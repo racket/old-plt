@@ -37,22 +37,22 @@ class wxIndividualLayoutConstraint : public wxObject {
 public:
     wxIndividualLayoutConstraint(void);
 
-    void  Set(wxRelationship rel, wxWindow *otherW, wxEdge otherE,
+    void  Set(wxRelationship rel, wxWindow **otherWSR, wxEdge otherE,
 	      int val = 0, int marg = wxLAYOUT_DEFAULT_MARGIN);
     // Sibling relationships
-    inline void  LeftOf(wxWindow *sibling, int marg = wxLAYOUT_DEFAULT_MARGIN)
+    inline void  LeftOf(wxWindow **sibling, int marg = wxLAYOUT_DEFAULT_MARGIN)
 	{ Set(wxLeftOf, sibling, wxLeft, 0, marg); }
-    inline void  RightOf(wxWindow *sibling, int marg = wxLAYOUT_DEFAULT_MARGIN)
+    inline void  RightOf(wxWindow **sibling, int marg = wxLAYOUT_DEFAULT_MARGIN)
 	{ Set(wxRightOf, sibling, wxRight, 0, marg); }
-    inline void  Above(wxWindow *sibling, int marg = wxLAYOUT_DEFAULT_MARGIN)
+    inline void  Above(wxWindow **sibling, int marg = wxLAYOUT_DEFAULT_MARGIN)
 	{ Set(wxAbove, sibling, wxTop, 0, marg); }
-    inline void  Below(wxWindow *sibling, int marg = wxLAYOUT_DEFAULT_MARGIN)
+    inline void  Below(wxWindow **sibling, int marg = wxLAYOUT_DEFAULT_MARGIN)
 	{ Set(wxBelow, sibling, wxBottom, 0, marg); }
     // 'Same edge' alignment
-    inline void  SameAs(wxWindow *otherW, wxEdge edge, int marg=wxLAYOUT_DEFAULT_MARGIN)
+    inline void  SameAs(wxWindow **otherW, wxEdge edge, int marg=wxLAYOUT_DEFAULT_MARGIN)
 	{ Set(wxPercentOf, otherW, edge, 0, marg); percent = 100; }
     // The edge is a percentage of the other window's edge
-    void  PercentOf(wxWindow *otherW, wxEdge wh, int per);
+    void  PercentOf(wxWindow **otherWSR, wxEdge wh, int per);
     // Edge has absolute value
     inline void Absolute(int val)
 	{ value = val; relationship = wxAbsolute; }
@@ -62,8 +62,6 @@ public:
     // Dimension is 'as is' (use current size settings)
     inline void AsIs(void)
 	{ relationship = wxAsIs; }
-    // Reset constraint if it mentions otherWin
-    Bool ResetIfWin(wxWindow *otherW);
     // Try to satisfy constraint
     Bool SatisfyConstraint(wxLayoutConstraints *constraints, wxWindow *win);
     // Get the value of this edge or dimension, or if this
@@ -73,7 +71,7 @@ private:
     friend class wxLayoutConstraints;
     friend class wxWindow;
 
-    wxWindow	*otherWin;	// parent or sibling of 'this' window
+    wxWindow	**otherWinSR;	// parent or sibling of 'this' window
     wxEdge	otherEdge;	// edge of parent or sibling
 
     wxEdge	   myEdge;	// constraints for this edge

@@ -107,46 +107,30 @@ void wxLayoutConstraints::UnDone(void)
 wxIndividualLayoutConstraint::wxIndividualLayoutConstraint(void)
   : wxObject(FALSE)
 {
-    otherWin	 = NULL;
+    otherWinSR	 = NULL;
     otherEdge	 = wxTop;
     myEdge	 = wxTop;
     relationship = wxUnconstrained;
     margin = value = percent = 0;
     done	 = FALSE;
-
-    WXGC_IGNORE(this, otherWin);
 }
 
-void wxIndividualLayoutConstraint::Set(wxRelationship rel, wxWindow *otherW,
+void wxIndividualLayoutConstraint::Set(wxRelationship rel, wxWindow **otherW,
 				       wxEdge otherE, int val, int marg)
 {
     relationship = rel;
-    otherWin     = otherW;
+    otherWinSR   = otherW;
     otherEdge    = otherE;
     value        = val;
     margin       = marg;
 }
 
-void wxIndividualLayoutConstraint::PercentOf(wxWindow *otherW, wxEdge wh, int per)
+void wxIndividualLayoutConstraint::PercentOf(wxWindow **otherW, wxEdge wh, int per)
 {
-    otherWin = otherW;
+    otherWinSR = otherW;
     relationship = wxPercentOf;
     percent = per;
     otherEdge = wh;
-}
-
-Bool wxIndividualLayoutConstraint::ResetIfWin(wxWindow *otherW)
-{
-    if (otherW == otherWin) {
-	otherWin     = NULL;
-	otherEdge    = wxTop;
-	myEdge	     = wxTop;
-	relationship = wxUnconstrained;
-	margin = value = percent = 0;
-	done	     = FALSE;
-	return TRUE;
-    }
-    return FALSE;
 }
 
 //-----------------------------------------------------------------------------
@@ -157,10 +141,13 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 						     wxWindow *win)
 {
     int edge_pos;
+    wxWindow *otherWin;
 
     if (relationship == wxAbsolute || done == TRUE) {
 	return (done = TRUE);
     }
+
+    otherWin = (otherWinSR ? (wxWindow *)GET_SAFEREF(otherWinSR) : NULL);
 
     edge_pos = (win && otherWin) ? GetEdge(otherEdge, win, otherWin) : -1;
     switch (myEdge) {

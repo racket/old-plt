@@ -844,13 +844,16 @@
   (test "#<primitive:void>" get-output-string p)
   (let ([try-bad
 	 (lambda (x)
+	   (test (void) (list x)
+		 (parameterize ([print-unreadable #f])
+		   (display x p)))
 	   (err/rt-test (parameterize ([print-unreadable #f])
-			  (display x p))))]
+			  (write x p))))]
 	[try-good
 	 (lambda (x)
 	   (test (void) (list x)
 		 (parameterize ([print-unreadable #f])
-		   (display x p))))])
+		   (write x p))))])
     (try-bad void)
     (try-bad (lambda () 10))
     (try-bad (seconds->date (current-seconds)))

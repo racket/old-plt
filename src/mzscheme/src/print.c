@@ -663,7 +663,7 @@ print_to_string(Scheme_Object *obj,
       params.print_unreadable = SCHEME_TRUEP(v);
     }
   } else
-    params.print_unreadable = 0;
+    params.print_unreadable = 1;
   v = scheme_get_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE);
   params.can_read_pipe_quote = SCHEME_TRUEP(v);
   v = scheme_get_param(config, MZCONFIG_CASE_SENS);

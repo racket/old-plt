@@ -1487,7 +1487,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
   env = scheme_current_process->current_local_env;
   if (!env)
     scheme_raise_exn(MZEXN_MISC, 
-		     "expansion-time-value: not currently expansion time");
+		     "syntax-local-value: not currently expansion time");
 
   sym = argv[0];
 

@@ -3361,12 +3361,12 @@ Scheme_Object *_scheme_eval_compiled_multi(Scheme_Object *obj, Scheme_Env *env)
 
 Scheme_Object *scheme_eval_compiled_expr(Scheme_Object *obj, Scheme_Env *env)
 {
-  return _eval(scheme_link_expr(obj, env), NULL, 1, 0, 0);
+  return _eval(scheme_link_expr(obj, env), NULL, 1, 0, 1);
 }
 
 Scheme_Object *scheme_eval_linked_expr(Scheme_Object *obj)
 {
-  return _eval(obj, NULL, 1, 0, 0);
+  return _eval(obj, NULL, 1, 0, 1);
 }
 
 static void *expand_k(void)

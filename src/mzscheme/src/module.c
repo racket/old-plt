@@ -763,8 +763,11 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	/* Add code with name to exp-time body: */
 	exp_body = scheme_make_pair(scheme_make_pair(name, m),
 				    exp_body);
-				    
-	m = scheme_eval_compiled_expr(m, eenv->genv);
+	
+	m = scheme_link_expr(m, eenv->genv);
+	
+	scheme_on_next_top(env, NULL, scheme_false);
+	m = scheme_eval_linked_expr(m);
 
 	/* Add macro to environment: */
 	macro = scheme_alloc_stubborn_small_object();

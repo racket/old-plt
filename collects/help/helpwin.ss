@@ -126,7 +126,6 @@
 
 			      [goto-url (lambda (url) (send results goto-url url #f))])
 			    
-
 			    (private
 			      [edit-menu:do (lambda (const)
 					      (lambda (menu evt)
@@ -361,19 +360,21 @@
 					   (lambda (t e)
 					     (send search enable (positive? (send (send t get-editor) last-position))))))
 	  (define search-pane (make-object horizontal-pane% top))
+
+	  (define (lucky-search-callback)
+	    (do-lucky-search
+	     (send search-text get-value)
+	     (send where get-selection)
+	     (send exact get-selection)))
+	  (define (search-callback)
+	    (run-search
+	     (send search-text get-value)
+	     (send where get-selection)
+	     (send exact get-selection)))
 	  (define search (make-object button% "Search" search-pane 
-				      (lambda (b e) 
-					(run-search (send search-text get-value)
-						    (send where get-selection)
-						    (send exact get-selection)))
+				      (lambda (b e)
+					(search-callback))
 				      '(border)))
-;	  (define feeling-lucky-button
-;	    (make-object button% "Feeling Lucky" search-pane
-;			 (lambda (b e)
-;			   (run-search (send search-text get-value)
-;				       (send where get-selection)
-;				       (send exact get-selection)))
-;			 '(border)))
 						      
 	  (define where (make-object choice% #f '("for Keyword"
 						  "for Keyword or Index Entry"
@@ -425,6 +426,11 @@
 				(send e set-position pos (+ pos (string-length s)))
 				(bell))))))
 		  (bell))]))
+
+	  (define menubar (send f get-menu-bar))
+	  (define search-menu (make-object menu% "Search" menubar))
+	  (define regular-search-item (make-object menu-item% "Search" search-menu (lambda (m e) (search-callback)) #\e))
+	  (define lucky-search-item (make-object menu-item% "Feeling Lucky" search-menu (lambda (m e) (lucky-search-callback)) #\l))
 
 	  (framework:frame:reorder-menus f)
 
@@ -520,6 +526,37 @@
 	  (define (add-kind-section name ckey)
 	    '(add-choice #f name #f '(change-style . slant) " " ckey))
 
+	  (define (do-lucky-search given-find search-level exactness)
+	    (let ([regexp? (= 2 exactness)]
+		  [exact? (= 0 exactness)]
+		  [ckey (gensym)]
+		  [found-something? #f])
+	      (let/ec k
+		(do-search given-find
+			   search-level
+			   regexp?
+			   exact?
+			   ckey 
+			   (lambda ()
+			     (k (void)))
+			   void
+			   void
+			   (lambda (key name title page label ckey)
+			     (set! found-something? #t)
+			     (send html-panel on-url-click
+				   (lambda (url) (send results goto-url url #f))
+				   (make-url
+				    "file"
+				    #f ; host
+				    #f ; port
+				    page
+				    #f ; params
+				    #f ; query
+				    label))
+			     (k (void)))))
+	      (unless found-something?
+		(message-box "Help Desk" (format "Nothing found for \"~a\"." given-find)))))
+
 	  (define (start-search given-find search-level exactness)
 	    (let* ([editor (let ([e (send results get-editor)])
 			     (if (is-a? e results-editor%)
@@ -528,7 +565,6 @@
 				   (send e lock #t)
 				   (send results set-page (editor->page e) #t)
 				   e)))]
-		   [tried-find given-find]
 		   [regexp? (= 2 exactness)]
 		   [exact? (= 0 exactness)]
 		   [maxxed-out? #f]

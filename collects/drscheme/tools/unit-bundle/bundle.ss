@@ -50,7 +50,7 @@ It supports three methods:
   create-view : (bundle-table-frame% (snip -> void) -> void)
     constructs a snip that displays the Bundle that this manager
     manages. Calls its argument with the snip, which must insert
-    the snip into an editor%.
+    that snip into an editor%.
   
   bundle-changed : (-> void)
     notifies all views of this bundle to update themselves.
@@ -125,6 +125,7 @@ node-bundle-snip%
         [contents #f]
         [views null]
         [interior-height-addition 10]
+	[interchild-space 4]
         [calculate-tree-size
          (lambda (view)
            (let o-loop ([contents-snip (send view get-contents-snip)])
@@ -143,9 +144,9 @@ node-bundle-snip%
                       (send contents set-tree-height h)
                       (values w h)))]
                  [(is-a? contents-snip node-bundle-snip%)
-                  (let i-loop ([bundle
-                                (send contents-snip get-bundle-snips)]
-                               [width 0]
+                  (let i-loop ([bundle (send contents-snip get-bundle-snips)]
+                               [width (* (max 0 (- (length (send contents-snip get-bundle-snips)) 1))
+					 interchild-space)]
                                [height 0])
                     (cond
                       [(null? bundle)
@@ -203,7 +204,7 @@ node-bundle-snip%
                                       x 
                                       (+ y interior-height-addition text-space))
                               (i-loop (cdr bundle-snips)
-                                      (+ x tree-width)))])))]
+                                      (+ x tree-width interchild-space)))])))]
                [else (error 'position-snips "fell off cond: ~e~n" contents-snip)])))]
         [build-view-contents
          (lambda (view)
@@ -224,12 +225,14 @@ node-bundle-snip%
         [get-bundle (lambda () contents)]
         [set-bundle (lambda (b) 
                       (set! contents b)
-                      (message-box "0" (format "setting view ~s" b))
+		      (send b set-bundle-manager this)
                       (bundle-changed))]
         [create-view
          (lambda (frame insert-into-editor)
            (let* ([view (make-object bundle-pasteboard% frame this)]
                   [snip (make-object editor-snip% view)])
+	     (send snip set-min-width 20)
+	     (send snip set-min-height 20)
              (insert-into-editor snip)
              (when contents
                (send view set-contents-snip (build-view-contents view))
@@ -241,7 +244,6 @@ node-bundle-snip%
          (lambda ()
            (let ([update-view
                   (lambda (view)
-                    (message-box "1" (format "updating view ~s~n" view))
                     '(send view begin-edit-sequence)
                     (let ([old-snips
                            (let loop ([snip (send view find-first-snip)])
@@ -371,7 +373,7 @@ node-bundle-snip%
         [set-label
          (lambda (s)
            (unless (symbol? s)
-             (error 'set-names "expected a list of symbols, got: ~e"
+             (error 'set-label "expected a symbols, got: ~e"
                     s))
            (set! label s))]
         [get-children
@@ -389,6 +391,7 @@ node-bundle-snip%
         [add-child
          (lambda (new-child)
            (set! children (cons new-child children))
+	   (send new-child set-bundle-manager (get-bundle-manager))
            (send (get-bundle-manager) bundle-changed))])
       (sequence
         (super-init)
@@ -501,6 +504,7 @@ node-bundle-snip%
         (update-text)
         (super-init text))))
   
+  (define node-bundle-snipclass (make-object snip-class%))
   (define node-bundle-snip%
     (class snip% (node-bundle bundle-snips)
       (public
@@ -544,8 +548,10 @@ node-bundle-snip%
 	     (send dc set-text-mode mode)
 	     (send dc set-text-foreground foreground)
 	     (send dc set-text-background background)))])
+      (inherit set-snipclass)
       (sequence
-        (super-init))))
+        (super-init)
+	(set-snipclass node-bundle-snipclass))))
   
   (define bundle-table%
     (class object% ()
@@ -590,8 +596,8 @@ node-bundle-snip%
       (public
         [enable-children
          (lambda (x)
-           (send new-leaf-button enable x)
-           (send new-node-button enable x))])
+           '(send new-leaf-button enable x)
+           '(send new-node-button enable x))])
       (sequence
         (super-init "Bundles" #f 400 400))
       (private
@@ -606,32 +612,36 @@ node-bundle-snip%
         [new-node-button (make-object button% "New Node" button-panel (lambda x (new-node)))]
         [canvas (make-object editor-canvas% this text)]
         
-        [new-leaf
-         (lambda ()
-           (let/ec k
-             (message-box "-2" "new-leaf")
-             (let ([out (lambda () (bell) (k #f))]
-                   [snip (send text get-focus-snip)])
-               (unless (is-a? snip editor-snip%)
-                 (out))
-               (let ([pb (send snip get-editor)])
-                 (unless (is-a? pb bundle-pasteboard%)
-                   (out))
-                 (let ([snip (send pb find-next-selected-snip #f)])
-                   (cond
-                     [(not snip)
-                      (let ([manager (send pb get-bundle-manager)])
-                        (message-box "-1" (format "manager: ~s" (list manager (send manager get-bundle))))
-                        (when (send manager get-bundle)
-                          (out))
-                        (send manager set-bundle (make-object leaf-bundle% '())))]
-                     [(and (is-a? snip node-bundle-snip%)
-                           (not (send pb find-next-selected-snip snip)))
-                      (let ([node-bundle (send snip get-bundle)])
-                        (send node-bundle add-child (make-object leaf-bundle% '())))]
-                     [else (out)]))))))]
-        
-        [new-node void]
+	[new-child
+	 (lambda (make-child)
+	   (let/ec k
+	     (let ([out (lambda () (bell) (k #f))]
+		   [snip (send text get-focus-snip)])
+	       (unless (is-a? snip editor-snip%)
+		 (out))
+	       (let ([pb (send snip get-editor)])
+		 (unless (is-a? pb bundle-pasteboard%)
+		   (out))
+		 (let ([snip (send pb find-next-selected-snip #f)])
+		   (cond
+		    [(not snip)
+		     (let ([manager (send pb get-bundle-manager)])
+		       (when (send manager get-bundle)
+			 (out))
+		       (send manager set-bundle (make-child)))]
+		    [(and (is-a? snip node-bundle-snip%)
+			  (not (send pb find-next-selected-snip snip)))
+		     (let ([node-bundle (send snip get-bundle)])
+		       (send node-bundle add-child (make-child)))]
+		    [else (out)]))))))]
+	[new-leaf
+	 (lambda () (new-child (lambda () (make-object leaf-bundle% '()))))]
+        [new-node
+	 (lambda ()
+	   (let ([label (get-text-from-user "New Node Bundle"
+					    "Label of node bundle")])
+	     (when label
+	       (new-child (lambda () (make-object node-bundle% (string->symbol label) '()))))))]
         
         [new-bundle
          (lambda ()

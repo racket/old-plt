@@ -32,12 +32,13 @@
   
   (define (language-dialog)
     (letrec
-	([dialog% (class mred:dialog%
+	([dialog% (class mred:dialog% (name)
 		    (public
 		      [on-close
 		       (lambda ()
 			 (when (procedure? unregister-callback)
-			   (unregister-callback)))]))]
+			   (unregister-callback)))])
+		    (sequence (super-init name)))]
 	 [language-levels (map (lambda (x) (symbol->string (vector-ref x 0))) basis:settings)]
 	 [f (make-object dialog% "Language")]
 	 [main (make-object mred:vertical-panel% f)]

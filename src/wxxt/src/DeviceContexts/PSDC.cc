@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.28 1999/10/08 04:33:18 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.29 1999/11/04 17:25:33 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1606,24 +1606,6 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
     
   if (!pstream)
     return;
-#if !USE_AFM_FOR_POSTSCRIPT
-  // Provide a VERY rough estimate (avoid using it)
-  int width = 12;
-  int height = 12;
-
-  if (fontToUse)
-    {
-      height = fontToUse->GetPointSize ();
-      width = height;
-    }
-  *x = (float) strlen (string) * width;
-  *y = (float) height;
-  if (descent)
-    *descent = 0.0;
-  if (topSpace)
-    *topSpace = 0.0;
-#else
-  // +++++ start of contributed code +++++
   
   // ************************************************************
   // method for calculating string widths in postscript:
@@ -1674,6 +1656,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   static int lastStyle= INT_MIN;
   static int lastWeight= INT_MIN;
   static int lastDescender = INT_MIN;
+  static int capHeight = -1;
   static int lastWidths[256]; // widths of the characters
 
   // get actual parameters
@@ -1683,7 +1666,10 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   const int Weight = fontToUse->GetWeight();
 
   // if we have another font, read the font-metrics
-  if(Family!=lastFamily||Size!=lastSize||Style!=lastStyle||Weight!=lastWeight){
+  if (Family != lastFamily 
+      || Size != lastSize 
+      || Style != lastStyle
+      || Weight != lastWeight) {
     // store actual values
     lastFamily = Family;
     lastSize =   Size;
@@ -1695,16 +1681,30 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
     // 1. construct filename ******************************************
     /* MATTHEW: [2] Use wxTheFontNameDirectory */
     char *name;
+    char *afmName;
 
     name = wxTheFontNameDirectory.GetAFMName(Family, Weight, Style);
-    if (!name)
-      name = "unknown";
-
-    // get the directory of the AFM files
-    char afmName[1024];
-    afmName[0] = 0;
-    if (afm_path)
-      strncpy(afmName, afm_path, 1024);
+    if (name && afm_path) {
+      int len = strlen(afm_path);
+      // get the directory of the AFM files
+      afmName = new char[strlen(name) + len + 256];
+      strcpy(afmName, afm_path);
+#ifdef wx_mac
+      if (len && (afm_path[len - 1] != ':'))
+	strcat(afmName, ":");
+#endif
+#ifdef wx_x
+      if (len && (afm_path[len - 1] != '/'))
+	strcat(afmName, "/");
+#endif
+#ifdef wx_msw
+      if (len && (afm_path[len - 1] != '/') && (afm_path[len - 1] != '\\'))
+	strcat(afmName, "/");
+#endif
+      strcat(afmName, name);
+      strcat(afmName,".afm");
+    } else
+      afmName = NULL;
 
     // 2. open and process the file **********************************
 
@@ -1721,53 +1721,62 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
     // when the font has changed, we read in the right AFM file and store the
     // character widths in an array, which is processed below (see point 3.).
 
-    strncat(afmName, "/", 1024);
-    strncat(afmName, name, 1024);
-    strncat(afmName,".afm", 1024);
-    afmName[1023] = 0;
-    FILE *afmFile = fopen(afmName,"r");
-    if(afmFile==NULL){
+    FILE *afmFile = (afmName ? fopen(afmName,"r") : (FILE *)NULL);
+
+    if (afmFile==NULL) {
       wxDebugMsg("GetTextExtent: can't open AFM file '%s'\n",afmName);
       wxDebugMsg("               using approximate values\n");
       int i;
-      for (i=0; i<256; i++) lastWidths[i] = 500; // an approximate value
+      for (i = 0; i < 256; i++) {
+	lastWidths[i] = 500; // an approximate value
+      }
       lastDescender = -150; // dito.
-    }else{
+    } else {
       int i;
       // init the widths array
-      for(i=0; i<256; i++) lastWidths[i]= INT_MIN;
+      for (i = 0; i < 256; i++) {
+	lastWidths[i] = INT_MIN;
+      }
       // some variables for holding parts of a line
-      char cString[10],semiString[10],WXString[10],descString[20];
+      char cString[256], semiString[256], WXString[256], descString[256];
       char line[256];
-      int ascii,cWidth;
+      int ascii, cWidth;
       // read in the file and parse it
-      while(fgets(line,sizeof(line),afmFile)!=NULL){
-        // A.) check for descender definition
-        if(strncmp(line,"Descender",9)==0){
-          if((sscanf(line,"%s%d",descString,&lastDescender)!=2)
-	     || (strcmp(descString,"Descender")!=0)) {
+      while (fgets(line,sizeof(line),afmFile)) {
+        if (!strncmp(line, "Descender ", 10)) {
+	  // descender
+          if ((sscanf(line, "%s%d", descString, &lastDescender) != 2)
+	      || strcmp(descString,"Descender")) {
 	    wxDebugMsg("AFM-file '%s': line '%s' has error (bad descender)\n",
-		       afmName,line);
+		       afmName, line);
           }
-	// B.) check for char-width
-        }else if(strncmp(line,"C ",2)==0){
-          if(sscanf(line,"%s%d%s%s%d",
-              cString,&ascii,semiString,WXString,&cWidth)!=5){
-             wxDebugMsg("AFM-file '%s': line '%s' has an error (bad character width)\n",afmName,line);
+        } else if (!strncmp(line, "CapHeight ", 10)) {
+	  // descender
+          if ((sscanf(line, "%s%d", descString, &capHeight) != 2)
+	      || strcmp(descString, "CapHeight")) {
+	    wxDebugMsg("AFM-file '%s': line '%s' has error (bad cap height)\n",
+		       afmName, line);
           }
-          if(strcmp(cString,"C")!=0 || strcmp(semiString,";")!=0 ||
-             strcmp(WXString,"WX")!=0){
-             wxDebugMsg("AFM-file '%s': line '%s' has a format error\n",afmName,line);
+        } else if (!strncmp(line, "C ", 2)){
+	  // char-width
+          if(sscanf(line, "%s%d%s%s%d", cString, &ascii, 
+		    semiString, WXString, &cWidth) != 5) {
+	    wxDebugMsg("AFM-file '%s': line '%s' has an error (bad character width)\n",
+		       afmName, line);
+          }
+          if(strcmp(cString,"C") 
+	     || strcmp(semiString,";") 
+	     || strcmp(WXString,"WX")) {
+	    wxDebugMsg("AFM-file '%s': line '%s' has a format error\n",afmName,line);
           }
           //printf("            char '%c'=%d has width '%d'\n",ascii,ascii,cWidth);
-          if(ascii>=0 && ascii<256){
+          if (ascii >= 0 && ascii < 256) {
             lastWidths[ascii] = cWidth; // store width
-          }else{
-	    /* MATTHEW: this happens a lot; don't print an error */
+          } else {
+	    /* This happens a lot; don't print an error */
             // wxDebugMsg("AFM-file '%s': ASCII value %d out of range\n",afmName,ascii);
           }
         }
-        // C.) ignore other entries.
       }
       fclose(afmFile);
     }
@@ -1777,21 +1786,22 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   // this is done by adding the widths of the characters in the
   // string. they are given in 1/1000 of the size!
 
-  float widthSum=0.0;
-  float height=(float)Size; // by default
+  float widthSum = 0.0;
+  float height = (float)Size;
   unsigned char *p;
-  for(p=(unsigned char *)string; *p; p++){
-    if(lastWidths[*p]== INT_MIN){
+  for (p = (unsigned char *)string; *p; p++) {
+    if (lastWidths[*p] == INT_MIN) {
       wxDebugMsg("GetTextExtent: undefined width for character '%c' (%d)\n",
-                 *p,*p);
+                 *p, *p);
       widthSum += lastWidths[' ']; // assume space
-    }else{
-      widthSum += (lastWidths[*p]/1000.0F)*Size;
+    } else {
+      widthSum += (lastWidths[*p] / 1000.0F) * Size;
     }
   }
+
   // add descender to height (it is usually a negative value)
-  if(lastDescender!=INT_MIN){
-    height += ((-lastDescender)/1000.0F) * Size; /* MATTHEW: forgot scale */
+  if (lastDescender != INT_MIN) {
+    height += ((-lastDescender) / 1000.0F) * Size;
   }
   
   // return size values
@@ -1800,18 +1810,18 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
 
   // return other parameters
   if (descent){
-    if(lastDescender!=INT_MIN){
-      *descent = ((-lastDescender)/1000.0F) * Size; /* MATTHEW: forgot scale */
-    }else{
+    if (lastDescender != INT_MIN)
+      *descent = ((-lastDescender) / 1000.0F) * Size;
+    else
       *descent = 0.0;
-    }
   }
 
-  if (topSpace)
-    *topSpace = 0.0;
-
-  // ----- end of contributed code -----
-#endif
+  if (topSpace) {
+    if (capHeight > -1)
+      *topSpace = ((1000 - capHeight) / 1000.0F) * Size;
+    else
+      *topSpace = 0.0;
+  }
 }
 
 void wxPostScriptDC::SetMapMode (int WXXTUNUSED(mode))

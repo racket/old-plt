@@ -493,7 +493,7 @@
  ;;; the command.
 
  (file-menu-label-windows "&Filer")
- (file-menu-label-other "F&il")
+ (file-menu-label-other "F&iler")
 
  (new-info  "Opret en ny fil")
  (new-menu-item "&Ny")

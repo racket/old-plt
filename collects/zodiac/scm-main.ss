@@ -1061,7 +1061,8 @@
 	    (out-pattern-2 'this-is-an-error-case)
 	    (in-pattern-3 '(_))
 	    (out-pattern-3 (if (or (language<=? 'structured)
-				 param:unmatched-cond/case-is-error?)
+				 (not (compile-auto-cond-else)))
+			     ;param:unmatched-cond/case-is-error?)
 			     '(#%raise (#%make-exn:else
 					 "no matching clause"
 					 ((debug-info-handler))))

@@ -251,7 +251,8 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 
 static char *string_to_from_locale(int to_bytes,
 				   char *in, int delta, int len,
-				   long *olen, int perm);
+				   long *olen, int perm,
+				   int *no_cvt);
 
 #define portable_isspace(x) (((x) < 128) && isspace(x))
 
@@ -1107,14 +1108,20 @@ do_byte_string_to_char_string_locale(const char *who,
     return do_byte_string_to_char_string(who, bstr, istart, ifinish, perm, 1);
 
   if (istart < ifinish) {
+    int no_cvt;
+
     us = string_to_from_locale(0, SCHEME_BYTE_STR_VAL(bstr),
 			       istart, ifinish - istart,
-			       &olen, perm);
+			       &olen, perm, &no_cvt);
 
     if (!us) {
-      scheme_arg_mismatch(who,
-			  "byte string is not a valid encoding for the current locale: ",
-			  bstr);
+      if (no_cvt) {
+	return do_byte_string_to_char_string(who, bstr, istart, ifinish, perm, 1);
+      } else {
+	scheme_arg_mismatch(who,
+			    "byte string is not a valid encoding for the current locale: ",
+			    bstr);
+      }
     }
     ((mzchar *)us)[olen] = 0;
   } else {
@@ -1232,14 +1239,20 @@ do_char_string_to_byte_string_locale(const char *who,
     return do_char_string_to_byte_string(cstr, istart, ifinish, 1);
 
   if (istart < ifinish) {
+    int no_cvt;
+
     s = string_to_from_locale(1, (char *)SCHEME_CHAR_STR_VAL(cstr),
 			      istart, ifinish - istart,
-			      &olen, perm);
+			      &olen, perm, &no_cvt);
 
     if (!s) {
-      scheme_arg_mismatch(who,
-			  "string cannot be encoded for the current locale: ",
-			  cstr);
+      if (no_cvt) {
+	return do_char_string_to_byte_string(cstr, istart, ifinish, 1);
+      } else {
+	scheme_arg_mismatch(who,
+			    "string cannot be encoded for the current locale: ",
+			    cstr);
+      }
     }
     s[olen] = 0;
   } else {
@@ -2310,7 +2323,8 @@ static char *do_convert(iconv_t cd,
 
 static char *string_to_from_locale(int to_bytes,
 				   char *in, int delta, int len,
-				   long *olen, int perm)
+				   long *olen, int perm,
+				   int *no_cvt)
      /* Call this function only when iconv is available, and only when
 	reset_locale() has been called */
 {
@@ -2326,8 +2340,11 @@ static char *string_to_from_locale(int to_bytes,
     cd = iconv_open(mz_iconv_nl_langinfo(), MZ_UCS4_NAME);
   else
     cd = iconv_open(MZ_UCS4_NAME, mz_iconv_nl_langinfo());
-  if (cd == (iconv_t)-1)
+  if (cd == (iconv_t)-1) {
+    *no_cvt = 1;
     return NULL;
+  }
+  *no_cvt = 0;
 
   while (len) {
     /* We might have conversion errors... */

@@ -10,7 +10,7 @@
 
 #ifdef wx_mac
 typedef struct {
-  CGCOntext cg;
+  CGContextRef cg;
   CGMutablePathRef path;
 } PathTarget;
 # define CGPATH ((PathTarget *)target)->path
@@ -859,7 +859,6 @@ void wxRegion::Install(long target, Bool align)
     CGContextRef cg = (CGContextRef)target;
     PathTarget *t;
     CGMutablePathRef path;
-    int i;
     
     path = CGPathCreateMutable();
   

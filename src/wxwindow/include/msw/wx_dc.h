@@ -174,6 +174,17 @@ class wxDC: public wxbDC
   void ReleaseGraphics(HDC given_dc = 0);
 
   void SetAntiAlias(Bool v);
+
+  Bool AlignSmoothing();
+  double GetPenSmoothingOffset();
+  double SmoothingXFormX(double x);
+  double SmoothingXFormY(double y);
+  double SmoothingXFormW(double w, double x);
+  double SmoothingXFormH(double h, double y);
+  double SmoothingXFormXB(double x);
+  double SmoothingXFormYB(double y);
+  double SmoothingXFormWL(double w, double x);
+  double SmoothingXFormHL(double h, double y);
 };
 
 // This class specific to Windows 3.1

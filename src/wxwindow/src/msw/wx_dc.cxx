@@ -255,6 +255,95 @@ void wxDC::ShiftXY(double x, double y, int *ix, int *iy)
   }
 }
 
+
+Bool wxDC::AlignSmoothing()
+{
+  return (anti_alias == 2);
+}
+
+double wxDC::GetPenSmoothingOffset()
+{
+  int pw;
+  pw = current_pen->GetWidth();
+  if (!pw)
+    pw = 1;
+  else
+    pw = (int)(user_scale_x * pw);
+  return ((pw & 1) * 0.5);
+}
+
+double wxDC::SmoothingXFormX(double x)
+{
+  if (AlignSmoothing())
+    return floor((x * user_scale_x) + device_origin_x) + GetPenSmoothingOffset();
+  else
+    return x;
+}
+
+double wxDC::SmoothingXFormY(double y)
+{
+  if (AlignSmoothing())
+    return floor((y * user_scale_y) + device_origin_y) + GetPenSmoothingOffset();
+  else
+    return y;
+}
+
+double wxDC::SmoothingXFormW(double w, double x)
+{
+  if (AlignSmoothing())
+    return SmoothingXFormX(x + w) - SmoothingXFormX(x);
+  else
+    return w;
+}
+
+double wxDC::SmoothingXFormH(double h, double y)
+{
+  if (AlignSmoothing())
+    return SmoothingXFormY(y + h) - SmoothingXFormX(y);
+  else
+    return h;
+}
+
+double wxDC::SmoothingXFormXB(double x)
+{
+  if (AlignSmoothing())
+    return floor((x * user_scale_x) + device_origin_x);
+  else
+    return x;
+}
+
+double wxDC::SmoothingXFormYB(double y)
+{
+  if (AlignSmoothing())
+    return floor((y * user_scale_y) + device_origin_y);
+  else
+    return y;
+}
+
+double wxDC::SmoothingXFormWL(double w, double x)
+{
+  if (AlignSmoothing()) {
+    w = SmoothingXFormW(w, x);
+    if (w >= 1.0)
+      return w - 1.0;
+    else
+      return w;
+  } else
+    return w;
+}
+
+double wxDC::SmoothingXFormHL(double h, double y)
+{
+  if (AlignSmoothing()) {
+    h = SmoothingXFormH(h, y);
+    if (h >= 1.0)
+      return h - 1.0;
+    else
+      return h;
+  } else
+    return h;
+}
+
 void wxDC::SetClippingRect(double cx, double cy, double cw, double ch)
 {
   wxRegion *c;
@@ -389,10 +478,12 @@ void wxDC::InitGraphics(HDC dc)
        own internal scale (remembered at the time that
        the region was created). */
     if (clipping)
-      clipping->Install((long)g);
+      clipping->Install((long)g, AlignSmoothing());
 
-    wxGTranslate(g, device_origin_x, device_origin_y);
-    wxGScale(g, user_scale_x, user_scale_y);
+    if (!AlignSmoothing()) {
+      wxGTranslate(g, device_origin_x, device_origin_y);
+      wxGScale(g, user_scale_x, user_scale_y);
+    }
   }
 }
 
@@ -534,7 +625,6 @@ Bool wxDC::GetPixel(double x, double y, wxColour *col)
 
 void wxDC::DrawLine(double x1, double y1, double x2, double y2)
 {
-  int xx1, yy1, xx2, yy2;
   HDC dc;
 
   dc = ThisDC();
@@ -543,19 +633,16 @@ void wxDC::DrawLine(double x1, double y1, double x2, double y2)
 
   if (anti_alias) {
     if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
-      InitGraphics(dc);
-      
-      if ((anti_alias == 2)
-	  && (user_scale_x == 1.0)
-	  && (user_scale_y == 1.0)
-	  && (current_pen->GetWidthF() <= 1.0)) {
-	x1 += 0.5;
-	y1 += 0.5;
-	x2 += 0.5;
-	y2 += 0.5;
-      }
+      double xx1, yy1, xx2, yy2;
 
-      wxGDrawLine(g, current_pen->GraphicsPen(), x1, y1, x2, y2);
+      InitGraphics(dc);
+
+      xx1 = SmoothingXFormX(x1);
+      yy1 = SmoothingXFormY(y1);
+      xx2 = SmoothingXFormX(x2);
+      yy2 = SmoothingXFormY(y2);
+
+      wxGDrawLine(g, current_pen->GraphicsPen(), xx1, yy1, xx2, yy2);
     }
     DoneDC(dc);
     return;
@@ -563,6 +650,7 @@ void wxDC::DrawLine(double x1, double y1, double x2, double y2)
     ReleaseGraphics(dc);
 
   if (StartPen(dc)) {
+    int xx1, yy1, xx2, yy2;
     int pw;
     int forward;
 
@@ -704,23 +792,28 @@ void wxDC::DrawArc(double x, double y, double w, double h, double start, double 
     }
 
     if (current_brush && (current_brush->GetStyle() != wxTRANSPARENT)) {
-      wxGFillPie(g, current_brush->GraphicsBrush(), x, y, w, h, init, span);
+      double xx, yy, ww, hh;
+
+      xx = SmoothingXFormXB(x);
+      yy = SmoothingXFormYB(y);
+      ww = SmoothingXFormW(w, x);
+      hh = SmoothingXFormH(h, y);
+
+      wxGFillPie(g, current_brush->GraphicsBrush(), xx, yy, ww, hh, init, span);
     }
 
     if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
-      if ((anti_alias == 2)
-	  && (user_scale_x == 1.0)
-	  && (user_scale_y == 1.0)
-	  && (current_pen->GetWidthF() <= 1.0)) {
-	x += 0.5;
-	y += 0.5;
-	w -= 1.0;
-	h -= 1.0;
-      }
-      wxGDrawArc(g, current_pen->GraphicsPen(), x, y, w, h, init, span);
+      double xx, yy, ww, hh;
+
+      xx = SmoothingXFormX(x);
+      yy = SmoothingXFormY(y);
+      ww = SmoothingXFormWL(w, x);
+      hh = SmoothingXFormHL(h, y);
+      
+      wxGDrawArc(g, current_pen->GraphicsPen(), xx, yy, ww, hh, init, span);
     }
 
-	DoneDC(dc);
+    DoneDC(dc);
     return;
   } else
     ReleaseGraphics(dc);
@@ -872,19 +965,11 @@ void wxDC::DrawPolygon(int n, wxPoint points[], double xoffset, double yoffset,i
     PointF *pts;
     
     InitGraphics(dc);
-
-    if ((anti_alias == 2)
-	&& (user_scale_x == 1.0)
-	&& (user_scale_y == 1.0)
-	&& (current_pen->GetWidthF() <= 1.0)) {
-      xoffset += 0.5;
-      yoffset += 0.5;
-    }
     
     pts = newPointFs(n);
     for (i = 0; i < n; i++) {
-      pts[i].X = points[i].x + xoffset;
-      pts[i].Y = points[i].y + yoffset;
+      pts[i].X = SmoothingXFormX(points[i].x + xoffset);
+      pts[i].Y = SmoothingXFormY(points[i].y + yoffset);
     }
 
     if (current_brush && (current_brush->GetStyle() != wxTRANSPARENT)) {
@@ -950,16 +1035,18 @@ void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
 
     InitGraphics(dc);
     
-    if ((anti_alias == 2)
-	&& (user_scale_x == 1.0)
-	&& (user_scale_y == 1.0)
-	&& (current_pen->GetWidthF() <= 1.0)) {
-      xoffset += 0.5;
-      yoffset += 0.5;
-    }
-
     gp = wxGPathNew((fillStyle == wxODDEVEN_RULE) ? FillModeAlternate : FillModeWinding);
-    p->Install((long)gp, xoffset, yoffset);
+
+    if (AlignSmoothing()) {
+      double pw;
+      pw = GetPenSmoothingOffset();
+      p->Install((long)gp, xoffset, yoffset,
+		 device_origin_x, device_origin_y, user_scale_x, user_scale_y,
+		 TRUE, pw, pw);
+    } else {
+      p->Install((long)gp, xoffset, yoffset,
+		 0, 0, 1, 1, FALSE, 0, 0);
+    }
 
     if (current_brush && (current_brush->GetStyle() != wxTRANSPARENT)) {
       wxGFillPath(g, current_brush->GraphicsBrush(), gp);
@@ -1075,25 +1162,17 @@ void wxDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffset)
       
       InitGraphics(dc);
 
-      if ((anti_alias == 2)
-	  && (user_scale_x == 1.0)
-	  && (user_scale_y == 1.0)
-	  && (current_pen->GetWidthF() <= 1.0)) {
-	xoffset += 0.5;
-	yoffset += 0.5;
-      }
-            
       pts = newPointFs(n);
       for (i = 0; i < n; i++) {
-	pts[i].X = points[i].x + xoffset;
-	pts[i].Y = points[i].y + yoffset;
+	pts[i].X = SmoothingXFormX(points[i].x + xoffset);
+	pts[i].Y = SmoothingXFormY(points[i].y + yoffset);
       }
 
       
       wxGDrawLines(g, current_pen->GraphicsPen(), pts, n);
     }
 
-	DoneDC(dc);
+    DoneDC(dc);
     return;
   } else
     ReleaseGraphics(dc);
@@ -1132,20 +1211,25 @@ void wxDC::DrawRectangle(double x, double y, double width, double height)
     InitGraphics(dc);
 
     if (current_brush && (current_brush->GetStyle() != wxTRANSPARENT)) {
-      wxGFillRectangle(g, current_brush->GraphicsBrush(), x, y, width, height);
+      double xx, yy, ww, hh;
+
+      xx = SmoothingXFormXB(x);
+      yy = SmoothingXFormYB(y);
+      ww = SmoothingXFormW(width, x);
+      hh = SmoothingXFormH(height, y);
+
+      wxGFillRectangle(g, current_brush->GraphicsBrush(), xx, yy, ww, hh);
     }
 
     if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
-      if ((anti_alias == 2)
-	  && (user_scale_x == 1.0)
-	  && (user_scale_y == 1.0)
-	  && (current_pen->GetWidthF() <= 1.0)) {
-	x += 0.5;
-	y += 0.5;
-	width -= 1.0;
-	height -= 1.0;
-      }
-      wxGDrawRectangle(g, current_pen->GraphicsPen(), x, y, width, height);
+      double xx, yy, ww, hh;
+
+      xx = SmoothingXFormX(x);
+      yy = SmoothingXFormY(y);
+      ww = SmoothingXFormWL(width, x);
+      hh = SmoothingXFormHL(height, y);
+
+      wxGDrawRectangle(g, current_pen->GraphicsPen(), xx, yy, ww, hh);
     }
     
     DoneDC(dc);
@@ -1208,35 +1292,58 @@ void wxDC::DrawRoundedRectangle(double x, double y, double width, double height,
 
     InitGraphics(dc);
 
-    if ((anti_alias == 2)
-	&& (user_scale_x == 1.0)
-	&& (user_scale_y == 1.0)
-	&& (current_pen->GetWidthF() <= 1.0)) {
-      x += 0.5;
-      y += 0.5;
-      width -= 1.0;
-      height -= 1.0;
-    }
-    
-    gp = wxGPathNew(FillModeWinding);
-    wxGPathAddArc(gp, x, y, radius * 2, radius * 2, 180, 90);
-    wxGPathAddLine(gp, x + radius, y, x + width - radius, y);
-    wxGPathAddArc(gp, x + width - 2 * radius, y, radius * 2, radius * 2, 270, 90);
-    wxGPathAddLine(gp, x + width, y + radius, x + width, y + height - radius);
-    wxGPathAddArc(gp, x + width - 2 * radius, y + height - 2 * radius, 2 * radius, 2 * radius, 0, 90);
-    wxGPathAddLine(gp, x + width - radius, y + height, x + radius, y + height);
-    wxGPathAddArc(gp, x, y + height - 2 * radius, 2 * radius, 2 * radius, 90, 90);
-    wxGPathCloseFigure(gp);
-    
     if (current_brush && (current_brush->GetStyle() != wxTRANSPARENT)) {
+      double xx, yy, ww, hh, rr, rr2;
+
+      xx = SmoothingXFormXB(x);
+      yy = SmoothingXFormYB(y);
+      ww = SmoothingXFormW(width, x);
+      hh = SmoothingXFormH(height, y);
+
+      rr = SmoothingXFormW(radius, 0);
+      rr2 = SmoothingXFormH(radius, 0);
+      if (rr2 < rr)
+	rr = rr2;
+      
+      gp = wxGPathNew(FillModeWinding);
+      wxGPathAddArc(gp, xx, yy, rr * 2, rr * 2, 180, 90);
+      wxGPathAddLine(gp, xx + rr, yy, xx + width - rr, y);
+      wxGPathAddArc(gp, xx + width - 2 * rr, yy, rr * 2, rr * 2, 270, 90);
+      wxGPathAddLine(gp, xx + width, yy + rr, xx + width, yy + height - rr);
+      wxGPathAddArc(gp, xx + width - 2 * rr, yy + height - 2 * rr, 2 * rr, 2 * rr, 0, 90);
+      wxGPathAddLine(gp, xx + width - rr, yy + height, xx + rr, yy + height);
+      wxGPathAddArc(gp, xx, yy + height - 2 * rr, 2 * rr, 2 * rr, 90, 90);
+      wxGPathCloseFigure(gp);
       wxGFillPath(g, current_brush->GraphicsBrush(), gp);
+      wxGPathRelease(gp);
     }
 
     if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
+      double xx, yy, ww, hh, rr, rr2;
+
+      xx = SmoothingXFormX(x);
+      yy = SmoothingXFormY(y);
+      ww = SmoothingXFormWL(width, x);
+      hh = SmoothingXFormHL(height, y);
+      
+      rr = SmoothingXFormWL(radius, 0);
+      rr2 = SmoothingXFormHL(radius, 0);
+      if (rr2 < rr)
+	rr = rr2;
+
+      gp = wxGPathNew(FillModeWinding);
+      wxGPathAddArc(gp, xx, yy, rr * 2, rr * 2, 180, 90);
+      wxGPathAddLine(gp, xx + rr, yy, xx + width - rr, y);
+      wxGPathAddArc(gp, xx + width - 2 * rr, yy, rr * 2, rr * 2, 270, 90);
+      wxGPathAddLine(gp, xx + width, yy + rr, xx + width, yy + height - rr);
+      wxGPathAddArc(gp, xx + width - 2 * rr, yy + height - 2 * rr, 2 * rr, 2 * rr, 0, 90);
+      wxGPathAddLine(gp, xx + width - rr, yy + height, xx + rr, yy + height);
+      wxGPathAddArc(gp, xx, yy + height - 2 * rr, 2 * rr, 2 * rr, 90, 90);
+      wxGPathCloseFigure(gp);
       wxGDrawPath(g, current_pen->GraphicsPen(), gp);
+      wxGPathRelease(gp);
     }
 
-    wxGPathRelease(gp);
 
     DoneDC(dc);
     return;
@@ -1810,7 +1917,7 @@ void wxDC::SetMapMode(int mode, HDC given_dc)
     if (!dc) return;
   }
 
-  switch (mode) {
+  switch (mapping_mode) {
   case 1:
     {
       double mm2pixelsX;
@@ -1829,32 +1936,27 @@ void wxDC::SetMapMode(int mode, HDC given_dc)
 	
       logical_scale_x = (double)(pt2mm * mm2pixelsX);
       logical_scale_y = (double)(pt2mm * mm2pixelsY);
-      sx = user_scale_x;
-      sy = user_scale_y;
-      ox = device_origin_x;
-      oy = device_origin_y;
-    }
-    break;
-  case 2: /* disables all scale */
-    {
-      logical_scale_x = 1.0;
-      logical_scale_y = 1.0;
-      sx = 1.0;
-      sy = 1.0;
-      ox = 0.0;
-      oy = 0.0;
     }
     break;
   default:
     {
       logical_scale_x = 1.0;
       logical_scale_y = 1.0;
-      sx = user_scale_x;
-      sy = user_scale_y;
-      ox = device_origin_x;
-      oy = device_origin_y;
       break;
     }
+  }
+
+  if (mode == 2) {
+    /* disable user xform */
+    sx = 1.0;
+    sy = 1.0;
+    ox = 0.0;
+    oy = 0.0;
+  } else {
+    sx = user_scale_x;
+    sy = user_scale_y;
+    ox = device_origin_x;
+    oy = device_origin_y;
   }
 
   if (::GetMapMode(dc) != MM_ANISOTROPIC)

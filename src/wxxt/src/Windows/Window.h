@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Window.h,v 1.10 1999/11/18 16:35:08 mflatt Exp $
  *
  * Purpose: base class for all windows
  *

@@ -40,11 +40,15 @@
 # define WXGC_ATOMIC /* empty */
 # define DELETE_OBJ delete_wxobject
 # define DELETE_VAL delete
+# define MALLOC_SAFEREF() GC_malloc_immobile_box(NULL)
+# define FREE_SAFEREF(x) GC_free_immobile_box(x)
 #else
 # define WXGC_IGNORE(ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
 # define WXGC_ATOMIC (AtomicGC)
 # define DELETE_OBJ delete
 # define DELETE_VAL delete
+# define MALLOC_SAFEREF() malloc(sizeof(void *))
+# define FREE_SAFEREF(x) free(x)
 #endif
 #define WXGC_NO_CLEANUP FALSE
 

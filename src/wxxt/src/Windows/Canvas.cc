@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Canvas.cc,v 1.14 1999/11/22 20:29:35 mflatt Exp $
  *
  * Purpose: canvas panel item
  *

@@ -46,14 +46,6 @@
 
 #include <X11/keysym.h> // needed for IsFunctionKey, etc.
 
-#ifdef MZ_PRECISE_GC
-# define MALLOC_SAFEREF() GC_malloc_immobile_box(NULL)
-# define FREE_SAFEREF(x) GC_free_immobile_box(x)
-#else
-# define MALLOC_SAFEREF() malloc(sizeof(wxWindow *))
-# define FREE_SAFEREF(x) free(x)
-#endif
-
 extern void wxSetSensitive(Widget, Bool enabled);
 
 //-----------------------------------------------------------------------------
@@ -1081,6 +1073,9 @@ static void FreeSaferef(Widget WXUNUSED(w), wxWindow** winp,
 			XtPointer WXUNUSED(null))
 {
   FREE_SAFEREF((char *)winp);
+#ifdef MZ_PRECISE_GC
+  XFORM_RESET_VAR_STACK;
+#endif
 }
 
 void wxWindow::FocusChangeCallback(void*,
@@ -1089,8 +1084,12 @@ void wxWindow::FocusChangeCallback(void*,
 {
   wxWindow *win = *winp;
 
-  if (!win)
+  if (!win) {
+#ifdef MZ_PRECISE_GC
+    XFORM_RESET_VAR_STACK;
+#endif
     return;
+  }
 
   if (on) {
     win->misc_flags |= FOCUS_FLAG;
@@ -1099,6 +1098,10 @@ void wxWindow::FocusChangeCallback(void*,
     win->misc_flags -= (win->misc_flags & FOCUS_FLAG);
     win->OnKillFocus();
   }
+
+#ifdef MZ_PRECISE_GC
+  XFORM_RESET_VAR_STACK;
+#endif
 }
 
 void wxWindow::RegisterAll(Widget ww)
@@ -1241,8 +1244,12 @@ void wxWindow::ExposeEventHandler(Widget     WXUNUSED(w),
   XfwfExposeInfo *einfo;
   wxWindow *win = *winp;
 
-  if (!win)
+  if (!win) {
+#ifdef MZ_PRECISE_GC
+    XFORM_RESET_VAR_STACK;
+#endif
     return;
+  }
 
     einfo = (XfwfExposeInfo*)p_XfwfExposeInfo;
 
@@ -1269,6 +1276,10 @@ void wxWindow::ExposeEventHandler(Widget     WXUNUSED(w),
 	    win->dc->SetCanvasClipping();
 	}
     }
+
+#ifdef MZ_PRECISE_GC
+  XFORM_RESET_VAR_STACK;
+#endif
 }
 
 void wxWindow::FrameEventHandler(Widget w,
@@ -1278,8 +1289,12 @@ void wxWindow::FrameEventHandler(Widget w,
 {
   /* MATTHEW: */
   wxWindow *win = *winp;
-  if (!win)
+  if (!win) {
+#ifdef MZ_PRECISE_GC
+    XFORM_RESET_VAR_STACK;
+#endif
     return;
+  }
 
   switch (xev->xany.type) {
   case ClientMessage:
@@ -1325,6 +1340,10 @@ void wxWindow::FrameEventHandler(Widget w,
     }
     break;
   }
+
+#ifdef MZ_PRECISE_GC
+  XFORM_RESET_VAR_STACK;
+#endif
 }
 
 void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
@@ -1453,6 +1472,9 @@ void wxWindow::WindowEventHandler(Widget w,
 
   if (!win) {
     *continue_to_dispatch_return = FALSE;
+#ifdef MZ_PRECISE_GC
+    XFORM_RESET_VAR_STACK;
+#endif
     return;
   }
 
@@ -1712,6 +1734,10 @@ void wxWindow::WindowEventHandler(Widget w,
 	}
         break;
     }
+
+#ifdef MZ_PRECISE_GC
+  XFORM_RESET_VAR_STACK;
+#endif
 }
 
 //-----------------------------------------------------------------------------

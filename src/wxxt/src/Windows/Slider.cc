@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Slider.cc,v 1.9 1999/11/18 16:35:08 mflatt Exp $
+ * $Id: Slider.cc,v 1.10 1999/11/22 20:29:35 mflatt Exp $
  *
  * Purpose: slider panel item
  *
@@ -126,7 +126,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label,
     // set data declared in wxItem
     callback = func;
     XtAddCallback(X->handle, XtNscrollCallback, wxSlider::EventCallback,
-		  (XtPointer)this);
+		  (XtPointer)saferef);
     // panel positioning
     panel->PositionItem(this, x, y, -1, -1);
     AddEventHandlers();
@@ -199,7 +199,7 @@ void wxSlider::Command(wxCommandEvent *event)
 void wxSlider::EventCallback(Widget WXUNUSED(w),
 			     XtPointer dclient, XtPointer dcall)
 {
-    wxSlider       *slider = (wxSlider*)dclient;
+    wxSlider       *slider = *(wxSlider**)dclient;
     XfwfScrollInfo *info   = (XfwfScrollInfo*)dcall;
     Bool           process = FALSE;
     int            new_value = 0;
@@ -233,4 +233,8 @@ void wxSlider::EventCallback(Widget WXUNUSED(w),
 	event = new wxCommandEvent(wxEVENT_TYPE_SLIDER_COMMAND);
 	slider->ProcessCommand(event);
     }
+
+#ifdef MZ_PRECISE_GC
+    XFORM_RESET_VAR_STACK;
+#endif
 }

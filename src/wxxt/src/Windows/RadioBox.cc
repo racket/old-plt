@@ -158,7 +158,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     // set data declared in wxItem
     callback = func;
     XtAddCallback(X->handle, XtNactivate, wxRadioBox::EventCallback,
-		  (XtPointer)this);
+		  (XtPointer)saferef);
     // resize enforcer
     XtVaGetValues(X->handle, XtNwidth, &ww, XtNheight, &hh, NULL);
     if (label)
@@ -297,7 +297,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     // set data declared in wxItem
     callback = func;
     XtAddCallback(X->handle, XtNactivate, wxRadioBox::EventCallback,
-		  (XtPointer)this);
+		  (XtPointer)saferef);
     // resize enforcer
     XtVaGetValues(X->handle, XtNwidth, &ww, XtNheight, &hh, NULL);
     if (label)
@@ -499,7 +499,7 @@ void wxRadioBox::SetSelectedButtonFocus()
 
 void wxRadioBox::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer WXUNUSED(dcall))
 {
-    wxRadioBox     *radioBox = (wxRadioBox*)dclient;
+    wxRadioBox     *radioBox = *(wxRadioBox**)dclient;
     wxCommandEvent *event;
 
     event = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
@@ -507,6 +507,10 @@ void wxRadioBox::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer 
     radioBox->SetSelectedButtonFocus();
 
     radioBox->ProcessCommand(event);
+
+#ifdef MZ_PRECISE_GC
+    XFORM_RESET_VAR_STACK;
+#endif
 }
 
 extern "C" Boolean has_focus_now(Widget w);

@@ -83,8 +83,8 @@ public:
     void  SetBackgroundColour(wxColour *col)  { if (col) bg = col; }
     void  SetForegroundColour(wxColour *col)  { if (col) fg = col; }
     // miscellaneous
-    char  *GetClientData(void) { return client_data; }
-    void  SetClientData(char *data) { client_data = data; }
+    void  *GetClientData(void) { return client_data; }
+    void  SetClientData(void *data) { client_data = data; }
     // search for item by label
     int   FindItem(char *label, int strip = 1);
 
@@ -111,8 +111,9 @@ private:
     wxMenuItem* last;		// last menu item for wxMenu::Append
     wxMenuItem* topdummy;
     wxMenuItem **owner; /* MATTHEW: Pointer to pointer to top */
-    // for special associated data
-    char* client_data;
+
+    void *client_data;
+    void *saferef;
 };
 
 #ifdef MZ_PRECISE_GC

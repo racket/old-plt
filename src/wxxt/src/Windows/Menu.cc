@@ -62,6 +62,9 @@ wxMenu::wxMenu(char *_title, wxFunction _func)
 	topdummy = top;
     }
 
+    saferef = MALLOC_SAFEREF();
+    *(wxMenu **)saferef = this;
+
     WXGC_IGNORE(owner);
 }
 
@@ -82,6 +85,8 @@ wxMenu::~wxMenu(void)
 	}
 	FREE_MENU_ITEM(temp);
     }
+
+    FREE_SAFEREF(saferef);
 }
 
 //-----------------------------------------------------------------------------
@@ -118,8 +123,8 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
 	 NULL);
     X->menu = wgt;
     XtRealizeWidget(X->shell);
-    XtAddCallback(X->menu, XtNonSelect, wxMenu::EventCallback, this);
-    XtAddCallback(X->menu, XtNonNoSelect, wxMenu::EventCallback, this);
+    XtAddCallback(X->menu, XtNonSelect, wxMenu::EventCallback, saferef);
+    XtAddCallback(X->menu, XtNonNoSelect, wxMenu::EventCallback, saferef);
     Xaw3dPopupMenuAtPos((MenuWidget)(X->menu), root_x, root_y);
 
     /* Get the menu started: */
@@ -443,9 +448,10 @@ wxMenuItem *wxMenu::FindItemForId(long id, wxMenu **req_menu)
 
 void wxMenu::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer dcall)
 {
-    wxMenu    *menu  = (wxMenu*)dclient;
-    menu_item *item  = (menu_item*)dcall;
+  wxMenu    *menu  = *(wxMenu**)dclient;
+  menu_item *item  = (menu_item*)dcall;
 
+  if (menu) {
     /* MATTHEW: remove grab */
     XtRemoveGrab(menu->X->shell);
     wxRemoveGrab(menu->X->shell);
@@ -470,9 +476,10 @@ void wxMenu::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer dcal
       if (menu->callback)
 	menu->callback(menu, event);
     }
+  }
 
 #ifdef MZ_PRECISE_GC
-    XFORM_RESET_VAR_STACK;
+  XFORM_RESET_VAR_STACK;
 #endif
 }
 

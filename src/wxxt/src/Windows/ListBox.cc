@@ -135,7 +135,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
     // callback
     callback = func;
     XtAddCallback(X->handle, XtNcallback,
-		  wxListBox::EventCallback,  (XtPointer)this);
+		  wxListBox::EventCallback,  (XtPointer)saferef);
 
     if (title) {
       float w, h;
@@ -552,7 +552,7 @@ void wxListBox::Command(wxCommandEvent *event)
 void wxListBox::EventCallback(Widget WXUNUSED(w),
 			     XtPointer dclient, XtPointer dcall)
 {
-    wxListBox                 *lbox   = (wxListBox*)dclient;
+    wxListBox                 *lbox   = *(wxListBox**)dclient;
     XfwfMultiListReturnStruct *rs     = (XfwfMultiListReturnStruct*)dcall;
     wxCommandEvent            *event;
 
@@ -563,6 +563,10 @@ void wxListBox::EventCallback(Widget WXUNUSED(w),
       event->eventType = wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND;
 
     lbox->ProcessCommand(event);
+
+#ifdef MZ_PRECISE_GC
+    XFORM_RESET_VAR_STACK;
+#endif
 }
 
 void wxListBox::OnChar(wxKeyEvent *e)

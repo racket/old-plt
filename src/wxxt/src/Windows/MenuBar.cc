@@ -117,8 +117,8 @@ Bool wxMenuBar::Create(wxPanel *panel)
 	 NULL);
     X->handle = wgt;
     // callbacks
-    XtAddCallback(X->handle, XtNonSelect,  wxMenuBar::CommandEventCallback, this);
-    XtAddCallback(X->handle, XtNonNewItem, wxMenuBar::SelectEventCallback, this);
+    XtAddCallback(X->handle, XtNonSelect,  wxMenuBar::CommandEventCallback, saferef);
+    XtAddCallback(X->handle, XtNonNewItem, wxMenuBar::SelectEventCallback, saferef);
 
     // Panel width needed
     panel->GetSize(&pw, &ph);
@@ -437,9 +437,10 @@ wxMenuItem *wxMenuBar::FindItemForId(long id, wxMenu **req_menu)
 void wxMenuBar::CommandEventCallback(Widget WXUNUSED(w),
 				     XtPointer dclient, XtPointer dcall)
 {
-    wxMenuBar *menu  = (wxMenuBar*)dclient;
-    menu_item *item  = (menu_item*)dcall;
+  wxMenuBar *menu  = *(wxMenuBar**)dclient;
+  menu_item *item  = (menu_item*)dcall;
 
+  if (menu) {
     if (item->ID != -1) {
       if (item->type == MENU_TOGGLE)
 	item->set = (!item->set);
@@ -448,24 +449,27 @@ void wxMenuBar::CommandEventCallback(Widget WXUNUSED(w),
       if (menu->parent)
 	menu->parent->OnMenuCommand(item->ID);
     }
+  }
 
 #ifdef MZ_PRECISE_GC
-    XFORM_RESET_VAR_STACK;
+  XFORM_RESET_VAR_STACK;
 #endif
 }
 
 void wxMenuBar::SelectEventCallback(Widget WXUNUSED(w),
 				    XtPointer dclient, XtPointer dcall)
 {
-    wxMenuBar *menu  = (wxMenuBar*)dclient;
-    menu_item *item  = (menu_item*)dcall;
+  wxMenuBar *menu  = *(wxMenuBar**)dclient;
+  menu_item *item  = (menu_item*)dcall;
 
+  if (menu) {  
     // call OnMenuSelect of parent (usually of a frame)
     if (menu->parent)
 	menu->parent->OnMenuSelect(item->ID);
+  }
 
 #ifdef MZ_PRECISE_GC
-    XFORM_RESET_VAR_STACK;
+  XFORM_RESET_VAR_STACK;
 #endif
 }
 

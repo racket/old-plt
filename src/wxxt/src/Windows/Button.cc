@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Button.cc,v 1.7 1999/11/22 20:29:35 mflatt Exp $
+ * $Id: Button.cc,v 1.8 1999/11/25 16:32:22 mflatt Exp $
  *
  * Purpose: button panel item
  *
@@ -97,7 +97,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, char *label,
     XtVaSetValues(X->frame, XtNpropagateTarget, X->handle, NULL);
     // set data declared in wxItem
     callback = function;
-    XtAddCallback(X->handle, XtNactivate, wxButton::EventCallback, (XtPointer)this);
+    XtAddCallback(X->handle, XtNactivate, wxButton::EventCallback, (XtPointer)saferef);
 
     panel->PositionItem(this, x, y, width, height);
     AddEventHandlers();
@@ -149,7 +149,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
     XtVaSetValues(X->frame, XtNpropagateTarget, X->handle, NULL);
     // set data declared in wxItem
     callback = function;
-    XtAddCallback(X->handle, XtNactivate, wxButton::EventCallback, (XtPointer)this);
+    XtAddCallback(X->handle, XtNactivate, wxButton::EventCallback, (XtPointer)saferef);
 
     panel->PositionItem(this, x, y, width, height);
     AddEventHandlers();
@@ -235,10 +235,16 @@ void wxButton::Command(wxCommandEvent *event)
 void wxButton::EventCallback(Widget WXUNUSED(w), XtPointer clientData,
 			     XtPointer WXUNUSED(ptr))
 {
-    wxButton       *button = (wxButton*)clientData;
+    wxButton       *button = *(wxButton**)clientData;
     wxCommandEvent *event;
 
-    event = new wxCommandEvent(wxEVENT_TYPE_BUTTON_COMMAND);
+    if (button) {
+      event = new wxCommandEvent(wxEVENT_TYPE_BUTTON_COMMAND);
+      
+      button->ProcessCommand(event);
+    }
 
-    button->ProcessCommand(event);
+#ifdef MZ_PRECISE_GC
+    XFORM_RESET_VAR_STACK;
+#endif
 }

@@ -71,7 +71,7 @@
 #include <stddef.h>
 
 #ifndef SCHEME_DIRECT_EMBEDDED
-#define SCHEME_DIRECT_EMBEDDED 1
+# define SCHEME_DIRECT_EMBEDDED 1
 #endif
 
 #ifndef MSC_IZE
@@ -830,19 +830,21 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 # define scheme_process_block(t) scheme_process_block_w_process(t,scheme_current_process)
 #endif
 
-#if !SCHEME_DIRECT_EMBEDDED
-# ifndef MZ_REAL_THREADS
+#ifndef MZ_REAL_THREADS
+# if !SCHEME_DIRECT_EMBEDDED
 #  ifdef LINK_EXTENSIONS_BY_TABLE
 #   define scheme_fuel_counter (*scheme_fuel_counter_ptr)
 #  endif
+# else
+extern int scheme_fuel_counter;
 # endif
 #endif
 
 #ifdef MZ_REAL_THREADS
-#define _scheme_check_for_break_wp(penalty, p) \
+# define _scheme_check_for_break_wp(penalty, p) \
    { if (((p)->fuel_counter -= penalty) <= 0) scheme_process_block_w_process(0, p); }
 #else
-#define _scheme_check_for_break_wp(penalty, p) \
+# define _scheme_check_for_break_wp(penalty, p) \
    { if ((scheme_fuel_counter -= penalty) <= 0) scheme_process_block_w_process(0, p); }
 #endif
 #define _scheme_check_for_break(penalty) _scheme_check_for_break_wp(penalty, scheme_current_process)

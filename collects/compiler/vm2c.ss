@@ -166,14 +166,15 @@
 	    (null? compiler:lifted-lambda-vars))))
 
 (define (emit-static-variable-fields! port l)
-  (fprintf port "  /* Write fields as an array to help C comiplers */~n")
-  (fprintf port "  /* that don't like really big records. */~n")
-  (fprintf port "  Scheme_Object * _consts_[~a];~n" (length l))
-  (let svloop ([l l][n 0])
-    (unless (null? l)
-      (fprintf port "# define ~a _consts_[~a]~n"
-	       (vm->c:convert-symbol (car l)) n)
-      (svloop (cdr l) (add1 n)))))
+  (unless (null? l)
+    (fprintf port "  /* Write fields as an array to help C comiplers */~n")
+    (fprintf port "  /* that don't like really big records. */~n")
+    (fprintf port "  Scheme_Object * _consts_[~a];~n" (length l))
+    (let svloop ([l l][n 0])
+      (unless (null? l)
+	(fprintf port "# define ~a _consts_[~a]~n"
+		 (vm->c:convert-symbol (car l)) n)
+	(svloop (cdr l) (add1 n))))))
 
 ; when statics have binding information, this will look more like 
 ; emit-local-variable-declarations!

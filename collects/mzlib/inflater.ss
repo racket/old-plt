@@ -617,7 +617,7 @@
       (let ([n (bitwise-and bb #xffff)])
 	(DUMPBITS 16)
 	(NEEDBITS 16)
-	(unless (= n (bitwise-and bb #xffff))
+	(unless (= n (bitwise-and (bitwise-not bb) #xffff))
 	  (error 'inflate "error in compressed data")
 	  (return #f)) ; /* error in compressed data */
 	(DUMPBITS 16)

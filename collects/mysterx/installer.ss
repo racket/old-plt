@@ -8,20 +8,26 @@
     (define (warn fmt . args) (apply fprintf (current-error-port) fmt args))
     (let* ([dlls '("myspage.dll" "myssink.dll")]
            [dll-paths (map make-dll-path dlls)]
-           [winsys-dir (find-system-path 'sys-dir)])
+           [winsys-dir (find-system-path 'sys-dir)]
+           [regsvr (and winsys-dir (build-path winsys-dir "REGSVR32.EXE"))])
       (cond
        [(not (eq? (system-type) 'windows))
-        (warn "Warning: can't install MysterX on non-Windows machine\n")]
-       [(not (andmap file-exists? dll-paths))
-        (warn "Warning: MysterX binaries not installed\n")]
+        (printf "Warning: can't install MysterX on non-Windows machine\n")]
+       [((not (andmap file-exists? dll-paths)))
+        (printf "Warning: MysterX binaries not installed\n")]
        [(not winsys-dir)
-        (warn "Warning: Can't run REGSVR32 on libraries\n")]
+        (printf "Warning: Can't run REGSVR32 on libraries\n")]
        [else (parameterize ([current-directory (make-dll-path)])
                (for-each
                 (lambda (dll)
-                  (if (system (format "~s /s ~a" ; /s = silent mode
-                                      (build-path winsys-dir "REGSVR32.EXE")
-                                      dll))
-                    (printf "MysterX: Registered library ~a\n" dll)
-                    (warn "MysterX: Unable to register library ~a\n" dll)))
+                  (let-values ([(p pout pin perr)
+                                (subprocess
+                                 (current-output-port)
+                                 (current-input-port)
+                                 (current-error-port)
+                                 regsvr "/s" dll)])
+                    (subprocess-wait p)
+                    (if (eq? 0 (subprocess-status p))
+                      (printf "MysterX: Registered library ~a\n" dll)
+                      (printf "MysterX: Unable to register library ~a\n" dll))))
                 dlls))]))))

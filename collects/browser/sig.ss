@@ -3,7 +3,10 @@
  (require-library "files.ss")
  (require-library "functios.ss")
  (require-library "strings.ss")
- (require-library "urls.ss" "net"))
+ (require-library "urls.ss" "net")
+
+ (require-relative-library "btrees.ss")
+ (require-relative-library "bullets.ss"))
 
 (define-signature browser:html^
   (html-convert))

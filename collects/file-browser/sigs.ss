@@ -26,7 +26,8 @@
      close-window
      confirm
      toolbar-add
-     toolbar-spacer))
+     toolbar-spacer
+     setup-gui))
   (define-signature script^ 
     (make-file
      file-name
@@ -62,5 +63,8 @@
      open-dir-window
      close-dir-window
      toolbar-add
-     toolbar-spacer))
+     toolbar-spacer
+     
+     setup-gui))
+
   (define-signature code-engine^ (user-eval user-eval-no-disable get-user-value open-drscheme)))

@@ -274,5 +274,13 @@
       
       ;; close-dir-window: ->
       (define (close-dir-window)
-        (gui:close-window)))))
+        (gui:close-window))
       
+      (define (setup-gui sym func)
+        (let ((syms '(filter-files sort-files single-mouse-dir double-mouse-dir single-mouse-file
+                                   double-mouse-file box-select-file box-select-dir)))
+          (check-arg sym (lambda (s) (memq s syms))  'setup-gui (format "symbol in: ~a" syms)
+                     0 sym func)
+          (check-arg func procedure? 'setup-gui "procedure" 1 sym func)
+          (gui:setup-gui sym func)))
+      )))

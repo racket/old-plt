@@ -79,9 +79,9 @@
             (let ((file (send snip get-file)))
               (cond
                 ((and on? (script:is-directory? file))
-                 (user-eval `(box-select-dir ,file) void))
+                 (user-eval `(,box-select-dir ,file) void))
                 (on?
-                 (user-eval `(box-select-file ,file) void)))
+                 (user-eval `(,box-select-file ,file) void)))
               (remove-selected snip)))
           
           (rename (super-on-event on-event))
@@ -107,30 +107,30 @@
                                    (set! last-click-time -inf.0)
                                    (cond
                                      ((script:is-directory? file)
-                                      (user-eval `(double-mouse-dir ,file ',keys) void))
+                                      (user-eval `(,double-mouse-dir ,file ',keys) void))
                                      (else
-                                      (user-eval `(double-mouse-file ,file ',keys) void))))
+                                      (user-eval `(,double-mouse-file ,file ',keys) void))))
                                   (else
                                    (set! last-click-time click-time)
                                    (cond
                                      ((script:is-directory? file)
-                                      (user-eval `(single-mouse-dir ,file 'left ',keys) void))
+                                      (user-eval `(,single-mouse-dir ,file 'left ',keys) void))
                                      (else
-                                      (user-eval `(single-mouse-file ,file 'left ',keys) void)))))))
+                                      (user-eval `(,single-mouse-file ,file 'left ',keys) void)))))))
                              (else
                               (cond
                                 ((script:is-directory? file)
                                  (case event-type
                                    ((middle-down) 
-                                    (user-eval `(single-mouse-dir ,file 'middle ',keys) void))
+                                    (user-eval `(,single-mouse-dir ,file 'middle ',keys) void))
                                    ((right-down) 
-                                    (user-eval `(single-mouse-dir ,file 'right ',keys) void))))
+                                    (user-eval `(,single-mouse-dir ,file 'right ',keys) void))))
                                 (else
                                  (case event-type
                                    ((middle-down) 
-                                    (user-eval `(single-mouse-file ,file 'middle ',keys) void))
+                                    (user-eval `(,single-mouse-file ,file 'middle ',keys) void))
                                    ((right-down)
-                                    (user-eval `(single-mouse-file ,file 'right ',keys) void))))))))))))
+                                    (user-eval `(,single-mouse-file ,file 'right ',keys) void))))))))))))
                 (else
                  (super-on-event event)))))
           
@@ -208,7 +208,7 @@
           
           (define (refresh)
             (let ((files (script:directory-list dir)))
-              (user-eval `(,quicksort (,filter filter-files ',files) sort-files)
+              (user-eval `(,quicksort (,filter ,filter-files ',files) ,sort-files)
                          (lambda (files)
                            (set! file-pasteboard (make-object file-board% 
                                                    files (get-restricted-selection)))
@@ -238,6 +238,26 @@
           (define file-canvas (make-object editor-canvas% this))
           (define file-pasteboard #f)
           (refresh)))
+      
+      (define filter-files #f)
+      (define sort-files #f)
+      (define single-mouse-file #f)
+      (define double-mouse-file #f)
+      (define single-mouse-dir #f)
+      (define double-mouse-dir #f)
+      (define box-select-file #f)
+      (define box-select-dir #f)
+      
+      (define (setup-gui sym func)
+        (case sym
+          ((filter-files) (set! filter-files func))
+          ((sort-files) (set! sort-files func))
+          ((single-mouse-file) (set! single-mouse-file func))
+          ((double-mouse-file) (set! double-mouse-file func))
+          ((single-mouse-dir) (set! single-mouse-dir func))
+          ((double-mouse-dir) (set! double-mouse-dir func))
+          ((box-select-file) (set! box-select-file func))
+          ((box-select-dir) (set! box-select-dir func))))
       
       (define file-windows (make-weak-set))
       

@@ -22,7 +22,6 @@
           
           ;; from the shared-mixin
           (inherit kill-autocompile-thread set-autocompile-thread-proc! make-syntax-error-handler clear-error-canvas)
-
           ;; from the expansion-tool-definitions-text-mixin
           (inherit buffer-directory)
           (inherit-field latest-expansion)

@@ -103,15 +103,14 @@
                 (set! last-error-canvas (new (class canvas%
                                                (super-new)
                                                (define/override (on-event evt)
-                                                 (when (eq? 'left-up (send evt get-event-type))
-                                                   (move-to-error)
-                                                   (send editor-canvas focus))
-                                                 '(printf "canvas on-event: bc? ~v (up: ~v down: ~v) (~v, ~v) type: ~v left-down? ~v~n"
-                                                          (send evt button-changed?)
-                                                          (send evt button-up?) (send evt button-down?)
-                                                          (send evt get-x) (send evt get-y)
-                                                          (send evt get-event-type)
-                                                          (send evt get-left-down))
+                                                 (case (send evt get-event-type)
+                                                   [(left-up)
+                                                    (move-to-error)
+                                                    (send editor-canvas focus)]
+                                                   [(right-up)
+                                                    (when last-error-string
+                                                      (message-box "Syntax error" last-error-string))]
+                                                   [else void])
                                                  (super on-event evt)))
                                              [parent info-panel]
                                              [min-width 20]
@@ -121,6 +120,7 @@
                 (set! default-canvas-background (send last-error-canvas get-canvas-background)))))
           
           (define last-error-snip #f)
+          (define last-error-string #f)
           
           ;; TODO: FIXME: don't I want "define/protected" here?
           (define/public (make-syntax-error-handler code-source)
@@ -143,7 +143,7 @@
                              (exn:fail:syntax-exprs exn))
                    (when last-error-canvas
                      (send last-error-canvas set-canvas-background red))
-                   (set! delta #f)
+                   (set! last-error-string (exn-message exn))
                    (handle-failed-syntax exn))))))
           
           #|  Disabled until someone requests it (and suggest a better key combo)

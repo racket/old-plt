@@ -17,7 +17,8 @@
            (lib "browser-unit.ss" "browser")
            (lib "web-server-unit.ss" "web-server")
            (lib "configuration.ss" "web-server")
-           (lib "servlet-sig.ss" "web-server"))
+           (lib "min-servlet.ss" "web-server")
+           )
   
   (provide/contract 
    (internal-serve (opt->*

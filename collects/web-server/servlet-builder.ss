@@ -7,7 +7,8 @@
            (lib "list.ss")
            (lib "etc.ss")
            (lib "pretty.ss")
-           (lib "servlet-sig.ss" "web-server")
+           (lib "sig.ss" "web-server")
+           (lib "min-servlet.ss" "web-server")
            (lib "string-constant.ss" "string-constants")
            (lib "util.ss" "web-server"))
   
@@ -44,7 +45,8 @@
           (let ([all-requires
                  (list* `(require
                           (lib "unitsig.ss")
-                          (lib "servlet-sig.ss" "web-server")
+                          (lib "sig.ss" "web-server")
+                          (lib "min-servlet.ss" "web-server")
                           (lib "servlet-helpers.ss" "web-server"))
                         `(require ,language)
                         `(require

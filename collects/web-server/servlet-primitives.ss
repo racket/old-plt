@@ -3,7 +3,7 @@
            "configuration.ss"
            ;"configuration-structures.ss"
            "web-server-unit.ss"
-           "servlet-sig.ss"
+           "min-servlet.ss"
            ;"servlet.ss"
 	   "servlet-tables.ss"
            "internal-structs.ss"

@@ -124,7 +124,7 @@
         (and (= major 1) (= minor 0))
         (cond
           [(assq 'connection headers)
-           => (lambda (x) (string-ci=? "close" (cdr x)))]
+           => (lambda (x) (string-ci=? "close" (bytes->string/utf-8 (cdr x))))]
           [else #f])
         (msie-from-local-machine? headers client-ip host-ip)))
   

@@ -3321,7 +3321,7 @@ static void check_require_name(Scheme_Object *prnt_name, Scheme_Object *name, Sc
 {
   Scheme_Bucket_Table *toplevel, *syntax;
   Scheme_Hash_Table *required;
-  Scheme_Object *vec;
+  Scheme_Object *vec, *nml;
 
   toplevel = ((Scheme_Bucket_Table **)tables)[0];
   required = ((Scheme_Hash_Table **)tables)[1];
@@ -3338,8 +3338,12 @@ static void check_require_name(Scheme_Object *prnt_name, Scheme_Object *name, Sc
   vec = scheme_hash_get(required, name);
   if (vec) {
     if (same_modidx(SCHEME_VEC_ELS(vec)[1], modidx)
-	&& SAME_OBJ(SCHEME_VEC_ELS(vec)[2], exname))
-      return; /* already required, same source */
+	&& SAME_OBJ(SCHEME_VEC_ELS(vec)[2], exname)) {
+      /* already required, same source; add redundant nominal (for re-provides) */
+      nml = scheme_make_pair(nominal_modidx, SCHEME_VEC_ELS(vec)[0]);
+      SCHEME_VEC_ELS(vec)[0] = nml;
+      return; 
+    }
     scheme_wrong_syntax("module", prnt_name, form, 
 			"identifier already imported (from a different source)");
   }
@@ -3353,7 +3357,8 @@ static void check_require_name(Scheme_Object *prnt_name, Scheme_Object *name, Sc
 
   /* Remember require: */
   vec = scheme_make_vector(5, NULL);
-  SCHEME_VEC_ELS(vec)[0] = nominal_modidx;
+  nml = scheme_make_pair(nominal_modidx, scheme_null);
+  SCHEME_VEC_ELS(vec)[0] = nml;
   SCHEME_VEC_ELS(vec)[1] = modidx;
   SCHEME_VEC_ELS(vec)[2] = exname;
   SCHEME_VEC_ELS(vec)[3] = (isval ? scheme_true : scheme_false);
@@ -3417,7 +3422,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Comp_Env *xenv, *cenv, *rhs_env;
   Scheme_Hash_Table *et_required; /* just to avoid duplicates */
   Scheme_Hash_Table *tt_required; /* just to avoid duplicates */
-  Scheme_Hash_Table *required;    /* name -> (vector nominal-modidx modidx srcname var? prntname) */
+  Scheme_Hash_Table *required;    /* name -> (vector nominal-modidx-list modidx srcname var? prntname) */
+  /**/                            /*   first nominal-modidx goes with modidx, rest are for re-provides */
   Scheme_Hash_Table *provided;    /* exname -> (cons locname-stx-or-sym protected?) */
   Scheme_Object *reprovided;      /* list of (list modidx syntax except-name ...) */
   Scheme_Object *all_defs_out;    /* list of (cons protected? (stx-list except-name ...)) */
@@ -3485,7 +3491,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   {
     int i, numvals;
     Scheme_Module *iim;
-    Scheme_Object *midx, *nmidx, *vec;
+    Scheme_Object *midx, *nmidx, *vec, *nml;
 
     nmidx = SCHEME_CAR(env->genv->module->requires);
     iim = module_load(scheme_module_resolve(nmidx), env->genv, NULL);
@@ -3503,7 +3509,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
       } else
 	midx = nmidx;
       vec = scheme_make_vector(5, NULL);
-      SCHEME_VEC_ELS(vec)[0] = nmidx;
+      nml = scheme_make_pair(nmidx, scheme_null);
+      SCHEME_VEC_ELS(vec)[0] = nml;
       SCHEME_VEC_ELS(vec)[1] = midx;
       SCHEME_VEC_ELS(vec)[2] = exsns[i];
       SCHEME_VEC_ELS(vec)[3] = ((i < numvals) ? scheme_true : scheme_false);
@@ -3517,7 +3524,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
       for (i = kernel->num_provides; i--; ) {
 	if (!SAME_OBJ(iim->kernel_exclusion, exs[i])) {
 	  vec = scheme_make_vector(5, NULL);
-	  SCHEME_VEC_ELS(vec)[0] = nmidx;
+	  nml = scheme_make_pair(nmidx, scheme_null);
+	  SCHEME_VEC_ELS(vec)[0] = nml;
 	  SCHEME_VEC_ELS(vec)[1] = kernel_symbol;
 	  SCHEME_VEC_ELS(vec)[2] = exs[i];
 	  SCHEME_VEC_ELS(vec)[3] = ((i < numvals) ? scheme_true : scheme_false);
@@ -4218,13 +4226,24 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
       exns = SCHEME_CDR(SCHEME_CDR(SCHEME_CAR(rx)));
       for (l = exns; !SCHEME_STX_NULLP(l); l = SCHEME_STX_CDR(l)) {
 	/* Make sure excluded name was required: */
-	Scheme_Object *a;
+	Scheme_Object *a, *vec;
 	a = SCHEME_STX_VAL(SCHEME_STX_CAR(l));
-	if (!scheme_hash_get(required, a)) {
-	  /* FIXME: check source of require */
+	vec = scheme_hash_get(required, a);
+	if (vec) {
+	  /* Check for nominal modidx in list */
+	  Scheme_Object *nml;
+	  nml = SCHEME_VEC_ELS(vec)[0];
+	  for (; SCHEME_PAIRP(nml); nml = SCHEME_CDR(nml)) {
+	    if (same_modidx(SCHEME_CAR(SCHEME_CAR(rx)), SCHEME_CAR(nml)))
+	      break;
+	  }
+	  if (!SCHEME_PAIRP(nml))
+	    vec = NULL; /* So it was provided, but not from the indicated module */
+	}
+	if (!vec) {
 	  a = SCHEME_STX_CAR(l);
 	  scheme_wrong_syntax("module", a, SCHEME_CADR(SCHEME_CAR(rx)),
-			      "excluded name was not required");
+			      "excluded name was not required from the module");
 	}
       }
     }
@@ -4232,44 +4251,51 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     /* Walk through requires, check for re-providing: */
     for (i = required->size; i--; ) {
       if (required->vals[i]) {
-	Scheme_Object *nominal_modidx, *name, *modidx, *srcname, *outname;
-
+	Scheme_Object *nominal_modidx, *name, *modidx, *srcname, *outname, *nml, *orig_nml;
+	int break_outer = 0;
+	
 	name = required->keys[i];
-	nominal_modidx = SCHEME_VEC_ELS(required->vals[i])[0];
+	orig_nml = SCHEME_VEC_ELS(required->vals[i])[0];
 	modidx = SCHEME_VEC_ELS(required->vals[i])[1];
 	srcname = SCHEME_VEC_ELS(required->vals[i])[2];
 	outname = SCHEME_VEC_ELS(required->vals[i])[4];
 
 	for (rx = reprovided; !SCHEME_NULLP(rx); rx = SCHEME_CDR(rx)) {
-	  if (same_modidx(SCHEME_CAR(SCHEME_CAR(rx)), nominal_modidx)) {
-	    Scheme_Object *exns, *ree;
-	    
-	    ree = SCHEME_CDR(SCHEME_CAR(rx));
-
-	    exns = SCHEME_CDR(ree);
-	    if (SAME_OBJ(modidx, kernel_symbol))
-	      if (!SCHEME_STX_NULLP(exns))
-		exclude_hint = exns;
-	    
-	    for (; !SCHEME_STX_NULLP(exns); exns = SCHEME_STX_CDR(exns)) {
-	      /* Was this name exluded? */
-	      Scheme_Object *a;
-	      a = SCHEME_STX_VAL(SCHEME_STX_CAR(exns));
-	      if (SAME_OBJ(a, name))
-		break;
-	    }
-
-	    if (SCHEME_STX_NULLP(exns)) {
-	      /* Not excluded, so provide it. */
-	      if (scheme_hash_get(provided, outname))
-		scheme_wrong_syntax("module", outname, SCHEME_CAR(ree), "identifier already provided");
+	  for (nml = orig_nml; SCHEME_PAIRP(nml); nml = SCHEME_CDR(nml)) {
+	    nominal_modidx = SCHEME_CAR(nml);
+	    if (same_modidx(SCHEME_CAR(SCHEME_CAR(rx)), nominal_modidx)) {
+	      Scheme_Object *exns, *ree;
 	      
-	      scheme_hash_set(provided, outname, scheme_make_pair(name, scheme_false));
+	      break_outer = 1;
+	      
+	      ree = SCHEME_CDR(SCHEME_CAR(rx));
 
-	      if (SAME_OBJ(modidx, kernel_symbol) && SAME_OBJ(outname, srcname))
-		reprovide_kernel++;
+	      exns = SCHEME_CDR(ree);
+	      if (SAME_OBJ(modidx, kernel_symbol))
+		if (!SCHEME_STX_NULLP(exns))
+		  exclude_hint = exns;
+	    
+	      for (; !SCHEME_STX_NULLP(exns); exns = SCHEME_STX_CDR(exns)) {
+		/* Was this name exluded? */
+		Scheme_Object *a;
+		a = SCHEME_STX_VAL(SCHEME_STX_CAR(exns));
+		if (SAME_OBJ(a, name))
+		  break;
+	      }
+
+	      if (SCHEME_STX_NULLP(exns)) {
+		/* Not excluded, so provide it. */
+		if (scheme_hash_get(provided, outname))
+		  scheme_wrong_syntax("module", outname, SCHEME_CAR(ree), "identifier already provided");
+	      
+		scheme_hash_set(provided, outname, scheme_make_pair(name, scheme_false));
+
+		if (SAME_OBJ(modidx, kernel_symbol) && SAME_OBJ(outname, srcname))
+		  reprovide_kernel++;
+	      }
 	    }
 	  }
+	  if (break_outer) break;
 	}
       }
     }

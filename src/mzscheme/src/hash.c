@@ -830,6 +830,7 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_string_converter_type, hash_general);
   PROC(scheme_alarm_type, hash_general);
   PROC(scheme_special_comment_type, hash_general);
+  PROC(scheme_readtable_type, hash_general);
 #undef PROC
 }
 

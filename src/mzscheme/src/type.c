@@ -163,6 +163,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_rename_table_type, "<rename-table>");
   set_name(scheme_bucket_type, "<hash-table-bucket>");
   set_name(scheme_resolve_prefix_type, "<resolve-prefix>");
+  set_name(scheme_readtable_type, "<readtable>");
 
   set_name(scheme_compilation_top_type, "<compiled-code>");
 

@@ -3980,6 +3980,62 @@ int mark_cport_FIXUP(void *p) {
 #define mark_cport_IS_CONST_SIZE 1
 
 
+int mark_readtable_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Readtable));
+}
+
+int mark_readtable_MARK(void *p) {
+  Readtable *t = (Readtable *)p;
+  gcMARK(t->mapping);
+  gcMARK(t->fast_mapping);
+  return
+  gcBYTES_TO_WORDS(sizeof(Readtable));
+}
+
+int mark_readtable_FIXUP(void *p) {
+  Readtable *t = (Readtable *)p;
+  gcFIXUP(t->mapping);
+  gcFIXUP(t->fast_mapping);
+  return
+  gcBYTES_TO_WORDS(sizeof(Readtable));
+}
+
+#define mark_readtable_IS_ATOMIC 0
+#define mark_readtable_IS_CONST_SIZE 1
+
+
+int mark_read_params_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(ReadParams));
+}
+
+int mark_read_params_MARK(void *p) {
+  ReadParams *rp = (ReadParams *)p;
+  gcMARK(rp->table);
+  gcMARK(rp->port);
+  gcMARK(rp->src);
+  gcMARK(rp->indentation);
+  gcMARK(rp->ht);
+  return
+  gcBYTES_TO_WORDS(sizeof(ReadParams));
+}
+
+int mark_read_params_FIXUP(void *p) {
+  ReadParams *rp = (ReadParams *)p;
+  gcFIXUP(rp->table);
+  gcFIXUP(rp->port);
+  gcFIXUP(rp->src);
+  gcFIXUP(rp->indentation);
+  gcFIXUP(rp->ht);
+  return
+  gcBYTES_TO_WORDS(sizeof(ReadParams));
+}
+
+#define mark_read_params_IS_ATOMIC 0
+#define mark_read_params_IS_CONST_SIZE 1
+
+
 #endif  /* READ */
 
 /**********************************************************************/

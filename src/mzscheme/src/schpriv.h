@@ -1355,6 +1355,8 @@ extern Scheme_Object *scheme_default_global_print_handler;
 void scheme_install_type_reader(Scheme_Type type, Scheme_Type_Reader f);
 void scheme_install_type_writer(Scheme_Type type, Scheme_Type_Writer f);
 
+Scheme_Object *scheme_make_default_readtable();
+
 /*========================================================================*/
 /*                          compile and link                              */
 /*========================================================================*/

@@ -57,6 +57,7 @@ static Scheme_Object *module_templ_binding(int argc, Scheme_Object **argv);
 static Scheme_Object *module_binding_pos(int argc, Scheme_Object **argv);
 static Scheme_Object *module_trans_binding_pos(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_src_module(int argc, Scheme_Object **argv);
+static Scheme_Object *identifier_protected_p(int argc, Scheme_Object **argv);
 
 static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv);
 
@@ -401,6 +402,12 @@ void scheme_init_stx(Scheme_Env *env)
   scheme_add_global_constant("identifier-transformer-binding-export-position",
 			     scheme_make_prim_w_arity(module_trans_binding_pos,
 						      "identifier-transformer-binding-export-position",
+						      1, 1),
+			     env);
+
+  scheme_add_global_constant("identifier-protected?", 
+			     scheme_make_prim_w_arity(identifier_protected_p,
+						      "identifier-protected?",
 						      1, 1),
 			     env);
 
@@ -4386,6 +4393,12 @@ static Scheme_Object *syntax_src_module(int argc, Scheme_Object **argv)
     scheme_wrong_type("syntax-source-module", "syntax", 0, argc, argv);
 
   return scheme_stx_source_module(argv[0], 0);
+}
+
+static Scheme_Object *identifier_protected_p(int argc, Scheme_Object **argv)
+{
+  /* FIXME */
+  return scheme_false;
 }
 
 /**********************************************************************/

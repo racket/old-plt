@@ -5764,6 +5764,8 @@ static void make_initial_config(Scheme_Thread *p)
   config->cell = (Scheme_Object *)paramz;
 
   p->init_config = config;
+
+  init_param(cells, paramz, MZCONFIG_READTABLE, scheme_make_default_readtable());
   
   init_param(cells, paramz, MZCONFIG_CAN_READ_GRAPH, scheme_true);
   init_param(cells, paramz, MZCONFIG_CAN_READ_COMPILED, scheme_false);

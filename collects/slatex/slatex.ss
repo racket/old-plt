@@ -6,10 +6,14 @@
       (require-library "slatexsrc.ss" "slatex")
       (global-defined-value 'slatex::*texinputs* #f)
       (global-defined-value 'slatex::*texinputs-list* #f))
-    (lambda (file)
-      (unless (or (file-exists? file) (file-exists? (string-append file ".tex")))
-	(error 'slatex "~e does not exist" file))
-      (let ([file (normalize-path file)])
+    (lambda (input-file)
+      (let* ([fixed-file (cond
+			  [(file-exists? input-file) input-file]
+			  [(file-exists? (string-append input-file ".tex"))
+			   (string-append input-file ".tex")]
+			  [else
+			   (error 'slatex "~e does not exist" input-file)])]
+	     [file (normalize-path fixed-file)])
 	(let-values ([(base name dir?) (split-path file)])
 	  (parameterize ([current-namespace ns]
 			 [current-directory

@@ -4,7 +4,8 @@
 
 (define-signature help:drscheme-interface^
   (help-desk
-   open-url))
+   open-url
+   open-users-url))
 
 (begin-elaboration-time
  (require-relative-library "search-sig.ss"))

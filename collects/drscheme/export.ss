@@ -9,10 +9,17 @@
 			   [init : drscheme:init^]
 			   [interface : drscheme:interface^]
 			   [graph : drscheme:graph^]
-			   [help-desk : help:drscheme-interface^]
 			   [aries : plt:aries^]
 			   [zodiac : drscheme:zodiac^])
-  (link [basis-import : userspace:basis-import^ ((unit/sig userspace:basis-import^
+  (link [help-desk : help:drscheme-interface^ ((require-library "start-help-desk.ss" "help")
+					       (mzlib function)
+					       (mzlib string)
+					       (mzlib file)
+					       url
+					       (mred : mred^)
+					       framework
+					       (export* frame))]
+	[basis-import : userspace:basis-import^ ((unit/sig userspace:basis-import^
 						   (import)
 						   (define in-mzscheme? #f)))]
 	[params : plt:userspace:params^ ((require-library "paramr.ss" "userspce"))]
@@ -49,4 +56,5 @@
 	  (unit unit)
 	  (unit program)
 	  (unit get/extend)
-	  (unit rep)))
+	  (unit rep)
+	  (unit help-desk)))

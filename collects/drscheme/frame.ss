@@ -33,7 +33,7 @@
                        "Open URL..."
                        file-menu
                        (lambda (item evt)
-                         (help:open-url this))))]
+                         (help:open-users-url this))))]
        [help-menu:about (lambda (item evt) (drscheme:app:about-drscheme))]
        [help-menu:about-string (lambda () "DrScheme")])
       

@@ -1309,7 +1309,7 @@
 	     
 	     (exit-handler (lambda (arg) (shutdown-user-custodian)))
 	     
-	     (invoker-library)
+	     (invoke-library)
 	     
 	     ;; set all parameters before constructing eventspace
 	     ;; so that the parameters are set in the eventspace's

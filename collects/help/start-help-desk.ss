@@ -28,7 +28,11 @@
                   (frame-mixin)))
     (set! load-help-desk void))
 
-  (define (open-url frame)
+  (define (open-url url)
+    (load-help-desk)
+    (new-help-frame url))
+
+  (define (open-users-url frame)
     (load-help-desk)
     (open-url-from-user 
      frame 

@@ -13,12 +13,18 @@
       (define error-box
 	(box #f))
 
-      (define improper-map
-	(lambda (f list)
-	  (cond
-	    ((null? list) list)
-	    ((pair? list) (cons (f (car list)) (improper-map f (cdr list))))
-	    (else (f list)))))
+      (define make-improper
+	(lambda (combine)
+	  (rec improper ;; `rec' is for the name in error messages
+	       (lambda (f list)
+		 (let improper-loop ([list list])
+		   (cond
+		     ((null? list) list)
+		     ((pair? list) (combine (f (car list))
+					    (improper-loop (cdr list))))
+		     (else (f list))))))))
+      (define improper-map (make-improper cons))
+      (define improper-foreach (make-improper (lambda (x y) y)))
 
       ; Robby's old definition, commented out:
     
@@ -225,7 +231,7 @@
 	    [(z:let-values-form? expr)
 	     (let ([bindings
 		    (map (lambda (vars val)
-			   (map check-for-keyword vars)
+			   (for-each check-for-keyword vars)
 			   (let ([name (and (= 1 (length vars))
 					    (z:binding-orig-name (car vars)))])
 			     `(,(map z:binding-var vars)
@@ -241,7 +247,7 @@
 	    [(z:letrec*-values-form? expr)
 	      (let ((bindings
 		      (map (lambda (vars val)
-			     (map check-for-keyword vars)
+			     (for-each check-for-keyword vars)
 			     (let ([name (and (= 1 (length vars))
 					      (z:binding-orig-name (car vars)))])
 			       `(,(map z:binding-var vars)
@@ -274,7 +280,7 @@
 	      `(#%case-lambda
 		 ,@(map (lambda (args body)
 			  (let ((args (arglist->ilist args)))
-			    (improper-map check-for-keyword args)
+			    (improper-foreach check-for-keyword args)
 			    `(,(improper-map z:binding-var args)
 			       ,(annotate body))))
 		     (z:case-lambda-form-args expr)
@@ -287,7 +293,7 @@
 				       (z:read-object (cdr export))))
 				(z:unit-form-exports expr)))
 		     (clauses (map annotate (z:unit-form-clauses expr))))
-		(map check-for-keyword imports)
+		(for-each check-for-keyword imports)
 		`(#%unit
 		   (import ,@(map z:binding-var imports))
 		   (export ,@exports)
@@ -350,7 +356,7 @@
 
 	    [(z:interface-form? expr)
 	      (let ((vars (z:interface-form-variables expr)))
-		(map check-for-keyword vars)
+		(for-each check-for-keyword vars)
 		`(#%interface ,(map mv-wrap
 				 (z:interface-form-super-exprs expr))
 		   ,@(map read->raw vars)))]

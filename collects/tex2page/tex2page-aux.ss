@@ -4,7 +4,8 @@
 (module tex2page-aux mzscheme
   (require (lib "process.ss"))
   (provide (all-defined-except ))
-  (define make-table
+
+(define make-table
   (lambda z (if (null? z) (make-hash-table) (make-hash-table 'equal))))
 
 (define table-get
@@ -16,7 +17,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "4r6")
+(define *tex2page-version* "4r7")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -480,32 +481,20 @@
 (define get-time-zone
   (lambda () (let ((tz (getenv "TZ"))) (if tz (string-append " " tz) ""))))
 
-(define decode-seconds-since-epoch
-  (lambda (secs)
-    (let ((d (seconds->date secs)))
-      (vector
-        (date-second d)
-        (date-minute d)
-        (date-hour d)
-        (date-day d)
-        (date-month d)
-        (date-year d)
-        (date-week-day d)))))
-
 (define seconds->human-time
-  (lambda (secs)
-    (let ((ht (decode-seconds-since-epoch secs)))
-      (if (not ht)
+  (lambda (s)
+    (let ((d (seconds->date s)))
+      (if (not d)
         ""
-        (let ((h (vector-ref ht 2)) (m (vector-ref ht 1)))
+        (let ((h (date-hour d)) (m (date-minute d)))
           (string-append
-            (alphabetic-week-day (vector-ref ht 6))
+            (alphabetic-week-day (date-week-day d))
             ", "
-            (alphabetic-month (vector-ref ht 4))
+            (alphabetic-month (date-month d))
             " "
-            (number->string (vector-ref ht 3))
+            (number->string (date-day d))
             ", "
-            (number->string (vector-ref ht 5))
+            (number->string (date-year d))
             ", "
             (number->string (non-military-hour h))
             ":"
@@ -1337,18 +1326,21 @@
       (string-trim-blanks
         (list->string
           (reverse!
-            (let loop ((s '()))
+            (let loop ((nesting 0) (s '()))
               (let ((c (get-actual-char)))
                 (cond
                  ((eof-object? c) (terror 'get-url "Missing }"))
                  ((and *comment-char* (char=? c *comment-char*))
                   (let ((c1 (snoop-actual-char)))
                     (loop
+                     nesting
                      (if (and (char? c1) (char-whitespace? c1))
                        (begin (ignore-all-whitespace) s)
                        (cons c s)))))
-                 ((char=? c #\}) s)
-                 (else (loop (cons c s))))))))))))
+                 ((char=? c #\{) (loop (+ nesting 1) (cons c s)))
+                 ((char=? c #\})
+                  (if (= nesting 0) s (loop (- nesting 1) (cons c s))))
+                 (else (loop nesting (cons c s))))))))))))
 
 (define get-csv
   (lambda ()
@@ -1783,6 +1775,9 @@
   (lambda ()
     (write-aux `(!preferred-title ,(tex-string->html-string (get-group))))))
 
+(define tex2page-string
+  (lambda (s) (call-with-input-string/buffered s (lambda () (generate-html)))))
+
 (define output-external-title
   (lambda ()
     (fluid-let
@@ -1837,16 +1832,15 @@
 (define do-today
   (lambda ()
     (let ((m (get-gcount "\\month")))
-      (cond
-       ((= m 0) (emit "[today]"))
-       (else
+      (if (= m 0)
+        (emit "[today]")
         (fluid-let
           ((*the-months* *the-months-fulsomely*))
-          (emit (alphabetic-month m)))
-        (emit " ")
-        (emit (get-gcount "\\day"))
-        (emit ", ")
-        (emit (get-gcount "\\year")))))))
+          (emit (alphabetic-month m))
+          (emit " ")
+          (emit (get-gcount "\\day"))
+          (emit ", ")
+          (emit (get-gcount "\\year")))))))
 
 (define add-afterpar (lambda (ap) (set! *afterpar* (cons ap *afterpar*))))
 
@@ -2521,12 +2515,12 @@
     (let ((model (get-bracketed-text-if-any)))
       (do-switch
         (cond
-         ((not model) "\\TIIPcolornamed")
-         ((string=? model "rgb") "\\TIIPrgb")
-         ((string=? model "RGB") "\\TIIPRGB")
-         ((string=? model "cmyk") "\\TIIPcmyk")
-         ((string=? model "gray") "\\TIIPgray")
-         (else "\\TIIPcolornamed"))))))
+         ((not model) 'colornamed)
+         ((string=? model "rgb") 'rgb)
+         ((string=? model "RGB") 'rgb255)
+         ((string=? model "cmyk") 'cmyk)
+         ((string=? model "gray") 'gray)
+         (else 'colornamed))))))
 
 (define do-definecolor
   (lambda ()
@@ -2567,123 +2561,117 @@
     (ignorespaces)
     (unless *outputting-external-title?*
       (add-postlude-to-top-frame
-        (cond
-         ((string=? sw "\\rm")
-          (when *math-mode?*
-            (let ((old-math-roman-mode? *math-roman-mode?*))
-              (set! *math-roman-mode?* #t)
-              (lambda () (set! *math-roman-mode?* old-math-roman-mode?)))))
-         ((string=? sw "\\em") (emit "<em>") (lambda () (emit "</em>")))
-         ((ormap (lambda (z) (string=? sw z)) '("\\it" "\\itshape" "\\sl"))
-          (emit "<i>")
-          (lambda () (emit "</i>")))
-         ((string=? sw "\\bf")
-          (emit "<strong>")
-          (lambda () (emit "</strong>")))
-         ((string=? sw "\\tt")
-          (let ((old-ligatures? *ligatures?*))
-            (set! *ligatures?* #f)
-            (emit "<tt>")
-            (lambda () (emit "</tt>") (set! *ligatures?* old-ligatures?))))
-         ((ormap (lambda (z) (string=? sw z)) '("\\sc" "\\scshape"))
-          (let ((old-in-small-caps? *in-small-caps?*))
-            (set! *in-small-caps?* #t)
-            (lambda () (set! *in-small-caps?* old-in-small-caps?))))
-         ((ormap
-           (lambda (z) (string=? sw z))
-           '("\\sevenrm" "\\small" "\\scriptsize"))
-          (emit "<small>")
-          (lambda () (emit "</small>")))
-         ((string=? sw "\\fiverm")
-          (emit "<font size=-2>")
-          (lambda () (emit "</font>")))
-         ((string=? sw "\\Huge")
-          (emit "<font size=+4>")
-          (lambda () (emit "</font>")))
-         ((string=? sw "\\TIIPcmyk")
-          (bgroup)
-          (let* ((i
-                  (open-input-string
-                    (tex-string->html-string
-                      (string-append "\\defcsactive\\,{}" (get-token)))))
-                 (c (read i))
-                 (m (read i))
-                 (y (read i))
-                 (k (read i)))
-            (close-input-port i)
-            (egroup)
-            (ignorespaces)
-            (emit "<font color=\"#")
-            (emit (cmyk->rgb c m y k))
-            (emit "\">")
-            (lambda () (emit "</font>"))))
-         ((string=? sw "\\TIIPrgb")
-          (bgroup)
-          (let* ((i
-                  (open-input-string
-                    (tex-string->html-string
-                      (string-append "\\defcsactive\\,{}" (get-token)))))
-                 (r (read i))
-                 (g (read i))
-                 (b (read i)))
-            (close-input-port i)
-            (egroup)
-            (ignorespaces)
-            (emit "<font color=\"#")
-            (emit (rgb.frac->hex r g b))
-            (emit "\">")
-            (lambda () (emit "</font>"))))
-         ((string=? sw "\\TIIPRGB")
-          (bgroup)
-          (let* ((i
-                  (open-input-string
-                    (tex-string->html-string
-                      (string-append "\\defcsactive\\,{}" (get-token)))))
-                 (r (read i))
-                 (g (read i))
-                 (b (read i)))
-            (close-input-port i)
-            (egroup)
-            (ignorespaces)
-            (emit "<font color=\"#")
-            (emit (rgb.dec->hex r g b))
-            (emit "\">")
-            (lambda () (emit "</font>"))))
-         ((string=? sw "\\TIIPgray")
-          (let* ((i (open-input-string (tex-string->html-string (get-token))))
-                 (g (read i)))
-            (close-input-port i)
-            (ignorespaces)
-            (emit "<font color=\"#")
-            (emit (cmyk->rgb 0 0 0 (- 1 g)))
-            (emit "\">")
-            (lambda () (emit "</font>"))))
-         ((string=? sw "\\TIIPcolornamed")
-          (let* ((name (get-peeled-group))
-                 (c (lassoc name *color-names* string=?)))
-            (ignorespaces)
-            (emit "<font color=\"")
-            (emit (if c (begin (emit #\#) (cdr c)) name))
-            (emit "\">")
-            (lambda () (emit "</font>"))))
-         ((string=? sw "\\bgcolor")
-          (emit "<font style=\"background-color: ")
-          (let ((color (ungroup (get-group))))
-            (if (string->number color 16) (emit "#"))
-            (emit color)
-            (emit "\">")
-            (lambda () (emit "</font>"))))
-         ((string=? sw "\\strike")
-          (emit "<strike>")
-          (lambda () (emit "</strike>")))
-         ((string=? sw "\\narrower")
-          (emit "<blockquote>")
-          (lambda () (emit "</blockquote>")))
-         ((string=? sw "\\raggedleft")
-          (do-end-para)
-          (emit "<div align=right>")
-          (lambda () (do-end-para) (emit "</div>") (do-para)))
-         (else (terror 'do-switch "Unknown switch " sw)))))))
+        (case sw
+          ((rm)
+           (when *math-mode?*
+             (let ((old-math-roman-mode? *math-roman-mode?*))
+               (set! *math-roman-mode?* #t)
+               (lambda () (set! *math-roman-mode?* old-math-roman-mode?)))))
+          ((em) (emit "<em>") (lambda () (emit "</em>")))
+          ((it itshape sl) (emit "<i>") (lambda () (emit "</i>")))
+          ((bf strong) (emit "<strong>") (lambda () (emit "</strong>")))
+          ((tt)
+           (let ((old-ligatures? *ligatures?*))
+             (set! *ligatures?* #f)
+             (emit "<tt>")
+             (lambda () (emit "</tt>") (set! *ligatures?* old-ligatures?))))
+          ((sc scshape)
+           (let ((old-in-small-caps? *in-small-caps?*))
+             (set! *in-small-caps?* #t)
+             (lambda () (set! *in-small-caps?* old-in-small-caps?))))
+          ((tiny) (emit "<font size=-4>") (lambda () (emit "</font>")))
+          ((scriptsize) (emit "<font size=-3>") (lambda () (emit "</font>")))
+          ((footnotesize fiverm)
+           (emit "<font size=-2>")
+           (lambda () (emit "</font>")))
+          ((small sevenrm)
+           (emit "<font size=-1>")
+           (lambda () (emit "</font>")))
+          ((large) (emit "<font size=+1>") (lambda () (emit "</font>")))
+          ((large-cap) (emit "<font size=+2>") (lambda () (emit "</font>")))
+          ((large-up) (emit "<font size=+3>") (lambda () (emit "</font>")))
+          ((huge) (emit "<font size=+4>") (lambda () (emit "</font>")))
+          ((huge-cap) (emit "<font size=+5>") (lambda () (emit "</font>")))
+          ((cmyk)
+           (bgroup)
+           (let* ((i
+                   (open-input-string
+                     (tex-string->html-string
+                       (string-append "\\defcsactive\\,{}" (get-token)))))
+                  (c (read i))
+                  (m (read i))
+                  (y (read i))
+                  (k (read i)))
+             (close-input-port i)
+             (egroup)
+             (ignorespaces)
+             (emit "<font color=\"#")
+             (emit (cmyk->rgb c m y k))
+             (emit "\">")
+             (lambda () (emit "</font>"))))
+          ((rgb)
+           (bgroup)
+           (let* ((i
+                   (open-input-string
+                     (tex-string->html-string
+                       (string-append "\\defcsactive\\,{}" (get-token)))))
+                  (r (read i))
+                  (g (read i))
+                  (b (read i)))
+             (close-input-port i)
+             (egroup)
+             (ignorespaces)
+             (emit "<font color=\"#")
+             (emit (rgb.frac->hex r g b))
+             (emit "\">")
+             (lambda () (emit "</font>"))))
+          ((rgb255)
+           (bgroup)
+           (let* ((i
+                   (open-input-string
+                     (tex-string->html-string
+                       (string-append "\\defcsactive\\,{}" (get-token)))))
+                  (r (read i))
+                  (g (read i))
+                  (b (read i)))
+             (close-input-port i)
+             (egroup)
+             (ignorespaces)
+             (emit "<font color=\"#")
+             (emit (rgb.dec->hex r g b))
+             (emit "\">")
+             (lambda () (emit "</font>"))))
+          ((gray)
+           (let* ((i (open-input-string (tex-string->html-string (get-token))))
+                  (g (read i)))
+             (close-input-port i)
+             (ignorespaces)
+             (emit "<font color=\"#")
+             (emit (cmyk->rgb 0 0 0 (- 1 g)))
+             (emit "\">")
+             (lambda () (emit "</font>"))))
+          ((colornamed)
+           (let* ((name (get-peeled-group))
+                  (c (lassoc name *color-names* string=?)))
+             (ignorespaces)
+             (emit "<font color=\"")
+             (emit (if c (begin (emit #\#) (cdr c)) name))
+             (emit "\">")
+             (lambda () (emit "</font>"))))
+          ((bgcolor)
+           (emit "<font style=\"background-color: ")
+           (let ((color (ungroup (get-group))))
+             (if (string->number color 16) (emit "#"))
+             (emit color)
+             (emit "\">")
+             (lambda () (emit "</font>"))))
+          ((strike) (emit "<strike>") (lambda () (emit "</strike>")))
+          ((narrower) (emit "<blockquote>") (lambda () (emit "</blockquote>")))
+          ((raggedleft)
+           (do-end-para)
+           (emit "<div align=right>")
+           (lambda () (do-end-para) (emit "</div>") (do-para)))
+          (else (terror 'do-switch "Unknown switch " sw)))))))
 
 (define do-obeylines
   (lambda ()
@@ -2698,10 +2686,11 @@
   (lambda (z)
     (do-end-para)
     (emit "<div ")
-    (cond
-     ((string=? z "\\center") (emit "align=center"))
-     ((string=? z "\\flushleft") (emit "align=left"))
-     ((string=? z "\\flushright") (emit "align=right")))
+    (emit
+     (case z
+       ((flushleft) "align=left")
+       ((flushright) "align=right")
+       (else "align=center")))
     (emit ">")
     (set! *tabular-stack* (cons 'block *tabular-stack*))
     (emit "<table><tr><td>")
@@ -5122,7 +5111,7 @@
   (lambda (f)
     (let ((tmpf (string-append *aux-dir/* *jobname* "-Z-Z.temp")))
       (system (string-append "kpsewhich " f " > " tmpf))
-      (let ((f (call-with-input-file tmpf read-line)))
+      (let ((f (call-with-input-file tmpf (lambda (i) (read-line i)))))
         (delete-file tmpf)
         (if (eof-object? f)
           #f
@@ -5228,7 +5217,7 @@
       =>
       (lambda (y)
         (get-actual-char)
-        (expand-tex-macro (tdef.optarg y) (tdef.argpat y) (tdef.expansion y))))
+        (expand-tex-macro (cdef.optarg y) (cdef.argpat y) (cdef.expansion y))))
      (else #f))))
 
 (define resolve-defs
@@ -5266,17 +5255,13 @@
 
 (define set-start-time
   (lambda ()
-    (let* ((secs (current-seconds))
-           (ht (and secs (decode-seconds-since-epoch secs))))
+    (let* ((secs (current-seconds)) (ht (and secs (seconds->date secs))))
       (cond
        (ht
-        (tex-def-count
-          "\\time"
-          (+ (* 60 (vector-ref ht 2)) (vector-ref ht 1))
-          #t)
-        (tex-def-count "\\day" (vector-ref ht 3) #t)
-        (tex-def-count "\\month" (vector-ref ht 4) #t)
-        (tex-def-count "\\year" (vector-ref ht 5) #t))
+        (tex-def-count "\\time" (+ (* 60 (date-hour ht)) (date-minute ht)) #t)
+        (tex-def-count "\\day" (date-day ht) #t)
+        (tex-def-count "\\month" (date-month ht) #t)
+        (tex-def-count "\\year" (date-year ht) #t))
        (else
         (tex-def-count "\\time" 0 #t)
         (tex-def-count "\\day" 0 #t)
@@ -5815,7 +5800,7 @@
               (let ((d (snoop-actual-char)))
                 (cond
                  ((and (char=? c #\space) (char-whitespace? d))
-                  (ignorespaces)
+                  (if (char=? d #\newline) (get-actual-char) (ignorespaces))
                   (loop2 (+ i 1) (cons c s)))
                  ((and (char=? c #\newline)
                        (char-whitespace? d)
@@ -5828,7 +5813,8 @@
                             (or (null? ss) (not (char=? (car ss) *esc-char*))))
                      (append (get-group-as-reversed-chars) ss)
                      (begin
-                       (if (char-whitespace? d)
+                       (if (and (char-whitespace? d)
+                                (not (char=? d #\newline)))
                          (ignorespaces)
                          (get-actual-char))
                        (cons d ss)))))
@@ -7361,9 +7347,6 @@
                  (cdr e))
                 (loop)))))))))
 
-(define tex2page-string
-  (lambda (s) (call-with-input-string/buffered s (lambda () (generate-html)))))
-
 (define tex2page-massage-file (lambda (f) f))
 
 (define tex2page-help
@@ -7670,9 +7653,9 @@
 
 (tex-def-prim "\\beginsection" do-beginsection)
 
-(tex-def-prim "\\bf" (lambda () (do-switch "\\bf")))
+(tex-def-prim "\\bf" (lambda () (do-switch 'bf)))
 
-(tex-def-prim "\\bgcolor" (lambda () (do-switch "\\bgcolor")))
+(tex-def-prim "\\bgcolor" (lambda () (do-switch 'bgcolor)))
 
 (tex-def-prim "\\bibitem" do-bibitem)
 
@@ -7696,7 +7679,7 @@
   "\\cdots"
   (lambda () (emit "<tt>&middot;&middot;&middot;</tt>")))
 
-(tex-def-prim "\\center" (lambda () (do-block "\\center")))
+(tex-def-prim "\\center" (lambda () (do-block 'center)))
 
 (tex-def-prim "\\centerline" (lambda () (do-function "\\centerline")))
 
@@ -7800,7 +7783,7 @@
 
 (tex-def-prim "\\else" (lambda () (do-else)))
 
-(tex-def-prim "\\em" (lambda () (do-switch "\\em")))
+(tex-def-prim "\\em" (lambda () (do-switch 'em)))
 
 (tex-def-prim "\\emph" (lambda () (do-function "\\emph")))
 
@@ -7905,13 +7888,15 @@
 
 (tex-def-prim "\\figure" (lambda () (do-table/figure 'figure)))
 
-(tex-def-prim "\\fiverm" (lambda () (do-switch "\\fiverm")))
+(tex-def-prim "\\fiverm" (lambda () (do-switch 'fiverm)))
 
-(tex-def-prim "\\flushleft" (lambda () (do-block "\\flushleft")))
+(tex-def-prim "\\flushleft" (lambda () (do-block 'flushleft)))
 
-(tex-def-prim "\\flushright" (lambda () (do-block "\\flushright")))
+(tex-def-prim "\\flushright" (lambda () (do-block 'flushright)))
 
 (tex-def-prim "\\footnote" do-footnote)
+
+(tex-def-prim "\\footnotesize" (lambda () (do-switch 'footnotesize)))
 
 (tex-def-prim "\\gdef" (lambda () (do-def #t)))
 
@@ -7963,7 +7948,9 @@
 
 (tex-def-prim "\\htmlrefexternal" do-htmlrefexternal)
 
-(tex-def-prim "\\Huge" (lambda () (do-switch "\\Huge")))
+(tex-def-prim "\\huge" (lambda () (do-switch 'huge)))
+
+(tex-def-prim "\\Huge" (lambda () (do-switch 'huge-cap)))
 
 (tex-def-prim "\\hyperref" do-hyperref)
 
@@ -8038,7 +8025,7 @@
 
 (tex-def-prim "\\inputindex" (lambda () (do-inputindex #f)))
 
-(tex-def-prim "\\it" (lambda () (do-switch "\\it")))
+(tex-def-prim "\\it" (lambda () (do-switch 'it)))
 
 (tex-def-prim "\\item" do-item)
 
@@ -8051,11 +8038,17 @@
     (set! *tabular-stack* (cons 'itemize *tabular-stack*))
     (emit "<ul>")))
 
-(tex-def-prim "\\itshape" (lambda () (do-switch "\\itshape")))
+(tex-def-prim "\\itshape" (lambda () (do-switch 'itshape)))
 
 (tex-def-prim "\\jobname" (lambda () (tex2page-string *jobname*)))
 
 (tex-def-prim "\\label" do-label)
+
+(tex-def-prim "\\large" (lambda () (do-switch 'large)))
+
+(tex-def-prim "\\Large" (lambda () (do-switch 'large-cap)))
+
+(tex-def-prim "\\LARGE" (lambda () (do-switch 'large-up)))
 
 (tex-def-prim "\\LaTeX" do-latex-logo)
 
@@ -8101,7 +8094,7 @@
 
 (tex-def-prim "\\multiply" (lambda () (do-multiply #f)))
 
-(tex-def-prim "\\narrower" (lambda () (do-switch "\\narrower")))
+(tex-def-prim "\\narrower" (lambda () (do-switch 'narrower)))
 
 (tex-def-prim "\\newcommand" (lambda () (do-newcommand #f)))
 
@@ -8197,7 +8190,7 @@
 
 (tex-def-prim "\\r" (lambda () (do-diacritic 'ring)))
 
-(tex-def-prim "\\raggedleft" (lambda () (do-switch "\\raggedleft")))
+(tex-def-prim "\\raggedleft" (lambda () (do-switch 'raggedleft)))
 
 (tex-def-prim "\\rawhtml" do-rawhtml)
 
@@ -8217,7 +8210,7 @@
 
 (tex-def-prim "\\rightline" (lambda () (do-function "\\rightline")))
 
-(tex-def-prim "\\rm" (lambda () (if *math-mode?* (do-switch "\\rm"))))
+(tex-def-prim "\\rm" (lambda () (if *math-mode?* (do-switch 'rm))))
 
 (tex-def-prim "\\romannumeral" (lambda () (do-romannumeral #f)))
 
@@ -8225,7 +8218,7 @@
 
 (tex-def-prim "\\ruledtable" do-ruledtable)
 
-(tex-def-prim "\\sc" (lambda () (do-switch "\\sc")))
+(tex-def-prim "\\sc" (lambda () (do-switch 'sc)))
 
 (tex-def-prim
   "\\schemedisplay"
@@ -8259,17 +8252,19 @@
 
 (tex-def-prim "\\scmvariable" do-scm-set-variables)
 
+(tex-def-prim "\\scriptsize" (lambda () (do-switch 'scriptsize)))
+
 (tex-def-prim "\\section" (lambda () (do-heading 1)))
 
 (tex-def-prim "\\seealso" do-see-also)
 
 (tex-def-prim "\\setcounter" (lambda () (set-latex-counter #f)))
 
-(tex-def-prim "\\sevenrm" (lambda () (do-switch "\\sevenrm")))
+(tex-def-prim "\\sevenrm" (lambda () (do-switch 'sevenrm)))
 
 (tex-def-prim "\\sf" do-relax)
 
-(tex-def-prim "\\sl" (lambda () (do-switch "\\sl")))
+(tex-def-prim "\\sl" (lambda () (do-switch 'sl)))
 
 (tex-def-prim "\\slatexdisable" get-group)
 
@@ -8277,7 +8272,7 @@
   "\\slatexlikecomments"
   (lambda () (set! *slatex-like-comments?* #t)))
 
-(tex-def-prim "\\small" (lambda () (do-switch "\\small")))
+(tex-def-prim "\\small" (lambda () (do-switch 'small)))
 
 (tex-def-prim "\\smallbreak" (lambda () (do-bigskip "\\smallbreak")))
 
@@ -8285,7 +8280,7 @@
 
 (tex-def-prim "\\ss" (lambda () (emit "&szlig;")))
 
-(tex-def-prim "\\strike" (lambda () (do-switch "\\strike")))
+(tex-def-prim "\\strike" (lambda () (do-switch 'strike)))
 
 (tex-def-prim "\\string" do-string)
 
@@ -8346,7 +8341,7 @@
 
 (tex-def-prim "\\TIIPbr" do-br)
 
-(tex-def-prim "\\TIIPcmyk" (lambda () (do-switch "\\TIIPcmyk")))
+(tex-def-prim "\\TIIPcmyk" (lambda () (do-switch 'cmyk)))
 
 (tex-def-prim "\\TIIPcomment" eat-till-eol)
 
@@ -8356,7 +8351,7 @@
 
 (tex-def-prim "\\TIIPgobblegroup" get-group)
 
-(tex-def-prim "\\TIIPgray" (lambda () (do-switch "\\TIIPgray")))
+(tex-def-prim "\\TIIPgray" (lambda () (do-switch 'gray)))
 
 (tex-def-prim "\\TIIPlatexenvasimage" do-following-latex-env-as-image)
 
@@ -8368,11 +8363,13 @@
 
 (tex-def-prim "\\TIIPreuseimage" reuse-img)
 
-(tex-def-prim "\\TIIPrgb" (lambda () (do-switch "\\TIIPrgb")))
+(tex-def-prim "\\TIIPrgb" (lambda () (do-switch 'rgb)))
 
-(tex-def-prim "\\TIIPRGB" (lambda () (do-switch "\\TIIPRGB")))
+(tex-def-prim "\\TIIPRGB" (lambda () (do-switch 'rgb255)))
 
 (tex-def-prim "\\TIIPtheorem" do-theorem)
+
+(tex-def-prim "\\tiny" (lambda () (do-switch 'tiny)))
 
 (tex-def-prim "\\title" do-title)
 
@@ -8386,7 +8383,7 @@
 
 (tex-def-prim "\\tracingmacros" (lambda () (do-tracingmacros #f)))
 
-(tex-def-prim "\\tt" (lambda () (do-switch "\\tt")))
+(tex-def-prim "\\tt" (lambda () (do-switch 'tt)))
 
 (tex-def-prim "\\typein" do-typein)
 

@@ -406,10 +406,44 @@
                   (values (ccond [(or cheap-wrap? ankle-wrap?)
                                   (if might-raise-exn?
                                       (appropriate-wrap annotated free-bindings)
-                                      annotated)
+                                      annotated)]
                                  [foot-wrap?
                                   (wcm-break-wrap (make-debug-info-normal free-bindings) (return-value-wrap annotated))]) 
                           free-bindings))]
+               
+               ; the app form's elaboration looks like this, where M0 etc. stand for expressions, and t0 etc
+               ; are temp identifiers that do not occur in the program:
+               ; (M0 ...)
+               ;
+               ; goes to
+               ;
+               ;(let ([t0 *unevaluated*]
+               ;      ...)
+               ;  (with-continuation-mark
+               ;   debug-key
+               ;   huge-value
+               ;   (set! t0 M0)
+               ;   ...
+               ;   (with-continuation-mark
+               ;    debug-key
+               ;    much-smaller-value
+               ;    (t0 ...))))
+               ; 
+               ; 'break's are not illustrated.  An optimization is possible when all expressions M0 ... are
+               ; varrefs.  In particular (where v0 ... are varrefs):
+               ; (v0 ...)
+               ;
+               ; goes to
+               ; 
+               ; (with-continuation-mark
+               ;  debug-key
+               ;  debug-value
+               ;  (v0 ...))
+               ;
+               ; in other words, no real elaboration occurs. Note that this doesn't work as-is for the
+               ; stepper, because there's nowhere to hang the breakpoint; you want to see the break
+               ; occur after all vars have been evaluated.  I suppose you could do (wcm ... (begin v0 ... (v0 ...)))
+               ; where the second set are not annotated ... but stepper runtime is not at a premium.
                
                [(z:app? expr)
 		(let*-values
@@ -439,10 +473,9 @@
                                                       arg-temp-syms annotated-sub-exprs)]
                                       [new-tail-bound (binding-set-union tail-bound arg-temps)]
                                       [app-debug-info (make-debug-info-app new-tail-bound arg-temps 'called)]
-                                      [final-app (if ankle-wrap?
-                                                     (break-wrap (simple-wcm-wrap app-debug-info 
+                                      [final-app (break-wrap (simple-wcm-wrap app-debug-info 
                                                                               (if (let ([fun-exp (z:app-fun expr)])
-                                                                                    (and ankle-wrap?
+                                                                                    (and foot-wrap?
                                                                                          (z:top-level-varref? fun-exp)
                                                                                          (non-annotated-proc? fun-exp)))
                                                                                   (return-value-wrap arg-temp-syms)
@@ -516,8 +549,8 @@
                                                               (binding-set-union free-bindings (list if-temp))
                                                               'none)]
                              [wcm-wrapped (wcm-wrap debug-info annotated)]
-                             [outer-annotated `(#%let ((,if-temp-sym (#%quote ,*unevaluated*))) ,wcm-wrapped)])
-                        (values outer-annotated free-bindings))))] ; I AM HERE
+                             [outer-annotated `(#%let ((,if-temp-sym ,*unevaluated*)) ,wcm-wrapped)])
+                        (values outer-annotated free-bindings))))]
 	       
 	       [(z:quote-form? expr)
                 (let ([annotated `(#%quote ,(utils:read->raw (z:quote-form-expr expr)))])
@@ -526,7 +559,7 @@
                               (wcm-wrap (make-debug-info-normal null) annotated))
                           null))]
                
-[(z:begin-form? expr)
+               [(z:begin-form? expr)
                 (if top-level? 
                     (let*-values
                      ([(bodies) (z:begin-form-bodies expr)]
@@ -567,23 +600,25 @@
                                   (wcm-wrap debug-info annotated)])
                           free-bindings))]
                
-               ; gott in himmel! this transformation is complicated.  Just for the record,
-               ; here's a sample transformation:
+               ; The let transformation is complicated.
+               ; here's a sample transformation (not including 'break's):
                ;(let-values ([(a b c) e1] [(d e) e2]) e3)
                ;
                ;turns into
                ;
-               ;(let-values ([(dummy1 dummy2 dummy3 dummy4 dummy5)
+               ;(let-values ([(a b c d e)
                ;              (values *unevaluated* *unevaluated* *unevaluated* *unevaluated* *unevaluated*)])
                ;  (with-continuation-mark 
                ;   key huge-value
                ;   (begin
-               ;     (set!-values (dummy1 dummy2 dummy3) e1)
-               ;     (set!-values (dummy4 dummy5) e2)
-               ;     (let-values ([(a b c d e) (values dummy1 dummy2 dummy3 dummy4 dummy5)])
-               ;       e3))))
+               ;     (set!-values (a b c) e1)
+               ;     (set!-values (d e) e2)
+               ;     e3)))
                ;
-               ; let me know if you can do it in less.
+               ; note that this elaboration looks exactly like the one for letrec, and that's
+               ; okay, becuase zodiac guarantees that every lexical binding has a unique name.
+               ; that is, it's not possible that one of the RHS expressions will contain a variable
+               ; whose name is the same as one of the LHS ones.
                
                ; another irritating point: the mark and the break that must go immediately 
                ; around the body.  Irritating because they will be instantly replaced by
@@ -598,6 +633,7 @@
                 (let*-values
                     ([(binding-sets) (z:let-values-form-vars expr)]
                      [(binding-list) (apply append binding-sets)]
+                     [(binding-names) (map get-binding-name binding-list)]
                      [(vals) (z:let-values-form-vals expr)]
                      [(_1) (for-each utils:check-for-keyword binding-list)]
                      [(_2) (for-each mark-never-undefined binding-list)]
@@ -607,8 +643,8 @@
                       (dual-map (let-rhs-recur null) vals binding-sets lifted-gensym-sets)]
                      [(annotated-body free-bindings-body)
                       (let-body-recur (z:let-values-form-body expr) binding-list)]
-                     [(free-bindings) (apply binding-set-union (remq* binding-list free-bindings-body)
-                                             free-bindings-vals)])
+                     [(free-bindings) (remq* binding-list 
+                                             (apply binding-set-union free-bindings-body free-bindings-vals))])
                   (ccond [cheap-wrap?
                           (let* ([bindings
                                   (map (lambda (bindings val)
@@ -619,22 +655,11 @@
                                   `(#%let-values ,bindings ,annotated-body)])
                             (values (appropriate-wrap annotated free-bindings) free-bindings))]
                          [(or ankle-wrap? foot-wrap?)
-                          (let* ([dummy-binding-sets
-                                  (let ([counter 0])
-                                    (map (lambda (binding-set)
-                                           (map (lambda (binding) 
-                                                  (begin0 
-                                                    (get-arg-binding counter)
-                                                    (set! counter (+ counter 1))))
-                                                binding-set))
-                                         binding-sets))]
-                                 [dummy-binding-list (apply append dummy-binding-sets)]
-                                 [create-index-finder (lambda (binding)
+                          (let* ([create-index-finder (lambda (binding)
                                                         `(,binding-indexer))]
-                                 [unevaluated-list (build-list (length dummy-binding-list) 
+                                 [unevaluated-list (build-list (length binding-list) 
                                                                (lambda (_) *unevaluated*))]
-                                 [dummy-binding-vars (map z:binding-var dummy-binding-list)]
-                                 [outer-dummy-initialization
+                                 [outer-initialization
                                   (if ankle-wrap?
                                       `((,dummy-binding-vars ,unevaluated-list))
                                       `([,(append lifted-gensyms dummy-binding-vars)
@@ -678,25 +703,25 @@
                      [(_2) (for-each utils:check-for-keyword binding-list)]
                      [(lifted-gensym-sets) (map (lambda (x) (map get-lifted-gensym x)) binding-sets)]
                      [(lifted-gensyms) (apply append lifted-gensym-sets)]
-                     [(letrec-tail-bound) (if ankle-wrap? binding-list null)]
                      [(annotated-vals free-bindings-vals)
-                      (dual-map (let-rhs-recur letrec-tail-bound) vals binding-sets lifted-gensym-sets)]
+                      (dual-map (let-rhs-recur null) vals binding-sets lifted-gensym-sets)]
                      [(annotated-body free-bindings-body)
                       (let-body-recur (z:letrec-values-form-body expr) binding-list)]
-                     [(free-bindings-inner) (apply binding-set-union free-bindings-body free-bindings-vals)]
-                     [(free-bindings-outer) (remq* binding-list free-bindings-inner)])
+                     [(free-bindings) (remq* binding-list 
+                                             (apply binding-set-union free-bindings-body free-bindings-vals))])
                   (ccond [cheap-wrap?
                           (let* ([bindings
                                   (map (lambda (bindings val)
-                                         `(,(map get-binding-name bindings)
-                                           ,val))
+                                         `(,(map get-binding-name bindings) ,val))
                                        binding-sets
                                        annotated-vals)]
                                  [annotated `(#%letrec-values ,bindings ,annotated-body)])
-                            (values (appropriate-wrap annotated free-bindings-outer) free-bindings-outer))]
-                         [(or foot-wrap? ankle-wrap?)
+                            (values (appropriate-wrap annotated free-bindings) free-bindings))]
+                         [(or ankle-wrap? foot-wrap?)
                           (let* ([create-index-finder (lambda (binding)
                                                         `(,binding-indexer))]
+                                 [unevaluated-list (build-list (length binding-list) 
+                                                               (lambda (_) *unevaluated*))]
                                  [outer-initialization
                                   (if ankle-wrap?
                                       `((,binding-names (#%values ,binding-names)))
@@ -715,14 +740,14 @@
                                  [wrapped-begin
                                   (wcm-wrap (make-debug-info expr 
                                                              (binding-set-union tail-bound binding-list)
-                                                             (binding-set-union free-bindings-inner binding-list)
+                                                             (binding-set-union free-bindings binding-list)
                                                              null ; advance warning
                                                              'let-body
                                                              foot-wrap?)
                                             middle-begin)]
                                  [whole-thing
                                   `(#%letrec-values ,outer-initialization ,wrapped-begin)])
-                            (values whole-thing free-bindings-outer))]))]
+                            (values whole-thing free-bindings))]))]
                
 	       [(z:define-values-form? expr)  
 		(let*-values

@@ -1,6 +1,6 @@
 (module build-info mzscheme
   
-  (require (lib "class.ss") (lib "file.ss") (lib "list.ss") (lib "match.ss")
+  (require (lib "class.ss") (lib "file.ss") (lib "list.ss")
            "ast.ss" "types.ss" "error-messaging.ss" "parameters.ss" "parser.ss")
 
   (provide build-info build-interactions-info find-implicit-import load-lang)
@@ -111,8 +111,7 @@
            (name (id-string (name-id (import-name imp))))
            (name-path (map id-string (name-path (import-name imp))))
            (path (if star? (append name-path (list name)) name-path))
-           (err (lambda ()
-                  (raise-error imp import-not-found))))
+           (err (lambda () (import-error (import-name imp) (import-src path)))))
       (if star?
           (let ((classes (send type-recs get-package-contents path (lambda () #f))))
             (if classes
@@ -144,7 +143,7 @@
                  (send type-recs get-class-record (cons class path) (lambda () 'internal-error "Failed to add record"))
                  )))
        (send type-recs add-require-syntax (cons class path) (build-require-syntax class path dir #t)))
-      (else (raise-error (cons class path) file-not-found)))
+      (else (file-error 'file (cons class path))))
     (when add-to-env (send type-recs add-to-env class path loc))
     (send type-recs add-class-req (cons class path) (not add-to-env) loc))
   
@@ -166,7 +165,7 @@
   (define (find-implicit-import name type-recs level)
     (lambda ()
       (let ((original-loc (send type-recs get-location))
-            (dir (find-directory (cdr name) (lambda () (raise-error name dir-not-found)))))
+            (dir (find-directory (cdr name) (lambda () (file-error 'dir name)))))
         (import-class (car name) (cdr name) dir original-loc type-recs level #f)
         (begin0
           (get-record (send type-recs get-class-record name (lambda () #f) type-recs))
@@ -274,22 +273,21 @@
       (let ((build-record
              (lambda ()
                (send type-recs add-to-records cname 'in-progress)
-               (let* ((super-name (if (null? (header-extends info))
-                                      '("Object" "java" "lang")
-                                      (name->list (car (header-extends info)))))
-                      (super-record (get-parent-record super-name (if (null? (header-extends info))
-                                                                      null
-                                                                      (car (header-extends info)))
-                                                       cname level type-recs))
+               (let* ((super (if (null? (header-extends info)) null (car (header-extends info))))
+                      (super-name (if (null? super) '("Object" "java" "lang") (name->list super)))
+                      (super-record (get-parent-record super-name super cname level type-recs))
                       (iface-records (map (lambda (i)
                                             (get-parent-record (name->list i) i #f level type-recs))
                                           (header-implements info)))
                       (members (class-def-members class))
-                      (reqs (map (lambda (name-list) 
+                      (modifiers (header-modifiers info))
+                      (test-mods (map modifier-kind modifiers))
+                      (reqs (map (lambda (name-list)
                                    (if (= (length name-list) 1)
                                        (make-req (car name-list) (send type-recs lookup-path (car name-list) (lambda () null)))
                                        (make-req (car name-list) (cdr name-list))))
                                  (cons super-name (map name->list (header-implements info))))))
+                 
                  (send type-recs set-location! (class-def-file class))
                  (set-class-def-uses! class reqs)
                  (unless (andmap (lambda (req) (type-exists? (req-class req) (req-path req) type-recs))
@@ -297,39 +295,41 @@
                    (error 'process-class "Internal error: not all of imports and classes exist"))
                  
                  (when (memq 'final (class-record-modifiers super-record))
-                   (raise-error (car (header-extends info)) final-extend))
+                   (extension-error 'final (header-id info) super (id-src super)))
                  
                  (unless (class-record-class? super-record)
-                   (raise-error (car (header-extends info)) class-extend-iface))
+                   (extension-error 'class-iface (header-id info) super (id-src super)))
                  
                  (when (ormap class-record-class? iface-records)
                    (letrec ((find-class
                              (lambda (recs names)
                                (if (class-record-class? (car recs))
                                    (car names)
-                                   (find-class (cdr recs) (cdr names))))))
-                     (raise-error (find-class iface-records (header-implements info)) class-implement-class)))                 
+                                   (find-class (cdr recs) (cdr names)))))
+                            (name (find-class iface-records (header-implements info))))
+                     (extension-error 'implement-class (header-id info) name (id-src name))))
                  
                  (valid-iface-implement? iface-records (header-implements info))
                                   
-                 (let-values (((f m) (if (memq 'strictfp (map modifier-kind
-                                                              (header-modifiers info)))
-                                         (process-members members cname type-recs level (find-strictfp (header-modifiers info)))
-                                         (process-members members cname type-recs level))))
+                 (let*-values (((old-methods) (class-record-methods super-record))
+                               ((f m) 
+                                (if (memq 'strictfp test-mods)
+                                    (process-members members old-methods cname type-recs level (find-strictfp modifiers))
+                                    (process-members members old-methods cname type-recs level))))
                    (valid-field-names? f members type-recs)
                    (valid-method-sigs? m members level type-recs)
 
-                   (when (not (memq 'abstract (map modifier-kind (header-modifiers info))))
-                     (and (class-fully-implemented? super-record (header-extends info) 
+                   (when (not (memq 'abstract test-mods))
+                     (and (class-fully-implemented? super-record super 
                                                     iface-records (header-implements info)
                                                     m level)
                           (no-abstract-methods m members type-recs)))
                    
                    (valid-inherited-methods? (cons super-record iface-records)
-                                             (append (if (null? (header-extends info))
-                                                         (list (make-name (make-id "Object" #f) null #f))
-                                                         (header-extends info))
-                                                     (header-implements info))
+                                             (cons (if (null? super)
+                                                       (make-name (make-id "Object" #f) null #f)
+                                                       super)
+                                                   (header-implements info))
                                              level)
                    
                    (check-current-methods (cons super-record iface-records)
@@ -341,10 +341,10 @@
                    (let ((record
                           (make-class-record 
                            cname
-                           (check-class-modifiers 'full (header-modifiers info))
+                           (check-class-modifiers 'full modifiers)
                            #t
                            (append f (filter class-specific-field? (class-record-fields super-record)))
-                           (append m (filter (lambda (meth) 
+                           (append m (filter (lambda (meth)
                                                (class-specific-method? meth m))
                                              (class-record-methods super-record)))
                            (cons super-name (class-record-parents super-record))
@@ -389,12 +389,13 @@
                              (lambda (recs names)
                                (if (class-record-class? (car recs))
                                    (car names)
-                                   (find-class (cdr recs) (cdr names))))))
-                     (raise-error (find-class super-records (header-extends info)) iface-extend-class)))
+                                   (find-class (cdr recs) (cdr names)))))
+                            (name (find-class super-records (header-extends info))))
+                     (extension-error 'iface-class (header-id info) name (id-src name))))
                  
                  (valid-iface-extend? super-records (header-extends info))
                  
-                 (let-values (((f m) (process-members members null type-recs level)))
+                 (let-values (((f m) (process-members members null iname type-recs level)))
                    
                    (valid-field-names? f members type-recs)
                    (valid-method-sigs? m members level type-recs)
@@ -423,21 +424,24 @@
   (define (valid-iface-extend? records extends)
     (or (null? records)
         (and (memq (car records) (cdr records))
-             (raise-error (car extends) repeating-inherited-iface))
+             (extension-error 'ifaces #f (car extends) (id-src (car extends))))
         (valid-iface-extend? (cdr records) (cdr extends))))
   
   (define (valid-iface-implement? records implements)
     (or (null? records)
         (and (memq (car records) (cdr records))
-             (raise-error (car implements) repeating-implement))
+             (extension-error 'implement #f (car implements) (id-src (car implements))))
         (valid-iface-implement? (cdr records) (cdr implements))))
   
+  ;valid-field-names? (list field-record) (list member) type-records -> bool
   (define (valid-field-names? fields members type-recs)
     (or (null? fields)
         (and (field-member? (car fields) (cdr fields))
-             (raise-error (find-member (car fields) members type-recs) repeated-field-name))
+             (let ((f (find-member (car fields) members type-recs)))
+               (field-error (field-name f) (field-src f))))
         (valid-field-names? (cdr fields) members type-recs)))
   
+  ;field-member: field-record (list field-record) -> bool
   (define (field-member? field fields)
     (and (not (null? fields))
          (or (equal? (field-record-name field)
@@ -470,10 +474,16 @@
       (else
        (find-member member-record (cdr members) type-recs))))
   
+  ;valid-method-sigs? (list method-record) (list member) symbol type-records -> bool
   (define (valid-method-sigs? methods members level type-recs)
     (or (null? methods)
         (and (method-member? (car methods) (cdr methods) level)
-             (raise-error (find-member (car methods) members type-recs) repeated-method))
+             (let ((m (find-member (car methods) members type-recs)))
+               (method-error 'repeated 
+                             (method-name m)
+                             (method-parms m)
+                             (method-record-class (car methods))
+                             (method-src m))))
         (valid-method-sigs? (cdr methods) members level type-recs)))
   
   (define (method-member? method methods level)
@@ -500,7 +510,11 @@
         (and (method-conflicts? (car methods) 
                                 (apply append (map class-record-methods records))
                                 level)
-             (raise-error (list from (car methods)) inherited-method-conflict))
+             (method-error 'inherit-conflict 
+                           (method-name (car methods))
+                           (method-parms (car methods))
+                           from
+                           (method-src (car methods))))
         (check-inherited-method (cdr methods) records from level)))
   
   (define (method-conflicts? method methods level)
@@ -522,39 +536,57 @@
         (and (method-conflicts? (car methods)
                                 (class-record-methods record)
                                 level)
-             (raise-error (list record (find-member (car methods) members type-recs)) conflicting-method))
+             (let ((method (find-member (car methods) members type-recs)))
+               (method-error 'conflicts 
+                             (method-name method)
+                             (method-parms method)
+                             (car (class-record-name record))
+                             (method-src method))))
         (check-for-conflicts (cdr methods) record members level type-recs)))
   
+  ;class-fully-implemented? class-record id (list class-record) (list id) (list method) symbol -> bool
   (define (class-fully-implemented? super super-name ifaces ifaces-name methods level) 
     (when (memq 'abstract (class-record-modifiers super))
       (implements-all? (filter (lambda (method)
                                  (memq 'abstract (method-record-modifiers method)))
-                               (class-record-methods super)) methods super-name level))
+                               (class-record-methods super))
+                       methods super-name level))
     (andmap (lambda (iface iface-name)
               (implements-all? (class-record-methods iface) methods iface-name level))
             ifaces
             ifaces-name
             ))
   
+  ;implements-all? (list method-record) (list method) id symbol -> bool
   (define (implements-all? inherit-methods methods name level)
     (or (null? inherit-methods)
         (and (not (method-member? (car inherit-methods) methods level))
-             (raise-error (list name (car inherit-methods)) method-not-implemented))
+             (method-error 'not-implement 
+                           (make-id (method-record-name (car inherit-methods)) #f)
+                           (map (lambda (parm)
+                                  (make-var-decl (make-id (type->ext-name parm #f) null #f #f)))
+                                (method-record-atypes (car inherit-methods)))
+                           (id-string name)
+                           (id-src name)))
         (implements-all? (cdr inherit-methods) methods name level)))
   
   (define (no-abstract-methods methods members type-recs)
     (or (null? methods)
         (and (memq 'abstract (method-record-modifiers (car methods)))
-             (raise-error (find-member (car methods) members type-recs) abstract-in-concrete))
+             (let ((method (find-member (car methods) members type-recs)))
+               (method-error 'illegal-abstract 
+                             (method-name method) 
+                             (method-parms method) 
+                             (method-record-class (car methods))
+                             (method-src method))))
         (no-abstract-methods (cdr methods) members type-recs)))
     
-      
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Methods to process fields and methods
   
-  ;; process-members: (list members) (list string) type-records symbol -> 
+  ;; process-members: (list members) (list method-record) (list string) type-records symbol -> 
   ;;                     (values (list field-record) (list method-record))
-  (define (process-members members cname type-recs level . args)
+  (define (process-members members inherited-methods cname type-recs level . args)
     (let loop ((members members)
                (fields null)
                (methods null))
@@ -572,8 +604,8 @@
          (loop (cdr members)
                fields
                (cons (if (null? args)
-                         (process-method (car members) cname type-recs level)
-                         (process-method (car members) cname type-recs level (car args)))
+                         (process-method (car members) inherited-methods cname type-recs level)
+                         (process-method (car members) inherited-methods cname type-recs level (car args)))
                          methods)))
         (else
          (loop (cdr members)
@@ -587,8 +619,9 @@
                        cname 
                        (type-spec-to-type (field-type field) type-recs)))
 
-  ;; process-method: method (list string) type-records symbol -> method-record  
-  (define (process-method method cname type-recs level . args)
+  ;; process-method: method (list method-record) (list string) type-records symbol -> method-record  
+  (define (process-method method inherited-methods cname type-recs level . args)
+    
     (make-method-record (id-string (method-name method))
                         (if (null? args)
                             (check-method-modifiers level (method-modifiers method))
@@ -598,13 +631,16 @@
                                (type-spec-to-type ts type-recs))
                              (map var-decl-type
                                   (method-parms method)))
-                        (map (lambda (t)
-                               (let ((name (make-ref-type (id-string (name-id t))
-                                                          (map id-string (name-path t)))))
-                                 (if (is-subclass? name throw-type type-recs)
-                                     name
-                                     (raise-error t thrown-not-throwable))))
-                             (method-throws method))
+                        (filter (lambda (n)
+                                  (not (or (is-subclass? n runtime-exn-type type-recs))))
+;                                           (is-subclass? n error-type type-recs))))
+                                (map (lambda (t)
+                                       (let ((n (make-ref-type (id-string (name-id t))
+                                                               (map id-string (name-path t)))))
+                                         (if (is-subclass? n throw-type type-recs)
+                                             n
+                                             (throws-error (name-id t) (name-src t)))))
+                                     (method-throws method)))
                         ""
                         cname))
     
@@ -722,16 +758,6 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Error raising code: code that takes information about the error message and throws the error
   
-;  (define (build-src-list src)
-;    (if (not src)
-;        src
-;        (if (and (= (src-line src) 0)
-;                 (= (src-col src) 0)
-;                 (= (src-pos src) 0)
-;                 (= (src-span src) 0))
-;            #f
-;            (list (build-info-location) (src-line src) (src-col src) (src-pos src) (src-span src)))))        
-
   ;modifier-error: symbol modifier -> void
   (define (modifier-error kind mod)
     (let ((m (modifier-kind mod))
@@ -766,107 +792,65 @@
                      ((cycle) 
                       (format "~a is illegally dependent on itself, potentially through other definitions" n)))
                    n src)))
-  
 
-  (define (final-extend a) (format "Final class ~a may not be extended" a))
+  ;extension-error: symbol id id src -> void
+  (define (extension-error kind name super src) 
+    (let ((n (if name (id->ext-name name) name))
+          (s (id->ext-name super)))
+      (raise-error s
+                   (case kind
+                     ((final) (format "Final class ~a may not be extended by ~a" s n))
+                     ((implement) (format "Interface ~a may not be implemented twice by this class" s))
+                     ((ifaces) (format "Interface ~a cannot be extended twice by this interface" s))
+                     ((iface-class) (format "Interface ~a may not extend class ~a" n s))
+                     ((class-iface) (format "Class ~a may not extend interface ~a" n s))
+                     ((implement-class) (format "Class ~a cannot implement class ~a" n s)))
+                   s src)))
 
-  (define (abstract-in-concrete a) (format "Abstract method ~a is not allowed in non-abstract class"))
-  
-  (define (repeating-inherited-iface a)
-    (format "Interface ~a cannot be extended twice by one interface" a))
-  (define (repeating-implement a)
-    (format "Interface ~a cannot be implemented twice by one class" a))
-  (define (repeated-field-name a)
-    (format "More than one field is declared with name ~a" a))
-  (define (repeated-method a)
-    (format "More than one method is declared as ~a" a))
-  (define (inherited-method-conflict a meth)
-    (format "Inherited method ~a from ~a has a conflict with another method of the same name" meth a))
-  (define (conflicting-method meth a)
-    (format "Method ~a has a conflict with a method inherited from ~a" meth a))
-  (define (iface-extend-class a) (format "An interface may not extend class: ~a" a))
-  (define (class-extend-iface a) (format "A class may not extend interface: ~a" a))
+  ;method-error: symbol id (list field) string src -> void
+  (define (method-error kind name parms class src)
+    (let ((m-name (method-name->ext-name (id-string name) parms)))
+      (raise-error m-name
+                   (case kind
+                     ((illegal-abstract)
+                      (format "Abstract method ~a is not allowed in non-abstract class ~a" m-name class))
+                     ((repeated)
+                      (format "Method ~a has already been written in this class (~a)" m-name class))
+                     ((inherit-conflict)
+                      (format "Inherited method ~a from ~a conflicts with another method of the same name"
+                              m-name class))
+                     ((conflict)
+                      (format "Method ~a conflicts with a method inherited from ~a" m-name class))
+                     ((not-implement)
+                      (format "Method ~a from ~a is not implemented" m-name class)))
+                   m-name src)))
 
-  (define (class-implement-class a) (format "A class may not implement class: ~a" a))
-  (define (method-not-implemented a meth) (format "Method ~a from ~a is not implemented" meth a))
+  ;field-error: id src -> void
+  (define (field-error name src)
+    (let ((n (id->ext-name name)))
+      (raise-error n (format "Multiple fields are declared with the name ~a" n) n src)))
 
-  (define (import-not-found a) (format "Import ~a not found" a))
-  (define (dir-not-found a) (format "Required directory ~a not found" a))
-  (define (file-not-found a) (format "Required file ~a not found" a))
+  ;import-error: name src -> void
+  (define (import-error imp src)
+    (raise-error 'import
+                 (format "Import ~a not found" (path->ext (name->path imp)))
+                 'import src))
+
+  ;file-error: symbol (list string) -> void
+  (define (file-error kind path)
+    (let ((k (if (eq? kind 'file) 'file-not-found 'directory-not-found)))
+      (raise-error k
+                   (case kind
+                     ((file) (format "Required file ~a not found" (path->ext path)))
+                     ((dir) (format "Required directory ~a not found" (path->ext path))))
+                   k #f)))
   
-  (define (thrown-not-throwable given)
-    (format "Classes listed as thrown by a method must be subtypes of Throwable. Given ~a"))
-  
-;  (define (make-so id src)
-;    (datum->syntax-object #f id (build-src-list src)))
-  
-;  (define (make-parm-string parms)
-;    (if (null? parms)
-;        ""
-;        (substring (apply string-append
-;                          (map 
-;                           (lambda (p) (string-append (id-string (field-name p)) " "))
-;                           parms))
-;                   0 (sub1 (length parms)))))
-  
-  (define (raise-old-error code make-msg)
-    (match code
-      ;Covers duplicate-mods one-of-access *-incorrect-modifiers invalid-*-mod abstract-restrict final-and-abstract
-      ;       final-and-volatile native-and-fp
-      ((? modifier? mod)
-       (let ((kind ((modifier-kind mod))))
-         (raise-syntax-error kind (make-msg kind) (make-so kind (modifier-src mod)))))
-      ;Covers extends-self cyclic-depends repeating-inherited-iface final-extend iface-extend-class class-extend-iface
-      ;       class-implement-class repeating-implement thrown-not-throwable
-      ((? name? n)
-       (let ((name (string->symbol (id-string (name-id n)))))
-             (raise-syntax-error name (make-msg name) (make-so name (name-src n)))))
-      ;Covers repeated-field-name
-      ((? field? f)
-       (let ((field (string->symbol (id-string (field-name f)))))
-         (raise-syntax-error field (make-msg field) (make-so field (id-src (field-name f))))))
-      ;Covers repeated-method abstract-in-concrete
-      ((? method? m)
-       (let* ((m-name (string->symbol (id-string (method-name m))))
-              (parms-string (make-parm-string (method-parms m))))                                                      
-         (raise-syntax-error m-name 
-                             (make-msg (format "~a(~a)" m-name parms-string)) 
-                             (make-so m-name (method-src m)))))
-      ;Covers conflicting-method
-      (((? class-record? cr) (? method? m))
-       (let ((m-name (string->symbol (id-string (method-name m))))
-             (parms (make-parm-string (method-parms m))))
-         (raise-syntax-error m-name
-                             (make-msg (format "~a(~a)" m-name parms) 
-                                       (car (class-record-name cr)))
-                             (make-so m-name (method-src m)))))
-      ;Covers inherited-method-conflict method-not-implemented
-      (((? name? n) (? method-record? mr))
-       (let ((name (string->symbol (id-string (name-id n)))))
-         (raise-syntax-error name
-                             (make-msg name (method-record-name mr))
-                             (make-so name (name-src n)))))
-      ;Covers import-not-found
-      ((? import? imp)
-       (let ((name (import-name imp)))
-         (raise-syntax-error (string->symbol (id-string (name-id name)))
-                             (make-msg (apply string-append (append (map 
-                                                                 (lambda (a)
-                                                                   (string-append (id-string a) "."))
-                                                                 (name-path name))
-                                                                (list (id-string (name-id name))))))
-                             (make-so (string->symbol (id-string (name-id name)))
-                                      (import-src imp)))))
-      ;Covers file-not-found dir-not-found
-      ((? list? path)
-       (raise-syntax-error #f
-                           (make-msg (apply string-append (append (map (lambda (a)
-                                                                         (string-append a "."))
-                                                                       (cdr path))
-                                                                  (list (car path)))))
-                           #f))
-      (_
-       (error 'internal-error "raise-error given ~a and ~a" code))))
+  ;throws-error id src -> void
+  (define (throws-error t src)
+    (raise-error 'throws
+                 (format "Thrown class must be a subtype of Throwable: Given ~a" 
+                         (id->ext-name t))
+                 'throws src))
         
   (define build-info-location (make-parameter #f))
   (define raise-error (make-error-pass build-info-location))

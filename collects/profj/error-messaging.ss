@@ -3,9 +3,8 @@
   (require "ast.ss")
   (require "types.ss")
   
-  (provide make-error-pass get-expected type->ext-name id->ext-name get-call-type method-name->ext-name)
-  
-  (provide make-so build-src-list make-parm-string)
+  (provide make-error-pass get-expected type->ext-name id->ext-name 
+           get-call-type method-name->ext-name path->ext name->path)
   
   ;make-error: 'a string 'a src -> void
   (define (make-error-pass parm)
@@ -76,5 +75,16 @@
   ;method-name->ext-name: string (list field) -> string
   (define (method-name->ext-name name parms)
     (format "~a(~a)" name (make-parm-string parms)))
+
+  ;path->ext: (list string) -> string
+  (define (path->ext path)
+    (apply string-append
+           (append (map (lambda (a) (string-append a "."))
+                        (cdr path))
+                   (list (car path)))))
   
+  ;name->path: name -> (list string)
+  (define (name->path n)
+    (cons (id-string (name-id n)) (map id-string (name-path n))))
+      
   )

@@ -6,79 +6,70 @@
 ; child-info
 
 (define mred:container-frames@
-  (unit/sig mred:container-frames^
-    (import [mred:debug : mred:debug^]
-	    [mred:connections : mred:connections^]
-	    mred:container-children^
-	    mred:container-panels^)
+  (let-macro PRINTF
+    ; Swap commenting of the next two lines to enable/disbale debugging
+    ; (lambda args (list* 'mred:debug:printf args))
+    void
+
+    (unit/sig mred:container-frames^
+      (import [mred:debug : mred:debug^]
+	      [mred:connections : mred:connections^]
+	      mred:container-children^
+	      mred:container-panels^)
+      
+      (mred:debug:printf 'invoke "mred:container-frames@")
+      
+      (define counter 0)  ; used in debugging
+      
+      ; this is the size of the border that the window system automatically
+      ; places between a panel and its frame.  I did it this way to make it
+      ; easily modifiable if necessary.
+      (define WX-BORDER-SIZE
+	(case wx:window-system
+	  [(xt)  2]  ; grrrr....
+	  [(motif) 0]
+	  [(windows) 0]
+	  [(macintosh) 0]))
+      
+      ; default size & placement for dialog boxes.  Note that these values
+      ; are not used by these classes; they are simply used in the function
+      ; that processes dialog-box%'s args before sending them on to
+      ; super-init, so we don't change the defaults from wx:dialog-box%.
+      (define default-dialog-posn 300)
+      (define default-dialog-size 500)
     
-    (mred:debug:printf 'invoke "mred:container-frames@")
-    
-    (define counter 0)  ; used in debugging
-    
-    ; this is the size of the border that the window system automatically
-    ; places between a panel and its frame.  I did it this way to make it
-    ; easily modifiable if necessary.
-    (define WX-BORDER-SIZE
-      (case wx:window-system
-	[(xt)  2]  ; grrrr....
-	[(motif) 0]
-	[(windows) 0]
-	[(macintosh) 0]))
-    
-    ; default size & placement for dialog boxes.  Note that these values
-    ; are not used by these classes; they are simply used in the function
-    ; that processes dialog-box%'s args before sending them on to
-    ; super-init, so we don't change the defaults from wx:dialog-box%.
-    (define default-dialog-posn 300)
-    (define default-dialog-size 500)
-    
-    ; make-top-container%: adds the necessary functionality to wx:frame% and 
-    ; wx:dialog-box%.
-    ; input: base%: the base class from which to descend the new mred class.
-    ;          Intended to be either wx:frame% or wx:dialog-box%, but can
-    ;          be anything which contains all methods in the inherit section
-    ;          below.
-    ; returns: a new class, descended from base%, which possesses the added
-    ;            capabilities necessary to serve as the frame/dialog which
-    ;            contains mred container classes.
-    (define make-top-container%
-      (lambda (base%)
-	(class base% args
-	  (inherit
-	    get-x
-	    get-y
-	    get-width
-	    get-height
-	    get-client-size)
-	  
-	  (rename
-	    [super-show show]
-	    [super-on-size on-size]
-	    [super-set-size set-size])
-	  
-	  (public
+      ; make-top-container%: adds the necessary functionality to wx:frame% and 
+      ; wx:dialog-box%.
+      ; input: base%: the base class from which to descend the new mred class.
+      ;          Intended to be either wx:frame% or wx:dialog-box%, but can
+      ;          be anything which contains all methods in the inherit section
+      ;          below.
+      ; returns: a new class, descended from base%, which possesses the added
+      ;            capabilities necessary to serve as the frame/dialog which
+      ;            contains mred container classes.
+      (define make-top-container%
+	(lambda (base%)
+	  (class base% args
+	    (inherit
+	     get-x
+	     get-y
+	     get-width
+	     get-height
+	     get-client-size
+	     is-shown?)
 	    
-	    ; track whether or not we should update the position of
-	    ; our children.
-	    [perform-updates #f]
-	    [set-perform-updates (lambda (x)
-				   (set! perform-updates x)
-				   (when pending-redraws
-				     (mred:debug:printf
-				      'container-frame-show
-				      "Container-frame-show: forcing redraw")
-				     (force-redraw)
-				     (set! pending-redraws #f)))])
+	    (rename
+	     [super-show show]
+	     [super-on-size on-size]
+	     [super-set-size set-size])
 	    
 	  (private
 	    ; have we had any redraw requests while the window has been
 	    ; hidden?
-	    [pending-redraws #f]
-	    
-	    ; flags whether or not we're in a forced redraw
-	    [in-force #f]
-	    
+	    [pending-redraws? #f]
+
+	    [ignore-redraw-request? #f]
+
 	    ; pointer to panel in the frame for use in on-size
 	    [panel null])
 	  
@@ -96,12 +87,12 @@
 	    ;            mred:panel%, calls error; panel not updated.
 	    [insert-panel
 	     (lambda (new-panel)
-	       (mred:debug:printf 'container-frame-insert-panel
+	       (PRINTF 'container-frame-insert-panel
 				  (string-append
 				   "container-frame-insert-panel: "
 				   "Entering insert-panel, frame ~s")
 				  object-ID)
-	       (mred:debug:printf 'container-frame-insert-panel
+	       (PRINTF 'container-frame-insert-panel
 				  (string-append
 				   "container-frame-insert-panel: "
 				   "Argument: ~s; panel ID ~s")
@@ -118,7 +109,7 @@
 			"Added panel ~s to a frame (~s) not its parent"
 			new-panel this))
 	       (set! panel new-panel)
-	       (mred:debug:printf 'container-frame-insert-panel
+	       (PRINTF 'container-frame-insert-panel
 				  (string-append
 				   "container-frame-insert-panel: "
 				   "sizing panel, forcing redraw, "
@@ -128,45 +119,45 @@
 		 (send panel set-size WX-BORDER-SIZE WX-BORDER-SIZE
 		       (- client-w (* 2 WX-BORDER-SIZE))
 		       (- client-h (* 2 WX-BORDER-SIZE))))
-	       (force-redraw))]
+	       (self-redraw-request))]
 	    
-	    ; undocumented hook to allow me to get the panel for debugging
-	    ; purposes.
 	    [get-panel
 	     (lambda ()
 	       panel)]
 	    
-	    ; force-redraw: receives a message from the panel to redraw the
+	    ; force-redraw: receives a message from to redraw the
 	    ; entire frame.
 	    ; input: none
 	    ; returns: nothing
 	    ; effects: redraws the frame at its current size (changing size
 	    ;            as necessary).
+	    [child-redraw-request
+	     ; since there's only one panel, we assume that `from' is the
+	     ; panel and the request should be granted
+	     (lambda (from) 
+	       (unless ignore-redraw-request?
+		  (self-redraw-request)))]
+	    [self-redraw-request
+	     (lambda ()
+	       (if (is-shown?)
+		   (force-redraw)
+		   (set! pending-redraws? #t)))]
 	    [force-redraw
 	     (lambda ()
-	       (mred:debug:printf 'container-frame-force-redraw
-				  (string-append
-				   "container-frame-force-redraw: "
-				   "Entering force-redraw; frame ~s")
-				  object-ID)
-	       (if perform-updates
-		   (begin
-		     (set! in-force #t)
-		     (mred:debug:printf
-		      'container-frame-force-redraw
-		      (string-append
-		       "container-frame-force-redraw: "
-		       "calling on-size with ~s ~s and quitting")
-		      (get-width) (get-height))
-		     (on-size (get-width) (get-height))
-		     (set! in-force #f))
-		   (begin
-		     (mred:debug:printf
-		      'container-frame-force-redraw
-		      (string-append
-		       "container-frame-force-redraw: "
-		       "updates are blocked, so exiting."))
-		     (set! pending-redraws #t))))]
+	       (PRINTF 'container-frame-force-redraw
+		       (string-append
+			"container-frame-force-redraw: "
+			"Entering force-redraw; frame ~s")
+		       object-ID)
+	       (unless (null? panel)
+		 (dynamic-wind
+		  (lambda () (set! ignore-redraw-request? #t))
+		  (lambda () 
+		    ; Ensures that the frame is big enough:
+		    (set-size (get-x) (get-y) (get-width) (get-height))
+		    (send panel on-container-resize))
+		  (lambda () (set! ignore-redraw-request? #f))))
+	       (set! pending-redraws? #f))]
 	    
 	    ; show: add capability to set perform-updates
 	    ; input: now : boolean
@@ -176,27 +167,19 @@
 	    ;          pass now to superclass's show.
 	    [show
 	     (lambda (now)
-	       (mred:debug:printf
-		'container-frame-show
-		"container-frame-show: entering; arg ~s" now)
-	       (if now
-		   (unless perform-updates
-		     (set-perform-updates #t))
-		   (set-perform-updates #f))
-	       (mred:debug:printf
-		'container-frame-show
-		"Container-frame-show: passing arg to super-show")
+	       (when (and now pending-redraws?)
+		     (force-redraw))
 	       (super-show now))]
 	    
 	    [set-size
 	     (lambda (x y width height)
-	       (mred:debug:printf
+	       (PRINTF
 		'container-frame-set-size
 		"Container-frame-set-size: entering; args ~s ~s ~s ~s"
 		x y width height)
 	       (let-values ([(correct-w correct-h)
 			     (correct-size width height)])
-		 (mred:debug:printf
+		 (PRINTF
 		  'container-frame-set-size
 		  "container-frame-set-size: correct size ~s ~s"
 		  correct-w correct-h)
@@ -211,7 +194,7 @@
 				     (get-two-int-values get-client-size)])
 			 (let ([panel-w (- f-client-w (* 2 WX-BORDER-SIZE))]
 			       [panel-h (- f-client-h (* 2 WX-BORDER-SIZE))])
-			   (mred:debug:printf
+			   (PRINTF
 			    'container-frame-set-size
 			    (string-append
 			     "container-frame-set-size: "
@@ -221,7 +204,7 @@
 				 WX-BORDER-SIZE WX-BORDER-SIZE
 				 panel-w panel-h))))
 		     (begin
-		       (mred:debug:printf
+		       (PRINTF
 			'container-frame-set-size
 			(string-append
 			 "Container-frame-set-size: passing correct size to "
@@ -274,8 +257,8 @@
 	    ;            contents.  Each direction is handled
 	    ;            independently.
 	    [on-size
-	     (lambda (new-width new-height)
-	       (mred:debug:printf 'container-frame-on-size
+	     (opt-lambda (new-width new-height [force? #f])
+	       (PRINTF 'container-frame-on-size
 				  (string-append
 				   "container-frame-on-size: "
 				   "Entered frame's on-size; args ~s ~s")
@@ -285,25 +268,26 @@
 		     [new-height (get-height)])
 		 (let-values ([(correct-w correct-h)
 			       (correct-size new-width new-height)])
-		   (mred:debug:printf 'container-frame-on-size
-				      (string-append
-				       "container-frame-on-size: "
-				       "Correct size ~s ~s")
-				      correct-w correct-h)
+		   (PRINTF 'container-frame-on-size
+			   (string-append
+			    "container-frame-on-size: "
+			    "Correct size ~s ~s")
+			   correct-w correct-h)
 		   (unless (and (= new-width correct-w)
 				(= new-height correct-h)
-				(not in-force))
-		     (mred:debug:printf 
+				(not force?))
+		     (PRINTF 
 		      'container-frame-on-size
 		      (string-append
 		       "container-frame-on-size: "
 		       "resizing frame to correct size"))
 		     (set-size -1 -1 correct-w correct-h))
-		   (mred:debug:printf 
+		   (PRINTF 
 		    'container-frame-on-size
 		    (string-append
 		     "container-frame-on-size: "
 		     "Leaving onsize at the end.")))))])
+
 	  (sequence
 	    (apply super-init args)
 	    (set! object-ID counter)
@@ -361,4 +345,4 @@
 		   (super-init parent title modal x y w h
 			       (bitwise-ior style wx:const-allow-auto-resize)
 			       name))
-		 args))))))
+		 args)))))))

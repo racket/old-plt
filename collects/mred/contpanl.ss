@@ -64,7 +64,9 @@
 	    
 	    ; list of child-info structs corresponding to the children.  (#f
 	    ;  if no longer valid.)
-	    [children-info null])
+	    [children-info null]
+
+	    [ignore-redraw-request? #f])
 	  
 	  (public
 	    
@@ -151,17 +153,17 @@
 		   "showing and hiding children as appropriate"))
 		 (let ([added-children (list-diff new-children children)]
 		       [removed-children (list-diff children new-children)])
-		   (for-each (lambda (child) (send child show #t))
-			     added-children)
 		   (for-each (lambda (child) (send child show #f))
-			     removed-children))
-		 (PRINTF
-		  'container-panel-change-children
-		  (string-append
-		   "container-panel-change-children: "
-		   "Changing children list and forcing redraw."))
-		 (set! children new-children)
-		 (force-redraw)))]
+			     removed-children)
+		   (PRINTF
+		    'container-panel-change-children
+		    (string-append
+		     "container-panel-change-children: "
+		     "Changing children list and forcing redraw."))
+		   (set! children new-children)
+		   (force-redraw)
+		   (for-each (lambda (child) (send child show #t))
+			     added-children))))]
 	    
 	    ; delete-child: removes a child from the panel.
 	    ; input: child: child to delete.
@@ -202,6 +204,11 @@
 	    ; returns: nothing
 	    ; effects: sends a message up to the top container to redraw
 	    ;   itself and all of its children.
+	    [child-redraw-request
+	     (lambda (from)
+	       (unless (or ignore-redraw-request?
+			   (not (memq from children)))
+		 (force-redraw)))]
 	    [force-redraw
 	     (lambda ()
 	       (PRINTF
@@ -219,7 +226,7 @@
 		    (string-append
 		     "container-panel-force-redraw: "
 		     "calling parent's force-redraw"))
-		   (send parent force-redraw))))]
+		   (send parent child-redraw-request this))))]
 	    
 	    ; get-min-graphical-size: poll children and return minimum possible
 	    ;   size, as required by the graphical representation of the tree,
@@ -285,14 +292,9 @@
 			(same-dimension? y (get-y))
 			(same-dimension? width (get-width))
 			(same-dimension? height (get-height)))
-		   (begin
-		     (PRINTF
-		      'container-panel-set-size
-		      "container-panel-set-size: redrawing children")
-		     (call-with-values
-		      (lambda ()
-			(get-two-int-values get-client-size))
-		      redraw))
+		   (PRINTF
+		    'container-panel-set-size
+		    "container-panel-set-size: do nothing")
 		   (begin
 		     (PRINTF
 		      'container-panel-set-size
@@ -322,6 +324,10 @@
 		'container-panel-on-size
 		"container-panel-on-size: Current size: ~s ~s"
 		(get-width) (get-height))
+	       (force-redraw))]
+
+	    [on-container-resize
+	     (lambda ()
 	       (let-values ([(client-width client-height)
 			     (get-two-int-values get-client-size)])
 		 (if (and (number? curr-width)
@@ -329,19 +335,19 @@
 			  (= curr-width client-width)
 			  (= curr-height client-height))
 		     (PRINTF
-		      'container-panel-on-size
+		      'container-panel-on-resized
 		      (string-append
-		       "Container-panel-on-size: "
+		       "Container-panel-resized: "
 		       "same size so not redrawing."))
 		     (begin
 		       (PRINTF
-			'container-panel-on-size
-			"container-panel-on-size: Client size: ~s x ~s"
+			'container-panel-on-resized
+			"container-panel-on-resized: Client size: ~s x ~s"
 			client-width client-height)
-		       '(begin (set! curr-width client-width)
-			       (set! curr-height client-height))
+		       (set! curr-width client-width)
+		       (set! curr-height client-height)
 		       (redraw client-width client-height)))))]
-	    
+
 	    ; place-children: determines where each child of panel should be
 	    ; placed.
 	    ; input: children-info: list of mred:child-info structs
@@ -370,21 +376,30 @@
 	    ; effects: places children at default positions in panel.
 	    [redraw
 	     (lambda (width height)
+	       (let ([children-info (get-children-info)])
+		 (panel-redraw children children-info
+			       (place-children children-info width height))))]
+	    [panel-redraw
+	     (lambda (childs child-infos placements)
 	       (PRINTF
 		'container-panel-redraw
 		"container-panel-redraw: Redrawing panel's children")
-	       (let ([children-info (get-children-info)])
-		 (for-each
-		  (lambda (child info placement)
-		    (let-values ([(x y w h) (apply values placement)])
-		      (let ([xm (child-info-x-margin info)]
-			    [ym (child-info-y-margin info)])
-			(send child set-size
-			      (+ x xm) (+ y ym)
-			      (- w (* 2 xm)) (- h (* 2 ym))))))
-		  children
-		  children-info
-		  (place-children children-info width height))))])
+	       (for-each
+		(lambda (child info placement)
+		  (let-values ([(x y w h) (apply values placement)])
+		    (let ([xm (child-info-x-margin info)]
+			  [ym (child-info-y-margin info)])
+		      (dynamic-wind
+		       (lambda () (set! ignore-redraw-request? #t))
+		       (lambda ()
+			 (send child set-size
+			       (+ x xm) (+ y ym)
+			       (- w (* 2 xm)) (- h (* 2 ym))))
+		       (lambda () (set! ignore-redraw-request? #f)))
+		      (send child on-container-resize))))
+		childs
+		child-infos
+		placements))])
 	  (sequence
 	    (apply super-init
 		   (apply 
@@ -655,7 +670,8 @@
 	    object-ID
 	    children
 	    set-children
-	    force-redraw)
+	    force-redraw
+	    panel-redraw)
 	  
 	  (rename
 	    [super-add add-child]
@@ -769,8 +785,8 @@
 			[y-size (if y-stretch
 				    (- height (* 2 (border)))
 				    y-min)])
-		   (list x-posn y-posn x-size y-size))))]
-	    
+		   (list (list x-posn y-posn x-size y-size)))))]
+	
 	    [redraw
 	     (lambda (width height)
 	       (PRINTF
@@ -778,10 +794,9 @@
 		"container-panel-redraw: Entering redraw; object ~s"
 		object-ID)
 	       (unless (null? active)
-		 (apply
-		  (ivar active set-size)
-		  ; we don't really care about the children info...
-		  (place-children null width height))))])
+		 (panel-redraw (list active) 
+			       (list (send active get-info))
+			       (place-children null width height))))])
 	  (sequence
 	    (PRINTF 'container-single-panel
 			       "About to call single-panel's super-init")

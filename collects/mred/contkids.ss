@@ -141,10 +141,6 @@
 	    (rename
 	      [super-set-size set-size])
 	    
-	    (private
-	      [in-force #f]) ; flag reflecting whether or not we're in the
-	    ; middle of processing a force-redraw request.
-	    
 	    (public
 	      
 	      [on-default-action
@@ -275,8 +271,6 @@
 	      ;   invalid.
 	      [force-redraw
 	       (lambda ()
-		 (set! in-force #t)
-		 ; the matching (set! in-force #f) is in set-size.
 		 (PRINTF
 		  'container-child-force-redraw
 		  (string-append
@@ -290,7 +284,7 @@
 		      (string-append
 		       "container-child-force-redraw: "
 		       "calling parent's force-redraw and quitting"))
-		     (send parent force-redraw))))]
+		     (send parent child-redraw-request this))))]
 	      
 	      ; set-size: caches calls to set-size to avoid unnecessary work.
 	      ; input: x/y: new position for object
@@ -304,15 +298,15 @@
 		 (unless (and (same-dimension? x (get-x))
 			      (same-dimension? y (get-y))
 			      (same-dimension? width (get-width))
-			      (same-dimension? height (get-height))
-			      (not in-force))
+			      (same-dimension? height (get-height)))
 		   (PRINTF 'container-child-set-size
 			   (string-append
 			    "container-child-set-size: "
 			    "Calling super-set-size ~s ~s ~s ~s")
 			   x y width height)
-		   (set! in-force #f)
 		   (super-set-size x y width height)))]
+
+	      [on-container-resize void] ; This object doesn't contain anything
 	      
 	      ; get-min-size: computes the minimum size the item can
 	      ;   reasonably assume.

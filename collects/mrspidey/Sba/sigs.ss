@@ -478,6 +478,7 @@
     template-structure
     template-mvalues
     template-image
+    template-text-box
     template-internal-class
     template-all-ivars
     template-dots

@@ -109,6 +109,7 @@
   (define AV-undefined (void))
   (define AV-top-s (void))
   (define AV-image (void))
+  (define AV-text-box (void))
 
   (define (mk-tvar-nil)   (mk-Tvar-init-AV 'nil   AV-nil))
   (define (mk-tvar-numb)  (mk-Tvar-init-AV 'num   AV-numb))
@@ -124,6 +125,7 @@
 	(mk-Tvar 'void)))
   (define (mk-tvar-undefined) (mk-Tvar-init-AV 'undefined AV-undefined))
   (define (mk-tvar-image)   (mk-Tvar-init-AV 'image AV-image))
+  (define (mk-tvar-text-box)   (mk-Tvar-init-AV 'text-box AV-text-box))
 
   (define (init-common-AV!)
     (unless (template? template-nil)
@@ -140,6 +142,7 @@
     (set! AV-undefined (make-constructed-AV-template template-undefined))
     (set! AV-top-s  (make-constructed-AV-template template-top-s))
     (set! AV-image  (make-constructed-AV-template template-image))
+    (set! AV-text-box  (make-constructed-AV-template template-text-box))
     )
 
   ;; ======================================================================
@@ -209,17 +212,13 @@
 	     (let ([tvar-e (mk-Tvar 'box-field)])
 	       (new-AV! tvar-e (traverse-const-exact b))
 	       (make-constructed-AV 'box tvar-e))]
-	    [($ zodiac:external _ _ _ img)
-	     (if (is-a? img image-snip%)
-		 (make-constructed-AV 'image)
-		 (error "traverse-const-exact: unknown external ~s" img))]
-;            [(? struct? s)
-;	     (let ([tvar-e (mk-Tvar 'struct-field)])
-;	       (printf "Found the struct!~n")
-;	       (for-each
-;		(lambda (e) (new-AV! tvar-e (traverse-const-exact e)))
-;		(cdr (vector->list (struct->vector s))))
-;	       (make-constructed-AV 'struct tvar-e))]
+	    [($ zodiac:external _ _ _ ext)
+	     (cond 
+	      [(is-a? ext image-snip%)
+	       (make-constructed-AV 'image)]
+	      [(is-a? ext editor-snip%)
+	       (make-constructed-AV 'text-box)]
+	      [else (error "traverse-const-exact: unknown external" ext)])]
 	    [(? box? b)
 	     (let ([tvar-e (mk-Tvar 'box-field)])
 	       (new-AV! tvar-e (traverse-const-exact (unbox b)))

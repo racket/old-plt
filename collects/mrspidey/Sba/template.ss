@@ -153,6 +153,7 @@
   (define template-dots   (void))
   (define template-ivarset (void))
   (define template-image (void))
+  (define template-text-box (void))
 
   (define (init-default-constructor-env!)
     (pretty-debug ' (init-default-constructor-env!))
@@ -178,6 +179,7 @@
     (set! template-structure (add-constructor! 'structure:))
     (set! template-mvalues   (add-constructor! 'mvalues #f))
     (set! template-image   (add-constructor! 'image ))
+    (set! template-text-box   (add-constructor! 'text-box ))
     (set! template-internal-class 
 	  (extend-constructor-env! 
 	   (make-template

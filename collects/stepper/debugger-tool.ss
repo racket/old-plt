@@ -27,6 +27,7 @@
       
       (define image? x:image?)
   
+      
       (define debugger-frame%
         (class (drscheme:frame:basics-mixin (frame:frame:standard-menus-mixin frame:frame:basic%))
           
@@ -97,60 +98,12 @@
           (super-instantiate ("Debugger" #f debugger-initial-width debugger-initial-height))))
   
       (define (view-controller-go drscheme-frame program-expander)
-
-        (local
-            
-            ; build gui object:
-            
-            ((define continue-semaphore #f)
-             
-             (define (next)
-               (send next-button enable #f)
-               (if (send s-frame get-can-step)
-                   (semaphore-post continue-semaphore)
-                   (message-box "Stepper"
-                                (string-append
-                                 "The source text for this program has changed or is no longer "
-                                 "available.  No further steps can be computed."))))
-        
-             (define s-frame (make-object debugger-frame% drscheme-frame))
-             
-             (define button-panel (make-object horizontal-panel% (send s-frame get-area-container)))
-             (define next-button (make-object button% "Next >>" button-panel (lambda (_1 _2) (next))))
-                
-             (define canvas (instantiate editor-canvas% () (parent (send s-frame get-area-container))))
-             (define text (instantiate frame:text:basic% ()))
-                
-             (define (print-current-view item evt)
-               (send (send canvas get-editor) print))
-                
-             ; receive-result takes a result from the model and renders it on-screen
-             ; : (string semaphore -> void)
-             (define (receive-result result continue-user-computation-semaphore)
-               (send text insert result (send text last-position) 'same #t)
-               (set! continue-semaphore continue-user-computation-semaphore)
-               (send next-button enable #t))
-                
-             ; need to capture the custodian as the thread starts up:
-             (define (program-expander-prime init iter)
-               (program-expander (lambda args
-                                   (send s-frame set-custodian! (current-custodian))
-                                   (apply init args))
-                                 iter)))
+        (let ([esp (make-eventspace)])
+          (thread 
+           (lambda ()
+             (graphical-read-eval-print-loop esp #t)))
           
-          
-          (send canvas set-editor text)
-          (send s-frame set-printing-proc print-current-view)
-          (send button-panel stretchable-width #f)
-          (send button-panel stretchable-height #f)
-          (send canvas stretchable-height #t)
-          (send next-button enable #f)
-          (send (send s-frame edit-menu:get-undo-item) enable #f)
-          (send (send s-frame edit-menu:get-redo-item) enable #f)
-          (model:go program-expander-prime receive-result)
-          (send s-frame show #t)
-          
-          s-frame))
+          (model:go program-expander esp)))
   
       (define debugger-bitmap
         (drscheme:unit:make-bitmap
@@ -159,7 +112,6 @@
 
       (define debugger-unit-frame<%>
         (interface ()
-          get-debugger-frame
           on-debugger-close))
       
       (define (debugger-unit-frame-mixin super%)
@@ -168,10 +120,9 @@
           (inherit get-button-panel get-interactions-text get-definitions-text)
           (rename [super-on-close on-close])
           
-          (define debugger-frame #f)
+          (define debugger-exists #f)
           (define/public (on-debugger-close)
-            (set! debugger-frame #f))
-          (define/public (get-debugger-frame) debugger-frame)
+            (set! debugger-exists #f))
           
           (super-instantiate ())
           
@@ -215,9 +166,17 @@
               (debugger-bitmap this)
               (get-button-panel)
               (lambda (button evt)
-                (if debugger-frame
-                    (send debugger-frame show #t)
-                    (set! debugger-frame (view-controller-go this program-expander))))))
+                (if debugger-exists
+                    (message-box/custom "Debugger Exists"
+                                        "There is already a debugger window open for this program."
+                                        "OK"
+                                        #f
+                                        #f
+                                        #f
+                                        '(default=1))
+                    (begin
+                      (set! debugger-exists #t)
+                      (view-controller-go this program-expander))))))
           
           (rename [super-enable-evaluation enable-evaluation])
           (define/override (enable-evaluation)
@@ -229,37 +188,7 @@
             (send debugger-button enable #f)
             (super-disable-evaluation))
           
-          (define/override (on-close)
-            (when debugger-frame
-              (send debugger-frame original-program-gone))
-            (super-on-close))
-          
           (send (get-button-panel) change-children
                 (lx (cons debugger-button (remq debugger-button _))))))
       
-
-      (define (debugger-definitions-text-mixin %)
-        (class %
-          
-          (inherit get-top-level-window)
-          (define/private (notify-debugger-frame-of-change)
-            (let ([win (get-top-level-window)])
-              (when (is-a? win debugger-unit-frame<%>) ;; should only be #f when win is #f.
-                (let ([debugger-window (send win get-debugger-frame)])
-                  (when debugger-window
-                    (send debugger-window original-program-changed))))))
-          
-          (rename [super-on-insert on-insert])
-          (define/override (on-insert x y)
-            (super-on-insert x y)
-            (notify-debugger-frame-of-change))
-          
-          (rename [super-on-delete on-delete])
-          (define/override (on-delete x y)
-            (super-on-delete x y)
-            (notify-debugger-frame-of-change))
-          
-          (super-instantiate ())))
-      
-      (drscheme:get/extend:extend-unit-frame debugger-unit-frame-mixin)
-      (drscheme:get/extend:extend-definitions-text debugger-definitions-text-mixin))))
+      (drscheme:get/extend:extend-unit-frame debugger-unit-frame-mixin))))

@@ -1,3 +1,5 @@
+
+
 (module debugger-model mzscheme
   (require (lib "contracts.ss")
            (lib "etc.ss")
@@ -14,41 +16,43 @@
         void?))
     
   (provide/contract [go (-> program-expander-contract ; program-expander
-                            (-> string? semaphore? void?) ; receive-result
+                            eventspace? ; debugger-eventspace
                             void?)])
   
   (define (send-to-eventspace eventspace thunk)
     (parameterize ([current-eventspace eventspace])
       (queue-callback thunk)))
 
+  (define debugger-debugger-error-port (current-error-port))
+  
   ; go starts a stepper instance
   (define go 
-    (lambda (program-expander receive-result)
+    (lambda (program-expander debugger-eventspace)
       (local
           
-          ((define current-expr #f)
+          ((define debugger-out-port #f)
+           
+           (define current-expr #f)
            
            (define packaged-envs (a:make-initial-env-package))
            
-           (define drscheme-eventspace (current-eventspace))
-           
-           (define (send-to-drscheme-eventspace thunk)
-             (send-to-eventspace drscheme-eventspace thunk))
-           
-           (define user-computation-semaphore (make-semaphore))
+           (define (send-to-debugger-eventspace thunk)
+             (send-to-eventspace debugger-eventspace thunk))
            
            (define basic-eval (current-eval))
+
+           (define user-program-semaphore (make-semaphore))
+           (define receive-result (make-parameter void))
+           
+           (define user-custodian (box #f))
            
            (define (break mark-set break-kind returned-value-list)
-             (let* ([mark-list (extract-mark-list mark-set)]
-                    [formatted (map (lambda (num mark) (format "mark ~a:\n~a" num (display-mark mark)))
-                                    (build-list (length mark-list) (lx _))
-                                    mark-list)])
-               (send-to-drscheme-eventspace
+             (let* ([mark-list (extract-mark-list mark-set)])
+               (send-to-debugger-eventspace
                 (lambda ()
-                  (receive-result (format "*breakpoint*\nmark-list:\n~abreak-kind: ~a\nreturned-value-list: ~a\n" formatted break-kind returned-value-list)
-                                  user-computation-semaphore)))
-               (semaphore-wait user-computation-semaphore)))
+                  ((receive-result) (make-normal-breakpoint-info mark-list break-kind returned-value-list))
+                  ((receive-result) (make-breakpoint-halt))))
+               (semaphore-wait user-program-semaphore)))
            
            (define (step-through-expression expanded expand-next-expression)
              (let*-values ([(annotated envs) (a:annotate expanded packaged-envs break 
@@ -58,22 +62,40 @@
                (let ([expression-result
                       (parameterize ([current-eval basic-eval])
                         (eval annotated))])
-                 (send-to-drscheme-eventspace
+                 (send-to-debugger-eventspace
                   (lambda ()
-                    (receive-result (format "*expression finished*\nresulting value: ~a" expression-result)
-                                    user-computation-semaphore)))
-                 (semaphore-wait user-computation-semaphore)
+                    ((receive-result) (make-expression-finished (list expression-result)))
+                    ((receive-result) (make-breakpoint-halt))))
+                 (semaphore-wait user-program-semaphore)
                  (expand-next-expression))))
            
            (define (err-display-handler message exn)
-             (send-to-drscheme-eventspace
+             (send-to-debugger-eventspace
               (lambda ()
-                (receive-result (format "*error*\nmessage: ~a" message)
-                                user-computation-semaphore)))))
+                ((receive-result) (make-error-breakpoint-info message))))))
         
+
+        ; set up bindings in grepl:
+        
+        (fprintf debugger-debugger-error-port "about to set up debugger.\n")
+        
+        (parameterize ([current-eventspace debugger-eventspace])
+          (queue-callback 
+           (lambda ()
+             (set! debugger-out-port (current-output-port))
+             (namespace-set-variable-value! 'go-semaphore user-program-semaphore)
+             (namespace-set-variable-value! 'receive-result receive-result)
+             (namespace-set-variable-value! 'user-custodian user-custodian))))
+        
+        (fprintf debugger-debugger-error-port "about to call expand-program.\n")
+
         (program-expander
          (lambda ()
-           (error-display-handler err-display-handler)) ; init
+           (set-box! user-custodian (current-custodian))
+           (current-output-port debugger-out-port)
+           (error-display-handler err-display-handler)
+           (fprintf debugger-debugger-error-port "about to perform first wait.\n")
+           (semaphore-wait user-program-semaphore)) ; init
          (lambda (expanded continue-thunk) ; iter
            (unless (eof-object? expanded)
                (step-through-expression expanded continue-thunk))))))))

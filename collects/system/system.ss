@@ -130,7 +130,9 @@
 	   (let ([hd (getenv "HOMEDRIVE")]
 		 [hp (getenv "HOMEPATH")])
 	     (when (and hd hp)
-	       (current-directory (build-path hd hp)))))
+	       (let ([path (build-path hd hp)])
+		 (when (directory-exists? path)
+		   (current-directory path))))))
 
 	 (mred:invoke)
 	 (mred:build-spidey-unit)

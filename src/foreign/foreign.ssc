@@ -919,7 +919,7 @@ void free_libffi_type(void *ignored, void *p)
       scheme_wrong_type(MYNAME, "list-of-non-void-C-types", 0, argc, argv);
     elements[i] = CTYPE_PRIMTYPE(base);
   }
-  /* allocate the new libffi type object: use malloc so it is not movable */
+  /* allocate the new libffi type object */
   libffi_type = malloc(sizeof(ffi_type));
   libffi_type->size      = 0;
   libffi_type->alignment = 0;
@@ -1370,7 +1370,6 @@ void do_ptr_finalizer(void *p, void *finalizer)
   }
   if (!(SCHEME_FALSEP(argv[1]) || SCHEME_PROCP(argv[1])))
     scheme_wrong_type(MYNAME, "procedure-or-false", 1, argc, argv);
-  /* !!! throw an error if the old finalizer is not ours */
   scheme_register_finalizer
     (argv[0], (ptrsym ? do_ptr_finalizer : do_scm_finalizer),
      argv[1], NULL, &old);
@@ -1539,12 +1538,12 @@ void ffi_do_callback(ffi_cif* cif, void* resultp, void** args, void *userdata)
   ffi_callback_struct *data;
   Scheme_Object *argv_stack[MAX_QUICK_ARGS];
   int argc = cif->nargs, i;
+  Scheme_Object **argv, *p, *v;
 #ifdef MZ_PRECISE_GC
   data = GC_weak_box_val(((struct immobile_box*)userdata)->p);
 #else
   data = (ffi_callback_struct*)userdata;
 #endif
-  Scheme_Object **argv, *p, *v;
   if (argc <= MAX_QUICK_ARGS)
     argv = argv_stack;
   else
@@ -1557,7 +1556,7 @@ void ffi_do_callback(ffi_cif* cif, void* resultp, void** args, void *userdata)
   scheme_to_c(data->otype, resultp, p, NULL);
 }
 
-/* see below */
+/* see ffi-callback below */
 typedef struct closure_and_cif_struct {
   ffi_closure          closure;
   ffi_cif              cif;

@@ -238,17 +238,19 @@
     (lambda (stx)
       (syntax-case stx ()
 	[(_ super (interface ...) body ...)
-	 (with-syntax ([class100* (datum->syntax-object (stx-car stx) 'class100* stx)])
+	 (with-syntax ([class100* (datum->syntax-object (stx-car stx) 'class100* stx)]
+		       [super-init (datum->syntax-object (stx-car stx) 'super-init stx)])
 	   (syntax/loc stx 
-	     (class100* super (interface ...) args body ...)))])))
+	     (class100* super (interface ...) args body ... (sequence (apply super-init args)))))])))
 
   (define-syntax class100-asi
     (lambda (stx)
       (syntax-case stx ()
 	[(_ super body ...)
-	 (with-syntax ([class100* (datum->syntax-object (stx-car stx) 'class100* stx)])
+	 (with-syntax ([class100* (datum->syntax-object (stx-car stx) 'class100* stx)]
+		       [super-init (datum->syntax-object (stx-car stx) 'super-init stx)])
 	   (syntax/loc stx 
-	     (class100* super () args body ...)))])))
+	     (class100* super () args body ... (sequence (apply super-init args)))))])))
   
   (provide class100 class100* class100*/names
 	   class100-asi class100*-asi))

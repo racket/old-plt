@@ -257,14 +257,17 @@ static long scheme_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	case 'e':	  
 	  {
 	    int en;
+	    char *es;
 	    en = va_arg(args, int);
 	    if (en) {
-	      t = strerror(en);
-	      tlen = strlen(t);
+	      es = strerror(en);
 	    } else {
-	      t = "-1";
-	      tlen = 2;
+	      es = "";
 	    }
+	    tlen = strlen(es) + 12;
+	    t = (const char *)scheme_malloc_atomic(tlen);
+	    sprintf((char *)t, "%d: %s", en, es);
+	    tlen = strlen(t);
 	  }
 	  break;
 	case 'S':

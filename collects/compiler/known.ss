@@ -90,8 +90,9 @@
 	      #%hash-table-map #%hash-table-for-each #%make-input-port #%make-output-port))
 
   ;; The valueable? predicate is used to determine how many variables
-  ;;  are reliably set in a mutatlly-recusrive binding context.
-  (define (analyze:valueable? v extra-known-bindings extra-unknown-bindings known-lambdas)
+  ;;  are reliably set in a mutually-recursive binding context.
+  ;; Along the way, we set more `known-binding' information in let and letrec.
+  (define (analyze:valueable? v extra-known-bindings extra-unknown-bindings known-lambdas set-known?)
     (let loop ([v v][extra-known-bindings extra-known-bindings])
       (cond
        [(and (zodiac:set!-form? v)
@@ -140,7 +141,8 @@
        [(zodiac:let-values-form? v)
 	(and (andmap (lambda (vars v) (if (loop v extra-known-bindings)
 					  (begin
-					    (when (= 1 (length vars))
+					    (when (and set-known?
+						       (= 1 (length vars)))
 					      (prephase:set-known-val! (car vars) v))
 					    #t)
 					  #f))
@@ -152,7 +154,8 @@
        [(zodiac:letrec-values-form? v)
 	(and (andmap (lambda (vars v) (if (loop v extra-known-bindings)
 					  (begin
-					    (when (= 1 (length vars))
+					    (when (and set-known?
+						       (= 1 (length vars)))
 					      (prephase:set-known-val! (car vars) v))
 					    #t)
 					  #f))
@@ -166,7 +169,8 @@
 	       [primfun (analyze:prim-fun fun)]
 	       [args (zodiac:app-args v)]
 	       [args-ok? (lambda ()
-			   (andmap (lambda (v) (loop v extra-known-bindings)) args))])
+			   (andmap (lambda (v) (loop v extra-known-bindings)) 
+				   args))])
 	  (if primfun
 
 	      ;; Check whether the primitive can call any procedures:
@@ -187,7 +191,8 @@
 						 body 
 						 extra-known-bindings
 						 extra-unknown-bindings
-						 (cons v known-lambdas)))
+						 (cons v known-lambdas)
+						 #f))
 				 (zodiac:case-lambda-form-bodies v))))])
 		     (cond
 		      [(zodiac:bound-varref? fun)
@@ -370,7 +375,7 @@
 		    ; Mark known letrec-bound vars
 		    (let loop ([varses varses][vals vals][done-vars null])
 		      (unless (null? vals)
-			(when (analyze:valueable? (car vals) done-vars (apply append varses) null)
+			(when (analyze:valueable? (car vals) done-vars (apply append varses) null #t)
 			  
 			  ; Continue known marking
 			  (let ([vars (car varses)])
@@ -561,7 +566,7 @@
 			    (cond
 			     ; analyze:valueable? also annotates unit-definition-set!ed 
 			     ;  bindings as known
-			     [(analyze:valueable? v extra-known-bindings null null)
+			     [(analyze:valueable? v extra-known-bindings null null #t)
 			      (loop (cdr l))]
 			     [else (not-valueable v)])))))
 

@@ -286,6 +286,48 @@
      ;; Close proc
      (lambda () #t))))
 
+;; Read without specials:
+(let* ([p (make-p `("(list "
+		    "a"
+		    " "
+		    "b"
+		    "))")
+		  special-size
+		  (lambda (w l c p)
+		    (error "shouldn't get here")))]
+       [_ (port-count-lines! p)]
+       [v (syntax-e (read-syntax 'ok p))])
+  (test 'list syntax-e (car v))
+  (test 'a syntax-e (cadr v))
+  (test 'b syntax-e (caddr v))
+  (test 1 syntax-line (car v))
+  (test 2 syntax-column (car v))
+  (test 1 syntax-line (cadr v))
+  (test 7 syntax-column (cadr v))
+  (test 1 syntax-line (caddr v))
+  (test 9 syntax-column (caddr v)))
+
+;; Without specials, with newlines:
+(let* ([p (make-p `("(list\n"
+		    "a"
+		    "\n"
+		    "b"
+		    "))")
+		  special-size
+		  (lambda (w l c p)
+		    (error "shouldn't get here")))]
+       [_ (port-count-lines! p)]
+       [v (syntax-e (read-syntax 'ok p))])
+  (test 'list syntax-e (car v))
+  (test 'a syntax-e (cadr v))
+  (test 'b syntax-e (caddr v))
+  (test 1 syntax-line (car v))
+  (test 2 syntax-column (car v))
+  (test 2 syntax-line (cadr v))
+  (test 1 syntax-column (cadr v))
+  (test 3 syntax-line (caddr v))
+  (test 1 syntax-column (caddr v)))
+  
 ;; Simple read:
 (let* ([p (make-p `("(list "
 		    ,a-special
@@ -298,6 +340,25 @@
 		    (test 1 'no-place l)
 		    (test p 'no-place c)
 		    (test #f not (memq p '(7 15)))))]
+       [_ (port-count-lines! p)]
+       [v (read p)])
+  (test 'list car v)
+  (test a-special cadr v)
+  (test b-special caddr v))
+
+;; Read with newlines
+(let* ([p (make-p `("(list\n"
+		    ,a-special
+		    "\n"
+		    ,b-special
+		    "))")
+		  special-size
+		  (lambda (w l c p)
+		    (test l 'no-place l)
+		    (test #f 'no-place w)
+		    (test 1 'no-place c)
+		    (test #f not (memq p '(7 15)))
+		    (test #f not (memq l '(2 3)))))]
        [_ (port-count-lines! p)]
        [v (read p)])
   (test 'list car v)

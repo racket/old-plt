@@ -1121,6 +1121,15 @@ long scheme_get_string(const char *who,
 	if (peek_skip)
 	  scheme_bad_time_for_special(who, port);
       }
+
+      if (!peek) {
+	if (ip->position >= 0)
+	  ip->position++;
+	ip->column++;
+	ip->readpos++;
+	ip->charsSinceNewline++;
+      }
+      
       return SCHEME_SPECIAL;
     }
 
@@ -1173,7 +1182,15 @@ long scheme_get_string(const char *who,
 	    ip->special = NULL;
 	  }
 
-	  return SCHEME_SPECIAL;
+	  if (!peek) {
+	    if (ip->position >= 0)
+	      ip->position++;
+	    ip->column++;
+	    ip->readpos++;
+	    ip->charsSinceNewline++;
+	  }
+
+      	  return SCHEME_SPECIAL;
 	}
 
 	if ((got || total_got) && only_avail) {
@@ -1209,6 +1226,11 @@ long scheme_get_string(const char *who,
       /****************************************************/
       /* Adjust position information for chars got so far */
       /****************************************************/
+
+      /* We don't get here if SCHEME_SPECIAL is returned, so
+	 the positions are updated separately in the two
+	 returning places above. */
+
       if (ip->position >= 0)
 	ip->position += got;
       if (ip->count_lines) {
@@ -1243,6 +1265,40 @@ long scheme_get_string(const char *who,
 	  mzAssert(n > 0);
 	  ip->lineNumber += n;
 	  ip->was_cr = (buffer[offset + got - 1] == '\r');
+
+	  /* Need to fix up column, counting before the found newline,
+             to compute oldColumn: */
+	  if (c) {
+	    int cc;
+
+	    /* Skip a CR that is really part of a found LF: */
+	    cc = c - 1;
+	    if ((cc > 0) 
+		&& (buffer[offset + c] == '\n')
+		&& (buffer[offset + cc] == '\r'))
+	      --cc;
+	    
+	    /* Go back, looking for another LF or CR: */
+	    for (i = cc; i--; ) {
+	      if (buffer[offset + i] == '\n' || buffer[offset + i] == '\r') {
+		break;
+	      }
+	    }
+	    i++;
+
+	    /* Found the previous line; adjust the column: */
+	    for (; i < cc; i++) {
+	      if (buffer[offset + i] == '\t')
+		ip->column = ip->column - (ip->column & 0x7) + 8;
+	      else
+		ip->column++;
+	    }
+	    /* Done. Now we can remember this column value as oldColumn. */
+	  }
+	  ip->oldColumn = ip->column;
+
+	  /* Now reset column to 0: */
+	  ip->column = 0;
 	} else
 	  ip->charsSinceNewline += c;
 
@@ -1259,6 +1315,9 @@ long scheme_get_string(const char *who,
 	mzAssert(ip->position >= 0);
       }
     } else if (!ps) {
+      /***************************************************/
+      /* save newly peeked string for future peeks/reads */
+      /***************************************************/
       /* need to save newly peeked string */
       unsigned char *uca;
       long j, k;
@@ -1546,7 +1605,7 @@ Scheme_Object *scheme_get_special(Scheme_Object *port, Scheme_Object *src, long 
     if (SCHEME_INTP(pd) && SCHEME_INT_VAL(pd) >= 0) {
       pos_delta = SCHEME_INT_VAL(pd) - 1;
     } else if (SCHEME_BIGNUMP(pd) && SCHEME_BIGPOS(pd)) {
-      pos_delta = ip->position - 1; /* drive position to 0 -> lost track */
+      pos_delta = -(ip->position+1); /* drive position to -1 -> lost track */
     } else {
       scheme_wrong_type("port read-special result", 
 			"exact non-negative integer", 1, 

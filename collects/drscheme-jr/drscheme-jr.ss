@@ -47,7 +47,7 @@
 (require-library (build-path plt-dir "lib" "require.ss"))
 (plt:require-library "ariesu.ss")
 (plt:require-library "sparamu.ss")
-(plt:require-library "ricedefu.ss")
+(plt:require-library "userspcu.ss")
 
 (invoke-open-unit/sig plt:mzscheme-parameters@ params)
 
@@ -115,6 +115,15 @@
 	    eof
 	    v)))))
 
+(define read/zodiac
+  (opt-lambda ([port (current-input-port)])
+    (let ([v ((zodiac:read
+	       port
+	       (zodiac:make-location 1 1 0 "port")))])
+      (if (zodiac:eof? v)
+	  eof
+	  (zodiac:sexp->raw v)))))
+
 (define debug-info (lambda () aries:error-box))
 
 (print-struct #t)
@@ -169,22 +178,36 @@
       (mzrice-expand-eval read))))
 
 (define mzrice-load
-  (lambda (f)
-    (call-with-input-file f
-      (lambda (p)
-	(let ([read (let ([t (with-parameterization system-parameterization
-			       (lambda ()
-				 (zodiac:read p (zodiac:make-location 1 1 0 f))))])
-		      (lambda ()
-			(with-parameterization system-parameterization
-			  t)))])
-	  (let loop ([this (read)]
-		     [next (read)])
-	    (cond
-	      [(zodiac:eof? this) (void)]
-	      [(zodiac:eof? next) (mzrice-expand-eval this)]
-	      [else (begin (mzrice-expand-eval this)
-			   (loop next (read)))])))))))
+  (let ([zo-file?
+	 (lambda (f)
+	   (string=? ".zo" (let ([l (string-length f)])
+			     (substring f (- l 3) l))))]
+	[old-handler (current-load)])
+    (lambda (f)
+      (if (zo-file? f)
+	  (with-parameterization parameterization
+	    (lambda ()
+	      (parameterize ([current-eval (with-parameterization 
+					       system-parameterization
+					     current-eval)])
+		((with-parameterization system-parameterization
+		   current-load)
+		 f))))
+	  (call-with-input-file f
+	    (lambda (p)
+	      (let ([read (let ([t (with-parameterization system-parameterization
+				     (lambda ()
+				       (zodiac:read p (zodiac:make-location 1 1 0 f))))])
+			    (lambda ()
+			      (with-parameterization system-parameterization
+				t)))])
+		(let loop ([this (read)]
+			   [next (read)])
+		  (cond
+		    [(zodiac:eof? this) (void)]
+		    [(zodiac:eof? next) (mzrice-expand-eval this)]
+		    [else (begin (mzrice-expand-eval this)
+				 (loop next (read)))])))))))))
 
 (define parameterization (make-parameterization))
 
@@ -204,11 +227,12 @@
 	       (import)
 	       (link
 		[params : plt:parameters^ (plt:mzscheme-parameters@)]
-		[ricedefs : ricedefs^ (ricedefs@ params)])
-	       (export (open ricedefs))))])
+		[userspace : plt:userspace^ (plt:userspace@ params)])
+	       (export (open userspace))))])
     (lambda ()
       (current-namespace namespace)
       (eval `(#%define argv ,argv))
+      (eval `(#%define read/zodiac ,read/zodiac))
       (invoke-open-unit u@)
       (read-case-sensitive params:case-sensitive?)
       (current-prompt-read prompt-read)
@@ -217,5 +241,4 @@
       (current-exception-handler exception-handler)
       (current-load mzrice-load) 
       (current-eval mzrice-eval))))
-
 (current-parameterization parameterization)

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_dc.cc,v 1.2 1998/05/26 19:21:26 robby Exp $
+ * RCS_ID:      $Id: wb_dc.cc,v 1.3 1998/08/19 20:59:22 robby Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -30,27 +30,6 @@
 #include "wx_canvs.h"
 #include "wx_dialg.h"
 #include "wx_main.h"
-
-// If not MS C++, don't include wx.h: we'll just include
-// the minimum set of files.
-// If MS C++, we'll use a precompiled header instead.
-#if !defined(_MSC_VER) && !defined(wx_wxh)
-#define wx_wxh
-#endif
-
-#include "wx.h"
-
-#include "math.h"
-
-#ifndef wx_mac
-#if USE_SPLINES
-# if USE_XFIG_SPLINE_CODE
-#  include "../base/xfspline.cc"
-# else
-#  include "../base/wxspline.cc"
-# endif
-#endif // USE_SPLINES
-#endif
 
 // Default constructor
 wxbDC::wxbDC(void)

@@ -327,6 +327,31 @@
 (test '("hey," "um..." "hi" "there") 'to-rest (send (instantiate to-rest3% ("hi" "there")) get-args))
 
 ;; ------------------------------------------------------------
+;; Test send/apply dotted send and method-call forms:
+
+(define dotted% (class object%
+		  (public f g)
+		  (define (f x y z)
+		    (list z y x))
+		  (define (g x)
+		    (let ([w (list x (add1 x) (+ x 2))])
+		      (f . w)))
+		  (super-make-object)))
+(define dotted (make-object dotted%))
+(test '(3 2 1) 'dotted (send dotted f 1 2 3))
+(test '(9 8 7) 'dotted (send dotted g 7))
+(let ([l (list 3 5 6)])
+  (test '(6 5 3) 'dotted (send dotted f . l))
+  (test '(6 5 3) 'dotted (send/apply dotted f l))
+  (test '(9 8 7) 'dotted (send/apply dotted f '(7 8 9))))
+(let ([l (list 6 8)])
+  (test '(8 6 2) 'dotted (send dotted f 2 . l))
+  (test '(8 6 2) 'dotted (send/apply dotted f 2 l))
+  (test '(9 7 3) 'dotted (send/apply dotted f 3 '(7 9))))
+
+(syntax-test #'(send/apply dotted f 2 . l))
+
+;; ------------------------------------------------------------
 ;; Test public*, define-public, etc.
 
 (syntax-test #'(class object% public*))

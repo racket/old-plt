@@ -50,11 +50,11 @@
 (err/rt-test (filter cons '(1 2 3)))
 (arity-test filter 2 2)
 
-(test 0 assf add1 '(0 1 2))
-(test 0 assf number? '(a 0 1 2 c))
-(test "ok" assf string? '(a 0 1 "ok" 2 c))
-(err/rt-test (assf cons '(1 2 3)))
-(err/rt-test (assf string? '(1 2 3 . 4)) exn:application:mismatch?)
+(err/rt-test (assf add1 '(0 1 2)) exn:application:mismatch?)
+(test '(0 x) assf number? '((a 1) (0 x) (1 w) (2 r) (c 17)))
+(test '("ok" . 10) assf string? '((a 0) (0 a) (1 w) ("ok" . 10) (2 .7) c))
+(err/rt-test (assf cons '((1) (2) (3))))
+(err/rt-test (assf string? '((1) (2) (3) . 4)) exn:application:mismatch?)
 
 (test '("a" "b" "c" "c" "d" "e" "f")
       quicksort 

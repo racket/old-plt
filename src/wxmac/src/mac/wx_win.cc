@@ -256,14 +256,10 @@ wxWindow::wxWindow // Constructor (given objectType; i.e., menu or menuBar)
 
 static wxWindow *entered;
 
-FILE *log_file_ptr = fopen("drscheme.log","w");
-
 //-----------------------------------------------------------------------------
 wxWindow::~wxWindow(void) // Destructor
 {
 	
-	fprintf(log_file_ptr,"D%X\n",this);
-	fflush(log_file_ptr);
 	wxPanel *panel = (wxPanel *) GetParent ();
 	if (panel)
 	{
@@ -1033,10 +1029,6 @@ Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *win, wxMouseEvent *evt);
 
 static void SendEnterLeaveEvent(wxWindow *target, int eventtype, wxWindow *evtsrc, wxMouseEvent *evt)
 {
-	if (eventtype == wxEVENT_TYPE_LEAVE_WINDOW) {
-	  fprintf(log_file_ptr,"R%X\n", target);
-	  fflush(log_file_ptr);
-	}
     if (!target->IsHidden()) {
 	    wxMouseEvent *theMouseEvent = new wxMouseEvent(eventtype);
 	    theMouseEvent->leftDown = evt->leftDown;
@@ -1065,8 +1057,6 @@ extern QueueMrEdEvent(EventRecord *e);
 
 static void QueueLeaveEvent(wxWindow *target, wxWindow *evtsrc, wxMouseEvent *evt)
 {
-   fprintf(log_file_ptr,"Q%X\n",target);
-   fflush(log_file_ptr);
    EventRecord e;
    
    int clientHitX = evt->x;
@@ -1119,7 +1109,6 @@ Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *win, wxMouseEvent *evt)
 	    } else
 	      p = win->GetRootFrame()->GetParent();
 		
-		//fprintf(log_file_ptr,"Entering window: %X\n", win);
 	    entered = win;
 	    
 	    while (1) {

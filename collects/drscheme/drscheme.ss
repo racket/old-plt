@@ -1,4 +1,7 @@
-(require-library "errortrace.ss" "errortrace")
+;(require-library "errortrace.ss" "errortrace")
+
+;(current-load (let ([ol (current-load)]) (lambda (x) (printf "~a~n" x) (ol x))))
+
 (define graphical-debug? (getenv "GRAPHICAL_DEBUG"))
 (define textual-debug? #f)
 

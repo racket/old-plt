@@ -6,8 +6,8 @@
    drawing
    ellipses
 
-   (struct size (width height descent space left right))
-   (struct pos (x y))
+   ;(struct size (width height descent space left right))
+   ;(struct pos (x y))
    position
    sup sub
 

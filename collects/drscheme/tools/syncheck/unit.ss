@@ -347,6 +347,10 @@
 	   [on-change
 	    (lambda ()
 	      (when arrow-vector
+		(let loop ([n (vector-length arrow-vector)])
+		  (unless (zero? n)
+		    (for-each update-poss (vector-ref arrow-vector (- n 1)))
+		    (loop (- n 1))))
 		(invalidate-bitmap-cache)))]
 
 	   [on-paint

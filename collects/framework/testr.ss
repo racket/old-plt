@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.25 1999/07/20 22:04:42 mflatt Exp $
+;; $Id: testr.ss,v 1.26 1999/09/11 22:05:57 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -22,9 +22,6 @@
 
   (define initial-run-interval 100)  ;; milliseconds
   
-  (define run-error error)  ;; naive error handling
-  (define arg-error error)
-  
   ;;
   ;; The minimum time an action is allowed to run before returning from
   ;; mred:test:action.  Controls the rate at which actions are started, 
@@ -41,7 +38,7 @@
         [()   msec]
 	[(x)  (if (and (integer? x) (exact? x) (<= 0 x))
 		  (set! msec x)
-		  (run-error tag "expects exact, non-negative integer, given: ~s" x))])))
+		  (error tag "expects exact, non-negative integer, given: ~s" x))])))
   
   ;;
   ;; How we get into the handler thread, and put fake actions 
@@ -259,7 +256,7 @@
 	[(string? b-desc)
 	 (let* ([active-frame (get-active-frame)]
 		[_ (unless active-frame
-		     (run-error object-tag
+		     (error object-tag
 				"could not find object: ~a, no active frame" 
 				b-desc))]
 		[found
@@ -274,12 +271,12 @@
 			  (send panel get-children)))])
 	   (if found
 	       found
-	       (run-error object-tag 
+	       (error object-tag 
 			  "no object of class ~a named ~s in active frame"
 			  obj-class
 			  b-desc)))]
 	[(is-a? b-desc obj-class) b-desc]
-	[else (run-error 
+	[else (error 
 	       object-tag
 	       "expected either a string or an object of class ~a as input, received: ~a"
 	       obj-class b-desc)])))
@@ -297,11 +294,11 @@
 	       [ctrl (find-ctrl)])
 	   (cond
 	     [(not (send ctrl is-shown?))
-	      (run-error error-tag "control ~e is not shown (label ~e)" ctrl (send ctrl get-label))]
+	      (error error-tag "control ~e is not shown (label ~e)" ctrl (send ctrl get-label))]
 	     [(not (send ctrl is-enabled?))
-	      (run-error error-tag "control ~e is not enabled (label ~e)" ctrl (send ctrl get-label))]
+	      (error error-tag "control ~e is not enabled (label ~e)" ctrl (send ctrl get-label))]
 	     [(not (in-active-frame? ctrl))
-	      (run-error error-tag "control ~e is not in active frame (label ~e)" ctrl (send ctrl get-label))]
+	      (error error-tag "control ~e is not in active frame (label ~e)" ctrl (send ctrl get-label))]
 	     [else
 	      (update-control ctrl)
 	      (send ctrl command event)
@@ -427,22 +424,22 @@
      [(key modifier-list)
       (cond
 	[(not (or (char? key) (memq key valid-key-symbols)))
-	 (arg-error key-tag "expects char or valid key symbol, given: ~s" key)]
+	 (error key-tag "expects char or valid key symbol, given: ~s" key)]
 	[(verify-list  modifier-list  legal-keystroke-modifiers)
-	 => (lambda (mod) (arg-error key-tag "unknown key modifier: ~s" mod))]
+	 => (lambda (mod) (error key-tag "unknown key modifier: ~s" mod))]
 	[else
 	 (run-one
 	  (lambda ()
 	    (let ([window (get-focused-window)])
 	      (cond
 		[(not window)
-		 (run-error key-tag "no focused window")]
+		 (error key-tag "no focused window")]
 		[(not (send window is-shown?))
-		 (run-error key-tag "focused window is not shown")]
+		 (error key-tag "focused window is not shown")]
 		[(not (send window is-enabled?))
-		 (run-error key-tag "focused window is not enabled")]
+		 (error key-tag "focused window is not enabled")]
 		[(not (in-active-frame? window))
-		 (run-error key-tag "focused window is not in active frame")]
+		 (error key-tag "focused window is not in active frame")]
 		[else
 		 (let ([event (make-key-event key window modifier-list)])
 		   (send-key-event window event)
@@ -458,7 +455,7 @@
 	      [(is-a? window mred:text-field%)
 	       (send (send window get-editor) on-char event)]
 	      [else 
-	       (run-error
+	       (error
 		key-tag
 		"focused window is not a text-field% and does not have on-char")])]
 	    [(send (car l) on-subwindow-char window event) #f]
@@ -493,7 +490,7 @@
 	      [(eq? mod 'nocontrol)  (send event set-control-down #f)]
 	      [(eq? mod 'nometa)     (send event set-meta-down    #f)]
 	      [(eq? mod 'noshift)    (send event set-shift-down   #f)]
-	      [else  (run-error key-tag "unknown key modifier: ~s" mod)])
+	      [else  (error key-tag "unknown key modifier: ~s" mod)])
 	    (loop (cdr l)))))))
   
   ;; A-Z and keymap:get-shifted-key-list are implicitly shifted.
@@ -525,9 +522,9 @@
     (lambda (menu-name . item-names)
       (cond
 	[(not (string? menu-name))
-	 (arg-error menu-tag "expects string, given: ~s" menu-name)]
+	 (error menu-tag "expects string, given: ~s" menu-name)]
 	[(not (andmap string? item-names))
-	 (arg-error menu-tag "expects strings, given: ~s" item-names)]
+	 (error menu-tag "expects strings, given: ~s" item-names)]
 	[else
 	 (run-one
 	  (lambda ()
@@ -541,13 +538,13 @@
     (lambda (frame item-names)
       (cond
 	[(not frame)
-	 (run-error menu-tag "no active frame")]
+	 (error menu-tag "no active frame")]
 	[(not (ivar-in-interface? 'get-menu-bar (object-interface frame)))
-	 (run-error menu-tag "active frame does not have menu bar")]
+	 (error menu-tag "active frame does not have menu bar")]
 	[else
 	 (let ([menu-bar  (send frame get-menu-bar)])
 	   (unless menu-bar
-	     (run-error menu-tag "active frame does not have menu bar"))
+	     (error menu-tag "active frame does not have menu bar"))
 	   (let* ([items (send menu-bar get-items)])
 	     (let loop ([items items]
 			[this-name (car item-names)]
@@ -572,7 +569,7 @@
 				  (car wanted-names)
 				  (cdr wanted-names))]
 			   [else
-			    (run-error menu-tag "no menu matching ~s~n" item-names)])]
+			    (error menu-tag "no menu matching ~s~n" item-names)])]
 			 [else
 			  (loop (cdr items)
 				this-name
@@ -605,27 +602,27 @@
       (cond 
 	[(verify-item button legal-mouse-buttons)
 	 => (lambda (button)
-	      (run-error mouse-tag "unknown mouse button: ~s" button))]
+	      (error mouse-tag "unknown mouse button: ~s" button))]
 	[(not (real? x))
-	 (run-error mouse-tag "expected real, given: ~s" x)]
+	 (error mouse-tag "expected real, given: ~s" x)]
 	[(not (real? y))
-	 (run-error mouse-tag "expected real, given: ~s" y)]
+	 (error mouse-tag "expected real, given: ~s" y)]
 	[(verify-list modifier-list legal-mouse-modifiers)
 	 => (lambda (mod) 
-	      (run-error mouse-tag "unknown mouse modifier: ~s" mod))]
+	      (error mouse-tag "unknown mouse modifier: ~s" mod))]
 	[else
 	 (run-one
 	  (lambda ()
 	    (let ([window  (get-focused-window)])
 	      (cond 
 		[(not window)
-		 (run-error mouse-tag "no focused window")]
+		 (error mouse-tag "no focused window")]
 		[(not (send window is-shown?))
-		 (run-error mouse-tag "focused window is not shown")]
+		 (error mouse-tag "focused window is not shown")]
 		[(not (send window is-enabled?))
-		 (run-error mouse-tag "focused window is not enabled")]
+		 (error mouse-tag "focused window is not enabled")]
 		[(not (in-active-frame? window))
-		 (run-error mouse-tag "focused window is not in active frame")]
+		 (error mouse-tag "focused window is not in active frame")]
 		[else
 		 (let ([motion  (make-mouse-event 'motion x y modifier-list)]
 		       [down    (make-mouse-event (list button 'down) x y modifier-list)]
@@ -645,7 +642,7 @@
 	  [(null? l)
 	   (if (ivar-in-interface? 'on-event (object-interface window))
 	       (send window on-event event)
-	       (run-error mouse-tag "focused window does not have on-event"))]
+	       (error mouse-tag "focused window does not have on-event"))]
 	  [(send (car l) on-subwindow-event window event)  #f]
 	  [else  (loop (cdr l))]))))
   
@@ -680,7 +677,7 @@
 	    [(eq? mod 'nocontrol)  (send event set-control-down #f)]
 	    [(eq? mod 'nometa)     (send event set-meta-down    #f)]
 	    [(eq? mod 'noshift)    (send event set-shift-down   #f)]
-	    [else  (run-error mouse-tag "unknown mouse modifier: ~s" mod)]))
+	    [else  (error mouse-tag "unknown mouse modifier: ~s" mod)]))
 	(set-mouse-modifiers event (cdr modifier-list)))))
       
   (define mouse-type-const
@@ -718,7 +715,7 @@
   
   (define bad-mouse-type
     (lambda (type)
-      (run-error mouse-tag "unknown mouse event type: ~s" type)))
+      (error mouse-tag "unknown mouse event type: ~s" type)))
 
   
   ;;
@@ -734,7 +731,7 @@
       (lambda (new-window)
 	(cond
 	  [(not (is-a? new-window mred:window<%>))
-	   (arg-error tag "new-window is not a window<%>")]
+	   (error tag "new-window is not a window<%>")]
 	  [else
 	   (run-one
 	    (lambda ()

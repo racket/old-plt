@@ -21,7 +21,12 @@
 	    "Help Desk"
 	    help-menu
 	    (lambda (item evt)
-	      (help:help-desk))))]
+	      (help:help-desk)))
+	  (make-object mred:menu-item%
+	    "Welcome to DrScheme"
+	    help-menu
+	    (lambda (item evt)
+	      (drscheme:app:invite-tour))))]
 
        [help-menu:about (lambda (item evt) (drscheme:app:about-drscheme))]
        [help-menu:about-string (lambda () "DrScheme")]

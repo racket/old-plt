@@ -130,13 +130,16 @@
     
   (define exception-reporting-rep (make-parameter #f))
 
-  (define (process-text/zodiac text f start end annotate?)
-    (let ([setting (basis:current-setting)])
+  (define (process-text/zodiac text f start end annotate? text-is-file?)
+    (let ([setting (basis:current-setting)]
+	  [file (if text-is-file?
+		    text
+		    (or (send text get-filename)
+			"Unknown"))])
       (basis:process/zodiac
-       (parameterize ([read-case-sensitive (basis:setting-case-sensitive?
-					    setting)])
+       (parameterize ([read-case-sensitive (basis:setting-case-sensitive? setting)])
 	 (zodiac:read (fw:gui-utils:read-snips/chars-from-text text start end)
-		      (zodiac:make-location 0 0 start text)
+		      (zodiac:make-location 0 0 start file)
 		      #t 1))
        f
        annotate?)))
@@ -213,6 +216,18 @@
 	   [(#\( #\) #\* #\+ #\? #\[ #\] #\. #\^ #\$ #\\)
 	    (cons #\\ (cons (car chars) (loop (cdr chars))))]
 	   [else (cons (car chars) (loop (cdr chars)))])]))))
+
+  (define (in-canvas? text)
+    (let ([editor-admin (send text get-admin)])
+      (cond
+       [(is-a? editor-admin mred:editor-snip-editor-admin<%>)
+	(let* ([snip (send editor-admin get-snip)]
+	       [snip-admin (send snip get-admin)])
+	  (and snip-admin
+	       (in-canvas? (send snip-admin get-editor))))]
+       [(is-a? editor-admin mred:editor-admin%)
+	(send text get-canvas)]
+       [else #f])))
 
   (define (make-text% super%)
     (class super% args
@@ -756,10 +771,21 @@
         
         [format-source-loc ;; =Kernel=, =Handler=
          (lambda (start end)
-           (basis:format-source-loc 
-            start end
-            (fw:preferences:get 'framework:line-offsets)
-            (fw:preferences:get 'framework:display-line-numbers)))]
+	   (let ([translate-loc
+		  (lambda (loc)
+		    (let ([loc-name (zodiac:location-file loc)])
+		      (zodiac:make-location (zodiac:location-line loc)
+					    (zodiac:location-column loc)
+					    (zodiac:location-offset loc)
+					    (if (is-a? loc-name mred:editor<%>)
+						(or (send loc-name get-filename)
+						    loc-name)
+						loc-name))))])
+	     (basis:format-source-loc 
+	      (translate-loc start)
+	      (translate-loc end)
+	      (fw:preferences:get 'framework:line-offsets)
+	      (fw:preferences:get 'framework:display-line-numbers))))]
         
 	[highlight-error
 	 (lambda (file start finish)
@@ -811,9 +837,9 @@
 
       (public
 	[process-text ; =User=, =Handler=, =No-Breaks=
-	 (lambda (text fn start end annotate?)
+	 (lambda (text fn start end annotate? text-is-file?)
 	   (if (basis:zodiac-vocabulary? user-setting)
-	       (process-text/zodiac text fn start end annotate?)
+	       (process-text/zodiac text fn start end annotate? text-is-file?)
 	       (process-text/no-zodiac text fn start end)))]
 	[process-file
 	 (lambda (filename fn annotate?)
@@ -961,6 +987,7 @@
 		      (recur)]))
 		  start
 		  end
+		  #t
 		  #t))
 	       
 	       ; Cleanup after evaluation:
@@ -1230,11 +1257,16 @@
 					(recur)])))])
 			     (apply values 
 				    (let ([text (make-object drscheme:text:text%)])
-				      (send text load-file filename)
-				      (process-text text process-sexps
-						    0 
-						    (send text last-position)
-						    #t))))
+				      (parameterize ([mred:current-eventspace
+						      drscheme:init:system-eventspace]) ;; to get the right snipclasses
+					(send text load-file filename))
+				      (begin0
+				       (process-text text process-sexps
+						     0 
+						     (send text last-position)
+						     #t
+						     #f)
+				       (send text on-close)))))
 			   (userspace-load filename))))))
 	     
 	     (basis:error-display/debug-handler

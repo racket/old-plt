@@ -1210,13 +1210,6 @@
    ", except that it creates a launcher instead of a"
    "stand-alone executable.")
   
-  (drscheme:language:get-post-hash-bang-start
-   ((is-a?/c text%) . -> . (>=/c 0))
-   (text)
-   "Returns the starting position of this text,"
-   "skipping over \\#! if there is one. If there"
-   "is no \\#!, returns 0.")
-  
   (drscheme:language:text/pos-text
    (drscheme:language:text/pos? . -> . (is-a?/c text%))
    (text/pos)

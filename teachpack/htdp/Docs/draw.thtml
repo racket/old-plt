@@ -48,14 +48,14 @@ suspends evaluation for the given number of seconds
 Applying the functions to any other symbol triggers an error.
 
 <li><br>
-<li><code>{(idx big-bang)}</code> : World -> true; <br>
-start up the world with initial values
-<li><code>{(idx on-key-event)}</code> : (union char symbol) World -> World; <br>
-process a keyboard event and produce a new world
-<li><code>{(idx on-tick-event)}</code> : World -> World; <br>
-process the world for one time-slice 
-<li><code>{(idx stop-time)}</code> : -> true; <br>
-stop the world. 
+<li><code>{(idx big-bang)}</code> : Number World -> true; <br>
+start the clock, one tick every n seconds, initialize the world with an initial value
+<li><code>{(idx on-key-event)}</code> : ((union char symbol) World -> World) -> true; <br>
+add a function to the world that processes keyboard events
+<li><code>{(idx on-tick-event)}</code> : (World -> World) -> true; <br>
+add a function to the world that processes tick events
+<li><code>{(idx stop-time)}</code> : -> World; <br>
+stop the world, return the last world 
 </menu>
 <br>
 <br>

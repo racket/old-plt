@@ -72,11 +72,11 @@
      (build-path (collection-path "help") "CVS")))
 
   (define (use-frames?)
-    (get-bool-pref/default 'use-frames use-frames-default))
+    (get-bool-pref/default 'plt:hd:use-frames use-frames-default))
   
   (define (make-main-frameset lower-url)
     (let ([search-height 
-	   (get-pref/default 'search-height search-height-default)])
+	   (get-pref/default 'plt:hd:search-height search-height-default)])
       `(FRAMESET ((ROWS ,(string-append search-height ",*")))
 		 (FRAME ((NAME "search")
 			 (SRC "/servlets/search.ss")

@@ -330,7 +330,7 @@
     (unless (unbox external-box)
       (with-handlers ; no harm if not saved
        ([void void])
-       (put-prefs (list 'user-name 'user-email)
+       (put-prefs (list 'plt:hd:user-name 'plt:hd:user-email)
 		  (list originator reply-to))))
     
     (send/suspend sending-page)

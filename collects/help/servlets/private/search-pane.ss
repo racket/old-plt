@@ -8,13 +8,13 @@
   (provide search-pane)
   
   (define (search-bg)
-    (get-pref/default 'search-bg search-bg-default))
+    (get-pref/default 'plt:hd:search-bg search-bg-default))
 
   (define (search-fg)
-    (get-pref/default 'search-fg search-text-default))
+    (get-pref/default 'plt:hd:search-fg search-text-default))
 
   (define (search-link-color)
-    (get-pref/default 'search-link search-link-default))
+    (get-pref/default 'plt:hd:search-link search-link-default))
 
   (define (make-make-link color-fun)
     (lambda (url label frame)

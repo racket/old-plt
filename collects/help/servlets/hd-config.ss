@@ -13,13 +13,13 @@
   (import servlet^)
 
   (define search-height 
-    (get-pref/default 'search-height search-height-default))
+    (get-pref/default 'plt:hd:search-height search-height-default))
   (define search-bg-color 
-    (get-pref/default 'search-bg search-bg-default))
+    (get-pref/default 'plt:hd:search-bg search-bg-default))
   (define search-text-color 
-    (get-pref/default 'search-fg search-text-default))
+    (get-pref/default 'plt:hd:search-fg search-text-default))
   (define search-link-color 
-    (get-pref/default 'search-link search-link-default))
+    (get-pref/default 'plt:hd:search-link search-link-default))
 
   (define (make-labelled-option default)
     (lambda (s-val s-label)

@@ -9,7 +9,7 @@
 (unit/sig ()
   (import servlet^)
 
-  (put-prefs (list 'use-frames)
+  (put-prefs (list 'plt:hd:use-frames)
 	     (list (if (use-frames?) "false" "true")))	
 
   (redirect-to "/servlets/home.ss"))

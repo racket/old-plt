@@ -8,7 +8,10 @@
 (unit/sig ()
   (import servlet^)
 
+  ; names as sent from FORM
   (define names '(search-bg search-fg search-link))
+  ; names of corresponding preferences
+  (define pref-names '(plt:hd:search-bg plt:hd:search-fg plt:hd:search-link))
 
   (define (make-error-page msgs)
     `(HTML 
@@ -58,11 +61,11 @@
 	    (with-handlers
 	     ([void (lambda _ 
 		      (add-error! "Error saving configuration"))])
-	     (put-prefs names vals)
+	     (put-prefs pref-names vals)
 	     (when search-height-val
-		   (put-prefs (list 'search-height)
+		   (put-prefs (list 'plt:hd:search-height)
 			      (list search-height-val)))
-	     (put-prefs (list 'use-frames)
+	     (put-prefs (list 'plt:hd:use-frames)
 			(list use-frames-val))))
 
     (if (errors?)

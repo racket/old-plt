@@ -16,8 +16,8 @@
 	""
 	(get-pref/default sym "")))
 
-  (define name (get-pref/external 'user-name))
-  (define email (get-pref/external 'user-email))
+  (define name (get-pref/external 'plt:hd:user-name))
+  (define email (get-pref/external 'plt:hd:user-email))
 
   (define (make-option s)
     (if (string=? (car s) "*")

@@ -7,7 +7,7 @@
   (provide home-no-frames)
 
   (define (search-bg)
-    (get-pref/default 'search-bg search-bg-default))
+    (get-pref/default 'plt:hd:search-bg search-bg-default))
 	
   (define (home-no-frames)
     `(BODY

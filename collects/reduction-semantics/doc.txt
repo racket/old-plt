@@ -55,6 +55,7 @@ language, used in various ways:
           | (name <symbol> <pattern>)
           | (in-hole <pattern> <pattern>)
           | (in-hole* <symbol> <pattern> <pattern>)
+          | (side-condition <pattern> <guard>)
           | (pattern ...)
           | <scheme-constant>
 
@@ -85,6 +86,13 @@ nested contexts; if you were to use in-hole twice, you would
 get two bindings of `hole' and the pattern matcher would
 require them to be equal, according to the semantics of
 repeated variables.
+
+The (side-condition pattern guard) pattern matches what the
+embedded pattern matches, and then the guard expression is
+evaluated. If it returns #f, the pattern fails to match,
+and if it returns anything else, the pattern matches. In
+addition, any occurrences of `name' in the pattern will be
+bound in the guard.
 
 The (pattern ...) pattern matches a sexpression list, where
 each pattern matches an element of the list. In addition, if

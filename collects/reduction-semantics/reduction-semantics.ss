@@ -3,7 +3,7 @@
   (require "private/matcher.ss"
            (lib "contracts.ss")
            (lib "etc.ss"))
-  (require-for-syntax "private/red-sem-macro-helpers.ss")
+  (require-for-syntax (lib "match.ss"))
 
   (provide reduction
            reduction/context
@@ -50,50 +50,99 @@
                         [res ((red-reduct red) bindings)])
                     (replace context hole res))))))
   
-  ;; (reduction/context lang ctxt pattern expression ...)
-  (define-syntax (reduction/context stx)
-    (syntax-case stx ()
-      [(_ lang-exp ctxt pattern bodies ...)
-       (let* ([names (extract-names (syntax pattern))])
-         (with-syntax ([(names ...) (map (lambda (name)
-                                           (datum->syntax-object (syntax pattern) name))
-                                         names)]
-                       [holeg (datum->syntax-object stx (gensym 'hole))])
-           (syntax 
-            (let ([lang lang-exp])
-              (build-red lang
-                         '(in-hole* holeg (name context ctxt) pattern)
-                         (lambda (bindings)
-                           (let ([holeg (lookup-binding bindings 'holeg)]
-                                 [context (lookup-binding bindings 'context)]
-                                 [names (lookup-binding bindings 'names)] ...)
-                             (replace
-                              context
-                              holeg
-                              (begin
-                                (void)
-                                bodies ...)))))))))]))
-  
-  ;; (reduction lang pattern expression ...)
-  (define-syntax (reduction stx)
-    (syntax-case stx ()
-      [(_ lang-exp pattern bodies ...)
-       (let* ([names (extract-names (syntax pattern))])
-         (with-syntax ([(name ...) (map (lambda (name) (datum->syntax-object (syntax pattern) name)) names)]
-                       [hole (datum->syntax-object stx 'hole)])
-           (syntax 
-            (let ([lang lang-exp])
-              (build-red lang
-                         'pattern
-                         (lambda (bindings)
-                           (let ([name (lookup-binding bindings 'name)] ...)
-                             bodies ...)))))))]))
-  
+  (define-syntax-set (reduction/context reduction)
+    
+    ;; (reduction/context lang ctxt pattern expression ...)
+    (define (reduction/context/proc stx)
+      (syntax-case stx ()
+        [(_ lang-exp ctxt pattern bodies ...)
+         (let ([names (extract-names (syntax-object->datum (syntax pattern)))])
+           (with-syntax ([(names ...) (map (lambda (name)
+                                             (datum->syntax-object (syntax pattern) name))
+                                           names)]
+                         [holeg (datum->syntax-object stx (gensym 'hole))]
+                         [side-condition-rewritten (rewrite-side-conditions (syntax pattern))])
+             (syntax 
+              (let ([lang lang-exp])
+                (build-red lang
+                           `(in-hole* holeg (name context ctxt) side-condition-rewritten)
+                           (lambda (bindings)
+                             (let ([holeg (lookup-binding bindings 'holeg)]
+                                   [context (lookup-binding bindings 'context)]
+                                   [names (lookup-binding bindings 'names)] ...)
+                               (replace
+                                context
+                                holeg
+                                (begin
+                                  (void)
+                                  bodies ...)))))))))]))
+    
+    ;; (reduction lang pattern expression ...)
+    (define (reduction/proc stx)
+      (syntax-case stx ()
+        [(_ lang-exp pattern bodies ...)
+         (let ([names (extract-names (syntax-object->datum (syntax pattern)))])
+           (with-syntax ([(name ...) (map (lambda (name) (datum->syntax-object (syntax pattern) name)) names)]
+                         [hole (datum->syntax-object stx 'hole)]
+                         [side-condition-rewritten (rewrite-side-conditions (syntax pattern))])
+             (syntax 
+              (let ([lang lang-exp])
+                (build-red lang
+                           `side-condition-rewritten
+                           (lambda (bindings)
+                             (let ([name (lookup-binding bindings 'name)] ...)
+                               bodies ...)))))))]))
+    
+    (define (rewrite-side-conditions stx)
+      (datum->syntax-object
+       stx
+       (let loop ([term (syntax-object->datum stx)])
+         (match term
+           [`(side-condition ,pat ,exp)
+            (let ([names (extract-names pat)])
+              (with-syntax ([exp (datum->syntax-object stx exp)]
+                            [pat pat]
+                            [(names ...) (map (lambda (x) (datum->syntax-object stx x)) names)])
+                (syntax/loc stx
+                  (side-condition
+                   pat
+                   ,(lambda (bindings)
+                      (let ([names (lookup-binding bindings 'names)] ...)
+                        exp))))))]
+           [(? list?) (map loop term)]
+           [else term]))))
+    
+    
+    (define (extract-names sexp)
+      (let ([dup-names
+             (let loop ([sexp sexp]
+                        [names null])
+               (match sexp
+                 [`(name ,(and sym (? symbol?)) ,pat)
+                  (loop pat (cons sym names))]
+                 [`(in-hole* ,(and sym (? symbol?)) ,pat1 ,pat2)
+                  (loop pat1
+                        (loop pat2
+                              (cons sym names)))]
+                 [`(in-hole ,pat1 ,pat2)
+                  (loop pat1
+                        (loop pat2
+                              (cons 'hole names)))]
+                 [(? list?)
+                  (let i-loop ([sexp sexp]
+                               [names names])
+                    (cond
+                      [(null? sexp) names]
+                      [else (i-loop (cdr sexp) (loop (car sexp) names))]))]
+                 [else names]))]
+            [ht (make-hash-table)])
+        (for-each (lambda (name) (hash-table-put! ht name #f)) dup-names)
+        (hash-table-map ht (lambda (x y) x)))))  
   (define-syntax (language stx)
     (syntax-case stx ()
       [(_ (name rhs ...) ...)
-       (andmap identifier? (syntax->list (syntax (name ...))))
-       (syntax
+       (andmap identifier? (syntax->list (syntax/loc stx (name ...))))
+       (syntax/loc stx
         (compile-language (list (make-nt 'name (list (make-rhs 'rhs) ...)) ...)))]
       [(_ (name rhs ...) ...)
        (for-each

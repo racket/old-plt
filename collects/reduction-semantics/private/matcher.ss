@@ -1,6 +1,14 @@
-;; support nested contexts:
-;; C[letrec x=C[y] and y=M in N] = C[letrec x=C[M] and y=M in N]
+#|
 
+Note: the patterns described in the doc.txt file are
+slightly different than the patterns processed here.
+The difference is in the form of the side-condition
+expressions. Here they are procedures that accept
+binding structures, instead of expressions. The
+reduction (And other) macros do this transformation
+before the pattern compiler is invoked.
+
+|#
 (module matcher mzscheme
   (require (lib "list.ss")
            (lib "match.ss")
@@ -179,6 +187,17 @@
               (lambda (l)
                 `(in-hole ,(match-context l)
                           ,(match-contractum l))))]
+           [`(in-hole* ,hole-name ,context ,contractum)
+            (let ([match-context (loop context)]
+                  [match-contractum (loop contractum)])
+              (lambda (l)
+                `(in-hole* ,hole-name
+                           ,(match-context l)
+                           ,(match-contractum l))))]
+           [`(side-condition ,pat ,condition)
+            (let ([patf (loop pat)])
+              (lambda (l)
+                `(side-condition ,(patf l) ,condition)))]
            [(? list?)
             (let ([fs (map loop pattern)])
               (lambda (l)
@@ -305,7 +324,6 @@
                   [match-contractum (loop contractum)])
               (lambda (exp hole-path hole-name)
                 (let ([bindingss (match-context exp '() this-hole-name)])
-                  '(printf "~s bindings: ~s\n" context bindingss)
                   (and bindingss
                        (apply
                         append
@@ -315,7 +333,6 @@
                                 (let ([holes (filter (lambda (x) (eq? this-hole-name (rib-name x)))
                                                      (bindings-table bindings))])
                                   (when (null? holes)
-                                    (printf "bindings: ~s\n" bindings)
                                     (error 'match-pattern "found no hole in ~e for ~e" context exp))
                                   (unless (null? (cdr holes))
                                     (error 'match-pattern "found more than one hole match in ~e ~e, holes: ~e" 
@@ -339,6 +356,15 @@
                                     ;(printf "~s ans ~s\n" context ans)
                                     ans)))
                               bindingss)))))))]
+           [`(side-condition ,pat ,condition)
+            (let ([match-pat (loop pat)])
+              (lambda (exp hole-path hole-name)
+                (let ([matches (match-pat exp hole-path hole-name)])
+                  (and matches
+                       (let ([filtered (filter condition matches)])
+                         (if (null? filtered)
+                             #f
+                             filtered))))))]
            [(? list?)
             (let ([rewritten (rewrite-ellipses pattern loop)])
               (lambda (exp hole-path hole-name)
@@ -552,6 +578,8 @@
         [(? symbol?) ribs]
         [`(name ,name ,pat) (loop pat (cons (make-rib name '()) ribs))]
         [`(in-hole ,context ,contractum) (loop context (loop contractum ribs))]
+        [`(in-hole* ,hole-name ,context ,contractum) (loop context (loop contractum ribs))]
+        [`(side-condition ,pat ,test) (loop pat ribs)]
         [(? list?)
          (let ([rewritten (rewrite-ellipses pattern (lambda (x) x))])
            (let i-loop ([r-exps rewritten]
@@ -760,6 +788,24 @@
                 '(z (z a))
                 (list 
                  (make-bindings (list (make-rib 'hole (make-hole-binding 'a '(cdr car)))))))
+    
+    (test-empty `(side-condition (name x any) ,(lambda (bindings) (eq? (lookup-binding bindings 'x) 'a)))
+                'a
+                (list 
+                 (make-bindings (list (make-rib 'x 'a)))))
+
+    (test-empty `(+ 1 (side-condition (name x any) ,(lambda (bindings) (eq? (lookup-binding bindings 'x) 'a))))
+                '(+ 1 a)
+                (list 
+                 (make-bindings (list (make-rib 'x 'a)))))
+
+    (test-empty `(side-condition (name x any) ,(lambda (bindings) (eq? (lookup-binding bindings 'x) 'a)))
+                'b
+                #f)
+    
+    (test-empty `(+ 1 (side-condition (name x any) ,(lambda (bindings) (eq? (lookup-binding bindings 'x) 'a))))
+                '(+ 1 b)
+                #f)
     
     (unless failure?
       (fprintf (current-error-port) "All tests passed.\n")))

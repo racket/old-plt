@@ -99,7 +99,9 @@
      (build-list (length (current-mark-list)) (lambda (x) x))))
 
   (define (src)
-    (printf "~v\n" (syntax-object->datum (mark-source (list-ref (current-mark-list) (current-frame-num))))))
+    (let ([source (mark-source (list-ref (current-mark-list) (current-frame-num)))])
+      ((namespace-variable-value 'highlight-source-position) (syntax-position source))
+      (printf "~v\n" source)))
 
   (define (binding sym)
     (lookup-binding-with-symbol (do-n-times cdr (current-frame-num) (current-mark-list)) sym))

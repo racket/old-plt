@@ -17,7 +17,7 @@
       [(var . others)
        (cons #'var (arglist-bindings #'others))]))
   
-  (define (annotate stx break)
+  (define (annotate stx breakpoints breakpoint-origin break)
     
     (define (top-level-annotate stx)
       (kernel:kernel-syntax-case stx #f
@@ -89,10 +89,11 @@
       
       (define (break-wrap debug-info annotated)
         #`(begin
-            (#,break (current-continuation-marks) 'debugger-break (list #,debug-info))
+            (#,break (current-continuation-marks) 'debugger-break #,debug-info)
             #,annotated))
       
-      (kernel:kernel-syntax-case expr #f
+      (define annotated
+        (kernel:kernel-syntax-case expr #f
         [var-stx (identifier? (syntax var-stx)) expr]
         
         [(lambda . clause)
@@ -146,23 +147,13 @@
                                                        #,(annotate #`body bound-vars is-tail?)))]
         
         [(#%app . exprs)
-         (kernel:kernel-syntax-case #`exprs #f
-           [((#%top . brk) arg)
-            (eq? (syntax-e #`brk) 'break)
-            (break-wrap (make-debug-info expr bound-vars bound-vars 'at-break #f)
-                        (annotate #`arg bound-vars is-tail?))]
-           [(brk . arg)
-            (eq? (syntax-e #`brk) 'break)
-            (break-wrap (make-debug-info expr bound-vars bound-vars 'at-break #f)
-                        (annotate #`arg bound-vars is-tail?))]
-           [else 
-            (let ([subexprs (map (lambda (expr) 
-                                   (annotate expr bound-vars #f))
-                                 (syntax->list #`exprs))])
-              (if is-tail?
-                  (quasisyntax/loc expr #,subexprs)
-                  (wcm-wrap (make-debug-info expr bound-vars bound-vars 'normal #f)
-                            (quasisyntax/loc expr #,subexprs))))])]
+         (let ([subexprs (map (lambda (expr) 
+                                (annotate expr bound-vars #f))
+                              (syntax->list #`exprs))])
+           (if is-tail?
+               (quasisyntax/loc expr #,subexprs)
+               (wcm-wrap (make-debug-info expr bound-vars bound-vars 'normal #f)
+                         (quasisyntax/loc expr #,subexprs))))]
         
         [(#%datum . _) expr]
         
@@ -170,6 +161,13 @@
         
         [else (error 'expr-syntax-object-iterator "unknown expr: ~a"
                      (syntax-object->datum expr))]))
+      
+      (if (and (eq? (syntax-source expr) breakpoint-origin)
+               (memq (- (syntax-position expr) 1) ; syntax positions start at one.
+                     breakpoints))
+          (break-wrap (make-debug-info expr bound-vars bound-vars 'at-break #f)
+                             annotated)
+          annotated))
     
     (top-level-annotate stx)))
 

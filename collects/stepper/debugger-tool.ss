@@ -10,7 +10,7 @@
            "private/debugger-vc.ss"
            "private/debugger-model.ss"
 	   "private/my-macros.ss")
-
+    
   (provide tool@)
   
   (define tool@
@@ -35,14 +35,45 @@
       (define (debugger-unit-frame-mixin super%)
         (class* super% (debugger-unit-frame<%>)
           
-          (inherit get-button-panel get-interactions-text get-definitions-text)
+          (inherit get-button-panel get-interactions-text get-definitions-text get-menu-bar)
           (rename [super-on-close on-close])
           
           (define debugger-exists #f)
           (define/public (on-debugger-close)
             (set! debugger-exists #f))
           
+          (define breakpoints null)
+          
           (super-instantiate ())
+          
+          ; DEBUGGER MENU
+          
+          (define debugger-menu (instantiate menu% () (label "Debugger") (parent (get-menu-bar))))
+          
+          (instantiate menu-item% () (label "Add Breakpoint") (parent debugger-menu) 
+            (callback (lambda (dc-item dc-event)
+                        (set! breakpoints (append breakpoints
+                                                  (list (send (get-definitions-text) get-start-position)))))))
+          
+          (define (position->line-n-offset pos)
+            (let* ([line (send (get-definitions-text) position-line pos)]
+                   [offset (- pos (send (get-definitions-text) line-start-position line))])
+              (values line offset)))
+          
+          (instantiate menu-item% () (label "List Breakpoints") (parent debugger-menu)
+            (callback (lambda (dc-item dc-event)
+                        (message-box "Current Breakpoints"
+                                   (format "Current breakpoint positions: ~a\n" (apply string-append
+                                                                                       (map (lambda (pos)
+                                                                                              (let-values ([(line offset) (position->line-n-offset pos)])
+                                                                                                (format "<~v:~v> " line offset)))
+                                                                                            breakpoints)))
+                                   this
+                                   '(ok)))))
+          
+          (instantiate menu-item% () (label "Clear All Breakpoints") (parent debugger-menu)
+            (callback (lambda (dc-item dc-event)
+                        (set! breakpoints null))))
           
           (define program-expander
             (contract
@@ -96,17 +127,21 @@
                       (set! debugger-exists #t)
                       (start-debugger program-expander this))))))
           
+          (define breakpoint-origin (get-definitions-text))
+          
           (define (start-debugger program-expander drs-window)
             (define-values/invoke-unit/sig (go)
              (compound-unit/sig 
                (import [EXPANDER : (program-expander)]
+                       [BREAKPOINTS : (breakpoints breakpoint-origin)]
                        [DRS-WINDOW : (drs-window)])
-               (link [MODEL : debugger-model^ (debugger-model@ VIEW-CONTROLLER EXPANDER)] 
+               (link [MODEL : debugger-model^ (debugger-model@ VIEW-CONTROLLER EXPANDER BREAKPOINTS)] 
                      [VIEW-CONTROLLER : debugger-vc^ (debugger-vc@ MODEL DRS-WINDOW)])
                (export (var (MODEL go))))
-             #f
-             (program-expander)
-             (drs-window))
+              #f
+              (program-expander)
+              (breakpoints breakpoint-origin)
+              (drs-window))
             (go))
           
           (rename [super-enable-evaluation enable-evaluation])

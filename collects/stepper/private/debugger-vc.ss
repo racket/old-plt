@@ -29,7 +29,9 @@
       
       (define (format-event debugger-event)
         (cond [(normal-breakpoint-info? debugger-event) 
-               (format "normal breakpoint\nsource:~v\n" (car (expose-mark (car (normal-breakpoint-info-mark-list debugger-event)))))]
+               (when (null? (normal-breakpoint-info-mark-list debugger-event))
+                 (error 'format-event "mark list was empty")) ; should never happen; at-brpt mark should always be there
+               (format "normal breakpoint\nsource:~v\n" (mark-source (car (normal-breakpoint-info-mark-list debugger-event))))]
               [(error-breakpoint-info? debugger-event)
                (format "error breakpoint\nmessage: ~v\n" (error-breakpoint-info-message debugger-event))]
               [(breakpoint-halt? debugger-event)
@@ -46,6 +48,12 @@
        (lambda () 
          (graphical-read-eval-print-loop debugger-eventspace #t)))
       
+      (define (highlight-source-position posn)
+        (send (send drs-window get-definitions-text)
+              set-position
+              posn
+              (+ 1 posn)))
+      
       (define debugger-output (make-output-window drs-window user-custodian))
       
       ; set up debugger eventspace
@@ -56,6 +64,7 @@
            (namespace-set-variable-value! 'go-semaphore go-semaphore)
            (namespace-set-variable-value! 'events events)
            (namespace-set-variable-value! 'user-custodian user-custodian)
+           (namespace-set-variable-value! 'highlight-source-position highlight-source-position)
            (install-debugger-bindings))))))
   
   ;; Info functions:

@@ -1,5 +1,3 @@
-
-
 (module debugger-model mzscheme
   (require (lib "unitsig.ss")
            (lib "contract.ss")
@@ -33,7 +31,8 @@
   (define debugger-model@   
     (unit/sig debugger-model^
       (import debugger-vc^
-              (program-expander))
+              (program-expander)
+              (breakpoints breakpoint-origin))
       
       (define go-semaphore (make-semaphore))
       (define user-custodian (make-custodian))
@@ -50,13 +49,13 @@
       
       (define (break mark-set kind final-mark)
         (let ([mark-list (continuation-mark-set->list mark-set debug-key)])
-          (queue-result (make-normal-breakpoint-info mark-list kind final-mark))
+          (queue-result (make-normal-breakpoint-info (cons final-mark mark-list) kind))
           (queue-result (make-breakpoint-halt))
           (semaphore-wait go-semaphore)))
       
       
       (define (step-through-expression expanded expand-next-expression)
-        (let* ([annotated (annotate expanded break)])
+        (let* ([annotated (annotate expanded breakpoints breakpoint-origin break)])
           ; (fprintf (current-error-port) "annotated: ~v\n" (syntax-object->datum annotated))
           (let ([expression-result
                  (parameterize ([current-eval basic-eval])

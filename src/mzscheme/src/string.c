@@ -51,33 +51,44 @@
 
 #ifdef USE_ICONV_DLL
 typedef long iconv_t;
-static char *nl_langinfo(int which) {
-  return "UTF-8";
-}
-static int get_iconv_errno(void)
-{
-  return 0;
-}
+typedef int *(*errno_proc_t)();
 typedef size_t (*iconv_proc_t)(iconv_t cd,
 			       char **inbuf, size_t *inbytesleft,
 			       char **outbuf, size_t *outbytesleft);
 typedef iconv_t (*iconv_open_proc_t)(const char *tocode, const char *fromcode);
 typedef void (*iconv_close_proc_t)(iconv_t cd);
+typedef char *(*locale_charset_proc_t)();
+static errno_proc_t msvcrt_errno;
 static iconv_proc_t iconv;
 static iconv_open_proc_t iconv_open;
 static iconv_close_proc_t iconv_close;
+static locale_charset_proc_t locale_charset; /* Not used, currently */
+static char *nl_langinfo(int which) 
+{
+  return "UTF-8";
+}
+static int get_iconv_errno(void)
+{
+  int *a;
+  a = msvcrt_errno();
+  return *a;
+}
 # define CODESET 0
 # define ICONV_errno get_iconv_errno()
 static int iconv_ready = 0;
 static void init_iconv()
 {
+# ifdef MZ_NO_ICONV
+# else
   HMODULE m;
-  m = LoadLibrary("libiconv-2.dll");
+  m = LoadLibrary("iconv.dll");
+  if (!m)
+    m = LoadLibrary("libiconv.dll");
   if (m) {
-    iconv = (iconv_proc_t)GetProcAddress(m, TEXT("libiconv"));
+    iconv = (iconv_proc_t)GetProcAddress(m, "libiconv");
     iconv_open = (iconv_open_proc_t)GetProcAddress(m, "libiconv_open");
     iconv_close = (iconv_close_proc_t)GetProcAddress(m, "libiconv_close");
-    printf("%p %p %p\n", iconv, iconv_open, iconv_close);
+    locale_charset = (locale_charset_proc_t)GetProcAddress(m, "locale_charset");
     /* Make sure we have all of them or none: */
     if (!iconv || !iconv_open || !iconv_close) {
       iconv = NULL;
@@ -85,6 +96,18 @@ static void init_iconv()
       iconv_close = NULL;
     }
   }
+  if (iconv) {
+    m = LoadLibrary("msvcrt.dll");
+    if (m) {
+      msvcrt_errno = (errno_proc_t)GetProcAddress(m, "_errno");
+      if (!msvcrt_errno) {
+	iconv = NULL;
+	iconv_open = NULL;
+	iconv_close = NULL;
+      }
+    }
+  }
+# endif
   iconv_ready = 1;
 }
 #else
@@ -1057,6 +1080,7 @@ do_byte_string_to_char_string_locale(const char *who,
   long olen;
 
   reset_locale();
+  if (!iconv_ready) init_iconv();
 
   if (mzLOCALE_IS_UTF_8(current_locale_name) || !locale_on)
     return do_byte_string_to_char_string(who, bstr, istart, ifinish, perm);
@@ -1180,6 +1204,7 @@ do_char_string_to_byte_string_locale(const char *who,
   long olen;
   
   reset_locale();
+  if (!iconv_ready) init_iconv();
 
   if (mzLOCALE_IS_UTF_8(current_locale_name) || !locale_on)
     return do_char_string_to_byte_string(cstr, istart, ifinish);
@@ -2635,7 +2660,7 @@ int mz_native_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cv
 		     ((cvt_case ? NORM_IGNORECASE : 0)
 		      | NORM_IGNOREKANATYPE
 		      | NORM_IGNOREWIDTH),
-		     s1 + d1, l1, s2 + d2, l2);
+		     (wchar_t *)s1 + d1, l1, (wchar_t *)s2 + d2, l2);
 
   return r - 2;
 }
@@ -3122,6 +3147,8 @@ static Scheme_Object *byte_string_open_converter(int argc, Scheme_Object **argv)
     return scheme_false;
   if (scheme_byte_string_has_null(s2))
     return scheme_false;
+
+  if (!iconv_ready) init_iconv();
 
   from_e = SCHEME_BYTE_STR_VAL(s1);
   to_e = SCHEME_BYTE_STR_VAL(s2);

@@ -1699,13 +1699,17 @@ static int UNC_stat(char *dirname, int len, int *flags, int *isdir, Scheme_Objec
     if (isdir)
       *isdir = 1;
 
-    copy = scheme_malloc_atomic(len + 10);
+    copy = scheme_malloc_atomic(len + 14);
     copy[0] = '\\';
     copy[1] = '\\';
     copy[2] = '?';
     copy[3] = '\\';
-    memcpy(copy + 4, dirname, len);
-    len += 4;
+    copy[4] = 'U';
+    copy[5] = 'N';
+    copy[6] = 'C';
+    copy[7] = '\\';
+    memcpy(copy + 8, dirname + 2, len - 2);
+    len += 8;
     if (!IS_A_SEP(copy[len - 1])) {
       copy[len] = '\\';
       len++;
@@ -3445,12 +3449,28 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
 #else
 
 #ifndef USE_MAC_FILE_TOOLBOX
-  if (argc)
-    filename = scheme_expand_string_filename(argv[0],
-					     "directory-list",
-					     NULL,
-					     SCHEME_GUARD_FILE_READ);
-  else {
+  if (argc) {
+    Scheme_Object *path = argv[0];
+# ifdef USE_FINDFIRST
+    while (1) {
+# endif
+      filename = scheme_expand_string_filename(path,
+					       "directory-list",
+					       NULL,
+					       SCHEME_GUARD_FILE_READ);
+#ifdef USE_FINDFIRST
+      /* Eliminate "." and "..": */
+      if (SAME_OBJ(path, argv[0])) {
+	Scheme_Object *old;
+	old = scheme_make_path(filename);
+	path = do_simplify_path(old, scheme_null);
+	if (SAME_OBJ(path, old))
+	  break;
+      } else
+	break;
+    }
+#endif
+  } else {
     filename = SCHEME_PATH_VAL(CURRENT_WD());
     scheme_security_check_file("directory-list", NULL, SCHEME_GUARD_FILE_EXISTS);
     scheme_security_check_file("directory-list", filename, SCHEME_GUARD_FILE_READ);
@@ -3516,14 +3536,30 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
   if (!filename)
     pattern = "*.*";
   else {
+    char *nf;
+    int is_unc = 0, d, nd;
     len = strlen(filename);
-    pattern = (char *)scheme_malloc_atomic(len + 10);
+    if ((len > 1) && IS_A_SEP(filename[0]) && check_dos_slashslash_drive(filename, len, NULL, 0))
+      is_unc = 1;
+    nf = scheme_normal_path_seps(filename, &len);
+    pattern = (char *)scheme_malloc_atomic(len + 14);
     pattern[0] = '\\';
     pattern[1] = '\\';
     pattern[2] = '?';
     pattern[3] = '\\';
-    memcpy(pattern + 4, filename, len);
-    len += 4;
+    if (is_unc) {
+      pattern[4] = 'U';
+      pattern[5] = 'N';
+      pattern[6] = 'C';
+      pattern[7] = '\\';
+      d = 8;
+      nd = 2;
+    } else {
+      d = 4;
+      nd = 0;
+    }
+    memcpy(pattern + d, nf + nd, len - nd);
+    len += d;
     if (len && !IS_A_SEP(pattern[len - 1]))
       pattern[len++] = '\\';      
     memcpy(pattern + len, "*.*", 4);

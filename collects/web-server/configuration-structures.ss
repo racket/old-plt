@@ -13,7 +13,7 @@
   ;                   passwords resopnders timeouts paths (U oport #f))
   (provide-define-struct
    host
-   (indices servlet-path format-log-message passwords responders timeouts paths log))
+   (indices servlet-path log-message passwords responders timeouts paths))
   
   ; passwords = (listof (list* relm:str protected-dir-regexp:str
   ;                            (listof (list user:sym password:str))))

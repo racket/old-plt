@@ -1,13 +1,12 @@
 (module servlet-primitives mzscheme
   (require "channel.ss"
            "configuration.ss"
+           "parse-table.ss"
            "configuration-structures.ss"
            "web-server.ss"
            "servlet-sig.ss"
-           (lib "etc.ss")
            (lib "url.ss" "net")
-           (lib "sendurl.ss" "net")
-           (lib "process.ss"))
+           (lib "sendurl.ss" "net"))
   (provide send/suspend
            send/finish
            initial-request) 
@@ -63,7 +62,7 @@
   
   ; override some configuration options
   (define the-configuration
-    (load-configuration default-configuration-table-path))
+    (load-developer-configuration default-configuration-table-path))
   
   (define big-timeout (* 24 60 60))
   (define the-config

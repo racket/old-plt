@@ -112,6 +112,7 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
   ScrapRef scrap;
   OSErr err;
   
+  err = GetCurrentScrap(&scrap);
   err = PutScrapFlavor(scrap,format,kScrapFlavorMaskTranslated,length,(const void *)obj);
   return (err != noErr);
 #else

@@ -360,7 +360,7 @@ SetColor(Display *display, Colormap colormap, Visual *visual, char *colorname, u
 {
     XColor xcolor;
 
-    if (strcasecmp(colorname, TRANSPARENT_COLOR)) {
+    if (strcasecmp((const char *)colorname, TRANSPARENT_COLOR)) {
 #if defined(wx_msw) || defined(FOR_MAC)
 	if (!XParseColor(display, (Colormap *)colormap, colorname, &xcolor))
 #else
@@ -567,7 +567,7 @@ CreateColors(Display *display, XpmAttributes *attributes, XpmColor *ct, unsigned
 	} else {
 	    *ip = colorsymbols[l].pixel;
 	    if (symbol->value
-		&& !strcasecmp(symbol->value, TRANSPARENT_COLOR)) {
+		&& !strcasecmp((const char *)symbol->value, TRANSPARENT_COLOR)) {
 		*mp = 0;
 		*mask_pixel = 0;
 	    } else

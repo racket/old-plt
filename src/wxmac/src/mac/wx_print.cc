@@ -46,7 +46,7 @@
 #include "wx_dcps.h"
 #endif
 
-void printIdle(void)
+pascal void printIdle(void)
 {
 	EventRecord theEvent;
 	while (GetNextEvent(24,&theEvent)) {

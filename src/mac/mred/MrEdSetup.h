@@ -2,6 +2,17 @@
 #define INCLUDE_WITHOUT_PATHS
 
 #ifdef OS_X
+  #pragma precompile_target ":MrEdHeadersOSX"
+#else
+  #ifdef __powerc
+    #pragma precompile_target ":MrEdHeadersPPC"
+  #else
+    #pragma precompile_target ":MrEdHeaders68K" 
+  #endif
+#endif
+
+#ifdef OS_X
+
   #define OPAQUE_TOOLBOX_STRUCTS 1
   #define TARGET_API_MAC_CARBON 1
 

@@ -315,14 +315,7 @@ XDestroyImage(XImage *img)
 	/* I don't believe this is called in wx_mac
 	   What we should do here is destroy the GWorld
 	*/
-		GWorldPtr x_pixmap;
-		if (x_pixmap = img->bitmap) {
-			::DisposeCTable((*x_pixmap->portPixMap)->pmTable);
-			(*x_pixmap->portPixMap)->pmTable = 0;
-			::DisposePtr((Ptr) (*x_pixmap->portPixMap)->baseAddr);
-			(*x_pixmap->portPixMap)->baseAddr = 0;
-			DisposeGWorld(x_pixmap);
-		}
+		::DisposeGWorld(img->bitmap);
 #else
 		DeleteObject(img->bitmap);	/* check return ??? */
 #endif

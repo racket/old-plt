@@ -96,11 +96,11 @@ char *wxFSSpecToPath(const FSSpec *spec)
     return str;
 }
 
-OSErr wxPathToFSSpec(const char *path, FSSpec *spec)
-{
-    wxFatalError("Not Implemented Yet","");
-  // hopefully, OS X will give us a nice way to do this.
-}
+//OSErr wxPathToFSSpec(const char *path, FSSpec *spec)
+//{
+//    wxFatalError("Not Implemented Yet","");
+//  // hopefully, OS X will give us a nice way to do this.
+//}
 #else
 extern "C" {
   extern char *scheme_build_mac_filename(FSSpec *spec, int given_dir);

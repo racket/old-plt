@@ -14,6 +14,8 @@
 
 /*	MacOS Toolbox #includes */
 
+#ifndef OS_X
+
 #if !defined( __CONTROLS__ )
 	#include <Controls.h>
 #endif
@@ -36,6 +38,7 @@
 	#include <MixedMode.h>
 #endif
 
+#endif
 /*	other #includes */
 
 #if !defined( __LONGCOORDINATES__ )

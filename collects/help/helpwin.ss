@@ -75,14 +75,15 @@
 			    [done (lambda ()
 				    (set! last-url-string s)
 				    (send d show #f))])
-		       (with-handlers ([void
+		       (with-handlers ([(lambda (x) #t)
 					(lambda (x)
 					  (if (exn:file-saved-instead? x)
 					      (done)
 					      (unless (exn:cancelled? x)
 						(message-box "Bad URL" 
 							     (format "Bad URL: ~a" (exn-message x))
-							     d))))])
+							     d)
+                                                (send d show #f))))])
 			 (let ([url (string->url
 				     (cond
 				      [(regexp-match ":" s) s]
@@ -564,7 +565,14 @@
             [(equal? initial-url startup-url)
              (send html-panel goto-init-page)]
             [else
-             (send results goto-url initial-url #f)])
+             ;; if the initial-url is bad, goto the default
+             ;; initial page and re-raise the exception to
+             ;; be reported to the user.
+             (with-handlers ([(lambda (x) #t)
+                              (lambda (x)
+                                (send html-panel goto-init-page)
+                                (raise x))])
+               (send results goto-url initial-url #f))])
 
 	  (define searching-message-on? #f)
 	  (define (searching-done editor)

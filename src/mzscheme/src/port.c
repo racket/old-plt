@@ -747,7 +747,7 @@ scheme_init_port (Scheme_Env *env)
   scheme_add_global_constant("send-event", 
 			     scheme_make_prim_w_arity(sch_send_event,
 						      "send-event", 
-						      3, 4), 
+						      3, 5), 
 			     env);
 
   scheme_add_global_constant("tcp-connect", 

@@ -1,3 +1,4 @@
+(require-library "wxs.ss" "system")
 (require-library "system.ss" "system")
 
 ; (mred:initialize) ;; use this line for mred

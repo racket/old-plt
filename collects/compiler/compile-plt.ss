@@ -55,7 +55,7 @@
 						 "info.ss"))])
 		     (for-each 
 		      (lambda (sym) (info sym (lambda () (k #f))))
-		      '(name compile-prefix compile-omit-files))
+		      '(name compile-prefix))
 		     #t))))])
 	(let loop ([collection-paths (current-library-collection-paths)])
 	  (cond

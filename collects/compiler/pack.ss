@@ -21,9 +21,10 @@
     (write
      `(lambda (request failure)
 	(case request
-	  [(name) "MrSpidey"]
+	  [(name) ,name]
 	  [(unpacker) 'mzscheme]))
      stdin)
+    (newline stdin)
     (write
      `(unit 
        (import plthome mzuntar)
@@ -31,6 +32,7 @@
        (mzuntar void)
        (quote ,collections))
      stdin)
+    (newline stdin)
     (for-each
      (lambda (dir)
        (mztar dir stdin std-filter))
@@ -41,20 +43,20 @@
       (thread-wait t2))))
 
 (define (mztar dir output filter)
-  (let loop ([dir dir])
+  (let loop ([dir dir][dpath (path->list dir)])
     (printf "MzTarring ~a...~n" dir)
-    (fprintf output "~s~n~s~n" 'dir dir)
+    (fprintf output "~s~n~s~n" 'dir dpath)
     (for-each
      (lambda (f)
        (let ([p (build-path dir f)])
 	 (when (filter p)
 	       (if (directory-exists? p)
-		   (loop p)
+		   (loop p (append dpath (list f)))
 		   (let ([len (file-size p)])
 		     ; (printf "MzTarring ~a~n" p)
 		     (fprintf output "~s~n~s~n~s~n*"
 			      'file
-			      p
+			      (append dpath (list f))
 			      len)
 		     (with-input-from-file p
 		       (lambda ()
@@ -64,6 +66,12 @@
 				(write-char c output)
 				(loop)))))))))))
      (directory-list dir))))
+
+(define (path->list p)
+  (let-values ([(base name dir?) (split-path p)])
+    (if (string? base)
+	(append (path->list base) (list name))
+	(list name))))
 
 (define (std-filter path)
   (not (or (regexp-match "CVS$" path)

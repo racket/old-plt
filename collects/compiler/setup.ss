@@ -1,6 +1,4 @@
 
-(define re:archive-file (regexp ".plt$"))
-
 (parameterize ([require-library-use-compiled #f])
   (require-library "cmdline.ss"))
 
@@ -15,7 +13,7 @@
 
 (define-values (specific-collections archives)
   (parse-command-line
-   "compile-plt"
+   "setup-plt"
    argv
    `((once-each
       [("-c" "--clean")
@@ -45,20 +43,17 @@
        ,(lambda (flag)
 	  (make-verbose #t)
 	  (compiler-verbose #t))
-       ("See make and compiler verbose messages")]))
-   (lambda (accum . args) 
-     (let loop ([l args][colls null][archives null])
-       (cond
-	[(null? l)
-	 (values (reverse colls) (reverse archives))]
-	[(regexp-match re:archive-file (car l))
-	 (loop (cdr l) colls (cons (car l) archives))]
-	[else
-	 (loop (cdr l) (cons (list (car l)) colls) archives)])))
-   '("collection-or-archive")
+       ("See make and compiler verbose messages")]
+      [("-l")
+       ,(lambda (flag . specifics)
+	  (map list specifics))
+       ("Setup specific <collection>s only" "collection")]))
+   (lambda (collections . archives) 
+     (values collections archives))
+   '("archive")
    (lambda (s)
      (display s)
-     (printf "If no <collection-or-archive> is specified, all collections are compiled~n")
+     (printf "If no <archive> or -l <collection> is specified, all collections are setup~n")
      (exit 0))))
 
 (define plthome
@@ -106,21 +101,25 @@
     (make-input-port
      (lambda ()
        (let loop ()
-	 (if (>= waiting-bits 8)
-	     (begin0
-	      (integer->char (arithmetic-shift waiting (- 8 waiting-bits)))
-	      (set! waiting-bits (- waiting-bits 8))
-	      (set! waiting (bitwise-and waiting (sub1 (arithmetic-shift 1 waiting-bits)))))
-	     (let* ([c (read-char p)]
-		    [n (char->integer c)])
-	       (cond
-		[(<= (#%char->integer #\A) n (#%char->integer #\Z)) (push (- n (#%char->integer #\A)))]
-		[(<= (#%char->integer #\a) n (#%char->integer #\z)) (push (+ 26 (- n (#%char->integer #\a))))]
-		[(<= (#%char->integer #\0) n (#%char->integer #\9)) (push (+ 52 (- n (#%char->integer #\0))))]
-		[(= (#%char->integer #\+) n) (push 62)]
-		[(= (#%char->integer #\/) n) (push 63)]
-		[(= (#%char->integer #\=) n) (set! at-eof? #t)])
-	       (loop)))))
+	 (if at-eof?
+	     eof
+	     (if (>= waiting-bits 8)
+		 (begin0
+		  (integer->char (arithmetic-shift waiting (- 8 waiting-bits)))
+		  (set! waiting-bits (- waiting-bits 8))
+		  (set! waiting (bitwise-and waiting (sub1 (arithmetic-shift 1 waiting-bits)))))
+		 (let* ([c (read-char p)]
+			[n (if (eof-object? c)
+			       (#%char->integer #\=)
+			       (char->integer c))])
+		   (cond
+		    [(<= (#%char->integer #\A) n (#%char->integer #\Z)) (push (- n (#%char->integer #\A)))]
+		    [(<= (#%char->integer #\a) n (#%char->integer #\z)) (push (+ 26 (- n (#%char->integer #\a))))]
+		    [(<= (#%char->integer #\0) n (#%char->integer #\9)) (push (+ 52 (- n (#%char->integer #\0))))]
+		    [(= (#%char->integer #\+) n) (push 62)]
+		    [(= (#%char->integer #\/) n) (push 63)]
+		    [(= (#%char->integer #\=) n) (set! at-eof? #t)])
+		   (loop))))))
      (lambda ()
        (or at-eof? (char-ready? p)))
      void)))
@@ -164,7 +163,7 @@
     (let ([kind (read p)])
       (unless (eof-object? kind)
        (case kind
-	 [(dir) (let ([s (read p)])
+	 [(dir) (let ([s (apply build-path (read p))])
 		  (unless (relative-path? s)
 		    (error "expected a directory name relative path string, got" s))
 		  (when (filter s plthome)
@@ -173,14 +172,14 @@
 		       (when (verbose)
 			 (printf "  making directory ~a~n" d))
 		       (make-directory* d)))))]
-	 [(file) (let ([s (read p)])
+	 [(file) (let ([s (apply build-path (read p))])
 		   (unless (relative-path? s)
 		    (error "expected a file name relative path string, got" s))
 		   (let ([len (read p)])
 		     (unless (and (number? len) (integer? len))
 		       (error "expected a file name size, got" len))
-		     (let ([write? (filter s plthome)]
-			   [path (build-path plthome s)])
+		     (let* ([write? (filter s plthome)]
+			    [path (build-path plthome s)])
 		       (let ([out (and write?
 				       (not (file-exists? path))
 				       (open-output-file path))])
@@ -206,9 +205,10 @@
 			     (let ([c (read-char p)])
 			       (when (eof-object? c)
 				  (error (format 
-					  "unexpected end-of-file while ~a ~a"
+					  "unexpected end-of-file while ~a ~a (at ~a of ~a)"
 					   (if out "unpacking" "skipping")
-					   path)))
+					   path
+					   (- len n -1) len)))
 			       (when out
 				  (write-char c out)))
 			     (loop (sub1 n))))
@@ -503,4 +503,3 @@
 						   x))])
 		     (t plthome))))
 	      collections-to-compile)))
-

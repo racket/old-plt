@@ -31,6 +31,8 @@ AC_ARG_ENABLE(libjpeg, [  --enable-libjpeg        use libjpeg instead of buildin
 AC_ARG_ENABLE(shared, [  --enable-shared         create shared libraries])
 AC_ARG_ENABLE(dynlib, [  --enable-dynlib         same as --enable-shared])
 
+AC_ARG_ENABLE(foreign, [  --enable-foreign        compile foreign support (enabled by default)], , enable_foreign=yes)
+
 AC_ARG_ENABLE(sgc, [  --enable-sgc            use Senora GC instead of the Boehm GC])
 AC_ARG_ENABLE(sgcdebug, [  --enable-sgcdebug       use Senora GC for debugging])
 AC_ARG_ENABLE(account, [  --enable-account        3m: use memory-accounting GC (enabled by default)], , enable_account=yes)
@@ -109,7 +111,7 @@ if test "${enable_perl}" = "" ; then
 fi
 
 if test "${prefix}" = "NONE" ; then
-  prefix="${srcdir}/.."
+  prefix=`cd "${srcdir}/.." && pwd`
   MAKE_FINISH=inplace-finish
 else
   # Check whether ${prefix} is redundant, because
@@ -979,7 +981,9 @@ makefiles="Makefile
              mzscheme/gc2/Makefile mzscheme/guile/Makefile
              mzscheme/palm/Makefile"
 
-subbuilds= 
+if test -d "${srcdir}/foreign" && test "${enable_foreign}" = "yes" ; then
+  AC_CONFIG_SUBDIRS( foreign/gcc/libffi )
+fi
 
 if test "${enable_mred}" = "yes" ; then
   if test "${enable_quartz}" = "yes" ; then
@@ -1010,15 +1014,13 @@ if test "${enable_mred}" = "yes" ; then
   fi
 
   if test "${enable_libjpeg}" = "no" ; then
-    subbuilds="$subbuilds wxcommon/jpeg"
+    AC_CONFIG_SUBDIRS( wxcommon/jpeg )
   fi
 fi
 
 if test "${enable_wbuild}" = "yes" ; then
- subbuilds="$subbuilds wxxt/src/x/wbuild"
- AC_CONFIG_AUX_DIR( wxxt/src/x/wbuild ) 
+  AC_CONFIG_AUX_DIR( wxxt/src/x/wbuild )
+  AC_CONFIG_SUBDIRS( wxxt/src/x/wbuild )
 fi
-
-AC_CONFIG_SUBDIRS( $subbuilds )
 
 AC_OUTPUT($makefiles)

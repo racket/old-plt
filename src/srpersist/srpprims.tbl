@@ -60,7 +60,7 @@ static SRP_PRIM srpPrims[] = {
   { srp_SQLDisconnect,"disconnect",1,1 },       
   { srp_SQLError,"sql-error",3,3 },                 
   { srp_SQLExecDirect,"exec-direct",2,2 },      
-  { srp_SQLExecute,"execute",1,1 },             
+  { srp_SQLExecute,"sql-execute",1,1 },             
   { srp_SQLFetch,"fetch",1,1 },                 
   { srp_SQLFreeConnect,"free-connect",1,1 },    
   { srp_SQLFreeEnv,"free-env",1,1 },            

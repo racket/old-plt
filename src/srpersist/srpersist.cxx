@@ -60,14 +60,7 @@ typedef short unsigned int WCHAR;
 #include "srpinfo.tbl"
 #include "srpbitmask.tbl"
 
-
-static Scheme_Unit *srp_unit;  /* the unit returned by the extension */
-
 static SRP_BUFFER_TBL_ENTRY *bufferTable[BUFFER_TBL_SIZE];
-
-/* use Scheme's raise for new exceptions */
-
-static Scheme_Object *scheme_raise;
 
 /* NOTE
 
@@ -1609,7 +1602,9 @@ Scheme_Object *raise_valued_exn(Scheme_Object *val,char *f,
 
   exn = scheme_make_struct_instance(type,3,argv);
 
-  return scheme_apply(scheme_raise,1,&exn);  
+  scheme_raise(exn);  
+
+  return scheme_void;
 }
 
 Scheme_Object *raise_info_exn(Scheme_Object *val,char *f) {
@@ -1649,7 +1644,7 @@ RETURN_CODE checkSQLReturn(SQLRETURN sr,char *f) {
 
     exn_object = scheme_make_struct_instance(NO_DATA_EXN_TYPE,2,argv);
 
-    scheme_apply(scheme_raise,1,&exn_object);
+    scheme_raise(exn_object);
 
     break;
 
@@ -1662,7 +1657,7 @@ RETURN_CODE checkSQLReturn(SQLRETURN sr,char *f) {
 
     exn_object = scheme_make_struct_instance(INVALID_HANDLE_EXN_TYPE,2,argv);
 
-    scheme_apply(scheme_raise,1,&exn_object);
+    scheme_raise(exn_object);
 
     break;
 
@@ -1675,7 +1670,7 @@ RETURN_CODE checkSQLReturn(SQLRETURN sr,char *f) {
 
     exn_object = scheme_make_struct_instance(ERROR_EXN_TYPE,2,argv);
 
-    scheme_apply(scheme_raise,1,&exn_object);
+    scheme_raise(exn_object);
 
     break;
 
@@ -1689,7 +1684,7 @@ RETURN_CODE checkSQLReturn(SQLRETURN sr,char *f) {
 
     exn_object = scheme_make_struct_instance(STILL_EXECUTING_EXN_TYPE,2,argv);
 
-    scheme_apply(scheme_raise,1,&exn_object);
+    scheme_raise(exn_object);
 
     break;
 
@@ -2585,16 +2580,16 @@ Scheme_Object *srp_SQLExecute(int argc,Scheme_Object **argv) {
   RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
-    scheme_wrong_type("execute","sql-hstmt",0,argc,argv);
+    scheme_wrong_type("sql-execute","sql-hstmt",0,argc,argv);
   }
 
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
 
   sr = SQLExecute(stmtHandle);
 
-  retcode = checkSQLReturn(sr,"execute");
+  retcode = checkSQLReturn(sr,"sql-execute");
   
-  sql_return(argv[0],retcode,"execute");
+  sql_return(argv[0],retcode,"sql-execute");
 }
 
 Scheme_Object *srp_SQLFetch(int argc,Scheme_Object **argv) {
@@ -6692,38 +6687,6 @@ char **schemeSymbolListToStringArray(Scheme_Object **objs,int n) {
   return strs;
 }
 
-Scheme_Object *srp_unit_init(Scheme_Object **boxes,Scheme_Object **anchors,
-			     Scheme_Unit *m,void *debug_request) {
-  int name_count;
-  int i,j,k;
-
-  for (i = 0; i < (int)sizeray(srpPrims); i++) {
-    SCHEME_ENVBOX_VAL(boxes[i]) = scheme_make_prim_w_arity(srpPrims[i].c_fun,
-							   srpPrims[i].name,
-							   srpPrims[i].minargs,
-							   srpPrims[i].maxargs);
-    anchors[i] = boxes[i];
-  }
-
-  for (i = 0,k = sizeray(srpPrims); i < (int)sizeray(srpStructs); i++) {
-    name_count = srpStructs[i].name_count;
-    for (j = 0; j < name_count; j++,k++) {
-      SCHEME_ENVBOX_VAL(boxes[k]) = (*(srpStructs[i].pStructFuns))[j];
-      anchors[k] = boxes[k];
-    }
-  }
-
-  for (i = 0,k = sizeray(srpPrims) + structNameCount; i < (int)sizeray(srp_exns); i++) {
-    name_count = srp_exns[i].name_count;
-    for (j = 0; j < name_count; j++,k++) {
-      SCHEME_ENVBOX_VAL(boxes[k]) = (*(srp_exns[i].pStructFuns))[j];
-      anchors[k] = boxes[k];
-    }
-  }
-  
-  return scheme_void;
-}
-
 void initTypes(void) {
   sql_date_type = scheme_make_type("<sql-date>");
   sql_decimal_type = scheme_make_type("<sql-decimal>");
@@ -6765,7 +6728,8 @@ void initExns(Scheme_Env *env) {
   for (i = 0; i < (int)sizeray(srp_exns); i++) {
     new_exn_name = scheme_intern_symbol(srp_exns[i].name);
     new_exn_type = 
-      scheme_make_struct_type(new_exn_name,exn_type,srp_exns[i].num_fields);
+      scheme_make_struct_type(new_exn_name,exn_type,NULL,
+			      srp_exns[i].num_fields,0,NULL,NULL);
     new_exn_names = 
       scheme_make_struct_names(new_exn_name,
 			       stringArrayToSchemeSymbolList(srp_exns[i].fields,
@@ -6795,7 +6759,9 @@ void initStructs(void) {
 
   for (i = 0; i < (int)sizeray(srpStructs); i++) {
     structNameSymbol = scheme_intern_symbol(srpStructs[i].name);
-    structType = scheme_make_struct_type(structNameSymbol,NULL,srpStructs[i].num_fields);
+    structType = scheme_make_struct_type(structNameSymbol,NULL,NULL,
+					 srpStructs[i].num_fields,0,
+					 NULL,NULL);
     structNames = scheme_make_struct_names(structNameSymbol,
 					   stringArrayToSchemeSymbolList(srpStructs[i].fields,srpStructs[i].num_fields),
 					   0,&name_count);
@@ -6849,8 +6815,8 @@ Scheme_Object *schemeObjectFromString(char *s,Scheme_Env *env) {
 }
 
 void initGlobals(Scheme_Env *env) {
-  scheme_raise = schemeObjectFromString("raise",env);
-  scheme_register_extension_global(&scheme_raise,sizeof(scheme_raise));
+  //  scheme_raise = schemeObjectFromString("raise",env);
+  //  scheme_register_extension_global(&scheme_raise,sizeof(scheme_raise));
 }
 
 void sortConsts(void) {
@@ -6907,8 +6873,8 @@ void sortConsts(void) {
 }
 
 Scheme_Object *scheme_initialize(Scheme_Env *env) {
-  int name_count;
-  int i,j,k;
+  int i,j;
+  Scheme_Object *srp_name,*srp_val;
 
   initTypes();
 
@@ -6922,43 +6888,43 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   scheme_register_extension_global(&bufferTable,sizeof(bufferTable));
 
-  srp_unit = (Scheme_Unit *)scheme_malloc(sizeof(Scheme_Unit));
-  srp_unit->type = scheme_unit_type;
-  srp_unit->num_imports = 0;
-  srp_unit->num_exports = sizeray(srpPrims) + structNameCount + exnNameCount;
-  srp_unit->exports = (Scheme_Object **)
-    scheme_malloc((sizeray(srpPrims) + structNameCount + exnNameCount) * sizeof(Scheme_Object *));
-  srp_unit->export_debug_names = NULL;
-  srp_unit->init_func = srp_unit_init;
-  
-  for (i = 0; i < (int)sizeray(srpPrims); i++) {
-    srp_unit->exports[i] = scheme_intern_symbol(srpPrims[i].name);
+  srp_name = scheme_intern_symbol("srpmain");
+  env = scheme_primitive_module(srp_name,env);
+
+  for (i = 0; i < sizeray(srpPrims); i++) {
+    srp_val = scheme_make_prim_w_arity(srpPrims[i].c_fun,
+				       srpPrims[i].name,
+				       srpPrims[i].minargs,
+				       srpPrims[i].maxargs);
+    scheme_add_global(srpPrims[i].name,srp_val,env);
   }
 
-  for (i = 0,k = sizeray(srpPrims); i < (int)sizeray(srpStructs); i++) {
-    name_count = srpStructs[i].name_count;
-    for (j = 0; j < name_count; j++,k++) {
-      srp_unit->exports[k] = scheme_intern_symbol(srpStructs[i].names[j]);
+  for (i = 0; i < sizeray(srpStructs); i++) {
+    for (j = 0; j < srpStructs[i].name_count; j++) {
+      srp_val = (*(srpStructs[i].pStructFuns))[j];
+      scheme_add_global(srpStructs[i].names[j],srp_val,env);
     }
   }
 
-  for (i = 0,k = sizeray(srpPrims) + structNameCount; i < (int)sizeray(srp_exns); i++) {
-    name_count = srp_exns[i].name_count;
-    for (j = 0; j < name_count; j++,k++) {
-      srp_unit->exports[k] = scheme_intern_symbol(srp_exns[i].names[j]);
+  for (i = 0; i < sizeray(srp_exns); i++) {
+    for (j = 0; j < srp_exns[i].name_count; j++) {
+      srp_val = (*(srp_exns[i].pStructFuns))[j];
+      scheme_add_global(srp_exns[i].names[j],srp_val,env);
     }
   }
-  
+
+  scheme_finish_primitive_module(env);
+
 #ifndef __MAC_OS__
   if (isatty(fileno(stdin))) {
-    fputs("SisterPersist extension for MzScheme, "
-	  "Copyright (c) 1999-2001 Rice PLT (Paul Steckler)\n",stderr);
+    fputs("SisterPersist ODBC extension for PLT Scheme\n"
+	  "Copyright (c) 1999-2001 PLT (Paul Steckler)\n",stderr);
   }
 #endif
 
-  return (Scheme_Object *)srp_unit;
+  return scheme_void;
 }
 
 Scheme_Object *scheme_reload(Scheme_Env *env) {
-  return (Scheme_Object *)srp_unit;
+  return scheme_void;
 }

@@ -170,6 +170,7 @@ typedef float nnfloat;
 # define WITH_REMEMBERED_STACK(x)        (GC_variable_stack = __remembered_vs__, x)
 # define CONSTRUCTOR_ARGS(x)             ()
 # define CONSTRUCTOR_INIT(x)             /* empty */
+# define ASSELF                          sElF->
 #else
 # define SETUP_VAR_STACK(n)              /* empty */
 # define SETUP_VAR_STACK_REMEMBERED(n)   /* empty */
@@ -183,6 +184,7 @@ typedef float nnfloat;
 # define WITH_REMEMBERED_STACK(x)        x
 # define CONSTRUCTOR_ARGS(x)             x
 # define CONSTRUCTOR_INIT(x)             x
+# define ASSELF                          /* empty */
 #endif
 
 #ifdef __cplusplus

@@ -34,12 +34,14 @@ typedef short Type_Tag;
 #include "gc2.h"
 
 #define TIME 0
-#define SEARCH 1
-#define SAFETY 1
+#define SEARCH 0
+#define SAFETY 0
 #define RECYCLE_HEAP 0
+#define KEEP_FROM_PTR 0
 
-#define GC_EVERY_ALLOC 1000
-#define ALLOC_GC_PHASE 5
+#define GC_EVERY_ALLOC 0
+#define ALLOC_GC_PHASE 0
+#define SKIP_FORCED_GC 0
 
 void (*GC_collect_start_callback)(void);
 void (*GC_collect_end_callback)(void);
@@ -77,6 +79,16 @@ static void *park[2];
 static int cycle_count = 0;
 #if GC_EVERY_ALLOC
 static int alloc_cycle = ALLOC_GC_PHASE;
+static int skipped_first = !SKIP_FORCED_GC;
+#endif
+
+#if KEEP_FROM_PTR
+static void *mark_source;
+# define FROM_STACK ((void *)0xAAAA1)
+# define FROM_ROOT ((void *)0xAAAA3)
+# define FROM_FNL ((void *)0xAAAA5)
+# define FROM_NEW ((void *)0xAAAA7)
+# define FROM_IMM ((void *)0xAAAA7)
 #endif
 
 /******************************************************************************/
@@ -609,6 +621,11 @@ static void *mark(void *p)
       }
 #endif
 	
+#if KEEP_FROM_PTR
+      *new_tagged_high = mark_source;
+      new_tagged_high++;
+#endif
+
       {
 	int i;
 	long *a, *b;
@@ -673,13 +690,19 @@ static void *mark(void *p)
       }
 #endif
 
-#ifdef SEARCH
+#if SEARCH
       if (atomic_detail_cycle == cycle_count) {
 	printf("%ld at %lx\n", size, (long)new_untagged_low);
       }
 #endif
-	
+
+#if KEEP_FROM_PTR
+      --new_untagged_low;
+      *new_untagged_low = mark_source;
+      return new_untagged_low + 2;
+#else
       return new_untagged_low + 1;
+#endif
     }
   }
 }
@@ -864,7 +887,14 @@ void gcollect(int needsize)
   diff = (((char *)p - (char *)GC_alloc_space) + 4) >> 2;
   top = (long *)GC_alloc_top;
   while (p < top) {
-    long size = (*p & 0x3FFFFFFF) + 1;
+    long size;
+
+#if KEEP_FROM_PTR
+    diff++;
+    p++;
+#endif
+
+    size = (*p & 0x3FFFFFFF) + 1;
 
     bitmap[diff >> 3] |= (1 << (diff & 0x7));
 
@@ -875,15 +905,21 @@ void gcollect(int needsize)
   p = ((long *)GC_alloc_space);
   diff = ((char *)p - (char *)GC_alloc_space) >> 2;
   while (p < (long *)tagged_high) {
-    Type_Tag tag = *(Type_Tag *)p;
+    Type_Tag tag;
+    long size;
+      
+#if KEEP_FROM_PTR
+    diff++;
+    p++;
+#endif
+    tag = *(Type_Tag *)p;
+
 #if ALIGN_DOUBLES
     if (tag == SKIP) {
       p++;
       diff++;
     } else {
 #endif
-      long size;
-
       bitmap[diff >> 3] |= (1 << (diff & 0x7));
 
 #if SEARCH
@@ -941,6 +977,10 @@ void gcollect(int needsize)
   tagged_mark = new_tagged_high = (void **)new_space;
   untagged_mark = new_untagged_low = (void **)(new_space + new_size);
 
+#if KEEP_FROM_PTR
+  mark_source = FROM_STACK;
+#endif
+
   GC_mark_variable_stack(GC_variable_stack,
 			 0,
 			 (void *)(GC_get_thread_stack_base
@@ -948,6 +988,10 @@ void gcollect(int needsize)
 				  : stack_base));
 
   PRINTTIME((STDERR, "gc: stack: %ld\n", GETTIMEREL()));
+
+#if KEEP_FROM_PTR
+  mark_source = FROM_ROOT;
+#endif
 
   for (i = 0; i < roots_count; i += 2) {
     void **s = (void **)roots[i];
@@ -957,6 +1001,15 @@ void gcollect(int needsize)
       gcMARK(*s);
       s++;
     }
+  }
+
+#if KEEP_FROM_PTR
+  mark_source = FROM_IMM;
+#endif
+
+  /* Do immobiles: */
+  for (ib = immobile; ib; ib = ib->next) {
+    gcMARK(ib->p);
   }
 
   PRINTTIME((STDERR, "gc: roots: %ld\n", GETTIMEREL()));
@@ -971,14 +1024,20 @@ void gcollect(int needsize)
       iterations++;
       
       while (tagged_mark < new_tagged_high) {
-	Type_Tag tag = *(Type_Tag *)tagged_mark;
+	Type_Tag tag;
+	long size;
 	
+#if KEEP_FROM_PTR
+	tagged_mark++;
+#endif
+
+	tag = *(Type_Tag *)tagged_mark;
+
 #if ALIGN_DOUBLES
 	if (tag == SKIP)
 	  tagged_mark++;
 	else {
 #endif
-	  long size;
 	  
 #if SAFETY
 	  if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
@@ -986,6 +1045,10 @@ void gcollect(int needsize)
 	  }
 #endif
 	  
+#if KEEP_FROM_PTR
+	  mark_source = tagged_mark;
+#endif
+
 	  size = tag_table[tag](tagged_mark, mark);
 	  
 #if SAFETY
@@ -1011,10 +1074,17 @@ void gcollect(int needsize)
 	
 	mp = started = new_untagged_low;
 	while (mp < untagged_mark) {
-	  long v = *(long *)mp;
-	  long size = (v & 0x3FFFFFFF);
+	  long v, size;
+#if KEEP_FROM_PTR
+	  mp++;
+#endif
+	  v = *(long *)mp;
+	  size = (v & 0x3FFFFFFF);
 	  
 	  if (v & 0xC0000000) {
+#if KEEP_FROM_PTR
+	    mark_source = mp;
+#endif
 	    mp++;	    
 	    if (v & 0x80000000) {
 	      /* Array of pointers */
@@ -1058,6 +1128,9 @@ void gcollect(int needsize)
 
 	    if (v == f->p) {
 	      /* Not yet marked. Mark it and enqueue it. */
+#if KEEP_FROM_PTR
+	      mark_source = f;
+#endif
 	      gcMARK(f->p);
 
 	      if (prev)
@@ -1087,9 +1160,9 @@ void gcollect(int needsize)
 	  int markit;
 	  markit = (wp != wl->p);
 	  wp = (wp + wl->offset);
-	  *(void **)wp = wl->saved;
 	  if (markit)
-	    gcMARK(wp);
+	    gcMARK(wl->saved);
+	  *(void **)wp = wl->saved;
 	}
 	
 	/* We have to mark one more time, because restoring a weak
@@ -1128,6 +1201,9 @@ void gcollect(int needsize)
 	      if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
 		*(int *)0x0 = 1;
 	      }
+#endif
+#if KEEP_FROM_PTR
+	      mark_source = FROM_FNL;
 #endif
 	      tag_table[tag](v, mark);
 	    }
@@ -1183,6 +1259,9 @@ void gcollect(int needsize)
 	/* Mark items added to run queue: */
 	f = queue;
 	while (f) {
+#if KEEP_FROM_PTR
+	  mark_source = f;
+#endif
 	  gcMARK(f->p);
 	  f = f->next;
 	}
@@ -1235,18 +1314,6 @@ void gcollect(int needsize)
 
     wa = wa->next;
   }
-
-  /* Do immobiles: */
-  /* FIXME: shouldn't need offset of 4! */
-  for (ib = immobile; ib; ib = ib->next) {
-    void *ip, *v;
-    ip = ib->p - 4;
-    v = GC_resolve(ip);
-    if (v != ip) {
-      ib->p = (v + 4);
-    }
-  }
-
 
   /* Cleanup weak finalization links: */
   {
@@ -1364,10 +1431,26 @@ static void *malloc_tagged(size_t size_in_bytes)
 #endif
 
 #if GC_EVERY_ALLOC
-  if (++alloc_cycle >= GC_EVERY_ALLOC) {
-    alloc_cycle = 0;
-    gcollect(size_in_bytes);
+# if SKIP_FORCED_GC
+  if (!skipped_first) {
+    alloc_cycle++;
+    if (alloc_cycle >= SKIP_FORCED_GC) {
+      alloc_cycle = 0;
+      skipped_first = 1;
+    }
   }
+# endif
+  if (skipped_first) {
+    alloc_cycle++;
+    if (alloc_cycle >= GC_EVERY_ALLOC) {
+      alloc_cycle = 0;
+      gcollect(size_in_bytes);
+    }
+  }
+#endif
+
+#if KEEP_FROM_PTR
+  size_in_bytes += 4;
 #endif
 
   size_in_bytes = ((size_in_bytes + 3) & 0xFFFFFFFC);
@@ -1377,6 +1460,9 @@ static void *malloc_tagged(size_t size_in_bytes)
     if (((long)tagged_high & 0x4)) {
       if (tagged_high == untagged_low) {
 	gcollect(size_in_bytes);
+#if KEEP_FROM_PTR
+	size_in_bytes -= 4;
+#endif
 	return malloc_tagged(size_in_bytes);
       }
       ((Type_Tag *)tagged_high)[0] = SKIP;
@@ -1394,9 +1480,17 @@ static void *malloc_tagged(size_t size_in_bytes)
   naya = tagged_high + (size_in_bytes >> 2);
   if (naya > untagged_low) {
     gcollect(size_in_bytes);
+#if KEEP_FROM_PTR
+    size_in_bytes -= 4;
+#endif
     return malloc_tagged(size_in_bytes);
   }
   tagged_high = naya;
+
+#if KEEP_FROM_PTR
+  *m = FROM_NEW;
+  m++;
+#endif
 
 #if SEARCH
   if (m == search_for) {
@@ -1416,14 +1510,30 @@ static void *malloc_untagged(size_t size_in_bytes, unsigned long nonatomic)
 #endif
 
 #if GC_EVERY_ALLOC
-  if (++alloc_cycle >= GC_EVERY_ALLOC) {
-    alloc_cycle = 0;
-    gcollect(size_in_bytes);
+# if SKIP_FORCED_GC
+  if (!skipped_first) {
+    alloc_cycle++;
+    if (alloc_cycle >= SKIP_FORCED_GC) {
+      alloc_cycle = 0;
+      skipped_first = 1;
+    }
+  }
+# endif
+  if (skipped_first) {
+    alloc_cycle++;
+    if (alloc_cycle >= GC_EVERY_ALLOC) {
+      alloc_cycle = 0;
+      gcollect(size_in_bytes);
+    }
   }
 #endif
 
   if (!size_in_bytes)
     return zero_sized;
+
+#if KEEP_FROM_PTR
+  size_in_bytes += 4;
+#endif
 
   size_in_bytes = ((size_in_bytes + 3) & 0xFFFFFFFC);
 #if ALIGN_DOUBLES
@@ -1431,6 +1541,9 @@ static void *malloc_untagged(size_t size_in_bytes, unsigned long nonatomic)
     /* Make sure memory is 8-aligned */
     if ((long)untagged_low & 0x4) {
       if (untagged_low == tagged_high) {
+#if KEEP_FROM_PTR
+	size_in_bytes -= 4;
+#endif
 	gcollect(size_in_bytes);
 	return malloc_untagged(size_in_bytes, nonatomic);
       }
@@ -1448,9 +1561,18 @@ static void *malloc_untagged(size_t size_in_bytes, unsigned long nonatomic)
   naya = untagged_low - ((size_in_bytes >> 2) + 1);
   if (naya < tagged_high) {
     gcollect(size_in_bytes);
+#if KEEP_FROM_PTR
+    size_in_bytes -= 4;
+#endif
     return malloc_untagged(size_in_bytes, nonatomic);
   }
   untagged_low = naya;
+
+#if KEEP_FROM_PTR
+  *naya = FROM_NEW;
+  naya++;
+  size_in_bytes -= 4;
+#endif
 
   ((long *)naya)[0] = (size_in_bytes >> 2) | nonatomic;
   
@@ -1505,3 +1627,31 @@ void GC_gcollect()
 {
   gcollect(0);
 }
+
+/*************************************************************/
+
+#if KEEP_FROM_PTR
+
+void GC_print_back_trace(void *p)
+{
+  while ((p > GC_alloc_space) && (p < GC_alloc_top)) {
+    if (p < (void *)tagged_high) {
+      printf("%lx = tagged: %d\n", (long)p, *(short *)p);
+      p = ((void **)p)[-1];
+    } else if (p > (void *)untagged_low) {
+      printf("%lx = untagged: %lx\n", (long)p, *(long *)p);
+      p = ((void **)p)[-1];
+    } else
+      break;
+  }
+
+  if (p == FROM_STACK)
+    printf("stack\n");
+  if (p == FROM_ROOT)
+    printf("root\n");
+  if (p == FROM_FNL)
+    printf("fnl\n");
+  if (p == FROM_IMM)
+    printf("immobile\n");
+}
+#endif

@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Button.cc,v 1.9 1999/12/01 15:53:36 mflatt Exp $
  *
  * Purpose: button panel item
  *

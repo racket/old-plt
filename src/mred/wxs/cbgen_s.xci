@@ -18,11 +18,11 @@
 
 class CALLBACKCLASS;
 
-@MACRO ubCallback = (SCHEME_NULLP({x}) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2({x}, CB_USER)), tmp_callback = {x}, (CB_FUNCTYPE)CB_TOSCHEME))
+@MACRO ubCallback = (SCHEME_NULLP({x}) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2({x}, CB_USER)), cb_pos = {s}, (CB_FUNCTYPE)CB_TOSCHEME))
 
-@MACRO ubCallbackSetup = Scheme_Object *tmp_callback = NULL;
-@MACRO ubCallbackFinish = ((CALLBACKCLASS *)((Scheme_Class_Object *)obj)->primdata)->callback_closure = tmp_callback;
-@MACRO ubCallbackCreatorFinish = realobj->callback_closure = tmp_callback;
+@MACRO ubCallbackSetup = int cb_pos = 0;
+@MACRO ubCallbackFinish = ((CALLBACKCLASS *)((Scheme_Class_Object *)obj)->primdata)->callback_closure = p[cb_pos];
+@MACRO ubCallbackCreatorFinish = realobj->callback_closure = p[cb_pos];
 
 @MACRO bCallback = WITH_VAR_STACK(scheme_make_closed_prim((Scheme_Closed_Prim *)CB_TOC, {x}))
 @MACRO cCallback = (SCHEME_NULLP({x}) || WITH_REMEMBERED_STACK(objscheme_istype_proc2({x}, {s})))

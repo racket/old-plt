@@ -469,7 +469,7 @@ static Scheme_Object *os_wxMenu_ConstructScheme(Scheme_Object *obj, int n,  Sche
   VAR_STACK_PUSH(2, realobj);
   VAR_STACK_PUSH(3, x0);
 
-  Scheme_Object *tmp_callback = NULL;
+  int cb_pos = 0;
   if ((n > 2)) 
     WITH_VAR_STACK(scheme_wrong_count("initialization in menu%", 0, 2, n, p));
   if (n > 0) {
@@ -477,7 +477,7 @@ static Scheme_Object *os_wxMenu_ConstructScheme(Scheme_Object *obj, int n,  Sche
   } else
     x0 = NULL;
   if (n > 1) {
-    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
+    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
   } else
     x1 = NULL;
 
@@ -489,7 +489,7 @@ static Scheme_Object *os_wxMenu_ConstructScheme(Scheme_Object *obj, int n,  Sche
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
-  realobj->callback_closure = tmp_callback;
+  realobj->callback_closure = p[cb_pos];
   ((Scheme_Class_Object *)obj)->primdata = realobj;
   WITH_REMEMBERED_STACK(objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;

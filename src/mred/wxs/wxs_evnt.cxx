@@ -239,8 +239,9 @@ static void init_symset_actionType(void) {
 }
 
 static int unbundle_symset_actionType(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!actionType_wxEVENT_TYPE_MENU_SELECT_sym) init_symset_actionType();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!actionType_wxEVENT_TYPE_MENU_SELECT_sym) WITH_VAR_STACK(init_symset_actionType());
   if (0) { }
   else if (v == actionType_wxEVENT_TYPE_BUTTON_COMMAND_sym) { return wxEVENT_TYPE_BUTTON_COMMAND; }
   else if (v == actionType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym) { return wxEVENT_TYPE_CHECKBOX_COMMAND; }
@@ -252,7 +253,7 @@ static int unbundle_symset_actionType(Scheme_Object *v, const char *where) {
   else if (v == actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym) { return wxEVENT_TYPE_RADIOBOX_COMMAND; }
   else if (v == actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym) { return wxEVENT_TYPE_TEXT_ENTER_COMMAND; }
   else if (v == actionType_wxEVENT_TYPE_MENU_SELECT_sym) { return wxEVENT_TYPE_MENU_SELECT; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "actionType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "actionType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -652,8 +653,9 @@ static void init_symset_scrollMoveType(void) {
 }
 
 static int unbundle_symset_scrollMoveType(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) init_symset_scrollMoveType();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) WITH_VAR_STACK(init_symset_scrollMoveType());
   if (0) { }
   else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_TOP_sym) { return wxEVENT_TYPE_SCROLL_TOP; }
   else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_BOTTOM_sym) { return wxEVENT_TYPE_SCROLL_BOTTOM; }
@@ -662,7 +664,7 @@ static int unbundle_symset_scrollMoveType(Scheme_Object *v, const char *where) {
   else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEUP_sym) { return wxEVENT_TYPE_SCROLL_PAGEUP; }
   else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym) { return wxEVENT_TYPE_SCROLL_PAGEDOWN; }
   else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) { return wxEVENT_TYPE_SCROLL_THUMBTRACK; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "scrollMoveType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "scrollMoveType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -694,12 +696,13 @@ static void init_symset_orientation(void) {
 }
 
 static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!orientation_wxHORIZONTAL_sym) WITH_VAR_STACK(init_symset_orientation());
   if (0) { }
   else if (v == orientation_wxVERTICAL_sym) { return wxVERTICAL; }
   else if (v == orientation_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "orientation symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "orientation symbol", -1, 0, &v));
   return 0;
 }
 
@@ -1161,8 +1164,9 @@ static void init_symset_keyCode(void) {
 }
 
 static int unbundle_symset_keyCode(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!keyCode_WXK_SCROLL_sym) init_symset_keyCode();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!keyCode_WXK_SCROLL_sym) WITH_VAR_STACK(init_symset_keyCode());
   if (0) { }
   else if (SCHEME_CHARP(v)) { return SCHEME_CHAR_VAL(v); }
   else if (v == keyCode_WXK_ESCAPE_sym) { return WXK_ESCAPE; }
@@ -1231,7 +1235,7 @@ static int unbundle_symset_keyCode(Scheme_Object *v, const char *where) {
   else if (v == keyCode_WXK_F24_sym) { return WXK_F24; }
   else if (v == keyCode_WXK_NUMLOCK_sym) { return WXK_NUMLOCK; }
   else if (v == keyCode_WXK_SCROLL_sym) { return WXK_SCROLL; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "keyCode symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "keyCode symbol", -1, 0, &v));
   return 0;
 }
 
@@ -1727,8 +1731,9 @@ static void init_symset_mouseEventType(void) {
 }
 
 static int unbundle_symset_mouseEventType(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym) init_symset_mouseEventType();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym) WITH_VAR_STACK(init_symset_mouseEventType());
   if (0) { }
   else if (v == mouseEventType_wxEVENT_TYPE_LEFT_DOWN_sym) { return wxEVENT_TYPE_LEFT_DOWN; }
   else if (v == mouseEventType_wxEVENT_TYPE_LEFT_UP_sym) { return wxEVENT_TYPE_LEFT_UP; }
@@ -1739,7 +1744,7 @@ static int unbundle_symset_mouseEventType(Scheme_Object *v, const char *where) {
   else if (v == mouseEventType_wxEVENT_TYPE_MOTION_sym) { return wxEVENT_TYPE_MOTION; }
   else if (v == mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym) { return wxEVENT_TYPE_ENTER_WINDOW; }
   else if (v == mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym) { return wxEVENT_TYPE_LEAVE_WINDOW; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "mouseEventType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "mouseEventType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -1779,14 +1784,15 @@ static void init_symset_buttonId(void) {
 }
 
 static int unbundle_symset_buttonId(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!buttonId_3_sym) init_symset_buttonId();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!buttonId_3_sym) WITH_VAR_STACK(init_symset_buttonId());
   if (0) { }
   else if (v == buttonId_NEGATIVE_ONE_sym) { return NEGATIVE_ONE; }
   else if (v == buttonId_1_sym) { return 1; }
   else if (v == buttonId_2_sym) { return 2; }
   else if (v == buttonId_3_sym) { return 3; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "buttonId symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "buttonId symbol", -1, 0, &v));
   return 0;
 }
 

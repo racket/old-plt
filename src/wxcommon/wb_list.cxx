@@ -494,9 +494,15 @@ wxObject* wxChildNode::Data()
 {
   if (strong)
     return strong;
-  else if (weak)
-    return cnGET_WEAK(weak);
-  else
+  else if (weak) {
+    wxObject *v;
+    v = cnGET_WEAK(weak);
+#ifdef MZ_PRECISE_GC
+    if (!gcOBJ_TO_PTR(v))
+      return NULL;
+#endif
+    return v;
+  } else
     return NULL;
 }
 

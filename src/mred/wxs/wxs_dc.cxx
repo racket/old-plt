@@ -55,12 +55,13 @@ static void init_symset_textMode(void) {
 }
 
 static int unbundle_symset_textMode(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!textMode_wxSOLID_sym) init_symset_textMode();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!textMode_wxSOLID_sym) WITH_VAR_STACK(init_symset_textMode());
   if (0) { }
   else if (v == textMode_wxTRANSPARENT_sym) { return wxTRANSPARENT; }
   else if (v == textMode_wxSOLID_sym) { return wxSOLID; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "textMode symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "textMode symbol", -1, 0, &v));
   return 0;
 }
 
@@ -89,13 +90,14 @@ static void init_symset_bitmapDrawStyle(void) {
 }
 
 static int unbundle_symset_bitmapDrawStyle(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!bitmapDrawStyle_wxXOR_sym) init_symset_bitmapDrawStyle();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!bitmapDrawStyle_wxXOR_sym) WITH_VAR_STACK(init_symset_bitmapDrawStyle());
   if (0) { }
   else if (v == bitmapDrawStyle_wxSOLID_sym) { return wxSOLID; }
   else if (v == bitmapDrawStyle_wxSTIPPLE_sym) { return wxSTIPPLE; }
   else if (v == bitmapDrawStyle_wxXOR_sym) { return wxXOR; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "bitmapDrawStyle symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bitmapDrawStyle symbol", -1, 0, &v));
   return 0;
 }
 
@@ -113,12 +115,13 @@ static void init_symset_fillKind(void) {
 }
 
 static int unbundle_symset_fillKind(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!fillKind_wxWINDING_RULE_sym) init_symset_fillKind();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!fillKind_wxWINDING_RULE_sym) WITH_VAR_STACK(init_symset_fillKind());
   if (0) { }
   else if (v == fillKind_wxODDEVEN_RULE_sym) { return wxODDEVEN_RULE; }
   else if (v == fillKind_wxWINDING_RULE_sym) { return wxWINDING_RULE; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "fillKind symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "fillKind symbol", -1, 0, &v));
   return 0;
 }
 

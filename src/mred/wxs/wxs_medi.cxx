@@ -68,12 +68,13 @@ static void init_symset_bufferType(void) {
 }
 
 static int unbundle_symset_bufferType(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!bufferType_wxPASTEBOARD_BUFFER_sym) init_symset_bufferType();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!bufferType_wxPASTEBOARD_BUFFER_sym) WITH_VAR_STACK(init_symset_bufferType());
   if (0) { }
   else if (v == bufferType_wxEDIT_BUFFER_sym) { return wxEDIT_BUFFER; }
   else if (v == bufferType_wxPASTEBOARD_BUFFER_sym) { return wxPASTEBOARD_BUFFER; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "bufferType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bufferType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -111,8 +112,9 @@ static void init_symset_fileType(void) {
 }
 
 static int unbundle_symset_fileType(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!fileType_wxMEDIA_FF_COPY_sym) init_symset_fileType();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!fileType_wxMEDIA_FF_COPY_sym) WITH_VAR_STACK(init_symset_fileType());
   if (0) { }
   else if (v == fileType_wxMEDIA_FF_GUESS_sym) { return wxMEDIA_FF_GUESS; }
   else if (v == fileType_wxMEDIA_FF_STD_sym) { return wxMEDIA_FF_STD; }
@@ -120,7 +122,7 @@ static int unbundle_symset_fileType(Scheme_Object *v, const char *where) {
   else if (v == fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym) { return wxMEDIA_FF_TEXT_FORCE_CR; }
   else if (v == fileType_wxMEDIA_FF_SAME_sym) { return wxMEDIA_FF_SAME; }
   else if (v == fileType_wxMEDIA_FF_COPY_sym) { return wxMEDIA_FF_COPY; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "fileType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "fileType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -154,13 +156,14 @@ static void init_symset_focus(void) {
 }
 
 static int unbundle_symset_focus(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!focus_wxFOCUS_GLOBAL_sym) init_symset_focus();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!focus_wxFOCUS_GLOBAL_sym) WITH_VAR_STACK(init_symset_focus());
   if (0) { }
   else if (v == focus_wxFOCUS_IMMEDIATE_sym) { return wxFOCUS_IMMEDIATE; }
   else if (v == focus_wxFOCUS_DISPLAY_sym) { return wxFOCUS_DISPLAY; }
   else if (v == focus_wxFOCUS_GLOBAL_sym) { return wxFOCUS_GLOBAL; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "focus symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "focus symbol", -1, 0, &v));
   return 0;
 }
 
@@ -193,13 +196,14 @@ static void init_symset_bias(void) {
 }
 
 static int unbundle_symset_bias(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!bias_Sym_END_sym) init_symset_bias();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!bias_Sym_END_sym) WITH_VAR_STACK(init_symset_bias());
   if (0) { }
   else if (v == bias_Sym_START_sym) { return Sym_START; }
   else if (v == bias_Sym_NONE_sym) { return Sym_NONE; }
   else if (v == bias_Sym_END_sym) { return Sym_END; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "bias symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bias symbol", -1, 0, &v));
   return 0;
 }
 
@@ -230,13 +234,14 @@ static void init_symset_caret(void) {
 }
 
 static int unbundle_symset_caret(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) init_symset_caret();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) WITH_VAR_STACK(init_symset_caret());
   if (0) { }
   else if (v == caret_wxSNIP_DRAW_NO_CARET_sym) { return wxSNIP_DRAW_NO_CARET; }
   else if (v == caret_wxSNIP_DRAW_SHOW_CARET_sym) { return wxSNIP_DRAW_SHOW_CARET; }
   else if (v == caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) { return wxSNIP_DRAW_SHOW_INACTIVE_CARET; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "caret symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "caret symbol", -1, 0, &v));
   return 0;
 }
 
@@ -293,8 +298,9 @@ static void init_symset_editOp(void) {
 }
 
 static int unbundle_symset_editOp(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!editOp_wxEDIT_SELECT_ALL_sym) init_symset_editOp();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!editOp_wxEDIT_SELECT_ALL_sym) WITH_VAR_STACK(init_symset_editOp());
   if (0) { }
   else if (v == editOp_wxEDIT_UNDO_sym) { return wxEDIT_UNDO; }
   else if (v == editOp_wxEDIT_REDO_sym) { return wxEDIT_REDO; }
@@ -307,7 +313,7 @@ static int unbundle_symset_editOp(Scheme_Object *v, const char *where) {
   else if (v == editOp_wxEDIT_INSERT_GRAPHIC_BOX_sym) { return wxEDIT_INSERT_GRAPHIC_BOX; }
   else if (v == editOp_wxEDIT_INSERT_IMAGE_sym) { return wxEDIT_INSERT_IMAGE; }
   else if (v == editOp_wxEDIT_SELECT_ALL_sym) { return wxEDIT_SELECT_ALL; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "editOp symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "editOp symbol", -1, 0, &v));
   return 0;
 }
 
@@ -342,12 +348,13 @@ static void init_symset_printMethod(void) {
 }
 
 static int unbundle_symset_printMethod(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!printMethod_1_sym) init_symset_printMethod();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!printMethod_1_sym) WITH_VAR_STACK(init_symset_printMethod());
   if (0) { }
   else if (v == printMethod_0_sym) { return 0; }
   else if (v == printMethod_1_sym) { return 1; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "printMethod symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "printMethod symbol", -1, 0, &v));
   return 0;
 }
 
@@ -383,8 +390,9 @@ static void init_symset_bitmapType(void) {
 }
 
 static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) init_symset_bitmapType();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) WITH_VAR_STACK(init_symset_bitmapType());
   if (0) { }
   else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return wxBITMAP_TYPE_BMP; }
   else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return wxBITMAP_TYPE_GIF; }
@@ -392,7 +400,7 @@ static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
   else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
   else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
   else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { return wxBITMAP_TYPE_UNKNOWN; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -556,19 +564,23 @@ nstring os_wxMediaBuffer::PutFile(nstring x0, nstring x1)
   Scheme_Object *p[2];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(6);
+  SETUP_VAR_STACK(7);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 2);
-  VAR_STACK_PUSH(4, x0);
-  VAR_STACK_PUSH(5, x1);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH(5, x0);
+  VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "put-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return wxMediaBuffer::PutFile(x0, x1);
+    return ASSELF wxMediaBuffer::PutFile(x0, x1);
   } else {
   
   p[0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
@@ -587,18 +599,22 @@ nstring os_wxMediaBuffer::GetFile(nstring x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "get-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return wxMediaBuffer::GetFile(x0);
+    return ASSELF wxMediaBuffer::GetFile(x0);
   } else {
   
   p[0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
@@ -616,16 +632,20 @@ void os_wxMediaBuffer::AfterEditSequence()
   Scheme_Object **p = NULL;
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(1);
+  SETUP_VAR_STACK(2);
   VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "after-edit-sequence", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxMediaBuffer::AfterEditSequence();
+    ASSELF wxMediaBuffer::AfterEditSequence();
   } else {
   
   
@@ -641,16 +661,20 @@ void os_wxMediaBuffer::OnEditSequence()
   Scheme_Object **p = NULL;
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(1);
+  SETUP_VAR_STACK(2);
   VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-edit-sequence", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxMediaBuffer::OnEditSequence();
+    ASSELF wxMediaBuffer::OnEditSequence();
   } else {
   
   
@@ -666,17 +690,21 @@ void os_wxMediaBuffer::AfterLoadFile(Bool x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(4);
+  SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "after-load-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxMediaBuffer::AfterLoadFile(x0);
+    ASSELF wxMediaBuffer::AfterLoadFile(x0);
   } else {
   
   p[0] = (x0 ? scheme_true : scheme_false);
@@ -693,18 +721,22 @@ void os_wxMediaBuffer::OnLoadFile(string x0, int x1)
   Scheme_Object *p[2];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 2);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-load-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxMediaBuffer::OnLoadFile(x0, x1);
+    ASSELF wxMediaBuffer::OnLoadFile(x0, x1);
   } else {
   
   p[0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
@@ -722,18 +754,22 @@ Bool os_wxMediaBuffer::CanLoadFile(string x0, int x1)
   Scheme_Object *p[2];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 2);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "can-load-file?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return wxMediaBuffer::CanLoadFile(x0, x1);
+    return ASSELF wxMediaBuffer::CanLoadFile(x0, x1);
   } else {
   
   p[0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
@@ -752,17 +788,21 @@ void os_wxMediaBuffer::AfterSaveFile(Bool x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(4);
+  SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "after-save-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxMediaBuffer::AfterSaveFile(x0);
+    ASSELF wxMediaBuffer::AfterSaveFile(x0);
   } else {
   
   p[0] = (x0 ? scheme_true : scheme_false);
@@ -779,18 +819,22 @@ void os_wxMediaBuffer::OnSaveFile(string x0, int x1)
   Scheme_Object *p[2];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 2);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-save-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxMediaBuffer::OnSaveFile(x0, x1);
+    ASSELF wxMediaBuffer::OnSaveFile(x0, x1);
   } else {
   
   p[0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
@@ -808,18 +852,22 @@ Bool os_wxMediaBuffer::CanSaveFile(string x0, int x1)
   Scheme_Object *p[2];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 2);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "can-save-file?", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return wxMediaBuffer::CanSaveFile(x0, x1);
+    return ASSELF wxMediaBuffer::CanSaveFile(x0, x1);
   } else {
   
   p[0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
@@ -838,17 +886,21 @@ class wxSnip* os_wxMediaBuffer::OnNewBox(int x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(4);
+  SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-new-box", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return wxMediaBuffer::OnNewBox(x0);
+    return ASSELF wxMediaBuffer::OnNewBox(x0);
   } else {
   
   p[0] = WITH_VAR_STACK(bundle_symset_bufferType(x0));
@@ -866,18 +918,22 @@ class wxImageSnip* os_wxMediaBuffer::OnNewImageSnip(nstring x0, int x1, Bool x2,
   Scheme_Object *p[4];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 4);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 4);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-new-image-snip", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return wxMediaBuffer::OnNewImageSnip(x0, x1, x2, x3);
+    return ASSELF wxMediaBuffer::OnNewImageSnip(x0, x1, x2, x3);
   } else {
   
   p[0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
@@ -898,11 +954,15 @@ void os_wxMediaBuffer::InvalidateBitmapCache(float x0, float x1, float x2, float
   Scheme_Object *p[4];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(4);
+  SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 4);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 4);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "invalidate-bitmap-cache", &mcache);
@@ -928,18 +988,22 @@ void os_wxMediaBuffer::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, floa
   Scheme_Object *p[9];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 9);
-  VAR_STACK_PUSH(4, x1);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 9);
+  VAR_STACK_PUSH(5, x1);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-paint", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxMediaBuffer::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8);
+    ASSELF wxMediaBuffer::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   } else {
   
   p[0] = (x0 ? scheme_true : scheme_false);
@@ -964,18 +1028,22 @@ Bool os_wxMediaBuffer::WriteFootersToFile(class wxMediaStreamOut* x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "write-footers-to-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return wxMediaBuffer::WriteFootersToFile(x0);
+    return ASSELF wxMediaBuffer::WriteFootersToFile(x0);
   } else {
   
   p[0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(x0));
@@ -993,18 +1061,22 @@ Bool os_wxMediaBuffer::WriteHeadersToFile(class wxMediaStreamOut* x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "write-headers-to-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return wxMediaBuffer::WriteHeadersToFile(x0);
+    return ASSELF wxMediaBuffer::WriteHeadersToFile(x0);
   } else {
   
   p[0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamOut(x0));
@@ -1022,19 +1094,23 @@ Bool os_wxMediaBuffer::ReadFooterFromFile(class wxMediaStreamIn* x0, string x1)
   Scheme_Object *p[2];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(6);
+  SETUP_VAR_STACK(7);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 2);
-  VAR_STACK_PUSH(4, x0);
-  VAR_STACK_PUSH(5, x1);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH(5, x0);
+  VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "read-footer-from-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return wxMediaBuffer::ReadFooterFromFile(x0, x1);
+    return ASSELF wxMediaBuffer::ReadFooterFromFile(x0, x1);
   } else {
   
   p[0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamIn(x0));
@@ -1053,19 +1129,23 @@ Bool os_wxMediaBuffer::ReadHeaderFromFile(class wxMediaStreamIn* x0, string x1)
   Scheme_Object *p[2];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(6);
+  SETUP_VAR_STACK(7);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 2);
-  VAR_STACK_PUSH(4, x0);
-  VAR_STACK_PUSH(5, x1);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH(5, x0);
+  VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "read-header-from-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return wxMediaBuffer::ReadHeaderFromFile(x0, x1);
+    return ASSELF wxMediaBuffer::ReadHeaderFromFile(x0, x1);
   } else {
   
   p[0] = WITH_VAR_STACK(objscheme_bundle_wxMediaStreamIn(x0));
@@ -1084,12 +1164,16 @@ void os_wxMediaBuffer::SetFilename(nstring x0, Bool x1)
   Scheme_Object *p[2];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 2);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "set-filename", &mcache);
@@ -1113,12 +1197,16 @@ Bool os_wxMediaBuffer::ReleaseSnip(class wxSnip* x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "release-snip", &mcache);
@@ -1142,17 +1230,21 @@ void os_wxMediaBuffer::SetModified(Bool x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(4);
+  SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "set-modified", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxMediaBuffer::SetModified(x0);
+    ASSELF wxMediaBuffer::SetModified(x0);
   } else {
   
   p[0] = (x0 ? scheme_true : scheme_false);
@@ -1169,13 +1261,17 @@ void os_wxMediaBuffer::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
   Scheme_Object *p[2];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(6);
+  SETUP_VAR_STACK(7);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 2);
-  VAR_STACK_PUSH(4, x0);
-  VAR_STACK_PUSH(5, x1);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH(5, x0);
+  VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "set-snip-data", &mcache);
@@ -1199,12 +1295,16 @@ class wxBufferData* os_wxMediaBuffer::GetSnipData(class wxSnip* x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "get-snip-data", &mcache);
@@ -1228,12 +1328,16 @@ void os_wxMediaBuffer::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat
   Scheme_Object *p[5];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 5);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 5);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "needs-update", &mcache);
@@ -1260,12 +1364,16 @@ void os_wxMediaBuffer::Resized(class wxSnip* x0, Bool x1)
   Scheme_Object *p[2];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 2);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "resized", &mcache);
@@ -1289,12 +1397,16 @@ void os_wxMediaBuffer::SetCaretOwner(class wxSnip* x0, int x1)
   Scheme_Object *p[2];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 2);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "set-caret-owner", &mcache);
@@ -1318,12 +1430,16 @@ Bool os_wxMediaBuffer::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3
   Scheme_Object *p[7];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 7);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 7);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "scroll-to", &mcache);
@@ -1353,16 +1469,20 @@ void os_wxMediaBuffer::OnDisplaySize()
   Scheme_Object **p = NULL;
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(1);
+  SETUP_VAR_STACK(2);
   VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-display-size", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxMediaBuffer::OnDisplaySize();
+    ASSELF wxMediaBuffer::OnDisplaySize();
   } else {
   
   
@@ -1378,10 +1498,14 @@ void os_wxMediaBuffer::OnChange()
   Scheme_Object **p = NULL;
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(1);
+  SETUP_VAR_STACK(2);
   VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-change", &mcache);
@@ -1403,17 +1527,21 @@ void os_wxMediaBuffer::OnFocus(Bool x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(4);
+  SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxMediaBuffer::OnFocus(x0);
+    ASSELF wxMediaBuffer::OnFocus(x0);
   } else {
   
   p[0] = (x0 ? scheme_true : scheme_false);
@@ -1430,12 +1558,16 @@ void os_wxMediaBuffer::OnDefaultChar(class wxKeyEvent* x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-default-char", &mcache);
@@ -1458,12 +1590,16 @@ void os_wxMediaBuffer::OnDefaultEvent(class wxMouseEvent* x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-default-event", &mcache);
@@ -1486,18 +1622,22 @@ void os_wxMediaBuffer::OnLocalChar(class wxKeyEvent* x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-local-char", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxMediaBuffer::OnLocalChar(x0);
+    ASSELF wxMediaBuffer::OnLocalChar(x0);
   } else {
   
   p[0] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x0));
@@ -1514,18 +1654,22 @@ void os_wxMediaBuffer::OnLocalEvent(class wxMouseEvent* x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-local-event", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxMediaBuffer::OnLocalEvent(x0);
+    ASSELF wxMediaBuffer::OnLocalEvent(x0);
   } else {
   
   p[0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
@@ -1542,10 +1686,14 @@ void os_wxMediaBuffer::SizeCacheInvalid()
   Scheme_Object **p = NULL;
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(1);
+  SETUP_VAR_STACK(2);
   VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "size-cache-invalid", &mcache);
@@ -1567,10 +1715,14 @@ void os_wxMediaBuffer::BlinkCaret()
   Scheme_Object **p = NULL;
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(1);
+  SETUP_VAR_STACK(2);
   VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "blink-caret", &mcache);
@@ -1592,11 +1744,15 @@ void os_wxMediaBuffer::OwnCaret(Bool x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(4);
+  SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "own-caret", &mcache);
@@ -1619,11 +1775,15 @@ void os_wxMediaBuffer::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x
   Scheme_Object *p[5];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(4);
+  SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 5);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 5);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "refresh", &mcache);
@@ -1650,12 +1810,16 @@ class wxCursor* os_wxMediaBuffer::AdjustCursor(class wxMouseEvent* x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "adjust-cursor", &mcache);
@@ -1679,12 +1843,16 @@ void os_wxMediaBuffer::OnChar(class wxKeyEvent* x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-char", &mcache);
@@ -1707,12 +1875,16 @@ void os_wxMediaBuffer::OnEvent(class wxMouseEvent* x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-event", &mcache);
@@ -1735,12 +1907,16 @@ void os_wxMediaBuffer::CopySelfTo(class wxMediaBuffer* x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "copy-self-to", &mcache);
@@ -1763,10 +1939,14 @@ class wxMediaBuffer* os_wxMediaBuffer::CopySelf()
   Scheme_Object **p = NULL;
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(1);
+  SETUP_VAR_STACK(2);
   VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "copy-self", &mcache);

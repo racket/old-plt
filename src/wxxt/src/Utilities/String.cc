@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: String.cc,v 1.5 1999/11/24 21:20:20 mflatt Exp $
  *
  * Purpose: string copy and conversion
  *

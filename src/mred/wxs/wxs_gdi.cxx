@@ -67,8 +67,9 @@ static void init_symset_bitmapType(void) {
 }
 
 static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) init_symset_bitmapType();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) WITH_VAR_STACK(init_symset_bitmapType());
   if (0) { }
   else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return wxBITMAP_TYPE_BMP; }
   else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return wxBITMAP_TYPE_GIF; }
@@ -76,7 +77,7 @@ static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
   else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
   else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
   else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { return wxBITMAP_TYPE_UNKNOWN; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -126,8 +127,9 @@ static void init_symset_family(void) {
 }
 
 static int unbundle_symset_family(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!family_wxSYMBOL_sym) init_symset_family();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!family_wxSYMBOL_sym) WITH_VAR_STACK(init_symset_family());
   if (0) { }
   else if (v == family_wxDEFAULT_sym) { return wxDEFAULT; }
   else if (v == family_wxDECORATIVE_sym) { return wxDECORATIVE; }
@@ -137,13 +139,14 @@ static int unbundle_symset_family(Scheme_Object *v, const char *where) {
   else if (v == family_wxMODERN_sym) { return wxMODERN; }
   else if (v == family_wxSYSTEM_sym) { return wxSYSTEM; }
   else if (v == family_wxSYMBOL_sym) { return wxSYMBOL; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "family symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "family symbol", -1, 0, &v));
   return 0;
 }
 
 static int istype_symset_family(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!family_wxSYMBOL_sym) init_symset_family();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!family_wxSYMBOL_sym) WITH_VAR_STACK(init_symset_family());
   if (0) { }
   else if (v == family_wxDEFAULT_sym) { return 1; }
   else if (v == family_wxDECORATIVE_sym) { return 1; }
@@ -153,7 +156,7 @@ static int istype_symset_family(Scheme_Object *v, const char *where) {
   else if (v == family_wxMODERN_sym) { return 1; }
   else if (v == family_wxSYSTEM_sym) { return 1; }
   else if (v == family_wxSYMBOL_sym) { return 1; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "family symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "family symbol", -1, 0, &v));
   return 0;
 }
 
@@ -188,13 +191,14 @@ static void init_symset_weight(void) {
 }
 
 static int unbundle_symset_weight(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!weight_wxBOLD_sym) init_symset_weight();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!weight_wxBOLD_sym) WITH_VAR_STACK(init_symset_weight());
   if (0) { }
   else if (v == weight_wxNORMAL_sym) { return wxNORMAL; }
   else if (v == weight_wxLIGHT_sym) { return wxLIGHT; }
   else if (v == weight_wxBOLD_sym) { return wxBOLD; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "weight symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "weight symbol", -1, 0, &v));
   return 0;
 }
 
@@ -224,13 +228,14 @@ static void init_symset_style(void) {
 }
 
 static int unbundle_symset_style(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!style_wxSLANT_sym) init_symset_style();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!style_wxSLANT_sym) WITH_VAR_STACK(init_symset_style());
   if (0) { }
   else if (v == style_wxNORMAL_sym) { return wxNORMAL; }
   else if (v == style_wxITALIC_sym) { return wxITALIC; }
   else if (v == style_wxSLANT_sym) { return wxSLANT; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "style symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "style symbol", -1, 0, &v));
   return 0;
 }
 
@@ -1664,8 +1669,9 @@ static void init_symset_brushStyle(void) {
 }
 
 static int unbundle_symset_brushStyle(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!brushStyle_wxVERTICAL_HATCH_sym) init_symset_brushStyle();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!brushStyle_wxVERTICAL_HATCH_sym) WITH_VAR_STACK(init_symset_brushStyle());
   if (0) { }
   else if (v == brushStyle_wxTRANSPARENT_sym) { return wxTRANSPARENT; }
   else if (v == brushStyle_wxSOLID_sym) { return wxSOLID; }
@@ -1677,7 +1683,7 @@ static int unbundle_symset_brushStyle(Scheme_Object *v, const char *where) {
   else if (v == brushStyle_wxCROSS_HATCH_sym) { return wxCROSS_HATCH; }
   else if (v == brushStyle_wxHORIZONTAL_HATCH_sym) { return wxHORIZONTAL_HATCH; }
   else if (v == brushStyle_wxVERTICAL_HATCH_sym) { return wxVERTICAL_HATCH; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "brushStyle symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "brushStyle symbol", -1, 0, &v));
   return 0;
 }
 
@@ -2340,8 +2346,9 @@ static void init_symset_penStyle(void) {
 }
 
 static int unbundle_symset_penStyle(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!penStyle_wxXOR_DOT_DASH_sym) init_symset_penStyle();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!penStyle_wxXOR_DOT_DASH_sym) WITH_VAR_STACK(init_symset_penStyle());
   if (0) { }
   else if (v == penStyle_wxTRANSPARENT_sym) { return wxTRANSPARENT; }
   else if (v == penStyle_wxSOLID_sym) { return wxSOLID; }
@@ -2354,7 +2361,7 @@ static int unbundle_symset_penStyle(Scheme_Object *v, const char *where) {
   else if (v == penStyle_wxXOR_LONG_DASH_sym) { return wxXOR_LONG_DASH; }
   else if (v == penStyle_wxXOR_SHORT_DASH_sym) { return wxXOR_SHORT_DASH; }
   else if (v == penStyle_wxXOR_DOT_DASH_sym) { return wxXOR_DOT_DASH; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "penStyle symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "penStyle symbol", -1, 0, &v));
   return 0;
 }
 
@@ -2392,13 +2399,14 @@ static void init_symset_join(void) {
 }
 
 static int unbundle_symset_join(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!join_wxJOIN_ROUND_sym) init_symset_join();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!join_wxJOIN_ROUND_sym) WITH_VAR_STACK(init_symset_join());
   if (0) { }
   else if (v == join_wxJOIN_BEVEL_sym) { return wxJOIN_BEVEL; }
   else if (v == join_wxJOIN_MITER_sym) { return wxJOIN_MITER; }
   else if (v == join_wxJOIN_ROUND_sym) { return wxJOIN_ROUND; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "join symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "join symbol", -1, 0, &v));
   return 0;
 }
 
@@ -2428,13 +2436,14 @@ static void init_symset_cap(void) {
 }
 
 static int unbundle_symset_cap(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!cap_wxCAP_BUTT_sym) init_symset_cap();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!cap_wxCAP_BUTT_sym) WITH_VAR_STACK(init_symset_cap());
   if (0) { }
   else if (v == cap_wxCAP_ROUND_sym) { return wxCAP_ROUND; }
   else if (v == cap_wxCAP_PROJECTING_sym) { return wxCAP_PROJECTING; }
   else if (v == cap_wxCAP_BUTT_sym) { return wxCAP_BUTT; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "cap symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "cap symbol", -1, 0, &v));
   return 0;
 }
 
@@ -3245,8 +3254,9 @@ static void init_symset_cursor(void) {
 }
 
 static int unbundle_symset_cursor(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!cursor_wxCURSOR_WATCH_sym) init_symset_cursor();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!cursor_wxCURSOR_WATCH_sym) WITH_VAR_STACK(init_symset_cursor());
   if (0) { }
   else if (v == cursor_wxCURSOR_ARROW_sym) { return wxCURSOR_ARROW; }
   else if (v == cursor_wxCURSOR_BULLSEYE_sym) { return wxCURSOR_BULLSEYE; }
@@ -3254,13 +3264,14 @@ static int unbundle_symset_cursor(Scheme_Object *v, const char *where) {
   else if (v == cursor_wxCURSOR_HAND_sym) { return wxCURSOR_HAND; }
   else if (v == cursor_wxCURSOR_IBEAM_sym) { return wxCURSOR_IBEAM; }
   else if (v == cursor_wxCURSOR_WATCH_sym) { return wxCURSOR_WATCH; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "cursor symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "cursor symbol", -1, 0, &v));
   return 0;
 }
 
 static int istype_symset_cursor(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!cursor_wxCURSOR_WATCH_sym) init_symset_cursor();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!cursor_wxCURSOR_WATCH_sym) WITH_VAR_STACK(init_symset_cursor());
   if (0) { }
   else if (v == cursor_wxCURSOR_ARROW_sym) { return 1; }
   else if (v == cursor_wxCURSOR_BULLSEYE_sym) { return 1; }
@@ -3268,7 +3279,7 @@ static int istype_symset_cursor(Scheme_Object *v, const char *where) {
   else if (v == cursor_wxCURSOR_HAND_sym) { return 1; }
   else if (v == cursor_wxCURSOR_IBEAM_sym) { return 1; }
   else if (v == cursor_wxCURSOR_WATCH_sym) { return 1; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "cursor symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "cursor symbol", -1, 0, &v));
   return 0;
 }
 
@@ -3607,12 +3618,13 @@ static void init_symset_fillKind(void) {
 }
 
 static int unbundle_symset_fillKind(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!fillKind_wxWINDING_RULE_sym) init_symset_fillKind();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!fillKind_wxWINDING_RULE_sym) WITH_VAR_STACK(init_symset_fillKind());
   if (0) { }
   else if (v == fillKind_wxODDEVEN_RULE_sym) { return wxODDEVEN_RULE; }
   else if (v == fillKind_wxWINDING_RULE_sym) { return wxWINDING_RULE; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "fillKind symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "fillKind symbol", -1, 0, &v));
   return 0;
 }
 

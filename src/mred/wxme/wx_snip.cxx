@@ -735,6 +735,14 @@ void wxTextSnip::Split(long position, wxSnip **first, wxSnip **second)
   snip->count = position;
   count -= position;
 
+#ifdef MZ_PRECISE_GC
+  /* Make sure text is word-aligned: */
+  if ((long)text & 0x1) {
+    memmove(text - 1, text, count);
+    text -= 1;
+  }
+#endif
+
   if (count && ((allocated / count) > MAX_WASTE)) {
     allocated = count;
     buffer = STRALLOC(allocated + 1);

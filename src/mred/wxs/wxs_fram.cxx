@@ -72,8 +72,9 @@ static void init_symset_frameStyle(void) {
 }
 
 static int unbundle_symset_frameStyle(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!frameStyle_wxNO_RESIZE_BORDER_sym) init_symset_frameStyle();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!frameStyle_wxNO_RESIZE_BORDER_sym) WITH_VAR_STACK(init_symset_frameStyle());
   Scheme_Object *i, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
@@ -88,7 +89,7 @@ static int unbundle_symset_frameStyle(Scheme_Object *v, const char *where) {
   l = SCHEME_CDR(l);
   }
   if (SCHEME_NULLP(l)) return result;
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "frameStyle symbol list", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "frameStyle symbol list", -1, 0, &v));
   return 0;
 }
 
@@ -108,13 +109,14 @@ static void init_symset_iconKind(void) {
 }
 
 static int unbundle_symset_iconKind(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!iconKind_2_sym) init_symset_iconKind();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!iconKind_2_sym) WITH_VAR_STACK(init_symset_iconKind());
   if (0) { }
   else if (v == iconKind_0_sym) { return 0; }
   else if (v == iconKind_1_sym) { return 1; }
   else if (v == iconKind_2_sym) { return 2; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "iconKind symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "iconKind symbol", -1, 0, &v));
   return 0;
 }
 
@@ -190,18 +192,22 @@ void os_wxFrame::OnDropFile(pathname x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxFrame *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxFrame_class, "on-drop-file", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxFrame::OnDropFile(x0);
+    ASSELF wxFrame::OnDropFile(x0);
   } else {
   mz_jmp_buf savebuf;
   p[0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
@@ -218,13 +224,17 @@ Bool os_wxFrame::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   Scheme_Object *p[2];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxFrame *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(6);
+  SETUP_VAR_STACK(7);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 2);
-  VAR_STACK_PUSH(4, x0);
-  VAR_STACK_PUSH(5, x1);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH(5, x0);
+  VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxFrame_class, "pre-on-event", &mcache);
@@ -249,13 +259,17 @@ Bool os_wxFrame::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   Scheme_Object *p[2];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxFrame *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(6);
+  SETUP_VAR_STACK(7);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 2);
-  VAR_STACK_PUSH(4, x0);
-  VAR_STACK_PUSH(5, x1);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH(5, x0);
+  VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxFrame_class, "pre-on-char", &mcache);
@@ -280,17 +294,21 @@ void os_wxFrame::OnSize(int x0, int x1)
   Scheme_Object *p[2];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxFrame *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(4);
+  SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 2);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 2);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxFrame_class, "on-size", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxFrame::OnSize(x0, x1);
+    ASSELF wxFrame::OnSize(x0, x1);
   } else {
   
   p[0] = scheme_make_integer(x0);
@@ -308,16 +326,20 @@ void os_wxFrame::OnSetFocus()
   Scheme_Object **p = NULL;
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxFrame *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(1);
+  SETUP_VAR_STACK(2);
   VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxFrame_class, "on-set-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxFrame::OnSetFocus();
+    ASSELF wxFrame::OnSetFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -333,16 +355,20 @@ void os_wxFrame::OnKillFocus()
   Scheme_Object **p = NULL;
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxFrame *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(1);
+  SETUP_VAR_STACK(2);
   VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxFrame_class, "on-kill-focus", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxFrame::OnKillFocus();
+    ASSELF wxFrame::OnKillFocus();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
@@ -358,17 +384,21 @@ void os_wxFrame::OnMenuCommand(ExactLong x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxFrame *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(4);
+  SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxFrame_class, "on-menu-command", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxFrame::OnMenuCommand(x0);
+    ASSELF wxFrame::OnMenuCommand(x0);
   } else {
   
   p[0] = WITH_VAR_STACK(scheme_make_integer_value(x0));
@@ -385,16 +415,20 @@ Bool os_wxFrame::OnClose()
   Scheme_Object **p = NULL;
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxFrame *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(1);
+  SETUP_VAR_STACK(2);
   VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxFrame_class, "on-close", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    return wxFrame::OnClose();
+    return ASSELF wxFrame::OnClose();
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 0; }
@@ -411,17 +445,21 @@ void os_wxFrame::OnActivate(Bool x0)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxFrame *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(4);
+  SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxFrame_class, "on-activate", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxFrame::OnActivate(x0);
+    ASSELF wxFrame::OnActivate(x0);
   } else {
   mz_jmp_buf savebuf;
   p[0] = (x0 ? scheme_true : scheme_false);

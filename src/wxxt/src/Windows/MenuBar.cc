@@ -236,7 +236,7 @@ Bool wxMenuBar::Delete(wxMenu *menu, int pos)
       mnu = EXTRACT_TOP_MENU(i);
       mnu->owner = NULL;
 #ifdef MZ_PRECISE_GC
-      children->Append(mnu);
+      children->DeleteObject(mnu);
 #endif
       FREE_TOP_POINTER(i->user_data);
     }

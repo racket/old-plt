@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Slider.cc,v 1.11 1999/12/01 15:53:37 mflatt Exp $
  *
  * Purpose: slider panel item
  *

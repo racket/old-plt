@@ -61,8 +61,9 @@ static void init_symset_bitmapType(void) {
 }
 
 static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) init_symset_bitmapType();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) WITH_VAR_STACK(init_symset_bitmapType());
   if (0) { }
   else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return wxBITMAP_TYPE_BMP; }
   else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return wxBITMAP_TYPE_GIF; }
@@ -70,7 +71,7 @@ static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
   else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
   else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
   else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { return wxBITMAP_TYPE_UNKNOWN; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -108,14 +109,15 @@ static void init_symset_saveBitmapType(void) {
 }
 
 static int unbundle_symset_saveBitmapType(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!saveBitmapType_wxBITMAP_TYPE_PICT_sym) init_symset_saveBitmapType();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!saveBitmapType_wxBITMAP_TYPE_PICT_sym) WITH_VAR_STACK(init_symset_saveBitmapType());
   if (0) { }
   else if (v == saveBitmapType_wxBITMAP_TYPE_BMP_sym) { return wxBITMAP_TYPE_BMP; }
   else if (v == saveBitmapType_wxBITMAP_TYPE_XBM_sym) { return wxBITMAP_TYPE_XBM; }
   else if (v == saveBitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
   else if (v == saveBitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "saveBitmapType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "saveBitmapType symbol", -1, 0, &v));
   return 0;
 }
 

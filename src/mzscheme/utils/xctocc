@@ -659,7 +659,7 @@ sub PrintFailureHandling
 		if ($callback) {
 		    print "obj->";
 		}
-		print "${oldclass}::${func}(";
+		print "ASSELF ${oldclass}::${func}(";
 	    }
 	}
 	&PrintArgs(1);
@@ -823,13 +823,16 @@ sub PrintMethod
     # Local variables
     if ($numschemes > 0) {
 	print "  Scheme_Object *p[${numschemes}];\n";
-        $varstacksize = 4;
+        $varstacksize = 5;
     } else {
 	print "  Scheme_Object **p = NULL;\n";
-        $varstacksize = 1;
+        $varstacksize = 2;
     }
     print "  Scheme_Object *v;\n"; #  mz_jmp_buf savebuf;\n
     print "  Scheme_Object *method;\n"; #  int sj;\n
+    print "#ifdef MZ_PRECISE_GC\n";
+    print "  ${newclass} *sElF = this;\n";
+    print "#endif\n";
     print "  static void *mcache = 0;\n\n";
 
     # Count pushable arguments
@@ -852,11 +855,12 @@ sub PrintMethod
 
     print "  SETUP_VAR_STACK($varstacksize);\n";
     print "  VAR_STACK_PUSH(0, method);\n";
+    print "  VAR_STACK_PUSH(1, sElF);\n";
     if ($numschemes > 0) {
-	print "  VAR_STACK_PUSH_ARRAY(1, p, $numschemes);\n";
-	$varstackpos = 4;
+	print "  VAR_STACK_PUSH_ARRAY(2, p, $numschemes);\n";
+	$varstackpos = 5;
     } else {
-	$varstackpos = 1;
+	$varstackpos = 2;
     }
 
     # Push arguments
@@ -1057,6 +1061,9 @@ sub PrintFunction
 	    print "  SETUP_PRE_VAR_STACK(2);\n";
 	    print "  PRE_VAR_STACK_PUSH(0, obj);\n";
 	    print "  PRE_VAR_STACK_PUSH(1, p);\n";
+	} else {
+	    print "  SETUP_PRE_VAR_STACK(1);\n";
+	    print "  PRE_VAR_STACK_PUSH(0, obj);\n";
 	}
 	print "  ${newclass} *realobj;\n";
 	print "  REMEMBER_VAR_STACK();\n";
@@ -2297,8 +2304,9 @@ sub PrintSymSet
 
 	if ($dothisone) {
 	    print "static int ${mode}_symset_${name}(Scheme_Object *v, const char *where) {\n";
-	    print "  REMEMBER_VAR_STACK();\n";
-	    print "  if (!${name}_${v}_sym) init_symset_${name}();\n";
+	    print "  SETUP_VAR_STACK(1);\n";
+	    print "  VAR_STACK_PUSH(0, v);\n";
+	    print "  if (!${name}_${v}_sym) WITH_VAR_STACK(init_symset_${name}());\n";
 	    if ($multi) {
 		$vv = "i";
 		print "  Scheme_Object *i, *l = v;\n";
@@ -2349,7 +2357,7 @@ sub PrintSymSet
 		print "  }\n";
 		print "  if (SCHEME_NULLP(l)) return result;\n";
 	    }
-	    print "  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, \"$name symbol${lname}\", -1, 0, &v));\n";
+	    print "  if (where) WITH_VAR_STACK(scheme_wrong_type(where, \"$name symbol${lname}\", -1, 0, &v));\n";
 	    print "  return 0;\n";
 	    print "}\n\n";
 	}

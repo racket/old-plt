@@ -409,19 +409,19 @@ wxKeycode *wxKeymap::MapFunction(long code, int shift, int ctrl,
   return newkey;
 }
 
-static long GetCode(unsigned char **keyseqp)
+static long GetCode(unsigned char *keyseq, int *_kp)
 {
-  unsigned char *keyseq = *keyseqp;
-  long i, code;
+  long i, code, kp;
 #define MAX_BUF 256
   unsigned char buffer[MAX_BUF], first;
 
-  first = buffer[0] = *(keyseq++);
-  for (i = 1; *keyseq && (*keyseq != ';'); i++) {
+  kp = *_kp;
+
+  first = buffer[0] = keyseq[kp++];
+  for (i = 1; keyseq[kp] && (keyseq[kp] != ';'); i++, kp++) {
     if (i >= MAX_BUF - 1)
       return 0;
-    buffer[i] = tolower(*keyseq);
-    keyseq++;
+    buffer[i] = tolower(keyseq[kp]);
   }
   buffer[i] = 0;
   code = 0;
@@ -436,7 +436,7 @@ static long GetCode(unsigned char **keyseqp)
   } else
     code = first;
 
-  *keyseqp = keyseq;
+  *_kp = kp;
 
   return code;
 }
@@ -444,42 +444,42 @@ static long GetCode(unsigned char **keyseqp)
 void wxKeymap::MapFunction(char *keys, char *fname)
 {
   char *keyseq = keys;
-  int num_keys, num_new_keys;
+  int num_keys, num_new_keys, kp, start_keys;
   wxKeycode **key, **new_key;
   int shift, ctrl, alt, meta, mod;
   int part = 1, i, j;
   long code;
-  char *errstr, *start_keys;
+  char *errstr;
   char buffer[256];
 
   num_keys = 1;
   key = new wxKeycode*[1];
   key[0] = NULL;
 
-  start_keys = keys;
+  start_keys = kp = 0;
 
-  while (*keyseq) {
+  while (keyseq[kp]) {
     shift = ctrl = alt = meta = 0;
     code = 0;
     
-    while (*keyseq && (*keyseq != ';')) {
+    while (keyseq[kp] && (keyseq[kp] != ';')) {
       mod = 1;
-      if ((keyseq == start_keys) && (*keyseq == ':') && keyseq[1]) {
+      if ((kp == start_keys) && (keyseq[kp] == ':') && keyseq[kp + 1]) {
 	shift = ctrl = alt = meta = -1;
-	keyseq++;
-      } else if (*keyseq == '~') {
-	if (!keyseq[1] || (keyseq[2] != ':')) {
+	kp++;
+      } else if (keyseq[kp] == '~') {
+	if (!keyseq[kp + 1] || (keyseq[kp + 2] != ':')) {
 	  goto do_char;
 	} else {
 	  mod = -1;
-	  keyseq++;
+	  kp++;
 	  goto do_mod;
 	}
-      } else if (isspace(*keyseq)) {
-	keyseq++;
-      } else if (keyseq[1] == ':') {
+      } else if (isspace(keyseq[kp])) {
+	kp++;
+      } else if (keyseq[kp + 1] == ':') {
       do_mod:
-	switch (tolower(*keyseq)) {
+	switch (tolower(keyseq[kp])) {
 	case 's':
 	  shift = mod;
 	  break;
@@ -510,10 +510,10 @@ void wxKeymap::MapFunction(char *keys, char *fname)
 	  goto key_error;
 	}
 	mod = 1;
-	keyseq += 2;
+	kp += 2;
       } else {
       do_char:
-	code = GetCode((unsigned char **)&keyseq);
+	code = GetCode((unsigned char *)keyseq, &kp);
 	if (!code) {
 	  errstr = "bad keyname";
 	  goto key_error;
@@ -535,7 +535,7 @@ void wxKeymap::MapFunction(char *keys, char *fname)
       for (i = 0, j = 0; i < num_keys; i++) {
 	wxKeycode *mf;
 	mf = MapFunction(code, shift, ctrl, alt, meta, fname, key[i], 
-			 *keyseq ? wxKEY_PREFIX : wxKEY_FINAL);
+			 keyseq[kp] ? wxKEY_PREFIX : wxKEY_FINAL);
 	new_key[j++] = mf;
       }
 
@@ -544,9 +544,9 @@ void wxKeymap::MapFunction(char *keys, char *fname)
       key = new_key;
 
       part++;
-      if (*keyseq)
-	keyseq++;
-      start_keys = keyseq;
+      if (keyseq[kp])
+	kp++;
+      start_keys = kp;
     } else {
       errstr = "no non-modifier key";
       goto key_error;

@@ -1287,6 +1287,8 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
     
     SnipSetAdmin(isnip, snipAdmin);
   } else {
+    int sp;
+
     addlen = strlen;
     
     if (!CanInsert(start, addlen))
@@ -1379,12 +1381,13 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
     }
 
     snipStartPos = start;
-    str = snip->text + s;
+    str = snip->text;
+    sp = s;
     for (i = 0; i < addlen; i++) {
-      if (*str == '\r')
-	*str = '\n';
-      if (*str == '\n' || *str == '\t') {
-	Bool newline = (*str == '\n');
+      if (str[sp] == '\r')
+	str[sp] = '\n';
+      if (str[sp] == '\n' || str[sp] == '\t') {
+	Bool newline = (str[sp] == '\n');
 
 	MakeSnipset(i + start, i + start + 1);
 	snip = (wxTextSnip *)FindSnip(i + start, +1);
@@ -1465,8 +1468,9 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 	snip = (wxTextSnip *)FindSnip(i + start + 1, +1);
 	snipStartPos = i + start + 1;
 	str = snip->text;
+	sp = 0;
       } else
-	str++;
+	sp++;
     }
 
     /* Divide up snip if it's too large: */

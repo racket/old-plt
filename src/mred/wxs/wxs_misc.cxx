@@ -86,16 +86,20 @@ void os_wxTimer::Notify()
   Scheme_Object **p = NULL;
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxTimer *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(1);
+  SETUP_VAR_STACK(2);
   VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTimer_class, "notify", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    wxTimer::Notify();
+    ASSELF wxTimer::Notify();
   } else {
   
   
@@ -625,12 +629,16 @@ nstring os_wxClipboardClient::GetData(string x0, long* x1)
   Scheme_Object *p[1];
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxClipboardClient *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
-  VAR_STACK_PUSH_ARRAY(1, p, 1);
-  VAR_STACK_PUSH(4, x0);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, 1);
+  VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxClipboardClient_class, "get-data", &mcache);
@@ -654,10 +662,14 @@ void os_wxClipboardClient::BeingReplaced()
   Scheme_Object **p = NULL;
   Scheme_Object *v;
   Scheme_Object *method;
+#ifdef MZ_PRECISE_GC
+  os_wxClipboardClient *sElF = this;
+#endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(1);
+  SETUP_VAR_STACK(2);
   VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxClipboardClient_class, "on-replaced", &mcache);
@@ -899,13 +911,14 @@ static void init_symset_psMode(void) {
 }
 
 static int unbundle_symset_psMode(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!psMode_PS_PRINTER_sym) init_symset_psMode();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!psMode_PS_PRINTER_sym) WITH_VAR_STACK(init_symset_psMode());
   if (0) { }
   else if (v == psMode_PS_PREVIEW_sym) { return PS_PREVIEW; }
   else if (v == psMode_PS_FILE_sym) { return PS_FILE; }
   else if (v == psMode_PS_PRINTER_sym) { return PS_PRINTER; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "psMode symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "psMode symbol", -1, 0, &v));
   return 0;
 }
 
@@ -932,12 +945,13 @@ static void init_symset_psOrientation(void) {
 }
 
 static int unbundle_symset_psOrientation(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!psOrientation_PS_LANDSCAPE_sym) init_symset_psOrientation();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!psOrientation_PS_LANDSCAPE_sym) WITH_VAR_STACK(init_symset_psOrientation());
   if (0) { }
   else if (v == psOrientation_PS_PORTRAIT_sym) { return PS_PORTRAIT; }
   else if (v == psOrientation_PS_LANDSCAPE_sym) { return PS_LANDSCAPE; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "psOrientation symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "psOrientation symbol", -1, 0, &v));
   return 0;
 }
 

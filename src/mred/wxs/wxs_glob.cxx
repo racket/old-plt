@@ -64,14 +64,15 @@ static void init_symset_fileSelMode(void) {
 }
 
 static int unbundle_symset_fileSelMode(Scheme_Object *v, const char *where) {
-  REMEMBER_VAR_STACK();
-  if (!fileSelMode_wxHIDE_READONLY_sym) init_symset_fileSelMode();
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!fileSelMode_wxHIDE_READONLY_sym) WITH_VAR_STACK(init_symset_fileSelMode());
   if (0) { }
   else if (v == fileSelMode_wxOPEN_sym) { return wxOPEN; }
   else if (v == fileSelMode_wxSAVE_sym) { return wxSAVE; }
   else if (v == fileSelMode_wxOVERWRITE_PROMPT_sym) { return wxOVERWRITE_PROMPT; }
   else if (v == fileSelMode_wxHIDE_READONLY_sym) { return wxHIDE_READONLY; }
-  if (where) WITH_REMEMBERED_STACK(scheme_wrong_type(where, "fileSelMode symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "fileSelMode symbol", -1, 0, &v));
   return 0;
 }
 

@@ -210,8 +210,12 @@ Scheme_Type scheme_make_type(const char *name)
   scheme_misc_count += (20 * sizeof(char *));
 #endif
   }
-  
-  type_names[maxtype] = scheme_strdup(name);
+
+  {
+    char *tn;
+    tn = scheme_strdup(name);
+    type_names[maxtype] = tn;
+  }
 
   return maxtype++;
 }
@@ -232,7 +236,9 @@ int scheme_find_type(Scheme_Object *ts)
 
   for (i = maxtype; i--; ) {
     if (type_names[i]) {
-      char *tss = type_names[i] + 1, *s = str;
+      char *tss, *s;
+      tss = type_names[i] + 1;
+      s = str;
       while (*s && *tss && (*s == *tss)) {
 	s++;
 	tss++;

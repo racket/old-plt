@@ -33,7 +33,7 @@ FP_TYPE SCHEME_BIGNUM_TO_FLOAT_INFO(const Scheme_Object *n, int skip, int *_skip
   d = 0;
   while (nl--) {
     d *= (FP_TYPE)BIG_RADIX;
-    d += (unsigned)*(--na);
+    d += *(--na);
     if (IS_FLOAT_INF(d))
       break;
     --skipped;

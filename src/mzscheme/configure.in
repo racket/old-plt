@@ -207,6 +207,9 @@ fi
 # for flags we don't want to use in config tests:
 EXTRALIBS=
 
+# for gmp assembly:
+EXTRA_GMP_OBJ=
+
 OS=`$UNAME -s`
 case $OS in
   SunOS)
@@ -244,13 +247,18 @@ case $OS in
          X_LIBS="$X_LIBS -L/usr/X11R6/lib"
        fi
        ;;
+      alpha)
+       EXTRA_GMP_OBJ="gmp_alpha_gcc.o"
+       ;;
       *)
        ;;
     esac
     ;;
   OSF1)
     if test "$CC" = "cc" ; then 
-      CFLAGS="$CFLAGS -iee_with_inexact"
+      CFLAGS="$CFLAGS -ieee_with_inexact -assume noaligned_objects"
+    elif test "$CC" = "gcc" ; then 
+      EXTRA_GMP_OBJ="gmp_alpha_gcc.o"
     fi
     ;;
   HP-UX)
@@ -498,6 +506,7 @@ AC_SUBST(MROPTIONS)
 AC_SUBST(GCDIR)
 AC_SUBST(MZBINTARGET)
 AC_SUBST(MZINSTALLTARGET)
+AC_SUBST(EXTRA_GMP_OBJ)
 
 AC_SUBST(MREDLINKER)
 AC_SUBST(LIBSFX)

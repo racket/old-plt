@@ -16,6 +16,7 @@
 
 
 #include <stdio.h>
+#include <unistd.h>
 #ifndef _WIN32_WCE
 #include <signal.h>
 #endif

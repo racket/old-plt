@@ -48,7 +48,7 @@ OBJS =  salloc.o \
 	syntax.o \
 	thread.o \
 	type.o \
-	vector.o
+	vector.o  @EXTRA_GMP_OBJ@
 
 SRCS =  $(srcdir)/salloc.c \
 	$(srcdir)/bignum.c \
@@ -208,6 +208,9 @@ type.o: $(srcdir)/type.c
 	$(CC) $(CFLAGS) -c $(srcdir)/type.c -o type.o
 vector.o: $(srcdir)/vector.c
 	$(CC) $(CFLAGS) -c $(srcdir)/vector.c -o vector.o
+
+gmp_alpha_gcc.o: $(srcdir)/gmp/gmp_alpha_gcc.s
+	$(AS) -o gmp_alpha_gcc.o $(srcdir)/gmp/gmp_alpha_gcc.s
 
 SCONFIG =   $(srcdir)/../sconfig.h $(srcdir)/../uconfig.h
 

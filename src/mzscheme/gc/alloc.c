@@ -979,14 +979,17 @@ GC_bool ignore_off_page;
       if (!GC_expand_hp_inner(blocks_to_get)
         && !GC_expand_hp_inner(needed_blocks)) {
       	if (GC_fail_count++ < GC_max_retries) {
+	  /* PLTSCHEME: rather not see this message */
+#if 0
+      	    WARN("Out of Memory!  Trying to continue ...\n", 0);
+#endif
+	    GC_notify_full_gc();
+	    GC_gcollect_inner();
+	} else {
 	    /* PLTSCHEME */
 	    if (GC_out_of_memory)
 	      GC_out_of_memory();
 
-      	    WARN("Out of Memory!  Trying to continue ...\n", 0);
-	    GC_notify_full_gc();
-	    GC_gcollect_inner();
-	} else {
 #	    if !defined(AMIGA) || !defined(GC_AMIGA_FASTALLOC)
 	      WARN("Out of Memory!  Returning NIL!\n", 0);
 #	    endif

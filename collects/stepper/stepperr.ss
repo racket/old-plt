@@ -81,7 +81,6 @@
                       (send outer-edit change-style output-delta between
                             (send outer-edit last-position))
                       (when (and redex-begin redex-end)
-;                        (send outer-edit change-style redex-delta redex-begin redex-end))
                         (send outer-edit highlight-range redex-begin redex-end highlight-color #f #f))
                       (set! history (append history (list outer-edit)))))))]
              
@@ -106,7 +105,6 @@
              [s-frame (make-object f:frame:basic% "Stepper")]
              [output-delta (make-object style-delta% 'change-family 'modern)]
              [result-delta (make-object style-delta% 'change-family 'modern)]
-;             [redex-delta (make-object style-delta%)] 
              [error-delta (make-object style-delta%)]
                                        
              [button-panel (make-object horizontal-panel% s-frame)]

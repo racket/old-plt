@@ -203,7 +203,7 @@ $(srcdir)/../../include/scheme.h: \
           $(srcdir)/src/stypes.h $(srcdir)/src/schemex.h $(srcdir)/src/schemexm.h $(srcdir)/src/schexn.h \
           $(srcdir)/include/ext.exp $(srcdir)/include/mzscheme.exp $(srcdir)/include/mzscheme3m.exp $(srcdir)/../../include 
 	cp  $(srcdir)/gc2/gc2.h $(srcdir)/../../include/schemegc2.h
-	$(SED) 's,^ */[*]III[*]/ *$,#define INCLUDE_WITHOUT_PATHS,' \
+	$(SED) 's,^ */[*]III[*]/ *$$,#define INCLUDE_WITHOUT_PATHS,' \
           < $(srcdir)/include/scheme.h > $(srcdir)/../../include/scheme.h
 
 # mzdyn.c, used for MacOS "library"

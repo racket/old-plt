@@ -201,9 +201,9 @@ void scheme_post_sema(Scheme_Object *o)
 	  w->waiting->result = w->waiting_i + 1;
 	  if (w->waiting->disable_break)
 	    scheme_set_param(w->waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
+	  t->value -= 1;
 	}
 	w->picked = 1;
-	t->value -= 1;
       }
 
       w->in_line = 0;
@@ -311,7 +311,7 @@ static int out_of_line(Scheme_Object *a)
   }
 
   /* Suspended by user? */
-  if (p->running & SCHEME_USER_SUSPENDED)
+  if (p->running & MZTHREAD_USER_SUSPENDED)
     return 1;
 
   return 0;
@@ -562,6 +562,7 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	} else {
 	  /* Mark the thread to indicate that we need to clean up
 	     if the thread is killed. */
+	  scheme_current_thread->running += MZTHREAD_NEED_KILL_CLEANUP;
 	  scheme_weak_suspend_thread(scheme_current_thread);
 	  scheme_current_thread->running -= MZTHREAD_NEED_KILL_CLEANUP;
 	}
@@ -607,50 +608,51 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	  
 	  scheme_thread_block(0); /* ok if it returns multiple times */ 
 	  /* [but why would it return multiple times?! there must have been a reason...] */
-	}
+	} else {
 
-	if ((scheme_current_thread->running & MZTHREAD_KILLED)
-	    (scheme_current_thread->running & MZTHREAD_USER_SUSPENDED)) {
-	  /* We've been killed or suspended! */
-	  i = -1;
-	}
+	  if ((scheme_current_thread->running & MZTHREAD_KILLED)
+	      || (scheme_current_thread->running & MZTHREAD_USER_SUSPENDED)) {
+	    /* We've been killed or suspended! */
+	    i = -1;
+	  }
 
-	/* We got a post from semas[i], or we were killed. 
-	   Did any (other) semaphore pick us?
-	   (This only happens when waiting == NULL.) */
-	if (!waiting) {
-	  int j;
+	  /* We got a post from semas[i], or we were killed. 
+	     Did any (other) semaphore pick us?
+	     (This only happens when waiting == NULL.) */
+	  if (!waiting) {
+	    int j;
 
-	  for (j = 0; j < n; j++) {
-	    if (j != i) {
-	      if (ws[j]->picked) {
-		if (semas[j]->value) {
-		  /* Consume the value and repost, because no one else
-		     has been told to go, and we're accepting a different post. */
-		  if (semas[j]->value > 0)
-		    --semas[j]->value;
-		  scheme_post_sema((Scheme_Object *)(semas[j]));
+	    for (j = 0; j < n; j++) {
+	      if (j != i) {
+		if (ws[j]->picked) {
+		  if (semas[j]->value) {
+		    /* Consume the value and repost, because no one else
+		       has been told to go, and we're accepting a different post. */
+		    if (semas[j]->value > 0)
+		      --semas[j]->value;
+		    scheme_post_sema((Scheme_Object *)(semas[j]));
+		  }
 		}
 	      }
 	    }
 	  }
-	}
 
-	/* If we're done, get out of all lines that we're still in. */
-	if (i < n) {
-	  int j;
-	  for (j = 0; j < n; j++) {
-	    if (ws[j]->in_line)
-	      get_outof_line(semas[j], ws[j]);
+	  /* If we're done, get out of all lines that we're still in. */
+	  if (i < n) {
+	    int j;
+	    for (j = 0; j < n; j++) {
+	      if (ws[j]->in_line)
+		get_outof_line(semas[j], ws[j]);
+	    }
 	  }
-	}
 
-	if (i == -1) {
-	  scheme_thread_block(0); /* dies or suspends */
-	}
+	  if (i == -1) {
+	    scheme_thread_block(0); /* dies or suspends */
+	  }
 
-	if (i < n)
-	  break;
+	  if (i < n)
+	    break;
+	}
 
 	/* Otherwise: someone stole the post! Loop to get back in line an try again. */
       }
@@ -700,8 +702,9 @@ static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p)
 
 static int pending_break(Scheme_Thread *p)
 {
-  if (scheme_current_thread->running & MZTHREAD_KILLED)
+  if (scheme_current_thread->running & (MZTHREAD_KILLED | MZTHREAD_USER_SUSPENDED))
     return 1;
+
   if (p->external_break) {
     int v;
 

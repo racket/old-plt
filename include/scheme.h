@@ -332,7 +332,8 @@ typedef struct Scheme_Vector {
 #define SCHEME_THREADP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_thread_type)
 #define SCHEME_CUSTODIANP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_custodian_type)
 #define SCHEME_SEMAP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_sema_type)
-
+#define SCHEME_CHANNELP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_channel_type)
+#define SCHEME_CHANNEL_PUTP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_channel_put_type)
 
 #define SCHEME_CONFIGP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_config_type)
 #define SCHEME_NAMESPACEP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_namespace_type)
@@ -675,6 +676,9 @@ typedef struct Scheme_Thread {
   struct Scheme_Dynamic_Wind *dw;
 
   int running;
+  Scheme_Object *suspended_box; /* contains pointer to thread when it's suspended */
+  Scheme_Object *resumed_box;   /* contains pointer to thread when it's resumed */
+  Scheme_Object *dead_box;      /* contains non-zero when the thread is dead */
 
   struct Scheme_Thread *nester, *nestee;
 

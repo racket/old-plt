@@ -365,9 +365,10 @@ MZ_EXTERN Scheme_Object *scheme_make_sema(long v);
 MZ_EXTERN void scheme_post_sema(Scheme_Object *o);
 MZ_EXTERN void scheme_post_sema_all(Scheme_Object *o);
 MZ_EXTERN int scheme_wait_sema(Scheme_Object *o, int just_try);
-MZ_EXTERN int scheme_wait_semas(int n, Scheme_Object **o, int just_try);
 #endif
 MZ_EXTERN Scheme_Object **scheme_char_constants;
+
+MZ_EXTERN Scheme_Object *scheme_make_channel();
 
 MZ_EXTERN int scheme_get_int_val(Scheme_Object *o, long *v);
 MZ_EXTERN int scheme_get_unsigned_int_val(Scheme_Object *o, unsigned long *v);

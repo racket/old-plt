@@ -209,7 +209,7 @@ static Scheme_Object *thread_swap_callbacks;
 static void register_traversers(void);
 #endif
 
-static void prepare_thread_for_GC(Scheme_Object *t);
+static void prepare_this_thread_for_GC(Scheme_Thread *t);
 
 static Scheme_Object *custodian_require_mem(int argc, Scheme_Object *args[]);
 static Scheme_Object *custodian_limit_mem(int argc, Scheme_Object *args[]);
@@ -228,6 +228,11 @@ static Scheme_Object *thread_wait(int argc, Scheme_Object *args[]);
 static Scheme_Object *sch_current(int argc, Scheme_Object *args[]);
 static Scheme_Object *kill_thread(int argc, Scheme_Object *args[]);
 static Scheme_Object *break_thread(int argc, Scheme_Object *args[]);
+static Scheme_Object *thread_suspend(int argc, Scheme_Object *args[]);
+static Scheme_Object *thread_resume(int argc, Scheme_Object *args[]);
+static Scheme_Object *make_thread_suspend(int argc, Scheme_Object *args[]);
+static Scheme_Object *make_thread_resume(int argc, Scheme_Object *args[]);
+static Scheme_Object *make_thread_dead(int argc, Scheme_Object *args[]);
 static void register_thread_wait();
 #endif
 
@@ -402,19 +407,19 @@ void scheme_init_thread(Scheme_Env *env)
 						      1, 2), 
 			     env);
 
-  scheme_add_global_constant("make-thread-resume-waitable", 
+  scheme_add_global_constant("thread-resume-waitable", 
 			     scheme_make_prim_w_arity(make_thread_resume,
-						      "make-thread-resume-waitable", 
+						      "thread-resume-waitable", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("make-thread-suspend-waitable", 
+  scheme_add_global_constant("thread-suspend-waitable", 
 			     scheme_make_prim_w_arity(make_thread_suspend,
-						      "make-thread-suspend-waitable", 
+						      "thread-suspend-waitable", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("make-thread-dead-waitable", 
+  scheme_add_global_constant("thread-dead-waitable", 
 			     scheme_make_prim_w_arity(make_thread_dead,
-						      "make-thread-dead-waitable", 
+						      "thread-dead-waitable", 
 						      1, 1), 
 			     env);
 
@@ -1511,13 +1516,13 @@ static void thread_is_dead(Scheme_Thread *r)
     scheme_post_sema_all(o);
     r->dead_box = NULL;
   }
-  if (r->suspend_box) {
-    SCHEME_PTR2_VAL(r->suspend_box) = NULL;
-    r->suspend_box = NULL;
+  if (r->suspended_box) {
+    SCHEME_PTR2_VAL(r->suspended_box) = NULL;
+    r->suspended_box = NULL;
   }
-  if (r->resume_box) {
-    SCHEME_PTR2_VAL(r->resume_box) = NULL;
-    r->resume_box = NULL;
+  if (r->resumed_box) {
+    SCHEME_PTR2_VAL(r->resumed_box) = NULL;
+    r->resumed_box = NULL;
   }
   
   r->list_stack = NULL;
@@ -1540,7 +1545,7 @@ static void remove_thread(Scheme_Thread *r)
   if (r->prev) {
     r->prev->next = r->next;
     r->next->prev = r->prev;
-  } else {
+  } else if (r->next) {
     if (r->next)
       r->next->prev = NULL;
     scheme_first_thread = r->next;
@@ -1968,7 +1973,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 
   /* zero out anything we need now, because nestee disables
      GC cleaning for this thread: */
-  prepare_thread_for_GC((Scheme_Object *)nestee);
+  prepare_this_thread_for_GC(p);
 
   np->nester = p;
   p->nestee = np;
@@ -2000,7 +2005,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 
   scheme_current_thread = np;
 
-  if (p->next) /* not main thread... */
+  if (0 && p->next) /* not main thread... */
     scheme_weak_suspend_thread(p);
 
   /* Call thunk, catch escape: */
@@ -2029,6 +2034,9 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
     scheme_first_thread = np->next;
   np->next->prev = np->prev;
 
+  np->next = NULL;
+  np->prev = NULL;
+
   np->running = 0;
 
   p->external_break = np->external_break;
@@ -2039,7 +2047,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 
   scheme_current_thread = p;
 
-  if (p->next) /* not main thread... */
+  if (0 && p->next) /* not main thread... */
     scheme_weak_resume_thread(p);
 
 #ifdef RUNSTACK_IS_GLOBAL
@@ -2687,7 +2695,7 @@ void scheme_weak_suspend_thread(Scheme_Thread *r)
 
   r->running |= MZTHREAD_SUSPENDED;
 
-  prepare_thread_for_GC((Scheme_Object *)r);
+  prepare_this_thread_for_GC(r);
 
   if (r == scheme_current_thread) {
     /* NOTE: swap_to might not be a good choice, because it
@@ -2887,10 +2895,14 @@ void scheme_pop_kill_action()
 /*                      suspend/resume and waitables                      */
 /*========================================================================*/
 
-static Scheme_Object *suspend_thread(int argc, Scheme_Object *argv[])
+static Scheme_Object *thread_suspend(int argc, Scheme_Object *argv[])
 {
+  Scheme_Thread *p;
+
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
     scheme_wrong_type("suspend-thread", "thread", 0, argc, argv);
+
+  p = (Scheme_Thread *)argv[0];
 
   if (!MZTHREAD_STILL_RUNNING(p->running))
     return scheme_void;
@@ -2917,10 +2929,14 @@ static Scheme_Object *suspend_thread(int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
-static Scheme_Object *resume_thread(int argc, Scheme_Object *argv[])
+static Scheme_Object *thread_resume(int argc, Scheme_Object *argv[])
 {
+  Scheme_Thread *p;
+
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
     scheme_wrong_type("resume-thread", "thread", 0, argc, argv);
+
+  p = (Scheme_Thread *)argv[0];
 
   if (!MZTHREAD_STILL_RUNNING(p->running))
     return scheme_void;
@@ -2932,6 +2948,21 @@ static Scheme_Object *resume_thread(int argc, Scheme_Object *argv[])
 
   scheme_weak_resume_thread(p);
 
+  return scheme_void;
+}
+
+static Scheme_Object *make_thread_suspend(int argc, Scheme_Object *args[])
+{
+  return scheme_void;
+}
+
+static Scheme_Object *make_thread_resume(int argc, Scheme_Object *args[])
+{
+  return scheme_void;
+}
+
+static Scheme_Object *make_thread_dead(int argc, Scheme_Object *args[])
+{
   return scheme_void;
 }
 
@@ -4279,6 +4310,19 @@ static void prepare_thread_for_GC(Scheme_Object *t)
 
   /* zero ununsed part of list stack */
   scheme_clean_list_stack(p);
+}
+
+static void prepare_this_thread_for_GC(Scheme_Thread *p)
+{
+  if (p == scheme_current_thread) {
+#ifdef RUNSTACK_IS_GLOBAL
+    scheme_current_thread->runstack = MZ_RUNSTACK;
+    scheme_current_thread->runstack_start = MZ_RUNSTACK_START;
+    scheme_current_thread->cont_mark_stack = MZ_CONT_MARK_STACK;
+    scheme_current_thread->cont_mark_pos = MZ_CONT_MARK_POS;
+#endif
+  }
+  prepare_thread_for_GC((Scheme_Object *)p);
 }
 
 static void get_ready_for_GC()

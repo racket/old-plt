@@ -298,9 +298,9 @@ Scheme_Object *(*scheme_make_sema)(long v);
 void (*scheme_post_sema)(Scheme_Object *o);
 void (*scheme_post_sema_all)(Scheme_Object *o);
 int (*scheme_wait_sema)(Scheme_Object *o, int just_try);
-int (*scheme_wait_semas)(int n, Scheme_Object **o, int just_try);
 #endif
 Scheme_Object **scheme_char_constants;
+Scheme_Object *(*scheme_make_channel)();
 int (*scheme_get_int_val)(Scheme_Object *o, long *v);
 int (*scheme_get_unsigned_int_val)(Scheme_Object *o, unsigned long *v);
 double (*scheme_real_to_double)(Scheme_Object *r);

@@ -1,5 +1,5 @@
 Intermediate level tests of DrScheme Jr
-Date: Fri May 15 10:09:27 CDT 1998
+Date: Wed May 20 17:40:55 CDT 1998
 DrScheme Jr is loading. Please wait...
 Welcome to DrScheme Jr version 52/3, Copyright (c) 1995-98 PLT
 Language: Intermediate
@@ -52,14 +52,14 @@ Language: Intermediate
 > (list "Intermediate" "Advanced" "R4RS+")
 > 5
 > 'let-2
-> null
-> stdin: 120.22-120.22: reference to undefined identifier: x
+> empty
+> stdin: 120.22-120.23: reference to undefined identifier: x
 > 'let-3
 > (list "Intermediate" "Advanced" "R4RS+")
 > 5
 > 'let-4
-> null
-> stdin: 12.23-12.23: reference to undefined identifier: x
+> empty
+> stdin: 12.23-12.24: reference to undefined identifier: x
 > 'letrec-1
 > (list "Intermediate" "Advanced" "R4RS+")
 > #t
@@ -74,175 +74,175 @@ Language: Intermediate
 > #t
 > 'set!
 > (list "Advanced" "R4RS+")
-> stdin: 37.1-39.4: Malformed let
+> stdin: 37.1-39.5: Malformed let
 > 'begin
 > (list "Advanced" "R4RS+")
-> stdin: 4.2-4.6: reference to undefined identifier: begin
+> stdin: 4.2-4.7: reference to undefined identifier: begin
 > 'begin0
 > (list "Advanced" "R4RS+")
-> stdin: 4.2-4.7: reference to undefined identifier: begin0
+> stdin: 4.2-4.8: reference to undefined identifier: begin0
 > 'recur-1
 > (list "Advanced" "R4RS+")
-> stdin: 4.1-8.29: Malformed let
+> stdin: 4.1-8.30: Malformed let
 > 'recur-2
 > (list "Advanced" "R4RS+")
-> stdin: 5.8-5.20: First term after parenthesis is illegal in an application
+> stdin: 5.8-5.21: First term after parenthesis is illegal in an application
 > 'recur-3
 > (list "Advanced" "R4RS+")
-> stdin: 4.11-4.13: reference to undefined identifier: rec
+> stdin: 4.11-4.14: reference to undefined identifier: rec
 > 'do-1
 > (list "Advanced" "R4RS+")
-> stdin: 4.10-4.21: '`(1 3 5 7 9) is not a symbol
+> stdin: 4.10-4.22: '(list 1 3 5 7 9) is not a symbol
 > 'do-2
 > (list "Advanced" "R4RS+")
-> stdin: 4.5-5.19: First term after parenthesis is illegal in an application
+> stdin: 4.5-5.20: First term after parenthesis is illegal in an application
 > 'call-cc-1
 > (list "Advanced" "R4RS+")
-> stdin: 4.10-6.51: Malformed lambda
+> stdin: 4.10-6.52: Malformed lambda
 > 'call-cc-2
 > (list "Advanced" "R4RS+")
 > 5
 > 'let-cc-1
 > (list "Advanced" "R4RS+")
-> stdin: 13.9-13.47: First term after parenthesis is illegal in an application
+> stdin: 13.9-13.48: First term after parenthesis is illegal in an application
 > 'let-cc-2
 > (list "Advanced" "R4RS+")
-> stdin: 4.11-4.16: reference to undefined identifier: let/cc
+> stdin: 4.11-4.17: reference to undefined identifier: let/cc
 > 'when-1
 > (list "Advanced" "R4RS+")
-> stdin: 4.2-4.5: reference to undefined identifier: when
+> stdin: 4.2-4.6: reference to undefined identifier: when
 > 'when-2
 > (list "Advanced" "R4RS+")
-> stdin: 5.4-5.7: reference to undefined identifier: when
+> stdin: 5.4-5.8: reference to undefined identifier: when
 > 'unless-1
 > (list "Advanced" "R4RS+")
-> stdin: 4.2-4.7: reference to undefined identifier: unless
+> stdin: 4.2-4.8: reference to undefined identifier: unless
 > 'unless-2
 > (list "Advanced" "R4RS+")
-> stdin: 4.1-6.4: Malformed let
+> stdin: 4.1-6.5: Malformed let
 > 'one-armed-if-1
 > (list "Advanced" "R4RS+")
-> stdin: 4.1-4.9: If must have an else clause
+> stdin: 4.1-4.10: If must have an else clause
 > 'one-armed-if-2
 > (list "Advanced" "R4RS+")
-> stdin: 4.1-6.4: Malformed let
+> stdin: 4.1-6.5: Malformed let
 > 'eq?-1
 > (list "Advanced" "R4RS+")
-> stdin: 4.1-4.9: eq?: expected symbols as arguments, received 5, and 5
+> stdin: 4.1-4.10: eq?: expected symbols as arguments, received 5, and 5
 > 'quote-num-1
 > (list "Advanced" "R4RS+")
-> stdin: 4.1-4.2: '5 is not a symbol
+> stdin: 4.1-4.3: '5 is not a symbol
 > 'quote-num-2
 > (list "Advanced" "R4RS+")
-> stdin: 4.1-4.9: '5 is not a symbol
+> stdin: 4.1-4.10: '5 is not a symbol
 > 'if-3
 > (list "Advanced" "R4RS+")
-> stdin: 4.5-4.5: if: value 5 is neither #t nor #f
+> stdin: 4.5-4.6: if: value 5 is neither #t nor #f
 > 'cond-1
 > (list "Advanced" "R4RS+")
-> stdin: 4.8-4.8: if: value 5 is neither #t nor #f
+> stdin: 4.8-4.9: if: value 5 is neither #t nor #f
 > 'thunk
 > (list "Advanced" "R4RS+")
-> stdin: 4.18-4.19: All procedures must take at least one argument
+> stdin: 4.18-4.20: All procedures must take at least one argument
 > 'anonymous-fun-app
 > (list "Advanced" "R4RS+")
-> stdin: 4.1-4.19: First term after parenthesis is illegal in an application
+> stdin: 4.1-4.20: First term after parenthesis is illegal in an application
 > 'keyword-interface
-> null
-> stdin: 6.1-6.11: unknown-phase: Invalid use of keyword #%interface
+> empty
+> stdin: 6.1-6.12: Invalid use of keyword #%interface
 > 'keyword-unit
-> null
-> stdin: 4.1-4.6: unknown-phase: Invalid use of keyword #%unit
+> empty
+> stdin: 4.1-4.7: Invalid use of keyword #%unit
 > 'keyword-struct
-> null
-> stdin: 4.1-4.8: Invalid use of keyword #%struct
+> empty
+> stdin: 4.1-4.9: Invalid use of keyword #%struct
 > 'keyword-unquote
-> null
-> stdin: 4.1-4.9: Invalid use of keyword #%unquote
+> empty
+> stdin: 4.1-4.10: Invalid use of keyword #%unquote
 > 'keyword-let-macro
-> null
-> stdin: 4.1-4.11: Invalid use of keyword #%let-macro
+> empty
+> stdin: 4.1-4.12: Invalid use of keyword #%let-macro
 > 'keyword-set!
-> null
-> stdin: 4.1-4.6: unknown-phase: Invalid use of keyword #%set!
+> empty
+> stdin: 4.1-4.7: Invalid use of keyword #%set!
 > 'keyword-if
-> null
-> stdin: 4.1-4.4: Invalid use of keyword #%if
+> empty
+> stdin: 4.1-4.5: Invalid use of keyword #%if
 > 'keyword-quote
-> null
-> stdin: 4.1-4.7: Invalid use of keyword #%quote
+> empty
+> stdin: 4.1-4.8: Invalid use of keyword #%quote
 > 'keyword-begin0
-> null
-> stdin: 4.1-4.8: unknown-phase: Invalid use of keyword #%begin0
+> empty
+> stdin: 4.1-4.9: Invalid use of keyword #%begin0
 > 'keyword-begin
-> null
-> stdin: 4.1-4.7: unknown-phase: Invalid use of keyword #%begin
+> empty
+> stdin: 4.1-4.8: Invalid use of keyword #%begin
 > 'keyword-let
-> null
-> stdin: 4.1-4.5: Invalid use of keyword #%let
+> empty
+> stdin: 4.1-4.6: Invalid use of keyword #%let
 > 'keyword-let*
-> null
-> stdin: 4.1-4.6: Invalid use of keyword #%let*
+> empty
+> stdin: 4.1-4.7: Invalid use of keyword #%let*
 > 'keyword-letrec*
-> null
-> stdin: 4.1-4.9: Invalid use of keyword #%letrec*
+> empty
+> stdin: 4.1-4.10: Invalid use of keyword #%letrec*
 > 'keyword-letrec
-> null
-> stdin: 4.1-4.8: Invalid use of keyword #%letrec
+> empty
+> stdin: 4.1-4.9: Invalid use of keyword #%letrec
 > 'keyword-lambda
-> null
-> stdin: 4.1-4.8: Invalid use of keyword #%lambda
+> empty
+> stdin: 4.1-4.9: Invalid use of keyword #%lambda
 > 'keyword-let-expansion-time
-> null
-> stdin: 4.1-4.20: unknown-phase: Invalid use of keyword #%let-expansion-time
+> empty
+> stdin: 4.1-4.21: Invalid use of keyword #%let-expansion-time
 > 'keyword-define-expansion-time
-> null
-> stdin: 4.1-4.23: unknown-phase: Invalid use of keyword #%define-expansion-time
+> empty
+> stdin: 4.1-4.24: Invalid use of keyword #%define-expansion-time
 > 'keyword-invoke-open-unit
-> null
-> stdin: 4.1-4.18: unknown-phase: Invalid use of keyword #%invoke-open-unit
+> empty
+> stdin: 4.1-4.19: Invalid use of keyword #%invoke-open-unit
 > 'keyword-invoke-unit
-> null
-> stdin: 4.1-4.13: unknown-phase: Invalid use of keyword #%invoke-unit
+> empty
+> stdin: 4.1-4.14: Invalid use of keyword #%invoke-unit
 > 'keyword-compound-unit
-> null
-> stdin: 4.1-4.15: unknown-phase: Invalid use of keyword #%compound-unit
+> empty
+> stdin: 4.1-4.16: Invalid use of keyword #%compound-unit
 > 'keyword-unquote-splicing
-> null
-> stdin: 4.1-4.18: Invalid use of keyword #%unquote-splicing
+> empty
+> stdin: 4.1-4.19: Invalid use of keyword #%unquote-splicing
 > 'keyword-let-id-macro
-> null
-> stdin: 4.1-4.14: unknown-phase: Invalid use of keyword #%let-id-macro
+> empty
+> stdin: 4.1-4.15: Invalid use of keyword #%let-id-macro
 > 'keyword-define-id-macro
-> null
-> stdin: 4.1-4.17: unknown-phase: Invalid use of keyword #%define-id-macro
+> empty
+> stdin: 4.1-4.18: Invalid use of keyword #%define-id-macro
 > 'keyword-define-macro
-> null
-> stdin: 4.1-4.14: Invalid use of keyword #%define-macro
+> empty
+> stdin: 4.1-4.15: Invalid use of keyword #%define-macro
 > 'keyword-case-lambda
-> null
-> stdin: 4.1-4.13: Invalid use of keyword #%case-lambda
+> empty
+> stdin: 4.1-4.14: Invalid use of keyword #%case-lambda
 > 'keyword-let-values
-> null
-> stdin: 4.1-4.12: Invalid use of keyword #%let-values
+> empty
+> stdin: 4.1-4.13: Invalid use of keyword #%let-values
 > 'keyword-let*-values
-> null
-> stdin: 4.1-4.13: Invalid use of keyword #%let*-values
+> empty
+> stdin: 4.1-4.14: Invalid use of keyword #%let*-values
 > 'keyword-letrec*-values
-> null
-> stdin: 4.1-4.16: Invalid use of keyword #%letrec*-values
+> empty
+> stdin: 4.1-4.17: Invalid use of keyword #%letrec*-values
 > 'keyword-letrec-values
-> null
-> stdin: 4.1-4.15: Invalid use of keyword #%letrec-values
+> empty
+> stdin: 4.1-4.16: Invalid use of keyword #%letrec-values
 > 'keyword-define-values
-> null
-> stdin: 4.1-4.15: Invalid use of keyword #%define-values
+> empty
+> stdin: 4.1-4.16: Invalid use of keyword #%define-values
 > 'keyword-cond
-> null
-> stdin: 4.1-4.6: Invalid use of keyword #%cond
+> empty
+> stdin: 4.1-4.7: Invalid use of keyword #%cond
 > 'keyword-class*/names
-> null
-> stdin: 4.1-4.14: unknown-phase: Invalid use of keyword #%class*/names
+> empty
+> stdin: 4.1-4.15: Invalid use of keyword #%class*/names
 > 'struct-1
 > (list "Intermediate" "Advanced" "R4RS+")
 > > (list make-a a? a-b a-c set-a-b! set-a-c!)
@@ -260,31 +260,31 @@ Language: Intermediate
 > > 5
 > 'delay-1
 > (list "Advanced" "R4RS+")
-> stdin: 37.1-37.9: All procedures must take at least one argument
+> stdin: 37.1-37.10: All procedures must take at least one argument
 > 'delay-2
 > (list "Advanced" "R4RS+")
-> stdin: 4.1-5.16: All procedures must take at least one argument
+> stdin: 4.1-5.17: All procedures must take at least one argument
 > 'delay-3
 > (list "Advanced" "R4RS+")
-> stdin: 5.11-5.19: All procedures must take at least one argument
+> stdin: 5.11-5.20: All procedures must take at least one argument
 > 'quote-list-1
 > (list "Advanced" "R4RS+")
-> stdin: 4.1-4.15: '`(a a a) is not a symbol
+> stdin: 4.1-4.16: '(list 'a 'a 'a) is not a symbol
 > 'quote-list-2
 > (list "Advanced" "R4RS+")
-> stdin: 4.1-4.8: '`(a a a) is not a symbol
+> stdin: 4.1-4.9: '(list 'a 'a 'a) is not a symbol
 > 'empty-list-1
 > (list "Advanced" "R4RS+")
-> stdin: 4.1-4.3: '`() is not a symbol
+> stdin: 4.1-4.4: 'empty is not a symbol
 > 'empty-list-2
 > (list "Advanced" "R4RS+")
-> stdin: 4.1-4.10: '`() is not a symbol
+> stdin: 4.1-4.11: 'empty is not a symbol
 > 'back-quote-1
 > (list "Advanced" "R4RS+")
-> stdin: 4.1-4.8: '`(a a a) is not a symbol
+> stdin: 4.1-4.9: '(list 'a 'a 'a) is not a symbol
 > 'back-quote-2
 > (list "Advanced" "R4RS+")
-> stdin: 4.11-4.16: '`(a a) is not a symbol
+> stdin: 4.11-4.17: '(list 'a 'a) is not a symbol
 > 'back-quote-3
 > (list "Beginner" "Intermediate" "Advanced" "R4RS+")
 > (list 'a 'a 'a)
@@ -293,24 +293,24 @@ Language: Intermediate
 > 'a
 > 'quasi-quote-2
 > (list "Advanced" "R4RS+")
-> stdin: 12.1-12.20: '`(a a a) is not a symbol
+> stdin: 12.1-12.21: '(list 'a 'a 'a) is not a symbol
 > 'quasi-quote-3
 > (list "Advanced" "R4RS+")
-> stdin: 4.30-4.42: '`(a a) is not a symbol
+> stdin: 4.30-4.43: '(list 'a 'a) is not a symbol
 > 'quasi-quote-4
 > (list "Advanced" "R4RS+")
-> stdin: 4.22-4.34: '`(a a) is not a symbol
+> stdin: 4.22-4.35: '(list 'a 'a) is not a symbol
 > 'set!-id
-> null
-> stdin: 4.2-4.5: reference to undefined identifier: set!
-> stdin: 1.1-1.25: reference to undefined identifier: some-undefined-identifier
+> empty
+> stdin: 4.2-4.6: reference to undefined identifier: set!
+> stdin: 1.1-1.26: reference to undefined identifier: some-undefined-identifier
 > 'non-list
 > "R4RS+"
-> stdin: 4.1-4.10: cons: second argument must be of type <list>, given 3 and 4
+> stdin: 4.1-4.11: cons: second argument must be of type <list>, given 3 and 4
 > 'fallthrough-cond-1
-> null
-> stdin: 4.8-4.21: no matching cond clause
+> empty
+> stdin: 4.8-4.22: no matching cond clause
 > 'fallthrough-cond-2
-> null
-> stdin: 4.17-4.26: First term after parenthesis is illegal in an application
+> empty
+> stdin: 4.17-4.27: First term after parenthesis is illegal in an application
 > 

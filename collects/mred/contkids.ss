@@ -1,5 +1,5 @@
 ;;
-;; $Id: contkids.ss,v 1.46 1997/12/01 18:31:19 robby Exp robby $
+;; $Id: contkids.ss,v 1.47 1997/12/08 18:41:42 robby Exp robby $
 ;;
 
 ; need to export:
@@ -495,7 +495,7 @@
 					 delta-w)
 				      ; client-height is the default
 				      ; dimension in the minor direction.
-				      (+ client-height delta-w)))
+				      (+ client-width delta-w)))
 		   (set-min-height (if horizontal
 				       (+ client-height delta-h)
 				       (+ (* range pixels-per-value)

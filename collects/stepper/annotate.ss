@@ -11,7 +11,6 @@
    initial-env-package
    annotate)
 
-
 ;  (import [z : zodiac^]
 ;          [utils : stepper:cogen-utils^]
 ;          stepper:marks^
@@ -74,16 +73,13 @@
                           (values (cons a a-rest) (cons b b-rest) (cons c c-rest)))))])
       (apply inr lsts)))
 
-  ; a BINDING is either a z:binding or a slot-box
+  ; a BINDING is a syntax-object
   
-  ; binding-set-pair-union: (union 'all (listof binding)) (union 'all (listof binding)) -> (union 'all (listof binding))
+  ; a BINDING-SET is (union 'all (listof BINDING))
   
   ; binding-set-union takes some lists of bindings where no element appears twice in one list, and 
   ; forms a new list which is the union of the sets.
-  
-  (define (binding-set-pair-union a-set b-set)
-    (cond [(or (eq? a-set 'all) (eq? b-set 'all)) 'all]
-          [else (append a-set (remq* a-set b-set))]))
+  ; binding-set-union : (listof BINDING-SET) *-> BINDING-SET
   
   (define binding-set-union
     (lambda args
@@ -91,10 +87,21 @@
 	     null
 	     args)))
   
+  ; binding-set-pair-union: BINDING-SET BINDING-SET -> BINDING-SET
+  
+  (define (binding-set-pair-union a-set b-set)
+    (cond [(or (eq? a-set 'all) (eq? b-set 'all)) 'all]
+          [else (append a-set (remq* a-set b-set))]))
+  
+
+  ; binding-set-intersect : BINDING-SET BINDING-SET -> BINDING-SET
+  
   (define (binding-set-intersect a-set b-set)
     (cond [(eq? a-set 'all) b-set]
           [(eq? b-set 'all) a-set]
           [else (remq* (remq* a-set b-set) b-set)]))
+  
+  ; binding-set-remove : BINDING-SET BINDING-SET -> BINDING-SET
   
   (define (binding-set-remove a-set b-set expr) ; removes a from b
     (cond [(eq? a-set 'all) null]
@@ -102,9 +109,19 @@
 	   (internal-error expr "tried to remove finite set of bindings from 'all")]
           [else (remq* a-set b-set)]))
       
-  (define never-undefined? never-undefined-getter)
-  (define (mark-never-undefined parsed) (never-undefined-setter parsed #t))
-   
+  ; WARNING: because of how syntax-property works, these properties will have a default value of #f.
+  ; that's what we want, in this case.
+  
+  (define (never-undefined? stx)
+    (syntax-property stx 'never-undefined))
+  (define (mark-never-undefined parsed) 
+    (syntax-property stx 'never-undefined #t))
+
+  (define (lambda-bound-var? stx)
+    (syntax-property stx 'lambda-bound-var))
+  (define (mark-lambda-bound-var stx)
+    (syntax-property stx 'lambda-bound-var #t))
+  
   (define (interlace a b)
     (foldr (lambda (a b built)
              (cons a (cons b built)))
@@ -115,24 +132,9 @@
   (define (closure-key-maker closure)
     closure)
 
-  ; paroptarglist-> ilist and arglist->ilist are used to recreate
-  ; mzscheme sexp syntax from the parsed zodiac form, so that the
-  ; resulting expression can be fed to mzscheme.
-  
-  
-
-  ; translate-varref : returns the name the varref will get in the final output
-  
-  (define (translate-varref expr)
-    (if (z:top-level-varref? expr) ; top level varrefs
-        (z:varref-var expr)
-        (get-binding-name (z:bound-varref-binding expr))))
-  
   ; make-debug-info builds the thunk which will be the mark at runtime.  It contains 
-  ; a source expression (in the parsed zodiac format) and a set of z:binding/value pairs.
-  ;((z:parsed (union (list-of z:binding) 'all) (list-of z:binding) symbol) ->
-  ; debug-info)
-  ;(((union z:parsed z:location) (union (list-of BINDING) 'all) (list-of BINDING) symbol) -> debug-info)
+  ; a source expression and a set of binding/value pairs.
+  ;(syntax-object BINDING-SET BINDING-SET BINDING-SET symbol boolean) -> debug-info)
      
   (define (make-debug-info source tail-bound free-bindings advance-warning label lifting?)
     (let* ([kept-bindings (if (eq? tail-bound 'all)
@@ -140,33 +142,27 @@
                               (binding-set-intersect tail-bound
                                                      free-bindings))]
            [var-clauses (map (lambda (x) 
-                               (let ([var (cond [(z:binding? x) (get-binding-name x)]
-                                                [(box? x) (if (null? (unbox x))
-                                                               (internal-error source "empty slot in make-debug-info")
-                                                               (z:varref-var (car (unbox x))))]
-                                                [else (internal-error source "binding is not a binding or a slot: ~a" x)])])
-                                 (list var x)))
+                               (list x (d->so #f `(quote-syntax ,x))))
                              kept-bindings)]
-           [let-bindings (filter (lambda (x) (and (not (z:lambda-binding? x))
-                                                  (not (box? x))
-                                                  (not (bogus-binding? x)))) 
+           [let-bindings (filter (lambda (x) (not (lambda-bound-var? x))) 
                                  (append advance-warning kept-bindings))]
-           [lifter-gensyms (map get-lifted-gensym let-bindings)]
-           [quoted-lifter-gensyms (map (lambda (b) `(#%quote ,b)) lifter-gensyms)]
-           [let-clauses (map list lifter-gensyms quoted-lifter-gensyms)])
+           [lifter-syms (map get-lifted-sym let-bindings)]
+           [quoted-lifter-syms (map (lambda (b) 
+                                      (d->so #f `(syntax-quote ,b)) lifter-syms)]
+           [let-clauses (map list lifter-syms quoted-lifter-syms)])
       (make-full-mark source label (append var-clauses (if lifting? let-clauses null)))))
   
   ; cheap-wrap for non-debugging annotation
   
-  (define cheap-wrap
-    (lambda (zodiac body)
-      (when (not (z:zodiac? zodiac))
-        (error 'cheap-wrap "argument to cheap-wrap is not a zodiac expr: ~a" zodiac))
-      (let ([start (z:zodiac-start zodiac)]
-	    [finish (z:zodiac-finish zodiac)])
-	`(#%with-continuation-mark ,debug-key
-	  ,(make-cheap-mark (z:make-zodiac #f start finish))
-	  ,body))))
+;  (define cheap-wrap
+;    (lambda (zodiac body)
+;      (when (not (z:zodiac? zodiac))
+;        (error 'cheap-wrap "argument to cheap-wrap is not a zodiac expr: ~a" zodiac))
+;      (let ([start (z:zodiac-start zodiac)]
+;	    [finish (z:zodiac-finish zodiac)])
+;	`(#%with-continuation-mark ,debug-key
+;	  ,(make-cheap-mark (z:make-zodiac #f start finish))
+;	  ,body))))
   
   ; wrap-struct-form 
   
@@ -190,14 +186,14 @@
   
   (define initial-env-package null)
   
-  (define (flatten-unit-clauses clauses)
-    (if (null? clauses)
-        null
-        (if  (z:begin-form? (car clauses))
-             (append (flatten-unit-clauses (z:begin-form-bodies (car clauses)))
-                     (flatten-unit-clauses (cdr clauses)))
-             (cons (car clauses) (flatten-unit-clauses (cdr clauses))))))
-    
+;  (define (flatten-unit-clauses clauses)
+;    (if (null? clauses)
+;        null
+;        (if  (z:begin-form? (car clauses))
+;             (append (flatten-unit-clauses (z:begin-form-bodies (car clauses)))
+;                     (flatten-unit-clauses (cdr clauses)))
+;             (cons (car clauses) (flatten-unit-clauses (cdr clauses))))))
+
   (define (extract-top-level-vars exprs)
     (apply append
            (map (lambda (expr)
@@ -224,7 +220,7 @@
   ; and break arguments may be #f, the first during a zodiac:elaboration-evaluator call,
   ; the second during any non-stepper use.
   
-  (define (annotate parsed-expr input-struct-proc-names break wrap-style . wrap-opts-list)
+  (define (annotate read-expr parsed-expr input-struct-proc-names break wrap-style . wrap-opts-list)
     (local
 	((define cheap-wrap? (eq? wrap-style 'cheap-wrap))
          (define ankle-wrap? (eq? wrap-style 'ankle-wrap))
@@ -246,21 +242,21 @@
          ; wrap creates the w-c-m expression.
          
          (define (simple-wcm-wrap debug-info expr)
-           (datum->syntax-object expr `(with-continuation-mark ,debug-key ,debug-info ,expr)))
+           (d->so `(with-continuation-mark ,debug-key ,debug-info ,expr)))
          
          (define (wcm-pre-break-wrap debug-info expr)
            (if break
-               (simple-wcm-wrap debug-info `(#%begin (,(make-break 'result-break)) ,expr))
+               (simple-wcm-wrap debug-info (d->so expr `(begin (,(make-break 'result-break)) ,expr)))
                (simple-wcm-wrap debug-info expr)))
          
          (define (break-wrap expr)
            (if break
-               `(#%begin (,(make-break 'normal-break)) ,expr)
+               (d->so expr `(begin (,(make-break 'normal-break)) ,expr))
                expr))
          
          (define (double-break-wrap expr)
            (if break
-               `(#%begin (,(make-break 'double-break)) ,expr)
+               (d->so expr `(begin (,(make-break 'double-break)) ,expr))
                expr))
          
          (define (simple-wcm-break-wrap debug-info expr)
@@ -269,14 +265,15 @@
          (define (late-let-break-wrap var-names lifted-gensyms expr)
            (if break
                (let* ([interlaced (apply append (map list var-names lifted-gensyms))])
-                 `(#%begin (,(make-break 'late-let-break) ,@interlaced) ,expr))
+                 (d->so expr `(begin (,(make-break 'late-let-break) ,@interlaced) ,expr)))
                expr))
          
          (define (return-value-wrap expr)
            (if break
-               `(#%let* ([result ,expr])
-                 (,(make-break 'result-break) result)
-                 result)
+               (d->so expr
+                      `(let* ([result ,expr])
+                         (,(make-break 'result-break) result)
+                         result))
                expr))
 
 ;  For Multiple Values:         
@@ -287,57 +284,55 @@
 ;              (,(make-break 'result-break) result-values)
 ;              (#%apply #%values result-values))))
 
-         (define (find-read-expr expr)
-           (when (not (z:zodiac? expr))
-             (error 'find-read-expr "argument to find-read-expr is not a zodiac expr: ~a" expr))
-           (let ([offset (z:location-offset (z:zodiac-start expr))])
-             (let search-exprs ([exprs red-exprs])
-               (let* ([later-exprs (filter 
-                                    (lambda (expr) 
-                                      (<= offset (z:location-offset (z:zodiac-finish expr))))
-                                    exprs)]
-                      [expr 
-                       (car later-exprs)])
-                 (if (= offset (z:location-offset (z:zodiac-start expr)))
-                     expr
-                     (cond
-                       ((z:scalar? expr) (internal-error expr "starting offset inside scalar:" offset))
-                       ((z:sequence? expr) 
-                        (let ([object (z:read-object expr)])
-                            (cond
-                            ((z:list? expr) (search-exprs object))
-                            ((z:vector? expr) 
-                             (search-exprs (vector->list object))) ; can source exprs be here?
-                            ((z:improper-list? expr)
-                             (search-exprs (search-exprs object))) ; can source exprs be here? (is this a bug?)
-                            (else (internal-error expr "unknown expression type in sequence")))))
-                       (else (internal-error expr "unknown read type"))))))))
-  
-         (define (struct-procs-defined expr)
-           (if (and (z:define-values-form? expr)
-                    (z:struct-form? (z:define-values-form-val expr)))
-               (map z:varref-var (z:define-values-form-vars expr))
-               null))
          
-         (define struct-proc-names (apply append input-struct-proc-names
-                                          (map struct-procs-defined parsed-exprs)))
+;         (define (find-read-expr expr)
+;           (when (not (z:zodiac? expr))
+;             (error 'find-read-expr "argument to find-read-expr is not a zodiac expr: ~a" expr))
+;           (let ([offset (z:location-offset (z:zodiac-start expr))])
+;             (let search-exprs ([exprs red-exprs])
+;               (let* ([later-exprs (filter 
+;                                    (lambda (expr) 
+;                                      (<= offset (z:location-offset (z:zodiac-finish expr))))
+;                                    exprs)]
+;                      [expr 
+;                       (car later-exprs)])
+;                 (if (= offset (z:location-offset (z:zodiac-start expr)))
+;                     expr
+;                     (cond
+;                       ((z:scalar? expr) (internal-error expr "starting offset inside scalar:" offset))
+;                       ((z:sequence? expr) 
+;                        (let ([object (z:read-object expr)])
+;                            (cond
+;                            ((z:list? expr) (search-exprs object))
+;                            ((z:vector? expr) 
+;                             (search-exprs (vector->list object))) ; can source exprs be here?
+;                            ((z:improper-list? expr)
+;                             (search-exprs (search-exprs object))) ; can source exprs be here? (is this a bug?)
+;                            (else (internal-error expr "unknown expression type in sequence")))))
+;                       (else (internal-error expr "unknown read type"))))))))
+;  
+;         (define (struct-procs-defined expr)
+;           (if (and (z:define-values-form? expr)
+;                    (z:struct-form? (z:define-values-form-val expr)))
+;               (map z:varref-var (z:define-values-form-vars expr))
+;               null))
+;         
+;         (define struct-proc-names (apply append input-struct-proc-names
+;                                          (map struct-procs-defined parsed-exprs)))
          
-         (define (non-annotated-proc? varref)
-           (let ([name (z:varref-var varref)])
-             (or (and (s:check-pre-defined-var name)
-                      (not (eq? name 'apply)))
-                 (memq name struct-proc-names))))
+;         (define (non-annotated-proc? varref)
+;           (let ([name (z:varref-var varref)])
+;             (or (and (s:check-pre-defined-var name)
+;                      (not (eq? name 'apply)))
+;                 (memq name struct-proc-names))))
          
          (define (top-level-annotate/inner expr)
            (annotate/inner expr 'all #f #t #f))
          
          ; annotate/inner takes 
-         ; a) a zodiac expression to annotate
-         ; b) a list of all findins which this expression is tail w.r.t. 
+         ; a) an expression to annotate
+         ; b) a list of all bindings which this expression is tail w.r.t. 
          ;    or 'all to indicate that this expression is tail w.r.t. _all_ bindings.
-         ; c) a list of varrefs of 'floating' variables; i.e. lexical bindings  NO: TAKEN OUT
-         ;    whose value must be captured in order to reconstruct outer expressions. 
-         ;    Necessitated by 'unit', useful for 'letrec*-values'.
          ; d) a boolean indicating whether this expression will be the r.h.s. of a reduction
          ;    (and therefore should be broken before)
          ; e) a boolean indicating whether this expression is top-level (and therefore should
@@ -351,7 +346,7 @@
          ; a) an annotated s-expression
          ; b) a list of varrefs for the variables which occur free in the expression
          ;
-	 ;(z:parsed (union (list-of z:varref) 'all) (list-of z:varref) bool bool (union #f symbol (list binding symbol)) -> 
+	 ;(syntax-object BINDING-SET bool bool (union #f symbol (list binding symbol)) -> 
          ;          sexp (list-of z:varref))
          
 	 (define (annotate/inner expr tail-bound pre-break? top-level? procedure-name-info)
@@ -398,8 +393,8 @@
                                              (let ([name (ccond [(symbol? procedure-name-info) procedure-name-info]
                                                                 [(and (list? procedure-name-info)
                                                                       (= (length procedure-name-info) 2))
-                                                                 (z:binding-orig-name (car procedure-name-info))])])
-                                               `(#%let ([,name ,annotated]) ,name))
+                                                                 (car procedure-name-info)])])
+                                               (d->so #f `(let* ([,name ,annotated]) ,name)))
                                              annotated))]
                   
                   ; The let transformation is complicated.
@@ -616,7 +611,7 @@
 		      [raw-type (utils:read->raw (z:struct-form-type expr))]
 		      [raw-fields (map utils:read->raw (z:struct-form-fields expr))])
 		  (if super-expr
-		      (let*-values
+		      (let*-values 
                           ([(annotated-super-expr free-bindings-super-expr) 
                             (non-tail-recur super-expr)]
                            [(annotated)

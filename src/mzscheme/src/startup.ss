@@ -2421,7 +2421,11 @@
 	  (list
 	   (lambda () (let ((v (getenv "PLTHOME")))
 			(and v (build-path v "collects"))))
-	   (lambda () (find-executable-path (find-system-path 'exec-file) "collects")))) 
+	   (lambda () (find-executable-path (find-system-path 'exec-file) "collects"))
+	   ;; When binary is in bin/ subdir:
+	   (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up "collects")))
+	   ;; When binary is in .bin/<platform> subdir:
+	   (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up 'up "collects")))))
 	 null)))
 
   ;; -------------------------------------------------------------------------

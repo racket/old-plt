@@ -221,6 +221,7 @@ HOSTCFLAGS=$(BASEFLAGS)
 
 CXXFLAGS= $(CFLAGS) 
 AR= @AR@
+ARFLAGS= @ARFLAGS@
 RANLIB= @RANLIB@
 
 
@@ -342,16 +343,10 @@ tests/test.o: tests $(srcdir)/tests/test.c
 tests:
 	mkdir tests
 
-base_lib gc.a: $(OBJS) dyn_load.o $(UTILS)
-	echo > base_lib
-	rm -f dont_ar_1
-	./if_mach SPARC SUNOS5 touch dont_ar_1
-	./if_mach SPARC SUNOS5 $(AR) rus gc.a $(OBJS) dyn_load.o
-	./if_mach M68K AMIGA touch dont_ar_1
-	./if_mach M68K AMIGA $(AR) -vrus gc.a $(OBJS) dyn_load.o
-	./if_not_there dont_ar_1 $(AR) ru gc.a $(OBJS) dyn_load.o
-	./if_not_there dont_ar_1 $(RANLIB) gc.a || cat /dev/null
-#	ignore ranlib failure; that usually means it doesn't exist, and isn't needed
+# PLTSCHEME: make ../libmzgc.a, and use $(AR), $(RANLIB), and @LIBSFX@:
+base_lib ../libmzgc.@LIBSFX@: $(OBJS) dyn_load.o $(UTILS)
+	$(AR) $(ARFLAGS) ../libmzgc.@LIBSFX@ $(OBJS) dyn_load.o
+	$(RANLIB) ../libmzgc.@LIBSFX@
 
 cords: $(CORD_OBJS) cord/cordtest $(UTILS)
 	rm -f dont_ar_3

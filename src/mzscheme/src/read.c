@@ -942,7 +942,7 @@ read_list(Scheme_Object *port,
       s[0] = closer;
       s[1] = 0;
       scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), EOF, 
-		      "read: expected a '%c'; started",
+		      "read: expected a '%c'",
 		      closer);
     }
 
@@ -1088,14 +1088,14 @@ read_string(Scheme_Object *port,
   while ((ch = scheme_getc_special_ok(port)) != '"') {
     if (ch == EOF) {
       scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), EOF,
-		      "read: expected a '\"'; started");
+		      "read: expected a '\"'");
     } else if (ch == SCHEME_SPECIAL) {
       scheme_get_special(port, stxsrc,
 			 scheme_tell_line(port), 
 			 scheme_tell_column(port), 
 			 scheme_tell(port));
       scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), SCHEME_SPECIAL,
-		      "read: found non-character while reading a string; started");
+		      "read: found non-character while reading a string");
     }
     /* Note: errors will tend to leave junk on the port, with an open \". */
     /* Escape-sequence handling by Eli Barzilay. */
@@ -1103,14 +1103,14 @@ read_string(Scheme_Object *port,
       ch = scheme_getc_special_ok(port);
       if (ch == EOF) {
 	scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), EOF,
-			"read: expected a '\"'; started");
+			"read: expected a '\"'");
       } else if (ch == SCHEME_SPECIAL) {
 	scheme_get_special(port, stxsrc,
 			   scheme_tell_line(port), 
 			   scheme_tell_column(port), 
 			   scheme_tell(port));
 	scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), SCHEME_SPECIAL,
-			"read: found non-character while reading a string; started");
+			"read: found non-character while reading a string");
       }
       switch ( ch ) {
       case '\\': case '\"': break;
@@ -1332,7 +1332,7 @@ read_number_or_symbol(Scheme_Object *port,
       ch = scheme_getc_special_ok(port);
       if (ch == EOF) {
 	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF,
-			"read: EOF following \\ in symbol; started");
+			"read: EOF following \\ in symbol");
 	return NULL;
       } else if (ch == SCHEME_SPECIAL) {
 	scheme_get_special(port, stxsrc,
@@ -1340,7 +1340,7 @@ read_number_or_symbol(Scheme_Object *port,
 			   scheme_tell_column(port), 
 			   scheme_tell(port));
 	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL,
-			"read: non-character following \\ in symbol; started");
+			"read: non-character following \\ in symbol");
 	return NULL;
       }
       quoted = 1;
@@ -1382,7 +1382,7 @@ read_number_or_symbol(Scheme_Object *port,
 		       scheme_tell_column(port), 
 		       scheme_tell(port));
     scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL,
-		    "read: non-character following \\ in symbol; started");      
+		    "read: non-character following \\ in symbol");      
   }
 
   if (ungetc_ok)
@@ -1734,7 +1734,7 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc)
 
       if (ch == EOF)
 	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF,
-			"read: end of file in #| comment; started");
+			"read: end of file in #| comment");
       else if (ch == SCHEME_SPECIAL)
 	scheme_get_special(port, stxsrc, 
 			   scheme_tell_line(port), 

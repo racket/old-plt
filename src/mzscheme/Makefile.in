@@ -197,10 +197,9 @@ LIBIDIR=$(srcdir)/../../collects/mzscheme/lib/$(INSTALLSYS)
 BUILDINFO=$(LIBIDIR)/buildinfo
 
 normal-install:
-	if [ ! -d $(srcdir)/../../.bin ] ; then mkdir $(srcdir)/../../.bin ; fi
-	if [ ! -d $(srcdir)/../../.bin/$(INSTALLSYS) ] ; then mkdir $(srcdir)/../../.bin/$(INSTALLSYS) ; fi
-	rm -f $(srcdir)/../../.bin/$(INSTALLSYS)/mzscheme
-	cp mzscheme $(srcdir)/../../.bin/$(INSTALLSYS)/mzscheme
+	if [ ! -d $(srcdir)/../../bin ] ; then mkdir $(srcdir)/../../bin ; fi
+	rm -f $(srcdir)/../../bin/mzscheme
+	cp mzscheme $(srcdir)/../../mzscheme
 	if [ ! -d $(LIBIDIR) ] ; then mkdir $(LIBIDIR) ; fi
 	cp mzdyn.o $(LIBIDIR)/mzdyn.o
 	cp libmzgc.@LIBSFX@ $(LIBIDIR)/libmzgc.@LIBSFX@

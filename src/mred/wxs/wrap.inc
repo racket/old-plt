@@ -4108,7 +4108,7 @@
 "(lambda(x)"
 "(if(eq?(system-type)"
 " 'macos)"
-" 16"
+" 15"
 " 0))))"
 "(sequence"
 "(super-init"

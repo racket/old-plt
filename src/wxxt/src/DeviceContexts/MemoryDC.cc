@@ -67,6 +67,9 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 
   /* Skip wxMemoryDC, because the bitmap's cache is fine. */
   wxWindowDC::FreeGetPixelCache(); 
+#ifdef WX_USE_CAIRO
+  ReleaseCairoDev();
+#endif
 
   if (!read_only) {
     /* Bitmap selection memory and safety */
@@ -77,8 +80,12 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
       selected->selectedIntoDC = 0;
       selected->selectedTo = NULL;
     }
-  } else if (bitmap && bitmap->selectedTo)
+  } else if (bitmap && bitmap->selectedTo) {
     bitmap->selectedTo->FreeGetPixelCache();
+#ifdef WX_USE_CAIRO
+    bitmap->selectedTo->ReleaseCairoDev();
+#endif
+  }
 
   // free all associated GCs
 #ifdef WX_USE_XRENDER

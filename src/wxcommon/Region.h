@@ -55,16 +55,6 @@ class wxRegion : public wxObject
   RgnHandle rgn;
 #endif
   wxPathRgn *prgn;
-#ifdef wx_mac
-  int npaths;
-  CGMutablePathRef *paths;
-  Bool *oes;
-#endif
-#ifdef wx_msw
-  int npaths;
-  GraphicsPath **paths;
-  Bool *oes;
-#endif
   wxDC *dc;
   char is_ps, locked, no_prgn;
 
@@ -96,7 +86,7 @@ class wxRegion : public wxObject
   
   void Cleanup();
 
-  void Install(long target);
+  void Install(long target, Bool align);
   void InstallPS(wxPostScriptDC *dc, wxPSStream *s);
 };
 
@@ -109,12 +99,19 @@ class wxPathRgn : public wxObject
 
   wxPathRgn(wxDC *dc_for_scale);
   ~wxPathRgn();
-  virtual Bool Install(long target, Bool reverse) = 0;
+  virtual Bool Install(long target, Bool reverse, Bool align) = 0;
 
-  long PrepareScale(long target, Bool oe);
-  void RestoreScale(long target, long v);
+  long PrepareScale(long target, Bool oe, Bool align);
+  void RestoreScale(long target, long v, Bool align);
 
   virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s) = 0;
+
+  double XFormX(double x, Bool align);
+  double XFormY(double x, Bool align);
+  double XFormXB(double x, Bool align);
+  double XFormYB(double x, Bool align);
+  double XFormW(double w, double x, Bool align);
+  double XFormH(double h, double y, Bool align);
 };
 
 class wxRectanglePathRgn : public wxPathRgn
@@ -125,7 +122,7 @@ class wxRectanglePathRgn : public wxPathRgn
   double width;
   double height;
   wxRectanglePathRgn(wxDC *dc_for_scale, double x, double y, double width, double height);
-  virtual Bool Install(long target, Bool reverse);
+  virtual Bool Install(long target, Bool reverse, Bool align);
   virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
 };
 
@@ -138,7 +135,7 @@ class wxRoundedRectanglePathRgn : public wxPathRgn
   double height;
   double radius;
   wxRoundedRectanglePathRgn(wxDC *dc_for_scale, double x, double y, double width, double height, double radius);
-  virtual Bool Install(long target, Bool reverse);
+  virtual Bool Install(long target, Bool reverse, Bool align);
   virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
 };
 
@@ -151,7 +148,7 @@ class wxPolygonPathRgn : public wxPathRgn
   double yoffset;
   int fillStyle;
   wxPolygonPathRgn(wxDC *dc_for_scale, int n, wxPoint points[], double xoffset, double yoffset, int fillStyle);
-  virtual Bool Install(long target, Bool reverse);
+  virtual Bool Install(long target, Bool reverse, Bool align);
   virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
 };
 
@@ -165,7 +162,7 @@ class wxArcPathRgn : public wxPathRgn
   double start;
   double end;
   wxArcPathRgn(wxDC *dc_for_scale, double x, double y, double w, double h, double start, double end);
-  virtual Bool Install(long target, Bool reverse);
+  virtual Bool Install(long target, Bool reverse, Bool align);
   virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
 };
 
@@ -177,7 +174,7 @@ class wxPathPathRgn : public wxPathRgn
   double yoffset;
   int fillStyle;
   wxPathPathRgn(wxDC *dc_for_scale, wxPath *p, double xoffset, double yoffset, int fillStyle);
-  virtual Bool Install(long target, Bool reverse);
+  virtual Bool Install(long target, Bool reverse, Bool align);
   virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
 };
 
@@ -186,7 +183,7 @@ class wxUnionPathRgn : public wxPathRgn
  public:
   wxPathRgn *a, *b;
   wxUnionPathRgn(wxPathRgn *f, wxPathRgn *s);
-  virtual Bool Install(long target, Bool reverse);
+  virtual Bool Install(long target, Bool reverse, Bool align);
   virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
 };
 
@@ -195,7 +192,7 @@ class wxIntersectPathRgn : public wxPathRgn
  public:
   wxPathRgn *a, *b;
   wxIntersectPathRgn(wxPathRgn *f, wxPathRgn *s);
-  virtual Bool Install(long target, Bool reverse);
+  virtual Bool Install(long target, Bool reverse, Bool align);
   virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
 };
 
@@ -204,7 +201,7 @@ class wxDiffPathRgn : public wxPathRgn
  public:
   wxPathRgn *a, *b;
   wxDiffPathRgn(wxPathRgn *f, wxPathRgn *s);
-  virtual Bool Install(long target, Bool reverse);
+  virtual Bool Install(long target, Bool reverse, Bool align);
   virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
 };
 
@@ -245,7 +242,9 @@ class wxPath : public wxObject
 
   void AddPath(wxPath *p);
   
-  void Install(long target, double dx, double dy);
+  void Install(long target, double dx, double dy,
+	       double ox, double oy, double sx, double sy, 
+	       Bool align, double pox, double poy);
   void InstallPS(wxPostScriptDC *dc, wxPSStream *s, double dx, double dy);
   int ToPolygons(int **_lens, double ***_pts, double sx, double sy);
 

@@ -10,12 +10,11 @@
 
 #ifdef wx_mac
 typedef struct {
+  CGCOntext cg;
   CGMutablePathRef path;
-  CGMutablePathRef *paths;
-  Bool *oes;
-  int npaths, apaths;
 } PathTarget;
 # define CGPATH ((PathTarget *)target)->path
+# define CGCG ((PathTarget *)target)->cg
 # define PathTargetPath_t CGMutablePathRef
 # define CGXFORM (&current_xform)
 # define PATHPATH ((CGMutablePathRef)target)
@@ -23,11 +22,13 @@ typedef struct {
 
 #ifdef wx_msw
 typedef struct {
+  Graphics *g;
   GraphicsPath *path;
-  GraphicsPath **paths;
-  int npaths, apaths;
+  int did_one;
 } PathTarget;
 # define GP ((PathTarget *)target)->path
+# define GP_G ((PathTarget *)target)->g
+# define GP_DID_ONE ((PathTarget *)target)->did_one
 # define PathTargetPath_t GraphicsPath*
 # define CURRENT_GP current_path
 # define PATH_GP ((GraphicsPath *)target)
@@ -80,23 +81,6 @@ void wxRegion::Cleanup()
 #endif
   if (!no_prgn) {
     prgn = NULL;
-# if defined(wx_mac) || defined(wx_msw)
-    if (paths) {
-      int i;
-      for (i = 0; i < npaths; i++) {
-#  ifdef wx_mac
-	CGPathRelease(paths[i]);
-#  endif
-#  ifdef wx_msw
-	wxGPathRelease(paths[i]);
-#  endif
-      }
-      paths = NULL;
-#  ifdef wx_mac
-      oes = NULL;
-#  endif
-    }
-# endif
   }
 }
 
@@ -164,6 +148,10 @@ void wxRegion::SetRoundedRectangle(double x, double y, double width, double heig
 
   Cleanup();
 
+  if (!no_prgn) {
+    prgn = new wxRoundedRectanglePathRgn(dc, x, y, width, height, radius);
+  }
+
   // A negative radius value is interpreted to mean
   // 'the proportion of the smallest X or Y dimension'
   if (radius < 0.0) {
@@ -175,10 +163,6 @@ void wxRegion::SetRoundedRectangle(double x, double y, double width, double heig
     radius = (double)(- radius * smallest);
   } else
     radius = dc->FLogicalToDeviceXRel(radius);
-
-  if (!no_prgn) {
-    prgn = new wxRoundedRectanglePathRgn(dc, x, y, width, height, radius);
-  }
 
 #ifdef wx_x
   lt = new wxRegion(dc, NULL, TRUE);
@@ -863,13 +847,12 @@ Bool wxRegion::IsInRegion(double x, double y)
 #endif
 }
 
-void wxRegion::Install(long target)
+void wxRegion::Install(long target, Bool align)
 {
   if (prgn) {
     Bool oe;
 
 #ifdef WX_USE_CAIRO
-    cairo_init_clip(CAIRO_DEV);
     cairo_new_path(CAIRO_DEV);
 #endif
 #ifdef wx_mac
@@ -878,27 +861,11 @@ void wxRegion::Install(long target)
     CGMutablePathRef path;
     int i;
     
-    if (paths) {
-      for (i = 0; i < npaths; i++) {
-	CGContextBeginPath(cg);
-	CGContextAddPath(cg, paths[i]);
-	if (oes[i])
-	  CGContextEOClip(cg);
-	else
-	  CGContextClip(cg);
-      }
-      return;
-    }
-  
     path = CGPathCreateMutable();
   
     t = (PathTarget *)malloc(sizeof(PathTarget));
     t->path = path;
-
-    t->paths = NULL;
-    t->oes = NULL;
-    t->npaths = 0;
-    t->apaths = 0;
+    t->cg = cg;
     
     target = (long)t;
 #endif
@@ -908,25 +875,17 @@ void wxRegion::Install(long target)
     PathTarget *t;
     int i;
 
-    if (paths) {
-      wxGSetClip(g, paths[0], CombineModeReplace);
-      for (i = 1; i < npaths; i++) {
-	wxGSetClip(g, paths[i], CombineModeIntersect);
-      }
-      return;
-    }
-    
     gp = wxGPathNew(FillModeAlternate);
 
     t = (PathTarget *)malloc(sizeof(PathTarget));
     t->path = gp;
-    t->npaths = 0;
-    t->apaths = 0;
+    t->g = g;
+    t->did_one = 0;
 
     target = (long)t;
 #endif
 
-    oe = prgn->Install(target, 0);
+    oe = prgn->Install(target, 0, align);
 
 #ifdef WX_USE_CAIRO
     if (oe)
@@ -936,48 +895,20 @@ void wxRegion::Install(long target)
       cairo_set_fill_rule(CAIRO_DEV, CAIRO_FILL_RULE_WINDING);
     cairo_new_path(CAIRO_DEV);
 #endif
-#if defined(wx_mac) || defined(wx_msw)
-    npaths = t->npaths + 1;
-    {
-# ifdef MZ_PRECISE_GC
-      PathTargetPath_t *ps;
-      ps = (PathTargetPath_t *)GC_malloc_atomic(sizeof(PathTargetPath_t) * npaths);
-      paths = ps;
-# else
-      paths = new WXGC_ATOMIC PathTargetPath_t[npaths];
-# endif
-    }
-# ifdef wx_mac
-    oes = new WXGC_ATOMIC Bool[npaths];
-# endif
-    for (i = 0; i < npaths - 1; i++) {
-      paths[i] = t->paths[i];
-# ifdef wx_mac
-      oes[i] = t->oes[i];
-# endif
-    }
-    paths[npaths - 1] = t->path;
-# ifdef wx_mac
-    oes[i] = oe;
-# endif
-
+#ifdef wx_mac
+    CGContextBeginPath(cg);
+    CGContextAddPath(cg, t->path);
+    if (oe)
+      CGContextEOClip(cg);
+    else
+      CGContextClip(cg);
+    CGPathRelease(t->path);
     free(t);
-# ifdef wx_mac
-    for (i = 0; i < npaths; i++) {
-      CGContextBeginPath(cg);
-      CGContextAddPath(cg, paths[i]);
-      if (oe)
-	CGContextEOClip(cg);
-      else
-	CGContextClip(cg);
-    }
-# endif
-# ifdef wx_msw
-    wxGSetClip(g, paths[0], CombineModeReplace);
-    for (i = 1; i < npaths; i++) {
-      wxGSetClip(g, paths[i], CombineModeIntersect);
-    }
-# endif
+#endif
+#ifdef wx_msw
+    wxGSetClip(g, t->path, t->did_one ? CombineModeIntersect : CombineModeReplace);
+    wxGPathRelease(t->path);
+    free(t);
 #endif
   } else {
     /* Empty region: */
@@ -1055,24 +986,80 @@ wxPathRgn::~wxPathRgn()
      wxPathRgns. */
 }
 
-long wxPathRgn::PrepareScale(long target, Bool oe)
+double wxPathRgn::XFormX(double _x, Bool align)
+{
+  if (align)
+    return floor((_x * sx) + ox) + 0.5;
+  else
+    return _x;
+}
+
+double wxPathRgn::XFormY(double _y, Bool align)
+{
+  if (align)
+    return floor((_y * sy) + oy) + 0.5;
+  else
+    return _y;
+}
+
+double wxPathRgn::XFormXB(double _x, Bool align)
+{
+  if (align)
+    return floor((_x * sx) + ox);
+  else
+    return _x;
+}
+
+double wxPathRgn::XFormYB(double _y, Bool align)
+{
+  if (align)
+    return floor((_y * sy) + oy);
+  else
+    return _y;
+}
+
+double wxPathRgn::XFormW(double _w, double _x, Bool align)
+{
+  if (align)
+    return floor(((_x + _w) * sx) + ox) - floor((_x * sx) + ox);
+  else
+    return _w;
+}
+
+double wxPathRgn::XFormH(double _h, double _y, Bool align)
+{
+  if (align)
+    return floor(((_y + _h) * sy) + oy) - floor((_y * sy) + oy);
+  else
+    return _h;
+}
+
+long wxPathRgn::PrepareScale(long target, Bool oe, Bool align)
 {
 #ifdef wx_xt
 # ifdef WX_USE_CAIRO
-  cairo_matrix_t *m;
-  m = cairo_matrix_create();
-  cairo_current_matrix(CAIRO_DEV, m);
-  cairo_default_matrix(CAIRO_DEV);
-  cairo_translate(CAIRO_DEV, ox, oy);
-  cairo_scale(CAIRO_DEV, sx, sy);
-  return (long)m;
+  if (align)
+    return 0;
+  else {
+    cairo_matrix_t *m;
+    m = cairo_matrix_create();
+    cairo_current_matrix(CAIRO_DEV, m);
+    cairo_default_matrix(CAIRO_DEV);
+    cairo_translate(CAIRO_DEV, ox, oy);
+    cairo_scale(CAIRO_DEV, sx, sy);
+    return (long)m;
+  }
 # else
   return 0;
 # endif
 #endif
 #ifdef wx_mac
-  current_xform = CGAffineTransformMakeTranslation(ox, oy);
-  current_xform = CGAffineTransformScale(current_xform, sx, sy);
+  if (align) {
+    current_xform = CGAffineTransformMakeTranslation(0, 0);
+  } else {
+    current_xform = CGAffineTransformMakeTranslation(ox, oy);
+    current_xform = CGAffineTransformScale(current_xform, sx, sy);
+  }
   return 0;
 #endif
 #ifdef wx_msw
@@ -1081,22 +1068,26 @@ long wxPathRgn::PrepareScale(long target, Bool oe)
 #endif
 }
 
-void wxPathRgn::RestoreScale(long target, long v)
+void wxPathRgn::RestoreScale(long target, long v, Bool align)
 {
 #ifdef WX_USE_CAIRO
-  cairo_matrix_t *m = (cairo_matrix_t *)v;
-  cairo_set_matrix(CAIRO_DEV, m);
-  cairo_matrix_destroy(m);
+  if (v) {
+    cairo_matrix_t *m = (cairo_matrix_t *)v;
+    cairo_set_matrix(CAIRO_DEV, m);
+    cairo_matrix_destroy(m);
+  }
 #endif
 #ifdef wx_mac
 #endif
 #ifdef wx_msw
-  Matrix *m;
-  m = wxGMatrixNew();
-  wxGMatrixTranslate(m, ox, oy);
-  wxGMatrixScale(m, sx, sy);
-  wxGPathTransform(current_path, m);
-  wxGMatrixRelease(m);
+  if (!align) {
+    Matrix *m;
+    m = wxGMatrixNew();
+    wxGMatrixTranslate(m, ox, oy);
+    wxGMatrixScale(m, sx, sy);
+    wxGPathTransform(current_path, m);
+    wxGMatrixRelease(m);
+  }
   wxGPathAddPath(GP, current_path, TRUE);
   wxGPathRelease(current_path);
 #endif
@@ -1112,51 +1103,57 @@ wxRectanglePathRgn::wxRectanglePathRgn(wxDC *dc_for_scale, double _x, double _y,
   height = _height;
 }
 
-Bool wxRectanglePathRgn::Install(long target, Bool reverse)
+Bool wxRectanglePathRgn::Install(long target, Bool reverse, Bool align)
 {
+  double xx, yy, ww, hh;
   long m;
-  m = PrepareScale(target, TRUE);
+  m = PrepareScale(target, TRUE, align);
+
+  xx = XFormXB(x, align);
+  yy = XFormYB(y, align);
+  ww = XFormW(width, x, align);
+  hh = XFormH(height, y, align);
 
 #ifdef WX_USE_CAIRO
-  cairo_move_to(CAIRO_DEV, x, y);
+  cairo_move_to(CAIRO_DEV, xx, yy);
   if (reverse) {
-    cairo_rel_line_to(CAIRO_DEV, 0, height);
-    cairo_rel_line_to(CAIRO_DEV, width, 0);
-    cairo_rel_line_to(CAIRO_DEV, 0, -height);
+    cairo_rel_line_to(CAIRO_DEV, 0, hh);
+    cairo_rel_line_to(CAIRO_DEV, ww, 0);
+    cairo_rel_line_to(CAIRO_DEV, 0, -hh);
   } else {
-    cairo_rel_line_to(CAIRO_DEV, width, 0);
-    cairo_rel_line_to(CAIRO_DEV, 0, height);
-    cairo_rel_line_to(CAIRO_DEV, -width, 0);
+    cairo_rel_line_to(CAIRO_DEV, ww, 0);
+    cairo_rel_line_to(CAIRO_DEV, 0, hh);
+    cairo_rel_line_to(CAIRO_DEV, -ww, 0);
   }
   cairo_close_path(CAIRO_DEV);
 #endif
 #ifdef wx_mac
-  CGPathMoveToPoint(CGPATH, CGXFORM, x, y);
+  CGPathMoveToPoint(CGPATH, CGXFORM, xx, yy);
   if (reverse) {
-    CGPathAddLineToPoint(CGPATH, CGXFORM, x, y + height);
-    CGPathAddLineToPoint(CGPATH, CGXFORM, x + width, y + height);
-    CGPathAddLineToPoint(CGPATH, CGXFORM, x + width, y);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, xx, yy + hh);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, xx + ww, yy + hh);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, xx + ww, yy);
   } else {
-    CGPathAddLineToPoint(CGPATH, CGXFORM, x + width, y);
-    CGPathAddLineToPoint(CGPATH, CGXFORM, x + width, y + height);
-    CGPathAddLineToPoint(CGPATH, CGXFORM, x, y + height);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, xx + ww, yy);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, xx + ww, yy + hh);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, xx, yy + hh);
   }
   CGPathCloseSubpath(CGPATH);
 #endif
 #ifdef wx_msw
   if (reverse) {
-    wxGPathAddLine(CURRENT_GP, x, y, x, y + height);
-    wxGPathAddLine(CURRENT_GP, x, y + height, x + width, y + height);
-    wxGPathAddLine(CURRENT_GP, x + width, y + height, x + width, y);
+    wxGPathAddLine(CURRENT_GP, xx, yy, xx, yy + hh);
+    wxGPathAddLine(CURRENT_GP, xx, yy + hh, xx + ww, yy + hh);
+    wxGPathAddLine(CURRENT_GP, xx + ww, yy + hh, xx + ww, yh);
   } else {
-    wxGPathAddLine(CURRENT_GP, x, y, x + width, y);
-    wxGPathAddLine(CURRENT_GP, x + width, y, x + width, y + height);
-    wxGPathAddLine(CURRENT_GP, x + width, y + height, x, y + height);
+    wxGPathAddLine(CURRENT_GP, xx, yy, x + width, y);
+    wxGPathAddLine(CURRENT_GP, xx + ww, y, x + width, yy + hh);
+    wxGPathAddLine(CURRENT_GP, xx + ww, y + height, x, yy + hh);
   }
   wxGPathCloseFigure(CURRENT_GP);
 #endif
 
-  RestoreScale(target, m);
+  RestoreScale(target, m, align);
   
   return FALSE;
 }
@@ -1190,6 +1187,7 @@ wxRoundedRectanglePathRgn::wxRoundedRectanglePathRgn(wxDC *dc_for_scale,
   radius = _radius;
 
   if (radius < 0) {
+    radius = -radius;
     if (width > height)
       radius = radius * height;
     else
@@ -1197,84 +1195,94 @@ wxRoundedRectanglePathRgn::wxRoundedRectanglePathRgn(wxDC *dc_for_scale,
   }
 }
 
-Bool wxRoundedRectanglePathRgn::Install(long target, Bool reverse)
+Bool wxRoundedRectanglePathRgn::Install(long target, Bool reverse, Bool align)
 {
+  double xx, yy, ww, hh, rr, rr2;
   long m;
-  m = PrepareScale(target, TRUE);
+  m = PrepareScale(target, TRUE, align);
+
+  xx = XFormXB(x, align);
+  yy = XFormYB(y, align);
+  ww = XFormW(width, x, align);
+  hh = XFormH(height, y, align);
+  
+  rr = XFormW(radius, 0, align);
+  rr2 = XFormH(radius, 0, align);
+  if (rr2 < rr)
+    rr = rr2;
 
 #ifdef WX_USE_CAIRO
   {
-    double w = width, h = height;
     if (reverse) {
-      cairo_move_to(CAIRO_DEV, x, y + radius);
-      cairo_line_to(CAIRO_DEV, x, y + h - radius);
-      cairo_arc_negative(CAIRO_DEV, x + radius, y + h - radius, radius, wxPI, 0.5 * wxPI);
-      cairo_line_to(CAIRO_DEV, x + w - radius, y + h);
-      cairo_arc_negative(CAIRO_DEV, x + w - radius, y + h - radius, radius, 0.5 * wxPI, 0);
-      cairo_line_to(CAIRO_DEV, x + w, y + radius);
-      cairo_arc_negative(CAIRO_DEV, x + w - radius, y + radius, radius, 2 * wxPI, 1.5 * wxPI);
-      cairo_line_to(CAIRO_DEV, x + radius, y);
-      cairo_arc_negative(CAIRO_DEV, x + radius, y + radius, radius, 1.5 * wxPI, wxPI);
-      cairo_line_to(CAIRO_DEV, x, y + radius);
+      cairo_move_to(CAIRO_DEV, xx, yy + rr);
+      cairo_line_to(CAIRO_DEV, xx, yy + hh - rr);
+      cairo_arc_negative(CAIRO_DEV, xx + rr, yy + hh - rr, rr, wxPI, 0.5 * wxPI);
+      cairo_line_to(CAIRO_DEV, xx + ww - rr, yy + hh);
+      cairo_arc_negative(CAIRO_DEV, xx + ww - rr, yy + hh - rr, rr, 0.5 * wxPI, 0);
+      cairo_line_to(CAIRO_DEV, xx + ww, yy + rr);
+      cairo_arc_negative(CAIRO_DEV, xx + ww - rr, yy + rr, rr, 2 * wxPI, 1.5 * wxPI);
+      cairo_line_to(CAIRO_DEV, xx + rr, yy);
+      cairo_arc_negative(CAIRO_DEV, xx + rr, yy + rr, rr, 1.5 * wxPI, wxPI);
+      cairo_line_to(CAIRO_DEV, xx, yy + rr);
     } else {
-      cairo_move_to(CAIRO_DEV, x, y + radius);
-      cairo_arc(CAIRO_DEV, x + radius, y + radius, radius, wxPI, 1.5 * wxPI);
-      cairo_line_to(CAIRO_DEV, x + w - radius, y);
-      cairo_arc(CAIRO_DEV, x + w - radius, y + radius, radius, 1.5 * wxPI, 2 * wxPI);
-      cairo_line_to(CAIRO_DEV, x + w, y + h - radius);
-      cairo_arc(CAIRO_DEV, x + w - radius, y + h - radius, radius, 0, 0.5 * wxPI);
-      cairo_line_to(CAIRO_DEV, x + radius, y + h);
-      cairo_arc(CAIRO_DEV, x + radius, y + h - radius, radius, 0.5 * wxPI, wxPI);
-      cairo_line_to(CAIRO_DEV, x, y + radius);
+      cairo_move_to(CAIRO_DEV, xx, yy + rr);
+      cairo_arc(CAIRO_DEV, xx + rr, yy + rr, rr, wxPI, 1.5 * wxPI);
+      cairo_line_to(CAIRO_DEV, xx + ww - rr, yy);
+      cairo_arc(CAIRO_DEV, xx + ww - rr, yy + rr, rr, 1.5 * wxPI, 2 * wxPI);
+      cairo_line_to(CAIRO_DEV, xx + ww, yy + hh - rr);
+      cairo_arc(CAIRO_DEV, xx + ww - rr, yy + hh - rr, rr, 0, 0.5 * wxPI);
+      cairo_line_to(CAIRO_DEV, xx + rr, yy + hh);
+      cairo_arc(CAIRO_DEV, xx + rr, yy + hh - rr, rr, 0.5 * wxPI, wxPI);
+      cairo_line_to(CAIRO_DEV, xx, yy + rr);
     }
     cairo_close_path(CAIRO_DEV);
   }
 #endif
 #ifdef wx_mac
   if (reverse) {
-    CGPathMoveToPoint(CGPATH, CGXFORM, x + radius, y);
-    CGPathAddArc(CGPATH, CGXFORM, x + radius, y + radius, radius, 1.5 * wxPI, 1.0 * wxPI, TRUE);
-    CGPathAddLineToPoint(CGPATH, CGXFORM, x, y + height - radius);
-    CGPathAddArc(CGPATH, CGXFORM, x + radius, y + height - radius, radius, 1.0 * wxPI, 0.5 * wxPI, TRUE);
-    CGPathAddLineToPoint(CGPATH, CGXFORM, x + width - radius, y + height);
-    CGPathAddArc(CGPATH, CGXFORM, x + width - radius, y + height - radius, radius, 0.5 * wxPI, 0, TRUE);
-    CGPathAddLineToPoint(CGPATH, CGXFORM, x + width, y + radius);
-    CGPathAddArc(CGPATH, CGXFORM, x + width - radius, y + radius, radius, 2 * wxPI, 1.5 * wxPI, TRUE);
+    CGPathMoveToPoint(CGPATH, CGXFORM, xx + rr, yy);
+    CGPathAddArc(CGPATH, CGXFORM, xx + rr, yy + rr, rr, 1.5 * wxPI, 1.0 * wxPI, TRUE);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, xx, yy + hh - rr);
+    CGPathAddArc(CGPATH, CGXFORM, xx + rr, yy + hh - rr, rr, 1.0 * wxPI, 0.5 * wxPI, TRUE);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, xx + ww - rr, yy + hh);
+    CGPathAddArc(CGPATH, CGXFORM, xx + ww - rr, yy + hh - rr, rr, 0.5 * wxPI, 0, TRUE);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, xx + ww, yy + rr);
+    CGPathAddArc(CGPATH, CGXFORM, xx + ww - rr, yy + rr, rr, 2 * wxPI, 1.5 * wxPI, TRUE);
   } else {
-    CGPathMoveToPoint(CGPATH, CGXFORM, x + radius, y);
-    CGPathAddLineToPoint(CGPATH, CGXFORM, x + width - radius, y);
-    CGPathAddArc(CGPATH, CGXFORM, x + width - radius, y + radius, radius, 1.5 * wxPI, 2 * wxPI, FALSE);
-    CGPathAddLineToPoint(CGPATH, CGXFORM, x + width, y + height - radius);
-    CGPathAddArc(CGPATH, CGXFORM, x + width - radius, y + height - radius, radius, 0, 0.5 * wxPI, FALSE);
-    CGPathAddLineToPoint(CGPATH, CGXFORM, x + radius, y + height);
-    CGPathAddArc(CGPATH, CGXFORM, x + radius, y + height - radius, radius, 0.5 * wxPI, 1.0 * wxPI, FALSE);
-    CGPathAddLineToPoint(CGPATH, CGXFORM, x, y + radius);
-    CGPathAddArc(CGPATH, CGXFORM, x + radius, y + radius, radius, 1.0 * wxPI, 1.5 * wxPI, FALSE);
+    CGPathMoveToPoint(CGPATH, CGXFORM, xx + rr, yy);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, xx + ww - rr, yy);
+    CGPathAddArc(CGPATH, CGXFORM, xx + ww - rr, yy + rr, rr, 1.5 * wxPI, 2 * wxPI, FALSE);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, xx + ww, yy + hh - rr);
+    CGPathAddArc(CGPATH, CGXFORM, xx + ww - rr, yy + hh - rr, rr, 0, 0.5 * wxPI, FALSE);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, xx + rr, yy + hh);
+    CGPathAddArc(CGPATH, CGXFORM, xx + rr, yy + hh - rr, rr, 0.5 * wxPI, 1.0 * wxPI, FALSE);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, xx, yy + rr);
+    CGPathAddArc(CGPATH, CGXFORM, xx + rr, yy + rr, rr, 1.0 * wxPI, 1.5 * wxPI, FALSE);
   }
   CGPathCloseSubpath(CGPATH);
 #endif
 #ifdef wx_msw
   if (reverse) {
-    wxGPathAddArc(CURRENT_GP, x, y, radius * 2, radius * 2, 270, -90);
-    wxGPathAddLine(CURRENT_GP, x, y + radius, x, y + height - radius);
-    wxGPathAddArc(CURRENT_GP, x, y + height - 2 * radius, 2 * radius, 2 * radius, 180, -90);
-    wxGPathAddLine(CURRENT_GP, x + radius, y + height, x + width - radius, y + height);
-    wxGPathAddArc(CURRENT_GP, x + width - 2 * radius, y + height - 2 * radius, 2 * radius, 2 * radius, 90, -90);
-    wxGPathAddLine(CURRENT_GP, x + width, y + height - radius, x + width, y + radius);
-    wxGPathAddArc(CURRENT_GP, x + width - 2 * radius, y, radius * 2, radius * 2, 360, -90);
+    wxGPathAddArc(CURRENT_GP, xx, yy, rr * 2, rr * 2, 270, -90);
+    wxGPathAddLine(CURRENT_GP, xx, yy + rr, xx, yy + hh - rr);
+    wxGPathAddArc(CURRENT_GP, xx, yy + hh - 2 * rr, 2 * rr, 2 * rr, 180, -90);
+    wxGPathAddLine(CURRENT_GP, xx + rr, yy + hh, xx + ww - rr, yy + hh);
+    wxGPathAddArc(CURRENT_GP, xx + ww - 2 * rr, yy + hh - 2 * rr, 2 * rr, 2 * rr, 90, -90);
+    wxGPathAddLine(CURRENT_GP, xx + ww, yy + hh - rr, xx + ww, yy + rr);
+    wxGPathAddArc(CURRENT_GP, xx + ww - 2 * rr, yy, rr * 2, rr * 2, 360, -90);
   } else {
-    wxGPathAddArc(CURRENT_GP, x, y, radius * 2, radius * 2, 180, 90);
-    wxGPathAddLine(CURRENT_GP, x + radius, y, x + width - radius, y);
-    wxGPathAddArc(CURRENT_GP, x + width - 2 * radius, y, radius * 2, radius * 2, 270, 90);
-    wxGPathAddLine(CURRENT_GP, x + width, y + radius, x + width, y + height - radius);
-    wxGPathAddArc(CURRENT_GP, x + width - 2 * radius, y + height - 2 * radius, 2 * radius, 2 * radius, 0, 90);
-    wxGPathAddLine(CURRENT_GP, x + width - radius, y + height, x + radius, y + height);
-    wxGPathAddArc(CURRENT_GP, x, y + height - 2 * radius, 2 * radius, 2 * radius, 90, 90);
+    wxGPathAddArc(CURRENT_GP, xx, yy, rr * 2, rr * 2, 180, 90);
+    wxGPathAddLine(CURRENT_GP, xx + rr, yy, xx + ww - rr, yy);
+    wxGPathAddArc(CURRENT_GP, xx + ww - 2 * rr, yy, rr * 2, rr * 2, 270, 90);
+    wxGPathAddLine(CURRENT_GP, xx + ww, yy + rr, xx + ww, yy + hh - rr);
+    wxGPathAddArc(CURRENT_GP, xx + ww - 2 * rr, yy + hh - 2 * rr, 2 * rr, 2 * rr, 0, 90);
+    wxGPathAddLine(CURRENT_GP, xx + ww - rr, yy + hh, xx + rr, yy + hh);
+    wxGPathAddArc(CURRENT_GP, xx, yy + hh - 2 * rr, 2 * rr, 2 * rr, 90, 90);
   }
   wxGPathCloseFigure(CURRENT_GP);
 #endif
 
-  RestoreScale(target, m);
+  RestoreScale(target, m, align);
 
   return FALSE;
 }
@@ -1329,23 +1337,32 @@ wxPolygonPathRgn::wxPolygonPathRgn(wxDC *dc_for_scale,
   fillStyle = _fillStyle;
 }
 
-Bool wxPolygonPathRgn::Install(long target, Bool reverse)
+Bool wxPolygonPathRgn::Install(long target, Bool reverse, Bool align)
 {
+  double xx, yy;
   long m;
-  m = PrepareScale(target, fillStyle == wxODDEVEN_RULE);
+  m = PrepareScale(target, fillStyle == wxODDEVEN_RULE, align);
 
 #ifdef WX_USE_CAIRO
   if (reverse) {
     int i;
-    cairo_move_to(CAIRO_DEV, points[n-1].x + xoffset, points[n-1].y + yoffset);
+    xx = XFormX(points[n-1].x + xoffset, align);
+    yy = XFormY(points[n-1].y + yoffset, align);
+    cairo_move_to(CAIRO_DEV, xx, yy);
     for (i = n-1; i--; ) {
-      cairo_line_to(CAIRO_DEV, points[i].x + xoffset, points[i].y + yoffset);
+      xx = XFormX(points[i].x + xoffset, align);
+      yy = XFormY(points[i].y + yoffset, align);
+      cairo_line_to(CAIRO_DEV, xx, yy);
     }
   } else {
     int i;
-    cairo_move_to(CAIRO_DEV, points[0].x + xoffset, points[0].y + yoffset);
+    xx = XFormX(points[0].x + xoffset, align);
+    yy = XFormY(points[0].y + yoffset, align);
+    cairo_move_to(CAIRO_DEV, xx, yy);
     for (i = 1; i < n; i++) {
-      cairo_line_to(CAIRO_DEV, points[i].x + xoffset, points[i].y + yoffset);
+      xx = XFormX(points[i].x + xoffset, align);
+      yy = XFormY(points[i].y + yoffset, align);
+      cairo_line_to(CAIRO_DEV, xx, yy);
     }
   }
   cairo_close_path(CAIRO_DEV);
@@ -1353,14 +1370,22 @@ Bool wxPolygonPathRgn::Install(long target, Bool reverse)
 #ifdef wx_mac
   if (reverse) {
     int i;
-    CGPathMoveToPoint(CGPATH, CGXFORM, points[n-1].x + xoffset, points[n-1].y + yoffset);
+    xx = XFormX(points[n-1].x + xoffset, align);
+    yy = XFormY(points[n-1].y + yoffset, align);
+    CGPathMoveToPoint(CGPATH, CGXFORM, xx, yy);
     for (i = n-1; i--; ) {
+      xx = XFormX(points[i].x + xoffset, align);
+      yy = XFormY(points[i].y + yoffset, align);
       CGPathAddLineToPoint(CGPATH, CGXFORM, points[i].x + xoffset, points[i].y + yoffset);
     }
   } else {
     int i;
-    CGPathMoveToPoint(CGPATH, CGXFORM, points[0].x + xoffset, points[0].y + yoffset);
+    xx = XFormX(points[0].x + xoffset, align);
+    yy = XFormY(points[0].y + yoffset, align);
+    CGPathMoveToPoint(CGPATH, CGXFORM, xx, yy);
     for (i = 1; i < n; i++) {
+      xx = XFormX(points[i].x + xoffset, align);
+      yy = XFormY(points[i].y + yoffset, align);
       CGPathAddLineToPoint(CGPATH, CGXFORM, points[i].x + xoffset, points[i].y + yoffset);
     }
   }
@@ -1369,23 +1394,28 @@ Bool wxPolygonPathRgn::Install(long target, Bool reverse)
 #ifdef wx_msw
   if (reverse) {
     int i;
+    double xx2, yy2;
     for (i = n - 1; i--; ) {
-      wxGPathAddLine(CURRENT_GP,
-		     points[i+1].x + xoffset, points[i+1].y + yoffset,
-		     points[i].x + xoffset, points[i].y + yoffset);
+      xx = XFormX(points[i+1].x + xoffset, align);
+      yy = XFormY(points[i+1].y + yoffset, align);
+      xx2 = XFormX(points[i].x + xoffset, align);
+      yy2 = XFormY(points[i].y + yoffset, align);
+      wxGPathAddLine(CURRENT_GP, xx, yy, xx2, yy2);
     }
   } else {
     int i;
     for (i = 0; i < n - 1; i++) {
-      wxGPathAddLine(CURRENT_GP,
-		     points[i].x + xoffset, points[i].y + yoffset,
-		     points[i+1].x + xoffset, points[i+1].y + yoffset);
+      xx = XFormX(points[i].x + xoffset, align);
+      yy = XFormY(points[i].y + yoffset, align);
+      xx2 = XFormX(points[i+1].x + xoffset, align);
+      yy2 = XFormY(points[i+1].y + yoffset, align);
+      wxGPathAddLine(CURRENT_GP, xx, yy, xx2, yy2);
     }
   }
   wxGPathCloseFigure(CURRENT_GP);
 #endif
 
-  RestoreScale(target, m);
+  RestoreScale(target, m, align);
 
   return (fillStyle == wxODDEVEN_RULE);
 }
@@ -1423,12 +1453,12 @@ wxPathPathRgn::wxPathPathRgn(wxDC *dc_for_scale,
   fillStyle = _fillStyle;
 }
 
-Bool wxPathPathRgn::Install(long target, Bool reverse)
+Bool wxPathPathRgn::Install(long target, Bool reverse, Bool align)
 {
   wxPath *q;
   long m;
 
-  m = PrepareScale(target, fillStyle == wxODDEVEN_RULE);
+  m = PrepareScale(target, fillStyle == wxODDEVEN_RULE, align);
 
   if (reverse) {
     q = new wxPath();
@@ -1437,17 +1467,29 @@ Bool wxPathPathRgn::Install(long target, Bool reverse)
   } else
     q = p;
 
+  if (align) {
 #ifdef WX_USE_CAIRO
-  q->Install(target, 0, 0);
+    q->Install(target, 0, 0, ox, oy, sx, sy, TRUE, 0.5, 0.5);
 #endif
 #ifdef wx_mac
-  q->Install((long)CGPATH, 0, 0);
+    q->Install((long)CGPATH, 0, 0, ox, oy, sx, sy, TRUE, 0.5, 0.5);
 #endif
 #ifdef wx_msw
-  q->Install((long)CURRENT_GP, 0, 0);
+    q->Install((long)CURRENT_GP, 0, 0, ox, oy, sx, sy, TRUE, 0, 0);
 #endif
+  } else {
+#ifdef WX_USE_CAIRO
+    q->Install(target, 0, 0, 0, 0, 1, 1, FALSE, 0, 0);
+#endif
+#ifdef wx_mac
+    q->Install((long)CGPATH, 0, 0, 0, 0, 1, 1, FALSE, 0, 0);
+#endif
+#ifdef wx_msw
+    q->Install((long)CURRENT_GP, 0, 0, 0, 0, 1, 1, FALSE, 0, 0);
+#endif
+  }
 
-  RestoreScale(target, m);
+  RestoreScale(target, m, align);
 
   return (fillStyle == wxODDEVEN_RULE);
 }
@@ -1470,16 +1512,22 @@ wxArcPathRgn::wxArcPathRgn(wxDC *dc_for_scale,
   end = _end;
 }
 
-Bool wxArcPathRgn::Install(long target, Bool reverse)
+Bool wxArcPathRgn::Install(long target, Bool reverse, Bool align)
 {
+  double xx, yy, ww, hh;
   long m;
 
-  m = PrepareScale(target, TRUE);
+  m = PrepareScale(target, TRUE, align);
+
+  xx = XFormXB(x, align);
+  yy = XFormYB(y, align);
+  ww = XFormW(w, x, align);
+  hh = XFormH(h, y, align);  
 
 #ifdef WX_USE_CAIRO
   {
-    cairo_translate(CAIRO_DEV, x, y);
-    cairo_scale(CAIRO_DEV, w, h);
+    cairo_translate(CAIRO_DEV, xx, yy);
+    cairo_scale(CAIRO_DEV, ww, hh);
     if ((start != 0.0) || (end != (2 * wxPI)))
       cairo_move_to(CAIRO_DEV, 0.5, 0.5);
     if (!reverse)
@@ -1492,8 +1540,8 @@ Bool wxArcPathRgn::Install(long target, Bool reverse)
 #ifdef wx_mac
   {
     CGAffineTransform xform;
-    xform = CGAffineTransformTranslate(*CGXFORM, x, y);
-    xform = CGAffineTransformScale(xform, w, h);
+    xform = CGAffineTransformTranslate(*CGXFORM, xx, yy);
+    xform = CGAffineTransformScale(xform, ww, hh);
     if ((start != 0.0) || (end != (2 * wxPI)))
       CGPathMoveToPoint(CGPATH, &xform, 0.5, 0.5);
     if (!reverse)
@@ -1508,9 +1556,9 @@ Bool wxArcPathRgn::Install(long target, Bool reverse)
     double init, span;
     if ((start == 0.0) && (end == 2 * wxPI)) {
       if (reverse) {
-	wxGPathAddArc(CURRENT_GP, x, y, w, h, 360.0, -360.0);
+	wxGPathAddArc(CURRENT_GP, xx, yy, ww, hh, 360.0, -360.0);
       } else {
-	wxGPathAddArc(CURRENT_GP, x, y, w, h, 0.0, 360.0);
+	wxGPathAddArc(CURRENT_GP, xx, yy, ww, hh, 0.0, 360.0);
       }
     } else {
       init = (2 * wxPI - start) * 180 / wxPI;
@@ -1523,16 +1571,16 @@ Bool wxArcPathRgn::Install(long target, Bool reverse)
       if (span > 0)
 	span -= 360.0;
       if (reverse) {
-	wxGPathAddPie(CURRENT_GP, x, y, w, h, init + span, -span);
+	wxGPathAddPie(CURRENT_GP, xx, yy, ww, hh, init + span, -span);
       } else {
-	wxGPathAddPie(CURRENT_GP, x, y, w, h, init, span);
+	wxGPathAddPie(CURRENT_GP, xx, yy, ww, hh, init, span);
       }
     }
     wxGPathCloseFigure(CURRENT_GP);
   }
 #endif
 
-  RestoreScale(target, m);
+  RestoreScale(target, m, align);
 
   return FALSE;
 }
@@ -1569,12 +1617,12 @@ wxUnionPathRgn::wxUnionPathRgn(wxPathRgn *_f, wxPathRgn *_s)
   b = _s;
 }
 
-Bool wxUnionPathRgn::Install(long target, Bool reverse)
+Bool wxUnionPathRgn::Install(long target, Bool reverse, Bool align)
 {
   Bool aoe, boe;
 
-  aoe = a->Install(target, reverse);
-  boe = b->Install(target, reverse);
+  aoe = a->Install(target, reverse, align);
+  boe = b->Install(target, reverse, align);
 
   return aoe || boe;
 }
@@ -1598,11 +1646,11 @@ wxIntersectPathRgn::wxIntersectPathRgn(wxPathRgn *_f, wxPathRgn *_s)
   b = _s;
 }
 
-Bool wxIntersectPathRgn::Install(long target, Bool reverse)
+Bool wxIntersectPathRgn::Install(long target, Bool reverse, Bool align)
 {
   Bool aoe;
 
-  aoe = a->Install(target, reverse);
+  aoe = a->Install(target, reverse, align);
 #ifdef WX_USE_CAIRO
   if (aoe)
     cairo_set_fill_rule(CAIRO_DEV, CAIRO_FILL_RULE_EVEN_ODD);
@@ -1611,54 +1659,23 @@ Bool wxIntersectPathRgn::Install(long target, Bool reverse)
     cairo_set_fill_rule(CAIRO_DEV, CAIRO_FILL_RULE_WINDING);
   cairo_new_path(CAIRO_DEV);
 #endif
-#if defined(wx_mac) || defined(wx_msw)
-  {
-    PathTarget *t = (PathTarget *)target;
-    PathTargetPath_t path;
-    int i;
-
-    if (t->npaths + 1 >= t->apaths) {
-      PathTargetPath_t *naya;
-# ifdef wx_mac
-      Bool *naya_oes;
-# endif
-      int n = (t->apaths + 5) * 2;
-      
-# ifdef MZ_PRECISE_GC
-      naya = (PathTargetPath_t *)GC_malloc_atomic(sizeof(PathTargetPath_t) * n);
-# else
-      naya = new WXGC_ATOMIC PathTargetPath_t[n];
-# endif
-# ifdef wx_mac
-      naya_oes = new WXGC_ATOMIC Bool[n];
-# endif
-      for (i = 0; i < t->npaths; i++) {
-	naya[i] = t->paths[i];
-# ifdef wx_mac
-	naya_oes[i] = t->oes[i];
-# endif
-      }
-
-      t->paths = naya;
-# ifdef wx_mac
-      t->oes = naya_oes;
-# endif
-      t->apaths = n;
-    }
-# ifdef wx_mac
-    t->oes[t->npaths] = aoe;
-# endif
-    t->paths[t->npaths++] = t->path;
-# ifdef wx_mac
-    path = CGPathCreateMutable();
-# endif
-# ifdef wx_msw
-    path = wxGPathNew(FillModeAlternate);
-# endif
-    t->path = path;
-  }
+#if defined(wx_mac)
+  CGContextBeginPath(CGCG);
+  CGContextAddPath(CGCG, CGPATH);
+  if (aoe)
+    CGContextEOClip(CGCG);
+  else
+    CGContextClip(CGCG);
+  CGPathRelease(CGPATH);
+  CGPATH = CGPathCreateMutable();
 #endif
-  return b->Install(target, reverse);
+#if defined(wx_msw)
+  wxGSetClip(GP_G, GP, GP_DID_ONE ? CombineModeIntersect : CombineModeReplace);
+  GP_DID_ONE = 1;
+  wxGPathRelease(GP);
+  GP = wxGPathNew(FillModeAlternate);
+#endif
+  return b->Install(target, reverse, align);
 }
 
 Bool wxIntersectPathRgn::InstallPS(wxPostScriptDC *dc, wxPSStream *s)
@@ -1684,12 +1701,12 @@ wxDiffPathRgn::wxDiffPathRgn(wxPathRgn *_f, wxPathRgn *_s)
   b = _s;
 }
 
-Bool wxDiffPathRgn::Install(long target, Bool reverse)
+Bool wxDiffPathRgn::Install(long target, Bool reverse, Bool align)
 {
   Bool aoe, boe;
 
-  aoe = a->Install(target, reverse);
-  boe = b->Install(target, !reverse);
+  aoe = a->Install(target, reverse, align);
+  boe = b->Install(target, !reverse, align);
 
   return aoe || boe;
 }
@@ -2168,10 +2185,12 @@ void wxPath::AddPath(wxPath *p)
   }
 }
 
-void wxPath::Install(long target, double dx, double dy)
+void wxPath::Install(long target, double dx, double dy, 
+		     double ox, double oy, double sx, double sy,
+		     Bool align, double pox, double poy)
 {
   int i = 0;
-  double lx = 0.0, ly = 0.0;
+  double lx = 0.0, ly = 0.0, lxx = 0.0, lyy = 0.0;
 
 #ifdef WX_USE_CAIRO
   cairo_new_path(CAIRO_DEV);
@@ -2190,53 +2209,82 @@ void wxPath::Install(long target, double dx, double dy)
 #endif
       i += 1;
     } else if (cmds[i] == CMD_MOVE) {
+      double xx, yy;
+      xx = (cmds[i+1]+dx) * sx + ox;
+      yy = (cmds[i+2]+dy) * sy + oy;
+      if (align) {
+	xx = floor(xx) + pox;
+	yy = floor(yy) + poy;
+      }
+
 #ifdef WX_USE_CAIRO
-      cairo_move_to(CAIRO_DEV, cmds[i+1]+dx, cmds[i+2]+dy);
+      cairo_move_to(CAIRO_DEV, xx, yy);
 #endif
 #ifdef wx_mac
-      CGPathMoveToPoint(PATHPATH, NULL, cmds[i+1]+dx, cmds[i+2]+dy);
+      CGPathMoveToPoint(PATHPATH, NULL, xx, yy);
 #endif
+
       lx = cmds[i+1];
       ly = cmds[i+2];
+      lxx = xx;
+      lyy = yy;
+
       i += 3;
     } else if (cmds[i] == CMD_LINE) {
       if ((cmds[i+1] != lx) || (cmds[i+2] != ly)) {
+	double xx, yy;
+	xx = (cmds[i+1]+dx) * sx + ox;
+	yy = (cmds[i+2]+dy) * sy + oy;
+	if (align) {
+	  xx = floor(xx) + pox;
+	  yy = floor(yy) + poy;
+	}
+
 #ifdef WX_USE_CAIRO
-	cairo_line_to(CAIRO_DEV, cmds[i+1]+dx, cmds[i+2]+dy);
+	cairo_line_to(CAIRO_DEV, xx, yy);
 #endif
 #ifdef wx_mac
-	CGPathAddLineToPoint(PATHPATH, NULL, cmds[i+1]+dx, cmds[i+2]+dy);
+	CGPathAddLineToPoint(PATHPATH, NULL, xx, yy);
 #endif
 #ifdef wx_msw
-	wxGPathAddLine(PATH_GP, lx+dx, ly+dy, cmds[i+1]+dx, cmds[i+2]+dy);
+	wxGPathAddLine(PATH_GP, lxx, lyy, xx, yy);
 #endif
+
+	lx = cmds[i+1];
+	ly = cmds[i+2];
+	lxx = xx;
+	lyy = yy;
       }
-      lx = cmds[i+1];
-      ly = cmds[i+2];
       i += 3;
     } else if (cmds[i] == CMD_CURVE) {
       if ((cmds[i+5] != lx) || (cmds[i+6] != ly)) {
+	double xx, yy, xx1, yy1, xx2, yy2;
+	xx = (cmds[i+5]+dx) * sx + ox;
+	yy = (cmds[i+6]+dy) * sy + oy;
+	if (align) {
+	  xx = floor(xx) + pox;
+	  yy = floor(yy) + poy;
+	}
+
+	xx1 = (cmds[i+1]+dx) * sx + ox;
+	yy1 = (cmds[i+2]+dy) * sy + oy;
+	xx2 = (cmds[i+3]+dx) * sx + ox;
+	yy2 = (cmds[i+4]+dy) * sy + oy;
+
 #ifdef WX_USE_CAIRO
-	cairo_curve_to(CAIRO_DEV, 
-		       cmds[i+1]+dx, cmds[i+2]+dy, 
-		       cmds[i+3]+dx, cmds[i+4]+dy, 
-		       cmds[i+5]+dx, cmds[i+6]+dy);
+	cairo_curve_to(CAIRO_DEV, xx1, yy1, xx2, yy2, xx, yy);
 #endif
 #ifdef wx_mac
-	CGPathAddCurveToPoint(PATHPATH, NULL, 
-			      cmds[i+1]+dx, cmds[i+2]+dy, 
-			      cmds[i+3]+dx, cmds[i+4]+dy, 
-			      cmds[i+5]+dx, cmds[i+6]+dy);
+	CGPathAddCurveToPoint(PATHPATH, NULL, xx1, yy1, xx2, yy2, xx, yy);
 #endif
 #ifdef wx_msw
-	wxGPathAddBezier(PATH_GP, lx+dx, ly+dy, 
-			 cmds[i+1]+dx, cmds[i+2]+dy, 
-			 cmds[i+3]+dx, cmds[i+4]+dy, 
-			 cmds[i+5]+dx, cmds[i+6]+dy);
+	wxGPathAddBezier(PATH_GP, lxx, lyy, xx1, yy1, xx2, yy2, xx, yy);
 #endif
+	lx = cmds[i+5];
+	ly = cmds[i+6];
+	lxx = xx;
+	lyy = yy;
       }
-      lx = cmds[i+5];
-      ly = cmds[i+6];
       i += 7;
     }
   }

@@ -1146,15 +1146,12 @@ void wxWindowDC::Clear(void)
     b = c->Blue();
     cairo_set_rgb_color(CAIRO_DEV, r / 255.0, g / 255.0, b / 255.0);    
 
-    cairo_save(CAIRO_DEV);
-    cairo_default_matrix(CAIRO_DEV);    
     cairo_new_path(CAIRO_DEV);
     cairo_move_to(CAIRO_DEV, 0, 0);
     cairo_line_to(CAIRO_DEV, w, 0);
     cairo_line_to(CAIRO_DEV, w, h);
     cairo_line_to(CAIRO_DEV, 0, h);
     cairo_fill(CAIRO_DEV);
-    cairo_restore(CAIRO_DEV);
 
     return;
   }
@@ -1177,16 +1174,19 @@ void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, d
 
 #ifdef WX_USE_CAIRO
   if (anti_alias) {
-    double pw;
-
     InitCairoDev();
 
     start = -start;
     end = -end;
-    
+
     if (SetCairoBrush()) {
-      double xx = x, yy = y, ww = w, hh = h;
-      
+      double xx, yy, ww, hh;
+
+      xx = SmoothingXFormXB(x);
+      yy = SmoothingXFormYB(y);
+      ww = SmoothingXFormW(w, x);
+      hh = SmoothingXFormH(h, y);
+
       cairo_save(CAIRO_DEV);
       cairo_translate(CAIRO_DEV, xx, yy);
       cairo_scale(CAIRO_DEV, ww, hh);
@@ -1197,21 +1197,16 @@ void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, d
       cairo_restore(CAIRO_DEV);
     }
     
-    pw = SetCairoPen();
-    if (pw) {
+    
+    if (SetCairoPen()) {
+      double xx, yy, ww, hh;
       cairo_matrix_t *m;
-      double xx = x, yy = y, ww = w, hh = h;
 
-      if ((anti_alias == 2)
-	  && (scale_x == 1.0)
-	  && (scale_y == 1.0)
-	  && (current_pen->GetWidthF() <= 1.0)) {
-	xx += 0.5;
-	yy += 0.5;
-	ww -= 1.0;
-	hh -= 1.0;
-      }      
-
+      xx = SmoothingXFormX(x);
+      yy = SmoothingXFormY(y);
+      ww = SmoothingXFormWL(w, x);
+      hh = SmoothingXFormHL(h, y);
+      
       m = cairo_matrix_create();
       cairo_current_matrix (CAIRO_DEV, m);
       cairo_translate(CAIRO_DEV, xx, yy);
@@ -1291,21 +1286,16 @@ void wxWindowDC::DrawLine(double x1, double y1, double x2, double y2)
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
 #ifdef WX_USE_CAIRO
       if (anti_alias) {
-	double xx1 = x1, yy1 = y1, xx2 = x2, yy2 = y2, pw;
+	double xx1, yy1, xx2, yy2;
 
 	InitCairoDev();
 	
-	pw = SetCairoPen();
+	SetCairoPen();
 
-	if ((anti_alias == 2)
-	    && (scale_x == 1.0)
-	    && (scale_y == 1.0)
-	    && (pw <= 1.0)) {
-	  xx1 += 0.5;
-	  yy1 += 0.5;
-	  xx2 += 0.5;
-	  yy2 += 0.5;
-	}
+	xx1 = SmoothingXFormX(x1);
+	yy1 = SmoothingXFormY(y1);
+	xx2 = SmoothingXFormX(x2);
+	yy2 = SmoothingXFormY(y2);
 
 	cairo_new_path(CAIRO_DEV);
 	cairo_move_to(CAIRO_DEV, xx1, yy1);
@@ -1336,25 +1326,16 @@ void wxWindowDC::DrawLines(int n, wxPoint pts[], double xoff, double yoff)
   
 #ifdef WX_USE_CAIRO
   if (anti_alias) {
-    double pw;
     int i;
 
     InitCairoDev();
     
-    pw = SetCairoPen();
-
-    if ((anti_alias == 2)
-	&& (scale_x == 1.0)
-	&& (scale_y == 1.0)
-	&& (pw <= 1.0)) {
-      xoff += 0.5;
-      yoff += 0.5;
-    }
+    SetCairoPen();
 
     cairo_new_path(CAIRO_DEV);
-    cairo_move_to(CAIRO_DEV, pts[0].x + xoff, pts[0].y + yoff);
+    cairo_move_to(CAIRO_DEV, SmoothingXFormX(pts[0].x + xoff), SmoothingXFormY(pts[0].y + yoff));
     for (i = 1; i < n; i++) {
-      cairo_line_to(CAIRO_DEV, pts[i].x + xoff, pts[i].y + yoff);
+      cairo_line_to(CAIRO_DEV, SmoothingXFormX(pts[i].x + xoff), SmoothingXFormY(pts[i].y + yoff));
     }
     cairo_stroke(CAIRO_DEV);    
 
@@ -1396,18 +1377,8 @@ void wxWindowDC::DrawPolygon(int n, wxPoint pts[], double xoff, double yoff,
 
 #ifdef WX_USE_CAIRO
   if (anti_alias) {
-    double pw;
-
     InitCairoDev();
 
-    if ((anti_alias == 2)
-	&& (scale_x == 1.0)
-	&& (scale_y == 1.0)
-	&& (current_pen->GetWidthF() <= 1.0)) {
-      xoff += 0.5;
-      yoff += 0.5;
-    }
-      
     if (SetCairoBrush()) {
       int i;     
 
@@ -1415,9 +1386,9 @@ void wxWindowDC::DrawPolygon(int n, wxPoint pts[], double xoff, double yoff,
 	cairo_set_fill_rule(CAIRO_DEV, CAIRO_FILL_RULE_EVEN_ODD);
       
       cairo_new_path(CAIRO_DEV);
-      cairo_move_to(CAIRO_DEV, pts[0].x + xoff, pts[0].y + yoff);
+      cairo_move_to(CAIRO_DEV, SmoothingXFormX(pts[0].x + xoff), SmoothingXFormY(pts[0].y + yoff));
       for (i = 1; i < n; i++) {
-	cairo_line_to(CAIRO_DEV, pts[i].x + xoff, pts[i].y + yoff);
+	cairo_line_to(CAIRO_DEV, SmoothingXFormX(pts[i].x + xoff), SmoothingXFormY(pts[i].y + yoff));
       }
       cairo_fill(CAIRO_DEV); 
 
@@ -1425,14 +1396,13 @@ void wxWindowDC::DrawPolygon(int n, wxPoint pts[], double xoff, double yoff,
 	cairo_set_fill_rule(CAIRO_DEV, CAIRO_FILL_RULE_WINDING);
     }
 
-    pw = SetCairoPen();
-    if (pw) {
+    if (SetCairoPen()) {
       int i;
 
       cairo_new_path(CAIRO_DEV);
-      cairo_move_to(CAIRO_DEV, pts[0].x + xoff, pts[0].y + yoff);
+      cairo_move_to(CAIRO_DEV, SmoothingXFormX(pts[0].x + xoff), SmoothingXFormY(pts[0].y + yoff));
       for (i = 1; i < n; i++) {
-	cairo_line_to(CAIRO_DEV, pts[i].x + xoff, pts[i].y + yoff);
+	cairo_line_to(CAIRO_DEV, SmoothingXFormX(pts[i].x + xoff), SmoothingXFormY(pts[i].y + yoff));
       }
       cairo_close_path(CAIRO_DEV);
       cairo_stroke(CAIRO_DEV);
@@ -1472,10 +1442,15 @@ void wxWindowDC::DrawRectangle(double x, double y, double w, double h)
     
 #ifdef WX_USE_CAIRO
     if (anti_alias) {
-      double xx = x, yy = y, ww = w, hh = h;
+      double xx, yy, ww, hh;
 
       InitCairoDev();
       if (SetCairoBrush()) {
+	xx = SmoothingXFormXB(x);
+	yy = SmoothingXFormYB(y);
+	ww = SmoothingXFormW(w, x);
+	hh = SmoothingXFormH(h, y);
+
 	cairo_new_path(CAIRO_DEV);
 	cairo_move_to(CAIRO_DEV, xx, yy);
 	cairo_line_to(CAIRO_DEV, xx+ww, yy);
@@ -1485,15 +1460,10 @@ void wxWindowDC::DrawRectangle(double x, double y, double w, double h)
       }
 
       if (SetCairoPen()) {
-	if ((anti_alias == 2)
-	    && (scale_x == 1.0)
-	    && (scale_y == 1.0)
-	    && (current_pen->GetWidthF() <= 1.0)) {
-	  xx += 0.5;
-	  yy += 0.5;
-	  ww -= 1.0;
-	  hh -= 1.0;
-	}
+	xx = SmoothingXFormX(x);
+	yy = SmoothingXFormY(y);
+	ww = SmoothingXFormWL(w, x);
+	hh = SmoothingXFormHL(h, y);
       
 	cairo_new_path(CAIRO_DEV);
 	cairo_move_to(CAIRO_DEV, xx, yy);
@@ -1537,44 +1507,54 @@ void wxWindowDC::DrawRoundedRectangle(double x, double y, double w, double h,
 
 #ifdef WX_USE_CAIRO
     if (anti_alias) {
-      double xx = x, yy = y, ww = w, hh = h;
+      double xx, yy, ww, hh, rr, rr2;
 
-      if ((anti_alias == 2)
-	  && (scale_x == 1.0)
-	  && (scale_y == 1.0)
-	  && (current_pen->GetWidthF() <= 1.0)) {
-	xx += 0.5;
-	yy += 0.5;
-	ww -= 1.0;
-	hh -= 1.0;
-      }
-      
       InitCairoDev();
       if (SetCairoBrush()) {
-	cairo_move_to(CAIRO_DEV, xx, yy + radius);
-	cairo_line_to(CAIRO_DEV, xx, yy + hh - radius);
-	cairo_arc_negative(CAIRO_DEV, xx + radius, yy + hh - radius, radius, wxPI, 0.5 * wxPI);
-	cairo_line_to(CAIRO_DEV, xx + ww - radius, yy + hh);
-	cairo_arc_negative(CAIRO_DEV, xx + ww - radius, yy + hh - radius, radius, 0.5 * wxPI, 0);
-	cairo_line_to(CAIRO_DEV, xx + w, yy + radius);
-	cairo_arc_negative(CAIRO_DEV, xx + ww - radius, yy + radius, radius, 2 * wxPI, 1.5 * wxPI);
-	cairo_line_to(CAIRO_DEV, xx + radius, y);
-	cairo_arc_negative(CAIRO_DEV, xx + radius, yy + radius, radius, 1.5 * wxPI, wxPI);
-	cairo_line_to(CAIRO_DEV, xx, yy + radius);
+	xx = SmoothingXFormXB(x);
+	yy = SmoothingXFormYB(y);
+	ww = SmoothingXFormW(w, x);
+	hh = SmoothingXFormH(h, y);
+
+	rr = SmoothingXFormW(radius, 0);
+	rr2 = SmoothingXFormH(radius, 0);
+	if (rr2 < rr)
+	  rr = rr2;
+
+	cairo_move_to(CAIRO_DEV, xx, yy + rr);
+	cairo_line_to(CAIRO_DEV, xx, yy + hh - rr);
+	cairo_arc_negative(CAIRO_DEV, xx + rr, yy + hh - rr, rr, wxPI, 0.5 * wxPI);
+	cairo_line_to(CAIRO_DEV, xx + ww - rr, yy + hh);
+	cairo_arc_negative(CAIRO_DEV, xx + ww - rr, yy + hh - rr, rr, 0.5 * wxPI, 0);
+	cairo_line_to(CAIRO_DEV, xx + ww, yy + rr);
+	cairo_arc_negative(CAIRO_DEV, xx + ww - rr, yy + rr, rr, 2 * wxPI, 1.5 * wxPI);
+	cairo_line_to(CAIRO_DEV, xx + rr, yy);
+	cairo_arc_negative(CAIRO_DEV, xx + rr, yy + rr, rr, 1.5 * wxPI, wxPI);
+	cairo_line_to(CAIRO_DEV, xx, yy + rr);
 	cairo_fill(CAIRO_DEV);    
       }
 
       if (SetCairoPen()) {
-	cairo_move_to(CAIRO_DEV, xx, yy + radius);
-	cairo_line_to(CAIRO_DEV, xx, yy + hh - radius);
-	cairo_arc_negative(CAIRO_DEV, xx + radius, yy + hh - radius, radius, wxPI, 0.5 * wxPI);
-	cairo_line_to(CAIRO_DEV, xx + ww - radius, yy + hh);
-	cairo_arc_negative(CAIRO_DEV, xx + ww - radius, yy + hh - radius, radius, 0.5 * wxPI, 0);
-	cairo_line_to(CAIRO_DEV, xx + ww, yy + radius);
-	cairo_arc_negative(CAIRO_DEV, xx + ww - radius, yy + radius, radius, 2 * wxPI, 1.5 * wxPI);
-	cairo_line_to(CAIRO_DEV, xx + radius, yy);
-	cairo_arc_negative(CAIRO_DEV, xx + radius, yy + radius, radius, 1.5 * wxPI, wxPI);
-	cairo_line_to(CAIRO_DEV, xx, yy + radius);
+	xx = SmoothingXFormX(x);
+	yy = SmoothingXFormY(y);
+	ww = SmoothingXFormWL(w, x);
+	hh = SmoothingXFormHL(h, y);
+
+	rr = SmoothingXFormWL(radius, 0);
+	rr2 = SmoothingXFormHL(radius, 0);
+	if (rr2 < rr)
+	  rr = rr2;
+
+	cairo_move_to(CAIRO_DEV, xx, yy + rr);
+	cairo_line_to(CAIRO_DEV, xx, yy + hh - rr);
+	cairo_arc_negative(CAIRO_DEV, xx + rr, yy + hh - rr, rr, wxPI, 0.5 * wxPI);
+	cairo_line_to(CAIRO_DEV, xx + ww - rr, yy + hh);
+	cairo_arc_negative(CAIRO_DEV, xx + ww - rr, yy + hh - rr, rr, 0.5 * wxPI, 0);
+	cairo_line_to(CAIRO_DEV, xx + ww, yy + rr);
+	cairo_arc_negative(CAIRO_DEV, xx + ww - rr, yy + rr, rr, 2 * wxPI, 1.5 * wxPI);
+	cairo_line_to(CAIRO_DEV, xx + rr, yy);
+	cairo_arc_negative(CAIRO_DEV, xx + rr, yy + rr, rr, 1.5 * wxPI, wxPI);
+	cairo_line_to(CAIRO_DEV, xx, yy + rr);
 	cairo_close_path(CAIRO_DEV);
 	cairo_stroke(CAIRO_DEV);
       }
@@ -1631,20 +1611,19 @@ void wxWindowDC::DrawPath(wxPath *p, double xoff, double yoff, int fill)
 #ifdef WX_USE_CAIRO
   if (anti_alias) {
 
-    if ((anti_alias == 2)
-	&& (user_scale_x == 1.0)
-	&& (user_scale_y == 1.0)
-	&& (current_pen->GetWidthF() <= 1.0)) {
-      xoff += 0.5;
-      yoff += 0.5;
-    }
-    
     InitCairoDev();
     if (SetCairoBrush()) {
       if (fill == wxODDEVEN_RULE)
 	cairo_set_fill_rule(CAIRO_DEV, CAIRO_FILL_RULE_EVEN_ODD);
 
-      p->Install((long)CAIRO_DEV, xoff, yoff);
+      if (AlignSmoothing()) {
+	double pw;
+	pw = GetPenSmoothingOffset();
+	p->Install((long)CAIRO_DEV, xoff, yoff, 
+		   device_origin_x, device_origin_y, user_scale_x, user_scale_y, 
+		   TRUE, pw, pw);
+      } else
+	p->Install((long)CAIRO_DEV, xoff, yoff, 0, 0, 1, 1, FALSE, 0, 0);
       cairo_fill(CAIRO_DEV);
 
       if (fill == wxODDEVEN_RULE)
@@ -1652,7 +1631,14 @@ void wxWindowDC::DrawPath(wxPath *p, double xoff, double yoff, int fill)
     }
 
     if (SetCairoPen()) {
-      p->Install((long)CAIRO_DEV, xoff, yoff);
+      if (AlignSmoothing()) {
+	double pw;
+	pw = GetPenSmoothingOffset();
+	p->Install((long)CAIRO_DEV, xoff, yoff, 
+		   device_origin_x, device_origin_y, user_scale_x, user_scale_y, 
+		   TRUE, pw, pw);
+      } else
+	p->Install((long)CAIRO_DEV, xoff, yoff, 0, 0, 1, 1, FALSE, 0, 0);
       cairo_stroke(CAIRO_DEV);
     }
 
@@ -2708,10 +2694,6 @@ void wxWindowDC::SetClippingRegion(wxRegion *r)
   if (clipping)
     clipping->locked++;
 
-#ifdef WX_USE_CAIRO
-  X->reset_cairo_clip = 1;
-#endif
-
   if (r) {
     if (r->rgn) {
       USER_REG = r->rgn;
@@ -2835,6 +2817,10 @@ void wxWindowDC::SetCanvasClipping(void)
 {
     if (!DRAWABLE)
 	return;
+
+#ifdef WX_USE_CAIRO
+    X->reset_cairo_clip = 1;
+#endif
 
     if (CURRENT_REG)
 	XDestroyRegion(CURRENT_REG);
@@ -3514,15 +3500,27 @@ void wxWindowDC::InitCairoDev()
   }
 
   cairo_default_matrix(CAIRO_DEV);
-  cairo_translate(CAIRO_DEV, device_origin_x, device_origin_y);
-  cairo_scale(CAIRO_DEV, scale_x, scale_y);
   if (X->reset_cairo_clip) {
-    /* FIXME: need to clip to EXPOSE_REG, too */
+    cairo_init_clip(CAIRO_DEV);
+    if (EXPOSE_REG) {
+      /* We assume a rectangular expose region. */
+      XRectangle r;
+      XClipBox(EXPOSE_REG, &r);
+      cairo_new_path(CAIRO_DEV);
+      cairo_move_to(CAIRO_DEV, r.x, r.y);
+      cairo_rel_line_to(CAIRO_DEV, 0, r.height);
+      cairo_rel_line_to(CAIRO_DEV, r.width, 0);
+      cairo_rel_line_to(CAIRO_DEV, 0, -r.height);
+      cairo_clip(CAIRO_DEV);
+      cairo_new_path(CAIRO_DEV);
+    }
     if (clipping)
-      clipping->Install(X->cairo_dev);
-    else
-      cairo_init_clip(CAIRO_DEV);
+      clipping->Install((long)CAIRO_DEV, AlignSmoothing());
     X->reset_cairo_clip = 0;
+  }
+  if (!AlignSmoothing()) {
+    cairo_translate(CAIRO_DEV, device_origin_x, device_origin_y);
+    cairo_scale(CAIRO_DEV, scale_x, scale_y);
   }
 }
 
@@ -3540,7 +3538,7 @@ static double cairo_long_dashed[] = {4, 8, /* offset */ 2};
 static double cairo_dotted_dashed[] = {6, 6, 2, 6, /* offset */ 4};
 
 
-double wxWindowDC::SetCairoPen()
+Bool wxWindowDC::SetCairoPen()
 {
   if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
     wxColour *c;
@@ -3557,11 +3555,19 @@ double wxWindowDC::SetCairoPen()
     cairo_set_rgb_color(CAIRO_DEV, r / 255.0, g / 255.0, b / 255.0);
 
     pw = current_pen->GetWidthF();
-    if (!pw) {
-      if (scale_y > scale_x)
-	pw = 1 / scale_x;
+    if (AlignSmoothing()) {
+      pw = (int)pw;
+      if (!pw)
+	pw = 1;
       else
-	pw = 1 / scale_y;
+	pw = (int)(pw * user_scale_x);
+    } else {
+      if (!pw) {
+	if (scale_y > scale_x)
+	  pw = 1 / scale_x;
+	else
+	  pw = 1 / scale_y;
+      }
     }
     cairo_set_line_width(CAIRO_DEV, pw);
 
@@ -3601,9 +3607,9 @@ double wxWindowDC::SetCairoPen()
       offset = 0;
     cairo_set_dash(CAIRO_DEV, dashes, ndash, offset);
 
-    return pw;
+    return TRUE;
   } else
-    return 0.0;
+    return FALSE;
 }
 
 Bool wxWindowDC::SetCairoBrush()
@@ -3619,5 +3625,103 @@ Bool wxWindowDC::SetCairoBrush()
     return TRUE;
   } else
     return FALSE;
+}
+
+void wxWindowDC::SetAntiAlias(int v)
+{
+  if (v != anti_alias) {
+    /* In case we go from aligned to not: */
+    X->reset_cairo_clip = 1;
+  }
+    
+  wxDC::SetAntiAlias(v);
+}
+
+Bool wxWindowDC::AlignSmoothing()
+{
+  return (anti_alias == 2);
+}
+
+double wxWindowDC::GetPenSmoothingOffset()
+{
+  int pw;
+  pw = current_pen->GetWidth();
+  if (!pw)
+    pw = 1;
+  else
+    pw = (int)(user_scale_x * pw);
+  return ((pw & 1) * 0.5);
+}
+
+double wxWindowDC::SmoothingXFormX(double x)
+{
+  if (AlignSmoothing())
+    return floor((x * user_scale_x) + device_origin_x) + GetPenSmoothingOffset();
+  else
+    return x;
+}
+
+double wxWindowDC::SmoothingXFormY(double y)
+{
+  if (AlignSmoothing())
+    return floor((y * user_scale_y) + device_origin_y) + GetPenSmoothingOffset();
+  else
+    return y;
+}
+
+double wxWindowDC::SmoothingXFormW(double w, double x)
+{
+  if (AlignSmoothing())
+    return SmoothingXFormX(x + w) - SmoothingXFormX(x);
+  else
+    return w;
+}
+
+double wxWindowDC::SmoothingXFormH(double h, double y)
+{
+  if (AlignSmoothing())
+    return SmoothingXFormY(y + h) - SmoothingXFormX(y);
+  else
+    return h;
+}
+
+double wxWindowDC::SmoothingXFormXB(double x)
+{
+  if (AlignSmoothing())
+    return floor((x * user_scale_x) + device_origin_x);
+  else
+    return x;
+}
+
+double wxWindowDC::SmoothingXFormYB(double y)
+{
+  if (AlignSmoothing())
+    return floor((y * user_scale_y) + device_origin_y);
+  else
+    return y;
+}
+
+double wxWindowDC::SmoothingXFormWL(double w, double x)
+{
+  if (AlignSmoothing()) {
+    w = SmoothingXFormW(w, x);
+    if (w >= 1.0)
+      return w - 1.0;
+    else
+      return w;
+  } else
+    return w;
+}
+
+double wxWindowDC::SmoothingXFormHL(double h, double y)
+{
+  if (AlignSmoothing()) {
+    h = SmoothingXFormH(h, y);
+    if (h >= 1.0)
+      return h - 1.0;
+    else
+      return h;
+  } else
+    return h;
 }
 #endif

@@ -115,97 +115,110 @@ class wxWindowDC_Xintern;
 
 class wxWindowDC : public wxDC {
 public:
-    wxWindowDC(void);
-    ~wxWindowDC(void);
+  wxWindowDC(void);
+  ~wxWindowDC(void);
 
-    // virtual methods, declared in wxDC
-    Bool  Blit(double xdest, double ydest, double w, double h, wxBitmap *bm,
-	       double xsrc, double ysrc, int rop=wxSOLID, wxColour *c=NULL, wxBitmap *mask=NULL);
-    Bool  GCBlit(double xdest, double ydest, double w, double h, wxBitmap *bm,
-		 double xsrc, double ysrc, wxBitmap *mask=NULL);
-    Bool  CanGetTextExtent(void) { return TRUE; }
-    Bool  CanDrawBitmap(void) { return TRUE; }
-    void  Clear(void);
-    void  DrawArc(double x1, double y1, double x2, double y2, double xc, double yc);
-    void  DrawEllipse(double x, double y, double w, double h);
-    void  DrawLine(double x1, double y1, double x2, double y2);
-    void  DrawLines(int n, wxPoint pts[], double xoff=0, double yoff=0);
-    void  DrawPoint(double x, double y);
-    void  DrawPolygon(int n, wxPoint pts[], double xoff=0, double yoff=0, int fill=wxODDEVEN_RULE);
-    void  DrawRectangle(double x, double y, double w, double h);
-    void  DrawRoundedRectangle(double x, double y, double w, double h, double radius=20);
-    void  DrawPath(wxPath *p, double dx, double dy, int fill=wxODDEVEN_RULE);
+  // virtual methods, declared in wxDC
+  Bool  Blit(double xdest, double ydest, double w, double h, wxBitmap *bm,
+	     double xsrc, double ysrc, int rop=wxSOLID, wxColour *c=NULL, wxBitmap *mask=NULL);
+  Bool  GCBlit(double xdest, double ydest, double w, double h, wxBitmap *bm,
+	       double xsrc, double ysrc, wxBitmap *mask=NULL);
+  Bool  CanGetTextExtent(void) { return TRUE; }
+  Bool  CanDrawBitmap(void) { return TRUE; }
+  void  Clear(void);
+  void  DrawArc(double x1, double y1, double x2, double y2, double xc, double yc);
+  void  DrawEllipse(double x, double y, double w, double h);
+  void  DrawLine(double x1, double y1, double x2, double y2);
+  void  DrawLines(int n, wxPoint pts[], double xoff=0, double yoff=0);
+  void  DrawPoint(double x, double y);
+  void  DrawPolygon(int n, wxPoint pts[], double xoff=0, double yoff=0, int fill=wxODDEVEN_RULE);
+  void  DrawRectangle(double x, double y, double w, double h);
+  void  DrawRoundedRectangle(double x, double y, double w, double h, double radius=20);
+  void  DrawPath(wxPath *p, double dx, double dy, int fill=wxODDEVEN_RULE);
 
-    void  DrawText(char *text, double x, double y, Bool combine = FALSE, Bool use16 = FALSE, int dt = 0, double angle = 0.0);
-    double GetCharHeight(void);
-    double GetCharWidth(void);
-    void  GetTextExtent(const char *s, double *w, double *h, double *descent = 0,
-			double *ext_leading = 0,	wxFont *font=NULL,
-			Bool combine=FALSE, Bool use16bit=FALSE, int dt=0);
-    void  SetBackground(wxColour *c);
-    void  SetBrush(wxBrush *brush);
-    void  SetClippingRect(double x, double y, double w, double h);
-    void  SetClippingRegion(wxRegion*);
-    wxRegion* GetClippingRegion();
-    void  SetColourMap(wxColourMap *cmap);
-    void  SetFont(wxFont *font);
-    void  SetPen(wxPen *pen);
-    void  SetTextBackground(wxColour *col);
-    void  SetTextForeground(wxColour *col);
+  void  DrawText(char *text, double x, double y, Bool combine = FALSE, Bool use16 = FALSE, int dt = 0, double angle = 0.0);
+  double GetCharHeight(void);
+  double GetCharWidth(void);
+  void  GetTextExtent(const char *s, double *w, double *h, double *descent = 0,
+		      double *ext_leading = 0,	wxFont *font=NULL,
+		      Bool combine=FALSE, Bool use16bit=FALSE, int dt=0);
+  void  SetBackground(wxColour *c);
+  void  SetBrush(wxBrush *brush);
+  void  SetClippingRect(double x, double y, double w, double h);
+  void  SetClippingRegion(wxRegion*);
+  wxRegion* GetClippingRegion();
+  void  SetColourMap(wxColourMap *cmap);
+  void  SetFont(wxFont *font);
+  void  SetPen(wxPen *pen);
+  void  SetTextBackground(wxColour *col);
+  void  SetTextForeground(wxColour *col);
 
-    // methods unique to wxWindowDC
-    void  SetCanvasClipping(void);
+  // methods unique to wxWindowDC
+  void  SetCanvasClipping(void);
 
-    virtual void GetSize(double *w, double *h);
+  virtual void GetSize(double *w, double *h);
 
-    void TryColour(wxColour *src, wxColour *dest);
+  void TryColour(wxColour *src, wxColour *dest);
 
-    Bool GetPixel(double x, double y, wxColour *col);
+  Bool GetPixel(double x, double y, wxColour *col);
 
-    void BeginSetPixel(int mini, int near_i, int near_j);
-    void EndSetPixel();
-    void SetPixel(double x, double y, wxColour *col);
+  void BeginSetPixel(int mini, int near_i, int near_j);
+  void EndSetPixel();
+  void SetPixel(double x, double y, wxColour *col);
   
-    Bool BeginSetPixelFast(int x, int y, int w, int h);
-    void EndSetPixelFast();
-    void SetPixelFast(int x, int y, int r, int g, int b);
+  Bool BeginSetPixelFast(int x, int y, int w, int h);
+  void EndSetPixelFast();
+  void SetPixelFast(int x, int y, int r, int g, int b);
 
-    Bool BeginGetPixelFast(int x, int y, int w, int h);
-    void EndGetPixelFast();
-    void GetPixelFast(int x, int y, int *r, int *g, int *b);
+  Bool BeginGetPixelFast(int x, int y, int w, int h);
+  void EndGetPixelFast();
+  void GetPixelFast(int x, int y, int *r, int *g, int *b);
 
-    void FillPrivateColor(wxColour *c);
+  void FillPrivateColor(wxColour *c);
 
-    virtual Bool GlyphAvailable(int c, wxFont *f = NULL);
+  virtual Bool GlyphAvailable(int c, wxFont *f = NULL);
 
-    virtual Bool Ok(void);
+  virtual Bool Ok(void);
 
 #ifdef WX_USE_XRENDER
-    virtual void InitPicture();
-    void InitPictureClip();
+  virtual void InitPicture();
+  void InitPictureClip();
 #endif
 
 #ifdef USE_GL
-    virtual wxGL *GetGL();
+  virtual wxGL *GetGL();
 #endif
 
 #ifdef WX_USE_CAIRO
-    void InitCairoDev();
-    void ReleaseCairoDev();
-    double SetCairoPen();
-    Bool SetCairoBrush();
+  void InitCairoDev();
+  void ReleaseCairoDev();
+  Bool SetCairoPen();
+  Bool SetCairoBrush();
+
+  void SetAntiAlias(int v);
+
+  Bool AlignSmoothing();
+  double GetPenSmoothingOffset();
+  double SmoothingXFormX(double x);
+  double SmoothingXFormY(double y);
+  double SmoothingXFormW(double w, double x);
+  double SmoothingXFormH(double h, double y);
+  double SmoothingXFormXB(double x);
+  double SmoothingXFormYB(double y);
+  double SmoothingXFormWL(double w, double x);
+  double SmoothingXFormHL(double h, double y);
 #endif
 
 protected:
-    friend class wxWindow;
-    friend class wxPostScriptDC;
+  friend class wxWindow;
+  friend class wxPostScriptDC;
 
-    void  Initialize(wxWindowDC_Xinit* init);
-    void  Destroy(void);
+  void  Initialize(wxWindowDC_Xinit* init);
+  void  Destroy(void);
 
-    virtual void FreeGetPixelCache(void);
+  virtual void FreeGetPixelCache(void);
 
-    wxWindowDC_Xintern* X;
+  wxWindowDC_Xintern* X;
 };
 
 #ifdef WX_USE_XRENDER

@@ -97,7 +97,7 @@
          (check-var-init (var-init-init prog) env type-recs current-class))
         ((var-decl? prog) (void))
         ((statement? prog)
-         (check-statement prog null env level type-recs current-class #f #t))
+         (check-statement prog null env null level type-recs current-class #f #t))
         ((expr? prog)
          (check-expr prog env level type-recs current-class #f #t))
         (else
@@ -144,9 +144,9 @@
                            (check-method member field-env type-recs current-class)))
                       ((initialize? member)
                        (if (initialize-static member)
-                           (check-statement (initialize-block member) null (get-static-env field-env)
+                           (check-statement (initialize-block member) null (get-static-env field-env) null
                                             'full type-recs current-class #f #t)
-                           (check-statement (initialize-block member) null field-env 'full
+                           (check-statement (initialize-block member) null field-env null 'full
                                             type-recs current-class #f #f)))
                       ((var-init? member)
                        (check-var-init (var-init-init member) field-env type-recs current-class))
@@ -222,7 +222,7 @@
          (check-block (cdr stmts) src return 
                       (check-local-var (car stmts) env type-recs current-class) type-recs current-class))
         (else
-         (check-statement (car stmts) return env 'full type-recs current-class #t #f)
+         (check-statement (car stmts) return env null 'full type-recs current-class #t #f)
          (check-block (cdr stmts) src return env type-recs current-class)))))
   
   ;build-method-env: (list var-decl) env type-records-> env
@@ -253,6 +253,7 @@
             (check-statement (method-body method)
                              return
                              (build-method-env (method-parms method) field-env type-recs)
+                             null
                              'full
                              type-recs
                              current-class
@@ -278,44 +279,46 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Statement checking functions
   
-  ;;check-statement: statement type env symbol type-records (U #f string) bool bool-> type
+  ;;check-statement: statement type env (list type) symbol type-records (U #f string) bool bool-> type
   (define check-statement
-    (lambda (statement return env level type-recs current-class ctor? static?)
-      (let ((check-s (lambda (stmt env)
-                       (check-statement stmt return env level type-recs current-class ctor? static?)))
-            (check-e (lambda (exp env)
+    (lambda (statement return env exn-env level type-recs current-class ctor? static?)
+      (let ((check-s (lambda (stmt env exn-env)
+                       (check-statement stmt return env exn-env level type-recs current-class ctor? static?)))
+            (check-e (lambda (exp env exn-env)
                        (check-expr exp env level type-recs current-class ctor? static?))))
       (cond
-        ((ifS? statement) (check-ifS (check-e (ifS-cond statement) env)
-                                     (check-s (ifS-then statement) env)
-                                     (check-s (ifS-else statement) env)
+        ((ifS? statement) (check-ifS (check-e (ifS-cond statement) env exn-env)
+                                     (check-s (ifS-then statement) env exn-env)
+                                     (check-s (ifS-else statement) env exn-env)
                                      (expr-src (ifS-cond statement))))
         ((throw? statement)
-         (send type-recs add-req (make-req "Throwable" (list "java" "lang")))
-         (check-e (throw-expr statement) env))
+         (check-throw (check-e (throw-expr statement) env exn-env)
+                      (expr-src (throw-expr statement))
+                      exn-env
+                      type-recs))
         ((return? statement)
-         (when (not (assignment-conversion return (check-e (return-expr statement) env) type-recs))
+         (when (not (assignment-conversion return (check-e (return-expr statement) env exn-env) type-recs))
            (raise-error #f #f)))
         ((while? statement)
-         (check-e (while-cond statement) env)
-         (check-s (while-loop statement) env))
+         (check-e (while-cond statement) env exn-env)
+         (check-s (while-loop statement) env exn-env))
         ((doS? statement)
-         (check-e (doS-cond statement) env)
-         (check-s (doS-loop statement) env))
+         (check-e (doS-cond statement) env exn-env)
+         (check-s (doS-loop statement) env exn-env))
         ((for? statement)
          (let ((newEnv (if (and (not (null? (for-init statement)))
                                 (or (var-init? (car (for-init statement)))
                                     (var-decl? (car (for-init statement)))))
                            (check-for-vars (for-init statement) env type-recs current-class)
-                           (begin (map (lambda (e) (check-e e)) (for-init statement))
+                           (begin (map (lambda (e) (check-e e env exn-env)) (for-init statement))
                                   env))))
-           (check-e (for-cond statement) newEnv)
-           (map (lambda (e) (check-e e newEnv)) (for-incr statement))
-           (check-s (for-loop statement) newEnv)))
+           (check-e (for-cond statement) newEnv exn-env)
+           (map (lambda (e) (check-e e newEnv exn-env)) (for-incr statement))
+           (check-s (for-loop statement) newEnv exn-env)))
         ((try? statement)
-         (check-s (try-body statement) env))
+         (check-s (try-body statement) env exn-env))
         ((switch? statement)
-         (check-e (switch-expr statement) env))
+         (check-e (switch-expr statement) env exn-env))
         ((block? statement)
          (check-block (block-stmts statement)
                       (block-src statement)
@@ -327,22 +330,42 @@
         ((continue? statement)
          void)
         ((label? statement)
-         (check-s (label-stmt statement) env))
+         (check-s (label-stmt statement) env exn-env))
         ((synchronized? statement)
-         (check-e (synchronized-expr statement) env)
-         (check-s (synchronized-stmt statement) env))
+         (check-e (synchronized-expr statement) env exn-env)
+         (check-s (synchronized-stmt statement) env exn-env))
         ((statement-expression? statement)
-         (check-e statement env))))))
+         (check-e statement env exn-env))))))
   
   ;check-ifS: type type type src -> void
   (define (check-ifS cond then else cond-src)
     (unless (eq? 'boolean cond)
       (raise-statement-error cond cond-src 'if if-cond-not-bool)))
+
+  ;check-throw: type src (list type) type-records -> void
+  (define (check-throw exp-type src exn-env type-recs)
+    (cond
+      ((or (not (ref-type? exp-type))
+           (not (is-subclass? exp-type throw-type type-recs)))
+       (raise-statement-error exp-type src 'throw throw-not-throwable))
+      ((not (is-subclass? exp-type (make-ref-type "RuntimeException" (list "java" "lang")) type-recs))
+       (unless (ormap 
+                (lambda (caught) (assignment-conversion caught exp-type exn-env type-recs))
+                exn-env)
+         (raise-statement-error exp-type src 'throw thrown-not-declared)))
+      (else
+       (send type-recs add-req (make-req "Throwable" (list "java" "lang"))))))
   
   ;Statement error messages
   
   (define (if-cond-not-bool given)
     (format "condition for if must be boolean, given ~a" given))
+  
+  (define (throw-not-throwable given)
+    (format "throw expression must be a subtype of class Throwable: given ~a" given))
+  (define (thrown-not-declared given)
+    (format "thrown type ~a must be declared in the throws clause or in a catch clause of the surrounding try block"
+            given))
   
   ;raise-statement-error: ast src symbol ( 'a -> string) -> void
   (define (raise-statement-error code src kind msg)

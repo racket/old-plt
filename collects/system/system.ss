@@ -2,11 +2,16 @@
 
 (error-print-width 250)
 
+(load "splash.ss")
 (load "debug.ss")
 
 ; Remember this directory
 (define mred:system-source-directory (current-directory))
 (constant-name 'mred:system-source-directory)
+
+(define mred:default-splash (build-path mred:system-source-directory
+				   "splash.gif"))
+(define mred:default-splash-title "MrEd")
 
 (let ([libdir
        (let ([try-dir (build-path (current-directory) 'up "mzlib")])
@@ -137,62 +142,6 @@
 (define mred:startup
   (lambda ()
     (make-object mred:console-frame%)))
-
-(define mred:splash-frame #f)
-(define mred:default-splash (build-path mred:system-source-directory
-				   "splash.gif"))
-(define mred:default-splash-title "MrEd")
-
-(define mred:close-splash
-  (lambda ()
-    (when mred:splash-frame
-      (send mred:splash-frame show #f)
-      (set! mred:splash-frame #f))))
-
-(define mred:open-splash
-  (lambda (filename title)
-    (if (file-exists? filename)
-	(let* ([len (string-length filename)]
-	       [flag (if (<= len 4)
-			 wx:const-bitmap-type-default
-			 (let ([suffix (substring filename (- len 4) len)])
-			   (cond
-			    [(string-ci=? ".xpm" suffix) wx:const-bitmap-type-xpm]
-			    [(string-ci=? ".xbm" suffix) wx:const-bitmap-type-xbm]
-			    [(string-ci=? ".gif" suffix) wx:const-bitmap-type-gif]
-			    [(string-ci=? "pict" suffix) wx:const-bitmap-type-pict]
-			    [else wx:const-bitmap-type-default])))]
-	       [bitmap (make-object wx:bitmap% filename flag)])
-	  (if (send bitmap ok?)
-	      (let* ([frame (parameterize ([wx:current-eventspace (wx:make-eventspace)])
-			      (make-object wx:dialog-box% '() title))]
-		     [width (box 0.)]
-		     [height (box 0.)]
-		     [c-x-offset 0]
-		     [c-y-offset 0]
-		     [message (make-object wx:message% frame bitmap)]
-		     [msg-width (send message get-width)]
-		     [msg-height (send message get-height)])
-		(wx:display-size width height)
-		(set! width (unbox width))
-		(set! height (unbox height))
-		(send frame set-size 0 0 width height)
-		(let-values ([(c-x-offset c-y-offset)
-			     (let ([cwidth (box 0.)]
-				   [cheight (box 0.)])
-			       (send frame get-client-size cwidth cheight)
-			       (values (- width (unbox cwidth))
-				       (- height (unbox cheight))))])
-		  (send* frame
-			 (set-size (/ (- (+ width c-x-offset) msg-width) 2)
-				   (/ (- (+ height c-y-offset) msg-height) 2)
-				   (+ c-x-offset msg-width)
-				   (+ c-y-offset msg-height))
-			 (show #t))
-		  (wx:flush-display) (wx:yield)
-		  (set! mred:splash-frame frame)))
-	      (printf "WARNING: bad bitmap ~s" filename)))
-	(printf "WARNING: bitmap path ~s not found~n" filename))))
 	     
 ;; called with the arguments on the command line
 (define mred:initialize
@@ -210,10 +159,13 @@
 		[hp (getenv "HOMEPATH")])
 	    (when (and hd hp)
 	      (current-directory (build-path hd hp)))))
+	(mred:change-splash-message "Invoking... 2")
 	(when (eq? mred:debug:on? 'compile-and-exit)
 	  (wx:exit))
 	(user-break-poll-handler wx:check-for-break)
+	(mred:change-splash-message "Command Line...")
 	(for-each (lambda (x) (apply (car x) (cdr x))) todo)
+	(mred:change-splash-message "Invoking...")
 	(unless mred:non-unit-startup?
 	  (invoke-open-unit (mred:make-invokable-unit) #f)
 	  (when mred:load-user-setup?

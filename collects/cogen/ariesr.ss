@@ -20,7 +20,6 @@
 	 ((pair? list) (cons (f (car list)) (improper-map f (cdr list))))
 	 (else (f list)))))
 
-
     (define unparse-read
       (lambda (read)
 	(cond
@@ -34,7 +33,6 @@
 	  [(zodiac:list? read) (map unparse-read (zodiac:read-object read))]
 	  [else (zodiac:read-object read)])))
 
-
     (define wrap
       (lambda (zodiac x)
 	(let ([start (zodiac:zodiac-start zodiac)]
@@ -45,8 +43,15 @@
 
     (define check-for-keyword
       (lambda (id)
-	(when (keyword-name? (zodiac:read-object id))
-	  (error id "Invalid use of keyword"))))
+	(let ((id
+		(cond
+		  ((zodiac:bound? id) (zodiac:bound-var id))
+		  ((zodiac:top-level-varref? id) (zodiac:id-var id))
+		  (else
+		    (error 'check-for-keyword "given ~s" id)))))
+	  (printf "Checking for keywordness of ~s~n" id)
+	  (when (keyword-name? id)
+	    (error id "Invalid use of keyword")))))
 
     (define annotate
       (lambda (expr)

@@ -1474,9 +1474,9 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       if (compact || !pp->print_unreadable) {
 	cannot_print(pp, notdisplay, obj, ht, compact);
       } else if (SCHEME_CPTR_TYPE(obj) == NULL) {
-	print_this_string(pp, "#<cpointer>", 0, 12);
+	print_this_string(pp, "#<cpointer>", 0, 11);
       } else {
-	print_this_string(pp, "#<cpointer:", 0, 12);
+	print_this_string(pp, "#<cpointer:", 0, 11);
         if (SCHEME_SYMBOLP(SCHEME_CPTR_TYPE(obj))) {
           print_this_string(pp,
                             (char *)SCHEME_CPTR_TYPE(obj),

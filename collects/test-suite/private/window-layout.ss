@@ -244,7 +244,7 @@
                 ((drscheme:debug:make-debug-error-display-handler/text
                  (lambda () error-text)
                  (lambda (text thunk) (thunk))
-                 (lambda (text info) (highlight-errors info))
+                 (lambda (text info error-arrows) (highlight-errors info))
                  (lambda (msg exn)
                    (drscheme:rep:insert-error-in-text/highlight-errors
                     error-text

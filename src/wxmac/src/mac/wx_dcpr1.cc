@@ -48,7 +48,7 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
     }
 
 #else    
-    prPort = PrOpenDoc(printData.macPrData, 0, 0);
+    prPort = PrOpenDoc(cPrintData->macPrData, 0, 0);
 
     if (PrError()) {
       PrCloseDoc(prPort);
@@ -80,8 +80,8 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
   pixmapWidth = (int)(pageRect.right - pageRect.left);
   pixmapHeight = (int)(pageRect.bottom - pageRect.top);
 #else
-  pixmapWidth = (**prRecHandle).prInfo.rPage.right;
-  pixmapHeight = (**prRecHandle).prInfo.rPage.bottom;
+  pixmapWidth = (*cPrintData->macPrData)->prInfo.rPage.right;
+  pixmapHeight = (*cPrintData->macPrData)->prInfo.rPage.bottom;
 #endif
 
   device = wxDEVICE_CANVAS;

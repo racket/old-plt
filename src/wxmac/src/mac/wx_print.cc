@@ -56,7 +56,11 @@ void printIdle(void)
 		}
 }
 
+#ifdef OS_X
 PMIdleUPP printIdleUPP = NewPMIdleUPP(printIdle);
+#else
+PrIdleUPP printIdleUPP = NewPrIdleUPP(printIdle);
+#endif
 
 
 wxPrintDialog::wxPrintDialog(wxWindow *p, wxPrintData *data):
@@ -439,7 +443,6 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
  //   wxEndBusyCursor();
     wxMessageBox("Sorry, could not create an abort dialog.", "Print Error", wxOK, (wxFrame *)parent);
     delete dc;
-    wxPrClose();
 	return FALSE;
   }
   abortWindow = win;

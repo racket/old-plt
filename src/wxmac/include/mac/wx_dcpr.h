@@ -27,7 +27,7 @@ class wxPrinterDC: public wxCanvasDC
 #ifdef OS_X
   PMPrintContext cPrintContext;
 #else
-  THPrint  prRecHandle;
+  TPPrPort prPort;
 #endif  
 
   wxPrinterDC(wxPrintData *); // Create a DC corresponding to a canvas

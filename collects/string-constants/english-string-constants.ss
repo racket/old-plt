@@ -363,8 +363,8 @@
  (bring-frame-to-front... "Bring frame to front...") ;;; corresponding title of menu item
 
  (show-menu-label "&Show")
- (show-overview "Show overview") 
- (hide-overview "Hide overview")
+ (show-overview "Show Contour") 
+ (hide-overview "Hide Contour")
 
  (help-menu-label "&Help")
  (about-info "Credits and details for this application")

@@ -523,7 +523,6 @@
  (stack-frame-in-current-definitions "definitions")
  (mzscheme-w/debug "Textual (MzScheme)")
  (mred-w/debug "Graphical (MrEd)")
- (r5rs-w/debug "R5RS")
  
  ;;; repl stuff
  (evaluation-terminated "Evaluation Terminated")	; pretty special. perhaps we should compare with German SICP?

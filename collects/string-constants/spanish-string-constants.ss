@@ -286,6 +286,9 @@
  (open-info "Abre un nuevo archivo del disco")
  (open-menu-item "&Abrir...")
 
+ (open-recent-info "Una lista de archivos abiertos recientemente")
+ (open-recent-menu-item "Abrir reciente")
+
  (revert-info "Revertir este archivo a la copia en disco")
  (revert-menu-item "&Revertir")
 
@@ -350,13 +353,15 @@
  (insert-text-box-item "Inserta caja de texto")
  (insert-pb-box-item "Inserta caja de porta-papeles")
  (insert-image-item "Inserta imagen...")
- (wrap-text-item "Wrap Text")
+ (wrap-text-item "Ajustar texto al borde")
 
  (windows-menu-label "&Ventana")
  (bring-frame-to-front "Traer ventana al frente")
  (bring-frame-to-front... "Traer ventana al frente...")
 
  (show-menu-label "&Muestra")
+ (show-overview "Mostrar descripción") 
+ (hide-overview "Esconder descripción")
 
  (help-menu-label "&Ayuda")
  (about-info "Créditos y detalles de esta apliación")
@@ -485,6 +490,8 @@
  (already-added-teachpack "El paquete de enseñanza ~a ya estaba cargado")
  
  ;;; Language dialog
+ (introduction-to-language-dialog
+  "Por favor selecciona un lenguaje.  La mayoría de los estudiantes de cursos introductorios deberían usar el lenguaje por omisión.")
  (language-dialog-title "Configurar Lenguaje")
  (case-sensitive-label "Sensible a mayúsculas") ;; FIXME: Case sensitive
  (output-style-label "Estilo de salida")
@@ -509,6 +516,7 @@
  (beginning-student/abbrev "Estudiante Principiante con Abreviaturas de Listas")
  (intermediate-student "Estudiante Intermedio")
  (advanced-student "Estudiante Avanzado")
+ (full-language "Completo")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "Similar a R5RS")
  (mred-lang-name "Gráfico sin depuración (MrEd)")
@@ -526,7 +534,6 @@
  (stack-frame-in-current-definitions "definiciones")
  (mzscheme-w/debug "Texto (MzScheme)")
  (mred-w/debug "Gráfico (MrEd)")
- (r5rs-w/debug "R5RS")
  
  ;;; repl stuff
  (evaluation-terminated "Evaluación Terminada")

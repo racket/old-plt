@@ -75,7 +75,7 @@
                                              ]
 			       [no-warning-cache-key (cons (sc-language-name sc1) (sc-language-name sc2))])
 			   (hash-table-put! ht2 constant unknown-word)
-			   '(unless (unbox already-printed)
+			   (unless (unbox already-printed)
 			     (cond
 			       [(memf (lambda (x) (equal? (car x) no-warning-cache-key)) warning-table)
 				=>

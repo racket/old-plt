@@ -138,6 +138,9 @@
 
       (define signal-undefined? (make-parameter #t))
 
+      (define undefined-error-format
+	 "Variable ~s referenced before definition or initialization")
+
       (define annotate
 	(lambda (expr)
 	  (cond
@@ -149,7 +152,7 @@
 		  (wrap expr
 		    `(#%if (#%eq? ,v ,the-undefined-value)
 		       (#%raise (,make-undefined
-				  ,(format "Undefined value in ~s" real-v)
+				  ,(format undefined-error-format real-v)
 				  ((#%debug-info-handler))
 				  (#%quote ,v)))
 		       ,v))
@@ -161,7 +164,7 @@
 		  (wrap expr
 		    `(#%if (#%eq? ,v ,the-undefined-value)
 		       (#%raise (,make-undefined
-				  ,(format "Undefined value in ~s" v)
+				  ,(format undefined-error-format v)
 				  ((#%debug-info-handler))
 				  (#%quote ,v)))
 		       ,v))

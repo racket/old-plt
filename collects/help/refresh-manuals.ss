@@ -44,13 +44,13 @@
             (delete-local-plt-files tmp-directory)
             (display sc-clearing-cached-indicies)
             (newline)
-            (doc-collections-changed)
             (display sc-finished-installation)
             (newline)
             (set! success? #t))
           (lambda ()
             (unless success?
               (delete-local-plt-files tmp-directory))
+            (doc-collections-changed)
             (kill-thread thd))))]))
       
   (define (make-local-doc-filename tmp-dir stub)

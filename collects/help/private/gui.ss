@@ -335,7 +335,16 @@
               (send search/status-panel active-child status-panel)))
           (define/public (set-search-status-contents s)
             (when status-message
-              (send status-message set-label s)))
+              (send status-message set-label (trim-string 200 s))))
+          (define/private (trim-string n str)
+            (cond
+              [(<= (string-length str) n) str]
+              [else (string-append (substring str 0 98)
+                                   " ... "
+                                   (substring str (- (string-length str) 
+                                                     97)
+                                              (string-length str)))]))
+          
           (define/public (change-status-to-search) 
             (when search/status-panel
               (send search/status-panel active-child field-panel)

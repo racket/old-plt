@@ -12,7 +12,7 @@
     (define make-find-frame%
       (lambda (super%) 
 	(class super% (canvas [in-edit ()] [x -1] [y -1] [flags ()])
-	  (inherit set-size show center make-modal panel)
+	  (inherit set-size show center)
 	  (public
 	    [HEIGHT 100]
 	    [get-canvas% (lambda () mred:canvas:editor-canvas%)]
@@ -69,7 +69,6 @@
 	    [on-close
 	     (lambda ()
 	       (send canvas force-display-focus #f)
-	       (make-modal #f)
 	       #t)]
 	    
 	    [show-replace-panel
@@ -181,6 +180,7 @@
 	    (super-init () "Find String" x y))
 	  
 	  (private
+	    [panel (make-object mred:container:vertical-panel% this)]
 	    [find-panel (make-object mred:container:vertical-panel% panel)]
 	    [replace-panel (make-object mred:container:vertical-panel% panel)]
 	    [bottom-panel (make-object mred:container:horizontal-panel% panel)]
@@ -273,11 +273,9 @@
 	    (show #t)
 	    (send canvas force-display-focus #t)
 	    
-	    (make-modal #t)
-	    
 	    (send find-canvas set-focus)))))
 
-    (define find-frame% (make-find-frame% mred:frame:empty-frame%))
+    (define find-frame% (make-find-frame% mred:container:dialog-box%))
 
     (define make-searchable-frame%
       (let* ([anchor 0]

@@ -8,7 +8,8 @@
 			 (import)
 			 (define app-name "DrScheme")
 			 (define console #f)
-			 (define eval-string void)))]
+			 (define eval-string void)
+			 (define startup void)))]
 	  [mred : mred^ ((reference-library-unit/sig "link.ss" "mred")
 			 core trigger appliction)]
 	  [rice : ricedefs^ ((reference-library-unit/sig "ricedefr.ss" "userspce"))]

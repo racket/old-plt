@@ -231,6 +231,11 @@ please adhere to these guidelines:
  (erase-log-directory-contents "Erase contents of log directory: ~a?")
  (error-erasing-log-directory "Error erasing log directory contents.\n\n~a\n")
 
+ ;; modes
+ (mode-submenu-label "Modes")
+ (scheme-mode "Scheme mode")
+ (text-mode "Text mode")
+ 
  (url "URL")
  (url: "URL:")
  (open-url... "Open URL...")

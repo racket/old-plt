@@ -479,7 +479,14 @@
 "to be used as the button's label.")
 
 
-
+(drscheme:unit:add-mode
+ (string?
+  (union false? (is-a?/c mode:surrogate-text<%>))
+  any?
+  . -> .
+  void?)
+ (name surrogate repl-submit?)
+ "Adds a mode to DrScheme.")
                      
                      
                      

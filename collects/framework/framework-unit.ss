@@ -107,4 +107,5 @@
        (unit panel)
        (unit frame)
        (unit scheme)
+       (unit mode)
        (unit main)))))

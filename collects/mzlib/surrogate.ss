@@ -83,7 +83,7 @@
                       (map make-empty-method
                            (syntax->list
                             (syntax (method-spec ...))))])
-         (syntax
+         (syntax/loc stx
           (let ([surrogate<%>
                  (interface ()
                    on-disable-surrogate
@@ -91,21 +91,25 @@
                    ids ...)])
             (values
              (lambda (super%)
-               (class* super% (delegating<%>)
+               (class* super% (host<%>)
                  (field [surrogate #f])
                  (define/public (set-surrogate d)
                    (when surrogate
                      (send surrogate on-disable-surrogate this))
+                   
+                   ;; error checking
                    (when d
                      (unless (object? d)
                        (error 'set-surrogate "expected an object, got: ~e" d))
-                     (let ([methods-to-impl '(on-enable on-disable ids ...)]
+                     (let ([methods-to-impl '(on-enable-surrogate on-disable-surrogate ids ...)]
                            [i (object-interface d)])
                        (for-each (lambda (x) 
                                    (unless (method-in-interface? x i)
                                      (error 'set-surrogate "expected object to implement an ~s method" x)))
-                                 methods-to-impl))
-                     (set! surrogate d)
+                                 methods-to-impl)))
+                   
+                   (set! surrogate d)
+                   (when surrogate
                      (send surrogate on-enable-surrogate this)))
                  (define/public (get-surrogate) surrogate)
                  
@@ -114,8 +118,8 @@
                  (super-new)))
              
              (class* object% (surrogate<%>)
-               (define/public (on-enable-surrogate) (void))
-               (define/public (on-disable-surrogate) (void))
+               (define/public (on-enable-surrogate x) (void))
+               (define/public (on-disable-surrogate x) (void))
                empty-methods ...
                (super-new))
              surrogate<%>))))])))

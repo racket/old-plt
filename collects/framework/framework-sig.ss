@@ -30,6 +30,7 @@
      [unit frame : framework:frame-class^]
      [unit scheme : framework:scheme-class^]
      [unit comment-box : framework:comment-box-class^]
+     (unit mode : framework:mode-class^)
      [unit main : framework:main-class^]))
 
   (define-signature framework^
@@ -58,4 +59,5 @@
      [unit frame : framework:frame^]
      [unit scheme : framework:scheme^]
      [unit comment-box : framework:comment-box^]
+     (unit mode : framework:mode^)
      [unit main : framework:main^])))

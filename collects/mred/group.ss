@@ -34,7 +34,8 @@
 	       (unless (send mb get-menu-named windows-menu-name)
 		 (let ([menu (send frame make-menu)])
 		   (set! windows-menus (cons (list menu) windows-menus))
-		   (send mb append menu windows-menu-name)))))]
+		   (send mb append menu windows-menu-name)
+		   (send frame move-help-menu-right)))))]
 	  [remove-windows-menu
 	   (lambda (frame)
 	     (let* ([mb (send frame get-menu-bar)]
@@ -49,7 +50,6 @@
 	  
 	  [update-windows-menus
 	   (lambda ()
-	     (printf "frames: ~e ~e~n" (length frames) frames)
 	     (let* ([windows (length windows-menus)]
 		    [get-name (lambda (frame) (send (frame-frame frame) get-title))]
 		    [sorted-frames
@@ -68,11 +68,17 @@
 			  (let ([new-ids
 				 (map
 				  (lambda (frame)
-				    (let ([frame (frame-frame frame)])
+				    (let ([frame (frame-frame frame)]
+					  [default-name "Untitled"])
 				      (send menu append-item
 					    (let ([title (send frame get-title)])
 					      (if (string=? title "")
-						  "Untitled"
+						  (if (ivar-in-class? 'get-entire-title (object-class frame))
+						      (let ([title (send frame get-entire-title)])
+							(if (string=? title "")
+							    default-name
+							    title))
+						      default-name)
 						  title))
 					    (lambda ()
 					      (send frame show #t)))))
@@ -89,6 +95,11 @@
 	  [get-frames (lambda () (map frame-frame frames))]
 	  [frame% mred:editor-frame:editor-frame%]
 	  [get-frame% (lambda () frame%)]
+	  
+	  [frame-title-changed
+	   (lambda (frame)
+	     (when (member frame (map frame-frame frames))
+	       (update-windows-menus)))]
 	  
 	  [for-each-frame
 	   (lambda (f)

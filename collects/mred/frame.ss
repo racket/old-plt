@@ -121,25 +121,30 @@
 	     (make-object (get-menu%)))]
 	  [on-menu-command
 	   (lambda (op)
-	     (send (get-menu-bar) dispatch op))])
+	     (send (get-menu-bar) dispatch op))]
+	  
+	  [move-help-menu-right
+	   (lambda ()
+	     (let* ([menu-bar (get-menu-bar)]
+		    [move-right
+		     (lambda (name)
+		       (let ([menu (send menu-bar get-menu-named name)])
+			 (and menu
+			      (begin 
+				(send menu-bar delete menu -1)
+				(send menu-bar append menu name)
+				#t))))])
+	       (or (move-right "Help")
+		   (move-right "&Help"))))])
 	(sequence
 	  (mred:debug:printf 'super-init "before mred:menu-frame%")
 	  (apply super-init args)
 	  (mred:debug:printf 'super-init "after mred:menu-frame%")
 	  ; Build and install the menu bar:
-	  (let* ([menu-bar (make-menu-bar)]
-		 [move-right
-		  (lambda (name)
-		    (let ([menu (send menu-bar get-menu-named name)])
-		      (and menu
-			   (begin 
-			     (send menu-bar delete menu -1)
-			     (send menu-bar append menu "Help")
-			     #t))))])
-	    (or (move-right "Help")
-		(move-right "&Help"))
+	  (let ([menu-bar (make-menu-bar)])
 	    (set-menu-bar menu-bar)
-	    (send menu-bar set-frame this))))))
+	    (send menu-bar set-frame this)
+	    (move-help-menu-right))))))
   
   (define tab (string #\tab))
   
@@ -351,33 +356,31 @@
 	  [title ""]
 	  [do-title
 	   (lambda ()
-	     (mred:debug:printf 'matthew "do-title.1~n")
-	     (let ([t (if (or (string=? "" title)
-			      (string=? "" title-prefix))
-			  (string-append title-prefix title)
-			  (string-append title " - " title-prefix))])
-	       (mred:debug:printf 'matthew "do-title.2~n")
-	       (super-set-title t)
-	       (mred:debug:printf 'matthew "super-set-title finished~n")))])
+	     (super-set-title (get-entire-title))
+	     (send mred:group:the-frame-group frame-title-changed this))])
 	
 	(public
+	  [get-entire-title
+	   (lambda ()
+	     (if (or (string=? "" title)
+		     (string=? "" title-prefix))
+		 (string-append title-prefix title)
+		 (string-append title " - " title-prefix)))]
+
 	  [get-title (lambda () title)]
 	  [set-title
 	   (lambda (t)
-	     (mred:debug:printf 'matthew "set-title~n")
 	     (when (and (string? t)
 			(not (string=? t title)))
 	       (set! title t)
-	       (do-title))
-	     (mred:debug:printf 'matthew "end set-title~n"))]
+	       (do-title)))]
+	  [get-title-prefix (lambda () title-prefix)]
 	  [set-title-prefix
 	   (lambda (s)
 	     (when (and (string? s)
 			(not (string=? s title-prefix)))
 	       (set! title-prefix s)
-	       (mred:debug:printf 'matthew "set-title-prefix calling do-title~n")
-	       (do-title)
-	       (mred:debug:printf 'matthew "set-title-prefix returned from do-title~n")))]
+	       (do-title)))]
 	  [get-canvas% (lambda () mred:canvas:frame-title-canvas%)]
 	  [get-edit% (lambda () mred:edit:media-edit%)]
 	  [make-edit (lambda () (make-object (get-edit%)))])
@@ -709,7 +712,7 @@
 		 (if on?
 		     (reset-anchor (get-edit-to-search))
 		     (clear-highlight)))
-	       (super-on-activate on?))]
+	       (super-on-activate on?))]	
 	    [get-edit-to-search
 	     (lambda () 
 	       (get-edit))]

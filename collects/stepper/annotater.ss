@@ -146,16 +146,19 @@
   ; b) a list of zodiac:parsed expressions,
   ; c) a list of previously-defined variables, 
   ; d) a break routine to be called at breakpoints, and
-  ; e) a boolean which indicates whether the expression is to be annotated "cheaply".
+  ; e) a symbol which indicates how to annotate the source.  Currently, there are three
+  ;    styles: 'cheap-wrap, 'ankle-wrap, and 'foot-wrap.
   ;
   ; actually, I'm not sure that annotate works for more than one expression, even though
   ; it's supposed to take a whole list.  I wouldn't count on it. Also, both the red-exprs
   ; and break arguments may be #f, the first during a zodiac:elaboration-evaluator call,
   ; the second during any non-stepper use.
   
-  (define (annotate red-exprs parsed-exprs input-struct-proc-names break cheap-wrap?)
+  (define (annotate red-exprs parsed-exprs input-struct-proc-names break wrap-style)
     (local
-	(  
+	((define (cheap-wrap?) (eq? wrap-style 'cheap-wrap))
+         (define (ankle-wrap?) (eq? wrap-style 'ankle-wrap))
+         
          (define (make-break kind)
            `(#%lambda returned-value-list
              (,break (continuation-mark-set->list
@@ -257,10 +260,7 @@
          ;    (and therefore should be broken before)
          ; e) a boolean indicating whether this expression is top-level (and therefore should
          ;    not be wrapped, if a begin).
-         ; f) a boolean indicating whether this expression should receive the "cheap wrap" (aka
-         ;    old-style aries annotation) or not.  #t => cheap wrap. NOTE: THIS HAS BEEN 
-         ;    (TEMPORARILY?) TAKEN OUT/MOVED TO THE TOP LEVEL.
-         ;
+
          ; it returns
          ; a) an annotated s-expression
          ; b) a list of varrefs for the variables which occur free in the expression

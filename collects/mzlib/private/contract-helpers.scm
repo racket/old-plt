@@ -1,6 +1,4 @@
 (module contract-helpers mzscheme
-  (require (lib "file.ss")
-           (lib "moddep.ss" "syntax"))
 
   (provide module-source-as-symbol build-src-loc-string)
 
@@ -21,6 +19,8 @@
          (format "~a" pos)]
         [else ""])))
   
+  (define o (current-output-port))
+  
   ;; module-source-as-symbol : syntax -> symbol
   ;; constructs a symbol for use in the blame error messages
   ;; when blaming the module where stx's occurs.
@@ -30,10 +30,10 @@
         [(symbol? src-module) src-module]
         [(module-path-index? src-module) 
          (let-values ([(path base) (module-path-index-split src-module)])
+           ;; we dont' normalize here, because we don't
+           ;; want to assume that the collection paths
+           ;; are set or the file system can be accessed.
            (if path
-               (string->symbol
-                (resolve-module-path-index
-                 src-module
-                 (build-path 'same)))
+               (string->symbol (format "~s" path))
                'top-level))]
         [else 'top-level]))))

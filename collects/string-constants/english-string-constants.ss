@@ -1013,4 +1013,26 @@ please adhere to these guidelines:
  (program-is-still-running "The program in the definitions window is still running. Close anyway?")
   (program-has-open-windows "The program in the definitions window has open windows. Close this window anyway?")
  
- )
+  ;; ml-cp names are all for the module language collection path
+  ;; configuration. See the details portion of the language dialog
+  ;; for the module language (at the bottom).
+  (ml-cp-default-collection-path "<<default collection paths>>")
+
+  ;; in std get-directory 
+  (ml-cp-choose-a-collection-path "Please choose a collection path")
+
+  ;; err msg when adding default twice
+  (ml-cp-default-already-present
+   "Default collection paths are already present")
+  
+  ;; title of this section of the dialog (possibly the word
+  ;; `Collection' should not be translated)
+  (ml-cp-collection-paths "Collection Paths")
+
+  ;; button labels
+  (ml-cp-add "Add")
+  (ml-cp-add-default "Add Default")
+  (ml-cp-remove "Remove")
+  (ml-cp-raise "Raise")
+  (ml-cp-lower "Lower")
+  )

@@ -186,4 +186,10 @@ exit 1
                                "menu,\nor run bin/help-desk.\n")))
          ;; if we're using GUI, and not in install mode, don't close the window
          (exit 0)]
-        [this-script (delete-file this-script)]))
+        [this-script
+         ;; Delete this script when finished running in install-mode, it
+         ;; doesn't make sense to do this twice.  Experienced users should just
+         ;; use setup-plt from now on.
+         (delete-file this-script)
+         (when (file-exists? (string-append this-script ".bat"))
+           (delete-file (string-append this-script ".bat")))]))

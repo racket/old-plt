@@ -418,18 +418,18 @@
 
   (add-primitivized-micro-form 'quote scheme-vocabulary
     (let* ((kwd '())
-	    (in-pattern `(_ body))
+	    (in-pattern '(_ body))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env attributes vocab)
-	(if (and (z:list? expr)
-	      (= 2 (z:sequence-length expr)))
-	  (let ((contents (expose-list expr)))
-	    (if (and (z:symbol? (car contents))
-		  (or (eq? 'quote (z:read-object (car contents)))
-		    (eq? '#%quote (z:read-object (car contents)))))
-	      (create-quote-form (cadr contents) expr)
-	      (static-error expr "Malformed quote")))
-	  (static-error expr "Malformed quote")))))
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (create-quote-form
+		(pat:pexpand 'body p-env kwd)
+		expr)))
+	  (else
+	    (static-error expr "Malformed quote"))))))
 
   (when (language>=? 'side-effecting)
     (add-primitivized-micro-form 'set! scheme-vocabulary

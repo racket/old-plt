@@ -500,7 +500,6 @@ wxCursor *wxWindow::SetCursor(wxCursor *new_cursor)
 	    XChangeActivePointerGrab(wxAPP_DISPLAY, 
 				     (ButtonPressMask | ButtonReleaseMask
 				      | ButtonMotionMask | PointerMotionMask
-				      | PointerMotionHintMask 
 				      | EnterWindowMask | LeaveWindowMask),
 				     c, 
 				     grabbing_panel_time);
@@ -1119,8 +1118,7 @@ void wxWindow::RegisterAll(Widget ww)
      ButtonPressMask |	// for OnEvent
      ButtonReleaseMask |
      ButtonMotionMask |
-     PointerMotionMask |
-     PointerMotionHintMask,
+     PointerMotionMask,
      FALSE,
      (XtEventHandler)wxWindow::WindowEventHandler,
      (XtPointer)saferef,
@@ -1200,7 +1198,6 @@ void wxWindow::AddEventHandlers(void)
        ButtonReleaseMask |
        ButtonMotionMask |
        PointerMotionMask |
-       PointerMotionHintMask |
        EnterWindowMask |
        LeaveWindowMask |
        extra_mask,
@@ -1216,8 +1213,7 @@ void wxWindow::AddEventHandlers(void)
 	 ButtonPressMask |	// for OnEvent
 	 ButtonReleaseMask |
 	 ButtonMotionMask |
-	 PointerMotionMask |
-	 PointerMotionHintMask,
+	 PointerMotionMask,
 	 FALSE,
 	 (XtEventHandler)wxWindow::WindowEventHandler,
 	 (XtPointer)saferef,
@@ -1642,7 +1638,6 @@ void wxWindow::WindowEventHandler(Widget w,
 	  XChangeActivePointerGrab(wxAPP_DISPLAY, 
 				   (ButtonPressMask | ButtonReleaseMask
 				    | ButtonMotionMask | PointerMotionMask
-				    | PointerMotionHintMask 
 				    | EnterWindowMask | LeaveWindowMask),
 				   c, 
 				   xev->xbutton.time);
@@ -1846,6 +1841,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	if (xev->xmotion.is_hint == NotifyHint) {
 	    // hints need a XQueryPointer
 	    Window root, child;
+	    printf("hint\n");
 	    XQueryPointer(XtDisplay(w), XtWindow(w), &root, &child,
 			  &(xev->xmotion.x_root), &(xev->xmotion.y_root),
 			  &(xev->xmotion.x),      &(xev->xmotion.y),

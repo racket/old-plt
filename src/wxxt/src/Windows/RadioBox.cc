@@ -179,8 +179,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 			   ButtonPressMask |	// for PreOnEvent
 			   ButtonReleaseMask |
 			   ButtonMotionMask |
-			   PointerMotionMask |
-			   PointerMotionHintMask,
+			   PointerMotionMask,
 			   FALSE,
 			   (XtEventHandler)wxWindow::WindowEventHandler,
 			   (XtPointer)saferef,
@@ -318,8 +317,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 			   ButtonPressMask |	// for PreOnEvent
 			   ButtonReleaseMask |
 			   ButtonMotionMask |
-			   PointerMotionMask |
-			   PointerMotionHintMask,
+			   PointerMotionMask,
 			   FALSE,
 			   (XtEventHandler)wxWindow::WindowEventHandler,
 			   (XtPointer)saferef,

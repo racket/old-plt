@@ -1,4 +1,4 @@
-Version 101
+Version 101:
 
 Fixed preferences dialogs, had not
  been fully ported from MrEd 53   
@@ -6,6 +6,8 @@ Fonts in Spidey window can be changed
  using the fonts preference dialog
 Classes with override clauses now 
  properly handled
+Path-to-source works again
 
-Version 100, August 9, 1999
+Version 100:
+
 Ported to MrEd 100

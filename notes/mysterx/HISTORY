@@ -1,14 +1,19 @@
-101
+Version 101:
 
 moved Windows event loop from mx-document% class
   initialization to unit
 moved .DLL's to compiled/native/win32/i386
-Extra Windows processing loop handles only 
+extra Windows processing loop handles only 
   WM_USER events, fixing various problems 
   running MysterX under DrScheme
-Renamed mysterx.dll to mxmain.dll
+added AddRef() for HTML elements, fixing
+  occasional crashes on GC
+added tag, id information for find-element
+  failures
+renamed mysterx.dll to mxmain.dll
+added clean option to Makefile
 
-100, August 17, 1999
+Version 100:
 
 made changes for IE5:
   added Chris Sells' wrapper object in MysPage code
@@ -17,7 +22,7 @@ made changes for IE5:
     arguments
 added call to CoUninitialize() from exit handler
   
-100alpha4, July 15, 1999
+Version 100alpha4:
 
 added support for multidimensional arrays,
   with COM SAFEARRAYs stored column-major
@@ -38,7 +43,7 @@ procedures com-methods, com-get-properties,
   com-event-type allow a com-type
   in place of a com-object
 
-100alpha3, June 18, 1999
+Version 100alpha3:
 
 unitized C++ and Scheme code
 added support for COM events

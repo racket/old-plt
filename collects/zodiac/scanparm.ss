@@ -1,6 +1,6 @@
 ;;
 ;;  zodiac:scanner-parameters@
-;;  $Id: scanparm.ss,v 1.3 1997/05/06 19:31:09 krentel Exp $
+;;  $Id: scanparm.ss,v 1.4 1997/08/19 21:06:49 shriram Exp robby $
 ;;
 ;;  Scanner/Reader Parameters.
 ;;
@@ -13,6 +13,8 @@
 
 (unit/sig  zodiac:scanner-parameters^
   (import  zodiac:structures^)
+
+  (define read-exact-numbers (make-parameter #f))
 
    ;; Only #\space and #\newline are always builtin,
    ;; so we specify the rest with ascii codes.

@@ -1,6 +1,6 @@
 ;;
 ;;  zodiac:scanner-code@
-;;  $Id: scanner.ss,v 1.5 1997/08/19 21:06:49 shriram Exp $
+;;  $Id: scanner.ss,v 1.6 1997/09/05 17:29:43 shriram Exp robby $
 ;;
 ;;  Zodiac Scanner  July 96.
 ;;  mwk, plt group, Rice university.
@@ -21,17 +21,14 @@
 ;;
 
 (unit/sig  zodiac:scanner-code^
-  
-  (import
-   zodiac:structures^
-   zodiac:scanner-structs^
-   (zodiac : zodiac:reader-structs^)
-   (parm : plt:parameters^)
-   zodiac:scanner-parameters^
-   (report : zodiac:interface^))
+  (import zodiac:structures^
+	  zodiac:scanner-structs^
+	  (zodiac : zodiac:reader-structs^)
+	  (parm : plt:parameters^)
+	  zodiac:scanner-parameters^
+	  (report : zodiac:interface^))
   
   ;; reset some names.  will clean this up.
-  
   (define paren-relation scan:paren-relation)
   (define def-init-loc default-initial-location)
   (define def-first-col scan:def-first-col)
@@ -47,14 +44,13 @@
   ;;
   
   (define  fill
-    (letrec
-	([loop
-	  (lambda  (table  value  char-list)
-	    (if  (null?  char-list)  'done
-		 (let* ([elt  (car char-list)]
-			[num  (if (integer? elt) elt (char->integer elt))])
-		   (vector-set!  table  num  value)
-		   (loop  table  value  (cdr char-list)))))])
+    (letrec ([loop
+	      (lambda  (table  value  char-list)
+		(if  (null?  char-list)  'done
+		     (let* ([elt  (car char-list)]
+			    [num  (if (integer? elt) elt (char->integer elt))])
+		       (vector-set!  table  num  value)
+		       (loop  table  value  (cdr char-list)))))])
       (case-lambda
        [(table  value)
 	(vector-fill!  table  value)]
@@ -217,7 +213,7 @@
   (define text->symbol
     (lambda (text param) 
       (let ([obj  (if ((in-parameterization param read-case-sensitive))
-		    text (map char-downcase text))])
+		      text (map char-downcase text))])
 	(string->symbol (text->string obj)))))
   
   (define text->char
@@ -309,8 +305,7 @@
 	   [digit?     
 	    (lambda ()
 	      (let ([tag  (vector-ref char-table int)])
-		(or  (eq? tag octal-tag)  (eq? tag digit-tag))))]
-	   )
+		(or  (eq? tag octal-tag)  (eq? tag digit-tag))))])
 	
 	(letrec
 	    
@@ -640,64 +635,64 @@
 	     
 	     [sym-or-num
 	      (lambda (text)
-		(call-with-values
-		 (lambda () (scan-to-delim  delim?  text  #f))
-		 (lambda (text  used-stick?)
-		   (if  used-stick?
-			(z:symbol (text->symbol text param)
-			  start-loc (prev-loc))
-			(with-handlers
-			    ([(lambda (x) #t)
-			      (lambda (x) (z:error "`~a' is not a valid number"
-						   text))])
-			  (let*
-			      ([str  (text->string text)]
-			       [num  (read (open-input-string str))])
-			    (if (number? num)
-				(z:number num start-loc (prev-loc))
-				(z:symbol (text->symbol text param)
-					  start-loc  (prev-loc)))))))))]
+		(let-values ([(text  used-stick?)
+			      (scan-to-delim  delim?  text  #f)])
+		  (if  used-stick?
+		       (z:symbol (text->symbol text param)
+				 start-loc (prev-loc))
+		       (with-handlers
+			   ([(lambda (x) #t)
+			     (lambda (x) (z:error "`~a' is not a valid number"
+						  text))])
+			 (let*
+			     ([str  (text->string text)]
+			      [num  (read (open-input-string str))])
+			   (if (number? num)
+			       (z:number (if (read-exact-numbers)
+					     (read (open-input-string (string-append "#e" str)))
+					     num)
+					 start-loc (prev-loc))
+			       (z:symbol (text->symbol text param)
+					 start-loc  (prev-loc))))))))]
 	     
 	     [symbol-only
 	      (lambda (text)
-		(call-with-values
-		 (lambda () (scan-to-delim  delim?  text  #t))
-		 (lambda (text  foo)
-		   (z:symbol  (text->symbol text param)
-			      start-loc  (prev-loc)))))]
+		(let-values ([(text  foo) (scan-to-delim  delim?  text  #t)])
+		  (z:symbol  (text->symbol text param)
+			     start-loc  (prev-loc))))]
 	     
 	     [number-only
 	      (lambda (text)
-		(call-with-values
-		 (lambda () (scan-to-delim  delim?  text  #f))
-		 (lambda (text  foo)
-		   (with-handlers
-		       ([(lambda (x) #t)
-			 (lambda (x) (z:error "`~a' is not a valid number" text))])
-		     (let* ([str  (text->string text)]
-			    [num  (read (open-input-string str))])
-		       (if (number? num)
-			   (z:number  num  start-loc  (prev-loc))
-			   (z:error "`~a' is not a valid number" text)))))))]
+		(let-values ([(text  foo) (scan-to-delim  delim?  text  #f)])
+		  (with-handlers
+		      ([(lambda (x) #t)
+			(lambda (x) (z:error "`~a' is not a valid number" text))])
+		    (let* ([str  (text->string text)]
+			   [num  (read (open-input-string 
+					(if (read-exact-numbers)
+					    (string-append "#e" str)
+					    str)))])
+		      (if (number? num)
+			  (z:number  num  start-loc  (prev-loc))
+			  (z:error "`~a' is not a valid number" text))))))]
 	     
 	     [scan-type-sym
 	      (lambda ()
 		(get-char)
-		(call-with-values
-		 (lambda () (scan-to-delim type-sym-delim? null #f))
-		 (lambda (text foo)
-		   (cond
-		     [(rangle?)
-		      (get-char)
-		      (z:type-sym
-		       (string->type-symbol (text->string text))
-		       start-loc
-		       (prev-loc))]
-		     [(eof?)
-		      (z:eof-error  "type symbol")]
-		     [else
-		      (get-char)
-		      (z:error "must escape delimiter inside type symbol")]))))]
+		(let-values ([(text foo)
+			      (scan-to-delim type-sym-delim? null #f)])
+		  (cond
+		    [(rangle?)
+		     (get-char)
+		     (z:type-sym
+		      (string->type-symbol (text->string text))
+		      start-loc
+		      (prev-loc))]
+		    [(eof?)
+		     (z:eof-error  "type symbol")]
+		    [else
+		     (get-char)
+		     (z:error "must escape delimiter inside type symbol")])))]
 	     
 	     [scan-eof
 	      (lambda () (z:eof (this-loc)))]
@@ -773,7 +768,5 @@
 	  (fill  char-table  octal-tag   octal-list)
 	  
 	  (get-char)	  
-	  get-token))))
-  
-  ) 
+	  get-token))))) 
 

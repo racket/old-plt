@@ -1,18 +1,24 @@
 
-(require-library "make.ss" "make")
-(require-library "file.ss" "dynext")
-(require-library "functio.ss")
-(require-library "file.ss")
+(module collection mzscheme
+  (import (lib "unitsig.ss"))
 
-(require-relative-library "collections.ss")
+  (import (lib "file-sig.ss" "dynext")
+	  (lib "file.ss" "dynext")
+	  (lib "sig.ss" "compiler")
+	  (lib "compiler.ss" "compiler")
+	  (lib "option.ss" "compiler"))
 
-(begin-elaboration-time
-  (require-library "invoke.ss"))
+  (import "make-sig.ss"
+	  "make.ss"
+	  "collection-sig.ss"
+	  "collection-unit.ss")
+  
+  (define-values/invoke-unit/sig make:collection^ 
+    make:collection@
+    #f
+    make^
+    dynext:file^
+    compiler:option^
+    compiler^)
 
-(define-values/invoke-unit/sig make:collection^
-  (require-relative-library "collectionr.ss")
-  #f
-  make:make^
-  mzlib:function^
-  mzlib:file^
-  dynext:file^)
+  (export-signature-elements make:collection^))

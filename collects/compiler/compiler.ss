@@ -1,5 +1,5 @@
 
-(module compile mzscheme
+(module compiler mzscheme
   (import (lib "unitsig.ss"))
   
   (import "sig.ss")

@@ -163,7 +163,7 @@
                             (build-src 6)
                             (file-path)
                             'intermediate
-                            null 'top)]
+                            null 'top null)]
        [(class IDENTIFIER Super Interfaces ClassBody)
 	(make-class-def (make-header (make-id $2 (build-src 2 2)) null $3 $4 null (build-src 4))
                             $5
@@ -171,7 +171,7 @@
                             (build-src 5)
                             (file-path)
                             'intermediate
-                            null 'top)])
+                            null 'top null)])
       
       (Super
        [() null]
@@ -320,7 +320,7 @@
                                 (build-src 4)
                                 (file-path)
                                 'intermedaite
-                                null 'top)]
+                                null 'top null)]
        [(interface IDENTIFIER InterfaceBody)
 	(make-interface-def (make-header (make-id $2 (build-src 2 2))(list (make-modifier 'public #f))
                                          null null null (build-src 2))
@@ -329,7 +329,7 @@
                                 (build-src 3)
                                 (file-path)
                                 'intermdediate
-                                null 'top)])
+                                null 'top null)])
       
       (ExtendsInterfaces
        [(extends InterfaceType) (list $2)]

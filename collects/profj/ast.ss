@@ -37,8 +37,8 @@
   (define (def-name d)
     (header-id (def-header d)))
   
-  ;;(make-def header (list member) src src string symbol (list req) symbol)
-  (p-define-struct def (header members key-src src file level uses kind))
+  ;;(make-def header (list member) src src string symbol (list req) symbol (list id))
+  (p-define-struct def (header members key-src src file level uses kind closure-args))
   
   ;;(make-class-def header (list member) src src string symbol (list req) symbol)
   ;; members in file order

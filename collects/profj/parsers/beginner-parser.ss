@@ -147,7 +147,7 @@
                         (build-src 4)
                         (file-path)
                         'beginner
-                        null 'top)]
+                        null 'top null)]
        [(abstract class IDENTIFIER Super ClassBody)
         (make-class-def (make-header (make-id $3 (build-src 3 3))
                                      (list (make-modifier 'public #f)
@@ -158,7 +158,7 @@
                         (build-src 5)
                         (file-path)
                         'beginner
-                        null 'top)])
+                        null 'top null)])
       
       (Super
        [() null]

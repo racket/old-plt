@@ -324,27 +324,36 @@
   
   ;check-inner def symbol type-records (list string) env -> (U class-record void)
   (define (check-inner-def def level type-recs c-class env)
-    (let ((local-inner? (or (eq? (def-kind def) 'anon) (eq? (def-kind def) 'statement))))
-      (when (eq? (def-kind def) 'statement)
-        (mangle-inner-name (car c-class) (current-method) def))
-      (let* ((p-name (if local-inner? null (cdr c-class)))
-             (inner-env (update-env-for-inner env))
-             (this-type (var-type-type (lookup-var-in-env "this" env)))
-             (inner-rec
-              (when local-inner?
-                (build-inner-info def p-name level type-recs (def-file def) #t))))
-        (when local-inner? (add-init-args def env))
-        (if (interface-def? def)
-            (check-interface def p-name level type-recs)
-            (check-class def p-name level type-recs (add-var-to-env "encl-this-1" this-type final-parm inner-env)))
+    (let* ((statement-inner? (eq? (def-kind def) 'statement))
+           (local-inner? (or (eq? (def-kind def) 'anon) statement-inner?))
+           (p-name (if local-inner? null (cdr c-class)))
+           (inner-env (update-env-for-inner env))
+           (this-type (var-type-type (lookup-var-in-env "this" env)))
+           (unique-name 
+            (when statement-inner? (gensym (string-append (id-string (def-name def)) "-"))))
+           (inner-rec
+            (when local-inner?
+              (build-inner-info def unique-name p-name level type-recs (def-file def) #t))))
+      (when local-inner? (add-init-args def env))
+      (if (interface-def? def)
+          (check-interface def p-name level type-recs)
+          (check-class def p-name level type-recs (add-var-to-env "encl-this-1" this-type final-parm inner-env)))
         ;; Propagate uses in internal defn to enclosing defn:
-        (for-each (lambda (use)
-                    (add-required c-class (req-class use) (req-path use) type-recs))
-                  (def-uses def))
-        inner-rec)))
-  
-  (define (mangle-inner-name container method def) void)
-  (define (add-init-args def env) void)
+      (for-each (lambda (use)
+                  (add-required c-class (req-class use) (req-path use) type-recs))
+                (def-uses def))
+      inner-rec))
+    
+  ;add-init-args: def env -> void
+  ;Updates the inner class with the names of the final variables visible within the class
+  (define (add-init-args def env)
+    (set-def-closure-args! def
+                           (map (lambda (type-var)
+                                  (make-id (var-type-var type-var) #f))
+                                (filter (lambda (type-var)
+                                          (or (eq? (var-type-properties type-var) final-parm)
+                                              (eq? (var-type-properties type-var) final-method-var)))
+                                        (environment-types env)))))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Member checking methods
@@ -1141,7 +1150,7 @@
     (make-type/env (make-ref-type (id-string (def-name def)) null) 
                    (add-local-inner-to-env 
                     (id-string (def-name def))
-                    (check-inner-def def level c-class type-recs env) env)))
+                    (check-inner-def def level type-recs c-class env) env)))
   
   ;check-break: (U id #f) src bool bool symbol env-> type/env
   (define (check-break label src in-loop? in-switch? level env)
@@ -1331,7 +1340,7 @@
                                            level static?)))
         ((def? exp) 
          (set-expr-type exp
-                        (check-local-inner exp type-recs c-class env level static?)))
+                        (check-local-inner exp type-recs c-class env level)))
         ((array-alloc? exp)
          (set-expr-type exp
                         (check-array-alloc (array-alloc-name exp)

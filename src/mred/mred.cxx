@@ -1975,7 +1975,7 @@ static void break_console_reading_threads()
   }
 }
 
-static int mrconsole_getc(Scheme_Input_Port *ip)
+static int mrconsole_getc(Scheme_Input_Port *ip, int *nonblock, int *eof_on_err)
 {
   int result;
   Scheme_Object *pipe = (Scheme_Object *)ip->port_data;
@@ -2054,7 +2054,7 @@ static Scheme_Object *MrEdMakeStdOut(void)
 
   return (Scheme_Object *)scheme_make_output_port(outtype, NULL,
 						  stdout_write,
-						  NULL, 0);
+						  NULL, NULL, NULL, 0);
 }
 
 static void stderr_write(char *s, long d, long l, Scheme_Output_Port*)
@@ -2076,7 +2076,7 @@ static Scheme_Object *MrEdMakeStdErr(void)
 
   return (Scheme_Object *)scheme_make_output_port(errtype, NULL,
 						  stderr_write,
-						  NULL, 0);
+						  NULL, NULL, NULL, 0);
 }
 #endif
 

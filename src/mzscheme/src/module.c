@@ -37,6 +37,8 @@ static Scheme_Object *dynamic_require_for_syntax(int argc, Scheme_Object *argv[]
 static Scheme_Object *namespace_require(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_trans_require(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[]);
+static Scheme_Object *module_compiled_p(int argc, Scheme_Object *argv[]);
+static Scheme_Object *module_compiled_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_compiled_imports(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *module_path_index_p(int argc, Scheme_Object *argv[]);
@@ -232,6 +234,17 @@ void scheme_init_module(Scheme_Env *env)
 						      2, 2),
 			     env);
 
+
+  scheme_add_global_constant("compiled-module-expression?",
+			     scheme_make_prim_w_arity(module_compiled_p,
+						      "compiled-module-expression?",
+						      1, 1),
+			     env);
+  scheme_add_global_constant("module-compiled-name",
+			     scheme_make_prim_w_arity(module_compiled_name,
+						      "module-compiled-name",
+						       1, 1),
+			     env);
   scheme_add_global_constant("module-compiled-imports",
 			     scheme_make_prim_w_arity2(module_compiled_imports,
 						       "module-compiled-imports",
@@ -923,6 +936,25 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
   }
 
   return scheme_void;
+}
+
+static Scheme_Object *module_compiled_p(int argc, Scheme_Object *argv[])
+{
+  Scheme_Module *m = scheme_extract_compiled_module(argv[0]);
+      
+  return (m ? scheme_true : scheme_false);
+}
+
+static Scheme_Object *module_compiled_name(int argc, Scheme_Object *argv[])
+{
+  Scheme_Module *m = scheme_extract_compiled_module(argv[0]);
+      
+  if (m) {
+    return m->modname;
+  }
+
+  scheme_wrong_type("module-compiled-name", "compiled module declaration", 0, argc, argv);
+  return NULL;
 }
 
 static Scheme_Object *module_compiled_imports(int argc, Scheme_Object *argv[])

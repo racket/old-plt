@@ -54,7 +54,7 @@
   (define *connection*
     ;; "homework" is the production database
     ;; "homework_test" is the testing database
-    (let ((db-connection (connect "subra.ccs.neu.edu" 8432 #"homework_test" #"csu211")))
+    (let ((db-connection (connect "subra.ccs.neu.edu" 8432 #"homework" #"csu211")))
       ;; Convert the data to the correct types
       (send db-connection use-type-conversions #t)
       db-connection))
@@ -349,7 +349,7 @@
           (string-append
             "INSERT INTO partners "
             "(student_id, partner_id, course_id, created, can_submit) "
-            "VALUES (~a, (SELECT max(partner_id) FROM partners), ~a, now(), "
+            "VALUES (~a, (SELECT max(partner_id) + 1 FROM partners), ~a, now(), "
             "(SELECT default_partnership_size = 1 FROM courses WHERE id = ~a))")
           pid cid cid))))
 
@@ -372,9 +372,9 @@
     (query
       (format
         (string-append
-          "SELECT p.id FROM people p "
-          "JOIN course_people c_p ON c_p.person_id = p.id "
-          "WHERE c_p.course_id != ~a")
+          "SELECT p.name, p.id FROM people p "
+          "LEFT JOIN course_people c_p ON c_p.person_id = p.id "
+          "WHERE c_p.course_id != ~a OR c_p.course_id IS NULL")
         cid)
       (lambda (rs)
         (map (lambda (v) (cons (bytes->string/utf-8 (vector-ref v 0))

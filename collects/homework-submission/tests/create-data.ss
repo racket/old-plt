@@ -40,7 +40,8 @@
     (db-do (string-append
              "DELETE FROM people WHERE name LIKE 'Person %' "
              "AND neu_id = 111223333 AND (username LIKE 'staff %' "
-             "OR username LIKE 'student %' OR username LIKE 'instructor %') "
+             "OR username LIKE 'student %' OR username LIKE 'instructor %' "
+             "OR username LIKE 'person %') "
              "AND password = crypt('password',password)"))
     ;; course_people and partners are taken care of beause they depend on
     ;; courses and people.

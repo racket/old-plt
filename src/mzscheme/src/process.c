@@ -1800,6 +1800,9 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
     p->block_descriptor = SLEEP_BLOCKED;
     p->block_start_sleep = start;
     p->sleep_time = sleep_time;
+  } else if ((sleep_time > 0.0) && (p->block_descriptor == -1)) {
+    p->block_start_sleep = start;
+    p->sleep_time = sleep_time;
   }
 
   if (next && (!next->running || (next->running == 2))) {
@@ -1838,6 +1841,8 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 
   if (p->block_descriptor == SLEEP_BLOCKED) {
     p->block_descriptor = NOT_BLOCKED;
+    p->sleep_time = 0.0;
+  } else if (p->block_descriptor == -1) {
     p->sleep_time = 0.0;
   }
 #else

@@ -1,4 +1,4 @@
-;; drspidey.ss
+; drspidey.ss
 ; ----------------------------------------------------------------------
 ; Copyright (C) 1995-97 Cormac Flanagan
 ;
@@ -74,7 +74,7 @@
       mrspidey-gui^)
     (version:add-spec 'sd 1)
     (lambda (frame)
-      (let* ( [edit (ivar frame definitions-edit)]
+      (let* ( [edit (ivar frame definitions-text)]
               [name (send edit get-filename)])
         (if (string? name)
           (when

@@ -260,6 +260,14 @@ is positive.
 @proc realize
 {
   if (wx_common_use_visual) {
+    Display *dpy;
+    int scrn;
+    dpy = XtDisplay($);
+    scrn = XScreenNumberOfScreen(XtScreen($));
+    attributes->colormap = XCreateColormap(dpy, 
+					   RootWindow(dpy, scrn),
+					   wx_common_use_visual, AllocNone);
+    *mask = *mask | CWColormap;
     XtCreateWindow($, InputOutput, wx_common_use_visual, *mask, attributes);
   } else {
     #realize($, mask, attributes);

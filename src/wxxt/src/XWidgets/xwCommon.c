@@ -661,6 +661,14 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
 #endif
 {
   if (wx_common_use_visual) {
+    Display *dpy;
+    int scrn;
+    dpy = XtDisplay(self);
+    scrn = XScreenNumberOfScreen(XtScreen(self));
+    attributes->colormap = XCreateColormap(dpy, 
+					   RootWindow(dpy, scrn),
+					   wx_common_use_visual, AllocNone);
+    *mask = *mask | CWColormap;
     XtCreateWindow(self, InputOutput, wx_common_use_visual, *mask, attributes);
   } else {
     compositeClassRec.core_class.realize(self, mask, attributes);

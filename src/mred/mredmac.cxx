@@ -739,41 +739,11 @@ int MrEdGetNextEvent(int check_only, int current_only,
 
 extern void wxCheckFinishedSounds(void);
 
-void ShowNonEmptyRegionInNewWindow(RgnHandle rgn)
-{
-	Rect theBoundsRect;
-	CWindowPtr newWindow;
-	Str255 windowTitle = "\pDebugging Window";
-	CGrafPtr oldPort;
-	GDHandle oldDevice;
-	
-	fprintf(stderr,"displaying region in new window.\n");
 
-	GetRegionBounds(rgn,&theBoundsRect);
-	theBoundsRect.top = theBoundsRect.left = 0;
-	theBoundsRect.right += 15;
-	theBoundsRect.bottom += 15; // room for grow box.
-	OffsetRect(&theBoundsRect,300,300);
-	
-	CreateNewWindow(kDocumentWindowClass,kWindowStandardDocumentAttributes,&theBoundsRect, &newWindow);
-
-	ShowWindow(newWindow);
-	
-	GetGWorld(&oldPort,&oldDevice);
-	
-	SetGWorld(GetWindowPort(newWindow),oldDevice);
-	
-	InvertRgn(rgn);
-	
-	SetGWorld(oldPort,oldDevice);
-	
-	
-}
-	
-	
 void MrEdDispatchEvent(EventRecord *e)
 {
   dispatched = 1;
+
 
   if (e->what == updateEvt) {
     /* Find the update event for this window: */
@@ -787,45 +757,11 @@ void MrEdDispatchEvent(EventRecord *e)
       if ((q->event.what == updateEvt)
 	  && (w == ((WindowPtr)q->event.message))) {
 	rgn = q->rgn;
-	fprintf(stderr,"removing update event from queue: %X\n",(long)q);
 	MrDequeue(q);
 	break;
       }
     }
     
-    // TEMPORARY
-    RgnHandle temp = NewRgn();
-    GetWindowRegion(w,kWindowUpdateRgn,temp);
-    if (EmptyRgn(temp)) {
-    	fprintf(stderr,"region is empty before addition of update region.\n");
-    } else {
-    	fprintf(stderr,"region is non-empty before addition of update region.\n");
-    	Point testPt = {50, 10};
-    	if (PtInRgn(testPt,temp)) {
-    		fprintf(stderr,"(10,50) is in the region.\n");
-    	} else {
-    		fprintf(stderr,"(10,50) is not in the region.\n");
-    	}
-    	Rect tempBounds;
-    	GetRegionBounds(temp,&tempBounds);
-    	fprintf(stderr,"bounds of update region: left = %d, top = %d, right = %d, bottom = %d\n",
-    		tempBounds.left,tempBounds.top,tempBounds.right,tempBounds.bottom);
-    	SetRect(&tempBounds,-1,-1,20,100);
-    	InvalWindowRect(w,&tempBounds);
-    	GetWindowRegion(w,kWindowUpdateRgn,temp);
-    	GetRegionBounds(temp,&tempBounds);
-    	fprintf(stderr,"bounds of update region after top-left addition: left = %d, top = %d, right = %d, bottom = %d\n",
-    		tempBounds.left,tempBounds.top,tempBounds.right,tempBounds.bottom);
-        fprintf(stderr,"for window: %X\n",w);
-    	if (PtInRgn(testPt,temp)) {
-    		fprintf(stderr,"(10,50) is in the region.\n");
-    	} else {
-    		fprintf(stderr,"(10,50) is not in the region.\n");
-    	}
-    	ShowNonEmptyRegionInNewWindow(temp);
-    }
-    
-
 #ifdef OS_X
     RgnHandle copied = NewRgn();
     Rect windowBounds;
@@ -881,7 +817,7 @@ void MrEdMacSleep(float secs)
   
   EventRecord e;
   
-#if 0
+#if 1
   /* This is right only if there is no TCP blocking */
   RgnHandle rgn;
   rgn = ::NewRgn();

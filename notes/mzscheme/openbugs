@@ -1,4 +1,6 @@
 
+fix docs for constan.ss
+
 fix docs for parse-command-line's final proc
 
 fix docs for function: delete-directory/files

@@ -225,7 +225,7 @@ void wxChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY)
   int clientWidth, clientHeight;
 
   GetClientSize(&clientWidth, &clientHeight);
-  ::SizeControl(cMacControl, clientWidth, clientHeight);
+  ::SizeControl(cMacControl, clientWidth - HSLOP, clientHeight);
   MaybeMoveControls();
 
   if (cTitle)

@@ -13,6 +13,8 @@
 #include "wx_utils.h"
 #include "wx_mac_utils.h"
 
+extern char *wxBuildMacMenuString(StringPtr setupstr, char *itemName, Bool stripCmds);
+
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Constructors
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -138,12 +140,27 @@ void wxMenuItem::SetLabel(char* label)
 
   macMenuItem = GetMacItemNumber();
   if (macMenuItem > 0) {
-    unsigned char *s;
-    if (label[0])
-      s = wxC2P(label);
-    else
-      s = (unsigned char *)"\p ";
-    SetMenuItemText(parentMenu->MacMenu(), macMenuItem, s);
+    CFStringRef ct;
+    Str255 tempString;
+    char *s;
+    MenuHandle nmh;
+
+    nmh = parentMenu->MacMenu();
+
+    s = wxBuildMacMenuString(tempString, label, 0);
+
+    /* Add item such the command keys are set */
+    ::DeleteMenuItem(nmh, macMenuItem);
+    ::InsertMenuItem(nmh, tempString, macMenuItem - 1);
+
+    /* Install the real label */
+    ct = CFStringCreateWithCString(NULL, s, kCFStringEncodingUTF8);
+    ::SetMenuItemTextWithCFString(nmh, macMenuItem, ct);
+    CFRelease(ct);
+
+    /* restore the submenu id, if any */
+    if (subMenu)
+      ::SetMenuItemHierarchicalID(nmh, macMenuItem, subMenu->cMacMenuId);
   }
 }
 

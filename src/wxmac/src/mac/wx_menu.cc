@@ -234,7 +234,7 @@ wxMenu::~wxMenu(void)
 // setupstr should be used with AppendItem; the result should then be used with SetMenuItemText
 // If stripCmds is TRUE, instead of replacing wxMenu string special chars, 
 // we delete them. This is appropriate for the menu text of a pulldown Menu.
-static char *BuildMacMenuString(StringPtr setupstr, char *itemName, Bool stripCmds)
+char *wxBuildMacMenuString(StringPtr setupstr, char *itemName, Bool stripCmds)
 {
   int s, d;
   char spc = '\0';
@@ -328,12 +328,12 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
       tempString[1] = '-';
     } else if (menuItem->subMenu) {
       wxMenu *subMenu;
-      title = BuildMacMenuString(tempString, menuItem->itemName, TRUE);
+      title = wxBuildMacMenuString(tempString, menuItem->itemName, TRUE);
       subMenu = menuItem->subMenu;
       subMenu->wxMacInsertSubmenu();
       hId = subMenu->cMacMenuId;
     } else {
-      title = BuildMacMenuString(tempString, menuItem->itemName, FALSE);
+      title = wxBuildMacMenuString(tempString, menuItem->itemName, FALSE);
       if (!i && doabouthack && helpflg && (!strncmp("About", title, 5))) {
 	if (menu_bar) {
 	  // This is a very sad hack !
@@ -852,7 +852,7 @@ void wxMenu::Append(int Id, char* Label, char* helpString, Bool checkable)
   menuItems->Append(item);
   no_items ++;
 
-  Label = BuildMacMenuString(menusetup, item->itemName, FALSE);
+  Label = wxBuildMacMenuString(menusetup, item->itemName, FALSE);
   wxPrepareMenuDraw();
   ::AppendMenu(cMacMenu, menusetup);
   {
@@ -893,7 +893,7 @@ void wxMenu::Append(int Id, char* Label, wxMenu* SubMenu, char* helpString)
   menuItems->Append(item);
   no_items++;
 
-  Label = BuildMacMenuString(menusetup, item->itemName, TRUE);
+  Label = wxBuildMacMenuString(menusetup, item->itemName, TRUE);
 	
   wxPrepareMenuDraw();
   ::AppendMenu(cMacMenu, menusetup);
@@ -1038,8 +1038,9 @@ void wxMenu::SetLabel(int Id , char* label)
   theMenuItem = FindItemForId(Id);
   if (theMenuItem) {
     theMenuItem->SetLabel(label);
-    if (menu_bar)
-      MacChangeMenuText(this, title);
+    /* We're not changing the title, so the following isn't necessary, right? */
+    // if (menu_bar)
+    //  MacChangeMenuText(this, title);
   }
 
   CheckHelpHack();

@@ -45,7 +45,7 @@
   (define (str-list->dos-str flags)
     (letrec ([trans
 	      (lambda (s)
-		(if (or (regexp-match (string #\space #\newline #\tab #\return #\vtab) s)
+		(if (or (regexp-match (string #\[ #\space #\newline #\tab #\return #\vtab #\]) s)
 			(regexp-match "\"" s)
 			(regexp-match "\\\\" s))
 		    (list->string

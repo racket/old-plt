@@ -436,9 +436,10 @@
 	    (construct-vector-constant ast 'vector known-immutable?)]
 	   
 	   ;; regexp
-	   [(or (regexp? (zodiac:zread-object ast))
-		(byte-regexp? (zodiac:zread-object ast)))
+	   [(regexp? (zodiac:zread-object ast))
 	    (construct-vector-constant ast 'regexp #t)]
+	   [(byte-regexp? (zodiac:zread-object ast))
+	    (construct-vector-constant ast 'byte-regexp #t)]
 	   
 	   ;; comes from module paths in analyze:
 	   [(module-path-index? (zodiac:zread-object ast))

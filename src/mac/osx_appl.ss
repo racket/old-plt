@@ -23,7 +23,7 @@ exit 1
 
 |#
 
-(use-compiled-file-kinds 'none)
+(use-compiled-file-paths null)
 
 (let ([p (getenv "PLTHOMEBASE")])
   (let ([plthome (path->complete-path p)])

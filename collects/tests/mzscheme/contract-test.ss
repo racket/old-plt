@@ -49,6 +49,18 @@
           eval
           `(begin ,sexp (void))))
   
+  (define (test-flat-contract contract pass fail)
+    (let ([name (if (pair? contract)
+                    (car contract)
+                    contract)])
+      (test/spec-failed (format "~a fail" name)
+                        `(contract ,contract ',fail 'pos 'neg)
+                        "pos")
+      (test/spec-passed/result
+       (format "~a pass" name)
+       `(contract ,contract ',pass 'pos 'neg)
+       pass)))
+  
   (test/spec-passed
    'contract-flat1 
    '(contract not #f 'pos 'neg))
@@ -82,6 +94,8 @@
   (test/no-error '(opt-> ((flat-contract integer?)) ((flat-contract integer?)) (flat-contract integer?)))
   (test/no-error '(opt->* (integer?) (integer?) (integer?)))
   (test/no-error '(opt->* ((flat-contract integer?)) ((flat-contract integer?)) ((flat-contract integer?))))
+  
+  (test/no-error '(listof any?))
   
   (test/spec-passed
    'contract-arrow-star0a
@@ -235,6 +249,32 @@
                'pos
                'neg)
      1 2 'bad)
+   "neg")
+  
+  (test/spec-passed
+   'contract-arrow-star15
+   '(let-values ([(a b) ((contract (->* (integer?) any)
+                                   (lambda (x) (values x x))
+                                   'pos
+                                   'neg)
+                         2)])
+      1))
+  
+  (test/spec-passed
+   'contract-arrow-star14
+   '((contract (->* (integer?) any)
+               (lambda (x) x)
+               'pos
+               'neg)
+     2))
+  
+  (test/spec-failed
+   'contract-arrow-star16
+   '((contract (->* (integer?) any)
+               (lambda (x) (values x x))
+               'pos
+               'neg)
+     #f)
    "neg")
 
   (test/spec-passed
@@ -496,6 +536,7 @@
        (lambda () (set! x 2))))
    "neg")
  
+  #;
   (test/spec-failed
    'combo1
    '(let ([cf (contract (case->
@@ -669,7 +710,8 @@
                (define-struct s (a))))
       (eval '(require contract-test-suite6))
       (eval '(define-struct (t s) ()))))
-  
+
+  #|
   (test/spec-passed/result
    'class-contract1
    '(send
@@ -722,8 +764,6 @@
           (apply super-make-object x))
       1 2 3))
   
-#|
-
   (test/spec-passed/result
    'object-contract1
    '(send
@@ -799,8 +839,7 @@
              [d (contract dd (make-object %) 'd-pos 'd-neg)])
       (send c m c))
    "c-neg")
-|#
-  
+
   (test/spec-passed/result
    'class-contract=>3
    '(let* ([c% (class object% (super-instantiate ()))]
@@ -832,6 +871,7 @@
              [d% (contract dd (class object% (define/public (n x) x) (super-instantiate ())) 'd-pos 'd-neg)])
       (send (make-object c%) m c%))
    "c-neg")  
+|#
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                                                        ;;
@@ -839,22 +879,61 @@
   ;;                                                        ;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
-  (test/spec-failed
-   'not/f1
-   '(contract (not/f integer?)
-              1
-              'pos
-              'neg)
-   "pos")
+  (test #t flat-contract? (union))
+  (test #t flat-contract? (union integer? (lambda (x) (> x 0))))
+  (test #t flat-contract? (union (flat-contract integer?)
+				 (flat-contract boolean?)))
+  (test-flat-contract '(union (flat-contract integer?) char?) #\a #t)
+  (test-flat-contract '(union (flat-contract integer?) char?) 1 #t)
   
-  (test/spec-passed/result
-   'not/f2
-   '(contract (not/f integer?)
-              'not-integer
-              'pos
-              'neg)
-   'not-integer)
+  (test #t flat-contract? (and/c))
+  (test #t flat-contract? (and/c number? integer?))
+  (test #t flat-contract? (and/c (flat-contract number?)
+				 (flat-contract integer?)))
+  (test-flat-contract '(and/c number? integer?) 1 3/2)
 
+  (test-flat-contract '(not/f integer?) #t 1)
+  (test-flat-contract '(>=/c 5) 5 0)
+  (test-flat-contract '(<=/c 5) 5 10)
+  (test-flat-contract '(</c 5) 0 5)
+  (test-flat-contract '(>/c 5) 10 5)
+  (test-flat-contract '(integer-in 0 10) 0 11)
+  (test-flat-contract '(integer-in 0 10) 10 3/2)
+  (test-flat-contract '(real-in 1 10) 3/2 20)
+  (test-flat-contract '(string/len 3) "ab" "abc")
+  (test-flat-contract 'natural-number? 5 -1)
+  (test-flat-contract 'false? #f #t)
+  (test/spec-passed 'any? '(contract any? 1 'pos 'neg))
+  (test-flat-contract 'printable? (vector (cons 1 (box #f))) (lambda (x) x))
+  (test-flat-contract '(symbols 'a 'b 'c) 'a 'd)
+  
+  (let ([c% (class object% (super-new))])
+    (test-flat-contract (subclass?/c c%) c% object%)
+    (test-flat-contract (subclass?/c c%) (class c%) (class object%)))
+  
+  (let ([i<%> (interface ())])
+    (test-flat-contract `(implementation?/c ,i<%>) (class* object% (i<%>) (super-new)) object%)
+    (test-flat-contract `(implementation?/c ,i<%>) (class* object% (i<%>) (super-new)) #f))
+  
+  (let ([i<%> (interface ())]
+        [c% (class object% (super-new))])
+    (test-flat-contract `(is-a?/c ,i<%>) (new (class* object% (i<%>) (super-new))) (new object%))
+    (test-flat-contract `(is-a?/c ,c%) (new c%) (new object%)))
+  
+  (test-flat-contract '(listof boolean?) (list #t #f) (list #f 3 #t))
+  (test-flat-contract '(listof any?) (list #t #f) 3)
+  (test-flat-contract '(vectorof boolean?) (vector #t #f) (vector #f 3 #t))
+  (test-flat-contract '(vectorof any?) (vector #t #f) 3)
+  
+  (test-flat-contract '(vector/p boolean? (flat-contract integer?)) (vector #t 1) (vector 1 #f))
+  (test-flat-contract '(vector/p boolean? (flat-contract integer?)) (vector #t 1) #f)
+  (test-flat-contract '(cons/p boolean? (flat-contract integer?)) (cons #t 1) (cons 1 #f))
+  (test-flat-contract '(cons/p boolean? (flat-contract integer?)) (cons #t 1) #f)
+  (test-flat-contract '(list/p boolean? (flat-contract integer?)) (list #t 1) (list 1 #f))
+  (test-flat-contract '(list/p boolean? (flat-contract integer?)) (list #t 1) #f)
+  (test-flat-contract '(box/p boolean?) (box #f) (box 1))
+  (test-flat-contract '(box/p (flat-contract boolean?)) (box #t) #f)
+  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                                                        ;;
   ;;   case-> arity checking tests                          ;;

@@ -32,6 +32,7 @@
       ("beginning-abbr" . "Beginning Student with List Abbreviations Language")
       ("advanced" . "Advanced Student Language")
       ("intermediate" . "Intermediate Student Language")
+      ("intermediate-lambda" . "Intermediate Student with Lambda Language")
       ("drscheme" . "PLT DrScheme: Programming Environment Manual")
       ("r5rs" . "Revised(5) Report on the Algorithmic Language Scheme")
       ("mzscheme" . "PLT MzScheme: Language Manual")

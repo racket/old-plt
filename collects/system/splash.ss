@@ -70,13 +70,10 @@
 			[bwidth (box 0.)]
 			[bheight (box 0.)]
 			[margin 2])
-		    (send message set-size
-			  0 0
-			  (send message get-width)
-			  (send message get-height))
+		    (send message set-size 0 0 msg-width msg-height)
 		    (send text-message set-size
 			  0 (+ margin msg-height)
-			  text-msg-width
+			  msg-width
 			  text-msg-height)
 		    (send gauge set-size
 			  0 (+ (* 2 margin) msg-height text-msg-height)
@@ -99,11 +96,11 @@
 					    (+ (* 2 WX-BORDER-SIZE)
 					       (- panel-height (unbox cheight)))))])
 
+		      ;; center by the client width here
 		      (let ([frame-width (+ c-x-offset panel-width)]
-			    [frame-height (+ c-y-offset panel-height)]
-			    [frame-x (/ (- (+ width c-x-offset) msg-width) 2)]
-			    [frame-y (/ (- (+ height c-y-offset) msg-height) 2)])
-			(send frame set-size frame-x frame-y frame-width frame-height))
+			    [frame-height (+ c-y-offset panel-height)])
+			(send frame set-size 0 0 frame-width frame-height))
+		      (send frame center wx:const-both)
 		      (send frame show #t)
 		      (wx:flush-display) (wx:yield)
 		      (set! mred:splash-message text-message)

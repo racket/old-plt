@@ -549,7 +549,7 @@ the ITypeInfo interface.
 
 > text-transform :: (send an-mx-element text-transform)
 
-  Retrieves a string indicating the CSS text-decoration for the
+  Retrieves a string indicating the CSS text-transform for the
   element.
 
 > set-text-transform! :: (send an-mx-element set-text-transform! tt)

@@ -4,9 +4,9 @@
 
 MZC="..\..\mzc"
 HTMLHELP="C:\Program Files\HTML Help Workshop"
-SHELL32="C:\Program Files\Microsoft Visual Studio\VC98"
+SHELL32="C:\Program Files\Microsoft Visual Studio .NET\VC7\PlatformSDK"
 REGSVR32="C:\Windows\System\REGSVR32"
-NEWMSHTML=0
+NEWMSHTML=1
 
 all : 
 	@ -255 mkdir ..\..\collects\mysterx\private\compiled\native\win32\i386

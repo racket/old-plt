@@ -2411,41 +2411,20 @@ static int times_scan_code;
 static int divide_scan_code;
 static int dot_scan_code;
 
-#define THE_SCAN_CODE(lParam) ((((unsigned long)lParam) >> 16) & 0xFF)
+#define THE_SCAN_CODE(lParam) ((((unsigned long)lParam) >> 16) & 0x1FF)
 
 void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
 {
   int id;
-  Bool tempControlDown = FALSE;
+  Bool tempControlDown = (::GetKeyState(VK_CONTROL) >> 1);
+
   if (isASCII) {
     // If 1 -> 26, translate to CTRL plus a letter.
     id = wParam;
-    if ((id > 0) && (id < 27)) {
-      switch (id)
-      {
-        case 13:
-        {
-          id = WXK_RETURN;
-          break;
-        }
-        case 8:
-        {
-          id = WXK_BACK;
-          break;
-        }
-        case 9:
-        {
-          id = WXK_TAB;
-          break;
-        }
-        default:
-        {
-          tempControlDown = TRUE;
-          id = id + 96;
-        }
-      }
+    if ((id > 0) && (id < 27) && tempControlDown) {
+      id = id + 96;
     }
-
+    
     /* Ignore character created by numpad, since it's
        already handled as WM_KEYDOWN */
     int sc = THE_SCAN_CODE(lParam);
@@ -2494,7 +2473,7 @@ void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
 
     if (::GetKeyState(VK_SHIFT) >> 1)
       event->shiftDown = TRUE;
-    if (tempControlDown || (::GetKeyState(VK_CONTROL) >> 1))
+    if (tempControlDown)
       event->controlDown = TRUE;
     if ((HIWORD(lParam) & KF_ALTDOWN) == KF_ALTDOWN)
       event->metaDown = TRUE;

@@ -570,17 +570,26 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 				mode = srcCopy;
 				break;
 		}
+
+		int ixsrc = floor(xsrc);
+		int iysrc = floor(ysrc);
+		
+		if (ixsrc > source->GetWidth())
+		  return TRUE;
+		if (iysrc > source->GetHeight())
+		  return TRUE;
+
+		if (ixsrc + height > source->GetHeight())
+		  height = source->GetHeight() - ixsrc;
+		if (iysrc + width > source->GetWidth())
+		  width = source->GetWidth() - iysrc;
+
 		int h = YLOG2DEVREL(height);
 		int w = XLOG2DEVREL(width);
 		int x = XLOG2DEV(xdest);
 		int y = YLOG2DEV(ydest);
-		int ixsrc = floor(xsrc);
-		int iysrc = floor(ysrc);
-		if (h > source->GetHeight())
-		  h = source->GetHeight();
-		if (w > source->GetWidth())
-		  w = source->GetWidth();
-		Rect srcr = {iysrc, ixsrc, iysrc + h, ixsrc + w};
+		
+		Rect srcr = {iysrc, ixsrc, iysrc + height, ixsrc + width};
 		Rect destr = {y, x, y+h, x+w };
 		
 		GrafPtr theMacGrafPort = (GrafPtr)cMacDC->macGrafPort();

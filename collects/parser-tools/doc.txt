@@ -3,7 +3,7 @@ _parser-tools_
 This documentation assumes familiarity with lex and yacc style lexer
 and parser generators.
 
-CHANGE: added support for custom input-ports that return non-character data (via (special)).
+CHANGE: added support for custom input-ports that return non-character data (via (special) and (special-comment)).
 
 CHANGE: token-name, token-value and token? functions are now exported from lex.ss.
 
@@ -86,9 +86,16 @@ This gives you the following syntactic forms:
    executed to handle the error situation as desired, only consuming
    the first character from the input buffer.
 
-In addition to (re action) the lexer treats ((special) action)
-differently.  If the input port returns a non-character, non-eof value
-the lexer will invoke the action provided with special.
+The lexer treats the rules ((special) action) and ((special-comment)
+action) specially.  In addition to returning characters and
+eof-objects, custom input ports can return arbitrary values (specials)
+or raise an exception to indicate a non-textual comment
+(special-comments).  A special or special-comment can never be part of
+a lexeme with surrounding characters.  When the lexer is invoked with
+a special or special-comment next in the input port, the specified
+action if performed.  Instead of binding the identifier "lexeme" in
+the action, the variable "special" is bound in the case of a special.
+No variable is bound in the case of a special-comment.
 
 
 > (lexer-src-pos (re action) ...) like a lexer, but the return of each

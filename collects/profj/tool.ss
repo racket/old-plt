@@ -114,6 +114,8 @@
       (define (phase1) (void))
       ;Add all the ProfessorJ languages into DrScheme
       (define (phase2) 
+        #;(drscheme:language-configuration:add-language
+         (make-object ((drscheme:language:get-default-mixin) dynamic-lang%)))
         (drscheme:language-configuration:add-language
          (make-object ((drscheme:language:get-default-mixin) full-lang%)))
         (drscheme:language-configuration:add-language
@@ -127,9 +129,10 @@
       (define-struct profj-settings (print-style print-full? classpath) (make-inspector))
       
       ;ProfJ general language mixin
-      (define (java-lang-mixin level name number one-line)
+      (define (java-lang-mixin level name number one-line dyn?)
+        (when dyn? (dynamic? #t))
         (class* object% (drscheme:language:language<%>)
-
+          
           (define/public (order-manuals x)
             (let* ((beg-list '(#"profj-beginner" #"tour" #"drscheme" #"help"))
                    (int-list (cons #"profj-intermediate" beg-list)))
@@ -353,9 +356,9 @@
 		    (syntax-as-top
                      (datum->syntax-object 
                       #f
-                      `(compile-interactions-helper ,(lambda (ast) (compile-interactions-ast ast name level execute-types))
+                      #;`(compile-interactions-helper ,(lambda (ast) (compile-interactions-ast ast name level execute-types))
                                                     ,(parse-interactions port name level))
-                      #;`(parse-java-interactions ,(parse-interactions port name level) ,name)
+                      `(parse-java-interactions ,(parse-interactions port name level) ,name)
                       #f))))))
 
           ;process-extras: (list struct) type-record -> (list syntax)
@@ -507,7 +510,7 @@
                                     (syntax-as-top (old-current-eval syn))
                                     (loop (cdr mods) extras #t))))))))
                         ((parse-java-interactions ex loc)
-                         (let ((exp (old-current-eval (syntax-as-top (syntax ex)))))
+                         (let ((exp (syntax-object->datum (syntax ex))))
                            (old-current-eval 
                             (syntax-as-top (compile-interactions-ast exp (syntax loc) level execute-types)))))
                         (_ (old-current-eval exp))))))
@@ -541,11 +544,12 @@
           (super-instantiate ())))
       
       ;Create the ProfessorJ languages
-      (define full-lang% (java-lang-mixin 'full "Full" 4 "Like Java 1.0 (some 1.1)"))
-      (define advanced-lang% (java-lang-mixin 'advanced "Advanced" 3 "Java-like Advanced teaching language"))
+      (define full-lang% (java-lang-mixin 'full "Full" 4 "Like Java 1.0 (some 1.1)" #f))
+      (define advanced-lang% (java-lang-mixin 'advanced "Advanced" 3 "Java-like Advanced teaching language" #f))
       (define intermediate-lang% 
-        (java-lang-mixin 'intermediate "Intermediate" 2 "Java-like Intermediate teaching language"))
-      (define beginner-lang% (java-lang-mixin 'beginner "Beginner" 1 "Java-like Beginner teaching language"))
+        (java-lang-mixin 'intermediate "Intermediate" 2 "Java-like Intermediate teaching language" #f))
+      (define beginner-lang% (java-lang-mixin 'beginner "Beginner" 1 "Java-like Beginner teaching language" #f))
+      (define dynamic-lang% (java-lang-mixin 'full "Java+dynamic" 5 "Java with dynamic typing capabilities" #t))
       
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;
@@ -794,8 +798,8 @@
   (define-syntax (compile-interactions-helper syn)
     (syntax-case syn ()
       ((_ comp ast)
-       (namespace-syntax-introduce ((syntax-object->datum (syntax comp))
-                                    (syntax-object->datum (syntax ast)))))))
+        (namespace-syntax-introduce ((syntax-object->datum (syntax comp))
+                                     (syntax-object->datum (syntax ast)))))))
   
     
   (provide format-java)

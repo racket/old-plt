@@ -295,8 +295,14 @@ please adhere to these guidelines:
  (forward-in-browser-history "Forward")
  (home "Home")
  (browser "Browser")
+ (external-browser-choice-title "External Browser") ; title for radio-button set
+ (browser-command-line-label "Command Line:") ; label for radio button that is followed by text boxes
  (choose-browser "Choose a Browser")
- (no-browser "None")
+ (no-browser "Ask Later")
+ (use-internal-browser-for-help "Read help with internal PLT browser") ; radio-button label
+ (use-external-browser-for-help "Read help with external web browser") ; radio-button label
+ (browser-cmdline-expl-line-1 "(Command line formed by concatenating pre-text, URL,") ; explanatory text for dialog, line 1
+ (browser-cmdline-expl-line-2 "and post-text, with no extra spaces between them.)") ; ... line 2. (Anyone need more lines?)
  (cannot-display-url "Cannot display URL ~s: ~a")
  (install? "Install?")  ;; if a .plt file is found (title of dialog)
  (you-have-selected-an-installable-package "You have selected an installable package.")

@@ -814,7 +814,7 @@
    (home "Hogar")
    (browser "Navegador")
    (choose-browser "Escoge un navegador")
-   (no-browser "Ninguno")    
+   ;; (no-browser "Ninguno") ; English changed from "None" to "Ask Later"
    (reuse-existing-frames "Reutilizar marcos existentes cuando se abre un nuevo archivo")
    (scheme-prefs-panel-label "Scheme")
 

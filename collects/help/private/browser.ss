@@ -88,16 +88,10 @@
     (semaphore-wait nav-mutex)
     (let ([nav-sem (make-semaphore 0)])
       (if (tried-external-browser?)
-	(parameterize
-	   ([external-browser (get-browser-param)])
-	   (send-url url #t)
+	  (begin
+	   (send-help-desk-url (hd-cookie->browser hd-cookie) url #t)
            (semaphore-post nav-mutex))
 	  (begin
-            ; should be no-op, except in Unix
-	    (unless (or (eq? (help-browser-preference) 'plt)
-			(get-preference 'external-browser 
-					(lambda () #f)))
-		    (update-browser-preference url))
 	    (letrec
 		([monitor-thread
 		  (thread
@@ -118,14 +112,14 @@
 			   ; shutdown old server
 			   ((hd-cookie->exit-proc hd-cookie))
 			   (internal-start-help-server hd-cookie)
-			   (send-url url))
+			   (send-help-desk-url (hd-cookie->browser hd-cookie) url))
 		     (kill-thread monitor-thread)
 		     (semaphore-post nav-sem)))])
 	      (with-handlers 
 	       ([void (lambda _ (fprintf (current-error-port)
 					 (string-append
 					  "Help Desk browser failed.~n")))])
-	       (send-url (build-dispatch-url hd-cookie url))
+	       (send-help-desk-url (hd-cookie->browser hd-cookie) (build-dispatch-url hd-cookie url))
 	       (yield nav-sem)
 	       (semaphore-post nav-mutex)))))))
   

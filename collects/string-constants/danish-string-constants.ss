@@ -179,7 +179,7 @@
  (home "Hjem")
  (browser "Browser")
  (choose-browser "Vælg en browser")
- (no-browser "Ingen")
+ ;; (no-browser "Ingen") ; English changed from "None" to "Ask Later"
  (cannot-display-url "Kan ikke vise URL ~s: ~a")
  (install? "Installér?")  ;; if a .plt file is found (title of dialog)
  (you-have-selected-an-installable-package "Du har valgt en pakke, som kan installeres.")

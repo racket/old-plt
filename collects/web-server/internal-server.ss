@@ -38,24 +38,24 @@
                         
                         (define browser-and-server-cust (make-custodian))
                         
-                        (external-browser
-                         (let ([browser-frame #f])
-                           (lambda (url-str)
-                             (if browser-frame
-                                 (begin (send browser-frame show #t)
-                                        (send (send (send browser-frame get-hyper-panel) get-canvas) goto-url url-str #f))
-                                 (set! browser-frame
-                                       (parameterize ([current-eventspace (parameterize ([current-custodian browser-and-server-cust])
-                                                                            (make-eventspace))])
-                                         (open-url url-str)))))))
+			(define browser-frame #f)
                         
                         (parameterize ([current-custodian browser-and-server-cust])
                           (serve configuration
                                (let ([listener (tcp-listen port)])
                                  (lambda ()
                                    (tcp-accept listener)))))
-                        
-                        (lambda () (custodian-shutdown-all browser-and-server-cust)))
+                        (values
+			 (lambda () 
+			   (when browser-frame
+			     (send browser-frame show #f)
+			     (set! browser-frame #f))
+			   (custodian-shutdown-all browser-and-server-cust))
+			 (lambda (url-str)
+			   (if browser-frame
+			       (begin (send browser-frame show #t)
+				      (send (send (send browser-frame get-hyper-panel) get-canvas) goto-url url-str #f))
+			       (set! browser-frame (open-url url-str))))))
                       TCP BROWSER WEB-SERVER)])
          (export))
        setup:plt-installer^

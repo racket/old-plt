@@ -48,7 +48,8 @@
 		 help-desk-port  	
 		 (if external-connections?
 		     (serve configuration help-desk-port)
-		     (serve configuration help-desk-port "127.0.0.1")))))))
+		     (serve configuration help-desk-port "127.0.0.1"))
+		 #f)))))
 
 
 

@@ -177,7 +177,7 @@
  (home "Start")
  (browser "Browser")
  (choose-browser "Kies een surfer") ; -- translated as Internet browser
- (no-browser "Geen")
+ ;; (no-browser "Geen") ; English changed from "None" to "Ask later"
  (cannot-display-url "Kan URL ~s niet tonen: ~a")
  (install? "Installeren?")  ;; if a .plt file is found (title of dialog)
  (you-have-selected-an-installable-package "U hebt een installeerbaar pakket gekozen.")

@@ -1051,7 +1051,7 @@ class wxTextSnip* os_wxMediaEdit::OnNewTextSnip()
   int sj;
   static void *mcache = 0;
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-new-text-snip", &mcache);
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-new-string-snip", &mcache);
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
@@ -1071,7 +1071,7 @@ return wxMediaEdit::OnNewTextSnip();
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxTextSnip(v, "on-new-text-snip in text%"", extracting return value", 0);
+  return objscheme_unbundle_wxTextSnip(v, "on-new-string-snip in text%"", extracting return value", 0);
   }
 }
 
@@ -6732,7 +6732,7 @@ if (os_wxMediaEdit_class) {
  scheme_add_method_w_arity(os_wxMediaEdit_class, "set-wordbreak-func", os_wxMediaEditSetWordbreakFunc, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "set-autowrap-bitmap", os_wxMediaEditSetAutowrapBitmap, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "on-new-tab-snip", os_wxMediaEditOnNewTabSnip, 0, 0);
- scheme_add_method_w_arity(os_wxMediaEdit_class, "on-new-text-snip", os_wxMediaEditOnNewTextSnip, 0, 0);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "on-new-string-snip", os_wxMediaEditOnNewTextSnip, 0, 0);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "caret-hidden?", os_wxMediaEditCaretHidden, 0, 0);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "hide-caret", os_wxMediaEditHideCaret, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "get-wordbreak-map", os_wxMediaEditGetWordbreakMap, 0, 0);

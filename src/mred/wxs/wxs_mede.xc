@@ -213,7 +213,7 @@
 @ "hide-caret" : void HideCaret(bool);
 @ "caret-hidden?" : bool CaretHidden();
 
-@ v "on-new-text-snip" : wxTextSnip! OnNewTextSnip();
+@ v "on-new-string-snip" : wxTextSnip! OnNewTextSnip();
 @ v "on-new-tab-snip" : wxTabSnip! OnNewTabSnip();
 
 @ "set-autowrap-bitmap" : wxBitmap^ SetAutowrapBitmap(wxBitmap^);

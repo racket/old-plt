@@ -77,11 +77,11 @@
  snip-class-list%
  special-control-key
  label->plain-label
+ string-snip%
  style%
  style-delta%
  style-list%
  tab-snip%
- text-snip%
  the-brush-list
  the-clipboard
  the-color-database

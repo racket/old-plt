@@ -3,8 +3,7 @@
   (import mzlib:function^
 	  mzlib:pretty-print^
 	  mzlib:file^
-	  (mred : mred^)
-	  (wx : wx^))
+	  (mred : mred^))
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Snips
@@ -27,17 +26,13 @@
 
   (define make-one-line/callback-edit
     (opt-lambda (parent label cb [v ""])
-       (make-object mred:media-text% parent
-		    (lambda (c e)
-		      (when (= (send e get-event-type) wx:const-event-type-text-command)
-			    (cb (send c get-value))))
-		    label v)))
+      (make-object text% label parent cb v)))
 
   (define make-number-control
     (lambda (parent label value get-min get-max set-v)
       (let* ([p (make-object mred:horizontal-panel% parent)]
-	     [l (make-object mred:message% p label)]
-	     [vl (make-object mred:message% p "999999")]
+	     [l (make-object mred:message% label p)]
+	     [vl (make-object mred:message% "999999" p)]
 	     [set-value
 	      (lambda (n)
 		(set! value n)
@@ -54,7 +49,7 @@
 				   (let ([n (string->number v)])
 				     (if (and (integer? n) (exact? n) (>= n (get-min)) (<= n (get-max)))
 					 (set-value n)
-					 (wx:message-box "Bad value"))))))
+					 (mred:message-box "Error" "Bad value"))))))
 			     "Set...")])
 	(send vl set-label (number->string value))
 	(make-object (class null ()
@@ -92,7 +87,7 @@
 	  (send dc destroy-clipping-region))))
   
   (define gb:snip%
-    (class wx:snip% ([lm 5][tm 5][rm 5][bm 5])
+    (class mred:snip% ([lm 5][tm 5][rm 5][bm 5])
       (inherit get-admin set-snipclass set-count)
       (private 
 	[need-recalc? #t]
@@ -159,10 +154,9 @@
 						       (lambda (txt)
 							 (set! name txt))
 						       name)]
-	       [controls (make-object mred:vertical-panel% main)]
-	       [on-close (lambda ()
-			   (do-on-close)
-			   #t)])
+	       [controls (make-object mred:vertical-panel% main)])
+	     (override
+	       [on-close (lambda () (do-on-close))])
 	     (sequence
 	       (send controls minor-align-left)
 	       (let* ([p (make-object mred:vertical-panel% main)]
@@ -444,9 +438,7 @@
 	(gb-local-instantiate
 	 (lambda (parent)
 	   `(make-object ,(gb-get-instantiate-class-getter) ,parent
-			 ,@(if with-border?
-			       '(-1 -1 -1 -1 wx:const-border)
-			       null))))
+			 ,(if with-border? '(border) 'null))))
 	(gb-wrap-instantiate
 	 (lambda (v)
 	   `(-:init-stretch ,v ,x-stretch? ,y-stretch?)))
@@ -465,7 +457,47 @@
 	       [,name ,(gb-wrap-instantiate v)]
 	       ,@(apply append
 			(map (lambda (c) (send c gb-instantiate name)) children))))))
+
+	(draw-box
+	 (lambda (dc x y w h)
+	   (let* ((xw (sub1 (+ x w)))
+		  (yh (sub1 (+ y h)))
+		  (x (add1 x))
+		  (y (add1 y)))
+	     (send dc draw-line x y xw y)
+	     (send dc draw-line xw y xw yh)
+	     (send dc draw-line x yh xw yh)
+	     (send dc draw-line x y x yh))))
 	
+	(base-setup
+	 (lambda (nm xs? ys? nw nh hca vca wb? id children-ids)
+	   (set! name nm)
+	   (set! x-stretch? xs?)
+	   (set! y-stretch? ys?)
+	   (set! w nw)
+	   (set! h nh)
+	   (set! horizontal-child-alignment hca)
+	   (set! vertical-child-alignment vca)
+	   (set! with-border? wb?)
+	   (set! original-id id)
+	   (set! original-children-ids children-ids)))
+
+	[get-tagged-value
+	 (lambda (tag) #f)]
+	[set-tagged-value void]
+
+	(refresh
+	 (lambda ()
+	   (let ([admin (get-admin)])
+	     (unless (null? admin)
+	       (send admin needs-update this 0 0 w h)))))
+	(resized
+	 (lambda ()
+	   (let ([admin (get-admin)])
+	     (unless (null? admin)
+	       (send admin resized this #t))))))
+
+      (override
 	(get-extent
 	 (lambda (dc x y wbox hbox descentbox spacebox
 		     lspacebox rspacebox)
@@ -491,29 +523,6 @@
 		 (draw-box dc (add1 x) (add1 y) (- w 2) (- h 2)))
 	   (when (and with-border? hilited?)
 		 (draw-box dc (+ 2 x) (+ 2 y) (- w 4) (- h 4)))))
-	(draw-box
-	 (lambda (dc x y w h)
-	   (let* ((xw (sub1 (+ x w)))
-		  (yh (sub1 (+ y h)))
-		  (x (add1 x))
-		  (y (add1 y)))
-	     (send dc draw-line x y xw y)
-	     (send dc draw-line xw y xw yh)
-	     (send dc draw-line x yh xw yh)
-	     (send dc draw-line x y x yh))))
-	
-	(base-setup
-	 (lambda (nm xs? ys? nw nh hca vca wb? id children-ids)
-	   (set! name nm)
-	   (set! x-stretch? xs?)
-	   (set! y-stretch? ys?)
-	   (set! w nw)
-	   (set! h nh)
-	   (set! horizontal-child-alignment hca)
-	   (set! vertical-child-alignment vca)
-	   (set! with-border? wb?)
-	   (set! original-id id)
-	   (set! original-children-ids children-ids)))
 	(copy
 	 (lambda ()
 	   (let ([o (make-object (object-class this) lm tm rm bm)])
@@ -554,21 +563,6 @@
 	    (send stream get-string)
 	    (let ([v (stream-read-list stream)])
 	      (if (null? v) #f v)))))
-
-	[get-tagged-value
-	 (lambda (tag) #f)]
-	[set-tagged-value void]
-
-	(refresh
-	 (lambda ()
-	   (let ([admin (get-admin)])
-	     (unless (null? admin)
-	       (send admin needs-update this 0 0 w h)))))
-	(resized
-	 (lambda ()
-	   (let ([admin (get-admin)])
-	     (unless (null? admin)
-	       (send admin resized this #t)))))
 	(resize 
 	 (lambda (w-in h-in)
 	   (if (not parent) 
@@ -584,27 +578,27 @@
 	       #f))))
       (sequence
 	(super-init)
-	(set-snipclass (send (wx:get-the-snip-class-list) find classname))
+	(set-snipclass (send (mred:get-the-snip-class-list) find classname))
 	(set-count 1))))
   
   (define register-class
     (lambda (class% classname)
       (let ([snipclass
 	     (make-object 
-	      (class wx:snip-class% ()
+	      (class snip-class% ()
 		(inherit set-classname set-version)
-		(public
+		(override
 		  [read
 		   (lambda (stream)
 		     (let ([o (make-object class%)]
-			   [scl (wx:get-the-snip-class-list)])
+			   [scl (mred:get-the-snip-class-list)])
 		       (send o read stream (send scl reading-version this))
 		       o))])
 		(sequence
 		  (super-init)
 		  (set-classname classname)
 		  (set-version GB:SNIP-VERSION))))])
-	(send (wx:get-the-snip-class-list) add snipclass))))
+	(send (mred:get-the-snip-class-list) add snipclass))))
   
   (register-class gb:snip% "gb:core")
   
@@ -618,7 +612,7 @@
 	(rename [super-get-frame% get-frame%]
 		[super-gb-get-class-defines gb-get-class-defines]
 		[super-gb-wrap-instantiate gb-wrap-instantiate])
-	(public
+	(override
 	  [get-frame%
 	   (lambda ()
 	     (class (super-get-frame%) args
@@ -660,7 +654,8 @@
 	 [symbol-append
 	  (lambda (a b) (string->symbol (string-append (symbol->string a) (symbol->string b))))])
 	(public
-	 [horizontal-is-major? #f]
+	 [horizontal-is-major? #f])
+	(override
 	 [gb-get-class-defines
 	  (lambda ()
 	    (append (super-gb-get-class-defines)
@@ -691,7 +686,7 @@
 
   (define gb:vertical-panel-snip% 
     (class-asi (gb:make-panel-params-snip% gb:snip%)
-      (public
+      (override
         [old-vertical-child-alignment 1]
 	[classname "gb:vertical-panel"]
 	[name (new-name "vpanel")])))
@@ -701,7 +696,7 @@
   ; Used by top-level panel:
   (define gb:panel-snip%
     (class-asi gb:vertical-panel-snip%
-      (public
+      (override
        [classname "gb:panel"])))
   
   (register-class gb:panel-snip% "gb:panel")
@@ -712,7 +707,7 @@
 	       children gb-get-instantiate-class-getter)
       (private
 	(sp-+ (lambda args (apply spacing-+ args))))
-      (public
+      (override
         [old-horizontal-child-alignment 1]
 	[classname "gb:horizontal-panel"]
 	[name (new-name "hpanel")]
@@ -773,7 +768,7 @@
   
   (define gb:atomic-snip%
     (class-asi gb:snip%
-      (public
+      (override
 	(x-stretch? #f)
 	(y-stretch? #f)
 	(container? #f))))
@@ -786,7 +781,7 @@
 		[super-copy copy]
 		[super-write write]
 		[super-read read])
-	(public
+	(override
 	  [get-frame%
 	   (lambda ()
 	     (class (super-get-frame%) args
@@ -838,7 +833,7 @@
       (class-asi cl
 	(inherit w h get-label get-label-size draw-label
 		 gb-get-instantiate-class-getter)
-	(public
+	(override
 	  [classname cn]
 	  [name (new-name "message")]
 	  [gb-get-min-size
@@ -864,7 +859,7 @@
       (class-asi cl
 	(inherit name)
 	(rename [super-gb-aux-instantiate gb-aux-instantiate])
-	(public
+	(override
 	  [callback-kinds (list "-callback")]
 	  [callback-code (map (lambda (x) 'void) callback-kinds)]
 	  [get-callback-names
@@ -884,7 +879,7 @@
       (class-asi cl
 	(inherit w h get-label get-label-size get-callback-names draw-label
 		 gb-get-instantiate-class-getter)
-	(public
+	(override
 	  [classname cn]
 	  [name (new-name "button")]
 	  [m 5]
@@ -910,7 +905,7 @@
       (class-asi cl
 	(inherit w h get-style get-label get-callback-names get-label-size draw-label
 		 gb-get-instantiate-class-getter)
-	(public
+	(override
 	  [classname cn]
 	  [name (new-name "checkbox")]
 	  [hspace 2]
@@ -961,7 +956,7 @@
 		 [(null? l) l]
 		 [(zero? p) (cdr l)]
 		 [else (cons (car l) (loop (cdr l) (sub1 p)))])))])
-	(public
+	(override
 	  [get-frame%
 	   (lambda ()
 	     (class (super-get-frame%) args
@@ -972,7 +967,10 @@
 		 [user-item (lambda (v)
 			      (mred:get-text-from-user "Item name:" "List Item Name" v))]
 		 [items-panel (make-object mred:vertical-panel% controls)]
-		 [items-list (make-object mred:list-box% items-panel 
+		 [items-list (make-object mred:list-box%
+					  "Items:" 
+					  items
+					  items-panel 
 					  (lambda (l e)
 					    (when (= 2 (send e get-extra-long))
 					      (let ([pos (send items-list get-selection)])
@@ -981,30 +979,25 @@
 						    (when v
 						      (send items-list set-string pos v)
 						      (set-car! (list-tail items pos) v)
-						      (gb-need-recalc-size)))))))
-					  "Items:" 
-					  wx:const-single -1 -1 -1 -1
-					  items)]
+						      (gb-need-recalc-size))))))))]
 		 [item-buttons-panel (let ([v (make-object mred:horizontal-panel% items-panel)])
-				       (send v stretchable-in-x #f)
+				       (send v stretchable-width #f)
 				       v)]
-		 [add-item (make-object mred:button% item-buttons-panel
+		 [add-item (make-object mred:button% "Add Item" item-buttons-panel
 					(lambda (b e)
 					  (let ([v (user-item (format "Item~a" (send items-list number)))])
 					    (when v
 					      (send items-list append v)
 					      (set! items (append items (list v)))
-					      (gb-need-recalc-size))))
-					"Add Item")]
-		 [delete-item (make-object mred:button% item-buttons-panel
+					      (gb-need-recalc-size)))))]
+		 [delete-item (make-object mred:button% "Delete Item" item-buttons-panel
 					   (lambda (b e)
 					     (let loop ([ls (reverse (send items-list get-selections))])
 					       (unless (null? ls)
 						 (send items-list delete (car ls))
 						 (set! items (delete items (car ls)))
 						 (loop (cdr ls))))
-					     (gb-need-recalc-size))
-					   "Delete Item")])))]
+					     (gb-need-recalc-size)))])))]
 	  [get-items
 	   (lambda ()
 	     items)]
@@ -1055,7 +1048,7 @@
 		[super-gb-get-class-defines gb-get-class-defines])
 	(private
 	  [hmargin 2])
-	(public
+	(override
 	  [get-label-top-margin (lambda () 0)]
 	  [get-frame%
 	   (lambda ()
@@ -1065,14 +1058,12 @@
 		 (apply super-init args))
 	       (public
 		 [direction-radio
-		  (make-object mred:radio-box% controls 
+		  (make-object mred:radio-box% "Label Position:" '("Top" "Left")
+			       controls 
 			       (lambda (r e)
 				 (set! vertical-label? (zero? (send direction-radio get-selection)))
 				 (gb-need-recalc-size))
-			       "Label Position:"
-			       -1 -1 -1 -1
-			       '("Top" "Left")
-			       0 wx:const-horizontal)])
+			       '(horizontal))])
 	       (sequence
 		 (send direction-radio set-selection (if vertical-label? 0 1)))))]
 	  [vertical-label? #f]
@@ -1112,8 +1103,8 @@
 	  [wrap-label-direction
 	   (lambda (p e)
 	     `(-:with-label-direction ,(if vertical-label? 
-					   `wx:const-vertical 
-					   `wx:const-horizontal) 
+					   ''vertical 
+					   ''horizontal) 
 				      ,p (lambda () ,e)))]
 	  
 	  [labelpos-install
@@ -1144,7 +1135,7 @@
 		[super-gb-get-class-defines gb-get-class-defines])
 	(private
 	  [initial "value"])
-	(public
+	(override
 	  [get-frame%
 	   (lambda ()
 	     (class (super-get-frame%) args
@@ -1206,7 +1197,8 @@
 	   (lambda (t v-in)
 	     (if (eq? t tag)
 		 (set! v v-in)
-		 (super-set-tagged-value t v-in)))]
+		 (super-set-tagged-value t v-in)))])
+	(override
 	  [copy
 	   (lambda ()
 	     (let ([o (super-copy)])
@@ -1220,7 +1212,7 @@
 	(rename [super-get-frame% get-frame%]
 		[super-write write]
 		[super-read read])
-	(public
+	(override
 	  [get-frame%
 	   (lambda ()
 	     (class*/names (frame super-init) (super-get-frame%) () args
@@ -1276,12 +1268,12 @@
 							  enable
 							  (send snip get-tagged-value 'multi))))
 	 (inherit get-tagged-value)
-	 (public
+	 (override
 	  [get-style-flag
 	   (lambda () 
 	     (if (get-tagged-value 'hscroll)
-		 'wx:const-hscroll
-		 0))]))))
+		 '(hscroll)
+		 null))]))))
   
   (define gb:make-text-snip%
     (lambda (cl cn)
@@ -1291,7 +1283,7 @@
 		 wrap-label-direction get-label gb-get-instantiate-class-getter)
 	(private
 	  [margin 2])
-	(public
+	(override
 	  [classname cn]
 	  [name (new-name "text")]
 	  [x-stretch? #t]
@@ -1314,17 +1306,17 @@
 	  [gb-local-instantiate
 	   (lambda (p)
 	     (wrap-label-direction
-	      p `(make-object ,(gb-get-instantiate-class-getter) ,p 
+	      p `(make-object ,(gb-get-instantiate-class-getter)
+			      ,(get-label) ,p 
 			      ,(let-values ([(change return focus) 
 					     (apply values (get-callback-names))])
 				 `(lambda (b e) 
 				    (let ([t (send e get-event-type)])
 				      (cond 
-				       [(= t wx:const-event-type-text-command) (,change b e)]
-				       [(= t wx:const-event-type-text-enter-command) (,return b e)]
+				       [(eq? t 'text-field) (,change b e)]
+				       [(eq? t 'text-field-enter) (,return b e)]
 				       [else (,focus b e)]))))
-			      ,(get-label) ,(get-initial)
-			      -1 -1 -1 -1
+			      ,(get-initial)
 			      ,(get-style-flag))))]))))
   
   (define gb:text-snip% (gb:make-text-snip%
@@ -1344,7 +1336,7 @@
       (class-asi cl
 	(inherit w h get-callback-names get-items get-item-height
 		 wrap-label-direction get-label gb-get-instantiate-class-getter)
-	(public
+	(override
 	  [classname cn]
 	  [name (new-name "listbox")]
 	  [y-stretch? #t]
@@ -1370,20 +1362,18 @@
 		    (unless (or (>= iy (+ y h)) (null? l))
 			    (send dc draw-text (car l) (+ 2 x) iy)
 			    (loop (cdr l) (+ iy ih))))))))]
-	  [callback-kinds (list "-select-callback" "-deselect-callback" "-double-select-callback")]
+	  [callback-kinds (list "-select-callback" "-double-select-callback")]
 	  [gb-get-default-class (lambda () 'mred:list-box%)]
 	  [gb-local-instantiate
 	   (lambda (p)
 	     (wrap-label-direction
-	      p `(make-object ,(gb-get-instantiate-class-getter) ,p 
-			      ,(let-values ([(sel desel dbl) (apply values (get-callback-names))])
+	      p `(make-object ,(gb-get-instantiate-class-getter)
+			      ,(get-label) ',(get-items) ,p 
+			      ,(let-values ([(sel dbl) (apply values (get-callback-names))])
 				 `(lambda (b e) 
-				    (case (send e get-extra-long)
-				      [(0) (,desel b e)]
-				      [(1) (,sel b e)]
-				      [(2) (,dbl b e)])))
-			      ,(get-label)
-			      wx:const-single -1 -1 -1 -1 ',(get-items))))]))))
+				    (case (send e get-event-type)
+				      [(list-box) (,sel b e)]
+				      [(list-box-dclick) (,dbl b e)]))))))]))))
   
   
   (define gb:list-box-snip% (gb:make-list-box-snip%
@@ -1404,7 +1394,7 @@
 		[super-copy copy]
 		[super-write write]
 		[super-read read])
-	(public
+	(override
 	  [get-frame%
 	   (lambda ()
 	     (class (super-get-frame%) args
@@ -1413,21 +1403,22 @@
 		 (apply super-init args))
 	       (public
 		 [layout-direction-radio
-		  (make-object mred:radio-box% controls 
+		  (make-object mred:radio-box%
+			       "Layout:"
+			       '("Vertical" "Horizontal")
+			       controls 
 			       (lambda (r e)
 				 (set! vertical-layout? (zero? (send layout-direction-radio get-selection)))
 				 (gb-need-recalc-size))
-			       "Layout:"
-			       -1 -1 -1 -1
-			       '("Vertical" "Horizontal")
-			       0 wx:const-horizontal)])
+			       '(horizontal))])
 	       (sequence
-		 (send layout-direction-radio set-selection (if vertical-layout? 0 1)))))]
+		 (send layout-direction-radio set-selection (if vertical-layout? 0 1)))))])
+	(public
 	  [vertical-layout? #t]
-	  
 	  [layout-install
 	   (lambda (vert?)
-	     (set! vertical-layout? vert?))]
+	     (set! vertical-layout? vert?))])
+	(override
 	  [copy
 	   (lambda ()
 	     (let ([o (super-copy)])
@@ -1449,7 +1440,7 @@
 		 wrap-label-direction get-label gb-need-recalc-size vertical-layout?
 		 gb-get-instantiate-class-getter)
 	(rename [super-get-frame% get-frame%])
-	(public
+	(override
 	  [classname cn]
 	  [name (new-name "radiobox")]
 	  [init-items (list "First" "Second")]
@@ -1481,10 +1472,9 @@
 	   (lambda (p)
 	     (wrap-label-direction
 	      p `(make-object ,(gb-get-instantiate-class-getter)
+			      ,(get-label) ',(get-items)
 			      ,p (lambda (b e) (,(car (get-callback-names)) b e)) 
-			      ,(get-label)
-			      -1 -1 -1 -1 ',(get-items) 0
-			      ,(if vertical-layout? 'wx:const-vertical wx:const-horizontal))))]))))
+			      '(,(if vertical-layout? 'vertical 'horizontal)))))]))))
   
   
   (define gb:radio-box-snip% (gb:make-radio-box-snip%
@@ -1503,7 +1493,7 @@
       (class-asi cl
 	(inherit w h get-item-height get-max-item-width get-callback-names get-items
 		 wrap-label-direction gb-need-recalc-size get-label gb-get-instantiate-class-getter)
-	(public
+	(override
 	  [classname cn]
 	  [name (new-name "choice")]
 	  [init-items (list "First")]
@@ -1511,9 +1501,9 @@
 	  [lmargin 2]
 	  [amargin 2]
 	  [rmargin 2]
-	  [arrow (list (make-object wx:point% 0 0)
-		       (make-object wx:point% arrow-size 0)
-		       (make-object wx:point% (quotient arrow-size 2) (quotient arrow-size 2)))]
+	  [arrow (list (make-object mred:point% 0 0)
+		       (make-object mred:point% arrow-size 0)
+		       (make-object mred:point% (quotient arrow-size 2) (quotient arrow-size 2)))]
 	  [get-min-body-size
 	   (lambda (dc)
 	     (let ([h (get-item-height dc)]
@@ -1557,7 +1547,7 @@
 		[super-copy copy]
 		[super-write write]
 		[super-read read])
-	(public
+	(override
 	  [get-frame%
 	   (lambda ()
 	     (class (super-get-frame%) args
@@ -1591,12 +1581,12 @@
 	  [height arrow-size]
 	  [line-height 3]
 	  [min-width 50]
-	  [darrow (list (make-object wx:point% 0 0)
-			(make-object wx:point% arrow-size 0)
-			(make-object wx:point% (quotient arrow-size 2) (quotient arrow-size 2)))]
-	  [rarrow (list (make-object wx:point% 0 0)
-			(make-object wx:point% 0 arrow-size)
-			(make-object wx:point% (quotient arrow-size 2) (quotient arrow-size 2)))]
+	  [darrow (list (make-object mred:point% 0 0)
+			(make-object mred:point% arrow-size 0)
+			(make-object mred:point% (quotient arrow-size 2) (quotient arrow-size 2)))]
+	  [rarrow (list (make-object mred:point% 0 0)
+			(make-object mred:point% 0 arrow-size)
+			(make-object mred:point% (quotient arrow-size 2) (quotient arrow-size 2)))]
 	  [get-min-body-size
 	   (lambda (dc)
 	     (if vertical-layout?
@@ -1621,10 +1611,10 @@
 	   (lambda (p)
 	     (wrap-label-direction
 	      p `(make-object ,(gb-get-instantiate-class-getter)
-			      ,p (lambda (b e) (,(car (get-callback-names)) b e)) 
-			      ,(get-label) ,init-value ,min-value ,max-value
-			      -1 -1 -1
-			      ,(if vertical-layout? 'wx:const-vertical wx:const-horizontal))))]
+			      ,(get-label) ,min-value ,max-value ,p 
+			      (lambda (b e) (,(car (get-callback-names)) b e)) 
+			      ,init-value 
+			      '(,(if vertical-layout? 'vertical 'horizontal)))))]
 	  
 	  [slider-install
 	   (lambda (mn mx in)
@@ -1667,7 +1657,7 @@
 		[super-copy copy]
 		[super-write write]
 		[super-read read])
-	(public
+	(override
 	  [get-frame%
 	   (lambda ()
 	     (class (super-get-frame%) args
@@ -1694,7 +1684,7 @@
 	   (lambda (dc x y w h)
 	     (send dc draw-rectangle x y w h)
 	     (let ([b (send dc get-brush)])
-	       (send dc set-brush (send wx:the-brush-list find-or-create-brush "BLACK" wx:const-solid))
+	       (send dc set-brush (send mred:the-brush-list find-or-create-brush "BLACK" 'solid))
 	       (send dc draw-rectangle 
 		     x (if vertical-layout? (+ y (* 0.75 h)) y)
 		     (if vertical-layout? w (* 0.25 w)) (if vertical-layout? (* 0.25 h) h))
@@ -1703,10 +1693,9 @@
 	  [gb-local-instantiate
 	   (lambda (p)
 	     (wrap-label-direction
-	      p `(make-object ,(gb-get-instantiate-class-getter) ,p
-			      ,(get-label) ,max-value
-			      -1 -1 -1 -1
-			      ,(if vertical-layout? 'wx:const-vertical wx:const-horizontal))))]
+	      p `(make-object ,(gb-get-instantiate-class-getter)
+			      ,(get-label) ,max-value ,p
+			      '(,(if vertical-layout? 'vertical 'horizontal)))))]
 	  
 	  
 	  [gauge-install
@@ -1757,7 +1746,7 @@
       (class-asi cl
 	(inherit w h get-hscroll get-vscroll)
 	(rename [super-get-frame% get-frame%])
-	(public
+	(override
 	 [get-frame%
 	  (lambda ()
 	    (class-asi (super-get-frame%)
@@ -1787,15 +1776,15 @@
     (lambda (cl cn)
       (class-asi cl
 	(inherit get-hscroll get-vscroll gb-get-instantiate-class-getter)
-	(public
+	(override
 	  [classname cn]
 	  [name (new-name "canvas")]
 	  [get-style-flag
 	   (lambda ()
 	     (cond
-	      [(and (get-hscroll) (get-vscroll)) '(+ wx:const-hscroll wx:const-vscroll)]
-	      [(get-hscroll) 'wx:const-hscroll]
-	      [(get-vscroll) 'wx:const-vscroll]
+	      [(and (get-hscroll) (get-vscroll)) ''(hscroll vscroll)]
+	      [(get-hscroll) ''(hscroll)]
+	      [(get-vscroll) ''(vscroll)]
 	      [else 0]))]
 	  
 	  [gb-get-default-class (lambda () 'mred:canvas%)]
@@ -1822,7 +1811,7 @@
 	(rename [super-get-frame% get-frame%]
 		[super-write write]
 		[super-read read])
-	(public
+	(override
 	  [get-frame%
 	   (lambda ()
 	     (class*/names (frame super-init) (super-get-frame%) () args
@@ -1853,9 +1842,10 @@
       (class-asi (gb:make-select-configure-snip% cl 'hscroll "Horizontal Scroll"
 						 '("Show" "Hide" "No Scrolling"))
 	 (inherit get-tagged-value)
-	 (public
+	 (override
 	  [get-hscroll
-	   (lambda () (zero? (get-hscroll-val)))]
+	   (lambda () (zero? (get-hscroll-val)))])
+	 (public
 	  [get-hscroll-val
 	   (lambda () (get-tagged-value 'hscroll))]))))
 
@@ -1864,9 +1854,10 @@
       (class-asi (gb:make-select-configure-snip% cl 'vscroll "Vertical Scroll"
 						 '("Show" "Hide" "No Scrolling"))
 	 (inherit get-tagged-value)
-	 (public
+	 (override
 	  [get-vscroll
-	   (lambda () (zero? (get-vscroll-val)))]
+	   (lambda () (zero? (get-vscroll-val)))])
+	 (public
 	  [get-vscroll-val
 	   (lambda () (get-tagged-value 'vscroll))]))))
 
@@ -1874,19 +1865,19 @@
     (lambda (cl cn)
       (class-asi cl
 	(inherit get-hscroll-val get-vscroll-val gb-get-instantiate-class-getter)
-	(public
+	(override
 	  [classname cn]
 	  [name (new-name "mcanvas")]
 	  [get-style-flag
 	   (lambda ()
-	     `(+ ,(case (get-hscroll-val)
-		    [(0) 0]
-		    [(1) 'wx:const-mcanvas-hide-h-scroll]
-		    [(2) 'wx:const-mcanvas-no-h-scroll])
-		 ,(case (get-vscroll-val)
-		    [(0) 0]
-		    [(1) 'wx:const-mcanvas-hide-v-scroll]
-		    [(2) 'wx:const-mcanvas-no-v-scroll])))]
+	     `'(,@(case (get-hscroll-val)
+		    [(0) null]
+		    [(1) '(hide-hscroll)]
+		    [(2) '(no-hscroll)])
+		,@(case (get-vscroll-val)
+		    [(0) ()]
+		    [(1) '(hide-vscroll)]
+		    [(2) '(no-vscroll)])))]
 	  
 	  [gb-get-default-class (lambda () 'mred:media-canvas%)]
 	  [gb-local-instantiate
@@ -1919,8 +1910,8 @@
   ;  affects how select-all and rubber-banding work due to the
   ;  ancestor/decendent-selection-exclusion rule.
   
-  (define top-font (send wx:the-font-list find-or-create-font 
-			 12 wx:const-default wx:const-normal wx:const-normal #f))
+  (define top-font (send mred:the-font-list find-or-create-font 
+			 12 'default 'normal 'normal #f))
 
   (define gb:edit%
     (class mred:backup-autosave-pasteboard% ()
@@ -2011,6 +2002,17 @@
 	[find-snip-by-name
 	 (lambda (id)
 	   (find-snip-by-XXX id (make-generic gb:snip% name)))]
+
+	[top-resized
+	 (lambda (snip old-w old-h w h)
+	   (when (eq? snip main-panel)
+		 (unless (= top-level-type PANEL-MODE)
+			 (invalidate-bitmap-cache 0 0
+						  (+ (max old-w w) (* 2 margin))
+						  (+ (max old-h h) (* 2 margin)
+						     (or frame-label-h 0) 2)))))])
+
+      (override
 	[on-move-to
 	 (lambda (snip x y dragging?)
 	   (or (not (eq? snip main-panel))
@@ -2020,14 +2022,6 @@
 	 (lambda (snip x y dragging?)
 	   (when dragging?
 	     (send snip gb-drag-children-along x y)))]
-	[top-resized
-	 (lambda (snip old-w old-h w h)
-	   (when (eq? snip main-panel)
-		 (unless (= top-level-type PANEL-MODE)
-			 (invalidate-bitmap-cache 0 0
-						  (+ (max old-w w) (* 2 margin))
-						  (+ (max old-h h) (* 2 margin)
-						     (or frame-label-h 0) 2)))))]
 	[after-resize
 	 (lambda (snip w h did?)
 	   (when (and (eq? snip main-panel) did?)
@@ -2165,7 +2159,8 @@
 	    (lambda () (set! pasting? #t))
 	    (lambda () (super-do-paste time))
 	    (lambda () (set! pasting? #f)))
-	   (handle-new-arrivals))]
+	   (handle-new-arrivals))])
+      (public
 	[handle-new-arrivals
 	 (lambda ()
 	   (let loop ()
@@ -2175,7 +2170,8 @@
 		   (when (send s gb-reconnect-to-original-children)
 		     (k loop))))
 		void)))
-	   (for-each-snip (lambda (s) (send s gb-forget-original-id))))]
+	   (for-each-snip (lambda (s) (send s gb-forget-original-id))))])
+      (override
 	[do-copy
 	 (lambda (time delete?)
 	   (dynamic-wind
@@ -2199,7 +2195,8 @@
 		  (for-each (close-selected add-selected) selected)
 		  (super-do-copy time delete?)
 		  (for-each (close-selected remove-selected) selected))))
-	    (lambda () (set! copying? #f))))]
+	    (lambda () (set! copying? #f))))])
+      (public
 	[get-selected-snip
 	 (lambda () 
 	   (let ([s (find-next-selected-snip null)])
@@ -2303,7 +2300,8 @@
 		       (set! main-panel-x margin)
 		       (set! main-panel-y (+ frame-label-h 2 margin))))
 		 (set-box! dx main-panel-x)
-		 (set-box! dy main-panel-y)))]
+		 (set-box! dy main-panel-y)))])
+      (override
 	[on-paint
 	 (lambda (pre? dc l t r b dx dy show-caret?)
 	   (unless (or (not pre?) (= top-level-type PANEL-MODE)
@@ -2373,7 +2371,8 @@
 	   (send main-panel gb-install this #f)
 	   (send main-panel set-id "0")
 	   (send main-panel gb-need-recalc-size)
-	   (set-modified #f))]
+	   (set-modified #f))])
+      (override
 	[on-load-file
 	 (lambda (file mode)
 	   (set! pasting? #t))]
@@ -2395,11 +2394,11 @@
   
   (define-struct tool (icon callback active?))
 
-  (define lg-pen (send wx:the-pen-list find-or-create-pen 
-		       (make-object wx:colour% 200 200 200) 0 wx:const-solid))
+  (define lg-pen (send mred:the-pen-list find-or-create-pen 
+		       (make-object mred:color% 200 200 200) 0 'solid))
 
-  (define dg-pen (send wx:the-pen-list find-or-create-pen 
-		       (make-object wx:colour% 140 140 140) 0 wx:const-solid))
+  (define dg-pen (send mred:the-pen-list find-or-create-pen 
+		       (make-object mred:color% 140 140 140) 0 'solid))
 
   (define icons (make-hash-table))
 
@@ -2432,7 +2431,7 @@
 		       (on-paint))
 		     (loop (cdr l) (+ x w)))))))]
        [can-drag #f])
-      (public
+      (override
        [on-paint
 	(lambda ()
 	  (let ([dc (get-dc)]
@@ -2482,7 +2481,8 @@
 			  (set-tool-active?! old-active #f)
 			  (on-paint))))]
 	   [else (set! can-drag #f) 
-		 (deactivate-tool)]))]
+		 (deactivate-tool)]))])
+      (public
        [append-tool
 	(lambda (icon-name cb)
 	  (let* ([name (string->symbol icon-name)]
@@ -2490,11 +2490,11 @@
 		  (hash-table-get 
 		   icons name
 		   (lambda ()
-		     (let* ([icon (make-object wx:bitmap% 
+		     (let* ([icon (make-object mred:bitmap% 
 					       (build-path (collection-path "guibuilder") icon-name)
-					       wx:const-bitmap-type-xpm)])
+					       'xpm)])
 		       (if (send icon ok?) 
-			   (let ([dc (make-object wx:memory-dc%)])
+			   (let ([dc (make-object mred:memory-dc%)])
 			     (send dc select-object icon)
 			     dc)
 			   #f))))])
@@ -2533,7 +2533,7 @@
 	   (let ([cl (eval (build-code #t))])
 	     (thread
 	      (lambda ()
-		(parameterize ([wx:current-eventspace (wx:make-eventspace)])
+		(parameterize ([mred:current-eventspace (mred:make-eventspace)])
 		   (make-object cl))))))]
 	[view-source
 	 (lambda ()

@@ -54,7 +54,7 @@
 @END
 
 
-@CLASSBASE wxTextSnip "text-snip":"snip"
+@CLASSBASE wxTextSnip "string-snip":"snip"
 
 @CREATOR (long=0);
 
@@ -69,7 +69,7 @@
 @END
 
 
-@CLASSBASE wxTabSnip "tab-snip":"text-snip"
+@CLASSBASE wxTabSnip "tab-snip":"string-snip"
 
 @CREATOR ();
 

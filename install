@@ -127,7 +127,7 @@ exit 1
         (semaphore-wait (make-semaphore)))
       (define f (make-object
                  (class frame% ()
-                   (define/override (can-close?) (quit) #f)
+                   (define/augment (can-close?) (quit) #f)
                    (super-instantiate ("PLT Installer" #f 600 480)))))
       (define e (make-object text%))
       (define c (make-object editor-canvas% f e '(no-hscroll)))
@@ -135,16 +135,18 @@ exit 1
       (send c allow-tab-exit #t)
       (send e lock #t)
       (send e auto-wrap #t)
-      (let ([out (make-custom-output-port #f
-                   (lambda (string start end flush?)
-                     (do-callback
-                      (lambda ()
-                        (send e lock #f)
-                        (send e insert (substring string start end)
-                              (send e last-position))
-                        (send e lock #t)))
+      (let ([out (make-output-port 'gui-output
+                   always-evt
+                   (lambda (bstring start end flush? breaks?)
+                     (do-callback (lambda ()
+                                    (send e lock #f)
+                                    (send e insert
+                                          (bytes->string/utf-8
+                                           (subbytes bstring start end))
+                                          (send e last-position))
+                                    (send e lock #t)))
                      (- end start))
-                   void void)])
+                   void)])
         (current-output-port out)
         (current-error-port out))
       (send f center 'both)
@@ -197,7 +199,8 @@ exit 1
                       (loop (cons l r)))))])
     (close-input-port in)
     (let ([out (open-output-file this-script 'truncate)]
-          [oldrun-expr (format "~s" `(define oldrun-plthome ,plthome))]
+          [oldrun-expr (format "~s" `(define oldrun-plthome
+                                       ,(path->string plthome)))]
           [oldrun-re "^ *\\(define oldrun-plthome .*\\) *$"])
       (for-each (lambda (l)
                   (display (if (regexp-match oldrun-re l) oldrun-expr l) out)
@@ -210,7 +213,7 @@ exit 1
     (set! install-mode? #t))
   (setup-environment)
   (process-command-line (cdr args))
-  (when (and install-mode? (equal? plthome oldrun-plthome))
+  (when (and install-mode? (equal? (path->string plthome) oldrun-plthome))
     (parameterize ([current-output-port (current-error-port)])
       (for-each display
                 `("This program should be used again only when the PLT tree "

@@ -1249,16 +1249,7 @@
 	     (syntax/loc stx (define-syntaxes (id ...) (values 'id ...)))
 	     ;; Map names to private indicators, which are made private
 	     ;;  simply by introduction:
-	     (with-syntax ([(gen-id ...) 
-			    (map (lambda (id)
-				   ;; Need to give the generated id the same context
-				   ;; as the original id:
-				   (datum->syntax-object
-				    id
-				    (gensym (syntax-e id))))
-				 ids)
-			    #;
-			    (map syntax-local-introduce ids)])
+	     (with-syntax ([(gen-id ...) (generate-temporaries ids)])
 	       (with-syntax ([stx-defs
 			      ;; Need to attach srcloc to this definition:
 			      (syntax/loc stx

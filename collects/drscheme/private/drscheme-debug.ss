@@ -166,12 +166,18 @@
       (newline)
       ((dynamic-require '(lib "errortrace.ss" "errortrace") 'output-profile-results) #f #f))
     (send t insert (get-output-string p))
-    (call-with-output-file "/home/robby/OUTPUT"
-      (lambda (op) (display (get-output-string p) op))
-      'truncate
-      'text)
+    (with-handlers ([not-break-exn?
+		     (lambda (x)
+		       (send t insert "\ndidn't save transcript in /home/robby/OUTPUT\n  ")
+		       (send t insert (if (exn? x)
+					  (format "~a" (exn-message x))
+					  (format "~s" x))))])
 
-    (send t insert "\nsaved transcript in /home/robby/OUTPUT\n")
+      (call-with-output-file "/home/robby/OUTPUT"
+	(lambda (op) (display (get-output-string p) op))
+	'truncate
+	'text)
+      (send t insert "\nsaved transcript in /home/robby/OUTPUT\n"))
 
     (send t change-style (make-object style-delta% 'change-family 'modern) 0 (send t last-position))
     (send t lock #t)

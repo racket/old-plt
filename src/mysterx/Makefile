@@ -1,4 +1,4 @@
-# Makefile for mysterx.dll and myspage.dll
+# Makefile for mysterx.dll, myspage.dll, myssink.dll
 
 # If you get errors about a missing file atlbase.h,
 # check the value of the environment variable INCLUDE.
@@ -22,3 +22,12 @@ all :
 	cd ..
         nmake /f mysterx.mak
 
+clean :
+	cd myspage
+        nmake clean /f myspage.mak
+	cd ../mysc
+        nmake clean /f mysc.mak
+	cd ../myssink
+        nmake clean /f myssink.mak
+	cd ..
+        nmake clean /f mysterx.mak

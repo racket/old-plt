@@ -1,14 +1,12 @@
 (unit/sig ricedefs^
   (import [params : plt:userspace:params^])
 
-  (define eq?
-    (if (params:eq?-only-compares-symbols)
-	(lambda (x y)
-	  (unless (and (symbol? x)
-		       (symbol? y))
-	    (error 'eq? "expected symbols as arguments, received ~e and ~e" x y))
-	  (#%eq? x y))
-	#%eq?))
+  (define (symbol=? x y)
+    (lambda (x y)
+      (unless (and (symbol? x)
+                   (symbol? y))
+        (error 'symbol=? "expected symbols as arguments, received ~e and ~e" x y))
+      (#%eq? x y)))
   
   (define check-second 
     (lambda (prim-name a b)

@@ -526,6 +526,11 @@
   
   (define ricedefs@ (require-library "ricedefr.ss" "userspce"))
   
+
+  (define (teaching-level? setting)
+    (member (setting-name setting)
+            '("Beginner" "Intermediate" "Advanced")))
+
   ;; initialize-parameters : custodian
   ;;                         (list-of symbols)
   ;;                         setting
@@ -606,7 +611,8 @@
         (params:allow-improper-lists improper-lists?))
       (params:eq?-only-compares-symbols (setting-eq?-only-compares-symbols? setting))
       (params:<=-at-least-two-args (setting-<=-at-least-two-args setting))
-      (global-define-values/invoke-unit/sig ricedefs^ ricedefs@ #f (params : plt:userspace:params^))
+      (unless (teaching-level? setting)
+        (global-define-values/invoke-unit/sig ricedefs^ ricedefs@ #f (params : plt:userspace:params^)))
       ;; end ricedefs
       
       (compile-allow-set!-undefined (setting-allow-set!-on-undefined? setting))

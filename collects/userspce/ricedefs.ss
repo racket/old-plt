@@ -1,7 +1,7 @@
 (define-signature ricedefs^
   (<= < > >=
    = + * /
-   eq?
+   symbol=?
    cons
    set-cdr!
    list*

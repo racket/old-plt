@@ -10,7 +10,7 @@
   (require
    (lib "class.ss")
    (lib "list.ss")
-   (lib "contracts.ss")
+   (lib "contract.ss")
    (lib "etc.ss")
    "pasteboard-lib.ss"
    "interface.ss"

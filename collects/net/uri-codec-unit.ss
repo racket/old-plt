@@ -173,13 +173,11 @@
         (define internal-decode
           (match-lambda
            [() (list)]
-           [(#\% char1 char2 . rest)
+           [(#\% (? hex-digit? char1) (? hex-digit? char2) . rest)
             ;; This used to consult the table again, but I think that's
             ;;  wrong. For exmaple %2b should produce +, not a space.
-            (let ([num (string->number (string char1 char2) 16)])
-              (if num
-                  (cons num (internal-decode rest))
-                  (internal-decode rest)))]
+            (cons (string->number (string char1 char2) 16)
+                  (internal-decode rest))]
            [(char . rest)
             (cons
              (vector-ref table
@@ -188,6 +186,11 @@
 	(bytes->string/utf-8
 	 (apply bytes (internal-decode (string->list str)))))
 
+      (define (hex-digit? c)
+        (or (char<=? #\0 c #\9)
+            (char<=? #\a c #\f)
+            (char<=? #\A c #\F)))
+      
       ;; string -> string
       (define (uri-encode str)
         (encode uri-encoding-vector str))

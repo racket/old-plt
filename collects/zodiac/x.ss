@@ -1,4 +1,4 @@
-; $Id: x.ss,v 1.43 1998/05/17 02:43:32 shriram Exp $
+; $Id: x.ss,v 1.44 1998/05/18 20:49:07 shriram Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -192,10 +192,13 @@
 				  (m (new-mark))
 				  (rewritten (rewriter expr env))
 				  (structurized (structurize-syntax
-						  rewritten expr (list m)))
+						  rewritten expr (list m)
+						  #f
+						  (make-origin 'macro
+						    app-pos)))
 				  (expanded (expand-expr structurized env
 					      attributes vocab)))
-			    (set-macro-origin expanded app-pos))))
+			    expanded)))
 		      ((micro-resolution? r)
 			((micro-resolution-rewriter r)
 			  expr env attributes vocab))

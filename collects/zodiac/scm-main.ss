@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.154 1998/05/17 02:43:30 shriram Exp $
+; $Id: scm-main.ss,v 1.155 1998/06/08 23:07:20 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -168,13 +168,16 @@
 
   (define parse-expr
     (lambda (expr env attributes vocab source)
-      (case (length expr)
-	((1)
-	  (expand-expr (car expr) env attributes vocab))
-	(else
-	  (expand-expr (structurize-syntax
-			 `(begin ,@expr) source '(-1))
-	    env attributes vocab)))))
+      (if (or (null? expr)
+	    (not (null? (cdr expr))))
+	(expand-expr (structurize-syntax
+		       `(begin ,@expr) source '(-1))
+	  env attributes vocab)
+	(let ((v (expand-expr (car expr) env attributes vocab)))
+	  (if (internal-definition? v)
+	    (static-error (car expr)
+	      "Internal definition not followed by expression")
+	    v)))))
 
   ; ----------------------------------------------------------------------
 
@@ -295,7 +298,9 @@
 			      (static-error expr
 				(if (null? seen)
 				  "Malformed begin"
-				  "Internal definitions not followed by expression"))
+				  (if (null? (cdr seen))
+				    "Internal definition not followed by expression"
+				    "Internal definitions not followed by expression")))
 			      (let ((first (car rest)))
 				(let ((e-first
 					(expand-expr first env

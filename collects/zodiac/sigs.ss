@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.50 1998/04/21 02:59:57 robby Exp $
+; $Id: sigs.ss,v 1.51 1998/05/09 17:14:40 shriram Exp $
 
 (begin-elaboration-time
  (require-relative-library "namedarg.ss"))
@@ -94,6 +94,7 @@
     scheme-expand scheme-expand-program
     set-top-level-status get-top-level-status at-top-level?
     mzscheme-libraries-provided
+    process-top-level-resolution ensure-not-macro/micro
     scheme-vocabulary
     (struct parsed (back))
     (struct varref (var))

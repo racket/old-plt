@@ -114,7 +114,6 @@
 		     (not (directory-exists? default-path)))
 		 (unbox path-box)
 		 default-path))))
-	(printf "mred:startup: ~a~n" (and (defined? 'mred:startup) mred:startup))
 	(load-system)
 	(current-library-path (normalize-path (current-library-path)))
 	(set! mred:plt-home-directory (normalize-path mred:plt-home-directory))

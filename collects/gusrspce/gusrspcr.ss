@@ -1,5 +1,6 @@
   (compound-unit/sig
-    (import [params : plt:parameters^])
+    (import [params : plt:parameters^]
+	    [export : drscheme:export^])
     (link [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
 	  [trigger : mzlib:trigger^ ((reference-library-unit/sig "triggerr.ss"))]
 	  [appliction : mred:application^ 
@@ -12,8 +13,17 @@
 			 core trigger appliction)]
 	  [rice : ricedefs^ ((reference-unit/sig "ricedefr.ss"))]
 	  [graphics : graphics^ ((reference-library-unit/sig "graphicr.ss" "graphics"))]
-	  [turtle : turtle^ ((reference-library-unit/sig "turtler.ss" "graphics")
-			     (core function@))])
+	  [create-window : turtle:create-window^
+	     ((unit/sig turtle:create-window^
+		(import [drscheme : drscheme:export^])
+		(define (create-turtle-window % title width height)
+		  (with-parameterization drscheme:rep:system-parameterization
+		    (lambda ()
+		      (make-object % title width height)))))
+	      export)]
+	  [turtle : turtle^ ((reference-library-unit/sig "turtlmr.ss" "graphics")
+			     (core function@)
+			     create-window)])
     (export (open (core pretty-print@))
 	    (open (core file@))
 	    (open (core function@))

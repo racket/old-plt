@@ -10,7 +10,9 @@
 		   ((reference-unit/sig "intrface.ss") zodiac mred)]
 	[prefs : drscheme:prefs^ ((reference-unit/sig "prefs.ss") mred)]
 	[basis : drscheme:basis^
-	       ((reference-unit/sig "basis.ss") (language : plt:parameters^) mred zodiac)]
+	       ((reference-unit/sig "basis.ss")
+		(language : plt:parameters^)
+		export mred zodiac)]
 	[aries : plt:aries^ ((reference-library-unit/sig "ariesr.ss" "cogen")
 			     zodiac
 			     (interface : zodiac:interface^))]

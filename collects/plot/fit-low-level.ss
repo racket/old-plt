@@ -1,81 +1,50 @@
 (module fit-low-level mzscheme
-  (require
-   (lib "cffi.ss" "compiler")
-   (lib "etc.ss")
-   (lib "list.ss"))
+  (require (lib "foreign.ss") (lib "etc.ss") (lib "foreign-helpers.ss" "plot"))
+  (unsafe!)
 
- (c-declare "#include \"fit.h\"")
+  (define libfit
+    (ffi-lib (build-path (this-expression-source-directory)
+                         "compiled" "native" (system-library-subpath)
+                         "libfit")))
 
- (c-declare "
- double * list_to_array(Scheme_Object * list)
- {
-  double * ar = (double *)scheme_malloc(scheme_list_length(list) * sizeof(double));
-  int i = 0;
-  while(!SCHEME_NULLP(list))
-    {
-      Scheme_Object * car = SCHEME_CAR(list);
-      double tmp;
+  (define do-fit
+    (get-ffi-obj "do_fit" libfit
+      (_fun (func      : _scheme)
+            (val-num   : _int = (length x-values))
+            (x-values  : (_list i _double*))
+            (y-values  : (_list i _double*))
+            (z-values  : (_list i _double*))
+            (errors    : (_list i _double*))
+            (param-num : _int = (length params))
+            (params    : (_list i _double*))
+            -> (_list o _double* param-num))))
 
-      tmp = scheme_real_to_double(car);
-      ar[i] = tmp;
-      list = SCHEME_CDR(list);
-      i++;
-    }
+  (define get-asym-error
+    (get-ffi-obj "get_asym_error" libfit
+      (_fun (len) :: ;; len is only used for list conversion
+            -> (_list o _double* len))))
 
-  return ar;
-  }
+  (define get-asym-error-percent
+    (get-ffi-obj "get_asym_error_percent" libfit
+      (_fun (len) :: ;; len is only used for list conversion
+            -> (_list o _double* len))))
 
- Scheme_Object * array_to_list(double * dbls, int length)
-  {
-    int i;
-    Scheme_Object * result = scheme_null;
-    for (i = length - 1; i >= 0; i--) {
-      result = scheme_make_pair(scheme_make_double(dbls[i]),result);
-    }
-    return result;
-  }
-")
+  (define get-rms
+    (get-ffi-obj "get_rms" libfit
+      (_fun -> _double*)))
 
- (define fit-internal
-   (c-lambda
-    (scheme-object scheme-object scheme-object
-                   scheme-object scheme-object scheme-object) scheme-object
-                            "
- {
-  double * result_params = do_fit(___arg1,
-                                  scheme_list_length(___arg2),
-                                  list_to_array(___arg2),
-                                  list_to_array(___arg3),
-                                  list_to_array(___arg4),
-                                  list_to_array(___arg5),
-                                  scheme_list_length(___arg6),
-                                  list_to_array(___arg6));
-  // now make the result_params into a list
+  (define get-varience
+    (get-ffi-obj "get_varience" libfit
+      (_fun -> _double*)))
 
+  (define (fit-internal f-of-x-y x-vals y-vals z-vals err-vals params)
 
-  if(result_params == NULL) {
-    ___result =  scheme_null;
-  } else {
-    int len = scheme_list_length(___arg6);
-    Scheme_Object * fit_final_params =
-           array_to_list(result_params, len);
-    Scheme_Object * fit_asym_error =
-           array_to_list (get_asym_error(), len);
-    Scheme_Object * fit_asym_error_percent =
-           array_to_list (get_asym_error_percent(), len);
-    Scheme_Object * fit_rms = scheme_make_double(get_rms());
-    Scheme_Object * fit_varience = scheme_make_double(get_varience());
-
-    ___result =
-        scheme_make_pair(fit_final_params,
-         scheme_make_pair(fit_asym_error,
-          scheme_make_pair(fit_asym_error_percent,
-           scheme_make_pair(fit_rms,
-            scheme_make_pair(fit_varience, scheme_null)))));
- }
-}
-"))
+    (let* ([len (length params)]
+           [fit-result (do-fit f-of-x-y x-vals y-vals z-vals err-vals params)]
+           [asym-error (get-asym-error len)]
+           [asym-error-percent (get-asym-error-percent len)]
+           [rms (get-rms)]
+           [varience (get-varience)])
+      (list fit-result asym-error asym-error-percent rms varience)))
 
   (provide fit-internal))
-
-

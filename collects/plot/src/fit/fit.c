@@ -64,7 +64,7 @@
 #include "matrix.h"
 #include "fit.h"
 
-#define STANDARD stderr
+/* #define STANDARD stderr */
 
 
 enum marq_res {
@@ -122,7 +122,7 @@ static double   *err_data;
 static double *a;
 
 
-//static fixstr * par_name;
+/* static fixstr * par_name; */
 
 static double startup_lambda = 0;
 static double lambda_down_factor = LAMBDA_DOWN_FACTOR;
@@ -183,10 +183,10 @@ int m, n;
 
     for (i = 0; i < m; i++) {
 	for (j = 0; j < n - 1; j++);
-	  //  Dblf2("%.8g |", C[i][j]);
-	//Dblf2("%.8g\n", C[i][j]);
+	  /* Dblf2("%.8g |", C[i][j]); */
+	/* Dblf2("%.8g\n", C[i][j]); */
     }
-    //Dblf("\n");
+    /* Dblf("\n"); */
 }
 
 /**************************************************************************
@@ -201,10 +201,10 @@ int m, n;
 
     for (i = 0; i < m; i++) {
 	for (j = 0; j < n; j++);
-	  // Dblf2("%8g ", C[i][j]);
-	  //Dblf3("| %8g | %8g\n", d[i], r[i]);
+	  /* Dblf2("%8g ", C[i][j]); */
+	  /* Dblf3("| %8g | %8g\n", d[i], r[i]); */
     }
-    // Dblf("\n");
+    /* Dblf("\n"); */
 }
 
 
@@ -254,7 +254,7 @@ double *lambda;
 	for (i = 0; i < num_params; i++)
 	    for (j = 0; j < i; j++)
 		C[num_data + i][j] = 0, C[num_data + j][i] = 0;
-	/*printmatrix(C, num_data+num_params, num_params); */
+	/* printmatrix(C, num_data+num_params, num_params); */
 	return analyze_ret ? OK : ERROR;
     }
     /* once converged, free dynamic allocated vars */
@@ -296,8 +296,8 @@ double *lambda;
 
     if (tmp_chisq < *chisq) {	/* Success, accept new solution */
 	if (*lambda > MIN_LAMBDA) {
-	  //(void) putc('/', stderr);
-	    *lambda /= lambda_down_factor;
+	  /* (void) putc('/', stderr); */
+          *lambda /= lambda_down_factor;
 	}
 	*chisq = tmp_chisq;
 	for (j = 0; j < num_data; j++) {
@@ -308,9 +308,9 @@ double *lambda;
 	    a[j] = temp_a[j];
 	return BETTER;
     } else {			/* failure, increase lambda and return */
-      //(void) putc('*', stderr);
-	*lambda *= lambda_up_factor;
-	return WORSE;
+      /* (void) putc('*', stderr); */
+      *lambda *= lambda_up_factor;
+      return WORSE;
     }
 }
 
@@ -415,24 +415,20 @@ double *data;
   int rators = 2 + num_params;
   Scheme_Object ** rands = 
     scheme_malloc(rators * sizeof(Scheme_Object));
-  
+
   int i;
 
-  // set up the constant params
+  /* set up the constant params */
   for(i = 0 ; i< num_params; i++) {
     rands[i+2] = scheme_make_double(par[i]);
   }
-    
+
   /* now calculate the function at the existing points */
     for (i = 0; i < num_data; i++) {
       rands[0] = scheme_make_double(fit_x[i]);
       rands[1] = scheme_make_double(fit_y[i]);
 
-      
-      data[i] = scheme_real_to_double(
-				      scheme_apply(current_fun,
-						   rators,
-						   rands));
+      data[i] = scheme_real_to_double(scheme_apply(current_fun, rators, rands));
     }
 }
 
@@ -448,33 +444,28 @@ static TBOOLEAN regress(a)
   
   chisq = last_chisq = INFINITY;
   C = matr(num_data + num_params, num_params);
-  lambda = -1;		/* use sign as flag */
-  iter = 0;			/* iteration counter  */
-  
+  lambda = -1;          /* use sign as flag */
+  iter = 0;             /* iteration counter  */
+
   /* Initialize internal variables and 1st chi-square check */
-  
+
   if ((res = marquardt(a, C, &chisq, &lambda)) == ERROR)
-    return 0; // an error occurded
+    return 0; /* an error occurded */
 
   res = BETTER;
-  
-  show_fit(iter, chisq, chisq, a, lambda, STANDARD);
 
+  /* show_fit(iter, chisq, chisq, a, lambda, STANDARD); */
 
   /* MAIN FIT LOOP: do the regression iteration */
 
-
-  
-  
   do {
-    
     if (res == BETTER) {
       iter++;
       last_chisq = chisq;
     }
     if ((res = marquardt(a, C, &chisq, &lambda)) == BETTER)
-      {}
-;      show_fit(iter, chisq, last_chisq, a, lambda, STANDARD);
+      {};
+    /* show_fit(iter, chisq, last_chisq, a, lambda, STANDARD); */
   } while ((res != ERROR)
 	   && (lambda < MAX_LAMBDA)
 	   && ((maxiter == 0) || (iter <= maxiter))
@@ -486,11 +477,9 @@ static TBOOLEAN regress(a)
 	   );
 
     /* fit done */
-  
-  // save all the info that was otherwise printed out
 
+  /* save all the info that was otherwise printed out */
 
-  
   rms = sqrt(chisq / (num_data - num_params));
   varience = chisq / (num_data - num_params);
   asym_error = malloc (num_params * sizeof (double));  
@@ -507,7 +496,7 @@ static TBOOLEAN regress(a)
   for (i = 0; i < num_params; i++) {
     /* FIXME: can this still happen ? */
       if (covar[i][i] <= 0.0)	/* HBB: prevent floating point exception later on */
-	return 0;  // Eex("Calculation error: non-positive diagonal element in covar. matrix");
+	return 0;  /* Eex("Calculation error: non-positive diagonal element in covar. matrix"); */
     dpar[i] = sqrt(covar[i][i]);
   }  
 
@@ -534,9 +523,9 @@ static TBOOLEAN regress(a)
   return 1;
 
 
-    //******** CRAP LEFT OVER FROM GNUPLOT ***********//
+    /******** CRAP LEFT OVER FROM GNUPLOT ***********/
 
-    //    /* HBB 970304: the maxiter patch: */
+    /* HBB 970304: the maxiter patch: */
     /*
     if ((maxiter > 0) && (iter > maxiter)) {
 	Dblf2("\nMaximum iteration count (%d) reached. Fit stopped.\n", maxiter);
@@ -552,7 +541,7 @@ static TBOOLEAN regress(a)
     }
 
     if (res == ERROR)
-//	Eex("FIT: error occurred during fit");
+      // Eex("FIT: error occurred during fit");
     */
     /* compute errors in the parameters */
 
@@ -688,25 +677,22 @@ double * do_fit(Scheme_Object * function,
 		int n_parameters,
 		double * parameters) {
 
-  // reset lambda and other parameters if desired
+  /* reset lambda and other parameters if desired */
   int i;
   current_fun = function;
-  
-  
+
   num_data = n_values;
   fit_x = x_values;
   fit_y = y_values;
-  fit_z = z_values; // value is stored in z
-  err_data = errors; 
-  
+  fit_z = z_values; /* value is stored in z */
+  err_data = errors;
+
   a = parameters;
   num_params = n_parameters;
-  
-  
-  //redim_vec(&a, num_params);
-  //par_name = (fixstr *) gp_realloc(par_name, (num_params + 1) * sizeof(fixstr), "fit param");
-  
-  
+
+  /* redim_vec(&a, num_params); */
+  /* par_name = (fixstr *) gp_realloc(par_name, (num_params + 1) * sizeof(fixstr), "fit param"); */
+
   /* avoid parameters being equal to zero */
   for (i = 0; i < num_params; i++) {
     if (a[i] == 0) {
@@ -719,6 +705,3 @@ double * do_fit(Scheme_Object * function,
   else
     return NULL; /* something went wrong */
 }
-
-
-

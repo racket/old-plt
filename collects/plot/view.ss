@@ -1,6 +1,6 @@
 (module view mzscheme
   (require 
-   (lib "plplot-low-level-loader.ss" "plot")
+   (lib "plplot.ss" "plot")
    (lib "math.ss" "plot")
    (lib "class.ss")
    (lib "file.ss")
@@ -125,23 +125,22 @@
       ; does housekeeping/setup for plplot
       (define (start-plot)
         (cond
-          [(eq? device 'png)           
+          [(eq? device 'png)
            (set! bitmap (make-temporary-file))
-           
            (init-colors)
-           (pl-setup-page  width height) 
-           (pl-set-device "png") 
-           (pl-set-output-file bitmap) 
+           (pl-setup-page  width height)
+           (pl-set-device "png")
+           (pl-set-output-file (path->string bitmap))
            (pl-init-plot)]
-;          [(eq? device 'mem)           
+;          [(eq? device 'mem)
 ;           (init-colors)
 ;           (set! bitmap (make-u8vector (* x-size y-size 4) 255))
 ;           (pl-setup-memory x-size y-size bitmap)
-;           (pl-set-device "mem") 
+;           (pl-set-device "mem")
 ;           (pl-init-plot)]
           [else
            (error "Incorrect device specified")]))
-      
+
       ; finish the plot.. loads the file
       (define (finish-plot)
         (cond

@@ -1,28 +1,28 @@
 ; loads the low level library using dynamic require
 (module plplot-low-level-loader mzscheme
-  
+
   (require (lib "etc.ss"))
-  
+
   (define-syntax require-and-provide
-    (syntax-rules () 
+    (syntax-rules ()
       [(_ mpath id ...)
        (begin
          (define id (dynamic-require mpath (quote id))) ...
          (provide id) ...
          )]))
-  
+
   ; for plplot to work properly, it needs to know where it's fnt files are
-  (putenv "PLPLOT_LIB" (this-expression-source-directory))
-  
+  (putenv "PLPLOT_LIB" (path->string (this-expression-source-directory)))
+
   ; dynamic require is used because putenv does not change values in current module
   (require-and-provide
-   '(lib "plplot-low-level.ss" "plot")  
+   '(lib "plplot-low-level.ss" "plot")
    pl-setup-page
    ;pl-setup-memory
-   pl-set-device 
-   pl-set-output-file 
-   pl-init-plot                
-   pl-finish-plot 
+   pl-set-device
+   pl-set-output-file
+   pl-init-plot
+   pl-finish-plot
    pl-set-plot-environment
    pl-set-labels
    pl-plot-line
@@ -45,5 +45,3 @@
    pl-poly3
    pl-line3
    pl-fill))
-  
-    

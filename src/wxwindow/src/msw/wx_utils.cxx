@@ -194,23 +194,51 @@ Bool wxWriteResource(const char *section, const char *entry, int value, const ch
 
 Bool wxGetResource(const char *section, const char *entry, char **value, const char *file)
 {
-  static const char defunkt[] = "$$default";
-  int no_file = !file;
+  HKEY key;
 
-  if (!file)
-    file = wxUserResourceFile;
+#define TRY_HKEY(name) if (!strcmp(section, #name)) key = name;
 
-  wxBuffer[0] = 0;
+  TRY_HKEY(HKEY_CLASSES_ROOT);
+  TRY_HKEY(HKEY_CURRENT_CONFIG);
+  TRY_HKEY(HKEY_CURRENT_USER);
+  TRY_HKEY(HKEY_LOCAL_MACHINE);
+  TRY_HKEY(HKEY_USERS);
 
-  if (file) {
-    int n = GetPrivateProfileString((LPCSTR)section, (LPCSTR)entry, (LPCSTR)defunkt,
-                                    (LPSTR)wxBuffer, 1000, (LPCSTR)file);
-    if (n == 0 || strcmp(wxBuffer, defunkt) == 0)
-      return FALSE;
+#undef TRY_HKEY
+
+  if (key) {
+    long rlen;
+    
+    rlen = 0;
+    if (RegQueryValue(key, entry, NULL, &rlen) == ERROR_SUCCESS) {
+      char *res;
+      res = new char[rlen + 1];
+      if (RegQueryValue(key, entry, res, &rlen) == ERROR_SUCCESS) {
+	res[rlen + 1] = 0;
+	*value = res;
+	return TRUE;
+      }
+    }
+    return FALSE;
+  } else {
+    static const char defunkt[] = "$$default";
+    int no_file = !file;
+    
+    if (!file)
+      file = wxUserResourceFile;
+    
+    wxBuffer[0] = 0;
+    
+    if (file) {
+      int n = GetPrivateProfileString((LPCSTR)section, (LPCSTR)entry, (LPCSTR)defunkt,
+				      (LPSTR)wxBuffer, 1000, (LPCSTR)file);
+      if (n == 0 || strcmp(wxBuffer, defunkt) == 0)
+	return FALSE;
+    }
+    
+    *value = copystring(wxBuffer);
+    return TRUE;
   }
-
-  *value = copystring(wxBuffer);
-  return TRUE;
 }
 
 Bool wxGetResource(const char *section, const char *entry, float *value, const char *file)

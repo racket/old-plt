@@ -8,7 +8,7 @@
     (let-values ([(subproc in out /err) (subprocess #f #f (current-error-port)
                                                     path "-rq"  
                                                     (build-path (current-load-relative-directory)
-                                                                "subproc.ss")
+                                                                "subproc2.ss")
                                                     "child")])
       (test 'running subprocess-status subproc)
       (test out object-wait-multiple 0 out)

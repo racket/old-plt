@@ -216,7 +216,7 @@
 			no-arg-x-flags)))
 		     args))))))
 
-      (define (make-unix-launcher kind variant flags dest aux-root)
+      (define (make-unix-launcher kind variant flags dest aux)
 	(install-template dest kind "sh" "sh") ; just for something that's executable
 	(let* ([newline (string #\newline)]
 	       [post-flags (if (eq? kind 'mred)
@@ -259,16 +259,16 @@
 		     (assemble-exec exec args))
 	    (close-output-port p))))
       
-      (define (make-windows-launcher kind variant flags dest aux-root)
-	(if (not (and aux-root
-		      (file-exists? (string-append aux-root ".lch"))))
+      (define (make-windows-launcher kind variant flags dest aux)
+	(if (not (and (let ([m (assq 'independent? aux)])
+			(and m (cdr m)))))
 	    ;; Normal launcher: 
 	    (make-embedding-executable dest (eq? kind 'mred) #f
 				       null null null
 				       flags
-				       aux-root
+				       aux
 				       #t)
-	    ;; Self-replacable launcher (needed for Setup PLT):
+	    ;; Independent launcher (needed for Setup PLT):
 	    (begin
 	      (install-template dest kind "mzstart.exe" "mrstart.exe")
 	      (let ([str (str-list->dos-str flags)]
@@ -324,15 +324,15 @@
       ;; OS X launcher code:
      
       ; make-macosx-launcher : symbol (listof str) pathname ->  
-      (define (make-macosx-launcher kind variant flags dest aux-root)
+      (define (make-macosx-launcher kind variant flags dest aux)
 	(if (eq? kind 'mzscheme) 
 	    ;; MzScheme launcher is the same as for Unix
-	    (make-unix-launcher kind variant flags dest aux-root)
+	    (make-unix-launcher kind variant flags dest aux)
 	    ;; MrEd "launcher" is a stand-alone executable
 	    (make-embedding-executable dest (eq? kind 'mred) #f
 				       null null null
 				       flags
-				       aux-root
+				       aux
 				       #t)))
         
       
@@ -401,7 +401,7 @@
       
       ;; end of lazy install-aliases code for mac added by jbc 2000-6
       
-      (define (make-macos-launcher kind variant flags dest aux-root)
+      (define (make-macos-launcher kind variant flags dest aux)
 	(maybe-install-aliases)
 	(install-template dest kind "GoMz" "GoMr")
 	(let ([p (open-output-file dest 'truncate)])
@@ -416,29 +416,42 @@
 	  [(macosx) make-macosx-launcher]))
       
       (define make-mred-launcher
-	(opt-lambda (flags dest [aux-root #f])
+	(opt-lambda (flags dest [aux null])
 	  (let ([variant (current-launcher-variant)])
-	    ((get-maker) 'mred variant flags dest aux-root))))
+	    ((get-maker) 'mred variant flags dest aux))))
       
       (define make-mzscheme-launcher
-	(opt-lambda (flags dest [aux-root #f])
+	(opt-lambda (flags dest [aux null])
 	  (let ([variant (current-launcher-variant)])
-	    ((get-maker) 'mzscheme variant flags dest aux-root))))
+	    ((get-maker) 'mzscheme variant flags dest aux))))
       
       (define (strip-suffix s)
 	(regexp-replace "[.]..?.?$" s ""))
 
+      (define (build-aux-from-path aux-root)
+	(let ([try (lambda (key suffix)
+		     (let ([p (string-append aux-root suffix)])
+		       (if (file-exists? p)
+			   (list (cons key p))
+			   null)))])
+	  (append
+	   (try 'icns ".icns")
+	   (try 'ico ".ico")
+	   (try 'independent? ".lch"))))
+
       (define (make-mred-program-launcher file collection dest)
 	(make-mred-launcher (list "-mqvL" file collection "--") 
 			    dest
-			    (build-path (collection-path collection)
-					(strip-suffix file))))
+			    (build-aux-from-path
+			     (build-path (collection-path collection)
+					 (strip-suffix file)))))
       
       (define (make-mzscheme-program-launcher file collection dest)
 	(make-mzscheme-launcher (list "-mqvL" file collection "--") 
 				dest
-				(build-path (collection-path collection)
-					    (strip-suffix file))))
+				(build-aux-from-path
+				 (build-path (collection-path collection)
+					     (strip-suffix file)))))
       
       (define l-home (if (memq (system-type) '(unix))
 			 (build-path plthome "bin")
@@ -477,17 +490,17 @@
 	  [else (mred-program-launcher-path name)]))
 
       (define mred-launcher-up-to-date?
-	(opt-lambda (dest [aux-root #f])
-          (mzscheme-launcher-up-to-date? dest aux-root)))
+	(opt-lambda (dest [aux null])
+          (mzscheme-launcher-up-to-date? dest aux)))
 
       (define mzscheme-launcher-up-to-date?
-	(opt-lambda (dest [aux-root #f])
+	(opt-lambda (dest [aux null])
            (cond
 	    [(eq? 'unix (system-type))
 	     (file-exists? dest)]
 	    [(eq? 'windows (system-type))
-	     (and aux-root
-		  (file-exists? (string-append aux-root ".lch"))
+	     (and (let ([m (assq 'independent? aux)])
+		    (and m (cdr m)))
 		  (file-exists? dest))]
 	    [else #f])))
 

@@ -38,7 +38,7 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "CompanyName", "Rice University\0"
+            VALUE "CompanyName", "PLT\0"
 #ifdef MRSTART
             VALUE "FileDescription", "MrEd Launcher\0"
 #endif
@@ -52,14 +52,14 @@ BEGIN
 #ifdef MZSTART
             VALUE "InternalName", "mzstart\0"
 #endif
-            VALUE "LegalCopyright", "Copyright © 1996-99\0"
+            VALUE "LegalCopyright", "Copyright © 1996-2002\0"
 #ifdef MRSTART
             VALUE "OriginalFilename", "MrStart.exe\0"
-            VALUE "ProductName", "Rice University MrEd Launcher\0"
+            VALUE "ProductName", "MrEd Launcher\0"
 #endif
 #ifdef MZSTART
             VALUE "OriginalFilename", "MzStart.exe\0"
-            VALUE "ProductName", "Rice University MzScheme Launcher\0"
+            VALUE "ProductName", "MzScheme Launcher\0"
 #endif
             VALUE "ProductVersion", "1, 0, 0, 1\0"
         END

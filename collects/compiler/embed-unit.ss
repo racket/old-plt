@@ -6,7 +6,8 @@
 	   (lib "etc.ss")
 	   (lib "thread.ss")
 	   (lib "moddep.ss" "syntax")
-	   (lib "plist.ss" "xml"))
+	   (lib "plist.ss" "xml")
+	   "private/winicon.ss")
 
   (provide compiler:embed@)
 
@@ -86,7 +87,7 @@
 
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      (define (prepare-macosx-mred exec-name dest aux-root)
+      (define (prepare-macosx-mred exec-name dest aux)
 	(let* ([name (let-values ([(base name dir?) (split-path dest)])
 		       (regexp-replace "[.]app$" name ""))]
 	       [src (build-path (collection-path "launcher")
@@ -98,10 +99,9 @@
 	  (copy-file exec-name (build-path dest "Contents" "MacOS" name))
 	  (copy-file (build-path src "Contents" "PkgInfo")
 		     (build-path dest "Contents" "PkgInfo"))
-	  (let ([icon (or (and aux-root
-			       (let ([icon (string-append aux-root ".icns")])
-				 (and (file-exists? icon)
-				      icon)))
+	  (let ([icon (or (let ([icon (assq 'icns aux)])
+			    (and icon
+				 (cdr icon)))
 			  (build-path src "Contents" "Resources" "Starter.icns"))])
 	    (copy-file icon
 		       (build-path dest "Contents" "Resources" "Starter.icns")))
@@ -327,7 +327,7 @@
 			  modules 
 			  literal-files literal-expression
 			  cmdline
-			  [aux-root #f]
+			  [aux null]
 			  [launcher? #f])
 	  (define long-cmdline? (or (eq? (system-type) 'windows)
 				    (and mred? (eq? 'macosx (system-type)))))
@@ -369,7 +369,7 @@
 		(fprintf (current-error-port) "Copying to ~s~n" dest))
 	      (let-values ([(dest-exe osx?)
 			    (if (and mred? (eq? 'macosx (system-type)))
-				(values (prepare-macosx-mred exe dest aux-root) #t)
+				(values (prepare-macosx-mred exe dest aux) #t)
 				(begin
 				  (when (file-exists? dest)
 				    (delete-file dest))
@@ -415,9 +415,13 @@
 			(fprintf (current-error-port) "Setting command line~n"))
 		      (let ([start-s (number->string start)]
 			    [end-s (number->string end)])
-			(let ([full-cmdline (if launcher?
-						cmdline
-						(list* "-k" start-s end-s cmdline))])
+			(let ([full-cmdline (append
+					     (if launcher?
+						 (if (eq? 'windows (system-type))
+						     (list exe) ; argv[0]
+						     null)
+						 (list "-k" start-s end-s))
+					     cmdline)])
 			  (if osx?
 			      (finish-osx-mred dest full-cmdline exe launcher?)
 			      (let ([cmdpos (with-input-from-file dest-exe find-cmdline)]
@@ -445,8 +449,13 @@
 					;; now put forwarding information at the normal cmdline pos
 					(let ([new-end (file-position out)])
 					  (file-position out cmdpos)
-					  (fprintf out "?...~a~a"
+					  (fprintf out "~a...~a~a"
+						   (if launcher? "*" "?")
 						   (integer->integer-byte-string end 4 #t #f)
 						   (integer->integer-byte-string (- new-end end) 4 #t #f)))))
 				    (lambda ()
-				      (close-output-port out))))))))))))))))))
+				      (close-output-port out)))
+				(let ([m (and (eq? 'windows (system-type))
+					      (assq 'ico aux))])
+				  (when m
+				    (install-icon dest-exe (cdr m)))))))))))))))))))

@@ -391,8 +391,9 @@
 				(for-each
 				 (lambda (mzll mzln)
 				   (let ([p (program-launcher-path mzln)]
-					 [aux (build-path (apply collection-path (cc-collection cc))
-							  (regexp-replace "[.]..?.?$" mzll ""))])
+					 [aux (build-aux-from-path 
+					       (build-path (apply collection-path (cc-collection cc))
+							   (regexp-replace "[.]..?.?$" mzll "")))])
 				     (unless (up-to-date? p aux)
 				       (setup-printf "Installing ~a~a launcher ~a" 
 						     kind (if (eq? (current-launcher-variant) 'normal)

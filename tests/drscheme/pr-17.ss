@@ -15,7 +15,7 @@
        [drscheme-frame-new 'dummy]
        [menubar (send drscheme-frame get-menu-bar)]
        [menubar-new 'dummy]
-       [menus-expected '("File" "Edit" "Show" "Scheme" "Language" "Help")]
+       [menus-expected '("File" "Edit" "View" "Scheme" "Language" "Help")]
        [buttons-expected '(check-syntax analyze execute break help)]
        [check-menus
 	(lambda ()

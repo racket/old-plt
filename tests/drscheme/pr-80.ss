@@ -19,11 +19,11 @@
 			    (lambda (self event) 
                                 (send frame show #f) (car 4))
 			    \"Push me\")])
-	           (send frame show #t)
-                   (mred:test:button-push button))"])
+	           (send frame show #t))"])
 
 	 (type-in-definitions drscheme-frame code)
 	 (push-button-and-wait execute-button)
 
-	 (printf "Push indicated button ... code in callback should be highlighted~n"))
+	 (printf "Code in callback should be highlighted~n"))
+
 

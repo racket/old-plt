@@ -1789,6 +1789,8 @@ wxBufferDataClassList::wxBufferDataClassList(void)
 #if USE_OLD_TYPE_SYSTEM
   __type = wxTYPE_BUFFER_DATA_CLASS_LIST;
 #endif
+  
+  unknowns = new wxList((KeyType)wxKEY_INTEGER);
 
   Add(&TheLocationBufferDataClass);
 }
@@ -1876,9 +1878,8 @@ Bool wxBufferDataClassList::Read(wxMediaStreamIn &f)
       return FALSE;
     sclass = Find(buffer);
     if (!sclass) {
-      char buffer2[256];
-      sprintf(buffer2, "Unknown snip data class \"%.100s\".", buffer);
-      wxmeError(buffer2);
+      char *copy = copystring(buffer);
+      unknowns->Append(i, (wxObject *)copy);
     } else
       sclass->mapPosition = FindPosition(sclass);
   }
@@ -1898,6 +1899,12 @@ wxBufferDataClass *wxBufferDataClassList::FindByMapPosition(short n)
     sclass = (wxBufferDataClass *)node->Data();
     if (sclass->mapPosition == n)
       return sclass;
+  }
+
+  if ((node = unknowns->Find(n))) {
+    char buffer2[256];
+    sprintf(buffer2, "Unknown snip data class \"%.100s\".", (char *)node->Data());
+    wxmeError(buffer2);
   }
 
   return NULL;

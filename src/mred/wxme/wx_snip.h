@@ -467,6 +467,9 @@ class wxBufferData : public wxObject
 
 class wxBufferDataClassList : public /* should be private */ wxList
 {
+ private:
+  wxList *unknowns;
+
  public:
   wxBufferDataClassList();
   ~wxBufferDataClassList();

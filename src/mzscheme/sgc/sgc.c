@@ -1376,7 +1376,7 @@ void GC_add_roots(void *start, void *end)
 #  define DATASTART ((void *)(&__data_start))
 # else
    extern int _etext;
-#  define DATASTART ((void *)((((word) (&_etext)) + 0xfff) & ~0xfff))
+#  define DATASTART ((void *)((((unsigned long) (&_etext)) + 0xfff) & ~0xfff))
 # endif
   extern int _end;
 # define DATAEND (&_end)

@@ -35,18 +35,22 @@
 	 (car leftovers)
 	 (set! leftovers (cdr leftovers)))
 	(let big-loop ()
-	  (let loop ([s (do-readline (get-prompt 0))][next-pos 1])
+	  (let loop ([s (do-readline (get-prompt 0))][next-pos 1][force? #f])
 	    (if (eof-object? s)
 		(begin
 		  (save-history)
 		  s)
-		(with-handlers ([exn:read:eof?
+		(with-handlers ([(if force? (lambda (x) #f) exn:read:eof?)
 				 (lambda (exn)
-				   (loop (string-append 
-					  s
-					  "\n"
-					  (do-readline (get-prompt next-pos)))
-					 (add1 next-pos)))])
+				   (let ([v (do-readline (get-prompt next-pos))])
+				     (loop (string-append 
+					    s
+					    "\n"
+					    (if (eof-object? v)
+						""
+						v))
+					   (add1 next-pos)
+					   (eof-object? v))))])
 		  (let ([p (open-input-string (string-append s "\n"))])
 		    (port-count-lines! p)
 		    (let ([rs (let loop ()

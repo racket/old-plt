@@ -834,7 +834,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	    {
 	      char a[1], b[1];
 
-	      if (cnt > 1) {
+	      if (cnt) {
 		a[0] = 'x';
 		b[0] = ch;
 	      } else {

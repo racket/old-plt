@@ -993,7 +993,7 @@ void wxPostScriptDC::SetPen (wxPen * pen)
 
   // Line width
   width = pen->GetWidthF();
-  pstream->Out(width);
+  pstream->Out(XSCALEREL(width));
   pstream->Out(" setlinewidth\n");
 
   if (level2ok) {

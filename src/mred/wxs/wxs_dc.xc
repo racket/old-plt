@@ -119,6 +119,36 @@ static void* MyGetSize(wxDC *dc)
   return WITH_VAR_STACK(scheme_values(2, a));
 }
 
+static void* MyGetScale(wxDC *dc)
+{
+  float w, h;
+  Scheme_Object *a[2];
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH_ARRAY(0, a, 2);
+
+  dc->GetUserScale(&w, &h);
+
+  a[0] = WITH_VAR_STACK(scheme_make_double(w));
+  a[1] = WITH_VAR_STACK(scheme_make_double(h));
+
+  return WITH_VAR_STACK(scheme_values(2, a));
+}
+
+static void* MyGetOrigin(wxDC *dc)
+{
+  float w, h;
+  Scheme_Object *a[2];
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH_ARRAY(0, a, 2);
+
+  dc->GetDeviceOrigin(&w, &h);
+
+  a[0] = WITH_VAR_STACK(scheme_make_double(w));
+  a[1] = WITH_VAR_STACK(scheme_make_double(h));
+
+  return WITH_VAR_STACK(scheme_values(2, a));
+}
+
 @MACRO CheckStringIndex[n.s.i] = if (x<i> > SCHEME_STRLEN_VAL(p[<s>])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>",<n>), "string index too large: ", p[<i>]));
 
 @CLASSBASE wxDC "dc":"object"
@@ -160,6 +190,9 @@ static void* MyGetSize(wxDC *dc)
 @ Q "set-text-mode" : void SetBackgroundMode(SYM[textMode]); :  : /CheckOk[METHODNAME("dc<%>","set-text-mode")]
 @ Q "set-scale" : void SetUserScale(nnfloat,nnfloat); : : /CheckOk[METHODNAME("dc<%>","set-scale")]
 @ Q "set-origin" : void SetDeviceOrigin(float,float); : : /CheckOk[METHODNAME("dc<%>","set-origin")]
+
+@ m "get-scale" : void[]/CastToSO//spAnything MyGetScale(); : : /CheckOk[METHODNAME("dc<%>","get-scale")]
+@ m "get-origin" : void[]/CastToSO//spAnything MyGetOrigin(); : : /CheckOk[METHODNAME("dc<%>","get-origin")]
 
 @ q "get-background" : wxColour! GetBackground(); : : /CheckOk[METHODNAME("dc<%>","get-background")]
 @ q "get-text-mode" : SYM[textMode] GetBackgroundMode(); : : /CheckOk[METHODNAME("dc<%>","get-text-mode")]

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.h,v 1.13 2000/04/15 01:38:39 mflatt Exp $
+ * $Id: DC.h,v 1.14 2000/05/01 20:32:32 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -232,6 +232,12 @@ public:
     void  SetLogicalScale(float xs, float ys);
     void  SetMapMode(int mode);
     void  SetUserScale(float xs, float ys);
+
+    void GetUserScale(float *xs, float *ys)
+      { *xs = user_scale_x; *ys = user_scale_y; }
+    void GetDeviceOrigin(float *x, float *y) 
+      { *x = device_origin_x; *y = device_origin_y; }
+  
     // public data members
     Bool  Colour;
     int   device;

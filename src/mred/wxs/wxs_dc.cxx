@@ -211,6 +211,36 @@ static void* MyGetSize(wxDC *dc)
   return WITH_VAR_STACK(scheme_values(2, a));
 }
 
+static void* MyGetScale(wxDC *dc)
+{
+  float w, h;
+  Scheme_Object *a[2];
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH_ARRAY(0, a, 2);
+
+  dc->GetUserScale(&w, &h);
+
+  a[0] = WITH_VAR_STACK(scheme_make_double(w));
+  a[1] = WITH_VAR_STACK(scheme_make_double(h));
+
+  return WITH_VAR_STACK(scheme_values(2, a));
+}
+
+static void* MyGetOrigin(wxDC *dc)
+{
+  float w, h;
+  Scheme_Object *a[2];
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH_ARRAY(0, a, 2);
+
+  dc->GetDeviceOrigin(&w, &h);
+
+  a[0] = WITH_VAR_STACK(scheme_make_double(w));
+  a[1] = WITH_VAR_STACK(scheme_make_double(h));
+
+  return WITH_VAR_STACK(scheme_values(2, a));
+}
+
 
 
 
@@ -347,6 +377,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 #else
 #define CHECKTHISONE(x) 1
 #endif
+
 
 
 
@@ -653,6 +684,48 @@ static Scheme_Object *os_wxDCGetBackground(Scheme_Object *obj, int n,  Scheme_Ob
   
   
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
+}
+
+static Scheme_Object *os_wxDCMyGetOrigin(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  void* r;
+  objscheme_check_valid(obj);
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+
+  
+
+  DO_OK_CHECK(METHODNAME("dc<%>","get-origin"))
+  r = WITH_VAR_STACK(MyGetOrigin(((wxDC *)((Scheme_Class_Object *)obj)->primdata)));
+
+  
+  
+  return (Scheme_Object*)r;
+}
+
+static Scheme_Object *os_wxDCMyGetScale(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  void* r;
+  objscheme_check_valid(obj);
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+
+  
+
+  DO_OK_CHECK(METHODNAME("dc<%>","get-scale"))
+  r = WITH_VAR_STACK(MyGetScale(((wxDC *)((Scheme_Class_Object *)obj)->primdata)));
+
+  
+  
+  return (Scheme_Object*)r;
 }
 
 static Scheme_Object *os_wxDCSetDeviceOrigin(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -1472,7 +1545,7 @@ void objscheme_setup_wxDC(void *env)
   wxREGGLOB(os_wxDC_class);
   wxREGGLOB(os_wxDC_interface);
 
-  os_wxDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dc%", "object%", NULL, 42));
+  os_wxDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dc%", "object%", NULL, 44));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "end-page", os_wxDCEndPage, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "end-doc", os_wxDCEndDoc, 0, 0));
@@ -1487,6 +1560,8 @@ void objscheme_setup_wxDC(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-brush", os_wxDCGetBrush, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-text-mode", os_wxDCGetBackgroundMode, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-background", os_wxDCGetBackground, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-origin", os_wxDCMyGetOrigin, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-scale", os_wxDCMyGetScale, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-origin", os_wxDCSetDeviceOrigin, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-scale", os_wxDCSetUserScale, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-text-mode", os_wxDCSetBackgroundMode, 1, 1));

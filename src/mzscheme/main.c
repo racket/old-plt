@@ -118,6 +118,11 @@ static int check_break_flag()
   return 0;
 }
 
+static void handle_one(EventRecord *e)
+{
+  SIOUXHandleOneEvent(e);
+}
+
 static Scheme_Object *adjust_break_flag_and_eval(int argc, Scheme_Object **argv)
 {
   break_flag = 0;
@@ -256,6 +261,8 @@ int actual_main(int argc, char *argv[])
 #ifdef MACINTOSH_SIOUX
   SIOUXSettings.initializeTB = 0;
 #endif
+
+  scheme_handle_aewait_event = handle_one;
 
   Drop_GetArgs(&argc, &argv);
 #endif

@@ -107,9 +107,12 @@
 			    (apply my-process* command)))
 			quiet?)
 	    (error 'link-extension "can't find linker")))))
+	    
+  (include "macinc.ss")
 
   (define (macos-link quiet? input-files output-file)
-   (error 'link-extension "Not yet supported for MacOS"))
+    (macos-make 'link-extension "linking-project" "so" quiet? 
+                input-files output-file null))
   
   (define link-extension
     (case (system-type)

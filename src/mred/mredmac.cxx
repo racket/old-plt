@@ -33,8 +33,11 @@ static long resume_ticks;
 
 static int dispatched = 1;
 
+static int QueueTransferredEvent(EventRecord *e);
+
 void MrEdInitFirstContext(MrEdContext *)
 {
+  scheme_handle_aewait_event = (void (*)(EventRecord*))QueueTransferredEvent;
 }
 
 void MrEdInitNewContext(MrEdContext *)
@@ -92,17 +95,17 @@ static int QueueTransferredEvent(EventRecord *e)
   
   done = 0;
 #ifdef USE_OS_QUEUE
-  if ((e.what == mouseDown) 
-      || (e.what == mouseUp)
-      || (e.what == keyDown)
-      || (e.what == keyUp)
-      || (e.what == autoKey)) {
+  if ((e->what == mouseDown) 
+      || (e->what == mouseUp)
+      || (e->what == keyDown)
+      || (e->what == keyUp)
+      || (e->what == autoKey)) {
     /* Throw it away and stop */
     return 0;
   } else 
 #endif
-    if (e.what == updateEvt) {
-      WindowPtr w = (WindowPtr)e.message;
+    if (e->what == updateEvt) {
+      WindowPtr w = (WindowPtr)e->message;
       for (q = first; q; q = q->next) {
 	if ((q->event.what == updateEvt)
 	    && (w == ((WindowPtr)q->event.message))) {
@@ -114,10 +117,16 @@ static int QueueTransferredEvent(EventRecord *e)
 	}
       }
     }
+    
+    if (e->what == kHighLevelEvent) {
+      /* We have to dispatch right away - oh no! */
+      AEProcessAppleEvent(e);
+      done = 1;
+    }
 
   if (!done) {
     q = new MrQueueElem;
-    memcpy(&q->event, &e, sizeof(EventRecord));
+    memcpy(&q->event, e, sizeof(EventRecord));
     q->next = NULL;
     q->prev = last;
     if (last)
@@ -128,14 +137,14 @@ static int QueueTransferredEvent(EventRecord *e)
       
     q->rgn = NULL;
       
-    if (e.what == updateEvt) {
-      WindowPtr w = (WindowPtr)e.message;
+    if (e->what == updateEvt) {
+      WindowPtr w = (WindowPtr)e->message;
       q->rgn = NewRgn();
       CopyRgn(((WindowRecord *)w)->updateRgn, q->rgn);
       BeginUpdate(w);
       EndUpdate(w);
-    } else if ((e.what == osEvt)
-	       && ((e.message >> 24) & 0x0ff) == suspendResumeMessage) {
+    } else if ((e->what == osEvt)
+	       && ((e->message >> 24) & 0x0ff) == suspendResumeMessage) {
 #ifdef SELF_SUSPEND_RESUME
       /* Forget it; we do fg/bg ourselves. See note at top. */
       last = q->prev;
@@ -144,7 +153,7 @@ static int QueueTransferredEvent(EventRecord *e)
       else
 	first = NULL;
 #else
-      int we_are_front = e.message & resumeFlag;
+      int we_are_front = e->message & resumeFlag;
       WindowPtr front = FrontWindow();
 
       if (we_are_front) {     
@@ -555,9 +564,22 @@ int MrEdGetNextEvent(int check_only, int current_only,
   
   // TransferQueue(0);
     
-  /* Try activate events: */
+  /* Try activate and high-level events: */
   for (q = first; q; q = q->next) {
     switch (q->event.what) {
+    case diskEvt:
+    case kHighLevelEvent:
+       fc = NULL;
+	   if ((!c && !fc) || (!c && fc->ready) || (fc == c)) {
+	    if (which)
+	      *which = fc;
+        if (check_only)
+          return TRUE;
+        MrDequeue(q);
+	    memcpy(event, &q->event, sizeof(EventRecord));
+	    return TRUE;
+	  }
+	  break;
     case activateEvt:
       window = (WindowPtr)q->event.message;
       if (WindowStillHere(window)) {

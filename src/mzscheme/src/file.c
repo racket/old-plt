@@ -751,7 +751,7 @@ void scheme_file_create_hook(char *filename)
 
 int scheme_mac_path_to_spec(const char *filename, FSSpec *spec, long *type)
 {
-  return find_mac_file(filename, spec, 0, 1, NULL, NULL, NULL, NULL, NULL, type, NULL, NULL);
+  return find_mac_file(filename, spec, 0, 0, NULL, NULL, NULL, NULL, NULL, type, NULL, NULL);
 }
 #endif
 
@@ -3076,6 +3076,7 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
   Boolean x_b;
   long x_i;
   double x_d;
+  FSSpec x_fss;
   Handle alias = NULL;
   int retval = 1;
     
@@ -3115,10 +3116,15 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
 	  char *s = SCHEME_STR_VAL(SCHEME_VEC_ELS(v)[1]);
 	  long l = SCHEME_STRTAG_VAL(SCHEME_VEC_ELS(v)[1]);
 	  if (!has_null(s, l)) {
-	    FSSpec spec;
-	    if (scheme_mac_path_to_spec(s, &spec, NULL)) {
-	      *err = NewAlias(NULL, &spec, (AliasHandle *)&alias);
-	      if (*err) {
+	    if (scheme_mac_path_to_spec(s, &x_fss, NULL)) {
+	      *err = NewAliasMinimal(&x_fss, (AliasHandle *)&alias);
+	      if (*err == -43) {
+	        /* Can't make alias; make FSSpec, instead */
+	        type = typeFSS;
+	        data = (char *)&x_fss;
+	        size = sizeof(FSSpec);
+	        break;
+	      } else if (*err) {
 		*stage = "converting file to alias: ";
 		return NULL;
 	      }
@@ -3401,6 +3407,96 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
   return result;
 }
 
+/* Single-threaded ok: */
+static jmp_buf escape_while_waiting;
+static int escaped = 0;
+
+static int handlerInstalled = 0;
+typedef struct ReplyItem {
+  long id;
+  AppleEvent ae;
+  struct ReplyItem *next;
+} ReplyItem;
+static ReplyItem *reply_queue;
+
+static pascal Boolean while_waiting(EventRecord *e, long *sleeptime, RgnHandle *rgn)
+{
+   jmp_buf save;
+
+	if (escaped) return TRUE;
+
+   if (scheme_handle_aewait_event)
+     scheme_handle_aewait_event(e);
+   
+   memcpy(&save, &scheme_error_buf, sizeof(jmp_buf));
+   if (scheme_setjmp(scheme_error_buf)) {
+     memcpy(&escape_while_waiting, &save, sizeof(jmp_buf));
+     escaped = 1;
+     return TRUE; /* Immediately return to AESend */
+   } else {
+     scheme_process_block(0);
+     memcpy(&scheme_error_buf, &save, sizeof(jmp_buf));
+   }
+   
+   return FALSE;
+}
+
+static pascal OSErr HandleAnswer(AppleEvent *evt, AppleEvent *rae, long k)
+{
+  ReplyItem *r = MALLOC_ONE(ReplyItem);
+  DescType rtype;
+  long id, sz;
+  
+  AEGetAttributePtr(evt, keyReturnIDAttr, typeLongInteger, &rtype, &r->id, sizeof(long), &sz);
+  
+  AEDuplicateDesc(evt, &r->ae);
+
+  r->next = reply_queue;
+  reply_queue = r;
+  
+  return 0;
+}
+
+static void wait_for_reply(AppleEvent *ae, AppleEvent *reply)
+{
+  EventRecord e;
+  DescType rtype;
+  long id, sz;
+  ReplyItem *r, *prev;
+  
+  if (!handlerInstalled) {
+    handlerInstalled = TRUE;
+    AEInstallEventHandler(kCoreEventClass, kAEAnswer, NewAEEventHandlerProc(HandleAnswer), 0, 0);
+    REGISTER_SO(reply_queue);
+  }
+  
+  AEGetAttributePtr(ae, keyReturnIDAttr, typeLongInteger, &rtype, &id, sizeof(long), &sz);
+  
+  while (1) {
+    WaitNextEvent(highLevelEventMask, &e, 60, 0L);
+    if (e.what == kHighLevelEvent)
+      AEProcessAppleEvent(&e);
+    else {
+	  if (while_waiting(&e, NULL, NULL))
+	    break;
+	}
+	
+	prev = NULL;
+	for (r = reply_queue; r; r = r->next) {
+	  if (r->id == id) {
+	    /* Got the reply */
+	    memcpy(reply, &r->ae, sizeof(AppleEvent));
+	    if (prev)
+	      prev->next = r->next;
+	    else
+	      reply_queue = r->next;
+	    return;
+	  }
+	  prev = r;
+	}
+  }
+}
+
 int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv, 
 			  Scheme_Object **result, OSErr *err, char **stage)
 {
@@ -3462,12 +3558,19 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv,
   }
   
   reply = MALLOC_ONE_ATOMIC(AppleEvent);
-  *err = AESend(ae, reply, kAEWaitReply | kAECanInteract, 
-                kAENormalPriority, kNoTimeOut, NULL, NULL);
+  *err = AESend(ae, reply, kAEQueueReply | kAECanInteract, kAENormalPriority, kNoTimeOut, NULL, NULL);
   if (*err) {
     *stage = "send failed: ";
     reply = NULL;
     goto fail;
+  }
+  wait_for_reply(ae, reply);
+  if (escaped) {
+     reply = NULL;
+     escaped = 0;
+     memcpy(&scheme_error_buf, &escape_while_waiting, sizeof(jmp_buf));
+     memset(&escape_while_waiting, 0, sizeof(jmp_buf));
+     goto escape;
   }
   
   if (!AEGetParamPtr(reply, keyErrorString, typeChar, &rtype, NULL, 0, &sz) && sz) {
@@ -3493,6 +3596,9 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv,
 succeed:
   retval = 1;
   goto done;
+escape:
+  retval = -1;
+  goto done;
 fail:
   retval = 0;
    
@@ -3500,6 +3606,10 @@ done:
   if (ae) AEDisposeDesc(ae);
   if (reply) AEDisposeDesc(reply);
   if (target) AEDisposeDesc(target);
+  
+  if (retval < 0) {
+    scheme_longjmp(scheme_error_buf, 1);
+  }
   
   return retval;
 }

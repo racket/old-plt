@@ -223,7 +223,7 @@ static pascal OSErr OpenFinderDoc(AppleEvent *evt, AppleEvent *, long )
 {
   AEDescList	docList;
   long		count, size;
-  short		i, loadedAlready=0;
+  short		i, loadedAlready=0, j;
   DescType	retType;
   AEKeyword	keywd;
   FSSpec		fss;
@@ -232,17 +232,20 @@ static pascal OSErr OpenFinderDoc(AppleEvent *evt, AppleEvent *, long )
   AEGetParamDesc(evt, keyDirectObject, typeAEList, &docList);
   AECountItems(&docList, &count);
   files = (char **)scheme_malloc(sizeof(char *) * count);
+  j = 0;
   for (i = 0; i < count; i++){
-    AEGetNthPtr(&docList, 1, typeFSS, &keywd, &retType, (Ptr)&fss, sizeof(FSSpec), &size);
-    files[i] = scheme_build_mac_filename(&fss, 0);
+    AEGetNthPtr(&docList, i + 1, typeFSS, &keywd, &retType, (Ptr)&fss, sizeof(FSSpec), &size);
+    files[i + j] = scheme_build_mac_filename(&fss, 0);
+    if (!files[i + j])
+     --j;
   }
   AEDisposeDesc(&docList);
   
   if (!gone) {
     gone = 1;
-    Startup(files, count);
+    Startup(files, count + j);
   } else {
-    Drop_Runtime(files, count);
+    Drop_Runtime(files, count + j);
   }
   
   return 0;

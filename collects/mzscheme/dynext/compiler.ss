@@ -96,9 +96,12 @@
 			   quiet?)
 	    (error 'compile-extension "can't find compiler")))))
 
-  (define (macos-compile quiet? input-file output-file)
-    (error 'compile-extension "Not yet supported for MacOS"))
-  
+  (include "macinc.ss")
+
+  (define (macos-compile quiet? input-file output-file includes)
+    (macos-make 'compile-extension "extension-project" "lib" quiet? 
+                (list input-file) output-file includes))
+         
   (define compile-extension
     (case (system-type)
       [(unix windows) unix/windows-compile]

@@ -36,7 +36,7 @@
 	   (for-each (lambda (box) (unless (null? box) (set-box! box 0)))
 		     (list descent-box space-box lspace-box rspace-box))
 	   (let* ([admin (get-admin)]
-		  [reporting-media (send admin get-media)]
+		  [reporting-media (send admin get-editor)]
 		  [reporting-admin (send reporting-media get-admin)]
 		  [widthb (box 0)]
 		  [space 2])

@@ -1,7 +1,7 @@
 (module pconvert mzscheme
 
   (require (prefix s: "string.ss")
-	  (prefix f: "list.ss"))
+           (prefix f: "list.ss"))
   (require "class.ss")
   (require "unit.ss")
 
@@ -38,7 +38,7 @@
   (define constructor-style-printing (make-parameter #f boolean-filter))
   (define quasi-read-style-printing (make-parameter #t boolean-filter))
   (define abbreviate-cons-as-list (make-parameter #t boolean-filter))
-  (define whole/fractional-exact-numbers (make-parameter #t boolean-filter))
+  (define whole/fractional-exact-numbers (make-parameter #f boolean-filter))
   (define booleans-as-true/false (make-parameter #t boolean-filter))
   
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

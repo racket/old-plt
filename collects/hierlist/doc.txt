@@ -79,6 +79,11 @@ _hierlist_ defines three classes:
      initialized to #f
 >  user-data :: (send an-item user-data v) - sets user data to v
 
+>  get-clickable-snip :: (send an-item get-clickable-snip) -
+   returns the snip that (when clicked) selects this element in
+   the list. This is intended for use with the autmatic test
+   suite.
+
 --------------------------------------------------
 
 > hierarchical-list-compound-item<%>, instantiate via new-list
@@ -119,6 +124,9 @@ _hierlist_ defines three classes:
 
 > is-open? :: (send a-list-item is-open?) - 
      returns a boolean indicating if the children of this list are visible.
+
+> get-arrow-snip :: (send a-list-item get-arrow-snip) -
+     returns the arrow snip. intended for test suites to facilitate simulated clicks
 
 
 --------------------------------------------------

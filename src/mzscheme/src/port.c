@@ -3526,7 +3526,7 @@ void scheme_flush_output(Scheme_Object *port)
 }
 
 typedef struct {
-  char *buf;
+  unsigned char *buf;
   long buflen;
   int bufstart, bufend;
   int eof;
@@ -3609,7 +3609,7 @@ static void pipe_write(char *str, long len, Scheme_Output_Port *p)
     old = pipe->buf;
     newlen = 2 * (pipe->buflen + len);
 
-    pipe->buf = (char *)scheme_malloc_atomic(newlen);
+    pipe->buf = (unsigned char *)scheme_malloc_atomic(newlen);
 
     if (pipe->bufstart <= pipe->bufend) {
       memcpy(pipe->buf, old + pipe->bufstart, pipe->bufend - pipe->bufstart);

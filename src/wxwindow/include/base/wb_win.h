@@ -44,7 +44,7 @@ class wxItem;
 class wxLayoutConstraints;
 
 // Callback function type definition
-typedef void (*wxFunction) (wxObject&, wxEvent&);
+typedef void (*wxFunction) (wxObject*, wxEvent*);
 
 /*
  * Event handler: windows have themselves as their event handlers
@@ -72,40 +72,33 @@ class wxEvtHandler: public wxObject
 
   virtual void OnMenuCommand(long WXUNUSED(cmd)) {};
   virtual void OnMenuSelect(long WXUNUSED(cmd)) {};
-  inline virtual void OnCommand(wxWindow& WXUNUSED(win), wxCommandEvent& WXUNUSED(event)) {};
+  inline virtual void OnCommand(wxWindow *WXUNUSED(win), wxCommandEvent *WXUNUSED(event)) {};
                                                  // Called if child control has no
                                                  // callback function
-  virtual void OnScroll(wxScrollEvent& WXUNUSED(event)) {};
+  virtual void OnScroll(wxScrollEvent *WXUNUSED(event)) {};
   inline virtual void OnPaint(void) {};                 // Called when needs painting
   virtual void OnSize(int WXUNUSED(width), int WXUNUSED(height)) {};           // Called on resize
   inline virtual void OnMove(int WXUNUSED(x), int WXUNUSED(y)) {};          // Called on move
-  inline virtual void OnEvent(wxMouseEvent& WXUNUSED(event)) {};  // Called on mouse event
-  inline virtual void OnChar(wxKeyEvent& WXUNUSED(event)) {};     // Called on character event
+  inline virtual void OnEvent(wxMouseEvent *WXUNUSED(event)) {};  // Called on mouse event
+  inline virtual void OnChar(wxKeyEvent *WXUNUSED(event)) {};     // Called on character event
   // Under Windows, we can intercept character input per dialog or frame
-  virtual inline Bool OnCharHook(wxKeyEvent& WXUNUSED(event)) { return FALSE; }
+  virtual inline Bool OnCharHook(wxKeyEvent *WXUNUSED(event)) { return FALSE; }
   inline virtual Bool OnClose(void) { return TRUE; };  // Delete window if returns TRUE
   inline virtual void OnActivate(Bool WXUNUSED(active)) {};       // Called on window activation (MSW)
   inline virtual void OnSetFocus(void) {};              // Called on setting focus
   inline virtual void OnKillFocus(void) {};             // Called on killing focus
   inline virtual void OnDropFile(char *WXUNUSED(file)) {};
 
-  // Members for editing dialogs/panels
-  inline virtual void OnItemMove(wxItem *WXUNUSED(item), int WXUNUSED(x), int WXUNUSED(y)) {};
-  inline virtual void OnItemSize(wxItem *WXUNUSED(item), int WXUNUSED(w), int WXUNUSED(h)) {};
-  inline virtual void OnItemSelect(wxItem *WXUNUSED(item), Bool WXUNUSED(select)) {};
-
   // If clicked on panel
   inline virtual void OnLeftClick(int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(keys)) {};
   inline virtual void OnRightClick(int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(keys)) {};
 
-  inline virtual void OnItemLeftClick(wxItem *WXUNUSED(item), int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(keys)) {};
-  inline virtual void OnItemRightClick(wxItem *WXUNUSED(item), int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(keys)) {};
-  virtual void OnItemEvent(wxItem *WXUNUSED(item), wxMouseEvent& WXUNUSED(event)) {};
+  virtual void OnItemEvent(wxItem *WXUNUSED(item), wxMouseEvent *WXUNUSED(event)) {};
   virtual void OnSelect(Bool WXUNUSED(select)) {};
 
   virtual void OnDefaultAction(wxItem *WXUNUSED(initiatingItem)) {};
   virtual void OnChangeFocus(wxItem *WXUNUSED(from), wxItem *WXUNUSED(to)) {};
-  virtual Bool OnFunctionKey(wxKeyEvent &WXUNUSED(event)) { return FALSE; };
+  virtual Bool OnFunctionKey(wxKeyEvent *WXUNUSED(event)) { return FALSE; };
 
   char *GetClientData(void);
   void SetClientData(char *WXUNUSED(clientData));
@@ -136,13 +129,6 @@ class wxbWindow: public wxEvtHandler
   // Font - created on demand, not deleted with window
   wxCursor *wx_cursor;                        // Window's cursor
 
-#if USE_CONSTRAINTS
-  wxLayoutConstraints *constraints;           // Constraints for this window
-  wxList *constraintsInvolvedIn;              // List of constraints we're involved in
-  wxSizer *windowSizer;                       // Window's top-level sizer (if any)
-  wxWindow *sizerParent;                      // Window's parent sizer (if any)
-  Bool autoLayout;                            // Whether to call Layout() in OnSize
-#endif
   Bool paintingEnabled;
   Bool winCaptured;
   char *handle;                                // Pointer to real window
@@ -223,7 +209,7 @@ class wxbWindow: public wxEvtHandler
   // Event handlers that do something by default
   virtual void OnSize(int width, int height);
   virtual void OnMenuSelect(long WXUNUSED(cmd)) {};
-  virtual void OnCommand(wxWindow& win, wxCommandEvent& event);
+  virtual void OnCommand(wxWindow *win, wxCommandEvent *event);
 
   // Caret
   virtual void CreateCaret(int WXUNUSED(w), int WXUNUSED(h)) {};
@@ -246,49 +232,6 @@ class wxbWindow: public wxEvtHandler
   virtual void SetEventHandler(wxEvtHandler *handler);
   virtual wxEvtHandler *GetEventHandler(void);
 
-#if USE_CONSTRAINTS
-  // Mode for telling default OnSize members to
-  // call Layout(), if not using Sizers, just top-down constraints
-  virtual inline void SetAutoLayout(Bool a) { autoLayout = a; }
-  virtual inline Bool GetAutoLayout(void) { return autoLayout; }
-
-  // Constraint accessors
-  inline wxLayoutConstraints *GetConstraints(void) { return constraints; }
-  void SetConstraints(wxLayoutConstraints *c);
-  void UnsetConstraints(wxLayoutConstraints *c);
-  inline wxList *GetConstraintsInvolvedIn(void) { return constraintsInvolvedIn; }
-  // Back-pointer to other windows we're involved with, so if we delete
-  // this window, we must delete any constraints we're involved with.
-  void AddConstraintReference(wxWindow *otherWin);
-  void RemoveConstraintReference(wxWindow *otherWin);
-  void DeleteRelatedConstraints(void);
-
-  Bool Layout(void);
-  virtual void SetSizer(wxSizer *sizer);    // Adds sizer child to this window
-  virtual wxSizer *GetSizer(void);
-  virtual wxWindow *GetSizerParent(void);
-  inline virtual void SetSizerParent(wxWindow *win) { sizerParent = win; }
-  virtual void ResetConstraints(void);
-  virtual void SetConstraintSizes(Bool recurse = TRUE);
-  virtual Bool LayoutPhase1(int *noChanges);
-  virtual Bool LayoutPhase2(int *noChanges);
-  virtual Bool DoPhase(int);
-  // Transforms from sizer coordinate space to actual
-  // parent coordinate space
-  virtual void TransformSizerToActual(int *x, int *y);
-
-  // Set size with transformation to actual coordinates if nec.
-  virtual void SizerSetSize(int x, int y, int w, int h);
-  virtual void SizerMove(int x, int y);
-
-  // Only set/get the size/position of the constraint (if any)
-  virtual void SetSizeConstraint(int x, int y, int w, int h);
-  virtual void MoveConstraint(int x, int y);
-  virtual void GetSizeConstraint(int *w, int *h);
-  virtual void GetClientSizeConstraint(int *w, int *h);
-  virtual void GetPositionConstraint(int *x, int *y);
-#endif
-
   Bool IsShown();
   void SetShown(Bool s);
 
@@ -297,12 +240,8 @@ class wxbWindow: public wxEvtHandler
   Bool GetsFocus();
 };
 
-#if 0
-extern wxList wxTopLevelWindows;
-#else
 extern wxChildList *wxGetTopLevelWindowsList(wxObject *);
 #define wxTopLevelWindows(w) (wxGetTopLevelWindowsList(w))
-#endif
 
 extern wxWindow *wxGetModalWindow(wxObject*);
 extern void wxPushModalWindow(wxObject*,wxWindow*);
@@ -312,7 +251,6 @@ extern void *wxGetContextForFrame();
 
 class wxRectangle: public wxObject
 {
- DECLARE_DYNAMIC_CLASS(wxRectangle)
  public:
   int x;
   int y;

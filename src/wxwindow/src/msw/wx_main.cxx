@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_main.cxx,v 1.9 1999/06/05 13:52:25 mflatt Exp $
+ * RCS_ID:      $Id: wx_main.cxx,v 1.10 1999/07/09 17:34:26 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -758,7 +758,7 @@ BOOL wxApp::OnIdle(void)
 
 // Windows specific. Intercept keyboard input: by default,
 // route it to the active frame or dialog box.
-Bool wxApp::OnCharHook(wxKeyEvent& event)
+Bool wxApp::OnCharHook(wxKeyEvent *event)
 {
   wxWindow *win = wxGetActiveWindow();
   if (win)

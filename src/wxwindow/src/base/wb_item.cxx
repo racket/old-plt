@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	March 1995
- * RCS_ID:      $Id: wb_item.cxx,v 1.8 1998/10/12 03:27:56 mflatt Exp $
+ * RCS_ID:      $Id: wb_item.cxx,v 1.9 1998/11/17 21:40:37 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -160,182 +160,16 @@ void wxbItem::Centre (int direction)
   GetPosition (&temp_x, &temp_y);
 }
 
-/*
- * Manipulation and drawing of items in Edit Mode
- */
- 
-void wxbItem::SelectItem(Bool select)
-{
-  isSelected = select;
-}
-
-// Returns TRUE or FALSE
-Bool wxbItem::HitTest(int x, int y)
-{
-  int xpos, ypos, width, height;
-  GetPosition(&xpos, &ypos);
-  GetSize(&width, &height);
-
-  return ((x >= xpos) && (x <= (xpos + width)) && (y >= ypos) && (y <= (ypos + height)));
-}
-
-// Calculate position of the 8 handles
-void wxbItem::CalcSelectionHandles(int *hx, int *hy)
-{
-  int xpos, ypos, width, height;
-  GetPosition(&xpos, &ypos);
-  GetSize(&width, &height);
-  int middleX = (int)(xpos + (width/2));
-  int middleY = (int)(ypos + (height/2));
-
-  // Start from top middle, clockwise.
-/*
-  7      0      1
-
-  6             2
-
-  5      4      3
-*/
-
-  hx[0] = (int)(middleX - (handleSize/2));
-  hy[0] = ypos - handleSize - handleMargin;
-
-  hx[1] = xpos + width + handleMargin;
-  hy[1] = ypos - handleSize - handleMargin;
-
-  hx[2] = xpos + width + handleMargin;
-  hy[2] = (int)(middleY - (handleSize/2));
-
-  hx[3] = xpos + width + handleMargin;
-  hy[3] = ypos + height + handleMargin;
-
-  hx[4] = (int)(middleX - (handleSize/2));
-  hy[4] = ypos + height + handleMargin;
-
-  hx[5] = xpos - handleSize - handleMargin;
-  hy[5] = ypos + height + handleMargin;
-
-  hx[6] = xpos - handleSize - handleMargin;
-  hy[6] = (int)(middleY - (handleSize/2));
-
-  hx[7] = xpos - handleSize - handleMargin;
-  hy[7] = ypos - handleSize - handleMargin;
-}
-
-// Returns 0 (no hit), 1 - 8 for which selection handle
-// (clockwise from top middle)
-int wxbItem::SelectionHandleHitTest(int x, int y)
-{
-  // Handle positions
-  int hx[8];
-  int hy[8];
-  CalcSelectionHandles(hx, hy);
-
-  int i;
-  for (i = 0; i < 8; i++)
-  {
-    if ((x >= hx[i]) && (x <= (hx[i] + handleSize)) && (y >= hy[i]) && (y <= (hy[i] + handleSize)))
-      return (i + 1);
-  }
-  return 0;
-}
-
-void wxbItem::DrawSelectionHandles(wxPanelDC *dc, Bool WXUNUSED(erase))
-{
-//  wxPanel *panel = (wxPanel *)GetParent();
-  
-  dc->SetOptimization(FALSE);
-
-  dc->SetPen(wxBLACK_PEN);
-  dc->SetBrush(wxBLACK_BRUSH);
-
-  dc->SetOptimization(TRUE);
-
-  // Handle positions
-  int hx[8];
-  int hy[8];
-  CalcSelectionHandles(hx, hy);
-
-  int i;
-  for (i = 0; i < 8; i++)
-  {
-    dc->DrawRectangle((float)hx[i], (float)hy[i], (float)handleSize, (float)handleSize);
-  }
-}
-
-void wxbItem::DrawBoundingBox(wxPanelDC *dc, int x, int y, int w, int h)
-{
-  dc->DrawRectangle((float)x, (float)y, (float)w, (float)h);
-}
-
-// If selectionHandle is zero, not dragging the selection handle.
-void wxbItem::OnDragBegin(int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(keys), 
-			  wxPanelDC *WXUNUSED(dc), int WXUNUSED(selectionHandle))
-{
-}
-
-void wxbItem::OnDragContinue(Bool WXUNUSED(paintIt), int WXUNUSED(x), int WXUNUSED(y), 
-			     int WXUNUSED(keys), wxPanelDC *WXUNUSED(dc), int WXUNUSED(selectionHandle))
-{
-}
-
-void wxbItem::OnDragEnd(int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(keys), 
-			wxPanelDC *WXUNUSED(dc), int WXUNUSED(selectionHandle))
-{
-}
-
-// These functions call OnItemEvent, OnItemMove and OnItemSize
-// by default.
-void wxbItem::OnEvent(wxMouseEvent& event)
-{
-  if ((event.eventType == wxEVENT_TYPE_LEFT_DCLICK) ||
-      (event.eventType == wxEVENT_TYPE_RIGHT_DCLICK))
-    return;
-    
-  wxWindow *theParent = this->GetParent();
-  ((wxPanel *)theParent)->GetEventHandler()->OnItemEvent((wxItem *)this, event);
-}
-
-void wxbItem::OnMove(int x, int y)
-{
-  wxWindow *theParent = GetParent();
-  ((wxPanel *)theParent)->GetEventHandler()->OnItemMove((wxItem *)this, x, y);
-}
-
-void wxbItem::OnSize(int w, int h)
-{
-  wxWindow *theParent = GetParent();
-  ((wxPanel *)theParent)->GetEventHandler()->OnItemSize((wxItem *)this, w, h);
-}
-
-void wxbItem::OnSelect(Bool select)
-{
-  wxWindow *theParent = GetParent();
-  ((wxPanel *)theParent)->GetEventHandler()->OnItemSelect((wxItem *)this, select);
-}
-
-void wxbItem::OnLeftClick(int x, int y, int keys)
-{
-  wxWindow *theParent = GetParent();
-  ((wxPanel *)theParent)->GetEventHandler()->OnItemLeftClick((wxItem *)this, x, y, keys);
-}
-
-void wxbItem::OnRightClick(int x, int y, int keys)
-{
-  wxWindow *theParent = GetParent();
-  ((wxPanel *)theParent)->GetEventHandler()->OnItemRightClick((wxItem *)this, x, y, keys);
-}
-
-void wxbItem::Command (wxCommandEvent & event)
+void wxbItem::Command (wxCommandEvent *event)
 {
   ProcessCommand (event);
 }
 
-void wxbItem::ProcessCommand (wxCommandEvent & event)
+void wxbItem::ProcessCommand (wxCommandEvent *event)
 {
   wxFunction fun = callback;
   if (fun)
-    (void) (*(fun)) (*this, event);
+    fun(this, event);
 }
 
 /*
@@ -489,11 +323,11 @@ char *wxbMenu::GetHelpString (long itemId)
     return NULL;
 }
 
-void wxbMenu::ProcessCommand (wxCommandEvent & event)
+void wxbMenu::ProcessCommand (wxCommandEvent *event)
 {
   wxFunction fun = callback;
   if (fun)
-    (void) (*(fun)) (*this, event);
+    fun(this, event);
 }
 
 /*

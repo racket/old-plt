@@ -160,15 +160,15 @@ wxList::wxList(KeyType the_key_type, Bool clean_up)
 wxList::~wxList (void)
 {
   wxNode *each = first_node;
-  while (each) {
-      wxNode *next;
-      
-      next = each->Next ();
+  wxNode *next;
 
-      each->Kill(this);
-      delete each;
-      
-      each = next;
+  while (each) {
+    next = each->Next ();
+    
+    each->Kill(this);
+    DELETE_OBJ each;
+    
+    each = next;
   }
 
   first_node = last_node = NULL;
@@ -246,7 +246,7 @@ Bool wxList::DeleteNode (wxNode * node)
 {
   if (node) {
     node->Kill(this);
-    delete node;
+    DELETE_OBJ node;
     return TRUE;
   }
   return FALSE;
@@ -259,7 +259,7 @@ Bool wxList::DeleteObject (wxObject * object)
   for (current = first_node; current; current = current->Next ()) {
     if (current->Data () == object) {
       current->Kill(this);
-      delete current;
+      DELETE_OBJ current;
       return TRUE;
     }
   }
@@ -348,8 +348,8 @@ void wxList::Clear (void)
 
   current = first_node;
   while (current) {
-    next = current->Next ();
-    delete current;
+    next = current->Next();
+    DELETE_OBJ current;
     current = next;
   }
   first_node = NULL;
@@ -420,10 +420,8 @@ wxStringList::~wxStringList (void)
 
   each = first_node;
   while (each) {
-    char *s;
-    s = (char *)each->Data();
     next = each->Next();
-    delete each;
+    DELETE_OBJ each;
     each = next;
   }
 }
@@ -441,7 +439,7 @@ void wxStringList::Delete (const char *s)
     char *string;
     string = (char *) node->Data ();
     if (string == s || strcmp (string, s) == 0) {
-      delete node;
+      DELETE_OBJ node;
       break;		// Done!
     }
   }

@@ -132,19 +132,15 @@ class wxColour: public wxObject
 
   wxColour(void);
   wxColour(const unsigned char r, const unsigned char b, const unsigned char g);
-  wxColour(const wxColour& col);
+  wxColour(const wxColour* col);
   wxColour(const char *col);
   ~wxColour(void) ;
-  wxColour& operator =(const wxColour& src) ;
-  wxColour& operator =(const char *src) ;
-  inline int Ok(void)
-#ifdef wx_x
-//    { return (isInit && (pixel != -1)) ; } // Can't be right -- pixel can't
-                                             // always be initialized!
-    { return (isInit) ; }
-#else
-    { return (isInit) ; }
+  wxColour* CopyFrom(const wxColour* src) ;
+  wxColour* CopyFrom(const char *src) ;
+#ifndef MZ_PRECISE_GC
+  wxColour& operator=(const wxColour & src) ;
 #endif
+  inline int Ok(void) { return (isInit) ; }
 
   void Set(unsigned char r, unsigned char b, unsigned char g);
   void Get(unsigned char *r, unsigned char *b, unsigned char *g);
@@ -163,7 +159,6 @@ class wxColourMap;
 
 
 // Point
-#if (!USE_TYPEDEFS)
 class wxPoint: public wxObject
 {
   DECLARE_DYNAMIC_CLASS(wxPoint)
@@ -174,14 +169,7 @@ class wxPoint: public wxObject
   wxPoint(float the_x, float the_y);
   ~wxPoint(void);
 };
-#else
-typedef struct {
-                float x ;
-                float y ;
-               } wxPoint ;
-#endif
 
-#if (!USE_TYPEDEFS)
 class wxIntPoint: public wxObject
 {
   DECLARE_DYNAMIC_CLASS(wxIntPoint)
@@ -192,13 +180,6 @@ class wxIntPoint: public wxObject
   wxIntPoint(int the_x, int the_y);
   ~wxIntPoint(void);
 };
-#else
-typedef struct {
-                int x ;
-                int y ;
-               } wxIntPoint ;
-#endif
-
 
 // Pen
 class wxPen;
@@ -219,11 +200,11 @@ class wxbPen: public wxObject
   wxColour colour;
 
   wxbPen(void);
-  wxbPen(wxColour& col, int width, int style);
+  wxbPen(wxColour *col, int width, int style);
   wxbPen(const char *col, int width, int style);
   ~wxbPen(void);
 
-  virtual void SetColour(wxColour& col) ;
+  virtual void SetColour(wxColour *col) ;
   virtual void SetColour(const char *col)  ;
   virtual void SetColour(char r, char g, char b)  ;
 
@@ -234,7 +215,7 @@ class wxbPen: public wxObject
   virtual void SetJoin(int join)  ;
   virtual void SetCap(int cap)  ;
 
-  virtual wxColour &GetColour(void);
+  virtual wxColour* GetColour(void);
   virtual int GetWidth(void);
   virtual int GetStyle(void);
   virtual int GetJoin(void);
@@ -257,17 +238,17 @@ class wxbBrush: public wxObject
  public:
   wxColour colour;
   wxbBrush(void);
-  wxbBrush(wxColour& col, int style);
+  wxbBrush(wxColour *col, int style);
   wxbBrush(char *col, int style);
   ~wxbBrush(void);
 
-  virtual void SetColour(wxColour& col)  ;
+  virtual void SetColour(wxColour *col)  ;
   virtual void SetColour(const char *col)  ;
   virtual void SetColour(char r, char g, char b)  ;
   virtual void SetStyle(int style)  ;
   virtual void SetStipple(wxBitmap* stipple=NULL)  ;
 
-  virtual wxColour &GetColour(void);
+  virtual wxColour *GetColour(void);
   virtual int GetStyle(void);
   virtual wxBitmap *GetStipple(void);
 
@@ -349,7 +330,7 @@ class wxColourDatabase: public wxList
   wxColourDatabase(int type);
   ~wxColourDatabase(void) ;
   wxColour *FindColour(const char *colour);
-  char *FindName(wxColour& colour);
+  char *FindName(wxColour *colour);
   void Initialize(void);
 };
 

@@ -101,12 +101,10 @@ class wxDC: public wxbDC
   wxRegion* GetClippingRegion();
   void SetClippingRegion(wxRegion*);
   void SetColourMap(wxColourMap *cmap);
-  /* MATTHEW: [2] 16-bit flag */
   void DrawText(const char *text, float x, float y, Bool use16bit = FALSE);
 
   float GetCharHeight(void);
   float GetCharWidth(void);
-  /* MATTHEW: [2] 16-bit flag */
   void GetTextExtent(const char *string, float *x, float *y,
                      float *descent = NULL, float *externalLeading = NULL, 
 		     wxFont *theFont = NULL, Bool use16bit = FALSE);
@@ -135,7 +133,8 @@ class wxDC: public wxbDC
   float FLogicalToDeviceYRel(float y);
 
   Bool Blit(float xdest, float ydest, float width, float height,
-            wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c=NULL);
+            wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID,
+	    wxColour *c=NULL);
             
   Bool CanDrawBitmap(void);
   Bool CanGetTextExtent(void);

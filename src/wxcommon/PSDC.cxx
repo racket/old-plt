@@ -324,9 +324,7 @@ wxPostScriptDC::~wxPostScriptDC (void)
   if (current_pen) current_pen->Lock(-1);
 
   if (pstream)
-    delete pstream;
-  if (filename)
-    delete[]filename;
+    DELETE_OBJ pstream;
 }
 
 Bool wxPostScriptDC::PrinterDialog(Bool interactive)
@@ -692,7 +690,8 @@ void wxPostScriptDC::DrawLines(wxList *list, float xoffset, float yoffset)
     points[i++].y = point->y;
   }
   DrawLines(n, points, xoffset, yoffset);
-  delete []points;
+
+  delete[] points;
 }
 
 void wxPostScriptDC::DrawPolygon(wxList *list, float xoffset, float yoffset,int fillStyle)
@@ -712,6 +711,7 @@ void wxPostScriptDC::DrawPolygon(wxList *list, float xoffset, float yoffset,int 
     points[i++].y = point->y;
   }
   DrawPolygon(n, points, xoffset, yoffset,fillStyle);
+
   delete[] points;
 }
 
@@ -1388,7 +1388,7 @@ void wxPostScriptDC::EndDoc (void)
   pstream->width(5);
   pstream->Out((page_number - 1)); pstream->Out("\n");
 
-  delete pstream;
+  DELETE_OBJ pstream;
   pstream = NULL;
 
 #ifdef wx_x
@@ -2149,7 +2149,6 @@ wxPrintPaperType::wxPrintPaperType(char *name, int wmm, int hmm, int wp, int hp)
 
 wxPrintPaperType::~wxPrintPaperType(void)
 {
-    delete[] pageName;
 }
 
 

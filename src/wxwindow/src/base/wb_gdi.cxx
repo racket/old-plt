@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cxx,v 1.18 1999/10/05 14:24:05 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cxx,v 1.19 1999/11/13 03:36:48 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -115,7 +115,7 @@ char *wxbFont::GetFaceString(void)
   case wxSYMBOL:
     return NULL;
   default:
-    return wxTheFontNameDirectory.GetFontName(fontid); 
+    return wxTheFontNameDirectory->GetFontName(fontid); 
   }
 }
 
@@ -187,85 +187,60 @@ wxColour::wxColour (const unsigned char r, const unsigned char g, const unsigned
 //  wxTheColourList->Append (this);
 }
 
-wxColour::wxColour (const wxColour& col)
+wxColour::wxColour (const wxColour *col)
 {
   __type = wxTYPE_COLOUR;
-  red = col.red;
-  green = col.green;
-  blue = col.blue;
-  isInit = col.isInit;
-  pixel = col.pixel;
   locked = 0;
+  CopyFrom(col);
 }
 
-wxColour& wxColour::operator =(const wxColour& col)
+wxColour* wxColour::CopyFrom(const wxColour* col)
 {
-  __type = wxTYPE_COLOUR;
-  red = col.red;
-  green = col.green;
-  blue = col.blue;
-  isInit = col.isInit;
-  pixel = col.pixel;
-  return *this;
+  red = col->red;
+  green = col->green;
+  blue = col->blue;
+  isInit = col->isInit;
+  pixel = col->pixel;
+  return this;
+}
+
+wxColour& wxColour::operator=(const wxColour& col)
+{
+  return *(CopyFrom(&col));
 }
 
 wxColour::wxColour (const char *col)
 {
   __type = wxTYPE_COLOUR;
   locked = 0;
-  wxColour *the_colour = wxTheColourDatabase->FindColour (col);
-  if (the_colour)
-    {
-      red = the_colour->Red ();
-      green = the_colour->Green ();
-      blue = the_colour->Blue ();
-      isInit = TRUE;
-    }
-  else
-    {
-      red = 0;
-      green = 0;
-      blue = 0;
-      isInit = FALSE;
-    }
-#ifdef wx_x
-  pixel = -1;
-#endif
-#ifdef wx_msw
-  pixel = RGB (red, green, blue);
-#endif
-//  wxTheColourList->Append (this);
+
+  CopyFrom(col);
 }
 
 wxColour::~wxColour (void)
 {
-//  wxTheColourList->DeleteObject (this);
 }
 
-wxColour& wxColour::operator = (const char *col)
+wxColour* wxColour::CopyFrom(const char *col)
 {
-  wxColour *the_colour = wxTheColourDatabase->FindColour (col);
-  if (the_colour)
-    {
-      red = the_colour->Red ();
-      green = the_colour->Green ();
-      blue = the_colour->Blue ();
-      isInit = TRUE;
-    }
-  else
-    {
-      red = 0;
-      green = 0;
-      blue = 0;
-      isInit = FALSE;
-    }
-#ifdef wx_x
-  pixel = -1;
-#endif
-#ifdef wx_msw
+  wxColour *the_colour;
+
+  the_colour = wxTheColourDatabase->FindColour (col);
+
+  if (the_colour) {
+    red = the_colour->Red ();
+    green = the_colour->Green ();
+    blue = the_colour->Blue ();
+    isInit = TRUE;
+  } else {
+    red = 0;
+    green = 0;
+    blue = 0;
+    isInit = FALSE;
+  }
   pixel = RGB (red, green, blue);
-#endif
-  return (*this);
+
+  return this;
 }
 
 void wxColour::Set (unsigned char r, unsigned char g, unsigned char b)
@@ -274,12 +249,7 @@ void wxColour::Set (unsigned char r, unsigned char g, unsigned char b)
   green = g;
   blue = b;
   isInit = TRUE;
-#ifdef wx_x
-  pixel = -1;
-#endif
-#ifdef wx_msw
   pixel = RGB (red, green, blue);
-#endif
 
 }
 
@@ -423,43 +393,7 @@ wxColour *wxColourDatabase::FindColour(const char *colour)
   if (node)
     return (wxColour *)node->Data();
 
-#ifdef wx_msw
   return NULL;
-#else
-  XColor xcolour;
-  
-  Display *display = XtDisplay(wxTheApp->topLevel);
-  
-  wxColour *col;
-  
-  if (!aux) {
-    aux = new wxHashTable(wxKEY_STRING, 20);
-    Initialize(); /* fills in aux */
-  }
-
-  /* MATTHEW: [4] Use wxGetMainColormap */
-  if (XParseColor(display, wxGetMainColormap(display), colour,&xcolour)) {
-    /* But only add it if it's a standard color */
-    if (aux->Get(colour)) {
-      unsigned char r = (unsigned char)(xcolour.red >> 8);
-      unsigned char g = (unsigned char)(xcolour.green >> 8);
-      unsigned char b = (unsigned char)(xcolour.blue >> 8);
-      
-      col = new wxColour(r, g, b);
-      col->Lock(1);
-    } else
-      return NULL;
-  } else {  
-    /* Check the standard color list: */
-    col = (wxColour *)aux->Get(colour);
-    if (!col)
-      return NULL;
-  }
-  
-  Append(colour, col);
-
-  return col;
-#endif
 }
 
 /* Old FindColour
@@ -470,13 +404,13 @@ wxColour *wxColourDatabase::FindColour (const char *colour)
 }
 */
 
-char *wxColourDatabase::FindName (wxColour& colour)
+char *wxColourDatabase::FindName (wxColour * colour)
 {
-  unsigned char red = colour.Red ();
-  unsigned char green = colour.Green ();
-  unsigned char blue = colour.Blue ();
+  unsigned char red = colour->Red();
+  unsigned char green = colour->Green();
+  unsigned char blue = colour->Blue();
 
-  for (wxNode * node = First (); node; node = node->Next ())
+  for (wxNode * node = First(); node; node = node->Next ())
     {
       wxColour *col = (wxColour *) node->Data ();
       if (col->Red () == red && col->Green () == green && col->Blue () == blue)
@@ -593,7 +527,7 @@ wxbPen::~wxbPen ()
     --stipple->selectedIntoDC;
 }
 
-wxbPen::wxbPen (wxColour& WXUNUSED(col), int WXUNUSED(Width), int WXUNUSED(Style))
+wxbPen::wxbPen (wxColour * WXUNUSED(col), int WXUNUSED(Width), int WXUNUSED(Style))
 {
   __type = wxTYPE_PEN;
   locked = 0;
@@ -636,14 +570,14 @@ int wxbPen::GetDashes (wxDash ** ptr)
   return nb_dash;
 }
 
-wxColour& wxbPen::GetColour (void)
+wxColour *wxbPen::GetColour (void)
 {
-  return colour;
+  return &colour;
 }
 
-void wxbPen::SetColour (wxColour& col)
+void wxbPen::SetColour (wxColour *col)
 {
-  colour = col;
+  colour.CopyFrom(col);
 }
 
 void wxbPen::SetColour (const char *col)
@@ -707,7 +641,7 @@ wxbBrush::~wxbBrush ()
     --stipple->selectedIntoDC;
 }
 
-wxbBrush::wxbBrush (wxColour& WXUNUSED(col), int WXUNUSED(Style))
+wxbBrush::wxbBrush (wxColour * WXUNUSED(col), int WXUNUSED(Style))
 {
   __type = wxTYPE_BRUSH;
   locked = 0;
@@ -729,14 +663,14 @@ wxBitmap *wxbBrush::GetStipple (void)
   return stipple;
 }
 
-wxColour& wxbBrush::GetColour (void)
+wxColour *wxbBrush::GetColour (void)
 {
-  return colour;
+  return &colour;
 }
 
-void wxbBrush::SetColour (wxColour& col)
+void wxbBrush::SetColour (wxColour *col)
 {
-  colour = col;
+  colour.CopyFrom(col);
 }
 
 void wxbBrush::SetColour (const char *col)
@@ -814,21 +748,18 @@ wxPen *wxPenList::FindOrCreatePen (wxColour * colour, int width, int style)
   while ((node = list->NextNode(i))) {
     wxPen *each_pen = (wxPen *) node->Data ();
     if (each_pen &&
-	each_pen->GetWidth () == width &&
-	each_pen->GetStyle () == style &&
-	each_pen->GetColour ().Red () == colour->Red () &&
-	each_pen->GetColour ().Green () == colour->Green () &&
-	each_pen->GetColour ().Blue () == colour->Blue ())
+	each_pen->GetWidth() == width &&
+	each_pen->GetStyle() == style &&
+	each_pen->GetColour()->Red () == colour->Red () &&
+	each_pen->GetColour()->Green () == colour->Green () &&
+	each_pen->GetColour()->Blue () == colour->Blue ())
       return each_pen;
   }
-  /* MATTHEW: [8] With GC, must explicitly add: */
-  pen = new wxPen (*colour, width, style);
+  pen = new wxPen (colour, width, style);
 
   pen->Lock(1);
 
-#if WXGARBAGE_COLLECTION_ON
   AddPen(pen);
-#endif
 
   return pen;
 }
@@ -871,21 +802,18 @@ wxBrush *wxBrushList::FindOrCreateBrush (wxColour * colour, int style)
   while ((node = list->NextNode(i))) {
     wxBrush *each_brush = (wxBrush *) node->Data ();
     if (each_brush &&
-	each_brush->GetStyle () == style &&
-	each_brush->GetColour ().Red () == colour->Red () &&
-	each_brush->GetColour ().Green () == colour->Green () &&
-	each_brush->GetColour ().Blue () == colour->Blue ())
+	each_brush->GetStyle() == style &&
+	each_brush->GetColour()->Red () == colour->Red () &&
+	each_brush->GetColour()->Green () == colour->Green () &&
+	each_brush->GetColour()->Blue () == colour->Blue ())
       return each_brush;
   }
 
-  /* MATTHEW: [8] With GC, must explicitly add: */
-  brush = new wxBrush (*colour, style);
+  brush = new wxBrush (colour, style);
 
   brush->Lock(1);
 
-#if WXGARBAGE_COLLECTION_ON
   AddBrush(brush);
-#endif
 
   return brush;
 }
@@ -948,7 +876,7 @@ wxFont *wxFontList::
 FindOrCreateFont (int PointSize, const char *Face, int Family, int Style, int Weight, Bool underline)
 {
   return FindOrCreateFont(PointSize,
-			  wxTheFontNameDirectory.FindOrCreateFontId(Face, Family),
+			  wxTheFontNameDirectory->FindOrCreateFontId(Face, Family),
 			  Style,
 			  Weight,
 			  underline);

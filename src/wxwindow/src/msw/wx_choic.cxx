@@ -42,8 +42,9 @@ BOOL wxChoice::MSWCommand(UINT param, WORD id)
 		  (WPARAM)MAKELONG(id, param),
 		  (LPARAM)GetHWND());
     } else {
-      wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
-      ProcessCommand(*event);
+      wxCommandEvent *event;
+	  event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+      ProcessCommand(event);
       /* delete[] event->commandString; */
     }
     return TRUE;

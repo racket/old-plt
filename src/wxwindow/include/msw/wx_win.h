@@ -105,7 +105,7 @@ class wxWindow: public wxbWindow
 
   void Refresh(void);
 
-  void OnScroll(wxScrollEvent& event);
+  void OnScroll(wxScrollEvent *event);
   void SetScrollPos(int orient, int pos);
   void SetScrollRange(int orient, int range);
   void SetScrollPage(int orient, int page);
@@ -120,10 +120,10 @@ class wxWindow: public wxbWindow
   void OnSize(int w, int h);
 
   // Internal function to update scrollbars
-  void DoScroll(wxScrollEvent& event);
+  void DoScroll(wxScrollEvent *event);
 
   // Calculate scroll increment
-  int CalcScrollInc(wxScrollEvent& event);
+  int CalcScrollInc(wxScrollEvent *event);
 
   Bool CallPreOnEvent(wxWindow *, wxMouseEvent *);
   Bool CallPreOnChar(wxWindow *, wxKeyEvent *);  

@@ -233,7 +233,7 @@ static int mark_eventspace_val(void *p, Mark_Proc mark)
     gcMARK_TYPED(wxStandardSnipClassList *, c->snipClassList);
     gcMARK_TYPED(wxBufferDataClassList *, c->bufferDataClassList);
     gcMARK_TYPED(wxWindow *, c->modal_window);
-    gcMARK_TYPED(struct MrEd_Saved_Modal *, c->modal_stack);
+    gcMARK_TYPED(MrEd_Saved_Modal *, c->modal_stack);
 
     gcMARK_TYPED(Scheme_Config *, c->main_config);
 
@@ -322,7 +322,7 @@ wxWindow *wxGetModalWindow(wxObject *w)
 class MrEd_Saved_Modal {
 public:
   wxWindow *win;
-  struct MrEd_Saved_Modal *next;
+  MrEd_Saved_Modal *next;
 };
 
 void wxPushModalWindow(wxObject *w, wxWindow *win)

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cxx,v 1.16 1999/10/05 14:24:06 mflatt Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.17 1999/11/15 19:55:14 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -76,14 +76,14 @@ wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weigh
   COUNT_P(font_count);
 
   Create(PointSize, 
-	 wxTheFontNameDirectory.FindOrCreateFontId(Face, Family), 
+	 wxTheFontNameDirectory->FindOrCreateFontId(Face, Family), 
 	 Style, Weight, Underlined);
 }
 
 Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Underlined)
 {
   fontid = FontId;
-  family = wxTheFontNameDirectory.GetFamily(fontid);
+  family = wxTheFontNameDirectory->GetFamily(fontid);
   style = Style;
   weight = Weight;
   point_size = PointSize;
@@ -131,7 +131,7 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
   int ff_family = 0;
   char *ff_face = NULL;
   
-  ff_face = wxTheFontNameDirectory.GetScreenName(fontid, weight, style);
+  ff_face = wxTheFontNameDirectory->GetScreenName(fontid, weight, style);
   if (!*ff_face)
     ff_face = NULL;
   
@@ -297,11 +297,11 @@ wxPen::~wxPen()
   cpen = NULL;
 }
 
-wxPen::wxPen(wxColour& col, int Width, int Style)
+wxPen::wxPen(wxColour *col, int Width, int Style)
 {
   COUNT_P(pen_count);
 
-  colour = col;
+  colour.CopyFrom(col);
   stipple = NULL;
   width = Width;
   style = Style;
@@ -554,11 +554,11 @@ wxBrush::~wxBrush()
   cbrush = NULL;
 }
 
-wxBrush::wxBrush(wxColour& col, int Style)
+wxBrush::wxBrush(wxColour *col, int Style)
 {
   COUNT_P(brush_count);
 
-  colour = col;
+  colour.CopyFrom(col);
   style = Style;
   stipple = NULL;
   cbrush = NULL;
@@ -1266,12 +1266,7 @@ wxBitmap::~wxBitmap(void)
 
   if (selectedInto)
   {
-	  ((wxMemoryDC *)selectedInto)->SelectObject(NULL);
-#if 0
-    char buf[200];
-    sprintf(buf, "Bitmap %X was deleted without selecting out of wxMemoryDC %X.", this, selectedInto);
-    wxFatalError(buf);
-#endif
+    ((wxMemoryDC *)selectedInto)->SelectObject(NULL);
   }
   if (ms_bitmap)
   {

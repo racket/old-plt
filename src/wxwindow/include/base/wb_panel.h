@@ -123,15 +123,7 @@ class wxbPanel: public wxCanvas
   virtual void OnChangeFocus(wxItem *from, wxItem *to);
   virtual Bool OnFunctionKey(wxKeyEvent &event);
 
-#if USE_WX_RESOURCES
-  /*
-   * Optional resource loading facility
-   */
-
-  Bool LoadFromResource(wxWindow *parent, char *resourceName, wxResourceTable *table = NULL);
-#endif
-
-  void OnEvent(wxMouseEvent& event);
+  void OnEvent(wxMouseEvent *event);
   virtual void OnItemEvent(wxItem *item, wxMouseEvent& event);
   virtual void ProcessItemEvent(wxItem *item, wxMouseEvent& event, int selectionHandle);
 

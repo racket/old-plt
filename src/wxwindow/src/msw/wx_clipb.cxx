@@ -280,15 +280,17 @@ Bool wxGetClipboardFormatName(int dataFormat, char *formatName, int maxCount)
  * Generalized clipboard implementation by Matthew Flatt
  */
 
-IMPLEMENT_DYNAMIC_CLASS(wxClipboard, wxObject)
-IMPLEMENT_ABSTRACT_CLASS(wxClipboardClient, wxObject)
-
 wxClipboard *wxTheClipboard = NULL;
 
 void wxInitClipboard(void)
 {
   if (!wxTheClipboard)
     wxTheClipboard = new wxClipboard;
+}
+
+ wxClipboardClient::wxClipboardClient()
+{
+  formats = new wxStringList;
 }
 
 wxClipboard::wxClipboard()
@@ -333,8 +335,8 @@ void wxClipboard::SetClipboardClient(wxClipboardClient *client, long time)
 
     wxEmptyClipboard();
 
-    formats = clipOwner->formats.ListToArray(FALSE);
-	count = clipOwner->formats.Number();
+    formats = clipOwner->formats->ListToArray(FALSE);
+	count = clipOwner->formats->Number();
     for (i = 0; i < count; i++) {
       ftype = FormatStringToID(formats[i]);
       data = clipOwner->GetData(formats[i], &size);
@@ -409,7 +411,7 @@ char *wxClipboard::GetClipboardString(long time)
 char *wxClipboard::GetClipboardData(char *format, long *length, long time)
 {
   if (clipOwner)  {
-    if (clipOwner->formats.Member(format))
+    if (clipOwner->formats->Member(format))
       return clipOwner->GetData(format, length);
     else
       return NULL;

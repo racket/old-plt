@@ -28,8 +28,9 @@ BOOL wxButton::MSWCommand(UINT param, WORD WXUNUSED(id))
 {
   if (param == BN_CLICKED)
   {
-    wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_BUTTON_COMMAND);
-    ProcessCommand(*event);
+    wxCommandEvent *event;
+	event = new wxCommandEvent(wxEVENT_TYPE_BUTTON_COMMAND);
+    ProcessCommand(event);
     return TRUE;
   }
   else return FALSE;

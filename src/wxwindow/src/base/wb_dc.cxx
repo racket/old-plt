@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_dc.cxx,v 1.4 1998/11/17 21:40:35 mflatt Exp $
+ * RCS_ID:      $Id: wb_dc.cxx,v 1.5 1999/10/05 16:31:50 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -92,13 +92,13 @@ void wxbDC::DrawLines(wxList *list, float xoffset, float yoffset)
 void wxbDC::SetTextForeground(wxColour *colour)
 {
   if (colour)
-    current_text_foreground = *colour;
+    current_text_foreground->CopyFrom(colour);
 }
 
 void wxbDC::SetTextBackground(wxColour *colour)
 {
   if (colour)
-    current_text_background = *colour;
+    current_text_background->CopyFrom(colour);
 }
 
 void wxbDC::SetBackgroundMode(int mode)
@@ -156,6 +156,13 @@ void wxbDC::DrawSpline(float x1, float y1, float x2, float y2, float x3, float y
  */
 }
 #endif
+
+wxColour *wxbDC::GetBackground(void)
+{
+  wxColour *c = new wxColour;
+  c->CopyFrom(current_background_color);
+  return c;
+}
 
 void wxbDC::SetLogicalOrigin(float x, float y)
 {

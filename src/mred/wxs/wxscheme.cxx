@@ -60,7 +60,7 @@ public:
   float x, y, w, h;
   float onx, ony, offx, offy;
   wxBitmap *on, *off;
-  struct GCBitmap *next;
+  GCBitmap *next;
 };
 
 #ifdef MZ_PRECISE_GC

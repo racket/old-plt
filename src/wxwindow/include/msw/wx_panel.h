@@ -71,8 +71,8 @@ class wxPanel: public wxbPanel
   void Tab(void);
 
   void Tab(int pixels);
-
-  virtual void ChangeToGray(Bool gray);
+
+  virtual void ChangeToGray(Bool gray);
 
   void GetCursor(int *x, int *y);
   void SetItemCursor(int x, int y);

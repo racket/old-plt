@@ -58,7 +58,7 @@ class wxbMenu: public wxItem
   // menu too if itemMenu is non-NULL.
   wxMenuItem *FindItemForId(long itemId, wxMenu **itemMenu = NULL, int *pos = NULL);
 
-  void ProcessCommand(wxCommandEvent& event);
+  void ProcessCommand(wxCommandEvent *event);
 };
 
 // Menu Bar (a la Windows)

@@ -26,12 +26,14 @@
 BOOL wxListBox::MSWCommand(UINT param, WORD WXUNUSED(id))
 {
   if (param == LBN_SELCHANGE) {
-    wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
-    ProcessCommand(*event);
+    wxCommandEvent *event;
+	event = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
+    ProcessCommand(event);
     return TRUE;
   } else if (param == LBN_DBLCLK) {
-    wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND);
-    ProcessCommand(*event);
+    wxCommandEvent *event;
+	event = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND);
+    ProcessCommand(event);
     return TRUE;
   }
 

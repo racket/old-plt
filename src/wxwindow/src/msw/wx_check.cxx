@@ -22,8 +22,9 @@
 
 BOOL wxCheckBox::MSWCommand(UINT WXUNUSED(param), WORD WXUNUSED(id))
 {
-  wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_CHECKBOX_COMMAND);
-  ProcessCommand(*event);
+  wxCommandEvent *event;
+  event = new wxCommandEvent(wxEVENT_TYPE_CHECKBOX_COMMAND);
+  ProcessCommand(event);
   return TRUE;
 }
 

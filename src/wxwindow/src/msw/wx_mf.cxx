@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_mf.cxx,v 1.2 1998/08/11 14:25:05 mflatt Exp $
+ * RCS_ID:      $Id: wx_mf.cxx,v 1.3 1998/09/21 05:21:17 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -162,9 +162,9 @@ wxMetaFileDC::wxMetaFileDC(char *file)
 
   current_pen = wxBLACK_PEN;
   current_brush = wxBLACK_BRUSH;
-  current_background_color = *wxWHITE;
-  current_text_foreground = *wxBLACK;
-  current_text_background = *wxWHITE;
+  current_background_color = new wxColour(wxWHITE);
+  current_text_foreground = new wxColour(wxBLACK);
+  current_text_background = new wxColour(wxWHITE);
   Colour = wxColourDisplay();
 }
 

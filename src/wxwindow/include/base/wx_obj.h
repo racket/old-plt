@@ -18,7 +18,7 @@
 
 #include "common.h"
 
-#include "gc_cpp.h"
+#include "../../../wxcommon/wxGC.h"
 
 #ifndef WXGC_CLEANUP_CLASS
 # define WXGC_CLEANUP_CLASS gc_cleanup
@@ -44,6 +44,8 @@ class wxObject;
 #define WXGC_IGNORE(ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
 #define WXGC_ATOMIC (AtomicGC)
 #define WXGC_NO_CLEANUP FALSE
+#define DELETE_OBJ delete
+#define DELETE_VAL delete
 
 class wxObject : public WXGC_CLEANUP_CLASS
 {

@@ -90,9 +90,9 @@ class wxbDC: public wxObject
 
   wxPen *current_pen;
   wxBrush *current_brush;
-  wxColour current_background_color;
-  wxColour current_text_foreground;
-  wxColour current_text_background;
+  wxColour *current_background_color;
+  wxColour *current_text_foreground;
+  wxColour *current_text_background;
   wxFont *font;
   Bool autoSetting ;
 
@@ -128,7 +128,7 @@ class wxbDC: public wxObject
   virtual void CrossHair(float x, float y) = 0;
   virtual void DrawArc(float x1,float y1,float x2,float y2,float xc,float yc)=0;
   virtual void DrawPoint(float x, float y) = 0;
-  inline virtual void DrawPoint(wxPoint& point) { DrawPoint(point.x, point.y); }
+  inline virtual void DrawPoint(wxPoint *point) { DrawPoint(point->x, point->y); }
   virtual void DrawLines(int n, wxPoint points[], float xoffset = 0, float yoffset = 0) = 0;
   virtual void DrawLines(int n, wxIntPoint points[], int xoffset = 0, int yoffset = 0) = 0;
   virtual void DrawLines(wxList *list, float xoffset = 0, float yoffset = 0);
@@ -185,13 +185,12 @@ class wxbDC: public wxObject
   inline virtual int  GetMapMode(void) {return mapping_mode;};
 
   // The following methods provide a cleaner interface
-  inline virtual wxColour *GetBackground(void)      { wxColour *c = new wxColour; *c = current_background_color; return c; }
-  inline virtual wxBrush *GetBrush(void)           { return current_brush ;}
-  inline virtual wxFont  *GetFont(void)            { return font ;}
-  inline virtual wxPen   *GetPen(void)             { return current_pen ;}
-  inline virtual wxColour&GetTextBackground(void)  { return current_text_background ;}
-  /* MATTHEW: [11] */
-  inline virtual wxColour&GetTextForeground(void)  { return current_text_foreground ;}
+  virtual wxColour *GetBackground(void);
+  inline virtual wxBrush *GetBrush(void)           { return current_brush;}
+  inline virtual wxFont  *GetFont(void)            { return font;}
+  inline virtual wxPen   *GetPen(void)             { return current_pen;}
+  inline virtual wxColour* GetTextBackground(void)  { return current_text_background;}
+  inline virtual wxColour* GetTextForeground(void)  { return current_text_foreground;}
  
   virtual void SetLogicalOrigin(float x, float y);
   virtual void SetDeviceOrigin(float x, float y);
@@ -220,7 +219,8 @@ class wxbDC: public wxObject
   virtual inline float MinY(void) { return min_y; }
   virtual inline float MaxY(void) { return max_y; }
   virtual Bool Blit(float xdest, float ydest, float width, float height,
-                    wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour* c = NULL) = 0;
+                    wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID, 
+		    wxColour* c = NULL) = 0;
 
   // Sometimes we need to override optimization, e.g.
   // if other software is drawing onto our surface and we

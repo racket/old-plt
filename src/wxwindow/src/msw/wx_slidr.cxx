@@ -251,9 +251,10 @@ void wxSliderEvent(HWND bar, WORD wParam, WORD pos)
   if (nScrollInc != 0)     {
     int new_pos = position + nScrollInc;
     if (!(new_pos < slider->s_min || new_pos > slider->s_max)) {
+      wxCommandEvent *event;
       slider->SetValue(new_pos);
-      wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_SLIDER_COMMAND);
-      slider->ProcessCommand(*event);
+	  event = new wxCommandEvent(wxEVENT_TYPE_SLIDER_COMMAND);
+      slider->ProcessCommand(event);
     }
   }
 }

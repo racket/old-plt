@@ -45,8 +45,11 @@ wxHashTable::~wxHashTable (void)
 {
   int i;
   for (i = 0; i < n; i++) {
-    if (hash_table[i])
-      delete (hash_table[i]);
+    if (hash_table[i]) {
+      wxList *l;
+      l = hash_table[i];
+      DELETE_OBJ l;
+    }
   }
 }
 
@@ -128,7 +131,7 @@ wxObject *wxHashTable::Delete(long key)
     if (node) {
       wxObject *data;
       data = node->Data();
-      delete node;
+      DELETE_OBJ node;
       return data;
     }
   }
@@ -147,7 +150,7 @@ wxObject *wxHashTable::Delete(const char *key)
     if (node) {
       wxObject *data;
       data = node->Data();
-      delete node;
+      DELETE_OBJ node;
       return data;
     }
   }

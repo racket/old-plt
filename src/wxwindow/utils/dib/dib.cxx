@@ -402,8 +402,10 @@ BOOL ReadDIB(LPSTR lpFileName, HBITMAP *bitmap, HPALETTE *palette)
 
     hDIB = GlobalAlloc(GHND, (DWORD)(sizeof(BITMAPINFOHEADER) + 
     					256 * sizeof(RGBQUAD)));
-    if (!hDIB)
-	return(NULL);
+    if (!hDIB) {
+      _lclose(fh);
+      return(NULL);
+    }
 
     lpbi = (LPBITMAPINFOHEADER)GlobalLock(hDIB);
 

@@ -79,7 +79,7 @@ class wxPen: public wxbPen
   HPEN my_old_cpen ;
 
   wxPen(void);
-  wxPen(wxColour& col, int width, int style);
+  wxPen(wxColour *col, int width, int style);
   wxPen(const char *col, int width, int style);
   ~wxPen(void);
 
@@ -104,7 +104,7 @@ class wxBrush: public wxbBrush
 
 
   wxBrush(void);
-  wxBrush(wxColour& col, int style);
+  wxBrush(wxColour *col, int style);
   wxBrush(const char *col, int style);
   ~wxBrush(void);
 
@@ -177,7 +177,7 @@ class wxCursor: public wxBitmap
   wxCursor(void);
   wxCursor(char bits[], int width, int height);
   wxCursor(const char *name, long flags = wxBITMAP_DISCARD_COLOURMAP | wxBITMAP_TYPE_CUR_RESOURCE,
-   int hotSpotX = 0, int hotSpotY = 0);
+	   int hotSpotX = 0, int hotSpotY = 0);
   wxCursor(int cursor_type);
   ~wxCursor(void);
 };

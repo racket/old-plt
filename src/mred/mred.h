@@ -20,6 +20,7 @@ class MrEdContextFrames {
 };
 
 class MrEdFinalizedContext;
+class MrEd_Saved_Modal;
 
 typedef struct MrEdContext {
   Scheme_Type type;
@@ -34,7 +35,7 @@ typedef struct MrEdContext {
   wxStandardSnipClassList *snipClassList;
   wxBufferDataClassList *bufferDataClassList;
   wxWindow *modal_window;
-  struct MrEd_Saved_Modal *modal_stack;
+  MrEd_Saved_Modal *modal_stack;
 
   Scheme_Config *main_config;
 

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.24 1999/11/13 03:36:48 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.25 1999/11/13 03:42:24 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -98,8 +98,9 @@ wxDC::wxDC(void)
   window_ext_y = VIEWPORT_EXTENT;
   current_pen = NULL;
   current_brush = NULL;
-  current_background_color = *wxWHITE;
-  current_text_foreground = *wxBLACK;
+  current_background_color = new wxColour(wxWHITE);
+  current_text_foreground = new wxColour(wxBLACK);
+  current_text_background = new wxColour(wxWHITE);
   current_bk_mode = wxTRANSPARENT;
   Colour = wxColourDisplay();
 
@@ -505,7 +506,7 @@ static void FillWithStipple(wxDC *dc, wxRegion *r, wxBrush *brush)
 
   wxBitmap *bm = brush->GetStipple();
   int style = brush->GetStyle();
-  wxColour *c = &brush->GetColour();
+  wxColour *c = brush->GetColour();
 
   old = dc->GetClippingRegion();
   if (old) r->Intersect(old);
@@ -586,7 +587,7 @@ void wxDC::DrawArc(float x, float y, float w, float h, float start, float end)
 void wxDC::DrawPoint(float x, float y)
 {
   if (current_pen)
-    SetPixel(x, y, &current_pen->GetColour());
+    SetPixel(x, y, current_pen->GetColour());
 }
 
 void wxDC::SetPixel(float x, float y, wxColour *c)
@@ -890,12 +891,12 @@ void wxDC::DrawText(const char *text, float x, float y, Bool use16bit)
     }
   }
   
-  if (current_text_foreground.Ok())
-    SetTextColor(dc, current_text_foreground.pixel);
+  if (current_text_foreground->Ok())
+    SetTextColor(dc, current_text_foreground->pixel);
 
   DWORD old_background;
-  if (current_text_background.Ok()) {
-    old_background = SetBkColor(dc, current_text_background.pixel);
+  if (current_text_background->Ok()) {
+    old_background = SetBkColor(dc, current_text_background->pixel);
   }
   
   SetBkMode(dc, ((current_bk_mode == wxTRANSPARENT) 
@@ -906,7 +907,7 @@ void wxDC::DrawText(const char *text, float x, float y, Bool use16bit)
 
   (void)TextOut(dc, XLOG2DEV(xx1), YLOG2DEV(yy1), text, strlen(text));
 
-  if (current_text_background.Ok())
+  if (current_text_background->Ok())
     (void)SetBkColor(dc, old_background);
 
   DoneDC(dc);
@@ -920,7 +921,7 @@ void wxDC::DrawText(const char *text, float x, float y, Bool use16bit)
 
 void wxDC::SetBackground(wxColour *c)
 {
-  current_background_color = *c;
+  current_background_color->CopyFrom(c);
 
   if (canvas) {
     wxCanvasWnd *wnd = (wxCanvasWnd *)canvas->handle;

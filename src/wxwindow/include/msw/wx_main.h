@@ -54,7 +54,7 @@ class wxApp: public wxbApp
   virtual BOOL OnIdle(void);
 
   // Windows specific. Intercept keyboard input.
-  virtual Bool OnCharHook(wxKeyEvent& event);
+  virtual Bool OnCharHook(wxKeyEvent *event);
 };
 
 extern HINSTANCE wxhInstance;

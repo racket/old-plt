@@ -120,7 +120,7 @@ class wxTypeTree: public wxHashTable
   char *GetName(WXTYPE t);
 };
 
-extern wxTypeTree wxAllTypes;
+extern wxTypeTree *wxAllTypes;
 
 Bool wxSubType(WXTYPE type1, WXTYPE type2);
 

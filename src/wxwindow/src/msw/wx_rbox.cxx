@@ -59,8 +59,9 @@ wxRadioItemProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     if (rb->buttonEnabled[i->which]) {
       rb->SetSelection(i->which);
       rb->ButtonFocus(i->which);
-      wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
-      i->item->ProcessCommand(*event);
+      wxCommandEvent *event;
+	  event = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
+      i->item->ProcessCommand(event);
     }
     return TRUE;
   } else

@@ -10,7 +10,7 @@
 @INCLUDE wxs_eds.xci
 @INCLUDE wxs_bmt.xci
 
-@CLASSBASE wxMediaPasteboard "pasteboard" : "editor"
+@CLASSBASE wxMediaPasteboard "pasteboard" : "editor" / nofnl
 
 @CREATOR ()
 

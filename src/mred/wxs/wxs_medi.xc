@@ -50,7 +50,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 
 @INCLUDE wxs_bmt.xci
 
-@CLASSBASE wxMediaBuffer "editor" : "object"
+@CLASSBASE wxMediaBuffer "editor" : "object" / nofnl
 @INTERFACE "editor"
 
 @CLASSID wxTYPE_MEDIA_BUFFER

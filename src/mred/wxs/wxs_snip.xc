@@ -26,7 +26,7 @@
 
 @INCLUDE wxs_eop.xci
 
-@CLASSBASE wxSnip "snip":"object"
+@CLASSBASE wxSnip "snip":"object" / nofnl
 
 @CREATOR ();
 
@@ -57,7 +57,7 @@
 
 @MACRO SetLength = x1 = SCHEME_STRLEN_VAL(p[0]);
 
-@CLASSBASE wxTextSnip "string-snip":"snip"
+@CLASSBASE wxTextSnip "string-snip":"snip" / nofnl
 
 @CREATOR (nnlong=0); <> initial size
 @CREATOR (string,-long); : : /SetLength <> initial string
@@ -73,7 +73,7 @@
 @END
 
 
-@CLASSBASE wxTabSnip "tab-snip":"string-snip"
+@CLASSBASE wxTabSnip "tab-snip":"string-snip" / nofnl
 
 @CREATOR ();
 
@@ -86,7 +86,7 @@
 
 @INCLUDE wxs_bmt.xci
 
-@CLASSBASE wxImageSnip "image-snip":"snip"
+@CLASSBASE wxImageSnip "image-snip":"snip" / nofnl
 
 // This isn't `pathname' because it expands internally
 @CREATOR (nstring=NULL,SYM[bitmapType]=0,bool=FALSE,bool=TRUE); : : //USEALLFUEL[x0] <> filename
@@ -109,7 +109,7 @@
 
 @END
 
-@CLASSBASE wxMediaSnip "editor-snip" : "snip"
+@CLASSBASE wxMediaSnip "editor-snip" : "snip" / nofnl
 
 @CREATOR (wxMediaBuffer^=NULL,bool=TRUE,nnint=wxMSNIPBOX_XMARGIN,nnint=wxMSNIPBOX_YMARGIN,nnint=wxMSNIPBOX_XMARGIN,nnint=wxMSNIPBOX_YMARGIN,nnint=wxMSNIPBOX_XINSET,nnint=wxMSNIPBOX_YINSET,nnint=wxMSNIPBOX_XINSET,nnint=wxMSNIPBOX_YINSET,nnfs[none]=-1,nnfs[none]=-1,nnfs[none]=-1,nnfs[none]=-1);
 

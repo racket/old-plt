@@ -17,6 +17,21 @@
     Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+/* This file implements MzScheme threads. The word "process" is used
+   everywhere, but it means "thread". 
+
+   Usually, MzScheme threads are implemented by copying the stack.
+   The scheme_process_block() function is called occassionally by the
+   evaluator so that the current thread can be swapped out.
+   scheme_swap_process() performs the actual swap. Threads can also be
+   implemented by the OS; the bottom part of this file contains
+   OS-specific thread code.
+
+   Much of the work in thread management is knowning when to go to
+   sleep, to be nice to the OS outside of MzScheme. The rest of the
+   work is implementing custodians (called "managers" in the code),
+   parameters, and wills. */
+
 /* Some copilers don't like re-def of GC_malloc in schemef.h: */
 #define SCHEME_NO_GC_PROTO
 
@@ -120,26 +135,9 @@ extern HANDLE scheme_break_semaphore;
 static int swapping = 0;
 #endif
 
-typedef struct ActiveWill {
-  MZTAG_IF_REQUIRED
-  Scheme_Object *o;
-  Scheme_Object *proc;
-  struct WillExecutor *w;  /* Set to will executor when executed */
-  struct ActiveWill *next;
-} ActiveWill;
-
-typedef struct WillExecutor {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
-  Scheme_Object *sema;
-  ActiveWill *first, *last;
-} WillExecutor;
-
-typedef struct WillRegistration {
-  MZTAG_IF_REQUIRED
-  Scheme_Object *proc;
-  WillExecutor *w;
-} WillRegistration;
+/*========================================================================*/
+/*                    local variables and proptypes                       */
+/*========================================================================*/
 
 #define INIT_TB_SIZE  20
 
@@ -169,6 +167,11 @@ static Scheme_Manager *main_manager;
 
 long scheme_total_gc_time;
 static long start_this_gc_time;
+extern void (*GC_collect_start_callback)(void);
+extern void (*GC_collect_end_callback)(void);
+static void get_ready_for_GC(void);
+static void done_with_GC(void);
+
 static short delay_breaks = 0, delayed_break_ready = 0;
 
 void (*scheme_sleep)(float seconds, void *fds);
@@ -185,11 +188,6 @@ static int process_ended_with_activity;
 #endif
 
 static int tls_pos = 0;
-
-extern void (*GC_collect_start_callback)(void);
-extern void (*GC_collect_end_callback)(void);
-static void get_ready_for_GC(void);
-static void done_with_GC(void);
 
 extern long GC_get_memory_use();
 
@@ -240,7 +238,6 @@ static Scheme_Object *register_will(int argc, Scheme_Object *args[]);
 static Scheme_Object *will_executor_try(int argc, Scheme_Object *args[]);
 static Scheme_Object *will_executor_go(int argc, Scheme_Object *args[]);
 
-static Scheme_Object *do_next_will(WillExecutor *w);
 static Scheme_Config *make_initial_config(void);
 static int do_kill_thread(Scheme_Process *p);
 
@@ -278,6 +275,10 @@ typedef struct {
 static int num_nsos = 0;
 static Scheme_NSO *namespace_options = NULL;
 
+#ifdef MZ_REAL_THREADS
+void *make_namespace_mutex;
+#endif
+
 #if defined(MZ_REAL_THREADS)
 # define SETJMP(p) 1
 # define LONGJMP(p) 0
@@ -286,10 +287,6 @@ static Scheme_NSO *namespace_options = NULL;
 # define SETJMP(p) scheme_setjmpup(&p->jmpup_buf, p, p->stack_start)
 # define LONGJMP(p) scheme_longjmpup(&p->jmpup_buf)
 # define RESETJMP(p) scheme_reset_jmpup_buf(&p->jmpup_buf)
-#endif
-
-#ifdef MZ_REAL_THREADS
-void *make_namespace_mutex;
 #endif
 
 #ifndef MZ_REAL_THREADS
@@ -327,8 +324,16 @@ extern BOOL WINAPI DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved);
 # define scheme_process_hop_type scheme_process_type
 #endif
 
+#ifdef MZ_PRECISE_GC
+static unsigned long get_current_stack_start(void);
+#endif
+
 typedef int (*Block_Check_Procedure)(Scheme_Object *blocker);
 typedef void (*Block_Needs_Wakeup_Procedure)(Scheme_Object *blocker, void *fds);
+
+/*========================================================================*/
+/*                             initialization                             */
+/*========================================================================*/
 
 void scheme_init_process(Scheme_Env *env)
 {
@@ -520,218 +525,9 @@ static Scheme_Object *current_memory_use(int argc, Scheme_Object *args[])
   return scheme_make_integer(GC_get_memory_use());
 }
 
-#ifdef MZ_PRECISE_GC
-static unsigned long get_current_stack_start(void)
-{
-  return (unsigned long)scheme_current_process->stack_start;
-}
-#endif
-
-#define ATSTEP(x) /* printf(x "\n") */
-
-static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config, 
-				    Scheme_Manager *mgr)
-{
-  Scheme_Process *process;
-  int prefix = 0, *alive;
-
-  ATSTEP("making process");
-
-  process = MALLOC_ONE_TAGGED(Scheme_Process);
-
-  process->type = scheme_process_type;
-
-  process->stack_start = 0;
-
-  if (!scheme_main_process) {
-#ifdef MZ_PRECISE_GC
-    register_traversers();
-#endif
-#ifndef MZ_REAL_THREADS
-    REGISTER_SO(scheme_current_process);
-#endif
-    REGISTER_SO(scheme_main_process);
-    REGISTER_SO(scheme_first_process);
-
-#ifdef MZ_REAL_THREADS
-    process->thread = SCHEME_INIT_THREADS();
-    SCHEME_SET_CURRENT_PROCESS(process);
-#else
-    scheme_current_process = process;
-#endif
-    scheme_first_process = scheme_main_process = process;
-    process->prev = NULL;
-    process->next = NULL;
-
-    GC_collect_start_callback = get_ready_for_GC;
-    GC_collect_end_callback = done_with_GC;
-
-#ifndef MZ_REAL_THREADS
-#ifdef LINK_EXTENSIONS_BY_TABLE
-    scheme_current_process_ptr = &scheme_current_process;
-    scheme_fuel_counter_ptr = &scheme_fuel_counter;
-#endif
-#endif
-
-#ifdef MZ_REAL_THREADS
-    scheme_init_stack_check();
-#endif
-
-#ifdef MZ_PRECISE_GC
-    {
-      void *ss;
-      ss = (void *)GC_get_stack_base();
-      process->stack_start = ss;
-    }
-    GC_get_thread_stack_base = get_current_stack_start;
-#endif
-  } else {
-    prefix = 1;
-  }
-
-  process->engine_weight = 10000;
-
-  ATSTEP("making config");
-
-  if (!config) {    
-    config = make_initial_config();
-    process->config = config;
-  } else
-    process->config = config;
-
-  ATSTEP("initing jmpbuf");
-
-  scheme_init_jmpup_buf(&process->jmpup_buf);
-
-  process->running = MZTHREAD_RUNNING;
-
-  process->dw = NULL;
-
-  process->block_descriptor = NOT_BLOCKED;
-  process->block_check = NULL;
-  process->block_needs_wakeup = NULL;
-  process->sleep_time = 0;
-
-  process->current_local_env = NULL;
-
-  process->suspend_break = 0;
-  process->external_break = 0;
-
-  process->print_buffer = NULL;
-  process->print_allocated = 0;
-
-#ifndef NO_SCHEME_EXN
-  process->exn_raised = 0;
-#endif
-  process->error_invoked = 0;
-  process->err_val_str_invoked = 0;
-
-  process->ran_some = 1;
-
-  process->list_stack = NULL;
-
-  SCHEME_GET_LOCK();
-  if (prefix) {
-    if (after) {
-      process->prev = after;
-      process->next = after->next;
-      process->next->prev = process;
-      process->prev->next = process;
-    } else {
-      process->next = scheme_first_process;
-      process->prev = NULL;
-      process->next->prev = process;
-      scheme_first_process = process;
-    }
-  }
-
-  ATSTEP("initing tailbuf");
-
-  {
-    Scheme_Object **tb;
-    tb = MALLOC_N(Scheme_Object *, buffer_init_size);
-    process->tail_buffer = tb;
-  }
-  process->tail_buffer_size = buffer_init_size;
-#ifdef AGRESSIVE_ZERO_TB
-  process->tail_buffer_set = 0;
-#endif
-  SCHEME_RELEASE_LOCK();
-
-  process->runstack_size = INIT_SCHEME_STACK_SIZE;
-  alive = MALLOC_ONE_ATOMIC(int);
-  process->runstack_alive = alive;
-  *(alive) = 1;
-  {
-    Scheme_Object **sa;
-    sa = scheme_malloc_allow_interior(sizeof(Scheme_Object*) * INIT_SCHEME_STACK_SIZE);
-    process->runstack_start = sa;
-  }
-  process->runstack = process->runstack_start + INIT_SCHEME_STACK_SIZE;
-  process->runstack_saved = NULL;
-
-  process->cont_mark_pos = (MZ_MARK_POS_TYPE)1;
-  process->cont_mark_stack = 0;
-  process->cont_mark_stack_segments = NULL;
-  process->cont_mark_seg_count = 0;
-
-#ifdef RUNSTACK_IS_GLOBAL
-  if (!prefix) {
-# ifndef MZ_PRECISE_GC
-    /* Precise GC: we intentionally don't register MZ_RUNSTACK. See done_with_GC() */
-    REGISTER_SO(MZ_RUNSTACK);
-# endif
-    REGISTER_SO(MZ_RUNSTACK_START);
-
-    MZ_RUNSTACK = process->runstack;
-    MZ_RUNSTACK_START = process->runstack_start;
-    MZ_CONT_MARK_STACK = process->cont_mark_stack;
-    MZ_CONT_MARK_POS = process->cont_mark_pos;
-  }
-#endif
-
-#ifdef MZ_REAL_THREADS
-  process->done_sema = scheme_make_sema(0);
-#endif
-
-  process->on_kill = NULL;
-
-  process->user_tls = NULL;
-  process->user_tls_size = 0;
-  
-  process->nester = process->nestee = NULL;
-
-  ATSTEP("initing manager");
-
-  /* A thread points to a lot of stuff, so it's bad to put a finalization
-     on it, which is what registering with a manager does. Instead, we
-     register a weak indirection with the manager. That way, the thread
-     (and anything it points to) can be collected one GC cycle earlier. */
-  {
-    Scheme_Process_Manager_Hop *hop;
-    Scheme_Manager_Reference *mref;
-    hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
-    process->mr_hop = hop;
-    hop->type = scheme_process_hop_type;
-    {
-      Scheme_Process *wp;
-      wp = (Scheme_Process *)WEAKIFY((Scheme_Object *)process);
-      hop->p = wp;
-    }
-
-    mref = scheme_add_managed(mgr
-			      ? mgr
-			      : (Scheme_Manager *)scheme_get_param(scheme_config, MZCONFIG_MANAGER),
-			      (Scheme_Object *)hop, NULL, NULL, 0);
-    process->mref = mref;
-
-#ifndef MZ_PRECISE_GC
-    scheme_weak_reference((void **)&hop->p);
-#endif
-  }
-
-  return process;
-}
+/*========================================================================*/
+/*                              custodians                                */
+/*========================================================================*/
 
 static void ensure_manage_space(Scheme_Manager *m, int k)
 {
@@ -1110,6 +906,245 @@ void scheme_close_managed(Scheme_Manager *m)
 #endif
 }
 
+static Scheme_Object *make_manager(int argc, Scheme_Object *argv[])
+{
+  Scheme_Manager *m;
+
+  if (argc) {
+    if (!SCHEME_MANAGERP(argv[0]))
+      scheme_wrong_type("make-custodian", "custodian", 0, argc, argv);
+    m = (Scheme_Manager *)argv[0];
+  } else
+    m = (Scheme_Manager *)scheme_get_param(scheme_config, MZCONFIG_MANAGER);
+
+  return (Scheme_Object *)scheme_make_manager(m);
+}
+
+static Scheme_Object *manager_p(int argc, Scheme_Object *argv[])
+{
+  return SCHEME_MANAGERP(argv[0]) ? scheme_true : scheme_false;
+}
+
+static Scheme_Object *manager_close_all(int argc, Scheme_Object *argv[])
+{
+  if (!SCHEME_MANAGERP(argv[0]))
+    scheme_wrong_type("custodian-shutdown-all", "custodian", 0, argc, argv);
+
+  scheme_close_managed((Scheme_Manager *)argv[0]);
+
+  return scheme_void;
+}
+
+static Scheme_Object *current_manager(int argc, Scheme_Object *argv[])
+{
+  return scheme_param_config("current-custodian", 
+			     scheme_make_integer(MZCONFIG_MANAGER),
+			     argc, argv,
+			     -1, manager_p, "custodian", 0);
+}
+
+/*========================================================================*/
+/*                      thread record creation                            */
+/*========================================================================*/
+
+static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config, 
+				    Scheme_Manager *mgr)
+{
+  Scheme_Process *process;
+  int prefix = 0;
+
+  process = MALLOC_ONE_TAGGED(Scheme_Process);
+
+  process->type = scheme_process_type;
+
+  process->stack_start = 0;
+
+  if (!scheme_main_process) {
+    /* Creating the first thread... */
+#ifdef MZ_PRECISE_GC
+    register_traversers();
+#endif
+#ifndef MZ_REAL_THREADS
+    REGISTER_SO(scheme_current_process);
+#endif
+    REGISTER_SO(scheme_main_process);
+    REGISTER_SO(scheme_first_process);
+
+#ifdef MZ_REAL_THREADS
+    process->thread = SCHEME_INIT_THREADS();
+    SCHEME_SET_CURRENT_PROCESS(process);
+#else
+    scheme_current_process = process;
+#endif
+    scheme_first_process = scheme_main_process = process;
+    process->prev = NULL;
+    process->next = NULL;
+
+    GC_collect_start_callback = get_ready_for_GC;
+    GC_collect_end_callback = done_with_GC;
+
+#ifndef MZ_REAL_THREADS
+#ifdef LINK_EXTENSIONS_BY_TABLE
+    scheme_current_process_ptr = &scheme_current_process;
+    scheme_fuel_counter_ptr = &scheme_fuel_counter;
+#endif
+#endif
+
+#ifdef MZ_REAL_THREADS
+    scheme_init_stack_check();
+#endif
+
+#ifdef MZ_PRECISE_GC
+    {
+      void *ss;
+      ss = (void *)GC_get_stack_base();
+      process->stack_start = ss;
+    }
+    GC_get_thread_stack_base = get_current_stack_start;
+#endif
+  } else {
+    prefix = 1;
+  }
+
+  process->engine_weight = 10000;
+
+  if (!config) {    
+    config = make_initial_config();
+    process->config = config;
+  } else
+    process->config = config;
+
+  scheme_init_jmpup_buf(&process->jmpup_buf);
+
+  process->running = MZTHREAD_RUNNING;
+
+  process->dw = NULL;
+
+  process->block_descriptor = NOT_BLOCKED;
+  process->block_check = NULL;
+  process->block_needs_wakeup = NULL;
+  process->sleep_time = 0;
+
+  process->current_local_env = NULL;
+
+  process->suspend_break = 0;
+  process->external_break = 0;
+
+  process->print_buffer = NULL;
+  process->print_allocated = 0;
+
+#ifndef NO_SCHEME_EXN
+  process->exn_raised = 0;
+#endif
+  process->error_invoked = 0;
+  process->err_val_str_invoked = 0;
+
+  process->ran_some = 1;
+
+  process->list_stack = NULL;
+
+  SCHEME_GET_LOCK();
+  if (prefix) {
+    if (after) {
+      process->prev = after;
+      process->next = after->next;
+      process->next->prev = process;
+      process->prev->next = process;
+    } else {
+      process->next = scheme_first_process;
+      process->prev = NULL;
+      process->next->prev = process;
+      scheme_first_process = process;
+    }
+  }
+
+  {
+    Scheme_Object **tb;
+    tb = MALLOC_N(Scheme_Object *, buffer_init_size);
+    process->tail_buffer = tb;
+  }
+  process->tail_buffer_size = buffer_init_size;
+#ifdef AGRESSIVE_ZERO_TB
+  process->tail_buffer_set = 0;
+#endif
+  SCHEME_RELEASE_LOCK();
+
+  process->runstack_size = INIT_SCHEME_STACK_SIZE;
+  {
+    Scheme_Object **sa;
+    sa = scheme_malloc_allow_interior(sizeof(Scheme_Object*) * INIT_SCHEME_STACK_SIZE);
+    process->runstack_start = sa;
+  }
+  process->runstack = process->runstack_start + INIT_SCHEME_STACK_SIZE;
+  process->runstack_saved = NULL;
+
+  process->cont_mark_pos = (MZ_MARK_POS_TYPE)1;
+  process->cont_mark_stack = 0;
+  process->cont_mark_stack_segments = NULL;
+  process->cont_mark_seg_count = 0;
+
+#ifdef RUNSTACK_IS_GLOBAL
+  if (!prefix) {
+# ifndef MZ_PRECISE_GC
+    /* Precise GC: we intentionally don't register MZ_RUNSTACK. See done_with_GC() */
+    REGISTER_SO(MZ_RUNSTACK);
+# endif
+    REGISTER_SO(MZ_RUNSTACK_START);
+
+    MZ_RUNSTACK = process->runstack;
+    MZ_RUNSTACK_START = process->runstack_start;
+    MZ_CONT_MARK_STACK = process->cont_mark_stack;
+    MZ_CONT_MARK_POS = process->cont_mark_pos;
+  }
+#endif
+
+#ifdef MZ_REAL_THREADS
+  process->done_sema = scheme_make_sema(0);
+#endif
+
+  process->on_kill = NULL;
+
+  process->user_tls = NULL;
+  process->user_tls_size = 0;
+  
+  process->nester = process->nestee = NULL;
+
+  /* A thread points to a lot of stuff, so it's bad to put a finalization
+     on it, which is what registering with a manager does. Instead, we
+     register a weak indirection with the manager. That way, the thread
+     (and anything it points to) can be collected one GC cycle earlier. */
+  {
+    Scheme_Process_Manager_Hop *hop;
+    Scheme_Manager_Reference *mref;
+    hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
+    process->mr_hop = hop;
+    hop->type = scheme_process_hop_type;
+    {
+      Scheme_Process *wp;
+      wp = (Scheme_Process *)WEAKIFY((Scheme_Object *)process);
+      hop->p = wp;
+    }
+
+    mref = scheme_add_managed(mgr
+			      ? mgr
+			      : (Scheme_Manager *)scheme_get_param(scheme_config, MZCONFIG_MANAGER),
+			      (Scheme_Object *)hop, NULL, NULL, 0);
+    process->mref = mref;
+
+#ifndef MZ_PRECISE_GC
+    scheme_weak_reference((void **)&hop->p);
+#endif
+  }
+
+  return process;
+}
+
+Scheme_Process *scheme_make_process()
+{
+  /* Makes the initial process. */
+  return make_process(NULL, NULL, NULL);
+}
+
 void scheme_set_tail_buffer_size(int s)
 {
   SCHEME_GET_LOCK();
@@ -1130,10 +1165,43 @@ void scheme_set_tail_buffer_size(int s)
   SCHEME_RELEASE_LOCK();  
 }
 
-Scheme_Process *scheme_make_process()
+int scheme_tls_allocate()
 {
-  return make_process(NULL, NULL, NULL);
+  return tls_pos++;
 }
+
+void scheme_tls_set(int pos, void *v)
+{
+  Scheme_Process *p = scheme_current_process;
+
+  if (p->user_tls_size <= pos) {
+    int oldc = p->user_tls_size;
+    void **old_tls = p->user_tls, **va;
+
+    p->user_tls_size = tls_pos;
+    va = MALLOC_N(void*, tls_pos);
+    p->user_tls = va;
+    while (oldc--) {
+      p->user_tls[oldc] = old_tls[oldc];
+    }
+  }
+
+  p->user_tls[pos] = v;
+}
+
+void *scheme_tls_get(int pos)
+{
+  Scheme_Process *p = scheme_current_process;
+
+  if (p->user_tls_size <= pos)
+    return NULL;
+  else
+    return p->user_tls[pos];
+}
+
+/*========================================================================*/
+/*                     thread creation and swapping                       */
+/*========================================================================*/
 
 int scheme_in_main_thread(void)
 {
@@ -1245,18 +1313,16 @@ static void remove_process(Scheme_Process *r)
   }
 #endif
 
-#ifdef SENORA_GC_NO_FREE
+#if defined(SENORA_GC_NO_FREE) || defined(MZ_PRECISE_GC)
   memset(r->runstack_start, 0, r->runstack_size * sizeof(Scheme_Object*));
 #else
-  *(r->runstack_alive) = 0;
   GC_free(r->runstack_start);
 #endif
   r->runstack_start = NULL;
   for (saved = r->runstack_saved; saved; saved = saved->prev) {
-#ifdef SENORA_GC_NO_FREE
+#if defined(SENORA_GC_NO_FREE) || defined(MZ_PRECISE_GC)
     memset(saved->runstack_start, 0, saved->runstack_size * sizeof(Scheme_Object*));
 #else
-    *(saved->runstack_alive) = 0;
     GC_free(saved->runstack_start);
 #endif
     saved->runstack_start = NULL;
@@ -1267,6 +1333,11 @@ static void remove_process(Scheme_Process *r)
     GC_free(r->list_stack);
 #endif
   r->list_stack = NULL;
+
+  r->dw = NULL;
+  r->config = NULL;
+  r->cont_mark_stack_segments = NULL;
+  r->overflow = NULL;
 
 #ifndef MZ_REAL_THREADS
   if (r == scheme_current_process) {
@@ -1432,7 +1503,70 @@ Scheme_Object *scheme_thread(Scheme_Object *thunk, Scheme_Config *config)
   return scheme_thread_w_manager(thunk, config, NULL);
 }
 
-/* Stuff for ensuring that a new thread has a reasonable starting stack: */
+static Scheme_Object *sch_thread(int argc, Scheme_Object *args[])
+{
+  Scheme_Config *c;
+
+  scheme_check_proc_arity("thread", 0, 0, argc, args);
+
+  c = (Scheme_Config *)scheme_branch_config();
+  return scheme_thread(args[0], c);
+}
+
+static Scheme_Object *sch_current(int argc, Scheme_Object *args[])
+{
+  return (Scheme_Object *)scheme_current_process;
+}
+
+static Scheme_Object *processp(int argc, Scheme_Object *args[])
+{
+  return SCHEME_PROCESSP(args[0]) ? scheme_true : scheme_false;
+}
+
+static Scheme_Object *process_running_p(int argc, Scheme_Object *args[])
+{
+  int running;
+
+  if (!SCHEME_PROCESSP(args[0]))
+    scheme_wrong_type("thread-running?", "thread", 0, argc, args);
+
+  running = ((Scheme_Process *)args[0])->running;
+
+  return MZTHREAD_STILL_RUNNING(running) ? scheme_true : scheme_false;
+}
+
+#ifndef MZ_REAL_THREADS
+static int thread_wait_done(Scheme_Object *p)
+{
+  int running = ((Scheme_Process *)p)->running;
+  return !MZTHREAD_STILL_RUNNING(running);
+}
+#endif
+
+static Scheme_Object *process_wait(int argc, Scheme_Object *args[])
+{
+  Scheme_Process *p;
+
+  if (!SCHEME_PROCESSP(args[0]))
+    scheme_wrong_type("thread-wait", "thread", 0, argc, args);
+
+  p = (Scheme_Process *)args[0];
+
+  if (MZTHREAD_STILL_RUNNING(p->running)) {
+#ifndef MZ_REAL_THREADS
+    scheme_block_until(thread_wait_done, NULL, p, 0);
+#else
+    scheme_wait_sema(p->done_sema, 0);
+    scheme_post_sema(p->done_sema);
+#endif
+  }
+
+  return scheme_void;
+}
+
+/**************************************************************************/
+/* Ensure that a new thread has a reasonable starting stack   */
+
 #ifndef MZ_REAL_THREADS
 # ifdef DO_STACK_CHECK
 #  define THREAD_STACK_SPACE (STACK_SAFETY_MARGIN / 2)
@@ -1531,142 +1665,203 @@ Scheme_Object *scheme_thread_w_manager(Scheme_Object *thunk, Scheme_Config *conf
 			 config, mgr);
 }
 
-void scheme_break_thread(Scheme_Process *p)
+/**************************************************************************/
+/* Nested threads */
+
+static Scheme_Object *def_nested_exn_handler(int argc, Scheme_Object *argv[])
 {
-  if (delay_breaks) {
-    delayed_break_ready = 1;
-    return;
+  if (scheme_current_process->nester) {
+    Scheme_Process *p = scheme_current_process;
+    p->cjs.jumping_to_continuation = (struct Scheme_Escaping_Cont *)scheme_current_process;
+    p->cjs.u.val = argv[0];
+    p->cjs.is_kill = 0;
+    scheme_longjmp(p->error_buf, 1);
   }
 
-  if (!p) {
-    p = scheme_main_process;
-    if (!p)
-      return;
-  }
-
-  /* Propagate breaks: */
-  while (p->nestee && scheme_can_break(p, p->config)) {
-    p = p->nestee;
-  }
-
-#ifdef MZ_REAL_THREADS
-  /* Avoid signals to wrapping thread when nested already has died: */
-  if (!MZTHREAD_STILL_RUNNING(p->running))
-    return;
-#endif
-
-  p->external_break = 1;
-
-#ifndef MZ_REAL_THREADS
-  if (p == scheme_current_process) {
-    if (scheme_can_break(p, p->config))
-      scheme_fuel_counter = 0;
-  }
-  scheme_weak_resume_thread(p);
-# if defined(WINDOWS_PROCESSES) || defined(DETECT_WIN32_CONSOLE_STDIN)
-#  ifndef NO_STDIO_THREADS
-  if (!p->next)
-    ReleaseSemaphore(scheme_break_semaphore, 1, NULL);
-#  endif
-# endif
-#else
-  p->fuel_counter = 0;
-  SCHEME_BREAK_THREAD(p->thread);
-#endif
+  return scheme_void; /* misuse of exception handler */
 }
 
-void scheme_add_namespace_option(Scheme_Object *key, void (*f)(Scheme_Env *))
+static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
 {
-  Scheme_NSO *old = namespace_options;
-  
-  namespace_options = MALLOC_N_RT(Scheme_NSO, (num_nsos + 1));
+  Scheme_Process *p = scheme_current_process;
+  Scheme_Process * volatile np;
+  Scheme_Manager *mgr;
+  Scheme_Object * volatile v;
+  volatile int failure;
 
-  memcpy(namespace_options, old, num_nsos * sizeof(Scheme_NSO));
-
-#ifdef MZTAG_REQUIRED
-  namespace_options[num_nsos].type = scheme_rt_namespace_option;
-#endif
-  namespace_options[num_nsos].key = key;
-  namespace_options[num_nsos].f = f;
-  
-  num_nsos++;
-}
-
-Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
-{
-  int save_no_key, save_ec_only, save_hp_syntax;
-  int i, with_nso = 0;
-  int empty = 0;
-  Scheme_Object *v;
-  Scheme_Env *env;
-
-#ifdef MZ_REAL_THREADS
-  SCHEME_LOCK_MUTEX(make_namespace_mutex);
-#endif
-
-  save_no_key = scheme_no_keywords;
-  save_ec_only = scheme_escape_continuations_only;
-  save_hp_syntax = scheme_hash_percent_syntax_only;
-
-  for (i = 0; i < argc; i++) {
-    v = argv[i];
-    if (v == keywords_symbol)
-      scheme_no_keywords = 0;
-    else if (v == no_keywords_symbol)
-      scheme_no_keywords = 1;
-    else if (v == callcc_is_callec_symbol)
-      scheme_escape_continuations_only = 1;
-    else if (v == callcc_is_not_callec_symbol)
-      scheme_escape_continuations_only = 0;
-    else if (v == hash_percent_syntax_symbol)
-      scheme_hash_percent_syntax_only = 1;
-    else if (v == all_syntax_symbol)
-      scheme_hash_percent_syntax_only = 0;
-    else if (v == empty_symbol)
-      empty = 1;
+  scheme_check_proc_arity("call-in-nested-thread", 0, 0, argc, argv);
+  if (argc > 1) {
+    if (SCHEME_MANAGERP(argv[1]))
+      mgr = (Scheme_Manager *)argv[1];
     else {
-      int j;
-      for (j = 0; j < num_nsos; j++) {
-	if (namespace_options[j].key == v) {
-	  with_nso = 1;
-	  break;
-	}
-      }
-      
-      if (j >= num_nsos)
-	scheme_wrong_type("make-namespace", "symbol-flag", i, argc, argv);
+      scheme_wrong_type("call-in-nested-thread", "custodian", 1, argc, argv);
+      return NULL;
     }
-  }
-  
-  /* Copy from original namespace: */
-  env = scheme_make_empty_env();
-  if (!empty)
-    scheme_copy_from_original_env(env);
+  } else
+    mgr = (Scheme_Manager *)scheme_get_param(p->config, MZCONFIG_MANAGER);
 
-  scheme_no_keywords = save_no_key;   
-  scheme_escape_continuations_only = save_ec_only;
-  scheme_hash_percent_syntax_only = save_hp_syntax;
+  SCHEME_USE_FUEL(25);
 
-  if (with_nso && !empty) {
-    int j;
+  np = MALLOC_ONE_TAGGED(Scheme_Process);
+  np->type = scheme_process_type;
+  np->running = MZTHREAD_RUNNING;
+  np->ran_some = 1;
 
-    for (i = 0; i < argc; i++) {
-      v = argv[i];
-      for (j = 0; j < num_nsos; j++) {
-	if (namespace_options[j].key == v) {
-	  namespace_options[j].f(env);
-	  break;
-	}
-      }
-    }
-  }
-
-#ifdef MZ_REAL_THREADS
-  SCHEME_UNLOCK_MUTEX(make_namespace_mutex);
+#ifdef RUNSTACK_IS_GLOBAL
+  p->runstack = MZ_RUNSTACK;
+  p->runstack_start = MZ_RUNSTACK_START;
+  p->cont_mark_stack = MZ_CONT_MARK_STACK;
+  p->cont_mark_pos = MZ_CONT_MARK_POS;
 #endif
 
-  return (Scheme_Object *)env;
+  np->runstack = p->runstack;
+  np->runstack_start = p->runstack_start;
+  np->runstack_size = p->runstack_size;
+  np->runstack_saved = p->runstack_saved;
+  np->stack_start = p->stack_start;
+  np->stack_end = p->stack_end;
+  np->current_local_env = p->current_local_env;
+  np->engine_weight = p->engine_weight;
+  np->tail_buffer = p->tail_buffer;
+  np->tail_buffer_size = p->tail_buffer_size;
+
+#ifdef MZ_REAL_THREADS
+  np->thread = p->thread;
+  np->done_sema = scheme_make_sema(0);
+#endif
+
+  np->overflow_set = p->overflow_set;
+  np->cc_start = p->cc_start;
+  memcpy(&np->overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
+
+  /* In case it's not yet set in the main thread... */
+  scheme_ensure_stack_start((Scheme_Process *)np, (int *)&failure);
+  
+  np->list_stack = p->list_stack;
+  np->list_stack_pos = p->list_stack_pos;
+
+  /* np->prev = NULL; - 0ed by allocation */
+  np->next = scheme_first_process;
+  scheme_first_process->prev = np;
+  scheme_first_process = np;
+
+  {
+    Scheme_Config *nconfig;
+    nconfig = (Scheme_Config *)scheme_make_config(p->config);
+    np->config = nconfig;
+  }
+  np->cont_mark_pos = (MZ_MARK_POS_TYPE)1;
+  /* others 0ed already by allocation */
+
+  if (!nested_exn_handler) {
+    REGISTER_SO(nested_exn_handler);
+    nested_exn_handler = scheme_make_prim_w_arity(def_nested_exn_handler,
+						  "nested-thread-exception-handler",
+						  1, 1);
+  }
+
+  scheme_init_error_escape_proc(np);
+  scheme_set_param(np->config, MZCONFIG_EXN_HANDLER, nested_exn_handler);
+
+  np->nester = p;
+  p->nestee = np;
+
+  {
+    Scheme_Process_Manager_Hop *hop;
+    Scheme_Manager_Reference *mref;
+    hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
+    np->mr_hop = hop;
+    hop->type = scheme_process_hop_type;
+    {
+      Scheme_Process *wp;
+      wp = (Scheme_Process *)WEAKIFY((Scheme_Object *)np);
+      hop->p = wp;
+    }
+    mref = scheme_add_managed(mgr, (Scheme_Object *)hop, NULL, NULL, 0);
+    np->mref = mref;
+#ifndef MZ_PRECISE_GC
+    scheme_weak_reference((void **)&hop->p);
+#endif
+  }
+
+#ifdef RUNSTACK_IS_GLOBAL
+  MZ_CONT_MARK_STACK = np->cont_mark_stack;
+  MZ_CONT_MARK_POS = np->cont_mark_pos;
+#endif
+
+#ifdef MZ_REAL_THREADS
+  SCHEME_SET_CURRENT_PROCESS(np);
+#else
+  scheme_current_process = np;
+#endif
+
+  /* Call thunk, catch escape: */
+  if (scheme_setjmp(np->error_buf)) {
+    if (!np->cjs.is_kill)
+      v = np->cjs.u.val;
+    else
+      v = NULL;
+    failure = 1;
+  } else {
+    v = scheme_apply(argv[0], 0, NULL);
+    failure = 0;
+  }
+
+  scheme_remove_managed(np->mref, (Scheme_Object *)np->mr_hop);
+#ifdef MZ_PRECISE_GC
+  WEAKIFIED(np->mr_hop->p) = NULL;
+#else
+  scheme_unweak_reference((void **)&np->mr_hop->p);
+#endif
+  scheme_remove_all_finalization(np->mr_hop);
+
+  if (np->prev)
+    np->prev->next = np->next;
+  else
+    scheme_first_process = np->next;
+  np->next->prev = np->prev;
+
+  np->running = 0;
+#ifdef MZ_REAL_THREADS
+  scheme_post_sema(np->done_sema);
+#endif
+
+  p->nestee = NULL;
+
+  np->nester = NULL;
+  np->runstack_start = NULL;
+  np->runstack_saved = NULL;
+  np->list_stack = NULL;
+  np->config = NULL;
+  np->dw = NULL;
+
+#ifdef MZ_REAL_THREADS
+  SCHEME_SET_CURRENT_PROCESS(p);
+#else
+  scheme_current_process = p;
+#endif
+
+#ifdef RUNSTACK_IS_GLOBAL
+  MZ_CONT_MARK_STACK = p->cont_mark_stack;
+  MZ_CONT_MARK_POS = p->cont_mark_pos;
+#endif
+
+  if (p->running & MZTHREAD_KILLED)
+    scheme_process_block(0.0);
+
+  if (failure) {
+    if (!v)
+      scheme_raise_exn(MZEXN_THREAD, "call-in-nested-thread: the thread was killed, or it exited via the default error escape handler");
+    else
+      scheme_raise(v);
+  }
+
+  return v;
 }
+
+/*========================================================================*/
+/*                     thread scheduling and termination                  */
+/*========================================================================*/
 
 #ifndef MZ_REAL_THREADS
 static int check_sleep(int need_activity, int sleep_now)
@@ -1804,170 +1999,11 @@ void scheme_out_of_fuel(void)
 #endif
 }
 
-#ifdef MZ_PRECISE_GC
-START_XFORM_SKIP;
-#endif
-
-void scheme_zero_unneeded_rands(Scheme_Process *p)
-{
-  /* Call this procedure before GC or before copying out
-     a thread's stack. */
-}
-
-static void get_ready_for_GC()
-{
-  start_this_gc_time = scheme_get_process_milliseconds();
-
-  scheme_zero_unneeded_rands(scheme_current_process);
-
-#ifdef RUNSTACK_IS_GLOBAL
-  scheme_current_process->runstack = MZ_RUNSTACK;
-  scheme_current_process->runstack_start = MZ_RUNSTACK_START;
-  scheme_current_process->cont_mark_stack = MZ_CONT_MARK_STACK;
-  scheme_current_process->cont_mark_pos = MZ_CONT_MARK_POS;
-#endif
-
-#ifndef MZ_REAL_THREADS
-# define RUNSTACK_TUNE(x) /* x   - Used for performance tuning */
-  if (scheme_fuel_counter) {
-    Scheme_Process *p;
-
-    /* zero ununsed part of env stack in each thread */
-    for (p = scheme_first_process; p; p = p->next) {
-      if (!p->nestee) {
-	Scheme_Object **o, **e, **e2;
-	Scheme_Saved_Stack *saved;
-	RUNSTACK_TUNE( long size; );
-
-	o = p->runstack_start;
-	e = p->runstack;
-	e2 = p->runstack_tmp_keep;
-
-	while (o < e && (o != e2)) {
-	  *(o++) = NULL;
-	}
-
-	RUNSTACK_TUNE( size = p->runstack_size - (p->runstack - p->runstack_start); );
-
-	for (saved = p->runstack_saved; saved; saved = saved->prev) {
-	  o = saved->runstack_start;
-	  e = saved->runstack_start;
-	  RUNSTACK_TUNE( size += saved->runstack_size; );
-	  while (o < e) {
-	    *(o++) = NULL;
-	  }
-	}
-
-	RUNSTACK_TUNE( printf("%ld\n", size); );
-
-# ifdef AGRESSIVE_ZERO_TB
-	{
-	  int i;
-	  for (i = p->tail_buffer_set; i < p->tail_buffer_size; i++) {
-	    p->tail_buffer[i] = NULL;
-	  }
-	}
-# endif
-      }
-      
-      /* release unused cont mark stack segments */
-      {
-	int segcount, i;
-	if (p->cont_mark_stack)
-	  segcount = ((long)(p->cont_mark_stack - 1) >> SCHEME_LOG_MARK_SEGMENT_SIZE) + 1;
-	else
-	  segcount = 0;
-	for (i = segcount; i < p->cont_mark_seg_count; i++) {
-	  p->cont_mark_stack_segments[i] = NULL;
-	}
-	if (segcount < p->cont_mark_seg_count)
-	  p->cont_mark_seg_count = segcount;
-      }
-      
-      /* zero unused part of last mark stack segment */
-      {
-	int segpos = ((long)p->cont_mark_stack >> SCHEME_LOG_MARK_SEGMENT_SIZE);
-	
-	if (segpos < p->cont_mark_seg_count) {
-	  Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[segpos];
-	  int stackpos = ((long)p->cont_mark_stack & SCHEME_MARK_SEGMENT_MASK), i;
-	  for (i = stackpos; i < SCHEME_MARK_SEGMENT_SIZE; i++) {
-	    seg[i].key = NULL;
-	    seg[i].val = NULL;
-	  }
-	}
-      }
-    }
-  }
-#endif
-   
-  scheme_fuel_counter = 0;
-
-#ifdef WINDOWS_PROCESSES
-  scheme_suspend_remembered_threads();
-#endif
-#ifdef UNIX_PROCESSES
-  scheme_block_child_signals(1);
-#endif
-
-  delayed_break_ready = 0;
-  delay_breaks = 1;
-}
-
-extern int GC_words_allocd;
-
-static void done_with_GC()
-{
-#ifdef RUNSTACK_IS_GLOBAL
-# ifdef MZ_PRECISE_GC
-  MZ_RUNSTACK = scheme_current_process->runstack;
-# endif
-#endif
-#ifdef WINDOWS_PROCESSES
-  scheme_resume_remembered_threads();
-#endif
-#ifdef UNIX_PROCESSES
-  scheme_block_child_signals(0);
-#endif
-
-  delay_breaks = 0;
-  if (delayed_break_ready)
-    scheme_break_thread(NULL);
-
-  scheme_total_gc_time += (scheme_get_process_milliseconds() - start_this_gc_time);
-}
-
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif
-
 int scheme_can_break(Scheme_Process *p, Scheme_Config *config)
 {
   return (!p->suspend_break
 	  && SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_ENABLE_BREAK))
 	  && !p->exn_raised);
-}
-
-int scheme_block_until(int (*f)(Scheme_Object *), void (*fdf)(Scheme_Object *,void*), 
-		       void *data, float delay)
-{
-  int result;
-  Scheme_Process *p = scheme_current_process;
-
-  p->block_descriptor = -1;
-  p->blocker = (Scheme_Object *)data;
-  p->block_check = f;
-  p->block_needs_wakeup = fdf;
-  do {
-    scheme_process_block(delay);
-  } while (!(result = f((Scheme_Object *)data)));
-  p->block_descriptor = NOT_BLOCKED;
-  p->blocker = NULL;
-  p->block_check = NULL;
-  p->block_needs_wakeup = NULL;
-  p->ran_some = 1;
-
-  return result;
 }
 
 static Scheme_Object *raise_user_break(int argc, Scheme_Object **argv)
@@ -2037,6 +2073,50 @@ static void exit_or_escape(Scheme_Process *p)
   SCHEME_EXIT_THREAD();
 #endif
 
+}
+
+void scheme_break_thread(Scheme_Process *p)
+{
+  if (delay_breaks) {
+    delayed_break_ready = 1;
+    return;
+  }
+
+  if (!p) {
+    p = scheme_main_process;
+    if (!p)
+      return;
+  }
+
+  /* Propagate breaks: */
+  while (p->nestee && scheme_can_break(p, p->config)) {
+    p = p->nestee;
+  }
+
+#ifdef MZ_REAL_THREADS
+  /* Avoid signals to wrapping thread when nested already has died: */
+  if (!MZTHREAD_STILL_RUNNING(p->running))
+    return;
+#endif
+
+  p->external_break = 1;
+
+#ifndef MZ_REAL_THREADS
+  if (p == scheme_current_process) {
+    if (scheme_can_break(p, p->config))
+      scheme_fuel_counter = 0;
+  }
+  scheme_weak_resume_thread(p);
+# if defined(WINDOWS_PROCESSES) || defined(DETECT_WIN32_CONSOLE_STDIN)
+#  ifndef NO_STDIO_THREADS
+  if (!p->next)
+    ReleaseSemaphore(scheme_break_semaphore, 1, NULL);
+#  endif
+# endif
+#else
+  p->fuel_counter = 0;
+  SCHEME_BREAK_THREAD(p->thread);
+#endif
 }
 
 #ifndef MZ_REAL_THREADS
@@ -2268,6 +2348,28 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   MZTHREADELEM(p, fuel_counter) = p->engine_weight;
 }
 
+int scheme_block_until(int (*f)(Scheme_Object *), void (*fdf)(Scheme_Object *,void*), 
+		       void *data, float delay)
+{
+  int result;
+  Scheme_Process *p = scheme_current_process;
+
+  p->block_descriptor = -1;
+  p->blocker = (Scheme_Object *)data;
+  p->block_check = f;
+  p->block_needs_wakeup = fdf;
+  do {
+    scheme_process_block(delay);
+  } while (!(result = f((Scheme_Object *)data)));
+  p->block_descriptor = NOT_BLOCKED;
+  p->blocker = NULL;
+  p->block_check = NULL;
+  p->block_needs_wakeup = NULL;
+  p->ran_some = 1;
+
+  return result;
+}
+
 #ifndef MZ_REAL_THREADS
 void scheme_start_atomic(void)
 {
@@ -2328,21 +2430,6 @@ void scheme_weak_resume_thread(Scheme_Process *r)
 #endif
 }
 
-Scheme_Object *scheme_branch_config(void)
-{
-  return scheme_make_config(scheme_config);
-}
-
-static Scheme_Object *sch_thread(int argc, Scheme_Object *args[])
-{
-  Scheme_Config *c;
-
-  scheme_check_proc_arity("thread", 0, 0, argc, args);
-
-  c = (Scheme_Config *)scheme_branch_config();
-  return scheme_thread(args[0], c);
-}
-
 static Scheme_Object *
 sch_sleep(int argc, Scheme_Object *args[])
 {
@@ -2362,11 +2449,6 @@ sch_sleep(int argc, Scheme_Object *args[])
   scheme_current_process->ran_some = 1;
 
   return scheme_void;
-}
-
-static Scheme_Object *sch_current(int argc, Scheme_Object *args[])
-{
-  return (Scheme_Object *)scheme_current_process;
 }
 
 static Scheme_Object *break_thread(int argc, Scheme_Object *args[])
@@ -2487,313 +2569,13 @@ static Scheme_Object *kill_thread(int argc, Scheme_Object *argv[])
 }
 #endif
 
-static Scheme_Object *processp(int argc, Scheme_Object *args[])
+/*========================================================================*/
+/*                              parameters                                */
+/*========================================================================*/
+
+Scheme_Object *scheme_branch_config(void)
 {
-  return SCHEME_PROCESSP(args[0]) ? scheme_true : scheme_false;
-}
-
-static Scheme_Object *process_running_p(int argc, Scheme_Object *args[])
-{
-  int running;
-
-  if (!SCHEME_PROCESSP(args[0]))
-    scheme_wrong_type("thread-running?", "thread", 0, argc, args);
-
-  running = ((Scheme_Process *)args[0])->running;
-
-  return MZTHREAD_STILL_RUNNING(running) ? scheme_true : scheme_false;
-}
-
-#ifndef MZ_REAL_THREADS
-static int thread_wait_done(Scheme_Object *p)
-{
-  int running = ((Scheme_Process *)p)->running;
-  return !MZTHREAD_STILL_RUNNING(running);
-}
-#endif
-
-static Scheme_Object *process_wait(int argc, Scheme_Object *args[])
-{
-  Scheme_Process *p;
-
-  if (!SCHEME_PROCESSP(args[0]))
-    scheme_wrong_type("thread-wait", "thread", 0, argc, args);
-
-  p = (Scheme_Process *)args[0];
-
-  if (MZTHREAD_STILL_RUNNING(p->running)) {
-#ifndef MZ_REAL_THREADS
-    scheme_block_until(thread_wait_done, NULL, p, 0);
-#else
-    scheme_wait_sema(p->done_sema, 0);
-    scheme_post_sema(p->done_sema);
-#endif
-  }
-
-  return scheme_void;
-}
-
-int scheme_tls_allocate()
-{
-  return tls_pos++;
-}
-
-void scheme_tls_set(int pos, void *v)
-{
-  Scheme_Process *p = scheme_current_process;
-
-  if (p->user_tls_size <= pos) {
-    int oldc = p->user_tls_size;
-    void **old_tls = p->user_tls, **va;
-
-    p->user_tls_size = tls_pos;
-    va = MALLOC_N(void*, tls_pos);
-    p->user_tls = va;
-    while (oldc--) {
-      p->user_tls[oldc] = old_tls[oldc];
-    }
-  }
-
-  p->user_tls[pos] = v;
-}
-
-void *scheme_tls_get(int pos)
-{
-  Scheme_Process *p = scheme_current_process;
-
-  if (p->user_tls_size <= pos)
-    return NULL;
-  else
-    return p->user_tls[pos];
-}
-
-static Scheme_Object *make_manager(int argc, Scheme_Object *argv[])
-{
-  Scheme_Manager *m;
-
-  if (argc) {
-    if (!SCHEME_MANAGERP(argv[0]))
-      scheme_wrong_type("make-custodian", "custodian", 0, argc, argv);
-    m = (Scheme_Manager *)argv[0];
-  } else
-    m = (Scheme_Manager *)scheme_get_param(scheme_config, MZCONFIG_MANAGER);
-
-  return (Scheme_Object *)scheme_make_manager(m);
-}
-
-static Scheme_Object *manager_p(int argc, Scheme_Object *argv[])
-{
-  return SCHEME_MANAGERP(argv[0]) ? scheme_true : scheme_false;
-}
-
-static Scheme_Object *manager_close_all(int argc, Scheme_Object *argv[])
-{
-  if (!SCHEME_MANAGERP(argv[0]))
-    scheme_wrong_type("custodian-shutdown-all", "custodian", 0, argc, argv);
-
-  scheme_close_managed((Scheme_Manager *)argv[0]);
-
-  return scheme_void;
-}
-
-static Scheme_Object *current_manager(int argc, Scheme_Object *argv[])
-{
-  return scheme_param_config("current-custodian", 
-			     scheme_make_integer(MZCONFIG_MANAGER),
-			     argc, argv,
-			     -1, manager_p, "custodian", 0);
-}
-
-static Scheme_Object *def_nested_exn_handler(int argc, Scheme_Object *argv[])
-{
-  if (scheme_current_process->nester) {
-    Scheme_Process *p = scheme_current_process;
-    p->cjs.jumping_to_continuation = (struct Scheme_Escaping_Cont *)scheme_current_process;
-    p->cjs.u.val = argv[0];
-    p->cjs.is_kill = 0;
-    scheme_longjmp(p->error_buf, 1);
-  }
-
-  return scheme_void; /* misuse of exception handler */
-}
-
-static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
-{
-  Scheme_Process *p = scheme_current_process;
-  Scheme_Process * volatile np;
-  Scheme_Manager *mgr;
-  Scheme_Object * volatile v;
-  volatile int failure;
-
-  scheme_check_proc_arity("call-in-nested-thread", 0, 0, argc, argv);
-  if (argc > 1) {
-    if (SCHEME_MANAGERP(argv[1]))
-      mgr = (Scheme_Manager *)argv[1];
-    else {
-      scheme_wrong_type("call-in-nested-thread", "custodian", 1, argc, argv);
-      return NULL;
-    }
-  } else
-    mgr = (Scheme_Manager *)scheme_get_param(p->config, MZCONFIG_MANAGER);
-
-  SCHEME_USE_FUEL(25);
-
-  np = MALLOC_ONE_TAGGED(Scheme_Process);
-  np->type = scheme_process_type;
-  np->running = MZTHREAD_RUNNING;
-  np->ran_some = 1;
-
-#ifdef RUNSTACK_IS_GLOBAL
-  p->runstack = MZ_RUNSTACK;
-  p->runstack_start = MZ_RUNSTACK_START;
-  p->cont_mark_stack = MZ_CONT_MARK_STACK;
-  p->cont_mark_pos = MZ_CONT_MARK_POS;
-#endif
-
-  np->runstack = p->runstack;
-  np->runstack_start = p->runstack_start;
-  np->runstack_size = p->runstack_size;
-  np->runstack_alive = p->runstack_alive;
-  np->runstack_saved = p->runstack_saved;
-  np->stack_start = p->stack_start;
-  np->stack_end = p->stack_end;
-  np->current_local_env = p->current_local_env;
-  np->engine_weight = p->engine_weight;
-  np->tail_buffer = p->tail_buffer;
-  np->tail_buffer_size = p->tail_buffer_size;
-
-#ifdef MZ_REAL_THREADS
-  np->thread = p->thread;
-  np->done_sema = scheme_make_sema(0);
-#endif
-
-  np->overflow_set = p->overflow_set;
-  np->cc_start = p->cc_start;
-  memcpy(&np->overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
-
-  /* In case it's not yet set in the main thread... */
-  scheme_ensure_stack_start((Scheme_Process *)np, (int *)&failure);
-  
-  np->list_stack = p->list_stack;
-  np->list_stack_pos = p->list_stack_pos;
-
-  /* np->prev = NULL; - 0ed by allocation */
-  np->next = scheme_first_process;
-  scheme_first_process->prev = np;
-  scheme_first_process = np;
-
-  {
-    Scheme_Config *nconfig;
-    nconfig = (Scheme_Config *)scheme_make_config(p->config);
-    np->config = nconfig;
-  }
-  np->cont_mark_pos = (MZ_MARK_POS_TYPE)1;
-  /* others 0ed already by allocation */
-
-  if (!nested_exn_handler) {
-    REGISTER_SO(nested_exn_handler);
-    nested_exn_handler = scheme_make_prim_w_arity(def_nested_exn_handler,
-						  "nested-thread-exception-handler",
-						  1, 1);
-  }
-
-  scheme_init_error_escape_proc(np);
-  scheme_set_param(np->config, MZCONFIG_EXN_HANDLER, nested_exn_handler);
-
-  np->nester = p;
-  p->nestee = np;
-
-  {
-    Scheme_Process_Manager_Hop *hop;
-    Scheme_Manager_Reference *mref;
-    hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
-    np->mr_hop = hop;
-    hop->type = scheme_process_hop_type;
-    {
-      Scheme_Process *wp;
-      wp = (Scheme_Process *)WEAKIFY((Scheme_Object *)np);
-      hop->p = wp;
-    }
-    mref = scheme_add_managed(mgr, (Scheme_Object *)hop, NULL, NULL, 0);
-    np->mref = mref;
-#ifndef MZ_PRECISE_GC
-    scheme_weak_reference((void **)&hop->p);
-#endif
-  }
-
-#ifdef RUNSTACK_IS_GLOBAL
-  MZ_CONT_MARK_STACK = np->cont_mark_stack;
-  MZ_CONT_MARK_POS = np->cont_mark_pos;
-#endif
-
-#ifdef MZ_REAL_THREADS
-  SCHEME_SET_CURRENT_PROCESS(np);
-#else
-  scheme_current_process = np;
-#endif
-
-  /* Call thunk, catch escape: */
-  if (scheme_setjmp(np->error_buf)) {
-    if (!np->cjs.is_kill)
-      v = np->cjs.u.val;
-    else
-      v = NULL;
-    failure = 1;
-  } else {
-    v = scheme_apply(argv[0], 0, NULL);
-    failure = 0;
-  }
-
-  scheme_remove_managed(np->mref, (Scheme_Object *)np->mr_hop);
-#ifdef MZ_PRECISE_GC
-  WEAKIFIED(np->mr_hop->p) = NULL;
-#else
-  scheme_unweak_reference((void **)&np->mr_hop->p);
-#endif
-  scheme_remove_all_finalization(np->mr_hop);
-
-  if (np->prev)
-    np->prev->next = np->next;
-  else
-    scheme_first_process = np->next;
-  np->next->prev = np->prev;
-
-  np->running = 0;
-#ifdef MZ_REAL_THREADS
-  scheme_post_sema(np->done_sema);
-#endif
-
-  p->nestee = NULL;
-
-  np->nester = NULL;
-  np->runstack_start = NULL;
-  np->runstack_alive = NULL;
-  np->runstack_saved = NULL;
-  np->list_stack = NULL;
-  np->config = NULL;
-
-#ifdef MZ_REAL_THREADS
-  SCHEME_SET_CURRENT_PROCESS(p);
-#else
-  scheme_current_process = p;
-#endif
-
-#ifdef RUNSTACK_IS_GLOBAL
-  MZ_CONT_MARK_STACK = p->cont_mark_stack;
-  MZ_CONT_MARK_POS = p->cont_mark_pos;
-#endif
-
-  if (p->running & MZTHREAD_KILLED)
-    scheme_process_block(0.0);
-
-  if (failure) {
-    if (!v)
-      scheme_raise_exn(MZEXN_THREAD, "call-in-nested-thread: the thread was killed, or it exited via the default error escape handler");
-    else
-      scheme_raise(v);
-  }
-
-  return v;
+  return scheme_make_config(scheme_config);
 }
 
 static Scheme_Object *parameter_p(int argc, Scheme_Object **argv)
@@ -2877,23 +2659,6 @@ static Scheme_Object *parameter_procedure_eq(int argc, Scheme_Object **argv)
 	  ? scheme_true
 	  : scheme_false);
 }
-
-static Scheme_Object *namespace_p(int argc, Scheme_Object **argv)
-{
-  return ((SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_namespace_type)) 
-	  ? scheme_true 
-	  : scheme_false);
-}
-
-static Scheme_Object *current_namespace(int argc, Scheme_Object *argv[])
-{
-  return scheme_param_config("current-namespace", 
-			     scheme_make_integer(MZCONFIG_ENV),
-			     argc, argv,
-			     -1, namespace_p, "namespace", 0);
-}
-
-/****************************************/
 
 static int max_configs = __MZCONFIG_BUILTIN_COUNT__;
 
@@ -3143,6 +2908,10 @@ Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
   }
 }
 
+/*========================================================================*/
+/*                              namespaces                                */
+/*========================================================================*/
+
 #ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
 #endif
@@ -3157,7 +2926,138 @@ Scheme_Env *scheme_get_env(Scheme_Config *c)
 END_XFORM_SKIP;
 #endif
 
-/****************************************/
+void scheme_add_namespace_option(Scheme_Object *key, void (*f)(Scheme_Env *))
+{
+  Scheme_NSO *old = namespace_options;
+  
+  namespace_options = MALLOC_N_RT(Scheme_NSO, (num_nsos + 1));
+
+  memcpy(namespace_options, old, num_nsos * sizeof(Scheme_NSO));
+
+#ifdef MZTAG_REQUIRED
+  namespace_options[num_nsos].type = scheme_rt_namespace_option;
+#endif
+  namespace_options[num_nsos].key = key;
+  namespace_options[num_nsos].f = f;
+  
+  num_nsos++;
+}
+
+Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
+{
+  int save_no_key, save_ec_only, save_hp_syntax;
+  int i, with_nso = 0;
+  int empty = 0;
+  Scheme_Object *v;
+  Scheme_Env *env;
+
+#ifdef MZ_REAL_THREADS
+  SCHEME_LOCK_MUTEX(make_namespace_mutex);
+#endif
+
+  save_no_key = scheme_no_keywords;
+  save_ec_only = scheme_escape_continuations_only;
+  save_hp_syntax = scheme_hash_percent_syntax_only;
+
+  for (i = 0; i < argc; i++) {
+    v = argv[i];
+    if (v == keywords_symbol)
+      scheme_no_keywords = 0;
+    else if (v == no_keywords_symbol)
+      scheme_no_keywords = 1;
+    else if (v == callcc_is_callec_symbol)
+      scheme_escape_continuations_only = 1;
+    else if (v == callcc_is_not_callec_symbol)
+      scheme_escape_continuations_only = 0;
+    else if (v == hash_percent_syntax_symbol)
+      scheme_hash_percent_syntax_only = 1;
+    else if (v == all_syntax_symbol)
+      scheme_hash_percent_syntax_only = 0;
+    else if (v == empty_symbol)
+      empty = 1;
+    else {
+      int j;
+      for (j = 0; j < num_nsos; j++) {
+	if (namespace_options[j].key == v) {
+	  with_nso = 1;
+	  break;
+	}
+      }
+      
+      if (j >= num_nsos)
+	scheme_wrong_type("make-namespace", "symbol-flag", i, argc, argv);
+    }
+  }
+  
+  /* Copy from original namespace: */
+  env = scheme_make_empty_env();
+  if (!empty)
+    scheme_copy_from_original_env(env);
+
+  scheme_no_keywords = save_no_key;   
+  scheme_escape_continuations_only = save_ec_only;
+  scheme_hash_percent_syntax_only = save_hp_syntax;
+
+  if (with_nso && !empty) {
+    int j;
+
+    for (i = 0; i < argc; i++) {
+      v = argv[i];
+      for (j = 0; j < num_nsos; j++) {
+	if (namespace_options[j].key == v) {
+	  namespace_options[j].f(env);
+	  break;
+	}
+      }
+    }
+  }
+
+#ifdef MZ_REAL_THREADS
+  SCHEME_UNLOCK_MUTEX(make_namespace_mutex);
+#endif
+
+  return (Scheme_Object *)env;
+}
+
+static Scheme_Object *namespace_p(int argc, Scheme_Object **argv)
+{
+  return ((SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_namespace_type)) 
+	  ? scheme_true 
+	  : scheme_false);
+}
+
+static Scheme_Object *current_namespace(int argc, Scheme_Object *argv[])
+{
+  return scheme_param_config("current-namespace", 
+			     scheme_make_integer(MZCONFIG_ENV),
+			     argc, argv,
+			     -1, namespace_p, "namespace", 0);
+}
+
+/*========================================================================*/
+/*                         wills and will executors                       */
+/*========================================================================*/
+
+typedef struct ActiveWill {
+  MZTAG_IF_REQUIRED
+  Scheme_Object *o;
+  Scheme_Object *proc;
+  struct WillExecutor *w;  /* Set to will executor when executed */
+  struct ActiveWill *next;
+} ActiveWill;
+
+typedef struct WillExecutor {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  Scheme_Object *sema;
+  ActiveWill *first, *last;
+} WillExecutor;
+
+typedef struct WillRegistration {
+  MZTAG_IF_REQUIRED
+  Scheme_Object *proc;
+  WillExecutor *w;
+} WillRegistration;
 
 static void activate_will(void *o, void *data) 
 {
@@ -3273,7 +3173,150 @@ static Scheme_Object *will_executor_go(int argc, Scheme_Object **argv)
   return do_next_will(w);
 }
 
-/****************************************/
+/*========================================================================*/
+/*                         GC preparation and timing                      */
+/*========================================================================*/
+
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
+void scheme_zero_unneeded_rands(Scheme_Process *p)
+{
+  /* Call this procedure before GC or before copying out
+     a thread's stack. */
+}
+
+static void get_ready_for_GC()
+{
+  start_this_gc_time = scheme_get_process_milliseconds();
+
+  scheme_zero_unneeded_rands(scheme_current_process);
+
+#ifdef RUNSTACK_IS_GLOBAL
+  scheme_current_process->runstack = MZ_RUNSTACK;
+  scheme_current_process->runstack_start = MZ_RUNSTACK_START;
+  scheme_current_process->cont_mark_stack = MZ_CONT_MARK_STACK;
+  scheme_current_process->cont_mark_pos = MZ_CONT_MARK_POS;
+#endif
+
+#ifndef MZ_REAL_THREADS
+# define RUNSTACK_TUNE(x) /* x   - Used for performance tuning */
+  if (scheme_fuel_counter) {
+    Scheme_Process *p;
+
+    /* zero ununsed part of env stack in each thread */
+    for (p = scheme_first_process; p; p = p->next) {
+      if (!p->nestee) {
+	Scheme_Object **o, **e, **e2;
+	Scheme_Saved_Stack *saved;
+	RUNSTACK_TUNE( long size; );
+
+	o = p->runstack_start;
+	e = p->runstack;
+	e2 = p->runstack_tmp_keep;
+
+	while (o < e && (o != e2)) {
+	  *(o++) = NULL;
+	}
+
+	RUNSTACK_TUNE( size = p->runstack_size - (p->runstack - p->runstack_start); );
+
+	for (saved = p->runstack_saved; saved; saved = saved->prev) {
+	  o = saved->runstack_start;
+	  e = saved->runstack_start;
+	  RUNSTACK_TUNE( size += saved->runstack_size; );
+	  while (o < e) {
+	    *(o++) = NULL;
+	  }
+	}
+
+	RUNSTACK_TUNE( printf("%ld\n", size); );
+
+# ifdef AGRESSIVE_ZERO_TB
+	{
+	  int i;
+	  for (i = p->tail_buffer_set; i < p->tail_buffer_size; i++) {
+	    p->tail_buffer[i] = NULL;
+	  }
+	}
+# endif
+      }
+      
+      /* release unused cont mark stack segments */
+      {
+	int segcount, i;
+	if (p->cont_mark_stack)
+	  segcount = ((long)(p->cont_mark_stack - 1) >> SCHEME_LOG_MARK_SEGMENT_SIZE) + 1;
+	else
+	  segcount = 0;
+	for (i = segcount; i < p->cont_mark_seg_count; i++) {
+	  p->cont_mark_stack_segments[i] = NULL;
+	}
+	if (segcount < p->cont_mark_seg_count)
+	  p->cont_mark_seg_count = segcount;
+      }
+      
+      /* zero unused part of last mark stack segment */
+      {
+	int segpos = ((long)p->cont_mark_stack >> SCHEME_LOG_MARK_SEGMENT_SIZE);
+	
+	if (segpos < p->cont_mark_seg_count) {
+	  Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[segpos];
+	  int stackpos = ((long)p->cont_mark_stack & SCHEME_MARK_SEGMENT_MASK), i;
+	  for (i = stackpos; i < SCHEME_MARK_SEGMENT_SIZE; i++) {
+	    seg[i].key = NULL;
+	    seg[i].val = NULL;
+	  }
+	}
+      }
+    }
+  }
+#endif
+   
+  scheme_fuel_counter = 0;
+
+#ifdef WINDOWS_PROCESSES
+  scheme_suspend_remembered_threads();
+#endif
+#ifdef UNIX_PROCESSES
+  scheme_block_child_signals(1);
+#endif
+
+  delayed_break_ready = 0;
+  delay_breaks = 1;
+}
+
+extern int GC_words_allocd;
+
+static void done_with_GC()
+{
+#ifdef RUNSTACK_IS_GLOBAL
+# ifdef MZ_PRECISE_GC
+  MZ_RUNSTACK = scheme_current_process->runstack;
+# endif
+#endif
+#ifdef WINDOWS_PROCESSES
+  scheme_resume_remembered_threads();
+#endif
+#ifdef UNIX_PROCESSES
+  scheme_block_child_signals(0);
+#endif
+
+  delay_breaks = 0;
+  if (delayed_break_ready)
+    scheme_break_thread(NULL);
+
+  scheme_total_gc_time += (scheme_get_process_milliseconds() - start_this_gc_time);
+}
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+
+/*========================================================================*/
+/*                       platform-specific OS threads                     */
+/*========================================================================*/
 
 #ifdef MZ_REAL_THREADS
 
@@ -4171,7 +4214,16 @@ int scheme_sproc_mutex_try_down(void *s)
 #endif /* MZ_USE_IRIX_SPROCS */
 
 
-/**********************************************************************/
+/*========================================================================*/
+/*                               precise GC                               */
+/*========================================================================*/
+
+#ifdef MZ_PRECISE_GC
+static unsigned long get_current_stack_start(void)
+{
+  return (unsigned long)scheme_current_process->stack_start;
+}
+#endif
 
 #ifdef MZ_PRECISE_GC
 

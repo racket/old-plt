@@ -493,7 +493,10 @@ wxStyle::wxStyle()
   cl = new wxList(wxKEY_NONE, FALSE);
   children = cl;
 
+#if 0
+  /* (style lists are not finalized any more) */
   WXGC_IGNORE(this, styleList);
+#endif
 
 #if 0
   /* (styles are not finalized any more) */
@@ -886,7 +889,7 @@ class NotificationRec {
   void *id;
 };
 
-wxStyleList::wxStyleList() : wxList()
+wxStyleList::wxStyleList() : wxList(wxKEY_NONE, WXGC_NO_CLEANUP)
 {
 #if USE_OLD_TYPE_SYSTEM
   __type = wxTYPE_STYLE_LIST;

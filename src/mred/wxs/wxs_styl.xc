@@ -8,7 +8,7 @@
 
 @HEADER
 
-@CLASSBASE wxMultColour "mult-color" : "object"
+@CLASSBASE wxMultColour "mult-color" : "object" / nofnl
 @INTERFACE "mult-color"
 
 @IVAR "r" : float r
@@ -20,7 +20,7 @@
 
 @END
 
-@CLASSBASE wxAddColour "add-color" : "object"
+@CLASSBASE wxAddColour "add-color" : "object" / nofnl
 @INTERFACE "add-color"
 
 @IVAR "r" : rint[-1000|1000] r
@@ -97,7 +97,7 @@
 @SYM "change-alignment" : wxCHANGE_ALIGNMENT
 @ENDSYMBOLS
 
-@CLASSBASE wxStyleDelta "style-delta" : "object"
+@CLASSBASE wxStyleDelta "style-delta" : "object" / nofnl
 
 @IVAR "family" : SYM[family] family
 @IVAR "face" : nstring face
@@ -151,7 +151,7 @@
 @END
 
 
-@CLASSBASE wxStyle "style" : "object"
+@CLASSBASE wxStyle "style" : "object" / nofnl
 @INTERFACE "style"
 
 @CLASSID wxTYPE_STYLE
@@ -190,7 +190,7 @@
 @END
 
 
-@CLASSBASE wxStyleList "style-list" : "object"
+@CLASSBASE wxStyleList "style-list" : "object" / nofnl
 
 @CREATOR ();
 

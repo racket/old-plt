@@ -153,7 +153,7 @@ typedef void *(*CAPOFunc)(void*);
 @END
 
 
-@CLASSBASE wxKeymap "keymap":"object"
+@CLASSBASE wxKeymap "keymap":"object" / nofnl
 
 typedef Scheme_Object KeymapCallbackToSchemeRec;
 #define kctsr(o) o

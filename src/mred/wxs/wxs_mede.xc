@@ -81,7 +81,7 @@
 @SYM "end-only" : Sym_END_ONLY
 @ENDSYMBOLS
 
-@CLASSBASE wxMediaEdit "text" : "editor"
+@CLASSBASE wxMediaEdit "text" : "editor" / nofnl
 
 @CREATOR (nnfloat=1.0,float[]=NULL/bList/ubList/cList///push,-int=0); : : /glueListSet[float.1.1.2.METHODNAME("text%","initialization")]//
 

@@ -555,7 +555,6 @@ typedef struct Scheme_Process {
   Scheme_Object **runstack;
   Scheme_Object **runstack_start;
   long runstack_size;
-  int *runstack_alive; /* For precise GC */
   struct Scheme_Saved_Stack *runstack_saved;
   Scheme_Object **runstack_tmp_keep;
 

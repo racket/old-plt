@@ -129,6 +129,7 @@ sub ReadFile {
 		$base = substr($_, 0, $pos);
 		$classstring = substr($_, $pos);
 		$base = &Wash($base);
+		($classstring,$classflags) = split(/\//, $classstring, 2);
 		($classstring,$parentstring) = &SplitColon($classstring);
 		$classstring = '"' . &Unquote(&Wash($classstring))
 		    . &Unquote($classsuffix) . '"';
@@ -137,6 +138,7 @@ sub ReadFile {
 		    $parentstring = '"' . &Unquote($parentstring)
 			. &Unquote($classsuffix) . '"';
 		}
+		$classflags = &Wash($classflags);
 		$oldclass = $base;
 		$newclass = 'os_' . $base;
 	    } elsif (&StartsWithKey($_, $key_interface)) {

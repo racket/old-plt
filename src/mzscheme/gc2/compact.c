@@ -47,9 +47,9 @@ typedef short Type_Tag;
 
 #include "gc2.h"
 
-#define TIME 0
+#define TIME 1
 #define SEARCH 0
-#define SAFETY 1
+#define SAFETY 0
 #define NOISY 0
 #define MARK_STATS 0
 
@@ -240,6 +240,8 @@ static int skipped_pages, scanned_pages, young_pages, inited_pages;
 static long iterations;
 
 static long mark_maxdepth, mark_stackcount;
+
+static int fnl_weak_link_count;
 
 static int during_gc;
 
@@ -850,6 +852,8 @@ void GC_finalization_weak_ptr(void **p, int offset)
   wl->offset = offset * sizeof(void*);
 
   fnl_weaks = wl;
+
+  fnl_weak_link_count++;
 }
 
 /******************************************************************************/
@@ -1099,6 +1103,8 @@ void GC_dump(void)
       }
     }
   }
+
+  fprintf(stderr, "Active fnl weak links: %d\n", fnl_weak_link_count);
 
   if (memory_in_use > max_memory_use)
     max_memory_use = memory_in_use;
@@ -3366,10 +3372,12 @@ static void gcollect(int full)
       next = wl->next;
       if (!is_marked(wl->p)) {
 	/* Will be collected. Removed this link. */
+	wl->p = NULL;
 	if (prev)
 	  prev->next = next;
 	else
 	  fnl_weaks = next;
+	--fnl_weak_link_count;
       } else {
 	prev = wl;
       }
@@ -3484,8 +3492,8 @@ static void gcollect(int full)
   getrusage(RUSAGE_SELF, &post);
 #endif
 
-  PRINTTIME((STDERR, "gc: done with %ld (%d/%d) [%ld faults]: %ld >>\n",
-	     memory_in_use, scanned_pages, skipped_pages, post.ru_minflt - pre.ru_minflt,
+  PRINTTIME((STDERR, "gc: done with %ld (free:%d cheap:%d) [%ld faults]: %ld >>\n",
+	     memory_in_use, skipped_pages, scanned_pages, post.ru_minflt - pre.ru_minflt,
 	     GETTIMEREL()));
 
   during_gc = 0;

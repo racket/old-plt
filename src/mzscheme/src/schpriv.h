@@ -301,13 +301,10 @@ Scheme_Process *scheme_do_close_managed(Scheme_Manager *m, Closer_Func f);
 
 typedef struct {
   Scheme_Bucket bucket;
-  short flags;
+  short flags, id;
 } Scheme_Bucket_With_Const_Flag;
 
-typedef struct {
-  Scheme_Bucket_With_Const_Flag flagged;
-  short id;
-} Scheme_Bucket_With_Ref_Id;
+typedef Scheme_Bucket_With_Const_Flag Scheme_Bucket_With_Ref_Id;
 
 Scheme_Object *
 scheme_get_primitive_global(Scheme_Object *var, Scheme_Env *env, 
@@ -522,7 +519,6 @@ typedef struct Scheme_Saved_Stack {
   Scheme_Object **runstack_start;
   Scheme_Object **runstack;
   long runstack_size;
-  int *runstack_alive;
   struct Scheme_Saved_Stack *prev;
 } Scheme_Saved_Stack;
 
@@ -556,7 +552,6 @@ typedef struct Scheme_Stack_State {
   Scheme_Object **runstack;
   Scheme_Object **runstack_start;
   long runstack_size;
-  int *runstack_alive;
   Scheme_Saved_Stack *runstack_saved;
   MZ_MARK_POS_TYPE cont_mark_pos;
   MZ_MARK_STACK_TYPE cont_mark_stack;
@@ -610,13 +605,11 @@ typedef struct Scheme_Escaping_Cont {
 #define scheme_save_env_stack_w_process(ss, p) \
     (ss.runstack = MZ_RUNSTACK, ss.runstack_start = MZ_RUNSTACK_START, \
      ss.cont_mark_stack = MZ_CONT_MARK_STACK, ss.cont_mark_pos = MZ_CONT_MARK_POS, \
-     ss.runstack_size = p->runstack_size, ss.runstack_alive = p->runstack_alive, \
-     ss.runstack_saved = p->runstack_saved)
+     ss.runstack_size = p->runstack_size, ss.runstack_saved = p->runstack_saved)
 #define scheme_restore_env_stack_w_process(ss, p) \
     (MZ_RUNSTACK = ss.runstack, MZ_RUNSTACK_START = ss.runstack_start, \
      MZ_CONT_MARK_STACK = ss.cont_mark_stack, MZ_CONT_MARK_POS = ss.cont_mark_pos, \
-     p->runstack_size = ss.runstack_size, p->runstack_alive = ss.runstack_alive, \
-     p->runstack_saved = ss.runstack_saved)
+     p->runstack_size = ss.runstack_size, p->runstack_saved = ss.runstack_saved)
 #define scheme_save_env_stack(ss) \
     scheme_save_env_stack_w_process(ss, scheme_current_process)
 #define scheme_restore_env_stack(ss) \

@@ -7494,7 +7494,6 @@ static Scheme_Object *os_wxMediaEdit_ConstructScheme(Scheme_Object *obj, int n, 
   
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(obj, &((Scheme_Class_Object *)obj)->primdata));
   ((Scheme_Class_Object *)obj)->primflag = 1;
   return obj;
 }
@@ -7689,7 +7688,6 @@ Scheme_Object *objscheme_bundle_wxMediaEdit(class wxMediaEdit *realobj)
   obj = (Scheme_Class_Object *)WITH_VAR_STACK(scheme_make_uninited_object(os_wxMediaEdit_class));
 
   obj->primdata = realobj;
-  WITH_VAR_STACK(objscheme_register_primpointer(obj, &obj->primdata));
   obj->primflag = 0;
 
   realobj->__gc_external = (void *)obj;

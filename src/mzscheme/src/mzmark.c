@@ -1097,8 +1097,7 @@ int process_val_MARK(void *p) {
 
   gcMARK(pr->config);
 
-  gcMARK(pr->runstack_alive);
-  if (pr->runstack_alive && *(pr->runstack_alive)) {
+  {
     Scheme_Object **rs = pr->runstack_start;
     gcMARK(pr->runstack_start);
     pr->runstack = pr->runstack_start + (pr->runstack - rs);
@@ -1163,8 +1162,7 @@ int process_val_FIXUP(void *p) {
 
   gcFIXUP(pr->config);
 
-  gcFIXUP(pr->runstack_alive);
-  if (pr->runstack_alive && *(pr->runstack_alive)) {
+  {
     Scheme_Object **rs = pr->runstack_start;
     gcFIXUP(pr->runstack_start);
     pr->runstack = pr->runstack_start + (pr->runstack - rs);
@@ -1529,11 +1527,8 @@ int mark_saved_stack_MARK(void *p) {
   Scheme_Object **old = saved->runstack_start;
   
   gcMARK(saved->prev);
-  gcMARK(saved->runstack_alive);
-  if (saved->runstack_alive && *(saved->runstack_alive)) {
-    gcMARK(saved->runstack_start);
-    saved->runstack = saved->runstack_start + (saved->runstack - old);
-  }
+  gcMARK(saved->runstack_start);
+  saved->runstack = saved->runstack_start + (saved->runstack - old);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Saved_Stack));
@@ -1544,11 +1539,8 @@ int mark_saved_stack_FIXUP(void *p) {
   Scheme_Object **old = saved->runstack_start;
   
   gcFIXUP(saved->prev);
-  gcFIXUP(saved->runstack_alive);
-  if (saved->runstack_alive && *(saved->runstack_alive)) {
-    gcFIXUP(saved->runstack_start);
-    saved->runstack = saved->runstack_start + (saved->runstack - old);
-  }
+  gcFIXUP(saved->runstack_start);
+  saved->runstack = saved->runstack_start + (saved->runstack - old);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Saved_Stack));

@@ -1,5 +1,5 @@
 (module browser mzscheme
-  (require (lib "sendurl.ss" "net"))
+  (require (lib "browser.ss" "net"))
   (require "server.ss")
 
   (provide help-desk-browser

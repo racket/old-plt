@@ -4,7 +4,7 @@
   (require (lib "list.ss"))
   (require (lib "etc.ss"))
   (require (lib "mred.ss" "mred"))
-  (require (lib "sendurl.ss" "net"))
+  (require (lib "browser.ss" "net"))
   
   (define *frame-label* "WaterWorld")
 

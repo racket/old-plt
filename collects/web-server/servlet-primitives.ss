@@ -7,7 +7,7 @@
            "servlet-sig.ss"
            (lib "xml.ss" "xml")
            (lib "url.ss" "net")
-           (lib "sendurl.ss" "net")
+           (lib "browser.ss" "net")
            ; more here - use contracts when they support suitable error messages
            ;(lib "specs.ss" "framework")
            (lib "error.ss" "htdp")

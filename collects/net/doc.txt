@@ -214,9 +214,9 @@ a unit that imports nothing and exports the names in net:url^.
 _URL viewing_
 ==========================================================================
 
-To load directly: (require (lib "sendurl.ss" "net"))
+To load directly: (require (lib "browser.ss" "net"))
 
-The _sendurl.ss_ module defines one procedure:
+The _browser.ss_ module defines one procedure:
 
 > (send-url str [separate-window? #t]) - 
   opens the url in a platform-specific manner,

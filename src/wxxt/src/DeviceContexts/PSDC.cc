@@ -4,16 +4,12 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.29 1999/11/04 17:25:33 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.30 1999/11/05 02:34:22 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
 /* This file is the same for all three version of wxWindows from
    PLT. */
-
-/* static const char sccsid[] = "@(#)wb_ps.cc	1.2 5/9/94"; */
-
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
 
 #if defined(_MSC_VER)
 # include "wx.h"
@@ -72,8 +68,6 @@
 
 #include "wx_rgn.h"
 
-#if USE_POSTSCRIPT
-
 # define YSCALE(y) ((paper_h) - ((y) * user_scale_y + device_origin_y))
 # define XSCALE(x) ((x) * user_scale_x + device_origin_x)
 # define YOFFSET(y) ((paper_h) - ((y) + device_origin_y))
@@ -113,59 +107,16 @@ class wxCanvas;
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-// #include <time.h>
 #include <limits.h>
 #include <assert.h>
 
 static char *default_afm_path = NULL;
 
-Bool XPrinterDialog (wxWindow *parent);
-
-// Determine the Default Postscript Previewer
-// available on the platform
-#if defined(sun) && defined(wx_xview)
-// OpenWindow/NeWS's Postscript Previewer
-# define PS_VIEWER_PROG "pageview"
-#elif defined(VMS)
-#define PS_VIEWER_PROG "view/format=ps/select=x_display"
-#elif defined(__sgi)
-// SGI's Display Postscript Previewer
-# define PS_VIEWER_PROG "dps"
-#elif defined(wx_x)
-// Front-end to ghostscript 
-# define PS_VIEWER_PROG "ghostview"
-#else
-// Windows ghostscript/ghostview
-# define PS_VIEWER_PROG NULL
-#endif
+Bool XPrinterDialog(wxWindow *parent);
 
 #ifdef wx_mac
 wxPrintPaperDatabase *wxThePrintPaperDatabase;
 #endif
-
-/*
-static char *wx_preview_command = copystring(PS_VIEWER_PROG);
-static Bool wx_printer_orientation = PS_PORTRAIT;
-static int wx_printer_mode = PS_PREVIEW;
-
-#ifdef VMS
-static char *wx_printer_command = copystring("print");
-static char *wx_printer_flags = copystring("/nonotify/queue=psqueue");
-static char *wx_afm_path = copystring("sys$ps_font_metrics:");
-#endif
-#ifdef wx_msw
-static char *wx_printer_command = copystring("print");
-static char *wx_afm_path = copystring("c:\\windows\\system\\");
-static char *wx_printer_flags = NULL;
-#endif
-#if !defined(VMS) && !defined(wx_msw)
-static char *wx_printer_command = copystring("lpr");
-static char *wx_printer_flags = NULL;
-static char *wx_afm_path = NULL;
-#endif
-*/
-
-#define _MAXPATHLEN 500
 
 #ifndef wx_xt
 # define current_font font
@@ -304,7 +255,6 @@ Bool wxPostScriptDC::Create(Bool interactive)
 
   pstream = NULL;
 
-  /* MATTHEW: [9] */
   clipx = 0;
   clipy = 0;
   clipw = -1;
@@ -878,7 +828,6 @@ void wxPostScriptDC::SetFont (wxFont * the_font)
   resetFont -= (resetFont & RESET_FONT);
 
   current_font = the_font;
-  /* MATTHEW: [2] Use wxTheFontDirectory */
   char *name;
   int Family = current_font->GetFontId();
   int Style = current_font->GetStyle();
@@ -1314,8 +1263,6 @@ void wxPostScriptDC::EndDoc (void)
     *pstream << "grestore\n";
   }
 
-  // THE FOLLOWING HAS BEEN CONTRIBUTED BY Andy Fyfe <andy@hyperparallel.com>
-
   // Compute the bounding box.  Note that it is in the default user
   // coordinate system, thus we have to convert the values.
   float llx;
@@ -1372,9 +1319,7 @@ void wxPostScriptDC::EndDoc (void)
 	case PS_PRINTER:
 	{
           char *argv[4];
-          /* MATTHEW: [7] Print - not preview */
           argv[0] = print_cmd;
-	  /* MATTHEW: [9] Use options only if it's not "" */
 	  int i = 1;
 	  char *opts = print_opts;
 	  if (opts && *opts)
@@ -1615,40 +1560,11 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   // it works well. the AFM file is only read in if the
   // font is changed. this may be chached in the future.
   // calls to GetTextExtent with the font unchanged are rather
-  // efficient!!!
+  // efficient!
   //
   // for each font and style used there is an AFM file necessary.
   // currently i have only files for the roman font family.
   // i try to get files for the other ones!
-  //
-  // CAVE: the size of the string is currently always calculated
-  //       in 'points' (1/72 of an inch). this should later on be
-  //       changed to depend on the mapping mode.
-  // CAVE: the path to the AFM files must be set before calling this
-  //       function. this is usually done by a call like the following:
-  //       wxSetAFMPath("d:\\wxw161\\afm\\");
-  //
-  // example:
-  //
-  //    wxPostScriptDC dc(NULL, TRUE);
-  //    if (dc.Ok()){
-  //      wxSetAFMPath("d:\\wxw161\\afm\\");
-  //      dc.StartDoc("Test");
-  //      dc.StartPage();
-  //      float w,h;
-  //      dc.SetFont(new wxFont(10, wxROMAN, wxNORMAL, wxNORMAL));
-  //      dc.GetTextExtent("Hallo",&w,&h);
-  //      dc.EndPage();
-  //      dc.EndDoc();
-  //    }
-  //
-  // by steve (stefan.hammes@urz.uni-heidelberg.de)
-  // created: 10.09.94
-  // updated: 14.05.95
-
-  assert(fontToUse && "void wxPostScriptDC::GetTextExtent: no font defined");
-  assert(x && "void wxPostScriptDC::GetTextExtent: x == NULL");
-  assert(y && "void wxPostScriptDC::GetTextExtent: y == NULL");
 
   // these static vars are for storing the state between calls
   static int lastFamily= INT_MIN;
@@ -1665,12 +1581,12 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   const int Style =  fontToUse->GetStyle();
   const int Weight = fontToUse->GetWeight();
 
-  // if we have another font, read the font-metrics
+  // if we have a new font, read the font-metrics
   if (Family != lastFamily 
       || Size != lastSize 
       || Style != lastStyle
       || Weight != lastWeight) {
-    // store actual values
+    // store cached values
     lastFamily = Family;
     lastSize =   Size;
     lastStyle =  Style;
@@ -1679,7 +1595,6 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
     // read in new font metrics **************************************
 
     // 1. construct filename ******************************************
-    /* MATTHEW: [2] Use wxTheFontNameDirectory */
     char *name;
     char *afmName;
 
@@ -1909,29 +1824,11 @@ void wxPostScriptDC::GetSize(float *width, float *height)
 
 void wxPostScriptDC::GetSizeMM(float *WXUNUSED(width), float *WXUNUSED(height))
 {
-#if 0
-  char *paperType = wxThePrintSetupData->GetPaperName();
-  if (!paperType)
-    paperType = DEFAULT_PAPER;
-
-  wxPrintPaperType *paper = wxThePrintPaperDatabase->FindPaperType(paperType);
-  if (!paper)
-    paper = wxThePrintPaperDatabase->FindPaperType(DEFAULT_PAPER);
-  if (paper) {
-    *width = (float)paper->widthMM;
-    *height = (float)paper->heightMM;
-  }
-  else {
-    *width = 1000;
-    *height = 1000;
-  }
-#endif
 }
 
 extern Bool wxsPrinterDialog(wxWindow *parent);
 
-Bool 
-XPrinterDialog (wxWindow *parent)
+Bool XPrinterDialog(wxWindow *parent)
 {
   return wxsPrinterDialog(parent);
 }
@@ -2217,5 +2114,3 @@ wxPrintPaperType *wxPrintPaperDatabase::FindPaperType(char *name)
     else
 	return NULL;
 }
-
-#endif

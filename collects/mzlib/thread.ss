@@ -4,19 +4,13 @@
 	   "etc.ss")
 
   (provide consumer-thread
-	  with-semaphore
-	  
-	  dynamic-disable-break
-	  dynamic-enable-break
-	  make-single-threader
+	   with-semaphore
+	   
+	   dynamic-disable-break
+	   dynamic-enable-break
+	   make-single-threader
 
-	  merge-input
-	  copy-port
-	  input-port-append
-	  convert-stream
-
-	  run-server
-	  make-limited-input-port)
+	   run-server)
   
   #|
   t accepts a function, f, and creates a thread. It returns the thread and a
@@ -24,7 +18,7 @@
   the call of f in the time of the thread that was created. Calls to g do not
   block.
   |#
-  
+
   (define consumer-thread
     (case-lambda
      [(f) (consumer-thread f void)]
@@ -98,55 +92,6 @@
 	    thunk
 	    (lambda () (semaphore-post sema))))))))
 
-  (define (copy-port src dest . dests)
-    (unless (input-port? src)
-      (raise-type-error 'copy-port "input-port" src))
-    (for-each
-     (lambda (dest)
-       (unless (output-port? dest)
-	 (raise-type-error 'copy-port "output-port" dest)))
-     (cons dest dests))
-    (let ([s (make-bytes 4096)])
-      (let loop ()
-	(let ([c (read-bytes-avail! s src)])
-	  (unless (eof-object? c)
-	    (for-each
-	     (lambda (dest)
-	       (let loop ([start 0])
-		 (unless (= start c)
-		   (let ([c2 (write-bytes-avail s dest start c)])
-		     (loop (+ start c2))))))
-	     (cons dest dests))
-	    (loop))))))
-  
-  (define merge-input
-    (case-lambda
-     [(a b) (merge-input a b 4096)]
-     [(a b limit)
-      (or (input-port? a)
-	  (raise-type-error 'merge-input "input-port" a))
-      (or (input-port? b)
-	  (raise-type-error 'merge-input "input-port" b))
-      (or (not limit)
-	  (and (number? limit) (positive? limit) (exact? limit) (integer? limit))
-	  (raise-type-error 'merge-input "positive exact integer or #f" limit))
-      (let-values ([(rd wt) (make-pipe limit)]
-		   [(other-done?) #f]
-		   [(sema) (make-semaphore 1)])
-	(let ([copy
-	       (lambda (from)
-                 (thread 
-                  (lambda ()
-                    (copy-port from wt)
-                    (semaphore-wait sema)
-                    (if other-done?
-                        (close-output-port wt)
-                        (set! other-done? #t))
-                    (semaphore-post sema))))])
-	  (copy a)
-	  (copy b)
-	  rd))]))
-
   (define run-server
     (opt-lambda (port-number 
 		 handler 
@@ -181,126 +126,12 @@
 					     (handler r w)))])
 			    ;; Clean-up and timeout thread:
 			    (thread (lambda () 
-				      (object-wait-multiple connection-timeout t)
+				      (sync/timeout connection-timeout t)
 				      (when (thread-running? t)
 					;; Only happens if connection-timeout is not #f
 					(break-thread t))
-				      (object-wait-multiple connection-timeout t)
+				      (sync/timeout connection-timeout t)
 				      (custodian-shutdown-all c)))))))))
 		(loop)))
-	    (lambda () (tcp-close l))))))
-
-  (define input-port-append
-    (opt-lambda (close-orig? . ports)
-      (make-custom-input-port
-       (lambda (str)
-	 ;; Reading is easy -- read from the first port,
-	 ;;  and get rid of it if the result is eof
-	 (if (null? ports)
-	     eof
-	     (let ([n (read-bytes-avail!* str (car ports))])
-	       (cond
-		[(eq? n 0) (car ports)]
-		[(eof-object? n)
-		 (when close-orig?
-		   (close-input-port (car ports)))
-		 (set! ports (cdr ports))
-		 0]
-		[else n]))))
-       (lambda (str skip)
-	 ;; Peeking is more difficult, due to skips.
-	 (let loop ([ports ports][skip skip])
-	   (if (null? ports)
-	       eof
-	       (let ([n (peek-bytes-avail!* str skip (car ports))])
-		 (cond
-		  [(eq? n 0) 
-		   ;; Not ready, yet.
-		   (car ports)]
-		  [(eof-object? n)
-		   ;; Port is exhausted, or we skipped past its input.
-		   ;; If skip is not zero, we need to figure out
-		   ;;  how many chars were skipped.
-		   (loop (cdr ports)
-			 (- skip (compute-avail-to-skip skip (car ports))))]
-		  [else n])))))
-       (lambda ()
-	 (when close-orig?
-	   (map close-input-port ports))))))
-
-  (define (convert-stream from from-port
-			  to to-port)
-    (let ([c (bytes-open-converter from to)]
-	  [in (make-bytes 4096)]
-	  [out (make-bytes 4096)])
-      (unless c
-	(error 'convert-stream "could not create converter from ~e to ~e"
-	       from to))
-      (dynamic-wind
-	  void
-	  (lambda ()
-	    (let loop ([got 0])
-	      (let ([n (read-bytes-avail! in from-port got)])
-		(let ([got (+ got (if (eof-object? n)
-				      0
-				      n))])
-		  (let-values ([(wrote used status) (bytes-convert c in 0 got out)])
-		    (when (eq? status 'error)
-		      (error 'convert-stream "conversion error"))
-		    (unless (zero? wrote)
-		      (write-bytes out to-port 0 wrote))
-		    (bytes-copy! in used in 0 got)
-		    (if (eof-object? n)
-			(begin
-			  (unless (= got used)
-			    (error 'convert-stream "input stream ended with a partial conversion"))
-			  (let-values ([(wrote status) (bytes-convert-end c out)])
-			    (when (eq? status 'error)
-			      (error 'convert-stream "conversion-end error"))
-			    (unless (zero? wrote)
-			      (write-bytes out to-port 0 wrote))
-			    ;; Success
-			    (void)))
-			(loop (- got used))))))))
-	  (lambda () (bytes-close-converter c)))))
-
-  ;; Helper for input-port-append; given a skip count
-  ;;  and an input port, determine how many characters
-  ;;  (up to upto) are left in the port. We figure this
-  ;;  out using binary search.
-  (define (compute-avail-to-skip upto p)
-    (let ([str (make-bytes 1)])
-      (let loop ([upto upto][skip 0])
-	(if (zero? upto)
-	    skip
-	    (let* ([half (quotient upto 2)]
-		   [n (peek-bytes-avail!* str (+ skip half) p)])
-	      (if (eq? n 1)
-		  (loop (- upto half 1) (+ skip half 1))
-		  (loop half skip)))))))
-
-  (define make-limited-input-port
-    (opt-lambda (port limit [close-orig? #t])
-      (let ([got 0])
-	(make-custom-input-port
-	 (lambda (str)
-	   (let ([count (min (- limit got) (bytes-length str))])
-	     (if (zero? count)
-		 eof
-		 (let ([n (read-bytes-avail!* str port 0 count)])
-		   (cond
-		    [(eq? n 0) port]
-		    [(number? n) (set! got (+ got n)) n]
-		    [else n])))))
-	 (lambda (str skip)
-	   (let ([count (max 0 (min (- limit got skip) (bytes-length str)))])
-	     (if (zero? count)
-		 eof
-		 (let ([n (peek-bytes-avail!* str skip port 0 count)])
-		   (if (eq? n 0)
-		       port
-		       n)))))
-	 (lambda ()
-	   (when close-orig?
-	     (close-input-port port))))))))
+	    (lambda () (tcp-close l)))))))
 

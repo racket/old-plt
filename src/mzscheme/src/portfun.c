@@ -987,28 +987,36 @@ typedef struct User_Input_Port {
 
 static long user_read_result(const char *who, Scheme_Input_Port *port, 
 			     Scheme_Object *val, Scheme_Object *bstr, 
-			     int peek, int nonblock, int evt_ok,
+			     int peek, int nonblock, int evt_ok, int special_ok,
 			     Scheme_Schedule_Info *sinfo)
 {
   Scheme_Object *a[1];
 
+  val_again:
+  
   if (SCHEME_EOFP(val))
     return EOF;
   else {
     int n;
-
-  val_again:
 
     if (!SCHEME_INTP(val) || (SCHEME_INT_VAL(val) < 0)) {
       a[0] = val;
       if (SCHEME_BIGNUMP(val) && SCHEME_BIGPOS(val)) {
 	n = -1;
       } else if (SCHEME_PAIRP(val)) {
+	Scheme_Object *orig = val;
 	a[0] = SCHEME_CDR(val);
 	val = SCHEME_CAR(val);
 	if (scheme_check_proc_arity(NULL, 4, 0, 1, a)
 	    && ((SCHEME_INTP(val) && (SCHEME_INT_VAL(val) >= 0))
 		|| (SCHEME_BIGNUMP(val) && SCHEME_BIGPOS(val)))) {
+	  if (!special_ok) {
+	    scheme_arg_mismatch(who, 
+				"the port has no specific peek procedure, so"
+				" a special read result is not allowed: ",
+				orig);
+	    return 0;
+	  }
 	  port->special_width = val;
 	  port->special = a[0];
 	  return SCHEME_SPECIAL;
@@ -1048,7 +1056,9 @@ static long user_read_result(const char *who, Scheme_Input_Port *port,
       if (!val) {
 	scheme_wrong_type(who, 
 			  (evt_ok
-			   ? "non-negative exact integer, eof, evt, or pair for special"
+			   ? (special_ok
+			      ? "non-negative exact integer, eof, evt, or pair for special"
+			      : "non-negative exact integer, eof, or evt")
 			   : "non-negative exact integer, eof, or pair for special"),
 			  -1, -1, a);
 	return 0;
@@ -1101,12 +1111,8 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
       vb = scheme_malloc_atomic(size + 1);
       bstr = scheme_make_sized_byte_string(vb, size, 0);
     }
-    if (peek) {
-      a[0] = peek_skip;
-      a[1] = bstr;
-    } else {
-      a[0] = bstr;
-    }
+    a[0] = bstr;
+    a[1] = peek_skip;
     val = scheme_apply(fun, peek ? 2 : 1, a);
     
     if ((size <= MAX_USER_INPUT_REUSE_SIZE)
@@ -1115,7 +1121,8 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
     }
 
     r = user_read_result(peek ? "user port peek" : "user port read",
-			 port, val, bstr, peek, nonblock, 1, sinfo);
+			 port, val, bstr, peek, nonblock, 
+			 1, !!uip->peek_proc, sinfo);
 
     if (r > 0) {
       memcpy(buffer + offset, SCHEME_BYTE_STR_VAL(bstr), r);
@@ -1164,7 +1171,7 @@ static Scheme_Object *user_read_evt_wrapper(void *d, int argc, struct Scheme_Obj
 	    ? "user port peek-byte-evt" 
 	    : "user port read-byte-evt"));
 
-  r = user_read_result(who, (Scheme_Input_Port *)port, val, bstr, peek, 0, 0, NULL);  
+  r = user_read_result(who, (Scheme_Input_Port *)port, val, bstr, peek, 0, 0, 1, NULL);  
 
   if (r < 0) {
     if (r == SCHEME_SPECIAL) {
@@ -1235,12 +1242,8 @@ user_get_or_peek_bytes_evt(Scheme_Input_Port *port,
   else
     fun = uip->read_evt_proc;
 
-  if (peek) {
-    a[0] = skip;
-    a[1] = bstr;
-  } else {
-    a[0] = bstr;
-  }
+  a[0] = bstr;
+  a[1] = skip;
   val = scheme_apply(fun, peek ? 2 : 1, a);  
 
   if (!scheme_is_evt(val)) {
@@ -2074,13 +2077,19 @@ make_input_port(int argc, Scheme_Object *argv[])
   Scheme_Object *name;
 
   scheme_check_proc_arity("make-input-port", 1, 1, argc, argv); /* read */
-  scheme_check_proc_arity("make-input-port", 2, 2, argc, argv); /* peek */
+  scheme_check_proc_arity2("make-input-port", 2, 2, argc, argv, 1); /* peek */
   scheme_check_proc_arity("make-input-port", 0, 3, argc, argv); /* close */
   if (argc > 4)
     scheme_check_proc_arity2("make-input-port", 1, 4, argc, argv, 1); /* read-evt */
   if (argc > 5)
     scheme_check_proc_arity2("make-input-port", 2, 5, argc, argv, 1); /* peek-evt */
   name = argv[0];
+
+  /* It makes no sense to supply peek-evt without peek: */
+  if ((argc > 5) && SCHEME_FALSEP(argv[2]) && !SCHEME_FALSEP(argv[5]))
+    scheme_arg_mismatch("make-output-port",
+			"peek argument is #f, but peek-evt argument is not: ",
+			argv[6]);
 
   /* It makes no sense to supply read-evt without peek-evt: */
   if ((argc > 5) && SCHEME_FALSEP(argv[4]) && !SCHEME_FALSEP(argv[5]))
@@ -2100,6 +2109,8 @@ make_input_port(int argc, Scheme_Object *argv[])
   
   uip->read_proc = argv[1];
   uip->peek_proc = argv[2];
+  if (SCHEME_FALSEP(uip->peek_proc))
+    uip->peek_proc = NULL;
   uip->close_proc = argv[3];
   uip->read_evt_proc = ((argc > 4) ? argv[4] : scheme_false);
   if (SCHEME_FALSEP(uip->read_evt_proc))
@@ -2114,11 +2125,14 @@ make_input_port(int argc, Scheme_Object *argv[])
 			      uip->read_evt_proc ? user_get_bytes_evt : NULL,
 			      user_get_bytes,
 			      uip->peek_evt_proc ? user_peek_bytes_evt : NULL,
-			      user_peek_bytes,
+			      uip->peek_proc ? user_peek_bytes : NULL,
 			      user_byte_ready,
 			      user_close_input,
 			      user_needs_wakeup_input,
 			      0);
+
+  if (!uip->peek_proc)
+    ip->pending_eof = 1; /* means that pending EOFs should be tracked */
 
   return (Scheme_Object *)ip;
 }

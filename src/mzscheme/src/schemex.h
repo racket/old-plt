@@ -110,6 +110,7 @@ void (*scheme_add_evt_through_sema)(Scheme_Type type,
 int (*scheme_is_evt)(Scheme_Object *o);
 Scheme_Object *(*scheme_sync)(int argc, Scheme_Object *argv[]);
 Scheme_Object *(*scheme_sync_enable_break)(int argc, Scheme_Object *argv[]);
+Scheme_Object *(*scheme_sync_timeout)(int argc, Scheme_Object *argv[]);
 Scheme_Object *(*scheme_make_evt_set)(int argc, Scheme_Object **argv);
 void (*scheme_add_swap_callback)(Scheme_Closure_Func f, Scheme_Object *data);
 Scheme_Object *(*scheme_call_enable_break)(Scheme_Prim *prim, int argc, Scheme_Object *argv[]);

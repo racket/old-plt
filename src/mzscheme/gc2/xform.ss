@@ -608,9 +608,12 @@
 
   (current-output-port (if file-out
 			   (open-output-file file-out 'truncate)
-			   (make-custom-output-port #f (lambda (s st ed f?)
-							 (- ed st))
-						    void void)))
+			   (make-output-port 'dev/null
+					     always-evt
+					     (lambda (s st ed f?)
+					       (- ed st))
+					     void)))
+
   (let ([eh (error-escape-handler)])
     (error-escape-handler
      (lambda ()

@@ -2602,7 +2602,6 @@ int mark_user_input_MARK(void *p) {
   gcMARK(uip->peek_evt_proc);
   gcMARK(uip->peek_proc);
   gcMARK(uip->close_proc);
-  gcMARK(uip->peeked);
   gcMARK(uip->reuse_str);
   return
   gcBYTES_TO_WORDS(sizeof(User_Input_Port));
@@ -2616,7 +2615,6 @@ int mark_user_input_FIXUP(void *p) {
   gcFIXUP(uip->peek_evt_proc);
   gcFIXUP(uip->peek_proc);
   gcFIXUP(uip->close_proc);
-  gcFIXUP(uip->peeked);
   gcFIXUP(uip->reuse_str);
   return
   gcBYTES_TO_WORDS(sizeof(User_Input_Port));
@@ -2887,33 +2885,6 @@ int mark_subprocess_FIXUP(void *p) {
 
 #define mark_subprocess_IS_ATOMIC 0
 #define mark_subprocess_IS_CONST_SIZE 1
-
-
-int mark_read_special_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Read_Special_DW));
-}
-
-int mark_read_special_MARK(void *p) {
-  Read_Special_DW *rs = (Read_Special_DW *)p;
-  gcMARK(rs->f);
-  gcMARK(rs->a);
-  gcMARK(rs->exn_handler);
-  return
-  gcBYTES_TO_WORDS(sizeof(Read_Special_DW));
-}
-
-int mark_read_special_FIXUP(void *p) {
-  Read_Special_DW *rs = (Read_Special_DW *)p;
-  gcFIXUP(rs->f);
-  gcFIXUP(rs->a);
-  gcFIXUP(rs->exn_handler);
-  return
-  gcBYTES_TO_WORDS(sizeof(Read_Special_DW));
-}
-
-#define mark_read_special_IS_ATOMIC 0
-#define mark_read_special_IS_CONST_SIZE 1
 
 
 int mark_read_write_evt_SIZE(void *p) {
@@ -3408,24 +3379,16 @@ int mark_evt_SIZE(void *p) {
 }
 
 int mark_evt_MARK(void *p) {
-  Evt *r = (Evt *)p;
- 
-  gcMARK(r->next);
-
   return
   gcBYTES_TO_WORDS(sizeof(Evt));
 }
 
 int mark_evt_FIXUP(void *p) {
-  Evt *r = (Evt *)p;
- 
-  gcFIXUP(r->next);
-
   return
   gcBYTES_TO_WORDS(sizeof(Evt));
 }
 
-#define mark_evt_IS_ATOMIC 0
+#define mark_evt_IS_ATOMIC 1
 #define mark_evt_IS_CONST_SIZE 1
 
 

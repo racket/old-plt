@@ -51,6 +51,7 @@ scheme_add_evt_through_sema
 scheme_is_evt
 scheme_sync
 scheme_sync_enable_break
+scheme_sync_timeout
 scheme_make_evt_set
 scheme_add_swap_callback
 scheme_call_enable_break

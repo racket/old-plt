@@ -2335,12 +2335,16 @@ static void start_child(Scheme_Thread * volatile child,
       exit_or_escape(scheme_current_thread);
     }
 
-    if (!scheme_setjmp(scheme_error_buf)) {
-      /* check for initial break before we do anything */
-      scheme_check_break_now();
-
-      /* run the main thunk: */
-      scheme_apply_thread_thunk(child_eval);
+    {
+      mz_jmp_buf newbuf;
+      scheme_current_thread->error_buf = &newbuf;
+      if (!scheme_setjmp(newbuf)) {
+	/* check for initial break before we do anything */
+	scheme_check_break_now();
+	
+	/* run the main thunk: */
+	scheme_apply_thread_thunk(child_eval);
+      }
     }
 
     /* !! At this point, scheme_current_thread can turn out to be a
@@ -5051,12 +5055,12 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
     return NULL;
 }
 
-Scheme_Object *sch_sync(int argc, Scheme_Object *argv[])
+static Scheme_Object *sch_sync(int argc, Scheme_Object *argv[])
 {
   return do_sync("sync", argc, argv, 0, 0, 1);
 }
 
-Scheme_Object *sch_sync_timeout(int argc, Scheme_Object *argv[])
+static Scheme_Object *sch_sync_timeout(int argc, Scheme_Object *argv[])
 {
   return do_sync("sync/timeout", argc, argv, 0, 1, 1);
 }
@@ -5068,7 +5072,7 @@ Scheme_Object *scheme_sync(int argc, Scheme_Object *argv[])
 
 Scheme_Object *scheme_sync_timeout(int argc, Scheme_Object *argv[])
 {
-  return do_sync("sync/timeout", argc, argv, 0, 0, 1);
+  return do_sync("sync/timeout", argc, argv, 0, 1, 0);
 }
 
 static Scheme_Object *do_scheme_sync_enable_break(const char *who, int with_timeout, int argc, Scheme_Object *argv[])

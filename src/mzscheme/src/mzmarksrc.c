@@ -1032,7 +1032,6 @@ mark_user_input {
   gcMARK(uip->peek_evt_proc);
   gcMARK(uip->peek_proc);
   gcMARK(uip->close_proc);
-  gcMARK(uip->peeked);
   gcMARK(uip->reuse_str);
  size:
   gcBYTES_TO_WORDS(sizeof(User_Input_Port));
@@ -1144,16 +1143,6 @@ mark_subprocess {
 #endif
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Subprocess));
-}
-
-mark_read_special {
- mark:
-  Read_Special_DW *rs = (Read_Special_DW *)p;
-  gcMARK(rs->f);
-  gcMARK(rs->a);
-  gcMARK(rs->exn_handler);
- size:
-  gcBYTES_TO_WORDS(sizeof(Read_Special_DW));
 }
 
 mark_read_write_evt {

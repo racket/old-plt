@@ -59,6 +59,7 @@
 #define scheme_is_evt (scheme_extension_table->scheme_is_evt)
 #define scheme_sync (scheme_extension_table->scheme_sync)
 #define scheme_sync_enable_break (scheme_extension_table->scheme_sync_enable_break)
+#define scheme_sync_timeout (scheme_extension_table->scheme_sync_timeout)
 #define scheme_make_evt_set (scheme_extension_table->scheme_make_evt_set)
 #define scheme_add_swap_callback (scheme_extension_table->scheme_add_swap_callback)
 #define scheme_call_enable_break (scheme_extension_table->scheme_call_enable_break)

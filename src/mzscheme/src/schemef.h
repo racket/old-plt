@@ -136,6 +136,7 @@ MZ_EXTERN void scheme_add_evt_through_sema(Scheme_Type type,
 MZ_EXTERN int scheme_is_evt(Scheme_Object *o);
 MZ_EXTERN Scheme_Object *scheme_sync(int argc, Scheme_Object *argv[]);
 MZ_EXTERN Scheme_Object *scheme_sync_enable_break(int argc, Scheme_Object *argv[]);
+MZ_EXTERN Scheme_Object *scheme_sync_timeout(int argc, Scheme_Object *argv[]);
 
 MZ_EXTERN Scheme_Object *scheme_make_evt_set(int argc, Scheme_Object **argv);
 

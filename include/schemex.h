@@ -99,18 +99,19 @@ void (*scheme_close_managed)(Scheme_Custodian *m);
 void (*scheme_schedule_custodian_close)(Scheme_Custodian *c);
 void (*scheme_add_custodian_extractor)(Scheme_Type t, Scheme_Custodian_Extractor e);
 void (*scheme_add_atexit_closer)(Scheme_Exit_Closer_Func f);
-void (*scheme_add_waitable)(Scheme_Type type,
+void (*scheme_add_evt)(Scheme_Type type,
 				   Scheme_Ready_Fun ready,
 				   Scheme_Needs_Wakeup_Fun wakeup,
-				   Scheme_Wait_Filter_Fun filter,
+				   Scheme_Sync_Filter_Fun filter,
 				   int can_redirect);
-void (*scheme_add_waitable_through_sema)(Scheme_Type type,
-						Scheme_Wait_Sema_Fun sema,
-						Scheme_Wait_Filter_Fun filter);
-int (*scheme_is_waitable)(Scheme_Object *o);
-Scheme_Object *(*scheme_object_wait_multiple)(int argc, Scheme_Object *argv[]);
-Scheme_Object *(*scheme_object_wait_multiple_enable_break)(int argc, Scheme_Object *argv[]);
-Scheme_Object *(*scheme_make_waitable_set)(int argc, Scheme_Object **argv);
+void (*scheme_add_evt_through_sema)(Scheme_Type type,
+					    Scheme_Sync_Sema_Fun sema,
+					    Scheme_Sync_Filter_Fun filter);
+int (*scheme_is_evt)(Scheme_Object *o);
+Scheme_Object *(*scheme_sync)(int argc, Scheme_Object *argv[]);
+Scheme_Object *(*scheme_sync_enable_break)(int argc, Scheme_Object *argv[]);
+Scheme_Object *(*scheme_sync_timeout)(int argc, Scheme_Object *argv[]);
+Scheme_Object *(*scheme_make_evt_set)(int argc, Scheme_Object **argv);
 void (*scheme_add_swap_callback)(Scheme_Closure_Func f, Scheme_Object *data);
 Scheme_Object *(*scheme_call_enable_break)(Scheme_Prim *prim, int argc, Scheme_Object *argv[]);
 int (*scheme_close_should_force_port_closed)();
@@ -281,6 +282,7 @@ void (*scheme_change_in_table)(Scheme_Bucket_Table *table, const char *key, void
 void *(*scheme_lookup_in_table)(Scheme_Bucket_Table *table, const char *key);
 Scheme_Bucket *(*scheme_bucket_from_table)(Scheme_Bucket_Table *table, const char *key);
 int (*scheme_bucket_table_equal)(Scheme_Bucket_Table *t1, Scheme_Bucket_Table *t2);
+Scheme_Bucket_Table *(*scheme_clone_bucket_table)(Scheme_Bucket_Table *bt);
 Scheme_Hash_Table *(*scheme_make_hash_table)(int type);
 Scheme_Hash_Table *(*scheme_make_hash_table_equal)();
 void (*scheme_hash_set)(Scheme_Hash_Table *table, Scheme_Object *key, Scheme_Object *val);
@@ -502,6 +504,7 @@ long (*scheme_get_char_string)(const char *who,
 				      mzchar *buffer, long offset, long size,
 				      int peek, Scheme_Object *peek_skip);
 long (*scheme_get_bytes)(Scheme_Object *port, long size, char *buffer, int offset);
+Scheme_Object *(*scheme_get_ready_special)(Scheme_Object *port, Scheme_Object *stxsrc, int peek);
 long (*scheme_tell)(Scheme_Object *port);
 long (*scheme_output_tell)(Scheme_Object *port);
 long (*scheme_tell_line)(Scheme_Object *port);
@@ -509,10 +512,18 @@ long (*scheme_tell_column)(Scheme_Object *port);
 void (*scheme_count_lines)(Scheme_Object *port);
 void (*scheme_close_input_port)(Scheme_Object *port);
 void (*scheme_close_output_port)(Scheme_Object *port);
+Scheme_Object *(*scheme_make_read_evt)(const char *who, Scheme_Object *port,
+					      char *str, long start, long size,
+					      int peek, Scheme_Object *peek_skip,
+					      int byte_or_spec);
+Scheme_Object *(*scheme_make_write_evt)(const char *who, Scheme_Object *port,
+					       Scheme_Object *special, char *str, long start, long size);
 Scheme_Object *(*scheme_make_port_type)(const char *name);
 Scheme_Input_Port *(*scheme_make_input_port)(Scheme_Object *subtype, void *data,
 						    Scheme_Object *name,
+						    Scheme_Get_String_Evt_Fun get_byte_string_evt_fun,
 						    Scheme_Get_String_Fun get_byte_string_fun,
+						    Scheme_Peek_String_Evt_Fun peek_string_evt_fun,
 						    Scheme_Peek_String_Fun peek_string_fun,
 						    Scheme_In_Ready_Fun byte_ready_fun,
 						    Scheme_Close_Input_Fun close_fun,
@@ -520,12 +531,25 @@ Scheme_Input_Port *(*scheme_make_input_port)(Scheme_Object *subtype, void *data,
 						    int must_close);
 Scheme_Output_Port *(*scheme_make_output_port)(Scheme_Object *subtype, void *data,
 						      Scheme_Object *name,
+						      Scheme_Write_String_Evt_Fun write_byte_string_evt_fun,
 						      Scheme_Write_String_Fun write_byte_string_fun,
 						      Scheme_Out_Ready_Fun ready_fun,
 						      Scheme_Close_Output_Fun close_fun,
 						      Scheme_Need_Wakeup_Output_Fun need_wakeup_fun,
+						      Scheme_Write_Special_Evt_Fun write_special_evt_fun,
 						      Scheme_Write_Special_Fun write_special_fun,
 						      int must_close);
+Scheme_Object *(*scheme_get_evt_via_get)(Scheme_Input_Port *port,
+						char *buffer, long offset, long size,
+						int byte_or_special);
+Scheme_Object *(*scheme_peek_evt_via_peek)(Scheme_Input_Port *port, 
+						  char *buffer, long offset, long size,
+						  Scheme_Object *skip,
+						  int byte_or_special);
+Scheme_Object *(*scheme_write_evt_via_write)(Scheme_Output_Port *port,
+						    const char *str, long offset, long size);
+Scheme_Object *(*scheme_write_special_evt_via_write_special)(Scheme_Output_Port *port, 
+								    Scheme_Object *special);
 Scheme_Object *(*scheme_open_input_file)(const char *name, const char *who);
 Scheme_Object *(*scheme_open_output_file)(const char *name, const char *who);
 Scheme_Object *(*scheme_make_file_input_port)(FILE *fp);
@@ -682,7 +706,10 @@ long (*scheme_get_process_milliseconds)(void);
 char *(*scheme_banner)(void);
 char *(*scheme_version)(void);
 int (*scheme_check_proc_arity)(const char *where, int a,
-			    int which, int argc, Scheme_Object **argv);
+				      int which, int argc, Scheme_Object **argv);
+int (*scheme_check_proc_arity2)(const char *where, int a,
+				       int which, int argc, Scheme_Object **argv,
+				       int false_ok);
 char *(*scheme_make_provided_string)(Scheme_Object *o, int count, int *len);
 char *(*scheme_make_args_string)(char *s, int which, int argc, Scheme_Object **argv, long *len);
 void (*scheme_no_dumps)(char *why);

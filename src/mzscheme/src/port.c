@@ -6936,7 +6936,6 @@ static void register_traversers(void)
 #endif
 
   GC_REG_TRAV(scheme_subprocess_type, mark_subprocess);
-  GC_REG_TRAV(scheme_rt_read_special_dw, mark_read_special);
   GC_REG_TRAV(scheme_read_evt_type, mark_read_write_evt);
   GC_REG_TRAV(scheme_peek_evt_type, mark_read_write_evt);
   GC_REG_TRAV(scheme_write_evt_type, mark_read_write_evt);

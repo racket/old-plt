@@ -9,7 +9,7 @@
 	   system/exit-code
 	   system*/exit-code)
 
-  (require (lib "thread.ss"))
+  (require (lib "port.ss"))
 
   ;; Helpers: ----------------------------------------
 

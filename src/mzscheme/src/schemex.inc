@@ -59,6 +59,7 @@
   scheme_extension_table->scheme_is_evt = scheme_is_evt;
   scheme_extension_table->scheme_sync = scheme_sync;
   scheme_extension_table->scheme_sync_enable_break = scheme_sync_enable_break;
+  scheme_extension_table->scheme_sync_timeout = scheme_sync_timeout;
   scheme_extension_table->scheme_make_evt_set = scheme_make_evt_set;
   scheme_extension_table->scheme_add_swap_callback = scheme_add_swap_callback;
   scheme_extension_table->scheme_call_enable_break = scheme_call_enable_break;

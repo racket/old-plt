@@ -405,7 +405,7 @@ typedef struct Scheme_Vector {
 #define SCHEME_STXP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_stx_type)
 
 #define SCHEME_UDPP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_udp_type)
-#define SCHEME_UDP_WAITP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_udp_waitable_type)
+#define SCHEME_UDP_EVTP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_udp_evt_type)
 
 #define SCHEME_CPTRP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_c_pointer_type)
 
@@ -746,8 +746,8 @@ typedef struct Scheme_Config Scheme_Config;
 
 typedef int (*Scheme_Ready_Fun)(Scheme_Object *o);
 typedef void (*Scheme_Needs_Wakeup_Fun)(Scheme_Object *, void *);
-typedef Scheme_Object *(*Scheme_Wait_Sema_Fun)(Scheme_Object *, int *repost);
-typedef int (*Scheme_Wait_Filter_Fun)(Scheme_Object *);
+typedef Scheme_Object *(*Scheme_Sync_Sema_Fun)(Scheme_Object *, int *repost);
+typedef int (*Scheme_Sync_Filter_Fun)(Scheme_Object *);
 
 /* The Scheme_Thread structure represents a MzScheme thread. */
 
@@ -761,7 +761,7 @@ typedef struct Scheme_Thread {
   Scheme_Object *t_set_next;
   Scheme_Object *t_set_prev;
 
-  mz_jmp_buf error_buf;
+  mz_jmp_buf *error_buf;
   Scheme_Continuation_Jump_State cjs;
 
   Scheme_Thread_Cell_Table *cell_values;
@@ -791,6 +791,7 @@ typedef struct Scheme_Thread {
   Scheme_Jumpup_Buf jmpup_buf;
 
   long *cc_ok;
+  long cc_ok_save;
   struct Scheme_Dynamic_Wind *dw;
 
   int running;
@@ -811,7 +812,7 @@ typedef struct Scheme_Thread {
 
   short overflow_set;
   struct Scheme_Overflow *overflow;
-  mz_jmp_buf overflow_buf;
+  mz_jmp_buf *overflow_buf;
   void *o_start;
 
   struct Scheme_Comp_Env *current_local_env;
@@ -909,16 +910,17 @@ typedef struct Scheme_Thread {
 typedef void (*Scheme_Kill_Action_Func)(void *);
 
 # define BEGIN_ESCAPEABLE(func, data) \
-    { mz_jmp_buf savebuf; \
+    { mz_jmp_buf *savebuf, newbuf; \
       scheme_push_kill_action((Scheme_Kill_Action_Func)func, (void *)data); \
-      memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf)); \
-      if (scheme_setjmp(scheme_error_buf)) { \
+      savebuf = scheme_current_thread->error_buf; \
+      scheme_current_thread->error_buf = &newbuf; \
+      if (scheme_setjmp(newbuf)) { \
         func(data); \
-        scheme_longjmp(savebuf, 1); \
+        scheme_longjmp(*savebuf, 1); \
       } else {
 # define END_ESCAPEABLE() \
       scheme_pop_kill_action(); \
-      memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf)); } }
+      scheme_current_thread->error_buf = savebuf; } }
 
 
 /*========================================================================*/
@@ -1016,9 +1018,16 @@ enum {
 typedef struct Scheme_Input_Port Scheme_Input_Port;
 typedef struct Scheme_Output_Port Scheme_Output_Port;
 
+typedef Scheme_Object *(*Scheme_Get_String_Evt_Fun)(Scheme_Input_Port *port,
+						    char *buffer, long offset, long size,
+						    int byte_or_special);
 typedef long (*Scheme_Get_String_Fun)(Scheme_Input_Port *port,
 				      char *buffer, long offset, long size,
 				      int nonblock);
+typedef Scheme_Object *(*Scheme_Peek_String_Evt_Fun)(Scheme_Input_Port *port,
+						     char *buffer, long offset, long size,
+						     Scheme_Object *skip,
+						     int byte_or_special);
 typedef long (*Scheme_Peek_String_Fun)(Scheme_Input_Port *port,
 				       char *buffer, long offset, long size,
 				       Scheme_Object *skip,
@@ -1027,12 +1036,15 @@ typedef int (*Scheme_In_Ready_Fun)(Scheme_Input_Port *port);
 typedef void (*Scheme_Close_Input_Fun)(Scheme_Input_Port *port);
 typedef void (*Scheme_Need_Wakeup_Input_Fun)(Scheme_Input_Port *, void *);
 
+typedef Scheme_Object *(*Scheme_Write_String_Evt_Fun)(Scheme_Output_Port *,
+						      const char *str, long offset, long size);
 typedef long (*Scheme_Write_String_Fun)(Scheme_Output_Port *,
 					const char *str, long offset, long size,
 					int rarely_block);
 typedef int (*Scheme_Out_Ready_Fun)(Scheme_Output_Port *port);
 typedef void (*Scheme_Close_Output_Fun)(Scheme_Output_Port *port);
 typedef void (*Scheme_Need_Wakeup_Output_Fun)(Scheme_Output_Port *, void *);
+typedef Scheme_Object *(*Scheme_Write_Special_Evt_Fun)(Scheme_Output_Port *, Scheme_Object *);
 typedef int (*Scheme_Write_Special_Fun)(Scheme_Output_Port *, Scheme_Object *,
 					int nonblock);
 
@@ -1043,7 +1055,9 @@ struct Scheme_Input_Port
   Scheme_Object *sub_type;
   Scheme_Custodian_Reference *mref;
   void *port_data;
+  Scheme_Get_String_Evt_Fun get_string_evt_fun;
   Scheme_Get_String_Fun get_string_fun;
+  Scheme_Peek_String_Evt_Fun peek_string_evt_fun;
   Scheme_Peek_String_Fun peek_string_fun;
   Scheme_In_Ready_Fun byte_ready_fun;
   Scheme_Close_Input_Fun close_fun;
@@ -1053,7 +1067,7 @@ struct Scheme_Input_Port
   Scheme_Object *peeked_read, *peeked_write;
   unsigned char ungotten[24];
   int ungotten_count;
-  Scheme_Object *special, *ungotten_special;
+  Scheme_Object *special, *ungotten_special, *special_width;
   long position, readpos, lineNumber, charsSinceNewline, utf8cont;
   long column, oldColumn; /* column tracking with one tab/newline ungetc */
   int count_lines, was_cr;
@@ -1067,10 +1081,12 @@ struct Scheme_Output_Port
   Scheme_Object *sub_type;
   Scheme_Custodian_Reference *mref;
   void *port_data;
+  Scheme_Write_String_Evt_Fun write_string_evt_fun;
   Scheme_Write_String_Fun write_string_fun;
   Scheme_Close_Output_Fun close_fun;
   Scheme_Out_Ready_Fun ready_fun;
   Scheme_Need_Wakeup_Output_Fun need_wakeup_fun;
+  Scheme_Write_Special_Evt_Fun write_special_evt_fun;
   Scheme_Write_Special_Fun write_special_fun;
   long pos;
   Scheme_Object *name;
@@ -1144,7 +1160,7 @@ typedef void (*Scheme_Invoke_Proc)(Scheme_Env *env, long phase_shift,
 #define scheme_overflow_k (scheme_current_thread->overflow_k)
 #define scheme_overflow_reply (scheme_current_thread->overflow_reply)
 
-#define scheme_error_buf (scheme_current_thread->error_buf)
+#define scheme_error_buf *(scheme_current_thread->error_buf)
 #define scheme_jumping_to_continuation (scheme_current_thread->cjs.jumping_to_continuation)
 
 #define scheme_multiple_count (scheme_current_thread->ku.multiple.count)

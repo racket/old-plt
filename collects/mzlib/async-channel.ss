@@ -8,14 +8,14 @@
   ;; if the buffer is full).
 
   ;; We make a fancy structure just so an async-channel
-  ;; can be supplied directly to 'object-wait-multiple'.
+  ;; can be supplied directly to `sync'.
   ;; The alternative is to use `define-struct' and supply
-  ;; a `make-async-channel-get-waitable' procedure.
+  ;; a `async-channel-get-evt' procedure.
   (define-values (struct:ac make-ac async-channel? ac-ref ac-set!)
     (make-struct-type 'async-channel #f 5 0 #f 
-		      (list (cons prop:waitable 
+		      (list (cons prop:evt 
 				  ;; This is the guard that is called when
-				  ;;  we use an async-channel as a waitable
+				  ;;  we use an async-channel as an event
 				  ;;  (to get).
 				  (lambda (ac)
 				    (async-channel-get-guard ac))))
@@ -36,12 +36,12 @@
 	     [full-ch (make-channel)]     ; for put polls
 	     [queue-first (cons #f null)] ; queue head
 	     [queue-last queue-first]     ; queue tail
-	     ;; Waitables:
+	     ;; Events:
 	     [tell-empty 
-	      (make-channel-put-waitable empty-ch (make-semaphore))] ; see poll->ch
+	      (channel-put-evt empty-ch (make-semaphore))] ; see poll->ch
 	     [tell-full 
-	      (make-channel-put-waitable full-ch (make-semaphore))]  ; see poll->ch
-	     [enqueue (make-wrapped-waitable
+	      (channel-put-evt full-ch (make-semaphore))]  ; see poll->ch
+	     [enqueue (wrap-evt
 		       enqueue-ch
 		       (lambda (v)
 			 ;; We received a put; enqueue it:
@@ -51,8 +51,8 @@
 			   (set! queue-last p))))]
 	     [mk-dequeue
 	      (lambda ()
-		(make-wrapped-waitable
-		 (make-channel-put-waitable dequeue-ch (car queue-first))
+		(wrap-evt
+		 (channel-put-evt dequeue-ch (car queue-first))
 		 (lambda (ignored)
 		   ;; A get succeeded; dequeue it:
 		   (set! queue-first (cdr queue-first)))))]
@@ -72,11 +72,11 @@
 		   (cond
 		    [(= 1 (length queue-first))
 		     ;; The queue is currently empty:
-		     (object-wait-multiple #f enqueue tell-empty)]
+		     (sync enqueue tell-empty)]
 		    [(or (not limit) ((sub1 (length queue-first)) . < . limit))
-		     (object-wait-multiple #f enqueue (mk-dequeue))]
+		     (sync enqueue (mk-dequeue))]
 		    [else
-		     (object-wait-multiple #f (mk-dequeue) tell-full)])
+		     (sync (mk-dequeue) tell-full)])
 		   (loop))))])
 	(make-ac enqueue-ch dequeue-ch empty-ch full-ch manager-thread))))
 
@@ -91,29 +91,29 @@
     ;;  block on the dequeue channel and the empty
     ;;  channel, and create a new waitable to report
     ;;  the result.
-    (make-poll-guard-waitable
+    (poll-guard-evt
      (lambda (poll?)
        (if poll?
 	   (poll->ch (ac-dequeue-ch ac) (ac-empty-ch ac))
 	   (ac-dequeue-ch ac)))))
 
   (define (async-channel-get ac)
-    (object-wait-multiple #f ac))
+    (sync ac))
 
   (define (async-channel-try-get ac)
-    (object-wait-multiple 0 ac))
+    (sync/timeout 0 ac))
 
   ;; Put ----------------------------------------
 
-  (define (make-async-channel-put-waitable ac v)
-    (letrec ([p (make-wrapped-waitable
-		 (make-guard-waitable
+  (define (async-channel-put-evt ac v)
+    (letrec ([p (wrap-evt
+		 (guard-evt
 		  (lambda ()
 		    ;; Make sure queue manager is running:
 		    (thread-resume (ac-thread ac) (current-thread))
-		    (let ([p (make-channel-put-waitable (ac-enqueue-ch ac) v)])
+		    (let ([p (channel-put-evt (ac-enqueue-ch ac) v)])
 		      ;; Poll handling, as in `async-channel-get-guard':
-		      (make-poll-guard-waitable
+		      (poll-guard-evt
 		       (lambda (poll?)
 			 (if poll?
 			     (poll->ch p (ac-full-ch ac))
@@ -123,27 +123,27 @@
   
   (define (async-channel-put ac v)
     (thread-resume (ac-thread ac) (current-thread))
-    (object-wait-multiple #f (make-channel-put-waitable (ac-enqueue-ch ac) v))
+    (sync (channel-put-evt (ac-enqueue-ch ac) v))
     (void))
 
   ;; Poll helper ----------------------------------------
 
   (define (poll->ch normal not-ready)
-    (object-wait-multiple #f
-			  ;; If a value becomes available,
-			  ;;  create a waitable that returns
-			  ;;  the value:
-			  (make-wrapped-waitable
-			   normal
-			   (lambda (v)
-			     ;; Return a waitable for a successful poll:
-			     (make-wrapped-waitable
-			      (make-semaphore 1)
-			      (lambda (ignored) v))))
-			  ;; If not-ready becomes available,
-			  ;;  the result is supposed to be
-			  ;;  a never-ready waitable:
-			  not-ready))
+    (sync
+     ;; If a value becomes available,
+     ;;  create a waitable that returns
+     ;;  the value:
+     (wrap-evt
+      normal
+      (lambda (v)
+	;; Return a waitable for a successful poll:
+	(wrap-evt
+	 always-evt
+	 (lambda (ignored) v))))
+     ;; If not-ready becomes available,
+     ;;  the result is supposed to be
+     ;;  a never-ready waitable:
+     not-ready))
 
   ;; Provides ----------------------------------------
 
@@ -158,4 +158,4 @@
 		    (async-channel-get (async-channel? . -> . any?))
 		    (async-channel-try-get (async-channel? . -> . any?))
 		    (async-channel-put (async-channel? any? . -> . any?))
-		    (make-async-channel-put-waitable (async-channel? any? . -> . object-waitable?))))
+		    (async-channel-put-evt (async-channel? any? . -> . evt?))))

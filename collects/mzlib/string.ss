@@ -248,13 +248,13 @@
 					 (and end (if need-leftover? (- end start) end))
 					 (if need-leftover?
 					     leftover-port
-					     (make-custom-output-port
-					      #f
+					     (make-output-port
+					      'counter
+					      always-evt
 					      (lambda (s start end flush?)
 						(let ([c (- end start)])
 						  (set! discarded (+ c discarded))
 						  c))
-					      void
 					      void)))]
 		    [leftovers (and need-leftover?
 				    (if (and (regexp? pattern) 

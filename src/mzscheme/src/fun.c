@@ -84,6 +84,8 @@ static Scheme_Object *andmap (int argc, Scheme_Object *argv[]);
 static Scheme_Object *ormap (int argc, Scheme_Object *argv[]);
 static Scheme_Object *call_cc (int argc, Scheme_Object *argv[]);
 static Scheme_Object *call_with_continuation_barrier (int argc, Scheme_Object *argv[]);
+static Scheme_Object *call_with_sema (int argc, Scheme_Object *argv[]);
+static Scheme_Object *call_with_sema_enable_break (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cc_marks (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cont_marks (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cc_marks_p (int argc, Scheme_Object *argv[]);
@@ -127,6 +129,9 @@ static int top_next_use_thread_cc_ok;
 static Scheme_Object *is_method_symbol;
 
 static long *thread_init_cc_ok;
+
+static long *available_cc_ok;
+static long *available_cws_cc_ok;
 
 static int cont_capture_count;
 
@@ -235,6 +240,19 @@ scheme_init_fun (Scheme_Env *env)
 						       "call-with-continuation-barrier",
 						       1, 1,
 						       0, -1), 
+			     env);
+
+  scheme_add_global_constant("call-with-semaphore",
+			     scheme_make_prim_w_arity2(call_with_sema,
+						       "call-with-semaphore",
+						       2, 3,
+						       0, -1), 
+			     env);
+  scheme_add_global_constant("call-with-semaphore/enable-break",
+			     scheme_make_prim_w_arity2(call_with_sema_enable_break,
+						       "call-with-semaphore/enable-break",
+						       2, 2,
+						       0, -1),
 			     env);
 
   scheme_add_global_constant("current-continuation-marks",
@@ -861,8 +879,6 @@ void scheme_on_next_top(Scheme_Comp_Env *env, Scheme_Object *mark, Scheme_Object
 
 typedef Scheme_Object *(*Overflow_K_Proc)(void);
 
-static long *available_cc_ok;
-
 void *top_level_do(void *(*k)(void), int eb, void *sj_start)
      /* Wraps a function `k' with a handler for stack overflows and
 	barriers to full-continuation jumps. No barrier if !eb. */
@@ -1100,6 +1116,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 void scheme_clear_cc_ok()
 {
   available_cc_ok = NULL;
+  available_cws_cc_ok = NULL;
 }
 
 /*========================================================================*/
@@ -2190,6 +2207,81 @@ int scheme_escape_continuation_ok(Scheme_Object *ec)
     return 1;
   else
     return 0;
+}
+
+static Scheme_Object *
+do_call_with_sema(const char *who, int enable_break, int argc, Scheme_Object *argv[])
+{
+  mz_jmp_buf newbuf, * volatile savebuf;
+  long * volatile cc_ok;
+  long * volatile old_cc_ok;
+  long volatile old_cc_ok_val;
+  Scheme_Object * volatile sema;
+  Scheme_Object *v;
+
+  if (!SCHEME_SEMAP(argv[0])) {
+    scheme_wrong_type(who, "semaphore", 0, argc, argv);
+    return NULL;
+  }
+  scheme_check_proc_arity(who, 0, 1, argc, argv);
+  if (argc > 2)
+    scheme_check_proc_arity(who, 0, 2, argc, argv);
+
+  sema = argv[0];
+
+  if (!scheme_wait_sema(sema, (argc > 2) ? enable_break : -1)) {
+    return _scheme_tail_apply(argv[2], 0, NULL);
+  }
+
+  savebuf = scheme_current_thread->error_buf;
+  scheme_current_thread->error_buf = &newbuf;
+
+  if (available_cws_cc_ok) {
+    cc_ok = available_cws_cc_ok;
+    available_cws_cc_ok = NULL;
+  } else
+    cc_ok = (long *)scheme_malloc_atomic(sizeof(long));
+  *cc_ok = 1;
+
+  old_cc_ok = scheme_current_thread->cc_ok;
+  scheme_current_thread->cc_ok = cc_ok;
+  if (old_cc_ok) {
+    old_cc_ok_val = *old_cc_ok;
+    *old_cc_ok = 0;
+  }
+
+  if (scheme_setjmp(newbuf)) {
+    v = NULL;
+  } else {
+    v = _scheme_apply_multi(argv[1], 0, NULL);
+  }
+
+  scheme_post_sema(sema);
+
+  if (*cc_ok != 2)
+    available_cws_cc_ok = cc_ok;
+  else
+    *cc_ok = 0;
+  if (old_cc_ok)
+    *old_cc_ok = old_cc_ok_val;
+  scheme_current_thread->cc_ok = old_cc_ok;
+
+  if (!v)
+    scheme_longjmp(*savebuf, 1);
+
+  return v;
+}
+
+static Scheme_Object *
+call_with_sema(int argc, Scheme_Object *argv[])
+{
+  return do_call_with_sema("call-with-semaphore", 0, argc, argv);
+}
+
+static Scheme_Object *
+call_with_sema_enable_break(int argc, Scheme_Object *argv[])
+{
+  return do_call_with_sema("call-with-semaphore/enable-break", 1, argc, argv);
 }
 
 #define TOTAL_STACK_SIZE (sizeof(Scheme_Object*) * SCHEME_STACK_SIZE)

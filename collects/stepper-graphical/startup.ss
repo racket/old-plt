@@ -3,7 +3,28 @@
           [mred : mred^]
           [fw : framework^]
           [drscheme : drscheme:export^]
+          [e : zodiac:interface^]
           (stepper-go))
+  
+  ;; ----- debugger startup
+  
+  (define parent-drscheme-frame 
+    (make-parameter #f (lambda (frame)
+                         (if (is-a? frame frame%
+                             frame
+                             (e:internal-error #f "non-frame given to parent-drscheme-frame parameter")))))
+  
+  (drscheme:get/extend:extend-unit-frame
+   (lambda (super%)
+     (class super% args
+       (rename [super-execute-callback execute-callback])
+       (override [execute-callback
+                  (lambda ()
+                    (parent-drscheme-frame this)
+                    (super-execute-callback))])
+       (sequence (super-init)))))
+
+  ;; ----- stepper startup
   
   (define (invoke-stepper frame)
       (let ([existing-stepper (send frame stepper-frame)])

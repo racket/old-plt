@@ -1946,6 +1946,7 @@ void marshallSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
     *pVariantArg->ppunkVal = MX_IUNKNOWN_VAL(SCHEME_BOX_VAL(val));
     break;
 
+  case VT_USERDEFINED :
   case VT_VARIANT :
     marshallSchemeValueToVariant(val,pVariantArg);
     break;

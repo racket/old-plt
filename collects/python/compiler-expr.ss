@@ -116,9 +116,7 @@
       ;;daniel
       (inherit ->orig-so ->lex-so)
       (define/override (to-scheme)
-        (let ([namespace (make-namespace 'empty)])
-          (parameterize ([current-namespace namespace])
-            (->lex-so (get-symbol) empty-context))))
+            (->lex-so (get-symbol) empty-context))
       
       (super-instantiate ())))
   

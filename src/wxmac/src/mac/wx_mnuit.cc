@@ -140,7 +140,7 @@ void wxMenuItem::SetLabel(char* label)
     if (label[0])
       s = wxC2P(label);
     else
-      s = "\p ";
+      s = (unsigned char *)"\p ";
     SetMenuItemText(parentMenu->MacMenu(), macMenuItem, s);
   }
 }

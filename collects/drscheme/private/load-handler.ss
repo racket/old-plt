@@ -1,7 +1,7 @@
 
 (module load-handlers mzscheme
   (require "mred-wrap.ss"
-           "framework-wrap.ss"
+           (lib "framework.ss" "framework")
            (lib "zodiac.ss" "syntax")
            (lib "basis.ss" "userspce"))
   

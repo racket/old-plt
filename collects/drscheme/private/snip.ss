@@ -2,7 +2,7 @@
   (require (lib "unitsig.ss")
            "drsig.ss"
            "mred-wrap.ss"
-           "framework-wrap.ss"
+           (lib "framework.ss" "framework")
            (lib "zodiac.ss" "syntax"))
   
   (provide snip@)

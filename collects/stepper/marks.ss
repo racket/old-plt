@@ -41,15 +41,15 @@
               count
               (loop (cdr l-list) (+ count 1))))))
 
-  (equal?
-   (list (get-label-num 'foo)
-         (get-label-num 'bar)
-         (get-label-num 'baz)
-         (get-label-num 'bar)
-         (get-label-num 'foo)
-         (get-label-num 'baz)
-         (get-label-num 'quux))
-   '(0 1 2 1 0 2 3))
+;  (equal?
+;   (list (get-label-num 'foo)
+;         (get-label-num 'bar)
+;         (get-label-num 'baz)
+;         (get-label-num 'bar)
+;         (get-label-num 'foo)
+;         (get-label-num 'baz)
+;         (get-label-num 'quux))
+;   '(0 1 2 1 0 2 3))
   
   (define-struct full-mark-struct (source label-num bindings))
   ; the 'varargs' creator is used to avoid an extra cons cell in every mark:

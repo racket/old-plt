@@ -7,6 +7,10 @@
            (lib "etc.ss")
            "my-macros.ss")
 
+; for testing:
+  (define (s:check-pre-defined-var x)
+    (eq? (car (symbol->string (syntax-e x))) #\a))
+  
   (provide
    initial-env-package
    annotate)
@@ -178,15 +182,10 @@
   
   ; cheap-wrap for non-debugging annotation
   
-;  (define cheap-wrap
-;    (lambda (zodiac body)
-;      (when (not (z:zodiac? zodiac))
-;        (error 'cheap-wrap "argument to cheap-wrap is not a zodiac expr: ~a" zodiac))
-;      (let ([start (z:zodiac-start zodiac)]
-;	    [finish (z:zodiac-finish zodiac)])
-;	`(#%with-continuation-mark ,debug-key
-;	  ,(make-cheap-mark (z:make-zodiac #f start finish))
-;	  ,body))))
+  (define (cheap-wrap body)
+    (d->so #f `(with-continuation-mark ,debug-key
+                                       ,(make-cheap-mark (d->so #f `(quote-syntax ,body)))
+                                       ,body)))
   
   ; wrap-struct-form 
   
@@ -212,9 +211,11 @@
   (define (extract-top-level-vars exprs)
     (apply append
            (map (lambda (expr)
-                  (cond ([z:define-values-form? expr]
-                         (z:define-values-form-vars expr))
-                        (else null)))
+                  (syntax-case expr (define-values)
+                    [(define-values vars body)
+                     (syntax->list (syntax vars))]
+                    [else
+                     null]))
                 exprs)))
   
   (define (term-is-reduced stx)
@@ -222,7 +223,7 @@
       [(quote _) #t]
       [(syntax-quote _) #t]
       [(#%top . _) #t]
-      [stx (symbol? (syntax-e stx))]))
+      [else (symbol? (syntax-e stx))]))
   
   ;;;;;;;;;;
   ;;
@@ -290,7 +291,7 @@
   
   ; annotate takes 
   ; a) a list of zodiac:read expressions,
-  ; b) a list of zodiac:parsed expressions,
+  ; b) a list of syntax expressions
   ; c) a list of previously-defined variables, 
   ; d) a break routine to be called at breakpoints, and
   ; e) a symbol which indicates how to annotate the source.  Currently, there are three
@@ -301,10 +302,6 @@
   ;    of applications and ifs which consist
   ;    only of varrefs.  This one might go away later, or be toggled into a "no-opt" flag.
   ;
-  ; actually, I'm not sure that annotate works for more than one expression, even though
-  ; it's supposed to take a whole list.  I wouldn't count on it. Also, both the red-exprs
-  ; and break arguments may be #f, the first during a zodiac:elaboration-evaluator call,
-  ; the second during any non-stepper use.
   
   (define (annotate read-expr parsed-expr input-struct-proc-names break wrap-style . wrap-opts-list)
     (local
@@ -397,14 +394,19 @@
 ;                            (else (internal-error expr "unknown expression type in sequence")))))
 ;                       (else (internal-error expr "unknown read type"))))))))
 ;  
-;         (define (struct-procs-defined expr)
-;           (if (and (z:define-values-form? expr)
-;                    (z:struct-form? (z:define-values-form-val expr)))
-;               (map z:varref-var (z:define-values-form-vars expr))
-;               null))
-;         
-;         (define struct-proc-names (apply append input-struct-proc-names
-;                                          (map struct-procs-defined parsed-exprs)))
+         (define (struct-procs-defined expr)
+           (if (andmap (lambda (origin-entry)
+                         (eq? (syntax-e origin-entry) 'define-struct))
+                       (syntax-property expr 'origin))
+               (syntax-case expr (define-values)
+                 [(define-values vars body)
+                  (syntax->list (syntax vars))]
+                 [else
+                  null])
+               null))
+         
+         (define struct-proc-names (append (struct-procs-defined parsed-expr)
+                                           input-struct-proc-names))
          
          (define (non-annotated-proc? varref)
            (let ([name (syntax-e varref)])
@@ -457,7 +459,6 @@
                                       (annotate/inner expr (binding-set-union (list tail-bound bindings)) #f #f procedure-name-info)))]
                   [cheap-wrap-recur (lambda (expr) (let-values ([(ann _) (tail-recur expr)]) ann))]
                   [no-enclosing-recur (lambda (expr) (annotate/inner expr 'all #f #f #f))]
-                  [class-rhs-recur (lambda (expr read-name) (annotate/inner expr 'all #f #f (utils:read->raw read-name)))]
                   [make-debug-info-normal (lambda (free-bindings)
                                             (make-debug-info expr tail-bound free-bindings null 'none foot-wrap?))]
                   [make-debug-info-app (lambda (tail-bound free-bindings label)
@@ -493,14 +494,14 @@
                   
                   [lambda-clause-abstraction 
                    (lambda (clause)
-                     (with-syntax [(args body ...) clause]
-                       (utils:improper-foreach mark-never-undefined args)
+                     (with-syntax ([(args body ...) clause])
+                       (utils:improper-foreach mark-never-undefined (syntax args))
                        (let*-2vals ([(annotated-bodies free-varref-sets)
                                      (2vals-map lambda-body-recur (syntax (body ...)))]
                                     [new-free-varrefs (varref-set-remove-bindings (varref-set-union free-varref-sets)
                                                                                   (syntax args))])
                          (with-syntax ([annotated-bodies annotated-bodies])
-                           (2vals (syntax/loc clause (args . annotated-bodies)) new-free-bindings)))))]
+                           (2vals (syntax/loc clause (args . annotated-bodies)) free-varref-sets)))))]
                   
                   [outer-lambda-abstraction
                    (lambda (annotated-lambda free-varrefs)
@@ -930,22 +931,7 @@
                           ; as far as I can tell, we can skip the result-break on lexical vars...
                           [foot-wrap? 
                            (wcm-break-wrap (make-debug-info-normal free-varrefs) annotated)])
-                   free-varrefs))]
-                
-
-
-;	       
-;	       
-;                
-;               
-;               
-;	       [else
-;		(internal-error
-;		 expr
-;                 "stepper:annotate/inner: unknown object to annotate, ~a~n"
-;                 expr)]
-               
-               )))
+                   free-varrefs))])))
          
          (define (annotate/top-level expr)
            (let-values ([(annotated dont-care)
@@ -953,10 +939,8 @@
              annotated)))
          
          ; body of local
-      (let* ([annotated-exprs (map (lambda (expr)
-                                     (annotate/top-level expr))
-                                   parsed-exprs)])
+      (let* ([annotated-expr (annotate/top-level expr)])
         ;(printf "annotated: ~n~a~n" (car annotated-exprs))
-        (values annotated-exprs struct-proc-names))))
+        (values annotated-expr struct-proc-names))))
   
 )

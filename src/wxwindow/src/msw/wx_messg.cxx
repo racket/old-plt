@@ -73,6 +73,7 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int iconID,
   cparent = (wxWnd *)(panel->handle);
 
   if (image) {
+    HBITMAP lbm;
     int nid;
     nid = NewId(this);
     static_item = wxwmCreateWindowEx(0, FafaStat, NULL,
@@ -82,13 +83,14 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int iconID,
 				     0, 0, 0, 0, cparent->handle, (HMENU)nid,
 				     wxhInstance, NULL);
     
-    SetBitmapDimensionEx(image->GetLabelBitmap(1),
+    lbm = image->GetLabelBitmap(1);
+    SetBitmapDimensionEx(lbm,
 			 image->GetWidth(),
 			 image->GetHeight(),
 			 NULL);
     SendMessage((HWND)static_item, WM_CHANGEBITMAP,
                   (WPARAM)0xFFFF,
-                  (LPARAM)image->GetLabelBitmap(1));
+                  (LPARAM)lbm);
   } else if (is_icon) {
     int nid;
     nid = NewId(this);
@@ -215,6 +217,7 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
   int w, h;
   RECT rect;
   wxWindow *par;
+  HBITMAP lbm;
 
   if (!bm_label || !bitmap->Ok() || (bitmap->selectedIntoDC < 0))
     return;
@@ -228,13 +231,14 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
   GetSize(&w, &h);
   rect.left = x; rect.top = y; rect.right = x + w; rect.bottom = y + h;
 
-  SetBitmapDimensionEx(bitmap->GetLabelBitmap(1),
+  lbm = bitmap->GetLabelBitmap(1);
+  SetBitmapDimensionEx(lbm,
 		       bitmap->GetWidth(),
 		       bitmap->GetHeight(),
 		       NULL);
   SendMessage((HWND)ms_handle, WM_CHANGEBITMAP,
 	      (WPARAM)0xFFFF /*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
-	      (LPARAM)bitmap->GetLabelBitmap(1));
+	      (LPARAM)lbm);
   
   par = GetParent();
   InvalidateRect(par->GetHWND(), &rect, TRUE);

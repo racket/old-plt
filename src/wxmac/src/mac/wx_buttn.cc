@@ -27,10 +27,8 @@ static const char sccsid[] = "%W% %G%";
 # define MIN_BUTTON_WIDTH 58
 # ifdef OS_X
 // Under OS X, an inset is necessary because the OS draws outside of the control rectangle.
-#  define BUTTON_H_SPACE 38
-#  define BUTTON_H_INSET 5
-#  define BUTTON_V_SPACE 15
-#  define BUTTON_V_INSET 5
+#  define PAD_X 5
+#  define PAD_Y 5
 # else
 #  define BUTTON_H_SPACE 12
 #  define BUTTON_V_SPACE 4
@@ -92,6 +90,26 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 	
 	label = wxItemStripLabel(label);
 
+	SetCurrentMacDC();
+	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+
+#ifdef OS_X
+        // First, create the control with a bogus rectangle;
+        OSErr err;
+        Rect boundsRect = {0,0,0,0};
+        ::OffsetRect(&boundsRect,SetOriginX,SetOriginY);
+        CFStringRef title = CFStringCreateWithCString(NULL,label,kCFStringEncodingISOLatin1);
+        ::CreatePushButtonControl(GetWindowFromPort(theMacGrafPort), &boundsRect, title, &cMacControl);
+    
+        // Now, ignore the font data and let the control find the "best" size 
+        ::SetRect(&boundsRect,0,0,0,0);
+        SInt16 baselineOffset; // ignored
+        err = ::GetBestControlRect(cMacControl,&boundsRect,&baselineOffset);
+        cWindowWidth = boundsRect.right - boundsRect.left + (PAD_X * 2);
+        cWindowHeight = boundsRect.bottom - boundsRect.top + (PAD_Y * 2);
+        ::SizeControl(cMacControl,boundsRect.right - boundsRect.left, boundsRect.bottom - boundsRect.top);
+#else
+
 	if (width <= 0 || height <= 0)
 	{
 		float fWidth, fHeight;
@@ -113,8 +131,6 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 	cBorderArea = new wxArea(this);
 	new wxButtonBorder(cBorderArea);
 
-	SetCurrentMacDC();
-	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	Rect boundsRect = {0, 0, ClientArea()->Height(), ClientArea()->Width()};
         OffsetRect(&boundsRect,SetOriginX,SetOriginY);
 	wxMacString theMacTitle = label;
@@ -123,11 +139,7 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 	const short minValue = 0;
 	const short maxValue = 1;
 	short refCon = 0;
-#ifdef OS_X
-        ::InsetRect(&boundsRect,BUTTON_H_INSET,BUTTON_V_INSET);
-        CFStringRef title = CFStringCreateWithCString(NULL,label,kCFStringEncodingISOLatin1);
-        ::CreatePushButtonControl(GetWindowFromPort(theMacGrafPort), &boundsRect, title, &cMacControl);
-#else        
+
 	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacTitle(),
 			drawNow, offValue, minValue, maxValue, pushButProc + popupUseWFont, refCon);
 	CheckMemOK(cMacControl);
@@ -572,7 +584,7 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
 	{
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
-		::SizeControl(cMacControl, clientWidth, clientHeight);
+		::SizeControl(cMacControl, clientWidth - 2 * PAD_X, clientHeight - 2 * PAD_Y);
 	}
 
 	if (dX || dY)
@@ -580,7 +592,7 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
 		SetCurrentDC(); // put new origin at (0, 0)
 #ifdef OS_X
-                ::MoveControl(cMacControl, SetOriginX + BUTTON_H_INSET, SetOriginY + BUTTON_V_INSET);
+                ::MoveControl(cMacControl, SetOriginX + PAD_X, SetOriginY + PAD_Y);
 #else                
 		::MoveControl(cMacControl, SetOriginX, SetOriginY);
 #endif                

@@ -904,7 +904,7 @@ void wxApp::doMacInGoAway(WindowPtr window)
 	wxFrame* theMacWxFrame = findMacWxFrame(window);
 	if (theMacWxFrame && theMacWxFrame->CanAcceptEvent())
 	{
-		if (TrackGoAway(window, cCurrentEvent.where))
+		if ((!StillDown()) || (TrackGoAway(window, cCurrentEvent.where)))
 		{
 			Bool okToDelete = theMacWxFrame->OnClose();
 			if (okToDelete) {

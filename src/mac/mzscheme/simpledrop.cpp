@@ -296,7 +296,7 @@ void Drop_GetArgs(int *argc, char ***argv)
 #ifdef OS_X
         AEProcessAppleEvent(&event);
 #else
-// high level events do not occur under OS X
+// high level events do not occur under OS X (per se, now they're just apple events)
       if ((event.message == 'PLT ') && ((*(long *)&event.where) == 'cmdl')) {
         /* Replaces OpenApp or OpenDocs: */
         TargetID src;
@@ -313,7 +313,12 @@ void Drop_GetArgs(int *argc, char ***argv)
 #endif
     }
   }
-#ifndef OS_X
+#ifdef OS_X // this is a truly obscene hack.
+  if (((*argc) > 1) && (strncmp((*argv)[1],"-psn_",5) == 0)) { // did the finder start this app?
+    *argc = scheme_mac_argc;
+    *argv = scheme_mac_argv;
+  }
+#else    
   *argc = scheme_mac_argc;
   *argv = scheme_mac_argv;
 #endif  

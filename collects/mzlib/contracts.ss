@@ -706,7 +706,7 @@
   ;; with a question mark, turn it into a mzscheme
   ;; style type name
   (define (predicate->expected-msg pred)
-    (let ([name (predicate->type-name)])
+    (let ([name (predicate->type-name pred)])
       (if name
           (format "expected type <~a>, " name)
           "")))

@@ -251,16 +251,11 @@
   ;                (list #'(let* ([a 9] [b a] [c b]) c) '(let*-values ([(a) (#%datum . 9)] [(b) a] [(c) b]) c) 9)
   ;                (list #'(let ([a 3] [b 9]) (let ([b 14]) b)) '(let*-values ([(a) (#%datum . 3)] [(b) (#%datum . 9)] [(b) (#%datum . 14)]) b) 14)))
   
-  
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;;                                            ;;;
-      ;;;                Annotate                    ;;;
-      ;;;                                            ;;;
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-  
-  
-  
+        * * * * * *      AAAA  N    N N    N  OOOO  TTTTT  AAAA  TTTTT EEEEEE     * * * * * * 
+         ***   ***      A    A NN   N NN   N O    O   T   A    A   T   E           ***   ***  
+        ***** *****     AAAAAA N N  N N N  N O    O   T   AAAAAA   T   EEEE       ***** ***** 
+         ***   ***      A    A N  N N N  N N O    O   T   A    A   T   E           ***   ***  
+        * * * * * *     A    A N   NN N   NN  OOOO    T   A    A   T   EEEEEE     * * * * * * 
   
   oh-say-can-you-see,by-the-dawn's-early-light,what-so-proudly-we-hailed,at-the-twilight's-last-gle
   a m i n g . W h o s e b r o a d s t r i                                                         p
@@ -798,7 +793,11 @@
                                                                                ,annotated-body))])
                             (2vals (appropriate-wrap annotated free-varrefs) free-varrefs))]
                          [foot-wrap?
-                          ;; FINISH AFTER APPLICATION
+                          (error 'annotate/inner "this region of code is still under construction")
+
+;                                       [annotated (d->so #f `(let-values ([key-temp ,*unevaluated*]
+;                                                                          [mark-temp ,*unevaluated*])
+                                                               
                           ]))]
                 
 ;                                  [foot-wrap? 
@@ -867,19 +866,41 @@
                                                       arg-temps annotated-terms)]
                                       [new-tail-bound (binding-set-union (list tail-bound arg-temps))]
                                       [app-debug-info (make-debug-info-app new-tail-bound arg-temps 'called)]
-                                      [final-app (break-wrap (simple-wcm-wrap app-debug-info 
-                                                                              (if (let ([fun-exp (z:app-fun expr)])
-                                                                                    (and foot-wrap?
-                                                                                         (z:top-level-varref? fun-exp)
-                                                                                         (non-annotated-proc? fun-exp)))
-                                                                                  (return-value-wrap arg-temp-syms)
-                                                                                  arg-temp-syms)))]
+                                      [final-app (break-wrap (simple-wcm-wrap app-debug-info
+                                                                              (if (syntax-case expr (#%app #%top)
+                                                                                    [(#%app (#%top . var) . _)
+                                                                                     (and foot-wrap?
+                                                                                          (non-annotated-proc? (syntax var)))]
+                                                                                    [else #f])
+                                                                                  (return-value-wrap (d->so expr arg-temps))
+                                                                                  (d->so expr arg-temps))))]
                                       [debug-info (make-debug-info-app new-tail-bound
-                                                                       (varref-set-union (list free-bindings arg-temps)) ; NB using bindings as vars
+                                                                       (varref-set-union (list free-varrefs arg-temps)) ; NB using bindings as vars
                                                                        'not-yet-called)]
-                                      [let-body (wcm-wrap debug-info `(#%begin ,@set!-list ,final-app))])
-                                 `(#%let-values ,let-clauses ,let-body)))])
-                   free-bindings))]                
+                                      [let-body (wcm-wrap debug-info (d->so #f `(begin ,@set!-list ,final-app)))])
+                                 (d->so #f `(let-values ,let-clauses ,let-body))))])
+                   free-varrefs))]   
+               
+               [(#%datum . _)
+                (if (or cheap-wrap? ankle-wrap?)
+                    expr
+                    (wcm-wrap (make-debug-info-normal null) expr))]
+               
+               [(#%top . var)
+                (let*-2vals ([annotated (syntax var)]
+                             [free-varrefs (list annotated)])
+                  (2vals 
+                   (ccond [(or cheap-wrap? ankle-wrap?)
+                           (appropriate-wrap (syntax var) free-varrefs)]
+                          [foot-wrap?
+                           (wcm-break-wrap (make-debug-info-normal free-varrefs)
+                                           (return-value-wrap annotated))])
+                   free-varrefs))]
+               
+               ; this case must be last, because the pattern will match anything at all..
+               [var
+                (
+                
                
 	       ; the variable forms 
 	       

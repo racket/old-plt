@@ -337,7 +337,7 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 
 	if ((type == 'q') || (type == 'Q')) {
 	  if (tlen > 256) {
-	    tlen = 3;
+	    tlen = 250;
 	    dots = 1;
 	  }
 	}

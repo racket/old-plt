@@ -514,7 +514,7 @@
                                 (class-record-methods record)
                                 level)
              (raise-error (list (find-member (car methods) members type-recs) record) 'conflicting-method))
-        (check-for-conflicts methods record members level type-recs)))
+        (check-for-conflicts (cdr methods) record members level type-recs)))
   
   (define (class-fully-implemented? super super-name ifaces ifaces-name methods level) 
     (when (memq 'abstract (class-record-modifiers super))

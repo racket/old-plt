@@ -238,7 +238,7 @@
 			     (or gone
 				 (begin (set! gone (zodiac:make-eof z))
 					(zodiac:structurize-syntax sexp z)))))]
-			[answer (void)]
+			[answer (list (void))]
 			[f
 			 (lambda (annotated recur)
 			   (if (process/zodiac-finish? annotated)
@@ -246,11 +246,14 @@
 				   (escape)
 				   answer)
 			       (begin (set! answer
-					    (with-parameterization param
-					      (lambda ()
-						(primitive-eval annotated))))
+					    (call-with-values
+					     (lambda ()
+					       (with-parameterization param
+						 (lambda ()
+						   (primitive-eval annotated))))
+					     (lambda x x)))
 				      (recur))))])
-		   (process/zodiac reader f #t)))))]
+		   (apply values (process/zodiac reader f #t))))))]
 	  [display-result
 	   (lambda (v)
 	     (unless (void? v)

@@ -1,0 +1,26 @@
+(define-signature mzlib:cgi-imports^
+  (sendmail-program-file))
+
+(define-signature mzlib:cgi^
+  (
+   ;; -- exceptions raised --
+   (struct no-mail-recipients ())
+   (struct cgi-error ())
+   (struct incomplete-%-suffix (chars))
+   (struct invalid-%-suffix (char))
+
+   ;; -- cgi methods --
+   get-bindings/post
+   generate-html-output
+   generate-error-output
+   bindings-as-html
+   extract-bindings
+   extract-binding/single
+   get-cgi-method
+   
+   ;; -- general HTML utilities --
+   string->html
+   send-mail-message/port
+   send-mail-message
+   generate-link-text
+   ))

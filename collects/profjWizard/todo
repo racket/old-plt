@@ -1,0 +1,18 @@
+contracts for class.scm and wizard.scm 
+          
+model 
+
+* figure out how to add toString and template flags to the macro version 
+
+view
+
+* refactor via classes and subclasses
+
+both
+
+* purpose statements for the class [in view but nowhere else]
+* privacy modifiers
+
+drawing: 
+
+* finish drawing unions, recursion 

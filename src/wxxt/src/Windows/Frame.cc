@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.16 1999/07/07 19:54:35 mflatt Exp $
+ * $Id: Frame.cc,v 1.17 1999/07/08 14:19:36 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -339,8 +339,11 @@ wxMenuBar *wxFrame::GetMenuBar(void)
     return menubar;
 }
 
-void wxFrame::SetIcon(wxBitmap *icon, wxBitmap *mask)
+void wxFrame::SetIcon(wxBitmap *icon, wxBitmap *mask, int kind)
 {
+  if (kind == 2) /* large */
+    return;
+
   if (icon->Ok()) {
     wxBitmap *bm = new wxBitmap(icon->GetWidth(), icon->GetHeight());
     if (bm->Ok()) {

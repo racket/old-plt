@@ -82,7 +82,7 @@ class wxbFrame: public wxWindow
   virtual wxMenuBar *GetMenuBar(void);
 
   // Set icon
-  virtual void SetIcon(wxBitmap *icon, wxBitmap *mask = NULL) = 0;
+  virtual void SetIcon(wxBitmap *icon, wxBitmap *mask = NULL, int kind = 0) = 0;
 
   // Create status line
   virtual void CreateStatusLine(int number = 1, char *name = "status_line") = 0;

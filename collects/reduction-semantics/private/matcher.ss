@@ -442,7 +442,12 @@ before the pattern compiler is invoked.
                                  (make-bindings
                                   (filter (lambda (x) (not (eq? this-hole-name (rib-name x))))
                                           (bindings-table pre-bindings))))]
+                            ;[_ (printf "start\n")]
                             [holes (filter (lambda (x) 
+                                             '(printf "rib: ~s ~s\n" x
+                                                     (list (eq? this-hole-name (rib-name x))
+                                                           (hole-binding? (rib-exp x))
+                                                           (eq? hole-id (hole-binding-id (rib-exp x)))))
                                              (and (eq? this-hole-name (rib-name x))
                                                   (hole-binding? (rib-exp x))
                                                   (eq? hole-id (hole-binding-id (rib-exp x)))))
@@ -813,6 +818,18 @@ before the pattern compiler is invoked.
     
     (test-empty '(in-named-hole+ h1 (z (hole h1)) a) 
                 '(z a)
+                (list (make-bindings (list))))
+    
+    (test-empty '(in-named-hole+ e ((hole e) (hole c)) x)
+                '(x y)
+                (list (make-bindings (list))))
+    
+    (test-empty '(in-named-hole+ c ((hole e) (hole c)) y)
+                '(x y)
+                (list (make-bindings (list))))
+    
+    (test-empty '(in-named-hole+ c (in-named-hole+ e ((hole e) (hole c)) x) y)
+                '(x y)
                 (list (make-bindings (list))))
     
     (test-empty '((name x number) (name x number)) '(1 1) (list (make-bindings (list (make-rib 'x 1)))))

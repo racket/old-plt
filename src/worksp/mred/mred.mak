@@ -824,7 +824,7 @@ SOURCE=..\..\mzscheme\utils\xcglue.c
 !IF  "$(CFG)" == "mred - Win32 Release"
 
 "wxwin - Win32 Release" : 
-   cd "\matthew\proj\plt\src\worksp\wxwin"
+   cd "..\wxwin"
    $(MAKE) /$(MAKEFLAGS) /F .\wxwin.mak CFG="wxwin - Win32 Release" 
    cd "..\mred"
 

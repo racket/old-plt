@@ -265,6 +265,7 @@
                  (format "~a is close to 'import' but is either miscapitalized or mispelled" (token-value tok))
                  srt end)
                 (parse-definition pre cur-tok 'start getter)))
+           ((INTERACTIONS_BOX TEST_SUITE) (parse-definition cur-tok (getter) 'start getter))
            (else
             (parse-definition pre cur-tok 'start getter))))
         ((semi-colon)
@@ -312,6 +313,13 @@
             (if (advanced?)
                 (parse-definition cur-tok (getter) 'start getter)
                 (parse-error "Expected class definition, found 'public' which may not be written here" srt end)))
+           ((INTERACTIONS_BOX TEST_SUITE) (parse-definition cur-tok (getter) 'start getter))
+           ((import)
+            (parse-error "Expected class definition, found 'import', which may only appear at the top of a file" srt end))
+           ((package)
+            (if (advanced?)
+                (parse-error "Expected class definition, found 'package' declaration. package must be the first item of a file" srt end)
+                (parse-error "Expected class definition, found 'package' which may not appear here" srt end)))
            (else 
             (cond
               ((close-to-keyword? tok 'class)

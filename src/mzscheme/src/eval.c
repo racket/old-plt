@@ -1542,7 +1542,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	  scheme_compile_rec_done_local(rec, drec);
 	  if (SAME_TYPE(SCHEME_TYPE(var), scheme_variable_type)
 	      || SAME_TYPE(SCHEME_TYPE(var), scheme_module_variable_type))
-	    return scheme_register_toplevel_in_prefix(var, env, 0);
+	    return scheme_register_toplevel_in_prefix(var, env);
 	  else
 	    return var;
 	} else
@@ -1890,7 +1890,7 @@ top_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, 
   } else
     c = (Scheme_Object *)scheme_global_bucket(SCHEME_STX_SYM(c), env->genv);
 
-  return scheme_register_toplevel_in_prefix(c, env, 0);
+  return scheme_register_toplevel_in_prefix(c, env);
 }
 
 static Scheme_Object *
@@ -2380,7 +2380,7 @@ static void unbound_global(Scheme_Object *obj)
 
   tmp = MZ_RUNSTACK[SCHEME_TOPLEVEL_DEPTH(obj)];
   tmp = ((Scheme_Object **)tmp)[SCHEME_TOPLEVEL_POS(obj)];
-  scheme_unbound_global(tmp);
+  scheme_unbound_global((Scheme_Bucket *)tmp);
 }
 
 #ifdef REGISTER_POOR_MACHINE
@@ -3796,8 +3796,6 @@ int scheme_prefix_depth(Resolve_Prefix *rp)
 
   if (rp->num_toplevels)
     d++;
-  if (rp->num_keywords)
-    d++;
   return rp->num_stxes + d;
 }
 
@@ -3817,17 +3815,6 @@ Scheme_Object **scheme_push_prefix(Scheme_Env *genv, Resolve_Prefix *rp,
   for (i = 0; i < rp->num_stxes; i++) {
     v = scheme_stx_phase_shift(rp->stxes[i], now_phase - src_phase, src_modidx, now_modidx);
     rs[i] = v;
-  }
-
-  if (rp->num_keywords) {
-    a = MALLOC_N(Scheme_Object *, rp->num_keywords);
-    --rs;
-    rs[0] = (Scheme_Object *)a;
-   
-    for (i = 0; i < rp->num_keywords; i++) {
-      v = (Scheme_Object *)scheme_global_keyword_bucket(rp->keywords[i], genv);
-      a[i] = v;
-    }
   }
 
   if (rp->num_toplevels) {

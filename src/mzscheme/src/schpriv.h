@@ -1150,9 +1150,8 @@ void scheme_install_type_writer(Scheme_Type type, Scheme_Type_Writer f);
 typedef struct Comp_Prefix
 {
   MZTAG_IF_REQUIRED
-  int num_toplevels, num_keywords, num_stxes;
+  int num_toplevels, num_stxes;
   Scheme_Hash_Table *toplevels; /* buckets for toplevel/module variables */
-  Scheme_Hash_Table *keywords;  /* symbols for toplevel syntax definitions */
   Scheme_Hash_Table *stxes;     /* syntax objects */
 } Comp_Prefix;
 
@@ -1190,9 +1189,8 @@ typedef struct Scheme_Compile_Info
 typedef struct Resolve_Prefix
 {
   Scheme_Type type;
-  int num_toplevels, num_keywords, num_stxes;
+  int num_toplevels, num_stxes;
   Scheme_Object **toplevels;
-  Scheme_Object **keywords;
   Scheme_Object **stxes; /* simplified */
 } Resolve_Prefix;
 
@@ -1310,7 +1308,7 @@ Scheme_Object *scheme_make_linked_closure(Scheme_Thread *p,
 
 Scheme_Object *scheme_compiled_void();
 
-Scheme_Object *scheme_register_toplevel_in_prefix(Scheme_Object *var, Scheme_Comp_Env *env, int kw);
+Scheme_Object *scheme_register_toplevel_in_prefix(Scheme_Object *var, Scheme_Comp_Env *env);
 Scheme_Object *scheme_register_stx_in_prefix(Scheme_Object *var, Scheme_Comp_Env *env);
 
 /* Resolving & linking */

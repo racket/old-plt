@@ -3759,11 +3759,11 @@ top_level_require_execute(Scheme_Object *data)
 {
   Scheme_Hash_Table *ht;
   Scheme_Object *rn;
-  Scheme_Object *form = SCHEME_CDR(SCHEME_CDR(data)), *rest, *brn;
-  int for_exp = (SCHEME_TRUEP(SCHEME_CAR(data)) ? 1 : 0);
+  Scheme_Object *form = SCHEME_CDDR(data), *rest, *brn;
+  int for_exp = (SCHEME_TRUEP(SCHEME_CADR(data)) ? 1 : 0);
   Scheme_Env *env;
 
-  env = scheme_environment_from_dummy(SCHEME_CADR(data));
+  env = scheme_environment_from_dummy(SCHEME_CAR(data));
 
   if (for_exp) {
     scheme_prepare_exp_env(env);
@@ -3806,7 +3806,11 @@ top_level_require_execute(Scheme_Object *data)
 static Scheme_Object *
 top_level_require_resolve(Scheme_Object *data, Resolve_Info *rslv)
 {
-  return scheme_make_syntax_resolved(REQUIRE_EXPD, data);
+  Scheme_Object *dummy = SCHEME_CAR(data);
+
+  dummy = scheme_resolve_expr(dummy, rslv);
+
+  return scheme_make_syntax_resolved(REQUIRE_EXPD, cons(dummy, SCHEME_CDR(data)));
 }
 
 static Scheme_Object *do_require(Scheme_Object *form, Scheme_Comp_Env *env, 
@@ -3845,10 +3849,11 @@ static Scheme_Object *do_require(Scheme_Object *form, Scheme_Comp_Env *env,
     scheme_compile_rec_done_local(rec, drec);
     scheme_default_compile_rec(rec, drec);
     return scheme_make_syntax_compiled(REQUIRE_EXPD, 
-				       cons((for_exp 
-					     ? scheme_true 
-					     : scheme_false),
-					    cons(dummy, form)));
+				       cons(dummy,
+					    cons((for_exp 
+						  ? scheme_true 
+						  : scheme_false),
+						 form)));
   } else
     return form;
 }
@@ -3947,6 +3952,9 @@ static Scheme_Object *write_module(Scheme_Object *obj)
   l = cons(m->reprovide_kernel ? scheme_true : scheme_false, l);
   l = cons(m->kernel_exclusion, l);
 
+  l = cons((Scheme_Object *)m->prefix, l);
+  l = cons(m->dummy, l);
+
   l = cons(m->self_modidx, l);
   l = cons(m->modname, l);
 
@@ -3974,6 +3982,12 @@ static Scheme_Object *read_module(Scheme_Object *obj)
   m->self_modidx = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
   ((Scheme_Modidx *)m->self_modidx)->resolved = m->modname;
+
+  m->dummy = SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
+
+  m->prefix = (Resolve_Prefix *)SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
 
   m->kernel_exclusion = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);

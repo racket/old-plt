@@ -473,22 +473,24 @@ define_execute(Scheme_Object *vars, Scheme_Object *vals, int defmacro,
   Scheme_Object *l, *name, *macro;
   int i, g, show_any;
   Scheme_Bucket *b;
+  Scheme_Env *dm_env;
 
   if (defmacro) {
     Scheme_Object **save_runstack;
-    Scheme_Env *prefix_env;
 
-    prefix_env = scheme_environment_from_dummy(prefix_env_getter);
-    scheme_prepare_exp_env(prefix_env);
+    dm_env = scheme_environment_from_dummy(prefix_env_getter);
+    scheme_prepare_exp_env(dm_env);
 
-    save_runstack = scheme_push_prefix(prefix_env->exp_env, rp, NULL, NULL, 1, 1);
+    save_runstack = scheme_push_prefix(dm_env->exp_env, rp, NULL, NULL, 1, 1);
     vals = scheme_eval_linked_expr_multi(vals);
     scheme_pop_prefix(save_runstack);
-  } else
+  } else {
     vals = _scheme_eval_linked_expr_multi(vals);
+    dm_env = NULL;
+  }
 
   if (SAME_OBJ(vals, SCHEME_MULTIPLE_VALUES)) {
-    Scheme_Object *v, **values, **toplevels;
+    Scheme_Object *v, **values;
 
     for (v = vars, i = 0; SCHEME_PAIRP(v); i++, v = SCHEME_CDR(v)) {}
     
@@ -497,16 +499,20 @@ define_execute(Scheme_Object *vars, Scheme_Object *vals, int defmacro,
       values = scheme_current_thread->ku.multiple.array;
       scheme_current_thread->ku.multiple.array = NULL;
       for (i = 0; i < g; i++, vars = SCHEME_CDR(vars)) {
-	toplevels = (Scheme_Object **)MZ_RUNSTACK[SCHEME_TOPLEVEL_DEPTH(SCHEME_CAR(vars))];
-	b = (Scheme_Bucket *)toplevels[SCHEME_TOPLEVEL_POS(SCHEME_CAR(vars))];
 	if (defmacro) {
+	  b = scheme_global_keyword_bucket(SCHEME_CAR(vars), dm_env);
+
 	  macro = scheme_alloc_small_object();
 	  macro->type = scheme_macro_type;
 	  SCHEME_PTR_VAL(macro) = values[i];
 
 	  scheme_set_global_bucket("define-syntaxes", b, macro, 1);
-	  scheme_shadow(((Scheme_Bucket_With_Home *)b)->home, (Scheme_Object *)b->key, 0);
+	  scheme_shadow(dm_env, (Scheme_Object *)b->key, 0);
 	} else {
+	  Scheme_Object **toplevels;
+	  toplevels = (Scheme_Object **)MZ_RUNSTACK[SCHEME_TOPLEVEL_DEPTH(SCHEME_CAR(vars))];
+	  b = (Scheme_Bucket *)toplevels[SCHEME_TOPLEVEL_POS(SCHEME_CAR(vars))];
+	
 	  scheme_set_global_bucket("define-values", b, values[i], 1);
 	  scheme_shadow(((Scheme_Bucket_With_Home *)b)->home, (Scheme_Object *)b->key, 1);
 	}
@@ -515,10 +521,9 @@ define_execute(Scheme_Object *vars, Scheme_Object *vals, int defmacro,
       return scheme_void;
     }
   } else if (SCHEME_PAIRP(vars) && SCHEME_NULLP(SCHEME_CDR(vars))) {
-    Scheme_Object **toplevels;
-    toplevels = (Scheme_Object **)MZ_RUNSTACK[SCHEME_TOPLEVEL_DEPTH(SCHEME_CAR(vars))];
-    b = (Scheme_Bucket *)toplevels[SCHEME_TOPLEVEL_POS(SCHEME_CAR(vars))];
     if (defmacro) {
+      b = scheme_global_keyword_bucket(SCHEME_CAR(vars), dm_env);
+
       macro = scheme_alloc_small_object();
       macro->type = scheme_macro_type;
       SCHEME_PTR_VAL(macro) = vals;
@@ -526,6 +531,10 @@ define_execute(Scheme_Object *vars, Scheme_Object *vals, int defmacro,
       scheme_set_global_bucket("define-syntaxes", b, macro, 1);
       scheme_shadow(((Scheme_Bucket_With_Home *)b)->home, (Scheme_Object *)b->key, 0);
     } else {
+      Scheme_Object **toplevels;
+      toplevels = (Scheme_Object **)MZ_RUNSTACK[SCHEME_TOPLEVEL_DEPTH(SCHEME_CAR(vars))];
+      b = (Scheme_Bucket *)toplevels[SCHEME_TOPLEVEL_POS(SCHEME_CAR(vars))];
+
       scheme_set_global_bucket("define-values", b, vals, 1);
       scheme_shadow(((Scheme_Bucket_With_Home *)b)->home, (Scheme_Object *)b->key, 1);
     }
@@ -644,7 +653,7 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
       bucket = scheme_hash_module_variable(env->genv, env->genv->module->self_modidx, name, -1);
     }
     /* Get indirection through the prefix: */
-    bucket = scheme_register_toplevel_in_prefix(bucket, env, 0);
+    bucket = scheme_register_toplevel_in_prefix(bucket, env);
 
     pr = cons(bucket, scheme_null);
     if (last)
@@ -1030,7 +1039,7 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
 
   if (SAME_TYPE(SCHEME_TYPE(var), scheme_variable_type)
       || SAME_TYPE(SCHEME_TYPE(var), scheme_module_variable_type)) {
-    var = scheme_register_toplevel_in_prefix(var, env, 0);
+    var = scheme_register_toplevel_in_prefix(var, env);
   }
 
   scheme_compile_rec_done_local(rec, drec);
@@ -2634,7 +2643,6 @@ static Scheme_Object *define_syntaxes_resolve(Scheme_Object *data, Resolve_Info 
   names = SCHEME_CAR(data);
   val = SCHEME_CDR(data);
 
-  names = scheme_resolve_list(names, info);
   dummy = scheme_resolve_expr(dummy, info);
 
   rp = scheme_resolve_prefix(1, cp, 1);
@@ -2647,14 +2655,9 @@ static Scheme_Object *define_syntaxes_resolve(Scheme_Object *data, Resolve_Info 
 									cons(names, val)))));
 }
 
-static Scheme_Object *keyword_bucket(Scheme_Object *name, Scheme_Object *_env)
+static Scheme_Object *stx_val(Scheme_Object *name, Scheme_Object *_ignored)
 {
-  Scheme_Comp_Env *env = (Scheme_Comp_Env *)_env;
-
-  /* Get indirection through the prefix: */
-  return scheme_register_toplevel_in_prefix((Scheme_Object *)scheme_global_keyword_bucket(SCHEME_STX_VAL(name), 
-											  env->genv),
-					    env, 1);
+  return SCHEME_STX_VAL(name);
 }
 
 static Scheme_Object *
@@ -2672,7 +2675,7 @@ define_syntaxes_syntax(Scheme_Object *form, Scheme_Comp_Env *env,
   scheme_define_parse(form, &names, &code, 1, env);
 
   /* Get prefixed-based accessors for syntax buckets: */
-  names = scheme_named_map_1(NULL, keyword_bucket, names, (Scheme_Object *)env);
+  names = scheme_named_map_1(NULL, stx_val, names, NULL);
 
   dummy = scheme_make_environment_dummy(env);
   
@@ -2724,7 +2727,7 @@ Scheme_Object *scheme_make_environment_dummy(Scheme_Comp_Env *env)
   /* Get prefixed-based accessors for a dummy top-level buckets. It's
      used to "link" to the right enviornment. begin_symbol is arbitrary */
   dummy = (Scheme_Object *)scheme_global_bucket(begin_symbol, env->genv);
-  dummy = scheme_register_toplevel_in_prefix(dummy, env, 0);
+  dummy = scheme_register_toplevel_in_prefix(dummy, env);
 
   return dummy;
 }
@@ -3221,7 +3224,8 @@ static Scheme_Object *write_top(Scheme_Object *obj)
   Scheme_Compilation_Top *top = (Scheme_Compilation_Top *)obj;
 
   return cons(scheme_make_integer(top->max_let_depth),
-	      scheme_protect_quote(top->code));
+	      cons(top->prefix,
+		   scheme_protect_quote(top->code)));
 }
 
 static Scheme_Object *read_top(Scheme_Object *obj)
@@ -3231,7 +3235,8 @@ static Scheme_Object *read_top(Scheme_Object *obj)
   top = MALLOC_ONE_TAGGED(Scheme_Compilation_Top);
   top->type = scheme_compilation_top_type;
   top->max_let_depth = SCHEME_INT_VAL(SCHEME_CAR(obj));
-  top->code = SCHEME_CDR(obj);
+  top->prefix = (Resolve_Prefix *)SCHEME_CADR(obj);
+  top->code = SCHEME_CDDR(obj);
 
   return (Scheme_Object *)top;
 }

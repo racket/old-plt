@@ -1920,24 +1920,27 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	      *(long *)0x0 = 1;
 	}
 	  
-	if (just_simplify) {
-	  stack = CONS(a, stack);
-	} else {
-	  Scheme_Object *local_key;
-	    
-	  local_key = scheme_hash_get(rns, a);
-	  if (local_key) {
-	    stack = CONS(local_key, stack);
-	  } else {
-	    local_key = scheme_make_integer(rns->count);
-	    scheme_hash_set(rns, a, local_key);
-	      
-	    /* Since this is a simplified table, we can steal the first
-	       slot for local_key: */
-	      
-	    SCHEME_VEC_ELS(a)[0] = local_key;
-	      
+	/* Simplification may have left us with the null table: */
+	if (SCHEME_VEC_SIZE(a) > 2) {
+	  if (just_simplify) {
 	    stack = CONS(a, stack);
+	  } else {
+	    Scheme_Object *local_key;
+	    
+	    local_key = scheme_hash_get(rns, a);
+	    if (local_key) {
+	      stack = CONS(local_key, stack);
+	    } else {
+	      local_key = scheme_make_integer(rns->count);
+	      scheme_hash_set(rns, a, local_key);
+	      
+	      /* Since this is a simplified table, we can steal the first
+		 slot for local_key: */
+	      
+	      SCHEME_VEC_ELS(a)[0] = local_key;
+	      
+	      stack = CONS(a, stack);
+	    }
 	  }
 	}
 	stack_size++;
@@ -2369,6 +2372,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       /* Re-use rename table or env rename */
       a = scheme_hash_get(rns, a);
       if (!a) {
+	a = SCHEME_CAR(w);
 	scheme_read_err(scheme_false, NULL, -1, -1, -1, -1, 0,
 			"read (compiled): unknown rename table index: %d",
 			SCHEME_INT_VAL(a));
@@ -2396,6 +2400,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
 
       a = n;
     } else if (SCHEME_VECTORP(a)) {
+      /* A (simplified) rename table. First element is the key. */
       Scheme_Object *local_key = SCHEME_VEC_ELS(a)[0];
       
       scheme_hash_set(rns, local_key, a);

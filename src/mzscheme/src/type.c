@@ -77,7 +77,8 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_char_type, "<char>");
   set_name(scheme_local_type, "<local-code>");
   set_name(scheme_local_unbox_type, "<local-unbox-code>");
-  set_name(scheme_variable_type, "<variable-code>");
+  set_name(scheme_variable_type, "<global-variable-code>");
+  set_name(scheme_toplevel_type, "<variable-code>");
   set_name(scheme_module_variable_type, "<module-variable-code>");
   set_name(scheme_application_type, "<application-code>");
   set_name(scheme_compiled_unclosed_procedure_type, "<procedure-semi-code>");
@@ -94,6 +95,8 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_let_void_type, "<let-void-code>");
   set_name(scheme_compiled_let_value_type, "<let-value-semi-code>");
   set_name(scheme_compiled_let_void_type, "<let-void-semi-code>");
+  set_name(scheme_compiled_toplevel_type, "<variable-semi-code>");
+  set_name(scheme_compiled_quote_syntax_type, "<quote-syntax-semi-code>");
   set_name(scheme_letrec_type, "<letrec-code>");
   set_name(scheme_let_one_type, "<let-one-code>");
   set_name(scheme_quote_compilation_type, "<quote-code>");

@@ -65,11 +65,15 @@ static Scheme_Object *local_introduce(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_set_transformer(int argc, Scheme_Object *argv[]);
 static Scheme_Object *set_transformer_p(int argc, Scheme_Object *argv[]);
 
+static Scheme_Object *write_toplevel(Scheme_Object *obj);
+static Scheme_Object *read_toplevel(Scheme_Object *obj);
 static Scheme_Object *write_variable(Scheme_Object *obj);
 static Scheme_Object *read_variable(Scheme_Object *obj);
 static Scheme_Object *write_local(Scheme_Object *obj);
 static Scheme_Object *read_local(Scheme_Object *obj);
 static Scheme_Object *read_local_unbox(Scheme_Object *obj);
+static Scheme_Object *write_resolve_prefix(Scheme_Object *obj);
+static Scheme_Object *read_resolve_prefix(Scheme_Object *obj);
 
 static void skip_certain_things(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void *data);
 
@@ -382,12 +386,16 @@ static void make_init_env(void)
 
   DONE_TIME(env);
 
+  scheme_install_type_writer(scheme_toplevel_type, write_toplevel);
+  scheme_install_type_reader(scheme_toplevel_type, read_toplevel);
   scheme_install_type_writer(scheme_variable_type, write_variable);
   scheme_install_type_reader(scheme_variable_type, read_variable);
   scheme_install_type_writer(scheme_local_type, write_local);
   scheme_install_type_reader(scheme_local_type, read_local);
   scheme_install_type_writer(scheme_local_unbox_type, write_local);
   scheme_install_type_reader(scheme_local_unbox_type, read_local_unbox);
+  scheme_install_type_writer(scheme_resolve_prefix_type, write_resolve_prefix);
+  scheme_install_type_reader(scheme_resolve_prefix_type, read_resolve_prefix);
 
   REGISTER_SO(kernel_symbol);
   kernel_symbol = scheme_intern_symbol("#%kernel");
@@ -1015,7 +1023,7 @@ Scheme_Comp_Env *scheme_extend_as_toplevel(Scheme_Comp_Env *env)
     return scheme_new_compilation_frame(0, SCHEME_TOPLEVEL_FRAME, env);
 }
 
-Scheme_Object *scheme_register_toplevel_in_prefix(Scheme_Object *var, Scheme_Comp_Env *env, int keyword)
+Scheme_Object *scheme_register_toplevel_in_prefix(Scheme_Object *var, Scheme_Comp_Env *env)
 {
   Scheme_Comp_Env *frame;
   Comp_Prefix *cp = env->prefix;
@@ -1033,18 +1041,10 @@ Scheme_Object *scheme_register_toplevel_in_prefix(Scheme_Object *var, Scheme_Com
     frame = frame->next;
   }
 
-  if (!keyword) {
-    ht = cp->toplevels;
-    if (!ht) {
-      ht = scheme_make_hash_table(SCHEME_hash_ptr);
-      cp->toplevels = ht;
-    }
-  } else {
-    ht = cp->keywords;
-    if (!ht) {
-      ht = scheme_make_hash_table(SCHEME_hash_ptr);
-      cp->keywords = ht;
-    }
+  ht = cp->toplevels;
+  if (!ht) {
+    ht = scheme_make_hash_table(SCHEME_hash_ptr);
+    cp->toplevels = ht;
   }
 
   o = scheme_hash_get(ht, var);
@@ -1053,13 +1053,10 @@ Scheme_Object *scheme_register_toplevel_in_prefix(Scheme_Object *var, Scheme_Com
 
   tl = MALLOC_ONE_TAGGED(Scheme_Toplevel);
   tl->type = scheme_compiled_toplevel_type;
-  tl->depth = (keyword ? 1 : 0);
-  tl->position = (keyword ? cp->num_keywords : cp->num_toplevels);
+  tl->depth = 0;
+  tl->position = cp->num_toplevels;
 
-  if (!keyword)
-    cp->num_toplevels++;
-  else
-    cp->num_keywords++;
+  cp->num_toplevels++;
   o = (Scheme_Object *)tl;  
   scheme_hash_set(ht, var, o);
 
@@ -1741,31 +1738,25 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
 Resolve_Prefix *scheme_resolve_prefix(int phase, Comp_Prefix *cp, int simplify)
 {
   Resolve_Prefix *rp;
-  Scheme_Object **tls, **stxes, **kws, *simplify_cache;
+  Scheme_Object **tls, **stxes, *simplify_cache;
   Scheme_Hash_Table *ht;
   int i;
 
-  rp = MALLOC_ONE_RT(Resolve_Prefix);
+  rp = MALLOC_ONE_TAGGED(Resolve_Prefix);
   rp->type = scheme_resolve_prefix_type;
   rp->num_toplevels = cp->num_toplevels;
-  rp->num_keywords = cp->num_keywords;
   rp->num_stxes = cp->num_stxes;
   
   if (rp->num_toplevels)
     tls = MALLOC_N(Scheme_Object*, rp->num_toplevels);
   else
     tls = NULL;
-  if (rp->num_keywords)
-    kws = MALLOC_N(Scheme_Object*, rp->num_toplevels);
-  else
-    kws = NULL;
   if (rp->num_stxes)
     stxes = MALLOC_N(Scheme_Object*, rp->num_stxes);
   else
     stxes = NULL;
 
   rp->toplevels = tls;
-  rp->keywords = kws;
   rp->stxes = stxes;
 
   ht = cp->toplevels;
@@ -1773,15 +1764,6 @@ Resolve_Prefix *scheme_resolve_prefix(int phase, Comp_Prefix *cp, int simplify)
     for (i = 0; i < ht->size; i++) {
       if (ht->vals[i]) {
 	tls[SCHEME_TOPLEVEL_POS(ht->vals[i])] = ht->keys[i];
-      }
-    }
-  }
-
-  ht = cp->keywords;
-  if (ht) {
-    for (i = 0; i < ht->size; i++) {
-      if (ht->vals[i]) {
-	kws[SCHEME_TOPLEVEL_POS(ht->vals[i])] = ht->keys[i];
       }
     }
   }
@@ -1984,8 +1966,6 @@ int scheme_resolve_quote_syntax(Resolve_Info *info, int oldpos)
 
   if (start->prefix->num_toplevels)
     skip += 1;
-  if (start->prefix->num_keywords)
-    skip += 1;
   
   return skip + oldpos;
 }
@@ -2164,6 +2144,24 @@ set_transformer_p(int argc, Scheme_Object *argv[])
 /*                    [un]marshalling variable reference                  */
 /*========================================================================*/
 
+static Scheme_Object *write_toplevel(Scheme_Object *obj)
+{
+  return scheme_make_pair(scheme_make_integer(SCHEME_TOPLEVEL_DEPTH(obj)),
+			  scheme_make_integer(SCHEME_TOPLEVEL_POS(obj)));
+}
+
+static Scheme_Object *read_toplevel(Scheme_Object *obj)
+{
+  Scheme_Toplevel *tl;
+
+  tl = MALLOC_ONE_TAGGED(Scheme_Toplevel);
+  tl->type = scheme_toplevel_type;
+  tl->depth = SCHEME_INT_VAL(SCHEME_CAR(obj));
+  tl->position = SCHEME_INT_VAL(SCHEME_CDR(obj));
+
+  return (Scheme_Object *)tl;
+}
+
 static Scheme_Object *write_variable(Scheme_Object *obj)
 {
   Scheme_Env *home;
@@ -2232,6 +2230,58 @@ static Scheme_Object *read_local_unbox(Scheme_Object *obj)
 {
   return scheme_make_local(scheme_local_unbox_type,
 			   SCHEME_INT_VAL(obj));
+}
+
+static Scheme_Object *write_resolve_prefix(Scheme_Object *obj)
+{
+  Resolve_Prefix *rp = (Resolve_Prefix *)obj;
+  Scheme_Object *tv, *sv;
+  int i;
+
+  i = rp->num_toplevels;
+  tv = scheme_make_vector(i, NULL);
+  while (i--) {
+    SCHEME_VEC_ELS(tv)[i] = rp->toplevels[i];
+  }
+
+  i = rp->num_stxes;
+  sv = scheme_make_vector(i, NULL);
+  while (i--) {
+    SCHEME_VEC_ELS(sv)[i] = rp->stxes[i];
+  }
+
+  return scheme_make_pair(tv, sv);
+}
+
+static Scheme_Object *read_resolve_prefix(Scheme_Object *obj)
+{
+  Resolve_Prefix *rp;
+  Scheme_Object *tv, *sv, **a;
+  int i;
+
+  tv = SCHEME_CAR(obj);
+  sv = SCHEME_CDR(obj);
+
+  rp = MALLOC_ONE_TAGGED(Resolve_Prefix);
+  rp->type = scheme_resolve_prefix_type;
+  rp->num_toplevels = SCHEME_VEC_SIZE(tv);
+  rp->num_stxes = SCHEME_VEC_SIZE(sv);
+
+  i = rp->num_toplevels;
+  a = MALLOC_N(Scheme_Object *, i);
+  while (i--) {
+    a[i] = SCHEME_VEC_ELS(tv)[i];
+  }
+  rp->toplevels = a;
+  
+  i = rp->num_stxes;
+  a = MALLOC_N(Scheme_Object *, i);
+  while (i--) {
+    a[i] = SCHEME_VEC_ELS(sv)[i];
+  }
+  rp->stxes = a;
+
+  return (Scheme_Object *)rp;
 }
 
 /*========================================================================*/

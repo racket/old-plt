@@ -97,6 +97,7 @@
 
 (define-signature zodiac:scheme-objects^
   (create-class*/names-form
+    create-interface-form
     (struct supervar-varref ())  create-supervar-varref
     (struct superinit-varref ()) create-superinit-varref
     (struct public-varref ())    create-public-varref
@@ -111,6 +112,7 @@
     (struct rename-binding ())    create-rename-binding+marks
     (struct class*/names-form
       (this super-init super-expr interfaces init-vars inst-clauses))
+    (struct interface-form (super-exprs variables))
     (struct public-clause (exports internals exprs))
     (struct private-clause (internals exprs))
     (struct inherit-clause (internals imports))

@@ -278,9 +278,10 @@
 		      "given as name-spec for invoke-open-unit"))))]
 
 	    [(z:interface-form? expr)
-	      (let ((vars (interface-form-variables expr)))
+	      (let ((vars (z:interface-form-variables expr)))
 		(map check-for-keyword vars)
-		`(#%interface ,(map annotate (interface-form-super-exprs expr))
+		`(#%interface ,(map annotate
+				 (z:interface-form-super-exprs expr))
 		   ,@(map read->raw vars)))]
 
 	    [(z:class*/names-form? expr)

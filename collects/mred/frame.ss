@@ -45,7 +45,7 @@
 	     (class-asi mred:container:vertical-panel%
 	       (public
 		 [default-spacing-width 0]
-		 [default-border-width 2])))]
+		 [default-border-width 0])))]
 	  [on-close (lambda () #t)])
 	(sequence 
 	  (mred:debug:printf 'super-init "before empty-frame%")

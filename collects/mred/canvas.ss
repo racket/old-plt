@@ -94,9 +94,11 @@
 	     (lambda ()
 	       (let ([frame-shown?
 		      (let loop ([t (get-parent)])
-			(if (is-a? t wx:frame%)
-			    (ivar t shown)
-			    (loop (send t get-parent))))])
+			(cond
+			  [(is-a? t wx:frame%)
+			   (ivar t shown)]
+			  [(null? t) #f]
+			  [else (loop (send t get-parent))]))])
 		 (when frame-shown?
 		   (let ([edit (get-media)])
 		     (unless (null? edit)
@@ -138,16 +140,29 @@
       (lambda (super%)
 	(class super% (parent [x -1] [y -1] [w -1] [h -1] 
 			      [name ""] [style 0] [spp 100] [m ()])
-	  (inherit get-media user-min-height)
+	  
+	  (inherit get-media call-as-primary-owner user-min-height
+		   get-size min-height)
 	  (rename [super-set-media set-media])
 	  (private
 	    [update-size
 	     (lambda (media)
 	       (unless (null? media)
-		 (let ([top (send media line-location 0 #t)]
-		       [bottom (send media line-location 0 #f)])
-		   (user-min-height (- bottom top)))))])
+		 (let* ([top (send media line-location 0 #t)]
+			[bottom (send media line-location 0 #f)]
+			[height (- bottom top)])
+		   (let* ([ch (box 0)]
+			  [h (box 0)])
+		     (call-as-primary-owner
+		      (lambda ()
+			(send (send media get-admin) 
+			      get-view null null null ch)))
+		     (get-size (box 0) h)
+		     (let ([new-min-height (+ height (- (unbox h) (unbox ch)))])
+		       (set! min-height new-min-height)
+		       (user-min-height new-min-height))))))])
 	  (public
+	    [default-y-stretch #f]
 	    [set-media
 	     (lambda (media)
 	       (super-set-media media)

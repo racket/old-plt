@@ -651,7 +651,8 @@
                                            (expr-src exp)
                                            type-recs
                                            current-class
-                                           env)))
+                                           env
+                                           level)))
         ((array-alloc? exp)
          (set-expr-type exp
                         (check-array-alloc (array-alloc-name exp)
@@ -1038,17 +1039,20 @@
                    (reference-type? exp-type)
                    (not (eq? this (send type-recs get-class-record exp-type))))
           (raise-error err-list pri-meth-called))
-        (unless (andmap (lambda (thrown)
-                          (lookup-exn thrown env type-recs))
-                        (method-record-throws method-record))
-          (raise-error #f #f))
+        (when (eq? level 'full)
+          (for-each (lambda (thrown)
+                      (unless (lookup-exn thrown env type-recs)
+                        (raise-error (append err-list (list (ref-type-class/iface thrown)))
+                                     called-throws-not-caught)))
+                    (method-record-throws method-record)))
         (set-call-method-record! call method-record)
         (method-record-rtype method-record))))
-     
+
+  
   ;;Skip package access controls
   ;; 15.9
-  ;;check-class-alloc: name (list type) src type-records (list string) env -> type
-  (define (check-class-alloc name args src type-recs c-class env)
+  ;;check-class-alloc: name (list type) src type-records (list string) env symbol -> type
+  (define (check-class-alloc name args src type-recs c-class env level)
     (let* ((type (java-name->type name type-recs))
            (class-record (send type-recs get-class-record type))
            (methods (get-method-records (ref-type-class/iface type) class-record))
@@ -1067,6 +1071,12 @@
                                          type-recs))
              (mods (method-record-modifiers const))
              (this (lookup-this type-recs env)))
+        (when (eq? level 'full)
+          (for-each (lambda (thrown)
+                      (unless (lookup-exn thrown env type-recs)
+                        (raise-error (append err-list (list (ref-type-class/iface thrown)))
+                                     called-throws-not-caught)))
+                    (method-record-throws const)))
         (when (and (memq 'private mods) (not (eq? class-record this)))
           (raise-error err-list class-alloc-access-private))
         (when (and (memq 'protected mods) (not (is-subclass? this type)))
@@ -1255,6 +1265,10 @@
     (format "No definition of ~a with ~a arguments found" meth (if (null? args) "no" args)))
   (define (full-meth-not-found meth)
     (format "Method ~a is not found with the types of arguments given" meth))
+  (define (called-throws-not-caught thrown called)
+    (format "called method ~a throws exception ~a, which is not caught or listed as thrown" called thrown))
+
+  
   
   ;;Class Alloc errors
   (define (class-alloc-abstract type)

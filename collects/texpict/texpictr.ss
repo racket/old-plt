@@ -120,7 +120,7 @@
 	    (find rt tline)
 	    (find rt bline))))
 
-(define (hide-children box)
+(define (launder box)
   (let ([b (extend-pict box 0 0 0 0 0 #f)])
     (set-pict-children! b null)
     b))
@@ -522,8 +522,7 @@
 
 (define table
   (case-lambda
-   [(ncol cells row-seps col-seps) (table ncol cells row-seps col-seps (lambda (c r) cc-superimpose))]
-   [(ncol cells row-seps col-seps get-cell-superimpose)
+   [(ncol cells row-aligns col-aligns row-seps col-seps)
     (unless (positive? ncol)
 	    (raise-type-error 'table "positive column count" ncol))
     (let ([count (length cells)])
@@ -540,15 +539,17 @@
 				(loop (sub1 c) (cdr cells) (cons (car cells) one-acc))))))]
 	     [imp-list->vector (lambda (l n)
 				 (let ([v (make-vector n)])
-				   (let loop ([l l][n n])
-				     (unless (zero? n)
+				   (let loop ([l l][p 0])
+				     (unless (= n p)
 				       (vector-set! v
-						    (sub1 n)
+						    p
 						    (if (pair? l)
 							(car l)
 							l))
-				       (loop (if (pair? l) (cdr l) l) (sub1 n))))
+				       (loop (if (pair? l) (cdr l) l) (add1 p))))
 				   v))]
+	     [ralign (imp-list->vector row-aligns h)]
+	     [calign (imp-list->vector col-aligns w)]
 	     [rsep (imp-list->vector row-seps h)]
 	     [csep (imp-list->vector col-seps w)]
 	     [get-cell (lambda (c r) (vector-ref (vector-ref cells r) c))]
@@ -559,21 +560,17 @@
 			   (loop (sub1 n) (cons (f (sub1 n)) acc)))))]
 	     [rowmap (lambda (f) (nmap f h))]
 	     [colmap (lambda (f) (nmap f w))]
-	     [max-widths (list->vector
-			  (colmap
-			   (lambda (c)
-			     (apply max 
-				    (rowmap 
-				     (lambda (r)
-				       (pict-width (get-cell c r))))))))]
-	     [max-heights (list->vector
-			   (rowmap
-			    (lambda (r)
-			      (apply max
-				     (colmap
-				      (lambda (c)
-					(pict-height (get-cell c r))))))))])
-	; No space after the last one
+	     [superimposed-rows (list->vector
+				 (rowmap (lambda (r)
+					   (apply
+					    (vector-ref ralign r)
+					    (colmap (lambda (c) (get-cell c r)))))))]
+	     [superimposed-cols (list->vector
+				 (colmap (lambda (c)
+					   (apply
+					    (vector-ref calign c)
+					    (colmap (lambda (r) (get-cell c r)))))))])
+	; No space after the last row/col
 	(vector-set! rsep (sub1 h) 0)
 	(vector-set! csep (sub1 w) 0)
 
@@ -590,10 +587,16 @@
 	      (colmap (lambda (c)
 			(ht-append
 			 0
-			 ((get-cell-superimpose c r)
-			  (empty (vector-ref max-widths c)
-				 (vector-ref max-heights r))
-			  (get-cell c r))
+			 (let* ([cell (get-cell c r)]
+				[sc (vector-ref superimposed-cols c)]
+				[sr (vector-ref superimposed-rows r)]
+				[w (pict-width sc)]
+				[h (pict-height sr)])
+			   (let-values ([(x __) (find-lb sc cell)]
+					[(_  y) (find-lb sr cell)])
+			     (picture
+			      w h
+			      `((place ,x ,y ,cell)))))
 			 (empty (vector-ref csep c) 0)))))
 	     (empty 0 (vector-ref rsep r))))))))]))
 

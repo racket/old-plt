@@ -28,16 +28,19 @@
     (if (eq? 'windows (system-type))
       (lambda (str) (regexp-replace* #rx"\\\\" (simplify-path str) "/"))
       simplify-path))
-  (define plthome/ (and plthome
-			(regexp-replace #rx"/?$" (simplify-path* plthome) "/")))
-  (define plthome/-len (and plthome/ (string-length plthome/)))
-  (define (maybe-cdr-op f)
+  (define plthome/
+    (and plthome
+         (regexp-replace #rx"/?$" (simplify-path* plthome) "/")))
+  (define plthome/-len
+    (and plthome/ (string-length plthome/)))
+  (define (maybe-cdr-op fname f)
     (lambda (x)
-      (if (and (pair? x) (not (eq? 'plthome (car x))))
-        (cons (car x) (f (cdr x)))
-        (f x))))
+      (cond [(not plthome/) (error fname "no PLTHOME and no mzlib found")]
+            [(and (pair? x) (not (eq? 'plthome (car x))))
+             (cons (car x) (f (cdr x)))]
+            [else (f x)])))
   (define plthome-ify
-    (maybe-cdr-op
+    (maybe-cdr-op 'plthome-ify
      (lambda (path)
        (let ([path* (and (string? path) (simplify-path* path))])
          (cond [(and path*
@@ -47,7 +50,7 @@
                [(equal? path* plthome) (cons 'plthome "")]
                [else path])))))
   (define un-plthome-ify
-    (maybe-cdr-op
+    (maybe-cdr-op 'un-plthome-ify
      (lambda (path)
        (if (and (pair? path) (eq? 'plthome (car path)))
          (if (equal? (cdr path) "") plthome (build-path plthome (cdr path)))

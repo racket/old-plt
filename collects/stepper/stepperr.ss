@@ -42,7 +42,7 @@
   (define (get-vocabulary) par-vocabulary)
   
   (define (image? val)
-   (is-a? val original:image-snip%))
+   (is-a? val image-snip%))
   
   (define stepper-frame%
     (d:frame:basics-mixin (f:frame:standard-menus-mixin f:frame:basic%)))
@@ -294,7 +294,7 @@
                         (let ([primitive-eval (current-eval)]
                               [primitive-vector vector]
                               [exn-handler (make-exception-handler k)])
-                          (d:basis:initialize-parameters (make-custodian) null settings)
+                          (d:basis:initialize-parameters (make-custodian) settings)
                           (d:rep:invoke-library)
                           (set! par-namespace (current-namespace))
                           (set! par-global-defined-vars (map car (make-global-value-list)))

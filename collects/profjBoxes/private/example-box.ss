@@ -49,7 +49,9 @@
               ;; STATUS: I'm parsing the ID with a regexp that's probablly not
               ;; the correct Java variable regexp. Furthermore, I need to parse
               ;; it differently if it's a class name vs. field name.
-              (define (text->java-id atext)
+              ;;EDITED BY KATHY:: Commented this out because the result reading the example box
+              ;;is much different than Mike expected it would be
+              #;(define (text->java-id atext)
                 (let ([str (send atext get-text)])
                   (match (regexp-match-positions re:java-id str 0 false)
                     [((m-start . m-end))
@@ -67,17 +69,24 @@
                     [else (raise-read-error
                            (string-constant profjBoxes-bad-java-id-error)
                            atext 1 1 1 (send atext last-position))])))
-              (let ([level 'beginner])
-                #`(begin #,@(send examples map-children
-                                  (lambda (example)
-                                    (with-syntax ([name (text->java-id
-                                                         (send example get-name))]
-                                                  [value (parse-interactions
-                                                          (open-input-text-editor
-                                                           (send example get-value))
-                                                          (send example get-value)
-                                                          level)])
-                                      #'(define name value))))))))
+              ;;EDITED BY KATHY:: Same reason as stated above
+              #;#`(begin #,@(send examples map-children
+                                (lambda (example)
+                                  (with-syntax ([name (text->java-id
+                                                       (send example get-name))]
+                                                [value (parse-expression
+                                                        (open-input-text-editor
+                                                         (send example get-value))
+                                                        (send example get-value)
+                                                        level)])
+                                    #'(define name value)))))
+              #`(parse-example-box (list #,@(send examples map-children
+                                                  (lambda (example)
+                                                    (with-syntax ([type (send example get-type)]
+                                                                  [id (send example get-name)]
+                                                                  [value (send example get-value)])
+                                                      #'(list type id value))))))
+              ))
           
           #;(-> void?)
           ;; Gives this box the cursor focus

@@ -197,7 +197,8 @@ extern void *wxGetContextForFrame();
 
 extern void wxDispatchEventsUntil(int (*f)(void *), void *data);
 extern wxWindow *wxGetModalWindow(wxObject *o);
-extern void wxPutModalWindow(wxObject *o, wxWindow *win);
+extern void wxPushModalWindow(wxObject *o, wxWindow *win);
+extern void wxPopModalWindow(wxObject *o, wxWindow *win);
 
 #endif // IN_CPROTO
 #endif // wxb_winh

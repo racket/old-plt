@@ -53,17 +53,17 @@ static int IsUnshown(void *data)
 //-----------------------------------------------------------------------------
 void wxDialogBox::Show(Bool show)
 {
-	cFrame->Show(show);
-	if (show) {
-  	  if (cFrame->IsModal()) {
-		wxWindow *oldm = wxGetModalWindow(ContextWindow());
-		wxPutModalWindow(ContextWindow(), cFrame);
-		
-		wxDispatchEventsUntil(IsUnshown, (void *)this);
-
-		wxPutModalWindow(ContextWindow(), oldm);
-	  }
+  cFrame->Show(show);
+  if (show) {
+    if (cFrame->IsModal()) {
+      wxWindow *oldm = wxGetModalWindow(ContextWindow());
+      wxPushModalWindow(ContextWindow(), cFrame);
+      
+      wxDispatchEventsUntil(IsUnshown, (void *)this);
+      
+      wxPopModalWindow(ContextWindow(), cFrame);
     }
+  }
 }
 
 Bool wxDialogBox::IsShown(void)

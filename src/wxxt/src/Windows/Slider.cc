@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Slider.cc,v 1.2 1998/02/05 23:00:32 mflatt Exp $
+ * $Id: Slider.cc,v 1.3 1998/08/08 03:33:06 mflatt Exp $
  *
  * Purpose: slider panel item
  *
@@ -117,6 +117,26 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label,
     AddEventHandlers();
 
     return TRUE;
+}
+
+void wxSlider::OnSize(int width, int height)
+{
+  float swidth, sheight; char tempstring[80];
+  Dimension length;
+  sprintf(tempstring, "-%d", max(abs(maximum), abs(minimum)));
+  GetTextExtent(tempstring, &swidth, &sheight);
+  swidth += 8; sheight += 8; // shadows and margin
+  if (style & wxVERTICAL) {
+    XtVaGetValues(X->handle, XtNheight, &length, NULL);
+    if (length > height) length = height;
+    XfwfResizeThumb(X->handle, 1.0, min(0.9,sheight/length));
+  } else {
+    XtVaGetValues(X->handle, XtNwidth, &length, NULL);
+    if (length > width) length = width;
+    XfwfResizeThumb(X->handle, min(0.9, swidth/length), 1.0);
+  }
+
+  wxItem::OnSize(width, height);
 }
 
 //-----------------------------------------------------------------------------

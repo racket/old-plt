@@ -354,6 +354,7 @@ Widget request,new;
 	XfwfMultiListWidget mlw;
 
 	mlw = (XfwfMultiListWidget)new;
+	MultiListFG(mlw) = BlackPixelOfScreen(XtScreen(new));
 	CreateNewGCs(mlw);
 	InitializeNewData(mlw);
 	MultiListLastRelease(mlw) = CurrentTime;

@@ -49,4 +49,6 @@
  get-text-from-user
  get-ps-setup-from-user
  play-sound
- get-display-size)
+ get-display-size
+ get-color-from-user
+ get-font-from-user)

@@ -24,7 +24,9 @@
  pasteboard-editor%
  play-sound
  display-size
- application-file-handler)
+ application-file-handler
+ get-color-from-user
+ get-font-from-user)
 
 
 

@@ -11,8 +11,6 @@
  buffer-data%
  buffer-data-class%
  buffer-data-class-list%
- can-get-user-color?
- can-get-user-font?
  canvas-dc%
  check-for-break
  clipboard%
@@ -41,8 +39,6 @@
  font%
  font-list%
  font-name-directory%
- get-color-from-user
- get-font-from-user
  get-font-list
  get-editor-print-margin
  get-resource

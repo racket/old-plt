@@ -733,6 +733,7 @@ class wxFontList *objscheme_unbundle_wxFontList(Scheme_Object *obj, const char *
 
 
 
+// @ "get" : void Get(ubyte*,ubyte*,ubyte*);
 
 
 class os_wxColour : public wxColour {
@@ -866,46 +867,6 @@ static Scheme_Object *os_wxColourOk(Scheme_Object *obj, int n,  Scheme_Object *p
 }
 
 #pragma argsused
-static Scheme_Object *os_wxColourGet(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  ubyte _x0;
-  ubyte* x0 = &_x0;
-  ubyte _x1;
-  ubyte* x1 = &_x1;
-  ubyte _x2;
-  ubyte* x2 = &_x2;
-
-  
-  if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("color%::get", "non-" XC_NULL_STR, (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "color%::get"), "color%::get");
-  if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("color%::get", "non-" XC_NULL_STR, (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "color%::get"), "color%::get");
-  if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("color%::get", "non-" XC_NULL_STR, (2 - 0), n, p);
-  else
-    *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "color%::get"), "color%::get");
-
-  
-  ((wxColour *)((Scheme_Class_Object *)obj)->primdata)->Get(x0, x1, x2);
-
-  
-  if (n > 0)
-    objscheme_set_box(p[0], scheme_make_integer(_x0));
-  if (n > 1)
-    objscheme_set_box(p[1], scheme_make_integer(_x1));
-  if (n > 2)
-    objscheme_set_box(p[2], scheme_make_integer(_x2));
-  
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxColouroperatorEQUAL(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -986,7 +947,7 @@ void objscheme_setup_wxColour(void *env)
 if (os_wxColour_class) {
     objscheme_add_global_class(os_wxColour_class, "color%", env);
 } else {
-  os_wxColour_class = objscheme_def_prim_class(env, "color%", "object%", os_wxColour_ConstructScheme, 8);
+  os_wxColour_class = objscheme_def_prim_class(env, "color%", "object%", os_wxColour_ConstructScheme, 7);
 
   scheme_add_method_w_arity(os_wxColour_class,"get-class-name",objscheme_classname_os_wxColour, 0, 0);
 
@@ -995,7 +956,6 @@ if (os_wxColour_class) {
  scheme_add_method_w_arity(os_wxColour_class, "red", os_wxColourRed, 0, 0);
  scheme_add_method_w_arity(os_wxColour_class, "set", os_wxColourSet, 3, 3);
  scheme_add_method_w_arity(os_wxColour_class, "ok?", os_wxColourOk, 0, 0);
- scheme_add_method_w_arity(os_wxColour_class, "get", os_wxColourGet, 3, 3);
  scheme_add_method_w_arity(os_wxColour_class, "=", os_wxColouroperatorEQUAL, 1, 1);
 
 

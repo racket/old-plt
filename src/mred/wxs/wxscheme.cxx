@@ -304,15 +304,6 @@ static Scheme_Object *wxSchemeRegisterCollectingBitmap(int n, Scheme_Object **a)
   return scheme_void;
 }
 
-static Scheme_Object *wxSchemeCanGetUserColour(int, Scheme_Object **)
-{
-#ifdef wx_x
-  return scheme_false;
-#else
-  return scheme_true;
-#endif
-}
-
 #ifdef wx_msw
 static BOOL do_choose_color(void *data, HWND parent)
 {
@@ -333,7 +324,10 @@ static Scheme_Object *wxSchemeGetColourFromUser(int, Scheme_Object **argv)
     s = objscheme_unbundle_string(argv[0], "get-color-from-user");
 
 #ifndef wx_x
-  wxColour *c = objscheme_unbundle_wxColour(argv[1], "get-color-from-user", 1);
+# ifdef wx_msw
+  wxWindow *parent = objscheme_unbundle_wxWindow(argv[1], "get-color-from-user", 1);
+# endif
+  wxColour *c = objscheme_unbundle_wxColour(argv[2], "get-color-from-user", 1);
 #endif
 
 #ifdef wx_x
@@ -356,7 +350,7 @@ static Scheme_Object *wxSchemeGetColourFromUser(int, Scheme_Object **argv)
     in.green = c->Green() << 8;
     in.blue = c->Blue() << 8;
   } else
-	in.red = in.green = in.blue = 0;
+    in.red = in.green = in.blue = 0;
 
   if (!GetColor(pt, buf, &in, &out))
     return scheme_false;
@@ -377,21 +371,12 @@ static Scheme_Object *wxSchemeGetColourFromUser(int, Scheme_Object **argv)
   cc->Flags = (c ? CC_RGBINIT : 0);
   cc->lpCustColors = userCustomColors;
 
-  if (!wxPrimitiveDialog(do_choose_color, cc, 0))
+  if (!wxPrimitiveDialog(do_choose_color, cc, parent ? parent->GetHWND() : 0))
     return scheme_false;
 
   c = new wxColour(GetRValue(cc->rgbResult), GetGValue(cc->rgbResult), GetBValue(cc->rgbResult));
 
   return objscheme_bundle_wxColour(c);
-#endif
-}
-
-static Scheme_Object *wxSchemeCanGetUserFont(int, Scheme_Object **)
-{
-#ifdef wx_msw
-  return scheme_true;
-#else
-  return scheme_false;
 #endif
 }
 
@@ -415,7 +400,8 @@ static Scheme_Object *wxSchemeGetFontFromUser(int, Scheme_Object **argv)
     prompt = objscheme_unbundle_string(argv[0], "get-font-from-user");
 
 #ifdef wx_msw
-  wxFont *f = objscheme_unbundle_wxFont(argv[1], "get-font-from-user", 1);
+  wxWindow *parent = objscheme_unbundle_wxWindow(argv[1], "get-color-from-user", 1);
+  wxFont *f = objscheme_unbundle_wxFont(argv[2], "get-font-from-user", 1);
 #endif
 
 #ifdef wx_x
@@ -509,7 +495,7 @@ static Scheme_Object *wxSchemeGetFontFromUser(int, Scheme_Object **argv)
   c->iPointSize = 10 * (f ? f->GetPointSize() : 10);
   c->Flags = CF_INITTOLOGFONTSTRUCT | CF_SCREENFONTS;
 
-  if (!wxPrimitiveDialog(do_choose_font, c, 0))
+  if (!wxPrimitiveDialog(do_choose_font, c, parent ? parent->GetHWND() : 0))
     return scheme_false;
   
   if (!lf->lfFaceName[0])
@@ -1219,12 +1205,13 @@ extern wxPrintSetupData *wxGetThePrintSetupData();
 
 Bool wxsPrinterDialog(wxWindow *parent)
 {
-  Scheme_Object *a[2], *r;
+  Scheme_Object *a[3], *r;
   
-  a[0] = !parent ? scheme_false : objscheme_bundle_wxWindow(parent);
-  a[1] = scheme_null;
+  a[0] = scheme_false;
+  a[1] = !parent ? scheme_false : objscheme_bundle_wxWindow(parent);
+  a[2] = scheme_null;
 
-  r = scheme_apply(get_ps_setup_from_user, 2, a);
+  r = scheme_apply(get_ps_setup_from_user, 3, a);
 
   if (SCHEME_FALSEP(r)) {
     return 0;
@@ -1262,27 +1249,16 @@ static void wxScheme_Install(Scheme_Env *env, void *global_env)
 						    1, 1),
 			   global_env);
   
-  scheme_install_xc_global("can-get-user-color?",
-			   scheme_make_prim_w_arity(wxSchemeCanGetUserColour,
-						    "can-get-user-color?",
-						    0, 0),
-			   global_env);
-  scheme_install_xc_global("can-get-user-font?",
-			   scheme_make_prim_w_arity(wxSchemeCanGetUserFont,
-						    "can-get-user-font?",
-						    0, 0),
-			   global_env);
-  
   scheme_install_xc_global("get-color-from-user",
 			   scheme_make_prim_w_arity(wxSchemeGetColourFromUser,
 						    "get-color-from-user",
-						    2, 2),
+						    0, 3),
 			   global_env);
   
   scheme_install_xc_global("get-font-from-user",
 			   scheme_make_prim_w_arity(wxSchemeGetFontFromUser,
 						    "get-font-from-user",
-						    2, 2),
+						    0, 3),
 			   global_env);
   
   scheme_install_xc_global("get-font-list",

@@ -82,7 +82,7 @@
 @CREATOR (string); <> color name
 
 @ "=" : wxColour% operator=(wxColour%);  : : /CHECKMUT[wxColour."color"."color%::="]
-@ "get" : void Get(ubyte*,ubyte*,ubyte*);
+// @ "get" : void Get(ubyte*,ubyte*,ubyte*);
 @ "ok?" : bool Ok();
 @ "set" : void Set(ubyte,ubyte,ubyte);   : : /CHECKMUT[wxColour."color"."color%::set"]
 

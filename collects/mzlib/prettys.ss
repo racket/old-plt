@@ -12,5 +12,6 @@
    pretty-print-display-string-handler
    pretty-print-print-line
    pretty-print-show-inexactness
-   pretty-print-exact-as-decimal))
+   pretty-print-exact-as-decimal
+   pretty-print-.-symbol-without-bars))
 

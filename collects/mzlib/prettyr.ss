@@ -74,6 +74,10 @@
    mzlib:pretty-print^
    (import)
    
+
+   (define pretty-print-.-symbol-without-bars
+     (make-parameter #f (lambda (x) (and x #t))))
+
    (define pretty-print-show-inexactness 
      (make-parameter #f
 		     (lambda (x) (and x #t))))
@@ -457,8 +461,6 @@
 			       number->decimal-string
 			       number->string)
 			   obj) col))
-		    ;; Let symbol get printed by default case to get proper quoting
-		    ;; ((symbol? obj)      (out (symbol->string obj) col))
 		    ((string? obj)      (if display?
 					    (out obj col)
 					    (let loop ((i 0) (j 0) (col (out "\"" col)))
@@ -490,6 +492,13 @@
 						   ((#\newline)  "newline")
 						   (else        (make-string 1 obj)))
 						 (out "#\\" col))))
+
+		    ;; Let symbol get printed by default case to get proper quoting
+		    ;; ((symbol? obj)      (out (symbol->string obj) col))
+
+		    [(and (pretty-print-.-symbol-without-bars)
+			  (eq? obj '|.|))
+		     (out "." col)]
 
 		    (else (out (let ([p (open-output-string)])
 				 ((if display? display write) obj p)

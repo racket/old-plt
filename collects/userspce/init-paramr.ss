@@ -787,6 +787,9 @@
       (mzlib:pretty-print:pretty-print-show-inexactness
        (setting-print-tagged-inexact-numbers setting))
       (mzlib:print-convert:show-sharing (setting-sharing-printing? setting))
+      (mzlib:pretty-print:pretty-print-.-symbol-without-bars
+       (and (zodiac-vocabulary? setting)
+	    (not (setting-allow-improper-lists? setting))))
 
       ;; use the fractional snips instead.
       (mzlib:print-convert:whole/fractional-exact-numbers #f)

@@ -1094,10 +1094,17 @@
 
 (define prefix-w/-:
   (lambda (prefix name)
-    (if (or (symbol? prefix)
-	  (not (= (string-length prefix) 0)))
-      (symbol-append prefix ":" name)
-      name)))
+    (cond
+      ((symbol? prefix)
+	(if (string=? "" (symbol->string prefix))
+	  name
+	  (symbol-append prefix ":" name)))
+      ((string? prefix)
+	(if (string=? "" prefix)
+	  name
+	  (symbol-append prefix ":" name)))
+      (else
+	(internal-error 'prefix-w/-: "Got ~s as prefix" prefix)))))
 
 (add-micro-form 'var cu/s-prim-export-vocab
   (let* ((kwd '(var))

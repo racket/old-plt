@@ -2093,7 +2093,7 @@ read_here_string(Scheme_Object *port, Scheme_Object *stxsrc,
 
   str = scheme_make_sized_char_string(s, len, 1);
 
-  if (str)
+  if (stxsrc)
     str = scheme_make_stx_w_offset(str, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
   
   return str;

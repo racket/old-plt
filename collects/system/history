@@ -1,7 +1,17 @@
 SYSTEM HISTORY
 --------------
 Version 45:
-
+- there are now two new methods of simple-menu-frame%'s, 
+  get-edit and get-canvas. These return the current "main" edit and canvas
+  in the frame. They should be used for saving, reverting, etc. If your
+  frame can have more than one "main" edit then override get-edit and 
+  get-canvas and have them return the current main canvas. Note that
+  this is different from active-canvas and active-edit. Those two functions
+  may return *any* visible edit in the frame, eg one of the searching edits
+  in the bottom of the frame, that appear while searching. 
+  active-edit and active-canvas should be used for things like pasting 
+  and copying, which should apply to all edits, not just "important" or "main"
+  ones.
 - mred:simple-frame-canvas% and mred:editor-canvas% are now obsolete.
   Instead there are now three important canvas classes in the system:
   mred:wrapping-canvas% : 
@@ -14,7 +24,6 @@ Version 45:
   mred:frame-title-canvas%
     updates the title of the frame when it recieves focus
     events. inherits from mred:wrapping-canvas%
-			
 - all of the "connection maintenence" ie edits that know which canvses
   they are in, frames that know which canvas is the most recently
   active canvas have been moved into into separate classes that only

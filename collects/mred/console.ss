@@ -772,6 +772,7 @@
 							 (port-display-handler port (handler-maker mzlib:pretty-print:pretty-display))))
 						     (list this-out this-err this-result)
 						     (list this-out-write this-err-write this-result-write)))])
+				    (doit)
 				    (with-parameterization user-parameterization doit))))])
 	  (sequence
 	    (mred:debug:printf 'super-init "before console-edit%")

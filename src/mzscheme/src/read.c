@@ -445,13 +445,23 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	return read_list(port, stxsrc, line, col, '}', 0, 0, ht CURRENTPROCARG);
     case '"': return read_string(port, stxsrc, line, col CURRENTPROCARG);
     case '\'': return read_quote(port, stxsrc, line, col, ht CURRENTPROCARG);
-    case '`': return read_quasiquote(port, stxsrc, line, col, ht CURRENTPROCARG);
-    case ',':
-      if (scheme_peekc(port) == '@') {
-	ch = scheme_getc(port);
-	return read_unquote_splicing(port, stxsrc, line, col, ht CURRENTPROCARG);
+    case '`': 
+      if (local_can_read_dot) {
+	scheme_read_err(port, line, col, 0, "read: illegal use of backquote");
+	return NULL;
       } else
-	return read_unquote(port, stxsrc, line, col, ht CURRENTPROCARG);
+	return read_quasiquote(port, stxsrc, line, col, ht CURRENTPROCARG);
+    case ',':
+      if (local_can_read_dot) {
+	scheme_read_err(port, line, col, 0, "read: illegal use of `,'");
+	return NULL;
+      } else {
+	if (scheme_peekc(port) == '@') {
+	  ch = scheme_getc(port);
+	  return read_unquote_splicing(port, stxsrc, line, col, ht CURRENTPROCARG);
+	} else
+	  return read_unquote(port, stxsrc, line, col, ht CURRENTPROCARG);
+      }
     case ';':
       while (((ch = scheme_getc(port)) != '\n') && (ch != '\r')) {
 	if (ch == EOF)

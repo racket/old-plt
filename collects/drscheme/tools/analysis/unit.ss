@@ -12,7 +12,7 @@
       (lambda (frame)
 	(mred:show-busy-cursor
 	 (lambda ()
-	   (require-library "mrspidey" "drspidey.ss")
+	   (require-library "drspidey.ss" "mrspidey")
 	   (set! invoke-spidey
 		 (invoke-open-unit/sig
 		  (global-defined-value 'tool@) 

@@ -52,6 +52,15 @@ Functions
 
 > xexpr->string : Xexpression -> String
        converts an Xexpression into a string representation
+       
+> eliminate-whitespace : (listof Symbol) (Bool -> Bool) -> Element -> Element
+       Some elements should not contain any text, only other tags, except they
+       often contain whitespace for formating purposes.  Given a list of tag names
+       and the identity function, eliminate-whitespace produces a function that
+       filters out pcdata consisting solely of whitespace from those elements and
+       raises and error if any non-whitespace text appears.  Passing in the function
+       called "not" instead of the identity function filters all elements which are not
+       named in the list.  Using void filters all elements regardless of the list.
 
 Parameters
 ==========

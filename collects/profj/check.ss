@@ -321,10 +321,8 @@
                               (create-field-env (cdr fields) env))))))
   
   ;get-static-env: env -> env
-  (define get-static-env
-    (lambda (env)
-      (list (car env)
-            (filter var-type-static? (cadr env)))))  
+  (define (get-static-env env)
+    (filter var-type-static? env))  
 
     
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -366,7 +364,8 @@
                                          (map check-sub-expr (class-alloc-args exp))
                                          (expr-src exp)
                                          type-recs
-                                         current-class)))
+                                         current-class
+                                         env)))
       ((array-alloc? exp)
        (set-expr-type exp
                       (check-array-alloc (array-alloc-name exp)
@@ -738,7 +737,7 @@
         (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type))))
       (when (memq 'abstract (class-record-modifiers class-record))
         (raise-error err-list class-alloc-abstract))
-      (when (class-record-class? class-record)
+      (unless (class-record-class? class-record)
         (raise-error err-list class-alloc-interface))
       (let* ((const (resolve-overloading methods 
                                          args 

@@ -196,8 +196,8 @@
                        (trim-string lexeme 1 1))))
      
      ;; 3.10.3
-     ("true" token-TRUE_LIT)
-     ("false" token-FALSE_LIT)
+     ("true" (token-TRUE_LIT))
+     ("false" (token-FALSE_LIT))
 
      ;; 3.10.2
      ((: FloatA FloatB FloatC)

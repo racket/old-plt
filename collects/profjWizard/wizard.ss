@@ -379,7 +379,7 @@
        (values error-message spec-error?))
      
      
-     #| run: |#
+     #| run: 
      (require (file "class.scm"))
      
      (provide x y)
@@ -389,6 +389,6 @@
      
      (define y (get-union-info))
      (if y (printf "~a~n" (apply make-union y)))
-     #| |#
+     |#
      
      )

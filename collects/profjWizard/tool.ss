@@ -48,8 +48,9 @@
                                               (apply make-what class-as-info))])
                       (send (get-edit-target-object) insert class-as-strn))))))
 
-          (make-menu-item% insert-java-class get-class-info make-class)
-          (make-menu-item% insert-java-union get-union-info make-union)))
+          ; (make-menu-item% insert-java-class get-class-info make-class)
+          ; (make-menu-item% insert-java-union get-union-info make-union)
+	  ))
       
       (drscheme:get/extend:extend-unit-frame java-class-wizard-mixin)
       

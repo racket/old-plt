@@ -1681,21 +1681,34 @@
 			     "bad syntax (illegal use of `.')"
 			     stx))
 			(if (stx-list? (syntax args))
-			    (syntax (let ([this obj])
-				      ((find-method this 'name) this . args)))
+			    (with-syntax ([call (syntax/loc stx
+						  ((find-method this 'name) this . args))])
+			      (syntax/loc stx (let ([this obj])
+						call)))
 			    (with-syntax ([args (flatten-args (syntax args))])
-			      (syntax (let ([this obj])
-					(apply (find-method this 'name) this . args)))))))])))])
+			      (with-syntax ([call (syntax/loc stx
+						    (apply (find-method this 'name) this . args))])
+				(syntax/loc stx (let ([this obj])
+						  call)))))))])))])
       (values (mk #f) (mk #t))))
   
   (define-syntax send*
     (lambda (stx)
       (syntax-case stx ()
-	[(_ obj (meth . args) ...)
-	 (syntax/loc stx
-		     (let ([o obj])
-		       (send o meth . args)
-		       ...))])))
+	[(_ obj s ...)
+	 (with-syntax ([sends (map (lambda (s)
+				     (syntax-case s ()
+				       [(meth . args)
+					(syntax/loc s (send o meth . args))]
+				       [_else (raise-syntax-error
+					       #f
+					       "bad method call"
+					       stx
+					       s)]))
+				   (syntax->list (syntax (s ...))))])
+	   (syntax/loc stx
+	     (let ([o obj])
+	       . sends)))])))
     
   (define (find-method/who who object name)
     (unless (object? object)
@@ -1779,12 +1792,16 @@
       (syntax-case stx ()
 	[(_ obj generic . args)
 	 (if (stx-list? (syntax args))
-	     (syntax (let ([this obj])
-		       (((generic-applicable generic) this) this . args)))
+	     (with-syntax ([call (syntax/loc stx
+				   (((generic-applicable generic) this) this . args))])
+	       (syntax/loc stx (let ([this obj])
+				 call)))
 	     (with-syntax ([args (flatten-args (syntax args))])
-	       (syntax (let ([this obj])
-			 (apply ((generic-applicable generic) this) this . args)))))])))
-
+	       (with-syntax ([call (syntax/loc stx
+				     (apply ((generic-applicable generic) this) this . args))])
+		 (syntax (let ([this obj])
+			   call)))))])))
+  
   (define (find-with-method object name)
     (find-method/who 'with-method object name))
 
@@ -1808,18 +1825,18 @@
 		     ids names)
 	   (with-syntax ([(method ...) (generate-temporaries ids)]
 			 [(method-obj ...) (generate-temporaries ids)])
-	     (syntax (let-values ([(method method-obj)
-				   (let ([obj obj-expr])
-				     (values (find-with-method obj 'name) obj))]
-				  ...)
-		       (letrec-syntaxes+values ([(id) (make-with-method-map
-						       (quote-syntax set!)
-						       (quote-syntax id)
-						       (quote-syntax method)
-						       (quote-syntax method-obj))]
-						...)
-					       ()
-			 body0 body1 ...)))))]
+	     (syntax/loc stx (let-values ([(method method-obj)
+					   (let ([obj obj-expr])
+					     (values (find-with-method obj 'name) obj))]
+					  ...)
+			       (letrec-syntaxes+values ([(id) (make-with-method-map
+							       (quote-syntax set!)
+							       (quote-syntax id)
+							       (quote-syntax method)
+							       (quote-syntax method-obj))]
+							...)
+				   ()
+				 body0 body1 ...)))))]
 	;; Error cases:
 	[(_ (clause ...) . body)
 	 (begin

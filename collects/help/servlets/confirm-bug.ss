@@ -10,6 +10,8 @@
 (unit/sig ()
   (import servlet^)
 
+  (adjust-timeout! +inf.0)
+
   (define bug-report-recipient "bugs")
   (define bug-email-server "bugs.plt-scheme.org")
   (define bug-email-server-port 1025)

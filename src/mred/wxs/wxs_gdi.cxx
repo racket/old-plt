@@ -3313,6 +3313,8 @@ static void *RgnBoundingBox(wxRegion *r)
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH_ARRAY(0, a, 4);
 
+  a[0] = a[1] = a[2] = a[3] = NULL;
+
   WITH_VAR_STACK(r->BoundingBox(&x, &y, &w, &h));
   a[0] = WITH_VAR_STACK(scheme_make_double(x));
   a[1] = WITH_VAR_STACK(scheme_make_double(y));
@@ -3361,7 +3363,7 @@ static void *RgnBoundingBox(wxRegion *r)
 
 static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 {
-  Scheme_Object *cdr = scheme_null, *obj;
+  Scheme_Object *cdr = scheme_null, *obj = NULL;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cdr);
 

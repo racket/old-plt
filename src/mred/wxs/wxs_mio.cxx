@@ -72,7 +72,7 @@ START_XFORM_SKIP;
 
 static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 {
-  Scheme_Object *cdr = scheme_null, *obj;
+  Scheme_Object *cdr = scheme_null, *obj = NULL;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cdr);
 
@@ -136,12 +136,11 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 static char *VectorToArray(char *r, Scheme_Object *vec, long *len)
 {
   long c, i;
-  Scheme_Object **a;
+  Scheme_Object **a = NULL;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH(0, r);
   VAR_STACK_PUSH(1, vec);
   VAR_STACK_PUSH(2, a);
-
 
   if (!SCHEME_VECTORP(vec))
     WITH_VAR_STACK(scheme_wrong_type(METHODNAME("editor-stream-in-base%","read"), 
@@ -165,7 +164,7 @@ static char *VectorToArray(char *r, Scheme_Object *vec, long *len)
 static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
 {
   long i;
-  Scheme_Object **a;
+  Scheme_Object **a = NULL;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH(0, r);
   VAR_STACK_PUSH(1, vec);

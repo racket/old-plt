@@ -237,6 +237,7 @@ static void NotifyCallbackToScheme(wxStyle *s, Scheme_Object *f)
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, f);
 
+  p[0] = NULL;
 
   p[0] = s ? WITH_VAR_STACK(objscheme_bundle_wxStyle(s)) : scheme_false;
 

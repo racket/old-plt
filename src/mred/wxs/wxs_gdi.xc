@@ -274,6 +274,8 @@ static void *RgnBoundingBox(wxRegion *r)
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH_ARRAY(0, a, 4);
 
+  a[0] = a[1] = a[2] = a[3] = NULL;
+
   WITH_VAR_STACK(r->BoundingBox(&x, &y, &w, &h));
   a[0] = WITH_VAR_STACK(scheme_make_double(x));
   a[1] = WITH_VAR_STACK(scheme_make_double(y));

@@ -44,17 +44,19 @@ void AddType(wxClipboardClient *c, char *s)
 
 Scheme_Object *GetTypes(wxClipboardClient *c)
 {
-  wxNode *n;
+  wxNode *n = NULL;
   Scheme_Object *first = scheme_null, *last = NULL;
-  SETUP_VAR_STACK(3);
+  Scheme_Object *p = NULL, *s = NULL;
+    
+  SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, n);
   VAR_STACK_PUSH(1, first);
   VAR_STACK_PUSH(2, last);
+  VAR_STACK_PUSH(3, p);
+  VAR_STACK_PUSH(4, s);
 
   n = WITH_VAR_STACK(c->formats->First());
   for (; n; n = WITH_VAR_STACK(n->Next())) {
-    Scheme_Object *p, *s;
-    
     s = WITH_VAR_STACK(scheme_make_string((char *)n->Data()));
     p = WITH_VAR_STACK(scheme_make_pair(s, scheme_null));
     if (last)

@@ -9,8 +9,8 @@
 
 static Scheme_Object* GetSelectionList(wxListBox *l)
 {
-  int c, *v;
-  Scheme_Object *cdr, *obj;;
+  int c, *v = NULL;
+  Scheme_Object *cdr = NULL, *obj = NULL;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH(0, l);
   VAR_STACK_PUSH(1, v);

@@ -114,7 +114,7 @@ static void CB_TOSCHEME(CB_REALCLASS *obj, wxCommandEvent *event);
 
 static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 {
-  Scheme_Object *cdr = scheme_null, *obj;
+  Scheme_Object *cdr = scheme_null, *obj = NULL;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cdr);
 
@@ -944,6 +944,9 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent *event)
   VAR_STACK_PUSH(1, event);
   VAR_STACK_PUSH(2, p[0]);
   VAR_STACK_PUSH(3, p[1]);
+
+  p[0] = NULL;
+  p[1] = NULL;
 
   obj = (Scheme_Class_Object *)realobj->__gc_external;
 

@@ -211,7 +211,7 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
 static Bool KMCallbackToScheme(UNKNOWN_OBJ media, wxEvent *event, 
 			       KeymapCallbackToSchemeRec *data)
 {
-  Scheme_Object *p[2], *obj;
+  Scheme_Object *p[2], *obj = NULL;
   SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, p[0]);
   VAR_STACK_PUSH(1, p[1]);
@@ -220,6 +220,7 @@ static Bool KMCallbackToScheme(UNKNOWN_OBJ media, wxEvent *event,
   VAR_STACK_PUSH(4, data);
 
   p[0] = (Scheme_Object *)media;
+  p[1] = NULL;
   p[1] = WITH_VAR_STACK(objscheme_bundle_wxEvent(event));
 
   obj = WITH_VAR_STACK(scheme_apply(kctsr(data), 2, p));
@@ -230,13 +231,17 @@ static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km,
 				    UNKNOWN_OBJ media, wxKeyEvent *event, 
 				    KeymapCallbackToSchemeRec *data)
 {
-  Scheme_Object *p[4], *obj;
+  Scheme_Object *p[4], *obj = NULL;
   SETUP_VAR_STACK(6);
   VAR_STACK_PUSH_ARRAY(0, p, 4);
   VAR_STACK_PUSH(3, obj);
   VAR_STACK_PUSH(4, event);
   VAR_STACK_PUSH(5, data);
   VAR_STACK_PUSH(6, km);
+
+  p[0] = NULL;
+  p[1] = NULL;
+  p[3] = NULL;
 
   p[2] = (Scheme_Object *)media;
 
@@ -252,13 +257,17 @@ static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km,
 				      UNKNOWN_OBJ media, wxMouseEvent *event, 
 				      KeymapCallbackToSchemeRec *data)
 {
-  Scheme_Object *p[3], *obj;
+  Scheme_Object *p[4], *obj = NULL;
   SETUP_VAR_STACK(6);
-  VAR_STACK_PUSH_ARRAY(0, p, 3);
+  VAR_STACK_PUSH_ARRAY(0, p, 4);
   VAR_STACK_PUSH(3, obj);
   VAR_STACK_PUSH(4, event);
   VAR_STACK_PUSH(5, data);
   VAR_STACK_PUSH(6, km);
+
+  p[0] = NULL;
+  p[1] = NULL;
+  p[3] = NULL;
 
   p[2] = (Scheme_Object *)media;
 

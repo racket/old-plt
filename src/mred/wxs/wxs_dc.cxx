@@ -127,7 +127,7 @@ static int unbundle_symset_fillKind(Scheme_Object *v, const char *where) {
 
 static wxColour* dcGetTextBackground(wxDC *dc)
 {
-  wxColour *c, *bg;
+  wxColour *c = NULL, *bg = NULL;
   SETUP_VAR_STACK(2);
   VAR_STACK_PUSH(0, dc);
   VAR_STACK_PUSH(1, c);
@@ -143,7 +143,7 @@ static wxColour* dcGetTextBackground(wxDC *dc)
 
 static wxColour* dcGetTextForeground(wxDC *dc)
 {
-  wxColour *c, *fg;
+  wxColour *c = NULL, *fg = NULL;
   SETUP_VAR_STACK(2);
   VAR_STACK_PUSH(0, dc);
   VAR_STACK_PUSH(1, c);
@@ -182,6 +182,8 @@ static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big, int offset)
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH_ARRAY(0, a, 4);
 
+  a[0] = a[1] = a[2] = a[3] = NULL;
+
   if (!dc->Ok()) {
     a[0] = a[1] = a[2] = a[3] = WITH_VAR_STACK(scheme_make_double(0.0));
   } else {
@@ -203,7 +205,9 @@ static void* MyGetSize(wxDC *dc)
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH_ARRAY(0, a, 2);
 
-  dc->GetSize(&w, &h);
+  a[0] = a[1] = NULL;
+
+  dc->GetSize(&w, &h); /* no GC possible */
 
   a[0] = WITH_VAR_STACK(scheme_make_double(w));
   a[1] = WITH_VAR_STACK(scheme_make_double(h));
@@ -218,7 +222,9 @@ static void* MyGetScale(wxDC *dc)
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH_ARRAY(0, a, 2);
 
-  dc->GetUserScale(&w, &h);
+  a[0] = a[1] = NULL;
+
+  dc->GetUserScale(&w, &h); /* no GC possible */
 
   a[0] = WITH_VAR_STACK(scheme_make_double(w));
   a[1] = WITH_VAR_STACK(scheme_make_double(h));
@@ -233,7 +239,9 @@ static void* MyGetOrigin(wxDC *dc)
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH_ARRAY(0, a, 2);
 
-  dc->GetDeviceOrigin(&w, &h);
+  a[0] = a[1] = NULL;
+
+  dc->GetDeviceOrigin(&w, &h); /* no GC possible */
 
   a[0] = WITH_VAR_STACK(scheme_make_double(w));
   a[1] = WITH_VAR_STACK(scheme_make_double(h));
@@ -292,7 +300,7 @@ extern wxPoint *objscheme_unbundle_wxPoint(Scheme_Object *, const char *, int);
 
 static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 {
-  Scheme_Object *cdr = scheme_null, *obj;
+  Scheme_Object *cdr = scheme_null, *obj = NULL;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cdr);
 

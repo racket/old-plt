@@ -70,7 +70,7 @@ START_XFORM_SKIP;
 
 static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 {
-  Scheme_Object *cdr = scheme_null, *obj;
+  Scheme_Object *cdr = scheme_null, *obj = NULL;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cdr);
 
@@ -772,7 +772,7 @@ static int unbundle_symset_Bias(Scheme_Object *v, const char *where) {
 
 static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 {
-  Scheme_Object *cdr = scheme_null, *obj;
+  Scheme_Object *cdr = scheme_null, *obj = NULL;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cdr);
 
@@ -859,7 +859,7 @@ static void WordbreakCallbackToScheme(wxMediaEdit *media,
 				      int reason,
 				      Scheme_Object *f)
 {
-    Scheme_Object *p[4], *s, *e;
+    Scheme_Object *p[4], *s = NULL, *e = NULL;
     SETUP_VAR_STACK(8);
     VAR_STACK_PUSH_ARRAY(0, p, 4);
     VAR_STACK_PUSH(3, s);
@@ -867,6 +867,8 @@ static void WordbreakCallbackToScheme(wxMediaEdit *media,
     VAR_STACK_PUSH(5, start);
     VAR_STACK_PUSH(6, end);
     VAR_STACK_PUSH(7, f);
+
+    p[0] = p[1] = p[2] = p[3] = NULL;
 
     p[0] = WITH_VAR_STACK(objscheme_bundle_wxMediaEdit(media));
     if (start)
@@ -896,6 +898,8 @@ static void ClickbackToScheme(wxMediaEdit *media,
   SETUP_VAR_STACK(4);
   VAR_STACK_PUSH_ARRAY(0, p, 3);
   VAR_STACK_PUSH(3, f);
+
+  p[0] = p[1] = p[2] = NULL;
 
   p[0] = WITH_VAR_STACK(objscheme_bundle_wxMediaEdit(media));
   p[1] = WITH_VAR_STACK(objscheme_bundle_integer(start));

@@ -20,12 +20,11 @@
 static char *VectorToArray(char *r, Scheme_Object *vec, long *len)
 {
   long c, i;
-  Scheme_Object **a;
+  Scheme_Object **a = NULL;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH(0, r);
   VAR_STACK_PUSH(1, vec);
   VAR_STACK_PUSH(2, a);
-
 
   if (!SCHEME_VECTORP(vec))
     WITH_VAR_STACK(scheme_wrong_type(METHODNAME("editor-stream-in-base%","read"), 
@@ -49,7 +48,7 @@ static char *VectorToArray(char *r, Scheme_Object *vec, long *len)
 static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
 {
   long i;
-  Scheme_Object **a;
+  Scheme_Object **a = NULL;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH(0, r);
   VAR_STACK_PUSH(1, vec);

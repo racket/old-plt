@@ -37,7 +37,7 @@
 
 static Scheme_Object *l_MAKE_VECTOR(l_TYPE l_POINT *f, int c)
 {
-  Scheme_Object *vec, *obj;
+  Scheme_Object *vec = NULL, *obj = NULL;
   SETUP_VAR_STACK(3);
   VAR_STACK_PUSH(0, vec);
   VAR_STACK_PUSH(1, obj);
@@ -57,7 +57,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, int *c)
 {
   int i = 0;
   long len;
-  l_TYPE l_POINT *f;
+  l_TYPE l_POINT *f = NULL;
 
   SETUP_VAR_STACK(2);
   VAR_STACK_PUSH(0, l);

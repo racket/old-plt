@@ -701,6 +701,9 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent *event)
   VAR_STACK_PUSH(2, p[0]);
   VAR_STACK_PUSH(3, p[1]);
 
+  p[0] = NULL;
+  p[1] = NULL;
+
   obj = (Scheme_Class_Object *)realobj->__gc_external;
 
   if (!obj) {

@@ -4,7 +4,7 @@
 
 (define doc (make-object mx-document% "MysTest" 230 250))
 
-(define ctrl (send doc insert-object "TestControl Class"))
+(define ctrl (send doc insert-object "TestControl Class" 95 95 'percent))
 
 (define (inv f . args) (apply com-invoke ctrl f args))
 

@@ -20,7 +20,8 @@
 
   (require (lib "string.ss")
            (lib "list.ss")
-	   (lib "thread.ss"))
+	   (lib "thread.ss")
+           "spell.ss")
 
   (require "sirmails.ss")
 
@@ -1824,12 +1825,14 @@
       (define (update-status-text)
         (let ([mem-str
                (if (and vsz rss)
-                   (format "(mz: ~a vsz: ~a rss: ~a)"
+                   (format "(mz: ~a vsz: ~a rss: ~a vocab: ~a)"
                            (format-number (quotient (current-memory-use) 1024)) 
                            vsz 
-                           rss)
-                   (format "(mz: ~a)"
-                           (format-number (quotient (current-memory-use) 1024))))])
+                           rss
+                           (word-count))
+                   (format "(mz: ~a vocab: ~a)"
+                           (format-number (quotient (current-memory-use) 1024))
+                           (word-count)))])
         (send main-frame set-status-text 
               (if (equal? last-status "")
                   mem-str

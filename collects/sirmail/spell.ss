@@ -9,7 +9,8 @@
 	   (lib "file.ss")
            (lib "process.ss"))
   
-  (provide/contract [activate-spelling ((is-a?/c color:text<%>) . -> . void?)])
+  (provide/contract [activate-spelling ((is-a?/c color:text<%>) . -> . void?)]
+                    [word-count (-> number?)])
   
   (define-lex-abbrevs
    (extended-alphabetic (:or alphabetic #\'))
@@ -39,6 +40,7 @@
             (|{| |}|))))
 
   (define ask-chan (make-channel))
+  (define word-count-chan (make-channel))
   
   ;; spelled-correctly? : string -> boolean
   (define (spelled-correctly? word)
@@ -49,24 +51,39 @@
           (channel-put ask-chan (list result failed word))
           result)))))
   
+  (define (word-count) 
+    (let ([c (make-channel)])
+      (channel-put word-count-chan c)
+      (channel-get c)))
+  
   (thread
    (lambda ()
      (let ([bad-dict (make-hash-table 'equal)])
        (let loop ([computed? #f]
                   [dict #f])
-         (let-values ([(answer-chan give-up-chan word) (apply values (channel-get ask-chan))])
-           (let ([computed-dict (if computed?
-                                    dict
-                                    (fetch-dictionary))])
-             (sync
-              (handle-evt
-               (channel-put-evt answer-chan (check-word computed-dict bad-dict word))
-               (lambda (done)
-                 (loop #t computed-dict)))
-              (handle-evt
-               give-up-chan
-               (lambda (done)
-                 (loop #t computed-dict))))))))))
+         (sync
+          (handle-evt
+           ask-chan
+           (lambda (lst)
+             (let-values ([(answer-chan give-up-chan word) (apply values lst)])
+               (let ([computed-dict (if computed?
+                                        dict
+                                        (fetch-dictionary))])
+                 (sync
+                  (handle-evt
+                   (channel-put-evt answer-chan (check-word computed-dict bad-dict word))
+                   (lambda (done)
+                     (loop #t computed-dict)))
+                  (handle-evt
+                   give-up-chan
+                   (lambda (done)
+                     (loop #t computed-dict))))))))
+          (handle-evt
+           word-count-chan
+           (lambda (ans)
+             (let ([count (if dict (hash-table-count dict) 0)])
+               (thread (lambda () (channel-put ans count))))
+             (loop computed? dict))))))))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;
@@ -143,7 +160,10 @@
   
   ;; fetch-dictionary : -> (union #f hash-table)
   ;; computes a dictionary, if any of the possible-file-names exist
-  (define (fetch-dictionary)
+  ;; for now, just return an empty table. Always use ispell
+  (define (fetch-dictionary) (make-hash-table 'equal))
+  
+  (define (fetch-dictionary/not-used)
     (let* ([possible-file-names '("/usr/share/dict/words"
                                   "/usr/share/dict/connectives"
                                   "/usr/share/dict/propernames"

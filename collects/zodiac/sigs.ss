@@ -101,7 +101,7 @@
     (struct inherit-binding ())   create-inherit-binding+marks
     (struct share-binding ())     create-share-binding+marks
     (struct rename-binding ())    create-rename-binding+marks
-    (struct class*-form (super-names super-exprs init-vars inst-clauses))
+    (struct class*-form (this super-names super-exprs init-vars inst-clauses))
     (struct public-clause (exports internals exprs))
     (struct private-clause (internals exprs))
     (struct local-clause (exports internals exprs))

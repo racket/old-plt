@@ -139,6 +139,7 @@ void wxInitialize(HINSTANCE hInstance)
     RegisterNoCursor(hInstance, "LISTBOX", "wxLISTBOX", L"LISTBOX", L"wxLISTBOX");
     RegisterNoCursor(hInstance, "EDIT", "wxEDIT", L"EDIT", L"wxEDIT");
     RegisterNoCursor(hInstance, "STATIC", "wxSTATIC", L"STATIC", L"wxSTATIC");
+    RegisterNoCursor(hInstance, "COMBOBOX", "wxCOMBOBOX", L"COMBOBOX", L"wxCOMBOBOX");
   }
 
   wxREGGLOB(wxWinHandleList);

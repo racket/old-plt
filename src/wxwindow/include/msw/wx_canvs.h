@@ -60,6 +60,8 @@ class wxCanvas: public wxbCanvas
   virtual void SetCanvasBackground(wxColor *c);
   wxColor *GetCanvasBackground();
 
+  virtual Bool Show(Bool show);
+
  private:
   wxColour *bgcol;
 };

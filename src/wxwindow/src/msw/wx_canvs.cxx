@@ -14,6 +14,8 @@
 
 #include <math.h>
 
+#define COMBO_WIDTH 16
+
 extern char wxCanvasClassName[];
 extern void RegisterGDIObject(HANDLE x);
 
@@ -67,6 +69,15 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
     msflags |= WS_VSCROLL;
   msflags |= WS_CLIPSIBLINGS;
 
+  if (style & wxCOMBO_SIDE) {
+    comboWnd = CreateWindowExW(cparent, L"wxCOMBOBOX", NULL,
+			       CBS_NOINTEGRALHEIGHT | WS_CHILD 
+			       | WS_GROUP | WS_CLIPSIBLINGS
+			       | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
+			       0, 0, 0, 0, cparent->handle, (HMENU)nid,
+			       wxhInstance, NULL);
+  }
+
   wnd = new wxCanvasWnd (cparent, this, 
 			 wxNEG_POS_IS_DEFAULT(x), wxNEG_POS_IS_DEFAULT(y), 
 			 width, height, msflags, exflags);
@@ -103,6 +114,10 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
 
 wxCanvas::~wxCanvas (void)
 {
+  if (comboWnd) {
+    ::DestroyWindow(comboWnd);    
+  }
+
   if (wx_dc) {
     wxWnd *wnd = (wxWnd *)handle;
     HDC dc;
@@ -132,9 +147,20 @@ void wxCanvas::SetSize (int x, int y, int w, int h, int sizeFlags)
     h = hh;
 
   if (wnd) {
-    MoveWindow (wnd->handle, x, y, w, h, TRUE);
-    OnSize (w, h);
+    MoveWindow(wnd->handle, x, y, w - (comboWnd ? COMBO_WIDTH : 0), h, TRUE);
+    if (comboWnd)
+      MoveWindow(comboWnd, x, y, w, h, TRUE);
+    OnSize(w, h);
   }
+}
+
+Bool wxCanvas::Show(Bool show)
+{
+  if (comboWnd) {
+    ::ShowWindow(comboWnd, show ? SW_SHOW : SW_HIDE);
+  }
+    
+  return wxbCanvas::Show(show);
 }
 
 wxWindow *wxCanvas::FindFocusWindow()

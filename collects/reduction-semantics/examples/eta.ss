@@ -7,7 +7,7 @@
   
   (define lang
     (language (e (e e)
-                 variable
+                 x
                  (+ e e)
                  v)
               (c (v c)
@@ -15,8 +15,9 @@
                  (+ v c)
                  (+ c e)
                  hole)
-              (v (lambda (variable) e)
-                 number)))
+              (v (lambda (x) e)
+                 number)
+              (x (variable-except lambda +))))
   
   (define reductions
     (list

@@ -52,6 +52,7 @@ language, used in various ways:
           | number
           | string
           | variable
+          | (variable-except <symbol> ...)
           | hole
           | <symbol>
           | (name <symbol> <pattern>)
@@ -62,13 +63,19 @@ language, used in various ways:
           | (pattern ...)
           | <scheme-constant>
 
-The patterns match sexpressions. The first pattern matches
-any sepxression. The second pattern matches any number. The
-third pattern matches any string. The `variable' pattern
-matches any symbol. The <symbol> pattern stands for a
-literal symbol that must match exactly (except, of course,
-for any, number, string, hole, or variable which are
-reserved). 
+The patterns match sexpressions. The _any_ pattern matches
+any sepxression. The _number_ pattern matches any number. The
+_string_ pattern matches any string. 
+
+The _variable_ pattern matches any symbol. The
+_variable-except_ pattern matches any variable except those
+listed in its argument. This is useful for ensuring that
+keywords in the language are not accidentally captured by
+variables.
+
+The _<symbol>_ pattern stands for a literal symbol that must
+match exactly (except, of course, for any, number, string,
+hole, or variable which are reserved).
 
 _name_: The pattern:
 

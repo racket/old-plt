@@ -181,6 +181,7 @@ before the pattern compiler is invoked.
            [`number (lambda (l) 'number)]
            [`string (lambda (l) 'string)]
            [`variable (lambda (l) 'variable)] 
+           [`(variable-except ,@vars) (lambda (l) pattern)]
            [`hole  (lambda (l) 'hole)]
            [(? string?) (lambda (l) pattern)]
            [(? symbol?) 
@@ -291,7 +292,12 @@ before the pattern compiler is invoked.
               (and (string? exp) (list (make-bindings null))))]
            [`variable 
             (lambda (exp hole-path hole-name)
-              (and (symbol? exp) (list (make-bindings null))))] 
+              (and (symbol? exp) (list (make-bindings null))))]
+           [`(variable-except ,@vars)
+            (lambda (exp hole-path hole-name)
+              (and (symbol? exp)
+                   (not (memq exp vars))
+                   (list (make-bindings null))))]
            [`hole 
             (lambda (exp hole-path hole-name)
               (list 
@@ -585,6 +591,7 @@ before the pattern compiler is invoked.
         [`any ribs]
         [`number ribs] 
         [`variable ribs] 
+        [`(variable-except ,@vars) ribs]
 
         [`hole (error 'match-pattern "cannot have a hole inside an ellipses")]
 
@@ -660,14 +667,6 @@ before the pattern compiler is invoked.
                     (loop (cdr sexp) (cdr path)))]))])))
 
   (define (test)
-    (define (mk-hasheq assoc-list)
-      (let ([ht (make-hash-table)])
-	(for-each
-         (lambda (a)
-	    (hash-table-put! ht (car a) (cdr a)))
-	  ht)
-	ht))
-
     (test-empty 'any 1 (list (make-bindings null)))
     (test-empty 'any 'true (list (make-bindings null)))
     (test-empty 'any "a" (list (make-bindings null)))
@@ -683,6 +682,9 @@ before the pattern compiler is invoked.
     (test-empty 'string 1 #f)
     (test-empty 'variable 'x (list (make-bindings null)))
     (test-empty 'variable 1 #f)
+    (test-empty '(variable-except x) 1 #f)
+    (test-empty '(variable-except x) 'x #f)
+    (test-empty '(variable-except x) 'y (list (make-bindings null)))
     (test-empty 'hole 1 (list (make-bindings (list (make-rib 'hole (make-hole-binding 1 '()))))))
     (test-empty '(name x number) 1 (list (make-bindings (list (make-rib 'x 1)))))
     
@@ -919,7 +921,17 @@ before the pattern compiler is invoked.
               (list (make-bindings (list (make-rib 'hole (make-hole-binding (list '+ 1 2) (list 'cdr 'car)))))))
     
     (unless failure?
-      (fprintf (current-error-port) "All tests passed.\n")))
+      (fprintf (current-error-port) "All ~a tests passed.\n" test-count)))
+
+  ;; mk-hasheq : (listof (cons sym any)) -> hash-table
+  ;; builds a hash table that has the bindings in assoc-list
+  (define (mk-hasheq assoc-list)
+    (let ([ht (make-hash-table)])
+      (for-each
+       (lambda (a)
+         (hash-table-put! ht (car a) (cdr a)))
+       assoc-list)
+      ht))
   
   ;; test-empty : sexp[pattern] sexp[term] answer -> void
   ;; returns #t if pat matching exp with the empty language produces ans.
@@ -959,7 +971,9 @@ before the pattern compiler is invoked.
   ;; compares ans with expected. If failure,
   ;; prints info about the test and sets `failure?' to #t.
   (define failure? #f)
+  (define test-count 0)
   (define (run-test symbolic ans expected)
+    (set! test-count (+ test-count 1))
     (cond
       [(equal/bindings? ans expected)
        '(printf "passed: ~s\n" symbolic)]

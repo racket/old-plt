@@ -460,11 +460,9 @@
 			       [else (cons (car v) (loop (cdr v)))]))])
 		       (if (null? v)
 			   (void)
-			   (begin (display-result (car v))
-				  (for-each (lambda (x)
-					      (newline this-result)
-					      (display-result x))
-					    (cdr v)))))))))])
+			   (for-each (lambda (x)
+				       (display-result x))
+				     v)))))))])
 	    
 	    (private
 	      [only-spaces-after

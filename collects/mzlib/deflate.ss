@@ -2271,10 +2271,10 @@
 	 (dynamic-wind
 	  void
 	  (lambda ()
-	    (let ([name (with-handlers ([not-break-exn? (lambda (x) #f)])
+	    (let ([name (with-handlers ([exn:fail? (lambda (x) #f)])
 			  (let-values ([(base name dir?) (split-path infile)])
 			    name))]
-		  [timestamp (with-handlers ([not-break-exn? (lambda (x) 0)])
+		  [timestamp (with-handlers ([exn:fail:filesystem? (lambda (x) 0)])
 			       (file-or-directory-modify-seconds infile))])
 	      (gzip-through-ports i o name timestamp)))
 	  (lambda () (close-output-port o)))))

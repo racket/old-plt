@@ -42,7 +42,7 @@
 		orig-stx))
 
 	     ;; Open the included file
-	     (let ([p (with-handlers ([not-break-exn?
+	     (let ([p (with-handlers ([exn:fail?
 				       (lambda (exn)
 					 (raise-syntax-error
 					  #f
@@ -58,7 +58,7 @@
 	       ;; Read expressions from file
 	       (let ([content
 		      (let loop ()
-			(let ([r (with-handlers ([not-break-exn?
+			(let ([r (with-handlers ([exn:fail?
 						  (lambda (exn)
 						    (close-input-port p)
 						    (raise-syntax-error

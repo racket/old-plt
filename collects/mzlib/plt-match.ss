@@ -165,7 +165,7 @@
                 " given " (format "~s" regex) "; "
                 "other argument was " (format "~s" str)))))
 
-  (define-struct (exn:misc:match exn:misc) (value))
+  (define-struct (exn:misc:match exn:fail) (value))
   
   (define match:error
     (case-lambda

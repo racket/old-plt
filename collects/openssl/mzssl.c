@@ -442,7 +442,8 @@ long ssl_do_get_string(Scheme_Input_Port *port, char *buffer, long offset,
   return bytes_read;
 
  read_error:
-  scheme_raise_exn(MZEXN_I_O_PORT_READ, port, "ssl-read: error reading (%Z)",
+  scheme_raise_exn(MZEXN_FAIL_NETWORK, 
+		   "ssl-read: error reading (%Z)",
 		   err, errstr);
   return 0; /* needless, but it makes GCC happy */
 }
@@ -647,7 +648,8 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
     return 0;
 
  write_error:
-   scheme_raise_exn(MZEXN_I_O_PORT_WRITE, port, "ssl-write: error writing (%Z)",
+   scheme_raise_exn(MZEXN_FAIL_NETWORK, 
+		    "ssl-write: error writing (%Z)",
 		   err, errstr);
   return 0; /* needless, but it makes GCC happy */
 }
@@ -736,7 +738,7 @@ void sslout_close(Scheme_Output_Port *port)
 	  else {
 	    const char *errstr;
 	    err = get_ssl_error_msg(err, &errstr, status, 1);
-	    scheme_raise_exn(MZEXN_I_O_PORT_WRITE, port, 
+	    scheme_raise_exn(MZEXN_FAIL_NETWORK, 
 			     "ssl-close: error shutting down output (%Z)",
 			     err, errstr);
 	    return;
@@ -965,12 +967,12 @@ static Scheme_Object *finish_ssl(const char *name, int sock, SSL_METHOD *meth,
   }
 
   if (do_accept)
-    scheme_raise_exn(MZEXN_I_O_TCP, 
+    scheme_raise_exn(MZEXN_FAIL_NETWORK, 
 		     "%s: accepted connection failed (%Z)",
 		     name,
 		     err, errstr);
   else
-    scheme_raise_exn(MZEXN_I_O_TCP, 
+    scheme_raise_exn(MZEXN_FAIL_NETWORK, 
 		     "%s: connection to %s, port %d failed (%Z)",
 		     name,
 		     address, port, err, errstr);
@@ -994,7 +996,7 @@ static void TCP_INIT(char *name)
   } else
     return;
   
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 		   "%s: not supported on this machine"
 		   " (no winsock driver)",
 		   name);
@@ -1103,7 +1105,7 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
 
  clean_up_and_die:
   if (sock != INVALID_SOCKET) closesocket(sock);
-  scheme_raise_exn(MZEXN_I_O_TCP, 
+  scheme_raise_exn(MZEXN_FAIL_NETWORK, 
 		   "ssl-connect: connection to %T, port %d failed (%Z)",
 		   argv[0], SCHEME_INT_VAL(argv[1]), 
 		   err, errstr);
@@ -1172,7 +1174,7 @@ ssl_listen(int argc, Scheme_Object *argv[])
     if(!ctx) { 
       const char *errstr;
       errid = get_ssl_error_msg(ERR_get_error(), &errstr, 0, 0);
-      scheme_raise_exn(MZEXN_I_O_TCP,
+      scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		       "sll-listen: context creation failed for listen on %d (%Z)",
 		       origid, errid, errstr);
       return scheme_void;
@@ -1232,7 +1234,7 @@ ssl_listen(int argc, Scheme_Object *argv[])
     } else {
       if (ctx && meth)
 	SSL_CTX_free(ctx);
-      scheme_raise_exn(MZEXN_I_O_TCP,
+      scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		       "ssl-listen: host not found: %s",
 		       address);
       return NULL;
@@ -1247,7 +1249,7 @@ ssl_listen(int argc, Scheme_Object *argv[])
   if (ctx && meth)
     SSL_CTX_free(ctx);
       
-  scheme_raise_exn(MZEXN_I_O_TCP,
+  scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		   "sll-listen: listen on %d failed (%E)",
 		   origid, errid);
 
@@ -1284,7 +1286,7 @@ ssl_close(int argc, Scheme_Object *argv[])
   was_closed = stop_listener(argv[0]);
 
   if (was_closed) {
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "ssl-close: listener was already closed");
     return NULL;
   }
@@ -1369,8 +1371,7 @@ ctx_load_file(const char *name, int mode, int client_ok, int argc, Scheme_Object
     int errid;
     const char *errstr;
     errid = get_ssl_error_msg(ERR_get_error(), &errstr, 0, 0);
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		     argv[1], scheme_false,
+    scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
 		     "%s: %s load failed from: %s (%Z)",
 		     name, what, filename, errid, errstr);
     return NULL;
@@ -1448,7 +1449,7 @@ ssl_mk_ctx(int argc, Scheme_Object *argv[])
     const char *errstr;
     int errid;
     errid = get_ssl_error_msg(ERR_get_error(), &errstr, 0, 0);
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "sll-make-context: context creation failed (%Z)",
 		     errid, errstr);
     return scheme_void;
@@ -1508,7 +1509,7 @@ ssl_accept(int argc, Scheme_Object *argv[])
   }
 
   if (was_closed) {
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "ssl-accept: listener is closed");
     return NULL;
   }
@@ -1539,7 +1540,7 @@ ssl_accept(int argc, Scheme_Object *argv[])
 
 
   errid = SOCK_ERRNO();
-  scheme_raise_exn(MZEXN_I_O_TCP,
+  scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		   "ssl-accept: accept from listener failed (%E)", errid);
 
   return NULL;
@@ -1588,18 +1589,18 @@ static Scheme_Object *ssl_addresses(int argc, Scheme_Object *argv[])
     scheme_wrong_type("ssl-addresses", "ssl-port", 0, argc, argv);
 
   if (closed)
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_FAIL,
 		     "ssl-addresses: port is closed");
 
   l = sizeof(tcp_here_addr);
   if (getsockname(fd, (struct sockaddr *)&tcp_here_addr, &l)) {
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "ssl-addresses: could not get local address (%e)",
 		     SOCK_ERRNO());
   }
   l = sizeof(tcp_there_addr);
   if (getpeername(fd, (struct sockaddr *)&tcp_there_addr, &l)) {
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_FAIL_NETWORK,
 		     "ssl-addresses: could not get peer address (%e)",
 		     SOCK_ERRNO());
   }

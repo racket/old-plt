@@ -437,33 +437,37 @@
 	     (try 'ico #".ico")
 	     (try 'independent? #".lch")
 	     (let ([l (try 'creator #".creator")])
-	       (with-handlers ([not-break-exn? (lambda (x) null)])
-		 (with-input-from-file (cdar l)
-		   (lambda () 
-		     (let ([s (read-string 4)])
-		       (if s
-			   (list (cons (caar l) s))
-			   null))))))
+	       (if (null? l)
+		   l
+		   (with-handlers ([exn:fail:filesystem? (lambda (x) null)])
+		     (with-input-from-file (cdar l)
+		       (lambda () 
+			 (let ([s (read-string 4)])
+			   (if s
+			       (list (cons (caar l) s))
+			       null)))))))
 	     (let ([l (try 'file-types #".filetypes")])
-	       (with-handlers ([not-break-exn? (lambda (x) null)])
-		 (with-input-from-file (cdar l)
-		   (lambda () 
-		     (let ([d (read)])
-		       (let-values ([(local-dir base dir?) (split-path aux-root)])
-			 (let ([icon-files
-				(apply
-				 append
-				 (map (lambda (spec)
-					(let ([m (assoc "CFBundleTypeIconFile" spec)])
-					  (if m
-					      (list (build-path 
-						     (path->complete-path local-dir)
-						     (format "~a.icns" (cadr m))))
-					      null)))
-				      d))])
-			   (list
-			    (cons 'file-types d)
-			    (cons 'resource-files icon-files)))))))))))))
+	       (if (null? l)
+		   l
+		   (with-handlers ([exn:fail:filesystem? (lambda (x) null)])
+		     (with-input-from-file (cdar l)
+		       (lambda () 
+			 (let ([d (read)])
+			   (let-values ([(local-dir base dir?) (split-path aux-root)])
+			     (let ([icon-files
+				    (apply
+				     append
+				     (map (lambda (spec)
+					    (let ([m (assoc "CFBundleTypeIconFile" spec)])
+					      (if m
+						  (list (build-path 
+							 (path->complete-path local-dir)
+							 (format "~a.icns" (cadr m))))
+						  null)))
+					  d))])
+			       (list
+				(cons 'file-types d)
+				(cons 'resource-files icon-files))))))))))))))
 
       (define (make-mred-program-launcher file collection dest)
 	(make-mred-launcher (list "-mqvL" file collection "--") 

@@ -138,7 +138,7 @@
   (require (lib "etc.ss")
            (lib "list.ss"))
 
-  (define-struct (exn:misc:match exn:misc) (value))
+  (define-struct (exn:misc:match exn:fail) (value))
 
   (define match:error
     (case-lambda

@@ -132,7 +132,7 @@
 						   (format " because (reason: ~a date: ~a)" 
 							   reason date))])
 						""))
-				    (with-handlers ([not-break-exn?
+				    (with-handlers ([exn:fail?
 						     (lambda (exn)
 						       (raise (make-exn:make 
 							       (format "make: Failed to make ~a; ~a"

@@ -71,7 +71,7 @@
   ;; Reads the Adobe char name -> Unicode table
   (define (read-names! gl.txt long?)
     (let ([ht (make-hash-table 'equal)])
-      (with-handlers ([not-break-exn? report-exn])
+      (with-handlers ([exn:fail? report-exn])
 	(call-with-input-file* 
 	 (find-path (current-ps-afm-file-paths) gl.txt)
 	 (lambda (i)
@@ -121,7 +121,7 @@
 							(lambda () #f))))
 		     (lambda (c cns)
 		       (hash-table-put! ht cns c)))])
-      (with-handlers ([not-break-exn? report-exn])
+      (with-handlers ([exn:fail? report-exn])
 	(call-with-input-file* 
 	 file
 	 (lambda (i)

@@ -305,7 +305,7 @@
       [(_ path)
        (let ([pathname (resolve-path-spec #'path #'path stx #'build-path)])
          (let ([str
-                (with-handlers ([not-break-exn?
+                (with-handlers ([exn:fail?
                                  (lambda (x)
                                    (raise-syntax-error
                                     #f

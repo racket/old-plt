@@ -29,7 +29,7 @@
 	 void
 	 (lambda ()
 	   (port-count-lines! (current-input-port))
-	   (with-handlers ([not-break-exn?
+	   (with-handlers ([void
 			    (lambda (exn)
 			      (with-handlers ([void void])
 				(delete-file dest))

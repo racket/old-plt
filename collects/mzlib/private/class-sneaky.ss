@@ -2520,9 +2520,10 @@
   (define (obj-error where . msg)
     (raise
      (make-exn:object
-      (string-append
-       (format "~a: " where)
-       (apply format msg))
+      (string->immutable-string
+       (string-append
+	(format "~a: " where)
+	(apply format msg)))
       (current-continuation-marks))))
 
   (define (for-class name)

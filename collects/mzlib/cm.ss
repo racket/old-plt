@@ -67,7 +67,7 @@
     (close-output-port (open-output-file path 'append)))
 
   (define (compilation-failure path zo-name date-path reason)
-    (with-handlers ((not-break-exn? void))
+    (with-handlers ((exn:fail:filesystem? void))
       (delete-file zo-name))
     (let ([fail-path (bytes->path
 		      (bytes-append (get-compilation-path path) #".fail"))])
@@ -105,7 +105,7 @@
               (if (not (directory-exists? code-dir))
                 (make-directory code-dir))
               (let ((out (open-output-file zo-name 'replace)))
-                (with-handlers ((exn:application:type?
+                (with-handlers ((exn:fail?
                                  (lambda (ex) (compilation-failure path zo-name #f (exn-message ex)))))
                   (dynamic-wind
                     void
@@ -157,7 +157,7 @@
      [() -inf.0]
      [(f . l)
       (if f
-	  (with-handlers ([exn:i/o:filesystem?
+	  (with-handlers ([exn:fail:filesystem?
 			   (lambda (ex)
 			     (apply first-date l))])
 	    (file-or-directory-modify-seconds (f)))
@@ -173,7 +173,7 @@
            ((trace) (format "~achecking: ~a" (indent) path))
            (let ((path-zo-time (get-compiled-time path #f))
                  (path-time 
-                  (with-handlers ((exn:i/o:filesystem? 
+                  (with-handlers ((exn:fail:filesystem? 
                                    (lambda (ex)
                                      ((trace) (format "~a~a does not exist" (indent) path))
                                      #f)))
@@ -186,7 +186,7 @@
 		   ((trace) (format "~anewer src..." (indent)))
 		   (compile-zo path))
                   (else
-                   (let ((deps (with-handlers ((exn:i/o:filesystem? (lambda (ex) (list (version)))))
+                   (let ((deps (with-handlers ((exn:fail:filesystem? (lambda (ex) (list (version)))))
                                  (call-with-input-file (bytes->path 
 							(bytes-append (get-compilation-path path) #".dep"))
                                    read))))
@@ -202,7 +202,7 @@
 					   [(bytes? d) (compile-root (bytes->path d) up-to-date)]
 					   [(path? d) (compile-root d up-to-date)]
 					   [(and (pair? d) (eq? (car d) 'ext))
-					    (with-handlers ((exn:i/o:filesystem?
+					    (with-handlers ((exn:fail:filesystem?
 							     (lambda (ex) +inf.0)))
 					      (file-or-directory-modify-seconds (cdr d)))]
 					   [else -inf.0])])

@@ -60,7 +60,7 @@
 				       ;; Use simplify-path to get rid of ..s, which can
 				       ;;  allow the path to grow indefinitely in a cycle.
 				       ;; An exception must mean a cycle of links.
-				       (with-handlers ([not-break-exn?
+				       (with-handlers ([exn:fail:filesystem?
 							(lambda (x)
 							  (error 'normalize-path "circular reference at ~s" path))])
 					 (simplify-path path))])
@@ -230,7 +230,7 @@
   (define make-temporary-file
     (case-lambda
      [(template copy-from base-dir)
-      (with-handlers ([not-break-exn?
+      (with-handlers ([exn:fail:contract?
 		       (lambda (x)
 			 (raise-type-error 'make-temporary-file
 					   "format string for 1 argument"
@@ -247,14 +247,10 @@
 			 [base-dir (build-path base-dir n)]
 			 [(relative-path? n) (build-path tmpdir n)]
 			 [else n]))])
-	    (with-handlers ([exn:i/o:filesystem? (lambda (x) 
-						   (if (eq? (exn:i/o:filesystem-detail x)
-							    'already-exists)
-						       ;; try again with a new name
-						       (loop (- s (random 10))
-							     (+ ms (random 10)))
-						       ;; It's something else; give up
-						       (raise x)))])
+	    (with-handlers ([exn:fail:filesystem:exists? (lambda (x) 
+							   ;; try again with a new name
+							   (loop (- s (random 10))
+								 (+ ms (random 10))))])
 	      (if copy-from
 		  (copy-file copy-from name)
 		  (close-output-port (open-output-file name)))
@@ -267,7 +263,7 @@
     (case-lambda 
      [(name) (find-library name "mzlib")]
      [(name collection . cp)
-      (let ([dir (with-handlers ([not-break-exn? (lambda (exn) #f)])
+      (let ([dir (with-handlers ([exn:fail:filesystem? (lambda (exn) #f)])
 		   (apply collection-path collection cp))])
 	(if dir
 	    (let ([file (build-path dir name)])
@@ -300,7 +296,7 @@
 		  (not filename)
 		  (weak-box-value pref-box))])
       (or f
-	  (let ([f (let ([v (with-handlers ([not-break-exn? (lambda (x) null)])
+	  (let ([f (let ([v (with-handlers ([exn:fail:filesystem? (lambda (x) null)])
 			      (let ([pref-file (or filename
 						   (let ([f (find-system-path 'pref-file)])
 						     (if (file-exists? f)
@@ -388,9 +384,7 @@
 						    #"LOCK"
 						    (path->bytes name))))
 				  dir))))])
-	(with-handlers ([(lambda (x)
-			   (and (exn:i/o:filesystem? x)
-				(eq? (exn:i/o:filesystem-detail x) 'already-exists)))
+	(with-handlers ([exn:fail:filesystem:exists?
 			 (lambda (x)
 			   (lock-there lock-file))])
 	  ;; Grab lock:

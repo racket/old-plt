@@ -61,12 +61,10 @@
 	   (let ([num (length new-state)])
 	     (unless (procedure-arity-includes? f num) 
 		     (raise 
-		      (make-exn:application:arity
+		      (make-exn:fail:contract:arity
 		       (format "<procedure-from-consumer-thread>: consumer procedure arity is ~e; provided ~s argument~a"
 			       (procedure-arity f) num (if (= 1 num) "" "s"))
-		       (current-continuation-marks)
-		       num
-		       (procedure-arity f)))))
+		       (current-continuation-marks)))))
 	   (semaphore-wait protect)
 	   (set! front-state (cons new-state front-state))
 	   (semaphore-post protect)
@@ -165,7 +163,7 @@
 	    (lambda ()
 	      ;; loop to handle connections
 	      (let loop ()
-		(with-handlers ([not-break-exn? handle-exn])
+		(with-handlers ([exn:fail:network? handle-exn])
 		  ;; Make a custodian for the next session:
 		  (let ([c (make-custodian)])
 		    (parameterize ([current-custodian c])

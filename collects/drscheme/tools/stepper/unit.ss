@@ -3,38 +3,32 @@
           mzlib:core^
           [fw : framework^]
           mzlib:print-convert^
-          (drscheme : drscheme:export^)
-          zodiac:system^)
+          [drscheme : drscheme:export^]
+          [z : zodiac:system^])
   
-  (define invoke-stepper
-    (lambda (frame)
-      (fw:gui-utils:show-busy-cursor
-       (lambda ()
-         (let* ([e (mred:make-eventspace)]
-                [f (parameterize ([mred:current-eventspace e])
-                     (mred:begin-busy-cursor)
-                     (make-object mred:frame% "The Foot"))]
-                [p (make-object mred:horizontal-panel% f)]
-                [m (make-object mred:message% "Please wait, loading the foot." p)]
-                [spacer-pane (make-object mred:grow-box-spacer-pane% p)])
-           (send p stretchable-height #f)
-           (send p stretchable-width #f)
-           (send f show #t)
-           (parameterize ([mred:current-eventspace e])
-             (mred:flush-display) (mred:yield))
-           (set! invoke-stepper 
-                 (invoke-unit/sig
-                  (require-library "stepper.ss" "stepper")
-                  mzlib:core^
-                  (fw : framework^)
-                  mzlib:print-convert^
-                  (mred : mred^)
-                  (drscheme : drscheme:export^)
-                  zodiac:system^))
-           (send f show #f)
-           (parameterize ([mred:current-eventspace e])
-             (mred:end-busy-cursor))
-           (invoke-stepper frame))))))
+  (define-values (never-undefined-getter never-undefined-setter)
+    (z:register-client 'stepper:never-undefined (lambda () #f)))
+  
+  (define-values (read-getter read-setter)
+    (z:register-client 'stepper:read (lambda () #f)))
+  
+  (define (invoke-stepper frame)
+      (let ([existing-stepper (send frame stepper-frame)])
+        (if existing-stepper
+            (send existing-stepper show #t)
+              (fw:gui-utils:show-busy-cursor
+               (lambda ()
+                 (let ([stepper-go
+                        (invoke-unit/sig
+                         (require-library "stepper.ss" "stepper")
+                         mzlib:core^
+                         (fw : framework^)
+                         mzlib:print-convert^
+                         (mred : mred^)
+                         (drscheme : drscheme:export^)
+                         (z : zodiac:system^)
+                         stepper:zodiac-client-procs^)])
+                   (stepper-go frame)))))))
   
   (define stepper-bitmap
     (drscheme:unit:make-bitmap
@@ -58,6 +52,12 @@
             (send stepper-button enable #f)
             (super-disable-evaluation))])
        (public
+         [stepper-frame
+          (let ([frame #f])
+            (case-lambda
+             (() frame)
+             ((new-val) (set! frame new-val))))]
+         
          [stepper-button (make-object mred:button%
                                       (stepper-bitmap this)
                                       button-panel

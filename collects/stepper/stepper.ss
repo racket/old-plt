@@ -6,7 +6,8 @@
           (print-convert : mzlib:print-convert^)
           (mred : mred^)
           (drscheme : drscheme:export^)
-          (zodiac : zodiac:system^))
+          (zodiac : zodiac:system^)
+          (zcp : stepper:zodiac-client-procs^))
   (link [error : stepper:error^ ((unit/sig stepper:error^
                                    (import)
                                    (define default-error-handler
@@ -23,14 +24,16 @@
         [pretty : mzlib:pretty-print^ ((require-library-unit/sig "prettyr.ss"))]
         [shared : stepper:shared^ ((require-library-unit/sig "sharedr.ss" "stepper")
                                    zodiac
-                                   error)]
+                                   error
+                                   zcp)]
         [annotate : stepper:annotate^
                   ((require-library-unit/sig "annotater.ss" "stepper")
                    zodiac
                    (core function)
                    error
                    stepper
-                   shared)]
+                   shared
+                   zcp)]
         [reconstruct : stepper:reconstruct^ 
                      ((require-library-unit/sig "reconstructr.ss" "stepper")
                       zodiac

@@ -1,3 +1,9 @@
+(define-signature stepper:zodiac-client-procs^
+  (never-undefined-getter
+   never-undefined-setter
+   read-getter
+   read-setter))
+
 (define-signature stepper:error^
   (static-error dynamic-error internal-error))
 

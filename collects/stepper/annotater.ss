@@ -3,7 +3,8 @@
 	  mzlib:function^
 	  [e : stepper:error^]
           [s : stepper:settings^]
-	  stepper:shared^)
+	  stepper:shared^
+          stepper:zodiac-client-procs^)
   
   ; ANNOTATE SOURCE CODE
   
@@ -105,10 +106,9 @@
   
   
   (define-values (never-undefined? mark-never-undefined)
-    (let-values ([(getter setter) (z:register-client 'stepper:never-undefined (lambda () #f))])
-      (values
-       (lambda (parsed) (getter (z:parsed-back parsed)))
-       (lambda (parsed) (setter (z:parsed-back parsed) #t)))))
+    (values
+     (lambda (parsed) (never-undefined-getter (z:parsed-back parsed)))
+     (lambda (parsed) (never-undefined-setter (z:parsed-back parsed) #t))))
    
   (define (interlace a b)
     (foldr (lambda (a b built)

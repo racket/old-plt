@@ -9,7 +9,7 @@
           [r : stepper:reconstruct^]
           [f : framework^]
           stepper:shared^)
- 
+  
   (define (send-to-other-eventspace eventspace thunk)
     (parameterize ([current-eventspace eventspace])
       (queue-callback thunk)))
@@ -160,7 +160,14 @@
   (define finished-exprs #f)
 
   (define stepper-frame%
-    (d:frame:basics-mixin (f:frame:standard-menus-mixin f:frame:basic%)))
+    (class (d:frame:basics-mixin (f:frame:standard-menus-mixin f:frame:basic%)) (drscheme-frame)
+      (rename [super-on-close on-close])
+      (override
+        [on-close
+         (lambda ()
+           (send drscheme-frame stepper-frame #f)
+           (super-on-close))])
+      (sequence (super-init "The Foot"))))
 
   (define stepper-canvas%
     (class editor-canvas% (parent (editor #f) (style null) (scrolls-per-page 100))
@@ -174,8 +181,6 @@
              (when editor
                (send editor reset-pretty-print-width this))))])
       (sequence (super-init parent editor style scrolls-per-page))))
-  
-  
   
   (define stepper-text%
     (class f:text:basic% (pre-sexp pre-redex post-sexp post-redex break-kind error-msg (line-spacing 1.0) (tabstops null))
@@ -299,9 +304,9 @@
              
   (define no-sexp (gensym "no-sexp-"))
   
-  (define (stepper-go frame settings)
+  (define (stepper-go drscheme-frame settings)
     (local
-        ((define text (ivar frame definitions-text))
+        ((define text (ivar drscheme-frame definitions-text))
          (define stepper-semaphore (make-semaphore))
          (define history null)
          
@@ -430,7 +435,7 @@
          (define (previous)
            (update-view (- view 1)))
              
-         (define s-frame (make-object stepper-frame% "Stepper"))
+         (define s-frame (make-object stepper-frame% drscheme-frame))
              
          (define button-panel (make-object horizontal-panel% (send s-frame get-area-container)))
          (define home-button (make-object button% "Home" button-panel
@@ -524,6 +529,7 @@
            (set! view-currently-updating new-view)
            (semaphore-post stepper-semaphore)))
       
+      (send drscheme-frame stepper-frame s-frame)
       (setup-print-convert settings)
       (set! finished-exprs null)
       (set! view-currently-updating 0)
@@ -535,6 +541,7 @@
       (send canvas min-height 500)
       (send previous-button enable #f)
       (send home-button enable #f)
+      (send next-button enable #f)
       (send (send s-frame edit-menu:get-undo-item) enable #f)
       (send (send s-frame edit-menu:get-redo-item) enable #f)
       (send s-frame show #t)))

@@ -454,6 +454,8 @@
       (do-install-part 'pre)
 
       (define (make-it desc compile-collection)
+	;; Create a fresh namespace to avoid polluting the compilation
+	;;  with modules that are already loaded
 	(for-each (lambda (cc)
 		    (record-error
 		     cc

@@ -1,67 +1,46 @@
 
 (module setup-go mzscheme
-  (require (lib "cmdline.ss"))
-  (require (lib "unitsig.ss"))
-  (require (lib "xml-sig.ss" "xml"))
+  (require "setup-cmdline.ss"
+	   (lib "unitsig.ss")
 
-  (require "option-sig.ss")
-  (require "setup-unit.ss")
-  (require "option-unit.ss")
+	    "option-sig.ss"
+	    "setup-unit.ss"
+	    "option-unit.ss"
+	    (lib "cm.ss"))
 
   (define-values/invoke-unit/sig setup-option^
     setup:option@)
 
-  (require (lib "cm.ss"))
+  (define-values (x-flags x-specific-collections x-archives)
+    (parse-cmdline (current-command-line-arguments)))
 
-  (define-values (x-specific-collections x-archives)
-    (command-line
-     "setup-plt"
-     (current-command-line-arguments)
-     (once-each
-      [("-c" "--clean") "Delete existing compiled files; implies -nxi"
-			(clean #t)
-                        (make-zo #f)
-			(call-install #f)
-			(make-launchers #f)]
-      [("-n" "--no-zo") "Do not produce .zo files"
-			(make-zo #f)]
-      [("-x" "--no-launcher") "Do not produce launcher programs"
-			      (make-launchers #f)]
-      [("-i" "--no-install") "Do not call collection-specific installers (just the post-installer)"
-			     (call-install #f)]
-      [("-e" "--extension") "Produce native code extensions"
-			    (make-so #t)]
-      [("-v" "--verbose") "See names of compiled files and info printfs"
-			  (verbose #t)]
-      [("-m" "--make-verbose") "See make and compiler usual messages"
-			       (make-verbose #t)]
-      [("-r" "--compile-verbose") "See make and compiler verbose messages"
-				  (make-verbose #t)
-				  (compiler-verbose #t)]
-      [("--trust-zos") "Trust existing zo files (use only with prepackaged zo distributions)"
-                       (trust-existing-zos #t)]
-      [("-p" "--pause") "Pause at the end if there are any errors"
-			(pause-on-errors #t)]
-      [("--force") "Treat version mismatches for archives as mere warnings"
-                   (force-unpacks #t)]
-      [("-a" "--all-users") "Install archives into PLTHOME, not user-specific directory"
-                            (current-target-plt-directory-getter
-			     (lambda (preferred plthome choices) plthome))]
-      [("-l") =>
-	      (lambda (flag . collections)
-		(map list collections))
-	      '("Setup specific <collection>s only" "collection")])
-     (=>
-      (lambda (collections . archives)
-	(values (if (null? collections)
-		    null
-		    (car collections))
-		archives))
-      '("archive")
-      (lambda (s)
-	(display s)
-	(printf "If no <archive> or -l <collection> is specified, all collections are setup~n")
-	(exit 0)))))
+  ;; Pseudo-option:
+  (define (all-users on?)
+    (when on?
+      (current-target-plt-directory-getter
+       (lambda (preferred plthome choices) plthome))))
+
+  ;; Converting parse-cmdline results into parameter settings:
+  (define (do-flag name param)
+    (let ([a (assq name x-flags)])
+      (when a
+	(param (cadr a)))))
+  (define-syntax all-flags
+    (syntax-rules ()
+      [(_ f ...) (begin
+		   (do-flag 'f f)
+		   ...)]))
+  (all-flags clean
+	     make-zo
+	     call-install
+	     make-launchers
+	     make-so
+	     verbose
+	     make-verbose
+	     trust-existing-zos
+	     pause-on-errors
+	     force-unpacks
+	     all-users)
 
   (specific-collections x-specific-collections)
   (archives x-archives)

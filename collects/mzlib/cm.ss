@@ -168,7 +168,9 @@
                ((not path-time) path-zo-time)
                (else
                 (cond
-                  ((> path-time path-zo-time) (compile-zo path))
+                  ((> path-time path-zo-time) 
+		   ((trace) (format "~anewer src..." (indent)))
+		   (compile-zo path))
                   (else
                    (let ((deps (with-handlers ((exn:i/o:filesystem? (lambda (ex) (list (version)))))
                                  (call-with-input-file (string-append (get-compilation-path path) ".dep")
@@ -176,19 +178,22 @@
                      (cond
                        ((or (not (pair? deps))
                             (not (equal? (version) (car deps))))
+			((trace) (format "~anewer version..." (indent)))
                         (compile-zo path))
-                       ((> (apply my-max (map (lambda (d)
-						;; str => str is a module file name (check transitive dates)
-						;; (cons 'ext str) => str is an non-module file (check date)
-						(cond
-						 [(string? d) (compile-root d up-to-date)]
-						 [(and (pair? d) (eq? (car d) 'ext))
-						  (with-handlers ((exn:i/o:filesystem?
-								   (lambda (ex) +inf.0)))
-						    (file-or-directory-modify-seconds (cdr d)))]
-						 [else -inf.0]))
-					      (cdr deps)))
-                           path-zo-time)
+                       ((ormap (lambda (d)
+				 ;; str => str is a module file name (check transitive dates)
+				 ;; (cons 'ext str) => str is an non-module file (check date)
+				 (let ([t (cond
+					   [(string? d) (compile-root d up-to-date)]
+					   [(and (pair? d) (eq? (car d) 'ext))
+					    (with-handlers ((exn:i/o:filesystem?
+							     (lambda (ex) +inf.0)))
+					      (file-or-directory-modify-seconds (cdr d)))]
+					   [else -inf.0])])
+				   (when (> t path-zo-time)
+				     ((trace) (format "~anewer: ~a (~a > ~a)..." (indent) d t path-zo-time)))
+				   (> t path-zo-time)))
+			       (cdr deps))
                         (compile-zo path))))))
                 (let ((stamp (get-compiled-time path #t)))
                   (hash-table-put! up-to-date path stamp)

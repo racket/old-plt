@@ -214,13 +214,17 @@
 ;; utf-16 type (note: these do not use #f as NULL).
 (provide _string/ucs-4 _string/utf-16)
 
-;; 8-bit string encodings
+;; 8-bit string encodings (#f is NULL)
+(define (false-or-op op) (lambda (x) (and x (op x))))
 (define* _string/utf-8
-  (make-ffi-type _bytes string->bytes/utf-8 bytes->string/utf-8))
+  (make-ffi-type _bytes
+    (false-or-op string->bytes/utf-8) (false-or-op bytes->string/utf-8)))
 (define* _string/locale
-  (make-ffi-type _bytes string->bytes/locale bytes->string/locale))
+  (make-ffi-type _bytes
+    (false-or-op string->bytes/locale) (false-or-op bytes->string/locale)))
 (define* _string/latin-1
-  (make-ffi-type _bytes string->bytes/latin-1 bytes->string/latin-1))
+  (make-ffi-type _bytes
+    (false-or-op string->bytes/latin-1) (false-or-op bytes->string/latin-1)))
 
 ;; A generic _string type that usually does the right thing via a parameter
 (define* default-_string-type

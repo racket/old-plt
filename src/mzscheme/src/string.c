@@ -3781,7 +3781,7 @@ void machine_details(char *buff)
       hasInfo = TRUE;
       break;
     }
-    p++;
+    p = p XFORM_OK_PLUS 1;
   }
 
   sprintf(buff,"Windows %s %ld.%ld (Build %ld)%s%s",

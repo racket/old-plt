@@ -60,10 +60,13 @@
 		 (let ([t (file-or-directory-modify-seconds dest)])
 		   (andmap
 		    (lambda (dep)
-		      (> t (file-or-directory-modify-seconds dep)))
+		      (let ([dep (cond
+				  [(bytes? dep) (bytes->path dep)]
+				  [else dep])])
+			(> t (file-or-directory-modify-seconds dep))))
 		    (append deps
 			    (if use-precomp (list use-precomp) null)
-			    (let ([deps (regexp-replace "[.].?.?.?$" dest ".sdep")])
+			    (let ([deps (path-replace-suffix dest #".sdep")])
 			      (if (file-exists? deps)
 				  (with-input-from-file deps read)
 				  null))))))

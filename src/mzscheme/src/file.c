@@ -1239,7 +1239,8 @@ char *scheme_getdrive()
   scheme_security_check_file("current-drive", NULL, SCHEME_GUARD_FILE_EXISTS);
 #ifdef DOS_FILE_SYSTEM
   {
-    Scheme_Object *wd = CURRENT_WD();
+    Scheme_Object *wd;
+    wd = CURRENT_WD();
     return get_drive_part(SCHEME_PATH_VAL(wd), SCHEME_PATH_LEN(wd));
   }
 #else
@@ -1677,8 +1678,13 @@ static int UNC_stat(char *dirname, int len, int *flags, int *isdir, Scheme_Objec
     } else {
       if (flags)
 	*flags = MZ_UNC_READ | MZ_UNC_EXEC | ((GET_FF_ATTRIBS(fd) & FF_A_RDONLY) ? 0 : MZ_UNC_WRITE);
-      if (date)
-	*date = scheme_make_integer_value_from_time(GET_FF_MODDATE(fd));
+      if (date) {
+	Scheme_Object *dt;
+	time_t mdt;
+	mdt = GET_FF_MODDATE(fd);
+	dt = scheme_make_integer_value_from_time(mdt);
+	*date = dt;
+      }
       FIND_CLOSE(fh);
       return 1;
     }
@@ -1701,8 +1707,11 @@ static int UNC_stat(char *dirname, int len, int *flags, int *isdir, Scheme_Objec
   if (v) {
     if (isdir && S_ISDIR(buf.st_mode))
       *isdir = 1;
-    if (date)
-      *date = scheme_make_integer_value_from_time(buf.st_mtime);
+    if (date) {
+      Scheme_Object *dt;
+      dt = scheme_make_integer_value_from_time(buf.st_mtime);
+      (*date) = dt;
+    }
     if (flags) {
       if (buf.st_mode & MSC_IZE(S_IREAD))
 	*flags |= MZ_UNC_READ | MZ_UNC_EXEC;
@@ -2788,17 +2797,23 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
   if (MoveFileExW(WIDE_PATH_COPY(src), WIDE_PATH(dest), (exists_ok ? MOVEFILE_REPLACE_EXISTING : 0)))
     return scheme_void;
 
-  errno = GetLastError();
+  {
+    int errid;
+    errid = GetLastError();
+    errno = errid;
+  }
 
   if (errno == ERROR_CALL_NOT_IMPLEMENTED) {
     /* Then we have the great misfortune of running in Windows 9x. If
        exists_ok, then do something no less stupid than the OS
        itself: */
+    int errid;
     if (exists_ok)
       MSC_W_IZE(unlink)(WIDE_PATH(dest));
     if (MoveFileW(WIDE_PATH_COPY(src), WIDE_PATH(dest)))
       return scheme_void;
-    errno = GetLastError();
+    errid = GetLastError();
+    errno = errid;
   }
 
 # define MOVE_ERRNO_FORMAT "%E"
@@ -3583,7 +3598,7 @@ static Scheme_Object *filesystem_root_list(int argc, Scheme_Object *argv[])
     while (s[ds]) {
       DWORD a, b, c, d;
       /* GetDiskFreeSpace effectively checks whether we can read the disk: */
-      if (GetDiskFreeSpace(s + ds, &a, &b, &c, &d)) {
+      if (GetDiskFreeSpace(s XFORM_OK_PLUS ds, &a, &b, &c, &d)) {
 	v = scheme_make_pair(scheme_make_sized_offset_path(s, ds, -1, 1), scheme_null);
 	if (last)
 	  SCHEME_CDR(last) = v;
@@ -3591,7 +3606,7 @@ static Scheme_Object *filesystem_root_list(int argc, Scheme_Object *argv[])
 	  first = v;
 	last = v;
       }
-      ds += strlen(s + ds) + 1;
+      ds += strlen(s XFORM_OK_PLUS ds) + 1;
     }
     SetErrorMode(oldmode);
   }
@@ -3747,9 +3762,9 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
 #  ifdef DOS_FILE_SYSTEM
     else if ((errno == EACCES) && !tried_cwd) {
       /* Maybe we're using the target directory. Try a real setcwd. */
-      scheme_os_setcwd(SCHEME_PATH_VAL(scheme_get_param(scheme_current_config(), 
-						       MZCONFIG_CURRENT_DIRECTORY)),
-		       0);
+      Scheme_Object *tcd;
+      tcd = scheme_get_param(scheme_current_config(), MZCONFIG_CURRENT_DIRECTORY);
+      scheme_os_setcwd(SCHEME_PATH_VAL(tcd), 0);
       tried_cwd = 1;
     }
 #  endif

@@ -3231,7 +3231,9 @@ scheme_file_position(int argc, Scheme_Object *argv[])
 
       if (lv < 0) {
 # ifdef WINDOWS_FILE_HANDLES
-	errno = GetLastError();
+	int errid;
+	errid = GetLastError();
+	errno = errid;
 # endif
 	scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
 			 "file-position: position change failed on stream (" FILENAME_EXN_E ")",
@@ -3762,11 +3764,13 @@ static long fd_get_string(Scheme_Input_Port *port,
 	} else
 	  delta = 0;
 
-	if (ReadFile((HANDLE)fip->fd, target + target_offset + delta, rgot, &rgot, NULL)) {
+	if (ReadFile((HANDLE)fip->fd, target XFORM_OK_PLUS target_offset + delta, rgot, &rgot, NULL)) {
 	  bc = rgot;
 	} else {
+	  int errid;
 	  bc = -1;
-	  errno = GetLastError();
+	  errid = GetLastError();
+	  errno = errid;
 	}
 
 	/* bc == 0 and no err => EOF */
@@ -4042,6 +4046,7 @@ make_fd_input_port(int fd, const char *filename, int regfile, int win_textmode, 
     Win_FD_Input_Thread *th;
     DWORD id;
     HANDLE h;
+    OS_SEMAPHORE_TYPE sm;
 
     th = (Win_FD_Input_Thread *)malloc(sizeof(Win_FD_Input_Thread));
     fip->th = th;
@@ -4056,9 +4061,13 @@ make_fd_input_port(int fd, const char *filename, int regfile, int win_textmode, 
     th->err = 0;
     th->eof = 0;
     th->checking = 0;
-    th->checking_sema = CreateSemaphore(NULL, 0, 1, NULL);
-    th->ready_sema = CreateSemaphore(NULL, 0, 1, NULL);
-    th->you_clean_up_sema = CreateSemaphore(NULL, 1, 1, NULL);
+    
+    sm = CreateSemaphore(NULL, 0, 1, NULL);
+    th->checking_sema = sm;
+    sm = CreateSemaphore(NULL, 0, 1, NULL);
+    th->ready_sema = sm;
+    sm = CreateSemaphore(NULL, 1, 1, NULL);
+    th->you_clean_up_sema = sm;
 
     h = CreateThread(NULL, 4096, (LPTHREAD_START_ROUTINE)WindowsFDReader, th, 0, &id);
 
@@ -4680,7 +4689,7 @@ static long flush_fd(Scheme_Output_Port *op,
 	} else
 	  orig_len = 0; /* not used */
 
-	if (WriteFile((HANDLE)fop->fd, bufstr + offset, buflen - offset, &winwrote, NULL)) {
+	if (WriteFile((HANDLE)fop->fd, bufstr XFORM_OK_PLUS offset, buflen - offset, &winwrote, NULL)) {
 	  if (fop->textmode) {
 	    if (winwrote != buflen) {
 	      /* Trouble! This shouldn't happen. We pick an random error msg. */
@@ -4752,7 +4761,7 @@ static long flush_fd(Scheme_Output_Port *op,
 	      while (1) {
 		GetNamedPipeHandleState((HANDLE)fop->fd, &old, NULL, NULL, NULL, NULL, 0);
 		SetNamedPipeHandleState((HANDLE)fop->fd, &nonblock, NULL, NULL);
-		ok = WriteFile((HANDLE)fop->fd, bufstr + offset, towrite, &winwrote, NULL);
+		ok = WriteFile((HANDLE)fop->fd, bufstr XFORM_OK_PLUS offset, towrite, &winwrote, NULL);
 		SetNamedPipeHandleState((HANDLE)fop->fd, &old, NULL, NULL);
 
 		if (ok && !winwrote) {
@@ -4789,6 +4798,7 @@ static long flush_fd(Scheme_Output_Port *op,
 	    HANDLE h;
 	    DWORD id;
 	    unsigned char *bfr;
+	    OS_SEMAPHORE_TYPE sm;
 
 	    oth = malloc(sizeof(Win_FD_Output_Thread));
 	    fop->oth = oth;
@@ -4813,10 +4823,14 @@ static long flush_fd(Scheme_Output_Port *op,
 	    oth->fd = (HANDLE)fop->fd;
 	    oth->err_no = 0;
 	    oth->done = 0;
-	    oth->lock_sema = CreateSemaphore(NULL, 1, 1, NULL);
-	    oth->work_sema = CreateSemaphore(NULL, 0, 1, NULL);
-	    oth->ready_sema = CreateSemaphore(NULL, 1, 1, NULL);
-	    oth->you_clean_up_sema = CreateSemaphore(NULL, 1, 1, NULL);
+	    sm = CreateSemaphore(NULL, 1, 1, NULL);
+	    oth->lock_sema = sm;
+	    sm = CreateSemaphore(NULL, 0, 1, NULL);
+	    oth->work_sema = sm;
+	    sm = CreateSemaphore(NULL, 1, 1, NULL);
+	    oth->ready_sema = sm;
+	    sm = CreateSemaphore(NULL, 1, 1, NULL);
+	    oth->you_clean_up_sema = sm;
 
 	    h = CreateThread(NULL, 4096, (LPTHREAD_START_ROUTINE)WindowsFDWriter, oth, 0, &id);
 
@@ -5534,6 +5548,7 @@ static Scheme_Object *subprocess_kill(int argc, Scheme_Object **argv)
 #else
     if (SCHEME_TRUEP(argv[1])) {
       DWORD w;
+      int errid;
 
       if (!sp->handle)
 	return scheme_void;
@@ -5544,7 +5559,8 @@ static Scheme_Object *subprocess_kill(int argc, Scheme_Object **argv)
 	if (TerminateProcess((HANDLE)sp->handle, 1))
 	  return scheme_void;
       }
-      errno = GetLastError();
+      errid = GetLastError();
+      errno = errid;
     } else
       return scheme_void;
 #endif
@@ -5887,6 +5903,8 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   fflush(stderr);
 
   {
+    Scheme_Object *tcd;
+
     if (!exact_cmdline) {
       /* protect spaces, etc. in the arguments: */
       for (i = 0; i < (c - 3); i++) {
@@ -5897,9 +5915,8 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
     }
 
     /* Set real CWD - and hope no other thread changes it! */
-    scheme_os_setcwd(SCHEME_BYTE_STR_VAL(scheme_get_param(scheme_current_config(),
-							  MZCONFIG_CURRENT_DIRECTORY)),
-		     0);
+    tcd = scheme_get_param(scheme_current_config(), MZCONFIG_CURRENT_DIRECTORY);
+    scheme_os_setcwd(SCHEME_BYTE_STR_VAL(tcd), 0);
 
     spawn_status = mz_spawnv(command, (const char * const *)argv,
 			     exact_cmdline,
@@ -6266,8 +6283,9 @@ static Scheme_Object *sch_shell_execute(int c, Scheme_Object *argv[])
     se.cbSize = sizeof(se);
     if (SCHEME_FALSEP(sv))
       se.lpVerb = NULL;
-    else
+    else {
       se.lpVerb = WIDE_PATH_COPY(SCHEME_BYTE_STR_VAL(sv));
+    }
     se.lpFile = WIDE_PATH_COPY(SCHEME_BYTE_STR_VAL(sf));
     se.lpParameters = WIDE_PATH_COPY(SCHEME_BYTE_STR_VAL(sp));
     se.lpDirectory = WIDE_PATH_COPY(dir);

@@ -66,6 +66,10 @@
   (define (need-bool ctx)
     (make-context 'bool (context-indef ctx)))
 
+  (define-struct accessor (make-struct-type-expr position))
+  (define-struct mutator (make-struct-type-expr position))
+  (define-struct ctor (make-struct-type-expr))
+  
   (define exp%
     (class object%
       
@@ -139,6 +143,12 @@
         (subexp-map! (lambda (x) 
                        (send x simplify (need-all ctx)))))
 	
+      (define/public (escape)
+        (subexp-map! (lambda (x) (send x escape))))
+
+      (define/public (stack-allocate)
+        (subexp-map! (lambda (x) (send x stack-allocate))))
+      
       ;; not an optimizations, but exposes info (epsecially to mzc)
       (define/public (reorganize)
         (subexp-map! (lambda (x) (send x reorganize))))
@@ -260,17 +270,20 @@
       (define used 0)
       (define mutated? #f)
       (define inited? always-inited?)
-
+      (define escape #f)
+      
       (define/public (is-used?) (positive? used))
       (define/public (is-mutated?) mutated?)
       (define/public (is-inited?) inited?)
-
       (define/public (get-use-count) used)
 
       (define/public (set-mutated) (set! mutated? #t))
       (define/public (set-inited) (set! inited? #t))
       (define/public (set-value v) (set! value v))
 
+      (define/public (escapes?) escape)
+      (define/public (set-escapes x) (set! escape #t))
+      
       (define/public (clone-binder env) 
         (make-object binding% 
           always-inited?
@@ -332,6 +345,9 @@
 
       (define/override (get-value) (send binding get-value))
 
+      (define/override (escape) 
+        (send binding set-escape))
+      
       (define/override (simplify ctx)
         (if (context-need ctx)
             (let ([v (get-value)])
@@ -373,7 +389,7 @@
               (if (null? (cdr subs))
                   (send (car subs) get-result-arity)
                   (loop (cdr subs))))))
-
+      
       (define/override (simplify ctx)
         (set! subs
               (let loop ([subs subs])
@@ -549,7 +565,7 @@
         (set-known-value v)
         v)
 
-      
+        
       (define/override (nonbind-sub-exprs) (cons rator rands))
       (define/override (set-nonbind-sub-exprs s) 
         (set! rator (car s))
@@ -578,6 +594,16 @@
         (if (or known-single-result? (no-side-effect?))
             1
             'unknown))
+
+      (define/override (escape)
+        (send rator escape)
+        (cond
+          ((bound-identifier=? #'vector-ref (send rator get-stx)) (void))
+          ((and (bound-identifier=? #'vector-set! (send rator get-stx))
+                (not (null? rands)))
+           (map (lambda (x) (send x escape)) (cdr rands)))
+          (else
+           (map (lambda (x) (send x escape)) rands))))
 
       (define/override (simplify ctx)
         (super-simplify ctx)

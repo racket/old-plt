@@ -141,8 +141,7 @@
   (define (get-item-property obj item)
     (cond
      [(and (list? item)
-	   (string? (car item))
-	   (= (length item) 2)) ; apparently, can only use one ppty index
+	   (string? (car item)))]
       (apply mxprims:com-get-property obj item)]
      [(string? item)
       (mxprims:com-get-property obj item)]

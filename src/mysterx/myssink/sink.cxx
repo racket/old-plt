@@ -414,6 +414,18 @@ HRESULT CSink::InternalQueryInterface(void *pThis,
 
 // override default implementation of IDispatch::Invoke
 
+typedef struct _named_args_ {
+  DISPID dispId;
+  VARIANTARG *pVariantArg;
+  short index;
+} NAMEDARG;
+
+#define MAXINVOKEARGS 128
+
+int cmpNamedArgs(NAMEDARG *p1,NAMEDARG *p2) {
+  return (int)p1->dispId - (int)p2->dispId; 
+}
+
 HRESULT CSink::Invoke(DISPID dispId,REFIID refiid,LCID lcid,WORD flags,
                       DISPPARAMS* pDispParams,VARIANT* pvarResult,
 		      EXCEPINFO* pexcepinfo,UINT* puArgErr) {
@@ -421,10 +433,11 @@ HRESULT CSink::Invoke(DISPID dispId,REFIID refiid,LCID lcid,WORD flags,
   Scheme_Object *handler;
   EVENT_HANDLER_ENTRY *p;  
   VARIANTARG *pCurrArg;
-  short numParams,actualParams;
-  Scheme_Object *argv[128];
+  NAMEDARG *namedArgs;
+  short numParams,actualParams,positionalParams,namedParams;
+  Scheme_Object *argv[MAXINVOKEARGS];
   mz_jmp_buf jmpSave;
-  int i;
+  int i,j;
 
   p = lookupHandler(dispId);
 
@@ -436,16 +449,24 @@ HRESULT CSink::Invoke(DISPID dispId,REFIID refiid,LCID lcid,WORD flags,
   
   numParams = pDispParams->cArgs;
 
-  if (numParams > 128) {
+  if (numParams > MAXINVOKEARGS) {
     return DISP_E_TYPEMISMATCH;
   }
 
-  // named arguments not supported
+  namedParams = pDispParams->cNamedArgs;
 
-  if (pDispParams->cNamedArgs > 0) {
-    return DISP_E_NONAMEDARGS;
+  if (namedParams > 0) {
+    namedArgs = (NAMEDARG *)scheme_malloc(sizeof(NAMEDARG) * namedParams);
+
+    for (i = 0; i < namedParams; i++) {
+      namedArgs[i].dispId = pDispParams->rgdispidNamedArgs[i];
+      namedArgs[i].pVariantArg = &pDispParams->rgvarg[i];
+    }
+
+    qsort(namedArgs,namedParams,sizeof(NAMEDARG),
+	  (int (*)(const void *,const void *))cmpNamedArgs);
   }
-
+  
   // trap any local errors
 
   memcpy(&jmpSave, &scheme_error_buf, sizeof(mz_jmp_buf));
@@ -458,43 +479,61 @@ HRESULT CSink::Invoke(DISPID dispId,REFIID refiid,LCID lcid,WORD flags,
 
   /* memory layout of rgvargs:
 
-      --------------------------------
-     | opt params | required params   |
-      --------------------------------
+    ---------------------------------
+   | named params | required params  |
+    ---------------------------------
 
      these are in reverse order from the order
      given to Scheme
 
   */
 
-  actualParams = numParams;
+  actualParams = 0;
 
-  i = 0;
+  positionalParams = numParams - namedParams;
 
-  while (i < numParams) {
-    pCurrArg = &pDispParams->rgvarg[i];
-    if (pCurrArg->vt == VT_ERROR &&
-	pCurrArg->scode == DISP_E_PARAMNOTFOUND) { 
-      actualParams--;
-    }
-    else { // as soon as first required arg found
-      break;
-    }
-    i++;
-  }
-
-  for (i = 0; i < actualParams; i++) {
+  for (i = 0; i < positionalParams; i++) {
     pCurrArg = &pDispParams->rgvarg[numParams - 1 - i];
     argv[i] = variantToSchemeObject(pCurrArg);
+    actualParams++;
+  }
+
+  i = positionalParams;
+  j = 0; 
+
+  while (j < namedParams) {
+
+    if (i >= MAXINVOKEARGS) {
+      return DISP_E_TYPEMISMATCH;
+    }
+
+    while(i < namedArgs[j].dispId) {
+      if (i >= MAXINVOKEARGS) {
+	return DISP_E_TYPEMISMATCH;
+      }
+
+      argv[i] = make_scode(DISP_E_PARAMNOTFOUND);
+      i++,actualParams++;
+    }
+
+    argv[i] = variantToSchemeObject(namedArgs[j].pVariantArg);
+    namedArgs[j].index = i;
+    i++,j++,actualParams++;
   }
 
   scheme_apply(handler,actualParams,argv);
 
   // updating of boxes needs to be reflected in BYREF parameters 
 
-  for (i = 0; i < actualParams; i++) {
+  for (i = 0; i < positionalParams; i++) {
     pCurrArg = &pDispParams->rgvarg[numParams - 1 - i];
     unmarshallSchemeObject(argv[i],pCurrArg);
+  }
+
+  for (i = 0; i < namedParams; i++) {
+    pCurrArg = namedArgs[i].pVariantArg;
+    j = namedArgs[i].index;
+    unmarshallSchemeObject(argv[j],pCurrArg);
   }
 
   memcpy(&scheme_error_buf, &jmpSave, sizeof(mz_jmp_buf));

@@ -81,3 +81,9 @@
 	 [_ (wait (lambda () (eq? (mred:test:get-active-frame) console))
 		  "focus didn't return to the console after closing autosave test frame")])
     (printf "test finished~n")))
+
+;
+;  when rewriting, apply this function to: 
+; "New Unit"
+; "Save Definitions"
+;  wx:frame%

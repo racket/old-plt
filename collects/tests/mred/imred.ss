@@ -3,7 +3,7 @@
     (compound-unit/sig (import)
       (link [wx : wx^ (wx@)]
 	    [core : mzlib:core^ (mzlib:core@)]
-	    [mred : mred^ ((require-library "linkwx.ss" "mred") core wx)]
+	    [mred : mred^ ((require-library/proc "linkwx.ss" "mred") core wx)]
 	    [application : () (application mred core wx)])
       (export (unit mred mred2)))))
 

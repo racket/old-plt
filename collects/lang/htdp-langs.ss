@@ -86,7 +86,6 @@
             (parameterize ([pc:booleans-as-true/false #t]
                            [pc:abbreviate-cons-as-list (get-abbreviate-cons-as-list)]
                            [pretty-print-show-inexactness #t]
-                           [pretty-print-.-symbol-without-bars #t]
                            [pretty-print-exact-as-decimal #t]
                            [pc:use-named/undefined-handler
                             (lambda (x)

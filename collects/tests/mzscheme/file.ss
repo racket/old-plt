@@ -343,7 +343,7 @@
 (test #t input-port? (make-input-port void void void))
 (error-test '(read (make-input-port void void void))
 	    exn:i/o:port:user?)
-(arity-test make-input-port 3 3)
+(arity-test make-input-port 3 4)
 (error-test '(make-input-port 8 void void))
 (error-test '(make-input-port void 8 void))
 (error-test '(make-input-port void void 8))
@@ -357,6 +357,19 @@
 (error-test '(make-output-port void 8))
 (error-test '(make-output-port (lambda () 9) void))
 (error-test '(make-output-port void add1))
+
+(let ([p (make-input-port 
+	  (lambda () #\a) 
+	  (lambda () #t) 
+	  void 
+	  (lambda () #\b))])
+  (test #\a read-char p)
+  (test #\b peek-char p)
+  (test #\a read-char p)
+  (test #\b peek-char p)
+  (test #\b peek-char p)
+  (test #\a read-char p)
+  (test 3 file-position p))
 
 (define test-file 
   (open-output-file "tmp2" 'truncate))

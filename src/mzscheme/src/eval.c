@@ -67,6 +67,7 @@ int scheme_stack_grows_up;
 /* locals */
 static Scheme_Object *eval(int argc, Scheme_Object *argv[]);
 static Scheme_Object *compile(int argc, Scheme_Object *argv[]);
+static Scheme_Object *compiled_p(int argc, Scheme_Object *argv[]);
 #if OPT_COMPILE_VISIBLE
 static Scheme_Object *compile_x(int argc, Scheme_Object *argv[]);
 #endif
@@ -207,6 +208,11 @@ scheme_init_eval (Scheme_Env *env)
   scheme_add_global_constant("compile", 
 			     scheme_make_prim_w_arity(compile, 
 						      "compile", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("compiled-expression?",
+			     scheme_make_prim_w_arity(compiled_p, 
+						      "compiled-expression?", 
 						      1, 1), 
 			     env);
 #if OPT_COMPILE_VISIBLE
@@ -3108,6 +3114,14 @@ static Scheme_Object *
 compile(int argc, Scheme_Object *argv[])
 {
   return _compile(argv[0], scheme_get_env(scheme_config), 1, 0);
+}
+
+static Scheme_Object *
+compiled_p(int argc, Scheme_Object *argv[])
+{
+  return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_compilation_top_type)
+	  ? scheme_true
+	  : scheme_false);
 }
 
 #if OPT_COMPILE_VISIBLE

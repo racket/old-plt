@@ -174,10 +174,10 @@
 					      "n" "&New" "")
 				(make-between 'file-menu 'between-new-and-open #f)
 				(make-an-item 'file-menu:open "Open a file from disk"
-					      '(lambda () (mred:handler:open-file))
+					      '(lambda () (mred:handler:open-file) #t)
 					      "o" "&Open" "...")
 				(make-an-item 'file-menu:open-url "Open a Uniform Resource Locater"
-					      '(lambda () (mred:handler:open-url))
+					      '(lambda () (mred:handler:open-url) #t)
 					      #f "Open &Url" "...")
 				(make-between 'file-menu 'between-open-and-save #f)
 				(make-an-item 'file-menu:revert 
@@ -215,13 +215,13 @@
 				(make-an-item 'edit-menu:select-all "" #f "a" "Select A&ll" "")
 				(make-between 'edit-menu 'between-select-all-and-find #t)
 				(make-an-item 'edit-menu:find "Search for a string in the buffer"
-					      '(lambda () (send this search))
+					      '(lambda () (send this search) #t)
 					      "f" "Find" "")
 				(make-an-item 'edit-menu:replace "Search and replace a string in the buffer"
 					      #f #f "Replace" "")
 				(make-between 'edit-menu 'between-replace-and-preferences #t)
 				(make-an-item 'edit-menu:preferences ""
-					      '(lambda () (mred:preferences:show-preferences-dialog))
+					      '(lambda () (mred:preferences:show-preferences-dialog) #t)
 					      #f "Preferences..." "")
 				(make-between 'edit-menu 'after-standard-items #f))])
 		 (lambda ()
@@ -268,7 +268,6 @@
 				(string=? "" title-prefix))
 			    (string-append title-prefix title)
 			    (string-append title-prefix ": " title))])
-		 '(printf "setting-title to ~a~n" t)
 		 (super-set-title t)))])
 	  
 	  (public

@@ -130,17 +130,18 @@ typedef struct {
 # include <dnr.c>
 #endif
 
+#ifdef USE_FCNTL_O_NONBLOCK
+# define MZ_NONBLOCKING O_NONBLOCK
+#else
+# define MZ_NONBLOCKING FNDELAY
+#endif
+
 #ifdef USE_UNIX_SOCKETS_TCP
 # include <netinet/in.h>
 # include <netdb.h>
 # include <sys/socket.h>
 # include <fcntl.h>
 # define TCP_SOCKSENDBUF_SIZE 32768
-# ifdef USE_FCNTL_O_NONBLOCK
-#  define TCP_NONBLOCKING O_NONBLOCK
-# else
-#  define TCP_NONBLOCKING FNDELAY
-# endif
 #endif
 
 #if defined(WIN32_FD_HANDLES) || defined(WINDOWS_PROCESSES)
@@ -235,11 +236,6 @@ typedef struct System_Child {
 
 #ifdef USE_FD_PORTS
 # include <fcntl.h>
-# ifdef USE_FCNTL_O_NONBLOCK
-#  define FD_NONBLOCKING O_NONBLOCK
-# else
-#  define FD_NONBLOCKING FNDELAY
-# endif
 # define MZPORT_FD_BUFFSIZE 2048
 typedef struct Scheme_FD {
   MZTAG_IF_REQUIRED
@@ -247,6 +243,10 @@ typedef struct Scheme_FD {
   int bufcount, buffpos;
   unsigned char buffer[MZPORT_FD_BUFFSIZE];
 } Scheme_FD;
+#endif
+
+#ifdef SOME_FDS_ARE_NOT_SELECTABLE
+# include <fcntl.h>
 #endif
 
 /* globals */
@@ -1889,6 +1889,30 @@ static void flush_orig_outputs()
       fflush(((Scheme_Output_File *)op->port_data)->f);
 }
 
+#ifdef SOME_FDS_ARE_NOT_SELECTABLE
+static int try_get_fd_char(int fd, int *ready)
+{
+  int old_flags, c;
+  unsigned char buf[1];
+
+  old_flags = fcntl(fd, F_GETFL, 0);
+  fcntl(fd, F_SETFL, old_flags | MZ_NONBLOCKING);
+  c = read(fd, buf, 1);
+  fcntl(fd, F_SETFL, old_flags);
+
+  if (c < 0) {
+    *ready = 0;
+    return 0;
+  } else {
+    *ready = 1;
+     if (!c)
+       return EOF;
+     else
+       return buf[0];
+  }
+}
+#endif
+
 static int
 file_char_ready (Scheme_Input_Port *port)
 {
@@ -1957,8 +1981,23 @@ file_char_ready (Scheme_Input_Port *port)
 
     r = select(fd + 1, readfds, NULL, NULL, &time);
 
+#ifdef SOME_FDS_ARE_NOT_SELECTABLE
+    /* Try a non-blocking read: */
+    if (!r) {
+      int c, ready;
+
+      c = try_get_fd_char(fd, &ready);
+      if (ready) {
+	if (c != EOF)
+	  ungetc(c, fp);
+	r = 1;
+      }
+    }
+#endif
+
     return r;
   }
+
 #endif
 }
 
@@ -2103,6 +2142,7 @@ fd_char_ready (Scheme_Input_Port *port)
   if (fip->bufcount)
     return 1;
   else {
+    int r;
     DECL_FDSET(readfds, 1);
     DECL_FDSET(exnfds, 1);
     struct timeval time = {0, 0};
@@ -2115,7 +2155,25 @@ fd_char_ready (Scheme_Input_Port *port)
     MZ_FD_SET(fip->fd, readfds);
     MZ_FD_SET(fip->fd, exnfds);
     
-    return select(fip->fd + 1, readfds, NULL, exnfds, &time);
+    r = select(fip->fd + 1, readfds, NULL, exnfds, &time);
+
+#ifdef SOME_FDS_ARE_NOT_SELECTABLE
+    /* Try a non-blocking read: */
+    if (!r) {
+      int c, ready;
+
+      c = try_get_fd_char(fip->fd, &ready);
+      if (ready) {
+	if (c != EOF) {
+	  fip->buffer[0] = (unsigned char)c;
+	  fip->bufcount = 1;
+	}
+	r = 1;
+      }
+    }
+#endif
+
+    return r;
   }
 }
 
@@ -3175,7 +3233,7 @@ make_fd_output_port(int fd)
   fop->bufcount = 0;
 
   /* Make output non-blocking: */
-  fcntl(fd, F_SETFL, FD_NONBLOCKING);
+  fcntl(fd, F_SETFL, MZ_NONBLOCKING);
 
   return (Scheme_Object *)scheme_make_output_port(fd_output_port_type,
 						  fop,
@@ -3187,8 +3245,8 @@ make_fd_output_port(int fd)
 # ifdef NEED_RESET_STDOUT_BLOCKING
 void reset_stdout_blocking_mode(void)
 {
-  fcntl(1, F_SETFL, FD_NONBLOCKING);
-  fcntl(2, F_SETFL, FD_NONBLOCKING);
+  fcntl(1, F_SETFL, 0);
+  fcntl(2, F_SETFL, 0);
 }
 # endif
 #endif
@@ -5606,8 +5664,8 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 	else {
 #ifdef USE_FD_PORTS
 	  /* stdut and stderr back to non-blocking: */
-	  fcntl(1, F_SETFL, FD_NONBLOCKING);
-	  fcntl(2, F_SETFL, FD_NONBLOCKING);
+	  fcntl(1, F_SETFL, MZ_NONBLOCKING);
+	  fcntl(2, F_SETFL, MZ_NONBLOCKING);
 #endif
 	  return scheme_void;
 	}
@@ -5623,8 +5681,8 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 	else {
 #ifdef USE_FD_PORTS
 	  /* stdut and stderr back to non-blocking: */
-	  fcntl(1, F_SETFL, FD_NONBLOCKING);
-	  fcntl(2, F_SETFL, FD_NONBLOCKING);
+	  fcntl(1, F_SETFL, MZ_NONBLOCKING);
+	  fcntl(2, F_SETFL, MZ_NONBLOCKING);
 #endif
 	  return scheme_void;
 	}
@@ -6478,7 +6536,7 @@ static Scheme_Tcp *make_tcp_port_data(MAKE_TCP_ARG int refcount)
     ioctlsocket(tcp, FIONBIO, &ioarg);
   }
 # else
-  fcntl(tcp, F_SETFL, TCP_NONBLOCKING);
+  fcntl(tcp, F_SETFL, MZ_NONBLOCKING);
 # endif
 #endif
 
@@ -7039,7 +7097,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 	ioctlsocket(s, FIONBIO, &ioarg);
 #else
 	int size = TCP_SOCKSENDBUF_SIZE;
-	fcntl(s, F_SETFL, TCP_NONBLOCKING);
+	fcntl(s, F_SETFL, MZ_NONBLOCKING);
 # ifndef CANT_SET_SOCKET_BUFSIZE
 	setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(int));
 # endif
@@ -7213,7 +7271,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
       unsigned long ioarg = 1;
       ioctlsocket(s, FIONBIO, &ioarg);
 #else
-      fcntl(s, F_SETFL, TCP_NONBLOCKING);
+      fcntl(s, F_SETFL, MZ_NONBLOCKING);
 #endif
       if (!bind(s, (struct sockaddr *)&tcp_listen_addr, sizeof(tcp_listen_addr)))
 	if (!listen(s, backlog)) {

@@ -138,6 +138,7 @@
 #  define NO_USLEEP
 #  define USE_ULIMIT
 #  define USE_FCNTL_O_NONBLOCK
+#  define SOME_FDS_ARE_NOT_SELECTABLE
 #  define NEED_RESET_STDOUT_BLOCKING
 #  define USE_TIMEZONE_AND_ALTZONE_VAR
 
@@ -1039,6 +1040,9 @@ int scheme_pthread_semaphore_try_down(void *);
 
  /* USE_FCNTL_O_NONBLOCK uses O_NONBLOCK instead of FNDELAY for
     fcntl on Unix TCP sockets. (Posix systems need this flag). */
+
+ /* SOME_FDS_ARE_NOT_SELECTABLE indicates that select() doesn't
+    work for reading on all kinds of file descriptors. */
 
  /* NEED_RESET_STDOUT_BLOCKING enures that file descriptors 1 and 2
     are reset to blocking mode before exiting. */

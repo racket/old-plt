@@ -1215,6 +1215,7 @@ void scheme_init_compile_recs(Scheme_Compile_Info *src, int drec,
 #endif
     dest[i].max_let_depth = 0;
     dest[i].dont_mark_local_use = src[drec].dont_mark_local_use;
+    dest[i].resolve_module_ids = src[drec].resolve_module_ids;
     dest[i].value_name = NULL;
   }
 }
@@ -1242,6 +1243,7 @@ void scheme_init_lambda_rec(Scheme_Compile_Info *src, int drec,
 {
   lam[dlrec].max_let_depth = 0;
   lam[dlrec].dont_mark_local_use = src[drec].dont_mark_local_use;
+  lam[dlrec].resolve_module_ids = src[drec].resolve_module_ids;
   lam[dlrec].value_name = NULL;
 }
 
@@ -1338,6 +1340,7 @@ static void *compile_k(void)
   p->ku.k.p2 = NULL;
 
   rec.dont_mark_local_use = 0;
+  rec.resolve_module_ids = !writeable;
   rec.value_name = NULL;
 
   if (!SCHEME_STXP(form))
@@ -1406,6 +1409,9 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 			       + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 			       + ((rec && rec[drec].dont_mark_local_use) 
 				  ? SCHEME_DONT_MARK_USE 
+				  : 0)
+			       + ((rec && rec[drec].resolve_module_ids)
+				  ? SCHEME_RESOLVE_MODIDS
 				  : 0));
 
   *current_val = val;
@@ -1587,8 +1593,11 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 				      : 0)
 				   + ((rec && drec[rec].dont_mark_local_use) ? 
 				      SCHEME_DONT_MARK_USE 
+				      : 0)
+				   + ((rec && rec[drec].resolve_module_ids)
+				      ? SCHEME_RESOLVE_MODIDS
 				      : 0));
-
+      
       if (!var) {
 	/* Unbound variable */
 	stx = unbound_symbol;
@@ -1626,6 +1635,9 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 				      : 0)
 				   + ((rec && rec[drec].dont_mark_local_use)
 				      ? SCHEME_DONT_MARK_USE 
+				      : 0)
+				   + ((rec && rec[drec].resolve_module_ids)
+				      ? SCHEME_RESOLVE_MODIDS
 				      : 0));
       if (!var) {
 	/* apply to global variable: compile it normally */

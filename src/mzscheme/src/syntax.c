@@ -955,8 +955,11 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
 			       + SCHEME_ELIM_CONST 
 			       + (rec[drec].dont_mark_local_use 
 				  ? SCHEME_DONT_MARK_USE 
+				  : 0)
+			       + (rec[drec].resolve_module_ids
+				  ? SCHEME_RESOLVE_MODIDS
 				  : 0));
-
+  
   if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
     /* Redirect to a macro. */
     form = scheme_apply_macro(name, SCHEME_PTR_VAL(SCHEME_PTR_VAL(var)), form, env, scheme_false);
@@ -1018,10 +1021,6 @@ set_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *
 
     return scheme_expand_expr(form, env, depth, name);
   }
-
-  if (ENV_PRIM_GLOBALS_ONLY(env) && SAME_TYPE(SCHEME_TYPE(var), scheme_variable_type))
-    scheme_wrong_syntax("set!", NULL, form,
-			"cannot mutate a global from within a unit");
 
   return scheme_datum_to_syntax(cons(SCHEME_STX_CAR(form),
 				     cons(name,

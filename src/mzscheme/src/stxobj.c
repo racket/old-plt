@@ -726,6 +726,9 @@ int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b, long phase)
   a = resolve_env(a, phase, &ahome);
   b = resolve_env(b, phase, &bhome);
 
+  a = scheme_module_resolve(a);
+  b = scheme_module_resolve(b);
+
   /* Same binding environment? */
   return (SAME_OBJ(a, b) && SAME_OBJ(HOME_MAP(ahome), HOME_MAP(bhome)));
 }
@@ -755,6 +758,9 @@ int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b, long phase)
   
   a = resolve_env(a, phase, &ahome);
   b = resolve_env(b, phase, &bhome);
+
+  a = scheme_module_resolve(a);
+  b = scheme_module_resolve(b);
 
   /* Same binding environment? */
   return (SAME_OBJ(a, b) && SAME_OBJ(HOME_MAP(ahome), HOME_MAP(bhome)));

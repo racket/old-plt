@@ -1091,7 +1091,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   if (!modname && (flags & SCHEME_NULL_FOR_UNBOUND))
     return NULL;
 
-  if (modname && !SAME_OBJ(modidx, modname)) {
+  if (modname && !(flags & SCHEME_RESOLVE_MODIDS) && !SAME_OBJ(modidx, modname)) {
     /* Create a module variable reference, so that idx is preserved: */
     val = scheme_alloc_object();
     val->type = scheme_module_variable_type;
@@ -1553,6 +1553,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
 
   v = scheme_static_distance(sym, env,
 			     (SCHEME_NULL_FOR_UNBOUND
+			      + SCHEME_RESOLVE_MODIDS
 			      + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 			      + SCHEME_OUT_OF_CONTEXT_OK + SCHEME_ELIM_CONST));
 

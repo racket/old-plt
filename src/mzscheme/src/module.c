@@ -343,6 +343,16 @@ Scheme_Object *scheme_make_modidx(Scheme_Object *path, Scheme_Object *resolved)
   return val;
 }
 
+int same_modidx(Scheme_Object *a, Scheme_Object *b)
+{
+  if (SAME_TYPE(SCHEME_TYPE(a), scheme_module_index_type))
+    a = SCHEME_PTR1_VAL(a);
+  if (SAME_TYPE(SCHEME_TYPE(b), scheme_module_index_type))
+    b = SCHEME_PTR1_VAL(b);
+
+  return scheme_equal(a, b);
+}
+
 Scheme_Object *scheme_module_resolve(Scheme_Object *modidx)
 {
   if (SCHEME_SYMBOLP(modidx))
@@ -725,14 +735,14 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   m->modname = SCHEME_STX_VAL(nm); /* must set before calling new_module_env */
   menv = scheme_new_module_env(env->genv, m);
 
+  iidx = scheme_make_modidx(scheme_syntax_to_datum(ii, 0, NULL), scheme_false);
+
   {
     Scheme_Object *ins;
-    ins = cons(SCHEME_STX_VAL(ii), scheme_null);
+    ins = cons(iidx, scheme_null);
     m->imports = ins;
     m->et_imports = scheme_null;
   }
-
-  iidx = scheme_make_modidx(scheme_syntax_to_datum(ii, 0, NULL), scheme_false);
 
   iim = scheme_module_load(scheme_module_resolve(iidx), menv); /* load the module for the initial import */
   expstart_module(iim, menv, 0, NULL, iidx);
@@ -1101,7 +1111,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  Scheme_Object *idx = SCHEME_CAR(imods);
 	  
 	  for (il = env->genv->module->imports; SCHEME_PAIRP(il); il = SCHEME_CDR(il)) {
-	    if (scheme_equal(idx, SCHEME_CAR(il)))
+	    if (same_modidx(idx, SCHEME_CAR(il)))
 	      break;
 	    ilast = il;
 	  }
@@ -1132,7 +1142,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  Scheme_Object *idx = SCHEME_CAR(imods);
 	  
 	  for (il = env->genv->module->et_imports; SCHEME_PAIRP(il); il = SCHEME_CDR(il)) {
-	    if (scheme_equal(idx, SCHEME_CAR(il)))
+	    if (same_modidx(idx, SCHEME_CAR(il)))
 	      break;
 	    ilast = il;
 	  }
@@ -1324,7 +1334,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
       Scheme_Object *midx = SCHEME_CAR(SCHEME_CAR(rx)), *l, *exns;
 	
       for (l = env->genv->module->imports; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
-	if (scheme_equal(midx, SCHEME_CAR(l)))
+	if (same_modidx(midx, SCHEME_CAR(l)))
 	  break;
       }
       if (SCHEME_NULLP(l)) {
@@ -1357,7 +1367,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	nominal_modidx = SCHEME_VEC_ELS((Scheme_Object *)b->val)[0];
 
 	for (rx = reexported; !SCHEME_NULLP(rx); rx = SCHEME_CDR(rx)) {
-	  if (scheme_equal(SCHEME_CAR(SCHEME_CAR(rx)), nominal_modidx)) {
+	  if (same_modidx(SCHEME_CAR(SCHEME_CAR(rx)), nominal_modidx)) {
 	    Scheme_Object *exns, *ree;
 	    
 	    ree = SCHEME_CDR(SCHEME_CAR(rx));
@@ -1680,7 +1690,7 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
     {
       Scheme_Object *l, *last = NULL, *p;
       for (l = imods; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
-	if (scheme_equal(SCHEME_CAR(l), idx))
+	if (same_modidx(SCHEME_CAR(l), idx))
 	  break;
 	last = l;
       }
@@ -1825,11 +1835,6 @@ static Scheme_Object *do_import(Scheme_Object *form, Scheme_Comp_Env *env,
   }
 
   (void)parse_imports(form, form, genv, NULL, rn, check_dup_import, ht, 1);
-
-  /* Check syntax: */
-  if ((scheme_stx_proper_list_length(form) != 2)
-      || !SCHEME_STX_SYMBOLP(SCHEME_STX_CADR(form)))
-    scheme_wrong_syntax(name, NULL, form, NULL);
 
   if (rec) {
     scheme_compile_rec_done_local(rec, drec);

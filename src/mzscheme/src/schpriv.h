@@ -1154,6 +1154,7 @@ typedef struct Scheme_Compile_Info
   MZTAG_IF_REQUIRED
   int max_let_depth;
   char dont_mark_local_use;
+  char resolve_module_ids;
   Scheme_Object *value_name;
 } Scheme_Compile_Info;
 
@@ -1385,6 +1386,7 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 #define SCHEME_DONT_MARK_USE 128
 #define SCHEME_OUT_OF_CONTEXT_OK 256
 #define SCHEME_NULL_FOR_UNBOUND 512
+#define SCHEME_RESOLVE_MODIDS 1024
 
 Scheme_Hash_Table *scheme_map_constants_to_globals(void);
 

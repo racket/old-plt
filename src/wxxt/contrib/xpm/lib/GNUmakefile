@@ -23,9 +23,10 @@
 #  in this Software without prior written authorization from GROUPE BULL.
 #
 
-WXDIR=$(shell pwd)/../../wxxt
+PLTSRCDIR = ../../../..
+include ../../../src/xtmake.env
 
-include $(WXDIR)/src/make$(MZPLATFORMSUFFIX).env
+XPMCC = $(CC)
 
 XPM_CC = $(XPMCC) $(CFLAGS) -DZPIPE -c
 

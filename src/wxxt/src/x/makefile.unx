@@ -27,9 +27,7 @@ all: $(IMAGELIBDIR) $(IMAGEOBJMAINDIR) $(IMAGEOBJDIR) \
      ../DataStructures/objects \
      ../Dialogs/objects \
      ../DeviceContexts/objects \
-     ../DrawingClasses/objects \
      ../EventHandling/objects \
-     ../IPC-Classes/objects \
      ../GDI-Classes/objects \
      ../Misc/objects \
      ../Utilities/objects \
@@ -39,9 +37,7 @@ all: $(IMAGELIBDIR) $(IMAGEOBJMAINDIR) $(IMAGEOBJDIR) \
      ../DataStructures/$(WXOBJS) \
      ../Dialogs/$(WXOBJS) \
      ../DeviceContexts/$(WXOBJS) \
-     ../DrawingClasses/$(WXOBJS) \
      ../EventHandling/$(WXOBJS) \
-     ../IPC-Classes/$(WXOBJS) \
      ../GDI-Classes/$(WXOBJS) \
      ../Misc/$(WXOBJS) \
      ../Utilities/$(WXOBJS) \
@@ -79,13 +75,9 @@ $(IMAGELIBDIR):
 	mkdir $@
 ../Dialogs/objects :
 	mkdir $@
-../DrawingClasses/objects :
-	mkdir $@
 ../DeviceContexts/objects :
 	mkdir $@
 ../EventHandling/objects :
-	mkdir $@
-../IPC-Classes/objects :
 	mkdir $@
 ../GDI-Classes/objects :
 	mkdir $@
@@ -104,13 +96,9 @@ $(IMAGELIBDIR):
 	mkdir $@
 ../Dialogs/$(WXOBJS) :
 	mkdir $@
-../DrawingClasses/$(WXOBJS) :
-	mkdir $@
 ../DeviceContexts/$(WXOBJS) :
 	mkdir $@
 ../EventHandling/$(WXOBJS) :
-	mkdir $@
-../IPC-Classes/$(WXOBJS) :
 	mkdir $@
 ../GDI-Classes/$(WXOBJS) :
 	mkdir $@

@@ -5,7 +5,8 @@ WXDIR = ../../..
 
 # All common UNIX compiler flags and options are now in
 # this central makefile.
-include $(WXDIR)/src/make$(MZPLATFORMSUFFIX).env
+PLTSRCDIR = ../../../..
+include ../../../src/xtmake.env
 
 IMAGEDIR = $(WXDIR)/utils/image
 IMAGELIB = $(IMAGEDIR)/lib/sys$(MZPLATFORMSUFFIX)/libimage$(GUISUFFIX).a

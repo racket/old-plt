@@ -452,6 +452,7 @@ please adhere to these guidelines:
  (show-interactions-on-execute "Automatically open interactions window when running a program")
  (limit-interactions-size "Limit interactions size")
  (background-color "Background color")
+ (default-text-color "Default text") ;; used for configuring colors, but doesn't need the word "color"
  (choose-a-background-color "Please choose a background color")
 
  ; title of the color choosing dialog

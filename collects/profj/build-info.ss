@@ -647,7 +647,9 @@
                         (method-record-atypes member-record)
                         (map (lambda (t)
                                (type-spec-to-type t (method-record-class member-record)  level type-recs))
-                             (map field-type (method-parms (car members))))))
+                             (map field-type (method-parms (car members)))))
+                (type=? (method-record-rtype member-record)
+                        (type-spec-to-type (method-type (car members)) (method-record-class member-record) level type-recs)))
            (car members)
            (find-member member-record (cdr members) level type-recs)))
       (else

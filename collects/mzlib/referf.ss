@@ -36,13 +36,10 @@
 				 '#%unit?)
 			    result)
 			   (#%raise
-			    (,(if sig?
-				  '#%make-exn:unit:signature:non-signed-unit
-				  '#%make-exn:unit:non-unit)
+			    (#%make-exn:unit
 			     ,(format "~s: result from ~s is not a ~aunit"
 				      sname names (if sig? "signed " ""))
-			     ((debug-info-handler))
-			     result)))
+			     ((debug-info-handler)))))
 		 result)))))
 
   (define make-require

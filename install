@@ -133,7 +133,7 @@ fi
 
 echo 'DrScheme starts up much faster with ".zo" files, but creating ".zo"'
 echo 'files now takes a few minutes and requires about 5MB of additional'
-echo 'disk space. Create ".zo" files later by running the bin/setup-plt.'
+echo 'disk space. Create ".zo" files later by running plt/bin/setup-plt.'
 echo -n ' Create ".zo" files now (y/n)? [y] '
 read response
 if [ "$response" != 'n' ] ; then

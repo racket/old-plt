@@ -156,7 +156,7 @@ void wxMessage::CreateWxMessage(char* label, wxFont* theFont) // common construc
     if (font->GetStyle() != wxNORMAL)
       clientWidth += 5; //cjc - try hello.cc italic labels are truncated
   }
-  SetClientSize(clientWidth + 3, clientHeight); // mflatt: +3 is needed (even for plain)
+  SetClientSize((int)floor(clientWidth) + 3, (int)floor(clientHeight)); // mflatt: +3 is needed (even for plain)
 	
   if (GetParent()->IsHidden())
     DoShow(FALSE);
@@ -229,6 +229,12 @@ void wxMessage::Paint(void)
 	  
     if (sBitmap) {
       sBitmap->DrawMac();
+    } else if (font && (font != wxNORMAL_FONT)) {
+      FontInfo fontInfo;
+      ::GetFontInfo(&fontInfo);
+      MoveTo(SetOriginX, fontInfo.ascent + SetOriginY); // move pen to start drawing text
+      
+      DrawLatin1Text(cMessage, 0, -1, 0);
     } else {
       Rect r = { SetOriginY, SetOriginX, 
 		 SetOriginY + clientHeight, SetOriginX + clientWidth };

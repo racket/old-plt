@@ -221,14 +221,21 @@ void wxChoice::DrawChoice(Bool active)
   SetCurrentDC();
   
   if (sTitle) {
-    Rect r = { SetOriginY + TitleRect.top - 2, SetOriginX + TitleRect.left, 
-	       SetOriginY + TitleRect.bottom - 2, SetOriginX + TitleRect.right };
-    CFStringRef str = CFStringCreateWithCString(NULL, wxP2C(sTitle), kCFStringEncodingISOLatin1);
-    
-    DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
-		     0, &r, teJustLeft, NULL);
-
-    CFRelease(str);
+    if (font && (font != wxNORMAL_FONT)) {
+      FontInfo fontInfo;
+      ::GetFontInfo(&fontInfo);
+      MoveTo(SetOriginX, fontInfo.ascent + SetOriginY); // move pen to start drawing text
+      DrawLatin1Text(sTitle, 0, -1, 0);
+    } else {
+      Rect r = { SetOriginY + TitleRect.top - 2, SetOriginX + TitleRect.left, 
+		 SetOriginY + TitleRect.bottom - 2, SetOriginX + TitleRect.right };
+      CFStringRef str = CFStringCreateWithCString(NULL, wxP2C(sTitle), kCFStringEncodingISOLatin1);
+      
+      DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
+		       0, &r, teJustLeft, NULL);
+      
+      CFRelease(str);
+    }
   }
   
   ::Draw1Control(cMacControl);

@@ -113,6 +113,24 @@ static wxFrame *wxWindowPtrToFrame(WindowPtr w, MrEdContext *c)
   return NULL;
 }
 
+static void UpdateRgnToWindowCoords(WindowPtr w, RgnHandle updateRgn)
+{
+  Rect windowBounds;
+  RgnHandle contentRgn;
+  
+  GetWindowBounds(w, kWindowContentRgn, &windowBounds);
+  
+  /* Avoid overflow in offset: */
+  contentRgn = NewRgn();
+  if (contentRgn) {
+    GetWindowRegion(w, kWindowContentRgn, contentRgn);
+    SectRgn(contentRgn, updateRgn, updateRgn);
+    DisposeRgn(contentRgn);
+  }
+  
+  OffsetRgn(updateRgn, -1 * windowBounds.left, -1 * windowBounds.top);
+}
+
 /***************************************************************************/
 /*                            shadow event queue                           */
 /***************************************************************************/
@@ -169,12 +187,17 @@ static void QueueTransferredEvent(EventRecord *e)
     for (q = first; q; q = q->next) {
       if ((q->event.what == updateEvt)
 	  && (w == ((WindowPtr)q->event.message))) {
-        RgnHandle updateRegionHandle;
-	updateRegionHandle = NewRgn();
+        RgnHandle updateRgn;
+	updateRgn = NewRgn();
 
-        GetWindowRegion(w,kWindowUpdateRgn,updateRegionHandle);	
-        UnionRgn(updateRegionHandle, q->rgn, q->rgn);
-	DisposeRgn(updateRegionHandle);
+        GetWindowRegion(w, kWindowUpdateRgn, updateRgn);	
+
+	/* Shift to window coords, because the window might
+	   move before we handle the update */
+	UpdateRgnToWindowCoords(w, updateRgn);
+
+        UnionRgn(updateRgn, q->rgn, q->rgn);
+	DisposeRgn(updateRgn);
 
         BeginUpdate(w);
         EndUpdate(w);
@@ -212,9 +235,13 @@ static void QueueTransferredEvent(EventRecord *e)
   if (e->what == updateEvt) {
     WindowPtr w = (WindowPtr)e->message;
     q->rgn = NewRgn();
-    GetWindowRegion(w,kWindowUpdateRgn,q->rgn);
+    GetWindowRegion(w, kWindowUpdateRgn, q->rgn);
     BeginUpdate(w);
     EndUpdate(w);
+
+    /* Shift to window coords, because the window might
+       move before we handle the update */
+    UpdateRgnToWindowCoords(w, q->rgn);
   } else if (e->what == osEvt) {
     /* Must be a suspend/resume event */
 
@@ -1038,22 +1065,9 @@ void MrEdDispatchEvent(EventRecord *e)
       }
     }
     
-    {
-      Rect windowBounds;
-      RgnHandle contentRgn;
-      contentRgn = NewRgn();
-
-      GetWindowBounds(w, kWindowContentRgn, &windowBounds);
-
-      /* Avoid overflow in offset: */
-      GetWindowRegion(w, kWindowContentRgn, contentRgn);
-      SectRgn(contentRgn, rgn, rgn);
-
-      OffsetRgn(rgn, -1 * windowBounds.left, -1 * windowBounds.top);
-      InvalWindowRgn(w, rgn);
-      DisposeRgn(rgn);
-      DisposeRgn(contentRgn);
-    }
+    /* rgn is in window co-ords */
+    InvalWindowRgn(w, rgn);
+    DisposeRgn(rgn);
   }
 
   wxTheApp->doMacPreEvent();

@@ -114,7 +114,7 @@
       (define send-to-server
 	(lambda (communicator message-template . rest)
 	  (apply fprintf (communicator-sender communicator)
-		 (string-append message-template "~n")
+		 (string-append message-template "\r\n")
 		 rest)))
 
       ;; parse-status-line :

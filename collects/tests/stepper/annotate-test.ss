@@ -1,6 +1,7 @@
 (current-library-collection-paths '("/Users/clements/hot/plt/collects"))
 
 (require (prefix annotate: (lib "annotate.ss" "stepper" "private")))
+(require (prefix kernel: (lib "kerncase.ss" "syntax")))
 
 (define (wrap-expand-unwrap stx language-level-spec)
   (let* ([wrapped (datum->syntax-object #f `(module test-module ,language-level-spec
@@ -28,28 +29,38 @@
 
 (define test-cases
   ; lambda 
-  (list (list #'(let ([a 9] [b 12]) (lambda (b c) (+ b c) (+ a b 4))) 'mzscheme)))
-
-              
-;              (kernel:kernel-syntax-case stx #f
-;                [(with-continuation-mark
-;                  _a
-;                  _b
-;                  (let-values _c
-;                    (with-continuation-mark _d _e
-;                      (begin
-;                        _f ; set!
-;                        _g ; set!
-;                        (with-continuation-mark
-;                         debug-key
-;                         debug-mark
-;                         (closure-capturing-proc
-;                          (lambda (b c) _a _b)
-;                          closure-info))))))
-;                 #f])
+  (list (list #'(let ([a 9] [b 12]) (lambda (b c) (+ b c) (+ a b 4))) 'mzscheme
+              (lambda (stx)
+                (kernel:kernel-syntax-case stx #f
+                   [(let*-values _c
+                       (with-continuation-mark _d _e
+                                               (begin
+                                                 . rest
+;                                                 (break-proc_1)
+;                                                 (begin
+;                                                   _f ; set!
+;                                                   _g ; set!
+;                                                   (begin
+;                                                     (break-proc_2 . break-proc_2-args)
+;                                                     (with-continuation-mark
+;                                                      debug-key
+;                                                      (lambda ()
+;                                                        (make-full-mark-proc
+;                                                         source
+;                                                         label-num
+;                                                         .
+;                                                         mark-bindings))
+;                                                      (closure-capturing-proc
+;                                                       (lambda (b c) _h _i)
+;                                                       closure-info))))
+                                                 ))
+                      )
+                    (syntax beg)]
+                   [else (error 'test-cases "nope, didn't match")])))))
               ; do example with lifted-name arg and inferred-name storage
 
-(syntax-object->datum (annotate-expr (caar test-cases) (cadar test-cases)))
+(define beg
+  ((caddar test-cases) (cadr (annotate-expr (caar test-cases) (cadar test-cases)))))
 
   
   

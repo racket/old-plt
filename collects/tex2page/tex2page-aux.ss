@@ -17,7 +17,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "4r8")
+(define *tex2page-version* "4r8a")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -3215,12 +3215,15 @@
 
 (define do-htmladdimg
   (lambda ()
-    (let ((align-info (get-bracketed-text-if-any)))
+    (let* ((align-info (get-bracketed-text-if-any))
+           (url (fully-qualify-url (get-url))))
       (emit "<img src=\"")
-      (emit (fully-qualify-url (get-url)))
+      (emit url)
       (emit "\" border=\"0\" ")
       (when align-info (tex2page-string align-info))
-      (emit ">"))))
+      (emit " alt=\"[")
+      (emit url)
+      (emit "]\">"))))
 
 (define do-pdfximage
   (lambda ()
@@ -3777,8 +3780,8 @@
 (define output-html-preamble
   (lambda (top-level-page?)
     (emit "<!doctype html public ")
-    (emit "\"-//W3C//DTD HTML 4.0 Transitional//EN\" ")
-    (emit "\"http://www.w3.org/TR/REC-html40/loose.dtd\">")
+    (emit "\"-//W3C//DTD HTML 4.01 Transitional//EN\" ")
+    (emit "\"http://www.w3.org/TR/html4/loose.dtd\">")
     (emit-newline)
     (emit "<html>")
     (emit-newline)
@@ -5671,7 +5674,9 @@
       (valid-img-file? f)
       (emit "<img src=\"")
       (emit img-file)
-      (emit "\" border=\"0\">")
+      (emit "\" border=\"0\" alt=\"[")
+      (emit img-file)
+      (emit "]\">")
       (write-log #\))
       (write-log 'separation-space)
       #t)))

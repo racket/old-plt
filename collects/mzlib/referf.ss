@@ -1,7 +1,7 @@
 
  (unit
   (import)
-  (export (make-require-unit require-unit) (make-require require-file))
+  (export (make-require-unit require-unit) (make-require include-file))
   
   (define make-require-unit
    ; require-unit, etc.

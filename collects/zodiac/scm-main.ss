@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.166 1999/01/06 23:09:57 mflatt Exp $
+; $Id: scm-main.ss,v 1.167 1999/01/09 04:41:38 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1860,7 +1860,7 @@
 
 ;  (include "shared.ss")
 
-  (define require-file-macro
+  (define include-file-macro
     (let* ((kwd '())
 	    (in-pattern '(_ filename))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -1880,10 +1880,10 @@
 		      env attributes vocab)
 		    (static-error filename "Does not yield a filename"))))))
 	  (else
-	    (static-error expr "Malformed require-file"))))))
+	    (static-error expr "Malformed include-file"))))))
 
-  (add-primitivized-micro-form 'require-file beginner-vocabulary require-file-macro)
-  (add-on-demand-form 'macro 'require-file common-vocabulary require-file-macro)
+  (add-primitivized-micro-form 'include-file beginner-vocabulary include-file-macro)
+  (add-on-demand-form 'macro 'include-file common-vocabulary include-file-macro)
 
   (define require-library-micro
     (let* ((kwd '())

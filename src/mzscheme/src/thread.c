@@ -2363,6 +2363,11 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
   if (!cells)
     cells = scheme_inherit_cells(NULL);
 
+  config = scheme_init_error_escape_proc(config);
+  config = scheme_extend_config(config, MZCONFIG_EXN_HANDLER,
+				scheme_get_thread_param(config, cells,
+							MZCONFIG_INIT_EXN_HANDLER));
+  
   child = make_thread(config, cells, mgr);
 
   /* Use child_thunk name, if any, for the thread name: */
@@ -2383,11 +2388,6 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
 
   if (!normal_kill)
     child->suspend_to_kill = 1;
-
-  scheme_init_error_escape_proc(child);
-  scheme_set_thread_param(child->init_config, child->cell_values, MZCONFIG_EXN_HANDLER,
-			  scheme_get_thread_param(child->init_config, child->cell_values, 
-						  MZCONFIG_INIT_EXN_HANDLER));
 
   child->stack_start = child_start;
   
@@ -2727,22 +2727,21 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   {
     Scheme_Config *config;
     config = scheme_current_config();
-    np->init_config = config;
     p->config_at_swap = config;
+
+    config = scheme_init_error_escape_proc(config);
+    if (!nested_exn_handler) {
+      REGISTER_SO(nested_exn_handler);
+      nested_exn_handler = scheme_make_prim_w_arity(def_nested_exn_handler,
+						    "nested-thread-exception-handler",
+						    1, 1);
+    }
+    config = scheme_extend_config(config, MZCONFIG_EXN_HANDLER, nested_exn_handler);
+
+    np->init_config = config;
   }
   np->cont_mark_pos = (MZ_MARK_POS_TYPE)1;
   /* others 0ed already by allocation */
-
-  if (!nested_exn_handler) {
-    REGISTER_SO(nested_exn_handler);
-    nested_exn_handler = scheme_make_prim_w_arity(def_nested_exn_handler,
-						  "nested-thread-exception-handler",
-						  1, 1);
-  }
-
-  scheme_init_error_escape_proc(np);
-  scheme_set_thread_param(np->init_config, np->cell_values,
-			  MZCONFIG_EXN_HANDLER, nested_exn_handler);
 
   /* zero out anything we need now, because nestee disables
      GC cleaning for this thread: */
@@ -4995,7 +4994,7 @@ Scheme_Object *scheme_make_thread_cell(Scheme_Object *def_val, int inherited)
 {
   Scheme_Object *c;
 
-  c = MALLOC_ONE_TAGGED(Scheme_Simple_Object);
+  c = scheme_alloc_object();
   c->type = scheme_thread_cell_type;
   SCHEME_IPTR_VAL(c) = def_val;
   SCHEME_PINT_VAL(c) = inherited;

@@ -1332,7 +1332,7 @@ inline static int custodian_member_owner_set(void *cust, int set)
   while(work) {
     if(work == cust) return 1;
     box = work->parent;
-    work = box ? box->u.two_ptr_val.ptr1 : NULL;
+    work = box ? SCHEME_PTR1_VAL(box) : NULL;
   }
   return 0;
 }
@@ -1527,8 +1527,8 @@ static void do_btc_accounting(void)
   clear_old_owner_data();
   
   /* the end of the custodian list is where we want to start */
-  while(box->u.two_ptr_val.ptr1) {
-    cur = (Scheme_Custodian*)box->u.two_ptr_val.ptr1;
+  while(SCHEME_PTR1_VAL(box)) {
+    cur = (Scheme_Custodian*)SCHEME_PTR1_VAL(box);
     box = cur->global_next;
   }
   
@@ -1543,7 +1543,7 @@ static void do_btc_accounting(void)
     GCDEBUG((DEBUGOUTF, "Propagating accounting marks\n"));
     propagate_accounting_marks();
     
-    box = cur->global_prev; cur = box ? box->u.two_ptr_val.ptr1 : NULL;
+    box = cur->global_prev; cur = box ? SCHEME_PTR1_VAL(box) : NULL;
   }
   
   in_unsafe_allocation_mode = 0;

@@ -50,14 +50,14 @@ toplevel_obj {
 c_pointer_obj {
  mark:
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 second_of_cons {
  mark:
   gcMARK(SCHEME_PTR2_VAL((Scheme_Object *)p));
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 twoptr_obj {
@@ -65,14 +65,14 @@ twoptr_obj {
   gcMARK(SCHEME_PTR1_VAL((Scheme_Object *)p));
   gcMARK(SCHEME_PTR2_VAL((Scheme_Object *)p));
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 iptr_obj {
  mark:
   gcMARK(SCHEME_IPTR_VAL((Scheme_Object *)p));
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 small_object {
@@ -145,15 +145,14 @@ branch_rec {
 
 unclosed_proc {
  mark:
-  Scheme_Closure_Compilation_Data *d = (Scheme_Closure_Compilation_Data *)p;
+  Scheme_Closure_Data *d = (Scheme_Closure_Data *)p;
 
-  if (d->name)
-    gcMARK(d->name);
+  gcMARK(d->name);
   gcMARK(d->code);
   gcMARK(d->closure_map);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Compilation_Data));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Data));
 }
 
 let_value {
@@ -211,18 +210,6 @@ with_cont_mark {
   gcBYTES_TO_WORDS(sizeof(Scheme_With_Continuation_Mark));
 }
 
-comp_unclosed_proc {
- mark:
-  Scheme_Closure_Compilation_Data *c = (Scheme_Closure_Compilation_Data *)p;
-  
-  gcMARK(c->closure_map);
-  gcMARK(c->code);
-  gcMARK(c->name);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Compilation_Data));
-}
-
 comp_let_value {
  mark:
   Scheme_Compiled_Let_Value *c = (Scheme_Compiled_Let_Value *)p;
@@ -252,7 +239,7 @@ prim_proc {
   gcMARK(prim->name);
 
  size:
-  ((prim->flags & SCHEME_PRIM_IS_MULTI_RESULT)
+  ((prim->pp.flags & SCHEME_PRIM_IS_MULTI_RESULT)
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Prim_W_Result_Arity))
    : gcBYTES_TO_WORDS(sizeof(Scheme_Primitive_Proc)));
 }
@@ -265,15 +252,15 @@ closed_prim_proc {
   gcMARK(SCHEME_CLSD_PRIM_DATA(c));
   
  size:
-  ((c->flags & SCHEME_PRIM_IS_MULTI_RESULT)
+  ((c->pp.flags & SCHEME_PRIM_IS_MULTI_RESULT)
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Prim_W_Result_Arity))
    : ((c->mina == -2)
       ? gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Case_Primitive_Proc))
       : gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Primitive_Proc))));
 }
 
-linked_closure {
-  Scheme_Closed_Compiled_Procedure *c = (Scheme_Closed_Compiled_Procedure *)p;
+scm_closure {
+  Scheme_Closure *c = (Scheme_Closure *)p;
 
  mark:
   int i = c->closure_size;
@@ -282,7 +269,7 @@ linked_closure {
   gcMARK(c->code);
   
  size:
-  gcBYTES_TO_WORDS((sizeof(Scheme_Closed_Compiled_Procedure)
+  gcBYTES_TO_WORDS((sizeof(Scheme_Closure)
 		    + (c->closure_size - 1) * sizeof(Scheme_Object *)));
 }
 
@@ -374,17 +361,15 @@ bignum_obj {
   Scheme_Bignum *b = (Scheme_Bignum *)p;
 
  mark:
-  if (!b->allocated_inline) {
+  if (!SCHEME_BIGINLINE(b)) {
     gcMARK(b->digits);
   } else
     b->digits = ((Small_Bignum *)b)->v;
 
  size:
-  ((!b->allocated_inline)
+  ((!SCHEME_BIGINLINE(b))
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Bignum))
-   : ((b->allocated_inline > 1)
-      ? gcBYTES_TO_WORDS(sizeof(Small_Bignum) + sizeof(bigdig))
-      : gcBYTES_TO_WORDS(sizeof(Small_Bignum))));
+   : gcBYTES_TO_WORDS(sizeof(Small_Bignum)));
 }
 
 rational_obj {
@@ -431,7 +416,7 @@ string_obj {
   gcMARK(SCHEME_CHAR_STR_VAL(o));
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 bstring_obj {
@@ -440,7 +425,7 @@ bstring_obj {
   gcMARK(SCHEME_BYTE_STR_VAL(o));
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 symbol_obj {
@@ -459,7 +444,7 @@ cons_cell {
   gcMARK(SCHEME_CDR(o));
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 vector_obj {
@@ -515,7 +500,7 @@ output_port {
 syntax_compiler {
  mark:
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 thread_val {
@@ -746,7 +731,7 @@ svector_val {
   gcMARK(SCHEME_SVEC_VEC(o));
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 stx_val {
@@ -756,7 +741,7 @@ stx_val {
   gcMARK(stx->srcloc);
   gcMARK(stx->wraps);
   gcMARK(stx->props);
-  if (!(stx->hash_code & STX_SUBSTX_FLAG))
+  if (!(MZ_OPT_HASH_KEY(&(stx)->iso) & STX_SUBSTX_FLAG))
     gcMARK(stx->u.modinfo_cache);
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Stx));

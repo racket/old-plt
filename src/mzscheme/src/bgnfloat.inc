@@ -115,7 +115,7 @@ Scheme_Object *SCHEME_BIGNUM_FROM_FLOAT(FP_TYPE d)
   }
 
   if (negate)
-    SCHEME_BIGPOS(n) = !SCHEME_BIGPOS(n);
+    SCHEME_SET_BIGPOS(n, !SCHEME_BIGPOS(n));
 
   n = scheme_bignum_normalize(n);
 

@@ -131,17 +131,17 @@ int toplevel_obj_FIXUP(void *p) {
 
 int c_pointer_obj_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int c_pointer_obj_MARK(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int c_pointer_obj_FIXUP(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 #define c_pointer_obj_IS_ATOMIC 1
@@ -150,19 +150,19 @@ int c_pointer_obj_FIXUP(void *p) {
 
 int second_of_cons_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int second_of_cons_MARK(void *p) {
   gcMARK(SCHEME_PTR2_VAL((Scheme_Object *)p));
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int second_of_cons_FIXUP(void *p) {
   gcFIXUP(SCHEME_PTR2_VAL((Scheme_Object *)p));
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 #define second_of_cons_IS_ATOMIC 0
@@ -171,21 +171,21 @@ int second_of_cons_FIXUP(void *p) {
 
 int twoptr_obj_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int twoptr_obj_MARK(void *p) {
   gcMARK(SCHEME_PTR1_VAL((Scheme_Object *)p));
   gcMARK(SCHEME_PTR2_VAL((Scheme_Object *)p));
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int twoptr_obj_FIXUP(void *p) {
   gcFIXUP(SCHEME_PTR1_VAL((Scheme_Object *)p));
   gcFIXUP(SCHEME_PTR2_VAL((Scheme_Object *)p));
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 #define twoptr_obj_IS_ATOMIC 0
@@ -194,19 +194,19 @@ int twoptr_obj_FIXUP(void *p) {
 
 int iptr_obj_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int iptr_obj_MARK(void *p) {
   gcMARK(SCHEME_IPTR_VAL((Scheme_Object *)p));
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int iptr_obj_FIXUP(void *p) {
   gcFIXUP(SCHEME_IPTR_VAL((Scheme_Object *)p));
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 #define iptr_obj_IS_ATOMIC 0
@@ -400,31 +400,29 @@ int branch_rec_FIXUP(void *p) {
 
 int unclosed_proc_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Compilation_Data));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Data));
 }
 
 int unclosed_proc_MARK(void *p) {
-  Scheme_Closure_Compilation_Data *d = (Scheme_Closure_Compilation_Data *)p;
+  Scheme_Closure_Data *d = (Scheme_Closure_Data *)p;
 
-  if (d->name)
-    gcMARK(d->name);
+  gcMARK(d->name);
   gcMARK(d->code);
   gcMARK(d->closure_map);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Compilation_Data));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Data));
 }
 
 int unclosed_proc_FIXUP(void *p) {
-  Scheme_Closure_Compilation_Data *d = (Scheme_Closure_Compilation_Data *)p;
+  Scheme_Closure_Data *d = (Scheme_Closure_Data *)p;
 
-  if (d->name)
-    gcFIXUP(d->name);
+  gcFIXUP(d->name);
   gcFIXUP(d->code);
   gcFIXUP(d->closure_map);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Compilation_Data));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Data));
 }
 
 #define unclosed_proc_IS_ATOMIC 0
@@ -576,37 +574,6 @@ int with_cont_mark_FIXUP(void *p) {
 #define with_cont_mark_IS_CONST_SIZE 1
 
 
-int comp_unclosed_proc_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Compilation_Data));
-}
-
-int comp_unclosed_proc_MARK(void *p) {
-  Scheme_Closure_Compilation_Data *c = (Scheme_Closure_Compilation_Data *)p;
-  
-  gcMARK(c->closure_map);
-  gcMARK(c->code);
-  gcMARK(c->name);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Compilation_Data));
-}
-
-int comp_unclosed_proc_FIXUP(void *p) {
-  Scheme_Closure_Compilation_Data *c = (Scheme_Closure_Compilation_Data *)p;
-  
-  gcFIXUP(c->closure_map);
-  gcFIXUP(c->code);
-  gcFIXUP(c->name);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Compilation_Data));
-}
-
-#define comp_unclosed_proc_IS_ATOMIC 0
-#define comp_unclosed_proc_IS_CONST_SIZE 1
-
-
 int comp_let_value_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Compiled_Let_Value));
@@ -669,7 +636,7 @@ int prim_proc_SIZE(void *p) {
   Scheme_Primitive_Proc *prim = (Scheme_Primitive_Proc *)p;
 
   return
-  ((prim->flags & SCHEME_PRIM_IS_MULTI_RESULT)
+  ((prim->pp.flags & SCHEME_PRIM_IS_MULTI_RESULT)
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Prim_W_Result_Arity))
    : gcBYTES_TO_WORDS(sizeof(Scheme_Primitive_Proc)));
 }
@@ -680,7 +647,7 @@ int prim_proc_MARK(void *p) {
   gcMARK(prim->name);
 
   return
-  ((prim->flags & SCHEME_PRIM_IS_MULTI_RESULT)
+  ((prim->pp.flags & SCHEME_PRIM_IS_MULTI_RESULT)
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Prim_W_Result_Arity))
    : gcBYTES_TO_WORDS(sizeof(Scheme_Primitive_Proc)));
 }
@@ -691,7 +658,7 @@ int prim_proc_FIXUP(void *p) {
   gcFIXUP(prim->name);
 
   return
-  ((prim->flags & SCHEME_PRIM_IS_MULTI_RESULT)
+  ((prim->pp.flags & SCHEME_PRIM_IS_MULTI_RESULT)
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Prim_W_Result_Arity))
    : gcBYTES_TO_WORDS(sizeof(Scheme_Primitive_Proc)));
 }
@@ -704,7 +671,7 @@ int closed_prim_proc_SIZE(void *p) {
   Scheme_Closed_Primitive_Proc *c = (Scheme_Closed_Primitive_Proc *)p;
 
   return
-  ((c->flags & SCHEME_PRIM_IS_MULTI_RESULT)
+  ((c->pp.flags & SCHEME_PRIM_IS_MULTI_RESULT)
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Prim_W_Result_Arity))
    : ((c->mina == -2)
       ? gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Case_Primitive_Proc))
@@ -718,7 +685,7 @@ int closed_prim_proc_MARK(void *p) {
   gcMARK(SCHEME_CLSD_PRIM_DATA(c));
   
   return
-  ((c->flags & SCHEME_PRIM_IS_MULTI_RESULT)
+  ((c->pp.flags & SCHEME_PRIM_IS_MULTI_RESULT)
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Prim_W_Result_Arity))
    : ((c->mina == -2)
       ? gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Case_Primitive_Proc))
@@ -732,7 +699,7 @@ int closed_prim_proc_FIXUP(void *p) {
   gcFIXUP(SCHEME_CLSD_PRIM_DATA(c));
   
   return
-  ((c->flags & SCHEME_PRIM_IS_MULTI_RESULT)
+  ((c->pp.flags & SCHEME_PRIM_IS_MULTI_RESULT)
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Prim_W_Result_Arity))
    : ((c->mina == -2)
       ? gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Case_Primitive_Proc))
@@ -743,16 +710,16 @@ int closed_prim_proc_FIXUP(void *p) {
 #define closed_prim_proc_IS_CONST_SIZE 0
 
 
-int linked_closure_SIZE(void *p) {
-  Scheme_Closed_Compiled_Procedure *c = (Scheme_Closed_Compiled_Procedure *)p;
+int scm_closure_SIZE(void *p) {
+  Scheme_Closure *c = (Scheme_Closure *)p;
 
   return
-  gcBYTES_TO_WORDS((sizeof(Scheme_Closed_Compiled_Procedure)
+  gcBYTES_TO_WORDS((sizeof(Scheme_Closure)
 		    + (c->closure_size - 1) * sizeof(Scheme_Object *)));
 }
 
-int linked_closure_MARK(void *p) {
-  Scheme_Closed_Compiled_Procedure *c = (Scheme_Closed_Compiled_Procedure *)p;
+int scm_closure_MARK(void *p) {
+  Scheme_Closure *c = (Scheme_Closure *)p;
 
   int i = c->closure_size;
   while (i--)
@@ -760,12 +727,12 @@ int linked_closure_MARK(void *p) {
   gcMARK(c->code);
   
   return
-  gcBYTES_TO_WORDS((sizeof(Scheme_Closed_Compiled_Procedure)
+  gcBYTES_TO_WORDS((sizeof(Scheme_Closure)
 		    + (c->closure_size - 1) * sizeof(Scheme_Object *)));
 }
 
-int linked_closure_FIXUP(void *p) {
-  Scheme_Closed_Compiled_Procedure *c = (Scheme_Closed_Compiled_Procedure *)p;
+int scm_closure_FIXUP(void *p) {
+  Scheme_Closure *c = (Scheme_Closure *)p;
 
   int i = c->closure_size;
   while (i--)
@@ -773,12 +740,12 @@ int linked_closure_FIXUP(void *p) {
   gcFIXUP(c->code);
   
   return
-  gcBYTES_TO_WORDS((sizeof(Scheme_Closed_Compiled_Procedure)
+  gcBYTES_TO_WORDS((sizeof(Scheme_Closure)
 		    + (c->closure_size - 1) * sizeof(Scheme_Object *)));
 }
 
-#define linked_closure_IS_ATOMIC 0
-#define linked_closure_IS_CONST_SIZE 0
+#define scm_closure_IS_ATOMIC 0
+#define scm_closure_IS_CONST_SIZE 0
 
 
 int case_closure_SIZE(void *p) {
@@ -998,43 +965,37 @@ int bignum_obj_SIZE(void *p) {
   Scheme_Bignum *b = (Scheme_Bignum *)p;
 
   return
-  ((!b->allocated_inline)
+  ((!SCHEME_BIGINLINE(b))
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Bignum))
-   : ((b->allocated_inline > 1)
-      ? gcBYTES_TO_WORDS(sizeof(Small_Bignum) + sizeof(bigdig))
-      : gcBYTES_TO_WORDS(sizeof(Small_Bignum))));
+   : gcBYTES_TO_WORDS(sizeof(Small_Bignum)));
 }
 
 int bignum_obj_MARK(void *p) {
   Scheme_Bignum *b = (Scheme_Bignum *)p;
 
-  if (!b->allocated_inline) {
+  if (!SCHEME_BIGINLINE(b)) {
     gcMARK(b->digits);
   } else
     b->digits = ((Small_Bignum *)b)->v;
 
   return
-  ((!b->allocated_inline)
+  ((!SCHEME_BIGINLINE(b))
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Bignum))
-   : ((b->allocated_inline > 1)
-      ? gcBYTES_TO_WORDS(sizeof(Small_Bignum) + sizeof(bigdig))
-      : gcBYTES_TO_WORDS(sizeof(Small_Bignum))));
+   : gcBYTES_TO_WORDS(sizeof(Small_Bignum)));
 }
 
 int bignum_obj_FIXUP(void *p) {
   Scheme_Bignum *b = (Scheme_Bignum *)p;
 
-  if (!b->allocated_inline) {
+  if (!SCHEME_BIGINLINE(b)) {
     gcFIXUP(b->digits);
   } else
     b->digits = ((Small_Bignum *)b)->v;
 
   return
-  ((!b->allocated_inline)
+  ((!SCHEME_BIGINLINE(b))
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Bignum))
-   : ((b->allocated_inline > 1)
-      ? gcBYTES_TO_WORDS(sizeof(Small_Bignum) + sizeof(bigdig))
-      : gcBYTES_TO_WORDS(sizeof(Small_Bignum))));
+   : gcBYTES_TO_WORDS(sizeof(Small_Bignum)));
 }
 
 #define bignum_obj_IS_ATOMIC 0
@@ -1151,7 +1112,7 @@ int complex_obj_FIXUP(void *p) {
 
 int string_obj_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int string_obj_MARK(void *p) {
@@ -1159,7 +1120,7 @@ int string_obj_MARK(void *p) {
   gcMARK(SCHEME_CHAR_STR_VAL(o));
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int string_obj_FIXUP(void *p) {
@@ -1167,7 +1128,7 @@ int string_obj_FIXUP(void *p) {
   gcFIXUP(SCHEME_CHAR_STR_VAL(o));
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 #define string_obj_IS_ATOMIC 0
@@ -1176,7 +1137,7 @@ int string_obj_FIXUP(void *p) {
 
 int bstring_obj_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int bstring_obj_MARK(void *p) {
@@ -1184,7 +1145,7 @@ int bstring_obj_MARK(void *p) {
   gcMARK(SCHEME_BYTE_STR_VAL(o));
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int bstring_obj_FIXUP(void *p) {
@@ -1192,7 +1153,7 @@ int bstring_obj_FIXUP(void *p) {
   gcFIXUP(SCHEME_BYTE_STR_VAL(o));
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 #define bstring_obj_IS_ATOMIC 0
@@ -1226,7 +1187,7 @@ int symbol_obj_FIXUP(void *p) {
 
 int cons_cell_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int cons_cell_MARK(void *p) {
@@ -1236,7 +1197,7 @@ int cons_cell_MARK(void *p) {
   gcMARK(SCHEME_CDR(o));
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int cons_cell_FIXUP(void *p) {
@@ -1246,7 +1207,7 @@ int cons_cell_FIXUP(void *p) {
   gcFIXUP(SCHEME_CDR(o));
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 #define cons_cell_IS_ATOMIC 0
@@ -1378,17 +1339,17 @@ int output_port_FIXUP(void *p) {
 
 int syntax_compiler_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int syntax_compiler_MARK(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int syntax_compiler_FIXUP(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 #define syntax_compiler_IS_ATOMIC 1
@@ -1923,7 +1884,7 @@ int comp_prefix_val_FIXUP(void *p) {
 
 int svector_val_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int svector_val_MARK(void *p) {
@@ -1932,7 +1893,7 @@ int svector_val_MARK(void *p) {
   gcMARK(SCHEME_SVEC_VEC(o));
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int svector_val_FIXUP(void *p) {
@@ -1941,7 +1902,7 @@ int svector_val_FIXUP(void *p) {
   gcFIXUP(SCHEME_SVEC_VEC(o));
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 #define svector_val_IS_ATOMIC 0
@@ -1959,7 +1920,7 @@ int stx_val_MARK(void *p) {
   gcMARK(stx->srcloc);
   gcMARK(stx->wraps);
   gcMARK(stx->props);
-  if (!(stx->hash_code & STX_SUBSTX_FLAG))
+  if (!(MZ_OPT_HASH_KEY(&(stx)->iso) & STX_SUBSTX_FLAG))
     gcMARK(stx->u.modinfo_cache);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Stx));
@@ -1971,7 +1932,7 @@ int stx_val_FIXUP(void *p) {
   gcFIXUP(stx->srcloc);
   gcFIXUP(stx->wraps);
   gcFIXUP(stx->props);
-  if (!(stx->hash_code & STX_SUBSTX_FLAG))
+  if (!(MZ_OPT_HASH_KEY(&(stx)->iso) & STX_SUBSTX_FLAG))
     gcFIXUP(stx->u.modinfo_cache);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Stx));

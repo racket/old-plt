@@ -178,7 +178,7 @@ extern Scheme_Type_Writer *scheme_type_writers;
 
 void scheme_init_port_config(void);
 void scheme_init_port_fun_config(void);
-void scheme_init_error_escape_proc(Scheme_Thread *p);
+Scheme_Config *scheme_init_error_escape_proc(Scheme_Config *c);
 void scheme_init_error_config(void);
 #ifndef NO_SCHEME_EXNS
 void scheme_init_exn_config(void);
@@ -982,10 +982,10 @@ typedef struct {
 } Scheme_Bignum;
 
 #if MZ_PRECISE_GC
-# define SCHEME_BIGPOS(b) MZ_OPT_HASH_KEY(&((Scheme_Bignum *)b)->iso) & 0x1)
-# define SCHEME_SET_BIGPOS(b, v) MZ_OPT_HASH_KEY(&((Scheme_Bignum *)b)->iso) = v | SCHEME_BIGINLINE(b)
-# define SCHEME_BIGINLINE(b) MZ_OPT_HASH_KEY(&((Scheme_Bignum *)b)->iso) & 0x2)
-# define SCHEME_SET_BIGINLINE(b, v) MZ_OPT_HASH_KEY(&((Scheme_Bignum *)b)->iso) = (v << 1) | SCHEME_BIGPOS(b)
+# define SCHEME_BIGPOS(b) (MZ_OPT_HASH_KEY(&((Scheme_Bignum *)b)->iso) & 0x1)
+# define SCHEME_SET_BIGPOS(b, v) MZ_OPT_HASH_KEY(&((Scheme_Bignum *)b)->iso) = ((v) | SCHEME_BIGINLINE(b))
+# define SCHEME_BIGINLINE(b) (MZ_OPT_HASH_KEY(&((Scheme_Bignum *)b)->iso) & 0x2)
+# define SCHEME_SET_BIGINLINE(b, v) MZ_OPT_HASH_KEY(&((Scheme_Bignum *)b)->iso) = (((v) << 1) | SCHEME_BIGPOS(b))
 #else
 # define SCHEME_BIGPOS(b) MZ_OPT_HASH_KEY(&((Scheme_Bignum *)b)->iso)
 # define SCHEME_SET_BIGPOS(b, v) SCHEME_BIGPOS(b) = v

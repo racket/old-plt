@@ -152,7 +152,7 @@ Scheme_Env *scheme_basic_env()
 #endif
 
     scheme_make_thread();
-    scheme_init_error_escape_proc(scheme_current_thread);
+    scheme_init_error_escape_proc(NULL);
 
     env = scheme_make_empty_env();
     scheme_install_initial_module_set(env);
@@ -306,7 +306,7 @@ Scheme_Env *scheme_basic_env()
 
   scheme_save_initial_module_set(env);
 
-  scheme_init_error_escape_proc(scheme_current_thread);
+  scheme_init_error_escape_proc(NULL);
 
   scheme_starting_up = 0;
 

@@ -99,7 +99,7 @@ static void default_output(char *s, long len)
   fflush(stderr);
 }
 
-void scheme_init_error_escape_proc(Scheme_Thread *p)
+Scheme_Config *scheme_init_error_escape_proc(Scheme_Config *config)
 {
   if (!def_error_esc_proc) {
     REGISTER_SO(def_error_esc_proc);
@@ -109,7 +109,12 @@ void scheme_init_error_escape_proc(Scheme_Thread *p)
 			       0, 0);
   }
 
-  scheme_set_thread_param(p->init_config, p->cell_values, MZCONFIG_ERROR_ESCAPE_HANDLER, def_error_esc_proc);
+  if (config)
+    return scheme_extend_config(config, MZCONFIG_ERROR_ESCAPE_HANDLER, def_error_esc_proc);
+  else {
+    scheme_set_root_param(MZCONFIG_ERROR_ESCAPE_HANDLER, def_error_esc_proc);
+    return NULL;
+  }
 }
 
 /*

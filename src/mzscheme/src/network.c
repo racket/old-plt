@@ -1378,7 +1378,7 @@ static Scheme_Tcp *make_tcp_port_data(MAKE_TCP_ARG int refcount)
   
   data = MALLOC_ONE_RT(Scheme_Tcp);
 #ifdef MZTAG_REQUIRED
-  data->b.so.type = scheme_rt_tcp;
+  data->b.type = scheme_rt_tcp;
 #endif
 #ifdef USE_SOCKETS_TCP
   data->tcp = tcp;

@@ -35,6 +35,14 @@
                                   #f)
             (syn (access (make-name))))))
 
+  ;flatten: (list (list ~a)...) -> (list ~a)
+  (define (flatten l)
+    (cond
+      ((null? l) l)
+      ((pair? (car l)) (append (flatten (car l))
+                               (flatten (cdr l))))
+      (else (cons (car l) (flatten (cdr l))))))
+  
   ;-------------------------------------------------------------------------------
   ;Main functions
 
@@ -264,7 +272,6 @@
                                      (method-record-modifiers m2))))
                (over-riden? m (cdr listm))))))
   
-  ;; Won't get the implemented interfaces' parents as implemented interfaces
   ;; process-class: class-def (list string) type-records bool symbol -> class-record
   (define (process-class class package-name type-recs look-in-table? level)
     (let* ((info (class-def-info class))
@@ -300,9 +307,10 @@
                                  reqs)
                    (error 'process-class "Internal error: not all of imports and classes exist"))
                  
-                 (when (memq 'final (class-record-modifiers super-record))
-                   (extension-error 'final (header-id info) super (id-src super)))
-                 
+                 (when (eq? level 'full)
+                   (when (memq 'final (class-record-modifiers super-record))
+                     (extension-error 'final (header-id info) super (id-src super))))
+                   
                  (unless (class-record-class? super-record)
                    (extension-error 'class-iface (header-id info) super (id-src super)))
                  
@@ -323,6 +331,13 @@
                                     (process-members members old-methods cname type-recs level 
                                                      (find-strictfp modifiers))
                                     (process-members members old-methods cname type-recs level))))
+                   
+                   (unless (has-ctor? m)
+                     (when (and (eq? level 'beginner)
+                                (not (null? f)))
+                       (beginner-ctor-error (header-id info) (id-src (header-id info))))
+                     (add-ctor class (lambda (rec) (set! m (cons rec m))) old-methods (header-id info) level))
+                   
                    (valid-field-names? f members type-recs)
                    (valid-method-sigs? m members level type-recs)
 
@@ -356,20 +371,62 @@
                                                (class-specific-method? meth m))
                                              (class-record-methods super-record)))
                            (cons super-name (class-record-parents super-record))
-                           (append (map name->list (header-implements info))
-                                   (class-record-ifaces super-record)))))
+                           (flatten
+                            (append (map name->list (header-implements info))
+                                    (map class-record-parents iface-records)
+                                    (class-record-ifaces super-record))))))
                      (send type-recs add-class-record record)
                      record))))))
         (if look-in-table?
             (get-record (send type-recs get-class-record cname build-record) type-recs)
             (build-record)))))
   
+  ;find-strictfp (list modifier) -> modifier
   (define (find-strictfp mods)
     (if (null? mods)
         null
         (if (eq? 'strictfp (modifier-kind (car mods)))
             (car mods)
             (find-strictfp (cdr mods)))))
+  
+  ;has-ctor?: (list method-record)-> bool
+  (define (has-ctor? methods)
+    (and (not (null? methods))
+         (or (eq? (method-record-rtype (car methods)) 'ctor)
+             (has-ctor? (cdr methods)))))
+  
+  ;add-ctor: class-def (method-record -> void) (list method-record) id symbol-> void
+  (define (add-ctor class add-rec super-methods name level) 
+    (let ((super-ctor (find-default-ctor super-methods)))
+      (cond
+        ((not super-ctor)
+         (default-ctor-error 'non-accessible name (method-record-class (car super-methods)) (id-src name) level))
+        ((memq 'private (method-record-modifiers super-ctor))
+         (default-ctor-error 'private name (method-record-class super-ctor) (id-src name) level))
+        ((and (memq level '(advanced full))
+              (not (null? (method-record-throws super-ctor))))
+         (default-ctor-error 'throws name (method-record-class super-ctor) (id-src name) level))
+        (else
+         (let ((method (make-method (list (make-modifier 'public #f))
+                                    (make-type-spec 'ctor 0 #f)
+                                    null
+                                    (make-id (id-string name) #f)
+                                    null
+                                    null
+                                    (make-block 
+                                     (list (make-call #f #f #f (make-special-name #f #f "super") null #f)) #f)
+                                    #f))
+               (rec (make-method-record (id-string name) `(public) 'ctor null null #f "")))
+           (set-class-def-members! class (cons method (class-def-members class)))
+           (add-rec rec))))))
+
+  ;find-default-ctor: (list method-record) -> (U boolean method-record)
+  (define (find-default-ctor methods)
+    (and (not (null? methods))
+         (or (and (eq? (method-record-rtype (car methods)) 'ctor)
+                  (null? (method-record-atypes (car methods)))
+                  (car methods))
+             (find-default-ctor (cdr methods)))))
   
   ;; process-interface: interface-def (list string) type-records bool symbol -> class-record
   (define (process-interface iface package-name type-recs look-in-table? level)
@@ -492,8 +549,9 @@
                              (map (lambda (t)
                                     (type-spec-to-type (field-type t) type-recs))
                                   (method-parms m))
-                             (method-record-class (car methods))
-                             (method-src m))))
+                             (car (method-record-class (car methods)))
+                             (method-src m)
+                             (eq? (method-record-rtype (car methods)) 'ctor))))
         (valid-method-sigs? (cdr methods) members level type-recs)))
   
   (define (method-member? method methods level)
@@ -506,7 +564,8 @@
                            (andmap type=? (method-record-atypes method) 
                                    (method-record-atypes (car methods))))))
              (method-member? method (cdr methods) level))))                              
-  
+ 
+  ;valid-inherited-methods?: (list class-record) (list name) symbol type-records -> bool
   (define (valid-inherited-methods? records extends level type-recs)
     (or (null? records)
         (and (check-inherited-method (class-record-methods (car records))
@@ -516,20 +575,21 @@
                                      type-recs)
              (valid-inherited-methods? (cdr records) (cdr extends) level type-recs))))
   
+  ;check-inherited-method: (list method-record) (list class-record) name symbol type-records -> bool
   (define (check-inherited-method methods records from level type-recs)
     (or (null? methods)
         (and (method-conflicts? (car methods) 
                                 (apply append (map class-record-methods records))
                                 level)
              (method-error 'inherit-conflict 
-                           (method-name (car methods))
-                           (map (lambda (t) 
-                                  (type-spec-to-type (field-type t) type-recs))
-                                (method-parms (car methods)))
-                           from
-                           (method-src (car methods))))
+                           (method-record-name (car methods))
+                           (method-record-atypes (car methods))
+                           (id-string (name-id from))
+                           (name-src from)
+                           #f))
         (check-inherited-method (cdr methods) records from level type-recs)))
-  
+
+  ;method-conflicts?: method-record (list method-record) symbol -> bool
   (define (method-conflicts? method methods level)
     (and (not (null? methods))
          (or (and (equal? (method-record-name method)
@@ -556,7 +616,8 @@
                                     (type-spec-to-type (field-type t) type-recs))
                                   (method-parms method))
                              (car (class-record-name record))
-                             (method-src method))))
+                             (method-src method)
+                             #f)))
         (check-for-conflicts (cdr methods) record members level type-recs)))
   
   ;class-fully-implemented? class-record id (list class-record) (list id) (list method) symbol -> bool
@@ -580,7 +641,8 @@
                            (make-id (method-record-name (car inherit-methods)) #f)
                            (method-record-atypes (car inherit-methods))
                            (id-string name)
-                           (id-src name)))
+                           (id-src name)
+                           #f))
         (implements-all? (cdr inherit-methods) methods name level)))
   
   (define (no-abstract-methods methods members type-recs)
@@ -592,8 +654,9 @@
                              (map (lambda (t)
                                     (type-spec-to-type (field-type t) type-recs))
                                   (method-parms method)) 
-                             (method-record-class (car methods))
-                             (method-src method))))
+                             (car (method-record-class (car methods)))
+                             (method-src method)
+                             #f)))
         (no-abstract-methods (cdr methods) members type-recs)))
     
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -932,15 +995,16 @@
                      ((implement-class) (format "Class ~a cannot implement class ~a" n s)))
                    s src)))
 
-  ;method-error: symbol id (list type) string src -> void
-  (define (method-error kind name parms class src)
+  ;method-error: symbol id (list type) string src bool -> void
+  (define (method-error kind name parms class src ctor?)
     (let ((m-name (method-name->ext-name (id-string name) parms)))
       (raise-error m-name
                    (case kind
                      ((illegal-abstract)
                       (format "Abstract method ~a is not allowed in non-abstract class ~a" m-name class))
                      ((repeated)
-                      (format "Method ~a has already been written in this class (~a)" m-name class))
+                      (format "~a ~a has already been written in this class (~a)" 
+                              (if ctor? "Constructor" "Method") m-name class))
                      ((inherit-conflict)
                       (format "Inherited method ~a from ~a conflicts with another method of the same name"
                               m-name class))
@@ -957,6 +1021,33 @@
                    (format "Method ~a has no return type and does not have the same name as the class, ~a.~n
                    Only constructors may have no return type, but must have the name of the class"
                            n class)
+                   n src)))
+
+  ;beginner-ctor-error: id src -> void
+  (define (beginner-ctor-error class src) 
+    (let ((n (id->ext-name class)))
+      (raise-error n
+                   (format "Class ~a has fields, and therefore must have a constructor to set them"
+                           n)
+                   n src)))
+
+  ;default-ctor-error symbol id string src symbol -> void
+  (define (default-ctor-error kind name parent src level)
+    (let ((n (id->ext-name name)))
+      (raise-error n
+                   (case kind
+                     ((private)
+                      (if (memq level '(beginner intermediate))
+                          (format "Class ~a cannot extend ~a" n parent)
+                          (format "Class ~a cannot access the default constructor of ~a, which is private"
+                                  n parent)))
+                     ((non-accessible)
+                      (if (memq level '(beginner intermediate))
+                          (format "Class ~a cannot extend ~a" n parent)
+                          (format "Class ~a cannot access a default constructor for ~a" n parent)))
+                     ((throws)
+                      (format "Class ~a cannot use the default constructor for ~a, as ~a's default contains a throws clause"
+                              n parent parent)))
                    n src)))
   
   ;inherited-throw-error:symbol string (list type) (list string) string type src -> void

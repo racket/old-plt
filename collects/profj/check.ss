@@ -766,9 +766,6 @@
       ((* / % *= /= %=)       ;; 15.17
        (prim-check prim-numeric-type? binary-promotion 'num l r op src))
       ((+ - += -=)      ;; 15.18
-       (display level)(newline)
-       (display l)(newline)
-       (display r)(newline)
        (if (and (memq level '(advanced full))
                 (eq? '+ op) (or (is-string-type? l) (is-string-type? r)))
            string-type

@@ -37,7 +37,7 @@
       ((num) "double, float, long, int, short, byte or char")
       (else "dummy")))
   
- ;type->ext-name: type -> (U symbol string)
+ ;type->ext-name: type -> symbol
   (define (type->ext-name t)
     (string->symbol
      (cond 
@@ -50,7 +50,7 @@
                         dims
                         (begin (set! dims (string-append dims "[]"))
                                (loop (sub1 d))))))))
-       (else t))))
+       (else (format "~a" t)))))
   
   ;id->ext-name: id -> symbol
   (define (id->ext-name id)
@@ -73,9 +73,9 @@
                            parms))
                    0 (sub1 (length parms)))))
   
-  ;method-name->ext-name: string (list type) -> string
+  ;method-name->ext-name: string (list type) -> symbol
   (define (method-name->ext-name name parms)
-    (format "~a(~a)" name (make-parm-string parms)))
+    (string->symbol (format "~a(~a)" name (make-parm-string parms))))
 
   ;path->ext: (list string) -> string
   (define (path->ext path)

@@ -310,8 +310,7 @@
 	(make-block (list $2) (build-src 3))]
        [(O_BRACE BlockStatements C_BRACE)
 	(make-block 
-	 (cons (make-call #f (build-src 1) 
-			      #f (make-special-name #f (build-src 1) "super") null #f)
+	 (cons (make-call #f #f #f (make-special-name #f #f "super") null #f)
 	       (reverse $2))
 	 (build-src 3))]
        [(O_BRACE C_BRACE)

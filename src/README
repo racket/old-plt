@@ -9,12 +9,10 @@ available at
   http://www.cs.rice.edu/CS/PLT/packages/mzscheme/
   http://www.cs.rice.edu/CS/PLT/packages/mred/
 
-The MzScheme source code should compile and execute with little or no
-modification on any Windows, MacOS, Unix (Linux), or BeOS platform.
-
-Compiling MrEd, needed for DrScheme, on a Unix platform requires GNU's
-make. (Linux's make is GNU's make.) MrEd will *not* compile using
-Cygwin for Windows, or on BeOS.
+The MzScheme source code should compile and execute on any Windows,
+MacOS, Unix (Linux), or BeOS platform. The MrEd source code should
+compile and execute on any Windows, MacOS, or Unix (Linux) platform,
+but not on BeOS and not using Cygwin with Windows.
 
 Per-platform instructions are below.
 
@@ -97,21 +95,15 @@ see `README' in that folder.
     torturous--process.  Compiling under Solaris 2.6 or compiling
     without -O under Solaris 2.7 apparently solves the problem.]
 
- 2. Run `make' or `gnumake' or `gmake'. If you are building MrEd, you
-    must use GNU's version of make.
+ 2. Run `make'.
 
-    Under Linux, `make' is GNU's make. For most other platforms, use
-    `gnumake' or `gmake'. With Cygwin, use `make --unix' to build
-    either MzScheme or MrEd.
-
-      Did you get a "no targets" make error when building MrEd? In that
-      case, are you using GNU's make, which reads "GNUmakefile"?
+    With Cygwin, use `make --unix'.
 
     Binaries and libraries are placed in subdirectories of the build
     directory. For example, the `mzscheme' binary appears in the
     `mzscheme' directory.
 
- 3. Run `make install' (or `gnumake install' or `gmake install').
+ 3. Run `make install'.
 
     This step copies binaries and libraries into their normal places
     in the plt tree relative to the source directory. For example, the
@@ -121,7 +113,7 @@ see `README' in that folder.
 
  4. Unix (Linux) and BeOS: Run ./install in the plt directory (one
     directory up from here). Afterwards, plt/bin/setup-plt and
-    plt/bin/mzc should work. If you move the plt tree, re-run
+    plt/bin/mzc should work. If you move the plt tree, simply re-run
     plt/install.
 
     Cygwin: Create the other executables (besides mred.exe and
@@ -131,6 +123,9 @@ see `README' in that folder.
     the .zo files, too, but add -n to the end of the command to skip
     the .zo-compiling step. Afterwards, `plt/Setup PLT.exe' and
     `plt/mzc.exe' work.
+
+    After installation, the plt/src directory is no longer needed, and
+    can be safely deleted.
 
 ========================================================================
  Compiling the OSKit-based kernel
@@ -200,8 +195,8 @@ collection") on some Unix platforms, including Linux, FreeBSD, and
 Solaris. The precisely-collected forms are called MzScheme2k and
 MrEd2k, repsectively.
 
-To build MzScheme2k and MrEd2k, run `gnumake 2k'. Building MzScheme2k
-and MrEd2k first builds the normal MzScheme and MrEd executables, and
+To build MzScheme2k and MrEd2k, run `make 2k'. Building MzScheme2k and
+MrEd2k first builds the normal MzScheme and MrEd executables, then
 uses them to build the 2k versions.
 
 Configuration Options

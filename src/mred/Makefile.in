@@ -4,7 +4,33 @@ srcdir = @srcdir@
 WXDIR = $(srcdir)/../wxxt
 
 PLTSRCDIR = $(srcdir)/..
-include Make.env
+
+###########################
+#      Common Macros      #
+###########################
+CC = @CC@
+CXX = @CXX@
+LINKER = $(CXX)
+PERL = @PERL@
+RANLIB = @RANLIB@
+AR = @AR@
+ARFLAGS = @ARFLAGS@
+OPTIONS = @OPTIONS@ @MROPTIONS@
+COMPFLAGS = @CFLAGS@
+XINCLUDE = @X_CFLAGS@
+XLIB = @X_LIBS@
+LDLIBS = @X_PRE_LIBS@ -lXaw -lXmu -lXt -lX11 -lXext @X_EXTRA_LIBS@ @LIBS@
+GCDIRECTORY = @GCDIR@
+WBUILD = @WBUILD@
+
+WXINC = $(PLTSRCDIR)/wxxt/src/AIAI-include -I$(PLTSRCDIR)/wxxt/src
+NOGCINC = -I$(WXINC) -I$(PLTSRCDIR)/mred/wxme/ -I$(PLTSRCDIR)/mzscheme/include/
+INC = -I$(PLTSRCDIR)/mzscheme/$(GCDIRECTORY) $(NOGCINC)
+CXXFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -Dwx_xt $(COMPFLAGS)
+CPPFLAGS = $(CXXFLAGS)
+CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -Dwx_xt $(COMPFLAGS)
+LDFLAGS = $(XLIB)
+###########################
 
 # system name for installation
 INSTALLSYS = `$(srcdir)/../../bin/archsys`
@@ -46,14 +72,14 @@ bin:
 	$(MAKE) mred
 
 mred : $(WXME) $(WXSCHEME) $(MZSCHEME) $(MREDOBJECTS) \
-          ../wxxt/src/libwx$(GUISUFFIX).a \
+          ../wxxt/src/libwx_xt.a \
           ../wxxt/utils/image/src/libimage_xt.a \
           ../wxxt/contrib/xpm/lib/libXpm.a \
           $(MRSTATIC_STUB)
-	$(LINKER) $(MREDLDFLAGS) $(MRSTATIC) -o mred $(LDSTARTERS) $(MREDOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB) $(SGILINKHACK) $(LDENDERS)
+	$(LINKER) $(MREDLDFLAGS) $(MRSTATIC) -o mred $(MREDOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB) $(SGILINKHACK)
 
 ee-app: mred mred_ee.o
-	if [ "$(EEAPP)" = '' ] ; then echo "ERROR: You must specify EEAPP" ; else $(LINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(EEAPP) $(LDSTARTERS) mred_ee.o mredx.o $(EEOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB) $(SGILINKHACK) $(LDENDERS) ; fi
+	if [ "$(EEAPP)" = '' ] ; then echo "ERROR: You must specify EEAPP" ; else $(LINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(EEAPP) mred_ee.o mredx.o $(EEOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB) $(SGILINKHACK) ; fi
 
 sunos4-static: dl_stub.o
 	$(MAKE) mred MRSTATIC=-static  MRSTATIC_STUB='dl_stub.o' LDNONSTATICLIBS=''
@@ -111,5 +137,6 @@ install:
 	rm -f $(srcdir)/../../.bin/$(INSTALLSYS)/mred
 	cp mred $(srcdir)/../../.bin/$(INSTALLSYS)/mred
 
-# Precise GC:
-include gc2/GNUmakefile
+2k:
+	cd gc2; $(MAKE) 2k
+

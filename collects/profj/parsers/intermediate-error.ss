@@ -1154,7 +1154,7 @@
                    (let* ((afterID (getter)))
                      (if (o-paren? (get-tok afterID))
                          (parse-expression next afterID 'method-call-args getter)
-                         afterID)))
+                         (parse-expression next afterID 'dot-op-or-end getter))))
                   ((keyword? next-tok) 
                    (parse-error (format "Expected a method name, reserved name ~a may not be a method name" name) ns ne))
                   (else (parse-error (format "Expected a method name, found ~a" (output-format next-tok)) ns ne)))))

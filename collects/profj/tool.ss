@@ -93,12 +93,12 @@
       
       (define (phase1) (void))
       (define (phase2) 
-        (drscheme:language-configuration:add-language
-         (make-object ((drscheme:language:get-default-mixin) 
-                       full-lang%)))
-        (drscheme:language-configuration:add-language
-         (make-object ((drscheme:language:get-default-mixin) 
-                       advanced-lang%)))
+        ;(drscheme:language-configuration:add-language
+        ; (make-object ((drscheme:language:get-default-mixin) 
+        ;               full-lang%)))
+        ;(drscheme:language-configuration:add-language
+        ; (make-object ((drscheme:language:get-default-mixin) 
+        ;               advanced-lang%)))
         (drscheme:language-configuration:add-language
          (make-object ((drscheme:language:get-default-mixin) 
                        intermediate-lang%)))

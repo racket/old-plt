@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.74 1999/01/28 18:34:22 mflatt Exp $
+; $Id: scm-unit.ss,v 1.75 1999/02/02 19:33:15 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -51,58 +51,46 @@
 
   ; --------------------------------------------------------------------
 
-  (define c-unit-link-import/body-vocab-attr 'c-unit-link-import/body-vocab)
+  (define (make-put-get-remove attr)
+    (define put
+      (lambda (attributes v)
+	(put-attribute 
+	 attributes attr
+	 (cons v
+	       (get-attribute attributes attr
+			      (lambda () null))))))
+    (define get
+      (lambda (attributes)
+	(car (get-attribute attributes attr))))
+    (define remove
+      (lambda (attributes)
+	(put-attribute 
+	 attributes attr
+	 (cdr (get-attribute attributes attr)))))
+    (values put get remove))
 
-  (define put-c-unit-vocab-attribute
-    (lambda (attributes vocab)
-      (put-attribute attributes c-unit-link-import/body-vocab-attr
-	(cons vocab
-	  (get-attribute attributes c-unit-link-import/body-vocab-attr
-	    (lambda () null))))))
+  (define-values (put-c-unit-vocab-attribute
+		  get-c-unit-vocab-attribute
+		  remove-c-unit-vocab-attribute)
+    (make-put-get-remove 'c-unit-link-import/body-vocab))
 
-  (define get-c-unit-vocab-attribute
-    (lambda (attributes)
-      (car
-	(get-attribute attributes c-unit-link-import/body-vocab-attr))))
 
-  (define remove-c-unit-vocab-attribute
-    (lambda (attributes)
-      (put-attribute attributes c-unit-link-import/body-vocab-attr
-	(cdr (get-attribute attributes c-unit-link-import/body-vocab-attr)))))
-
-  (define c-unit-current-link-tag-attribute 'c-unit-current-link-tag-attribute)
-
-  (define put-c-unit-current-link-tag-attribute
-    (lambda (attributes tag)
-      (put-attribute attributes c-unit-current-link-tag-attribute
-	(cons tag
-	  (get-attribute attributes c-unit-current-link-tag-attribute
-	    (lambda () null))))))
-
-  (define get-c-unit-current-link-tag-attribute
-    (lambda (attributes)
-      (car
-	(get-attribute attributes c-unit-current-link-tag-attribute))))
-
-  (define remove-c-unit-current-link-tag-attribute
-    (lambda (attributes)
-      (put-attribute attributes c-unit-current-link-tag-attribute
-	(cdr (get-attribute attributes c-unit-current-link-tag-attribute)))))
-
-  (define make-vars-attribute
-    (lambda (attributes)
-      (put-attribute attributes 'unit-vars
-	(cons (make-hash-table)
-	  (get-attribute attributes 'unit-vars (lambda () '()))))))
-
-  (define get-vars-attribute
-    (lambda (attributes)
-      (car (get-attribute attributes 'unit-vars))))
-
-  (define remove-vars-attribute
-    (lambda (attributes)
-      (put-attribute attributes 'unit-vars
-	(cdr (get-attribute attributes 'unit-vars)))))
+  (define-values (put-c-unit-current-link-tag-attribute
+		  get-c-unit-current-link-tag-attribute
+		  remove-c-unit-current-link-tag-attribute)
+    (make-put-get-remove 'c-unit-current-link-tag-attribute))
+		  
+  (define-values (put-c-unit-expand-env
+		  get-c-unit-expand-env
+		  remove-c-unit-expand-env)
+    (make-put-get-remove 'c-unit-expand-env))
+		  
+  (define-values (put-vars-attribute
+		  get-vars-attribute
+		  remove-vars-attribute)
+    (make-put-get-remove 'unit-vars))
+  (define (make-vars-attribute attributes)
+    (put-vars-attribute attributes (make-hash-table)))
 
   (define-struct unresolved (id varref))
 
@@ -416,8 +404,8 @@
     (lambda (expr env attributes vocab)
       (verify-export expr attributes)
       (let ((expand-vocab (get-attribute attributes 'exports-expand-vocab)))
-	(cons (expand-expr expr env attributes expand-vocab)
-	  expr))))
+	(cons (process-unit-top-level-resolution expr attributes)
+	      expr))))
 
   (add-list-micro unit-verify-exports-vocab
     (let* ((kwd '())
@@ -433,8 +421,8 @@
 		(verify-export internal attributes)
 		(let ((expand-vocab (get-attribute attributes
 				      'exports-expand-vocab)))
-		  (cons (expand-expr internal env attributes expand-vocab)
-		    external)))))
+		  (cons (process-unit-top-level-resolution internal attributes)
+			external)))))
 	  (else
 	    (static-error expr "Malformed export declaration"))))))
 
@@ -446,7 +434,7 @@
 			  null
 			  (let ([r (resolve (car exports) env vocab)]
 				[rest (loop (cdr exports))])
-			    (if (lexical-binding? r)
+			    (if (binding? r)
 				(cons (cons
 				       r 
 				       (lambda ()
@@ -463,7 +451,7 @@
 	       (fixup expr shadowed))
 	     exprs)))))
 
-  ;; Yuck - traverse and re-create expressions to fix varrefs pointing to
+  ;; Yuck - traverse and patch expressions to fix varrefs pointing to
   ;; lexical bindings that are shadowed by unit definitions.
 
   (define (fixup expr binding-map)
@@ -493,9 +481,11 @@
 	     [(begin0-form? expr)
 	      (set-begin0-form-bodies! expr (map fix (begin0-form-bodies expr)))]
 	     [(let-values-form? expr)
-	      (set-let-values-form-vals! expr (map fix (let-values-form-vals expr)))]
+	      (set-let-values-form-vals! expr (map fix (let-values-form-vals expr)))
+	      (set-let-values-form-body! expr (fix (let-values-form-body expr)))]
 	     [(letrec*-values-form? expr)
-	      (set-letrec*-values-form-vals! expr (map fix (letrec*-values-form-vals expr)))]
+	      (set-letrec*-values-form-vals! expr (map fix (letrec*-values-form-vals expr)))
+	      (set-letrec*-values-form-body! expr (fix (letrec*-values-form-body expr)))]
 	     [(define-values-form? expr)
 	      (set-define-values-form-val! expr (fix (define-values-form-val expr)))]
 	     [(set!-form? expr)
@@ -508,13 +498,26 @@
 	      (set-with-continuation-mark-form-val! expr (fix (with-continuation-mark-form-val expr)))
 	      (set-with-continuation-mark-form-body! expr (fix (with-continuation-mark-form-body expr)))]
 	     [(class*/names-form? expr)
-	      expr] ; !!!
+	      (for-each
+	       (lambda (clause)
+		 (cond
+		  [(public-clause? clause)
+		   (set-public-clause-exprs! clause (map fix (public-clause-exprs clause)))]
+		  [(private-clause? clause)
+		   (set-private-clause-exprs! clause (map fix (private-clause-exprs clause)))]
+		  [(sequence-clause? clause)
+		   (set-sequence-clause-exprs! clause (map fix (sequence-clause-exprs clause)))]
+		  [else (void)]))
+	       (class*/names-form-inst-clauses expr))]
 	     [(interface-form? expr)
 	      (set-interface-form-super-exprs! expr (map fix (interface-form-super-exprs expr)))]
 	     [(unit-form? expr)
 	      (set-unit-form-clauses! expr (map fix (unit-form-clauses expr)))]
 	     [(compound-unit-form? expr)
-	      expr] ; !!!
+	      (for-each
+	       (lambda (link)
+		 (set-car! (cdr link) (fix (cadr link))))
+	       (compound-unit-form-links expr))]
 	     [(invoke-unit-form? expr)
 	      (set-invoke-unit-form-unit! expr (fix (invoke-unit-form-unit expr)))
 	      (set-invoke-unit-form-variables! expr (map fix (invoke-unit-form-variables expr)))]
@@ -668,8 +671,10 @@
 	      (let ((sub-unit-expr (pat:pexpand 'sub-unit-expr p-env kwd))
 		     (imported-vars
 		       (pat:pexpand '(imported-var ...) p-env kwd)))
-		(cons (expand-expr sub-unit-expr env attributes
-			(get-c-unit-vocab-attribute attributes))
+		(cons (expand-expr sub-unit-expr
+				   (get-c-unit-expand-env attributes)
+				   attributes
+				   (get-c-unit-vocab-attribute attributes))
 		  (map (lambda (imported-var)
 			 (expand-expr imported-var env attributes
 			   c-unit-link-import-vocab))
@@ -748,14 +753,15 @@
 	      =>
 	      (lambda (p-env)
 		(let ((in:imports (pat:pexpand '(imports ...) p-env kwd))
-		       (in:link-tags (pat:pexpand '(link-tag ...) p-env kwd))
-		       (in:link-bodies
-			 (pat:pexpand '(link-body ...) p-env kwd))
-		       (in:export-clauses
-			 (pat:pexpand '(export-clause ...) p-env kwd)))
+		      (in:link-tags (pat:pexpand '(link-tag ...) p-env kwd))
+		      (in:link-bodies
+		       (pat:pexpand '(link-body ...) p-env kwd))
+		      (in:export-clauses
+		       (pat:pexpand '(export-clause ...) p-env kwd)))
 		  (distinct-valid-syntactic-id/s? in:link-tags)
 		  (make-vars-attribute attributes)
 		  (put-c-unit-vocab-attribute attributes vocab)
+		  (put-c-unit-expand-env attributes (copy-env env))
 		  (let* ((proc:imports (map (lambda (e)
 					      (expand-expr e env
 							   attributes c/imports-vocab))
@@ -805,6 +811,7 @@
 				      in:export-clauses)))
 			 (_ (retract-env (map car proc:imports) env)))
 		    (remove-c-unit-vocab-attribute attributes)
+		    (remove-c-unit-expand-env attributes)
 		    (remove-vars-attribute attributes)
 		    (create-compound-unit-form
 		      (map car proc:imports)
@@ -1208,8 +1215,9 @@
   (reference-library-unit-maker 'require-relative-library-unit/sig #t #t)
 
   (define (reset-unit-attributes attr)
-    (put-attribute attr c-unit-link-import/body-vocab-attr null)
-    (put-attribute attr c-unit-current-link-tag-attribute null)
+    (put-attribute attr 'c-unit-link-import/body-vocab null)
+    (put-attribute attr 'c-unit-current-link-tag-attribute null)
+    (put-attribute attr 'c-unit-expand-env null)
     (put-attribute attr 'unit-vars null)
     (put-attribute attr 'unresolved-unit-vars null))
 

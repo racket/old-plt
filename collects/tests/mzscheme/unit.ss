@@ -454,10 +454,10 @@
 	   (define define-values 10)
 	   define-values))))
 	
-; Escpecially for zodiac:
+; Especially for zodiac:
 (test '(b c 10 b a (c a b) (c b a) (c . c) (a) #t
-	  (nested-b a b c))
-      'invoke-w/shadowed-alot
+	  (nested-b a b c) (a 2 b) (10 b c) (cl-unit-a 12 c))
+      'invoke-w/shadowed-a-lot
       (let ([a 'bad-a]
 	    [b 'bad-b]
 	    [c 'bad-c]
@@ -506,7 +506,43 @@
 	       (export)
 	       (define b 'nested-b)
 	       (list b w a c))
-	     a b))))))
+	     a b)
+	    (invoke-open-unit
+	      (compound-unit
+	       (import a)
+	       (link [u ((unit (import c) (export (xa a) (b xb))
+			       (define xa 1)
+			       (define b 2)
+			       (list a b c))
+			 a)])
+	       (export))
+	      #f
+	      b)
+	    (send
+	     (make-object
+	      (class object% ()
+		(public
+		  [a 10]
+		  [tester
+		   (lambda () (list a b c))])
+		(sequence (super-init))))
+	     tester)
+	    (send
+	     (make-object
+	      (class object% ()
+		(public
+		  [a 10]
+		  [b 12]
+		  [tester
+		   (lambda () 
+		     (invoke-unit
+		      (unit 
+			(import)
+			(export)
+			(define a 'cl-unit-a)
+			(list a b c))))])
+		(sequence (super-init))))
+	     tester))))))
 
 ; Not ok if defining an imported name, but error should be about
 ; redefining an imported name. (This behavior is not actually tested.)

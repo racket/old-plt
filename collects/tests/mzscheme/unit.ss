@@ -58,8 +58,14 @@
 (syntax-test '(unit (import i) (export (a x) b) (define x 5) (define b 6)))
 (syntax-test '(unit (import i) (export (a x) b) (set! a 5) (define b 6)))
 
-(syntax-test '(compound-unit (import) (link (A (0 (A)))) (export))) ; self-import
-(syntax-test '(compound-unit (import) (link (A (0 (A x)))) (export))) ; self-import
+; No identifiers in link/export:
+(syntax-test '(compound-unit (import) (link (A (0 (A)))) (export))) 
+(syntax-test '(compound-unit (import) (link (A (0))) (export (A))))
+(syntax-test '(compound-unit (import) (link (A (0 (B))) (B (0))) (export)))
+(syntax-test '(compound-unit (import) (link (A (0)) (B (0))) (export (A x) (B))))
+
+; Self-import:
+(syntax-test '(compound-unit (import) (link (A (0 (A x)))) (export)))
 
 (unless (defined? 'test-global-var)
 	(define test-global-var 5)

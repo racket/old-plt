@@ -35,8 +35,6 @@
 wxDialogBox::wxDialogBox(void) : wxFrame()
 {
   __type = wxTYPE_DIALOG_BOX;
-  
-  modal_showing = FALSE;
 }
 
 wxDialogBox::wxDialogBox(wxWindow *parent, char *title, Bool _modal, int x,
@@ -46,8 +44,6 @@ wxDialogBox::wxDialogBox(wxWindow *parent, char *title, Bool _modal, int x,
     __type = wxTYPE_DIALOG_BOX;
 
     style |= wxTRANSIENT;
-
-    modal_showing = FALSE;
 
     Create((wxFrame *)parent, title, _modal, x, y, width, height, style, name);
 }
@@ -66,27 +62,23 @@ extern void wxDispatchEventsUntil(int (*)(void *), void *);
 
 static int CheckDialogShowing(void *data)
 {
-  return (!((wxDialogBox *)data)->ModalShowing()
-	  || ((wxDialogBox *)data)->ModalPleaseClose());
+  return !((wxDialogBox *)data)->ModalShowing();
 }
 
 Bool wxDialogBox::Show(Bool show)
 {
   // handle modality
   if (show) {
-    wxList *disabled_windows;
-    wxNode *node;
     wxChildNode *cnode;
     wxChildList *tlf;
-
-    modal_please_close = 0;
 
     // popup/popdown frame
     wxFrame::Show(show);
     SetShown(show);
       
-    if (!modal_showing) {
-      modal_showing = TRUE;
+    if (!restore_disabled_windows) {
+      wxList *disabled_windows;
+
       wxPushModalWindow(this, this);
       
       disabled_windows = new wxList;
@@ -100,31 +92,34 @@ Bool wxDialogBox::Show(Bool show)
 	  w->InternalEnable(FALSE);
 	}
       }
-    } else
-     disabled_windows = NULL;
       
-    wxDispatchEventsUntil(CheckDialogShowing, (void *)this);
-      
-    wxFrame::Show(FALSE);
-    SetShown(FALSE);
+      restore_disabled_windows = disabled_windows;
+    }
 
-    if (disabled_windows) {
-      modal_showing = FALSE;
-      XFlush(XtDisplay(wxAPP_TOPLEVEL));
-      XSync(XtDisplay(wxAPP_TOPLEVEL), FALSE);
-      
-      wxPopModalWindow(this, this);
+    wxDispatchEventsUntil(CheckDialogShowing, (void *)this);
+  } else {
+    if (restore_disabled_windows) {
+      wxList *disabled_windows = restore_disabled_windows;
+      wxNode *node;
+
+      restore_disabled_windows = NULL;
       
       for (node = disabled_windows->First(); node; node = node->Next()) {
 	wxWindow *w;
 	w = (wxWindow *)node->Data();
 	w->InternalEnable(TRUE);
       }
+
+      wxPopModalWindow(this, this);
+
+      wxFrame::Show(FALSE);
+      SetShown(FALSE);
+      
+      XFlush(XtDisplay(wxAPP_TOPLEVEL));
+      XSync(XtDisplay(wxAPP_TOPLEVEL), FALSE);
     }
-  } else {
-    modal_please_close = 1;
-  }
-    
-    return TRUE;
+  } 
+  
+  return TRUE;
 }
 

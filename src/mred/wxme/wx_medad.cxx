@@ -115,7 +115,12 @@ wxBlinkTimer::wxBlinkTimer(wxMediaCanvas *c) {
 }
 
 void wxBlinkTimer::Notify(void) {
-  wxYield();
+  /* Used to try to avoid starving other events, but yielding 
+     has its own problems. In particular, it messes up dialogs
+     that expect show #f to immediately lead to a return from
+     show #t. */
+  // wxYield();
+
   if (canvas)
     canvas->BlinkCaret();
 }
@@ -145,7 +150,9 @@ wxAutoDragTimer::wxAutoDragTimer(wxMediaCanvas *c, wxMouseEvent *e) {
 }
 
 void wxAutoDragTimer::Notify(void) {
-  wxYield(); /* In case we get too much time */
+  /* See note above about wxYield */
+  // wxYield(); /* In case we get too much time */
+
   if (canvas) {
     event->timeStamp += AUTO_DRAG_DELAY;
     canvas->OnEvent(event);
@@ -1867,7 +1874,9 @@ public:
   void Notify(void) 
   {
     if (ss->trackState) {
-      wxYield(); /* timer can take over: check for events */
+      /* See note above about wxYield */
+      // wxYield(); /* timer can take over: check for events */
+
       ss->Click(x);
       if (!restarted) {
 	restarted = 1;

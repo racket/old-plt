@@ -1548,6 +1548,11 @@ void wxDispatchEventsUntil(wxDispatch_Check_Fun f, void *data)
   wxDispatchEventsUntilWaitable(f, data, NULL);
 }
 
+void wxBlockUntil(wxDispatch_Check_Fun f, void *data)
+{
+  scheme_block_until((Scheme_Ready_Fun)f, NULL, (Scheme_Object *)data, 0.0);
+}
+
 static SLEEP_PROC_PTR mzsleep;
 
 static void MrEdSleep(float secs, void *fds)

@@ -312,7 +312,7 @@ char *wxClipboard::GetClipboardString(long time)
   return str;
 }
 
-extern void wxDispatchEventsUntil(int (*)(void *), void *);
+extern void wxBlockUntil(int (*)(void *), void *);
 
 static int clipget_in_progress;
 
@@ -353,7 +353,7 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
     /* Disabled for now because we haven't handled thread kills and 
        escapes. */
 #if 0
-    wxDispatchEventsUntil(CheckNotInProgress, NULL);
+    wxBlockUntil(CheckNotInProgress, NULL);
 #endif
 
     clipget_in_progress = 1;
@@ -364,7 +364,7 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
     XtGetSelectionValue(getClipWindow, XA_PRIMARY,
 			xa_targets, wxGetTargets, (XtPointer)NULL, time);
 
-    wxDispatchEventsUntil(CheckReadyTarget, NULL);
+    wxBlockUntil(CheckReadyTarget, NULL);
 
     xa = ATOM(format);
 
@@ -389,7 +389,7 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
     XtGetSelectionValue(getClipWindow, XA_PRIMARY,
 			xa, wxGetSelection, (XtPointer)NULL, 0);
     
-    wxDispatchEventsUntil(CheckReadyString, NULL);
+    wxBlockUntil(CheckReadyString, NULL);
 
     *length = receivedLength;
 

@@ -513,7 +513,12 @@ wxXtTimer::wxXtTimer(XtTimerCallbackProc c, XtPointer d)
 }
 
 void wxXtTimer::Notify(void) {
-  wxYield();
+  /* Used to try to avoid starving other events, but yielding 
+     has its own problems. In particular, it messes up dialogs
+     that expect show #f to immediately lead to a return from
+     show #t. */
+  // wxYield();
+
   if (ok)
     callback(data, NULL);
 }

@@ -142,10 +142,12 @@
 
   ;; flat-named-contract = (make-flat-named-contract string (any -> boolean))
   ;; this holds flat contracts that have names for error reporting
-  (define-struct flat-named-contract (type-name predicate))
+  (define-struct flat-named-contract (type-name predicate) (make-inspector)) (print-struct #t)
+
   (provide (rename build-flat-named-contract flat-named-contract)
            flat-named-contract-type-name
            flat-named-contract-predicate)
+  
   (define build-flat-named-contract
     (let ([flat-named-contract
 	   (lambda (name contract)
@@ -693,24 +695,36 @@
             pos
 	    neg
             "~agiven: ~e~a"
-	    (predicate->type-name contract)
+	    (predicate->expected-msg contract)
 	    val
             (if extra-message
                 extra-message
                 "")))]))
 
-  ;; predicate->type-name : function -> string
+  ;; predicate->expected-msg : function -> string
   ;; if the function has a name and the name ends
   ;; with a question mark, turn it into a mzscheme
   ;; style type name
+  (define (predicate->expected-msg pred)
+    (let ([name (predicate->type-name)])
+      (if name
+          (format "expected type <~a>, " name)
+          "")))
+  
+  ;; predicate->type-name : pred -> (union #f string)
   (define (predicate->type-name pred)
     (let* ([name (object-name pred)])
-      (if name
-	  (let ([m (regexp-match "(.*)\\?" (symbol->string name))])
-	    (if m
-		(format "expected type <~a>, " (cadr m))
-		""))
-	  "")))
+      (and name
+           (let ([m (regexp-match "(.*)\\?" (symbol->string name))])
+             (and m
+                  (cadr m))))))
+
+  ;; flat-contract->type-name : flat-contract -> string
+  (define (flat-contract->type-name fc)
+    (cond
+      [(flat-named-contract? fc) (flat-named-contract-type-name fc)]
+      [else (or (predicate->type-name fc)
+                "unknown type")]))
 
   (provide union)
   (define (union . args)
@@ -732,19 +746,27 @@
       (unless (or (null? contracts)
                   (null? (cdr contracts)))
         (error 'union "expected at most one function contract, given: ~e" args))
-      (make-contract
-       (lambda (val pos neg src-info)
-         (cond
-           [(ormap (lambda (proc)
-		     (if (flat-named-contract? proc)
-			 ((flat-named-contract-predicate proc) val)
-			 (proc val)))
-		   procs)
-            val]
-           [(null? contracts)
-            (raise-contract-error src-info pos neg "union failed, given: ~e" val)]
-           [(null? (cdr contracts))
-            ((contract-f (car contracts)) val pos neg src-info)])))))
+      (cond
+        [(null? contracts) 
+         (make-flat-named-contract
+          (apply build-compound-type-name "union" procs)
+          (lambda (x)
+            (ormap (lambda (proc) (test-flat-contract proc x))
+                    procs)))]
+        [else
+         (make-contract
+          (lambda (val pos neg src-info)
+            (cond
+              [(ormap (lambda (proc)
+                        (if (flat-named-contract? proc)
+                            ((flat-named-contract-predicate proc) val)
+                            (proc val)))
+                      procs)
+               val]
+              [(null? contracts)
+               (raise-contract-error src-info pos neg "union failed, given: ~e" val)]
+              [(null? (cdr contracts))
+               ((contract-f (car contracts)) val pos neg src-info)])))])))
 
   (provide and/f or/f 
            >=/c <=/c </c >/c 
@@ -753,9 +775,37 @@
 	   printable?
            symbols
            subclass?/c implementation?/c is-a?/c
-           listof vectorof cons/p list/p
+           listof vectorof vector/p cons/p list/p box/p
 	   mixin-contract make-mixin-contract)
 
+  ;; test-flat-contract : (union pred flat-named-contract) any -> boolean
+  (define (test-flat-contract flat-contract x)
+    (cond
+      [(flat-named-contract? flat-contract)
+       ((flat-named-contract-predicate flat-contract) x)]
+      [else
+       (flat-contract x)]))
+
+  
+  ;; flat-contract? : any -> boolean?
+  ;; determines if a value is a flat contract
+  (define (flat-contract? fc)
+    (or (flat-named-contract? fc)
+	(and (procedure? fc)
+	     (procedure-arity-includes? fc 1))))
+
+  (define (build-compound-type-name name . fs)
+    (let ([strs (map flat-contract->type-name fs)])
+      (format "(~a~a)" 
+              name
+              (apply string-append
+                     (let loop ([strs strs])
+                       (cond
+                         [(null? strs) null]
+                         [else (cons " "
+                                     (cons (car strs)
+                                           (loop (cdr strs))))]))))))
+  
   (define (symbols . ss)
     (unless ((length ss) . >= . 1)
       (error 'symbols "expected at least one argument"))
@@ -769,20 +819,24 @@
      (lambda (x)
        (memq x ss))))
 
-  (define (printable? x)
-    (or (symbol? x)
-	(string? x)
-	(boolean? x)
-	(char? x)
-	(null? x)
-	(number? x)
-	(and (pair? x)
-	     (printable? (car x))
-	     (printable? (cdr x)))
-	(and (vector? x)
-	     (andmap printable? (vector->list x)))
-	(and (box? x)
-	     (printable? (unbox x)))))
+  (define printable?
+    (make-flat-named-contract
+     "printable"
+     (lambda (x)
+       (let printable? ([x x])
+	 (or (symbol? x)
+	     (string? x)
+	     (boolean? x)
+	     (char? x)
+	     (null? x)
+	     (number? x)
+	     (and (pair? x)
+		  (printable? (car x))
+		  (printable? (cdr x)))
+	     (and (vector? x)
+		  (andmap printable? (vector->list x)))
+	     (and (box? x)
+		  (printable? (unbox x))))))))
 
   (define (and/f . fs)
     (for-each
@@ -792,12 +846,11 @@
                         (procedure-arity-includes? x 1)))
          (error 'and/f "expected procedures of arity 1 or <flat-named-contract>s, given: ~e" x)))
      fs)
-    (lambda (x)
-      (andmap (lambda (f) 
-                (if (flat-named-contract? f)
-                    ((flat-named-contract-predicate f) x)
-                    (f x)))
-              fs)))
+    (make-flat-named-contract
+     (apply build-compound-type-name "and/f" fs)
+     (lambda (x)
+       (andmap (lambda (f) (test-flat-contract f x))
+               fs))))
 
   (define (or/f . fs)
     (for-each
@@ -807,12 +860,11 @@
                         (procedure-arity-includes? x 1)))
          (error 'or/f "expected procedures of arity 1 or <flat-named-contract>s, given: ~e" x)))
      fs)
-    (lambda (x)
-      (ormap (lambda (f)
-               (if (flat-named-contract? f)
-                   ((flat-named-contract-predicate f) x)
-                   (f x)))
-             fs)))
+    (make-flat-named-contract
+     (apply build-compound-type-name "or/f" fs)
+     (lambda (x)
+       (ormap (lambda (f) (test-flat-contract f x))
+              fs))))
   
   (define (>=/c x)
     (make-flat-named-contract
@@ -831,10 +883,13 @@
      (format "number > ~a" x)
      (lambda (y) (and (number? y) (> y x)))))
 
-  (define (natural-number? x)
-    (and (number? x)
-	 (integer? x)
-	 (x . >= . 0)))
+  (define natural-number?
+    (make-flat-named-contract
+     "natural-number"
+     (lambda (x)
+       (and (number? x)
+	    (integer? x)
+	    (x . >= . 0)))))
 
   (define (is-a?/c <%>)
     (unless (or (interface? <%>)
@@ -867,26 +922,85 @@
 	   "implementation of <<unknown>>")
        (lambda (x) (implementation? x <%>)))))
 
-  (define (false? x) (not x))
-  (define (any? x) #t)
+  (define false?
+    (make-flat-named-contract
+     "false"
+     (lambda (x) (not x))))
+
+  (define any?
+    (make-flat-named-contract
+     "any"
+     (lambda (x) #t)))
 
   (define (listof p)
-    (lambda (v)
-      (and (list? v)
-	   (andmap p v))))
+    (unless (flat-contract? p)
+      (error 'listof "expected a flat contract as argument, got: ~e" p))
+    (make-flat-named-contract
+     (build-compound-type-name "listof" p)
+     (lambda (v)
+       (and (list? v)
+	    (andmap (lambda (ele) (test-flat-contract p ele))
+		    v)))))
   
   (define (vectorof p)
-    (lambda (v)
-      (and (vector? v)
-	   (andmap p (vector->list v)))))
+    (unless (flat-contract? p)
+      (error 'vectorof "expected a flat contract as argument, got: ~e" p))
+    (make-flat-named-contract
+     (build-compound-type-name "vectorof" p)
+     (lambda (v)
+       (and (vector? v)
+	    (andmap (lambda (ele) (test-flat-contract p ele))
+		    (vector->list v))))))
+
+  (define (vector/p . args)
+    (unless (andmap flat-contract? args)
+      (error 'vector/p "expected flat contracts as arguments, got: ~a"
+             (let loop ([args args])
+               (cond
+                 [(null? args) ""]
+                 [(null? (cdr args)) (format "~e" (car args))]
+                 [else (string-append
+                        (format "~e " (car args))
+                        (loop (cdr args)))]))))
+    (make-flat-named-contract
+     (apply build-compound-type-name "vector/p" args)
+     (lambda (v)
+       (and (vector? v)
+            (= (vector-length v) (length args))
+            (andmap test-flat-contract
+                    args
+                    (vector->list v))))))
+  
+  (define (box/p pred)
+    (unless (flat-contract? pred)
+      (error 'box/p "expected a flat contract, got: ~e" pred))
+    (make-flat-named-contract
+     (build-compound-type-name "box/p" pred)
+     (lambda (x)
+       (and (box? x)
+	    (test-flat-contract pred (unbox x))))))
 
   (define (cons/p hdp tlp)
-    (lambda (x)
-      (and (pair? x)
-	   (hdp (car x))
-	   (tlp (cdr x)))))
+    (unless (and (flat-contract? hdp)
+                 (flat-contract? tlp))
+      (error 'cons/p "expected two flat contracts, got: ~e and ~e" hdp tlp))
+    (make-flat-named-contract
+     (build-compound-type-name "cons/p" hdp tlp)
+     (lambda (x)
+       (and (pair? x)
+            (test-flat-contract hdp (car x))
+            (test-flat-contract tlp (cdr x))))))
 
   (define (list/p . args)
+    (unless (andmap flat-contract? args)
+      (error 'list/p "expected flat contracts, got: ~a"
+             (let loop ([args args])
+               (cond
+                 [(null? args) ""]
+                 [(null? (cdr args)) (format "~e" (car args))]
+                 [else (string-append
+                        (format "~e " (car args))
+                        (loop (cdr args)))]))))
     (let loop ([args args])
       (cond
 	[(null? args) null?]

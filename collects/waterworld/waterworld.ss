@@ -70,6 +70,8 @@
 
   (define *last-game-dir* #f) 
 
+  (define *click-sem* (make-semaphore 1))
+
   (define *default-message*
     "Shift = unsafe (default safe)  Ctrl = assert (default guess)")
 
@@ -1635,23 +1637,25 @@
 	       (lambda (e)
 		 (when (and (not in-counterexample?)
 			    (send e button-down?))
-		       (let-values
-			([(col row) (x-y->row-column
-				     (send e get-x)
-				     (send e get-y))])
-			(when (and (>= col 0)
-				   (< col board-width)
-				   (>= row 0)
-				   (< row board-height)
-				   (> (send board get-num-concealed) 0))
-			      (reset-ww-message!)
-			      (send frame expose-row-col
-				    row col
-				    (not (send e get-shift-down))
-				    (send e get-control-down))
-			      (send frame update-status!)
-			      (when (zero? (send board get-num-concealed))
-				    (ww-message "Game over!"))))))]
+		   (when (semaphore-try-wait? *click-sem*)
+			 (let-values
+			  ([(col row) (x-y->row-column
+				       (send e get-x)
+				       (send e get-y))])
+			  (when (and (>= col 0)
+				     (< col board-width)
+				     (>= row 0)
+				     (< row board-height)
+				     (> (send board get-num-concealed) 0))
+				(reset-ww-message!)
+				(send frame expose-row-col
+				      row col
+				      (not (send e get-shift-down))
+				      (send e get-control-down))
+				(send frame update-status!)
+				(when (zero? (send board get-num-concealed))
+				      (ww-message "Game over!"))))
+			 (semaphore-post *click-sem*))))]
 	      [on-paint
 	       (lambda () 
 		 (send frame draw-board))])

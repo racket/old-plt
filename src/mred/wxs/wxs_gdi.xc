@@ -308,6 +308,29 @@ static void *RgnBoundingBox(wxRegion *r)
 
 @MACRO CheckOpen[who] = if (!((wxPath *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsOpen()) scheme_arg_mismatch(METHODNAME("dc-path%",<who>), "path is not open: ", THEOBJ);
 
+@MACRO identity = {x}
+@MACRO sbString = str
+
+static void *PathBoundingBox(wxPath *r)
+{
+  double x, y, x2, y2;
+  Scheme_Object *a[4];
+  void *rt;
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH_ARRAY(0, a, 4);
+
+  a[0] = a[1] = a[2] = a[3] = NULL;
+
+  WITH_VAR_STACK(r->BoundingBox(&x, &y, &x2, &y2));
+  a[0] = WITH_VAR_STACK(scheme_make_double(x));
+  a[1] = WITH_VAR_STACK(scheme_make_double(y));
+  a[2] = WITH_VAR_STACK(scheme_make_double(x2 - x));
+  a[3] = WITH_VAR_STACK(scheme_make_double(y2 - y));
+  rt = WITH_VAR_STACK(scheme_values(4, a));
+  READY_TO_RETURN;
+  return rt;
+}
+
 @CLASSBASE wxPath "dc-path" : "object"
 
 @CREATOR ()
@@ -331,6 +354,8 @@ static void *RgnBoundingBox(wxRegion *r)
 @ "reverse" : void Reverse();
 
 @ "append" : void AddPath(wxPath!);
+
+@ m "get-bounding-box" : void*/bundleAny PathBoundingBox();
 
 @END
 

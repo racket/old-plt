@@ -4335,6 +4335,28 @@ class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *obj, const char *wher
 
 
 
+static void *PathBoundingBox(wxPath *r)
+{
+  double x, y, x2, y2;
+  Scheme_Object *a[4];
+  void *rt;
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH_ARRAY(0, a, 4);
+
+  a[0] = a[1] = a[2] = a[3] = NULL;
+
+  WITH_VAR_STACK(r->BoundingBox(&x, &y, &x2, &y2));
+  a[0] = WITH_VAR_STACK(scheme_make_double(x));
+  a[1] = WITH_VAR_STACK(scheme_make_double(y));
+  a[2] = WITH_VAR_STACK(scheme_make_double(x2 - x));
+  a[3] = WITH_VAR_STACK(scheme_make_double(y2 - y));
+  rt = WITH_VAR_STACK(scheme_values(4, a));
+  READY_TO_RETURN;
+  return rt;
+}
+
+
+
 
 
 
@@ -4370,6 +4392,27 @@ CONSTRUCTOR_INIT(: wxPath())
 os_wxPath::~os_wxPath()
 {
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
+}
+
+static Scheme_Object *os_wxPathPathBoundingBox(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  void* r;
+  objscheme_check_valid(os_wxPath_class, "get-bounding-box in dc-path%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(PathBoundingBox(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)));
+
+  
+  
+  READY_TO_RETURN;
+  return ((Scheme_Object *)r);
 }
 
 static Scheme_Object *os_wxPathAddPath(int n,  Scheme_Object *p[])
@@ -4823,8 +4866,9 @@ void objscheme_setup_wxPath(Scheme_Env *env)
 
   wxREGGLOB(os_wxPath_class);
 
-  os_wxPath_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dc-path%", "object%", (Scheme_Method_Prim *)os_wxPath_ConstructScheme, 16));
+  os_wxPath_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dc-path%", "object%", (Scheme_Method_Prim *)os_wxPath_ConstructScheme, 17));
 
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "get-bounding-box" " method", (Scheme_Method_Prim *)os_wxPathPathBoundingBox, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "append" " method", (Scheme_Method_Prim *)os_wxPathAddPath, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "reverse" " method", (Scheme_Method_Prim *)os_wxPathReverse, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "rotate" " method", (Scheme_Method_Prim *)os_wxPathRotate, 1, 1));

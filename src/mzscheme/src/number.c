@@ -616,11 +616,13 @@ double scheme_real_to_double(Scheme_Object *r)
 }
 
 static
-#ifndef NO_INLINE_KEYWORD
-# ifndef DONT_INLINE_NZERO_TEST
-MSC_IZE(inline)
-# endif
-#endif
+/*   Inlining seems to trip over a bug in gcc 3.4.x, 
+     and it's not worth the trouble.
+   #ifndef NO_INLINE_KEYWORD
+   # ifndef DONT_INLINE_NZERO_TEST
+   MSC_IZE(inline)
+   # endif
+   #endif */
 int minus_zero_p(double d)
 {
   /* Relies on 4-byte "int": */

@@ -3885,7 +3885,7 @@ scheme_file_buffer(int argc, Scheme_Object *argv[])
       
       if (op && SAME_OBJ(op->sub_type, file_output_port_type))
 	f = ((Scheme_Output_File *)op->port_data)->f;
-      else if (op && SAME_OBJ(ip->sub_type, file_input_port_type))
+      else if (ip && SAME_OBJ(ip->sub_type, file_input_port_type))
 	f = ((Scheme_Input_File *)ip->port_data)->f;
       else
 	f = NULL;

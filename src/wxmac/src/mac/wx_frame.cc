@@ -550,19 +550,21 @@ void wxFrame::Maximize(Bool maximize)
 
 void wxFrame::EnforceSize(int minw, int minh, int maxw, int maxh, int incw, int inch)
 {
-  BitMap screenBits;
+  RgnHandle screen;
+  Rect bounds;
 
   if (minw < 0)
     minw = 1;
   if (minh < 0)
     minh = 1;
-      
-  GetQDGlobalsScreenBits(&screenBits);
+
+  screen = GetGrayRgn();
+  GetRegionBounds(screen, &bounds);
 
   if (maxh < 0)
-    maxh = screenBits.bounds.bottom - screenBits.bounds.top;
+    maxh = bounds.bottom - bounds.top;
   if (maxw < 0)
-    maxw = screenBits.bounds.right - screenBits.bounds.left;
+    maxw = bounds.right - bounds.left;
 
   size_limits.left = minw;
   size_limits.top = minh;
@@ -1131,16 +1133,15 @@ void wxFrame::OnEvent(wxMouseEvent *event)
 
 void wxFrame::DragFrame(Point where)
 {
-  BitMap screenBits;
+  RgnHandle screen;
   Rect dragBoundsRect;
   CWindowPtr window;
 
   window = GetWindowFromPort(cMacDC->macGrafPort());
   
-  GetQDGlobalsScreenBits(&screenBits);
-  dragBoundsRect = screenBits.bounds;
-  InsetRect(&dragBoundsRect, 4, 4); // This is not really necessary
-  
+  screen = GetGrayRgn();
+  GetRegionBounds(screen, &dragBoundsRect);
+
   wxTracking();
   
   DragWindow(window, where, &dragBoundsRect);

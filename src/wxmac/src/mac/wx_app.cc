@@ -248,10 +248,8 @@ void wxApp::doMacDispatch(EventRecord *e)
     {
     case mouseMenuDown:
     case mouseDown:
-      wxUnhideCursor();
       doMacMouseDown(); break;
     case mouseUp:
-      wxUnhideCursor();
       doMacMouseUp(); break;
     case keyDown:
     case wheelEvt:
@@ -274,7 +272,6 @@ void wxApp::doMacDispatch(EventRecord *e)
       doMacMouseLeave(); break;
     case nullEvent:
       if (e->message) {
-	wxUnhideCursor();
 	doMacMouseMotion();
       }
       break;
@@ -917,7 +914,6 @@ void wxApp::doMacOsEvt(void)
 	}
       break;
     case mouseMovedMessage:
-      wxUnhideCursor();
       doMacMouseMovedMessage();
       break;
     }

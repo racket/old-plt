@@ -58,15 +58,39 @@ static int get_iconv_errno(void)
 {
   return 0;
 }
-static size_t (*iconv)(iconv_t cd,
-		       char **inbuf, size_t *inbytesleft,
-		       char **outbuf, size_t *outbytesleft);
-static iconv_t (*iconv_open)(const char *tocode, const char *fromcode);
-static void (*iconv_close)(iconv_t cd);
+typedef size_t (*iconv_proc_t)(iconv_t cd,
+			       char **inbuf, size_t *inbytesleft,
+			       char **outbuf, size_t *outbytesleft);
+typedef iconv_t (*iconv_open_proc_t)(const char *tocode, const char *fromcode);
+typedef void (*iconv_close_proc_t)(iconv_t cd);
+static iconv_proc_t iconv;
+static iconv_open_proc_t iconv_open;
+static iconv_close_proc_t iconv_close;
 # define CODESET 0
 # define ICONV_errno get_iconv_errno()
+static int iconv_ready = 0;
+static void init_iconv()
+{
+  HMODULE m;
+  m = LoadLibrary("libiconv-2.dll");
+  if (m) {
+    iconv = (iconv_proc_t)GetProcAddress(m, TEXT("libiconv"));
+    iconv_open = (iconv_open_proc_t)GetProcAddress(m, "libiconv_open");
+    iconv_close = (iconv_close_proc_t)GetProcAddress(m, "libiconv_close");
+    printf("%p %p %p\n", iconv, iconv_open, iconv_close);
+    /* Make sure we have all of them or none: */
+    if (!iconv || !iconv_open || !iconv_close) {
+      iconv = NULL;
+      iconv_open = NULL;
+      iconv_close = NULL;
+    }
+  }
+  iconv_ready = 1;
+}
 #else
 # define ICONV_errno errno
+# define iconv_ready 1
+static void init_iconv() { }
 #endif
 
 #ifdef MACOS_UNICODE_SUPPORT
@@ -2066,6 +2090,7 @@ static char *do_convert(iconv_t cd,
   *oolen = 0;
 
   if (cd == (iconv_t)-1) {
+    if (!iconv_ready) init_iconv();
     if (iconv_open) {
       if (!from_e)
 	from_e = nl_langinfo(CODESET);
@@ -2243,6 +2268,8 @@ static char *string_to_from_locale(int to_bytes,
   long clen, used;
   int status;
   iconv_t cd;
+
+  if (!iconv_ready) init_iconv();
 
   if (to_bytes)
     cd = iconv_open(nl_langinfo(CODESET), MZ_UCS4_NAME);
@@ -2788,13 +2815,18 @@ mzchar *do_native_recase(int to_up, mzchar *in, int delta, int len, long *olen)
 
   result = (char *)scheme_malloc_atomic((len + 1) * 2);
   memcpy(result, ((char *)in) + (2 * delta), len * 2);
-  
+  ((wchar_t*)result)[len] = 0;
+
   if (to_up)
     CharUpperBuffW((wchar_t *)result, len);
-  else
-    CharLowerBuffW((wchar_t *)result, len);
-
-  ((wchar_t*)result)[len] = 0;
+  else {
+    int i;
+    /* CharLowerBuff doesn't work with unicows.dll -- strange. 
+       So we use CharLower, instead. */
+    for (i = 0; i < len; i++) {
+      CharLower(((wchar_t *)result) + i);
+    }
+  }
 
   *olen = len;
   return (mzchar *)result;
@@ -3108,6 +3140,8 @@ static Scheme_Object *byte_string_open_converter(int argc, Scheme_Object **argv)
     cd = (iconv_t)-1;
     need_regis = (*to_e && *from_e);
   } else {
+    if (!iconv_ready) init_iconv();
+
     if (!iconv_open)
       return scheme_false;
     

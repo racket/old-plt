@@ -791,6 +791,9 @@ void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before, float x, float y)
   writeLocked++;
   EndEditSequence();
   --writeLocked;
+
+  if (!sequence)
+    UpdateNeeded();
 }
 
 void wxMediaPasteboard::Insert(wxSnip *snip, float x, float y)
@@ -922,6 +925,9 @@ void wxMediaPasteboard::_Delete(wxSnip *del_snip,
       writeLocked++;
       EndEditSequence();
       --writeLocked;
+
+      if (!sequence)
+	UpdateNeeded();
     }
   }  
 
@@ -1009,6 +1015,9 @@ void wxMediaPasteboard::MoveTo(wxSnip *snip, float x, float y)
     writeLocked++;
     EndEditSequence();
     --writeLocked;
+
+    if (!sequence)
+      UpdateNeeded();
   }
 }
 
@@ -1095,6 +1104,9 @@ Bool wxMediaPasteboard::Resize(wxSnip *snip, float w, float h)
   writeLocked++;
   EndEditSequence();
   --writeLocked;
+
+  if (!sequence)
+    UpdateNeeded();
 
   return rv;
 }
@@ -1694,12 +1706,16 @@ void wxMediaPasteboard::CheckRecalc()
     r = b = 0;
     for (node = snipLocationList->First(); node; node = node->Next()) {
       loc = (wxSnipLocation *)node->Data();
+      if (sizeCacheInvalid) {
+	loc->snip->SizeCacheInvalid();
+	loc->needResize = TRUE;
+      }
       if (loc->needResize)
 	loc->Resize(dc);
-      if (loc->r + DOT_WIDTH > r)
-	r = loc->r + DOT_WIDTH;
-      if (loc->b + DOT_WIDTH > b)
-	b = loc->b + DOT_WIDTH;
+      if (loc->r + HALF_DOT_WIDTH > r)
+	r = loc->r + HALF_DOT_WIDTH;
+      if (loc->b + HALF_DOT_WIDTH > b)
+	b = loc->b + HALF_DOT_WIDTH;
     }
   
     realWidth = r;
@@ -1718,6 +1734,8 @@ void wxMediaPasteboard::CheckRecalc()
     needResize = FALSE;
   }
 
+  sizeCacheInvalid = FALSE;
+
   if (!keepSize) {
     if (realWidth != totalWidth || realHeight != totalHeight) {
       totalWidth = realWidth;
@@ -1725,8 +1743,6 @@ void wxMediaPasteboard::CheckRecalc()
       admin->Resized(FALSE);
     }
   }
-
-  
 }
 
 void wxMediaPasteboard::Update(float x, float y, float w, float h)
@@ -1896,6 +1912,8 @@ void wxMediaPasteboard::BlinkCaret()
 void wxMediaPasteboard::SizeCacheInvalid(void)
 {
   sizeCacheInvalid = TRUE;
+  needResize = TRUE;
+  Update(0, 0, -1, -1);
 }
 
 

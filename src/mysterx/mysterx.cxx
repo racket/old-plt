@@ -1945,7 +1945,7 @@ void marshallSchemeValueToVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
   
   if (SCHEME_VECTORP (val)) {
     pVariantArg->vt = VT_ARRAY | VT_VARIANT;
-    pVariantArg->parray = mx_vectorToSafeArray(val);
+    pVariantArg->parray = schemeVectorToSafeArray(val);
     //  scheme_debug_print(variantToSchemeObject(pVariantArg));
     //printf("Made vector to safe array\n");
     return;
@@ -1958,7 +1958,7 @@ void marshallSchemeValueToVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
 void marshallSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
   
   if (pVariantArg->vt & VT_ARRAY) {
-    pVariantArg->parray = mx_vectorToSafeArray(val);
+    pVariantArg->parray = schemeVectorToSafeArray(val);
     
   }
   
@@ -2123,7 +2123,7 @@ void marshallSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
 Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
   
   if (pVariantArg->vt & VT_ARRAY) {
-    return safeArrayToVector(pVariantArg->parray, pVariantArg->vt);
+    return safeArrayToSchemeVector(pVariantArg->parray,pVariantArg->vt);
   }
   
   switch(pVariantArg->vt) {

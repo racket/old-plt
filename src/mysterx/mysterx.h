@@ -10,6 +10,8 @@
 #define DOCHWND_TRIES 40
 #define DOCDISPATCH_TRIES 60
 
+#define MAXARRAYDIMS 32
+
 // temp !!! until dont_gc_ptr fixed
 
 #ifdef scheme_dont_gc_ptr
@@ -469,9 +471,8 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *);
 
 // array procedures
 
-Scheme_Object *SafeArrayRowToVector(SAFEARRAY *,int,int,UINT type);
-Scheme_Object *safeArrayToVector(SAFEARRAY *,UINT);
-Scheme_Object *SafeArrayElement(SAFEARRAY *,long *,UINT);
-SAFEARRAY * mx_vectorToSafeArray(Scheme_Object *);
+Scheme_Object *safeArrayToSchemeVector(SAFEARRAY *,UINT);
+Scheme_Object *safeArrayElementToSchemeObject(SAFEARRAY *,long *,UINT);
+SAFEARRAY *schemeVectorToSafeArray(Scheme_Object *);
 
 

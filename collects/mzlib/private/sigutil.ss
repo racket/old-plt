@@ -4,7 +4,8 @@
   ;; (needs an overhaul, too)
 
   (require (lib "stx.ss" "syntax")
-	   (lib "struct.ss" "syntax"))
+	   (lib "struct.ss" "syntax")
+	   (lib "context.ss" "syntax"))
 
   (require "sigmatch.ss")
   (require "../unit.ss")
@@ -600,7 +601,8 @@
 					 swapped-renames)
 				  (loop (cdr e))
 				  (cons (car e) (loop (cdr e)))))))]
-		   [local-vars (append renamed-internals filtered-exported-names imported-names)])
+		   [local-vars (append renamed-internals filtered-exported-names imported-names)]
+		   [expand-context (generate-expand-context)])
 	      (let loop ([pre-lines null][lines body][port #f][port-name #f][body null][vars null])
 		(cond
 		 [(and (null? pre-lines) (not port) (null? lines))
@@ -623,7 +625,7 @@
 					 (if (eof-object? s)
 					   s
 					   (local-expand s    
-							 'internal-define
+							 expand-context
 							 (append
 							  user-stx-forms
 							  local-vars))))]

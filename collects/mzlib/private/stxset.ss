@@ -1,7 +1,8 @@
 
 (module stxset mzscheme
 
-  (require-for-syntax (lib "kerncase.ss" "syntax"))
+  (require-for-syntax (lib "kerncase.ss" "syntax")
+		      (lib "context.ss" "syntax"))
 
   (provide finish-syntax-set)
 
@@ -19,7 +20,8 @@
 					  id
 					  (string->symbol (format "~a/proc" (syntax-e id)))
 					  id))
-				       ids)])
+				       ids)]
+		    [expand-context (generate-expand-context)])
 		;; Check defns (requires expand) ---------
 		(let* ([defns (let loop ([defns (syntax->list (syntax (defn ...)))])
 				(apply 
@@ -28,7 +30,7 @@
 				  (lambda (defn)
 				    (let ([defn (local-expand
 						 defn
-						 'internal-define
+						 expand-context
 						 (kernel-form-identifier-list (quote-syntax here)))])
 				      (syntax-case defn (define-values define-syntaxes begin)
 					[(define-values (id ...) expr)

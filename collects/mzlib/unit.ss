@@ -5,6 +5,7 @@
   (require-for-syntax (lib "kerncase.ss" "syntax")
 		      (lib "stx.ss" "syntax")
 		      (lib "name.ss" "syntax")
+		      (lib "context.ss" "syntax")
 		      "list.ss"
 		      "private/unitidmap.ss")
 
@@ -60,6 +61,7 @@
 			   "export is not an identifier or renamed identifier"
 			   stx
 			   v)]))]
+	       [expand-context (generate-expand-context)]
 	       [ivars (syntax->list (syntax (ivar ...)))]
 	       [evars (syntax->list (syntax (evar ...)))])
 	   (for-each check-id ivars)
@@ -100,7 +102,7 @@
 				 (lambda (defn-or-expr)
 				   (local-expand
 				    defn-or-expr
-				    'internal-define
+				    expand-context
 				    (append
 				     (kernel-form-identifier-list (quote-syntax here))
 				     declared-names)))

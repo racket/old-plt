@@ -44,6 +44,7 @@ substitutability is checked properly.
   (require-for-syntax (lib "kerncase.ss" "syntax")
 		      (lib "stx.ss" "syntax")
 		      (lib "name.ss" "syntax")
+		      (lib "context.ss" "syntax")
 		      "classidmap.ss")
 
   (define insp (current-inspector)) ; for all structures
@@ -140,11 +141,12 @@ substitutability is checked properly.
                                              super-instantiate-id
                                              super-make-object-id
                                              super-new-id))]
+					  [expand-context (generate-expand-context)]
                                           [expand
                                            (lambda (defn-or-expr)
                                              (local-expand
                                               defn-or-expr
-                                              'internal-define
+                                              expand-context
                                               stop-forms))])
                                      (let loop ([l defn-and-exprs])
                                        (if (null? l)

@@ -492,6 +492,8 @@ void scheme_init_process(Scheme_Env *env)
     REGISTER_SO(namespace_options);
 
 #ifdef MZ_REAL_THREADS
+    REGISTER_SO(make_namespace_mutex);
+    REGISTER_SO(will_mutex);
     make_namespace_mutex = SCHEME_MAKE_MUTEX();
     will_mutex = SCHEME_MAKE_MUTEX();
 #endif
@@ -817,8 +819,10 @@ Scheme_Manager_Reference *scheme_add_managed(Scheme_Manager *m, Scheme_Object *o
   /* GCing while we have the lock would be bad: */
   ensure_manage_space(m, 1);
 
-  if (!cust_mutex)
+  if (!cust_mutex) {
+    REGISTER_SO(cust_mutex);
     cust_mutex = SCHEME_MAKE_MUTEX();
+  }
 #endif
 
   GET_CUST_LOCK();

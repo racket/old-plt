@@ -43,7 +43,7 @@ static void *fin_mutex = NULL;
 # ifdef MZ_KEEP_LOCK_INFO
 int scheme_fin_lock_c;
 # endif
-# define GET_FIN_LOCK() ((fin_mutex = (fin_mutex ? fin_mutex : SCHEME_MAKE_MUTEX())), SCHEME_LOCK_MUTEX(fin_mutex) _MZ_LOCK_INFO(scheme_fin_lock_c++))
+# define GET_FIN_LOCK() ((fin_mutex = (fin_mutex ? fin_mutex : (REGISTER_SO(fin_mutex), SCHEME_MAKE_MUTEX()))), SCHEME_LOCK_MUTEX(fin_mutex) _MZ_LOCK_INFO(scheme_fin_lock_c++))
 # define RELEASE_FIN_LOCK()  (MZ_LOCK_INFO_(--scheme_fin_lock_c) SCHEME_UNLOCK_MUTEX(fin_mutex))
 #endif
 

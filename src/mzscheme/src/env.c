@@ -206,6 +206,7 @@ Scheme_Env *scheme_basic_env()
   REGISTER_SO(hash_percent_buffer);
 
 #ifdef MZ_REAL_THREADS
+  REGISTER_SO(scheme_global_lock);
   scheme_global_lock = SCHEME_MAKE_MUTEX();
 #else
   scheme_init_stack_check();

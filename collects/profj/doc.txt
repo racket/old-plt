@@ -1,0 +1,224 @@
+_drj_
+
+This is preliminary documentation for a preliminary version of DrJ,
+including information about the constructs allowed at different
+language levels, and known bugs. If a bug is listed in known bugs,
+please do not report it, it will be fixed at some point. Otherwise,
+please for now, report bugs directly to me at kathyg@cs.utah.eud
+
+General Information:
+
+The interactions window can evaluate the statements and expressions
+legal for the level, and except for beginner can have variable
+declarations. The definitions window should only have classes,
+interfaces, package declarations and import statements.
+
+Known Bugs for all of DrJ:
+
+Parse errors are all of the form "parse error near" and do not offer
+further information
+
+Many type errors provide no information about the error, and will
+instead produce a generic error message indicating which module (and
+therefore phase of type-checking) the error was found in. Some phases
+have better error messages.
+
+Some incorrectly typed Java programs are accepted erroneously (the
+type checker is currently being written).
+
+All classes which will be instantiated (i.e. if you plan to type new
+X()), need a constructor. One is not necessarily created by
+default.
+
+Recursive functions are very slow.
+
+Using statements or variable declarations in the interactions window
+causes errors.
+
+Fully qualified names will not be understood in interactions (anything
+that would require an implicit import).
+
+_full java_
+
+For Language definition see Java Language Spec Version 2
+
+Known Bugs
+
+Full Java is mostly 1.0, with a few exceptions. This means no inner
+classes yet
+
+Most libraries aren't implemented (or presently compilable due to
+native method needs). Most notably System and the libraries needed to
+use System.out.println(..) There is a hack in place that the last
+value used in main will be printed (i.e. the value of the last
+expression or void if a statement was the last item in main)
+
+Labeling statements, and then attempting to continue or break to a
+label is incorrectly implemented.
+
+Synchronized statements are incorrectly implemented.
+
+_advanced java_
+
+Language Specification 
+ - package - Allowed
+ - imports - Allowed
+ - classes - Allowed with restrictions
+   + final modifier not allowed
+ - interfaces - Allowed
+ - constructors - Allowed
+ - fields - Allowed with restrictions
+   + final modifier not allowed
+ - static initializers - not allowed
+ - class initializers - allowed
+ - inner classes - not allowed
+ - methods - Allowed with restricitons on modifiers
+   + native, strictfp not allowed
+ - statements
+   + if, return, blocks - no restriction
+   + while, do, for - Allowed
+   + break, continue - Allowed within a loop, not to a label
+   + assignment, method call - no restriction
+   + pre and post increment/decrement expressions
+   + throw,try,switch,label,synchronized - not allowed
+ - expressions - no restrictions
+ - General restrictions
+   + Functions requiring reflection may not be used
+   + Functions using threads cannot be used
+
+Known Bugs
+
+Some language constraints are not enforced
+
+_intermediate java_
+
+Language Specification
+ - package - No package specifications allowed
+ - imports - 
+   + Declared imports are not allowed
+   + Environment will provide means of controlled imports
+ - classes - Allowed with restrictions
+   + All classes implicitly public
+   + Final modifier not allowed
+   + Can extend classes, implement interfaces
+   + Classes can be abstract
+ - interfaces - Allowed with restrictions
+   + Can extend interfaces
+   + May not have static members
+ - constructors - Allowed
+ - fields - Allowed with restrictions
+   + No modifiers allowed
+   + Implicitly private
+   + Initialization allowed
+   + Multiple fields can be declared per line
+ - static initializers - not allowed
+ - class initializers - not allowed
+ - inner classes - not allowed
+ - methods - Allowed with restrictions
+   + No modifiers allowed
+   + All methods implicitly public
+   + Not required to return a value
+   + Parameters have no modifiers
+ - statements
+   + if - Allowed with required else branch
+   + return - no restriction
+   + blocks - no restriction
+   + throw,while,do,for,try,switch,break,continue,
+     label,synchronized - not allowed
+   + assignment - Allowed with restrictions detailed below
+   + method call - Allowed
+ - expressions
+   + literal - Allowed
+   + binary operations - Allowed with restrictions
+     * Can only be performed on primitive types
+   + variable reference - Allowed
+   + qualified names - Allowed
+   + field access - Allowed
+   + method call - Allowed with restrictions
+     * Method must return a value
+   + class allocation - Allowed
+   + casts - Allowed
+   + unary expression - Allowed with restrictions
+     * ++ and -- expressions are not allowed
+   + assignment - Allowed with restrictions
+     * +=, *=, /=, etc Not allowed: Only = allowed
+   + array creation, array access, pre and post expressions, 
+     instance-of, conditional exressions - not allowed
+ - General restrictions
+   + Functions cannot be overloaded
+   + Functions can be overridden
+   + Functions which implement reflection cannot be used
+   + Functions using threads cannot be used
+
+Known Bugs
+
+Same as for advanced
+
+_beginner java_
+
+Language Specification
+ - package - No package specifications allowed
+ - imports
+   + Declared imports are not allowed 
+   + Environment will provide means of controlled imports (does not yet)
+ - classes - Allowed with restrictions
+   + No modifiers allowed
+   + All classes implicitly public
+   + Can extend existing classes, cannot implement interfaces
+   + No abstract classes allowed
+ - interfaces - Not allowed
+ - constructors - Required for classes with fields; Not allowed otherwise
+   + Arguments optional
+   + Requires assignment to each field
+     Only location assignment allowed
+   + No other statements allowed
+ - fields - Allowed with restrictions
+   + No modifiers allowed
+   + Implicitly private, final
+   + Initialization not allowed
+   + One field declaration allowed per line
+ - static initializers - Not allowed
+ - class initializers - Not allowed
+ - inner classes - Not allowed
+ - methods - Allowed with restrictions
+   + No modifiers allowed
+   + All methods implicitly public
+   + Must return a value, cannot return Void
+   + Parameters have no modifiers
+   + Local variable declarations not allowed
+ - statements
+   + if - Allowed with required else branch
+   + return - no restriction
+   + throw, while, do, for, try, switch, block, break, 
+     continue, label, synchronized - not allowed
+   + method call - Allowed
+   + assignment - Allowed with restrictions detailed below
+ - expressions
+   + literal - Allowed
+   + binary operations - Allowed with restriction
+     * Can only be performed on primitive types
+   + variable reference - Allowed
+   + qualified names - Allowed
+   + method call - Allowed
+   + class allocation - Allowed 
+   + unary expression - Allowed with restriction
+     * ++ and -- expressions are not allowed
+   + assignment - Allowed with restriction
+     * Allowed only in constructors
+     * Right hand side must be a non-assignment expression
+     * +=, *=, /=, etx Not allowed: Only = allwoed
+   + field-accesses, array creation, array access, post expressions, 
+     cast, instance-of, conditional exressions - not allowed
+ - General restrictions
+   + Functions cannot be overloaded
+   + Functions can be overridden
+   + Functions which implement reflection cannot be used
+   + Functions using threads cannot be used
+
+Known bugs
+
+Same as Advanced
+
+
+
+

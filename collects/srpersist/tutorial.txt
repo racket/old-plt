@@ -1,5 +1,8 @@
-Using SrPersist: A Tutorial Example
-===================================
+_SrPersist Tutorial_
+====================
+
+_ODBC_
+======
 
 If you look at the doc.txt file in the SrPersist collection,
 you soon realize that the ODBC standard is quite complex.

@@ -1,7 +1,7 @@
 ;; srpersist.ss
 
 (unless (defined? 'odbc-version)
-	(error "odbc-version not defined"))
+	(error "odbc-version not defined: should be inexact number greater than or equal to 1.0"))
 
 (require-library "macro.ss")
 (require-library "cores.ss")

@@ -238,6 +238,8 @@ static int run_from_cmd_line(int argc, char *argv[],
       argv[0] = "-m";
     else if (!strcmp("--awk", argv[0]))
       argv[0] = "-w";
+    else if (!strcmp("--binary", argv[0]))
+      argv[0] = "-b";
 # ifdef CMDLINE_STDIO_FLAG
     else if (!strcmp("--stdio", argv[0]))
       argv[0] = "-z";
@@ -392,6 +394,9 @@ static int run_from_cmd_line(int argc, char *argv[],
 	  break;
 	case '-':
 	  no_more_switches = 1;
+	  break;
+	case 'b':
+	  scheme_binary_mode_stdio = 1;
 	  break;
 #ifdef CMDLINE_STDIO_FLAG
 	case 'z':
@@ -585,6 +590,7 @@ static int run_from_cmd_line(int argc, char *argv[],
 # ifdef VERSION_YIELD_FLAG
 	 "  -V, --yield : Like -v, adds yield after evaling/loading all exprs/files.\n"
 # endif
+	 "  -b, --binary : Read stdin and write stdout/stderr in binary mode.\n"
 	 "  -h, --help : Shows this information and exits, ignoring other switches.\n"
 #ifdef UNIX_IMAGE_DUMPS
 	 "  -R<file>, --restore <file> : restores an image.\n"

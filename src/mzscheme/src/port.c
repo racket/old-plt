@@ -284,6 +284,8 @@ int scheme_file_open_count;
 
 int scheme_internal_checking_char;
 
+int scheme_binary_mode_stdio;
+
 /* locals */
 #ifdef USE_FD_PORTS
 static Scheme_Object *fd_input_port_type;
@@ -589,6 +591,14 @@ scheme_init_port (Scheme_Env *env)
 # ifdef USE_BEOS_PORT_THREADS
     scheme_break_semaphore = create_sem(0, NULL);
 # endif
+#endif
+
+#ifdef DETECT_WIN32_CONSOLE_STDIN
+    if (scheme_binary_mode_stdio) {
+      _setmode(_fileno(stdin), _O_BINARY);
+      _setmode(_fileno(stdout), _O_BINARY);
+      _setmode(_fileno(stderr), _O_BINARY);
+    }
 #endif
 
     scheme_orig_stdin_port = (scheme_make_stdin

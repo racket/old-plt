@@ -11,12 +11,10 @@ have an ANSI C compiler on any platform supported by the conservative
 garbage collector.  Special per-platform instructions are below,
 followed by some general notes on compilation.
 
--Matthew Flatt and Robby Findler
+-Matthew Flatt
  Rice University PLT
  mflatt@cs.rice.edu
  http://www.cs.rice.edu/~mflatt/
- robby@cs.rice.edu
- http://www.cs.rice.edu/~robby/
 
 ========================================================================
  Compiling for X Windows
@@ -30,7 +28,7 @@ Compile MzScheme first. See plt/src/mzscheme/README.
 If you are compiling the Motif version of MrEd, the file
 plt/src/wxwindow/src/make.env will need to be edited as described
 below. If you are compiling the non-Motif version (a.k.a. "Xt"), edit
-plt/src/wxxt/src/make.env.
+plt/src/wxxt/src/make.env (the distributed file is set up for Linux).
 
 In src/make.env, some of the variables may need to be changed:
 

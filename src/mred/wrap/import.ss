@@ -26,6 +26,7 @@
  play-sound
  display-size
  application-file-handler
+ application-quit-handler
  get-color-from-user
  get-font-from-user
  middle-queue-key

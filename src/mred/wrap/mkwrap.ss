@@ -92,3 +92,8 @@
     (display "> fstop unit <")
     (newline))
   'replace)
+
+(when (directory-exists? "../../../collects/mred")
+  (with-output-to-file "../../../collects/mred/sig.ss"
+    (lambda () (pretty-print `(define-signature mred^ ,sig)))
+    'truncate))

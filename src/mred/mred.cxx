@@ -1961,6 +1961,10 @@ static char *pltcollects_from_resource;
 #define TAKEDOWN_GETENV_HACK /* empty */
 #endif
 
+#ifdef wx_x
+# define CMDLINE_STDIO_FLAG
+#endif
+
 #ifdef INCLUDE_WITHOUT_PATHS
 # include "cmdline.inc"
 #else
@@ -2158,8 +2162,6 @@ int MrEdApp::OnExit(void)
 }
 
 #ifdef wx_mac
-extern Scheme_Object *wxs_app_file_proc;
-
 void Drop_Runtime(char **argv, int argc)
 {
   int i;
@@ -2182,12 +2184,17 @@ void Drop_Runtime(char **argv, int argc)
 
 void Drop_Quit()
 {
-  Scheme_Object *sym, *quit;
+  mz_jmp_buf savebuf;
+  
+  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
 
-  sym = scheme_intern_symbol("mred:exit");
-  quit = scheme_lookup_global(sym, scheme_get_env(scheme_config));
+  if (scheme_setjmp(scheme_error_buf)) {
+    /* give up on rest */
+  } else {
+    scheme_apply(wxs_app_quit_proc, 0, NULL);
+  }
 
-  scheme_apply(quit, 0, NULL);
+  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 }
 #endif
 

@@ -890,6 +890,7 @@ extern short wxMacDisableMods;
 #endif
 
 Scheme_Object *wxs_app_file_proc;
+Scheme_Object *wxs_app_quit_proc;
 
 static Scheme_Object *SpecialCtlKey(int, Scheme_Object *SCK_ARG[])
 {
@@ -921,6 +922,22 @@ static Scheme_Object *ApplicationFileProc(int n, Scheme_Object *p[])
     scheme_check_proc_arity("application-file-handler", 1,
 			    0, n, p);
     wxs_app_file_proc = p[0];
+    return scheme_void;
+  }
+}
+
+static Scheme_Object *DefaultAppQuitProc(int n, Scheme_Object *p[])
+{
+  return scheme_void;
+}
+
+static Scheme_Object *ApplicationQuitProc(int n, Scheme_Object *p[])
+{
+  if (!n)
+    return wxs_app_quit_proc;
+  else {
+    scheme_check_proc_arity("application-quit-handler", 0, 0, n, p);
+    wxs_app_quit_proc = p[0];
     return scheme_void;
   }
 }
@@ -1325,6 +1342,9 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
     wxs_app_file_proc = scheme_make_prim_w_arity(DefaultAppFileProc,
 						 "default-application-file-handler",
 						 1, 1);
+    wxs_app_quit_proc = scheme_make_prim_w_arity(DefaultAppQuitProc,
+						 "default-application-quit-handler",
+						 0, 0);
   }
 
   scheme_install_xc_global("special-control-key", 
@@ -1336,7 +1356,12 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
   scheme_install_xc_global("application-file-handler",
 			   scheme_make_prim_w_arity(ApplicationFileProc,
 						    "application-file-handler",
-						    1, 1),
+						    0, 1),
+			   global_env);
+  scheme_install_xc_global("application-quit-handler",
+			   scheme_make_prim_w_arity(ApplicationQuitProc,
+						    "application-quit-handler",
+						    0, 1),
 			   global_env);
   
   scheme_install_xc_global("get-color-from-user",

@@ -1280,6 +1280,7 @@ class IOFrame : public wxFrame
 public:
   wxMediaCanvas *display;
   wxMediaEdit *media;
+  wxMenu *fileMenu;
   Bool hidden, beginEditSeq;
 
   IOFrame() : wxFrame(NULL, "Standard Output", -1, -1, 600, 400, 0, "stdout")
@@ -1312,8 +1313,11 @@ public:
 #endif
 
       wxMenuBar *mb = new wxMenuBar();
+      fileMenu = new wxMenu();
+      fileMenu->Append(77, "Close\tCmd+W");
       wxMenu *m = new wxMenu();
-      m->Append(79, "Copy");
+      m->Append(79, "&Copy\tCmd+C");
+      mb->Append(fileMenu, "File");
       mb->Append(m, "Edit");
       SetMenuBar(mb);
       
@@ -1344,6 +1348,32 @@ public:
     {
       if (id == 79)
 	media->Copy();
+      else if (id == 77)
+        if (OnClose())
+           Show(FALSE);
+    }
+    
+  Bool PreOnChar(wxWindow *, wxKeyEvent *e)
+    {
+#ifdef wx_mac
+       if (e->metaDown && e->KeyCode() == 'q') {
+          OnMenuCommand(77);
+       }
+else
+       if (e->controlDown && e->KeyCode() == 'x') {
+          OnMenuCommand(77);
+       }
+#endif
+    }
+    
+  void CloseIsQuit(void)
+    {
+#ifdef wx_mac
+# define QUIT_MENU_ITEM "Quit\tCmd+Q"
+#else
+# define QUIT_MENU_ITEM "E&xit"
+#endif
+      fileMenu->SetLabel(77, QUIT_MENU_ITEM);
     }
 };
 
@@ -2063,6 +2093,8 @@ static void on_main_killed(Scheme_Process *p)
 #if WINDOW_STDIO
   if (have_stdio) {
     stdio_kills_prog = 1;
+    if (ioFrame)
+      ioFrame->CloseIsQuit();
     scheme_close_managed(main_manager);
     return;
   }

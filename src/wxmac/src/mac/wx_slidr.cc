@@ -35,8 +35,8 @@ static const char sccsid[] = "%W% %G%";
 
 #define KDEFAULTW  60	// number pixels wide for a default scroll control
 #define KSCROLLH   16	// height of a mac scrollbar control
-#define VSP			2	// space between scrollbar and value
-#define HSP			2	
+#define VSP			3	// space between scrollbar and value
+#define HSP			3	
 // Because I never get this right and t,l,b,r makes sense to me - CJC
 //
 #define SetBounds(rect, top, left, bottom, right) ::SetRect(rect, left, top, right, bottom)
@@ -76,7 +76,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 	if (page_size < 2)
 		page_size = 2;
 
-	valueFont = wxNORMAL_FONT;
+	valueFont = buttonFont;
 	float fWidth;
 	float fHeight;
 	float fDescent;
@@ -88,47 +88,71 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 		lblh = fHeight;
 		lblw = fWidth;
 	}
-	GetTextExtent("258", &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
-	int vwid = (int)fWidth;
-	int vhgt = (int)fHeight;
-
+	int vwid, vhgt, hsp, vsp;
+	if (style & (wxHORIZONTAL << 2)) {
+	  vwid = 0;
+	  vhgt = 0;
+	  hsp = 0;
+	  vsp = 0;
+	} else {
+	  GetTextExtent("258", &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
+	  vwid = (int)fWidth;
+	  vhgt = (int)fHeight;
+	  hsp = HSP;
+	  vsp = VSP;
+    }
+    
 	Rect boundsRect = {0, 0, KSCROLLH, KDEFAULTW};
 	
 	int adjust = 0;
 	if (style & wxVERTICAL) {
 		if (width < 0)
-			cWindowHeight = KDEFAULTW + ((labelPosition == wxVERTICAL) ? lblh : 0);
+			cWindowHeight = KDEFAULTW + ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
 		else
 			cWindowHeight = width;
-		cWindowWidth = vwid + KSCROLLH + HSP + ((labelPosition == wxVERTICAL) ? 0 : lblw + HSP);
+		cWindowWidth = vwid + KSCROLLH + hsp + ((labelPosition == wxVERTICAL) ? 0 : lblw + HSP);
 		
 		boundsRect.right = KSCROLLH;
-		boundsRect.bottom = cWindowHeight - ((labelPosition == wxVERTICAL) ? lblh : 0);
+		boundsRect.bottom = cWindowHeight - ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
 		
 		valueRect.left = cWindowWidth - vwid + 1;
 		valueRect.top = (cWindowHeight - vhgt) / 2;
 		adjust = -1;
 	} else {
 		if (width < 0)
-			cWindowWidth = KDEFAULTW + ((labelPosition == wxHORIZONTAL) ? lblw : 0);
+			cWindowWidth = KDEFAULTW + ((labelPosition == wxHORIZONTAL) ? lblw + HSP : 0);
 		else
 			cWindowWidth = width;
-		cWindowHeight = vhgt + KSCROLLH + VSP + ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
+		cWindowHeight = vhgt + KSCROLLH + vsp + ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
 		
-		boundsRect.right = cWindowWidth - ((labelPosition == wxVERTICAL) ? 0 : lblw);
+		boundsRect.right = cWindowWidth - ((labelPosition == wxVERTICAL) ? 0 : lblw + HSP);
 		
 		valueRect.top = cWindowHeight - vhgt;
 		valueRect.left = (cWindowWidth - vwid) / 2;
 	}
 
-	valueRect.bottom = valueRect.top + vhgt;
-	valueRect.right = valueRect.left + vwid + adjust;
-	
+	if (style & (wxHORIZONTAL << 2)) {
+	  valueRect.bottom = valueRect.top = 0;
+	  valueRect.right = valueRect.left = 0;
+	} else {
+	  valueRect.bottom = valueRect.top + vhgt;
+	  valueRect.right = valueRect.left + vwid + adjust;
+	}
 	valuebase = fDescent;
 	
 	cMacControl = ::NewControl((WindowPtr)theMacGrafPort, &boundsRect, NULL,
 			TRUE, value, min_value, max_value, scrollBarProc, 0);
 	CheckMemOK(cMacControl);
+	
+	if (label) {
+	 if (labelPosition == wxVERTICAL) {
+	   if (cWindowWidth < lblw)
+	     cWindowWidth = lblw;
+	  } else {
+	   if (cWindowHeight < lblh)
+	     cWindowHeight = lblh;
+	  }
+	}
 
 	::SetControlReference(cMacControl, (long)this);
 	if (label)
@@ -161,14 +185,17 @@ void wxSlider::Paint(void)
 	SetCurrentDC();
 	::Draw1Control(cMacControl);
 
-	SetFont(valueFont);
-	SetTextInfo();
+    if (!(windowStyle & (wxHORIZONTAL << 2))) {
+		SetFont(valueFont);
+		SetTextInfo();
+		
+		::MoveTo(valueRect.left, valueRect.bottom - valuebase);
+		::EraseRect(&valueRect);
+		char t[8];
+		sprintf(t,"%d",::GetControlValue(cMacControl));
+		::DrawText(t,0,strlen(t));
+	}
 	
-	::MoveTo(valueRect.left, valueRect.bottom - valuebase);
-	::EraseRect(&valueRect);
-	char t[8];
-	sprintf(t,"%d",::GetControlValue(cMacControl));
-	::DrawText(t,0,strlen(t));
 	wxWindow::Paint();
 }
 
@@ -207,16 +234,16 @@ void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 			::SizeControl(cMacControl, w, clientHeight);
 			valueRect.top = (clientHeight - vhgt) / 2;
 			valueRect.bottom = valueRect.top + vhgt;
-			valueRect.right = clientWidth;
-			valueRect.left = valueRect.right - vwid + 1;
+			valueRect.left = KSCROLLH + HSP;
+			valueRect.right = valueRect.left + vwid;
 		} else {
 			int h = viewRect.bottom - viewRect.top;
 			// the hgt can't change
 			::SizeControl(cMacControl, clientWidth, h);
 			valueRect.left = (clientWidth - vwid) / 2;
 			valueRect.right = valueRect.left + vwid;
-			valueRect.bottom = clientHeight;
-			valueRect.top = valueRect.bottom - vhgt;
+			valueRect.top = KSCROLLH + VSP;
+			valueRect.bottom = valueRect.top + vhgt;
 		}
 	}
 
@@ -274,14 +301,14 @@ void wxSlider::OnEvent(wxMouseEvent& event) // WCH: mac only ?
 			case kControlIndicatorPart:
 				break;
 			} // end switch
-			// Draw the new value or should we Invalidate the Rect or don't bother ?
-			::MoveTo(valueRect.left+HSP, valueRect.bottom - valuebase);
-			::EraseRect(&valueRect);
-			char t[8];
-			sprintf(t,"%d",::GetControlValue(cMacControl));
-			::DrawText(t,0,strlen(t));
-			// Creat a wxEvent
-			strcpy(wxBuffer,t);
+			if (!(windowStyle & (wxHORIZONTAL << 2))) {
+				// Draw the new value
+				::MoveTo(valueRect.left+HSP, valueRect.bottom - valuebase);
+				::EraseRect(&valueRect);
+				char t[8];
+				sprintf(t,"%d",::GetControlValue(cMacControl));
+				::DrawText(t,0,strlen(t));
+			}
 			wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_SLIDER_COMMAND);
 			ProcessCommand(*commandEvent);
 		}
@@ -294,13 +321,6 @@ static pascal void SCTrackActionProc(ControlHandle theControl, short thePart)
 {
 	wxSlider*	slider;
 	slider = (wxSlider*)::GetCRefCon(theControl);
-#if 0
-	::MoveTo(slider->valueRect.left+HSP, slider->valueRect.bottom - slider->valuebase);
-	::EraseRect(&slider->valueRect);
-	char t[8];
-	sprintf(t,"%d",::GetControlValue(theControl));
-	::DrawText(t,0,strlen(t));
-#endif	
 }
 #endif
 
@@ -314,11 +334,13 @@ void wxSlider::SetValue(int value)
 {
 	SetCurrentDC();
 	::SetControlValue(cMacControl, value);
-	::MoveTo(valueRect.left+HSP, valueRect.bottom - valuebase);
-	::EraseRect(&valueRect);
-	char t[8];
-	sprintf(t,"%d",::GetControlValue(cMacControl));
-	::DrawText(t,0,strlen(t));
+	if (!(windowStyle & (wxHORIZONTAL << 2))) {
+	  ::MoveTo(valueRect.left+HSP, valueRect.bottom - valuebase);
+	  ::EraseRect(&valueRect);
+	  char t[8];
+	  sprintf(t,"%d",::GetControlValue(cMacControl));
+	  ::DrawText(t,0,strlen(t));
+	}
 }
 
 void wxSlider::SetBackgroundColour(wxColour*col)

@@ -33,8 +33,8 @@ static const char sccsid[] = "%W% %G%";
 
 #define KDEFAULTW  60	// number pixels wide for a default scroll control
 #define KGAUGEH    12	
-#define VSP			2	// space between scrollbar and value
-#define HSP			2	
+#define VSP			3	// space between scrollbar and value
+#define HSP			3	
 // Because I never get this right and t,l,b,r makes sense to me - CJC
 //
 #define SetBounds(rect, top, left, bottom, right) ::SetRect(rect, left, top, right, bottom)
@@ -77,22 +77,32 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
 	int adjust = 0;
 	if (style & wxVERTICAL) {
 		if (height < 0)
-			cWindowHeight = KDEFAULTW + ((labelPosition == wxVERTICAL) ? lblh : 0);
+			cWindowHeight = KDEFAULTW + ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
 		else
 			cWindowHeight = height;
-		cWindowWidth = KGAUGEH + HSP + ((labelPosition == wxVERTICAL) ? 0 : lblw + HSP);
+		cWindowWidth = KGAUGEH + ((labelPosition == wxVERTICAL) ? 0 : lblw + HSP);
 		
 		valueRect.right = KGAUGEH;
-		valueRect.bottom = cWindowHeight - ((labelPosition == wxVERTICAL) ? lblh : 0);
+		valueRect.bottom = cWindowHeight - ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
 	} else {
 		if (width < 0)
-			cWindowWidth = KDEFAULTW + ((labelPosition == wxHORIZONTAL) ? lblw : 0);
+			cWindowWidth = KDEFAULTW + ((labelPosition == wxHORIZONTAL) ? lblw + HSP : 0);
 		else
 			cWindowWidth = width;
-		cWindowHeight = KGAUGEH + VSP + ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
+		cWindowHeight = KGAUGEH + ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
 		
-		valueRect.right = cWindowWidth - ((labelPosition == wxHORIZONTAL) ? lblw : 0);
+		valueRect.right = cWindowWidth - ((labelPosition == wxHORIZONTAL) ? lblw + HSP : 0);
 		valueRect.bottom = KGAUGEH;
+	}
+	
+	if (label) {
+	 if (labelPosition == wxVERTICAL) {
+	   if (cWindowWidth < lblw)
+	     cWindowWidth = lblw;
+	  } else {
+	   if (cWindowHeight < lblh)
+	     cWindowHeight = lblh;
+	  }
 	}
 
 	if (label)

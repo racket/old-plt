@@ -46,11 +46,11 @@ wxLabelArea::wxLabelArea
 
 	if (cDirection & Direction::wxTop)
 	{
-		SetMargin(labelHeight, Direction::wxTop);
+		SetMargin(labelHeight + 3, Direction::wxTop);
 	}
 	else
 	{
-		SetMargin(labelWidth+5, Direction::wxLeft);
+		SetMargin(labelWidth + 3, Direction::wxLeft);
 	}
 }
 

@@ -153,9 +153,8 @@ void wxMessage::CreateWxMessage(char* label, wxFont* theFont) // common construc
 		font = wxNORMAL_FONT; // WCH: kludge
 	if (font) {
 		font->GetTextExtent(cMessage, &clientWidth, &clientHeight, NULL, NULL);
-		if (font->GetStyle() != wxNORMAL || font->GetWeight() != wxNORMAL)
+		if (font->GetStyle() != wxNORMAL)
 			clientWidth += 5; //cjc - try hello.cc italic labels are truncated
-			//clientWidth += 0;	//tom and others
 	}
 	SetClientSize(clientWidth + 3, clientHeight); // mflatt: +3 is needed (even for plain)
 	

@@ -3,7 +3,10 @@
  (require-relative-library "spidey.ss"))
 
 (define-signature mzlib:function^
-  (first
+  (true
+   false
+   
+   first
    second
    third
    fourth

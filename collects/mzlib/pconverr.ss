@@ -327,6 +327,8 @@
 				     [(or (zero? whole) (zero? frac))
 				      `(+ ,(real-part expr) (* +1i (+ ,whole-i ,frac-i)))]
 				     [else `(+ (+ ,whole ,frac) (* +1i (+ ,whole-i ,frac-i)))]))]
+                                [(eq? expr #f) 'false]
+                                [(eq? expr #t) 'true]
 				[else expr]))
 			   recur)))])
 		    (let ([es (convert-share-info-expand-shared? csi)])

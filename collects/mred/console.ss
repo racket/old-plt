@@ -713,7 +713,7 @@
 	    (port-read-handler this-in (lambda (x) (transparent-read)))
 	    (with-parameterization user-parameterization
 	      (lambda ()
-		(current-base-parameterization user-parameterization)))))))
+		(parameterization-branch-handler (lambda () user-parameterization))))))))
       
     (define console-edit% (make-console-edit% mred:edit:edit%))
 
@@ -898,17 +898,20 @@
 		   (if (directory-exists? dir)
 		       (let* ([dirs (directory-list dir)]
 			      [find-title
-			       (lambda (port)
-				 (let loop ([l (read-line port)])
-				   (let ([match (regexp-match reg l)])
-				     (if match
-					 (cadr match)
-					 (loop (read-line port))))))]				 
+			       (lambda (name)
+				 (lambda (port)
+				   (let loop ([l (read-line port)])
+				     (if (eof-object? l)
+					 name
+					 (let ([match (regexp-match reg l)])
+					   (if match
+					       (cadr match)
+					       (loop (read-line port))))))))]
 			      [build-item
 			       (lambda (local-dir output)
 				 (let* ([f (build-path dir local-dir "index.htm")])
 				   (if (file-exists? f)
-				       (let ([title (call-with-input-file f find-title)])
+				       (let ([title (call-with-input-file f (find-title local-dir))])
 					 (cons 
 					  (list title
 						(lambda ()

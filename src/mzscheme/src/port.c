@@ -5550,7 +5550,7 @@ static int tcp_getc(Scheme_Input_Port *port)
   if (!data->tcp.lock)
     data->tcp.lock = scheme_make_sema(0);
   else {
-    if (scheme_wait_sema(data->tcp.lock, 1)) {
+    if (!scheme_wait_sema(data->tcp.lock, 1)) {
       /* Do it the hard way: */
       scheme_wait_sema(data->tcp.lock, 0);
       scheme_post_sema(data->tcp.lock);

@@ -869,6 +869,8 @@
 	      (purge-marked/update-headers)))
       (send global-keymap add-function "gc"
 	    (lambda (w e) (dump-memory-stats) (collect-garbage)))
+      (send global-keymap add-function "show-memory-histogram"
+	    (lambda (w e) (show-memory-histogram)))
       
       (send global-keymap map-function ":m" "new-mailer")
       (send global-keymap map-function ":g" "get-new-mail")
@@ -882,6 +884,7 @@
       (send global-keymap map-function ":b" "scroll-up")
       (send global-keymap map-function "#" "purge")
       (send global-keymap map-function "!" "gc")
+      (send global-keymap map-function ":z" "show-memory-histogram")
       
       (define icon (make-object bitmap% (build-path (collection-path "sirmail")
 						    "postmark.bmp")))
@@ -2524,6 +2527,176 @@
       (define bold-style-delta (make-object style-delta% 'change-bold))
       (define italic-style-delta (make-object style-delta% 'change-italic))
 
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;
+      ;; Mailbox memory histogram (from messages in this mailbox)
+      ;;
+
+      (define (show-memory-histogram)
+        ;; grab the current value of the mailbox, just in case
+        (let ([mailbox mailbox])
+          
+          (status "Collecting histogram information...")
+          ;; ht : [symbol -o> (listof (cons seconds bytes))]
+          (thread
+           (lambda ()
+             (define (parse-uptime str)
+               (let* ([sep-bytes (regexp-match #rx"([0-9,]*) bytes" str)]
+                      [bytes (and sep-bytes
+                                  (string->number
+                                   (regexp-replace* #rx"," (cadr sep-bytes) "")))]
+                      [seconds
+                       (cond
+                         [(regexp-match day-hour-regexp str)
+                          =>
+                          (combine (* 24 60 60) (* 60 60))]
+                         [(regexp-match hour-minute-regexp str)
+                          =>
+                          (combine (* 60 60) 60)]
+                         [(regexp-match minute-second-regexp str)
+                          =>
+                          (combine 60 1)]
+                         [else #f])])
+                 (if (and bytes seconds)
+                     (cons seconds bytes)
+                     #f)))
+             
+             (define (combine m1 m2)
+               (lambda (match)
+                 (let ([first (cadr match)]
+                       [second (caddr match)])
+                   (+ (* (string->number first) m1)
+                      (* (string->number second) m2)))))
+             
+             (let ([ht (make-hash-table)])
+               (let loop ([mailbox mailbox])
+                 (cond
+                   [(empty? mailbox) (void)]
+                   [else 
+                    (let* ([message (car mailbox)]
+                           [uid (message-uid message)]
+                           [header (get-header uid)]
+                           [key 
+                            (string->symbol
+                             (format "~a ~a" 
+                                     (extract-field "X-Mailer" header)
+                                     (extract-field "From" header)))]
+                           [uptime-str (extract-field "X-Uptime" header)])
+                      (when uptime-str
+                        (let ([uptime (parse-uptime uptime-str)])
+                          (when uptime
+                            (hash-table-put! 
+                             ht
+                             key
+                             (cons
+                              uptime
+                              (hash-table-get ht key (lambda () '()))))))))
+                    (loop (cdr mailbox))]))
+               
+               (let ([info 
+                      (quicksort 
+                       (hash-table-map ht (lambda (x y) (list (symbol->string x) y)))
+                       (lambda (x y)
+                         (string<=? (car x) (car y))))])
+                 (queue-callback
+                  (lambda ()
+                    (status "Showing histogram")
+                    (make-memory-histogram-window info)))))))))
+      
+      ;; info : (listof (list string (listof (cons number number)))) -> void
+      (define (make-memory-histogram-window info)
+        (define frame (new frame:basic% 
+                           (label "Memory Histogram")
+                           (width 500)
+                           (height 600)))
+        (define canvas (new canvas%
+                            (paint-callback
+                             (lambda (c dc)
+                               (let-values ([(w h) (send c get-client-size)])
+                                 (draw-histogram dc w h text))))
+                            (parent (send frame get-area-container))))
+        (define text (new text%))
+        (define editor-canvas (new editor-canvas% 
+                                   (parent (send frame get-area-container))
+                                   (editor text)
+                                   (stretchable-height #f)
+                                   (line-count 6)))
+        
+        (define colors '("Green"
+                         "DarkOliveGreen"
+                         "ForestGreen"
+                         "MediumTurquoise"
+                         "SteelBlue"
+                         "Teal"
+                         "CadetBlue"
+                         "Indigo"
+                         "Purple"
+                         "Fuchsia"
+                         "Black"
+                         "DarkRed"
+                         "HotPink"
+                         "OrangeRed"
+                         "SaddleBrown"))
+        
+        (define original-colors colors)
+
+        (define (draw-histogram dc w h text)
+          (let ([max-x 0]
+                [max-y 0])
+            (for-each
+             (lambda (key-pairs)
+               (for-each
+                (lambda (pair)
+                  (set! max-x (max (car pair) max-x))
+                  (set! max-y (max (cdr pair) max-y)))
+                (cadr key-pairs)))
+             info)
+            (set! colors original-colors)
+            (for-each
+             (lambda (key-pairs)
+               (let ([key (car key-pairs)]
+                     [pairs (cadr key-pairs)])
+                 (set! colors (cdr colors))
+                 (send dc set-pen (send the-pen-list find-or-create-pen (car colors) 1 'solid))
+                 (send dc set-brush (send the-brush-list find-or-create-brush (car colors) 'solid))
+                 (for-each
+                  (lambda (pair)
+                    (plot-pair dc (car pair) (cdr pair) w h max-x max-y))
+                  pairs)))
+             info)))
+        
+        (define (plot-pair dc x y w h max-x max-y)
+          (let ([dc-x (* x (/ w max-x))]
+                [dc-y (* y (/ h max-y))])
+            (send dc draw-rectangle dc-x dc-y 3 3)))
+        
+        (send text begin-edit-sequence)
+        (for-each (lambda (key-pairs)
+                    (let ([key (car key-pairs)]
+                          [pairs (cadr key-pairs)])
+                      (set! colors (cdr colors))
+                      (let ([before (send text last-position)])
+                        (send text insert (format "~a msgs ~a ~a" 
+                                                  (length pairs)
+                                                  key
+                                                  (car colors)))
+                        (let ([after (send text last-position)])
+                          (send text insert "\n")
+                          (let ([sd (make-object style-delta%)])
+                            (send sd set-delta-foreground (car colors))
+                            (send text change-style sd before after))))))
+                  info)
+        (send text end-edit-sequence)
+        
+        (set-cdr! (last-pair colors) colors)
+        (send frame show #t))
+      
+      (define (make-and-regexp first second)
+        (regexp (format "([0-9]+) ~as? and ([0-9]+) ~as?" first second)))
+      (define day-hour-regexp (make-and-regexp "day" "hour"))
+      (define hour-minute-regexp (make-and-regexp "hour" "minute"))
+      (define minute-second-regexp (make-and-regexp "minute" "second"))
+           
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Hiliting URLS                                          ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

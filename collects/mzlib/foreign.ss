@@ -1216,6 +1216,8 @@
          [_TYPE*               (id "_"name"*")]
          [TYPE?                (id name"?")]
          [make-TYPE            (id "make-"name)]
+         [list->TYPE           (id "list->"name)]
+         [TYPE->list           (id name"->list")]
          [TYPE->C              (id name"->C")]
          [TYPE-tag             (id name"-tag")]
          [(stype ...)          (ids (lambda (s) `(,name"-",s"-type")))]
@@ -1224,7 +1226,7 @@
          [(offset ...) (generate-temporaries
                                (ids (lambda (s) `(,s"-offset"))))])
       #'(define-values (_TYPE _TYPE-pointer TYPE? TYPE-tag make-TYPE
-                        TYPE-SLOT ... set-TYPE-SLOT! ...)
+                        list->TYPE TYPE->list TYPE-SLOT ... set-TYPE-SLOT! ...)
           (let*-values ([(stype ...)  (values slot-type ...)]
                         [(types)      (list stype ...)]
                         [(offsets)    (compute-offsets types)]
@@ -1238,7 +1240,7 @@
               (if (and has-super? super-types super-offsets)
                 (values (append super-types   (cdr types))
                         (append super-offsets (cdr offsets)))
-                (values #f #f)))
+                (values types offsets)))
             (define (TYPE-SLOT x)
               (unless (TYPE? x) (raise-type-error 'TYPE-SLOT struct-string x))
               (ptr-ref x stype 'abs offset))
@@ -1268,9 +1270,19 @@
                     (ptr-set! block stype 'abs offset slot)
                     ...
                     block))))
-            (cstruct-info _TYPE* 'set!
-              _TYPE all-tags (or all-types types) (or all-offsets offsets))
-            (values _TYPE* _TYPE TYPE? TYPE-tag make-TYPE
+            (define (list->TYPE l) (apply make-TYPE l))
+            (define (TYPE->list x)
+              (unless (TYPE? x) (raise-type-error 'TYPE-list struct-string x))
+              (let loop ([x x] [types all-types] [offsets all-offsets])
+                (map (lambda (typ ofs)
+                       (let-values ([(v) (ptr-ref x typ 'abs ofs)]
+                                    [(ptr tags types offsets)
+                                     (cstruct-info
+                                      typ (lambda () (values #f '() #f #f)))])
+                         (if (and types offsets) (loop v types offsets) v)))
+                     types offsets)))
+            (cstruct-info _TYPE* 'set! _TYPE all-tags all-types all-offsets)
+            (values _TYPE* _TYPE TYPE? TYPE-tag make-TYPE list->TYPE TYPE->list
                     TYPE-SLOT ... set-TYPE-SLOT! ...)))))
   (define (identifiers? stx)
     (andmap identifier? (syntax->list stx)))

@@ -1,6 +1,6 @@
 ;;
 ;;  zodiac:scanner-code@
-;;  $Id: scanner.ss,v 1.1 1997/02/25 16:09:20 krentel Exp $
+;;  $Id: scanner.ss,v 1.2 1997/04/28 18:56:54 shriram Exp krentel $
 ;;
 ;;  Zodiac Scanner  July 96.
 ;;  mwk, plt group, Rice university.
@@ -537,10 +537,12 @@
                       (let ([c  char]
                             [num  (text->number l)])
                         (get-char)
-                        (if #t
-			  ; Used to have
-			  ; (index-integer? num)
-			  ; here, but this is gone now.
+			; The vector-constant-size test is now to let mzscheme
+			; try the malloc and see if it succeeds or raises exn.
+			(if (with-handlers
+			      (((lambda (x) #t) (lambda (x) #f)))
+			      (make-vector num 0)
+                              #t)
                             (z:token  size-vec-tag  (list  num  c)
                                       start-loc  (prev-loc))
                             (z:error  "vector constant size too large")))]

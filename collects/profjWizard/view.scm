@@ -13,7 +13,9 @@
      
      #|
 
-            basic%
+            dialog%
+              |
+            wizard%
               |
              / \
         --------------
@@ -23,7 +25,13 @@
      |#
      
      ;; ------------------------------------------------------------------------
-     (define basic%
+     ;; Set up the entire frame, including the info panel where subclasses can 
+     ;; request specific information. The frame includes buttons for aborting
+     ;; the edit process, for packaging up the information in the edit, and for 
+     ;; adding some component (field, variant)
+
+     ;; String String String -> Wizard
+     (define wizard%
        (class dialog% (init-field title insert add)
          (super-new (label title) (width 500) (height 300))
          
@@ -49,19 +57,20 @@
           (tostring? (make-checkbox switch-pane "add toString()"))
           (template? (make-checkbox switch-pane "add method template")))
          
-         ;; -----------------------------------------------------------------------
+         ;; --------------------------------------------------------------------
          ;; info panel
          (field 
           (info-pane (new vertical-panel% (parent p) (style '(border)))))
          
-         ;; -----------------------------------------------------------------------
+         ;; --------------------------------------------------------------------
          ;; error panel         
          
          (define message-size 100)
          (define spec-error (cons 1 2))
          (define message
            (new message%
-                (parent (add-horizontal-panel p)) (label (make-string 100 #\space))))
+                (parent (add-horizontal-panel p)) 
+                (label (make-string 100 #\space))))
 
          ;; String -> false
          (define/public (error-message m)
@@ -71,8 +80,8 @@
          (define/public (spec-error? x) (eq? spec-error x ))))
      
      ;; ------------------------------------------------------------------------
-     (define get-class-info%
-       (class basic%
+     (define class-info%
+       (class wizard%
          (init title insert add)
          
          (init-field (a-super null) (a-v-class null))
@@ -135,6 +144,25 @@
          
          ;; Information about the class's fields:
          (define field-panel (new vertical-panel% (parent info-pane)))
+                  
+         ;; --------------------------------------------------------------------
+         ;; Managing the creation of new "add field" panels
+         
+         ;; (Listof TextField)
+         ;; the list of name TextFields that have been added via (add-field-panel)
+         ;; a stack in that the bottom field is always at beginning of list
+         ;; if empty, there are no fields
+         (define the-last-field-name '())
+         
+         ;; TextField Event -> Void
+         ;; a callback that on return creates a new "add field" panel when 
+         ;; it's the bottom most text field
+         (define (send/create-field x e)
+           (when (eq? (send e get-event-type) 'text-field-enter)
+             (when (or (null? the-last-field-name)
+                       (eq? (car the-last-field-name) x))
+               (add-field-panel))
+             (send this on-traverse-char (new key-event% (key-code #\tab)))))
          
          ;; (list Modifier String String) *-> Void
          ;; add a field panel so that a new field for the class can be specified
@@ -163,19 +191,6 @@
                      (remove-field-name name)
                      (send field-panel change-children (remove-panel fp)))))))
          
-         ;; Managing the creation of new "add field" panels
-         
-         ;; (Listof TextField)
-         ;; the list of name TextFields that have been added via (add-field-panel)
-         ;; a stack in that the bottom field is always at beginning of list
-         ;; if empty, there are no fields
-         (define the-last-field-name '())
-         
-         ;; TextField -> Boolean
-         ;; what is the current last 
-         (define (should-create-new-add-field? x) 
-           (or (null? the-last-field-name) (eq? (car the-last-field-name) x)))
-         
          ;; TextField -> Void
          ;; push f on the-last-field-name
          (define (add-field-name f) 
@@ -185,14 +200,6 @@
          ;; remove from "stack"
          (define (remove-field-name f)
            (set! the-last-field-name (remove f the-last-field-name)))
-         
-         ;; TextField Event -> Void
-         ;; a callback that on return creates a new "add field" panel when 
-         ;; it's the bottom most text field
-         (define (send/create-field x e)
-           (when (eq? (send e get-event-type) 'text-field-enter)
-             (when (should-create-new-add-field? x) (add-field-panel))
-             (send this on-traverse-char (new key-event% (key-code #\tab)))))
          
          ;; -----------------------------------------------------------------------
          (define/override (add-field-cb x e) (add-field-panel))
@@ -259,7 +266,7 @@
      
      ;; ------------------------------------------------------------------------
 
-     (define x (new get-class-info% (title "hello") (add "add x") (insert "insert y")))
+     (define x (new class-info% (title "hello") (add "add x") (insert "insert y")))
      
      (send x show #t)
 

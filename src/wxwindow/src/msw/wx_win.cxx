@@ -896,13 +896,14 @@ LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, int dialo
   case WM_KEYDOWN: /* ^^^ fallthrough */
     {
       // Avoid duplicate messages to OnChar
-      if ((wParam != VK_ESCAPE) 
-	  && (wParam != VK_SHIFT) 
-	  && (wParam != VK_CONTROL) 
-	  && (wParam != VK_SPACE) 
-	  && (wParam != VK_RETURN) 
-	  && (wParam != VK_TAB) 
-	  && (wParam != VK_BACK))
+      if ((message == WM_KEYUP)
+	  || ((wParam != VK_ESCAPE) 
+	      && (wParam != VK_SHIFT) 
+	      && (wParam != VK_CONTROL) 
+	      && (wParam != VK_SPACE) 
+	      && (wParam != VK_RETURN) 
+	      && (wParam != VK_TAB) 
+	      && (wParam != VK_BACK)))
 	wnd->OnChar((WORD)wParam, lParam, FALSE, message == WM_KEYUP);
       break;
     }

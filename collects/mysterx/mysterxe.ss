@@ -1638,8 +1638,8 @@
 	     (mxprims:register-navigate-handler
 	      browser
 	      (lambda (_ boxed-url)
-		(set! navigate-url (unbox boxed-url))
-		(semaphore-post navigate-sem)))))) 
+		(set! navigate-url (current-url))
+		(semaphore-post navigate-sem))))))
 
   (define mx-document%	
     (class object% (doc)

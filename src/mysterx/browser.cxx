@@ -335,10 +335,32 @@ Scheme_Object *mx_register_navigate_handler(int argc,Scheme_Object **argv) {
   return scheme_void;
 }
 
-Scheme_Object *mx_current_document(int argc,Scheme_Object **argv) {
+IHTMLDocument2 *IHTMLDocument2FromBrowser(Scheme_Object *obj) {
   HRESULT hr;
-  IDispatch *pIDispatch;
   IWebBrowser2 *pIWebBrowser2;
+  IHTMLDocument2 *pIHTMLDocument2;
+  IDispatch *pIDispatch;
+
+  pIWebBrowser2 = MX_BROWSER_VAL(obj);
+
+  hr = pIWebBrowser2->get_Document(&pIDispatch);
+
+  if (hr != S_OK || pIDispatch == NULL) {
+    scheme_signal_error("Error retrieving DHTML dispatch interface");
+  }
+  
+  hr = pIDispatch->QueryInterface(IID_IHTMLDocument2,(void **)&pIHTMLDocument2);
+  
+  pIDispatch->Release();
+
+  if (hr != S_OK || pIHTMLDocument2 == NULL) {
+    codedComError("Error retrieving DHTML document2 interface",hr);
+  }
+
+  return pIHTMLDocument2;
+}
+
+Scheme_Object *mx_current_document(int argc,Scheme_Object **argv) {
   IHTMLDocument2 *pIHTMLDocument2;
   MX_Document_Object *doc;
 
@@ -346,21 +368,7 @@ Scheme_Object *mx_current_document(int argc,Scheme_Object **argv) {
     scheme_wrong_type("unregister-navigate-handler!","mx-browser",0,argc,argv);
   }
 
-  pIWebBrowser2 = MX_BROWSER_VAL(argv[0]);
-
-  pIWebBrowser2->get_Document(&pIDispatch);
-
-  if (pIDispatch == NULL) {
-    scheme_signal_error("Error retrieving DHTML dispatch interface");
-  }
-  
-  hr = pIDispatch->QueryInterface(IID_IHTMLDocument2,(void **)&pIHTMLDocument2);
-  
-  if (hr != S_OK || pIHTMLDocument2 == NULL) {
-    codedComError("Error retrieving DHTML document2 interface",hr);
-  }
-
-  pIDispatch->Release();
+  pIHTMLDocument2 = IHTMLDocument2FromBrowser(argv[0]);
 
   doc = (MX_Document_Object *)scheme_malloc(sizeof(MX_Document_Object));
   doc->type = mx_document_type;
@@ -379,6 +387,7 @@ Scheme_Object *mx_current_document(int argc,Scheme_Object **argv) {
 Scheme_Object *mx_current_url(int argc,Scheme_Object **argv) {
   HRESULT hr;
   IWebBrowser2 *pIWebBrowser2;
+  IHTMLDocument2 *pIHTMLDocument2;
   BSTR url;
   Scheme_Object *retval;
 
@@ -388,7 +397,11 @@ Scheme_Object *mx_current_url(int argc,Scheme_Object **argv) {
 
   pIWebBrowser2 = MX_BROWSER_VAL(argv[0]);
 
-  hr = pIWebBrowser2->get_LocationURL(&url);
+  pIHTMLDocument2 = IHTMLDocument2FromBrowser(argv[0]);
+
+  hr = pIHTMLDocument2->get_URL(&url);
+
+  pIHTMLDocument2->Release();
 
   if (hr != S_OK) {
     codedComError("current-url: Error retrieving URL",hr);
@@ -400,7 +413,7 @@ Scheme_Object *mx_current_url(int argc,Scheme_Object **argv) {
 
   retval = BSTRToSchemeString(url);
 
-  // SysFreeString(url);
+  SysFreeString(url);
 
   return retval;
 }

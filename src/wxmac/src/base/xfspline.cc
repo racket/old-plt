@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: xfspline.cc,v 1.4 1999/10/05 16:43:16 mflatt Exp $
+ * RCS_ID:      $Id: xfspline.cc,v 1.5 2000/04/17 22:14:09 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -15,6 +15,8 @@
  * FIG : Facility for Interactive Generation of figures
  * Copyright (c) 1985 by Supoj Sutanthavibul
  */
+
+#include "wx.h"
 
 #if USE_SPLINES
 

@@ -70,7 +70,7 @@ char *wxFSSpecToPath(const FSSpec *spec)
   // hopefully, OS X will give us a nice way to do this.
 }
 
-FSSpec *wxPathToFSSpec(const char *path)
+OSErr wxPathToFSSpec(const char *path, FSSpec *spec)
 {
   // hopefully, OS X will give us a nice way to do this.
 }

@@ -3164,27 +3164,14 @@ static Scheme_Object *read_let_void(Scheme_Object *obj)
 
 static Scheme_Object *write_let_one(Scheme_Object *obj)
 {
-  Scheme_Let_One *lo;
- 
-  lo = (Scheme_Let_One *)obj;
-
-  return cons(lo->value, scheme_protect_quote(lo->body));
+  scheme_signal_error("let-one writer shouldn't be used");
+  return NULL;
 }
 
 static Scheme_Object *read_let_one(Scheme_Object *obj)
 {
-  Scheme_Let_One *lo;
-  int et;
- 
-  lo = (Scheme_Let_One *)scheme_malloc_tagged(sizeof(Scheme_Let_One));
-  lo->type = scheme_let_one_type;
-
-  lo->value = SCHEME_CAR(obj);
-  lo->body = SCHEME_CDR(obj);
-  et = scheme_get_eval_type(lo->value);
-  lo->eval_type = et;
-
-  return (Scheme_Object *)lo;
+  scheme_signal_error("let-one reader shouldn't be used");
+  return NULL;
 }
 
 static Scheme_Object *write_letrec(Scheme_Object *obj)

@@ -1971,20 +1971,45 @@ static Scheme_Object *read_compact(CPort *port,
       break;
     case CPT_APPLICATION:
       {
-	int c;
-	Scheme_Object *l;
-	ListStackRec r;
+	int c, i;
+	Scheme_App_Rec *a;
 
 	c = read_compact_number(port) + 1;
-	STACK_START(r);
-	l = read_compact_list(c, 1, 1, port, ht, symtab CURRENTPROCARG);
-	STACK_END(r);
-  
-	{
-	  Scheme_Type_Reader reader;
-	  reader = scheme_type_readers[scheme_application_type];
-	  v = reader(l);
+	a = scheme_malloc_application(c);
+	for (i = 0; i < c; i++) {
+	  v = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
+	  a->args[i] = v;
 	}
+
+	scheme_finish_application(a);
+	v = (Scheme_Object *)a;
+      }
+      break;
+    case CPT_LET_ONE:
+      {
+	Scheme_Let_One *lo;
+	int et;
+
+	lo = (Scheme_Let_One *)scheme_malloc_tagged(sizeof(Scheme_Let_One));
+	lo->type = scheme_let_one_type;
+
+	v = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
+	lo->value = v;
+	v = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
+	lo->body = v;
+	et = scheme_get_eval_type(lo->value);
+	lo->eval_type = et;
+
+	v = (Scheme_Object *)lo;
+      }
+      break;
+    case CPT_BRANCH:
+      {
+	Scheme_Object *test, *tbranch, *fbranch;
+	test = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
+	tbranch = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
+	fbranch = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
+	v = scheme_make_branch(test, tbranch, fbranch);
       }
       break;
     case CPT_MODULE_INDEX:
@@ -2089,20 +2114,18 @@ static Scheme_Object *read_compact(CPort *port,
       break;
     case CPT_SMALL_APPLICATION_START:
       {
-	int c;
-	Scheme_Object *l;
-	ListStackRec r;
+	int c, i;
+	Scheme_App_Rec *a;
 
 	c = (ch - CPT_SMALL_APPLICATION_START) + 1;
-	STACK_START(r);
-	l = read_compact_list(c, 1, 1, port, ht, symtab CURRENTPROCARG);
-	STACK_END(r);
-
-	{
-	  Scheme_Type_Reader reader;
-	  reader = scheme_type_readers[scheme_application_type];
-	  v = reader(l);
+	a = scheme_malloc_application(c);
+	for (i = 0; i < c; i++) {
+	  v = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
+	  a->args[i] = v;
 	}
+
+	scheme_finish_application(a);
+	v = (Scheme_Object *)a;
       }
       break;
     default:

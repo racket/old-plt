@@ -615,7 +615,7 @@ static Scheme_Object *make_application(Scheme_Object *v, int final)
 {
   Scheme_Object *o;
   Scheme_App_Rec *app;
-  int i, nv, size, devals;
+  int i, nv;
   volatile int n;
 
   o = v;
@@ -652,6 +652,23 @@ static Scheme_Object *make_application(Scheme_Object *v, int final)
     }
   }
 
+  app = scheme_malloc_application(n);
+
+  for (i = 0; i < n; i++, v = SCHEME_CDR(v)) {
+    app->args[i] = SCHEME_CAR(v);
+  }
+
+  if (final)
+    scheme_finish_application(app);
+
+  return (Scheme_Object *)app;
+}
+
+Scheme_App_Rec *scheme_malloc_application(int n)
+{
+  Scheme_App_Rec *app;
+  int size;
+
   size = (sizeof(Scheme_App_Rec) 
 	  + ((n - 1) * sizeof(Scheme_Object *))
 	  + n * sizeof(char));
@@ -661,21 +678,22 @@ static Scheme_Object *make_application(Scheme_Object *v, int final)
 
   app->num_args = n - 1;
 
+  return app;
+}
+
+void scheme_finish_application(Scheme_App_Rec *app)
+{
+  int i, devals, n;
+
+  n = app->num_args + 1;
+
   devals = sizeof(Scheme_App_Rec) + (app->num_args * sizeof(Scheme_Object *));
 
-  for (i = 0; i < n; i++, v = SCHEME_CDR(v)) {
-    app->args[i] = SCHEME_CAR(v);
+  for (i = 0; i < n; i++) {
+    char etype;
+    etype = scheme_get_eval_type(app->args[i]);
+    ((char *)app + devals)[i] = etype;
   }
-
-  if (final) {
-    for (i = 0; i < n; i++) {
-      char etype;
-      etype = scheme_get_eval_type(app->args[i]);
-      ((char *)app + devals)[i] = etype;
-    }
-  }
-
-  return (Scheme_Object *)app;
 }
 
 static Scheme_Object *link_application(Scheme_Object *o, Link_Info *info)
@@ -3884,28 +3902,14 @@ enable_break(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *write_application(Scheme_Object *obj)
 {
-  Scheme_App_Rec *app;
-  Scheme_Object *l;
-  int i;
-
-  app = (Scheme_App_Rec *)obj;
-
-  l = scheme_null;
-  for (i = app->num_args + 1; i--; ) {
-    l = cons(scheme_protect_quote(app->args[i]), l);
-  }
-  
-  return l;
+  scheme_signal_error("app writer shouldn't be used");
+  return NULL;
 }
 
 static Scheme_Object *read_application(Scheme_Object *obj)
 {
-  /* (void) optimization: */
-  if (SCHEME_PAIRP(obj) && SCHEME_NULLP(SCHEME_CDR(obj))
-      && SAME_OBJ(SCHEME_CAR(obj), scheme_void_func))
-    return scheme_void;
-
-  return make_application(obj, 1);
+  scheme_signal_error("app reader shouldn't be used");
+  return NULL;
 }
 
 static Scheme_Object *write_sequence(Scheme_Object *obj)
@@ -3935,25 +3939,14 @@ static Scheme_Object *read_sequence_save_first(Scheme_Object *obj)
 
 static Scheme_Object *write_branch(Scheme_Object *obj)
 {
-  Scheme_Branch_Rec *b;
-
-  b = (Scheme_Branch_Rec *)obj;
-
-  return cons(scheme_protect_quote(b->test),
-	      cons(scheme_protect_quote(b->tbranch), 
-		   scheme_protect_quote(b->fbranch)));
+  scheme_signal_error("branch writer shouldn't be used");
+  return NULL;
 }
 
 static Scheme_Object *read_branch(Scheme_Object *obj)
 {
-#if 0
-  if (!SCHEME_PAIRP(obj) || !SCHEME_PAIRP(SCHEME_CDR(obj)))
-    scheme_signal_error("bad compiled branch");
-#endif
-
-  return scheme_make_branch(SCHEME_CAR(obj), 
-			    SCHEME_CAR(SCHEME_CDR(obj)),
-			    SCHEME_CDR(SCHEME_CDR(obj)));
+  scheme_signal_error("branch reader shouldn't be used");
+  return NULL;
 }
 
 static Scheme_Object *write_with_cont_mark(Scheme_Object *obj)

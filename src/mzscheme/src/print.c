@@ -1171,13 +1171,16 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 		       notdisplay, 1, ht, symtab, rnht, p);
       } else {
 	Scheme_Stx *stx = (Scheme_Stx *)obj;
-	if (stx->srcloc->line >= 0) {
+	if ((stx->srcloc->line >= 0) || (stx->srcloc->pos >= 0)) {
 	  print_this_string(p, "#<syntax:", 0, 9);
 	  if (stx->srcloc->src && SCHEME_STRINGP(stx->srcloc->src)) {
 	    print_this_string(p, SCHEME_STR_VAL(stx->srcloc->src), 0, SCHEME_STRLEN_VAL(stx->srcloc->src));
 	    print_this_string(p, ":", 0, 1);
 	  }
-	  sprintf(quick_buffer, "%ld.%ld", stx->srcloc->line, stx->srcloc->col);
+	  if (stx->srcloc->line >= 0)
+	    sprintf(quick_buffer, "%ld.%ld", stx->srcloc->line, stx->srcloc->col);
+	  else
+	    sprintf(quick_buffer, "%ld", stx->srcloc->pos);
 	  print_this_string(p, quick_buffer, 0, -1);
 	  print_this_string(p, ">", 0, 1);
 	} else
@@ -1270,6 +1273,27 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       for (i = 0; i < app->num_args + 1; i++) {
 	closed = print(scheme_protect_quote(app->args[i]), notdisplay, 1, NULL, symtab, rnht, p);
       }
+    }
+  else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_let_one_type))
+    {
+      Scheme_Let_One *lo;
+
+      lo = (Scheme_Let_One *)obj;
+
+      print_compact(p, CPT_LET_ONE);
+      print(scheme_protect_quote(lo->value), notdisplay, 1, NULL, symtab, rnht, p);
+      closed = print(scheme_protect_quote(lo->body), notdisplay, 1, NULL, symtab, rnht, p);
+    }
+  else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_branch_type))
+    {
+      Scheme_Branch_Rec *b;
+
+      b = (Scheme_Branch_Rec *)obj;
+
+      print_compact(p, CPT_BRANCH);
+      print(scheme_protect_quote(b->test), notdisplay, 1, NULL, symtab, rnht, p);
+      print(scheme_protect_quote(b->tbranch), notdisplay, 1, NULL, symtab, rnht, p);
+      closed = print(scheme_protect_quote(b->fbranch), notdisplay, 1, NULL, symtab, rnht, p);
     }
   else if (SAME_TYPE(SCHEME_TYPE(obj), scheme_quote_compilation_type))
     {

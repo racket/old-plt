@@ -1406,6 +1406,9 @@ Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *compiled_list,
 Scheme_Object *scheme_link_closure_compilation(Scheme_Object *_data, Link_Info *info);
 Scheme_Object *scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info);
 
+Scheme_App_Rec *scheme_malloc_application(int n);
+void scheme_finish_application(Scheme_App_Rec *app);
+
 #define SCHEME_SYNTAX(obj)   ((obj)->u.two_ptr_val.ptr1)
 #define SCHEME_SYNTAX_EXP(obj)   ((obj)->u.two_ptr_val.ptr2)
 

@@ -29,7 +29,7 @@
 #include <ctype.h>
 #include "schgc.h"
 
-# define HASH_TABLE_SIZE 1
+# define HASH_TABLE_SIZE 256
 #ifdef SMALL_HASH_TABLES
 # define FILL_FACTOR 1.30
 #else

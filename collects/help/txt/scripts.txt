@@ -8,12 +8,10 @@ A batch file has the extension .BAT.  The form of the batch
 file is
 
         ; @echo off
-        ; mzscheme.exe -r %0 %1 %2 %3 %4 %5 %6 %7 %8 %9
+        ; mzscheme.exe -r %*
         ; goto :end
 
         <Scheme code here>
 
         ; :end
 
-Only nine (9) command-line parameters to the batch file are allowed.
-That restriction is a limitation of MS-DOS.

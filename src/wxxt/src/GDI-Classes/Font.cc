@@ -117,11 +117,11 @@ void wxFont::InitFont(void)
   
   __type = wxTYPE_FONT;
   
-  sl            = new wxList(wxKEY_INTEGER);
+  sl = new wxList(wxKEY_INTEGER);
   scaled_xfonts = sl;
 
 #ifdef WX_USE_XFT
-  sl            = new wxList(wxKEY_INTEGER);
+  sl = new wxList(wxKEY_INTEGER);
   scaled_xft_fonts = sl;
 #endif
 }
@@ -144,14 +144,24 @@ wxFont::~wxFont(void)
   node = scaled_xft_fonts->First();
   while (node) {
     wxFontStruct *xfont;
-    wxNode *next;
     xfont = (wxFontStruct*)node->Data();
-    next = node->Next();
     if (xfont != (wxFontStruct *)0x1)
       XftFontClose(wxAPP_DISPLAY, xfont);
-    node = next;
+    node = node->Next();
   }
   DELETE_OBJ scaled_xft_fonts;
+
+  if (substitute_xft_fonts) {
+    node = substitute_xft_fonts->First();
+    while (node) {
+      wxFontStruct *xfont;
+      xfont = (wxFontStruct*)node->Data();
+      if (xfont != (wxFontStruct *)0x1)
+	XftFontClose(wxAPP_DISPLAY, xfont);
+      node = node->Next();
+    }
+    DELETE_OBJ substitute_xft_fonts;
+  }
 #endif
 
   if (rotated_fonts) {
@@ -229,6 +239,9 @@ void *wxFont::GetInternalFont(float scale, float angle)
   wxNode      *node=NULL;
   XFontStruct *xfont;
 
+  if (point_scale > 256)
+    point_scale = 256;
+
   if (angle != rotation) {
     wxFont *rot;
     rot = GetRotated(angle);
@@ -258,6 +271,9 @@ void *wxFont::GetInternalAAFont(float scale, float angle)
     wxNode      *node=NULL;
     wxFontStruct *xft_font;
 
+    if (point_scale > 256)
+      return NULL;
+
     if (angle != rotation) {
       wxFont *rot;
       rot = GetRotated(angle);
@@ -285,6 +301,68 @@ void *wxFont::GetInternalAAFont(float scale, float angle)
     return GetInternalFont(scale);
 #endif
 }
+
+#ifdef WX_USE_XFT
+int wxFont::HasAASubstitutions()
+{
+  char *name;
+  int i;
+  
+  name = wxTheFontNameDirectory->GetScreenName(font_id, weight, style);
+  if (name[0] == ' ') {
+    for (i = 1; name[i]; i++) {
+      if (name[i] == ',')
+	return 1;
+    }
+  }
+
+  return 0;
+}
+
+void *wxFont::GetNextAASubstitution(int index, float scale, float angle)
+{
+  wxFont *subs;
+  wxNode *node;
+
+  if (!substitute_xft_fonts) {
+    wxList *sl;
+    sl = new wxList(wxKEY_INTEGER);
+    substitute_xft_fonts = sl;
+  }
+
+  node = substitute_xft_fonts->Find(index);
+  if (node)
+    subs = (wxFont *)node->Data();
+  else {
+    char *name, *next_name;
+    int i, c = 0, len;
+    
+    name = wxTheFontNameDirectory->GetScreenName(font_id, weight, style);
+    for (i = 0; name[i]; i++) {
+      if (name[i] == ',') {
+	c++;
+	if (c == index)
+	  break;
+      }
+    }
+    if (!name[i])
+      return NULL;
+
+    i++;
+    len = strlen(name + i);
+    next_name = new char[len + 2];
+    memcpy(next_name + 1, name + i, len + 1);
+    next_name[0] = ' ';
+
+    subs = new wxFont(point_size, next_name, family, style, weight,
+		      underlined, smoothing, size_in_pixels);
+    
+    substitute_xft_fonts->Append(index, (wxObject*)subs);
+  }
+
+  return subs->GetInternalAAFont(scale, angle);
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // wxFontList
@@ -424,14 +502,22 @@ static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int fa
     }
     
     if (name) {
-      fs = XftFontOpen(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY),
-		       XFT_FAMILY, XftTypeString, name + 1,
-		       (sip ? XFT_PIXEL_SIZE : XFT_SIZE), XftTypeInteger, point_size,
-		       XFT_WEIGHT, XftTypeInteger, wt,
-		       XFT_SLANT, XftTypeInteger, sl,
-		       ex_tags[0], ex_types[0], ex_vals[0],
-		       ex_tags[1], ex_types[1], ex_vals[1],
-		       NULL);
+      XftPattern *pat;
+      XftResult res;
+
+      pat = XftNameParse(name + 1);
+
+      pat = XftPatternBuild(pat,
+			    (sip ? XFT_PIXEL_SIZE : XFT_SIZE), XftTypeInteger, point_size,
+			    XFT_WEIGHT, XftTypeInteger, wt,
+			    XFT_SLANT, XftTypeInteger, sl,
+			    ex_tags[0], ex_types[0], ex_vals[0],
+			    ex_tags[1], ex_types[1], ex_vals[1],
+			    NULL);
+
+      pat = XftFontMatch(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY), pat, &res);
+
+      fs = XftFontOpenPattern(wxAPP_DISPLAY, pat);
     } else
       fs = NULL;
 

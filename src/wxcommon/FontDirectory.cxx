@@ -195,6 +195,8 @@ static void AdjustFontDefaults(void)
 	font_defaults[i + 1] = " Nimbus Sans L";
       } else if (!strcmp(font_defaults[i], "ScreenScript__")) {
 	font_defaults[i + 1] = " URW Chancery L";
+      } else if (!strcmp(font_defaults[i], "ScreenSymbol__")) {
+	font_defaults[i + 1] = " Standard Symbols L,Nimbus Sans L";
       }
     }
   }

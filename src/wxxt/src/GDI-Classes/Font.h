@@ -68,10 +68,17 @@ public:
 
     void  *GetInternalFont(float scale = 1.0, float angle = 0.0); // return type XFontStruct*
     void  *GetInternalAAFont(float scale = 1.0, float angle = 0.0); // return type wxFontStruct*
+
+#ifdef WX_USE_XFT
+    int HasAASubstitutions(void);
+    void *GetNextAASubstitution(int index, float scale, float angle);
+#endif
+
 private:
     wxList *scaled_xfonts;
 #ifdef WX_USE_XFT
     wxList *scaled_xft_fonts;
+    wxList *substitute_xft_fonts;
 #endif
     wxList *rotated_fonts;
     short  point_size;

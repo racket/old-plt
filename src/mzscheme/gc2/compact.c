@@ -53,7 +53,7 @@ typedef short Type_Tag;
 /* Debugging and performance tools: */
 #define TIME 0
 #define SEARCH 0
-#define CHECKS 1
+#define CHECKS 0
 #define NOISY 0
 #define MARK_STATS 0
 #define ALLOC_GC_PHASE 0
@@ -622,14 +622,17 @@ void GC_add_roots(void *start, void *end)
 /*                             immobile box                                   */
 /******************************************************************************/
 
+/* The ImmobileBox struct is an internal view, only. To a GC client,
+   an immobile box starts with a longword for a pointer, and the rest
+   is undefined. */
 typedef struct ImmobileBox {
-  void *p;
+  void *p; /* must be first in the record */
   struct ImmobileBox *next, *prev;
 } ImmobileBox;
 
 static ImmobileBox *immobile;
 
-void *GC_malloc_immobile_box(void *p)
+void **GC_malloc_immobile_box(void *p)
 {
   ImmobileBox *ib;
 
@@ -642,10 +645,10 @@ void *GC_malloc_immobile_box(void *p)
 
   immobile = ib;
 
-  return ib;
+  return (void **)ib;
 }
 
-void GC_free_immobile_box(void *b)
+void GC_free_immobile_box(void **b)
 {
   ImmobileBox *ib = (ImmobileBox *)b;
 
@@ -679,13 +682,16 @@ static int size_on_free_list(void *p)
 /*                           weak arrays and boxes                            */
 /******************************************************************************/
 
+/* The GC_Weak_Array structure is not externally visible, but
+   clients expect a specific structure. See README for more
+   information. */
 typedef struct GC_Weak_Array {
   Type_Tag type;
   short keyex;
   long count;
   void *replace_val;
   struct GC_Weak_Array *next;
-  void *data[1];
+  void *data[1]; /* must be the 5th longword! */
 } GC_Weak_Array;
 
 static GC_Weak_Array *weak_arrays;
@@ -765,8 +771,9 @@ void *GC_malloc_weak_array(size_t size_in_bytes, void *replace_val)
   return w;
 }
 
+/* The GC_Weak_Box struct is not externally visible, but
+   first three fields are mandated by the GC interface */
 typedef struct GC_Weak_Box {
-  /* The first three fields are mandated by the GC spec: */
   Type_Tag type;
   short keyex;
   void *val;

@@ -159,8 +159,24 @@ MzScheme allocates the following kinds of memory objects:
    of weak pointers to collectable objects. See GC_malloc_weak_array()
    in gc2.h for more details.
 
-Of course, an implementation of the collector may collapse these
-catagories internally.
+ * Immobile box - a longword-sized box that can contain a reference to
+   a collectable object, but it not itself collectable or movable. An
+   immobile box lets MzScheme refer to a collectable object (through
+   one indirection) from memory that is not traversed by the
+   collector.
+
+   The GC_malloc_immobile_box() function creates an immobile box with
+   an initial value:
+
+     void **GC_malloc_immobile_box(void *p);
+
+   Immobile boxes must be explicitly freed with the
+   GC_free_immobile_box() function:
+
+     void GC_free_immobile_box(void **b);
+
+Of course, an implementation of the collector may collapse any of
+these catagories internally.
 
 Finalization
 ------------

@@ -539,7 +539,7 @@ void wxMediaEdit::OnChar(wxKeyEvent *event)
 
 void wxMediaEdit::OnDefaultChar(wxKeyEvent *event)
 {
-  long code;
+  long code, ins = -1;
   int ok = 0;
 
   if (!admin)
@@ -551,7 +551,7 @@ void wxMediaEdit::OnDefaultChar(wxKeyEvent *event)
   case WXK_BACK:
   case WXK_DELETE:
     Delete();
-    break;
+    return;
   case WXK_RIGHT:
   case WXK_LEFT:
   case WXK_UP:
@@ -565,62 +565,66 @@ void wxMediaEdit::OnDefaultChar(wxKeyEvent *event)
       isshift = event->ShiftDown();
       MovePosition(code, isshift);
     }
-    break;
+    return;
   case WXK_NUMPAD0:
-    Insert('0');
+    ins = '0';
     break;
   case WXK_NUMPAD1:
-    Insert('1');
+    ins = '1';
     break;
   case WXK_NUMPAD2:
-    Insert('2');
+    ins = '2';
     break;
   case WXK_NUMPAD3:
-    Insert('3');
+    ins = '3';
     break;
   case WXK_NUMPAD4:
-    Insert('4');
+    ins = '4';
     break;
   case WXK_NUMPAD5:
-    Insert('5');
+    ins = '5';
     break;
   case WXK_NUMPAD6:
-    Insert('6');
+    ins = '6';
     break;
   case WXK_NUMPAD7:
-    Insert('7');
+    ins = '7';
     break;
   case WXK_NUMPAD8:
-    Insert('8');
+    ins = '8';
     break;
   case WXK_NUMPAD9:
-    Insert('9');
+    ins = '9';
     break;
   case WXK_MULTIPLY:
-    Insert('*');
+    ins = '*';
     break;
   case WXK_DIVIDE:
-    Insert('/');
+    ins = '/';
     break;
   case WXK_ADD:
-    Insert('+');
+    ins = '+';
     break;
   case WXK_SUBTRACT:
-    Insert('-');
+    ins = '-';
     break;
   case WXK_DECIMAL:
-    Insert('.');
+    ins = '.';
     break;
   case WXK_RETURN:
   case WXK_TAB:
     ok = 1;
   default:
     if (ok || (code >= 32 && code <= 255)) {
-      if (overwriteMode && (startpos == endpos))
-	Insert(code, startpos, startpos + 1);
-      else
-	Insert(code);
+      ins = code;
     }
+  }
+
+  if (ins > -1) {
+    if (overwriteMode && (startpos == endpos))
+      Insert(ins, startpos, startpos + 1);
+    else
+      Insert(ins);
   }
 }
 

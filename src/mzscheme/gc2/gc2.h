@@ -136,8 +136,8 @@ void *GC_malloc_weak_box(void *p, void **secondary, int soffset);
 /* 
    Allocate a weak box. See README for details. */
 
-void *GC_malloc_immobile_box(void *p);
-void GC_free_immobile_box(void *b);
+void **GC_malloc_immobile_box(void *p);
+void GC_free_immobile_box(void **b);
 /* 
    Allocate (or free) a non-GCed box containing a pointer to a GCed
    value.  The pointer is stored as the first longword of the box. */

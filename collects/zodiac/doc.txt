@@ -120,25 +120,26 @@ Quickref:
 
 Details:
 
-The mapping from fully elaborated "E-expressions" to the source
-S-expressions is always an injection. Aries relies on the E->S
-injection to hilite a specific S-expression in response to a run-time
-error for a particular E-expression. However, the E->S relation is
-obviously not a surjection. For example, (cond [#f 5][#t 6]) expands
-to (if #f 5 (if #t 6)), where the `cond' S-expression is identified as
-the source of both `if' E-expressions. Other elaborations might drop
-S-expressions entirely, such that an S-expression has no reprentative
-in the final E-expression.
+Zodiac's start and end locations provide a client with a mapping from
+fully elaborated "E-expressions" to source S-expressions. For example,
+Aries relies on the E->S mapping to hilite a specific S-expression in
+response to a run-time error for a particular E-expression. Certain
+tools, such as DrScheme's syntax checker, require an S->E mapping,
+instead. However, the inverse of the E->S relation is not a mapping,
+because E->S can map many E-expressions to one S-expression, and it
+can map zero E-expressions to some S-expressions. For example, (cond
+[#f 5][#t 6]) expands to (if #f 5 (if #t 6)), where the `cond'
+S-expression is identified as the source of both `if'
+E-expressions. Other elaborations drop an S-expression entirely, such
+that an S-expression has no reprentative in the final E-expression.
 
-Certain tools, such as DrScheme's syntax checker, require a S->E
-function, which cannot be derived by simply inverting the E->S
-relation. The `origin' field of an E-expression provides information
-for approximating an S->E function. The S->E function is obtained by
-dropping E-expression elements from the E->S domain before inverting
-the relation. More specifically, the `origin' field identifies each
-E-expression as either the principal representative of its source
-expression or not. Zodiac guarantees that at most one E-expression is
-a principal expression for each S-expression in the source.
+The `origin' field of an E-expression provides information
+for approximating an S->E function by dropping E-expression elements
+from the E->S domain before inverting the relation. More specifically,
+the `origin' field identifies each E-expression as either the
+principal representative of its source expression or not. Zodiac
+guarantees that at most one E-expression is a principal expression for
+each S-expression in the source.
 
 Principal E-Expressions
 - - - - - - - - - - - -

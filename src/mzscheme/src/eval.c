@@ -1040,6 +1040,9 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
 	  return NULL;
 	}
 
+	if (!SAME_OBJ(m, info))
+	  scheme_check_accessible_in_module(m, (Scheme_Object *)b->bucket.bucket.key, NULL, 1);
+
 	return (Scheme_Object *)scheme_global_bucket((Scheme_Object *)b->bucket.bucket.key, m);
       }
     }

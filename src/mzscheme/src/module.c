@@ -34,6 +34,8 @@ static Scheme_Object *import_for_syntax_syntax(Scheme_Object *form, Scheme_Comp_
 static Scheme_Object *import_for_syntax_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
 static Scheme_Object *export_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *export_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
+static Scheme_Object *export_indirect_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
+static Scheme_Object *export_indirect_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
 
 static Scheme_Object *module_execute(Scheme_Object *data);
 static Scheme_Object *top_level_import_execute(Scheme_Object *data);
@@ -64,6 +66,7 @@ static Scheme_Object *define_syntax_stx;
 static Scheme_Object *import_stx;
 static Scheme_Object *import_for_syntax_stx;
 static Scheme_Object *export_stx;
+static Scheme_Object *export_indirect_stx;
 static Scheme_Object *set_stx;
 static Scheme_Object *app_stx;
 static Scheme_Object *unbound_stx;
@@ -105,6 +108,10 @@ void scheme_init_module(Scheme_Env *env)
   scheme_add_global_keyword("export", 
 			    scheme_make_compiled_syntax(export_syntax, 
 							export_expand), 
+			    env);
+  scheme_add_global_keyword("export-indirect", 
+			    scheme_make_compiled_syntax(export_indirect_syntax, 
+							export_indirect_expand), 
 			    env);
 
   REGISTER_SO(kernel_symbol);
@@ -191,6 +198,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   import_stx = scheme_datum_to_syntax(scheme_intern_symbol("import"), scheme_false, w);
   import_for_syntax_stx = scheme_datum_to_syntax(scheme_intern_symbol("import-for-syntax"), scheme_false, w);
   export_stx = scheme_datum_to_syntax(scheme_intern_symbol("export"), scheme_false, w);
+  export_indirect_stx = scheme_datum_to_syntax(scheme_intern_symbol("export-indirect"), scheme_false, w);
   set_stx = scheme_datum_to_syntax(scheme_intern_symbol("set!"), scheme_false, w);
   app_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%app"), scheme_false, w);
   unbound_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%unbound"), scheme_false, w);
@@ -281,6 +289,25 @@ Scheme_Env *scheme_module_access(Scheme_Object *name, Scheme_Env *env)
     return scheme_lookup_in_table(env->modules, (const char *)name);
 }
 
+void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, 
+				       Scheme_Object *stx, int nosyntax)
+{
+  if (env == kernel)
+    return;
+
+  if (scheme_lookup_in_table(env->accessible, (const char *)symbol))
+    return;
+
+  if (stx && SAME_OBJ(SCHEME_STX_SYM(stx), symbol)) {
+    symbol = stx;
+    stx = NULL;
+  }
+
+  scheme_wrong_syntax("compile", stx, symbol, 
+		      "variable not exported (directly or indirectly) from module: %S",
+		      env->modname);
+}
+
 Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name)
 {
   if (modname == kernel_symbol)
@@ -330,6 +357,24 @@ static void expstart_module(Scheme_Env *menv, Scheme_Env *env)
     scheme_add_to_table(env->modules, (const char *)menv->modname, m, 0);
 
     m->phase = env->phase;
+    
+    if (!menv->accessible) {
+      Scheme_Hash_Table *ht;
+      int i;
+
+      ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+      for (i = 0; i < menv->num_exports; i++) {
+	if (SAME_OBJ(menv->export_srcs[i], menv->modname)) {
+	  scheme_add_to_table(ht, (const char *)menv->export_src_names[i], scheme_false, 0);
+	}
+      }
+      for (i = 0; i < menv->num_indirect_exports; i++) {
+	scheme_add_to_table(ht, (const char *)menv->indirect_exports[i], scheme_false, 0);
+      }
+      menv->accessible = ht;
+    }
+
+    m->accessible = menv->accessible;
 
     /* Create exported global variables: */
     {
@@ -637,9 +682,10 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Hash_Table *imported;    /* name -> (cons nominal-modname (cons modname srcname)) */
   Scheme_Hash_Table *exported;    /* exname -> locname */
   Scheme_Hash_Table *reexported;  /* modname -> (cons syntax (list except-name ...)) */
+  Scheme_Hash_Table *exported_indirect; /* exname -> #f */
   void *tables[4], *et_tables[4];
-  Scheme_Object **exs, **exsns, **exss;
-  int excount;
+  Scheme_Object **exs, **exsns, **exss, **exis;
+  int excount, exicount;
 
   if (!scheme_is_module_env(env))
     scheme_wrong_syntax("#%module-begin", NULL, form, "illegal use (not a module body)");
@@ -659,6 +705,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     scheme_add_local_syntax(import_stx, stop, xenv);
     scheme_add_local_syntax(import_for_syntax_stx, stop, xenv);
     scheme_add_local_syntax(export_stx, stop, xenv);
+    scheme_add_local_syntax(export_indirect_stx, stop, xenv);
     scheme_add_local_syntax(set_stx, stop, xenv);
     scheme_add_local_syntax(app_stx, stop, xenv);
     scheme_add_local_syntax(unbound_stx, stop, xenv);
@@ -672,7 +719,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   {
     int i;
     Scheme_Env *iim;
-    Scheme_Object **exs, **exsns, **exss, *mn, *nmn;
+    Scheme_Object *mn, *nmn;
 
     nmn = SCHEME_CAR(env->genv->imports);
     iim = scheme_module_load(nmn, env->genv);
@@ -700,6 +747,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
   exported = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
   reexported = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+  exported_indirect = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
 
   exp_body = scheme_null;
 
@@ -983,6 +1031,34 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	if (rec)
 	  e = scheme_compiled_void();
 	normal = 0;
+      } else if (scheme_stx_module_eq(export_indirect_stx, SCHEME_STX_CAR(e), 0))  {
+	/************ export-indirect *************/
+	/* Add exports to table: */
+	Scheme_Object *l;
+
+	if (scheme_stx_proper_list_length(e) < 0)
+	  scheme_wrong_syntax("export-indirect", e, form, "bad syntax (" IMPROPER_LIST_FORM ")");
+
+	for (l = SCHEME_STX_CDR(e); !SCHEME_NULLP(l); l = SCHEME_STX_CDR(l)) {
+	  Scheme_Object *a;
+
+	  a = SCHEME_CAR(l);
+
+	  if (SCHEME_STX_SYMBOLP(a)) {
+	    /* <id> */
+	    a = SCHEME_STX_VAL(a);
+	    if (scheme_lookup_in_table(exported_indirect, (const char *)a))
+	      scheme_wrong_syntax("export-indirect", a, form, "identifier already exported indirectly");
+	    /* Export a indirectly: */
+	    scheme_add_to_table(exported_indirect, (const char *)a, a, 0);
+	  } else {
+	    scheme_wrong_syntax("export-indirect", a, form, NULL);
+	  }
+	}
+
+	if (rec)
+	  e = scheme_compiled_void();
+	normal = 0;
       } else
 	normal = 1;
     } else
@@ -1135,6 +1211,48 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     excount = count;
   }
 
+  /* Compute indirect exports: */
+  {
+    int i, count, j;
+    Scheme_Bucket **bs, *b;
+    
+    bs = exported_indirect->buckets;
+    for (count = 0, i = exported_indirect->size; i--; ) {
+      b = bs[i];
+      if (b && b->val)
+	count++;
+    }
+
+    exis = MALLOC_N(Scheme_Object *, count);
+
+    for (count = 0, i = exported->size; i--; ) {
+      b = bs[i];
+      if (b && b->val) {
+	Scheme_Object *name;
+	  
+	name = (Scheme_Object *)b->key;
+	if (scheme_lookup_in_table(env->genv->toplevel, (const char *)name)
+	    || scheme_lookup_in_table(env->genv->syntax, (const char *)name)) {
+	  exis[count] = name;
+	  
+	  /* If the name is directly exported, ignore indirect... */
+	  for (j = 0; j < excount; j++) {
+	    if (SAME_OBJ(name, exsns[j]))
+	      break;
+	  }
+	  
+	  if (j == excount)
+	    count++;
+	} else {
+	  /* Not defined! */
+	  scheme_wrong_syntax("module", name, form, "indirectly exported identifier not defined");
+	}
+      }
+    }
+
+    exicount = count;
+  }
+
   if (rec) {
     Scheme_Object *mb, *exp_body_r = scheme_null;
     
@@ -1155,6 +1273,9 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     env->genv->exports = exs;
     env->genv->export_src_names = exsns;
     env->genv->export_srcs = exss;
+
+    env->genv->indirect_exports = exis;
+    env->genv->num_indirect_exports = exicount;
 
     return mb;
   } else
@@ -1474,5 +1595,19 @@ static Scheme_Object *
 export_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
   scheme_wrong_syntax("export", NULL, form, "not in module body");
+  return NULL;
+}
+
+static Scheme_Object *
+export_indirect_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
+{
+  scheme_wrong_syntax("export-indirect", NULL, form, "not at top-level or in module body");
+  return NULL;
+}
+
+static Scheme_Object *
+export_indirect_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
+{
+  scheme_wrong_syntax("export-indirect", NULL, form, "not in module body");
   return NULL;
 }

@@ -1039,16 +1039,11 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
       if (!genv) {
 	scheme_wrong_syntax("import", NULL, srcsym, 
-			    "broken compiled code (stat-dist): cannot find prepared module"
-#if 0
-			    " %V in %V/%V at %d from %V",
-			    modname, home_env ? home_env : scheme_false, 
-			    env->genv->modname, 
-			    phase, scheme_syntax_to_datum(srcsym, 1)
-#endif
-			    );
+			    "broken compiled code (stat-dist): cannot find prepared module");
 	return NULL;
       }
+
+      scheme_check_accessible_in_module(genv, symbol, srcsym, 0);
     }
   } else
     genv = env->genv;

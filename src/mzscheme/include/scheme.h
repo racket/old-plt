@@ -514,6 +514,10 @@ typedef struct Scheme_Env
   Scheme_Object **export_src_names;
   int num_exports;
   int num_var_exports; /* non-syntax listed first in exports */
+  Scheme_Object **indirect_exports;
+  int num_indirect_exports;
+
+  Scheme_Hash_Table *accessible;
 
   /* Per-instance: */
   long phase;

@@ -129,17 +129,19 @@ following order (with a mnemonic name and a type between parenthesis):
     get-editor-from-label function described just above).  This
     function must return the same position for all the labels
     corresponding to a given term.
-4)  a function from label to term color span (get-span-from-label: label
-    -> non-negative-exact-integer) indicating the number of characters
-    of the term corresponding to the label that should be colored.
-    Coloring of a term starts with the leftmost character of the term
-    and continues towards the right for that number of characters.
-    This applies to all terms for which at least one label has been
-    registered with the library, regardless of whether they are atomic
-    or not, so care must be exercised when computing the span for a
-    term containing sub-terms that also have to be colored.  This
-    function must return the same span for all labels corresponding to
-    a given term.
+4)  a function from label to term color span (get-span-from-label:
+    label -> non-negative-exact-integer) indicating the number of
+    characters of the term corresponding to the label that should be
+    colored.  Coloring of a term starts with the leftmost character of
+    the term and continues towards the right for that number of
+    characters.  This applies to all terms for which at least one
+    label has been registered with the library, regardless of whether
+    they are atomic or not, so care must be exercised when computing
+    the span for a term containing sub-terms that also have to be
+    colored.  Arrows starting or ending at a given term will be
+    anchored at half the span of the term, so again care must be taken
+    when specifying the span of non-atomic terms.  This function must
+    return the same span for all labels corresponding to a given term.
 5)  a function from label to a list of arrows data
     (get-arrows-from-label: label -> (listof (list label label
     string))) indicating what arrows should be drawn when the mouse
@@ -199,21 +201,26 @@ term.  It is only necessary to give one label per term to be changed.
 It is an error to give two pairs with labels representing the same
 term but with different strings.  The function to register a label has
 type (label -> void) and is used to indicate to the library that the
-corresponding term has to be colored.  Unspeakable things involving
-nasty crawling bugs will happen to you, and your descendants will be
-cursed to the seventh generation if you dare to call this function
-after having already called the color-registered-labels method
-described above.
+corresponding term has to be colored.  The same label can safely be
+registered several times.  Unspeakable things involving nasty crawling
+bugs will happen to you, and your descendants will be cursed to the
+seventh generation if you dare to call this function after having
+already called the color-registered-labels method described above.
 
 The init-snips-and-arrows-gui-for-syntax-objects function is a
 simplified (yes, really) version of init-snips-and-arrows-gui that
 assumes labels are in fact MzScheme syntax objects, and also provides
 default values for all the menu and snip related functions that simply
-assume that no snips are used at all.  The function has only three
-required arguments, and five optional arguments.  The three required
-arguments are, in that order, using the mnemonic names from the
-description of init-snips-and-arrows-gui above, and with updated types
-in parenthesis:
+assume that no snips are used at all.  Also, the terms represented by
+the syntax objects are assumed to be atomic, meaning they will be
+colored in whole and arrows will be anchored at half the terms' spans.
+Seemingly unanchored arrows and overlapping colors may result if you
+try to use this function with non-atomic terms (i.e. terms containing
+sub-terms).  The function has only three required arguments, and five
+optional arguments.  The three required arguments are, in that order,
+using the mnemonic names from the description of
+init-snips-and-arrows-gui above, and with updated types in
+parenthesis:
 - top-editor (text%)
 - get-arrows-from-label (syntax-object -> (listof (list syntax-object
   syntax-object string)))

@@ -86,7 +86,15 @@
                                  ; (setof arrow)
                                  ending-arrows))
   
-  ; Note that several labels might have a given position (due to macros)
+  ; Note that several labels might have a given position (due to macros) and we use a list
+  ; instead of a set because we expect the sets to be very small (i.e. only one label is
+  ; normally registered for a given position, maybe two or three if there are macros, so
+  ; we do expect the list to be very short) but we expect a great number of them (i.e. we
+  ; expect pretty much all terms in a program to be registered).  Sets have an better asymptotic
+  ; access time but onyl for big sets compared to lists, and they consumme much more memory than
+  ; lists (since we usually use the hash-table-based implementation of sets), so using lists
+  ; here for labels-by-mzscheme-position is probably the fastest and most memory efficient
+  ; solution here given our assumptions.
   (define-struct source-gui-data (; (assoc-setof label label-gui-data)
                                   label-gui-data-by-label
                                   ; (assoc-setof non-negative-exact-integer (non-empty-listof label))
@@ -235,14 +243,18 @@
             ; two identical source terms), or what I do now: just register all the labels no
             ; matter what.  This solution also means I don't have to have a get-term-from-label
             ; function in my interface.
-            (begin
-              (assoc-set-set labels-by-mzscheme-position
-                             mzscheme-pos
-                             (cons label
-                                   (assoc-set-get labels-by-mzscheme-position
-                                                  mzscheme-pos
-                                                  cst:thunk-empty))
-                             #f)
+            ; Note that we still make sure the exact same label is not already registered with
+            ; the gui, otherwise we'll try to add the same arrows twice which will lead to error
+            ; messages in add-one-arrow-end
+            (let ([currently-registered-labels-for-this-position
+                   (assoc-set-get labels-by-mzscheme-position
+                                  mzscheme-pos
+                                  cst:thunk-empty)])
+              (unless (memq label currently-registered-labels-for-this-position)
+                (assoc-set-set labels-by-mzscheme-position
+                               mzscheme-pos
+                               (cons label currently-registered-labels-for-this-position)
+                               #f))
               #f))
           (begin
             ; source unknown: register it and try again

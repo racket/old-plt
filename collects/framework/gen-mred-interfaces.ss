@@ -1,6 +1,6 @@
 #!/bin/sh
 
-string=? ; exec mred -qvL errortrace.ss errortrace -f $0
+string=? ; exec mred -magqvL errortrace.ss errortrace -f $0
 
 (require-library "function.ss")
 (require-library "pretty.ss")
@@ -96,6 +96,21 @@ string=? ; exec mred -qvL errortrace.ss errortrace -f $0
 	(length interface-names)
 	(length signature-names)
 	(+ (length signature-names) (length interface-names)))
+
+(call-with-output-file (build-path framework-dir 'up 'up "src" "doc" "framework-mred-interfaces.cdb")
+  (lambda (port)
+    (parameterize ([current-output-port port])
+      (printf "@external framework-mred.cdb~n")
+      (for-each (lambda (interface-name-sym)
+		  (let* ([interface-name (symbol->string interface-name-sym)]
+			 [len (string-length interface-name)]
+			 [short (substring interface-name 0 (- len 3))])
+		    (printf "@interface ~a~n" short)
+		    (printf "@super ~a~n" short)
+		    (printf "This interface was automatically generated in order to use mixins.~n")
+		    (printf "For documentation, refer to the corresponding class: \\iscmclass{~a}.~n~n" short)))
+		interface-names)))
+  'truncate)
 
 (call-with-output-file (build-path framework-dir "mred-interfaces.ss")
   (lambda (port)

@@ -12,15 +12,19 @@
   ())
 
 (define-signature drscheme:bundle:bundle-model^
-  (bundle-manager% bundle-manager<%>
+  (bundle-manager% 
+   bundle-manager<%>
    
+   bundle-table%
+                   
    bundle% bundle<%>
    leaf-bundle% leaf-bundle<%>
    node-bundle% node-bundle<%>))
 
 (define-signature drscheme:bundle:bundle-view/control^
   (new-bundle-table-frame
-   
+   bundle-table-frame%
+
    bundle-pasteboard%
    leaf-bundle-snip%
    node-bundle-snip%))

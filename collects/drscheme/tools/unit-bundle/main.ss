@@ -14,10 +14,12 @@
     [misc : drscheme:bundle:misc^
 	  ((require-library "misc.ss" "drscheme" "tools" "unit-bundle") mred)]
     [bundle-model : drscheme:bundle:bundle-model^
-                  ((require-library "bundle-model.ss" "drscheme" "tools" "unit-bundle"))]
+                  ((require-library "bundle-model.ss" "drscheme" "tools" "unit-bundle")
+                   mred bundle-view/control)]
     [bundle-view/control : drscheme:bundle:bundle-view/control^
-                         ((require-library "bundle-view-control.ss" "drscheme" "tools" "unit-bundle")
-                          bundle-model mred misc)]
+                         ((require-library "bundle-view-control.ss"
+                                           "drscheme" "tools" "unit-bundle")
+                          mred misc bundle-model)]
     [compound-unit : drscheme:bundle:compound-unit^
 		   ((require-library "compound-unit.ss" "drscheme" "tools" "unit-bundle")
 		    mred

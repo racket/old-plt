@@ -10,6 +10,6 @@ findlast()
 }
 findlast ${1+"$@"}
 
-if [ -f ${RESULT} ] ; then
-  touch ${RESULT}
+if [ -f "${RESULT}.c" ] ; then
+  touch "${RESULT}.c"
 fi

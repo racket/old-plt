@@ -126,7 +126,7 @@
   (defvar slatex::*response-triggerers* (list "schemeresponse"))
   (defvar slatex::*respbox-triggerers* (list "schemeresponsebox"))
   (defvar slatex::*box-triggerers* (list "schemebox"))
-  (defvar slatex::*top-box-triggerers* (list "schemetopbox"))
+  (defvar slatex::*topbox-triggerers* (list "schemetopbox"))
   (defvar slatex::*input-triggerers* (list "schemeinput"))
   (defvar slatex::*region-triggerers* (list "schemeregion"))
   (defvar slatex::*math-triggerers* '())

@@ -1,0 +1,994 @@
+% tex2page.tex
+% Dorai Sitaram, Apr 1997
+
+% TeX files using these macros
+% can be converted by the program
+% tex2page into HTML
+
+\let\texonly\relax
+\let\endtexonly\relax
+
+\texonly
+
+\ifx\slatexignorecurrentfile\UNDEFINED\relax\fi
+
+% margins
+
+\def\sidemargin{\afterassignment\sidemarginII\hoffset}
+
+\def\sidemarginII{\advance\hoffset -1true in
+\advance\hsize -2\hoffset}
+
+\def\vertmargin{\afterassignment\vertmarginII\voffset}
+
+\def\vertmarginII{\advance\voffset -1true in
+\advance\vsize -2\voffset}
+
+%
+
+\def\defcsactive#1{\defnumactive{`#1}}
+
+\def\defnumactive#1#2{\catcode#1\active
+  \begingroup\lccode`\~#1%
+    \lowercase{\endgroup\def~{#2}}}
+
+% gobblegobblegobble
+
+\def\gobblegroup{\bgroup
+  \def\do##1{\catcode`##1=9 }\dospecials
+  \catcode`\{1 \catcode`\}2 \catcode`\^^M=9
+  \gobblegroupI}
+
+\def\gobblegroupI#1{\egroup}
+
+\def\gobbleencl{\bgroup
+  \def\do##1{\catcode`##1=12 }\dospecials
+  \catcode`\{1 \catcode`\}2 \catcode`\^^M=9
+  \futurelet\gobbleenclnext\gobbleenclI}
+
+\def\gobbleenclI{\ifx\gobbleenclnext\bgroup
+    \let\gobbleenclnext\gobblegroupI
+  \else\let\gobbleenclnext\gobbleenclII\fi
+  \gobbleenclnext}
+
+\def\gobbleenclII#1{%
+  \def\gobbleenclIII##1#1{\egroup}%
+  \gobbleenclIII}
+
+% \verb
+% Usage: \verb{...lines...} or \verb|...lines...|
+% In the former case, | can be used as escape char within
+% the verbatim text
+
+\let\verbhook\relax
+
+\def\verbfont{\tt}
+%\hyphenchar\tentt-1
+
+\def\verbsetup{\frenchspacing
+  \def\do##1{\catcode`##1=12 }\dospecials
+  \catcode`\|=12 % needed?
+  \verbfont}
+
+% The current font is cmtt iff fontdimen3 = 0 _and_
+% fontdimen7 != 0
+
+\def\checkifusingcmtt{\let\usingcmtt n%
+  \ifdim\the\fontdimen3\the\font=0.0pt
+    \ifdim\the\fontdimen7\the\font=0.0pt
+    \else\let\usingcmtt y\fi\fi}
+
+% In a nonmonospaced font, - followed by a letter
+% is a regular hyphen.  Followed by anything else, it is a
+% typewriter hyphen.
+
+\def\variablelengthhyphen{\futurelet\variablelengthhyphenI
+  \variablelengthhyphenII}
+
+\def\variablelengthhyphenII{\ifcat\noexpand\variablelengthhyphenI
+ a-\else{\tt\char`\-}\fi}
+
+\def\verbavoidligs{% avoid ligatures
+  \defcsactive\`{\relax\lq}%
+  \defcsactive\ {\leavevmode\ }%
+  \defcsactive\^^I{\leavevmode\ \ \ \ \ \ \ \ }%
+  \defcsactive\^^M{\leavevmode\endgraf}%
+  \checkifusingcmtt
+  \ifx\usingcmtt n%
+  \defcsactive\<{\relax\char`\<}%
+  \defcsactive\>{\relax\char`\>}%
+  \defcsactive\-{\variablelengthhyphen}%
+  \fi}
+
+\def\verbinsertskip{%
+  \let\firstpar y%
+  \defcsactive\^^M{\ifx\firstpar y%
+    \let\firstpar n%
+    \verbdisplayskip
+    \parskip 0pt
+    \aftergroup\verbdisplayskip
+    \else\leavevmode\fi\endgraf}%
+  \verbhook}
+
+\ifx\verb\UnDeFiNeD\else
+% Save LaTeX's \verb away, because
+% we'll be defining our own \verb
+\let\LaTeXverb\verb
+\fi
+
+\def\verb{\begingroup
+  \verbsetup\verbI}
+
+\def\verbc{\begingroup
+  \verbsetup\afterassignment\verbcI
+  \let\verbcII=}
+
+\def\verbcI{{\verbfont\verbcII}\endgroup}
+
+\let\E\verbc
+
+\newcount\verbbracebalancecount
+
+\def\verblbrace{\char`\{}
+\def\verbrbrace{\char`\}}
+
+\def\verbescapechar#1{%
+  \def\escapifyverbescapechar{\catcode`#1=0 }}
+
+\verbescapechar\|
+
+{\catcode`\[1 \catcode`\]2
+\catcode`\{12 \catcode`\}12
+\gdef\verbI#1[\verbavoidligs
+  \verbinsertskip\verbhook
+  \if#1{\escapifyverbescapechar
+    \def\{[\char`\{]%
+    \def\}[\char`\}]%
+    \def\|[\char`\|]%
+    \verbbracebalancecount0
+    \defcsactive\{[\advance\verbbracebalancecount by 1
+      \verblbrace]%
+    \defcsactive\}[\ifnum\verbbracebalancecount=0
+      \let\verbrbracenext\endgroup\else
+      \advance\verbbracebalancecount by -1
+      \let\verbrbracenext\verbrbrace\fi
+      \verbrbracenext]\else
+  \defcsactive#1[\endgroup]\fi
+  \verbII
+]]
+
+\def\verbII{\futurelet\verbIInext\verbIII}
+
+{\catcode`\^^M\active%
+\gdef\verbIII{\ifx\verbIInext^^M\else%
+  \defcsactive\^^M{\leavevmode\ }\fi}}
+
+\let\verbdisplayskip\medbreak
+
+% \verbinput FILENAME
+% displays contents of file FILENAME verbatim.
+
+\def\verbinput#1 {{\verbsetup\verbavoidligs\verbhook
+  \input #1 }}
+
+\def\verbfilename#1 {\relax}
+\let\verbwrite\gobbleencl
+
+
+% \url{URL} becomes
+% <a href="URL">URL</a> in HTML, and
+% URL in DVI.
+
+% A-VERY-VERY-LONG-URL in a .bib file
+% could be split by BibTeX
+% across a linebreak, with % before the newline.
+% To accommodate this, %-followed-by-newline will
+% be ignored in the URL argument of \url and related
+% macros.
+
+\def\url{\bgroup\urlsetup\let\dummy=}
+
+\def\urlsetup{\verbsetup\urlfont\verbavoidligs
+  \catcode`\{1 \catcode`\}2
+  \defcsactive\%{\urlpacifybibtex}%
+  \defcsactive\ {\relax}%
+  \defcsactive\^^M{\relax}%
+  \defcsactive\.{\discretionary{\char`\.}{}{\char`\.}}%
+  \defcsactive\/{\discretionary{\char`\/}{}{\char`\/}}%
+  \defcsactive\`{\relax\lq}}
+
+\let\urlfont\relax
+
+\def\urlpacifybibtex{\futurelet\urlpacifybibtexnext\urlpacifybibtexI}
+
+\def\urlpacifybibtexI{\ifx\urlpacifybibtexnext^^M%
+  \else\%\fi}
+
+% \mailto{ADDRESS} becomes
+% <a href="mailto:ADDRESS">ADDRESS</a> in HTML, and
+% ADDRESS in DVI.
+
+\let\mailto\url
+
+% \urlh{URL}{TEXT} becomes
+% <a href="URL">TEXT</a> in HTML, and
+% TEXT in DVI.
+
+% If TEXT contains \\, the part after \\ appears in
+% the DVI only.  If, further, this part contains \1,
+% the latter is replaced by a fixed-width representation
+% of URL.
+
+\def\urlh{\bgroup\urlsetup
+  \afterassignment\urlhI
+  \gdef\urlII}
+
+\def\urlhI{\egroup
+  \bgroup
+    \let\\\relax
+    \def\1{{\urlsetup\urlII}}%
+    \let\dummy=}
+
+\def\urlp#1{#1 \bgroup\urlsetup
+\afterassignment\urlpI
+\gdef\urlpII}
+
+\def\urlpI{\egroup
+{\rm(}{\urlsetup\urlpII}{\rm)}}
+
+% \urlhd{URL}{HTML-TEXT}{DVI-TEXT} becomes
+% <a href="URL">HTML-TEXT</a> in HTML, and
+% DVI-TEXT in DVI
+
+\def\urlhd{\bgroup
+  \def\do##1{\catcode`##1=12 }\dospecials
+  \catcode`\{1 \catcode`\}2
+  \urlhdI}
+
+\def\urlhdI#1#2{\egroup}
+
+%
+
+\let\ignorenextinputtimestamp\relax
+
+% don't let caps disable end-of-sentence spacing
+
+\def\nocapdot{%
+\count255=`\A
+\loop
+\sfcode\the\count255=1000
+\ifnum\count255<`\Z
+\advance\count255 by 1
+\repeat
+}
+
+%
+
+\let\htmlonly\iffalse
+\let\endhtmlonly\fi
+
+\def\rawhtml{\errmessage{Can't occur except inside
+  \string\htmlonly}}
+\def\endrawhtml{\errmessage{Can't occur except inside
+  \string\htmlonly}}
+
+\let\htmlheadonly\iffalse
+\let\endhtmlheadonly\fi
+
+\let\htmlstylesheet\gobblegroup
+
+% color 
+
+\let\rgb\gobblegroup
+\let\color\gobblegroup
+
+% Scheme
+
+\let\scm\verb
+\let\scminput\verbatiminput
+
+\def\scmfilename#1 {\relax}
+\let\scmdribble\scm
+\let\scmwrite\gobbleencl
+
+\let\scmkeyword\gobblegroup
+\let\setkeyword\gobblegroup % SLaTeX compat
+
+\ifx\slatexversion\UNDEFINED
+\def\schemedisplay{\begingroup
+  \verbsetup\verbavoidligs
+  \verbinsertskip
+  \schemedisplayI}%
+\fi
+
+{\catcode`\|0 |catcode`|\12
+  |long|gdef|schemedisplayI#1\endschemedisplay{%
+    #1|endgroup}}
+
+% Images
+
+\let\imgdef\def
+
+%\def\imgpreamble{\let\magnificationoutsideimgpreamble\magnification
+%  \def\magnification{\count255=}}
+%
+%\def\endimgpreamble{\let\magnification\magnificationoutsideimgpreamble}
+
+
+\let\imgpreamble\iffalse
+\let\endimgpreamble\fi
+
+\let\htmlimg\relax
+\let\endhtmlimg\relax
+
+% Cheap count registers: doesn't use up TeX's limited
+% number of real count registers.
+
+% A cheap count register is simply a macro that expands to the
+% contents of the count register.  Thus \def\kount{0} defines a
+% count register \kount that currently contains 0.
+
+% \advancecheapcount\kount num increments \kount by n.
+% \globaladvancecheapcount increments the global \kount.
+% If \kount is not defined, the \[global]advancecheapcount
+% macros define it to be 0 before proceeding with the
+% incrementation.
+
+\def\newcheapcount#1{\edef#1{0}}
+
+\def\advancecheapcounthelper#1#2#3{%
+  \ifx#2\UNDEFINED
+    #1\edef#2{0}\fi
+  \edef\setcountCCLV{\count255=#2 }%
+  \setcountCCLV
+  \advance\count255 by #3
+  #1\edef#2{\the\count255 }}
+
+\def\advancecheapcount{\advancecheapcounthelper\relax}
+\def\globaladvancecheapcount{\advancecheapcounthelper\global}
+
+% 
+
+%\def\subject#1{\centerline{\bf#1}\medskip}
+
+\def\subject#1{\bgroup\bf
+\def\\{\cr}%
+$$\vbox{\halign{\hfil##\hfil\cr#1\cr}}$$\egroup
+\medskip}
+
+
+% plain's \beginsection splits pages too easily
+
+%\def\beginsection#1\par{\sectionhelp{1}{}{#1}}
+
+\def\beginsection{\vskip-\lastskip
+  \bigbreak\noindent
+  \bgroup\bf
+    \let\par\sectionafterskip}
+
+\def\beginsectionstar*{\beginsection}
+
+% plain's \{left,center,right}line can't handle catcode change
+% within their argument
+
+\def\leftline{\line\bgroup\bgroup
+  \aftergroup\leftlinefinish
+  \let\dummy=}
+
+\def\leftlinefinish{\hss\egroup}
+
+\def\centerline{\line\bgroup\bgroup
+  \aftergroup\leftlinefinish
+  \hss\let\dummy=}
+
+\def\rightline{\line\bgroup\hss\let\dummy=}
+
+%
+
+\let\strike\fiverm % can be much better!
+
+%
+
+\let\htmlpagebreak\relax
+
+\let\htmlpagelabel\gobblegroup
+
+\def\htmlpageref{\errmessage{Can't occur except inside
+  \string\htmlonly}}
+
+% Miscellaneous stuff
+
+\def\hr{$$\hbox{---}$$}
+\def\hr{\medbreak\centerline{---}\medbreak}
+%\def\hr{\par\centerline{$*$}\par}
+%\def\hr{\smallskip\line{\leaders\hbox{~.~}\hfill}\smallskip}
+
+%Commonplace math that doesn't require image files.  (Avoiding $
+%here because $ triggers image-file generation.)
+
+\let\nohtmlmathimg\relax
+\let\nohtmlmathintextimg\relax
+\let\nohtmlmathdisplayimg\relax
+
+\let\htmlimgformat\gobblegroup
+\let\htmlimgmagnification\gobblegroup
+
+\let\externaltitle\gobblegroup
+
+\def\mathg{$\bgroup\aftergroup\closemathg\let\dummy=}
+\def\closemathg{$}
+
+\def\mathdg{$$\bgroup\aftergroup\closemathdg\let\dummy=}
+\def\closemathdg{$$}
+
+\def\frac#1/#2{{#1\over#2}}
+
+%
+
+\newcount\scratchfilenamecount
+\scratchfilenamecount=0
+\newwrite\scratchfileport
+
+\def\eval{\begingroup
+\global\advance\scratchfilenamecount by 1
+\edef\scratchfile{\jobname-Z-E-\the\scratchfilenamecount}%
+{\immediate\openin0=\scratchfile.tex
+\ifeof0 \immediate\closein0
+\else \input \scratchfile.tex \fi}%
+\immediate\openout\scratchfileport \scratchfile.scm
+\def\do##1{\catcode`##1=12 }\dospecials
+\catcode`\{=1 \catcode`\}=2
+\catcode`\^^M=12
+\newlinechar=`\^^M%
+\evalqii}
+
+\def\evalqii#1{%
+\immediate\write\scratchfileport{#1}%
+\immediate\closeout\scratchfileport
+\endgroup}
+
+% Backward compatible stuff
+
+\let\endgifpreamble\endimgpreamble
+\let\endhtmlgif\endhtmlimg
+\let\gifdef\imgdef
+\let\gifpreamble\imgpreamble
+\let\href\urlhd
+\let\htmlgif\htmlimg
+\let\n\noindent
+\let\p\verb
+\let\q\scm
+\let\schemeeval\eval
+\let\scmfile\scmdribble
+\let\scmfileonly\scmwrite
+\let\scmp\scm
+%\let\scmverbatim\scm
+\let\scmverbatimfile\scminput
+\let\setverbatimescapechar\verbescapechar
+%\let\verbatim\verb
+\let\verbatimfile\verbinput
+
+% uppercase version of \romannumeral
+
+\def\Romannumeral{\afterassignment\RomannumeralI\count255=}
+
+\def\RomannumeralI{\uppercase\expandafter{\romannumeral\the\count255 }}
+
+% The rest of the file isn't needed for LaTeX
+
+\ifx\section\UnDeFiNeD
+\let\maybeloadfollowing\relax
+\else \let\maybeloadfollowing\endinput
+\fi\maybeloadfollowing
+
+% title
+
+\let\title\subject
+
+%\def\subtitle#1{\centerline{#1}\par}
+%\def\author#1{\centerline{#1}\par}
+
+% Sections
+
+\def\tracksectionchangeatlevel#1{%
+  \expandafter\let\expandafter\thiscount\csname
+    sectionnumber#1\endcsname
+  \ifx\thiscount\relax
+    \expandafter\edef\csname sectionnumber#1\endcsname{0}%
+  \fi
+  \expandafter\advancecheapcount
+    \csname sectionnumber#1\endcsname 1%
+  \ifx\doingappendix0%
+    \edef\recentlabel{\csname sectionnumber1\endcsname}%
+  \else
+    %\count255=\expandafter\csname sectionnumber1\endcsname
+    \edef\recentlabel{\char\csname sectionnumber1\endcsname}%
+  \fi
+  \count255=0
+  \loop
+    \advance\count255 by 1
+    \ifnum\count255=1
+    \else\edef\recentlabel{\recentlabel.\csname
+      sectionnumber\the\count255\endcsname}\fi
+  \ifnum\count255<#1%
+  \repeat
+  \loop
+    \advance\count255 by 1
+    \expandafter\let\expandafter\nextcount\csname
+      sectionnumber\the\count255\endcsname
+    \ifx\nextcount\relax
+      \let\continue0%
+    \else
+      \expandafter\edef\csname
+        sectionnumber\the\count255\endcsname{0}%
+      \let\continue1\fi
+  \ifx\continue1%
+  \repeat}
+
+% Vanilla section-header look -- change this macro for new look
+
+\def\secnumdepth#1 {\xdef\secnumdepthvalue{#1}}
+
+\secnumdepth 10
+
+\def\sectiond#1{\count255=#1%
+  \ifx\usingchapters1\advance\count255 by 1 \fi
+  \edef\sectiondlvl{\the\count255 }%
+  \futurelet\sectionnextchar\sectiondispatch}
+
+\def\sectiondispatch{\ifx\sectionnextchar*%
+  \def\sectioncontinue{\sectionstar{\sectiondlvl}}\else
+  \ifnum\sectiondlvl>\secnumdepthvalue
+  \def\sectioncontinue{\sectionhelp{\sectiondlvl}{}}\else
+  \tracksectionchangeatlevel{\sectiondlvl}
+  \def\sectioncontinue{\sectionhelp{\sectiondlvl}%
+    {\recentlabel\enspace}}\fi\fi
+  \sectioncontinue}
+
+\def\sectionstar#1*{\sectionhelp{#1}{}}
+
+\def\sectionhelp#1#2{%
+  \edef\sectiondepth{#1}%
+  \def\sectionnr{#2}%
+  \immediate\openout0 Z-sec-temp
+  \begingroup
+  \def\do##1{\catcode`##1=11 }\dospecials
+  \catcode`\{=1 \catcode`\}= 2
+  \sectionheader}
+
+\def\sectionheader#1{\endgroup
+  \immediate\write0 {#1}%
+  \immediate\closeout0 
+  \vskip -\lastskip
+  \ifnum\sectiondepth>\tocdepthvalue\else
+  \tocactivate
+  {\let\folio0%
+   \edef\temp{\write\tocout
+     {\string\tocentry{\sectiondepth}{\sectionnr}{#1}{\folio}}}%
+   \temp}\fi
+  \vskip1.5\bigskipamount
+  \noindent
+  \hbox{\bf\sectionnr\vtop{\hsize=.7\hsize
+    \pretolerance 10000
+    \noindent\raggedright\input Z-sec-temp }}%
+  \bgroup\let\par\sectionafterskip}
+
+% \edef\temp{\write\tocout{\string\hskip#1\space em\string\relax\space #2%
+%    \string\vtop{\string\hsize=.7\string\hsize
+%    \string\noindent\string\raggedright\space #3}\string\par}}\temp
+
+\def\sectionafterskip{\egroup\nobreak\medskip\noindent}
+
+\def\section{\sectiond1}
+\def\subsection{\sectiond2}
+\def\subsubsection{\sectiond3}
+\def\paragraph{\sectiond4}
+\def\subparagraph{\sectiond5}
+
+\let\usingchapters0
+
+\def\chapter{\global\let\usingchapters1%
+\futurelet\chapternextchar\chapterdispatch}
+
+\def\chapterdispatch{\ifx\chapternextchar*%
+  \let\chaptercontinue\chapterstar\else
+  \tracksectionchangeatlevel{1}%
+  \def\chaptercontinue{\chapterhelp{\recentlabel\enspace}}\fi
+  \chaptercontinue}
+
+\def\chapterstar*{\chapterhelp{}}
+
+\def\chapterhelp#1{%
+  % #1=number #2=heading-text
+  \def\chapternr{#1}%
+  \immediate\openout0 Z-sec-temp
+  \begingroup
+  \def\do##1{\catcode`##1=11 }\dospecials
+  \catcode`\{=1 \catcode`\}=2
+  \chapterheader}
+
+\def\chapterheader#1{\endgroup
+  \immediate\write0 {#1}%
+  \immediate\closeout0
+  \tocactivate
+  {\let\folio0%
+   \edef\temp{\write\tocout{\string\tocentry{1}{\chapternr}{#1}{\folio}}}%
+   \temp}%
+  \vfill\eject
+  \null\vskip3em
+  \noindent
+  \ifx\doingappendix0%
+    \hbox{\bf Chapter \chapternr}\else
+    \hbox{\bf Appendix \chapternr}\fi
+  \vskip 1em
+  \noindent
+  \hbox{\bf\vtop{\hsize=.7\hsize
+    \pretolerance 10000
+    \noindent\raggedright\input Z-sec-temp }}%
+  \bgroup\let\par\chapterafterskip}
+
+\def\chapterafterskip{\egroup\nobreak\vskip3em \noindent}
+
+\let\doingappendix=0
+
+\def\appendix{\let\doingappendix=1%
+  \count255=`\A%
+  \advance\count255 by -1
+  \expandafter\edef\csname
+    sectionnumber1\endcsname{\the\count255 }}
+
+% toc
+
+\let\tocactive0
+
+\def\tocdepth#1 {\edef\tocdepthvalue{#1}}
+
+\tocdepth 10
+
+\def\tocoutensure{\ifx\tocout\UNDEFINED
+  \csname newwrite\endcsname\tocout\fi}
+
+\def\tocactivate{\ifx\tocactive0%
+  \tocoutensure
+  \tocsave
+  \openout\tocout \jobname.toc
+  \global\let\tocactive1\fi}
+
+\def\tocspecials{\def\do##1{\catcode`##1=12 }\dospecials}
+
+\def\tocsave{\openin0=\jobname.toc
+  \ifeof0 \closein0 \else
+    \openout\tocout Z-T-\jobname.tex
+    \let\tocsaved 0%
+    \loop
+      \ifeof0 \closeout\tocout
+        \let\tocsaved1%
+      \else{\tocspecials
+         \read0 to \tocsaveline
+         \edef\temp{\write\tocout{\tocsaveline}}\temp}%
+      \fi
+    \ifx\tocsaved0%
+    \repeat
+  \fi
+  \closein0 }
+
+\def\tocentry#1#2{%
+  %#1=depth #2=secnum
+  \ifnum#1=1
+    \ifnum\tocdepthvalue>2
+    \medbreak\begingroup\bf
+    \else\begingroup\fi
+  \else\begingroup\fi
+  \noindent\hskip #1 em
+  #2%
+  \vtop\bgroup\hsize=.7\hsize
+    \raggedright
+    \noindent
+    \bgroup
+    \aftergroup\tocentryI
+    %read section title
+    \let\dummy=}
+
+\def\tocentryI#1{%
+  %#1=page nr
+  , #1\strut\egroup
+  \endgroup\par}
+
+\def\tableofcontents{%
+  \ifx\tocactive0%
+    \openin0 \jobname.toc
+    \ifeof0 \closein0 \else
+      \closein0 \input \jobname.toc
+    \fi
+    \tocoutensure
+    \openout\tocout \jobname.toc
+    \global\let\tocactive1%
+  \else
+    \input Z-T-\jobname.tex
+  \fi}
+
+% bibliography
+
+\ifx\bibliography\UnDeFiNeD
+\input btxmac
+\fi
+
+% allow {thebibliography} to be used directly
+% without generating it via BibTeX
+
+\edef\atcatcodebeforebibl{\the\catcode`\@ }
+\catcode`\@11
+
+\ifx\Origreadbblfile\UnDeFiNeD
+\global\let\Origreadbblfile\@readbblfile
+\fi
+
+\def\thebibliography#1{\begingroup
+  \def\endthebibliography{\endgroup\endgroup}%
+  \def\input##1 ##2{\relax}%
+  \setbox0=\hbox{\biblabelcontents{#1}}%
+  \biblabelwidth=\wd0
+  \Origreadbblfile}
+
+\def\@readbblfile{%
+  \let\begin\undefined
+  \Origreadbblfile}
+
+\catcode`\@\atcatcodebeforebibl
+
+% Cross-references
+
+% \openxrefout loads all the TAG-VALUE associations in
+% \jobname.xrf and then opens \jobname.xrf as an
+% output channel that \tag can use
+
+\def\openxrefout{%
+  \openin0=\jobname.xrf
+  \ifeof0 \closein0 
+  \else {\catcode`\\0 \input \jobname.xrf }%
+  \fi
+  \expandafter\csname newwrite\endcsname\xrefout
+  \openout\xrefout=\jobname.xrf
+}
+
+% I'd like to call \openxrefout lazily, but
+% unfortunately it produces a bug in MiKTeX.
+% So let's call it up front.
+
+\openxrefout
+
+% \tag{TAG}{VALUE} associates TAG with VALUE.
+% Hereafter, \ref{TAG} will output VALUE.
+% \tag stores its associations in \xrefout.
+% \tag calls \openxrefout if \jobname.xrf hasn't
+% already been opened
+
+\def\tag#1#2{\ifx\xrefout\UNDEFINED\openxrefout\fi
+  {\let\folio0%
+    \edef\temp{%
+     \write\xrefout{\string\expandafter\string\gdef
+        \string\csname\space XREF#1\string\endcsname
+        {#2}\string\relax}}%
+    \temp}}
+
+% \tagref{TAG} outputs VALUE, assuming \tag put such
+% an association into \xrefout.  \tagref calls
+% \openxrefout if \jobname.xrf hasn't already
+% been opened
+
+% Later, we will \let \ref = \tagref after making
+% sure we aren't in eplain, which uses the ctlseq
+% \ref differently
+
+\def\tagref#1{\ifx\xrefout\UNDEFINED\openxrefout\fi
+  \expandafter\ifx\csname XREF#1\endcsname\relax
+  %\message or \write16 ?
+  \message{\the\inputlineno: Unresolved label `#1'.}?\else
+  \csname XREF#1\endcsname\fi}
+
+% \label, as in LaTeX
+
+\let\recentlabel\relax
+
+% The sectioning commands
+% define \recentlabel so a subsequent call to \label will pick up the
+% right label.
+
+\def\label#1{\tag{#1}{\recentlabel}%
+  \tag{PAGE#1}{\folio}}
+
+% \pageref, as in LaTeX
+
+\def\pageref#1{\ref{PAGE#1}}
+
+%
+
+\def\iffileexists#1#2#3{%
+  \openin0 #1
+  \ifeof0 \closein0
+    #3%
+  \else \closein0
+    #2\fi}
+
+% Index generation
+%
+% Your TeX source contains \index{NAME} to
+% signal that NAME should be included in the index.
+% Check the makeindex documentation to see the various
+% ways NAME can be specified, eg, for subitems, for
+% explicitly specifying the alphabetization for a name
+% involving TeX control sequences, etc.
+%
+% The first run of TeX will create \jobname.idx.
+% makeindex on \jobname[.idx] will create the sorted
+% index \jobname.ind.
+%
+% Use \inputindex (without arguments) to include this
+% sorted index, typically somewhere to the end of your
+% document.  This will produce the items and subitems.
+% It won't produce a section heading however -- you
+% will have to typeset one yourself.
+%
+% Use \printindex instead of \inputindex if you want
+% the section heading ``Index'' automatically generated.
+
+\def\sanitizeidxletters{\def\do##1{\catcode`##1=11 }%
+  \do\\\do\$\do\&\do\#\do\^\do\_\do\%\do\~%
+  \do\@\do\"\do\!\do\|\do\-\do\ \do\'}
+
+\def\index{%\unskip
+  \ifx\indexout\UNDEFINED
+    \csname newwrite\endcsname\indexout
+    \openout\indexout \jobname.idx\fi
+  \begingroup
+    \sanitizeidxletters
+    \indexI}
+
+\def\indexI#1{\endgroup
+  \write\indexout{\string\indexentry{#1}{\folio}}%
+  \ignorespaces}
+
+% The following index style indents subitems on a
+% separate lines
+
+\def\theindex{\begingroup
+  \parskip0pt \parindent0pt
+  \def\indexitem##1{\par\hangindent30pt \hangafter1
+    \hskip ##1 }%
+  \def\item{\indexitem{0em}}%
+  \def\subitem{\indexitem{2em}}%
+  \def\subsubitem{\indexitem{4em}}%
+  \def\see{{\it see} \bgroup\aftergroup\gobblegroup\let\dummy=}%
+  \let\indexspace\medskip}
+
+\def\endtheindex{\endgroup}
+
+% \packindex declares that subitems be bundled into one
+% semicolon-separated paragraph
+
+\def\packindex{%
+  \def\theindex{\begingroup
+    \parskip0pt \parindent0pt
+    \def\item{\par\hangindent20pt \hangafter1 }%
+    \def\subitem{\unskip; }%
+    \def\subsubitem{\unskip; }%
+    \def\see{\bgroup\it see \aftergroup\gobblegroup\let\dummy=}%
+    \let\indexspace\medskip}}
+
+\def\inputindex{%
+  \openin0 \jobname.ind
+  \ifeof0 \closein0
+    \message{\jobname.ind missing.}%
+  \else\closein0
+    \begingroup
+      \def\begin##1{\csname##1\endcsname}%
+      \def\end##1{\csname end##1\endcsname}%
+      \input\jobname.ind
+    \endgroup\fi}
+
+\def\printindex{\csname beginsection\endcsname Index\par
+  \inputindex}
+
+%
+
+\def\italiccorrection{\futurelet\italiccorrectionI
+  \italiccorrectionII}
+
+\def\italiccorrectionII{%
+  \if\noexpand\italiccorrectionI,\else
+  \if\noexpand\italiccorrectionI.\else
+  \/\fi\fi}
+
+\def\em{\it\ifmmode\else\aftergroup\italiccorrection\fi}
+
+%\def\emph{\bgroup\it
+%  \ifmmode\else\aftergroup\italiccorrection\fi
+%  \let\dummy=}
+
+\def\quote{\smallbreak\bgroup\narrower}
+\def\endquote{\egroup\smallbreak}
+
+\def\begin#1{\begingroup
+  \csname #1\endcsname
+  \def\end##1{\csname end#1\endcsname\endgroup}}
+
+%the rest of the file isn't needed for eplain
+
+\ifx\eplain\UnDeFiNeD
+\let\maybeloadfollowing\relax
+\else\let\maybeloadfollowing\endinput
+\fi\maybeloadfollowing
+
+%cross refs.  Eplain users see the \ref they are
+%used to.  Others have \ref = \tagref
+
+\let\ref\tagref
+
+% 
+
+\def\itemize{\par\begingroup
+  \advance\leftskip\parindent
+  \smallbreak
+  \def\item{\smallbreak\noindent
+  \llap{$\bullet$\enspace}\ignorespaces}}
+
+\def\enditemize{\smallbreak\smallbreak\endgroup\par}
+
+\newcheapcount\enumeratelevel
+
+\def\enumerate{\par\begingroup
+  \advancecheapcount\enumeratelevel1%
+  \newcheapcount\enumeratenumber
+  \advance\leftskip\parindent
+  \smallbreak
+  \def\item{\smallbreak\noindent
+    \advancecheapcount\enumeratenumber1%
+    \ifnum\enumeratelevel=1 
+      \edef\enumeratemark{\enumeratenumber}\else
+    \ifnum\enumeratelevel=2 
+      \count255=\enumeratenumber 
+      \advance\count255 by -1 \advance\count255 by `a
+      \edef\enumeratemark{\noexpand\char\the\count255 }\else
+    \ifnum\enumeratelevel=3 
+      \edef\enumeratemark{\romannumeral\enumeratenumber}\else
+    \ifnum\enumeratelevel=4
+      \count255=\enumeratenumber 
+      \advance\count255 by -1 \advance\count255 by `A
+      \edef\enumeratemark{\noexpand\char\the\count255 }\else
+    \edef\enumeratemark{\enumeratenumber}\fi\fi\fi\fi
+    \edef\recentlabel{\enumeratemark}% needed?
+    \llap{\enumeratemark.\enspace}\ignorespaces}}
+
+\def\endenumerate{\smallbreak\smallbreak\endgroup\par}
+
+% Numbered footnotes
+
+\ifx\plainfootnote\UNDEFINED
+  \let\plainfootnote\footnote
+\fi
+
+\newcheapcount\footnotenumber
+
+\def\numfootnote{\globaladvancecheapcount\footnotenumber 1%
+  \bgroup\csname footnotehook\endcsname
+    \plainfootnote{$^{\footnotenumber}$}\bgroup
+      \edef\recentlabel{\footnotenumber}%
+      \aftergroup\egroup
+      \let\dummy=}
+
+\let\f\numfootnote
+
+% \path is like \verb except that its argument
+% can break across lines at `.' and `/'.
+
+\def\path{\begingroup\verbsetup
+  \pathfont
+  \defcsactive\.{\discretionary{\char`\.}{}{\char`\.}}%
+  \defcsactive\/{\discretionary{\char`\/}{}{\char`\/}}%
+  \verbI}
+
+\let\pathfont\relax
+
+\endtexonly
+
+% end of file

@@ -1094,9 +1094,9 @@
   ;;       if the words are too long the test case will take up too much horizontal room and
   ;;       not look very good.
   ;; This string is the label of the expression that is being tested in a test case.
-  (test-case-to-test "Skal testes")
+  ;(test-case-to-test "Skal testes")
   ;; This string is the label of the expression that is the expected value of the to-test expression.
-  (test-case-expected "Forventet")
+  ;(test-case-expected "Forventet")
   ;; This string is the label of the actual result of the to test expression.
   (test-case-actual "Faktisk")
 

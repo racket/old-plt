@@ -756,9 +756,9 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
     p->cc_start = &v;
     memcpy(&oversave, &p->overflow_buf, sizeof(mz_jmp_buf));
     if (scheme_setjmp(p->overflow_buf)) {
-      /* We get `p' again because it would be a nestee: */
-      Scheme_Process *p = scheme_current_process;
       while (1) {
+	/* We get `p' again because it might be a nestee: */
+	Scheme_Process *p = scheme_current_process;
 	Scheme_Overflow *overflow;
 
 	overflow = MALLOC_ONE(Scheme_Overflow);

@@ -906,11 +906,11 @@ inline static void do_thread_register(void *t, void *c)
 
   for(work = threads; work; work = work->next)
     if(work->thread == t) {
-      work->owner = current_owner(NULL);
+      work->owner = current_owner((Scheme_Custodian *)c);
       return;
     }
   work = (struct thread *)malloc(sizeof(struct thread));
-  work->owner = current_owner(NULL);
+  work->owner = current_owner((Scheme_Custodian *)c);
   work->thread = t;
   work->next = threads;
   threads = work;

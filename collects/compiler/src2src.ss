@@ -556,9 +556,16 @@
        [stx -stx]
        [rator -rator]
        [rands -rands]
-       [tables -tables])
+       [tables -tables]
+       [known-single-result? #f])
       (rename [super-simplify simplify]
 	      [super-valueable? valueable?])
+      (inherit set-known-value)
+      (private
+	[known-single-result (lambda (v)
+			       (set! known-single-result? #t)
+			       (set-known-value v)
+			       v)])
       (override
 	[nonbind-sub-exprs (lambda () (cons rator rands))]
 	[set-nonbind-sub-exprs (lambda (s) 
@@ -566,13 +573,16 @@
 				 (set! rands (cdr s)))]
 
 	[no-side-effect? (lambda ()
+			   ;; Note: get-result-arity assumes #t result => single value
+			   ;;
 			   ;; Some prims are known to be side-effect-free (including no errors)
 			   ;; get-result-arity assumes 1 when this returns #t
-			   (and (rator . is-a? . global%)
-				(send rator is-kernel?)
-				(memq (send rator orig-name) effectless-prims)
-				(andmap (lambda (rand) (send rand no-side-effect?))
-					rands)))]
+			   (or known-single-result?
+			       (and (rator . is-a? . global%)
+				    (send rator is-kernel?)
+				    (memq (send rator orig-name) effectless-prims)
+				    (andmap (lambda (rand) (send rand no-side-effect?))
+					    rands))))]
 
 	[valueable? (lambda ()
 		      (and (rator . is-a? . global%)
@@ -582,7 +592,7 @@
 			   (super-valueable?)))]
 
 	[get-result-arity (lambda ()
-			    (if (no-side-effect?)
+			    (if (or known-single-result? (no-side-effect?))
 				1
 				'unknown))]
 
@@ -619,8 +629,9 @@
 							      "constant calculation error: ~a~n"
 							      (exn-message x))
 						     this)])
-		     (send (make-object constant% stx (apply f vals))
-			   simplify ctx))))]
+		     (known-single-result
+		      (send (make-object constant% stx (apply f vals))
+			    simplify ctx)))))]
 
 	    ;; (+ x 1) => (add1 x)
 	    [(and (is-a? rator global%)
@@ -676,7 +687,7 @@
 	     =>
 	     (lambda (val)
 	       (send (car rands) drop-uses)
-	       val)]
+	       (known-single-result val))]
 
 	    ;; (memv x '(c ...)) in a boolean context => (if (eq[v]? x 'c) ...)
 	    ;; relevant to the output of `case'
@@ -690,12 +701,12 @@
 		  (list? (send (cadr rands) get-const-val)))
 	     (let ([xformed
 		    (let ([l (send (cadr rands) get-const-val)]
-			  [l-stx (syntax->list (send (cadr rands) get-stx))]
+			  [l-stx (send (cadr rands) get-stx)]
 			  [false (make-object constant% (datum->syntax-object #f #f) #f)]
 			  [true (make-object constant% (datum->syntax-object #f #t) #t)])
 		      (if (null? l)
 			  false
-			  (let loop ([l l][l-stx l-stx])
+			  (let loop ([l l])
 			    (let ([test
 				   (make-object app%
 						stx
@@ -716,12 +727,12 @@
 						(list
 						 (car rands)
 						 (make-object constant% 
-							      (car l-stx)
+							      l-stx
 							      (car l)))
 						tables)])
 			      (cond
 			       [(null? (cdr l)) test]
-			       [else (let ([rest (loop (cdr l) (cdr l-stx))])
+			       [else (let ([rest (loop (cdr l))])
 				       ;; increment use count:
 				       (send (car rands) set-known-values)
 				       (make-object if%
@@ -731,7 +742,15 @@
 						    rest))])))))])
 	       (send xformed simplify ctx))]
 
-	    ;; inlining
+	    ;; (values e) where e has result arity 1
+	    [(and (is-a? rator global%)
+		  (send rator is-kernel?)
+		  (eq? 'values (send rator orig-name))
+		  (= 1 (length rands))
+		  (equal? 1 (send (car rands) get-result-arity)))
+	     (known-single-result (car rands))]
+
+	    ;; inlining: currently hacked for testing to only inline on two special names
 	    [(and (is-a? rator binding%)
 		  (is-a? (send rator get-value) lambda%)
 		  (or 

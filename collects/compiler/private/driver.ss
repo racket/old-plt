@@ -216,6 +216,9 @@
 		     (let ([expanded (expand expr)])
 		       (zodiac:syntax->zodiac 
 			(let ([p (expand (src2src:optimize expanded #t))])
+			  '(with-output-to-file "/tmp/l.ss"
+			    (lambda () (pretty-print (syntax-object->datum p)))
+			    'replace)
 			  p))))
 		   exprs)))))
 

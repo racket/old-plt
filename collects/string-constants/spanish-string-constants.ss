@@ -18,6 +18,7 @@
  (drscheme "DrScheme")
  (ok "OK")
  (cancel "Cancelar")
+ (abort "Abortar")
  (untitled "Sin título")
  (untitled-n "Sin título ~a")
  (warning "Advertencia")
@@ -67,6 +68,7 @@
  (bug-report-synthesized-information "Información sintetizada")  ;; dialog title
  (bug-report-show-synthesized-info "Muestra información resumida")
  (bug-report-submit "Enviar")
+ (bug-report-submit-menu-item "Enviar reporte de problemas") ;; in Help Menu (drs & help desk)
  (sending-bug-report "Enviando reporte de problemas")
  (error-sending-bug-report "Error al enviar el reporte de problemas")
  (error-sending-bug-report-expln "Un error ocurrió mientras enviaba éste reporte de problemas.  Si tu conexión a Internet está funcionando bien, por favor visita:\n\n    http://bugs.plt-scheme.org/\n\ny envía el reporte de problemas por medio de la forma de web en esea página de WEB. Sentimos mucho las molestias que esto te ocasiona.\n\nEl mensaje de error es:\n~a")
@@ -93,13 +95,13 @@
  (cs-rename-id "Renombrar identificador")
  (cs-rename-var-to "Renombrar ~a a:")
  (cs-name-duplication-error "El nuevo nombre que has seleccionado, ~s, colisiona con otro nombre en este ambiente.")
+ (cs-rename-anyway "Renombrar de cualquier modo")
  (cs-status-init "Checar sintaxis: Iniciando el ambiente para el código de usuario")
  (cs-status-coloring-program "Checar sintaxis: coloreando la expresión")
  (cs-status-eval-compile-time "Checar sintaxis: tiempo de evaluación y compilación")
  (cs-status-expanding-expression "Checar sintaxis: expandiendo la expresión")
- (cs-mouse-over-variable-import "variable ~s importada de ~s")
- (cs-mouse-over-syntax-import "syntaxis ~s importada de ~s")
-
+ (cs-mouse-over-import "Asociación ~s importada desde ~s")
+ 
  (cs-lexical-variable "variable léxica")
  (cs-lexical-syntax "sintaxis léxica")
  (cs-imported-variable "variable importada")
@@ -161,7 +163,10 @@
  (scheme-mode-color-parenthesis "Paréntesis")
  (scheme-mode-color-error "Error")
  (scheme-mode-color-other "Otro")
- 
+  ;; the ~a is filled in with one of the above (scheme-mode-*)
+ (syntax-coloring-choose-color "Escoge un color para: ~a")
+ (preferences-colors "Colores") ;; used in the preferences dialog
+
  (url "URL")
  (url: "URL:")
  (open-url... "Abre URL...")
@@ -348,6 +353,7 @@
  (display-line-numbers "Muestra números de línea en el contenedor; sin desplazamiento de caracteres")
  (enable-keybindings-in-menus "Habilita enlaces de teclas en los menús")
  (automatically-to-ps "Imprime automáticamente a un archivo en postscript")
+ (option-as-meta "Tratar cualquier tecla como meta") ;; macos/macos x only
  (use-mdi "Utiliza Ventanas MDI") ;;; ms windows only -- use that window in a window thingy
  (separate-dialog-for-searching "Use el diálogo adecuado para buscar")
  (reuse-existing-frames "Reutilizar marcos existentes cuando se abre un nuevo archivo")
@@ -355,7 +361,13 @@
  (paren-match-color "Color de resaltado de paréntesis") ; in prefs dialog
  (choose-color "Selección de Color") ; in prefs dialog
  (online-coloring-active "Colorea sintaxis interactivamente")
- 
+ (open-files-in-tabs "Abrir archivos en distintas pestañas (no distintas ventanas)")
+ (show-interactions-on-execute "Abrir ventana de interacciones cuando se ejecuta un programa")
+ (limit-interactions-size "Limita el tamaño de las interacciones")
+ (background-color "Color de fondo")
+ (default-text-color "Texto por omisión") ;; used for configuring colors, but doesn't need the word "color"
+ (choose-a-background-color "Por favor selecciona un color de fondo")
+
   ; title of the color choosing dialog
  (choose-paren-highlight-color "Selecciona un color para resaltar paréntesis")
 
@@ -392,7 +404,8 @@
 
  ;;; indenting preferences panel
  (indenting-prefs-panel-label "Sangrar")  ;; To indent is "Sangrado de márgenes"
-
+ (indenting-prefs-extra-regexp "Expresiones regulares extra")
+ 
  ; filled with define, lambda, or begin
  (enter-new-keyword "Teclea una nueva palabra clave parecida a ~a:")
  (x-keyword "Palabra clave ~a")
@@ -559,9 +572,16 @@
 
  (keybindings-info "Muestra los enlaces de tecla activos")
  (keybindings-menu-item "Enlaces de teclas")
+ (keybindings-show-active "Mostrar enlaces de tecla activos")
  (keybindings-frame-title "Enlaces de teclas")
  (keybindings-sort-by-name "Ordena por Nombre")
  (keybindings-sort-by-key "Ordena por Llave")
+ (keybindings-add-user-defined-keybindings "Añade enlaces de tecla definidos por el usuario...")
+ (keybindings-menu-remove "Eliminar ~a")
+ (keybindings-choose-user-defined-file "Por favor seleccione un archivo con enlaces de teclas.")
+
+ (user-defined-keybinding-error "Error al ejecutar el enlace de teclas ~a\n\n~a")
+ (user-defined-keybinding-malformed-file "El archivo ~a no contiene un módulo escrito usando el lenguaje (lib \"keybinding-lang.ss\" \"framework\").")  
 
  (insert-text-box-item "Inserta caja de texto")
  (insert-pb-box-item "Inserta caja de porta-papeles")
@@ -695,7 +715,9 @@
  (save-interactions-as "Salvar Interacciones como...")
  (save-interactions-as-text "Salvar Interacciones como Texto...")
  (print-interactions "Imprimir Interacciones...")
- 
+ (new-tab "Nueva pestaña")
+ (close-tab "Cerrar pestaña") ;; must not have any &s in it.
+
  ;;; edit-menu
  (split-menu-item-label "&Dividir")
  (collapse-menu-item-label "C&olapsar")
@@ -898,6 +920,13 @@
  (test-coverage-clear-and-do-not-ask-again "Sí y no me preguntes más")
  (test-coverage-ask? "¿Preguntar acerca de las pruebas de  cobertura?")
 
+ ;; tracing
+ (tracing-enable-tracing "Habilitar trazado")
+ (tracing-show-tracing-window "Mostrar trazado")
+ (tracing-hide-tracing-window "Esconder trazado")
+ (tracing-tracing-nothing-to-show "No hay resultados de trazado disponibles.  Asegúrese que su lenguaje soporte trazado y que esté habilitado.")
+
+ 
  ;;; repl stuff
  (evaluation-terminated "Evaluación Terminada")
  (evaluation-terminated-explanation
@@ -924,7 +953,7 @@
  ;; vc-wizard-check-note which is similar, only it is used as part of the initial
  ;; wizard dialog.  Note that vc-wizard-check-prompt can (should) have newlines so
  ;; it will not make the dialog too wide.
- ; vc-wizard-check-note goes here
+ (vc-wizard-check-note "La versión que está a punto de instalar puede no ser\nla más reciente.  Si lo desea, DrScheme puede verificar por Usted.")
  (vc-wizard-check-button "¡Buscar ahora!") 
  (vc-update-check "Revisar Actualización")
  (vc-please-wait "Por favor espere")
@@ -971,11 +1000,17 @@
  (module-browser-refresh "Refrescar") ;; button label in show module browser pane in drscheme window.
  (module-browser-only-in-plt-and-module-langs
   "El navegador de módulos está disponible para programas en los lenguajes PLT y en el lenguaje con módulos (y únicamente para programas que incluyan módulos).")
- 
+ (module-browser-name-length "Longitud de nombre")
+ (module-browser-name-short "Corto")
+ (module-browser-name-medium "Medio")
+ (module-browser-name-long "Largo")
+ (module-browser-open-all "Abrir todos los archivos mostrados")
+
  ;; Birthdays section
  (happy-birthday-matthias "¡Feliz cumpleaños Matthias!")
  (happy-birthday-matthew "¡Feliz cumpleaños Matthew!")
-
+ (happy-birthday-shriram "¡Feliz cumpleaños Shriram!")
+ 
  (mrflow-using-default-language-title "Lenguaje por omisión usado")
  (mrflow-using-default-language "El lenguaje usado actualmente no tiene un tipo tabla definido para sus primitivas.  Usaré R5RS Scheme en su lugar.")
  (mrflow-button-title "Analizar")
@@ -1080,10 +1115,37 @@
  ;;       if the words are too long the test case will take up too much horizontal room and
  ;;       not look very good.
  ;; This string is the label of the expression that is being tested in a test case.
- ;(test-case-to-test "Por probar")
+ (test-case-to-test "Por probar")
  ;; This string is the label of the expression that is the expected value of the to-test expression.
- ;(test-case-expected "Esperado")
+ (test-case-expected "Esperado")
  ;; This string is the label of the actual result of the to test expression.
  (test-case-actual "Obtenido")
+ (test-case-predicate "Predicado")
+ (test-case-should-raise "Debe provocar") ;; should raise?
+ ;; The label of a field of the test-case that describes the expected error message of a test case
+ (test-case-error-message "Mensaje de Error")
 
+ (test-case-menu-title "Caso de prueba")
+ (test-case-switch-to-error-box "Cambiar a caja de prueba de error")
+ (test-case-switch-to-nonerror-box "Cambiar a caja de prueba sin-error")
+ (test-case-collapse "Colapsar el caso de prueba")
+ (test-case-show-actual "Mostrar valor actual")
+ (test-case-enable "Activar caso de prueba")
+ (test-case-show-predicate "Mostrar predicado")
+ (test-case-show-error-message "Mostrar mensaje de error")
+ (test-case-convert-to-text "Convertir a texto")
+
+  ;; Profj Boxes
+ (profjBoxes-empty-error "Interacción vacía")
+ (profjBoxes-too-many-expressions-error "Demasiadas expresiones en una caja")
+ (profjBoxes-interactions-label "Interacciones")
+ (profjBoxes-bad-java-id-error "Java ID mal formado")
+ (profjBoxes-examples-label "Ejemplos")
+ (profjBoxes-add-new-example-button "Añadir nuevo ejemplo")
+ (profjBoxes-type "Tipo")
+ ;; The Java identifier of an example of data
+ (profjBoxes-name "Nombre")
+ (profjBoxes-value "Valor")
+
+ 
  )

@@ -109,7 +109,7 @@
 		    frame handler (core file@) (core function@))]
 	  [console : mred:console^ 
 		   ((reference-unit/sig "console.ss") wx 
-		    constants
+		    constants container
 		    preferences edit frame canvas find-string
 		    exit finder handler gui-utils scheme-mode
 		    scheme-paren icon hyper-frame version application

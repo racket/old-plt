@@ -2,6 +2,7 @@
   (unit/sig mred:console^
     (import [wx : mred:wx^]
 	    [mred:constants : mred:constants^]
+	    [mred:container : mred:container^]
 	    [mred:preferences : mred:preferences^]
 	    [mred:edit : mred:edit^]
 	    [mred:frame : mred:frame^]
@@ -28,9 +29,9 @@
 
     (define copyright-string
       (string-append
-       "MrEd version "
+       "version "
        (mred:version:version)
-       ", Copyright (c) 1995-1997 PLT, Rice University."))
+       ", Copyright (c) 1995-1997 PLT, Rice University"))
 
     (define credits-proc
       (lambda (indent-string)
@@ -58,16 +59,74 @@
 	   " (c) 1994 Xerox Corp."
 	   newline-string))))
 
-
     (define welcome-message
       (string-append
        "Welcome to " copyright-string
        newline-string
        "Based on the following: "
        newline-string
-       (credits-proc "  ")
-       "See the license agreement or"
-       " http://www.cs.rice.edu/CS/PLT/packages/mred/ for more info."))
+       (credits-proc "  ")))
+
+    (define message-delta 
+      (make-object wx:style-delta%
+		   wx:const-change-family
+		   wx:const-decorative))
+    (send message-delta set-delta wx:const-change-size 10)
+    (define url-delta
+      (make-object wx:style-delta%
+		   wx:const-change-family
+		   wx:const-decorative))
+    (send* url-delta
+      (set-delta wx:const-change-size 10)
+      (set-delta-foreground "BLUE")
+      (set-underlined-on #t))
+
+    (define url "http://www.cs.rice.edu/CS/PLT/packages/mred/")
+
+    (define credits
+      (lambda ()
+	(let* ([f (make-object mred:container:frame% null "MrEd Credits"
+			       -1 -1 600 300)]
+	       [p (make-object mred:container:horizontal-panel% f)]
+	       [c (make-object mred:canvas:wide-snip-canvas% p)]
+	       [is (make-object wx:image-snip% 
+				(build-path 
+				 mred:constants:plt-home-directory
+				 "icons"
+				 "mred.gif")
+				wx:const-bitmap-type-gif)]
+	       [oe (make-object mred:edit:edit%)]
+	       [ie (make-object mred:edit:edit%)]
+	       [es (make-object mred:edit:media-snip% ie #f)]
+	       [top (make-object wx:style-delta% wx:const-change-alignment wx:const-align-top)])
+	  (send* c 
+	    (set-media oe)
+	    (widen-snips #t)
+	    (add-wide-snip es))
+	  (send* oe 
+	    (insert is)
+	    (insert es))
+	  (send* ie 
+	    (insert welcome-message)
+	    (insert #\newline)
+	    (insert "See the license agreement or "))
+	  (let ([start (send ie get-start-position)])
+	    (send ie insert url)
+	    (let ([end (send ie get-start-position)])
+	      (send ie insert " for more info.")
+	      (send* ie 
+		(change-style message-delta 0 (send ie last-position))
+		(change-style url-delta start end)
+		(set-clickback start end
+			       (lambda (edit start end)
+				 (make-object
+				  mred:hyper-frame:hyper-view-frame%
+				  url))))))
+	  (send* ie 
+	    (set-autowrap-bitmap null)
+	    (set-position 1))
+	  (send oe change-style top 0 2)
+	  (send f show #t))))
 
     (define make-scheme-mode-edit%
       (lambda (super%)
@@ -829,7 +888,7 @@
     (define make-console-frame%
       (lambda (super%)
 	(class super% ([close-item? #f]
-		       [mssg welcome-message]
+		       [insert-welcome? #t]
 		       [show? #t])
 	  (inherit active-edit get-edit get-canvas show make-menu)
 	  (rename [super-on-close on-close]
@@ -917,36 +976,49 @@
 	      (send edit set-file-format wx:const-media-ff-std)
 	      
 	      
-	      ; Welcome message and initial prompt:
-	      (when mssg
-		(send edit insert mssg)
-		(send edit set-last-header-position (send edit get-end-position))
-		
+		; Welcome message and initial prompt:
 		(mred:gui-utils:local-busy-cursor 
 		 (get-canvas)
 		 (lambda ()
 		   (let ([last (send edit last-position)]
 			 [delta (make-object wx:style-delta%
 					     wx:const-change-family
-					     wx:const-decorative)])
-		     (send delta set-delta wx:const-change-size 10)
-		     (send edit insert #\newline)
-		     (send edit change-style delta 0 last)
+					     wx:const-decorative)]
+			 [insert-delta
+			  (lambda (string delta)
+			    (let ([before (send edit get-start-position)])
+			      (send* edit
+				(insert string)
+				(change-style delta before (send edit get-end-position)))))])
+		     (when insert-welcome?
+		       (insert-delta "Welcome to " delta)
+		       (let ([before (send edit get-start-position)])
+			 (insert-delta "MrEd" url-delta)
+			 (send edit set-clickback 
+			       before 
+			       (send edit get-start-position)
+			       (lambda (edit start end)
+				 (credits))))
+		       (insert-delta " " message-delta)
+		       (insert-delta copyright-string message-delta)
+		       (insert-delta "." message-delta)
+		       (insert-delta #\newline message-delta)
+		       (send edit change-style message-delta 0 last))
 		     
 		     (let ([dd (ivar edit output-delta)])
 		       (dynamic-wind
 			(lambda ()
-			  (send edit set-output-delta delta))
+			  (send edit set-output-delta message-delta))
 			(lambda ()
 			  (send edit initialize-console))
 			(lambda ()
 			  (send edit set-output-delta dd)))))))
-		
-		(send edit enable-autoprompt)
-		(send edit insert-prompt)
-		(send edit clear-undos)
-		(when show?
-		  (show #t))))))))
+	      (send edit set-last-header-position (send edit get-end-position))
+	      (send edit enable-autoprompt)
+	      (send edit insert-prompt)
+	      (send edit clear-undos)
+	      (when show?
+		(show #t)))))))
 
     (define console-frame% (make-console-frame%
 			    (mred:find-string:make-searchable-frame%

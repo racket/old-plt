@@ -172,6 +172,7 @@
 
 (define-signature mred:console^
   (credits-proc
+   credits
    copyright-string
    welcome-message
    console-max-save-previous-exprs

@@ -16,6 +16,8 @@ Internal definitions are allowed only at the beginning of lambda,
 begin expressions are flattened in an internal-definition context
 (begin) allowed in a top-level, unit, or internal-definition
  context
+Removed invoke-open-unit; see the new invoke.ss library, which
+ includes define-values/invoke-unit
 Self-import is now allowed for unit linking
 Removed constant-name and constant-name-all-globals
 Removed secure-primitive-exception-types

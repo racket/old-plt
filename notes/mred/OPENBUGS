@@ -2,8 +2,6 @@
 Bugs
 ----
 
-* Windows: MDI frames still buggy (especially with regard to menus)
-
 * MacOS: bitmaps don't print (with MacOS-specific printing)
 
 * Windows and MacOS: "primitive" dialogs don't get closed by

@@ -31,6 +31,7 @@ BROWSER_WINDOW_STYLE_OPTION styleOptions[6] = {
   { "no-system-menu",WS_CAPTION | WS_SYSMENU,FALSE },
   { "no-thick-border",WS_THICKFRAME,FALSE },
   { "scrollbars",WS_HSCROLL | WS_VSCROLL,TRUE },
+  { "visible",WS_VISIBLE,TRUE },
 };
 
 int cmpBwso(char *key,BROWSER_WINDOW_STYLE_OPTION *bwso) {

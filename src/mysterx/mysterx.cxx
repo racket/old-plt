@@ -4466,7 +4466,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   if (isatty(fileno(stdin))) {
     fprintf(stderr,
 	    "MysterX extension for MzScheme, "
-	    "Copyright (c) 1999-2000 PLT (Paul Steckler)\n");
+	    "Copyright (c) 1999-2001 PLT (Paul Steckler)\n");
   }
   
   return (Scheme_Object *)mx_unit;
@@ -4505,7 +4505,7 @@ void browserHwndMsgLoop(LPVOID p) {
   }
 
   hwnd = CreateWindow("AtlAxWin","myspage.DHTMLPage.1",
-		      WS_VISIBLE | hasScrollBars | 
+		      hasScrollBars | 
 		      (pBrowserWindowInit->browserWindow.style & ~(WS_HSCROLL|WS_VSCROLL)),
 		      pBrowserWindowInit->browserWindow.x,pBrowserWindowInit->browserWindow.y,
 		      pBrowserWindowInit->browserWindow.width,pBrowserWindowInit->browserWindow.height,
@@ -4527,9 +4527,6 @@ void browserHwndMsgLoop(LPVOID p) {
   
   SetWindowText(hwnd,pBrowserWindowInit->browserWindow.label);
 
-  ShowWindow(hwnd,SW_SHOW);
-  SetForegroundWindow(hwnd);
-
   pIUnknown = NULL;
 
   destroy = &(pBrowserWindowInit->browserObject->destroy);
@@ -4548,7 +4545,7 @@ void browserHwndMsgLoop(LPVOID p) {
 	  ReleaseSemaphore(createHwndSem,1,NULL);
 	  codedComError("Can't marshal document interface",hr);
 	}
-	
+
 	ReleaseSemaphore(createHwndSem,1,NULL);
       }
     }

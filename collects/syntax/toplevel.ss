@@ -1,43 +1,74 @@
 
 (module toplevel mzscheme
   (require "kerncase.ss")
-
+  
   (provide eval-compile-time-part-of-top-level
-	   expand-top-level-with-compile-time-evals)
-
+	   eval-compile-time-part-of-top-level/compile
+           expand-top-level-with-compile-time-evals)
+  
+  ;; eval-compile-time-part-of-top-level/compile : syntax -> (listof compiled-expression)
+  (define (eval-compile-time-part-of-top-level/compile expr)
+    (map (lambda (e) (compile-and-eval-compile-time-part e #t))
+         (flatten-out-begins expr)))
+  
   (define (eval-compile-time-part-of-top-level stx)
-    (kernel-syntax-case stx #f
-      [(begin e ...)
-       (for-each eval-compile-time-part-of-top-level (cdr (syntax->list stx)))]
-      [(require req ...)
-       (for-each (lambda (req)
-		   (namespace-require/expansion-time (syntax-object->datum req)))
-		 (syntax->list (syntax (req ...))))]
-      [(module . _)
-       (eval stx)]
-      [(define-syntaxes . _)
-       (eval stx)]
-      [(require-for-syntax . _)
-       (eval stx)]
-      [(define-values (id ...) . _)
-       (for-each (lambda (id)
-		   (with-syntax ([id id]
-				 [undefined (letrec ([x x]) x)])
-		     (eval (syntax (define (id) undefined)))))
-		 (syntax->list (syntax (id ...))))]
-      [_else (void)]))
-
-  (define (expand-top-level-with-compile-time-evals expr)
-    (let ([e (expand-to-top-form expr)])
+    (for-each (lambda (e) (compile-and-eval-compile-time-part e #f))
+              (flatten-out-begins stx)))
+  
+  (define (expand-top-level-with-compile-time-evals stx)
+    (let ([e (expand-to-top-form stx)])
       (syntax-case e (begin)
+        [(begin expr ...)
+         (with-syntax ([(expr ...) 
+                        ;;left-to-right part of this map is important:
+                        (map expand-top-level-with-compile-time-evals
+                             (syntax->list (syntax (expr ...))))]
+                       [(beg . _) e])
+           (datum->syntax-object e (syntax-e (syntax (beg expr ...))) e e))]
+        [else 
+         (let ([e (expand e)])
+           (compile-and-eval-compile-time-part e #f)
+           e)])))
+  
+  ;; compile-and-eval-compile-time-part : syntax boolean -> (union syntax compiled-expression)
+  ;; compiles the syntax it receives as an argument and evaluates the compile-time part of it.
+  ;; result depends on second argument. If #t, returns compiled expressions
+  ;; if #f, returns void (and doesn't do any extra compilation)
+  ;; pre: there are no top-level begins in stx.
+  (define (compile-and-eval-compile-time-part stx compile?)
+    (let ([eval/compile (lambda (stx) 
+                          (let ([compiled (compile stx)])
+                            (eval compiled)
+                            (when compile?
+                              compiled)))])
+      (kernel-syntax-case stx #f
+        [(require req ...)
+         (for-each (lambda (req) (namespace-require/expansion-time (syntax-object->datum req)))
+                   (syntax->list (syntax (req ...))))
+         (when compile? (compile stx))]
+        [(module . _)
+         (eval/compile stx)]
+        [(define-syntaxes . _)
+         (eval/compile stx)]
+        [(require-for-syntax . _)
+         (eval/compile stx)]
+        [(define-values (id ...) . _)
+         (for-each (lambda (id)
+                     (with-syntax ([id id]
+                                   [undefined (letrec ([x x]) x)])
+                       (eval (syntax (define-values (id) undefined)))))
+                   (syntax->list (syntax (id ...))))
+         (when compile? (compile stx))]
+        [_else 
+         (when compile? (compile stx))])))
+  
+  ;; flatten-out-begins : syntax -> (listof syntax)
+  ;; flattens out the begins in a top-level expression,
+  ;; into multiple expressions
+  (define (flatten-out-begins expr)
+    (let loop ([expr expr])
+      (syntax-case (expand-to-top-form expr) (begin)
 	[(begin expr ...)
-	 (with-syntax ([(expr ...) 
-			;;left-to-right part of this map isimportant:
-			(map expand-top-level-with-compile-time-evals
-			     (syntax->list (syntax (expr ...))))]
-		       [(beg . _) e])
-	   (datum->syntax-object e (syntax-e (syntax (beg expr ...))) e e))]
+	 (apply append (map loop (syntax->list (syntax (expr ...)))))]
 	[else 
-	 (let ([e (expand e)])
-	   (eval-compile-time-part-of-top-level e)
-	   e)]))))
+         (list expr)]))))

@@ -58,8 +58,10 @@ wxMemoryDC *create_dc(int width, int height, wxBitmap *bm)
   bm->Create(width, height);
   dc->SelectObject(bm);
 
-  if (!dc->Ok())
+  if (!dc->Ok()) {
+    dc->SelectObject(NULL);
     return NULL;
+  }
 
   return dc;
 }
@@ -180,6 +182,10 @@ int read_JPEG_file(char * filename, wxBitmap *bm)
    */ 
 
   dc = create_dc(cinfo.output_width, cinfo.output_height, bm);
+  if (!dc) {
+    /* couldn't allocate DC or select bitmap */
+    return 0;
+  }
 
   /* JSAMPLEs per row in output buffer */
   row_stride = cinfo.output_width * cinfo.output_components;

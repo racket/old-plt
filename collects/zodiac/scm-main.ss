@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.155 1998/06/08 23:07:20 shriram Exp $
+; $Id: scm-main.ss,v 1.156 1998/07/14 20:25:02 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -124,7 +124,7 @@
 
   (extend-parsed->raw letrec*-values-form?
     (lambda (expr p->r)
-      `(letrec*-values 
+      `(letrec-values 
 	 ,(map (lambda (vars val)
 		 (list (map p->r vars) (p->r val)))
 	    (letrec*-values-form-vars expr) (letrec*-values-form-vals expr))

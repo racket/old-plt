@@ -87,7 +87,7 @@
     (define expand-expr
       (lambda (expr env attributes vocab)
 ;	(printf "Expanding~n") (pretty-print (sexp->raw expr))
-;	(printf "Expanding~n") (pretty-print expr)
+;	(printf "Expanding~n") (pretty-print expr) (newline)
 ;	(printf "Expanding~n") (display expr)
 ;	(printf "in ~s~n" (get-vocabulary-name vocab))
 ;	(printf "in vocabulary~n") (print-env vocab)

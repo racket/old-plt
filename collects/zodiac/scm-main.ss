@@ -4,7 +4,8 @@
   (unit/sig zodiac:scheme-main^
     (import zodiac:misc^ zodiac:structures^ (z : zodiac:reader-structs^)
       zodiac:sexp^ (pat : zodiac:pattern^) zodiac:scheme-core^
-      zodiac:back-protocol^ zodiac:expander^ zodiac:interface^)
+      zodiac:back-protocol^ zodiac:expander^ zodiac:interface^
+      (param : plt:parameters^))
 
     ; ----------------------------------------------------------------------
 
@@ -341,13 +342,15 @@
 			   (when (null? bodies)
 			     (static-error expr "Malformed begin0"))
 			   (set-top-level-status attributes)
-			   (let-values
+			   (let*-values
 			     (((first-body) (car bodies))
 			       ((definitions terms)
 				 (let loop ((seen '()) (rest (cdr bodies)))
 				   (if (null? rest)
-				     (static-error expr
-				       "Internal definitions not followed by expression")
+				     (if (null? seen)
+				       (values '() '())
+				       (static-error expr
+					 "Internal definitions not followed by expression"))
 				     (let ((first (car rest)))
 				       (let ((e-first
 					       (expand-expr first env
@@ -1135,7 +1138,8 @@
 			      '(cond (else b ...) rest ...)))
 	      (out-pattern-2 'this-is-an-error-case)
 	      (in-pattern-3 '(cond))
-	      (out-pattern-3 (if (language<=? 'structured)
+	      (out-pattern-3 (if (or (language<=? 'structured)
+				   param:unmatched-cond/case-is-error?)
 			       '(#%raise (#%make-exn:else
 					   "no matching clause"
 					   ((debug-info-handler))))
@@ -1194,7 +1198,8 @@
 	      (out-pattern-1 (if (language<=? 'structured) 'b '(begin b ...)))
 	      (kwd-2 '(case))
 	      (in-pattern-2 '(case val))
-	      (out-pattern-2 (if (language<=? 'structured)
+	      (out-pattern-2 (if (or (language<=? 'structured)
+				   param:unmatched-cond/case-is-error?)
 			       '(#%raise (#%make-exn:else
 					   "no matching clause"
 					   ((debug-info-handler))))

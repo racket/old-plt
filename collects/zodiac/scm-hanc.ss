@@ -311,11 +311,13 @@
 
 (add-list-micro u/s-prim-imports-vocab
   (let* ((kwd '(:))
-	  (in-pattern '(id : sig))
-	  (m&e (pat:make-match&env in-pattern kwd)))
+	  (in-pattern-1 '(id : sig))
+	  (in-pattern-2 '(id : any ...))
+	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	  (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
     (lambda (expr env attributes vocab)
       (cond
-	((pat:match-against m&e expr env)
+	((pat:match-against m&e-1 expr env)
 	  =>
 	  (lambda (p-env)
 	    (let ((id (pat:pexpand 'id p-env kwd))
@@ -325,6 +327,8 @@
 		(signature-elements
 		  (expand-expr sig env attributes sig-vocab))
 		(z:read-object id)))))
+	((pat:match-against m&e-2 expr env)
+	  (static-error expr "Ambiguous : in signature"))
 	(else
 	  (convert-to-prim-format
 	    (signature-elements
@@ -380,11 +384,13 @@
 
 (add-list-micro u/s-sign-imports-vocab
   (let* ((kwd '(:))
-	  (in-pattern '(id : sig))
-	  (m&e (pat:make-match&env in-pattern kwd)))
+	  (in-pattern-1 '(id : sig))
+	  (in-pattern-2 '(id : any ...))
+	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	  (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
     (lambda (expr env attributes vocab)
       (cond
-	((pat:match-against m&e expr env)
+	((pat:match-against m&e-1 expr env)
 	  =>
 	  (lambda (p-env)
 	    (let ((id (pat:pexpand 'id p-env kwd))
@@ -393,6 +399,8 @@
 	      (cons (z:read-object id)
 		(signature-exploded
 		  (expand-expr sig env attributes sig-vocab))))))
+	((pat:match-against m&e-2 expr env)
+	  (static-error expr "Ambiguous : in signature"))
 	(else
 	  (cons immediate-signature-name
 	    (explode-signature-elements
@@ -438,11 +446,13 @@
 
 (add-list-micro u/s-sign-exports-vocab
   (let* ((kwd '(:))
-	  (in-pattern '(id : sig))
-	  (m&e (pat:make-match&env in-pattern kwd)))
+	  (in-pattern-1 '(id : sig))
+	  (in-pattern-2 '(id : any ...))
+	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	  (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
     (lambda (expr env attributes vocab)
       (cond
-	((pat:match-against m&e expr env)
+	((pat:match-against m&e-1 expr env)
 	  =>
 	  (lambda (p-env)
 	    (let ((id (pat:pexpand 'id p-env kwd))
@@ -450,6 +460,8 @@
 	      (valid-syntactic-id? id)
 	      (signature-exploded
 		(expand-expr sig env attributes sig-vocab)))))
+	((pat:match-against m&e-2 expr env)
+	  (static-error expr "Ambiguous : in signature"))
 	(else
 	  (explode-signature-elements
 	    (signature-elements
@@ -526,7 +538,12 @@
 				   vocab))
 			    (let ((reader (z:read p
 					    (z:make-location
-					      1 1 0
+					      (z:location-line
+						z:default-initial-location)
+					      (z:location-column
+						z:default-initial-location)
+					      (z:location-offset
+						z:default-initial-location)
 					      (build-path (current-directory)
 						name)))))
 			      (let loop ()
@@ -1572,11 +1589,13 @@
 
 (add-list-micro iu/s-linkage-vocab
   (let* ((kwd '(:))
-	  (in-pattern '(id : sig))
-	  (m&e (pat:make-match&env in-pattern kwd)))
+	  (in-pattern-1 '(id : sig))
+	  (in-pattern-2 '(id : any ...))
+	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	  (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
     (lambda (expr env attributes vocab)
       (cond
-	((pat:match-against m&e expr env)
+	((pat:match-against m&e-1 expr env)
 	  =>
 	  (lambda (p-env)
 	    (let ((in:id (pat:pexpand 'id p-env kwd))
@@ -1585,6 +1604,8 @@
 	      (cons (z:read-object in:id)
 		(signature-exploded
 		  (expand-expr in:sig env attributes sig-vocab))))))
+	((pat:match-against m&e-2 expr env)
+	  (static-error expr "Ambiguous : in signature"))
 	(else
 	  (cons immediate-signature-name
 	    (signature-exploded
@@ -1600,11 +1621,13 @@
 
 (add-list-micro iu/s-imports-vocab
   (let* ((kwd '(:))
-	  (in-pattern '(id : sig))
-	  (m&e (pat:make-match&env in-pattern kwd)))
+	  (in-pattern-1 '(id : sig))
+	  (in-pattern-2 '(id : any ...))
+	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	  (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
     (lambda (expr env attributes vocab)
       (cond
-	((pat:match-against m&e expr env)
+	((pat:match-against m&e-1 expr env)
 	  =>
 	  (lambda (p-env)
 	    (let ((in:id (pat:pexpand 'id p-env kwd))
@@ -1613,6 +1636,8 @@
 		(signature-elements
 		  (expand-expr in:sig env attributes sig-vocab))
 		(z:read-object in:id)))))
+	((pat:match-against m&e-2 expr env)
+	  (static-error expr "Ambiguous : in signature"))
 	(else
 	  (convert-to-prim-format
 	    (signature-elements

@@ -1,6 +1,8 @@
 (define zodiac:scheme-units@
   (unit/sig zodiac:scheme-units^
-    (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
+    (import zodiac:misc^ (z : zodiac:structures^)
+      (z : zodiac:scanner-parameters^)
+      (z : zodiac:reader-structs^)
       (z : zodiac:reader-code^)
       zodiac:sexp^ (pat : zodiac:pattern^) zodiac:scheme-core^
       zodiac:scheme-main^ zodiac:back-protocol^

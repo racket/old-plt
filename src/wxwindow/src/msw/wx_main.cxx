@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_main.cxx,v 1.8 1998/10/19 03:49:54 mflatt Exp $
+ * RCS_ID:      $Id: wx_main.cxx,v 1.9 1999/06/05 13:52:25 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -98,12 +98,6 @@ char wxCanvasClassName[ZZ]        = "wxCanvasClass";
 #undef ZZ
 
 HICON wxSTD_FRAME_ICON = NULL;
-HICON wxSTD_MDICHILDFRAME_ICON = NULL;
-HICON wxSTD_MDIPARENTFRAME_ICON = NULL;
-
-HICON wxDEFAULT_FRAME_ICON = NULL;
-HICON wxDEFAULT_MDICHILDFRAME_ICON = NULL;
-HICON wxDEFAULT_MDIPARENTFRAME_ICON = NULL;
 
 HFONT wxSTATUS_LINE_FONT = NULL;
 LRESULT APIENTRY wxWndProc(HWND, UINT, WPARAM, LPARAM);
@@ -219,12 +213,6 @@ void wxInitialize(HINSTANCE hInstance)
 #endif
 
   wxSTD_FRAME_ICON = LoadIcon(hInstance, "wxSTD_FRAME");
-  wxSTD_MDIPARENTFRAME_ICON = LoadIcon(hInstance, "wxSTD_MDIPARENTFRAME");
-  wxSTD_MDICHILDFRAME_ICON = LoadIcon(hInstance, "wxSTD_MDICHILDFRAME");
-
-  wxDEFAULT_FRAME_ICON = LoadIcon(hInstance, "wxDEFAULT_FRAME");
-  wxDEFAULT_MDIPARENTFRAME_ICON = LoadIcon(hInstance, "wxDEFAULT_MDIPARENTFRAME");
-  wxDEFAULT_MDICHILDFRAME_ICON = LoadIcon(hInstance, "wxDEFAULT_MDICHILDFRAME");
 
   wxSTATUS_LINE_FONT = CreateFont(16, 0, 0, 0, FW_NORMAL, 0, 0, 0,
                     ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -265,7 +253,7 @@ void wxInitialize(HINSTANCE hInstance)
   wndclass1.cbClsExtra    = 0;
   wndclass1.cbWndExtra    = sizeof( DWORD ); // was 4
   wndclass1.hInstance     = hInstance;
-  wndclass1.hIcon         = wxSTD_MDIPARENTFRAME_ICON;
+  wndclass1.hIcon         = wxSTD_FRAME_ICON;
   wndclass1.hCursor       = NULL /* LoadCursor( NULL, IDC_ARROW ) */;
 #if FAFA_LIB
   wndclass1.hbrBackground =  (HBRUSH)(COLOR_APPWORKSPACE+1) ;
@@ -290,7 +278,7 @@ void wxInitialize(HINSTANCE hInstance)
   wndclass4.cbClsExtra    = 0;
   wndclass4.cbWndExtra    = sizeof( DWORD ); // was 4
   wndclass4.hInstance     = hInstance;
-  wndclass4.hIcon         = wxSTD_MDICHILDFRAME_ICON;
+  wndclass4.hIcon         = wxSTD_FRAME_ICON;
   wndclass4.hCursor       = NULL /* LoadCursor( NULL, IDC_ARROW ) */;
 #if FAFA_LIB
   wndclass4.hbrBackground =  (HBRUSH)(COLOR_BTNFACE+1) ;
@@ -421,17 +409,6 @@ void wxCleanUp(void)
   
   if (wxSTD_FRAME_ICON)
     DestroyIcon(wxSTD_FRAME_ICON);
-  if (wxSTD_MDICHILDFRAME_ICON)
-    DestroyIcon(wxSTD_MDICHILDFRAME_ICON);
-  if (wxSTD_MDIPARENTFRAME_ICON)
-    DestroyIcon(wxSTD_MDIPARENTFRAME_ICON);
-
-  if (wxDEFAULT_FRAME_ICON)
-    DestroyIcon(wxDEFAULT_FRAME_ICON);
-  if (wxDEFAULT_MDICHILDFRAME_ICON)
-    DestroyIcon(wxDEFAULT_MDICHILDFRAME_ICON);
-  if (wxDEFAULT_MDIPARENTFRAME_ICON)
-    DestroyIcon(wxDEFAULT_MDIPARENTFRAME_ICON);
 
   DeleteObject(wxSTATUS_LINE_FONT);
 #if CTL3D

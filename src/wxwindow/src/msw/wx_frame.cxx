@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.16 1999/07/07 19:32:35 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.17 1999/07/08 15:53:29 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -848,7 +848,7 @@ wxFrameWnd::wxFrameWnd(void)
 wxFrameWnd::wxFrameWnd(wxWnd *parent, char *WXUNUSED(wclass), wxWindow *wx_win, char *title,
                    int x, int y, int width, int height, long style)
 {
-  defaultIcon = (wxSTD_FRAME_ICON ? wxSTD_FRAME_ICON : wxDEFAULT_FRAME_ICON);
+  defaultIcon = wxSTD_FRAME_ICON;
 
 //  DWORD msflags = WS_OVERLAPPED;
   DWORD msflags = WS_POPUP;
@@ -940,10 +940,7 @@ BOOL wxFrameWnd::OnPaint(void)
 
 HICON wxFrameWnd::OnQueryDragIcon(void)
 {
-  if (icon != 0)
-    return icon;
-  else
-    return defaultIcon;
+  return NULL;
 }
 
 void wxFrameWnd::OnSize(int bad_x, int bad_y, UINT id)
@@ -1035,9 +1032,7 @@ BOOL wxFrameWnd::ProcessMessage(MSG* pMsg)
 wxMDIFrame::wxMDIFrame(wxWnd *parent, wxWindow *wx_win, char *title,
                    int x, int y, int width, int height, long style)
 {
-  defaultIcon = (wxSTD_MDIPARENTFRAME_ICON 
-		 ? wxSTD_MDIPARENTFRAME_ICON
-		 : wxDEFAULT_MDIPARENTFRAME_ICON);
+  defaultIcon = wxSTD_FRAME_ICON;
   icon = NULL;
   iconized = FALSE;
   parent_frame_active = TRUE;
@@ -1244,9 +1239,7 @@ extern wxNonlockingHashTable *wxWinHandleList;
 wxMDIChild::wxMDIChild(wxMDIFrame *parent, wxWindow *wx_win, char *title,
                    int x, int y, int width, int height, long style)
 {
-  defaultIcon = (wxSTD_MDICHILDFRAME_ICON 
-		 ? wxSTD_MDICHILDFRAME_ICON
-		 : wxDEFAULT_MDICHILDFRAME_ICON);
+  defaultIcon = wxSTD_FRAME_ICON;
   icon = NULL;
   iconized = FALSE;
   wx_window = wx_win;

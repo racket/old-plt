@@ -2,7 +2,7 @@
 ;;
 ;; reduction.ss
 ;; Richard Cobbe
-;; $Id: reduction.ss,v 1.4 2004/09/10 15:38:54 cobbe Exp $
+;; $Id: reduction.ss,v 1.5 2004/09/21 19:39:25 cobbe Exp $
 ;;
 ;; Contains the definition of ClassicJava for PLT Redex
 ;;
@@ -391,11 +391,12 @@
      ;; [bprim]
      [reduction
       cj-lang
-      (program_ store_ (in-hole context_ (unop_ value_1 value_2)))
+      (program_ store_ (in-hole context_ (binop_ value_1 value_2)))
       (term (program_
              store_
              ,(replace (term context_) (term hole)
-                       (delta-2 (term unop_) (term value_1) (term value_2)))))]
+                       (delta-2 (term binop_)
+                                (term value_1) (term value_2)))))]
 
      ;; [and-true]
      [reduction
@@ -408,18 +409,18 @@
      [reduction
       cj-lang
       (program_ store_ (in-hole context_ (and false expr_)))
-      (term (program_ store_ ,(replace (term context_) (term hole) false)))]
+      (term (program_ store_ ,(replace (term context_) (term hole) 'false)))]
 
      ;; [or-true]
      [reduction
       cj-lang
       (program_ store_ (in-hole context_ (or true expr_)))
-      (term (program_ store_ ,(replace (term context_) (term hole) true)))]
+      (term (program_ store_ ,(replace (term context_) (term hole) 'true)))]
 
      ;; [or-false]
      [reduction
       cj-lang
-      (program_ store_ (in-hole (context_ (or false expr_))))
+      (program_ store_ (in-hole context_ (or false expr_)))
       (term (program_ store_
                       ,(replace (term context_) (term hole) (term expr_))))]
 
@@ -452,8 +453,8 @@
                           (make-ivar (field-class fd)
                                      (field-name fd)
                                      (match (field-type fd)
-                                       [(struct ground-type ('int)) 0]
-                                       [(struct ground-type ('bool)) #f]
+                                       [($ ground-type 'int) 0]
+                                       [($ ground-type 'bool) 'false]
                                        [else 'null])))
                         fields)))))
 

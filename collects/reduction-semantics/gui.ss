@@ -283,6 +283,9 @@
       (init-field graph-pb toggle-panel-callback)
       (define/override (file-menu:create-save?) #f)
       (define/override (file-menu:between-save-as-and-print file-menu)
+        (make-object menu-item% "Print"
+          file-menu
+          (lambda (item evt) (send graph-pb print)))
         (make-object menu-item% "Export as Encapsulted PostScript..."
           file-menu
           (lambda (item evt) (send graph-pb print #t #f 'postscript this #f)))

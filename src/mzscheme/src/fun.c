@@ -278,7 +278,7 @@ scheme_init_fun (Scheme_Env *env)
   scheme_add_global_constant("continuation-mark-set->lists",
 			     scheme_make_prim_w_arity(extract_cc_markses,
 						      "continuation-mark-set->lists",
-						      2, 2),
+						      2, 3),
 			     env);
   scheme_add_global_constant("continuation-mark-set-first",
 			     scheme_make_prim_w_arity(extract_one_cc_mark,
@@ -2939,14 +2939,12 @@ extract_cc_marks(int argc, Scheme_Object *argv[])
   Scheme_Cont_Mark_Chain *chain;
   Scheme_Object *first = scheme_null, *last = NULL, *key;
   Scheme_Object *pr;
-  long last_pos;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_cont_mark_set_type)) {
     scheme_wrong_type("continuation-mark-set->list", "continuation-mark-set", 0, argc, argv);
     return NULL;
   }
   chain = ((Scheme_Cont_Mark_Set *)argv[0])->chain;
-  last_pos = ((Scheme_Cont_Mark_Set *)argv[0])->cmpos + 2;
   key = argv[1];
 
   if ((key == scheme_parameterization_key)
@@ -2974,7 +2972,63 @@ extract_cc_marks(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 extract_cc_markses(int argc, Scheme_Object *argv[])
 {
-  return scheme_void;
+  Scheme_Cont_Mark_Chain *chain;
+  Scheme_Object *first = scheme_null, *last = NULL;
+  Scheme_Object *pr, **keys, *vals, *none;
+  int len, i;
+  long last_pos;
+
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_cont_mark_set_type)) {
+    scheme_wrong_type("continuation-mark-set->lists", "continuation-mark-set", 0, argc, argv);
+    return NULL;
+  }
+  len = scheme_proper_list_length(argv[1]);
+  if (len < 0) {
+    scheme_wrong_type("continuation-mark-set->lists", "list", 1, argc, argv);
+    return NULL;
+  }
+  if (argc > 2)
+    none = argv[2];
+  else
+    none = scheme_false;
+
+  keys = MALLOC_N(Scheme_Object *, len);
+  for (pr = argv[1], i = 0; SCHEME_PAIRP(pr); pr = SCHEME_CDR(pr), i++) {
+    keys[i] = SCHEME_CAR(pr);
+    if ((keys[i] == scheme_parameterization_key)
+	|| (keys[i] == scheme_break_enabled_key)) {
+      scheme_signal_error("continuation-mark-set->list: secret key leaked!");
+      return NULL;
+    }
+  }
+
+  chain = ((Scheme_Cont_Mark_Set *)argv[0])->chain;
+  last_pos = ((Scheme_Cont_Mark_Set *)argv[0])->cmpos + 2;
+
+  while (chain) {
+    for (i = 0; i < len; i++) {
+      if (SAME_OBJ(chain->key, keys[i])) {
+	long pos;
+	pos = (long)chain->pos;
+	if (pos != last_pos) {
+	  vals = scheme_make_vector(len, none);
+	  last_pos = pos;
+	  pr = scheme_make_pair(vals, scheme_null);
+	  if (last)
+	    SCHEME_CDR(last) = pr;
+	  else
+	    first = pr;
+	  last = pr;
+	} else
+	  vals = SCHEME_CAR(last);
+	SCHEME_VEC_ELS(vals)[i] = chain->val;
+      }
+    }
+    
+    chain = chain->next;
+  }
+
+  return first;
 }
 
 Scheme_Object *

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: MemoryDC.cc,v 1.1 1996/01/10 14:55:42 markus Exp $
+ * $Id: MemoryDC.cc,v 1.1.1.1 1997/12/22 17:28:48 mflatt Exp $
  *
  * Purpose: device context to draw into wxBitmaps
  *
@@ -34,24 +34,13 @@
 
 IMPLEMENT_DYNAMIC_CLASS(wxMemoryDC, wxCanvasDC)
 
-wxMemoryDC::wxMemoryDC(void) : wxCanvasDC()
+wxMemoryDC::wxMemoryDC(Bool ro) : wxCanvasDC()
 {
     __type = wxTYPE_DC_MEMORY;
 
     device = wxDEVICE_MEMORY;
 
-    // the memory DC is at construction a unusable class because
-    // there is no drawable. The initialization will be done with
-    // wxMemoryDC::SelectObject(wxBitmap *bitmap)
-}
-
-wxMemoryDC::wxMemoryDC(wxCanvasDC *WXUNUSED(old_dc)) : wxCanvasDC()
-{
-    // I don't know what meens "similar attributes"
-
-    __type = wxTYPE_DC_MEMORY;
-
-    device = wxDEVICE_MEMORY;
+    read_only = ro;
 
     // the memory DC is at construction a unusable class because
     // there is no drawable. The initialization will be done with
@@ -71,12 +60,14 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 
   FreeGetPixelCache();
 
-  /* MATTHEW: [4] Bitmap selection memory and safety */
-  if (bitmap && bitmap->selectedIntoDC)
-    bitmap = NULL;
+  if (!read_only) {
+    /* MATTHEW: [4] Bitmap selection memory and safety */
+    if (bitmap && bitmap->selectedIntoDC)
+      bitmap = NULL;
 
-  if (selected)
-    selected->selectedIntoDC = 0;
+    if (selected)
+      selected->selectedIntoDC = 0;
+  }
 
     // free all associated GCs
     Destroy();
@@ -95,12 +86,18 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 	if (bitmap->GetColourMap() != current_cmap)
 	    SetColourMap(bitmap->GetColourMap());
 	selected = bitmap;
-	bitmap->selectedIntoDC = -1;
+	if (!read_only)
+	  bitmap->selectedIntoDC = -1;
     } else {
 	DRAWABLE = 0;
 	WIDTH = HEIGHT = 0;
 	selected = NULL;
     }
+}
+
+wxBitmap *wxMemoryDC::GetObject()
+{
+  return selected;
 }
 
 void wxMemoryDC::GetSize(float *w, float *h)

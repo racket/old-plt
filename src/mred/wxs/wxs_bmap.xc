@@ -16,6 +16,10 @@
 @SYM "pict" : wxBITMAP_TYPE_PICT
 @ENDSYMBOLS
 
+static Bool IsColor(wxBitmap *bm)
+{
+  return (bm->GetDepth() == 1);
+}
 
 @CLASSBASE wxBitmap "bitmap" : "object"
 
@@ -23,28 +27,21 @@
 @SET NOTEST = 1
 @INCLUDE list.xci
 
-@MACRO ZEROERR[p.woh] = if ((x<p> < 1) || (x<p> > 100000)) scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "bad " <woh> ": ", p[<p>]);
+@MACRO ZEROERR[p.woh] = if (!SCHEME_INTP(p[<p>]) || (SCHEME_INT_VAL(p[<p>]) < 1) || (SCHEME_INT_VAL(p[<p>]) > 10000)) scheme_wrong_type(METHODNAME("bitmap%","initialization"), "integer in [1,10000]", <p>, n, p);
 
-@MACRO NONZERODEPTH = if (x3 != 1) scheme_signal_error("%s: depth %d is illegal (only depth 1 is supported)", METHODNAME("bitmap%","initialization"), x3);
-@MACRO LISTENOUGH = if (scheme_proper_list_length(p[0]) < (((x1 * x2) >> 3) * x3)) scheme_signal_error("%s", METHODNAME("bitmap%","initialization")": byte list too short");
-	
-@CREATOR (char[]/bList/ubList/cList,int,int,int=1); : : /ZEROERR[1."width"]|ZEROERR[2."height"]|NONZERODEPTH|LISTENOUGH|glueUncountedListSet[char.0.0.METHODNAME("bitmap%","initialization")]// <> character list
-@CREATOR (int,int,int=-1); : : /ZEROERR[0."width"]|ZEROERR[1."height"] <> width/height
+@MACRO LISTENOUGH = if (scheme_proper_list_length(p[0]) < ((x1 * x2) >> 3)) scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "byte list string too short: ", p[0]);
+
+@CREATOR (char[]/bList/ubList/cList,int,int); : : /ZEROERR[1."width"]|ZEROERR[2."height"]|LISTENOUGH|glueUncountedListSet[char.0.0.METHODNAME("bitmap%","initialization")]// <> character list
+@CREATOR (int,int,bool=0); : : ZEROERR[0."width"]|ZEROERR[1."height"] <> width/height
 @CREATOR (pathname,SYM[bitmapType]=0); <> pathname
 
 @ "get-depth" : int GetDepth();
 @ "get-height" : int GetHeight();
 @ "get-width" : int GetWidth();
 @ "ok?" : bool Ok();
+@ m "color?" : bool IsColor();
 
 @ "load-file" : bool LoadFile(pathname,SYM[bitmapType]=0);
 @ "save-file" : bool SaveFile(pathname,SYM[saveBitmapType]);
 
 @END
-
-@CLASSBASE wxIcon "icon" : "bitmap"
-
-@CREATOR (string, SYM[bitmapType]=0);
-
-@END
-

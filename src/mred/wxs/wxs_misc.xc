@@ -20,38 +20,6 @@
 #define NEWEST_TYPES 0
 #endif
 
-#ifdef wx_msw
-
-#include "wx_mf.h"
-
-class baseMetaFile : public wxMetaFile
-{
-};
-
-#else
-
-class baseMetaFile : public wxObject
-{
-public:
-  Bool Ok() { return FALSE; }
-  void Play(wxDC*) { }
-  Bool SetClipboard(int, int) { return FALSE; }
-
-};
-
-#endif
-
-@CLASSBASE baseMetaFile "meta-file" : "object"
-@INTERFACE "meta-file"
-
-// @CREATOR (string=NULL);
-
-@ "ok?" : bool Ok();
-@ "play" : void Play(wxDC!);
-@ "set-clipboard" : bool SetClipboard(int=0,int=0);
-
-@END
-
 @MACRO rFALSE = return FALSE;
 
 @CLASSBASE wxTimer "timer" : "object"
@@ -167,3 +135,41 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 @ "copy-from" : void copy(wxPrintSetupData%);
 
 @END
+
+
+
+#if 0
+
+#ifdef wx_msw
+
+#include "wx_mf.h"
+
+class baseMetaFile : public wxMetaFile
+{
+};
+
+#else
+
+class baseMetaFile : public wxObject
+{
+public:
+  Bool Ok() { return FALSE; }
+  void Play(wxDC*) { }
+  Bool SetClipboard(int, int) { return FALSE; }
+
+};
+
+#endif
+
+@CLASSBASE baseMetaFile "meta-file" : "object"
+@INTERFACE "meta-file"
+
+// @CREATOR (string=NULL);
+
+@ "ok?" : bool Ok();
+@ "play" : void Play(wxDC!);
+@ "set-clipboard" : bool SetClipboard(int=0,int=0);
+
+@END
+
+#endif

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: MemoryDC.h,v 1.1 1996/01/10 14:55:43 markus Exp $
+ * $Id: MemoryDC.h,v 1.1.1.1 1997/12/22 17:28:48 mflatt Exp $
  *
  * Purpose: device context to draw into wxBitmaps
  *
@@ -35,16 +35,18 @@ class wxBitmap;
 class wxMemoryDC : public wxCanvasDC {
 DECLARE_DYNAMIC_CLASS(wxMemoryDC)
 public:
-    wxMemoryDC(void);
-    wxMemoryDC(wxCanvasDC *old_dc); // Create compatible DC
+    wxMemoryDC(Bool read_only = 0);
     ~wxMemoryDC(void);
 
     virtual void GetSize(float *w, float *h);
 
     void SelectObject(wxBitmap *bitmap);
+    wxBitmap* GetObject();
+
 private:
     /* MATTHEW: [4] */
     wxBitmap *selected; /* Need to keep pointer or it will be GC'ed */
+    Bool read_only;
 };
 
 #endif // MemoryDC_h

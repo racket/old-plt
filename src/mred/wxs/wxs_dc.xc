@@ -40,6 +40,22 @@ static wxColour* dcGetTextForeground(wxDC *dc)
   return c;
 }
 
+static bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int logicalFunc)
+{
+  if (bm->Ok()) {
+    return dc->Blit(x, y, bm->GetWidth(), bm->GetHeight(), bm, 0, 0, logicalFunc);
+  } else
+    return FALSE;
+}
+
+static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx, float dy, float dw, float dh, int logicalFunc)
+{
+  if (bm->Ok()) {
+    return dc->Blit(x, y, dw, dh, bm, dx, dy, logicalFunc);
+  } else
+    return FALSE;
+}
+
 @CLASSBASE wxDC "dc":"object"
 @INTERFACE "dc"
 
@@ -73,15 +89,11 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 #define CHECKTHISONE(x) 1
 #endif
 
-@MACRO CheckIcon[p] = if (!CHECKTHISONE(x<p>->Ok())) return scheme_void;
-
-@ Q "draw-icon" : void DrawIcon(wxIcon!,float,float); : : /CheckOk|CheckIcon[0]
-
-@ Q "blit" : bool Blit(float,float,float,float,wxCanvasDC!,float,float,SYM[logicalFunc]=wxCOPY); : : /CheckOkFalse|CheckFalse[4] : : rFALSE
+@ m "draw-bitmap-region" : bool DrawBitmapRegion(wxBitmap!,float,float,float,float,float,float,SYM[logicalFunc]=wxCOPY); : : /CheckOkFalse|CheckFalse[0] : : rFALSE <> with size
+@ m "draw-bitmap" : bool DrawBitmap(wxBitmap!,float,float,SYM[logicalFunc]=wxCOPY);
 
 @ Q "try-color" : void TryColour(wxColour!,wxColour!);
 
-// @ Q "set-map-mode" : void SetMapMode(SYM[mapMode]); : : /CheckOk
 @ Q "set-background-mode" : void SetBackgroundMode(SYM[solidity]); :  : /CheckOk
 @ Q "set-user-scale" : void SetUserScale(nnfloat,nnfloat); : : /CheckOk
 @ Q "set-device-origin" : void SetDeviceOrigin(float,float); : : /CheckOk
@@ -91,17 +103,11 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 @ q "get-brush" : wxBrush! GetBrush();
 @ q "get-font" : wxFont! GetFont();
 @ q "get-logical-function" : SYM[logicalFunc] GetLogicalFunction();
-// @ q "get-map-mode" : SYM[mapMode] GetMapMode();
 @ q "get-pen" : wxPen! GetPen();
 @ m "get-text-background" : wxColour! dcGetTextBackground();
 @ m "get-text-foreground" : wxColour! dcGetTextForeground();
 
 @ q "get-size" : void GetSize(float*,float*);
-
-// @ q "max-x" : float MaxX();
-// @ q "max-y" : float MaxY();
-// @ q "min-x" : float MinX();
-// @ q "min-y" : float MinY();
 
 @ q "ok?" : bool Ok();
 
@@ -112,11 +118,10 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 
 @END
 
-@CLASSBASE wxCanvasDC "canvas-dc":"dc"
+@CLASSBASE wxCanvasDC "pixel-dc":"dc"
+@INTERFACE "pixel-dc"
 
 @CLASSID wxTYPE_DC_CANVAS
-
-@CREATOR ();
 
 @ "get-pixel" : bool GetPixel(float,float,wxColour^)
 
@@ -127,14 +132,14 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 @END
 
 
-@CLASSBASE wxMemoryDC "memory-dc":"canvas-dc"
+@CLASSBASE wxMemoryDC "bitmap-dc":"pixel-dc"
 
 @CLASSID wxTYPE_DC_MEMORY
 
-@CREATOR (); <> no argument
-// @CREATOR (wxCanvasDC!); <> canvas-dc%
+@CREATOR ()
 
-@ "select-object" : void SelectObject(wxBitmap^);
+@ "set-bitmap" : void SelectObject(wxBitmap^);
+@ "get-bitmap" : wxBitmap^ GetObject();
 
 @END
 
@@ -183,6 +188,10 @@ public:
 @END
 
 
+
+
+#if 0
+
 #ifdef wx_msw
 
 class baseMetaFileDC : public wxMetaFileDC {
@@ -223,3 +232,4 @@ public:
 
 @END
 
+#endif

@@ -62,7 +62,7 @@ typedef struct GCBitmap {
   wxCanvas **canvasptr; /* weak reference */
   float x, y, w, h;
   float onx, ony, offx, offy;
-  wxMemoryDC *on, *off;
+  wxBitmap *on, *off;
   struct GCBitmap *next;
 } GCBitmap;
 
@@ -283,8 +283,8 @@ static Scheme_Object *wxSchemeRegisterCollectingBitmap(int n, Scheme_Object **a)
   gcbm->y = objscheme_unbundle_float(a[2], "register-collecting-blit");
   gcbm->w = objscheme_unbundle_float(a[3], "register-collecting-blit");
   gcbm->h = objscheme_unbundle_float(a[4], "register-collecting-blit");
-  gcbm->on = objscheme_unbundle_wxMemoryDC(a[5], "register-collecting-blit", 0);
-  gcbm->off = objscheme_unbundle_wxMemoryDC(a[6], "register-collecting-blit", 0);
+  gcbm->on = objscheme_unbundle_wxBitmap(a[5], "register-collecting-blit", 0);
+  gcbm->off = objscheme_unbundle_wxBitmap(a[6], "register-collecting-blit", 0);
   gcbm->onx = gcbm->ony = gcbm->offx = gcbm-> offy = 0;
   if (n > 7) {
     gcbm->onx = objscheme_unbundle_float(a[7], "register-collecting-blit");
@@ -1475,7 +1475,6 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
   objscheme_setup_wxPen(global_env);
   objscheme_setup_wxPenList(global_env);
   objscheme_setup_wxBitmap(global_env);
-  objscheme_setup_wxIcon(global_env);
   objscheme_setup_wxCursor(global_env);
   objscheme_setup_wxFont(global_env);
   objscheme_setup_wxFontList(global_env);
@@ -1538,8 +1537,10 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
   objscheme_setup_wxStyleDelta(global_env);
   objscheme_setup_wxStyle(global_env);
   objscheme_setup_wxStyleList(global_env);
+#if 0
   objscheme_setup_baseMetaFile(global_env);
   objscheme_setup_baseMetaFileDC(global_env);
+#endif
   objscheme_setup_wxTimer(global_env);
   objscheme_setup_wxClipboard(global_env);
   objscheme_setup_wxClipboardClient(global_env);

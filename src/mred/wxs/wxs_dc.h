@@ -7,8 +7,8 @@ extern Scheme_Object *objscheme_bundle_wxBrush(class wxBrush *);
 extern Scheme_Object *objscheme_bundle_wxBrush(class wxBrush *);
 extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
 extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
-extern class wxCanvasDC *objscheme_unbundle_wxCanvasDC(Scheme_Object *, const char *, int);
-extern class wxIcon *objscheme_unbundle_wxIcon(Scheme_Object *, const char *, int);
+extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
+extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 extern class wxFont *objscheme_unbundle_wxFont(Scheme_Object *, const char *, int);
 extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
 extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
@@ -30,6 +30,7 @@ void objscheme_setup_wxCanvasDC(void *env);
 int objscheme_istype_wxCanvasDC(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxCanvasDC(class wxCanvasDC *realobj);
 class wxCanvasDC *objscheme_unbundle_wxCanvasDC(Scheme_Object *obj, const char *where, int nullOK);
+extern Scheme_Object *objscheme_bundle_wxBitmap(class wxBitmap *);
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 #endif
 void objscheme_setup_wxMemoryDC(void *env);
@@ -49,11 +50,4 @@ void objscheme_setup_basePrinterDC(void *env);
 int objscheme_istype_basePrinterDC(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_basePrinterDC(class basePrinterDC *realobj);
 class basePrinterDC *objscheme_unbundle_basePrinterDC(Scheme_Object *obj, const char *where, int nullOK);
-extern Scheme_Object *objscheme_bundle_baseMetaFile(class baseMetaFile *);
-#endif
-void objscheme_setup_baseMetaFileDC(void *env);
-#ifndef WXS_SETUP_ONLY
-int objscheme_istype_baseMetaFileDC(Scheme_Object *obj, const char *stop, int nullOK);
-Scheme_Object *objscheme_bundle_baseMetaFileDC(class baseMetaFileDC *realobj);
-class baseMetaFileDC *objscheme_unbundle_baseMetaFileDC(Scheme_Object *obj, const char *where, int nullOK);
 #endif

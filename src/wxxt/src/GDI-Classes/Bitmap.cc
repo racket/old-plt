@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Bitmap.cc,v 1.4 1998/08/01 12:42:15 mflatt Exp $
+ * $Id: Bitmap.cc,v 1.5 1998/09/06 01:43:29 mflatt Exp $
  *
  * Purpose: bitmap classes to implement pixmaps, icons, and cursors
  *
@@ -51,7 +51,6 @@ enum {
 
 IMPLEMENT_DYNAMIC_CLASS(wxBitmap, wxObject)
 IMPLEMENT_DYNAMIC_CLASS(wxCursor, wxBitmap)
-IMPLEMENT_DYNAMIC_CLASS(wxIcon, wxBitmap)
 IMPLEMENT_DYNAMIC_CLASS(wxGDIList, wxList)
 
 class wxBitmap_Xintern {
@@ -92,7 +91,7 @@ wxBitmap::wxBitmap(void)
 }
 
 // create bitmap from bitmap-data
-wxBitmap::wxBitmap(char bits[], int w, int h, int d)
+wxBitmap::wxBitmap(char bits[], int w, int h)
 {
     __type = wxTYPE_BITMAP;
 
@@ -103,7 +102,7 @@ wxBitmap::wxBitmap(char bits[], int w, int h, int d)
     Xbitmap->type   = __BITMAP_NORMAL;
     Xbitmap->width  = w;
     Xbitmap->height = h;
-    Xbitmap->depth  = d = 1; // don't know what to do if depth > 1 !!!
+    Xbitmap->depth  = 1; // don't know what to do if depth > 1 !!!
     Xbitmap->x_hot  = 0;
     Xbitmap->y_hot  = 0;
 
@@ -181,7 +180,7 @@ wxBitmap::wxBitmap(char **data, wxItem *WXUNUSED(anItem)) // anItem used for MOT
 #endif
 
 // create bitmap of given size
-wxBitmap::wxBitmap(int w, int h, int d)
+wxBitmap::wxBitmap(int w, int h, Bool b_and_w)
 {
     __type = wxTYPE_BITMAP;
 
@@ -189,7 +188,7 @@ wxBitmap::wxBitmap(int w, int h, int d)
     cmap    = wxAPP_COLOURMAP;
 
     // use create method
-    (void)Create(w, h, d);
+    (void)Create(w, h, b_and_w ? 1 : -1);
 
 #if !WXGARBAGE_COLLECTION_ON
     wxTheBitmapList->Append(this);
@@ -521,7 +520,7 @@ wxCursor::wxCursor(char *name, long flags, int x, int y) : wxBitmap(name, flags)
 }
 
 wxCursor::wxCursor(char bits[], int width, int height /* , int x, int y */)
-    : wxBitmap(bits, width, height, 1)
+    : wxBitmap(bits, width, height)
 {
     __type = wxTYPE_CURSOR;
 
@@ -603,41 +602,6 @@ wxCursor::~wxCursor(void)
 }
 
 void* wxCursor::GetHandle(void) { return (Xcursor ? &(Xcursor->x_cursor) : NULL); }
-
-//-----------------------------------------------------------------------------
-// wxIcon
-//-----------------------------------------------------------------------------
-
-wxIcon::wxIcon(void) : wxBitmap()
-{
-    __type = wxTYPE_ICON;
-}
-
-wxIcon::wxIcon(char bits[], int width, int height, int depth)
-    : wxBitmap(bits, width, height, depth)
-{
-    __type = wxTYPE_ICON;
-}
-
-wxIcon::wxIcon(int width, int height, int depth)
-    : wxBitmap(width, height, depth)
-{
-    __type = wxTYPE_ICON;
-}
-
-#if USE_XPM
-wxIcon::wxIcon(char **data)
-    : wxBitmap(data)
-{
-    __type = wxTYPE_ICON;
-}
-#endif
-
-wxIcon::wxIcon(char *name, long flags)
-    : wxBitmap(name, flags)
-{
-    __type = wxTYPE_ICON;
-}
 
 //-----------------------------------------------------------------------------
 // GDIList

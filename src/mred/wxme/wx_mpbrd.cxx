@@ -1597,7 +1597,7 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
 #endif
 
     Draw(offscreen, -localx, -localy, localx, localy, w, h, show_caret);
-    dc->Blit(localx - dx, localy - dy, w, h, offscreen, 0, 0, wxCOPY);
+    dc->Blit(localx - dx, localy - dy, w, h, offscreen->GetObject(), 0, 0, wxCOPY);
 
 #ifndef EACH_BUFFER_OWN_OFFSCREEN
     offscreenInUse = FALSE;

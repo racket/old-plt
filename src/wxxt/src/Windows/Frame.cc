@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.7 1998/08/18 20:03:40 mflatt Exp $
+ * $Id: Frame.cc,v 1.8 1998/09/09 16:02:50 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -36,6 +36,7 @@
 #define  Uses_wxMenuBar
 #define  Uses_wxMessage
 #define  Uses_wxTypeTree
+#define  Uses_wxMemoryDC
 #include "wx.h"
 #define  Uses_ShellWidget
 #define  Uses_BoardWidget
@@ -346,10 +347,21 @@ wxMenuBar *wxFrame::GetMenuBar(void)
     return menubar;
 }
 
-void wxFrame::SetIcon(wxIcon *icon)
+void wxFrame::SetIcon(wxBitmap *icon)
 {
-    if (icon->Ok())
-	XtVaSetValues(X->frame, XtNiconPixmap, GETPIXMAP(icon), NULL);
+  if (icon->Ok()) {
+    wxBitmap *bm = new wxBitmap(icon->GetWidth(), icon->GetHeight());
+    if (bm->Ok()) {
+      wxMemoryDC *mdc = new wxMemoryDC();
+      mdc->SelectObject(bm);
+      mdc->Blit(0, 0, icon->GetWidth(), icon->GetHeight(), icon, 0, 0);
+      mdc->SelectObject(NULL);
+
+      XtVaSetValues(X->frame, XtNiconPixmap, GETPIXMAP(bm), NULL);
+      
+      frame_icon = bm;
+    }
+  }
 }
 
 void wxFrame::SetMenuBar(wxMenuBar *new_menubar)

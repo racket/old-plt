@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.h,v 1.3 1996/01/11 15:10:22 markus Exp $
+ * $Id: WindowDC.h,v 1.1.1.1 1997/12/22 17:28:49 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -97,7 +97,7 @@ public:
     ~wxWindowDC(void);
 
     // virtual methods, declared in wxDC
-    Bool  Blit(float xdest, float ydest, float w, float h, wxDC *src,
+    Bool  Blit(float xdest, float ydest, float w, float h, wxBitmap *bm,
 	       float xsrc, float ysrc, int rop=wxCOPY);
     Bool  CanGetTextExtent(void) { return TRUE; }
     Bool  CanDrawBitmap(void) { return TRUE; }
@@ -106,7 +106,6 @@ public:
     void  DestroyClippingRegion(void);
     void  DrawArc(float x1, float y1, float x2, float y2, float xc, float yc);
     void  DrawEllipse(float x, float y, float w, float h);
-    void  DrawIcon(wxIcon *icon, float x, float y);
     void  DrawLine(float x1, float y1, float x2, float y2);
     void  DrawLines(int n, wxPoint pts[], float xoff=0, float yoff=0);
     void  DrawLines(int n, wxIntPoint pts[], int xoff=0, int yoff=0);

@@ -227,6 +227,22 @@ static wxColour* dcGetTextForeground(wxDC *dc)
   return c;
 }
 
+static bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int logicalFunc)
+{
+  if (bm->Ok()) {
+    return dc->Blit(x, y, bm->GetWidth(), bm->GetHeight(), bm, 0, 0, logicalFunc);
+  } else
+    return FALSE;
+}
+
+static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx, float dy, float dw, float dh, int logicalFunc)
+{
+  if (bm->Ok()) {
+    return dc->Blit(x, y, dw, dh, bm, dx, dy, logicalFunc);
+  } else
+    return FALSE;
+}
+
 
 
 
@@ -357,15 +373,6 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
-// @ Q "set-map-mode" : void SetMapMode(SYM[mapMode]); : : /CheckOk
-
-// @ q "get-map-mode" : SYM[mapMode] GetMapMode();
-
-
-// @ q "max-x" : float MaxX();
-// @ q "max-y" : float MaxY();
-// @ q "min-x" : float MinX();
-// @ q "min-y" : float MinY();
 
 
 
@@ -709,35 +716,27 @@ static Scheme_Object *os_wxDCTryColour(Scheme_Object *obj, int n,  Scheme_Object
 }
 
 #pragma argsused
-static Scheme_Object *os_wxDCBlit(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxDCDrawBitmap(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   Bool r;
   objscheme_check_valid(obj);
-  float x0;
+  class wxBitmap* x0;
   float x1;
   float x2;
-  float x3;
-  class wxCanvasDC* x4;
-  float x5;
-  float x6;
-  int x7;
+  int x3;
 
   
-  x0 = objscheme_unbundle_float(p[0], "blit in dc<%>");
-  x1 = objscheme_unbundle_float(p[1], "blit in dc<%>");
-  x2 = objscheme_unbundle_float(p[2], "blit in dc<%>");
-  x3 = objscheme_unbundle_float(p[3], "blit in dc<%>");
-  x4 = objscheme_unbundle_wxCanvasDC(p[4], "blit in dc<%>", 0);
-  x5 = objscheme_unbundle_float(p[5], "blit in dc<%>");
-  x6 = objscheme_unbundle_float(p[6], "blit in dc<%>");
-  if (n > 7) {
-    x7 = unbundle_symset_logicalFunc(p[7], "blit in dc<%>");
+  x0 = objscheme_unbundle_wxBitmap(p[0], "draw-bitmap in dc<%>", 0);
+  x1 = objscheme_unbundle_float(p[1], "draw-bitmap in dc<%>");
+  x2 = objscheme_unbundle_float(p[2], "draw-bitmap in dc<%>");
+  if (n > 3) {
+    x3 = unbundle_symset_logicalFunc(p[3], "draw-bitmap in dc<%>");
   } else
-    x7 = wxCOPY;
+    x3 = wxCOPY;
 
-  DO_OK_CHECK(scheme_false)if (!x4->Ok()) return scheme_false;
-  r = ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->Blit(x0, x1, x2, x3, x4, x5, x6, x7);
+  
+  r = DrawBitmap(((wxDC *)((Scheme_Class_Object *)obj)->primdata), x0, x1, x2, x3);
 
   
   
@@ -745,25 +744,39 @@ static Scheme_Object *os_wxDCBlit(Scheme_Object *obj, int n,  Scheme_Object *p[]
 }
 
 #pragma argsused
-static Scheme_Object *os_wxDCDrawIcon(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxDCDrawBitmapRegion(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
   objscheme_check_valid(obj);
-  class wxIcon* x0;
+  class wxBitmap* x0;
   float x1;
   float x2;
+  float x3;
+  float x4;
+  float x5;
+  float x6;
+  int x7;
 
   
-  x0 = objscheme_unbundle_wxIcon(p[0], "draw-icon in dc<%>", 0);
-  x1 = objscheme_unbundle_float(p[1], "draw-icon in dc<%>");
-  x2 = objscheme_unbundle_float(p[2], "draw-icon in dc<%>");
+  x0 = objscheme_unbundle_wxBitmap(p[0], "draw-bitmap-region in dc<%>", 0);
+  x1 = objscheme_unbundle_float(p[1], "draw-bitmap-region in dc<%>");
+  x2 = objscheme_unbundle_float(p[2], "draw-bitmap-region in dc<%>");
+  x3 = objscheme_unbundle_float(p[3], "draw-bitmap-region in dc<%>");
+  x4 = objscheme_unbundle_float(p[4], "draw-bitmap-region in dc<%>");
+  x5 = objscheme_unbundle_float(p[5], "draw-bitmap-region in dc<%>");
+  x6 = objscheme_unbundle_float(p[6], "draw-bitmap-region in dc<%>");
+  if (n > 7) {
+    x7 = unbundle_symset_logicalFunc(p[7], "draw-bitmap-region in dc<%>");
+  } else
+    x7 = wxCOPY;
 
-  DO_OK_CHECK(scheme_void)if (!CHECKTHISONE(x0->Ok())) return scheme_void;
-  ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawIcon(x0, x1, x2);
+  DO_OK_CHECK(scheme_false)if (!x0->Ok()) return scheme_false;
+  r = DrawBitmapRegion(((wxDC *)((Scheme_Class_Object *)obj)->primdata), x0, x1, x2, x3, x4, x5, x6, x7);
 
   
   
-  return scheme_void;
+  return (r ? scheme_true : scheme_false);
 }
 
 #pragma argsused
@@ -1403,8 +1416,8 @@ if (os_wxDC_class) {
  scheme_add_method_w_arity(os_wxDC_class, "set-user-scale", os_wxDCSetUserScale, 2, 2);
  scheme_add_method_w_arity(os_wxDC_class, "set-background-mode", os_wxDCSetBackgroundMode, 1, 1);
  scheme_add_method_w_arity(os_wxDC_class, "try-color", os_wxDCTryColour, 2, 2);
- scheme_add_method_w_arity(os_wxDC_class, "blit", os_wxDCBlit, 7, 8);
- scheme_add_method_w_arity(os_wxDC_class, "draw-icon", os_wxDCDrawIcon, 3, 3);
+ scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap", os_wxDCDrawBitmap, 3, 4);
+ scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap-region", os_wxDCDrawBitmapRegion, 7, 8);
  scheme_add_method_w_arity(os_wxDC_class, "get-char-width", os_wxDCGetCharWidth, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-char-height", os_wxDCGetCharHeight, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-text-extent", os_wxDCGetTextExtent, 3, 7);
@@ -1497,23 +1510,15 @@ class wxDC *objscheme_unbundle_wxDC(Scheme_Object *obj, const char *where, int n
 
 
 
-
 class os_wxCanvasDC : public wxCanvasDC {
  public:
 
-  os_wxCanvasDC(Scheme_Object * obj);
   ~os_wxCanvasDC();
 };
 
 Scheme_Object *os_wxCanvasDC_class;
 
-os_wxCanvasDC::os_wxCanvasDC(Scheme_Object * o)
-: wxCanvasDC()
-{
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
-}
+Scheme_Object *os_wxCanvasDC_interface;
 
 os_wxCanvasDC::~os_wxCanvasDC()
 {
@@ -1530,9 +1535,9 @@ static Scheme_Object *os_wxCanvasDCSetPixel(Scheme_Object *obj, int n,  Scheme_O
   class wxColour* x2;
 
   
-  x0 = objscheme_unbundle_float(p[0], "set-pixel in canvas-dc%");
-  x1 = objscheme_unbundle_float(p[1], "set-pixel in canvas-dc%");
-  x2 = objscheme_unbundle_wxColour(p[2], "set-pixel in canvas-dc%", 1);
+  x0 = objscheme_unbundle_float(p[0], "set-pixel in pixel-dc<%>");
+  x1 = objscheme_unbundle_float(p[1], "set-pixel in pixel-dc<%>");
+  x2 = objscheme_unbundle_wxColour(p[2], "set-pixel in pixel-dc<%>", 1);
 
   
   ((wxCanvasDC *)((Scheme_Class_Object *)obj)->primdata)->SetPixel(x0, x1, x2);
@@ -1585,9 +1590,9 @@ static Scheme_Object *os_wxCanvasDCGetPixel(Scheme_Object *obj, int n,  Scheme_O
   class wxColour* x2;
 
   
-  x0 = objscheme_unbundle_float(p[0], "get-pixel in canvas-dc%");
-  x1 = objscheme_unbundle_float(p[1], "get-pixel in canvas-dc%");
-  x2 = objscheme_unbundle_wxColour(p[2], "get-pixel in canvas-dc%", 1);
+  x0 = objscheme_unbundle_float(p[0], "get-pixel in pixel-dc<%>");
+  x1 = objscheme_unbundle_float(p[1], "get-pixel in pixel-dc<%>");
+  x2 = objscheme_unbundle_wxColour(p[2], "get-pixel in pixel-dc<%>", 1);
 
   
   r = ((wxCanvasDC *)((Scheme_Class_Object *)obj)->primdata)->GetPixel(x0, x1, x2);
@@ -1597,31 +1602,13 @@ static Scheme_Object *os_wxCanvasDCGetPixel(Scheme_Object *obj, int n,  Scheme_O
   return (r ? scheme_true : scheme_false);
 }
 
-#pragma argsused
-static Scheme_Object *os_wxCanvasDC_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  os_wxCanvasDC *realobj;
-
-  
-  if (n != 0) 
-    scheme_wrong_count("initialization in canvas-dc%", 0, 0, n, p);
-
-  
-  realobj = new os_wxCanvasDC(obj);
-  
-  
-  ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
-  ((Scheme_Class_Object *)obj)->primflag = 1;
-  return obj;
-}
-
 void objscheme_setup_wxCanvasDC(void *env)
 {
 if (os_wxCanvasDC_class) {
-    objscheme_add_global_class(os_wxCanvasDC_class, "canvas-dc%", env);
+    objscheme_add_global_class(os_wxCanvasDC_class, "pixel-dc%", env);
+    objscheme_add_global_interface(os_wxCanvasDC_interface, "pixel-dc" "<%>", env);
 } else {
-  os_wxCanvasDC_class = objscheme_def_prim_class(env, "canvas-dc%", "dc%", os_wxCanvasDC_ConstructScheme, 4);
+  os_wxCanvasDC_class = objscheme_def_prim_class(env, "pixel-dc%", "dc%", NULL, 4);
 
  scheme_add_method_w_arity(os_wxCanvasDC_class, "set-pixel", os_wxCanvasDCSetPixel, 3, 3);
  scheme_add_method_w_arity(os_wxCanvasDC_class, "end-set-pixel", os_wxCanvasDCEndSetPixel, 0, 0);
@@ -1631,6 +1618,9 @@ if (os_wxCanvasDC_class) {
 
   scheme_made_class(os_wxCanvasDC_class);
 
+  os_wxCanvasDC_interface = scheme_class_to_interface(os_wxCanvasDC_class, "pixel-dc" "<%>");
+
+  objscheme_add_global_interface(os_wxCanvasDC_interface, "pixel-dc" "<%>", env);
   objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxCanvasDC, wxTYPE_DC_CANVAS);
 
 }
@@ -1645,7 +1635,7 @@ int objscheme_istype_wxCanvasDC(Scheme_Object *obj, const char *stop, int nullOK
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "canvas-dc% object or " XC_NULL_STR: "canvas-dc% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "pixel-dc% object or " XC_NULL_STR: "pixel-dc% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1689,7 +1679,6 @@ class wxCanvasDC *objscheme_unbundle_wxCanvasDC(Scheme_Object *obj, const char *
 
 
 
-// @CREATOR (wxCanvasDC!); <> canvas-dc%
 
 
 class os_wxMemoryDC : public wxMemoryDC {
@@ -1715,6 +1704,23 @@ os_wxMemoryDC::~os_wxMemoryDC()
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMemoryDCGetObject(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  class wxBitmap* r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxMemoryDC *)((Scheme_Class_Object *)obj)->primdata)->GetObject();
+
+  
+  
+  return objscheme_bundle_wxBitmap(r);
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMemoryDCSelectObject(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1722,7 +1728,7 @@ static Scheme_Object *os_wxMemoryDCSelectObject(Scheme_Object *obj, int n,  Sche
   class wxBitmap* x0;
 
   
-  x0 = objscheme_unbundle_wxBitmap(p[0], "select-object in memory-dc%", 1);
+  x0 = objscheme_unbundle_wxBitmap(p[0], "set-bitmap in bitmap-dc%", 1);
 
   
   ((wxMemoryDC *)((Scheme_Class_Object *)obj)->primdata)->SelectObject(x0);
@@ -1739,7 +1745,7 @@ static Scheme_Object *os_wxMemoryDC_ConstructScheme(Scheme_Object *obj, int n,  
 
   
   if (n != 0) 
-    scheme_wrong_count("initialization in memory-dc%", 0, 0, n, p);
+    scheme_wrong_count("initialization in bitmap-dc%", 0, 0, n, p);
 
   
   realobj = new os_wxMemoryDC(obj);
@@ -1754,11 +1760,12 @@ static Scheme_Object *os_wxMemoryDC_ConstructScheme(Scheme_Object *obj, int n,  
 void objscheme_setup_wxMemoryDC(void *env)
 {
 if (os_wxMemoryDC_class) {
-    objscheme_add_global_class(os_wxMemoryDC_class, "memory-dc%", env);
+    objscheme_add_global_class(os_wxMemoryDC_class, "bitmap-dc%", env);
 } else {
-  os_wxMemoryDC_class = objscheme_def_prim_class(env, "memory-dc%", "canvas-dc%", os_wxMemoryDC_ConstructScheme, 1);
+  os_wxMemoryDC_class = objscheme_def_prim_class(env, "bitmap-dc%", "pixel-dc%", os_wxMemoryDC_ConstructScheme, 2);
 
- scheme_add_method_w_arity(os_wxMemoryDC_class, "select-object", os_wxMemoryDCSelectObject, 1, 1);
+ scheme_add_method_w_arity(os_wxMemoryDC_class, "get-bitmap", os_wxMemoryDCGetObject, 0, 0);
+ scheme_add_method_w_arity(os_wxMemoryDC_class, "set-bitmap", os_wxMemoryDCSelectObject, 1, 1);
 
 
   scheme_made_class(os_wxMemoryDC_class);
@@ -1777,7 +1784,7 @@ int objscheme_istype_wxMemoryDC(Scheme_Object *obj, const char *stop, int nullOK
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "memory-dc% object or " XC_NULL_STR: "memory-dc% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "bitmap-dc% object or " XC_NULL_STR: "bitmap-dc% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -2072,167 +2079,5 @@ class basePrinterDC *objscheme_unbundle_basePrinterDC(Scheme_Object *obj, const 
 
 
 
-#ifdef wx_msw
-
-class baseMetaFileDC : public wxMetaFileDC {
-public:
-  baseMetaFileDC(char *s = NULL);
-
-  baseMetaFile* baseClose() { return (baseMetaFile *)Close(); }
-};
-
-baseMetaFileDC::baseMetaFileDC(char *s)
-    : wxMetaFileDC(s)
-{
-}
-
-#else
-
-class baseMetaFileDC : public wxObject 
-{
-public:
-  baseMetaFileDC(char * = NULL) {
-    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		     "%s", 
-		     METHODNAME("meta-file-dc%","initialization")": only supported for Windows");
-  }
-
-  baseMetaFile* baseClose() { return NULL; }
-};
-
-#endif
-
-
-
-
-
-class os_baseMetaFileDC : public baseMetaFileDC {
- public:
-
-  os_baseMetaFileDC(Scheme_Object * obj, string x0 = NULL);
-  ~os_baseMetaFileDC();
-};
-
-Scheme_Object *os_baseMetaFileDC_class;
-
-os_baseMetaFileDC::os_baseMetaFileDC(Scheme_Object * o, string x0)
-: baseMetaFileDC(x0)
-{
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
-}
-
-os_baseMetaFileDC::~os_baseMetaFileDC()
-{
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
-}
-
-#pragma argsused
-static Scheme_Object *os_baseMetaFileDCbaseClose(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  class baseMetaFile* r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((baseMetaFileDC *)((Scheme_Class_Object *)obj)->primdata)->baseClose();
-
-  
-  
-  return objscheme_bundle_baseMetaFile(r);
-}
-
-#pragma argsused
-static Scheme_Object *os_baseMetaFileDC_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  os_baseMetaFileDC *realobj;
-  string x0;
-
-  
-  if ((n > 1)) 
-    scheme_wrong_count("initialization in meta-file-dc%", 0, 1, n, p);
-  if (n > 0) {
-    x0 = (string)objscheme_unbundle_string(p[0], "initialization in meta-file-dc%");
-  } else
-    x0 = NULL;
-
-  
-  realobj = new os_baseMetaFileDC(obj, x0);
-  
-  
-  ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
-  ((Scheme_Class_Object *)obj)->primflag = 1;
-  return obj;
-}
-
-void objscheme_setup_baseMetaFileDC(void *env)
-{
-if (os_baseMetaFileDC_class) {
-    objscheme_add_global_class(os_baseMetaFileDC_class, "meta-file-dc%", env);
-} else {
-  os_baseMetaFileDC_class = objscheme_def_prim_class(env, "meta-file-dc%", "dc%", os_baseMetaFileDC_ConstructScheme, 1);
-
- scheme_add_method_w_arity(os_baseMetaFileDC_class, "close", os_baseMetaFileDCbaseClose, 0, 0);
-
-
-  scheme_made_class(os_baseMetaFileDC_class);
-
-  objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_baseMetaFileDC, wxTYPE_DC_METAFILE);
-
-}
-}
-
-int objscheme_istype_baseMetaFileDC(Scheme_Object *obj, const char *stop, int nullOK)
-{
-  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
-      && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_baseMetaFileDC_class))
-    return 1;
-  else {
-    if (!stop)
-       return 0;
-    scheme_wrong_type(stop, nullOK ? "meta-file-dc% object or " XC_NULL_STR: "meta-file-dc% object", -1, 0, &obj);
-    return 0;
-  }
-}
-
-Scheme_Object *objscheme_bundle_baseMetaFileDC(class baseMetaFileDC *realobj)
-{
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
-
-  if (!realobj) return XC_SCHEME_NULL;
-
-  if (realobj->__gc_external)
-    return (Scheme_Object *)realobj->__gc_external;
-  if ((realobj->__type != wxTYPE_DC_METAFILE) && (sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
-    return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_baseMetaFileDC_class);
-
-  obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
-  obj->primflag = 0;
-
-  realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
-  return (Scheme_Object *)obj;
-}
-
-class baseMetaFileDC *objscheme_unbundle_baseMetaFileDC(Scheme_Object *obj, const char *where, int nullOK)
-{
-  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
-
-  (void)objscheme_istype_baseMetaFileDC(obj, where, nullOK);
-  Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
-  if (o->primflag)
-    return (os_baseMetaFileDC *)o->primdata;
-  else
-    return (baseMetaFileDC *)o->primdata;
-}
 
 

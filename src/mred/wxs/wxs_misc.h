@@ -1,11 +1,4 @@
 #ifndef WXS_SETUP_ONLY
-extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
-#endif
-void objscheme_setup_baseMetaFile(void *env);
-#ifndef WXS_SETUP_ONLY
-int objscheme_istype_baseMetaFile(Scheme_Object *obj, const char *stop, int nullOK);
-Scheme_Object *objscheme_bundle_baseMetaFile(class baseMetaFile *realobj);
-class baseMetaFile *objscheme_unbundle_baseMetaFile(Scheme_Object *obj, const char *where, int nullOK);
 #endif
 void objscheme_setup_wxTimer(void *env);
 #ifndef WXS_SETUP_ONLY

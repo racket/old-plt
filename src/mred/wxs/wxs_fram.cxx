@@ -852,10 +852,10 @@ static Scheme_Object *os_wxFrameSetIcon(Scheme_Object *obj, int n,  Scheme_Objec
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  class wxIcon* x0;
+  class wxBitmap* x0;
 
   
-  x0 = objscheme_unbundle_wxIcon(p[0], "set-icon in frame%", 0);
+  x0 = objscheme_unbundle_wxBitmap(p[0], "set-icon in frame%", 0);
 
   if (x0 && !x0->Ok()) return scheme_void;
   ((wxFrame *)((Scheme_Class_Object *)obj)->primdata)->SetIcon(x0);

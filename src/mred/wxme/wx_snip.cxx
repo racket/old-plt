@@ -1197,7 +1197,7 @@ void wxImageSnip::Draw(wxDC *dc, float x, float y,
   }
 
 
-  dc->Blit(x, y, w, h, offscreen, 0, 0, wxCOPY);
+  dc->Blit(x, y, w, h, offscreen->GetObject(), 0, 0, wxCOPY);
   return;
 }
 

@@ -209,7 +209,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 #define l_EXTRA 0
 #define l_TERMINATE 
 #define l_COPY l_COPYDEST=l_COPYSRC;
-#define l_OKTEST if (!((l_COPYDEST)->Ok())) scheme_arg_mismatch(OKTESTWHERE, "bad bitmap", SCHEME_CAR(l));
+#define l_OKTEST if (!((l_COPYDEST)->Ok())) scheme_arg_mismatch(OKTESTWHERE, "bad bitmap: ", SCHEME_CAR(l));
 #define l_INTTYPE int
 
 #define l_TYPE wxBitmap

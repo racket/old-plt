@@ -1730,9 +1730,6 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
     admin->Resized(FALSE);
 }
 
-static wxMemoryDC *autowrapMemDC = NULL;
-static wxBitmap *lastSetAWMDC = NULL;
-
 wxBitmap *wxMediaEdit::SetAutowrapBitmap(wxBitmap *bm)
 {
   wxBitmap *old;
@@ -1752,11 +1749,6 @@ wxBitmap *wxMediaEdit::SetAutowrapBitmap(wxBitmap *bm)
 
   if (maxWidth > 0)
     SetMaxWidth(maxWidth + oldWidth);
-
-  if (old && PTREQ(old, lastSetAWMDC)) {
-    autowrapMemDC->SelectObject(NULL);
-    lastSetAWMDC = NULL;
-  }
 
   return old;
 }
@@ -1851,7 +1843,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 #if ALLOW_X_STYLE_SELECTION
     outlineNonownerBrush = new wxBrush();
     outlineNonownerBrush->SetColour("BLACK");
-    outlineNonownerBrush->SetStipple(new wxBitmap(xpattern, 16, 16, 1));
+    outlineNonownerBrush->SetStipple(new wxBitmap(xpattern, 16, 16));
     outlineNonownerBrush->SetStyle(wxSTIPPLE);
 #endif
     clearBrush = wxTheBrushList->FindOrCreateBrush("WHITE", wxSOLID);
@@ -2015,14 +2007,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 	&& (rightx >= maxWidth) && autoWrapBitmap->Ok()) {
       int h;
 
-      if (PTRNE(autoWrapBitmap, lastSetAWMDC)) {
-	if (!autowrapMemDC)
-	  autowrapMemDC = new wxMemoryDC;
-	autowrapMemDC->SelectObject(autoWrapBitmap);
-	lastSetAWMDC = autoWrapBitmap;
-      }
-
-      if (autowrapMemDC->Ok()) {
+      if (autoWrapBitmap->Ok()) {
 	h = (int)autoWrapBitmap->GetHeight();
 	if (h > line->bottombase)
 	  h = (int)line->bottombase;
@@ -2033,7 +2018,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 
 	dc->Blit(maxWidth + dx - 1, bottombase - h + dy, 
 		 wrapBitmapWidth, h,
-		 autowrapMemDC, 0, 0,
+		 autoWrapBitmap, 0, 0,
 		 wxCOLOR);
       }
     }
@@ -2396,7 +2381,7 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
       lastDrawXSel = show_xsel;
       drawCachedInBitmap = TRUE;
     }
-    dc->Blit(left - x, top - y, width, height, offscreen, 0, 0, wxCOPY);
+    dc->Blit(left - x, top - y, width, height, offscreen->GetObject(), 0, 0, wxCOPY);
 #ifndef EACH_BUFFER_OWN_OFFSCREEN
     offscreenInUse = FALSE;
     lastUsedOffscreen = this;

@@ -2119,8 +2119,8 @@ wxMediaEdit::InvalidateBitmapCache(x0, x1, x2, x3);
   
   p[0] = scheme_make_double(x0);
   p[1] = scheme_make_double(x1);
-  p[2] = objscheme_bundle_nonnegative_symbol_float(x2, "width");
-  p[3] = objscheme_bundle_nonnegative_symbol_float(x3, "height");
+  p[2] = objscheme_bundle_nonnegative_symbol_float(x2, "end");
+  p[3] = objscheme_bundle_nonnegative_symbol_float(x3, "end");
   
 
   v = scheme_apply(method, 4, p);
@@ -5978,11 +5978,11 @@ static Scheme_Object *os_wxMediaEditInvalidateBitmapCache(Scheme_Object *obj, in
   } else
     x1 = 0.0;
   if (n > 2) {
-    x2 = objscheme_unbundle_nonnegative_symbol_float(p[2], "width", "invalidate-bitmap-cache in text%");
+    x2 = objscheme_unbundle_nonnegative_symbol_float(p[2], "end", "invalidate-bitmap-cache in text%");
   } else
     x2 = -1.0;
   if (n > 3) {
-    x3 = objscheme_unbundle_nonnegative_symbol_float(p[3], "height", "invalidate-bitmap-cache in text%");
+    x3 = objscheme_unbundle_nonnegative_symbol_float(p[3], "end", "invalidate-bitmap-cache in text%");
   } else
     x3 = -1.0;
 

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.4 1998/08/05 23:56:31 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.5 1998/09/09 16:02:49 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -147,25 +147,20 @@ wxWindowDC::~wxWindowDC(void)
 // drawing methods
 //-----------------------------------------------------------------------------
 
-Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxDC *_src,
+Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 		      float xsrc, float ysrc, int rop)
 {
     if (!DRAWABLE) // ensure that a drawable has been associated
-	return FALSE;
+      return FALSE;
+    
+    if (!src->Ok())
+      return FALSE;
 
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    wxWindowDC *src;
-    
-    switch (_src->device) {
-    case wxDEVICE_WINDOW: // I can only handle CanvasDC and its children
-    case wxDEVICE_MEMORY:
-	src = (wxWindowDC*)_src;
-	break;
-    default:
-	return FALSE;
-    }
+    xsrc = floor(xsrc);
+    ysrc = floor(ysrc);
 
     Bool retval = FALSE;
     Bool resetPen;
@@ -193,29 +188,29 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxDC *_src,
 
     // until I know how to scale bitmaps
     int scaled_width
-	= (signed)src->X->width  < XLOG2DEVREL(w) ? src->X->width  : XLOG2DEVREL(w);
+	= src->GetWidth()  < XLOG2DEVREL(w) ? src->GetWidth()  : XLOG2DEVREL(w);
     int scaled_height
-	= (signed)src->X->height < YLOG2DEVREL(h) ? src->X->height : YLOG2DEVREL(h);
+	= src->GetHeight() < YLOG2DEVREL(h) ? src->GetHeight() : YLOG2DEVREL(h);
 
-    if (DRAWABLE && src->X->drawable) {
+    if (DRAWABLE && src->Ok()) {
 	// Check if we're copying from a mono bitmap
         retval = TRUE;
-	if (src->X->depth == 1) {
+	if (src->GetDepth() == 1) {
 	    int old_logical_fkt = current_logical_fkt;
 	    if (current_logical_fkt != rop)
 		SetLogicalFunction(rop);
-	    XCopyPlane(DPY, src->X->drawable, DRAWABLE, PEN_GC,
-		       src->XLOG2DEV(xsrc), src->YLOG2DEV(ysrc),
+	    XCopyPlane(DPY, GETPIXMAP(src), DRAWABLE, PEN_GC,
+		       xsrc, ysrc,
 		       scaled_width, scaled_height,
 		       XLOG2DEV(xdest), YLOG2DEV(ydest), 1);
 	    if (current_logical_fkt != old_logical_fkt)
 		SetLogicalFunction(old_logical_fkt);
-	} else if (src->X->depth == DEPTH) {
+	} else if (src->GetDepth() == DEPTH) {
 	    int old_logical_fkt = current_logical_fkt;
 	    if (current_logical_fkt != rop)
 		SetLogicalFunction(rop);
-	    XCopyArea(DPY, src->X->drawable, DRAWABLE, PEN_GC,
-		      src->XLOG2DEV(xsrc), src->YLOG2DEV(ysrc),
+	    XCopyArea(DPY, GETPIXMAP(src), DRAWABLE, PEN_GC,
+		      xsrc, ysrc,
 		      scaled_width, scaled_height,
 		      XLOG2DEV(xdest), YLOG2DEV(ydest));
 	    if (current_logical_fkt != old_logical_fkt)
@@ -360,29 +355,6 @@ void wxWindowDC::DrawEllipse(float x, float y, float w, float h)
 		 XLOG2DEVREL(w) - WX_GC_CF, YLOG2DEVREL(h) - WX_GC_CF, 0, 64*360);
     CalcBoundingBox(x, y);
     CalcBoundingBox(x+w, y+h);
-}
-
-void wxWindowDC::DrawIcon(wxIcon *icon, float x, float y)
-{
-    if (!DRAWABLE) // ensure that a drawable has been associated
-	return;
-
-    /* MATTHEW: [5] Implement GetPixel */
-    FreeGetPixelCache();
-    
-    if (auto_setting && current_pen)
-	SetPen(current_pen);
-    if (icon->Ok() && current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-	if (icon->GetDepth() == 1) {
-	    XCopyPlane(DPY, GETPIXMAP(icon), DRAWABLE, PEN_GC,
-		       0, 0, icon->GetWidth(), icon->GetHeight(),
-		       XLOG2DEV(x), YLOG2DEV(y), 1);
-	} else if (icon->GetDepth() == (signed)DEPTH) {
-	    XCopyArea(DPY, GETPIXMAP(icon), DRAWABLE, PEN_GC,
-		       0, 0, icon->GetWidth(), icon->GetHeight(),
-		       XLOG2DEV(x), YLOG2DEV(y));
-	}
-    CalcBoundingBox(x, y);
 }
 
 void wxWindowDC::DrawLine(float x1, float y1, float x2, float y2)

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.h,v 1.1.1.1 1997/12/22 17:28:49 mflatt Exp $
+ * $Id: DC.h,v 1.2 1998/06/07 20:16:23 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -69,7 +69,6 @@ class wxCanvas;
 class wxColour;
 class wxColourMap;
 class wxFont;
-class wxIcon;
 class wxList;
 class wxPen;
 
@@ -79,7 +78,7 @@ public:
     wxDC(void);
 
     // pure virtual methods, must be implemented for all DCs
-    virtual Bool  Blit(float xdest, float ydest, float w, float h, wxDC *src,
+    virtual Bool  Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 		       float xsrc, float ysrc, int rop=wxCOPY) = 0;
     virtual Bool  CanGetTextExtent(void) = 0;
     virtual Bool  CanDrawBitmap(void) = 0;
@@ -89,7 +88,6 @@ public:
     virtual void  DrawArc(float x1, float y1, float x2, float y2,
 			  float xc, float yc) = 0;
     virtual void  DrawEllipse(float x, float y, float w, float h) = 0;
-    virtual void  DrawIcon(wxIcon *icon, float x, float y) = 0;
     virtual void  DrawLine(float x1, float y1, float x2, float y2) = 0;
     virtual void  DrawLines(int n, wxPoint pts[],
 			    float xoff=0, float yoff=0) = 0;

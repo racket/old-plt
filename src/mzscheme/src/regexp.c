@@ -43,6 +43,7 @@
 #include <string.h>
 
 typedef int rxpos;
+#define BIGGEST_RXPOS 0x7FFFFFFF
 
 typedef struct regexp {
   Scheme_Type type;
@@ -846,21 +847,6 @@ static rxpos l_strchr(char *str, rxpos a, int l, int c)
   return -1;
 }
 
-static void fixup_offsets(rxpos *startp, rxpos *endp, int nsubexp, rxpos dropped)
-{
-  rxpos i;
-
-  /* The offsets will be returned to the user,
-     not used to index *stringp, so increment
-     by the number of characters we'd already dropped: */
-  for (i = 0; i < nsubexp; i++) {
-    if (startp[i] != -1) {
-      startp[i] += dropped;
-      endp[i] += dropped;
-    }
-  }
-}
-
 /*
  * regexec and friends
  */
@@ -878,7 +864,7 @@ typedef struct Regwork {
   rxpos bol;		  /* Beginning of input, for ^ check. */
   rxpos *startp;	  /* Pointer to startp array. */
   rxpos *endp;		  /* Ditto for endp. */
-  rxpos peekskip;
+  Scheme_Object *peekskip;
 } Regwork;
 
 /*
@@ -886,7 +872,7 @@ typedef struct Regwork {
  */
 STATIC int regtry(regexp *, char *, int, int, rxpos *, rxpos *, Regwork *rw, int);
 STATIC int regtry_port(regexp *, Scheme_Object *, rxpos *, rxpos *, 
-		       char **, rxpos *, rxpos *, rxpos, rxpos, rxpos, int);
+		       char **, rxpos *, rxpos *, rxpos, Scheme_Object*, Scheme_Object*, int);
 STATIC int regmatch(Regwork *rw, rxpos);
 STATIC int regrepeat(Regwork *rw, rxpos);
 
@@ -903,14 +889,20 @@ STATIC char *regprop();
    */
 static int
 regexec(const char *who,
-	regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, rxpos *endp,
-	Scheme_Object *port, char **stringp, int peek, int get_offsets,
-	Scheme_Object *discard_oport)
-     /* stringp, peek, and get_offsets used only with port */
+	regexp *prog, char *string, 
+	/* used only for strings: */
+	int stringpos, int stringlen, 
+	/* Always used: */
+	rxpos *startp, rxpos *endp,
+	Scheme_Object *port, 
+	/* Used only when port is non-NULL: */
+	char **stringp, int peek, int get_offsets,
+	Scheme_Object *discard_oport, 
+	Scheme_Object *portstart, Scheme_Object *portend, Scheme_Object **_dropped)
 {
   int spos;
   int slen;
-  rxpos dropped = 0, peekskip = 0; /* used for ports, only */
+  Scheme_Object *dropped = NULL, *peekskip = NULL; /* used for ports, only */
  
   /* Check validity of program. */
   if (UCHARAT(prog->program) != MAGIC) {
@@ -939,38 +931,48 @@ regexec(const char *who,
       return 0;
   }
 
-  if (port && stringpos) {
+  if (port) {
     if (peek) {
-      peekskip = stringpos;
-      dropped = stringpos;
-      if (stringlen + dropped > 0)
-	stringlen += dropped; /* because it's subtracted later */
-      stringpos = 0;
+      peekskip = portstart;
+      dropped = portstart;
     } else {
-      /* In non-peek port mode, skip over stringpos chars: */
-      char *drain;
-      long amt = stringpos, got;
+      /* In non-peek port mode, skip over portstart chars: */
+      long amt, got;
 
-      if (amt > 4096)
+      if (SCHEME_INTP(startpos)) {
+	amt = SCHEME_INT_VAL(stringpos);
+	if (amt > 4096)
+	  amt = 4096;
+      } else
 	amt = 4096;
 
-      drain = (char *)scheme_malloc_atomic(amt);
-      do {
-	got = scheme_get_string(who, port, drain, 0, amt, 0, 0, 0);
-	if (got != EOF) {
-	  if (discard_oport)
-	    scheme_put_string(who, discard_oport, drain, 0, got, 0);
-	  dropped += amt;
-	  if (amt > (stringpos - dropped))
-	    amt = stringpos - dropped;
-	}
-      } while ((got != EOF) && (dropped < stringpos));
-      if (stringpos > dropped)
-	return 0; /* can't skip far enough, so it fails */
-      stringpos = 0;
-      peekskip = 0;
-      if (stringlen + dropped > 0)
-	stringlen += dropped; /* because it's subtracted later */
+      dropped = scheme_make_integer(0);
+	
+      if (amt) {
+	char *drain;
+
+	drain = (char *)scheme_malloc_atomic(amt);
+
+	do {
+	  got = scheme_get_string(who, port, drain, 0, amt, 0, 0, 0);
+	  if (got != EOF) {
+	    Scheme_Object *delta;
+	    
+	    if (discard_oport)
+	      scheme_put_string(who, discard_oport, drain, 0, got, 0);
+	    
+	    dropped = scheme_bin_plus(dropped, scheme_make_integer(amt));
+	    delta = scheme_bin_minus(startpos, dropped);
+	    if (scheme_bin_gt(scheme_make_integer(amt), delta))
+	      amt = SCHEME_INT_VAL(delta);
+	  }
+	} while ((got != EOF) && amt);
+	if (amt)
+	  return 0; /* can't skip far enough, so it fails */
+      }
+
+      if (portend)
+	portend = scheme_bin_minus(portend, dropped);
     }
   }
 
@@ -980,7 +982,7 @@ regexec(const char *who,
       rxpos len = 0, space = 0;
 
       *stringp = NULL;
-      if (regtry_port(prog, port, startp, endp, stringp, &len, &space, stringpos, stringlen - dropped, peekskip, 1)) {
+      if (regtry_port(prog, port, startp, endp, stringp, &len, &space, 0, portend, peekskip, 1)) {
 	if (!peek) {
 	  /* Need to consume matched chars: */
 	  char *drain;
@@ -997,8 +999,7 @@ regexec(const char *who,
 	  got = scheme_get_string(who, port, drain, 0, *endp, 0, 0, 0);
 	}
 
-	if (dropped && get_offsets)
-	  fixup_offsets(startp, endp, prog->nsubexp, dropped);
+	*_dropped = dropped;
 
 	return 1;
       } else {
@@ -1037,18 +1038,25 @@ regexec(const char *who,
       *stringp = NULL;
 
       do {
-	if (!peek && (skip >= REGPORT_FLUSH_THRESHOLD)) {
-	  if (discard_oport)
-	    scheme_put_string(who, discard_oport, *stringp, 0, skip, 0);
+	if (skip >= REGPORT_FLUSH_THRESHOLD) {
+	  if (!peek) {
+	    if (discard_oport)
+	      scheme_put_string(who, discard_oport, *stringp, 0, skip, 0);
+	    
+	    scheme_get_string(who, port, *stringp, 0, skip, 0, 0, 0);
 
-	  scheme_get_string(who, port, *stringp, 0, skip, 0, 0, 0);
+	    if (portend)
+	      portend = scheme_bin_minus(portend, scheme_make_integer(skip));
+	  } else {
+	    peekskip = scheme_bin_plus(peekskip, scheme_make_integer(skip));
+	  }
 
 	  len -= skip;
 	  memmove(*stringp, *stringp + skip, len);
 	  skip = 0;
 	}
 
-	if (regtry_port(prog, port, startp, endp, stringp, &len, &space, skip, stringlen - dropped, peekskip, !space)) {
+	if (regtry_port(prog, port, startp, endp, stringp, &len, &space, skip, portend, peekskip, !space)) {
 	  if (!peek) {
 	    char *drain;
 
@@ -1064,8 +1072,7 @@ regexec(const char *who,
 	    scheme_get_string(who, port, drain, 0, *endp, 0, 0, 0);
 	  }
 
-	  if (dropped && get_offsets)
-	    fixup_offsets(startp, endp, prog->nsubexp, dropped);
+	  *_dropped = dropped;
 
 	  return 1;
 	}
@@ -1142,15 +1149,19 @@ regtry(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, 
    */
 static int			/* 0 failure, 1 success */
 regtry_port(regexp *prog, Scheme_Object *port, rxpos *startp, rxpos *endp, 
-	    char **work_string, rxpos *len, rxpos *size, rxpos skip, rxpos maxlen,
-	    rxpos peekskip, int atstart)
+	    char **work_string, rxpos *len, rxpos *size, rxpos skip, 
+	    Scheme_Object *maxlen, Scheme_Object *peekskip, 
+	    int atstart)
 {
   int m;
   Regwork rw;
 
   rw.port = port;
   rw.instr_size = *size;
-  rw.input_maxend = maxlen;
+  if (maxlen && SCHEME_INTP(maxlen))
+    rw.input_maxend = SCHEME_INT_VAL(maxlen);
+  else
+    rw.input_maxend = BIGGEST_RXPOS;
   rw.peekskip = peekskip;
 
   m = regtry(prog, *work_string, skip, *len - skip, startp, endp, &rw, atstart);
@@ -1168,6 +1179,7 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
      /* Called when we're about to look past our read-ahead */
 {
   long got;
+  Scheme_Object *peekskip;
 
   /* limit reading by rw->input_maxend: */
   if (need_total > rw->input_maxend) {
@@ -1202,11 +1214,16 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
   else
     got = rw->instr_size - rw->input_end;
   
+  if (rw->peekskip)
+    peekskip = scheme_bin_plus(scheme_make_integer(rw->input_end), rw->peekskip);
+  else
+    peekskip = scheme_make_integer(rw->input_end);
+
   /* Fill as much of our buffer as possible: */
   got = scheme_get_string("regexp-match", rw->port, 
 			  rw->instr, rw->input_end, got,
 			  1, /* read at least one char, and as much as possible */
-			  1, rw->input_end + rw->peekskip);
+			  1, peekskip);
 
   regstr = rw->str;
 
@@ -1215,13 +1232,18 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
   else {
     rw->input_end += got;
 
-    /* Non-blocking read got enough? If not, try againin blocking mode: */
+    /* Non-blocking read got enough? If not, try again in blocking mode: */
     if (need_total > rw->input_end) {
+      if (rw->peekskip)
+	peekskip = scheme_bin_plus(scheme_make_integer(rw->input_end), rw->peekskip);
+      else
+	peekskip = scheme_make_integer(rw->input_end);
+
       rw->str = regstr; /* get_string can swap threads */
       got = scheme_get_string("regexp-match", rw->port, 
 			      rw->instr, rw->input_end, need_total - rw->input_end,
 			      0, /* blocking mode */
-			      1, rw->input_end + rw->peekskip);
+			      1, peekskip);
       regstr = rw->str;
       
       if (got == EOF)
@@ -1718,7 +1740,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
   char *full_s;
   rxpos *startp, *endp;
   int offset = 0, endset, m;
-  Scheme_Object *iport, *oport = NULL;
+  Scheme_Object *iport, *oport = NULL, *startv = NULL, *endv = NULL;
   
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
       && !SCHEME_STRINGP(argv[0]))
@@ -1795,7 +1817,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
   endp = MALLOC_N_ATOMIC(rxpos, r->nsubexp);
 
   m = regexec(name, r, full_s, offset, endset - offset, startp, endp,
-	      iport, &full_s, peek, pos, oport);
+	      iport, &full_s, peek, pos, oport, &dropped);
 
   if (m) {
     int i;
@@ -1804,13 +1826,18 @@ static Scheme_Object *gen_compare(char *name, int pos,
     for (i = r->nsubexp; i--; ) {
       if (startp[i] != -1) {
 	if (pos) {
-	  long startpd, endpd;
+	  Scheme_Object *startpd, *endpd;
 
-	  startpd = startp[i];;
-	  endpd = endp[i];
-	
-	  l = scheme_make_pair(scheme_make_pair(scheme_make_integer(startpd),
-						scheme_make_integer(endpd)),
+	  startpd = scheme_make_integer(startp[i]);
+	  endpd = scheme_make_integer(endp[i]);
+	  
+	  if (iport) {
+	    /* Increment by drop count: */
+	    startpd = scheme_bin_plus(startpd, dropped);
+	    endpd = scheme_bin_plus(endpd, dropped);
+	  }
+	  
+	  l = scheme_make_pair(scheme_make_pair(startpd, endpd),
 			       l);
 	} else {
 	  l = scheme_make_pair(scheme_make_sized_offset_string(full_s, startp[i], 

@@ -1074,7 +1074,7 @@ long scheme_get_string(const char *who,
 		       Scheme_Object *port, 
 		       char *buffer, long offset, long size,
 		       int only_avail, 
-		       int peek, long peek_skip)
+		       int peek, Scheme_Object *peek_skip)
 {
   Scheme_Input_Port *ip;
   long got = 0, total_got = 0, gc, i;
@@ -1108,12 +1108,12 @@ long scheme_get_string(const char *who,
       /* s is in reverse order */
 
       if (peek) {
-	if (i < peek_skip) {
-	  peek_skip -= i;
+	if (!SCHEME_INTP(peek_skip) || (i < SCHEME_INT_VAL(peek_skip))) {
+	  peek_skip = scheme_bin_minus(peek_skip, scheme_make_integer(i));
 	  i = 0;
 	} else {
-	  i -= peek_skip;
-	  peek_skip = 0;
+	  i -= SCHEME_INT_VAL(peek_skip);
+	  peek_skip = scheme_make_integer(0);
 	}
       }
 
@@ -1132,8 +1132,8 @@ long scheme_get_string(const char *who,
 
       l = pipe_char_count(ip->peeked_read);
       if (size && l) {
-	if (l > peek_skip) {
-	  l -= peek_skip;
+	if (SCHEME_INTP(peek_skip) && (l > peek_skip)) {
+	  l -= SCHEME_INT_VAL(peek_skip);
 
 	  if (l > size)
 	    l = size;
@@ -1144,10 +1144,10 @@ long scheme_get_string(const char *who,
 			      1, peek, peek_skip);
 	    size -= l;
 	    got += l;
-	    peek_skip = 0;
+	    peek_skip = scheme_make_integer(0);
 	  }
 	} else
-	  peek_skip -= l;
+	  peek_skip = scheme_bin_minus(peek_skip, scheme_make_integer(l));
       }
     } else if (ip->ungotten_special) {
       if (!special_ok)
@@ -1156,7 +1156,7 @@ long scheme_get_string(const char *who,
 	ip->special = ip->ungotten_special;
 	ip->ungotten_special = NULL;
       } else {
-	if (peek_skip)
+	if (peek_skip != scheme_make_integer(0))
 	  scheme_bad_time_for_special(who, port);
       }
 
@@ -1178,13 +1178,21 @@ long scheme_get_string(const char *who,
        we haven't gotten anything so far, it means that we need to read before we
        can actually peek. Handle this case with a recursive peek that starts
        from the current position, then set peek_skip to 0 and go on. */
-    if (peek && !ps && peek_skip && !total_got && !got) {
+    if (peek && !ps && (peek_skip != scheme_make_integer(0)) && !total_got && !got) {
       char *tmp;
       int v, pcc;
+      long skip;
 
-      tmp = (char *)scheme_malloc_atomic(peek_skip);
+      if (!SCHEME_INTP(peek_skip)) {
+	scheme_raise_out_of_memory(who, "peeking with offset %V", peek_skip);
+	return 0;
+      }
+	
+      skip = SCHEME_INT_VAL(peek_skip);
+
+      tmp = (char *)scheme_malloc_atomic(skip);
       pcc = pipe_char_count(ip->peeked_read);
-      v = scheme_get_string(who, port, tmp, 0, peek_skip,
+      v = scheme_get_string(who, port, tmp, 0, skip,
 			    (only_avail == 2) ? 2 : 0, 
 			    1, ip->ungotten_count + pcc);
       if (v == EOF)
@@ -1192,8 +1200,8 @@ long scheme_get_string(const char *who,
       else if (v == SCHEME_SPECIAL) {
 	ip->special = NULL;
 	scheme_bad_time_for_special(who, port);
-      } else if (v == peek_skip) {
-	peek_skip = 0;
+      } else if (v == skip) {
+	peek_skip = scheme_make_integer(0);
 	/* Ok, we're ready to continue! */
       } else
 	return 0;
@@ -1243,7 +1251,8 @@ long scheme_get_string(const char *who,
       gc = 0;
 
     got += gc;
-    peek_skip += gc;
+    if (peek)
+      peek_skip = scheme_bin_plus(peek_skip, scheme_make_integer(gc));
     size -= gc;
 
     if (!peek) {

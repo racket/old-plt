@@ -581,9 +581,16 @@ string_get_string(Scheme_Input_Port *port,
 static long 
 string_peek_string(Scheme_Input_Port *port, 
 		   char *buffer, long offset, long size,
-		   long skip,
+		   Scheme_Object *sskip,
 		   int nonblock)
 {
+  long skip;
+
+  if (SCHEME_INTP(sskip))
+    skip = SCHEME_INT_VAL(sskip);
+  else
+    skip = ((Scheme_Indexed_String *)port->port_data)->size;
+
   return string_get_or_peek_string(port, buffer, offset, size, 1, skip);
 }
 
@@ -921,11 +928,10 @@ user_get_string(Scheme_Input_Port *port,
 static long 
 user_peek_string(Scheme_Input_Port *port, 
 		 char *buffer, long offset, long size,
-		 long skip,
+		 Scheme_Object *skip,
 		 int nonblock)
 {
-  return user_get_or_peek_string(port, buffer, offset, size, nonblock, 
-				 1, scheme_make_integer(skip));
+  return user_get_or_peek_string(port, buffer, offset, size, nonblock, 1, skip);
 }
 
 static long 
@@ -1300,9 +1306,16 @@ static long pipe_get_string(Scheme_Input_Port *p,
 
 static long pipe_peek_string(Scheme_Input_Port *p, 
 			     char *buffer, long offset, long size,
-			     long peek_skip,
+			     Scheme_Object *skip,
 			     int nonblock)
 {
+  long peek_skip;
+
+  if (SCHEME_INTP(skip))
+    peek_skip = SCHEME_INT_VAL(skip);
+  else
+    peek_skip = 0;
+
   return pipe_get_or_peek_string(p, buffer, offset, size, nonblock, 1, peek_skip);
 }
 
@@ -2190,7 +2203,7 @@ static Scheme_Object *
 do_general_read_string(const char *who, int argc, Scheme_Object *argv[],
 		       int alloc_mode, int only_avail, int peek)
 {
-  Scheme_Object *port, *str;
+  Scheme_Object *port, *str, *peek_skip;
   long size, start, finish, got, peek_skip;
   int delta, skip_was_bignum = 0, size_too_big = 0;
 
@@ -2222,20 +2235,16 @@ do_general_read_string(const char *who, int argc, Scheme_Object *argv[],
     Scheme_Object *v;
     v = argv[1];
     if (SCHEME_INTP(v) && (SCHEME_INT_VAL(v) >= 0))
-      peek_skip = SCHEME_INT_VAL(v);
-    else if (SCHEME_BIGNUMP(v) && SCHEME_BIGPOS(v)) {
-      /* For most all port types, we'll hit EOF or run out of memory.
-	 The exception, potentially, is a custom port with a peek
-	 procedure. See below. */
-      peek_skip = 0x7FFFFFFF; 
-      skip_was_bignum = 1;
-    } else {
+      peek_skip = v;
+    else if (SCHEME_BIGNUMP(v) && SCHEME_BIGPOS(v))
+      peek_skip = v;
+    else {
       scheme_wrong_type(who, "non-negative exact integer", 1, argc, argv);
       return NULL;
     }
     delta = 1;
   } else {
-    peek_skip = 0;
+    peek_skip = scheme_make_integer(0);
     delta = 0;
   }
 
@@ -2275,24 +2284,6 @@ do_general_read_string(const char *who, int argc, Scheme_Object *argv[],
       return NULL;
     }
     str = scheme_alloc_string(size, 0);
-  }
-
-  if (skip_was_bignum) {
-    if (SAME_OBJ(((Scheme_Input_Port *)port)->sub_type, scheme_user_input_port_type)) {
-      User_Input_Port *uop = (User_Input_Port *)((Scheme_Input_Port *)port)->port_data;
-      if (uop->peek_proc) {
-	/* Corner case: bignum supplied as the peek offset for a
-	   custom input port. */
-	got = user_peek_string_bignum_skip((Scheme_Input_Port *)port,
-					   SCHEME_STR_VAL(str), start, size, 
-					   argv[1], only_avail == 2);
-	if (got == EOF)
-	  return scheme_eof;
-	else
-	  return scheme_make_integer(got);
-      }
-    }
-		 
   }
 
   got = scheme_get_string(who, port, 

@@ -255,6 +255,7 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
   int i, offset;
   MenuHandle nmh;
   int helpflg;
+  int hId = 0;
 	
   if (!toHandle)  {
     // Remove accel - not used in Mac Top Level Menus
@@ -312,17 +313,12 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
       BuildMacMenuString((StringPtr)tmp, (StringPtr)t, menuItem->itemName, TRUE);
       wxMenu *subMenu = menuItem->subMenu;
       subMenu->wxMacInsertSubmenu();
-      unsigned char menuadds[4] = {'/',0x1b,'!', ' ' };
-      menuadds[3] = subMenu->cMacMenuId;
-      int len = tmp[0];
-      memcpy(&tmp[len+1], menuadds, 4);
-      tmp[0] += 4;
-    }
-    else {
+      hId = subMenu->cMacMenuId;
+    } else {
       BuildMacMenuString((StringPtr)tmp, (StringPtr)t, menuItem->itemName, FALSE);
       if (!i && doabouthack && helpflg && (!strncmp("About", &t[1], 5))) {
 	if (menu_bar) {
-	  // This is an very sad hack !
+	  // This is a very sad hack !
 	  menu_bar->iHelpMenuHackNum = 1;
 	}
       }
@@ -334,6 +330,8 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
       ::CheckMenuItem(nmh, i + offset, TRUE);
     if (!menuItem->IsEnabled() || (toHandle && !cEnable))
       ::DisableMenuItem(nmh, i + offset);
+    if (hId)
+      ::SetMenuItemHierarchicalID(nmh, i + offset, hId);
     node = node->Next();						// watch for null?	
   }
 	
@@ -782,17 +780,10 @@ void wxMenu::Append(int Id, char* Label, wxMenu* SubMenu, char* helpString)
   Str255 pullrightSetup, pullrightLabel;
   BuildMacMenuString(pullrightSetup, pullrightLabel,item->itemName, TRUE);
 	
-  int theEnd = pullrightSetup[0] + 1; // mflatt: +1
-  if (theEnd > 251) theEnd = 251; // mac allows only 255 characters
-  pullrightSetup[theEnd++] = '/';
-  pullrightSetup[theEnd++] = 0x1B; // mac item is a pullright menu
-  pullrightSetup[theEnd++] = '!';
-  pullrightSetup[theEnd++] = SubMenu->cMacMenuId; // id of mac pullright menu
-  pullrightSetup[theEnd] = 0x00;
-  pullrightSetup[0] = theEnd;
   ::AppendMenu(cMacMenu, (ConstStr255Param)pullrightSetup);
   ::SetMenuItemText(cMacMenu, no_items, (ConstStr255Param)pullrightLabel);
   ::SetMenuItemTextEncoding(cMacMenu, no_items, kCFStringEncodingISOLatin1);
+  ::SetMenuItemHierarchicalID(cMacMenu, no_items, SubMenu->cMacMenuId);
 
   wxMenu *ancestor = this;
   while (ancestor) {

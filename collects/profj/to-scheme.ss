@@ -548,7 +548,14 @@
                                   (members-init class-members))
                            
                            (super-instantiate ())))
-                        
+
+                        ,@(create-static-methods (append static-method-names
+                                                         (make-static-method-names 
+                                                          (get-statics (accesses-private methods)) 
+                                                          type-recs))
+                                                 (append (accesses-static methods)
+                                                         (get-statics (accesses-private methods)))
+                                                 type-recs)
                         ,@(create-static-fields (append static-field-names
                                                         (make-static-field-names (get-statics (accesses-private fields))))
                                                 (append (accesses-static fields)
@@ -557,13 +564,6 @@
                                                  (filter (lambda (f) (not (final? 
                                                                            (map modifier-kind (field-modifiers f)))))
                                                          (accesses-static fields)))
-                        ,@(create-static-methods (append static-method-names
-                                                         (make-static-method-names 
-                                                          (get-statics (accesses-private methods)) 
-                                                          type-recs))
-                                                 (append (accesses-static methods)
-                                                         (get-statics (accesses-private methods)))
-                                                 type-recs)
                         ,@(create-field-accessors field-getters/setters
                                                   (append (accesses-public fields)
                                                           (accesses-package fields)

@@ -691,7 +691,9 @@
            ((new) (parse-expression cur-tok (getter) 'class-alloc-start getter))
            ((IDENTIFIER) (parse-expression cur-tok (getter) 'name getter))
            ((STRING_ERROR)
-            (parse-error (format "String must end with '~a', which is not found" #\") start end))
+            (if (eq? 'STRING_NEWLINE (get-token-name (caddr (token-value tok))))
+                (parse-error (format "A string must be contained all on one line, and end in '~a'" #\") start end)
+                (parse-error (format "String must end with '~a', which is not found" #\") start end)))
            (else 
             (parse-error (format "Expected an expression, ~a is not the valid beginning of an expression" out) start end))))
         ((op-or-end)

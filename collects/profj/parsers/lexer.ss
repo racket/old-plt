@@ -163,13 +163,12 @@
                                    (tokens->string (cdr toks)))))))
       (if (eq? 'STRING_END (get-token-name last-token))
           (token-STRING_LIT (list (tokens->string tokens) (caddr last-token)))
-          (token-STRING_ERROR (list (tokens->string tokens) (caddr last-token))))))
+          (token-STRING_ERROR (list (tokens->string tokens) (caddr last-token) (car last-token))))))
   
   (define (get-string-tokens input-port)
     (let ((tok (get-str-tok input-port)))
       (case (get-token-name tok)
-        ((STRING_EOF) (list tok))
-        ((STRING_END) (list tok))
+        ((STRING_EOF STRING_END STRING_NEWLINE) (list tok))
         (else (cons tok (get-string-tokens input-port))))))
 
   (define (get-token-name tok)
@@ -178,13 +177,14 @@
         (car tok)))
   
   (define-tokens str-tok (STRING_CHAR))
-  (define-empty-tokens err (STRING_END STRING_EOF))
+  (define-empty-tokens err (STRING_END STRING_EOF STRING_NEWLINE))
   
   (define get-str-tok
     (lexer-src-pos
      (#\" (token-STRING_END))
      (EscapeSequence (token-STRING_CHAR (EscapeSequence->char lexeme)))
      ((^ CR LF) (token-STRING_CHAR (string-ref lexeme 0)))
+     ((: CR LF) (token-STRING_NEWLINE))
      ((: (eof) #\032) (token-STRING_EOF))))
   
   ;; 3.10.6

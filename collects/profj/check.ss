@@ -1236,9 +1236,9 @@
                                      (car accs)
                                      (make-var-access #t #f #f (class-record-name (car static-class)))))
                        (cdr accs))))
-                   ((and (eq? level 'advanced) (not first-binding) (> (length acc) 1)
+                   ((and (memq level '(beginner intermediate advanced)) (not first-binding) (> (length acc) 1)
                          (with-handlers ((exn:syntax? (lambda (e) #f))) 
-                           (type-exists? first-acc null (id-src (car acc)) 'advanced type-recs)))
+                           (type-exists? first-acc null (id-src (car acc)) level type-recs)))
                     (build-field-accesses
                      (make-access #f
                                   (expr-src exp)
@@ -1374,7 +1374,8 @@
            (exp-type #f)
            (handle-call-error 
             (lambda (exn)
-              (when (or (not (access? expr)) (memq level '(beginner intermediate))) (raise exn))
+;              (when (or (not (access? expr)) (memq level '(beginner intermediate))) (raise exn))
+              (when (not (access? expr)) (raise exn))
               (if (eq? level 'full)
                   (let ((record (car (find-static-class 
                                       (append (access-name expr) (list name))
@@ -1390,13 +1391,13 @@
                              (type-exists? (id-string (car (access-name expr)))
                                            null
                                            (id-src (car (access-name expr)))
-                                           'advanced
+                                           level
                                            type-recs)))
-                      (let ((record (send type-recs get-class-record (list (id-string (car access-name expr))))))
+                      (let ((record (send type-recs get-class-record (list (id-string (car (access-name expr)))))))
                         (set-call-expr! call #f)
                         (unless (equal? (class-record-name record) c-class)
                           (send type-recs add-req (make-req (car (class-record-name record)) null)))
-                        (get-method-records name record))
+                        (get-method-records (id-string name) record))
                       (raise exn)))))
            (methods 
             (cond 

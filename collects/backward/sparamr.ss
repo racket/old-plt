@@ -1,6 +1,5 @@
 ;(plt:require-library "sparams.ss")
 
-(define plt:mzscheme-parameters@
   (unit/sig plt:parameters^
     (import)
     (define case-sensitive? (not (eq? 'a 'A)))
@@ -13,4 +12,4 @@
 	(eval `(set! ,(gensym) 5))
 	#t))
     (define allow-improper-lists? #t)
-    (define check-syntax-level 'advanced)))
+    (define check-syntax-level 'advanced))

@@ -15,7 +15,12 @@ line, run
 
 If you move mzcom.exe, you'll also need to set the Windows 
 environment variables PLTHOME or PLTCOLLECTS for 
-MzCOM to find collections.
+MzCOM to find collections.  
+
+The mzcom.exe executable also requires the dynamic 
+libraries libmzsch.dll and libmzgc.dll.  Those files must 
+be in the same directory as the executable, or in your 
+PATH.
 
 Loading MzCOM
 -------------
@@ -171,7 +176,7 @@ Contact us
 ----------
 
 If you need more information on using MzCOM, please 
-contact us at scheme@cs.rice.edu.
+contact us at scheme@plt-scheme.org.
 
 Acknowledgements
 ----------------

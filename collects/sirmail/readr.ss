@@ -1249,7 +1249,7 @@
         #\t)
       (make-object menu-item% "F&orward" msg-menu
         (lambda (i e) (do-forward))
-        #\Z)
+        #\W)
       (send (make-object checkable-menu-item% "&Quote Original" msg-menu
               (lambda (item e)
                 (set! quote-in-reply? (send item is-checked?))))

@@ -942,11 +942,10 @@
 
       ;; -------------------- Frame Creation --------------------
       
-      (define sm-frame (make-object sm-frame% mailbox-name #f 
-                         (get-pref 'sirmail:frame-width)
-                         (get-pref 'sirmail:frame-height)))
-      (set! main-frame sm-frame)
-      (define mb (send sm-frame get-menu-bar))
+      (set! main-frame (make-object sm-frame% mailbox-name #f 
+				    (get-pref 'sirmail:frame-width)
+				    (get-pref 'sirmail:frame-height)))
+      (define mb (send main-frame get-menu-bar))
 
       ;; -------------------- Message Menu --------------------
       
@@ -1438,7 +1437,7 @@
       ;;  GUI: Rest of Frame                                     ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      (define sizing-panel (make-object panel:vertical-dragable% (send sm-frame get-area-container)))
+      (define sizing-panel (make-object panel:vertical-dragable% (send main-frame get-area-container)))
       (define top-half (make-object vertical-panel% sizing-panel))
       (define button-panel (make-object horizontal-panel% top-half))
       (define sorting-list (instantiate sorting-list% ()
@@ -1596,7 +1595,7 @@
                            rss)
                    (format "(mz: ~a)"
                            (format-number (quotient (current-memory-use) 1024))))])
-        (send sm-frame set-status-text 
+        (send main-frame set-status-text 
               (if (equal? last-status "")
                   mem-str
                   (string-append last-status " " mem-str)))))
@@ -1604,7 +1603,7 @@
        (lambda ()
          (let loop ()
            (semaphore-wait status-sema)
-           (when (object? sm-frame)
+           (when (object? main-frame)
              (update-status-text))
            (semaphore-post status-sema)
            (sleep 5)
@@ -1915,9 +1914,9 @@
       
       (for-each add-message mailbox)
       
-      (send sm-frame create-status-line)
+      (send main-frame create-status-line)
       
-      (send sm-frame show #t)
+      (send main-frame show #t)
       (start-vsz/rss-thread)
       (set! got-started? #t)
       
@@ -1926,7 +1925,7 @@
 	  (send last select #t)
 	  (queue-callback (lambda () (send last scroll-to)))))
 
-      (frame:reorder-menus sm-frame)
+      (frame:reorder-menus main-frame)
       
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Queued Message Sends                                   ;;

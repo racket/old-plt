@@ -1,4 +1,4 @@
-// srptypes.cxx
+/* srptypes.c */
 
 #include "stdafx.h"
 
@@ -11,10 +11,10 @@ typedef bool BOOL;
 typedef unsigned char BYTE;
 typedef unsigned short WORD;
 typedef unsigned long DWORD;
-// dummy typedefs -- only used in trace API, not ODBC as such
-typedef void * LPWSTR; 
+/* dummy typedefs -- only used in trace API, not ODBC as such */
 typedef void VOID; 
 typedef int CHAR; 
+typedef void *LPWSTR; 
 typedef int WCHAR; 
 typedef int GUID; 
 #endif

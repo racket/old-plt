@@ -1,4 +1,4 @@
-// srpbuffer.cxx
+/* srpbuffer.c */
 
 #include <ctype.h>
 
@@ -7,14 +7,14 @@
 #else
 #define FALSE (0)
 #define TRUE  (1)
-typedef bool BOOL;
+typedef int BOOL;
 typedef unsigned char BYTE;
 typedef unsigned short WORD;
 typedef unsigned long DWORD;
-// dummy typedefs -- only used in trace API, not ODBC as such
-typedef void * LPWSTR; 
+/* dummy typedefs -- only used in trace API, not ODBC as such */
 typedef void VOID; 
 typedef int CHAR; 
+typedef void *LPWSTR; 
 typedef int WCHAR; 
 typedef int GUID; 
 #endif
@@ -36,6 +36,38 @@ Scheme_Object *readCharBuffer(char *buffer,long numElts) {
 void writeCharBuffer(char *buffer,Scheme_Object *obj) {
   strcpy((char *)buffer,SCHEME_STR_VAL(obj));
 }
+
+#if (ODBCVER >= 0x0300)
+Scheme_Object *readWideCharBuffer(wchar_t *buffer,long numElts) {
+  Scheme_Object *retval;
+  char *s;
+  int i;
+
+  retval = scheme_alloc_string(numElts,0);
+  s = SCHEME_STR_VAL(retval);
+
+  /* truncate wide chars */
+
+  for (i = 0; i < numElts; i++) {
+    s[i] = (char)(buffer[i] & 0xFF);
+  }
+
+  return retval;
+}
+
+void writeWideCharBuffer(wchar_t *buffer,Scheme_Object *obj) {
+  int i;
+  char *s;
+
+  s = SCHEME_STR_VAL(obj);
+
+  while (*s) {
+    buffer[i] = (wchar_t)(s[i]);
+    s++;
+  }
+
+}
+#endif
 
 Scheme_Object *readLongBuffer(long *buffer,long numElts) {
   Scheme_Object *retval;
@@ -245,12 +277,12 @@ Scheme_Object *readNumericBuffer(SQL_NUMERIC_STRUCT *buffer,long numElts) {
     argv[1] = scheme_make_integer(currVal->scale);
     argv[2] = scheme_make_integer_value_from_unsigned(currVal->sign);
 
-    // in Scheme structure, store hex digits with MSBytes leftmost
-    // in MS structure, MSBytes are rightmost
+    /* in Scheme structure, store hex digits with MSBytes leftmost
+       in MS structure, MSBytes are rightmost */
 
     digits = scheme_null;
 
-    // rightmost 0's in MS structure can be stripped off
+    /* rightmost 0's in MS structure can be stripped off */
 
     k = sizeray(currVal->val) - 1;
     while (k >= 0) {
@@ -879,7 +911,7 @@ Scheme_Object *readBinaryBuffer(char *buffer,long numElts) {
   char *s;
   int i,j;
 
-  // convert each byte to hex char pairs
+  /* convert each byte to hex char pairs */
 
   retval = scheme_alloc_string(numElts * 2 + 1,'\0');
   s = SCHEME_STR_VAL(retval);

@@ -1,4 +1,4 @@
-// srpbuffer.h
+/* srpbuffer.h */
 
 extern Scheme_Object *numericStructType;
 extern Scheme_Object *dateStructType;

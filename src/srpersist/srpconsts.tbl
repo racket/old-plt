@@ -520,6 +520,7 @@ SRP_NAMED_SMALL_CONSTANT fetchScrolls[] = {
 
 SRP_NAMED_SMALL_CONSTANT CDataTypes[] = {
 #if (ODBCVER >= 0x300)
+  { "sql-c-wchar", SQL_C_WCHAR },
   { "sql-c-numeric", SQL_C_NUMERIC },
   { "sql-c-timestamp", SQL_C_TIMESTAMP },
   { "sql-c-type-timestamp", SQL_C_TYPE_TIMESTAMP },
@@ -570,6 +571,9 @@ SRP_NAMED_SMALL_CONSTANT SQLDataTypes[] = {
   { "sql-type-date", SQL_TYPE_DATE },
   { "sql-type-time", SQL_TYPE_TIME },
   { "sql-type-timestamp", SQL_TYPE_TIMESTAMP },
+  { "sql-wchar", SQL_WCHAR },
+  { "sql-wvarchar", SQL_WVARCHAR },
+  { "sql-wlongvarchar", SQL_WLONGVARCHAR }, 
 #endif
 #if (ODBCVER >= 0x0350)
   { "sql-guid", SQL_GUID },
@@ -577,9 +581,6 @@ SRP_NAMED_SMALL_CONSTANT SQLDataTypes[] = {
   { "sql-char", SQL_CHAR },
   { "sql-varchar", SQL_VARCHAR },
   { "sql-longvarchar", SQL_LONGVARCHAR },
-  { "sql-wchar", SQL_WCHAR },
-  { "sql-wvarchar", SQL_WVARCHAR },
-  { "sql-wlongvarchar", SQL_WLONGVARCHAR }, 
   { "sql-date", SQL_DATE },
   { "sql-time", SQL_TIME },
   { "sql-timestamp", SQL_TIMESTAMP },
@@ -621,6 +622,9 @@ SRP_NAMED_CONSTANT SQLColDataTypes[] = {
   { "sql-type-timestamp", SQL_TYPE_TIMESTAMP },
   { "sql-datetime", SQL_DATETIME },
   { "sql-interval", SQL_INTERVAL },
+  { "sql-wchar", SQL_WCHAR },
+  { "sql-wvarchar", SQL_WVARCHAR },
+  { "sql-wlongvarchar", SQL_WLONGVARCHAR }, 
 #endif
 #if (ODBCVER >= 0x0350)	
   { "sql-guid", SQL_GUID },
@@ -628,9 +632,6 @@ SRP_NAMED_CONSTANT SQLColDataTypes[] = {
   { "sql-char", SQL_CHAR },
   { "sql-varchar", SQL_VARCHAR },
   { "sql-longvarchar", SQL_LONGVARCHAR },
-  { "sql-wchar", SQL_WCHAR },
-  { "sql-wvarchar", SQL_WVARCHAR },
-  { "sql-wlongvarchar", SQL_WLONGVARCHAR }, 
   { "sql-decimal", SQL_DECIMAL },
   { "sql-numeric", SQL_NUMERIC },
   { "sql-smallint", SQL_SMALLINT },

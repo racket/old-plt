@@ -13,13 +13,18 @@ Header files
 ------------
 
 SrPersist relies on definitions in ODBC C header files supplied
-by Microsoft.  Since those files are copyrighted, we cannot 
-distribute them.  The files are downloadable from the Web, though.
-You'll need to download the Microsoft Data Access Components (MDAC), 
-available at http://www.microsoft.com/data/.  We used version 2.0;
-we expect later versions will work.  After downloading MDAC,
-copy the files sql.h, sqlext.h, sqltypes.h, and sqlucode.h 
-to this directory, plt/src/srpersist/.
+by Microsoft, or by vendors of ODBC Driver Managers.  Since those files 
+are copyrighted, PLT cannot distribute them.  
+
+If you are using Microsoft Visual C++ to compile SrPersist, the necessary 
+files are downloadable from the Web.  You'll need to download the 
+Microsoft Data Access Components (MDAC),  available at 
+http://www.microsoft.com/data/.  We used version 2.0; we expect later 
+versions will work.  After downloading MDAC, copy the files sql.h, sqlext.h, 
+sqltypes.h, and sqlucode.h to this directory, plt/src/srpersist/.
+
+For other platforms, the Driver Manager library you choose should 
+provide ODBC header files with similar names.
 
 Windows compilation
 -------------------

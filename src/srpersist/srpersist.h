@@ -1,4 +1,4 @@
-// srpersist.h
+/* srpersist.h */
 
 #define sizeray(x) (sizeof(x)/sizeof(*x))
 
@@ -133,9 +133,7 @@ typedef struct named_bits_dict_ {
   size_t numBits;
 } SRP_NAMED_BITS_DICT;
 
-// Scheme_Object *scheme_make_list(Scheme_Object *,...);
-
-// type-and-value predicates
+/* type-and-value predicates */
 
 BOOL isSmallInt(Scheme_Object *);
 BOOL isUnsignedSmallInt(Scheme_Object *);
@@ -143,10 +141,14 @@ BOOL isUnsignedInt(Scheme_Object *);
 BOOL isCharInt(Scheme_Object *);
 BOOL isUnsignedCharInt(Scheme_Object *);
 
-// buffer procedures
+/* buffer procedures */
 
 Scheme_Object *readCharBuffer(char *,long);
 void writeCharBuffer(char *,Scheme_Object *);
+#if (ODBCVER >= 0x0300)
+Scheme_Object *readWideCharBuffer(wchar_t *,long);
+void writeWideCharBuffer(wchar_t *,Scheme_Object *);
+#endif
 Scheme_Object *readLongBuffer(long *,long);
 void writeLongBuffer(long *,Scheme_Object *);
 Scheme_Object *readULongBuffer(unsigned long *buffer,long);
@@ -216,7 +218,7 @@ void writeUBigIntBuffer(unsigned _int64 *buffer,Scheme_Object *);
 #endif
 
 
-// utilities
+/* utilities */
 
 SRP_PRIM_DECL(srp_make_length);
 SRP_PRIM_DECL(srp_read_length);
@@ -230,7 +232,7 @@ SRP_PRIM_DECL(srp_make_buffer);
 SRP_PRIM_DECL(srp_read_buffer);
 SRP_PRIM_DECL(srp_write_buffer);
 
-// from SQL.H
+/* from SQL.H */
 
 SRP_PRIM_DECL(srp_SQLAllocConnect);
 SRP_PRIM_DECL(srp_SQLAllocEnv);
@@ -290,7 +292,7 @@ SRP_PRIM_DECL(srp_SQLStatistics);
 SRP_PRIM_DECL(srp_SQLTables);
 SRP_PRIM_DECL(srp_SQLTransact);
 
-     // from SQLEXT.H)
+/* from SQLEXT.H */
 	
 SRP_PRIM_DECL(srp_SQLBulkOperations);
 SRP_PRIM_DECL(srp_SQLDriverConnect);
@@ -314,7 +316,7 @@ SRP_PRIM_DECL(srp_SQLBindParameter);
 SRP_PRIM_DECL(srp_SQLSetScrollOptions);
 SRP_PRIM_DECL(srp_SQLLenBinaryAttr);
 
-// structure info
+/* structure info */
 
 extern Scheme_Object **numericStructFuns;
 extern Scheme_Object **dateStructFuns;
@@ -335,7 +337,7 @@ extern Scheme_Object **hourToMinuteIntervalStructFuns;
 extern Scheme_Object **hourToSecondIntervalStructFuns;
 extern Scheme_Object **minuteToSecondIntervalStructFuns;
 
-// structure #defines
+/* structure #defines */
 
 #define TYPE 0
 #define PI_1 3

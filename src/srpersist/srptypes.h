@@ -1,4 +1,4 @@
-// srptypes.h -- types for SisterPersist
+/* srptypes.h -- types for SisterPersist */
 
 /* declare Scheme types for those SQL types that have
    no existing Scheme analog

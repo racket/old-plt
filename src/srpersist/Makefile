@@ -1,7 +1,7 @@
 # Makefile for srpersist.so on Unix boxes
 
 # change to ODBC version supported by driver manager
-ODBCVER=0x0350
+ODBCVER=0x0351
 
 # static library that implements driver manager
 DRIVER_MGR_LIB=odbc

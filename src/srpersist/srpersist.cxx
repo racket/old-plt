@@ -1,4 +1,4 @@
-// srpersist.cxx
+/* srpersist.cxx */
 
 #include "stdafx.h"
 
@@ -13,26 +13,31 @@
 #else
 #define FALSE (0)
 #define TRUE  (1)
-typedef bool BOOL;
+typedef int BOOL;
 typedef unsigned char BYTE;
 typedef unsigned short WORD;
 typedef unsigned long DWORD;
-// dummy typedefs -- only used in trace API, not ODBC as such
-typedef void * LPWSTR; 
+/* dummy typedefs -- only used in trace API, not ODBC as such */
 typedef void VOID; 
 typedef int CHAR; 
+typedef void * LPWSTR; 
 typedef int WCHAR; 
 typedef int GUID; 
 #endif
 
-// Microsoft ODBC SDK include files
-// obtainable as part of Data Access SDK
-// at http://www.microsoft.com/data/
+/* 
+   Microsoft ODBC SDK include files 
+   obtainable as part of Data Access SDK
+   at http://www.microsoft.com/data/
+*/
 
 #include <sql.h>
 #include <sqlext.h>
 #include <sqltypes.h>
+
+#if (ODBCVER >= 0x0300)
 #include <sqlucode.h>
+#endif
 
 #include "escheme.h"
 
@@ -48,7 +53,7 @@ typedef int GUID;
 #include "srpbitmask.tbl"
 
 
-static Scheme_Unit *srp_unit;  // the unit returned by the extension 
+static Scheme_Unit *srp_unit;  /* the unit returned by the extension */
 
 static SRP_BUFFER_TBL_ENTRY *bufferTable[BUFFER_TBL_SIZE];
 
@@ -141,7 +146,7 @@ SQLUINTEGER findBitByNameInDict(char *intName,SRP_NAMED_CONSTANT *entry,size_t n
     }
   } 
 
-  return (SQLUINTEGER)(-1);  // appears to be unused in ODBC header files
+  return (SQLUINTEGER)(-1);  /* appears to be unused in ODBC header files */
 }
 
 char *findSmallIntName(char *name,SQLUSMALLINT value,
@@ -244,7 +249,7 @@ int sizeofCDataType(SQLSMALLINT type) {
   case SQL_C_SLONG :
     return sizeof(long int);
   case SQL_C_ULONG :
-    // SQL_C_BOOKMARK is same value
+    /* SQL_C_BOOKMARK is same value */
     return sizeof(unsigned long int);
   case SQL_C_FLOAT :
     return sizeof(float);
@@ -271,7 +276,7 @@ int sizeofCDataType(SQLSMALLINT type) {
 #endif
 
   case SQL_C_BINARY :
-    // SQL_C_VARBOOKMARK has same value
+    /* SQL_C_VARBOOKMARK has same value */
     return sizeof(unsigned char *);
 
 #if (ODBCVER >= 0x0300)
@@ -306,7 +311,7 @@ int sizeofCDataType(SQLSMALLINT type) {
   
   scheme_signal_error("Unknown C data type constant: %X",(int)type);
 
-  return 0;  // unreachable
+  return 0;  /* unreachable */
 }
 
 unsigned short getHashValue(void *address) {
@@ -373,7 +378,7 @@ char *rowStatusToString(SQLUSMALLINT rowStatus) {
   return "?";
 }
 
-// utilities
+/* utilities */
 
 Scheme_Object *srp_make_length(int argc,Scheme_Object **argv) {
   SQLINTEGER len;
@@ -807,14 +812,14 @@ Scheme_Object *srp_make_buffer(int argc,Scheme_Object **argv) {
 
   retval->eltSize = sizeofCDataType(retval->CDataType);
 
-  // buffers might be relinquished by Scheme, 
-  // but still bound to OBDC columns
-  // so make actual storage uncollectable
+  /* buffers might be relinquished by Scheme, 
+     but still bound to OBDC columns
+     so make actual storage uncollectable */
 
   retval->storage = scheme_malloc_uncollectable(retval->numElts * sizeof(retval->eltSize));
 
-  // need to be able to recover <sql-buffer> from storage address
-  // for use by SQLParamData()
+  /* need to be able to recover <sql-buffer> from storage address
+     for use by SQLParamData() */
 
   addToBufferTable(retval->storage,retval);
 
@@ -837,11 +842,15 @@ Scheme_Object *srp_read_buffer(int argc,Scheme_Object **argv) {
   switch(CDataType) {
   case SQL_C_CHAR :
     return readCharBuffer((char *)buffer,numElts);
+#if (ODBCVER >= 0x0300)
+  case SQL_C_WCHAR :
+    return readWideCharBuffer((wchar_t *)buffer,numElts);
+#endif
   case SQL_C_SLONG :
   case SQL_C_LONG :
     return readLongBuffer((long *)buffer,numElts);
   case SQL_C_ULONG :
-    // SQL_C_BOOKMARK is the same
+    /* SQL_C_BOOKMARK is the same */
     return readULongBuffer((unsigned long *)buffer,numElts);
   case SQL_C_SSHORT :
   case SQL_C_SHORT :
@@ -906,7 +915,7 @@ Scheme_Object *srp_read_buffer(int argc,Scheme_Object **argv) {
     return readIntervalMinuteSecondBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
 #endif
   case SQL_C_BINARY :
-    // SQL_C_VARBOOKMARK is the same
+    /* SQL_C_VARBOOKMARK is the same */
     return readBinaryBuffer((char *)buffer,numElts);
   case SQL_C_BIT :
     return readBitBuffer((unsigned char *)buffer,numElts);
@@ -931,7 +940,7 @@ Scheme_Object *srp_read_buffer(int argc,Scheme_Object **argv) {
 
   scheme_signal_error("Unknown buffer C data type: %X",CDataType);
 
-  return scheme_void; // unreachable
+  return scheme_void; /* unreachable */
 
 }
 
@@ -1090,8 +1099,8 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
   memset(buffer,'\0',numElts * sizeofCDataType(CDataType));
 
-  // check that data to be written is of appropriate type, 
-  // then call specialized write routine
+  /* check that data to be written is of appropriate type, 
+     then call specialized write routine */
 
   switch(CDataType) {
   case SQL_C_CHAR :
@@ -1107,6 +1116,21 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
     writeCharBuffer((char *)buffer,argv[1]);
     break;
 
+#if (ODBCVER >= 0x0300)
+  case SQL_C_WCHAR :
+
+    if (SCHEME_STRINGP(argv[1]) == FALSE) {
+      scheme_wrong_type("sql-write-buffer","string",1,argc,argv);
+    }
+
+    if (SCHEME_STRLEN_VAL(argv[1]) >= numElts) {
+      scheme_signal_error("sql-write-buffer: string too long for buffer");
+    }
+
+    writeWideCharBuffer((wchar_t *)buffer,argv[1]);
+    break;
+#endif
+
   case SQL_C_SLONG :
   case SQL_C_LONG :
 
@@ -1118,7 +1142,7 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
   case SQL_C_ULONG :
 
-    // SQL_C_BOOKMARK is the same
+    /* SQL_C_BOOKMARK is the same */
 
     checkIsPredList(argv[1],schemeExactIntegerP,numElts);
     writeULongBuffer((unsigned long *)buffer,argv[1]); 
@@ -1243,7 +1267,7 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
     break;
 
   case SQL_C_BINARY :
-    // SQL_C_VARBOOKMARK is the same
+    /* SQL_C_VARBOOKMARK is the same */
 
     if (SCHEME_STRINGP(argv[1]) == FALSE) {
       scheme_wrong_type("sql-write-buffer","string",1,argc,argv);
@@ -1446,7 +1470,7 @@ Scheme_Object *srp_SQLLenBinaryAttr(int argc,Scheme_Object **argv) {
     scheme_signal_error("len-binary-attr: number too big");
   }
 
-  // Scheme equivalent of SQL_LEN_BINARY_ATTR macro in SQLEXT.H
+  /* Scheme equivalent of SQL_LEN_BINARY_ATTR macro in SQLEXT.H */
 
   return scheme_make_integer_value(-100L - intVal);
 }
@@ -1677,7 +1701,7 @@ RETURN_CODE checkSQLReturn(SQLRETURN sr,char *f) {
 
   }
 
-  return success; // unreachable
+  return success; /* unreachable */
 }
 
 char *sqlReturnToString(SQLRETURN sr) {
@@ -1709,7 +1733,7 @@ char *sqlReturnToString(SQLRETURN sr) {
  }
 }
 
-// actual ODBC procedures
+/* actual ODBC procedures */
 
 /*
 
@@ -1735,7 +1759,7 @@ char *sqlReturnToString(SQLRETURN sr) {
 
 */
 
-// Functions in SQL.H
+/* Functions in SQL.H */
 
 Scheme_Object *srp_SQLAllocConnect(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -1880,7 +1904,7 @@ Scheme_Object *srp_SQLAllocHandle(int argc,Scheme_Object **argv) {
 		      "'sql-handle-stmt, or "
 		      "'sql-handle-desc");
 
-  return scheme_void; // unreachable
+  return scheme_void; /* unreachable */
 }
 #endif
 
@@ -2023,7 +2047,7 @@ Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
   case SQL_INTERVAL_HOUR_TO_SECOND :
   case SQL_INTERVAL_MINUTE_TO_SECOND :
 
-      // need Decimals
+    /* need Decimals */
 
       if (argc != 7) {
 	scheme_wrong_count("bind-param",7,7,argc,argv);
@@ -2174,7 +2198,7 @@ Scheme_Object *srp_SQLColAttribute(int argc,Scheme_Object **argv) {
 
   scheme_signal_error("sql-col-attribute: invalid attribute type");
 
-  return scheme_void; // unreachable
+  return scheme_void; /* unreachable */
 }
 #endif
 
@@ -2755,7 +2779,7 @@ Scheme_Object *srp_SQLGetConnectAttr(int argc,Scheme_Object **argv) {
 
   attributeString = SCHEME_SYM_VAL(argv[1]);
 
-  // need to check settable and read-only attributes
+  /* need to check settable and read-only attributes */
 
   p = namedTypedConstSearch(attributeString,settableConnectionAttributes);
   
@@ -2809,7 +2833,7 @@ Scheme_Object *srp_SQLGetConnectAttr(int argc,Scheme_Object **argv) {
 
   }
   
-  return scheme_void; // for compiler
+  return scheme_void; /* for compiler */
 }
 #endif
 
@@ -2880,7 +2904,7 @@ Scheme_Object *srp_SQLGetConnectOption(int argc,Scheme_Object **argv) {
     sql_return(retval,retcode,"get-connect-option");
   }
   
-  return scheme_void; // for compiler
+  return scheme_void; /* for compiler */
 }
 
 Scheme_Object *srp_SQLGetCursorName(int argc,Scheme_Object **argv) {
@@ -3115,7 +3139,7 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     sql_return((Scheme_Object *)pArrayStatus,retcode,"get-desc-field");
 
   case bindingoffset :
-    // SQLINTEGER *pIntVal;
+    /* SQLINTEGER *pIntVal; */
     SRP_SQL_BINDING_OFFSET *pBindingOffset;
 
     sr = SQLGetDescField(descHandle,recNumber,fieldId,
@@ -3145,7 +3169,7 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     sql_return((Scheme_Object *)pRowsProcessed,retcode,"get-desc-field");
 
   case octetlength :
-    // SQLINTEGER *pIntVal;
+    /* SQLINTEGER *pIntVal; */
     SRP_SQL_OCTET_LENGTH *pOctetLength;
 
     sr = SQLGetDescField(descHandle,recNumber,fieldId,
@@ -3298,7 +3322,7 @@ Scheme_Object *srp_SQLGetDiagField(int argc,Scheme_Object **argv) {
 
   case possiblynamedinteger :
 
-    // SQLINTEGER intVal;
+    /* SQLINTEGER intVal; */
     char *diagString;
 
     sr = SQLGetDiagField(handleType,handle,recNumber,diagId,
@@ -3435,7 +3459,7 @@ Scheme_Object *srp_SQLGetEnvAttr(int argc,Scheme_Object **argv) {
 
   envHandle = SQL_HENV_VAL(argv[0]);
 
-  // interpret attribute according to type
+  /* interpret attribute according to type */
 
   switch(attributeType) {
 
@@ -3465,7 +3489,7 @@ Scheme_Object *srp_SQLGetEnvAttr(int argc,Scheme_Object **argv) {
   scheme_signal_error("Unknown environment attribute type: %X",
 		      (int)attributeType);
 
-  return scheme_void; // unreachable
+  return scheme_void; /* unreachable */
 }
 #endif
 
@@ -3517,8 +3541,8 @@ Scheme_Object *srp_SQLGetFunctions(int argc,Scheme_Object **argv) {
 
     for (i = 0; i < sizeray(sqlFunctions); i++) {
       ndx = sqlFunctions[i].val;
-      if (ndx < 100) { // valid ODBC 2 function
-	if (supported[ndx]) { // rely on SQL_FALSE == 0
+      if (ndx < 100) { /* valid ODBC 2 function */
+	if (supported[ndx]) { /* rely on SQL_FALSE == 0 */
 	  value = scheme_true;
 	}
 	else {
@@ -3555,7 +3579,7 @@ Scheme_Object *srp_SQLGetFunctions(int argc,Scheme_Object **argv) {
 
   }
 #endif
-  else if (*supported) { // rely on SQL_FALSE == 0
+  else if (*supported) { /* rely on SQL_FALSE == 0 */
     sql_return(scheme_true,retcode,"get-functions");
   }
   
@@ -3777,7 +3801,7 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
 
   }
 
-  return scheme_void;  // unreachable
+  return scheme_void;  /* unreachable */
 }
 
 #if (ODBCVER >= 0x0300)
@@ -3817,7 +3841,7 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
 
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
 
-  // interpret attribute according to type
+  /* interpret attribute according to type */
 
   switch(attributeType) {
 
@@ -3872,8 +3896,8 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
     sr = SQLGetStmtAttr(stmtHandle,attribute,&smallnumpointer,0,&actualLen);
     retcode = checkSQLReturn(sr,"get-stmt-attr");
 
-    // need to keep rowStatus around until cursor closed
-    // conservatively, make it uncollectable
+    /* need to keep rowStatus around until cursor closed
+       conservatively, make it uncollectable */
 
     rowStatus = (SRP_SQL_ROW_STATUS *)scheme_malloc_uncollectable(sizeof(SRP_SQL_ROW_STATUS));
     rowStatus->type = sql_row_status_type;
@@ -3952,7 +3976,7 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
   scheme_signal_error("sql-get-stmt-attr: invalid attribute type: %X",
 		      attributeType);
 
-  return scheme_void; // unreachable
+  return scheme_void; /* unreachable */
 }
 #endif
 
@@ -3990,7 +4014,7 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
 
 
-  // interpret option according to type
+  /* interpret option according to type */
 
   switch(optionType) {
 
@@ -4035,7 +4059,7 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
   scheme_signal_error("get-stmt-option: invalid option type: %X",
 		      optionType);
 
-  return scheme_void; // unreachable
+  return scheme_void; /* unreachable */
 
 }
 
@@ -4237,7 +4261,7 @@ Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
 
     SQLUINTEGER boolVal;
 
-    // treat non-#f as true
+    /* treat non-#f as true */
 
     boolVal = (argv[2] == scheme_false) ? SQL_FALSE : SQL_TRUE;
 
@@ -4336,8 +4360,8 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
 			optionString);
   }
 
-  // p->val is an SQLINTEGER, but all the connection options
-  // are between 101 and 112, so this cast is OK
+  /* p->val is an SQLINTEGER, but all the connection options
+     are between 101 and 112, so this cast is OK */
 
   option = (SQLUSMALLINT)(p->val);
   optionType = p->type;
@@ -4794,7 +4818,7 @@ Scheme_Object *srp_SQLSetEnvAttr(int argc,Scheme_Object **argv) {
 
     SQLUINTEGER boolVal;
 
-    // treat non-#f as true
+    /* treat non-#f as true */
 
     boolVal = (argv[2] == scheme_false) ? SQL_FALSE : SQL_TRUE;
 
@@ -5551,7 +5575,7 @@ Scheme_Object *srp_SQLTransact(int argc,Scheme_Object **argv) {
   sql_return(scheme_void,retcode,"transaction");
 }
 
-// Functions in SQLEXT.H
+/* Functions in SQLEXT.H */
 
 Scheme_Object *srp_SQLDriverConnect(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -5774,7 +5798,7 @@ Scheme_Object *srp_SQLColAttributes(int argc,Scheme_Object **argv) {
 
   scheme_signal_error("sql-col-attributes: invalid attribute type");
 
-  return scheme_void; // unreachable
+  return scheme_void; /* unreachable */
 } 
 
 Scheme_Object *srp_SQLColumnPrivileges(int argc,Scheme_Object **argv) {
@@ -5939,8 +5963,8 @@ Scheme_Object *srp_SQLExtendedFetch(int argc,Scheme_Object **argv) {
   checkSQLReturn(sr,"get-stmt-option");
 #endif
 
-  // need to keep rowStatus around until cursor closed
-  // conservatively, make it uncollectable
+  /* need to keep rowStatus around until cursor closed
+     conservatively, make it uncollectable */
 
   rowStatus = (SRP_SQL_ROW_STATUS *)scheme_malloc_uncollectable(sizeof(SRP_SQL_ROW_STATUS));
   rowStatus->type = sql_row_status_type;
@@ -6489,7 +6513,7 @@ Scheme_Object *srp_SQLBindParameter(int argc,Scheme_Object **argv) {
   case SQL_INTERVAL_HOUR_TO_SECOND :
   case SQL_INTERVAL_MINUTE_TO_SECOND :
 
-      // need Decimals
+      /* need Decimals */
 
       if (argc != 8) {
 	scheme_wrong_count("sql-bind-parameter",8,8,argc,argv);
@@ -6547,7 +6571,7 @@ Scheme_Object *srp_SQLSetScrollOptions(int argc,Scheme_Object **argv) {
     scheme_wrong_type("set-scroll-options","symbol",1,argc,argv);
   }
 
-  // deal with argv[2] below
+  /* deal with argv[2] below */
 
   if (isUnsignedSmallInt(argv[3]) == FALSE) {
     scheme_wrong_type("set-scroll-options","unsigned-small-int",3,argc,argv);

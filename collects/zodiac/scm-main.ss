@@ -1564,16 +1564,28 @@
 	  (else
 	    (static-error expr "Malformed include"))))))
 
-;  (add-micro-form 'begin-elaboration-time scheme-vocabulary
-;    (let* ((kwd '(begin-elaboration-time))
-;	    (in-pattern '(begin-elaboration-time expr ...))
-;	    (m&e (pat:make-match&env in-pattern kwd)))
-;      (lambda (expr env attributes vocab)
-;	(cond
-;	  ((pat:match-against m&e expr env)
-;	    =>
-;	    (lambda (p-env)
-;	      (let ((exprs 
+  (add-micro-form 'begin-elaboration-time scheme-vocabulary
+    (let* ((kwd '(begin-elaboration-time))
+	    (in-pattern '(begin-elaboration-time expr ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((exprs (pat:pexpand '(expr ...) p-env kwd)))
+		(when (null? exprs)
+		  (static-error expr "Malformed begin-elaboration-time"))
+		(expand-expr
+		  (structurize-syntax
+		    (with-parameterization
+		      zodiac-user-parameterization
+		      (lambda ()
+			(eval `(begin ,@(map sexp->raw exprs)))))
+		    expr)
+		  env attributes vocab))))
+	  (else
+	    (static-error expr "Malformed begin-elaboration-time"))))))
 
   (add-macro-form 'unquote scheme-vocabulary
     (lambda (expr env)

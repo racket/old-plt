@@ -1,7 +1,7 @@
-(#%define-values (mred:debug:printf
-		  mred:debug:when
-		  mred:debug:turn-on
-		  mred:debug:turn-off)
+(#%define-values (mred:debug:printf/proc
+		  mred:debug:when/proc
+		  mred:debug:turn-on/proc
+		  mred:debug:turn-off/proc)
  (#%let* ([mred:debug:debug-on
 	   (#%let ([DEFAULT-ON (list (#%quote load) 
 				     (#%quote startup)
@@ -77,7 +77,7 @@
 				     (set-box! ,mred:debug:debug-on
 					       (,remove (unbox ,mred:debug:debug-on) ,s)))))))))
 
-(#%define-macro mred:debug:printf mred:debug:printf)
-(#%define-macro mred:debug:when mred:debug:when)
-(#%define-macro mred:debug:turn-on mred:debug:turn-on)
-(#%define-macro mred:debug:turn-off mred:debug:turn-off)
+(#%define-macro mred:debug:printf mred:debug:printf/proc)
+(#%define-macro mred:debug:when mred:debug:when/proc)
+(#%define-macro mred:debug:turn-on mred:debug:turn-on/proc)
+(#%define-macro mred:debug:turn-off mred:debug:turn-off/proc)

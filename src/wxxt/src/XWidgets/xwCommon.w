@@ -272,11 +272,16 @@ is positive.
     screen = XScreenNumberOfScreen(XtScreen($));
 
     vi = glXChooseVisual(dpy, screen, gl_attribs);
-    attributes->colormap = XCreateColormap(dpy, RootWindow(dpy, vi->screen),
-                	                   vi->visual, AllocNone);
-    *mask = *mask | CWColormap;
-    XtCreateWindow($, InputOutput, vi->visual, *mask, attributes);
-    wx_temp_visual_info = vi;
+    if (vi) {
+      attributes->colormap = XCreateColormap(dpy, RootWindow(dpy, vi->screen),
+                  	                     vi->visual, AllocNone);
+      *mask = *mask | CWColormap;
+      XtCreateWindow($, InputOutput, vi->visual, *mask, attributes);
+      wx_temp_visual_info = vi;
+    } else {
+      /* Probably GL isn't available from the X server */
+      #realize($, mask, attributes);
+    }
   }
   else
   {

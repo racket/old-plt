@@ -459,7 +459,11 @@ static void make_init_env(void)
 						      1, 1),
 			     env);
 
-  scheme_current_thread->name = scheme_intern_symbol("mzscheme");
+  {
+    Scheme_Object *sym;
+    sym = scheme_intern_symbol("mzscheme");
+    scheme_current_thread->name = sym;
+  }
 
   DONE_TIME(env);
 

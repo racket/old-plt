@@ -620,7 +620,7 @@ static Scheme_Object *current_memory_use(int argc, Scheme_Object *args[])
   }
 
 #ifdef MZ_PRECISE_GC
-  retval = GC_get_memory_use(args[0]);    
+  retval = GC_get_memory_use(cust);
 #else
   retval = GC_get_memory_use();
 #endif
@@ -1392,7 +1392,7 @@ static Scheme_Thread *make_thread(Scheme_Thread *after, Scheme_Config *config,
   process->type = scheme_thread_type;
 
 #ifdef MZ_PRECISE_GC
-  GC_register_thread(process);
+  GC_register_thread(process, mgr);
 #endif
 
   process->stack_start = 0;
@@ -2183,7 +2183,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   np = MALLOC_ONE_TAGGED(Scheme_Thread);
   np->type = scheme_thread_type;
 #ifdef MZ_PRECISE_GC
-  GC_register_thread(np);
+  GC_register_thread(np, mgr);
 #endif
   np->running = MZTHREAD_RUNNING;
   np->ran_some = 1;
@@ -3400,6 +3400,9 @@ static Scheme_Object *thread_resume(int argc, Scheme_Object *argv[])
 	scheme_remove_managed(p->mref, (Scheme_Object *)p->mr_hop);
 	mref = scheme_add_managed(c, (Scheme_Object *)p->mr_hop, NULL, NULL, 0);
 	p->mref = mref;
+#ifdef MZ_PRECISE_GC
+	GC_register_thread(p, c);
+#endif
       }
     } /* else c1 is already more powerful than c2 */
   }
@@ -5123,9 +5126,17 @@ static Scheme_Object *current_stats(int argc, Scheme_Object *argv[])
 				 ? scheme_true
 				 : scheme_false));
     case 2:
-      SCHEME_VEC_ELS(v)[1] = thread_dead_p(1, (Scheme_Object **)&t);
+      {
+	Scheme_Object *dp;
+	dp = thread_dead_p(1, (Scheme_Object **)&t);
+	SCHEME_VEC_ELS(v)[1] = dp;
+      }
     case 1:
-      SCHEME_VEC_ELS(v)[0] = thread_running_p(1, (Scheme_Object **)&t);
+      {
+	Scheme_Object *rp;
+	rp = thread_running_p(1, (Scheme_Object **)&t);
+	SCHEME_VEC_ELS(v)[0] = rp;
+      }
     case 0:
       break;
     }

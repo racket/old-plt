@@ -1375,7 +1375,7 @@ void wxImageSnip::Write(wxMediaStreamOut *f)
 
     fname = wxGetTempFileName("img", NULL);
 
-    bm->SaveFile(fname, wxBITMAP_TYPE_PNG, NULL);
+    bm->SaveFile(fname, wxBITMAP_TYPE_PNG);
     
     fi = fopen(fname, "rb");
     if (fi) {

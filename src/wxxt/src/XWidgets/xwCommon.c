@@ -673,11 +673,16 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
     screen = XScreenNumberOfScreen(XtScreen(self));
 
     vi = glXChooseVisual(dpy, screen, gl_attribs);
-    attributes->colormap = XCreateColormap(dpy, RootWindow(dpy, vi->screen),
-                	                   vi->visual, AllocNone);
-    *mask = *mask | CWColormap;
-    XtCreateWindow(self, InputOutput, vi->visual, *mask, attributes);
-    wx_temp_visual_info = vi;
+    if (vi) {
+      attributes->colormap = XCreateColormap(dpy, RootWindow(dpy, vi->screen),
+                  	                     vi->visual, AllocNone);
+      *mask = *mask | CWColormap;
+      XtCreateWindow(self, InputOutput, vi->visual, *mask, attributes);
+      wx_temp_visual_info = vi;
+    } else {
+      /* Probably GL isn't available from the X server */
+      compositeClassRec.core_class.realize(self, mask, attributes);
+    }
   }
   else
   {

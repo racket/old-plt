@@ -44,7 +44,7 @@
  currently in beta, that uses SrPersist as a substrate.
  A SchemeQL programmer avoids the low-level details 
  of ODBC.  You can download SchemeQL at 
- ftp://abulafia.fciencias.unam.mx/pub/solsona/schemeql.tgz.
+ ftp://wish.com.mx/pub/scheme/.
 
  Loading
  -------

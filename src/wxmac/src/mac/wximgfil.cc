@@ -17,7 +17,6 @@
 #include "wx_utils.h"
 #include "wx_mac_utils.h"
 #include <string.h>
-//#include <sys/types.h>
 
 #include "wximgfil.h"
 

@@ -29,7 +29,7 @@
 #include "wxMacDC.h"
 #include "wx_stdev.h"
 #ifndef OS_X
-  #include <Controls.h>
+# include <Controls.h>
 #endif
 
 /* 
@@ -379,25 +379,25 @@ void wxChoice::DrawChoice(Bool active)
 	PolyHandle poly;
 	poly = OpenPoly();
 	if (poly) {
-		MoveTo(r.right - TRIANGLE_WIDTH - TRIANGLE_RIGHT_SPACE + SetOriginX,
-			   (r.top + (r.bottom - r.top - TRIANGLE_HEIGHT) / 2) + SetOriginY);
-	    Line(TRIANGLE_WIDTH, 0);
-	    Line(-(TRIANGLE_WIDTH / 2), TRIANGLE_HEIGHT);
-	    Line(-(TRIANGLE_WIDTH / 2), -TRIANGLE_HEIGHT);
-		ClosePoly();
-		PaintPoly(poly);
-		KillPoly(poly);
+	  MoveTo(r.right - TRIANGLE_WIDTH - TRIANGLE_RIGHT_SPACE + SetOriginX,
+		 (r.top + (r.bottom - r.top - TRIANGLE_HEIGHT) / 2) + SetOriginY);
+	  Line(TRIANGLE_WIDTH, 0);
+	  Line(-(TRIANGLE_WIDTH / 2), TRIANGLE_HEIGHT);
+	  Line(-(TRIANGLE_WIDTH / 2), -TRIANGLE_HEIGHT);
+	  ClosePoly();
+	  PaintPoly(poly);
+	  KillPoly(poly);
 	}
 	
 	if (!no_strings)
-		return;
-		
+	  return;
+	
 	r.left += ::CharWidth('¥') + ::CharWidth(' ') + MSPACEX;
 	r.right -= TRIANGLE_WIDTH - TRIANGLE_RIGHT_SPACE;
 	
 	Str255	s;
 	if (selection < 0)
-		selection = 0;
+	  selection = 0;
 	::GetMenuItemText(hDynMenu, selection+1, s);
 	SetFont(valueFont);
 	SetTextInfo();
@@ -406,82 +406,82 @@ void wxChoice::DrawChoice(Bool active)
 	int elw = ::CharWidth('É');
 	int tgtw = r.right - r.left - elw;
 	for (i = 1; i < s[0] && w < tgtw; i++)
-		w+= ::CharWidth(s[i]);
+	  w+= ::CharWidth(s[i]);
 	for (; w >= tgtw; i--)
-		w -= ::CharWidth(s[i]);
+	  w -= ::CharWidth(s[i]);
 	if (i != s[0])
-		s[i] = 'É';
+	  s[i] = 'É';
 	::DrawText(s, 1, i);
 	//DrawString(s);
 #endif
-}
+      }
 
 
 // --------- Event Handling -------------------
 void wxChoice::Paint(void)
 {
-	if (cHidden) return;
-	DrawChoice(TRUE);
-	wxWindow::Paint();
+  if (cHidden) return;
+  DrawChoice(TRUE);
+  wxWindow::Paint();
 }
 
 // Resize and/or Move the Control
 void wxChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
-	SetCurrentDC();
-	int clientWidth, clientHeight;
+  SetCurrentDC();
+  int clientWidth, clientHeight;
 
-	if (dW || dH)
-	{
-		GetClientSize(&clientWidth, &clientHeight);
-		if (clientWidth != CtlRect.right) {
-			int needw = CtlRect.right - clientWidth;
-			if (labelPosition == wxVERTICAL) {
-				// Shrink width of both Title and Value
-				if (sTitle)
-					TitleRect.right -= needw;
-				ValueRect.right -= needw;
-			} else {
-				// Shrink width of Value, Title strings if we have to
+  if (dW || dH)
+    {
+      GetClientSize(&clientWidth, &clientHeight);
+      if (clientWidth != CtlRect.right) {
+	int needw = CtlRect.right - clientWidth;
+	if (labelPosition == wxVERTICAL) {
+	  // Shrink width of both Title and Value
+	  if (sTitle)
+	    TitleRect.right -= needw;
+	  ValueRect.right -= needw;
+	} else {
+	  // Shrink width of Value, Title strings if we have to
 #if 0
-				if (sTitle) {
-					TitleRect.right -= needw/2;
-					ValueRect.left -= needw/2;
-				}
+	  if (sTitle) {
+	    TitleRect.right -= needw/2;
+	    ValueRect.left -= needw/2;
+	  }
 #endif
-				ValueRect.right -= needw;
-			}
-			CtlRect.right = clientWidth;
-		} 
-		if (clientHeight != CtlRect.bottom) {
-			int needh = CtlRect.bottom - clientHeight;
-			if (labelPosition == wxVERTICAL) {
-				// Shrink heights equally
-				if (sTitle)
-					TitleRect.bottom -= needh/2;
-				ValueRect.top -= needh/2;
-				ValueRect.bottom -= needh;
-				
-			} else {
-				// Shrink heights eqally
-				if (sTitle)
-					TitleRect.bottom -= needh;
-				ValueRect.bottom -= needh;
-			}
-			CtlRect.bottom = clientHeight;
-		}
+	  ValueRect.right -= needw;
 	}
+	CtlRect.right = clientWidth;
+      } 
+      if (clientHeight != CtlRect.bottom) {
+	int needh = CtlRect.bottom - clientHeight;
+	if (labelPosition == wxVERTICAL) {
+	  // Shrink heights equally
+	  if (sTitle)
+	    TitleRect.bottom -= needh/2;
+	  ValueRect.top -= needh/2;
+	  ValueRect.bottom -= needh;
+	  
+	} else {
+	  // Shrink heights eqally
+	  if (sTitle)
+	    TitleRect.bottom -= needh;
+	  ValueRect.bottom -= needh;
+	}
+	CtlRect.bottom = clientHeight;
+      }
+    }
 
-	if (dX || dY)
-	{
-		MaybeMoveControls();
-	}
+  if (dX || dY)
+    {
+      MaybeMoveControls();
+    }
 }
 
 //-----------------------------------------------------------------------------
 void wxChoice::DoShow(Bool show)
 {
-	wxWindow::DoShow(show);
+  wxWindow::DoShow(show);
 }
 
 //-----------------------------------------------------------------------------
@@ -489,62 +489,62 @@ void wxChoice::DoShow(Bool show)
 
 void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
 {
-	if (event->LeftDown() && (no_strings > 0))
-	{
-		SetCurrentDC();
-	
-		int	newsel;
+  if (event->LeftDown() && (no_strings > 0))
+    {
+      SetCurrentDC();
+      
+      int	newsel;
 #ifdef OS_X
-		int startH, startV;
-		event->Position(&startH, &startV); // client c.s.
+      int startH, startV;
+      event->Position(&startH, &startV); // client c.s.
 
-		Point startPt = {startV + SetOriginY, startH + SetOriginX}; // port c.s.
+      Point startPt = {startV + SetOriginY, startH + SetOriginX}; // port c.s.
 
-		int trackResult;
+      int trackResult;
 
 
-		if (::StillDown()) {
-                    trackResult = TrackControl(cMacControl,startPt,(ControlActionUPP)-1);
-                    if (trackResult == kControlMenuPart) {
-                        newsel = ::GetControlValue(cMacControl);
-                        wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
-                        ProcessCommand(commandEvent);
-                    }
-                }
-#else                
-		Point pos = {ValueRect.top + SetOriginY, ValueRect.left + SetOriginX};
-		LocalToGlobal(&pos);
-                // Rect r = TitleRect;
-                // OffsetRect(&r,SetOriginX,SetOriginY);
-		// if (sTitle) ::InvertRect(&r);
-		::InsertMenu(hDynMenu, -1);
-		::CalcMenuSize(hDynMenu);+
-		newsel = ::PopUpMenuSelect(hDynMenu, pos.v, pos.h, selection+1);
-		// if (sTitle) ::InvertRect(&r);
-		::DeleteMenu(PopUpID);
-		RGBColor save;
-		::GetForeColor(&save);
-		::ForeColor(whiteColor);
-                Rect r = ValueRect;
-                ::OffsetRect(&r,SetOriginX,SetOriginY);
-		::PaintRect(&r);
-		::RGBForeColor(&save);
-		if (newsel) {
-			newsel = LoWord(newsel) -1;
-			if (1 || (newsel != selection)) {
-#ifdef Checkem
-				// selected a different item
-				::CheckMenuItem(hDynMenu, selection+1, FALSE);
-				::CheckMenuItem(hDynMenu, newsel+1, TRUE);
-#endif
-				selection = newsel;
-				wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
-				ProcessCommand(commandEvent);
-			}
-		}
-		DrawChoice(TRUE);
-#endif        
+      if (::StillDown()) {
+	trackResult = TrackControl(cMacControl,startPt,(ControlActionUPP)-1);
+	if (trackResult == kControlMenuPart) {
+	  newsel = ::GetControlValue(cMacControl);
+	  wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+	  ProcessCommand(commandEvent);
 	}
+      }
+#else                
+      Point pos = {ValueRect.top + SetOriginY, ValueRect.left + SetOriginX};
+      LocalToGlobal(&pos);
+      // Rect r = TitleRect;
+      // OffsetRect(&r,SetOriginX,SetOriginY);
+      // if (sTitle) ::InvertRect(&r);
+      ::InsertMenu(hDynMenu, -1);
+      ::CalcMenuSize(hDynMenu);+
+	newsel = ::PopUpMenuSelect(hDynMenu, pos.v, pos.h, selection+1);
+      // if (sTitle) ::InvertRect(&r);
+      ::DeleteMenu(PopUpID);
+      RGBColor save;
+      ::GetForeColor(&save);
+      ::ForeColor(whiteColor);
+      Rect r = ValueRect;
+      ::OffsetRect(&r,SetOriginX,SetOriginY);
+      ::PaintRect(&r);
+      ::RGBForeColor(&save);
+      if (newsel) {
+	newsel = LoWord(newsel) -1;
+	if (1 || (newsel != selection)) {
+#ifdef Checkem
+	  // selected a different item
+	  ::CheckMenuItem(hDynMenu, selection+1, FALSE);
+	  ::CheckMenuItem(hDynMenu, newsel+1, TRUE);
+#endif
+	  selection = newsel;
+	  wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+	  ProcessCommand(commandEvent);
+	}
+      }
+      DrawChoice(TRUE);
+#endif        
+    }
 }
 
 
@@ -569,11 +569,11 @@ void wxChoice::Append (char *Item)
 
 void wxChoice::Clear (void)
 {
-	int n;
-	for (n = 0; n < no_strings; n++)
-		::DeleteMenuItem(hDynMenu, 1);
-	no_strings = 0;
-	selection = 0;
+  int n;
+  for (n = 0; n < no_strings; n++)
+    ::DeleteMenuItem(hDynMenu, 1);
+  no_strings = 0;
+  selection = 0;
 #ifdef OS_X
   ::SetControlMinimum(cMacControl,0);
   ::SetControlMaximum(cMacControl,0);        
@@ -589,50 +589,50 @@ int wxChoice::GetSelection (void)
 
 void wxChoice::SetSelection (int n)
 {
-	if ((n < 0) || (n >= no_strings))
-	  return;
+  if ((n < 0) || (n >= no_strings))
+    return;
 
 #ifdef OS_X
-        ::SetControlValue(cMacControl,selection+1);
+  ::SetControlValue(cMacControl,selection+1);
 #else
 # ifdef Checkem
-	::CheckMenuItem(hDynMenu, selection+1, FALSE);
-	::CheckMenuItem(hDynMenu, n+1, TRUE);
+  ::CheckMenuItem(hDynMenu, selection+1, FALSE);
+  ::CheckMenuItem(hDynMenu, n+1, TRUE);
 # endif
 #endif
-	selection = n;
+  selection = n;
 #ifndef OS_X        
-	DrawChoice(TRUE);
+  DrawChoice(TRUE);
 #endif        
 }
 
 int wxChoice::FindString (char *s)
 {
-	int i;
-	Str255	ps;
-        Str255  temp;
-        CopyCStringToPascal(s,temp);
-	for (i = 0; i < no_strings; i++) {
-		::GetMenuItemText(hDynMenu, i+1, ps);
+  int i;
+  Str255	ps;
+  Str255  temp;
+  CopyCStringToPascal(s,temp);
+  for (i = 0; i < no_strings; i++) {
+    ::GetMenuItemText(hDynMenu, i+1, ps);
 #ifdef OS_X
-                if (!CompareString(ps,temp,NULL))
-                        return i;
+    if (!CompareString(ps,temp,NULL))
+      return i;
 #else                        
-		if (!IUCompPString(ps,temp,NULL))
-			return i;
+    if (!IUCompPString(ps,temp,NULL))
+      return i;
 #endif                        
-	}
-	return -1;
+  }
+  return -1;
 }
 
 char *wxChoice::GetString (int n)
 {
-	Str255	s;
-	if (n < 0 || n >= no_strings)
-		return NULL; // dummy
-	::GetMenuItemText(hDynMenu, n+1, s);
-	CopyPascalStringToC(s, wxBuffer);
-	return copystring(wxBuffer);
+  Str255	s;
+  if (n < 0 || n >= no_strings)
+    return NULL; // dummy
+  ::GetMenuItemText(hDynMenu, n+1, s);
+  CopyPascalStringToC(s, wxBuffer);
+  return copystring(wxBuffer);
 }
 
 
@@ -650,28 +650,28 @@ void wxChoice::SetButtonColour(wxColour*col)
 
 char* wxChoice::GetLabel(void)
 {
-	int n;
-	if (sTitle && (n = sTitle[0])) {
-		CopyPascalStringToC(sTitle, wxBuffer);
-		return wxBuffer;
-	}
-	else
-		return NULL;
+  int n;
+  if (sTitle && (n = sTitle[0])) {
+    CopyPascalStringToC(sTitle, wxBuffer);
+    return wxBuffer;
+  }
+  else
+    return NULL;
 }
 
 void wxChoice::SetLabel(char *label)
 {
-	if (sTitle) {
-		delete[] (char *)sTitle;
-	}
-	label = wxItemStripLabel(label);
-	sTitle = (StringPtr)new char[strlen(label) + 1];
-	CopyCStringToPascal(label, sTitle);
-	
-	SetCurrentDC();
-    Rect r = TitleRect;
-    OffsetRect(&r,SetOriginX,SetOriginY);
-	EraseRect(&r);
-	Paint();
+  if (sTitle) {
+    delete[] (char *)sTitle;
+  }
+  label = wxItemStripLabel(label);
+  sTitle = (StringPtr)new char[strlen(label) + 1];
+  CopyCStringToPascal(label, sTitle);
+  
+  SetCurrentDC();
+  Rect r = TitleRect;
+  OffsetRect(&r,SetOriginX,SetOriginY);
+  EraseRect(&r);
+  Paint();
 }
 

@@ -6,17 +6,14 @@
 // Updated:	
 ///////////////////////////////////////////////////////////////////////////////
 
-static const char sccsid[] = "%W% %G%";
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #ifndef OS_X
-#include <Printing.h>
-#include <QuickDraw.h>
+# include <Printing.h>
+# include <QuickDraw.h>
 #endif
 #include "wx_dcpr.h"
-//#include "wx_canvs.h"
 #include "wx_privt.h"
 #include "wx_utils.h"
 #include "wx_mac_utils.h"
@@ -31,47 +28,47 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
 {
   ok = true;
 
-    CGrafPtr theGrafPtr;
-    __type = wxTYPE_DC_PRINTER;
+  CGrafPtr theGrafPtr;
+  __type = wxTYPE_DC_PRINTER;
 
-    cPrintData = printData;
+  cPrintData = printData;
 
 #ifdef OS_X
-    if (PMSessionBeginDocument(cPrintData->cPrintSession, cPrintData->cPrintSettings,cPrintData->cPageFormat) != noErr) {
-      ok = false;
-      return;
-    }  
-    
-    if (PMSessionGetGraphicsContext(cPrintData->cPrintSession, NULL, (void **)&theGrafPtr) != noErr) {
-      ok = false;
-      return;
-    }
+  if (PMSessionBeginDocument(cPrintData->cPrintSession, cPrintData->cPrintSettings,cPrintData->cPageFormat) != noErr) {
+    ok = false;
+    return;
+  }  
+  
+  if (PMSessionGetGraphicsContext(cPrintData->cPrintSession, NULL, (void **)&theGrafPtr) != noErr) {
+    ok = false;
+    return;
+  }
 
 #else    
-    prPort = PrOpenDoc(cPrintData->macPrData, 0, 0);
+  prPort = PrOpenDoc(cPrintData->macPrData, 0, 0);
 
-    if (PrError()) {
-      PrCloseDoc(prPort);
-      PrClose();
-      ok = FALSE;
-      return;
-    }
+  if (PrError()) {
+    PrCloseDoc(prPort);
+    PrClose();
+    ok = FALSE;
+    return;
+  }
 
-    theGrafPtr = (CGrafPtr)(&(prPort->gPort));
+  theGrafPtr = (CGrafPtr)(&(prPort->gPort));
 #endif
 
-    cMacDC = new wxMacDC(theGrafPtr);
-	
-    cMacDoingDrawing = FALSE;
+  cMacDC = new wxMacDC(theGrafPtr);
+  
+  cMacDoingDrawing = FALSE;
 
-    clipping = FALSE;
-    selected_pixmap = NULL;
+  clipping = FALSE;
+  selected_pixmap = NULL;
 
-    current_reg = NULL ;
-    onpaint_reg = NULL ;
+  current_reg = NULL ;
+  onpaint_reg = NULL ;
 
-    min_x = 0; min_y = 0;
-    max_x = 0; max_y = 0;
+  min_x = 0; min_y = 0;
+  max_x = 0; max_y = 0;
 
 #ifdef OS_X
   PMRect pageRect;
@@ -116,7 +113,7 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
   current_pen = NULL;
   current_brush = NULL;
   current_text_foreground = new wxColour(wxBLACK);
-//  current_text_background = NULL;
+  //  current_text_background = NULL;
   SetBrush(wxWHITE_BRUSH);
   SetPen(wxBLACK_PEN);
 
@@ -154,10 +151,10 @@ void wxPrinterDC::EndDoc(void) { }
 void wxPrinterDC::StartPage(void)
 {
 #ifdef OS_X
-    if (cPrintContext)
-        PMSessionBeginPage(cPrintData->cPrintSession,
-			   cPrintData->cPageFormat,
-			   NULL);
+  if (cPrintContext)
+    PMSessionBeginPage(cPrintData->cPrintSession,
+		       cPrintData->cPageFormat,
+		       NULL);
 #else
   if (prPort)
     PrOpenPage(prPort, 0); 
@@ -168,8 +165,8 @@ void wxPrinterDC::StartPage(void)
 void wxPrinterDC::EndPage(void)
 {
 #ifdef OS_X
-    if (cPrintContext)
-        PMSessionEndPage(cPrintData->cPrintSession);
+  if (cPrintContext)
+    PMSessionEndPage(cPrintData->cPrintSession);
 #else
   if (prPort)
     PrClosePage(prPort);

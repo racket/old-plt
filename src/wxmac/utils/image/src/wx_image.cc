@@ -163,44 +163,6 @@ void Mac_FixupFileName(char * dest, char * src) {
 		strcpy(dest, src);
 	}
 }
-
-// Load into existing bitmap;
-//Bool *wxLoadIntoBitmap(char *fileName, wxBitmap *bitmap, wxColourMap **pal);
-
-Bool wxLoadIntoBitmap(char *infile, wxBitmap *bitmap, wxColourMap **pal)
-{
-  Bool stats = FALSE;
-  char fileName[255];
-  Mac_FixupFileName(fileName, infile);
-  if (wxMatchWild("*.gif",fileName)) {
-    stats = wxLoadGifIntoBitmap(fileName, bitmap, pal);
-  }
-  else if (wxMatchWild("*.pict", fileName)) {
-    stats = wxLoadPICTIntoBitmap(fileName, bitmap, pal);
-  }
-  else if (wxMatchWild("*.xpm", fileName)) {
-	stats = wxLoadXPMIntoBitmap(fileName, bitmap, pal);
- }
-  if (stats)
-    return TRUE;
-  else
-  {
-    delete bitmap;
-    return 0;
-  }
-  return 0;
-}
-
-wxBitmap *wxLoadBitmap(char *fileName, wxColourMap **pal)
-{
-  wxBitmap *bitmap = new wxBitmap;
-
-  if (wxLoadIntoBitmap(fileName, bitmap, pal))
-  	return bitmap;
-  else
-  	return NULL;
-}
-
  
 wxImage::wxImage(void)
 {

@@ -7,8 +7,6 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-static const char sccsid[] = "%W% %G%";
-
 #include "wx_buttn.h"
 #include "wx_utils.h"
 #include "wx_mac_utils.h"
@@ -23,7 +21,6 @@ static const char sccsid[] = "%W% %G%";
 #endif
 #include "wxButtonBorder.h"
 
-#if 1
 # define MIN_BUTTON_WIDTH 58
 # ifdef OS_X
 // Under OS X, an inset is necessary because the OS draws outside of the control rectangle.
@@ -35,12 +32,6 @@ static const char sccsid[] = "%W% %G%";
 #  define BUTTON_H_SPACE 12
 #  define BUTTON_V_SPACE 4
 # endif
-#else
-/* Original parameters */
-#define MIN_BUTTON_WIDTH 60
-#define BUTTON_H_SPACE 20
-#define BUTTON_V_SPACE 10
-#endif
 
 #define IB_MARGIN_X 3
 #define IB_MARGIN_Y 3
@@ -389,6 +380,10 @@ static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Boo
 #   define DARK_SCALE(x) (x - (x >> 2))
 #   define DARKER_SCALE(x) (x >> 1)
 #   define LITE_SCALE(x) 0xFF
+
+    wxREGGLOB(dark);
+    wxREGGLOB(darker);
+    wxREGGLOB(lite);
 
     dark = new wxColour(DARK_SCALE(norm->Red()), 
 			DARK_SCALE(norm->Green()), 

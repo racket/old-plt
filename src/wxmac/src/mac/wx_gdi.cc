@@ -7,7 +7,6 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-static const char sccsid[] = "%W% %G%";
 #include "common.h"
 #include "wx_list.h"
 #include "wx_utils.h"
@@ -28,18 +27,31 @@ static const char sccsid[] = "%W% %G%";
 
 CGrafPtr gMacFontGrafPort = NULL; // mac platform only
 
+#define PLAIN_MALLOC_FOR_XPM
+
 void *XpmMalloc(size_t size)
 {
+#ifdef PLAIN_MALLOC_FOR_XPM
+  return malloc(size);
+#else
   return new char[size];
+#endif
 }
 
 void *XpmMallocA(size_t size)
 {
+#ifdef PLAIN_MALLOC_FOR_XPM
+  return malloc(size);
+#else
   return new WXGC_ATOMIC char[size];
+#endif
 }
 
 static void *DoXpmRealloc(void *(*alloc)(size_t), void *ptr, size_t size)
 {
+#ifdef PLAIN_MALLOC_FOR_XPM
+  return realloc(ptr, size);
+#else
   void *naya;
   size_t osize;
   
@@ -52,6 +64,7 @@ static void *DoXpmRealloc(void *(*alloc)(size_t), void *ptr, size_t size)
   memcpy(naya, ptr, osize);
   
   return naya;
+#endif
 }
 
 void *XpmRealloc(void *ptr, size_t size)
@@ -66,14 +79,22 @@ void *XpmReallocA(void *ptr, size_t size)
 
 void *XpmCallocA(size_t nelem, size_t elsize)
 {
+#ifdef PLAIN_MALLOC_FOR_XPM
+  return calloc(nelem, elsize);
+#else
   void *v = XpmMallocA(nelem * elsize);
   memset(v, 0, nelem * elsize);
   return v;
+#endif
 }
 
-void XpmFree(void *)
+void XpmFree(void *ptr)
 {
+#ifdef PLAIN_MALLOC_FOR_XPM
+  free(ptr);
+#else
   /* Do nothing */
+#endif
 }
 
 #ifdef wx_xview
@@ -1012,11 +1033,10 @@ Bool wxBitmap::LoadFile(char *name, long flags)
       ok = FALSE;
     } else {
       SetDepth(wxDisplayDepth());
-    }	} else if (flags & wxBITMAP_TYPE_ANY) {
-      ok = wxLoadIntoBitmap(name,this, &colourmap);
-    } else {
-      ok = FALSE;
-    }
+    }	
+  } else {
+    ok = FALSE;
+  }
   return ok;
 }
 

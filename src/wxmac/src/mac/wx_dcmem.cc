@@ -7,13 +7,11 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-static const char sccsid[] = "%W% %G%";
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #ifndef OS_X
-  #include <Quickdraw.h>
+# include <Quickdraw.h>
 #endif
 #include "wx_dcmem.h"
 #include "wx_utils.h"
@@ -21,15 +19,11 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_privt.h"
 
 /* 
-	A wxMemoryDC is a pointer to a bitmap, which is an offscreen GWorld. 
-
-	When the wxMemoryDC(void) constructor is used we don't know how large a pixmap
-	(boundsRect) to create so we wait until SelectObject() is called. 
-   mflatt:
-    This is unlike X-Windows and Windows! These platforms allocate a bitmap
-     anyway of some size. Since the manual says to select a bitmap first, I
-     see no problem with this Mac implementation.
-*/
+   A wxMemoryDC is a pointer to a bitmap, which is an offscreen GWorld. 
+   
+   When the wxMemoryDC(void) constructor is used we don't know how large a pixmap
+   (boundsRect) to create so we wait until SelectObject() is called. 
+   */
 extern CGrafPtr wxMainColormap;
 
 wxMemoryDC::wxMemoryDC(Bool ro)
@@ -52,59 +46,59 @@ wxMemoryDC::~wxMemoryDC(void)
 {
   if (selected_pixmap) {
     if (!read_only) {
-	selected_pixmap->selectedInto = NULL;
-	selected_pixmap->selectedIntoDC = 0;
-     }
-	gworldH = NULL;
+      selected_pixmap->selectedInto = NULL;
+      selected_pixmap->selectedIntoDC = 0;
+    }
+    gworldH = NULL;
   } else {
     if (gworldH) {
-	  ::DisposeGWorld(gworldH);
-	  gworldH = NULL;
+      ::DisposeGWorld(gworldH);
+      gworldH = NULL;
     }
- }
- 
- if (cMacDC) {
-	delete cMacDC;
-	cMacDC = NULL;
+  }
+  
+  if (cMacDC) {
+    delete cMacDC;
+    cMacDC = NULL;
   }
 }
 
 void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 {
   if (selected_pixmap == bitmap) {
-		// set cMacDC ??
-		return;
+    // set cMacDC ??
+    return;
   }
   if (!read_only) {
     if (bitmap && bitmap->selectedIntoDC)
-	// This bitmap is selected into a different memoryDC
-    return;
+      // This bitmap is selected into a different memoryDC
+      return;
   }
   
   if (selected_pixmap) {
-     if (!read_only) {
-	selected_pixmap->selectedInto = NULL;
-	selected_pixmap->selectedIntoDC = 0;
-      }
-      gworldH = NULL;
+    if (!read_only) {
+      selected_pixmap->selectedInto = NULL;
+      selected_pixmap->selectedIntoDC = 0;
+    }
+    gworldH = NULL;
   } else {
     if (gworldH) {
-  	  ::DisposeGWorld(gworldH);
+      ::DisposeGWorld(gworldH);
       gworldH = NULL;
     }
   }
 
   if (cMacDC) {
-	delete cMacDC;
-	cMacDC = NULL;
+    delete cMacDC;
+    cMacDC = NULL;
   }
   ok = FALSE;
   selected_pixmap = bitmap;
   if (bitmap == NULL) {	// deselect a bitmap
     pixmapWidth = 0;
     pixmapHeight = 0;
-	pixmap = NULL;
-	return;
+    pixmap = NULL;
+    return;
   }
   if (!read_only) {
     bitmap->selectedInto = this;
@@ -115,16 +109,16 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
   if (bitmap->Ok()) {
     gworldH = bitmap->x_pixmap;
     if (gworldH) {
-	pixmap = ::GetGWorldPixMap(gworldH);
-	
-	cMacDC = new wxMacDC((CGrafPtr)gworldH);
-	// bitmap->DrawMac(0, 0);
-	ok = TRUE;
-	    
-        SetCurrentDC();
-  	InstallColor(current_background_color, FALSE);
-	PenMode(patCopy);
-	ToolChanged(kNoTool);
+      pixmap = ::GetGWorldPixMap(gworldH);
+      
+      cMacDC = new wxMacDC((CGrafPtr)gworldH);
+      // bitmap->DrawMac(0, 0);
+      ok = TRUE;
+      
+      SetCurrentDC();
+      InstallColor(current_background_color, FALSE);
+      PenMode(patCopy);
+      ToolChanged(kNoTool);
     }
   }
 }
@@ -136,6 +130,6 @@ wxBitmap* wxMemoryDC::GetObject()
 
 GWorldPtr wxMemoryDC::MacCreateGWorld(int width, int height)
 {
-	return NULL;
+  return NULL;
 }
 

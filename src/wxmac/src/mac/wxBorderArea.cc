@@ -16,14 +16,14 @@
 
 //-----------------------------------------------------------------------------
 wxBorderArea::wxBorderArea(wxWindow* parentWindow, int margin, Direction direction,
-							int whitespace) :
-		wxArea(parentWindow)
+			   int whitespace) :
+			   wxArea(parentWindow)
 {
-	cBorder = new wxRectBorder(this, margin, direction, whitespace);
+  cBorder = new wxRectBorder(this, margin, direction, whitespace);
 }
 
 //-----------------------------------------------------------------------------
 wxBorderArea::~wxBorderArea(void)	// destructor
 {
-//	delete cBorder;
+  //	delete cBorder;
 }

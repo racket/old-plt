@@ -4,13 +4,8 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_canvs.cc,v 1.5 2001/07/11 16:53:06 clements Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
-
-/* static const char sccsid[] = "@(#)wb_canvs.cc	1.2 5/9/94"; */
-
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
 
 #ifdef __GNUG__
 #pragma implementation
@@ -21,26 +16,8 @@
 #include "wx_dc.h"
 #include "wx_canvs.h"
 
-#include "wx.h"
-
 class wxFrame;
 
-#ifndef wx_mac
-wxbCanvas::wxbCanvas(void)
-{
-  __type = wxTYPE_CANVAS;
-}
-#endif // wx_mac
-
-#ifndef wx_mac
-wxbCanvas::wxbCanvas(wxWindow *window, int x, int y, int width, int height, long style,
-                     char *name)
-{
-  __type = wxTYPE_CANVAS;
-  windowStyle = style;
-}
-#endif // wx_mac
-#ifdef wx_mac
 // Constructor (given parentArea)
 wxbCanvas::wxbCanvas (char* windowName, wxArea* parentArea, int x, int y,
 		int width, int height, long style)
@@ -64,7 +41,6 @@ wxbCanvas::wxbCanvas(char* windowName, wxWindow* parentWindow, int x, int y,
   __type = wxTYPE_CANVAS;
   windowStyle = style;
 }
-#endif // wx_mac
 
 wxbCanvas::~wxbCanvas(void)
 {

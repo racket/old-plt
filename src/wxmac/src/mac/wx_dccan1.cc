@@ -7,13 +7,11 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-static const char sccsid[] = "%W% %G%";
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #ifndef OS_X
-#include <QuickDraw.h>
+# include <QuickDraw.h>
 #endif
 #include "wx_dccan.h"
 #include "wx_canvs.h"
@@ -22,22 +20,6 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_mac_utils.h"
 #include "wx_area.h"
 #include "wx_rgn.h"
-
-//#include "bdiag.xbm"
-//#include "fdiag.xbm"
-//#include "cdiag.xbm"
-//#include "horiz.xbm"
-//#include "verti.xbm"
-//#include "cross.xbm"
-//#include "wx_area.h"
-//
-//static PixMapHandle	bdiag,
-//		cdiag,
-//		fdiag,
-//		cross,
-//		horiz,
-//		verti;
-
 
 extern CGrafPtr wxMainColormap;
 

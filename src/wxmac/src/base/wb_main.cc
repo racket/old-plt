@@ -4,13 +4,8 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_main.cc,v 1.7 2001/11/05 06:55:00 clements Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
-
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-/* static const char sccsid[] = "%W% %G%"; */
 
 #ifdef __GNUG__
 #ifdef __GNUG__
@@ -31,16 +26,6 @@
 #include "wx_dialg.h"
 #include "wx_types.h"
 #include "wx_dcps.h"
-
-// If not MS C++, don't include wx.h: we'll just include
-// the minimum set of files.
-// If MS C++, we'll use a precompiled header instead.
-#if !defined(_MSC_VER) && !defined(wx_wxh)
-#define wx_wxh
-#endif
-
-#include "wx.h"
-
 #include "wx_sysev.h"
 
 #include <string.h>
@@ -49,7 +34,7 @@ extern char *wxBuffer;
 
 wxApp *wxTheApp = NULL;
 
-wxbApp::wxbApp(wxlanguage_t )
+wxbApp::wxbApp()
 {
   __type = wxTYPE_APP;
   wx_class = NULL;

@@ -68,14 +68,6 @@ void StringToLong(char *s, long *number);
 char *IntToString(int number);
 char *LongToString(long number);
 
-// Matches string one within string two regardless of case
-#ifndef IN_CPROTO
-Bool StringMatch(char *one, char *two, Bool subString = TRUE, Bool exact = FALSE);
-#endif
-
-// A shorter way of using strcmp
-#define wxStringEq(s1, s2) (s1 && s2 && (strcmp(s1, s2) == 0))
-
 // Some file utilities
 
 // Get filename
@@ -96,11 +88,6 @@ void wxUnix2DosFilename(char *s);
 char *wxGetTempFileName(const char *prefix, char *buf = NULL);
 
 void wxRemoveFile(char *filename);
-
-// Does the pattern match the text (usually a filename)?
-// If dot_special is TRUE, doesn't match * against . (eliminating
-// `hidden' dot files)
-Bool wxMatchWild(const char *pattern,  const char *text, Bool dot_special = TRUE);
 
 // Sleep for nSecs seconds under UNIX, do nothing under Windows
 void wxSleep(int nSecs);

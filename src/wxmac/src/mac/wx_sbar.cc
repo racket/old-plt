@@ -7,8 +7,6 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-static const char sccsid[] = "%W% %G%";
-
 #include "wx_item.h"
 #include "wx_sbar.h"
 #include "wxScroll.h"
@@ -19,7 +17,7 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_area.h"
 #include "wx_frame.h"
 #ifndef OS_X
-#include <Windows.h>
+# include <Windows.h>
 #endif
 
 pascal void	TrackActionProc(ControlHandle theControl,short partCode);

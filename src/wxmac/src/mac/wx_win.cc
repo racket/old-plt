@@ -7,8 +7,6 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-static const char sccsid[] = "%W% %G%";
-
 #include "wx_win.h"
 #include "wxMacDC.h"
 #include "wx_utils.h"

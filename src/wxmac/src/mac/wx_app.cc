@@ -7,21 +7,18 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ////////////////////////////////////////////////////////////////////////////////
 
-static const char sccsid[] = "%W% %G%";
-
-// #include <stdlib.h>
 #ifndef OS_X
-#include <Events.h>
-#include <AppleEvents.h>
-#include <DiskInit.h>
-#include <Devices.h>
-#include <Resources.h>
-#include <Balloons.h>
-#include <QuickDraw.h>
-#include <Gestalt.h>
-#include <Sound.h>
+# include <Events.h>
+# include <AppleEvents.h>
+# include <DiskInit.h>
+# include <Devices.h>
+# include <Resources.h>
+# include <Balloons.h>
+# include <QuickDraw.h>
+# include <Gestalt.h>
+# include <Sound.h>
 #endif
-#include "wx_main.h"	// WCH : should split out stuff for wx_app.h and wb_app.h
+#include "wx_main.h"
 #include "wx_frame.h"
 #include "wx_menu.h"
 #include "wx_mnuit.h"
@@ -53,10 +50,12 @@ extern Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *win, wxMouseEvent *e
 
 extern wxApp *wxTheApp;
 //-----------------------------------------------------------------------------
-wxApp::wxApp(wxlanguage_t language):wxbApp(language)
+wxApp::wxApp():wxbApp()
 {
   wxREGGLOB(wxTheApp);
   wxTheApp = this;
+
+  wxREGGLOB(wxWindow::gMouseWindow);
 
   OSErr myErr;
   long quickdrawVersion;
@@ -108,7 +107,6 @@ wxApp::wxApp(wxlanguage_t language):wxbApp(language)
   death_processed = FALSE;
   work_proc = NULL;
   wx_class = NULL;
-  wxSetLanguage(language);
   cLastMousePos.v = cLastMousePos.h = -1;
   
 }

@@ -1,12 +1,7 @@
 /*
  * Global Data
  *
- * RCS_ID:      $Id: wb_data.cc,v 1.4 2001/10/17 21:17:33 clements Exp $
  */
-
-/* static const char sccsid[] = "@(#)wb_data.cc	1.2 5/9/94"; */
-
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
 
 #ifdef __GNUG__
 #ifdef __GNUG__
@@ -19,30 +14,12 @@
 #include "wx_list.h"
 #include "wx_gdi.h"
 
-// If not MS C++, don't include wx.h: we'll just include
-// the minimum set of files.
-// If MS C++, we'll use a precompiled header instead.
-#if !defined(_MSC_VER) && !defined(wx_wxh)
-#define wx_wxh
-#endif
-
-#include "wx.h"
-
 #define _MAXPATHLEN 500
 
 // Useful buffer, initialized in wxCommonInit
 char *wxBuffer = NULL;
 
-#if 0
-// Windows List
-wxList wxTopLevelWindows;
-#endif
-
-// Message Strings for Internationalization
-char **wx_msg_str = (char**)NULL;
-
 // Some global printer parameters
-/* char wx_printer_file[_MAXPATHLEN]; */
 float wx_printer_scale_x = 1.0;
 float wx_printer_scale_y = 1.0;
 float wx_printer_translate_x = 0.0;
@@ -98,9 +75,3 @@ wxCursor *wxSTANDARD_CURSOR = NULL;
 wxCursor *wxHOURGLASS_CURSOR = NULL;
 wxCursor *wxCROSS_CURSOR = NULL;
 wxCursor *wxIBEAM_CURSOR = NULL;
-
-/*
- * Edward, haven't added in your wx_version and wx_version_string constants:
- * do you think they're necessary over and above the #defines?
- */
-

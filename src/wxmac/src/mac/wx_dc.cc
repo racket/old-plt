@@ -7,41 +7,40 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-static const char sccsid[] = "%W% %G%";
 #ifndef OS_X
-  #include <QuickDraw.h>
+# include <QuickDraw.h>
 #endif
 #include "wx_gdi.h"
 #include "wx_dc.h"
 
 //-----------------------------------------------------------------------------
 wxDC::wxDC(void)
-//-----------------------------------------------------------------------------
+     //-----------------------------------------------------------------------------
 {
-	cMacDC = NULL;
-	cMacCurrentTool = kNoTool;
+  cMacDC = NULL;
+  cMacCurrentTool = kNoTool;
 }
 
 //-----------------------------------------------------------------------------
 wxDC::~wxDC(void)
-//-----------------------------------------------------------------------------
+     //-----------------------------------------------------------------------------
 {
 }
 
 //-----------------------------------------------------------------------------
 void wxDC::wxMacDrawPoint(int x1, int y1)
-//-----------------------------------------------------------------------------
+     //-----------------------------------------------------------------------------
 {
-	MoveTo(x1 + SetOriginX, y1 + SetOriginY);
-	Line(0, 0);
+  MoveTo(x1 + SetOriginX, y1 + SetOriginY);
+  Line(0, 0);
 }
 
 //-----------------------------------------------------------------------------
 void wxDC::wxMacDrawLine(int x1, int y1, int x2, int y2)
-//-----------------------------------------------------------------------------
+     //-----------------------------------------------------------------------------
 {
-	MoveTo(x1 + SetOriginX, y1 + SetOriginY);
-	LineTo(x2 + SetOriginX, y2 + SetOriginY);
+  MoveTo(x1 + SetOriginX, y1 + SetOriginY);
+  LineTo(x2 + SetOriginX, y2 + SetOriginY);
 }
 
 void wxDC::SetTextForeground(wxColour *colour)
@@ -64,6 +63,6 @@ void wxDC::SetBackgroundMode(int mode)
 
 void wxDC::ToolChanged(wxMacToolType tool)
 {
-   if ((tool == kNoTool) || (cMacCurrentTool == tool))
-     cMacCurrentTool = kNoTool;
+  if ((tool == kNoTool) || (cMacCurrentTool == tool))
+    cMacCurrentTool = kNoTool;
 }

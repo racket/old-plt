@@ -4,13 +4,8 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_obj.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
-
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-/* static const char sccsid[] = "@(#)wb_obj.cc	1.2 5/9/94"; */
 
 #ifdef __GNUG__
 #ifdef __GNUG__
@@ -20,15 +15,6 @@
 
 #include "wx_obj.h"
 #include "wx_types.h"
-
-// If not MS C++, don't include wx.h: we'll just include
-// the minimum set of files.
-// If MS C++, we'll use a precompiled header instead.
-#if !defined(_MSC_VER) && !defined(wx_wxh)
-#define wx_wxh
-#endif
-
-#include "wx.h"
 
 int wx_object_count;
 

@@ -4,13 +4,8 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_frame.cc,v 1.8 2001/10/29 16:27:06 clements Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
-
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-/* static const char sccsid[] = "%W% %G%"; */
 
 #ifdef __GNUG__
 #ifdef __GNUG__
@@ -27,57 +22,9 @@
 #include "wx_utils.h"
 #include "wx_menu.h"
 #include "wx_mnuit.h"
-#ifdef wx_mac
-#include "wx_screen.h"
-#endif
-// If not MS C++, don't include wx.h: we'll just include
-// the minimum set of files.
-// If MS C++, we'll use a precompiled header instead.
-#if !defined(_MSC_VER) && !defined(wx_wxh)
-#define wx_wxh
-#endif
-
-#include "wx.h"
- 
+#include "wx_screen.h" 
 #include "wx_stdev.h"
 
-// #include <iostream.h>
-
-#ifndef wx_mac
-wxbFrame::wxbFrame(void)
-{
-  __type = wxTYPE_FRAME;
-  nb_status = 0;
-  frameToolBar = NULL ;
-}
-
-wxbFrame::wxbFrame(wxFrame *Parent, char *title, int x, int y,
-                 int width, int height, long style, char *name)
-{
-  __type = wxTYPE_FRAME;
-  windowStyle = style;
-  frameToolBar = NULL ;
-
-  /* WXGC_IGNORE(context); - NO, context itself is not finalized */
-  context = wxGetContextForFrame();
-}
-
-Bool wxbFrame::Create(wxFrame *Parent, char *title, int x, int y,
-                 int width, int height, long style, char *name)
-{
-  windowStyle = style;
-
-  /* WXGC_IGNORE(context); - NO, context itself is not finalized */
-  context = wxGetContextForFrame();
-
-  wxTopLevelWindows(ContextWindow())->Append(this);
-  wxTopLevelWindows(ContextWindow())->Show(this, FALSE);
-
-  return TRUE;
-}
-#endif // wx_mac
-
-#ifdef wx_mac
 //-----------------------------------------------------------------------------
 // Constructor (given parentScreen)
 wxbFrame::wxbFrame (char* windowName, wxScreen* parentScreen,
@@ -99,8 +46,6 @@ wxbFrame::wxbFrame (char* windowName, wxScreen* parentScreen,
   wxTopLevelWindows(ContextWindow())->Append(this);
   wxTopLevelWindows(ContextWindow())->Show(this, FALSE);
 }
-
-#endif // wx_mac
 
 wxbFrame::~wxbFrame(void)
 {
@@ -194,11 +139,9 @@ void wxbFrame::OnMenuSelect(int id)
   }
 }
 
-#ifdef wx_mac // The following belongs in this file! Moved from wb_item.cc
 void wxbFrame::SetMenuBar(wxMenuBar *menu_bar)
 {
 }
-#endif // wx_mac
 
 wxMenuBar *wxbFrame::GetMenuBar(void)
 {

@@ -53,7 +53,7 @@ class wxbApp: public wxObject
   Bool death_processed;
   void (*work_proc)(wxApp*app) ; // work procedure
 
-  wxbApp(wxlanguage_t language = wxLANGUAGE_DEFAULT);
+  wxbApp();
   ~wxbApp(void);
   virtual wxFrame *OnInit(void);
   virtual int OnExit(void);

@@ -4,13 +4,8 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_item.cc,v 1.8 2001/10/30 05:15:35 clements Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
-
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-/* static const char sccsid[] = "%W% %G%"; */
 
 #ifdef __GNUG__
 #ifdef __GNUG__
@@ -70,9 +65,7 @@
 #include "common.h"
 #include "wx_setup.h"
 
-#ifdef wx_mac
-#  include "wx_mac_utils.h"
-#endif
+#include "wx_mac_utils.h"
 #include "wx_item.h"
 #include "wx_slidr.h"
 #include "wx_choic.h"
@@ -92,15 +85,6 @@
 
 #include "wx_stdev.h"
 #include "wx_utils.h"
-
-// If not MS C++, don't include wx.h: we'll just include
-// the minimum set of files.
-// If MS C++, we'll use a precompiled header instead.
-#if !defined(_MSC_VER) && !defined(wx_wxh)
-#define wx_wxh
-#endif
-
-#include "wx.h"
 
 #include "wx_stdev.h"
 
@@ -279,11 +263,6 @@ void wxbItem::Centre (int direction)
     new_y = (int) ((panel_height - height) / 2);
 
   SetSize (new_x, new_y, width, height, wxPOS_USE_MINUS_ONE);
-#ifndef wx_mac
-  int temp_x, temp_y;
-  GetPosition (&temp_x, &temp_y);
-  GetPosition (&temp_x, &temp_y);
-#endif // wx_mac
 }
 
 void wxbItem::Command (wxCommandEvent * event)
@@ -588,28 +567,12 @@ wxbCheckBox::wxbCheckBox (wxPanel * panel, wxFunction func, char *Title,
   buttonColour = panel->buttonColour;
 }
 
-#ifndef wx_mac
-wxbCheckBox::wxbCheckBox (wxPanel * panel, wxFunction func, wxBitmap * bitmap,
-	     int x, int y, int width, int height, long style, char *name)
-{
-  __type = wxTYPE_CHECK_BOX;
-  windowStyle = style;
-  window_parent = panel;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
-}
-#else
 wxbCheckBox::wxbCheckBox (wxPanel* parentPanel, int x, int y, int width, int height,
 		long style, char* name) 
 	: wxItem (parentPanel, x, y, width, height, style,  name)
 {
   __type = wxTYPE_CHECK_BOX;
 }
-#endif
 
 wxbCheckBox::~wxbCheckBox (void)
 {
@@ -629,22 +592,9 @@ wxbChoice::wxbChoice (void)
 wxbChoice::wxbChoice (wxPanel * panel, wxFunction func, char *Title,
 	   int x, int y, int width, int height, int N, char **Choices,
 	   long style, char *name)
-#ifdef wx_mac
 	: wxItem (panel, x, y, width, height, style, name)
-#endif
 {
   __type = wxTYPE_CHOICE;
-#ifndef wx_mac
-  windowStyle = style;
-  window_parent = panel;
-  labelPosition = panel->label_position;
-  no_strings = N;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
-#endif
 }
 
 wxbChoice::~wxbChoice (void)
@@ -770,7 +720,6 @@ wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction func,
   buttonColour = panel->buttonColour;
 }
 
-#ifndef __BORLANDC__
 wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction func,
 	     char *Title,
 	     int x, int y, int width, int height,
@@ -789,7 +738,6 @@ wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction func,
   labelColour = panel->labelColour;
   buttonColour = panel->buttonColour;
 }
-#endif
 
 wxbRadioBox::~wxbRadioBox (void)
 {

@@ -4,13 +4,8 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_utils.cc,v 1.5 2001/10/17 21:17:33 clements Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
-
-/* static const char sccsid[] = "%W% %G%"; */
-
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
 
 #ifdef __GNUG__
 #ifdef __GNUG__
@@ -23,29 +18,9 @@
 #include "wx_win.h"
 #include "wx_menu.h"
 
-// If not MS C++, don't include wx.h: we'll just include
-// the minimum set of files.
-// If MS C++, we'll use a precompiled header instead.
-#if !defined(_MSC_VER) && !defined(wx_wxh)
-#define wx_wxh
-#endif
-
-#include "wx.h"
-
 # include <ctype.h>
 # include <stdio.h>
 # include <stdlib.h>
-# if !defined(wx_mac) || defined(_powerc)
-#  include <errno.h>
-# endif
-
-// Pattern matching code.
-// Yes, this path is deliberate (for Borland compilation)
-#ifdef wx_mac /* MATTHEW: [5] Mac doesn't like paths with "/" */
-#include "glob.inc"
-#else
-#include "../base/glob.inc"
-#endif
 
 #define _MAXPATHLEN 500
 
@@ -128,22 +103,22 @@ wxFileNameFromPath (char *path)
 #else
 	      *tcp == '/' 
 #ifdef wx_msw /* MATTHEW: [5] DOS only */
-                    || *tcp == '\\'
+	      || *tcp == '\\'
 #endif
 #endif
 #ifdef VMS
-     || *tcp == ':' || *tcp == ']')
+	      || *tcp == ':' || *tcp == ']')
 #else
-     )
+	    )
 #endif
-	    return tcp + 1;
-	}			/* while */
+	  return tcp + 1;
+    }			/* while */
 #ifdef wx_msw
-      if (isalpha (*path) && *(path + 1) == ':')
-	return path + 2;
+  if (isalpha (*path) && *(path + 1) == ':')
+    return path + 2;
 #endif
-    }
-  return path;
+}
+return path;
 }
 
 // Return just the directory, or NULL if no directory
@@ -154,10 +129,10 @@ wxPathOnly (char *path)
     {
       static char *buf = NULL;
 
-	  if (!buf) {
-	    wxREGGLOB(buf);
-	    buf = new char[_MAXPATHLEN];
-	  }
+      if (!buf) {
+	wxREGGLOB(buf);
+	buf = new char[_MAXPATHLEN];
+      }
 
       // Local copy
       strcpy (buf, path);
@@ -169,38 +144,38 @@ wxPathOnly (char *path)
 
       // Search backward for a backward or forward slash
       while (!done && i > -1)
-      {
-        if (
-#ifdef wx_mac /* MATTHEW: [5] Mac */
-	    path[i] == ':'
-#else
-	    path[i] == '/' 
-#ifdef wx_msw /* MATTHEW: [5] DOS only */
-	    || path[i] == '\\'
-#endif
-#endif
-	    )
-        {
-          done = TRUE;
-          buf[i] = 0;
-          return buf;
-        }
-        else i --;
-      }
-
-/* there's a bug here somewhere, so replaced with my original code.
-      char *tcp;
-      // scan back
-      for (tcp = &buf[strlen (buf) - 1]; tcp >= buf; tcp--)
 	{
-	  // Search for Unix or Dos path sep {'\\', '/'}
-	  if (*tcp == '\\' || *tcp == '/')
+	  if (
+#ifdef wx_mac /* MATTHEW: [5] Mac */
+	      path[i] == ':'
+#else
+	      path[i] == '/' 
+#ifdef wx_msw /* MATTHEW: [5] DOS only */
+	      || path[i] == '\\'
+#endif
+#endif
+	      )
 	    {
-	      *tcp = '\0';
+	      done = TRUE;
+	      buf[i] = 0;
 	      return buf;
 	    }
-	}			// for()
-*/
+	  else i --;
+	}
+
+      /* there's a bug here somewhere, so replaced with my original code.
+	 char *tcp;
+	 // scan back
+	 for (tcp = &buf[strlen (buf) - 1]; tcp >= buf; tcp--)
+	 {
+	 // Search for Unix or Dos path sep {'\\', '/'}
+	 if (*tcp == '\\' || *tcp == '/')
+	 {
+	 *tcp = '\0';
+	 return buf;
+	 }
+	 }			// for()
+	 */
 #ifdef wx_msw
       // Try Drive specifier
       if (isalpha (buf[0]) && buf[1] == ':')
@@ -253,7 +228,7 @@ char *wxStripMenuCodes (char *in, char *out)
 {
   if (!in)
     return NULL;
-    
+  
   if (!out)
     out = copystring(in);
 
@@ -298,22 +273,22 @@ wxFindMenuItemId (wxFrame * frame, char *menuString, char *itemString)
 int strcasecmp(char *s, char *t);
 int strcasecmp(char *s, char *t)
 {
-	int r;
-	while (*s && *t) {
-		r = tolower(*s++) - tolower(*t++);
-		if (r != 0) return r;
-	}
-	return (tolower(*s) - tolower(*t));		// CJC is this correct
+  int r;
+  while (*s && *t) {
+    r = tolower(*s++) - tolower(*t++);
+    if (r != 0) return r;
+  }
+  return (tolower(*s) - tolower(*t));		// CJC is this correct
 }
 
 int strncasecmp(char *s, char *t, int w);
 int strncasecmp(char *s, char *t, int w)
 {
-	int r,i = 0;
-	while (i < w) {
-		r = tolower(s[i]) - tolower(t[i]);
-		if (r != 0) return r;
-		i += 1;	
-	}
-	return 0;
+  int r,i = 0;
+  while (i < w) {
+    r = tolower(s[i]) - tolower(t[i]);
+    if (r != 0) return r;
+    i += 1;	
+  }
+  return 0;
 }

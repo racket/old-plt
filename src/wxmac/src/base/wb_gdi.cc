@@ -4,13 +4,8 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.30 2001/11/05 06:55:00 clements Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
-
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-/* static const char sccsid[] = "%W% %G%"; */
 
 #ifdef __GNUG__
 #ifdef __GNUG__
@@ -27,26 +22,7 @@
 #include "wx_utils.h"
 #include "wx_main.h"
 #include "wx_gdi.h"
-
-// If not MS C++, don't include wx.h: we'll just include
-// the minimum set of files.
-// If MS C++, we'll use a precompiled header instead.
-#if !defined(_MSC_VER) && !defined(wx_wxh)
-#define wx_wxh
-#endif
-
-#include "wx.h"
-
-
-#ifdef wx_x
-extern Colormap wxMainColormap;
-#endif
-#ifdef wx_xview
-extern Xv_Server xview_server;
-#endif
-#if USE_IMAGE_LOADING_IN_MAC
 #include "wx_image.h"
-#endif
 
 #include "FontDirectory.cxx"
 
@@ -152,18 +128,10 @@ wxColour::wxColour (void)
 {
   __type = wxTYPE_COLOUR;
   isInit = FALSE;
-#ifdef wx_x
-  pixel = -1;
-#endif
-#ifdef wx_msw
-  pixel = 0;
-#endif
-#ifdef wx_mac
   red = 0; green = 0; blue = 0;
   pixel.red = 0;
   pixel.green = 0;
   pixel.blue = 0;
-#endif
   locked = 0;
 }
 
@@ -175,17 +143,9 @@ wxColour::wxColour (unsigned char r, unsigned char g, unsigned char b)
   green = g;
   blue = b;
   isInit = TRUE;
-#ifdef wx_x
-  pixel = -1;
-#endif
-#ifdef wx_msw
-  pixel = RGB (red, green, blue);
-#endif
-#ifdef wx_mac
   pixel.red = red << 8;
   pixel.green = green << 8;
   pixel.blue = blue << 8;
-#endif
   locked = 0;
 }
 
@@ -215,17 +175,9 @@ wxColour::wxColour (const char *col)
       blue = 0;
       isInit = FALSE;
     }
-#ifdef wx_x
-  pixel = -1;
-#endif
-#ifdef wx_msw
-  pixel = RGB (red, green, blue);
-#endif
-#ifdef wx_mac
   pixel.red = red << 8;
   pixel.green = green << 8;
   pixel.blue = blue << 8;
-#endif
   locked = 0;
 }
 
@@ -722,7 +674,6 @@ wxGDIList::wxGDIList (void)
 
 wxGDIList::~wxGDIList (void)
 {
-#ifndef wx_x
   wxNode *node = First ();
   while (node)
     {
@@ -731,7 +682,6 @@ wxGDIList::~wxGDIList (void)
       delete object;
       node = next;
     }
-#endif
 }
 
 // Pen and Brush lists
@@ -924,15 +874,6 @@ wxIntPoint::~wxIntPoint (void)
 {
 }
 #endif
-
-#if !USE_RESOURCES
-#define wxGetResource(a, b, c) 0
-#endif
-
-typedef char *a_charptr;
-// Note from CJC - Initialize leaked like crazy because the copystring() returned by
-// searchresource() was not deleted on expansions.
-//
 
 #include "Region.h"
 #include "Region.cxx"

@@ -7,7 +7,6 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-static const char sccsid[] = "%W% %G%";
 #ifndef OS_X
 # include <Windows.h>
 # include <Folders.h>
@@ -47,26 +46,15 @@ extern "C" {
   extern char *scheme_mac_spec_to_path(FSSpec *spec);
 }
 
-char *wxmac_startup_directory;
-
-extern void wxInitResources(char *s);
-
 //-----------------------------------------------------------------------------
 int wxEntry(int argc, char* argv[])
 {
-  // CreateApp();	// This procedure initializes the whole application
-
   if (!wxTheApp)
-    {
-      exit(0);
-    }
+    exit(0);
 
   wxTheApp->argc = argc;
   wxTheApp->argv = argv;
 
-  wxmac_startup_directory = scheme_os_getcwd(NULL, 0, NULL, 1);
-  wxREGGLOB(wxmac_startup_directory);
-  
   FSSpec spec;
   SInt16 vRefNum;
   SInt32 dirID;
@@ -77,21 +65,6 @@ int wxEntry(int argc, char* argv[])
   static char path_divider = ':';
 #endif
   
-  if (FindFolder(kOnSystemDisk, 'pref', kCreateFolder, &vRefNum, &dirID) == noErr) {
-    char *home;
-    
-    FSMakeFSSpec(vRefNum,dirID,fileName,&spec);
-    home = scheme_mac_spec_to_path(&spec);
-    int l = strlen(home);
-    char *s = new char[l + 15];
-    memcpy(s, home, l);
-    if (s[l - 1] != path_divider) {
-      s[l++] = path_divider;
-    }
-    strcpy(s + l, "mred.fnt");
-    wxInitResources(s);
-  }
-
   wxCommonInit();
   wxInitializePrintSetupData(1);
 

@@ -51,13 +51,6 @@
 #ifdef wx_mac 
 // Save (device dependent) wxBitmap as a DIB
 Bool wxSaveBitmap(char *filename, wxBitmap *bitmap, wxColourMap *colourmap = NULL);
-
-// Load device independent bitmap into device dependent bitmap
-wxBitmap *wxLoadBitmap(char *filename, wxColourMap **colourmap = NULL);
-
-// Load into existing bitmap;
-Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **pal = NULL);
-// There are other wxLoad*IntoBitmap defined in wximgfil.h
 #endif
 
 class wxImage: public wxObject

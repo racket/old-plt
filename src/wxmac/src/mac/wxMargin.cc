@@ -17,28 +17,28 @@
 //-----------------------------------------------------------------------------
 wxMargin::wxMargin(int margin)
 {
-	left = margin;
-	top = margin;
-	right = margin;
-	bottom = margin;
+  left = margin;
+  top = margin;
+  right = margin;
+  bottom = margin;
 }
 
 //-----------------------------------------------------------------------------
 wxMargin::wxMargin(int margin, Direction direction)
 {
-	left = ((int)direction & Direction::wxLeft ? margin : 0);
-	top = ((int)direction & Direction::wxTop ? margin : 0);
-	right = ((int)direction & Direction::wxRight ? margin : 0);
-	bottom = ((int)direction & Direction::wxBottom ? margin : 0);
+  left = ((int)direction & Direction::wxLeft ? margin : 0);
+  top = ((int)direction & Direction::wxTop ? margin : 0);
+  right = ((int)direction & Direction::wxRight ? margin : 0);
+  bottom = ((int)direction & Direction::wxBottom ? margin : 0);
 }
 
 //-----------------------------------------------------------------------------
 wxMargin::wxMargin(const wxMargin& margin)
 {
-	left = margin.left;
-	top = margin.top;
-	right = margin.right;
-	bottom = margin.bottom;
+  left = margin.left;
+  top = margin.top;
+  right = margin.right;
+  bottom = margin.bottom;
 }
 
 //-----------------------------------------------------------------------------
@@ -52,11 +52,11 @@ wxMargin::~wxMargin(void)	// destructor
 
 wxMargin& wxMargin::operator +=(wxMargin margin)
 {
-	left += margin.left;
-	top += margin.top;
-	right += margin.right;
-	bottom += margin.bottom;
-	return *this;
+  left += margin.left;
+  top += margin.top;
+  right += margin.right;
+  bottom += margin.bottom;
+  return *this;
 }
 
 //=============================================================================
@@ -66,29 +66,29 @@ wxMargin& wxMargin::operator +=(wxMargin margin)
 //-----------------------------------------------------------------------------
 void wxMargin::SetMargin(wxMargin margin, Direction direction)
 {
-	if ((int)direction & Direction::wxLeft) left = margin.left;
-	if ((int)direction & Direction::wxTop) top = margin.top;
-	if ((int)direction & Direction::wxRight) right = margin.right;
-	if ((int)direction & Direction::wxBottom) bottom = margin.bottom;
+  if ((int)direction & Direction::wxLeft) left = margin.left;
+  if ((int)direction & Direction::wxTop) top = margin.top;
+  if ((int)direction & Direction::wxRight) right = margin.right;
+  if ((int)direction & Direction::wxBottom) bottom = margin.bottom;
 }
 
 //-----------------------------------------------------------------------------
 void wxMargin::SetMargin(int margin, Direction direction)
 {
-	if ((int)direction & Direction::wxLeft) left = margin;
-	if ((int)direction & Direction::wxTop) top = margin;
-	if ((int)direction & Direction::wxRight) right = margin;
-	if ((int)direction & Direction::wxBottom) bottom = margin;
+  if ((int)direction & Direction::wxLeft) left = margin;
+  if ((int)direction & Direction::wxTop) top = margin;
+  if ((int)direction & Direction::wxRight) right = margin;
+  if ((int)direction & Direction::wxBottom) bottom = margin;
 }
 
 //-----------------------------------------------------------------------------
 int wxMargin::Offset(Direction direction)
 {
-	int result = 0;
-	if ((int)direction & Direction::wxLeft) result += left;
-	if ((int)direction & Direction::wxTop) result += top;
-	if ((int)direction & Direction::wxRight) result += right;
-	if ((int)direction & Direction::wxBottom) result += bottom;
+  int result = 0;
+  if ((int)direction & Direction::wxLeft) result += left;
+  if ((int)direction & Direction::wxTop) result += top;
+  if ((int)direction & Direction::wxRight) result += right;
+  if ((int)direction & Direction::wxBottom) result += bottom;
 
-	return result;
+  return result;
 }

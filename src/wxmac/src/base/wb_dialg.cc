@@ -4,13 +4,8 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_dialg.cc,v 1.5 1999/07/12 14:25:37 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
-
-// #include "wx.h" // Uncomment this line for Borland precomp. headers to work
-
-/* static const char sccsid[] = "@(#)wb_dialg.cc	1.2 5/9/94"; */
 
 #ifdef __GNUG__
 #ifdef __GNUG__
@@ -37,15 +32,6 @@
 #include "wx_lbox.h"
 #include "wx_mgstr.h"
 
-// If not MS C++, don't include wx.h: we'll just include
-// the minimum set of files.
-// If MS C++, we'll use a precompiled header instead.
-#if !defined(_MSC_VER) && !defined(wx_wxh)
-#define wx_wxh
-#endif
-
-#include "wx.h"
-// #include <iostream.h>
 #include <stdio.h>
 
 #define wxDIALOG_DEFAULT_X 300

@@ -34,7 +34,7 @@ public:
 	Point			cLastMousePos; // mac platform only
 
  public:
-	wxApp(wxlanguage_t language = wxLANGUAGE_DEFAULT);
+	wxApp();
 	~wxApp(void);
 #if USE_MAC_DIALOG_PANEL
 	virtual int MainLoop(void);

@@ -1,4 +1,2 @@
 
-/* Moved to common */
-
-#include "::::wxcommon:PSDC.cxx"
+/* not used */

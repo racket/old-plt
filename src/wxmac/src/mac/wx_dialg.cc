@@ -11,8 +11,6 @@
 // Dialog box - like panel but doesn't need a frame, and is modal or non-modal
 //-----------------------------------------------------------------------------
 
-static const char sccsid[] = "%W% %G%";
-
 #include "wx_dialg.h"
 #include "wx_panel.h"
 #include "wx_utils.h"
@@ -21,15 +19,10 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_buttn.h"
 #include "wx_macevents.h"
 #ifndef OS_X
-  #include <StandardFile.h>
-  #include <TextUtils.h>
-  #include <Strings.h>
-  #include <LowMem.h>
-#endif
-#ifdef PYLIB
-extern "C" {
-#include "nfullpath.h"
-}
+# include <StandardFile.h>
+# include <TextUtils.h>
+# include <Strings.h>
+# include <LowMem.h>
 #endif
 
 # define USE_NAVIGATION
@@ -51,7 +44,7 @@ extern wxApp* wxTheApp;
 
 static int IsUnshown(void *data)
 {
-	return !((wxDialogBox *)data)->IsShown();
+  return !((wxDialogBox *)data)->IsShown();
 }
 
 //-----------------------------------------------------------------------------
@@ -77,18 +70,18 @@ Bool wxDialogBox::IsShown(void)
 
 void wxDialogBox::SetSize(int x, int y, int width, int height, int flags)
 {
-    if (!(flags & 0x70)) {
-      int w, h, cw, ch;
-      
-      if ((width > -1) && (height > -1)) {
-        cFrame->GetSize(&w, &h);
-        cFrame->GetClientSize(&cw, &ch);
-      } else
-         w = h = cw = ch = 0;
-      
-      cFrame->SetSize(x, y, width + (w - cw), height + (h - ch), flags);
-     } else
-	  wxWindow::SetSize(x, y, width, height, flags);
+  if (!(flags & 0x70)) {
+    int w, h, cw, ch;
+    
+    if ((width > -1) && (height > -1)) {
+      cFrame->GetSize(&w, &h);
+      cFrame->GetClientSize(&cw, &ch);
+    } else
+      w = h = cw = ch = 0;
+    
+    cFrame->SetSize(x, y, width + (w - cw), height + (h - ch), flags);
+  } else
+    wxWindow::SetSize(x, y, width, height, flags);
 }
 
 
@@ -101,18 +94,18 @@ void wxDialogBox::OnSize(int x, int y)
   // Count the number of _subwindow_ children
   int noChildren = 0;
   for(wxChildNode *node = GetChildren()->First(); node; node = node->Next())
-  {
-    wxWindow *win = (wxWindow *)(node->Data());
-    WXTYPE winType = win->__type;
-
-    if (wxSubType(winType, wxTYPE_PANEL) ||
-        wxSubType(winType, wxTYPE_TEXT_WINDOW) ||
-        wxSubType(winType, wxTYPE_CANVAS))
     {
-      child = win;
-      noChildren ++;
+      wxWindow *win = (wxWindow *)(node->Data());
+      WXTYPE winType = win->__type;
+
+      if (wxSubType(winType, wxTYPE_PANEL) ||
+	  wxSubType(winType, wxTYPE_TEXT_WINDOW) ||
+	  wxSubType(winType, wxTYPE_CANVAS))
+	{
+	  child = win;
+	  noChildren ++;
+	}
     }
-  }
   if (!child || (noChildren > 1))
     return;
 
@@ -125,95 +118,90 @@ void wxDialogBox::OnSize(int x, int y)
 //-----------------------------------------------------------------------------
 Bool wxDialogBox::IsModal(void)
 {
-	return cFrame->IsModal();
+  return cFrame->IsModal();
 }
 
 //-----------------------------------------------------------------------------
 void wxDialogBox::ShowModal(void)
 {
-	Show(TRUE);
-	if (!cFrame->IsModal()) {
-  	  while (IsShown())
-		wxTheApp->MainLoop();
-	}
+  Show(TRUE);
+  if (!cFrame->IsModal()) {
+    while (IsShown())
+      wxTheApp->MainLoop();
+  }
 }
 
 void wxDialogBox::Fit(void)
 {
-	int x, y;
+  int x, y;
 
-	wxPanel::Fit();
-	wxPanel::GetSize(&x, &y);
-	// cFrame->SetClientSize(x, y);
+  wxPanel::Fit();
+  wxPanel::GetSize(&x, &y);
+  // cFrame->SetClientSize(x, y);
 }
 
 //-----------------------------------------------------------------------------
 int wxDialogBox::GetButtonPressed(void)
 {
-	return cButtonPressed;
+  return cButtonPressed;
 }
 
 //-----------------------------------------------------------------------------
 void wxDialogBox::SetButtonPressed(int buttonPressed)
 {
-	cButtonPressed = buttonPressed;
+  cButtonPressed = buttonPressed;
 }
 
 //-----------------------------------------------------------------------------
 Bool wxDialogBox::OnClose(void)
 {
-	Bool result;
-	if (IsModal())
-	{
-		Show(FALSE);
-		result = FALSE; // don't want dialog frame deleted
-	}
-	else
-	{
-		result = TRUE;
-	}
+  Bool result;
+  if (IsModal())
+    {
+      Show(FALSE);
+      result = FALSE; // don't want dialog frame deleted
+    }
+  else
+    {
+      result = TRUE;
+    }
 
-	if (result)
-	  return cFrame->OnClose();
+  if (result)
+    return cFrame->OnClose();
 
-	return result;
+  return result;
 }
 
 //=============================================================================
 // Public constructors
 //=============================================================================
 
-/* we no longer ignore the border style on dialogs */
-#if 1
 # define DIALOG_BORDER_STYLE wxMAXIMIZE
-#else
-# define DIALOG_BORDER_STYLE 0
-#endif
 
 //-----------------------------------------------------------------------------
 wxDialogBox::wxDialogBox // Constructor (for dialog window)
-	(
-		wxWindow*	parentFrame,		// this is ignored, used to be wxFrame*
-		char*		windowTitle,
-		Bool		modal,
-		int 		x,
-		int			y,
-		int			width,
-		int			height,
-		long		style,
-		char*		windowName,
-		WXTYPE		objectType
-	) :
-		wxPanel (new wxFrame(NULL, windowTitle, 
-				     x, y,
-				     width, height, 
-				     (style | wxMDI_CHILD 
-				      | ((style & DIALOG_BORDER_STYLE) 
-					 ? 0
-					 : wxNO_RESIZE_BORDER)), 
-				     windowName, objectType),
-			 0, 0, width, height),
-		cButtonPressed (0)
+(
+ wxWindow*	parentFrame,		// this is ignored, used to be wxFrame*
+ char*		windowTitle,
+ Bool		modal,
+ int 		x,
+ int			y,
+ int			width,
+ int			height,
+ long		style,
+ char*		windowName,
+ WXTYPE		objectType
+ ) :
+ wxPanel (new wxFrame(NULL, windowTitle, 
+		      x, y,
+		      width, height, 
+		      (style | wxMDI_CHILD 
+		       | ((style & DIALOG_BORDER_STYLE) 
+			  ? 0
+			  : wxNO_RESIZE_BORDER)), 
+		      windowName, objectType),
+	  0, 0, width, height),
+	  cButtonPressed (0)
 {
   WXGC_IGNORE(this, cFrame);
   
@@ -238,10 +226,10 @@ wxDialogBox::wxDialogBox // Constructor (for dialog window)
 //-----------------------------------------------------------------------------
 wxDialogBox::~wxDialogBox()
 {
-	if (cFrame) {
-		  wxTopLevelWindows(ContextWindow())->DeleteObject(cFrame);
-		  cFrame = NULL;
-	}
+  if (cFrame) {
+    wxTopLevelWindows(ContextWindow())->DeleteObject(cFrame);
+    cFrame = NULL;
+  }
 }
 
 extern int wxsMessageBox(char *message, char *caption, long style, wxWindow *parent);
@@ -257,8 +245,8 @@ int wxMessageBox(char* message, char* caption, long style,
 }
 
 extern "C" {
- extern char *scheme_mac_spec_to_path(FSSpec *f);
- extern int scheme_mac_path_to_spec(const char *filename, FSSpec *spec);
+  extern char *scheme_mac_spec_to_path(FSSpec *f);
+  extern int scheme_mac_path_to_spec(const char *filename, FSSpec *spec);
 }
 
 //= T.P. ==============================================================================
@@ -277,16 +265,16 @@ static pascal void EventFilter(NavEventCallbackMessage callBackSelector,
 {
 #ifndef OS_X
   /* Essentially copied from Inside Macintosh: */
-    switch (callBackSelector)
+  switch (callBackSelector)
     {
-        // never happens in nav services 3.0?:
-        case kNavCBEvent:
-        	switch (((callBackParms->eventData).eventDataParms.event)->what) {
-        		case updateEvt:
-		            QueueMrEdEvent(callBackParms->eventData.eventDataParms.event);
-		            break;
-		    }
-            break;
+      // never happens in nav services 3.0?:
+    case kNavCBEvent:
+      switch (((callBackParms->eventData).eventDataParms.event)->what) {
+      case updateEvt:
+	QueueMrEdEvent(callBackParms->eventData.eventDataParms.event);
+	break;
+      }
+      break;
     }
 #endif            
 }
@@ -312,14 +300,14 @@ char *wxFileSelector(char *message, char *default_path,
 #ifdef USE_NAVIGATION
   if ((navinited >= 0) && (navinited || NavServicesAvailable())) {
     if (!navinited) {
-       if (!NavLoad()) {
-         navinited = 1;
-       } else {
-         navinited = -1;
-         return wxFileSelector(message, default_path, default_filename,
-         		       default_extension, wildcard, flags,
-         		       parent, x, y);
-       } 
+      if (!NavLoad()) {
+	navinited = 1;
+      } else {
+	navinited = -1;
+	return wxFileSelector(message, default_path, default_filename,
+			      default_extension, wildcard, flags,
+			      parent, x, y);
+      } 
     }
 
     NavEventUPP   eventProc = NewNavEventUPP(EventFilter);
@@ -331,15 +319,15 @@ char *wxFileSelector(char *message, char *default_path,
     NavGetDefaultDialogCreationOptions(&dialogOptions);
     
     if (default_filename) 
-        dialogOptions.saveFileName = CFStringCreateWithCString(NULL,default_filename,CFStringGetSystemEncoding());
+      dialogOptions.saveFileName = CFStringCreateWithCString(NULL,default_filename,CFStringGetSystemEncoding());
     if (message)
-        dialogOptions.message = CFStringCreateWithCString(NULL,message,CFStringGetSystemEncoding());
+      dialogOptions.message = CFStringCreateWithCString(NULL,message,CFStringGetSystemEncoding());
     dialogOptions.modality = kWindowModalityAppModal;
     
     NavDialogRef outDialog;
     
     // looks like there's no way to specify a default directory to start in...
- 
+    
     // create the dialog:
     if ((flags == 0) || (flags & wxOPEN) || (flags & wxMULTIOPEN)) {
       if (NavCreateGetFileDialog(&dialogOptions,NULL,eventProc,NULL,NULL,NULL,&outDialog) != noErr) {
@@ -411,7 +399,7 @@ char *wxFileSelector(char *message, char *default_path,
         NavDisposeReply(reply);
         return NULL;
       }
-    	    
+      
       for (index=1; index<=count; index++) {
         err = AEGetNthPtr(&(reply->selection),index,typeFSRef, &theKeyword, &actualType, &fsref,sizeof(fsref),&actualSize);
         if (err != noErr) {
@@ -427,9 +415,9 @@ char *wxFileSelector(char *message, char *default_path,
           aggregate = newpath;
         }
       }
-	
+      
       NavDisposeReply(reply);
-	    
+      
       return aggregate;
       
     } else if (flags & wxOPEN) {
@@ -438,35 +426,35 @@ char *wxFileSelector(char *message, char *default_path,
       
       NavDisposeReply(reply);
 
-	  return wxFSRefToPath(fsref);
-	        
+      return wxFSRefToPath(fsref);
+      
     } else { // saving file
-    	int strLen = CFStringGetLength(reply->saveFileName) + 1;
-        char *filename = new char[strLen];
-        char *path, *wholepath;
+      int strLen = CFStringGetLength(reply->saveFileName) + 1;
+      char *filename = new char[strLen];
+      char *path, *wholepath;
 
-		if (CFStringGetCString(reply->saveFileName,filename,strLen,CFStringGetSystemEncoding()) == FALSE) {
-			// Unable to convert string
-			NavDisposeReply(reply);
-			return NULL;
-		}
-		
-        AEGetNthPtr(&(reply->selection), 1, typeFSRef, &theKeyword, &actualType, &fsref, sizeof(fsref), &actualSize);
-		
-		path = wxFSRefToPath(fsref);
-		
-		if (path == NULL) {
-		  NavDisposeReply(reply);
-		  return NULL;
-		}
-		
-		wholepath = new WXGC_ATOMIC char[strlen(path) + strlen(filename) + 2];
-		
-		sprintf(wholepath,"%s/%s",path,filename);
-        
-        NavDisposeReply(reply);
-        
-        return wholepath;
+      if (CFStringGetCString(reply->saveFileName,filename,strLen,CFStringGetSystemEncoding()) == FALSE) {
+	// Unable to convert string
+	NavDisposeReply(reply);
+	return NULL;
+      }
+      
+      AEGetNthPtr(&(reply->selection), 1, typeFSRef, &theKeyword, &actualType, &fsref, sizeof(fsref), &actualSize);
+      
+      path = wxFSRefToPath(fsref);
+      
+      if (path == NULL) {
+	NavDisposeReply(reply);
+	return NULL;
+      }
+      
+      wholepath = new WXGC_ATOMIC char[strlen(path) + strlen(filename) + 2];
+      
+      sprintf(wholepath,"%s/%s",path,filename);
+      
+      NavDisposeReply(reply);
+      
+      return wholepath;
     }
     
 #else    
@@ -488,7 +476,7 @@ char *wxFileSelector(char *message, char *default_path,
       dialogOptions->message[0] = len;
       memcpy(dialogOptions->message + 1, message, len);
     }
-      
+    
     NavReplyRecord *reply = new NavReplyRecord;
     AEDesc *startp = NULL;
     OSErr err;
@@ -511,8 +499,8 @@ char *wxFileSelector(char *message, char *default_path,
     
     if ((flags == 0) || (flags & wxOPEN) || (flags & wxMULTIOPEN))
       err = NavChooseFile(startp, reply, dialogOptions,
-                       eventProc,
-                       NULL, NULL, NULL, NULL);
+			  eventProc,
+			  NULL, NULL, NULL, NULL);
     else {
       err = NavPutFile(startp, reply, dialogOptions,
                        eventProc,
@@ -529,51 +517,51 @@ char *wxFileSelector(char *message, char *default_path,
       err = 1;
       NavDisposeReply(reply);
     }
-      
+    
     if (startp)
       AEDisposeDesc(startp);
-      
+    
     if (!err) {
-        AEKeyword   theKeyword;
-        DescType    actualType;
-        Size        actualSize;
+      AEKeyword   theKeyword;
+      DescType    actualType;
+      Size        actualSize;
 
-    	if (flags & wxMULTIOPEN) {
-    	    long count, index;
-    	    char *aggregate = "";
-    	    char *newpath, *temp;
-    	    
-    	    AECountItems(&(reply->selection),&count);
-    	    
-    	    for (index=1; index<=count; index++) {
-    	    	AEGetNthPtr(&(reply->selection),index,
-    	    		    typeFSS, &theKeyword,
-    	    		    &actualType, &fsspec,
-    	    		    sizeof(fsspec),
-    	    		    &actualSize);
-		temp = scheme_mac_spec_to_path(&fsspec);
-		newpath = new WXGC_ATOMIC char[strlen(aggregate) + 
-						       strlen(temp) +
-						       log_base_10(strlen(temp)) + 3];
-		sprintf(newpath,"%s %ld %s",aggregate,strlen(temp),temp);
-		aggregate = newpath;
-	    }
-	    
-	    NavDisposeReply(reply);
-	    
-	    return aggregate;
-	} else {
-	    AEGetNthPtr(&(reply->selection), 1,
-                        typeFSS, &theKeyword,
-                        &actualType, &fsspec,
-                        sizeof(fsspec),
-                        &actualSize);
-       
-	    NavDisposeReply(reply);
-	    return scheme_mac_spec_to_path(&fsspec);
+      if (flags & wxMULTIOPEN) {
+	long count, index;
+	char *aggregate = "";
+	char *newpath, *temp;
+	
+	AECountItems(&(reply->selection),&count);
+	
+	for (index=1; index<=count; index++) {
+	  AEGetNthPtr(&(reply->selection),index,
+		      typeFSS, &theKeyword,
+		      &actualType, &fsspec,
+		      sizeof(fsspec),
+		      &actualSize);
+	  temp = scheme_mac_spec_to_path(&fsspec);
+	  newpath = new WXGC_ATOMIC char[strlen(aggregate) + 
+					 strlen(temp) +
+					 log_base_10(strlen(temp)) + 3];
+	  sprintf(newpath,"%s %ld %s",aggregate,strlen(temp),temp);
+	  aggregate = newpath;
 	}
-     } else 
-       return NULL;
+	
+	NavDisposeReply(reply);
+	
+	return aggregate;
+      } else {
+	AEGetNthPtr(&(reply->selection), 1,
+		    typeFSS, &theKeyword,
+		    &actualType, &fsspec,
+		    sizeof(fsspec),
+		    &actualSize);
+	
+	NavDisposeReply(reply);
+	return scheme_mac_spec_to_path(&fsspec);
+      }
+    } else 
+      return NULL;
 #endif       
   } else {
 #endif
@@ -581,66 +569,65 @@ char *wxFileSelector(char *message, char *default_path,
     wxFatalError("Navigation Services Unavailable.","");
     return NULL;
 #else
-	StandardFileReply	rep;
-	SFTypeList typeList = { 'TEXT' };
-	char * name;
-	short numTypes = -1; // all types
-	Str255	p_prompt,p_defname;
+    StandardFileReply	rep;
+    SFTypeList typeList = { 'TEXT' };
+    char * name;
+    short numTypes = -1; // all types
+    Str255	p_prompt,p_defname;
 
 
-	if (default_path) {
-	   FSSpec sp;
-	   CInfoPBRec pb;
-	   if (scheme_mac_path_to_spec(default_path, &sp)) {
-  	     pb.dirInfo.ioNamePtr = sp.name;
-	     pb.dirInfo.ioVRefNum = sp.parID; // sounds crazy, I know
-	     pb.dirInfo.ioFDirIndex = 0;
-	     if (PBGetCatInfo(&pb, 0) == noErr) {
-	       LMSetCurDirStore(pb.dirInfo.ioDrDirID);
-	     }
-	     LMSetSFSaveDisk(-sp.vRefNum);
-	   }
+    if (default_path) {
+      FSSpec sp;
+      CInfoPBRec pb;
+      if (scheme_mac_path_to_spec(default_path, &sp)) {
+	pb.dirInfo.ioNamePtr = sp.name;
+	pb.dirInfo.ioVRefNum = sp.parID; // sounds crazy, I know
+	pb.dirInfo.ioFDirIndex = 0;
+	if (PBGetCatInfo(&pb, 0) == noErr) {
+	  LMSetCurDirStore(pb.dirInfo.ioDrDirID);
 	}
-	
-			
-	if ((flags == 0) || (flags & wxOPEN) || (flags & wxMULTIOPEN))
-	{	// get file
-		::StandardGetFile( NULL, numTypes, typeList, &rep);	
-	} else
+	LMSetSFSaveDisk(-sp.vRefNum);
+      }
+    }
+    
+    
+    if ((flags == 0) || (flags & wxOPEN) || (flags & wxMULTIOPEN))
+      {	// get file
+	::StandardGetFile( NULL, numTypes, typeList, &rep);	
+      } else
 	{	// put file
-		if (message)
-		{	
-			CopyCStringToPascal(message,p_prompt);
-		} else 
-		{
-			CopyCStringToPascal("Save File Name",p_prompt);
-		}
-		if (default_filename)
-		{	
-                        CopyCStringToPascal(default_filename,p_defname);
-		} else 
-		{
-			CopyCStringToPascal("",p_defname);
-		}
-		::StandardPutFile( p_prompt, p_defname, &rep);
+	  if (message)
+	    {	
+	      CopyCStringToPascal(message,p_prompt);
+	    } else 
+	      {
+		CopyCStringToPascal("Save File Name",p_prompt);
+	      }
+	  if (default_filename)
+	    {	
+	      CopyCStringToPascal(default_filename,p_defname);
+	    } else 
+	      {
+		CopyCStringToPascal("",p_defname);
+	      }
+	  ::StandardPutFile( p_prompt, p_defname, &rep);
 	}
-	
-	if (!rep.sfGood)
-	  return NULL;
-	
-	name = scheme_mac_spec_to_path(&rep.sfFile);
-	
-	if (flags & wxMULTIOPEN) {
-	    char *aggregate = new char[strlen(name) + log_base_10(strlen(name)) + 2];
-	    sprintf(aggregate,"%d %s",strlen(name),name);
-	  
-	    return aggregate;
-	} else {
-	    return name;
-	}
+    
+    if (!rep.sfGood)
+      return NULL;
+    
+    name = scheme_mac_spec_to_path(&rep.sfFile);
+    
+    if (flags & wxMULTIOPEN) {
+      char *aggregate = new char[strlen(name) + log_base_10(strlen(name)) + 2];
+      sprintf(aggregate,"%d %s",strlen(name),name);
+      
+      return aggregate;
+    } else {
+      return name;
+    }
 #endif
 #ifdef USE_NAVIGATION
   }
 #endif
 }
-

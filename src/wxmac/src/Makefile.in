@@ -38,11 +38,9 @@ WXMAC_CXXFLAGS = $(CXXFLAGS) -I$(XPMDIR) -I$(PLTSRCDIR)/a-list/c-headers/ -I$(sr
 
 
 OBJS = \
-   wb_form.o \
    wb_item.o \
    wb_panel.o \
    wb_timer.o \
-   wxstring.o \
    wb_frame.o \
    wb_list.o \
    wb_ps.o \
@@ -50,20 +48,14 @@ OBJS = \
    wb_canvs.o \
    wb_gdi.o \
    wb_main.o \
-   wb_res.o \
    wb_utils.o \
    wb_data.o \
    wb_hash.o \
-   wb_mf.o \
    wb_stdev.o \
    wb_win.o \
    wb_dc.o \
-   wb_help.o \
-   wb_mgstr.o \
    wb_sysev.o \
-   wx_enhdg.o \
    wb_dialg.o \
-   wb_ipc.o \
    wb_obj.o \
    xfspline.o \
    wx_choic.o \
@@ -81,7 +73,6 @@ OBJS = \
    wxButtonBorder.o \
    wx_dccan2.o \
    wx_mtxt.o \
-   wxGetTxt.o \
    wx_dccan3.o \
    wx_panel.o \
    wxLabelArea.o \
@@ -90,7 +81,6 @@ OBJS = \
    wxMacDC.o \
    wx_dcpr1.o \
    wx_rbox.o \
-   wxMacObj.o \
    wx_rbut.o \
    wx_sbar.o \
    wxMargin.o \
@@ -103,15 +93,12 @@ OBJS = \
    wx_text.o \
    wxScrollArea.o \
    wx_gauge.o \
-   wx_timer.o \
    wxScrollData.o \
    wx_gdi.o \
    wx_txt.o \
    wx_app.o \
-   wx_group.o \
    wx_util.o \
    wx_area.o \
-   wx_ipc.o \
    wx_win.o \
    wx_buttn.o \
    wx_item.o \
@@ -167,16 +154,12 @@ libwxmac.a: $(OBJS)
 clean:
 	rm -f *.o libwxmac.a
 
-wb_form.o : $(srcdir)/base/wb_form.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wb_form.o -c $(srcdir)/base/wb_form.cc
 wb_item.o : $(srcdir)/base/wb_item.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_item.o -c $(srcdir)/base/wb_item.cc
 wb_panel.o : $(srcdir)/base/wb_panel.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_panel.o -c $(srcdir)/base/wb_panel.cc
 wb_timer.o : $(srcdir)/base/wb_timer.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_timer.o -c $(srcdir)/base/wb_timer.cc
-wxstring.o : $(srcdir)/base/wxstring.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wxstring.o -c $(srcdir)/base/wxstring.cc
 wb_frame.o : $(srcdir)/base/wb_frame.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_frame.o -c $(srcdir)/base/wb_frame.cc
 wb_list.o : $(srcdir)/../../wxcommon/wb_list.cxx
@@ -191,34 +174,22 @@ wb_gdi.o : $(srcdir)/base/wb_gdi.cc $(srcdir)/../../wxcommon/FontDirectory.cxx
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_gdi.o -c $(srcdir)/base/wb_gdi.cc
 wb_main.o : $(srcdir)/base/wb_main.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_main.o -c $(srcdir)/base/wb_main.cc
-wb_res.o : $(srcdir)/base/wb_res.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wb_res.o -c $(srcdir)/base/wb_res.cc
 wb_utils.o : $(srcdir)/base/wb_utils.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_utils.o -c $(srcdir)/base/wb_utils.cc
 wb_data.o : $(srcdir)/base/wb_data.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_data.o -c $(srcdir)/base/wb_data.cc
 wb_hash.o : $(srcdir)/../../wxcommon/wb_hash.cxx
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_hash.o -c $(srcdir)/../../wxcommon/wb_hash.cxx
-wb_mf.o : $(srcdir)/base/wb_mf.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wb_mf.o -c $(srcdir)/base/wb_mf.cc
 wb_stdev.o : $(srcdir)/base/wb_stdev.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_stdev.o -c $(srcdir)/base/wb_stdev.cc
 wb_win.o : $(srcdir)/base/wb_win.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_win.o -c $(srcdir)/base/wb_win.cc
 wb_dc.o : $(srcdir)/base/wb_dc.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_dc.o -c $(srcdir)/base/wb_dc.cc
-wb_help.o : $(srcdir)/base/wb_help.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wb_help.o -c $(srcdir)/base/wb_help.cc
-wb_mgstr.o : $(srcdir)/base/wb_mgstr.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wb_mgstr.o -c $(srcdir)/base/wb_mgstr.cc
 wb_sysev.o : $(srcdir)/base/wb_sysev.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_sysev.o -c $(srcdir)/base/wb_sysev.cc
-wx_enhdg.o : $(srcdir)/base/wx_enhdg.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wx_enhdg.o -c $(srcdir)/base/wx_enhdg.cc
 wb_dialg.o : $(srcdir)/base/wb_dialg.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_dialg.o -c $(srcdir)/base/wb_dialg.cc
-wb_ipc.o : $(srcdir)/base/wb_ipc.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wb_ipc.o -c $(srcdir)/base/wb_ipc.cc
 wb_obj.o : $(srcdir)/base/wb_obj.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wb_obj.o -c $(srcdir)/base/wb_obj.cc
 xfspline.o : $(srcdir)/base/xfspline.cc
@@ -255,8 +226,6 @@ wx_dccan2.o : $(srcdir)/mac/wx_dccan2.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_dccan2.o -c $(srcdir)/mac/wx_dccan2.cc
 wx_mtxt.o : $(srcdir)/mac/wx_mtxt.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_mtxt.o -c $(srcdir)/mac/wx_mtxt.cc
-wxGetTxt.o : $(srcdir)/mac/wxGetTxt.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wxGetTxt.o -c $(srcdir)/mac/wxGetTxt.cc
 wx_dccan3.o : $(srcdir)/mac/wx_dccan3.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_dccan3.o -c $(srcdir)/mac/wx_dccan3.cc
 wx_panel.o : $(srcdir)/mac/wx_panel.cc
@@ -273,8 +242,6 @@ wx_dcpr1.o : $(srcdir)/mac/wx_dcpr1.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_dcpr1.o -c $(srcdir)/mac/wx_dcpr1.cc
 wx_rbox.o : $(srcdir)/mac/wx_rbox.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_rbox.o -c $(srcdir)/mac/wx_rbox.cc
-wxMacObj.o : $(srcdir)/mac/wxMacObj.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wxMacObj.o -c $(srcdir)/mac/wxMacObj.cc
 wx_rbut.o : $(srcdir)/mac/wx_rbut.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_rbut.o -c $(srcdir)/mac/wx_rbut.cc
 wx_sbar.o : $(srcdir)/mac/wx_sbar.cc
@@ -299,8 +266,6 @@ wxScrollArea.o : $(srcdir)/mac/wxScrollArea.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wxScrollArea.o -c $(srcdir)/mac/wxScrollArea.cc
 wx_gauge.o : $(srcdir)/mac/wx_gauge.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_gauge.o -c $(srcdir)/mac/wx_gauge.cc
-wx_timer.o : $(srcdir)/mac/wx_timer.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wx_timer.o -c $(srcdir)/mac/wx_timer.cc
 wxScrollData.o : $(srcdir)/mac/wxScrollData.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wxScrollData.o -c $(srcdir)/mac/wxScrollData.cc
 wx_gdi.o : $(srcdir)/mac/wx_gdi.cc
@@ -309,14 +274,10 @@ wx_txt.o : $(srcdir)/mac/wx_txt.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_txt.o -c $(srcdir)/mac/wx_txt.cc
 wx_app.o : $(srcdir)/mac/wx_app.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_app.o -c $(srcdir)/mac/wx_app.cc
-wx_group.o : $(srcdir)/mac/wx_group.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wx_group.o -c $(srcdir)/mac/wx_group.cc
 wx_util.o : $(srcdir)/mac/wx_util.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_util.o -c $(srcdir)/mac/wx_util.cc
 wx_area.o : $(srcdir)/mac/wx_area.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_area.o -c $(srcdir)/mac/wx_area.cc
-wx_ipc.o : $(srcdir)/mac/wx_ipc.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wx_ipc.o -c $(srcdir)/mac/wx_ipc.cc
 wx_win.o : $(srcdir)/mac/wx_win.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_win.o -c $(srcdir)/mac/wx_win.cc
 wx_buttn.o : $(srcdir)/mac/wx_buttn.cc

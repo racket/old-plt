@@ -7,8 +7,6 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-static const char sccsid[] = "%W% %G%";
-
 #include "wxRectBorder.h"
 #include "wxMacDC.h"
 #include "wx_area.h"
@@ -32,7 +30,7 @@ wxRectBorder::wxRectBorder // Constructor (given parentArea)
  long		style,
  WXTYPE		objectType
  ) :
- wxBorder (parentArea, windowName, x, y, width, height, style, objectType)
+  wxBorder (parentArea, windowName, x, y, width, height, style, objectType)
 {
   cWhitespace = whitespace;
   parentArea->SetMargin(margin, direction);

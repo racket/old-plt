@@ -160,6 +160,8 @@
  ; Help Desk configuration
 			     
  (hd-configuration "PLT Help Desk configuration")
+ (hd-no-frames "No Frames")
+ (hd-use-frames "Use Frames")
  (hd-use-html-frames "Use HTML frames")
  (hd-search-pane-options "Search pane options")
  (hd-height "Height")

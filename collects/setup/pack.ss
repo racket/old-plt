@@ -96,7 +96,8 @@
 	      [(conflicts) ',conflicts]
 	      [(plt-relative?) ,plt-relative?]
 	      [(plt-home-relative?) ,(and plt-relative?
-					  plt-home-relative?)]))
+					  plt-home-relative?)]
+	      [else (failure)]))
          fileout)
         (newline fileout)
         (write

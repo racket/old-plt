@@ -146,7 +146,10 @@
 		      [target-dir (let ([rel? (call-info info 'plt-relative? (lambda () #f) values)]
 					[not-user-rel? (call-info info 'plt-home-relative? (lambda () #f) values)])
 				    (if rel?
-					(if not-user-rel?
+					(if (and not-user-rel? 
+						 ;; Check for void because old unpacker didn't use
+						 ;;  the failure thunk.
+						 (not (void? not-user-rel?)))
 					    (get-target-plt-directory plthome plthome (list plthome))
 					    (let ([addons (build-path (find-system-path 'addon-dir)
 								      (version))])

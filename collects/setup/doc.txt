@@ -261,9 +261,10 @@ The raw format is
 
  * "PLT" are the first three characters.
 
- * A procedure that takes a symbol and a failure thunk and
-   returns information about archive for recognized symbols. The
-   information symbols are:
+ * A procedure that takes a symbol and a failure thunk and returns
+   information about archive for recognized symbols and calls the
+   failure thunk for unrecognized symbols. The information symbols
+   are:
 
      + 'name - a human-readable string describing the archive's
        contents. This name is used only for printing messages to the

@@ -34,7 +34,9 @@ CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) $(COMPFLAGS)
 LDFLAGS = $(XLIB)
 ###########################
 
-LOCALFLAGS = 
+LOCALFLAGS_wx_xt =
+LOCALFLAGS_wx_mac = -MMD
+LOCALFLAGS = $(LOCALFLAGS_@WXVARIANT@)
 
 WXSCFLAGS = $(CFLAGS)
 
@@ -289,3 +291,33 @@ $(srcdir)/wxs_slid.ss : $(srcdir)/wxs_slid.cxx
 $(srcdir)/wxs_snip.ss : $(srcdir)/wxs_snip.cxx
 $(srcdir)/wxs_styl.ss : $(srcdir)/wxs_styl.cxx
 $(srcdir)/wxs_win.ss : $(srcdir)/wxs_win.cxx
+
+@INCLUDEDEP@ xcglue.d
+@INCLUDEDEP@ wxs_bmap.d
+@INCLUDEDEP@ wxs_butn.d
+@INCLUDEDEP@ wxs_chce.d
+@INCLUDEDEP@ wxs_ckbx.d
+@INCLUDEDEP@ wxs_cnvs.d
+@INCLUDEDEP@ wxs_dc.d
+@INCLUDEDEP@ wxs_evnt.d
+@INCLUDEDEP@ wxs_fram.d
+@INCLUDEDEP@ wxs_gage.d
+@INCLUDEDEP@ wxs_gdi.d
+@INCLUDEDEP@ wxs_glob.d
+@INCLUDEDEP@ wxs_item.d
+@INCLUDEDEP@ wxs_lbox.d
+@INCLUDEDEP@ wxs_madm.d
+@INCLUDEDEP@ wxs_mede.d
+@INCLUDEDEP@ wxs_medi.d
+@INCLUDEDEP@ wxs_menu.d
+@INCLUDEDEP@ wxs_mio.d
+@INCLUDEDEP@ wxs_misc.d
+@INCLUDEDEP@ wxs_mpb.d
+@INCLUDEDEP@ wxs_obj.d
+@INCLUDEDEP@ wxs_panl.d
+@INCLUDEDEP@ wxs_rado.d
+@INCLUDEDEP@ wxs_slid.d
+@INCLUDEDEP@ wxs_snip.d
+@INCLUDEDEP@ wxs_styl.d
+@INCLUDEDEP@ wxs_win.d
+@INCLUDEDEP@ wxscheme.d

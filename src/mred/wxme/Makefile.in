@@ -68,6 +68,10 @@ libwxme.a: $(OBJECTS)
 	$(AR) $(ARFLAGS) libwxme.a $(OBJECTS)
 	$(RANLIB) libwxme.a
 
+LOCALFLAGS_wx_xt =
+LOCALFLAGS_wx_mac = -MMD
+LOCALFLAGS = $(LOCALFLAGS_@WXVARIANT@)
+
 MCC = $(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c
 
 wx_media.o : $(srcdir)/wx_media.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h \
@@ -113,3 +117,17 @@ wx_style.o : $(srcdir)/wx_style.cxx $(srcdir)/wx_style.h $(srcdir)/wx_medio.h $(
 
 clean:
 	rm -f *.o *.a *~ core
+
+
+@INCLUDEDEP@ wx_style.d
+@INCLUDEDEP@ wx_keym.d
+@INCLUDEDEP@ wx_mbuf.d
+@INCLUDEDEP@ wx_media.d
+@INCLUDEDEP@ wx_mpriv.d
+@INCLUDEDEP@ wx_msnip.d
+@INCLUDEDEP@ wx_mline.d
+@INCLUDEDEP@ wx_mpbrd.d
+@INCLUDEDEP@ wx_medad.d
+@INCLUDEDEP@ wx_snip.d
+@INCLUDEDEP@ wx_cgrec.d
+@INCLUDEDEP@ wx_medio.d

@@ -184,18 +184,21 @@
 	    (invoke-unit/sig
 	     (compound-unit/sig
 	      (import (FUNCTION : mzlib:function^)
+		      (FILE : mzlib:file^)
 		      (DFILE : dynext:file^)
 		      (OPTIONS : compiler:option^)
 		      (COMPILER : compiler^))
 	      (link [MAKE : make:make^ (make)]
 		    [COLL : make:collection^ (coll MAKE
 						   FUNCTION
+						   FILE
 						   DFILE
 						   OPTIONS
 						   COMPILER)]
 		    [INIT : () (init COLL)])
 	      (export))
 	     mzlib:function^
+	     mzlib:file^
 	     dynext:file^
 	     compiler:option^
 	     compiler^)])

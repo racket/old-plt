@@ -12,7 +12,7 @@
  (require-library "zsigs.ss" "zodiac")
  (require-library "sigs.ss" "zodiac")
 
- (require-relative-library "sig.ss") )
+ (require-relative-library "sig.ss"))
 
 (define-signature compiler:library^
   (logical-inverse

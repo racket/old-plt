@@ -222,15 +222,16 @@
 	    (when verbose? (printf " expanding...~n"))
 	    (parameterize ([current-load-relative-directory input-directory])
 	      (map (lambda (expr)
-		     (let ([expanded (expand expr)])
+		     (let ([expanded ((if has-prefix?
+					  expand-top-level-with-compile-time-evals
+					  expand) 
+				      expr)])
 		       (zodiac:syntax->zodiac 
 			(let ([p (src2src:optimize expanded #t)])
 			  '(with-output-to-file "/tmp/l.ss"
 			     (lambda () (pretty-print (syntax-object->datum p)))
 			     'replace)
 			  (let ([opt-expanded (expand p)])
-			    (when has-prefix?
-			      (eval-compile-time-part-of-top-level opt-expanded))
 			    opt-expanded)))))
 		   exprs)))))
 

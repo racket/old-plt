@@ -65,13 +65,25 @@ _kerncase.ss_: matching fully-expanded expressions
 _toplevel.ss_: helper for moduleless compilation and expansion
 ======================================================================
 
+> (expand-top-level-with-compile-time-evals expr) - expands `expr' as
+  a top-level expression, and evaluates its compile-time portion for
+  the benefit of later expansions.
+
+  The expander recognizes top-level `begin' expressions, and
+  interleaves the evaluation and expansion of of the `begin' body, so
+  that compile-time expressions within the `begin' body affect later
+  expansions within the body. (In other words, it ensures that
+  expanding a `begin' is the same as expanding separate top-level
+  expressions.)
+
 > (eval-compile-time-part-of-top-level syntax) - evaluates
   expansion-time code in the fully expanded top-level expression
   represented by `syntax' (or a part of it, in the case of `begin'
   expressions). The expansion-time code might affect the compilation
   of later top-level expressions. For example, if `syntax' is a
   `require' expression, then `namespace-require/expansion-time' is
-  used on each require specification in the form.
+  used on each require specification in the form. Normally, this
+  function is used only by `expand-top-level-with-compile-time-evals'.
 
 ======================================================================
 _struct.ss_: generating the same names as `define-struct'

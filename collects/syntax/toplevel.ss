@@ -28,7 +28,7 @@
       [_else (void)]))
 
   (define (expand-top-level-with-compile-time-evals expr)
-    (let ([e (expand-to-top-from expr)])
+    (let ([e (expand-to-top-form expr)])
       (syntax-case e (begin)
 	[(begin expr ...)
 	 (with-syntax ([(expr ...) 
@@ -37,5 +37,7 @@
 			     (syntax->list (syntax (expr ...))))]
 		       [(beg . _) e])
 	   (syntax/loc e (beg expr ...)))]
-	[else (let ([e (expand e)])
-		(eval-compile-time-part-of-top-level e))]))))
+	[else 
+	 (let ([e (expand e)])
+	   (eval-compile-time-part-of-top-level e)
+	   e)]))))

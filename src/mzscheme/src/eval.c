@@ -1357,23 +1357,21 @@ static void *compile_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *form;
-  int writeable;
+  int writeable, for_eval;
   Scheme_Comp_Env *env;
   Scheme_Compile_Info rec;
-  Scheme_Object *o;
+  Scheme_Object *o, *tl_queue;
   Scheme_Compilation_Top *top;
   Resolve_Prefix *rp;
+  Scheme_Object *gval;
 
   form = (Scheme_Object *)p->ku.k.p1;
   env = (Scheme_Comp_Env *)p->ku.k.p2;
   writeable = p->ku.k.i1;
+  for_eval = p->ku.k.i2;
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
-
-  rec.dont_mark_local_use = 0;
-  rec.resolve_module_ids = !writeable && !env->genv->module;
-  rec.value_name = NULL;
 
   if (!SCHEME_STXP(form))
     form = scheme_datum_to_syntax(form, scheme_false, scheme_false, 1, 0);
@@ -1384,22 +1382,62 @@ static void *compile_k(void)
   if (env->genv->exp_env && env->genv->exp_env->rename)
     form = scheme_add_rename(form, env->genv->exp_env->rename);
 
-  o = scheme_compile_expr(form, env, &rec, 0);
+  tl_queue = scheme_null;
 
-  rp = scheme_resolve_prefix(0, env->prefix, 1);
+  while (1) {
+    rec.dont_mark_local_use = 0;
+    rec.resolve_module_ids = !writeable && !env->genv->module;
+    rec.value_name = NULL;
 
-  o = scheme_resolve_expr(o, scheme_resolve_info_create(rp));
+    if (for_eval) {
+      /* Need to look for top-level `begin', and if we
+	 find one, break it up to eval first expression
+	 before the rest. */
+      while (1) {
+	form = scheme_check_immediate_macro(form, 
+					    env, &rec, 0,
+					    0, scheme_false, 
+					    0, &gval);
+	if (SAME_OBJ(gval, scheme_begin_syntax)) {
+	  if (scheme_stx_proper_list_length(form) > 1){
+	    form = SCHEME_STX_CDR(form);
+	    tl_queue = scheme_append(scheme_flatten_syntax_list(form, NULL),
+				     tl_queue);
+	    form = SCHEME_CAR(tl_queue);
+	    tl_queue = SCHEME_CDR(tl_queue);
+	  }
+	} else
+	  break;
+      }
+    }
+      
+    o = scheme_compile_expr(form, env, &rec, 0);
+    
+    rp = scheme_resolve_prefix(0, env->prefix, 1);
+    
+    o = scheme_resolve_expr(o, scheme_resolve_info_create(rp));
 
-  top = MALLOC_ONE_TAGGED(Scheme_Compilation_Top);
-  top->type = scheme_compilation_top_type;
-  top->max_let_depth = rec.max_let_depth;
-  top->code = o;
-  top->prefix = rp;
+    top = MALLOC_ONE_TAGGED(Scheme_Compilation_Top);
+    top->type = scheme_compilation_top_type;
+    top->max_let_depth = rec.max_let_depth;
+    top->code = o;
+    top->prefix = rp;
+    
+    if (SCHEME_PAIRP(tl_queue)) {
+      /* This compile is interleaved with evaluation,
+	 and we need to eval now before compiling more. */
+      _scheme_eval_compiled_multi((Scheme_Object *)top, env->genv);
+
+      form = SCHEME_CAR(tl_queue);
+      tl_queue = SCHEME_CDR(tl_queue);
+    } else
+      break;
+  }
 
   return (void *)top;
 }
 
-static Scheme_Object *_compile(Scheme_Object *form, Scheme_Env *env, int writeable, int eb)
+static Scheme_Object *_compile(Scheme_Object *form, Scheme_Env *env, int writeable, int for_eval, int eb)
 {
   Scheme_Comp_Env *cenv;
   Scheme_Thread *p = scheme_current_thread;
@@ -1417,13 +1455,19 @@ static Scheme_Object *_compile(Scheme_Object *form, Scheme_Env *env, int writeab
   p->ku.k.p1 = form;
   p->ku.k.p2 = cenv;
   p->ku.k.i1 = writeable;
+  p->ku.k.i2 = for_eval;
 
   return (Scheme_Object *)scheme_top_level_do(compile_k, eb);
 }
 
 Scheme_Object *scheme_compile(Scheme_Object *form, Scheme_Env *env, int writeable)
 {
-  return _compile(form, env, writeable, 1);
+  return _compile(form, env, writeable, 0, 1);
+}
+
+Scheme_Object *scheme_compile_for_eval(Scheme_Object *form, Scheme_Env *env)
+{
+  return _compile(form, env, 0, 1, 1);
 }
 
 Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first, 
@@ -3378,12 +3422,12 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
 Scheme_Object *scheme_eval(Scheme_Object *obj, Scheme_Env *env)
 {
-  return scheme_eval_compiled(scheme_compile(obj, env, 0), env);
+  return scheme_eval_compiled(scheme_compile_for_eval(obj, env), env);
 }
 
 Scheme_Object *scheme_eval_multi(Scheme_Object *obj, Scheme_Env *env)
 {
-  return scheme_eval_compiled_multi(scheme_compile(obj, env, 0), env);
+  return scheme_eval_compiled_multi(scheme_compile_for_eval(obj, env), env);
 }
 
 static void *eval_k(void)
@@ -3555,7 +3599,7 @@ static void *expand_k(void)
 
   if (just_to_top) {
     Scheme_Object *gval;
-    obj = scheme_check_immediate_macro(obj, env, NULL, 0, depth, scheme_false, 1, &gval);
+    obj = scheme_check_immediate_macro(obj, env, NULL, 0, depth, scheme_false, 0, &gval);
   } else
     obj = scheme_expand_expr(obj, env, depth, scheme_false);
 
@@ -3596,7 +3640,7 @@ do_default_eval_handler(Scheme_Env *env, int argc, Scheme_Object **argv)
 {
   Scheme_Object *v;
 
-  v = _compile(argv[0], env, 0, 0);
+  v = _compile(argv[0], env, 0, 1, 0);
 
   return _eval(v, env, 0, 1, 0);
 }
@@ -3680,7 +3724,7 @@ current_eval(int argc, Scheme_Object **argv)
 static Scheme_Object *
 compile(int argc, Scheme_Object *argv[])
 {
-  return _compile(argv[0], scheme_get_env(scheme_config), 1, 0);
+  return _compile(argv[0], scheme_get_env(scheme_config), 1, 0, 0);
 }
 
 static Scheme_Object *

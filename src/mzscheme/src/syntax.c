@@ -699,31 +699,35 @@ if_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, 
   test = scheme_compile_expr(test, env, recs, 0);
 
   if (SCHEME_TYPE(test) > _scheme_compiled_values_types_) {
-    Scheme_Object *comp, *exp;
-
     opt = 1;
     
     if (SCHEME_FALSEP(test)) {
-      comp = elsep;
-      exp = thenp;
+      /* compile other branch only to get syntax checking: */
+      recs[2].dont_mark_local_use = 1;
+      scheme_compile_expr(thenp, env, recs, 2);
+
+      if (len == 4)
+	test = scheme_compile_expr(elsep, env, recs, 1);
+      else
+	test = elsep;
     } else {
-      comp = thenp;
-      exp = elsep;
+      if (len == 4) {
+	/* compile other branch only to get syntax checking: */
+	recs[2].dont_mark_local_use = 1;
+	scheme_compile_expr(elsep, env, recs, 2);
+      }
+      
+      test = scheme_compile_expr(thenp, env, recs, 1);
     }
-
-    /* compile other branch only to get syntax checking: */
-    recs[2].dont_mark_local_use = 1;
-    scheme_compile_expr(exp, env, recs, 2);
-
-    test = scheme_compile_expr(comp, env, recs, 1);
   } else {
     opt = 0;
     thenp = scheme_compile_expr(thenp, env, recs, 1);
-    elsep = scheme_compile_expr(elsep, env, recs, 2);
+    if (len == 4)
+      elsep = scheme_compile_expr(elsep, env, recs, 2);
   }
 
-  scheme_merge_compile_recs(rec, drec, recs, opt ? 2 : 3);
-
+  scheme_merge_compile_recs(rec, drec, recs, (opt || (len == 3)) ? 2 : 3);
+  
   if (opt)
     return test;
   else

@@ -28,10 +28,10 @@ void scheme_add_embedded_builtins(Scheme_Env *env)
 #define EVAL_ONE_STR(str) scheme_eval_string(str, env)
 #define EVAL_ONE_SIZED_STR(str, len) scheme_eval_compiled_sized_string(str, len, env)
 #define JUST_DEFINED(name)
-#define JUST_DEFINED_FUNC(name)
-#define JUST_DEFINED_KEY(name)
-#define JUST_DEFINED_COND(name)
-#define JUST_DEFINED_QQ(name)
+#define JUST_DEFINED_FUNC(name) JUST_DEFINED(name)
+#define JUST_DEFINED_KEY(name) JUST_DEFINED(name)
+#define JUST_DEFINED_COND(name) JUST_DEFINED(name)
+#define JUST_DEFINED_QQ(name) JUST_DEFINED(name)
 
 #if USE_COMPILED_MACROS
 # include "cmacro.inc"

@@ -110,6 +110,10 @@ volatile int scheme_fuel_counter;
 
 int scheme_stack_grows_up;
 
+static Scheme_Object *app_symbol;
+static Scheme_Object *datum_symbol;
+static Scheme_Object *symbol_symbol;
+
 static Scheme_Object *stop_expander;
 
 /* locals */
@@ -124,6 +128,13 @@ static Scheme_Object *current_eval(int argc, Scheme_Object *[]);
 
 static Scheme_Object *allow_auto_cond_else(int argc, Scheme_Object **argv);
 static Scheme_Object *allow_set_undefined(int argc, Scheme_Object **argv);
+
+static Scheme_Object *symbol_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
+static Scheme_Object *symbol_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
+static Scheme_Object *app_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
+static Scheme_Object *app_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
+static Scheme_Object *datum_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
+static Scheme_Object *datum_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
 
 static Scheme_Object *write_application(Scheme_Object *obj);
 static Scheme_Object *read_application(Scheme_Object *obj);
@@ -293,6 +304,27 @@ scheme_init_eval (Scheme_Env *env)
 						       "compile-allow-set!-undefined",
 						       MZCONFIG_ALLOW_SET_UNDEFINED), 
 			     env);
+
+  REGISTER_SO(app_symbol);
+  REGISTER_SO(datum_symbol);
+  REGISTER_SO(symbol_symbol);
+
+  app_symbol = scheme_intern_symbol("#%app");
+  datum_symbol = scheme_intern_symbol("#%datum");
+  symbol_symbol = scheme_intern_symbol("#%symbol");
+
+  scheme_add_global_keyword("#%symbol", 
+			    scheme_make_compiled_syntax(symbol_syntax,
+							symbol_expand), 
+			    env);
+  scheme_add_global_keyword("#%app", 
+			    scheme_make_compiled_syntax(app_syntax,
+							app_expand), 
+			    env);
+  scheme_add_global_keyword("#%datum", 
+			    scheme_make_compiled_syntax(datum_syntax,
+							datum_expand), 
+			    env);
 }
 
 /*========================================================================*/
@@ -1308,7 +1340,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 			   int depth, Scheme_Object *boundname,
 			   int app_position)
 {
-  Scheme_Object *name, *var, *rest;
+  Scheme_Object *name, *var, *rest, *stx;
 
 #ifdef DO_STACK_CHECK
 # include "mzstkchk.h"
@@ -1330,88 +1362,175 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
   if (rec)
     scheme_default_compile_rec(rec, drec);
 
-  if (!SCHEME_STX_PAIRP(form)) {
-    if (SCHEME_STX_SYMBOLP(form)) {
-      var = scheme_static_distance(form, env, 
-				   SCHEME_ENV_CONSTANTS_OK
+  if (SCHEME_STX_NULLP(form)) {
+    stx = app_symbol;
+  } else if (!SCHEME_STX_PAIRP(form)) {
+    if (SCHEME_STX_SYMBOLP(form))
+      stx = symbol_symbol;
+    else
+      stx = datum_symbol;
+  } else {
+    name = SCHEME_STX_CAR(form);
+    rest = SCHEME_STX_CDR(form);
+    if (SCHEME_STX_SYMBOLP(name)) {
+      /* Check for macros: */
+      var = scheme_static_distance(name, env, 
+				   SCHEME_APP_POS
+				   + SCHEME_ENV_CONSTANTS_OK
 				   + ((rec && !ENV_PRIM_GLOBALS_ONLY(env))
-				      ? SCHEME_ELIM_CONST 
+				      ? SCHEME_ELIM_CONST
 				      : 0)
-				   + (app_position 
-				      ? SCHEME_APP_POS 
-				      : 0)
-				   + ((rec && drec[rec].dont_mark_local_use) ? 
-				      SCHEME_DONT_MARK_USE 
+				   + ((rec && rec[drec].dont_mark_local_use)
+				      ? SCHEME_DONT_MARK_USE 
 				      : 0));
-      if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
-	if (var == stop_expander)
-	  return form;
-	else
-	  scheme_wrong_syntax("compile", NULL, form, 
-			      "illegal use of a syntactic form name");
-      } else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
-	       || SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type))
-	return scheme_compile_expand_macro_app(form, var, form, env, rec, drec, depth, boundname);
-
-      if (rec) {
-	scheme_compile_rec_done_local(rec, drec);
-	return var;
+      if (SAME_TYPE(SCHEME_TYPE(var), scheme_local_type)
+	  || SAME_TYPE(SCHEME_TYPE(var), scheme_local_unbox_type)) {
+	/* apply to local variable: compile it normally */
+      } else {
+	if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
+	    || SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type)) {
+	  return scheme_compile_expand_macro_app(name, var, form, env, rec, drec, depth, boundname);
+	} else if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
+	  if (rec) {
+	    Scheme_Syntax *f;
+	    f = (Scheme_Syntax *)SCHEME_SYNTAX(var);
+	    return f(form, env, rec, drec);
+	  } else {
+	    Scheme_Syntax_Expander *f;
+	    f = (Scheme_Syntax_Expander *)SCHEME_SYNTAX_EXP(var);
+	    return f(form, env, depth, boundname);
+	  }
+	}
+	
+	/* Else: unknown global - must be a function: compile as application */
       }
-    } else if (rec) {
-      if (SCHEME_STXP(form))
-	return SCHEME_STX_VAL(form);
     }
 
-    return form;
+    stx = app_symbol;
   }
 
-  name = SCHEME_STX_CAR(form);
-  rest = SCHEME_STX_CDR(form);
-  if (SCHEME_STX_SYMBOLP(name)) {
-    /* Check for macros: */
-    var = scheme_static_distance(name, env, 
-				 SCHEME_APP_POS
-				 + SCHEME_ENV_CONSTANTS_OK
-				 + ((rec && !ENV_PRIM_GLOBALS_ONLY(env))
-				    ? SCHEME_ELIM_CONST
-				    : 0)
-				 + ((rec && rec[drec].dont_mark_local_use)
-				    ? SCHEME_DONT_MARK_USE 
-				    : 0));
-    if (SAME_TYPE(SCHEME_TYPE(var), scheme_local_type)
-	|| SAME_TYPE(SCHEME_TYPE(var), scheme_local_unbox_type)) {
-      /* apply to local variable: compile it normally */
+  /* Compile/expand as application: */
+  stx = scheme_datum_to_syntax(stx, scheme_false, form);
+  var = scheme_static_distance(stx, env,
+			       SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
+			       + SCHEME_DONT_MARK_USE);
+  if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
+      || SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type)
+      || SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
+    form = scheme_datum_to_syntax(scheme_make_pair(stx, form), form, form);
+    if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
+      if (rec) {
+	Scheme_Syntax *f;
+	f = (Scheme_Syntax *)SCHEME_SYNTAX(var);
+	return f(form, env, rec, drec);
+      } else {
+	Scheme_Syntax_Expander *f;
+	f = (Scheme_Syntax_Expander *)SCHEME_SYNTAX_EXP(var);
+	return f(form, env, depth, boundname);
+      }
     } else {
-      if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
-	  || SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type)) {
-	return scheme_compile_expand_macro_app(name, var, form, env, rec, drec, depth, boundname);
-      } else if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
-	if (rec) {
-	  Scheme_Syntax *f;
-	  f = (Scheme_Syntax *)SCHEME_SYNTAX(var);
-	  return f(form, env, rec, drec);
-	} else {
-	  Scheme_Syntax_Expander *f;
-	  f = (Scheme_Syntax_Expander *)SCHEME_SYNTAX_EXP(var);
-	  return f(form, env, depth, boundname);
-	}
-      }
-	
-      /* Else: unknown global - must be a function: compile normally */
-
-      /* Optimize (void) to just the value void */
-      if (rec && SAME_OBJ(var, scheme_void_func) && SCHEME_NULLP(rest)) {
-	scheme_compile_rec_done_local(rec, drec);
-	return scheme_void;
-      }
+      return scheme_compile_expand_macro_app(stx, var, form, env, rec, drec, depth, boundname);
     }
-    
-    /* Must be an application */
+  } else {
+    /* Not allowed this context! */
+    scheme_wrong_syntax("compile", NULL, form, "bad syntax (no %S syntax expander)",
+			SCHEME_STX_VAL(stx));
+    return NULL;
+  }
+}
+
+static Scheme_Object *
+compile_expand_sym(Scheme_Object *forms, Scheme_Comp_Env *env, 
+		   Scheme_Compile_Info *rec, int drec, 
+		   int depth, Scheme_Object *boundname)
+{
+  Scheme_Object *form, *var;
+
+  form = SCHEME_STX_CDR(forms);
+
+  if (!SCHEME_STX_SYMBOLP(form))
+    scheme_wrong_syntax("#%symbol", NULL, forms, NULL);
+
+  var = scheme_static_distance(form, env, 
+			       SCHEME_ENV_CONSTANTS_OK
+			       + ((rec && !ENV_PRIM_GLOBALS_ONLY(env))
+				  ? SCHEME_ELIM_CONST 
+				  : 0)
+#if 0
+			       + (app_position 
+				  ? SCHEME_APP_POS 
+				  : 0)
+#endif
+			       + ((rec && drec[rec].dont_mark_local_use) ? 
+				  SCHEME_DONT_MARK_USE 
+				  : 0));
+
+  if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
+    if (var == stop_expander)
+      return form;
+    else {
+      scheme_wrong_syntax("compile", NULL, form, "bad syntax");
+      return NULL;
+    }
+  } else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
+	     || SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type))
+    return scheme_compile_expand_macro_app(form, var, form, env, rec, drec, depth, boundname);
+  
+  if (rec) {
+    scheme_compile_rec_done_local(rec, drec);
+    return var;
+  } else {
+    /* Re-wrap symbol: */
+    form = scheme_datum_to_syntax(SCHEME_STX_VAL(form), form, forms);
+    return form;
+  }
+}
+
+static Scheme_Object *
+symbol_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
+{
+  return compile_expand_sym(form, env, rec, drec, 0, scheme_false);
+}
+
+static Scheme_Object *
+symbol_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
+{
+  return compile_expand_sym(form, env, NULL, 0, depth, boundname);
+}
+
+static Scheme_Object *
+compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env, 
+		   Scheme_Compile_Info *rec, int drec, 
+		   int depth, Scheme_Object *boundname)
+{
+  Scheme_Object *form;
+
+  form = SCHEME_STX_CDR(forms);
+  form = scheme_datum_to_syntax(form, forms, forms);
+  
+  if (SCHEME_STX_NULLP(form)) {
+    /* Compile/expand empty application to null list: */
+    if (rec)
+      return scheme_null;
+    /* else form will be returned... */
+  } else if (SCHEME_STX_SYMBOLP(SCHEME_CAR(form))) {
+#if 0
+    /* Optimize (void) to just the value void */
+    if (rec && SAME_OBJ(var, scheme_void_func) && SCHEME_NULLP(rest)) {
+      scheme_compile_rec_done_local(rec, drec);
+      return scheme_void;
+    }
+#endif
+
     if (rec)
       return compile_application(form, env, rec, drec);
-    else
-      return scheme_expand_list(form, scheme_no_defines(env), depth, scheme_false);
+    else {
+      form = scheme_expand_list(form, scheme_no_defines(env), depth, scheme_false);
+      /* form will be returned... */
+    }
   } else if (rec) {
+    Scheme_Object *name;
+    name = SCHEME_STX_CAR(form);
     /* look for ((lambda (x) ...) ...) */
     if (SCHEME_STX_PAIRP(name) && SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(name))) {
       Scheme_Object *gval, *origname = name;
@@ -1431,7 +1550,9 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	    pl = scheme_stx_proper_list_length(args);
 	    if (pl >= 0) {
 	      Scheme_Object *bindings = scheme_null, *last = NULL;
+	      Scheme_Object *rest;
 	      int al;
+	      rest = SCHEME_STX_CDR(form);
 	      al = scheme_stx_proper_list_length(rest);
 	      
 	      if (al == pl) {	      
@@ -1471,12 +1592,60 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
       }
 
       if (NOT_SAME_OBJ(name, origname))
-	form = scheme_datum_to_syntax(scheme_make_pair(name, rest), form, scheme_sys_wraps);
+	form = scheme_datum_to_syntax(scheme_make_pair(name, SCHEME_STX_CDR(form)), forms, forms);
     }
     
     return compile_application(form, env, rec, drec);
-  } else
-    return scheme_expand_list(form, scheme_no_defines(env), depth, boundname);
+  } else {
+    form = scheme_expand_list(form, scheme_no_defines(env), depth, scheme_false);
+    /* form will be returned... */
+  }
+
+  /* Make sure resulting form for macro expansion has system wraps on the parens: */
+  form = scheme_datum_to_syntax(scheme_make_pair(SCHEME_STX_CAR(form), SCHEME_STX_CDR(form)),
+				forms,
+				scheme_sys_wraps);
+  return form;
+}
+
+static Scheme_Object *
+app_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
+{
+  return compile_expand_app(form, env, rec, drec, 0, scheme_false);
+}
+
+static Scheme_Object *
+app_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
+{
+  return compile_expand_app(form, env, NULL, 0, depth, boundname);
+}
+
+static Scheme_Object *
+datum_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
+{
+  Scheme_Object *c;
+
+  c = SCHEME_STX_CDR(form);
+
+  if (SCHEME_NULLP(c))
+    scheme_wrong_syntax("#%datum", NULL, form, NULL);
+
+  return SCHEME_STX_VAL(c);
+}
+
+static Scheme_Object *
+datum_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
+{
+  Scheme_Object *c;
+
+  c = SCHEME_STX_CDR(form);
+
+  if (SCHEME_NULLP(c))
+    scheme_wrong_syntax("#%datum", NULL, form, NULL);
+
+  /* Put system wraps on the form: */
+  c = scheme_datum_to_syntax(SCHEME_STX_VAL(c), form, scheme_sys_wraps);
+  return c;
 }
 
 Scheme_Object *scheme_compile_expr(Scheme_Object *form, Scheme_Comp_Env *env, 

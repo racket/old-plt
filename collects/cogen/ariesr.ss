@@ -1,10 +1,10 @@
 ;; Shriram, then Moy, then Robby, then Shriram
 
-;; aries adds only begin and let to the transformed source
+; Aries adds begin, begin0 and let's to the transformed source.
 
-; Commented out these, they must be loaded by whoever loads this file:
-;(plt:require-library "ariess.ss")
-;(require-library "pretty.ss")
+; Dependencies:
+;   ariesus.ss
+;   pretty.ss  [for debugging]
 
     (unit/sig plt:aries^
       (import [z : zodiac:system^]
@@ -49,6 +49,11 @@
 
       (define unparse-read read->raw)
 
+      ; We have two kinds of wrapping.  The first, `wrap', checks for
+      ; errors in arbitrary code.  In non-tail positions, we have to
+      ; also be sure that multiple values were not returned where only
+      ; one value was expected.  For this, we use `mv-wrap'.
+
       (define wrap
 	(lambda (zodiac x)
 	  (let ([start (z:zodiac-start zodiac)]
@@ -56,6 +61,14 @@
 	    `(#%begin (,set-box! ,error-box
 			,(z:make-zodiac #f start finish))
 	       ,x))))
+
+      (define mv-wrap
+	(lambda (zodiac body)
+	  (let ((start (z:zodiac-start zodiac))
+		 (finish (z:zodiac-finish zodiac)))
+	    `(#%begin0 ,body
+	       (,set-box! ,error-box
+		 ,(z:make-zodiac #f start finish))))))
 
       (define check-for-keyword
 	(lambda (id)
@@ -168,14 +181,17 @@
 	      `(#%struct
 		 ,(if (z:struct-form-super expr)
 		    (list (read->raw (z:struct-form-type expr))
-		      (annotate (z:struct-form-super expr)))
+		      (wrap (z:struct-form-super expr)
+			(annotate (z:struct-form-super expr))))
 		    (read->raw (z:struct-form-type expr)))
 		 ,(map read->raw (z:struct-form-fields expr)))]
 
 	    [(z:if-form? expr)
 	      `(#%if ,(annotate (z:if-form-test expr))
-		 ,(annotate (z:if-form-then expr))
-		 ,(annotate (z:if-form-else expr)))]
+		 ,(mv-wrap (z:if-form-then expr)
+		    (annotate (z:if-form-then expr)))
+		 ,(mv-wrap (z:if-form-else expr)
+		    (annotate (z:if-form-else expr))))]
 
 	    [(z:quote-form? expr)
 	      `(#%quote ,(unparse-read (z:quote-form-expr expr)))]
@@ -193,7 +209,7 @@
 		      (map (lambda (vars val)
 			     (map check-for-keyword vars)
 			     `(,(map z:binding-var vars)
-				,(annotate val)))
+				,(mv-wrap val (annotate val))))
 			(z:let-values-form-vars expr)
 			(z:let-values-form-vals expr))))
 		`(#%let-values ,bindings
@@ -204,7 +220,7 @@
 		      (map (lambda (vars val)
 			     (map check-for-keyword vars)
 			     `(,(map z:binding-var vars)
-				,(annotate val)))
+				,(mv-wrap val (annotate val))))
 			(z:letrec*-values-form-vars expr)
 			(z:letrec*-values-form-vals expr))))
 		`(#%letrec*-values ,bindings
@@ -216,7 +232,8 @@
 			 (check-for-keyword v)
 			 (z:varref-var v))
 		    (z:define-values-form-vars expr))
-		 ,(annotate (z:define-values-form-val expr)))]
+		 ,(mv-wrap (z:define-values-form-val expr)
+		    (annotate (z:define-values-form-val expr))))]
 
 	    [(z:set!-form? expr)
 	      (check-for-keyword (z:set!-form-var expr))
@@ -375,6 +392,6 @@
 		  (let* ([expanded (z:scheme-expand expr)]
 			  [_ '(printf "expanded: ~s~n" expanded)]
 			  [annotated (annotate expanded)])
-		    '(begin ((global-defined-value 'pretty-print) annotated)
+		    (begin ((global-defined-value 'pretty-print) annotated)
 		       (newline))
 		    (read-loop (cons annotated exprs))))))))))

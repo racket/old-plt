@@ -1527,7 +1527,7 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
                 wxBitmap *source, float xsrc, float ysrc, int rop,
 		wxColour *c, wxBitmap *mask)
 {
-  int xdest1, ydest1, xsrc1, ysrc1, iw, ih;
+  int xdest1, ydest1, xdest2, ydest2, xsrc1, ysrc1, iw, ih;
   HDC dc, dc_src, invented_dc, mdc = NULL;
   wxMemoryDC *sel, *msel = NULL, *invented_memdc = NULL;
   wxBitmap *invented = NULL;

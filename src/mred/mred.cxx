@@ -1904,7 +1904,7 @@ void MrEdQueuePaint(wxWindow *wx_window)
 	}
       }
     }
-    cb = cb->next;
+    cb = cb->prev;
   }
 
   p = scheme_make_closed_prim(CAST_SCP call_on_paint, wx_window);

@@ -174,13 +174,13 @@ HDC wxGetPrinterDC(void);
 
 // Logical to device
 // Absolute
-#define XLOG2DEV(x) (floor(x))
+#define XLOG2DEV(x) (x)
 
-#define YLOG2DEV(y) (floor(y))
+#define YLOG2DEV(y) (y)
 
 // Relative
-#define XLOG2DEVREL(x) (floor(x))
-#define YLOG2DEVREL(y) (floor(y))
+#define XLOG2DEVREL(x) (x)
+#define YLOG2DEVREL(y) (y)
 
 // Device to logical
 // Absolute

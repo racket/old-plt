@@ -377,7 +377,7 @@
     ))
 
 (define-signature mrspidey:atype^
-  ((struct fo-FlowType (def))
+  ((struct fo-FlowType (def tvar))
    FlowType->Atype
    create-fo-FlowType
    fo-Atype? poly-atype?
@@ -641,6 +641,7 @@
     app-tvar-args set-app-tvar-args!
     binding-refs set-binding-refs! 
     binding-mutated set-binding-mutated!
+    get-top-level-varref-binding
     varref-binding
     my-create-binding
 

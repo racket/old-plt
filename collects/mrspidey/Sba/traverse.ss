@@ -46,7 +46,20 @@
    mzlib:pretty-print^
    mzlib:file^
    mzlib:string^)
-  
+
+  (define (remove-duplicate-bindings lst) ; only one top-level define for a variable
+    (cond [(null? lst) '()]
+	  [else
+	   (let ([the-car (car lst)])
+	     (cons 
+	      the-car
+	      (filter
+	       (lambda (elt) 	   
+		 (not 
+		  (eq? (zodiac:get-top-level-varref-binding elt) 
+		       (zodiac:get-top-level-varref-binding the-car))))
+	       (remove-duplicate-bindings (cdr lst)))))]))
+
   (define (top-level-traverse-defs defs env)
     ;;(assert (atenv:ok? env) 'top-level-traverse-defs)
     (begin0
@@ -62,41 +75,42 @@
     ;; returns (values env refs result)
     (pretty-debug-traverse `(->traverse-defs))
     ;; First alloc void for all defines
-    (let* ( [lvrs (apply append
+    (let* ([lvrs (remove-duplicate-bindings 
+		  (apply append
 			 (map (match-lambda
 			       [($ zodiac:define-values-form _ _ _ _ vars) vars]
 			       [_ '()])
-			      defs))]
-	    [names (map zodiac:varref-binding lvrs)]
-	    [nuenv (atenv:extend-undefineds env names)]
-	    ;; bubble define-struct stuff to top
-	    [defs 
-	      (append
-	       (filter
-                (match-lambda
-		 [($ zodiac:define-values-form _ _ _ _ _ 
-                     ($ zodiac:struct-form))
-		  #t]
-		 [_ #f])
-                defs)
-	       (filter
-                (match-lambda
-		 [($ zodiac:define-values-form _ _ _ _ _ 
-                     ($ zodiac:struct-form))
-		  #f]
-		 [_ #t])
-                defs))])
+			      defs)))]
+	   [names (map zodiac:varref-binding lvrs)]
+	   [nuenv (atenv:extend-undefineds env names)]
+	   ;; bubble define-struct stuff to top
+	   [defs 
+	     (append
+	      (filter
+	       (match-lambda
+		[($ zodiac:define-values-form _ _ _ _ _ 
+		    ($ zodiac:struct-form))
+		 #t]
+		[_ #f])
+	       defs)
+	      (filter
+	       (match-lambda
+		[($ zodiac:define-values-form _ _ _ _ _ 
+		    ($ zodiac:struct-form))
+		 #f]
+		[_ #t])
+	       defs))])
       (recur loop ([defs defs]
 		   [env nuenv]
 		   [refs '()]
 		   [result (wrap-value (mk-tvar-void))])
 	     (match defs
-	       [() (atenv:flush! env)
-		   (values env refs result)]
-	       [(first . rest)
-		(let-values
-		    ([(env nu-refs result) (traverse-def first env)])
-		  (loop rest env (append nu-refs refs) result))]))))
+		    [() (atenv:flush! env)
+			(values env refs result)]
+		    [(first . rest)
+		     (let-values
+		      ([(env nu-refs result) (traverse-def first env)])
+		      (loop rest env (append nu-refs refs) result))]))))
 
   ;; ----------------------------------------------------------------------
 

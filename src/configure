@@ -2319,12 +2319,14 @@ case $OS in
     fi
     ;;
   Darwin)
+    # mwccppc doesn't produce files that 'ar' can handle:
+    AR="libtool"
+    ARFLAGS="-o"
+    # don't use X Libraries: 
+    LIBS="-framework Carbon"
     if test `basename "$CC"` = "mwccppc"; then
       MZBINTARGET=macosx-bin
-      CFLAGS="-gccinc $CFLAGS -ext o -g -O2"
-      AR="libtool"
-      ARFLAGS="-o"
-      LIBS="$LIBS -framework Carbon"
+      CFLAGS="-gccinc -ext o $CFLAGS"
     fi
     ;;
   *)
@@ -2370,19 +2372,19 @@ cross_compiling=$ac_cv_prog_cc_cross
 
  msg="for inline keyword" 
 echo $ac_n "checking $msg""... $ac_c" 1>&6
-echo "configure:2373: checking $msg" >&5
+echo "configure:2375: checking $msg" >&5
 if test "$cross_compiling" = yes; then
   inline=no
 else
   cat > conftest.$ac_ext <<EOF
-#line 2378 "configure"
+#line 2380 "configure"
 #include "confdefs.h"
 static inline int foo() { return 0; }
    int main() {
       return foo();
    }
 EOF
-if { (eval echo configure:2385: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:2387: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
 then
   inline=yes
 else
@@ -2397,6 +2399,17 @@ fi
 if test "$inline" = "no" ; then
   MZOPTIONS="$MZOPTIONS -DNO_INLINE_KEYWORD"
 fi
+
+case $OS in
+  Darwin)
+    if test `basename "$CC"` = "mwccppc"; then
+      MZOPTIONS="$MZOPTIONS -include carbon-precomp"
+    fi
+    ;;
+  *)
+    ;;
+esac
+
 echo "$ac_t""$inline" 1>&6 
 
 ############## C++ grunge ################
@@ -2415,12 +2428,12 @@ cross_compiling=$ac_cv_prog_cxx_cross
 
  msg="whether new and new[] are different"   
   echo $ac_n "checking $msg""... $ac_c" 1>&6
-echo "configure:2418: checking $msg" >&5
+echo "configure:2431: checking $msg" >&5
   if test "$cross_compiling" = yes; then
   different=yes
 else
   cat > conftest.$ac_ext <<EOF
-#line 2423 "configure"
+#line 2436 "configure"
 #include "confdefs.h"
 #ifdef __cplusplus
 extern "C" void exit(int);
@@ -2433,7 +2446,7 @@ extern "C" void exit(int);
     return (new C) == (new C[10]);       
    }
 EOF
-if { (eval echo configure:2436: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:2449: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
 then
   different=yes
 else
@@ -2454,16 +2467,16 @@ fi
   #  then try adding -fpermissive
   if test "$CC" = "gcc" ; then
     echo $ac_n "checking whether need to use -fpermissive""... $ac_c" 1>&6
-echo "configure:2457: checking whether need to use -fpermissive" >&5
+echo "configure:2470: checking whether need to use -fpermissive" >&5
     cat > conftest.$ac_ext <<EOF
-#line 2459 "configure"
+#line 2472 "configure"
 #include "confdefs.h"
 #include "X11/Intrinsic.h"
 int main() {
 
 ; return 0; }
 EOF
-if { (eval echo configure:2466: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2479: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   addperm=no
 else
@@ -2482,12 +2495,12 @@ rm -f conftest*
   # Can we make auto-repeat detectable?
  msg="whether X11/XKBlib.h is available"   
   echo $ac_n "checking $msg""... $ac_c" 1>&6
-echo "configure:2485: checking $msg" >&5
+echo "configure:2498: checking $msg" >&5
   if test "$cross_compiling" = yes; then
   xkbavail=no
 else
   cat > conftest.$ac_ext <<EOF
-#line 2490 "configure"
+#line 2503 "configure"
 #include "confdefs.h"
 #ifdef __cplusplus
 extern "C" void exit(int);
@@ -2498,7 +2511,7 @@ extern "C" void exit(int);
       return 0;
    }
 EOF
-if { (eval echo configure:2501: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:2514: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
 then
   xkbavail=yes
 else
@@ -2515,6 +2528,16 @@ fi
   fi
   echo "$ac_t""$xkbavail" 1>&6
 fi
+
+case $OS in
+  Darwin)
+    if test `basename "$CC"` = "mwccppc"; then
+      MROPTIONS="$MROPTIONS -include carbon-precomp"
+    fi
+    ;;
+  *)
+    ;;
+esac
 
 ############## drop optimization flags ################
 

@@ -30,7 +30,7 @@ cygwin-bin:
 	$(MAKE) normal-bin
 
 macosx-bin:
-	$(MAKE) carbon-precomp
+	$(MAKE) include/carbon-precomp
 	$(MAKE) normal-bin
 
 oskit: 
@@ -101,7 +101,7 @@ mzscheme.multiboot : libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.o
 		@OSKHOME@/lib/oskit/crtn.o
 
 main.o: $(srcdir)/main.c $(srcdir)/include/scheme.h $(srcdir)/sconfig.h $(srcdir)/src/stypes.h $(srcdir)/cmdline.inc $(srcdir)/oskglue.inc
-	$(CC) @CFLAGS@ @PROFFLAGS@ @OPTIONS@ -I$(srcdir)/include -c $(srcdir)/main.c -o main.o
+	$(CC) @CFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(srcdir)/include -c $(srcdir)/main.c -o main.o
 
 main_ee.o: main.o
 	$(CC) @CFLAGS@ @PROFFLAGS@ @OPTIONS@ -DSTANDALONE_WITH_EMBEDDED_EXTENSION -c $(srcdir)/main.c -o main_ee.o
@@ -120,8 +120,8 @@ mzstart.exe: $(srcdir)/dynsrc/start.c
 
 starter: mzstart.exe
 
-carbon-precomp: src/macosxpre.c
-	mwccppc -gccinc -D__CF_USE_FRAMEWORK_INCLUDES__ -precompile carbon-precomp src/macosxpre.c
+include/carbon-precomp: src/macosxpre.c
+	mwccppc -gccinc -D__CF_USE_FRAMEWORK_INCLUDES__ -precompile include/carbon-precomp src/macosxpre.c
 
 exn:
 	$(MAKE) $(srcdir)/src/schexn.h
@@ -188,6 +188,7 @@ clean:
 	/bin/rm -f tests/*~
 	/bin/rm -f *.o core
 	/bin/rm -f mzdyn.o libmzgc.@LIBSFX@ libmzscheme.@LIBSFX@ libdl.a mzscheme mzscheme.multiboot
+	/bin/rm -f include/carbon-precomp
 	cd gc; $(MAKE) clean
 	cd gc2; $(MAKE) clean
 	cd sgc; $(MAKE) clean

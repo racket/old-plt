@@ -9,7 +9,7 @@ srcdir = @srcdir@
 prefix = @prefix@
 
 CC = @CC@
-CFLAGS = @CFLAGS@ -I$(srcdir)/../include -I$(srcdir)/../src
+CFLAGS = @CFLAGS@ -I$(srcdir)/../include -I$(srcdir)/../src @MZOPTIONS@
 
 dynlib:
 	$(MAKE) ../mzdyn.o

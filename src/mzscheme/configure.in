@@ -277,12 +277,14 @@ case $OS in
     fi
     ;;
   Darwin)
+    # mwccppc doesn't produce files that 'ar' can handle:
+    AR="libtool"
+    ARFLAGS="-o"
+    # don't use X Libraries: 
+    LIBS="-framework Carbon"
     if test `basename "$CC"` = "mwccppc"; then
       MZBINTARGET=macosx-bin
-      CFLAGS="-gccinc $CFLAGS -ext o -g -O2"
-      AR="libtool"
-      ARFLAGS="-o"
-      LIBS="$LIBS -framework Carbon"
+      CFLAGS="-gccinc -ext o $CFLAGS"
     fi
     ;;
   *)
@@ -330,6 +332,17 @@ AC_TRY_RUN(
 if test "$inline" = "no" ; then
   MZOPTIONS="$MZOPTIONS -DNO_INLINE_KEYWORD"
 fi
+
+case $OS in
+  Darwin)
+    if test `basename "$CC"` = "mwccppc"; then
+      MZOPTIONS="$MZOPTIONS -include carbon-precomp"
+    fi
+    ;;
+  *)
+    ;;
+esac
+
 AC_MSG_RESULT($inline) 
 
 ############## C++ grunge ################
@@ -380,6 +393,16 @@ if test "${enable_mred}" = "yes" ; then
   fi
   AC_MSG_RESULT($xkbavail)
 fi
+
+case $OS in
+  Darwin)
+    if test `basename "$CC"` = "mwccppc"; then
+      MROPTIONS="$MROPTIONS -include carbon-precomp"
+    fi
+    ;;
+  *)
+    ;;
+esac
 
 ############## drop optimization flags ################
 

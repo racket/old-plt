@@ -2186,13 +2186,13 @@ PROCEDURES -----------------------------------------------------------
   : String -> String
 
   Encode a string using the application/x-www-form-urlencoded encoding
-  rules
+  rules. (This string contains no non-ASCII characters, of course.)
 
 > (form-urlencoded-decode string)
   : String -> String
 
   Decode a string encoded using the application/x-www-form-urlencoded
-  encoding rules
+  encoding rules.
 
 > (alist->form-urlencoded alist [separator-mode-sym])
   : alist [symbol] -> String
@@ -2208,7 +2208,8 @@ PROCEDURES -----------------------------------------------------------
   : String -> alist
 
   Decode a string encoded using the application/x-www-form-urlencoded
-  encoding rules into an alist of key/value pairs.
+  encoding rules into an alist of key/value pairs. All keys are
+  downcased for conversion to symbols.
 
   The `separator-mode-sym' argument must be either 'amp, 'semi, or
   'both to select the separator. The default is 'both.

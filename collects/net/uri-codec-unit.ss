@@ -139,10 +139,10 @@
       ;; (listof (cons char char)) -> (values (vectorof string) (vectorof string))
       (define (make-codec-tables alist)
         (let ((encoding-table (make-vector 256 ""))
-              (decoding-table (make-vector 256 "")))
+              (decoding-table (make-vector 256 0)))
           (for (i 0 256)
                (vector-set! encoding-table i (number->hex-string i))
-               (vector-set! decoding-table i (string (integer->char i))))
+               (vector-set! decoding-table i (integer->char i)))
           (for-each (match-lambda
                      [(orig . enc)
                       (vector-set! encoding-table
@@ -150,7 +150,7 @@
                                    (string enc))
                       (vector-set! decoding-table
                                    (char->integer enc)
-                                   (string orig))])
+                                   (char->integer orig))])
                     alist)
           (values encoding-table decoding-table)))
 
@@ -164,9 +164,9 @@
       ;; vector string -> string
       (define (encode table str)
         (apply string-append
-               (map (lambda (char)
-                      (vector-ref table (char->integer char)))
-                    (string->list str))))
+               (map (lambda (byte)
+                      (vector-ref table byte))
+                    (bytes->list (string->bytes/utf-8 str)))))
 
       ;; vector string -> string
       (define (decode table str)
@@ -177,14 +177,15 @@
             (cons
 	     ;; This used to consult the table again, but I think that's
 	     ;;  wrong. For exmaple %2b should produce +, not a space.
-             (string (integer->char (string->number (string char1 char2) 16)))
+	     (string->number (string char1 char2) 16)
              (internal-decode rest))]
            [(char . rest)
             (cons
              (vector-ref table
                          (char->integer char))
              (internal-decode rest))]))
-        (apply string-append (internal-decode (string->list str))))
+	(bytes->string/utf-8
+	 (apply bytes (internal-decode (string->list str)))))
 
       ;; string -> string
       (define (uri-encode str)

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.176 1999/03/12 17:22:31 mflatt Exp $
+; $Id: scm-main.ss,v 1.177 1999/03/15 14:35:39 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1656,7 +1656,7 @@
 	   (body (get-expr-pattern #t))
 	   (in-pattern-1 `(_ () ,@body))
 	   (out-pattern-1 `(let-values () ,@body))
-	   (in-pattern-2 `(_ ((param value) ...) ,@body)))
+	   (in-pattern-2 `(_ ((param value) ...) ,@body))
 	   (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	   (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
       (lambda (expr env)
@@ -1687,7 +1687,7 @@
 			     ,swap)))
 		       expr '(-1))
 		      env attributes vocab))))
-	    (static-error expr "Malformed parameterize"))))
+	    (static-error expr "Malformed parameterize")))))
 
   (add-primitivized-macro-form 'parameterize advanced-vocabulary parameterize-macro)
   (add-primitivized-macro-form 'parameterize scheme-vocabulary parameterize-macro)

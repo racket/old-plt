@@ -73,6 +73,9 @@
 @ v "can-resize?" :  bool CanResize(wxSnip!,nnfloat,nnfloat);
 @ v "on-resize" :  void OnResize(wxSnip!,nnfloat,nnfloat);
 @ v "after-resize" :  void AfterResize(wxSnip!,nnfloat,nnfloat,bool);
+@ v "can-reorder?" :  bool CanReorder(wxSnip!,wxSnip!,bool);
+@ v "on-reorder" :  void OnReorder(wxSnip!,wxSnip!,bool);
+@ v "after-reorder" :  void AfterReorder(wxSnip!,wxSnip!,bool);
 
 @ v "can-select?" : bool CanSelect(wxSnip!, bool);
 @ v "on-select" : void OnSelect(wxSnip!, bool);

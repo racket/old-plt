@@ -32,7 +32,7 @@
   ;; Try (make-object graph-snip% '(lambda (x) (* x x))) in DrScheme.
 
   (define graph-snip%
-    (class draw-snip%
+    (class* draw-snip% (readable-snip<%>)
       (init-field function-expression)
       (inherit set-snipclass)
       (inherit-field w h)
@@ -84,6 +84,11 @@
        [write
 	(lambda (stream)
 	  (send stream << (expr->string function-expression)))])
+
+      (public*
+       [read-one-special
+	(lambda (index src line col pos)
+	  (values function-expression 1 #t))])
 
       (super-instantiate (100 100))
       

@@ -1225,66 +1225,12 @@ void wxMediaPasteboard::_ChangeStyle(wxStyle *style, wxStyleDelta *delta,
 
 void wxMediaPasteboard::Raise(wxSnip *snip)
 {
-  wxSnip *prev;
-
-  if (userLocked || writeLocked)
-    return;
-
-  if (!snipLocationList->FindPtr(snip))
-    return;
-
-  prev = snip->prev;
-  if (prev) {
-    prev->next = snip->next;
-    if (!snip->next)
-      lastSnip = prev;
-    else
-      snip->next->prev = prev;
-    snip->prev = prev->prev;
-    prev->prev = snip;
-    if (!snip->prev)
-      snips = snip;
-    else
-      snip->prev->next = snip;
-
-    changed = TRUE;
-    if (!modified)
-      SetModified(TRUE);
-
-    UpdateSnip(snip);
-  }
+  SetBefore(snip, snip->prev);
 }
 
 void wxMediaPasteboard::Lower(wxSnip *snip)
 {
-  wxSnip *next;
-
-  if (userLocked || writeLocked)
-    return;
-
-  if (!snipLocationList->FindPtr(snip))
-    return;
-  
-  next = snip->next;
-  if (next) {
-    next->prev = snip->prev;
-    if (!snip->prev)
-      snips = next;
-    else
-      snip->prev->next = next;
-    snip->next = next->next;
-    next->next = snip;
-    if (!snip->next)
-      lastSnip = snip;
-    else
-      snip->next->prev = snip;
-
-    changed = TRUE;
-    if (!modified)
-      SetModified(TRUE);
-
-    UpdateSnip(snip);
-  }
+  SetAfter(snip, snip->next);
 }
 
 void wxMediaPasteboard::SetBefore(wxSnip *snip, wxSnip *before)
@@ -1301,7 +1247,15 @@ void wxMediaPasteboard::SetBefore(wxSnip *snip, wxSnip *before)
 
   if (snip == before)
     return;
-  
+
+  writeLocked++;
+  if (!CanReorder(snip, before, TRUE)) {
+    --writeLocked;
+    return;
+  }
+  OnReorder(snip, before, TRUE);
+  --writeLocked;
+
   /* Remove snip from current pos: */
   if (snip->prev)
     snip->prev->next = snip->next;
@@ -1326,6 +1280,8 @@ void wxMediaPasteboard::SetBefore(wxSnip *snip, wxSnip *before)
     SetModified(TRUE);
 
   UpdateSnip(snip);
+
+  AfterReorder(snip, before, TRUE);
 }
 
 void wxMediaPasteboard::SetAfter(wxSnip *snip, wxSnip *after)
@@ -1342,7 +1298,15 @@ void wxMediaPasteboard::SetAfter(wxSnip *snip, wxSnip *after)
 
   if (snip == after)
     return;
-  
+
+  writeLocked++;
+  if (!CanReorder(snip, after, FALSE)) {
+    --writeLocked;
+    return;
+  }    
+  OnReorder(snip, after, FALSE);
+  --writeLocked;
+ 
   /* Remove snip from current pos: */
   if (snip->prev)
     snip->prev->next = snip->next;
@@ -1367,6 +1331,8 @@ void wxMediaPasteboard::SetAfter(wxSnip *snip, wxSnip *after)
     SetModified(TRUE);
 
   UpdateSnip(snip);
+
+  AfterReorder(snip, after, FALSE);
 }
 
 wxSnip *wxMediaPasteboard::SnipSetAdmin(wxSnip *snip, wxSnipAdmin *a)
@@ -2489,6 +2455,8 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
   if (userLocked || writeLocked)
     return FALSE;
 
+  showErrors = TRUE;
+
   if (!file || !*file) {
     if ((file && !*file) || !filename || tempFilename) {
       char *path;
@@ -2584,6 +2552,8 @@ Bool wxMediaPasteboard::InsertFile(Scheme_Object *f, const char *filename, Bool 
   if (userLocked || writeLocked)
     return FALSE;
 
+  showErrors = TRUE;
+
   n = scheme_get_string("insert-file in pasteboard%", f, buffer, 0, MRED_START_STR_LEN, 0, 0, NULL);
   buffer[MRED_START_STR_LEN] = 0;
   if ((n != MRED_START_STR_LEN) || strcmp(buffer, MRED_START_STR)) {
@@ -2603,7 +2573,7 @@ Bool wxMediaPasteboard::InsertFile(Scheme_Object *f, const char *filename, Bool 
     b->Read(vbuf, MRED_VERSION_STR_LEN);
     memcpy((char *)mf->read_version, vbuf, MRED_VERSION_STR_LEN);
 
-    if (wxmeCheckFormatAndVersion(mf,showErrors)) {
+    if (wxmeCheckFormatAndVersion(mf, b, showErrors)) {
       if (wxReadMediaGlobalHeader(mf)) {
 	if (mf->Ok())
 	  fileerr = !ReadFromFile(mf, clearStyles);
@@ -2635,6 +2605,8 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
   Bool no_set_filename;
   wxMediaStreamOutFileBase *b;
   wxMediaStreamOut *mf;
+
+  showErrors = TRUE;
 
   if (!file || !*file) {
     if ((file && !*file) || !filename || tempFilename) {
@@ -2909,6 +2881,20 @@ void wxMediaPasteboard::OnSelect(wxSnip *, Bool)
 
 void wxMediaPasteboard::AfterSelect(wxSnip *, Bool)
 {
+}
+
+Bool wxMediaPasteboard::CanReorder(wxSnip *, wxSnip *, Bool)
+{
+  return TRUE;
+}
+
+void wxMediaPasteboard::OnReorder(wxSnip *, wxSnip *, Bool)
+{
+}
+
+void wxMediaPasteboard::AfterReorder(wxSnip *, wxSnip *, Bool)
+{
+  
 }
 
 #if ALLOW_X_STYLE_SELECTION

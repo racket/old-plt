@@ -1083,7 +1083,7 @@ static unsigned char *special_filenames[] = { "NUL", "CON", "PRN", "AUX", "CLOCK
 
 #define IS_SPEC_CHAR(x) (IS_A_SEP(x) || ((x) == '"') || ((x) == '|') || ((x) == ':') || ((x) == '<') || ((x) == '>'))
 
-static int is_special_filename(const char *_f, int not_nul)
+int scheme_is_special_filename(const char *_f, int not_nul)
 {
   int i, j, delta;
   const unsigned char *f = (const unsigned char *)_f;
@@ -1111,14 +1111,14 @@ static int is_special_filename(const char *_f, int not_nul)
       f = strip_trailing_spaces(f, NULL);
 
       if (!f[j])
-	return 1;
+	return i + 1;
       if ((f[j] == ':') && !(f[j+1]))
-	return 1;
+	return i + 1;
       /* Look for extension: */
       if (f[j] == '.') {
 	j++;
 	if (!f[j])
-	  return 1;
+	  return i + 1;
 	else {
 	  if ((f[j] == '.') || IS_SPEC_CHAR(f[j]) || !isprint(f[j]))
 	    return 0;
@@ -1131,7 +1131,7 @@ static int is_special_filename(const char *_f, int not_nul)
 	      if ((f[j] == '.') || IS_SPEC_CHAR(f[j]) || !isprint(f[j]))
 		return 0;
 	      if (!f[j+1])
-		return 1;
+		return i + 1;
 	    }
 	  }
 	}
@@ -1386,7 +1386,7 @@ int scheme_file_exists(char *filename)
 
 #  ifdef DOS_FILE_SYSTEM
   /* Claim that all special files exist: */
-  if (is_special_filename(filename, 0))
+  if (scheme_is_special_filename(filename, 0))
     return 1;
 #  endif
 
@@ -1547,7 +1547,7 @@ int scheme_is_regular_file(char *filename)
   struct MSC_IZE(stat) buf;
 
 #  ifdef DOS_FILE_SYSTEM
-  if (is_special_filename(filename, 1))
+  if (scheme_is_special_filename(filename, 1))
     return 0;
 #  endif
 

@@ -313,6 +313,8 @@ static void init_mred(Scheme_Env *global_env)
 		       global_env);
     scheme_eval_string("(require (lib \"mred.ss\" \"mred\"))", 
 		       global_env);
+    scheme_eval_string("(current-load text-editor-load-handler)", 
+		       global_env);
   }
 }
 #endif
@@ -716,7 +718,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  break;
 #endif
 #ifdef CMDLINE_STDIO_FLAG
-	case 'z': /* ^^^ fallthrough ^^^ */
+	case 'z':
 	  no_rep = 1;
 	  evals_and_loads[num_enl] = "(read-eval-print-loop)";
 	  eval_kind[num_enl++] = mzcmd_EVAL;
@@ -853,7 +855,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 "  -i, --script-cd : Like -r, but also sets the directory. Same as -dmv-.\n"
 	 "  -u, --require-script : Like -r, but requires a module. Same as -tmv-.\n" 
 # ifndef MZSCHEME_CMD_LINE
-	 "  -Z, --nogui : Skip \"class.ss\" and \"mred.ss\" require.\n"
+	 "  -Z, --nogui : Skip \"class.ss\" & \"mred.ss\" require, load handler set.\n"
 # endif
 # ifdef CMDLINE_STDIO_FLAG
 	 "  -z, --stdio : Use stdio REPL. Same as -ve '(read-eval-print-loop)'.\n"

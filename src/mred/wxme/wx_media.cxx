@@ -2848,6 +2848,8 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
   if (writeLocked || userLocked)
     return FALSE;
 
+  showErrors = TRUE;
+
   if (!file || !*file) {
     if ((file && !*file) || !filename || tempFilename) {
       char *path;
@@ -2950,6 +2952,8 @@ Bool wxMediaEdit::InsertFile(Scheme_Object *f, char *WXUNUSED(file), int *format
 
   fileerr = FALSE;
 
+  showErrors = TRUE;
+
   if (*format == wxMEDIA_FF_STD) {
     n = scheme_get_string("insert-file in text%", f, buffer, 0, MRED_START_STR_LEN, 0, 1, NULL);
     buffer[MRED_START_STR_LEN] = 0;
@@ -2972,7 +2976,7 @@ Bool wxMediaEdit::InsertFile(Scheme_Object *f, char *WXUNUSED(file), int *format
       b->Read(vbuf, MRED_VERSION_STR_LEN);
       memcpy((char *)mf->read_version, vbuf, MRED_VERSION_STR_LEN);
       
-      if (wxmeCheckFormatAndVersion(mf, showErrors)) {
+      if (wxmeCheckFormatAndVersion(mf, b, showErrors)) {
 	if (wxReadMediaGlobalHeader(mf)) {
 	  if (mf->Ok())
 	    fileerr = !ReadFromFile(mf, clearStyles);
@@ -3043,6 +3047,8 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
 
   if (readLocked)
     return FALSE;
+
+  showErrors = TRUE;
 
   if (!file || !*file) {
     if ((file && !*file) || !filename || tempFilename) {

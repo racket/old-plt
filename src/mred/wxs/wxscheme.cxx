@@ -1363,7 +1363,7 @@ static Scheme_Object *SetExecuter(int, Scheme_Object *a[])
 void wxsExecute(char **argv)
 {
   int i, c;
-  Scheme_Object **a;
+  Scheme_Object **a, *aa;
 
   for (i = 0; argv[i]; i++) {
   }
@@ -1372,7 +1372,8 @@ void wxsExecute(char **argv)
   a = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *) * c);
 
   for (i = 0; i < c; i++) {
-    a[i] = scheme_make_string(argv[i]);
+    aa = scheme_make_string(argv[i]);
+    a[i] = aa;
   }
 
   (void *)scheme_apply_multi(executer, c, a);

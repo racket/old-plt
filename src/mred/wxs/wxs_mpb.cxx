@@ -370,6 +370,9 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   void AfterSelect(class wxSnip* x0, Bool x1);
   void OnSelect(class wxSnip* x0, Bool x1);
   Bool CanSelect(class wxSnip* x0, Bool x1);
+  void AfterReorder(class wxSnip* x0, class wxSnip* x1, Bool x2);
+  void OnReorder(class wxSnip* x0, class wxSnip* x1, Bool x2);
+  Bool CanReorder(class wxSnip* x0, class wxSnip* x1, Bool x2);
   void AfterResize(class wxSnip* x0, nnfloat x1, nnfloat x2, Bool x3);
   void OnResize(class wxSnip* x0, nnfloat x1, nnfloat x2);
   Bool CanResize(class wxSnip* x0, nnfloat x1, nnfloat x2);
@@ -906,6 +909,115 @@ Bool os_wxMediaPasteboard::CanSelect(class wxSnip* x0, Bool x1)
   
   
   return WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-select? in pasteboard%"", extracting return value"));
+  }
+}
+
+void os_wxMediaPasteboard::AfterReorder(class wxSnip* x0, class wxSnip* x1, Bool x2)
+{
+  Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaPasteboard *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(7);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+3);
+  VAR_STACK_PUSH(5, x0);
+  VAR_STACK_PUSH(6, x1);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "after-reorder", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    ASSELF wxMediaPasteboard::AfterReorder(x0, x1, x2);
+  } else {
+  
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
+  p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x1));
+  p[POFFSET+2] = (x2 ? scheme_true : scheme_false);
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
+  
+  
+  }
+}
+
+void os_wxMediaPasteboard::OnReorder(class wxSnip* x0, class wxSnip* x1, Bool x2)
+{
+  Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaPasteboard *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(7);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+3);
+  VAR_STACK_PUSH(5, x0);
+  VAR_STACK_PUSH(6, x1);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-reorder", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    ASSELF wxMediaPasteboard::OnReorder(x0, x1, x2);
+  } else {
+  
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
+  p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x1));
+  p[POFFSET+2] = (x2 ? scheme_true : scheme_false);
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
+  
+  
+  }
+}
+
+Bool os_wxMediaPasteboard::CanReorder(class wxSnip* x0, class wxSnip* x1, Bool x2)
+{
+  Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaPasteboard *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(7);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+3);
+  VAR_STACK_PUSH(5, x0);
+  VAR_STACK_PUSH(6, x1);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "can-reorder?", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    return ASSELF wxMediaPasteboard::CanReorder(x0, x1, x2);
+  } else {
+  
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x0));
+  p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxSnip(x1));
+  p[POFFSET+2] = (x2 ? scheme_true : scheme_false);
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+3, p));
+  
+  
+  return WITH_VAR_STACK(objscheme_unbundle_bool(v, "can-reorder? in pasteboard%"", extracting return value"));
   }
 }
 
@@ -3310,6 +3422,97 @@ static Scheme_Object *os_wxMediaPasteboardCanSelect(int n,  Scheme_Object *p[])
     r = WITH_VAR_STACK(((os_wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaPasteboard::CanSelect(x0, x1));
   else
     r = WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->CanSelect(x0, x1));
+
+  
+  
+  return (r ? scheme_true : scheme_false);
+}
+
+static Scheme_Object *os_wxMediaPasteboardAfterReorder(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMediaPasteboard_class, "after-reorder in pasteboard%", n, p);
+  class wxSnip* x0 INIT_NULLED_OUT;
+  class wxSnip* x1 INIT_NULLED_OUT;
+  Bool x2;
+
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x1);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+0], "after-reorder in pasteboard%", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+1], "after-reorder in pasteboard%", 0));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "after-reorder in pasteboard%"));
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaPasteboard::AfterReorder(x0, x1, x2));
+  else
+    WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->AfterReorder(x0, x1, x2));
+
+  
+  
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxMediaPasteboardOnReorder(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMediaPasteboard_class, "on-reorder in pasteboard%", n, p);
+  class wxSnip* x0 INIT_NULLED_OUT;
+  class wxSnip* x1 INIT_NULLED_OUT;
+  Bool x2;
+
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x1);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+0], "on-reorder in pasteboard%", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+1], "on-reorder in pasteboard%", 0));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "on-reorder in pasteboard%"));
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaPasteboard::OnReorder(x0, x1, x2));
+  else
+    WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->OnReorder(x0, x1, x2));
+
+  
+  
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxMediaPasteboardCanReorder(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(os_wxMediaPasteboard_class, "can-reorder? in pasteboard%", n, p);
+  class wxSnip* x0 INIT_NULLED_OUT;
+  class wxSnip* x1 INIT_NULLED_OUT;
+  Bool x2;
+
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x1);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+0], "can-reorder? in pasteboard%", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+1], "can-reorder? in pasteboard%", 0));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "can-reorder? in pasteboard%"));
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    r = WITH_VAR_STACK(((os_wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaPasteboard::CanReorder(x0, x1, x2));
+  else
+    r = WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->CanReorder(x0, x1, x2));
 
   
   
@@ -5767,7 +5970,7 @@ void objscheme_setup_wxMediaPasteboard(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaPasteboard_class);
 
-  os_wxMediaPasteboard_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "pasteboard%", "editor%", (Scheme_Method_Prim *)os_wxMediaPasteboard_ConstructScheme, 103));
+  os_wxMediaPasteboard_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "pasteboard%", "editor%", (Scheme_Method_Prim *)os_wxMediaPasteboard_ConstructScheme, 106));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "set-scroll-step" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardSetScrollStep, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-scroll-step" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardGetScrollStep, 0, 0));
@@ -5788,6 +5991,9 @@ void objscheme_setup_wxMediaPasteboard(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "after-select" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardAfterSelect, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-select" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardOnSelect, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "can-select?" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardCanSelect, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "after-reorder" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardAfterReorder, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-reorder" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardOnReorder, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "can-reorder?" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardCanReorder, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "after-resize" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardAfterResize, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-resize" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardOnResize, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "can-resize?" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardCanResize, 3, 3));

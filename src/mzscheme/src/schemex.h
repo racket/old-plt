@@ -408,7 +408,7 @@ char *(*scheme_get_string_output)(Scheme_Object *);
 char *(*scheme_get_sized_string_output)(Scheme_Object *, long *len);
 void (*scheme_pipe)(Scheme_Object **read, Scheme_Object **write);
 void (*scheme_pipe_with_limit)(Scheme_Object **write, Scheme_Object **read, int maxsize);
-void (*scheme_set_file_position)(Scheme_Object *port, long pos);
+long (*scheme_set_file_position)(Scheme_Object *port, long pos);
 int (*scheme_file_exists)(char *filename);
 int (*scheme_directory_exists)(char *dirname);
 char *(*scheme_expand_filename)(char* filename, int ilen, const char *errorin, int *ex, int guards);

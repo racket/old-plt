@@ -1,4 +1,10 @@
 
+Version 200.1
+
+Fixed bug in port reading (especially variantes of `read-string')
+ and `file-position' that follow peeks on the port
+
+
 Version 200, June 2002
 >> See MzScheme_200.txt for information on major changes in
    MzScheme 200. Minor changes are listed below.

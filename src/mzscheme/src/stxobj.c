@@ -3323,14 +3323,23 @@ static Scheme_Object *do_module_binding(char *name, int argc, Scheme_Object **ar
       return lexical_symbol;
   } else {
     if (get_position) {
-      int pos;
-
-      m = scheme_module_resolve(m);
-      pos = scheme_module_export_position(m, scheme_get_env(scheme_config), a);
-      if (pos < 0)
+      /* Imported or a "self" variable? */
+      if (SAME_TYPE(SCHEME_TYPE(m), scheme_module_index_type)
+	  && SCHEME_FALSEP(((Scheme_Modidx *)m)->path)
+	  && SCHEME_FALSEP(((Scheme_Modidx *)m)->base)) {
+	/* self */
 	return scheme_false;
-      else
-	return scheme_make_integer(pos);
+      } else {
+	/* Imported */
+	int pos;
+	
+	m = scheme_module_resolve(m);
+	pos = scheme_module_export_position(m, scheme_get_env(scheme_config), a);
+	if (pos < 0)
+	  return scheme_false;
+	else
+	  return scheme_make_integer(pos);
+      }
     } else
       return CONS(m, CONS(a, CONS(nom_mod, CONS(nom_a, scheme_null))));
   }

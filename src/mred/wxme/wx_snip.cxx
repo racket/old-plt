@@ -1969,7 +1969,6 @@ short wxBufferDataClassList::FindPosition(wxBufferDataClass *sclass)
 {
   wxNode *node;
   short i;
-  int k;
   
   for (i = 0, node = First(); node; node = node->Next(), i++) {
     if (PTREQ(sclass, (wxBufferDataClass *)node->Data()))

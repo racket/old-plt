@@ -161,6 +161,9 @@ class wxMediaPasteboard : public wxMediaBuffer
   virtual Bool CanResize(wxSnip *, float w, float h);
   virtual void OnResize(wxSnip *, float w, float h);
   virtual void AfterResize(wxSnip *, float w, float h, Bool did);
+  virtual Bool CanReorder(wxSnip *, wxSnip *, Bool);
+  virtual void OnReorder(wxSnip *, wxSnip *, Bool);
+  virtual void AfterReorder(wxSnip *, wxSnip *, Bool);
 
   virtual Bool CanSelect(wxSnip *, Bool on);
   virtual void OnSelect(wxSnip *, Bool on);

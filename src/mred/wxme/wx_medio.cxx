@@ -134,7 +134,7 @@ wxMediaStreamInFileBase::~wxMediaStreamInFileBase()
 
 long wxMediaStreamInFileBase::Tell(void)
 {
-  return scheme_tell(f);
+  return scheme_set_file_position(f, -1);
 }
 
 void wxMediaStreamInFileBase::Seek(long p)
@@ -144,7 +144,7 @@ void wxMediaStreamInFileBase::Seek(long p)
 
 void wxMediaStreamInFileBase::Skip(long n)
 {
-  scheme_set_file_position(f, n + scheme_tell(f));
+  scheme_set_file_position(f, n + scheme_set_file_position(f, -1));
 }
 
 Bool wxMediaStreamInFileBase::Bad(void)
@@ -173,7 +173,7 @@ wxMediaStreamOutFileBase::~wxMediaStreamOutFileBase()
 
 long wxMediaStreamOutFileBase::Tell(void)
 {
-  return scheme_tell(f);
+  return scheme_set_file_position(f, -1);
 }
 
 void wxMediaStreamOutFileBase::Seek(long p)

@@ -2244,12 +2244,16 @@ static char *clean_string(const char *msg)
 
 void wxmeError(const char *e)
 {
+#if 1
+  scheme_signal_error("%s", e);
+#else
   if (scheme_console_printf) {
     e = clean_string(e);
     scheme_console_printf("%s\n", (char *)e);
   } else {
     wxMessageBox((char *)e, "Error");
   }
+#endif
 }
 
 /****************************************************************************/

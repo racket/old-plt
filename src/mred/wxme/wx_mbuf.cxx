@@ -702,11 +702,11 @@ Bool wxWriteMediaGlobalFooter(wxMediaStreamOut *f)
 
 /**********************************************************************/
 
-int wxmeCheckFormatAndVersion(wxMediaStreamIn *s, Bool showErrors)
+int wxmeCheckFormatAndVersion(wxMediaStreamIn *s, wxMediaStreamInBase *b, Bool showErrors)
 {
   if (strcmp(s->read_format, MRED_FORMAT_STR)) {
     if (showErrors)
-      wxmeError("load-file: unknown format number");
+      wxmeError("load-file: unknown format number in editor<%> file format");
     return 0;
   }
   if (strcmp(s->read_version, MRED_VERSION_STR)
@@ -714,22 +714,20 @@ int wxmeCheckFormatAndVersion(wxMediaStreamIn *s, Bool showErrors)
       && strcmp(s->read_version, "02")
       && strcmp(s->read_version, "03")) {
     if (showErrors)
-      wxmeError("load-file: unknown version number");
+      wxmeError("load-file: unknown version number in editor<%> file format");
     return 0;
   }
 
   if (!strcmp(s->read_version, MRED_VERSION_STR)) {
     /* Need to skip " ## " */
     char buf[4];
-    long l = 4;
-    s->Get(&l, (char *)buf);
-    if ((l != 4)
-	|| (buf[0] != ' ')
+    b->Read((char *)buf, 4);
+    if ((buf[0] != ' ')
 	|| (buf[1] != '#')
 	|| (buf[2] != '#')
 	|| (buf[3] != ' ')) {
       if (showErrors)
-	wxmeError("load-file: missing ' ## ' mark");
+	wxmeError("load-file: editor<%> file missing ' ## ' mark");
       return 0;
     }
   }
@@ -1734,8 +1732,10 @@ void wxMediaBuffer::DoBufferPaste(long time, Bool local)
   wxSnip *snip;
   wxBufferData *bd;
 
+  /* Cut and paste to ourself? (Same eventspace?) */
   owner = wxTheClipboard->GetClipboardClient();
-  if (local || (!pasteTextOnly && PTREQ(owner, TheMediaClipboardClient))) {
+  if (local || (!pasteTextOnly && PTREQ(owner, TheMediaClipboardClient)
+		&& PTREQ(wxGetContextForFrame(), owner->context))) {
     copyDepth++;
     for ((node = wxmb_commonCopyBuffer->First(),
 	  node2 = wxmb_commonCopyBuffer2->First()); 

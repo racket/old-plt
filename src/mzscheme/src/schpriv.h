@@ -1799,6 +1799,11 @@ Scheme_Object *scheme_default_load_extension(int argc, Scheme_Object **argv);
 
 Scheme_Object *scheme_remove_current_directory_prefix(Scheme_Object *fn);
 
+#ifdef DOS_FILE_SYSTEM
+int scheme_is_special_filename(const char *_f, int not_nul);
+# define NUM_SPECIAL_FILE_KINDS 30
+#endif
+
 /*========================================================================*/
 /*                               ports                                    */
 /*========================================================================*/

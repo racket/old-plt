@@ -181,30 +181,8 @@
 			    [else
 			     (f)]))]
 		       [constructor-style
-			(let* ([get-class
-				(lambda (n actual)
-				  (lambda (expr)
-				    (let* ([str (format "~a" expr)])
-				      (and (not (string=? str actual))
-					   (let* ([sub (substring
-							str n
-							(- (string-length str) 1))]
-						  [symbol (string->symbol sub)])
-					     symbol)))))]
-			       [get-class-from-class (get-class 8 "#<class>")]
-			       [get-class-from-object (get-class 9 "#<object>")]
-			       [build-class-expr
-				(lambda (symbol actual-class)
-				  (if symbol
-				      (let ([matches?
-					     (with-handlers ([void (lambda (x) #f)])
-					       (eq? (eval symbol) actual-class))])
-					(if matches?
-					    symbol
-					    `(class ,symbol ...)))
-				      '(class ...)))]
-			       [build-named
-				(lambda (build-unnamed string-name beginning-offset)
+			(let* ([build-named
+				(lambda (expr build-unnamed)
 				  (let ([answer (inferred-name expr)])
 				    (if answer
 					(if (eq? (with-handlers ([(lambda (x) #t)
@@ -231,26 +209,26 @@
 			      [(weak-box? expr) `(make-weak-box ,(recur (weak-box-value expr)))]
 			      [(box? expr) `(box ,(recur (unbox expr)))]
 			      [(vector? expr) `(vector ,@(map recur (vector->list expr)))]
-			      [(symbol? expr) `(quote ,expr)]
+			      [(symbol? expr) `',expr]
 			      [(string? expr) expr]
 			      [(primitive? expr) (string->symbol (primitive-name expr))]
 			      [(procedure? expr)
-			       (build-named (lambda ()
-					      (let ([arity (arity expr)])
-						(if (list? arity)
-						    (cons 'case-lambda (make-lambda-helper arity))
-						    (list 'lambda (make-lambda-helper arity) '...))))
-					    "#<procedure>"
-					    12)]
+			       (build-named 
+				expr
+				(lambda ()
+				  (let ([arity (arity expr)])
+				    (if (list? arity)
+					`(case-lambda . ,(make-lambda-helper arity))
+					`(lambda ,(make-lambda-helper arity) ...)))))]
 			      [(regexp? expr)
 			       '(regexp ...)]
 			      [(class? expr) 
-			       (build-named (lambda () (build-class-expr (get-class-from-class expr) expr))
-					    "#<class>"
-					    7)]
-			      [(object? expr) `(make-object ,(build-class-expr (get-class-from-object expr)
-									       (object-class expr))
-							    ...)]
+			       (build-named 
+				expr
+				(lambda () '(class ...)))]
+			      [(object? expr) `(make-object ,(build-named 
+							      expr
+							      (lambda () '(class ...))))]
 			      [(void? expr) '(void)]
 			      [(promise? expr) '(delay ...)]
 			      [(struct? expr)
@@ -263,10 +241,10 @@
 							    (string-length name))))
 				       (map recur (cdr (vector->list
 							(struct->vector expr))))))]
-			      [(unit? expr) (build-named (lambda () 
-							   '(unit ...))
-							 "#<unit>"
-							 6)]
+			      [(unit? expr) (build-named 
+					     expr
+					     (lambda () 
+					       '(unit ...)))]
 			      [else (hooks@:print-convert-hook
 				     expr recur)])))])
 		    (let ([es (convert-share-info-expand-shared? csi)])

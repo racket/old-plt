@@ -320,20 +320,16 @@ static void out_of_string_range(const char *name, const char *which,
 				long start, long len)
 {
   if (SCHEME_STRTAG_VAL(s)) {
-    scheme_raise_exn(MZEXN_APPLICATION_RANGE_BOUNDS_STRING,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     scheme_make_integer(i),
-		     scheme_make_integer(start),
-		     scheme_make_integer(len),
 		     "%s: %sindex %s out of range [%d, %d] for string: %s",
 		     name, which,
 		     scheme_make_provided_string(i, 2, NULL), 
 		     start, len,
 		     scheme_make_provided_string(s, 2, NULL));
   } else {
-    scheme_raise_exn(MZEXN_APPLICATION_RANGE_BOUNDS_STRING,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     scheme_make_integer(i),
-		     scheme_make_integer(start),
-		     scheme_make_integer(len),
 		     "%s: %sindex %s out of range for empty string",
 		     name, which,
 		     scheme_make_provided_string(i, 0, NULL));
@@ -884,14 +880,13 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
     char *args = scheme_make_args_string("", -1, argc, argv);
 
     if (used > argc) {
-      scheme_raise_exn(MZEXN_APPLICATION_FPRINTF_NO_ARGUMENT,
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		       argv[fpos],
 		       "%s: format string requires %d arguments, given %d%s",
 		       procname, used - offset, argc - offset, args);
     } else {
-      scheme_raise_exn(MZEXN_APPLICATION_FPRINTF_EXTRA_ARGUMENTS,
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		       argv[fpos],
-		       scheme_build_list(argc - used, argv + used),
 		       "%s: format string requires %d arguments, given %d%s",
 		       procname, used - offset, argc - offset, args);
     }
@@ -903,9 +898,8 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
     char *type = (num_err ? "exact-number" : "character");
     Scheme_Object *bad = argv[pos];
 
-    scheme_raise_exn(MZEXN_APPLICATION_FPRINTF_ARGUMENT_TYPE,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     bad,
-		     scheme_intern_symbol(type),
 		     "%s: format string requires argument of type <%s>, given %s%s",
 		     procname, type, 
 		     scheme_make_provided_string(bad, 1, NULL),

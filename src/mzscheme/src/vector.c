@@ -170,20 +170,16 @@ bad_index(char *name, Scheme_Object *i, Scheme_Object *vec)
   int n = SCHEME_VEC_SIZE(vec) - 1;
 
   if (SCHEME_VEC_SIZE(vec))
-    scheme_raise_exn(MZEXN_APPLICATION_RANGE_BOUNDS_VECTOR,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     i,
-		     scheme_make_integer(0),
-		     scheme_make_integer(n),
 		     "%s: index %s out of range [%d, %d] for vector: %s",
 		     name, 
 		     scheme_make_provided_string(i, 2, NULL), 
 		     0, n,
 		     scheme_make_provided_string(vec, 2, NULL));
   else
-    scheme_raise_exn(MZEXN_APPLICATION_RANGE_BOUNDS_VECTOR,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     i,
-		     scheme_make_integer(0),
-		     scheme_make_integer(0),
 		     "%s: bad index %s for empty vector",
 		     name,
 		     scheme_make_provided_string(i, 0, NULL));

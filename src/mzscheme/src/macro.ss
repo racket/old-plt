@@ -711,7 +711,7 @@
 > fstop with-new-parameterization <
 
 (#%define load/cd
-  (#%let ([make-exn make-exn:i/o:filesystem:directory]
+  (#%let ([make-exn make-exn:i/o:filesystem]
 	  [debug debug-info-handler])
     (#%lambda (n)
       (#%unless (#%string? n)
@@ -838,20 +838,18 @@
 	   [not-found (box 0)]
 	   [null-str (#%string #\nul)]
 	   [debug debug-info-handler]
-	   [make-path-exn make-exn:i/o:filesystem:path]
+	   [make-exn make-exn:i/o:filesystem]
 	   [check (#%lambda (who s)
 		    (#%unless (#%string? s)
 		      (#%raise-type-error who "string" s))
 		    (#%unless (#%relative-path? s)
-		      (#%raise (make-path-exn
+		      (#%raise (make-exn
 			       (#%format "~a: invalid relative path: ~s" who s)
 			       ((debug)) s))))]
 	   [with-null (#%lambda (l) (#%let loop ([l l])
 					   (#%if (#%null? l)
 						 #%null
 						 (#%list* (#%car l) null-str (loop (#%cdr l))))))]
-	   [make-coll-exn make-exn:i/o:filesystem:collection]
-	   [make-file-exn make-exn:i/o:filesystem:file]
 	   [check-collection
 	    (#%lambda (who collection collection-path)
 		      (check who collection) (#%for-each (lambda (p) (check who p)) collection-path))]
@@ -861,11 +859,11 @@
 		     (#%let loop ([paths all-paths])
 			    (#%if (#%null? paths)
 				 (#%raise
-				  (make-coll-exn
-				  (#%format "~a: collection not found: ~s in any of: ~s" 
-					    who collection all-paths)
-				  ((debug))
-				  collection))
+				  (make-exn
+				   (#%format "~a: collection not found: ~s in any of: ~s" 
+					     who collection all-paths)
+				   ((debug))
+				   collection))
 				 (#%let ([dir (#%build-path (#%car paths) collection)])
 				    (#%if (#%directory-exists? dir)
 				       (#%let* ([cpath (#%apply #%build-path dir collection-path)])
@@ -877,7 +875,7 @@
 							 (#%if (#%directory-exists? np)
 							       (loop np (#%cdr l) nc)
 							       (#%raise
-								(make-coll-exn
+								(make-exn
 								 (#%format "require-library: collection ~s does not have sub-collection: ~s in: ~s"
 									   c (#%car l) p)
 								 ((debug))
@@ -894,7 +892,7 @@
 			    (#%if cp
 				  (#%apply require-library/proc file (#%append cp collection-path))
 				  (#%raise
-				   (make-coll-exn
+				   (make-exn
 				    (#%format "require-relative-library: there is no current collection for library: ~s~a"
 					      file
 					      (#%if (#%null? collection-path)
@@ -925,7 +923,7 @@
 										 p))
 								      #%list))
 								   (#%raise
-								    (make-file-exn
+								    (make-exn
 								     (#%format "require-library: collection ~s does not have library: ~s in: ~s"
 									       (#%apply #%build-path collection collection-path) file c)
 								     ((debug))
@@ -1042,19 +1040,18 @@
 > literal "#ifndef NO_UNIT_SYSTEM"
 
 (#%define verify-linkage-signature-match
-  (#%let ([make-non #%make-exn:unit:signature:non-signed-unit]
-	  [make-arity #%make-exn:unit:signature:arity]
+  (#%let ([make-exn #%make-exn:unit]
 	  [p-suffix (#%lambda (pos) (#%case pos [(1) 'st][(2) 'nd][(3) 'rd][else 'th]))])
     (#%lambda (who tags units esigs isigs)
       (#%for-each
        (#%lambda (u tag)
 	  (#%unless (#%unit-with-signature? u)
 	     (#%raise
-	      (make-non
+	      (make-exn
 	       (#%format
 		"~s: expression for \"~s\" is not a signed unit"
 		who tag)
-	       ((#%debug-info-handler)) u))))
+	       ((#%debug-info-handler))))))
        units tags)
       (#%for-each
        (#%lambda (u tag esig)
@@ -1071,11 +1068,11 @@
 		 [c (#%length isig)])
 	   (#%unless (#%= c n)
 	      (#%raise
-	       (make-arity
+	       (make-exn
 		(#%format
 		 "~s: ~a unit imports ~a units, but ~a units were provided"
 		 who tag n c)
-		((#%debug-info-handler)) u)))))
+		((#%debug-info-handler)))))))
        units tags isigs)
       (#%for-each
        (#%lambda (u tag isig)

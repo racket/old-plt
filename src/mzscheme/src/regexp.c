@@ -195,7 +195,7 @@ STATIC int regstrcspn(char *, char *);
 static void
 regerror(char *s)
 {
-  scheme_raise_exn(MZEXN_MISC_REGEXP,
+  scheme_raise_exn(MZEXN_MISC,
 		   "regexp: %s", s);
 }
 

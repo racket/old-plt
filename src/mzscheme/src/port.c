@@ -1647,7 +1647,7 @@ static int file_getc(Scheme_Input_Port *port)
 
   if (c == EOF) {
     if (!feof(fp)) {
-      scheme_raise_exn(MZEXN_I_O_READ,
+      scheme_raise_exn(MZEXN_I_O_PORT_READ,
 		       port,
 		       "error reading from file port (%d)",
 		       errno);
@@ -2214,7 +2214,7 @@ user_getc (Scheme_Input_Port *port)
     return EOF;
   else {
     if (!SCHEME_CHARP(val))
-      scheme_raise_exn(MZEXN_I_O_USER_PORT,
+      scheme_raise_exn(MZEXN_I_O_PORT_USER,
 		       port,
 		       "port: user getc returned a non-character");
     return (unsigned char)SCHEME_CHAR_VAL(val);
@@ -2253,7 +2253,7 @@ file_write_string(char *str, long len, Scheme_Output_Port *port)
   fp = ((Scheme_Output_File *)port->port_data)->f;
 
   if (fwrite(str, len, 1, fp) != 1) {
-    scheme_raise_exn(MZEXN_I_O_WRITE,
+    scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
 		     port,
 		     "error writing to file port (%d)",
 		     errno);
@@ -2320,7 +2320,7 @@ fd_write_string(char *str, long len, Scheme_Output_Port *port)
   } else {
     if (fop->bufcount) {
       if (write(fop->fd, fop->buffer, fop->bufcount) != fop->bufcount) {
-	scheme_raise_exn(MZEXN_I_O_WRITE,
+	scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
 			 port,
 			 "error writing to file port (%d)",
 			 errno);
@@ -2333,7 +2333,7 @@ fd_write_string(char *str, long len, Scheme_Output_Port *port)
       fop->bufcount = len;
     } else {
       if (write(fop->fd, str, len) != len) {
-	scheme_raise_exn(MZEXN_I_O_WRITE,
+	scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
 			 port,
 			 "error writing to file port (%d)",
 			 errno);
@@ -2347,7 +2347,7 @@ fd_write_string(char *str, long len, Scheme_Output_Port *port)
     if (*str == '\n' || *str == '\r') {
       /* Flush: */
       if (write(fop->fd, fop->buffer, fop->bufcount) != fop->bufcount) {
-	scheme_raise_exn(MZEXN_I_O_WRITE,
+	scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
 			 port,
 			 "error writing to file port (%d)",
 			 errno);
@@ -2516,7 +2516,7 @@ static void filename_exn(char *name, char *msg, char *filename, int err)
   rel = dir ? dir : (drive ? drive : "");
   post = dir ? "\"" : "";
 
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_FILE,
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		   scheme_make_string(filename),
 		   "%s: %s: \"%.255s\"%s%.255s%s (%d)", 
 		   name, msg, filename,
@@ -2636,9 +2636,8 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
 		       scheme_make_args_string("other ", i, argc, argv));
 
     if (m_set > 1 || e_set > 1)
-      scheme_raise_exn(MZEXN_APPLICATION_MODE_CONFLICT,
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		       argv[i],
-		       argv[0],
 		       "%s: conflicting or redundant "
 		       "file modes given%s", name,
 		       scheme_make_args_string("", -1, argc, argv));
@@ -2659,14 +2658,14 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
 #endif
     if (scheme_file_exists(filename)) {
       if (!existsok)
-	scheme_raise_exn(MZEXN_I_O_FILESYSTEM_FILE_EXISTS,
+	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			 argv[0],
 			 "%s: file \"%s\" exists", name, filename);
 #ifdef MAC_FILE_SYSTEM
       if (existsok > 0) {
 #endif
 	if (MSC_IZE(unlink)(filename))
-	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_FILE_EXISTS,
+	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   argv[0],
 			   "%s: error deleting \"%s\"", 
 			   name, filename);
@@ -2685,7 +2684,7 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
       /* Can't truncate; try to replace */
       if (scheme_file_exists(filename)) {
 	if (MSC_IZE(unlink)(filename))
-	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_FILE_EXISTS,
+	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   argv[0],
 			   "%s: error deleting \"%s\"", 
 			   name, filename);
@@ -3632,7 +3631,7 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
     len = SCHEME_STRTAG_VAL(d);
 
     if (!scheme_is_complete_path(s, len))
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM_PATH,
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       d,
 		       "current-load-relative-directory: not a complete path: \"%.255s\"",
 		       s);
@@ -3640,7 +3639,7 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
     expanded = scheme_expand_filename(s, len, "current-load-relative-directory", NULL);
     ed = scheme_make_sized_string(expanded, strlen(expanded), 1);
     if (!scheme_directory_exists(expanded)) {
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM_DIRECTORY,
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       ed,
 		       "current-load-relative-directory: directory not found or not a directory: \"%.255s\"",
 		       expanded);
@@ -3798,7 +3797,7 @@ file_position(int argc, Scheme_Object *argv[])
   }
 
   if (!f)
-    scheme_raise_exn(MZEXN_APPLICATION_FILE_POSITION,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     argv[0],
 		     "file-position: cannot move to position %d in a non-file port",
 		     SCHEME_INT_VAL(argv[1]));
@@ -4423,21 +4422,21 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   
   if (!synchonous) {
     if (MSC_IZE(pipe)(to_subprocess _EXTRA_PIPE_ARGS))
-      scheme_raise_exn(MZEXN_MISC_PROCESS,
-		       "%s: pipe failed", name);
+      scheme_raise_exn(MZEXN_MISC,
+		       "%s: pipe failed (too many ports open?)", name);
     if (MSC_IZE(pipe)(from_subprocess _EXTRA_PIPE_ARGS)) {
       MSC_IZE(close)(to_subprocess[0]);
       MSC_IZE(close)(to_subprocess[1]);
-      scheme_raise_exn(MZEXN_MISC_PROCESS,
-		       "%s: pipe failed", name);
+      scheme_raise_exn(MZEXN_MISC,
+		       "%s: pipe failed (too many ports open?)", name);
     }
     if (MSC_IZE(pipe)(err_subprocess _EXTRA_PIPE_ARGS)) {
       MSC_IZE(close)(to_subprocess[0]);
       MSC_IZE(close)(to_subprocess[1]);
       MSC_IZE(close)(from_subprocess[0]);
       MSC_IZE(close)(from_subprocess[1]);
-      scheme_raise_exn(MZEXN_MISC_PROCESS,
-		       "%s: pipe failed", name);
+      scheme_raise_exn(MZEXN_MISC,
+		       "%s: pipe failed (too many ports open?)", name);
     }
   }
 
@@ -4561,7 +4560,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   switch (pid)
     {
     case -1:
-      scheme_raise_exn(MZEXN_MISC_PROCESS,
+      scheme_raise_exn(MZEXN_MISC,
 		       "%s: fork failed", name);
       return scheme_false;
 
@@ -4759,7 +4758,7 @@ static Scheme_Object *sch_send_event(int c, Scheme_Object *args[])
   if (scheme_mac_send_event("send-event", c, args, &result, &err, &stage))
     return result;
   else
-    scheme_raise_exn(MZEXN_MISC_SEND_EVENT, "send-event: failed (%s%d)", stage, (int)err);
+    scheme_raise_exn(MZEXN_MISC, "send-event: failed (%s%d)", stage, (int)err);
 #else
   scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "send-event: not supported on this platform");
@@ -5516,7 +5515,7 @@ static int tcp_getc(Scheme_Input_Port *port)
 #endif
   
   if (data->bufmax == -1) {
-    scheme_raise_exn(MZEXN_I_O_READ,
+    scheme_raise_exn(MZEXN_I_O_PORT_READ,
 		     port,
 		     "tcp-read: error reading (%d)",
 		     errid);
@@ -5779,7 +5778,7 @@ static void tcp_write_string(char *s, long len, Scheme_Output_Port *port)
     data->sendbuftrying = 0;
 
   if (errid)
-    scheme_raise_exn(MZEXN_I_O_WRITE,
+    scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
 		     port,
 		     "tcp-write: error writing (%d)",
 		     errid);
@@ -6028,9 +6027,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 #endif
 
 #ifdef USE_TCP
-  scheme_raise_exn(MZEXN_I_O_TCP_CONNECT,
-		   scheme_make_string(address), 
-		   scheme_make_integer(origid),
+  scheme_raise_exn(MZEXN_I_O_TCP,
 		   "tcp-connect: connection to %s, port %d failed (%d%s%d%s)",
 		   address, origid, errpart, ":", errid, errmsg);
 #else
@@ -6150,8 +6147,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
 #endif
 
 #ifdef USE_TCP
-  scheme_raise_exn(MZEXN_I_O_TCP_LISTEN,
-		   scheme_make_integer(origid),
+  scheme_raise_exn(MZEXN_I_O_TCP,
 		   "tcp-connect: listen on %d failed (%d)",
 		   origid, errid);
 #else
@@ -6213,8 +6209,7 @@ tcp_stop(int argc, Scheme_Object *argv[])
   was_closed = stop_listener(argv[0]);
 
   if (was_closed) {
-    scheme_raise_exn(MZEXN_I_O_TCP_LISTENER_CLOSED,
-		     argv[0],
+    scheme_raise_exn(MZEXN_I_O_TCP,
 		     "tcp-close: listener was already closed");
     return NULL;
   }
@@ -6238,8 +6233,7 @@ tcp_accept_ready(int argc, Scheme_Object *argv[])
   TCP_INIT("tcp-accept-ready?");
 
   if (LISTENER_WAS_CLOSED(argv[0])) {
-    scheme_raise_exn(MZEXN_I_O_TCP_LISTENER_CLOSED,
-		     argv[0],
+    scheme_raise_exn(MZEXN_I_O_TCP,
 		     "tcp-accept-ready?: listener is closed");
     return NULL;
   }
@@ -6296,8 +6290,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
   }
 
   if (was_closed) {
-    scheme_raise_exn(MZEXN_I_O_TCP_LISTENER_CLOSED,
-		     listener,
+    scheme_raise_exn(MZEXN_I_O_TCP,
 		     "tcp-accept: listener is closed");
     return NULL;
   }
@@ -6357,8 +6350,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
   }
 # endif
 
-  scheme_raise_exn(MZEXN_I_O_TCP_LISTEN,
-		   listener,
+  scheme_raise_exn(MZEXN_I_O_TCP,
 		   "tcp-accept: accept from listener failed (%d)", errid);
 #else
   scheme_wrong_type("tcp-accept", "tcp-listener", 0, argc, argv);

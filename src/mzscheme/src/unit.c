@@ -1648,8 +1648,7 @@ static void wrong_import(char *where,
 			 Scheme_Object *stag,
 			 Scheme_Object *id)
 {
-  scheme_raise_exn(MZEXN_UNIT_IMPORT,
-		   unit, sunit, tag, stag, id,
+  scheme_raise_exn(MZEXN_UNIT,
 		   "%s: import at tag \"%s\" failed from tag \"%s\", "
 		   "name \"%s\"",
 		   where,
@@ -1755,8 +1754,7 @@ do_close_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
       v = _scheme_eval_compiled_expr(data->subunit_exprs[i]);
 
     if (!SCHEME_UNITP(v)) {
-      scheme_raise_exn(MZEXN_UNIT_NON_UNIT,
-		       v,
+      scheme_raise_exn(MZEXN_UNIT,
 		       MAKE_COMPOUND_UNIT ": not a " KIND " for \"%s\" "
 		       "in compound unit; provided %s",
 		       scheme_symbol_name(data->tags[i]),
@@ -1767,8 +1765,7 @@ do_close_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
     subunits[i] = sm = (Scheme_Unit *)v;
 
     if (sm->num_imports != data->param_counts[i]) {
-      scheme_raise_exn(MZEXN_UNIT_ARITY,
-		       v,
+      scheme_raise_exn(MZEXN_UNIT,
 		       MAKE_COMPOUND_UNIT ": " KIND " tagged \"%s\" "
 		       "expects %d imports, given %d",
 		       scheme_symbol_name(data->tags[i]),
@@ -1791,10 +1788,7 @@ do_close_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
     if (!find_exported(data->exports[i].submod_index, data->exports[i].ext_id,
 		       num_mods, subunits, data->tags, boxesList,
 		       1, &pos)) {
-      scheme_raise_exn(MZEXN_UNIT_EXPORT,
-		       subunits[data->exports[i].submod_index],
-		       data->tags[data->exports[i].submod_index],
-		       data->exports[i].ext_id,
+      scheme_raise_exn(MZEXN_UNIT,
 		       MAKE_COMPOUND_UNIT ": compound " KIND " exported variable "
 		       "not found for tag \"%s\", name \"%s\"",
 		       scheme_symbol_name(data->tags[data->exports[i].submod_index]),
@@ -1918,7 +1912,7 @@ static Scheme_Object *debug_bind(Scheme_Debug_Request *request,
 
   if (b->val) {
     if (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_CONST) {
-      scheme_raise_exn(MZEXN_MISC_CONSTANT,
+      scheme_raise_exn(MZEXN_VARIABLE_KEYWORD,
 		       full_name,
 		       INVOKE_OPEN_UNIT ": cannot redefine global constant: %s",
 		       scheme_symbol_name(full_name));
@@ -1953,15 +1947,14 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
   v = _scheme_eval_compiled_expr(data->expr);
 
   if (!SCHEME_UNITP(v))
-    scheme_raise_exn(MZEXN_UNIT_NON_UNIT,
-		     v,
+    scheme_raise_exn(MZEXN_UNIT,
 		     INVOKE_UNIT ": not a " KIND "; provided %s",
 		     scheme_make_provided_string(v, 1, NULL));
   
   unit = (Scheme_Unit *)v;
 
   if (unit->num_imports != data->num_exports) {
-    scheme_raise_exn(MZEXN_UNIT_ARITY, v,
+    scheme_raise_exn(MZEXN_UNIT,
 		     "%s : " KIND " "
 		     "expects %d imports, given %d",
 		     data->path ? INVOKE_OPEN_UNIT : INVOKE_UNIT,
@@ -1996,8 +1989,7 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
       if (SAME_TYPE(SCHEME_TYPE(e), scheme_variable_type)) {
 	if (!((Scheme_Bucket *)e)->val) {
 	  Scheme_Object *name = (Scheme_Object *)((Scheme_Bucket *)e)->key;
-	  scheme_raise_exn(MZEXN_UNIT_INVOKE_VARIABLE,
-			   name,
+	  scheme_raise_exn(MZEXN_UNIT,
 			   INVOKE_UNIT ": cannot link to undefined identifier: %s",
 			   scheme_symbol_name(name));
 	  return NULL;
@@ -2871,10 +2863,7 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
       if (!b->val) {
 	/* Missing value */
 	char *p = sig_path_name(s, path);
-	scheme_raise_exn(MZEXN_UNIT_SIGNATURE_MATCH_MISSING,
-			 dest_context,
-			 src_context,
-			 scheme_make_string(p),
+	scheme_raise_exn(MZEXN_UNIT,
 			 "%s: %.255s is missing a value name \"%.255s\", required by %.255s",
 			 scheme_symbol_name(who),
 			 SCHEME_STR_VAL(src_context),
@@ -2886,10 +2875,7 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
       else if (!SCHEME_SYMBOLP((Scheme_Object *)b->val)) {
 	/* Kind mismatch */
 	char *p = sig_path_name(s, path);
-	scheme_raise_exn(MZEXN_UNIT_SIGNATURE_MATCH_KIND,
-			 dest_context,
-			 src_context,
-			 scheme_make_string(p),
+	scheme_raise_exn(MZEXN_UNIT,
 			 "%s: %.255s contains \"%.255s\" as a sub-unit name, but %.255s contains \"%.255s\" as a value name",
 			 scheme_symbol_name(who),
 			 SCHEME_STR_VAL(src_context),
@@ -2914,10 +2900,7 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
       if (!b->val) {
 	/* Missing sub-unit */
 	char *p = sig_path_name(name, path);
-	scheme_raise_exn(MZEXN_UNIT_SIGNATURE_MATCH_MISSING,
-			 dest_context,
-			 src_context,
-			 scheme_make_string(p),
+	scheme_raise_exn(MZEXN_UNIT,
 			 "%s: %.255s is missing a sub-unit name \"%.255s\", required by %.255s",
 			 scheme_symbol_name(who),
 			 SCHEME_STR_VAL(src_context),
@@ -2928,10 +2911,7 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
       else if (!SCHEME_HASHTP((Scheme_Object *)b->val)) {
 	/* Kind mismatch */
 	char *p = sig_path_name(name, path);
-	scheme_raise_exn(MZEXN_UNIT_SIGNATURE_MATCH_KIND,
-			 dest_context,
-			 src_context,
-			 scheme_make_string(p),
+	scheme_raise_exn(MZEXN_UNIT,
 			 "%s: %.255s contains \"%.255s\" as a value name, but %.255s contains \"%.255s\" as a sub-unit name",
 			 scheme_symbol_name(who),
 			 SCHEME_STR_VAL(src_context),
@@ -2960,10 +2940,7 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
 	  /* Extra mismatch */
 	  Scheme_Object *name = (Scheme_Object *)b->key;
 	  char *p = sig_path_name(name, path);
-	  scheme_raise_exn(MZEXN_UNIT_SIGNATURE_MATCH_EXTRA,
-			   dest_context,
-			   src_context,
-			   scheme_make_string(p),
+	  scheme_raise_exn(MZEXN_UNIT,
 			   "%s: %.255s contains an extra %s name \"%.255s\" that is not required by %.255s",
 			   scheme_symbol_name(who),
 			   SCHEME_STR_VAL(src_context),

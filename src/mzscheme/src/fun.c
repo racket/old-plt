@@ -188,10 +188,10 @@ scheme_init_fun (Scheme_Env *env)
 			     env);
 
   o = scheme_make_prim_w_arity2(call_ec,  
-				"call-with-escaping-continuation",
+				"call-with-escape-continuation",
 				1, 1,
 				0, -1), 
-  scheme_add_global_constant("call-with-escaping-continuation", o, env);
+  scheme_add_global_constant("call-with-escape-continuation", o, env);
   scheme_add_global_constant("call/ec", o, env);  
 
   if (!scheme_escape_continuations_only)
@@ -1474,7 +1474,7 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
     else if (size != l) {
       char *argstr = scheme_make_args_string("", -1, argc, argv);
 
-      scheme_raise_exn(MZEXN_APPLICATION_LIST_SIZES, argv[i],
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[i],
 		       "%s: all lists must have same size%s", 
 		       name, argstr);
       return NULL;
@@ -1484,8 +1484,7 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
   if (SCHEME_FALSEP(get_or_check_arity(argv[0], argc - 1))) {
     char *s = scheme_make_arity_expect_string(argv[0], argc - 1, NULL);
 
-    scheme_raise_exn(MZEXN_APPLICATION_MAP_ARITY, argv[0],
-		     scheme_make_integer(argc - 1),
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[0],
 		     "%s: arity mismatch for %s", name, s);
     return NULL;
   }
@@ -1667,6 +1666,7 @@ static Scheme_Object *handle_call_ec(void *ec)
 #ifdef ERROR_ON_OVERFLOW
     p->stack_overflow = ((Scheme_Escaping_Cont *)ec)->orig_overflow;
 #endif
+    p->suspend_break = ((Scheme_Escaping_Cont *)ec)->suspend_break;
     if (n == 1)
       return v;
     else
@@ -1692,6 +1692,7 @@ call_ec (int argc, Scheme_Object *argv[])
 #ifdef ERROR_ON_OVERFLOW
   cont->orig_overflow = p->stack_overflow;
 #endif
+  cont->suspend_break = p->suspend_break;
   copy_cjs(&cont->cjs, &p->cjs);
 
   return scheme_dynamic_wind(pre_call_ec, do_call_ec, post_call_ec,
@@ -1719,6 +1720,7 @@ call_cc (int argc, Scheme_Object *argv[])
   cont->ok = p->cc_ok;
   cont->dw = p->dw;
   cont->home = p;
+  cont->suspend_break = p->suspend_break;
   copy_cjs(&cont->cjs, &p->cjs);
 #ifdef ERROR_ON_OVERFLOW
   cont->orig_overflow = p->stack_overflow;
@@ -1784,6 +1786,8 @@ call_cc (int argc, Scheme_Object *argv[])
 	}
     }
     p->dw = cont->dw;
+
+    p->suspend_break = cont->suspend_break;
 
     copy_cjs(&p->cjs, &cont->cjs);
 #ifdef ERROR_ON_OVERFLOW
@@ -1858,10 +1862,13 @@ typedef struct {
 
 static void pre_dyn_wind(void *d)
 {
-  Dyn_Wind *dw;
-  dw = (Dyn_Wind *)d;
+  Scheme_Process *p = scheme_current_process;
+  Dyn_Wind *dw = (Dyn_Wind *)d;
+  int s = p->suspend_break;
 
+  p->suspend_break = 1;
   (void)_scheme_apply_multi(dw->pre, 0, NULL);
+  p->suspend_break = s;
 }
 
 static Scheme_Object *do_dyn_wind(void *d)
@@ -1874,10 +1881,13 @@ static Scheme_Object *do_dyn_wind(void *d)
 
 static void post_dyn_wind(void *d)
 {
-  Dyn_Wind *dw;
-  dw = (Dyn_Wind *)d;
+  Scheme_Process *p = scheme_current_process;
+  Dyn_Wind *dw = (Dyn_Wind *)d;
+  int s = p->suspend_break;
 
+  p->suspend_break = 1;
   (void)_scheme_apply_multi(dw->post, 0, NULL);
+  p->suspend_break = s;
 }
 
 static Scheme_Object *dynamic_wind(int c, Scheme_Object *p[])
@@ -2180,7 +2190,7 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
     }
   }
 
-  scheme_raise_exn(MZEXN_APPLICATION_INTEGER,
+  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		   secs,
 		   "seconds->date: integer %s is out-of-range",
 		   scheme_make_provided_string(secs, 0, NULL));

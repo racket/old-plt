@@ -53,10 +53,6 @@ typedef struct {
 Scheme_Object *scheme_arity_at_least, *scheme_date;
 
 /* locals */
-#ifdef USE_STRUCT_CASE  
-static Scheme_Object *make_struct_case(int argc, Scheme_Object **argv);
-#endif
-
 static Scheme_Object *struct_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
 static Scheme_Object *struct_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 
@@ -231,14 +227,6 @@ scheme_init_struct (Scheme_Env *env)
 						      1, 1),
 			    env);
   
-#ifdef USE_STRUCT_CASE  
-  scheme_add_global_constant("make-struct-case",
-			     scheme_make_prim_w_arity(make_struct_case,
-						      "make-struct-case",
-						      2, 3),
-			     env);
-#endif
-
   /* Add arity structure */
   for (i = 0; i < as_count; i++)
     scheme_add_global_constant(SCHEME_SYM_VAL(as_names[i]), as_values[i],
@@ -427,10 +415,8 @@ struct_ref(int argc, Scheme_Object *argv[])
   i = scheme_extract_index(name, 1, argc, argv, m);
 
   if (i >= m)
-    scheme_raise_exn(MZEXN_APPLICATION_RANGE_BOUNDS_STRUCT,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     argv[1],
-		     scheme_make_integer(0),
-		     scheme_make_integer(m - 1),
 		     "%s: index %s out of range [%d, %d]",
 		     name, 
 		     scheme_make_provided_string(argv[1], 0, NULL), 
@@ -710,7 +696,7 @@ struct_execute (Scheme_Object *form)
 
   if (parent && !SAME_TYPE(SCHEME_TYPE(parent),
 			   scheme_struct_type_type))
-    scheme_raise_exn(MZEXN_STRUCT_STRUCT_TYPE, parent,
+    scheme_raise_exn(MZEXN_STRUCT,
 		     "struct: supertype expression returned "
 		     "a value that is not a struct type value");
   
@@ -923,224 +909,6 @@ static Scheme_Object *make_name(const char *pre, const char *tn, int ltn,
 
   return scheme_intern_symbol(name);
 }
-
-#ifdef USE_STRUCT_CASE  
-static Scheme_Object *do_struct_case(void *d, int argc, Scheme_Object **argv)
-{
-  Scheme_Object *s = argv[0];
-  Struct_Case *c = (Struct_Case *)d;
-  Scheme_Struct_Type *t;
-  int level, i, *levels;
-
-  if (!SCHEME_STRUCTP(s)) {
-    scheme_wrong_type("#<struct-case>", "struct", 0, argc, argv);
-    return NULL;
-  }
-  
-  t = SCHEME_STRUCT_TYPE(s);
-  level = t->name_pos;
-
-  levels = c->levels;
-  i = c->num_levels; 
-  while (i--) {
-    if (levels[i] <= level) {
-      do {
-	Scheme_Struct_Type *st = t->parent_types[levels[i]];
-	Scheme_Object *o;
-
-	o = (Scheme_Object *)scheme_lookup_in_table(c->tables[i], 
-						    (const char *)st);
-	if (o) {
-	  Scheme_Object **v;
-	  Scheme_Process *p = scheme_current_process;
-
-	  v = scheme_tail_apply_buffer_wp(1, p);
-	  v[0] = argv[0];
-
-	  return _scheme_tail_apply_no_copy_wp(o, 1, v, p);
-	}
-      } while (i--);
-
-      break;
-    }
-  }
-
-  if (c->elsep) {
-    Scheme_Object **v;
-    Scheme_Process *p = scheme_current_process;
-    
-    v = scheme_tail_apply_buffer_wp(1, p);
-    v[0] = argv[0];
-    
-    return _scheme_tail_apply_no_copy_wp(c->elsep, 1, v, p);
-  }
-  
-  scheme_raise_else("#<struct-case>", argv[0]);
-
-  return NULL;
-}
-
-#define PREDICATE_TYPE(p) ((Scheme_Struct_Type *)((Scheme_Closed_Primitive_Proc *)p)->data)
-
-static Scheme_Object *make_struct_case(int argc, Scheme_Object **argv)
-{
-  Scheme_Object *types, *procs, *l, *conflict_base = NULL, *conflict_sub = NULL;
-  Struct_Case *c;
-  Scheme_Hash_Table **tables;
-  int i, count, *levels, num_levels;
-  
-  types = argv[0];
-  procs = argv[1];
-
-  num_levels = 0;
-  levels = NULL;
-  tables = NULL;
-
-  for (count = 0, l = types; SCHEME_PAIRP(l); l = SCHEME_CDR(l), count++) {
-    Scheme_Object *o = SCHEME_CAR(l);
-    if (!STRUCT_PROCP(o, SCHEME_PRIM_IS_STRUCT_PRED))
-      break;
-  }
-
-  if (!SCHEME_NULLP(l)) {
-    scheme_wrong_type("make-struct-case", "list of struct predicate procedures",
-		      0, argc, argv);
-    return NULL;
-  }
-
-
-  for (i = 0, l = procs; SCHEME_PAIRP(l); l = SCHEME_CDR(l), i++) {
-    Scheme_Object *p = SCHEME_CAR(l);
-    if (!scheme_check_proc_arity(NULL, 1, -1, 0, &p))
-      break;
-  }
-
-  if (!SCHEME_NULLP(l)) {
-    scheme_wrong_type("make-struct-case", "list of procedures (arity 1)",
-		      1, argc, argv);
-    return NULL;
-  }
-
-
-  if (argc == 3)
-    scheme_check_proc_arity("#<struct-case>", 1, 2, argc, argv);
-
-  if (i != count) {
-    scheme_raise_exn(MZEXN_APPLICATION_LIST_SIZES,
-		     procs,
-		     "make-struct-case: given %d struct-type%s and "
-		     "%d procedure%s",
-		     count,
-		     (count == 1) ? "s" : "",
-		     i,
-		     (i == 1) ? "s" : "");
-    return NULL;
-  }
-
-
-  for (count = 0; 
-       SCHEME_PAIRP(types) && SCHEME_PAIRP(procs); 
-       types = SCHEME_CDR(types), procs = SCHEME_CDR(procs), count++) {
-    Scheme_Object *f = SCHEME_CAR(types), *p = SCHEME_CAR(procs);
-    Scheme_Struct_Type *t;
-    int level;
-
-    t = PREDICATE_TYPE(f);
-
-    level = t->name_pos;
-    for (i = 0; i < num_levels; i++)
-      if (levels[i] == level) {
-	if (!conflict_base) {
-	  if (!scheme_lookup_in_table(tables[i], (const char *)t))
-	    scheme_add_to_table(tables[i], (const char *)t, p, 0);
-	  else {
-	    conflict_base = conflict_sub = (Scheme_Object *)f;
-	  }
-	}
-
-	break;
-      }
-    if (i == num_levels) {
-      int *naya, j, k, unset = 1;
-      Scheme_Hash_Table **tnaya, *newtable;
-
-      naya = (int *)scheme_malloc_atomic(sizeof(int) * (num_levels + 1));
-      tnaya = (Scheme_Hash_Table **)scheme_malloc((num_levels + 1) * 
-						  sizeof(Scheme_Hash_Table *));
-
-      newtable = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
-      scheme_add_to_table(newtable, (const char *)t, p, 0);
-
-      for (j = k = 0; j < num_levels; j++, k++) {
-	if (unset) {
-	  if (level < levels[j]) {
-	    tnaya[k] = newtable;
-	    naya[k++] = level;
-	    unset = 0;
-	  } else if (!conflict_base) {
-	    Scheme_Struct_Type *st;
-	    st = t->parent_types[levels[j]];
-	    if (scheme_lookup_in_table(tables[j], (const char *)st)) {
-	      conflict_base = (Scheme_Object *)st;
-	      conflict_sub = (Scheme_Object *)f;
-	    }
-	  }
-	}
-	tnaya[k] = tables[j];
-	naya[k] = levels[j];
-      }
-      if (unset) {
-	naya[k] = level;
-	tnaya[k] = newtable;
-      }
-
-      levels = naya;
-      tables = tnaya;
-      num_levels++;
-    }
-  }
-
-  if (conflict_base) {
-    if (SAME_OBJ(conflict_base, conflict_sub)) {
-      scheme_raise_exn(MZEXN_APPLICATION_STRUCT_TYPE_CONFLICT,
-		       conflict_sub,
-		       conflict_base,
-		       "make-struct-case: predicate for %s specified twice",
-		       scheme_symbol_name(PREDICATE_TYPE(conflict_sub)->type_name));
-    } else {
-      /* Need to map conflict_base type back to predicate: */
-      for (l = argv[0]; 1; l = SCHEME_CDR(l)) {
-	Scheme_Object *p = SCHEME_CAR(l);
-	if (SAME_OBJ((Scheme_Object *)PREDICATE_TYPE(p), conflict_base)) {
-	  conflict_base = p;
-	  break;
-	}
-      }
-
-      scheme_raise_exn(MZEXN_APPLICATION_STRUCT_TYPE_CONFLICT,
-		       conflict_sub,
-		       conflict_base,
-		       "make-struct-case: the predicate for %s entails the predicate for %s "
-		       " that was specified later",
-		       scheme_symbol_name(PREDICATE_TYPE(conflict_base)->type_name),
-		       scheme_symbol_name(PREDICATE_TYPE(conflict_sub)->type_name));
-    }
-
-    return NULL;
-  }
-
-  c = MALLOC_ONE(Struct_Case);
-
-  c->num_levels = num_levels;
-  c->levels = levels;
-  c->tables = tables;
-  c->elsep = ((argc == 3) ? argv[2] : NULL);
-
-  return scheme_make_closed_prim_w_arity(do_struct_case,
-					 c, "struct-case",
-					 1, 1);
-}
-#endif
 
 /************************************************************************/
 

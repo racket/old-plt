@@ -346,6 +346,7 @@ typedef struct Scheme_Cont {
 #else
   mz_jmp_buf save_overflow_buf;
 #endif
+  int suspend_break;
   Scheme_Stack_State ss;
   Scheme_Saved_Stack *runstack_copied;
   struct Scheme_Overflow *save_overflow;
@@ -362,6 +363,7 @@ typedef struct Scheme_Escaping_Cont {
   int orig_overflow;
 #endif
   Scheme_Object *f;
+  int suspend_break;
 } Scheme_Escaping_Cont;
 
 #define SCHEME_CONT_HOME(obj)  (((Scheme_Escaping_Cont *)(obj))->home)
@@ -722,8 +724,6 @@ Scheme_Object *scheme_make_branch(Scheme_Object *test,
 #endif
 
 extern Scheme_Process *scheme_main_process;
-
-extern Scheme_Object *scheme_null_break_poll;
 
 
 #ifndef MZ_REAL_THREADS

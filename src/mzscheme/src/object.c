@@ -781,8 +781,7 @@ static short *CheckInherited(Scheme_Class *sclass, ClassVariable *item)
 	cl = get_class_name((Scheme_Object *)sclass, " for class: ");
 	sc = get_class_name((Scheme_Object *)superclass, " in superclass: ");
 
-	scheme_raise_exn(MZEXN_OBJECT_INHERIT,
-			 name,
+	scheme_raise_exn(MZEXN_OBJECT,
 			 CLASS_STAR ": %s ivar not found: %s%s%s",
 			 isoverride(item) ? "overridden" : "inherited",
 			 scheme_symbol_name(name),
@@ -800,8 +799,7 @@ static short *CheckInherited(Scheme_Class *sclass, ClassVariable *item)
 	cl = get_class_name((Scheme_Object *)sclass, " for class: ");
 	sc = get_class_name((Scheme_Object *)superclass, " in superclass: ");
 
-	scheme_raise_exn(MZEXN_OBJECT_INHERIT,
-			 name,
+	scheme_raise_exn(MZEXN_OBJECT,
 			 CLASS_STAR ": superclass already includes public ivar: %s%s%s",
 			 scheme_symbol_name(name),
 			 sc,
@@ -875,8 +873,7 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
     Scheme_Object *in;
     in = _scheme_eval_compiled_expr(data->super_exprs[i]);
     if (!SCHEME_INTERFACEP(in)) {
-      scheme_raise_exn(MZEXN_OBJECT_INTERFACE_TYPE,
-		       in,
+      scheme_raise_exn(MZEXN_OBJECT,
 		       "interface: interface expression returned "
 		       "a non-interface: %s%s%s",
 		       scheme_make_provided_string(in, 1, NULL),
@@ -1171,8 +1168,7 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
     superobj = NullClass();
   
   if (!SCHEME_CLASSP(superobj)) {
-    scheme_raise_exn(MZEXN_OBJECT_CLASS_TYPE,
-		     superobj,
+    scheme_raise_exn(MZEXN_OBJECT,
 		     CLASS_STAR ": superclass expression returned "
 		     "a non-class: %s%s%s",
 		     scheme_make_provided_string(superobj, 1, NULL),
@@ -1191,8 +1187,7 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
     Scheme_Object *in;
     in = _scheme_eval_compiled_expr(data->interface_exprs[i]);
     if (!SCHEME_INTERFACEP(in)) {
-      scheme_raise_exn(MZEXN_OBJECT_INTERFACE_TYPE,
-		       in,
+      scheme_raise_exn(MZEXN_OBJECT,
 		       CLASS_STAR ": interface expression returned "
 		       "a non-interface: %s%s%s",
 		       scheme_make_provided_string(in, 1, NULL),
@@ -1216,9 +1211,8 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
   if ((superclass->priminit == pi_CPP) 
       && !superclass->piu.initf) {
     const char *cl = get_class_name((Scheme_Object *)sclass, " to create class: ");
-    scheme_raise_exn(MZEXN_OBJECT_PRIVATE_CLASS,
-		     superclass,
-		     "can't derive from the class: %s%s", 
+    scheme_raise_exn(MZEXN_OBJECT,
+		     CLASS_STAR ": can't derive from the class: %s%s", 
 		     scheme_symbol_name(superclass->defname),
 		     cl);
   }
@@ -1431,8 +1425,7 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
 	} else
 	  bf = "";
 	
-	scheme_raise_exn(MZEXN_OBJECT_IMPLEMENT,
-			 in->names[j],
+	scheme_raise_exn(MZEXN_OBJECT,
 			 CLASS_STAR ": ivar not implemented: %s%s"
 			 " as required by the %sinterface%s",
 			 scheme_symbol_name(in->names[j]),
@@ -2974,9 +2967,7 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
     if (sclass->superclass->pos) {
       const char *cl = get_class_name((Scheme_Object *)sclass, " in class: ");
 
-      scheme_raise_exn(MZEXN_OBJECT_INIT_NEVER,
-		       o, 
-		       sclass->superclass,
+      scheme_raise_exn(MZEXN_OBJECT,
 		       CREATE_OBJECT ": initialization did not invoke %s%s",
 		       scheme_symbol_name(sclass->super_init_name),
 		       cl);
@@ -3130,9 +3121,7 @@ static void CallInitFrame(Internal_Object *o, Init_Object_Rec *irec, int level,
       if (sclass->superclass->pos) {
 	const char *cl = get_class_name((Scheme_Object *)sclass, " for class: ");
 	
-	scheme_raise_exn(MZEXN_OBJECT_INIT_NEVER,
-			 o,
-			 sclass->superclass,
+	scheme_raise_exn(MZEXN_OBJECT,
 			 CREATE_OBJECT ": superclass never initialized%s",
 			 cl);
       }
@@ -3178,9 +3167,8 @@ static Scheme_Object *CreateObject(int argc, Scheme_Object *argv[])
 
   if ((sclass->priminit == pi_CPP)
       && !sclass->piu.initf)
-    scheme_raise_exn(MZEXN_OBJECT_PRIVATE_CLASS,
-		     sclass,
-		     "can't create objects from the class %s",
+    scheme_raise_exn(MZEXN_OBJECT,
+		     CLASS_STAR ": can't create objects from the class %s",
 		     SCHEME_SYM_VAL(sclass->defname));
   
   obj = (Internal_Object *)make_object(sclass, argc  - 1, argv + 1);
@@ -3197,9 +3185,7 @@ static Scheme_Object *DoSuperInitPrim(SuperInitData *data,
     Scheme_Class **heritage = ((Scheme_Class *)data->o->o.sclass)->heritage;
     const char *cl = get_class_name((Scheme_Object *)heritage[data->level + 1], 
 				    " in class: ");
-    scheme_raise_exn(MZEXN_OBJECT_INIT_MULTIPLE,
-		     data->o,
-		     heritage[data->level],
+    scheme_raise_exn(MZEXN_OBJECT,
 		     "multiple intializations of superclass%s",
 		     cl);
     return NULL;
@@ -3284,8 +3270,7 @@ Scheme_Object *scheme_apply_generic_data(Scheme_Object *gdata,
     if (NOT_SAME_OBJ((Scheme_Object *)sclass, data->clori)) {
       if (!scheme_is_subclass((Scheme_Object *)sclass, data->clori)) {
 	const char *cl = get_class_name(data->clori, ": ");
-	scheme_raise_exn(MZEXN_OBJECT_GENERIC,
-			 obj,
+	scheme_raise_exn(MZEXN_OBJECT,
 			 "generic for %s: object not an instance of the generic's class%s",
 			 scheme_symbol_name(data->ivar_name),
 			 cl);
@@ -3300,8 +3285,7 @@ Scheme_Object *scheme_apply_generic_data(Scheme_Object *gdata,
     map = find_implementation((Scheme_Object *)sclass, data->clori, &offset);
     if (!map) {
       const char *inn = get_interface_name(data->clori, ": ");
-      scheme_raise_exn(MZEXN_OBJECT_GENERIC,
-		       obj,
+      scheme_raise_exn(MZEXN_OBJECT,
 		       "generic for %s: object not an instance of the generic's interface%s",
 		       scheme_symbol_name(data->ivar_name),
 		       inn);
@@ -3351,11 +3335,7 @@ static Scheme_Object *MakeGeneric(int argc, Scheme_Object *argv[])
     else
       s = get_interface_name(src, " in interface: ");
   
-    scheme_raise_exn(SCHEME_CLASSP(src)
-		     ? MZEXN_OBJECT_CLASS_IVAR
-		     : MZEXN_OBJECT_INTERFACE_IVAR,
-		     src,
-		     argv[1],
+    scheme_raise_exn(MZEXN_OBJECT,
 		     MAKE_GENERIC ": can't find instance variable: %s%s",
 		     scheme_symbol_name(argv[1]),
 		     s);
@@ -3405,9 +3385,7 @@ static Scheme_Object *IVar(int argc, Scheme_Object *argv[])
 
     cl = get_class_name(obj->o.sclass, " in class: ");
     
-    scheme_raise_exn(MZEXN_OBJECT_IVAR,
-		     obj,
-		     name,
+    scheme_raise_exn(MZEXN_OBJECT,
 		     IVAR ": instance variable not found: %s%s",
 		     scheme_symbol_name(name),
 		     cl);

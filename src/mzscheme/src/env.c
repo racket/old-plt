@@ -630,16 +630,16 @@ scheme_remove_global_symbol(Scheme_Object *sym, Scheme_Env *env)
   if (!b)
     return;
 
-  if (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_CONST)
-    scheme_raise_exn(MZEXN_MISC_CONSTANT, sym,
-		     "undefine: can't undefine constant %s",
-		     scheme_symbol_name(sym));
   if (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_KEYWORD)
-    scheme_raise_exn(MZEXN_MISC_CONSTANT, sym,
+    scheme_raise_exn(MZEXN_VARIABLE_KEYWORD, sym,
 		     "undefine: can't undefine keyword %s",
 		     scheme_symbol_name(sym));
+  if (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_CONST)
+    scheme_raise_exn(MZEXN_VARIABLE_KEYWORD, sym,
+		     "undefine: can't undefine constant %s",
+		     scheme_symbol_name(sym));
   if (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_PERMANENT)
-    scheme_raise_exn(MZEXN_MISC_CONSTANT, sym,
+    scheme_raise_exn(MZEXN_VARIABLE_KEYWORD, sym,
 		     "undefine: can't undefine permanent global %s",
 		     scheme_symbol_name(sym));
 
@@ -1432,7 +1432,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
 
   env = scheme_current_process->current_local_env;
   if (!env)
-    scheme_raise_exn(MZEXN_MISC_EXPANSION_TIME,
+    scheme_raise_exn(MZEXN_MISC,
 		     "local-expansion-time-value: illegal at run-time");
 
   if (!SCHEME_SYMBOLP(argv[0]))
@@ -1447,7 +1447,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
     v = (Scheme_Object *)(SCHEME_VAR_BUCKET(v))->val;
 
   if (!v || NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_exp_time_type))
-    scheme_raise_exn(MZEXN_MISC_EXPANSION_TIME,
+    scheme_raise_exn(MZEXN_MISC,
 		     "local-expansion-time-value: %s is not defined "
 		     "as an expansion-time value",
 		     scheme_symbol_name(argv[0]));
@@ -1464,7 +1464,7 @@ global_exp_time_value(int argc, Scheme_Object *argv[])
 
   env = scheme_current_process->current_local_env;
   if (!env)
-    scheme_raise_exn(MZEXN_MISC_EXPANSION_TIME,
+    scheme_raise_exn(MZEXN_MISC,
 		     "global-expansion-time-value: illegal at run-time");
 
   if (!SCHEME_SYMBOLP(argv[0]))
@@ -1477,7 +1477,7 @@ global_exp_time_value(int argc, Scheme_Object *argv[])
     v = (Scheme_Object *)(SCHEME_VAR_BUCKET(v))->val;
 
   if (!v || NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_exp_time_type))
-    scheme_raise_exn(MZEXN_MISC_EXPANSION_TIME,
+    scheme_raise_exn(MZEXN_MISC,
 		     "global-expansion-time-value: %s is not defined "
 		     "as an expansion-time value",
 		     scheme_symbol_name(argv[0]));
@@ -1494,7 +1494,7 @@ local_exp_time_bound_p(int argc, Scheme_Object *argv[])
 
   env = scheme_current_process->current_local_env;
   if (!env)
-    scheme_raise_exn(MZEXN_MISC_EXPANSION_TIME,
+    scheme_raise_exn(MZEXN_MISC,
 		     "local-expansion-time-bound?: illegal at run-time");
 
   if (!SCHEME_SYMBOLP(argv[0]))
@@ -1518,7 +1518,7 @@ local_exp_top_level_p(int argc, Scheme_Object *argv[])
 
   env = scheme_current_process->current_local_env;
   if (!env)
-    scheme_raise_exn(MZEXN_MISC_EXPANSION_TIME,
+    scheme_raise_exn(MZEXN_MISC,
 		     "local-expansion-top-level?: illegal at run-time");
 
   return (scheme_is_toplevel(env)

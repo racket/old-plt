@@ -944,7 +944,7 @@ do_list_ref(char *name, int takecar, int argc, Scheme_Object *argv[])
 
     for (i = 0; i < k; i++) {
       if (!SCHEME_PAIRP(lst)) {
-	scheme_raise_exn(MZEXN_APPLICATION_RANGE_LIST,
+	scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 			 index,
 			 "%s: index %s too large for list%s: %s", name,
 			 scheme_make_provided_string(index, 2, NULL),
@@ -960,7 +960,7 @@ do_list_ref(char *name, int takecar, int argc, Scheme_Object *argv[])
 
   if (takecar) {
     if (!SCHEME_PAIRP(lst)) {
-      scheme_raise_exn(MZEXN_APPLICATION_RANGE_LIST,
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		       index,
 		       "%s: index %s too large for list%s: %s", name,
 		       scheme_make_provided_string(index, 2, NULL),
@@ -1002,7 +1002,7 @@ name (int argc, Scheme_Object *argv[]) \
       list = SCHEME_CDR (list); \
     } \
   if (!SCHEME_NULLP(list)) \
-    scheme_raise_exn(MZEXN_APPLICATION_LIST, argv[1], \
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[1], \
 		     "%s: not a proper list: %s", #scheme_name, \
 		     scheme_make_provided_string(argv[1], 0, NULL)); \
   return (scheme_false); \
@@ -1022,7 +1022,7 @@ name (int argc, Scheme_Object *argv[]) \
     { \
       pair = SCHEME_CAR (list); \
       if (!SCHEME_PAIRP (pair)) {\
-	scheme_raise_exn(MZEXN_APPLICATION_LIST, argv[1], \
+	scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[1], \
 			 "%s: non-pair found in list: %s in %s", #scheme_name, \
 			 scheme_make_provided_string(pair, 2, NULL), \
 			 scheme_make_provided_string(argv[1], 2, NULL)); \
@@ -1035,7 +1035,7 @@ name (int argc, Scheme_Object *argv[]) \
       list = SCHEME_CDR (list); \
     } \
   if (!SCHEME_NULLP(list))\
-    scheme_raise_exn(MZEXN_APPLICATION_LIST, argv[1], \
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[1], \
 		     "%s: not a proper list: %s", #scheme_name, \
 		     scheme_make_provided_string(argv[1], 0, NULL)); \
   return (scheme_false); \
@@ -1212,7 +1212,7 @@ static Scheme_Object *hash_table_get(int argc, Scheme_Object *argv[])
   else if (argc == 3)
     return _scheme_tail_apply(argv[2], 0, NULL);
   else {
-    scheme_raise_exn(MZEXN_MISC_HASH_TABLE,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     argv[1],
 		     "hash-table-get: no value found for key: %s",
 		     scheme_make_provided_string(argv[1], 1, NULL));

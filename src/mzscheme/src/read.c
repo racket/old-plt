@@ -339,7 +339,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	return read_symbol(port CURRENTPROCARG);
       }
     case ')': 
-      scheme_raise_exn(MZEXN_READ_PAREN,
+      scheme_raise_exn(MZEXN_READ,
 		       port,
 		       "read: unexpected '%c' at %ld, "
 		       "line %ld in %s", 
@@ -400,9 +400,8 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	case '(': return read_vector(port, ')', -1, NULL, ht CURRENTPROCARG);
 	case '[': 
 	  if (!local_square_brackets_are_parens) {
-	    scheme_raise_exn(MZEXN_READ_UNSUPPORTED,
+	    scheme_raise_exn(MZEXN_READ,
 			     port,
-			     scheme_make_string("["),
 			     "read: bad syntax `#[' at position %ld, "
 			     "line %ld in %s",
 			     scheme_tell(port),
@@ -413,9 +412,8 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	    return read_vector(port, ']', -1, NULL, ht CURRENTPROCARG);
 	case '{': 
 	  if (!local_curly_braces_are_parens) {
-	    scheme_raise_exn(MZEXN_READ_UNSUPPORTED,
+	    scheme_raise_exn(MZEXN_READ,
 			     port,
-			     scheme_make_string("["),
 			     "read: bad syntax `#[' at position %ld, "
 			     "line %ld in %s",
 			     scheme_tell(port),
@@ -445,9 +443,8 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	  if (local_can_read_compiled)
 	    return read_compiled(port, ht CURRENTPROCARG);
 	  else
-	    scheme_raise_exn(MZEXN_READ_UNSUPPORTED,
+	    scheme_raise_exn(MZEXN_READ,
 			     port,
-			     scheme_make_string("`"),
 			     "read: #` expressions not currently enabled");
 	case '|':
 	  depth = 0;
@@ -457,7 +454,6 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	    if (ch == EOF)
 	      scheme_raise_exn(MZEXN_READ_EOF,
 			       port,
-			       scheme_make_string("|#"),
 			       "read: end of file in #| comment");
 	    if ((ch2 == '|') && (ch == '#')) {
 	      if (!(depth--))
@@ -471,9 +467,8 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	  if (local_can_read_box)
 	    return read_box(port, ht CURRENTPROCARG);
 	  else {
-	    scheme_raise_exn(MZEXN_READ_UNSUPPORTED,
+	    scheme_raise_exn(MZEXN_READ,
 			     port,
-			     scheme_make_string("&"),
 			     "read: #& expressions not currently enabled");
 	    return scheme_void;
 	  }
@@ -526,13 +521,12 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	      Scheme_Object *ph;
 	      
 	      if (!local_can_read_graph)
-		scheme_raise_exn(MZEXN_READ_UNSUPPORTED,
+		scheme_raise_exn(MZEXN_READ,
 				 port,
-				 scheme_make_string("..#"),
 				 "read: #..# expressions not currently enabled");
 	      
 	      if (digits > MAX_GRAPH_ID_DIGITS)
-		scheme_raise_exn(MZEXN_READ_GRAPH,
+		scheme_raise_exn(MZEXN_READ,
 				 port,
 				 "read: graph id too long in #%s#",
 				 buffer);
@@ -544,7 +538,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 		ph = NULL;
 	      
 	      if (!ph) {
-		scheme_raise_exn(MZEXN_READ_GRAPH,
+		scheme_raise_exn(MZEXN_READ,
 				 port,
 				 "read: no #%ld= for #%ld#",
 				 vector_length, vector_length);
@@ -557,20 +551,19 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	      Scheme_Object *v, *ph;
 	      
 	      if (!local_can_read_graph)
-		scheme_raise_exn(MZEXN_READ_UNSUPPORTED,
+		scheme_raise_exn(MZEXN_READ,
 				 port,
-				 scheme_make_string("..="),
 				 "read: #..= expressions not currently enabled");
 	      
 	      if (digits > MAX_GRAPH_ID_DIGITS)
-		scheme_raise_exn(MZEXN_READ_GRAPH,
+		scheme_raise_exn(MZEXN_READ,
 				 port,
 				 "read: graph id too long in #%s=",
 				 buffer);
 	      
 	      if (*ht) {
 		if (scheme_lookup_in_table(*ht, (const char *)vector_length)) {
-		  scheme_raise_exn(MZEXN_READ_GRAPH,
+		  scheme_raise_exn(MZEXN_READ,
 				   port,
 				   "read: multiple #%ld= tags",
 				   vector_length);
@@ -601,9 +594,8 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	      } else
 		sprintf(lbuffer, "%s%c", buffer, ch);
 	      
-	      scheme_raise_exn(MZEXN_READ_UNSUPPORTED,
+	      scheme_raise_exn(MZEXN_READ,
 			       port,
-			       scheme_make_string(buffer),
 			       "read: bad syntax `#%s' at position %ld, "
 			       "line %ld in %s",
 			       lbuffer,
@@ -634,7 +626,7 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
     obj = (Scheme_Object *)SCHEME_PTR_VAL(obj);
     while (SAME_TYPE(SCHEME_TYPE(obj), scheme_placeholder_type)) {
       if (SAME_OBJ(start, obj)) {
-	scheme_raise_exn(MZEXN_READ_GRAPH,
+	scheme_raise_exn(MZEXN_READ,
 			 port,
 			 "read: illegal cycle");
 	return scheme_void;
@@ -738,7 +730,6 @@ read_list(Scheme_Object *port, char closer, int vec, int use_stack,
       s[1] = 0;
       scheme_raise_exn(MZEXN_READ_EOF,
 		       port,
-		       scheme_make_string(s),
 		       "read: expected a '%c'; started at "
 		       "position %ld, line %ld in %s", closer, start, 
 		       startline, SCHEME_IPORT_NAME(port));
@@ -788,14 +779,14 @@ read_list(Scheme_Object *port, char closer, int vec, int use_stack,
 		    || ((next == ']') && brackets)
 		    || ((next == '}') && braces)))) {
       if (vec)
-	scheme_raise_exn(MZEXN_READ_DOT,
+	scheme_raise_exn(MZEXN_READ,
 			 port,
 			 "read: illegal use of \".\" at position %ld line %ld in %s",
 			 scheme_tell(port), scheme_tell_line(port), SCHEME_IPORT_NAME(port));
       cdr = read_inner(port, ht CURRENTPROCARG);
       ch = skip_whitespace_comments (port);
       if (ch != closer)
-	scheme_raise_exn(MZEXN_READ_DOT,
+	scheme_raise_exn(MZEXN_READ,
 			 port,
 			 "read: illegal use of \".\" at position %ld line %ld in %s",
 			 scheme_tell(port), scheme_tell_line(port), SCHEME_IPORT_NAME(port));
@@ -835,7 +826,6 @@ read_string(Scheme_Object *port CURRENTPROCPRM)
     if (ch == EOF)
       scheme_raise_exn(MZEXN_READ_EOF,
 		       port,
-		       scheme_make_string("\""),
 		       "read: expected a '\"'; started at position %ld"
 		       ", line %ld in %s", 
 		       start, startline, SCHEME_IPORT_NAME(port));
@@ -894,9 +884,8 @@ read_vector (Scheme_Object *port, char closer,
   if (requestLength >= 0 && len > requestLength) {
     char buffer[20];
     sprintf(buffer, "%ld", requestLength);
-    scheme_raise_exn(MZEXN_READ_VECTOR_LENGTH,
+    scheme_raise_exn(MZEXN_READ,
 		     port,
-		     scheme_make_string(buffer),
 		     "read: vector length %ld is too small, "
 		     "%d values provided",
 		     requestLength, len);
@@ -958,7 +947,6 @@ read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float,
       if (ch == EOF) {
 	scheme_raise_exn(MZEXN_READ_EOF,
 			 port,
-			 scheme_make_string("\\"),
 			 "read: EOF following \"\\\"");
 	return scheme_void;
       }
@@ -997,7 +985,6 @@ read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float,
   if (running_quote) {
     scheme_raise_exn(MZEXN_READ_EOF,
 		     port,
-		     scheme_make_string("|"),
 		     "read: unbalanced `|' at %d, line %d",
 		     rq_pos, rq_line);
     return scheme_void;
@@ -1006,7 +993,7 @@ read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float,
   buf[i] = '\0';
 
   if (!quoted_ever && (i == 1) && (buf[0] == '.')) {
-    scheme_raise_exn(MZEXN_READ_DOT,
+    scheme_raise_exn(MZEXN_READ,
 		     port,
 		     "read: illegal use of \".\" at position %ld line %ld in %s",
 		     scheme_tell(port), scheme_tell_line(port), SCHEME_IPORT_NAME(port));
@@ -1069,9 +1056,8 @@ read_character(Scheme_Object *port CURRENTPROCPRM)
       buffer[1] = next;
       buffer[2] = last;
       buffer[3] = 0;
-      scheme_raise_exn(MZEXN_READ_CHAR,
+      scheme_raise_exn(MZEXN_READ,
 		       port,
-		       scheme_make_string(buffer),
 		       "read: bad character constant #\\%c%c%c",
 		       ch, next, last);
       return scheme_void;
@@ -1146,9 +1132,8 @@ read_character(Scheme_Object *port CURRENTPROCPRM)
       break;
     }
 
-    scheme_raise_exn(MZEXN_READ_CHAR,
+    scheme_raise_exn(MZEXN_READ,
 		     port,
-		     scheme_make_string(buf),
 		     "read: bad character constant: #\\%s",
 		     buf);
   }
@@ -1159,7 +1144,6 @@ read_character(Scheme_Object *port CURRENTPROCPRM)
 
     scheme_raise_exn(MZEXN_READ_EOF,
 		     port,
-		     scheme_make_string("<character>"),
 		     "read: expected a character after #\\"
 		     " at %ld, line %ld in %s",
 		     pos, l, SCHEME_IPORT_NAME(port));
@@ -1241,7 +1225,6 @@ skip_whitespace_comments(Scheme_Object *port)
       if (ch == EOF)
 	scheme_raise_exn(MZEXN_READ_EOF,
 			 port,
-			 scheme_make_string("|#"),
 			 "read: end of file in #| comment");
       if ((ch2 == '|') && (ch == '#')) {
 	if (!(depth--))
@@ -1623,7 +1606,7 @@ static Scheme_Object *read_compact(CPort *port,
 	Scheme_Object *oldv, **oels, **els;
 	int i = read_compact_number(port);
 	if (i >= local_vector_memory_count)
-	  scheme_raise_exn(MZEXN_READ_COMPILED,
+	  scheme_raise_exn(MZEXN_READ,
 			   port,
 			   "read (compiled): bad symbol vector reuse index: %d at %ld",
 			   i, CP_TELL(port));
@@ -1641,7 +1624,7 @@ static Scheme_Object *read_compact(CPort *port,
     default:
       {
 	v = NULL;
-	scheme_raise_exn(MZEXN_READ_COMPILED,
+	scheme_raise_exn(MZEXN_READ,
 			 port,
 			 "read (compiled): bad #` contents: %d at %ld", ch,
 			 CP_TELL(port));
@@ -1770,7 +1753,7 @@ static Scheme_Object *read_marshalled(int type,
   STACK_END(r);
 
   if (!scheme_type_readers[type])
-      scheme_raise_exn(MZEXN_READ_COMPILED,
+      scheme_raise_exn(MZEXN_READ,
 		       port,
 		       "read (compiled): bad #` type number: %d at %ld",
 		       type, CP_TELL(port));
@@ -1855,7 +1838,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   cp.s = cp.start = (unsigned char *)scheme_malloc_atomic(size);
   cp.base = scheme_tell(port);
   if ((got = scheme_get_chars(port, size, (char *)cp.s)) != size)
-    scheme_raise_exn(MZEXN_READ_COMPILED,
+    scheme_raise_exn(MZEXN_READ,
 		     port,
 		     "read (compiled): bad count: %ld != %ld",
 		     got, size);

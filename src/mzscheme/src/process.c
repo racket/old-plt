@@ -612,7 +612,7 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
 
   process->current_local_env = NULL;
 
-  process->checking_break = 0;
+  process->suspend_break = 0;
   process->external_break = 0;
 
   process->print_buffer = NULL;
@@ -1508,9 +1508,9 @@ static int check_sleep(int need_activity, int sleep_now)
 void scheme_check_threads(void)
 {
 #ifndef MZ_REAL_THREADS
-  scheme_current_process->checking_break = 1;
+  scheme_current_process->suspend_break = 1;
   scheme_process_block((float)0);
-  scheme_current_process->checking_break = 0;
+  scheme_current_process->suspend_break = 0;
 
   check_sleep(have_activity, 0);
 #endif
@@ -1667,62 +1667,13 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   else
     start = 0; /* compiler-friendly */
 
-  if (!p->checking_break) {
-    int breaking = 0;
-    int allow_break = scheme_can_break(p, config);
+  if (!p->external_break && !p->next && scheme_check_for_break && scheme_check_for_break())
+    p->external_break = 1;
 
-    if (p->external_break) {
-      if (allow_break) {
-	p->external_break = 0;
-	breaking = 1;
-      } else
-	breaking = 0;
-    }
-#if 1
-    else {
-      Scheme_Object *poll;
-      
-      poll = scheme_get_param(config, MZCONFIG_USER_BREAK_POLL_HANDLER);
-      
-      if (poll && NOT_SAME_OBJ(poll, scheme_null_break_poll)) {
-	Scheme_Object *v;
-	int save_desc = p->block_descriptor;
-	Scheme_Object *save_blocker = p->blocker;
-	int (*save_check)(Scheme_Object *) = p->block_check;
-	void (*save_needs_wakeup)(Scheme_Object *, void *) = p->block_needs_wakeup;
-	int ran_some = p->ran_some;
-
-	make_unblocked(p);
-	
-	p->checking_break = 1;
-	v = scheme_apply_wp(poll, 0, NULL, p);
-	p->checking_break = 0;
-
-	p->block_descriptor = save_desc;
-	p->blocker = save_blocker;
-	p->block_check = save_check;
-	p->block_needs_wakeup = save_needs_wakeup;
-	p->ran_some = ran_some;
-	
-	breaking = SCHEME_TRUEP(v);
-      } else
-	breaking = 0;
-
-      if (breaking && !allow_break) {
-	p->external_break = 1;
-	breaking = 0;
-      }
-    }
-#endif
-	
-    if (breaking
-#if 1
-	|| (!p->next && scheme_check_for_break && scheme_check_for_break())
-#endif
-	) {
-      make_unblocked(p);
-      scheme_raise_exn(MZEXN_MISC_USER_BREAK, "user break");
-    }
+  if (p->external_break && !p->suspend_break && scheme_can_break(p, config)) {
+    p->external_break = 0;
+    make_unblocked(p);
+    scheme_raise_exn(MZEXN_MISC_USER_BREAK, "user break");
   }
   
  swap_or_sleep:
@@ -1838,7 +1789,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 #endif
 
   /* Check for external break again after swap or sleep */
-  if (!p->checking_break && p->external_break && scheme_can_break(p, config)) {
+  if (p->external_break && !p->suspend_break && scheme_can_break(p, config)) {
     p->external_break = 0;
     make_unblocked(p);
     scheme_raise_exn(MZEXN_MISC_USER_BREAK, "user break");
@@ -1937,8 +1888,7 @@ Scheme_Object *scheme_branch_config(void)
 		    0, NULL);
 
   if (!SCHEME_CONFIGP(o)) {
-    scheme_raise_exn(MZEXN_MISC_PARAMETERIZATION,
-		     o,
+    scheme_raise_exn(MZEXN_MISC,
 		     "thread: parameterization branch handler returned a non-parameterization: %s",
 		     scheme_make_provided_string(o, 1, NULL));
     return NULL;
@@ -2075,7 +2025,7 @@ static Scheme_Object *kill_thread(int argc, Scheme_Object *argv[])
   while (NOT_SAME_OBJ(m, current)) {
     m = *m->parent;
     if (!m) {
-      scheme_raise_exn(MZEXN_MISC_THREAD_KILL,
+      scheme_raise_exn(MZEXN_MISC,
 		       "kill-thread: the current custodian does not "
 		       "manage the specified thread");
       return NULL;
@@ -2103,7 +2053,7 @@ static Scheme_Object *process_weight(int argc, Scheme_Object *args[])
     }
 
     if (!scheme_get_int_val(args[1], &v)) {
-      scheme_raise_exn(MZEXN_APPLICATION_INTEGER,
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		       args[1],
 		       "thread-weight: %s is too large",
 		       scheme_make_provided_string(args[1], 0, NULL));
@@ -2652,8 +2602,7 @@ static Scheme_Object *make_new_config(Scheme_Config *base, Scheme_Object *defsha
 	Scheme_Config *s = (Scheme_Config *)r;
 	config->configs[i] = s->configs[i];
       } else {
-	scheme_raise_exn(MZEXN_MISC_PARAMETERIZATION,
-			 r,
+	scheme_raise_exn(MZEXN_MISC,
 			 "make-parameterization: sharing procedure returned a non-parameterization: %s",
 			 scheme_make_provided_string(r, 1, NULL));
 	return NULL;
@@ -2707,8 +2656,7 @@ static Scheme_Object *make_new_config(Scheme_Config *base, Scheme_Object *defsha
 	      
 	      scheme_add_bucket_to_table(config->extensions, b);
 	    } else {
-	      scheme_raise_exn(MZEXN_MISC_PARAMETERIZATION,
-			       r,
+	      scheme_raise_exn(MZEXN_MISC,
 			       "make-parameterization: "
 			       "sharing procedure returned a non-parameterization: %s",
 			       scheme_make_provided_string(r, 1, NULL));

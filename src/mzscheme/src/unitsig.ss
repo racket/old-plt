@@ -667,7 +667,7 @@
 			    (lambda (sig use-sig)
 			      (when use-sig
 				    (with-handlers
-				     ([exn:unit:signature?
+				     ([exn:unit?
 				       (lambda (exn)
 					 (syntax-error 
 					  cpd-unit/sig expr

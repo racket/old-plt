@@ -1064,7 +1064,7 @@ char *scheme_bignum_to_string(const Scheme_Object *b, int radix)
   bigdig *ba, v;
 
   if (radix != 10 && radix != 2 && radix != 8 && radix != 16)
-    scheme_raise_exn(MZEXN_APPLICATION_MATH_RADIX, scheme_make_integer(radix),
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_make_integer(radix),
 		     "bad bignum radix (%d)", radix);
 
   if (!SCHEME_BIGLEN(b))

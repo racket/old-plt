@@ -1803,7 +1803,7 @@ sub PrintTypecheck
     } elsif (substr($paramtype,0,4) eq 'nnls') {
 	$paramtype =~ /nnls\[(.*)\]/;
 	$symname = $1;
-	print "objscheme_istype_nonnegative_symbol_integer($var, \"$symnam\", $stop)";
+	print "objscheme_istype_nonnegative_symbol_integer($var, \"$symname\", $stop)";
     } elsif (($paramtype eq 'ExactLong')) {
 	print "objscheme_istype_ExactLong($var, $stop)";
     } elsif (($paramtype eq 'Long')) {

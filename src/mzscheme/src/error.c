@@ -623,7 +623,7 @@ void scheme_wrong_rator(Scheme_Object *rator, int argc, Scheme_Object **argv)
   else
     s = " (no arguments)";
 
-  scheme_raise_exn(MZEXN_APPLICATION_NON_PROCEDURE, rator,
+  scheme_raise_exn(MZEXN_APPLICATION_TYPE, rator, scheme_intern_symbol("procedure"),
 		   "procedure application: expected procedure, given: %s%s",
 		   r, s);
 }

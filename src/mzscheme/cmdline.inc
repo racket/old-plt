@@ -414,7 +414,11 @@ static int run_from_cmd_line(int argc, char *argv[],
 		                          "(#%and v (#%build-path v \"collects\"))))"
 		            "(#%lambda () (#%find-executable-path program \"collects\"))"
 #ifdef UNIX_FILE_SYSTEM
+# ifdef USE_BEOS_SNOOZE
+		            "(#%lambda () \"/boot/apps/plt/collects\")"
+# else
 		            "(#%lambda () \"/usr/local/lib/plt/collects\")"
+# endif
 #endif
 #ifdef DOS_FILE_SYSTEM
 		            "(#%lambda () \"c:\\plt\\collects\")"

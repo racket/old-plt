@@ -91,7 +91,6 @@ static void dangerdanger(int ignored)
 #ifndef NO_USER_BREAK_HANDLER
 
 #ifdef MACINTOSH_EVENTS
-static int break_flag;
 static Scheme_Object *orig_evaluator;
 #endif
 
@@ -166,12 +165,6 @@ static void handle_one(EventRecord *e)
 # ifdef MACINTOSH_SIOUX
   SIOUXHandleOneEvent(e);
 # endif
-}
-
-static Scheme_Object *adjust_break_flag_and_eval(int argc, Scheme_Object **argv)
-{
-  break_flag = 0;
-  return _scheme_tail_apply(orig_evaluator, argc, argv);
 }
 #endif
 
@@ -258,7 +251,6 @@ static void do_scheme_rep(void)
   scheme_set_param(scheme_config, MZCONFIG_ENABLE_BREAK, scheme_true);
   
   orig_evaluator = scheme_get_param(scheme_config, MZCONFIG_EVAL_HANDLER);
-  scheme_set_param(scheme_config, MZCONFIG_EVAL_HANDLER, scheme_make_prim(adjust_break_flag_and_eval));
 #  endif
 # endif
   

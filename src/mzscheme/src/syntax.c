@@ -492,7 +492,7 @@ void scheme_set_global_bucket(char *who, Scheme_Bucket *b, Scheme_Object *val,
   if ((((Scheme_Bucket_With_Const_Flag *)b)->flags & (GLOB_IS_CONST | GLOB_IS_KEYWORD))
       && b->val) {
     Scheme_Object *key = (Scheme_Object *)b->key;
-    scheme_raise_exn(MZEXN_MISC_CONSTANT, key,
+    scheme_raise_exn(MZEXN_VARIABLE_KEYWORD, key,
 		     "%s: cannot redefine %s: %s", 
 		     who,
 		     (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_CONST)
@@ -2134,8 +2134,7 @@ do_def_execute(char *who, Scheme_Object *form, Scheme_Type type, int require_pro
 
   if (require_proc)
     if (!SCHEME_PROCP(val))
-      scheme_raise_exn(MZEXN_MISC_DEFMACRO,
-		       val,
+      scheme_raise_exn(MZEXN_MISC,
 		       "define-macro: not a procedure");
 
   if (SCHEME_TRUEP(name)) {
@@ -2334,7 +2333,7 @@ do_letmacro(char *where, Scheme_Object *formname,
   p->current_local_env = save_env;
 
   if (!anything && !SCHEME_PROCP(clf))
-    scheme_raise_exn(MZEXN_MISC_DEFMACRO, clf,
+    scheme_raise_exn(MZEXN_MISC,
 		     "let-macro: not a procedure");
 
   macro = scheme_alloc_stubborn_small_object ();

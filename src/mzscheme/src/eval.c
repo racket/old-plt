@@ -49,7 +49,6 @@ int scheme_allow_cond_auto_else = 1;
 
 Scheme_Object *scheme_eval_waiting;
 Scheme_Object *scheme_multiple_values;
-Scheme_Object *scheme_null_break_poll;
 
 #ifndef MZ_REAL_THREADS
 int scheme_fuel_counter;
@@ -69,8 +68,6 @@ static Scheme_Object *local_expand_body_expression(int argc, Scheme_Object **arg
 static Scheme_Object *expand_once(int argc, Scheme_Object **argv);
 static Scheme_Object *enable_break(int, Scheme_Object *[]);
 static Scheme_Object *exn_enable_break(int, Scheme_Object *[]);
-static Scheme_Object *user_break_poll(int, Scheme_Object *[]);
-static Scheme_Object *dynamic_enable_break(int, Scheme_Object *[]);
 static Scheme_Object *current_eval(int argc, Scheme_Object *[]);
 
 static Scheme_Object *built_in_name(int argc, Scheme_Object **argv);
@@ -79,7 +76,6 @@ static Scheme_Object *allow_auto_cond_else(int argc, Scheme_Object **argv);
 static Scheme_Object *allow_set_undefined(int argc, Scheme_Object **argv);
 
 static Scheme_Object *default_eval_handler(int, Scheme_Object *[]);
-static Scheme_Object *default_user_break_poll_proc(int c, Scheme_Object **a);
 
 static Scheme_Object *write_application(Scheme_Object *obj);
 static Scheme_Object *read_application(Scheme_Object *obj);
@@ -133,7 +129,6 @@ scheme_init_eval (Scheme_Env *env)
 
     REGISTER_SO(scheme_eval_waiting);
     REGISTER_SO(scheme_multiple_values);
-    REGISTER_SO(scheme_null_break_poll);
 
 #ifdef MZ_EVAL_WAITING_CONSTANT
     scheme_eval_waiting = MZ_EVAL_WAITING_CONSTANT;
@@ -188,21 +183,11 @@ scheme_init_eval (Scheme_Env *env)
     scheme_install_type_reader(scheme_begin0_sequence_type, read_sequence_save_first);
 
 
-    scheme_null_break_poll 
-      = scheme_make_prim_w_arity(default_user_break_poll_proc, 
-				 "default-user-break-poll-handler",
-				 0, 0);
-
-
-
     scheme_set_param(config, MZCONFIG_EVAL_HANDLER,
 		     scheme_make_prim_w_arity2(default_eval_handler,
 					       "default-eval-handler",
 					       1, 1,
 					       0, -1));
-    
-    scheme_set_param(config, MZCONFIG_USER_BREAK_POLL_HANDLER,
-		     scheme_null_break_poll);
   }
     
   scheme_add_global_constant("eval", 
@@ -253,16 +238,6 @@ scheme_init_eval (Scheme_Env *env)
 			     scheme_register_parameter(exn_enable_break, 
 						       "exception-break-enabled",
 						       MZCONFIG_ENABLE_EXCEPTION_BREAK), 
-			     env);
-  scheme_add_global_constant("dynamic-enable-break", 
-			     scheme_make_prim_w_arity(dynamic_enable_break, 
-						      "dynamic-enable-break", 
-						      1, 1), 
-			     env);
-  scheme_add_global_constant("user-break-poll-handler", 
-			     scheme_register_parameter(user_break_poll, 
-						       "user-break-poll-handler",
-						       MZCONFIG_USER_BREAK_POLL_HANDLER), 
 			     env);
   scheme_add_global_constant("current-eval",
 			     scheme_register_parameter(current_eval, 
@@ -2231,13 +2206,15 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       DO_CHECK_FOR_BREAK(p, ;);
 
       if (NOT_SAME_OBJ(c->home, p))
-	scheme_raise_exn(MZEXN_MISC_CONTINUATION,
+	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
 			 "continuation application: attempted to apply foreign continuation"
 			 " (created in another thread)");
       if (c->ok && !*c->ok)
-	scheme_raise_exn(MZEXN_MISC_CONTINUATION,
+	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
 			 "continuation application: attempted to cross a continuation boundary");
       
+      p->suspend_break = 1; /* restored at call/cc destination */
+
       /* Find `common', then intersection of dynamic-wind chain for 
 	 the current continuation and the given continuation */
       common = p->dw;
@@ -2291,14 +2268,14 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #endif
 
       if (!SCHEME_CONT_HOME(obj))
-	scheme_raise_exn(MZEXN_MISC_CONTINUATION,
+	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
 			 "continuation application: attempt to jump into an escape continuation");
       if (NOT_SAME_OBJ(SCHEME_CONT_HOME(obj), p))
-	scheme_raise_exn(MZEXN_MISC_CONTINUATION,
+	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
 			 "continuation application: attempted to apply foreign escape continuation"
 			 " (created in another thread)");
       if (SCHEME_CONT_OK(obj) && !*SCHEME_CONT_OK(obj))
-	scheme_raise_exn(MZEXN_MISC_CONTINUATION,
+	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
 			 "continuation application: attempted to cross an escape continuation boundary");
       p->cjs.u.val = value;
       p->cjs.jumping_to_continuation = (Scheme_Escaping_Cont *)obj;
@@ -3014,7 +2991,7 @@ local_expand(int argc, Scheme_Object **argv)
       scheme_wrong_type("local-expand-defmacro", "list of symbols", 1, argc, argv);
   }
   if (!env)
-    scheme_raise_exn(MZEXN_MISC_EXPANSION_TIME,
+    scheme_raise_exn(MZEXN_MISC,
 		     "local-expand-defmacro: illegal at run-time");
 
   return _expand(argv[0], env, -1, 0);
@@ -3033,7 +3010,7 @@ local_expand_body_expression(int argc, Scheme_Object **argv)
       scheme_wrong_type("local-expand-body-expression", "list of symbols", 1, argc, argv);
   }
   if (!env)
-    scheme_raise_exn(MZEXN_MISC_EXPANSION_TIME,
+    scheme_raise_exn(MZEXN_MISC,
 		     "local-expand-body-expression: illegal at run-time");
 
   /* Check for macro expansion, which could mask the real define-values */
@@ -3126,59 +3103,6 @@ exn_enable_break(int argc, Scheme_Object *argv[])
     scheme_process_block_w_process(0.0, p);
 
   return v;
-}
-
-typedef struct {
-  Scheme_Object *old;
-  Scheme_Config *config;
-  Scheme_Object *f;
-} Enable_Break;
-
-static void pre_enable_br(void *eb)
-{
-  ((Enable_Break *)eb)->old = scheme_get_param(((Enable_Break *)eb)->config, MZCONFIG_ENABLE_BREAK);
-
-  scheme_set_param(((Enable_Break *)eb)->config, MZCONFIG_ENABLE_BREAK,
-		   scheme_true);
-}
-
-static void post_enable_br(void *eb)
-{
-  scheme_set_param(((Enable_Break *)eb)->config, MZCONFIG_ENABLE_BREAK,
-		   ((Enable_Break *)eb)->old);
-}
-
-static Scheme_Object *do_enable_br(void *eb)
-{
-  return _scheme_apply_multi(((Enable_Break *)eb)->f, 0, NULL);
-}
-
-static Scheme_Object *
-dynamic_enable_break(int argc, Scheme_Object *argv[])
-{
-  Enable_Break *eb;
-
-  eb = (Enable_Break *)scheme_malloc(sizeof(Enable_Break));
-  eb->f = argv[0];
-  eb->config = scheme_config;
-
-  return scheme_dynamic_wind(pre_enable_br, do_enable_br, post_enable_br,
-			     NULL, eb);
-}
-
-static Scheme_Object *
-default_user_break_poll_proc(int c, Scheme_Object **a)
-{
-  return scheme_false;
-}
-
-static Scheme_Object *
-user_break_poll(int argc, Scheme_Object *argv[])
-{
-  return scheme_param_config("user-break-poll-handler", 
-			     MZCONFIG_USER_BREAK_POLL_HANDLER,
-			     argc, argv,
-			     0, NULL, NULL, 0);
 }
 
 /****************************************************/

@@ -478,7 +478,7 @@ int scheme_os_setcwd(char *expanded, int noexn)
 #endif
 
   if (err && !noexn)
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM_DIRECTORY,
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(expanded),
 		       "current-directory: unable to switch to directory: \"%.255s\"",
 		       expanded);
@@ -850,7 +850,7 @@ static int has_null(const char *s, long l)
 
 static void raise_null_error(const char *name, Scheme_Object *path, const char *mod)
 {
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_PATH,
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		   path,
 		   "%s: pathname%s contains a null character: %.255s...", 
 		   name, mod, SCHEME_STR_VAL(path));
@@ -967,7 +967,7 @@ static char *do_expand_filename(char* filename, int ilen, char *errorin,
 
     if (filename[f] && filename[f] != '/') {
       if (errorin && report_bad_user)
-	scheme_raise_exn(MZEXN_I_O_FILESYSTEM_PATH_USERNAME,
+	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			 scheme_make_string(filename),
 			 "%s: bad username in path: \"%.255s\"", 
 			 errorin, filename);
@@ -996,7 +996,7 @@ static char *do_expand_filename(char* filename, int ilen, char *errorin,
 
     if (!home) {
       if (errorin && report_bad_user)
-	scheme_raise_exn(MZEXN_I_O_FILESYSTEM_PATH_USERNAME,
+	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			 scheme_make_string(filename),
 			 "%s: bad username in path: \"%.255s\"", 
 			 errorin, filename);
@@ -1467,7 +1467,7 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 	  len = 0;
 #endif	
 	if (!len) {
-	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_PATH,
+	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   scheme_make_string(next),
 			   "build-path: %d%s pathname element is an empty string%s", 
 			   i + 1,
@@ -1498,7 +1498,7 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
       if (next[0] == '/') {
 	rel = 0;
 	if (i) {
-	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_PATH,
+	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			      scheme_make_string(next),
 			      "build-path: absolute path \"%.255s\" cannot be"
 			      " added to a pathname",
@@ -1538,7 +1538,7 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 	      str[30] = 0;
 	    } else
 	      str[pos] = 0;
-	    scheme_raise_exn(MZEXN_I_O_FILESYSTEM_PATH,
+	    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			     scheme_make_string(next),
 			     "build-path: %s \"%s\" cannot be"
 			     " added to the pathname \"%.255s\"",
@@ -1576,7 +1576,7 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 	for (j = 0; j < last; j++)
 	  if (next[j] == ':') {
 	    if (i) {
-	      scheme_raise_exn(MZEXN_I_O_FILESYSTEM_PATH,
+	      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			       scheme_make_string(next),
 			       "build-path: absolute path \"%.255s\" cannot be"
 			       " added to a pathname",
@@ -1826,7 +1826,7 @@ static Scheme_Object *split_pathname(int argc, Scheme_Object **argv)
   len = SCHEME_STRTAG_VAL(inpath);
 
   if (!len) {
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM_PATH,
+    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		     inpath, "split-path: pathname is an empty string");
   }
 
@@ -1966,7 +1966,7 @@ static Scheme_Object *path_to_complete_path(int argc, Scheme_Object **argv)
       raise_null_error("path->complete-path", p, "");
 
     if (!scheme_is_complete_path(ws, wlen))
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM_PATH,
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       wrt,
 		       "path->complete-path: second argument is not a complete path: \"%.255s\"",
 		       ws);
@@ -2020,7 +2020,7 @@ static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
     return scheme_void;
 #endif
   
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_FILE, 
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, 
 		   argv[0], 
 		   "delete-file: cannot delete file: \"%.255s\"",
 		   filename_for_error(argv[0]));
@@ -2114,8 +2114,8 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
 #endif
 
 failed:
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_RENAME, 
-		   argv[0], argv[1],
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, 
+		   argv[0],
 		   "rename-file-or-directory: cannot rename file or directory: %.255s to: %.255s",
 		   filename_for_error(argv[0]),
 		   filename_for_error(argv[1]));
@@ -2296,8 +2296,8 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
   }
 #endif
 
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_RENAME, 
-		   argv[0], argv[1],
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, 
+		   argv[0],
 		   "copy-file: %s; cannot copy: %.255s to: %.255s",
 		   reason,
 		   filename_for_error(argv[0]),
@@ -2450,7 +2450,7 @@ static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle
 	if ((len == SCHEME_STRTAG_VAL(p))
 	    && !strcmp(s, SCHEME_STR_VAL(p))) {
 	  /* Cycle of links detected */
-	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_LINK,
+	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   path,
 			   "simplify-path: cycle detected at link: \"%.255s\"",
 			   s);
@@ -2644,7 +2644,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     filename = SCHEME_STR_VAL(CURRENT_WD());
 
   if (filename && !scheme_directory_exists(filename))
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM_DIRECTORY,
+    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		     scheme_make_string(filename),
 		     "directory-list: could not open \"%.255s\"",
 		     filename);
@@ -2659,10 +2659,10 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     filename = "";
   if (!find_mac_file(filename, 0, &dir, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
     if (argc) {
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM_DIRECTORY,
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       argv[0],
-		     "directory-list: could not open \"%.255s\"",
-		     filename);
+		       "directory-list: could not open \"%.255s\"",
+		       filename);
     }
     return scheme_null;
   }
@@ -2869,7 +2869,7 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
 		     , 0xFFFF
 #endif
 		     )) {
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM_DIRECTORY,
+    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		     argv[0],
 		     "make-directory: cannot make directory: %.255s",
 		     filename_for_error(argv[0]));
@@ -2895,7 +2895,7 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
 				    NULL);
   
   if (MSC_IZE(rmdir)(filename)) {
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM_DIRECTORY,
+    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		     argv[0],
 		     "delete-directory: cannot delete directory: %.255s",
 		     filename_for_error(argv[0]));
@@ -2953,7 +2953,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 # endif
 #endif
 
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_FILE,
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		   argv[0],
 		   "file-or-directory-modify-seconds: file or directory not found: \"%.255s\"",
 		   filename_for_error(argv[0]));
@@ -3093,7 +3093,7 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
 #endif
   
   if (!l) {
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM_FILE,
+    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		     argv[0],
 		     "file-or-directory-permissions: file or directory not found: \"%.255s\"",
 		     filename_for_error(argv[0]));
@@ -3142,7 +3142,7 @@ static Scheme_Object *file_size(int argc, Scheme_Object *argv[])
   return scheme_make_integer_value_from_unsigned(len);
 
 failed:
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_FILE,
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		   argv[0],
 		   "file-size: file not found: \"%.255s\"",
 		   filename_for_error(argv[0]));
@@ -3168,7 +3168,7 @@ static Scheme_Object *cwd_check(int argc, Scheme_Object **argv)
     expanded = scheme_expand_filename(s, len, "current-load-relative-directory", NULL);
     ed = scheme_make_sized_string(expanded, strlen(expanded), 1);
     if (!scheme_directory_exists(expanded)) {
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM_DIRECTORY,
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       ed,
 		       "current-directory: directory not found or not a directory: \"%.255s\"",
 		       expanded);

@@ -81,6 +81,13 @@
 	       (app-determined))
 	     
 	     (user-break-poll-handler wx:check-for-break)
+	     (let* ([default-path (with-handlers ([void (lambda (x) #f)])
+				    (collection-path "afm"))]
+		    [path-box (box (or default-path ""))])
+	       (wx:get-resource "MrEd" "afmPath" path-box)
+	       (when (directory-exists? (unbox path-box))
+		 (wx:set-afm-path (unbox path-box))))
+
 	     
 	     (mred:change-splash-message "Command Line...")	 
 	     (for-each (lambda (x) (apply (car x) (cdr x))) (reverse todo))
@@ -88,12 +95,6 @@
 	     (when output-spidey-file
 	       (mred:build-spidey-unit output-spidey-file
 				       app-collection app-unit-library app-sig-library))
-	     
-	     (let* ([default-path (with-handlers ([void (lambda (x) #f)]) (collection-path "afm"))]
-		    [path-box (box (or default-path ""))])
-	       (wx:get-resource "MrEd" "afmPath" path-box)
-	       (when (directory-exists? (unbox path-box))
-		 (wx:set-afm-path (unbox path-box))))
 	     
 	     (when non-unit-startup?
 	       (set! mred:console (apply mred:startup extra-args)))

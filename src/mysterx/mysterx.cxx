@@ -1,4 +1,4 @@
-// mysterx.cxx : COM/ActiveX/DHTML extension for MzScheme
+ // mysterx.cxx : COM/ActiveX/DHTML extension for MzScheme
 // Author: Paul Steckler
 
 #include "stdafx.h"

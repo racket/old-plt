@@ -110,6 +110,7 @@
 		       [tag "top"] [relative? #f])
 	  (inherit get-canvas panel make-menu menu-bar% show on-size)
 	  (public
+	    [title-prefix "Web"]
 	    [get-edit (lambda () (send (get-canvas) get-media))]
 	    [get-edit% (lambda () mred:hyper-edit:hyper-edit%)]
 	    [get-canvas% (lambda () hyper-canvas%)]

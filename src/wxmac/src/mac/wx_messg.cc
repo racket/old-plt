@@ -352,3 +352,12 @@ void wxMessage::ChangeToGray(Bool gray)
   Refresh();
   wxWindow::ChangeToGray(gray);
 }
+
+
+void wxMessage::OnEvent(wxMouseEvent *event)
+{
+  if (MaybeMetalDrag(event)) 
+    return;
+  wxbMessage::OnEvent(event);
+}
+

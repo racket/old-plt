@@ -137,9 +137,12 @@ class wxFrame: public wxbFrame
   /* Other methods */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
   virtual void Paint(void);
-  virtual void OnChar(wxKeyEvent *event); /* mac platform only */
-  virtual void OnCommandEvent(wxCommandEvent *event) {}; /* mac platform only */
+  virtual void OnEvent(wxMouseEvent *event);
+  virtual void OnChar(wxKeyEvent *event);
+  virtual void OnCommandEvent(wxCommandEvent *event) {};
       
+  void DragFrame(Point startpt);
+
   virtual RgnHandle GetCoveredRegion(int x, int y, int w, int h);
 
   virtual wxFrame* GetRootFrame(void); /* mac platform only */

@@ -144,11 +144,8 @@ public:
 	void ChangeColour(void);
 	void DoShow(Bool show);
 	void Paint(void);
-	virtual void OnChar(wxKeyEvent *event); // mac platform only
-#if 0
-	// EMBEDDING	
-    ControlRef	cEmbeddingControl;
-#endif    
+	virtual void OnChar(wxKeyEvent *event);
+	virtual void OnEvent(wxMouseEvent *event);
 
  	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  	// Tree methods

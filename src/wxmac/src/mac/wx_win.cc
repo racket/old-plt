@@ -1537,8 +1537,16 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
   /* Frame/dialog: hande all events, even outside the window */	
   if (!result && (__type == wxTYPE_FRAME || __type == wxTYPE_DIALOG_BOX)) {
     wxMouseEvent *areaMouseEvent;
+    wxMargin hitAreaMargin;
+    int hitAreaX, hitAreaY;
+    hitArea = ClientArea();
+    hitAreaMargin = hitArea->Margin(this);
+    hitAreaX = hitAreaMargin.Offset(wxLeft);
+    hitAreaY = hitAreaMargin.Offset(wxTop);
     areaMouseEvent = new wxMouseEvent(0);
     *areaMouseEvent = *mouseEvent;
+    areaMouseEvent->x = hitX - hitAreaX;
+    areaMouseEvent->y = hitY - hitAreaY;
     if (!doCallPreMouseEvent(this, this, areaMouseEvent))
       if (!IsGray())
 	OnEvent(areaMouseEvent);
@@ -2215,6 +2223,24 @@ wxCursor *wxWindow::GetEffectiveCursor(void)
 Bool wxWindow::GetsFocus()
 {
   return WantsFocus();
+}
+
+int wxWindow::MaybeMetalDrag(wxMouseEvent *event)
+{
+  /* Maybe drag metal frame... */
+  if (event->ButtonDown(1)) {
+    wxFrame *f = GetRootFrame();
+    if (f->GetWindowStyleFlag() & wxMETAL) {
+      int x = event->x, y = event->y;
+      Point start;
+      ClientToScreen(&x, &y);
+      start.h = x;
+      start.v = y;
+      f->DragFrame(start);
+      return 1;
+    }
+  }
+  return 0;
 }
 
 //-----------------------------------------------------------------------------

@@ -365,7 +365,7 @@ void wxApp::doMacMouseDown(void)
     case inCollapseBox:
       {
 	wxTracking();
-	if ((!StillDown()) || (TrackBox(window, cCurrentEvent.where, inCollapseBox)))
+	if (TrackBox(window, cCurrentEvent.where, inCollapseBox))
 	  CollapseWindow(window, TRUE);
       }
       break;
@@ -373,7 +373,7 @@ void wxApp::doMacMouseDown(void)
     case inToolbarButton:
       {
 	wxTracking();
-	if ((!StillDown()) || (TrackBox(window, cCurrentEvent.where, inToolbarButton))) {
+	if (TrackBox(window, cCurrentEvent.where, inToolbarButton)) {
 	  {
 	    wxFrame* theMacWxFrame;
 	    theMacWxFrame = findMacWxFrame(window);
@@ -1095,27 +1095,16 @@ void wxApp::doMacInDrag(WindowPtr window)
   last_drag_click = window;
   last_drag_click_time = cCurrentEvent.when;
 
-  if (StillDown()) {
+  {
     wxFrame* theMacWxFrame;
     theMacWxFrame = findMacWxFrame(window);
     if (theMacWxFrame) {
-      BitMap screenBits;
       long oldx, oldy;
-      Rect dragBoundsRect;
-
-      GetQDGlobalsScreenBits(&screenBits);
-      dragBoundsRect = screenBits.bounds;
-      InsetRect(&dragBoundsRect, 4, 4); // This is not really necessary
-
       oldx = theMacWxFrame->cWindowX;
       oldy = theMacWxFrame->cWindowY;
-
-      wxTracking();
-
-      DragWindow(window, cCurrentEvent.where, &dragBoundsRect);
-
-      theMacWxFrame->wxMacRecalcNewSize(FALSE); // recalc new position only
-
+      
+      theMacWxFrame->DragFrame(cCurrentEvent.where);
+    
       if ((oldx != theMacWxFrame->cWindowX)
 	  || (oldy != theMacWxFrame->cWindowY))
 	last_drag_click = NULL;
@@ -1126,7 +1115,7 @@ void wxApp::doMacInDrag(WindowPtr window)
 //-----------------------------------------------------------------------------
 void wxApp::doMacInGrow(WindowPtr window)
 {
-  if (StillDown()) {
+  {
     wxFrame* theMacWxFrame;
     theMacWxFrame = findMacWxFrame(window);
     if (theMacWxFrame && theMacWxFrame->CanAcceptEvent()) {
@@ -1158,7 +1147,7 @@ void wxApp::doMacInGoAway(WindowPtr window)
   theMacWxFrame = findMacWxFrame(window);
   if (theMacWxFrame && theMacWxFrame->CanAcceptEvent()) {
     wxTracking();
-    if ((!StillDown()) || (TrackGoAway(window, cCurrentEvent.where))) {
+    if (TrackGoAway(window, cCurrentEvent.where)) {
       Bool okToDelete;
       okToDelete = theMacWxFrame->OnClose();
       if (okToDelete) {
@@ -1171,7 +1160,7 @@ void wxApp::doMacInGoAway(WindowPtr window)
 //-----------------------------------------------------------------------------
 void wxApp::doMacInZoom(WindowPtr window, short windowPart)
 {
-  if (StillDown()) { 
+  { 
     wxFrame* theMacWxFrame;
     theMacWxFrame = findMacWxFrame(window);
     if (theMacWxFrame && theMacWxFrame->CanAcceptEvent()) {

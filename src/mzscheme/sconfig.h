@@ -616,6 +616,8 @@
 
 # define USE_TM_GMTOFF_FIELD
 
+# define USE_UNDERSCORE_SETJMP
+
 #ifndef XONX
 # define MACOS_UNICODE_SUPPORT
 #endif

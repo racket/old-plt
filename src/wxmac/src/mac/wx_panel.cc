@@ -428,6 +428,13 @@ void wxPanel::OnChar(wxKeyEvent *event)
 {
 }
 
+void wxPanel::OnEvent(wxMouseEvent *event)
+{
+  if (MaybeMetalDrag(event)) 
+    return;
+  wxbPanel::OnEvent(event);
+}
+
 
 Bool wxPanel::WantsFocus()
 {

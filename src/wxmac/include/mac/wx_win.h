@@ -229,6 +229,8 @@ class wxWindow: public wxbWindow
   void CaptureMouse(void);
   void ReleaseMouse(void);
 
+  int MaybeMetalDrag(wxMouseEvent *evt);
+
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
   /* Keyboard methods */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */

@@ -186,7 +186,7 @@ wxFrame::wxFrame // Constructor (for frame window)
   theMacHeight = cWindowHeight - pam.Offset(wxVertical);
   SizeWindow(theMacWindow, theMacWidth, theMacHeight, FALSE);
   
-  windowStyle |= (style & wxHIDE_MENUBAR);
+  windowStyle |= ((style & wxHIDE_MENUBAR) | (style & wxMETAL));
 
   wx_cursor = wxSTANDARD_CURSOR;
   
@@ -519,7 +519,7 @@ void wxFrame::EnforceSize(int minw, int minh, int maxw, int maxh, int incw, int 
   size_limits.left = minw;
   size_limits.top = minh;
   size_limits.right = maxw;
-  size_limits.bottom = maxh;
+  size_limits.bottom = maxh;  
 }
 
 void wxFrame::GetSizeLimits(Rect *r)
@@ -1057,12 +1057,48 @@ RgnHandle wxFrame::GetCoveredRegion(int x, int y, int w, int h)
 }
 
 //-----------------------------------------------------------------------------
-void wxFrame::OnChar(wxKeyEvent *event) // mac platform only
+void wxFrame::OnChar(wxKeyEvent *event)
 {
   if (cFocusWindow) {
     if (cFocusWindow != this) // kludge to prevent infinite loop
       cFocusWindow->OnChar(event);
   }
+}
+
+void wxFrame::OnEvent(wxMouseEvent *event)
+{
+  if (cStyle & wxMETAL) {
+    if (event->ButtonDown(1)) {
+      int x = event->x, y = event->y;
+      Point start;
+      start.h = x;
+      start.v = y;
+      SetCurrentDC();
+      LocalToGlobal(&start);
+      DragFrame(start);
+      return;
+    }
+  }
+  wxbFrame::OnEvent(event);
+}
+
+void wxFrame::DragFrame(Point where)
+{
+  BitMap screenBits;
+  Rect dragBoundsRect;
+  CWindowPtr window;
+
+  window = GetWindowFromPort(cMacDC->macGrafPort());
+  
+  GetQDGlobalsScreenBits(&screenBits);
+  dragBoundsRect = screenBits.bounds;
+  InsetRect(&dragBoundsRect, 4, 4); // This is not really necessary
+  
+  wxTracking();
+  
+  DragWindow(window, where, &dragBoundsRect);
+  
+  wxMacRecalcNewSize(FALSE);
 }
 
 //-----------------------------------------------------------------------------

@@ -188,6 +188,8 @@
      (make-same-test (syntax (a . b)) (syntax (a . b)))
      (make-same-test (syntax (a b . c)) '(syntax (a b . c)))
 
+     (make-same-test (syntax #'a) '#'a)
+
      ;; sadly, these two tests come out the same 
      ;; -- there is no way to distinguish them as sexps.
      (make-same-test (syntax (a . (b))) '(syntax (a b)))

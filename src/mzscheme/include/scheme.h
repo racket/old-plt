@@ -462,6 +462,23 @@ typedef struct Scheme_Vector {
 #define scheme_make_integer(i)    LONG_TO_OBJ ((OBJ_TO_LONG(i) << 1) | 0x1)
 #define scheme_make_character(ch) (scheme_char_constants[(unsigned char)(ch)])
 
+#define scheme_uchar_find(x) (scheme_uchar_table[x >> 21][(x >> 8) & 0x1FFF][x & 0xFF])
+
+#define scheme_isblank(x) ((scheme_uchar_find(x)) & 0x1)
+#define scheme_issymbol(x) ((scheme_uchar_find(x)) & 0x2)
+#define scheme_ispunc(x) ((scheme_uchar_find(x)) & 0x4)
+#define scheme_iscontrol(x) ((scheme_uchar_find(x)) & 0x8)
+#define scheme_iswhitespace(x) ((scheme_uchar_find(x)) & 0x10)
+#define scheme_ishex(x) ((scheme_uchar_find(x)) & 0x20)
+#define scheme_isdigit(x) ((scheme_uchar_find(x)) & 0x40)
+#define scheme_istitle(x) ((scheme_uchar_find(x)) & 0x80)
+#define scheme_isup(x) ((scheme_uchar_find(x)) & 0x100)
+#define scheme_islow(x) ((scheme_uchar_find(x)) & 0x200)
+
+#define scheme_toupper(x) (x + scheme_uchar_ups[(((scheme_uchar_find(x)) & 0xfa00) >> 10)])
+#define scheme_tolower(x) (x + scheme_uchar_downs[(((scheme_uchar_find(x)) & 0x3F0000) >> 16)])
+#define scheme_totitle(x) (x + scheme_uchar_titles[(((scheme_uchar_find(x)) & 0xfa00000) >> 22)])
+
 /*========================================================================*/
 /*                          procedure values                              */
 /*========================================================================*/

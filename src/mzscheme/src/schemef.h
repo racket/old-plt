@@ -191,6 +191,11 @@ MZ_EXTERN Scheme_Object scheme_undefined[1];
 MZ_EXTERN Scheme_Object *scheme_tail_call_waiting;
 MZ_EXTERN Scheme_Object *scheme_multiple_values;
 
+MZ_EXTERN unsigned int **scheme_uchar_table[1];
+MZ_EXTERN int scheme_uchar_ups[1];
+MZ_EXTERN int scheme_uchar_downs[1];
+MZ_EXTERN int scheme_uchar_titles[1];
+
 /*========================================================================*/
 /*                              evaluation                                */
 /*========================================================================*/

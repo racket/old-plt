@@ -1,0 +1,187 @@
+
+(require (lib "list.ss"))
+
+(define ups (cons (make-hash-table 'equal) (box 0)))
+(define downs (cons (make-hash-table 'equal) (box 0)))
+(define titles (cons (make-hash-table 'equal) (box 0)))
+
+(define (indirect t v)
+  (let ([r (hash-table-get (car t) v (lambda () #f))])
+    (or r
+	(let ([r (unbox (cdr t))])
+	  (set-box! (cdr t) (add1 r))
+	  (hash-table-put! (car t) v r)
+	  (when (r . > . 63)
+	    (error "too many indirects"))
+	  r))))
+
+(define (combine up down title . l)  
+  (bitwise-ior
+   (arithmetic-shift (indirect ups up) 10)
+   (arithmetic-shift (indirect downs down) 16)
+   (arithmetic-shift (indirect titles title) 22)
+   (let loop ([l l][v 0])
+     (if (null? l)
+	 v
+	 (loop (cdr l) (bitwise-ior (arithmetic-shift v 1)
+				    (if (car l)
+					1
+					0)))))))
+
+(define hexes (map char->integer (string->list "0123456789abcdefABCDEF")))
+
+(define low-bits 8)
+
+(define low (sub1 (expt 2 low-bits)))
+(define hi-count (expt 2 (- 21 low-bits)))
+(define hi (arithmetic-shift (sub1 hi-count) low-bits))
+
+(define top (make-vector hi-count #f))
+
+(define (map1 c v)
+  (let ([top-index (arithmetic-shift c (- low-bits))])
+    (let ([vec (vector-ref top top-index)])
+      (unless vec
+	(vector-set! top top-index (make-vector (add1 low))))
+      (let ([vec (vector-ref top top-index)])
+	(vector-set! vec (bitwise-and c low) v)))))
+
+(call-with-input-file "Unicodedata.txt"
+  (lambda (i)
+    (let loop ()
+      (let ([l (read-line i)])
+	(unless (eof-object? l)
+	  (let ([m (regexp-match #rx"^([0-9A-F]+);([^;]*);([^;]*);[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;[^;]*;([^;]*);([^;]*);([^;]*)"
+				 l)])
+	    (unless m
+	      (printf "no match: ~a~n" l))
+	    (let ([code (string->number (cadr m) 16)]
+		  [name (caddr m)]
+		  [cat (cadddr m)]
+		  [up (string->number (cadddr (cdr m)) 16)]
+		  [down (string->number (cadddr (cddr m)) 16)]
+		  [title (string->number (cadddr (cdddr m)) 16)])
+	      (map1 code
+		   (combine
+		    (if up (- up code) 0)
+		    (if down (- down code) 0)
+		    (if title (- title code) 0)
+
+		    ;; lowercase:
+		    (and (not (<= #x2000 code #x2FFF))
+			 (not down)
+			 (or up
+			     (regexp-match #rx"SMALL LETTER" name)
+			     (regexp-match #rx"SMALL LIGATURE" name)))
+		    ;; uppercase;
+		    (and (not (<= #x2000 code #x2FFF))
+			 (not up)
+			 (or down
+			     (regexp-match #rx"CAPITAL LETTER" name)
+			     (regexp-match #rx"CAPITAL LIGATURE" name)))
+		    ;; titlecase:
+		    (string=? cat "Lt")
+		    ;; letter
+		    (member cat '("Lu" "Ll" "Lt" "Lm" "Lo"))
+		    ;; digit
+		    (string=? cat "Ld")
+		    ;; hex digit
+		    (member code hexes)
+		    ;; whitespace
+		    (or (member cat '("Zl" "Zs" "Zp"))
+			(member code '(#x9 #xa #xb #xc #xd)))
+		    ;; control
+		    (or (<= #x0000 code #x001F)
+			(<= #x007F code #x009F))
+		    ;; punctuation
+		    (member cat '("Pc" "Pd" "Ps" "Pe" "Pi" "Pf" "Po"))
+		    ;; symbol
+		    (member cat '("Sm" "Sc" "Sk" "So"))
+		    ;; blank
+		    (or (string=? cat "Zs")
+			(= code #x9))))))
+	  (loop))))))
+
+(define vectors (make-hash-table 'equal))
+
+(define pos 0)
+
+(let loop ([i 0])
+  (unless (= i hi-count)
+    (let ([vec (vector-ref top i)])
+      (when vec
+	(unless (hash-table-get vectors vec (lambda () #f))
+	  (set! pos (add1 pos))
+	  (hash-table-put! vectors vec pos)))
+      (loop (add1 i)))))
+
+(define world-count (sub1 (expt 2 10)))
+
+(printf "unsigned int **scheme_uchar_table[~a];~n~n" world-count)
+(printf "static unsigned int *main_table[~a], *zero_table[~a];~n~n"
+	hi-count hi-count)
+
+(define print-row
+ (lambda (vec name)
+   (printf " /* ~a */~n" name)
+   (let loop ([i 0])
+     (printf " ~a~a" 
+	     (or (vector-ref vec i) "0")
+	     (if (and (= name pos)
+		      (= i low))
+		 "" ","))
+     (when (zero? (modulo (add1 i) 16))
+	 (newline))
+     (unless (= i low)
+       (loop (add1 i))))))
+
+(printf "static unsigned int udata[] = {~n")
+
+(print-row (make-vector (add1 low) 0) 0)
+
+(map (lambda (p)
+       (print-row (car p) (cdr p)))
+     (quicksort
+      (hash-table-map vectors cons)
+      (lambda (a b) (< (cdr a) (cdr b)))))
+(printf "};~n")
+
+(define (print-shift t end name)
+  (printf "~nint scheme_uchar_~a[] = {~n" name)
+  (for-each (lambda (p)
+	      (printf " ~a~a" 
+		      (car p)
+		      (if (= (cdr p) (sub1 end))
+			  ""
+			  ","))
+	      (when (zero? (modulo (add1 (cdr p)) 16))
+		(newline)))
+	    (quicksort (hash-table-map t cons)
+		       (lambda (a b) (< (cdr a) (cdr b)))))
+  (printf " };~n"))
+
+(print-shift (car ups) (unbox (cdr ups)) "ups")
+(print-shift (car downs) (unbox (cdr downs)) "downs")
+(print-shift (car titles) (unbox (cdr titles)) "titles")
+
+(printf "~nstatic void init_uchar_table(void)~n{~n")
+(printf "  int i;~n~n")
+(printf "  scheme_uchar_table[0] = main_table;~n")
+(printf "  for (i = 1; i < ~a; i++) {~n" world-count)
+(printf "    scheme_uchar_table[i] = zero_table;~n")
+(printf "  }~n~n")
+(printf "  for (i = 0; i < ~a; i++) { ~n" hi-count)
+(printf "    main_table[i] = udata;~n")
+(printf "    zero_table[i] = udata;~n")
+(printf "  }~n")
+(printf "~n")
+(let loop ([i 0])
+  (unless (= i hi-count)
+    (let ([vec (vector-ref top i)])
+      (when vec
+	(printf "  main_table[~a] = udata + ~a;~n"
+		i
+		(* (add1 low)
+		   (hash-table-get vectors vec (gensym 'u)))))
+      (loop (add1 i)))))
+(printf "}~n")

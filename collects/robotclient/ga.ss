@@ -104,10 +104,12 @@
   
   ;; spawn-next-generation : list-of-gene-seqs -> list-of-gene-seqs
   (define (spawn-next-generation bestls)
-    (let ([base-set (apply append (map (lambda (x) (n-copies 3 x)) bestls))])
+    (let ([base-set (apply append (map (lambda (x) (n-copies 2 x)) bestls))])
       (let loop ((ls base-set) (acc '()))
         (cond
-          [(null? (cdr ls)) (append bestls acc)]
+          [(null? (cdr ls)) (let ([foo (length (append bestls acc))])
+			      (printf "Size = ~a~n" foo)
+			      (append bestls acc))]
           [else (loop (cdr ls)
                       (append (map (lambda (x) (breed (car x) (cdr x)))
                                    (map (lambda (x) (cons (car ls) x)) 
@@ -118,14 +120,15 @@
   (define (startup-player gene-seq)
     (flush-output (current-output-port))
     (set-parameter-values! gene-seq)
-    (start-client #t #f "localhost" 4000))
+    (start-client #f #f "localhost" 4000))
   
   ;; play-board : vector(num) string string num vector(gene-seq) num -> void
   (define (play-board scoreboard board packages fuel player-vec players)
     (let ([board-file (string-append "boards/" board)]
           [packages-file (string-append "boards/" packages)])
+      (sleep 3)
       (apply (lambda (stdout stdin procid stderr utility)
-	       (sleep 1)
+	       (sleep 3)
 	       (printf (string-append "Starting game with players ~s on"
 				      "board ~s with package file ~s~n")
 		       players board-file packages-file)

@@ -39,7 +39,8 @@
   ;; The glue SPIDEY must be initialized after the real MRSPIDEY
   [SPIDEY : compiler:mrspidey^
 	  ((require-relative-library-unit/sig "mrspidey.ss")
-	   MRSPIDEY)])
+	   MRSPIDEY
+	   (BASE LIBRARY))])
  (export (open ((BASE DRIVER) : compiler:inner^))))
 
 

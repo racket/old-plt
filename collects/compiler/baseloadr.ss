@@ -74,6 +74,17 @@
 			    DRIVER
 			    FUNCTION
 			    SPIDEY)]
+  [LIGHTWEIGHT : compiler:lightweight^ ((require-relative-library-unit/sig "lightweight.ss")
+			    OPTIONS
+			    LIBRARY
+			    CSTRUCTS
+                            ZLAYER
+                            CONST
+			    TOP-LEVEL
+			    DRIVER
+			    FUNCTION
+			    ZODIAC
+			    SPIDEY)]
   [ANALYZE : compiler:analyze^ ((require-relative-library-unit/sig "analyze.ss")
 				OPTIONS
 				LIBRARY
@@ -172,6 +183,7 @@
 			      ANALYZE
 			      CONST
 			      CLOSURE
+                              LIGHTWEIGHT
 			      VEHICLE
 			      REP
 			      VMSTRUCTS
@@ -187,6 +199,6 @@
 			      SPIDEY)])
  (export (unit ZODIAC)
 	 (unit ZLAYER)
-	 (unit DRIVER)))
-
+	 (unit DRIVER)
+	 (unit LIBRARY)))
 

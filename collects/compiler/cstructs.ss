@@ -18,7 +18,9 @@
     (set-annotation! ast (set-union (make-singleton-set attr)
 				    (get-annotation ast))))
   (define (varref:has-attribute? ast attr)
-    (set-memq? attr (get-annotation ast)))
+    (let ([anno (get-annotation ast)])
+      (and (set? anno)
+	   (set-memq? attr anno))))
 
   (define varref:static 'varref:static)
   (define varref:per-load-static 'varref:per-load-static)
@@ -69,6 +71,29 @@
 		  (binding-val b)
 		  (binding-known-but-used? b)
 		  (binding-rep b)))
+
+  (define (copy-binding-for-light-closures b)
+    (make-binding #f
+		  #f
+		  #f
+		  #f
+		  #f 
+		  #f
+		  (binding-known? b) (binding-val b)
+		  #f
+		  #f))
+
+  (define binder:empty-anno
+    (make-binding #f
+		  #f
+		  #f
+		  #f
+		  #f
+		  #f
+		  #f
+		  #f
+		  #f
+		  #f))
 
   (define-struct code (; The following fields, XXX-vars, are
 		       ; all sets of zodiac:bindings

@@ -60,7 +60,7 @@
 					    COMPILE
 					    LINK
 					    DFILE
-					    OPTIONS)]
+					    OPTIONS)] 
 	     [INIT : () (init COMPILER)])
        (export))
       mzlib:function^

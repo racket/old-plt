@@ -3,7 +3,8 @@
 ;;  dummy version of these functions that don't use the real MrSpidey
 
 (unit/sig compiler:mrspidey^
-  (import (mrspidey : mrspidey:sba^))
+  (import (mrspidey : mrspidey:sba^)
+	  compiler:library^)
   
   (define copy-annotations!
     (lambda (new old)
@@ -16,10 +17,6 @@
       new))
 
   (define binding-mutated mrspidey:binding-mutated)
-
-  (define (SDL-type ast)
-    (let* ([ftype (mrspidey:parsed-ftype ast)])
-      (and ftype (mrspidey:FlowType->SDL ftype))))
 
   (define analyze-program-sexps mrspidey:analyze-program-sexps)
 
@@ -67,6 +64,57 @@
   (mrspidey:st:constants #t)
   (mrspidey:st:const-merge-size 2)
   (mrspidey:st:unit-read-za #f)
-  (mrspidey:st:unit-write-za #f))
+  (mrspidey:st:unit-write-za #f)
 
+  (define (SDL-type ast)
+    (let* ([ftype (mrspidey:parsed-ftype ast)])
+      (and ftype (mrspidey:FlowType->SDL ftype))))
 
+  (define parsed-ftype mrspidey:parsed-ftype)
+
+  (define Tvar-objs mrspidey:Tvar-objs)
+  (define Tvar? mrspidey:Tvar?)
+
+  (define fo-FlowType? mrspidey:fo-FlowType?)
+
+  (define FlowType->Tvar mrspidey:FlowType->Tvar)
+
+  (define (prim-av? av) 
+    (mrspidey:atprim? 
+     (mrspidey:AV-misc av)))
+
+  (define (fo-ftype->AVs fo-ftype)
+    (letrec ([AVs-from-ftypes
+	      (lambda (ftypes)
+		(if (null? ftypes) 
+		    '()
+		    (let ([the-ftype (car ftypes)])
+		      (if (mrspidey:Tvar? the-ftype)
+			  (append (mrspidey:Tvar-objs the-ftype)
+				  (AVs-from-ftypes (cdr ftypes)))
+			  (AVs-from-ftypes (cdr ftypes))))))])
+      (let ([atype 
+	     (mrspidey:fo-FlowType-def fo-ftype)])
+	(if (mrspidey:atvalues? atype)
+	    (AVs-from-ftypes 
+	     (mrspidey:atvalues-values atype))
+	    '()))))
+
+  (define (ast->AVs ast)
+    (let ([fo-ftype (mrspidey:parsed-ftype ast)])
+      (if fo-ftype
+	  (fo-ftype->AVs fo-ftype)
+	  '())))
+
+  (define (AV->AVs av)
+    (let* ([av-vec (mrspidey:AV-fields+ av)])
+
+      ; in case of multiple-values, disregard any AV's
+      ; other than in 0th position
+
+       (if (>= (vector-length av-vec) 1)
+
+	 (list->set (mrspidey:Tvar-objs (vector-ref av-vec 0)))
+
+	 empty-set)))
+)

@@ -1,7 +1,6 @@
 ;; Compiler driver routines 
 ;; (c) 1996-7 Sebastian Good
 ;; (c) 1997-8 PLT, Rice University
-
 ;; Scheme->C compilation Overview
 ;; ------------------------------
 ;;
@@ -58,7 +57,6 @@
 ;;    zodiac:binding->lexical-varref will create varrefs to 
 ;;    the binding.
 
-
 (unit/sig compiler:driver^
   (import (compiler:option : compiler:option^)
 	  compiler:library^
@@ -71,6 +69,7 @@
 	  compiler:analyze^
 	  compiler:const^
 	  compiler:closure^
+	  compiler:lightweight^
 	  compiler:vehicle^
 	  compiler:rep^
 	  compiler:vmstructs^
@@ -85,7 +84,7 @@
 	  mzlib:pretty-print^
 	  (mrspidey : compiler:mrspidey^))
   (rename (compile-extension* compile-extension))
-  
+
   (define debug:file "dump.txt")
   (define debug:port #f)
   (define debug
@@ -94,52 +93,52 @@
 	(apply fprintf (cons debug:port x))
 	(flush-output debug:port))))
   
-  ;;----------------------------------------------------------------------------
-  ;; FILE PROCESSING FUNCTIONS
-  ;;
+;;----------------------------------------------------------------------------
+;; FILE PROCESSING FUNCTIONS
+;;
+
+; takes an input-name from the compile command and returns 4 values
+; 1) an input path
+; 2) a C output path
+; 3) a constant pool output path
+; 4) an obj output path
+; 5) a dll output path
+; 6) a scheme_setup suffix
+(define s:process-filenames
+  (lambda (input-name dest-dir c?)
+    (let-values ([(basedir file dir?) (split-path input-name)])
+		(let* ([sbase (extract-base-filename/ss file (if c? #f 'mzc))]
+		       [cbase (extract-base-filename/c file (if c? 'mzc #f))]
+		       [base (or sbase cbase)])
+		  (unless base
+			  (error 'mzc "not a Scheme or C file: ~a" input-name))
+		  (values (if sbase input-name #f)
+			  (if cbase input-name (build-path dest-dir (append-c-suffix base)))
+			  (build-path dest-dir (append-constant-pool-suffix base))
+			  (build-path dest-dir (append-object-suffix base))
+			  (build-path dest-dir (append-extension-suffix base))
+			  (string-append (compiler:clean-string (compiler:option:setup-prefix)) "_" (compiler:clean-string base)))))))
+
+(define elaboration-exn-handler
+  (lambda (exn)
+    (compiler:fatal-error 
+     #f
+     (format "Error at elaboration time: ~a" 
+	     (if (exn? exn)
+		 (exn-message exn)
+		 exn)))
+    (raise exn)))
+
+(define top-level-exn-handler
+  (lambda (exn)
+    (set! compiler:messages (reverse! compiler:messages))
+    (compiler:report-messages! #t)
+    (exit -1)))
   
-  ; takes an input-name from the compile command and returns 4 values
-  ; 1) an input path
-  ; 2) a C output path
-  ; 3) a constant pool output path
-  ; 4) an obj output path
-  ; 5) a dll output path
-  ; 6) a scheme_setup suffix
-  (define s:process-filenames
-    (lambda (input-name dest-dir c?)
-      (let-values ([(basedir file dir?) (split-path input-name)])
-	(let* ([sbase (extract-base-filename/ss file (if c? #f 'mzc))]
-	       [cbase (extract-base-filename/c file (if c? 'mzc #f))]
-	       [base (or sbase cbase)])
-	  (unless base
-	    (error 'mzc "not a Scheme or C file: ~a" input-name))
-	  (values (if sbase input-name #f)
-		  (if cbase input-name (build-path dest-dir (append-c-suffix base)))
-		  (build-path dest-dir (append-constant-pool-suffix base))
-		  (build-path dest-dir (append-object-suffix base))
-		  (build-path dest-dir (append-extension-suffix base))
-		  (string-append (compiler:clean-string (compiler:option:setup-prefix)) "_" (compiler:clean-string base)))))))
-
-  (define elaboration-exn-handler
-    (lambda (exn)
-      (compiler:fatal-error 
-       #f
-       (format "Error at elaboration time: ~a" 
-	       (if (exn? exn)
-		   (exn-message exn)
-		   exn)))
-      (raise exn)))
-
-  (define top-level-exn-handler
-    (lambda (exn)
-      (set! compiler:messages (reverse! compiler:messages))
-      (compiler:report-messages! #t)
-      (exit -1)))
-
   (define (is-mzlib-library? path lib)
     (and (regexp-match lib path)
 	 (string=? (build-path (collection-path "mzlib") lib) path)))
-
+  
   (define load-prefix-file
     (lambda (prefix)
       (if (or (is-mzlib-library? prefix "refer.ss")
@@ -152,50 +151,50 @@
 	    (let-values ([(base file dir?) (split-path prefix)]
 			 ; [(start) (current-process-milliseconds)]
 			 [(p) (open-input-file prefix 'text)])
-	      (let* ([results
-		      (s:expand-top-level-expressions! 
-		       (path->complete-path
-			(if (eq? 'relative base)
-			    (build-path 'same)
-			    base))
-		       (zodiac:read p (zodiac:make-location 1 1 0 prefix))
-		       #f
-		       #f
-		       (lambda (expr)
-			 (if (void? expr)
-			     expr
-			     (let ([r (zodiac:parsed->raw expr)])
-			       (call-with-values
-				(lambda () 
-				  (eval r))
-				list)))))])
-		(close-input-port p)
-		; (printf "~a~n" (- (current-process-milliseconds) start))
-		(apply values (car (last-pair results)))))))))
-
+			(let* ([results
+				(s:expand-top-level-expressions! 
+				 (path->complete-path
+				  (if (eq? 'relative base)
+				      (build-path 'same)
+				      base))
+				 (zodiac:read p (zodiac:make-location 1 1 0 prefix))
+				 #f
+				 #f
+				 (lambda (expr)
+				   (if (void? expr)
+				       expr
+				       (let ([r (zodiac:parsed->raw expr)])
+					 (call-with-values
+					  (lambda () 
+					    (eval r))
+					  list)))))])
+			  (close-input-port p)
+			  ; (printf "~a~n" (- (current-process-milliseconds) start))
+			  (apply values (car (last-pair results)))))))))
+  
   (define s:expand-top-level-expressions!
     (lambda (input-directory reader vocab verbose? r-eval)
       (when verbose? (printf "~n Zodiac: reading... ") (flush-output))
       ; During reads, syntax errors are truly fatal
       (let ([exprs (begin ; time
-		    (let loop ([n 1])
-		      (let ([sexp (let loop () 
-				    ; This loop handles the case where
-				    ; the reader is really unhappy after
-				    ; it encounters an error
-				    (with-handlers ([void (lambda (x) (loop))])
-				      (reader)))])
-			(if (zodiac:eof? sexp)
-			    null
-			    (begin 
-			      (when (compiler:option:debug)
-				(debug "~a[~a.~a]_"
-				       n
-				       (zodiac:location-line
-					(zodiac:zodiac-start sexp))
-				       (zodiac:location-column
-					(zodiac:zodiac-start sexp))))
-			      (cons sexp (loop (+ n 1))))))))])
+		     (let loop ([n 1])
+		       (let ([sexp (let loop () 
+				     ; This loop handles the case where
+				     ; the reader is really unhappy after
+				     ; it encounters an error
+				     (with-handlers ([void (lambda (x) (loop))])
+						    (reader)))])
+			 (if (zodiac:eof? sexp)
+			     null
+			     (begin 
+			       (when (compiler:option:debug)
+				     (debug "~a[~a.~a]_"
+					    n
+					    (zodiac:location-line
+					     (zodiac:zodiac-start sexp))
+					    (zodiac:location-column
+					     (zodiac:zodiac-start sexp))))
+			       (cons sexp (loop (+ n 1))))))))])
 	(unless (null? compiler:messages) (when (compiler:option:verbose) (newline)))
 	(compiler:report-messages! #t)
 	(when verbose? (printf " expanding...~n"))
@@ -518,37 +517,49 @@
 	      ; -- whole-program analysis? ----------------------------------------
 	      (when (compiler:option:use-mrspidey)
 		(when (compiler:option:verbose) (printf " MrSpidey: analyzing~n"))
-
-		(set-block-source! 
-		 s:file-block
-		 (with-handlers ([void (lambda (x)
-					 (compiler:fatal-error
-					  #f
-					  (format "analysis died: ~a"
-						  (if (exn? x)
-						      (exn-message x)
-						      x))))])
-		   (mrspidey:analyze-program-sexps (block-source s:file-block)
-						   input-directory)))
-	      
-		(compiler:report-messages! #t))
+		(let ([spidey-thunk
+		       (lambda ()
+			 (set-block-source! 
+			  s:file-block
+			  (with-handlers ([void (lambda (x)
+						  (compiler:fatal-error
+						   #f
+						   (format "analysis died: ~a"
+							   (if (exn? x)
+							       (exn-message x)
+							       x))))])
+					 (mrspidey:analyze-program-sexps (block-source s:file-block)
+									 input-directory))))])
+		  (verbose-time spidey-thunk)	
+		  (compiler:report-messages! #t)))
+		  
 
 	      ; -- per-unit analysis? ----------------------------------------
 	      (when (compiler:option:use-mrspidey-for-units)
 		(when (compiler:option:verbose) (printf " MrSpidey: analyzing units~n"))
+		(let ([spidey-unit-thunk
+		       (lambda ()
+			 (set-block-source! 
+			  s:file-block
+			  (with-handlers ([void (lambda (x)
+						  (compiler:fatal-error
+						   #f
+						   (format "analysis died: ~a"
+							   (if (exn? x)
+							       (exn-message x)
+							       x))))])
+					 (map analyze-units (block-source s:file-block)))))])
+		(verbose-time spidey-unit-thunk)
+		(compiler:report-messages! #t)))
 
-		(set-block-source! 
-		 s:file-block
-		 (with-handlers ([void (lambda (x)
-					 (compiler:fatal-error
-					  #f
-					  (format "analysis died: ~a"
-						  (if (exn? x)
-						      (exn-message x)
-						      x))))])
-		   (map analyze-units (block-source s:file-block))))
-		
-		(compiler:report-messages! #t))
+	      ; force Spidey to annotate ast
+	      ; do we need this?????
+
+;	      (when (or (compiler:option:use-mrspidey)
+;			(compiler:option:use-mrspidey-for-units))
+;		    (map zodiac->sexp/annotate (block-source s:file-block))
+;		    (printf "~n")
+;		    (flush-output))
 
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 	      
@@ -594,7 +605,7 @@
 			(map (lambda (s) (a-normalize s identity)) 
 			     (block-source s:file-block))))])
 		(verbose-time anorm-thunk))
-	      
+
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 
 	      ;;-----------------------------------------------------------------------
@@ -650,6 +661,60 @@
 		(verbose-time bnorm-thunk))
 	      (compiler:report-messages! #t)
 	      
+	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
+
+	      ;;-----------------------------------------------------------------------
+	      ;; Lightweight closure transformation
+	      ;;
+
+	      (when (or (compiler:option:use-mrspidey)
+			(compiler:option:use-mrspidey-for-units))
+
+		    (when (compiler:option:verbose) 
+			  (printf " lightweight closure transformation~n"))
+
+		    (let ([lightweight-thunk
+			   (lambda ()
+
+			     (let* ([ast-list (block-source s:file-block)]
+				    [code-list (block-codes s:file-block)]) 
+
+			       (for-each 
+				make-global-tables 
+				ast-list)
+
+			       (for-each 
+				(lambda (ast)
+				  (closure-analyze ast)
+				  (initialize-invariance-sets ast)
+				  (initialize-protocol-eq-classes ast))
+				ast-list)
+		       
+			       (for-each
+				(lambda (ast)
+				  (invariance-analyze ast)
+				  (set-protocol-eq-classes ast)
+				  (compute-protocols ast))
+				ast-list)
+			       
+			       (for-each
+				lightweight-transform
+				ast-list)
+
+;			       (printf "~n;; transformed program -->~n")
+;			       
+;			       (for-each
+;				(lambda (ast)
+;				  (printf "~s~n~n" (zodiac:parsed->raw ast)))
+;				ast-list)
+;
+;			       (printf ";; end transformed program~n~n")
+;
+			       ))])
+	  
+		      (verbose-time lightweight-thunk)
+		      (compiler:report-messages! #t)))
+
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 
 	      ;;-----------------------------------------------------------------------

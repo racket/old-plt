@@ -212,6 +212,10 @@
   
   (define zodiac->sexp
     (lambda (ast)
+
+      (printf ".")
+      (flush-output)
+
       (cond 
        [(or (zodiac:quote-form? ast) 
 	    (zodiac:binding? ast)
@@ -250,6 +254,9 @@
 
        [(zodiac:begin-form? ast)
 	`(begin ,@(map zodiac->sexp/annotate (zodiac:begin-form-bodies ast)))]
+
+       [(zodiac:begin0-form? ast)
+	`(begin ,@(map zodiac->sexp/annotate (zodiac:begin0-form-bodies ast)))]
 
        [(zodiac:let-values-form? ast)
 	`(let-values
@@ -357,5 +364,10 @@
 	(error 'zodiac->sexp/annotate "unsupported ~s" ast)])))
   
   )
+
+
+
+
+
 
 

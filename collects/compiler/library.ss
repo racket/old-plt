@@ -90,7 +90,7 @@
 (define make-singleton-set (compose make-set list))
 (define list->set
   (lambda (l)
-    (unless (list? l) (error 'list->set "~a not a list"))
+    (unless (list? l) (error 'list->set "~a not a list" l))
     (make-set l)))
 (define set->list set-%m)
 (define improper-list->set
@@ -108,6 +108,14 @@
 (define set-memv? (set-list-predicate memv))
 (define set-memq? (set-list-predicate memq))
 (define set-empty? (compose null? set->list))
+
+(define set-find
+  (lambda (p s)
+    (let ([lst (set->list s)])
+      (let loop ([l lst])
+	(cond [(null? l) #f]
+	      [(p (car l)) (car l)]
+	      [else (loop (cdr l))])))))
 
 (define set-union ; O(|a|*|b|)
   (lambda (a b)
@@ -134,6 +142,18 @@
        [(memq (car a) b) (minus (cdr a) b acc)]
        [else (minus (cdr a) b (cons (car a) acc))]))))
 
+(define set-remove 
+  (lambda (e s)
+    (set-minus s (make-singleton-set e))))
+
+(define set-remove-if 
+  (lambda (p s)
+    (let ([lst (set->list s)])
+      (list->set 
+       (filter 
+	(lambda (elt) (not (p elt)))
+	lst)))))
+
 (define set-intersect ; O(|a|*|b|)
   (lambda (a b)
     (let intersect ([a (set->list a)]
@@ -143,12 +163,51 @@
        [(set-memq? (car a) b) (intersect (cdr a) (cons (car a) acc))]
        [else (intersect (cdr a) acc)]))))
 
+(define (set-subset? s1 s2)
+  (let ([l1 (set->list s1)]
+	[l2 (set->list s2)])
+    (andmap (lambda (elt) (member elt l2)) l1)))
+
+(define set-map
+  (lambda (f s)
+    (list->set (map f (set->list s)))))
+
+(define set-filter
+  (lambda (f s)
+    (list->set (filter f (set->list s)))))
+
 (define symbol-append
   (lambda s
     (let loop ([str ""] [s s])
       (if (null? s)
 	  (string->symbol str)
 	  (loop (string-append str (symbol->string (car s))) (cdr s))))))
+
+;; operations on sets of binders
+
+(define (binding-name b)
+  (if (zodiac:top-level-varref/bind? b)
+      (zodiac:varref-var b)
+      (zodiac:binding-var b)))
+    
+(define (find-binder the-name) 
+  (lambda (binders)
+    (set-find
+     (lambda (b) 
+       (eq? the-name (binding-name b)))
+     binders)))
+
+(define (add-binders-to-scope old-bindings new-bindings)
+  (for-each 
+   (lambda (binding)
+     (let* ([b-name (binding-name binding)]
+	    [p (lambda (elt) (eq? (binding-name elt)
+				  b-name))])
+       (set! old-bindings (set-remove-if p old-bindings)))) ; shadowing of scope
+   new-bindings)
+  (set-union old-bindings (list->set new-bindings)))
+
+; end binder set ops
 
 (define compiler:formals->arity
   (lambda (f)

@@ -10,7 +10,7 @@
 
 ; The relate-lambdas! procedure is used to put procedure
 ;  code into equivalence sets. If A contains a tail-call to
-;  B, their put in the same equivalence class, and then
+;  B, they're put in the same equivalence class, and then
 ;  they'll be implemented in the same vehicle, so A's call
 ;  to B can be implemented as a goto.
 
@@ -30,7 +30,6 @@
 	 compiler:analyze^
 	 compiler:closure^
 	 compiler:driver^)
-
 
  ;; Used for union-find for lambda vehicles:
  (define (get-vehicle-top code)
@@ -87,7 +86,7 @@
    (lambda (v n)
      (set-procedure-vehicle-max-args! v (max n (procedure-vehicle-max-args v)))))
 
- ; These lists are built up backwards, so reverse it before outputing the list
+ ; These lists are built up backwards, so reverse it before outputting the list
  (define compiler:case-lambdas null)
  (define compiler:total-unit-exports null)
  (define compiler:classes null)
@@ -271,3 +270,4 @@
  (define (vehicle:only-code-in-vehicle? code)
    (= (vehicle-total-labels (get-vehicle (closure-code-vehicle code))) 1))
  )
+

@@ -28,6 +28,7 @@
    list-index
    list-last
 
+   set?
    empty-set
    make-singleton-set
    list->set
@@ -38,10 +39,19 @@
    set-memv?
    set-memq?
    set-empty?
+   set-find
    set-union
    set-union-singleton
    set-minus
+   set-remove
+   set-remove-if
    set-intersect
+   set-subset?
+   set-map
+   set-filter
+   binding-name
+   find-binder
+   add-binders-to-scope
    symbol-append
    compiler:formals->arity
    compiler:paroptformals->arity
@@ -81,6 +91,10 @@
 		    known-but-used? ; known value used in an improper way?
 		    rep))      ; reprsentation
    copy-binding
+
+   copy-binding-for-light-closures
+
+   binder:empty-anno 
 
    (struct code (free-vars local-vars global-vars used-vars captured-vars
 			   parent case-parent children))
@@ -258,6 +272,16 @@
 
    analyze-expression!))
 
+(define-signature compiler:lightweight^
+  (make-global-tables
+   closure-analyze
+   initialize-invariance-sets
+   initialize-protocol-eq-classes
+   invariance-analyze
+   set-protocol-eq-classes
+   compute-protocols
+   lightweight-transform))
+
 (define-signature compiler:closure^
   (compiler:closure-list
    compiler:once-closures-list
@@ -431,10 +455,22 @@
   (copy-annotations!
    analyze-program-sexps
    binding-mutated
+   constant-value
    SDL-type
-   constant-value))
+   parsed-ftype
+   Tvar-objs
+   Tvar?
+   fo-FlowType?
+   FlowType->Tvar
+   prim-av?
+   fo-ftype->AVs
+   ast->AVs
+   AV->AVs))
 
 (define-signature compiler:basic-link^
   ((unit ZODIAC : zodiac:system^)
    (unit ZLAYER : compiler:zlayer^)
-   (unit DRIVER : compiler:driver^)))
+   (unit DRIVER : compiler:driver^)
+   (unit LIBRARY : compiler:library^)))
+
+

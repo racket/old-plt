@@ -68,40 +68,39 @@ third pattern matches any string. The `variable' pattern
 matches any symbol. The <symbol> pattern stands for a
 literal symbol that must match exactly (except, of course,
 for any, number, string, hole, or variable which are
-reserved). The pattern:
+reserved). 
+
+_name_: The pattern:
 
   (name <symbol> <pattern>)
 
 matches <pattern> and binds it to the name <symbol>. 
 
-The (in-hole <pattern> <pattern>) matches the first
-pattern. This match must include exactly one match against
-the `hole' pattern. The `hole' pattern matches any
-sexpression. Then, the sexpression that matched the hole
-pattern is used to match against the second pattern. The
-in-hole pattern also binds `hole' in the right-hand side of
-a reduction.
+_in-hole_: The (in-hole <pattern> <pattern>) matches the first
+pattern. This match must include exactly one match against the `hole'
+pattern. The `hole' pattern matches any sexpression. Then, the
+sexpression that matched the hole pattern is used to match against the
+second pattern. The in-hole pattern also binds `hole' in the
+right-hand side of a reduction.
 
-The (in-hole* <symbol> <pattern> <pattern>) is just like the
-in-hole pattern, except that you can specify the name to be
-implicitly bound. This is important to write reductions with
-nested contexts; if you were to use in-hole twice, you would
-get two bindings of `hole' and the pattern matcher would
-require them to be equal, according to the semantics of
-repeated variables.
+_in-hole*_: The (in-hole* <symbol> <pattern> <pattern>) is just like
+the in-hole pattern, except that you can specify the name to be
+implicitly bound. This is important to write reductions with nested
+contexts; if you were to use in-hole twice, you would get two bindings
+of `hole' and the pattern matcher would require them to be equal,
+according to the semantics of repeated variables.
 
-The (side-condition pattern guard) pattern matches what the
-embedded pattern matches, and then the guard expression is
-evaluated. If it returns #f, the pattern fails to match,
-and if it returns anything else, the pattern matches. In
-addition, any occurrences of `name' in the pattern will be
-bound in the guard.
+_side-condition_: The (side-condition pattern guard) pattern matches
+what the embedded pattern matches, and then the guard expression is
+evaluated. If it returns #f, the pattern fails to match, and if it
+returns anything else, the pattern matches. In addition, any
+occurrences of `name' in the pattern will be bound in the guard.
 
-The (cross <symbol>) pattern is used for the compatible
-closure functions. If the language contains a non-terminal
-with the same name as <symbol>, the pattern (cross <symbol>)
-matches the context that corresponds to the compatible
-closure of that non-terminal.
+_cross_: The (cross <symbol>) pattern is used for the compatible
+closure functions. If the language contains a non-terminal with the
+same name as <symbol>, the pattern (cross <symbol>) matches the
+context that corresponds to the compatible closure of that
+non-terminal.
 
 The (pattern ...) pattern matches a sexpression list, where
 each pattern matches an element of the list. In addition, if

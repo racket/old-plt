@@ -1,7 +1,7 @@
 (module iswim mzscheme
   (require (lib "reduction-semantics.ss" "reduction-semantics")
            (lib "subst.ss" "reduction-semantics")
-	   (lib "contract.ss"))
+	   (lib "contracts.ss"))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Expression grammar:
@@ -26,13 +26,20 @@
 		 (V E)
 		 (o1 E)
 		 (o2 E M)
-		 (o2 V E))))
+		 (o2 V E))
+
+	      ;; Continuations
+	      (k "mt"
+		 ("fun" V k)
+		 ("arg" M k)
+		 ("narg" (V ... on) (M ...) k))))
 
   (define M? (language->predicate iswim-grammar 'M))
   (define V? (language->predicate iswim-grammar 'V))
   (define o1? (language->predicate iswim-grammar 'o1))
   (define o2? (language->predicate iswim-grammar 'o2))
   (define on? (language->predicate iswim-grammar 'on))
+  (define k? (language->predicate iswim-grammar 'k))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Substitution:
@@ -164,8 +171,9 @@
   (provide/contract (iswim-grammar compiled-lang?)
 		    (M? (any? . -> . boolean?))
 		    (V? (M? . -> . boolean?))
-		    (o1? (M? . -> . boolean?))
-		    (o2? (M? . -> . boolean?))
+		    (o1? (any? . -> . boolean?))
+		    (o2? (any? . -> . boolean?))
+		    (k? (any? . -> . boolean?))
 		    (iswim-subst (M? symbol? M? . -> . M?))
 		    (beta_v red?)
 		    (delta (listof red?))

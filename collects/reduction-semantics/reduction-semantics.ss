@@ -57,6 +57,8 @@
       (syntax-case stx ()
         [(_ lang-exp ctxt pattern bodies ...)
          (let ([names (extract-names (syntax-object->datum (syntax pattern)))])
+	   (when (null? (syntax->list (syntax (bodies ...))))
+	     (raise-syntax-error #f "missing result expression" stx))
            (with-syntax ([(names ...) (map (lambda (name)
                                              (datum->syntax-object (syntax pattern) name))
                                            names)]
@@ -82,6 +84,8 @@
       (syntax-case stx ()
         [(_ lang-exp pattern bodies ...)
          (let ([names (extract-names (syntax-object->datum (syntax pattern)))])
+	   (when (null? (syntax->list (syntax (bodies ...))))
+	     (raise-syntax-error #f "missing result expression" stx))
            (with-syntax ([(name ...) (map (lambda (name) (datum->syntax-object (syntax pattern) name)) names)]
                          [hole (datum->syntax-object stx 'hole)]
                          [side-condition-rewritten (rewrite-side-conditions (syntax pattern))])

@@ -11,7 +11,7 @@
                     [bt (-> void?)] 
                     [set-frame-num! (-> number? void?)]
                     [src (-> void?)]
-                    [binding (-> symbol? void?)])
+                    [binding (-> symbol? any)])
   
   (define (events)
     ((namespace-variable-value 'events)))

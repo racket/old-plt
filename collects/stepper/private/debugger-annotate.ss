@@ -13,7 +13,7 @@
   
   (define (annotate-expr stx)
     (let ([result-box (box null)])
-      ((f-maker null null result-box) stx 'tail)))
+      ((f-maker null null result-box) stx 'tail null)))
   
 
   ;; TEMPLATE FUNCTIONS:
@@ -57,9 +57,11 @@
          (annotate-expr stx)])))
     
   (define (expr-iterator fn stx)
-      (let* ([tr-fn (lambda (stx) (fn stx 'tail))]
-             [nt-fn (lambda (stx) (fn stx 'non-tail))]
-             [lb-fn (lambda (stx) (fn stx 'lambda-body))]
+    (let* ([tr-fn (lambda (stx) (fn stx 'tail null))]      ; tail position
+           [nt-fn (lambda (stx) (fn stx 'non-tail null))]  ; non-tail position
+           [lb-fn (lambda (bindings) (lambda (stx) (fn stx 'lambda-body bindings)))] ; lambda body
+           [lt-fn (lambda (bindings) (lambda (stx) (fn stx 'tail bindings)))] ; body of a let
+           [rh-fn (lambda (bindings) (lambda (stx) (fn stx 'non-tail bindings)))] ; right-hand side of a let binding
              [fn-map-begin/0 
               (lambda (stx begin0?)
                 (let* ([bodies (syntax->list stx)]
@@ -78,14 +80,17 @@
               (lambda (clause)
                 (kernel:kernel-syntax-case clause #f
                   [(arglist . bodies)
-                   `(,#'arglist ,@(map lb-fn (syntax->list #'bodies)))]
+                   `(,#'arglist ,@(map (lb-fn (arglist-bindings #'arglist)) (syntax->list #'bodies)))]
                    [else
                     (error 'expr-syntax-object-iterator "unexpected (case-)lambda clause: ~a" (syntax-object->datum stx))]))]
-              [let-values-abstraction
-               (lambda (stx)
+             [let-values-abstraction
+               (lambda (stx rec?)
                  (kernel:kernel-syntax-case stx #f
-                   [(kwd ((variable ...) ...) . bodies)
-                    (rebuild #`(kwd ((variable ...) ...) #,@(map tr-fn (syntax->list #'bodies))))]
+                   [(kwd (((variable ...) rhs) ...) . bodies)
+                    (let* ([new-bindings (varref-set-union (map syntax->list (syntax->list #'((variable ...) ...))))]
+                           [rhs-new-bindings (if rec? new-bindings null)])
+                      (with-syntax ([(rhs-a ...) (map (rh-fn rhs-new-bindings) (syntax->list #'(rhs ...)))])
+                        (rebuild #`(kwd (((variable ...) rhs-a) ...) #,@(map (lt-fn new-bindings) (syntax->list #'bodies))))))]
                    [else
                     (error 'expr-syntax-object-iterator "unexpected let(rec) expression: ~a" (syntax-object->datum stx))]))]) 
          (kernel:kernel-syntax-case stx #f
@@ -105,9 +110,9 @@
            [(begin0 . bodies)
             (rebuild #`(begin0 #,@(fn-map-begin0 #'bodies)))]
            [(let-values . _)
-            (let-values-abstraction stx)]
+            (let-values-abstraction stx #f)]
            [(letrec-values . _)
-            (let-values-abstraction stx)]
+            (let-values-abstraction stx #t)]
            [(set! var val)
             (rebuild #`(set! var #,(nt-fn #'val)))]
            [(quote _)
@@ -164,37 +169,19 @@
     (case tailness
       ((lambda-body) 'all)
       ((tail) (binding-set-union (list prior newly-bound)))
-      ((non-tail) null)
+      ((non-tail) newly-bound)
       (else (error 'tail-bound "unexpected value ~s for tailness argument" tailness))))
   
-  (define (newly-bound stx)
-    (kernel:kernel-syntax-case stx #f
-      [(lambda arglist . rest)
-       (arglist-bindings #'arglist)]
-      [(case-lambda . clauses)
-       (apply append
-              (map (lambda (clause)
-                     (syntax-case clause ()
-                       [(arglist . rest)
-                        (arglist-bindings #'arglist)]))
-                   (syntax->list #'clauses)))]
-      [(let-values (((var ...) . stuff) ...) . dont-care)
-       (apply append (map syntax->list (syntax->list #'((var ...) ...))))]
-      [(letrec-values (((var ...) . stuff) ...) . dont-care)
-       (apply append (map syntax->list (syntax->list #'((var ...) ...))))]
-      [etc
-       null]))
-        
-        
   
-  (define (f-maker prior-tail-bound newly-bound-in-parent result-box)
-    (lambda (stx we-are-tail?)
+  (define (f-maker prior-tail-bound prior-lexically-bound result-box)
+    (lambda (stx we-are-tail? newly-bound-in-parent)
       (set-box! result-box (append (free-vars stx) (unbox result-box)))
       (let* ([new-result-box (box null)]
              [my-tail-bound (tail-bound prior-tail-bound newly-bound-in-parent we-are-tail?)]
-             [new-f (f-maker my-tail-bound (newly-bound stx) new-result-box)]
+             [my-lexically-bound (varref-set-union (list prior-lexically-bound newly-bound-in-parent))]
+             [new-f (f-maker my-tail-bound my-lexically-bound new-result-box)]
              [sub-annotated (expr-iterator new-f stx)] ; recursive call
-             [debug-info (make-debug-info stx my-tail-bound (append (free-vars stx) (unbox new-result-box)) 'none #f)])
+             [debug-info (make-debug-info stx my-tail-bound my-lexically-bound 'none #f)])
         #`(with-continuation-mark #,debug-key #,debug-info #,sub-annotated))))
   
   

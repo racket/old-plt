@@ -60,7 +60,7 @@
       
       (define (step-through-expression expanded expand-next-expression)
         (let* ([annotated (annotate-top-level expanded)])
-          (fprintf (current-error-port) "annotated: ~v\n" (syntax-object->datum annotated))
+          ; (fprintf (current-error-port) "annotated: ~v\n" (syntax-object->datum annotated))
           (set! current-expr expanded)
           (let ([expression-result
                  (parameterize ([current-eval basic-eval])

@@ -4586,7 +4586,9 @@ static long mz_spawnv(char *command, const char * const *argv, int *pid)
   startup.hStdOutput = (HANDLE)_get_osfhandle(1);
   startup.hStdError = (HANDLE)_get_osfhandle(2);
 
-  if (CreateProcess(command, cmdline, NULL, NULL, 1, 0, NULL, NULL, &startup, &info)) {
+  if (CreateProcess(command, cmdline, NULL, NULL, 1,
+		    CREATE_NO_WINDOW, NULL, NULL,
+		    &startup, &info)) {
     CloseHandle(info.hThread);
     *pid = info.dwProcessId;
     /* FIXME: process handle never gets closed */

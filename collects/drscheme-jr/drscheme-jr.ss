@@ -65,7 +65,7 @@
 
     (define setting (basis:get-default-setting))
 
-    (define omit-languages '("MzScheme"))
+    (define omit-languages '("Textual Full Scheme without Debugging (MzScheme)"))
 
     ;; Flag definitions
 

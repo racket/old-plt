@@ -2480,6 +2480,7 @@ static Scheme_Object *MrEdMakeStdIn(void)
 
   ip = scheme_make_input_port(scheme_make_port_type("mred-console-input-port"),
 			      readp,
+			      scheme_intern_symbol("mred-console"),
 			      CAST_GS mrconsole_get_string,
 			      NULL,
 			      CAST_IREADY mrconsole_char_ready,
@@ -2514,8 +2515,9 @@ static Scheme_Object *MrEdMakeStdOut(void)
   outtype = scheme_make_port_type("stdout");
 
   return (Scheme_Object *)scheme_make_output_port(outtype, NULL,
+						  scheme_intern_symbol("mred-console"),
 						  CAST_WS stdout_write,
-						  NULL, NULL, NULL, 0);
+						  NULL, NULL, NULL, NULL, 0);
 }
 
 static long stderr_write(Scheme_Output_Port*, const char *s, long d, long l, int rarely_block)

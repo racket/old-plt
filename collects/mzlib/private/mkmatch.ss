@@ -144,8 +144,10 @@
 	     (fprintf
 	      (current-error-port)
 	      "Warning: unreachable pattern ~e in ~e~n"
-	      (syntax-object->datum (car x))
-	      (syntax-object->datum match-expr))))
+	      ;; This (s->d (d->s _)) pattern is used in case
+	      ;;  the value is a mixture of syntax and non-syntax
+	      (syntax-object->datum (datum->syntax-object #f (car x)))
+	      (syntax-object->datum (datum->syntax-object #f match-expr)))))
        plist)))
   
   (define validate-pattern

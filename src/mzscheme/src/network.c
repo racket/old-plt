@@ -130,6 +130,7 @@ typedef struct tcp_t {
 typedef struct {
   Scheme_Type type; 
   MZ_HASH_KEY_EX
+  int hostid;
   int portid;
   int count;
   struct Scheme_Tcp **datas;
@@ -200,7 +201,7 @@ void scheme_init_network(Scheme_Env *env)
   scheme_add_global_constant("tcp-listen", 
 			     scheme_make_prim_w_arity(tcp_listen,
 						      "tcp-listen", 
-						      1, 3),
+						      1, 4),
 			     env);
   scheme_add_global_constant("tcp-close", 
 			     scheme_make_prim_w_arity(tcp_stop,
@@ -692,7 +693,7 @@ static void mac_tcp_close_all(Scheme_Tcp *data)
   mac_tcp_close(data, 1, 1);
 }
 
-static int mac_tcp_listen(int id, Scheme_Tcp **_data)
+static int mac_tcp_listen(int id, long host_id, Scheme_Tcp **_data)
 {
   TCPiopbX *xpb;
   TCPiopb *pb;
@@ -713,7 +714,7 @@ static int mac_tcp_listen(int id, Scheme_Tcp **_data)
     pb->csParam.open.commandTimeoutValue = 0 /* seconds; 0 = infinity */;
     pb->csParam.open.remoteHost = 0;
     pb->csParam.open.remotePort = 0;
-    pb->csParam.open.localHost = 0;
+    pb->csParam.open.localHost = host_id;
     pb->csParam.open.localPort = id;
     pb->csParam.open.dontFrag = 0;
     pb->csParam.open.timeToLive = 0;
@@ -1633,7 +1634,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
   address = SCHEME_STR_VAL(argv[0]);
   origid = (unsigned short)SCHEME_INT_VAL(argv[1]);
 
-  scheme_security_check_network("tcp-connect", address, origid);
+  scheme_security_check_network("tcp-connect", address, origid, 1);
 
 #ifdef USE_TCP
   /* Set id in network order: */
@@ -1850,6 +1851,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
   unsigned short id, origid;
   int backlog, errid;
   int reuse = 0;
+  const char *address;
 #ifdef USE_SOCKETS_TCP
 # ifndef PROTOENT_IS_INT
   struct protoent *proto;
@@ -1864,6 +1866,10 @@ tcp_listen(int argc, Scheme_Object *argv[])
   }
   if (argc > 2)
     reuse = SCHEME_TRUEP(argv[2]);
+  if (argc > 3) {
+    if (!SCHEME_STRINGP(argv[3]))
+      scheme_wrong_type("tcp-connect", "string", 3, argc, argv);
+  }
     
 #ifdef USE_TCP
   TCP_INIT("tcp-listen");
@@ -1874,8 +1880,12 @@ tcp_listen(int argc, Scheme_Object *argv[])
     backlog = SCHEME_INT_VAL(argv[1]);
   else
     backlog = 4;
+  if (argc > 3)
+    address = SCHEME_STR_VAL(argv[3]);
+  else
+    address = NULL;
 
-  scheme_security_check_network("tcp-listen", NULL, origid);
+  scheme_security_check_network("tcp-listen", address, origid, 0);
 
 #ifdef USE_TCP
   /* Set id in network order: */
@@ -1885,12 +1895,27 @@ tcp_listen(int argc, Scheme_Object *argv[])
 #ifdef USE_MAC_TCP
   {
     int i;
+    long hostid;
     Scheme_Tcp **datas, *data;
+    struct hostInfo *local_host;
+
+    if (address) {
+      local_host = MALLOC_ONE_ATOMIC(struct hostInfo);
+      if ((errNo = tcp_addr(address, local_host))) {
+	scheme_raise_exn(MZEXN_I_O_TCP,
+			 "tcp-listen: host not found: %s (%E)",
+			 address, errid);
+	return NULL;
+      }
+      hostid = local_host->addr[0];
+    } else
+      hostid = 0;
+
 
     datas = MALLOC_N(Scheme_Tcp *, backlog);
 
     for (i = 0; i < backlog; i++) {
-      if ((errid = mac_tcp_listen(id, &data))) {
+      if ((errid = mac_tcp_listen(id, hostid, &data))) {
         /* Close listeners that had succeeded: */
         int j;
         for (j = 0; j < i; j++)
@@ -1905,6 +1930,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
 
       l->type = scheme_listener_type;
       l->portid = id;
+      l->hostid = hostid;
       l->count = backlog;
       l->datas = datas;
       l->mref = scheme_add_managed(NULL,
@@ -1924,56 +1950,77 @@ tcp_listen(int argc, Scheme_Object *argv[])
   if (proto)
 # endif
   {
-    tcp_address tcp_listen_addr; /* Use a long name for precise GC's xform.ss */
-    tcp_t s;
+    struct hostent *host;
 
-    tcp_listen_addr.sin_family = AF_INET;
-    tcp_listen_addr.sin_port = id;
-    memset(&tcp_listen_addr.sin_addr, 0, sizeof(tcp_listen_addr.sin_addr));
-    memset(&tcp_listen_addr.sin_zero, 0, sizeof(tcp_listen_addr.sin_zero));
+    if (address)
+      host = MZ_GETHOSTBYNAME(address);
+    else
+      host = NULL;
 
-    s = socket(MZ_PF_INET, SOCK_STREAM, PROTO_P_PROTO);
-    if (s != INVALID_SOCKET) {
-#ifdef USE_WINSOCK_TCP
-      unsigned long ioarg = 1;
-      ioctlsocket(s, FIONBIO, &ioarg);
+    if (!address || host) {
+      tcp_address tcp_listen_addr; /* Use a long name for precise GC's xform.ss */
+      tcp_t s;
+
+      tcp_listen_addr.sin_family = AF_INET;
+      tcp_listen_addr.sin_port = id;
+      memset(&tcp_listen_addr.sin_addr, 0, sizeof(tcp_listen_addr.sin_addr));
+      memset(&tcp_listen_addr.sin_zero, 0, sizeof(tcp_listen_addr.sin_zero));
+      if (host) {
+#ifdef HOST_RESULT_IS_ADDR
+	memcpy(&tcp_listen_addr.sin_addr, &host, sizeof(long)); 
 #else
-      fcntl(s, F_SETFL, MZ_NONBLOCKING);
+	memcpy(&tcp_listen_addr.sin_addr, host->h_addr_list[0], host->h_length); 
+#endif
+      }
+
+      s = socket(MZ_PF_INET, SOCK_STREAM, PROTO_P_PROTO);
+      if (s != INVALID_SOCKET) {
+#ifdef USE_WINSOCK_TCP
+	unsigned long ioarg = 1;
+	ioctlsocket(s, FIONBIO, &ioarg);
+#else
+	fcntl(s, F_SETFL, MZ_NONBLOCKING);
 #endif
 
-      if (reuse) {
-	setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int));
-      }
-      
-      if (!bind(s, (struct sockaddr *)&tcp_listen_addr, sizeof(tcp_listen_addr))) {
-	if (!listen(s, backlog)) {
-	  listener_t *l;
-
-	  l = MALLOC_ONE_TAGGED(listener_t);
-	  l->type = scheme_listener_type;
-	  l->s = s;
-	  {
-	    Scheme_Custodian_Reference *mref;
-	    mref = scheme_add_managed(NULL,
-				      (Scheme_Object *)l,
-				      (Scheme_Close_Custodian_Client *)stop_listener,
-				      NULL,
-				      1);
-	    l->mref = mref;
-	  }
-
-	  scheme_file_open_count++;
-	  REGISTER_SOCKET(s);
-
-	  return (Scheme_Object *)l;
+	if (reuse) {
+	  setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int));
 	}
-      }
+      
+	if (!bind(s, (struct sockaddr *)&tcp_listen_addr, sizeof(tcp_listen_addr))) {
+	  if (!listen(s, backlog)) {
+	    listener_t *l;
 
-      errid = SOCK_ERRNO();
+	    l = MALLOC_ONE_TAGGED(listener_t);
+	    l->type = scheme_listener_type;
+	    l->s = s;
+	    {
+	      Scheme_Custodian_Reference *mref;
+	      mref = scheme_add_managed(NULL,
+					(Scheme_Object *)l,
+					(Scheme_Close_Custodian_Client *)stop_listener,
+					NULL,
+					1);
+	      l->mref = mref;
+	    }
 
-      closesocket(s);
-    } else
-      errid = SOCK_ERRNO();
+	    scheme_file_open_count++;
+	    REGISTER_SOCKET(s);
+
+	    return (Scheme_Object *)l;
+	  }
+	}
+
+	errid = SOCK_ERRNO();
+
+	closesocket(s);
+      } else
+	errid = SOCK_ERRNO();
+    } else {
+      scheme_raise_exn(MZEXN_I_O_TCP,
+		       "tcp-listen: host not found: %s",
+		       address);
+      return NULL;
+    }
   }
 # ifndef PROTOENT_IS_INT
   else {
@@ -2180,7 +2227,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
       v[0] = make_named_tcp_input_port(datas[i], "TCP");
       v[1] = make_tcp_output_port(datas[i]);
       
-      if (!(errid = mac_tcp_listen(l->portid, &data))) {
+      if (!(errid = mac_tcp_listen(l->portid, l->hostid, &data))) {
         /* new listener at the end of the queue: */
 	memcpy(datas + i, datas + i + 1, sizeof(Scheme_Tcp *) * (count - i - 1));
 	datas[count - 1] = data;

@@ -415,8 +415,8 @@ void (*scheme_fdclr)(void *fd, int pos);
 int (*scheme_fdisset)(void *fd, int pos);
 void (*scheme_add_fd_handle)(void *h, void *fds, int repost);
 void (*scheme_add_fd_eventmask)(void *fds, int mask);
-void (*scheme_security_check_file)(const char *who, char *filename, int guards);
-void (*scheme_security_check_network)(const char *who, char *host, int port);
+void (*scheme_security_check_file)(const char *who, const char *filename, int guards);
+void (*scheme_security_check_network)(const char *who, const char *host, int port, int client);
 /*========================================================================*/
 /*                        namespace/environment                           */
 /*========================================================================*/

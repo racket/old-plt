@@ -504,8 +504,8 @@ MZ_EXTERN int scheme_fdisset(void *fd, int pos);
 MZ_EXTERN void scheme_add_fd_handle(void *h, void *fds, int repost);
 MZ_EXTERN void scheme_add_fd_eventmask(void *fds, int mask);
 
-MZ_EXTERN void scheme_security_check_file(const char *who, char *filename, int guards);
-MZ_EXTERN void scheme_security_check_network(const char *who, char *host, int port);
+MZ_EXTERN void scheme_security_check_file(const char *who, const char *filename, int guards);
+MZ_EXTERN void scheme_security_check_network(const char *who, const char *host, int port, int client);
 
 /*========================================================================*/
 /*                        namespace/environment                           */

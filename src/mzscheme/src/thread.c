@@ -193,6 +193,7 @@ extern MZ_DLLIMPORT long GC_get_memory_use();
 static Scheme_Object *empty_symbol, *initial_symbol;
 
 static Scheme_Object *read_symbol, *write_symbol, *execute_symbol, *delete_symbol, *exists_symbol;
+static Scheme_Object *client_symbol, *server_symbol;
 
 static Scheme_Object *nested_exn_handler;
 
@@ -3283,7 +3284,7 @@ static Scheme_Object *make_security_guard(int argc, Scheme_Object *argv[])
   if (!(SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_security_guard_type)))
     scheme_wrong_type("make-security-guard", "security-guard", 0, argc, argv);
   scheme_check_proc_arity("make-security-guard", 3, 1, argc, argv);
-  scheme_check_proc_arity("make-security-guard", 3, 2, argc, argv);
+  scheme_check_proc_arity("make-security-guard", 4, 2, argc, argv);
 
   sg = MALLOC_ONE_TAGGED(Scheme_Security_Guard);
   sg->type = scheme_security_guard_type;
@@ -3310,7 +3311,7 @@ static Scheme_Object *current_security_guard(int argc, Scheme_Object *argv[])
 }
 
 
-void scheme_security_check_file(const char *who, char *filename, int guards)
+void scheme_security_check_file(const char *who, const char *filename, int guards)
 {
   Scheme_Security_Guard *sg;
 
@@ -3355,21 +3356,30 @@ void scheme_security_check_file(const char *who, char *filename, int guards)
   }
 }
 
-void scheme_security_check_network(const char *who, char *host, int port)
+void scheme_security_check_network(const char *who, const char *host, int port, int client)
 {
   Scheme_Security_Guard *sg;
 
   sg = (Scheme_Security_Guard *)scheme_get_param(scheme_config, MZCONFIG_SECURITY_GUARD);
 
   if (sg->network_proc) {
-    Scheme_Object *a[3];
+    Scheme_Object *a[4];
+
+    if (!client_symbol) {
+      REGISTER_SO(client_symbol);
+      REGISTER_SO(server_symbol);
+
+      client_symbol = scheme_intern_symbol("client");
+      server_symbol = scheme_intern_symbol("server");
+    }
 
     a[0] = scheme_intern_symbol(who);
     a[1] = (host ? scheme_make_immutable_sized_string(host, -1, 1) : scheme_false);
     a[2] = scheme_make_integer(port);
+    a[3] = (client ? client_symbol : server_symbol);
 
     while (sg->parent) {
-      scheme_apply(sg->network_proc, 3, a);
+      scheme_apply(sg->network_proc, 4, a);
       sg = sg->parent;
     }
   }

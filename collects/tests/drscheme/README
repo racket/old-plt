@@ -6,9 +6,13 @@ tests. Those names must be listed here. If no arguments are passed to
 the function, all tests will be run.
 
 
-  mem.ss
+|# race-condition.ss #|
 
-  runs some memory tests
+   demonstrates the race condition in DrScheme.
+
+   mem.ss
+
+   runs some memory tests
 
 |# io.ss #|
 

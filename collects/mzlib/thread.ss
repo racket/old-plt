@@ -117,6 +117,7 @@
     (let* ((can-stop-lock (make-semaphore 1))
            (done-ch (make-channel))
            (ex-ch (make-channel))
+	   (proceed-sema (make-semaphore))
            (stop-enabled? #t)
            (enable-stop
             (lambda (enable?)
@@ -131,6 +132,7 @@
               ;;(printf "3. finished enabling~n")
 	      ))
 	   (tid (thread (lambda ()
+			  (semaphore-wait proceed-sema)
 			  ;;(printf "3. creating coroutine thread~n")
 			  (with-handlers (((lambda (exn) #t)
 					   (lambda (exn) 
@@ -140,7 +142,8 @@
 			      (channel-put done-ch v)))))))
       (begin0
        (make-coroutine-object tid can-stop-lock done-ch ex-ch #f)
-       (thread-suspend tid))))
+       (thread-suspend tid)
+       (semaphore-post proceed-sema))))
                         
   ;; coroutine : real-number X-coroutine-object -> bool
   (define (coroutine-run timeout w)

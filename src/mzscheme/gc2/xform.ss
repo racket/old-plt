@@ -146,9 +146,9 @@
 
 (define-struct live-var-info (tag maxlive maxpush vars new-vars pushed-vars num-calls))
 
-(define-struct prototype (type static? pointer? pointer?-determined?))
+(define-struct prototype (type args static? pointer? pointer?-determined?))
 
-(define-struct c++-class (parent prototyped top-vars))
+(define-struct c++-class (parent prototyped top-vars init-vars))
 
 (define c++-classes null)
 
@@ -530,9 +530,11 @@
 			  (loop (cdr t))
 			  t))]
 	      [static? (ormap (lambda (t) (eq? (tok-n t) 'static)) type)])
-	  (unless (assq name (prototyped))
-	    (prototyped (cons (cons name (make-prototype type static? #f #f))
-			      (prototyped))))
+	  (prototyped (cons (cons name (make-prototype 
+					type
+					(seq-in (cadr e))
+					static? #f #f))
+			    (prototyped)))
 	  name)
 	(loop (cdr e) (cons (car e) type)))))
 
@@ -559,7 +561,7 @@
     (set! non-pointer-types (append (map car non-pointers) non-pointer-types))))
 
 (define (get-vars e comment union-ok?)
-  (let* ([e (filter (lambda (x) (not (eq? 'volatile (tok-n x)))) e)]
+  (let* ([e (filter (lambda (x) (not (memq (tok-n x) '(volatile const)))) e)]
 	 [base (tok-n (car e))]
 	 [base-is-ptr?
 	  (assq base pointer-types)]
@@ -711,6 +713,14 @@
 		(get-vars e comment union-ok?)])
     pointers))
 
+(define (get-pointer-vars-from-seq body comment comma-sep?)
+  (let ([el (body->lines body comma-sep?)])
+    (apply
+     append
+     (map (lambda (e)
+	    (get-pointer-vars e comment #t))
+	  el))))
+
 (define (register-struct e)
   (let ([body (seq-in (if (braces? (cadr e))
 			  (cadr e)
@@ -718,12 +728,7 @@
 	[name (if (braces? (cadr e))
 		  (gensym 'Anonymous)
 		  (tok-n (cadr e)))])
-    (let ([l (let ([el (body->lines body #f)])
-	       (apply
-		append
-		(map (lambda (e)
-		       (get-pointer-vars e "PTRFIELD" #t))
-		     el)))])
+    (let ([l (get-pointer-vars-from-seq body "PTRFIELD" #f)])
       (and (not (null? l))
 	   (begin
 	     (set! struct-defs (cons (cons name l) struct-defs))
@@ -771,6 +776,7 @@
 		      #f)]
 	   [cl (make-c++-class super
 			       null
+			       null
 			       null)]
 	   [pt (prototyped)]
 	   [vs (top-vars)])
@@ -778,13 +784,51 @@
       (prototyped null)
       (top-vars null)
       (let* ([body-v (list-ref e body-pos)]
-	     [body-e (process-top-level (seq-in body-v))])
+	     [body-e (process-top-level (seq-in body-v))]
+	     [methods (prototyped)]
+	     ;; Get all pointer args to constructors:
+	     [init-vars (let loop ([methods methods][result null])
+			  (if (null? methods)
+			      ;; Done; rename the init vars:
+			      (let loop ([l result][pos 0])
+				(if (null? l)
+				    null
+				    (cons
+				     (cons (string->symbol (format "InItVaR~a" pos))
+					   (cdar l))
+				     (loop (cdr l) (add1 pos)))))
+			      ;; Handle this method
+			      (loop (cdr methods)
+				    (let ([m (car methods)])
+				      (if (eq? (car m) name)
+					  ;; Get vars for this constructor, see what new
+					  ;;  buckets we need to accomodate them
+					  (let ([vars (get-pointer-vars-from-seq 
+						       (append (prototype-args (cdr m))
+							       (list (make-tok '|,| #f #f #f)))
+						       "CONSTRPTR"
+						       #t)])
+					    (append
+					     ;; Find out what we need to add:
+					     (let loop ([vars vars][result result])
+					       (cond
+						[(null? vars) null]
+						[(ormap (lambda (r) (and (equal? (cdar vars) (cdr r)) r)) result)
+						 ;; reuse existing:
+						 => (lambda (r)
+						      (loop (cdr vars) (filter (lambda (x) (not (eq? x r))) result)))]
+						[else 
+						 ;; Add new:
+						 (cons (car vars) (loop (cdr vars) result))]))
+					     result))
+					  result)))))])
 	;; Save prototype list, but remove constructor and statics:
 	(set-c++-class-prototyped! cl (filter (lambda (x)
 						(not (or (eq? (car x) name)
 							 (prototype-static? (cdr x)))))
-					      (prototyped)))
+					      methods))
 	(set-c++-class-top-vars! cl (top-vars))
+	(set-c++-class-init-vars! cl init-vars)
 	(prototyped pt)
 	(top-vars vs)
 	(let loop ([e e][p body-pos])
@@ -806,20 +850,36 @@
 		       body-e
 		       (if (eq? name 'gc_marking)
 			   null
-			   (list
-			    (make-tok 'public #f #f #f)
-			    (make-tok ': #f #f #f)
-			    (make-tok 'int #f #f #f)
-			    (make-tok gcMark #f #f #f)
-			    (make-parens
-			     "(" #f #f #f ")"
-			     (list (make-tok Mark_Proc #f #f #f)
-				   (make-tok 'mark #f #f #f)))
-			    (make-braces
-			     "{" #f #f #f "}"
-			     (make-mark-body (or super 'gc_marking)
-					     (c++-class-top-vars cl)
-					     (car e)))))))
+			   ;; Add init-var decls and gcMARK method:
+			   (append
+			    (list
+			     (make-tok 'private #f #f #f)
+			     (make-tok ': #f #f #f))
+			    ;; init-var decls:
+			    (apply
+			     append
+			     (map
+			      (lambda (r)
+				(append
+				 (type->decl (cdr r) (car e))
+				 (list (make-tok (car r) #f #f #f)
+				       (make-tok semi #f #f #f))))
+			      init-vars))
+			    (list
+			     (make-tok 'public #f #f #f)
+			     (make-tok ': #f #f #f)
+			     ;; gcMARK method:
+			     (make-tok 'int #f #f #f)
+			     (make-tok gcMark #f #f #f)
+			     (make-parens
+			      "(" #f #f #f ")"
+			      (list (make-tok Mark_Proc #f #f #f)
+				    (make-tok 'mark #f #f #f)))
+			     (make-braces
+			      "{" #f #f #f "}"
+			      (make-mark-body (or super 'gc_marking)
+					      (c++-class-top-vars cl)
+					      (car e))))))))
 		     (cdr e)))
 	      (cons (car e) (loop (cdr e) (sub1 p)))))))))
 
@@ -909,42 +969,93 @@
 				    (values (list-ref e (sub1 len)) (sub1 len))
 				    (values v len)))]
 		[(body-e) (seq-in body-v)]
-		[(args-e) (seq-in (list-ref e (sub1 len)))]
+		[(class-name function-name func-pos) 
+		 (let loop ([e e][p 0])
+		   (cond
+		    [(null? e) (values #f #f #f)]
+		    [(null? (cdr e)) (values #f #f #f)]
+		    [(eq? ':: (tok-n (cadr e)))
+		     (values (tok-n (car e))
+			     (tok-n (caddr e))
+			     (+ p 2))]
+		    [else (loop (cdr e) (add1 p))]))]
+		[(args-e) (seq-in (list-ref e (if (and func-pos
+						       (eq? class-name function-name))
+						  (add1 func-pos)
+						  (sub1 len))))]
 		[(arg-vars all-arg-vars) 
-		 (let ([arg-decls (body->lines
-				   (append
-				    (map 
-				     (lambda (v) (if (eq? '|,| (tok-n v))
-						     (make-tok semi (tok-line v) (tok-col v) (tok-file v))
-						     v))
-				     args-e)
-				    (list (make-tok semi #f #f #f)))
-				   #f)])
+		 (let ([arg-decls (body->lines (append
+						args-e
+						(list (make-tok '|,| #f #f #f)))
+					       #t)])
 		   (let loop ([l arg-decls][arg-vars null][all-arg-vars null])
 		     (if (null? l)
 			 (values arg-vars all-arg-vars) 
 			 (let-values ([(ptrs non-ptrs) (get-vars (car l) "PTRARG" #f)])
 			   (loop (cdr l) (append arg-vars ptrs) (append all-arg-vars ptrs non-ptrs))))))]
-		[(class-name function-name) 
-		 (let loop ([e e])
-		   (cond
-		    [(null? e) (values #f #f)]
-		    [(null? (cdr e)) (values #f #f)]
-		    [(eq? ':: (tok-n (cadr e)))
-		     (values (tok-n (car e))
-			     (tok-n (caddr e)))]
-		    [else (loop (cdr e))]))]
 		[(c++-class) (let ([c++-class (find-c++-class class-name #t)])
 			       (and c++-class
 				    (or (get-c++-class-method function-name c++-class)
 					(eq? function-name class-name)
 					(eq? function-name '~))
-				    c++-class))])
+				    c++-class))]
+		[(init-mapping) (and (eq? class-name function-name)
+				     c++-class
+				     ;; Map init args to in-class slots
+				     (let ([init-slots (c++-class-init-vars c++-class)])
+				       (let loop ([args arg-vars][inits init-slots])
+					 (if (null? args)
+					     null
+					     (let ([r (ormap (lambda (r)
+							       (and (equal? (cdar args) (cdr r))
+								    r))
+							     inits)])
+					       (cons
+						r
+						(loop (cdr args) (filter (lambda (x) (not (eq? r x))) inits))))))))]
+		[(make-init-setups) (lambda ()
+				      (if init-mapping
+					  (let loop ([setups
+						      (map (lambda (arg init)
+							     (list
+							      (make-tok (car init) #f #f #f)
+							      (make-parens
+							       "(" #f #f #f ")"
+							       (list (make-tok (car arg) #f #f #f)))))
+							   arg-vars init-mapping)])
+					    (cond
+					     [(null? setups) null]
+					     [(null? (cdr setups))
+					      (car setups)]
+					     [else
+					      (append (car setups)
+						      (list (make-tok '|,| #f #f #f))
+						      (loop (cdr setups)))]))
+					  null))])
      (append
-      (let loop ([e e][len len])
-	(if (zero? len)
-	    null
-	    (cons (car e) (loop (cdr e) (sub1 len)))))
+      (let loop ([e e][len len][setup-mode 'waiting])
+	(cond
+	 [(and (eq? ': (tok-n (car e)))
+	       (eq? setup-mode 'waiting))
+	  ;; Insert constructor setups with comma separator
+	  (cons (car e) 
+		(append
+		 (let ([s (make-init-setups)])
+		   (if (null? s)
+		       null
+		       (append s (list (make-tok '|,| #f #f #f)))))
+		 (loop (cdr e) (sub1 len) 'done)))]
+	 [(and (zero? len)
+	       (eq? setup-mode 'waiting))
+	  ;; Constructor setups without comma
+	  (let ([l (make-init-setups)])
+	    (if (null? l)
+		null
+		(cons (make-tok ': #f #f #f) l)))]
+	 [(zero? len)
+	  null]
+	 [else
+	  (cons (car e) (loop (cdr e) (sub1 len) setup-mode))]))
       (list
        (make-braces
 	(tok-n body-v)
@@ -958,12 +1069,15 @@
 						   (set! used-self? #f)
 						   (convert-class-vars body-e all-arg-vars c++-class))])
 					  (append
+					   ;; If sElF is used, add its declaration.
 					   (if used-self?
 					       (list
 						(make-tok class-name #f #f #f)
 						(make-tok '* #f #f #f)
 						(make-tok sElF #f #f #f)
 						(make-tok '= #f #f #f)
+						;; If this is a constructor, we get sElF in
+						;;  a special way
 						(if (eq? class-name function-name)
 						    (make-parens
 						     "(" #f #f #f")"
@@ -976,10 +1090,30 @@
 						    (make-tok 'this #f #f #f))
 						(make-tok semi #f #f #f))
 					       null)
+					   ;; The main body:
 					   e))
 					body-e)
 				    arg-vars arg-vars 
 				    c++-class
+				    (lambda ()
+				      ;; If this is a constructor, need to patch init args,
+				      ;;  because super constructor may have triggered a GC
+				      (if init-mapping
+					  (apply
+					   append
+					   (map
+					    (lambda (arg init)
+					      (list
+					       (make-tok (car arg) #f #f #f)
+					       (make-tok '= #f #f #f)
+					       (make-tok sElF #f #f #f)
+					       (make-tok '-> #f #f #f)
+					       (make-tok (car init) #f #f #f)
+					       (make-tok semi #f #f #f)))
+					    arg-vars init-mapping))
+					  
+					  ;; No patches:
+					  null))
 				    (make-live-var-info #f -1 0 null null null 0) #t)])
 	  body-e))))))
 
@@ -1133,7 +1267,7 @@
 (define (is-generated? x)
   (regexp-match re:funcarg (symbol->string (car x))))
 
-(define (convert-body body-e extra-vars pushable-vars c++-class live-vars setup-stack?)
+(define (convert-body body-e extra-vars pushable-vars c++-class after-vars-thunk live-vars setup-stack?)
   (let ([el (body->lines body-e #f)])
     (let-values ([(decls body) (split-decls el)])
       (let* ([local-vars 
@@ -1231,6 +1365,7 @@
 			 append
 			 (append
 			  decls
+			  (list (after-vars-thunk))
 			  (list (append (if label?
 					    (list (make-note 'note #f #f #f (format "/* PTRVARS: ~a */" (map car vars))))
 					    null)
@@ -1727,7 +1862,7 @@
 		      ;; Proc to convert body once
 		      [(convert-brace-body) 
 		       (lambda (live-vars)
-			 (convert-body (seq-in v) vars null c++-class live-vars #f))]
+			 (convert-body (seq-in v) vars null c++-class (lambda () null) live-vars #f))]
 		      ;; First conversion
 		      [(e live-vars) (convert-brace-body live-vars)]
 		      ;; Proc to filter live and pushed vars, dropping vars no longer in scope:

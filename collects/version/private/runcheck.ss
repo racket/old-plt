@@ -1,5 +1,6 @@
 (module runcheck mzscheme
   (require (lib "unitsig.ss"))
+  (require (lib "string-constant.ss" "string-constants"))
   (require (lib "list.ss"))
   (require (lib "url.ss" "net"))
   (require (lib "getinfo.ss" "setup"))
@@ -16,10 +17,10 @@
       (define download-url-string "http://download.plt-scheme.org/")
 
       (define check-question 
-	"Check for updates of all PLT software over the Internet?")
-
+	(string-constant check-question))
+	
       (define star "*")
-      (define dialog-title "PLT update status")
+      (define dialog-title (string-constant update-dialog-title))
 
       (define rv-sym 'release-version)
       (define no-info-sym 'no-info-file)
@@ -58,8 +59,8 @@
 	(let loop ([n 0])
 	  (if (> n timeout-value)
 	      (begin
-		(show-ok "Network timeout" 
-			 "Can't connect to PLT version server")
+		(show-ok (string-constant network-timeout)
+			 (string-constant cannot-connect))
 		(when the-port
                       ; will force exception on pending read
 		      (close-input-port the-port)))
@@ -154,7 +155,7 @@
 			  (if (null? bad-info)
 			      ""
 			      (string-append
-			       "These collections are not installed:"
+			       (string-constant collections-not-installed)
 			       nl
 			       (foldr
 				comma-proc
@@ -166,7 +167,7 @@
 			       (if (null? bad-info) ; add newline
 				   ""
 				   nl)
-			       "These collections have missing or incomplete version information:"
+			       (string-constant collections-missing-version)
 			       nl
 			       (foldr
 				comma-proc
@@ -177,20 +178,20 @@
 
 	      (when (or (not (null? args-vis))
 			(eq? 'yes
-			     (get-yes-no "PLT version check" 
+			     (get-yes-no (string-constant update-check)
 					 check-question)))
 		    (set! the-port 
 			  (with-handlers 
 			   ((void 
 			     (lambda _ 
 			       (show-error-ok
-				"Network failure" 
-				"Can't connect to PLT version server")
+				(string-constant network-failure)
+				(string-constant cannot-connect))
 			       (raise 'network-error))))
 			   (get-pure-port (string->url 
 					   (make-url-string
 					    (cvi-triples))))))
-	      
+			  
 		    (let* ([timeout-thread (thread timer-proc)]
 			   [responses 
 			    (let loop ()
@@ -229,15 +230,14 @@
 			   (show-ok 
 			    dialog-title
 			    (string-append
-			     "Installed binaries for DrScheme (or MzScheme) "
-			     "are not up-to-date"
+			     (string-constant old-binaries)
 			     nl nl
 			     (format 
-			      "Installed binary version: ~a (iteration ~a)"
+			      (string-constant binary-information-format)
 			      binary-version binary-iteration)
 			     nl nl
 			     (format 
-			      "Latest released version: ~a (iteration ~a)"
+			      (string-constant latest-binary-information-format)
 			      latest-binary-version latest-binary-iteration)
 			     nl nl
 			     "Updates are available at "
@@ -260,10 +260,11 @@
 					[(eq? verdict 'update)
 					 (begin
 					   (set! needs-update #t)
-					   (format "~a v.~a (iteration ~a) needs updating to v.~a (iteration ~a)"
-						   package 
-						   installed-version installed-iteration 
-						   latest-version latest-iteration))]
+					   (format 
+					    (string-constant update-format)
+					    package 
+					    installed-version installed-iteration 
+					    latest-version latest-iteration))]
 					[else ""])))
 				    (cdr responses))]
 				  [folded-string
@@ -281,13 +282,16 @@
 			      dialog-title
 			      (string-append
 			       (format up-to-format
-				       "Binary" binary-version binary-iteration)
+				       (string-constant binary-name)
+				       binary-version binary-iteration)
 			       nl
 			       (if needs-update
 				   (string-append
 				    folded-string
 				    nl nl
-				    "Updates are available at "
+				    (string-constant 
+				     updates-available)
+				    " "
 				    download-url-string)
 				   folded-string)))))))))))
 
@@ -297,6 +301,4 @@
       (with-handlers
        ((void void))
        (go)))))
-
-
 

@@ -437,7 +437,7 @@ typedef struct Scheme_Struct_Type {
   char *immutables;
 
   Scheme_Object *guard;
-  
+
   struct Scheme_Struct_Type *parent_types[1];
 } Scheme_Struct_Type;
 
@@ -576,7 +576,7 @@ Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
 
 Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift,
 				      Scheme_Object *old_midx, Scheme_Object *new_midx);
-Scheme_Object *scheme_stx_phase_shift_as_rename(long shift, 
+Scheme_Object *scheme_stx_phase_shift_as_rename(long shift,
 						Scheme_Object *old_midx, Scheme_Object *new_midx);
 
 int scheme_stx_list_length(Scheme_Object *list);
@@ -1403,7 +1403,7 @@ typedef struct Scheme_Object *(*Scheme_Syntax_Resolver)(Scheme_Object *data, Res
 typedef struct CPort Mz_CPort;
 
 typedef void (*Scheme_Syntax_Validater)(Scheme_Object *data, Mz_CPort *port,
-					char *stack, int depth, int letlimit, int delta, 
+					char *stack, int depth, int letlimit, int delta,
 					int num_toplevels, int num_stxes);
 
 typedef struct Scheme_Object *(*Scheme_Syntax_Executer)(struct Scheme_Object *data);
@@ -1683,15 +1683,15 @@ Scheme_Env *scheme_environment_from_dummy(Scheme_Object *dummy);
 void scheme_validate_code(Mz_CPort *port, Scheme_Object *code, int depth,
 			  int num_toplevels, int num_stxes);
 void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr,
-			  char *stack, int depth, int letlimit, int delta, 
+			  char *stack, int depth, int letlimit, int delta,
 			  int num_toplevels, int num_stxes);
 void scheme_validate_toplevel(Scheme_Object *expr, Mz_CPort *port,
-			      char *stack, int depth, int delta, 
+			      char *stack, int depth, int delta,
 			      int num_toplevels, int num_stxes);
 void scheme_validate_boxenv(int pos, Mz_CPort *port,
 			    char *stack, int depth, int delta);
 void scheme_validate_quote_syntax(int c, int p, int z, Mz_CPort *port,
-				  char *stack, int depth, int delta, 
+				  char *stack, int depth, int delta,
 				  int num_toplevels, int num_stxes);
 
 #define TRACK_ILL_FORMED_CATCH_LINES 0
@@ -1992,7 +1992,7 @@ extern char *scheme_convert_from_wchar(wchar_t *ws);
 # define WIDE_PATH(s) s
 # define WIDE_PATH_COPY(s) s
 # define NARROW_PATH(s) s
-# define MSC_W_IZE(n) MSC_IZE(n) 
+# define MSC_W_IZE(n) MSC_IZE(n)
 #endif
 
 /*========================================================================*/
@@ -2074,7 +2074,7 @@ long scheme_get_byte_string_or_ch_put(const char *who,
 				      char *buffer, long offset, long size,
 				      int only_avail,
 				      int peek, Scheme_Object *peek_skip,
-				      Scheme_Object *unless_evt, 
+				      Scheme_Object *unless_evt,
 				      Scheme_Object *target_ch);
 
 Scheme_Object *scheme_get_special(Scheme_Object *inport, Scheme_Object *stxsrc, long line, long col, long pos, int peek);
@@ -2140,6 +2140,9 @@ Scheme_Object *scheme_copy_list(Scheme_Object *l);
 Scheme_Object *scheme_regexp_source(Scheme_Object *re);
 int scheme_regexp_is_byte(Scheme_Object *re);
 Scheme_Object *scheme_make_regexp(Scheme_Object *str, int byte, int * volatile result_is_err_string);
+unsigned short * scheme_ucs4_to_utf16(const mzchar *text, int start, int end,
+				      unsigned short *buf, int bufsize,
+				      long *ulen, int term_size);
 
 #define SCHEME_SYM_UNINTERNEDP(o) (MZ_OPT_HASH_KEY(&((Scheme_Symbol *)(o))->iso) & 0x1)
 #define SCHEME_SYM_PARALLELP(o) (MZ_OPT_HASH_KEY(&((Scheme_Symbol *)(o))->iso) & 0x2)

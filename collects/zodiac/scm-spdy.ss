@@ -184,43 +184,32 @@
 	  (else
 	    (static-error expr "Malformed define-constructor"))))))
 
-  (add-micro-form 'reference-unit mrspidey-vocabulary
-    (let* ((kwd '(reference-unit))
-	    (in-pattern '(reference-unit file))
-	    (m&e (pat:make-match&env in-pattern kwd)))
-      (lambda (expr env attributes vocab)
-	(cond
-	  ((pat:match-against m&e expr env)
-	    =>
-	    (lambda (p-env)
-	      (let ((file (pat:pexpand 'file p-env kwd)))
-		(create-reference-unit-form
-		  file
-		  (current-directory)
-		  'exp
-		  #f
-		  expr))))
-	  (else
-	    (static-error expr "Malformed reference-unit"))))))
+  (define reference-unit-maker
+    (lambda (form-name signed? library?)
+      (add-micro-form form-name mrspidey-vocabulary
+	(let* ((kwd (list form-name))
+		(in-pattern `(,form-name file))
+		(m&e (pat:make-match&env in-pattern kwd)))
+	  (lambda (expr env attributes vocab)
+	    (cond
+	      ((pat:match-against m&e expr env)
+		=>
+		(lambda (p-env)
+		  (let ((file (pat:pexpand 'file p-env kwd)))
+		    (create-reference-unit-form
+		      file
+		      ((if library? current-library-path current-directory))
+		      'exp
+		      signed?
+		      library?
+		      expr))))
+	      (else
+		(static-error expr "Malformed ~a" form-name))))))))
 
-  (add-micro-form 'reference-unit/sig mrspidey-vocabulary
-    (let* ((kwd '(reference-unit/sig))
-	    (in-pattern '(reference-unit/sig file))
-	    (m&e (pat:make-match&env in-pattern kwd)))
-      (lambda (expr env attributes vocab)
-	(cond
-	  ((pat:match-against m&e expr env)
-	    =>
-	    (lambda (p-env)
-	      (let ((file (pat:pexpand 'file p-env kwd)))
-		(create-reference-unit-form
-		  file
-		  (current-directory)
-		  'exp
-		  #t
-		  expr))))
-	  (else
-	    (static-error expr "Malformed reference-unit"))))))
+  (reference-unit-maker 'reference-unit #f #f)
+  (reference-unit-maker 'reference-unit/sig #t #f)
+  (reference-unit-maker 'reference-library-unit #f #t)
+  (reference-unit-maker 'reference-library-unit/sig #t #t)
 
 '  (add-micro-form 'references-unit-imports mrspidey-vocabulary
     (let* ((kwd '(reference-unit-imports))

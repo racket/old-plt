@@ -4,6 +4,8 @@
 (reference "zsigs.ss")
 (reference "sigs.ss")
 
+; All this stuff needs to be disappeared.
+
 (begin-elaboration-time
   (define plt-home-directory
     (let ([plt (getenv "PLTHOME")])

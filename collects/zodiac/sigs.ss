@@ -137,7 +137,7 @@
     (struct :-form (exp type))
     (struct type:-form (type attrs))
     (struct st:control-form (para val))
-    (struct reference-unit-form (file cd kind signed?))
+    (struct reference-unit-form (file cd kind signed? library?))
     (struct define-type-form (sym type))
     (struct define-constructor-form (sym modes))
     create-poly-form

@@ -493,7 +493,7 @@
 							    (format "~a" id-name))))
 							(invalidate-bitmap-cache))])))]
 				     [menu (make-object wx:menu% null callback)])
-				(send menu append STICK-ID "Toggle Tackedness")
+				(send menu append STICK-ID "Tack/Untack Arrow")
 				(send menu append JUMP-ID "Jump")
 				(send menu append RENAME-ID "Rename")
 				(send canvas popup-menu menu

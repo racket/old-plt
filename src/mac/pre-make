@@ -1,5 +1,7 @@
 #!/bin/sh
 
+#|
+
 # OS X pre-make script
 # builds resource files, makes template Starter.app and MrEd.app
 # this script must be run from its own directory
@@ -18,11 +20,11 @@ exit
   (define rez-path "/Developer/Tools/Rez")
 
   ; set plthome:
-  (define plthome (simplify-path (build-path (current-directory 'up 'up))))
-  (printf "plthome is ~s" plthome)
+  (define plthome (simplify-path (build-path (current-directory) 'up 'up)))
+  (printf "plthome is ~s~n" plthome)
 
   ; Rez where needed:
-  (let* ([cw-path (build-path plthome "src" "mac" "cw")]'
+  (let* ([cw-path (build-path plthome "src" "mac" "cw")]
 	 [rez-it (lambda (app)
 		   (system* rez-path 
 			    (build-path cw-path (string-append app ".r")) "-UseDF" "-o" 
@@ -39,12 +41,12 @@ exit
       (unless (directory-exists? head-path)
 	      (printf "Creating directory: ~s~n" head-path)
 	      (make-directory head-path))
-      (foreach (lambda (template-tree) (realize-template head-path template-tree))
-	       (cdr template-tree))))
+      (for-each (lambda (template-tree) (realize-template head-path template-tree))
+	        (cdr template-tree))))
 
   ; a template-tree is (list string<dir-name> (listof template-tree))
   (define app-template-tree
-    '(("Contents" ("MacOS") ("Resources"))))
+    '("Contents" ("MacOS") ("Resources")))
 
   (define (create-app dest-path app-name pkg-info-string info-plist)
     (let* ([app-path (build-path dest-path (string-append app-name ".app"))])
@@ -52,13 +54,14 @@ exit
 	      (make-directory app-path))
       (realize-template app-path app-template-tree)
       (let* ([pkg-info-path (build-path app-path "Contents" "PkgInfo")])
-	(printf
+	(printf "writing file ~s~n" pkg-info-path)
 	(call-with-output-file pkg-info-path
 	  (lambda (port)
 	    (fprintf port pkg-info-string))
 	  'truncate))
       (let* ([contents-path (build-path app-path "Contents")])
 	(let* ([info-plist-path (build-path contents-path "Info.plist")])
+	  (printf "writing file ~s~n" info-plist-path)
 	  (call-with-output-file info-plist-path
 	    (lambda (port)
 	      (write-plist info-plist port))
@@ -101,4 +104,6 @@ exit
 		"Starter"
 		"APPLMrSt"
 		(make-info-plist "Starter" "MrSt")))
+
+(require pre-make)
 

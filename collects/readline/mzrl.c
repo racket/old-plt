@@ -86,10 +86,14 @@ Scheme_Object *scheme_reload(Scheme_Env *env)
 
 Scheme_Object *scheme_initialize(Scheme_Env *env)
 {
-
   rl_readline_name = "mzscheme";
 
   rl_event_hook = block;
 
   return scheme_reload(env);
+}
+
+Scheme_Object *scheme_module_name()
+{
+  return scheme_intern_symbol("mzrl");
 }

@@ -208,7 +208,7 @@
 			  stx
 			  (mk-back)
 			  (if (pair? b)
-			      (cdr b)
+			      (cadr b)
 			      (syntax-e stx))
 			  (let ([modname (and (pair? b) (car b))])
 			    (if trans?
@@ -243,7 +243,7 @@
 			    stx
 			    (mk-back)
 			    (if (pair? b)
-				(cdr b)
+				(cadr b)
 				(syntax-e stx))
 			    (and (pair? b) (car b))
 			    (get-slot stx slot-table))))
@@ -260,7 +260,7 @@
 			    stx
 			    (mk-back)
 			    (if (pair? b)
-				(cdr b)
+				(cadr b)
 				(syntax-e stx))
 			    (and (pair? b) (car b))
 			    (get-slot stx syntax-slot-table))))

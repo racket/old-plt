@@ -564,6 +564,8 @@
 
       (define compiler:multi-o-constant-pool (make-parameter #f))
 
+      (define compiler:module-decl-name #f)
+
       (define s:compile
 	(lambda (c-only? multi-o? from-c? input-name dest-directory)
 	  (define input-directory 
@@ -641,6 +643,14 @@
 		  ; (map (lambda(ast)(pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 		  
 		  ; (print-graph #t) (display (car (block-source s:file-block))) (newline)
+
+		  ;;-----------------------------------------------------------------------
+		  ;; record module name, if a single declaration
+
+		  (when (and (= 1 (length (block-source s:file-block)))
+			     (zodiac:module-form? (car (block-source s:file-block))))
+		    (set! compiler:module-decl-name 
+			  (syntax-e (zodiac:module-form-name (car (block-source s:file-block))))))
 
 		  ;;-----------------------------------------------------------------------
 		  ;; MrSpidey analyze
@@ -1212,7 +1222,17 @@
 				     (fprintf c-port "~areturn scheme_reload(env);~n"
 					      vm->c:indent-spaces)
 				     (fprintf c-port 
-					      "}~n~n")))
+					      "}~n~n"))
+
+				   (fprintf c-port
+					    "~nScheme_Object * ~ascheme_module_name()~n{~n~areturn "
+					    compiler:setup-suffix
+					    vm->c:indent-spaces)
+				   (if compiler:module-decl-name
+				       (let ([s (symbol->string compiler:module-decl-name)])
+					 (fprintf c-port "scheme_intern_exact_symbol(~s, ~a)" s (string-length s)))
+				       (fprintf c-port "NULL"))
+				   (fprintf c-port ";~n}~n"))
 
 				 (let emit-vehicles ([vehicle-number 0])
 				   (unless (= vehicle-number (compiler:get-total-vehicles))

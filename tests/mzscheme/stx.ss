@@ -42,6 +42,15 @@
 ;; Test basic expansion and property propagation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define (tree-map f)
+  (lambda (l)
+    (if (pair? l)
+	(cons ((tree-map f) (car l))
+	      ((tree-map f) (cdr l)))
+	(if (null? l)
+	    null
+	    (f l)))))
+
 (define-syntax mcr
   (lambda (stx)
     (syntax-case stx ()
@@ -72,7 +81,7 @@
 
 (test 10 syntax-property s 'testing)
 (test 10 syntax-property se 'testing)
-(test 'mcr syntax-e (syntax-property se 'origin))
+(test '(mcr) (tree-map syntax-e) (syntax-property se 'origin))
 
 (test 10 syntax-property (datum->syntax-object #f 0 #f s) 'testing)
 
@@ -94,7 +103,7 @@
 
 (test 10 syntax-property s 'testing)
 (test 10 syntax-property se 'testing)
-(test 'mcr2 syntax-e (syntax-property se 'origin))
+(test '(mcr2) (tree-map syntax-e) (syntax-property se 'origin))
 
 (test #t syntax-original? s)
 (test #t syntax-original? se)
@@ -113,7 +122,7 @@
 
 (test 10 syntax-property s 'testing)
 (test '(12 . 10) syntax-property se 'testing)
-(test 'mcr2 syntax-e (syntax-property se 'origin))
+(test '(mcr2) (tree-map syntax-e) (syntax-property se 'origin))
 
 (test #f syntax-original? s)
 (test #t syntax-original? se)
@@ -131,14 +140,7 @@
 
 (test (syntax-e (cadr (syntax-e (cadr (syntax-e s))))) syntax-e se)
 
-(define (tree-map f)
-  (lambda (l)
-    (if (pair? l)
-	(cons ((tree-map f) (car l))
-	      ((tree-map f) (cdr l)))
-	(f l))))
-
-(test '(mcr5 . mcr2)
+(test '(mcr2 mcr5)
       (tree-map syntax-e)
       (syntax-property se 'origin))
 
@@ -159,7 +161,7 @@
 
 (test (syntax-e (cadr (syntax-e (cadr (syntax-e s))))) syntax-e se)
 
-(test '(mcr2 . mcr7)
+(test '((mcr2) mcr7)
       (tree-map syntax-e)
       (syntax-property se 'origin))
 
@@ -173,7 +175,7 @@
 (define s (quote-syntax (mcr5 (mcr7 (mcr2 5)))))
 (define se (expand-once (expand-once s)))
 
-(test '(mcr2 mcr5 . mcr7)
+(test '((mcr2) mcr7 mcr5)
       (tree-map syntax-e)
       (syntax-property se 'origin))
 
@@ -183,7 +185,7 @@
 (define s (quote-syntax (mcr7 (mcr5 (mcr2 5)))))
 (define se (expand-once s))
 
-(test '((mcr5 . mcr2) . mcr7)
+(test '((mcr2 mcr5) mcr7)
       (tree-map syntax-e)
       (syntax-property se 'origin))
 
@@ -196,6 +198,14 @@
 (define s (syntax-property (quote-syntax 5) 'testing 10))
 (test 10 syntax-property (expand s) 'testing)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Check tracking of primitive expanders
+
+(test '(let) (tree-map syntax-e) (syntax-property (expand #'(let ([x 10]) x)) 'origin))
+(test '(let let*) (tree-map syntax-e) (syntax-property (expand #'(let* ([x 10]) x)) 'origin))
+(test '(let) (tree-map syntax-e) (syntax-property (expand #'(let loop ([x 10]) x)) 'origin))
+(test '(letrec) (tree-map syntax-e) (syntax-property (expand #'(letrec ([x 10]) x)) 'origin))
+(test '(let*-values) (tree-map syntax-e) (syntax-property (expand #'(let*-values ([(x) 10]) x)) 'origin))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Test module-identifier=? on different phases via syntax-case*

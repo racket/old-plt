@@ -529,5 +529,63 @@
 	       (list w 10))
 	 x)))
 
+;; ----------------------------------------
+;; Macro definitions in units
+
+(test 5 'stx-def
+      (invoke-unit
+       (unit 
+	 (import)
+	 (export)
+	 
+	 (define-syntax (five stx) #'5)
+	 five)))
+
+(test 5 'stx-def
+      (let ()
+	(define-values/invoke-unit (x)
+	  (unit 
+	    (import)
+	    (export x)
+	 
+	    (define-syntax (five stx) #'5)
+	    (define x five)))
+	x))
+
+(test 50 'stx-def
+      (let ()
+	(define-values/invoke-unit (x)
+	  (unit 
+	    (import)
+	    (export x)
+	 
+	    (define-syntax (five stx) #'fifty)
+	    (define fifty 50)
+	    (define x five)))
+	x))
+
+(test 60 'stx-def
+      (let ()
+	(define-values/invoke-unit (x)
+	  (unit 
+	    (import)
+	    (export x sixty)
+	 
+	    (define-syntax (five stx) #'sixty)
+	    (define sixty 60)
+	    (define x five)))
+	x))
+
+(test 70 'stx-def
+      (let ([y 70])
+	(define-values/invoke-unit (x)
+	  (unit 
+	    (import seventy)
+	    (export x)
+	 
+	    (define-syntax (five stx) #'seventy)
+	    (define x five))
+	  #f y)
+	x))
 
 (report-errs)

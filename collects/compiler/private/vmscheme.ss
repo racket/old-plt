@@ -7,8 +7,8 @@
 (module vmscheme mzscheme
   
   (require (lib "unitsig.ss")
-	  (lib "list.ss")
-	  (lib "etc.ss"))
+	   (lib "list.ss")
+	   (lib "etc.ss"))
 
   (require (lib "zodiac-sig.ss" "syntax"))
 

@@ -2,6 +2,12 @@
 See MzScheme_200.txt for information on major changes in MzScheme
  199.x. Minor changes are listed below.
 
+Version 199.21:
+
+ * Changed `define-struct' ...
+
+ * Changed result of `identifier-binding' in the module case: ...
+
 Version 199.20:
 
  * Added `tcp-connect/enable-break' and `tcp-accept/enable-break'.

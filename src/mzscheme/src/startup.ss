@@ -1908,7 +1908,7 @@
 	     (let-syntaxes ([(id) expr] ...)
 	       body1 body ...))])))
 
-  ;; From Dybvig:
+  ;; From Dybvig, mostly:
   (define-syntax syntax-rules
     (lambda (x)
       (syntax-case x ()
@@ -1918,7 +1918,7 @@
 			(generate-temporaries (syntax (keyword ...)))))
 	   (syntax (lambda (x)
 		     (syntax-case x (k ...)
-		       ((dummy . pattern) (syntax template))
+		       ((dummy . pattern) (syntax/loc x template))
 		       ...))))))))
 
   (provide (all-from #%stxcase) (all-from #%small-scheme)

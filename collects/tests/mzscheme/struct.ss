@@ -191,7 +191,6 @@
 (err/rt-test (a-b ai))
 (err/rt-test (set-a-b! ai 5))
 (err/rt-test (set-a-c! ai 5))
-(err/rt-test (begin (define-struct (a 9) (b c)) (void)))
 
 (arity-test struct-type? 1 1)
 
@@ -202,11 +201,13 @@
   (syntax-test (datum->syntax-object #f `(,formname a (x . y) ,@suffix) #f))
   (syntax-test (datum->syntax-object #f `(,formname (a) (x) ,@suffix) #f))
   (syntax-test (datum->syntax-object #f `(,formname (a . y) (x) ,@suffix) #f))
+  (syntax-test (datum->syntax-object #f `(,formname (a 2) (x) ,@suffix) #f))
   (syntax-test (datum->syntax-object #f `(,formname (a 2 3) (x) ,@suffix) #f)))
 (define (struct-syntax-test formname)
   (syntax-test (datum->syntax-object #f `(,formname) #f))
   (syntax-test (datum->syntax-object #f `(,formname . a) #f))
   (syntax-test (datum->syntax-object #f `(,formname a . x) #f))
+  (syntax-test (datum->syntax-object #f `(,formname (a 9) (x)) #f))
   (syntax-test (datum->syntax-object #f `(,formname a x) #f))
   (gen-struct-syntax-test formname '()))
 
@@ -368,6 +369,18 @@
 		base2-l x132 1
 		two132-a x132 6
 		one32-y x132 4))))
+
+;; ------------------------------------------------------------
+;; Check that struct definiton sequences work:
+
+(let ()
+  (define-struct a (x y))
+  (define-struct (b struct:a) (z))
+  (define-struct (c struct:b) (w))
+
+  (test 1 a-x (make-a 1 2))
+  (test 10 a-x (make-b 10 20 30))
+  (test 100 a-x (make-c 100 200 300 400)))
 
 
 (report-errs)

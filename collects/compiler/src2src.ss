@@ -213,7 +213,7 @@
 	 (lambda ()
 	   (get-mbind!)
 	   (if (pair? mbind)
-	       (cdr mbind)
+	       (cadr mbind)
 	       (syntax-e stx)))]
 
 	[is-kernel?

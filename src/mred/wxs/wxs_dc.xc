@@ -340,7 +340,7 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
 			 double tx, double ty, double ww2, double hh2,
 			 double fx, double fy, double ww, double hh)
 {
-  double xs, ys, r, g, b, t, dx, dy, wt, si, sj, span;
+  double xs, ys, r, g, b, t, dx, dy, wt, si, sj;
   int i, j, starti, endi, startj, endj, p, xi, xj, sbmw, sbmh, w, h, w2, h2, ispan, jspan;
   unsigned char *s = NULL, *s2 = NULL;
   wxMemoryDC *srcdc = NULL;
@@ -399,7 +399,6 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
     jspan = 0;
   else
     jspan = (h / h2) - 1;
-  span = ((ispan + jspan) / 2) + 1;
 
 #ifdef wx_msw
   srcdc = (wxMemoryDC *)src->selectedInto;
@@ -429,15 +428,19 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
 
   for (j = 0; j < h2; j++) {
     sj = (double)j / ys;
-    startj = (int)floor(sj);
-    endj = (int)ceil(sj) + jspan;
+    startj = (int)floor(sj) - (jspan >> 1);
+    if (startj < 0)
+      startj = 0;
+    endj = (int)ceil(sj) + (jspan - (jspan >> 1));
     if (endj >= h)
       endj = h - 1;
     
     for (i = 0; i < w2; i++) {
       si = (double)i / xs;
-      starti = (int)floor(si);
-      endi = (int)ceil(si) + ispan;
+      starti = (int)floor(si) - (ispan >> 1);
+      if (starti < 0)
+	starti = 0;
+      endi = (int)ceil(si) + (ispan - (ispan >> 1));
       if (endi >= w)
 	endi = w - 1;
 
@@ -445,9 +448,9 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
 
       for (xj = startj; xj <= endj; xj++) {
 	for (xi = starti; xi <= endi; xi++) {
-	  dx = ((xi * xs) - i - (ispan >> 1));
-	  dy = ((xj * ys) - j - (jspan >> 1));
-	  wt = span / (0.001 + approx_dist(dx, dy));
+	  dx = ((xi * xs) - i);
+	  dy = ((xj * ys) - j);
+	  wt = 1 / (0.001 + approx_dist(dx, dy));
 	  p = ((xj * w) + xi) * 4;
 	  r += (wt * s[p+1]);
 	  g += (wt * s[p+2]);

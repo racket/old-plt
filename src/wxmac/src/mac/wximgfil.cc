@@ -143,8 +143,6 @@ BOOL wxGIF::ReadHeader( FILE *fp)
   
   fread((char*)&tstA[0],13,1,fp);
   
-  // what a standard, numbers need to be read in backwards ????
-  //  fread((char*)&dscgif,sizeof(dscgif),1,f); // not portable
   ushort index = 0;
   for (i = 0; i < 6; i++)
     dscgif.header[i] = tstA[index++];
@@ -220,7 +218,6 @@ BOOL wxGIF::ReadHeader( FILE *fp)
       TabCol.paleta[i].b = tstA[j++];
     }
   }
-
 
   return TRUE;
 }

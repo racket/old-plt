@@ -1175,7 +1175,7 @@ Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx,
       
       smodidx = scheme_make_modidx(((Scheme_Modidx *)modidx)->path,
 				   sbase,
-				   ((Scheme_Modidx *)modidx)->resolved);
+				   scheme_false);
       
       if (i >= c) {
 	/* Grow cache vector */
@@ -1447,10 +1447,18 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
   }
   
   for (l = m->requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
-    if (syntax_idx)
-      midx = scheme_modidx_shift(SCHEME_CAR(l), m->src_modidx, syntax_idx);
-    else
-      midx = scheme_modidx_shift(SCHEME_CAR(l), m->src_modidx, m->self_modidx);
+    if (SAME_OBJ(m->modname, scheme_intern_symbol(",/home/mflatt/proj/plt/collects/framework/framework"))) {
+      midx = SCHEME_CAR(l);
+      if (!SCHEME_SYMBOLP(midx)) {
+	if (SCHEME_STRINGP(((Scheme_Modidx *)midx)->path))
+	  printf("%s %lx %lx\n", 
+		 SCHEME_STR_VAL(((Scheme_Modidx *)midx)->path),
+		 ((Scheme_Modidx *)midx)->base,
+		 m->self_modidx);
+      }
+    }
+
+    midx = scheme_modidx_shift(SCHEME_CAR(l), m->self_modidx, syntax_idx);
     expstart_module(module_load(scheme_module_resolve(midx), env, NULL), 
 		    env, 0, 
 		    midx,
@@ -1485,7 +1493,7 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env)
   exp_env->link_midx = menv->link_midx;
 
   for (l = menv->module->et_requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
-    midx = scheme_modidx_shift(SCHEME_CAR(l), menv->module->src_modidx, exp_env->link_midx);
+    midx = scheme_modidx_shift(SCHEME_CAR(l), menv->module->self_modidx, exp_env->link_midx);
     start_module(module_load(scheme_module_resolve(midx), env, NULL), 
 		 exp_env, 0,
 		 midx,
@@ -1545,10 +1553,7 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart,
     return;
   
   for (l = m->requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
-    if (syntax_idx)
-      midx = scheme_modidx_shift(SCHEME_CAR(l), m->src_modidx, syntax_idx);
-    else
-      midx = scheme_modidx_shift(SCHEME_CAR(l), m->src_modidx, m->self_modidx);
+    midx = scheme_modidx_shift(SCHEME_CAR(l), m->self_modidx, syntax_idx);
     start_module(module_load(scheme_module_resolve(midx), env, NULL), 
 		 env, 0, 
 		 midx,
@@ -1885,9 +1890,30 @@ module_execute(Scheme_Object *data)
     
     if (m->self_modidx) {
       if (!SCHEME_SYMBOLP(m->self_modidx)) {
+	Scheme_Object *l, *first, *last, *p;
+	int phase;
 	Scheme_Modidx *midx = (Scheme_Modidx *)m->self_modidx;
 	
 	m->self_modidx = scheme_make_modidx(midx->path, midx->base, m->modname);
+
+	/* Shift all imports: */
+	for (phase = 0; phase < 2; phase++) {
+	  first = scheme_null;
+	  last = NULL;
+	  for (l = (phase ? m->et_requires : m->requires); !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
+	    p = scheme_make_pair(scheme_modidx_shift(SCHEME_CAR(l), m->src_modidx, m->self_modidx),
+				 scheme_null);
+	    if (last)
+	      SCHEME_CDR(last) = p;
+	    else
+	      first = p;
+	    last = p;
+	  }
+	  if (!phase)
+	    m->requires = first;
+	  else
+	    m->et_requires = first;
+	}
       }
     }
   }
@@ -3641,7 +3667,7 @@ Scheme_Object *parse_requires(Scheme_Object *form,
 	}
 	
 	modidx = ((exss && !SCHEME_FALSEP(exss[j])) 
-		  ? scheme_modidx_shift(exss[j], m->src_modidx, idx)
+		  ? scheme_modidx_shift(exss[j], m->self_modidx, idx)
 		  : idx);
       
 	if (!iname)

@@ -1743,8 +1743,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env)
 		      tcp_check_accept, tcp_accept_needs_wakeup,
 		      NULL, 0);
 
-  cfg = (Scheme_Config *)scheme_branch_config();
-  scheme_thread_w_custodian(thread, cfg, newcust);
+  scheme_thread_w_details(thread, NULL, NULL, newcust, 0);
   return scheme_reload(env);
 }
 

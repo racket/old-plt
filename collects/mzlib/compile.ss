@@ -22,7 +22,8 @@
 					(regexp-replace 
 					 -re:suffix name
 					 ".zo")))))]
-     [(src dest)
+     [(src dest) (compile-file src dest values)]
+     [(src dest filter)
       (let ([in (open-input-file src)])
 	(dynamic-wind
 	 void
@@ -41,7 +42,7 @@
 		  (let loop ()
 		    (let ([r (read-syntax src in)])
 		      (unless (eof-object? r)
-			(write (compile r) out)
+			(write (compile (filter r)) out)
 			(loop))))
 		  (set! ok? #t))
 		(lambda () 

@@ -210,10 +210,11 @@ make .plt archives, especially under Unix:
 > (pack dest name paths collections [filter encode? file-mode]) -
   Creates the .plt file specified by the pathname `dest', using the
   string `name' as the name reported to Setup PLT as the archive's
-  description, and `collections' as the list of colection paths
-  returned by the unpacking unit. The `paths argument must be a list
-  of relative paths for directories and files; the contents of these
-  files and directories will be packed into the archive.
+  description, and `collections' as the list of collection paths (to
+  be compiled) returned by the unpacking unit. The `paths' argument
+  must be a list of relative paths for directories and files; the
+  contents of these files and directories will be packed into the
+  archive.
 
   The `filter' procedure is called with the relative path of each
   candidate for packing. If it returns #f for some path, then that

@@ -27,9 +27,17 @@ Follow these steps for a DLL-based build:
 
     Creates ../mzscheme.exe
 
- 4. cd ..\mzscheme\dynsrc; mkbordyn.bat
+ 4. make -f starter.mak
+
+    Creates ../collects/launcher/mzstart.exe
+
+ 5. cd ..\mzscheme\dynsrc; mkbordyn.bat
 
     Creates support files for mzc-built extensions
+
+ 6. cd ..; mzscheme -mvqM- setup -c
+
+    Builds .zo files and launcher executables
 
 The resulting DLLs do not have the same interface as DLLs built with
 Microsoft's compiler. The difference is that every exported name has
@@ -47,9 +55,17 @@ Follow these steps for a monolithic MzScheme executable:
 
  2. rename ../monolithic.exe ../mzschem.exe
 
- 3. cd ..\mzscheme\dynsrc; mkbordyn.bat
+ 3. make -f starter.mak
+
+    Creates ../collects/launcher/mzstart.exe
+
+ 4. cd ..\mzscheme\dynsrc; mkbordyn.bat
 
     Creates support files for mzc-built extensions
+
+ 5. cd ..; mzscheme -mvqM- setup -c
+
+    Builds .zo files and launcher executables
 
 ------------------------------------------------------------------------
 Using MASM with the free Borland Compiler

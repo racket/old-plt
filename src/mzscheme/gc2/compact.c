@@ -922,7 +922,7 @@ static void init_tagged_mpage(void **p, MPage *page)
 
 #if ALIGN_DOUBLES
     if (tag == SKIP) {
-      page->offset[offset] = 0;
+      offsets[offset] = 0;
       offset++;
       p++;
     } else {

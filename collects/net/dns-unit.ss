@@ -321,18 +321,35 @@
 
   (define (dns-find-nameserver)
     (case (system-type)
-      [(unix macosx) 
+      [(unix macosx)
        (with-handlers ([void (lambda (x) #f)])
 	 (with-input-from-file "/etc/resolv.conf"
 	   (lambda ()
 	     (let loop ()
 	       (let ([l (read-line)])
 		 (or (and (string? l)
-			  (let ([m (regexp-match 
+			  (let ([m (regexp-match
 				    (format "nameserver[ ~a]+([0-9]+[.][0-9]+[.][0-9]+[.][0-9]+)" #\tab)
 				    l)])
 			    (and m (cadr m))))
 		     (and (not (eof-object? l))
 			  (loop))))))))]
+      [(windows)
+       (let ([nslookup (find-executable-path "nslookup.exe" #f)])
+         (and nslookup
+              (let-values ([(p pout pin perr)
+                            (subprocess
+                             #f (open-input-file "NUL") (current-error-port)
+                             nslookup)])
+                (let loop ([dns #f])
+                  (let ([line (read-line pout 'any)])
+                    (cond [(eof-object? line)
+                           (subprocess-wait p)
+                           dns]
+                          [(and (not dns)
+                                (regexp-match #rx"^Default Server: +(.*)$"
+                                              line))
+                           => (lambda (m) (loop (cadr m)))]
+                          [else (loop dns)]))))))]
       [else #f])))))
 

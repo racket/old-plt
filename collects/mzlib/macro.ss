@@ -59,7 +59,7 @@
 (define-macro opt-lambda 
   (lambda (args . body)
     (let* ([mk-code (lambda () (list* 'opt-lambda args body))]
-	   [f (gensym)]
+	   [f (gensym 'opt-lambda-procedure)]
 	   [required
 	    (let loop ([args args])
 	      (if (and (pair? args)

@@ -235,6 +235,9 @@ static Scheme_Object *text_symbol, *binary_symbol;
 static Scheme_Object *append_symbol, *error_symbol;
 static Scheme_Object *replace_symbol, *truncate_symbol, *truncate_replace_symbol;
 
+static Scheme_Object *any_symbol, *any_one_symbol;
+static Scheme_Object *cr_symbol, *lf_symbol, *crlf_symbol;
+
 #ifdef USE_MAC_TCP
 static int num_tcp_send_buffers = 0;
 static void **tcp_send_buffers;
@@ -493,6 +496,18 @@ scheme_init_port (Scheme_Env *env)
     truncate_symbol = scheme_intern_symbol("truncate");
     truncate_replace_symbol = scheme_intern_symbol("truncate/replace");
 
+    REGISTER_SO(any_symbol);
+    REGISTER_SO(any_one_symbol);
+    REGISTER_SO(cr_symbol);
+    REGISTER_SO(lf_symbol);
+    REGISTER_SO(crlf_symbol);
+
+    any_symbol = scheme_intern_symbol("any");
+    any_one_symbol = scheme_intern_symbol("any-one");
+    cr_symbol = scheme_intern_symbol("return");
+    lf_symbol = scheme_intern_symbol("linefeed");
+    crlf_symbol = scheme_intern_symbol("return-linefeed");
+
     default_read_handler = scheme_make_prim_w_arity(sch_default_read_handler,
 						    "default-port-read-handler", 
 						    1, 1);
@@ -624,7 +639,7 @@ scheme_init_port (Scheme_Env *env)
   scheme_add_global_constant("read-line", 
 			     scheme_make_prim_w_arity(read_line, 
 						      "read-line", 
-						      0, 1), 
+						      0, 2), 
 			     env);
   scheme_add_global_constant("read-string", 
 			     scheme_make_prim_w_arity(read_string, 
@@ -2818,11 +2833,31 @@ read_line (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *port;
   int ch;
+  int crlf = 0, cr = 0, lf = 1;
   char *buf, *oldbuf, onstack[32];
   long size = 31, oldsize, i = 0;
 
   if (argc && !SCHEME_INPORTP(argv[0]))
     scheme_wrong_type("read-line", "input-port", 0, argc, argv);
+  if (argc > 1) {
+    Scheme_Object *v = argv[1];
+    if (SAME_OBJ(v, any_symbol)) {
+      crlf = cr = lf = 1;
+    } else if (SAME_OBJ(v, any_one_symbol)) {
+      crlf = 0;
+      cr = lf = 1;
+    } else if (SAME_OBJ(v, cr_symbol)) {
+      crlf = lf = 0;
+      cr = 1;
+    } else if (SAME_OBJ(v, lf_symbol)) {
+      crlf = cr = 0;
+      lf = 1;
+    } else if (SAME_OBJ(v, crlf_symbol)) {
+      lf = cr = 0;
+      crlf = 1;
+    } else
+      scheme_wrong_type("read-line", "newline specification symbol", 1, argc, argv);
+  }
 
   if (argc)
     port = argv[0];
@@ -2841,8 +2876,21 @@ read_line (int argc, Scheme_Object *argv[])
 	return scheme_eof;
       break;
     }
-    if (ch == '\r' || ch == '\n')
-      break;
+    if (ch == '\r') {
+      if (crlf) {
+	int ch2 = scheme_getc(port);
+	if (ch2 == '\n')
+	  break;
+	else {
+	  scheme_ungetc(ch2, port);
+	  if (cr)
+	    break;
+	}
+      } else if (cr)
+	break;
+    } else if (ch == '\n') {
+      if (lf) break;
+    }
     
     if (i >= size) {
       oldsize = size;

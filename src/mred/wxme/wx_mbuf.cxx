@@ -1966,7 +1966,7 @@ char *wxMediaClipboardClient::GetData(char *format, long *size)
 
       for (i = 0; i < length; i++) {
 	if (total[i] == '\n')
-	  total[i] == '\r';
+	  total[i] = '\r';
       }
     }
 #endif

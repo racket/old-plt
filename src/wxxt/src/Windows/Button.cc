@@ -76,7 +76,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, char *label,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNshrinkToFit, (width < 0 || height < 0),
-	 XtNframeWidth,  style ? 2 : 0,
+	 XtNframeWidth,  (style & wxBORDER) ? 2 : 0,
 	 XtNframeType,   XfwfSunken,
 	 NULL);
     if (!(style & wxINVISIBLE))
@@ -135,6 +135,8 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNshrinkToFit, (width < 0 || height < 0),
+	 XtNframeWidth,  (style & wxBORDER) ? 2 : 0,
+	 XtNframeType,   XfwfSunken,
 	 NULL);
     if (!(style & wxINVISIBLE))
       XtManageChild(wgt);

@@ -3115,7 +3115,7 @@ static void designate_modified(void *p)
 /* Linux signal handler: */
 #if defined(linux)
 # include <signal.h>
-# include <linx/version.h>
+# include <linux/version.h>
 void fault_handler(int sn, struct siginfo *si, void *ctx)
 {
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0)

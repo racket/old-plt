@@ -2145,9 +2145,12 @@ void wxMediaEdit::InsertPasteString(char *str)
 #endif
 
   /* Change non-breaking space to space: */
-  for (i = 0; str[i]; i++) {
-    if (((unsigned char *)str)[i] == 160)
-      str[i] = 32;
+  {
+    int i;
+    for (i = 0; str[i]; i++) {
+      if (((unsigned char *)str)[i] == 160)
+	str[i] = 32;
+    }
   }
 
   Insert(str, readInsert);

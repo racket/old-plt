@@ -167,7 +167,7 @@
 	     (let ([a ((car l))])
 	       (if (multi-result? a)
 		   (loop (append (multi-result-choices a)
-				 l))
+				 (cdr l)))
 		   (let ([v (try a)])
 		     (if (not v)
 			 (loop (cdr l))

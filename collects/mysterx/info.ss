@@ -10,7 +10,7 @@
      "MysterX also has a programmable Web browser with support for "
      "Dynamic HTML."))
   (define install-collection "installer.ss")
-  (define release-version "200alpha1")	
+  (define release-version "200alpha19")	
   (define release-iteration "0"))
 
 	

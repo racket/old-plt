@@ -1,4 +1,4 @@
- ;;; Define the standard editing window class
+;;; Define the standard editing window class
 
 ;; mini-panels must inheirit from wx:panel% and must provide a
 ;; desired-height method that returns the desired height in pixels.
@@ -27,6 +27,7 @@
 
     (define empty-frame%
       (class mred:container:frame% args
+	(rename [super-pre-on-char pre-on-char])
 	(inherit show)
 	(public
 	  [panel% (class-asi mred:container:vertical-panel%
@@ -36,9 +37,15 @@
 	(sequence 
 	  (apply super-init args))
 	(public
+	  [keymap (make-object wx:keymap%)]
 	  [panel (make-object panel% this)])
-	(sequence
-	  (send panel border 2))))
+	(private
+	  [pre-on
+	   (lambda (receiver event)
+	     (or (send keymap handle-key-event this event)
+		 (super-pre-on-char receiver event)))])
+	(public
+	  [pre-on-char pre-on])))
 
     (define frame-width 600)
     (define frame-height 600)
@@ -53,7 +60,7 @@
     (define make-menu-frame%
       (lambda (super%)
 	(class super% args
-	  (inherit set-menu-bar get-menu-bar)
+	  (inherit set-menu-bar get-menu-bar keymap)
 	  (public
 	    [menu% mred:menu:menu%]
 	    [menu-bar% mred:menu:menu-bar%])
@@ -72,10 +79,10 @@
 	       (send (get-menu-bar) dispatch op))])
 	  (sequence
 	    (apply super-init args)
-
 	    ; Build and install the menu bar:
 	    (let ([menu-bar (make-menu-bar)])
-	      (set-menu-bar menu-bar))))))
+	      (set-menu-bar menu-bar)
+	      (send menu-bar set-frame this))))))
 
     (define menu-frame% (make-menu-frame% empty-frame%))
 
@@ -178,137 +185,97 @@
 
 	    [make-menu-bar
 	     (lambda ()
-	       (set! file-menu (make-menu))
-	       (set! edit-menu (make-menu))
-
-	       (when file-menu:new
-		 (set! file-menu:new-id
-		       (send file-menu append-item (case wx:platform 
-						     [(windows) (string-append "&New " file-menu:new-string tab "Ctrl+N")]
-						     [(macintosh) (string-append "New " file-menu:new-string tab "Cmd+N")]
-						     [else (string-append "&New " file-menu:new-string)])
-			     file-menu:new
-			     file-menu:new-help-string)))
-	       (file-menu:between-new-and-open file-menu)
-	       (when file-menu:open
-		 (set! file-menu:open-id
-		       (send file-menu append-item (case wx:platform
-						     [(windows) (string-append "&Open " file-menu:open-string "..." tab "Ctrl+O")]
-						     [(macintosh) (string-append "Open " file-menu:open-string "..." tab "Cmd+O")]
-						     [else (string-append "&Open " file-menu:open-string "..." tab "Ctl+x Ctl+f")])
-			     file-menu:open
-			     file-menu:open-help-string)))
-	       (file-menu:between-open-and-save file-menu)
-	       (when file-menu:revert
-		 (set! file-menu:revert-id
-		       (send file-menu append-item (case wx:platform
-						     [(windows) "&Revert"]
-						     [(macintosh) "Revert"]
-						     [else "&Revert"])
-			     file-menu:revert
-			     file-menu:revert-help-string)))
-
-	       (when file-menu:save
-		 (set! file-menu:save-id
-		       (send file-menu append-item (case wx:platform
-						     [(windows) (string-append "&Save " file-menu:save-string tab "Ctrl+S")]
-						     [(macintosh) (string-append "Save " file-menu:save-string tab "Cmd+S")]
-						     [else (string-append "&Save " file-menu:save-string tab "Ctl+x Ctl+s")])
-			     file-menu:save
-			     file-menu:save-help-string)))
-	       (when file-menu:save-as
-		 (set! file-menu:save-as-id
-		       (send file-menu append-item (string-append "Save" file-menu:save-string " &As...")
-			     file-menu:save-as)))
-	       (file-menu:between-save-and-print file-menu)
-	       (when file-menu:print
-		 (set! file-menu:print-id
-		       (send file-menu append-item (case wx:platform
-						     [(windows) (string-append "&Print " file-menu:print-string "..." tab "Ctrl+P")]
-						     [(macintosh) (string-append "Print " file-menu:print-string "..." tab "Cmd+P")]
-						     [else (string-append "&Print " file-menu:print-string "...")])
-			     file-menu:print
-			     file-menu:print-help-string)))
-	       (file-menu:between-print-and-close file-menu)
-	       (when file-menu:close
-		 (set! file-menu:close-id
-		       (send file-menu append-item (case wx:platform
-						     [(windows) (string-append "&Close" tab "Ctrl+W")]
-						     [(macintosh) (string-append "Close" tab "Cmd+W")]
-						     [else "&Close"])
-			     file-menu:close
-			     file-menu:close-help-string)))
-	       (file-menu:between-close-and-quit file-menu)
-	       (when file-menu:quit
-		 (set! file-menu:quit-id
-		       (send file-menu append-item (case wx:platform
-						     [(windows) "E&xit"]
-						     [(macintosh) (string-append "Quit" tab "Cmd+Q")]
-						     [else (string-append "E&xit" tab "Ctl+x Ctl+c")])
-			     file-menu:quit
-			     file-menu:quit-help-string)))
-	       (file-menu:after-quit file-menu)
-	       
-	       
-	       (set! edit-menu:undo-id
-		     (send edit-menu append-item (case wx:platform
-						   [(windows) (string-append "&Undo" tab "Ctrl+Z")]
-						   [(macintosh) (string-append "Undo" tab "Cmd+Z")]
-						   [else (string-append "&Undo" tab "Ctl+x u")]) 
-			   edit-menu:undo
-			   edit-menu:undo-help-string))
-	       (set! edit-menu:redo-id
-		     (send edit-menu append-item (case wx:platform
-						   [(windows) (string-append "&Redo" tab "Ctrl+Y")]
-						   [(macintosh) (string-append "Redo" tab "Cmd+Y")]
-						   [else "&Redo"]) edit-menu:redo))
-	       (send edit-menu append-separator)
-	       (set! edit-menu:cut-id
-		     (send edit-menu append-item (case wx:platform
-						   [(windows) (string-append "Cu&t" tab "Ctrl+X")]
-						   [(macintosh) (string-append "Cut" tab "Cmd+X")]
-						   [else (string-append "Cu&t" tab "Ctl+w")])
-			   edit-menu:cut
-			   edit-menu:cut-help-string))
-	       (set! edit-menu:copy-id
-		     (send edit-menu append-item (case wx:platform
-						   [(windows) (string-append "&Copy" tab "Ctrl+C")]
-						   [(macintosh) (string-append "Copy" tab "Cmd+C")]
-						   [else (string-append "&Copy" tab "Alt+w")])
-			   edit-menu:copy
-			   edit-menu:copy-help-string))
-	       (edit-menu:between-copy-and-paste edit-menu)
-	       (set! edit-menu:paste-id
-		     (send edit-menu append-item (case wx:platform
-						   [(windows) (string-append "&Paste" tab "Ctrl+V")]
-						   [(macintosh) (string-append "Paste" tab "Cmd+V")]
-						   [else (string-append "&Paste" tab "Ctl+y")])
-			   edit-menu:paste
-			   edit-menu:paste-help-string))
-	       (set! edit-menu:clear-id
-		     (send edit-menu append-item (case wx:platform
-						   [(windows) (string-append "&Delete" tab "Del")]
-						   [(macintosh) "Clear"]
-						   [else (string-append "Clear" tab "Del")])
-			   edit-menu:clear
-			   edit-menu:clear-help-string))
-	       (set! edit-menu:select-all-id
-		     (send edit-menu append-item (case wx:platform
-						   [(windows) (string-append "Select A&ll" tab "Ctrl+A")]
-						   [(macintosh) (string-append "Select All" tab "Cmd+A")]
-						   [else "Select A&ll"])
-			   edit-menu:select-all
-			   edit-menu:select-all-help-string))
-	       (edit-menu:between-select-all-and-preferences edit-menu)
-	       (when edit-menu:preferences
-		 (set! edit-menu:preferences-id
-		       (send edit-menu append-item "&Preferences..." edit-menu:preferences
-			     edit-menu:preferences-help-string)))
-	       (edit-menu:after-standard-items edit-menu)
-	       
-	       (let ([mb (super-make-menu-bar)])
+	       (let ([mb (super-make-menu-bar)]
+		     [join (opt-lambda (base special [suffix ""])
+			     (if (string=? base "")
+				 (string-append base suffix)
+				 (string-append base " " special suffix)))])
+		 (set! file-menu (make-menu))
+		 (set! edit-menu (make-menu))
 		 (send mb append file-menu (if (eq? wx:platform 'windows) "&File" "F&ile"))
 		 (send mb append edit-menu "&Edit")
+		 
+		 (when file-menu:new
+		   (set! file-menu:new-id
+			 (send file-menu append-item (join "&New" file-menu:new-string)
+			       file-menu:new file-menu:new-help-string #f "n")))
+		 (file-menu:between-new-and-open file-menu)
+		 (when file-menu:open
+		   (set! file-menu:open-id
+			 (send file-menu append-item (join "&Open" file-menu:open-string "...")
+			       file-menu:open file-menu:open-help-string #f "o")))
+		 (file-menu:between-open-and-save file-menu)
+		 (when file-menu:revert
+		   (set! file-menu:revert-id
+			 (send file-menu append-item "&Revert"
+			       file-menu:revert file-menu:revert-help-string)))
+		 
+		 (when file-menu:save
+		   (set! file-menu:save-id
+			 (send file-menu append-item (join "&Save" file-menu:save-string)
+			       file-menu:save file-menu:save-help-string #f "s")))
+		 (when file-menu:save-as
+		   (set! file-menu:save-as-id
+			 (send file-menu append-item (join "Save" file-menu:save-string " &As...")
+			       file-menu:save-as)))
+		 (file-menu:between-save-and-print file-menu)
+		 (when file-menu:print
+		   (set! file-menu:print-id
+			 (send file-menu append-item (join "&Print" file-menu:print-string "...")
+			       file-menu:print file-menu:print-help-string #f "p")))
+		 (file-menu:between-print-and-close file-menu)
+		 (when file-menu:close
+		   (set! file-menu:close-id
+			 (send file-menu append-item "&Close"
+			       file-menu:close file-menu:close-help-string #f "w")))
+		 (file-menu:between-close-and-quit file-menu)
+		 (when file-menu:quit
+		   (set! file-menu:quit-id
+			 (send file-menu append-item (if (eq? wx:platform 'macintosh)
+							 "Quit"
+							 "E&xit")
+			       file-menu:quit file-menu:quit-help-string #f
+			       (lambda (wx:platform)
+				 (case wx:platform
+				   [(windows) #f]
+				   [(macintosh) "d:q"]
+				   [else "c:x;c:c"])))))
+		 (file-menu:after-quit file-menu)
+		 
+		 
+		 (set! edit-menu:undo-id
+		       (send edit-menu append-item "&Undo"
+			     edit-menu:undo edit-menu:undo-help-string #f "z"))
+			     
+		 (set! edit-menu:redo-id
+		       (send edit-menu append-item "&Redo"
+			     edit-menu:redo edit-menu:redo-help-string #f "y"))
+		 (send edit-menu append-separator)
+		 (set! edit-menu:cut-id
+		       (send edit-menu append-item "Cu&t"
+			     edit-menu:cut edit-menu:cut-help-string #f "x"))
+		 (set! edit-menu:copy-id
+		       (send edit-menu append-item "&Copy"
+			     edit-menu:copy edit-menu:copy-help-string #f "c"))
+		 (edit-menu:between-copy-and-paste edit-menu)
+		 (set! edit-menu:paste-id
+		       (send edit-menu append-item "&Paste"
+			     edit-menu:paste edit-menu:paste-help-string #f "v"))
+		 (set! edit-menu:clear-id
+		       (send edit-menu append-item (if (eq? wx:platform 'macintosh)
+						       "Clear"
+						       "&Delete")
+			     edit-menu:clear edit-menu:clear-help-string #f
+			     (lambda (wx:platform) "del")))
+		 (set! edit-menu:select-all-id
+		       (send edit-menu append-item "Select A&ll"
+			     edit-menu:select-all edit-menu:select-all-help-string #f "a"))
+		 (edit-menu:between-select-all-and-preferences edit-menu)
+		 (when edit-menu:preferences
+		   (set! edit-menu:preferences-id
+			 (send edit-menu append-item "&Preferences..." edit-menu:preferences
+			       edit-menu:preferences-help-string)))
+		 (edit-menu:after-standard-items edit-menu)
 		 mb))]))))
 
     (define standard-menus-frame% (make-standard-menus-frame% menu-frame%))

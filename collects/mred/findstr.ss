@@ -322,7 +322,7 @@
     (define make-searchable-frame%
       (lambda (super%)
 	(class super% args
-	  (inherit panel active-edit)
+	  (inherit panel active-edit active-canvas)
 	  (private
 	    [search-edit
 	     (make-object
@@ -359,6 +359,7 @@
 	    [hide-search
 	     (lambda ()
 	       (send panel delete-child search-panel)
+	       (send (active-canvas) set-focus)
 	       (set! hidden? #t))])
 	  (private
 	    [media-canvas (make-object mred:canvas:editor-canvas% search-panel

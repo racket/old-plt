@@ -10,9 +10,66 @@
     (define generate-menu-id
       (let ([id (add1 max-manual-menu-id)])
 	(lambda ()
-	  (begin0
-	   id
-	   (set! id (add1 id))))))
+	  (begin0 id
+		  (set! id (add1 id))))))
+
+    (define parse-key
+      (lambda (str)
+	(letrec ([find-next
+		  (lambda (l p)
+		    (cond [(null? l) (values null null)]
+			  [else (if (p (car l))
+				    (values null (cdr l))
+				    (let-values ([(token rest) (find-next (cdr l) p)])
+				      (values (cons (car l) token) rest)))]))]
+		 [handle-modifier
+		  (lambda (s)
+		    (cond
+		      [(string=? "c" s) (case wx:platform
+					  [(macintosh) (error 'parse-key "cannot bind control to a menu-item on the macintosh")]
+					  [else "Ctrl+"])]
+		      [(string=? "d" s) (case wx:platform
+					  [(macintosh) "Cmd+"]
+					  [else (error 'parse-key "cannot bind command to a menu-item except on the macintosh")])]
+		      [(string=? "s" s) (case wx:platform
+					  [(macintosh) (error 'parse-key "cannot bind shift to a menu-item on the macintosh")]
+					  [else "Shft+"])]
+		      [(string=? "m" s) (case wx:platform
+					  [(macintosh) (error 'parse-key "cannot bind meta to a menu-item on the macintosh")]
+					  [else "Meta+"])]
+		      [(string=? "a" s) (case wx:platform
+					  [(macintosh) (error 'parse-key "cannot bind alt to a menu-item on the macintosh")]
+					  [else "Alt+"])]
+		      [else (error 'parse-key "unrecognised modifier key: ~a in string: ~a" s str)]))]
+		 [capitalize 
+		  (lambda (s)
+		    (cond
+		      [(and (= (length s) 1) (eq? wx:platform 'unix)) s]
+		      [(null? s) null]
+		      [else (cons (char-upcase (car s)) (cdr s))]))]
+		 [handle-key-combo
+		  (lambda (l)
+		    (let-values ([(modifier rest) (if (member #\: l)
+						      (find-next l (lambda (x) (char=? x #\:)))
+						      (values null l))]
+				 [(key rest) (find-next rest (lambda (x) (char=? x #\;)))])
+		      (let ([mod (if (null? modifier) 
+				     ""
+				     (handle-modifier (apply string modifier)))])
+			
+			(values (string-append mod
+					       (apply string (capitalize key)))
+				rest))))]
+		 [handle-string
+		  (lambda (l)
+		    (let-values ([(combo rest) (find-next l (lambda (x) (char=? x #\;)))]
+				 [(combo-string rest2) (handle-key-combo combo)])
+		      (unless (null? rest2)
+			(error 'parse-key "uncomprehended key-string: ~a (problems from ~a)" str rest2))
+		      (if (null? rest)
+			  combo-string
+			  (string-append combo-string " " (handle-string rest)))))])
+	  (handle-string (string->list str)))))
 
     (define make-menu%
       (lambda (super%)
@@ -37,9 +94,35 @@
 		 id))]
 	    [append-item
 	     (opt-lambda (label callback [help ()] [checkable? #f] [key #f])
-	       (let ([id (append -1 label help checkable?)])
-		 (set! callbacks (cons (cons id callback)
-				       callbacks))
+	       (let* ([key-proc (cond
+				 [(procedure? key) key]
+				 [(string? key) (lambda (platform)
+						  (case platform
+						    [(macintosh) (string-append "d:" key)]
+						    [(windows) (string-append "c:" key)]
+						    [else (string-append "c:m;" key)]))]
+				 [(not key) (lambda (s) #f)]
+				 [else (error 'mred:menu% "append-item: last arg (key) must be either #f, a procedure or a string. Args were: ~a"
+					      (list label callback help checkable? key))])]
+		      [this-key (key-proc wx:platform)]
+		      [label-with-key (if this-key 
+					  (string-append label 
+							 (string #\tab) 
+							 (parse-key this-key))
+					  label)]
+		      [id (append -1 label-with-key help checkable?)])
+		 (unless menu-bar
+		   (error 'mred:menu% "append-item: must set the menubar before appending items"))
+		 (set! callbacks (cons (cons id callback) callbacks))
+		 (for-each (let ([keymap-string (string-append "append-item:" (number->string id) "/")])
+			     (lambda (symbol)
+			       (let ([keymap (send menu-bar get-platform-menu-keymap symbol)]
+				     [key (key-proc symbol)])
+				 (when key
+				   (let ([name (string-append keymap-string key)])
+				     (send keymap add-key-function name (lambda (x y) (callback)))
+				     (send keymap map-function key name))))))
+			   (list 'unix  'windows  'macintosh))
 		 id))]
 	    [append-menu
 	     (opt-lambda (label menu [help ()])
@@ -103,8 +186,24 @@
 	  (rename [super-append append]
 		  [super-delete delete])
 	  (private
-	    [menus ()])
+	    [menus ()]
+	    [macintosh-keymap (make-object wx:keymap%)]
+	    [windows-keymap (make-object wx:keymap%)]
+	    [unix-keymap (make-object wx:keymap%)])
 	  (public
+	    [frame #f]
+	    [set-frame (lambda (f) 
+			 (set! frame f)
+			 (send (ivar frame keymap) chain-to-keymap menu-keymap #t))]
+	    [get-platform-menu-keymap
+	     (lambda (sym)
+	       (case sym
+		 [(macintosh) macintosh-keymap]
+		 [(windows) windows-keymap]
+		 [(unix) unix-keymap]
+		 [else (error 'menu-frame% "get-platform-menu-keymap, unrecognised platform: ~a"
+			      sym)]))]
+	    [menu-keymap (get-platform-menu-keymap wx:platform)]
 	    [append
 	     (lambda (menu name)
 	       (when (not (ivar menu menu-bar))

@@ -498,7 +498,8 @@
 		     (lambda ()
 		       (let ((file (mred:finder:get-file)))
 			 (if file
-			     (load-file file)))))
+			     (load-file file))))
+		     "" #f "l")
 	       (send file-menu append-separator))]
 	    [file-menu:save (lambda ()
 			      (send (active-edit) save-file

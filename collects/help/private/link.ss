@@ -23,6 +23,7 @@
            
            "tcp-intercept.ss"
            "sig.ss"
+           
            "gui.ss"
            "main.ss")
   
@@ -83,5 +84,5 @@
        [browser : browser^ (browser@ plt-installer mred ic-tcp ic-url)]
        [gui : gui^ (gui@ browser ic-url)]
 
-       [m : () (main@ gui web-server)])
-      (export))))
+       [m : () (main@ gui)])
+      (export (open gui)))))

@@ -13,6 +13,7 @@
   (define (search-how? x)
     (member x '("exact-match" "containing-match" "regexp-match")))
   
+  (provide search-type? search-how?)
   (provide/contract 
    (make-relative-results-url (string? 
                                search-type? 
@@ -29,11 +30,9 @@
                       . -> .
                       string?))
    (make-missing-manual-url (string? string? string? . -> . string?))
-   (search-for-docs (string? search-type? search-how? any? (listof symbol?) any? 
-                                (union false? string?) . -> . any?))
-   (goto-hd-location ((lambda (sym) (memq sym hd-location-syms))
-                      . -> . 
-                      any))
+   (get-hd-location ((lambda (sym) (memq sym hd-location-syms))
+                     . -> . 
+                     string))
    [make-docs-plt-url (string? . -> . string?)]
    [make-docs-html-url (string? . -> . string?)])
 
@@ -106,24 +105,7 @@
   
   (define hd-location-syms (map car hd-locations))
 
-  (define (search-for-docs cookie search-string search-type match-type lucky? manuals doc.txt? lang-name)
-    (unless (string=? search-string "")
-      (let* ([port '(hd-cookie-port cookie)]
-             [url (make-results-url '(hd-cookie-port cookie)
-                                    search-string
-                                    search-type
-                                    match-type
-                                    lucky?
-                                    manuals 
-                                    doc.txt?
-                                    lang-name)])
-        '(visit-url-in-browser cookie url))))
-
-  (define (goto-hd-location cookie sym)
+  (define (get-hd-location sym)
     ; the assq is guarded by the contract
     (let ([entry (assq sym hd-locations)])
-      '(visit-url-in-browser 
-       cookie
-       (prefix-with-server 
-	cookie
-	(cadr entry))))))
+      (prefix-with-server (cadr entry)))))

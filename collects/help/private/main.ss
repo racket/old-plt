@@ -12,7 +12,7 @@
   
   (define main@
     (unit/sig ()
-      (import gui^ web-server^)
+      (import gui^)
       
       ;; where should the pref stuff really go?
       (preferences:set-default 'drscheme:help-desk:last-url-string "" string?)
@@ -45,7 +45,4 @@
            (preferences:add-callback 
             'drscheme:help-desk:separate-browser
             (lambda (p v) (send cb set-value (not v))))
-           (void))))
-      
-      (serve)
-      (new-help-desk))))
+           (void)))))))

@@ -1,59 +1,39 @@
 (module help-desk mzscheme
-  (require "private/standard-urls.ss"
-           "private/docpos.ss"
-	   "private/search.ss"
-	   "private/manuals.ss"
-	   "private/installed-components.ss"
-           "private/server.ss"
-           "private/buginfo.ss"
-           "private/cookie.ss"
-	   "bug-report.ss" ;; this is require'd here to get the prefs defaults setup done early.
-           (lib "contract.ss")
-           (lib "mred.ss" "mred"))
-
+  (require 
+   
+   "private/manuals.ss"
+   "private/buginfo.ss"
+   "private/sig.ss"
+   "private/standard-urls.ss"
+   
+   (lib "mred-sig.ss" "mred")
+   (lib "mred.ss" "mred")
+   (lib "tcp-sig.ss" "net")
+   (lib "plt-installer-sig.ss" "setup")
+   (lib "plt-installer.ss" "setup")   
+   (lib "unitsig.ss")
+   
+   "private/link.ss"
+   "bug-report.ss" ;; this is require'd here to get the prefs defaults setup done early.
+   (lib "contract.ss")
+   (lib "mred.ss" "mred"))
   
   (provide/contract 
-   (start-help-server (mixin-contract . -> . hd-cookie?))
-   (hd-cookie? (any? . -> . boolean?))
-   (hd-cookie-shutdown-server (hd-cookie? . -> . (-> any)))
-   (hd-cookie-find-browser (hd-cookie? . -> . (-> (union false? (is-a?/c frame%)))))
-   (hd-cookie->browser (hd-cookie? . -> . (is-a?/c frame%)))
-   (hd-cookie-port (hd-cookie? . -> . number?))
-   (visit-url-in-browser (hd-cookie? string? . -> . void?))
-   (visit-url-in-new-browser (hd-cookie? string? . -> . void?)))
+   (set-bug-report-info! any?)
+   (find-doc-names (-> (listof (cons/p path? string?))))
+   (goto-manual-link (string? string? . -> . any))
+   
+   (goto-hd-location (symbol? . -> . any))
+   (new-help-desk (-> (is-a?/c frame%)))
+   (show-help-desk (-> any))
+   (search-for-docs (string?
+                     search-type?
+                     search-how?
+                     any?
+                     (listof path?) ;; manual names
+                     . -> .
+                     any)))
   
-  (define (start-help-server x) (void))
+  (define (goto-hd-location x) (error 'goto-hd-location "no"))
   
-  (provide 
-   
-   ;; manual ordering
-   standard-html-doc-position
-   user-defined-doc-position
-   set-doc-position!
-   reset-doc-positions!
-   known-docs
-
-   doc-collections-changed
-   
-   ;; manuals
-   find-manuals
-   find-doc-directories
-   find-doc-directory
-   find-doc-names
-   
-   ;; manual search
-   finddoc
-   findreldoc
-   finddoc-page
-   finddoc-page-anchor
-   
-   ;; supplemental
-   set-bug-report-info!
-   help-desk:installed-components
-
-   search-for-docs
-   goto-manual-link
-   goto-hd-location
-   
-   home-page-url
-   ))
+  (define-values/invoke-unit/sig gui^ help-desk@ #f setup:plt-installer^ mred^ net:tcp^))

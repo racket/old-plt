@@ -31,18 +31,9 @@
       (import browser^
               net:url^)
       
-      (define (new-help-desk) (new ((make-help-desk-frame-mixin) hyper-frame%)
-                                   (start-url home-page-url)))
-      
-      (define (make-help-desk-frame-mixin)
-        (compose
-         make-catch-url-frame-mixin
-         bug-report/help-desk-mixin
-         make-help-desk-framework-mixin
-         browser-scroll-frame-mixin
-         frame:searchable-mixin
-         frame:standard-menus-mixin
-         make-search-button-mixin))
+      (define help-desk-frame<%>
+        (interface ()
+          ))
       
       (define bug-report/help-desk-mixin
         (mixin (frame:standard-menus<%>) ()
@@ -350,7 +341,7 @@
           (frame:reorder-menus this)))
       
       (define make-search-button-mixin
-        (mixin (frame:basic<%>) ()
+        (mixin (frame:basic<%>) (help-desk-frame<%>)
           (field [search-panel #f])
           
           ;; order-manuals : as in drscheme:language:language<%>
@@ -496,67 +487,117 @@
             (send search-menu enable #f)
             (send search-field focus))))
       
-      (define/contract get-url-from-user
-        ((union false? (is-a?/c top-level-window<%>)) . -> . (union false? string?))
-        (lambda (parent)
-          (define d (make-object dialog% (string-constant open-url) parent 500))
-          (define t
-            (keymap:call/text-keymap-initializer
-             (lambda ()
-               (make-object text-field% (string-constant url:) d
-                 (lambda (t e)
-                   (update-ok))))))
-          (define p (make-object horizontal-panel% d))
-          (define browse (make-object button% (string-constant browse...) p
-                           (lambda (b e)
-                             (let ([f (get-file)])
-                               (when f
-                                 (send t set-value (string-append "file:" f))
-                                 (update-ok))))))
-          (define spacer (make-object vertical-pane% p))
-          (define result #f)
-          (define (ok-callback b e)
-            (let* ([s (send t get-value)]
-                   [done (lambda ()
-                           ;; Might be called twice!
-                           (preferences:set 'drscheme:help-desk:last-url-string s)
-                           (send d show #f))])
-              (with-handlers ([exn:fail?
-                               (lambda (x)
-                                 (message-box (string-constant bad-url) 
-                                              (format (string-constant bad-url:this)
-                                                      (exn-message x))
-                                              d))])
-                (let* ([removed-spaces (regexp-replace #rx"^[ \t]*" s "")]
-                       [str (cond
-                              [(regexp-match #rx":" removed-spaces) removed-spaces]
-                              [(regexp-match #rx"^[a-zA-Z][a-zA-Z.]*($|/)" removed-spaces)
-                               (string-append "http://" removed-spaces)]
-                              [else
-                               (string-append "file:" removed-spaces)])]
-                       
-                       ;; just convert the string to test it out; don't use result...
-                       [url (string->url str)])
-                  (set! result str)
-                  (done)))))
-          (define cancel-callback (lambda (b e) (send d show #f)))
-          (define-values (ok cancel)
-            (gui-utils:ok/cancel-buttons
-             p
-             ok-callback
-             cancel-callback))
-          (define (update-ok)
-            (send ok enable 
-                  (positive? (send (send t get-editor) 
-                                   last-position))))
-          (define last-url-string (preferences:get 'drscheme:help-desk:last-url-string))
-          (when last-url-string 
-            (send t set-value last-url-string)
-            (let ([text (send t get-editor)])
-              (send text set-position 0 (send text last-position))))
-          (send p set-alignment 'right 'center)
-          (update-ok)
-          (send d center)
-          (send t focus)
-          (send d show #t)
-          result)))))
+      (define (make-help-desk-frame-mixin)
+        (compose
+         make-catch-url-frame-mixin
+         bug-report/help-desk-mixin
+         make-help-desk-framework-mixin
+         browser-scroll-frame-mixin
+         frame:searchable-mixin
+         frame:standard-menus-mixin
+         make-search-button-mixin))
+      
+      (define new-help-desk
+        (opt-lambda ([link home-page-url])
+          (new ((make-help-desk-frame-mixin) hyper-frame%)
+               (start-url link))))
+      
+      (define (goto-hd-location sym) (goto-url (get-hd-location sym)))
+      
+      (define (search-for-docs search-string search-type match-type lucky? docs)
+        (let ([fr (or (find-help-desk-frame)
+                      (new-help-desk))])
+          (let-values ([(manuals doc.txt?) (send fr order-manuals docs)])
+            (send (send (send fr get-hyper-panel) get-canvas) goto-url 
+                  (make-results-url search-string
+                                    search-type 
+                                    match-type
+                                    lucky?
+                                    manuals
+                                    doc.txt?
+                                    (send fr get-language-name))
+                  #f))))
+      
+      (define (goto-url link)
+        (let ([fr (find-help-desk-frame)])
+          (if fr
+              (send (send (send fr get-hyper-panel) get-canvas) goto-url link #f)
+              (new-help-desk link))))
+      
+      (define (show-help-desk)
+        (let ([fr (find-help-desk-frame)])
+          (if fr
+              (send fr show #t)
+              (new-help-desk))))
+      
+      (define (find-help-desk-frame)
+        (let loop ([frames (send (group:get-the-frame-group) get-frames)])
+          (cond
+            [(null? frames) #f]
+            [else (let ([frame (car frames)])
+                    (if (is-a? frame help-desk-frame<%>)
+                        frame
+                        (loop (cdr frames))))])))
+      
+      (define (get-url-from-user parent)
+        (define d (make-object dialog% (string-constant open-url) parent 500))
+        (define t
+          (keymap:call/text-keymap-initializer
+           (lambda ()
+             (make-object text-field% (string-constant url:) d
+               (lambda (t e)
+                 (update-ok))))))
+        (define p (make-object horizontal-panel% d))
+        (define browse (make-object button% (string-constant browse...) p
+                         (lambda (b e)
+                           (let ([f (get-file)])
+                             (when f
+                               (send t set-value (string-append "file:" f))
+                               (update-ok))))))
+        (define spacer (make-object vertical-pane% p))
+        (define result #f)
+        (define (ok-callback b e)
+          (let* ([s (send t get-value)]
+                 [done (lambda ()
+                         ;; Might be called twice!
+                         (preferences:set 'drscheme:help-desk:last-url-string s)
+                         (send d show #f))])
+            (with-handlers ([exn:fail?
+                             (lambda (x)
+                               (message-box (string-constant bad-url) 
+                                            (format (string-constant bad-url:this)
+                                                    (exn-message x))
+                                            d))])
+              (let* ([removed-spaces (regexp-replace #rx"^[ \t]*" s "")]
+                     [str (cond
+                            [(regexp-match #rx":" removed-spaces) removed-spaces]
+                            [(regexp-match #rx"^[a-zA-Z][a-zA-Z.]*($|/)" removed-spaces)
+                             (string-append "http://" removed-spaces)]
+                            [else
+                             (string-append "file:" removed-spaces)])]
+                     
+                     ;; just convert the string to test it out; don't use result...
+                     [url (string->url str)])
+                (set! result str)
+                (done)))))
+        (define cancel-callback (lambda (b e) (send d show #f)))
+        (define-values (ok cancel)
+          (gui-utils:ok/cancel-buttons
+           p
+           ok-callback
+           cancel-callback))
+        (define (update-ok)
+          (send ok enable 
+                (positive? (send (send t get-editor) 
+                                 last-position))))
+        (define last-url-string (preferences:get 'drscheme:help-desk:last-url-string))
+        (when last-url-string 
+          (send t set-value last-url-string)
+          (let ([text (send t get-editor)])
+            (send text set-position 0 (send text last-position))))
+        (send p set-alignment 'right 'center)
+        (update-ok)
+        (send d center)
+        (send t focus)
+        (send d show #t)
+        result))))

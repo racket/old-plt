@@ -13,6 +13,7 @@ It is only loaded when Help Desk is run by itself (outside DrScheme).
            (lib "external.ss" "browser")
            "../bug-report.ss" ;; load now to init the preferences early
            "link.ss"
+           "sig.ss"
            (lib "string-constant.ss" "string-constants")
            (lib "mred-sig.ss" "mred")
            (lib "mred.ss" "mred")
@@ -56,5 +57,7 @@ It is only loaded when Help Desk is run by itself (outside DrScheme).
                #f))
        browser-frame)))
   
-  (invoke-unit/sig help-desk@ setup:plt-installer^ mred^ net:tcp^))
+  (define-values/invoke-unit/sig gui^ help-desk@ #f setup:plt-installer^ mred^ net:tcp^)
+      
+  (new-help-desk))
   

@@ -1,10 +1,8 @@
 (module sig mzscheme
   (require (lib "unitsig.ss"))
-  (provide gui^ internal-hp^)
-  
-  (define-signature internal-hp^
-    (internal-host
-     internal-port))
+  (provide gui^)
   
   (define-signature gui^
-    (new-help-desk)))
+    (new-help-desk
+     show-help-desk
+     search-for-docs)))

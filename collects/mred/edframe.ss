@@ -284,7 +284,7 @@
 		     (lambda ()
 		       (let ([edit (active-edit)])
 			 (send edit set-auto-set-wrap (not (ivar edit auto-set-wrap?)))
-			 (send panel force-redraw))))
+			 (send (active-canvas) force-redraw))))
 	       (send edit-menu append-separator))]
 
 	  [make-menu-bar
@@ -307,8 +307,9 @@
 	     (if (not keep-buffers?)
 		 (mred:exit:insert-exit-callback check-all-saved-for-quit))])
 	  
+	  (public
+	    [edit (active-edit)])
 	  (sequence
-	    (when show? (show #t))
 	    
 	    (if keep-buffers?
 		(send frames insert-frame this)
@@ -318,11 +319,9 @@
 				(mzlib:file:normalize-path filename)
 				filename)])
 	      (open-file filename))
-	    
-	    (when show?
-	      (send (active-canvas) set-focus)))
-	  (public
-	    [edit (active-edit)]))))
+	    (when show? 
+	      (show #t)
+	      (send (active-canvas) set-focus))))))
 
     (define editor-frame% (make-editor-frame%
 			   (mred:find-string:make-searchable-frame%

@@ -879,7 +879,7 @@
                                                                 #f '(ok)))))]
                                             [else
                                              (message-box (strcst:string-constant mrflow-unknown-exception-title)
-                                                          (format (strcst:string-constant mrflow-unknwon-exception) exn))]))
+                                                          (format (strcst:string-constant mrflow-unknown-exception) exn))]))
                                         (unless (eof-object? syntax-object-or-exception)
                                           ;(printf "~a~n~n" (syntax-object->datum syntax-object-or-exception))
                                           (sba:create-label-from-term syntax-object-or-exception '() #f)))

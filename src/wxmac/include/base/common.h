@@ -502,5 +502,6 @@ const int kInactiveControl = 255;
 #define IMPLEMENT_DYNAMIC_CLASS(x, y) /* empty */
 
 extern GDHandle wxGetGDHandle(void);
+extern CGrafPtr wxGetGrafPtr(void);
 
 #endif // wxb_commonh

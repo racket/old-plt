@@ -59,7 +59,6 @@ void wxCanvasDC::Init(wxCanvas* the_canvas)
     WXGC_IGNORE(this, canvas);
     cMacDC = canvas->MacDC();
     CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-    pixmap = GetPortPixMap(theMacGrafPort);
   }
 
   cMacDoingDrawing = FALSE;
@@ -154,16 +153,28 @@ void wxCanvasDC::EndDrawing(void)
   cMacDoingDrawing = FALSE;
 }
 
+
+static GDHandle def_dev_handle = 0;
+static CGrafPtr def_grafptr = NULL;
+
 GDHandle wxGetGDHandle(void)
 {
-  static GDHandle def_dev_handle = 0;
-
   if (!def_dev_handle) {
-    CGrafPtr p;
-    GetGWorld(&p, &def_dev_handle);
+    GetGWorld(&def_grafptr, &def_dev_handle);
   }
   
   return def_dev_handle;
+}
+
+CGrafPtr wxGetGrafPtr(void)
+{
+  return def_grafptr;
+}
+
+extern "C" {
+  GDHandle alist_GetGDHandle(void) {
+    return wxGetGDHandle();
+  }
 }
 
 //-----------------------------------------------------------------------------

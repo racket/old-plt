@@ -169,10 +169,8 @@ wxFrame::wxFrame // Constructor (for frame window)
 
 wxFrame::~wxFrame(void)
 {
-#if WXGARBAGE_COLLECTION_ON
   if (IsVisible()) 
     Show(FALSE);
-#endif
 
   // Kludge needed here:
   // Bad:  DisposeWindow deletes the mac controls, but not their wxItems.
@@ -181,11 +179,7 @@ wxFrame::~wxFrame(void)
     cDialogPanel = NULL;
   DestroyChildren();
 
-#ifdef OS_X
   CWindowPtr theMacWindow;
-#else
-  WindowPtr theMacWindow;
-#endif
   theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
   ::DisposeWindow(theMacWindow);
   delete cMacDC;
@@ -754,7 +748,7 @@ void wxFrame::MacUpdateWindow(void)
 
     Paint();
 
-#ifndef OS_X 			
+#ifndef OS_X
     // Draw the grow box
     if (!(cStyle & wxNO_RESIZE_BORDER))
       MacDrawGrowIcon();
@@ -767,9 +761,10 @@ void wxFrame::MacUpdateWindow(void)
 //-----------------------------------------------------------------------------
 void wxFrame::MacDrawGrowIcon(void)
 {
-#if (__powerc) || defined(__ppc__)
+#ifndef OS_X
+# if (__powerc) || defined(__ppc__)
   if (! wxTheApp->MacOS85WindowManagerPresent) {
-#endif
+# endif
     if (SetCurrentMacDCNoMargin()) {
       // Save the clipping region
       RgnHandle saveClip = NewRgn();
@@ -796,8 +791,9 @@ void wxFrame::MacDrawGrowIcon(void)
       ::RGBForeColor(&fore);
       ::RGBBackColor(&back);
     }
-#if (__powerc) || defined(__ppc__)
+# if (__powerc) || defined(__ppc__)
   }
+# endif
 #endif
 }
 
@@ -938,7 +934,7 @@ void wxFrame::Paint(void)
 	  if (borderRgn)
 	    DiffRgn(subrgn, borderRgn, subrgn);
 #endif
-	  // PaintRgn(subrgn);
+	  PaintRgn(subrgn);
 	  RGBForeColor(&save);
 #ifndef OS_X
 	  if (borderRgn)

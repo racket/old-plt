@@ -12,7 +12,7 @@
 
 #ifdef SELF_SUSPEND_RESUME
 /* Note on handling Suspend/Resume events:
-    Something in the handling of events messes up the sending of 
+    Before OS X, something in the handling of events messes up the sending of 
     suspend and resume events. So, we ignore these events if they happen 
     to occur, but notice suspension and resumption ourselves (by testing 
     for the current process).
@@ -543,16 +543,21 @@ static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only, Mr
     }
     break;
   case keyUp:
-    if (!cont_event_context) {
-      if (!saw_kdown) {
-	MrDequeue(osq);
+    if (!e->message) {
+      /* not a real event; we posted this with PostEvent */
+      MrDequeue(osq);
+    } else {
+      if (!cont_event_context) {
+	if (!saw_kdown) {
+	  MrDequeue(osq);
+	}
+      } else if (keyOk == cont_event_context) {
+	*foundc = keyOk;
+	if (*foundc)
+	  found = 1;
+	if (!check_only)
+	  cont_event_context = NULL;
       }
-    } else if (keyOk == cont_event_context) {
-      *foundc = keyOk;
-      if (*foundc)
-	found = 1;
-      if (!check_only)
-	cont_event_context = NULL;
     }
     break;
   }
@@ -969,7 +974,7 @@ static void *do_watch(void *fds)
     mzsleep(sleep_secs, fds);
     if (need_post) {
       need_post = 0;
-      PostEvent(mouseUp, 0);
+      PostEvent(keyUp, 0);
     }
 
     write(watch_done_write_fd, "y", 1);

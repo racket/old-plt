@@ -264,10 +264,10 @@ int main(int argc, char *argv[])
 #ifdef wx_mac
   wxMacDisableMods = 4096;
 
-#ifndef OS_X
+# ifndef OS_X
   scheme_creator_id = 'MrEd';
   wxMediaCreatorId = 'MrEd';
-#endif
+# endif
 
 # if !defined(__powerc) && !defined(__ppc__)
   long calcLimit, size;
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
   /* initialize Mac stuff */
   ::InitCursor();
 #ifdef OS_X
-  ::MoreMasterPointers(512);
+  ::MoreMasterPointers(4);
 #else
   ::MaxApplZone();
   ::InitWindows();

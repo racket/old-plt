@@ -752,11 +752,13 @@ int wxWindow::SetCurrentDC(void) // mac platform only
     
     if (rgn) {
       RgnHandle clip = NewRgn();
-      RectRgn(clip, &theClipRect);
-      DiffRgn(clip, rgn, clip);
-      DisposeRgn(rgn);
-      SetClip(clip);
-      DisposeRgn(clip);
+      if (clip) {
+	RectRgn(clip, &theClipRect);
+	DiffRgn(clip, rgn, clip);
+	DisposeRgn(rgn);
+	SetClip(clip);
+	DisposeRgn(clip);
+      }
     } else 
       ::ClipRect(&theClipRect);
     

@@ -27,7 +27,6 @@ class wxCanvasDC: public wxbCanvasDC
   // Every time a callback happens, these are set to point to the right values
   // for drawing calls to work
 
-  PixMapHandle pixmap;
   int pixmapWidth;
   int pixmapHeight;
 

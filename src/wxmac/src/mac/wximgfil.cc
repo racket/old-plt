@@ -55,18 +55,15 @@ static struct {
   rgb paleta[256];
 } TabCol;
 
-#pragma pack No
-
-
 static long Code_Mask[] = {
-	  0,
-	  0x0001, 0x0003,
-	  0x0007, 0x000F,
-	  0x001F, 0x003F,
-	  0x007F, 0x00FF,
-	  0x01FF, 0x03FF,
-	  0x07FF, 0x0FFF
-	  };
+  0,
+  0x0001, 0x0003,
+  0x0007, 0x000F,
+  0x001F, 0x003F,
+  0x007F, 0x00FF,
+  0x01FF, 0x03FF,
+  0x07FF, 0x0FFF
+};
 
 Ptr wxGIF::GetRawImage()
 {
@@ -86,7 +83,7 @@ wxGIF::wxGIF( char * path)
   if (path) {
     fp = fopen(path,"rb");
     if (!fp)
-    	return;
+      return;
     ReadHeader(fp);
     Create(image.w, image.h, 8);
     if (GetRawImage() != 0)
@@ -111,29 +108,17 @@ void wxGIF::Create(ushort width, ushort height, ushort deep)
   EfeWidth = (long)(((long)Width*Deep + 31) / 32) * 4;
 }
 
-ushort wxGIF::out_line(uchar *pixels, ushort linelen)
-{
-  if (ItOK()) {
-
-	 SetRow(linelen, pixels);
-	 (void)ItPrev();
-	 return 0;
-  }
-  else return -1;
-}
-
-
 wxColourMap *wxGIF::getColorMap()
 {
-	byte r[256], g[256], b[256];
+  byte r[256], g[256], b[256];
 
-	for (ushort i=0; i<TabCol.sogct ; i++) {
-	  r[i] =  TabCol.paleta[i].r;
-	  g[i] =  TabCol.paleta[i].g;
-	  b[i] =  TabCol.paleta[i].b;
-	}
-	SetColourMap(TabCol.sogct,r,g,b);
-	return GetColourMap();
+  for (ushort i=0; i<TabCol.sogct ; i++) {
+    r[i] =  TabCol.paleta[i].r;
+    g[i] =  TabCol.paleta[i].g;
+    b[i] =  TabCol.paleta[i].b;
+  }
+  SetColourMap(TabCol.sogct,r,g,b);
+  return GetColourMap();
 }
 
 BOOL wxGIF::ReadHeader( FILE *fp)
@@ -190,7 +175,7 @@ BOOL wxGIF::ReadHeader( FILE *fp)
     } else
       break;
   }
- 
+  
   fread((char*)&tstA[0],9,1,fp);
   index = 0;
   image.sep = single;
@@ -230,7 +215,7 @@ BOOL wxGIF::Extrae_imagen()
   IterImage = RawImage; 
   ItCount = 0; 
   decoder(GetWidth());
-//  MacFixupPixelData( (unsigned char *) IterImage, Width*Height);
+  //  MacFixupPixelData( (unsigned char *) IterImage, Width*Height);
   return TRUE;
 }
 
@@ -240,90 +225,86 @@ wxGIF::wxGIF()
 /* This function initializes the decoder for reading a new image.
  */
 ushort wxGIF::init_exp(ushort size)
-	{
-	curr_size = size + 1;
-	top_slot = 1 << curr_size;
-	clear = 1 << size;
-	ending = clear + 1;
-	slot = newcodes = ending + 1;
-	navail_bytes = nbits_left = 0;
-	return(0);
-	}
+{
+  curr_size = size + 1;
+  top_slot = 1 << curr_size;
+  clear = 1 << size;
+  ending = clear + 1;
+  slot = newcodes = ending + 1;
+  navail_bytes = nbits_left = 0;
+  return(0);
+}
 
 ushort wxGIF::get_byte() {
 
-	 if (ibf>=GIFBUFTAM) {
-		fread(buf,GIFBUFTAM,1,fp);
-		ibf = 0;
-	 }
-
-	 return buf[ibf++];
+  if (ibf>=GIFBUFTAM) {
+    fread(buf,GIFBUFTAM,1,fp);
+    ibf = 0;
   }
+
+  return buf[ibf++];
+}
 
 /* get_next_code()
  * - gets the next code from the GIF file.  Returns the code, or else
  * a negative number in case of file errors...
  */
 ushort wxGIF::get_next_code()
-	{
-	ushort i, x;
-	ulong ret;
+{
+  ushort i, x;
+  ulong ret;
 
-	if (nbits_left == 0)
-      {
-		if (navail_bytes <= 0)
-			{
-
-         /* Out of bytes in current block, so read next block
-          */
-         pbytes = byte_buff;
-         if ((navail_bytes = get_byte()) < 0)
-            return(navail_bytes);
-         else if (navail_bytes)
-	    {
-				for (i = 0; i < navail_bytes; ++i)
-               {
-               if ((x = get_byte()) < 0)
-						return(x);
-					byte_buff[i] = x;
-					}
-            }
-			}
-      b1 = *pbytes++;
-		nbits_left = 8;
-		--navail_bytes;
-      }
-
-   ret = b1 >> (8 - nbits_left);
-   while (curr_size > nbits_left)
-      {
+  if (nbits_left == 0)
+    {
       if (navail_bytes <= 0)
-         {
+	{
 
-         /* Out of bytes in current block, so read next block
-			 */
-         pbytes = byte_buff;
-			if ((navail_bytes = get_byte()) < 0)
-            return(navail_bytes);
-			else if (navail_bytes)
-            {
-            for (i = 0; i < navail_bytes; ++i)
-					{
-					if ((x = get_byte()) < 0)
-                  return(x);
-               byte_buff[i] = x;
-               }
+	  /* Out of bytes in current block, so read next block
+	   */
+	  pbytes = byte_buff;
+	  navail_bytes = get_byte();
+	  if (navail_bytes)
+	    {
+	      for (i = 0; i < navail_bytes; ++i)
+		{
+		  x = get_byte();
+		  byte_buff[i] = x;
+		}
             }
-         }
+	}
+      b1 = *pbytes++;
+      nbits_left = 8;
+      --navail_bytes;
+    }
+
+  ret = b1 >> (8 - nbits_left);
+  while (curr_size > nbits_left)
+    {
+      if (navail_bytes <= 0)
+	{
+
+	  /* Out of bytes in current block, so read next block
+	   */
+	  pbytes = byte_buff;
+	  navail_bytes = get_byte();
+	  if (navail_bytes)
+            {
+	      for (i = 0; i < navail_bytes; ++i)
+		{
+		  x = get_byte();
+		  byte_buff[i] = x;
+		}
+            }
+	}
       b1 = *pbytes++;
       ret |= b1 << nbits_left;
-		nbits_left += 8;
-		--navail_bytes;
-      }
-	nbits_left -= curr_size;
-	ret &= code_mask[curr_size];
-	return((ushort)(ret));
-   }
+      nbits_left += 8;
+      --navail_bytes;
+    }
+  nbits_left -= curr_size;
+  ret &= code_mask[curr_size];
+  return((ushort)(ret));
+}
 
 void wxGIF::InitInterlaceRow(int linewidth)
 {
@@ -364,12 +345,11 @@ ushort  wxGIF::decoder(ushort linewidth)
   register ushort code, fc, oc, bufcnt;
   ushort c, size, ret;
 
-	/* Initialize for decoding a new image...
-    */
-  if ((size = get_byte()) < 0)
-    return(size);
+  /* Initialize for decoding a new image...
+   */
+  size = get_byte();
   if (size < 2 || 9 < size)
-    return(BAD_CODE_SIZE);
+    return (BAD_CODE_SIZE);
   init_exp(size);
   oc = fc = 0;
   ret = 0;
@@ -383,166 +363,158 @@ ushort  wxGIF::decoder(ushort linewidth)
 
   int interlace = image.pf & INTERLACEMASK;
 
-   /* This is the main loop.  For each code we get we pass through the
-    * linked list of prefix codes, pushing the corresponding "character" for
-    * each code onto the stack.  When the list reaches a single "character"
-    * we push that on the stack too, and then start unstacking each
-    * character for output in the correct order.  Special handling is
-    * included for the clear code, and the whole thing ends when we get
-    * an ending code.
-    */
+  /* This is the main loop.  For each code we get we pass through the
+   * linked list of prefix codes, pushing the corresponding "character" for
+   * each code onto the stack.  When the list reaches a single "character"
+   * we push that on the stack too, and then start unstacking each
+   * character for output in the correct order.  Special handling is
+   * included for the clear code, and the whole thing ends when we get
+   * an ending code.
+   */
   while ((c = get_next_code()) != ending)
-  {
-
-      /* If we had a file error, return without completing the decode
-		 */
-    if (c < 0)
     {
-      delete buf;
-      return(0);
-     }
 
-		/* If the code is a clear code, reinitialize all necessary items.
-		 */
-    if (c == clear)
-    {
-       curr_size = size + 1;
-       slot = newcodes;
-       top_slot = 1 << curr_size;
+      /* If the code is a clear code, reinitialize all necessary items.
+       */
+      if (c == clear)
+	{
+	  curr_size = size + 1;
+	  slot = newcodes;
+	  top_slot = 1 << curr_size;
 
-			/* Continue reading codes until we get a non-clear code
-			 * (Another unlikely, but possible case...)
-			 */
-      while ((c = get_next_code()) == clear) ;
+	  /* Continue reading codes until we get a non-clear code
+	   * (Another unlikely, but possible case...)
+	   */
+	  while ((c = get_next_code()) == clear) ;
 
-         /* If we get an ending code immediately after a clear code
-          * (Yet another unlikely case), then break out of the loop.
-          */
-      if (c == ending)
-        break;
+	  /* If we get an ending code immediately after a clear code
+	   * (Yet another unlikely case), then break out of the loop.
+	   */
+	  if (c == ending)
+	    break;
 
-         /* Finally, if the code is beyond the range of already set codes,
-          * (This one had better NOT happen...  I have no idea what will
-          * result from this, but I doubt it will look good...) then set it
-          * to color zero.
-          */
-      if (c >= slot)
-        c = 0;
+	  /* Finally, if the code is beyond the range of already set codes,
+	   * (This one had better NOT happen...  I have no idea what will
+	   * result from this, but I doubt it will look good...) then set it
+	   * to color zero.
+	   */
+	  if (c >= slot)
+	    c = 0;
 
-      oc = fc = c;
+	  oc = fc = c;
 
-         /* And let us not forget to put the char into the buffer... And
-			 * if, on the off chance, we were exactly one pixel from the end
-          * of the line, we have to send the buffer to the out_line()
-          * routine...
-          */
-      *bufptr++ = c;
-      if (--bufcnt == 0)
-      {
-        if (ItCount < Height)
-        {
-          if (interlace) InitInterlaceRow(linewidth);
-          for (ushort i=0; i<linewidth; i++) *IterImage++ = buf[i];
-          ItCount++;
+	  /* And let us not forget to put the char into the buffer... And
+	   * if, on the off chance, we were exactly one pixel from the end
+	   * of the line, we have to send the buffer to the out_line()
+	   * routine...
+	   */
+	  *bufptr++ = c;
+	  if (--bufcnt == 0)
+	    {
+	      if (ItCount < Height)
+		{
+		  if (interlace) InitInterlaceRow(linewidth);
+		  for (ushort i=0; i<linewidth; i++) *IterImage++ = buf[i];
+		  ItCount++;
+		}
+	      else
+		{
+		  delete buf;
+		  return(ret);
+		}
+	      bufptr = buf;
+	      bufcnt = linewidth;
+	    }
+	}
+      else
+	{
+
+	  /* In this case, it's not a clear code or an ending code, so
+	   * it must be a code code...  So we can now decode the code into
+	   * a stack of character codes. (Clear as mud, right?)
+	   */
+	  code = c;
+
+	  /* Here we go again with one of those off chances...  If, on the
+	   * off chance, the code we got is beyond the range of those already
+	   * set up (Another thing which had better NOT happen...) we trick
+	   * the decoder into thinking it actually got the last code read.
+	   * (Hmmn... I'm not sure why this works...  But it does...)
+	   */
+	  if (code >= slot)
+	    {
+	      if (code > slot)
+		++bad_code_count;
+	      code = oc;
+	      *sp++ = fc;
+	    }
+
+	  /* Here we scan back along the linked list of prefixes, pushing
+	   * helpless characters (ie. suffixes) onto the stack as we do so.
+	   */
+	  while (code >= newcodes)
+	    {
+	      *sp++ = suffix[code];
+	      code = prefix[code];
+	    }
+
+	  /* Push the last character on the stack, and set up the new
+	   * prefix and suffix, and if the required slot number is greater
+	   * than that allowed by the current bit size, increase the bit
+	   * size.  (NOTE - If we are all full, we *don't* save the new
+	   * suffix and prefix...  I'm not certain if this is correct...
+	   * it might be more proper to overwrite the last code...
+	   */
+	  *sp++ = code;
+	  if (slot < top_slot)
+	    {
+	      suffix[slot] = fc = code;
+	      prefix[slot++] = oc;
+	      oc = c;
+	    }
+	  if (slot >= top_slot)
+	    if (curr_size < 12)
+	      {
+		top_slot <<= 1;
+		++curr_size;
+	      } 
+
+	  /* Now that we've pushed the decoded string (in reverse order)
+	   * onto the stack, lets pop it off and put it into our decode
+	   * buffer...  And when the decode buffer is full, write another
+	   * line...
+	   */
+	  while (sp > stack)
+	    {
+	      *bufptr++ = *(--sp);
+	      if (--bufcnt == 0)
+		{
+		  if (ItCount < Height)
+		    {
+		      if (interlace) InitInterlaceRow(linewidth);
+		      for (ushort i=0; i<linewidth; i++) *IterImage++ = buf[i];
+		      ItCount++;
+		    }
+		  else
+		    {
+		      delete buf;
+		      return(ret);
+		    }
+		  bufptr = buf;
+		  bufcnt = linewidth;
+		}
+	    }
         }
-        else
-        {
-          delete buf;
-          return(ret);
-        }
-        bufptr = buf;
-        bufcnt = linewidth;
-      }
     }
-    else
-    {
-
-         /* In this case, it's not a clear code or an ending code, so
-          * it must be a code code...  So we can now decode the code into
-          * a stack of character codes. (Clear as mud, right?)
-          */
-      code = c;
-
-         /* Here we go again with one of those off chances...  If, on the
-          * off chance, the code we got is beyond the range of those already
-          * set up (Another thing which had better NOT happen...) we trick
-			 * the decoder into thinking it actually got the last code read.
-          * (Hmmn... I'm not sure why this works...  But it does...)
-			 */
-      if (code >= slot)
-      {
-        if (code > slot)
-          ++bad_code_count;
-        code = oc;
-        *sp++ = fc;
-       }
-
-         /* Here we scan back along the linked list of prefixes, pushing
-          * helpless characters (ie. suffixes) onto the stack as we do so.
-			 */
-        while (code >= newcodes)
-        {
-          *sp++ = suffix[code];
-          code = prefix[code];
-        }
-
-         /* Push the last character on the stack, and set up the new
-          * prefix and suffix, and if the required slot number is greater
-			 * than that allowed by the current bit size, increase the bit
-          * size.  (NOTE - If we are all full, we *don't* save the new
-          * suffix and prefix...  I'm not certain if this is correct...
-          * it might be more proper to overwrite the last code...
-			 */
-         *sp++ = code;
-         if (slot < top_slot)
-         {
-           suffix[slot] = fc = code;
-           prefix[slot++] = oc;
-           oc = c;
-         }
-        if (slot >= top_slot)
-          if (curr_size < 12)
-          {
-            top_slot <<= 1;
-            ++curr_size;
-          } 
-
-         /* Now that we've pushed the decoded string (in reverse order)
-          * onto the stack, lets pop it off and put it into our decode
-          * buffer...  And when the decode buffer is full, write another
-			 * line...
-          */
-         while (sp > stack)
-         {
-            *bufptr++ = *(--sp);
-            if (--bufcnt == 0)
-            {
-              if (ItCount < Height)
-              {
-                if (interlace) InitInterlaceRow(linewidth);
-                for (ushort i=0; i<linewidth; i++) *IterImage++ = buf[i];
-                ItCount++;
-              }
-              else
-              {
-                delete buf;
-                return(ret);
-              }
-              bufptr = buf;
-              bufcnt = linewidth;
-            }
-          }
-        }
-      }
   ret = 0;
   if (bufcnt != linewidth)
-      if (ItCount < Height)
+    if (ItCount < Height)
       {
         if (interlace) InitInterlaceRow(linewidth);
         for (ushort i=0; i<(linewidth - bufcnt); i++) *IterImage++ = buf[i];
         ItCount++;
-       }
-       else
+      }
+    else
       {
         delete buf;
         return(ret);
@@ -558,8 +530,8 @@ ushort  wxGIF::decoder(ushort linewidth)
 //inline 
 void wxGIF::reset() 
 {
- IterImage = RawImage; 
- ItCount = 0; 
+  IterImage = RawImage; 
+  ItCount = 0; 
 }
 
 //inline 
@@ -580,7 +552,7 @@ Bool wxGIF::ItNext()
 //inline 
 Bool wxGIF::ItPrev()
 {
-  if (ItCount-- < 0) return 0;
+  ItCount--;
   IterImage -= EfeWidth;
   return 1;
 }
@@ -604,17 +576,17 @@ BOOL wxGIF::SetColourMap(ushort n, byte *r, byte *g, byte *b)
 {
   ColourMap = new wxColourMap();
   if (ColourMap)
-  {
-// temporary fix
-    numcmapentries = n;
-    for (int i=0; i < n; i++) {
-      red[i] = r[i];
-      green[i] = g[i];
-      blue[i] = b[i];
+    {
+      // temporary fix
+      numcmapentries = n;
+      for (int i=0; i < n; i++) {
+	red[i] = r[i];
+	green[i] = g[i];
+	blue[i] = b[i];
+      }
+      //ColourMap->Create(n, r, g, b);
+      return TRUE;
     }
-    //ColourMap->Create(n, r, g, b);
-    return TRUE;
-  }
   return FALSE;
 }
 
@@ -627,25 +599,25 @@ CTabHandle XlateColorMap(wxGIF *gif)
   int i;
 
   gDirClut =  GetCTable ( 36 ); // 36 = 256 shades of gray
- 
+  
   if (gDirClut) {
 
     (*gDirClut)->ctSize = gif->numcmapentries - 1;
     for (i = 0; i < gif->numcmapentries; ++i) {
-        (*gDirClut)->ctTable[i].value = i;
-        (*gDirClut)->ctTable[i].rgb.red = 256 *gif->red[i];
-        (*gDirClut)->ctTable[i].rgb.green = 256 *gif->green[i];
-        (*gDirClut)->ctTable[i].rgb.blue = 256 *gif->blue[i];
+      (*gDirClut)->ctTable[i].value = i;
+      (*gDirClut)->ctTable[i].rgb.red = 256 *gif->red[i];
+      (*gDirClut)->ctTable[i].rgb.green = 256 *gif->green[i];
+      (*gDirClut)->ctTable[i].rgb.blue = 256 *gif->blue[i];
     }
-			
+    
   }
   else
     return 0;
-    
+  
   return gDirClut;
-// caller must
-//	DisposeCTable(gDirClut);
-//	gDirClut = 0;
+  // caller must
+  //	DisposeCTable(gDirClut);
+  //	gDirClut = 0;
 
 }
 
@@ -664,21 +636,21 @@ CTabHandle XlateColorMap(wxGIF *gif)
 
 Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 {
- 
+  
   CGrafPtr  colorPort;
 
   wxGIF *gifImage  = new wxGIF(fileName);
   if (gifImage && gifImage->GetRawImage() != 0) {
-     CreateOffScreenPixMap(&colorPort, gifImage);
-     if (colorPort) {
-	bm->x_pixmap = colorPort;
-	//  bm->pixmap = colorPort->portPixMap;
-	bm->SetWidth(gifImage->GetWidth());
-	bm->SetHeight(gifImage->GetHeight());
-	bm->SetDepth(gifImage->GetDeep());
-	bm->SetOk(TRUE);
-	delete gifImage;
-	return TRUE;
+    CreateOffScreenPixMap(&colorPort, gifImage);
+    if (colorPort) {
+      bm->x_pixmap = colorPort;
+      //  bm->pixmap = colorPort->portPixMap;
+      bm->SetWidth(gifImage->GetWidth());
+      bm->SetHeight(gifImage->GetHeight());
+      bm->SetDepth(gifImage->GetDeep());
+      bm->SetOk(TRUE);
+      delete gifImage;
+      return TRUE;
     } 
   }
 
@@ -689,33 +661,33 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 
 void CreateOffScreenPixMap (CGrafPtr *cport, wxGIF *gif)
 {
-	int width = gif->GetWidth(), height = gif->GetHeight();
-	Rect bounds = { 0, 0, height, width };
-	GDHandle savegw;
-	CGrafPtr saveport;
-	GetGWorld(&saveport, &savegw);
-	QDErr err;
-	GWorldPtr	newGWorld;
-	err = NewGWorld(&newGWorld, 0, &bounds, NULL, NULL, noNewDevice);
-	if (err) {
-	  *cport = 0;
-	  return;
-	}
-	LockPixels(GetGWorldPixMap(newGWorld));
-	SetGWorld(newGWorld, 0);
+  int width = gif->GetWidth(), height = gif->GetHeight();
+  Rect bounds = { 0, 0, height, width };
+  GDHandle savegw;
+  CGrafPtr saveport;
+  GetGWorld(&saveport, &savegw);
+  QDErr err;
+  GWorldPtr	newGWorld;
+  err = NewGWorld(&newGWorld, 32, &bounds, NULL, NULL, 0);
+  if (err) {
+    *cport = 0;
+    return;
+  }
+  LockPixels(GetGWorldPixMap(newGWorld));
+  SetGWorld(newGWorld, 0);
 
-	RGBColor	cpix;
-	int i, j;
-	unsigned char *buf = (unsigned char *)gif->GetRawImage();
-	for (i = 0; i < height; i++) {
-	  for (j = 0; j < width; j++, buf++) {
-	    int v = *buf;
-	    cpix.red = 256 *gif->red[v];
-	    cpix.green = 256 *gif->green[v];
-	    cpix.blue = 256 *gif->blue[v];
-	    ::SetCPixel(j, i, &cpix);
-	  }
-	}
-	SetGWorld(saveport, savegw);
-	*cport = newGWorld;
+  RGBColor	cpix;
+  int i, j;
+  unsigned char *buf = (unsigned char *)gif->GetRawImage();
+  for (i = 0; i < height; i++) {
+    for (j = 0; j < width; j++, buf++) {
+      int v = *buf;
+      cpix.red = 256 *gif->red[v];
+      cpix.green = 256 *gif->green[v];
+      cpix.blue = 256 *gif->blue[v];
+      ::SetCPixel(j, i, &cpix);
+    }
+  }
+  SetGWorld(saveport, savegw);
+  *cport = newGWorld;
 }

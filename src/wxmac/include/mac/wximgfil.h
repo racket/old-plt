@@ -13,8 +13,8 @@
 
 /* Various error codes used by decoder
  */
-#define OUT_OF_MEMORY -10
-#define BAD_CODE_SIZE -20
+#define OUT_OF_MEMORY 0
+#define BAD_CODE_SIZE 0
 #define READ_ERROR -1
 #define WRITE_ERROR -2
 #define OPEN_ERROR -3
@@ -115,7 +115,6 @@ public:
 
 protected:
   ushort get_byte();
-  ushort  out_line(uchar *pixels, ushort linelen);
 
 ushort curr_size;                     /* The current code size */
 ushort clear;                         /* Value for a clear code */

@@ -41,11 +41,7 @@ static int defaultSize = 12;
 static int defaultSize = 10;
 #endif
 #ifdef wx_mac
-# ifdef OS_X
-static int defaultSize = 10;
-# else
 static int defaultSize = 12;
-# endif
 #endif
 
 # define FONT_DIRECTORY wxTheFontNameDirectory

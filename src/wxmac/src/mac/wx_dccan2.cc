@@ -550,73 +550,70 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
     wxMacSetCurrentTool(kBlitTool);
     rop = wxSTIPPLE;
   }
-  Bool theResult = FALSE;
 
-  if (pixmap)
-    {
-      int mode;
-      switch (rop)
-	{
-	case wxXOR:  
-	  mode = srcXor; 
-	  break;
-	case wxSOLID: 
-	  mode = srcOr; 
-	  break;
-	case wxSTIPPLE: /* = opaque */
-	default:
-	  mode = srcCopy;
-	  break;
-	}
-
-      int ixsrc = (int)floor(xsrc);
-      int iysrc = (int)floor(ysrc);
-      
-      if (ixsrc > source->GetWidth())
-	return TRUE;
-      if (iysrc > source->GetHeight())
-	return TRUE;
-
-      if (iysrc + height > source->GetHeight())
-	height = source->GetHeight() - iysrc;
-      if (ixsrc + width > source->GetWidth())
-	width = source->GetWidth() - ixsrc;
-
-      int h = YLOG2DEVREL(height);
-      int w = XLOG2DEVREL(width);
-      int x = XLOG2DEV(xdest);
-      int y = YLOG2DEV(ydest);
-      
-      Rect srcr = {iysrc, ixsrc, iysrc + (int)height, ixsrc + (int)width};
-      Rect destr = {y, x, y+h, x+w };
-      OffsetRect(&destr,SetOriginX,SetOriginY);
-      
-      CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-      const BitMap *dstbm;
-      const BitMap *srcbm;
-
-      dstbm = GetPortBitMapForCopyBits(theMacGrafPort);
-      srcbm = GetPortBitMapForCopyBits(source->x_pixmap);
-
-      if (mask) {
-	OSErr err;
-	
-	maskRgn = NewRgn();
-	err = BitMapToRegion(maskRgn,GetPortBitMapForCopyBits(mask->x_pixmap));
-	if (err != noErr) return FALSE;
+  {
+    int mode;
+    switch (rop)
+      {
+      case wxXOR:  
+	mode = srcXor; 
+	break;
+      case wxSOLID: 
+	mode = srcOr; 
+	break;
+      case wxSTIPPLE: /* = opaque */
+      default:
+	mode = srcCopy;
+	break;
       }
+
+    int ixsrc = (int)floor(xsrc);
+    int iysrc = (int)floor(ysrc);
+    
+    if (ixsrc > source->GetWidth())
+      return TRUE;
+    if (iysrc > source->GetHeight())
+      return TRUE;
+
+    if (iysrc + height > source->GetHeight())
+      height = source->GetHeight() - iysrc;
+    if (ixsrc + width > source->GetWidth())
+      width = source->GetWidth() - ixsrc;
+
+    int h = YLOG2DEVREL(height);
+    int w = XLOG2DEVREL(width);
+    int x = XLOG2DEV(xdest);
+    int y = YLOG2DEV(ydest);
+    
+    Rect srcr = {iysrc, ixsrc, iysrc + (int)height, ixsrc + (int)width};
+    Rect destr = {y, x, y+h, x+w };
+    OffsetRect(&destr,SetOriginX,SetOriginY);
+    
+    CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+    const BitMap *dstbm;
+    const BitMap *srcbm;
+
+    dstbm = GetPortBitMapForCopyBits(theMacGrafPort);
+    srcbm = GetPortBitMapForCopyBits(source->x_pixmap);
+
+    if (mask) {
+      OSErr err;
       
-      ::CopyBits(srcbm, dstbm, &srcr, &destr, mode, maskRgn);
-
-      if (maskRgn)
-	DisposeRgn(maskRgn);
-
-      CalcBoundingBox(xdest, ydest);
-      CalcBoundingBox(xdest + width, ydest + height);
-      theResult = TRUE;
+      maskRgn = NewRgn();
+      err = BitMapToRegion(maskRgn,GetPortBitMapForCopyBits(mask->x_pixmap));
+      if (err != noErr) return FALSE;
     }
+    
+    ::CopyBits(srcbm, dstbm, &srcr, &destr, mode, maskRgn);
 
-  return theResult;
+    if (maskRgn)
+      DisposeRgn(maskRgn);
+
+    CalcBoundingBox(xdest, ydest);
+    CalcBoundingBox(xdest + width, ydest + height);
+  }
+
+  return TRUE;
 }
 
 Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,

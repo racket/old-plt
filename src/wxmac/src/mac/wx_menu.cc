@@ -171,8 +171,7 @@ wxMenu::~wxMenu(void)
     } else if (window_parent)
       ((wxMenu *)window_parent)->Delete(this, 0, -1);
 
-  ::DisposeMenu(cMacMenu); // WCH: does this dispose of submenus? I hope not.
-  // mflatt: it does not dispose of submenus
+  ::DisposeMenu(cMacMenu); // does not dispose of submenus
 
   // if (title) delete[] title; // WCH: ~wxbMenu should do this - (cjc - it does)
   wxNode* node = menuItems.First();

@@ -120,11 +120,20 @@ char *font_defaults[] = {
 #endif
 
 #ifdef wx_mac
+# ifdef OS_X
+  "ScreenDefault__", "lucida grande",
+  "ScreenSystem__", "lucida grande",
+# else
   "ScreenDefault__", "applicationfont",
   "ScreenSystem__", "systemfont",
+# endif
   "ScreenRoman__", "times",
   "ScreenDecorative__", "geneva",
+# ifdef OS_X
+  "ScreenModern__", "courier new",
+#else
   "ScreenModern__", "monaco", /* "courier" is also good */
+#endif
   "ScreenTeletype__", "${ScreenModern,$[weight],$[style]}",
   "ScreenSwiss__", "helvetica",
   "ScreenScript__", "geneva",

@@ -110,7 +110,6 @@ OBJS = \
    wx_mac_utils.o \
 \
    wx_bmp.o \
-   wx_pm.o \
    wx_24to8.o \
    wx_image.o \
    wx_xbm.o \
@@ -305,8 +304,6 @@ wx_mac_utils.o : $(srcdir)/mac/wx_mac_utils.cc
 
 wx_bmp.o : $(srcdir)/../utils/image/src/wx_bmp.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_bmp.o -c $(srcdir)/../utils/image/src/wx_bmp.cc
-wx_pm.o : $(srcdir)/../utils/image/src/wx_pm.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wx_pm.o -c $(srcdir)/../utils/image/src/wx_pm.cc
 wx_24to8.o : $(srcdir)/../utils/image/src/wx_24to8.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_24to8.o -c $(srcdir)/../utils/image/src/wx_24to8.cc
 wx_image.o : $(srcdir)/../utils/image/src/wx_image.cc
@@ -357,35 +354,36 @@ wrffri.o : $(XPMDIR)/wrffri.cpp
 
 ALISTDIR = $(srcdir)/../../a-list/a-list-1.1.9
 ALISTCCFLAGS = $(CFLAGS) -I$(ALISTDIR)/../c-headers -include $(srcdir)/../include/mac/alcarbon.h 
+ALISTDEPS = $(ALISTDIR)/AListInternal.h
 
-ALBirthDeath.o : $(ALISTDIR)/ALBirthDeath.c
+ALBirthDeath.o : $(ALISTDEPS) $(ALISTDIR)/ALBirthDeath.c
 	$(CC) $(ALISTCCFLAGS) -o ALBirthDeath.o -c $(ALISTDIR)/ALBirthDeath.c
-ALKeyboard.o : $(ALISTDIR)/ALKeyboard.c
+ALKeyboard.o : $(ALISTDEPS) $(ALISTDIR)/ALKeyboard.c
 	$(CC) $(ALISTCCFLAGS) -o ALKeyboard.o -c $(ALISTDIR)/ALKeyboard.c
-ALUserPane.o : $(ALISTDIR)/ALUserPane.c
+ALUserPane.o : $(ALISTDEPS) $(ALISTDIR)/ALUserPane.c
 	$(CC) $(ALISTCCFLAGS) -o ALUserPane.o -c $(ALISTDIR)/ALUserPane.c
-LongControls.o : $(ALISTDIR)/LongControls.c
+LongControls.o : $(ALISTDEPS) $(ALISTDIR)/LongControls.c
 	$(CC) $(ALISTCCFLAGS) -o LongControls.o -c $(ALISTDIR)/LongControls.c
-ALCellData.o : $(ALISTDIR)/ALCellData.c
+ALCellData.o : $(ALISTDEPS) $(ALISTDIR)/ALCellData.c
 	$(CC) $(ALISTCCFLAGS) -o ALCellData.o -c $(ALISTDIR)/ALCellData.c
-ALMouse.o : $(ALISTDIR)/ALMouse.c
+ALMouse.o : $(ALISTDEPS) $(ALISTDIR)/ALMouse.c
 	$(CC) $(ALISTCCFLAGS) -o ALMouse.o -c $(ALISTDIR)/ALMouse.c
-ALUtilities.o : $(ALISTDIR)/ALUtilities.c
+ALUtilities.o : $(ALISTDEPS) $(ALISTDIR)/ALUtilities.c
 	$(CC) $(ALISTCCFLAGS) -o ALUtilities.o -c $(ALISTDIR)/ALUtilities.c
-ALDrawing.o : $(ALISTDIR)/ALDrawing.c
+ALDrawing.o : $(ALISTDEPS) $(ALISTDIR)/ALDrawing.c
 	$(CC) $(ALISTCCFLAGS) -o ALDrawing.o -c $(ALISTDIR)/ALDrawing.c
-ALScrolling.o : $(ALISTDIR)/ALScrolling.c
+ALScrolling.o : $(ALISTDEPS) $(ALISTDIR)/ALScrolling.c
 	$(CC) $(ALISTCCFLAGS) -o ALScrolling.o -c $(ALISTDIR)/ALScrolling.c
-LongCoords.o : $(ALISTDIR)/LongCoords.c
+LongCoords.o : $(ALISTDEPS) $(ALISTDIR)/LongCoords.c
 	$(CC) $(ALISTCCFLAGS) -o LongCoords.o -c $(ALISTDIR)/LongCoords.c
-ALEditing.o : $(ALISTDIR)/ALEditing.c
+ALEditing.o : $(ALISTDEPS) $(ALISTDIR)/ALEditing.c
 	$(CC) $(ALISTCCFLAGS) -o ALEditing.o -c $(ALISTDIR)/ALEditing.c
-ALSelecting.o : $(ALISTDIR)/ALSelecting.c
+ALSelecting.o : $(ALISTDEPS) $(ALISTDIR)/ALSelecting.c
 	$(CC) $(ALISTCCFLAGS) -o ALSelecting.o -c $(ALISTDIR)/ALSelecting.c
-QDDrawingState.o : $(ALISTDIR)/QDDrawingState.c
+QDDrawingState.o : $(ALISTDEPS) $(ALISTDIR)/QDDrawingState.c
 	$(CC) $(ALISTCCFLAGS) -o QDDrawingState.o -c $(ALISTDIR)/QDDrawingState.c
-ALHeirarchical.o : $(ALISTDIR)/ALHeirarchical.c
+ALHeirarchical.o : $(ALISTDEPS) $(ALISTDIR)/ALHeirarchical.c
 	$(CC) $(ALISTCCFLAGS) -o ALHeirarchical.o -c $(ALISTDIR)/ALHeirarchical.c
-ALSelectors.o : $(ALISTDIR)/ALSelectors.c
+ALSelectors.o : $(ALISTDEPS) $(ALISTDIR)/ALSelectors.c
 	$(CC) $(ALISTCCFLAGS) -o ALSelectors.o -c $(ALISTDIR)/ALSelectors.c
 

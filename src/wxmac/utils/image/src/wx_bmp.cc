@@ -819,7 +819,7 @@ Bool wxLoadBMPIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		GetGWorld(&saveport, &savegw);
 		QDErr err;
 		GWorldPtr	newGWorld;
-		err = NewGWorld(&newGWorld, 0, &bounds, NULL, NULL, noNewDevice);
+		err = NewGWorld(&newGWorld, 32, &bounds, NULL, NULL, 0);
 		if (err) {
 			bm->SetOk(FALSE);
 			return FALSE;

@@ -361,15 +361,23 @@ wxInitializeStockObjects (void)
   wxThePenList = new wxPenList;
   wxREGGLOB(wxTheFontList);
   wxTheFontList = new wxFontList;
+
+#ifdef OS_X
+# define BIG_FONT_SIZE 13
+# define SMALL_FONT_SIZE 11
+#else
+# define BIG_FONT_SIZE 12
+# define SMALL_FONT_SIZE 10
+#endif
  
   wxREGGLOB(wxNORMAL_FONT);
-  wxNORMAL_FONT = new wxFont (12, wxSYSTEM, wxNORMAL, wxNORMAL);
+  wxNORMAL_FONT = new wxFont (BIG_FONT_SIZE, wxSYSTEM, wxNORMAL, wxNORMAL);
   wxREGGLOB(wxSMALL_FONT);
-  wxSMALL_FONT = new wxFont (10, wxSWISS, wxNORMAL, wxNORMAL);
+  wxSMALL_FONT = new wxFont (SMALL_FONT_SIZE, wxSWISS, wxNORMAL, wxNORMAL);
   wxREGGLOB(wxITALIC_FONT);
-  wxITALIC_FONT = new wxFont (12, wxROMAN, wxITALIC, wxNORMAL);
+  wxITALIC_FONT = new wxFont (BIG_FONT_SIZE, wxROMAN, wxITALIC, wxNORMAL);
   wxREGGLOB(wxSWISS_FONT);
-  wxSWISS_FONT = new wxFont (12, wxSWISS, wxNORMAL, wxNORMAL);
+  wxSWISS_FONT = new wxFont (BIG_FONT_SIZE, wxSWISS, wxNORMAL, wxNORMAL);
 
   wxREGGLOB(wxRED_PEN);
   wxRED_PEN = new wxPen ("RED", 0, wxSOLID);

@@ -251,13 +251,17 @@ void wxListBox::Paint(void)
 
   SetCurrentDC();
   RgnHandle visibleRgn = NewRgn();
+  if (visibleRgn) {
 #ifdef OS_X
-  GetPortVisibleRegion(cMacDC->macGrafPort(),visibleRgn);
+    GetPortVisibleRegion(cMacDC->macGrafPort(),visibleRgn);
 #else
-  CopyRgn(cMacDC->macGrafPort()->visRgn,visibleRgn);
+    CopyRgn(cMacDC->macGrafPort()->visRgn,visibleRgn);
 #endif
-  ::ALUpdate(visibleRgn, cListReference);
+    ::ALUpdate(visibleRgn, cListReference);
+    DisposeRgn(visibleRgn);
+  }
   
+
   /* White out any empty space in the list: */
   /* The following has not been updated to deal with the non-SetOrigin world */
   /*	Point last, dlast;

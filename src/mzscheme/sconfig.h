@@ -596,6 +596,7 @@
 #ifndef XONX
 # undef SYSTEM_TYPE_NAME
 # define SYSTEM_TYPE_NAME "macosx"
+# define MACROMAN_CHAR_SET
 #endif
 
 # define STACK_GROWS_DOWN

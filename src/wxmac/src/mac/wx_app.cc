@@ -95,8 +95,6 @@ wxApp::wxApp():wxbApp()
 
   gMacFontGrafPort = CreateNewPort();
 
-  cMacCursorRgn = ::NewRgn(); // forces cursor-move event right away
-  CheckMemOK(cMacCursorRgn);
   wxREGGLOB(wxScreen::gScreenWindow);
   wxScreen::gScreenWindow = new wxScreen;
   wxArea* menuArea = (wxScreen::gScreenWindow)->MenuArea();
@@ -266,7 +264,7 @@ void wxApp::doMacMouseDown(void)
   switch (windowPart)
     {
     case inMenuBar:
-      {
+      if (StillDown()) {
 	long menuResult;
 	WindowPtr theMacWindow = ::FrontWindow();
 
@@ -279,8 +277,8 @@ void wxApp::doMacMouseDown(void)
 
 	menuResult = MenuSelect(cCurrentEvent.where);
 	doMacInMenuBar(menuResult, FALSE);
-	break;
       }
+      break;
     case inContent:
       doMacInContent(window); break;
     case inDrag:
@@ -714,11 +712,7 @@ void wxApp::doMacSuspendEvent(void)
 
 //-----------------------------------------------------------------------------
 void wxApp::doMacMouseMovedMessage(void)
-{ // based on "Programming for System 7" by Gary Little and Tim Swihart
-  if (cMacCursorRgn) ::DisposeRgn(cMacCursorRgn);
-  cMacCursorRgn = ::NewRgn();
-  CheckMemOK(cMacCursorRgn);
-  ::SetRectRgn(cMacCursorRgn, -32768, -32768, 32766, 32766);
+{
 }
 
 //-----------------------------------------------------------------------------
@@ -803,6 +797,10 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
   wxMenuItem* theWxMenuItem = (wxMenuItem*) node->Data();
   if (!theWxMenuItem) wxFatalError("No wxMenuItem for wxNode.");
 
+  if (theWxMenuItem->IsCheckable()) {
+    theWxMenuItem->Check(!theWxMenuItem->IsChecked());
+  }
+
   theMacWxFrame->ProcessCommand(theWxMenuItem->itemId);
   
   return TRUE;
@@ -864,20 +862,14 @@ void wxApp::doMacContentClick(wxFrame* frame)
 //-----------------------------------------------------------------------------
 void wxApp::doMacInDrag(WindowPtr window)
 {
-  if (window != ::FrontWindow())
-    {
+  if (StillDown()) {
+    if (window != ::FrontWindow()) {
       wxFrame* frontFrame = findMacWxFrame(::FrontWindow());
       if (!frontFrame) wxFatalError("No wxFrame for frontWindow.");
-      if (0 && frontFrame->IsModal())
-	{
-	  ::SysBeep(3);
-	  return;
-	}
     }
-
-  wxFrame* theMacWxFrame = findMacWxFrame(window);
-  if (theMacWxFrame)
-    {
+    
+    wxFrame* theMacWxFrame = findMacWxFrame(window);
+    if (theMacWxFrame) {
       BitMap screenBits;
       Rect dragBoundsRect;
       GetQDGlobalsScreenBits(&screenBits);
@@ -886,14 +878,15 @@ void wxApp::doMacInDrag(WindowPtr window)
       DragWindow(window, cCurrentEvent.where, &dragBoundsRect);
       theMacWxFrame->wxMacRecalcNewSize(FALSE); // recalc new position only
     }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void wxApp::doMacInGrow(WindowPtr window)
 {
-  wxFrame* theMacWxFrame = findMacWxFrame(window);
-  if (theMacWxFrame && theMacWxFrame->CanAcceptEvent())
-    {
+  if (StillDown()) {
+    wxFrame* theMacWxFrame = findMacWxFrame(window);
+    if (theMacWxFrame && theMacWxFrame->CanAcceptEvent()) {
       BitMap screenBits;
       
       GetQDGlobalsScreenBits(&screenBits);
@@ -904,51 +897,42 @@ void wxApp::doMacInGrow(WindowPtr window)
       growSizeRect.bottom = screenBits.bounds.bottom - screenBits.bounds.top;
       growSizeRect.right = screenBits.bounds.right - screenBits.bounds.left;
       long windSize = ::GrowWindow(window, cCurrentEvent.where, &growSizeRect);
-      if (windSize != 0)
-	{
-	  wxArea* contentArea = theMacWxFrame->ContentArea();
-	  int newContentWidth = LoWord(windSize);
-	  int newContentHeight = HiWord(windSize);
-	  if (newContentWidth == 0) newContentWidth = contentArea->Width(); // no change
-	  if (newContentHeight == 0) newContentHeight = contentArea->Height(); // no change
-	  contentArea->SetSize(newContentWidth, newContentHeight);
-
-	}
+      if (windSize != 0) {
+	wxArea* contentArea = theMacWxFrame->ContentArea();
+	int newContentWidth = LoWord(windSize);
+	int newContentHeight = HiWord(windSize);
+	if (newContentWidth == 0) newContentWidth = contentArea->Width(); // no change
+	if (newContentHeight == 0) newContentHeight = contentArea->Height(); // no change
+	contentArea->SetSize(newContentWidth, newContentHeight);
+      }
     }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void wxApp::doMacInGoAway(WindowPtr window)
 {
   wxFrame* theMacWxFrame = findMacWxFrame(window);
-  if (theMacWxFrame && theMacWxFrame->CanAcceptEvent())
-    {
-      if ((!StillDown()) || (TrackGoAway(window, cCurrentEvent.where)))
-	{
-	  Bool okToDelete = theMacWxFrame->OnClose();
-	  if (okToDelete) {
-#if WXGARBAGE_COLLECTION_ON
-	    theMacWxFrame->Show(FALSE);
-#else
-	    delete theMacWxFrame;
-#endif
-	  }
-	}
+  if (theMacWxFrame && theMacWxFrame->CanAcceptEvent()) {
+    if ((!StillDown()) || (TrackGoAway(window, cCurrentEvent.where))) {
+      Bool okToDelete = theMacWxFrame->OnClose();
+      if (okToDelete) {
+	theMacWxFrame->Show(FALSE);
+      }
     }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void wxApp::doMacInZoom(WindowPtr window, short windowPart)
 {
-  wxFrame* theMacWxFrame = findMacWxFrame(window);
-  if (theMacWxFrame && theMacWxFrame->CanAcceptEvent())
-    {
+  if (StillDown()) { 
+    wxFrame* theMacWxFrame = findMacWxFrame(window);
+    if (theMacWxFrame && theMacWxFrame->CanAcceptEvent()) {
       if (TrackBox(window, cCurrentEvent.where, windowPart))
-	{
-	  theMacWxFrame->Maximize(windowPart == inZoomOut);
-	}
-      
+	theMacWxFrame->Maximize(windowPart == inZoomOut);
     }
+  }
 }
 
 //-----------------------------------------------------------------------------

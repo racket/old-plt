@@ -25,15 +25,12 @@ typedef       void    *wxMemoryDC ;
 class wxMemoryDC: public wxbMemoryDC
 {
  public:
-  GWorldPtr	gworldH;
   Bool read_only;
   wxMemoryDC(Bool read_only = FALSE);
 
   ~wxMemoryDC(void);
   virtual void SelectObject(wxBitmap *bitmap);
   wxBitmap *GetObject();
-
-  GWorldPtr MacCreateGWorld(int width, int height);
 };
 
 #endif // IN_CPROTO

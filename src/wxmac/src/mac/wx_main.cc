@@ -65,6 +65,7 @@ int wxEntry(int argc, char* argv[])
   static char path_divider = ':';
 #endif
   
+  wxGetGDHandle(); /* save original grafptr and device */
   wxCommonInit();
   wxInitializePrintSetupData(1);
 

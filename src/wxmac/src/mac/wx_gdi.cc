@@ -29,10 +29,20 @@ CGrafPtr gMacFontGrafPort = NULL; // mac platform only
 
 #define PLAIN_MALLOC_FOR_XPM
 
+#if 1
+# define RECORD(w, p) p
+#else
+static void *RECORD(const char *where, void *p)
+{
+	printf("%s %lx\n", where, (long)p);
+	return p;
+}
+#endif
+
 void *XpmMalloc(size_t size)
 {
 #ifdef PLAIN_MALLOC_FOR_XPM
-  return malloc(size);
+  return RECORD("m", malloc(size));
 #else
   return new char[size];
 #endif
@@ -41,7 +51,7 @@ void *XpmMalloc(size_t size)
 void *XpmMallocA(size_t size)
 {
 #ifdef PLAIN_MALLOC_FOR_XPM
-  return malloc(size);
+  return RECORD("m", malloc(size));
 #else
   return new WXGC_ATOMIC char[size];
 #endif
@@ -50,7 +60,7 @@ void *XpmMallocA(size_t size)
 static void *DoXpmRealloc(void *(*alloc)(size_t), void *ptr, size_t size)
 {
 #ifdef PLAIN_MALLOC_FOR_XPM
-  return realloc(ptr, size);
+  return RECORD("r", realloc(ptr, size));
 #else
   void *naya;
   size_t osize;
@@ -80,7 +90,7 @@ void *XpmReallocA(void *ptr, size_t size)
 void *XpmCallocA(size_t nelem, size_t elsize)
 {
 #ifdef PLAIN_MALLOC_FOR_XPM
-  return calloc(nelem, elsize);
+  return RECORD("c", calloc(nelem, elsize));
 #else
   void *v = XpmMallocA(nelem * elsize);
   memset(v, 0, nelem * elsize);
@@ -88,10 +98,19 @@ void *XpmCallocA(size_t nelem, size_t elsize)
 #endif
 }
 
+void *XpmCalloc(size_t nelem, size_t elsize)
+{
+#ifdef PLAIN_MALLOC_FOR_XPM
+  return RECORD("c", calloc(nelem, elsize));
+#else
+  return XpmMalloc((nelem) * (elsize))
+#endif
+}
+
 void XpmFree(void *ptr)
 {
 #ifdef PLAIN_MALLOC_FOR_XPM
-  free(ptr);
+  free(RECORD("f", ptr));
 #else
   /* Do nothing */
 #endif
@@ -769,6 +788,23 @@ void wxDisplaySize(int *width, int *height)
   *height = screenBits.bounds.bottom - screenBits.bounds.top - GetMBarHeight();
 }
 
+/* NOTE: we rely on no garbage collection between GetGWorld()... SetGWorld()
+   pairs. Otherwise, the temporarily unset GWorldPtr could be freed before
+   the restoring SetGWorld(). */
+
+static void FreeGWorld(GWorldPtr x_pixmap)
+{
+  /* Is this GWorld the current context? */
+  GDHandle savegd;
+  CGrafPtr saveport;
+  GetGWorld(&saveport, &savegd);
+  if (saveport == x_pixmap) {
+    SetGWorld(wxGetGrafPtr(), wxGetGDHandle());
+  }
+
+  DisposeGWorld(x_pixmap);
+}
+
 //------------------ BitMaps ------------------------------------------
 /*
    on the Mac, the wxBitMap needs to be a structure that will allow
@@ -797,9 +833,9 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
   //Rect bounds = {0, 0, the_height, the_width};
   GDHandle savegd;
   CGrafPtr saveport;
-  GetGWorld(&saveport, &savegd);
   Create(the_width, the_height, 1);
   if (ok) {
+    GetGWorld(&saveport, &savegd);
     SetGWorld(x_pixmap, 0);
     int i, j, p = 0;
     char byte;
@@ -843,9 +879,9 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
       height = (*h)->picFrame.bottom;
       GDHandle savegd;
       CGrafPtr saveport;
-      GetGWorld(&saveport, &savegd);
       Rect bounds = {0, 0, height, width};
       Create(width, height, depth);
+      GetGWorld(&saveport, &savegd);
       SetGWorld(x_pixmap, 0);
       DrawPicture( h, &bounds);
       ::ReleaseResource((Handle)h);
@@ -879,19 +915,10 @@ wxBitmap::~wxBitmap(void)
   if (selectedInto)
     selectedInto->SelectObject(NULL);
 
-  if (x_pixmap)
-    // Louis Birk Suggests:
-#ifdef LkB
-#error "REVIEW this code"
-    BitMap pixMap = GetPortPixMap(*x_pixmap);
-  ::DisposeCTable(pixMap->pmTable);
-  pixMap->pmTable = 0;
-  ::DisposePtr((Ptr) pixMap->baseAddr);
-  pixMap->baseAddr = 0;
-  // End of birk@moonface.com mods
-#else
-  DisposeGWorld(x_pixmap);
-#endif
+  if (x_pixmap) {
+    FreeGWorld(x_pixmap);
+    x_pixmap = NULL;
+  }
 }
 
 Bool wxBitmap::Create(int wid, int hgt, int deep)
@@ -908,11 +935,11 @@ Bool wxBitmap::Create(int wid, int hgt, int deep)
   // Build a offscreen GWorld to draw the Picture in
   GDHandle savegw;
   CGrafPtr saveport;
-  GetGWorld(&saveport, &savegw);
   QDErr err;
   GWorldPtr	newGWorld = NULL;
-  err = NewGWorld(&newGWorld, (deep == -1) ? 0 : deep, &bounds, NULL, NULL, 0);
+  err = NewGWorld(&newGWorld, (deep == -1) ? 32 : deep, &bounds, NULL, NULL, 0);
   if (err == noErr) {
+    GetGWorld(&saveport, &savegw);
     ::LockPixels(::GetGWorldPixMap(newGWorld));
     SetGWorld(newGWorld, 0);
     if (depth < 1)
@@ -980,7 +1007,7 @@ Bool wxBitmap::LoadFile(char *name, long flags)
   if (selectedIntoDC) return FALSE;
   
   if (x_pixmap) {
-    DisposeGWorld(x_pixmap);
+    FreeGWorld(x_pixmap);
     x_pixmap = NULL;
   }
   wxColourMap *colourmap;
@@ -1027,7 +1054,7 @@ Bool wxBitmap::LoadFile(char *name, long flags)
     ok = read_JPEG_file(name, this);
     if (!ok) {
       if (x_pixmap) {
-	DisposeGWorld(x_pixmap);
+	FreeGWorld(x_pixmap);
 	x_pixmap = NULL;
       }
       ok = FALSE;

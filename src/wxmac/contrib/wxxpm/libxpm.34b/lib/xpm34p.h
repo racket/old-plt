@@ -89,7 +89,7 @@ extern void *XpmMalloc(size_t size);
 extern void *XpmMallocA(size_t size);
 extern void *XpmRealloc(void *ptr, size_t size);
 extern void *XpmReallocA(void *ptr, size_t size);
-#define XpmCalloc(nelem, elsize) XpmMalloc((nelem) * (elsize))
+extern void *XpmCalloc(size_t nelem, size_t elsize);
 extern void *XpmCallocA(size_t nelem, size_t elsize);
 
 

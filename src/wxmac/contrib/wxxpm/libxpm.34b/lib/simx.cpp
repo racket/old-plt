@@ -132,11 +132,19 @@ XDefaultDepth(Display *display, Screen *screen)
 {
     int d, b;
 #ifdef FOR_MAC
+    {
+      static int the_depth;
+
+      if (!the_depth) {
 	PixMapHandle pmap;
 	GDHandle dev;
-	dev = GetGDevice();
+	dev = GetMainDevice();
 	pmap = (**dev).gdPMap;
-	b = (**pmap).pixelSize;
+	the_depth = (**pmap).pixelSize;
+      }
+
+     b = the_depth;
+    }
 #else
     b = GetDeviceCaps(*display, BITSPIXEL);
     d = GetDeviceCaps(*display, PLANES);

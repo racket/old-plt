@@ -20,9 +20,6 @@
 
 /* 
    A wxMemoryDC is a pointer to a bitmap, which is an offscreen GWorld. 
-   
-   When the wxMemoryDC(void) constructor is used we don't know how large a pixmap
-   (boundsRect) to create so we wait until SelectObject() is called. 
    */
 extern CGrafPtr wxMainColormap;
 
@@ -39,7 +36,6 @@ wxMemoryDC::wxMemoryDC(Bool ro)
   title = NULL;
 
   selected_pixmap = NULL;
-  gworldH = NULL;
 }
 
 wxMemoryDC::~wxMemoryDC(void)
@@ -49,12 +45,7 @@ wxMemoryDC::~wxMemoryDC(void)
       selected_pixmap->selectedInto = NULL;
       selected_pixmap->selectedIntoDC = 0;
     }
-    gworldH = NULL;
-  } else {
-    if (gworldH) {
-      ::DisposeGWorld(gworldH);
-      gworldH = NULL;
-    }
+    selected_pixmap = NULL;
   }
   
   if (cMacDC) {
@@ -80,12 +71,6 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
       selected_pixmap->selectedInto = NULL;
       selected_pixmap->selectedIntoDC = 0;
     }
-    gworldH = NULL;
-  } else {
-    if (gworldH) {
-      ::DisposeGWorld(gworldH);
-      gworldH = NULL;
-    }
   }
 
   if (cMacDC) {
@@ -97,7 +82,6 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
   if (bitmap == NULL) {	// deselect a bitmap
     pixmapWidth = 0;
     pixmapHeight = 0;
-    pixmap = NULL;
     return;
   }
   if (!read_only) {
@@ -107,11 +91,8 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
   pixmapWidth = bitmap->GetWidth();
   pixmapHeight = bitmap->GetHeight();
   if (bitmap->Ok()) {
-    gworldH = bitmap->x_pixmap;
-    if (gworldH) {
-      pixmap = ::GetGWorldPixMap(gworldH);
-      
-      cMacDC = new wxMacDC((CGrafPtr)gworldH);
+    if (bitmap->x_pixmap) {
+      cMacDC = new wxMacDC((CGrafPtr)bitmap->x_pixmap);
       // bitmap->DrawMac(0, 0);
       ok = TRUE;
       
@@ -127,9 +108,3 @@ wxBitmap* wxMemoryDC::GetObject()
 {
   return selected_pixmap;
 }
-
-GWorldPtr wxMemoryDC::MacCreateGWorld(int width, int height)
-{
-  return NULL;
-}
-

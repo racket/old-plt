@@ -221,6 +221,7 @@ wxButton::~wxButton(void)
 {
   if (buttonBitmap == NULL) {
     if (cMacControl) ::DisposeControl(cMacControl);
+    cMacControl = NULL;
   } else
     --buttonBitmap->selectedIntoDC;
 }

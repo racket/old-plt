@@ -87,8 +87,7 @@ START_XFORM_SKIP;
 wxBitmap *wxMediaBuffer::bitmap;
 wxMemoryDC *wxMediaBuffer::offscreen = NULL;
 long wxMediaBuffer::bmHeight, wxMediaBuffer::bmWidth;
-# define OFFSCREEN_IN_USE_INIT FALSE
-Bool wxMediaBuffer::offscreenInUse = OFFSCREEN_IN_USE_INIT;
+Bool wxMediaBuffer::offscreenInUse = FALSE;
 wxMediaBuffer *wxMediaBuffer::lastUsedOffscreen = NULL;
 
 #ifdef MZ_PRECISE_GC

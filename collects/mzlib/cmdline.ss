@@ -15,10 +15,6 @@
 		   msg
 		   stx
 		   detail))])
-	   (unless (string? (syntax-e (syntax program-name)))
-	     (serror
-	      "program name is not a string"
-	      (syntax program-name)))
 	   (let ([extract (lambda (what args . detail)
 			    (if (null? args)
 				(apply serror (format "missing ~a" what) detail)

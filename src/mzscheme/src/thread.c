@@ -947,7 +947,7 @@ static void adjust_custodian_family(void *mgr, void *skip_move)
 	  {
 	    Scheme_Object *o;
 	    o = xCUSTODIAN_FAM(m->boxes[i]);
-	    if (SAME_TYPE(SCHEME_TYPE(r->boxes[i]), scheme_thread_hop_type)) {
+	    if (SAME_TYPE(SCHEME_TYPE(o), scheme_thread_hop_type)) {
 	      o = WEAKIFIED(((Scheme_Thread_Custodian_Hop *)o)->p);
 	      if (o)
 		GC_register_thread(o, parent);

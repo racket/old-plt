@@ -672,6 +672,8 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
   MrEdContextFrames *frames;
   Context_Custodian_Hop *mr_hop;
 
+  scheme_custodian_check_available(NULL, "make-eventspace", "eventspace");
+
   if (!c) {
     wxChildList *tlwl;
     wxStandardSnipClassList *scl;

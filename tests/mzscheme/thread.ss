@@ -176,11 +176,8 @@
 (test #f custodian? 1)
 (arity-test custodian? 1 1)
 
-(arity-test custodian-shutdown-all 1 2)
+(arity-test custodian-shutdown-all 1 1)
 (err/rt-test (custodian-shutdown-all 0))
-(err/rt-test (custodian-shutdown-all (make-custodian) 5))
-(err/rt-test (custodian-shutdown-all (make-custodian) (make-custodian))
-	     exn:application:mismatch?)
 
 (arity-test make-custodian 0 1)
 (err/rt-test (make-custodian 0))
@@ -408,9 +405,6 @@
 (err/rt-test (call-in-nested-thread (lambda () ((error-escape-handler)))) exn:thread?)
 (err/rt-test (call-in-nested-thread (lambda () (raise (box 5)))) box?)
 
-(define c1 (make-custodian))
-(define c2 (make-custodian))
-(define c3 (make-custodian))
 (define output-stream null)
 (define (output v)
   (set! output-stream 
@@ -419,6 +413,11 @@
   (test v 'output-stream output-stream))
 
 (define (chain c)
+  (define c1 (make-custodian))
+  (define c2 (make-custodian))
+  (define c3 (make-custodian))
+
+
   (set! output-stream null)
   
   (output 'os)
@@ -439,9 +438,15 @@
 					    (output 'ibreak)
 					    (output 'iother))
 					(raise x))])
-		  (if (procedure? c)
-		      (c t1)
-		      (custodian-shutdown-all c)))
+		  (let ([get-c (lambda (c)
+				 (case c
+				   [(1) c1]
+				   [(2) c2]
+				   [(3) c3]
+				   [else c]))])
+		    (if (procedure? c)
+			(c t1 get-c)
+			(custodian-shutdown-all (get-c c)))))
 		(output 'ie)
 		'inner-result)
 	      c2)))
@@ -449,14 +454,14 @@
 	(output 'me)))
      c1)))
 
-(test 'inner-result chain c3)
+(test 'inner-result chain 3)
 (test-stream '(os ms mpre is ie mpost me))
 
-(test #t exn:thread? (chain c1))
+(test #t exn:thread? (chain 1))
 (test-stream '(os ms mpre is ibreak))
 
 (parameterize ([break-enabled #f])
-  (test #t exn:thread? (chain c1))
+  (test #t exn:thread? (chain 1))
   (test-stream '(os ms mpre is ie))
   (test (void) 'discard-break
 	(with-handlers ([void void])
@@ -464,25 +469,25 @@
 	  (sleep)
 	  'not-void)))
 
-(test #t exn:thread? (chain c2))
+(test #t exn:thread? (chain 2))
 (test-stream '(os ms mpre is mpost))
 
-(test #t exn:thread? (chain (lambda (t1) (kill-thread (current-thread)))))
+(test #t exn:thread? (chain (lambda (t1 get-c) (kill-thread (current-thread)))))
 (test-stream '(os ms mpre is mpost))
 
 (test #t exn:application? (chain 'wrong))
 (test-stream '(os ms mpre is iother mpost))
 
-(test #t exn:break? (chain (let ([t (current-thread)]) (lambda (t1) (break-thread t)))))
+(test #t exn:break? (chain (let ([t (current-thread)]) (lambda (t1 get-c) (break-thread t)))))
 (test-stream '(os ms mpre is ibreak mpost))
 
-(test #t exn:thread? (chain (lambda (t1) (kill-thread t1))))
+(test #t exn:thread? (chain (lambda (t1 get-c) (kill-thread t1))))
 (test-stream '(os ms mpre is ibreak))
 
 (parameterize ([break-enabled #f])
   (test #t exn:thread? (let ([t (current-thread)])
-			 (chain (lambda (t1)
-				  (custodian-shutdown-all c1)
+			 (chain (lambda (t1 get-c)
+				  (custodian-shutdown-all (get-c 1))
 				  (test #t thread-running? (current-thread))
 				  (test #t thread-running? t)
 				  (test #f thread-running? t1)))))
@@ -841,6 +846,42 @@
  (list sleep void))
 
 ;; ----------------------------------------
+;;  Simple multi-custodian threads
+
+(let ([go
+       (lambda (1st1st? derived?)
+	 (let* ([c1 (make-custodian)]
+		[c2 (make-custodian (if derived? c1 (current-custodian)))])
+	   (let ([t (parameterize ([current-custodian c1])
+		      (thread (lambda () (sleep 1000))))])
+	     (test #t thread-running? t)
+	     (thread-resume t c2)
+	     (test #t thread-running? t)
+	     (custodian-shutdown-all (if 1st1st? c1 c2))
+	     (test (not (and derived? 1st1st?)) thread-running? t)
+	     (custodian-shutdown-all (if 1st1st? c1 c2))
+	     (test (not (and derived? 1st1st?)) thread-running? t)
+	     (custodian-shutdown-all (if 1st1st? c2 c1))
+	     (test #f thread-running? t))))])
+  (go #t #f)
+  (go #f #f)
+  (go #t #t)
+  (go #f #t))
+
+;; Test collapsing custodians for resume
+(let* ([c0 (make-custodian)]
+       [c1 (make-custodian c0)]
+       [c2 (make-custodian c0)]
+       [c3 (make-custodian c0)])
+  (let ([t (parameterize ([current-custodian c1])
+	     (thread (lambda () (sleep 1000))))])
+    (thread-resume t c2)
+    (thread-resume t c3)
+    (thread-resume t c0)
+    (custodian-shutdown-all c0)
+    (test #f thread-running? t)))
+	     
+;; ----------------------------------------
 ;; Kill versus Suspend
 
 (let* ([v 0]
@@ -869,7 +910,8 @@
 	     (check-inc #f)
 	     (let ([r (thread-resume-waitable t)])
 	       (test #f object-wait-multiple 0 r)
-	       (thread-resume t)
+	       (set! c (make-custodian))
+	       (thread-resume t c)
 	       (test (and resumable? t) object-wait-multiple 0 r))
 	     (test resumable? thread-running? t)
 	     (when resumable?
@@ -878,7 +920,8 @@
 	       (test #f thread-running? t)
 	       (test #f thread-dead? t)
 	       (check-inc #f)
-	       (thread-resume t)
+	       (set! c (make-custodian))
+	       (thread-resume t c)
 	       (test #t thread-running? t)
 	       (check-inc #t)
 	       (kill-thread t)
@@ -892,6 +935,11 @@
 		(parameterize ([current-custodian c0])
 		  (thread (lambda () (thread-resume t (current-thread))))))
 	       (check-inc #t)
+	       (custodian-shutdown-all c)
+	       (test #t thread-running? t)
+	       (check-inc #t)
+	       (set! c (make-custodian))
+	       (thread-resume t c)
 	       (custodian-shutdown-all c)
 	       (test #t thread-running? t)
 	       (check-inc #t)
@@ -936,7 +984,7 @@
 			   threads)
 		 (test (void) thread-resume t)
 		 (for-each (lambda (t)
-			     (test #t thread-running? t))
+			     (test (not c-suspend?) thread-running? t))
 			   threads)))
 	     (custodian-shutdown-all (current-custodian)))))])
   (go thread #f)
@@ -967,35 +1015,6 @@
   (thread-suspend t2)
   (thread-resume t2)
   (test #f thread-running? t3))
-
-;; Check creation of a custodian between custodians for thread-resume
-(let ([check-escape
-       (lambda (mode)
-	 (let* ([c0 (make-custodian)]
-		[c1 (make-custodian c0)]
-		[c2 (make-custodian c0)]
-		[t1 (parameterize ([current-custodian c1])
-		      (thread (lambda () (let loop () (sleep) (loop)))))]
-		[t2 (parameterize ([current-custodian c2])
-		      (thread (lambda () (let loop () (sleep) (loop)))))])
-	   (thread-resume t1 t2)
-	   ;; Killing c1 shouldn't stop t1 anymore
-	   (custodian-shutdown-all c1)
-	   (test #t thread-running? t1)
-	   (custodian-shutdown-all c2)
-	   (test #f thread-running? t2)
-	   (test #t thread-running? t1)
-	   (case mode
-	     [(manual-check)
-	      (for-each (lambda (i)
-			  (when (custodian? i)
-			    (custodian-shutdown-all i)))
-			(custodian-managed-list c0 (current-custodian)))]
-	     [(csa-2)
-	      (custodian-shutdown-all c1 c0)])
-	   (test #f thread-running? t1)))])
-  (check-escape 'manual-check)
-  (check-escape 'csa-2))
 
 ;; ----------------------------------------
 

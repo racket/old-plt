@@ -250,6 +250,7 @@ MX_PRIM_DECL(mx_current_document);
 
 MX_PRIM_DECL(mx_find_element);
 MX_PRIM_DECL(mx_find_element_by_id_or_name);
+MX_PRIM_DECL(mx_elements_with_tag);
 MX_PRIM_DECL(mx_document_objects);
 MX_PRIM_DECL(mx_coclass_to_html);
 MX_PRIM_DECL(mx_insert_html);

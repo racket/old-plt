@@ -224,6 +224,11 @@ _MysterX_
   If more than one element has the given id or name, the results
   are unspecified.
 
+> elements-with-tag :: (send an-mx-document elements-with-tag tag)
+
+  Returns a list of mx-element% instances with the HTML tag given by
+  `tag', a string.
+
   HTML events
   -----------
 

@@ -1594,6 +1594,12 @@
 	       (make-object 
 		mx-element% doc 
 		(mxprims:document-find-element-by-id-or-name doc id)))]
+	    [elements-with-tag
+	     (lambda (tag)
+	       (map
+		(lambda (elt)
+		  (make-object mx-element% doc elt))
+		(mxprims:document-elements-with-tag doc tag)))]
 	    [objects
 	     (lambda () 
 	       (mxprims:document-objects doc))]

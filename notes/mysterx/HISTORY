@@ -15,8 +15,8 @@ created mx-browser% class with methods
 constructor for mx-browser% takes same arguments
  as old constructor for mx-document%; style
  list may include 'scrollbars
-added find-element-by-id-or-name
- to mx-document%
+added find-element-by-id-or-name,
+ elements-with-tag to mx-document%
 added methods selection and 
  set-selection to mx-element%
 added focus method to mx-element%;

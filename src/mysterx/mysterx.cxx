@@ -126,6 +126,7 @@ static MX_PRIM mxPrims[] = {
   { mx_replace_html,"document-replace-html",2,2 },
   { mx_find_element,"document-find-element",3,3 },
   { mx_find_element_by_id_or_name,"document-find-element-by-id-or-name",2,2 },
+  { mx_elements_with_tag,"document-elements-with-tag",2,2 },
   { mx_document_objects,"document-objects",1,1 },
   
   // elements
@@ -3245,6 +3246,7 @@ Scheme_Object *mx_com_object_pred(int argc,Scheme_Object **argv) {
 }
   
 Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
+  HRESULT hr;  
   IHTMLDocument2 *pDocument;
   IHTMLElement *pBody;
   IHTMLElementCollection *pObjectsCollection;
@@ -3260,10 +3262,10 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
   
   pDocument = MX_DOCUMENT_VAL(argv[0]); 
   
-  pDocument->get_body(&pBody);
+  hr = pDocument->get_body(&pBody);
   
-  if (pBody == NULL) {
-    scheme_signal_error("Can't find document body");
+  if (hr == NULL || pBody == NULL) {
+    codedComError("document-objects: Can't find document BODY",hr);
   }
   
   pObjectsCollection = getBodyElementsWithTag(pBody,"OBJECT");
@@ -3295,6 +3297,70 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
   }
   
   pObjectsCollection->Release();
+  
+  return retval;
+}
+
+Scheme_Object *mx_elements_with_tag(int argc,Scheme_Object **argv) {
+  HRESULT hr;
+  IHTMLDocument2 *pDocument;
+  IHTMLElement *pBody,*pIHTMLElement;
+  IHTMLElementCollection *pCollection;
+  long numObjects;
+  Scheme_Object *retval;
+  MX_Element *elt;
+  IDispatch *pDispatch;
+  int i;
+  
+  if (MX_DOCUMENTP(argv[0]) == FALSE) {
+    scheme_wrong_type("document-elements-with-tag","mx-document",0,argc,argv);
+  }
+  
+  if (SCHEME_STRINGP(argv[1]) == FALSE) {
+    scheme_wrong_type("document-elements-with-tag","string",1,argc,argv);
+  }
+  
+  pDocument = MX_DOCUMENT_VAL(argv[0]); 
+  
+  pDocument->get_body(&pBody);
+  
+  if (pBody == NULL) {
+    scheme_signal_error("Can't find document BODY");
+  }
+  
+  pCollection = getBodyElementsWithTag(pBody,SCHEME_STR_VAL(argv[1]));
+  
+  pBody->Release();
+  
+  pCollection->get_length(&numObjects);
+  
+  retval = scheme_null;
+  
+  for (i = numObjects - 1; i >= 0; i--) {
+    
+    pDispatch = getElementInCollection(pCollection,i);
+
+    hr = pDispatch->QueryInterface(IID_IHTMLElement,(void **)&pIHTMLElement);
+    
+    if (hr != S_OK || pIHTMLElement == NULL) {
+      codedComError("document-elements-with-tag: Can't get IHTMLElement interface",hr);
+    }
+
+    elt = (MX_Element *)scheme_malloc(sizeof(MX_Element));
+  
+    elt->type = mx_element_type;
+    elt->released = FALSE;
+    elt->valid = TRUE;
+    elt->pIHTMLElement = pIHTMLElement;
+
+    pIHTMLElement->AddRef();  
+
+    mx_register_simple_com_object((Scheme_Object *)elt,pIHTMLElement);
+  
+    retval = scheme_make_pair((Scheme_Object *)elt,retval);
+  }
+  
+  pCollection->Release();
   
   return retval;
 }
@@ -3640,7 +3706,7 @@ Scheme_Object *mx_stuff_html(int argc,Scheme_Object **argv,
   pDocument->get_body(&pBody);
   
   if (pBody == NULL) {
-    scheme_signal_error("Can't find document body");
+    scheme_signal_error("Can't find document BODY");
   }
   
   where = SysAllocString(oleWhere);

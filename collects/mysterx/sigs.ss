@@ -75,6 +75,7 @@
    document-replace-html
    document-find-element
    document-find-element-by-id-or-name
+   document-elements-with-tag
    document-objects
    element-insert-html
    element-append-html

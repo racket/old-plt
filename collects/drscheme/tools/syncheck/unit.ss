@@ -635,11 +635,6 @@
 					(cond
 					 [(eq? who 'macro) (loop (zodiac:origin-how origin))]
 					 [(and (eq? who 'source) (zodiac:symbol? zobj))
-					  (printf "followed to: ~a - ~a~n~a~n"
-						  (zodiac:location-offset (zodiac:zodiac-start zobj))
-						  (add1 (zodiac:location-offset 
-							 (zodiac:zodiac-finish zobj)))
-						  zobj)
 					  (change-style syntax-style
 							(zodiac:location-offset (zodiac:zodiac-start zobj))
 							(add1 (zodiac:location-offset 
@@ -719,10 +714,11 @@
 			       (for-each 
 				(lambda (var) (hash-table-put! defineds (zodiac:varref-var var) var))
 				(zodiac:define-values-form-vars zodiac-ast))
-			       (for-each (lambda (var) 
-					   (change-style bound-style 
-							 (zodiac:location-offset (zodiac:zodiac-start var))
-							 (add1 (zodiac:location-offset (zodiac:zodiac-finish var)))))
+			       (for-each (lambda (var)
+					   (when (eq? 'source (zodiac:origin-who (zodiac:zodiac-origin var)))
+					     (change-style bound-style 
+							   (zodiac:location-offset (zodiac:zodiac-start var))
+							   (add1 (zodiac:location-offset (zodiac:zodiac-finish var))))))
 					 (zodiac:define-values-form-vars zodiac-ast))
 			       (color-loop (zodiac:define-values-form-val zodiac-ast))]
 			      
@@ -756,9 +752,14 @@
 			       (color-loop (zodiac:let-values-form-body zodiac-ast))]
 			      
 			      [(zodiac:app? zodiac-ast)
+			       (mred:message-box "0")
+			       (search-for-orig-syntax)
+			       (mred:message-box "1")
 			       (color-loop (zodiac:app-fun zodiac-ast))
+			       (mred:message-box "2")
 			       (for-each color-loop
-					 (zodiac:app-args zodiac-ast))]
+					 (zodiac:app-args zodiac-ast))
+			       (mred:message-box "3")]
 			      
 			      ;; little grossness hear to make life easier.
 			      [(zodiac:symbol? zodiac-ast) (color bound-style)]

@@ -1,44 +1,4 @@
-
-101/7:
-
- * Fixed regexp-match so a pattern can be used concurrently by
-   multiple threads.
-
-101/6:
-
- * Added `timezone-offset' field to the `date' structure.
-   Its value is the number of seconds east of GMT. The value is -18000
-   for CDT.
-
- * Changed (find-system-path 'sys-dir) to "/etc" for Unix and BeOS.
-
- * Added continuation field to exn:misc:user-break, an escape
-   continuation that continues from the point of the break.
-
-   Note that full continuation hops are disallowed across the boundary
-   between the raising of an exception and the invocation of the
-   exception handler.
-
- * Fixed (expt x y) where x is negative and y is non-integral
-
-101/5:
-
- * Added latin-1-integer->char and char->latin-1-integer.
-
-   Characters in MzScheme are characters in the platform-specific
-   extension of ASCII, and the integer->char and char->integer
-   procedures map characters to numbers according to the
-   platform-specific extension of ASCII.
-
-   The Latin-1 character set is platform-indepedent, and the X
-   character set matches Latin-1. Not all of the Latin-1 characters
-   are in the Mac character set, and the Windows and MacOS characters
-   sets contain characters that are not in Latin-1. So
-   latin-1-integer->char and char->latin-1-integer return #f for some
-   values on some platforms.
-
-
-Version 101, ??
+Version 101, October 25, 1999
 Added 'sys-dir to find-system-path
 Added latin-1-integer->char and char->latin-1-integer
 Added timezone-offset field to the date structure

@@ -5,4 +5,4 @@
 # define SPECIAL_TAG ""
 #endif
 
-#define VERSION "101/7" SPECIAL_TAG
+#define VERSION "101" SPECIAL_TAG

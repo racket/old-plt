@@ -27,19 +27,6 @@
           (lambda (port)
             (process (lambda () (read port)) f))))
       
-      ;; process-sexp : sexp
-      ;;                ((+ process-finish sexp) ( -> void) -> void)
-      ;;                -> void
-      ;; expects to be called with user's parameter settings active
-      (define (process-sexp sexp f)
-        (process (let ([first? #t]) 
-                   (lambda ()
-                     (if first?
-                         (begin (set! first? #f)
-                                sexp)
-                         eof)))
-                 f))
-      
       ;; process : ( -> sexp) ((+ sexp process-finish) ( -> void) -> void) -> void
       (define (process reader f)
         (let loop ()

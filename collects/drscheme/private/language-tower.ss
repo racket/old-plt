@@ -11,7 +11,7 @@
 
   (define language-tower@
     (unit/sig drscheme:language-tower^
-      (import)
+      (import [drscheme:rep : drscheme:rep^])
       
       (define language<%>
 	(interface ()
@@ -196,8 +196,7 @@
           (define (default-settings? x)
             (send module-based-language default-settings? x))
           (define (front-end input settings)
-            (lambda ()
-              '...))
+            (module-based-language-front-end input settings))
           (define (config-panel panel settings)
             (send module-based-language config-panel panel settings))
           (define (on-execute settings run-in-user-thread)
@@ -206,4 +205,40 @@
 	    (send module-based-language get-language-position))
           (define (render-value value port put-snip)
             (send module-based-language render-value value port put-snip))
-	  (super-instantiate ()))))))
+	  (super-instantiate ())))
+      
+      ;; module-based-language-front-end : (input settings -> (-> (union sexp syntax eof)))
+      (define (module-based-language-front-end input settings)
+        (let ([port (cond
+                      [(string? input) (open-input-file input)]
+                      [else (open-input-text (drscheme:rep:text/pos-text input)
+                                             (drscheme:rep:text/pos-start input)
+                                             (drscheme:rep:text/pos-end input))])])
+          (lambda ()
+            (read-syntax port))))
+      
+      ;; open-input-text : (instanceof text%) num num -> input-port
+      ;; creates a user port whose input is taken from the text%,
+      ;; starting at position `start' and ending at position `end'
+      (define (open-input-text text start end)
+        (send text split-snip start)
+        (send text split-snip end)
+        (letrec ([snip/eof (or (send text find-snip start 'after-or-none) eof)]
+                 [str (if (object? snip/eof) (send snip read) "")]
+                 [pos 0]
+                 [read-char (lambda () 
+                              (cond
+                                [(eof-object? snip/eof) eof]
+                                [(pos . < . (string-length str))
+                                 (begin0
+                                   (string-ref str pos)
+                                   (set! pos (+ pos 1)))]
+                                [else 
+                                 (set! snip (send snip next))
+                                 (set! str (send snip read))
+                                 (set! pos 0)
+                                 (read-char)]))]
+                 [char-ready? (lambda () #t)]
+                 [close (lambda () (void))]
+                 [peek-char #f])
+          (make-input-port read-char char-ready? close peek-char))))))

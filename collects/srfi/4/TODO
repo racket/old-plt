@@ -1,0 +1,10 @@
+- figure out the "right" way to compute the build directory for use in make script
+- move type-checking to C, so that the bindings pass through directly and get the right inferred names.
+- get external syntax as specified by SRFI 8.
+- why doesn't scheme_raise_exn work?
+- test suite
+- accurate description of 'keyex'?
+- collection dependences: doesn't recompile after change to substitutions
+- numbers not properly coerced to integers for integer-type vectors. (you just get 0)
+- vector-set! fails silently when coercions fail (e.g., (s32vector-set! v 0 32.423))
+- collection dependencies: doesn't recompile after change to scheme version

@@ -201,11 +201,8 @@ void wxItem::MaybeMoveControls()
 static ControlRef test_control;
 static WindowRef test_win;
 
-Bool wxItem::AcceptsExplicitFocus()
+Bool wxAllControlsWantFocus()
 {
-  if (WantsFocus())
-    return TRUE;
-
   /* Create a hidden window/control to check wherg Full Keyboard Access
      has been enabled by the user: */
   if (!test_control && !test_win) {
@@ -234,6 +231,14 @@ Bool wxItem::AcceptsExplicitFocus()
     return (c == test_control);
   } else
     return FALSE;
+}
+
+Bool wxItem::AcceptsExplicitFocus()
+{
+  if (WantsFocus())
+    return TRUE;
+
+  return wxAllControlsWantFocus();
 }
 
 //-----------------------------------------------------------------------------

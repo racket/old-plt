@@ -15,6 +15,7 @@
 #include "wx_sbar.h"
 #include "wxScroll.h"
 #include "wx_frame.h"
+#include "wx_item.h"
 #include "wxScrollArea.h"
 #include "wxBorderArea.h"
 #include "wxRectBorder.h"
@@ -22,6 +23,7 @@
 
 extern void wxCallDoPaintOrQueue(wxCanvas *win);
 extern void MrEdQueuePaint(wxWindow *wx_window);
+extern void MrEdAtomicallyPaint(wxCanvas *win);
 
 //=============================================================================
 // Public constructors
@@ -714,7 +716,24 @@ void wxCanvas::ClientToLogical(int* x, int* y) // mac platform only; testing
 
 Bool wxCanvas::WantsFocus(void)
 {
-  return !cHidden;
+  if (cStyle & wxAS_CONTROL)
+    return FALSE;
+  else
+    return !cHidden;
+}
+
+Bool wxCanvas::AcceptsExplicitFocus(void)
+{
+  if (cStyle & wxAS_CONTROL)
+    return wxAllControlsWantFocus();
+  else
+    return wxbCanvas::AcceptsExplicitFocus();
+}
+
+Bool wxCanvas::SetAsControl()
+{
+  cStyle |= wxAS_CONTROL;
+  return wxAllControlsWantFocus();
 }
 
 void wxCanvas::OnSetFocus(void)
@@ -843,8 +862,13 @@ void wxCanvas::DoPaint(void)
 void wxCanvas::Paint(void)
 {
   if (!cHidden) {
-    /* In wx_frame.cc: */
-    wxCallDoPaintOrQueue(this);
+    if (cStyle & wxAS_CONTROL) {
+      /* Run on-paint atomically */
+      MrEdAtomicallyPaint(this);
+    } else {
+      /* In wx_frame.cc: */
+      wxCallDoPaintOrQueue(this);
+    }
   }
 }
 

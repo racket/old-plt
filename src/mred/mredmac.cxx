@@ -2113,3 +2113,10 @@ int wxHETYield(wxWindow *win, HiEventTrampProc do_f, void *do_data)
 
   return more;
 }
+
+void MrEdAtomicallyPaint(wxCanvas *win)
+{
+  scheme_start_atomic();
+  win->OnPaint();
+  scheme_end_atomic_no_swap();
+}

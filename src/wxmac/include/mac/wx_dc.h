@@ -45,6 +45,9 @@ class wxDC: public wxbDC
   void wxMacDrawLine(int x1, int y1, int x2, int y2);
 
   virtual wxGL *GetGL();
+
+  virtual void DrawTabBase(double x, double y, double w, double h, int state);
+  virtual void DrawTab(char *str, double x, double y, double w, double h, int state);
 };
 
 extern "C" {

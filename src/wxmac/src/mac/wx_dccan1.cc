@@ -1264,3 +1264,82 @@ void wxGLNoContext()
   aglSetCurrentContext(dummy);
 #endif
 }
+
+/************************************************************************/
+/*                        Tab-drawing hack                              */
+/************************************************************************/
+
+void wxCanvasDC::DrawTabBase(double x, double y, double w, double h, int state)
+{
+  Rect r;
+
+  SetCurrentDC();
+
+  x += SetOriginX;
+  y += SetOriginY;
+
+  r.left = (int)x;
+  r.right = (int)(x + w);
+  r.top = (int)y;
+  r.bottom = (int)(y + h);
+
+  DrawThemeTabPane(&r, (ThemeDrawState)state);
+
+  ReleaseCurrentDC();
+}
+
+
+static void draw_tab_label(const Rect *bounds,
+			   ThemeTabStyle style,
+			   ThemeTabDirection direction,
+			   SInt16 depth,
+			   Boolean isColorDev,
+			   UInt32 str)
+{
+  Rect r;
+  r = *bounds;
+  r.top += 2;
+  DrawThemeTextBox((CFStringRef)str, kThemeSystemFont, kThemeStateActive,
+		   0, &r, teJustLeft, NULL);
+}
+
+void wxCanvasDC::DrawTab(char *str, double x, double y, double w, double h, int state)
+{
+  Rect r;
+  CFStringRef title;
+  Bool focus_ring = 0;
+
+  if (state >= 100) {
+    focus_ring = 1;
+    state -= 100;
+  }
+
+  SetCurrentDC();
+
+  x += SetOriginX;
+  y += SetOriginY;
+
+  r.left = (int)x;
+  r.right = (int)(x + w);
+  r.top = (int)y;
+  r.bottom = (int)(y + h);
+
+  title = wxCFString(str);
+
+  DrawThemeTab(&r, state, kThemeTabNorth, draw_tab_label, (long)title);
+
+  CFRelease(title);
+
+  if (focus_ring) {
+    RgnHandle rgn;
+    rgn = NewRgn();
+    if (rgn) {
+      GetThemeTabRegion(&r, state, kThemeTabNorth, rgn);
+      InsetRgn(rgn, 1, 1);
+      DrawThemeFocusRegion(rgn, TRUE);
+      DisposeRgn(rgn);
+    }
+  }
+
+  ReleaseCurrentDC();
+}

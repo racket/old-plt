@@ -169,6 +169,7 @@ class wxCanvas: public wxbCanvas
   virtual void OnKillFocus(void);
 
   Bool WantsFocus();
+  Bool AcceptsExplicitFocus(void);
 
   void ResetGLView(void);
 
@@ -176,6 +177,8 @@ class wxCanvas: public wxbCanvas
 
   virtual void SetCanvasBackground(wxColor *c);
   wxColor *GetCanvasBackground();
+
+  Bool SetAsControl();
 };
 
 #endif // IN_CPROTO

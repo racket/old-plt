@@ -178,6 +178,10 @@ class wxCanvasDC: public wxbCanvasDC
   double SmoothingXFormYB(double y);
   double SmoothingXFormWL(double w, double x);
   double SmoothingXFormHL(double h, double y);
+
+  void DrawTabBase(double x, double y, double w, double h, int state);
+  void DrawTab(char *str, double x, double y, double w, double h, int state);
+
 };
 
 long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str, int d = 0, int len = -1);

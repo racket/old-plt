@@ -64,6 +64,7 @@ class wxItem: public wxbItem
 };
 
 char *wxItemStripLabel(char *label);
+Bool wxAllControlsWantFocus();
 
 #endif // IN_CPROTO
 #endif // wx_itemh

@@ -75,3 +75,13 @@ void wxDC::ToolChanged(wxMacToolType tool)
   if ((tool == kNoTool) || (cMacCurrentTool == tool))
     cMacCurrentTool = kNoTool;
 }
+
+void wxDC::DrawTabBase(double x, double y, double w, double h, int state)
+{
+  /* Only in canvas... */
+}
+
+void wxDC::DrawTab(char *str, double x, double y, double w, double h, int state)
+{
+  /* Only in canvas... */
+}

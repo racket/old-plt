@@ -34,7 +34,7 @@
   
   (define (get-unix-link-flags)
     (case (string->symbol (system-library-subpath))
-      [(sparc-solaris) (list "-G")]
+      [(sparc-solaris i386-solaris) (list "-G")]
       [(sparc-sunos4) (list "-Bdynamic")]
       [(i386-freebsd) (list "-Bshareable")]
       [(rs6k-aix) (let ([version (read (car (process* "/usr/bin/uname" "-v")))])

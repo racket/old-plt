@@ -43,10 +43,6 @@ void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d)
 
     wxMacSetCurrentTool(kTextTool);
 
-	CGrafPtr grafPtr;
-	GDHandle deviceHandle;
-	::GetGWorld(&grafPtr,&deviceHandle);
-	fprintf(stderr,"grafPtr: %X, deviceHandle: %X, isOffscreen: %d\n",(long)(grafPtr),(long)(deviceHandle),IsPortOffscreen(grafPtr));
 	FontInfo fontInfo;
 	Point start, end;
 	::GetFontInfo(&fontInfo);
@@ -54,9 +50,8 @@ void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d)
 	start.v = YLOG2DEV(y + fontInfo.ascent);
 	MoveTo(start.h + SetOriginX, start.v + SetOriginY); // move pen to start drawing text
 	int theStrlen = strlen(text+d);
-	fprintf(stderr,"about to draw text: \"%s\"\n",text+d);
 	::DrawText(text+d, 0, theStrlen); // WCH: kludge, mac procedure same name as wxWindows method
-
+	
 	// mflatt: look at pen, use distance travelled instead of calculating 
     // the length of the string (again)
 	float w, h;

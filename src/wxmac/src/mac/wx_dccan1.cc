@@ -178,10 +178,12 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
 {
 	if (!Ok()) return;
 	 
-        CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-        if (theMacGrafPort != GetQDGlobalsThePort()) {
-	    ::SetGWorld(theMacGrafPort, wxGetGDHandle());
-     }
+     CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+     if (IsPortOffscreen(theMacGrafPort)) {
+     	::SetGWorld(theMacGrafPort, NULL);
+     } else {
+	 	::SetGWorld(theMacGrafPort, wxGetGDHandle());
+	 }
     
      SetOriginX = SetOriginY = 0;
      if (canvas)

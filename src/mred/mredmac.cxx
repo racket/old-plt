@@ -97,6 +97,25 @@ static MrQueueElem *first, *last;
 
 static int last_was_front;
 
+/* QueueTransferredEvent takes an event and puts it
+ * in the MrEd queue, with several exceptions.
+ * 1. Update events.  Update events are sent by the OS
+ *    whenever the OS queue does not contain an update
+ *    event and the update region is not empty.  That is,
+ *    the OS will keep poking you until the update region
+ *    is empty.  To get around this, QTE clears the update
+ *    region manually (and then must reinstate it when it's
+ *    time to handle the event.  ick.
+ * 2. high level events.  I believe that high level events
+ *    actually do not occur any more under OS X.  I could be
+ *    wrong.  in any case, they're dispatched immediately.
+ *    I'm not sure why.
+ * 3. suspendResumeMessage.  Per matthew's comment above, 
+ *    these messages evidently don't work somehow.  So 
+ *    MrEd detects them manually.  Maybe we can get rid
+ *    of this too.
+ */
+
 static int QueueTransferredEvent(EventRecord *e)
 {
   MrQueueElem *q;
@@ -209,6 +228,10 @@ static void GetSleepTime(int *sleep_time, int *delay_time)
   *delay_time = last_was_front ? DELAY_TIME : 0;
 }
 
+/* TransferQueue sucks all of the pending events out of the 
+ * Application queue and sticks them in the MrEd queue.
+ */
+ 
 static int TransferQueue(int all)
 {
   EventRecord e;
@@ -225,8 +248,10 @@ static int TransferQueue(int all)
   mask = everyEvent;
   
   while (WaitNextEvent(mask, &e, dispatched ? sleep_time : 0, NULL)) {
-    if (!QueueTransferredEvent(&e))
+    if (!QueueTransferredEvent(&e)) {
+      // this never happens: QueueTransferredEvent always returns 1
       break;
+    }
   }
   
   lastTime = TickCount();
@@ -787,7 +812,7 @@ int MrEdCheckForBreak(void)
 
 void MrEdMacSleep(float secs)
 {
-  secs = 0; /* <-- !!!! */
+  secs = 0;
   
   EventRecord e;
   
@@ -804,7 +829,7 @@ void MrEdMacSleep(float secs)
 #else
   RgnHandle rgn = NULL;
 #endif
-  
+    
   if (WaitNextEvent(0, &e, secs ? secs * 60 : BG_SLEEP_TIME, rgn))
     QueueTransferredEvent(&e);
 }

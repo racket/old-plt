@@ -137,6 +137,8 @@ extern void wxCheckFinishedSounds(void);
 
 int wxApp::MainLoop(void)
 {
+  keep_going = TRUE;
+  
   while (1) { wxDoEvents(); }
 
 	return 0;

@@ -482,6 +482,15 @@ char *scheme_os_getcwd(char *buf, int buflen, int *actlen, int noexn)
 #endif
 }
 
+#ifdef USE_MAC_FILE_TOOLBOX
+static int find_mac_file(const char *filename, int use_real_cwd,
+			 FSSpec *spec, int finddir, int findfile,
+			 int *dealiased, int *wasdir, int *exists,
+			 long *filedate, int *flags, 
+			 long *type, unsigned long *size,
+			 FInfo *finfo); 
+#endif
+
 int scheme_os_setcwd(char *expanded, int noexn)
 {
 #ifdef USE_MAC_FILE_TOOLBOX
@@ -868,7 +877,7 @@ static int find_mac_file(const char *filename, int use_real_cwd,
   return 1;
 }
 
-char *scheme_mac_spec_to_path(const FSSpec *spec)
+char *scheme_mac_spec_to_path(FSSpec *spec)
 {
 #define QUICK_BUF_SIZE 256
 
@@ -3904,6 +3913,7 @@ find_system_path(int argc, Scheme_Object **argv)
     if (!FindFolder(kOnSystemDisk, t, kCreateFolder, &vRefNum, &dirID)) {
       FSMakeFSSpec(vRefNum,dirID,NULL,&spec);
       home = scheme_make_string(scheme_mac_spec_to_path(&spec));
+    }
     else {
       if (which == id_temp_dir)
 	home = CURRENT_WD();

@@ -1,5 +1,5 @@
 ;;
-;; $Id: frameworkr.ss,v 1.8 1998/09/14 18:34:42 robby Exp $
+;; $Id: frameworkr.ss,v 1.9 1998/09/15 03:21:48 robby Exp $
 ;;
 
 (compound-unit/sig (import [core : mzlib:core^]
@@ -49,7 +49,7 @@
 
 	[group : framework:group^ 
 	       ((require-relative-library-unit/sig "group.ss")
-		mred exit
+		mred exit frame
 		(core function) (core file))]
 
 	[canvas : framework:canvas^ ((require-relative-library-unit/sig "canvas.ss") mred preferences)]

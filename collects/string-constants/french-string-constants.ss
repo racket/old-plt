@@ -589,6 +589,8 @@
  (insert-pb-box-item "Insérer une boite à dessin")
  (insert-image-item "Insérer une image...")
  (insert-comment-box-menu-item-label "Insérer une boite à commentaires")
+ (insert-lambda "Insérer &Lambda")
+
  (wrap-text-item "Replier le texte")
  
  (windows-menu-label "Fe&nêtres")
@@ -770,6 +772,10 @@
  
  (create-servlet "Créer un servlet...") ;servlet = greffon, extension serveur?
  
+ ; the ~a is a language such as "module" or "algol60"
+ (create-servlet-unsupported-language
+  "La création de servlets n'est pas possible avec le language ~a.")
+
  ;;; buttons
  (execute-button-label "Exécuter") 
  (save-button-label "Sauvegarder")

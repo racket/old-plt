@@ -1435,7 +1435,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 static void
 print_string(Scheme_Object *string, int notdisplay, Scheme_Thread *p)
 {
-  char *str, minibuf[10], *esc;
+  char *str, minibuf[8], *esc;
   int len, a, i;
 
   len = SCHEME_STRTAG_VAL(string);
@@ -1460,7 +1460,9 @@ print_string(Scheme_Object *string, int notdisplay, Scheme_Thread *p)
 	if (isprint(str[i])) {
 	  esc = NULL;
 	} else {
-	  sprintf(minibuf, "\\%03o", ((unsigned char *)str)[i]);
+	  sprintf(minibuf,
+                  ((i+1>=len) || (str[i+1] < '0') || (str[i+1] > '7')) ? "\\%o" : "\\%03o",
+                  ((unsigned char *)str)[i]);
 	  esc = minibuf;
 	}
 	break;

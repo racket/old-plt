@@ -73,11 +73,13 @@
 			       append
 			       (map
 				(lambda (clause)
-				  (syntax-case clause (public override private private-field rename inherit sequence)
+				  (syntax-case clause (public override augment private private-field rename inherit sequence)
 				    [(public decl ...)
 				     (extract-ivars 'public #t (syntax (decl ...)))]
 				    [(override decl ...)
 				     (extract-ivars 'override #t (syntax (decl ...)))]
+				    [(augment decl ...)
+				     (extract-ivars 'augment #t (syntax (decl ...)))]
 				    [(private decl ...)
 				     (extract-ivars 'private #f (syntax (decl ...)))]
 				    [(private-field decl ...)
@@ -129,11 +131,12 @@
 			;; Extract internal and external ids, and create xformed body:
 			(with-syntax ([public-ipds (get-info '(public) make-idp)]
 				      [override-ipds (get-info '(override) make-idp)]
+				      [augment-ipds (get-info '(augment) make-idp)]
 				      [rename-ipds (get-info '(rename) make-idp)]
 				      [inherit-ipds (get-info '(inherit) make-idp)]
 				      [private-ids (get-info '(private) (lambda (x) (cadr x)))]
 				      
-				      [(method-decl ...) (get-info '(public override private) make-decl)]
+				      [(method-decl ...) (get-info '(public override augment private) make-decl)]
 				      [(expr ...) (get-info '(private-field sequence) make-seq)]
 				      [(init-expr ...) (let loop ([init-ids init-ids]
 								  [init-defs init-defs])
@@ -164,7 +167,8 @@
 			     (private . private-ids)
 			     (public . public-ipds)
 			     (override . override-ipds)
-			     (rename . rename-ipds)
+			     (augment . augment-ipds)
+			     (rename-super . rename-ipds)
 			     (inherit . inherit-ipds)
 			     method-decl ...
 			     expr ...))))))]))])

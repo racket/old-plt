@@ -128,7 +128,7 @@
 	     "misuse of method (not in application)" 
 	     stx)])))))
 
-  (define (make-rename-map the-finder the-obj the-binder rename-temp)
+  (define (make-rename-super-map the-finder the-obj the-binder rename-temp)
     (let ([set!-stx (datum->syntax-object the-finder 'set!)])
       (mk-set!-trans
        the-binder
@@ -150,7 +150,7 @@
 	     "misuse of super method (not in application)" 
 	     stx)])))))
 
-  (define (make-inner-map the-finder the-obj the-binder rename-temp)
+  (define (make-rename-inner-map the-finder the-obj the-binder rename-temp)
     (let ([set!-stx (datum->syntax-object the-finder 'set!)]
 	  [lambda-stx (datum->syntax-object the-finder 'lambda)])
       (mk-set!-trans
@@ -192,6 +192,25 @@
 	     'class 
 	     "misuse of inner method (not in application)" 
 	     stx)])))))
+
+  (define (generate-super-call stx the-finder the-obj rename-temp args)
+    (datum->syntax-object 
+     the-finder
+     (make-method-apply (find the-finder rename-temp stx) 
+			(find the-finder the-obj stx) 
+			args)
+     stx))
+
+  (define (generate-inner-call stx the-finder the-obj default-expr rename-temp args)
+    (datum->syntax-object 
+     the-finder
+     (let ([target (find the-finder the-obj stx)])
+       (datum->syntax-object 
+	the-finder
+	(make-method-apply (list (find the-finder rename-temp stx) target default-expr)
+			   target args)
+	stx))
+     stx))
 
   (define init-error-map
     (make-set!-transformer
@@ -255,13 +274,25 @@
 	  (loop (s!t-ref (set!-transformer-procedure v) 1))]
 	 [else orig-id]))))
 
+  (define-struct class-context ())
+
+  (define (generate-class-expand-context)
+    (let ([c (syntax-local-context)]
+	  [v (make-class-context)])
+      (if (pair? c)
+	  (cons-immutable v c)
+	  (list-immutable v))))
+
+  (define (class-top-level-context? ctx)
+    (and (pair? ctx)
+	 (class-context? (car ctx))))
 
   (provide make-this-map make-field-map make-method-map 
 	   make-direct-method-map 
-	   make-rename-map make-inner-map
+	   make-rename-super-map make-rename-inner-map
 	   init-error-map super-error-map 
 	   make-with-method-map
 	   flatten-args
-	   make-private-name localize))
-
-    
+	   make-private-name localize
+	   generate-super-call generate-inner-call
+	   generate-class-expand-context class-top-level-context?))

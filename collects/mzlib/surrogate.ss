@@ -6,15 +6,22 @@
   (define-syntax (surrogate stx)
     
     (define (make-empty-method method-spec)
-      (syntax-case method-spec ()
-        [(name argspec ...)
+      (syntax-case method-spec (override augment)
+	[(override name argspec ...)
          (identifier? (syntax name))
-         (with-syntax ([(cases ...) (map make-empty-lambda-case
-                                         (syntax->list (syntax (argspec ...))))])
-           (syntax
-            (begin
-              (define/public name
-                (case-lambda cases ...)))))]))
+	 (make-empty-method-from-argspec #'name (syntax (argspec ...)))]
+        [(augment def-expr name argspec ...)
+         (identifier? (syntax name))
+	 (make-empty-method-from-argspec #'name (syntax (argspec ...)))]))
+
+    (define (make-empty-method-from-argspec name argspecs)
+      (with-syntax ([(cases ...) (map make-empty-lambda-case
+				      (syntax->list argspecs))]
+		    [name name])
+	(syntax
+	 (begin
+	   (define/public name
+	     (case-lambda cases ...))))))
     
     (define (make-empty-lambda-case spec)
       (syntax-case spec ()
@@ -24,80 +31,107 @@
          (syntax [(ths super-call . name) (apply super-call name)])]))
     
     (define (make-overriding-method method-spec)
-      (syntax-case method-spec ()
-        [(name argspec ...)
-         (identifier? (syntax name))
-         (let ([super-name
-                (datum->syntax-object 
-                 (syntax name)
-                 (string->symbol
-                  (string-append
-                   "super-"
-                   (symbol->string
-                    (syntax-object->datum
-                     (syntax name))))))]
-               [super-call-name
-                (datum->syntax-object 
-                 (syntax name)
-                 (string->symbol
-                  (string-append
-                   "super-proc-"
-                   (symbol->string
-                    (syntax-object->datum
-                     (syntax name))))))])
-           (with-syntax ([(cases ...) 
-                          (map (make-lambda-case (syntax name)
-						 super-name
-						 super-call-name)
-                               (syntax->list (syntax (argspec ...))))]
-                         [(super-proc-cases ...)
-                          (map (make-super-proc-case super-name)
-                               (syntax->list (syntax (argspec ...))))]
-                         [super-name super-name]
-                         [super-call-name super-call-name])
-             (syntax
-              (begin
-                (rename [super-name name])
-                (field [super-call-name
-			(case-lambda super-proc-cases ...)])
-                (define/override name
-                  (case-lambda cases ...))))))]))
+      (syntax-case method-spec (override augment)
+	[(override name argspec ...)
+	 (identifier? (syntax name))
+	 (make-overriding-method-with-inner-default 
+	  #'name #f #'(argspec ...))]
+        [(augment def-expr name argspec ...)
+	 (identifier? (syntax name))
+	 (make-overriding-method-with-inner-default 
+	  #'name #'def-expr #'(argspec ...))]))
+
+    (define (make-overriding-method-with-inner-default name def-expr argspecs)
+      ;; (not def-expr) => normal override
+      ;; def-expr => beta override
+      (let ([super-call-name
+	     (datum->syntax-object 
+	      name
+	      (string->symbol
+	       (string-append
+		(if def-expr
+		    "inner-proc-"
+		    "super-proc-")
+		(symbol->string
+		 (syntax-object->datum
+		  name)))))])
+	(with-syntax ([(cases ...) 
+		       (map (make-lambda-case name
+					      super-call-name)
+			    (syntax->list argspecs))]
+		      [(super-proc-cases ...)
+		       (map (make-super-proc-case name def-expr)
+			    (syntax->list argspecs))]
+		      [super-call-name super-call-name]
+		      [name name]
+		      [ren/inn (if def-expr
+				   #'inner
+				   #'rename)]
+		      [define/override/fnl (if def-expr
+					       #'define/augment
+					       #'define/override)])
+	  (syntax
+	   (begin
+	     (field [super-call-name
+		     (case-lambda super-proc-cases ...)])
+	     (define/override/fnl name
+	       (case-lambda cases ...)))))))
     
-    (define (extract-id method-spec)
-      (syntax-case method-spec ()
-        [(name argspec ...) 
-         (syntax name)]))
+    (define ((extract-id stx) method-spec)
+      (syntax-case method-spec (override augment)
+	[(override name argspec ...)
+	 (identifier? #'name)
+	 (syntax name)]
+	[(augment result-expr name argspec ...)
+	 (identifier? #'name)
+	 (syntax name)]
+	[else (raise-syntax-error 
+	       #f
+	       "bad method specification"
+	       stx
+	       method-spec)]))
     
-    (define (make-super-proc-case super-name)
+    (define (make-super-proc-case name def-expr)
       (lambda (spec)
-        (with-syntax ([super-name super-name])
+        (with-syntax ([name name])
           (syntax-case spec ()
-            [(id ...) (syntax [(id ...)
-                               (super-name id ...)])]
+	    ;; Not a rest arg: normal mode
+            [(id ...) (quasisyntax [(id ...)
+				    (#,@(if def-expr 
+					    (list #'inner def-expr)
+					    (list #'super))
+				     name
+				     id ...)])]
+	    ;; A rest arg: take args as list
             [id 
              (identifier? (syntax id))
-             (syntax [id (super-name . id)])]))))
+             (quasisyntax [(id) (#,@(if def-expr 
+					(list #'inner def-expr)
+					(list #'super))
+				 name
+				 . id)])]))))
     
-    (define (make-lambda-case name super-name super-call)
-      (with-syntax ([super-name super-name]
-                    [name name]
+    (define (make-lambda-case name super-call)
+      (with-syntax ([name name]
                     [super-call super-call])
         (lambda (spec)
           (syntax-case spec ()
+	    ;; Not a rest arg: normal mode for super-call
             [(id ...) (syntax [(id ...)
                                (if surrogate
                                    (send surrogate name this super-call id ...)
                                    (super-call id ...))])]
+	    ;; A rest arg: super-class takes args as a list
             [id
              (identifier? (syntax id))
              (syntax [name 
                       (if surrogate
-                          (send surrogate name this super-call . id)
-                          (super-name . id))])]))))
+                          (send surrogate name this (lambda args (super-call args)) . id)
+                          (super-call id))])]))))
     
     (syntax-case stx ()
       [(_ method-spec ...)
-       (with-syntax ([(ids ...) (map extract-id (syntax->list (syntax (method-spec ...))))]
+       (with-syntax ([(ids ...) (map (extract-id stx) (syntax->list (syntax (method-spec ...))))]
                      [(overriding-methods ...)
                       (map make-overriding-method 
                            (syntax->list

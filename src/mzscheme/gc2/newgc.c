@@ -1412,6 +1412,11 @@ struct ot_entry {
 
 static struct ot_entry **owner_table = NULL;
 static unsigned int owner_table_top = 0;
+static int doing_memory_accounting = 0;
+static int really_doing_accounting = 0;
+static int current_mark_owner = 0;
+static int old_btc_mark = 0;
+static int new_btc_mark = 1;
 
 inline static int create_blank_owner_set(void)
 {
@@ -1521,17 +1526,20 @@ inline static unsigned long custodian_usage(void *custodian)
 {
   unsigned long retval = 0;
   int i;
-
+  
+  if(!really_doing_accounting) {
+    park[0] = custodian;
+    really_doing_accounting = 1;
+    garbage_collect(0);
+    custodian = park[0]; 
+    park[0] = NULL;
+  }
   for(i = 1; i < owner_table_top; i++)
     if(owner_table[i] && custodian_member_owner_set(custodian, i)) 
       retval += owner_table[i]->memory_use;
   return gcWORDS_TO_BYTES(retval);
 }
 
-/* this is the actual code that runs the pass. it's a bit, er, hefty */
-static int current_mark_owner = 0;
-static int old_btc_mark = 0;
-static int new_btc_mark = 1;
 
 inline static void memory_account_mark(struct mpage *page, void *ptr)
 {
@@ -1652,58 +1660,59 @@ static void propagate_accounting_marks(void)
     reset_pointer_stack();
 }
 
-static int doing_memory_accounting = 0;
-
 static void do_btc_accounting(void)
 {
-  Scheme_Custodian *cur = owner_table[current_owner(NULL)]->originator;
-  Scheme_Custodian_Reference *box = cur->global_next;
-  int i;
+  if(really_doing_accounting) {
+    Scheme_Custodian *cur = owner_table[current_owner(NULL)]->originator;
+    Scheme_Custodian_Reference *box = cur->global_next;
+    int i;
 
-  GCDEBUG((DEBUGOUTF, "\nBEGINNING MEMORY ACCOUNTING\n"));
-  doing_memory_accounting = 1;
-  in_unsafe_allocation_mode = 1;
-  unsafe_allocation_abort = btc_overmem_abort;
-
-  if(!normal_thread_mark) {
-    normal_thread_mark = mark_table[scheme_thread_type];
-    normal_custodian_mark = mark_table[scheme_custodian_type];
-  }
-  mark_table[scheme_thread_type] = &BTC_thread_mark;
-  mark_table[scheme_custodian_type] = &BTC_custodian_mark;
-  
-  /* clear the memory use numbers out */
-  for(i = 1; i < owner_table_top; i++)
-    if(owner_table[i])
-      owner_table[i]->memory_use = 0;
-  
-  /* the end of the custodian list is where we want to start */
-  while(SCHEME_PTR1_VAL(box)) {
-    cur = (Scheme_Custodian*)SCHEME_PTR1_VAL(box);
-    box = cur->global_next;
-  }
-  
-  /* walk backwards for the order we want */
-  while(cur) {
-    int owner = custodian_to_owner_set(cur);
+    GCDEBUG((DEBUGOUTF, "\nBEGINNING MEMORY ACCOUNTING\n"));
+    doing_memory_accounting = 1;
+    in_unsafe_allocation_mode = 1;
+    unsafe_allocation_abort = btc_overmem_abort;
     
-    current_mark_owner = owner;
-    GCDEBUG((DEBUGOUTF,"MARKING THREADS OF OWNER %i (CUST %p)\n", owner, cur));
-    kill_propagation_loop = 0;
-    mark_threads(owner);
-    GCDEBUG((DEBUGOUTF, "Propagating accounting marks\n"));
-    propagate_accounting_marks();
+    if(!normal_thread_mark) {
+      normal_thread_mark = mark_table[scheme_thread_type];
+      normal_custodian_mark = mark_table[scheme_custodian_type];
+    }
+    mark_table[scheme_thread_type] = &BTC_thread_mark;
+    mark_table[scheme_custodian_type] = &BTC_custodian_mark;
     
-    box = cur->global_prev; cur = box ? SCHEME_PTR1_VAL(box) : NULL;
-  }
+    /* clear the memory use numbers out */
+    for(i = 1; i < owner_table_top; i++)
+      if(owner_table[i])
+	owner_table[i]->memory_use = 0;
+    
+    /* the end of the custodian list is where we want to start */
+    while(SCHEME_PTR1_VAL(box)) {
+      cur = (Scheme_Custodian*)SCHEME_PTR1_VAL(box);
+      box = cur->global_next;
+    }
+    
+    /* walk backwards for the order we want */
+    while(cur) {
+      int owner = custodian_to_owner_set(cur);
+      
+      current_mark_owner = owner;
+      GCDEBUG((DEBUGOUTF,"MARKING THREADS OF OWNER %i (CUST %p)\n",
+	       owner, cur));
+      kill_propagation_loop = 0;
+      mark_threads(owner);
+      GCDEBUG((DEBUGOUTF, "Propagating accounting marks\n"));
+      propagate_accounting_marks();
+      
+      box = cur->global_prev; cur = box ? SCHEME_PTR1_VAL(box) : NULL;
+    }
   
-  mark_table[scheme_thread_type] = normal_thread_mark;
-  mark_table[scheme_custodian_type] = normal_custodian_mark;
-  in_unsafe_allocation_mode = 0;
-  doing_memory_accounting = 0;
-  old_btc_mark = new_btc_mark;
-  new_btc_mark = !new_btc_mark;
-  clear_stack_pages();
+    mark_table[scheme_thread_type] = normal_thread_mark;
+    mark_table[scheme_custodian_type] = normal_custodian_mark;
+    in_unsafe_allocation_mode = 0;
+    doing_memory_accounting = 0;
+    old_btc_mark = new_btc_mark;
+    new_btc_mark = !new_btc_mark;
+    clear_stack_pages();
+  }
 }
 
 struct account_hook {
@@ -1719,6 +1728,13 @@ inline static void add_account_hook(int type,void *c1,void *c2,unsigned long b)
 {
   struct account_hook *work;
 
+  if(!really_doing_accounting) {
+    park[0] = c1; park[1] = c2;
+    really_doing_accounting = 1;
+    garbage_collect(0);
+    c1 = park[0]; c2 = park[1];
+    park[0] = park[1] = NULL;
+  }
   for(work = hooks; work; work = work->next) {
     if((work->type == type) && (work->c2 == c2)) {
       if(type == MZACCT_REQUIRE) {

@@ -1,14 +1,20 @@
 #|
 
 todo:
-- scroll bars
 
+slideshow language:
 - handle ranges (just the first letter of an identifier), 
 - show/hide menu in the wrong place
 - dock/undock the preview window
 - editing should make the annotations disappear (need to extend the program mixin)
 - move calls to draw-pict over to user's eventspace
 
+pict snip :
+- snipclass for running snips outside of drscheme
+- need to toggle the picts back to scheme code when
+  important things happen (save, execute, etc).
+- should save the true pict size when it gets recorded.
+- show the true size in the GUI
 |#
 
 (module tool mzscheme
@@ -17,7 +23,8 @@ todo:
            (lib "class.ss")
            (lib "unitsig.ss")
            (lib "string-constant.ss" "string-constants")
-           (lib "framework.ss" "framework"))
+           (lib "framework.ss" "framework")
+           (lib "mrpict.ss" "texpict"))
 
   (provide tool@)
 
@@ -32,6 +39,247 @@ todo:
       (define sc-hide-slideshow-panel "Hide Slideshow Panel")
       (define sc-freeze-picts "Freeze These Picts")
       (define sc-thaw-picts "Show Picts Under Mouse")
+      (define sc-insert-pict-box "Insert Pict Box")
+      (define sc-hide-picts "Show Nested Boxes")
+      (define sc-show-picts "Show Picts")
+      
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;
+      ;; pict boxes
+      ;;
+      
+      (define pict-pasteboard% pasteboard%)
+      
+      (define pict-snip%
+        (class* decorated-editor-snip% (readable-snip<%>)
+          (inherit get-editor)
+          
+          (define width 100)
+          (define height 100)
+          (define/public (get-size) (values width height))
+          
+          (define/override (make-editor) (make-object pict-pasteboard%))
+          (define/override (get-corner-bitmap) slideshow-bm)
+          
+          (define/override (get-menu)
+            (let* ([menu (instantiate popup-menu% () (title #f))]
+                   [eliminate-item
+                    (make-object checkable-menu-item%
+                      (if show-picts? sc-hide-picts sc-show-picts)
+                      menu
+                      (lambda (x y)
+                        (set! show-picts? (not show-picts?))
+                        (update-picts-visibility)))])
+              menu))
+          
+          (define has-ever-been-in-show-picts-mode? #f)
+          (define show-picts? #f)
+          
+          (define sub-drawer-snips '())
+          (define sub-snips '())
+          (define/public (set-subs _sub-drawers _sub-snips ws hs)
+            (set! sub-drawer-snips (map (lambda (x w h) 
+                                          (new drawer-snip% 
+                                               (drawer x)
+                                               (w w)
+                                               (h h)))
+                                        _sub-drawers
+                                        ws
+                                        hs))
+            (set! sub-snips _sub-snips))
+          
+          (define/private (update-picts-visibility)
+            (let ([pb (get-editor)])
+              (send pb begin-edit-sequence)
+              (cond
+                [show-picts?
+                 (set! has-ever-been-in-show-picts-mode? #t)
+                 (for-each (lambda (sub-drawer-snip sub-snip)
+                             (let-values ([(x y) (snip-position pb sub-snip)])
+                               (send pb release-snip sub-snip)
+                               (send pb insert sub-drawer-snip x y)))
+                           sub-drawer-snips 
+                           sub-snips)]
+                [else
+                 (for-each (lambda (sub-drawer-snip sub-snip)
+                             (let-values ([(x y) (snip-position pb sub-drawer-snip)])
+                               (send pb release-snip sub-drawer-snip)
+                               (send pb insert sub-snip x y)))
+                           sub-drawer-snips 
+                           sub-snips)])
+              (send pb end-edit-sequence)))
+          
+          (define/private (snip-position pb snip)
+            (let ([x (box 0)]
+                  [y (box 0)])
+              (send pb get-snip-location snip x y)
+              (values (unbox x) (unbox y))))
+
+          (define/public (read-one-special index file line col pos)
+            (pict-read-one-special this
+                                   file
+                                   line
+                                   col
+                                   pos))
+          
+          (define/override (write stream-out)
+            (send (get-editor) write-to-file stream-out))
+          (define/override (make-snip) (new pict-snip%))
+          
+          (rename [super-get-extent get-extent])
+          (define/override (get-extent dc x y wb hb descent space lspace rspace)
+            (super-get-extent dc x y wb hb descent space lspace rspace)
+            (when (or (not has-ever-been-in-show-picts-mode?)
+                      show-picts?)
+              (when (box? wb) (set! width (unbox wb)))
+              (when (box? hb) (set! height (unbox hb)))))
+          
+          ;(define/override (get-color) xml-box-color)
+          
+          (inherit show-border set-snipclass)
+          (super-instantiate ())
+          (show-border #t)
+          (set-snipclass lib-pict-snipclass)))
+      
+      (define drawer-snip%
+        (class snip%
+          (init-field drawer w h)
+          (define/override (draw dc x y left top right bottom dx dy draw-caret)
+            (drawer dc x y))
+          (define/override (get-extent dc x y wbox hbox descent space lspace rspace)
+            (set-box/f wbox w)
+            (set-box/f hbox h)
+            (set-box/f descent 0)
+            (set-box/f space 0)
+            (set-box/f lspace 0)
+            (set-box/f rspace 0))
+          (super-new)
+          (inherit set-snipclass)
+          (set-snipclass drawer-snipclass)))
+
+      (define drawer-snipclass (new snip-class%))
+      
+      (define (set-box/f b v) (when (box? b) (set-box! b v)))
+      
+      (define slideshow-bm
+        (let ([bm (make-object bitmap% (build-path (collection-path "slideshow") "slideshow.bmp"))])
+          (and (send bm ok?)
+               bm)))
+      
+      (define lib-pict-snipclass%
+        (class snip-class%
+          (define/override (read stream-in)
+            (let* ([snip (new pict-snip%)])
+              (send (send snip get-editor) read-from-file stream-in #f)
+              snip))
+          (super-new)))
+      
+      (define lib-pict-snipclass (make-object lib-pict-snipclass%))
+      (send lib-pict-snipclass set-version 1)
+      (send lib-pict-snipclass set-classname (format "~s" '(lib "pict-snipclass.ss" "slideshow")))
+      (send (get-the-snip-class-list) add lib-pict-snipclass)
+      
+      (define-struct stx/pos (stx snip x y))
+      
+      (define drs-eventspace (current-eventspace))
+      
+      ;; pict-read-one-special ... -> ...
+      ;; thread: user's thread
+      (define (pict-read-one-special snip file line col pos)
+        (let ([editor (send snip get-editor)]
+              [old-locked #f])
+          (dynamic-wind
+           (lambda () 
+             (set! old-locked (send editor is-locked?))
+             (send editor lock #t))
+           (lambda ()
+             (let ([stx/poss (get-stx/poss editor)])
+               (let-values ([(w h) (send snip get-size)])
+                 (printf "h ~s ys ~s nys ~s\n" 
+                         h 
+                         (map stx/pos-y stx/poss)
+                         (map (lambda (x) (- h (stx/pos-y x))) stx/poss))
+                 (with-syntax ([(subpicts ...) (map stx/pos-stx stx/poss)]
+                               [(subsnips ...) (map stx/pos-snip stx/poss)]
+                               [(ids ...) (generate-ids "snip-id" (map stx/pos-stx stx/poss))]
+                               [(drawer-ids ...) (generate-ids "drawer-id" (map stx/pos-stx stx/poss))]
+                               [(x ...) (map stx/pos-x stx/poss)]
+                               [(y ...) (map (lambda (x) (- h (stx/pos-y x))) stx/poss)]
+                               [w w]
+                               [h h]
+                               [drs-eventspace drs-eventspace]
+                               [snip snip])
+                   (values
+                    (syntax
+                     (let ([ids subpicts] ...)
+                       (let ([drawer-ids (make-pict-drawer ids)] ...)
+                         (parameterize ([current-eventspace drs-eventspace])
+                           (queue-callback 
+                            (lambda () ;; drs eventspace
+                              (send snip set-subs 
+                                    (list drawer-ids ...) 
+                                    (list subsnips ...)
+                                    (list (pict-width ids) ...)
+                                    (list (pict-height ids) ...))))))
+                       (picture w h `((place ,x ,(- y (pict-height ids)) ,ids) ...))))
+                    1
+                    #t)))))
+           (lambda () (send editor lock old-locked)))))
+
+      (define (generate-ids pre lst)
+        (let loop ([i 0]
+                   [l lst])
+          (cond
+            [(null? l) null]
+            [else (cons (datum->syntax-object #'here (string->symbol (format "~a~a" pre i)))
+                        (loop (+ i 1)
+                              (cdr l)))])))
+      
+        (define (get-stx/poss editor)
+          (let loop ([snip (send editor find-first-snip)])
+            (cond
+              [(not snip) null]
+              [(is-a? snip readable-snip<%>)
+               (let-values ([(stx n b) (send snip read-one-special 0 #f 0 0 0)])
+                 (let ([x (box 0)]
+                       [y (box 0)])
+                   (send editor get-snip-location snip x y)
+                   (cons (make-stx/pos stx snip (unbox x) (unbox y))
+                         (loop (send snip next)))))]
+              [else (loop (send snip next))])))
+        
+      (define (add-special-menu-item menu frame)
+        (let* ([find-insertion-point ;; -> (union #f editor<%>)
+                ;; returns the editor (if there is one) with the keyboard focus
+                (lambda ()
+                  (let ([editor (send frame get-edit-target-object)])
+                    (and editor
+                         (is-a? editor editor<%>)
+                         (let loop ([editor editor])
+                           (let ([focused (send editor get-focus-snip)])
+                             (if (and focused
+                                      (is-a? focused editor-snip%))
+                                 (loop (send focused get-editor))
+                                 editor))))))]
+               [insert-snip
+                (lambda (make-obj)
+                  (let ([editor (find-insertion-point)])
+                    (when editor
+                      (let ([snip (make-obj)])
+                        (send editor insert snip)
+                        (send editor set-caret-owner snip 'display)))))]
+               [demand-callback ;; : menu-item% -> void
+                ;; enables the menu item when there is an editor available.
+                (lambda (item)
+                  (send item enable (find-insertion-point)))])
+          (instantiate menu:can-restore-menu-item% ()
+            (label sc-insert-pict-box)
+            (parent menu)
+            (demand-callback demand-callback)
+            (callback 
+             (lambda (menu evt)
+               (insert-snip 
+                (lambda () (new pict-snip%))))))))
       
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;
@@ -281,6 +529,9 @@ todo:
             (super-clear-annotations))
           
           (super-new)
+          
+          (inherit get-special-menu)
+          (add-special-menu-item (get-special-menu) this)
           
           (define view-menu-item 
             (new menu-item%

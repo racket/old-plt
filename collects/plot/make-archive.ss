@@ -73,7 +73,7 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -mgrq $0 "$@"
        (copy-files 
 	(apply build-path source dir) 
 	(apply build-path target dir)
-	#rx"[.]")))
+	#rx"[.]|hdindex")))
    directories))
 
 ; copy over all the docs

@@ -135,7 +135,12 @@ void wxBell(void)
   MessageBeep(MB_OK);
 }
 
-extern char *wxGetWindowsSetupFilePath(void);
+static char *wxUserResourceFile;
+
+void wxInitUserResource(char *s)
+{
+   wxUserResourceFile = s;
+}
 
 Bool wxWriteResource(const char *section, const char *entry, char *value, const char *file)
 {
@@ -160,7 +165,7 @@ Bool wxWriteResource(const char *section, const char *entry, char *value, const 
 
     file = naya;
   } else {
-    file = wxGetWindowsSetupFilePath();
+    file = wxUserResourceFile;
   } 
    
   return WritePrivateProfileString((LPCSTR)section, (LPCSTR)entry, (LPCSTR)value, (LPCSTR)file);
@@ -185,13 +190,6 @@ Bool wxWriteResource(const char *section, const char *entry, int value, const ch
   char buf[50];
   sprintf(buf, "%d", value);
   return wxWriteResource(section, entry, (char *)buf, file);
-}
-
-static char *wxUserResourceFile;
-
-void wxInitUserResource(char *s)
-{
-   wxUserResourceFile = s;
 }
 
 Bool wxGetResource(const char *section, const char *entry, char **value, const char *file)

@@ -1568,16 +1568,6 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   return scheme_void;
 }
 
-char *wxGetWindowsSetupFilePath(void)
-{
-  Scheme_Object *s, *a[1];
-
-  a[0] = setup_file_symbol;
-  s = wxSchemeFindDirectory(1, a);
-
-  return SCHEME_STR_VAL(s);
-}
-
 char *wxsFileDialog(char *message, char *default_path, 
 		    char *default_filename, char *default_extension, 
 		    int is_put, wxWindow *parent)

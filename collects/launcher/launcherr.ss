@@ -253,14 +253,14 @@
 			    (delete-file dest))
 		      (error 
 		       (format	
-			"~a: exceeds limit of ~a characters"
-			es len))))]
+			"~a exceeds limit of ~a characters: ~a"
+			es len s))))]
 	     [content (begin
 			(file-position p 0)
 			(read-string (file-size dest) p))])
 	(close-input-port p)
-	(check-len len-exedir exedir "executable home directory is too long")
-	(check-len len-command str "collection/file name is too long")
+	(check-len len-exedir exedir "executable home directory")
+	(check-len len-command str "collection/file name")
 	(let ([p (open-output-file dest 'truncate)])
 	  (display content p)
 	  (write-magic p exedir pos-exedir len-exedir)   

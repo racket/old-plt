@@ -337,7 +337,16 @@
                                    `(cons ,(recur (car expr)) ,(recur (cdr expr)))))]
                                [(weak-box? expr) `(make-weak-box ,(recur (weak-box-value expr)))]
                                [(box? expr) `(box ,(recur (unbox expr)))]
-                               [(hash-table? expr) `(make-hash-table)]
+                               [(hash-table? expr) `(hash-table 
+                                                     ,@(cond
+                                                         [(hash-table? expr 'weak 'equal) '('equal 'weak)]
+                                                         [(hash-table? expr 'equal) '('equal)]
+                                                         [(hash-table? expr 'weak) '('weak)]
+                                                         [else '()])
+                                                     ,@(hash-table-map
+                                                        expr
+                                                        (lambda (k v)
+                                                          `(,(recur k) ,(recur v)))))]
                                [(vector? expr) `(vector ,@(map recur (vector->list expr)))]
                                [(symbol? expr) `',expr]
                                [(string? expr) expr]

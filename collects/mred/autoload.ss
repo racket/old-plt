@@ -1,7 +1,6 @@
-(define mred:autoload@
+
   (unit/sig mred:autoload^
-    (import [mred:debug : mred:debug^]
-	    [mred:preferences : mred:preferences^]
+    (import [mred:preferences : mred:preferences^]
 	    [mzlib:file : mzlib:file^])
 
     (mred:debug:printf 'invoke "mred:autoload@")
@@ -28,4 +27,5 @@
 			       (try-it file))))
 			 (mred:preferences:get-preference 'mred:autoload-paths))
 			(error 'autoload "unable to find file: ~s" file))
-		      (try-it file))))))))))
+		      (try-it file)))))))))
+

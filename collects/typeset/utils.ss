@@ -457,23 +457,25 @@
 		(send dc set-font (send the-font-list find-or-create-font (typeset-size)
 					'roman 'normal 'normal #f))
 		(let-values ([(width height descent space) (send dc get-text-extent "a")])
-		  (values (+ margin (* 4 width) margin) height descent space 0 0)
-		  (send dc set-font old-font))))])
+		  (begin0 (values (+ margin (* 3 width) margin) height descent space margin margin)
+			  (send dc set-font old-font)))))])
       (drawing "robby:ellipses"
 	       get-w/h/d/s/l/r
 	       (lambda (dc x y)
 		 (let*-values ([(w h d s _1 _2) (get-w/h/d/s/l/r dc)]
 			       [(yp) (+ y s (floor (+ 1/2 (/ (- h s d) 2))))]
-			       [(l) (+ x margin 1)]
-			       [(ellipse-size) 1]
+			       [(l) (+ x margin)]
+			       [(r) (+ x w (- margin))]
+			       [(ellipse-size) 2/3]
 			       [(draw-dot)
 				(lambda (x y)
-				  (send dc draw-ellipse
-					(- x (/ ellipse-size 2)) (- y (/ ellipse-size 2))
-					ellipse-size ellipse-size))]
+				  (if (is-a? dc post-script-dc%)
+				      (send dc draw-ellipse
+					    (- x (/ ellipse-size 2)) (- y (/ ellipse-size 2))
+					    ellipse-size ellipse-size)
+				      (send dc draw-point x y)))]
 			       [(old-pen) (send dc get-pen)]
-			       [(old-brush) (send dc get-brush)]
-			       [(r) (+ x w -1 (- margin) (- margin))])
+			       [(old-brush) (send dc get-brush)])
 					;(send dc draw-rectangle x y w h)
 					;(send dc draw-rectangle x (+ y s) w (- h d s))
 

@@ -69,6 +69,11 @@ The tool also provides several new primitive functions:
     base/subscript positioning. The first argument is the base in each
     case.
 
+  - ellipses : snip
+
+    This is vertically centered ellipses. It does not really look like
+    three periods, tho.
+
   - drawing : (string
                (dc<%> -> exact-integer exact-integer exact-integer exact-integer)
                (dc<%> exact-integer exact-integer -> void)

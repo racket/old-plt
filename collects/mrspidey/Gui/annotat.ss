@@ -146,7 +146,7 @@
 ;; Edit class with flow arrows
 ;; sets mode to scheme mode
 
-(define wx:const-break-special 8)
+(define wx:const-break-special wx:const-break-for-user-1)
 
 (define flow-arrow:media-edit%
   (class arrow:media-edit% (margin arg-main arg-canvas)
@@ -402,7 +402,7 @@
              (unless (or (char-whitespace? (integer->char i))
                          (memv (integer->char i) '(#\( #\) #\;)))
                (send wb set-map i
-                     (+ (send wb get-map i) wx:const-break-special))))
+                     (bitwise-ior (send wb get-map i) wx:const-break-special))))
         (set-wordbreak-map wb))
       ;;(set-mode (make-object mred:scheme-mode%))
       (let ([keymap (get-keymap)])

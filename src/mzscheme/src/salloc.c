@@ -48,19 +48,7 @@ static int use_registered_statics;
 
 #if !defined(MZ_PRECISE_GC) && !defined(USE_SENORA_GC)
 extern MZ_DLLIMPORT void GC_init();
-extern MZ_DLLIMPORT void GC_push_finalizer_structures(void);
-extern MZ_DLLIMPORT void GC_push_stubborn_structures(void);
 extern MZ_DLLIMPORT unsigned long GC_get_stack_base();
-extern MZ_DLLIMPORT void (*GC_push_other_roots)();
-static void (*orig_GC_push_other_roots)();
-
-static void push_roots()
-{
-  if (orig_GC_push_other_roots)
-    orig_GC_push_other_roots();
-  GC_push_finalizer_structures();
-  GC_push_stubborn_structures();
-}
 #endif
 
 void scheme_set_stack_base(void *base, int no_auto_statics)
@@ -74,9 +62,6 @@ void scheme_set_stack_base(void *base, int no_auto_statics)
     GC_no_dls = 1;
     GC_init();
     GC_clear_roots();
-    
-    orig_GC_push_other_roots = GC_push_other_roots;
-    GC_push_other_roots = push_roots;
   }
 #endif
   use_registered_statics = no_auto_statics;

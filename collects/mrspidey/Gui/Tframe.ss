@@ -181,11 +181,9 @@
 	  (resize w h)]
         [() (void)])
       (pretty-debug-gui `(Tframe super-init))
-      (let ([t (format "~a: ~a" 
-                 st:name (file-name-from-path arg-filename))]) 
-        (super-init t)
-        (pretty-debug-gui `(Tframe super-init done))
-        (set-label-prefix t)))
+      (super-init (file-name-from-path arg-filename))
+      (pretty-debug-gui `(Tframe super-init done))
+      (set-label-prefix st:name))
 
     (sequence
       (set! panel (get-area-container)))

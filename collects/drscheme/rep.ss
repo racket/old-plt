@@ -24,6 +24,33 @@
 	  [drscheme:load-handler : drscheme:load-handler^]
           [help : help:drscheme-interface^])
   
+  (define drs-bindings-keymap (make-object mred:keymap%))
+  (send drs-bindings-keymap add-function
+        "toggle-focus-between-definitions-and-interactions"
+        (lambda (obj evt)
+          (when (is-a? obj mred:editor<%>)
+            (let ([canvas (send obj get-canvas)])
+              (when canvas
+                (let ([frame (send canvas get-top-level-window)])
+                  (when (is-a? frame drscheme:unit:frame%)
+                    (cond
+                      [(send (ivar frame definitions-canvas) has-focus?)
+                       (send (ivar frame interactions-canvas) focus)]
+                      [else
+                       (send (ivar frame definitions-canvas) focus)]))))))))
+  (send drs-bindings-keymap map-function
+        "c:x;o"
+        "toggle-focus-between-definitions-and-interactions")
+  
+  (define (drs-bindings-keymap-mixin editor%)
+    (class editor% args
+      (rename [super-get-keymaps get-keymaps])
+      (override
+        [get-keymaps
+         (lambda ()
+           (cons drs-bindings-keymap (super-get-keymaps)))])
+      (sequence (apply super-init args))))
+  
   ;; Max length of output queue (user's thread blocks if the
   ;; queue is full):
   (define output-limit-size 2000)
@@ -2299,4 +2326,7 @@
       (fw:scheme:text-mixin
        fw:text:searching%))))
   
-  (define text% (make-text% (make-console-text% fw:scheme:text%))))
+  (define text% 
+    (drs-bindings-keymap-mixin
+     (make-text% 
+      (make-console-text% fw:scheme:text%)))))

@@ -12,7 +12,14 @@
 			   [graph : drscheme:graph^]
 			   [aries : plt:aries^]
 			   [zodiac : zodiac:system^])
-  (link [interface : drscheme:interface^
+  (link [dynext-compiler : dynext:compile^ ((require-library "compiler.ss" "dynext"))]
+        [dynext-linker : dynext:link^ ((require-library "linkr.ss" "dynext"))]
+	[launcher : launcher-maker^ ((require-library "launcherr.ss" "launcher")
+                                     (mzlib file)
+                                     dynext-compiler
+                                     dynext-linker)]
+
+        [interface : drscheme:interface^
           ((require-library "interface.ss" "userspce") aries zodiac)]
         [url : mzlib:url^ ((require-library "urlr.ss" "net") (mzlib file))]
 	[basis-import : plt:basis-import^ ((unit/sig plt:basis-import^
@@ -48,12 +55,6 @@
 		mred mzlib mzlib:date framework
 		unit app
 		help-desk zodiac)]
-        [dynext-compiler : dynext:compile^ ((require-library "compiler.ss" "dynext"))]
-        [dynext-linker : dynext:link^ ((require-library "linkr.ss" "dynext"))]
-	[launcher : launcher-maker^ ((require-library "launcherr.ss" "launcher")
-                                     (mzlib file)
-                                     dynext-compiler
-                                     dynext-linker)]
         [unit : drscheme:unit^
 	  ((require-relative-library "unit.ss")
 	   mred mzlib mzlib:date 

@@ -77,7 +77,7 @@
 	(cons exn:i/o:port:user? (cons exn:i/o:port-port input-port?))
 	(cons exn:i/o:filesystem? (cons exn:i/o:filesystem-pathname string?))
 	(cons exn:i/o:filesystem? (cons exn:i/o:filesystem-detail (lambda (x)
-								    (memq x '(generic-failure
+								    (memq x '(#f
 									      ill-formed-path
 									      already-exists
 									      wrong-version)))))))

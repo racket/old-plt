@@ -1,7 +1,7 @@
 (module tests mzscheme
   (provide homo-vec-test)
 
-  (load (build-path "/Users/clements/plt" "tests" "mzscheme" "testing.ss"))
+  (load (build-path (collection-path "mzlib") 'up 'up "tests" "mzscheme" "testing.ss"))
   
   (define test (namespace-variable-value 'test))
   (define arity-test (namespace-variable-value 'arity-test))

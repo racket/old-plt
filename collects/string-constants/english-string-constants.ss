@@ -383,7 +383,12 @@ please adhere to these guidelines:
  (separate-dialog-for-searching "Use separate dialog for searching")
  (reuse-existing-frames "Reuse existing frames when opening new files")
  (default-fonts "Default Fonts")
- 
+ (paren-match-color "Parenthesis highlight color") ; in prefs dialog
+ (choose-color "Choose Color") ; in prefs dialog
+
+ ; title of the color choosing dialog
+ (choose-paren-highlight-color "Choose Parenthesis Highlight Color")
+
  ; should have entire alphabet
  (font-example-string "The quick brown fox jumped over the lazy dogs.") 
 

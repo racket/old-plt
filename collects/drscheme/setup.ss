@@ -14,21 +14,6 @@
 
     (mred:set-preference-default 'drscheme:use-setup? #f)
 
-    ; User-settable
-    (mred:set-preference-default 'drscheme:verify-quit? #t)
-    (mred:set-preference-default 'drscheme:advanced? #f)
-    (mred:set-preference-default 'drscheme:wrap-program? #t)
-    (mred:set-preference-default 'drscheme:always-check? #t)
-    (mred:set-preference-default 'drscheme:print-as-input? #t)
-    (mred:set-preference-default 'drscheme:switch-to-in-main? #f)
-    (mred:set-preference-default 'drscheme:allow-x-selection? #t)
-    (mred:set-preference-default 'drscheme:allow-analysis? #t)
-    (mred:set-preference-default 'drscheme:allow-stepper? #t)
-    (mred:set-preference-default 'drscheme:mzscheme-type 'mred)
-
-    ; Mode flags:
-    (mred:set-preference-default 'drscheme:start-show-mode 'both)
-
     ; Startup files:
     (mred:set-preference-default 'drscheme:startup-files '())
 

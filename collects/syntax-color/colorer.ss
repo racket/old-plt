@@ -31,7 +31,12 @@
       
       (define background-thread #f)
       
-      (inherit get-prompt-position change-style begin-edit-sequence end-edit-sequence)
+      (define should-color? #t)
+      
+      (define remove-prefs-callback-thunk #f)
+      
+      (inherit get-prompt-position change-style begin-edit-sequence end-edit-sequence
+               get-surrogate set-surrogate get-style-list)
       
       (define (reset)
         (set! tokens #f)
@@ -66,7 +71,7 @@
                       (set! colors (cons
                                     (lambda ()
                                       (change-style
-                                       (preferences:get (string->symbol (format "drscheme:editor-modes:~a:~a"
+                                       (preferences:get (string->symbol (format "syntax-coloring:~a:~a"
                                                                                 prefix
                                                                                 type)))
                                        (sub1 (+ input-start-pos new-token-start))
@@ -77,50 +82,61 @@
                       (re-tokenize prefix get-token in input-start-pos (+ current-pos len)))))))))))
     
       (define/public (do-insert/delete prefix get-token edit-start-pos change-length)
-        (let ((buffer-start (get-prompt-position)))
-          (unless (= last-prompt-position buffer-start)
-            (reset))
-          (when (> edit-start-pos buffer-start)
-            (set! edit-start-pos (sub1 edit-start-pos)))
-          (channel-put sync
-                       (lambda ()
-                         (let-values (((orig-token-start orig-token-end valid-tree invalid-tree)
-                                       (split tokens (- edit-start-pos buffer-start))))
-                           (let ((in (open-input-text-editor this (+ buffer-start orig-token-start) 'end)))
-                             (set! tokens valid-tree)
-                             (set! invalid-tokens invalid-tree)
-                             (set! invalid-tokens-start (+ orig-token-end change-length))
-                             (re-tokenize prefix get-token in
-                                          (+ buffer-start orig-token-start)
-                                          (+ buffer-start orig-token-start)))))))
-        (channel-get sync)
-        (printf "~a~n~n" (to-list tokens))
-        (begin-edit-sequence #f)
-        (color)
-        (end-edit-sequence))
+        (when should-color?
+          (let ((buffer-start (get-prompt-position)))
+            (unless (= last-prompt-position buffer-start)
+              (reset))
+            (when (> edit-start-pos buffer-start)
+              (set! edit-start-pos (sub1 edit-start-pos)))
+            (channel-put sync
+                         (lambda ()
+                           (let-values (((orig-token-start orig-token-end valid-tree invalid-tree)
+                                         (split tokens (- edit-start-pos buffer-start))))
+                             (let ((in (open-input-text-editor this (+ buffer-start orig-token-start) 'end)))
+                               (set! tokens valid-tree)
+                               (set! invalid-tokens invalid-tree)
+                               (set! invalid-tokens-start (+ orig-token-end change-length))
+                               (re-tokenize prefix get-token in
+                                            (+ buffer-start orig-token-start)
+                                            (+ buffer-start orig-token-start)))))))
+          (channel-get sync)
+          (begin-edit-sequence #f)
+          (color)
+          (end-edit-sequence)))
       
       (define/public (start prefix get-token)
         (reset)
-        (unless background-thread
-          (set! background-thread (thread background-colorer)))
-        (channel-put sync
-                     (lambda ()
-                       (re-tokenize prefix get-token (open-input-text-editor this last-prompt-position 'end)
-                                    last-prompt-position last-prompt-position)))
-        (channel-get sync)
-        (printf "~a~n~n" (to-list tokens))
-        (begin-edit-sequence #f)
-        (color)
-        (end-edit-sequence))
+        (unless remove-prefs-callback-thunk
+          (set! remove-prefs-callback-thunk
+                (preferences:add-callback
+                 (string->symbol (format "syntax-coloring:~a:active" prefix))
+                 (lambda (_ on?)
+                   (set! should-color? on?)
+                   (set-surrogate (get-surrogate))))))
+        (when should-color?
+          (unless background-thread
+            (set! background-thread (thread background-colorer)))
+          (channel-put sync
+                       (lambda ()
+                         (re-tokenize prefix get-token (open-input-text-editor this last-prompt-position 'end)
+                                      last-prompt-position last-prompt-position)))
+          (channel-get sync)
+          (begin-edit-sequence #f)
+          (color)
+          (end-edit-sequence)))
       
       (define/public (stop prefix get-token)
-        (reset))
-      
+        (reset)
+        (when remove-prefs-callback-thunk
+          (remove-prefs-callback-thunk)
+          (set! remove-prefs-callback-thunk #f))
+        (change-style (send (get-style-list) find-named-style "Standard") last-prompt-position 'end #f))
+  
       (define (background-colorer)
         ((channel-get sync))
         (channel-put sync #f)
         (background-colorer))
-      
+  
       (super-instantiate ())))
   
   (define (colorer %)
@@ -131,7 +147,7 @@
       ;; The token's starting offset
       ;; The token's ending offset
       (init-field get-token prefix)
-      
+            
       (rename (super-on-disable-surrogate on-disable-surrogate))
       (define/override (on-disable-surrogate text)
         (super-on-disable-surrogate text)

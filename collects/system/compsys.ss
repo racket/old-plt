@@ -56,7 +56,8 @@
 			   [zo (let-values ([(base file dir?)
 					     (split-path basename)])
 				   (let ([dir (build-path base "compiled")])
-				     (unless (directory-exists? dir)
+				     (unless (or (directory-exists? dir)
+						 (not (string=? ".ss" suffix)))
 					     (make-directory dir))
 				     (build-path dir
 						 (string-append file ".zo"))))]

@@ -1234,7 +1234,9 @@
        ;; NOT eval-string
        (expr->string    (_ -> str))
        (newline-string  (-> str))
-       (read-string     (str -> sexp))
+       (read-string     (case->
+			  (num iport -> (union str eof))
+			  (num -> (union str eof))))
        (read-string-all (str -> (listof sexp)))
        ;;(regexp-match    ((union str regexp) str -> bool))
        (string-lowercase! (str -> str))

@@ -412,7 +412,7 @@ ptr_t cold_gc_frame;
 	/* We're not sure whether he would like  */
 	/* to be he acknowledged for it or not.  */
 	{
-	    static jmp_buf regs;
+	    /* static - PLTSCHEME: no static */ jmp_buf regs;
 	    register word * i = (word *) regs;
 	    register ptr_t lim = (ptr_t)(regs) + (sizeof regs);
 

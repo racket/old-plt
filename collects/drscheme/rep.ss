@@ -70,9 +70,13 @@
   (define welcome-delta (make-object mred:style-delta% 'change-family 'decorative))
   (define click-delta (fw:gui-utils:get-clickback-delta))
   (define red-delta (make-object mred:style-delta%))
+  (define dark-green-delta (make-object mred:style-delta%))
   (send* red-delta
-    (copy welcome-delta)
-    (set-delta-foreground "RED"))
+	 (copy welcome-delta)
+	 (set-delta-foreground "RED"))  
+  (send* dark-green-delta
+	 (copy welcome-delta)
+	 (set-delta-foreground "dark green"))
   (define warning-style-delta (make-object mred:style-delta% 'change-bold))
   (send* warning-style-delta
     (set-delta-foreground "BLACK")
@@ -1725,16 +1729,16 @@
             (set-position (last-position) (last-position))
             
             (insert-delta "Language: " welcome-delta)
-            (insert-delta (basis:setting-name user-setting) red-delta)
+            (insert-delta (basis:setting-name user-setting) dark-green-delta)
             (unless (equal? (basis:find-setting-named (basis:setting-name user-setting))
                             user-setting)
-              (insert-delta " Custom" red-delta))
+              (insert-delta " Custom" dark-green-delta))
             (insert-delta (format ".~n") welcome-delta)
             
 	    (for-each
 	     (lambda (fn)
 	       (insert-delta "Teachpack: " welcome-delta)
-	       (insert-delta fn red-delta)
+	       (insert-delta fn dark-green-delta)
 	       (insert-delta (format ".~n") welcome-delta))
 	     (fw:preferences:get 'drscheme:teachpack-file))
             

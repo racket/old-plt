@@ -186,14 +186,15 @@
 			   #t
 			   boolean?)
   (define project-frame%
-    (class/d (drscheme:frame:basics-mixin frame:standard-menus%) (filename)
+    (class/d (drscheme:frame:basics-mixin (frame:searchable-mixin frame:standard-menus%)) (filename)
       ((inherit get-area-container get-menu-bar set-label)
        (rename [super-make-root-area-container make-root-area-container]
 	       [super-file-menu:between-open-and-revert file-menu:between-open-and-revert]
 	       [super-file-menu:between-new-and-open file-menu:between-new-and-open]
 	       [super-on-close on-close]
 	       [super-can-close? can-close?])
-       (override file-menu:save file-menu:save-as get-filename
+       (override get-text-to-search
+		 file-menu:save file-menu:save-as get-filename
 		 edit-menu:between-select-all-and-find
 		 file-menu:between-print-and-close
                  make-root-area-container
@@ -204,6 +205,9 @@
                has-file? ;; : (string -> boolean)
 	       execute-project ;; : (-> void)
                ))
+
+      (define (get-text-to-search)
+	rep)
 
       (define (on-close)
         (set! project-frames (function:remove this project-frames))
@@ -768,20 +772,20 @@
 				(null? new-files)
 				(null? (cdr new-files))))
 
-	  (define no-all-button (make-object button% "No to all" bp
+	  (define no-all-button (make-object button% "load-relative for all" bp
 					     (lambda xx
 					       (set! answer #f)
 					       (set! prompt-user-collection?
 						     (lambda xxx #f))
 					       (send dialog show #f))))
-	  (define no-button (make-object button% "No" bp
+	  (define no-button (make-object button% "load-relative" bp
 					 (lambda xx (set! answer #f) (send dialog show #f))))
-	  (define yes-button (make-object button% "Yes" bp
+	  (define yes-button (make-object button% "require-library" bp
 					  (lambda xx (set! answer #t) (send dialog show #f))
 					  (if just-one?
 					      '(border)
 					      '())))
-	  (define yes-all-button (make-object button% "Yes to all" bp
+	  (define yes-all-button (make-object button% "require-library for all" bp
 					      (lambda xx
 						(set! answer #t)
 						(set! prompt-user-collection?
@@ -814,7 +818,7 @@
 ~n~
 ~n   ~a~
 ~n~
-~nShould this file be loaded with require-library instead of load?"
+~nShould this file be loaded with require-library or load-relative?"
 			filename
 			collection
 			collection-dir))
@@ -974,7 +978,8 @@
 		(when loaded-collection-paths
 		  (set! collection-paths (function:second loaded-collection-paths)))
 
-		(refresh-files-list-box))))))
+		(refresh-files-list-box)
+		(is-not-changed void))))))
 
       (define (save-file filename)
 	(is-not-changed

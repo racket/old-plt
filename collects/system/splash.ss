@@ -129,8 +129,10 @@
 					       name)])
 			      (when (and (mred:change-splash-message (format "Loading ~a..." finalf))
 					 (<= mred:splash-counter mred:splash-max))
-				(send gauge set-value mred:splash-counter)))
-			    (old-load f)))))))
+				(send gauge set-value mred:splash-counter))
+			      (begin0
+			       (old-load f)
+			       (mred:change-splash-message (format "Loading ~a...done." finalf))))))))))
 		 (begin (printf "WARNING: bad bitmap ~s" filename)
 			(mred:no-more-splash-messages))))
 	   (begin

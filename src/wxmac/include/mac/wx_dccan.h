@@ -83,7 +83,7 @@ class wxCanvasDC: public wxbCanvasDC
   void SetPen(wxPen* pen);
   void SetBrush(wxBrush* brush);
   void SetLogicalFunction(int function);
-  void SetBackground(wxBrush* brush);
+  void SetBackground(wxColour* c);
   virtual void SetPaintRegion(Rect* paintRect); // mac platform only
   void SetClippingRegion(float x, float y, float width, float height);
   void GetClippingRegion(float *x, float *y, float *width, float *height);
@@ -109,7 +109,7 @@ class wxCanvasDC: public wxbCanvasDC
   int LogicalToDeviceYRel(float y);
 
   Bool Blit(float xdest, float ydest, float width, float height,
-            wxBitmap* source, float xsrc, float ysrc, int rop = wxCOPY);
+            wxBitmap* source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL);
 
   void wxMacSetClip(void); // Internal only
   void wxMacSetCurrentTool(wxMacToolType whichTool); // Internal only

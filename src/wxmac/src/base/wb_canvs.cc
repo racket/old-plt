@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_canvs.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
+ * RCS_ID:      $Id: wb_canvs.cc,v 1.2 1998/08/14 13:56:01 robby Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -71,29 +71,10 @@ void wxbCanvas::AllowDoubleClick(int value)
   doubleClickAllowed = value ;
 }
 
-void wxbCanvas::SetClippingRegion(float cx, float cy, float cw, float ch)
-{
-  wx_dc->SetClippingRegion(cx, cy, cw, ch);
-}
-
-void wxbCanvas::GetClippingRegion(float *cx, float *cy, float *cw, float *ch)
-{
-  wx_dc->GetClippingRegion(cx, cy, cw, ch);
-}
-
-void wxbCanvas::DestroyClippingRegion(void)
-{
-  wx_dc->DestroyClippingRegion();
-}
 
 wxCanvasDC *wxbCanvas::GetDC(void)
 {
   return wx_dc;
-}
-
-void wxbCanvas::Clear(void)
-{
-  wx_dc->Clear();
 }
 
 // Default input behaviour for a scrolling canvas should be to scroll
@@ -152,135 +133,6 @@ void wxbCanvas::OnChar(wxKeyEvent& event)
     }
   }
 }
-
-void wxbCanvas::FloodFill(float x, float y, wxColour *col, int style)
-{
-      wx_dc->FloodFill(x,y,col,style) ;
-}
-
-Bool wxbCanvas::GetPixel(float x, float y, wxColour *col)
-{
-  return wx_dc->GetPixel(x,y,col) ;
-}
-
-void wxbCanvas::DrawLine(float x1, float y1, float x2, float y2)
-{
-  wx_dc->DrawLine(x1, y1, x2, y2);
-}
-
-void wxbCanvas::IntDrawLine(int x1, int y1, int x2, int y2)
-{
-  wx_dc->IntDrawLine(x1, y1, x2, y2);
-}
-
-void wxbCanvas::CrossHair(float x, float y)
-{
-  wx_dc->CrossHair(x, y);
-}
-
-void wxbCanvas::DrawArc(float x1,float y1,float x2,float y2,float xc,float yc)
-{
-  wx_dc->DrawArc(x1, y1, x2, y2,xc,yc);
-}
-
-void wxbCanvas::DrawPoint(float x, float y)
-{
-  wx_dc->DrawPoint(x, y);
-}
-
-void wxbCanvas::DrawPolygon(int n, wxPoint points[], float xoffset, float yoffset,int fillStyle)
-{
-  wx_dc->DrawPolygon(n, points, xoffset, yoffset,fillStyle);
-}
-
-void wxbCanvas::DrawPolygon(wxList *list, float xoffset, float yoffset,int fillStyle)
-{
-  ((wxDC *)wx_dc)->DrawPolygon(list, xoffset, yoffset,fillStyle);
-}
-
-void wxbCanvas::DrawLines(int n, wxPoint points[], float xoffset, float yoffset)
-{
-  wx_dc->DrawLines(n, points, xoffset, yoffset);
-}
-
-void wxbCanvas::DrawLines(int n, wxIntPoint points[], int xoffset, int yoffset)
-{
-  wx_dc->DrawLines(n, points, xoffset, yoffset);
-}
-
-void wxbCanvas::DrawLines(wxList *list, float xoffset, float yoffset)
-{
-  ((wxDC *)wx_dc)->DrawLines(list, xoffset, yoffset);
-}
-
-void wxbCanvas::DrawRectangle(float x, float y, float width, float height)
-{
-  wx_dc->DrawRectangle(x, y, width, height);
-}
-
-void wxbCanvas::DrawRoundedRectangle(float x, float y, float width, float height, float radius)
-{
-  wx_dc->DrawRoundedRectangle(x, y, width, height, radius);
-}
-
-void wxbCanvas::DrawEllipse(float x, float y, float width, float height)
-{
-  wx_dc->DrawEllipse(x, y, width, height);
-}
-
-
-void wxbCanvas::SetFont(wxFont *the_font)
-{
-  wx_dc->SetFont(the_font);
-}
-
-void wxbCanvas::SetPen(wxPen *pen)
-{
-  wx_dc->SetPen(pen);
-}
-
-void wxbCanvas::SetTextForeground(wxColour *colour)
-{
-  wx_dc->SetTextForeground(colour);
-}
-
-void wxbCanvas::SetTextBackground(wxColour *colour)
-{
-  wx_dc->SetTextBackground(colour);
-}
-
-void wxbCanvas::SetBrush(wxBrush *brush)
-{
-  wx_dc->SetBrush(brush);
-}
-
-void wxbCanvas::DrawText(const char *text, float x, float y, Bool use16)
-{
-  wx_dc->DrawText(text, x, y, use16);
-}
-
-void wxbCanvas::SetBackground(wxBrush *brush)
-{
-  wx_dc->SetBackground(brush);
-}
-
-void wxbCanvas::SetLogicalFunction(int function)
-{
-  wx_dc->SetLogicalFunction(function);
-}
-
-#if USE_SPLINES
-// Make a 3-point spline
-void wxbCanvas::DrawSpline(float x1, float y1, float x2, float y2, float x3, float y3)
-{
-  wx_dc->DrawSpline(x1, y1, x2, y2, x3, y3);
-}
-
-void wxbCanvas::DrawSpline(wxList *list)
-{
-  wx_dc->DrawSpline(list);
-}
-#endif
 
 float wxbCanvas::GetCharHeight(void)
 {

@@ -50,7 +50,6 @@ wxMemoryDC::wxMemoryDC(Bool ro)
   ok = FALSE;
   title = NULL;
 
-  current_logical_function = wxCOPY;
   font = wxNORMAL_FONT;
   min_x = 0; min_y = 0; max_x = 0; max_y = 0;
   logical_origin_x = 0;
@@ -69,9 +68,7 @@ wxMemoryDC::wxMemoryDC(Bool ro)
 
   current_pen = NULL;
   current_brush = NULL;
-  current_background_brush = wxWHITE_BRUSH;
   current_text_foreground = *wxBLACK;
-//  current_text_background = NULL;
 
   // mflatt: NOT ok
   // ok = TRUE;

@@ -416,51 +416,37 @@ void wxCanvasDC::DrawEllipse(float x, float y, float width, float height)
 		I.e if (this->device != source->device)
 */
 Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
-                wxBitmap *source, float xsrc, float ysrc, int rop)
+                wxBitmap *source, float xsrc, float ysrc, int rop, wxColour *c)
 {
 	// Switch Gworld to this
 	SetGWorld(cMacDC->macGrafPort(), 0);
 	cMacDC->setCurrentUser(NULL); // macDC no longer valid
 	SetCurrentDC();
 	
-	if (rop == wxCOLOR) {
+	if (source->GetDepth() == 1) {
 	  wxMacSetCurrentTool(kColorBlitTool);
-	  rop = wxCOPY;
-	} else
+	  if (rop == wxSOLID) BackColor(whiteColor);
+	  if (c)
+	    InstallColor(*c, TRUE);
+	  else
+	    ForeColor(blackColor);
+	} else {
 	  wxMacSetCurrentTool(kBlitTool);
+	  rop = wxSTIPPLE;
+	}
 	Bool theResult = FALSE;
 
 	if (pixmap && source->Ok())
 	{
 		int mode;
 		switch (rop)
-		{ // FIXME -  these modes have not be tested
-		//	case wxCLEAR:  theMacPenMode = GXclear; break;
-			case wxXOR:  
+		{       case wxXOR:  
 				mode = srcXor; 
 				break;
-		//	case wxINVERT: theMacPenMode = GXinvert; break;
-		//	case wxOR_REVERSE: theMacPenMode = GXorReverse; break;
-		//	case wxAND_REVERSE: theMacPenMode = GXandReverse; break;
-			case wxAND:
-				mode = srcBic;
-				break;
-			case wxOR: 
+			case wxSOLID: 
 				mode = srcOr; 
 				break;
-			case wxAND_INVERT: 
-				mode = notSrcBic; break;
-		//	case wxNO_OP: theMacPenMode = GXnoop; break;
-		//	case wxNOR: theMacPenMode = GXnor; break;
-			case wxEQUIV: 
-				mode = notSrcXor; break;
-			case wxSRC_INVERT: 
-				mode = notSrcCopy; break;
-			case wxOR_INVERT: 
-				mode = notSrcOr; break;
-		//	case wxNAND: theMacPenMode = GXnand; break;
-		//	case wxSET: theMacPenMode = GXset; break;
-			case wxCOPY:
+			case wxSTIPPLE: /* = opaque */
 			default:
 				mode = srcCopy;
 				break;

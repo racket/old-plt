@@ -107,17 +107,14 @@ wxPrinterDC::wxPrinterDC(THPrint pData) : wxCanvasDC()
   current_pen_cap = -1 ;
   current_pen_nb_dash = -1 ;
   current_pen_dash = NULL ;
-  current_logical_function = wxCOPY;
   current_stipple = NULL ;
 
   Colour = wxColourDisplay();
 
   current_pen = NULL;
   current_brush = NULL;
-  current_background_brush = NULL;
   current_text_foreground = *wxBLACK;
 //  current_text_background = NULL;
-  SetBackground(wxWHITE_BRUSH);
   SetBrush(wxWHITE_BRUSH);
   SetPen(wxBLACK_PEN);
 

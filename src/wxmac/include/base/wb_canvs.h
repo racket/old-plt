@@ -75,47 +75,6 @@ class wxbCanvas: public wxWindow
   virtual void ViewStart(int *x, int *y) = 0;
   virtual void GetScrollUnitsPerPage(int *x_page, int *y_page) = 0;
 
-  virtual void BeginDrawing(void) {} ;
-  virtual void EndDrawing(void) {} ;
-
-  virtual void FloodFill(float x1, float y1, wxColour *col, int style=wxFLOOD_SURFACE) ;
-  virtual Bool GetPixel(float x1, float y1, wxColour *col) ;
-
-  virtual void DrawLine(float x1, float y1, float x2, float y2);
-  virtual void IntDrawLine(int x1, int y1, int x2, int y2);
-  virtual void CrossHair(float x, float y) ;
-  virtual void DrawArc(float x1,float y1,float x2,float y2,float xc,float yc);
-  virtual void DrawPoint(float x, float y);
-  virtual void DrawLines(int n, wxPoint points[], float xoffset = 0, float yoffset = 0);
-  virtual void DrawLines(int n, wxIntPoint points[], int xoffset = 0, int yoffset = 0);
-  virtual void DrawLines(wxList *list, float xoffset = 0, float yoffset = 0);
-  virtual void DrawPolygon(int n, wxPoint points[], float xoffset = 0, float yoffset = 0, int fillStyle=wxODDEVEN_RULE);
-  virtual void DrawPolygon(wxList *list, float xoffset = 0, float yoffset = 0, int fillStyle=wxODDEVEN_RULE);
-  virtual void DrawRectangle(float x, float y, float width, float height);
-  virtual void DrawRoundedRectangle(float x, float y, float width, float height, float radius = 20);
-  virtual void DrawEllipse(float x, float y, float width, float height);
-
-#if USE_SPLINES
-  // Splines
-  // 3-point spline
-  virtual void DrawSpline(float x1, float y1, float x2, float y2, float x3, float y3);
-  // Any number of control points - a list of pointers to wxPoints
-  virtual void DrawSpline(wxList *points);
-#endif
-
-  virtual void Clear(void);
-  virtual void SetFont(wxFont *font);
-  virtual void SetPen(wxPen *pen);
-  virtual void SetBrush(wxBrush *brush);
-  virtual void SetLogicalFunction(int function);
-  virtual void SetBackground(wxBrush *brush);
-  virtual void SetTextForeground(wxColour *colour);
-  virtual void SetTextBackground(wxColour *colour);
-  virtual void SetClippingRegion(float x, float y, float width, float height);
-  virtual void GetClippingRegion(float *x, float *y, float *width, float *height);
-  virtual void DestroyClippingRegion(void);
-  virtual void DrawText(const char *text, float x, float y, Bool use16 = FALSE);
-
   // Actual size in pixels when scrolling is taken into account
   virtual void GetVirtualSize(int *x, int *y) = 0;
   virtual float GetCharHeight(void);

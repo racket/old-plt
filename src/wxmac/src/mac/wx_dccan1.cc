@@ -94,16 +94,13 @@ wxCanvasDC::wxCanvasDC(void)
   current_pen_dash = NULL ;
   current_stipple = NULL ;
 
-  current_logical_function = wxCOPY;
-
   Colour = wxColourDisplay();
 
   current_pen = NULL;
   current_brush = NULL;
-  current_background_brush = NULL;
+  current_background_color = *wxWHITE;
   current_text_foreground = *wxBLACK;
   current_text_background = *wxWHITE;
-  SetBackground(wxWHITE_BRUSH);
 }
 
 
@@ -165,17 +162,15 @@ __type = wxTYPE_DC_CANVAS;
   current_pen_cap = -1 ;
   current_pen_nb_dash = -1 ;
   current_pen_dash = NULL ;
-  current_logical_function = wxCOPY;
   current_stipple = NULL ;
 
   Colour = wxColourDisplay();
 
   current_pen = NULL;
   current_brush = NULL;
-  current_background_brush = NULL;
+  current_background_color = *wxWHITE;
   current_text_foreground = *wxBLACK;
   current_text_background = *wxWHITE;
-  SetBackground(wxWHITE_BRUSH);
   SetBrush(wxWHITE_BRUSH);
   SetPen(wxBLACK_PEN);
 
@@ -196,7 +191,6 @@ wxCanvasDC::~wxCanvasDC(void)
 {
   if (current_pen) current_pen->Lock(-1);
   if (current_brush) current_brush->Lock(-1);
-  if (current_background_brush) current_background_brush->Lock(-1);
 }
 
 //-----------------------------------------------------------------------------
@@ -443,38 +437,23 @@ void wxCanvasDC::InstallLogicalFunction(int function)
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::SetBackground(wxBrush* brush)
+void wxCanvasDC::SetBackground(wxColour* color)
 {
-	if (current_background_brush) current_background_brush->Lock(-1);
-	current_background_brush = brush;
-	if (current_background_brush) current_background_brush->Lock(1);
+	current_background_color = *color;
 
 	if (cMacDC->currentUser() == this
 		&& (cMacCurrentTool == kNoTool))
 	{ // must update platform to kNoTool
-		if (!current_background_brush) {
-			BackColor(whiteColor);
-			return;
-		}
-	
 		GrafPtr theOldPort = qd.thePort;
 		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort((GrafPtr)theMacGrafPort);
 
-        InstallColor(current_background_brush->GetColour(), FALSE);
+        InstallColor(*color, FALSE);
 
 		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort(theOldPort);
 	}
 
 	ToolChanged(kNoTool);
-}
-
-//-----------------------------------------------------------------------------
-void wxCanvasDC::SetLogicalFunction(int function)
-{
-	current_logical_function = function;
-    ToolChanged(kPenTool);
-    ToolChanged(kBrushTool);
 }
 
 //-----------------------------------------------------------------------------
@@ -620,11 +599,13 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 	switch (whichTool)
 	{
 		case kNoTool:
-			InstallColor(current_background_brush->GetColour(), FALSE);
-            InstallLogicalFunction(wxCOPY);
+			InstallColor(current_background_color, FALSE);
+            		PenMode(patCopy);
 			break;
 		case kBrushTool:
+			{
 			int theBrushStyle = current_brush->GetStyle();
+			int log = theBrushStyle == wxXOR ? patXor : patCopy;
 			if (theBrushStyle == wxSOLID)
 				PenPat(&qd.black);
 			else if (theBrushStyle == wxTRANSPARENT)
@@ -632,31 +613,37 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			else if (IS_HATCH(theBrushStyle)) {
 				macGetHatchPattern(theBrushStyle, &cMacPattern);
 				PenPat(&cMacPattern);
+				log = patOr;
 			} else {
 				PenPat(&qd.black);
 			}
 	
-			InstallColor(current_background_brush->GetColour(), FALSE);
+			InstallColor(current_background_color, FALSE);
 			InstallColor(current_brush->GetColour(), TRUE);
-			InstallLogicalFunction(current_logical_function);
+			PenMode(log);
+			}
 			break;
 		case kPenTool:
+		        {
 			int thePenWidth = current_pen->GetWidth();
 			int thePenHeight = current_pen->GetWidth();
 			PenSize(thePenWidth, thePenHeight);
 
 			int thePenStyle = current_pen->GetStyle();
+			int log = thePenStyle == wxXOR ? patXor : patCopy;
 			if (thePenStyle == wxSOLID)
 				PenPat(&qd.black);
 			else if (thePenStyle == wxTRANSPARENT)
 				PenPat(&qd.white);
 			else if ((thePenStyle == wxDOT)
-			         || (thePenStyle == wxSHORT_DASH))
+			         || (thePenStyle == wxSHORT_DASH)) {
 				PenPat(&qd.ltGray);
-			else if ((thePenStyle == wxLONG_DASH)
-			         || (thePenStyle == wxDOT_DASH))
+				log = patOr;
+			} else if ((thePenStyle == wxLONG_DASH)
+			         || (thePenStyle == wxDOT_DASH)) {
 				PenPat(&qd.dkGray);
-			else if (IS_HATCH(thePenStyle)) {
+				log = patOr;
+			} else if (IS_HATCH(thePenStyle)) {
 				macGetHatchPattern(thePenStyle, &cMacPattern);
 				PenPat(&cMacPattern);
 			} else {
@@ -664,8 +651,9 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			}
 
 			InstallColor(current_pen->GetColour(), TRUE);
-			InstallColor(current_background_brush->GetColour(), FALSE);
-			InstallLogicalFunction(current_logical_function);
+			InstallColor(current_background_color, FALSE);
+			PenMode(log);
+			}
 			break;
 		case kTextTool:
 			InstallColor(current_text_foreground, TRUE);
@@ -685,7 +673,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			InstallLogicalFunction(wxCOPY);
 			break;
 		case kColorBlitTool:
-			BackColor(whiteColor);
+			InstallColor(current_background_color, FALSE);
 			InstallColor(current_pen->GetColour(), TRUE);
 			InstallLogicalFunction(wxCOPY);
 			break;

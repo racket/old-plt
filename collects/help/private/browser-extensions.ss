@@ -381,7 +381,8 @@
       (field [search/status-panel #f]
              [field-panel #f]
              [status-panel #f]
-             [status-message #f])
+             [status-message #f]
+             [choices-panel #f])
       (let ()
         (define search-menu (instantiate menu% ()
                               (label (string-constant plt:hd:search))
@@ -418,9 +419,12 @@
                                              (send search-button enable on?)
                                              (send search-menu enable on?))))
                                (parent field-panel)))
-        (define choices-panel (instantiate horizontal-panel% ()
+        
+        ;; exposed to derived classes
+        (define stupid-internal-define-syntax5
+          (set! choices-panel (instantiate horizontal-panel% ()
                                 (parent search-panel)
-                                (alignment '(center center))))
+                                (alignment '(center center)))))
         
         (define search-button (instantiate button% ()
                                 (label (string-constant plt:hd:search))

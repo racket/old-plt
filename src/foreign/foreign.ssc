@@ -165,7 +165,7 @@ exec mzscheme -r "$0" "$0" "$@"
                     (~ "int "cname"_"mode"(void *p) {" \\
                        "  "cname"_struct *s = ("cname"_struct *)p;")
                     (for-each (lambda (s t)
-                                (when (regexp-match #rx#"[*]" t)
+                                (when (regexp-match #rx"[*]" t)
                                   (~ "  gc"mode"(s->"s");")))
                               slots types)
                     (~ "  return gcBYTES_TO_WORDS(sizeof("cname"_struct));" \\
@@ -180,7 +180,7 @@ exec mzscheme -r "$0" "$0" "$@"
     [(_ name (slot type) ...)
      (_cdefstruct `name (list `slot ...) (list type ...))]))
 
-;; Stubborn object allocation
+;; Tagged object allocation
 (define (_cmake-object var type . values)
   (define cstruct (assq type cstructs))
   (~ var" = ("(cadr cstruct)"_struct*)scheme_malloc_stubborn(sizeof("
@@ -195,12 +195,17 @@ exec mzscheme -r "$0" "$0" "$@"
 (define-syntax defsymbols
   (syntax-rules ()
     [(_ sym ...)
-     (for-each (lambda (s)
-                 (when (memq s symbols)
-                   (error 'defsymbols "symbol ~s already defined" s))
-                 (set! symbols (cons s symbols))
-                 (~ "static Scheme_Object *"s"_sym;"))
-               '(sym ...))]))
+     (for-each
+      (lambda (s)
+        (when (assq s symbols)
+          (error 'defsymbols "symbol ~s already defined" s))
+        (set! symbols
+              (cons (list s (string-append (regexp-replace
+                                            #rx"-" (symbol->string s) "_")
+                                           "_sym"))
+                    symbols))
+        (~ "static Scheme_Object *"(cadar symbols)";"))
+      '(sym ...))]))
 
 :}
 
@@ -1077,23 +1082,26 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
   return NULL; /* shush the compiler */
 }
 
-{:(defsymbols atomic stubborn uncollectable eternal):}
+{:(defsymbols atomic stubborn uncollectable eternal fail-ok):}
 
-/* (malloc num type cpointer flag) -> pointer */
+/* (malloc num type cpointer mode) -> pointer */
 /* The arguments for this function are:
  * - num: bytes to allocate, or the number of instances of type when given,
  * - type: malloc the size of this type (or num instances of it),
  * - cpointer: a source pointer to copy contents from,
  * - mode: a symbol for different allocation functions to use - one of
  *   'atomic, 'stubborn, 'uncollectable, 'eternal
+ * - if an additional 'fail-ok flag is given, then scheme_malloc_fail_ok is
+ *   used with the chosen malloc function
  * The arguments can be specified in any order at all since they are all
  * different types, the only requirement is for a size, either a number of
  * bytes or a type. */
 {:(cdefine malloc 1 4):}
 {
-  int i, size=0, num=0;
+  int i, size=0, num=0, failok=0;
   void *from = NULL, *res = NULL;
   Scheme_Object *mode = NULL, *a;
+  void *(*mf)(size_t);
   for (i=0; i<argc; i++) {
     a = argv[i];
     if (SCHEME_INTP(a)) {
@@ -1110,6 +1118,8 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
         scheme_wrong_type(MYNAME, "C-type", i, argc, argv);
       else if (size == 0)
         scheme_wrong_type(MYNAME, "non-void-C-type", i, argc, argv);
+    } else if (SAME_OBJ(a, fail_ok_sym)) {
+      failok = 1;
     } else if (SCHEME_SYMBOLP(a)) {
       if (mode != NULL)
         scheme_signal_error(MYNAME": specifying a second mode symbol: %V", a);
@@ -1125,13 +1135,16 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
   }
   if ((num == 0) && (size == 0)) scheme_signal_error(MYNAME": no size given");
   size = ((size==0) ? 1 : size) * ((num==0) ? 1 : num);
-  if (mode == NULL)                      res = scheme_malloc(size);
-  else if (SAME_OBJ(mode, atomic_sym))   res = scheme_malloc_atomic(size);
-  else if (SAME_OBJ(mode, stubborn_sym)) res = scheme_malloc_stubborn(size);
-  else if (SAME_OBJ(mode, eternal_sym))  res = scheme_malloc_eternal(size);
-  else if (SAME_OBJ(mode, uncollectable_sym))
-    res = scheme_malloc_uncollectable(size);
-  else scheme_signal_error(MYNAME": bad allocation mode: %V", mode);
+  if (mode == NULL)                           mf = scheme_malloc;
+  else if (SAME_OBJ(mode, atomic_sym))        mf = scheme_malloc_atomic;
+  else if (SAME_OBJ(mode, stubborn_sym))      mf = scheme_malloc_stubborn;
+  else if (SAME_OBJ(mode, eternal_sym))       mf = scheme_malloc_eternal;
+  else if (SAME_OBJ(mode, uncollectable_sym)) mf = scheme_malloc_uncollectable;
+  else {
+    scheme_signal_error(MYNAME": bad allocation mode: %V", mode);
+    return NULL; /* shush the compiler */
+  }
+  if (failok) res = scheme_malloc_fail_ok(mf,size); else res = mf(size);
   if ((from != NULL) && (res != NULL)) memcpy(res, from, size);
   return scheme_make_foreign_cpointer(res);
 }
@@ -1499,8 +1512,8 @@ void scheme_init_foreign(Scheme_Env *env)
   opened_libs = scheme_make_hash_table(SCHEME_hash_string);
   {:(for-each
      (lambda (sym)
-       (~ "MZ_REGISTER_STATIC("sym"_sym);" \\
-	  sym"_sym = scheme_intern_symbol(\""sym"\");"))
+       (~ "MZ_REGISTER_STATIC("(cadr sym)");" \\
+	  (cadr sym)" = scheme_intern_symbol(\""(car sym)"\");"))
      (reverse symbols)):}
   {:(for-each
       (lambda (x)

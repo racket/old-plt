@@ -1,7 +1,7 @@
 (module token-tree mzscheme
   (require (lib "class.ss"))
   
-  (provide token-tree% insert-first! insert-last!
+  (provide token-tree% insert-first! insert-last! insert-last-spec!
            node-token-length node-token-data node-left-subtree-length node-left node-right)
   
   ;; A tree is 
@@ -355,5 +355,18 @@
         (else
          (send tree1 set-root node2)))
       (send tree2 reset-tree)))
+
+  ;; insert-last-spec!: token-tree% NAT 'a ->
+  ;; Same as (insert-last! tree1 (new token-tree% (length len) (data type)))
+  ;; This optimization is important for the colorer.
+  (define (insert-last-spec! tree1 len type)
+    (send tree1 search-max!)
+    (let ((node1 (send tree1 get-root))
+          (node2 (make-node len type 0 #f #f)))
+      (cond
+        (node1
+         (set-node-right! node1 node2))
+        (else
+         (send tree1 set-root node2)))))
     
   )

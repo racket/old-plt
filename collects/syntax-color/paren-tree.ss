@@ -80,7 +80,9 @@
       (define/public (add-token type length)
         (cond
           ((or (send tree is-empty?) (is-open? type) (is-close? type))
-           (insert-last! tree (new token-tree% (length length) (data (cons type length)))))
+           ; Big performance increase using the -spec version.
+           ;(insert-last! tree (new token-tree% (length length) (data (cons type length))))
+           (insert-last-spec! tree length (cons type length)))
           (else
            (send tree search-max!)
            (send tree add-to-root-length length))))

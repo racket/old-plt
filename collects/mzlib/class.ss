@@ -63,6 +63,7 @@
 					(lambda (defn-or-expr)
 					  (local-expand
 					   defn-or-expr
+					   'internal-define
 					   (append
 					    (kernel-form-identifier-list (quote-syntax here))
 					    (list 
@@ -111,9 +112,10 @@
 						public-final override-final
 						rename inherit)
 			   [(form idp ...)
-			    (ormap (lambda (f) (module-identifier=? (syntax form) f))
-				   (list (quote-syntax init)
-					 (quote-syntax init-field)))
+			    (and (identifier? (syntax form))
+				 (ormap (lambda (f) (module-identifier=? (syntax form) f))
+					(list (quote-syntax init)
+					      (quote-syntax init-field))))
 			    (let ([form (syntax-e (syntax form))])
 			      (for-each 
 			       (lambda (idp)
@@ -299,6 +301,7 @@
 				      (define (expand expr locals)
 					(local-expand
 					 expr
+					 'expression
 					 (append locals expand-stop-names)))
 				      ;; Checks whether the vars sequence is well-formed
 				      (define (vars-ok? vars)

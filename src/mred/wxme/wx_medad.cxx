@@ -21,9 +21,6 @@
 #include "wx_timer.h"
 #include "wx_main.h"
 
-#define XMARGIN 5
-#define YMARGIN 5
-
 #ifdef wx_motif
 # define MEDIA_CANVAS_COMBAT_CLIP_BUG
 #endif
@@ -204,6 +201,9 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 
   givenHScrollsPerPage = scrollsPP;
 
+  xmargin = 5;
+  ymargin = 5;
+
   allowXScroll = !(style  & wxMCANVAS_NO_H_SCROLL);
   allowYScroll = !(style  & wxMCANVAS_NO_V_SCROLL);
   fakeXScroll = !allowXScroll || (style & wxMCANVAS_HIDE_H_SCROLL);
@@ -337,6 +337,11 @@ void wxMediaCanvas::OnSize(int w, int h)
   if (media && media->printing)
     return;
 
+  ResetSize();
+}
+
+void wxMediaCanvas::ResetSize()
+{
   ResetVisual(FALSE);
 
 #if defined(MEDIA_CANVAS_INTERNAL_SCROLLS) || defined(wx_mac)
@@ -354,12 +359,38 @@ void wxMediaCanvas::OnSize(int w, int h)
 #ifndef MEDIA_CANVAS_INTERNAL_SCROLLS
   int cliph, clipw;
   GetClientSize(&clipw, &cliph);
-  SetClippingRegion(XMARGIN, YMARGIN,
-		    clipw - 2 * XMARGIN, cliph - 2 * YMARGIN);
+  SetClippingRegion(xmargin, ymargin,
+		    clipw - 2 * xmargin, cliph - 2 * ymargin);
 #endif
 #endif
 
   Refresh();
+}
+
+void wxMediaCanvas::SetXMargin(int x)
+{
+  if (x != xmargin) {
+    xmargin = x;
+    ResetSize();
+  }
+}
+
+void wxMediaCanvas::SetYMargin(int y)
+{
+  if (y != ymargin) {
+    ymargin = y;
+    ResetSize();
+  }
+}
+
+int wxMediaCanvas::GetXMargin()
+{
+  return xmargin;
+}
+
+int wxMediaCanvas::GetYMargin()
+{
+  return ymargin;
 }
 
 void wxMediaCanvas::OnFocus(Bool focus)
@@ -714,9 +745,9 @@ void wxMediaCanvas::PaintScrolls(void)
     vscroll->Paint(w - SB_WIDTH, 0, 
 		   SB_WIDTH, h - (fakeXScroll ? 0 : SB_WIDTH));
   
-  SetClippingRegion(XMARGIN, YMARGIN,
-		    w - 2 * XMARGIN - (fakeYScroll ? 0 : SB_WIDTH),
-		    h - 2 * YMARGIN - (fakeXScroll ? 0 : SB_WIDTH));
+  SetClippingRegion(xmargin, ymargin,
+		    w - 2 * xmargin - (fakeYScroll ? 0 : SB_WIDTH),
+		    h - 2 * ymargin - (fakeXScroll ? 0 : SB_WIDTH));
 #endif
 }
 
@@ -765,12 +796,12 @@ wxDC *wxMediaCanvas::GetDCAndOffset(float *fx, float *fy)
   if (fx || fy) {
     GetScroll(&x, &y);
     if (fx)
-      *fx = x * hpixelsPerScroll - XMARGIN;
+      *fx = x * hpixelsPerScroll - xmargin;
     if (fy) {
       if (media && (y  || scrollBottomBased)) {
 	int h, w;
 	GetClientSize(&w, &h);
-	h -= 2 * YMARGIN;
+	h -= 2 * ymargin;
 #ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
 	if (!fakeXScroll)
 	  h -= SB_WIDTH;
@@ -779,13 +810,13 @@ wxDC *wxMediaCanvas::GetDCAndOffset(float *fx, float *fy)
 	  h = 0;
 	{
 	  float v;
-	  v = media->ScrollLineLocation(y + scrollOffset) - YMARGIN;
+	  v = media->ScrollLineLocation(y + scrollOffset) - ymargin;
 	  *fy = v;
 	}
 	if (scrollBottomBased && (scrollHeight || scrollToLast))
 	  *fy -= h;
       } else
-	*fy = -YMARGIN;
+	*fy = -ymargin;
     }
   }
 
@@ -801,9 +832,9 @@ void wxMediaCanvas::GetView(float *fx, float *fy, float *fw, float *fh,
   GetDCAndOffset(fx, fy);
   if (1 /* !full */) {
     if (fx)
-      *fx += XMARGIN;
+      *fx += xmargin;
     if (fy)
-      *fy += YMARGIN;
+      *fy += ymargin;
   }
 #ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
   if (!fakeXScroll)
@@ -822,14 +853,14 @@ void wxMediaCanvas::GetView(float *fx, float *fy, float *fw, float *fh,
       *fw = w;
   } else {
     if (fh) {
-      if (h > 2 * YMARGIN)
-	*fh = h - 2 * YMARGIN;
+      if (h > 2 * ymargin)
+	*fh = h - 2 * ymargin;
       else
 	*fh = 0;
     }
     if (fw) {
-      if (w > 2 * XMARGIN)
-	*fw = w - 2 * XMARGIN;
+      if (w > 2 * xmargin)
+	*fw = w - 2 * xmargin;
       else
 	*fw = 0;
     }
@@ -855,8 +886,8 @@ void wxMediaCanvas::Redraw(float localx, float localy, float fw, float fh)
   {
     wxDC *adc;
     adc = GetDC();
-    adc->SetClippingRect(XMARGIN, YMARGIN,
-			 clipw - 2 * XMARGIN, cliph - 2 * YMARGIN);
+    adc->SetClippingRect(xmargin, ymargin,
+			 clipw - 2 * xmargin, cliph - 2 * ymargin);
   }
 #endif
   

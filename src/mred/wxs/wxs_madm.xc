@@ -67,6 +67,11 @@ typedef void *(*CAPOFunc)(void*);
 
 @ "scroll-to" : bool ScrollTo(float,float,nnfloat,nnfloat, bool,SYM[bias]=0); : : : rFALSE
 
+@ "get-x-margin" : nnint GetXMargin();
+@ "get-y-margin" : nnint GetYMargin();
+@ "set-x-margin" : void SetXMargin(nnint);
+@ "set-y-margin" : void SetYMargin(nnint);
+
 @MACRO CastToSO = (Scheme_Object*){x}
 @MACRO ubTestFunc = DoCAPOCallback
 @MACRO ubData = p[POFFSET]

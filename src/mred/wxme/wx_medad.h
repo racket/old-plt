@@ -395,6 +395,7 @@ class wxMediaCanvas : public wxCanvas
 
  public:
   int wheel_amt;
+  int xmargin, ymargin;
 
   wxMediaCanvas(wxWindow *parent, int x = -1, int y = -1,
 		int width = -1, int height = -1, char *name = "",
@@ -443,6 +444,12 @@ class wxMediaCanvas : public wxCanvas
   void *CallAsPrimaryOwner(void *(*f)(void *), void *);
 
   virtual wxMenu *PopupForMedia(wxMediaBuffer *b, void *m);
+
+  void ResetSize(void);
+  void SetXMargin(int);
+  void SetYMargin(int);
+  int GetXMargin(void);
+  int GetYMargin(void);
 };
 
 class wxCursor;

@@ -205,9 +205,9 @@ Scheme_Object *scheme_make_bignum_from_long_long(mzlonglong v)
       bigdig *o_digs;
       int len;
 #if defined(USE_LONG_LONG_FOR_BIGDIG)
-      len = 2;
+      len = 1;
 #else
-      len = 3;
+      len = 2;
 #endif
 
       o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));      
@@ -218,8 +218,7 @@ Scheme_Object *scheme_make_bignum_from_long_long(mzlonglong v)
       SCHEME_BIGDIG(o) = o_digs;
 
       o_digs[0] = 0;
-      o_digs[1] = 0;
-      o_digs[len] = 1;
+      o_digs[1] = ((bigdig)1 << (WORD_SIZE - 1));
       
       return (Scheme_Object *)o;      
     } else {
@@ -346,7 +345,7 @@ int scheme_bignum_get_long_long_val(const Scheme_Object *o, mzlonglong *v)
   } else if (SCHEME_BIGLEN(o) == 0) {
     *v = 0;
     return 1;
-  } else if (SCHEME_BIGDIG(o)[MAX_BN_SIZE_FOR_LL -1] == FIRST_BIT_MASK 
+  } else if (SCHEME_BIGDIG(o)[MAX_BN_SIZE_FOR_LL - 1] == FIRST_BIT_MASK 
 #ifndef USE_LONG_LONG_FOR_BIGDIG
 	     && !SCHEME_BIGDIG(o)[0]
 #endif
@@ -355,14 +354,15 @@ int scheme_bignum_get_long_long_val(const Scheme_Object *o, mzlonglong *v)
     mzlonglong v2;
     v2 = 1;
     v2 = (v2 << 63);
+    *v = v2;
     return 1;
   } else if ((SCHEME_BIGDIG(o)[MAX_BN_SIZE_FOR_LL - 1] & FIRST_BIT_MASK) != 0) { /* Won't fit into a signed long long */
     return 0;
   } else {
     mzlonglong v2;
     v2 = SCHEME_BIGDIG(o)[0];
-    if (SCHEME_BIGLEN(o)) {
-      v2 |= ((mzlonglong)SCHEME_BIGDIG(o)[1]) << 32;
+    if (SCHEME_BIGLEN(o) > 1) {
+      v2 |= ((mzlonglong)(SCHEME_BIGDIG(o)[1])) << 32;
     }
     if (!SCHEME_BIGPOS(o)) {
       v2 = -v2;

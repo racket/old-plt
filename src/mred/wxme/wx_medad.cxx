@@ -769,11 +769,18 @@ Bool wxMediaCanvas::ScrollTo(float localx, float localy, float fw, float fh,
     else if (// doesn't fit, bias is set:
 	     (bias == 1 && fh > ih) 
 	     // fits, need to shift up into view:
-	     || (fh <= ih && y + ih < localy + fh) 
-	     // doesn't fit, no conflicting bias, can shift down to see more:
-	     || (fh > ih && bias != -1 && localy + fh > y + ih))
+	     || (fh <= ih && y + ih < localy + fh)) 
       sy = media->FindScrollLine(find_dy + localy + fh - ih) + 1 - scrollOffset;
-    else
+    else if (// doesn't fit, no conflicting bias, maybe shift down to see more:
+	     (fh > ih && bias != -1 && localy + fh > y + ih)) {
+      // Shift to one more than the first scroll position that shows last line
+      long my = media->FindScrollLine(find_dy + localy + fh - ih) + 1 - scrollOffset;
+      // But only shift down the extra line if doing so doesn't skip the whole area
+      if (media->ScrollLineLocation(my) < find_dy + localy + fh)
+	sy = my;
+      else
+	sy = max(0, my - 1);
+    } else
       sy = cy;
   } else
     sy = cy;

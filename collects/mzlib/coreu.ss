@@ -15,4 +15,4 @@
 
 (reference-relative-library "cores.ss")
 
-(define mzlib:core@ (reference-unit/sig "corer.ss"))
+(define mzlib:core@ (reference-relative-library-unit/sig "corer.ss"))

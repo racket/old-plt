@@ -62,7 +62,7 @@
 #endif
 
 #include "wx_rgn.h"
-#include "scheme.h"
+#include "../mzscheme/include/scheme.h"
 
 # define YSCALE(y) ((paper_h) - ((y) * user_scale_y + device_origin_y))
 # define XSCALE(x) ((x) * user_scale_x + device_origin_x)

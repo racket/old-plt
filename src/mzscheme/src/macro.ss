@@ -1283,7 +1283,7 @@
 		    map = < > <= >= max min + - * / 
 		    abs gcd lcm exp log sin cos tan not eq?
 		    call-with-current-continuation
-		    symbol->string make-rectangular exact->inexact inexact->exact number->string string->number 
+		    symbol->string string->symbol make-rectangular exact->inexact inexact->exact number->string string->number 
 		    rationalize output-port? current-input-port current-output-port current-error-port 
 		    open-input-file open-output-file close-input-port close-output-port
 		    with-output-to-file transcript-on transcript-off flush-output
@@ -1292,7 +1292,7 @@
 		    char-upper-case? char-lower-case? char->integer integer->char char-downcase
 		    call-with-output-file call-with-input-file with-input-from-file
 		    apply for-each symbol? pair? cons set-car! set-cdr! null? list? list length append reverse list-tail list-ref
-		    memq memv member assq assv assoc
+		    memq memv member assq assv assoc procedure?
 		    number? complex? real? rational? integer? exact? inexact? zero? positive?  negative? odd? even? 
 		    quotient remainder modulo floor ceiling truncate round numerator denominator asin acos atan sqrt
 		    expt make-polar real-part imag-part angle magnitude input-port? read read-char peek-char eof-object?
@@ -1301,7 +1301,7 @@
 		    vector? make-vector vector vector-ref vector-set! 
 		    char? char=? char<? char>? char<=? char>=? char-ci=? char-ci<? char-ci>? char-ci<=? char-ci>=? 
 		    char-upcase boolean? eqv? equal? force)]
-	  [r5 '(call-with-values values eval port? scheme-report-environment null-environment
+	  [r5 '(call-with-values values eval port? scheme-report-environment null-environment interaction-environment
 				 dynamic-wind)]
 	  [copy-env (#%lambda (l)
 		      (#%let ([n (#%make-namespace 'hash-percent-syntax 'hash-percent-globals)]

@@ -1,11 +1,19 @@
 
-(unless (defined? 'flat-load)
-   (global-defined-value 'flat-load "all.ss"))
-(unless (defined? 'lines-per-file)
-   (global-defined-value 'lines-per-file +inf.0))
+(with-handlers ([not-break-exn?
+		 (lambda (exn)
+		   (namespace-variable-binding
+		    'flat-load
+		    "all.ss"))])
+  (namespace-variable-binding 'flat-load))
 
-(import (lib "pretty.ss"))
+(with-handlers ([not-break-exn?
+		 (lambda (exn)
+		   (namespace-variable-binding
+		    'lines-per-file
+		    +inf.0))])
+  (namespace-variable-binding 'lines-per-file))
 
+(require (lib "pretty.ss"))
 
 (define line-count 0)
 (define file-count 0)
@@ -19,7 +27,7 @@
 (pretty-print '(define section #f) flatp)
 
 (define (flat-pp v)
-  (pretty-print (if (syntax? v) (syntax->datum v) v) flatp)
+  (pretty-print (if (syntax? v) (syntax-object->datum v) v) flatp)
   (set! line-count (add1 line-count))
   (when (>= line-count lines-per-file)
     (set! line-count 0)
@@ -35,14 +43,12 @@
    [(expr) (error-test expr #f)]
    [(expr exn?)
     (unless (eq? exn? exn:syntax?)
-      (let ([dexpr (syntax->datum expr)])
+      (let ([dexpr (syntax-object->datum expr)])
 	(flat-pp 
 	 `(thunk-error-test (lambda () ,dexpr)
 			    (quote ,dexpr)
 			    ,@(if exn?
-				  (list (string->symbol
-					 (primitive-name
-					  exn?)))
+				  (list (inferred-name exn?))
 				  null)))))]))
 
 (define building-flat-tests #t)

@@ -2175,6 +2175,8 @@
 					   #f)))])
 		       (and cols
 			    (andmap (lambda (x) (and (string? x) (relative-path? x))) cols)
+			    (string? (cadr s))
+			    (relative-path? (cadr s))
 			    (let ([p (-find-col 'standard-module-name-resolver (car cols) (cdr cols))])
 			      (build-path p (cadr s)))))]
 		    [(eq? (car s) 'file)

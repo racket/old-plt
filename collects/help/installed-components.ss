@@ -27,32 +27,44 @@
 				    (lambda (x)
 				      (k #f))])
 		     (load info-file))]
-	     [blurb (with-handlers ([(lambda (x) #t)
-				     (lambda (x)
-				       (k
-					(make-comp
-					 collection
-					 (format "error during 'blurb: ~a"
-						 (if (exn? x)
-						     (exn-message x)
-						     x)))))])
-		      (proc 'blurb (lambda () (k #f))))]
 	     [name (with-handlers ([(lambda (x) #t)
 				    (lambda (x)
 				      (k
 				       (make-comp
 					collection
-					(format "error during 'name: ~a"
-						(if (exn? x)
-						    (exn-message x)
-						    x)))))])
-		     (proc 'name (lambda () (k #f))))])
+					`(li ()
+					     (font ((color "forest green")) (b () ,collection))
+					     (p
+					      ()
+					      (font
+					       ((color "red"))
+					       (i ()
+						  ,(format "error during 'name: ~a"
+							   (if (exn? x)
+							       (exn-message x)
+							       x)))))))))])
+		     (proc 'name (lambda () (k #f))))]
+	     [blurb (with-handlers ([(lambda (x) #t)
+				     (lambda (x)
+				       (k
+					(make-comp
+					 collection
+					 `(li ()
+					      (font ((color "forest green")) (b () ,name))
+					      (p
+					       ()
+					       (font ((color "red"))
+						     (i ()
+							,(format "error during 'blurb: ~a"
+								 (if (exn? x)
+								     (exn-message x)
+								     x)))))))))])
+		      (proc 'blurb (lambda () (k #f))))])
 	(make-comp
 	 name
 	 `(li ()
 	      (font ((color "forest green")) (b () ,name))
-	      (br ())
-	      ,@blurb))))))
+	      (p () ,@blurb)))))))
 
 (define (comp<=? ca cb) (string<=? (comp-name ca) (comp-name cb)))
 

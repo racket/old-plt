@@ -285,6 +285,18 @@ the html that help desk can parse. If a collection's info.ss file returns
 such a list, the blurb is inserted into the ``installed components'' page
 of the help desk documentation.
 
+Each installed collection is listed in a "ul". The context of the
+individual blurb field is this:
+
+   `(li ()
+        (font ((color "forest green")) 
+              (b () ,name-of-collection))
+        (p () ,@blurbs)))))))
+
+where `name-of-collection' is the response of the 'name query to the
+info.ss file and `blurbs' is the response of the 'blurb query to the
+info.ss file.
+
 _Help Desk Entry Points_
 ========================
 

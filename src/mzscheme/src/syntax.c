@@ -1272,7 +1272,7 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
 static Scheme_Object *
 set_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *erec, int drec)
 {
-  Scheme_Env *menv;
+  Scheme_Env *menv = NULL;
   Scheme_Object *name, *var, *fn, *rhs, *find_name;
   int l;
   l = check_form(form, form);

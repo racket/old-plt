@@ -223,7 +223,7 @@
         (class %
           (inherit get-manual)
           (define/override (order-manuals x) 
-            (values (list (get-manual) "drscheme" "tools" "help") #f))
+            (values (list (get-manual) "drscheme" "help") #f))
           
           (inherit get-module get-transformer-module get-init-code
                    use-namespace-require/copy?)

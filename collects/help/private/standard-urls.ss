@@ -2,7 +2,7 @@
 
   (require "../servlets/private/util.ss"
            "cookie.ss"
-           "manuals.ss"
+           ;"manuals.ss"
 	   (lib "contract.ss"))
   
   (provide make-home-page-url
@@ -24,7 +24,6 @@
    (make-missing-manual-url (hd-cookie? string? string? string? . -> . string?))
    (search-for-docs (hd-cookie? string? search-type? search-how? any? (listof symbol?) any? 
                                 (union false? string?) . -> . any?))
-   (goto-manual-link (hd-cookie? string? string? . -> . any?))
    (goto-hd-location (hd-cookie? (lambda (sym)
                                    (memq sym hd-location-syms))
                                  . -> . 
@@ -100,11 +99,6 @@
                                     doc.txt?
                                     lang-name)])
         (visit-url-in-browser cookie url))))
-
-  (define (goto-manual-link cookie manual index-key)
-    (let* ([hd-url (finddoc-page-anchor manual index-key)]
-	   [url (prefix-with-server cookie hd-url)])
-      (visit-url-in-browser cookie url)))
 
   (define (goto-hd-location cookie sym)
     ; the assq is guarded by the contract

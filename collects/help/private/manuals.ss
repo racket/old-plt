@@ -6,8 +6,10 @@
 	   (lib "xml.ss" "xml")
            (lib "contract.ss")
            "colldocs.ss"
+           "cookie.ss"
            "docpos.ss"
            "path.ss"
+           "standard-urls.ss"
            "../servlets/private/util.ss"
            "../servlets/private/headelts.ss")
 
@@ -20,11 +22,17 @@
   
   (provide/contract [find-doc-directories (-> (listof string?))]
                     [find-doc-directory (string? . -> . (union false? string?))]
-                    [find-doc-names (-> (listof (cons/p string? string?)))])
+                    [find-doc-names (-> (listof (cons/p string? string?)))]
+                    
+                    [goto-manual-link (hd-cookie? string? string? . -> . any?)])
   
   (provide find-manuals)
 
-  
+  (define (goto-manual-link cookie manual index-key)
+    (let* ([hd-url (finddoc-page-anchor manual index-key)]
+	   [url (prefix-with-server cookie hd-url)])
+      (visit-url-in-browser cookie url)))
+    
   ;; Creates a "file:" link into the indicated manual.
   ;; The link doesn't go to a particular anchor,
   ;; because "file:" does not support that.

@@ -92,7 +92,7 @@ The optional preferences are:
     email, if it has a header named `field' that mathces `regexp', it
     is filed into `mailbox-name'.
 
-  - biff-delay: (union #f number); when number specifies how long
+  - biff-delay-seconds: (union #f number); when number specifies how long
     between sirmail waits before polling the mailbox. Only polls when
     connected.
 

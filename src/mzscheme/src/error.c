@@ -1300,7 +1300,10 @@ void scheme_wrong_syntax(const char *where,
     } else {
       pform = detail_form;
       /* To go in exn record: */
-      form = scheme_datum_to_syntax(detail_form, scheme_false, scheme_false, 1, 0);
+      form = scheme_datum_to_syntax(detail_form, 
+				    /* Use source location of `form': */
+				    SCHEME_STXP(form) ? form : scheme_false, 
+				    scheme_false, 1, 0);
     }
 
     /* don't use error_write_to_string_w_max since this is code */

@@ -92,6 +92,9 @@ if ($list) {
 		if ($f =~ /#ifndef MZ_REAL_THREADS/) {
 		    $elsesuspend = 1;
 		}
+		if ($f =~ /#ifdef MACINTOSH_EVENTS/) {
+		    $suspend = 1;
+		}
 		if ($f =~ /#ifdef USE_MAC_FILE_TOOLBOX/) {
 		    $suspend = 1;
 		}

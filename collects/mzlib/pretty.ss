@@ -502,20 +502,12 @@
 						(out s col)))))
 		    ((char? obj)        (if display?
 					    (out (make-string 1 obj) col)
-					    (out (case obj
-						   ((#\space)    "space")
-						   ((#\newline)  "newline")
-						   ((#\linefeed) "linefeed")
-						   ((#\return)   "return")
-						   ((#\rubout)   "rubout")
-						   ((#\backspace)"backspace")
-						   ((#\nul)      "nul")
-						   ((#\page)     "page")
-						   ((#\tab)      "tab")
-						   ((#\vtab)      "vtab")
-						   ((#\newline)  "newline")
-						   (else        (make-string 1 obj)))
-						 (out "#\\" col))))
+					    (out 
+					     ;; Must go through string to determe "printable" chars in any case:
+					     (let ([p (open-output-string)])
+					       (write obj p)
+					       (get-output-string p))
+					     col)))
 
 		    ;; Let symbol get printed by default case to get proper quoting
 		    ;; ((symbol? obj)      (out (symbol->string obj) col))

@@ -2,7 +2,7 @@
 ; REPL by getting & setting values in the top-level environment
 
 (module debugger-bindings mzscheme
-  (require (lib "contracts.ss")
+  (require (lib "contract.ss")
            "marks.ss"
            (lib "etc.ss")
            (lib "list.ss"))

@@ -1,7 +1,7 @@
 (module debugger-annotate mzscheme
   
   (require (prefix kernel: (lib "kerncase.ss" "syntax"))
-           (lib "contracts.ss")
+           (lib "contract.ss")
            "shared.ss"
            "marks.ss")
   

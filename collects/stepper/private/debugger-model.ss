@@ -2,7 +2,7 @@
 
 (module debugger-model mzscheme
   (require (lib "unitsig.ss")
-           (lib "contracts.ss")
+           (lib "contract.ss")
            (lib "etc.ss")
            (lib "mred.ss" "mred")
            (lib "debugger-sig.ss" "stepper")

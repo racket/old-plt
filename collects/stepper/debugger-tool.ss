@@ -1,5 +1,5 @@
 (module debugger-tool mzscheme
-  (require (lib "contracts.ss")
+  (require (lib "contract.ss")
            (lib "tool.ss" "drscheme")
            (lib "mred.ss" "mred")  
            (prefix frame: (lib "framework.ss" "framework"))

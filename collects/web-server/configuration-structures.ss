@@ -3,18 +3,17 @@
            "configuration-table-structs.ss")
   (provide (struct timeouts (default-servlet password servlet-connection file-per-byte file-base))
            (struct paths (host-base log htdocs servlet)))
-  
+
   ; configuration is now a unit.  See sig.ss
 
-  ; host = (make-host (listof str) (string -> resource) (str str sym url str -> str)
+  ; host = (make-host (listof str) (str str sym url str -> str)
   ;                   passwords resopnders timeouts paths)
-  ; Greg P: see dispatcher.ss for data definition of resource
   (provide-define-struct
-   host (indices dispatcher log-message passwords responders timeouts paths))
-  
+   host (indices log-message passwords responders timeouts paths))
+
   ; passwords = (listof (list* relm:str protected-dir-regexp:str
   ;                            (listof (list user:sym password:str))))
-  
+
   ; responders = (make-responders (url tst -> response)
   ;                               (url tst -> response)
   ;                               (url (cons sym str) -> response)

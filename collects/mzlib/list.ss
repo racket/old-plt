@@ -245,15 +245,16 @@
          (cond
 	   [(null? l) null]
 	   [(pair? l)
-	    (let* ([keep? (f (car l))]
-		   [frest (loop (cdr l))])
+	    (let* ([keep? (f (car l))])
 	      (if keep?
-		  (cons (car l) frest)
-		  frest))]
-	   [else (raise (make-exn:application:mismatch
-			 (format "filter: second argument must be a (proper) list; given ~e" list)
-			 (current-continuation-marks)
-			 list))])))))
+		  (cons (car l) (loop (cdr l)))
+		  (loop (cdr l))))]
+	   [else (raise-type-error
+		  'filter
+		  "proper list"
+		  1 ; i.e., 2nd argument
+		  f
+		  list)])))))
   
   (define first (polymorphic (lambda (x) 
                                (unless (pair? x)

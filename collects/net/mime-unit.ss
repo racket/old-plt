@@ -646,7 +646,7 @@
                  (att (attribute (regexp-replace r par "\\1")))
                  (val (value (regexp-replace r par "\\2"))))
             (and (regexp-match r par)
-                 att val (cons att val)))))
+                 att val (cons (lowercase att) val)))))
       
       ;; value := token / quoted-string
       (define value

@@ -2,9 +2,11 @@
 #ifdef MARKS_FOR_TYPE_C
 
 int variable_obj_SIZE(void *p) {
+  Scheme_Bucket *b = (Scheme_Bucket *)p;
+
   return
   ((((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
-   ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home)),
+   ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home))
    : gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id)));
 }
 
@@ -19,7 +21,7 @@ int variable_obj_MARK(void *p) {
 
   return
   ((((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
-   ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home)),
+   ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home))
    : gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id)));
 }
 
@@ -34,7 +36,7 @@ int variable_obj_FIXUP(void *p) {
 
   return
   ((((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
-   ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home)),
+   ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home))
    : gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id)));
 }
 
@@ -1447,7 +1449,7 @@ int module_val_MARK(void *p) {
   gcMARK(m->export_srcs);
   gcMARK(m->export_src_names);
 
-  gcMARK(m->kernel_exlcusion);
+  gcMARK(m->kernel_exclusion);
 
   gcMARK(m->indirect_exports);
   gcMARK(m->self_modidx);
@@ -1471,7 +1473,7 @@ int module_val_FIXUP(void *p) {
   gcFIXUP(m->export_srcs);
   gcFIXUP(m->export_src_names);
 
-  gcFIXUP(m->kernel_exlcusion);
+  gcFIXUP(m->kernel_exclusion);
 
   gcFIXUP(m->indirect_exports);
   gcFIXUP(m->self_modidx);
@@ -2836,6 +2838,26 @@ int mark_struct_proc_info_FIXUP(void *p) {
 
   return
   gcBYTES_TO_WORDS(sizeof(Struct_Proc_Info));
+}
+
+
+int mark_inspector_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Inspector));
+}
+
+int mark_inspector_MARK(void *p) {
+  Scheme_Inspector *i = (Scheme_Inspector *)p;
+  gcMARK(i->superior);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Inspector));
+}
+
+int mark_inspector_FIXUP(void *p) {
+  Scheme_Inspector *i = (Scheme_Inspector *)p;
+  gcFIXUP(i->superior);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Inspector));
 }
 
 

@@ -44,15 +44,6 @@
 #define WORD_SIZE (1 << LOG_WORD_SIZE)
 #define WORD_BIT_COUNT (WORD_SIZE << 3)
 
-#if USE_MMAP
-/* For mmap: */
-# include <unistd.h>
-# include <fcntl.h>
-# include <sys/types.h>
-# include <sys/mman.h>
-# include <errno.h>
-#endif
-
 typedef short Type_Tag;
 
 #include "gc2.h"
@@ -61,8 +52,8 @@ typedef short Type_Tag;
 
 /* Debugging and performance tools: */
 #define TIME 0
-#define SEARCH 0
-#define CHECKS 0
+#define SEARCH 1
+#define CHECKS 1
 #define NOISY 0
 #define MARK_STATS 0
 #define ALLOC_GC_PHASE 0
@@ -384,6 +375,12 @@ void flush_freed_pages(void)
 /* Default: mmap */
 
 #ifndef MALLOCATOR_DEFINED
+
+# include <unistd.h>
+# include <fcntl.h>
+# include <sys/types.h>
+# include <sys/mman.h>
+# include <errno.h>
 
 #ifndef MAP_ANON
 int fd, fd_created;
@@ -1114,6 +1111,7 @@ static void init_tagged_mpage(void **p, MPage *page)
 
 #if CHECKS
       if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
+	printf("bad tag: %d at %lx\n", tag, (long)p);
 	fflush(NULL);
 	CRASH();
       }

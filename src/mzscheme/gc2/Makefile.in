@@ -132,8 +132,8 @@ $(XSRCDIR)/hash.c: ../src/hash.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/hash.c $(XSRCDIR)/hash.c
 $(XSRCDIR)/image.c: ../src/image.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/image.c $(XSRCDIR)/image.c
-$(XSRCDIR)/module.c: ../src/list.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/list.c $(XSRCDIR)/module.c
+$(XSRCDIR)/module.c: ../src/module.o $(XFORMDEP)
+	$(XFORM) $(SRCDIR)/module.c $(XSRCDIR)/module.c
 $(XSRCDIR)/list.c: ../src/list.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/list.c $(XSRCDIR)/list.c
 $(XSRCDIR)/network.c: ../src/network.o $(XFORMDEP)

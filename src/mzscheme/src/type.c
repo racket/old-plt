@@ -339,6 +339,7 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_letrec_type, letrec);
   GC_REG_TRAV(scheme_let_one_type, let_one);
   GC_REG_TRAV(scheme_with_cont_mark_type, with_cont_mark);
+  GC_REG_TRAV(scheme_module_variable_type, cons_cell);
 
   GC_REG_TRAV(_scheme_values_types_, bad_trav);
   
@@ -373,7 +374,6 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_null_type, char_obj); /* small */
   GC_REG_TRAV(scheme_pair_type, cons_cell);
   GC_REG_TRAV(scheme_vector_type, vector_obj);
-  GC_REG_TRAV(scheme_closure_type, bad_trav); /* not used anymore */
 
   GC_REG_TRAV(scheme_input_port_type, input_port);
   GC_REG_TRAV(scheme_output_port_type, output_port);
@@ -383,14 +383,12 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_void_type, char_obj);  /* small */
   GC_REG_TRAV(scheme_syntax_compiler_type, syntax_compiler);
   GC_REG_TRAV(scheme_macro_type, small_object);
-  GC_REG_TRAV(scheme_promise_type, promise_val);
   GC_REG_TRAV(scheme_box_type, small_object);
   GC_REG_TRAV(scheme_process_type, process_val);
   GC_REG_TRAV(scheme_generic_type, bad_trav); /* generic = proc */
   GC_REG_TRAV(scheme_cont_mark_set_type, cont_mark_set_val);
   GC_REG_TRAV(scheme_sema_type, sema_val);
   GC_REG_TRAV(scheme_hash_table_type, hash_table_val);
-  GC_REG_TRAV(scheme_exp_time_type, small_object);
   GC_REG_TRAV(scheme_namespace_type, namespace_val);
   GC_REG_TRAV(scheme_random_state_type, random_state_val);
   
@@ -411,8 +409,6 @@ void scheme_register_traversers(void)
 
   GC_REG_TRAV(scheme_stx_type, stx_val);
   GC_REG_TRAV(scheme_module_type, module_val);
-
-  GC_REG_TRAV(scheme_module_begin_type, small_object);
 
   GC_REG_TRAV(scheme_reserved_1_type, bad_trav);
   GC_REG_TRAV(scheme_reserved_2_type, bad_trav);

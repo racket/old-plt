@@ -661,7 +661,7 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
 static Scheme_Object *
 define_values_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
-  Scheme_Object *var, *val;
+  Scheme_Object *var, *val, *fn;
 
   scheme_define_values_parse(form, &var, &val, env);
 
@@ -672,7 +672,8 @@ define_values_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Schem
   else
     boundname = scheme_false;
 
-  return scheme_datum_to_syntax(icons(SCHEME_STX_CAR(form),
+  fn = SCHEME_STX_CAR(form);
+  return scheme_datum_to_syntax(icons(fn,
 				      icons(var,
 					    icons(scheme_expand_expr(val, env, depth, boundname), 
 						  scheme_null))),
@@ -683,16 +684,16 @@ define_values_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Schem
 static Scheme_Object *
 quote_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
-  Scheme_Object *v;
+  Scheme_Object *v, *rest;
 
-  if (!(SCHEME_STX_PAIRP(SCHEME_STX_CDR(form))
-	&& SCHEME_STX_NULLP(SCHEME_STX_CDR(SCHEME_STX_CDR(form)))))
+  rest = SCHEME_STX_CDR(form);
+  if (!(SCHEME_STX_PAIRP(rest) && SCHEME_STX_NULLP(SCHEME_STX_CDR(rest))))
     scheme_wrong_syntax("quote", NULL, form, "bad syntax (wrong number of parts)");
 
   scheme_compile_rec_done_local(rec, drec);
   scheme_default_compile_rec(rec, drec);
   
-  v = SCHEME_STX_CAR(SCHEME_STX_CDR(form));
+  v = SCHEME_STX_CAR(rest);
 
   if (SCHEME_STXP(v))
     return scheme_syntax_to_datum(v, 0, NULL);
@@ -703,12 +704,15 @@ quote_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *re
 static Scheme_Object *
 quote_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
-  if (!(SCHEME_STX_PAIRP(SCHEME_STX_CDR(form))
-	&& SCHEME_STX_NULLP(SCHEME_STX_CDR(SCHEME_STX_CDR(form)))))
+  Scheme_Object *first, *rest;
+
+  first = SCHEME_STX_CAR(form);
+  rest = SCHEME_STX_CDR(form);
+
+  if (!(SCHEME_STX_PAIRP(rest) && SCHEME_STX_NULLP(SCHEME_STX_CDR(rest))))
     scheme_wrong_syntax("quote", NULL, form, "bad syntax (wrong number of parts)");
 
-  return scheme_datum_to_syntax(icons(SCHEME_STX_CAR(form), SCHEME_STX_CDR(form)),
-				form, form, 0);
+  return scheme_datum_to_syntax(icons(first, rest), form, form, 0);
 }
 
 static Scheme_Object *
@@ -782,7 +786,7 @@ if_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, 
 static Scheme_Object *
 if_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
-  Scheme_Object *test, *rest, *thenp, *elsep;
+  Scheme_Object *test, *rest, *thenp, *elsep, *fn;
   int len;
   len = check_form("if", form);
 
@@ -791,16 +795,18 @@ if_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *b
 
   env = scheme_no_defines(env);
 
-  test = SCHEME_STX_CDR(form);
-  test = SCHEME_STX_CAR(test);
+  rest = SCHEME_STX_CDR(form);
+  test = SCHEME_STX_CAR(rest);
   test = scheme_expand_expr(test, env, depth, scheme_false);
 
-  rest = SCHEME_STX_CDR(SCHEME_STX_CDR(form));
-  thenp = scheme_expand_expr(SCHEME_STX_CAR(rest), env, depth, boundname);
+  rest = SCHEME_STX_CDR(rest);
+  thenp = SCHEME_STX_CAR(rest);
+  thenp = scheme_expand_expr(thenp, env, depth, boundname);
 
   rest = SCHEME_STX_CDR(rest);
   if (!SCHEME_STX_NULLP(rest)) {
-    elsep = scheme_expand_expr(SCHEME_STX_CAR(rest), env, depth, boundname);
+    elsep = SCHEME_STX_CAR(rest);
+    elsep = scheme_expand_expr(elsep, env, depth, boundname);
     rest = icons(elsep, scheme_null);
   } else {
     rest = scheme_null;
@@ -808,7 +814,8 @@ if_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *b
 
   rest = icons(thenp, rest);
 
-  return scheme_datum_to_syntax(icons(SCHEME_STX_CAR(form), icons(test, rest)),
+  fn = SCHEME_STX_CAR(form);
+  return scheme_datum_to_syntax(icons(fn, icons(test, rest)),
 				form, form, 0);
 }
 
@@ -857,7 +864,7 @@ with_cont_mark_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
 static Scheme_Object *
 with_cont_mark_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
-  Scheme_Object *key, *val, *expr, *orig_form = form;
+  Scheme_Object *key, *val, *expr, *orig_form = form, *fn;
   int len;
   len = check_form("with-continuation-mark", form);
 
@@ -877,7 +884,8 @@ with_cont_mark_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Sche
   val = scheme_expand_expr(val, env, depth, scheme_false);
   expr = scheme_expand_expr(expr, env, depth, boundname);
 
-  return scheme_datum_to_syntax(icons(SCHEME_STX_CAR(orig_form),
+  fn = SCHEME_STX_CAR(orig_form);
+  return scheme_datum_to_syntax(icons(fn,
 				      icons(key,
 					    icons(val,
 						  icons(expr, scheme_null)))),
@@ -889,14 +897,16 @@ static Scheme_Object *
 set_execute (Scheme_Object *data)
 {
   Scheme_Object *val, *set_undef;
+  Scheme_Bucket *var;
 
   set_undef = SCHEME_CAR(data);
   data = SCHEME_CDR(data);
   
-  val = _scheme_eval_linked_expr(SCHEME_STX_CDR(data));
+  val = SCHEME_STX_CDR(data);
+  val = _scheme_eval_linked_expr(val);
 
-  scheme_set_global_bucket("set!", (Scheme_Bucket *)SCHEME_STX_CAR(data), 
-			   val, SCHEME_TRUEP(set_undef));
+  var = (Scheme_Bucket *)SCHEME_STX_CAR(data);
+  scheme_set_global_bucket("set!", var, val, SCHEME_TRUEP(set_undef));
 
   return scheme_void;
 }
@@ -1182,10 +1192,12 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
   if (!SCHEME_STX_PAIRP(form))
     scheme_wrong_syntax("case-lambda", form, orig_form, NULL);
   if (SCHEME_STX_NULLP(SCHEME_STX_CDR(form))) {
-    case_lambda_check_line(SCHEME_STX_CAR(form), orig_form, env);
+    c = SCHEME_STX_CAR(form);
+
+    case_lambda_check_line(c, orig_form, env);
 
     c = icons(scheme_datum_to_syntax(lambda_symbol, scheme_false, scheme_sys_wraps(env), 0),
-	      SCHEME_STX_CAR(form));
+	      c);
     c = scheme_datum_to_syntax(c, orig_form, orig_form, 0);
     
     return lambda_syntax(c, env, rec, drec);
@@ -1230,10 +1242,12 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
   recs = MALLOC_N_RT(Scheme_Compile_Info, count);
   scheme_init_compile_recs(rec, drec, recs, count);
 
-  for (i = 0; i < count; i++, list = SCHEME_STX_CDR(list)) {
+  for (i = 0; i < count; i++) {
     Scheme_Object *ce;
-    ce = scheme_compile_expr(SCHEME_STX_CAR(list), env, recs, i);
+    ce = SCHEME_STX_CAR(list);
+    ce = scheme_compile_expr(ce, env, recs, i);
     cl->array[i] = ce;
+    list = SCHEME_STX_CDR(list);
   }
 
   scheme_end_stubborn_change((void *)cl);
@@ -1248,13 +1262,16 @@ case_lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_
 {
   Scheme_Object *first, *last, *args, *body, *c, *orig_form = form;
 
-  first = icons(SCHEME_STX_CAR(form), scheme_null);
+  first = SCHEME_STX_CAR(form);
+  first = icons(first, scheme_null);
   last = first;
   form = SCHEME_STX_CDR(form);
 
   while (SCHEME_STX_PAIRP(form)) {
-    Scheme_Object *line_form = SCHEME_STX_CAR(form);
+    Scheme_Object *line_form;
     Scheme_Comp_Env *newenv;
+
+    line_form = SCHEME_STX_CAR(form);
 
     case_lambda_check_line(line_form, orig_form, env);
     
@@ -1314,8 +1331,10 @@ Scheme_Object *bangboxenv_link(Scheme_Object *data, Link_Info *info)
 static Scheme_Object *
 bangboxvalue_execute(Scheme_Object *data)
 {
-  int pos = SCHEME_INT_VAL(SCHEME_STX_CAR(data));
+  int pos;
   Scheme_Object *val;
+
+  pos = SCHEME_INT_VAL(SCHEME_STX_CAR(data));
 
   data = SCHEME_CDR(data);
   
@@ -1741,13 +1760,15 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *origenv, char *formname,
   if (scheme_stx_proper_list_length(form) < 3)
     scheme_wrong_syntax(formname, NULL, form, NULL);
 
-  bindings = SCHEME_STX_CAR(SCHEME_STX_CDR(form));
+  bindings = SCHEME_STX_CDR(form);
+  bindings = SCHEME_STX_CAR(bindings);
   num_clauses = scheme_stx_proper_list_length(bindings);
 
   if (num_clauses < 0)
     scheme_wrong_syntax(formname, bindings, form, NULL);
 
-  forms = SCHEME_STX_CDR(SCHEME_STX_CDR(form));
+  forms = SCHEME_STX_CDR(form);
+  forms = SCHEME_STX_CDR(forms);
   forms = scheme_datum_to_syntax(forms, form, form, 0);
 
   if (!num_clauses) {
@@ -1759,14 +1780,24 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *origenv, char *formname,
     num_bindings = 0;
     l = bindings;
     while (!SCHEME_STX_NULLP(l)) {
-      Scheme_Object *clause, *names;
+      Scheme_Object *clause, *names, *rest;
       int num_names;
 
       clause = SCHEME_STX_CAR(l);
       
-      if (!SCHEME_STX_PAIRP(clause)
-	  || !SCHEME_STX_PAIRP(SCHEME_STX_CDR(clause))
-	  || !SCHEME_STX_NULLP(SCHEME_STX_CDR(SCHEME_STX_CDR(clause))))
+      if (!SCHEME_STX_PAIRP(clause))
+	rest = NULL;
+      else {
+	rest = SCHEME_STX_CDR(clause);
+	if (!SCHEME_STX_PAIRP(rest))
+	  rest = NULL;
+	else {
+	  rest = SCHEME_STX_CDR(rest);
+	  if (!SCHEME_STX_NULLP(rest))
+	    rest = NULL;
+	}
+      }
+      if (!rest)
 	scheme_wrong_syntax(formname, clause, form, NULL);
       
       names = SCHEME_STX_CAR(clause);
@@ -1818,7 +1849,9 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *origenv, char *formname,
     name = SCHEME_STX_CAR(binding);
     if (multi) {
       while (!SCHEME_STX_NULLP(name)) {
-	names[k] = SCHEME_STX_CAR(name);
+	Scheme_Object *n;
+	n = SCHEME_STX_CAR(name);
+	names[k] = n;
 	scheme_check_identifier(formname, names[k], NULL, env, form);
 	k++;
 	name = SCHEME_STX_CDR(name);
@@ -1945,7 +1978,11 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
   
   vars = SCHEME_STX_CDR(form);
 
-  named = !multi && !letrec && !letstar && SCHEME_STX_PAIRP(vars) && SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(vars));
+  named = (!multi
+	   && !letrec
+	   && !letstar
+	   && SCHEME_STX_PAIRP(vars) 
+	   && SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(vars)));
   
   if (named)
     return named_let_syntax(form, origenv, NULL, 0, depth, boundname);
@@ -1961,6 +1998,8 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
 
   if (letstar) {
     if (!SCHEME_STX_NULLP(vars)) {
+      Scheme_Object *a, *vr;
+
       if (!SCHEME_STX_PAIRP(vars))
 	scheme_wrong_syntax(formname, vars, form, NULL);
 
@@ -1968,12 +2007,13 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
       first = scheme_datum_to_syntax(first, form, scheme_sys_wraps(origenv), 0);
       last = multi ? let_star_values_symbol : let_star_symbol;
       last = scheme_datum_to_syntax(last, form, scheme_sys_wraps(origenv), 0);
-      
+
+      a = SCHEME_STX_CAR(vars);
+      vr = SCHEME_STX_CDR(vars);
       body = icons(first,
-		   icons(icons(SCHEME_STX_CAR(vars), scheme_null),
-			 icons(icons(last,
-				    icons(SCHEME_STX_CDR(vars), body)),
-			    scheme_null)));
+		   icons(icons(a, scheme_null),
+			 icons(icons(last, icons(vr, body)),
+			       scheme_null)));
     } else {
       first = scheme_datum_to_syntax(let_values_symbol, form, scheme_sys_wraps(origenv), 0);
       body = icons(first, icons(scheme_null, body));
@@ -2150,10 +2190,13 @@ letrec_values_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Schem
 static Scheme_Object *
 let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
+  Scheme_Object *rest;
+
   if (!SCHEME_STX_PAIRP(SCHEME_STX_CDR(form)))
     scheme_wrong_syntax("let", NULL, form, "bad syntax (" IMPROPER_LIST_FORM ")");
 
-  if (SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(SCHEME_STX_CDR(form))))
+  rest = SCHEME_STX_CDR(form);
+  if (SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(rest)))
     return named_let_syntax (form, env, rec, drec, 0, scheme_false);
   
   return gen_let_syntax(form, env, "let", 0, 0, 0, rec, drec);
@@ -2209,31 +2252,48 @@ static Scheme_Object *nl_car(Scheme_Object *l, Scheme_Object *form)
 
 static Scheme_Object *nl_cadr(Scheme_Object *l, Scheme_Object *form)
 {
+  Scheme_Object *rest;
+  
   if (!SCHEME_STX_PAIRP(l) || !SCHEME_STX_PAIRP(SCHEME_STX_CDR(l)))
     scheme_wrong_syntax("named let", l, form, 
 			"bad syntax (non-identifier-value-pair)");
   
-  if (!SCHEME_STX_NULLP(SCHEME_STX_CDR(SCHEME_STX_CDR(l))))
+  rest = SCHEME_STX_CDR(l);
+  if (!SCHEME_STX_NULLP(SCHEME_STX_CDR(rest)))
     scheme_wrong_syntax("named let", l, form, 
 			"bad syntax (extra data in indentifier-value pair)");
   
-  l = SCHEME_STX_CDR(l);
-  return SCHEME_STX_CAR(l);
+  return SCHEME_STX_CAR(rest);
 }
 
 static Scheme_Object *
 named_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
 		  Scheme_Compile_Info *rec, int drec, int depth, Scheme_Object *boundname)
 {
-  Scheme_Object *name, *bindings, *vars, *vals, *forms;
+  Scheme_Object *name, *bindings, *vars, *vals, *forms, *rest;
   Scheme_Object *proc, *app, *letrec;
 
-  if (!(SCHEME_STX_PAIRP(SCHEME_STX_CDR(form))
-	&& SCHEME_STX_PAIRP(SCHEME_STX_CDR(SCHEME_STX_CDR(form)))
-	&& SCHEME_STX_PAIRP(SCHEME_STX_CDR(SCHEME_STX_CDR(SCHEME_STX_CDR(form))))))
+  rest = SCHEME_STX_CDR(form);
+  if (!SCHEME_STX_PAIRP(rest))
+    rest = NULL;
+  else {
+    rest = SCHEME_STX_CDR(rest);
+    if (!SCHEME_STX_PAIRP(rest))
+      rest = NULL;
+    else {
+      rest = SCHEME_STX_CDR(rest);
+      if (!SCHEME_STX_PAIRP(rest))
+	rest = NULL;
+    }
+  }
+
+  if (!rest)
     scheme_wrong_syntax("named let", NULL, form, NULL);
-  name = SCHEME_STX_CAR(SCHEME_STX_CDR(form));
-  bindings = SCHEME_STX_CAR(SCHEME_STX_CDR(SCHEME_STX_CDR(form)));
+
+  rest = SCHEME_STX_CDR(form);
+  name = SCHEME_STX_CAR(rest);
+  rest = SCHEME_STX_CDR(rest);
+  bindings = SCHEME_STX_CAR(rest);
   if (!SCHEME_STX_PAIRP(bindings) && !SCHEME_STX_NULLP(bindings))
     scheme_wrong_syntax("named let", bindings, form, NULL);
 
@@ -2277,7 +2337,9 @@ Scheme_Object *scheme_compile_sequence(Scheme_Object *forms,
 
   if (SCHEME_STX_PAIRP(forms) && SCHEME_STX_NULLP(SCHEME_STX_CDR(forms))) {
     /* If it's a begin, we have to check some more... */
-    Scheme_Object *first = SCHEME_STX_CAR(forms), *val;
+    Scheme_Object *first, *val;
+
+    first = SCHEME_STX_CAR(forms);
 
     if (SCHEME_STX_PAIRP(first)) {
       first = scheme_check_immediate_macro(first, env, rec, drec, -1, scheme_false, &val);
@@ -2410,8 +2472,10 @@ do_begin_syntax(char *name,
   if (zero)
     env = scheme_no_defines(env);
 
-  if (SCHEME_STX_NULLP(SCHEME_STX_CDR(forms)))
-    return scheme_compile_expr(SCHEME_STX_CAR(forms), env, rec, drec);
+  if (SCHEME_STX_NULLP(SCHEME_STX_CDR(forms))) {
+    forms = SCHEME_STX_CAR(forms);
+    return scheme_compile_expr(forms, env, rec, drec);
+  }
 
   if (!scheme_is_toplevel(env)) {
     /* Not at top-level */
@@ -2426,8 +2490,10 @@ do_begin_syntax(char *name,
       scheme_init_compile_recs(rec, drec, recs, 2);
       recs[0].value_name = vname;
 
-      first = scheme_compile_expr(SCHEME_STX_CAR(forms), env, recs, 0);
-      rest = scheme_compile_list(SCHEME_STX_CDR(forms), env, recs, 1);
+      first = SCHEME_STX_CAR(forms);
+      first = scheme_compile_expr(first, env, recs, 0);
+      rest = SCHEME_STX_CDR(forms);
+      rest = scheme_compile_list(rest, env, recs, 1);
       
       scheme_merge_compile_recs(rec, drec, recs, 2);
 
@@ -2637,17 +2703,19 @@ void scheme_defmacro_parse(Scheme_Object *form,
 			   Scheme_Object **name, Scheme_Object **code,
 			   Scheme_Comp_Env *env)
 {
+  Scheme_Object *rest;
+
   if (scheme_stx_proper_list_length(form) != 3)
     scheme_wrong_syntax("define-syntax", NULL, form, NULL);
 
-  *name = SCHEME_STX_CAR(SCHEME_STX_CDR(form));
+  rest = SCHEME_STX_CDR(form);
+  *name = SCHEME_STX_CAR(rest);
     
   scheme_check_identifier("define-syntax", *name, NULL, env, form);
     
-  form = SCHEME_STX_CDR(form);
-  form = SCHEME_STX_CDR(form);
-  form = SCHEME_STX_CAR(form);
-  *code = form;
+  rest = SCHEME_STX_CDR(rest);
+  rest = SCHEME_STX_CAR(rest);
+  *code = rest;
 }
 
 static Scheme_Object *defmacro_link(Scheme_Object *data, Link_Info *info)

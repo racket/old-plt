@@ -644,7 +644,8 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   data->type = scheme_compiled_unclosed_procedure_type;
 
   params = SCHEME_STX_CDR(code);
-  params = allparams = SCHEME_STX_CAR(params);
+  params = SCHEME_STX_CAR(params);
+  allparams = params;
 
   data->num_params = 0;
   for (; SCHEME_STX_PAIRP(params); params = SCHEME_STX_CDR(params)) {

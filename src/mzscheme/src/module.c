@@ -94,6 +94,8 @@ static Scheme_Object *default_module_resolver(int argc, Scheme_Object **argv);
 
 void scheme_init_module(Scheme_Env *env)
 {
+  Scheme_Object *o;
+
   scheme_register_syntax(MODULE_EXPD, module_resolve, 
 			 module_link, module_execute, 1);
   scheme_register_syntax(IMPORT_EXPD, top_level_import_resolve, 
@@ -136,10 +138,10 @@ void scheme_init_module(Scheme_Env *env)
   scheme_install_type_writer(scheme_module_type, write_module);
   scheme_install_type_reader(scheme_module_type, read_module);
 
-  scheme_set_param(scheme_config, MZCONFIG_CURRENT_MODULE_RESOLVER,
-		   scheme_make_prim_w_arity(default_module_resolver,
-					    "default-module-name-resolver",
-					    1, 1));
+  o = scheme_make_prim_w_arity(default_module_resolver,
+			       "default-module-name-resolver",
+			       1, 1);
+  scheme_set_param(scheme_config, MZCONFIG_CURRENT_MODULE_RESOLVER, o);
 
   scheme_set_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX, scheme_false);
 
@@ -880,14 +882,17 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   } else {
     fm = scheme_expand_expr(fm, menv->init, depth, scheme_false);
 
-    if (!SCHEME_STX_PAIRP(fm)
-	|| !SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(fm))
-	|| !SAME_OBJ(module_begin_symbol, SCHEME_STX_VAL(SCHEME_STX_CAR(fm))))
+    if (!SCHEME_STX_PAIRP(fm))
+      scheme_wrong_syntax("module", fm, form, "body expansion was not a #%module-begin expression");
+    
+    mb = SCHEME_STX_CAR(fm);
+
+    if (!SCHEME_STX_SYMBOLP(mb)
+	|| !SAME_OBJ(module_begin_symbol, SCHEME_STX_VAL(mb)))
       scheme_wrong_syntax("module", fm, form, "body expansion was not a #%module-begin expression");
     else if (scheme_stx_proper_list_length(fm) < 0)
       scheme_wrong_syntax("module", fm, form, "body expansion was an ill-formed #%module-begin expression");
     
-    mb = SCHEME_STX_CAR(fm);
     fm = SCHEME_STX_CDR(fm);
     if (SCHEME_STXP(fm))
       fm = SCHEME_STX_VAL(fm);
@@ -1083,34 +1088,91 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     int normal;
 
     while (1) {
+      Scheme_Object *fst;
+
       e = SCHEME_STX_CAR(fm);
 
       /* -2 means expand all the way (to stops), but preserve letrec-syntax. */
       e = scheme_expand_expr(e, xenv, -2, scheme_false);
 
-      if (SCHEME_STX_PAIRP(e) && SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(e))
-	  && scheme_stx_module_eq(begin_stx, SCHEME_STX_CAR(e), 0)) {
+      if (SCHEME_STX_PAIRP(e))
+	fst = SCHEME_STX_CAR(e);
+      else
+	fst = NULL;
+
+      if (fst && SCHEME_STX_SYMBOLP(fst) && scheme_stx_module_eq(begin_stx, fst, 0)) {
 	if (scheme_stx_proper_list_length(e) < 0)
 	  scheme_wrong_syntax("begin (module body)", NULL, form, "bad syntax (" IMPROPER_LIST_FORM ")");
-	fm = scheme_append(scheme_flatten_syntax_list(SCHEME_STX_CDR(e), NULL), SCHEME_STX_CDR(fm));
+	fst = SCHEME_STX_CDR(e);
+	fm = SCHEME_STX_CDR(fm);
+	fm = scheme_append(scheme_flatten_syntax_list(fst, NULL), fm);
       } else
 	break;
     }
     
-    if (SCHEME_STX_PAIRP(e) && SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(e))) {
-      Scheme_Object *n;
-      n = SCHEME_STX_CAR(e);
-      if (scheme_stx_module_eq(define_values_stx, SCHEME_STX_CAR(e), 0)) {
-	/************ define-values *************/
-	Scheme_Object *vars, *val;
+    if (SCHEME_STX_PAIRP(e)) {
+      Scheme_Object *fst;
 
-	/* Create top-level vars */
-	scheme_define_values_parse(e, &vars, &val, env);
+      fst = SCHEME_STX_CAR(e);
 
-	while (SCHEME_STX_PAIRP(vars)) {
-	  Scheme_Object *name;
-	  name = SCHEME_STX_CAR(vars);
+      if (SCHEME_STX_SYMBOLP(fst)) {
+
+	Scheme_Object *n;
+	n = SCHEME_STX_CAR(e);
+	if (scheme_stx_module_eq(define_values_stx, fst, 0)) {
+	  /************ define-values *************/
+	  Scheme_Object *vars, *val;
+
+	  /* Create top-level vars */
+	  scheme_define_values_parse(e, &vars, &val, env);
+
+	  while (SCHEME_STX_PAIRP(vars)) {
+	    Scheme_Object *name;
+	    name = SCHEME_STX_CAR(vars);
+	    name = SCHEME_STX_SYM(name);
+
+	    /* Check that it's not yet defined: */
+	    if (scheme_lookup_in_table(env->genv->toplevel, (const char *)name)) {
+	      scheme_wrong_syntax("module", name, e, "duplicate definition for identifier");
+	      return NULL;
+	    }
+
+	    /* Not imported: */
+	    if (scheme_lookup_in_table(imported, (const char *)name)) {
+	      scheme_wrong_syntax("module", name, e, "identifier is imported");
+	      return NULL;
+	    }
+
+	    /* Not syntax: */
+	    if (scheme_lookup_in_table(env->genv->syntax, (const char *)name)) {
+	      scheme_wrong_syntax("module", name, e, "duplicate definition for identifier");
+	      return NULL;
+	    }
+
+	    /* Create the bucket, indicating that the name will be defined: */
+	    scheme_add_global_symbol(name, scheme_undefined, env->genv);
+
+	    /* Add a renaming: */
+	    scheme_extend_module_rename(rn, self_modidx, name, name);
+
+	    vars = SCHEME_STX_CDR(vars);
+	  }
+	
+	  normal = 1;
+	} else if (scheme_stx_module_eq(define_syntax_stx, fst, 0)) {
+	  /************ define-syntax *************/
+	  /* Define the macro: */
+	  Scheme_Compile_Info mrec;
+	  Scheme_Object *name, *code, *m, *macro, *vec;
+
+	  scheme_defmacro_parse(e, &name, &code, env);
+
 	  name = SCHEME_STX_SYM(name);
+
+	  if (scheme_lookup_in_table(env->genv->syntax, (const char *)name)) {
+	    scheme_wrong_syntax("module", name, e, "duplicate definition for identifier");
+	    return NULL;
+	  }
 
 	  /* Check that it's not yet defined: */
 	  if (scheme_lookup_in_table(env->genv->toplevel, (const char *)name)) {
@@ -1124,280 +1186,245 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    return NULL;
 	  }
 
-	  /* Not syntax: */
-	  if (scheme_lookup_in_table(env->genv->syntax, (const char *)name)) {
-	    scheme_wrong_syntax("module", name, e, "duplicate definition for identifier");
-	    return NULL;
+	  mrec.dont_mark_local_use = 0;
+	  mrec.value_name = NULL;
+
+	  if (!eenv) {
+	    scheme_prepare_exp_env(env->genv);
+	    eenv = scheme_no_defines(env->genv->exp_env->init);
 	  }
 
-	  /* Create the bucket, indicating that the name will be defined: */
-	  scheme_add_global_symbol(name, scheme_undefined, env->genv);
+	  if (!rec)
+	    code = scheme_expand_expr(code, eenv, -1, name);
+	  m = scheme_compile_expr(code, eenv, &mrec, 0);
+	  m = scheme_resolve_expr(m, scheme_resolve_info_create());
+
+	  /* Add code with name and lexical depth to exp-time body: */
+	  vec = scheme_make_vector(3, NULL);
+	  SCHEME_VEC_ELS(vec)[0] = name;
+	  SCHEME_VEC_ELS(vec)[1] = m;
+	  SCHEME_VEC_ELS(vec)[2] = scheme_make_integer(mrec.max_let_depth);
+	  exp_body = scheme_make_pair(vec, exp_body);
+	
+	  m = scheme_link_expr(m, eenv->genv);
+	
+	  scheme_on_next_top(env, NULL, scheme_false);
+	  m = scheme_eval_linked_expr(m, mrec.max_let_depth);
+
+	  /* Add macro to environment: */
+	  macro = scheme_alloc_stubborn_small_object();
+	  macro->type = scheme_macro_type;
+	  SCHEME_PTR_VAL(macro) = m;
+	  scheme_end_stubborn_change((void *)macro);
+	
+	  scheme_add_to_table(env->genv->syntax, (const char *)name, macro, 0);
 
 	  /* Add a renaming: */
 	  scheme_extend_module_rename(rn, self_modidx, name, name);
 
-	  vars = SCHEME_STX_CDR(vars);
-	}
-	
-	normal = 1;
-      } else if (scheme_stx_module_eq(define_syntax_stx, SCHEME_STX_CAR(e), 0)) {
-	/************ define-syntax *************/
-	/* Define the macro: */
-	Scheme_Compile_Info mrec;
-	Scheme_Object *name, *code, *m, *macro, *vec;
-
-	scheme_defmacro_parse(e, &name, &code, env);
-
-	name = SCHEME_STX_SYM(name);
-
-	if (scheme_lookup_in_table(env->genv->syntax, (const char *)name)) {
-	  scheme_wrong_syntax("module", name, e, "duplicate definition for identifier");
-	  return NULL;
-	}
-
-	/* Check that it's not yet defined: */
-	if (scheme_lookup_in_table(env->genv->toplevel, (const char *)name)) {
-	  scheme_wrong_syntax("module", name, e, "duplicate definition for identifier");
-	  return NULL;
-	}
-
-	/* Not imported: */
-	if (scheme_lookup_in_table(imported, (const char *)name)) {
-	  scheme_wrong_syntax("module", name, e, "identifier is imported");
-	  return NULL;
-	}
-
-	mrec.dont_mark_local_use = 0;
-	mrec.value_name = NULL;
-
-	if (!eenv) {
-	  scheme_prepare_exp_env(env->genv);
-	  eenv = scheme_no_defines(env->genv->exp_env->init);
-	}
-
-	if (!rec)
-	  code = scheme_expand_expr(code, eenv, -1, name);
-	m = scheme_compile_expr(code, eenv, &mrec, 0);
-	m = scheme_resolve_expr(m, scheme_resolve_info_create());
-
-	/* Add code with name and lexical depth to exp-time body: */
-	vec = scheme_make_vector(3, NULL);
-	SCHEME_VEC_ELS(vec)[0] = name;
-	SCHEME_VEC_ELS(vec)[1] = m;
-	SCHEME_VEC_ELS(vec)[2] = scheme_make_integer(mrec.max_let_depth);
-	exp_body = scheme_make_pair(vec, exp_body);
-	
-	m = scheme_link_expr(m, eenv->genv);
-	
-	scheme_on_next_top(env, NULL, scheme_false);
-	m = scheme_eval_linked_expr(m, mrec.max_let_depth);
-
-	/* Add macro to environment: */
-	macro = scheme_alloc_stubborn_small_object();
-	macro->type = scheme_macro_type;
-	SCHEME_PTR_VAL(macro) = m;
-	scheme_end_stubborn_change((void *)macro);
-	
-	scheme_add_to_table(env->genv->syntax, (const char *)name, macro, 0);
-
-	/* Add a renaming: */
-	scheme_extend_module_rename(rn, self_modidx, name, name);
-
-	if (rec)
-	  e = scheme_compiled_void();
-	else {
-	  m = SCHEME_STX_CDR(e);
-	  m = SCHEME_STX_CAR(m);
-	  m = scheme_make_pair(define_syntax_stx,
-			       scheme_make_pair(m, scheme_make_pair(code, scheme_null)));
-	  e = scheme_datum_to_syntax(m, e, e, 0);
-	}
-	normal = 0;
-      } else if (scheme_stx_module_eq(import_stx, SCHEME_STX_CAR(e), 0)) {	
-	/************ import *************/
-	Scheme_Object *imods;
-
-	/* Add imports to renaming: */
-	tables[3] = e;
-	imods = parse_imports(form, e, env->genv, NULL, 
-			      rn, check_import_name, tables, 0,
-			      redef_modname);
-	
-	/* Add imported modules to imports list: */
-	for (; !SCHEME_NULLP(imods); imods = SCHEME_CDR(imods)) {
-	  Scheme_Object *il, *ilast = NULL;
-	  Scheme_Object *idx = SCHEME_CAR(imods);
-	  
-	  for (il = env->genv->module->imports; SCHEME_PAIRP(il); il = SCHEME_CDR(il)) {
-	    if (same_modidx(idx, SCHEME_CAR(il)))
-	      break;
-	    ilast = il;
+	  if (rec)
+	    e = scheme_compiled_void();
+	  else {
+	    m = SCHEME_STX_CDR(e);
+	    m = SCHEME_STX_CAR(m);
+	    m = scheme_make_pair(define_syntax_stx,
+				 scheme_make_pair(m, scheme_make_pair(code, scheme_null)));
+	    e = scheme_datum_to_syntax(m, e, e, 0);
 	  }
+	  normal = 0;
+	} else if (scheme_stx_module_eq(import_stx, fst, 0)) {	
+	  /************ import *************/
+	  Scheme_Object *imods;
+
+	  /* Add imports to renaming: */
+	  tables[3] = e;
+	  imods = parse_imports(form, e, env->genv, NULL, 
+				rn, check_import_name, tables, 0,
+				redef_modname);
+	
+	  /* Add imported modules to imports list: */
+	  for (; !SCHEME_NULLP(imods); imods = SCHEME_CDR(imods)) {
+	    Scheme_Object *il, *ilast = NULL;
+	    Scheme_Object *idx = SCHEME_CAR(imods);
 	  
-	  if (SCHEME_NULLP(il)) {
-	    il = scheme_make_pair(idx, scheme_null);
-	    SCHEME_CDR(ilast) = il;
-	  }
-	}
-
-	if (rec)
-	  e = scheme_compiled_void();
-	normal = 0;
-      } else if (scheme_stx_module_eq(import_for_syntax_stx, SCHEME_STX_CAR(e), 0)) {	
-	/************ import-for-syntax *************/
-	Scheme_Object *imods;
-
-	scheme_prepare_exp_env(env->genv);
-
-	/* Add imports to renaming: */
-	et_tables[3] = e;
-	imods = parse_imports(form, e, env->genv->exp_env, env->genv,
-			      et_rn, check_import_name, et_tables, 1,
-			      redef_modname);
-
-	/* Add imported modules to et_imports list: */
-	for (; !SCHEME_NULLP(imods); imods = SCHEME_CDR(imods)) {
-	  Scheme_Object *il, *ilast = NULL;
-	  Scheme_Object *idx = SCHEME_CAR(imods);
-	  
-	  for (il = env->genv->module->et_imports; SCHEME_PAIRP(il); il = SCHEME_CDR(il)) {
-	    if (same_modidx(idx, SCHEME_CAR(il)))
-	      break;
-	    ilast = il;
-	  }
-	  
-	  if (SCHEME_NULLP(il)) {
-	    il = scheme_make_pair(idx, scheme_null);
-	    if (ilast)
-	      SCHEME_CDR(ilast) = il;
-	    else
-	      env->genv->module->et_imports = il;
-	  }
-	}
-
-	if (rec)
-	  e = scheme_compiled_void();
-	normal = 0;
-      } else if (scheme_stx_module_eq(export_stx, SCHEME_STX_CAR(e), 0)) {
-	/************ export *************/
-	/* Add exports to table: */
-	Scheme_Object *l;
-
-	if (scheme_stx_proper_list_length(e) < 0)
-	  scheme_wrong_syntax("export", e, form, "bad syntax (" IMPROPER_LIST_FORM ")");
-
-	for (l = SCHEME_STX_CDR(e); !SCHEME_NULLP(l); l = SCHEME_STX_CDR(l)) {
-	  Scheme_Object *a, *midx;
-
-	  a = SCHEME_CAR(l);
-
-	  if (SCHEME_STX_SYMBOLP(a)) {
-	    /* <id> */
-	    a = SCHEME_STX_VAL(a);
-	    if (scheme_lookup_in_table(exported, (const char *)a))
-	      scheme_wrong_syntax("export", a, form, "identifier already exported");
-	    /* Export a: */
-	    scheme_add_to_table(exported, (const char *)a, a, 0);
-	  } else if (SCHEME_STX_PAIRP(a)
-		     && SAME_OBJ(rename_symbol, SCHEME_STX_VAL(SCHEME_STX_CAR(a)))) {
-	    /* (rename <id> <id>) */
-	    Scheme_Object *inm, *enm;
-	    if (!SCHEME_STX_PAIRP(SCHEME_STX_CDR(a))
-		|| !SCHEME_STX_PAIRP(SCHEME_STX_CDR(SCHEME_STX_CDR(a))))
-	      scheme_wrong_syntax("export", a, form, "bad syntax");
-	    inm = SCHEME_STX_CDR(a);
-	    inm = SCHEME_STX_CAR(inm);
-	    enm = SCHEME_STX_CDR(a);
-	    enm = SCHEME_STX_CAR(enm);
-	    if (!SCHEME_STX_SYMBOLP(inm))
-	      scheme_wrong_syntax("export", a, form, "bad syntax (internal name is not an identifier)");
-	    if (!SCHEME_STX_SYMBOLP(enm))
-	      scheme_wrong_syntax("export", a, form, "bad syntax (external name is not an identifier)");
-	    if (!SCHEME_STX_NULLP(SCHEME_STX_CDR(SCHEME_STX_CDR(SCHEME_STX_CDR(a)))))
-	      scheme_wrong_syntax("export", a, form, "bad syntax (data following external name)");
-	    
-	    inm = SCHEME_STX_VAL(inm);
-	    enm = SCHEME_STX_VAL(enm);
-
-	    if (scheme_lookup_in_table(exported, (const char *)enm))
-	      scheme_wrong_syntax("export", enm, a, "identifier already exported");
-	    /* Export enm: */
-	    scheme_add_to_table(exported, (const char *)enm, inm, 0);
-	  } else if (SCHEME_STX_PAIRP(a)
-		     && SAME_OBJ(all_from_symbol, SCHEME_STX_VAL(SCHEME_STX_CAR(a)))) {
-	    /* (all-from <modname>) */
-	    if (!SCHEME_STX_PAIRP(SCHEME_STX_CDR(a)))
-	      scheme_wrong_syntax("export", a, form, "bad syntax");
-	    if (!SCHEME_STX_NULLP(SCHEME_STX_CDR(SCHEME_STX_CDR(a))))
-	      scheme_wrong_syntax("export", a, form, "bad syntax (data following all keyword)");
-	    
-	    midx = SCHEME_STX_CDR(a);
-	    midx = SCHEME_STX_CAR(midx);
-	    midx = scheme_make_modidx(scheme_syntax_to_datum(midx, 0, NULL),
-				      scheme_false);
-
-	    reexported = scheme_make_pair(scheme_make_pair(midx, scheme_make_pair(a, scheme_null)), 
-					  reexported);
-	  } else if (SCHEME_STX_PAIRP(a)
-		     && SAME_OBJ(all_from_except_symbol, SCHEME_STX_VAL(SCHEME_STX_CAR(a)))) {
-	    /* (all-from-except <modname> <id> ...) */
-	    Scheme_Object *exns, *el;
-
-	    if (scheme_stx_proper_list_length(a) < 0)
-	      scheme_wrong_syntax("export", e, form, "bad syntax (" IMPROPER_LIST_FORM ")");
-
-	    midx = SCHEME_STX_CDR(a);
-	    midx = SCHEME_STX_CAR(midx);
-	    midx = scheme_make_modidx(scheme_syntax_to_datum(midx, 0, NULL),
-				      scheme_false);
-	    exns = SCHEME_STX_CDR(SCHEME_STX_CDR(a));
-	    
-	    /* Check all excclusions are identifiers: */
-	    for (el = exns; SCHEME_STX_PAIRP(el); el = SCHEME_STX_CDR(el)) {
-	      if (!SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(el))) {
-		scheme_wrong_syntax("export", SCHEME_STX_CAR(el), a,
-				    "bad syntax (excluded name is not an identifier)");
-	      }
+	    for (il = env->genv->module->imports; SCHEME_PAIRP(il); il = SCHEME_CDR(il)) {
+	      if (same_modidx(idx, SCHEME_CAR(il)))
+		break;
+	      ilast = il;
 	    }
-
-	    reexported = scheme_make_pair(scheme_make_pair(midx, scheme_make_pair(a, exns)), 
-					  reexported);
-	  } else {
-	    scheme_wrong_syntax("export", a, form, NULL);
+	  
+	    if (SCHEME_NULLP(il)) {
+	      il = scheme_make_pair(idx, scheme_null);
+	      SCHEME_CDR(ilast) = il;
+	    }
 	  }
-	}
 
-	if (rec)
-	  e = scheme_compiled_void();
-	normal = 0;
-      } else if (scheme_stx_module_eq(export_indirect_stx, SCHEME_STX_CAR(e), 0))  {
-	/************ export-indirect *************/
-	/* Add exports to table: */
-	Scheme_Object *l;
+	  if (rec)
+	    e = scheme_compiled_void();
+	  normal = 0;
+	} else if (scheme_stx_module_eq(import_for_syntax_stx, fst, 0)) {	
+	  /************ import-for-syntax *************/
+	  Scheme_Object *imods;
 
-	if (scheme_stx_proper_list_length(e) < 0)
-	  scheme_wrong_syntax("export-indirect", e, form, "bad syntax (" IMPROPER_LIST_FORM ")");
+	  scheme_prepare_exp_env(env->genv);
 
-	for (l = SCHEME_STX_CDR(e); !SCHEME_NULLP(l); l = SCHEME_STX_CDR(l)) {
-	  Scheme_Object *a;
+	  /* Add imports to renaming: */
+	  et_tables[3] = e;
+	  imods = parse_imports(form, e, env->genv->exp_env, env->genv,
+				et_rn, check_import_name, et_tables, 1,
+				redef_modname);
 
-	  a = SCHEME_CAR(l);
-
-	  if (SCHEME_STX_SYMBOLP(a)) {
-	    /* <id> */
-	    a = SCHEME_STX_VAL(a);
-	    if (scheme_lookup_in_table(exported_indirect, (const char *)a))
-	      scheme_wrong_syntax("export-indirect", a, form, "identifier already exported indirectly");
-	    /* Export a indirectly: */
-	    scheme_add_to_table(exported_indirect, (const char *)a, e, 0);
-	  } else {
-	    scheme_wrong_syntax("export-indirect", a, form, NULL);
+	  /* Add imported modules to et_imports list: */
+	  for (; !SCHEME_NULLP(imods); imods = SCHEME_CDR(imods)) {
+	    Scheme_Object *il, *ilast = NULL;
+	    Scheme_Object *idx = SCHEME_CAR(imods);
+	  
+	    for (il = env->genv->module->et_imports; SCHEME_PAIRP(il); il = SCHEME_CDR(il)) {
+	      if (same_modidx(idx, SCHEME_CAR(il)))
+		break;
+	      ilast = il;
+	    }
+	  
+	    if (SCHEME_NULLP(il)) {
+	      il = scheme_make_pair(idx, scheme_null);
+	      if (ilast)
+		SCHEME_CDR(ilast) = il;
+	      else
+		env->genv->module->et_imports = il;
+	    }
 	  }
-	}
 
-	if (rec)
-	  e = scheme_compiled_void();
-	normal = 0;
+	  if (rec)
+	    e = scheme_compiled_void();
+	  normal = 0;
+	} else if (scheme_stx_module_eq(export_stx, fst, 0)) {
+	  /************ export *************/
+	  /* Add exports to table: */
+	  Scheme_Object *l;
+
+	  if (scheme_stx_proper_list_length(e) < 0)
+	    scheme_wrong_syntax("export", e, form, "bad syntax (" IMPROPER_LIST_FORM ")");
+
+	  for (l = SCHEME_STX_CDR(e); !SCHEME_NULLP(l); l = SCHEME_STX_CDR(l)) {
+	    Scheme_Object *a, *midx;
+
+	    a = SCHEME_CAR(l);
+
+	    if (SCHEME_STX_SYMBOLP(a)) {
+	      /* <id> */
+	      a = SCHEME_STX_VAL(a);
+	      if (scheme_lookup_in_table(exported, (const char *)a))
+		scheme_wrong_syntax("export", a, form, "identifier already exported");
+	      /* Export a: */
+	      scheme_add_to_table(exported, (const char *)a, a, 0);
+	    } else if (SCHEME_STX_PAIRP(a)) {
+	      Scheme_Object *rest;
+
+	      fst = SCHEME_STX_CAR(a);
+	      rest = SCHEME_STX_CDR(a);
+
+	      if (SAME_OBJ(rename_symbol, SCHEME_STX_VAL(fst))) {
+		/* (rename <id> <id>) */
+		Scheme_Object *inm, *enm;
+
+		if (!SCHEME_STX_PAIRP(rest)
+		    || !SCHEME_STX_PAIRP(SCHEME_STX_CDR(rest)))
+		  scheme_wrong_syntax("export", a, form, "bad syntax");
+		inm = SCHEME_STX_CAR(rest);
+		rest = SCHEME_STX_CDR(rest);
+		enm = SCHEME_STX_CAR(rest);
+		if (!SCHEME_STX_SYMBOLP(inm))
+		  scheme_wrong_syntax("export", a, form, "bad syntax (internal name is not an identifier)");
+		if (!SCHEME_STX_SYMBOLP(enm))
+		  scheme_wrong_syntax("export", a, form, "bad syntax (external name is not an identifier)");
+		rest = SCHEME_CDR(rest);
+		if (!SCHEME_STX_NULLP(rest))
+		  scheme_wrong_syntax("export", a, form, "bad syntax (data following external name)");
+		
+		inm = SCHEME_STX_VAL(inm);
+		enm = SCHEME_STX_VAL(enm);
+		
+		if (scheme_lookup_in_table(exported, (const char *)enm))
+		  scheme_wrong_syntax("export", enm, a, "identifier already exported");
+		/* Export enm: */
+		scheme_add_to_table(exported, (const char *)enm, inm, 0);
+	      } else if (SAME_OBJ(all_from_symbol, SCHEME_STX_VAL(fst))) {
+		/* (all-from <modname>) */
+		if (!SCHEME_STX_PAIRP(rest))
+		  scheme_wrong_syntax("export", a, form, "bad syntax");
+		if (!SCHEME_STX_NULLP(SCHEME_STX_CDR(rest)))
+		  scheme_wrong_syntax("export", a, form, "bad syntax (data following all keyword)");
+		
+		midx = SCHEME_STX_CAR(rest);
+		midx = scheme_make_modidx(scheme_syntax_to_datum(midx, 0, NULL),
+					  scheme_false);
+		
+		reexported = scheme_make_pair(scheme_make_pair(midx, scheme_make_pair(a, scheme_null)), 
+					      reexported);
+	      } else if (SAME_OBJ(all_from_except_symbol, SCHEME_STX_VAL(fst))) {
+		/* (all-from-except <modname> <id> ...) */
+		Scheme_Object *exns, *el;
+		
+		if (scheme_stx_proper_list_length(a) < 0)
+		  scheme_wrong_syntax("export", e, form, "bad syntax (" IMPROPER_LIST_FORM ")");
+		
+		midx = SCHEME_STX_CAR(rest);
+		midx = scheme_make_modidx(scheme_syntax_to_datum(midx, 0, NULL),
+					  scheme_false);
+		exns = SCHEME_STX_CDR(rest);
+		
+		/* Check all excclusions are identifiers: */
+		for (el = exns; SCHEME_STX_PAIRP(el); el = SCHEME_STX_CDR(el)) {
+		  p = SCHEME_STX_CAR(el);
+		  if (!SCHEME_STX_SYMBOLP(p)) {
+		    scheme_wrong_syntax("export", p, a,
+					"bad syntax (excluded name is not an identifier)");
+		  }
+		}
+		
+		reexported = scheme_make_pair(scheme_make_pair(midx, scheme_make_pair(a, exns)), 
+					      reexported);
+	      } else {
+		scheme_wrong_syntax("export", a, form, NULL);
+	      }
+	    } else {
+	      scheme_wrong_syntax("export", a, form, NULL);
+	    }
+	  }
+
+	  if (rec)
+	    e = scheme_compiled_void();
+	  normal = 0;
+	} else if (scheme_stx_module_eq(export_indirect_stx, fst, 0))  {
+	  /************ export-indirect *************/
+	  /* Add exports to table: */
+	  Scheme_Object *l;
+
+	  if (scheme_stx_proper_list_length(e) < 0)
+	    scheme_wrong_syntax("export-indirect", e, form, "bad syntax (" IMPROPER_LIST_FORM ")");
+
+	  for (l = SCHEME_STX_CDR(e); !SCHEME_NULLP(l); l = SCHEME_STX_CDR(l)) {
+	    Scheme_Object *a;
+
+	    a = SCHEME_CAR(l);
+
+	    if (SCHEME_STX_SYMBOLP(a)) {
+	      /* <id> */
+	      a = SCHEME_STX_VAL(a);
+	      if (scheme_lookup_in_table(exported_indirect, (const char *)a))
+		scheme_wrong_syntax("export-indirect", a, form, "identifier already exported indirectly");
+	      /* Export a indirectly: */
+	      scheme_add_to_table(exported_indirect, (const char *)a, e, 0);
+	    } else {
+	      scheme_wrong_syntax("export-indirect", a, form, NULL);
+	    }
+	  }
+
+	  if (rec)
+	    e = scheme_compiled_void();
+	  normal = 0;
+	} else
+	  normal = 1;
       } else
 	normal = 1;
     } else
@@ -1478,7 +1505,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	a = SCHEME_STX_VAL(SCHEME_STX_CAR(l));
 	if (!scheme_lookup_in_table(imported, (const char *)a)) {
 	  /* FIXME: check source of import */
-	  scheme_wrong_syntax("export", SCHEME_STX_CAR(l), SCHEME_CAR(SCHEME_CAR(rx)),
+	  a = SCHEME_STX_CAR(l);
+	  scheme_wrong_syntax("export", a, SCHEME_CAR(SCHEME_CAR(rx)),
 			      "excluded name was not imported");
 	}
       }
@@ -1725,8 +1753,10 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     env->genv->module->num_indirect_exports = exicount;
 
     return (Scheme_Object *)env->genv->module;
-  } else
-    return scheme_datum_to_syntax(cons(SCHEME_STX_CAR(form), first), form, form, 0);
+  } else {
+    p = SCHEME_STX_CAR(form);
+    return scheme_datum_to_syntax(cons(p, first), form, form, 0);
+  }
 }
 
 static Scheme_Object *
@@ -1754,7 +1784,7 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
   Scheme_Module *m;
   int j, var_count, is_kern;
   Scheme_Object **exs, **exsns, **exss;
-  Scheme_Object *idx, *name, *i, *exns, *prefix, *iname, *ename;
+  Scheme_Object *idx, *name, *i, *exns, *prefix, *iname, *ename, *aa;
   Scheme_Object *imods;
 
   imods = scheme_null;
@@ -1767,8 +1797,12 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
   for (ll = SCHEME_STX_CDR(ll); !SCHEME_STX_NULLP(ll); ll = SCHEME_STX_CDR(ll)) {
     i = SCHEME_STX_CAR(ll);
     iname = ename = NULL;
-    if (SCHEME_STX_PAIRP(i)
-	&& SAME_OBJ(prefix_symbol, SCHEME_STX_VAL(SCHEME_STX_CAR(i)))) {
+    if (SCHEME_STX_PAIRP(i))
+      aa = SCHEME_STX_CAR(i);
+    else
+      aa = NULL;
+
+    if (aa && SAME_OBJ(prefix_symbol, SCHEME_STX_VAL(aa))) {
       int len;
 
       len = scheme_stx_proper_list_length(i);
@@ -1792,8 +1826,7 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
       i = SCHEME_STX_CDR(i);
       idx = SCHEME_STX_CAR(i);
       exns = NULL;
-    } else if (SCHEME_STX_PAIRP(i)
-	       && SAME_OBJ(all_except_symbol, SCHEME_STX_VAL(SCHEME_STX_CAR(i)))) {
+    } else if (aa && SAME_OBJ(all_except_symbol, SCHEME_STX_VAL(aa))) {
       Scheme_Object *l;
       int len;
 
@@ -1807,15 +1840,17 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
       idx = SCHEME_STX_CAR(idx);
 
       prefix = NULL;
-      exns = SCHEME_STX_CDR(SCHEME_STX_CDR(i));
+      exns = SCHEME_STX_CDR(i);
+      exns = SCHEME_STX_CDR(exns);
 
       for (l = exns; SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l)) {
-	if (!SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(l)))
-	  scheme_wrong_syntax("import", SCHEME_STX_CAR(l), form,
+	if (!SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(l))) {
+	  l = SCHEME_STX_CAR(l);
+	  scheme_wrong_syntax("import", l, form,
 			      "bad syntax (excluded name is not an identifier)");
+	}
       }
-    } else if (SCHEME_STX_PAIRP(i)
-	       && SAME_OBJ(rename_symbol, SCHEME_STX_VAL(SCHEME_STX_CAR(i)))) {
+    } else if (aa && SAME_OBJ(rename_symbol, SCHEME_STX_VAL(aa))) {
       int len;
       Scheme_Object *rest;
 
@@ -2264,14 +2299,18 @@ static Scheme_Object *read_module(Scheme_Object *obj)
   }
   m->export_src_names = v;
 
-  m->et_body = copy_list(SCHEME_CAR(obj));
+  e = copy_list(SCHEME_CAR(obj));
+  m->et_body = e;
   obj = SCHEME_CDR(obj);
-  m->body = copy_list(SCHEME_CAR(obj));
+  e = copy_list(SCHEME_CAR(obj));
+  m->body = e;
   obj = SCHEME_CDR(obj);
 
-  m->imports = copy_list(SCHEME_CAR(obj));
+  e = copy_list(SCHEME_CAR(obj));
+  m->imports = e;
   obj = SCHEME_CDR(obj);
-  m->et_imports = copy_list(obj);
+  e = copy_list(obj);
+  m->et_imports = e;
 
   return (Scheme_Object *)m;
 }

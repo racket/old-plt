@@ -1272,6 +1272,8 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_struct_type_type, mark_struct_type_val);
   GC_REG_TRAV(scheme_struct_info_type, mark_struct_info_val);
 
+  GC_REG_TRAV(scheme_inspector_type, mark_inspector);
+
   GC_REG_TRAV(scheme_rt_struct_proc_info, mark_struct_proc_info);
 }
 

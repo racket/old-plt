@@ -2,9 +2,9 @@
 START type;
 
 variable_obj {
- mark:
   Scheme_Bucket *b = (Scheme_Bucket *)p;
 
+ mark:
   gcMARK(b->key);
   gcMARK(b->val);
 
@@ -13,7 +13,7 @@ variable_obj {
 
  size:
   ((((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
-   ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home)),
+   ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home))
    : gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id)));
 }
 
@@ -619,7 +619,7 @@ module_val {
   gcMARK(m->export_srcs);
   gcMARK(m->export_src_names);
 
-  gcMARK(m->kernel_exlcusion);
+  gcMARK(m->kernel_exclusion);
 
   gcMARK(m->indirect_exports);
   gcMARK(m->self_modidx);
@@ -1254,6 +1254,14 @@ mark_struct_proc_info {
 
  size:
   gcBYTES_TO_WORDS(sizeof(Struct_Proc_Info));
+}
+
+mark_inspector {
+ mark:
+  Scheme_Inspector *i = (Scheme_Inspector *)p;
+  gcMARK(i->superior);
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Inspector));
 }
 
 END struct;

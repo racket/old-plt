@@ -425,7 +425,11 @@
 		     [x 10])
 		   (sequence
 		     (set! x 5)))))
-		     
+(syntax-test '(let ([x 10])
+		(unit 
+		  (import x)
+		  (export)
+		  (set! x 5))))
 
 ; Especially for zodiac:
 (test '(b c 10 b a (c a b) (c b a) (c . c) (a) #t

@@ -22,6 +22,7 @@
       ((dynamic-require '(lib "setup-cmdline.ss" "setup") 'parse-cmdline)
        (current-command-line-arguments))))
 
+  ;; Checks whether a flag is present:
   (define (on? flag-name not)
     (let ([a (assq flag-name flags)])
       (and a (not (cadr a)))))
@@ -35,22 +36,62 @@
   
       ;; Load the cm instance to be installed while loading Setup PLT.
       ;; This has to be dynamic, so we get a chance to turn off compiled
-      ;; file loading, and so it can be in a separate namespace.
+      ;;  file loading, and so it can be in a separate namespace.
       (let-values ([(mk trust-zos)
-		    (parameterize ([use-compiled-file-paths null])
-		      ;; Load cm.ss into its own namespace, so that cm compiles
-		      ;; itself and its required modules in the right order
-		      ;; (i.e., when some module requires cm or one of its
-		      ;; required modules)
-		      (parameterize ([current-namespace (make-namespace)])
-			(values
-			 (dynamic-require '(lib "cm.ss") 
-					  'make-compilation-manager-load/use-compiled-handler)
-			 (dynamic-require '(lib "cm.ss") 'trust-existing-zos))))])
+		    ;; Load cm.ss into its own namespace, so that cm compiles
+		    ;;  itself and its required modules in the right order
+		    ;;  (i.e., when some module requires cm or one of its
+		    ;;  required modules)
+		    ;; Since cm.ss pulls in quite a lot of code itself, we
+		    ;;  would like to load using .zo files. But if we discover
+		    ;;  any date mismatch in the loading process, abort and
+		    ;;  try again without .zo files. If .zo files are newer
+		    ;;  than .ss files but a required file is newer than its
+		    ;;  requring file, we won't notice, but that
+		    ;;  shouldn't happen for a reaonsbaly maintained
+		    ;;  tree, and there's always --clean to turn this
+		    ;;  off. If an .so file is used, we give up using
+		    ;;  compiled files.
+		    (let loop ([skip-zo? (null? (use-compiled-file-paths))])
+		      ((let/ec escape
+			 ;; Create a new namespace, and also install load handlers
+			 ;;  to check file dates, if necessary.
+			 (parameterize ([current-namespace (make-namespace)]
+					[use-compiled-file-paths 
+					 (if skip-zo?
+					     null
+					     (use-compiled-file-paths))]
+					[current-load 
+					 (let ([orig-load (current-load)])
+					   (if skip-zo?
+					       orig-load
+					       (lambda (path modname)
+						 (if (regexp-match #rx#"[.]zo$" (path->bytes path))
+						     ;; It's a .zo:
+						     (orig-load path modname)
+						     ;; Not a .zo! Don't use .zo files at all...
+						     (escape (lambda ()
+							       ;; Try again without .zo
+							       (loop #t)))))))]
+					[current-load-extension 
+					 (if skip-zo?
+					     (current-load-extension)
+					     (lambda (path modname)
+					       (escape (lambda ()
+							 ;; Try again without .zo
+							 (loop #t)))))])
+			   ;; Here's the main dynamic load of "cm.ss":
+			   (let ([mk
+				  (dynamic-require '(lib "cm.ss") 
+						   'make-compilation-manager-load/use-compiled-handler)]
+				 [trust-zos
+				  (dynamic-require '(lib "cm.ss") 'trust-existing-zos)])
+			     ;; Return the two extracted functions:
+			     (lambda () (values mk trust-zos)))))))])
 	(when (on? 'trust-existing-zos values)
 	  (trust-zos #t))
 	(current-load/use-compiled (mk))))
 
   ;; This has to be dynamic, so we get a chance to turn off
-  ;; .zo use and turn on the compilation manager.
+  ;;  .zo use and turn on the compilation manager.
   (dynamic-require '(lib "setup-go.ss" "setup") #f))

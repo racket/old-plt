@@ -1795,8 +1795,8 @@ static Scheme_Object *SpecialOptionKey(int c, Scheme_Object *SCK_ARG[])
 
 static Scheme_Object *DefaultAppFileProc(int n, Scheme_Object *p[])
 {
-  if (!SCHEME_BYTE_STRINGP(p[0]))
-    scheme_wrong_type("default-application-file-handler", "byte string",
+  if (!SCHEME_PATH_STRINGP(p[0]))
+    scheme_wrong_type("default-application-file-handler", SCHEME_PATH_STRING_STR,
 		      0, n, p);
 
   return scheme_void;

@@ -25,7 +25,7 @@
 		   ;; Windows extra libs (assume always there)
 		   (list "wsock32.lib")
 		   ;; Force symbols:
-		   (list "BIO_new" "SSL_new" "ERR_load_strings")
+		   (list 'nm "^BIO_.*" "^SSL.*" "^TLS_.*" "^ERR_.*")
 		   ;; Extra depends:
 		   (list "mzssl.ss")
 		   ;; Last-chance k:

@@ -760,20 +760,34 @@
               ;; tack/untack-callback : (listof arrow) -> void
               ;; callback for the tack/untack menu item
               (define (tack/untack-callback arrows)
-                (for-each 
-                 (lambda (arrow)
-                   (let ([tack-single-arrow
-                          (lambda (arrow)
-                            (let ([now-tacked?
-                                   (hash-table-get
-                                    tacked-hash-table
-                                    arrow
-                                    (lambda () #f))])
-                              (hash-table-put! tacked-hash-table arrow (not now-tacked?))))])
+                (let ([arrow-tacked?
+                       (lambda (arrow)
+                         (hash-table-get
+                          tacked-hash-table
+                          arrow
+                          (lambda () #f)))]
+                      [untack-arrows? #f])
+                  (for-each 
+                   (lambda (arrow)
                      (cond
-                       [(var-arrow? arrow) (tack-single-arrow arrow)]
-                       [(tail-arrow? arrow) (for-each-tail-arrows tack-single-arrow arrow)])))
-                 arrows)
+                       [(var-arrow? arrow)
+                        (set! untack-arrows? (or untack-arrows? (arrow-tacked? arrow)))]
+                       [(tail-arrow? arrow)
+                        (for-each-tail-arrows
+                         (lambda (arrow) (set! untack-arrows? (or untack-arrows? (arrow-tacked? arrow))))
+                         arrow)]))
+                   arrows)
+                  (for-each 
+                   (lambda (arrow)
+                     (cond
+                       [(var-arrow? arrow)
+                        (hash-table-put! tacked-hash-table arrow (not untack-arrows?))]
+                       [(tail-arrow? arrow)
+                        (for-each-tail-arrows
+                         (lambda (arrow) 
+                           (hash-table-put! tacked-hash-table arrow (not untack-arrows?)))
+                         arrow)]))
+                   arrows))
                 (invalidate-bitmap-cache))
               
               ;; jump-callback : (listof arrow) -> void

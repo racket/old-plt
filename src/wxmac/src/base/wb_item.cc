@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_item.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
+ * RCS_ID:      $Id: wb_item.cc,v 1.2 1998/02/15 22:48:12 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -479,25 +479,32 @@ void wxbMenuBar::Append (wxMenu * menu, char *title)
   OnAppend(menu, title);
 }
 
-void wxbMenuBar::Delete(wxMenu * menu, int i)
+Bool wxbMenuBar::Delete(wxMenu * menu, int i)
 {
   int j;
 
   if (menu) {
-	for (i = 0; i < n; i++) {
-		if (menus[i] == menu)
-        	break;
-        }	
-	if (i >= n)
-		return;
+    for (i = 0; i < n; i++) {
+      if (menus[i] == menu)
+	break;
+    }	
+    if (i >= n)
+      return FALSE;
   } else {
-         if (i < 0 || i >= n)
-                return;
-         menu = menus[i];
+    if (i < 0 || i >= n)
+      return FALSE;
+    menu = menus[i];
   }
-
+  
   if (!OnDelete(menu, i))
-         return;
+    return FALSE;
+
+  return TRUE;
+}
+
+int wxbMenuBar::Number(void)
+{
+  return n;
 }
 
 // Find the menu menuString, item itemString, and return the item id.

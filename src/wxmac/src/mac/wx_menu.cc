@@ -772,42 +772,48 @@ void wxMenu::Append(int Id, char* Label, wxMenu* SubMenu, char* helpString)
 }
 
 // mflatt
-void wxMenu::Delete(wxMenu *menu, int Id, int delpos)
+Bool wxMenu::Delete(wxMenu *menu, int Id, int delpos)
 {
-	int pos;
-	wxMenuItem *item;
-	wxNode *node;
+  int pos;
+  wxMenuItem *item;
+  wxNode *node;
 	
-	if ((Id == -1) && (delpos == -1))
-	  return;
+  if ((Id == -1) && (delpos == -1))
+    return FALSE;
+  
+  for (pos = 0, node = menuItems.First(); node; node = node->Next(), pos++) {
+    item = (wxMenuItem *)node->Data();
+    if ((menu && item->subMenu == menu) 
+	|| (!menu && (delpos == -1) && item->itemId == Id)
+	|| (delpos == pos)) {
+      if (item->subMenu)
+	item->subMenu->window_parent = NULL;
+      ::DeleteMenuItem(cMacMenu, pos + 1);
+      menuItems.DeleteNode(node);
+      delete item;
+      --no_items;
+      CheckHelpHack();
+      return TRUE;
+    }
+  }
 
-	for (pos = 0, node = menuItems.First(); node; node = node->Next(), pos++) {
-		item = (wxMenuItem *)node->Data();
-		if ((menu && item->subMenu == menu) 
-		    || (!menu && (delpos == -1) && item->itemId == Id)
-		    || (delpos == pos)) {
-		  if (item->subMenu)
-			 item->subMenu->window_parent = NULL;
-		  ::DeleteMenuItem(cMacMenu, pos + 1);
-		  menuItems.DeleteNode(node);
-		  delete item;
-		  --no_items;
-	      CheckHelpHack();
-		  return;
-		}
-	}
-
+  return FALSE;
 }
 
-void wxMenu::DeleteByPosition(int pos)
+Bool wxMenu::DeleteByPosition(int pos)
 {
-  Delete(NULL, -1, pos);
+  return Delete(NULL, -1, pos);
 }
 
 // mflatt
-void wxMenu::Delete(int Id)
+Bool wxMenu::Delete(int Id)
 {
-	Delete((wxMenu *)NULL, Id, -1);
+  return Delete((wxMenu *)NULL, Id, -1);
+}
+
+int wxMenu::Number()
+{
+  return no_items;
 }
 
 //-----------------------------------------------------------------------------

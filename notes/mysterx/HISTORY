@@ -1,3 +1,11 @@
+Version 104:
+
+Added optional index argument to 
+ find-element, find-element-by-id-or-name
+ methods of mx-document%
+Added methods get-html, get-text to
+ mx-element% class
+
 Version 103:
 
 Added support for VT_INT 

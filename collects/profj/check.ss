@@ -307,10 +307,33 @@
                                          env)
                          type-recs))))
 
-  ;Should check that all branches have a return; as Java requires
-  ;Always returns #t  
   ;reachable-return?: statement -> bool
-  (define (reachable-return? body) #t)
+  (define (reachable-return? body)
+    (cond
+      ((ifS? body) 
+       (if (ifS-else body)
+           (and (reachable-return? (ifS-then body))
+                (reachable-return? (ifS-else body)))))
+      ((throw? body) #f)
+      ((return? body) #t)
+      ((while? body) (reachable-return? (while-loop body)))
+      ((doS? body) (reachable-return? (doS-loop body)))
+      ((for? body) (reachable-return? (for-loop body)))
+      ((try? body) 
+       (and (reachable-return? (try-body body))
+            (or (and (try-finally body)
+                     (reachable-return? (try-finally body)))
+                #t)
+            (andmap reachable-return? (map catch-body (try-catches body)))))
+      ((switch? body) #f)
+      ((block? body)
+       (reachable-return? (list-ref (block-stmts body)
+                                    (sub1 (length (block-stmts body))))))
+      ((break? body) #f)
+      ((continue? body) #f)
+      ((label? body) (reachable-return? (label-stmt body)))
+      ((synchronized? body) (reachable-return? (synchronized-stmt body)))
+      (else #f)))
 
   ;check-var-init: expression (expression -> type) type symbol type-records -> type
   (define (check-var-init init check-e dec-type name type-recs)
@@ -387,7 +410,7 @@
          (check-ifS (check-e-no-change (ifS-cond statement))
                     (expr-src (ifS-cond statement)))
          (check-s-no-change (ifS-then statement))
-         (check-s-no-change (ifS-else statement)))                           
+         (when (ifS-else statement) (check-s-no-change (ifS-else statement))))
         ((throw? statement)
          (check-throw (check-e-no-change (throw-expr statement))
                       (expr-src (throw-expr statement))

@@ -39,7 +39,7 @@
 
     (define make-connections-media-canvas%
       (lambda (%)
-	(class % (parent . args)
+	(class % (parent x y width height name style scrolls-per-page init-buffer)
 	  (rename [super-set-media set-media]
 		  [super-on-set-focus on-set-focus])
 	  (public
@@ -52,8 +52,15 @@
 		    (set! shown x)
 		    (super-show x))])
 
-	  (inherit get-media)
+	  (inherit get-media is-focus-on?)
   
+	  (private
+	    [update-active-canvas
+	     (lambda (m)
+	       (when (and (not (null? m))
+			  (or (not (ivar m active-canvas))
+			      (is-focus-on?)))
+		 (send m set-active-canvas this)))])
 	  (public
 	    [edit-renamed
 	     (lambda (name)
@@ -64,6 +71,7 @@
 	    [set-media
 	     (opt-lambda (media [redraw? #t])
 	       (let ([m (get-media)])
+		 (update-active-canvas media)
 		 (unless (null? m)
 		   (send m remove-canvas this)))
 	       (super-set-media media redraw?)
@@ -79,7 +87,8 @@
 		   (send m set-active-canvas this)))
 	       (super-on-set-focus))])
 	  (sequence
-	    (apply super-init parent args)))))
+	    (super-init parent x y width height name style scrolls-per-page init-buffer)
+	    (update-active-canvas init-buffer)))))
 
     (define make-connections-panel%
       (lambda (%)
@@ -113,9 +122,8 @@
 			(car canvases))))]
 	    [get-frame
 	     (lambda ()
-	       (let ([c active-canvas])
-		 (and c
-		      (ivar c frame))))]
+	       (and active-canvas
+		    (ivar active-canvas frame)))]
 	    [active-canvas #f]
 	    [set-active-canvas
 	     (lambda (new-canvas)

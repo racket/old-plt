@@ -1872,8 +1872,7 @@ emergency_error_display_proc(int argc, Scheme_Object *argv[])
   Scheme_Object *s;
 
   if (!SCHEME_CHAR_STRINGP(argv[0]))
-    scheme_wrong_type("emergency-error-display-handler", "string", 0, argc, argv);
-  /* don't care about argv[1] */
+    return scheme_void;
 
   s = scheme_char_string_to_byte_string(argv[0]);
 

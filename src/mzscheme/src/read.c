@@ -1887,7 +1887,7 @@ read_string(int is_byte, Scheme_Object *port,
 	return NULL;
       }
       switch ( ch ) {
-      case '\\': case '\"': break;
+      case '\\': case '\"': case '\'': break;
       case 'a': ch = '\a'; break;
       case 'b': ch = '\b'; break;
       case 'e': ch = 27; break; /* escape */

@@ -2865,6 +2865,13 @@ static Scheme_Object *gen_replace(const char *name, int argc, Scheme_Object *arg
     if (m) {
       char *insert;
       long len, end, startpd, endpd;
+
+      if ((startp[0] == endp[0]) && all) {
+	scheme_arg_mismatch(name, 
+			    "found a zero-width match for pattern: ",
+			    argv[0]);
+	return NULL;
+      }
       
       if (!deststr) {
 	if (was_non_byte) {
@@ -2884,7 +2891,7 @@ static Scheme_Object *gen_replace(const char *name, int argc, Scheme_Object *arg
       
       startpd = startp[0];
       endpd = endp[0];
-      
+
       if (!startpd && (endpd == end) && !prefix) {
 	if (was_non_byte)
 	  return scheme_make_sized_utf8_string(insert, len);

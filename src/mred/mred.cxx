@@ -2100,13 +2100,6 @@ int actual_main(int argc, char **argv)
 int main(int argc, char *argv[])
 {
 #if defined(_IBMR2)
-  int dummy;
-
-  if ((unsigned long)&dummy > (unsigned long)0x2ff23000)
-    scheme_stackbottom = 0x2ff80000;
-  else
-    scheme_stackbottom = 0x2ff23000;
-
   signal(SIGDANGER, dangerdanger);
 #endif
 #ifdef wx_x

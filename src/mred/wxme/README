@@ -56,8 +56,8 @@ modified wxMedia. See COPYING.LIB for more information.
 History:
 --------
 
-Version 51: ??, 1997
-Stopped keeping the history
+Version 51: March 24, 1997
+Stopped keeping the history here; see MrEd
 
 Version 50: August 26, 1997
 Added argument to wxMediaBuffer::Print()

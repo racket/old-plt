@@ -1,14 +1,16 @@
 (module installer mzscheme
-  (require (lib "process.ss"))
   (provide post-installer)
   (define (post-installer plt-home)
-    (let* ([exe-dir  (build-path plt-home "collects" "mzcom")]
-           [exe-path (build-path exe-dir "mzcom.exe")])
+    (let ([exe "MzCOM.exe"])
       (cond [(not (eq? (system-type) 'windows))
-             (fprintf (current-error-port)
-                      "Warning: can't install MzCOM on non-Windows machine\n")]
-            [(not (file-exists? exe-path))
-             (fprintf (current-error-port)
-                      "Warning: MzCOM binary not installed\n")]
-            [else (parameterize ([current-directory exe-dir])
-                    (system "mzcom.exe /RegServer"))]))))
+             (printf "Warning: can't install MzCOM on non-Windows machine\n")]
+            [(not (file-exists? (build-path plt-home exe)))
+             (printf "Warning: MzCOM binary not installed\n")]
+            [else (parameterize ([current-directory plt-home])
+                    (let-values ([(p pout pin perr)
+                                  (subprocess
+                                   (current-output-port)
+                                   (current-input-port)
+                                   (current-error-port)
+                                   exe "/RegServer")])
+                      (subprocess-wait p)))]))))

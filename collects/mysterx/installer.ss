@@ -1,5 +1,4 @@
 (module installer mzscheme
-  (require (lib "process.ss"))
   (provide post-installer)
   (define (post-installer mx-path)
     (define (make-dll-path . more)

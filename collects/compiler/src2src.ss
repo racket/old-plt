@@ -1256,7 +1256,7 @@
 						     (make-object binding%
 								  (datum->syntax-object
 								   #f
-								   (string->symbol (format "m_~a" (syntax-e var)))
+								   (syntax-e var)
 								   var)
 								  #t))
 						   vars))

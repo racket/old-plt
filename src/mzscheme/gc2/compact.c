@@ -3257,15 +3257,17 @@ static void gcollect(int full)
 	  }
 	}
 
-	/* Restore zeroed out weak links, marking as we go: */	
-	for (wl = fnl_weaks; wl; wl = wl->next) {
-	  void *wp = (void *)wl->p;
-	  int markit;
-	  markit = is_marked(wp);
-	  if (markit) {
-	    gcMARK(wl->saved);
+	if (young == 15) {
+	  /* Restore zeroed out weak links, marking as we go: */	
+	  for (wl = fnl_weaks; wl; wl = wl->next) {
+	    void *wp = (void *)wl->p;
+	    int markit;
+	    markit = is_marked(wp);
+	    if (markit) {
+	      gcMARK(wl->saved);
+	    }
+	    *(void **)(BYTEPTR(wp) + wl->offset) = wl->saved;
 	  }
-	  *(void **)(BYTEPTR(wp) + wl->offset) = wl->saved;
 	}
 	
 	/* We have to mark one more time, because restoring a weak
@@ -3282,11 +3284,14 @@ static void gcollect(int full)
 	Fnl *f;
 	Fnl_Weak_Link *wl;
 
-	/* Zero out weak links for ordered finalization */
-	for (wl = fnl_weaks; wl; wl = wl->next) {
-	  void *wp = (void *)wl->p;
-	  wl->saved = *(void **)(BYTEPTR(wp) + wl->offset);
-	  *(void **)(BYTEPTR(wp) + wl->offset) = NULL;
+	/* If full collect, zero out weak links for ordered finalization. */
+	/* (Only done on full collect to avoid modifying old pages.) */
+	if (young == 15) {
+	  for (wl = fnl_weaks; wl; wl = wl->next) {
+	    void *wp = (void *)wl->p;
+	    wl->saved = *(void **)(BYTEPTR(wp) + wl->offset);
+	    *(void **)(BYTEPTR(wp) + wl->offset) = NULL;
+	  }
 	}
 
 	/* Mark content of not-yet-marked finalized objects,

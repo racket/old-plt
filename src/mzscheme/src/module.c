@@ -1735,7 +1735,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 			       SCHEME_CAR(hints));
       fm = scheme_stx_property(fm, 
 			       scheme_intern_symbol("module-self-path-index"),
-			       self_modidx);
+			       empty_self_modidx);
     }
 
     /* for future expansion, shift away from self_modidx: */

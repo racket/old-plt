@@ -297,12 +297,7 @@
   scheme_extension_table->scheme_add_namespace_option = scheme_add_namespace_option;
   scheme_extension_table->scheme_require_from_original_env = scheme_require_from_original_env;
   scheme_extension_table->scheme_add_global = scheme_add_global;
-  scheme_extension_table->scheme_add_global_keyword = scheme_add_global_keyword;
-  scheme_extension_table->scheme_add_global_constant = scheme_add_global_constant;
-  scheme_extension_table->scheme_remove_global = scheme_remove_global;
   scheme_extension_table->scheme_add_global_symbol = scheme_add_global_symbol;
-  scheme_extension_table->scheme_remove_global_symbol = scheme_remove_global_symbol;
-  scheme_extension_table->scheme_add_global_constant_symbol = scheme_add_global_constant_symbol;
   scheme_extension_table->scheme_make_envunbox = scheme_make_envunbox;
   scheme_extension_table->scheme_lookup_global = scheme_lookup_global;
   scheme_extension_table->scheme_global_bucket = scheme_global_bucket;

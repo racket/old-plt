@@ -3527,7 +3527,7 @@ Scheme_Object *scheme_eval_compiled_stx_string(Scheme_Object *str, Scheme_Env *e
   /* Unwrap syntax once; */
   expr = SCHEME_STX_VAL(expr);
 
-  /* If modidx, then last element is a mmodule index; shift the rest. */
+  /* If modidx, then last element is a module index; shift the rest. */
   if (modidx) {
     int i, len = SCHEME_VEC_SIZE(expr);
     Scheme_Object *orig = SCHEME_VEC_ELS(expr)[len - 1], *s;

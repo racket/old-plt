@@ -63,7 +63,11 @@
 	(lambda (lam pls?)
 	  ;; Set the closure's liftable field to a new top-level-varref
 	  (let* ([code (get-annotation lam)]
-		 [var (gensym (if pls? 'pllifted 'lifted))]
+		 [var (gensym (if pls? 
+				  (if (varref:current-invoke-module)
+				      'pmilifted
+				      'pllifted)
+				  'lifted))]
 		 [sv (make-top-level-varref/bind-from-lift
 		      (zodiac:zodiac-stx lam)
 		      (make-empty-box)
@@ -71,7 +75,7 @@
 		      #f
 		      (box '())
 		      lam
-		      (and pls? (or pls? (varref:current-invoke-module))))]
+		      (and pls? (or (varref:current-invoke-module) pls?)))]
 		 [def (zodiac:make-define-values-form 
 		       (zodiac:zodiac-stx lam)
 		       (make-empty-box)

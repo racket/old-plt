@@ -8,6 +8,9 @@ The yellow execute warning in the interactions window does not go away
 
 Backup files don't preserve file permissions.
 
+Standalone executables do not support files with images (or
+any kind of graphical syntax).
+
 For a more complete listing of known bugs, see our
 <a href="http://bugs.plt-scheme.org/query/">
 online bug report database</a>

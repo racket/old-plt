@@ -164,10 +164,10 @@
 						    (syntax-case (car omissions) ()
 						      [-selectors
 						       (literal? -selectors)
-						       (loop rest names #t no-sel?)]
+						       (loop rest names no-sel? #t)]
 						      [-setters
 						       (literal? -setters)
-						       (loop rest names no-set? #t)]
+						       (loop rest names #t no-set?)]
 						      [(- name)
 						       (and (literal? -) (identifier? (syntax name)))
 						       (loop rest (cons (syntax name) names)

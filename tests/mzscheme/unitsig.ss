@@ -534,5 +534,41 @@
 		   (list x 10))
 	 (x))))
 
+;; Check -setters, -selectors, and -
+
+(let ([foo-bar 10]
+      [set-foo-bar! 100]
+      [foo@ (unit/sig ((struct foo (bar)))
+	      (import)
+	      (define-struct foo (bar)))])
+  (define-syntax (go stx)
+    (syntax-case stx ()
+      [(_ lookup omit ...)
+       (syntax
+	(invoke-unit/sig
+	 (compound-unit/sig
+	  (import)
+	  (link [FOO : ((struct foo (bar))) (foo@)]
+		[CLIENT : () ((unit/sig ()
+				(import ((struct foo (bar) omit ...)))
+				(if (eq? 'foo-bar 'lookup)
+				    foo-bar
+				    set-foo-bar!))
+			      (FOO : ((struct foo (bar) omit ...))))])
+	  (export))))]))
+
+  (test #t struct-accessor-procedure? (go foo-bar))
+  (test #t struct-mutator-procedure? (go set-foo-bar!))
+  (test 10 'no-sel (go foo-bar -selectors))
+  (test #t struct-mutator-procedure? (go set-foo-bar! -selectors))
+  (test #t struct-accessor-procedure? (go foo-bar -setters))
+  (test 100 'no-set (go set-foo-bar! -setters))
+  (test 10 'no-sel (go foo-bar (- foo-bar)))
+  (test 100 'no-set (go set-foo-bar! (- set-foo-bar!)))
+  (test #t struct-accessor-procedure? (go foo-bar (- set-foo-bar!)))
+  (test #t struct-mutator-procedure? (go set-foo-bar! (- foo-bar)))
+  (test #t struct-accessor-procedure? (go foo-bar (- make-foo)))
+  (test #t struct-mutator-procedure? (go set-foo-bar! (- make-foo))))
+
 (report-errs)
 

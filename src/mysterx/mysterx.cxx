@@ -2161,6 +2161,7 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
   short int numParamsPassed;
   short int numOptParams;
   short int numDefaultParams;
+  short int numDefaultsNeeded;
   BOOL lastParamIsRetval;
   int i,j,k;
   static DISPID dispidPropPut = DISPID_PROPERTYPUT;
@@ -2294,8 +2295,15 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
 
   // use default values
 
-  for (i = numParamsPassed - 1 - (argc - 2),j = 0,k = argc - 2; j < numDefaultParams; i--,j++,k++) {
-    methodArguments->rgvarg[i] = pFuncDesc->lprgelemdescParam[k].paramdesc.pparamdescex->varDefaultValue;
+  numDefaultsNeeded = numParamsPassed - numOptParams + // required
+                      numDefaultParams -               // possible defaults
+                      (argc - 2);                      // actually supplied 
+
+  for (i = numParamsPassed - 1 - (argc - 2),j = 0,k = argc - 2; 
+       j < numDefaultsNeeded; 
+       i--,j++,k++) {
+   methodArguments->rgvarg[i] =
+     pFuncDesc->lprgelemdescParam[k].paramdesc.pparamdescex->varDefaultValue;
   }
 
   // omitted optional arguments

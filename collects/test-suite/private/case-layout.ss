@@ -19,7 +19,7 @@
       (define case%
         (class* super:case% (test-suite:item<%>)
           (inherit get-editor)
-          (inherit-field call expected actual test pass test-showing?)
+          (inherit-field call call-io expected actual expected-io test pass test-showing?)
           
           ;; show-test (boolean? . -> . void?)
           ;; show/hide the test in the display
@@ -40,15 +40,40 @@
           
           (field
            [bottom-pb (instantiate horizontal-pasteboard% ())]
+           [bottom-snip (instantiate aligned-editor-snip% ()
+                          (editor bottom-pb)
+                          (with-border? false)
+                          (top-margin 0)
+                          (bottom-margin 0)
+                          (left-margin 0)
+                          (right-margin 0))]
            [call-snip (label-box "Call" (instantiate base-snip% ()
                                           (editor call)))]
+           [call-io-snip (label-box "Call I/O"
+                                    (instantiate base-snip% ()
+                                      (editor call-io)))]
+           [call-io-snip-shown? #f]
            [expected-snip (label-box "Expected" (instantiate base-snip% ()
                                                   (editor expected)))]
            [actual-snip (label-box "Actual" (instantiate actual-snip% ()
                                               (editor actual)))]
+           [expected-io-snip (label-box "Expected I/O"
+                                        (instantiate base-snip% ()
+                                          (editor expected-io)))]
+           [expected-io-snip-shown? #f]
            [test-snip (label-box "Equality Test" (instantiate base-snip% ()
                                                    (editor test)))])
           
+          (define/public (show-expected-io)
+            (unless expected-io-snip-shown?
+              (set! expected-io-snip-shown? #t)
+              (send (get-editor) insert expected-io-snip false)))
+          
+          (define/public (show-call-io)
+            (unless call-io-snip-shown?
+              (set! call-io-snip-shown? #t)
+              (send (get-editor) insert call-io-snip bottom-snip)))
+            
           (send* bottom-pb
             (begin-edit-sequence)
             (insert expected-snip false)
@@ -63,18 +88,9 @@
           (send* (get-editor)
             (begin-edit-sequence)
             (insert call-snip false)
-            (insert (instantiate aligned-editor-snip% ()
-                      (editor bottom-pb)
-                      (with-border? false)
-                      (top-margin 0)
-                      (bottom-margin 0)
-                      (left-margin 0)
-                      (right-margin 0))
-                    false)
+            (insert bottom-snip false)
             (set-selection-visible false)
-            (end-edit-sequence))
-          ))
-      ))
+            (end-edit-sequence))))))
   
   ;; label-box (string? (is-a?/c snip%) . -> . (is-a?/c aligned-editor-snip%))
   ;; a snip with a box to type in and a label

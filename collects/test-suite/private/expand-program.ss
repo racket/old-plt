@@ -145,8 +145,41 @@
               (when (thread-running? user-thread)
                 (queue-callback thunk))))
           
+          ;; make-ports : -> (values port port)
+          ;; =drscheme-eventspace=
+          (define/public (make-ports text show-text)
+            (let* ([text-shown? #f]
+                   [write-string-proc
+                    (lambda (style) ;; =drscheme-eventspace=
+                      (lambda (str start end ignore-me?) ;; =user-eventspace=
+                        (let ([str-to-insert (substring str start end)])
+                          (queue-to-drscheme
+                           (lambda () ; =drscheme-eventspace=
+                             (show-text)
+                             (send text begin-edit-sequence)
+                             (send text lock #f)
+                             (let ([pos (send text last-position)])
+                               (send text insert 
+                                     str-to-insert
+                                     pos
+                                     pos)
+                               (send text change-style style pos (send text last-position)))
+                             (send text lock #t)
+                             (send text end-edit-sequence))))
+                        (- end start)))])
+              (send text lock #t)
+              (values
+               (make-custom-output-port #f (write-string-proc stdout-style) void void)
+               (make-custom-output-port #f (write-string-proc stderr-style) void void))))
+          
+          
           (super-instantiate ())
           ))
+      
+      (define stdout-style (make-object style-delta% 'change-bold))
+      (send stdout-style set-delta-foreground "purple")
+      (define stderr-style (make-object style-delta% 'change-italic))
+      (send stderr-style set-delta-foreground "red")
       
       ;; kill-confirmation? (-> boolean?)
       ;; asks the user for confirmation to kill the thread and returns true on confirmation false otherwise

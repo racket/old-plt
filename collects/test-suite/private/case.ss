@@ -9,7 +9,9 @@
    (lib "tool.ss" "drscheme")
    "signatures.ss"
    "interfaces.ss"
-   "test-text.ss")
+   "test-text.ss"
+   (lib "framework.ss" "framework")
+   (lib "text-string-style-desc.ss" "mrlib"))
   
   (provide
    case@
@@ -31,10 +33,19 @@
           
           (field
            [call (instantiate call-text% () (case this))]
+           [call-io (instantiate text:hide-caret/selection%  ())]
            [expected (instantiate expected-text% () (case this))]
+           [expected-io (instantiate text:hide-caret/selection%  ())]
            [test (instantiate test-text% () (case this))]
            [actual (instantiate actual-text% () (case this))]
            [pass (make-object image-snip% *unknown*)])
+          
+          (let ([init-io-text
+                 (lambda (io-text)
+                   (send io-text set-styles-sticky #f)
+                   (send io-text lock #t))])
+            (init-io-text call-io)
+            (init-io-text expected-io))
           
           (send pass load-file *unknown*)
           
@@ -42,7 +53,17 @@
           ;; resets the result of the test case
           (define/public (reset)
             (send actual erase)
+            (reset-io-text call-io)
+            (reset-io-text expected-io)
             (send pass load-file *unknown*))
+
+          ;; reset-io-text : -> void
+          (define (reset-io-text io-text)
+            (send io-text begin-edit-sequence)
+            (send io-text lock #f)
+            (send io-text erase)
+            (send io-text lock #t)
+            (send io-text end-edit-sequence))
           
           ;; set-actual ((is-a?/c expand-program%) any? . -> . void?)
           ;; set the text in the actual field to the value given
@@ -108,37 +129,55 @@
                      (if test-showing?
                          (send expander expand-text test f)
                          (f (syntax equal?))))])
-              (send expander expand-text call
-                    (lambda (call-syntax) ; =drscheme-eventspace=
-                      (send expander expand-text expected
-                            (lambda (expected-syntax) ; =drscheme-eventspace=
-                              (call-with-test
-                               (lambda (test-syntax) ; =drscheme-eventspace=
-                                 (send expander eval-syntax
-                                       (with-syntax ([call call-syntax]
-                                                     [expected expected-syntax]
-                                                     [test test-syntax])
-                                         (syntax
-                                          (let ([call-value call])
-                                            (cons call-value
-                                                  (#%app test call-value expected)))))
-                                       (lambda (call/test-value) ; =drscheme-eventspace=
-                                         (set-actual expander (car call/test-value))
-                                         (set-icon (cdr call/test-value))
-                                         (let ([next-case (next)])
-                                           (if next-case
-                                               (send next-case execute expander continue)
-                                               (continue)))))))))))))
+              (let-values ([(call-output-port call-error-port) (send expander make-ports call-io
+                                                                     (lambda ()
+                                                                       (send this show-call-io)))]
+                           [(expected-output-port expected-error-port) (send expander make-ports expected-io 
+                                                                             (lambda ()
+                                                                               (send this show-expected-io)))])
+                (send expander expand-text call
+                      (lambda (call-syntax) ; =drscheme-eventspace=
+                        (send expander expand-text expected
+                              (lambda (expected-syntax) ; =drscheme-eventspace=
+                                (call-with-test
+                                 (lambda (test-syntax) ; =drscheme-eventspace=
+                                   (send expander eval-syntax
+                                         (with-syntax ([call call-syntax]
+                                                       [expected expected-syntax]
+                                                       [test test-syntax]
+                                                       [call-output-port call-output-port]
+                                                       [call-error-port call-error-port]
+                                                       [expected-output-port expected-output-port]
+                                                       [expected-error-port expected-error-port])
+                                                       
+                                           (syntax
+                                            (let ([call-value 
+                                                   (parameterize ([current-output-port call-output-port]
+                                                                  [current-error-port call-error-port])
+                                                     call)]
+                                                  [expected-value 
+                                                   (parameterize ([current-output-port expected-output-port]
+                                                                  [current-error-port expected-error-port])
+                                                     expected)])
+                                              (cons call-value
+                                                    (#%app test call-value expected-value)))))
+                                         (lambda (call/test-value) ; =drscheme-eventspace=
+                                           (set-actual expander (car call/test-value))
+                                           (set-icon (and (cdr call/test-value)
+                                                          (equal? (get-string/style-desc call-io)
+                                                                  (get-string/style-desc expected-io))))
+                                           (let ([next-case (next)])
+                                             (if next-case
+                                                 (send next-case execute expander continue)
+                                                 (continue))))))))))))))
 
           ;; show-test (boolean? . -> . void?)
           ;; show/hide the test in the display
           (define/public (show-test show?)
             (set! test-showing? show?))
           
-          (super-instantiate ())
-          ))
-      ))
-      
+          (super-instantiate ())))))
+    
   (define case-snipclass@
     (unit/sig case^
       (import (super : case^))

@@ -122,11 +122,21 @@
                     (parent (get-area-container))
                     (style '(border))
                     (stretchable-height false))]
+                 [program-label
+                  (instantiate message% ()
+                    (parent program-panel)
+                    (label "Program to Test"))]
+                 [program-canvas
+                  (instantiate editor-canvas% ()
+                    (parent program-panel)
+                    (editor (send model get-program))
+                    (style '(no-hscroll no-vscroll))
+                    (stretchable-width true))]
                  [program-button
                   (instantiate button% ()
                     (label
                      ((drscheme:unit:make-bitmap
-                       "Browse" *empty-icon*)
+                       "Browse..." *empty-icon*)
                       (get-area-container)))
                     (parent program-panel)
                     (callback 
@@ -134,12 +144,19 @@
                        (let ([filename (get-file)])
                          (when filename
                            (send model set-program filename))))))]
-                 [program-canvas
-                  (instantiate editor-canvas% ()
-                    (parent program-panel)
-                    (editor (send model get-program))
-                    (style '(no-hscroll no-vscroll))
-                    (stretchable-width true))])
+                 ;[open-button
+                 ; (instantiate button% ()
+                 ;   (label
+                 ;    ((drscheme:unit:make-bitmap
+                 ;      "Open..." *empty-icon*)
+                 ;     (get-area-container)))
+                 ;    (parent program-panel)
+                 ;    (callback
+                 ;     (lambda (button event)
+                 ;       (let ([filename (send (send model get-program) get-text)])
+                 ;         (unless (string=? filename "")
+                 ;       (send (handler:edit-file filename) focus))))))]
+                 )
             (send program-canvas set-line-count 1))
           
           ;;;;;;;;;;;;;;;;;
@@ -205,6 +222,7 @@
                           (send text change-style sd start stop))
                         (highlight-errors errors)])])
               (lambda (msg exn)
+                ((super-get-error-handler) msg exn)
                 (send* error-text
                   (lock false)
                   (erase)
@@ -219,8 +237,7 @@
                     highlight-errors
                     msg exn
                     false)
-                   (show-error-panel)
-                   ((super-get-error-handler) msg exn)))
+                   (show-error-panel)))
                  msg exn))))
             
           ;; hide-error-panel (-> void?)

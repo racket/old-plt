@@ -10,9 +10,9 @@
    (lib "mred.ss" "mred")
    (lib "framework.ss" "framework")
    (lib "list.ss")
+   (lib "file.ss")
    "interfaces.ss"
-   "signatures.ss"
-   "test-text.ss")
+   "signatures.ss")
   
   (provide model@)
   
@@ -24,12 +24,13 @@
       (define model%
         (class* vertical-pasteboard% (test-suite:model<%>)
           (inherit insert delete find-first-snip begin-write-header-footer-to-file
-                   end-write-header-footer-to-file begin-edit-sequence
-                   end-edit-sequence)
+                   end-write-header-footer-to-file begin-edit-sequence get-filename
+                   end-edit-sequence set-selection-visible get-focus-snip)
           
           (init-field window)
           
           (field
+           [ignore-modified? false]
            [expander false]
            [tests-showing? false]
            [program (instantiate text% ())]
@@ -85,23 +86,28 @@
           ;; delete-case (-> void?)
           ;; removes the case that currently has focus
           (define/public (delete-case)
-            (let ([snip (get-focused-snip this)])
+            (let ([snip (get-focus-snip)])
               (when snip (delete snip))))
           
           ;; execute (-> void?)
           ;; runs the test-suite by executing each test-case
           (define/public (execute)
+            (set! ignore-modified? true)
+            (clear-highlighting)
             (send window update-executing true)
             (set-expander)
             (reset-cases)
-            (clear-highlighting)
             (let ([program-filename (send program get-text)])
               (if (string=? program-filename "")
                   (eval-cases)
-                  (send expander eval-file
-                        program-filename
-                        (lambda ()
-                          (eval-cases))))))
+                  (send expander eval-file program-filename eval-cases))))
+          
+          ;; post-execute-cleanup (-> void?)
+          ;; run cleanup after the execution terminates
+          (define (post-execute-cleanup)
+            (send expander done)
+            (send window update-executing false)
+            (set! ignore-modified? false))
           
           ;; set-expander (-> void?)
           ;; create a program expander and store it in the field
@@ -111,9 +117,7 @@
                     (language language)
                     (teachpacks teachpacks)
                     (error-handler (send window get-error-handler))
-                    (clean-up
-                     (lambda ()
-                       (send window update-executing false))))))
+                    (clean-up post-execute-cleanup))))
           
           ;; reset-cases (-> void?)
           ;; reset all the test cases to unknown state
@@ -123,13 +127,19 @@
                (send case reset))
              (find-first-snip)))
           
+          ;; lock-cases (boolean? . -> . void?)
+          ;; lock or unlock modifcation to the test cases
+          (define/public (lock-cases lock?)
+            (for-each-snip
+             (lambda (case)
+               (send case lock lock?))
+             (find-first-snip)))
+          
           ;; eval-cases (-> void?)
           ;; evaluate each case in the test-suite
-          (define/private (eval-cases)
+          (define (eval-cases)
             (let ([case (find-first-snip)]
-                  [next (lambda ()
-                          (send expander done)
-                          (send window update-executing false))])
+                  [next post-execute-cleanup])
               (if case
                   (send case execute expander next)
                   (next))))
@@ -181,12 +191,33 @@
                 (send program read-from-file stream)
                 (super-read-header-from-file stream name)))
           
+          ;; save-file ((union string? false?) (symbols guess standard text text-force-cr same copy)
+          ;;            boolean? . -> . void?)
+          ;; save the file
+          (rename [super-save-file save-file])
+          (define/override save-file
+            (opt-lambda ((filename "") (format 'guess) (show-errors? true))
+              (super-save-file filename format show-errors?)
+              (send window set-label
+                    (file-name-from-path (get-filename)))))
+          
+          ;; load-file ((union string? false?) (symbols guess standard text text-force-cr same copy)
+          ;;            boolean? . -> . void?)
+          ;; load the file
+          (rename [super-load-file load-file])
+          (define/override load-file
+            (opt-lambda ((filename "") (format 'guess) (show-errors? true))
+              (super-load-file filename format show-errors?)
+              (send window set-label
+                    (file-name-from-path (get-filename)))))
+          
           ;; set-modified (boolean . -> . void?)
           ;; called when the editor is modified
           (rename [super-set-modified set-modified])
           (define/override (set-modified modified?)
-            (send window update-modified modified?)
-            (super-set-modified modified?))
+            (unless ignore-modified?
+              (send window update-modified modified?)
+              (super-set-modified modified?)))
           
           ;; clear-highlighting (-> void?)
           ;; clear the error highlighting
@@ -206,11 +237,7 @@
             (when success? (set-modified false)))
           
           (super-instantiate ())
+          (set-selection-visible false)
           ))
-      
-      ;; get-focused-snip: ((is-a?/c editor<%>) . -> . (union (is-a?/c snip%) false?))
-      ;; the snip that is currently focused in the editor
-      (define (get-focused-snip editor)
-        (send editor get-focus-snip))
       ))
   )

@@ -73,6 +73,13 @@
                          style 0 (send text last-position) #f))))
              (list call expected test)))
           
+          ;; lock (boolean? . -> . void?)
+          ;; lock or unlock the test case for modification
+          (define/public (lock lock?)
+            (send call lock lock?)
+            (send expected lock lock?)
+            (send test lock lock?))
+          
           ;; execute ((is-a?/c expand-program%) ((union (id-s?/c snip%) false?) . -> . void?) . -> . void?)
           ;; execute the test case
           (define/public (execute expander continue) ; =drscheme-eventspace=

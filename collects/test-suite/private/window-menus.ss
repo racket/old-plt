@@ -2,7 +2,6 @@
   
   (require
    (lib "unitsig.ss")
-   (lib "unit.ss")
    (lib "class.ss")
    (lib "etc.ss")
    (lib "mred.ss" "mred")
@@ -40,46 +39,62 @@
            (define/override (file-menu:save-as-callback item event)
              (save-as))
            
+           ;; update-executing (boolean? . -> . void?)
+           ;; called by the model when it is executing
+           (rename [super-update-executing update-executing])
+           (define/override (update-executing executing?)
+             (if executing?
+                 (begin
+                   (send new-menu enable false)
+                   (send delete-menu enable false)
+                   (send execute-menu enable false))
+                 (begin
+                   (send new-menu enable true)
+                   (send delete-menu enable true)
+                   (send execute-menu enable true)))
+             (super-update-executing executing?))
+           
            (super-instantiate ())
            
-           (let ([test-menu (instantiate menu% ()
-                              (label "Test")
-                              (parent (get-menu-bar)))])
-             (instantiate menu-item% ()
-               (label "New Test Case")
-               (parent test-menu)
-               (callback (lambda (m e) (new))))
-             (instantiate menu-item% ()
-               (label "Delete Test Case")
-               (parent test-menu)
-               (callback (lambda (m e) (delete))))
-             (instantiate menu-item% ()
-               (label "Execute")
-               (parent test-menu)
-               (callback (lambda (m e) (execute)))
-               (shortcut #\t))
-             (instantiate menu-item% ()
-               (label "Break")
-               (parent test-menu)
-               (callback (lambda (m e) (break)))
-               (shortcut #\b))
-             (letrec ([show/hide
-                       (instantiate menu-item% ()
-                         (label "Show Equality Tests")
-                         (parent test-menu)
-                         (callback
-                          (let ([tests-showing? false])
-                            (lambda (menu event)
-                              (if tests-showing?
-                                  (begin
-                                    (set! tests-showing? false)
-                                    (send show/hide set-label "Show Equality Tests")
-                                    (show-tests false))
-                                  (begin
-                                    (set! tests-showing? true)
-                                    (send show/hide set-label "Hide Equality Tests")
-                                    (show-tests true)))))))])
-               (void)))
+           (field [test-menu (instantiate menu% ()
+                               (label "Test")
+                               (parent (get-menu-bar)))]
+                  [new-menu (instantiate menu-item% ()
+                              (label "New Test Case")
+                              (parent test-menu)
+                              (callback (lambda (m e) (new))))]
+                  [delete-menu (instantiate menu-item% ()
+                                 (label "Delete Test Case")
+                                 (parent test-menu)
+                                 (callback (lambda (m e) (delete))))]
+                  [execute-menu (instantiate menu-item% ()
+                                  (label "Execute")
+                                  (parent test-menu)
+                                  (callback (lambda (m e) (execute)))
+                                  (shortcut #\t))]
+                  [break-menu (instantiate menu-item% ()
+                                (label "Break")
+                                (parent test-menu)
+                                (callback (lambda (m e) (break)))
+                                (shortcut #\b))]
+                  [show/hide-menu
+                   (letrec ([show/hide
+                             (instantiate menu-item% ()
+                               (label "Show Equality Tests")
+                               (parent test-menu)
+                               (callback
+                                (let ([tests-showing? false])
+                                  (lambda (menu event)
+                                    (if tests-showing?
+                                        (begin
+                                          (set! tests-showing? false)
+                                          (send show/hide set-label "Show Equality Tests")
+                                          (show-tests false))
+                                        (begin
+                                          (set! tests-showing? true)
+                                          (send show/hide set-label "Hide Equality Tests")
+                                          (show-tests true)))))))])
+                     (void))])
       
            (frame:reorder-menus this)
            ))

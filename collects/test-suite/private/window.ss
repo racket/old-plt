@@ -9,8 +9,6 @@
    (lib "etc.ss")
    (lib "framework.ss" "framework")
    (lib "tool.ss" "drscheme")
-   (lib "mred.ss" "mred")
-   (lib "list.ss")
    "signatures.ss"
    "interfaces.ss")
   
@@ -48,7 +46,11 @@
           ;; update-executing (boolean? . -> . void?)
           ;; called by the model when it is executing
           (define/public (update-executing executing?)
-            (void))
+            (if executing?
+                (begin
+                  (send model lock-cases true))
+                (begin
+                  (send model lock-cases false))))
           
           ;; get-error-display-handler (-> (string? exn? . -> . void?))
           ;; the error handler that is used to display errors to the window
@@ -62,20 +64,23 @@
             (if (send model is-modified?)
                 (let ([responce (gui-utils:unsaved-warning
                                  (or (send model get-filename) "Untitled")
-                                 "Close Anyway"
-                                 true
-                                 this)])
+                                 "Close Anyway" true this)])
                   (cond
-                    [(symbol=? responce 'continue)
-                     true]
+                    [(symbol=? responce 'continue) true]
                     [(symbol=? responce 'save)
                      (send model save-file)]
-                    [(symbol=? responce 'cancel)
-                     false]))
+                    [(symbol=? responce 'cancel) false]))
                 true))
           
+          ;; set-label (string? . -> . void?)
+          ;; sets the labelof the window
+          (rename [super-set-label set-label])
+          (define/override (set-label l)
+            (super-set-label (string-append l " - Test Suite"))
+            (send (group:get-the-frame-group) frame-label-changed this))
+          
           (super-instantiate ()
-            (label "Test Suite"))
+            (label "Untitled - Test Suite"))
           
           (when program (send model set-program program))
           ;;why doesn't this line work? sending filename as an init

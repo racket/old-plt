@@ -52,7 +52,8 @@
           (send* bottom-pb
             (begin-edit-sequence)
             (insert expected-snip false)
-            (insert actual-snip false))
+            (insert actual-snip false)
+            (set-selection-visible false))
           (when test-showing?
             (send bottom-pb insert test-snip false))
           (send* bottom-pb
@@ -70,6 +71,7 @@
                       (left-margin 0)
                       (right-margin 0))
                     false)
+            (set-selection-visible false)
             (end-edit-sequence))
           ))
       ))
@@ -87,6 +89,7 @@
         (insert label-snip false)
         (change-style sd label-snip)
         (insert snip false)
+        (set-selection-visible false)
         (end-edit-sequence))
       (instantiate aligned-editor-snip% ()
         (with-border? false)

@@ -39,6 +39,10 @@
       ;; execute ((is-a?/c expand-program%) ((union (id-s?/c snip%) false?) . -> . void?) . -> . void?)
       ;; execute the item
       execute
+      
+      ;; lock (boolean? . -> . void?)
+      ;; lock or unlock the test case for modification
+      lock
     ))
   
   ;; the interface of a model that may be contained in a test-suite:window<%>

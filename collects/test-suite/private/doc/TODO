@@ -12,15 +12,6 @@ Robby
 > lines between the test case items (or even not, if you can figure out
 > the background colors)
 -------------------
-First use experience report: Pls:                                          
-                                                            
-2. enable tab to move from "slot" to slot                           
-                                                                                
-3. make "actual" visibly different so that people know you can't fill
-   it in ... :-)                                                     
-                                                                     
--- Matthias                                
--------------------
 One thing I noticed about your tester: it doesn't seem to use Robby's
 string-constants system.  So all the menus and buttons and stuff you
 have will always be in English, which will look weird to people who
@@ -30,15 +21,38 @@ Philippe
 -------------------
 Make the save button come up when the program to test is changed.
 Make the save button not come up when a test-suite is just loaded.
-Make the save button not come up after the test-suite executes
-  and changest the icons.
 -------------------
 Give a better error message with highlighting when there are too many
 expressions in a test box.
 -------------------
 Scroll to off screen test cases when tabbing
+  fix this so that it if a snip ever gets focus it gets scrolled to
+  i.e. when I mouse select a snip that is partially visible it does
+  not come into view.
 -------------------
 Don't unset the caret from a test case when a new case is inserted.
 -------------------
-Lock the test-suites text boxes when executing.
+- add a button next to browse that opens the tested file in DrScheme
+  (handler:open-file or finder:open-file in the framework does
+  everying for you)
+
+Robby
 -------------------
+Some suggestions after playing a little while:
+
+ * Disable the "Delete" button when it doesn't apply. It should also be
+   more clear which entry will be deleted. For example, move the
+   keyboard focus to the "Browse" area, go away for an hour, come back,
+   and click "Delete".
+
+ * The window title should be more informative. (Remember that it will
+   show up in the "Windows" list.)
+
+ * There's a problem with handling mouse-button releases. They seem to
+   be handled like clicks. For example, drag a selection in "Expected",
+   but release the mouse in "Call". The selection will move to "Call".
+
+Matthew
+-------------------
+give the language menu a serpator so it looks just like the drscheme
+window menu

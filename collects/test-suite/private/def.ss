@@ -29,6 +29,11 @@
           ;; resets the result of the test case
           (define/public (reset)
             (void))
+          
+          ;; lock (boolean? . -> . void?)
+          ;; lock or unlock the test case for modification
+          (define/public (lock lock?)
+            (void))
 
           ;; execute ((is-a?/c expand-program%) ((union (id-s?/c snip%) false?) . -> . void?) . -> . void?)
           ;; execute the item

@@ -1,10 +1,6 @@
 
 MrEd Engine:
 
-* macos: drawing points, etc?
-
-  -------------------- ^- fix for 51   v- leave for later
-
 * MacOS needs way to control the 0-window menu bar
 
 * MacOS: bitmaps' don't print with platform-specific printing

@@ -478,6 +478,13 @@ void wxMenuBar::Stop(void)
   XtCallActionProc(X->handle, "select", NULL, NULL, 0);
 }
 
+extern "C" int xwMenuIsPoppedUp(Widget w);
+
+int wxMenuBar::InProgress(void)
+{
+  return xwMenuIsPoppedUp(X->handle);
+}
+
 void wxMenuBar::SelectAMenu()
 {
   XEvent xevent;

@@ -1350,3 +1350,8 @@ void Xaw3dPopupMenuAtPos(MenuWidget mw, int x, int y)
     ev.x_root = x; ev.y_root = y;
     HandleMotionEvent(mw, (XMotionEvent*)&ev);
 }
+
+int xwMenuIsPoppedUp(Widget w)
+{
+  return ((MenuWidget)w)->menu.grabbed;
+}

@@ -1548,8 +1548,10 @@ void wxWindow::WindowEventHandler(Widget w,
 		if (wxSubType(p->__type, wxTYPE_FRAME)) {
 		  wxMenuBar *mb;
 		  mb = ((wxFrame *)p)->GetMenuBar();
-		  if (mb)
+		  if (mb) {
+		    ((wxFrame *)p)->OnMenuClick();
 		    mb->SelectAMenu();
+		  }
 		  break;
 		}
 		p = p->GetParent();
@@ -1612,9 +1614,11 @@ void wxWindow::WindowEventHandler(Widget w,
 	  } else {
 	    if (Press) {
 	      if (wxSubType(win->__type, wxTYPE_MENU_BAR)) {
-		wxFrame *f;
-		f = (wxFrame *)(win->GetParent());
-		f->OnMenuClick();
+		if (!((wxMenuBar *)win)->InProgress()) {
+		  wxFrame *f;
+		  f = (wxFrame *)(win->GetParent());
+		  f->OnMenuClick();
+		}
 	      } else if (!wxSubType(win->__type, wxTYPE_PANEL)) {
 		win->SetFocus();
 	      }

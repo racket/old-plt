@@ -61,6 +61,7 @@ public:
     // search for item by label
     int   FindMenuItem(char *menu, char *label);
     void Stop();
+    int InProgress();
     void SelectAMenu();
 private:
     // search for internal data by id

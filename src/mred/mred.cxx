@@ -2249,7 +2249,7 @@ extern "C" Scheme_Object *scheme_initialize(Scheme_Env *env);
 #else
 # define MRED2K ""
 #endif
-#define BANNER "MrEd" MRED2K " version " VERSION ", Copyright (c) 1995-2000 PLT (Matthew Flatt and Robby Findler)\n"
+#define BANNER "MrEd" MRED2K " version " VERSION ", Copyright (c) 1995-2000 PLT (Flatt, Findler, Clements)\n"
 
 #ifdef wx_mac
 #define GET_PLTCOLLECTS_VIA_RESOURCES

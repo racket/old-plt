@@ -210,7 +210,7 @@
 	    [(z:unit-form? expr)
 	      (let ((imports (z:unit-form-imports expr))
 		     (exports (map (lambda (export)
-				     (list (z:read-object (car export))
+				     (list (z:varref-var (car export))
 				       (z:read-object (cdr export))))
 				(z:unit-form-exports expr)))
 		     (clauses (map annotate (z:unit-form-clauses expr))))

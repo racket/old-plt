@@ -5,13 +5,11 @@
   ; The exports are meaningless, except that they allow shadowing
   (export unit/sig
 	  invoke-unit/sig
-	  invoke-open-unit/sig
 	  define-signature
 	  let-signature
           unit-with-signature
           compound-unit-with-signature
 	  invoke-unit-with-signature
-	  invoke-open-unit-with-signature
 	  unit->unit-with-signature)
   
   ; Parse-time structs:
@@ -24,7 +22,6 @@
   (define u->u/sig 'unit->unit/sig)
   (define cpd-unit/sig 'compound-unit/sig)
   (define invoke-unit/sig 'invoke-unit/sig)
-  (define invoke-open-unit/sig 'invoke-open-unit/sig)
 
   (define inline-sig-name '<unnamed>)
 
@@ -1073,21 +1070,6 @@
 	      [sigs (parse-invoke-vars invoke-unit/sig (cdr body) expr)])
 	  (build-invoke-unit invoke-unit/sig '#%invoke-unit u sigs null)))))
   
-  (define invoke-open-unit-with-signature
-    (lambda body
-      (let ([expr (cons invoke-open-unit/sig body)])
-	(unless (and (pair? body)
-		     (or (null? (cdr body)) 
-			 (and (pair? (cdr body))
-			      (list? (cddr body)))))
-		(syntax-error invoke-open-unit/sig expr "improper form"))
-	(if (null? (cdr body))
-	    (build-invoke-unit invoke-open-unit/sig '#%invoke-open-unit (car body) null null)
-	    (let ([u (car body)]
-		  [ns (cadr body)]
-		  [sigs (parse-invoke-vars invoke-open-unit/sig (cddr body) expr)])
-	      (build-invoke-unit invoke-open-unit/sig '#%invoke-open-unit u sigs (list ns)))))))
-  
   (define unit->unit-with-signature
     (lambda body
       (let ([expr (cons u->u/sig body)])
@@ -1112,7 +1094,6 @@
           unit-with-signature
           compound-unit-with-signature
 	  invoke-unit-with-signature
-	  invoke-open-unit-with-signature
 	  unit->unit-with-signature)))
 
 > stop unitsig <

@@ -474,7 +474,7 @@ Scheme_Object *(*scheme_get_generic_data)(Scheme_Object *cl,
 /* Units */
 Scheme_Object *(*scheme_invoke_unit)(Scheme_Object *functor, int num_ins, 
 				  Scheme_Object **ins, Scheme_Object **anchors,
-				  int open, const char *name, int tail, int multi);
+				  int tail, int multi);
 Scheme_Object *(*scheme_assemble_compound_unit)(Scheme_Object *imports,
 					     Scheme_Object *links,
 					     Scheme_Object *exports);

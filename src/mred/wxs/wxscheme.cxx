@@ -84,7 +84,7 @@ static Scheme_Object *make_media_edit, *make_media_pasteboard, *make_media_snip,
 
 #define INSTALL_COUNT 520
 
-static Scheme_Object *mred_unit, *mred_sig;
+static Scheme_Object *mred_unit_opener, *mred_sig;
 
 #define CONS scheme_make_pair
 
@@ -101,7 +101,7 @@ static void wxScheme_Invoke(Scheme_Env *env)
   Scheme_Object *save = scheme_get_param(scheme_config, MZCONFIG_ENV);
   scheme_set_param(scheme_config, MZCONFIG_ENV, (Scheme_Object *)env);
 
-  scheme_invoke_unit(mred_unit, 0, NULL, NULL, 1, NULL, 0, 0);
+  _scheme_apply(mred_unit_opener, 0, NULL);
 
   scheme_set_param(scheme_config, MZCONFIG_ENV, save);
 
@@ -175,7 +175,7 @@ void wxsScheme_setup(Scheme_Env *env)
 #endif
 
   a[0] = (Scheme_Object *)u;
-  mred_unit = _scheme_apply(link, 1, a);
+  mred_unit_opener = _scheme_apply(link, 1, a);
 
   wxScheme_Invoke(env);
 

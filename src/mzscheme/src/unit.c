@@ -29,7 +29,6 @@
 #define MAKE_UNIT "unit"
 #define MAKE_COMPOUND_UNIT "compound-unit"
 #define INVOKE_UNIT "invoke-unit"
-#define INVOKE_OPEN_UNIT "invoke-open-unit"
 
 static Scheme_Object *CloseUnit(Scheme_Object *data);
 static Scheme_Object *CloseCompoundUnit(Scheme_Object *data);
@@ -51,47 +50,8 @@ static Scheme_Object *define_values_symbol;
 static Scheme_Object *unit_symbol;
 static Scheme_Object *compound_unit_symbol;
 static Scheme_Object *invoke_unit_symbol;
-static Scheme_Object *invoke_open_unit_symbol;
 
 static Scheme_Object *unitsig_macros;
-
-/**********************************************************************/
-/* Debugging tools                                                    */
-/**********************************************************************/
-
-typedef struct {
-  Scheme_Object *const_prefix;
-  Scheme_Object *prefix;
-  Scheme_Env *env;
-  Scheme_Object *path;
-} Scheme_Debug_Request;
-
-static Scheme_Object *build_unit_pathname(Scheme_Object *tag,
-					     Scheme_Object *name)
-{
-#define BUILD_BUF_SIZE 100
-  char buffer[BUILD_BUF_SIZE];
-  char *s;
-  int tl, nl;
-  
-  if (!tag)
-    return name;
-
-  tl = SCHEME_SYM_LEN(tag);
-  nl = SCHEME_SYM_LEN(name);
-
-  if (tl + nl < BUILD_BUF_SIZE - 2)
-    s = buffer;
-  else
-    s = (char *)scheme_malloc_atomic(tl + nl + 2);
-
-  memcpy(s, SCHEME_SYM_VAL(tag), tl);
-  memcpy(s + tl + 1, SCHEME_SYM_VAL(name), nl);
-  s[tl] = ':';
-  s[tl + nl + 1] = 0;
-
-  return scheme_intern_exact_symbol(s, tl + nl + 1);
-}
 
 /**********************************************************************/
 /* Parsing tools                                                      */
@@ -878,9 +838,7 @@ static int check_compound_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   return c;
 }
 
-static int check_invoke_unit(char *where, Scheme_Object *form, Scheme_Comp_Env *env,
-				int with_path, 
-				Scheme_Object **path, Scheme_Object **prefix)
+static int check_invoke_unit(char *where, Scheme_Object *form, Scheme_Comp_Env *env)
 {
   Scheme_Object *l;
   int count = 0;
@@ -890,35 +848,6 @@ static int check_invoke_unit(char *where, Scheme_Object *form, Scheme_Comp_Env *
 			"bad syntax (missing parts or " IMPROPER_LIST_FORM ")");
   
   l = SCHEME_CDR(SCHEME_CDR(form));
-
-  if (with_path && !SCHEME_NULLP(l)) {
-    Scheme_Object *first = SCHEME_CAR(l);
-
-    l = SCHEME_CDR(l);
-
-    if (SCHEME_SYMBOLP(first) || SCHEME_FALSEP(first)) {
-      if (prefix)
-	*prefix = first;
-      if (path)
-	*path = scheme_null;
-    } else {
-      if (path)
-	*path = first;
-      if (prefix)
-	*prefix = NULL;
-
-      while (SCHEME_PAIRP(first)) {
-	if (!SCHEME_SYMBOLP(SCHEME_CAR(first)))
-	  scheme_wrong_syntax(where, SCHEME_CAR(first), form,
-			      "bad syntax (not an identifier in path)");
-	first = SCHEME_CDR(first);
-      }
-      
-      if (!SCHEME_NULLP(first))
-	scheme_wrong_syntax(where, first, form,
-			    "bad syntax (bad path)");
-    }
-  }
 
   while (SCHEME_PAIRP(l)) {
     Scheme_Object *first = SCHEME_CAR(l);
@@ -1448,8 +1377,6 @@ typedef struct {
   Scheme_Object **exports;
   Scheme_Object **anchors;
   Scheme_Object *expr;
-  Scheme_Object *path;
-  Scheme_Object *const_prefix;
 } InvokeUnitData;
 
 static Scheme_Object *link_invoke_unit(Scheme_Object *o, Link_Info *info)
@@ -1491,23 +1418,17 @@ static Scheme_Object *link_invoke_unit(Scheme_Object *o, Link_Info *info)
 static Scheme_Object *do_invoke_unit_syntax(char *where,
 					    Scheme_Object *form,
 					    Scheme_Comp_Env *env,
-					    Scheme_Compile_Info *rec,
-					    int with_path)
+					    Scheme_Compile_Info *rec)
 {
-  Scheme_Object *path, *prefix, *l;
+  Scheme_Object *l;
   int c, i;
   InvokeUnitData *data;
 
-  path = with_path ? scheme_null : NULL;
-  prefix = scheme_false;
-
-  c = check_invoke_unit(where, form, env, with_path, &path, &prefix);
+  c = check_invoke_unit(where, form, env);
 
   data = MALLOC_ONE_TAGGED(InvokeUnitData);
   data->type = scheme_invoke_unit_data_type;
   data->num_exports = c;
-  data->path = path;
-  data->const_prefix = prefix;
 
   scheme_compile_rec_done_local(rec);
 
@@ -1520,8 +1441,6 @@ static Scheme_Object *do_invoke_unit_syntax(char *where,
 
   data->exports = (Scheme_Object **)scheme_malloc(c * sizeof(Scheme_Object *));
   l = SCHEME_CDR(SCHEME_CDR(form));
-  if (with_path && !SCHEME_NULLP(l))
-    l = SCHEME_CDR(l);
 
   for (i = 0; i < c; i++, l = SCHEME_CDR(l)) {
     Scheme_Object *s, *v;
@@ -1554,10 +1473,9 @@ static Scheme_Object *do_invoke_unit_expand(char *where,
 					    Scheme_Object *formname,
 					    Scheme_Object *form,
 					    Scheme_Comp_Env *env,
-					    int depth,
-					    int with_path)
+					    int depth)
 {
-  (void)check_invoke_unit(where, form, env, with_path, NULL, NULL);
+  (void)check_invoke_unit(where, form, env);
   
   return cons(formname,
 	      cons(scheme_expand_expr(SCHEME_CADR(form), env, depth),
@@ -1568,29 +1486,14 @@ static Scheme_Object *invoke_unit_syntax(Scheme_Object *form,
 					 Scheme_Comp_Env *env,
 					 Scheme_Compile_Info *rec)
 {
-  return do_invoke_unit_syntax(INVOKE_UNIT, form, env, rec, 0);
+  return do_invoke_unit_syntax(INVOKE_UNIT, form, env, rec);
 }
 
 static Scheme_Object *invoke_unit_expand(Scheme_Object *form,
 					 Scheme_Comp_Env *env,
 					 int depth)
 {
-  return do_invoke_unit_expand(INVOKE_UNIT, invoke_unit_symbol, form, env, depth, 0);
-}
-
-static Scheme_Object *invoke_open_unit_syntax(Scheme_Object *form,
-					      Scheme_Comp_Env *env,
-					      Scheme_Compile_Info *rec)
-{
-  return do_invoke_unit_syntax(INVOKE_OPEN_UNIT, form, env, rec, 1);
-}
-
-static Scheme_Object *invoke_open_unit_expand(Scheme_Object *form,
-					      Scheme_Comp_Env *env,
-					      int depth)
-{
-  return do_invoke_unit_expand(INVOKE_OPEN_UNIT, invoke_open_unit_symbol, 
-			       form, env, depth, 1);
+  return do_invoke_unit_expand(INVOKE_UNIT, invoke_unit_symbol, form, env, depth);
 }
 
 /**********************************************************************/
@@ -1877,74 +1780,10 @@ scheme_make_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
   return do_close_compound_unit(data_in, subs_in);
 }
 
-static Scheme_Object *debug_bind(Scheme_Debug_Request *request, 
-				 Scheme_Object *name, 
-				 Scheme_Object *export_name,
-				 Scheme_Object *v,
-				 Scheme_Object **anchor)
-{
-  Scheme_Object *full_name, *path;
-  Scheme_Bucket *b;
-
-  *anchor = NULL;
-
-  if (!request || (request->const_prefix && !export_name))
-    return scheme_make_envunbox(v);
-
-  if (request->const_prefix) {
-    if (SCHEME_FALSEP(request->const_prefix))
-      full_name = export_name;
-    else
-      full_name = build_unit_pathname(request->const_prefix, export_name);
-  } else {
-    if (!name)
-      return scheme_make_envunbox(v);
-
-    path = request->path;
-    while (SCHEME_PAIRP(path)) {
-      if (!SCHEME_PAIRP(name)
-	  || NOT_SAME_OBJ(SCHEME_CAR(name), SCHEME_CAR(path)))
-	return scheme_make_envunbox(v);
-      
-      path = SCHEME_CDR(path);
-      name = SCHEME_CDR(name);
-    }
-    
-    full_name = NULL;
-    while (SCHEME_PAIRP(name)) {
-      full_name = build_unit_pathname(full_name, SCHEME_CAR(name));
-      name = SCHEME_CDR(name);
-    }
-    
-    full_name = build_unit_pathname(full_name, name);
-    
-    full_name = build_unit_pathname(request->prefix, full_name);
-  }
-
-  b = scheme_global_bucket(full_name, request->env);
-
-  if (b->val) {
-    if (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_CONST) {
-      scheme_raise_exn(MZEXN_VARIABLE_KEYWORD,
-		       full_name,
-		       INVOKE_OPEN_UNIT ": cannot redefine global constant: %s",
-		       scheme_symbol_name(full_name));
-    }
-  }
-
-  b->val = v;
-  ((Scheme_Bucket_With_Const_Flag *)b)->flags |= GLOB_IS_PERMANENT;
-
-  *anchor = (Scheme_Object *)b;
-
-  return (Scheme_Object *)&b->val;
-}
-
 typedef struct {
   Scheme_Object **boxes;
   Scheme_Object **anchors;
   Scheme_Unit *unit;
-  void *request;
 } Do_Invoke_Data;
 
 /* Tail-called by InvokeUnit: */
@@ -1952,7 +1791,7 @@ static Scheme_Object *do_invoke_unit(void *data, int argc, Scheme_Object **argv)
 {
   Do_Invoke_Data *diu = (Do_Invoke_Data *)data;
 
-  return diu->unit->init_func(diu->boxes, diu->anchors, diu->unit, diu->request);
+  return diu->unit->init_func(diu->boxes, diu->anchors, diu->unit, NULL);
 }
 
 static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
@@ -1960,7 +1799,6 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
   Scheme_Unit *unit;
   InvokeUnitData *data;
   Scheme_Env *link_env;
-  Scheme_Debug_Request *request, debug_request;
   Scheme_Object *v, **boxes, **anchors;
   int c, i, j;
 #ifndef RUNSTACK_IS_GLOBAL
@@ -1984,19 +1822,10 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
     scheme_raise_exn(MZEXN_UNIT,
 		     "%s: " KIND " "
 		     "expects %d imports, given %d",
-		     data->path ? INVOKE_OPEN_UNIT : INVOKE_UNIT,
+		     INVOKE_UNIT,
 		     unit->num_imports,
 		     data->num_exports);
   }
-
-  if (data->path)  {
-    debug_request.const_prefix = data->const_prefix;
-    debug_request.prefix = NULL;
-    debug_request.env = link_env;
-    debug_request.path = data->path;
-    request = &debug_request;
-  } else
-    request = NULL;
 
   c = unit->num_exports + unit->num_imports;
 
@@ -2034,18 +1863,8 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
   }
 
   for (i = 0, j = data->num_exports; j < c; j++, i++) {
-    if (request)
-      boxes[j] = debug_bind(request,
-			    (unit->export_debug_names
-			     ? unit->export_debug_names[i]
-			     : NULL),
-			    unit->exports[i],
-			    scheme_undefined,
-			    &anchors[j]);
-    else {
-      boxes[j] = scheme_make_envunbox(scheme_undefined);
-      anchors[j] = NULL;
-    }
+    boxes[j] = scheme_make_envunbox(scheme_undefined);
+    anchors[j] = NULL;
   }
 
   /* Invoke the unit: */
@@ -2059,7 +1878,6 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
     diu->boxes = boxes;
     diu->anchors = anchors;
     diu->unit = unit;
-    diu->request = request;
 
     invoke_unit_f = scheme_make_closed_prim(do_invoke_unit, diu);
 
@@ -2069,7 +1887,6 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
 
 Scheme_Object *scheme_invoke_unit(Scheme_Object *unit, int num_ins, 
 				  Scheme_Object **ins, Scheme_Object **anchors,
-				  int open, const char *prefix,
 				  int tail, int multi)
 {
   InvokeUnitData *data;
@@ -2083,11 +1900,6 @@ Scheme_Object *scheme_invoke_unit(Scheme_Object *unit, int num_ins,
   data->exports = ins;
   data->anchors = anchors;
 
-  data->path = (open ? scheme_null : NULL);
-  data->const_prefix = (prefix 
-			? scheme_intern_symbol(prefix) 
-			: scheme_false);
-  
   v = InvokeUnit((Scheme_Object *)data);
 
   if (tail)
@@ -2113,19 +1925,16 @@ static void *do_unit_k()
   Scheme_Object **boxes;
   Scheme_Object **anchors;
   Scheme_Unit *m;
-  void *debug_request;
   
   boxes = (Scheme_Object **)p->ku.k.p1;
   anchors = (Scheme_Object **)p->ku.k.p2;
   m = (Scheme_Unit *)p->ku.k.p3;
-  debug_request = p->ku.k.p4;
   
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
   p->ku.k.p3 = NULL;
-  p->ku.k.p4 = NULL;
 
-  v = do_unit(boxes, anchors, m, debug_request);
+  v = do_unit(boxes, anchors, m, NULL);
 
   return scheme_force_value(v);
 }
@@ -2133,7 +1942,6 @@ static void *do_unit_k()
 static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
 			      Scheme_Unit *m, void *debug_request)
 {
-  Scheme_Debug_Request *request = (Scheme_Debug_Request *)debug_request;
   UnitDataClosure *cl;
   BodyExpr *e;
   BodyData *data;
@@ -2148,7 +1956,6 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
     p->ku.k.p1 = (void *)boxes;
     p->ku.k.p2 = (void *)anchors;
     p->ku.k.p3 = (void *)m;
-    p->ku.k.p4 = (void *)debug_request;
 
     return scheme_handle_stack_overflow((Scheme_Object *(*)())do_unit_k);
   }
@@ -2167,7 +1974,6 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
     p->ku.k.p1 = (void *)boxes;
     p->ku.k.p2 = (void *)anchors;
     p->ku.k.p3 = (void *)m;
-    p->ku.k.p4 = (void *)debug_request;
     return (Scheme_Object *)scheme_enlarge_runstack(total, do_unit_k);
   }
 
@@ -2189,10 +1995,8 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
       BodyVar *vs = e->u.def.vars;
       for (i = 0; i < e->u.def.count; i++) {
 	if (!vs[i].exported) {
-	  Scheme_Object *anchor;
-	  
-	  direct[vs[i].pos] = debug_bind(request, vs[i].id, NULL, scheme_undefined, &anchor);
-	  direct[vs[i].pos + data->num_locals] = anchor;
+	  direct[vs[i].pos] = scheme_make_envunbox(scheme_undefined);
+	  direct[vs[i].pos + data->num_locals] = NULL; /* anchor */
 	}
       }
     }
@@ -2258,41 +2062,6 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
     return scheme_void;
 }
 
-static void *sub_debug(CompoundLinkedData *data,
-		       Scheme_Unit **subunits,
-		       Scheme_Debug_Request *request,
-		       Scheme_Debug_Request *sub_request,
-		       int i)
-{
-  void *sub_debug_request;
-
-  if (request 
-      && !request->const_prefix
-      && data->tags
-      && (!subunits[i]->exports || subunits[i]->export_debug_names)
-      && (SCHEME_NULLP(request->path)
-	  || SAME_OBJ(SCHEME_CAR(request->path), data->tags[i]))) {
-    sub_request->env = request->env;
-    sub_request->const_prefix = request->const_prefix;
-    if (SCHEME_NULLP(request->path)) {
-      if (!sub_request->const_prefix)
-	sub_request->prefix = (request->prefix
-			       ? build_unit_pathname(request->prefix, data->tags[i])
-			       : data->tags[i]);
-      else
-	sub_request->prefix = request->prefix;
-      sub_request->path = scheme_null;
-    } else {
-      sub_request->prefix = request->prefix;
-      sub_request->path = SCHEME_CDR(request->path);
-    }
-    sub_debug_request = (void *)sub_request;
-  } else
-    sub_debug_request = NULL;
-
-  return sub_debug_request;
-}
-
 #ifdef _MSC_VER
 # pragma optimize("", off)
 #endif
@@ -2303,27 +2072,21 @@ static Scheme_Object *do_compound_k(void)
   Scheme_Object **boxes;
   Scheme_Object **anchors;
   Scheme_Unit *m;
-  void *debug_request;
   
   boxes = (Scheme_Object **)p->ku.k.p1;
   anchors = (Scheme_Object **)p->ku.k.p2;
   m = (Scheme_Unit *)p->ku.k.p3;
-  debug_request = p->ku.k.p4;
   
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
   p->ku.k.p3 = NULL;
-  p->ku.k.p4 = NULL;
 
-  return do_compound_unit(boxes, anchors, m, debug_request);
+  return do_compound_unit(boxes, anchors, m, NULL);
 }
 
 static Scheme_Object *do_compound_unit(Scheme_Object **boxes_in, Scheme_Object **anchors_in,
 				       Scheme_Unit *m, void *debug_request)
 {
-  Scheme_Debug_Request *request = (Scheme_Debug_Request *)debug_request;
-  void *sub_debug_request;
-  Scheme_Debug_Request sub_request;
   Scheme_Unit **subunits, *sm;
   BoxMap **boxMapsList, *boxMaps;
   Scheme_Object ***boxesList, **boxes, *v = scheme_void;
@@ -2338,7 +2101,6 @@ static Scheme_Object *do_compound_unit(Scheme_Object **boxes_in, Scheme_Object *
     p->ku.k.p1 = (void *)boxes_in;
     p->ku.k.p2 = (void *)anchors_in;
     p->ku.k.p3 = (void *)m;
-    p->ku.k.p4 = (void *)debug_request;
 
     return scheme_handle_stack_overflow(do_compound_k);
   }
@@ -2375,18 +2137,9 @@ static Scheme_Object *do_compound_unit(Scheme_Object **boxes_in, Scheme_Object *
 	Scheme_Object *box;
 	Scheme_Object *anchor;
 
-	sub_debug_request = sub_debug(data, subunits, request, &sub_request, i);
-	
-	if (sub_debug_request) {
-	  box = debug_bind((Scheme_Debug_Request *)sub_debug_request, 
-			   sm->export_debug_names[j], 
-			   sm->exports[j], 
-			   scheme_undefined,
-			   &anchor);
-	} else {
-	  box = scheme_make_envunbox(scheme_undefined);
-	  anchor = NULL;
-	}
+	box = scheme_make_envunbox(scheme_undefined);
+	anchor = NULL;
+
 	boxes[j + k] = box;
 	anchors[j + k] = anchor;
       } else if (boxMaps[j + k].source == -2) {
@@ -2425,9 +2178,8 @@ static Scheme_Object *do_compound_unit(Scheme_Object **boxes_in, Scheme_Object *
 
   /* All boxes are set up; now initialize units and we're done */
   for (i = 0; i < num_mods; i++) {
-    sub_debug_request = sub_debug(data, subunits, request, &sub_request, i);
     v = subunits[i]->init_func(boxesList[i], anchorsList[i], 
-			       subunits[i], sub_debug_request);
+			       subunits[i], NULL);
     if (i + 1 < num_mods) {
       /* could be a tail-call or a tail-eval */
       v = scheme_force_value(v);
@@ -2790,15 +2542,11 @@ static Scheme_Object *write_invoke_data(Scheme_Object *o)
   data = (InvokeUnitData *)o;
 
   return cons(scheme_make_integer(data->num_exports),
-	      cons(data->path ? data->path : scheme_make_integer(0),
-		   cons(data->const_prefix 
-			? data->const_prefix 
-			: scheme_make_integer(0),
-			cons(scheme_make_svector(data->num_local_exports,
-						 data->anchor_positions),
-			     cons(data->expr, array_to_list(data->exports,
-							    data->num_exports,
-							    scheme_null))))));
+	      cons(scheme_make_svector(data->num_local_exports,
+				       data->anchor_positions),
+		   cons(data->expr, array_to_list(data->exports,
+						  data->num_exports,
+						  scheme_null))));
 }
 
 
@@ -2811,14 +2559,6 @@ static Scheme_Object *read_invoke_data(Scheme_Object *o)
   data->type = scheme_invoke_unit_data_type;
 
   data->num_exports = SCHEME_INT_VAL(SCHEME_CAR(o));
-  o = SCHEME_CDR(o);
-  data->path = SCHEME_CAR(o);
-  if (SCHEME_INTP(data->path))
-    data->path = NULL;
-  o = SCHEME_CDR(o);
-  data->const_prefix = SCHEME_CAR(o);
-  if (SCHEME_INTP(data->const_prefix))
-    data->const_prefix = NULL;
   o = SCHEME_CDR(o);
 
   v = SCHEME_CAR(o);
@@ -3110,7 +2850,6 @@ void scheme_init_unit(Scheme_Env *env)
     REGISTER_SO(unit_symbol);
     REGISTER_SO(compound_unit_symbol);
     REGISTER_SO(invoke_unit_symbol);
-    REGISTER_SO(invoke_open_unit_symbol);
 
     export_symbol = scheme_intern_symbol("export");
     import_symbol = scheme_intern_symbol("import");
@@ -3121,7 +2860,6 @@ void scheme_init_unit(Scheme_Env *env)
     unit_symbol = scheme_intern_symbol("#%unit");
     compound_unit_symbol = scheme_intern_symbol("#%compound-unit");
     invoke_unit_symbol = scheme_intern_symbol("#%invoke-unit");
-    invoke_open_unit_symbol = scheme_intern_symbol("#%invoke-open-unit");
 
     scheme_register_syntax("m", CloseUnit);
     scheme_register_syntax("cm", CloseCompoundUnit);
@@ -3148,10 +2886,6 @@ void scheme_init_unit(Scheme_Env *env)
   scheme_add_global_keyword(INVOKE_UNIT, 
 			    scheme_make_compiled_syntax(invoke_unit_syntax, 
 							invoke_unit_expand), 
-			    env);
-  scheme_add_global_keyword(INVOKE_OPEN_UNIT, 
-			    scheme_make_compiled_syntax(invoke_open_unit_syntax, 
-							invoke_open_unit_expand), 
 			    env);
 
   scheme_add_global_constant("unit?", 
@@ -3181,9 +2915,6 @@ void scheme_init_unit(Scheme_Env *env)
   scheme_add_global_keyword("invoke-unit-with-signature", v, env);
   scheme_add_global_keyword("invoke-unit/sig", v, env);
   v = make_unitsig_macro(5);
-  scheme_add_global_keyword("invoke-open-unit-with-signature", v, env);
-  scheme_add_global_keyword("invoke-open-unit/sig", v, env);
-  v = make_unitsig_macro(6);
   scheme_add_global_keyword("unit->unit-with-signature", v, env);
   scheme_add_global_keyword("unit->unit/sig", v, env);
 }

@@ -86,7 +86,8 @@
 					    `(unit (import ,@(map prefix-wx: imports))
 						   (export)
 						   ,@code
-						   (vector ,@mred-exports)))
+						   (vector ,@mred-exports
+							   ,@(map prefix-wx: propagate))))
 					  (wx ,@imports))])
 			     (export)))])
 		(letrec ([mred@
@@ -104,7 +105,12 @@
 					       (define -mred@ mred@)))])
 			    (export (wx ,@propagate) (mred mred@ ,@mred-exports)))
 			   () ,sig)])
-		  (unit/sig->unit mred@))))])
+		  (lambda ()
+		    ,@(let loop ([l (append mred-exports propagate)][n 0])
+			(if (null? l)
+			    null
+			    (cons `(global-defined-value ',(car l) (vector-ref ex ,n))
+				  (loop (cdr l) (add1 n)))))))))])
       (if debug?
 	  (pretty-print `(eval ',c))
 	  (pretty-print c)))

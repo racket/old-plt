@@ -9,9 +9,11 @@ else
 fi
 
 if [ -x "/bin/uname" ] ; then
-  OS=`/bin/uname -s`
+  UNAME=/bin/uname
+  OS=`$UNAME -s`
 elif [ -x "/usr/bin/uname" ] ; then
-  OS=`/usr/bin/uname -s`
+  UNAME=/usr/bin/uname
+  OS=`$UNAME -s`
 else
  echo archsys: cannot find uname
  exit -1
@@ -19,7 +21,7 @@ fi
 
 case $OS in
   SunOS)
-    case `uname -r` in
+    case `$UNAME -r` in
       5.*)
        SYS=sparc${SEP}solaris
        ;;
@@ -32,11 +34,18 @@ case $OS in
     SYS=rs6k${SEP}aix
     ;;
   Linux)
-    if [ `file /bin/ls | grep ELF | wc -l` = 1 ]; then
-     SYS=i386${SEP}linux
-    else
-     SYS=i386${SEP}linux${SEP}aout
-    fi
+    case `$UNAME -m` in
+     ppc)
+      SYS=ppc${SEP}linux
+      ;;
+     *)
+      if [ `file /bin/ls | grep ELF | wc -l` = 1 ]; then
+        SYS=i386${SEP}linux
+      else
+        SYS=i386${SEP}linux${SEP}aout
+      fi
+      ;;
+    esac
     ;;
   FreeBSD)
     SYS=i386${SEP}freebsd

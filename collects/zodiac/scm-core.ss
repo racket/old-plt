@@ -202,12 +202,6 @@
 
   (define previous-attribute (make-attributes))
 
-  (define-argument-list zodiac:scheme-expand/nal
-    (kwd expression: expr)
-    (opt (kwd parameterization: params) (current-parameterization))
-    (opt (kwd attributes: attr) 'previous)
-    (opt (kwd vocabulary: vocab) #f))
-
   (define scheme-expand
     (lambda/nal zodiac:scheme-expand/nal
       (let ((attr (cond
@@ -221,12 +215,6 @@
 	  (vocabulary: (or vocab scheme-vocabulary))
 	  (parameterization: params)))))
   
-  (define-argument-list zodiac:scheme-expand-program/nal
-    (kwd expressions: exprs)
-    (opt (kwd parameterization: params) (current-parameterization))
-    (opt (kwd attributes: attr) 'previous)
-    (opt (kwd vocabulary: vocab) #f))
-
   (define scheme-expand-program
     (lambda/nal zodiac:scheme-expand-program/nal
       (let ((attr (cond

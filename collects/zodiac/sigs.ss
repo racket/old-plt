@@ -1,5 +1,29 @@
 (reference "namedarg.ss")
 
+(define-argument-list zodiac:scheme-expand/nal
+  (kwd expression: expr)
+  (opt (kwd parameterization: params) (current-parameterization))
+  (opt (kwd attributes: attr) 'previous)
+  (opt (kwd vocabulary: vocab) #f))
+
+(define-argument-list zodiac:scheme-expand-program/nal
+  (kwd expressions: exprs)
+  (opt (kwd parameterization: params) (current-parameterization))
+  (opt (kwd attributes: attr) 'previous)
+  (opt (kwd vocabulary: vocab) #f))
+
+(define-argument-list zodiac:expand/nal
+  (kwd expression: expr)
+  (kwd attributes: attr)
+  (kwd vocabulary: vocab)
+  (opt (kwd parameterization: params) (current-parameterization)))
+
+(define-argument-list zodiac:expand-program/nal
+  (kwd expressions: exprs)
+  (kwd attributes: attr)
+  (kwd vocabulary: vocab)
+  (opt (kwd parameterization: params) (current-parameterization)))
+
 (define-signature zodiac:misc^
   (pretty-print debug-level symbol-append flush-printf print-and-return))
 

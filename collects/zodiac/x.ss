@@ -196,22 +196,10 @@
 
   (define zodiac-user-parameterization (current-parameterization))
 
-  (define-argument-list zodiac:expand/nal
-    (kwd expression: expr)
-    (kwd attributes: attr)
-    (kwd vocabulary: vocab)
-    (opt (kwd parameterization: params) (current-parameterization)))
-
   (define expand
     (lambda/nal zodiac:expand/nal
       (set! zodiac-user-parameterization params)
       (expand-expr expr (make-new-environment) attr vocab)))
-
-  (define-argument-list zodiac:expand-program/nal
-    (kwd expressions: exprs)
-    (kwd attributes: attr)
-    (kwd vocabulary: vocab)
-    (opt (kwd parameterization: params) (current-parameterization)))
 
   (define expand-program
     (lambda/nal zodiac:expand-program/nal

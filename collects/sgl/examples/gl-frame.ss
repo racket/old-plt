@@ -129,10 +129,16 @@
       (glBindTexture GL_TEXTURE_2D (gl-vector-ref *textures* ix))
       (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER min-filter)
       (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER mag-filter)
-      (if (or (= min-filter GL_LINEAR_MIPMAP_NEAREST)
-              (= mag-filter GL_LINEAR_MIPMAP_NEAREST))
-          (gluBuild2DMipmaps GL_TEXTURE_2D 3 width height GL_RGB GL_UNSIGNED_BYTE image-vector)
-          (glTexImage2D GL_TEXTURE_2D 0 3 width height 0 GL_RGB GL_UNSIGNED_BYTE image-vector)))
+      (let* ((new-width 128)
+             (new-height 128)
+             (new-img-vec (make-gl-ubyte-vector (* new-width new-height 3))))
+        (gluScaleImage GL_RGB
+                       width height GL_UNSIGNED_BYTE image-vector
+                       new-width new-height GL_UNSIGNED_BYTE new-img-vec)
+        (if (or (= min-filter GL_LINEAR_MIPMAP_NEAREST)
+                (= mag-filter GL_LINEAR_MIPMAP_NEAREST))
+            (gluBuild2DMipmaps GL_TEXTURE_2D 3 new-width new-height GL_RGB GL_UNSIGNED_BYTE new-img-vec)
+            (glTexImage2D GL_TEXTURE_2D 0 3 new-width new-height 0 GL_RGB GL_UNSIGNED_BYTE new-img-vec))))
     )
   
   (define get-texture

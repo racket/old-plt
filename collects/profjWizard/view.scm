@@ -13,18 +13,8 @@
      
      (provide/contract
       [get-class-info (-> (union false? (list/p Class boolean? boolean?)))]
-      ; [get-union-info (-> (union false? (list/p Union boolean? boolean?)))]
-      )
-     
-     #|
-     present a dialog to create a single class; 
-     if programmer aborts, return #f
-     otherwise, produce a class and two booleans, requesting toString and draft 
-     templates, respectively
-
-     ; (() (string? Class) . opt-> . (union false? (list/p Class boolean? boolean?)))
-     |#
-     
+      [get-union-info (-> (union false? (list/p Union boolean? boolean?)))])
+          
      (define CLASS-WIZARD "The Class Wizard")
      (define UNION-WIZARD "The Union Wizard")
      (define INSERT-CLASS "Insert Class")
@@ -46,6 +36,13 @@
      (define ABORT "Abort")
      (define ERROR: "Error: ")
      (define DELETE "Delete")
+     
+     #|
+     present a dialog to create a single class; 
+     if programmer aborts, return #f
+     otherwise, produce a class and two booleans, requesting toString and draft 
+     templates, respectively
+     |#
      
      (define (get-class-info)
        (let ([ci (new class-info% (title CLASS-WIZARD)
@@ -125,6 +122,7 @@
      
      ;; ------------------------------------------------------------------------
      ;; String String String [String] [String] -> ClassUnionWizard
+     ;; get information about a class (fields, purpose statement, ...)
      (define class-info%
        (class class-union-wizard%
          (init-field (a-super null) (a-v-class null))
@@ -238,11 +236,11 @@
                (add))
              (send window on-traverse-char (new key-event% (key-code #\tab)))))
          
-         ;; Fields-Assoc (list String String) *-> Void
+         ;; (list String String) *-> Void
          ;; add a field panel so that a new field for the class can be specified
          ;; if rest arguments, it consists of two strings: 
          ;; one for the type, one for name
-         
+         (define/public (add . a-field)
            (let* ([fp (add-horizontal-panel this)]
                   ; [modi (make-modifier-menu fp)]
                   [type (make-text-field fp TYPE)]
@@ -264,7 +262,7 @@
          
          ;; --------------------------------------------------------------------
          ;; managing the fields of the class 
-       
+         
          (define fields (new assoc%))
          
          (define/public (produce)
@@ -285,13 +283,15 @@
      
      
      ;; ------------------------------------------------------------------------
+     ;; -> UnionInfo
+     ;; get information about a datatype union 
      (define union-info%
        (class class-union-wizard%
          (super-new)
          (inherit-field tostring? template? info-pane)
          (inherit error-message an-error?)
          
-         ;; -------------------------------------------------------------------------
+         ;; --------------------------------------------------------------------
          ;; filling in the info-pane 
          
          (define type-pane 
@@ -325,15 +325,19 @@
               (send tostring? get-value)
               (send template? get-value))))
          
-         (define/override (make-class-cb x e) (when (produce) (send this show #f)))
+         (define/override (make-class-cb x e)
+           (when (produce) (send this show #f)))
          
-         (define/override (add-field-cb x e) (send vart-panel add))
+         (define/override (add-field-cb x e)
+           (send vart-panel add))
          
          ;; make two variants to boot
          ;; allow people to add and delete a variant 
          (send vart-panel add)
          (send vart-panel add)))
      
+     ;; (-> String) (String -> Void) (Any -> Boolean) -> VariantPanel
+     ;; manage the variant panels and their content for union
      (define variant-panel%
        (class horizontal-panel% 
          (super-new (alignment '(center center)) (style '(border))
@@ -409,15 +413,15 @@
                                 (filter (lambda (c) (not (eq? vp c))) cs)))))))
      
      ;; ------------------------------------------------------------------------
-     #| Run, program, run: |#
+     #| Run, program, run:
      
      (require (file "class.scm"))
-     
+
      ; (define x (get-class-info))
      ; (if x (printf "~a~n" (apply make-class x)))
      
      (define y (get-union-info))
      (if y (printf "~a~n" (apply make-union y)))
-     #|
+     
      |#
      )

@@ -7,7 +7,7 @@
            (lib "class.ss")
 	   (lib "string-constant.ss" "string-constants")
            (file "class.scm")
-           (file "wizard.ss")
+           (file "view.scm")
            )
 
   (provide tool@)

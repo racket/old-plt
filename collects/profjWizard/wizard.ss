@@ -15,7 +15,7 @@
       [get-class-info
        (() (string? Class) . opt-> . (union false? (list/p Class boolean? boolean?)))]
       [get-union-info
-       (-> (union false? (list/p Union boolean? boolean?)))]
+       (-> (union false? (list/p Union boolean? boolean?)))] 
       )
      
      ;; (define/abstract <identifier>) :: <definition> 

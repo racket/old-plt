@@ -679,10 +679,10 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
     if (ixsrc + width > source->GetWidth())
       width = source->GetWidth() - ixsrc;
 
-    h = YLOG2DEVREL(height);
-    w = XLOG2DEVREL(width);
     x = XLOG2DEV(xdest);
     y = YLOG2DEV(ydest);
+    h = YLOG2DEV(height + xdest) - x;
+    w = XLOG2DEV(width + ydest) - y;
     
     {
       Rect srcr = {iysrc, ixsrc, iysrc + (int)height, ixsrc + (int)width};

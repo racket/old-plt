@@ -91,7 +91,8 @@ wxMenu::~wxMenu(void)
 	  children->DeleteObject(mnu);
 #endif
 	  DELETE_OBJ mnu;
-	  FREE_TOP_POINTER(temp->user_data);
+	  if (temp->user_data)
+	    FREE_TOP_POINTER(temp->user_data);
 	}
 	FREE_MENU_ITEM(temp);
     }
@@ -256,7 +257,8 @@ void wxMenu::Append(long id, char *label, char *help, Bool checkable)
 	item = (menu_item*)topdummy;
 	FREE_MENU_STRING(item->label);
 	FREE_MENU_STRING(item->key_binding);
-	FREE_TOP_POINTER(item->user_data);
+	if (item->user_data)
+	  FREE_TOP_POINTER(item->user_data);
 	topdummy = 0;
     } else {
       item = MALLOC_MENU_ITEM();
@@ -385,7 +387,8 @@ Bool wxMenu::DeleteItem(long id, int pos)
       wxMenu *mnu;
       mnu = EXTRACT_TOP_MENU(found);
       mnu->owner = NULL;
-      FREE_TOP_POINTER(found->user_data);
+      if (found->user_data)
+	FREE_TOP_POINTER(found->user_data);
 #ifdef MZ_PRECISE_GC
       children->DeleteObject(mnu);
 #endif

@@ -180,15 +180,16 @@ wxGL *wxWindowDC::GetGL()
 //-----------------------------------------------------------------------------
 
 static wxBitmap *ScaleBitmap(wxBitmap *src, 
-			     float scale_x, float scale_y,
+			     int tw, int th,
 			     float xsrc, float ysrc, float w, float h, 
 			     Display *dpy, 
 			     wxBitmap **_tmp, int *retval,
 			     int forceMono, unsigned long whiteVal)
 {
-  int sw, sh, tw, th, i, j, ti, tj, xs, ys, mono;
+  int sw, sh, i, j, ti, tj, xs, ys, mono;
   unsigned long pixel;
   wxBitmap *tmp;
+  float scale_x, scale_y;
 
   *retval = TRUE;
 
@@ -210,8 +211,9 @@ static wxBitmap *ScaleBitmap(wxBitmap *src,
   sw -= xs;
   sh -= ys;
 
-  tw = (int)(sw * scale_x);
-  th = (int)(sh * scale_y);
+  scale_x = (float)tw / sw;
+  scale_y = (float)th / sh;
+
   mono = (src->GetDepth() == 1);
   if (forceMono && !mono)
     mono = 1;
@@ -234,67 +236,18 @@ static wxBitmap *ScaleBitmap(wxBitmap *src,
     tpm = GETPIXMAP(tmp);
     timg = XGetImage(dpy, tpm, 0, 0, tw, th, AllPlanes, ZPixmap);
 
-    if (tw > sw) {
-      for (ti = 0; ti < tw; ti++) {
+    for (ti = 0; ti < tw; ti++) {
+      for (tj = 0; tj < th; tj++) {
 	i = (int)(ti / scale_x);
-	if (i < sw) {
-	  if (th > h) {
-	    for (tj = 0; tj < th; tj++) {
-	      j = (int)(tj / scale_y);
-	      pixel = XGetPixel(simg, i + xs, j + ys);
-	      if (forceMono) {
-		if (pixel == whiteVal)
-		  pixel = 0;
-		else
-		  pixel = 1;
-	      }
-	      XPutPixel(timg, ti, tj, pixel);
-	    }
-	  } else {
-	    for (j = 0; j < sh; j++) {
-	      tj = (int)(j * scale_y);
-	      pixel = XGetPixel(simg, i + xs, j + ys);
-	      if (forceMono) {
-		if (pixel == whiteVal)
-		  pixel = 0;
-		else
-		  pixel = 1;
-	      }
-	      if (tj < th)
-		XPutPixel(timg, ti, tj, pixel);
-	    }
-	  }
+	j = (int)(tj / scale_y);
+	pixel = XGetPixel(simg, i + xs, j + ys);
+	if (forceMono) {
+	  if (pixel == whiteVal)
+	    pixel = 0;
+	  else
+	    pixel = 1;
 	}
-      }
-    } else {
-      for (i = 0; i < sw; i++) {
-	ti = (int)(i * scale_x);
-	if (th > h) {
-	  for (tj = 0; tj < th; tj++) {
-	    j = (int)(tj / scale_y);
-	    pixel = XGetPixel(simg, i + xs, j + ys);
-	    if (forceMono) {
-	      if (pixel == whiteVal)
-		pixel = 0;
-	      else
-		pixel = 1;
-	    }
-	    XPutPixel(timg, ti, tj, pixel);
-	  }
-	} else {
-	  for (j = 0; j < sh; j++) {
-	    tj = (int)(j * scale_y);
-	    pixel = XGetPixel(simg, i + xs, j + ys);
-	    if (forceMono) {
-	      if (pixel == whiteVal)
-		pixel = 0;
-	      else
-		pixel = 1;
-	    }
-	    if (tj < th)
-	      XPutPixel(timg, ti, tj, pixel);
-	  }
-	}
+	XPutPixel(timg, ti, tj, pixel);
       }
     }
 
@@ -445,7 +398,8 @@ static wxBitmap *IntersectBitmapRegion(GC agc, Region user_reg, Region expose_re
       int ok;
       wxBitmap *tmp;
       monoized = 1;
-      bmask = ScaleBitmap(bmask, 1, 1, 0, 0, 
+      bmask = ScaleBitmap(bmask, bmask->GetWidth(), bmask->GetHeight(), 
+			  0, 0, 
 			  bmask->GetWidth(), bmask->GetHeight(),
 			  dpy, &tmp, &ok,
 			  1, whiteVal);
@@ -624,14 +578,27 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 			     && (!dcolor || (!dcolor->Red() && !dcolor->Green() && !dcolor->Blue())))));
 #endif
 
+    tx = (int)XLOG2DEV(xdest);
+    ty = (int)YLOG2DEV(ydest);
+
+    {
+      float ww, hh;
+
+      ww = src->GetWidth()  < w ? src->GetWidth() : w;
+      hh = src->GetHeight() < h ? src->GetHeight() : h;
+
+      scaled_width = (int)XLOG2DEV(xdest + w) - tx;
+      scaled_height = (int)YLOG2DEV(ydest + h) - ty;
+    }
+
     /* Handle scaling by creating a new, temporary bitmap: */
-    if ((scale_x != 1) || (scale_y != 1)) {
+    if ((scaled_width != w) || (scaled_height != h)) {
       int retval;
-      src = ScaleBitmap(src, scale_x, scale_y, xsrc, ysrc, w, h, DPY, &tmp, &retval, 0, 0);
+      src = ScaleBitmap(src, scaled_width, scaled_height, xsrc, ysrc, w, h, DPY, &tmp, &retval, 0, 0);
       if (!src)
 	return retval;
       if (mask) {
-	mask = ScaleBitmap(mask, scale_x, scale_y, xsrc, ysrc, w, h, DPY, &tmp_mask, &retval, 
+	mask = ScaleBitmap(mask, scaled_width, scaled_height, xsrc, ysrc, w, h, DPY, &tmp_mask, &retval, 
 			   !should_xrender, wx_white_pixel);
 	if (!mask) {
 	  DELETE_OBJ tmp;
@@ -643,12 +610,6 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     xsrc = floor(xsrc);
     ysrc = floor(ysrc);
     
-    scaled_width = src->GetWidth()  < XLOG2DEVREL(w) ? src->GetWidth()  : XLOG2DEVREL(w);
-    scaled_height = src->GetHeight() < YLOG2DEVREL(h) ? src->GetHeight() : YLOG2DEVREL(h);
-
-    tx = (int)XLOG2DEV(xdest);
-    ty = (int)YLOG2DEV(ydest);
-
 #ifdef WX_USE_XRENDER
     if (should_xrender) {
       /* Using Xrender... */

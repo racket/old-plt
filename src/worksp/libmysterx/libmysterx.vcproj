@@ -19,41 +19,44 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				InlineFunctionExpansion="0"
-				OmitFramePointers="FALSE"
 				AdditionalIncludeDirectories="..\..\..\include;..\..\mysterx\mysc;..\..\mysterx\myspage;..\..\mysterx\myssink"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL"
 				StringPooling="FALSE"
-				MinimalRebuild="FALSE"
+				MinimalRebuild="TRUE"
 				ExceptionHandling="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
-				BufferSecurityCheck="FALSE"
+				BufferSecurityCheck="TRUE"
 				EnableFunctionLevelLinking="FALSE"
 				UsePrecompiledHeader="2"
+				BrowseInformation="1"
 				WarningLevel="3"
-				SuppressStartupBanner="FALSE"
-				Detect64BitPortabilityProblems="FALSE"
-				DebugInformationFormat="0"/>
+				SuppressStartupBanner="TRUE"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
 			<Tool
 				Name="VCCustomBuildTool"
-                                Description="Copy $(InputName).dll to collects"
-				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386"
-				Outputs="..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
+				Description="Copy mxmain.dll to collects"
+				CommandLine="copy /y $(OutDir)\mxmain.dll ..\..\..\collects\mysterx\private\compiled\native\win32\i386
+"
+				Outputs="..\..\..\collects\mysterx\private\compiled\native\win32\i386\mxmain.dll"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\..\lib\msvc\libmzgcxxxxxxx.lib ..\..\..\lib\msvc\libmzschxxxxxxx.lib htmlhelp.lib"
+				AdditionalDependencies="..\..\..\lib\msvc\mzdyn.exp ..\..\..\lib\msvc\mzdyn.obj ..\..\..\lib\msvc\libmzgcxxxxxxx.lib ..\..\..\lib\msvc\libmzschxxxxxxx.lib htmlhelp.lib"
 				OutputFile="$(OutDir)\mxmain.dll"
 				LinkIncremental="2"
 				IgnoreDefaultLibraryNames="LIBCD.lib;LIBCMT.lib"
-				ModuleDefinitionFile="..\..\mysterx\mxmain.def"
+				ModuleDefinitionFile=""
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)\$(InputName).pdb"
 				SubSystem="2"
 				ImportLibrary="$(OutDir)\$(InputName).lib"
 				TargetMachine="1"/>
 			<Tool
-				Name="VCMIDLTool"/>
+				Name="VCMIDLTool"
+				WarningLevel="3"
+				GenerateStublessProxies="TRUE"
+				EnableErrorChecks="2"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -96,13 +99,14 @@
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"
-                                Description="Copy $(InputName).dll to collects"
-				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386"
-				Outputs="..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
+				Description="Copy mxmain.dll to collects"
+				CommandLine="copy /y $(OutDir)\mxmain.dll ..\..\..\collects\mysterx\private\compiled\native\win32\i386
+"
+				Outputs="..\..\..\collects\mysterx\private\compiled\native\win32\i386\mxmain.dll"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\..\lib\msvc\libmzgcxxxxxxx.lib ..\..\..\lib\msvc\libmzschxxxxxxx.lib htmlhelp.lib"
-				OutputFile="$(OutDir)\$(InputName).dll"
+				AdditionalDependencies="..\..\..\lib\msvc\mzdyn.exp ..\..\..\lib\msvc\mzdyn.obj ..\..\..\lib\msvc\libmzgcxxxxxxx.lib ..\..\..\lib\msvc\libmzschxxxxxxx.lib htmlhelp.lib"
+				OutputFile="$(OutDir)\mxmain.dll"
 				LinkIncremental="1"
 				GenerateDebugInformation="FALSE"
 				SubSystem="2"

@@ -260,10 +260,10 @@
 			      (make-an-item 'file-menu:open-url "Open a Uniform Resource Locater"
 					    '(lambda () (mred:handler:open-url) #t)
 					    #f "Open &URL" "...")
-			      (make-between 'file-menu 'between-open-and-save #f)
 			      (make-an-item 'file-menu:revert 
 					    "Revert this file to the copy on disk"
 					    #f #f "&Revert" "")
+			      (make-between 'file-menu 'between-open-and-save #f)
 			      (make-an-item 'file-menu:save "" #f "s" "&Save" "")
 			      (make-an-item 'file-menu:save-as "" #f #f "Save" " &As...")
 			      (make-between 'file-menu 'between-save-and-print #t)

@@ -18,11 +18,16 @@ typedef unsigned long DWORD;
 /* dummy typedefs -- only used in trace API, not ODBC as such */
 typedef void VOID; 
 typedef int GUID; 
-// uncomment these if needed 
-// typedef int CHAR; 
-// typedef void *LPWSTR; 
-// typedef int WCHAR; 
+#ifndef HAVE_CHAR
+typedef int CHAR; 
 #endif
+#ifndef HAVE_WCHAR
+typedef int WCHAR; 
+#endif
+#ifndef HAVE_LPWSTR
+typedef void *LPWSTR; 
+#endif
+#endif /* end not WIN32 */
 
 #include <sql.h>
 #include <sqlext.h>

@@ -66,9 +66,12 @@ instance, you'd have
 
 	ODBCVER=0x0200
 
-in the Makefile.  In CPP_FLAGS, you may need to add the location of
-the directory containing the driver manager's include files. Finally, 
-you may want to change the of the SrPersist dynamic library.  The 
+in the Makefile.  The variable INCDIR should specify the directory 
+containing the driver manager's include files.  You should remove 
+the definitions for HAVE_CHAR, HAVE_LPWSTR, and HAVE_WCHAR if your 
+driver manager include files do not have type definitions for 
+CHAR, WCHAR, and LPWSTR.  Finally, you may want to change the 
+installation location for the SrPersist dynamic library.  The 
 variable LIBDIR indicates that location.
 
 Once you've made these changes, you can compile everything by

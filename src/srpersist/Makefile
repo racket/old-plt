@@ -9,14 +9,19 @@ DRIVER_MGR_LIB=odbc
 # installation directory
 LIBDIR=/usr/site/unixODBC/lib
 
+# driver manager include directory
+INCDIR=/usr/local/include
+
 MZC=../../bin/mzc 
 
 CPP=gcc 
-CPP_FLAGS=-DODBCVER=$(ODBCVER) -I. -I../../include -c 
+CPP_FLAGS=-g -DODBCVER=$(ODBCVER) \
+	-DHAVE_CHAR -DHAVE_LPWSTR -DHAVE_WCHAR \
+	-I. -I../../include -I$(INCDIR) -c
 
 OBJS=srpersist.o srpbuffer.o srptypes.o
 
-ARCH=`archsys`
+ARCH=`mzscheme -vm -e '(display (system-library-subpath))'`
  
 NATIVE_DIR=../../collects/srpersist/private/compiled/native/$(ARCH)
 

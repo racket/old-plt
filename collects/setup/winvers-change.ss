@@ -14,7 +14,8 @@
   (define binary-extensions '(exe dll lib obj o so def))
   (define xxxs "xxxxxxx")
   (define xxxs-re
-    (format "(?:lib(?:mzsch|mzgc|mred)(?:|3m)|(?:lib|ssl)eay32)(~a)" xxxs))
+    (string-append "(?:lib(?:mzsch|mzgc|mred)(?:|3m)|"
+                   "(?:[Ll][Ii][Bb]|[Ss][Ss][Ll])[Ee][Aa][Yy]32)("xxxs")"))
   (define renaming
     (regexp (format "^~a[.](?:dll|lib)$" xxxs-re)))
   (define substitutions

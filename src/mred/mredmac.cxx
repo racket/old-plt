@@ -107,12 +107,17 @@ static int QueueTransferredEvent(EventRecord *e)
     for (q = first; q; q = q->next) {
       if ((q->event.what == updateEvt)
 	  && (w == ((WindowPtr)q->event.message))) {
+#ifdef OS_X	  
+  		// global->local coordinate problems here
         RgnHandle updateRegionHandle = NewRgn();
-        GetWindowRegion(w,kWindowUpdateRgn,updateRegionHandle);
-	UnionRgn(updateRegionHandle, q->rgn, q->rgn);
-	BeginUpdate(w);
-	EndUpdate(w);
-	done = 1;
+        GetWindowRegion(w,kWindowUpdateRgn,updateRegionHandle);	
+		UnionRgn(updateRegionHandle, q->rgn, q->rgn);
+#else		
+		UnionRgn(((WindowRecord *)w)->updateRgn, q->rgn, q->rgn);
+#endif		
+		BeginUpdate(w);
+		EndUpdate(w);
+		done = 1;
       }
     }
   }
@@ -137,12 +142,17 @@ static int QueueTransferredEvent(EventRecord *e)
     q->rgn = NULL;
       
     if (e->what == updateEvt) {
-      RgnHandle updateRegion = NewRgn();
-
       WindowPtr w = (WindowPtr)e->message;
       q->rgn = NewRgn();
+      
+#ifdef OS_X
+	  // local to global coordinate problems here.
+      RgnHandle updateRegion = NewRgn();
       GetWindowRegion(w,kWindowUpdateRgn,updateRegion);
       CopyRgn(updateRegion,q->rgn);
+#else      
+      CopyRgn(((WindowRecord *)w)->updateRgn, q->rgn);
+#endif      
       BeginUpdate(w);
       EndUpdate(w);
     } else if ((e->what == osEvt)
@@ -711,7 +721,8 @@ void MrEdDispatchEvent(EventRecord *e)
     RgnHandle rgn;
     MrQueueElem *q;
     WindowPtr w;
-    GrafPtr p;    
+    GrafPtr p; 
+    RgnHandle test;
 
     w = (WindowPtr)e->message;
 
@@ -723,8 +734,18 @@ void MrEdDispatchEvent(EventRecord *e)
 	break;
       }
     }
-    
-    InvalWindowRgn(w,rgn);
+
+#ifdef OS_X
+    err = InvalWindowRgn(w,rgn);  // global->local coordinate problems!
+#else
+ 	if (!((WindowRecord *)w)->updateRgn)
+ 	  ((WindowRecord *)w)->updateRgn = rgn;
+ 	else {
+       RgnHandle update = ((WindowRecord *)w)->updateRgn;
+ 	   UnionRgn(update, rgn, update);
+       DisposeRgn(rgn);
+    }
+#endif
   }
     
   wxTheApp->doMacPreEvent();

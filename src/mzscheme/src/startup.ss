@@ -121,6 +121,22 @@
 			      flat-end))))
 		e)))))
 
+  ;; a syntax vector?
+  (define-values (stx-vector?)
+    (lambda (p len)
+      (if (syntax? p) 
+	  (if (vector? (syntax-e p))
+	      (if len
+		  (= len (vector-length (syntax-e p)))
+		  #t)
+	      #f)
+	  #f)))
+
+  ;; syntax vector reference
+  (define-values (stx-vector-ref)
+    (lambda (p pos)
+      (vector-ref (syntax-e p) pos)))
+
   ;; used in pattern-matching with an escape proc
   (define-values (stx-check/esc)
     (lambda (v esc)
@@ -161,6 +177,7 @@
 
   (provide identifier? stx-null? stx-null/#f stx-pair? stx-list?
 	   stx-car stx-cdr stx->list
+	   stx-vector? stx-vector-ref
 	   stx-check/esc cons/#f append/#f
 	   stx-rotate stx-rotate*))
 
@@ -1024,6 +1041,44 @@
 			   (wrap '(datum->syntax-object #f e))
 			   (wrap 'e)))
 		     #t))))]
+       [(stx-vector? p #f)
+	(let ([l (vector->list (syntax-e p))])
+	  ;; If no top-level ellipses, match one by one:
+	  (if (and (not just-vars?)
+		   (or (not use-ellipses?)
+		       (andmap (lambda (x) (not (eq? '... (syntax-e x)))) l)))
+	      ;; Match one-by-one:
+	      ;; Do tail first to find out if it has variables.
+	      (let ([len (vector-length (syntax-e p))])
+		(let loop ([pos len][did-var? (not last?)][body null])
+		  (if (zero? pos)
+		      (values 
+		       `(lambda (e)
+			  (if (stx-vector? e ,len)
+			      ,body
+			      #f))
+		       did-var?)
+		      (let-values ([(match-elem elem-did-var?) 
+				    (let ([e (vector-ref (syntax-e p) (sub1 pos))])
+				      (m&e e e use-ellipses? (not did-var?) #f))])
+			(loop (sub1 pos)
+			      (or did-var? elem-did-var?)
+			      (let ([app-elem (app match-elem `(stx-vector-ref e ,(sub1 pos)))])
+				(if (null? body)
+				    app-elem
+				    (if elem-did-var?
+					(app-append app-elem body)
+					`(if ,app-elem ,body #f)))))))))
+	      ;; Match as a list:
+	      (let-values ([(match-content did-var?) (m&e l p use-ellipses? last? #f)])
+		(if just-vars?
+		    (values match-content #f)
+		    (values
+		     `(lambda (e)
+			(if (stx-vector? e #f)
+			    ,(app match-content '(vector->list (syntax-e e)))
+			    #f))
+		     did-var?)))))]
        [else
 	(if just-vars?
 	    (values null #f)
@@ -1218,6 +1273,13 @@
 		       ,(apply-cons (apply-to-r ehd) (apply-to-r etl) p))
 		    ;; variables were hashed
 		    (void)))))]
+       [(stx-vector? p #f)
+	(let ([e (expander (vector->list (syntax-e p)) proto-r p use-ellipses? use-tail-pos hash!)])
+	  (if proto-r
+	      `(lambda (r)
+		 (list->vector ,(apply-to-r e)))
+	      ;; variables were hashed
+	      (void)))]
        [(identifier? p)
 	(if (stx-memq p k) 
 	    (if proto-r 
@@ -1835,11 +1897,11 @@
 				x))
 			   (syntax->list (syntax (in ...)))) ()
 	   [(here ...)
-	    (syntax/loc x (syntax-case (list (datum->syntax-object 
-					      (quote-syntax here) 
-					      in) 
-					     ...) ()
-			    ((out ...) (begin e1 e2 ...))))])))))
+	    (syntax/loc x (syntax-case (vector (datum->syntax-object 
+						(quote-syntax here) 
+						in) 
+					       ...) ()
+			    (#(out ...) (begin e1 e2 ...))))])))))
 
   (define (generate-temporaries sl)
     (unless (stx-list? sl)

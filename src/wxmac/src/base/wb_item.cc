@@ -206,11 +206,6 @@ wxbItem::~wxbItem (void)
   }
 }
 
-void wxbItem::SetClientSize (int width, int height)
-{
-  SetSize (-1, -1, width, height);
-}
-
 int wxbItem::GetLabelPosition (void)
 {
   return labelPosition;

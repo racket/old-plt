@@ -498,7 +498,7 @@
 	     [desc (cadr e)]
 	     [x (caddr e)])
 	 (setup-fprintf port
-			" Error during ~a for ~a (~a)"
+			"Error during ~a for ~a (~a)"
 			desc (cc-name cc) (cc-path cc))
 	 (if (exn? x)
 	     (setup-fprintf port "  ~a" (exn-message x))

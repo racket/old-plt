@@ -11,6 +11,7 @@
 	       (require-library "sig.ss" "userspce"))]
 	   [(compile-omit-files) (list "sig.ss" "errors.ss" "params.ss" "ricedefs.ss"
 				       "launcher-bootstrap.ss"
+				       "advancedr.ss"
 				       "launcher-bootstrap-mred.ss"
 				       "launcher-bootstrap-mzscheme.ss")]
 	   [(compile-elaboration-zos) (list "sig.ss")]

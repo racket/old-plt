@@ -2,7 +2,8 @@
   (require (lib "class.ss")
            (lib "mred.ss" "mred")
            (lib "framework.ss" "framework")
-           "token-tree.ss")
+           "token-tree.ss"
+           "paren-tree.ss")
   
   (provide tokenized-text-mixin tokenized-interactions-text-mixin)
   
@@ -34,6 +35,10 @@
       
       (define stopped? #t)
       
+      ;; ---------------------- Parnethesis matching --------------------------
+      
+      (define parens (new paren-tree% (matches '(|(| |)|))))
+      
       ;; ---------------------- Interactions state ----------------------------
       ;; The positions to start and end the coloring at.
       (field (start-pos 0) (end-pos 'end))
@@ -60,6 +65,7 @@
         (set! invalid-tokens #f)
         (set! invalid-tokens-start +inf.0)
         (set! up-to-date? #t)
+        (set! parens (new paren-tree% (matches '(|(| |)|))))
         (set! current-pos start-pos)
         (set! colors null)
         (modify))
@@ -109,6 +115,7 @@
                                  #f))
                               colors)))
               (set! tokens (insert-after! tokens (make-node len data 0 #f #f)))
+              (send parens add-token data (- current-pos start-pos len) len)
               (cond
                 ((and invalid-tokens (= invalid-tokens-start current-pos))
                  (set! tokens (insert-after! tokens (search-min! invalid-tokens null)))
@@ -190,6 +197,7 @@
             ;; Breaks should be disabled from exit of re-tokenize
             ;; lock will be held
             (set! up-to-date? #t)
+            (send parens print)
             (semaphore-post lock)
             (thread-suspend (current-thread))))
         (background-colorer))
@@ -275,8 +283,8 @@
           (inherit reset-tokens get-prompt-position)
           
           (define/override (do-eval start end)
-            (set-end-pos! end)
-            (super-do-eval start end))
+            (super-do-eval start end)
+            (set-end-pos! this end))
           
           (define/override (insert-prompt)
             (super-insert-prompt)
@@ -287,13 +295,13 @@
           (define/override (initialize-console)
             (super-initialize-console)
             (set-start-pos! this 0)
-            (set-end-pos! this 0)
+            (set-end-pos! this 'end)
             (reset-tokens))
           
           (define/override (reset-console)
             (super-reset-console)
             (set-start-pos! this 0)
-            (set-end-pos! this 0)
+            (set-end-pos! this 'end)
             (reset-tokens))
           (super-instantiate ())))))
   )

@@ -1,6 +1,6 @@
 (module token-tree mzscheme
   
-  (provide search! search-min! search-max! insert-after! split invalidate-before! invalidate-after!
+  (provide search! search-min! search-max! insert-after! split insert-next! insert-prev!
            to-list
            (struct node (token-length token-data left-subtree-length left right)))
   
@@ -71,6 +71,14 @@
                    (node-right n)))
         (else (values 0 0 #f #f)))))
 
+  (define (insert-before! node new-node)
+    (let ((n (search-min! node null)))
+      (cond
+        (n
+         (set-node-left! n new-node)
+         (search-min! n null))
+        (else new-node))))
+  
   (define (insert-after! node new-node)
     (let ((n (search-max! node null)))
       (cond
@@ -79,7 +87,15 @@
          (search-max! n null))
         (else new-node))))
   
-
+  (define (insert-prev! node new-node)
+    (set-node-left! node (insert-after! (node-left node) new-node))
+    (set-node-left-subtree-length! node (+ (node-token-length new-node) 
+                                           (node-left-subtree-length node))))
+  
+  (define (insert-next! node new-node)
+    (set-node-right! node (insert-before! (node-right node) new-node)))
+  
+  
   (define (update-subtree-length-left-rotate! self parent)
     (set-node-left-subtree-length! parent 
                                    (- (node-left-subtree-length parent)

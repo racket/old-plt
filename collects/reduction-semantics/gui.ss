@@ -16,6 +16,8 @@
            gui/multiple
            gui/pred
 	   reduction-steps-cutoff initial-font-size initial-char-width)
+
+  (preferences:set-default 'plt-reducer:show-bottom #t boolean?)
   
   ;; after (about) this many steps, stop automatic, initial reductions
   (define reduction-steps-cutoff (make-parameter 20))
@@ -53,26 +55,41 @@
                   (label "Reduction Graph")
                   (graph-pb graph-pb)
                   (width 600)
-                  (height 400)))
+                  (height 400)
+                  (toggle-panel-callback
+                   (lambda ()
+                     (send remove-my-contents-panel
+                           change-children
+                           (lambda (l)
+                             (preferences:set 'plt-reducer:show-bottom (null? l))
+                             (if (null? l)
+                                 (list bottom-panel)
+                                 null)))))))
       (define ec (make-object editor-canvas% (send f get-area-container) graph-pb))
+      (define remove-my-contents-panel (new vertical-panel%
+                                            (parent (send f get-area-container))
+                                            (stretchable-height #f)))
+      (define bottom-panel (new vertical-panel%
+                                (parent remove-my-contents-panel)
+                                (stretchable-height #f)))
       (define font-size (instantiate slider% ()
                           (label "Font Size")
                           (min-value 1)
                           (init-value (initial-font-size))
                           (max-value 127)
-                          (parent (send f get-area-container))
+                          (parent bottom-panel)
                           (callback (lambda (slider evt) (set-font-size (send slider get-value))))))
-      (define bottom-panel (instantiate horizontal-panel% ()
-                             (parent (send f get-area-container))
+      (define lower-panel (instantiate horizontal-panel% ()
+                             (parent bottom-panel)
                              (stretchable-height #f)))
       (define reduce-button (make-object button% 
                               "Reducing..." 
-                              bottom-panel
+                              lower-panel
                               (lambda (x y)
                                 (reduce-button-callback))))
       (define status-message (instantiate message% ()
                                (label "")
-                               (parent bottom-panel)
+                               (parent lower-panel)
                                (stretchable-width #t)))
       
       (define snip-cache (make-hash-table 'equal))
@@ -227,6 +244,12 @@
           (send graph-pb get-snip-location snip br #f #t)
           (unbox br)))
              
+      (send remove-my-contents-panel
+            change-children
+            (lambda (l)
+              (if (preferences:get 'plt-reducer:show-bottom)
+                  (list bottom-panel)
+                  null)))
       (insert-into init-rightmost-x 0 graph-pb frontier)
       (set-font-size (initial-font-size))
       (reduce-button-callback)
@@ -234,7 +257,7 @@
   
   (define red-sem-frame%
     (class (frame:standard-menus-mixin (frame:basic-mixin frame%))
-      (init-field graph-pb)
+      (init-field graph-pb toggle-panel-callback)
       (define/override (file-menu:create-save?) #f)
       (define/override (file-menu:between-save-as-and-print file-menu)
         (make-object menu-item% "Export as Encapsulted PostScript..."
@@ -242,7 +265,11 @@
           (lambda (item evt) (send graph-pb print #t #f 'postscript this #f)))
         (make-object menu-item% "Export as PostScript..."
           file-menu
-          (lambda (item evt) (send graph-pb print #t #f 'postscript this))))
+          (lambda (item evt) (send graph-pb print #t #f 'postscript this)))
+        (make-object menu-item% 
+          "Toggle bottom stuff"
+          file-menu
+          (lambda (item evt) (toggle-panel-callback))))
       (super-instantiate ())))
   
   (define (resizing-pasteboard-mixin pb%)

@@ -247,8 +247,8 @@
   ;MethodName => special-name
   ;           |  id
   
-  ;(make-class-alloc ?? src name (list Expression))
-  (p-define-struct (class-alloc expr) (name args))
+  ;(make-class-alloc ?? src name (list Expression) (U #f method-record))
+  (p-define-struct (class-alloc expr) (name args ctor-record))
   
   ;(make-array-alloc ?? src type-spec (list Expression) int)
   (p-define-struct (array-alloc expr) (name size dim))

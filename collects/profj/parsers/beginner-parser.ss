@@ -15,7 +15,7 @@
   (define parsers
     (parser
      (start CompilationUnit BeginnerInteractions)
-     ;;(debug "parser.output")
+;;     (debug "parser.output")
      (tokens java-vals Keywords Separators EmptyLiterals Operators)
      (error (lambda (tok-ok name val start-pos end-pos)
               (raise-read-error (format "Parse error near <~a:~a>" name val)
@@ -265,9 +265,9 @@
       
       (ClassInstanceCreationExpression
        [(new ClassOrInterfaceType O_PAREN ArgumentList C_PAREN)
-	(make-class-alloc #f (build-src 5) $2 (reverse $4))]
+	(make-class-alloc #f (build-src 5) $2 (reverse $4) #f)]
        [(new ClassOrInterfaceType O_PAREN C_PAREN) 
-	(make-class-alloc #f (build-src 4) $2 null)])
+	(make-class-alloc #f (build-src 4) $2 null #f)])
       
       (ArgumentList
        [(Expression) (list $1)]
@@ -375,7 +375,7 @@
       
       (LeftHandSide
        [(Name) (name->access $1)]
-       [(this PERIOD IDENTIFIER)
+       [(Primary PERIOD IDENTIFIER)
         (make-access #f (build-src 3)
                      (make-field-access (make-special-name #f (build-src 1) "this")
                                         (make-id $3 (build-src 3 3))

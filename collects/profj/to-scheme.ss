@@ -1220,7 +1220,8 @@
         ((class-alloc? expr) (translate-class-alloc (class-alloc-name expr)
                                                     (map expr-types (class-alloc-args expr))
                                                     (map translate-expression (class-alloc-args expr))
-                                                    (expr-src expr)))
+                                                    (expr-src expr)
+                                                    (class-alloc-ctor-record expr)))
         ((array-alloc? expr)(translate-array-alloc (array-alloc-name expr)
                                                    (map translate-expression (array-alloc-size expr))
                                                    (expr-src expr)))
@@ -1409,28 +1410,26 @@
                                (build-src src))))))
           (else (error 'translate-call (format "Translate call given ~s as method-name" method-name)))))))
   
-  (define overridden?
-    (lambda (name)
-      (hash-table-get (class-override-table) name (lambda () #f))))
+  (define (overridden? name)
+    (hash-table-get (class-override-table) name (lambda () #f)))
   
-  ;translate-class-alloc: java-name (list type) (list syntax) src -> syntax
-  (define translate-class-alloc 
-    (lambda (class-type arg-types args src)
-      (if (name? class-type)
-          (let ((class-string (get-class-string class-type))
-                (class-id (name-id class-type)))
-            (make-syntax #f `(let ((new-o (make-object ,(translate-id class-string
-                                                                               (id-src class-id)))))
-                                        (send new-o ,(translate-id (build-constructor-name 
-                                                                    (if (null? (name-path class-type)) 
-                                                                        class-string 
-                                                                        (id-string (name-id class-type)))
-                                                                    arg-types) 
-                                                                   (id-src class-id)) 
-                                              ,@args)
-                                        new-o) 
-                                  (build-src src)))
-          (error 'translate-class-alloc "does not have gj-name implemented"))))
+  ;translate-class-alloc: java-name (list type) (list syntax) src method-record-> syntax
+  (define (translate-class-alloc class-type arg-types args src ctor-record)
+    (if (name? class-type)
+        (let ((class-string (get-class-string class-type))
+              (class-id (name-id class-type)))
+          (make-syntax #f `(let ((new-o (make-object ,(translate-id class-string
+                                                                    (id-src class-id)))))
+                             (send new-o ,(translate-id (build-constructor-name 
+                                                         (if (null? (name-path class-type)) 
+                                                             class-string 
+                                                             (id-string (name-id class-type)))
+                                                         (method-record-atypes ctor-record))
+                                                        (id-src class-id))
+                                   ,@args)
+                             new-o) 
+                       (build-src src)))
+        (error 'translate-class-alloc "does not have gj-name implemented")))
   
   ;converted
   ;translate-array-alloc: type-spec (list syntax) src -> syntax

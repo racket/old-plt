@@ -978,7 +978,8 @@
                                         static?)))
         ((class-alloc? exp)
          (set-expr-type exp
-                        (check-class-alloc (class-alloc-name exp)
+                        (check-class-alloc exp
+                                           (class-alloc-name exp)
                                            (map check-sub-expr (class-alloc-args exp))
                                            (expr-src exp)
                                            type-recs
@@ -1416,14 +1417,14 @@
     (unless (= (length args) (length atypes))
       (method-arg-error 'number args atypes name exp-type src))
     (for-each (lambda (arg atype)
-                (unless (assignment-conversion arg atype type-recs)
+                (unless (assignment-conversion atype arg type-recs)
                   (method-arg-error 'type (list arg) (cons atype atypes) name exp-type src)))
               args atypes))
   
   ;;Skip package access controls
   ;; 15.9
-  ;;check-class-alloc: name (list type) src type-records (list string) env symbol -> type
-  (define (check-class-alloc name args src type-recs c-class env level)
+  ;;check-class-alloc: expr name (list type) src type-records (list string) env symbol -> type
+  (define (check-class-alloc exp name args src type-recs c-class env level)
     (let* ((type (name->type name (name-src name) level type-recs))
            (class-record (send type-recs get-class-record type))
            (methods (get-method-records (ref-type-class/iface type) class-record)))
@@ -1453,6 +1454,7 @@
           (class-access-error 'pri type src))
         (when (and (memq 'protected mods) (not (is-eq-subclass? this type)))
           (class-access-error 'pro type src))
+        (set-class-alloc-ctor-record! exp const)
         type)))
 
   ;check-ctor-args: (list type) (list type) type src symbol type-records -> void
@@ -1763,7 +1765,7 @@
                               n e (length expecteds) awitht expecteds (length givens) awitht givens))
                      ((type)
                       (format "method ~a from ~a expects ~a ~a, but given a ~a instead of ~a for one argument"
-                              n e awitht (cdr atypes) (car givens) (car atypes))))
+                              n e awitht (map type->ext-name (cdr atypes)) (car givens) (type->ext-name (car atypes)))))
                    n src)))
 
   ;call-access-error: symbol id type src -> void

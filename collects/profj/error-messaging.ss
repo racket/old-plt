@@ -62,7 +62,7 @@
     (cond
       ((eq? t 'super) "the current super class")
       ((not t) "this class")
-      (else (type->ext-name exp))))
+      (else (type->ext-name t))))
   
   ;make-parm-string: (list type) -> string
   (define (make-parm-string parms)

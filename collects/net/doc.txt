@@ -284,6 +284,12 @@ PROCEDURES -----------------------------------------------------------
   Given a key and a set of bindings, extract-binding/single ensures
   that the key has exactly one association, and returns it.
 
+> (output-http-headers) -> void
+
+  Outputs all the http headers needed for a normal html response.
+  Only call this function if you are not using generate-html-output
+  or generate-error-output.
+
 > (generate-html-output html-string list-of-html-strings [color color color color color]) -> void
 
   The first argument is the title.  The second is a list of strings

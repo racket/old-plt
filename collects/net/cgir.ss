@@ -120,6 +120,10 @@
 	     ""
 	     "</body>"
 	     "</html>")))))
+  
+  ;; output-http-headers : -> void
+  (define (output-http-headers)
+    (printf "Content-type: text/html~a~n~a~n" #\return #\return))
    
   ;; read-until-char :
   ;; iport x char -> list (char) x bool

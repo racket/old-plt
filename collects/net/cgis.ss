@@ -11,6 +11,7 @@
     get-bindings
     get-bindings/post
     get-bindings/get
+    output-http-headers
     generate-html-output
     generate-error-output
     bindings-as-html

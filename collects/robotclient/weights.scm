@@ -38,9 +38,10 @@
 (define wall-push-bid (make-parameter 1))
 (define water-push-bid (make-parameter 1))
 (define blank-push-bid (make-parameter 1))
-	
+(define max-bid-const (make-parameter 10))
+(define max-bid (make-parameter 0))
 
-  (define myboard #f)
+
   (define-struct search-player (x y id money capacity packages))
   
 	(define (update-robots robot-list p)
@@ -56,67 +57,70 @@
 
 	
 	(define (calc-weight mtype x y p list-of-pack)
+          (begin
+            (if (= (max-bid) 0)
+                (max-bid (* (max-bid-const) (/ (player-initial-money) (* (board-height) (board-width))))))
 	  (cond
 	   [(eq? mtype 'm)
 	    (let*
-		([spot (get-spot myboard x y)]
+		([spot (get-spot (board) x y)]
 		 [weight (if (= 1 (get-valid spot))
 			     (get-weight spot)
 			     (let ([new-weight
-				    (+ (if (could-player-move? myboard x y p)
-				    (+ (* (wall-danger-value) (wall-danger? myboard x y))
-				       (* (water-danger-value) (water-danger? myboard x y))
-				       (* (blank-danger-value) (blank-danger? myboard x y))
-				       (* (wall-threat-value) (wall-threat? myboard x y))
-				       (* (water-threat-value) (water-threat? myboard x y))
-				       (* (blank-threat-value) (blank-threat? myboard x y))
-				       (* (water-escape-value) (water-escape? myboard x y p))
-				       (* (blank-escape-value) (blank-escape? myboard x y p))
-				       (* (wall-escape-value) (wall-escape? myboard x y p))
-				       (* (water-push-value) (water-push? myboard x y p))
-				       (* (blank-push-value) (blank-push? myboard x y p))
-				       (* (wall-push-value) (wall-push? myboard x y p )))
+				    (+ (if (could-player-move? (board) x y p)
+				    (+ (* (wall-danger-value) (wall-danger? (board) x y))
+				       (* (water-danger-value) (water-danger? (board) x y))
+				       (* (blank-danger-value) (blank-danger? (board) x y))
+				       (* (wall-threat-value) (wall-threat? (board) x y))
+				       (* (water-threat-value) (water-threat? (board) x y))
+				       (* (blank-threat-value) (blank-threat? (board) x y))
+				       (* (water-escape-value) (water-escape? (board) x y p))
+				       (* (blank-escape-value) (blank-escape? (board) x y p))
+				       (* (wall-escape-value) (wall-escape? (board) x y p))
+				       (* (water-push-value) (water-push? (board) x y p))
+				       (* (blank-push-value) (blank-push? (board) x y p))
+				       (* (wall-push-value) (wall-push? (board) x y p )))
 				    
 				    0)
-				(if (blank? myboard x y)
+				(if (blank? (board) x y)
 				    (blank-value)
-				    (if (wall? myboard x y)
+				    (if (wall? (board) x y)
 					(wall-value)
-					(if (water? myboard x y)
+					(if (water? (board) x y)
 					    (water-value)
-					    (if (home? myboard x y)
+					    (if (home? (board) x y)
 						(home-value)))))
-				(* (next-water-value) (next-to-water? myboard x y))
-				(* (destination-value) (destination? myboard x y))
-				(* (one-destination-value) (one-away-destination? myboard x y (search-player-packages p)))
-				(* (two-destination-value) (two-away-destination? myboard x y (search-player-packages p)))
-				(* (three-destination-value) (three-away-destination? myboard x y (search-player-packages p)))
-				(* (one-home-value) (one-away-base? myboard x y))
-				(* (two-home-value) (two-away-base? myboard x y))
-				(* (three-home-value) (three-away-base? myboard x y)))])
+				(* (next-water-value) (next-to-water? (board) x y))
+				(* (destination-value) (destination? (board) x y))
+				(* (one-destination-value) (one-away-destination? (board) x y (search-player-packages p)))
+				(* (two-destination-value) (two-away-destination? (board) x y (search-player-packages p)))
+				(* (three-destination-value) (three-away-destination? (board) x y (search-player-packages p)))
+				(* (one-home-value) (one-away-base? (board) x y))
+				(* (two-home-value) (two-away-base? (board) x y))
+				(* (three-home-value) (three-away-base? (board) x y)))])
 			       (begin
-				 (set-weight new-weight (get-spot myboard x y))
-				 (set-valid (get-spot myboard x y))
+				 (set-weight new-weight (get-spot (board) x y))
+				 (set-valid (get-spot (board) x y))
 				 new-weight)))]
-		 [bid (if (could-player-move? myboard x y p)
-			  (figure-bid myboard x y p)
+		 [bid (if (could-player-move? (board) x y p)
+			  (figure-bid (board) x y p)
 			  1)])
 		(list weight bid null null))]
 	   [(eq? mtype 'd)
 	    (let* ([ptod (get-packages-for x y (search-player-packages))]
-		   [weight (+ (if (could-player-move? myboard x y p)
-				 (+ (* (wall-danger-value) (wall-danger? myboard x y))
-				    (* (water-danger-value) (water-danger? myboard x y))
-				    (* (blank-danger-value) (blank-danger? myboard x y))
-				    (* (wall-threat-value) (wall-threat? myboard x y))
-				    (* (water-threat-value) (water-threat? myboard x y))
-				    (* (blank-threat-value) (blank-threat? myboard x y)))
+		   [weight (+ (if (could-player-move? (board) x y p)
+				 (+ (* (wall-danger-value) (wall-danger? (board) x y))
+				    (* (water-danger-value) (water-danger? (board) x y))
+				    (* (blank-danger-value) (blank-danger? (board) x y))
+				    (* (wall-threat-value) (wall-threat? (board) x y))
+				    (* (water-threat-value) (water-threat? (board) x y))
+				    (* (blank-threat-value) (blank-threat? (board) x y)))
 				 0)
 			     (* (dropoff-value) (if (null? ptod)
 						    0
 						    (eval `(+ ,@(map package-weight ptod))))))]
-		   [bid (if (or (= (wall-danger? myboard x y) 1) (= (water-danger? myboard x y) 1) (= (blank-danger? myboard x y) 1))
-			    (water-escape-bid)
+		   [bid (if (or (= (wall-danger? (board) x y) 1) (= (water-danger? (board) x y) 1) (= (blank-danger? (board) x y) 1))
+			    (* (water-escape-bid) (max-bid))
 			    1)])
 	      (list weight bid ptod null))]
 	   [(eq? mtype 'p)
@@ -127,7 +131,7 @@
 				  (eval `(* ,@(map pack-val ptop)))))])
 		   (list weight 1 null ptop))]
 	   [else
-	    (error "not a recognized symbol")]))
+	    (error "not a recognized symbol")])))
 
 	(define-syntax wleft
 	  (syntax-rules ()
@@ -138,12 +142,12 @@
 	  (syntax-rules ()
 			((_ board x y p)
 			 (cond
-			  [(water-escape? board x y p) (water-escape-bid)]
-			  [(water-push? board x y p) (water-push-bid)]
-			  [(blank-escape? board x y p) (blank-escape-bid)]
-			  [(wall-escape? board x y p) (wall-escape-bid)]
-			  [(blank-push? board x y p) (blank-push-bid)]
-			  [(wall-push? board x y p) (wall-push-bid)]))))
+			  [(water-escape? board x y p) (* (water-escape-bid) (max-bid))]
+			  [(water-push? board x y p) (* (water-push-bid) (max-bid))]
+			  [(blank-escape? board x y p) (* (blank-escape-bid) (max-bid))]
+			  [(wall-escape? board x y p) (* (wall-escape-bid) (max-bid))]
+			  [(blank-push? board x y p) (* (blank-push-bid) (max-bid))]
+			  [(wall-push? board x y p) (* (wall-push-bid) (max-bid))]))))
 	
 	(define (most-of player-left lop)
 	  (if (null? lop)

@@ -394,7 +394,7 @@
 		;; change unit-bound `top-levels' to lexicals
 		;;
 		[(zodiac:varref? ast)
-		 
+
 		 (if (and (zodiac:top-level-varref/bind? ast)
 			  (zodiac:lexical-binding? 
 			   (unbox (zodiac:top-level-varref/bind-slot ast))))

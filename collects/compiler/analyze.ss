@@ -633,7 +633,8 @@
 			
 			c)]
 		     
-		     [(and (compiler:option:propagate-constants)
+		     [(and #f ; MrSpidey doesn't work.
+			   (compiler:option:propagate-constants)
 			   (not need-varref?)
 			   (let-values ([(const? c) (mrspidey:constant-value ast)])
 			     (and const?

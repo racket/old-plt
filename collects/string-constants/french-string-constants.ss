@@ -199,6 +199,11 @@
  (download-was-saved "Le fichier téléchargé à été sauvegardé.")
  (getting-page "Page en cours de réception") ;; dialog title
  
+ (install-plt-file-menu-item... "Installer un fichier .plt...")
+ (install-plt-file-dialog-title "Installer un fichier .plt")
+ (plt-from-web "Télécharger et installer un fichier .plt à partir du web")
+ (plt-from-file "Installer un fichier .plt à partir d'un fichier local")
+ 
  ;; install plt file when opened in drscheme strings
  (install-plt-file "Installer ~a ou l'ouvrir pour édition ?")
  (install-plt-file/yes "Installation")
@@ -808,6 +813,7 @@
  
  (show-recent-items-window-menu-item "Montrer les fichiers récemment ouverts dans une fenêtre séparée")
  (show-recent-items-window-label "Fichiers récemment ouverts")
+ (number-of-open-recent-items "Nombre de fichiers récents")
  (switch-anyway "Changer de fichier quand même")
 
  (stepper-program-has-changed "Avertissement : le programme a été modifié.")

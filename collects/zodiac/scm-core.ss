@@ -206,8 +206,10 @@
     (lambda (expr env attributes vocab)
       (let ((r (ensure-not-macro/micro expr env vocab attributes)))
 	(cond
-	  ((lexical-binding? r)
-	    (create-lexical-varref r expr))
+	  ((lambda-binding? r)
+           (create-lambda-varref r expr))
+          ((lexical-binding? r)
+           (create-lexical-varref r expr))
 	  ((top-level-resolution? r)
 	   (check-for-signature-name expr attributes)
 	   (process-top-level-resolution expr attributes))

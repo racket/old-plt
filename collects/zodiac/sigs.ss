@@ -75,9 +75,11 @@
     (struct top-level-varref/bind/unit (unit?)) create-top-level-varref/bind/unit
     (struct bound-varref (binding))   create-bound-varref
     (struct lexical-varref ())        create-lexical-varref
+    (struct lambda-varref ())         create-lambda-varref
     (struct app (fun args))           create-app
     (struct binding (var orig-name))  create-binding+marks
     (struct lexical-binding ())       create-lexical-binding+marks
+    (struct lambda-binding ())        create-lambda-binding+marks
     (struct form ())
     valid-syntactic-id? valid-syntactic-id/s?
     distinct-valid-syntactic-id/s?

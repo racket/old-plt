@@ -48,8 +48,10 @@ TYPES ----------------------------------------------------------------
   5 = params, 6 = query, 7 = fragment
 
   If the scheme is "file", then the path is a platform-dependent
-  string assumed to have been constructed using build-path.  Otherwise
-  it's a url-path as defined in the standard.
+  string assumed to have been constructed using build-path.  The library
+  does, however, check for the presence of a fragment designator and, if
+  there is one, separates it from the rest of the path.  For non-"file"
+  schemes, the path is a URL path as defined in the standard.
 
 > pure-port
 

@@ -91,8 +91,10 @@
                 (fragment (url-fragment url)))
             (cond
 	     ((and scheme (string=? scheme "file"))
-	      (string-append "file:" path))
-	     (else
+	      (string-append "file:" path
+                             (or (and (not fragment) "")
+                                 (string-append "#" fragment))))
+             (else
 	      (let ((sa string-append))
 		(sa (if scheme (sa scheme "://") "")
 		    (if host host "")
@@ -467,7 +469,7 @@
 				      scheme-start scheme-finish))))
 		      (if (and scheme
 			    (string=? scheme "file"))
-                        (let ((path (substring string path-start total-length)))
+                        (let ((path (substring string path-start path-finish)))
                           (if (or (relative-path? path)
 				(absolute-path? path))
 			    (make-url
@@ -477,7 +479,10 @@
 			      path
 			      #f	; params
 			      #f	; query
-			      #f)	; fragment
+                              (and fragment-start
+                                   (substring string 
+                                              fragment-start
+                                              fragment-finish)))	; fragment
 			    (url-error "scheme 'file' path ~s neither relative nor absolute" path)))
                         (let-values (((host port path)
 				       (parse-host/port/path

@@ -240,7 +240,7 @@ char *wxFileSelector(char *message,
   HWND hwnd = NULL;
   wchar_t *file_buffer;
   wchar_t *filter_buffer;
-  wchar_t *def_path, *def_ext;
+  wchar_t *def_path, *def_ext, *msg;
   OPENFILENAMEW *of;
   long msw_flags = 0;
   Bool success;
@@ -252,6 +252,9 @@ char *wxFileSelector(char *message,
     wnd = (wxWnd *)parent->handle;
     hwnd = wnd->handle;
   }
+
+  if (!message)
+    message = "";
 
   if (flags & wxGETDIR) {
     BROWSEINFOW *b;
@@ -270,9 +273,13 @@ char *wxFileSelector(char *message,
     b->pidlRoot = NULL;
     b->pszDisplayName = _result;
     {
+      int len;
       wchar_t *ws;
       ws = wxWIDE_STRING_COPY(message);
-      b->lpszTitle = ws;
+      len = wx_wstrlen(ws);
+      msg = (wchar_t *)malloc(sizeof(wchar_t) * (len + 1));
+      memcpy(msg, ws, sizeof((wchar_t *) * (len + 1)));
+      b->lpszTitle = msg;
     }
     b->ulFlags = (BIF_NEWDIALOGSTYLE | BIF_RETURNONLYFSDIRS);
 
@@ -286,6 +293,7 @@ char *wxFileSelector(char *message,
       result = NULL;
 
     free(_result);
+    free(msg);
 
     return wxNARROW_STRING(result);
   }
@@ -407,9 +415,13 @@ char *wxFileSelector(char *message,
   of->nMaxFileTitle = 0;
   of->lpstrInitialDir = def_path;
   {
+    int len;
     wchar_t *ws;
     ws = wxWIDE_STRING_COPY(message);
-    of->lpstrTitle = ws;
+    len = wx_wstrlen(ws);
+    msg = (wchar_t *)malloc(sizeof(wchar_t) * (len + 1));
+    memcpy(msg, ws, sizeof((wchar_t *) * (len + 1)));
+    of->lpstrTitle = msg;
   }
   of->nFileOffset = 0;
   of->nFileExtension = 0;
@@ -437,6 +449,7 @@ char *wxFileSelector(char *message,
   if (def_path) free(def_path);
   if (def_ext) free(def_ext);
   if (filter_buffer) free(filter_buffer);
+  free(msg);
 
   {
     char *s;

@@ -29,6 +29,9 @@ static void wxsFillPrivateColor(wxDC *dc, wxColour *c)
 #ifndef wxBUNDLES_OK
 # define wxBUNDLES_OK 0
 #endif
+#ifndef wxBUNDLES_ENTER
+# define wxBUNDLES_ENTER 0
+#endif
 
 @BEGINSYMBOLS fileSelMode > PRED BUNDLE
 @SYM "get" : wxOPEN
@@ -37,7 +40,8 @@ static void wxsFillPrivateColor(wxDC *dc, wxColour *c)
 @SYM "multi" : wxMULTIOPEN
 @SYM "overwrite-prompt" : wxOVERWRITE_PROMPT
 @SYM "hide-readonly" : wxHIDE_READONLY
-@SYM "bundles-ok" : wxBUNDLES_OK
+@SYM "packages" : wxBUNDLES_OK
+@SYM "enter-packages" : wxBUNDLES_ENTER
 @ENDSYMBOLS
 
 #define USE_PRINTER 1

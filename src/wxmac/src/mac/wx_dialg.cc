@@ -341,8 +341,10 @@ char *wxFileSelector(char *message, char *default_path,
       dialogOptions.message = CFStringCreateWithCString(NULL,message,CFStringGetSystemEncoding());
     dialogOptions.modality = kWindowModalityAppModal;
 
-    if (flags & wxBUNDLES_OK)
+    if (flags & wxBUNDLES_ENTER)
       dialogOptions.optionFlags |= (kNavSupportPackages | kNavAllowOpenPackages);
+    if (flags & wxBUNDLES_OK)
+      dialogOptions.optionFlags |= kNavSupportPackages;
     if (!(flags & wxMULTIOPEN))
       dialogOptions.optionFlags -= (dialogOptions.optionFlags & kNavAllowMultipleFiles);
 

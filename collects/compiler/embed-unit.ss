@@ -22,7 +22,7 @@
       (define (embedding-executable-put-file-extension+style+filters mred?)
 	(case (system-type)
 	  [(windows) (values ".exe" null '(("Executable" "*.exe")))]
-	  [(macosx) (values ".app" '(packages-ok) #f)]
+	  [(macosx) (values ".app" '(enter-packages) #f)]
 	  [else (values #f null null)]))
 
       ;; Find executable via (find-system-path 'exec-file), then

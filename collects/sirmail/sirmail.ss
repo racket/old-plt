@@ -199,7 +199,7 @@
 
   ;; Start the preferences writing thread -------------------------------
 
-  (preferences:start-writing-thread)
+  (preferences:start-writing-timer)
   
   ;; We start by opening "Inbox" ----------------------------------------
   

@@ -39,7 +39,7 @@ It is only loaded when Help Desk is run by itself (outside DrScheme).
         (lambda (p v) (send size set-value v)))
        hp)))
   
-  (preferences:start-writing-thread)
+  (preferences:start-writing-timer)
   
   (define the-hd-cookie (start-help-server (lambda (x) x)))
   (unless the-hd-cookie

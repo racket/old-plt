@@ -2774,12 +2774,12 @@ static Scheme_Object *positions_peek(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *compare_peek_nonblock(int argc, Scheme_Object *argv[])
 {
-  return gen_compare("regexp-match-peek*", 0, argc, argv, 1, 1);
+  return gen_compare("regexp-match-peek-immediate", 0, argc, argv, 1, 1);
 }
 
 static Scheme_Object *positions_peek_nonblock(int argc, Scheme_Object *argv[])
 {
-  return gen_compare("regexp-match-peek-positions*", 1, argc, argv, 1, 1);
+  return gen_compare("regexp-match-peek-positions-immediate", 1, argc, argv, 1, 1);
 }
 
 static Scheme_Object *gen_replace(const char *name, int argc, Scheme_Object *argv[], int all)
@@ -3013,14 +3013,14 @@ void scheme_regexp_initialize(Scheme_Env *env)
 						      "regexp-match-peek-positions",
 						      2, 5),
 			     env);
-  scheme_add_global_constant("regexp-match-peek*",
+  scheme_add_global_constant("regexp-match-peek-immediate",
 			     scheme_make_prim_w_arity(compare_peek_nonblock,
-						      "regexp-match-peek*",
+						      "regexp-match-peek-immediate",
 						      2, 5),
 			     env);
-  scheme_add_global_constant("regexp-match-peek-positions*", 
+  scheme_add_global_constant("regexp-match-peek-positions-immediate", 
 			     scheme_make_prim_w_arity(positions_peek_nonblock, 
-						      "regexp-match-peek-positions*",
+						      "regexp-match-peek-positions-immediate",
 						      2, 5),
 			     env);
   scheme_add_global_constant("regexp-replace", 

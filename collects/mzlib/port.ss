@@ -192,7 +192,7 @@
 		    ;; Not enough even in the special queue.
 		    ;; Read once and add it.
 		    (let* ([t (make-bytes (min 4096 (+ sk (bytes-length s))))]
-			   [r (read s)])
+			   [r (read t)])
 		      (cond
 		       [(evt? r) 
 			;; We can't deal with an event, so complain
@@ -206,7 +206,7 @@
 		       [else (let ([v (if (number? r)
 					  (subbytes t 0 r)
 					  r)])
-			       (set-cdr! special-peeked-tail v)
+			       (set-cdr! special-peeked-tail (cons v null))
 			       ;; Got something; now try again
 			       (do-peek-it s skip unless-evt))]))]
 		   [(eof-object? (car l)) 
@@ -547,7 +547,7 @@
       (let try-again ()
 	(let* ([progress-evt (port-progress-evt input-port)]
 	       [m ((if poll?
-		       regexp-match-peek-positions* 
+		       regexp-match-peek-positions-immediate 
 		       regexp-match-peek-positions)
 		   pattern input-port 0 #f progress-evt)])
 	  (cond

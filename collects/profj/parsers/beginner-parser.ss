@@ -248,7 +248,8 @@
       (BeginnerInteractions
        [(Statement) $1]
        [(Expression) $1]
-       [(InteractFieldDeclaration) $1])
+       [(InteractFieldDeclaration) $1]
+       [() null])
       
       (Statement
        [(StatementWithoutTrailingSubstatement) $1]

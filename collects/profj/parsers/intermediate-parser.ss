@@ -113,7 +113,8 @@
       (IntermediateInteractions
        [(Statement) $1]
        [(Expression) $1]
-       [(FieldDeclaration) $1])
+       [(FieldDeclaration) $1]
+       [() null])
       
       (TypeDeclarations
        [(TypeDeclaration) (if $1 (list $1) null)]

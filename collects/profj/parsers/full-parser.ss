@@ -116,7 +116,8 @@
       (Interactions
        [(Statement) $1]
        [(Expression) $1]
-       [(FieldDeclaration) $1])
+       [(FieldDeclaration) $1]
+       [() null])
       
       (ImportDeclarations
        [(ImportDeclaration) (list $1)]

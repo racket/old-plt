@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Message.cc,v 1.8 2000/03/02 13:59:06 mflatt Exp $
+ * $Id: Message.cc,v 1.9 2002/09/03 23:30:07 mflatt Exp $
  *
  * Purpose: message panel item
  *
@@ -29,10 +29,170 @@
 
 #define  Uses_XtIntrinsic
 #define  Uses_wxMessage
+#define  Uses_wxBitmap
 #include "wx.h"
 #define  Uses_EnforcerWidget
 #define  Uses_LabelWidget
 #include "widgets.h"
+
+static char * info_xpm[] = {
+"32 32 17 1",
+" 	c None",
+".	c #000000",
+"+	c #800000",
+"@	c #008000",
+"#	c #808000",
+"$	c #000080",
+"%	c #800080",
+"&	c #008080",
+"*	c #808080",
+"=	c #D6D6D6",
+"-	c #FF0000",
+";	c #00FF00",
+">	c #FFFF00",
+",	c #0000FF",
+"'	c #FF00FF",
+")	c #00FFFF",
+"!	c #FFFFFF",
+"================================",
+"================================",
+"=============,,,,,,,============",
+"==========,,,,,,,,,,,,,=========",
+"=========,,,,,,,,,,,,,,,========",
+"=======,,,,,,,,,,,,,,,,,,,======",
+"======,,,,,,,,,,,,,,,,,,,,,=====",
+"======,,,,,,,,,,,,,,,,,,,,,=====",
+"=====,,,,,,,,,,,,,,,,,,,,,,,====",
+"====,,,,,,,,,,,!!!,,,,,,,,,,,===",
+"====,,,,,,,,,,,!!!,,,,,,,,,,,===",
+"====,,,,,,,,,,,,,,,,,,,,,,,,,===",
+"===,,,,,,,,,,,,,,,,,,,,,,,,,,,==",
+"===,,,,,,,,,,,!!!!,,,,,,,,,,,,==",
+"===,,,,,,,,,,,,!!!,,,,,,,,,,,,==",
+"===,,,,,,,,,,,,!!!,,,,,,,,,,,,==",
+"===,,,,,,,,,,,,!!!,,,,,,,,,,,,==",
+"===,,,,,,,,,,,,!!!,,,,,,,,,,,,==",
+"===,,,,,,,,,,,,!!!,,,,,,,,,,,,==",
+"====,,,,,,,,,,,!!!,,,,,,,,,,,===",
+"====,,,,,,,,,,!!!!!,,,,,,,,,,===",
+"====,,,,,,,,,,,,,,,,,,,,,,,,,===",
+"=====,,,,,,,,,,,,,,,,,,,,,,,====",
+"======,,,,,,,,,,,,,,,,,,,,,=====",
+"======,,,,,,,,,,,,,,,,,,,,,=====",
+"=======,,,,,,,,,,,,,,,,,,,======",
+"=========,,,,,,,,,,,,,,,========",
+"==========,,,,,,,,,,,,,=========",
+"=============,,,,,,,============",
+"================================",
+"================================",
+"================================"};
+
+static char * caution_xpm[] = {
+"32 32 17 1",
+" 	c None",
+".	c #000000",
+"+	c #800000",
+"@	c #008000",
+"#	c #808000",
+"$	c #000080",
+"%	c #800080",
+"&	c #008080",
+"*	c #808080",
+"=	c #D6D6D6",
+"-	c #FF0000",
+";	c #00FF00",
+">	c #FFFF00",
+",	c #0000FF",
+"'	c #FF00FF",
+")	c #00FFFF",
+"!	c #FFFFFF",
+"================================",
+"================================",
+"================================",
+"================>===============",
+"===============>>>==============",
+"===============>>>==============",
+"==============>>>>>=============",
+"==============>>>>>=============",
+"=============>>>>>>>============",
+"=============>>>>>>>============",
+"============>>>..>>>>===========",
+"============>>....>>>===========",
+"===========>>>....>>>>==========",
+"===========>>>....>>>>==========",
+"==========>>>>....>>>>>=========",
+"==========>>>>....>>>>>=========",
+"=========>>>>>....>>>>>>========",
+"=========>>>>>>..>>>>>>>========",
+"========>>>>>>>..>>>>>>>>=======",
+"========>>>>>>>..>>>>>>>>=======",
+"=======>>>>>>>>..>>>>>>>>>======",
+"=======>>>>>>>>>>>>>>>>>>>======",
+"======>>>>>>>>>>>>>>>>>>>>>=====",
+"======>>>>>>>>>>>>>>>>>>>>>=====",
+"=====>>>>>>>>>>..>>>>>>>>>>>====",
+"=====>>>>>>>>>>..>>>>>>>>>>>====",
+"====>>>>>>>>>>>>>>>>>>>>>>>>>===",
+"====>>>>>>>>>>>>>>>>>>>>>>>>>===",
+"================================",
+"================================",
+"================================",
+"================================"};
+
+static char * stop_xpm[] = {
+"32 32 17 1",
+" 	c None",
+".	c #000000",
+"+	c #800000",
+"@	c #008000",
+"#	c #808000",
+"$	c #000080",
+"%	c #800080",
+"&	c #008080",
+"*	c #808080",
+"=	c #D6D6D6",
+"-	c #FF0000",
+";	c #00FF00",
+">	c #FFFF00",
+",	c #0000FF",
+"'	c #FF00FF",
+")	c #00FFFF",
+"!	c #FFFFFF",
+"================================",
+"================================",
+"==========-----------===========",
+"=========-------------==========",
+"========---------------=========",
+"=======-----------------========",
+"======-------------------=======",
+"=====---------------------======",
+"====-----------------------=====",
+"===-------------------------====",
+"==----------!-----!----------===",
+"==---------!!!---!!!---------===",
+"==----------!!!-!!!----------===",
+"==-----------!!!!!-----------===",
+"==------------!!!------------===",
+"==------------!!!------------===",
+"==-----------!!!!!-----------===",
+"==----------!!!-!!!----------===",
+"==---------!!!---!!!---------===",
+"==----------!-----!----------===",
+"==---------------------------===",
+"===-------------------------====",
+"====-----------------------=====",
+"=====---------------------======",
+"======-------------------=======",
+"=======-----------------========",
+"========---------------=========",
+"=========-------------==========",
+"==========-----------===========",
+"================================",
+"================================",
+"================================"};
+
+static int icons_loaded;
+static wxBitmap *icons[3];
 
 //-----------------------------------------------------------------------------
 // create and destroy message
@@ -61,7 +221,7 @@ wxMessage::wxMessage(wxPanel *panel, int iconId,
 		   int x, int y, long style, char *name) : wxItem()
 {
     __type = wxTYPE_MESSAGE;
-    Create(panel, "<no icon>", x, y, style, name);
+    Create(panel, NULL, NULL, iconId, x, y, style, name);
 }
 
 static void do_nothing()
@@ -71,10 +231,51 @@ static void do_nothing()
 Bool wxMessage::Create(wxPanel *panel, char *message,
 		      int x, int y, long style, char *name)
 {
+  return Create(panel, message, NULL, 0, x, y, style, name);
+}
+
+Bool wxMessage::Create(wxPanel *panel, wxBitmap *bitmap,
+		      int x, int y, long style, char *name)
+{
+  return Create(panel, NULL, bitmap, 0, x, y, style, name);
+}
+
+Bool wxMessage::Create(wxPanel *panel, 
+		       char *label, wxBitmap *bitmap, int iconID, 
+		       int x, int y,
+		       long style, char *name)
+{
     wxWindow_Xintern *ph;
     Widget wgt;
+    const char *lblT;
+    void *lblV;
 
-    bm_label = NULL;
+    if (iconID) {
+      if (!icons_loaded) {
+	icons_loaded = 1;
+	wxREGGLOB(icons);
+	icons[0] = new wxBitmap(info_xpm, NULL);
+	icons[1] = new wxBitmap(caution_xpm, NULL);
+	icons[2] = new wxBitmap(stop_xpm, NULL);
+      }
+
+      bitmap = icons[iconID - 1];
+      if (!bitmap)
+	label = "<bad-icon>";
+    }
+
+    if (bitmap) {
+      if (!bitmap->Ok() || (bitmap->selectedIntoDC < 0)) {
+	label = "<bad-image>";
+	bitmap = NULL;
+      } else {
+	bitmap->selectedIntoDC++;
+	bm_label = bitmap;
+      }
+    }
+    
+    if (!bitmap)
+      bm_label = NULL;
 
     ChainToPanel(panel, style, name);
 
@@ -93,9 +294,18 @@ Bool wxMessage::Create(wxPanel *panel, char *message,
 
     XtManageChild(X->frame);
     // create widget
+    if (bitmap) {
+      lblT = XtNpixmap;
+      lblV = (void *)GETPIXMAP(bitmap);
+    } else {
+      lblT = XtNlabel;
+      lblV = label;
+    }
+
+    // create widget
     wgt = XtVaCreateManagedWidget
 	("message", xfwfLabelWidgetClass, X->frame,
-	 XtNlabel,       message,
+	 lblT,           lblV,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
@@ -107,6 +317,7 @@ Bool wxMessage::Create(wxPanel *panel, char *message,
 	     XtNouterOffset, 1, XtNinnerOffset, 1,
 	     XtNframeWidth,  2, XtNframeType, XfwfChiseled,
 	     NULL);
+
     X->handle = wgt;
 
     panel->PositionItem(this, x, y, -1, -1);
@@ -116,59 +327,6 @@ Bool wxMessage::Create(wxPanel *panel, char *message,
     XtAddEventHandler(X->frame, KeyPressMask, FALSE, (XtEventHandler)do_nothing, NULL);
     XtAddEventHandler(X->handle, KeyPressMask, FALSE, (XtEventHandler)do_nothing, NULL);
     
-    AllowResize(FALSE);
-
-    return TRUE;
-}
-
-Bool wxMessage::Create(wxPanel *panel, wxBitmap *bitmap,
-		      int x, int y, long style, char *name)
-{
-    wxWindow_Xintern *ph;
-    Widget wgt;
-    Pixmap pm;
-
-    if (!bitmap->Ok() || (bitmap->selectedIntoDC < 0))
-      return Create(panel, "<bad-image>", x, y, style, name);
-
-    bitmap->selectedIntoDC++;
-    bm_label = bitmap;
-
-    ChainToPanel(panel, style, name);
-
-    ph = parent->GetHandle();
-
-    // create frame
-    wgt = XtVaCreateManagedWidget
-	(name, xfwfEnforcerWidgetClass, ph->handle,
-	 XtNbackground,  wxGREY_PIXEL,
-	 XtNforeground,  wxBLACK_PIXEL,
-	 XtNfont,        label_font->GetInternalFont(),
-	 XtNshrinkToFit, TRUE,
-	 XtNhighlightThickness, 0, XtNtraversalOn, FALSE,
-	 NULL);
-    X->frame = wgt;
-
-    // create widget
-    pm = GETPIXMAP(bitmap);
-    wgt = XtVaCreateManagedWidget
-	("Message", xfwfLabelWidgetClass, X->frame,
-	 XtNpixmap,      pm,
-	 XtNbackground,  wxGREY_PIXEL,
-	 XtNforeground,  wxBLACK_PIXEL,
-	 XtNfont,        label_font->GetInternalFont(),
-	 XtNalignment,   wxALIGN_LEFT,
-	 XtNshrinkToFit, TRUE,
-	 XtNhighlightThickness, 0,
-	 ( !(style & wxBORDER) ) ?
-	     NULL :
-	     XtNouterOffset, 1, XtNinnerOffset, 1,
-	     XtNframeWidth,  2, XtNframeType, XfwfChiseled,
-	     NULL);
-    X->handle = wgt;
-
-    panel->PositionItem(this, x, y, -1, -1);
-
     AllowResize(FALSE);
 
     return TRUE;

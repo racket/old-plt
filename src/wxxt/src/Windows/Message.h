@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Message.h,v 1.2 1999/11/04 17:25:38 mflatt Exp $
+ * $Id: Message.h,v 1.3 2002/09/03 23:30:07 mflatt Exp $
  *
  * Purpose: message panel item
  *
@@ -49,6 +49,9 @@ public:
 		long style=0, char *name="message");
     Bool Create(wxPanel *panel, wxBitmap *bitmap, int x=-1, int y=-1,
 		long style=0, char *name="message");
+
+    Bool Create(wxPanel *panel, char *label, wxBitmap *bitmap, int iconID, int x, int y,
+		long style, char *name);
 
     void AllowResize(Bool allow);
     void SetAlignment(long alignment);

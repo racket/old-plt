@@ -14,6 +14,9 @@ Functions:
 
 > read-html : [Input-port] -> Html
 
+> read-html-as-xml : [Input-port] -> (listof Content)
+  See the XML library for the definitoin of Content
+
 HTML Structures:
 ================
 

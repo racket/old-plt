@@ -106,6 +106,10 @@
   (define may-contain
     (sgml:gen-may-contain (call-with-input-file (find-library "html-spec" "html") read)))
   
+  ;; read-html-as-xml : [Input-port] -> (listof Content)
+  (define read-html-as-xml
+    (compose clean-up-pcdata (sgml:gen-read-sgml may-contain implicit-starts)))
+  
   ;; read-html : [Input-port] -> Html
   (define read-html
-    (compose repackage-html xml-contents->html clean-up-pcdata (sgml:gen-read-sgml may-contain implicit-starts))))
+    (compose repackage-html xml-contents->html read-html-as-xml)))

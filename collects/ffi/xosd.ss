@@ -5,15 +5,12 @@
 (define libxosd (ffi-lib "libxosd.so"))
 
 ;; Use this type to properly destroy an xosd object
-(define-struct xosd (ptr))
-(define _xosd
-  (make-ffi-type _pointer xosd-ptr
-    (lambda (p)
-      (if p
-        (let ([new (make-xosd p)])
-          (ffi-register-finalizer new xosd-destroy)
-          new)
-        (error '_xosd "got a NULL pointer")))))
+(define _xosd (make-ctype (make-cpointer-type "xosd") #f
+                (lambda (p)
+                  (if p
+                    (register-finalizer p xosd-destroy)
+                    (error '_xosd "got a NULL pointer"))
+                  p)))
 
 (define-syntax defxosd
   (syntax-rules (:)
@@ -28,7 +25,7 @@
     [(_ name x ...) (begin (provide name) (defxosd name x ...))]))
 
 (define _status
-  (make-ffi-type _int #f
+  (make-ctype _int #f
     (lambda (x)
       (if (eq? -1 x)
         (error 'xosd "~a"
@@ -37,7 +34,7 @@
         x))))
 
 (define _sbool
-  (make-ffi-type _status #f
+  (make-ctype _status #f
     (lambda (x)
       (case x [(1) #t] [(0) #f] [else (error "bad boolean value: ~e" x)]))))
 

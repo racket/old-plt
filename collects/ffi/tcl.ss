@@ -15,9 +15,9 @@
 ;; This creates _interp as a type to be used for functions that return an
 ;; interpreter that should be destroyed with delete-interp.
 (define _interp
-  (make-ffi-type _pointer #f ; no op when going to C
+  (make-ctype _pointer #f ; no op when going to C
     (lambda (interp)
-      (when interp (ffi-register-finalizer interp delete-interp))
+      (when interp (register-finalizer interp delete-interp))
       interp)))
 
 (define* create-interp
@@ -32,7 +32,7 @@
   (get-ffi-obj #"Tcl_GetStringResult" libtcl (_fun _interp -> _string)))
 
 (define _tclret
-  (make-ffi-type (_enum '(ok error return break continue))
+  (make-ctype (_enum '(ok error return break continue))
     (lambda (x) (error "tclret is only for return values"))
     (lambda (x)
       (when (eq? x 'error) (error 'tcl (get-string-result (current-interp))))

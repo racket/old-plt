@@ -287,7 +287,9 @@
 	 (let ([fast-peek-k (lambda (s skip)
 			      (peek-it s skip #f))])
 	   (lambda (s skip unless-evt)
-	     (if unless-evt
+	     (if (or unless-evt
+		     (char-ready? peeked-r)
+		     (pair? special-peeked))
 		 (peek-it s skip unless-evt)
 		 (fast-peek s skip fast-peek-k))))
 	 peek-it)

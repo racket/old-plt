@@ -13,8 +13,9 @@
     -:make-traced-entry -:traced-entry-original-proc -:traced-entry-trace-proc
     trace untrace))
 
-(reference-library "prettyu.ss")
+(begin-elaboration-time (reference-library "prettyu.ss"))
 
+(begin-elaboration-time
 (define mzlib:trace@
   (unit/sig mzlib:trace^
     (import mzlib:pretty-print^)
@@ -241,11 +242,12 @@
 			 '())))
 	       ids))))))
 
-))
+)))
 
-(invoke-open-unit/sig
+(begin-elaboration-time
+ (invoke-open-unit/sig
   (compound-unit/sig
-    (import)
+   (import)
     (link
       (PRETTY : mzlib:pretty-print^
 	(mzlib:pretty-print@))
@@ -253,14 +255,16 @@
 	(mzlib:trace@ PRETTY)))
     (export
       (open TRACE)))
-  #f)
+  #f))
 
 (define-macro trace trace)
 (define-macro untrace untrace)
 
-(keyword-name '-:trace-print-args)
-(keyword-name '-:trace-print-results)
-(keyword-name '-:trace-table)
-(keyword-name '-:make-traced-entry)
-(keyword-name '-:traced-entry-original-proc)
-(keyword-name '-:traced-entry-trace-proc)
+(begin-elaboration-time
+ (keyword-name '-:trace-print-args)
+ (keyword-name '-:trace-print-results)
+ (keyword-name '-:trace-table)
+ (keyword-name '-:make-traced-entry)
+ (keyword-name '-:traced-entry-original-proc)
+ (keyword-name '-:traced-entry-trace-proc))
+

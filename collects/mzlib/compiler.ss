@@ -42,27 +42,29 @@
 	      (unless (defined? (car gvp))
 		      (eval `(define ,(car gvp) (quote ,(cdr gvp))))))
 	    gvs)
-	   (when (or preserve-elab? preserve-constr?)
-		 (eval `(begin
-			  (require-library "refer.ss")
-			  (define-macro reference ,-reference)
-			  (define-macro reference-unit/sig ,-reference-unit/sig)
-			  (define-macro reference-unit ,-reference-unit)
-			  (define-macro reference-library-unit/sig ,-reference-library-unit/sig)
-			  (define-macro reference-library-unit ,-reference-library-unit)
-			  (define-macro reference-library ,-reference-library)
-			  (define-macro reference-relative-library-unit/sig ,-reference-relative-library-unit/sig)
-			  (define-macro reference-relative-library-unit ,-reference-relative-library-unit)
-			  (define-macro reference-relative-library ,-reference-relative-library)
-			  ,@(let ([e (if preserve-elab?
-					 `((define-macro begin-elaboration-time ,-begin-elaboration-time))
-					 null)]
-				  [c (if preserve-constr?
-					 `((define-macro begin-construction-time ,-begin-elaboration-time))
-					 null)])
-			      (append e c))))))
-			      
-	 n)))
+	   (setup-preserving-compile-namespace preserve-elab? preserve-constr?))
+	  n)))
+
+   (define (setup-preserving-compile-namespace preserve-elab? preserve-constr?)
+     (when (or preserve-elab? preserve-constr?)
+       (eval `(begin
+		(require-library "refer.ss")
+		(define-macro reference ,-reference)
+		(define-macro reference-unit/sig ,-reference-unit/sig)
+		(define-macro reference-unit ,-reference-unit)
+		(define-macro reference-library-unit/sig ,-reference-library-unit/sig)
+		(define-macro reference-library-unit ,-reference-library-unit)
+		(define-macro reference-library ,-reference-library)
+		(define-macro reference-relative-library-unit/sig ,-reference-relative-library-unit/sig)
+		(define-macro reference-relative-library-unit ,-reference-relative-library-unit)
+		(define-macro reference-relative-library ,-reference-relative-library)
+		,@(let ([e (if preserve-elab?
+			       `((define-macro begin-elaboration-time ,-begin-elaboration-time))
+			       null)]
+			[c (if preserve-constr?
+			       `((define-macro begin-construction-time ,-begin-elaboration-time))
+			       null)])
+		    (append e c))))))
 
    (define compile-file
      (case-lambda 
@@ -101,7 +103,11 @@
 	      [ignore-rl? (member 'ignore-require-library flags)]
 	      [expand-only? (member 'only-expand flags)]
 	      [namespace (if (member 'use-current-namespace flags)
-			     (current-namespace)
+			     (begin
+			       (setup-preserving-compile-namespace
+				(member 'preserve-elaborations flags)
+				(member 'preserve-constructions flags))
+			       (current-namespace))
 			     (make-compile-namespace
 			      (if (built-in-name 'wx:frame%) ; HACK!!!
 				  '(wx)

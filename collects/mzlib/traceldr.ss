@@ -21,12 +21,13 @@
 			(let ([f (load filename)])
 			  (lambda (sym)
 			    (fprintf (cep)
-				     "~atrying ~a~n" tab sym)
+				     "~atrying ~a's ~a~n" tab filename sym)
 			    (let ([loader (f sym)])
 			      (and loader
 				   (lambda ()
 				     (fprintf (cep)
-					      "~astarting ~a at ~a~n" tab sym
+					      "~astarting ~a's ~a at ~a~n" 
+					      tab filename sym
 					      (current-process-milliseconds))
 				     (let ([s tab])
 				       (begin0
@@ -35,8 +36,8 @@
 					 (lambda () (loader))
 					 (lambda () (set! tab s)))
 					(fprintf (cep)
-						 "~adone ~a at ~a~n"
-						 tab sym
+						 "~adone ~a's ~a at ~a~n"
+						 tab filename sym
 						 (current-process-milliseconds)))))))))
 			(load filename)))
 		  (lambda () (set! tab s))))

@@ -1661,9 +1661,12 @@ Check Syntax separates four classes of identifiers:
       ;;                      (union identifier-binding identifier-transformer-binding)
       ;;                   -> void
       (define (connect-identifier var all-binders unused requires get-binding)
+        ;(printf "connect-identifier.1 ~s\n" (syntax-object->datum var))
         (let ([binders (get-ids all-binders var)])
+          ;(printf "connect-identifier.2 ~s\n" binders)
           (when binders
             (for-each (lambda (x)
+                        ;(printf "connect-identifier.3 ~s\n" (syntax-original? x))
                         (when (syntax-original? x)
                           (connect-syntaxes x var)))
                       binders))
@@ -1738,25 +1741,29 @@ Check Syntax separates four classes of identifiers:
       (define (connect-syntaxes from to)
         (let* ([from-source (syntax-source from)]
 	       [to-source (syntax-source to)])
+          ;(printf "connect-syntaxes.1 ~s ~s\n" from-source to-source)
 	  (when (and (is-a? from-source text%)
                      (is-a? to-source text%))
             (let ([to-syncheck-text (find-syncheck-text to-source)]
                   [from-syncheck-text (find-syncheck-text from-source)])
+              ;(printf "connect-syntaxes.2 ~s ~s\n" from-syncheck-text (eq? to-syncheck-text from-syncheck-text))
               (when (and to-syncheck-text
                          from-syncheck-text
-                         (eq? to-syncheck-text from-syncheck-text)
-                         (syntax-position from)
-                         (syntax-span from)
-                         (syntax-position to)
-                         (syntax-span to))
-                (let* ([from-pos-left (- (syntax-position from) 1)]
-                       [from-pos-right (+ from-pos-left (syntax-span from))]
-                       [to-pos-left (- (syntax-position to) 1)]
-                       [to-pos-right (+ to-pos-left (syntax-span to))])
-                  (unless (= from-pos-left to-pos-left)
-                    (send from-syncheck-text syncheck:add-arrow
-                          from-source from-pos-left from-pos-right
-                          to-source to-pos-left to-pos-right))))))))
+                         (eq? to-syncheck-text from-syncheck-text))
+                (let ([pos-from (syntax-position from)]
+                      [span-from (syntax-span from)]
+                      [pos-to (syntax-position to)]
+                      [span-to (syntax-span to)])
+                  ;(printf "connect-syntaxes.3 ~s\n" (list pos-from span-from pos-to span-to))
+                  (when (and pos-from span-from pos-to span-to)
+                        (let* ([from-pos-left (- (syntax-position from) 1)]
+                               [from-pos-right (+ from-pos-left (syntax-span from))]
+                               [to-pos-left (- (syntax-position to) 1)]
+                               [to-pos-right (+ to-pos-left (syntax-span to))])
+                          (unless (= from-pos-left to-pos-left)
+                            (send from-syncheck-text syncheck:add-arrow
+                                  from-source from-pos-left from-pos-right
+                                  to-source to-pos-left to-pos-right))))))))))
       
       ;; add-mouse-over : syntax[original] string -> void
       ;; registers the range in the editor so that a mouse over

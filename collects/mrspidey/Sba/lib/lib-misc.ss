@@ -132,8 +132,8 @@
  ;;
 
 (define (file-newer f1 f2)
-  (let ([s1 (file-modify-seconds f1)]
-        [s2 (file-modify-seconds f2)])
+  (let ([s1 (and (file-exists? f1) (file-or-directory-modify-seconds f1))]
+        [s2 (and (file-exists? f2) (file-or-directory-modify-seconds f2))])
     (and (number? s1) 
          (number? s2)
          (> s1 s2))))

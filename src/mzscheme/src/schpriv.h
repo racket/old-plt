@@ -1445,8 +1445,43 @@ void scheme_define_parse(Scheme_Object *form,
 void scheme_shadow(Scheme_Env *env, Scheme_Object *n, int stxtoo);
 
 /*========================================================================*/
-/*                              modules                                   */
+/*                         namespaces and modules                         */
 /*========================================================================*/
+
+struct Scheme_Env {
+  Scheme_Type type; /* scheme_namespace_type */
+  MZ_HASH_KEY_EX
+
+  struct Scheme_Module *module; /* NULL => top-level */
+
+  Scheme_Hash_Table *module_registry; /* symbol -> module ; loaded modules, 
+					 shared with moucles in same space */
+
+  /* For compilation, per-declaration: */
+  /* First two are passed from module to module-begin: */
+  Scheme_Object *rename;    /* module rename record */
+  Scheme_Object *et_rename; /* exp-time rename record */
+
+  struct Scheme_Comp_Env *init;
+  
+  Scheme_Hash_Table *syntax;
+  struct Scheme_Env *exp_env;
+
+  Scheme_Hash_Table *shadowed_syntax; /* top level only */
+
+  /* Per-instance: */
+  long phase;
+  Scheme_Object *link_midx;
+  short running;
+  short lazy_syntax;
+
+  Scheme_Hash_Table *toplevel;
+  Scheme_Object *modchain; /* Vector of:
+			       1. symbol -> env ; running modules, 
+			           shared with instances in same phase
+			       2. modchain for next phase (or #f)
+                               3. modchain for previous phase (or #f) */
+};
 
 /* A module access path (or "idx") is a pair: sexp * symbol-or-#f
    The symbol is the resolved module name, or #f if it's not
@@ -1502,7 +1537,7 @@ int scheme_is_module_env(Scheme_Comp_Env *env);
 Scheme_Object *scheme_module_resolve(Scheme_Object *modidx);
 Scheme_Module *scheme_module_load(Scheme_Object *modname, Scheme_Env *env);
 Scheme_Env *scheme_module_access(Scheme_Object *modname, Scheme_Env *env);
-void scheme_module_force_lazy(Scheme_Env *env);
+void scheme_module_force_lazy(Scheme_Env *env, int previous);
 
 void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, Scheme_Object *stx);
 Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name);
@@ -1518,6 +1553,8 @@ extern Scheme_Env *scheme_initial_env;
 
 void scheme_install_initial_module_set(Scheme_Env *env);
 Scheme_Hash_Table *scheme_clone_toplevel(Scheme_Hash_Table *ht, Scheme_Env *home);
+
+Scheme_Env *scheme_clone_module_env(Scheme_Env *menv, Scheme_Env *ns, Scheme_Object *modchain);
 
 /*========================================================================*/
 /*                         errors and exceptions                          */

@@ -489,40 +489,7 @@ enum {
   SCHEME_hash_weak_ptr
 };
 
-typedef struct Scheme_Env
-{
-  Scheme_Type type; /* scheme_namespace_type */
-  MZ_HASH_KEY_EX
-
-  struct Scheme_Module *module; /* NULL => top-level */
-
-  Scheme_Hash_Table *module_registry; /* symbol -> module ; loaded modules, 
-					 shared with moucles in same space */
-
-  /* For compilation, per-declaration: */
-  /* First two are passed from module to module-begin: */
-  Scheme_Object *rename;    /* module rename record */
-  Scheme_Object *et_rename; /* exp-time rename record */
-
-  struct Scheme_Comp_Env *init;
-  
-  Scheme_Hash_Table *syntax;
-  struct Scheme_Env *exp_env;
-
-  Scheme_Hash_Table *shadowed_syntax; /* top level only */
-
-  /* Per-instance: */
-  long phase;
-  Scheme_Object *link_midx;
-  int running;  
-
-  Scheme_Hash_Table *toplevel;
-  Scheme_Object *modchain; /* Vector of:
-			       1. symbol -> env ; running modules, 
-			           shared with instances in same phase
-			       2. modchain for next phase (or #f)
-                               3. modchain for previous phase (or #f) */
-} Scheme_Env;
+typedef struct Scheme_Env Scheme_Env;
 
 #define SCHEME_VAR_BUCKET(obj) ((Scheme_Bucket *)(obj))
 

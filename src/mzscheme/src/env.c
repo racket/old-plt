@@ -522,6 +522,62 @@ void scheme_prepare_exp_env(Scheme_Env *env)
   }
 }
 
+Scheme_Env *scheme_clone_module_env(Scheme_Env *menv, Scheme_Env *ns, Scheme_Object *modchain)
+{
+  /* New env should have the same syntax and globals table, but it lives in
+     a different namespaces. */
+  Scheme_Env *menv2;
+
+  menv2 = MALLOC_ONE_TAGGED(Scheme_Env);
+  menv2->type = scheme_namespace_type;
+
+  menv2->module = menv->module;
+
+  menv2->module_registry = ns->module_registry;
+
+  menv2->rename = menv->rename;
+  menv2->et_rename = menv->et_rename;
+
+  menv2->syntax = menv->syntax;
+
+  menv2->phase = menv->phase;
+  menv2->link_midx = menv->link_midx;
+  menv2->running = menv->running;
+
+  menv2->toplevel = menv->toplevel;
+  
+  menv2->modchain = modchain;
+
+  {
+    Scheme_Comp_Env *me;
+    me = (Scheme_Comp_Env *)MALLOC_ONE_RT(Scheme_Full_Comp_Env);
+    menv2->init = me;
+  }
+#ifdef MZTAG_REQUIRED
+  menv2->init->type = scheme_rt_comp_env;
+#endif
+  menv2->init->num_bindings = 0;
+  menv2->init->next = NULL;
+  menv2->init->genv = menv2;
+  init_compile_data(menv2->init);
+
+  if (!SCHEME_NULLP(menv2->module->et_requires)) {
+    /* We'll need the next link in the modchain: */
+    modchain = SCHEME_VEC_ELS(modchain)[1];
+    if (SCHEME_FALSEP(modchain)) {
+      Scheme_Hash_Table *next_modules;
+      
+      next_modules = scheme_hash_table(7, SCHEME_hash_ptr);
+      modchain = scheme_make_vector(3, scheme_false);
+      SCHEME_VEC_ELS(modchain)[0] = (Scheme_Object *)next_modules;
+      SCHEME_VEC_ELS(menv2->modchain)[1] = modchain;
+      SCHEME_VEC_ELS(modchain)[2] = menv2->modchain;
+    }
+  }
+
+  return menv2;
+}
+
 Scheme_Hash_Table *scheme_clone_toplevel(Scheme_Hash_Table *ht, Scheme_Env *home)
 {
   Scheme_Hash_Table *r;
@@ -1083,7 +1139,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 	  /* The failure might be due a laziness in required-syntax
 	     execution. Force all laziness at the prior level 
 	     and try again. */
-	  scheme_module_force_lazy(env->genv);
+	  scheme_module_force_lazy(env->genv, 1);
 	  genv = scheme_module_access(modname, env->genv);
 	}
 

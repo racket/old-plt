@@ -107,7 +107,7 @@ static Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *l,
 				    int unpack_kern);
 static void start_module(Scheme_Module *m, Scheme_Env *env, int restart, Scheme_Object *syntax_idx);
 static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart, Scheme_Object *syntax_idx);
-static void finish_expstart_module(Scheme_Object *lazy, Scheme_Hash_Table *syntax, Scheme_Env *env);
+static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env);
 
 static Scheme_Object *default_module_resolver(int argc, Scheme_Object **argv);
 
@@ -639,8 +639,9 @@ static Scheme_Object *namespace_trans_require(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 {
-  Scheme_Env *env, *to_env, *menv, *menv2;
-  Scheme_Object *todo, *name, *notifies = scheme_null, *a[3], *resolver;
+  Scheme_Env *from_env, *to_env, *menv, *menv2;
+  Scheme_Object *todo, *next_phase_todo, *name, *notifies = scheme_null, *a[3], *resolver;
+  Scheme_Object *to_modchain, *from_modchain;
   Scheme_Module *m2;
 
   if (!SCHEME_NAMESPACEP(argv[0]))
@@ -648,74 +649,110 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
   if (!SCHEME_SYMBOLP(argv[1]))
     scheme_wrong_type("namespace-attach-module", "symbol", 1, argc, argv);
 
-  env = (Scheme_Env *)argv[0];
+  from_env = (Scheme_Env *)argv[0];
   to_env = scheme_get_env(scheme_config);
 
   todo = scheme_make_pair(argv[1], scheme_null);
+  next_phase_todo = scheme_null;
+  from_modchain = from_env->modchain;
+  to_modchain = to_env->modchain;
+
   /* Check whether todo, or anything it needs, is already declared incompatibly: */
   while (!SCHEME_NULLP(todo)) {
-    name = SCHEME_CAR(todo);
-    name = scheme_module_resolve(name);
+    while (!SCHEME_NULLP(todo)) {
+      name = SCHEME_CAR(todo);
+      name = scheme_module_resolve(name);
 
-    todo = SCHEME_CDR(todo);
+      todo = SCHEME_CDR(todo);
 
-    if (!SAME_OBJ(name, kernel_symbol)) {
-      menv = scheme_module_access(name, env);
-      
-      if (!menv) {
-	scheme_arg_mismatch("namespace-attach-module",
-			    "unknown module (in the current namespace): ",
-			    name);
-      }
+      if (!SAME_OBJ(name, kernel_symbol)) {
+	menv = (Scheme_Env *)scheme_lookup_in_table(MODCHAIN_TABLE(from_modchain), (const char *)name);
 
-      menv2 = (Scheme_Env *)scheme_lookup_in_table(MODCHAIN_TABLE(to_env->modchain), (char *)name);
-      if (menv2) {
-	if (!SAME_OBJ(menv, menv2))
-	  m2 = menv2->module;
-	else
-	  m2 = NULL;
-      } else {
-	m2 = (Scheme_Module *)scheme_lookup_in_table(to_env->module_registry, (char *)name);
-      }
+	if (!menv) {
+	  /* Assert: name == argv[1] */
+	  scheme_arg_mismatch("namespace-attach-module",
+			      "unknown module (in the source namespace): ",
+			      name);
+	}
+
+	if (SCHEME_TRUEP(to_modchain)) {
+	  menv2 = (Scheme_Env *)scheme_lookup_in_table(MODCHAIN_TABLE(to_modchain), (char *)name);
+	  if (menv2) {
+	    if (!SAME_OBJ(menv->toplevel, menv2->toplevel))
+	      m2 = menv2->module;
+	    else
+	      m2 = NULL;
+	  } else {
+	    m2 = (Scheme_Module *)scheme_lookup_in_table(to_env->module_registry, (char *)name);
+	  }
+	  
+	  if (m2)
+	    scheme_arg_mismatch("namespace-attach-module",
+				"a different module with the same name is already "
+				"in the destination namespace, for name: ",
+				name);
+	} else
+	  menv2 = NULL;
       
-      if (m2)
-	scheme_arg_mismatch("namespace-attach-module",
-			    "a different module with the same name is already "
-			    "in the destination namespace, for name: ",
-			    name);
-      
-      if (!menv2) {
-	/* Push requires onto the check list: */
-	todo = scheme_append(menv->module->requires, todo);
-	todo = scheme_append(menv->module->et_requires, todo);
+	if (!menv2) {
+	  /* Push requires onto the check list: */
+	  todo = scheme_append(menv->module->requires, todo);
+
+	  /* Have to force laziness in source to ensure sharing: */
+	  if (menv->lazy_syntax)
+	    finish_expstart_module(menv, from_env);
+
+	  next_phase_todo = scheme_append(menv->module->et_requires, next_phase_todo);
+	}
       }
     }
+
+    todo = next_phase_todo;
+    next_phase_todo = scheme_null;
+    from_modchain = SCHEME_VEC_ELS(from_modchain)[1];
+    if (SCHEME_TRUEP(to_modchain))
+      to_modchain = SCHEME_VEC_ELS(to_modchain)[1];
   }
 
-  /* Go again, this time tranferring modules: */
+  /* Go again, this time tranferring modules */
+
   todo = scheme_make_pair(argv[1], scheme_null);
+  next_phase_todo = scheme_null;
+  from_modchain = from_env->modchain;
+  to_modchain = to_env->modchain;
+
   while (!SCHEME_NULLP(todo)) {
-    name = SCHEME_CAR(todo);
-    name = scheme_module_resolve(name);
+    while (!SCHEME_NULLP(todo)) {
+      name = SCHEME_CAR(todo);
+      name = scheme_module_resolve(name);
 
-    todo = SCHEME_CDR(todo);
+      todo = SCHEME_CDR(todo);
 
-    if (!SAME_OBJ(name, kernel_symbol)) {
-      menv = scheme_module_access(name, env);
+      if (!SAME_OBJ(name, kernel_symbol)) {
+	menv = (Scheme_Env *)scheme_lookup_in_table(MODCHAIN_TABLE(from_modchain), (const char *)name);
       
-      menv2 = (Scheme_Env *)scheme_lookup_in_table(MODCHAIN_TABLE(to_env->modchain), (char *)name);
-      if (!menv2) {
-	scheme_add_to_table(MODCHAIN_TABLE(to_env->modchain), (char *)name, menv, 0);
-	scheme_add_to_table(to_env->module_registry, (char *)name, menv->module, 0);
+	menv2 = (Scheme_Env *)scheme_lookup_in_table(MODCHAIN_TABLE(to_modchain), (char *)name);
+	if (!menv2) {
+	  /* Clone menv for the new namespace: */
+	  menv2 = scheme_clone_module_env(menv, to_env, to_modchain);
 
-	/* Puch name onto notify list: */
-	notifies = scheme_make_pair(name, notifies);
+	  scheme_add_to_table(MODCHAIN_TABLE(to_modchain), (char *)name, menv2, 0);
+	  scheme_add_to_table(to_env->module_registry, (char *)name, menv2->module, 0);
 
-	/* Push requires onto the check list: */
-	todo = scheme_append(menv->module->requires, todo);
-	todo = scheme_append(menv->module->et_requires, todo);
+	  /* Push name onto notify list: */
+	  notifies = scheme_make_pair(name, notifies);
+
+	  /* Push requires onto the check list: */
+	  todo = scheme_append(menv->module->requires, todo);
+	  next_phase_todo = scheme_append(menv->module->et_requires, next_phase_todo);
+	}
       }
     }
+
+    todo = next_phase_todo;
+    next_phase_todo = scheme_null;
+    from_modchain = SCHEME_VEC_ELS(from_modchain)[1];
+    to_modchain = SCHEME_VEC_ELS(to_modchain)[1];
   }
 
   /* Notify module name resolver of attached modules: */
@@ -926,63 +963,46 @@ Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Sch
     if (!menv)
       return NULL;
 
-    ht = menv->syntax;
+    if (menv->lazy_syntax)
+      finish_expstart_module(menv, env);
 
+    ht = menv->syntax;
     val = scheme_lookup_in_table(ht, (char *)name);
-    if (val && !SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)) {
-      /* A pair indicates a lazy expstart: */
-      finish_expstart_module(val, ht, env);
-      val = scheme_lookup_in_table(ht, (char *)name);
-    }
 
     return val;
   }
 }
 
-void scheme_module_force_lazy(Scheme_Env *env)
+void scheme_module_force_lazy(Scheme_Env *env, int previous)
 {
   Scheme_Hash_Table *mht;
   Scheme_Bucket **mbs;
   int mi;
 
-  mht = MODCHAIN_TABLE(SCHEME_VEC_ELS(env->modchain)[2]);
-
+  if (previous)
+    mht = MODCHAIN_TABLE(SCHEME_VEC_ELS(env->modchain)[2]);
+  else
+    mht = MODCHAIN_TABLE(env->modchain);
+  
   mbs = mht->buckets;
   
   for (mi = mht->size; mi--; ) {
     Scheme_Bucket *mb = mbs[mi];
     if (mb && mb->val) {
       /* Check this module for lazy syntax. */
-      Scheme_Hash_Table *ht;
-      Scheme_Bucket **bs;
-      int i;
+      Scheme_Env *menv = (Scheme_Env *)mb->val;
 
-      ht = ((Scheme_Env *)mb->val)->syntax;
-      
-      if (ht) {
-	bs = ht->buckets;
-	for (i = ht->size; i--; ) {
-	  Scheme_Bucket *b = bs[i];
-	  if (b && b->val) {
-	    Scheme_Object *mcr = (Scheme_Object *)b->val;
-	    if (SCHEME_TRUEP(mcr) && !SAME_TYPE(SCHEME_TYPE(mcr), scheme_macro_type)) {
-	      /* It's lazy. Finish it. */
-	      finish_expstart_module(mcr, ht, env);
-	    }
-	    break;
-	  }
-	}
-      }
+      if (menv->lazy_syntax)
+	finish_expstart_module(menv, env);
     }
   }
-
 }
 
 static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart, 
 			    Scheme_Object *syntax_idx)
 {
   Scheme_Env *menv;
-  Scheme_Object *body, *l, *names;
+  Scheme_Object *l;
 
   if (SAME_OBJ(m, kernel))
     return;
@@ -1058,29 +1078,28 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
 		    scheme_modidx_shift(SCHEME_CAR(l), m->self_modidx, syntax_idx));
   }
 
-  /* Lazily start the module. Map all syntax names to a lazy marker: */
-  body = m->et_body;
-  for (; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
-    names = SCHEME_VEC_ELS(SCHEME_CAR(body))[0];
-    while (SCHEME_PAIRP(names)) {
-      scheme_add_to_table(menv->syntax, 
-			  (const char *)SCHEME_CAR(names),
-			  menv, 0);
-      names= SCHEME_CDR(names);
-    }
+  /* Make sure et_requires are at least defined: */
+  for (l = m->et_requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
+    scheme_module_resolve(SCHEME_CAR(l));
+  }
+
+  if (!SCHEME_NULLP(m->et_body) || !SCHEME_NULLP(m->et_requires)) {
+    /* Set lazy-syntax flag. */
+    menv->lazy_syntax = 1;
   }
 }
 
-static void finish_expstart_module(Scheme_Object *lazy, Scheme_Hash_Table *syntax, Scheme_Env *env)
+static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env)
 {
   Scheme_Object *l, *body, *e, *names;
   Scheme_Env *exp_env;
-  Scheme_Env *menv;
+  Scheme_Hash_Table *syntax;
   int let_depth;
 
   /* Continue a delayed expstart: */
+  menv->lazy_syntax = 0;
 
-  menv = (Scheme_Env *)lazy;
+  syntax = menv->syntax;
 
   scheme_prepare_exp_env(menv);
   exp_env = menv->exp_env;
@@ -1092,16 +1111,6 @@ static void finish_expstart_module(Scheme_Object *lazy, Scheme_Hash_Table *synta
     start_module(scheme_module_load(scheme_module_resolve(SCHEME_CAR(l)), env), 
 		 exp_env, 0,
 		 scheme_modidx_shift(SCHEME_CAR(l), menv->module->self_modidx, exp_env->link_midx));
-  }
-
-  /* Just in case: set syntax to #f to avoid cyclic forcing of lazy syntax. */
-  for (body = menv->module->et_body; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
-    e = SCHEME_CAR(body);
-    names = SCHEME_VEC_ELS(e)[0];
-    while (SCHEME_PAIRP(names)) {
-      scheme_add_to_table(syntax, (const char *)SCHEME_CAR(names), scheme_false, 0);
-      names = SCHEME_CDR(names);
-    }
   }
 
   for (body = menv->module->et_body; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
@@ -2411,6 +2420,14 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
       i = SCHEME_STX_CDR(i);
       idxstx = SCHEME_STX_CAR(i);
       exns = NULL;
+
+      if (!SCHEME_SYMBOLP(SCHEME_STX_VAL(prefix))) {
+	scheme_wrong_syntax("require", prefix, form, "bad prefix (not an identifier)");
+	return NULL;
+      }
+
+      prefix = SCHEME_STX_VAL(prefix);
+
     } else if (aa && SAME_OBJ(all_except_symbol, SCHEME_STX_VAL(aa))) {
       Scheme_Object *l;
       int len;
@@ -2501,9 +2518,6 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
 	       && !iname
 	       && !unpack_kern);
 
-    if (prefix)
-      prefix = SCHEME_STX_VAL(prefix);
-      
     while (1) { /* loop to handle kernel re-provides... */
 
       /* Add name to require list, if it's not there: */

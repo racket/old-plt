@@ -67,8 +67,8 @@
                          ((windows) (list "opengl32.lib" "glu32.lib"))
                          (else '())))))
         (let ((file.o (append-object-suffix file)))
-	  (parameterize ([dynext:compile-variant '3m]
-			 [dynext:link-variant '3m])
+	  (parameterize ([dynext:compile-variant variant]
+			 [dynext:link-variant variant])
 	    (dynext:compile-extension #f 
 				      file.c
 				      file.o

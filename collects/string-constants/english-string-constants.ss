@@ -667,6 +667,12 @@
  (profiling-square "Square")
  (profiling-number "Number of Calls")
  (profiling-time "Cumulative Time")
+ (profiling-clear "Clear Profile")
+ (profiling-update "Update Profile")
+ (profiling-col-filename "Filename")
+ (profiling-col-name "Name")
+ (profiling-col-time "Time")
+ (profiling-col-count "Count")
  
  ;;; repl stuff
  (evaluation-terminated "Evaluation Terminated")

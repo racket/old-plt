@@ -309,8 +309,8 @@
 
 (drscheme:get/extend:extend-interactions-text
  (case->
-  ((class? . ->d . (lambda (%) (subclass?/c %))) . -> . void?)
-  ((class? . ->d . (lambda (%) (subclass?/c %))) boolean? . -> . void?))
+  ((make-mixin-contract/% drscheme:rep:text%) . -> . void?)
+  ((make-mixin-contract/% drscheme:rep:text%) boolean? . -> . void?))
  ((mixin) (mixin before?))
 
 "The unextended class is \\iscmclass{drscheme:rep:text}. This text is used"

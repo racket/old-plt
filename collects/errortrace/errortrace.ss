@@ -21,6 +21,9 @@
   (define profile-paths-enabled (make-parameter #f))
   
   (define profile-info (make-hash-table))
+
+  (define (initialize-profile-point key name expr)
+    (hash-table-put! profile-info key (list (box #f) 0 0 (and name (syntax-e name)) expr null)))
   
   (define (register-profile-start key)
     (and (profiling-record-enabled)
@@ -61,88 +64,6 @@
                                                        (list (caddr v) (cadddr v))))
                                                    cms))
                                             cmss))))))
-  
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;; Profiling instrumenter
-
-  (define (profile-point body name expr trans?)
-    (if (profiling-enabled)
-        (let ([key (gensym)])
-          (hash-table-put! profile-info key (list (box #f) 0 0 (and name (syntax-e name)) expr null))
-          (with-syntax ([key (datum->syntax-object #f key (quote-syntax here))]
-                        [start (datum->syntax-object #f (gensym) (quote-syntax here))]
-                        [profile-key (datum->syntax-object #f profile-key (quote-syntax here))]
-                        [register-profile-start register-profile-start]
-                        [register-profile-done register-profile-done])
-            (with-syntax ([rest 
-                           (insert-at-tail*
-                            (syntax (register-profile-done 'key start))
-                            body
-                            trans?)])
-              (syntax
-               ((let ([start (register-profile-start 'key)])
-                  (with-continuation-mark 'profile-key 'key
-                                          (begin . rest))))))))
-        body))
-  
-  (define (insert-at-tail* e exprs trans?)
-    (if (stx-null? (stx-cdr exprs))
-        (list (insert-at-tail e (stx-car exprs) trans?))
-        (cons (stx-car exprs) (insert-at-tail* e (stx-cdr exprs) trans?))))
-  
-  (define (insert-at-tail se sexpr trans?)
-    (with-syntax ([expr sexpr]
-		  [e se])
-      (kernel-syntax-case sexpr trans?
-	;; negligible time to eval
-	[id
-	 (identifier? sexpr)
-	 (syntax (begin e expr))]
-	[(quote _) (syntax (begin e expr))]
-	[(quote-syntax _) (syntax (begin e expr))]
-	[(#%datum . d) (syntax (begin e expr))]
-	[(#%top . d) (syntax (begin e expr))]
-
-	;; No tail effect, and we want to account for the time
-	[(lambda . _) (syntax (begin0 expr e))]
-	[(case-lambda . _) (syntax (begin0 expr e))]
-	[(set! . _) (syntax (begin0 expr e))]
-
-	[(let-values bindings . body)
-	 (with-syntax ([rest (insert-at-tail* se (syntax body) trans?)])
-	   (syntax (let-values bindings . rest)))]
-	[(letrec-values bindings . body)
-	 (with-syntax ([rest (insert-at-tail* se (syntax body) trans?)])
-	   (syntax (letrec-values bindings . rest)))]
-
-	[(begin . _)
-	 (insert-at-tail* se sexpr trans?)]
-	[(with-continuation-mark . _)
-	 (insert-at-tail* se sexpr trans?)]
-
-	[(begin0 body ...)
-	 (syntax (begin0 body ... e))]
-
-	[(if test then)
-	 (with-syntax ([then2 (insert-at-tail se (syntax then) trans?)])
-	   (syntax (if test then2)))]
-	[(if test then else)
-	 ;; WARNING: e inserted twice!
-	 (with-syntax ([then2 (insert-at-tail se (syntax then) trans?)]
-		       [else2 (insert-at-tail se (syntax else) trans?)])
-	   (syntax (if test then2 else2)))]
-
-	[(#%app . rest)
-	 (if (stx-null? (syntax rest))
-	     ;; null constant
-	     (syntax (begin e expr))
-	     ;; application; exploit guaranteed left-to-right evaluation
-	     (insert-at-tail* se sexpr trans?))]
-	
-	[_else
-	 (error 'errortrace
-		"unrecognized (non-top-level) expression form: ~e"
-		(syntax-object->datum sexpr))])))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Stacktrace instrumenter

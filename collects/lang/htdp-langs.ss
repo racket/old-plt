@@ -359,8 +359,12 @@ to the original stdout of DrScheme.
                   expr)))
               expr)))
       
-      ;; an unused stacktrace-import^
-      (define (profile-point body name expr trans?) body)
+      ;; profiling infrastructure. Not used.
+      (define profile-key (gensym))
+      (define (profiling-enabled) #f)
+      (define (initialize-profile-point . x) (void))
+      (define (register-profile-start . x) #f)
+      (define (register-profile-done . x) (void))
       
       (define-values/invoke-unit/sig stacktrace^ stacktrace@ #f stacktrace-imports^)
       

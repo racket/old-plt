@@ -209,12 +209,38 @@ The import signature contains these names:
   expressions with `with-continuation-mark'. The first argument is the
   source expressions and the second is the expression to be wrapped.
 
-> profile-point : (syntax symbol-or-#f syntax boolean -> syntax)
+> profile-key : symbol
 
-  This procedure is called by `annotate' and `annotate-top' to wrap
-  expressions with profile collecting information.  Returning the
-  first argument means no profiling information is collected.
+  only used for profiling paths
 
-  The second argument is the point's inferred name, if any, tne third
-  argument is the source expression, and the fourth argument is #t for
-  a transformer expression and #f for a normal expression.
+> profiling-enabled  : -> boolean
+
+  determines if profiling information is currently collected
+  (affects the behavior of compiling the code -- does not
+  affect running code). If this always returns #f, 
+  the other profiling functions are never called.
+
+> initialize-profile-point : symbol (union #f syntax[symbol]) syntax -> void
+
+  called as the program is compiled for each profiling point
+  that might be encountered during the program's
+  execution. The first argument is a key identifying this
+  code. The second argument is the inferred name at this
+  point and the final argument is the syntax of this expression.
+
+> register-profile-start : symbol -> (union #f number)
+ 
+  Called when some profiled code is about to be executed. If
+  the result is a number, it is expected to be the current
+  number of milliseconds. The symbol is a key that is unique
+  to this fragment of code -- it is the same symbol passed
+  to initialize-profile-point for this code fragment.
+			      
+> register-profile-done : symbol (union #f number) -> void
+
+  This function is called when some profiled code is
+  finished executing. The 
+
+  Note that register-profile-start and register-profile-done
+  can be called in a nested manner; in this case, the result
+  of register-profile-point should be #f.

@@ -565,8 +565,8 @@ static Scheme_Object *os_wxMediaStreamInBase_ConstructScheme(int n,  Scheme_Obje
   
   READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   return scheme_void;
 }
 
@@ -954,8 +954,8 @@ static Scheme_Object *os_wxMediaStreamOutBase_ConstructScheme(int n,  Scheme_Obj
   
   READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   return scheme_void;
 }
 
@@ -1102,8 +1102,8 @@ static Scheme_Object *os_wxMediaStreamInStringBase_ConstructScheme(int n,  Schem
   
   READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   return scheme_void;
 }
 
@@ -1265,8 +1265,8 @@ static Scheme_Object *os_wxMediaStreamOutStringBase_ConstructScheme(int n,  Sche
   
   READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   return scheme_void;
 }
 
@@ -1776,8 +1776,8 @@ static Scheme_Object *os_wxMediaStreamIn_ConstructScheme(int n,  Scheme_Object *
   
   READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   return scheme_void;
 }
 
@@ -2180,8 +2180,8 @@ static Scheme_Object *os_wxMediaStreamOut_ConstructScheme(int n,  Scheme_Object 
   
   READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   return scheme_void;
 }
 

@@ -1817,11 +1817,11 @@ sub PrintFunction
 
     if ($iscreator) {
 	print "  ((Scheme_Class_Object *)p[0])->primdata = realobj;\n";
+	print "  ((Scheme_Class_Object *)p[0])->primflag = 1;\n";
 	if ($classflags ne "nofnl") {
 	    print "  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])";
 	    print "->primdata));\n";
 	}
-	print "  ((Scheme_Class_Object *)p[0])->primflag = 1;\n";
 	print "  return scheme_void;\n";
 	print "}\n";
     } else {

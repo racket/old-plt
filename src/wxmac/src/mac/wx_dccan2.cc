@@ -716,8 +716,9 @@ Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
   GDHandle savegd;
   ThemeDrawingState state;
   long ox, oy;
-  Rect largestClipRect = {-32767, -32767, 32767, 32767};
+  Rect clientRect = {-32767, -32767, 32767, 32767};
   CGrafPtr theMacGrafPort;
+  RgnHandle rgn;
 
   ::GetGWorld(&savep, &savegd);  
 
@@ -733,8 +734,12 @@ Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
   SetOriginX = SetOriginY = 0;
   if (canvas) {
     wxArea *area;
+    int aw, ah;
     area = canvas->ClientArea();
     area->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
+    aw = area->Width();
+    ah = area->Height();
+    ::SetRect(&clientRect, SetOriginX, SetOriginY, SetOriginX + aw, SetOriginY + ah);
   }
 
   GetThemeDrawingState(&state);
@@ -746,11 +751,20 @@ Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
   BackPat(GetWhitePattern());
   PenMode(patCopy);
 
-  ::ClipRect(&largestClipRect);
+  rgn = NewRgn();
+  if (rgn) {
+    GetClip(rgn);
+    ::ClipRect(&clientRect);
+  }
 
   isok = Blit(xdest, ydest, width, height, source, xsrc, ysrc, wxSTIPPLE, NULL);
 
   noDCSet = 0;
+
+  if (rgn) {
+    SetClip(rgn);
+    DisposeRgn(rgn);
+  }
 
   SetThemeDrawingState(state, TRUE);
   SetOriginX = ox;

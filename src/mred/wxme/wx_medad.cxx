@@ -180,6 +180,7 @@ static int default_wheel_amt;
 
 #ifdef wx_x
 # define wxmeBORDER wxNO_CAPTION
+# define wxCONTROL_BORDER 0
 #else
 # define wxmeBORDER wxBORDER
 #endif

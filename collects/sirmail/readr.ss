@@ -1589,12 +1589,13 @@
 	  (let* ([w (send recycle-bm get-width)]
 		 [h (send recycle-bm get-height)]
 		 [canvas (instantiate canvas% (button-panel)
-				      [min-width w]
-				      [min-height h]
 				      [stretchable-width #f]
-				      [stretchable-height #f])]
+				      [stretchable-height #f]
+				      [style '(border)])]
 		 [empty-bm (make-object bitmap% w h)]
 		 [dc (make-object bitmap-dc% empty-bm)])
+	    (send canvas min-client-width w)
+	    (send canvas min-client-height h)
 	    (send dc clear)
 	    (send dc set-bitmap #f)
 	    (register-collecting-blit canvas 

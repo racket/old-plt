@@ -1298,8 +1298,8 @@ static Scheme_Object *os_wxMediaCanvas_ConstructScheme(int n,  Scheme_Object *p[
   
   READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   return scheme_void;
 }
 
@@ -3967,8 +3967,8 @@ static Scheme_Object *os_wxSnipClass_ConstructScheme(int n,  Scheme_Object *p[])
   
   READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   return scheme_void;
 }
 
@@ -5159,8 +5159,8 @@ static Scheme_Object *os_wxMediaWordbreakMap_ConstructScheme(int n,  Scheme_Obje
   
   READY_TO_RETURN;
   ((Scheme_Class_Object *)p[0])->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   ((Scheme_Class_Object *)p[0])->primflag = 1;
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
   return scheme_void;
 }
 

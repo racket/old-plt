@@ -2,7 +2,7 @@
 ;;
 ;; parser-tests.ss
 ;; Richard Cobbe
-;; $Id: parser-tests.ss,v 1.12 2004/04/21 21:40:18 cobbe Exp $
+;; $Id: parser-tests.ss,v 1.1 2004/07/27 22:41:36 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -31,44 +31,27 @@
      (make-test-case "initial program"
        (mv-assert equal?
                   (parse-init-program
-                   '((class a Object () ([int foo]) (contain) (acquire))
-                     (class b a () ([bool bar]) (contain [a inner]) (acquire))
-                     (class c a (a)
-                       ([Object baz]) (contain) (acquire [int foo]))
+                   '((class a Object ([int foo]))
+                     (class b a ([bool bar]))
+                     (class c a ([Object baz]))
                      (* 3 (+ 4 5))))
                   (hash-table
                    ('Object
-                    (make-temp-class 'Object #f null null null null null))
-                   ('a (make-temp-class 'a 'Object null
+                    (make-temp-class 'Object #f null null))
+                   ('a (make-temp-class 'a 'Object
                                         (list (make-field
                                                (make-ground-type 'int)
-                                               'foo
-                                               'normal))
-                                        null
-                                        null
+                                               'foo))
                                         null))
-                   ('b (make-temp-class 'b 'a null
+                   ('b (make-temp-class 'b 'a
                                         (list
                                          (make-field (make-ground-type 'bool)
-                                                     'bar
-                                                     'normal))
-                                        (list
-                                         (make-field (make-class-type 'a)
-                                                     'inner
-                                                     'contained))
-                                        null
+                                                     'bar))
                                         null))
                    ('c (make-temp-class 'c 'a
-                                        (list (make-class-type 'a))
                                         (list
                                          (make-field (make-class-type 'Object)
-                                                     'baz
-                                                     'normal))
-                                        null
-                                        (list
-                                         (make-field (make-ground-type 'int)
-                                                     'foo
-                                                     'acquired))
+                                                     'baz))
                                         null)))
                   (make-binary-prim '* (make-num-lit 3)
                                     (make-binary-prim '+
@@ -85,75 +68,60 @@
      (make-test-case "parse-init-program: no defns"
        (mv-assert equal?
                   (parse-init-program '(true))
-                  (hash-table ('Object (make-temp-class 'Object #f null null
-                                                        null null null)))
+                  (hash-table ('Object (make-temp-class 'Object #f null null)))
                   (make-bool-lit #t)))
 
      (make-test-case "init-program: duplicate class name"
        (assert-parse-exn
         "duplicate class definition"
-        (make-temp-class 'a 'Object null
-                         (list (make-field (make-ground-type 'int) 'foo
-                                           'normal))
-                         (list (make-field (make-class-type 'b) 'my-b
-                                           'contained))
-                         null null)
+        (make-temp-class 'a 'Object
+                         (list (make-field (make-ground-type 'int) 'foo)) null)
         (parse-init-program
-         '((class a Object () ([int first-defn-of-a])
-             (contain) (acquire))
-           (class a Object () ([int foo]) (contain [b my-b])
-             (acquire))
+         '((class a Object ([int first-defn-of-a]))
+           (class a Object ([int foo]))
            (+ 3 4)))))
 
      (make-test-case "make-final-classes: Object only"
        (assert-equal?
         (make-final-classes
-           (hash-table ('Object (make-temp-class 'Object #f null
-                                                 null null null null))))
+         (hash-table ('Object (make-temp-class 'Object #f null null))))
         (hash-table ('Object (make-class (make-class-type 'Object)
-                                         #f null
-                                         null null null null)))))
+                                         #f null null)))))
 
      (make-test-case "make-final-classes: small hierarchy"
        (let* ([object-class (make-class
                              (make-class-type 'Object)
-                             #f null null null null null)]
+                             #f null null)]
               [a-class (make-class (make-class-type 'a) object-class
-                                   (list (make-class-type 'a)) null
-                                   (list (make-field (make-class-type 'a)
-                                                     'value
-                                                     'contained))
                                    null null)]
               [b-class (make-class (make-class-type 'b) a-class
-                                   (list (make-class-type 'a))
-                                   null null null null)])
+                                   null null)])
          (assert-equal?
           (make-final-classes
-           (hash-table ('Object (make-temp-class 'Object #f null
-                                                 null null null null))
-                       ('b (make-temp-class 'b 'a (list (make-class-type 'a))
-                                            null null null null))
-                       ('a (make-temp-class 'a 'Object
-                                            (list (make-class-type 'a))
-                                            null
-                                            (list (make-field
-                                                   (make-class-type 'a)
-                                                   'value
-                                                   'contained))
-                                            null null))))
-         (hash-table ('Object object-class)
-                     ('a a-class)
-                     ('b b-class)))))
+           (hash-table ('Object (make-temp-class 'Object #f null null))
+                       ('b (make-temp-class 'b 'a null null))
+                       ('a (make-temp-class 'a 'Object null null))))
+          (hash-table ('Object object-class)
+                      ('a a-class)
+                      ('b b-class)))))
 
      (make-test-case "make-final-classes: missing superclass"
-       (let ([a (make-temp-class 'a 'b 'any null null null null)])
+       (let ([a (make-temp-class 'a 'b null null)])
          (assert-parse-exn "parent class doesn't exist" a
                            (make-final-classes
                             (hash-table
-                             ('Object (make-temp-class 'Object #f null
-                                                       null null null
-                                                       null))
-                                        ('a a))))))
+                             ('Object (make-temp-class 'Object #f null null))
+                             ('a a))))))
+
+     (make-test-case "make-final-classes: inheritance cycle"
+       (let ([a (make-temp-class 'a 'b null null)]
+             [b (make-temp-class 'b 'c null null)]
+             [c (make-temp-class 'c 'a null null)])
+         (assert-parse-exn "inheritance cycle" a
+                           (make-final-classes
+                            (hash-table ['a a]
+                                        ['b b]
+                                        ['c c])))))
 
      (make-test-case "Numeric expression"
        (assert-equal? (parse-expr '(* (+ 3 4) (- 7 -2)))
@@ -222,42 +190,52 @@
                            (parse-expr `(if ,defn x y)))))
 
      (make-test-case "ctor call"
-       (assert-equal? (parse-expr '(new foo false 3 null))
-                      (make-new (make-class-type 'foo)
-                                (list (make-bool-lit #f)
-                                      (make-num-lit 3)
-                                      (make-nil)))))
+       (assert-equal? (parse-expr '(new foo))
+                      (make-new (make-class-type 'foo))))
 
      (make-test-case "ctor: first arg must be class name"
        (assert-parse-exn "bad expression" '(new (x y) z)
                          (parse-expr '(new (x y) z))))
 
-     (make-test-case "ivar"
-       (assert-equal? (parse-expr '(ivar this x))
-                      (make-ivar (make-var-ref 'this) 'x)))
+     (make-test-case "ref"
+       (assert-equal? (parse-expr '(ref this x))
+                      (make-ref (make-var-ref 'this) 'x)))
 
-     (make-test-case "ivar: field must be name"
-       (assert-parse-exn "bad expression" '(ivar this (x y))
-                         (parse-expr '(ivar this (x y)))))
+     (make-test-case "ref: field must be name"
+       (assert-parse-exn "bad expression" '(ref this (x y))
+                         (parse-expr '(ref this (x y)))))
 
-     (make-test-case "send"
-       (assert-equal? (parse-expr '(send (ivar x y) foo (ivar z a) null))
-                      (make-send (make-ivar (make-var-ref 'x) 'y)
+     (make-test-case "set"
+       (assert-equal? (parse-expr '(set this x (+ y z)))
+                      (make-set (make-var-ref 'this)
+                                'x
+                                (make-binary-prim '+
+                                                  (make-var-ref 'y)
+                                                  (make-var-ref 'z)))))
+
+     (make-test-case "set: field must be name"
+       (let ([set '(set this (+ a b) (- c d))])
+         (assert-parse-exn "bad expression" set
+                           (parse-expr set))))
+
+     (make-test-case "call"
+       (assert-equal? (parse-expr '(call (ref x y) foo (ref z a) null))
+                      (make-call (make-ref (make-var-ref 'x) 'y)
                                  'foo
-                                 (list (make-ivar (make-var-ref 'z)
+                                 (list (make-ref (make-var-ref 'z)
                                                   'a)
                                        (make-nil)))))
 
-     (make-test-case "send: method name must be name"
-       (let ([send '(send (ivar x y) (z q))])
-         (assert-parse-exn "bad expression" send
-                           (parse-expr send))))
+     (make-test-case "call: method name must be name"
+       (let ([call '(call (ref x y) (z q))])
+         (assert-parse-exn "bad expression" call
+                           (parse-expr call))))
 
      (make-test-case "super"
-       (assert-equal? (parse-expr '(super foo x (ivar a b)))
+       (assert-equal? (parse-expr '(super foo x (ref a b)))
                       (make-super 'foo
                                   (list (make-var-ref 'x)
-                                        (make-ivar (make-var-ref 'a)
+                                        (make-ref (make-var-ref 'a)
                                                    'b)))))
 
      (make-test-case "super: method name must be literal"
@@ -265,9 +243,9 @@
                          (parse-expr '(super (x y)))))
 
      (make-test-case "cast"
-       (assert-equal? (parse-expr '(cast foo (ivar x y)))
+       (assert-equal? (parse-expr '(cast foo (ref x y)))
                       (make-cast (make-class-type 'foo)
-                                 (make-ivar (make-var-ref 'x) 'y))))
+                                 (make-ref (make-var-ref 'x) 'y))))
 
      (make-test-case "cast: class name must be literal"
        (assert-parse-exn "bad expression" '(cast (x y) z)
@@ -279,99 +257,62 @@
 
      (make-test-case "definition"
        (assert-equal?
-        (parse-defn '(class foo Object (bar)
+        (parse-defn '(class foo Object
                        ((int x)
-                        (Object y))
-                       (contain (bar a)
-                                (baz b))
-                       (acquire (quux c))
+                        (Object y)
+                        (bar a)
+                        (baz b)
+                        (quux c))
                        (foo get-foo ((int x)) null)))
         (make-temp-class
          'foo
          'Object
-         (list (make-class-type 'bar))
-         (list (make-field (make-ground-type 'int) 'x 'normal)
-               (make-field (make-class-type 'Object) 'y 'normal))
-         (list (make-field (make-class-type 'bar) 'a 'contained)
-               (make-field (make-class-type 'baz) 'b 'contained))
-         (list (make-field (make-class-type 'quux) 'c 'acquired))
+         (list (make-field (make-ground-type 'int) 'x)
+               (make-field (make-class-type 'Object) 'y)
+               (make-field (make-class-type 'bar) 'a)
+               (make-field (make-class-type 'baz) 'b)
+               (make-field (make-class-type 'quux) 'c))
          (list (make-method (make-class-type 'foo) 'get-foo
                             (list 'x)
                             (list (make-ground-type 'int))
                             (make-nil))))))
 
-     (make-test-case "defn with ANY containers"
-       (assert-equal?
-        (parse-defn '(class foo Object any
-                       ([int x]
-                        [Object y])
-                       (contain [bar z])
-                       (acquire [quux c])
-                       (foo get-foo ([int x]) null)))
-        (make-temp-class 'foo 'Object 'any
-                         (list (make-field (make-ground-type 'int) 'x 'normal)
-                               (make-field (make-class-type 'Object) 'y
-                                           'normal))
-                         (list (make-field (make-class-type 'bar) 'z
-                                           'contained))
-                         (list (make-field (make-class-type 'quux) 'c
-                                           'acquired))
-                         (list (make-method (make-class-type 'foo)
-                                            'get-foo
-                                            (list 'x)
-                                            (list (make-ground-type 'int))
-                                            (make-nil))))))
-
      (make-test-case "defn: malformed"
        (assert-parse-exn "bad definition" '(class foo (x y) () ())
                          (parse-defn '(class foo (x y) () ()))))
 
-     (make-test-case "defn: missing fields"
-       (let ([bad-defn '(class foo x ((int y) ((Object z))
-                                      ((Object foo () nil))))])
-         (assert-parse-exn "bad definition" bad-defn
-                           (parse-defn bad-defn))))
-
      (make-test-case "defn: bad field"
        (let ([bad-field '(x y z)])
          (assert-parse-exn "bad field definition" bad-field
-                           (parse-defn `(class foo Object ()
-                                          ((a b) ,bad-field)
-                                          (contain) (acquire))))))
+                           (parse-defn `(class foo Object
+                                          ((a b) ,bad-field))))))
 
      (make-test-case "defn: bad method"
        (let ([bad-method '(int foo ())])
          (assert-parse-exn "bad method definition" bad-method
-                           (parse-defn `(class bar Object () ()
-                                          (contain) (acquire)
-                                          ,bad-method)))))
+                           (parse-defn `(class bar Object () ,bad-method)))))
 
      (make-test-case "defn: bad argument"
        (assert-parse-exn "bad argument definition" '(int x y)
-                         (parse-defn '(class bar Object
-                                        () ()
-                                        (contain) (acquire)
+                         (parse-defn '(class bar Object ()
                                         (int foo ((int x y) (foo bar))
-                                              null)))))
+                                             null)))))
 
      (make-test-case "program"
        (assert-equal?
         (parse-program
-         '((class foo Object () () (contain) (acquire))
-           (class bar foo () ((int x)) (contain (foo f)) (acquire)
+         '((class foo Object ())
+           (class bar foo ((int x) [foo f])
              (int zero () 0)
              (Object get-root () null)
              (int sum ((int x) (int y)) (+ x y)))
-           (send (new bar 3 null) zero)))
-        (let* ([obj (make-class (make-class-type 'Object) #f null null null
-                                null null)]
-               [foo (make-class (make-class-type 'foo) obj null null null null
-                                null)]
+           (call (new bar) zero)))
+        (let* ([obj (make-class (make-class-type 'Object) #f null null)]
+               [foo (make-class (make-class-type 'foo) obj null null)]
                [bar (make-class
-                     (make-class-type 'bar) foo null
-                     (list (make-field (make-ground-type 'int) 'x 'normal))
-                     (list (make-field (make-class-type 'foo) 'f 'contained))
-                     null
+                     (make-class-type 'bar) foo
+                     (list (make-field (make-ground-type 'int) 'x)
+                           (make-field (make-class-type 'foo) 'f))
                      (list (make-method (make-ground-type 'int)
                                         'zero
                                         null
@@ -393,9 +334,7 @@
                                          (make-var-ref 'y)))))])
           (make-program
            (hash-table ('Object obj) ('foo foo) ('bar bar))
-           (make-send (make-new (make-class-type 'bar)
-                                (list (make-num-lit 3)
-                                      (make-nil)))
+           (make-call (make-new (make-class-type 'bar))
                       'zero
-                      ()))
+                      null))
           ))))))

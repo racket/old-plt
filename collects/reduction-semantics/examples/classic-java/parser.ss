@@ -2,10 +2,10 @@
 ;;
 ;; parser.ss
 ;; Richard Cobbe
-;; $Id: parser.ss,v 1.37 2004/05/21 23:01:06 cobbe Exp $
+;; $Id: parser.ss,v 1.1 2004/07/27 22:41:36 cobbe Exp $
 ;;
 ;; Implements the parser for the S-Expression based source syntax for
-;; Acquired Java.
+;; ClassicJava.
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -25,36 +25,24 @@
 
   (with-public-inspector
    (define-struct (exn:aj:parse exn:application) ())
-   (define-struct temp-class
-                  (name superclass containers fields contained-fields
-                        acquired-fields methods)))
+   (define-struct temp-class (name superclass fields methods)))
 
-  #;(set! make-temp-class
+  #;
+  (set! make-temp-class
         (let ([old-ctor make-temp-class])
-          (lambda (n s c f cf af m)
+          (lambda (n s f m)
             (unless (class-name? n)
               (error 'make-temp-class "expected class-name, got ~a" n))
             (unless (or (class-name? s) (not s))
               (error 'make-temp-class
                      "expected class-name or false, got ~a" s))
-            (unless (or (eq? c 'any)
-                        (and (list? c)
-                             (andmap class-type? c)))
-              (error 'make-temp-class
-                     "expected 'any or list of class-types, got ~a" c))
             (unless (and (list? f) (andmap field? f))
               (error 'make-temp-class "expected list of field, got ~a" f))
-            (unless (and (list? cf) (andmap field? cf))
-              (error 'make-temp-class "expected list of field, got ~a" cf))
-            (unless (and (list? af) (andmap field? af))
-              (error 'make-temp-class "expected list of field, got ~a" af))
             (unless (and (list? m) (andmap method? m))
               (error 'make-temp-class "expected list of method, got ~a" m))
-            (old-ctor n s c f cf af m))))
+            (old-ctor n s f m))))
 
   ;; Temp-Class ::= (make-temp-class Class-Name (Union Class-Name #f)
-  ;;                                 (Union 'any (Listof Type[Class])
-  ;;                                 (Listof Field) (Listof Field)
   ;;                                 (Listof Field) (Listof Method))
 
   (define-syntax expand-parse-exn
@@ -64,6 +52,8 @@
          expr)]))
 
   ;; parse-init-program :: SExpr -> (Hash-Table ID Temp-Class) Src-Expr
+  ;; Creates initial class hierarchy; classes have superclass names rather
+  ;; than direct references.
   (define parse-init-program
     (lambda (src)
       (unless (and (list? src)
@@ -72,7 +62,7 @@
                                   src)))
       (let ([table (make-hash-table)])
         (hash-table-put! table 'Object
-                         (make-temp-class 'Object #f null null null null null))
+                         (make-temp-class 'Object #f null null))
         (let loop ([src src])
           (cond
            [(null? (cdr src)) (values table (parse-expr (car src)))]
@@ -81,7 +71,7 @@
             (loop (cdr src))])))))
 
   ;; add-to-table! :: Temp-Class (Hash-Table Class-Name Temp-Class) -> ()
-  ;; adds cdefn to table; raises exn:aj:parse if already present
+  ;; adds temp cdefn to table; raises exn:aj:parse if already present
   (define add-to-table!
     (lambda (cdefn table)
       (when (hash-table-get table
@@ -93,11 +83,15 @@
       (hash-table-put! table (temp-class-name cdefn) cdefn)))
 
   ;; parse-program :: SExpr -> Program[Src-Expr]
+  ;; parses the SExpression source into an (unelaborated) program
   (define parse-program
     (lambda (src)
       (let-values ([(temp-table main) (parse-init-program src)])
         (make-program (make-final-classes temp-table) main))))
 
+  ;; make-final-classes :: (Hash-Table Class-Name Temp-Class)
+  ;;                    -> (Hash-Table Class-Name Class[Src-Expr])
+  ;; patches up parent links in class inheritance hierarchy.
   (define make-final-classes
     (lambda (temp-table)
       (let ([final-table (make-hash-table)])
@@ -109,10 +103,18 @@
   ;;                     (Hash-Table Class-Name Class)
   ;;                  -> Class-Name Class
   ;;                  -> ()
+  ;; ensures that class and all its ancestors are in final-table with
+  ;;   valid superclass refs
   (define patch-superclass
     (lambda (temp-table final-table)
-      (rec loop
-        (lambda (name class)
+      (lambda (name class0)
+        (recur loop ([name name]
+                     [class class0]
+                     [history null])
+          (when (memq class history)
+            (raise (make-exn:aj:parse "inheritance cycle"
+                                      (current-continuation-marks)
+                                      class0)))
           (unless (hash-table-get final-table name (lambda () #f))
             (let* ([parent-name (temp-class-superclass class)]
                    [parent
@@ -124,7 +126,7 @@
                                                   (current-continuation-marks)
                                                   class))))
                         #f)])
-              (when parent (loop parent-name parent))
+              (when parent (loop parent-name parent (cons class history)))
               (let ([final-parent (if parent-name
                                       (hash-table-get final-table
                                                       parent-name)
@@ -133,10 +135,7 @@
                  final-table name
                  (make-class (make-class-type name)
                              final-parent
-                             (temp-class-containers class)
                              (temp-class-fields class)
-                             (temp-class-contained-fields class)
-                             (temp-class-acquired-fields class)
                              (temp-class-methods class))))))))))
 
   ;; parse-expr :: SExpr -> Src-Expr
@@ -148,17 +147,19 @@
       ['false (make-bool-lit #f)]
       [(? id? x) (make-var-ref x)]
       ['this (make-var-ref 'this)]
-      [('new (? class-name? cname) args ...)
-       (make-new (make-class-type cname) (map parse-expr args))]
-      [('ivar obj (? field-name? fd)) (make-ivar (parse-expr obj) fd)]
-      [('send obj (? method-name? md) args ...)
-       (make-send (parse-expr obj) md (map parse-expr args))]
+      [('new (? class-name? cname))
+       (make-new (make-class-type cname))]
+      [('ref obj (? field-name? fd)) (make-ref (parse-expr obj) fd)]
+      [('set obj (? field-name? fd) rhs)
+       (make-set (parse-expr obj) fd (parse-expr rhs))]
+      [('call obj (? method-name? md) args ...)
+       (make-call (parse-expr obj) md (map parse-expr args))]
       [('super (? method-name? md) args ...)
        (make-super md (map parse-expr args))]
       [('cast (? class-name? cname) obj)
        (make-cast (make-class-type cname) (parse-expr obj))]
       [('let (? id? id) rhs body)
-       (make-aj-let id (parse-expr rhs) (parse-expr body))]
+       (make-cj-let id (parse-expr rhs) (parse-expr body))]
       [((? binary-prim-name? op) rand1 rand2)
        (make-binary-prim op (parse-expr rand1) (parse-expr rand2))]
       [((? unary-prim-name? op) rand)
@@ -179,44 +180,24 @@
       [('class
          (? defn-name? name)
          (? class-name? superclass)
-         'any
          (fields ...)
-         ('contain cfields ...)
-         ('acquire afields ...)
-         methods ...)
-       (make-temp-class name superclass 'any
-                        (map (parse-field 'normal) fields)
-                        (map (parse-field 'contained) cfields)
-                        (map (parse-field 'acquired ) afields)
-                        (map parse-method methods))]
-      [('class
-         (? defn-name? name)
-         (? class-name? superclass)
-         ((? class-name? containers) ...)
-         (fields ...)
-         ('contain cfields ...)
-         ('acquire afields ...)
          methods ...)
        (make-temp-class name superclass
-                        (map make-class-type containers)
-                        (map (parse-field 'normal) fields)
-                        (map (parse-field 'contained) cfields)
-                        (map (parse-field 'acquired) afields)
+                        (map parse-field fields)
                         (map parse-method methods))]
       [bogus (raise (make-exn:aj:parse "bad definition"
                                        (current-continuation-marks)
                                        bogus))]))
 
   ;; Parses a raw field definition.
-  ;; parse-field :: Status -> SExpr -> Field
+  ;; parse-field :: SExpr -> Field
   (define parse-field
-    (lambda (status)
-      (match-lambda
-        [((? type-name? type) (? field-name? fd))
-         (make-field (parse-type type) fd status)]
-        [bogus (raise (make-exn:aj:parse "bad field definition"
-                                         (current-continuation-marks)
-                                         bogus))])))
+    (match-lambda
+      [((? type-name? type) (? field-name? fd))
+       (make-field (parse-type type) fd)]
+      [bogus (raise (make-exn:aj:parse "bad field definition"
+                                       (current-continuation-marks)
+                                       bogus))]))
 
   ;; parses the raw representation of a type
   ;; parse-type :: SExpr -> Type

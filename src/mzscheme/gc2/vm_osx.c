@@ -4,8 +4,15 @@
       macosx_init_exception_handler() --- installs fault handler
       determine_max_heap_size()
    Requires:
+      TEST = 0
       designate_modified --- when GENERATIONS is non-zero
       my_qsort (for alloc_cache.c)
+   Optional:
+      CHECK_USED_AGAINST_MAX(len)
+      PAGE_ALLOC_STATS(expr)
+      GCPRINT
+      GCOUTF
+      DONT_NEED_MAX_HEAP_SIZE --- to disable a provide
 */
 
 #include <sys/time.h>
@@ -17,7 +24,19 @@
 
 #ifndef TEST
 # define TEST 1
+# include "my_qsort.c"
 void designate_modified(void *p);
+#endif
+
+#ifndef GCPRINT
+# define GCPRINT fprintf
+# define GCOUTF stderr
+#endif
+#ifndef PAGE_ALLOC_STATS
+# define PAGE_ALLOC_STATS(x) /* empty */
+#endif
+#ifndef CHECK_USED_AGAINST_MAX
+# define CHECK_USED_AGAINST_MAX(x) /* empty */
 #endif
 
 /* Forward declaration: */
@@ -61,6 +80,8 @@ static void *malloc_pages(size_t len, size_t alignment)
   void *r;
 
   if(!task_self) task_self = mach_task_self();
+
+  CHECK_USED_AGAINST_MAX(len);
   
   /* round up to the nearest page: */
   if(len & (page_size - 1))
@@ -74,7 +95,7 @@ static void *malloc_pages(size_t len, size_t alignment)
 
   retval = vm_allocate(task_self, (vm_address_t*)&r, len + extra, TRUE);
   if(retval != KERN_SUCCESS) {
-    printf("Couldn't allocate memory: %s\n", mach_error_string(retval));
+    GCPRINT(GCOUTF, "Couldn't allocate memory: %s\n", mach_error_string(retval));
     abort();
   }
 
@@ -88,7 +109,7 @@ static void *malloc_pages(size_t len, size_t alignment)
     if(pre_extra) {
       retval = vm_deallocate(task_self, (vm_address_t)r, pre_extra);
       if(retval != KERN_SUCCESS) {
-	printf("WARNING: couldn't deallocate pre-extra: %s\n",
+	GCPRINT(GCOUTF, "WARNING: couldn't deallocate pre-extra: %s\n",
 	       mach_error_string(retval));
       }
     }
@@ -96,12 +117,15 @@ static void *malloc_pages(size_t len, size_t alignment)
       retval = vm_deallocate(task_self, (vm_address_t)real_r + len, 
 			     extra - pre_extra);
       if(retval != KERN_SUCCESS) {
-	printf("WARNING: couldn't deallocate post-extra: %s\n",
+	GCPRINT(GCOUTF, "WARNING: couldn't deallocate post-extra: %s\n",
 	       mach_error_string(retval));
       }
     }
     r = real_r;
   }
+
+  PAGE_ALLOC_STATS(page_allocations += len);
+  PAGE_ALLOC_STATS(page_reservations += len);
 
   return r;
 }
@@ -112,7 +136,7 @@ static void system_free_pages(void *p, size_t len)
 
   retval = vm_deallocate(task_self, (vm_address_t)p, len);
   if(retval != KERN_SUCCESS) {
-    printf("WARNING: couldn't deallocate page %p: %s\n", p,
+    GCPRINT(GCOUTF, "WARNING: couldn't deallocate page %p: %s\n", p,
 	   mach_error_string(retval));
   }
 }
@@ -129,13 +153,14 @@ static void protect_pages(void *p, size_t len, int writeable)
 		      writeable ? VM_PROT_ALL 
 		      : (VM_PROT_READ | VM_PROT_EXECUTE));
   if(retval != KERN_SUCCESS) {
-    printf("WARNING: couldn't protect %li bytes of page %p%s\n",
+    GCPRINT(GCOUTF, "WARNING: couldn't protect %li bytes of page %p%s\n",
 	   len, p, mach_error_string(retval));
   }
 }
 
 #include "alloc_cache.c"
 
+#ifndef DONT_NEED_MAX_HEAP_SIZE
 static unsigned long determine_max_heap_size()
 {
   struct rlimit *rlim = malloc(sizeof(struct rlimit));
@@ -145,6 +170,7 @@ static unsigned long determine_max_heap_size()
   retval = rlim->rlim_cur; free(rlim);
   return (retval == RLIM_INFINITY) ? (1024 * 1024 * 1024) : retval;
 }
+#endif
 
 /* these are some less neat mach callbacks */
 kern_return_t catch_exception_raise_state(mach_port_t port,
@@ -207,7 +233,7 @@ void exception_thread(void)
 		      exc_port, MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
     /* forward off the handling of this message */
     if(!exc_server(message, reply)) {
-      printf("INTERNAL ERROR: exc_server() didn't like something\n");
+      GCPRINT(GCOUTF, "INTERNAL ERROR: exc_server() didn't like something\n");
       abort();
     }
     /* send the message back out to the thread */
@@ -233,7 +259,7 @@ static void macosx_init_exception_handler()
   /* allocate the port we're going to get exceptions on */
   retval = mach_port_allocate(task_self, MACH_PORT_RIGHT_RECEIVE, &exc_port);
   if(retval != KERN_SUCCESS) {
-    printf("Couldn't allocate exception port: %s\n", 
+    GCPRINT(GCOUTF, "Couldn't allocate exception port: %s\n", 
 	   mach_error_string(retval));
     abort();
   }
@@ -242,7 +268,7 @@ static void macosx_init_exception_handler()
   retval = mach_port_extract_right(task_self, exc_port, MACH_MSG_TYPE_MAKE_SEND,
 				   &exc_port_s, &type);
   if(retval != KERN_SUCCESS) {
-    printf("Couldn't extract send rights: %s\n", mach_error_string(retval));
+    GCPRINT(GCOUTF, "Couldn't extract send rights: %s\n", mach_error_string(retval));
     abort();
   }
 
@@ -251,14 +277,14 @@ static void macosx_init_exception_handler()
 				      exc_port_s, EXCEPTION_DEFAULT, 
 				      PPC_THREAD_STATE);
   if(retval != KERN_SUCCESS) {
-    printf("Couldn't set exception ports: %s\n", mach_error_string(retval));
+    GCPRINT(GCOUTF, "Couldn't set exception ports: %s\n", mach_error_string(retval));
     abort();
   }
 
   /* set up the subthread */
   retval = thread_create(task_self, &exc_thread);
   if(retval != KERN_SUCCESS) {
-    printf("Couldn't create exception thread: %s\n", mach_error_string(retval));
+    GCPRINT(GCOUTF, "Couldn't create exception thread: %s\n", mach_error_string(retval));
     abort();
   }
   subthread_stack = (void*)malloc(page_size);
@@ -270,12 +296,12 @@ static void macosx_init_exception_handler()
 			    (thread_state_t)exc_thread_state,
 			    PPC_THREAD_STATE_COUNT);
   if(retval != KERN_SUCCESS) {
-    printf("Couldn't set subthread state: %s\n", mach_error_string(retval));
+    GCPRINT(GCOUTF, "Couldn't set subthread state: %s\n", mach_error_string(retval));
     abort();
   }
   retval = thread_resume(exc_thread);
   if(retval != KERN_SUCCESS) {
-    printf("Couldn't resume subthread: %s\n", mach_error_string(retval));
+    GCPRINT(GCOUTF, "Couldn't resume subthread: %s\n", mach_error_string(retval));
     abort();
   }
 }

@@ -334,6 +334,7 @@ static MSet *sets[NUM_SETS]; /* First one is tagged, last one is atomic */
 /********************* Statistics *********************/
 static long page_allocations = 0;
 static long page_reservations = 0;
+#define PAGE_ALLOC_STATS(x) x
 
 static long memory_in_use, gc_threshold = GROW_ADDITION, max_memory_use;
 #if USE_FREELIST
@@ -397,64 +398,25 @@ static int just_checking, the_size;
 /*                     OS-specific low-level allocator                        */
 /******************************************************************************/
 
+#define DONT_NEED_MAX_HEAP_SIZE
+
+/******************************************************************************/
 /* Windows */
 
 #if _WIN32
-
-static void *malloc_pages(size_t len, size_t alignment)
-{
-  return (void *)VirtualAlloc(NULL, len, 
-			      MEM_COMMIT | MEM_RESERVE, 
-			      PAGE_READWRITE);
-}
-
-static void free_pages(void *p, size_t len)
-{
-  VirtualFree(p, 0, MEM_RELEASE);
-}
-
-static void flush_freed_pages(void)
-{
-}
-
-static void protect_pages(void *p, size_t len, int writeable)
-{
-  DWORD old;
-  VirtualProtect(p, len, (writeable ? PAGE_READWRITE : PAGE_READONLY), &old);
-}
-
+# include "vm_win.c"
 # define MALLOCATOR_DEFINED
 #endif
 
 /******************************************************************************/
-
 /* OSKit */
 
 #if OSKIT
-# include <oskit/c/malloc.h>
-
-static void *malloc_pages(size_t len, size_t alignment)
-{
-  void *p;
-  p = smemalign(alignment, len);
-  memset(p, 0, len);
-  return p;
-}
-
-static void free_pages(void *p, size_t len)
-{
-  sfree(p, len);
-}
-
-static void flush_freed_pages(void)
-{
-}
-
+# include "vm_osk.c"
 # define MALLOCATOR_DEFINED
 #endif
 
 /******************************************************************************/
-
 /* OS X */
 
 #if defined(OS_X)
@@ -469,7 +431,6 @@ static void designate_modified(void *p);
 #endif
 
 /******************************************************************************/
-
 /* Default: mmap */
 
 #ifndef MALLOCATOR_DEFINED

@@ -1,8 +1,15 @@
 /* 
    Provides:
       mmap-based allocator (uses alloc_cache.c)
+      determine_max_heap_size()
    Requires:
       my_qsort (for alloc_cache.c)
+   Optional:
+      CHECK_USED_AGAINST_MAX(len)
+      PAGE_ALLOC_STATS(expr)
+      GCPRINT
+      GCOUTF
+      DONT_NEED_MAX_HEAP_SIZE --- to disable a provide
 */
 
 #include <unistd.h>
@@ -11,15 +18,26 @@
 #include <sys/mman.h>
 #include <errno.h>
 
+#ifndef GCPRINT
+# define GCPRINT fprintf
+# define GCOUTF stderr
+#endif
+#ifndef PAGE_ALLOC_STATS
+# define PAGE_ALLOC_STATS(x) /* empty */
+#endif
+#ifndef CHECK_USED_AGAINST_MAX
+# define CHECK_USED_AGAINST_MAX(x) /* empty */
+#endif
+
 static int page_size; /* OS page size */
 
 #ifndef MAP_ANON
 int fd, fd_created;
 #endif
 
-static void *find_cached_pages(size_t len, size_t alignment);
+inline static void *find_cached_pages(size_t len, size_t alignment);
 
-/* Instead of immediaately freeing pages with munmap---only to mmap
+/* Instead of immediately freeing pages with munmap---only to mmap
    them again---we cache BLOCKFREE_CACHE_SIZE freed pages. A page is
    cached unused for at most BLOCKFREE_UNMAP_AGE cycles of the
    collector. (A max age of 1 seems useful, anything more seems
@@ -43,6 +61,8 @@ static void *malloc_pages(size_t len, size_t alignment)
     fd = open("/dev/zero", O_RDWR);
   }
 #endif
+
+  CHECK_USED_AGAINST_MAX(len);
 
   /* Round up to nearest page: */
   if (len & (page_size - 1))
@@ -81,8 +101,8 @@ static void *malloc_pages(size_t len, size_t alignment)
     r = real_r;
   }
 
-  page_allocations += len;
-  page_reservations += len;
+  PAGE_ALLOC_STATS(page_allocations += len);
+  PAGE_ALLOC_STATS(page_reservations += len);
 
   return r;
 }
@@ -104,3 +124,27 @@ static void protect_pages(void *p, size_t len, int writeable)
 }
 
 # include "alloc_cache.c"
+
+/*************************************************************/
+
+#ifndef DONT_NEED_MAX_HEAP_SIZE
+
+# include <sys/time.h>
+# include <sys/resource.h>
+# include <unistd.h>
+
+static unsigned long determine_max_heap_size(void) 
+{
+  struct rlimit *rlim = malloc(sizeof(struct rlimit));
+  unsigned long retval = 0;
+
+# ifdef OS_X
+  getrlimit(RLIMIT_RSS, rlim);
+# else  
+  getrlimit(RLIMIT_DATA, rlim);
+# endif
+  retval = rlim->rlim_cur; free(rlim);
+  return (retval == RLIM_INFINITY) ? (1024 * 1024 * 1024) : retval;
+}
+
+#endif

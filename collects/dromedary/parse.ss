@@ -218,15 +218,15 @@
 					       (let ([result (hash-table-get keyword-table name)])
 						 (let ([stx-list
 							(list
-							 'source-name
+							 source-name
 							 (position-line start-pos)
 							 (position-col start-pos)
 							 (position-offset start-pos)
 							 (- (position-offset end-pos)
 							    (position-offset start-pos)))])
 						   (if (list? result)
-						       ((eval (car result)) (datum->syntax-object #f (cdr result) stx-list))
-						       (result (datum->syntax-object #f result stx-list)))))
+						       ((eval (car result)) (datum->syntax-object #f (cdr result) stx-list stx-for-original-property))
+						       (result (datum->syntax-object #f lexeme stx-list stx-for-original-property)))))
 					       (token LIDENT s)))]
 	
 	;; No capitalized keywords

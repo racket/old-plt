@@ -108,6 +108,10 @@ static struct dlstatus * loadModule(const char * path, const struct stat * sbuf,
 
 /* Functions */
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 static void debug(const char * fmt, ...)
 {
 #if DEBUG > 1
@@ -526,3 +530,7 @@ static const char * dlerror(void)
 	err_filled = 0;
 	return e;
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

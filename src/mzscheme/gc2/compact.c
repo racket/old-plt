@@ -3128,6 +3128,17 @@ LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e)
 # define NEED_SIGWIN
 #endif
 
+/* Mac OS X signal handler: */
+#if defined(__APPLE__) && defined(__ppc__) && defined(__MACH__)
+# include <signal.h>
+# include "osx_addr.inc"
+void fault_handler(int sn, int code, struct sigcontext *sc)
+{
+  designate_modified(get_fault_addr(sc));
+}
+# define NEED_SIGBUS
+#endif
+
 #endif /* GENERATIONS */
 
 /******************************************************************************/

@@ -594,10 +594,12 @@ latin1_integer_to_char (int argc, Scheme_Object *argv[])
 #ifdef MACROMAN_CHAR_SET
   if (!l2m_mapping_inited) {
     int i;
-    for (i = 0; i < 256; i++)
+    for (i = 0; i < 256; i++) {
       latin1_to_mac_mapping[i] = (unsigned char)i;
-    for (i = 0; deviation_table[i]; i += 2)
+    }
+    for (i = 0; deviation_table[i]; i += 2) {
       latin1_to_mac_mapping[deviation_table[i]] = deviation_table[i + 1];
+    }
     l2m_mapping_inited = 1;
   }
   

@@ -4532,7 +4532,9 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
 	    AEDisposeDesc(list);
 	    return NULL;
 	  } else {
-	    Scheme_Object *pr = scheme_make_pair(v, scheme_null);
+	    Scheme_Object *pr;
+
+	    pr = scheme_make_pair(v, scheme_null);
 	    if (recp) {
 	      pr = scheme_make_pair(rec, pr);
 	      pr = scheme_make_pair(pr, scheme_null);
@@ -4642,9 +4644,11 @@ static pascal Boolean while_waiting(EventRecord *e, long *sleeptime, RgnHandle *
 
 static pascal OSErr HandleAnswer(const AppleEvent *evt, AppleEvent *rae, long k)
 {
-  ReplyItem *r = MALLOC_ONE_RT(ReplyItem);
+  ReplyItem *r;
   DescType rtype;
   long sz;
+
+  r = MALLOC_ONE_RT(ReplyItem);
   
   AEGetAttributePtr(evt, keyReturnIDAttr, typeLongInteger, &rtype, &r->id, sizeof(long), &sz);
   

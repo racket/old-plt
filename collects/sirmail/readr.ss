@@ -681,7 +681,7 @@
 					   start 'same #f)
 				     (let ([end (send e last-position)])
 				       (delta e start end))))])
-		     (parse-and-insert-body h body e insert 79 img-mode?)))
+		     (parse-and-insert-body h body e insert 78 img-mode?)))
                  (send e set-position 0)
                  (set-current-selected i))
                (lambda ()
@@ -1146,9 +1146,8 @@
             (auto-file))))
       
       (define (redisplay-current)
-	(let ([i (send header-list get-selected)])
-	  (when current-selected
-	    (send header-list on-double-select current-selected))))
+	(when current-selected
+	  (send header-list on-double-select current-selected)))
 
       (make-object separator-menu-item% msg-menu)
       (define sort-menu (make-object menu% "&Sort" msg-menu))
@@ -1810,81 +1809,86 @@
 	(unless selected
 	  (bell))
 	(when selected
-	  (let* ([uid (send selected user-data)]
-		 [h (get-header uid)]
-		 [body (let ([p (open-output-string)])
-			 (parse-and-insert-body h (get-body uid) #f (lambda (s delta) (display s p)) 78 #f)
-			 (get-output-string p))])
-	    (start-new-mailer
-	     #f
-	     (or (extract-field "Reply-To" h) 
-		 (extract-field "From" h)
-		 "")
-	     (if follow-up?
-		 (let ([to (extract-field "To" h)]
-		       [cc (extract-field "CC" h)])
-		   (if (or to cc)
-		       (let ([to (map
-				  caddr
-				  (filter
-				   not-me?
-				   (append
-				    (if to
-					(extract-addresses to 'all)
-					null)
-				    (if cc
-					(extract-addresses cc 'all)
-					null))))])
-			 (if (null? to)
-			     ""
-			     (assemble-address-field to)))
-		       ""))
-		 "")
-	     (let ([s (extract-field "Subject" h)])
-	       (cond
-                 [(not s) ""]
-                 [(regexp-match "^[Rr][Ee][(]([0-9]+)[)]:(.*)$" s)
-                  ;; Other mailer is counting replies. We'll count, too.
-                  => (lambda (m)
-                       (format "~a(~a):~a"
-                               (substring s 0 2)
-                               (add1 (string->number (cadr m)))
-                               (caddr m)))]
-                 [(regexp-match "^[Rr][Ee]:" s) s]
-                 [else (string-append "Re: " s)]))
-	     (let ([id (extract-field "Message-Id" h)]
-		   [refs (extract-field "References" h)])
-	       (format "~a~a"
-		       (if id
-			   (format "In-Reply-To: ~a~a" id crlf)
-			   "")
-		       (if (or refs id)
-			   (format "References: ~a~a"
-				   (cond
-                                     [(and refs id)
-                                      (format "~a~a~a~a~a"
-                                              refs crlf #\tab #\tab id)]
-                                     [else (or refs id)])
-				   crlf)
-			   "")))
-	     (if quote-in-reply?
-		 (string-append
-		  (format "Quoting ~a:~a" 
-			  (let ([from (extract-field "From" h)])
-			    (let ([name (with-handlers ([void (lambda (x) #f)])
-					  (car (extract-addresses from 'name)))])
-			      (or name "<unknown>")))
-			  crlf)
-		  "> "
-		  (let* ([s (splice (split body crlf)
-				    (string-append crlf "> "))]
-			 [len (string-length s)])
-		    (if (and (>= len 2)
-			     (string=? "> " (substring s (- len 2) len)))
-			(substring s 0 (- len 2))
-			s)))
-		 "")
-	     null))))
+	  (unless (eq? selected current-selected)
+	    (send header-list on-double-select selected))
+	  (unless (eq? selected current-selected)
+	    (bell))
+	  (when (eq? selected current-selected)
+	    (let* ([uid (send selected user-data)]
+		   [h (get-header uid)]
+		   [body (let ([e (send message get-editor)]
+			       [start (string-length (crlf->lf (get-viewable-headers h)))])
+			   (send e get-text start 'eof #t #t))])
+	      (start-new-mailer
+	       #f
+	       (or (extract-field "Reply-To" h) 
+		   (extract-field "From" h)
+		   "")
+	       (if follow-up?
+		   (let ([to (extract-field "To" h)]
+			 [cc (extract-field "CC" h)])
+		     (if (or to cc)
+			 (let ([to (map
+				    caddr
+				    (filter
+				     not-me?
+				     (append
+				      (if to
+					  (extract-addresses to 'all)
+					  null)
+				      (if cc
+					  (extract-addresses cc 'all)
+					  null))))])
+			   (if (null? to)
+			       ""
+			       (assemble-address-field to)))
+			 ""))
+		   "")
+	       (let ([s (extract-field "Subject" h)])
+		 (cond
+		  [(not s) ""]
+		  [(regexp-match "^[Rr][Ee][(]([0-9]+)[)]:(.*)$" s)
+		   ;; Other mailer is counting replies. We'll count, too.
+		   => (lambda (m)
+			(format "~a(~a):~a"
+				(substring s 0 2)
+				(add1 (string->number (cadr m)))
+				(caddr m)))]
+		  [(regexp-match "^[Rr][Ee]:" s) s]
+		  [else (string-append "Re: " s)]))
+	       (let ([id (extract-field "Message-Id" h)]
+		     [refs (extract-field "References" h)])
+		 (format "~a~a"
+			 (if id
+			     (format "In-Reply-To: ~a~a" id crlf)
+			     "")
+			 (if (or refs id)
+			     (format "References: ~a~a"
+				     (cond
+				      [(and refs id)
+				       (format "~a~a~a~a~a"
+					       refs crlf #\tab #\tab id)]
+				      [else (or refs id)])
+				     crlf)
+			     "")))
+	       (if quote-in-reply?
+		   (string-append
+		    (format "Quoting ~a:~a" 
+			    (let ([from (extract-field "From" h)])
+			      (let ([name (with-handlers ([void (lambda (x) #f)])
+					    (car (extract-addresses from 'name)))])
+				(or name "<unknown>")))
+			    crlf)
+		    "> "
+		    (let* ([s (splice (split body (string #\linefeed))
+				      (string-append (string #\linefeed) "> "))]
+			   [len (string-length s)])
+		      (if (and (>= len 2)
+			       (string=? "> " (substring s (- len 2) len)))
+			  (substring s 0 (- len 2))
+			  s)))
+		   "")
+	       null)))))
 
       (define (do-forward)
 	(define selected (send header-list get-selected))

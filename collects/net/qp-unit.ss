@@ -1,7 +1,7 @@
 ;;;
 ;;; <qp-unit.ss> ---- Quoted Printable Implementation
-;;; Time-stamp: <01/04/23 09:28:43 solsona>
 ;;;
+;;; Copyright (C) 2002 by PLT. 
 ;;; Copyright (C) 2001 by Francisco Solsona. 
 ;;;
 ;;; This file is part of mime-plt.

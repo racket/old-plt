@@ -1,6 +1,7 @@
 ;;;
 ;;; <mime-unit.ss> ---- MIME support
 ;;;
+;;; Copyright (C) 2002 by PLT. 
 ;;; Copyright (C) 2001 by Wish Computing. 
 ;;;
 ;;; This file is part of mime
@@ -273,10 +274,10 @@
                                                     #f;; close-delimiter?
                                                     #t;; eof reached?
                                                     ))
-                                           ((regexp-match re:done ln)
+                                           ((regexp-match-positions re:done ln)
                                             (close-output-port pout)
                                             (values pin #t #f))
-                                           ((regexp-match re:sep ln)
+                                           ((regexp-match-positions re:sep ln)
                                             (close-output-port pout)
                                             (values pin #f #f))
                                            (else
@@ -286,7 +287,7 @@
               (let loop ()
                 (let-values ([(part close? eof?) (eat-part)])
                   (cond (close? (list part))
-                        (eof? null)
+                        (eof? (list part))
                         (else
                          (cons part (loop))))))))))
       

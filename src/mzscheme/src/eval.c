@@ -4837,15 +4837,17 @@ static Scheme_Object *read_syntax(Scheme_Object *obj)
 {
   Scheme_Object *idx;
   Scheme_Object *first = NULL, *last = NULL;
+  int limit;
 
   if (!SCHEME_PAIRP(obj) || !SCHEME_INTP(SCHEME_CAR(obj)))
     return NULL; /* bad .zo */
 
   idx = SCHEME_CAR(obj);
 
-  /* Copy obj: */
+  /* Copy obj, up to number of cons cells before a "protected" value: */
+  limit = scheme_syntax_protect_afters[SCHEME_INT_VAL(idx)];
   obj = SCHEME_CDR(obj);
-  while (SCHEME_PAIRP(obj)) {
+  while (SCHEME_PAIRP(obj) && (limit > 0)) {
     Scheme_Object *p;
     p = scheme_make_pair(SCHEME_CAR(obj), scheme_null);
     if (last)
@@ -4854,6 +4856,7 @@ static Scheme_Object *read_syntax(Scheme_Object *obj)
       first = p;
     last = p;
     obj = SCHEME_CDR(obj);
+    limit--;
   }
   
   if (last)

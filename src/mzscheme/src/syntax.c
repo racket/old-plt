@@ -189,23 +189,23 @@ scheme_init_syntax (Scheme_Env *env)
 			 define_values_execute, 1);
   scheme_register_syntax(SET_EXPD,
 			 set_resolve, set_validate,
-			 set_execute, 1);
+			 set_execute, 2);
   scheme_register_syntax(DEFINE_SYNTAX_EXPD, 
 			 define_syntaxes_resolve, define_syntaxes_validate,
-			 define_syntaxes_execute, 1);
+			 define_syntaxes_execute, 4);
   scheme_register_syntax(CASE_LAMBDA_EXPD, 
 			 case_lambda_resolve, case_lambda_validate,
-			 case_lambda_execute, 1);
+			 case_lambda_execute, -1);
   scheme_register_syntax(BEGIN0_EXPD, 
 			 begin0_resolve, begin0_validate,
-			 begin0_execute, 1);
+			 begin0_execute, -1);
 
   scheme_register_syntax(BOXENV_EXPD, 
 			 NULL, bangboxenv_validate,
 			 bangboxenv_execute, 1);
   scheme_register_syntax(BOXVAL_EXPD, 
 			 NULL, bangboxvalue_validate,
-			 bangboxvalue_execute, 1);
+			 bangboxvalue_execute, 2);
 
   scheme_install_type_writer(scheme_let_value_type, write_let_value);
   scheme_install_type_reader(scheme_let_value_type, read_let_value);

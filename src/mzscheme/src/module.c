@@ -174,10 +174,10 @@ void scheme_init_module(Scheme_Env *env)
 
   scheme_register_syntax(MODULE_EXPD, 
 			 module_resolve, module_validate, 
-			 module_execute, 1);
+			 module_execute, -1);
   scheme_register_syntax(REQUIRE_EXPD, 
 			 top_level_require_resolve, top_level_require_validate, 
-			 top_level_require_execute, 1);
+			 top_level_require_execute, 2);
 
   scheme_add_global_keyword("module", 
 			    scheme_make_compiled_syntax(module_syntax, 

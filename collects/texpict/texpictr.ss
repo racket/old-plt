@@ -403,14 +403,21 @@
 			   ,dy2
 			   ,(pict-draw rest)))
 		    w h
-		    (combine-ascent fd1 rd1)
-		    (combine-descent fd2 rd2)
+		    (combine-ascent fd1 rd1 fd2 rd2 fh rh h)
+		    (combine-descent fd2 rd2 fd1 rd1 fh rh h)
 		    (list (make-child first dx1 dy1)
 			  (make-child rest dx2 dy2))))]))))]
 	[2max (lambda (a b c) (max a b))]
 	[zero (lambda (fw fh rw rh sep fd1 fd2 rd1 rd2) 0)]
-	[fv (lambda (a b) a)]
-	[sv (lambda (a b) b)])
+	[fv (lambda (a b . args) a)]
+	[sv (lambda (a b . args) b)]
+	[min2 (lambda (a b . args) (min a b))]
+	[max2 (lambda (a b . args) (max a b))]
+	[min-ad (lambda (a b oa ob ah bh h)
+		  (if (and (= ah (+ a oa))
+			   (= bh (+ b ob)))
+		      (- h (max oa ob))
+		      (min a b)))])
     (values
      (make-append-boxes 2max + 
 			zero (lambda (fw fh rw rh sep . a) (+ sep rh))
@@ -433,17 +440,17 @@
 			(lambda (fw fh rw rh sep . a) (- (max fh rh) fh))
 			(lambda (fw fh rw rh sep . a) (+ sep fw))
 			(lambda (fw fh rw rh sep . a) (- (max fh rh) rh))
-			max min)
+			max2 min2)
      (make-append-boxes + 2max
 			zero
 			(lambda (fw fh rw rh sep . a) (quotient (- (max fh rh) fh) 2))
 			(lambda (fw fh rw rh sep . a) (+ sep fw))
 			(lambda (fw fh rw rh sep . a) (quotient (- (max fh rh) rh) 2))
-			min max)
+			min2 max2)
      (make-append-boxes + 2max 
 			zero zero
 			(lambda (fw fh rw rh sep . a) (+ sep fw)) zero
-			min max)
+			min2 max2)
      (make-append-boxes + 2max
 			zero
 			(lambda (fw fh rw rh sep fd1 fd2 rd1 rd2) 
@@ -451,7 +458,7 @@
 			(lambda (fw fh rw rh sep . a) (+ sep fw))
 			(lambda (fw fh rw rh sep fd1 fd2 rd1 rd2) 
 			  (- (max fh rh) rh (- (max fd1 rd1) rd1)))
-			max min)
+			max2 min-ad)
      (make-append-boxes + 2max
 			zero
 			(lambda (fw fh rw rh sep fd1 fd2 rd1 rd2) 
@@ -459,7 +466,7 @@
 			(lambda (fw fh rw rh sep . a) (+ sep fw))
 			(lambda (fw fh rw rh sep fd1 fd2 rd1 rd2) 
 			  (- (max fd2 rd2) rd2))
-			min max))))
+			min-ad max2))))
 
 (define-values (lt-superimpose
 		lb-superimpose

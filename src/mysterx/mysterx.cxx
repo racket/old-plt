@@ -2484,10 +2484,6 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   DOCUMENT_WINDOW_STYLE_OPTION *pDwso;
   int i;
 
-  // mutex to protect association between new window and pIUnknown pointer to DHTML control
-
-  WaitForSingleObject(documentHwndMutex,INFINITE);
-
   if (SCHEME_STRINGP(argv[0]) == FALSE) {
     scheme_wrong_type("make-document","string",1,argc,argv);
   }
@@ -2534,6 +2530,10 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
 
     pSyms = SCHEME_CDR(pSyms);
   }
+
+  // mutex to protect association between new window and pIUnknown pointer to DHTML control
+
+  WaitForSingleObject(documentHwndMutex,INFINITE);
 
   docWindowInit.ppIStream = &pDocumentStream;
 

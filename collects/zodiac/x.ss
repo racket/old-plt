@@ -172,8 +172,11 @@
 				(marker (mark-expression m))
 				(rewritten (rewriter expr env))
 				(structurized (structurize-syntax
-						rewritten expr (list m))))
-			  (expand-expr structurized env attributes vocab)))
+						rewritten expr (list m)))
+				(expanded (expand-expr structurized env
+					    attributes vocab)))
+			  (set-macro-origin expanded app-pos)
+			  expanded))
 		      ((micro-resolution? r)
 			((micro-resolution-rewriter r)
 			  expr env attributes vocab))

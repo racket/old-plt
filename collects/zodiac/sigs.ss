@@ -7,6 +7,7 @@
 (define-signature zodiac:sexp^
   (structurize-syntax sexp->raw
     syntax-null? syntax-car syntax-cdr syntax-map
+    set-macro-origin
     new-mark mark-expression add/remove-mark expose-list))
 
 (define-signature zodiac:pattern^

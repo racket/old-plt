@@ -8,7 +8,7 @@
 
   (define structurize-syntax
     (opt-lambda (expr source (marks '()) (table #f))
-      (let ((origin (make-origin 'non-source (zodiac-origin source)))
+      (let ((origin (make-origin 'non-source 'never-mind))
 	     (start (zodiac-start source))
 	     (finish (zodiac-finish source)))
 	(letrec
@@ -62,6 +62,15 @@
 		       expr)
 		     2 marks))))))
 	  (structurize expr)))))
+
+  (define set-macro-origin
+    (lambda (parsed-term head-sexp)
+      (set-zodiac-origin! parsed-term
+	(make-origin 'macro
+	  (if (z:symbol? head-sexp)
+	    head-sexp
+	    (internal-error 'set-macro-origin
+	      "Shouldn't get ~s here" head-sexp))))))
 
   (define sexp->raw
     (opt-lambda (expr (table #f))

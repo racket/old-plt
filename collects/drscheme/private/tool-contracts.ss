@@ -922,7 +922,7 @@
 ;                                   ;;;;                                                
 
   (drscheme:language-configuration:add-language
-   ((union (is-a?/c drscheme:language:language<%>) language-object)
+   ((and/c (is-a?/c drscheme:language:language<%>) language-object)
     . -> . void?)
    (language)
    
@@ -1454,17 +1454,11 @@
      (default-settings? (any? . -> . boolean?))
      (order-manuals ((listof string?) . -> . (values (listof string?) boolean?)))
      (front-end/complete-program (input-port?
-                                  (list/p (union false? number?)
-                                          (union false? number?)
-                                          (union false? number?))
                                   any?
                                   drscheme:teachpack:teachpack-cache?
                                   . -> .
                                   (-> any?)))
      (front-end/interaction (input-port?
-                             (list/p (union false? number?)
-                                     (union false? number?)
-                                     (union false? number?))
                              any?
                              drscheme:teachpack:teachpack-cache?
                              . -> .
@@ -1474,7 +1468,7 @@
      (get-language-position (-> (cons/p string? (listof string?))))
      (get-language-url (-> (union false? string?)))
      (get-one-line-summary (-> string?))
-     (get-comment-character (-> char?))
+     (get-comment-character (-> (values string? char?)))
      (get-style-delta (-> (union false?
                                  (is-a?/c style-delta%)
                                  (listof (list/p (is-a?/c style-delta%) number? number?)))))

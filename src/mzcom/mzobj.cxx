@@ -91,31 +91,10 @@ void exitHandler(int) {
   ExitThread(0);
 } 
 
-void displayInternalError(char *s,long len) {
-  long i;
-  char c;
-  char *buff;
-
-  buff = (char *)scheme_malloc(len + 1);
-  scheme_dont_gc_ptr(buff);
-
-  for (i = 0; i < len; i++) {
-    c = s[i];
-    buff[i] = (c == '\0') ? '\n' : c;
-  }
-
-  buff[len+1] = '\0';
-
-  ::MessageBox(NULL,buff,"MzCOM internal error",MB_OK);
-
-  scheme_gc_ptr_ok(buff);
-}
-
 void setupSchemeEnv(void) {
   char *wrapper;
   char exeBuff[260];
   static BOOL registered;
-  static BOOL errhandler_installed;
 
   if (!registered) {
     scheme_register_static(&env,sizeof(env)); 
@@ -131,11 +110,6 @@ void setupSchemeEnv(void) {
     ErrorBox("Can't create Scheme environment");
     ExitThread(0);
   } 
-
-  if (!errhandler_installed) {
-    scheme_console_output = displayInternalError;
-    errhandler_installed = TRUE;
-  }
 
   // set up exception trapping
   
@@ -154,6 +128,7 @@ void setupSchemeEnv(void) {
 
   scheme_add_global("mzcom-exe",scheme_make_string(exeBuff),env);
 
+  // if something goes wrong, it's likely to be here 
   scheme_eval_string("(current-library-collection-paths "
 		     " (path-list-string->path-list "
 		     "  (or (getenv \"PLTCOLLECTS\") \"\") "

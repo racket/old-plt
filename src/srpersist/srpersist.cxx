@@ -589,11 +589,11 @@ Scheme_Object *srp_read_buffer(int argc,Scheme_Object **argv) {
   case SQL_C_INTERVAL_DAY_TO_MINUTE :
     return readIntervalDayMinuteBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
   case SQL_C_INTERVAL_DAY_TO_SECOND :
-    return readDaySecondBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
+    return readIntervalDaySecondBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
   case SQL_C_INTERVAL_HOUR_TO_MINUTE :
     return readIntervalHourMinuteBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
   case SQL_C_INTERVAL_HOUR_TO_SECOND :
-    return readHourSecondBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
+    return readIntervalHourSecondBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
   case SQL_C_INTERVAL_MINUTE_TO_SECOND :
     return readIntervalMinuteSecondBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
   case SQL_C_BINARY :

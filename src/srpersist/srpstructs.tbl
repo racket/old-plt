@@ -29,6 +29,13 @@ char *timeStampFields[] = {
   "fraction"
 };
 
+char *guidFields[] = {
+  "data1",
+  "data2",
+  "data3",
+  "data4",
+};
+
 char *yearIntervalFields[] = {
   "sign",
   "year"
@@ -109,6 +116,7 @@ Scheme_Object *numericStructType;
 Scheme_Object *dateStructType;
 Scheme_Object *timeStructType;
 Scheme_Object *timeStampStructType;
+Scheme_Object *guidStructType;
 Scheme_Object *yearIntervalStructType;
 Scheme_Object *monthIntervalStructType;
 Scheme_Object *dayIntervalStructType;
@@ -128,6 +136,7 @@ SRPSTRUCT srpStructs[] = {
   { "sql-date", &dateStructType, dateFields, sizeray(dateFields) },
   { "sql-time", &timeStructType, timeFields, sizeray(timeFields) },
   { "sql-timestamp", &timeStampStructType, timeStampFields, sizeray(timeStampFields) },
+  { "sql-guid", &guidStructType, guidFields, sizeray(guidFields) },
   { "sql-year-interval", &yearIntervalStructType, yearIntervalFields, sizeray(yearIntervalFields) },
   { "sql-month-interval", &monthIntervalStructType, monthIntervalFields, sizeray(monthIntervalFields) },
   { "sql-day-interval", &dayIntervalStructType, dayIntervalFields, sizeray(dayIntervalFields) },

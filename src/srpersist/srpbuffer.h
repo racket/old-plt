@@ -1,10 +1,20 @@
 // srpbuffer.h
 
-#define checkInterval(o,ty) \
-  if (o->interval_type != ty) { \
-    badInterval(ty,o->interval_type); \
-  } 
-
-void badInterval(int,int);
-
-
+extern Scheme_Object *numericStructType;
+extern Scheme_Object *dateStructType;
+extern Scheme_Object *timeStructType;
+extern Scheme_Object *timeStampStructType;
+extern Scheme_Object *guidStructType;
+extern Scheme_Object *yearIntervalStructType;
+extern Scheme_Object *monthIntervalStructType;
+extern Scheme_Object *dayIntervalStructType;
+extern Scheme_Object *hourIntervalStructType;
+extern Scheme_Object *minuteIntervalStructType;
+extern Scheme_Object *secondIntervalStructType;
+extern Scheme_Object *yearToMonthIntervalStructType;
+extern Scheme_Object *dayToHourIntervalStructType;
+extern Scheme_Object *dayToMinuteIntervalStructType;
+extern Scheme_Object *dayToSecondIntervalStructType;
+extern Scheme_Object *hourToMinuteIntervalStructType;
+extern Scheme_Object *hourToSecondIntervalStructType;
+extern Scheme_Object *minuteToSecondIntervalStructType;

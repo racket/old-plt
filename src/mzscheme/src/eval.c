@@ -3451,7 +3451,7 @@ static Scheme_Object *write_syntax(Scheme_Object *obj)
     new_l = scheme_protect_quote(l);
 
     if (new_l != l) {
-      Scheme_Object *first, *last = NULL;
+      Scheme_Object *first = NULL, *last = NULL;
       
       while (rest != l) {
 	Scheme_Object *p;

@@ -290,6 +290,11 @@
                           editor-location-to-dc-location
                           dc-location-to-editor-location
                           get-position
+                          scroll-line-location
+                          set-max-undo-history
+                          get-max-undo-history
+                          set-load-overwrites-styles
+                          get-load-overwrites-styles
                           get-tabs
                           set-tabs
                           can-insert?
@@ -337,11 +342,6 @@
                           get-dc
                           load-file
                           save-file
-                          scroll-line-location
-                          set-max-undo-history
-                          get-max-undo-history
-                          set-load-overwrites-styles
-                          get-load-overwrites-styles
                           set-position
                           find-string-all
                           get-snip-position
@@ -531,6 +531,7 @@
                         (interface
                           ()
                           equal?
+                          get-transparent-text-backing-on
                           copy
                           get-family
                           get-face
@@ -567,8 +568,7 @@
                           set-delta-face
                           set-transparent-text-backing-off
                           get-transparent-text-backing-off
-                          set-transparent-text-backing-on
-                          get-transparent-text-backing-on))
+                          set-transparent-text-backing-on))
                       ($$string-snip<%>
                         (interface
                           ()
@@ -731,6 +731,7 @@
                           ()
                           set-rectangle
                           get-bounding-box
+                          set-rounded-rectangle
                           get-dc
                           set-ellipse
                           set-polygon
@@ -738,8 +739,7 @@
                           union
                           intersect
                           subtract
-                          is-empty?
-                          set-rounded-rectangle))
+                          is-empty?))
                       ($$radio-box<%>
                         (interface
                           ()
@@ -817,6 +817,7 @@
                           ok?
                           get-size
                           get-text-extent
+                          draw-rounded-rectangle
                           draw-line
                           draw-point
                           draw-spline
@@ -838,7 +839,6 @@
                           end-doc
                           end-page
                           clear
-                          draw-rounded-rectangle
                           draw-rectangle
                           draw-ellipse
                           draw-polygon
@@ -862,6 +862,7 @@
                           ok?
                           get-size
                           get-text-extent
+                          draw-rounded-rectangle
                           draw-line
                           draw-point
                           draw-spline
@@ -883,7 +884,6 @@
                           end-doc
                           end-page
                           clear
-                          draw-rounded-rectangle
                           draw-rectangle
                           draw-ellipse
                           draw-polygon
@@ -939,6 +939,11 @@
                           set-inactive-caret-threshold
                           editor-location-to-dc-location
                           dc-location-to-editor-location
+                          scroll-line-location
+                          set-max-undo-history
+                          get-max-undo-history
+                          set-load-overwrites-styles
+                          get-load-overwrites-styles
                           can-insert?
                           on-insert
                           can-delete?
@@ -982,11 +987,6 @@
                           get-dc
                           load-file
                           save-file
-                          scroll-line-location
-                          set-max-undo-history
-                          get-max-undo-history
-                          set-load-overwrites-styles
-                          get-load-overwrites-styles
                           after-insert
                           after-delete
                           change-style
@@ -1274,6 +1274,10 @@
                           set-selection
                           get-client-size
                           on-drop-file
+                          number-of-visible-items
+                          set-first-visible-item
+                          get-string-selection
+                          set-string-selection
                           on-focus
                           clear
                           delete
@@ -1286,10 +1290,6 @@
                           command
                           get-label
                           set-label
-                          number-of-visible-items
-                          set-first-visible-item
-                          get-string-selection
-                          set-string-selection
                           is-selected?
                           get-top-level-window
                           get-graphical-min-size
@@ -1718,6 +1718,9 @@
                           lazy-refresh
                           get-client-size
                           on-drop-file
+                          allow-scroll-to-last
+                          scroll-with-bottom-base
+                          call-as-primary-owner
                           on-focus
                           set-editor
                           get-editor
@@ -1729,9 +1732,6 @@
                           get-label
                           set-label
                           get-dc
-                          allow-scroll-to-last
-                          scroll-with-bottom-base
-                          call-as-primary-owner
                           warp-pointer
                           force-display-focus
                           get-top-level-window
@@ -1866,6 +1866,8 @@
                           set-selection
                           get-client-size
                           on-drop-file
+                          get-string-selection
+                          set-string-selection
                           on-focus
                           clear
                           find-string
@@ -1873,8 +1875,6 @@
                           command
                           get-label
                           set-label
-                          get-string-selection
-                          set-string-selection
                           get-top-level-window
                           get-graphical-min-size
                           get-plain-label
@@ -2009,6 +2009,7 @@
                           ok?
                           get-size
                           get-text-extent
+                          draw-rounded-rectangle
                           get-pixel
                           set-pixel
                           set-bitmap
@@ -2034,7 +2035,6 @@
                           end-doc
                           end-page
                           clear
-                          draw-rounded-rectangle
                           draw-rectangle
                           draw-ellipse
                           draw-polygon

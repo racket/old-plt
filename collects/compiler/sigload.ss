@@ -45,15 +45,11 @@
    set-union-singleton
    set-minus
    set-remove
-   set-remove-if
    set-intersect
    set-subset?
    set-map
    set-filter
    remove-duplicates
-   binding-name
-   find-binder
-   add-binders-to-scope
    symbol-append
    compiler:formals->arity
    compiler:paroptformals->arity

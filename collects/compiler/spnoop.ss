@@ -8,12 +8,12 @@
 
   (define (binding-mutated ast) #f)
 
-  (define (SDL-type ast) #f)
-  
   (define (analyze-program-sexps exprs input-directory)
       exprs)
 
   (define (constant-value ast) (values #f (void)))
+
+  (define (SDL-type ast) #f)  
 
   (define (parsed-ftype _) #f)
 

@@ -183,36 +183,12 @@
 	  (string->symbol str)
 	  (loop (string-append str (symbol->string (car s))) (cdr s))))))
 
-;; operations on sets of binders
-
-(define (binding-name b)
-  (if (zodiac:top-level-varref/bind? b)
-      (zodiac:varref-var b)
-      (zodiac:binding-var b)))
-    
-(define (find-binder the-name) 
-  (lambda (binders)
-    (set-find
-     (lambda (b) 
-       (eq? the-name (binding-name b)))
-     binders)))
-
 (define (remove-duplicates elts)
   (if (null? elts)
       '()
       (if (memq (car elts) (cdr elts))
 	  (remove-duplicates (cdr elts))
 	  (cons (car elts) (remove-duplicates (cdr elts))))))
-
-(define (add-binders-to-scope old-bindings new-bindings)
-  (for-each 
-   (lambda (binding)
-     (let* ([b-name (binding-name binding)]
-	    [p (lambda (elt) (eq? (binding-name elt)
-				  b-name))])
-       (set! old-bindings (set-remove-if p old-bindings)))) ; shadowing of scope
-   new-bindings)
-  (set-union old-bindings (list->set new-bindings)))
 
 ; end binder set ops
 

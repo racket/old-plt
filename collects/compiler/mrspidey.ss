@@ -102,7 +102,7 @@
 
   (define (ast->AVs ast)
     (let ([fo-ftype (mrspidey:parsed-ftype ast)])
-      (if fo-ftype
+      (if (and fo-ftype (not (void? fo-ftype)))
 	  (fo-ftype->AVs fo-ftype)
 	  '())))
 

@@ -78,7 +78,7 @@
 	    [finder : framework:finder^ (finder@ mred preferences gui-utils keymap)]
 	    [group : framework:group^ (group@ mred application frame preferences)]
 	    [canvas : framework:canvas^ (canvas@ mred preferences frame)]
-	    [panel : framework:panel^ (panel@ mred)]
+	    [panel : framework:panel^ (panel@ icon mred)]
 	    [frame : framework:frame^ 
 		   (frame@ mred group preferences icon handler application panel gui-utils
 			   exit finder keymap text pasteboard editor canvas menu)]

@@ -664,6 +664,7 @@
                 [(lambda args bodies ...)
                  (begin
                    (annotate-raw-keyword sexp)
+                   (annotate-arglist (syntax args))
                    (for-each (lambda (sexp) (loop sexp (args->vars (syntax args) bound-vars)))
                              (syntax->list (syntax (bodies ...)))))]
                 [(case-lambda [argss bodiess ...]...)
@@ -671,8 +672,9 @@
                    (annotate-raw-keyword sexp)
                    (for-each
                     (lambda (args bodies)
+                      (annotate-arglist args)
                       (for-each
-                       (lambda (sexp) (loop sexp (args->vars (syntax args) bound-vars)))
+                       (lambda (sexp) (loop sexp (args->vars args bound-vars)))
                        (syntax->list bodies)))
                     (syntax->list (syntax (argss ...)))
                     (syntax->list (syntax ((bodiess ...) ...)))))]
@@ -682,6 +684,11 @@
                    (loop (syntax test) bound-vars)
                    (loop (syntax then) bound-vars)
                    (loop (syntax else) bound-vars))]
+                [(if test then)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (loop (syntax test) bound-vars)
+                   (loop (syntax then) bound-vars))]
                 [(begin bodies ...)
                  (begin
                    (annotate-raw-keyword sexp)
@@ -701,6 +708,7 @@
                                                      (syntax->list (syntax ((xss ...) ...)))))
                                   bound-vars)])
                    (annotate-raw-keyword sexp)
+                   (for-each annotate-arglist (syntax->list (syntax ((xss ...) ...))))
                    (for-each (lambda (e) (loop e bound-vars)) (syntax->list (syntax (es ...))))
                    (for-each (lambda (b) (loop b new-vars)) (syntax->list (syntax (bs ...)))))]
                 [(letrec-values (((xss ...) es) ...) bs ...)
@@ -710,14 +718,17 @@
                                                      (syntax->list (syntax ((xss ...) ...)))))
                                   bound-vars)])
                    (annotate-raw-keyword sexp)
+                   (for-each annotate-arglist (syntax->list (syntax ((xss ...) ...))))
                    (for-each (lambda (e) (loop e new-vars)) (syntax->list (syntax (es ...))))
                    (for-each (lambda (b) (loop b new-vars)) (syntax->list (syntax (bs ...)))))]
                 [(set! var E)
                  (begin
                    (annotate-raw-keyword sexp)
+                   (annotate-variable (syntax var) bound-vars)
                    (loop (syntax E) bound-vars))]
                 [(quote datum)
-                 (annotate-raw-keyword sexp)]
+                 (begin (annotate-raw-keyword sexp)
+                        (color (syntax datum) constant-style-str))]
                 [(quote-syntax datum)
                  (annotate-raw-keyword sexp)]
                 [(with-continuation-mark a b c)
@@ -736,10 +747,11 @@
                 [(#%top . var)
                  (void)]
                 
-                [(define-values (xs ...) b)
+                [(define-values vars b)
                  (begin
                    (annotate-raw-keyword sexp)
-                   (loop (syntax b) (args->vars (syntax (xs ...)) bound-vars)))]
+                   (annotate-arglist (syntax vars))
+                   (loop (syntax b) (args->vars (syntax vars) bound-vars)))]
                 [(define-syntaxes (names ...) exp)
                  (begin
                    (annotate-raw-keyword sexp)
@@ -763,9 +775,7 @@
                 [_
                  (cond
                    [(identifier? sexp)
-                    (cond 
-                      [(memq sexp bound-vars) (color sexp bound-variable-style-str)]
-                      [else (color sexp unbound-variable-style-str)])]
+                    (annotate-variable sexp bound-vars)]
                    [else (printf "unknown stx: ~e (datum: ~e) (source: ~e)~n"
                                  sexp
                                  (and (syntax? sexp)
@@ -777,13 +787,15 @@
           ;; transforms an argument list into a bunch of symbols/symbols and puts 
           ;; them on `incoming'
           (define (args->vars stx incoming)
-            (if (null? stx)
-                incoming
-                (let ([first (syntax-e stx)])
-                  (cond
-                    [(cons? first) (args->vars (cdr first) (cons (car first) incoming))]
-                    [(null? first) incoming]
-                    [else (cons first incoming)]))))
+            (append (syntax->list stx) incoming)
+;            (if (null? stx)
+;                incoming
+;                (let ([first (syntax-e stx)])
+;                  (cond
+;                    [(cons? first) (args->vars (cdr first) (cons (car first) incoming))]
+;                    [(null? first) incoming]
+;                    [else (cons first incoming)])))
+            )
 
           
           ;; annotate-original-keywords : syntax -> void
@@ -811,7 +823,23 @@
                   (let ([f-stx (car lst)])
                     (when (syntax-original? f-stx)
                       (color f-stx keyword-style-str)))))))
-                      
+          
+          ;; annotate-variable : syntax (listof identifer) -> void
+          (define (annotate-variable sexp bound-vars)
+            (cond
+              [(ormap (lambda (x) (and (module-identifier=? sexp x) x)) bound-vars)
+               =>
+               (lambda (binding)
+                 (color sexp bound-variable-style-str))]
+              [else
+               (color sexp unbound-variable-style-str)]))
+
+          ;; annotate-arg-list : syntax -> void
+          ;; annotates the (possibly improper) syntax list as bound variables
+          (define (annotate-arglist stx)
+            (for-each (lambda (stx) (color stx bound-variable-style-str))
+                      (syntax->list stx)))
+          
           ;; color : syntax str -> void
           ;; colors the syntax with style-name's style
           (define (color stx style-name)

@@ -215,7 +215,8 @@
       (when (and (string? base)
 		 (not (directory-exists? base)))
 	(make-directory* base))
-      (make-directory dir)))
+      (unless (directory-exists? dir)
+        (make-directory dir))))
 
   (define make-temporary-file
     (case-lambda

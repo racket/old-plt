@@ -520,7 +520,7 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 				    scheme_true);
 
       scheme_push_continuation_frame(&cframe);
-      scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
+      scheme_install_config(config);
       
       /* Need to check for a break, in case one was queued and we just enabled it: */
       scheme_check_break_now();

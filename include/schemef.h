@@ -57,6 +57,7 @@ MZ_EXTERN Scheme_Object *scheme_register_parameter(Scheme_Prim *function, char *
 
 MZ_EXTERN Scheme_Config *scheme_current_config(void);
 MZ_EXTERN Scheme_Config *scheme_extend_config(Scheme_Config *c, int pos, Scheme_Object *init_val);
+MZ_EXTERN void scheme_install_config(Scheme_Config *);
 
 MZ_EXTERN Scheme_Object *scheme_get_param(Scheme_Config *c, int pos);
 MZ_EXTERN void scheme_set_param(Scheme_Config *c, int pos, Scheme_Object *o);

@@ -5099,6 +5099,11 @@ Scheme_Config *scheme_extend_config(Scheme_Config *c, int pos, Scheme_Object *in
   return do_extend_config(c, scheme_make_integer(pos), init_val);
 }
 
+void scheme_install_config(Scheme_Config *config)
+{
+  
+}
+
 #ifdef MZTAG_REQUIRED
 # define IS_VECTOR(c) SCHEME_VECTORP((c)->content)
 #else

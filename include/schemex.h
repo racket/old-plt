@@ -49,6 +49,7 @@ Scheme_Object *(*scheme_param_config)(char *name, Scheme_Object *pos,
 Scheme_Object *(*scheme_register_parameter)(Scheme_Prim *function, char *name, int which);
 Scheme_Config *(*scheme_current_config)(void);
 Scheme_Config *(*scheme_extend_config)(Scheme_Config *c, int pos, Scheme_Object *init_val);
+void (*scheme_install_config)(Scheme_Config *);
 Scheme_Object *(*scheme_get_param)(Scheme_Config *c, int pos);
 void (*scheme_set_param)(Scheme_Config *c, int pos, Scheme_Object *o);
 Scheme_Object *(*scheme_get_thread_param)(Scheme_Config *c, Scheme_Thread_Cell_Table *cells, int pos);

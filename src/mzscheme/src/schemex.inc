@@ -13,6 +13,7 @@
   scheme_extension_table->scheme_register_parameter = scheme_register_parameter;
   scheme_extension_table->scheme_current_config = scheme_current_config;
   scheme_extension_table->scheme_extend_config = scheme_extend_config;
+  scheme_extension_table->scheme_install_config = scheme_install_config;
   scheme_extension_table->scheme_get_param = scheme_get_param;
   scheme_extension_table->scheme_set_param = scheme_set_param;
   scheme_extension_table->scheme_get_thread_param = scheme_get_thread_param;

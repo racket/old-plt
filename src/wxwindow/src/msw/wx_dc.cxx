@@ -361,10 +361,10 @@ void wxDC::Clear(void)
 
   if (!dc) return;
 
-  rect.left = -MAX_INT;
-  rect.top = -MAX_INT;
-  rect.right = MAX_INT;
-  rect.bottom = MAX_INT;
+  rect.left = -200000;
+  rect.top = -200000;
+  rect.right = 200000;
+  rect.bottom = 200000;
   
   {
     HBRUSH brush;
@@ -697,12 +697,11 @@ void wxDC::DrawPolygon(int n, wxPoint points[], float xoffset, float yoffset,int
     FillWithStipple(this, r, current_brush);
   }
 
-  ShiftXY(xoffset, yoffset, &xoffset1, &yoffset1);
-
   cpoints = new POINT[n];
   for (i = 0; i < n; i++) {
-    cpoints[i].x = (int)(XLOG2DEV(points[i].x + xoffset1));
-    cpoints[i].y = (int)(YLOG2DEV(points[i].y + yoffset1));
+    ShiftXY(points[i].x + xoffset, points[i].y + yoffset, &xoffset1, &yoffset1);
+    cpoints[i].x = xoffset1;
+    cpoints[i].y = yoffset1;
     CalcBoundingBox(points[i].x + xoffset, points[i].y + yoffset);
   }
 
@@ -742,7 +741,6 @@ void wxDC::DrawLines(int n, wxIntPoint points[], int xoffset, int yoffset)
     for (i = 0; i < n; i++) {
       cpoints[i].x = (int)(XLOG2DEV(points[i].x + xoffset1));
       cpoints[i].y = (int)(YLOG2DEV(points[i].y + yoffset1));
-      
       CalcBoundingBox((float)points[i].x + xoffset, (float)points[i].y + yoffset);
     }
     
@@ -769,13 +767,11 @@ void wxDC::DrawLines(int n, wxPoint points[], float xoffset, float yoffset)
     POINT *cpoints;
     int i;
     
-    ShiftXY(xoffset, yoffset, &xoffset1, &yoffset1);
-    
     cpoints = new POINT[n];
     for (i = 0; i < n; i++) {
-      cpoints[i].x = (int)(XLOG2DEV(points[i].x + xoffset1));
-      cpoints[i].y = (int)(YLOG2DEV(points[i].y + yoffset1));
-      
+      ShiftXY(points[i].x + xoffset, points[i].y + yoffset, &xoffset1, &yoffset1);
+      cpoints[i].x = xoffset1;
+      cpoints[i].y = yoffset1;
       CalcBoundingBox(points[i].x + xoffset, points[i].y + yoffset);
     }
     

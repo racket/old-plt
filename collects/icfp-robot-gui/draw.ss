@@ -95,6 +95,9 @@
 
       (define/public (get-robots&packages)
         (send canvas get-robots&packages))
+      
+      (define/public (get-dead-robot-scores)
+        (send canvas get-dead-robot-scores))
 
       (super-instantiate (frame))
       (define canvas (make-object board-canvas% this width height board
@@ -542,7 +545,7 @@
                              (robot-money r)
                              (robot-max-lift r)
                              (map pack-id (robot-packages r))))
-                     robots)
+                     (filter (lambda (r) (not (robot-dead? r))) robots))
                 (map (lambda (p)
                        (list (pack-id p)
                              (add1 (pack-x p))
@@ -550,7 +553,11 @@
                              (add1 (pack-dest-x p))
                              (add1 (pack-dest-y p))
                              (pack-weight p)))
-                     packages)))
+                     (filter (lambda (p) (not (pack-home? p))) packages))))
+      
+      (define/public (get-dead-robot-scores)
+        (map (lambda (r) (list (robot-id r) (robot-score r)))
+             (filter robot-dead? robots)))
 
       (define display-w (add1 (* scale width)))
       (define display-h (add1 (* scale height)))

@@ -8,11 +8,14 @@
   
   (define (match-up steps possible-moves possible-dests)
     (if (null? steps)
-        'n ;; arbitrary
-        (ormap (lambda (m d)
-                 (and (equal? d (car steps)) m))
-               possible-moves
-               possible-dests)))
+        ;; pick random move if no recommended step:
+        (list-ref possible-moves (random (length possible-moves)))
+        ;; pick a random step
+        (let ([step (list-ref steps (random (length steps)))])
+          (ormap (lambda (m d)
+                   (and (equal? d step) m))
+                 possible-moves
+                 possible-dests))))
 
   (define (run-robots n server port)
     (if (<= n 1)
@@ -36,7 +39,6 @@
                      (if (eq? 'base (get-cell board i j))
                          (cons (cons i j) (loop (add1 j)))
                          (loop (add1 j))))))))
-       (define possible-bases null)
        
        (define (find-steps-toward-targets starts targets)
          ;; Copy the board:
@@ -140,19 +142,16 @@
            ;; If we know about an unowned package, add its
            ;;  location to the list of possible "bases"
            (let ([owned-packages (apply append
-                                        (map bot-packages robots))]
-                 [bases (append bases possible-bases)])
+                                        (map bot-packages robots))])
              (for-each (lambda (p)
                          (when (not (member (pkg-id p) owned-packages))
                            (let ([px (sub1 (pkg-x p))]
                                  [py (sub1 (pkg-y p))])
                              (when (not (member (cons px py) bases))
-                               (set! possible-bases (cons (cons px py) possible-bases))))))
+                               ;; Make sure it's an ok spot:
+                               (when (memq (get-cell board px py) '(plain base))
+                                 (set! bases (cons (cons px py) bases)))))))
                        packages))
-           ;; No bases? Copy over possible bases:
-           (when (null? bases)
-             (set! bases possible-bases)
-             (set! possible-bases null))
                
            ;; ----------------------------------------
            ;; Move decision

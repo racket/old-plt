@@ -117,7 +117,23 @@
                (if (<= id num-players)
                    (let-values (((input output) (tcp-accept listener))
                                 ((client-sema) (make-semaphore)))
-                     (thread (lambda () (client-handler input output client-sema server-sema id)))
+                     (thread (lambda () 
+                               (with-handlers ([void
+                                                (lambda (exn)
+                                                  (fprintf (current-error-port)
+                                                           "bot ~a exn: ~e~n"
+                                                           id (if (exn? exn)
+                                                                  (exn-message exn)
+                                                                  exn))
+                                                  (close-input-port input)
+                                                  (close-output-port output)
+                                                  ;; For now, we'll just go into a
+                                                  ;; do-nothing loop.
+                                                  (let loop ()
+                                                    (semaphore-post server-sema)
+                                                    (semaphore-wait client-sema)
+                                                    (loop)))])
+                                 (client-handler input output client-sema server-sema id))))
                      (cons client-sema (server-loop (add1 id))))
                    null))])
         (server client-semas server-sema))))
@@ -130,30 +146,40 @@
           (cons (list-ref l n)
                 (loop (remq (list-ref l n) l)))))))
   
-  (define (update-state!)
+  (define (update-state!?)
     (let ([commands (let loop ([i 0])
                      (if (= i num-players)
                          null
                          (let ([cmd (vector-ref player-commands i)])
                            (vector-set! player-commands i #f)
-                           (cons
-                            (list (add1 i)
-                                  (command-bid cmd)
-                                  (case (command-type cmd)
-                                    [(move) (command-args cmd)]
-                                    [(pick drop) (cons (command-type cmd) (command-args cmd))]))
-                            (loop (add1 i))))))])
+                           (if cmd
+                               (cons
+                                (list (add1 i)
+                                      (command-bid cmd)
+                                      (case (command-type cmd)
+                                        [(move) (command-args cmd)]
+                                        [(pick drop) (cons (command-type cmd) (command-args cmd))]))
+                                (loop (add1 i)))
+                               ;; otherwise, bot is apparently dead:
+                               (loop (add1 i))))))])
       (send drawn queue-robot-actions (quicksort (randomize commands) (lambda (a b)
                                                                         (< (cadr a) (cadr b)))))
       (send drawn apply-queued-actions)
       (set! activity (send drawn get-most-recent-activity))
-      (set!-values (robots packages) (send drawn get-robots&packages))))
+      (set!-values (robots packages) (send drawn get-robots&packages))
+      (for-each (lambda (d)
+                  (fprintf (current-error-port)
+                           "Robot ~a final score: ~a~n"
+                           (car d) (cadr d)))
+                (send drawn get-dead-robot-scores))
+      ;; Continue if non-empty action list:
+      (pair? commands)))
   
   (define (server client-semas server-sema)
     (semaphore-Pn server-sema num-players)
-    (update-state!)
-    (map semaphore-post client-semas)
-    (server client-semas server-sema))
+    (when (update-state!?)
+      (map semaphore-post client-semas)
+      (server client-semas server-sema)))
     
   (define (client-handler input output client-sema server-sema id)
     (when (regexp-match "^Player" input)
@@ -182,7 +208,10 @@
       (newline output)
       (let loop ([orig-robots robots])
         ;; Print packages at my position:
-        (let* ([r (assoc id robots)]
+        (let* ([r (let ([r (assoc id robots)])
+                    (or r
+                        ;; Otherwise, this robot is dead.
+                        (raise 'dead)))]
                [x (list-ref r 1)]
                [y (list-ref r 2)])
           (for-each (lambda (pack)

@@ -1275,7 +1275,7 @@ Bool wxMediaEdit::GetAnchor(void)
   return anchorStreak;
 }
 
-void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str, 
+void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str, wxList *snipsl,
 			  long start, long end, Bool scrollOk)
 {
   long addlen, i, sPos, s, snipStartPos;
@@ -1283,6 +1283,7 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
   wxTextSnip *snip;
   wxTabSnip *tabsnip;
   Bool deleted = FALSE, insertedLine = FALSE, scroll;
+  wxNode *node;
 
   if (writeLocked || userLocked)
     return;
@@ -1314,18 +1315,34 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 
   if (!isnip && !strlen)
     return;
-  /* If deleted, must end edit sequence... */
+
+  /* If deleted, must end edit sequence after this point... */
 
   writeLocked = TRUE;
 
   if (isnip) {
-    if (!isnip->count)
-      goto give_up;
+    int did_one = 0;
 
-    addlen = isnip->count;
+    addlen = 0;
 
-    if (isnip->IsOwned())
-      goto give_up;
+    if (snipsl) {
+      for (node = snipsl->First(); node; node = node->Next()) {
+	isnip = (wxSnip *)node->Data();
+	if (!isnip->count)
+	  goto give_up;
+	addlen += isnip->count;
+	if (isnip->IsOwned())
+	  goto give_up;
+      }
+    } else {
+      if (!isnip->count)
+	goto give_up;
+      
+      addlen = isnip->count;
+      
+      if (isnip->IsOwned())
+	goto give_up;
+    }
 
     if (!CanInsert(start, addlen))
       goto give_up;
@@ -1333,95 +1350,118 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 
     flowLocked = TRUE;
 
-    /* Make sure OnInsert didn't do something bad to the snip: */
-    if (!isnip->count)
-      goto give_up;
-    if (isnip->IsOwned())
-      goto give_up;
-
-    if ((isnip->flags & wxSNIP_NEWLINE)&&!(isnip->flags & wxSNIP_HARD_NEWLINE))
-      isnip->flags -= wxSNIP_NEWLINE;
-    
-    if (!len) {
-      /* Special case: ignore the empty snip */
-      snips = lastSnip = isnip;
-      lineRoot = new wxMediaLine;
-      isnip->line = lineRoot;
-      lineRoot->snip = lineRoot->lastSnip = isnip;
-      if (maxWidth > 0)
-	lineRoot->MarkCheckFlow();
+    /* Make sure OnInsert didn't do something bad to the snip(s): */
+    if (snipsl) {
+      for (node = snipsl->First(); node; node = node->Next()) {
+	isnip = (wxSnip *)node->Data();
+	if (!isnip->count)
+	  goto give_up;
+	if (isnip->IsOwned())
+	  goto give_up;
+      }
     } else {
-      MakeSnipset(start, start);
-      gsnip = FindSnip(start, +2);
-      
-      if (!gsnip) {
-	AppendSnip(isnip);
-	gsnip = lastLine->lastSnip;
-	if (gsnip && (gsnip->flags & wxSNIP_HARD_NEWLINE)) {
-	  wxMediaLine *lr;
-	  lr = lineRoot;
-	  isnip->line = lastLine->Insert(&lr, FALSE);
-	  lineRoot = lr;
-	  isnip->line->snip = isnip->line->lastSnip = isnip;
-	  numValidLines++;
-	  insertedLine = TRUE;
-	} else {
-	  isnip->line = lastLine;
-	  if (!lastLine->snip)
-	    lastLine->snip = isnip;
-	  lastLine->lastSnip = isnip;
-	  if (isnip->flags & wxSNIP_HARD_NEWLINE)
-	    insertedLine = TRUE; /* b/c added extra ghost line */
-	}
-      } else {
-	InsertSnip(gsnip, isnip);
-	if (isnip->flags & wxSNIP_HARD_NEWLINE) {
-	  wxMediaLine *lr;
-	  lr = lineRoot;
-	  isnip->line = gsnip->line->Insert(&lr, TRUE);
-	  lineRoot = lr;
-	  insertedLine = TRUE;
-	  numValidLines++;
-	  if (PTREQ(gsnip->line->snip, gsnip))
-	    isnip->line->snip = isnip;
-	  else
-	    isnip->line->snip = gsnip->line->snip;
-	  isnip->line->lastSnip = isnip;
-	  gsnip->line->snip = gsnip;
-	  
-	  for (cSnip = isnip->line->snip;
-	       PTRNE(cSnip, isnip); 
-	       cSnip = cSnip->next) {
-	    cSnip->line = isnip->line;
-	  }
-	  
-	  gsnip->line->CalcLineLength();
-	  gsnip->line->MarkRecalculate();
-	} else {
-	  isnip->line = gsnip->line;
-	  if (PTREQ(isnip->line->snip, gsnip))
-	    isnip->line->snip = isnip;
-	}
-      }
-
-      if (maxWidth > 0) {
-	isnip->line->MarkCheckFlow();
-	if (isnip->line->prev
-	    && !(isnip->line->prev->lastSnip->flags & wxSNIP_HARD_NEWLINE))
-	  isnip->line->prev->MarkCheckFlow();
-	if ((isnip->flags & wxSNIP_HARD_NEWLINE) && isnip->line->next)
-	  isnip->line->next->MarkCheckFlow();
-      }
+      if (!isnip->count)
+	goto give_up;
+      if (isnip->IsOwned())
+	goto give_up;
     }
 
+    for (node = snipsl ? snipsl->First() : NULL; 
+	 !snipsl || node;
+	 node = node ? node->Next() : node) {
 
-    isnip->style = styleList->Convert(isnip->style);
-    isnip->SizeCacheInvalid();
+      if (node)
+	isnip = (wxSnip *)node->Data();
 
-    isnip->line->CalcLineLength();
-    isnip->line->MarkRecalculate();
+      if ((isnip->flags & wxSNIP_NEWLINE)&&!(isnip->flags & wxSNIP_HARD_NEWLINE))
+	isnip->flags -= wxSNIP_NEWLINE;
     
-    SnipSetAdmin(isnip, snipAdmin);
+      if (!len && !did_one) {
+	/* Special case: ignore the empty snip */
+	snips = lastSnip = isnip;
+	lineRoot = new wxMediaLine;
+	isnip->line = lineRoot;
+	lineRoot->snip = lineRoot->lastSnip = isnip;
+	if (maxWidth > 0)
+	  lineRoot->MarkCheckFlow();
+      } else {
+	MakeSnipset(start, start);
+	gsnip = FindSnip(start, +2);
+      
+	if (!gsnip) {
+	  AppendSnip(isnip);
+	  gsnip = lastLine->lastSnip;
+	  if (gsnip && (gsnip->flags & wxSNIP_HARD_NEWLINE)) {
+	    wxMediaLine *lr;
+	    lr = lineRoot;
+	    isnip->line = lastLine->Insert(&lr, FALSE);
+	    lineRoot = lr;
+	    isnip->line->snip = isnip->line->lastSnip = isnip;
+	    numValidLines++;
+	    insertedLine = TRUE;
+	  } else {
+	    isnip->line = lastLine;
+	    if (!lastLine->snip)
+	      lastLine->snip = isnip;
+	    lastLine->lastSnip = isnip;
+	    if (isnip->flags & wxSNIP_HARD_NEWLINE)
+	      insertedLine = TRUE; /* b/c added extra ghost line */
+	  }
+	} else {
+	  InsertSnip(gsnip, isnip);
+	  if (isnip->flags & wxSNIP_HARD_NEWLINE) {
+	    wxMediaLine *lr;
+	    lr = lineRoot;
+	    isnip->line = gsnip->line->Insert(&lr, TRUE);
+	    lineRoot = lr;
+	    insertedLine = TRUE;
+	    numValidLines++;
+	    if (PTREQ(gsnip->line->snip, gsnip))
+	      isnip->line->snip = isnip;
+	    else
+	      isnip->line->snip = gsnip->line->snip;
+	    isnip->line->lastSnip = isnip;
+	    gsnip->line->snip = gsnip;
+	  
+	    for (cSnip = isnip->line->snip;
+		 PTRNE(cSnip, isnip); 
+		 cSnip = cSnip->next) {
+	      cSnip->line = isnip->line;
+	    }
+	  
+	    gsnip->line->CalcLineLength();
+	    gsnip->line->MarkRecalculate();
+	  } else {
+	    isnip->line = gsnip->line;
+	    if (PTREQ(isnip->line->snip, gsnip))
+	      isnip->line->snip = isnip;
+	  }
+	}
+
+	if (maxWidth > 0) {
+	  isnip->line->MarkCheckFlow();
+	  if (isnip->line->prev
+	      && !(isnip->line->prev->lastSnip->flags & wxSNIP_HARD_NEWLINE))
+	    isnip->line->prev->MarkCheckFlow();
+	  if ((isnip->flags & wxSNIP_HARD_NEWLINE) && isnip->line->next)
+	    isnip->line->next->MarkCheckFlow();
+	}
+      }
+
+
+      isnip->style = styleList->Convert(isnip->style);
+      isnip->SizeCacheInvalid();
+
+      isnip->line->CalcLineLength();
+      isnip->line->MarkRecalculate();
+    
+      SnipSetAdmin(isnip, snipAdmin);
+
+      if (!snipsl)
+	break;
+
+      did_one = 1;
+    }
   } else {
     int sp;
 
@@ -1703,7 +1743,7 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 
 void wxMediaEdit::Insert(char *str, long start, long end, Bool scrollOk)
 {
-  _Insert(NULL, strlen(str), str, start, end, scrollOk);
+  _Insert(NULL, strlen(str), str, NULL, start, end, scrollOk);
 }
 
 void wxMediaEdit::Insert(char *str)
@@ -1713,12 +1753,12 @@ void wxMediaEdit::Insert(char *str)
 
 void wxMediaEdit::Insert(long len, char *str, long start, long end, Bool scrollOk)
 {
-  _Insert(NULL, len, str, start, end, scrollOk);
+  _Insert(NULL, len, str, NULL, start, end, scrollOk);
 }
 
 void wxMediaEdit::Insert(long len, char *str)
 {
-  _Insert(NULL, len, str, startpos, endpos);
+  _Insert(NULL, len, str, NULL, startpos, endpos);
 }
 
 void wxMediaEdit::Insert(unsigned char ascii, long start, long end)
@@ -1748,12 +1788,17 @@ void wxMediaEdit::Insert(unsigned char ascii)
 
 void wxMediaEdit::Insert(wxSnip *snip, long start, long end, Bool scrollOk)
 {
-  _Insert(snip, 0, NULL, start, end, scrollOk);
+  _Insert(snip, 0, NULL, NULL, start, end, scrollOk);
 }
 
 void wxMediaEdit::Insert(wxSnip *snip)
 {
   Insert(snip, startpos, endpos);
+}
+
+void wxMediaEdit::Insert(wxList *snipsl)
+{
+  _Insert(NULL, 0, NULL, snipsl, startpos);
 }
 
 void wxMediaEdit::_Delete(long start, long end, Bool withUndo, Bool scrollOk)

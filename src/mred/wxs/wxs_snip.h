@@ -172,6 +172,8 @@ extern class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *, const char *, in
 extern Scheme_Object *objscheme_bundle_wxDC(class wxDC *);
 extern Scheme_Object *objscheme_bundle_wxDC(class wxDC *);
 extern Scheme_Object *objscheme_bundle_wxDC(class wxDC *);
+extern Scheme_Object *objscheme_bundle_wxBitmap(class wxBitmap *);
+extern Scheme_Object *objscheme_bundle_wxBitmap(class wxBitmap *);
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 extern class wxSnipAdmin *objscheme_unbundle_wxSnipAdmin(Scheme_Object *, const char *, int);

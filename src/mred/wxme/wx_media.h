@@ -202,6 +202,7 @@ class wxMediaEdit : public wxMediaBuffer
   void Insert(long len, char *str);
   void Insert(wxSnip *snip, long start, long end = -1, Bool scrollOk=TRUE);
   void Insert(wxSnip *snip);
+  void Insert(wxList *snips);
   void Insert(unsigned char ascii);
   void Insert(unsigned char ascii, long start, long end = -1);
   void Delete(long start, long end = -1, Bool scrollOk = TRUE);
@@ -548,7 +549,8 @@ class wxMediaEdit : public wxMediaBuffer
 
   wxMediaWordbreakMap *wordBreakMap;
 
-  void _Insert(wxSnip *snip, long len, char *str, long start, long end = -1, 
+  void _Insert(wxSnip *snip, long len, char *str, wxList *snips,
+	       long start, long end = -1, 
 	       Bool scrollOk = TRUE);
   void _Delete(long start, long end, Bool undo, Bool scrollOk);
 

@@ -1405,7 +1405,7 @@ void wxImageSnip::LoadFile(char *name, long type, Bool relative, Bool inlineImg)
   if (name && !*name)
     name = NULL;
 
-  bm = NULL;
+  SetBitmap(NULL, NULL, FALSE);
 
   if (relative && name) {
 #ifdef wx_mac
@@ -1443,6 +1443,7 @@ void wxImageSnip::LoadFile(char *name, long type, Bool relative, Bool inlineImg)
 
   if (name) {
     char *loadname, *fn;
+    wxBitmap *nbm = NULL;
 
     loadname = name;
 
@@ -1476,17 +1477,13 @@ void wxImageSnip::LoadFile(char *name, long type, Bool relative, Bool inlineImg)
 
       wxBeginBusyCursor();
 
-      {
-	wxBitmap *nbm;
-	nbm = new wxBitmap(fn, type);
-	bm = nbm;
-      }
+      nbm = new wxBitmap(fn, type);
 
       wxEndBusyCursor();
-      
-      if (!bm->Ok()) {
-	DELETE_OBJ bm;
-	bm = NULL;
+
+      if (!nbm->Ok()) {
+	DELETE_OBJ nbm;
+	nbm = NULL;
       }
     }
 
@@ -1495,14 +1492,15 @@ void wxImageSnip::LoadFile(char *name, long type, Bool relative, Bool inlineImg)
       filetype = type;
     } else
       filename = NULL;
+
+    if (nbm)
+      SetBitmap(nbm, NULL, FALSE);
   } else {
     filename = NULL;
   }
 
-  contentsChanged = TRUE;
-
-  if (admin)
-    admin->Resized(this, TRUE);
+  /* For refresh: */
+  SetBitmap(bm, mask);
 }
 
 void wxImageSnip::Copy(wxImageSnip *newSnip)
@@ -1536,30 +1534,47 @@ long wxImageSnip::GetFiletype()
   return filename ? 0 : filetype;
 }
 
-void wxImageSnip::SetBitmap(wxBitmap *map, wxBitmap *msk)
+void wxImageSnip::SetBitmap(wxBitmap *map, wxBitmap *msk, int refresh)
 {
-#ifdef wx_x
-  if (map->selectedTo)
+  if ((map && (map->selectedIntoDC < 0))
+      || (msk && (msk->selectedIntoDC < 0)))
     return;
-#endif
-#if defined(wx_mac) || defined(wx_msw)
-  if (map->selectedInto)
-    return;
-#endif
+
+  if (bm)
+    --bm->selectedIntoDC;
+  if (mask)
+    --mask->selectedIntoDC;
 
   bm = NULL;
   mask = NULL;
 
-  if (!map->Ok())
-    return;
+  if ((!map || map->Ok())
+      && (!msk || msk->Ok())) {
+    if (map)
+      map->selectedIntoDC++;
+    if (msk)
+      msk->selectedIntoDC++;
+    
+    bm = map;
+    mask = msk;
+  }
 
-  bm = map;
-  mask = msk;
+  if (refresh) {
+    contentsChanged = TRUE;
+    
+    if (admin)
+      admin->Resized(this, TRUE);
+  }
+}
 
-  contentsChanged = TRUE;
-  
-  if (admin)
-    admin->Resized(this, TRUE);
+wxBitmap *wxImageSnip::GetBitmap()
+{
+  return bm;
+}
+
+wxBitmap *wxImageSnip::GetBitmapMask()
+{
+  return mask;
 }
 
 void wxImageSnip::SetOffset(float x, float y)

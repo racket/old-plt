@@ -324,8 +324,8 @@ static void dcGetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char
   
   p = 0;
 
-  for (i = 0; i < w; i++) {
-    for (j = 0; j < h; j++) {
+  for (j = 0; j < h; j++) {
+    for (i = 0; i < w; i++) {
       WITH_VAR_STACK(dc->GetPixel(x + i, y + j, c));
       ss[p++] = 255; /* alpha */
       ss[p++] = c->Red();
@@ -351,8 +351,8 @@ static void dcSetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char
   
   p = 0;
 
-  for (i = 0; i < w; i++) {
-    for (j = 0; j < h; j++) {
+  for (j = 0; j < h; j++) {
+    for (i = 0; i < w; i++) {
       WITH_VAR_STACK(c->Set(ss[p+1], ss[p+2], ss[p+3]));
       WITH_VAR_STACK(dc->SetPixel(x + i, y + j, c));
       p += 4;

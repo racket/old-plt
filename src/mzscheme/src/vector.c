@@ -27,6 +27,7 @@
 static Scheme_Object *vector_p (int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_vector (int argc, Scheme_Object *argv[]);
 static Scheme_Object *vector (int argc, Scheme_Object *argv[]);
+static Scheme_Object *vector_immutable (int argc, Scheme_Object *argv[]);
 static Scheme_Object *vector_length (int argc, Scheme_Object *argv[]);
 static Scheme_Object *vector_ref (int argc, Scheme_Object *argv[]);
 static Scheme_Object *vector_set (int argc, Scheme_Object *argv[]);
@@ -59,6 +60,11 @@ scheme_init_vector (Scheme_Env *env)
   scheme_add_global_constant("vector", 
 			     scheme_make_prim_w_arity(vector, 
 						      "vector", 
+						      0, -1), 
+			     env);
+  scheme_add_global_constant("vector-immutable", 
+			     scheme_make_prim_w_arity(vector_immutable, 
+						      "vector-immutable", 
 						      0, -1), 
 			     env);
   scheme_add_global_constant("vector-length", 
@@ -175,7 +181,18 @@ vector (int argc, Scheme_Object *argv[])
     SCHEME_VEC_ELS(vec)[i] = argv[i];
   }
 
-  return (vec);
+  return vec;
+}
+
+static Scheme_Object *
+vector_immutable (int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *vec;
+
+  vec = vector(argc, argv);
+  SCHEME_SET_IMMUTABLE(vec);
+
+  return vec;
 }
 
 static Scheme_Object *

@@ -1926,15 +1926,19 @@ void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
   wxmb_commonCopyRegionData = saveData;
   copyingSelf = save_cs;
 
+  if (m->bufferType == wxEDIT_BUFFER)
+    ((wxMediaEdit *)m)->Insert(copySnips);
+
   node = copySnips->First();
   node2 = copySnips2->First();
   for (; node; node = node->Next(), node2 = node2->Next()) {
     wxSnip *s;
     wxBufferData *bfd;
     s = (wxSnip *)node->Data();
-    if (m->bufferType == wxEDIT_BUFFER)
-      m->Insert(s);
-    else {
+    if (m->bufferType == wxEDIT_BUFFER) {
+      /* Done all at once above: */
+      /*   m->Insert(s); */
+    } else {
       wxMediaPasteboard *pb = (wxMediaPasteboard *)m;
       pb->Insert(s, s); /* before itself -> at end */
     }

@@ -934,6 +934,22 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
 {
   Scheme_Object *first = scheme_null, *last = NULL;
   int mono_only = 0;
+#ifdef wx_x
+  int count, i = 0;
+  char **xnames, **names;
+  int last_pos = -1, last_len = 0;
+#endif
+#ifdef wx_mac
+  FMFontFamilyIterator iterator;
+  FMFontFamily fam;
+  Str255 fname;
+  char temp[256];
+#endif
+#ifdef wx_msw
+  gfData data;
+  HDC dc;
+  int i = 0;
+#endif
 
   if (argc > 0) {
     if (!mono_symbol) {
@@ -949,10 +965,6 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
   }
   
 #ifdef wx_x
-  int count, i = 0;
-  char **xnames, **names;
-  int last_pos = -1, last_len = 0;
-
   xnames = XListFonts(wxAPP_DISPLAY, "*", 50000, &count);
 
   names = new char* [count];
@@ -966,11 +978,6 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
   i = 0;
 #endif
 #ifdef wx_mac
-  FMFontFamilyIterator iterator;
-  FMFontFamily fam;
-  Str255 fname;
-  char temp[256];
-
 # ifndef OS_X
 #  define kFMDefaultIterationScope 0
 # endif
@@ -978,10 +985,6 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
   FMCreateFontFamilyIterator(NULL, NULL, kFMDefaultIterationScope, &iterator);
 #endif
 #ifdef wx_msw
-  gfData data;
-  HDC dc;
-  int i = 0;
-
   data.count = data.size = 0;
   data.names = NULL;
 

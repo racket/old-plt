@@ -107,6 +107,9 @@
 
 @ "set-bitmap" : void SetBitmap(wxBitmap!,wxBitmap^=NULL); : : /CheckBW[1.METHODNAME("image-snip%","set-bitmap")]|CHECKOK[0.METHODNAME("image-snip%","set-bitmap")]|CHECKOK[1.METHODNAME("image-snip%","set-bitmap")]|CheckSizes[0.1.METHODNAME("image-snip%","set-bitmap")]
 
+@ "get-bitmap" : wxBitmap^ GetBitmap();
+@ "get-bitmap-mask" : wxBitmap^ GetBitmapMask();
+
 @ "set-offset" : void SetOffset(float, float);
 
 @END

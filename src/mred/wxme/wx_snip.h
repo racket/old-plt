@@ -306,7 +306,9 @@ class wxImageSnip : public wxInternalSnip
   char *GetFilename(Bool *relative);
   long GetFiletype();
 
-  void SetBitmap(wxBitmap *, wxBitmap *mask = NULL);
+  void SetBitmap(wxBitmap *, wxBitmap *mask = NULL, int refresh = TRUE);
+  wxBitmap *GetBitmap();
+  wxBitmap *GetBitmapMask();
 
   void SetOffset(float dx, float dy);
   virtual Bool Resize(float w, float h);

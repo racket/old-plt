@@ -1,6 +1,6 @@
 /*
   MzScheme
-  Copyright (c) 1995 Matthew Flatt
+  Copyright (c) 1995-2001 Matthew Flatt, Scott Owens
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -19,13 +19,6 @@
   libscheme
   Copyright (c) 1994 Brent Benson
   All rights reserved.
-
-
-  Some algorithms imitate VSCM:
-
-   (C) m.b (Matthias Blume); May 1992, HUB; Jan 1993 PU/CS
-           Humboldt-University of Berlin
-           Princeton University, Dept. of Computer Science
 */
 
 

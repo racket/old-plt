@@ -67,6 +67,7 @@ sub ReadFile {
     @openfiles = ();
     $stop = 0;
     $linenum = 0;
+    $filepos = 0;
     $testfile = 0;
     $classsuffix = '';
     $idfield = '';
@@ -90,6 +91,7 @@ sub ReadFile {
     {
 	$_ = <IN>;
 	$linenum += 1;
+	$filepos += length($_);
 	if ($_ eq undef) {
 	    if ($#openfiles >= 0) {
 		close(IN);
@@ -98,11 +100,11 @@ sub ReadFile {
 		$linenum = substr($oldin, 0, $p);
 		$oldin = substr($oldin, $p + 1); 
 		$p = index($oldin, ":");
-		$pos = substr($oldin, 0, $p);
+		$filepos = substr($oldin, 0, $p);
 		$thisfile = substr($oldin, $p + 1); 
 		open(IN, "$thisfile");
-		if ($pos > 0) {
-		    seek(IN, $pos, 0);
+		if ($filepos > 0) {
+		    seek(IN, $filepos, 0);
 		} else {
 		    seek(IN, 0, 2);
 		}
@@ -121,7 +123,7 @@ sub ReadFile {
 	    if (&StartsWithKey($_, $key_include)) {
 		$_ = &SkipKey($_, $key_include);
 		$incfile = &Wash($_);
-		$oldin = $linenum . ":" . tell(IN) . ":" . $thisfile;
+		$oldin = $linenum . ":" . $filepos . ":" . $thisfile;
 		$thisfile =~ /^((.*\/)|)([^\/]*)$/;
 		$incpath = $1;
 		if (!open(IN2, "$incpath$incfile")) {
@@ -129,6 +131,7 @@ sub ReadFile {
 		} else {
 		    $thisfile = "$incpath$incfile";
 		    $linenum = 0;
+		    $filepos = 0;
 		    push(@openfiles, $oldin);
 		    close(IN);
 		    open(IN, "<&IN2");

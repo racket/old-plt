@@ -350,7 +350,7 @@
  "@flink drscheme:debug:get-cm-key %"
  ", and \\var{dis} k"
  "is a continuation which may be used to resume execution"
- "in the case of a breakpoint (or #f for non-breakpoints)"
+ "in the case of a breakpoint (or \\rawscm{\\#f} for non-breakpoints)"
  ".")
 
 (drscheme:debug:get-cm-key

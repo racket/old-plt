@@ -130,11 +130,12 @@
       
       ;; read-mailbox-folder : -> mailbox-folder
       (define (read-mailbox-folder)
-        (let ([default
-               (make-deep-folder (string->bytes/utf-8 (ROOT-MAILBOX-FOR-LIST))
-                                 (ROOT-MAILBOX-FOR-LIST)
-                                 #f ;; arbitrary
-                                 null)])
+        (let* ([root-box (ROOT-MAILBOX-FOR-LIST)]
+               [default
+                (make-deep-folder (and root-box (string->bytes/utf-8 root-box))
+                                  root-box
+                                  #f ;; arbitrary
+                                  null)])
           (if (file-exists? mailbox-cache-file)
               (let/ec k
                 (let ([raw-datum (call-with-input-file mailbox-cache-file read 'text)])

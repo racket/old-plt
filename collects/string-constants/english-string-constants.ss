@@ -571,6 +571,8 @@
  (kill? "Kill?")
 
  ;;; version checker
+ (vc-update-check "Update check")
+ (vc-check-prompt "Check for PLT software updates over the Internet?")
  (vc-please-wait "Please wait")
  (vc-connecting-version-server "Connecting to PLT version server")
  (vc-network-timeout "Network timeout") 

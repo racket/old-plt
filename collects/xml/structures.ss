@@ -36,4 +36,8 @@
   (define-struct (pi struct:source) (target-name instruction))
   
   ;; Comment ::= (make-comment String)
-  (define-struct comment (text)))
+  (define-struct comment (text))
+  
+  ;; content? : TST -> Bool
+  (define (content? x)
+    (or (pcdata? x) (element? x) (entity? x) (comment? x) (pi? x))))

@@ -10,7 +10,8 @@
    (struct pi (target-name instruction))
    (struct source (start stop))
    (struct pcdata (string))
-   (struct entity (text))))
+   (struct entity (text))
+   content?))
 
 (define-signature writer^ (write-xml display-xml write-xml/content display-xml/content empty-tag-shorthand))
 (define-signature reader^ (read-xml read-comments trim-whitespace))

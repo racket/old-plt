@@ -193,8 +193,10 @@
 
  (install-plt-file-menu-item... "Install .plt File...")
  (install-plt-file-dialog-title "Install .plt File")
- (plt-from-web "Download and install .plt file from the web")
- (plt-from-file "Install .plt file from a local file")
+ (install-plt-from-web "Download and install .plt file from the web")
+ (install-plt-from-file "Install .plt file from a local file")
+ (install-plt-filename "Filename:")
+ (install-plt-url "URL:")
  
  ;; install plt file when opened in drscheme strings
  (install-plt-file "Install ~a or open for editing?")

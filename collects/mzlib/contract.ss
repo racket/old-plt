@@ -704,6 +704,8 @@ add struct contracts for immutable structs?
 ;                                                                                   
 
   
+  (define (print-me x) (printf "pm: ~s\n" x))
+  
   (define-syntax-set (-> ->* ->d ->d* ->r case-> object-contract opt-> opt->*)
     
     (define (->/proc stx) (make-/proc #f ->/h stx))
@@ -748,13 +750,11 @@ add struct contracts for immutable structs?
                 (with-syntax ([proj-code (build-proj outer-args inner-lambda-w/err-check)])
                   (arguments-check
                    outer-args
-                   (set-inferred-name-from
-                    stx
-                    (syntax/loc stx
-                      (make-contract
-                       name-id
-                       (lambda (pos-blame neg-blame src-info orig-str)
-                         proj-code))))))))))))
+                   (syntax/loc stx
+                     (make-contract
+                      name-id
+                      (lambda (pos-blame neg-blame src-info orig-str)
+                        proj-code)))))))))))
     
     (define (make-case->/proc method-proc? stx)
       (syntax-case stx ()
@@ -777,13 +777,11 @@ add struct contracts for immutable structs?
                    (with-syntax ([proj-code (build-projs outer-args inner-lambda-w/err-check)])
                      (arguments-check
                       outer-args
-                      (set-inferred-name-from
-                       stx
-                       (syntax/loc stx
-                         (make-contract
-                          (apply build-compound-type-name 'case-> name-id)
-                          (lambda (pos-blame neg-blame src-info orig-str)
-                            proj-code)))))))))))]))
+                      (syntax/loc stx
+                        (make-contract
+                         (apply build-compound-type-name 'case-> name-id)
+                         (lambda (pos-blame neg-blame src-info orig-str)
+                           proj-code))))))))))]))
     
     (define (make-opt->/proc method-proc? stx)
       (syntax-case stx (any)
@@ -2144,9 +2142,13 @@ add struct contracts for immutable structs?
       (let ([name (syntax-local-infer-name with-name)])
         (cond
           [(identifier? name)
-           (syntax-property to-be-named 'inferred-name (syntax-e name))]
+           (with-syntax ([rhs (syntax-property to-be-named 'inferred-name (syntax-e name))]
+                         [name (syntax-e name)])
+             (syntax (let ([name rhs]) name)))]
           [(symbol? name)
-           (syntax-property to-be-named 'inferred-name name)]
+           (with-syntax ([rhs (syntax-property to-be-named 'inferred-name name)]
+                         [name name])
+             (syntax (let ([name rhs]) name)))]
           [else to-be-named])))
     
     ;; (cons X (listof X)) -> (listof X)

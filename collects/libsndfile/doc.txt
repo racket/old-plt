@@ -189,7 +189,7 @@ This, as I see it, is something of a shortcoming of SRFI 4.
 So, here's a little tiny program which generates a tone at 440 Hz,
 panning from the left ear to the right ear at a frequency of 0.5 Hz:
 
-(require (lib "homo-vectors.ss" "homogeneous-vectors")
+(require (lib "homo-vectors.ss" "srfi" "4")
          (lib "libsndfile.ss" "libsndfile"))
 
 (define sample-rate 44100)
@@ -198,7 +198,7 @@ panning from the left ear to the right ear at a frequency of 0.5 Hz:
 
 (sf-error-level 'no-conversions)
 
-(define buffer (make-s32vector (* sample-rate buffer-time channels)))
+(define buffer (make-s32vector (* sample-rate buffer-time channels) 0))
 (define out-info (sf-open-for-write "./test.wav" sample-rate channels 'cpu 'wav 'pcm-32))
 
 (define pan-frequency 0.5)

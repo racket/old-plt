@@ -32,10 +32,6 @@
 
   (printf "Working in ~a~n" work-dir)
 
- 
-
-
-
   (define (copy-files from to re)
     (for-each 
      (lambda (f)
@@ -100,52 +96,7 @@
 		  pre-dir
 		  (if (eq? target-sys-type 'windows)
 		      #rx"[.]dll$"
-		      #rx"[.]so$"))
-      
-;      (when (eq? target-sys-type 'windows)
-;	;; Assume that the xxxx-ized versions of the DLLs are in
-;	;; the plt directory:
-;	(let* ([new-version (substring
-;			     (regexp-replace*
-;			      "alpha"
-;			      (format "~a_000000000" (version))
-;			      "a")
-;			     0
-;			     7)]
-;	       [target-name
-;		(lambda (x)
-;		  (format "~aeay32~a.dll" x new-version))]
-;	       [move-dll
-;		(lambda (x)
-;		  (copy-file (build-path (collection-path "openssl")
-;					 'up 'up
-;					 (format "~aeay32xxxxxxx.dll" x))
-;			     (build-path pre-dir 
-;					 (target-name x))))])
-;	  (move-dll "lib")
-;	  (move-dll "ssl")
-;
-;	  ;; Mangle xxxxxxxx to a version:
-;	  (let ([fixup
-;		 (lambda (f)
-;		   (let ([p (build-path pre-dir f)])
-;		     (let ([i (open-input-file p)]
-;			   [o (open-output-file p 'append)])
-;		       (let loop ()
-;			 (file-position i 0)
-;			 ;; This is a poor technique for updating the files, but
-;			 ;;  it works well enough.
-;			 (let ([m (regexp-match-positions #rx"[eE][aA][yY]32xxxxxxx" i)])
-;			   (when m
-;				 (file-position o (+ (caar m) 5))
-;				 (display new-version o)
-;				 (loop))))
-;		       (close-input-port i)
-;		       (close-output-port o))))])
-;	    (fixup "mzssl.dll")
-;	    (fixup (target-name "lib"))
-;	    (fixup (target-name "ssl")))))
-
+		      #rx"[.]so$"))      
       'done))
 
   (parameterize ([current-directory work-dir])

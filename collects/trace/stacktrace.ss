@@ -69,12 +69,12 @@
                   (kernel-syntax-case clause #f
                     [(arglist . bodies)
                      (let-values ([(arglist-proper improper?) (arglist-flatten #'arglist)])
-                     #`(arglist (begin (let ([call-depth (length (continuation-mark-set->list (current-continuation-marks) #,calltrace-key))])
-                                         (#,print-call-trace #,name-guess #,(make-stx-protector stx) (list #,@arglist-proper) #,improper? call-depth))
-                                       (with-continuation-mark 
-                                        #,calltrace-key
-                                        'unimportant
-                                        (begin #,@(recur-on-sequence (syntax->list #'bodies)))))))]
+                       #`(arglist (with-continuation-mark 
+                                   #,calltrace-key
+                                   'unimportant
+                                   (begin (let ([call-depth (length (continuation-mark-set->list (current-continuation-marks) #,calltrace-key))])
+                                            (#,print-call-trace #,name-guess #,(make-stx-protector stx) (list #,@arglist-proper) #,improper? call-depth))
+                                          #,@(recur-on-sequence (syntax->list #'bodies))))))]
                     [else
                      (error 'expr-syntax-object-iterator 
                             "unexpected (case-)lambda clause: ~a" 

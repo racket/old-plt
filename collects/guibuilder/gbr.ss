@@ -3,7 +3,8 @@
   (import mzlib:function^
 	  mzlib:pretty-print^
 	  mzlib:file^
-	  (mred : mred^))
+	  (mred : mred^)
+	  (framework : framework^))
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Snips
@@ -26,7 +27,7 @@
 
   (define make-one-line/callback-edit
     (opt-lambda (parent label cb [v ""])
-      (make-object text% label parent cb v)))
+      (make-object mred:text% label parent cb v)))
 
   (define make-number-control
     (lambda (parent label value get-min get-max set-v)
@@ -176,7 +177,7 @@
 		 (send xsc set-value x-stretch?)
 		 (send ysc set-value y-stretch?)
 		 (let ([p (make-object mred:vertical-panel% p)])
-		   (send p stretchable-in-y #f)))))))
+		   (send p stretchable-height #f)))))))
 	
 	(gb-add-child 
 	 (case-lambda 
@@ -428,8 +429,8 @@
 	 (lambda ()
 	   (list `[-:init-stretch
 		   (lambda (c hs? vs?)
-		     (send c stretchable-in-x hs?)
-		     (send c stretchable-in-y vs?)
+		     (send c stretchable-width hs?)
+		     (send c stretchable-height vs?)
 		     c)])))
 
 	(gb-get-instantiate-class-getter
@@ -548,7 +549,8 @@
 	   (send stream << vertical-child-alignment)
 	   (send stream << (if with-border? 1 0))
 	   (send stream << (if id id "BAD"))
-	   (stream-write-list stream (map (lambda (c) (ivar c id)) children))))
+	   (stream-write-list stream (map (lambda (c) (ivar c id)) children)))))
+      (public
 	(read
 	 (lambda (stream version)
 	   (base-setup
@@ -562,7 +564,8 @@
 	    (if (>= version 2) (positive? (send stream get-exact)) #f) ; with-border?
 	    (send stream get-string)
 	    (let ([v (stream-read-list stream)])
-	      (if (null? v) #f v)))))
+	      (if (null? v) #f v))))))
+      (override
 	(resize 
 	 (lambda (w-in h-in)
 	   (if (not parent) 
@@ -585,7 +588,7 @@
     (lambda (class% classname)
       (let ([snipclass
 	     (make-object 
-	      (class snip-class% ()
+	      (class mred:snip-class% ()
 		(inherit set-classname set-version)
 		(override
 		  [read
@@ -645,9 +648,9 @@
 				 (gb-need-recalc-size))
 			       "Show Border")])
 	       (sequence
-		 (send hca-choice stretchable-in-x #f)
+		 (send hca-choice stretchable-width #f)
 		 (send hca-choice set-selection (sub1 horizontal-child-alignment))
-		 (send vca-choice stretchable-in-x #f)
+		 (send vca-choice stretchable-width #f)
 		 (send vca-choice set-selection (sub1 vertical-child-alignment))
 		 (send border-check set-value with-border?))))])
 	(private
@@ -795,7 +798,8 @@
 							    (lambda (txt)
 							      (set! label txt)
 							      (gb-need-recalc-size))
-							    label)])))]
+							    label)])))])
+	(public
 	  [label deflabel]
 	  [get-label
 	   (lambda ()
@@ -813,7 +817,8 @@
 	  
 	  [label-install
 	   (lambda (n)
-	     (set! label n))]
+	     (set! label n))])
+	(override
 	  [copy
 	   (lambda ()
 	     (let ([o (super-copy)])
@@ -859,7 +864,7 @@
       (class-asi cl
 	(inherit name)
 	(rename [super-gb-aux-instantiate gb-aux-instantiate])
-	(override
+	(public
 	  [callback-kinds (list "-callback")]
 	  [callback-code (map (lambda (x) 'void) callback-kinds)]
 	  [get-callback-names
@@ -867,7 +872,8 @@
 	     (map
 	      (lambda (ct)
 		(string->symbol (string-append name ct)))
-	      callback-kinds))]
+	      callback-kinds))])
+	(override
 	  [gb-aux-instantiate
 	   (lambda ()
 	     (append
@@ -879,10 +885,11 @@
       (class-asi cl
 	(inherit w h get-label get-label-size get-callback-names draw-label
 		 gb-get-instantiate-class-getter)
+	(private
+	  [m 5])
 	(override
 	  [classname cn]
 	  [name (new-name "button")]
-	  [m 5]
 	  [gb-get-min-size
 	   (lambda (dc)
 	     (let-values ([(x y) (get-label-size dc)])
@@ -905,11 +912,12 @@
       (class-asi cl
 	(inherit w h get-style get-label get-callback-names get-label-size draw-label
 		 gb-get-instantiate-class-getter)
+	(private
+	  [hspace 2]
+	  [boxsize 12])
 	(override
 	  [classname cn]
 	  [name (new-name "checkbox")]
-	  [hspace 2]
-	  [boxsize 12]
 	  [gb-get-min-size
 	   (lambda (dc)
 	     (let-values ([(x y) (get-label-size dc)])
@@ -956,6 +964,30 @@
 		 [(null? l) l]
 		 [(zero? p) (cdr l)]
 		 [else (cons (car l) (loop (cdr l) (sub1 p)))])))])
+	(public
+	  [get-items
+	   (lambda ()
+	     items)]
+	  [init-items null]
+	  [get-item-height
+	   (lambda (dc)
+	     (let ([w (box 0)]
+		   [h (box 0)])
+	       (send dc get-text-extent "Xj" w h)
+	       (unbox h)))]
+	  [get-max-item-width
+	   (lambda (dc)
+	     (let loop ([l items][mw 0])
+	       (if (null? l)
+		   mw
+		   (let ([w (box 0)]
+			 [h (box 0)])
+		     (send dc get-text-extent (car l) w h)
+		     (loop (cdr l) (max mw (unbox w)))))))]
+	  
+	  [items-install
+	   (lambda (l)
+	     (set! items l))])
 	(override
 	  [get-frame%
 	   (lambda ()
@@ -998,29 +1030,6 @@
 						 (set! items (delete items (car ls)))
 						 (loop (cdr ls))))
 					     (gb-need-recalc-size)))])))]
-	  [get-items
-	   (lambda ()
-	     items)]
-	  [init-items null]
-	  [get-item-height
-	   (lambda (dc)
-	     (let ([w (box 0)]
-		   [h (box 0)])
-	       (send dc get-text-extent "Xj" w h)
-	       (unbox h)))]
-	  [get-max-item-width
-	   (lambda (dc)
-	     (let loop ([l items][mw 0])
-	       (if (null? l)
-		   mw
-		   (let ([w (box 0)]
-			 [h (box 0)])
-		     (send dc get-text-extent (car l) w h)
-		     (loop (cdr l) (max mw (unbox w)))))))]
-	  
-	  [items-install
-	   (lambda (l)
-	     (set! items l))]
 	  [copy
 	   (lambda ()
 	     (let ([o (super-copy)])
@@ -1048,8 +1057,28 @@
 		[super-gb-get-class-defines gb-get-class-defines])
 	(private
 	  [hmargin 2])
-	(override
+	(public
 	  [get-label-top-margin (lambda () 0)]
+	  [vertical-label? #f]
+
+	  [get-min-body-size
+	   (lambda (dc)
+	     (values 0 0))]
+	  [draw-body
+	   (lambda (dc x y w h)
+	     (void))]
+
+	  [wrap-label-direction
+	   (lambda (p e)
+	     `(-:with-label-direction ,(if vertical-label? 
+					   ''vertical 
+					   ''horizontal) 
+				      ,p (lambda () ,e)))]
+	  
+	  [labelpos-install
+	   (lambda (vert?)
+	     (set! vertical-label? vert?))])
+	(override
 	  [get-frame%
 	   (lambda ()
 	     (class (super-get-frame%) args
@@ -1066,10 +1095,6 @@
 			       '(horizontal))])
 	       (sequence
 		 (send direction-radio set-selection (if vertical-label? 0 1)))))]
-	  [vertical-label? #f]
-	  [get-min-body-size
-	   (lambda (dc)
-	     (values 0 0))]
 	  [gb-get-min-size
 	   (lambda (dc)
 	     (let-values ([(x y) (get-label-size dc)]
@@ -1088,10 +1113,7 @@
 	       (with-clipping-region dc (+ x dx) (+ y dy) (- w dx) (- h dy)
 		 (lambda ()
 		   (draw-body dc (+ x dx) (+ y dy) (- w dx) (- h dy))))))]
-	  [draw-body
-	   (lambda (dc x y w h)
-	     (void))]
-
+	  
 	  [gb-get-class-defines
 	   (lambda ()
 	     (append (super-gb-get-class-defines)
@@ -1100,16 +1122,6 @@
 			       (send parent set-label-position direction)
 			       (make-it))])))]
 
-	  [wrap-label-direction
-	   (lambda (p e)
-	     `(-:with-label-direction ,(if vertical-label? 
-					   ''vertical 
-					   ''horizontal) 
-				      ,p (lambda () ,e)))]
-	  
-	  [labelpos-install
-	   (lambda (vert?)
-	     (set! vertical-label? vert?))]
 	  [copy
 	   (lambda ()
 	     (let ([o (super-copy)])
@@ -1135,6 +1147,19 @@
 		[super-gb-get-class-defines gb-get-class-defines])
 	(private
 	  [initial "value"])
+	(public
+	  [get-initial (lambda () initial)]
+	  [get-initial-size
+	   (lambda (dc)
+	     (let ([xb (box 0.0)]
+		   [yb (box 0.0)])
+	       (send dc get-text-extent initial xb yb null null
+		     (send (get-style) get-font))
+	       (values (unbox xb) (unbox yb))))]
+
+	  [initial-install
+	   (lambda (i)
+	     (set! initial i))])
 	(override
 	  [get-frame%
 	   (lambda ()
@@ -1150,18 +1175,6 @@
 						 (gb-need-recalc-size))
 					       initial)])))]
 
-	  [get-initial (lambda () initial)]
-	  [get-initial-size
-	   (lambda (dc)
-	     (let ([xb (box 0.0)]
-		   [yb (box 0.0)])
-	       (send dc get-text-extent initial xb yb null null
-		     (send (get-style) get-font))
-	       (values (unbox xb) (unbox yb))))]
-
-	  [initial-install
-	   (lambda (i)
-	     (set! initial i))]
 	  [copy
 	   (lambda ()
 	     (let ([o (super-copy)])
@@ -1187,7 +1200,7 @@
 		[super-set-tagged-value set-tagged-value])
 	(private
 	  [v init])
-	(public
+	(override
 	  [get-tagged-value
 	   (lambda (t)
 	     (if (eq? t tag)
@@ -1197,8 +1210,8 @@
 	   (lambda (t v-in)
 	     (if (eq? t tag)
 		 (set! v v-in)
-		 (super-set-tagged-value t v-in)))])
-	(override
+		 (super-set-tagged-value t v-in)))]
+
 	  [copy
 	   (lambda ()
 	     (let ([o (super-copy)])
@@ -1268,7 +1281,7 @@
 							  enable
 							  (send snip get-tagged-value 'multi))))
 	 (inherit get-tagged-value)
-	 (override
+	 (public
 	  [get-style-flag
 	   (lambda () 
 	     (if (get-tagged-value 'hscroll)
@@ -1336,14 +1349,15 @@
       (class-asi cl
 	(inherit w h get-callback-names get-items get-item-height
 		 wrap-label-direction get-label gb-get-instantiate-class-getter)
+	(public
+	  [min-body-width 50]
+	  [sb-width 10]
+	  [min-item-count 3])
 	(override
 	  [classname cn]
 	  [name (new-name "listbox")]
 	  [y-stretch? #t]
 	  [x-stretch? #t]
-	  [min-body-width 50]
-	  [sb-width 10]
-	  [min-item-count 3]
 	  [get-min-body-size
 	   (lambda (dc)
 	     (let ([y (get-item-height dc)])
@@ -1440,12 +1454,13 @@
 		 wrap-label-direction get-label gb-need-recalc-size vertical-layout?
 		 gb-get-instantiate-class-getter)
 	(rename [super-get-frame% get-frame%])
+	(private
+	  [circle-size 10]
+	  [margin 2])
 	(override
 	  [classname cn]
 	  [name (new-name "radiobox")]
 	  [init-items (list "First" "Second")]
-	  [circle-size 10]
-	  [margin 2]
 	  [get-min-body-size
 	   (lambda (dc)
 	     (let ([h (max (get-item-height dc) circle-size)]
@@ -1493,17 +1508,18 @@
       (class-asi cl
 	(inherit w h get-item-height get-max-item-width get-callback-names get-items
 		 wrap-label-direction gb-need-recalc-size get-label gb-get-instantiate-class-getter)
-	(override
-	  [classname cn]
-	  [name (new-name "choice")]
-	  [init-items (list "First")]
+	(public
 	  [arrow-size 10]
 	  [lmargin 2]
 	  [amargin 2]
 	  [rmargin 2]
 	  [arrow (list (make-object mred:point% 0 0)
 		       (make-object mred:point% arrow-size 0)
-		       (make-object mred:point% (quotient arrow-size 2) (quotient arrow-size 2)))]
+		       (make-object mred:point% (quotient arrow-size 2) (quotient arrow-size 2)))])
+	(override
+	  [classname cn]
+	  [name (new-name "choice")]
+	  [init-items (list "First")]
 	  [get-min-body-size
 	   (lambda (dc)
 	     (let ([h (get-item-height dc)]
@@ -1547,6 +1563,25 @@
 		[super-copy copy]
 		[super-write write]
 		[super-read read])
+	(public
+	  [init-value 0]
+	  [min-value 0]
+	  [max-value 10]
+	  [arrow-size 10]
+	  [height arrow-size]
+	  [line-height 3]
+	  [min-width 50]
+	  [darrow (list (make-object mred:point% 0 0)
+			(make-object mred:point% arrow-size 0)
+			(make-object mred:point% (quotient arrow-size 2) (quotient arrow-size 2)))]
+	  [rarrow (list (make-object mred:point% 0 0)
+			(make-object mred:point% 0 arrow-size)
+			(make-object mred:point% (quotient arrow-size 2) (quotient arrow-size 2)))]
+	  [slider-install
+	   (lambda (mn mx in)
+	     (set! min-value mn)
+	     (set! max-value mx)
+	     (set! init-value in))])
 	(override
 	  [get-frame%
 	   (lambda ()
@@ -1574,19 +1609,6 @@
 	  [classname cn]
 	  [name (new-name "slider")]
 	  [vertical-layout? #f]
-	  [init-value 0]
-	  [min-value 0]
-	  [max-value 10]
-	  [arrow-size 10]
-	  [height arrow-size]
-	  [line-height 3]
-	  [min-width 50]
-	  [darrow (list (make-object mred:point% 0 0)
-			(make-object mred:point% arrow-size 0)
-			(make-object mred:point% (quotient arrow-size 2) (quotient arrow-size 2)))]
-	  [rarrow (list (make-object mred:point% 0 0)
-			(make-object mred:point% 0 arrow-size)
-			(make-object mred:point% (quotient arrow-size 2) (quotient arrow-size 2)))]
 	  [get-min-body-size
 	   (lambda (dc)
 	     (if vertical-layout?
@@ -1616,11 +1638,6 @@
 			      ,init-value 
 			      '(,(if vertical-layout? 'vertical 'horizontal)))))]
 	  
-	  [slider-install
-	   (lambda (mn mx in)
-	     (set! min-value mn)
-	     (set! max-value mx)
-	     (set! init-value in))]
 	  [copy
 	   (lambda ()
 	     (let ([o (super-copy)])
@@ -1657,6 +1674,13 @@
 		[super-copy copy]
 		[super-write write]
 		[super-read read])
+	(public
+	  [max-value 10]
+	  [min-height 10]
+	  [min-width 50]
+	  [gauge-install
+	   (lambda (mx)
+	     (set! max-value mx))])
 	(override
 	  [get-frame%
 	   (lambda ()
@@ -1672,9 +1696,6 @@
 	  [classname cn]
 	  [name (new-name "gauge")]
 	  [vertical-layout? #f]
-	  [max-value 10]
-	  [min-height 10]
-	  [min-width 50]
 	  [get-min-body-size
 	   (lambda (dc)
 	     (if vertical-layout?
@@ -1697,10 +1718,6 @@
 			      ,(get-label) ,max-value ,p
 			      '(,(if vertical-layout? 'vertical 'horizontal)))))]
 	  
-	  
-	  [gauge-install
-	   (lambda (mx)
-	     (set! max-value mx))]
 	  [copy
 	   (lambda ()
 	     (let ([o (super-copy)])
@@ -1746,6 +1763,9 @@
       (class-asi cl
 	(inherit w h get-hscroll get-vscroll)
 	(rename [super-get-frame% get-frame%])
+	(public
+	  [sb-width 10]
+	  [canvas-min-space 15])
 	(override
 	 [get-frame%
 	  (lambda ()
@@ -1754,8 +1774,6 @@
 	       [kind item-kind])))]
 	  [x-stretch? #t]
 	  [y-stretch? #t]
-	  [sb-width 10]
-	  [canvas-min-space 15]
 	  [gb-get-min-size
 	   (lambda (dc)
 	     (values (+ sb-width canvas-min-space)
@@ -1776,16 +1794,17 @@
     (lambda (cl cn)
       (class-asi cl
 	(inherit get-hscroll get-vscroll gb-get-instantiate-class-getter)
-	(override
-	  [classname cn]
-	  [name (new-name "canvas")]
+	(public
 	  [get-style-flag
 	   (lambda ()
 	     (cond
 	      [(and (get-hscroll) (get-vscroll)) ''(hscroll vscroll)]
 	      [(get-hscroll) ''(hscroll)]
 	      [(get-vscroll) ''(vscroll)]
-	      [else 0]))]
+	      [else 0]))])
+	(override
+	  [classname cn]
+	  [name (new-name "canvas")]
 	  
 	  [gb-get-default-class (lambda () 'mred:canvas%)]
 	  [gb-local-instantiate
@@ -1842,10 +1861,9 @@
       (class-asi (gb:make-select-configure-snip% cl 'hscroll "Horizontal Scroll"
 						 '("Show" "Hide" "No Scrolling"))
 	 (inherit get-tagged-value)
-	 (override
-	  [get-hscroll
-	   (lambda () (zero? (get-hscroll-val)))])
 	 (public
+	  [get-hscroll
+	   (lambda () (zero? (get-hscroll-val)))]
 	  [get-hscroll-val
 	   (lambda () (get-tagged-value 'hscroll))]))))
 
@@ -1854,10 +1872,9 @@
       (class-asi (gb:make-select-configure-snip% cl 'vscroll "Vertical Scroll"
 						 '("Show" "Hide" "No Scrolling"))
 	 (inherit get-tagged-value)
-	 (override
-	  [get-vscroll
-	   (lambda () (zero? (get-vscroll-val)))])
 	 (public
+	  [get-vscroll
+	   (lambda () (zero? (get-vscroll-val)))]
 	  [get-vscroll-val
 	   (lambda () (get-tagged-value 'vscroll))]))))
 
@@ -1865,9 +1882,7 @@
     (lambda (cl cn)
       (class-asi cl
 	(inherit get-hscroll-val get-vscroll-val gb-get-instantiate-class-getter)
-	(override
-	  [classname cn]
-	  [name (new-name "mcanvas")]
+	(public
 	  [get-style-flag
 	   (lambda ()
 	     `'(,@(case (get-hscroll-val)
@@ -1877,7 +1892,11 @@
 		,@(case (get-vscroll-val)
 		    [(0) ()]
 		    [(1) '(hide-vscroll)]
-		    [(2) '(no-vscroll)])))]
+		    [(2) '(no-vscroll)])))])
+	  
+	(override
+	  [classname cn]
+	  [name (new-name "mcanvas")]
 	  
 	  [gb-get-default-class (lambda () 'mred:media-canvas%)]
 	  [gb-local-instantiate
@@ -1914,7 +1933,7 @@
 			 12 'default 'normal 'normal #f))
 
   (define gb:edit%
-    (class mred:backup-autosave-pasteboard% ()
+    (class framework:pasteboard:backup-autosave% ()
       (inherit set-selected find-next-selected-snip insert
 	       find-first-snip is-selected? add-selected remove-selected
 	       get-admin find-snip begin-edit-sequence end-edit-sequence
@@ -2279,7 +2298,7 @@
 						      "Show Frame Automatically")])
 		 (send frame-stuff minor-align-left)
 		 (send frame-stuff enable (< top-level-type PANEL-MODE))
-		 (send kind-choice stretchable-in-x #f)
+		 (send kind-choice stretchable-width #f)
 		 (send kind-choice set-selection top-level-type)
 		 (send auto-show-check set-value auto-show?))))
 	   (send configure-frame show #t))]
@@ -2404,7 +2423,7 @@
 
   (define toolbar%
     (class mred:canvas% (parent)
-      (inherit user-min-height stretchable-in-y get-dc)
+      (inherit min-height stretchable-height get-dc)
       (private
        [margin 2]
        [icon-size 16]
@@ -2455,8 +2474,7 @@
 		    (send dc draw-line (+ x w -2) (+ y 2) (+ x w -2) (+ y h -2))
 		    (send dc set-pen p))
 		  (if (tool-icon tool)
-		      (send dc blit (+ x margin) margin icon-size icon-size
-			    (tool-icon tool) 0 0)
+		      (send dc draw-bitmap (tool-icon tool) (+ x margin) margin)
 		      (send dc draw-rectangle (+ x margin) margin icon-size icon-size)))
 		(loop (cdr l) (+ x w))))))]
        [on-event
@@ -2494,27 +2512,25 @@
 					       (build-path (collection-path "guibuilder") icon-name)
 					       'xpm)])
 		       (if (send icon ok?) 
-			   (let ([dc (make-object mred:memory-dc%)])
-			     (send dc select-object icon)
-			     dc)
+			   icon
 			   #f))))])
 	    (hash-table-put! icons name icon)
 	    (set! tools (append tools (list (make-tool icon cb #f))))))])
       (sequence
 	(super-init parent)
-	(user-min-height (+ icon-size (* margin 2)))
-	(stretchable-in-y #f))))
+	(min-height (+ icon-size (* margin 2)))
+	(stretchable-height #f))))
 
   (define gb:frame%
-    (class mred:pasteboard-info-file-frame% ([file #f])
-      (inherit get-edit make-menu show panel)
-      (rename [super-make-menu-bar make-menu-bar]
+    (class framework:frame:pasteboard-info-file% ([file #f])
+      (inherit get-editor show get-area-container get-menu-bar)
+      (rename [super-get-menu-bar% get-menu-bar%]
 	      [super-help-menu:after-about help-menu:after-about])
       (private)
-      (public
+      (override
         [help-menu:about-string "GUI Builder"]
 	[help-menu:about
-	 (lambda ()
+	 (lambda (evt)
 	   (mred:message-box (format "Version ~a.~a, Copyright (c) 1997, PLT (Matthew Flatt)~n"
 				     GB:SNIP-VERSION
 				     MINOR-VERSION)
@@ -2523,11 +2539,13 @@
 	 (lambda (help-menu)
 	   (send help-menu append-item "GUI Builder Help"
 		 (lambda ()
-		   (let ([f (mred:edit-file (build-path (collection-path "guibuilder") "help.mre"))])
-		     (send (send f get-edit) lock #t))))
+		   (let ([f (framework:handler:edit-file (build-path (collection-path "guibuilder") "help.mre"))])
+		     (send (send f get-editor) lock #t))))
 	   (super-help-menu:after-about help-menu))]
 
-	[get-edit% (lambda () gb:edit%)]
+	[get-editor% (lambda () gb:edit%)])
+
+      (public
 	[instantiate
 	 (lambda ()
 	   (let ([cl (eval (build-code #t))])
@@ -2539,11 +2557,11 @@
 	 (lambda ()
 	   (let ([port (open-output-string)])
 	     (pretty-print (build-code #f) port)
-	     (let ([f (make-object mred:editor-frame%)])
-	       (send (send f get-edit) insert (get-output-string port)))))]
+	     (let ([f (make-object framework:frame:editor%)])
+	       (send (send f get-editor) insert (get-output-string port)))))]
 	[build-code
 	 (lambda (force-frame?)
-	   (let* ([edit (get-edit)]
+	   (let* ([edit (get-editor)]
 		  [main (send edit get-main-panel)]
 		  [type (send edit get-top-level-type)]
 		  [frame-label (if (and (= type PANEL-MODE) force-frame?)
@@ -2575,7 +2593,7 @@
 	[get-class-functions
 	 (lambda ()
 	   (let ([ht (make-hash-table)])
-	     (send (get-edit) for-each-snip
+	     (send (get-editor) for-each-snip
 		   (lambda (s)
 		     (for-each 
 		      (lambda (l)
@@ -2584,28 +2602,27 @@
 	     (hash-table-map ht (lambda (key value) key))))]
 
 	[toolbar #f]
-	[make-menu-bar
-	 (lambda ()
-	   (set! toolbar (make-object toolbar% panel))
-	   (send panel change-children
+	[init-tools
+	 (lambda (mb)
+	   (set! toolbar (make-object toolbar% (get-area-container)))
+	   (send (get-area-container) change-children
 		 (lambda (l)
 		   (cons toolbar (remove toolbar l))))
-
-	   (let* ([mb (super-make-menu-bar)]
-		  [emenu (make-menu)]
+	   
+	   (let* ([emenu (make-object mred:menu% "Element" mb)]
 		  [append-element-type
 		   (lambda (name icon c%)
-		     (let ([maker (lambda () (insert-element c%))])
+		     (let ([maker (lambda (i e) (insert-element c%))])
 		       (send toolbar append-tool icon maker)
-		       (send emenu append-item name maker)))]
-		  [vmenu (make-menu)])
-	     (send emenu append-item "Configure Selected"
-		   (lambda ()
-		     (send (get-edit)
-			   for-each-selected-snip
-			   (lambda (s)
-			     (send s gb-open-dialog)))))
-	     (send emenu append-separator)
+		       (make-object mred:menu-item% name emenu maker)))]
+		  [vmenu (make-object mred:menu% "Output" mb)])
+	     (make-object mred:menu-item% "Configure Selected" emenu
+			  (lambda (i e)
+			    (send (get-editor)
+				  for-each-selected-snip
+				  (lambda (s)
+				    (send s gb-open-dialog)))))
+	     (make-object mred:separator-menu-item% emenu)
 	     (append-element-type "New Vertical Panel" "vpanel.xpm" gb:vertical-panel-snip%)
 	     (append-element-type "New Horizontal Panel" "hpanel.xpm" gb:horizontal-panel-snip%)
 	     (append-element-type "New Message Label" "message.xpm" gb:message-snip%)
@@ -2620,30 +2637,31 @@
 	     (append-element-type "New Canvas" "canvas.xpm" gb:canvas-snip%)
 	     (append-element-type "New Media Canvas" "mcanvas.xpm" gb:media-canvas-snip%)
 	     
-	     (send vmenu append-item "Configure Output" 
-		   (lambda () (send (get-edit) open-dialog)))
-	     (send vmenu append-separator)
-	     (send vmenu append-item "Make Sample Window" instantiate)
-	     (send vmenu append-item "Make Source Code" view-source)
-	     
-	     (send mb append emenu "Element")
-	     (send mb append vmenu "Output")
-	     mb))]
+	     (make-object mred:menu-item% "Configure Output"  vmenu
+			  (lambda (i e) (send (get-editor) open-dialog)))
+	     (make-object mred:separator-menu-item% vmenu)
+	     (make-object mred:menu-item%  "Make Sample Window" vmenu (lambda (i e) (instantiate)))
+	     (make-object mred:menu-item%  "Make Source Code" vmenu (lambda (i e) (view-source)))))]
 	[insert-element
 	 (lambda (c%)
-	   (let ([e (get-edit)])
+	   (let ([e (get-editor)])
 	     (send e insert-element c%)))])
       (sequence
-	(super-init)
+	(super-init (or file "GUI Builder"))
+
+	(init-tools (get-menu-bar))
+
 	(let ([file (and file (normalize-path file))])
-	  (unless (and file (file-exists? file) (send (get-edit) load-file file))
-	      (send (get-edit) create-main-panel)
+	  (unless (and file (file-exists? file) (send (get-editor) load-file file))
+	      (send (get-editor) create-main-panel)
 	      (when file
-		    (send (get-edit) set-filename file))))
+		    (send (get-editor) set-filename file))))
 	(show #t))))
   
-  (mred:insert-format-handler "GUI Builder" "gui"
-			      (lambda (file)
-				(make-object gb:frame% file)))
+  (framework:handler:insert-format-handler "GUI Builder" "gui"
+					   (lambda (file)
+					     (make-object gb:frame% file)))
   
-  (define (new-gui-builder-frame) (make-object gb:frame%)))
+  (define (new-gui-builder-frame) (make-object gb:frame%))
+
+  (new-gui-builder-frame))

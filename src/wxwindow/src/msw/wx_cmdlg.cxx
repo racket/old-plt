@@ -7,6 +7,7 @@
  * Copyright:	(c) 1995, Julian Smart
  *
  * Renovated by Matthew for MrEd, 1995-2000
+ * Corrected and improved by Noel Welsh.
  */
 
 #include "wx.h"
@@ -15,6 +16,134 @@
 
 #define wxDIALOG_DEFAULT_X 300
 #define wxDIALOG_DEFAULT_Y 300
+
+#define FILEBUF_SIZE 4096
+
+
+/*
+ * Utility functions
+ */
+
+
+/**
+ * Gets the directory portion of an multiple file OPENFILENAME file buffer.  
+ * Returns length of said directory portion
+ */
+static int GetDirectoryPart(char* fileBuffer, char* directory) 
+{
+  int length;
+  
+  /* The only confusion is that the directory portion may or may not
+     end with a \.  If the file is, e.g., c:\file.dat, it will.  If
+     the file is c:\somedir\file.dat, it won't so we must append the \ */
+
+  length = strlen(fileBuffer);
+  strcpy(directory, fileBuffer);
+
+  if(! (directory[length - 1] == '\\') ) {
+    directory[length] = '\\';
+    directory[length + 1] = '\0';
+    length = length + 1;
+  }
+
+  return length;
+}
+
+
+/**
+ * Returns the length of the buffer than will be need for the
+ * transformed multiple file OPENFILENAME file buffer 
+ */
+static int GetTotalLength(char* fileBuffer, int directoryLength)
+{
+  char* currentFile;
+  int currentLength = 0;
+  int totalLength = 0;
+  
+  currentFile = fileBuffer;
+  
+  /* Skip the directory part */      
+  currentLength = strlen(currentFile);
+  currentFile += currentLength + 1;
+
+  while (*currentFile) {
+      currentLength = strlen(currentFile);
+      totalLength += directoryLength + currentLength + 8;
+      currentFile += currentLength + 1;
+  }
+
+  return totalLength;
+}
+
+
+/**
+ * If a dialog box allows multiple files to be selected, and the user
+ * selects multiple files, the lpstrFile buffer contains the current
+ * directory followed by the filenames of the selected files. For
+ * Explorer-style dialog boxes, the directory and filename strings are
+ * NULL separated, with an extra NULL character after the last
+ * filename.
+ *
+ * The format we want is a simple string containing of the form:
+ * "<length> <full-file-name>...", where
+ *
+ * <length> is the length of filename
+ * <full-file-name> is concatenation of that path and the filename
+ *
+ * This function does the conversion from the Windows format to the
+ * format we want
+ */
+static char* ExtractMultipleFileNames(OPENFILENAME* of, char* fileBuffer) 
+{
+  char* result;
+  
+  /* Check for multiple file names, indicated by a null character
+     preceding nFileOffset */
+  if (of->nFileOffset && !fileBuffer[of->nFileOffset - 1]) {
+    char directory[FILEBUF_SIZE];
+    int directoryLength = 0;
+    char* currentFile;
+    int currentFileLength = 0;
+    int currentTotal = 0;
+    int totalLength = 0;
+        
+    directoryLength = GetDirectoryPart(fileBuffer, directory);
+    totalLength = GetTotalLength(fileBuffer, directoryLength);
+    
+    result = new WXGC_ATOMIC char[totalLength];
+
+    /* Skip the directory part */
+    currentFileLength = strlen(fileBuffer);
+    currentFile = fileBuffer + currentFileLength + 1;
+
+    /* Copy the concatentation of the directory and file */
+    while (*currentFile) {
+      currentFileLength = strlen(currentFile);
+      sprintf(result + currentTotal, "%5d ",
+	      currentFileLength + directoryLength);
+      memcpy(result + currentTotal + 6, directory, directoryLength);
+      memcpy(result + currentTotal + 6 + directoryLength,
+	     currentFile, currentFileLength);
+
+      currentFile += currentFileLength + 1;
+      currentTotal += currentFileLength + directoryLength + 6;
+    }
+    result[currentTotal] = 0;
+  }
+  /* Only a single file name so we can simply copy it */
+  else {
+    int length;
+    length = strlen(fileBuffer);
+
+    result = new WXGC_ATOMIC char[length + 7];
+    sprintf(result, "%5d ", length);
+    memcpy(result + 6, fileBuffer, length + 1);
+  }
+
+  return result;
+}
+
+
 
 /*
  * Common dialogs
@@ -62,7 +191,6 @@ char *wxFileSelector(char *message,
     hwnd = wnd->handle;
   }
   char *file_buffer;
-#define FILEBUF_SIZE 4096
 
   file_buffer = new WXGC_ATOMIC char[FILEBUF_SIZE];
 
@@ -74,13 +202,12 @@ char *wxFileSelector(char *message,
   title_buffer = new WXGC_ATOMIC char[50];
   title_buffer[0] = 0;
 
+  char *filter_buffer;
+  filter_buffer = new WXGC_ATOMIC char[200];
+
   if (!wildcard)
     wildcard = "*.*";
   
-  int wcl = strlen(wildcard);
-  char *filter_buffer;
-  filter_buffer = new WXGC_ATOMIC char[(wcl * 2) + 10];
-
   /* Alejandro Sierra's wildcard modification
 
      In wxFileSelector you can put, instead of a single wild_card, pairs of
@@ -93,21 +220,24 @@ char *wxFileSelector(char *message,
   */
   
   // Here begin my changes (Alex)              ******************************
+  if (wildcard)                               
+    {
+         if (!strchr(wildcard, '|'))         // No '|'s, I leave it as it was
+                sprintf(filter_buffer, "Files (%s)|%s",wildcard, wildcard);
+         else
+                strcpy(filter_buffer, wildcard);
 
-  if (!strchr(wildcard, '|'))         // No '|'s, I leave it as it was
-    sprintf(filter_buffer, "Files (%s)|%s",wildcard, wildcard);
-  else
-    strcpy(filter_buffer, wildcard);
-  
-  int len = strlen(filter_buffer);
-  
-  int i;
-  for (i = 0; i < len; i++) {
-    if (filter_buffer[i]=='|')
-      filter_buffer[i] = '\0';  
+         int len = strlen(filter_buffer);
+
+         int i;
+         for (i = 0; i < len; i++)
+                if (filter_buffer[i]=='|')
+                  filter_buffer[i] = '\0';
+
+         filter_buffer[len+1] = '\0';
+
   }
-  filter_buffer[len+1] = '\0';
-  
+
   if (!set_init_dir) {
     set_init_dir = 1;
     MrEdSyncCurrentDir();
@@ -131,8 +261,13 @@ char *wxFileSelector(char *message,
     }
   }
 
-  of->lpstrFilter = (LPSTR)filter_buffer;
-  of->nFilterIndex = 1L;
+  if (wildcard) {
+    of->lpstrFilter = (LPSTR)filter_buffer;
+    of->nFilterIndex = 1L;
+  } else {
+    of->lpstrFilter = NULL;
+    of->nFilterIndex = 0L;
+  }
   of->lpstrCustomFilter = NULL;
   of->nMaxCustFilter = 0L;
   of->lpstrFile = file_buffer;
@@ -168,42 +303,7 @@ char *wxFileSelector(char *message,
     success = 0;
 
   if (success && (flags & wxMULTIOPEN)) {
-    if (of->nFileOffset && !file_buffer[of->nFileOffset - 1]) {
-      /* Calculate size... */
-      char *s, *result;
-      int len = 0, dirlen, filelen;
-
-      s = file_buffer;
-      dirlen = strlen(s);
-      s += dirlen + 1;
-      while (*s) {
-	filelen = strlen(s);
-	len += dirlen + filelen + 8;
-	s += filelen + 1;
-      }
-
-      result = new WXGC_ATOMIC char[len];
-      len = 0;
-      s = file_buffer + dirlen + 1;
-      while (*s) {
-	filelen = strlen(s);
-	sprintf(result + len, "%5d ", filelen + dirlen);
-	memcpy(result + len + 6, file_buffer, dirlen);
-	memcpy(result + len + 6 + dirlen, s, filelen);
-	s += filelen + 1;
-	len += filelen + dirlen + 6;
-      }
-      result[len] = 0;
-      return result;
-    } else {
-      int len;
-	  char *result;
-      len = strlen(file_buffer);
-      result = new WXGC_ATOMIC char[len + 7];
-      sprintf(result, "%5d ", len);
-      memcpy(result + 6, file_buffer, len + 1);
-	  file_buffer = result;
-    }
+    return ExtractMultipleFileNames(of, file_buffer);
   }
 
   if (success)
@@ -211,3 +311,9 @@ char *wxFileSelector(char *message,
   else
     return NULL;
 }
+
+
+
+
+
+

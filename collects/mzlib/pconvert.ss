@@ -553,4 +553,5 @@
                          (unless (void? v)
                            (print (print-convert v))))))
       (current-prompt-read (lambda ()
-                             (display (current-read-eval-convert-print-prompt)))))))
+                             (display (current-read-eval-convert-print-prompt))
+                             (read-syntax 'STDIN))))))

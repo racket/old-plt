@@ -1,5 +1,6 @@
 (require (prefix annotate: (lib "annotate.ss" "stepper" "private")))
 (require (prefix kernel: (lib "kerncase.ss" "syntax")))
+(require (lib "syncheck-debug.ss" "drscheme" "private"))
 
 (load "/Users/clements/plt/tests/mzscheme/testing.ss")
 
@@ -116,10 +117,20 @@
           (cons annotated (loop new-env (cdr stxs)))))))
 
 (define (namespace-annotate-expr stx namespace)
+  ;(when (syntax? stx)
+  ;  (error 'namespace-rewrite-expr "namespace-rewrite-expr accepts s-exps, not syntax-objects"))
   (parameterize ([current-namespace namespace])
     (let*-values ([(annotated new-env)
                    (annotate:annotate (expand stx) annotate:initial-env-package break 'foot-wrap)])
       annotated)))
+
+; the following procedure is used to test just the top-level-rewrite part of the annotater:
+
+(define (namespace-rewrite-expr stx namespace)
+  ;(when (syntax? stx)
+  ;  (error 'namespace-rewrite-expr "namespace-rewrite-expr accepts s-exps, not syntax-objects"))
+  (parameterize ([current-namespace namespace])
+    (annotate:top-level-rewrite (expand stx))))
 
 ; strip-outer-lambda takes off a lambda wrapped around a test expression. For testing purposes,
 ; we often want to establish lexical bindings, then strip them off to check the test expr
@@ -662,31 +673,30 @@
             ((cadr test-case) (car (annotate-exprs (car test-case)))))
           test-cases)
 
-(define old-namespace (current-namespace))
+(define mz-namespace (current-namespace))
 (define beginner-namespace (make-namespace 'empty))
 (parameterize ([current-namespace beginner-namespace])
-  (namespace-attach-module old-namespace 'mzscheme)
+  (namespace-attach-module mz-namespace 'mzscheme)
   (namespace-require '(lib "htdp-beginner.ss" "lang")))
 
-(namespace-annotate-expr #'(or 3 4 5) beginner-namespace)
-(syntax-case (namespace-annotate-expr #'(or true false true) beginner-namespace) (let-values if with-continuation-mark begin set-)
-  [(let-values bindings 
-     (with-continuation-mark 
-      key
-      mark
-      (begin
-        
-        
+;(namespace-annotate-expr '(or 3 4 5) beginner-namespace)
   
-  
-  )
+(syntax-case (namespace-rewrite-expr '(lambda (a) a) mz-namespace) (lambda)
+  [(lambda (a-var-0) a-var-1)
+   (begin
+     (test 'lambda-bound syntax-property (syntax a-var-0) 'stepper-binding-type)
+     (test 'lexical identifier-binding (syntax a-var-0)) 
+     (test 'lambda-bound syntax-property (syntax a-var-1) 'stepper-binding-type)
+     (test 'lexical identifier-binding (syntax a-var-1)))])
 
-;(let ([expanded (namespace-annotate-expr #'(or 3 4 5) beginner-namespace)])
-;  (test 'comes-from-or syntax-property expanded 'stepper-hint)
-;  (syntax-case expanded (let-values)
-;    [(let-values ((part-0) test-stx) rest)
-;     (test 'comes-from-or syntax-property (syntax rest) 'stepper-hint)]))
-       
+(syntax-case (namespace-rewrite-expr (datum->syntax-object #'here '(case-lambda ((a) a) ((a b) b))) mz-namespace) (case-lambda)
+  [(case-lambda ((a-0) a-1) ((a-2 b-0) b-1))
+   (begin
+     (test 'lexical identifier-binding (syntax b-0))
+     (test 'lexical identifier-binding (syntax b-1)))])
+
+
+        
 
 
 

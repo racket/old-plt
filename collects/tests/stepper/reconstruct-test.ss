@@ -18,25 +18,29 @@
           (let ([mark-list (continuation-mark-set->list mark-set key)])
             (action (reconstruct:reconstruct-current expr mark-list break-kind returned-value-list)))))))
         
-(define (annotate-exprs stx-list num-steps action namespace)
-  (parameterize ([current-namespace namespace])
-    (let loop ([env annotate:initial-env-package] [stxs stx-list])
-      (if (null? stxs)
-          null
-          (let*-values ([(break) (make-break num-steps (car stxs) action)]
-                        [(annotated new-env)
-                         (annotate:annotate (expand (datum->syntax-object #'here (car stxs))) env break 'foot-wrap)])
-            (cons annotated (loop new-env (cdr stxs))))))))
+(define (annotate-exprs stx-list num-steps action)
+  (let loop ([env annotate:initial-env-package] [stxs stx-list])
+    (if (null? stxs)
+        null
+        (let*-values ([(break) (make-break num-steps (car stxs) action)]
+                      [(annotated new-env)
+                       (annotate:annotate (expand (car stxs)) env break 'foot-wrap)])
+          (cons annotated (loop new-env (cdr stxs)))))))
 
 (define (test-expr stx-list num-steps namespace)
   (let/ec k
-    (map eval (annotate-exprs stx-list num-steps k namespace))))
+    (parameterize ([current-namespace namespace])
+      (map eval (annotate-exprs stx-list num-steps k)))))
 
 (define (test-sequence source-list result-list namespace)
   (for-each (lambda (result step-num)
               (test result test-expr source-list step-num namespace))
             result-list
             (build-list (length result-list) (lambda (x) x))))
+
+(define (namespace-rewrite-expr stx-list namespace)
+  (parameterize ([current-namespace namespace])
+    (map annotate:top-level-rewrite (map expand stx-list))))
 
 (define mz-namespace (current-namespace))
 (define (test-mz-sequence source-list result-list)
@@ -179,7 +183,13 @@
                  ((,highlight-placeholder) ((cond [false 4] [else 9])))
                  ((,highlight-placeholder) (9))))
 
-(map syntax-object->datum (annotate-exprs '((or true false true)) 0 (lambda (x) x) beginner-namespace))
+(syntax-case (car (namespace-rewrite-expr (list '(or true false true)) beginner-namespace)) (let-values if)
+  [(let-values ([or-part-0 true-0]) (if or-part-1 or-part-2 rest))
+   (begin
+     (test 'or-part syntax-e (syntax or-part-0))
+     (test 'let-bound syntax-property (syntax or-part-0) 'stepper-binding-type)
+     (test 'or-part syntax-e (syntax or-part-1))
+     (test 'let-bound syntax-property (syntax or-part-1) 'stepper-binding-type))])
 
 (test-beginner-sequence (list '(or true false true))
                `((((or ,highlight-placeholder false true)) (true))

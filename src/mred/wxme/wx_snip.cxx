@@ -1201,11 +1201,11 @@ wxImageSnip::wxImageSnip(char *name, long type, Bool relative, Bool inlineImg)
     LoadFile(name, type, relative, inlineImg);
 }
 
-wxImageSnip::wxImageSnip(wxBitmap *bm)
+wxImageSnip::wxImageSnip(wxBitmap *bm, wxBitmap *mask)
 {
   Init();
 
-  SetBitmap(bm);
+  SetBitmap(bm, mask);
 }
 
 void wxImageSnip::Init(void)
@@ -1300,7 +1300,7 @@ void wxImageSnip::Draw(wxDC *dc, float x, float y,
   }
 
 
-  dc->Blit(x, y, w, h, bm, 0, 0, wxCOPY);
+  dc->Blit(x, y, w, h, bm, 0, 0, wxCOPY, NULL, mask);
   return;
 }
 
@@ -1510,7 +1510,7 @@ long wxImageSnip::GetFiletype()
   return filename ? 0 : filetype;
 }
 
-void wxImageSnip::SetBitmap(wxBitmap *map)
+void wxImageSnip::SetBitmap(wxBitmap *map, wxBitmap *msk)
 {
 #ifdef wx_x
   if (map->selectedTo)
@@ -1522,11 +1522,13 @@ void wxImageSnip::SetBitmap(wxBitmap *map)
 #endif
 
   bm = NULL;
+  mask = NULL;
 
   if (!map->Ok())
     return;
 
   bm = map;
+  mask = msk;
 
   contentsChanged = TRUE;
   

@@ -363,6 +363,20 @@ if test "${enable_mred}" = "yes" ; then
     fi
     AC_MSG_RESULT($addperm) 
   fi
+
+  # Can we make auto-repeat detectable?
+[ msg="whether X11/XKBlib.h is available"   ]
+  AC_MSG_CHECKING($msg)
+  AC_TRY_RUN(
+[  #include <X11/Intrinsic.h>]
+[  #include <X11/XKBlib.h>]
+   int main() {
+      return 0;
+   }, xkbavail=yes, xkbavail=no, xkbavail=no)
+  if test "$xkbavail" = "no" ; then
+    MROPTIONS="$MROPTIONS -DNO_XKB_LIB_PRESENT"
+  fi
+  AC_MSG_RESULT($xkbavail)
 fi
 
 ############## drop optimization flags ################

@@ -113,7 +113,7 @@ class wxMediaPasteboard : public wxMediaBuffer
 
   void AddPasteboardFunctions(wxKeymap *tab);
 
-  wxSnip *FindSnip(float x, float y);
+  wxSnip *FindSnip(float x, float y, wxSnip *after=NULL);
   wxSnip *FindFirstSnip(void);
 
   Bool IsSelected(wxSnip *asnip);

@@ -83,13 +83,16 @@
 
 @END
 
+@MACRO CheckBW[p.who] = if (x<p> && (x<p>->GetDepth() != 1)) WITH_VAR_STACK(scheme_arg_mismatch(<who>, "mask bitmap is not monochrome: ", p[POFFSET+<p>]));
+@MACRO CheckSizes[p.m.who] = if (x<m> && ((x<p>->GetWidth() != x<m>->GetWidth()) || (x<p>->GetHeight() != x<m>->GetHeight()))) WITH_VAR_STACK(scheme_arg_mismatch(<who>, "mask bitmap size does not match bitmap to draw: ", p[POFFSET+<p>]));
+
 @INCLUDE wxs_bmt.xci
 
 @CLASSBASE wxImageSnip "image-snip":"snip" / nofnl
 
 // This isn't `pathname' because it expands internally
 @CREATOR (nstring=NULL,SYM[bitmapType]=0,bool=FALSE,bool=TRUE); : : //USEALLFUEL[x0] <> filename
-@CREATOR (wxBitmap!) : : /CHECKOK[0.METHODNAME("image-snip%","initialization")] <> bitmap
+@CREATOR (wxBitmap!,wxBitmap!=NULL) : : /CheckBW[1.METHODNAME("image-snip%","initialization")]|CHECKOK[0.METHODNAME("image-snip%","initialization")]|CHECKOK[1.METHODNAME("image-snip%","initialization")]|CheckSizes[0.1.METHODNAME("image-snip%","initialization")] <> bitmap
 
 @CLASSID wxTYPE_IMAGE_SNIP
 
@@ -102,7 +105,7 @@
 @ "get-filename" : nstring GetFilename(bool?=NULL);
 @ "get-filetype" : SYM[bitmapType] GetFiletype();
 
-@ "set-bitmap" : void SetBitmap(wxBitmap!); : : /CHECKOK[0.METHODNAME("image-snip%","set-bitmap")]
+@ "set-bitmap" : void SetBitmap(wxBitmap!,wxBitmap!=NULL); : : /CheckBW[1.METHODNAME("image-snip%","set-bitmap")]|CHECKOK[0.METHODNAME("image-snip%","set-bitmap")]|CHECKOK[1.METHODNAME("image-snip%","set-bitmap")]|CheckSizes[0.1.METHODNAME("image-snip%","set-bitmap")]
 
 @ "set-offset" : void SetOffset(float, float);
 

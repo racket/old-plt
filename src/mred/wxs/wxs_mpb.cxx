@@ -3727,16 +3727,22 @@ static Scheme_Object *os_wxMediaPasteboardFindSnip(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxMediaPasteboard_class, "find-snip in pasteboard%", n, p);
   float x0;
   float x1;
+  class wxSnip* x2 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(1);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x2);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "find-snip in pasteboard%"));
   x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "find-snip in pasteboard%"));
+  if (n > (POFFSET+2)) {
+    x2 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+2], "find-snip in pasteboard%", 0));
+  } else
+    x2 = NULL;
 
   
-  r = WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->FindSnip(x0, x1));
+  r = WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->FindSnip(x0, x1, x2));
 
   
   
@@ -5796,7 +5802,7 @@ void objscheme_setup_wxMediaPasteboard(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "can-insert?" " method", os_wxMediaPasteboardCanInsert, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "find-next-selected-snip" " method", os_wxMediaPasteboardFindNextSelectedSnip, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "is-selected?" " method", os_wxMediaPasteboardIsSelected, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "find-snip" " method", os_wxMediaPasteboardFindSnip, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "find-snip" " method", os_wxMediaPasteboardFindSnip, 2, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-center" " method", os_wxMediaPasteboardGetCenter, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "remove-selected" " method", os_wxMediaPasteboardRemoveSelected, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "no-selected" " method", os_wxMediaPasteboardNoSelected, 0, 0));

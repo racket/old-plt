@@ -5,7 +5,7 @@
 
   (define cell-size 32)
   
-  (define person-x-inset 5)
+  (define person-x-inset 8)
   
   (define (minpos a b)
     (if (negative? b)
@@ -169,28 +169,34 @@
                                          (send pb get-snip-location this xb yb)
                                          (values (unbox xb) (unbox yb)))])
                      ;; Assumptions:
-                     ;;   1. ollie = 2 cells high, one cell wide
-                     ;;   2. we move less than a cell in each direction on each step
+                     ;;   1. Ollie is two cells high and no more than one cell wide
+                     ;;   2. We move less than one cell in each direction on each step
                      ;; Find potential hits and adjust delta:
                      (let ([potential-snips
                             (let loop ([corners 
-                                        (list 
-                                         ;; shift x by 1 so that snip search doesn't find the character
-                                         (cons (- x 1) y)
-                                         (cons (+ x cell-size 1) y)
-                                         (cons (- x 1) (+ y cell-size))
-                                         (cons x (+ y cell-size 1))
-                                         (cons (+ x cell-size 1) (+ y cell-size))
-                                         (cons (- x 1) (+ y (* 2 cell-size)))
-                                         (cons x (+ y 1 (* 2 cell-size)))
-                                         (cons (+ x cell-size 1) (+ y (* 2 cell-size))))])
+                                        (let ([pw (- cell-size person-x-inset)]
+                                              [pi (- person-x-inset)])
+                                          (let ([now-on (list 
+                                                         (cons (+ x pi) y)
+                                                         (cons (+ x pw) y)
+                                                         (cons (+ x pi) (+ y cell-size))
+                                                         (cons (+ x pw) (+ y cell-size))
+                                                         (cons (+ x pi) (+ y (* 2 cell-size)))
+                                                         (cons (+ x pw) (+ y (* 2 cell-size))))])
+                                            ;; Might hit:
+                                            (append
+                                             now-on
+                                             (map (lambda (p) (cons (+ dx (car p)) (cdr p))) now-on)
+                                             (map (lambda (p) (cons (+ dx (car p)) (+ dy (cdr p)))) now-on)
+                                             (map (lambda (p) (cons (car p) (+ dy (cdr p)))) now-on))))])
                               (if (null? corners)
                                   null
-                                  (let ([snip1 (send pb find-snip (caar corners) (cdar corners))]
-                                        [snip2 (send pb find-snip (+ dx (caar corners)) (+ dy (cdar corners)))])
-                                    (let ([l (loop (cdr corners))])
-                                      (let ([l (if (snip2 . is-a? . static-object-snip%) (cons snip2 l) l)])
-                                        (if (snip1 . is-a? . static-object-snip%) (cons snip1 l) l))))))]
+                                  (let ([l (loop (cdr corners))])
+                                    (let ([snip (send pb find-snip (caar corners) (cdar corners) this)])
+                                      (if (and (snip . is-a? . static-object-snip%) 
+                                               (not (memq snip l)))
+                                          (cons snip l)
+                                          l)))))]
                            [orig-dx dx])
                        (let-values ([(dx dy jump?)
                                      (let loop ([snips potential-snips][dx orig-dx][dy dy][j? #f][first-pass? #f])
@@ -256,6 +262,6 @@
     (unless (= i 19)
       (loop (add1 i))))
   
-  (send pb insert (mk-person) (* 2 cell-size) (- (* 9 cell-size) 2))
+  (send pb insert (mk-person) (- (* 2 cell-size) 33) (* 7 cell-size))
   
   (send f show #t))

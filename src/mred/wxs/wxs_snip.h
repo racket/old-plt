@@ -173,6 +173,7 @@ extern Scheme_Object *objscheme_bundle_wxDC(class wxDC *);
 extern Scheme_Object *objscheme_bundle_wxDC(class wxDC *);
 extern Scheme_Object *objscheme_bundle_wxDC(class wxDC *);
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
+extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 extern class wxSnipAdmin *objscheme_unbundle_wxSnipAdmin(Scheme_Object *, const char *, int);
 extern class wxMediaStreamOut *objscheme_unbundle_wxMediaStreamOut(Scheme_Object *, const char *, int);
 extern class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *, const char *, int);
@@ -195,6 +196,7 @@ extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
 extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
 extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
 extern int objscheme_istype_wxBitmap(Scheme_Object *, const char *, int);
+extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 #endif
 void objscheme_setup_wxImageSnip(Scheme_Env *env);

@@ -1556,7 +1556,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	  }
 	}
 
-	if (win->X->ic) {
+	if (win->X->ic && (xev->xany.type == KeyPress)) {
 	  XSetICValues(win->X->ic, 
 		       XNClientWindow, XtWindow(w),
 		       XNFocusWindow,  XtWindow(w),

@@ -5668,6 +5668,7 @@ class wxTabSnip *objscheme_unbundle_wxTabSnip(Scheme_Object *obj, const char *wh
 
 
 
+
 #ifndef wx_mac
 # define wxBITMAP_TYPE_PICT 101
 #endif
@@ -5756,7 +5757,7 @@ class os_wxImageSnip : public wxImageSnip {
 
   os_wxImageSnip CONSTRUCTOR_ARGS((nstring x0 = NULL, int x1 = 0, Bool x2 = FALSE, Bool x3 = TRUE));
 #ifndef MZ_PRECISE_GC
-  os_wxImageSnip CONSTRUCTOR_ARGS((class wxBitmap* x0));
+  os_wxImageSnip CONSTRUCTOR_ARGS((class wxBitmap* x0, class wxBitmap* x1 = NULL));
 #endif
   ~os_wxImageSnip();
   nnfloat GetScrollStepOffset(nnlong x0);
@@ -5804,8 +5805,8 @@ CONSTRUCTOR_INIT(: wxImageSnip(x0, x1, x2, x3))
 }
 
 #ifndef MZ_PRECISE_GC
-os_wxImageSnip::os_wxImageSnip CONSTRUCTOR_ARGS((class wxBitmap* x0))
-CONSTRUCTOR_INIT(: wxImageSnip(x0))
+os_wxImageSnip::os_wxImageSnip CONSTRUCTOR_ARGS((class wxBitmap* x0, class wxBitmap* x1))
+CONSTRUCTOR_INIT(: wxImageSnip(x0, x1))
 {
 }
 #endif
@@ -6633,16 +6634,22 @@ static Scheme_Object *os_wxImageSnipSetBitmap(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxImageSnip_class, "set-bitmap in image-snip%", n, p);
   class wxBitmap* x0 INIT_NULLED_OUT;
+  class wxBitmap* x1 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x1);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "set-bitmap in image-snip%", 0));
+  if (n > (POFFSET+1)) {
+    x1 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+1], "set-bitmap in image-snip%", 0));
+  } else
+    x1 = NULL;
 
-  { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","set-bitmap"), "bad bitmap: ", p[POFFSET+0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","set-bitmap"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+0])); }
-  WITH_VAR_STACK(((wxImageSnip *)((Scheme_Class_Object *)p[0])->primdata)->SetBitmap(x0));
+  if (x1 && (x1->GetDepth() != 1)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","set-bitmap"), "mask bitmap is not monochrome: ", p[POFFSET+1]));{ if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","set-bitmap"), "bad bitmap: ", p[POFFSET+0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","set-bitmap"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+0])); }{ if (x1 && !x1->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","set-bitmap"), "bad bitmap: ", p[POFFSET+1])); if (x1 && BM_SELECTED(x1)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","set-bitmap"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+1])); }if (x1 && ((x0->GetWidth() != x1->GetWidth()) || (x0->GetHeight() != x1->GetHeight()))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","set-bitmap"), "mask bitmap size does not match bitmap to draw: ", p[POFFSET+0]));
+  WITH_VAR_STACK(((wxImageSnip *)((Scheme_Class_Object *)p[0])->primdata)->SetBitmap(x0, x1));
 
   
   
@@ -7460,21 +7467,27 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[POFFSET+0], NULL, 0))) {
     class wxBitmap* x0 INIT_NULLED_OUT;
+    class wxBitmap* x1 INIT_NULLED_OUT;
 
-    SETUP_VAR_STACK_PRE_REMEMBERED(3);
+    SETUP_VAR_STACK_PRE_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, realobj);
     VAR_STACK_PUSH(2, x0);
+    VAR_STACK_PUSH(3, x1);
 
     
-    if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in image-snip% (bitmap case)", POFFSET+1, POFFSET+1, n, p, 1));
+    if ((n < (POFFSET+1)) || (n > (POFFSET+2))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in image-snip% (bitmap case)", POFFSET+1, POFFSET+2, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "initialization in image-snip% (bitmap case)", 0));
+    if (n > (POFFSET+1)) {
+      x1 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+1], "initialization in image-snip% (bitmap case)", 0));
+    } else
+      x1 = NULL;
 
-    { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bad bitmap: ", p[POFFSET+0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+0])); }
-    realobj = WITH_VAR_STACK(new os_wxImageSnip CONSTRUCTOR_ARGS((x0)));
+    if (x1 && (x1->GetDepth() != 1)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "mask bitmap is not monochrome: ", p[POFFSET+1]));{ if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bad bitmap: ", p[POFFSET+0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+0])); }{ if (x1 && !x1->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bad bitmap: ", p[POFFSET+1])); if (x1 && BM_SELECTED(x1)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+1])); }if (x1 && ((x0->GetWidth() != x1->GetWidth()) || (x0->GetHeight() != x1->GetHeight()))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "mask bitmap size does not match bitmap to draw: ", p[POFFSET+0]));
+    realobj = WITH_VAR_STACK(new os_wxImageSnip CONSTRUCTOR_ARGS((x0, x1)));
 #ifdef MZ_PRECISE_GC
-    WITH_VAR_STACK(realobj->gcInit_wxImageSnip(x0));
+    WITH_VAR_STACK(realobj->gcInit_wxImageSnip(x0, x1));
 #endif
     realobj->__gc_external = (void *)p[0];
     
@@ -7535,7 +7548,7 @@ void objscheme_setup_wxImageSnip(Scheme_Env *env)
   os_wxImageSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "image-snip%", "snip%", os_wxImageSnip_ConstructScheme, 27));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-offset" " method", os_wxImageSnipSetOffset, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-bitmap" " method", os_wxImageSnipSetBitmap, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-bitmap" " method", os_wxImageSnipSetBitmap, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-filetype" " method", os_wxImageSnipGetFiletype, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-filename" " method", os_wxImageSnipGetFilename, 0, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "load-file" " method", os_wxImageSnipLoadFile, 1, 4));

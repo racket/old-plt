@@ -268,7 +268,7 @@ class wxImageSnip : public wxInternalSnip
  private:
   char *filename;
   long filetype; /* file != NULL => type of file, otherwise loaded 1 => XBM and 2 => XPM */
-  wxBitmap *bm;
+  wxBitmap *bm, *mask;
   Bool relativePath;
 
   void Init(void);
@@ -279,7 +279,7 @@ class wxImageSnip : public wxInternalSnip
 
  public:
   wxImageSnip(char *name = NULL, long type = 0, Bool relative = FALSE, Bool inlineImg = TRUE); 
-  wxImageSnip(wxBitmap *bm);
+  wxImageSnip(wxBitmap *bm, wxBitmap *mask = NULL);
   ~wxImageSnip(); 
 
   virtual void SizeCacheInvalid(void);
@@ -302,7 +302,7 @@ class wxImageSnip : public wxInternalSnip
   char *GetFilename(Bool *relative);
   long GetFiletype();
 
-  void SetBitmap(wxBitmap *);
+  void SetBitmap(wxBitmap *, wxBitmap *mask = NULL);
 
   void SetOffset(float dx, float dy);
   virtual Bool Resize(float w, float h);

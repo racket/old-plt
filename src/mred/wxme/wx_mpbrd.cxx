@@ -1470,19 +1470,24 @@ Bool wxMediaPasteboard::FindDot(wxSnipLocation *loc, float x, float y,
   return TRUE;
 }
 
-wxSnip *wxMediaPasteboard::FindSnip(float x, float y)
+wxSnip *wxMediaPasteboard::FindSnip(float x, float y, wxSnip *after)
 {
   wxSnip *snip;
   wxSnipLocation *loc;
   float dym, dxm;
 
   for (snip = snips; snip; snip = snip->next) {
-    loc = SnipLoc(snip);
-    if (loc->x <= x && loc->y <= y
-	&& loc->r >= x && loc->b >= y)
-      return snip;
-    else if (loc->selected && FindDot(loc, x, y, &dxm, &dym))
-      return snip;
+    if (after) {
+      if (after == snip)
+	after = NULL;
+    } else {
+      loc = SnipLoc(snip);
+      if (loc->x <= x && loc->y <= y
+	  && loc->r >= x && loc->b >= y)
+	return snip;
+      else if (loc->selected && FindDot(loc, x, y, &dxm, &dym))
+	return snip;
+    }
   }
 
   return NULL;

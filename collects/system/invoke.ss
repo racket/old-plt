@@ -14,6 +14,13 @@
 	     (define mred:plt-home-directory ,mred:plt-home-directory)
 	     (current-library-path ,(current-library-path)))
 	   port)
+
+	  (pretty-print `(reference-library "match.ss") port)
+	  (pretty-print `(reference-library "macro.ss") port)
+	  (pretty-print `(reference ,(build-path mred:plt-home-directory
+						 "mred" "system" "debug.ss"))
+			port)
+	  
 	  (pretty-print `(reference-library "cores.ss") port)
 	  (pretty-print `(reference-library "triggers.ss") port)
 	  (pretty-print `(reference ,(build-path mred:system-source-directory

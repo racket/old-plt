@@ -1638,7 +1638,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     stx = app_symbol;
   }
 
-  /* Compile/expand as application: */
+  /* Compile/expand as application, datum, or unbound: */
   stx = scheme_datum_to_syntax(stx, scheme_false, form);
   var = scheme_static_distance(stx, env,
 			       SCHEME_NULL_FOR_UNBOUND
@@ -1674,7 +1674,7 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
 		   Scheme_Compile_Info *rec, int drec, 
 		   int depth, Scheme_Object *boundname)
 {
-  Scheme_Object *form;
+  Scheme_Object *form, *naya;
 
   form = SCHEME_STX_CDR(forms);
   form = scheme_datum_to_syntax(form, forms, forms);
@@ -1684,7 +1684,7 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
     if (rec)
       return scheme_null;
     else
-      return scheme_datum_to_syntax(scheme_null, forms, scheme_sys_wraps(env));
+      return forms;
   } else if (SCHEME_STX_SYMBOLP(SCHEME_CAR(form))) {
 #if 0
     /* Optimize (void) to just the value void */
@@ -1697,8 +1697,8 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
     if (rec)
       return compile_application(form, env, rec, drec);
     else {
-      form = scheme_expand_list(form, scheme_no_defines(env), depth, scheme_false);
-      /* form will be returned... */
+      naya = scheme_expand_list(form, scheme_no_defines(env), depth, scheme_false);
+      /* naya will be prefixed and returned... */
     }
   } else if (rec) {
     Scheme_Object *name;
@@ -1769,15 +1769,17 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
     
     return compile_application(form, env, rec, drec);
   } else {
-    form = scheme_expand_list(form, scheme_no_defines(env), depth, scheme_false);
-    /* form will be returned... */
+    naya = scheme_expand_list(form, scheme_no_defines(env), depth, scheme_false);
+    /* naya will be prefixed returned... */
   }
 
-  /* Make sure resulting form for macro expansion has system wraps on the parens: */
-  form = scheme_datum_to_syntax(scheme_make_pair(SCHEME_STX_CAR(form), SCHEME_STX_CDR(form)),
+  if (SAME_OBJ(form, naya))
+    return forms;
+
+  /* Add #%app prefix back: */
+  return scheme_datum_to_syntax(scheme_make_pair(SCHEME_STX_CAR(forms), naya),
 				forms,
-				scheme_sys_wraps(env));
-  return form;
+				forms);
 }
 
 static Scheme_Object *
@@ -1815,9 +1817,7 @@ datum_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object
   if (SCHEME_NULLP(c))
     scheme_wrong_syntax("#%datum", NULL, form, NULL);
 
-  /* Put system wraps on the form: */
-  c = scheme_datum_to_syntax(SCHEME_STX_VAL(c), form, scheme_sys_wraps(env));
-  return c;
+  return form;
 }
 
 static void check_unbound(char *when, Scheme_Object *form, Scheme_Comp_Env *env)
@@ -1865,9 +1865,7 @@ unbound_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Obje
 
   c = SCHEME_STX_CDR(form);
 
-  /* Put system wraps on the form: */
-  c = scheme_datum_to_syntax(SCHEME_STX_VAL(c), form, scheme_sys_wraps(env));
-  return c;
+  return form;
 }
 
 Scheme_Object *scheme_compile_expr(Scheme_Object *form, Scheme_Comp_Env *env, 

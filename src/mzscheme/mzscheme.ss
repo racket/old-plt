@@ -5,7 +5,7 @@
 ;;----------------------------------------------------------------------
 ;; basic syntax utilities
 
-(module .stx-utilities .kernel
+(module .stx .kernel
 
   ;; stx is an identifier?
   (define-values (stx-symbol?)
@@ -98,7 +98,7 @@
 ;; quasiquote
 
 (module .qq-and-or .kernel
-  (import-for-syntax .stx-utilities .kernel)
+  (import-for-syntax .stx .kernel)
 
   (define-syntax quasiquote
     (lambda (in-form)
@@ -304,7 +304,7 @@
 ;; cond
 
 (module .cond .kernel
-  (import-for-syntax .stx-utilities .qq-and-or .kernel)
+  (import-for-syntax .stx .qq-and-or .kernel)
 
   (define-syntax cond
     (lambda (in-form)
@@ -367,7 +367,7 @@
 ;; define, when, unless, let/ec, define-struct
 
 (module .define-et-al .kernel
-  (import-for-syntax .kernel .stx-utilities .qq-and-or .cond)
+  (import-for-syntax .kernel .stx .qq-and-or .cond)
 
   (define-syntax define
     (lambda (code)
@@ -534,7 +534,7 @@
 ;; .small-scheme: assembles all basic forms we have so far
 
 (module .small-scheme .kernel
-  (import .stx-utilities .qq-and-or .cond .define-et-al)
+  (import .stx .qq-and-or .cond .define-et-al)
 
   (export (all-from .qq-and-or)
 	  (all-from .cond)
@@ -544,8 +544,8 @@
 ;; pattern-matching utilities
 ;; based on Shriram's pattern matcher for Zodiac
 
-(module .sc-utilities .kernel
-  (import .stx-utilities .small-scheme)
+(module .sc .kernel
+  (import .stx .small-scheme)
 
   ;; memq on a list of identifiers, and
   ;;  nested identifiers
@@ -628,9 +628,12 @@
 	      (let ([nest-vars (flatten-nestings nestings)])
 		`(lambda (e esc)
 		   (if (stx-list? e)
-		       (let ([l (map (lambda (e) 
-				       (,match-head e esc))
-				     (stx->list e))])
+		       (let ([l ,(let ([b (app-e-esc match-head)])
+				   (let ([f (if (equal? b '(list e))
+						 'list
+						 `(lambda (e) ,b))])
+				     `(map ,f
+					   (stx->list e))))])
 			 (if (null? l)
 			     (quote ,(map (lambda (v)
 					    '())
@@ -661,8 +664,8 @@
 		    (append match-head match-tail)
 		    `(lambda (e esc)
 		       (if  (stx-pair? e)
-			    (append (,match-head (stx-car e) esc)
-				    (,match-tail (stx-cdr e) esc))
+			    ,(app-append (app-esc match-head '(stx-car e))
+					 (app-esc match-tail '(stx-cdr e)))
 			    (esc #f)))))))]
        [(stx-null? p)
 	(if just-vars?
@@ -721,9 +724,9 @@
 		(loop (cdr r))]
 	       [else (void)]))
 	    r)
-	  `(lambda (e1)
+	  `(lambda (e)
 	     (let/ec esc
-	       (,r e1 esc))))))
+	       ,(app-e-esc r))))))
 
   (define (make-match&env p k)
     (make-match&env/extract-vars p k #f))
@@ -731,6 +734,35 @@
   (define (get-match-vars p k)
     (make-match&env/extract-vars p k #t))
 
+  (define (app-e-esc rest)
+    (if (and (pair? rest)
+	     (eq? (car rest) 'lambda)
+	     (equal? (cadr rest) '(e esc)))
+	(caddr rest)
+	`(,rest e esc)))
+
+  (define (app-esc rest e)
+    (if (and (pair? rest)
+	     (eq? (car rest) 'lambda)
+	     (equal? (cadr rest) '(e esc)))
+	(let ([r (caddr rest)])
+	  (if (and (pair? r)
+		   (eq? (car r) 'list)
+		   (pair? (cdr r))
+		   (eq? (cadr r) 'e)
+		   (null? (cddr r)))
+	      `(list ,e)
+	      `((lambda (e) ,r) ,e)))
+	`(,rest ,e esc)))
+
+  (define (app-append e1 e2)
+    (if (and (pair? e1)
+	     (eq? (car e1) 'list)
+	     (pair? (cdr e1))
+	     (null? (cddr e1)))
+	`(cons ,(cadr e1) ,e2)
+	`(append ,e1 ,e2)))
+  
   ;; ----------------------------------------------------------------------
   ;; Output generator
 
@@ -770,13 +802,15 @@
 						  (map (lambda (fn) `(quote-syntax ,fn)) 
 						       flat-nestings))])
 		  `(lambda (r)
-		     (append
-		      (map 
-		       (lambda vals (,ehead vals))
-		       ,@(map (lambda (var)
-				`(list-ref r ,(stx-memq*-pos var proto-r)))
-			      flat-nestings))
-		      ,(apply-to-r rest))))
+		     ,(let ([pre `(map 
+				   (lambda vals (,ehead vals))
+				   ,@(map (lambda (var)
+					    `(list-ref r ,(stx-memq*-pos var proto-r)))
+					  flat-nestings))]
+			    [post (apply-to-r rest)])
+			(if (eq? post 'null)
+			    pre
+			    `(append ,pre ,post)))))
 		(append! ehead rest))))]
        [(stx-pair? p)
 	(let ([hd (stx-car p)])
@@ -877,16 +911,26 @@
 	`(,rest r)))
 
   (define (apply-cons h t p)
-    (if (and (pair? h)
-	     (eq? (car h) 'quote-syntax)
-	     (eq? (cadr h) (stx-car p))
-	     (or (eq? t 'null)
-		 (and
-		  (pair? t)
-		  (eq? (car t) 'quote-syntax)
-		  (eq? (cadr t) (stx-cdr p)))))
-	`(quote-syntax ,p)
-	`(cons ,h ,t)))
+    (cond
+     [(and (pair? h)
+	   (eq? (car h) 'quote-syntax)
+	   (eq? (cadr h) (stx-car p))
+	   (or (eq? t 'null)
+	       (and
+		(pair? t)
+		(eq? (car t) 'quote-syntax)
+		(eq? (cadr t) (stx-cdr p)))))
+      `(quote-syntax ,p)]
+     [(eq? t 'null)
+      `(list ,h)]
+     [(and (pair? t)
+	   (memq (car t) '(list list*)))
+      `(,(car t) ,h ,@(cdr t))]
+     [(and (pair? t)
+	   (eq? (car t) 'cons))
+      `(list* ,h ,@(cdr t))]
+     [else
+      `(cons ,h ,t)]))
 
   ;; Returns a list that nests a pattern variable as deeply as it
   ;; is ellipsed. Escaping ellipses are detected.
@@ -1003,8 +1047,8 @@
 ;; syntax-case and syntax
 
 (module .syntax-case .kernel
-  (import .stx-utilities .small-scheme)
-  (import-for-syntax .stx-utilities .small-scheme .sc-utilities .kernel)
+  (import .stx .small-scheme)
+  (import-for-syntax .stx .small-scheme .sc .kernel)
 
   (define-syntax syntax-case
     (lambda (x)
@@ -1236,7 +1280,7 @@
 ;; with-syntax, generate-temporaries, identifier?
 
 (module .with-syntax .kernel
-  (import .syntax-case .stx-utilities .small-scheme)
+  (import .syntax-case .stx .small-scheme)
   (import-for-syntax .kernel .syntax-case .syntax-loc)
 
   ;; From Dybvig
@@ -1266,7 +1310,7 @@
 ;;  check-duplicate-identifier, and assembles everything we have so far
 
 (module .syntax-case-scheme .kernel
-  (import .small-scheme .stx-utilities .syntax-case .with-syntax .syntax-loc)
+  (import .small-scheme .stx .syntax-case .with-syntax .syntax-loc)
   (import-for-syntax .kernel .small-scheme .syntax-case .with-syntax .syntax-loc)
 
   (define (check-duplicate-identifier names)

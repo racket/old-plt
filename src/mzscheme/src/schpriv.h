@@ -1133,7 +1133,7 @@ Scheme_Object *scheme_eval_linked_expr_multi(Scheme_Object *expr);
 Scheme_Object *_scheme_apply_to_list (Scheme_Object *rator, Scheme_Object *rands);
 Scheme_Object *_scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *rands);
 
-Scheme_Object *scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, Scheme_Config *);
+Scheme_Object *scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int cantfail);
 void scheme_internal_display(Scheme_Object *obj, Scheme_Object *port, Scheme_Config *);
 void scheme_internal_write(Scheme_Object *obj, Scheme_Object *port, Scheme_Config *);
 

@@ -880,10 +880,10 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 }
 
 Scheme_Object *
-scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, 
-		     Scheme_Config *config)
+_scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc)
 {
   Scheme_Object *v;
+  Scheme_Config *config = scheme_config;
   Scheme_Hash_Table *ht = NULL;
 
   local_can_read_compiled = crc;
@@ -916,42 +916,40 @@ static void *scheme_internal_read_k(void)
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
 
-  return (void *)scheme_internal_read(port, stxsrc, local_can_read_compiled,
-				      scheme_current_thread->config);
+  return (void *)_scheme_internal_read(port, stxsrc, p->ku.k.i1);
 }
 
 Scheme_Object *
-scheme_read(Scheme_Object *port)
+scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int cantfail)
 {
   Scheme_Thread *p = scheme_current_thread;
 
-  local_can_read_compiled = SCHEME_TRUEP(scheme_get_param(scheme_config, 
-							  MZCONFIG_CAN_READ_COMPILED));
-
+  if (crc < 0)
+    crc = SCHEME_TRUEP(scheme_get_param(scheme_config, MZCONFIG_CAN_READ_COMPILED));
+  
   /* Need this before top_level_do: */
   if (USE_LISTSTACK(!p->list_stack))
     scheme_alloc_list_stack(p);
 
-  p->ku.k.p1 = (void *)port;
-  p->ku.k.p2 = NULL;
-  return (Scheme_Object *)scheme_top_level_do(scheme_internal_read_k, 0);
+  if (cantfail) {
+    return _scheme_internal_read(port, stxsrc, crc);
+  } else {
+    p->ku.k.p1 = (void *)port;
+    p->ku.k.p2 = (void *)stxsrc;
+    p->ku.k.i1 = crc;
+    
+    return (Scheme_Object *)scheme_top_level_do(scheme_internal_read_k, 0);
+  }
 }
 
-Scheme_Object *
-scheme_read_syntax(Scheme_Object *port, Scheme_Object *stxsrc)
+Scheme_Object *scheme_read(Scheme_Object *port)
 {
-  Scheme_Thread *p = scheme_current_thread;
+  return scheme_internal_read(port, NULL, -1, 0);
+}
 
-  /* Need this before top_level_do: */
-  if (USE_LISTSTACK(!p->list_stack))
-    scheme_alloc_list_stack(p);
-
-  local_can_read_compiled = SCHEME_TRUEP(scheme_get_param(scheme_config, 
-							  MZCONFIG_CAN_READ_COMPILED));
-
-  p->ku.k.p1 = (void *)port;
-  p->ku.k.p2 = (void *)stxsrc;
-  return (Scheme_Object *)scheme_top_level_do(scheme_internal_read_k, 0);
+Scheme_Object *scheme_read_syntax(Scheme_Object *port, Scheme_Object *stxsrc)
+{
+  return scheme_internal_read(port, stxsrc, -1, 0);
 }
 
 Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj, int mkstx)

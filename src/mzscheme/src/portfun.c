@@ -1446,7 +1446,6 @@ static Scheme_Object *make_offset(Scheme_Object *delta, Scheme_Object *src)
 
 static Scheme_Object *sch_default_read_handler(void *ignore, int argc, Scheme_Object *argv[])
 {
-  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *src;
 
   if (!(argc == 1) && !(argc == 3))
@@ -1468,14 +1467,11 @@ static Scheme_Object *sch_default_read_handler(void *ignore, int argc, Scheme_Ob
   else
     src = NULL;
 
-  return scheme_internal_read(argv[0], src,
-			      SCHEME_TRUEP(scheme_get_param(p->config, MZCONFIG_CAN_READ_COMPILED)),
-			      p->config);
+  return scheme_internal_read(argv[0], src, -1, 0);
 }
 
 static Scheme_Object *read_f(int argc, Scheme_Object *argv[])
 {
-  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *port;
 
   if (argc && !SCHEME_INPORTP(argv[0]))
@@ -1484,7 +1480,7 @@ static Scheme_Object *read_f(int argc, Scheme_Object *argv[])
   if (argc)
     port = argv[0];
   else
-    port = CURRENT_INPUT_PORT(p->config);
+    port = CURRENT_INPUT_PORT(scheme_current_thread->config);
   
   if (((Scheme_Input_Port *)port)->read_handler) {
     Scheme_Object *o[1];
@@ -1494,15 +1490,12 @@ static Scheme_Object *read_f(int argc, Scheme_Object *argv[])
     if (port == scheme_orig_stdin_port)
       scheme_flush_orig_outputs();
 
-    return scheme_internal_read(port, NULL,
-				SCHEME_TRUEP(scheme_get_param(p->config, MZCONFIG_CAN_READ_COMPILED)),
-				p->config);
+    return scheme_internal_read(port, NULL, -1, 0);
   }
 }
 
 static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
 {
-  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *port;
   Scheme_Object *delta = scheme_false;
 
@@ -1512,7 +1505,7 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
   if (argc > 1)
     port = argv[1];
   else
-    port = CURRENT_INPUT_PORT(p->config);
+    port = CURRENT_INPUT_PORT(scheme_current_thread->config);
 
   if (argc > 2) {
     /* Argument should be a list: (list line col pos) */
@@ -1551,9 +1544,7 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
     if (port == scheme_orig_stdin_port)
       scheme_flush_orig_outputs();
 
-    return scheme_internal_read(port, src,
-				SCHEME_TRUEP(scheme_get_param(p->config, MZCONFIG_CAN_READ_COMPILED)),
-				p->config);
+    return scheme_internal_read(port, src, -1, 0);
   }
 }
 
@@ -2263,9 +2254,7 @@ static Scheme_Object *do_load_handler(void *data)
   Scheme_Object *last_val = scheme_void, *obj, **save_array = NULL;
   int save_count = 0, got_one = 0;
 
-  while ((obj = scheme_internal_read(port, lhd->stxsrc,
-				     1,
-				     config)) 
+  while ((obj = scheme_internal_read(port, lhd->stxsrc, 1, 0))
 	 && !SCHEME_EOFP(obj)) {
     save_array = NULL;
     got_one = 1;
@@ -2338,7 +2327,7 @@ static Scheme_Object *do_load_handler(void *data)
       }
 
       /* Check no more expressions: */
-      d = scheme_internal_read(port, lhd->stxsrc, 1, config);
+      d = scheme_internal_read(port, lhd->stxsrc, 1, 0);
       if (!SCHEME_EOFP(d)) {
 	scheme_raise_exn(MZEXN_MODULE,
 			 "default-load-handler: expected only a `module' declaration for `%S', but found an extra expression in: %q",

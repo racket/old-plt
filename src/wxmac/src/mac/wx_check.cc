@@ -88,13 +88,14 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
 	SetCurrentMacDC();
 	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	Rect boundsRect = {0, 0, cWindowHeight, cWindowWidth};
+        OffsetRect(&boundsRect,SetOriginX,SetOriginY);
 	wxMacString theMacLabel = label;
 	const Bool drawNow = TRUE; // WCH: use FALSE, then show after ChangeColour??
 	const short offValue = 0;
 	const short minValue = 0;
 	const short maxValue = 1;
 	short refCon = 0;
-	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel(), // SET-ORIGIN FLAGGED
+	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel(),
 			drawNow, offValue, minValue, maxValue, checkBoxProc + useWFont, refCon);
 	CheckMemOK(cMacControl);
 #else
@@ -138,8 +139,9 @@ wxCheckBox::wxCheckBox // Constructor (given parentPanel, label)
 	cWindowWidth = bounds.right + IC_BOX_SIZE + IC_X_SPACE;
 	if (cWindowHeight < IC_MIN_HEIGHT)
 	  cWindowHeight = IC_MIN_HEIGHT;
+        OffsetRect(&bounds,SetOriginX,SetOriginY);
 	
-	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds); // SET-ORIGIN FLAGGED
+	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
 }
 
 //=============================================================================
@@ -248,8 +250,8 @@ void wxCheckBox::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platfo
 	if (dX || dY)
 	{
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
-		SetCurrentDC(); // put new origin at (0, 0)
-		::MoveControl(cMacControl, 0, 0); // SET-ORIGIN FLAGGED
+		SetCurrentDC(); // put new "origin" at (SetOriginX, SetOriginY)
+		::MoveControl(cMacControl,SetOriginX,SetOriginY);
 	}
 
 	if (hideToPreventFlicker) ::ShowControl(cMacControl);
@@ -259,7 +261,8 @@ void wxCheckBox::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platfo
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect); // SET-ORIGIN FLAGGED
+                OffsetRect(&clientRect,SetOriginX,SetOriginY);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
 	}
 }
 
@@ -291,7 +294,8 @@ void wxCheckBox::Paint(void)
 	if (cHidden) return;
 	SetCurrentDC();
 	Rect r = { 0, 0, cWindowHeight, cWindowWidth};
-	::EraseRect(&r); // SET-ORIGIN FLAGGED
+        OffsetRect(&r,SetOriginX,SetOriginY);
+	::EraseRect(&r);
 	if (cMacControl)
 	  ::Draw1Control(cMacControl);
 	else {
@@ -305,22 +309,23 @@ void wxCheckBox::Paint(void)
 		float fLeading = 0.0;
 		GetTextExtent(labelString, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
 		int stop = (int)((cWindowHeight + fHeight) / 2);
-		::MoveTo(IC_BOX_SIZE + IC_X_SPACE, (short)(stop - fDescent - fLeading)); // SET-ORIGIN FLAGGED
+		::MoveTo(IC_BOX_SIZE + IC_X_SPACE + SetOriginX, (short)(stop - fDescent - fLeading) + SetOriginY);
 	  	::DrawText(labelString, 0, strlen(labelString));
 	  }
 	  int top = (cWindowHeight - IC_BOX_SIZE) / 2;
 	  Rect r = { top, 0, top + IC_BOX_SIZE, IC_BOX_SIZE };
-      ForeColor(blackColor);
+          OffsetRect(&r,SetOriginX,SetOriginY)
+          ForeColor(blackColor);
 	  PenSize(1, 1);
-	  FrameRect(&r); // SET-ORIGIN FLAGGED
+	  FrameRect(&r);
 	  ForeColor(whiteColor);
   	  InsetRect(&r, 1, 1);
-  	  PaintRect(&r); // SET-ORIGIN FLAGGED
-      ForeColor(blackColor);
+  	  PaintRect(&r);
+          ForeColor(blackColor);
 	  if (bitmapState) {
-	    MoveTo(0, top); // SET-ORIGIN FLAGGED
+	    MoveTo(SetOriginX, top + SetOriginY);
 	    Line(IC_BOX_SIZE - 1, IC_BOX_SIZE - 1);
-	    MoveTo(0, top + IC_BOX_SIZE - 1); // SET-ORIGIN FLAGGED
+	    MoveTo(SetOriginX, top + IC_BOX_SIZE - 1 + SetOriginY);
 	    Line(IC_BOX_SIZE - 1, -(IC_BOX_SIZE - 1));
 	  } else {
 	  }
@@ -332,17 +337,18 @@ void wxCheckBox::Highlight(Bool on)
 {
 	int top = (cWindowHeight - IC_BOX_SIZE) / 2;
 	Rect r = { top + 1, 1, top + IC_BOX_SIZE - 1, IC_BOX_SIZE - 1};
+        OffsetRect(&r,SetOriginX,SetOriginY);
 	PenSize(1, 1);
 	if (on)
-	  FrameRect(&r); // SET-ORIGIN FLAGGED
+	  FrameRect(&r);
 	else {
 	  ForeColor(whiteColor);
-	  FrameRect(&r); // SET-ORIGIN FLAGGED
+	  FrameRect(&r);
 	  ForeColor(blackColor);
 	  if (bitmapState) {
-	    MoveTo(0, top); // SET-ORIGIN FLAGGED
+	    MoveTo(SetOriginX, top + SetOriginY);
 	    Line(IC_BOX_SIZE - 1, IC_BOX_SIZE - 1);
-	    MoveTo(0, top + IC_BOX_SIZE - 1); // SET-ORIGIN FLAGGED
+	    MoveTo(SetOriginX, top + IC_BOX_SIZE - 1 + SetOriginY);
 	    Line(IC_BOX_SIZE - 1, -(IC_BOX_SIZE - 1));
 	  }
 	}
@@ -385,13 +391,13 @@ void wxCheckBox::OnEvent(wxMouseEvent *event) // mac platform only
 	
 		int startH;
 		int startV;
-		event->Position(&startH, &startV); // client c.s.
+		event->Position(&startH, &startV); // frame c.s.
 	
-		Point startPt = {startH, startV}; // client c.s.
+		Point startPt = {startH, startV}; // frame c.s.
 		int trackResult;
 		if (::StillDown()) {
 			if (cMacControl)
-		      trackResult = ::TrackControl(cMacControl, startPt, NULL); // SET-ORIGIN FLAGGED
+		      trackResult = ::TrackControl(cMacControl, startPt, NULL);
 		    else
 		      trackResult = Track(startPt);
 		} else

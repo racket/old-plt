@@ -51,7 +51,8 @@ void wxCanvasDC::Clear(void)
 	}
 
 	Rect theClearRect = {0, 0, h, w};
-	::EraseRect(&theClearRect); // SET-ORIGIN FLAGGED
+        OffsetRect(&theClearRect,SetOriginX,SetOriginY);
+	::EraseRect(&theClearRect);
 }
 
 void wxCanvasDC::GetSize(float *width, float *height)
@@ -102,7 +103,7 @@ Bool wxCanvasDC::GetPixel(float x, float y, wxColour *col)
 
 	SetCurrentDC();
 
-	GetCPixel(XLOG2DEV(x), YLOG2DEV(y), &rgb); // SET-ORIGIN FLAGGED
+	GetCPixel(XLOG2DEV(x) + SetOriginX, YLOG2DEV(y) + SetOriginY, &rgb);
 	col->Set(rgb.red >> 8, rgb.green >> 8, rgb.blue >> 8);
 
 	return TRUE;
@@ -127,7 +128,7 @@ void wxCanvasDC::SetPixel(float x, float y, wxColour *col)
 	  rgb.green = col->Green() << 8;
 	  rgb.blue = col->Blue() << 8;
 	}
-	SetCPixel(XLOG2DEV(x), YLOG2DEV(y), &rgb); // SET-ORIGIN FLAGGED
+	SetCPixel(XLOG2DEV(x) + SetOriginX, YLOG2DEV(y) + SetOriginY, &rgb);
 }
 
 //-----------------------------------------------------------------------------
@@ -244,21 +245,22 @@ void wxCanvasDC::DrawArc(float x,float y,float w,float h,float start,float end)
     if (alpha2 < 0)
       alpha2 += 360;
 
-	Rect rect;
-	rect.left = xx;
-	rect.top = yy;
-	rect.right = rect.left + ww;
-	rect.bottom = rect.top + hh;
+    Rect rect;
+    rect.left = xx;
+    rect.top = yy;
+    rect.right = rect.left + ww;
+    rect.bottom = rect.top + hh;
+    OffsetRect(&rect,SetOriginX,SetOriginY);
 
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
       if (!rgn) {
         wxMacSetCurrentTool(kBrushTool);
-        PaintArc(&rect, alpha1, alpha2); // SET-ORIGIN FLAGGED
+        PaintArc(&rect, alpha1, alpha2);
       }
     }
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
       wxMacSetCurrentTool(kPenTool);
-      FrameArc(&rect, alpha1, alpha2); // SET-ORIGIN FLAGGED
+      FrameArc(&rect, alpha1, alpha2);
     }
 	
 	CalcBoundingBox(x, y);
@@ -310,10 +312,10 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
 	xpoints1[n].v = xpoints1[0].v;
 
 	PolyHandle thePolygon = OpenPoly();
-	MoveTo(xpoints1[0].h, xpoints1[0].v); // SET-ORIGIN FLAGGED
+	MoveTo(xpoints1[0].h + SetOriginX, xpoints1[0].v + SetOriginY);
 	for (int j = 1; j <= n; j++)
 	{
-		LineTo(xpoints1[j].h, xpoints1[j].v); // SET-ORIGIN FLAGGED
+		LineTo(xpoints1[j].h + SetOriginX, xpoints1[j].v + SetOriginY);
 	}
 	ClosePoly();
 
@@ -321,14 +323,14 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
 	{
 	    if (!rgn) {
 		if (cMacCurrentTool != kBrushTool) wxMacSetCurrentTool(kBrushTool);
-		PaintPoly(thePolygon); // SET-ORIGIN FLAGGED
+		PaintPoly(thePolygon);
 	    }
 	}
 
 	if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	{
 		wxMacSetCurrentTool(kPenTool);
-		FramePoly(thePolygon); // SET-ORIGIN FLAGGED
+		FramePoly(thePolygon);
 	}
 
 	delete[] xpoints1;
@@ -356,14 +358,14 @@ void wxCanvasDC::DrawLines(int n, wxIntPoint points[], int xoffset, int yoffset)
 		}
 	
 		PolyHandle thePolygon = OpenPoly();
-		MoveTo(xpoints[0].h, xpoints[0].v); // SET-ORIGIN FLAGGED
+		MoveTo(xpoints[0].h + SetOriginX, xpoints[0].v + SetOriginY);
 		for (int j = 1; j < n; j++)
 		{
-			LineTo(xpoints[j].h, xpoints[j].v); // SET-ORIGIN FLAGGED
+			LineTo(xpoints[j].h + SetOriginX, xpoints[j].v + SetOriginY);
 		}
 		ClosePoly();
 	
-		FramePoly(thePolygon); // SET-ORIGIN FLAGGED
+		FramePoly(thePolygon);
 	
 		delete[] xpoints;
 		KillPoly(thePolygon);
@@ -391,14 +393,14 @@ void wxCanvasDC::DrawLines(int n, wxPoint points[], float xoffset, float yoffset
 		}
 	
 		PolyHandle thePolygon = OpenPoly();
-		MoveTo(xpoints[0].h, xpoints[0].v); // SET-ORIGIN FLAGGED
+		MoveTo(xpoints[0].h + SetOriginX, xpoints[0].v + SetOriginY);
 		for (int j = 1; j < n; j++)
 		{
-			LineTo(xpoints[j].h, xpoints[j].v); // SET-ORIGIN FLAGGED
+			LineTo(xpoints[j].h + SetOriginX, xpoints[j].v + SetOriginY);
 		}
 		ClosePoly();
 	
-		FramePoly(thePolygon); // SET-ORIGIN FLAGGED
+		FramePoly(thePolygon);
 	
 		delete[] xpoints;
 		KillPoly(thePolygon);
@@ -424,18 +426,19 @@ void wxCanvasDC::DrawRectangle(float x, float y, float width, float height)
 	int bottom = YLOG2DEV(y + height);
 	int right = XLOG2DEV(x + width);
 	Rect theRect = {top, left, bottom, right};
+        OffsetRect(&theRect,SetOriginX,SetOriginY);
 	if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
 	{
 	    if (!rgn) {
 		wxMacSetCurrentTool(kBrushTool);
-		PaintRect(&theRect); // SET-ORIGIN FLAGGED
+		PaintRect(&theRect);
 	    }
 	}
 
 	if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	{
 		wxMacSetCurrentTool(kPenTool);
-		FrameRect(&theRect); // SET-ORIGIN FLAGGED
+		FrameRect(&theRect);
 	}
 	CalcBoundingBox(x, y);
 	CalcBoundingBox(x + width, y + height);
@@ -472,19 +475,20 @@ void wxCanvasDC::DrawRoundedRectangle
 	int bottom = YLOG2DEV(y + height);
 	int right = XLOG2DEV(x + width);
 	Rect theRect = {top, left, bottom, right};
+        OffsetRect(&theRect,SetOriginX,SetOriginY);
 
 	if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
 	{
 	    if (!rgn) {
 		wxMacSetCurrentTool(kBrushTool);
-		PaintRoundRect(&theRect, phys_rwidth, phys_rheight); // SET-ORIGIN FLAGGED
+		PaintRoundRect(&theRect, phys_rwidth, phys_rheight);
 	    }
 	}
 
 	if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	{
 		wxMacSetCurrentTool(kPenTool);
-		FrameRoundRect(&theRect, phys_rwidth, phys_rheight); // SET-ORIGIN FLAGGED
+		FrameRoundRect(&theRect, phys_rwidth, phys_rheight);
 	}
 
 	CalcBoundingBox(x, y);
@@ -509,18 +513,19 @@ void wxCanvasDC::DrawEllipse(float x, float y, float width, float height)
 	int bottom = YLOG2DEV(y + height);
 	int right = XLOG2DEV(x + width);
 	Rect theRect = {top, left, bottom, right};
+        OffsetRect(&theRect,SetOriginX,SetOriginY);
 	if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
 	{
 	    if (!rgn) {
 		wxMacSetCurrentTool(kBrushTool);
-		PaintOval(&theRect); // SET-ORIGIN FLAGGED
+		PaintOval(&theRect);
 	    }
 	}
 
 	if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	{
 		wxMacSetCurrentTool(kPenTool);
-		FrameOval(&theRect); // SET-ORIGIN FLAGGED
+		FrameOval(&theRect);
 	}
 	CalcBoundingBox(x, y);
 	CalcBoundingBox(x + width, y + height);
@@ -596,7 +601,7 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
                 PixMapHandle destpixh;
                 if (! IsPortColor(theMacGrafPort)) {
                     destpixh = NULL;
-                    dstbm = GetPortBitMapForCopyBits(theMacGrafPort); // SET-ORIGIN FLAGGED
+                    dstbm = GetPortBitMapForCopyBits(theMacGrafPort);
                 } else {
                     destpixh = GetPortPixMap(theMacGrafPort);
                     dstbm = (BitMap *)(* destpixh);

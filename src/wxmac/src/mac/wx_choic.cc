@@ -270,7 +270,7 @@ void wxChoice::DrawChoice(Bool active)
 {
 	SetCurrentDC();
 	Rect t = TitleRect;
-	::MoveTo(t.left, t.bottom - labelbase); // SET-ORIGIN FLAGGED
+	::MoveTo(t.left + SetOriginX, t.bottom - labelbase + SetOriginY);
 	SetFont(labelFont);
 	SetTextInfo();
 	int w = 0;
@@ -287,31 +287,32 @@ void wxChoice::DrawChoice(Bool active)
 	}
 	
 	Rect r = ValueRect;
+        OffsetRect(&r,SetOriginX,SetOriginY);
 	::InsetRect(&r, -1, -1);
-	::FrameRect(&r); // SET-ORIGIN FLAGGED
-	::MoveTo(r.right, r.top+2); // SET-ORIGIN FLAGGED
-	::LineTo(r.right, r.bottom); // SET-ORIGIN FLAGGED
-	::LineTo(r.left+2, r.bottom); // SET-ORIGIN FLAGGED
+        ::FrameRect(&r);
+	::MoveTo(r.right + SetOriginX, r.top+2 + SetOriginY);
+	::LineTo(r.right + SetOriginX, r.bottom + SetOriginY);
+	::LineTo(r.left+2 + SetOriginX, r.bottom + SetOriginY);
 
 	// mflatt:
 	RGBColor save;
 	GetForeColor(&save);
 	ForeColor(whiteColor);
 	::InsetRect(&r, 1, 1);
-	::PaintRect(&r); // SET-ORIGIN FLAGGED
+	::PaintRect(&r);
 	::InsetRect(&r, -1, -1);
 	::RGBForeColor(&save);
 	
 	PolyHandle poly;
 	poly = OpenPoly();
 	if (poly) {
-		MoveTo(r.right - TRIANGLE_WIDTH - TRANGLE_RIGHT_SPACE,  // SET-ORIGIN FLAGGED
-			   r.top + (r.bottom - r.top - TRIANGLE_HEIGHT) / 2);
+		MoveTo(r.right - TRIANGLE_WIDTH - TRANGLE_RIGHT_SPACE + SetOriginX,
+			   (r.top + (r.bottom - r.top - TRIANGLE_HEIGHT) / 2) + SetOriginY);
 	    Line(TRIANGLE_WIDTH, 0);
 	    Line(-(TRIANGLE_WIDTH / 2), TRIANGLE_HEIGHT);
 	    Line(-(TRIANGLE_WIDTH / 2), -TRIANGLE_HEIGHT);
 		ClosePoly();
-		PaintPoly(poly); // SET-ORIGIN FLAGGED
+		PaintPoly(poly);
 		KillPoly(poly);
 	}
 	
@@ -327,7 +328,7 @@ void wxChoice::DrawChoice(Bool active)
 	::GetMenuItemText(hDynMenu, selection+1, s);
 	SetFont(valueFont);
 	SetTextInfo();
-	::MoveTo(r.left, r.bottom - valuebase); // SET-ORIGIN FLAGGED
+	::MoveTo(r.left + SetOriginX, r.bottom - valuebase + SetOriginY);
 	w = 0;
 	int elw = ::CharWidth('É');
 	int tgtw = r.right - r.left - elw;
@@ -439,16 +440,20 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
 		int	newsel;
 		Point pos = {ValueRect.top, ValueRect.left};
 		LocalToGlobal(&pos);
-		// if (sTitle) ::InvertRect(&TitleRect); // SET-ORIGIN FLAGGED
+                // Rect r = TitleRect;
+                // OffsetRect(&r,SetOriginX,SetOriginY);
+		// if (sTitle) ::InvertRect(&r);
 		::InsertMenu(hDynMenu, -1);
 		::CalcMenuSize(hDynMenu);
 		newsel = ::PopUpMenuSelect(hDynMenu, pos.v, pos.h, selection+1);
-		// if (sTitle) ::InvertRect(&TitleRect); // SET-ORIGIN FLAGGED
+		// if (sTitle) ::InvertRect(&r);
 		::DeleteMenu(PopUpID);
 		RGBColor save;
 		::GetForeColor(&save);
 		::ForeColor(whiteColor);
-		::PaintRect(&ValueRect); // SET-ORIGIN FLAGGED
+                Rect r = ValueRect;
+                OffsetRect(&r,SetOriginX,SetOriginY);
+		::PaintRect(&r);
 		::RGBForeColor(&save);
 		if (newsel) {
 			newsel = LoWord(newsel) -1;
@@ -579,7 +584,9 @@ void wxChoice::SetLabel(char *label)
 	memcpy(&sTitle[1], label, n);
 	
 	SetCurrentDC();
-	EraseRect(&TitleRect); // SET-ORIGIN FLAGGED
+        Rect r = TitleRect;
+        OffsetRect(&r,SetOriginX,SetOriginY);
+	EraseRect(&r);
 	Paint();
 }
 

@@ -155,7 +155,8 @@ private:
 
 	virtual void Paint(void);
 	virtual void OnPaint(void);
-
+        
+        // AddWhiteRgn accepts a rgn in frame-relative coordinates
 	virtual void AddWhiteRgn(RgnHandle rgn);
 
 	Bool WantsFocus();

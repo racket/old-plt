@@ -14,7 +14,7 @@
   (provide tool@)
   
   (define state (make-object file-system-state%))
-
+  
   (define-syntax (make-unit stx)
     (syntax-case stx ()
       ((_ script^ names-mac)
@@ -32,14 +32,18 @@
               (import)
               (rename (f-int name) ...)
               (define f-int name) ...)))))))
-
+  
+  (define trace? #t)
+  (define-syntax trace
+    (syntax-rules ()
+      ((_ str arg ...)
+       (cond (trace? (printf str arg ...) (newline))))))
   
   (define tool@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
       
       (define active? #f)
-      
       (define user-namespace #f)
       (define user-thread #f)
       
@@ -51,10 +55,14 @@
         (unit/sig code-engine^
           (import script^)
           
+          (trace "invoking code-engine")
+          
           (script-unit-param
            (make-unit script^ (signature->symbols script^)))
           
-          (setup-namespace user-thread)
+          (setup-namespace user-thread (script-unit-param))
+          
+          (trace "code-engine through")
           
           (define (get-user-value sym)
             (parameterize ((current-namespace user-namespace))
@@ -64,7 +72,7 @@
             (user-thread
              (lambda ()
                (callback (eval (read (open-input-string code-string)))))))))
-        
+      
       (drscheme:get/extend:extend-unit-frame
        (lambda (frame%)
          (class frame%
@@ -79,9 +87,9 @@
            (define/override (disable-evaluation)
              (send button enable #f)
              (super-disable-evaluation))
-
+           
            (rename (super-make-root-area-container make-root-area-container))
-           (define browser-panel 100)
+           (define browser-panel #f)
            
            (define/public (set-bp x)
              (set! browser-panel x))
@@ -91,7 +99,7 @@
                    (super-make-root-area-container panel:vertical-dragable% parent))
              (let ((root (make-object % browser-panel)))
                root))
-
+           
            (super-instantiate ())
            
            (define button
@@ -102,10 +110,12 @@
                     (set! active? #f)
                     (set! user-thread #f)
                     (set! user-namespace #f)
+                    (script-unit-param null)
                     (send browser-panel delete-child (car (send browser-panel get-children)))
                     (send (get-execute-button) command b))
                    (else
                     (set! active? #t)
+                    (send (get-execute-button) command b)
                     (let ((container browser-panel))
                       (send container begin-container-sequence)
                       (invoke-unit/sig 
@@ -125,32 +135,49 @@
                  (lambda (x) (cons button (remq button x)))))))
       
       
-      (define (setup-namespace run-thread)
-        (let ((module-name ((current-module-name-resolver) 
-                            '(lib "script-param.ss" "file-browser")
-			    'script-param #f))
-              (prog-namespace (current-namespace))
-              (script (script-unit-param)))
-          (run-thread
-           (lambda ()
-	     (with-handlers ((void (lambda (x) (printf "~a~n" (exn-message x)))))
-               (script-unit-param script)
-	       (namespace-attach-module prog-namespace module-name)
-	       (namespace-require `(lib "script.ss" "file-browser"))
-               (load (build-path (find-system-path 'pref-dir) ".file-browser.ss")))
-             (set! user-namespace (current-namespace))))))
+      (define (setup-namespace run-thread unit)
+        (trace "entering setup-namespace")
+        (if (not (null? unit))
+            (let ((s (make-semaphore)))
+              (trace "starting setup-namespace user-thread")
+              (run-thread
+               (lambda () (void)))
+;                 (with-handlers ((void (lambda (x) (printf "~a~n" (exn-message x)))))
+;                   (script-unit-param unit)
+;                   (namespace-require `(lib "script.ss" "file-browser"))
+;                   (load (build-path (find-system-path 'pref-dir) ".file-browser.ss")))
+;                 (semaphore-post s)))
+;              (semaphore-wait s)
+              (trace "finished setup-namespace user-thread")))
+        (trace "leaving setup-namespace"))
       
       (define (phase1)
         (drscheme:language:extend-language-interface
          drscheme:language:language<%>
          (lambda (%)
            (class %
-             (super-instantiate ())
              (rename (super-on-execute on-execute))
              (define/override (on-execute settings run-in-user-thread)
-               (super-on-execute settings run-in-user-thread)
+               (trace "entering on-execute")
                (set! user-thread run-in-user-thread)
                (if active?
-                   (setup-namespace run-in-user-thread)))))))
+                   (let ((module-name ((current-module-name-resolver) 
+                                       '(lib "script-param.ss" "file-browser")
+                                       'script-param #f))
+                         (prog-namespace (current-namespace))
+                         (s (make-semaphore)))
+                     (trace "starting on-execute user-thread")
+                     (run-in-user-thread
+                      (lambda ()
+                        (with-handlers ((void (lambda (x) (printf "~a~n" (exn-message x)))))
+                          (namespace-attach-module prog-namespace module-name)
+                          (set! user-namespace (current-namespace)))
+                        (semaphore-post s)))
+                     (semaphore-wait s)
+                     (trace "finish on-execute user-thread")
+                     (setup-namespace run-in-user-thread (script-unit-param))))
+               (trace "calling super-on-execute")
+               (super-on-execute settings run-in-user-thread))
+             (super-instantiate ())))))
       
       (define (phase2) (void)))))

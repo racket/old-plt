@@ -1,4 +1,5 @@
 (module installer mzscheme
+  (require "procss.ss")
   (provide post-installer)
   (define (post-installer plt-home)
     (let ([exe "MzCOM.exe"])
@@ -7,10 +8,4 @@
             [(not (file-exists? (build-path plt-home exe)))
              (printf "Warning: MzCOM binary not installed\n")]
             [else (parameterize ([current-directory plt-home])
-                    (let-values ([(p pout pin perr)
-                                  (subprocess
-                                   (current-output-port)
-                                   (current-input-port)
-                                   (current-error-port)
-                                   exe "/RegServer")])
-                      (subprocess-wait p)))]))))
+                    (system* exe "/RegServer"))]))))

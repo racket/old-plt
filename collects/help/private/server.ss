@@ -29,18 +29,17 @@
 	      curr-port
 	      (loop (add1 curr-port))))))
 
-  (define help-desk-port (get-free-port))
-
   (define (start-help-server)
     (let* ([configuration
 	   (load-developer-configuration
 	    (extract-flag 
 	     'config '() 
 	     (build-path (collection-path "help")
-			 "server-configuration")))])
+			 "server-configuration")))]
+	   [help-desk-port (get-free-port)])
       ; restrict connections to localhost
       (make-hd-cookie help-desk-port  	
-		      (serve configuration help-desk-port))))) ; "127.0.0.1")))))
+		      (serve configuration help-desk-port "127.0.0.1")))))
 
 
 

@@ -1352,7 +1352,11 @@ static Scheme_Object *foreign_compiler_sizeof(int argc, Scheme_Object *argv[])
     switch (intsize) {
     case 0:  RETSIZE(int); break;
     case 1:  RETSIZE(long int); break;
+#ifdef INT64_AS_LONG_LONG
+    case 2:  RETSIZE(_int64); break; /* MSVC doesn't allow long long */
+#else
     case 2:  RETSIZE(long long int); break;
+#endif
     case -1: RETSIZE(short int); break;
     }
     break;

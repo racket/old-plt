@@ -20,7 +20,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\mzscheme\gc,..\..\mzscheme\include,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\wxcommon\jpeg,..\jpeg,..\..\wxcommon\zlib,$(NOINHERIT)"
+				AdditionalIncludeDirectories="..,..\..\mzscheme\gc,..\..\mzscheme\include,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\wxcommon\jpeg,..\jpeg,..\..\wxcommon\zlib,$(NOINHERIT)"
 				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,__WINDOWS__,GC_DLL,__STDC__"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -62,7 +62,7 @@
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="TRUE"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="..\..\mzscheme\gc,..\..\mzscheme\include,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\wxcommon\jpeg,..\jpeg,..\..\wxcommon\zlib,$(NOINHERIT)"
+				AdditionalIncludeDirectories="..,..\..\mzscheme\gc,..\..\mzscheme\include,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\wxcommon\jpeg,..\jpeg,..\..\wxcommon\zlib,$(NOINHERIT)"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,__WINDOWS__,GC_DLL,__STDC__"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"

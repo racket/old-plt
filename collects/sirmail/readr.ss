@@ -2365,51 +2365,57 @@
 						  (and a (cdr a)))))]
 				      [sz (mime:disposition-size (mime:entity-disposition ent))]
 				      [content #f])
-				  (insert (format "[~a/~a~a~a]" 
-						  (mime:entity-type ent)
-						  (mime:entity-subtype ent)
-						  (if fn
-						      (format " \"~a\"" fn)
-						      "")
-						  (if sz
-						      (format " ~a bytes" sz)
-						      ""))
-					  (lambda (t s e)
-					    (send t set-clickback s e
-						  (lambda (a b c)
-						    (let ([fn (put-file "Save Attachement As"
-									main-frame
-									#f
-									fn)])
-						      (when fn
-							(unless content
-							  (set! content (slurp ent)))
-							(with-output-to-file fn
-							  (lambda ()
-							    (write-bytes content))
-							  'truncate/replace))))
-						  #f #f)
-					    (send t change-style url-delta s e)))
-                                  (when (eq? (system-type) 'macosx)
-                                    (insert " " (lambda (t s e) 
-                                                  (send t change-style
-                                                        (make-object style-delta% 'change-normal)
-                                                        s
-                                                        e)))
-                                    (let ([fn (normalize-path (build-path "~/Desktop" fn))])
-                                      (insert (format "[save as ~a & open]" (path->string fn))
-                                              (lambda (t s e)
-                                                (send t set-clickback s e
-                                                      (lambda (a b c)
-                                                        (unless content
-                                                          (set! content (slurp ent)))
-                                                        (with-output-to-file fn
-                                                          (lambda ()
-                                                            (write-bytes content))
-                                                          'truncate/replace)
-                                                        (system* "/usr/bin/open" (path->string fn)))
-                                                      #f #f)
-                                                (send t change-style url-delta s e)))))
+				  (let ([to-file
+					 (lambda (fn)
+					   (as-background
+					    enable-main-frame
+					    (lambda (break-bad break-ok)
+					      (break-ok)
+					      (let ([v (slurp ent)])
+						(break-bad)
+						(unless content
+						  (set! content v)))
+					      (break-ok)
+					      (with-output-to-file fn
+						(lambda ()
+						  (write-bytes content))
+						'truncate/replace))
+					    close-frame))])
+				    (insert (format "[~a/~a~a~a]" 
+						    (mime:entity-type ent)
+						    (mime:entity-subtype ent)
+						    (if fn
+							(format " \"~a\"" fn)
+							"")
+						    (if sz
+							(format " ~a bytes" sz)
+							""))
+					    (lambda (t s e)
+					      (send t set-clickback s e
+						    (lambda (a b c)
+						      (let ([fn (put-file "Save Attachement As"
+									  main-frame
+									  #f
+									  fn)])
+							(when fn
+							  (to-file fn))))
+						    #f #f)
+					      (send t change-style url-delta s e)))
+				    (when (eq? (system-type) 'macosx)
+				      (insert " " (lambda (t s e) 
+						    (send t change-style
+							  (make-object style-delta% 'change-normal)
+							  s
+							  e)))
+				      (let ([fn (normalize-path (build-path "~/Desktop" fn))])
+					(insert (format "[save as ~a & open]" (path->string fn))
+						(lambda (t s e)
+						  (send t set-clickback s e
+							(lambda (a b c)
+							  (to-file fn)
+							  (system* "/usr/bin/open" (path->string fn)))
+							#f #f)
+						  (send t change-style url-delta s e))))))
                                   (insert "\n" (lambda (t s e) 
                                                  (send t change-style
                                                        (make-object style-delta% 'change-normal)

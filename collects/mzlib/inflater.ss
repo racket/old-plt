@@ -295,7 +295,8 @@
 	   s ;             /* number of simple-valued codes (0..s-1) */
 	   d ; int vector                /* list of base values for non-simple codes */
 	   e ; int vector                /* list of extra bits for non-simple codes */
-	   m) ; int                /* maximum lookup bits, returns actual */
+	   m ; int                /* maximum lookup bits, returns actual */
+	   incomp-ok?)
     ; return: new-t new-m ok?
 
 #|
@@ -363,11 +364,15 @@
 			    (values y j)
 			    (let ([new-y (- y (vector-ref c j))])
 			      (if (negative? new-y) 
-				  (return null m-result #f)
+				  (begin
+				    (error 'inflate 
+					   "bad input: more codes than bits")
+				    (return null m-result #f))
 				  (loop (* new-y 2) (add1 j))))))])
 	  ; (printf "loop y: ~s~n" y)
 	  (let ([y (- y (vector-ref c i))])
 	    (when (negative? y)
+	      (error 'inflate "bad input: more codes than bits")
 	      (return #f m-result #f))
 	    ; (printf "set c[~s] ~s + ~s~n" i (vector-ref c i) y)
 	    (vector-set! c i (+ (vector-ref c i) y))
@@ -498,10 +503,14 @@
 		      (a-loop (sub1 a))))
 		  (k-loop (add1 k)))))
 	    
-	    ; /* Return #f as third if we were given an incomplete table */t
+	    ; /* Return #f as third if we were given an incomplete table */
 	    ; (printf "done: ~s ~s~n" final-y g)
-	    (values t-result m-result (not (and (not (zero? final-y))
-						(not (= g 1))))))))))
+	    (let ([ok? (or incomp-ok?
+			   (not (and (not (zero? final-y))
+				     (not (= g 1)))))])
+	      (unless ok? 
+		      (error 'inflate "incomplete table"))
+	      (values t-result m-result ok?)))))))
   
   (define (inflate_codes
 	   tl ; vector of hufts ; /* literal/length tables */
@@ -526,6 +535,7 @@
       (define (jump-to-next)
 	(let loop ()
 	  (when (= e 99)
+	    (error 'inflate "bad inflate code")
 	    (return #f))
 	  (DUMPBITS (huft-b t))
 	  (set! e (- e 16))
@@ -608,6 +618,7 @@
 	(DUMPBITS 16)
 	(NEEDBITS 16)
 	(unless (= n (bitwise-and bb #xffff))
+	  (error 'inflate "error in compressed data")
 	  (return #f)) ; /* error in compressed data */
 	(DUMPBITS 16)
 	
@@ -636,14 +647,14 @@
     (step 280 < 288 add1 (lambda (i) (vector-set! l i 8)))
     
     (let-values ([(tl bl ok?)
-		  (huft_build l 288 257 cplens cplext 7)])
+		  (huft_build l 288 257 cplens cplext 7 #f)])
       
       (if (not ok?)
 	  #f
 	  (begin
 	    (step 0 < 30 add1 (lambda (i) (vector-set! l i 5)))
 	    (let-values ([(td bd ok?)
-			  (huft_build l 30 0 cpdist cpdext 5)])
+			  (huft_build l 30 0 cpdist cpdext 5 #t)])
 	      (if (not ok?)
 		  #f
 		  ; /* decompress until an end-of-block code */
@@ -669,7 +680,9 @@
       (define l 0)
 
       (if (or (> nl 286) (> nd 30))
-	  #f ; /* bad lengths */
+	  (begin
+	    (error 'inflate "bad lengths")
+	    #f) ; /* bad lengths */
 	  (begin
 	    ; /* read in bit-length-code lengths */
 	    (step 0 < nb add1 
@@ -681,7 +694,7 @@
 	    
 	    ; /* build decoding table for trees--single level, 7 bit lookup */
 	    (let-values ([(tl bl ok?)
-			  (huft_build ll 19 19 null null 7)])
+			  (huft_build ll 19 19 null null 7 #f)])
 	      (if (not ok?)
 		  #f
 		  (begin
@@ -701,6 +714,7 @@
 				 [set-lit
 				  (lambda (j l)
 				    (when (> (+ i j) n)
+				      (error 'inflate "bad hop")
 				      (return #f))
 				    (let loop ([j j])
 				      (unless (zero? j)
@@ -729,13 +743,17 @@
 		      
 		      ; /* build the decoding tables for literal/length and distance codes */
 		      (let-values ([(tl bl ok?)
-				    (huft_build ll nl 257 cplens cplext lbits)])
+				    (huft_build ll nl 257 cplens cplext lbits #f)])
 			(if (not ok?)
-			    #f ; /* incomplete code set */
+			    (begin
+			      (error 'inflate "incomplete code set")
+			      #f) ; /* incomplete code set */
 			    (let-values ([(td bd ok?)
-					  (huft_build (subvector ll nl) nd 0 cpdist cpdext dbits)])
+					  (huft_build (subvector ll nl) nd 0 cpdist cpdext dbits #f)])
 			      (if (not ok?)
-				  #f ; /* incomplete code set */
+				  (begin
+				    (error 'inflate "incomplete code set")
+				    #f) ; /* incomplete code set */
 				  ; /* decompress until an end-of-block code */
 				  (inflate_codes tl td bl bd)))))))))))))
 
@@ -753,7 +771,8 @@
 	      [(2) (inflate_dynamic)]
 	      [(0) (inflate_stored)]
 	      [(1) (inflate_fixed)]
-	      [else #f])))
+	      [else (error 'inflate "unknown inflate type")
+		    #f])))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;
   ; inflate starts here
@@ -782,7 +801,7 @@
 		    ; do something: inptr--
 		    (loop)))
 		(flush-output wp)
-		#t))
+		#t = (void)))
 	  #f))))
 
   (define (make-small-endian . chars)

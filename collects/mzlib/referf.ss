@@ -46,14 +46,25 @@
  
    ; reference
    (lambda (must-string? require?)
-     (lambda (name)
-       (let ([name (if must-string?
-		       (local-expand-defmacro name)
-		       name)])
-	 (unless (or (not must-string?) (string? name))
-		 (raise-syntax-error 'reference
-				     "filename is not a string"
-				     (list 'reference name)))
-	 `(,(if require? 'require-library '#%load/use-compiled) ,name)))))))
+     (lambda names
+       (let ([sname (if require? 
+			'reference-library
+			'reference)]
+	     [len (length names)]
+	     [expect (if require? 2 1)])
+	 (unless (and (positive? len) (<= len expect))
+		 ((raise-syntax-error sname
+				      (format "expected ~a names; given ~a"
+					      expect len)
+				      (list* sname names))))
+	 (let ([names (if must-string?
+			  (map local-expand-defmacro names)
+			  names)])
+	   (unless (or (not must-string?) (map string? names))
+		   (raise-syntax-error sname
+				       "filename is not a string"
+				       (list* sname names)))
+	   `(,(if require? 'require-library '#%load/use-compiled) 
+	     ,@names))))))))
 
 

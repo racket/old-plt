@@ -22,4 +22,4 @@
 	   (system "OTEX")
 	   (send-event "OTEX" "aevt" "odoc" (vector 'file file))]
 	   [(windows unix)
-	    (system (format "latex ~a" (vector-ref argv 0)))])))))
+	    (system (format "latex ~a" file))])))))

@@ -10,5 +10,6 @@
   [(windows unix)
    (when (eq? (vector) argv)
      (error 'slatex "expected a file on the command line~n"))
-   (slatex (vector-ref argv 0))
+   (parameterize ([error-escape-handler exit])
+		 (slatex (vector-ref argv 0)))
    (exit)])

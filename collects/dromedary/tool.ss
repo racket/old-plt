@@ -164,8 +164,8 @@
 			    (begin
 			      (set! current-type (flatten (typecheck-all cur-parse name)))
 			      (set! current-parse (map syntaxify (flatten (compile-all cur-parse name))))
-			      (pretty-print (format "current-type: ~e" current-type))
-			      (pretty-print (format "current-parse: ~e" (map syntax-object->datum current-parse)))
+			      ;(pretty-print (format "current-type: ~e" current-type))
+			      ;(pretty-print (format "current-parse: ~e" (map syntax-object->datum current-parse)))
 				    
 			      (let ([firstexp (car current-parse)])
 				(begin
@@ -175,10 +175,8 @@
 			  (begin
 			    (set! current-parse (cdr current-parse))
 			    firstexp)))
-		    (begin
-		      (display "doing this")
 		    (read-syntax input port))
-		    ))))
+		    )))
 	  (define/public (get-style-delta) #f)
           (define/public (get-language-position) (list "Dromedary"))
           (define/public (get-language-name) "Dromedary")

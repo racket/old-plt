@@ -31,7 +31,7 @@
 	       (set! cur-var #\a)
 	       (set! loc location)
 	       (let ([progtype (typecheck-ml stmt (empty-context))])
-		 (begin (pretty-print (format "initial progtype: ~a" progtype))
+		 (begin ; (pretty-print (format "initial progtype: ~a" progtype))
 		 (if (list? progtype)
 		     (letrec ([ucvert (lambda (ttlist)
 					(if (null? ttlist)
@@ -71,7 +71,7 @@
 		    [($ ast:pstr_value rec_flag pelist)
 		     (typecheck-defines rec_flag pelist context)]
 		    [($ ast:pstr_type stdlist)
-		     (begin (pretty-print (format "Length of stdlist is ~a" (length stdlist)))
+		     (begin ; (pretty-print (format "Length of stdlist is ~a" (length stdlist)))
 		     (map typecheck-typedecl stdlist (repeat (newboundtypes stdlist) (length stdlist))))]
 		    [($ ast:pstr_eval expr)
 		     (typecheck-ml expr context)]
@@ -398,13 +398,13 @@
 		   (cons (car varenv) (union-envs (cdr varenv) context)))))
 
 	   (define (patcheck context type pat) 
-	     (pretty-print (format "patcheck: ~a" pat))
+	     ; (pretty-print (format "patcheck: ~a" pat))
 	     (if (unique-var pat null)
 		 (union-envs (patenv pat type context) context)
 		 'fuzzle))
 
 	   (define (unique-var pat curvars)
-	     (pretty-print (format "unique-var: ~a" pat))
+	     ; (pretty-print (format "unique-var: ~a" pat))
 	     (match (ast:pattern-ppat_desc pat)
 		    [($ ast:ppat_any dummy)
 		     curvars]
@@ -777,7 +777,8 @@
 	       (eval #`(cond
 			[(#,pred #,rtype) #t]
 			[(tvar? #,rtype) (if (null? (unbox (tvar-tbox #,rtype)))
-					  (begin (pretty-print "istype?: ununified type-var") #f)
+					  (begin ; (pretty-print "istype?: ununified type-var") 
+					    #f)
 					  (istype? #,typename-as-symbol (unbox (tvar-tbox #,rtype))))]
 			[else #f]))))
 	     
@@ -834,7 +835,7 @@
 	   (define (get-type var context)
 	     (if (null? context)
 		 #f
-		 (begin (pretty-print (format "Comparing ~a and ~a" (caar context) var))
+		 (begin ; (pretty-print (format "Comparing ~a and ~a" (caar context) var))
 		 (if (equal? (caar context) var)
 		     (cdar context)
 		     (get-type var (cdr context))))))

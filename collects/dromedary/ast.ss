@@ -1,7 +1,6 @@
 #cs
 (module ast mzscheme
-  (require (lib "contracts.ss"))
-  
+
 	;;Macro for structure definition and provision
 	(define-syntax p-define-struct
 	  (syntax-rules ()
@@ -9,44 +8,23 @@
 			 (begin
 			   (provide (struct name fields))
 			   (define-struct (name inherit) fields (make-inspector)))]
-                        [(_ name ((fname con) ...))
-                         (begin
-                           (provide/contract (struct name ((fname con) ...)))
-                           (define-struct name (fname ...) (make-inspector)))]
-                        [(_ name fields)
+			[(_ name fields)
 			 (begin
 			   (provide (struct name fields))
 			   (define-struct name fields (make-inspector)))]))
 
 	;(make-src int int int)
-	(p-define-struct src ((line natural-number?)
-                              (col natural-number?)
-                              (pos natural-number?)
-                              (span natural-number?)))
+	(p-define-struct src (line col pos span))
 
 	;(make-ptop-def structure)
-	(p-define-struct ptop_def ((structure structure?)))
+	(p-define-struct ptop_def (structure))
 
 	;(make-stucture list)
-	(p-define-struct structure ((structure_items (listof structure_item?))))
+	(p-define-struct structure (structure_items))
 
 	;(make-structure_item structure_item_desc src)
-	(p-define-struct structure_item ((pstr_desc structure_item?)
-                                         (pstr_src src?)))
+	(p-define-struct structure_item (pstr_desc pstr_src))
 
-        (define structure_item_desc/p (or/f pstr_eval?
-                                            pstr_value?
-                                            pstr_primitive? 
-                                            pstr_type?
-                                            pstr_exception?
-                                            pstr_exn_rebind?
-                                            ;;pstr_module? 
-                                            ;;pstr_modtype?
-                                            pstr_open?
-                                            pstr_class?
-                                            pstr_class_type?))
-                                            ;;pstr_include?))
-  
 	;structure_item_desc => eval
 	;                     | value
 	;                     | primitive
@@ -61,28 +39,22 @@
 	;                     | include
 
 	;(make-pstr_eval expression)
-	(p-define-struct pstr_eval ((expr expression?)))
+	(p-define-struct pstr_eval (expr))
 	;(make-pstr_value boolean list)
-	(p-define-struct pstr_value ((rec_flag any?)
-                                     (pattern*expression-list
-                                      (listof (cons/p pattern? expression?)))))
+	(p-define-struct pstr_value (rec_flag pattern*expression-list))
 	;(make-pstr_primitive string value_description)
-	(p-define-struct pstr_primitive ((name string?)
-                                         (desc value_description?)))
+	(p-define-struct pstr_primitive (name desc))
 	;(make-pstr_type list)
-	(p-define-struct pstr_type ((string*type_declaration-list
-                                     (listof (cons/p string? type_declaration?)))))
+	(p-define-struct pstr_type (string*type_declaration-list))
 	;(make-pstr_exception string exception_declaration(core_type list))
-	(p-define-struct pstr_exception ((name string?)
-                                         (decl (listof (core_type?)))))
+	(p-define-struct pstr_exception (name decl))
 	;(make-pstr_exn_rebind string longident)
-	(p-define-struct pstr_exn_rebind ((name string?)
-                                          (ident longident?)))
+	(p-define-struct pstr_exn_rebind (name ident))
 	;(make-pstr_module string 
   ;| pstr_module of string * module_expr
   ;| pstr_modtype of string * module_type
 	;(make-pstr_open longident)
-	(p-define-struct pstr_open ((name longident?)))
+	(p-define-struct pstr_open (name))
 	;(make-pstr_class list)
 	(p-define-struct pstr_class (class_declaration-list))
 	;(make-pstr_class_type list)
@@ -90,22 +62,10 @@
   ;| pstr_include of module_expr
 
 	;(make-value_description core_type string-list)
-	(p-define-struct value_description ((pval_type core_type?)
-                                            (pval_prim (listof string?))))
+	(p-define-struct value_description (pval_type pval_prim))
 	;(make-core_type core_type_desc src)
 	(p-define-struct core_type (desc src))
 
-        (define core_type_makdesc (or/f ptyp_any?
-                                        ptyp_var?
-                                        ptyp_arrow?
-                                        ptyp_tuple?
-                                        ptyp_constr?
-                                        ptyp_object?
-                                        ptyp_class?
-                                        ptyp_alias?
-                                        ptyp_variant?))
-                                       
-  
 	; core_type_makdesc => any
 	;                 | var
 	;                 | arrow
@@ -117,23 +77,21 @@
 	;                 | variant
 
 	;(make-ptyp_any null)
-	(p-define-struct ptyp_any ((x null?)))
+	(p-define-struct ptyp_any (x))
 	;(make-ptyp_var string)
-	(p-define-struct ptyp_var ((name string?)))
+	(p-define-struct ptyp_var (name))
 	;(make-ptyp_arrow label core_type core_type)
 	(p-define-struct ptyp_arrow (name fromtype totype))
 	;(make-ptyp_tuple list)
-	(p-define-struct ptyp_tuple ((core_type-list (listof core_type?))))
+	(p-define-struct ptyp_tuple (core_type-list))
 	;(make-ptyp_constr longident list)
-	(p-define-struct ptyp_constr ((name longident?)
-                                      (core_type-list (listof core_type?))))
+	(p-define-struct ptyp_constr (name core_type-list))
 	;(make-ptyp_object list)
-	(p-define-struct ptyp_object ((core_field_type-list (listof core_field_type?))))
+	(p-define-struct ptyp_object (core_field_type-list))
 	;(make-ptyp_class longident list list)
 	(p-define-struct ptyp_class (longident core_type-list label-list))
 	;(make-ptyp_alias core_type string)
-	(p-define-struct ptyp_alias ((type core_type?)
-                                     (name string?)))
+	(p-define-struct ptyp_alias (type name))
 	;(make-ptyp_variant list boolean list-or-null)
 	(p-define-struct ptyp_variant (row_field-list bool label-list))
 

@@ -17,7 +17,7 @@
 ;	(datum->syntax-object
 ;	 #f
 	 (let ([result (compile-ml stmt (empty-context))])
-	   (pretty-print (format "initial progval: ~a" result))
+	   ; (pretty-print (format "initial progval: ~a" result))
 	   result)))
 ;	 #f)))
 

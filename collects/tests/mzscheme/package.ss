@@ -5,9 +5,7 @@
 
 (SECTION 'packages)
 
-;; Test suite does not cover:
-;;  Ensuring that packages do not leak non-provided variables
-
+(define expand-test-use-toplevel? #t)
 
 ;; syntax
 (syntax-test #'(dot))
@@ -304,6 +302,6 @@
 (syntax-test #'(let () (package x ()) (dot x c)))
 
 
-
+(define expand-test-use-toplevel? #f)
 
 (report-errs)

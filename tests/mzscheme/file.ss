@@ -403,16 +403,16 @@
   (display 9 (current-error-port))
   (current-error-port c))
 (test "89" get-output-string s)
-(define s (open-input-string (get-output-string s)))
-(test #t input-port? s)
-(test #f output-port? s)
+(define s2 (open-input-string (get-output-string s)))
+(test #t input-port? s2)
+(test #f output-port? s2)
 (test 89 + 0
       (let ([c (current-input-port)])
-	(current-input-port s) 
+	(current-input-port s2) 
 	(begin0
 	 (read)
 	 (current-input-port c))))
-(test eof read s)
+(test eof read s2)
 
 (arity-test open-output-string 0 0)
 (arity-test open-input-string 1 1)

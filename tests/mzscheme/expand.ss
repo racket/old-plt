@@ -1,3 +1,6 @@
+
+(require (lib "toplevel.ss" "syntax"))
+
 (load-relative "loadtest.ss")
 
 ;; test that expansion preserves source location information
@@ -107,6 +110,14 @@
   (compare-expansion #'(#%app (#%top . f)))
   (compare-expansion #'(#%app (#%top . f) (#%datum . 1))))
 
+(define expand-test-use-toplevel? #f)
+
+(define datum->top-level-syntax-object
+  (lambda (v)
+    (datum->syntax-object #'here v)))
+
+(define now-expanding (make-parameter #f))
+
 ; Tests macro expansion by setting the eval handler and
 ;  running all tests
 
@@ -121,15 +132,22 @@
    (lambda ()
      (current-eval
       (lambda (x)
-	(set! mz-test-syntax-errors-allowed? #t)
-	(let ([x (if (or (compiled-expression? x)
-			 (and (syntax? x) (compiled-expression? (syntax-e x))))
-		     x
-		     (parameterize ([current-module-name-prefix #f])
-		       (expand-syntax
-			((if (syntax? x) expand-syntax expand) x))))])
-	  (set! mz-test-syntax-errors-allowed? #f)
-	  (orig x)))))
+	(if (now-expanding)
+	    (orig x)
+	    (begin
+	      (set! mz-test-syntax-errors-allowed? #t)
+	      (let ([x (if (or (compiled-expression? x)
+			       (and (syntax? x) (compiled-expression? (syntax-e x))))
+			   x
+			   (parameterize ([current-module-name-prefix #f]
+					  [now-expanding expand-test-use-toplevel?])
+			     (expand-syntax
+			      ((if expand-test-use-toplevel?
+				   expand-top-level-with-compile-time-evals
+				   expand-syntax)
+			       ((if (syntax? x) values datum->top-level-syntax-object) x)))))])
+		(set! mz-test-syntax-errors-allowed? #f)
+		(orig x)))))))
    (lambda ()
      (load-relative expand-load))
    (lambda ()

@@ -535,3 +535,121 @@ _vsnprintf
 _vsprintf
 _waitpid
 _write
+
+******* 
+Text of an e-mail I sent Matthew, outlining my observations about SetCurrentDC:
+
+I'm trying to expunge the use of SetOrigin from MrEd.  As I may have
+mentioned before, I'm hoping to do this by adding two instance
+variables in the "appropriate" place so that calls which would
+otherwise have been affected by the SetOrigin can instead move their
+rectangles/regions/whatever appropriately.
+
+SetOrigin is called now from four similar functions:
+wxWindow::SetCurrentDC
+wxWindow::SetCurrentMacDC
+wxWindow::SetCurrentMacDCNoMargin
+wxCanvasDC::SetCurrentDC
+
+I'm trying to figure out the relative roles of all four of these, to
+make sure I don't mess things up horribly.
+
+1) wxWindow::SetCurrentDC is by far the most popular; it's called all
+over the place. It sets cMacDC's currentUser to point to 'this', then
+does a SetOrigin, a bunch of clip region setting, and sets the pen
+mode and Text info.  Fair enough.
+
+2) wxWindow::SetCurrentMacDC: it's comments (// kludge, since not
+doing complete setup of DC) seem to indicate that the DC does not yet
+exist, and it only sets the origin, it doesn't do any of the other
+stuff.  It seems like a more appropriate name would be
+SetCurrentDCPartial, or something...  Looking at where it's called, I
+don't see a consistent pattern.  I would expect it to be used, for
+instance, when the DC does not yet exist, but it crops up in
+wx_button, and wx_sbar, and all over the place.
+
+3) wxWindow::SetCurrentMacDCNoMargin: this one is also quite
+confusing; it checks to see whether there is a parent area and whether
+!wxSubType(__type, wxTYPE_FRAME) (presumably, whether this class is a
+subtype of wxFrame); if both are true, it sets the origin as the last
+one did, except that it adds cWindowX and cWindowY, which appear to be
+the global coordinates of the window, before calling SetOrigin.  That
+is, it uses global rather than local coordinates, but only when 'this'
+is not a frame.  I'm pretty much baffled by this one.
+
+4) wxCanvasDC::SetCurrentDC: this one is a lot like #2, except that it
+sets up the clip region in a slightly different way, and it calls
+wxMacSetCurrentTool.  The real question is why a canvas DC needs its
+own SetCurrentDC, rather than just using the wxWindow one.
+
+If you can shed any light on the difference between these functions,
+I'd be eternally grateful...
+
+john
+
+********
+
+A follow-up message:
+
+To: Matthew Flatt <mflatt@cs.utah.edu>
+From: John Clements <clements@brinckerhoff.org>
+Subject: Re: why four kinds of SetCurrentDC?
+Cc: 
+Bcc: 
+X-Attachments: 
+
+Quoting John Clements:
+> 2) wxWindow::SetCurrentMacDC: it's comments (// kludge, since not
+> doing complete setup of DC) seem to indicate that the DC does not yet
+> exist, and it only sets the origin, it doesn't do any of the other
+> stuff.  It seems like a more appropriate name would be
+> SetCurrentDCPartial, or something...  Looking at where it's called, I
+> don't see a consistent pattern.  I would expect it to be used, for
+> instance, when the DC does not yet exist, but it crops up in
+> wx_button, and wx_sbar, and all over the place.
+
+Maybe it's called when the current viewport is known to be the right
+one already?
+
+Thanks for the prompt reply.  No, this function checks & sets the port; that's
+the one piece of code that appears verbatim in all four functions.
+
+> 3) wxWindow::SetCurrentMacDCNoMargin:  this one is also quite
+> confusing; it checks to see whether there is a parent area and
+> whether !wxSubType(__type, wxTYPE_FRAME) (presumably, whether this
+> class is a subtype of wxFrame); if both are true, it sets the origin
+> as the last one did, except that it adds cWindowX and cWindowY, which
+> appear to be the global coordinates of the window, before calling
+> SetOrigin.  That is, it uses global rather than local coordinates,
+> but only when 'this' is not a frame.  I'm pretty much baffled by this
+> one.
+
+I think cWindowX and cWindowY are frame-relative (or parent-relative),
+rather than global. But global for frames, which is why they're not
+used in that case.
+
+Okay, thanks.  Aha, on closer scrutiny I see that this function calls
+FrameContentAreaOffset on cParentArea, rather than cClient Area.  This
+explains why it's the "No Margin" call.  I'm still in the dark about
+cWindowX and cWindowY, though... it seems like the result of
+FrameContentAreaOffset should already be relative to the frame.
+
+> 4) wxCanvasDC::SetCurrentDC: this one is a lot like #2, except that
+> it sets up the clip region in a slightly different way, and it calls
+> wxMacSetCurrentTool.  The real question is why a canvas DC needs its
+> own SetCurrentDC, rather than just using the wxWindow one.
+
+Probably doesn't. Maybe having a separate one saves some
+region-manipulation time, but I don't know.
+
+Okay, thanks. So I guess my game plan now is simply to add two global
+offset variables to MrEd, and consult them whenever MrEd calls a
+drawing command.  This is ugly, but probably much easier (and less
+error-prone) than attaching the offsets to the objects themselves and
+statically determining for each drawing call which SetCurrentDC it's
+downstream from.  Judging from the handling of wxTheApp, I don't need
+to do anything special GC-wise to add such a global?  Is that true?
+
+john
+
+*********

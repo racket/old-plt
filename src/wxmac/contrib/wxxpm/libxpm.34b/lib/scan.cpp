@@ -463,8 +463,8 @@ MSWGetImagePixels(Display *display, XImage *image, unsigned int width, unsigned 
 	    /* bitmap must be selected !!! */
 		RGBColor	macpixel;
 		long r, g, b;
-		GetCPixel(x, y, &macpixel); // SET-ORIGIN FLAGGED
-		r = ((macpixel.red >> 8) & 0xFF);
+		GetCPixel(x, y, &macpixel); 
+                r = ((macpixel.red >> 8) & 0xFF);
 		g = ((macpixel.green >> 8) & 0xFF);
 		b = ((macpixel.blue >> 8) & 0xFF);
 		pixel = (r << 16) | (g << 8) | b;

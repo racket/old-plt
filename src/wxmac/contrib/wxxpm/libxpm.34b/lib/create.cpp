@@ -1477,10 +1477,8 @@ MACSetImagePixels(Display *dc, XImage *image, unsigned int width, unsigned int h
     unsigned int x, y;
 	GDHandle savegd;
 	CGrafPtr saveport;
-	Rect	bounds;
 	Pixel 	apix;
 	RGBColor thePixel;
-	SetRect(&bounds, 0, 0, height, width); // CJC correct order?
 	GetGWorld(&saveport, &savegd);
 	SetGWorld(image->bitmap, 0);
 	switch (image->depth) {
@@ -1495,7 +1493,7 @@ MACSetImagePixels(Display *dc, XImage *image, unsigned int width, unsigned int h
 				thePixel.red = (apix >> 8) & 0xFF00;
 				thePixel.green = apix  & 0xFF00;
 				thePixel.blue = (apix << 8) & 0xFF00;
-			    SetCPixel(x, y, &thePixel);  // SET-ORIGIN FLAGGED
+			    SetCPixel(x, y, &thePixel);
 			}
 	    }
     }

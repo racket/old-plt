@@ -1069,10 +1069,11 @@
     (let ([n (try)])
       (test n try))))
 
-(cust-test (lambda ()
-	     (open-input-file 
-	      (build-path (current-load-relative-directory)
-			  "file.ss"))))
+(unless (eq? 'macos (system-type)) ;; no limit in Mac OS Classic!
+  (cust-test (lambda ()
+	       (open-input-file 
+		(build-path (current-load-relative-directory)
+			    "file.ss")))))
 
 ;; Too time-consuming, does bad things to the network:
 '(let* ([pn 40001]

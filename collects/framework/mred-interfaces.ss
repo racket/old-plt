@@ -4,12 +4,12 @@
    vertical-panel<%>
    vertical-pane<%>
    timer<%>
-   text-snip<%>
    text-field<%>
    text<%>
    tab-snip<%>
    style-list<%>
    style-delta<%>
+   string-snip<%>
    snip-class<%>
    snip-admin<%>
    snip<%>
@@ -81,12 +81,12 @@
             (vertical-panel<%>
               vertical-pane<%>
               timer<%>
-              text-snip<%>
               text-field<%>
               text<%>
               tab-snip<%>
               style-list<%>
               style-delta<%>
+              string-snip<%>
               snip-class<%>
               snip-admin<%>
               snip<%>
@@ -151,12 +151,12 @@
               vertical-panel%
               vertical-pane%
               timer%
-              text-snip%
               text-field%
               text%
               tab-snip%
               style-list%
               style-delta%
+              string-snip%
               snip-class%
               snip-admin%
               snip%
@@ -222,12 +222,12 @@
                (vertical-panel<%>
                  vertical-pane<%>
                  timer<%>
-                 text-snip<%>
                  text-field<%>
                  text<%>
                  tab-snip<%>
                  style-list<%>
                  style-delta<%>
+                 string-snip<%>
                  snip-class<%>
                  snip-admin<%>
                  snip<%>
@@ -292,12 +292,12 @@
                  vertical-panel%
                  vertical-pane%
                  timer%
-                 text-snip%
                  text-field%
                  text%
                  tab-snip%
                  style-list%
                  style-delta%
+                 string-snip%
                  snip-class%
                  snip-admin%
                  snip%
@@ -364,12 +364,12 @@
                  (-vertical-panel% vertical-panel%)
                  (-vertical-pane% vertical-pane%)
                  (-timer% timer%)
-                 (-text-snip% text-snip%)
                  (-text-field% text-field%)
                  (-text% text%)
                  (-tab-snip% tab-snip%)
                  (-style-list% style-list%)
                  (-style-delta% style-delta%)
+                 (-string-snip% string-snip%)
                  (-snip-class% snip-class%)
                  (-snip-admin% snip-admin%)
                  (-snip% snip%)
@@ -436,7 +436,6 @@
                  (interface
                    ()
                    on-drop-file
-                   get-label
                    set-label
                    set-cursor
                    show
@@ -450,16 +449,7 @@
                    get-x
                    get-y
                    on-size
-                   horiz-margin
-                   get-children
-                   change-children
-                   place-children
-                   delete-child
-                   on-subwindow-event
-                   accept-drop-files
-                   client->screen
-                   screen->client
-                   get-client-size
+                   get-label
                    on-focus
                    set-label-position
                    get-label-position
@@ -467,12 +457,12 @@
                    get-control-font
                    set-label-font
                    get-label-font
+                   get-client-size
                    focus
                    is-enabled?
                    border
                    get-alignment
                    get-top-level-window
-                   get-low-level-window
                    on-subwindow-char
                    get-plain-label
                    stretchable-width
@@ -485,20 +475,24 @@
                    add-child
                    on-move
                    has-focus?
-                   get-cursor))
+                   get-cursor
+                   horiz-margin
+                   get-children
+                   change-children
+                   container-size
+                   place-children
+                   delete-child
+                   on-subwindow-event
+                   accept-drop-files
+                   client->screen
+                   screen->client))
                (define vertical-pane<%>
                  (interface
                    ()
                    get-parent
-                   horiz-margin
-                   get-children
-                   change-children
-                   place-children
-                   delete-child
                    border
                    get-alignment
                    get-top-level-window
-                   get-low-level-window
                    stretchable-width
                    stretchable-height
                    set-alignment
@@ -506,55 +500,20 @@
                    min-height
                    vert-margin
                    spacing
-                   add-child))
+                   add-child
+                   horiz-margin
+                   get-children
+                   change-children
+                   container-size
+                   place-children
+                   delete-child))
                (define timer<%> (interface () interval notify start stop))
-               (define text-snip<%>
-                 (interface
-                   ()
-                   write
-                   read
-                   get-style
-                   set-style
-                   get-flags
-                   get-count
-                   set-count
-                   set-flags
-                   is-owned?
-                   draw
-                   split
-                   merge-with
-                   match?
-                   next
-                   previous
-                   resize
-                   get-text
-                   insert
-                   copy
-                   own-caret
-                   blink-caret
-                   get-extent
-                   get-admin
-                   set-admin
-                   on-event
-                   on-char
-                   do-edit-operation
-                   adjust-cursor
-                   size-cache-invalid
-                   set-snipclass
-                   get-snipclass
-                   release-from-owner
-                   partial-offset
-                   find-scroll-step
-                   get-num-scroll-steps
-                   get-scroll-step-offset))
                (define text-field<%>
                  (interface
                    ()
                    on-drop-file
                    get-value
                    set-value
-                   command
-                   get-label
                    set-label
                    set-cursor
                    show
@@ -568,18 +527,14 @@
                    get-x
                    get-y
                    on-size
-                   horiz-margin
-                   on-subwindow-event
-                   accept-drop-files
-                   client->screen
-                   screen->client
-                   get-client-size
+                   command
+                   get-label
                    on-focus
                    get-editor
+                   get-client-size
                    focus
                    is-enabled?
                    get-top-level-window
-                   get-low-level-window
                    on-subwindow-char
                    get-plain-label
                    stretchable-width
@@ -589,7 +544,12 @@
                    vert-margin
                    on-move
                    has-focus?
-                   get-cursor))
+                   get-cursor
+                   horiz-margin
+                   on-subwindow-event
+                   accept-drop-files
+                   client->screen
+                   screen->client))
                (define text<%>
                  (interface
                    ()
@@ -602,22 +562,6 @@
                    save-file
                    set-cursor
                    refresh
-                   get-canvases
-                   get-active-canvas
-                   set-active-canvas
-                   remove-canvas
-                   get-snip-position-and-location
-                   begin-write-header-footer-to-file
-                   end-write-header-footer-to-file
-                   get-inactive-caret-threshold
-                   set-inactive-caret-threshold
-                   editor-location-to-dc-location
-                   dc-location-to-editor-location
-                   get-position
-                   set-max-undo-history
-                   get-max-undo-history
-                   set-load-overwrites-styles
-                   get-load-overwrites-styles
                    set-anchor
                    get-anchor
                    flash-on
@@ -667,7 +611,7 @@
                    set-keymap
                    get-keymap
                    lock
-                   modified?
+                   is-locked?
                    insert-box
                    on-paint
                    on-event
@@ -679,6 +623,7 @@
                    do-edit-operation
                    get-style-list
                    set-style-list
+                   is-modified?
                    get-filename
                    insert-image
                    get-focus-snip
@@ -735,7 +680,7 @@
                    set-wordbreak-map
                    get-wordbreak-map
                    caret-hidden?
-                   on-new-text-snip
+                   on-new-string-snip
                    on-new-tab-snip
                    set-autowrap-bitmap
                    set-wordbreak-func
@@ -784,9 +729,26 @@
                    get-snip-location
                    num-scroll-lines
                    find-scroll-line
+                   get-snip-position-and-location
+                   begin-write-header-footer-to-file
+                   end-write-header-footer-to-file
+                   get-inactive-caret-threshold
+                   set-inactive-caret-threshold
+                   editor-location-to-dc-location
+                   dc-location-to-editor-location
+                   get-position
+                   set-max-undo-history
+                   get-max-undo-history
+                   set-load-overwrites-styles
+                   get-load-overwrites-styles
+                   auto-wrap
                    get-canvas
                    add-canvas
-                   auto-wrap))
+                   get-canvases
+                   get-active-canvas
+                   set-active-canvas
+                   remove-canvas
+                   get-max-view-size))
                (define tab-snip<%>
                  (interface
                    ()
@@ -817,13 +779,13 @@
                    on-event
                    on-char
                    do-edit-operation
-                   adjust-cursor
-                   size-cache-invalid
                    set-snipclass
                    get-snipclass
                    release-from-owner
                    partial-offset
                    find-scroll-step
+                   adjust-cursor
+                   size-cache-invalid
                    get-num-scroll-steps
                    get-scroll-step-offset))
                (define style-list<%>
@@ -849,13 +811,11 @@
                    equal?
                    get-family
                    get-face
+                   copy
                    set-transparent-text-backing-off
                    get-transparent-text-backing-off
                    set-transparent-text-backing-on
                    get-transparent-text-backing-on
-                   copy
-                   set-delta-background
-                   set-delta-foreground
                    set-face
                    set-family
                    set-delta
@@ -884,7 +844,48 @@
                    get-size-add
                    set-size-mult
                    get-size-mult
-                   set-delta-face))
+                   set-delta-face
+                   set-delta-background
+                   set-delta-foreground))
+               (define string-snip<%>
+                 (interface
+                   ()
+                   write
+                   read
+                   get-style
+                   set-style
+                   get-flags
+                   get-count
+                   set-count
+                   set-flags
+                   is-owned?
+                   draw
+                   split
+                   merge-with
+                   match?
+                   next
+                   previous
+                   resize
+                   get-text
+                   insert
+                   copy
+                   own-caret
+                   blink-caret
+                   get-extent
+                   get-admin
+                   set-admin
+                   on-event
+                   on-char
+                   do-edit-operation
+                   set-snipclass
+                   get-snipclass
+                   release-from-owner
+                   partial-offset
+                   find-scroll-step
+                   adjust-cursor
+                   size-cache-invalid
+                   get-num-scroll-steps
+                   get-scroll-step-offset))
                (define snip-class<%>
                  (interface
                    ()
@@ -939,13 +940,13 @@
                    on-event
                    on-char
                    do-edit-operation
-                   adjust-cursor
-                   size-cache-invalid
                    set-snipclass
                    get-snipclass
                    release-from-owner
                    partial-offset
                    find-scroll-step
+                   adjust-cursor
+                   size-cache-invalid
                    get-num-scroll-steps
                    get-scroll-step-offset))
                (define slider<%>
@@ -954,8 +955,6 @@
                    on-drop-file
                    get-value
                    set-value
-                   command
-                   get-label
                    set-label
                    set-cursor
                    show
@@ -969,17 +968,13 @@
                    get-x
                    get-y
                    on-size
-                   horiz-margin
-                   on-subwindow-event
-                   accept-drop-files
-                   client->screen
-                   screen->client
-                   get-client-size
+                   command
+                   get-label
                    on-focus
+                   get-client-size
                    focus
                    is-enabled?
                    get-top-level-window
-                   get-low-level-window
                    on-subwindow-char
                    get-plain-label
                    stretchable-width
@@ -989,32 +984,29 @@
                    vert-margin
                    on-move
                    has-focus?
-                   get-cursor))
+                   get-cursor
+                   horiz-margin
+                   on-subwindow-event
+                   accept-drop-files
+                   client->screen
+                   screen->client))
                (define separator-menu-item<%>
-                 (interface
-                   ()
-                   delete
-                   get-parent
-                   get-low-level-window
-                   restore
-                   is-deleted?))
+                 (interface () delete get-parent restore is-deleted?))
                (define scroll-event<%>
                  (interface
                    ()
-                   set-time-stamp
-                   get-time-stamp
-                   get-position
                    set-position
                    set-direction
                    get-direction
                    set-event-type
-                   get-event-type))
+                   get-event-type
+                   set-time-stamp
+                   get-time-stamp
+                   get-position))
                (define radio-box<%>
                  (interface
                    ()
                    on-drop-file
-                   command
-                   get-label
                    set-label
                    set-cursor
                    show
@@ -1028,20 +1020,16 @@
                    get-x
                    get-y
                    on-size
-                   horiz-margin
-                   on-subwindow-event
-                   accept-drop-files
-                   client->screen
-                   screen->client
+                   command
+                   get-label
+                   on-focus
                    get-selection
                    set-selection
                    get-client-size
-                   on-focus
                    focus
                    is-enabled?
                    get-top-level-window
                    get-item-plain-label
-                   get-low-level-window
                    on-subwindow-char
                    get-item-label
                    get-plain-label
@@ -1053,7 +1041,12 @@
                    on-move
                    has-focus?
                    get-cursor
-                   get-number))
+                   get-number
+                   horiz-margin
+                   on-subwindow-event
+                   accept-drop-files
+                   client->screen
+                   screen->client))
                (define ps-setup<%>
                  (interface
                    ()
@@ -1087,10 +1080,6 @@
                    get-text-extent
                    clear
                    get-size
-                   draw-rounded-rectangle
-                   destroy-clipping-region
-                   set-logical-function
-                   get-logical-function
                    end-drawing
                    draw-line
                    draw-point
@@ -1128,7 +1117,11 @@
                    get-background
                    get-background-mode
                    get-text-background
-                   get-text-foreground))
+                   get-text-foreground
+                   draw-rounded-rectangle
+                   destroy-clipping-region
+                   set-logical-function
+                   get-logical-function))
                (define post-script-dc<%>
                  (interface
                    ()
@@ -1136,10 +1129,6 @@
                    get-text-extent
                    clear
                    get-size
-                   draw-rounded-rectangle
-                   destroy-clipping-region
-                   set-logical-function
-                   get-logical-function
                    end-drawing
                    draw-line
                    draw-point
@@ -1177,9 +1166,12 @@
                    get-background
                    get-background-mode
                    get-text-background
-                   get-text-foreground))
-               (define popup-menu<%>
-                 (interface () get-low-level-window get-items))
+                   get-text-foreground
+                   draw-rounded-rectangle
+                   destroy-clipping-region
+                   set-logical-function
+                   get-logical-function))
+               (define popup-menu<%> (interface () get-items))
                (define point<%> (interface () set-y set-x get-x get-y))
                (define pen-list<%> (interface () find-or-create-pen))
                (define pen<%>
@@ -1210,20 +1202,6 @@
                    move
                    set-cursor
                    refresh
-                   get-canvases
-                   get-active-canvas
-                   set-active-canvas
-                   remove-canvas
-                   begin-write-header-footer-to-file
-                   end-write-header-footer-to-file
-                   get-inactive-caret-threshold
-                   set-inactive-caret-threshold
-                   editor-location-to-dc-location
-                   dc-location-to-editor-location
-                   set-max-undo-history
-                   get-max-undo-history
-                   set-load-overwrites-styles
-                   get-load-overwrites-styles
                    remove
                    move-to
                    resize
@@ -1273,7 +1251,7 @@
                    set-keymap
                    get-keymap
                    lock
-                   modified?
+                   is-locked?
                    insert-box
                    on-paint
                    on-event
@@ -1285,6 +1263,7 @@
                    do-edit-operation
                    get-style-list
                    set-style-list
+                   is-modified?
                    get-filename
                    insert-image
                    get-focus-snip
@@ -1305,6 +1284,21 @@
                    write-footers-to-file
                    invalidate-bitmap-cache
                    scroll-line-location
+                   set-selected
+                   add-selected
+                   remove-selected
+                   find-first-snip
+                   is-selected?
+                   can-move-to?
+                   after-move-to
+                   after-resize
+                   after-select
+                   on-double-click
+                   on-interactive-move
+                   get-dragable
+                   set-dragable
+                   get-scroll-step
+                   set-scroll-step
                    after-insert
                    after-delete
                    change-style
@@ -1350,29 +1344,28 @@
                    get-snip-location
                    num-scroll-lines
                    find-scroll-line
-                   set-selected
-                   add-selected
-                   remove-selected
-                   find-first-snip
-                   is-selected?
-                   can-move-to?
-                   after-move-to
-                   after-resize
-                   after-select
-                   on-double-click
-                   on-interactive-move
-                   get-dragable
-                   set-dragable
-                   get-scroll-step
-                   set-scroll-step
+                   begin-write-header-footer-to-file
+                   end-write-header-footer-to-file
+                   get-inactive-caret-threshold
+                   set-inactive-caret-threshold
+                   editor-location-to-dc-location
+                   dc-location-to-editor-location
+                   set-max-undo-history
+                   get-max-undo-history
+                   set-load-overwrites-styles
+                   get-load-overwrites-styles
+                   auto-wrap
                    get-canvas
                    add-canvas
-                   auto-wrap))
+                   get-canvases
+                   get-active-canvas
+                   set-active-canvas
+                   remove-canvas
+                   get-max-view-size))
                (define panel<%>
                  (interface
                    ()
                    on-drop-file
-                   get-label
                    set-label
                    set-cursor
                    show
@@ -1386,16 +1379,7 @@
                    get-x
                    get-y
                    on-size
-                   horiz-margin
-                   get-children
-                   change-children
-                   place-children
-                   delete-child
-                   on-subwindow-event
-                   accept-drop-files
-                   client->screen
-                   screen->client
-                   get-client-size
+                   get-label
                    on-focus
                    set-label-position
                    get-label-position
@@ -1403,12 +1387,12 @@
                    get-control-font
                    set-label-font
                    get-label-font
+                   get-client-size
                    focus
                    is-enabled?
                    border
                    get-alignment
                    get-top-level-window
-                   get-low-level-window
                    on-subwindow-char
                    get-plain-label
                    stretchable-width
@@ -1421,20 +1405,24 @@
                    add-child
                    on-move
                    has-focus?
-                   get-cursor))
+                   get-cursor
+                   horiz-margin
+                   get-children
+                   change-children
+                   container-size
+                   place-children
+                   delete-child
+                   on-subwindow-event
+                   accept-drop-files
+                   client->screen
+                   screen->client))
                (define pane<%>
                  (interface
                    ()
                    get-parent
-                   horiz-margin
-                   get-children
-                   change-children
-                   place-children
-                   delete-child
                    border
                    get-alignment
                    get-top-level-window
-                   get-low-level-window
                    stretchable-width
                    stretchable-height
                    set-alignment
@@ -1442,7 +1430,13 @@
                    min-height
                    vert-margin
                    spacing
-                   add-child))
+                   add-child
+                   horiz-margin
+                   get-children
+                   change-children
+                   container-size
+                   place-children
+                   delete-child))
                (define mouse-event<%>
                  (interface
                    ()
@@ -1450,8 +1444,6 @@
                    set-x
                    get-x
                    get-y
-                   set-time-stamp
-                   get-time-stamp
                    button-up?
                    dragging?
                    entering?
@@ -1474,7 +1466,9 @@
                    set-shift-down
                    get-shift-down
                    set-event-type
-                   get-event-type))
+                   get-event-type
+                   set-time-stamp
+                   get-time-stamp))
                (define meta-file-dc<%>
                  (interface
                    ()
@@ -1482,10 +1476,6 @@
                    get-text-extent
                    clear
                    get-size
-                   draw-rounded-rectangle
-                   destroy-clipping-region
-                   set-logical-function
-                   get-logical-function
                    end-drawing
                    draw-line
                    draw-point
@@ -1524,13 +1514,15 @@
                    get-background-mode
                    get-text-background
                    get-text-foreground
+                   draw-rounded-rectangle
+                   destroy-clipping-region
+                   set-logical-function
+                   get-logical-function
                    close))
                (define message<%>
                  (interface
                    ()
                    on-drop-file
-                   command
-                   get-label
                    set-label
                    set-cursor
                    show
@@ -1544,17 +1536,13 @@
                    get-x
                    get-y
                    on-size
-                   horiz-margin
-                   on-subwindow-event
-                   accept-drop-files
-                   client->screen
-                   screen->client
-                   get-client-size
+                   command
+                   get-label
                    on-focus
+                   get-client-size
                    focus
                    is-enabled?
                    get-top-level-window
-                   get-low-level-window
                    on-subwindow-char
                    get-plain-label
                    stretchable-width
@@ -1564,17 +1552,15 @@
                    vert-margin
                    on-move
                    has-focus?
-                   get-cursor))
+                   get-cursor
+                   horiz-margin
+                   on-subwindow-event
+                   accept-drop-files
+                   client->screen
+                   screen->client))
                (define menu-bar<%>
-                 (interface
-                   ()
-                   enable
-                   is-enabled?
-                   get-frame
-                   get-low-level-window
-                   get-items))
-               (define menu<%>
-                 (interface () get-item get-low-level-window get-items))
+                 (interface () enable is-enabled? get-frame get-items))
+               (define menu<%> (interface () get-item get-items))
                (define memory-dc<%>
                  (interface
                    ()
@@ -1582,10 +1568,6 @@
                    get-text-extent
                    clear
                    get-size
-                   draw-rounded-rectangle
-                   destroy-clipping-region
-                   set-logical-function
-                   get-logical-function
                    get-pixel
                    set-pixel
                    end-drawing
@@ -1628,7 +1610,11 @@
                    get-background
                    get-background-mode
                    get-text-background
-                   get-text-foreground))
+                   get-text-foreground
+                   draw-rounded-rectangle
+                   destroy-clipping-region
+                   set-logical-function
+                   get-logical-function))
                (define list-box<%>
                  (interface
                    ()
@@ -1642,8 +1628,6 @@
                    set-string
                    find-string
                    get-string
-                   command
-                   get-label
                    set-label
                    set-cursor
                    show
@@ -1657,11 +1641,10 @@
                    get-x
                    get-y
                    on-size
-                   horiz-margin
-                   on-subwindow-event
-                   accept-drop-files
-                   client->screen
-                   screen->client
+                   command
+                   get-label
+                   on-focus
+                   is-selected?
                    get-selections
                    get-selection
                    set-selection
@@ -1670,14 +1653,11 @@
                    set-first-visible-item
                    get-string-selection
                    set-string-selection
-                   on-focus
-                   is-selected?
                    focus
                    select
                    is-enabled?
                    get-top-level-window
                    get-first-visible-item
-                   get-low-level-window
                    on-subwindow-char
                    get-plain-label
                    stretchable-width
@@ -1688,7 +1668,12 @@
                    on-move
                    has-focus?
                    get-cursor
-                   get-number))
+                   get-number
+                   horiz-margin
+                   on-subwindow-event
+                   accept-drop-files
+                   client->screen
+                   screen->client))
                (define keymap<%>
                  (interface
                    ()
@@ -1717,8 +1702,6 @@
                    set-x
                    get-x
                    get-y
-                   set-time-stamp
-                   get-time-stamp
                    set-alt-down
                    get-alt-down
                    set-meta-down
@@ -1728,7 +1711,9 @@
                    set-shift-down
                    get-shift-down
                    set-key-code
-                   get-key-code))
+                   get-key-code
+                   set-time-stamp
+                   get-time-stamp))
                (define image-snip<%>
                  (interface
                    ()
@@ -1759,14 +1744,14 @@
                    on-char
                    do-edit-operation
                    get-filename
-                   adjust-cursor
-                   size-cache-invalid
                    get-filetype
                    set-snipclass
                    get-snipclass
                    release-from-owner
                    partial-offset
                    find-scroll-step
+                   adjust-cursor
+                   size-cache-invalid
                    get-num-scroll-steps
                    get-scroll-step-offset
                    set-bitmap
@@ -1784,7 +1769,6 @@
                  (interface
                    ()
                    on-drop-file
-                   get-label
                    set-label
                    set-cursor
                    show
@@ -1798,16 +1782,7 @@
                    get-x
                    get-y
                    on-size
-                   horiz-margin
-                   get-children
-                   change-children
-                   place-children
-                   delete-child
-                   on-subwindow-event
-                   accept-drop-files
-                   client->screen
-                   screen->client
-                   get-client-size
+                   get-label
                    on-focus
                    set-label-position
                    get-label-position
@@ -1815,12 +1790,12 @@
                    get-control-font
                    set-label-font
                    get-label-font
+                   get-client-size
                    focus
                    is-enabled?
                    border
                    get-alignment
                    get-top-level-window
-                   get-low-level-window
                    on-subwindow-char
                    get-plain-label
                    stretchable-width
@@ -1833,20 +1808,24 @@
                    add-child
                    on-move
                    has-focus?
-                   get-cursor))
+                   get-cursor
+                   horiz-margin
+                   get-children
+                   change-children
+                   container-size
+                   place-children
+                   delete-child
+                   on-subwindow-event
+                   accept-drop-files
+                   client->screen
+                   screen->client))
                (define horizontal-pane<%>
                  (interface
                    ()
                    get-parent
-                   horiz-margin
-                   get-children
-                   change-children
-                   place-children
-                   delete-child
                    border
                    get-alignment
                    get-top-level-window
-                   get-low-level-window
                    stretchable-width
                    stretchable-height
                    set-alignment
@@ -1854,15 +1833,21 @@
                    min-height
                    vert-margin
                    spacing
-                   add-child))
+                   add-child
+                   horiz-margin
+                   get-children
+                   change-children
+                   container-size
+                   place-children
+                   delete-child))
                (define gauge<%>
                  (interface
                    ()
                    on-drop-file
+                   set-range
+                   get-range
                    get-value
                    set-value
-                   command
-                   get-label
                    set-label
                    set-cursor
                    show
@@ -1876,19 +1861,13 @@
                    get-x
                    get-y
                    on-size
-                   horiz-margin
-                   on-subwindow-event
-                   accept-drop-files
-                   client->screen
-                   screen->client
-                   get-client-size
+                   command
+                   get-label
                    on-focus
-                   set-range
-                   get-range
+                   get-client-size
                    focus
                    is-enabled?
                    get-top-level-window
-                   get-low-level-window
                    on-subwindow-char
                    get-plain-label
                    stretchable-width
@@ -1898,12 +1877,16 @@
                    vert-margin
                    on-move
                    has-focus?
-                   get-cursor))
+                   get-cursor
+                   horiz-margin
+                   on-subwindow-event
+                   accept-drop-files
+                   client->screen
+                   screen->client))
                (define frame<%>
                  (interface
                    ()
                    on-drop-file
-                   get-label
                    set-label
                    iconize
                    set-icon
@@ -1924,19 +1907,7 @@
                    get-x
                    get-y
                    on-size
-                   get-children
-                   change-children
-                   place-children
-                   delete-child
-                   on-subwindow-event
-                   accept-drop-files
-                   client->screen
-                   screen->client
-                   get-eventspace
-                   get-menu-bar
-                   set-status-text
-                   create-status-line
-                   get-client-size
+                   get-label
                    resize
                    on-focus
                    set-label-position
@@ -1945,14 +1916,18 @@
                    get-control-font
                    set-label-font
                    get-label-font
+                   get-menu-bar
+                   set-status-text
+                   create-status-line
+                   get-client-size
                    focus
                    is-enabled?
                    border
                    get-alignment
                    get-top-level-window
                    get-edit-target-window
-                   get-low-level-window
                    get-edit-target-object
+                   get-eventspace
                    get-focus-window
                    get-focus-object
                    on-subwindow-char
@@ -1969,7 +1944,16 @@
                    on-move
                    has-focus?
                    get-cursor
-                   can-close?))
+                   can-close?
+                   get-children
+                   change-children
+                   container-size
+                   place-children
+                   delete-child
+                   on-subwindow-event
+                   accept-drop-files
+                   client->screen
+                   screen->client))
                (define font-list<%> (interface () find-or-create-font))
                (define font<%>
                  (interface
@@ -2038,6 +2022,12 @@
                    on-event
                    on-char
                    do-edit-operation
+                   border-visible?
+                   set-snipclass
+                   get-snipclass
+                   release-from-owner
+                   partial-offset
+                   find-scroll-step
                    adjust-cursor
                    size-cache-invalid
                    get-max-width
@@ -2048,12 +2038,6 @@
                    get-min-height
                    set-max-height
                    set-min-height
-                   border-visible?
-                   set-snipclass
-                   get-snipclass
-                   release-from-owner
-                   partial-offset
-                   find-scroll-step
                    get-num-scroll-steps
                    get-scroll-step-offset
                    show-border
@@ -2077,7 +2061,6 @@
                  (interface
                    ()
                    on-drop-file
-                   get-label
                    set-label
                    set-cursor
                    show
@@ -2091,15 +2074,7 @@
                    get-x
                    get-y
                    on-size
-                   horiz-margin
-                   on-subwindow-event
-                   accept-drop-files
-                   client->screen
-                   screen->client
-                   get-client-size
-                   allow-scroll-to-last
-                   scroll-with-bottom-base
-                   call-as-primary-owner
+                   get-label
                    on-focus
                    set-editor
                    get-editor
@@ -2111,10 +2086,13 @@
                    on-scroll
                    force-display-focus
                    warp-pointer
+                   get-client-size
+                   allow-scroll-to-last
+                   scroll-with-bottom-base
+                   call-as-primary-owner
                    focus
                    is-enabled?
                    get-top-level-window
-                   get-low-level-window
                    on-subwindow-char
                    min-client-width
                    min-client-height
@@ -2128,7 +2106,12 @@
                    vert-margin
                    on-move
                    has-focus?
-                   get-cursor))
+                   get-cursor
+                   horiz-margin
+                   on-subwindow-event
+                   accept-drop-files
+                   client->screen
+                   screen->client))
                (define editor-admin<%>
                  (interface
                    ()
@@ -2145,7 +2128,6 @@
                  (interface
                    ()
                    on-drop-file
-                   get-label
                    set-label
                    on-activate
                    on-close
@@ -2163,16 +2145,7 @@
                    get-x
                    get-y
                    on-size
-                   get-children
-                   change-children
-                   place-children
-                   delete-child
-                   on-subwindow-event
-                   accept-drop-files
-                   client->screen
-                   screen->client
-                   get-eventspace
-                   get-client-size
+                   get-label
                    resize
                    on-focus
                    set-label-position
@@ -2181,14 +2154,15 @@
                    get-control-font
                    set-label-font
                    get-label-font
+                   get-client-size
                    focus
                    is-enabled?
                    border
                    get-alignment
                    get-top-level-window
                    get-edit-target-window
-                   get-low-level-window
                    get-edit-target-object
+                   get-eventspace
                    get-focus-window
                    get-focus-object
                    on-subwindow-char
@@ -2203,15 +2177,24 @@
                    on-move
                    has-focus?
                    get-cursor
-                   can-close?))
+                   can-close?
+                   get-children
+                   change-children
+                   container-size
+                   place-children
+                   delete-child
+                   on-subwindow-event
+                   accept-drop-files
+                   client->screen
+                   screen->client))
                (define cursor<%> (interface () ok?))
                (define control-event<%>
                  (interface
                    ()
-                   set-time-stamp
-                   get-time-stamp
                    set-event-type
-                   get-event-type))
+                   get-event-type
+                   set-time-stamp
+                   get-time-stamp))
                (define color<%>
                  (interface () ok? set red copy-from green blue))
                (define clipboard-client<%>
@@ -2224,8 +2207,6 @@
                    clear
                    find-string
                    get-string
-                   command
-                   get-label
                    set-label
                    set-cursor
                    show
@@ -2239,21 +2220,17 @@
                    get-x
                    get-y
                    on-size
-                   horiz-margin
-                   on-subwindow-event
-                   accept-drop-files
-                   client->screen
-                   screen->client
+                   command
+                   get-label
+                   on-focus
                    get-selection
                    set-selection
                    get-client-size
                    get-string-selection
                    set-string-selection
-                   on-focus
                    focus
                    is-enabled?
                    get-top-level-window
-                   get-low-level-window
                    on-subwindow-char
                    get-plain-label
                    stretchable-width
@@ -2264,22 +2241,26 @@
                    on-move
                    has-focus?
                    get-cursor
-                   get-number))
+                   get-number
+                   horiz-margin
+                   on-subwindow-event
+                   accept-drop-files
+                   client->screen
+                   screen->client))
                (define checkable-menu-item<%>
                  (interface
                    ()
                    go
                    delete
-                   get-label
                    set-label
                    enable
                    get-parent
                    check
+                   get-label
                    set-help-string
                    is-enabled?
                    get-x-shortcut-prefix
                    set-x-shortcut-prefix
-                   get-low-level-window
                    get-plain-label
                    get-help-string
                    set-shortcut
@@ -2293,8 +2274,6 @@
                    on-drop-file
                    get-value
                    set-value
-                   command
-                   get-label
                    set-label
                    set-cursor
                    show
@@ -2308,17 +2287,13 @@
                    get-x
                    get-y
                    on-size
-                   horiz-margin
-                   on-subwindow-event
-                   accept-drop-files
-                   client->screen
-                   screen->client
-                   get-client-size
+                   command
+                   get-label
                    on-focus
+                   get-client-size
                    focus
                    is-enabled?
                    get-top-level-window
-                   get-low-level-window
                    on-subwindow-char
                    get-plain-label
                    stretchable-width
@@ -2328,7 +2303,12 @@
                    vert-margin
                    on-move
                    has-focus?
-                   get-cursor))
+                   get-cursor
+                   horiz-margin
+                   on-subwindow-event
+                   accept-drop-files
+                   client->screen
+                   screen->client))
                (define canvas-dc<%>
                  (interface
                    ()
@@ -2336,10 +2316,6 @@
                    get-text-extent
                    clear
                    get-size
-                   draw-rounded-rectangle
-                   destroy-clipping-region
-                   set-logical-function
-                   get-logical-function
                    get-pixel
                    set-pixel
                    end-drawing
@@ -2381,13 +2357,15 @@
                    get-background
                    get-background-mode
                    get-text-background
-                   get-text-foreground))
+                   get-text-foreground
+                   draw-rounded-rectangle
+                   destroy-clipping-region
+                   set-logical-function
+                   get-logical-function))
                (define button<%>
                  (interface
                    ()
                    on-drop-file
-                   command
-                   get-label
                    set-label
                    set-cursor
                    show
@@ -2401,17 +2379,13 @@
                    get-x
                    get-y
                    on-size
-                   horiz-margin
-                   on-subwindow-event
-                   accept-drop-files
-                   client->screen
-                   screen->client
-                   get-client-size
+                   command
+                   get-label
                    on-focus
+                   get-client-size
                    focus
                    is-enabled?
                    get-top-level-window
-                   get-low-level-window
                    on-subwindow-char
                    get-plain-label
                    stretchable-width
@@ -2421,7 +2395,12 @@
                    vert-margin
                    on-move
                    has-focus?
-                   get-cursor))
+                   get-cursor
+                   horiz-margin
+                   on-subwindow-event
+                   accept-drop-files
+                   client->screen
+                   screen->client))
                (define brush-list<%> (interface () find-or-create-brush))
                (define brush<%>
                  (interface
@@ -2459,12 +2438,6 @@
                    (timer<%>)
                    args
                    (sequence (apply super-init args))))
-               (define -text-snip%
-                 (class*
-                   text-snip%
-                   (text-snip<%>)
-                   args
-                   (sequence (apply super-init args))))
                (define -text-field%
                  (class*
                    text-field%
@@ -2493,6 +2466,12 @@
                  (class*
                    style-delta%
                    (style-delta<%>)
+                   args
+                   (sequence (apply super-init args))))
+               (define -string-snip%
+                 (class*
+                   string-snip%
+                   (string-snip<%>)
                    args
                    (sequence (apply super-init args))))
                (define -snip-class%

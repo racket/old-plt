@@ -50,6 +50,13 @@ STDMETHODIMP CTestControl::FloatTest(double n1, double n2, double *n3)
   return S_OK;
 }
 
+STDMETHODIMP CTestControl::UnsignedTest(unsigned n1, unsigned n2, unsigned *n3)
+{
+  *n3 = n2 - n1;
+
+  return S_OK;
+}
+
 STDMETHODIMP CTestControl::get_Numprop(long ndx,long *pVal) {
   *pVal = the_value;
   return S_OK;

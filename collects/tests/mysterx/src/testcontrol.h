@@ -105,6 +105,7 @@ END_MSG_MAP()
 // ITestControl
 public:
 	STDMETHOD(FloatTest)(double n1,double n2,/*[out,retval]*/double *n3);
+	STDMETHOD(UnsignedTest)(unsigned n1,unsigned n2,/*[out,retval]*/unsigned *n3);
 	STDMETHOD(ShortTest)(short int n1,short int n2,/*[out,retval]*/short int *n3);
 	STDMETHOD(StringTest)(BSTR s1,BSTR s2,/*[out,retval]*/BSTR *s3);
 	STDMETHOD(AddTest)(long n1,long *n2,/*[out,retval]*/long *n3);

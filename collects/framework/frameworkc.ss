@@ -1,5 +1,5 @@
 ;;
-;; $Id: frameworkc.ss,v 1.13 1999/07/16 05:11:06 robby Exp $
+;; $Id: frameworkc.ss,v 1.14 1999/07/28 19:00:06 robby Exp $
 ;;
 
 (compound-unit/sig (import [core:string : mzlib:string^]
@@ -13,7 +13,7 @@
   (link [application : framework:application^ ((require-relative-library "app.ss"))]
 	[version : framework:version^ ((require-relative-library "version.ss") core:string core:function)]
 	[exn : framework:exn^ ((require-relative-library "exn.ss"))]
-	[exit : framework:exit^ ((require-relative-library "exit.ss") preferences gui-utils)]
+	[exit : framework:exit^ ((require-relative-library "exit.ss") mred preferences gui-utils)]
 	[preferences : framework:preferences^
 		     ((require-relative-library "prefs.ss")
 		      mred

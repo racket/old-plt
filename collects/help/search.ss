@@ -210,6 +210,18 @@
   (define (doc-collections-changed)
     (set! doc-collection-date #f))
 
+  
+  ;; do-search : ((? -> ?)
+  ;;              ??
+  ;;              boolean
+  ;;              boolean
+  ;;              ??
+  ;;              ??
+  ;;              (?? -> ??)
+  ;;              (?? -> ??)
+  ;;              (?? ?? ?? ?? ?? ?? -> ??)
+  ;;              ->
+  ;;              (union string #f))
   (define (do-search given-find search-level regexp? exact? ckey maxxed-out
 		     add-doc-section add-kind-section add-choice)
     ; When new docs are installed, the directory's modification date changes:
@@ -284,7 +296,7 @@
 						    ckey)]
 				       [(text)
 					(found "index entries")
-					(add-choice "" name
+ 					(add-choice "" name
 						    "indexed content"
 						    doc
 						    desc

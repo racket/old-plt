@@ -281,7 +281,7 @@
 					  ;; Looks like the user needs to download some docs,
 					  ;;  rather than a generic file-not-found error.
 					  ;; Redirect to information about missing docs:
-					  (escape
+                                          (escape
 					   (lambda ()
 					     (global-defined-value 'missing-doc-name dest-doc)
 					     (global-defined-value 'missing-html-file dest-file)
@@ -458,12 +458,12 @@
 				  (when key-start
 				    (send editor change-style enbolden (+ key-start start) 
 					  (+ key-start start (string-length key))))
-				  (send editor set-clickback start end
+                                  (send editor set-clickback start end
 					(lambda (edit start end)
 					  ; We don't catch errors explicitly because the
 					  ;  page is always documentation, an on-url-click
 					  ;  will catch it.
-					  (send html-panel on-url-click
+                                          (send html-panel on-url-click
 						(lambda (url)
 						  (send results goto-url url #f))
 						(make-url

@@ -28,9 +28,11 @@
       (set! get-fixed-faces (lambda () ans))
       ans))
 
+  (define default-font-name (get-family-builtin-face 'modern))
+  
   (framework:preferences:set-default
    'drscheme:font-name
-   (get-family-builtin-face 'modern)
+   default-font-name
    string?)
 
   (framework:preferences:set-default
@@ -74,6 +76,11 @@
   (framework:preferences:add-panel
    "Font"
    (lambda (panel)
+     
+     (unless (member (framework:preferences:get 'drscheme:font-name)
+                     (get-fixed-faces))
+       (framework:preferences:set 'drscheme:font-name default-font-name))
+     
      (let* ([main (make-object vertical-panel% panel)]
 	    [options-panel (make-object horizontal-panel% main)]
 	    [size (make-object slider% "Font Size" 1 72 options-panel
@@ -85,13 +92,13 @@
 	     (case (system-type)
 	       [(windows macos)
 		(let ([choice
-		       (make-object choice% "Font Name"
-				    (get-fixed-faces)
-				    options-panel
-				    (lambda (font-name evt)
-				      (framework:preferences:set 
+                       (make-object choice% "Font Name"
+                                    (get-fixed-faces)
+                                    options-panel
+                                    (lambda (font-name evt)
+                                      (framework:preferences:set 
                                        'drscheme:font-name
-				       (send font-name get-string-selection))))])
+                                       (send font-name get-string-selection))))])
 		  (send choice set-string-selection
 			(framework:preferences:get 'drscheme:font-name))
 		  choice)]
@@ -105,7 +112,9 @@
 				   "Select Font Name"
 				   (get-fixed-faces))])
 		      (when choice
-			(framework:preferences:set 'drscheme:font-name (list-ref (get-fixed-faces) (car choice)))))))])]
+			(framework:preferences:set 
+                         'drscheme:font-name 
+                         (list-ref (get-fixed-faces) (car choice)))))))])]
 				      
 	    [text (make-object text%)]
 	    [ex-panel (make-object horizontal-panel% main)]

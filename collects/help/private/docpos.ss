@@ -57,7 +57,7 @@
       ("profj-intermediate" "ProfessorJ Intermediate Language" -9)
       ("profj-advanced" "ProfessorJ Advanced Language" -8)
       
-      ("tour" "A Brief Tour of DrScheme version 205" 0)
+      ("tour" "A Brief Tour of DrScheme version 206" 0)
       ("drscheme" "PLT DrScheme: Programming Environment Manual" 1)
       
       ("r5rs" "Revised^5 Report on the Algorithmic Language Scheme" 2)

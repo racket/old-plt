@@ -54,8 +54,49 @@
 
 (define s (open-output-string))
 (display deep-list s)
+(test 'ok 'display 'ok)
 
 (test #t 'equal? (equal? deep-list (read (open-input-string (get-output-string s)))))
 
-(report-errs)
+(define going? #t)
+(define (equal?-forever l1 l2)
+  (let ([t (thread (lambda () 
+		     (equal? l1 l2) ; runs forever; could run out of memory
+		     (set! going? #f)))])
+    (sleep 1)
+    (kill-thread t)
+    going?))
 
+
+(define l1 (cons 0 #f))
+(set-cdr! l1 l1)
+(define l2 (cons 0 #f))
+(set-cdr! l2 l2)
+(test #t 'equal?-forever (equal?-forever l1 l2))
+
+(define l1 (cons 0 #f))
+(set-car! l1 l1)
+(define l2 (cons 0 #f))
+(set-car! l2 l2)
+(test #t 'equal?-forever/memory (equal?-forever l1 l2))
+
+(define l1 (vector 0))
+(vector-set! l1 0 l1)
+(define l2 (vector 0))
+(vector-set! l2 0 l2)
+(test #t 'equal?-forever/vector (equal?-forever l1 l2))
+
+(define-struct a (b c))
+(define l1 (make-a 0 #f))
+(set-a-b! l1 l1)
+(define l2 (make-a 0 #f))
+(set-a-b! l2 l2)
+(test #t 'equal?-forever/struct (equal?-forever l1 l2))
+
+(define l1 (box 0))
+(set-box! l1 l1)
+(define l2 (box 0))
+(set-box! l2 l2)
+(test #t 'equal?-forever/struct (equal?-forever l1 l2))
+
+(report-errs)

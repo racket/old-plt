@@ -1,6 +1,6 @@
 
-To run all of the tests, run:
- > (load "PATHTOHEREall.ss")
+To run most of the tests, run:
+ > (load "PATHTOHERE/all.ss")
 where PATHTOHERE is the path to this directory.  
 
 Test failures may cause the test to stop before finishing, but most
@@ -20,19 +20,22 @@ don't worry about failures that look like this:
   ((path) (#f #t (#<|primitive:<=|> 11 39 11)))
 
 Additionally, test expand-defmacro by running:
- > (load "PATHTOHEREexpand.ss")
+ > (load "PATHTOHERE/expand.ss")
 
 Test compilation and writing/reading compiled code with:
- > (load "PATHTOHEREcompile.ss")
+ > (load "PATHTOHERE/compile.ss")
 
-Run the tests with no output except for the results with:
- > (load "PATHTOHEREquiet.ss")
+Test deep non-tail recursion with:
+ > (load "PATHTOHERE/deep.ss")
+
+Run the standard tests with no output except for the results with:
+ > (load "PATHTOHERE/quiet.ss")
 
 Run 3 copies of the test suite concurrently in separate threads:
- > (load "PATHTOHEREparallel.ss")
+ > (load "PATHTOHERE/parallel.ss")
 
 MzLib tests are run with:
- > (load "PATHTOHEREmzlib.ss")
+ > (load "PATHTOHERE/mzlib.ss")
 
 
 To run the test suite in MzRice, use these flags:
@@ -40,6 +43,6 @@ To run the test suite in MzRice, use these flags:
 
 
 Please report bugs using
-  http://www.cs.rice.edu/CS/PLT/Gnats/
+  http://www.cs.rice.edu/CS/PLT/Bugs/
 or (as a last resort) send mail to
   plt-bugs@rice.edu

@@ -138,19 +138,19 @@
 (define dispatchers
   (let ([dispatchers (make-thread-cell '() #t)])
     (case-lambda
-     [() dispatchers]
-     [(new) (set! dispatchers new) (rebuild-dispatcher-table)])))
+     [() (thread-cell-ref dispatchers)]
+     [(new) (thread-cell-set! dispatchers new) (rebuild-dispatcher-table)])))
 (define dispatcher-table (make-parameter #f))
 
 (provide command-marker)
 (define command-marker
   (let ([marker (make-thread-cell #f #t)])
     (case-lambda
-     [() marker]
+     [() (thread-cell-ref marker)]
      [(new)
-      (set! marker new)
+      (thread-cell-set! marker new)
       (command-marker-here-re
-       (and marker (regexp (string-append "^" (regexp-quote marker)))))
+       (and marker (regexp (string-append "^" (regexp-quote new)))))
       (rebuild-dispatcher-table)])))
 (define command-marker-here-re (make-parameter #f))
 

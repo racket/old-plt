@@ -181,11 +181,13 @@
  (cdr (forall ([a_cdr top])
               ((cons top a_cdr) -> a_cdr)))
  
- ; set-car!
+ ; b can't be twice in contra-variant position...
+ ;(set-car! (forall ([a top][b top][c top])
+ ;                  (cons (union a b) c) b -> void
  
- ; set-cdr!
+ ;(set-cdr! (forall ([a top][b top][c top])
+ ;                  (cons a (union b c)) b -> void
  
- ; ouch
  (caar (forall ([a_caar top])
                ((cons (cons a_caar top) top) -> a_caar)))
  (cdar (forall ([a_cdar top])
@@ -403,7 +405,8 @@
  
  (string-ref (string exact-integer -> char))
  
- ; string-set!
+ ; should inject string into the first arg
+ ;(string-set! (string exact-integer char -> void))
  
  (string=? (string string -> boolean))
  (string-ci=? (string string -> boolean))
@@ -433,7 +436,8 @@
  ; (string-copy (forall ([a string]) (a -> a))) works only if we don't have string-set!
  (string-copy (string -> string))
  
- ; string-fill!
+ ; should inject string into first arg
+ ;(string-fill! (string char -> void))
  
  
  ; 6.3.6 Vectors
@@ -454,14 +458,16 @@
  (vector-ref (forall ([a_vector-ref top])
                      ((vector a_vector-ref) exact-integer -> a_vector-ref)))
  
- ; vector-set!
+ ; should  inject third arg into first
+ ;(vector-set! (vector exact-integer top -> void))
  
  (vector->list (forall ([a_vector->list top])
                        ((vector a_vector->list) -> (listof a_vector->list))))
  (list->vector (forall ([a_list->vector top])
                        ((listof a_list->vector) -> (vector a_list->vector))))
  
- ; vector-fill!
+ ; second arg shoould flow into first
+ ;(vector-fill! (vector top -> void))
  
  
  ; 6.4 Control features

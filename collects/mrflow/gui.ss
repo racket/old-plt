@@ -414,7 +414,7 @@
                                         (send (get-definitions-text) change-style red-style
                                               start (+ start (syntax-span syntax-object)))
                                         (message-box "syntax exception"
-                                                     (format "syntax exception: ~a~nCheck the language level."
+                                                     (format "syntax exception: ~a"
                                                              message)
                                                      #f '(ok)))))]
                                  [else

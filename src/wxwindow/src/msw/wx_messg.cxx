@@ -82,13 +82,13 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int iconID,
 				     0, 0, 0, 0, cparent->handle, (HMENU)nid,
 				     wxhInstance, NULL);
     
-    SetBitmapDimensionEx(image->GetLabelBitmap(),
+    SetBitmapDimensionEx(image->GetLabelBitmap(1),
 			 image->GetWidth(),
 			 image->GetHeight(),
 			 NULL);
     SendMessage((HWND)static_item, WM_CHANGEBITMAP,
                   (WPARAM)0xFFFF,
-                  (LPARAM)image->GetLabelBitmap());
+                  (LPARAM)image->GetLabelBitmap(1));
   } else if (is_icon) {
     int nid;
     nid = NewId(this);
@@ -228,13 +228,13 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
   GetSize(&w, &h);
   rect.left = x; rect.top = y; rect.right = x + w; rect.bottom = y + h;
 
-  SetBitmapDimensionEx(bitmap->GetLabelBitmap(),
+  SetBitmapDimensionEx(bitmap->GetLabelBitmap(1),
 		       bitmap->GetWidth(),
 		       bitmap->GetHeight(),
 		       NULL);
   SendMessage((HWND)ms_handle, WM_CHANGEBITMAP,
 	      (WPARAM)0xFFFF /*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
-	      (LPARAM)bitmap->GetLabelBitmap());
+	      (LPARAM)bitmap->GetLabelBitmap(1));
   
   par = GetParent();
   InvalidateRect(par->GetHWND(), &rect, TRUE);

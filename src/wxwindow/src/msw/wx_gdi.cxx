@@ -1664,6 +1664,10 @@ wxBitmap::~wxBitmap(void)
     DeleteRegisteredGDIObject(label_bitmap);
   }
   label_bitmap = NULL;
+  if (button_label_bitmap) {
+    DeleteRegisteredGDIObject(button_label_bitmap);
+  }
+  button_label_bitmap = NULL;
   if (accounting) {
     GC_free_accounting_shadow(accounting);
     accounting = NULL;
@@ -1848,15 +1852,20 @@ wxBitmap *wxLoadBitmap(char *filename, wxColourMap **pal)
 
 /****************************************/
 
-HBITMAP wxBitmap::GetLabelBitmap()
+HBITMAP wxBitmap::GetLabelBitmap(Bool panel_bg)
 {
   wxBitmap *bm;
   wxMemoryDC *dc;
   DWORD v;
   wxColor *c;
 
-  if (label_bitmap)
-    return label_bitmap;
+  if (panel_bg) {
+    if (label_bitmap)
+      return label_bitmap;
+  } else {
+    if (button_label_bitmap)
+      return button_label_bitmap;
+  }
 
   if (!mask || (mask->GetWidth() != GetWidth())
       || (mask->GetHeight() != GetHeight()))
@@ -1870,8 +1879,11 @@ HBITMAP wxBitmap::GetLabelBitmap()
 
   dc = new wxMemoryDC(0);
   dc->SelectObject(bm);
-  v = GetSysColor(COLOR_BTNFACE);
-  c = new wxColour(GetRValue(v), GetGValue(v), GetBValue(v));
+  if (panel_bg) {
+    v = GetSysColor(COLOR_BTNFACE);
+    c = new wxColour(GetRValue(v), GetGValue(v), GetBValue(v));
+  } else
+    c = wxWHITE;
   dc->SetBackground(c);
   dc->Clear();
   dc->Blit(0, 0, GetWidth(), GetHeight(),
@@ -1880,11 +1892,14 @@ HBITMAP wxBitmap::GetLabelBitmap()
   dc->SelectObject(NULL);
 
   /* Take over ownership of label_bitmap: */
-  label_bitmap = bm->ms_bitmap;
+  if (panel_bg)
+    label_bitmap = bm->ms_bitmap;
+  else
+    button_label_bitmap = bm->ms_bitmap;
   bm->ms_bitmap = 0;
   DELETE_OBJ bm;
 
-  return label_bitmap;
+  return (panel_bg ? label_bitmap : button_label_bitmap);
 }
 
 void wxBitmap::ReleaseLabel()

@@ -77,13 +77,13 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title, wxBitmap *
 				   BITCHECK_FLAGS | WS_CLIPSIBLINGS,
 				   0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 				   wxhInstance, NULL);
-    SetBitmapDimensionEx(bitmap->GetLabelBitmap(),
+    SetBitmapDimensionEx(bitmap->GetLabelBitmap(0),
 			 bitmap->GetWidth(),
 			 bitmap->GetHeight(),
 			 NULL);
     SendMessage((HWND)wx_button,WM_CHANGEBITMAP,
 		(WPARAM)0xFFFF,
-		(LPARAM)bitmap->GetLabelBitmap());
+		(LPARAM)bitmap->GetLabelBitmap(0));
   } else {
     isFafa = FALSE;
     checkWidth = -1;
@@ -156,13 +156,13 @@ void wxCheckBox::SetLabel(wxBitmap *bitmap)
 
   checkWidth = bitmap->GetWidth() ;
   checkHeight = bitmap->GetHeight() ;
-  SetBitmapDimensionEx(bitmap->GetLabelBitmap(),
+  SetBitmapDimensionEx(bitmap->GetLabelBitmap(0),
 		       bitmap->GetWidth(),
 		       bitmap->GetHeight(),
 		       NULL);
   SendMessage((HWND)ms_handle,WM_CHANGEBITMAP,
 	      (WPARAM)0xFFFF,
-	      (LPARAM)bitmap->GetLabelBitmap());
+	      (LPARAM)bitmap->GetLabelBitmap(0));
 }
 
 void wxCheckBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFlags))

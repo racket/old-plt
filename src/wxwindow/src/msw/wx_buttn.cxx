@@ -82,13 +82,13 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function,
 			 FB_BITMAP | WS_CHILD | WS_CLIPSIBLINGS,
 			 0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 			 wxhInstance, NULL);
-    SetBitmapDimensionEx(bitmap->GetLabelBitmap(),
+    SetBitmapDimensionEx(bitmap->GetLabelBitmap(0),
 			 bitmap->GetWidth(),
 			 bitmap->GetHeight(),
 			 NULL);
     SendMessage((HWND)wx_button, WM_CHANGEBITMAP,
 		(WPARAM)0xFFFF,
-		(LPARAM)bitmap->GetLabelBitmap());
+		(LPARAM)bitmap->GetLabelBitmap(0));
   } else {
     wx_button =
       CreateWindowExW(0, L"wxBUTTON", wxWIDE_STRING(label), 
@@ -151,13 +151,13 @@ void wxButton::SetLabel(wxBitmap *bitmap)
   bm_label = bitmap;
   bm_label->selectedIntoDC++;
 
-  SetBitmapDimensionEx(bitmap->GetLabelBitmap(),
+  SetBitmapDimensionEx(bitmap->GetLabelBitmap(0),
 		       bitmap->GetWidth(),
 		       bitmap->GetHeight(),
 		       NULL);
   SendMessage((HWND)ms_handle,WM_CHANGEBITMAP,
 	      (WPARAM)0xFFFF/*((bitmap->GetHeight()<<8)+bitmap->GetWidth())*/,
-	      (LPARAM)bitmap->GetLabelBitmap());
+	      (LPARAM)bitmap->GetLabelBitmap(0));
 }
 
 char *wxButton::GetLabel(void)

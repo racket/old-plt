@@ -114,6 +114,7 @@ class wxBitmap: public wxObject
   wxBitmap *mask;
   HBITMAP ms_bitmap;
   HBITMAP label_bitmap; /* Gray background, drawn with mask */
+  HBITMAP button_label_bitmap; /* White background, drawn with mask */
   void *accounting;
   wxDC *selectedInto; // So bitmap knows whether it's been selected into
                       // a device context (for error checking)
@@ -156,7 +157,7 @@ class wxBitmap: public wxObject
   void *ChangeToDIBSection(Bool copy_old = FALSE);
   Bool IsDIB();
 
-  HBITMAP GetLabelBitmap();
+  HBITMAP GetLabelBitmap(Bool panel_bg);
   void ReleaseLabel();
 };
 

@@ -47,7 +47,8 @@
 				 (define mred:system-source-directory 
 				   ,(global-defined-value 'mred:system-source-directory))
 				 (invoke-open-unit ,((global-defined-value 'mred:make-invokable-unit))
-						 mred)))))
+						 mred))))
+	      new-eval)
 	    (lambda () (void)))))))
 
 (invoke-open-unit mred:debug@ mred:debug)
@@ -108,11 +109,17 @@
 (for-each (lambda (x)
 	    (let* ([ss-file (string-append x ".ss")]
 		   [zo-file (string-append x ".zo")]
-		   [file (if (and (file-exists? zo-file)
-				  (<= (file-modify-seconds ss-file)
-				      (file-modify-seconds zo-file)))
-			     zo-file
-			     ss-file)])
+		   [file (cond
+			  [(and (not (file-exists? ss-file))
+				(not (file-exists? zo-file)))
+			   (printf "system: cannot find: ~a or ~a. exiting.~n" ss-file zo-file)
+			   (wx:exit)]
+			  [(not (file-exists? ss-file)) zo-file]
+			  [(not (file-exists? zo-file)) ss-file]
+			  [(<= (file-modify-seconds ss-file)
+			       (file-modify-seconds zo-file))
+			   zo-file]
+			  [else ss-file])])
 	      (mred:debug:printf 'startup "Loading ~a..." file)
 	      (load/cd file)))
 	  (list "sig" "prefs" "exn" "containr"
@@ -154,7 +161,7 @@
 		  [exit : mred:exit^ (mred:exit@ debug)]
 		  [mode : mred:mode^ (mred:mode@ debug keymap)]
 		  [handler : mred:handler^ (mred:handler@ debug group frame finder (core file@))] 
-		  [keymap : mred:keymap^ (mred:keymap@ debug finder handler find-string scheme-paren)]
+		  [keymap : mred:keymap^ (mred:keymap@ debug preferences finder handler find-string scheme-paren)]
 		  [match-cache : mred:match-cache^ (mred:match-cache@ debug)]
 		  [scheme-paren : mred:scheme-paren^ (mred:scheme-paren@ debug paren)]
 		  [paren : mred:paren^ (mred:paren@ debug)]

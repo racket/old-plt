@@ -36,7 +36,7 @@
 				     link-tag)
 	     (make-exn:syntax string
 			      (current-continuation-marks)
-			      #f))
+			      #f))]
 	[(reader)
 	 (if link-tag
 	     (make-exn:zodiac-read

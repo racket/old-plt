@@ -185,10 +185,10 @@
    (lambda (p)
      (define (i v) (match:syntax-err p (format "illegal use of ~a" v)))
      (let parse-quasipattern ([p p])
-       (syntax-case p (unquote unquote-slicing)
+       (syntax-case p (unquote unquote-splicing ...)
 	 [(unquote x) `(,'unquote ,(:ucall parse-pattern (syntax x)))]
 	 [(unquote . _) (i "unquote")]
-	 [(unquote-splicing x) `(,'unquote-splicing (:ucall parse-pattern (syntax x)))]
+	 [(unquote-splicing x) `(,'unquote-splicing ,(:ucall parse-pattern (syntax x)))]
 	 [(unquote-splicing . _) (i "unquote-splicing")]
 	 [(p (... ...))
 	  `(,(parse-quasipattern (syntax p)) ...)]
@@ -199,7 +199,9 @@
 	  `(,(parse-quasipattern (syntax p)) ,(syntax-e (syntax ..k)))]
 	 [(i . rest)
 	  (identifier? (syntax i))
-	  `(,(syntax i) ,@(parse-quasipattern (syntax rest)))]
+	  `(,(syntax->datum (syntax i)) ,@(parse-quasipattern (syntax rest)))]
+         [(qp . rest)
+	  `(,(parse-quasipattern (syntax qp)) ,@(parse-quasipattern (syntax rest)))]
 	 [_else
 	  (let ([s (syntax-e p)])
 	    (cond

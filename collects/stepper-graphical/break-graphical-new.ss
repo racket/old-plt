@@ -81,11 +81,57 @@
             (send source highlight-range start-offset (+ finish-offset 1) debug-highlight-color #f))
           #f)))
   
+ (define (collapse-tree cons-tree)
+    (let loop ([tree cons-tree] [result null])
+      (cond 
+        [(pair? tree) (loop (cdr tree) (loop (car tree) result))]
+        [(null? tree) result]
+        [else (cons tree result)])))
+  
+  ;(equal? (collapse-tree (list 3 4 (list (list 5 6) (cons 7 8)) (list 9)))
+  ;        (list 9 8 7 6 5 4 3))
+  
   (define debugger%
     (class object% (drscheme-frame)
 
       (private [parsed #f]
-               [needs-update #t])
+               [needs-update #t]
+               [clear-highlight-thunks null]
+               
+               [show-var-values
+               [highlight-vars
+                (lambda (mark)
+                  (let* ([src (mark-source mark)]
+                         [highlight-thunk-tree
+                          (let recur ([src src])
+                            (cond ; we need a z:parsed iterator...
+                              [(z:varref? src)
+                               (let* ([start (z:location-offset (z:zodiac-start src))]
+                                      [finish (z:location-offset (z:zodiac-finish src))])
+                                 (send editor change-style var-style start finish)
+                                 (lambda ()
+                                   (send editor change-style standard-style start finish)))]
+                              [(z:app? src)
+                               (map recur (cons (z:app-fun src) (z:app-args src)))]
+                              [(z:struct-form? src)
+                               (if super-expr
+                                   (recur (z:struct-form-super-expr src))
+                                   null)]
+                              [(z:if-form? src)
+                               (map recur (list (z:if-form-test src)
+                                                (z:if-form-then src)
+                                                (z:if-form-else src)))]
+                              [(z:quote-form? src)
+                               null]
+                              [(z:begin-form? src)
+                               (map recur (z:begin-form-bodies src))]
+                              [(z:begin0-form? src)
+                               (map recur (z:begin0-form-bodies src))]
+                              [(z:let-values-form? src)
+                               (let loop ([bindings (apply append (z:let-form-bindings src))])
+                                 (
+                        
+)
       (public [set-zodiac!
                (lambda (new-parsed)
                  (if (z:parsed? new-parsed)
@@ -96,9 +142,12 @@
               [handle-breakpoint
                (lambda (frame-info-list semaphore)
                  (set! break-semaphore semaphore)
-                 (when needs-update
-                   (send defns-text clear)
-                   (send drscheme-frame drscheme:get/extend
+                 (if needs-update
+                     (begin
+                       (send defns-text clear)
+                       (send (ivar drscheme-frame definitions-text) copy-self-to defns-text))
+                     (for-each (lambda (x) (x)) clear-highlight-thunks))
+                 
                  (send frame show #t)
                  )]
                  
@@ -112,6 +161,11 @@
                [button-panel (make-object m:horizontal-panel% area-container)]
                [defns-canvas (make-object m:editor-canvas% area-container)]
                [defns-text (make-object f:text:basic%)]
+               [standard-style (send (send defns-text get-style-list) find-named-style "Standard")]
+               [var-style (let* ([style-list (send defns-text get-style-list)]
+                                 [underline-delta (make-object style-delta% 'change-underline #t)]
+                                 [underline-blue-delta (send underline-delta set-delta-foreground "blue")])
+                            (send style-list find-or-create-style standard-style underline-blue-delta))]
                [break-semaphore #f])
       
       (sequence (send button-panel stretchable-height #f)

@@ -23,8 +23,8 @@ _URL_ posting, _web clients_, _WWW_
 ==========================================================================
 
 Collection: net
-Files: _url.ss_, _urlr.ss_, _urls.ss_, _urlu.ss_
-To Load: (require-library "url.ss" "net")
+Files: _url.ss_, _url-net.ss_, _url-sig.ss_
+To Load: (require (lib "url.ss" "net"))
 
 ABSTRACT -------------------------------------------------------------
 
@@ -190,12 +190,18 @@ _web documents_
 
 EXAMPLE --------------------------------------------------------------
 
- (require-library "url.ss" "net")
+ (require (lib "url.ss" "net"))
  (define url:cs (string->url "http://www.cs.rice.edu/"))
  (define (test url)
    (call/input-url url get-pure-port display-pure-port))
  (test url:cs)
 
+UNITS ----------------------------------------------------------------
+
+The _url-sig.ss_ module exports the _net:url^_ signature which contains
+the names documented above. the _url-unit.ss_ module exports _url@_,
+a unit that imports nothing and exports the names in net:url^.
+ 
 ==========================================================================
 _URL viewing_
 ==========================================================================

@@ -16,10 +16,12 @@
   ;;       |  (if expr expr)
   ;;       |  (if expr expr expr)
   ;;       |  (let-values ([(var)] expr) expr)
+  ;;       |  (let-values ([(var ...)] expr) expr)
   ;;       |  (#%app expr ...)
   ;;       |  (#%datum . datum)
   ;;       |  (#%top . var)
   ;;       |  (begin expr ...)
+  ;;       |  (values expr ...)
   
   ;; **************************************************
   ;; TARGET LANGUAGE
@@ -82,6 +84,10 @@
         #'tst-expr)]
       [(let-values ([(var) rhs-expr]) body)
        (normalize ctxt #'(#%app (lambda (var) body) rhs-expr))]
+      [(let-values ([(vars ...) rhs-expr]) body)
+       (normalize ctxt #'(#%app call-with-values
+                                (lambda () rhs-expr)
+                                (lambda (vars ...) body)))]
       [(let-values . anything)
        (raise-syntax-error #f "Not all let-values-expressions supported" expr)]
       [(#%app expr-rator expr-rands ...)

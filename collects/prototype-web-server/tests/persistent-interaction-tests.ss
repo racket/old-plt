@@ -198,4 +198,25 @@
    (zero? (dispatch `(,second-key -1)))
    (= -7 (dispatch `(,third-key 0)))
    (zero? (dispatch `(,third-key 7)))))
+
+;; ****************************************
+;; ****************************************
+;; TESTS INVOLVING LETREC
+
+(module m07 "../persistent-interaction.ss"
+  (define (id x) x)
+  
+  (letrec ([even? (lambda (n)
+                    (or (zero? n)
+                        (odd? (sub1 n))))]
+           [odd? (lambda (n)
+                   (and (not (zero? n))
+                        (even? (sub1 n))))])
+    (even? (start-interaction id))))
+
+(require m07)
+(dispatch-start 0)
+(dispatch-start 16)
+(not (dispatch-start 1))
+(not (dispatch-start 7))
    

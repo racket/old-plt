@@ -3,6 +3,7 @@
    (require-for-syntax (lib "kerncase.ss" "syntax")
                        (lib "list.ss")
                        "labels.ss"
+                       "elim-letrec.ss"
                        "normalizer.ss"
                        "elim-call-cc.ss"
                        "defunctionalize.ss")
@@ -85,13 +86,17 @@
           (let ([new-defs (foldl
                            (lambda (first rest)
                              (append (defunctionalize-definition
-                                       (elim-call/cc-from-definition (normalize-definition first))
+                                       (elim-call/cc-from-definition
+                                        (normalize-definition
+                                         (elim-letrec-from-definition first)))
                                        (make-labeler first))
                                      rest))
                            '()
                            (syntax->list #'rev-defs))])
             (let-values ([(new-body-expr body-defs) (defunctionalize
-                                                      (elim-call/cc (normalize-term #'body-expr))
+                                                      (elim-call/cc
+                                                       (normalize-term
+                                                        (elim-letrec #'body-expr)))
                                                       (make-labeler #'body-expr))])
               #`(begin
                   #,@new-defs

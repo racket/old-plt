@@ -2,10 +2,12 @@
   (require-for-template mzscheme
                         (lib "serialize.ss")
                         (lib "etc.ss"))
-  (provide make-closure-definition-syntax)
+  (provide make-closure-definition-syntax) 
   
   (define myprint printf)
-  
+   
+  ;; borrowed this from Matthew's code
+  ;; creates the deserialize-info identifier
   (define (make-deserialize-name id)
 	(datum->syntax-object
 	 id

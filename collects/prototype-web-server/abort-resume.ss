@@ -1,5 +1,6 @@
 (module abort-resume mzscheme
-  (require "define-closure.ss")
+  (require "define-closure.ss"
+           (lib "serialize.ss"))
   (provide
 
    ;; AUXILLIARIES
@@ -7,6 +8,7 @@
    resume
    the-cont-key
    abort/cc
+   the-undef
    
    ;; "SERVLET" INTERFACE
    start-interaction
@@ -16,7 +18,7 @@
    dispatch-start
    dispatch
    )
-  
+    
   ;; **********************************************************************
   ;; **********************************************************************
   ;; AUXILLIARIES
@@ -49,6 +51,11 @@
        #'((let/cc abort-k
             (set-box! current-abort-continuation abort-k)
             (lambda () expr)))]))
+  
+  
+  ;; a serializable undefined value
+  (define-serializable-struct undef ())
+  (define the-undef (make-undef))
   
   ;; **********************************************************************
   ;; **********************************************************************

@@ -592,8 +592,9 @@ The _helper.ss_ module provides additional helper functions and syntax.
    argument is the starting expression; the last argument is a
    predicate to recognize ending expressions.  The function applies
    the reductions repeatedly until an ending expression os found, or
-   the reduction gets stuck. The result is the list of expressions
-   leading to the ending expression.
+   until the reduction gets stuck. (If the reduction produces multiple
+   results, an exception is raised.) The result is the list of
+   expressions leading to the ending expression.
 
 > unique-names? : ((listof symbol?) . -> . boolean?)
 

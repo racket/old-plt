@@ -37,7 +37,7 @@
 	      (regexp-match re:continue s offset))
 	  (let ([m (regexp-match-positions (string #\return #\linefeed) s offset)])
 	    (if m
-		(loop (+ offset (cdar m)))
+		(loop (cdar m))
 		(error 'validate-header "missing ending CRLF")))]
 	 [else (error 'validate-header "ill-formed header at ~s" 
 		      (substring s offset (string-length s)))]))))

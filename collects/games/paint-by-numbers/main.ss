@@ -9,7 +9,6 @@
 	  mred^)
 
   (define default-font (send the-font-list find-or-create-font 10 'roman 'normal 'normal #f))
-  (fw:preferences:set-default 'paint-by-numbers:font default-font (lambda (f) (is-a? f font%)))
   (fw:preferences:set-un/marshall 'paint-by-numbers:font
 				  (lambda (font)
 				    (list (send font get-point-size)
@@ -19,6 +18,7 @@
 					  (send font get-weight)
 					  (send font get-underlined)))
 				  (lambda (lst) (apply (ivar the-font-list find-or-create-font) lst)))
+  (fw:preferences:set-default 'paint-by-numbers:font default-font (lambda (f) (is-a? f font%)))
 				    
   (define problems (car all:problemss))
 

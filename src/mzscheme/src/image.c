@@ -303,7 +303,7 @@ static Scheme_Object *dump_image(char *filename)
     if (fd == -1) {
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
-		       scheme_intern_symbol("generic-failure"),
+		       scheme_false,
 		       "write-image-to-file: couldn't write file %s", 
 		       filename);
     } else {

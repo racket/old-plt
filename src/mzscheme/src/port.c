@@ -677,7 +677,7 @@ scheme_init_port (Scheme_Env *env)
     }
 
     REGISTER_SO(fail_err_symbol);
-    fail_err_symbol = scheme_intern_symbol("generic-failure");
+    fail_err_symbol = scheme_false;
   }
 
   scheme_add_global_constant("eof", scheme_eof, env);

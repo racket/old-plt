@@ -203,7 +203,7 @@ void scheme_init_file(Scheme_Env *env)
     init_file_symbol = scheme_intern_symbol("init-file");
     sys_dir_symbol = scheme_intern_symbol("sys-dir");
 
-    fail_err_symbol = scheme_intern_symbol("generic-failure");
+    fail_err_symbol = scheme_false;
     path_err_symbol = scheme_intern_symbol("ill-formed-path");
     exists_err_symbol = scheme_intern_symbol("already-exists");
 
@@ -2300,6 +2300,8 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
     return scheme_void;
   
   reason = "copy failed";
+  if (GetLastError() == ERROR_ALREADY_EXISTS)
+    pre_exists = 1;
 #endif
 #ifdef MAC_FILE_SYSTEM
   { 

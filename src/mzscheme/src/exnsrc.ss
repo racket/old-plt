@@ -47,7 +47,7 @@ strings are types/comments.
 		(closed [] "attempt to operate on a closed port")
 		(*user [] "user-defined input port returned a non-character from the character-getting procedure"))
 	  (filesystem [pathname "path" "file or directory pathname"
-				detail "symbol" "\\SymbolFirst{ill-formed-path}, \\SymbolFirst{already-exists}, \\SymbolFirst{wrong-version}, or \\SymbolFirst{generic-failure}, indicating the reason for the exception"] 
+				detail "symbol or false" "\\SymbolFirst{ill-formed-path}, \\SymbolFirst{already-exists}, or \\SymbolFirst{wrong-version}, indicating the reason for the exception (if available), or \\scm{\\#f}"] 
 		      "illegal pathname or error manipulating a filesystem object")
 	  (*tcp [] "TCP errors"))
      

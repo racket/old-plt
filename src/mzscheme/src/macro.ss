@@ -729,7 +729,7 @@
 	       (#%format "load/cd: cannot open a directory: ~s" n)
 	       (debug)
 	       n
-	       'generic-failure))
+	       #f))
 	     (#%if (#%not (#%string? base))
 		 (#%load n)
 		 (#%begin
@@ -741,7 +741,7 @@
 			  n (#%current-directory))
 			 (debug)
 			 base
-			 'generic-failure)))
+			 #f)))
 		   (#%let ([orig (#%current-directory)])
 		     (#%dynamic-wind
 		      (#%lambda () (#%current-directory base))
@@ -833,7 +833,7 @@
 					     who collection all-paths)
 				   (debug)
 				   collection
-				   'generic-failure))
+				   #f))
 				 (#%let ([dir (#%build-path (#%car paths) collection)])
 				    (#%if (#%directory-exists? dir)
 				       (#%let* ([cpath (#%apply #%build-path dir collection-path)])
@@ -850,7 +850,7 @@
 									   c (#%car l) p)
 								 (debug)
 								 nc
-								 'generic-failure)))))))
+								 #f)))))))
 				       (loop (#%cdr paths))))))))])
 	   
 	  (#%letrec ([core-load/use-compiled
@@ -941,7 +941,7 @@
 						    (#%format " in sub-collection: ~s" collection-path)))
 				    (debug)
 				    (#%apply #%build-path file collection-path)
-				    'generic-failure)))))]
+				    #f)))))]
 		     [require-library/proc
 		      (#%case-lambda
 		       [(file) (require-library/proc file "mzlib")]
@@ -967,7 +967,7 @@
 											(#%apply #%build-path collection collection-path) file c)
 									      (debug)
 									      p
-									      'generic-failure)))))
+									      #f)))))
 								   #%list))])
 						    (#%hash-table-put! table sym result)
 						    (#%apply #%values result))

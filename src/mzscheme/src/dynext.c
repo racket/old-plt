@@ -141,7 +141,7 @@ void scheme_init_dynamic_extension(Scheme_Env *env)
     REGISTER_SO(fail_err_symbol);
     REGISTER_SO(version_err_symbol);
 
-    fail_err_symbol = scheme_intern_symbol("generic-failure");
+    fail_err_symbol = scheme_false;
     version_err_symbol = scheme_intern_symbol("wrong-version");
   }
 

@@ -695,8 +695,6 @@
 	  (send m set-flags (remove 'handles-events (send m get-flags)))
 	  m))
       
-      (define re:one-line (regexp (format "^[^~a~a]*" #\newline #\return)))
-      
       (define first-gap 35)
       (define second-gap 15)
       (define line-space 8)
@@ -767,8 +765,7 @@
 	       [e (send i get-editor)]
                [one-line
                 (lambda (s)
-                  (let ([m (regexp-match re:one-line s)])
-                    (if m (car m) s)))]
+		  (regexp-replace* #rx"[ \r\n\t]+" s " "))]
 	       [snip (new line-snip% 
                           (from
                            (one-line (or (parse-iso-8859-1 (message-from m))

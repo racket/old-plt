@@ -1,3 +1,6 @@
+Version 205.3
+Changed syntax-local-get-shadower to add the current
+ module expansion context, if any
 
 Version 205.1
 Fixed transitivity of numerical comparison for mixed

@@ -1,20 +1,101 @@
 
-(module french-string-constants "string-constant-lang.ss"
- ; Note: http://www.linux-france.org/prj/jargonf/ peut etre utile... Les dictionnaires online
- ; anglais->francais sont tres pauvres en ce qui concerne le jargon technique, et l'academie
- ; francaise (http://www-rocq.inria.fr/qui/Philippe.Deschamp/RETIF/) a quelques longueures de
- ; retard. http://www.can.ibm.com/francais/dico/ peut aider aussi...
- ; http://www.dicofr.com/ permet les recherches a partir du mot anglais.
- ; http://www.francophonie.hachette-livre.fr/ est un dico standard de base
- ; http://zeus.inalf.fr/academie9.htm est le dico de l'academie (A-M pour l'instant seulement)
+; do not remove all these blank lines, I use them to make sure a translation 
+; in this file appears on the same line as in english-string-constants.ss
+
+
+
+; Note: http://www.linux-france.org/prj/jargonf/ peut etre utile... Les dictionnaires online
+; anglais->francais sont tres pauvres en ce qui concerne le jargon technique, et l'academie
+; francaise (http://www-rocq.inria.fr/qui/Philippe.Deschamp/RETIF/) a quelques longueures de
+; retard. http://www.can.ibm.com/francais/dico/ peut aider aussi...
+; http://www.dicofr.com/ permet les recherches a partir du mot anglais.
+; http://www.francophonie.hachette-livre.fr/ est un dico standard de base
+; http://zeus.inalf.fr/academie9.htm est le dico de l'academie (A-M pour l'instant seulement)
  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(module french-string-constants "string-constant-lang.ss"
  ;;; when translating this constant, substitue name of actual langauge for `English'
  (is-this-your-native-language "Le Français est-il votre langue maternelle ?")
 
- (interact-with-drscheme-in-language "Interagir avec DrScheme en Français")
- 
  (are-you-sure-you-want-to-switch-languages
   "Ceci va changer le language utilisé par l'interface graphique, ce qui va nécessiter un redémarrage de DrScheme. Etes-vous certain de vouloir continuer ?")
+ 
+ (interact-with-drscheme-in-language "Interagir avec DrScheme en Français")
  
  ;; these two should probably be the same in all languages excepet English.
  ;; they are the button labels (under macos and windows, respectively)
@@ -128,7 +209,7 @@
  (clear-anyway "Effacer quand même")
  
  ;; menu item title
- (log-definitions-and-interactions "Créer un enregistrement des définitions et interactions...")
+ (log-definitions-and-interactions "Enregistrer les définitions et interactions...")
  (stop-logging "Stopper l'enregistrement")
  (please-choose-a-log-directory "Sélectionnez un répertoire d'enregistrement")
  (logging-to "Enregistrer dans: ")
@@ -518,12 +599,11 @@
  (clear-current "Effacer celle-ci")
  (new-window "Nouvelle fenêtre")
  
- ;;; exiting and quitting are you sure dialog
- ;;; (exit is used on windows, quit on macos. go figure)
+ ;;; exiting and quitting ``are you sure'' dialog
+ ;;; exit is used on windows, quit on macos, in English. Other
+ ;;; languages probably use the same word on both platforms.
  (exit "Quitter")
  (quit "Quitter")
- ;;; in are-you-sure-format, either exit or quit is filled in (from above)
- ;;; based on the platform drscheme is running on.
  (are-you-sure-exit "Etes-vous certain de vouloir quitter ?")
  (are-you-sure-quit "Etes-vous certain de vouloir quitter ?")
  
@@ -534,22 +614,36 @@
  (autosave-details "Détails")
  (autosave-recover "Recouvrer")
  (autosave-unknown-filename "<<inconnu>>")
+  
+ ;; these are labels in a dialog that drscheme displays
+ ;; if you have leftover autosave files. to see the dialog,
+ ;; start up drscheme and modify (but don't save) a file
+ ;; (also, do this with an unsaved file). Wait for the autosave
+ ;; files to appear (typically 5 minutes). Kill DrScheme
+ ;; and restart it. You'll see the dialog
  (autosave-autosave-label: "Fichier auto-sauvegardé:")
  (autosave-original-label: "Fichier original:")
  (autosave-autosave-label "Fichier auto-sauvegardé")
  (autosave-original-label "Fichier original")
  (autosave-compare-files "Comparer les fichiers auto-sauvegardés")
- (autosave-show-autosave "Auto-sauvegarder un fichier")
+
+ (autosave-show-autosave "Auto-sauvegarder un fichier") ;; title of a window showing the autosave file
+ 
  (autosave-explanation "DrScheme a trouvé des fichiers auto-sauvegardés, qui peuvent contenir votre travail non-sauvegardé.")
- (autosave-recovered! "Recouvré !")
- (autosave-error-deleting "Erreur durant l'effacement de ~a\n\n~a")
- (autosave-are-you-sure-delete? "Etes-vous certain de vouloir effacer ~a?")
+ 
+ (autosave-recovered! "Recouvré !") ;; status of an autosave file
+ (autosave-deleted "Effacé")       ;; status of an autosave file
+
+ (autosave-error-deleting "Erreur durant l'effacement de ~a\n\n~a") ;; first is a filename, second is an error message from mz.
+ (autosave-are-you-sure-delete? "Etes-vous certain de vouloir effacer ~a?") ;; ~a is a filename
  (autosave-delete-button "Effacer")
- (autosave-delete-title "Effacer")
- (autosave-deleted "Effacé")
+ (autosave-delete-title "Effacer")  ;; title of a dialog asking for deletion confirmation
  (autosave-done "Fait")
+  
+ ;; appears in the file dialog
  (autosave-restore-to-where? "Sélectionnez un répertoire où sauvegarder le fichier auto-sauvegardé.")
  
+  
  ;;; file modified warning
  (file-has-been-modified
   "Ce fichier a été modifié depuis sa dernière sauvegarde. Voulez-vous écraser les modifications ?")
@@ -574,6 +668,7 @@
  (tool-error-phase1 "Erreur durant la phase 1 pour l'outil ~s; ~s")
  (tool-error-phase2 "Erreur durant la phase 2 oour l'outil ~s; ~s")
  
+  
  ;;; define popup menu
  (end-of-buffer-define "<< fin du tampon >>")
  (sort-by-name "Trier par nom")
@@ -733,6 +828,7 @@
  (decimal-notation-for-rationals "Utiliser la notation décimale pour les nombres rationnels")
  (please-select-a-language "Veuillez sélectionner un language")
 
+  
  ;;; languages
  (beginning-student "Etudiant niveau débutant")
  (beginning-one-line-summary "define, cond, structs, constantes, et primitives")
@@ -820,8 +916,6 @@
  (vc-connecting-version-server "Connexion au server de version de PLT en cours")
  (vc-network-timeout "Expiration du compte-à-rebours lors de la connexion réseau") 
  (vc-cannot-connect "Impossible de se connecter au serveur de version de PLT")
- ;(collections-not-installed "Les collections suivantes ne sont pas installées :")
- ;(collections-missing-version "Les collections suivantes ont un numéro de version incomplet ou manquant :")
  (vc-network-failure "Erreur réseau")
  (vc-old-binaries "Les fichiers binaires installés pour DrScheme (ou MzScheme) ne sont pas à jour")
  (vc-binary-information-format "Version binaire installée : ~a (itération ~a)")

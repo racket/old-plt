@@ -137,13 +137,13 @@
 	   [(eq? mtype 'p)
 	    (let* ([spack 
                     (begin
-                      (printf "list-of-pack:~a~n" list-of-pack)
+;                      (printf "list-of-pack:~a~n" list-of-pack)
                       (quicksort list-of-pack (lambda (p1 p2) (< (pack-val p1 x y) (pack-val p2 x y)))))]
                    [ptop
                     (begin
-                      (printf "spack:~a~n" spack)
+;                      (printf "spack:~a~n" spack)
                     (most-of (wleft p) spack))]
-		   [weight (begin (printf "ptop:~a~n" ptop)
+		   [weight (begin ;(printf "ptop:~a~n" ptop)
                              (* (pickup-value)
 			      (if (null? ptop)
 				  0
@@ -177,7 +177,8 @@
 	      (if (<= player-left 0)
 		  null
 		  (if (< (package-weight (car lop)) player-left)
-		      (cons (car lop) (most-of (- player-left (package-weight (car lop))) (cdr lop)))))))
+		      (cons (car lop) (most-of (- player-left (package-weight (car lop))) (cdr lop)))
+                      (most-of player-left (cdr lop))))))
 	
 	   (define (pack-val package x y)
 	     (* (dvw-value) (+ (abs (- x (package-x package))) (abs (- y (package-y package))))))

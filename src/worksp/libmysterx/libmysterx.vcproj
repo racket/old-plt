@@ -104,7 +104,7 @@
 				Outputs="..\..\..\collects\mysterx\private\compiled\native\win32\i386\mxmain.dll"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="htmlhelp.lib libmzgcxxxxxxx.lib libmzschxxxxxxx.lib mzdyn.obj .\mysc\Debug\mysc.lib"
+				AdditionalDependencies="htmlhelp.lib libmzgcxxxxxxx.lib libmzschxxxxxxx.lib mscoree.lib mzdyn.obj .\mysc\Debug\mysc.lib"
 				OutputFile="$(OutDir)\mxmain.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"

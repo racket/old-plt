@@ -13,10 +13,12 @@
 	   is-test-suite-submission?
 
 	   make-evaluator
+	   make-evaluator/submission
 	   evaluate-all
 	   evaluate-submission
 
 	   call-with-evaluator
+	   call-with-evaluator/submission
 	   reraise-exn-as-submission-problem
 	   current-run-status
 
@@ -133,8 +135,8 @@
 
   ;; Execution ----------------------------------------
 
-  (define (make-evaluator language teachpacks)
-    (let ([ns (make-namespace-with-mred 'empty)]
+  (define (make-evaluator language teachpacks program-port)
+    (let ([ns (make-namespace-with-mred)]
 	  [orig-ns (current-namespace)]
 	  [posn-module ((current-module-name-resolver) '(lib "posn.ss" "lang") #f #f)])
       (parameterize ([current-namespace ns]
@@ -143,20 +145,35 @@
 		     [current-inspector (make-inspector)])
 	(namespace-attach-module orig-ns posn-module)
 	(parameterize ([current-eventspace (make-eventspace)])
-	  (namespace-require `(lib ,(case language
-				      [(beginner) "htdp-beginner.ss"]
-				      [(beginner-abbr) "htdp-beginner-abbr.ss"]
-				      [(intermediate) "htdp-intermediate.ss"]
-				      [(intermediate-lambda) "htdp-intermediate-lambda.ss"]
-				      [(advanced) "htdp-advanced.ss"])
-				   "lang"))
-	  (for-each (lambda (tp)
-		      (namespace-require `(file ,tp)))
-		    teachpacks)
 	  (let ([ch (make-channel)]
 		[result-ch (make-channel)])
 	    (queue-callback
 	     (lambda ()
+	       ;; First read program and evaluate it as a module:
+	       (with-handlers ([void (lambda (exn) (channel-put result-ch (cons 'exn exn)))])
+		 (let ([prog-body
+			(parameterize ([read-case-sensitive #t]
+				       [read-decimal-as-inexact #f])
+			  (let loop ([l null])
+			    (let ([expr (read-syntax 'program program-port)])
+			      (if (eof-object? expr)
+				  (reverse l)
+				  (loop (cons expr l))))))])
+		   (eval `(module m (lib ,(case language
+					    [(beginner) "htdp-beginner.ss"]
+					    [(beginner-abbr) "htdp-beginner-abbr.ss"]
+					    [(intermediate) "htdp-intermediate.ss"]
+					    [(intermediate-lambda) "htdp-intermediate-lambda.ss"]
+					    [(advanced) "htdp-advanced.ss"])
+					 "lang")
+			    ,@(map (lambda (tp)
+				     `(,#'require (file ,tp)))
+				   teachpacks)
+			    ,@prog-body))
+		   (eval `(require m))
+		   (current-namespace (module->namespace 'm)))
+		 (channel-put result-ch 'ok))
+	       ;; Now wait for interaction expressions:
 	       (let loop ()
 		 (let ([expr (channel-get ch)])
 		   (unless (eof-object? expr)
@@ -167,12 +184,21 @@
 	       (let loop ()
 		 (channel-put result-ch '(exn . no-more-to-evaluate))
 		 (loop))))
-	    (lambda (expr)
-	      (channel-put ch expr)
-	      (let ([r (channel-get result-ch)])
-		(if (eq? (car r) 'exn)
-		    (raise (cdr r))
-		    (cdr r)))))))))
+	    (let ([r (channel-get result-ch)])
+	      (if (eq? r 'ok)
+		  ;; Initial program executed ok, so return an evaluator:
+		  (lambda (expr)
+		    (channel-put ch expr)
+		    (let ([r (channel-get result-ch)])
+		      (if (eq? (car r) 'exn)
+			  (raise (cdr r))
+			  (cdr r))))
+		  ;; Program didn't execute:
+		  (raise (cdr r)))))))))
+      
+  (define (make-evaluator/submission language teachpacks str)
+    (let-values ([(defs interacts) (unpack-submission str)])
+      (make-evaluator language teachpacks (open-input-text-editor defs))))
 
   (define (evaluate-all source port eval)
     (let loop ()
@@ -246,7 +272,7 @@
 	(unless ok?
 	  (error
 	   (format "instructor-supplied test ~a should have produced ~e, instead produced ~e"
-		   (format-history)
+		   (format-history test)
 		   result
 		   val)))
 	val)))
@@ -290,16 +316,20 @@
 	(pretty-print (value-converter v) p)
 	(regexp-replace #rx"\n$" (get-output-string p) ""))))
 
-  (define (call-with-evaluator lang teachpacks go)
+  (define (call-with-evaluator lang teachpacks program-port go)
     (parameterize ([error-value->string-handler (lambda (v s)
 						  (value-printer v))]
 		   [list-abbreviation-enabled (not (or (eq? lang 'beginner)
 						       (eq? lang 'beginner-abbr)))])
       (reraise-exn-as-submission-problem
        (lambda ()
-	 (let ([e (make-evaluator lang teachpacks)])
+	 (let ([e (make-evaluator lang teachpacks program-port)])
 	   (current-run-status "executing your code")
 	   (go e))))))
+  
+  (define (call-with-evaluator/submission lang teachpacks str go)
+    (let-values ([(defs interacts) (unpack-submission str)])
+      (call-with-evaluator lang teachpacks (open-input-text-editor defs) go)))
   
   )
 

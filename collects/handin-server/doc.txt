@@ -362,30 +362,45 @@ The _utils.ss_ module provides utilities helpful in implementing
   for the test expression, one for the expected result, and one for
   the equality predicate.
 
-> (is-test-suitef-submission? string) - returns #t if `string' can be
-  read as a test suite, #f otherwise.
+> (is-test-suite-submission? string) - returns #t if `string' can be
+  read as an old-style test suite, #f otherwise.
 
-> (make-evaluator language teachpack-paths) - returns a function of
-  one argument for evaluating expressions in the designated teaching
-  language, one of 'beginner, 'beginner-abbr, 'intermediate,
-  'intermediate-lambda, or 'advanced. The `teachpack-paths' list
-  contains paths to teachpacks to load in the evaluator.
 
-  The actual evaluation of expressions happens in a separate
+> (make-evaluator language teachpack-paths program-port) - returns a
+  function of one argument for evaluating expressions in the
+  designated teaching language, one of 'beginner, 'beginner-abbr,
+  'intermediate, 'intermediate-lambda, or 'advanced. The
+  `teachpack-paths' list contains paths to teachpacks to load in the
+  evaluator. The `program-port' is an input port that produces the
+  content of the definitions window; use `(open-input-string "")'
+  for an empty definitions window.
+
+  The actual evaluation of expressions happens in a newly created
   eventspace and namespace.
 
-> (call-with-evaluator language teachpack-paths proc) - calls `proc'
-  with an evaluator for the given language and teachpack paths. It
-  also sets the current error-value print handler to print values in a
-  way suitable for `lang', it initializes `current-run-status' with
+> (make-evaluator/submission language teachpack-paths str) - like
+  `make-evaluator', but the definitions content is supplied as a
+  submission string.
+
+> (call-with-evaluator language teachpack-paths program-port proc) -
+  calls `proc' with an evaluator for the given language, teachpack
+  paths, and initial definition content as supplied by a port. It also
+  sets the current error-value print handler to print values in a way
+  suitable for `lang', it initializes `current-run-status' with
   "executing your code", and it catches all exceptions to re-raise
   them in a form suitable as a submission error.
+
+> (call-with-evaluator/submission language teachpack-paths str proc) -
+   like `call-with-evaluator', but the definitions content is supplied
+   as a submission string.
+
 
 > (evaluate-all source input-port eval) - like `load' on an input
   port.
 
 > (evaluate-submission string eval) - like `load' on a non-test-suite
   submission string.
+
 
 > (check-proc eval expect-v compare-proc proc-name arg ...) - calls
   the function named `proc-name' using the evaluator `eval', giving it
@@ -397,10 +412,10 @@ The _utils.ss_ module provides utilities helpful in implementing
   phrased suitably for the handin client.
 
 > (check-defined eval name) - checks whether `name' is defined in the
-  evaluator `eval', and raises an error if not (suitably phrased for the
-  handin client).  If it is defined, its value is returned (warning: in
-  the beginner language level, procedure definitions are bound to syntax
-  objects).
+  evaluator `eval', and raises an error if not (suitably phrased for
+  the handin client).  If it is defined as non-syntax, its value is
+  returned. Warning: in the beginner language level, procedure
+  definitions are bound as syntax.
 
 > (look-for-tests text name n) - inspects the given text% object to
   determine whether it contains at least `n' tests for the function
@@ -409,6 +424,7 @@ The _utils.ss_ module provides utilities helpful in implementing
 > (user-construct eval name arg ...) - like `check-proc', but with no
   result checking. This function is often useful for calling a
   student-defined constructor.
+
 
 > test-history-enabled - parameter that controls how run-time errors
   are reported to the handin client. If the parameter's value is true,

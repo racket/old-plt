@@ -120,8 +120,7 @@
 	    (thread
 	     (lambda ()
 	       (current-namespace n)
-	       (let ([program (with-handlers ([void (lambda (x) "MzScheme")])
-				(global-defined-value 'program))])
+	       (let ([program (find-system-path 'exec-file)])
 		 (read-case-sensitive case-sensitive?)
 		 (compile-allow-set!-undefined allow-set!-undefined?)
 		 (compile-allow-cond-fallthrough (not no-auto-else?))

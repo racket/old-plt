@@ -301,6 +301,22 @@ static int run_from_cmd_line(int argc, char *_argv[],
 
     if (!strcmp("--help", argv[0]))
       argv[0] = "-h";
+    else if (!strcmp("--eval", argv[0]))
+      argv[0] = "-e";
+    else if (!strcmp("--load", argv[0]))
+      argv[0] = "-f";
+    else if (!strcmp("--load-cd", argv[0]))
+      argv[0] = "-d";
+    else if (!strcmp("--require", argv[0]))
+      argv[0] = "-t";
+    else if (!strcmp("--Load", argv[0]))
+      argv[0] = "-F";
+    else if (!strcmp("--Load-cd", argv[0]))
+      argv[0] = "-D";
+    else if (!strcmp("--Require", argv[0]))
+      argv[0] = "-T";
+    else if (!strcmp("--mzlib", argv[0]))
+      argv[0] = "-l";
     else if (!strcmp("--case-sens", argv[0]))
       argv[0] = "-g";
     else if (!strcmp("--esc-cont", argv[0]))
@@ -431,7 +447,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	    is_load[num_enl++] = 0;
 	  }
 	  break;
-	case 'I':
+	case 'T':
 	  while (argc > 1) {
 	    argv++;
 	    --argc;
@@ -635,17 +651,17 @@ static int run_from_cmd_line(int argc, char *_argv[],
 #  endif
 # endif
 	 " Startup file and expression switches:\n"
-	 "  -e <expr> : Evaluates <expr> after " PROGRAM " starts.\n"
-	 "  -f <file> : Loads <file> after " PROGRAM " starts.\n"
-	 "  -d <file> : Load/cds <file> after " PROGRAM " starts.\n"
-	 "  -i <file> : Requires <file> after " PROGRAM " starts.\n"
-	 "  -F : Loads all remaining arguments after " PROGRAM " starts.\n"
-	 "  -D : Load/cds all remaining arguments after " PROGRAM " starts.\n"
-	 "  -I : Requires all remaining arguments after " PROGRAM " starts.\n"
-	 "  -l <file> : Same as -e '(require (lib \"<file>\"))'.\n"
+	 "  -e <expr>, --eval <expr> : Evaluates <expr> after " PROGRAM " starts.\n"
+	 "  -f <file>, --load <file> : Loads <file> after " PROGRAM " starts.\n"
+	 "  -d <file>, --load-cd <file> : Load/cds <file> after " PROGRAM " starts.\n"
+	 "  -t <file>, --require <file> : Requires <file> after " PROGRAM " starts.\n"
+	 "  -F, --Load : Loads all remaining arguments after " PROGRAM " starts.\n"
+	 "  -D, --Load-cd : Load/cds all remaining arguments after " PROGRAM " starts.\n"
+	 "  -T, --Require : Requires all remaining arguments after " PROGRAM " starts.\n"
+	 "  -l <file>, --mzlib <file> : Same as -e '(require (lib \"<file>\"))'.\n"
 	 "  -L <file> <coll> : Same as -e '(require (lib \"<file>\" \"<coll>\"))'.\n"
 	 "  -r, --script : Script mode: use as last switch for scripts. Same as -fmv-.\n" 
-	 "  -t, --script-cd : Like -r, but also sets the directory. Same as -dmv-.\n"
+	 "  -i, --script-cd : Like -r, but also sets the directory. Same as -dmv-.\n"
 # ifdef CMDLINE_STDIO_FLAG
 	 "  -z, --stdio : Use stdio REPL. Same as -ve '(read-eval-print-loop)'.\n"
 # endif

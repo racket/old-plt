@@ -83,6 +83,7 @@ static Scheme_Object *rename_symbol;
 static Scheme_Object *all_except_symbol;
 static Scheme_Object *all_from_symbol;
 static Scheme_Object *all_from_except_symbol;
+static Scheme_Object *struct_symbol;
 
 static Scheme_Object *begin_stx;
 static Scheme_Object *define_values_stx;
@@ -322,11 +323,13 @@ void scheme_finish_kernel(Scheme_Env *env)
   REGISTER_SO(all_except_symbol);
   REGISTER_SO(all_from_symbol);
   REGISTER_SO(all_from_except_symbol);
+  REGISTER_SO(struct_symbol);
   prefix_symbol = scheme_intern_symbol("prefix");
   rename_symbol = scheme_intern_symbol("rename");
   all_except_symbol = scheme_intern_symbol("all-except");
   all_from_symbol = scheme_intern_symbol("all-from");
   all_from_except_symbol = scheme_intern_symbol("all-from-except");
+  struct_symbol = scheme_intern_symbol("struct");
 }
 
 void scheme_require_from_original_env(Scheme_Env *env, int syntax_only)
@@ -2116,7 +2119,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 					  scheme_false);
 		exns = SCHEME_STX_CDR(rest);
 		
-		/* Check all excclusions are identifiers: */
+		/* Check all exclusions are identifiers: */
 		for (el = exns; SCHEME_STX_PAIRP(el); el = SCHEME_STX_CDR(el)) {
 		  p = SCHEME_STX_CAR(el);
 		  if (!SCHEME_STX_SYMBOLP(p)) {
@@ -2127,6 +2130,51 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 		
 		reprovided = scheme_make_pair(scheme_make_pair(midx, scheme_make_pair(a, exns)), 
 					      reprovided);
+	      } else if (SAME_OBJ(struct_symbol, SCHEME_STX_VAL(fst))) {
+		/* (struct <id> (<id> ...)) */
+		int len, i;
+		Scheme_Object *base, *fields, *el, **names;
+		
+		len = scheme_stx_proper_list_length(rest);
+		if (len != 2) {
+		  if (len < 0)
+		    scheme_wrong_syntax("provide", e, form, "bad syntax (" IMPROPER_LIST_FORM ")");
+		  else
+		    scheme_wrong_syntax("provide", e, form, "bad syntax "
+					"(not a struct identifier followed by "
+					"a sequence of field identifiers)");
+		}
+		
+		base = SCHEME_STX_CAR(rest);
+		fields = SCHEME_STX_CDR(rest);
+		fields = SCHEME_STX_CAR(fields);
+		
+		if (!SCHEME_STX_SYM(base))
+		  scheme_wrong_syntax("provide", base, a,
+				      "bad syntax (struct name is not an identifier)");
+
+		/* Check all field names are identifiers: */
+		for (el = fields; SCHEME_STX_PAIRP(el); el = SCHEME_STX_CDR(el)) {
+		  p = SCHEME_STX_CAR(el);
+		  if (!SCHEME_STX_SYMBOLP(p)) {
+		    scheme_wrong_syntax("provide", p, a,
+					"bad syntax (field name is not an identifier)");
+		  }
+		}
+		if (!SCHEME_STX_NULLP(el))
+		  scheme_wrong_syntax("provide", fields, a,
+				      "bad syntax (" IMPROPER_LIST_FORM ")");
+		
+		base = SCHEME_STX_VAL(base);
+		fields = scheme_syntax_to_datum(fields, 0, NULL);
+
+		names = scheme_make_struct_names(base, fields, 0, &len);
+
+		for (i = 0; i < len; i++) {
+		  if (scheme_hash_get(provided, names[i]))
+		    scheme_wrong_syntax("provide", names[i], form, "identifier already provided");
+		  scheme_hash_set(provided, names[i], names[i]);
+		}
 	      } else {
 		scheme_wrong_syntax("provide", a, form, NULL);
 	      }

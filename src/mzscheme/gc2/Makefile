@@ -240,4 +240,4 @@ ctok: lex.yy.c
 	gcc -g -o ctok lex.yy.c
 
 lex.yy.c: ctok.lex
-	lex ctok.lex
+	flex ctok.lex

@@ -1,4 +1,4 @@
-; $Id$
+; $Id: pattern.ss,v 1.4 1997/07/21 15:51:43 shriram Exp $
 
 ; Uses of memq are okay, since they look up pattern var in kwd list
 
@@ -39,8 +39,7 @@
 		       `(lambda (e)
 			  (if (,z:list? e)
 			    (#%list (#%cons ',nestings
-				      (#%map (lambda (x)
-					       (,match-head x))
+				      (#%map ,match-head
 					(,expose-list e))))
 			    (esc #f)))))))
 	       ((pair? p)

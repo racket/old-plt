@@ -1,6 +1,6 @@
 ;;
 ;;  zodiac:scanner-code@
-;;  $Id: scanner.ss,v 1.7 1997/12/03 19:20:21 robby Exp $
+;;  $Id: scanner.ss,v 1.8 1998/03/05 18:30:41 mflatt Exp $
 ;;
 ;;  Zodiac Scanner  July 96.
 ;;  mwk, plt group, Rice university.
@@ -27,15 +27,6 @@
 	  (parm : plt:parameters^)
 	  zodiac:scanner-parameters^
 	  (report : zodiac:interface^))
-  
-  ;; reset some names.  will clean this up.
-  (define paren-relation scan:paren-relation)
-  (define def-init-loc default-initial-location)
-  (define def-first-col scan:def-first-col)
-  (define wspace-list scan:whitespace-list)
-  (define delim-sym-list scan:self-delim-symbols)
-  (define tab-list scan:tab-list)
-  (define newline-list scan:newline-list)
   
   ;;
   ;;  Insert elements into table of ascii chars (plus eof).
@@ -74,15 +65,8 @@
       (lambda (obj  st  fin)
 	(maker  (source)  st  fin  obj))))
   
-  (define z:symbol   (z:scalar  (lambda (so st fi obj)
-				  (zodiac:make-symbol so st fi obj obj '()))))
-  (define z:number   (z:scalar  zodiac:make-number))
-  (define z:string   (z:scalar  zodiac:make-string))
-  (define z:boolean  (z:scalar  zodiac:make-boolean))
-  (define z:char     (z:scalar  zodiac:make-char))
-  (define z:snip     (z:scalar  zodiac:make-external))
-  (define z:type-sym  (z:scalar  zodiac:make-type-symbol))
-  
+  ;;;;; Moved from here
+
   (define z:token
     (lambda  (tag  obj  st  fin)
       (make-token  (source)  st  fin  obj  tag)))
@@ -158,11 +142,24 @@
   (define snip-int     257)
   (define ascii-size   258)
   
-  (define open-list     (map car  paren-relation))
-  (define close-list    (map cadr paren-relation))
+  (define open-list     (map car  scan:paren-relation))
+  (define close-list    (map cadr scan:paren-relation))
   
   (define delim-list    (cons eof-int (cons snip-int scan:delim-list)))
   
+  ;;;;; Moved to here
+
+  (define z:symbol   (z:scalar  (lambda (so st fi obj)
+				  (zodiac:make-symbol so st fi obj obj '()))))
+  (define z:number   (z:scalar  zodiac:make-number))
+  (define z:string   (z:scalar  zodiac:make-string))
+  (define z:boolean  (z:scalar  zodiac:make-boolean))
+  (define z:char     (z:scalar  zodiac:make-char))
+  (define z:snip     (z:scalar  zodiac:make-external))
+  (define z:type-sym  (z:scalar  zodiac:make-type-symbol))
+
+ ;;;;;;;;;;;;;;;;
+
   ;; letters and octals are used in #\space and #\012.
   ;; digits are used in #3(.
   ;; (nothing to do with the chars allowed in symbols.)
@@ -247,9 +244,9 @@
   (define  scan
     (opt-lambda 
 	([port   (current-input-port)]
-	 [init-loc      def-init-loc]
+	 [init-loc      default-initial-location]
 	 [skip-script?  #t]
-	 [first-col     def-first-col]
+	 [first-col     scan:def-first-col]
 	 [param         (current-parameterization)])
       
       
@@ -305,7 +302,12 @@
 	   [digit?     
 	    (lambda ()
 	      (let ([tag  (vector-ref char-table int)])
-		(or  (eq? tag octal-tag)  (eq? tag digit-tag))))])
+		(or  (eq? tag octal-tag)  (eq? tag digit-tag))))]
+	   [fetch-char
+	      (if (procedure? port)
+		  port
+		  (lambda () (read-char port)))]
+	   [hash-char-list (list hash-char)])
 	
 	(letrec
 	    
@@ -314,12 +316,7 @@
 	    ;;   <newline> affects the following char,
 	    ;;   <tab> affects itself.
 	    
-	    ([fetch-char
-	      (if (procedure? port)
-		  port
-		  (lambda () (read-char port)))]                
-	     
-	     [get-char
+	    ([get-char
 	      (lambda ()
 		(set!  prev-line  line) 
 		(set!  prev-col   col)
@@ -584,8 +581,7 @@
 		    [else  (loop  nest)])))]
 	     
 	     [scan-primitive
-	      (let ([l  (list  hash-char)])
-		(lambda () (symbol-only  l)))]
+	      (lambda () (symbol-only  hash-char-list))]
 	     
 	     [scan-hash-other
 	      (lambda ()
@@ -630,8 +626,7 @@
 	     [scan-sym-num  (lambda () (sym-or-num   null))]
 	     [scan-symbol   (lambda () (symbol-only  null))]
 	     [scan-number
-	      (let ([l  (list  hash-char)])
-		(lambda () (number-only  l)))]
+	      (lambda () (number-only  hash-char-list))]
 	     
 	     [sym-or-num
 	      (lambda (text)
@@ -725,12 +720,12 @@
 	     )
 	  
 	  (fill  main-table  scan-symbol)
-	  (fill  main-table  scan-wspace   wspace-list)
+	  (fill  main-table  scan-wspace   scan:whitespace-list)
 	  (fill  main-table  scan-sym-num  ambig-list)
 	  (fill  main-table  scan-dot      dot-char)
 	  (fill  main-table  scan-open     open-list)
 	  (fill  main-table  scan-close    close-list)
-	  (fill  main-table  scan-delim-sym  delim-sym-list)
+	  (fill  main-table  scan-delim-sym scan:self-delim-symbols)
 	  (fill  main-table  scan-quote    quote-char)
 	  (fill  main-table  scan-quasi    quasi-char)
 	  (fill  main-table  scan-unquote  unquote-char)
@@ -755,9 +750,9 @@
 	  
 	  (fill  delim-table  #f)
 	  (fill  delim-table  delim-tag    delim-list)
-	  (fill  delim-table  space-tag    wspace-list)
-	  (fill  delim-table  tab-tag      tab-list)
-	  (fill  delim-table  newline-tag  newline-list)
+	  (fill  delim-table  space-tag    scan:whitespace-list)
+	  (fill  delim-table  tab-tag      scan:tab-list)
+	  (fill  delim-table  newline-tag  scan:newline-list)
 	  (fill  delim-table  open-tag     open-list)
 	  (fill  delim-table  eof-tag      eof-int)
 	  (fill  delim-table  snip-tag     snip-int)

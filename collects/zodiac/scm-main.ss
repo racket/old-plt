@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.149 1998/03/20 04:42:33 shriram Exp $
+; $Id: scm-main.ss,v 1.150 1998/04/21 02:59:55 robby Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1786,7 +1786,7 @@
 				     (string=? (car raw-cs) "mzlib")))
 			      (member raw-f mzscheme-libraries-provided))
 			  `(#%void)
-			  `(#%require-library ,(quote-form-expr f)
+			  `(#%require-library/proc ,(quote-form-expr f)
 			     ,@(map quote-form-expr cs)))
 			expr '(-1))
 		      env attributes vocab))))))
@@ -1832,7 +1832,7 @@
 				     (string=? (car raw-cs) "mzlib")))
 			      (member raw-f mzscheme-libraries-provided))
 			  `(#%void)
-			  `(#%require-relative-library ,(quote-form-expr f)
+			  `(#%require-relative-library/proc ,(quote-form-expr f)
 			     ,@(map quote-form-expr cs)))
 			expr '(-1))
 		      env attributes vocab))))))

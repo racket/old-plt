@@ -1722,8 +1722,7 @@ extern GC_bool GC_print_stats;	/* Produce at least some logging output	*/
 				/* Set from environment variable.	*/
 
 #ifndef NO_DEBUGGING
-/* PLTSCHEME: GC_API */
-GC_API GC_bool GC_dump_regularly;  /* Generate regular debugging dumps. */
+GC_bool GC_dump_regularly;  /* Generate regular debugging dumps. */
 # define COND_DUMP if (GC_dump_regularly) GC_dump();
 #else
 # define COND_DUMP
@@ -1805,7 +1804,8 @@ void GC_print_hblkfreelist GC_PROTO((void));
 void GC_print_heap_sects GC_PROTO((void));
 void GC_print_static_roots GC_PROTO((void));
 void GC_print_finalization_stats GC_PROTO((void));
-void GC_dump GC_PROTO((void));
+/* PLTSCHEME: GC_API */
+GC_API void GC_dump GC_PROTO((void));
 
 #ifdef KEEP_BACK_PTRS
    void GC_store_back_pointer(ptr_t source, ptr_t dest);

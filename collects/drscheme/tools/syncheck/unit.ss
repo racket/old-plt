@@ -90,7 +90,7 @@
       (mred:set-preference-default 'mzprizm:syntax
 				   (let ([s (make-object wx:style-delta%)])
 				     (when (< (wx:display-depth) 8)
-				       (send s set-delta wx:const-change-bold 1))
+				       (send s set-delta wx:const-change-bold))
 				     (send s set-delta-foreground "BLACK")
 				     s)
 				   style-delta?)
@@ -108,7 +108,7 @@
 				   (let ([s (make-object wx:style-delta%)])
 				     (if (< (wx:display-depth) 8)
 					 (send s set-delta
-					   wx:const-change-underline 1)
+					   wx:const-change-underline #t)
 					 (send s set-delta-foreground
 					       "DARK GREEN"))
 				     s)

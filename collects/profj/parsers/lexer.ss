@@ -40,7 +40,8 @@
     continue    goto       package       synchronized))
 
   (define-tokens java-vals
-    (STRING_LIT CHAR_LIT INTEGER_LIT LONG_LIT FLOAT_LIT DOUBLE_LIT IDENTIFIER STRING_ERROR NUMBER_ERROR))
+    (STRING_LIT CHAR_LIT INTEGER_LIT LONG_LIT FLOAT_LIT DOUBLE_LIT 
+                IDENTIFIER STRING_ERROR NUMBER_ERROR HEX_LIT OCT_LIT HEXL_LIT OCTL_LIT))
   
   (define-tokens special-toks
     (INTERACTIONS_BOX TEST_SUITE OTHER_SPECIAL))
@@ -263,13 +264,13 @@
      ((@ DecimalNumeral IntegerTypeSuffix)
       (token-LONG_LIT (string->number (trim-string lexeme 0 1) 10)))
      (HexNumeral
-      (token-INTEGER_LIT (string->number (trim-string lexeme 2 0) 16)))
+      (token-HEX_LIT (string->number (trim-string lexeme 2 0) 16)))
      ((@ HexNumeral IntegerTypeSuffix)
-      (token-LONG_LIT (string->number (trim-string lexeme 2 1) 16)))
+      (token-HEXL_LIT (string->number (trim-string lexeme 2 1) 16)))
      (OctalNumeral
-      (token-INTEGER_LIT (string->number (trim-string lexeme 1 0) 8)))
+      (token-OCT_LIT (string->number (trim-string lexeme 1 0) 8)))
      ((@ OctalNumeral IntegerTypeSuffix)
-      (token-LONG_LIT (string->number (trim-string lexeme 1 1) 8)))
+      (token-OCTL_LIT (string->number (trim-string lexeme 1 1) 8)))
 
      ;; 3.9
      (Keyword (string->symbol lexeme))

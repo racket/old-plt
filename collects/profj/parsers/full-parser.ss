@@ -39,7 +39,11 @@
       ;; 19.3
       (Literal
        [(INTEGER_LIT) (make-literal 'int (build-src 1) $1)]
+       [(HEX_LIT) (make-literal 'int (build-src 1) $1)]
+       [(OCT_LIT) (make-literal 'int (build-src 1) $1)]
        [(LONG_LIT) (make-literal 'long (build-src 1) $1)]
+       [(HEXL_LIT) (make-literal 'long (build-src 1) $1)]
+       [(OCTL_LIT) (make-literal 'long (build-src 1) $1)]
        [(FLOAT_LIT) (make-literal 'float (build-src 1) $1)]
        [(DOUBLE_LIT) (make-literal 'double (build-src 1)  $1)]
        [(TRUE_LIT) (make-literal 'boolean (build-src 1) #t)]

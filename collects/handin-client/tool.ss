@@ -16,8 +16,18 @@
 
   (define uninstalled? #f)
 
-  (define server (#%info-lookup 'server))
-  (define port-no (#%info-lookup 'port-no))
+  (define server:port
+    (#%info-lookup 'server:port (lambda () (getenv "PLT_HANDIN_SERVER_PORT"))))
+  (define-values (server port-no)
+    (if server:port
+      (let ([m (regexp-match #rx"^(.+):([0-9]+)$" server:port)])
+        (unless m
+          (error 'handin-client
+                 "Bad configuration ~s, expecting \"server:port\""
+                 server:port))
+        (values (cadr m) (caddr m)))
+      (values #f #f)))
+
   (define handin-name (#%info-lookup 'name))
   (define this-collection (#%info-lookup 'collection))
   (define web-menu-name (#%info-lookup 'web-menu-name (lambda () #f)))
@@ -299,7 +309,7 @@
 				(lambda (b e)
 				  (do-change/add #t new-username b e))]
 			       [style '(border)]))
-       
+
        (define uninstall-box (new vertical-panel%
 				 [parent single]
 				 [alignment '(center center)]))
@@ -392,7 +402,7 @@
 					 exn))])
 		  (remember-user (send username get-value))
 		  (send status set-label "Making secure connection...")
-		  (let-values ([(h l) (connect)])						    
+		  (let-values ([(h l) (connect)])
 		    (send status set-label "Updating server...")
 		    (if new?
 			(submit-addition
@@ -441,7 +451,7 @@
 		editors)
       (write-editor-global-footer stream)
       (send base get-string)))
-  
+
   (add-test-suite-extension
    "Handin"
    handin-icon
@@ -452,10 +462,10 @@
   (define tool@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
-      
+
       (define phase1 void)
       (define phase2 void)
-      
+
       (define tool-button-label
 	(drscheme:unit:make-bitmap
 	 "Handin"
@@ -475,8 +485,8 @@
 		 (label (format "Manage ~a..." handin-name))
 		 (parent file-menu)
 		 (callback (lambda (m e) (manage-handin-account))))
-            (super-file-menu:between-open-and-revert file-menu))	  
-	  
+            (super-file-menu:between-open-and-revert file-menu))
+
 	  (rename (super-help-menu:after-about help-menu:after-about))
           (define/override (help-menu:after-about menu)
 	    (when web-menu-name
@@ -499,5 +509,6 @@
 		 [style '(deleted)]))
 	  (send (get-button-panel) change-children
 		(lambda (l) (cons button l)))))
-      
-      (drscheme:get/extend:extend-unit-frame make-new-unit-frame% #f))))
+
+      (when (and server port-no)
+        (drscheme:get/extend:extend-unit-frame make-new-unit-frame% #f)))))

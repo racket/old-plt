@@ -5,7 +5,6 @@
            (lib "list.ss")
            (lib "unitsig.ss")
            (lib "class.ss")
-           (lib "class100.ss")
            (prefix mred: (lib "mred.ss" "mred"))
            (prefix fw: (lib "framework.ss" "framework")))
   
@@ -60,25 +59,27 @@
       
       (define current-test-suite-frame #f)
       
+      (define test-suite-frame%
+	(class mred:frame%
+	  (override on-size on-close)
+	  [define on-size
+	    (lambda (w h)
+	      (fw:preferences:set 'drscheme:test-suite:frame-width w)
+	      (fw:preferences:set 'drscheme:test-suite:frame-height h))]
+	  [define on-close
+	   (lambda ()
+	     (set! current-test-suite-frame #f))]
+	  (super-make-object
+	   "Test Suites"
+	   #f
+	   (fw:preferences:get 'drscheme:test-suite:frame-width)
+	   (fw:preferences:get 'drscheme:test-suite:frame-height))))
+
       (define (ask-test-suite)
         (if current-test-suite-frame
             (send current-test-suite-frame show #t)
-            (let* ([frame% (class100 mred:frame% ()
-                             (override
-                               [on-size
-                                (lambda (w h)
-                                  (fw:preferences:set 'drscheme:test-suite:frame-width w)
-                                  (fw:preferences:set 'drscheme:test-suite:frame-height h))]
-                               [on-close
-                                (lambda ()
-                                  (set! current-test-suite-frame #f))])
-                             (sequence
-                               (super-init "Test Suites"
-                                           #f
-                                           (fw:preferences:get 'drscheme:test-suite:frame-width)
-                                           (fw:preferences:get 'drscheme:test-suite:frame-height))))]
-                   [drscheme-test-dir (collection-path "tests" "drscheme")]
-                   [frame (make-object frame%)]
+            (let* ([drscheme-test-dir (collection-path "tests" "drscheme")]
+                   [frame (make-object test-suite-frame%)]
                    [panel (make-object mred:vertical-panel% frame)]
                    [top-panel (make-object mred:vertical-panel% panel)]
                    [bottom-panel (make-object mred:horizontal-panel% panel)])
@@ -160,19 +161,18 @@
       
       (drscheme:get/extend:extend-unit-frame
        (lambda (super%)
-         (class100 super% args
+         (class super%
            (inherit get-button-panel)
-           (sequence
-             (apply super-init args)
-             (let* ([bitmap (make-object mred:bitmap% 
-                              (if (<= (mred:get-display-depth) 1)
-                                  (build-path (collection-path "icons") "bb-sm-bw.bmp")
-                                  (build-path (collection-path "icons") "bb-small.bmp"))
-                              'bmp)]
-                    [button (make-object mred:button%
-                              (if (send bitmap ok?) bitmap "Console")
-                              (get-button-panel)
-                              (lambda (button evt) (ask-test-suite)))])
-               (send (get-button-panel) change-children
-                     (lambda (l)
-                       (cons button (remq button l))))))))))))
+	   (super-instantiate ())
+	   (let* ([bitmap (make-object mred:bitmap% 
+			    (if (<= (mred:get-display-depth) 1)
+				(build-path (collection-path "icons") "bb-sm-bw.bmp")
+				(build-path (collection-path "icons") "bb-small.bmp"))
+			    'bmp)]
+		  [button (make-object mred:button%
+			    (if (send bitmap ok?) bitmap "Console")
+			    (get-button-panel)
+			    (lambda (button evt) (ask-test-suite)))])
+	     (send (get-button-panel) change-children
+		   (lambda (l)
+		     (cons button (remq button l)))))))))))

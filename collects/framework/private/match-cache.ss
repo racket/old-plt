@@ -83,13 +83,11 @@
 		  (set! max-count count))
 		(set! times (+ 1 times))
 		(set! sum (+ count sum))
-					;(printf "count: ~a ~a ~a~n" count max-count (exact->inexact (/ sum times)))
 		ans))]
 	  [define put
 	    (lambda (pos jump-to)
 	      (let ([pos (- pos offset)]
 		    [jump-to (if jump-to (- jump-to offset) #f)])
-					;(printf "put: ~a -> ~a~n" pos jump-to)
 		(splay pos)
 		(if tree
 		    (let ([tpos (node-pos tree)])
@@ -121,7 +119,6 @@
 				       #f))
 				 #f))
 			   #f)])
-					;(printf "get: ~a -> ~a~n" pos ans)
 		  ans)))]
 	  [define delete
 	    (lambda (pos)
@@ -138,7 +135,6 @@
 			  (set! tree (node-right tree)))))))]
 	  [define invalidate
 	    (lambda (pos)
-					;(printf "invalidate~n")
 	      (when tree	
 		(splay pos)
 		(if (<= pos (node-pos tree))
@@ -146,7 +142,6 @@
 		    (set-node-right! tree #f))))]
 	  [define forward-invalidate
 	    (lambda (pos adjust)
-					;(printf "forward-invalidate~n")
 	      (when tree
 		(let ([pos (- pos offset)])
 		  (splay pos)

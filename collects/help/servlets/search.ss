@@ -55,7 +55,8 @@
 	  (FORM ((ACTION "/servlets/results.ss")
 		 (TARGET "main")
 		 (METHOD "POST"))
-		(TABLE  
+		(TABLE ((CELLSPACING "0")
+			(CELLPADDING "0"))
 		 (TR 
 		  (TD 
 		   (TABLE 
@@ -72,19 +73,19 @@
 		      (INPUT ((TYPE "submit")
 			      (NAME "search")
 			      (VALUE "Search")))
-		      'nbsp 'nbsp
+		      'nbsp 
 		      (INPUT ((TYPE "submit")
 			      (NAME "lucky")
 			      (VALUE "Lucky!"))))
-		     (TD ((WIDTH "20")) 'nbsp))
+		     (TD 'nbsp 'nbsp))
 		    (TR 
 		     (TD ((ALIGN "right")) 
 			 (B  ,(color-with search-fg "Options:")))
-		     (TD ((COLSPAN "3"))
+		     (TD ((COLSPAN "2"))
 			 (SELECT ((NAME "search-type"))
 				 ,@(map make-option
 					search-types))
-			 'nbsp 'nbsp
+			 'nbsp 
 			 (SELECT ((NAME "match-type"))
 				 ,@(map make-option 
 					match-types))))
@@ -104,7 +105,7 @@
 				 "_top"))))))
 		  (TD
 		   (TABLE ((BGCOLOR ,search-bg)
-			   (CELLSPACING "0")
+			   (CELLSPACING "0") 
 			   (CELLPADDING "0"))
 			  (TR 
 			   (TD

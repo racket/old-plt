@@ -74,13 +74,13 @@ exit 1
 
 (require (lib "cmdline.ss"))
 (define setup-flags (make-parameter '()))
-(define (process-command-line)
+(define (process-command-line args)
   (define more-help
     (lambda (help)
       (display "This is the PLT installer.\nUsage: ")
       (display help)
       (exit 0)))
-  (command-line this-script (current-command-line-arguments)
+  (command-line this-script (list->vector args)
     (once-each
      (("-i")
       "Install mode.\n\
@@ -188,7 +188,7 @@ exit 1
   (when (regexp-match #rx"^finish.install($|\\.)" this-script)
     (set! install-mode? #t))
   (setup-environment)
-  (process-command-line)
+  (process-command-line (cdr args))
   (create-zos)
   (display "PLT installation done.\n")
   (cond [(not install-mode?)

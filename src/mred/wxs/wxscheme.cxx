@@ -1555,6 +1555,8 @@ public:
   Scheme_Object *sema;
 };
 
+extern "C" int objscheme_something_prepared;
+
 Scheme_Object *get_data_from_client(void *_gd, int, Scheme_Object **)
 {
   wxGetData *gd = (wxGetData *)_gd;
@@ -1570,7 +1572,7 @@ Scheme_Object *get_data_from_client(void *_gd, int, Scheme_Object **)
 
 char *wxsGetDataInEventspace(wxClipboardClient *clipOwner, char *format, long *length)
 {
-  if (clipOwner->context && (clipOwner->context != wxGetContextForFrame())) {
+  if (objscheme_something_prepared && clipOwner->context && (clipOwner->context != wxGetContextForFrame())) {
     Scheme_Object *cb, *sema;
     wxGetData *gd;
     

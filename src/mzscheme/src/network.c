@@ -595,6 +595,23 @@ static void TCP_INIT(char *name)
   atexit(tcp_cleanup);
 }
 
+long scheme_this_ip(void)
+{
+  struct GetAddrParamBlock ipBlock;
+  OSErr      anErr;
+ 
+  TCP_INIT("system-type");
+
+  ipBlock.csCode = ipctlGetAddr;
+  ipBlock.ioCRefNum = tcpDriverId;
+ 
+  anErr = mzPBControlSync((ParmBlkPtr)&ipBlock);
+  if (anErr == noErr)
+    return ipBlock.ourAddress;
+  else
+    return 0;
+}
+
 static int tcp_addr(const char *address, struct hostInfo *info)
 {
   int tries = 3;

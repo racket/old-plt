@@ -1564,6 +1564,7 @@ void scheme_reset_locale(void)
 
 #if defined(MACINTOSH_EVENTS) && !defined(OS_X)
 # include <Gestalt.h>
+extern long scheme_this_ip(void);
 static void machine_details(char *s)
 {
    OSErr err;
@@ -1582,7 +1583,7 @@ static void machine_details(char *s)
      /* remove trailing zeros: */
      i = strlen(sysvers);
      while ((i > 1) && (sysvers[i-1] == '0') && (sysvers[i-2] != '.')) {
-       sysvers[i] = 0;
+       sysvers[i-1] = 0;
        i--;
      }
    }
@@ -1597,7 +1598,13 @@ static void machine_details(char *s)
 	 CopyPascalStringToC(machine_name_pascal, machine_name);
    }
 
-   sprintf(s, "%s %s", sysvers, machine_name);
+   lng = scheme_this_ip();
+
+   sprintf(s, "%s %s %d.%d.%d.%d", sysvers, machine_name,
+	   ((unsigned char *)&lng)[0],
+	   ((unsigned char *)&lng)[1],
+	   ((unsigned char *)&lng)[2],
+	   ((unsigned char *)&lng)[3]);
 }
 #endif
 

@@ -35,9 +35,9 @@ static int last_was_front;
 # include <Sound.h>
 #endif
 
-#define FG_SLEEP_TIME 0
-#define BG_SLEEP_TIME 30
 #define DELAY_TIME 5
+#define FG_SLEEP_TIME 0
+#define BG_SLEEP_TIME DELAY_TIME
 
 static long resume_ticks;
 
@@ -389,7 +389,7 @@ static int TransferQueue(int all)
   if (TickCount() <= lastTime + delay_time)
     return 0;
   
-  while (WNE(&e, dispatched ? (60 * sleep_time) : 0)) {
+  while (WNE(&e, dispatched ? ((double)sleep_time/60.0) : 0)) {
     QueueTransferredEvent(&e);
   }
   

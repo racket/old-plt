@@ -2467,6 +2467,11 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
     int creating = 0;
 
     if (scheme_mac_path_to_spec(filename, &spec)) {
+      if (existsok == 1) {
+	/* In case it's there: */
+	FSpDelete(&spec);
+      }
+
       errno = FSpCreate(&spec, 'MrEd', 'TEXT', smSystemScript);
       if (errno == dupFNErr) {
 	if (!existsok) {

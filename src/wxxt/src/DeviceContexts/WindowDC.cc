@@ -1676,7 +1676,7 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
     fontinfo = NULL;
   else
 #endif
-    fontinfo = (XFontStruct *)current_font->GetInternalFont(scale_x, angle);
+    fontinfo = (XFontStruct *)current_font->GetInternalFont(scale_x, 0.0);
 
   dev_x = XLOG2DEV(x);
   dev_y = YLOG2DEV(y);
@@ -1775,10 +1775,53 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
 	else
 	  XDrawImageString(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, text + dt, textlen);
       } else {
-	if (use16bit)
-	  XDrawString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text + dt, textlen);
-	else
-	  XDrawString(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, text + dt, textlen);
+	if (angle != 0.0) {
+	  double offset, mx, my;
+	  double quad, pie = 3.14159;
+	  int the_x, the_y, i;
+	  XFontStruct *zfontinfo;
+	  
+	  zfontinfo = fontinfo;
+	  fontinfo = (XFontStruct *)current_font->GetInternalFont(scale_x, angle);
+	  XSetFont(DPY, TEXT_GC, fontinfo->fid);
+
+	  quad = fmod(angle, 2 * pie);
+	  if (quad < 0)
+	    quad += (2 * pie);
+	  
+	  mx = (float)cos(angle);
+	  my = (float)sin(angle);
+
+	  dev_y += (int)((double)ascent * mx);
+	  dev_x += (int)((double)ascent * my);
+
+	  /* FIXME: this isn't right for wide characters. */
+	  offset = 0.0;
+	  for (i = 0; i < textlen; i++) {
+	    int charno = (unsigned char)text[dt];
+	    int char_metric_offset = charno - fontinfo->min_char_or_byte2;
+	  
+	    the_x = (int)((double)dev_x + offset * mx);
+	    the_y = (int)((double)dev_y - offset * my);
+	    
+	    if (use16bit)
+	      XDrawString16(DPY, DRAWABLE, TEXT_GC, the_x, the_y, (XChar2b *)text + dt, 1);
+	    else
+	      XDrawString(DPY, DRAWABLE, TEXT_GC, the_x, the_y, text + dt, 1);
+	    dt++;
+	  	    
+	    offset += (double)(zfontinfo->per_char ?
+			       zfontinfo->per_char[char_metric_offset].width :
+			       zfontinfo->min_bounds.width);
+	  }
+
+	  XSetFont(DPY, TEXT_GC, zfontinfo->fid);
+	} else {
+	  if (use16bit)
+	    XDrawString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text + dt, textlen);
+	  else
+	    XDrawString(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, text + dt, textlen);
+	}
       }
     }
   CalcBoundingBox(x, y);

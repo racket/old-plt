@@ -11,7 +11,8 @@ wraps the load of the module.)
 (module eopl-tool mzscheme
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
-	   (lib "tool.ss" "drscheme"))
+	   (lib "tool.ss" "drscheme")
+           (lib "string-constant.ss" "string-constants"))
   
   (provide tool@)
 
@@ -22,9 +23,10 @@ wraps the load of the module.)
       (define language-base%
 	(class* object% (drscheme:language:simple-module-based-language<%>)
 	  (define/public (get-language-numbers)
-	    '(-400))
+	    '(-400 -400))
 	  (define/public (get-language-position)
-	    '("Essentials of Programming Languages (2nd ed.)"))
+	    (list (string-constant teaching-languages)
+                  "Essentials of Programming Languages (2nd ed.)"))
 	  (define/public (get-module)
 	    '(lib "eopl.ss" "eopl"))
 	  (define/public (get-one-line-summary)

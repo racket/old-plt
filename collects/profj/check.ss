@@ -286,10 +286,10 @@
             (check-e (lambda (exp env)
                        (check-expr exp env level type-recs current-class ctor? static?))))
       (cond
-        ((ifS? statement)
-         (check-e (ifS-cond statement) env)
-         (check-s (ifS-then statement) env)
-         (check-s (ifS-else statement) env))
+        ((ifS? statement) (check-ifS (check-e (ifS-cond statement) env)
+                                     (check-s (ifS-then statement) env)
+                                     (check-s (ifS-else statement) env)
+                                     (expr-src (ifS-cond statement))))
         ((throw? statement)
          (send type-recs add-req (make-req "Throwable" (list "java" "lang")))
          (check-e (throw-expr statement) env))
@@ -333,7 +333,23 @@
          (check-s (synchronized-stmt statement) env))
         ((statement-expression? statement)
          (check-e statement env))))))
-
+  
+  ;check-ifS: type type type src -> void
+  (define (check-ifS cond then else cond-src)
+    (unless (eq? 'boolean cond)
+      (raise-statement-error cond cond-src 'if if-cond-not-bool)))
+  
+  ;Statement error messages
+  
+  (define (if-cond-not-bool given)
+    (format "condition for if must be boolean, given ~a" given))
+  
+  ;raise-statement-error: ast src symbol ( 'a -> string) -> void
+  (define (raise-statement-error code src kind msg)
+    (cond
+      ((type? code) (raise-syntax-error kind (msg (type->ext-name code)) (make-so kind src)))
+      (else (error 'raise-statement-error "Given ~a" code)))) 
+                                        
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Expression checking functions

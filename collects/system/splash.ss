@@ -56,7 +56,7 @@
 		       [_ (ready-cursor)]
 		       [text-message (make-object wx:message% panel (format "Welcome to ~a" title))]
 		       [_ (ready-cursor)]
-		       [gauge (make-object wx:gauge% panel "" mred:splash-max)]
+		       [gauge (make-object wx:gauge% panel null mred:splash-max)]
 		       [text-msg-height (send text-message get-height)]
 		       [text-msg-width (send text-message get-width)]
 		       [msg-width (send message get-width)]

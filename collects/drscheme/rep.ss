@@ -27,6 +27,7 @@
   ((in-parameterization eval-thread-parameterization break-enabled) #f)
   ((in-parameterization eval-thread-parameterization print-struct) #t)
   (define primitive-eval (current-eval))
+  (define primitive-load (current-load))
 
   (error-display-handler
    (lambda (msg)
@@ -37,18 +38,48 @@
 	 (mred:message-box (format "Internal Error: ~a" msg)
 			   "Internal Error")))))
   
+  (define report-exception-error
+    (lambda (exn last-resort-edit)
+      (if (exn? exn)
+	  (let ([di (exn-debug-info exn)])
+	    (if (zodiac:zodiac? di)
+		(let* ([start (zodiac:zodiac-start di)]
+		       [finish (zodiac:zodiac-finish di)]
+		       [file (zodiac:location-file start)]
+		       [edit (if (is-a? file wx:media-edit%)
+				 file
+				 last-resort-edit)]
+		       [frame (send edit get-frame)]
+		       [interactions (ivar frame interactions-edit)])
+		  (send interactions report-error start finish
+			'dynamic (exn-message exn)))
+		(mred:message-box
+		 (format "~a" (exn-message exn))
+		 "Uncaught Exception")))
+	  (mred:message-box (format "~s" exn)
+			    "Uncaught Exception"))))
+
   (define build-parameterization
     (let ([orig-eventspace (wx:current-eventspace)])
-      (lambda (user-custodian)
+      (lambda (user-custodian last-resort-edit)
 	(let* ([p (make-parameterization eval-thread-parameterization)]
 	       [bottom-eventspace (parameterize ([current-custodian user-custodian])
 				    (wx:make-eventspace p))]
-	       [n (make-namespace 'no-constants 'wx 'hash-percent-syntax)])
+	       [n (make-namespace 'no-constants 'wx 'hash-percent-syntax)]
+	       [exception-handler
+		(lambda (exn)
+		  (with-parameterization system-parameterization
+		    (lambda ()
+		      (report-exception-error exn last-resort-edit)))
+		  ((error-escape-handler)))])
 	  (with-parameterization p
 	    (lambda ()
 	      (parameterization-branch-handler
 	       (lambda ()
-		 (make-parameterization p)))
+		 (let* ([new (make-parameterization p)])
+		   ((in-parameterization new current-exception-handler)
+		    exception-handler)
+		   new)))
 	      (require-library-use-compiled #f)
 	      (current-custodian user-custodian)
 	      (error-value->string-handler
@@ -87,7 +118,9 @@
 	      (error-print-width 250)))
 	  (drscheme:basis:add-basis n bottom-eventspace)
 	  p))))
-  
+
+  (define-struct process/zodiac-finish (error?))
+
   (define make-edit%
     (lambda (super%)
       (class super% args
@@ -150,13 +183,14 @@
 	       (let ([locked? (ivar interactions-edit locked?)])
 		 (send* interactions-edit
 		   (lock #f)
-		   (this-err-write message)
+		   (this-err-write (string-append message (string #\newline)))
 		   (lock locked?)))
 	       (when (is-a? file wx:media-edit%)
 		 (send (send file get-canvas) set-focus)
 		 (send file begin-edit-sequence)
 		 (send file set-position start finish)
-		 (send file scroll-to-position start #f (sub1 (send file last-position)))
+		 (send file scroll-to-position start
+		       #f (sub1 (send file last-position)))
 		 (send file end-edit-sequence))))])
 	(public
 	  [on-set-media void]
@@ -225,15 +259,15 @@
 	   (lambda (reader f annotate?)
 	     (let* ([cleanup
 		     (lambda (error?)
-		       (f error? void))])
-	       (with-handlers ([zodiac:interface:zodiac-exn?
-				(lambda (exn)
-				  (report-error (zodiac:interface:zodiac-exn-start-location exn)
-						(zodiac:interface:zodiac-exn-end-location exn)
-						(zodiac:interface:zodiac-exn-type exn)
-						(zodiac:interface:zodiac-exn-message exn))
-				  (cleanup #t))])
-		 (let loop ()
+		       (f (make-process/zodiac-finish error?) void))])
+	       (let loop ()
+		 (with-handlers ([zodiac:interface:zodiac-exn?
+				  (lambda (exn)
+				    (report-error (zodiac:interface:zodiac-exn-start-location exn)
+						  (zodiac:interface:zodiac-exn-end-location exn)
+						  (zodiac:interface:zodiac-exn-type exn)
+						  (zodiac:interface:zodiac-exn-message exn))
+				    (cleanup #t))])
 		   (let ([zodiac-read (reader)])
 		     (if (zodiac:eof? zodiac-read)
 			 (cleanup #f)
@@ -242,8 +276,8 @@
 				     zodiac:scheme-expand
 				     (expression: zodiac-read)
 				     (parameterization: 
-				      ;param
 				      (make-parameterization system-parameterization)
+				      ;param
 				      ))])
 			   (f (if annotate? (aries:annotate exp) exp)
 			      loop))))))))])
@@ -346,7 +380,7 @@
 		     (process-edit/zodiac edit
 					  (lambda (expr recur)
 					    (cond
-					      [(or (not expr) (eq? expr #t))
+					      [(process/zodiac-finish? expr)
 					       (semaphore-post evaluation-sucessful)]
 					      [else
 					       (send-scheme expr 
@@ -393,17 +427,7 @@
 		      (break-thread evaluation-thread)
 		      (set! ask-about-kill? #t)
 		      (mred:debug:printf 'console-threading "break: posting break.1.3")
-		      (semaphore-post break-semaphore)]))]
-	  [report-exception-error
-	   (lambda (exn)
-	     (if (exn? exn)
-		 (let ([di (exn-debug-info exn)])
-		   (report-error (zodiac:zodiac-start di)
-				 (zodiac:zodiac-finish di)
-				 'dynamic
-				 (exn-message exn)))
-		 (mred:message-box (format "~s" exn)
-				   "Uncaught Exception")))])
+		      (semaphore-post break-semaphore)]))])
 	
 	(public
 	  [send-scheme (opt-lambda (x [after void]) (void))]
@@ -428,7 +452,7 @@
 				      (lambda ()
 					(with-handlers ([(lambda (x) #t)
 							 (lambda (exn)
-							   (report-exception-error exn)
+							   (report-exception-error exn this)
 							   (k #t))])
 					  (with-parameterization param
 					    (lambda ()
@@ -449,6 +473,10 @@
 	   (lambda (filename)
 	     (with-parameterization system-parameterization
 	       (lambda ()
+		 (unless (and (file-exists? filename)
+			      (member 'read (file-or-directory-permissions filename)))
+		   (with-parameterization param
+		     (lambda () (primitive-load filename))))
 		 (let* ([p (open-input-file filename)]
 			[loc (zodiac:make-location 0 0 0 filename)]
 			[chars (begin0
@@ -467,10 +495,12 @@
 			     (let ([last (void)])
 			       (lambda (sexp recur)
 				 (cond
-				   [(or (eq? sexp #t) (not sexp)) last]
-				   [(zodiac:zodiac? sexp)
+				   [(process/zodiac-finish? sexp) last]
+				   [else
 				    (set! last
-					  (with-handlers ([(lambda (x) #t) report-exception-error])
+					  (with-handlers ([(lambda (x) #t)
+							   (lambda (exn)
+							     (report-exception-error exn this))])
 					    (with-parameterization param
 					      (lambda ()
 						(primitive-eval sexp)))))
@@ -493,7 +523,7 @@
 	       (collect-garbage)
 	       (lock #f) ;; locked if the thread was killed
 	       (init-evaluation-thread)
-	       (let ([p (build-parameterization user-custodian)])
+	       (let ([p (build-parameterization user-custodian this)])
 		 (with-parameterization p
 		   (lambda ()
 		     (current-custodian user-custodian)

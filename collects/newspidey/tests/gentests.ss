@@ -4,7 +4,7 @@
 (define *max-cases* 6)
 (define *max-formals* 5)
 (define *cookie-max* 10)
-(define *max-depth* 6)
+(define *max-depth* 7)
 
 (define (go)
   (gen-app '() 0))

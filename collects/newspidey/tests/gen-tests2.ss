@@ -2,8 +2,8 @@
 
 (define (l) (load "gen-tests2.ss"))
 
-(define *max-funs* 1600)
-(define *max-args* 1)
+(define *max-funs* 1200)
+(define *max-args* 9)
 (define *counter* 0)
 (define *arg* 0)
 
@@ -18,7 +18,8 @@
    (string-append "fun-" (number->string n))))
 
 (define (create-fun)
-  (let* ([numargs 1] ;[numargs (random *max-args*)]
+  (let* ([numargs 1]
+	 ;[numargs (random *max-args*)]
 	 [formals (build-list numargs
 			      (lambda _ (gensym)))]
 	 [prev-fun (fun-name *counter*)]

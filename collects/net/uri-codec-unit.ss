@@ -142,7 +142,7 @@
               (decoding-table (make-vector 256 0)))
           (for (i 0 256)
                (vector-set! encoding-table i (number->hex-string i))
-               (vector-set! decoding-table i (integer->char i)))
+               (vector-set! decoding-table i i))
           (for-each (match-lambda
                      [(orig . enc)
                       (vector-set! encoding-table

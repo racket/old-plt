@@ -40,7 +40,10 @@
 		    (unless input
 		      (set! input
 			    (zodiac:read (current-input-port)
-					 (zodiac:make-location 1 1 (file-position (current-output-port)) "stdin"))))
+					 (zodiac:make-location
+					  1 1
+					  (file-position (current-output-port))
+					  "stdin"))))
 		    (basis:process/zodiac
 		     input
 		     (lambda (sexp loop)

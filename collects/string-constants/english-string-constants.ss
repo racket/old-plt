@@ -222,7 +222,7 @@ please adhere to these guidelines:
   "The file does not have a full name because it has not yet been saved.")
  (cannot-open-because-dne "Cannot open ~a because it does not exist.")
  (interactions-out-of-sync
-  "WARNING: Interactions window is out of sync with the definitions window. Click Execute.")
+  "WARNING: Interactions window is out of sync with the definitions window. Click Run.")
  (file-is-not-saved "The file \"~a\" is not saved.")
  (save "Save")
  (please-choose-either "Please choose either \"~a\" or \"~a\"")
@@ -808,9 +808,9 @@ please adhere to these guidelines:
  
  ;;; scheme-menu
  (scheme-menu-name "S&cheme")
- (execute-menu-item-label "Execute")
+ (execute-menu-item-label "Run")
  (execute-menu-item-help-string "Restart the program in the definitions window")
- (break-menu-item-label "Break")
+ (break-menu-item-label "Stop")
  (break-menu-item-help-string "Break the current evaluation")
  (kill-menu-item-label "Kill")
  (kill-menu-item-help-string "Kill the current evaluation")
@@ -862,9 +862,9 @@ please adhere to these guidelines:
   "Create Servlet does not work with the ~a language.")
   
  ;;; buttons
- (execute-button-label "Execute") 
+ (execute-button-label "Run") 
  (save-button-label "Save")
- (break-button-label "Break")
+ (break-button-label "Stop")
  
  ;;; search help desk popup menu
  (search-help-desk-for "Search in Help Desk for \"~a\"")
@@ -958,7 +958,7 @@ please adhere to these guidelines:
  (teaching-languages "Teaching Languages")
  (experimental-languages "Experimental Languages")
  
- (module-language-one-line-summary "Execute creates a REPL in the context of the module, including the module's declared language")
+ (module-language-one-line-summary "Run creates a REPL in the context of the module, including the module's declared language")
   
 
  ;;; debug language
@@ -1003,6 +1003,12 @@ please adhere to these guidelines:
  (test-coverage-clear? "Changing the definitions window invalidates the test coverage information. Continue?")
  (test-coverage-clear-and-do-not-ask-again "Yes, and don't ask again")
  (test-coverage-ask? "Ask about clearing test coverage")
+  
+ ;; tracing
+ (tracing-enable-tracing "Enable tracing")
+ (tracing-show-tracing-window "Show Tracing")
+ (tracing-hide-tracing-window "Hide Tracing")
+ (tracing-tracing-nothing-to-show "No tracing results are available. Be sure your language supports tracing and it is enabled.")
 
  ;;; repl stuff
  (evaluation-terminated "Evaluation Terminated")
@@ -1197,11 +1203,5 @@ please adhere to these guidelines:
   (test-case-expected "Expected")
   ;; This string is the label of the actual result of the to test expression.
   (test-case-actual "Actual")
-
-  ;; Call tracing
-  (call-tracing-checkbox "Call tracing") ;; in language dialog
-  (call-tracing-show-window "Show Tracing") ;; menu item in view menu
-  (call-tracing-hide-window "Hide Tracing") ;; menu item in view menu
-  (call-tracing-nothing-to-show "No tracing results are available. Be sure your language supports tracing and it is enabled.")
 
   )

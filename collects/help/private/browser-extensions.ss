@@ -80,21 +80,19 @@
              (string-constant plt:hd:help-on-help)
              (string-constant plt:hd:help-on-help-details)
              this))))
-      (super-instantiate ())))
+      (super-new)))
 
   (define (browser-scroll-frame-mixin %)
     (class %
-      (rename [super-on-subwindow-char on-subwindow-char])
-
       (inherit get-hyper-panel)
 
       (define/override (on-subwindow-char w e)
 	(or (let ([txt (send (send (get-hyper-panel) get-canvas) get-editor)])
 	      (let ([km (send txt get-hyper-keymap)])
 		(send km handle-key-event txt e)))
-	    (super-on-subwindow-char w e)))
+	    (super on-subwindow-char w e)))
 
-      (super-instantiate ())))
+      (super-new)))
 
   ;; redirect urls to outside pages to external browsers (depending on the preferences settings)
   ;; also catches links into documentation that isn't installed yet and sends that
@@ -102,16 +100,14 @@
   (define (make-catch-url-frame-mixin hd-cookie)
     (define (catch-url-hyper-panel-mixin %)
       (class %
-        (rename [super-get-canvas% get-canvas%])
         (define/override (get-canvas%)
-          (catch-url-canvas-mixin (super-get-canvas%)))
-        (super-instantiate ())))
+          (catch-url-canvas-mixin (super get-canvas%)))
+        (super-new)))
     
     (define (catch-url-canvas-mixin %)
       (class %
         
-        (rename [super-get-editor% get-editor%])
-        (define/override (get-editor%) (hd-editor-mixin (super-get-editor%)))
+        (define/override (get-editor%) (hd-editor-mixin (super get-editor%)))
         
         (define/override (remap-url url)
           (let ([internal-url-test (hd-cookie-url-on-server-test hd-cookie)]
@@ -159,7 +155,7 @@
                             (make-missing-manual-url hd-cookie coll (cdr doc-pr) url-str))]))
                      url))]
               [else url])))
-        (super-instantiate ())))
+        (super-new)))
 
     ;; has-index-installed? : path -> boolean
     (define (has-index-installed? doc-coll)
@@ -179,7 +175,6 @@
       (mixin (editor<%>) ()
         (define show-sk? #t)
 
-        (rename [super-on-event on-event])
         (define/override (on-event evt)
           (cond
             [(and show-sk? 
@@ -201,13 +196,12 @@
                  (send (get-canvas) popup-menu menu
                        (+ (send evt get-x) 1)
                        (+ (send evt get-y) 1))))]
-            [else (super-on-event evt)]))
+            [else (super on-event evt)]))
              
         
         (inherit dc-location-to-editor-location get-admin)
-        (rename [super-on-paint on-paint])
         (define/override (on-paint before? dc left top right bottom dx dy draw-caret)
-          (super-on-paint before? dc left top right bottom dx dy draw-caret)
+          (super on-paint before? dc left top right bottom dx dy draw-caret)
           (when before?
             (when (and show-sk? (sk-bday?))
               (unless sk-bitmap
@@ -242,14 +236,13 @@
         (define/override (close-browser-status-line top-level-window) 
           (send  top-level-window change-status-to-search))
         
-        (super-instantiate ())))
+        (super-new)))
     
     (lambda (%)
       (class %
-        (rename [super-get-hyper-panel% get-hyper-panel%])
         (define/override (get-hyper-panel%)
-          (catch-url-hyper-panel-mixin (super-get-hyper-panel%)))
-        (super-instantiate ()))))
+          (catch-url-hyper-panel-mixin (super get-hyper-panel%)))
+        (super-new))))
 
   (define (is-download.plt-scheme.org/doc-url? s)
     (let ([url (string->url s)])
@@ -349,9 +342,8 @@
           (and ed
                (send ed print))))
       
-      (rename [super-file-menu:between-open-and-revert file-menu:between-open-and-revert])
       (define/override (file-menu:between-open-and-revert file-menu)
-        (super-file-menu:between-open-and-revert file-menu)
+        (super file-menu:between-open-and-revert file-menu)
         (instantiate menu:can-restore-menu-item% ()
           (parent file-menu)
           (callback (lambda (_1 _2) (open-url-callback)))
@@ -368,13 +360,12 @@
                    [hc (send hp get-canvas)])
               (send hc goto-url url #f)))))
               
-      (rename [super-on-size on-size])
       (define/override (on-size w h)
         (preferences:set 'drscheme:help-desk:frame-width w)
         (preferences:set 'drscheme:help-desk:frame-height h)
-        (super-on-size w h))
+        (super on-size w h))
 
-      (super-instantiate ()
+      (super-new
         (width (preferences:get 'drscheme:help-desk:frame-width))
         (height (preferences:get 'drscheme:help-desk:frame-height)))
       
@@ -392,9 +383,8 @@
       ;; or #f if nothing is to be put there.
       (define/public (get-language-name) #f)
       
-      (rename [super-make-root-area-container make-root-area-container])
       (define/override (make-root-area-container class parent)
-        (let* ([search-panel-parent (super-make-root-area-container vertical-panel% parent)]
+        (let* ([search-panel-parent (super make-root-area-container vertical-panel% parent)]
                [main-panel (make-object class search-panel-parent)])
           (set! search-panel (instantiate vertical-panel% ()
                                (parent search-panel-parent)
@@ -410,8 +400,7 @@
         (send search/status-panel active-child field-panel))
       
       
-      (super-instantiate ()
-        (label (string-constant help-desk)))
+      (super-new (label (string-constant help-desk)))
       
       (let ([hp (send this get-hyper-panel)])
         (send hp set-init-page (make-home-page-url (hd-cookie-port hd-cookie)))

@@ -1,5 +1,8 @@
 #|
 
+tracing todo:
+ - shorten lines
+
 ;; we don't use the built in debugging, use our own
 ;; version here that has no bug icon and only
 ;; annotates code that comes from editors.
@@ -9,17 +12,28 @@
 (module htdp-langs mzscheme
   (require (lib "string-constant.ss" "string-constants")
            (lib "framework.ss" "framework")
-           (lib "stacktrace.ss" "errortrace")
+           (prefix et: (lib "stacktrace.ss" "errortrace"))
+           (prefix tr: (lib "stacktrace.ss" "trace"))
            (lib "pretty.ss")
            (prefix pc: (lib "pconvert.ss"))
            (lib "unitsig.ss")
            (lib "class.ss")
            (lib "list.ss")
+           (lib "file.ss")
            (lib "tool.ss" "drscheme")
            (lib "mred.ss" "mred")
-           (lib "bday.ss" "framework" "private"))
+           (lib "bday.ss" "framework" "private")
+           (lib "moddep.ss" "syntax")
+           (lib "cache-image-snip.ss" "mrlib"))
   
   (provide tool@)
+  
+  (define sc-tracing (string-constant tracing-enable-tracing))
+  (define sc-show-tracing-window (string-constant tracing-show-tracing-window))
+  (define sc-hide-tracing-window (string-constant tracing-hide-tracing-window))
+  (define sc-tracing-nothing-to-show (string-constant tracing-tracing-nothing-to-show))
+  
+  (define ellipses-cutoff 200)
   
   (define o (current-output-port))
   (define (oprintf . args) (apply fprintf o args))
@@ -29,6 +43,12 @@
       (import drscheme:tool^)
 
       (define (phase1) (void))
+
+      (define drs-eventspace (current-eventspace))
+      
+      (define-struct (htdp-lang-settings drscheme:language:simple-settings) (tracing?))
+      
+      (define image-string "<image>")
       
       (define htdp-language<%>
         (interface ()
@@ -50,13 +70,38 @@
           (inherit get-sharing-printing get-abbreviate-cons-as-list)
           
           (define/override (default-settings)
-            (drscheme:language:make-simple-settings 
+            (make-htdp-lang-settings 
              #t
              'constructor
              'repeating-decimal
              (get-sharing-printing)
              #t
-             'none))
+             'none
+             #f))
+          
+          (define/override (default-settings? s)
+            (and (super default-settings? s)
+                 (not (htdp-lang-settings-tracing? s))))
+          
+          (define/override (marshall-settings x)
+            (list (super marshall-settings x)
+                  (htdp-lang-settings-tracing? x)))
+          
+          (define/override (unmarshall-settings x)
+            (if (and (pair? x)
+                     (pair? (cdr x))
+                     (null? (cddr x))
+                     (boolean? (cadr x)))
+                (let ([drs-settings (super unmarshall-settings (first x))])
+                  (make-htdp-lang-settings
+                   (drscheme:language:simple-settings-case-sensitive drs-settings)
+                   (drscheme:language:simple-settings-printing-style  drs-settings)
+                   (drscheme:language:simple-settings-fraction-style  drs-settings)
+                   (drscheme:language:simple-settings-show-sharing  drs-settings)
+                   (drscheme:language:simple-settings-insert-newlines  drs-settings)
+                   (drscheme:language:simple-settings-annotations drs-settings)
+                   (cadr x)))
+                (default-settings)))
           
           (inherit get-allow-sharing? get-use-function-output-syntax? 
                    get-accept-quasiquote? get-read-accept-dot)
@@ -70,7 +115,7 @@
                  (read-accept-quasiquote (get-accept-quasiquote?))
                  (namespace-attach-module drs-namespace 'drscheme-secrets)
                  (error-display-handler teaching-languages-error-display-handler)
-                 (current-eval (add-annotation (current-eval)))
+                 (current-eval (add-annotation (htdp-lang-settings-tracing? settings) (current-eval)))
                  (error-print-source-location #f)
                  (read-decimal-as-inexact #f)
                  (read-accept-dot (get-read-accept-dot)))))
@@ -79,36 +124,43 @@
 	  ;; set-printing-parameters : settings ( -> TST) -> TST
 	  ;; is implicitly exposed to the stepper.  watch out!  --  john
           (define/public (set-printing-parameters settings thunk)
-            (parameterize ([pc:booleans-as-true/false #t]
-                           [pc:abbreviate-cons-as-list (get-abbreviate-cons-as-list)]
-                           [pretty-print-print-hook
-                            (let ([oh (pretty-print-print-hook)])
-                              (lambda (val write? port)
-                                (cond
-                                  [(or (is-a? val image-snip%)
-                                       (is-a? val cache-image-snip%))
-                                   (display image-string port)]
-                                  [else (oh val write? port)])))]
-                           [pretty-print-size-hook
-                            (let ([oh (pretty-print-size-hook)])
-                              (lambda (val write? port)
-                                (cond
-                                  [(or (is-a? val image-snip%)
-                                       (is-a? val cache-image-snip%))
-                                   (string-length image-string)]
-                                  [else (oh val write? port)])))]
-                           [pretty-print-show-inexactness #t]
-                           [pretty-print-exact-as-decimal #t]
-                           [pc:use-named/undefined-handler
-                            (lambda (x)
-                              (and (get-use-function-output-syntax?)
-                                   (procedure? x)
-                                   (object-name x)))]
-                           [pc:named/undefined-handler
-                            (lambda (x)
-                              (string->symbol
-                               (format "function:~a" (object-name x))))])
-              (thunk)))
+            (let ([image-test
+                   (lambda (val port)
+                     (and (let ([rep (drscheme:rep:current-rep)])
+                            (and rep
+                                 (not (eq? port (send rep get-this-result)))
+                                 (not (eq? port (send rep get-this-out)))
+                                 (not (eq? port (send rep get-this-err)))))
+                          (or (is-a? val image-snip%)
+                              (is-a? val cache-image-snip%))))])
+              (parameterize ([pc:booleans-as-true/false #t]
+                             [pc:abbreviate-cons-as-list (get-abbreviate-cons-as-list)]
+                             [pretty-print-print-hook
+                              (let ([oh (pretty-print-print-hook)])
+                                (lambda (val write? port)
+                                  (cond
+                                    [(image-test val port)
+                                     (display image-string port)]
+                                    [else (oh val write? port)])))]
+                             [pretty-print-size-hook
+                              (let ([oh (pretty-print-size-hook)])
+                                (lambda (val write? port)
+                                  (cond
+                                    [(image-test val port)
+                                     (string-length image-string)]
+                                    [else (oh val write? port)])))]                                   
+                             [pretty-print-show-inexactness #t]
+                             [pretty-print-exact-as-decimal #t]
+                             [pc:use-named/undefined-handler
+                              (lambda (x)
+                                (and (get-use-function-output-syntax?)
+                                     (procedure? x)
+                                     (object-name x)))]
+                             [pc:named/undefined-handler
+                              (lambda (x)
+                                (string->symbol
+                                 (format "function:~a" (object-name x))))])
+                (thunk))))
           
           (define/override (render-value/format value settings port put-snip width)
             (set-printing-parameters
@@ -160,7 +212,11 @@
                [insert-newlines (make-object check-box%
                                   (string-constant use-pretty-printer-label)
                                   output-panel
-                                  void)])
+                                  void)]
+               [tracing (new check-box%
+                             (parent output-panel)
+                             (label sc-tracing)
+                             (callback void))])
           
           (when allow-sharing-config?
             (set! show-sharing
@@ -177,7 +233,7 @@
           
           (case-lambda
             [()
-             (drscheme:language:make-simple-settings
+             (make-htdp-lang-settings
               (send case-sensitive get-value)
               (case (send output-style get-selection)
                 [(0) 'constructor]
@@ -188,7 +244,8 @@
                 [(1) 'repeating-decimal])
               (and allow-sharing-config? (send show-sharing get-value))
               (send insert-newlines get-value)
-              'none)]
+              'none
+              (send tracing get-value))]
             [(settings)
              (send case-sensitive set-value (drscheme:language:simple-settings-case-sensitive settings))
              (send output-style set-selection
@@ -204,9 +261,9 @@
              (when allow-sharing-config?
                (send show-sharing set-value (drscheme:language:simple-settings-show-sharing settings)))
              (send insert-newlines set-value 
-                   (drscheme:language:simple-settings-insert-newlines settings))])))
+                   (drscheme:language:simple-settings-insert-newlines settings))
+             (send tracing set-value (htdp-lang-settings-tracing? settings))])))
       
-
       (define simple-htdp-language%
         (class* drscheme:language:simple-module-based-language% (htdp-language<%>)
           (init-field sharing-printing
@@ -238,7 +295,7 @@
           
           (inherit get-module get-transformer-module get-init-code
                    use-namespace-require/copy?)
-          (define/override (create-executable setting parent program-filename)
+          (define/override (create-executable setting parent program-filename teachpack-cache)
             (let ([executable-filename
 		   (drscheme:language:put-executable
 		    parent program-filename
@@ -246,55 +303,127 @@
 		    #t
 		    (string-constant save-a-mred-stand-alone-executable))])
               (when executable-filename
-                (drscheme:language:create-module-based-stand-alone-executable
-                 program-filename
-                 executable-filename
-                 (get-module)
-                 (get-transformer-module)
-                 (get-init-code setting)
-                 #t
-                 (use-namespace-require/copy?)))))
+                (let ([wrapper-filename (make-temporary-file "drs-htdp-lang-executable~a.ss")]
+                      [teachpack-specs
+                       (map (lambda (x) `(file ,x))
+                            (drscheme:teachpack:teachpack-cache-filenames teachpack-cache))])
+                  (call-with-output-file wrapper-filename
+                    (lambda (outp)
+                      (write
+                       `(module #%htdp-lang-language mzscheme
+                          (require (prefix #%htdp: ,(get-module)))
+                          (provide ,@(map (lambda (x) `(rename ,(symbol-append '#%htdp: x) ,x))
+                                          (get-export-names (get-module))))
+                          (require ,@teachpack-specs)
+                          ,@(map (lambda (x) `(provide ,@(get-export-names x)))
+                                 teachpack-specs))
+                       outp)
+                      (newline outp)
+                      (newline outp)
+                      (fprintf outp "(module #%htdp-lang-executable #%htdp-lang-language\n")
+                      (call-with-input-file program-filename
+                        (lambda (inp)
+                          (let loop ()
+                            (let ([c (read-char inp)])
+                              (unless (eof-object? c)
+                                (display c outp)
+                                (loop))))))
+                      (fprintf outp "\n)\n\n")
+                      (write `(require #%htdp-lang-executable) outp)
+                      (newline outp))
+                    'truncate)
+                  (drscheme:language:create-module-based-stand-alone-executable
+                   wrapper-filename
+                   executable-filename
+                   (get-module)
+                   (get-transformer-module)
+                   (get-init-code setting teachpack-cache)
+                   #t
+                   (use-namespace-require/copy?))
+                  (delete-file wrapper-filename)))))
+          
+          (define/private (get-export-names sexp)
+            (let* ([sym-name ((current-module-name-resolver) sexp #f #f)]
+                   [no-ext-name (substring (symbol->string sym-name)
+                                           1
+                                           (string-length (symbol->string sym-name)))]
+                   [full-name
+                    (cond
+                      [(file-exists? (string-append no-ext-name ".ss"))
+                       (string-append no-ext-name ".ss")]
+                      [(file-exists? (string-append no-ext-name ".scm"))
+                       (string-append no-ext-name ".scm")]
+                      [(file-exists? no-ext-name)
+                       no-ext-name]
+                      [else (error 'htdp-lang.ss "could not find language filename ~s" no-ext-name)])]
+                   [base-dir (let-values ([(base _1 _2) (split-path full-name)]) base)]
+                   [stx
+                    (call-with-input-file full-name
+                      (lambda (port)
+                        (read-syntax full-name port)))]
+                   [code
+                    (parameterize ([current-load-relative-directory base-dir]
+                                   [current-directory base-dir])
+                      (expand stx))]
+                   [find-name
+                    (lambda (p)
+                      (cond
+                        [(symbol? p) p]
+                        [(and (pair? p) (pair? (cdr p)))
+                         (cadr p)]
+                        [else (car p)]))])
+              (append
+               (map find-name (syntax-property code 'module-variable-provides))
+               (map find-name (syntax-property code 'module-syntax-provides)))))
 
+          (define/private (symbol-append x y)
+            (string->symbol
+             (string-append
+              (symbol->string x)
+              (symbol->string y))))
+          
           (inherit get-htdp-style-delta)
           (define/override (get-style-delta)
             (get-htdp-style-delta))
           
           (inherit get-reader set-printing-parameters)
+          
           (define/override (front-end/complete-program port settings teachpacks)
-            (let ([state 'init]
-                  ;; state : 'init => 'require => 'done
-                  [reader (get-reader)])
-              
-              (lambda ()
-                (case state
-                  [(init)
-                   (with-syntax ([(body-exp ...) 
-                                  (let loop ()
-                                    (let ([result (reader (object-name port) port)])
-                                      (if (eof-object? result)
-                                          null
-                                          (cons result (loop)))))]
-                                 [language-module (get-module)]
-                                 [(require-specs ...) 
-                                  (drscheme:teachpack:teachpack-cache-require-specs teachpacks)])
-                     (set! state 'require)
-                     (let ([mod (expand (syntax (module #%htdp language-module 
-                                                  (require require-specs ...)
-                                                  body-exp ...)))])
-                       (rewrite-module mod)))]
-                  [(require) 
-                   (set! state 'done)
-                   (syntax
-                    (let ([done-already? #f])
-                      (dynamic-wind
-                       void
-                       (lambda () (dynamic-require '#%htdp #f))
-                       (lambda () 
-                         (unless done-already?
-                           (set! done-already? #t)
-                           (current-namespace (module->namespace '#%htdp)))))))]
-                  [(done) eof]))))
-          (super-instantiate ())))
+             (let ([state 'init]
+                   ;; state : 'init => 'require => 'done
+                   [reader (get-reader)])
+               
+               (lambda ()
+                 (case state
+                   [(init)
+                    (with-syntax ([(body-exp ...) 
+                                   (let loop ()
+                                     (let ([result (reader (object-name port) port)])
+                                       (if (eof-object? result)
+                                           null
+                                           (cons result (loop)))))]
+                                  [language-module (get-module)]
+                                  [(require-specs ...) 
+                                   (drscheme:teachpack:teachpack-cache-require-specs teachpacks)])
+                      (set! state 'require)
+                      (let ([mod (expand (syntax (module #%htdp language-module 
+                                                   (require require-specs ...)
+                                                   body-exp ...)))])
+                        (rewrite-module mod)))]
+                   [(require) 
+                    (set! state 'done)
+                    (syntax
+                     (let ([done-already? #f])
+                       (dynamic-wind
+                        void
+                        (lambda () (dynamic-require '#%htdp #f))
+                        (lambda () 
+                          (unless done-already?
+                            (set! done-already? #t)
+                            (current-namespace (module->namespace '#%htdp)))))))]
+                   [(done) eof]))))
+
+          (super-new)))
 
       ;; rewrite-module : syntax -> syntax
       ;; rewrites te module to provide all definitions and 
@@ -426,13 +555,10 @@
       ;;    (string (union TST exn) -> void) -> string exn -> void
       ;; adds in the bug icon, if there are contexts to display
       (define (teaching-languages-error-display-handler msg exn)
-        (let ([src-string
-               #f
-               
-               #;
+        (let ([src 
                (cond
                  [(exn:fail:syntax? exn) 
-                  (let loop ([exprs (exn:syntax-exprs exn)])
+                  (let loop ([exprs (exn:fail:syntax-exprs exn)])
                     (cond
                       [(null? exprs) #f]
                       [else
@@ -440,20 +566,15 @@
                          (if (string? src)
                              src
                              (loop (cdr exprs))))]))]
-                 [(exn:read? exn) (if (string? (exn:read-source exn))
-                                      (exn:read-source exn)
-                                      #f)]
+                 [(exn:fail:read? exn) #f]
                  [(exn? exn) 
                   (let ([cms (continuation-mark-set->list (exn-continuation-marks exn) cm-key)])
                     (when (and cms (not (null? cms)))
-                      (let* ([first-cms (st-mark-source (car cms))]
+                      (let* ([first-cms (et:st-mark-source (car cms))]
                              [src (car first-cms)])
-                        (if (string? src)
-                            src
-                            #f))))]
+                        src)))]
                  [else #f])])
-          (void)
-          #;
+          
           (let ([rep (drscheme:rep:current-rep)])
             (when (and rep
                        mf-note
@@ -476,8 +597,7 @@
                         (send rep lock locked?)
                         (send rep end-edit-sequence))))))
           
-          #;
-          (when (string? src-string)
+          (when (string? src)
             (display src (current-error-port))
             (display ": " (current-error-port))))
         
@@ -491,8 +611,8 @@
           (when rep
             (send rep wait-for-io-to-complete/user)
             (cond
-              [(exn:syntax? exn) 
-               (let ([obj (exn:fail:syntax-expr exn)])
+              [(exn:fail:syntax? exn) 
+               (let ([obj (exn:syntax-expr exn)])
                  (when (syntax? obj)
                    (let ([src (syntax-source obj)]
                          [pos (syntax-position obj)]
@@ -502,9 +622,9 @@
                                 (number? span))
                        (send rep highlight-error src (- pos 1) (+ pos -1 span))))))]
               [(exn:read? exn) 
-               (let ([srcs (exn:fail:read-srclocs exn)]
-                     [pos (exn:fail:read-position exn)]
-                     [span (exn:fail:read-span exn)])
+               (let ([src (exn:read-source exn)]
+                     [pos (exn:read-position exn)]
+                     [span (exn:read-span exn)])
                  (when (and (is-a? src text:basic<%>)
                             (number? pos)
                             (number? span))
@@ -515,7 +635,7 @@
               [(exn? exn) 
                (let ([cms (continuation-mark-set->list (exn-continuation-marks exn) cm-key)])
                  (when (and cms (not (null? cms)))
-                   (let* ([first-cms (st-mark-source (car cms))]
+                   (let* ([first-cms (et:st-mark-source (car cms))]
                           [src (car first-cms)]
                           [start-position (cadr first-cms)]
                           [end-position (+ start-position (cddr first-cms))])
@@ -534,7 +654,7 @@
                    (number? start-position)
                    (number? span))
               (with-syntax ([expr expr]
-                            [mark (make-st-mark `(,source ,(- start-position 1) . ,span))]
+                            [mark (et:make-st-mark `(,source ,(- start-position 1) . ,span))]
                             [cm-key cm-key])
                 #`(with-continuation-mark
                       'cm-key
@@ -585,21 +705,176 @@
         (let ([v (hash-table-get (current-test-coverage-info) key)])
           (set-car! v #t)))
       
-      (define-values/invoke-unit/sig stacktrace^ stacktrace@ #f stacktrace-imports^)
+      (define-values/invoke-unit/sig et:stacktrace^ et:stacktrace@ et et:stacktrace-imports^)
+
+      (define calltrace-key #`(quote #,(gensym 'drscheme-calltrace-key)))
       
-      ;; add-annotation : (sexp -> value) -> sexp -> value
+      (define (print-call-trace inferred-name original? src args improper? depth)
+        (when inferred-name
+          (let ([name (cond
+                        [(identifier? inferred-name) (syntax-e inferred-name)]
+                        [else (object-name inferred-name)])]
+                [rep (drscheme:rep:current-rep)])
+            (when (and name rep)
+              (let ([canvas (send rep get-canvas)])
+                (when canvas
+                  (let ([frame (send canvas get-top-level-window)])
+                    (when (is-a? frame frame-tracing<%>)
+                      (let ([sp (open-output-string)])
+                        (let loop ([i depth])
+                          (unless (zero? i)
+                            (display " " sp)
+                            (loop (- i 1))))
+                        (fprintf sp "(")
+                        (fprintf sp "~a" name)
+                        (let loop ([args args])
+                          (cond
+                            [(null? args) (void)]
+                            [(and (null? (cdr args)) improper?)
+                             (fprintf sp " . ")
+                             (fprintf sp "~v" (car args))]
+                            [else
+                             (let ([arg (car args)])
+                               (fprintf sp " ")
+                               (fprintf sp "~v" arg))
+                             (loop (cdr args))]))
+                        (fprintf sp ")")
+                        (parameterize ([current-eventspace drs-eventspace])
+                          (queue-callback
+                           (lambda ()
+                             (send frame tracing:add-line (get-output-string sp))))))))))))))
+
+      (define-values/invoke-unit/sig tr:stacktrace^ tr:stacktrace@ tr tr:stacktrace-imports^)
+      
+      ;; add-annotation : boolean (sexp -> value) -> sexp -> value
       ;; adds debugging and test coverage information to `sexp' and calls `oe'
-      (define (add-annotation oe)
+      (define (add-annotation tracing? oe)
         (let ([teaching-language-eval-handler
                (lambda (exp)
-                 (let ([annotated
-                        (if (compiled-expression? 
-                             (if (syntax? exp) (syntax-e exp) exp))
-                            exp
-                            (annotate-top (expand exp) #f))])
+                 (let* ([is-compiled? (compiled-expression? (if (syntax? exp) (syntax-e exp) exp))]
+                        [annotated
+                         (if is-compiled?
+                             exp
+                             (let* ([et-annotated (et:annotate-top (expand exp) #f)]
+                                    [tr-annotated
+                                     (if tracing?
+                                         (tr:annotate (expand et-annotated))
+                                         et-annotated)])
+                               tr-annotated))])
                    (oe annotated)))])
           teaching-language-eval-handler))
       
+      (define frame-tracing<%>
+        (interface ()
+          tracing:add-line
+          tracing:reset))
+          
+      (define frame-tracing-mixin 
+        (mixin (drscheme:frame:<%> drscheme:unit:frame<%>) (frame-tracing<%>)
+          (define show-tracing-menu-item #f)
+          (define tracing-visible? #f)
+          
+          (define/override (add-show-menu-items show-menu)
+            (super add-show-menu-items show-menu)
+            (set! show-tracing-menu-item
+                  (new menu-item%
+                       (parent show-menu)
+                       (label sc-show-tracing-window)
+                       (callback (lambda (x y) (toggle-tracing))))))
+          
+          (define/private (toggle-tracing)
+            (cond
+              [(and (not tracing-visible?)
+                    (not any-results?))
+               (message-box (string-constant drscheme)
+                            sc-tracing-nothing-to-show
+                            this
+                            '(ok stop))]
+              [else
+               (set! tracing-visible? (not tracing-visible?))
+               (send show-tracing-menu-item set-label
+                     (if tracing-visible?
+                         sc-hide-tracing-window
+                         sc-show-tracing-window))
+               (send dragable-parent change-children
+                     (lambda (l)
+                       (let ([without (remq show-tracing-canvas l)])
+                         (if tracing-visible?
+                             (append without (list show-tracing-canvas))
+                             without))))
+               (when tracing-visible?
+                 (send dragable-parent set-percentages '(3/4 1/4)))])
+            (void))
+          
+          (define/override (clear-annotations)
+            (tracing:reset)
+            (super clear-annotations))
+          
+          (define any-results? #f)
+          (define/public (tracing:reset)
+            (set! any-results? #f)
+            (send show-tracing-text lock #f)
+            (send show-tracing-text erase)
+            (send show-tracing-text lock #t))
+          
+          
+          (define/public (tracing:add-line s)
+            (let ([old-any? any-results?])
+              (set! any-results? #t)
+              (unless old-any?
+                (unless tracing-visible?
+                  (toggle-tracing)))
+              (send show-tracing-text begin-edit-sequence)
+              (send show-tracing-text lock #f)
+              (let ([insert
+                     (lambda (s)
+                       (send show-tracing-text insert s (send show-tracing-text last-position) 'same #f))])
+                (cond
+                  [(<= (string-length s) ellipses-cutoff)
+                   (insert s)
+                   (insert "\n")]
+                  [else
+                   (insert (substring s 0 ellipses-cutoff))
+                   (insert " ")
+                   (let ([ell-start (send show-tracing-text last-position)])
+                     (insert "...")
+                     (let ([ell-end (send show-tracing-text last-position)])
+                       (let ([para (send show-tracing-text last-paragraph)])
+                         (insert "\n")
+                         (send show-tracing-text change-style clickback-delta ell-start ell-end)
+                         (send show-tracing-text set-clickback ell-start ell-end 
+                                (lambda (t x y)
+                                  (send show-tracing-text begin-edit-sequence)
+                                  (send show-tracing-text lock #f)
+                                  (let ([line-start (send show-tracing-text paragraph-start-position para)]
+                                        [line-end (send show-tracing-text paragraph-end-position para)])
+                                    (send show-tracing-text delete line-start line-end #f)
+                                    (send show-tracing-text insert s line-start 'same #f))
+                                  (send show-tracing-text lock #t)
+                                  (send show-tracing-text end-edit-sequence))))))]))
+              (send show-tracing-text lock #t)
+              (send show-tracing-text end-edit-sequence)))
+          
+          (field [dragable-parent #f]
+                 [show-tracing-parent-panel #f]
+                 [show-tracing-canvas #f]
+                 [show-tracing-text (new text:hide-caret/selection%)])
+          (send show-tracing-text lock #t)
+          (define/override (make-root-area-container cls parent)
+            (set! dragable-parent (super make-root-area-container panel:horizontal-dragable% parent))
+            (let ([root (make-object cls dragable-parent)])
+              (set! show-tracing-canvas (new editor-canvas% 
+                                             (parent dragable-parent)
+                                             (editor show-tracing-text)))
+              (send dragable-parent change-children (lambda (l) (remq show-tracing-canvas l)))
+              root))
+          
+          (super-new)))
+      
+      (define clickback-delta (make-object style-delta%))
+      (send clickback-delta set-delta-foreground "BLUE")
+      (send clickback-delta set-delta 'change-underline #t)
+
       
 ;                                                                                                                
 ;                                                                                                                
@@ -712,4 +987,6 @@
            (sharing-printing #f)
            (abbreviate-cons-as-list #f)
            (allow-sharing? #f)
-           (accept-quasiquote? #f)))))))
+           (accept-quasiquote? #f)))
+        
+        (drscheme:get/extend:extend-unit-frame frame-tracing-mixin)))))

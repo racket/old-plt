@@ -1,4 +1,7 @@
 
+Version 205.6
+Added integer-sqrt, quotient/remainder, integer-sqrt/remainder
+
 Version 205.5
 Added optional namespace argument to most of the
  namespace- primitives

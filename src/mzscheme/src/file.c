@@ -1659,10 +1659,12 @@ static Scheme_Object *link_exists(int argc, Scheme_Object **argv)
 Scheme_Object *scheme_get_fd_identity(Scheme_Object *port, long fd)
 {
   int errid = 0;
+  unsigned long devi = 0, inoi = 0, inoi2 = 0;
+  int shift = 0, shift2 = -1;
+  Scheme_Object *devn, *inon, *a[2];
 
 #ifdef UNIX_FILE_SYSTEM
   struct MSC_IZE(stat) buf;
-  Scheme_Object *devn, *inon, *a[2];
 
   while (1) {
     if (!MSC_IZE(fstat)(fd, &buf))
@@ -1675,14 +1677,25 @@ Scheme_Object *scheme_get_fd_identity(Scheme_Object *port, long fd)
   
   if (!errid) {
     /* Warning: we assume that dev_t and ino_t fit in a long. */
-    devn = scheme_make_integer_value_from_unsigned((unsigned long)buf.st_dev);
-    inon = scheme_make_integer_value_from_unsigned((unsigned long)buf.st_ino);
-    
-    a[0] = inon;
-    a[1] = scheme_make_integer(sizeof(dev_t));
-    inon = scheme_bitwise_shift(2, a);
-    
-    return scheme_bin_plus(devn, inon);
+    devi = (unsigned long)buf.st_dev;
+    inon = (unsigned long)buf.st_ino;
+    shift = sizeof(dev_t);
+  }
+#endif
+#ifdef DOS_FILE_SYSTEM
+  BY_HANDLE_FILE_INFORMATION info;
+
+  if (GetFileInformationByHandle((HANDLE)fd, &info))
+    errid = 0;
+  else
+    errid = GetLastError();
+
+  if (!errid) {
+    devi = info.dwVolumeSerialNumber;
+    inoi = info.nFileIndexLow;
+    inoi2 = info.nFileIndexHigh;
+    shift = sizeof(DWORD);
+    shift2 = 2 * sizeof(DWORD);
   }
 #endif
 #ifdef MAC_FILE_SYSTEM
@@ -1695,18 +1708,28 @@ Scheme_Object *scheme_get_fd_identity(Scheme_Object *port, long fd)
   err = PBGetFCBInfo(&rec, FALSE);
 
   if (err == noErr) {
-    Scheme_Object *vid, *fid, *a[2];
-
-    vid = scheme_make_integer((unsigned short)rec.ioFCBVRefNum);
-    fid = scheme_make_integer((unsigned short)rec.ioFCBVRefNum);
-
-    a[0] = vid;
-    a[1] = scheme_make_integer(sizeof(short));
-    vid = scheme_bitwise_shift(2, a);
-    
-    return scheme_bin_plus(vid, fid);
+    devi = (unsigned short)rec.ioFCBVRefNum;
+    inoi = (unsigned short)rec.ioFCBVRefNum;
+    shift = sizeof(short);
   }
 #endif
+
+  if (!errid) {
+    devn = scheme_make_integer_value_from_unsigned(devi);
+    inon = scheme_make_integer_value_from_unsigned(inoi);
+    
+    a[0] = inon;
+    a[1] = scheme_make_integer(shift);
+    inon = scheme_bitwise_shift(2, a);
+    
+    if (shift2 > -1) {
+      a[0] = scheme_make_integer_value_from_unsigned(inoi2);
+      a[1] = scheme_make_integer(shift2);
+      inon = scheme_bin_plus(inon, scheme_bitwise_shift(2, a));
+    }
+
+    return scheme_bin_plus(devn, inon);
+  }
 
   scheme_raise_exn(MZEXN_I_O_PORT,
 		   port,

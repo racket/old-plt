@@ -1,3 +1,15 @@
 #!/bin/sh
 
-echo "$@"
+findlast()
+{
+  RESULT=${1%%.w}
+  if [ "$2" != '' ] ; then
+    shift
+    findlast ${1+"$@"}
+  fi
+}
+findlast ${1+"$@"}
+
+if [ -f ${RESULT} ] ; then
+  touch ${RESULT}
+fi

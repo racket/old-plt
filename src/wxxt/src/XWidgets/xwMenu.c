@@ -1047,7 +1047,11 @@ static void DrawButtonItem(MenuWidget mw, menu_state *ms, menu_item *item,
 		      ? ((ms->selected==item)
 			 ? mw->menu.highlight_GC 
 			 : mw->menu.erase_GC)
-		      : (item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC)),
+		      : (item->enabled 
+			 ? ((ms->selected==item)
+			    ? mw->menu.erase_GC 
+			    : mw->menu.normal_GC)
+			 : mw->menu.inactive_GC)),
 		     x+ms->wLeft+ms->wMiddle+(3 * ISPACING),
 		     y+mw->menu.shadow_width+VMARGIN+wx_ASCENT(mw->menu.font,
 							       mw->menu.xft_font),

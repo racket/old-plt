@@ -6,10 +6,9 @@
    (define file-stack null)
    
    (define (make-get-ht sym)
-     (lambda ()
-       (unless (defined? sym)
-	 (global-defined-value sym (make-hash-table)))
-       (global-defined-value sym)))
+     (let ([ht (make-hash-table)])
+       (lambda ()
+	 ht)))
    
    (define get-file-ht (make-get-ht (gensym "file-ht")))
    (define get-value-ht (make-get-ht (gensym "value-ht")))

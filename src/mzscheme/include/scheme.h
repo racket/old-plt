@@ -62,13 +62,23 @@
 #include <stdio.h>
 #include <setjmp.h>
 #include <stdarg.h>
-#include <stdlib.h>
+#ifndef PALMOS_STUFF
+# include <stdlib.h>
+#endif
 #include <string.h>
 #include <stddef.h>
 
 #ifdef PALMOS_STUFF
 #include <Pilot.h>
 typedef void FILE;
+#endif
+
+#ifdef PALMOS_STUFF
+# define PALM_FARPROC(n) __attribute__ ((section (#n)))
+# define STATIC /* empty */
+#else
+# define PALM_FARPROC(n) /* empty */
+# define STATIC static
 #endif
 
 #ifndef SCHEME_DIRECT_EMBEDDED

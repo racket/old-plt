@@ -33,9 +33,9 @@ typedef short Type_Tag;
 
 #include "gc2.h"
 
-#define TIME 0
-#define SEARCH 1
-#define SAFETY 1
+#define TIME 1
+#define SEARCH 0
+#define SAFETY 0
 #define RECYCLE_HEAP 0
 #define KEEP_FROM_PTR 0
 

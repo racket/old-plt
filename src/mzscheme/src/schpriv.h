@@ -228,7 +228,7 @@ void scheme_init_file (Scheme_Env *env);
 void scheme_init_proc (Scheme_Env *env);
 void scheme_init_vector (Scheme_Env *env);
 void scheme_init_string (Scheme_Env *env);
-void scheme_init_number (Scheme_Env *env);
+void scheme_init_number (Scheme_Env *env) PALM_FARPROC(number3);
 void scheme_init_eval (Scheme_Env *env);
 void scheme_init_promise (Scheme_Env *env);
 void scheme_init_struct (Scheme_Env *env);
@@ -285,7 +285,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 				  int radix, int radix_set, 
 				  Scheme_Object *port,
 				  int *div_by_zero,
-				  int test_only);
+				  int test_only)
+     PALM_FARPROC(number3);
 
 typedef long bigdig;
 
@@ -331,8 +332,8 @@ typedef Scheme_Complex Small_Complex;
 #define _scheme_complex_real_part(n) (((Scheme_Complex *)(n))->r)
 #define _scheme_complex_imaginary_part(n) (((Scheme_Complex *)(n))->i)
 
-Scheme_Object *scheme_make_small_bignum(long v, Small_Bignum *s);
-char *scheme_number_to_string(int radix, Scheme_Object *obj);
+Scheme_Object *scheme_make_small_bignum(long v, Small_Bignum *s) PALM_FARPROC(bignum);
+char *scheme_number_to_string(int radix, Scheme_Object *obj)PALM_FARPROC(bignum);
 
 Scheme_Object *_scheme_apply_to_list (Scheme_Object *rator, Scheme_Object *rands);
 Scheme_Object *_scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *rands);
@@ -560,94 +561,94 @@ Scheme_Object *scheme_named_map_1(char *, Scheme_Object *(*fun)(Scheme_Object*, 
 
 extern Scheme_Object *scheme_orig_stdout_port;
 
-int scheme_bignum_eq(const Scheme_Object *a, const Scheme_Object *b);
-int scheme_bignum_lt(const Scheme_Object *a, const Scheme_Object *b);
-int scheme_bignum_gt(const Scheme_Object *a, const Scheme_Object *b);
-int scheme_bignum_le(const Scheme_Object *a, const Scheme_Object *b);
-int scheme_bignum_ge(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_bignum_negate(const Scheme_Object *n);
-Scheme_Object *scheme_bignum_add(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_bignum_subtract(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_bignum_add1(const Scheme_Object *n);
-Scheme_Object *scheme_bignum_sub1(const Scheme_Object *n);
-Scheme_Object *scheme_bignum_multiply(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_bignum_max(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_bignum_min(const Scheme_Object *a, const Scheme_Object *b);
+int scheme_bignum_eq(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(bignum);
+int scheme_bignum_lt(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(bignum);
+int scheme_bignum_gt(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(bignum);
+int scheme_bignum_le(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(bignum);
+int scheme_bignum_ge(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(bignum);
+Scheme_Object *scheme_bignum_negate(const Scheme_Object *n) PALM_FARPROC(bignum);
+Scheme_Object *scheme_bignum_add(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(bignum);
+Scheme_Object *scheme_bignum_subtract(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(bignum);
+Scheme_Object *scheme_bignum_add1(const Scheme_Object *n) PALM_FARPROC(bignum);
+Scheme_Object *scheme_bignum_sub1(const Scheme_Object *n) PALM_FARPROC(bignum);
+Scheme_Object *scheme_bignum_multiply(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(bignum);
+Scheme_Object *scheme_bignum_max(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(bignum);
+Scheme_Object *scheme_bignum_min(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(bignum);
 void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
-			  Scheme_Object **qp, Scheme_Object **rp, int norm);
-Scheme_Object *scheme_bignum_power(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n);
-Scheme_Object *scheme_bignum_and(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_bignum_or(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_bignum_xor(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_bignum_not(const Scheme_Object *a);
-Scheme_Object *scheme_bignum_shift(const Scheme_Object *a, long shift);
+			  Scheme_Object **qp, Scheme_Object **rp, int norm) PALM_FARPROC(bignum);
+Scheme_Object *scheme_bignum_power(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(bignum);
+Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n) PALM_FARPROC(bignum);
+Scheme_Object *scheme_bignum_and(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(bignum);
+Scheme_Object *scheme_bignum_or(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(bignum);
+Scheme_Object *scheme_bignum_xor(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(bignum);
+Scheme_Object *scheme_bignum_not(const Scheme_Object *a) PALM_FARPROC(bignum);
+Scheme_Object *scheme_bignum_shift(const Scheme_Object *a, long shift) PALM_FARPROC(bignum);
 
-Scheme_Object *scheme_make_small_rational(long n, Small_Rational *space);
-Scheme_Object *scheme_integer_to_rational(const Scheme_Object *n);
-Scheme_Object *scheme_make_fixnum_rational(long n, long d);
-int scheme_rational_eq(const Scheme_Object *a, const Scheme_Object *b);
-int scheme_rational_lt(const Scheme_Object *a, const Scheme_Object *b);
-int scheme_rational_gt(const Scheme_Object *a, const Scheme_Object *b);
-int scheme_rational_le(const Scheme_Object *a, const Scheme_Object *b);
-int scheme_rational_ge(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_rational_negate(const Scheme_Object *n);
-Scheme_Object *scheme_rational_add(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_rational_subtract(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_rational_add1(const Scheme_Object *n);
-Scheme_Object *scheme_rational_sub1(const Scheme_Object *n);
-Scheme_Object *scheme_rational_multiply(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_rational_max(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_rational_min(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_rational_divide(const Scheme_Object *n, const Scheme_Object *d);
-Scheme_Object *scheme_rational_power(const Scheme_Object *a, const Scheme_Object *b);
-int scheme_is_rational_positive(const Scheme_Object *o);
-Scheme_Object *scheme_rational_floor(const Scheme_Object *a);
-Scheme_Object *scheme_rational_truncate(const Scheme_Object *a);
-Scheme_Object *scheme_rational_ceiling(const Scheme_Object *a);
-Scheme_Object *scheme_rational_round(const Scheme_Object *a);
-Scheme_Object *scheme_rational_sqrt(const Scheme_Object *n);
+Scheme_Object *scheme_make_small_rational(long n, Small_Rational *space) PALM_FARPROC(rational);
+Scheme_Object *scheme_integer_to_rational(const Scheme_Object *n) PALM_FARPROC(rational);
+Scheme_Object *scheme_make_fixnum_rational(long n, long d) PALM_FARPROC(rational);
+int scheme_rational_eq(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(rational);
+int scheme_rational_lt(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(rational);
+int scheme_rational_gt(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(rational);
+int scheme_rational_le(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(rational);
+int scheme_rational_ge(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(rational);
+Scheme_Object *scheme_rational_negate(const Scheme_Object *n) PALM_FARPROC(rational);
+Scheme_Object *scheme_rational_add(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(rational);
+Scheme_Object *scheme_rational_subtract(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(rational);
+Scheme_Object *scheme_rational_add1(const Scheme_Object *n) PALM_FARPROC(rational);
+Scheme_Object *scheme_rational_sub1(const Scheme_Object *n) PALM_FARPROC(rational);
+Scheme_Object *scheme_rational_multiply(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(rational);
+Scheme_Object *scheme_rational_max(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(rational);
+Scheme_Object *scheme_rational_min(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(rational);
+Scheme_Object *scheme_rational_divide(const Scheme_Object *n, const Scheme_Object *d) PALM_FARPROC(rational);
+Scheme_Object *scheme_rational_power(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(rational);
+int scheme_is_rational_positive(const Scheme_Object *o) PALM_FARPROC(rational);
+Scheme_Object *scheme_rational_floor(const Scheme_Object *a) PALM_FARPROC(rational);
+Scheme_Object *scheme_rational_truncate(const Scheme_Object *a) PALM_FARPROC(rational);
+Scheme_Object *scheme_rational_ceiling(const Scheme_Object *a) PALM_FARPROC(rational);
+Scheme_Object *scheme_rational_round(const Scheme_Object *a) PALM_FARPROC(rational);
+Scheme_Object *scheme_rational_sqrt(const Scheme_Object *n) PALM_FARPROC(rational);
 
-Scheme_Object *scheme_make_small_complex(const Scheme_Object *n, Small_Complex *space);
-Scheme_Object *scheme_real_to_complex(const Scheme_Object *n);
-int scheme_complex_eq(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_complex_negate(const Scheme_Object *n);
-Scheme_Object *scheme_complex_add(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_complex_subtract(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_complex_add1(const Scheme_Object *n);
-Scheme_Object *scheme_complex_sub1(const Scheme_Object *n);
-Scheme_Object *scheme_complex_multiply(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_complex_divide(const Scheme_Object *n, const Scheme_Object *d);
-Scheme_Object *scheme_complex_power(const Scheme_Object *a, const Scheme_Object *b);
-Scheme_Object *scheme_complex_sqrt(const Scheme_Object *a);
-Scheme_Object *scheme_complex_real_part(const Scheme_Object *a);
-Scheme_Object *scheme_complex_imaginary_part(const Scheme_Object *a);
-int scheme_is_complex_exact(const Scheme_Object *o);
+Scheme_Object *scheme_make_small_complex(const Scheme_Object *n, Small_Complex *space) PALM_FARPROC(complex);
+Scheme_Object *scheme_real_to_complex(const Scheme_Object *n) PALM_FARPROC(complex);
+int scheme_complex_eq(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(complex);
+Scheme_Object *scheme_complex_negate(const Scheme_Object *n) PALM_FARPROC(complex);
+Scheme_Object *scheme_complex_add(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(complex);
+Scheme_Object *scheme_complex_subtract(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(complex);
+Scheme_Object *scheme_complex_add1(const Scheme_Object *n) PALM_FARPROC(complex);
+Scheme_Object *scheme_complex_sub1(const Scheme_Object *n) PALM_FARPROC(complex);
+Scheme_Object *scheme_complex_multiply(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(complex);
+Scheme_Object *scheme_complex_divide(const Scheme_Object *n, const Scheme_Object *d) PALM_FARPROC(complex);
+Scheme_Object *scheme_complex_power(const Scheme_Object *a, const Scheme_Object *b) PALM_FARPROC(complex);
+Scheme_Object *scheme_complex_sqrt(const Scheme_Object *a) PALM_FARPROC(complex);
+Scheme_Object *scheme_complex_real_part(const Scheme_Object *a) PALM_FARPROC(complex);
+Scheme_Object *scheme_complex_imaginary_part(const Scheme_Object *a) PALM_FARPROC(complex);
+int scheme_is_complex_exact(const Scheme_Object *o) PALM_FARPROC(complex);
 
 /* General numeric: */
-Scheme_Object *scheme_bin_gcd(const Scheme_Object *n1, const Scheme_Object *n2);
-Scheme_Object *scheme_bin_quotient(const Scheme_Object *n1, const Scheme_Object *n2);
-Scheme_Object *scheme_bin_mult(const Scheme_Object *n1, const Scheme_Object *n2);
-Scheme_Object *scheme_bin_div(const Scheme_Object *n1, const Scheme_Object *n2);
-Scheme_Object *scheme_bin_plus(const Scheme_Object *n1, const Scheme_Object *n2);
-Scheme_Object *scheme_bin_minus(const Scheme_Object *n1, const Scheme_Object *n2);
-int scheme_bin_eq(const Scheme_Object *n1, const Scheme_Object *n2);
-int scheme_bin_lt(const Scheme_Object *n1, const Scheme_Object *n2);
-int scheme_bin_gt(const Scheme_Object *n1, const Scheme_Object *n2);
-int scheme_bin_gt_eq(const Scheme_Object *n1, const Scheme_Object *n2);
-int scheme_bin_lt_eq(const Scheme_Object *n1, const Scheme_Object *n2);
+Scheme_Object *scheme_bin_gcd(const Scheme_Object *n1, const Scheme_Object *n2) PALM_FARPROC(number3);
+Scheme_Object *scheme_bin_quotient(const Scheme_Object *n1, const Scheme_Object *n2) PALM_FARPROC(number3);
+Scheme_Object *scheme_bin_mult(const Scheme_Object *n1, const Scheme_Object *n2) PALM_FARPROC(number3);
+Scheme_Object *scheme_bin_div(const Scheme_Object *n1, const Scheme_Object *n2) PALM_FARPROC(number3);
+Scheme_Object *scheme_bin_plus(const Scheme_Object *n1, const Scheme_Object *n2) PALM_FARPROC(number3);
+Scheme_Object *scheme_bin_minus(const Scheme_Object *n1, const Scheme_Object *n2) PALM_FARPROC(number3);
+int scheme_bin_eq(const Scheme_Object *n1, const Scheme_Object *n2) PALM_FARPROC(number5);
+int scheme_bin_lt(const Scheme_Object *n1, const Scheme_Object *n2) PALM_FARPROC(number5);
+int scheme_bin_gt(const Scheme_Object *n1, const Scheme_Object *n2) PALM_FARPROC(number5);
+int scheme_bin_gt_eq(const Scheme_Object *n1, const Scheme_Object *n2) PALM_FARPROC(number3);
+int scheme_bin_lt_eq(const Scheme_Object *n1, const Scheme_Object *n2) PALM_FARPROC(number3);
 
-Scheme_Object *scheme_sub1(int argc, Scheme_Object *argv[]);
-Scheme_Object *scheme_add1(int argc, Scheme_Object *argv[]);
-Scheme_Object *scheme_odd_p(int argc, Scheme_Object *argv[]);
-Scheme_Object *scheme_expt(int argc, Scheme_Object *argv[]);
-Scheme_Object *scheme_modulo(int argc, Scheme_Object *argv[]);
-Scheme_Object *scheme_sqrt(int argc, Scheme_Object *argv[]);
-double scheme_get_val_as_double(const Scheme_Object *n);
+Scheme_Object *scheme_sub1(int argc, Scheme_Object *argv[]) PALM_FARPROC(number3);
+Scheme_Object *scheme_add1(int argc, Scheme_Object *argv[]) PALM_FARPROC(number3);
+Scheme_Object *scheme_odd_p(int argc, Scheme_Object *argv[]) PALM_FARPROC(number3);
+Scheme_Object *scheme_expt(int argc, Scheme_Object *argv[]) PALM_FARPROC(number3);
+Scheme_Object *scheme_modulo(int argc, Scheme_Object *argv[]) PALM_FARPROC(number3);
+Scheme_Object *scheme_sqrt(int argc, Scheme_Object *argv[]) PALM_FARPROC(number3);
+double scheme_get_val_as_double(const Scheme_Object *n) PALM_FARPROC(number3);
 
-Scheme_Object *scheme_double_to_integer(const char *where, double d);
+Scheme_Object *scheme_double_to_integer(const char *where, double d) PALM_FARPROC(number3);
 
-Scheme_Object *scheme_generic_integer_power(const Scheme_Object *o, const Scheme_Object *p);
+Scheme_Object *scheme_generic_integer_power(const Scheme_Object *o, const Scheme_Object *p) PALM_FARPROC(number3);
 
 #define scheme_add_good_binding(i,v,f) (f->values[i] = v)
 
@@ -681,9 +682,9 @@ void scheme_jmpup_free(Scheme_Jumpup_Buf *);
 
 extern Scheme_Object *scheme_arity_at_least;
 
-int scheme_check_double(const char *where, double v, const char *dest);
+int scheme_check_double(const char *where, double v, const char *dest) PALM_FARPROC(number3);
 #ifdef MZ_USE_SINGLE_FLOATS
-int scheme_check_float(const char *where, float v, const char *dest);
+int scheme_check_float(const char *where, float v, const char *dest) PALM_FARPROC(number3);
 #else
 # define scheme_check_float scheme_check_double
 #endif

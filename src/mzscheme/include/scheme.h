@@ -485,7 +485,7 @@ typedef struct Scheme_Vector {
 #define SCHEME_PLONG_VAL(obj) (((Scheme_Simple_Object *)(obj))->u.ptr_long_val.pint)
 
 #define SCHEME_CPTR_VAL(obj) SCHEME_PTR1_VAL(obj)
-#define SCHEME_CPTR_TYPE(obj) ((char *)SCHEME_PTR2_VAL(obj))
+#define SCHEME_CPTR_TYPE(obj) ((Scheme_Object *)SCHEME_PTR2_VAL(obj))
 
 #define SCHEME_SET_IMMUTABLE(obj)  ((MZ_OPT_HASH_KEY((Scheme_Inclhash_Object *)(obj)) |= 0x1))
 #define SCHEME_SET_CHAR_STRING_IMMUTABLE(obj) SCHEME_SET_IMMUTABLE(obj)

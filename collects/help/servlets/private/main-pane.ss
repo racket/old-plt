@@ -3,7 +3,7 @@
   (require (lib "string-constant.ss" "string-constants")
 	   (lib "plt-browser.ss" "help" "private"))
 
-  (require "external.ss"
+  (require "remote.ss"
            "util.ss") 
 
   (provide main-pane)
@@ -23,7 +23,7 @@
 	  (B
 	   (A ((HREF "/servlets/howtouse.ss")) "Help Desk"))
 	  ":  How to get help"
-	  ,@(if (unbox external-box)
+	  ,@(if (unbox remote-box)
 		'()
 		`((BR) 
 		  'nbsp 'nbsp 'nbsp 'nbsp 'nbsp 'nbsp

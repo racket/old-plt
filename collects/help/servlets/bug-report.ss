@@ -4,20 +4,20 @@
 (require "private/headelts.ss")
 (require "private/util.ss")
 (require "private/synthesize.ss")
-(require "private/external.ss")
+(require "private/remote.ss")
 
 (unit/sig ()
   (import servlet^)
 
-  (define external? (unbox external-box))
+  (define remote? (unbox remote-box))
 
-  (define (get-pref/external sym)
-    (if external?	
+  (define (get-pref/remote sym)
+    (if remote?	
 	""
 	(get-pref/default sym "")))
 
-  (define name (get-pref/external 'plt:hd:user-name))
-  (define email (get-pref/external 'plt:hd:user-email))
+  (define name (get-pref/remote 'plt:hd:user-name))
+  (define email (get-pref/remote 'plt:hd:user-email))
 
   (define (make-option s)
     (if (string=? (car s) "*")

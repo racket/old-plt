@@ -3,7 +3,7 @@
            "private/server-config.ss"
 	   "private/external-server.ss")
 
-  (define external-connections? #f)
+  (define remote-connections? #f)
   (define quiet? #f)
   (define port #f)
 
@@ -11,8 +11,8 @@
    "background-help-desk"
    (current-command-line-arguments)
    (once-each
-    [("-x" "--external-connections") "Allow external connections"
-     (set! external-connections? #t)]
+    [("-r" "--remote-connections") "Allow remote connections"
+     (set! remote-connections? #t)]
     [("-q" "--quiet") "Don't print port information"
      (set! quiet? #t)]
     [("-p" "--port") number "Use given port number"
@@ -24,7 +24,7 @@
 		(raise 'not-exact-integer))
 	(set! port port-val)))]))
 
-  (define hd-cookie (external-start-help-server port external-connections?))
+  (define hd-cookie (external-start-help-server port remote-connections?))
   (define help-desk-port (hd-cookie->port hd-cookie))
 
   ; allow server startup time

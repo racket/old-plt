@@ -7,12 +7,12 @@
 (require "private/util.ss"
          "private/headelts.ss"
          "private/refresh-util.ss"
-         "private/external.ss")
+         "private/remote.ss")
 
 (unit/sig ()
   (import servlet^)
 
-  (check-external 	
+  (check-remote 	
    send/finish
    (url-path (request-uri initial-request)))
 

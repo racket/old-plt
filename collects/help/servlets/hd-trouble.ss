@@ -4,12 +4,12 @@
          (lib "servlet-helpers.ss" "web-server"))
 
 (require "private/headelts.ss"
-	 "private/external.ss")
+	 "private/remote.ss")
 
 (unit/sig ()
   (import servlet^)
 
-  (check-external 	
+  (check-remote 	
    send/finish
    (url-path (request-uri initial-request)))
 

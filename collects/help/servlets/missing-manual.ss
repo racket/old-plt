@@ -5,7 +5,7 @@
 
 (require "private/headelts.ss")
 (require "private/util.ss")
-(require "private/external.ss")
+(require "private/remote.ss")
 
 (define doc-root "http://download.plt-scheme.org/doc")
 
@@ -17,7 +17,7 @@
 			  doc-root 
 			  (if (cvs?) "pre-release" vno)
 			  manual)]
-	 [external-connections? (unbox external-box)])
+	 [remote-connections? (unbox remote-box)])
     `(HTML
       (HEAD ,hd-css
             ,@hd-links 
@@ -37,7 +37,7 @@
        (UL
 	(LI 
 	 (A ((HREF ,html-url)) "Click here")))
-       ,@(if external-connections?
+       ,@(if remote-connections?
 	     `("")
 	     `((H2 "To download and install the documentation")
 	       (P)

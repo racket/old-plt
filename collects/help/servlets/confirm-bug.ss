@@ -5,7 +5,7 @@
 	 (lib "smtp.ss" "net"))
 
 (require "private/headelts.ss")
-(require "private/external.ss")
+(require "private/remote.ss")
 (require "private/util.ss")
 
 (unit/sig ()
@@ -330,8 +330,8 @@
 	    "30 minutes, please send an e-mail describing the problem to "
 	    (TT "scheme@plt-scheme.org") "."))])
     
-    ; don't save user/email if server accepts external connections
-    (unless (unbox external-box)
+    ; don't save user/email if server accepts remote connections
+    (unless (unbox remote-box)
       (with-handlers ; no harm if not saved
        ([void void])
        (put-prefs (list 'plt:hd:user-name 'plt:hd:user-email)

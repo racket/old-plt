@@ -7,7 +7,7 @@
 
   (require "server-config.ss")
 
-  (require (lib "external.ss" "help" "servlets" "private"))
+  (require (lib "remote.ss" "help" "servlets" "private"))
 
   (provide external-start-help-server
            wait-for-connection)
@@ -37,20 +37,21 @@
 	(close-output-port oport)
 	(close-input-port iport)))))
 
-  (define external-start-help-server
-    (lambda (addl-browser-frame-mixin use-port external-connections?) 
+  (define (external-start-help-server 
+	   use-port remote-connections? addl-browser-frame-mixin)
       (let ([configuration
              (build-developer-configuration
               (build-config-exp))]
 	    [help-desk-port (get-free-port use-port)])
-        (set-box! external-box external-connections?)
+        (set-box! remote-box remote-connections?)
         (make-hd-cookie 
          help-desk-port  	
-         (if external-connections?
+         (if remote-connections?
              (serve configuration help-desk-port)
              (serve configuration help-desk-port "127.0.0.1"))
          #f
-         addl-browser-frame-mixin)))))
+         addl-browser-frame-mixin))))
+
 
 
 

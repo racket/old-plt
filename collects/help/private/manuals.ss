@@ -7,7 +7,7 @@
            "colldocs.ss"
            "docpos.ss"
 	   (lib "util.ss" "help" "servlets" "private")
-	   (lib "external.ss" "help" "servlets" "private"))
+	   (lib "remote.ss" "help" "servlets" "private"))
 
   ; to get CSS style spec
   (require (lib "xml.ss" "xml"))
@@ -17,7 +17,7 @@
  
   (define re:title (regexp "<[tT][iI][tT][lL][eE]>(.*)</[tT][iI][tT][lL][eE]>"))
 
-  (define external-connections? (unbox external-box))
+  (define remote-connections? (unbox remote-box))
 
   (define (find-manuals)
     (let* ([sys-type (system-type)]
@@ -95,7 +95,7 @@
                                     (string-append 
                                      "<BR>&nbsp;&nbsp;"
 				     "<FONT SIZE=\"-1\">"
-				     (if (or external-connections?
+				     (if (or remote-connections?
 					     (not (assoc manual-dir known-docs)))
 					 ""
 					 (string-append
@@ -137,7 +137,7 @@
 	  
 	  (list "<H1>Installed Manuals</H1>")
 	  
-	  (if (and cvs-user? (not external-connections?))
+	  (if (and cvs-user? (not remote-connections?))
 	      (list "<b>CVS:</b> <a href=\"/servlets/refresh-manuals.ss\" target=\"outer\">"
 		    (string-constant plt:hd:refresh-all-manuals)
 		    "</a>")

@@ -7,9 +7,9 @@
 	   "private/manuals.ss"
 	   "private/installed-components.ss")
 
-  (define (start-help-server use-port external-connections?)
+  (define (start-help-server use-port remote-connections?)
     (external-start-help-server use-port
-                                external-connections?
+                                remote-connections?
                                 (lambda (x) x)))
   
   (provide 

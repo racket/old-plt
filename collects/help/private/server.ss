@@ -19,10 +19,10 @@
   
   (define start-help-server
     (opt-lambda ([use-port #f]
-                 [external-connections? #f] 
+                 [remote-connections? #f] 
                  [addl-browser-frame-mixin (lambda (x) x)])
       (if (use-plt-browser?)
           (internal-start-help-server addl-browser-frame-mixin)
           (external-start-help-server use-port
-                                      external-connections?
+                                      remote-connections?
                                       addl-browser-frame-mixin)))))

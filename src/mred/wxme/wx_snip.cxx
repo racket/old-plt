@@ -1458,6 +1458,15 @@ long wxImageSnip::GetFiletype()
 
 void wxImageSnip::SetBitmap(wxBitmap *map)
 {
+#ifdef wx_x
+  if (map->selectedTo)
+    return;
+#endif
+#if defined(wx_mac) || defined(wx_msw)
+  if (map->selectedInto)
+    return;
+#endif
+
   if (sharing) {
     if (--(*sharing)) {
       offscreen = NULL;

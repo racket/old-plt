@@ -1,5 +1,6 @@
 #cs(module typecheck mzscheme
-	   (require "prims.ss"
+	   (require "libs/basic.ss"
+		    "prims.ss"
 		    "error-msgs.ss"
 		    (prefix ast: "ast.ss")
 		    (lib "match.ss")
@@ -1199,7 +1200,7 @@
 							 (string->symbol rname)
 							 src)
 					    )])
-			    (lookup-ident (ast:make-ldot "Pervasives" name)))
+			    (lookup-ident (ast:make-ldot (ast:make-lident (datum->syntax-object #f "Pervasives")) name) src))
 					    ))]
 		    
 		    [($ ast:ldot longident name)
@@ -1210,7 +1211,9 @@
 			   (if lib-map
 			       (let ([function (hash-table-get lib-map (syntax-object->datum name) (lambda () #f))])
 				 (if function
+			
 				     (car function)
+				     
 				     (raise-error #f
 						  (loc)
 						  (format "Value ~a not found in library ~a" (syntax-object->datum name) lib-name)
@@ -1222,7 +1225,13 @@
 					    (format "Unknown libaray: ~a" lib-name)
 					    (string->symbol lib-name)
 					    (ast:lident-name longident))
-				)))]))
+				)))]
+		    [_
+		     (raise-error #f
+				  (loc)
+				  (format "Bad longident: ~a" uname)
+				  uname
+				  uname)]))
 			       
 
 	   (define (convert-tvars type mappings)

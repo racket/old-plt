@@ -562,10 +562,8 @@
 	       (let ([result (hash-table-get built-in-and-user-funcs (syntax-object->datum name) (lambda () #f))])
 		 (if result
 		     (cdr result)
-		     (let ([sresult (lookup-ident (ast:make-ldot "Pervasives" name))])
-		       (if sresult
-			   (cdr sresult)
-			   #f))))]
+		     (lookup-ident (ast:make-ldot (ast:make-lident (datum->syntax-object #f "Pervasives")) name))
+			   ))]
 	      [($ ast:ldot longident name)
 	       (match longident
 		      [($ ast:lident library)
@@ -574,8 +572,8 @@
 			     (let ([function (hash-table-get lib-map (syntax-object->datum name) (lambda () #f))])
 			       (if function
 				   (cdr function)
-				   (begin (pretty-print (list "Error: " (syntax-object->datum name) "not found in" (syntax-object->datum library))) #f)))
-			     (begin (pretty-print (list "Error: " library "not found")) #f)))])]))
+				  #f))
+			     #f))])]))
 
      (define (look-up name context)
        (if (null? context)

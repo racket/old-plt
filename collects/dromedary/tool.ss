@@ -9,7 +9,7 @@
 	   "parsers/beginner-parse.ss"
 	   "parsers/intermed-parse.ss"
 	   "parsers/advanced-parse.ss"
-	   "prims.ss"
+	   "libs/basic.ss"
            (lib "string-constant.ss" "string-constants"))
 
   (provide tool@)
@@ -244,8 +244,8 @@
 		      (make-dromedary-settings 'inference)))
 		(define/public (default-settings? x) 
 		  (equal? x (default-settings)))
-		(define/public (front-end/complete-program input settings) (front-end input settings 0))
-		(define/public (front-end/interaction input settings) (front-end input settings (drscheme:language:text/pos-start input)))
+		(define/public (front-end/complete-program input settings teachpack-cache) (front-end input settings 0))
+		(define/public (front-end/interaction input settings teachpack-cache) (front-end input settings (drscheme:language:text/pos-start input)))
 		(define/public (front-end input settings offset)
 		  (let-values ([(port name current-parse type-choice)
 				(if (string? input)

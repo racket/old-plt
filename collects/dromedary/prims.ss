@@ -30,6 +30,7 @@
 	(hash-table-put! <library-names> "List" <list-funcs>)
 	(hash-table-put! <library-names> "Array" <array-funcs>)
 	(hash-table-put! <library-names> "String" <string-funcs>)
+	(hash-table-put! <library-names> "Pervasives" <pervasive-funcs>)
 
 	(define (boolean-to-number n)
 	  (if n 1 0))

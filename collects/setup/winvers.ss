@@ -54,6 +54,11 @@
 			  [o (open-output-file p 'append)])
 		      (let loop ()
 			(file-position i 0)
+			;; This is a poor technique for updating the files, but
+			;;  it works well enough. I wasn't able to parse
+			;;  the file format properly (I expected to find
+			;;  DLL imports in an ".idata" section, but there
+			;;  isn't one.)
 			(let ([m (regexp-match-positions "xxxxxxx[.]dll" i)])
 			  (when m
 			    (file-position o (caar m))

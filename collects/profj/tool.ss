@@ -5,7 +5,6 @@
            (lib "framework.ss" "framework")
            (lib "unitsig.ss")
            (lib "class.ss")
-           (lib "file.ss")
 	   (lib "string-constant.ss" "string-constants")
            (lib "Object.ss" "profj" "libs" "java" "lang")
            (lib "array.ss" "profj" "libs" "java" "lang")
@@ -36,22 +35,24 @@
                        intermediate-lang%)))
         (drscheme:language-configuration:add-language
          (make-object ((drscheme:language:get-default-mixin) 
-                       beginner-lang%))))
+                       beginner-lang%))))           
       
-      (define (override-render-value-set %)
-        (class %
-          (inherit [super-render-value-set render-value-set])
-          (define/override (render-value-set . x)
-            ;; needs to be filled in!
-            (super-render-value-set . x))
+      (define (profj-editor super)
+        (class* super (drscheme:unit:definitions-text<%>)
+          
+          (define/override (tabify-on-return?) #f)
+          
           (super-instantiate ())))
-
+      
+      
       ;(make-profj-settings symbol boolean (list string))
       (define-struct profj-settings (print-style print-full? classpath))
       
       (define (java-lang-mixin level name position numbers one-line)
         (class* object% (drscheme:language:language<%>)
 
+          ;(drscheme:get/extend:extend-definitions-text profj-editor)
+          
           ;default-settings: -> profj-settings
           (define/public (default-settings) (make-profj-settings 'default #f null))
           ;default-settings? any -> bool

@@ -1239,7 +1239,7 @@ Scheme_Object *scheme_read_number(const mzchar *str, long len,
     first[has_slash - delta] = 0;
 
     n1 = scheme_read_number(first, has_slash - delta,
-			    0, 0, 1,
+			    is_float, is_not_float, 1,
 			    radix, 1, next_complain,
 			    div_by_zero,
 			    test_only,
@@ -1263,7 +1263,7 @@ Scheme_Object *scheme_read_number(const mzchar *str, long len,
 #endif
 
       n2 = scheme_read_number(substr, len - has_slash - 1,
-			      0, 0, 1,
+			      is_float, is_not_float, 1,
 			      radix, 1, next_complain,
 			      div_by_zero,
 			      test_only,

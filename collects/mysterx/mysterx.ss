@@ -41,13 +41,17 @@
 	   (lambda (b) 
 	     (document-show doc b))]
 	  [objects
-	   (lambda () (document-objects doc))]
+	   (lambda () 
+	     (document-objects doc))]
 	  [insert-html 
 	   (lambda (html-string)
 	     (document-insert-html doc html-string))]
 	  [append-html 
 	   (lambda (html-string)
 	     (document-append-html doc html-string))]
+	  [replace-html 
+	   (lambda (html-string)
+	     (document-replace-html doc html-string))]
 	  [register-event-handler
 	   (lambda (tag id fn)
 	     (semaphore-wait handler-sem)
@@ -65,9 +69,13 @@
 	       (let ([key (make-event-key tag-string id-string)])
 		 (hash-table-remove! handler-table key)))
 	     (semaphore-post handler-sem))]
+	   [append-object 
+	    (lambda (object)
+	      (append-html (coclass->html object))
+	      (car (document-objects doc)))]
 	   [insert-object 
 	    (lambda (object)
-	      (insert-html doc (object->html object))
+	      (insert-html (coclass->html object))
 	      (car (document-objects doc)))]
 	   [handle-events 
 	    (lambda ()

@@ -35,11 +35,11 @@
           (inherit sharing-printing abbreviate-cons-as-list)
           
           (define (default-settings)
-            (drscheme:language:make-simple-settings/parse
-             `((case-sensitive #t)
-               (printing-style constructor)
-               (show-sharing ,(sharing-printing))
-               (insert-newlines #t))))
+            (drscheme:language:make-simple-settings 
+             #t
+             'constructor
+             (sharing-printing)
+             #t))
           
           (override config-panel)
           (rename [super-config-panel config-panel])

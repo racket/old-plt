@@ -1,87 +1,81 @@
-(module spec/type mzscheme
-  (provide provide/type require/type)
+(module specs mzscheme
+  (provide contract)
   (require-for-syntax mzscheme
+                      (lib "list.ss")
 		      (lib "stx.ss" "syntax"))
   
-  (define (raise-error module-name fmt . args)
-    (error 'provide/type
-	   (string-append
-	    (format "module ~e: " module-name)
-	    (apply format fmt args))))
+         
+  (define (raise-error sym fmt . args)
+    (apply error sym fmt args))
 
-  (define-struct wrapper (defn type))
-
-  (define-syntax wrap
+  (define-syntax contract
     (lambda (stx)
       (syntax-case stx ()
-	[(_ type name stx-pos? module-name)
-	 (let ([pos? (syntax-object->datum (syntax stx-pos?))])
-	   (syntax-case (syntax type) (-> number union boolean interface)
-	     [(dom -> rng)
-	      (with-syntax ([stx-n-pos? (not (syntax-object->datum (syntax stx-pos?)))])
-		(if pos?
-		    (syntax
-		     (if (procedure? name)
-			 (lambda (in)
-			   (let ([out (name (wrap dom in stx-n-pos? module-name))])
-			     (wrap rng out stx-pos? module-name)))
-			 (raise-error
-			  (quote module-name)
-			  "expected a procedure, got: ~e" name)))
-		    (syntax
-		     (lambda (in)
-		       (let ([out (name (wrap dom in stx-n-pos? module-name))])
-			 (wrap rng out stx-pos? module-name))))))]
-	     [(interface i-e)
-	      (if pos?
-		  (syntax
-		   (let ([interface i-e])
-		     (if (is-a? name interface)
-			 name
-			 (raise-error
-			  (quote module-name)
-			  "expected an instance of ~e, got: ~e" name interface))))
-		  (syntax name))]
-	     [number
-	      (if pos?
-		  (syntax
-		   (if (number? name)
-		       name
-		       (raise-error
-			(quote module-name)
-			"expected a number, got: ~e" name)))
-		  (syntax name))]
-	     [boolean
-	      (if pos?
-		  (syntax
-		   (if (boolean? name)
-		       name
-		       (raise-error
-			(quote module-name)
-			"expected a boolean, got: ~e" name)))
-		  (syntax name))]))])))
+        [(_ type to-check pos-blame-e neg-blame-e)
+         (syntax
+          (let ([name to-check]
+                [neg-blame neg-blame-e]
+                [pos-blame pos-blame-e])
+            (unless (and (symbol? neg-blame)
+                         (symbol? pos-blame))
+              (error 'contract "expected symbols as names for assigning blame, got: ~e and ~e"
+                     neg-blame pos-blame))
+            (contract/internal type name pos-blame neg-blame)))])))
 
-  (define-syntax provide/type
+  (define-syntax contract/internal
     (lambda (stx)
+      (define (all-but-last lst)
+        (cond
+          [(null? lst) null]
+          [(null? (cdr lst)) null]
+          [else (cons (car lst) (all-but-last (cdr lst)))]))
       (syntax-case stx ()
-	[(_ module-name internal-name external-name type)
-	 (with-syntax ([module-name (syntax-source stx)])
-	   (syntax
-	    (begin
-	      (define external-name
-		(make-wrapper
-		 (wrap type internal-name #t module-name)
-		 (quote type)))
-	      (provide external-name))))])))
-
-  (define-syntax require/type
-    (lambda (stx)
-      (syntax-case stx ()
-	[(_ orig-name wrap-name type)
-	 (with-syntax ([module-name (syntax-source stx)])
-	   (syntax
-	    (define wrap-name
-	      (if (equal? (quote type) (wrapper-type orig-name))
-		  (wrap type (wrapper-defn orig-name) #f module-name)
-		  (error 'require/type "expected types to match, but they don't: ~s ~s"
-			 (quote type) (wrapper-type orig-name))))))]))))
+	[(_ type name pos-blame neg-blame)
+         (and (identifier? (syntax name))
+              (identifier? (syntax neg-blame))
+              (identifier? (syntax pos-blame)))
+         (syntax-case (syntax type) (-> number union boolean interface tst)
+           [(-> funs ...)
+            (with-syntax ([(doms ...) (all-but-last (syntax->list (syntax (funs ...))))]
+                          [rng (car (last-pair (syntax->list (syntax (funs ...)))))])
+              (with-syntax ([(ins ...) (generate-temporaries (syntax (doms ...)))])
+                (syntax
+                 (if (procedure? name)
+                     (lambda (ins ...)
+                       (let ([out (name (contract doms ins neg-blame pos-blame) ...)])
+                         (contract rng out pos-blame neg-blame)))
+                     (raise-error
+                      pos-blame
+                      "expected a procedure, got: ~e" name)))))]
+           [(interface i-e)
+            (syntax
+             (let ([interface i-e])
+               (if (is-a? name interface)
+                   name
+                   (raise-error
+                    pos-blame
+                    "expected an instance of ~e, got: ~e" name interface))))]
+           [number
+            (syntax
+             (if (number? name)
+                 name
+                 (raise-error
+                  pos-blame
+                  "expected a number, got: ~e" name)))]
+           [boolean
+            (syntax
+             (if (boolean? name)
+                 name
+                 (raise-error
+                  pos-blame
+                  "expected a boolean, got: ~e" name)))]
+           [tst
+            (syntax name)]
+           [else
+            '(printf "equal: ~s datum equal: ~a~n" 
+                    (equal? (syntax ->) (car (syntax-e (syntax type))))
+                    (equal? (syntax-object->datum (syntax ->))
+                            (syntax-object->datum (car (syntax-e (syntax type))))))
+            (raise-syntax-error 
+             'contract
+             "unknown contract specification" (syntax type))])]))))

@@ -72,13 +72,18 @@
                           (hash-table-put! ht2 constant unknown-word)
                           (unless (member no-warning-cache-key (unbox already-warned))
                             (set-box! already-warned (cons no-warning-cache-key (unbox already-warned)))
-                            (fprintf
-                             (current-error-port)
-                             "WARNING: language ~a defines ~a, but\n         language ~a does not, substituting:\n         \"~a\"\n         other words may be substituted without warning.\n"
-                             (sc-language-name sc1)
-                             constant
-                             (sc-language-name sc2)
-                             unknown-word))))))))])
+                            
+                            ;; in some cases, the printf may raise an exception because the error port
+                            ;; is gone. If so, just don't display the warning.
+                            (with-handlers ([not-break-exn?
+                                             (lambda (x) (void))])
+                              (fprintf
+                               (current-error-port)
+                               "WARNING: language ~a defines ~a, but\n         language ~a does not, substituting:\n         \"~a\"\n         other words may be substituted without warning.\n"
+                               (sc-language-name sc1)
+                               constant
+                               (sc-language-name sc2)
+                               unknown-word)))))))))])
           (for-each (lambda (x) 
                       (check-one-way x first-string-constant-set)
                       (check-one-way first-string-constant-set x))

@@ -176,9 +176,6 @@
 ;; foreign name into the type syntax, which allows generated wrappers to have a
 ;; proper name.
 (provide* (unsafe get-ffi-obj))
-(define (get-ffi-obj* name lib type . failure)
-  (ffi-get (ffi-obj (get-ffi-obj-name 'get-ffi-obj name) (get-ffi-lib lib))
-           type))
 (define get-ffi-obj*
   (case-lambda
    [(name lib type) (get-ffi-obj* name lib type #f)]

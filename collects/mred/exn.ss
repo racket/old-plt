@@ -7,4 +7,5 @@
 
       (define-struct (exn original-outside-world-struct:exn) ())
       (define-struct (exn:unknown-preference struct:exn) ())
-      (define-struct (exn:during-preferences struct:exn) ()))))
+      (define-struct (exn:during-preferences struct:exn) ())
+      (define-struct (exn:url struct:exn) ()) )))

@@ -251,18 +251,20 @@
        (if print-vec-length?
 	   (lambda (v)
 	     (let ([len (vector-length v)])
-	       (let ([last (vector-ref v (sub1 len))])
-		 (let loop ([i (- len 2)])
-		   (if (i . < . 0)
-		       (list last)
-		       (let ([e (vector-ref v i)])
-			 (if (eq? e last)
-			     (loop (sub1 i))
-			     (let loop ([i (sub1 i)][r (list e last)])
-			       (if (i . < . 0)
-				   r
-				   (loop (sub1 i) (cons (vector-ref v i) r)))))))))))
-	   vector->list))
+               (if (zero? len)
+                   null
+                   (let ([last (vector-ref v (sub1 len))])
+                     (let loop ([i (- len 2)])
+                       (if (i . < . 0)
+                           (list last)
+                           (let ([e (vector-ref v i)])
+                             (if (eq? e last)
+                                 (loop (sub1 i))
+                                 (let loop ([i (sub1 i)][r (list e last)])
+                                   (if (i . < . 0)
+                                       r
+                                       (loop (sub1 i) (cons (vector-ref v i) r))))))))))))
+           vector->list))
 
      (define found-cycle
        (or print-graph?
@@ -279,10 +281,10 @@
 				[(vector? obj)
 				 (let ([len (vector-length obj)])
 				   (let loop ([i 0])
-				     (if 
-				      (= i len)
-				      (or (vector-ref obj i)
-					  (loop (add1 i))))))]
+				     (if (= i len)
+					 #f
+					 (or (vector-ref obj i)
+					     (loop (add1 i))))))]
 				[(pair? obj)
 				 (or (loop (car obj))
 				     (loop (cdr obj)))]
@@ -309,12 +311,10 @@
 			       (cond
 				[(vector? obj)
 				 (let ([len (vector-length obj)])
-				   (let loop ([i 0])
-				     (if 
-				      (= i len)
-				      (begin
-					(loop (vector-ref obj i))
-					(loop (add1 i))))))]
+				   (let vloop ([i 0])
+				     (unless (= i len)
+				        (loop (vector-ref obj i))
+					(vloop (add1 i)))))]
 				[(pair? obj)
 				 (loop (car obj))
 				 (loop (cdr obj))]

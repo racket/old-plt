@@ -567,6 +567,9 @@ typedef struct Scheme_Process {
   Scheme_Object *list_stack;
   int list_stack_pos;
 
+  Scheme_Object **vector_memory;
+  int vector_memory_size, vector_memory_count;
+
   long block_start_sleep;
 
 #ifdef AGRESSIVE_ZERO_TB

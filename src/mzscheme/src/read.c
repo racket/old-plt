@@ -100,6 +100,10 @@ static int peek_char(Scheme_Object *port);
 
 #define local_list_stack (scheme_current_process->list_stack)
 #define local_list_stack_pos (scheme_current_process->list_stack_pos)
+
+#define local_vector_memory (scheme_current_process->vector_memory)
+#define local_vector_memory_size (scheme_current_process->vector_memory_size)
+#define local_vector_memory_count (scheme_current_process->vector_memory_count)
 #else
 #define local_can_read_type_symbol (p->quick_can_read_type_symbol)
 #define local_can_read_compiled (p->quick_can_read_compiled)
@@ -112,6 +116,10 @@ static int peek_char(Scheme_Object *port);
 
 #define local_list_stack (p->list_stack)
 #define local_list_stack_pos (p->list_stack_pos)
+
+#define local_vector_memory (p->vector_memory)
+#define local_vector_memory_size (p->vector_memory_size)
+#define local_vector_memory_count (p->vector_memory_count)
 #endif
 
 #define NUM_CELLS_PER_STACK 500
@@ -1645,6 +1653,37 @@ static Scheme_Object *read_compact(CPort *port,
 	v = ((scheme_type_readers)[scheme_application_type])(l);
       }
       break;
+    case CPT_SYM_VECTOR_REMEMBER:
+      /* Read a vector (of symbols) and push it onto the vector "memory" stack */
+      v = read_compact(port, ht, 0 CURRENTPROCARG);
+      if (local_vector_memory_count == local_vector_memory_size) {
+	Scheme_Object **old = local_vector_memory;
+	local_vector_memory_size = local_vector_memory_size ? 2 * local_vector_memory_size : 20;
+	local_vector_memory = MALLOC_N(Scheme_Object *, local_vector_memory_size);
+	memcpy(local_vector_memory, old, local_vector_memory_count * sizeof(Scheme_Object *));
+      }
+      local_vector_memory[local_vector_memory_count++] = v;
+      break;
+    case CPT_SYM_VECTOR_REUSE:
+      {
+	Scheme_Object *oldv, **oels, **els;
+	int i = read_compact_number(port);
+	if (i >= local_vector_memory_count)
+	  scheme_raise_exn(MZEXN_READ_COMPILED,
+			   port,
+			   "read (compiled): bad symbol vector reuse index: %d at %ld",
+			   i, CP_TELL(port));
+	oldv = local_vector_memory[i];
+
+	/* Copy it */
+	i = SCHEME_VEC_SIZE(oldv);
+	v = scheme_make_vector(i, scheme_null);
+	oels = SCHEME_VEC_ELS(oldv);
+	els = SCHEME_VEC_ELS(v);
+	while (i--)
+	  els[i] = oels[i];
+      }
+      break;
     default:
       {
 	v = NULL;
@@ -1821,6 +1860,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
 				    Scheme_Hash_Table **ht
 				    CURRENTPROCPRM)
 {
+  Scheme_Object *result;
 #if USE_BUFFERING_CPORT
   CPort cp;
 #endif
@@ -1864,5 +1904,12 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   rp = port;
 #endif
 
-  return read_marshalled(scheme_compilation_top_type, rp, ht CURRENTPROCARG);
+  local_vector_memory_size = 0;
+  local_vector_memory_count = 0;
+
+  result = read_marshalled(scheme_compilation_top_type, rp, ht CURRENTPROCARG);
+
+  local_vector_memory = NULL;
+
+  return result;
 }

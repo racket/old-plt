@@ -2546,7 +2546,7 @@ static Scheme_Object *read_body_data(Scheme_Object *o)
 static Scheme_Object *write_compound_data(Scheme_Object *o)
 {
   CompoundData *data;
-  Scheme_Object *exs, *subs, *tags, *counts, *maps;
+  Scheme_Object *exs, *subs, *tags, *counts, *maps, *lmap, *prev;
   ParamMap *map;
   int i, j;
 
@@ -2568,13 +2568,29 @@ static Scheme_Object *write_compound_data(Scheme_Object *o)
   maps = scheme_null;
   for (i = data->num_subunits; i--; ) {
     map = data->param_maps[i];
+
+    /* Put names with the same source index in a vector; this gets the .zo 
+       "symvector" optimization for complex, repetitive linking */
+    lmap = NULL;
+    prev = NULL;
     for (j = data->param_counts[i]; j--; ) {
+      Scheme_Object *x, *t;
+
       if (map[j].index < 0)
-	maps = cons(scheme_make_integer(map[j].u.pos), maps);
+	x = scheme_make_integer(map[j].u.pos);
       else
-	maps = cons(map[j].u.ext_id, maps);
-      maps = cons(scheme_make_integer(map[j].index), maps);
+	x = map[j].u.ext_id;
+      t = scheme_make_integer(map[j].index);
+
+      if (t != prev) {
+	if (lmap) maps = cons(scheme_list_to_vector(lmap), maps);
+	lmap = scheme_null;
+      }
+      lmap = cons(t, cons(x, lmap));
+      prev = t;
     }
+    if (lmap)
+      maps = cons(scheme_list_to_vector(lmap), maps);
   }
 
   return cons(scheme_make_integer(data->num_exports),
@@ -2591,9 +2607,9 @@ static Scheme_Object *write_compound_data(Scheme_Object *o)
 static Scheme_Object *read_compound_data(Scheme_Object *o)
 {
   CompoundData *data;
-  Scheme_Object *exs, *subs, *counts, *maps, *tags;
+  Scheme_Object *exs, *subs, *counts, *maps, *tags, **els = NULL;
   ParamMap *map;
-  int c, n, i, j;
+  int c, n, i, j, p = 0, d = 0;
 
   data = (CompoundData *)scheme_malloc_tagged(sizeof(CompoundData));
   data->type = scheme_unit_compound_data_type;
@@ -2637,13 +2653,22 @@ static Scheme_Object *read_compound_data(Scheme_Object *o)
   for (i = 0; i < n; i++) {
     c = data->param_counts[i];
     map = data->param_maps[i] = (ParamMap *)scheme_malloc(c * sizeof(ParamMap));
-    for (j = 0; j < c; j++, maps = SCHEME_CDR(maps)) {
-      map[j].index = SCHEME_INT_VAL(SCHEME_CAR(maps));
-      maps = SCHEME_CDR(maps);
+    
+    for (j = 0; j < c; j++) {
+      if (d >= p) {
+	Scheme_Object *vec;
+	vec = SCHEME_CAR(maps);
+	maps = SCHEME_CDR(maps);
+	els = SCHEME_VEC_ELS(vec);
+	p = SCHEME_VEC_SIZE(vec);
+	d = 0;
+      }
+
+      map[j].index = SCHEME_INT_VAL(els[d++]);
       if (map[j].index < 0)
-	map[j].u.pos = SCHEME_INT_VAL(SCHEME_CAR(maps));
+	map[j].u.pos = SCHEME_INT_VAL(els[d++]);
       else
-	map[j].u.ext_id = SCHEME_CAR(maps);
+	map[j].u.ext_id = els[d++];
     }
   }
 

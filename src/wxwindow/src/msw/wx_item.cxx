@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_item.cxx,v 1.8 1998/09/21 05:21:16 mflatt Exp $
+ * RCS_ID:      $Id: wx_item.cxx,v 1.9 1998/10/12 03:27:56 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -348,7 +348,23 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	  return 0;
       }
 
+      break;
+
+#ifdef CATCH_ALT_KEY
+    case WM_SYSKEYDOWN:
+#endif
     case WM_KEYDOWN:
+      if (!((wParam != VK_ESCAPE) 
+	    && (wParam != VK_SPACE) 
+	    && (wParam != VK_RETURN)
+	    && (wParam != VK_TAB)
+	    && (wParam != VK_DELETE)))
+	/* Already covered by WM_CHAR */
+	return 0;
+
+#ifdef CATCH_ALT_KEY
+    case WM_SYSCHAR:
+#endif
     case WM_CHAR: // Always an ASCII character
       {
 	int id = wParam;
@@ -412,6 +428,9 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 LONG APIENTRY _EXPORT
   wxSubclassedGenericControlProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+  if (message == WM_GETDLGCODE)
+    return DLGC_WANTMESSAGE;
+
   wxItem *item = wxFindControlFromHandle(hWnd);
 
   if (!item) {

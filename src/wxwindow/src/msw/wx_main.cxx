@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_main.cxx,v 1.6 1998/09/17 05:20:18 mflatt Exp $
+ * RCS_ID:      $Id: wx_main.cxx,v 1.7 1998/09/21 05:21:16 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -68,9 +68,7 @@ extern wxNonlockingHashTable *wxWinHandleList;
 extern wxNonlockingHashTable *wxSliderList;
 extern FARPROC wxGenericControlSubClassProc;
 
-#ifdef _____USE_KEYBOARD_HOOK
 extern void wxSetKeyboardHook(Bool doIt);
-#endif
 
 long last_msg_time; /* MATTHEW: timeStamp implementation */
 
@@ -393,9 +391,7 @@ void wxInitialize(HINSTANCE hInstance)
   wxWinHandleList = new wxNonlockingHashTable();
   wxSliderList = new wxNonlockingHashTable();
 
-#ifdef ____USE_KEYBOARD_HOOK
   wxSetKeyboardHook(TRUE);
-#endif
 }
 
 
@@ -410,9 +406,7 @@ void wxCleanUp(void)
   GC_gcollect();
 #endif
 
-#ifdef _____USE_KEYBOARD_HOOK
   wxSetKeyboardHook(FALSE);
-#endif
   wxCommonCleanUp();
 
 #ifndef __WATCOMC__

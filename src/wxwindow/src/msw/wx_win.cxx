@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.15 1998/09/17 05:20:18 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.16 1998/09/21 05:21:17 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -941,6 +941,9 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
             retval = wnd->OnMeasureItem((int)wParam, (MEASUREITEMSTRUCT *)lParam);
           break;
         }
+#ifdef CATCH_ALT_KEY
+        case WM_SYSKEYDOWN:
+#endif
         case WM_KEYDOWN:
         {
             if (wParam == VK_SHIFT)
@@ -948,7 +951,11 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
             else if (wParam == VK_CONTROL)
               wxControlDown = TRUE;
             // Avoid duplicate messages to OnChar
-            else if ((wParam != VK_ESCAPE) && (wParam != VK_SPACE) && (wParam != VK_RETURN) && (wParam != VK_BACK))
+            else if ((wParam != VK_ESCAPE) 
+		     && (wParam != VK_SPACE) 
+		     && (wParam != VK_RETURN) 
+		     && (wParam != VK_TAB) 
+		     && (wParam != VK_BACK))
 	    {
               wnd->OnChar((WORD)wParam, lParam);
 	    }
@@ -962,7 +969,10 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
               wxControlDown = FALSE;
             break;
         }
-        case WM_CHAR: // Always an ASCII character
+#ifdef CATCH_ALT_KEY
+        case WM_SYSCHAR:
+#endif
+        case WM_CHAR:
         {
           wnd->OnChar((WORD)wParam, lParam, TRUE);
           break;
@@ -1373,14 +1383,20 @@ LONG APIENTRY _EXPORT
             wnd->OnMouseMove(x, y, wParam);
             break;
         }
-/* Do we intercept keystrokes from dialogs, or would this cause problems?
+#ifdef CATCH_ALT_KEY
+        case WM_SYSKEYDOWN:
+#endif
         case WM_KEYDOWN:
         {
             if (wParam == VK_SHIFT)
               wxShiftDown = TRUE;
             else if (wParam == VK_CONTROL)
               wxControlDown = TRUE;
-            else if ((wParam != VK_ESCAPE) && (wParam != VK_SPACE) && (wParam != VK_RETURN) && (wParam != VK_DELETE))
+            else if ((wParam != VK_ESCAPE) 
+		     && (wParam != VK_SPACE) 
+		     && (wParam != VK_RETURN)
+		     && (wParam != VK_TAB)
+		     && (wParam != VK_DELETE))
               wnd->OnChar(wParam, lParam);
             break;
         }
@@ -1392,7 +1408,15 @@ LONG APIENTRY _EXPORT
               wxControlDown = FALSE;
             break;
         }
-*/
+#ifdef CATCH_ALT_KEY
+        case WM_SYSCHAR:
+#endif
+        case WM_CHAR:
+        {
+          wnd->OnChar((WORD)wParam, lParam, TRUE);
+          break;
+        }
+
         case WM_HSCROLL:
         {
 #ifdef WIN32
@@ -3583,7 +3607,6 @@ wxWindow *wxGetActiveWindow(void)
   return NULL;
 }
 
-#if 0 && USE_KEYBOARD_HOOK
 // Windows keyboard hook. Allows interception of e.g. F1, ESCAPE
 // in active frames and dialogs, regardless of where the focus is.
 static HHOOK wxTheKeyboardHook = 0;
@@ -3593,22 +3616,25 @@ int APIENTRY _EXPORT
 
 void wxSetKeyboardHook(Bool doIt)
 {
+#if 0
   if (doIt) {
     wxTheKeyboardHookProc = MakeProcInstance((FARPROC) wxKeyboardHook, wxhInstance);
-    wxTheKeyboardHook = SetWindowsHookEx(WH_KEYBOARD, wxTheKeyboardHookProc, wxhInstance,
-					 GetCurrentThreadId());
+    wxTheKeyboardHook = SetWindowsHookEx(WH_KEYBOARD, 
+					 (HOOKPROC)wxTheKeyboardHookProc, 
+					 wxhInstance, GetCurrentThreadId());
   } else {
     UnhookWindowsHookEx(wxTheKeyboardHook);
     FreeProcInstance(wxTheKeyboardHookProc);
   }
+#endif
 }
 
 int APIENTRY _EXPORT
   wxKeyboardHook(int nCode, WORD wParam, DWORD lParam)
 {
+#if 0
   DWORD hiWord = HIWORD(lParam);
-  if (nCode != HC_NOREMOVE && ((hiWord & KF_UP) == 0))
-  {
+  if (nCode != HC_NOREMOVE && ((hiWord & KF_UP) == 0)) {
     int id;
     if ((id = wxCharCodeMSWToWX(wParam)) != 0) {
       wxKeyEvent *_event = new wxKeyEvent(wxEVENT_TYPE_CHAR);
@@ -3620,11 +3646,14 @@ int APIENTRY _EXPORT
       event.keyCode = id;
       event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
-      if (wxTheApp && wxTheApp->OnCharHook(event))
-        return 1;
+      return 0;
     }
   }
+#else
+  if (nCode >= 0)
+    return 0;
+#endif
+
   return (int)CallNextHookEx(wxTheKeyboardHook, nCode, wParam, lParam);
 }
 
-#endif

@@ -25,13 +25,6 @@
 BOOL wxRadioBox::MSWCommand(UINT param, WORD id)
 {
   if (param == BN_CLICKED)  {
-    wxNode *n;
-    int i;
-    for (n = subControls.First(); n; n = n->Next(), i++)
-      if (id == (long)n->Data())
-	selected = i;
-    wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
-    ProcessCommand(*event);
     return TRUE;
   } else 
     return FALSE;
@@ -43,12 +36,16 @@ extern int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LP
 typedef struct {
   FARPROC old;
   wxItem *item;
+  int which;
 } wxRBInfo;
 
 // Sub-classed generic control proc
 LONG APIENTRY _EXPORT
 wxRadioItemProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+  if (message == WM_GETDLGCODE)
+    return DLGC_WANTMESSAGE;
+
   wxRBInfo *i = (wxRBInfo *)wxFindControlFromHandle(hWnd);
   
   if (!i) return FALSE;
@@ -57,16 +54,27 @@ wxRadioItemProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
   if (!wxDoItemPres(i->item, hWnd, message, wParam, lParam, &r))
     return r;
 
-  return CallWindowProc((WNDPROC)i->old, hWnd, message, wParam, lParam);
+  if (message == WM_LBUTTONDOWN) {
+    wxRadioBox *rb = (wxRadioBox *)i->item;
+    if (rb->buttonEnabled[i->which]) {
+      rb->SetSelection(i->which);
+      rb->ButtonFocus(i->which);
+      wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
+      i->item->ProcessCommand(*event);
+    }
+    return TRUE;
+  } else
+    return CallWindowProc((WNDPROC)i->old, hWnd, message, wParam, lParam);
 }
 
 static FARPROC wxGenericRIProc;
 
-void SubclassRadioButton(HWND hWnd, wxItem *item)
+static void SubclassRadioButton(HWND hWnd, wxItem *item, int which)
 {
   wxRBInfo *i = (wxRBInfo *)malloc(sizeof(wxRBInfo));
   
   i->item = item;
+  i->which = which;
 
   // Subclass again for purposes of dialog editing mode
   wxAddControlHandle(hWnd, (wxItem *)i);
@@ -223,7 +231,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
 #if CTL3D
     Ctl3dSubclassCtl(radioButtons[i]);
 #endif
-    SubclassRadioButton(radioButtons[i], this);
+    SubclassRadioButton(radioButtons[i], this, i);
     HDC the_dc = GetWindowDC((HWND)radioButtons[i]) ;
     if (buttonFont && buttonFont->GetInternalFont(the_dc))
       SendMessage((HWND)radioButtons[i],WM_SETFONT,
@@ -356,43 +364,34 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
 #if FAFA_LIB && !CTL3D
 
     if (Choices[i]->Ok()
-
         && (Choices[i]->selectedIntoDC >= 0)) {
-
 	 bm_labels[i] = Choices[i];
-
 	 bm_labels[i]->selectedIntoDC++;
 	 radioButtons[i] = wxwmCreateWindowEx(0, FafaChck, tmp,
 					      groupStyle | BITRADIO_FLAGS,
 					      0, 0, 0, 0,
 					      the_handle, (HMENU)newId, wxhInstance, NULL);
-     SubclassRadioButton(radioButtons[i], this);
-    
-    SetBitmapDimensionEx(Choices[i]->ms_bitmap,
-
-			 Choices[i]->GetWidth(),
-
-			 Choices[i]->GetHeight(),
-
-			 NULL);
-    SendMessage((HWND)radioButtons[i],WM_CHANGEBITMAP,
-                  (WPARAM)0xFFFF/*((Choices[i]->GetHeight()<<8)+Choices[i]->GetWidth())*/,
-                  (LPARAM)Choices[i]->ms_bitmap);
+	 SubclassRadioButton(radioButtons[i], this, i);
+	 
+	 SetBitmapDimensionEx(Choices[i]->ms_bitmap,
+			      Choices[i]->GetWidth(),
+			      Choices[i]->GetHeight(),
+			      NULL);
+	 SendMessage((HWND)radioButtons[i],WM_CHANGEBITMAP,
+		     (WPARAM)0xFFFF/*((Choices[i]->GetHeight()<<8)+Choices[i]->GetWidth())*/,
+		     (LPARAM)Choices[i]->ms_bitmap);
     } else 
 #else
-
       {
-
-	 bm_labels[i] = NULL;
-	 radioButtons[i] = wxwmCreateWindowEx(0, RADIO_CLASS, tmp,
-					      groupStyle | RADIO_FLAGS, 0, 0, 0, 0,
-					      the_handle, (HMENU)newId, wxhInstance, NULL);
-
-    }
+	bm_labels[i] = NULL;
+	radioButtons[i] = wxwmCreateWindowEx(0, RADIO_CLASS, tmp,
+					     groupStyle | RADIO_FLAGS, 0, 0, 0, 0,
+					     the_handle, (HMENU)newId, wxhInstance, NULL);
+      }
 #if CTL3D
     Ctl3dSubclassCtl(radioButtons[i]);
 #endif
-	SubclassRadioButton(radionButtons[i]);
+    SubclassRadioButton(radionButtons[i], this, i);
 #endif
     HDC the_dc = GetWindowDC((HWND)radioButtons[i]) ;
     if (buttonFont && buttonFont->GetInternalFont(the_dc))
@@ -538,43 +537,24 @@ int wxRadioBox::FindString(char *s)
 
 
 void wxRadioBox::SetButton(int which, int value)
-
 {
-
   int reset = 0;
 
-
-
   if (IsGray() || !buttonEnabled[which]) {
-
     ::EnableWindow(radioButtons[which], TRUE);
-
     reset = 1;
-
   }
 
-
-
-   SendMessage(radioButtons[which], 
-
+  SendMessage(radioButtons[which], 
 #if FAFA_LIB
-
-	      isFafa?FAFA_SETCHECK:BM_SETCHECK, 
-
+	      isFafa ? FAFA_SETCHECK : BM_SETCHECK, 
 #else
-
 	      BM_SETCHECK,
-
 #endif
-
 	      value, 0L);
 
-
-
-   if (reset)
-
-     ::EnableWindow(radioButtons[which], FALSE);
-
+  if (reset)
+    ::EnableWindow(radioButtons[which], FALSE);
 }
 
 
@@ -583,18 +563,13 @@ void wxRadioBox::SetSelection(int N)
   if ((N < 0) || (N >= no_items))
     return;
 
-
   if (N == selected)
-
     return;
 
-
   if (selected >= 0 && selected < no_items)
-
     SetButton(selected, 0);
     
   SetButton(N, 1);
-
 
   selected = N;
 }
@@ -861,19 +836,14 @@ Bool wxRadioBox::Show(Bool show)
   else
     cshow = SW_HIDE;
 
-  
-
   ShowWindow((HWND)ms_handle, cshow);
-  
 
   if (static_label)
     ShowWindow(static_label, cshow);
-  
 
   int i;
   for (i = 0; i < no_items; i++)
     ShowWindow(radioButtons[i], cshow);
-  
 
   return TRUE;
 }
@@ -882,49 +852,28 @@ Bool wxRadioBox::Show(Bool show)
 void wxRadioBox::Enable(int item, Bool enable)
 {
   if (item >= 0 && item < no_items) {
-
     buttonEnabled[item] = enable;
-
     if (!IsGray())
       ::EnableWindow(radioButtons[item], enable);
-
   }
 }
-
-
 
 void wxRadioBox::Enable(Bool enable)
-
 {
-
   wxWindow::Enable(enable);
-
 }
 
-
-
 void wxRadioBox::ChangeToGray(Bool gray)
-
 {
-
   wxWindow::ChangeToGray(gray);
 
-
-
   int i;
-
   for (i = 0; i < no_items; i++) {
-
     if (gray)
-
       ::EnableWindow(radioButtons[i], FALSE);
-
     else
-
       ::EnableWindow(radioButtons[i], buttonEnabled[i]);
-
   }
-
 }
 
 // Show a specific button
@@ -941,4 +890,18 @@ void wxRadioBox::Show(int item, Bool show)
       cshow = SW_HIDE;
     ShowWindow(radioButtons[item], cshow);
   }
+}
+
+int wxRadioBox::ButtonFocus(int which)
+{
+  if (which < 0) {
+    int i;
+    HWND fw = ::GetFocus();
+    for (i = no_items; i--; )
+      if (fw == radioButtons[i])
+	return i;
+  } else if (which < no_items)
+    ::SetFocus(radioButtons[which]);
+
+  return -1;
 }

@@ -91,6 +91,7 @@ class wxRadioBox: public wxbRadioBox
   void SetLabelColour(wxColour*col) ;
   void SetButtonColour(wxColour*col) ;
 
+  int ButtonFocus(int i);
 };
 
 #endif // IN_CPROTO

@@ -15,6 +15,8 @@
 
 #define wx_TabCtrl_InsertItem(h, nv, tie) \
    SendMessageW(h, (UINT)TCM_INSERTITEMW, nv, (LPARAM)tie)
+#define wx_TabCtrl_SetItem(h, nv, tie) \
+   SendMessageW(h, (UINT)TCM_SETITEMW, nv, (LPARAM)tie)
 
 BOOL wxTabChoice::MSWCommand(UINT param, WORD WXUNUSED(id))
 {
@@ -204,6 +206,16 @@ void wxTabChoice::Delete(int i)
 {
   if ((i >= 0) && (i < Number()))
     TabCtrl_DeleteItem((HWND)ms_handle, i);
+}
+
+void wxTabChoice::SetLabel(int i, char *s)
+{
+  if ((i >= 0) && (i < Number())) {
+    TCITEMW ti;
+    ti.mask = TCIF_TEXT;
+    ti.pszText = wxWIDE_STRING(s);
+    wx_TabCtrl_SetItem((HWND)ms_handle, i, &ti);
+  }
 }
 
 Bool wxTabChoice::Show(Bool show) 

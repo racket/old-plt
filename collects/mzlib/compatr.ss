@@ -7,7 +7,7 @@
    (define #%1+ #%add1)
    (define #%1- #%sub1)
    
-   (define =? #%=)
+   (define =? =)
    (define <? <)
    (define >? >)
    (define <=? <)

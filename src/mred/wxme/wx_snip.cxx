@@ -2012,7 +2012,7 @@ wxBufferDataClassList *wxMakeTheBufferDataClassList()
 
 /**************************************************/
 
-int wxInitSnips(void)
+void wxInitSnips(void)
 {
   wxREGGLOB(TheTextSnipClass);
   wxREGGLOB(TheTabSnipClass);
@@ -2026,6 +2026,4 @@ int wxInitSnips(void)
   TheMediaSnipClass = new MediaSnipClass;
   TheImageSnipClass = new ImageSnipClass;
   TheLocationBufferDataClass = new LocationBufferDataClass;
-
-  return 0;
 }

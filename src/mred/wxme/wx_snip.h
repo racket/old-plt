@@ -23,7 +23,7 @@ enum {
   wxSNIP_CAN_DISOWN = 0x4000
 };
 
-extern wxInitSnips(void);
+extern void wxInitSnips(void);
 
 #define WRITE_FUNC \
    Bool wxmbWriteSnipsToFile(class wxMediaStreamOut *, \

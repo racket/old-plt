@@ -11,21 +11,21 @@
            (lib "readerr.ss" "syntax"))
   
   (require-for-syntax "lexer.ss")
-  ;(require (lib "build-grammar.ss" "tester"))
+  (require (lib "build-grammar.ss" "tester"))
 
-  (define-syntax testing-parser
+  #;(define-syntax testing-parser
     (syntax-rules ()
       ((_ parse-info ...) (parser parse-info ...))))  
   
   (provide parse-intermediate parse-intermediate-interactions)
-  ;(provide intermediate-grammar)
+  (provide intermediate-grammar)
   
   (define parsers
     (testing-parser
      (start CompilationUnit IntermediateInteractions)
      ;;(debug "parser.output")
      (tokens java-vals special-toks Keywords Separators EmptyLiterals Operators)
-     ;(terminals val-tokens special-tokens keyword-tokens separator-tokens literal-tokens operator-tokens)
+     (terminals val-tokens special-tokens keyword-tokens separator-tokens literal-tokens operator-tokens)
      (error (lambda (tok-ok name val start-pos end-pos)
               (if ((determine-error))
                   (raise-read-error (format "Parse error near <~a:~a>" name val)
@@ -587,8 +587,8 @@
       (ConstantExpression
        [(Expression) $1]))))
   
-  ;(define intermediate-grammar (cadr parsers))
-  ;(set! parsers (car parsers))
+  (define intermediate-grammar (cadr parsers))
+  (set! parsers (car parsers))
   
   (define parse-intermediate (car parsers))
   (define parse-intermediate-interactions (cadr parsers))

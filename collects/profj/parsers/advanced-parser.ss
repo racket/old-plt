@@ -10,9 +10,9 @@
            (lib "lex.ss" "parser-tools")
            (lib "readerr.ss" "syntax"))
   
-  ;(require (lib "build-grammar.ss" "tester"))
+  (require (lib "build-grammar.ss" "tester"))
   
-  (define-syntax testing-parser
+  #;(define-syntax testing-parser
     (syntax-rules ()
       ((_ parse-info ...) (parser parse-info ...))))
   
@@ -24,7 +24,7 @@
      (start CompilationUnit AdvancedInteractions)
      ;;(debug "parser.output")
      (tokens java-vals special-toks Keywords Separators EmptyLiterals Operators)
-     ;(terminals val-tokens special-tokens keyword-tokens separator-tokens literal-tokens operator-tokens)
+     (terminals val-tokens special-tokens keyword-tokens separator-tokens literal-tokens operator-tokens)
      (error (lambda (tok-ok name val start-pos end-pos)
               (if ((determine-error))
                   (raise-read-error (format "Parse error near <~a:~a>" name val)
@@ -791,8 +791,8 @@
       (ConstantExpression
        [(Expression) $1]))))
 
-  ;(define advanced-grammar (cadr parsers))
-  ;(set! parsers (car parsers))
+  (define advanced-grammar (cadr parsers))
+  (set! parsers (car parsers))
   
   (define parse-advanced (car parsers))
   (define parse-advanced-interactions (cadr parsers)))

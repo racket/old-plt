@@ -5,8 +5,10 @@
 ; To do:
 ; deal with multiple values (?)
 ; handle structs, vectors (done?)
-; flip arguments in event-handling combinators
+; flip arguments in event-handling combinators (done)
 ; localized exception-handling mechanism
+;
+;
 ; generalize and improve notion of time
 ;  (e.g., combine seconds & milliseconds,
 ;  give user general "timer : number -> signal (event?)"
@@ -460,8 +462,9 @@
      (list e)))
   
   ; -=> : event[a] b -> event[b]
-  (define (e . -=> . v)
-    (e . ==> . (lambda (_) v)))
+  (define-syntax -=>
+    (syntax-rules ()
+      [(_ e k-e) (==> e (lambda _ k-e))]))
   
   ; =#> : event[a] (a -> bool) -> event[a]
   (define (e . =#> . p)
@@ -480,10 +483,12 @@
          (emit x)))
      (list e)))
   
-  (define map-e ==>)
-  (define map-const-e -=>)
-  (define filter-e =#>)
-  (define filter-map-e =#=>)
+  (define (map-e f e)
+    (==> e f))
+  (define (filter-e p e)
+    (=#> e p))
+  (define (filter-map-e f e)
+    (=#=> e f))
   
   ; event[a] b (a b -> b) -> event[b]
   (define (collect-e e init trans)
@@ -1086,7 +1091,6 @@
            (rename frp:require require)
            (rename frp:provide provide)
            (rename frp:letrec letrec)
-           (rename frp:rec rec)
            (rename match-b match)
            (rename get-value cur-val)
            (rename lift-app lift)

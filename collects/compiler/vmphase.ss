@@ -89,6 +89,8 @@
 			     [(#%set-cdr!) "MZC_SET_CDR"]
 			     [(#%vector-ref) "MZC_VECTOR_REF"]
 			     [(#%vector-set!) "MZC_VECTOR_SET"]
+			     [(#%string-ref) "MZC_STRING_REF"]
+			     [(#%string-set!) "MZC_STRING_SET"]
 			     [(#%char->integer) "MZC_CHAR_TO_INTEGER"]
 			     [(#%add1) "MZC_ADD1"]
 			     [(#%sub1) "MZC_SUB1"]

@@ -171,6 +171,9 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
 # define MZC_VECTOR_REF(p, v, i) SCHEME_VEC_ELS(v)[SCHEME_INT_VAL(i)]
 # define MZC_VECTOR_SET(p, v, i, x) (SCHEME_VEC_ELS(v)[SCHEME_INT_VAL(i)] = x, scheme_void)
 
+# define MZC_STRING_REF(p, v, i) scheme_make_character(SCHEME_STR_VAL(v)[SCHEME_INT_VAL(i)])
+# define MZC_STRING_SET(p, v, i, x) (SCHEME_STR_VAL(v)[SCHEME_INT_VAL(i)] = SCHEME_CHAR_VAL(x), scheme_void)
+
 #define MZC_CHAR_TO_INTEGER(p, v) scheme_make_integer((unsigned char)SCHEME_CHAR_VAL(v))
 /* End unsafe versions */
 #else
@@ -182,8 +185,8 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
 #define MZC_CDAR(p, av) ((SCHEME_PAIRP(av) && SCHEME_PAIRP(SCHEME_CAR(av))) ? SCHEME_CDR(SCHEME_CAR(av)) : (arg[0] = av, _scheme_direct_apply_primitive_multi(p, 1, arg)))
 #define MZC_CAAR(p, av) ((SCHEME_PAIRP(av) && SCHEME_PAIRP(SCHEME_CAR(av))) ? SCHEME_CAR(SCHEME_CAR(av)) : (arg[0] = av, _scheme_direct_apply_primitive_multi(p, 1, arg)))
 #define MZC_CADDR(p, av) ((SCHEME_PAIRP(av) && SCHEME_PAIRP(SCHEME_CDR(av)) && SCHEME_PAIRP(SCHEME_CDR(SCHEME_CDR(av)))) ? SCHEME_CADR(SCHEME_CDR(av)) : (arg[0] = av, _scheme_direct_apply_primitive_multi(p, 1, arg)))
-#define MZC_SET_CAR(p, av, bv) (SCHEME_PAIRP(av) ? (SCHEME_CAR(av)=bv, scheme_void) : (arg[0] = av, arg[1] = bv, _scheme_direct_apply_primitive_multi(p, 2, arg)))
-#define MZC_SET_CDR(p, av, bv) (SCHEME_PAIRP(av) ? (SCHEME_CDR(av)=bv, scheme_void) : (arg[0] = av, arg[1] = bv, _scheme_direct_apply_primitive_multi(p, 2, arg)))
+#define MZC_SET_CAR(p, av, bv) (SCHEME_MUTABLE_PAIRP(av) ? (SCHEME_CAR(av)=bv, scheme_void) : (arg[0] = av, arg[1] = bv, _scheme_direct_apply_primitive_multi(p, 2, arg)))
+#define MZC_SET_CDR(p, av, bv) (SCHEME_MUTABLE_PAIRP(av) ? (SCHEME_CDR(av)=bv, scheme_void) : (arg[0] = av, arg[1] = bv, _scheme_direct_apply_primitive_multi(p, 2, arg)))
 
 #define MZC_CHAR_TO_INTEGER(p, v) (SCHEME_CHARP(v) ? scheme_make_integer((unsigned char)SCHEME_CHAR_VAL(v)) \
                                    : (arg[0] = v, _scheme_direct_apply_primitive_multi(p, 1, arg)))
@@ -196,6 +199,14 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
                                     && (SCHEME_INT_VAL(i) < SCHEME_VEC_SIZE(v)) \
                                     ? (SCHEME_VEC_ELS(v)[SCHEME_INT_VAL(i)] = x, scheme_void) \
 				    : (arg[0] = v, arg[1] = i, arg[2] = x, _scheme_direct_apply_primitive_multi(p, 3, arg))))
+# define MZC_STRING_REF(p, v, i) ((SCHEME_INTP(i) && SCHEME_STRINGP(v) && (SCHEME_INT_VAL(i) >= 0) \
+                                  && (SCHEME_INT_VAL(i) < SCHEME_STRLEN_VAL(v)) \
+                                  ? scheme_make_character(SCHEME_STR_VAL(v)[SCHEME_INT_VAL(i)]) \
+				  : (arg[0] = v, arg[1] = i, _scheme_direct_apply_primitive_multi(p, 2, arg))))
+# define MZC_STRING_SET(p, v, i, x) ((SCHEME_INTP(i) && SCHEME_MUTABLE_STRINGP(v) && SCHEME_CHARP(x) && (SCHEME_INT_VAL(i) >= 0) \
+                                      && (SCHEME_INT_VAL(i) < SCHEME_VEC_SIZE(v)) \
+                                     ? (SCHEME_STR_VAL(v)[SCHEME_INT_VAL(i)] = SCHEME_CHAR_VAL(x), scheme_void) \
+				     : (arg[0] = v, arg[1] = i, arg[2] = x, _scheme_direct_apply_primitive_multi(p, 3, arg))))
 /* End safe versions */
 #endif
 

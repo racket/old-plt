@@ -1717,7 +1717,9 @@
 	  (let ([ast (vm:build-constant-text ast)])
 	    (cond
 	      [(zodiac:string? ast) 
-	       (fprintf port "scheme_make_string(~s)" (zodiac:read-object ast))]
+	       (fprintf port "scheme_make_immutable_sized_string(~s, ~s, 0)" 
+			(zodiac:read-object ast)
+			(string-length (zodiac:read-object ast)))]
 	      [(zodiac:symbol? ast) 
 	       (let ([s (symbol->string (zodiac:read-object ast))])
 		 (emit-expr "scheme_intern_exact_symbol(~s, ~a)" s (string-length s)))]

@@ -16,6 +16,10 @@
 # define CHECK_FOR_PANEL(x) 0
 #endif
 
+#ifndef wxCONTROL_BORDER
+# define wxCONTROL_BORDER wxBORDER
+#endif
+
 static void FillZero(int *a, int *b) {
   *a = *b = 0;
 }
@@ -51,6 +55,7 @@ static void wxSetBackgroundToGray(wxCanvas *c)
 
 @BEGINSYMBOLS canvasStyle > > PRED BUNDLE
 @SYM "border" : wxBORDER
+@SYM "control-border" : wxCONTROL_BORDER
 @SYM "vscroll" : wxVSCROLL
 @SYM "hscroll" : wxHSCROLL
 @SYM "gl" : wxGL_CONTEXT

@@ -12,6 +12,10 @@
 #include "wxs_obj.h"
 #include "wxs_evnt.h"
 
+#ifndef wxCONTROL_BORDER
+# define wxCONTROL_BORDER 0
+#endif
+
 @MACRO rNULL = return NULL;
 @MACRO rFALSE = return FALSE;
 @MACRO rZERO = return 0;
@@ -29,6 +33,7 @@ extern Bool wxsCheckIsPopupMenu(void *m);
 @SYM "hide-hscroll" : wxMCANVAS_HIDE_H_SCROLL
 @SYM "hide-vscroll" : wxMCANVAS_HIDE_V_SCROLL
 @SYM "deleted" : wxINVISIBLE
+@SYM "control-border" : wxCONTROL_BORDER
 @ENDSYMBOLS
 
 @INCLUDE wxs_fcs.xci

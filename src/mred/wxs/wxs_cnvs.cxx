@@ -42,6 +42,10 @@ START_XFORM_SKIP;
 # define CHECK_FOR_PANEL(x) 0
 #endif
 
+#ifndef wxCONTROL_BORDER
+# define wxCONTROL_BORDER wxBORDER
+#endif
+
 static void FillZero(int *a, int *b) {
   *a = *b = 0;
 }
@@ -76,6 +80,7 @@ static void wxSetBackgroundToGray(wxCanvas *c)
 }
 
 static Scheme_Object *canvasStyle_wxBORDER_sym = NULL;
+static Scheme_Object *canvasStyle_wxCONTROL_BORDER_sym = NULL;
 static Scheme_Object *canvasStyle_wxVSCROLL_sym = NULL;
 static Scheme_Object *canvasStyle_wxHSCROLL_sym = NULL;
 static Scheme_Object *canvasStyle_wxGL_CONTEXT_sym = NULL;
@@ -85,6 +90,8 @@ static void init_symset_canvasStyle(void) {
   REMEMBER_VAR_STACK();
   wxREGGLOB(canvasStyle_wxBORDER_sym);
   canvasStyle_wxBORDER_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("border"));
+  wxREGGLOB(canvasStyle_wxCONTROL_BORDER_sym);
+  canvasStyle_wxCONTROL_BORDER_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("control-border"));
   wxREGGLOB(canvasStyle_wxVSCROLL_sym);
   canvasStyle_wxVSCROLL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("vscroll"));
   wxREGGLOB(canvasStyle_wxHSCROLL_sym);
@@ -105,6 +112,7 @@ static int unbundle_symset_canvasStyle(Scheme_Object *v, const char *where) {
   i = SCHEME_CAR(l);
   if (0) { }
   else if (i == canvasStyle_wxBORDER_sym) { result = result | wxBORDER; }
+  else if (i == canvasStyle_wxCONTROL_BORDER_sym) { result = result | wxCONTROL_BORDER; }
   else if (i == canvasStyle_wxVSCROLL_sym) { result = result | wxVSCROLL; }
   else if (i == canvasStyle_wxHSCROLL_sym) { result = result | wxHSCROLL; }
   else if (i == canvasStyle_wxGL_CONTEXT_sym) { result = result | wxGL_CONTEXT; }

@@ -366,6 +366,7 @@
                   (cons (make-syntax #f `(module ,(module-name) mzscheme
                                            (require (lib "class.ss")
                                                     (prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))
+                                                    (prefic c: (lib "contract.ss"))
                                                     ,@(remove-dup-syntax (translate-require reqs type-recs)))
                                            ,@(map car translated-defs))
                                      #f)
@@ -377,6 +378,7 @@
                                         mzscheme
                                         (require (lib "class.ss")
                                                  (prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))
+                                                 (prefix c: (lib "contract.ss"))
                                                  ,@(remove-dup-syntax
                                                     (translate-require (map (lambda (r) (list (def-file (car defs)) r))
                                                                             (def-uses (car defs)))
@@ -1464,6 +1466,7 @@
                                           (expr-src expr)
                                           (expr-types expr)))
         ((access? expr) (translate-access (access-name expr)
+                                          (expr-types expr)
                                           (expr-src expr)))
         ((special-name? expr) (translate-special-name (special-name-name expr)
                                                       (expr-src expr)))
@@ -1607,8 +1610,8 @@
         (else
          (error 'translate-op (format "Translate op given unknown operation ~s" op))))))
 
-  ;translate-access: (U field-access local-access) src -> syntax
-  (define (translate-access name src)
+  ;translate-access: (U field-access local-access) type src -> syntax
+  (define (translate-access name type src)
     (cond
       ((local-access? name)
        (translate-id (build-var-name (id-string (local-access-name name)))
@@ -1622,8 +1625,14 @@
               (expr (if obj (translate-expression obj))))
          (cond
            ((var-access-static? access)
-            (translate-id (build-var-name (build-static-name field-string (var-access-class access)))
-                          field-src))
+            (if (scheme-val? type)
+                (make-syntax #f
+                             `(c:contract ,(type->contract (scheme-val-type type))
+                                          ,(translate-id (build-static-name field-string (var-access-class access)) field-src)
+                                          'scheme 'java)
+                             (build-src field-src))
+                (translate-id (build-var-name (build-static-name field-string (var-access-class access)))
+                              field-src)))
            ((eq? 'array (var-access-class access))
             (if cant-be-null?
                 (make-syntax #f `(send ,expr ,(translate-id field-string field-src)) (build-src src))

@@ -163,6 +163,16 @@
       (type-exists? name path container-class src level type-recs)
       (make-ref-type name (if (null? path) (send type-recs lookup-path name (lambda () null)) path)))) 
   
+  ;type->contract: type -> sexp
+  (define (type->contract type)
+    (cond
+      ((symbol? type)
+       (case type
+         ((int short long byte) '(c:and/c number? exact?))
+         ((long float) '(c:and/c number? inexact?))
+         ((boolean) 'boolean?)
+         ((char) 'char?)))))
+  
   ;; type-exists: string (list string) (U (list string) #f) src symbol type-records -> (U record procedure)
   (define (type-exists? name path container-class src level type-recs)
     (send type-recs get-class-record (cons name path) container-class
@@ -228,7 +238,7 @@
   ;;(make-inner-record string (list symbol) bool)
   (define-struct inner-record (name modifiers class?))
 
-  ;;(make-scheme-record string (list string) string (list scheme-val))
+  ;;(make-scheme-record string (list string) path (list scheme-val))
   (define-struct scheme-record (name path dir provides))
   
   ;;(make-scheme-val symbol bool (U #f type))
@@ -564,9 +574,10 @@
            (namespace-require (generate-require-spec (scheme-record-name mod-ref)
                                                      (scheme-record-path mod-ref)))
            (begin0
-             (when (namespace-variable-value var #t 
-                                             (lambda () (current-namespace old-namespace)
-                                               (fail)))
+             (begin
+               (namespace-variable-value var #t  (lambda () 
+                                                   (current-namespace old-namespace)
+                                                   (fail)))
                (let ((val (make-scheme-val var #t #f)))
                  (set-scheme-record-provides! mod-ref (cons val (scheme-record-provides mod-ref)))
                  val))

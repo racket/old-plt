@@ -27,8 +27,8 @@
         (and (< (length sub-ex) (length full-ex))
              (first-of? full-ex sub-ex)))))
   
-  ;build-require-syntax: string (list string) dir bool -> (list syntax)
-  (define (build-require-syntax name path dir local?)
+  ;build-require-syntax: string (list string) dir bool bool-> (list syntax)
+  (define (build-require-syntax name path dir local? scheme?)
     (let* ((syn (lambda (acc) (datum->syntax-object #f acc #f)))
            (profj-lib? (ormap (lambda (p) (same-base-dir? dir p))
                               (map (lambda (p) (build-path p "profj" "libs"))
@@ -41,18 +41,22 @@
                        (profj-lib? `(lib ,name "profj" "libs" ,@path))
                        (htdch-lib? `(lib ,name "htdch" ,@path))
                        ((and local? (not (to-file))) name)
-                       (else `(file ,(path->bytes (build-path dir name)))))))
+                       (else `(file ,(path->string (build-path dir name)))))))
            (make-name (lambda ()
                         (if (or (not local?) profj-lib? htdch-lib? (to-file))
                             (string-append name ".ss")
                             (string->symbol name)))))
-      (list (datum->syntax-object #f
-                                  `(prefix ,(string->symbol (apply string-append
-                                                                   (map (lambda (s) (string-append s "."))
-                                                                        path)))
-                                           ,(syn (access (make-name))))
-                                  #f)
-            (syn (access (make-name))))))
+      (if scheme?
+          (list (syn `(prefix ,(string->symbol
+                                (apply string-append
+                                       (append (map (lambda (s) (string-append s ".")) path)
+                                               (list name "-"))))
+                              ,(syn (access (make-name)))))
+                (syn `(prefix ,(string->symbol (string-append name "-")) ,(syn (access (make-name))))))
+          (list (syn `(prefix ,(string->symbol (apply string-append
+                                                      (map (lambda (s) (string-append s ".")) path)))
+                              ,(syn (access (make-name)))))
+                (syn (access (make-name)))))))
   
   ;-------------------------------------------------------------------------------
   ;Main functions
@@ -143,12 +147,12 @@
       (unless (memq 'private (map modifier-kind (header-modifiers (def-header def))))
         (send type-recs add-to-env name pname current-loc)
         (when (execution?) (send type-recs add-to-env name pname 'interactions)))
-      (let ((req-syn (if (null? inner-req) (build-require-syntax name pname dir #t) (car inner-req))))
+      (let ((req-syn (if (null? inner-req) (build-require-syntax name pname dir #t #f) (car inner-req))))
         (send type-recs add-class-req defname #f current-loc)
         (send type-recs add-require-syntax defname req-syn)
         (send type-recs add-class-req native-name #f current-loc)
         (send type-recs add-require-syntax native-name 
-              (build-require-syntax (car native-name) pname dir #f))
+              (build-require-syntax (car native-name) pname dir #f #f))
         (send type-recs add-to-records defname
               (lambda () (process-class/iface def pname type-recs look-in-table level)))
         ;;get info for Inner member classes
@@ -214,7 +218,7 @@
          =>
          (lambda (record)
            (send type-recs add-class-record record)
-           (send type-recs add-require-syntax class-name (build-require-syntax class path dir #f))
+           (send type-recs add-require-syntax class-name (build-require-syntax class path dir #f #f))
            (map (lambda (ancestor) 
                   (import-class (car ancestor) (cdr ancestor) 
                                 (find-directory (cdr ancestor) 
@@ -224,7 +228,7 @@
            ))
         ((and (scheme-ok?) (dir-path-scheme? in-dir) (check-scheme-file-exists? class dir))
          (send type-recs add-to-records class-name (make-scheme-record class (cdr path) dir null))
-         (send type-recs add-require-syntax class-name (build-require-syntax class path dir #f)))
+         (send type-recs add-require-syntax class-name (build-require-syntax class path dir #f #t)))
         (class-exists?
          (send type-recs add-to-records 
                class-name
@@ -235,7 +239,7 @@
                    (build-info ast (unbox new-level) type-recs 'not_look_up)
                    (send type-recs get-class-record class-name #f (lambda () 'internal-error "Failed to add record"))
                    )))
-         (send type-recs add-require-syntax class-name (build-require-syntax class path dir #t)))
+         (send type-recs add-require-syntax class-name (build-require-syntax class path dir #t #f)))
         (else (file-error 'file (cons class path) caller-src level)))
       (when add-to-env (send type-recs add-to-env class path loc))
       (send type-recs add-class-req class-name (not add-to-env) loc)))

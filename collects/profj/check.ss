@@ -1357,6 +1357,7 @@
                                                                         (make-ref-type (if (pair? name) (car name) name) 
                                                                                        (list "scheme"))
                                                                         src))))))))
+           (printf "class-rec ~a record ~a ~n" class-rec record)
            (cond 
              ((field-record? record)
               (let* ((field-class (if (null? (cdr (field-record-class record))) 
@@ -1400,9 +1401,12 @@
                     (restricted-field-access-err (field-access-field acc) field-class src)))
                 (field-record-type record)))
              ((scheme-val? record)
+              (add-required c-class (scheme-record-name class-rec) 
+                            (cons "scheme" (scheme-record-path class-rec)) type-recs)
               (set-field-access-access! acc (make-var-access #t #t #t 'public (scheme-record-name class-rec)))
               record)
-             (else (error 'internal-error "field-access given unknown form of field information")))))              
+             (else 
+              (error 'internal-error "field-access given unknown form of field information")))))              
         ((local-access? acc) 
          (let ((var (lookup-var-in-env (id-string (local-access-name acc)) env)))
            (if (properties-usable? (var-type-properties var))

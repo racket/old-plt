@@ -34,7 +34,7 @@ RSC=rc.exe
 OUTDIR=.\Release
 INTDIR=.\Release
 
-ALL : "..\..\..\libmzgc.dll"
+ALL : "..\..\..\libmzgcxxxxxxx.dll"
 
 
 CLEAN :
@@ -58,10 +58,10 @@ CLEAN :
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(INTDIR)\win32_threads.obj"
-	-@erase "$(OUTDIR)\libmzgc.exp"
-	-@erase "$(OUTDIR)\libmzgc.lib"
-	-@erase "$(OUTDIR)\libmzgc.pdb"
-	-@erase "..\..\..\libmzgc.dll"
+	-@erase "$(OUTDIR)\libmzgcxxxxxxx.exp"
+	-@erase "$(OUTDIR)\libmzgcxxxxxxx.lib"
+	-@erase "$(OUTDIR)\libmzgcxxxxxxx.pdb"
+	-@erase "..\..\..\libmzgcxxxxxxx.dll"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -72,7 +72,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmzgc.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\libmzgc.pdb" /debug /machine:I386 /out:"../../../libmzgc.dll" /implib:"$(OUTDIR)\libmzgc.lib" 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\libmzgcxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmzgcxxxxxxx.dll" /implib:"$(OUTDIR)\libmzgcxxxxxxx.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\Allchblk.obj" \
 	"$(INTDIR)\Alloc.obj" \
@@ -93,7 +93,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\Stubborn.obj" \
 	"$(INTDIR)\win32_threads.obj"
 
-"..\..\..\libmzgc.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"..\..\..\libmzgcxxxxxxx.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
@@ -103,7 +103,7 @@ LINK32_OBJS= \
 OUTDIR=.\Debug
 INTDIR=.\Debug
 
-ALL : "..\..\..\libmzgc.dll"
+ALL : "..\..\..\libmzgcxxxxxxx.dll"
 
 
 CLEAN :
@@ -127,11 +127,11 @@ CLEAN :
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(INTDIR)\win32_threads.obj"
-	-@erase "$(OUTDIR)\libmzgc.exp"
-	-@erase "$(OUTDIR)\libmzgc.lib"
-	-@erase "$(OUTDIR)\libmzgc.pdb"
-	-@erase "..\..\..\libmzgc.dll"
-	-@erase "..\..\..\libmzgc.ilk"
+	-@erase "$(OUTDIR)\libmzgcxxxxxxx.exp"
+	-@erase "$(OUTDIR)\libmzgcxxxxxxx.lib"
+	-@erase "$(OUTDIR)\libmzgcxxxxxxx.pdb"
+	-@erase "..\..\..\libmzgcxxxxxxx.dll"
+	-@erase "..\..\..\libmzgcxxxxxxx.ilk"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -142,7 +142,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmzgc.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmzgc.pdb" /debug /machine:I386 /out:"../../../libmzgc.dll" /implib:"$(OUTDIR)\libmzgc.lib" 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmzgcxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmzgcxxxxxxx.dll" /implib:"$(OUTDIR)\libmzgcxxxxxxx.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\Allchblk.obj" \
 	"$(INTDIR)\Alloc.obj" \
@@ -163,7 +163,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\Stubborn.obj" \
 	"$(INTDIR)\win32_threads.obj"
 
-"..\..\..\libmzgc.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"..\..\..\libmzgcxxxxxxx.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<

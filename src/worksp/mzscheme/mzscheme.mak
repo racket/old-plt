@@ -70,12 +70,12 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\mzscheme.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=..\libmzgc\Release\libmzgc.lib ..\libmzsch\Release\libmzsch.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\MzScheme.pdb" /debug /machine:I386 /out:"$(OUTDIR)\MzScheme.exe" 
+LINK32_FLAGS=..\libmzgc\Release\libmzgcxxxxxxx.lib ..\libmzsch\Release\libmzschxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\MzScheme.pdb" /debug /machine:I386 /out:"$(OUTDIR)\MzScheme.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\Main.obj" \
 	"$(INTDIR)\mzscheme.res" \
-	"$(OUTDIR)\src\worksp\libmzsch\Release\libmzsch.lib" \
-	"$(OUTDIR)\src\worksp\libmzgc\Release\libmzgc.lib"
+	"$(OUTDIR)\src\worksp\libmzsch\Release\libmzschxxxxxxx.lib" \
+	"$(OUTDIR)\src\worksp\libmzgc\Release\libmzgcxxxxxxx.lib"
 
 "$(OUTDIR)\MzScheme.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -133,12 +133,12 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\mzscheme.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=..\libmzgc\Debug\libmzgc.lib ..\libmzsch\Debug\libmzsch.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\MzScheme.pdb" /debug /machine:I386 /out:"..\..\..\MzScheme.exe" 
+LINK32_FLAGS=..\libmzgc\Debug\libmzgcxxxxxxx.lib ..\libmzsch\Debug\libmzschxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\MzScheme.pdb" /debug /machine:I386 /out:"..\..\..\MzScheme.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\Main.obj" \
 	"$(INTDIR)\mzscheme.res" \
-	"..\libmzsch\Debug\libmzsch.lib" \
-	"..\libmzgc\Debug\libmzgc.lib"
+	"..\libmzsch\Debug\libmzschxxxxxxx.lib" \
+	"..\libmzgc\Debug\libmzgcxxxxxxx.lib"
 
 "..\..\..\MzScheme.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<

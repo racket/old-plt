@@ -73,11 +73,11 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\mred.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=..\libmred\Release\libmred.lib ..\libmzsch\Release\libmzsch.lib ..\libmzgc\Release\libmzgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)\MrEd.pdb" /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"$(OUTDIR)\MrEd.exe" 
+LINK32_FLAGS=..\libmred\Release\libmredxxxxxxx.lib ..\libmzsch\Release\libmzschxxxxxxx.lib ..\libmzgc\Release\libmzgcxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)\MrEd.pdb" /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"$(OUTDIR)\MrEd.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\mrmain.obj" \
 	"$(INTDIR)\Mred.res" \
-	"$(OUTDIR)\src\worksp\libmred\Release\libmred.lib"
+	"$(OUTDIR)\src\worksp\libmred\Release\libmredxxxxxxx.lib"
 
 "$(OUTDIR)\MrEd.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -123,11 +123,11 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\mred.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=..\libmred\Debug\libmred.lib ..\libmzsch\Debug\libmzsch.lib ..\libmzgc\Debug\libmzgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib /nologo /subsystem:windows /incremental:yes /pdb:"$(OUTDIR)\MrEd.pdb" /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"..\..\..\MrEd.exe" 
+LINK32_FLAGS=..\libmred\Debug\libmredxxxxxxx.lib ..\libmzsch\Debug\libmzschxxxxxxx.lib ..\libmzgc\Debug\libmzgcxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib /nologo /subsystem:windows /incremental:yes /pdb:"$(OUTDIR)\MrEd.pdb" /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"..\..\..\MrEd.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\mrmain.obj" \
 	"$(INTDIR)\Mred.res" \
-	"..\libmred\Debug\libmred.lib"
+	"..\libmred\Debug\libmredxxxxxxx.lib"
 
 "..\..\..\MrEd.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<

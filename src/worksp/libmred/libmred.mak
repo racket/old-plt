@@ -36,11 +36,11 @@ INTDIR=.\Release
 
 !IF "$(RECURSE)" == "0" 
 
-ALL : "..\..\..\libmred.dll"
+ALL : "..\..\..\libmredxxxxxxx.dll"
 
 !ELSE 
 
-ALL : "wxme - Win32 Release" "libmzsch - Win32 Release" "libmzgc - Win32 Release" "wxwin - Win32 Release" "wxutils - Win32 Release" "wxs - Win32 Release" "jpeg - Win32 Release" "..\..\..\libmred.dll"
+ALL : "wxme - Win32 Release" "libmzsch - Win32 Release" "libmzgc - Win32 Release" "wxwin - Win32 Release" "wxutils - Win32 Release" "wxs - Win32 Release" "jpeg - Win32 Release" "..\..\..\libmredxxxxxxx.dll"
 
 !ENDIF 
 
@@ -53,10 +53,10 @@ CLEAN :
 	-@erase "$(INTDIR)\MREDMSW.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
-	-@erase "$(OUTDIR)\libmred.exp"
-	-@erase "$(OUTDIR)\libmred.lib"
-	-@erase "$(OUTDIR)\libmred.pdb"
-	-@erase "..\..\..\libmred.dll"
+	-@erase "$(OUTDIR)\libmredxxxxxxx.exp"
+	-@erase "$(OUTDIR)\libmredxxxxxxx.lib"
+	-@erase "$(OUTDIR)\libmredxxxxxxx.pdb"
+	-@erase "..\..\..\libmredxxxxxxx.dll"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -67,7 +67,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmred.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=../libmzsch/release/libmzsch.lib ../libmzgc/release/libmzgc.lib ../wxs/release/wxs.lib ../wxme/release/wxme.lib ../wxutils/release/wxutils.lib ../jpeg/release/jpeg.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\libmred.pdb" /debug /machine:I386 /out:"../../../libmred.dll" /implib:"$(OUTDIR)\libmred.lib" 
+LINK32_FLAGS=../libmzsch/release/libmzschxxxxxxx.lib ../libmzgc/release/libmzgcxxxxxxx.lib ../wxs/release/wxs.lib ../wxme/release/wxme.lib ../wxutils/release/wxutils.lib ../jpeg/release/jpeg.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\libmredxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmredxxxxxxx.dll" /implib:"$(OUTDIR)\libmredxxxxxxx.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\MRED.obj" \
 	"$(INTDIR)\MREDMSW.obj" \
@@ -75,11 +75,11 @@ LINK32_OBJS= \
 	"..\wxs\Release\wxs.lib" \
 	"..\wxutils\Release\wxutils.lib" \
 	"..\wxwin\Release\wxwin.lib" \
-	"..\libmzgc\Release\libmzgc.lib" \
-	"..\libmzsch\Release\libmzsch.lib" \
+	"..\libmzgc\Release\libmzgcxxxxxxx.lib" \
+	"..\libmzsch\Release\libmzschxxxxxxx.lib" \
 	"..\wxme\Release\wxme.lib"
 
-"..\..\..\libmred.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"..\..\..\libmredxxxxxxx.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
@@ -91,11 +91,11 @@ INTDIR=.\Debug
 
 !IF "$(RECURSE)" == "0" 
 
-ALL : "..\..\..\libmred.dll"
+ALL : "..\..\..\libmredxxxxxxx.dll"
 
 !ELSE 
 
-ALL : "wxme - Win32 Debug" "libmzsch - Win32 Debug" "libmzgc - Win32 Debug" "wxwin - Win32 Debug" "wxutils - Win32 Debug" "wxs - Win32 Debug" "jpeg - Win32 Debug" "..\..\..\libmred.dll"
+ALL : "wxme - Win32 Debug" "libmzsch - Win32 Debug" "libmzgc - Win32 Debug" "wxwin - Win32 Debug" "wxutils - Win32 Debug" "wxs - Win32 Debug" "jpeg - Win32 Debug" "..\..\..\libmredxxxxxxx.dll"
 
 !ENDIF 
 
@@ -108,11 +108,11 @@ CLEAN :
 	-@erase "$(INTDIR)\MREDMSW.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
-	-@erase "$(OUTDIR)\libmred.exp"
-	-@erase "$(OUTDIR)\libmred.lib"
-	-@erase "$(OUTDIR)\libmred.pdb"
-	-@erase "..\..\..\libmred.dll"
-	-@erase "..\..\..\libmred.ilk"
+	-@erase "$(OUTDIR)\libmredxxxxxxx.exp"
+	-@erase "$(OUTDIR)\libmredxxxxxxx.lib"
+	-@erase "$(OUTDIR)\libmredxxxxxxx.pdb"
+	-@erase "..\..\..\libmredxxxxxxx.dll"
+	-@erase "..\..\..\libmredxxxxxxx.ilk"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -123,7 +123,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmred.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=../libmzsch/debug/libmzsch.lib ../libmzgc/debug/libmzgc.lib ../wxs/debug/wxs.lib ../wxme/debug/wxme.lib ../wxutils/debug/wxutils.lib ../jpeg/debug/jpeg.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmred.pdb" /debug /machine:I386 /out:"../../../libmred.dll" /implib:"$(OUTDIR)\libmred.lib" 
+LINK32_FLAGS=../libmzsch/debug/libmzschxxxxxxx.lib ../libmzgc/debug/libmzgcxxxxxxx.lib ../wxs/debug/wxs.lib ../wxme/debug/wxme.lib ../wxutils/debug/wxutils.lib ../jpeg/debug/jpeg.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmredxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmredxxxxxxx.dll" /implib:"$(OUTDIR)\libmredxxxxxxx.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\MRED.obj" \
 	"$(INTDIR)\MREDMSW.obj" \
@@ -131,11 +131,11 @@ LINK32_OBJS= \
 	"..\wxs\Debug\wxs.lib" \
 	"..\wxutils\Debug\wxutils.lib" \
 	"..\wxwin\Debug\wxwin.lib" \
-	"..\libmzgc\Debug\libmzgc.lib" \
-	"..\libmzsch\Debug\libmzsch.lib" \
+	"..\libmzgc\Debug\libmzgcxxxxxxx.lib" \
+	"..\libmzsch\Debug\libmzschxxxxxxx.lib" \
 	"..\wxme\Debug\wxme.lib"
 
-"..\..\..\libmred.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"..\..\..\libmredxxxxxxx.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<

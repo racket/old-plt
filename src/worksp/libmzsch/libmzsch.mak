@@ -36,11 +36,11 @@ INTDIR=.\Release
 
 !IF "$(RECURSE)" == "0" 
 
-ALL : "..\..\..\libmzsch.dll"
+ALL : "..\..\..\libmzschxxxxxxx.dll"
 
 !ELSE 
 
-ALL : "libmzgc - Win32 Release" "..\..\..\libmzsch.dll"
+ALL : "libmzgc - Win32 Release" "..\..\..\libmzschxxxxxxx.dll"
 
 !ENDIF 
 
@@ -90,10 +90,10 @@ CLEAN :
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(INTDIR)\vector.obj"
-	-@erase "$(OUTDIR)\libmzsch.exp"
-	-@erase "$(OUTDIR)\libmzsch.lib"
-	-@erase "$(OUTDIR)\libmzsch.pdb"
-	-@erase "..\..\..\libmzsch.dll"
+	-@erase "$(OUTDIR)\libmzschxxxxxxx.exp"
+	-@erase "$(OUTDIR)\libmzschxxxxxxx.lib"
+	-@erase "$(OUTDIR)\libmzschxxxxxxx.pdb"
+	-@erase "..\..\..\libmzschxxxxxxx.dll"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -104,7 +104,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmzsch.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=../libmzgc/Release/libmzgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\libmzsch.pdb" /debug /machine:I386 /out:"../../../libmzsch.dll" /implib:"$(OUTDIR)\libmzsch.lib" 
+LINK32_FLAGS=../libmzgc/Release/libmzgcxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\libmzschxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmzschxxxxxxx.dll" /implib:"$(OUTDIR)\libmzschxxxxxxx.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\Bignum.obj" \
 	"$(INTDIR)\Bool.obj" \
@@ -145,9 +145,9 @@ LINK32_OBJS= \
 	"$(INTDIR)\thread.obj" \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\vector.obj" \
-	"..\libmzgc\Release\libmzgc.lib"
+	"..\libmzgc\Release\libmzgcxxxxxxx.lib"
 
-"..\..\..\libmzsch.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"..\..\..\libmzschxxxxxxx.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
@@ -159,11 +159,11 @@ INTDIR=.\Debug
 
 !IF "$(RECURSE)" == "0" 
 
-ALL : "..\..\..\libmzsch.dll"
+ALL : "..\..\..\libmzschxxxxxxx.dll"
 
 !ELSE 
 
-ALL : "libmzgc - Win32 Debug" "..\..\..\libmzsch.dll"
+ALL : "libmzgc - Win32 Debug" "..\..\..\libmzschxxxxxxx.dll"
 
 !ENDIF 
 
@@ -213,11 +213,11 @@ CLEAN :
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(INTDIR)\vector.obj"
-	-@erase "$(OUTDIR)\libmzsch.exp"
-	-@erase "$(OUTDIR)\libmzsch.lib"
-	-@erase "$(OUTDIR)\libmzsch.pdb"
-	-@erase "..\..\..\libmzsch.dll"
-	-@erase "..\..\..\libmzsch.ilk"
+	-@erase "$(OUTDIR)\libmzschxxxxxxx.exp"
+	-@erase "$(OUTDIR)\libmzschxxxxxxx.lib"
+	-@erase "$(OUTDIR)\libmzschxxxxxxx.pdb"
+	-@erase "..\..\..\libmzschxxxxxxx.dll"
+	-@erase "..\..\..\libmzschxxxxxxx.ilk"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -228,7 +228,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmzsch.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=../libmzgc/Debug/libmzgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmzsch.pdb" /debug /machine:I386 /out:"../../../libmzsch.dll" /implib:"$(OUTDIR)\libmzsch.lib" 
+LINK32_FLAGS=../libmzgc/Debug/libmzgcxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmzschxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmzschxxxxxxx.dll" /implib:"$(OUTDIR)\libmzschxxxxxxx.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\Bignum.obj" \
 	"$(INTDIR)\Bool.obj" \
@@ -269,9 +269,9 @@ LINK32_OBJS= \
 	"$(INTDIR)\thread.obj" \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\vector.obj" \
-	"..\libmzgc\Debug\libmzgc.lib"
+	"..\libmzgc\Debug\libmzgcxxxxxxx.lib"
 
-"..\..\..\libmzsch.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+"..\..\..\libmzschxxxxxxx.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<

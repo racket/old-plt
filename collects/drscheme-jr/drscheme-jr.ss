@@ -311,7 +311,6 @@
 		  (let* ([expanded (call/nal zodiac:scheme-expand/nal
 					     zodiac:scheme-expand
 					     (expression: x)
-					     (parameterization: parameterization)
 					     (vocabulary: mzrice-user-vocabulary))]
 			 [_ '(printf "expanded: ~a~n~n" expanded)]
 			 [annotated (if annotate?

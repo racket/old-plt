@@ -184,7 +184,7 @@ Per-platform notes:
 
    The setup script needs "libeay32.lib" and "ssleay32.lib", which it
    can find automatically if they are installed as
-   plt/collects/openssl/openssl/{lib,ssl}easy32.lib. Similarly, the
+   plt/collects/openssl/openssl/lib/{lib,ssl}easy32.lib. Similarly, the
    setup script needs several OpenSSL header files (such as "ssl.h"),
    which it can find automatically if they are installed as
    plt/collects/openssl/openssl/include/openssl/ssl.h, etc.

@@ -573,9 +573,11 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	    v = scheme_get_special(port);
 	    if (SCHEME_STXP(v)) {
 	      if (!stxsrc)
-		v = SCHEME_STX_VAL(v);
+		v = scheme_syntax_to_datum(v, 0, NULL);
 	    } else if (stxsrc) {
-	      v = scheme_make_stx(v, line, col, stxsrc, STX_SRCTAG);
+	      Scheme_Object *s;
+	      s = scheme_make_stx(scheme_false, line, col, stxsrc, STX_SRCTAG);
+	      v = scheme_datum_to_syntax(v, s, scheme_false, 1, 0);
 	    }
 	    return v;
 	  } else {

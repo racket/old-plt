@@ -247,7 +247,31 @@
 	 [l (syntax->list v)])
     ;; make sure syntax object is intact:
     (test stx cadr l)
-    (test 108 syntax-position (caddr l))))
+    (test 108 syntax-position (caddr l))
+
+    ;; Check that plain read performs a syntax-object->datum:
+    (let* ([p (make-p `("(list "
+			,stx
+			" end))")
+		      (lambda (x) 100))]
+	   [v (read p)])
+      (test `(list (list ,a-special ,b-special end) end) values v))))
+
+;; Check that syntax read with with a list special
+;;  syntaxizes the list.
+(let* ([p (make-p `("(list "
+		    ,(list a-special b-special)
+		    " end))")
+		  (lambda (x)
+		    100))]
+       [v (read-syntax 'dk p)]
+       [l (syntax->list v)])
+  (test #t syntax? (cadr l))
+  (test #t list? (syntax-e (cadr l)))
+  (test a-special syntax-e (car (syntax-e (cadr l))))
+  (test b-special syntax-e (cadr (syntax-e (cadr l))))
+  (test 108 syntax-position (caddr l)))
+	    
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

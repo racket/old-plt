@@ -28,5 +28,6 @@
 		      (send ev get-shift-down)))]))])
   (define f (make-object frame% "tests" #f 100 100))
   (define c (make-object c% f))
+  (send c focus)
   (send f show #t))
 

@@ -11,5 +11,10 @@ count.ss
 add.ss
   The add servlet uses send/suspend to interact with the user multiple times.
 
+quiz.ss english-measure-questions.ss
+  The quiz servlet demonstrates how to implement a web-based multiple choice
+  quiz. A big thank you to Don Felgar for providing this sample.
+
+
 To construct a multi-unit servlet that combines code from several files,
 see the subdirectory "compound".

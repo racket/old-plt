@@ -426,7 +426,8 @@
 					 #f)
 					(list-immutable
 					 ,@(map pfx (every-other (if (null? (cdddr names)) null (cddddr names))))
-					 #f)))))))
+					 #f)
+					#f))))))
 	    (signature-structs sig)))))
 
   ;; Could be called at expansion time from the result of a `unit/sig' expansion.

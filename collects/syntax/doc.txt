@@ -115,11 +115,14 @@ _struct.ss_: generating the same names as `define-struct'
   structure type and return values for the identifiers creates by
   `build-struct-names'.
 
-> (build-struct-expand-info name-id field-ids omit-sel? omit-set? base-getters base-setters) -
-  takes the same arguments as `build-struct-names', plus a list of
-  accessor and mutator identifiers (possibly ending in #f) for a
-  parent type, and generates an S-expression for expansion-time code
-  to be used in the binding for the structure name.
+> (build-struct-expand-info name-id field-ids omit-sel? omit-set? base-name base-getters base-setters) - 
+  takes the same arguments as `build-struct-names', plus a parent
+  identifier/#t/#f and a list of accessor and mutator identifiers
+  (possibly ending in #f) for a parent type, and generates an
+  S-expression for expansion-time code to be used in the binding for
+  the structure name. A #t for the base-name means no super-type, #f
+  means that the super-type (if any) is unknown, and an identifier
+  indicates the super-type identifier.
 
 > (struct-declaration-info? v) - returns #t if `x' has the shape of
   expansion-time information for structure type declarations, #f

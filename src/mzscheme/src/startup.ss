@@ -512,12 +512,13 @@
   (define-values (struct-info?)
     (lambda (x)
       (and (list? x)
-	   (= (length x) 5)
+	   (= (length x) 6)
 	   (identifier/#f? (car x))
 	   (identifier/#f? (cadr x))
 	   (identifier/#f? (caddr x))
 	   (id/#f-list? (list-ref x 3))
-	   (id/#f-list? (list-ref x 4)))))
+	   (id/#f-list? (list-ref x 4))
+	   (or (identifier/#f? (list-ref x 5)) (eq? #t (list-ref x 5))))))
 
   (define-values (struct-info-type-id) car)
   (define-values (struct-info-constructor-id) cadr)
@@ -598,7 +599,10 @@
 				  (append (map qs (if (null? fields) 
 						      null 
 						      (every-other (cdr fields)))) 
-					  initial-sets))))))
+					  initial-sets)))
+				(if super-id
+				    (qs super-id)
+				    #t))))
 	     #f)))))
 
   (provide get-stx-info))

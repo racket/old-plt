@@ -622,6 +622,7 @@ MZ_EXTERN Scheme_Object *scheme_make_struct_instance(Scheme_Object *stype,
 					   Scheme_Object **argv);
 
 MZ_EXTERN Scheme_Object *scheme_make_struct_exptime(Scheme_Object **names, int count,
+						    Scheme_Object *super_sym,
 						    Scheme_Object *super_exptime,
 						    int flags);
 

@@ -165,7 +165,7 @@ scheme_init_struct (Scheme_Env *env)
 			       env);
   }
 
-  as_et = scheme_make_struct_exptime(as_names, as_count, NULL, BUILTIN_STRUCT_FLAGS);
+  as_et = scheme_make_struct_exptime(as_names, as_count, NULL, NULL, BUILTIN_STRUCT_FLAGS);
   scheme_add_global_keyword_symbol(as_names[as_count - 1], as_et, env);
 
 #ifdef TIME_SYNTAX
@@ -184,7 +184,7 @@ scheme_init_struct (Scheme_Env *env)
 			       env);
   }
 
-  ts_et = scheme_make_struct_exptime(ts_names, ts_count, NULL, BUILTIN_STRUCT_FLAGS);
+  ts_et = scheme_make_struct_exptime(ts_names, ts_count, NULL, NULL, BUILTIN_STRUCT_FLAGS);
   scheme_add_global_keyword_symbol(ts_names[ts_count - 1], ts_et, env);
 #endif
 
@@ -1789,7 +1789,10 @@ static Scheme_Object *get_phase_ids(Scheme_Object *_v, int phase)
   if (super_exptime) {
     super_exptime = get_phase_ids(SCHEME_PTR2_VAL(super_exptime), phase);
     super_exptime = SCHEME_PTR_VAL(super_exptime);
+    l = scheme_make_pair(scheme_datum_to_syntax(v[4], scheme_false, w, 0, 0), scheme_null);
     super_exptime = SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(super_exptime)));
+  } else {
+    l = scheme_make_pair(scheme_true, scheme_null);
   }
 
   if (count > 3) {
@@ -1797,7 +1800,7 @@ static Scheme_Object *get_phase_ids(Scheme_Object *_v, int phase)
 
     if (super_exptime) {
       gets = SCHEME_CAR(super_exptime);
-      sets = SCHEME_CAR(super_exptime);
+      sets = SCHEME_CADR(super_exptime);
     } else {
       gets = scheme_null;
       sets = scheme_null;
@@ -1813,12 +1816,14 @@ static Scheme_Object *get_phase_ids(Scheme_Object *_v, int phase)
       sets = scheme_make_immutable_pair(n, sets);
     }
 
-    l = scheme_make_pair(gets, scheme_make_immutable_pair(sets, scheme_null));
+    l = scheme_make_pair(gets, scheme_make_immutable_pair(sets, l));
   } else {
     if (super_exptime)
-      l = super_exptime;
+      l = icons(SCHEME_CAR(super_exptime),
+		icons(SCHEME_CADR(super_exptime),
+		      l));
     else
-      l = scheme_make_immutable_pair(scheme_null, scheme_make_immutable_pair(scheme_null, scheme_null));
+      l = scheme_make_immutable_pair(scheme_null, scheme_make_immutable_pair(scheme_null, l));
   }
 
   l = scheme_make_immutable_pair(prd, l);
@@ -1835,6 +1840,7 @@ static Scheme_Object *get_phase_ids(Scheme_Object *_v, int phase)
 }
 
 Scheme_Object *scheme_make_struct_exptime(Scheme_Object **names, int count,
+					  Scheme_Object *super_sym,
 					  Scheme_Object *super_exptime,
 					  int flags)
 {
@@ -1846,11 +1852,12 @@ Scheme_Object *scheme_make_struct_exptime(Scheme_Object **names, int count,
     return NULL;
   }
 
-  v = MALLOC_N(Scheme_Object*, 4);
+  v = MALLOC_N(Scheme_Object*, 5);
   v[0] = (Scheme_Object *)names;
   v[1] = scheme_make_integer(count);
   v[2] = super_exptime;
   v[3] = NULL; /* hash table, filled in by get_phase_ids */
+  v[4] = super_sym;
 
   macro = scheme_alloc_object();
   macro->type = scheme_lazy_macro_type;

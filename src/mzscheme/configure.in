@@ -94,15 +94,19 @@ fi
 
 ###### Autoconfigure #######
 
-if test "$CC" = '' ; then 
-  AC_PROG_CC
-  AC_PROG_CPP
-  AC_PROG_CXX
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_CXX
+if test "$AS" = '' ; then 
+  AS=as
 fi
-AS=as
 AC_PROG_RANLIB
-AR=ar
-ARFLAGS=ruv
+if test "$AR" = '' ; then 
+  AR=ar
+fi
+if test "$ARFLAGS" = '' ; then 
+  ARFLAGS=ruv
+fi
 
 # If using gcc, we want all warnings:
 if test "$CC" = "gcc" ; then 
@@ -197,6 +201,7 @@ case $OS in
   HP-UX)
     if test "$CC" = "gcc"; then
       CFLAGS="$CFLAGS -fPIC"
+      LIBS="$LIBS -Wl,-E"
     else
       CFLAGS="$CFLAGS -Wp,-H,64000 -Aa -D_HPUX_SOURCE +k +z"
     fi

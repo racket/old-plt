@@ -1,5 +1,5 @@
 (module mxmain mzscheme
-  (error "mxmain.ss: you really want to load mxmain.dll")
+  (error "mxmain.ss: you seem to be missing mxmain.dll; you need to build MysterX in plt\\src\\mysterx\\")
 
   ; dummy entries to make Setup happy
   ; these are the names defined in mxPrims[] in src/mysterx.cxx

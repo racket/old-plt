@@ -10,11 +10,17 @@
   (provide status-servlet)
   
   (define TOPICS-PER-PAGE 25)
-  
+
   (define handin-dir (current-directory))
   (define active-dir (build-path handin-dir "active"))
   (define inactive-dir (build-path handin-dir "inactive"))
 
+  (define master-password 
+    (with-handlers ([not-break-exn? (lambda (x) #f)])
+      (cadr (assq 'master-password 
+		  (with-input-from-file (build-path handin-dir "config.ss")
+		    read)))))
+  
   (define (clean-str s)
     (regexp-replace
      " *$" 
@@ -185,7 +191,9 @@
 	      (cond
 	       [(and user-data
 		     (string? passwd)
-		     (equal? (md5 passwd) (car user-data)))
+		     (let ([pw (md5 passwd)])
+		       (or (equal? pw (car user-data))
+			   (equal? pw master-password))))
 		(status-page (update-status status 'user user) for-handin)]
 	       [else
 		(login-page status for-handin "Bad username or password")])))))

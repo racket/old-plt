@@ -11,9 +11,11 @@
 
 (load-relative "cmdline.ss")
 
+(load-relative "pconvert.ss")
+
 (load-relative "pretty.ss")
 
-(load-relative "pconvert.ss")
+(load-relative "classd.ss")
 
 ; Last - so macros are not present by accident
 (load-relative "macrolib.ss")

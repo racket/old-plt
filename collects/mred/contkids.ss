@@ -1,5 +1,5 @@
 ;;
-;; $Id: contkids.ss,v 1.40 1997/08/12 17:31:41 robby Exp robby $
+;; $Id: contkids.ss,v 1.41 1997/08/12 17:33:16 robby Exp mflatt $
 ;;
 
 ; need to export:
@@ -690,7 +690,7 @@
 	(class canvas% (panel
 			message 
 			[x -1] [y -1]
-			[style wx:const-retained]
+			[style 0]
 			[name "canvasmessage"])
 	  (private
 	    [mdc 'canvas-message:not-yet-the-mdc]

@@ -23,7 +23,8 @@
    "convert-to-string.ss"
    "text-syntax-object.ss"
    "print-to-text.ss"
-   "test-case.ss")
+   "test-case.ss"
+   (rename (lib  "teachprims.ss" "lang" "private") beginner-equal? beginner-equal?))
   
   (define-signature test-case-box^ (test-case-box% phase1 phase2))
   (define test-case-box@
@@ -64,8 +65,8 @@
             [error-box? false]
             [to-test (new error-alert-text%)]
             [expected (new error-alert-text%)]
-            [predicate (new error-alert-text% (text "equal?"))]
-            [should-raise (new error-alert-text% (text "exn:fail?"))]
+            [predicate (new error-alert-text% (text ""))]
+            [should-raise (new error-alert-text% (text ""))]
             [error-message (new error-alert-text%)])
            
            #;(any? (union integer? false?) (union integer? false?) (union integer? false?) . -> . any?)
@@ -74,8 +75,8 @@
              (opt-lambda (source (line false) (column false) (position false))
                #;((is-a?/c text%) . -> . syntax-object?)
                ;; Creates a single syntax object out of the text or raises read-error
-               (define (text->syntax-object text always-scheme?)
-                 (match (text->syntax-objects text always-scheme?)
+               (define (text->syntax-object text default-content)
+                 (match (text->syntax-objects text default-content)
                    [() (raise-read-error (string-constant test-case-empty-error)
                                          source line false position 1)]
                    [(stx) stx]
@@ -95,7 +96,7 @@
                                    [set-actuals-stx set-actuals]
                                    [w printf])
                        (if error-box?
-                           (with-syntax ([exn-pred-stx (text->syntax-object should-raise #f)]
+                           (with-syntax ([exn-pred-stx (text->syntax-object should-raise #'exn:fail?)]
                                          [exn-handler-stx
                                           (if (empty-text? error-message)
                                               #'(lambda (v) true)
@@ -111,8 +112,8 @@
                                                 exn-handler-stx
                                                 update-stx
                                                 set-actuals-stx)))
-                           (with-syntax ([exp-stx (text->syntax-object expected #t)]
-                                         [pred-stx (text->syntax-object predicate #t)])
+                           (with-syntax ([exp-stx (text->syntax-object expected #f)]
+                                         [pred-stx (text->syntax-object predicate #'beginner-equal?)])
                              (syntax/loc (datum->syntax-object
                                           false 'ignored (list source line column position 1))
                                (test-case pred-stx

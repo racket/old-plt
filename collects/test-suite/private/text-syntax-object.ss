@@ -21,7 +21,7 @@
       
       #;((is-a?/c text%) . -> . (listof syntax-object?))
       ;; a syntax object representing the text with the color of the given object
-      (define (text->syntax-objects text always-scheme?)
+      (define (text->syntax-objects text default-v)
         (let ([port (open-input-text-editor text)])
           #;(-> (listof syntax-object?))
           ;; Reads all the syntax objects for the text%
@@ -36,12 +36,15 @@
                     (drscheme:language-configuration:language-settings-settings
                      language-settings)])
               (if (drscheme:language-configuration:language-settings? language-settings)
-                  (let ([thunk (if always-scheme?
-				   (let ([p (open-input-text-editor text)])
-				     (lambda () (let ([v (read-syntax (object-name p) p)])
-						  (if (identifier? v)
-						      (datum->syntax-object top-id (syntax-e v) v v)
-						      v))))
+                  (let ([thunk (if (and default-v
+					(zero? (send text last-position)))
+				   (let ([got? #f])
+				     (lambda () 
+				       (begin0
+					(if got?
+					    eof
+					    default-v)
+					(set! got? #t))))
 				   (send language front-end/interaction
 					 (open-input-text-editor text)
 					 settings

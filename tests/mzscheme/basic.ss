@@ -941,6 +941,25 @@
 (test "my cerveza My Mi Mi" regexp-replace* r2 "mi cerveza Mi Mi Mi" insert)
 (test "bbb" regexp-replace* "a" "aaa" "b")
 
+;; Check greedy and non-greedy operators:
+(define input "<tag1 b=5> <tag2 bb=7>")
+(test '("<tag1 b=5> <tag2 bb=7>") regexp-match "<.*>" input)
+(test '("<tag1 b=5>") regexp-match "<.*?>" input)
+(test '("<tag1 b=5> <tag2 bb=7>") regexp-match "<.*?>$" input)
+(test '("") regexp-match "b*" input)
+(test '("<tag") regexp-match "<[tag]*" input)
+(test '("<tag1") regexp-match "<[tag]*1" input)
+(test '("") regexp-match "b*?" input)
+(test '("<") regexp-match "<[tag]*?" input)
+(test '("<tag1") regexp-match "<[tag]*?1" input)
+(test '("b") regexp-match "b+?" input)
+(test '("<t") regexp-match "<[tag]+?" input)
+(test '("<tag1") regexp-match "<[tag]+?1" input)
+(test '("") regexp-match "b??" input)
+(test '("") regexp-match "[tag]??" input)
+(test '("g1") regexp-match "[tag]??1" input)
+(test '("ag") regexp-match "[a-m]*" input)
+
 ;; Test regexp with null chars:
 (let* ([s (string #\a #\b #\nul #\c)]
        [3s (string-append s s s)])

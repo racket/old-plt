@@ -500,7 +500,7 @@
                           (method-record-name (car methods)))
                   (or (or (eq? level 'beginner) (eq? level 'intermediate))
                       (andmap type=? (method-record-atypes method) (method-record-atypes (car methods))))
-                  (type=? (method-record-rtype method) (method-record-rtype (car methods))))
+                  (not (type=? (method-record-rtype method) (method-record-rtype (car methods)))))
              (method-conflicts? method (cdr methods) level))))                              
 
   (define (check-current-methods records methods members level type-recs)

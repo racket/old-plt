@@ -1,4 +1,8 @@
-_parser tools_
+_parser tools_ 
+
+This documentation assumes familiarity with lex and yacc style lexer
+and parser generators.
+
 _lex.ss_
 A regular expression is one of the following
 character                          match the given character
@@ -7,7 +11,8 @@ symbol                             match the sequence of chars in the symbol
 				   symbol to all lower case
 string                             match its sequence of characters
 (eof)				   match end of file
-(symbol)                           expand the lex abbreviation named symbol
+(symbol)                           expand the lex abbreviation whose name 
+				   is symbol
 (* re)                             match 0 or more occurrences of re
 (+ re)                             match 1 or more occurrences of re
 (? re)                             match 0 or 1 occurrence of re
@@ -23,26 +28,42 @@ To use the _lexer generator_ you must (require (lib "lex.ss" "parser-tools")).
 This gives you the following syntactic forms:
 
 > (define-lex-abbrev name re) which associates a regular expression
-   with name to be used in other regular expressions with the (symbol)
-   form.  The definition of name has the same scoping properties as a
-   normal mzscheme macro definition.  In particular a 
+   with a name to be used in other regular expressions with the
+   (symbol) form.  The definition of name has the same scoping
+   properties as a normal mzscheme macro definition.  In particular a
    (define-syntax name ...) could interfere.
 
 > (define-lex-abbrevs [name re] ...) defines several lex-abbrevs
 
-> (lexer (re action) ...) expands into a function that takes a lex-buf,
-   matches the re's against the buffer and returns the result of
-   executing the corresponding action.  Each action is scheme code
+> (lexer (re action) ...) expands into a function that takes a
+   lex-buf, matches the re's against the buffer and returns the result
+   of executing the corresponding action.  Each action is scheme code
    that has the same scope as its lexer definition, except that the
-   variables get-start-pos, get-end-pos, get-lexeme and lex-buf are
-   also bound in the action (hiding any outside binding).
-   > (get-start-pos) returns a position struct for the first character 
-      matched 
-   > (get-end-pos) returns a position struct for the first character not
+   variables get-start-pos, get-end-pos, get-lexeme,
+   return-without-pos and lex-buf are also bound in the action (hiding
+   any outside binding).  
+   > (get-start-pos) returns a position struct for the first character
       matched
+   > (get-end-pos) returns a position struct for the character after
+      the last character in the match
    > (get-lexeme) returns the matched string
    > lex-buf is the lex-buf being processed (this is useful for
       matching input with multiple lexers, see example below)
+   > (return-without-pos x) is a function (continuation) that
+     immediately returns the value of x from the lexer.  This useful
+     in a src-pos lexer to prevent the lexer from adding source
+     information.  For example:
+     (define get-token
+       (lexer-src-pos
+       ...
+       ((comment) (get-token lex-buf))
+       ...))
+     would wrap the source location information for the comment around
+     the value of the recursive call.  Using
+     ((comment) (return-without-pos (get-token lex-buf))) 
+     will cause the value of the recursive call to be returned without
+     wrapping position around it.
+
    The lexer will raise an exception (exn:read) if none of the regular
    expressions match the input.
    Hint: If ((- #\000 #\377) custom-error-behavior) is the last rule,
@@ -67,22 +88,23 @@ This gives you the following syntactic forms:
    define-tokens, except the resulting token constructors take no
    arguments and store the value #f into the token.
 
+HINT: Token definitions are usually necessary for interoperating with
+a generated parser, but may not be the right choice when using the
+lexer in other situations.
+
 
 Several values are also provided:
-
 > (make-lex-buf input-port) creates a lex-buf from an input-port.  A
   lex-buf automatically treats #\return, #\newline and #\return
   #\newline as single #\newline characters.  For keeping source
   location information, the lex-buf treats a #\tab as however many
   spaces (> 0) are needed to bring the column number to a multiple of
   8.
-
 > (make-lex-buf input-port offsets) creates a lex-buf from an
-  input-port that starts at the source location provided at offsets
+  input-port that starts at the source location provided by offsets
   rather than at 1.  Offsets must be a list of 3 non-negative integers
   whose car is the line number, whose cadr is the column number and
   whose caddr is the total character offset.
-
 > (get-position lex-buf) returns a position structure for the next
   character in the lex-buf
 > (position-offset position) the offset of the character in the stream.
@@ -102,8 +124,7 @@ See the combined lexer/parser example below.
 _yacc.ss_
 
 To use the _parser generator_ (require (lib "yacc.ss" "parser-tools")).
-This module provides the following syntactic forms:
-
+This module provides the following syntactic form:
 
 > (parser args ...) where the possible args may come in any order (as
   long as there are no duplicates and all non-optional arguments are
@@ -113,7 +134,7 @@ This module provides the following syntactic forms:
      LALR table to the file named filename (unless the file exists).
      filename must be a string.
 
-  > (suppress) OPTIONAL causes the parser generator to not report
+  > (suppress) OPTIONAL causes the parser generator not to report
      shift/reduce or reduce/reduce conflicts.
 
   > (src-pos) OPTIONAL causes the generated parser to expect input in
@@ -126,7 +147,8 @@ This module provides the following syntactic forms:
      encounters an error.  If the src-pos option is present, the
      function should accept 5 arguments, 
      (lambda (token-ok token-name token-value start-pos end-pos) ...).     
-     Otherwise it should accept 3, (lambda (token-ok token-name token-value).
+     Otherwise it should accept 3, 
+     (lambda (token-ok token-name token-value) ...).
      The first argument will be #f iff the error is that an invalid
      token was received.  The second and third arguments will be the
      name and the value of the token at which the error was detected.
@@ -168,7 +190,7 @@ This module provides the following syntactic forms:
      the right of the production.  If the src-pos option is present in
      the parser, variables $1-start-pos, ..., $n-start-pos and
      $1-end-pos, ..., $n-end-pos are also available and refer to the
-     position structure corresponding to the start and end of the
+     position structures corresponding to the start and end of the
      corresponding grammar-symbol.  All of the productions for a given
      non-terminal must be grouped with it, i.e. No non-terminal may
      appear twice on the left hand side in a parser.
@@ -180,9 +202,9 @@ desired, the t may return symbols instead of tokens.  The parser will
 treat symbols as tokens of the corresponding name (with #f as a value,
 so it is usual to return symbols only in the case of empty tokens).  f
 returns the value associated with the parse tree by the semantic
-actions.  If the parser encounters an error, it will try to use error
-productions to continue parsing.  If it cannot, it raises a read
-error.
+actions.  If the parser encounters an error, after invoking the
+supplied error function, it will try to use error productions to
+continue parsing.  If it cannot, it raises a read error.
 
 Each time the scheme code for a parser is compiled (e.g. when a .ss
 file containing a (parser ...) is loaded/required) the parser
@@ -297,4 +319,4 @@ Error check the use of error productions
 
 both:
 Code documentation
-Increase runtime speed.
+Increase runtime speed

@@ -49,6 +49,9 @@ static void wxsFillPrivateColor(wxDC *dc, wxColour *c)
 #ifndef wxGETDIR
 # define wxGETDIR 0
 #endif
+#ifndef wxBUNDLES_OK
+# define wxBUNDLES_OK 0
+#endif
 
 static Scheme_Object *fileSelMode_wxOPEN_sym = NULL;
 static Scheme_Object *fileSelMode_wxSAVE_sym = NULL;
@@ -56,6 +59,7 @@ static Scheme_Object *fileSelMode_wxGETDIR_sym = NULL;
 static Scheme_Object *fileSelMode_wxMULTIOPEN_sym = NULL;
 static Scheme_Object *fileSelMode_wxOVERWRITE_PROMPT_sym = NULL;
 static Scheme_Object *fileSelMode_wxHIDE_READONLY_sym = NULL;
+static Scheme_Object *fileSelMode_wxBUNDLES_OK_sym = NULL;
 
 static void init_symset_fileSelMode(void) {
   REMEMBER_VAR_STACK();
@@ -71,21 +75,70 @@ static void init_symset_fileSelMode(void) {
   fileSelMode_wxOVERWRITE_PROMPT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("overwrite-prompt"));
   wxREGGLOB(fileSelMode_wxHIDE_READONLY_sym);
   fileSelMode_wxHIDE_READONLY_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hide-readonly"));
+  wxREGGLOB(fileSelMode_wxBUNDLES_OK_sym);
+  fileSelMode_wxBUNDLES_OK_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("bundles-ok"));
 }
 
 static int unbundle_symset_fileSelMode(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!fileSelMode_wxHIDE_READONLY_sym) WITH_VAR_STACK(init_symset_fileSelMode());
+  if (!fileSelMode_wxBUNDLES_OK_sym) WITH_VAR_STACK(init_symset_fileSelMode());
+  Scheme_Object *i INIT_NULLED_OUT, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
   if (0) { }
-  else if (v == fileSelMode_wxOPEN_sym) { return wxOPEN; }
-  else if (v == fileSelMode_wxSAVE_sym) { return wxSAVE; }
-  else if (v == fileSelMode_wxGETDIR_sym) { return wxGETDIR; }
-  else if (v == fileSelMode_wxMULTIOPEN_sym) { return wxMULTIOPEN; }
-  else if (v == fileSelMode_wxOVERWRITE_PROMPT_sym) { return wxOVERWRITE_PROMPT; }
-  else if (v == fileSelMode_wxHIDE_READONLY_sym) { return wxHIDE_READONLY; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "fileSelMode symbol", -1, 0, &v));
+  else if (i == fileSelMode_wxOPEN_sym) { result = result | wxOPEN; }
+  else if (i == fileSelMode_wxSAVE_sym) { result = result | wxSAVE; }
+  else if (i == fileSelMode_wxGETDIR_sym) { result = result | wxGETDIR; }
+  else if (i == fileSelMode_wxMULTIOPEN_sym) { result = result | wxMULTIOPEN; }
+  else if (i == fileSelMode_wxOVERWRITE_PROMPT_sym) { result = result | wxOVERWRITE_PROMPT; }
+  else if (i == fileSelMode_wxHIDE_READONLY_sym) { result = result | wxHIDE_READONLY; }
+  else if (i == fileSelMode_wxBUNDLES_OK_sym) { result = result | wxBUNDLES_OK; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "fileSelMode symbol list", -1, 0, &v));
   return 0;
+}
+
+static int istype_symset_fileSelMode(Scheme_Object *v, const char *where) {
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!fileSelMode_wxBUNDLES_OK_sym) WITH_VAR_STACK(init_symset_fileSelMode());
+  Scheme_Object *i INIT_NULLED_OUT, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == fileSelMode_wxOPEN_sym) { ; }
+  else if (i == fileSelMode_wxSAVE_sym) { ; }
+  else if (i == fileSelMode_wxGETDIR_sym) { ; }
+  else if (i == fileSelMode_wxMULTIOPEN_sym) { ; }
+  else if (i == fileSelMode_wxOVERWRITE_PROMPT_sym) { ; }
+  else if (i == fileSelMode_wxHIDE_READONLY_sym) { ; }
+  else if (i == fileSelMode_wxBUNDLES_OK_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "fileSelMode symbol list", -1, 0, &v));
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_fileSelMode(int v) {
+  REMEMBER_VAR_STACK();
+  if (!fileSelMode_wxBUNDLES_OK_sym) init_symset_fileSelMode();
+  Scheme_Object *l = scheme_null;
+  if (v & wxOPEN) l = WITH_REMEMBERED_STACK(scheme_make_pair(fileSelMode_wxOPEN_sym, l));
+  if (v & wxSAVE) l = WITH_REMEMBERED_STACK(scheme_make_pair(fileSelMode_wxSAVE_sym, l));
+  if (v & wxGETDIR) l = WITH_REMEMBERED_STACK(scheme_make_pair(fileSelMode_wxGETDIR_sym, l));
+  if (v & wxMULTIOPEN) l = WITH_REMEMBERED_STACK(scheme_make_pair(fileSelMode_wxMULTIOPEN_sym, l));
+  if (v & wxOVERWRITE_PROMPT) l = WITH_REMEMBERED_STACK(scheme_make_pair(fileSelMode_wxOVERWRITE_PROMPT_sym, l));
+  if (v & wxHIDE_READONLY) l = WITH_REMEMBERED_STACK(scheme_make_pair(fileSelMode_wxHIDE_READONLY_sym, l));
+  if (v & wxBUNDLES_OK) l = WITH_REMEMBERED_STACK(scheme_make_pair(fileSelMode_wxBUNDLES_OK_sym, l));
+  return l;
 }
 
 

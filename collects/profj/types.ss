@@ -176,8 +176,8 @@
   ;;(make-inner-record string (list symbol) bool)
   (define-struct inner-record (name modifiers class?))
 
-  ;;(make-scheme-record (list scheme-val))
-  (define-struct scheme-record (provides))
+  ;;(make-scheme-record string (list string) string (list scheme-val))
+  (define-struct scheme-record (name path dir provides))
   
   ;;(make-scheme-val symbol bool (U #f type function-type))
   (define-struct scheme-val (name dynamic? contract))

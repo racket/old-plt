@@ -1757,6 +1757,7 @@
            (end (get-end cur-tok))
            (ps (if (null? pre) null (get-start pre)))
            (pe (if (null? pre) null (get-end pre))))
+;      (printf "parse-for: state ~a pre ~a cur-tok ~a~n" state pre cur-tok)
       (case state
         ((start)
          (cond
@@ -1787,7 +1788,7 @@
            ((EOF) (parse-error "Expected remainder of 'for'" ps pe))
            ((COMMA) (parse-for cur-tok (parse-expression cur-tok (getter) 'start getter #f) 'statement-expr-first 
                                getter ctor? super-seen?))
-           ((SEMI-COLON)
+           ((SEMI_COLON)
             (parse-for cur-tok (getter) 'past-inits getter ctor? super-seen?))
            (else
             (parse-error (format "Expected a ',' or ';' for list of statement expressions in 'for'. Found ~a" out) 
@@ -1795,18 +1796,18 @@
         ((past-inits)
          (case kind
            ((EOF) (parse-error "Expected remainder of 'for'" ps pe))
-           ((SEMI-COLON)
+           ((SEMI_COLON)
             (parse-for cur-tok (getter) 'past-condition getter ctor? super-seen?))
            (else
             (let ((next (getter)))
-              (if (eof? (get-tok getter))
+              (if (eof? (get-tok next))
                   (parse-error "Expected the rest of 'for'" start end)
                   (parse-for cur-tok (parse-expression cur-tok next 'start getter #f) 
                              'end-condition getter ctor? super-seen?))))))
         ((end-condition)
          (case kind
            ((EOF) (parse-error "Expected a ';' to end the condition portion of 'for', and rest of 'for'." ps pe))
-           ((SEMI-COLON) (parse-for cur-tok (getter) 'past-condition getter ctor? super-seen?))
+           ((SEMI_COLON) (parse-for cur-tok (getter) 'past-condition getter ctor? super-seen?))
            (else
             (parse-error (format "Expected a ';' to end the condition portion of 'for', found ~a" out) start end))))
         ((past-condition)

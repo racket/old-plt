@@ -187,7 +187,7 @@
          (send type-recs add-class-record (read-record type-path))
          (send type-recs add-require-syntax class-name (build-require-syntax class path dir #f)))
         ((and (scheme-ok?) (not (eq? dir in-dir)) (check-scheme-file-exists? file-path))
-         (send type-recs add-to-records class-name (lambda () (create-scheme-type-rec class (cdr path))))
+         (send type-recs add-to-records class-name (make-scheme-record class (cdr path) dir null))
          (send type-recs add-require-syntax class-name (build-require-syntax class path dir #f)))
         ((check-file-exists? file-path new-level)
          (send type-recs add-to-records 

@@ -454,6 +454,10 @@
  ;;; search help desk popup menu
  (search-help-desk-for "Search in Help Desk for \"~a\"")
  (exact-lucky-search-help-desk-for "Exact lucky search in Help Desk for \"~a\"")
+
+ ;; collapse and expand popup menu items
+ (collapse-sexp "Collapse sexp")
+ (expand-sexp "Expand sexp")
  
  ;;; fraction dialog
  (enter-fraction "Enter Fraction")

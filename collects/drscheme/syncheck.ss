@@ -1,14 +1,6 @@
 #|
 
   TODO:
-     - remove the booleans in the variable annotations
-       about level of syntax
-     - add these tests:
-       
-       (module m mzscheme (require (lib "list.ss") (lib "list.ss")) foldl)
-       (module m mzscheme (require (lib "etc.ss") (lib "etc.ss")) (rec f 1))
-       
-     to make sure that both "etc"s and both "list"s get arrows.
        
      - write test suite for arrows and menus
 |#
@@ -725,9 +717,12 @@
                          0
                          (send (get-definitions-text) last-position)
                          base-style-str)
-            (let ([binders null]
-                  [varrefs null]
-                  [tops null]
+            (let ([tl-binders null]
+                  [tl-varrefs null]
+                  [tl-requires null]
+                  [tl-require-for-syntaxes null]
+                  [tl-tops null]
+                  [tl-referenced-macros null]
                   [users-namespace #f]
                   [err-termination? #f])
               (send (get-interactions-text)
@@ -751,25 +746,37 @@
                          (custodian-shutdown-all (run-in-expansion-thread current-custodian))]
                         [else
                          (let-values ([(new-binders
-                                        pre-new-varrefs
+                                        new-varrefs
                                         new-tops
-                                        requires
-                                        require-for-syntaxes
-                                        referenced-macros)
+                                        new-requires
+                                        new-require-for-syntaxes
+                                        new-referenced-macros
+                                        has-module?)
                                        (annotate-basic sexp run-in-expansion-thread)])
-                           (let ([new-varrefs
-                                  (if requires
-                                      (annotate-require-vars pre-new-varrefs 
-                                                             requires
-                                                             require-for-syntaxes
-                                                             referenced-macros)
-                                      (map cdr pre-new-varrefs))])
-                             (set! binders (append new-binders binders))
-                             (set! varrefs (append new-varrefs varrefs))
-                             (set! tops (append new-tops tops))))
+                           (if has-module?
+                               (annotate-complete users-namespace
+                                                  new-binders
+                                                  new-varrefs
+                                                  new-tops
+                                                  new-requires
+                                                  new-require-for-syntaxes
+                                                  new-referenced-macros)
+                               (begin
+                                 (set! tl-binders (append new-binders tl-binders))
+                                 (set! tl-varrefs (append new-varrefs tl-varrefs))
+                                 (set! tl-requires (append new-requires tl-requires))
+                                 (set! tl-require-for-syntaxes (append new-require-for-syntaxes tl-require-for-syntaxes))
+                                 (set! tl-referenced-macros (append new-referenced-macros tl-referenced-macros))
+                                 (set! tl-tops (append new-tops tl-tops)))))
                          (loop)])))
               (unless err-termination? 
-                (annotate-variables users-namespace binders varrefs tops)))
+                (annotate-complete users-namespace
+                                   tl-binders
+                                   tl-varrefs
+                                   tl-tops
+                                   tl-requires
+                                   tl-require-for-syntaxes
+                                   tl-referenced-macros)))
             (send (get-definitions-text) end-edit-sequence))
 
           (super-instantiate ())
@@ -801,6 +808,35 @@
        ;; type req/tag = (make-req/tag syntax sexp boolean)
       (define-struct req/tag (req-stx req-sexp used?))
       
+      ;; annotate-complete :    namespace
+      ;;                        (listof syntax)
+      ;;                        (listof (cons boolean syntax))
+      ;;                        (listof syntax)
+      ;;                        (listof syntax)
+      ;;                        (listof (cons boolean syntax[original]))
+      ;;                     -> void
+      ;;
+      ;; annotates the non-local portions of a complete program.
+      ;; for the purposes of check syntax, a complete program is either
+      ;; a module expression, or everything at the toplevel.
+      ;;
+      ;; the inputs match the outputs of annotate-basic, except this
+      ;; accepts the user's namespace in addition and doesn't accept
+      ;; the boolean from annotate-basic.
+      (define (annotate-complete users-namespace
+                                 binders
+                                 varrefs
+                                 tops
+                                 requires
+                                 require-for-syntaxes
+                                 referenced-macros)
+        (let ([non-require-varrefs (annotate-require-vars 
+                                    varrefs
+                                    requires
+                                    require-for-syntaxes
+                                    referenced-macros)])
+          (annotate-variables users-namespace binders non-require-varrefs tops)))
+
       ;; annotate-require-vars :    (listof (cons boolean syntax[identifier]))
       ;;                            (listof syntax)
       ;;                            (listof syntax)
@@ -879,15 +915,21 @@
         (and (pair? binding)
              (let ([mod-path (caddr binding)])
                (if (module-path-index? mod-path)
-                   (let loop ([mpi mod-path]
-                              [ph #f])
-                     (let-values ([(main rest) (module-path-index-split mpi)])
-                       (if rest
-                           (loop rest main)
-                           ph)))
+
+                   (let-values ([(base offset) (module-path-index-split mod-path)])
+                     base)
+
+;                   (let loop ([mpi mod-path]
+;                              [ph #f])
+;                     (let-values ([(main rest) (module-path-index-split mpi)])
+;                       (if rest
+;                           (loop rest main)
+;                           ph)))
+
+
                    mod-path))))
       
-      ;; annotate-variables : namespace (listof syntax) (listof syntax) -> void
+      ;; annotate-variables : namespace (listof syntax) (listof syntax) (listof syntax) -> void
       ;; colors the variables, free are turned unbound color, bound are turned
       ;; bound color and all binders are turned bound color.
       ;; vars-ht maps from the name of an identifier to all of the ids that
@@ -995,16 +1037,19 @@
       ;; annotate-basic : syntax -> (values (listof syntax)
       ;;                                    (listof (cons boolean syntax))
       ;;                                    (listof syntax)
-      ;;                                    (union #f (listof syntax))
-      ;;                                    (listof (cons boolean syntax[original])))
+      ;;                                    (listof syntax)
+      ;;                                    (listof (cons boolean syntax[original]))
+      ;;                                    boolean)
       ;; annotates the lexical structure of the program `sexp', except
       ;; for the variables in the program. returns the variables in several
       ;; lists -- the first is the ones that occur in binding positions
       ;; and the second is those that occur in bound positions. The third
-      ;; is those that occur in #%top's. The next value is #f if there was
-      ;; no module, or all of the require expressions if there was one.
-      ;; the last is the list of all original macro references.
-      ;;
+      ;; is those that occur in #%top's. 
+      ;; The next value is all of the require expressions and then all of the
+      ;; require-for-syntax expressions.
+      ;; the next to last is the list of all original macro references.
+      ;; the last is a boolean indicating if there was a `module' in the expanded expression.
+
       ;; the booleans in the lists indicate if the variables or macro references
       ;; were on the rhs of a define-syntax (boolean is #t) or not (boolean is #f)
       (define (annotate-basic sexp run-in-expansion-thread)
@@ -1166,9 +1211,10 @@
           (values binders 
                   varrefs
                   tops
-                  (and has-module? requires)
-                  (and has-module? require-for-syntaxes)
-                  referenced-macros)))
+                  requires
+                  require-for-syntaxes
+                  referenced-macros
+                  has-module?)))
       
       ;; annotate-require-open : ((-> void) -> stx -> void)
       (define (annotate-require-open run-in-expansion-thread)

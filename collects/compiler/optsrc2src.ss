@@ -103,12 +103,30 @@
   (define (get-sexpr o) (send o sexpr))
   (define (get-body-sexpr o) (send o body-sexpr))
 
+  (define-struct bucket (mutated?))
+
+  (define (global-bucket table stx)
+    (let ([l (hash-table-get table (syntax-e stx) (lambda () null))])
+      (let ([s (ormap (lambda (b)
+			(and (module-identifier=? stx (car b))
+			     (cdr b)))
+		      l)])
+	(if s
+	    s
+	    (let ([s (make-bucket #f)])
+	      (hash-table-put! table (syntax-e stx) (cons (cons stx s) l))
+	      s)))))
+
+  (define global-ht (make-hash-table))
+  (define et-global-ht (make-hash-table))
+
   (define global%
     (class100 exp% (-stx -trans?)
       (private-field
         [stx -stx]
 	[trans? -trans?]
-	[mbind #f])
+	[mbind #f]
+	[bucket (global-bucket (if trans? et-global-ht global-ht) stx)])
       (private
 	[get-mbind!
 	 (lambda ()
@@ -130,8 +148,11 @@
 	   (get-mbind!)
 	   (and (pair? mbind)
 		(eq? (car mbind) '#%kernel)))]
-	[is-trans? (lambda () trans?)])
+	
+	[is-trans? (lambda () trans?)]
 
+	[is-mutated? (lambda () (bucket-mutated? bucket))])
+      
       (override
 	[no-side-effect?
 	 ;; If not built in, could raise exn
@@ -150,7 +171,7 @@
 				    env)
 			     this))])
       (public
-	[set-mutated (lambda () (void))])
+	[set-mutated (lambda () (set-bucket-mutated?! bucket #t))])
 
       (sequence
 	(super-init stx))))
@@ -164,7 +185,7 @@
 	[value #f]
 	[used 0]
 	[mutated? #f]
-	[inited? #t])
+	[inited? always-inited?])
 
       (public
 	[is-used? (lambda () (positive? used))]
@@ -1031,7 +1052,11 @@
 		 [-et-body (map (lambda (x) (send x reorganize)) et-body)])
 	     (let loop ([l -body][defs null])
 	       (cond
-		[(and (pair? l) ((car l) . is-a? . variable-def%))
+		[(and (pair? l) 
+		      ((car l) . is-a? . variable-def%)
+		      (not (ormap (lambda (v) (send v mutated?))
+				  (send (car l) get-vars)))
+		      (send (send (car l) get-rhs) valueable?))
 		 (loop (cdr l)
 		       (cons (car l) defs))]
 		[else
@@ -1313,6 +1338,7 @@
     (let ([p (parse-top e null #f #f)])
       (send p reorganize)
       (send p set-known-values)
+      (printf "simplify~n")
       (let ([p (send p simplify (make-context 'all null))])
 
 	(get-sexpr p))))
@@ -1331,5 +1357,5 @@
    (parameterize ([current-directory "/home/mflatt/proj/plt/collects/mzlib/"])
      (parameterize ([current-load-relative-directory (current-directory)])
        (expand 
-	(with-input-from-file "class.ss" 
-	  (lambda () (read-syntax "class.ss")))))))))
+	(with-input-from-file "awk.ss" 
+	  (lambda () (read-syntax "awk.ss")))))))))

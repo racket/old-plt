@@ -197,7 +197,9 @@
   (make-std-buffer%
    make-edit%
    make-pasteboard%
+   make-return-edit%
    edit%
+   return-edit%
    pasteboard%))
 
 (define-signature mred:canvas^

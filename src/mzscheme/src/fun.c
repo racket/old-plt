@@ -831,7 +831,8 @@ typedef Scheme_Object *(*Overflow_K_Proc)(void);
 
 void *top_level_do(void *(*k)(void), int eb, void *sj_start)
      /* Wraps a function `k' with a handler for stack overflows and
-	barriers to full-continuation jumps.  */
+	barriers to full-continuation jumps. No barrier if !eb, but
+        include an escape-continuation barrier if eb > 1. */
 {
   void *v;
   long * volatile old_cc_ok;

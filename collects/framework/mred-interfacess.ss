@@ -1,6 +1,6 @@
-(unless (equal? (version) "100alpha3")
+(unless (equal? (version) "100alpha4")
   (error 'mred-interfaces
-         "mred-interfaces.ss and mred-interfacess.ss compiled for version 100alpha3, not version ~a"
+         "mred-interfaces.ss and mred-interfacess.ss compiled for version 100alpha4, not version ~a"
          (version)))
 (define-signature
   mred-interfaces^
@@ -58,7 +58,6 @@
            editor-stream-in-base%
            editor-stream-in%
            editor-snip%
-           editor-data-class-list%
            editor-data-class%
            editor-data%
            editor-canvas%
@@ -127,7 +126,6 @@
    editor-stream-in-base<%>
    editor-stream-in<%>
    editor-snip<%>
-   editor-data-class-list<%>
    editor-data-class<%>
    editor-data<%>
    editor-canvas<%>

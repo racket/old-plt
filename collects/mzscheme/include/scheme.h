@@ -104,9 +104,9 @@ enum {
 typedef struct Scheme_Env
 {
   Scheme_Type type; /* scheme_namespace_type */
+  short no_keywords;
   Scheme_Hash_Table *globals;
   Scheme_Hash_Table *loaded_libraries;
-  struct Scheme_Object *nonempty_cond; /* hack used when !scheme_allow_cond_auto_else */
   struct Scheme_Comp_Env *init; /* initial compilation environment */
 } Scheme_Env;
 
@@ -361,6 +361,7 @@ enum {
   MZCONFIG_EXIT_HANDLER,
 
   MZCONFIG_EXN_HANDLER,
+  MZCONFIG_INIT_EXN_HANDLER,
 
   MZCONFIG_EVAL_HANDLER,
   MZCONFIG_LOAD_HANDLER,

@@ -11,7 +11,7 @@
          brush-list%
          editor-data%
          editor-data-class%
-         editor-data-class-list%
+         editor-data-class-list<%>
          check-for-break
          clipboard<%>
          clipboard-client%
@@ -44,7 +44,7 @@
          make-eventspace
          editor-admin%
          editor-set-x-selection-mode
-         editor-snip-editor-admin%
+         editor-snip-editor-admin<%>
          editor-stream-in%
          editor-stream-in-base%
          editor-stream-in-string-base%
@@ -67,11 +67,11 @@
          snip%
          snip-admin%
          snip-class%
-         snip-class-list%
+         snip-class-list<%>
          special-control-key
          label->plain-label
          string-snip%
-         style%
+         style<%>
          style-delta%
          style-list%
          tab-snip%

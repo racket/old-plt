@@ -20,7 +20,10 @@
 			"native"
 			(system-library-subpath)))
 
-(define classhack.so (build-path classhack.so-dir (string-append classhack ".so")))
+(define classhack.so (build-path classhack.so-dir (string-append classhack 
+								 (case (system-type)
+								   [(windows) ".dll"]
+								   [else ".so"]))))
 
 ;(unless (file-exists? classhack.so)
   (let ([classhack.c (build-path framework-dir (string-append classhack ".c"))])

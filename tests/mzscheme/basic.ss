@@ -1163,6 +1163,19 @@
 (test-bad-re-args regexp-match)
 (test-bad-re-args regexp-match-positions)
 
+;; Test non-capturing parens
+(test '("1aaa2" "a") regexp-match #rx"1(a)*2" "01aaa23")
+(test '("1aaa2") regexp-match #rx"1(?:a)*2" "01aaa23")
+(test '("1akakak2" "ak") regexp-match #rx"1(ak)*2" "01akakak23")
+(test '("1akakak2") regexp-match #rx"1(?:ak)*2" "01akakak23")
+(test '("1akakkakkkk2" "akkkk") regexp-match #rx"1(ak*)*2" "01akakkakkkk23")
+(test '("1akakkakkkk2") regexp-match #rx"1(?:ak*)*2" "01akakkakkkk23")
+(test '("01akakkakkkk23" "1akakkakkkk2" "1" "a" "k" "2") 
+      regexp-match #rx"(?:0)(((?:1))(?:(a)(?:(k))*)*((?:2)))(?:3)" "_01akakkakkkk23_")
+
+(test '((1 . 10) (7 . 9)) regexp-match-positions #rx"1(ak*)*2" "01akakkak23")
+(test '((1 . 10)) regexp-match-positions #rx"1(?:ak*)*2" "01akakkak23")
+
 (arity-test regexp 1 1)
 (arity-test regexp? 1 1)
 (arity-test regexp-match 2 5)

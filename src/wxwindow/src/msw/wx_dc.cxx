@@ -1640,7 +1640,7 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
 {
   HDC dc;
   DWORD old_background;
-  double w;
+  double w, h, ws, hs;
   wchar_t *ustring;
   long len, alen;
   SIZE sizeRect;
@@ -1683,10 +1683,14 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
   SetScaleMode(wxWINDOWS_SCALE, dc);
   
   w = 0;
+  h = 0;
   d = 0;
 
   oox = device_origin_x;
   ooy = device_origin_y;
+
+  ws = cos(angle);
+  hs = -sin(angle);
 
   while (len) {
     if (combine)
@@ -1696,18 +1700,22 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
     
     alen = substitute_font(ustring, d, alen, font, dc, screen_font, angle, &reset);
     
-    SetDeviceOrigin(MS_XLOG2DEVREL(x + w) + oox, MS_YLOG2DEVREL(y) + ooy);
+    SetDeviceOrigin(MS_XLOG2DEVREL(x + w) + oox, MS_YLOG2DEVREL(y + h) + ooy);
 
     (void)TextOutW(dc, 0, 0, ustring XFORM_OK_PLUS d, alen);
     
     if (alen == 1) {
       ABCFLOAT cw;
       GetCharABCWidthsFloatW(dc, ustring[d], ustring[d], &cw);
-      w += cw.abcfA + cw.abcfB + cw.abcfC;
+      w += (cw.abcfA + cw.abcfB + cw.abcfC) * ws;
+      if (angle != 0.0) {
+	GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
+	h += ((double)sizeRect.cx) * hs;
+      }
     } else {
       GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
-      
-      w += sizeRect.cx;
+      w += ((double)sizeRect.cx) * ws;
+      h += ((double)sizeRect.cx) * hs;
     }
 
     len -= alen;

@@ -233,6 +233,7 @@ lexer:
 POSIX style regular expressions
 User definition of lex operators
 DFA minimization
+Implement interactive behavior
 
 parser:
 Increase speed of parser generator

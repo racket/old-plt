@@ -89,11 +89,14 @@
                                     (string-append 
                                      "<BR>&nbsp;&nbsp;"
 				     "<FONT SIZE=\"-1\">"
-				     (format 
-				      "[<A HREF=\"/servlets/download-manual.ss?manual=~a&label=~a\">refresh</A>]"
-				      manual-dir
-				      (hexify-string name))
-				     "&nbsp;"
+				     (if external-connections?
+					 ""
+					 (string-append
+					  (format 
+					   "[<A HREF=\"/servlets/download-manual.ss?manual=~a&label=~a\">refresh</A>]"
+					   manual-dir
+					   (hexify-string name))
+					  "&nbsp;"))
                                      (format (string-constant manual-installed-date)
                                              (date->string
                                               (seconds->date

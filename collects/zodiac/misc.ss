@@ -3,7 +3,13 @@
 (unit/sig zodiac:misc^
   (import (mz-pp : mzlib:pretty-print^))
 
-  (define pretty-print mz-pp:pretty-print)
+  ; This is to get around an ordering problem.  Otherwise uses of
+  ; pretty-print show up as #<undefined>, since this pretty-print
+  ; captures the MzScheme pretty-print too soon.
+
+  (define pretty-print
+    (lambda args
+      (apply mz-pp:pretty-print args)))
 
   (define debug-level-list '(expand expose resolve lex-res))
   (define debug-level '())

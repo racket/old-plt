@@ -42,7 +42,6 @@
 
 (require-library "ariess.ss" "cogen")
 (require-library "params.ss" "userspce")
-(require-library "userspcs.ss" "userspce")
 
 (require-library "sig.ss" "userspce")
 

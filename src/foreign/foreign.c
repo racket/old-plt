@@ -555,8 +555,18 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  * C->Scheme:   scheme_make_double(<C>)
  */
 
+/* A double that will coerce numbers to doubles: */
+#define FOREIGN_doubleS (18)
+/* Type Name:   double* (doubleS)
+ * LibFfi type: ffi_type_double
+ * C type:      double
+ * Predicate:   SCHEME_REALP(<Scheme>)
+ * Scheme->C:   scheme_real_to_double(<Scheme>)
+ * C->Scheme:   scheme_make_double(<C>)
+ */
+
 /* Booleans -- implemented as an int which is 1 or 0: */
-#define FOREIGN_bool (18)
+#define FOREIGN_bool (19)
 /* Type Name:   bool
  * LibFfi type: ffi_type_sint
  * C type:      int
@@ -569,7 +579,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  * #f is not NULL only for byte-strings, for other strings it is
  * meaningless to use NULL. */
 
-#define FOREIGN_string_ucs_4 (19)
+#define FOREIGN_string_ucs_4 (20)
 /* Type Name:   string/ucs-4 (string_ucs_4)
  * LibFfi type: ffi_type_pointer
  * C type:      mzchar*
@@ -578,7 +588,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  * C->Scheme:   scheme_make_char_string_without_copying(<C>)
  */
 
-#define FOREIGN_string_utf_16 (20)
+#define FOREIGN_string_utf_16 (21)
 /* Type Name:   string/utf-16 (string_utf_16)
  * LibFfi type: ffi_type_pointer
  * C type:      unsigned short*
@@ -590,7 +600,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 /* Byte strings -- not copying C strings, #f is NULL.
  * (note: these are not like char* which is just a pointer) */
 
-#define FOREIGN_bytes (21)
+#define FOREIGN_bytes (22)
 /* Type Name:   bytes
  * LibFfi type: ffi_type_pointer
  * C type:      char*
@@ -599,7 +609,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  * C->Scheme:   (<C>==NULL)?scheme_false:scheme_make_byte_string_without_copying(<C>)
  */
 
-#define FOREIGN_path (22)
+#define FOREIGN_path (23)
 /* Type Name:   path
  * LibFfi type: ffi_type_pointer
  * C type:      char*
@@ -608,7 +618,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  * C->Scheme:   (<C>==NULL)?scheme_false:scheme_make_path_without_copying(<C>)
  */
 
-#define FOREIGN_symbol (23)
+#define FOREIGN_symbol (24)
 /* Type Name:   symbol
  * LibFfi type: ffi_type_pointer
  * C type:      char*
@@ -620,7 +630,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 /* This is for any C pointer: #f is NULL, cpointer values as well as
  * ffi-obj and string values pass their pointer.  When used as a return
  * value, either a cpointer object or #f is returned. */
-#define FOREIGN_pointer (24)
+#define FOREIGN_pointer (25)
 /* Type Name:   pointer
  * LibFfi type: ffi_type_pointer
  * C type:      void*
@@ -631,7 +641,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 
 /* This is used for passing and Scheme_Object* value as is.  Useful for
  * functions that know about Scheme_Object*s, like MzScheme's. */
-#define FOREIGN_scheme (25)
+#define FOREIGN_scheme (26)
 /* Type Name:   scheme
  * LibFfi type: ffi_type_pointer
  * C type:      Scheme_Object*
@@ -643,7 +653,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 /* Special type, not actually used for anything except to mark points
  * that are treated like pointers but not referenced.  Used for
  * creating function types. */
-#define FOREIGN_fmark (26)
+#define FOREIGN_fmark (27)
 /* Type Name:   fmark
  * LibFfi type: ffi_type_pointer
  * C type:      -none-
@@ -669,6 +679,7 @@ typedef union _ForeignAny {
   unsigned long x_ufixnum;
   float x_float;
   double x_double;
+  double x_doubleS;
   int x_bool;
   mzchar* x_string_ucs_4;
   unsigned short* x_string_utf_16;
@@ -680,7 +691,7 @@ typedef union _ForeignAny {
 } ForeignAny;
 
 /* This is a tag that is used to identify user-made struct types. */
-#define FOREIGN_struct (27)
+#define FOREIGN_struct (28)
 
 /*****************************************************************************/
 /* Type objects */
@@ -796,6 +807,7 @@ static int ctype_sizeof(Scheme_Object *type)
   case FOREIGN_ufixnum: return sizeof(unsigned long);
   case FOREIGN_float: return sizeof(float);
   case FOREIGN_double: return sizeof(double);
+  case FOREIGN_doubleS: return sizeof(double);
   case FOREIGN_bool: return sizeof(int);
   case FOREIGN_string_ucs_4: return sizeof(mzchar*);
   case FOREIGN_string_utf_16: return sizeof(unsigned short*);
@@ -1015,6 +1027,7 @@ static Scheme_Object *c_to_scheme(Scheme_Object *type, void *src)
     case FOREIGN_ufixnum: return scheme_make_integer_from_unsigned(((unsigned long*)src)[0]);
     case FOREIGN_float: return scheme_make_float(((float*)src)[0]);
     case FOREIGN_double: return scheme_make_double(((double*)src)[0]);
+    case FOREIGN_doubleS: return scheme_make_double(((double*)src)[0]);
     case FOREIGN_bool: return (((int*)src)[0]?scheme_true:scheme_false);
     case FOREIGN_string_ucs_4: return scheme_make_char_string_without_copying(((mzchar**)src)[0]);
     case FOREIGN_string_utf_16: return utf16_pointer_to_ucs4_string(((unsigned short**)src)[0]);
@@ -1162,6 +1175,15 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
         (((double*)dst)[0]) = tmp; return NULL;
       } else {
         scheme_wrong_type("Scheme->C","double",0,1,&(val));
+        return NULL; /* shush the compiler */
+      }
+    case FOREIGN_doubleS:
+      if (SCHEME_REALP(val)) {
+        double tmp;
+        tmp = (double)(scheme_real_to_double(val));
+        (((double*)dst)[0]) = tmp; return NULL;
+      } else {
+        scheme_wrong_type("Scheme->C","double*",0,1,&(val));
         return NULL; /* shush the compiler */
       }
     case FOREIGN_bool:
@@ -1912,7 +1934,7 @@ static Scheme_Object *foreign_ffi_callback(int argc, Scheme_Object *argv[])
 /* Initialization */
 
 /* lightning initialization */
-void scheme_init_lightning(Scheme_Env *env);
+/* void scheme_init_lightning(Scheme_Env *env); */
 
 void scheme_init_foreign(Scheme_Env *env)
 {
@@ -2116,6 +2138,12 @@ void scheme_init_foreign(Scheme_Env *env)
   t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   t->so.type = ctype_tag;
   t->basetype = (NULL);
+  t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_double));
+  t->c_to_scheme = ((Scheme_Object*)FOREIGN_doubleS);
+  scheme_add_global("_double*", (Scheme_Object*)t, menv);
+  t = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
+  t->so.type = ctype_tag;
+  t->basetype = (NULL);
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_sint));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_bool);
   scheme_add_global("_bool", (Scheme_Object*)t, menv);
@@ -2167,7 +2195,7 @@ void scheme_init_foreign(Scheme_Env *env)
   t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_pointer));
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_fmark);
   scheme_add_global("_fmark", (Scheme_Object*)t, menv);
-  scheme_init_lightning(menv);
+  /* scheme_init_lightning(menv); */
   scheme_finish_primitive_module(menv);
   scheme_protect_primitive_provide(menv, NULL);
 }

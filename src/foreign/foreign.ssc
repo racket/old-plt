@@ -293,7 +293,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 ;;     'prop2 val2
 ;;     ...)
 ;; The current properties are:
-;;   stype: scheme type symbol
+;;   stype: scheme binding for this type
 ;;   cname: like stype but used for C identifiers
 ;;   ftype: type name used by libffi (as ffi_type_X) (defaults to cname)
 ;;   ctype: C type, or #f if none (defaults to ftype, with proper massaging)
@@ -503,6 +503,11 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 (defctype* 'double "double"       "DBL"  "DBL"        "double")
 ;; Not useful?  not implemented in any case.
 ;; (defctype* 'longdouble "long double" ...???...)
+
+(~ "/* A double that will coerce numbers to doubles: */")
+(defctype* '(double* "double") "double"
+  ;; use a list to avoid automatic "SCHEME_..._VAL" wrapping
+  "REAL" '("scheme_real_to_double") "double")
 
 (~ "/* Booleans -- implemented as an int which is 1 or 0: */")
 (defctype 'bool
@@ -1491,7 +1496,7 @@ void free_cl_cif_args(void *ignored, void *p)
 /* Initialization */
 
 /* lightning initialization */
-void scheme_init_lightning(Scheme_Env *env);
+/* void scheme_init_lightning(Scheme_Env *env); */
 
 void scheme_init_foreign(Scheme_Env *env)
 {
@@ -1530,7 +1535,7 @@ void scheme_init_foreign(Scheme_Env *env)
                  (list "(Scheme_Object*)FOREIGN_"cname))
                (~ "scheme_add_global(\"_"stype"\", (Scheme_Object*)t, "
                   "menv);")))):}
-  scheme_init_lightning(menv);
+  /* scheme_init_lightning(menv); */
   scheme_finish_primitive_module(menv);
   scheme_protect_primitive_provide(menv, NULL);
 }

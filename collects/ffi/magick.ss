@@ -89,7 +89,7 @@
       (unless (and (list? l)
                    (andmap (lambda (x) (and (list? x) (= 2 (length x)))) l))
         (error '_Points "expecting a list of two-element lists, got ~e" l))
-      (list->cblock (apply append l) _double))
+      (list->cblock (apply append l) _double*))
     (lambda (x)
       (error '_Points "cannot be used as an output type"))))
 
@@ -99,8 +99,8 @@
     (lambda (l)
       (unless (and (list? l) (= 6 (length l)))
         (error '_Points "expecting a list of six numbers, got ~e" l))
-      (list->cblock l _double))
-    (lambda (x) (cblock->list x _double 6))))
+      (list->cblock l _double*))
+    (lambda (x) (cblock->list x _double* 6))))
 
 ;; Utilities for MagickGetImagePixels/MagickSetImagePixels
 
@@ -112,7 +112,7 @@
     [(IntegerPixel) _uint]
     [(LongPixel)    _ulong]
     [(FloatPixel)   _float]
-    [(DoublePixel)  _double]))
+    [(DoublePixel)  _double*]))
 
 ;; Gets a list and a number, and returns a list of lists of length n
 ;; (destructive).
@@ -622,7 +622,7 @@
 ;; MagickAnnotateImage annotates an image with text.
 (defmagick* MagickAnnotateImage :
   _MagickWand _DrawingWand
-  (x : _double) (y : _double) (angle : _double) (text : _string)
+  (x : _double*) (y : _double*) (angle : _double*) (text : _string)
   -> _status)
 
 ;; MagickAppendImages append a set of images.
@@ -644,7 +644,7 @@
 ;; results, the radius should be larger than sigma.  Use a radius of 0 and
 ;; MagickBlurImage selects a suitable radius for you.
 (defmagick* MagickBlurImage :
-  _MagickWand (radius : _double) (sigma : _double) -> _status)
+  _MagickWand (radius : _double*) (sigma : _double*) -> _status)
 
 ;; MagickBlurImageChannel blurs one or more image channels.  We convolve the
 ;; image cnannel with a gaussian operator of the given radius and standard
@@ -652,7 +652,7 @@
 ;; sigma.  Use a radius of 0 and MagickBlurImageChannel selects a suitable
 ;; radius for you.
 (defmagick* MagickBlurImageChannel :
-  _MagickWand _ChannelType (radius : _double) (sigma : _double) -> _status)
+  _MagickWand _ChannelType (radius : _double*) (sigma : _double*) -> _status)
 
 ;; MagickBorderImage surrounds the image with a border of the color defined by
 ;; the bordercolor pixel wand.
@@ -662,7 +662,7 @@
 
 ;; MagickCharcoalImage simulates a charcoal drawing.
 (defmagick* MagickCharcoalImage :
-  _MagickWand (radius : _double) (sigma : _double) -> _status)
+  _MagickWand (radius : _double*) (sigma : _double*) -> _status)
 
 ;; MagickChopImage removes a region of an image and collapses the image to
 ;; occupy the removed portion.
@@ -697,7 +697,7 @@
 ;; specified, the color value is changed for any neighbor pixel that does not
 ;; match the bordercolor member of image.
 (defmagick* MagickColorFloodfillImage :
-  _MagickWand (fill : _PixelWand) (fuzz : _double) (border : _PixelWand)
+  _MagickWand (fill : _PixelWand) (fuzz : _double*) (border : _PixelWand)
   (x : _long) (y : _long)
   -> _status)
 
@@ -720,7 +720,7 @@
 ;; the specified distortion metric.
 (defmagick* MagickCompareImageChannels :
   _MagickWand (reference : _MagickWand)
-  _ChannelType _MetricType (distortion : (_ptr o _double))
+  _ChannelType _MetricType (distortion : (_ptr o _double*))
   -> (comp : _MagickWand)
   -> (list distortion comp))
 
@@ -741,7 +741,7 @@
 (defmagick* MagickConvolveImage :
   (w kernel) ::
   (w : _MagickWand)
-  (_ulong = (length kernel)) (kernel : (_sqmatrix-of _double))
+  (_ulong = (length kernel)) (kernel : (_sqmatrix-of _double*))
   -> _status)
 
 ;; MagickConvolveImageChannel applies a custom convolution kernel to one or
@@ -749,7 +749,7 @@
 (defmagick* MagickConvolveImageChannel :
   (w channels kernel) ::
   (w : _MagickWand) (channels : _ChannelType)
-  (_ulong = (length kernel)) (kernel : (_sqmatrix-of _double))
+  (_ulong = (length kernel)) (kernel : (_sqmatrix-of _double*))
   -> _status)
 
 ;; MagickCropImage extracts a region of the image.
@@ -796,7 +796,7 @@
 ;; the given radius.  Use a radius of 0 and MagickEdgeImage selects a
 ;; suitable radius for you.
 (defmagick* MagickEdgeImage :
-  _MagickWand (radius : _double) -> _status)
+  _MagickWand (radius : _double*) -> _status)
 
 ;; MagickEmbossImage returns a grayscale image with a three-dimensional effect.
 ;; We convolve the image with a Gaussian operator of the given radius and
@@ -804,7 +804,7 @@
 ;; than sigma.  Use a radius of 0 and MagickEmbossImage selects a suitable
 ;; radius for you.
 (defmagick* MagickEmbossImage :
-  _MagickWand (radius : _double) (sigma : _double) -> _status)
+  _MagickWand (radius : _double*) (sigma : _double*) -> _status)
 
 ;; MagickEnhanceImage applies a digital filter that improves the quality of a
 ;; noisy image.
@@ -820,14 +820,14 @@
 ;; image, to increase or decrease contrast in an image, or to produce the
 ;; "negative" of an image.
 (defmagick* MagickEvaluateImage :
-  _MagickWand _MagickEvaluateOperator (const : _double) -> _status)
+  _MagickWand _MagickEvaluateOperator (const : _double*) -> _status)
 
 ;; Use MagickEvaluateImageChannel to apply an arithmetic, relational, or
 ;; logical operator to an image.  These operations can be used to lighten or
 ;; darken an image, to increase or decrease contrast in an image, or to produce
 ;; the "negative" of an image.
 (defmagick* MagickEvaluateImageChannel :
-  _MagickWand _ChannelType _MagickEvaluateOperator (const : _double)
+  _MagickWand _ChannelType _MagickEvaluateOperator (const : _double*)
   -> _status)
 
 ;; MagickFlattenImages merges a sequence of images.  This is useful for
@@ -871,7 +871,7 @@
 ;; parameter.  Values typically range from 0.8 to 2.3.  You can also reduce the
 ;; influence of a particular channel with a gamma value of 0.
 (defmagick* MagickGammaImage :
-  _MagickWand (gamma : _double) -> _status)
+  _MagickWand (gamma : _double*) -> _status)
 
 ;; Use MagickGammaImageChannel to gamma-correct a particular image channel.
 ;; The same image viewed on different devices will have perceptual differences
@@ -879,14 +879,14 @@
 ;; individual gamma levels for the red, green, and blue channels, or adjust all
 ;; three with the gamma parameter.  Values typically range from 0.8 to 2.3.
 (defmagick* MagickGammaImageChannel :
-  _MagickWand _ChannelType (gamma : _double) -> _status)
+  _MagickWand _ChannelType (gamma : _double*) -> _status)
 
 ;; MagickGaussianBlurImage blurs an image.  We convolve the image with a
 ;; Gaussian operator of the given radius and standard deviation (sigma).  For
 ;; reasonable results, the radius should be larger than sigma.  Use a radius of
 ;; 0 and MagickGaussianBlurImage selects a suitable radius for you.
 (defmagick* MagickGaussianBlurImage :
-  _MagickWand (radius : _double) (sigma : _double) -> _status)
+  _MagickWand (radius : _double*) (sigma : _double*) -> _status)
 
 ;; MagickGaussianBlurImageChannel blurs one or more image channels.  We
 ;; convolve the image cnannel with a Gaussian operator of the given radius and
@@ -894,7 +894,7 @@
 ;; larger than sigma.  Use a radius of 0 and MagickGaussianBlurImageChannel
 ;; selects a suitable radius for you.
 (defmagick* MagickGaussianBlurImageChannel :
-  _MagickWand _ChannelType (radius : _double) (sigma : _double) -> _status)
+  _MagickWand _ChannelType (radius : _double*) (sigma : _double*) -> _status)
 
 ;; MagickGetCopyright returns the ImageMagick API copyright as a string.
 (defmagick* MagickGetCopyright :
@@ -919,7 +919,7 @@
 ;; MagickGetImageBluePrimary returns the chromaticy blue primary point for the
 ;; image.
 (defmagick* MagickGetImageBluePrimary :
-  _MagickWand (x : (_ptr o _double)) (y : (_ptr o _double)) -> _status
+  _MagickWand (x : (_ptr o _double*)) (y : (_ptr o _double*)) -> _status
   -> (list x y))
 
 ;; MagickGetImageBorderColor returns the image border color.
@@ -941,7 +941,7 @@
 ;; more image channels.
 (defmagick* MagickGetImageChannelMean :
   _MagickWand _ChannelType
-  (mean : (_ptr o _double)) (standard-deviation : (_ptr o _double))
+  (mean : (_ptr o _double*)) (standard-deviation : (_ptr o _double*))
   -> _status
   -> (list mean standard-deviation))
 
@@ -1000,11 +1000,11 @@
 
 ;; MagickGetImageGamma gets the image gamma.
 (defmagick* MagickGetImageGamma :
-  _MagickWand -> _double)
+  _MagickWand -> _double*)
 
 ;; MagickGetImageGreenPrimary returns the chromaticy green primary point.
 (defmagick* MagickGetImageGreenPrimary :
-  _MagickWand (x : (_ptr o _double)) (y : (_ptr o _double)) -> _status
+  _MagickWand (x : (_ptr o _double*)) (y : (_ptr o _double*)) -> _status
   -> (list x y))
 
 ;; MagickGetImageHeight returns the image height.
@@ -1064,7 +1064,7 @@
 
 ;; MagickGetImageRedPrimary returns the chromaticy red primary point.
 (defmagick* MagickGetImageRedPrimary :
-  _MagickWand (x : (_ptr o _double)) (y : (_ptr o _double)) -> _status
+  _MagickWand (x : (_ptr o _double*)) (y : (_ptr o _double*)) -> _status
   -> (list x y))
 
 ;; MagickGetImageRenderingIntent gets the image rendering intent.
@@ -1095,7 +1095,7 @@
 
 ;; MagickGetImageWhitePoint returns the chromaticy white point.
 (defmagick* MagickGetImageWhitePoint :
-  _MagickWand (x : (_ptr o _double)) (y : (_ptr o _double)) -> _status
+  _MagickWand (x : (_ptr o _double*)) (y : (_ptr o _double*)) -> _status
   -> (list x y))
 
 ;; MagickGetImageWidth returns the image width.
@@ -1104,7 +1104,8 @@
 
 ;; MagickGetImageResolution gets the image X & Y resolution.
 (defmagick* MagickGetImageResolution :
-  _MagickWand (res-x : (_ptr o _double)) (res-y : (_ptr o _double)) -> _status
+  _MagickWand (res-x : (_ptr o _double*)) (res-y : (_ptr o _double*))
+  -> _status
   -> (list res-x res-y))
 
 ;; MagickGetNumberImages returns the number of images associated with a magick
@@ -1130,7 +1131,7 @@
 
 ;; MagickGetSamplingFactors gets the horizontal and vertical sampling factor.
 (defmagick* MagickGetSamplingFactors :
-  _MagickWand (len : (_ptr o _ulong)) -> (_list o _double len))
+  _MagickWand (len : (_ptr o _ulong)) -> (_list o _double* len))
 
 ;; MagickGetSize returns the size associated with the magick wand.
 (defmagick* MagickGetSize :
@@ -1155,7 +1156,7 @@
 ;; MagickImplodeImage creates a new image that is a copy of an existing one
 ;; with the image pixels "implode" by the specified percentage.
 (defmagick* MagickImplodeImage :
-  _MagickWand (amount : _double) -> _status)
+  _MagickWand (amount : _double*) -> _status)
 
 ;; MagickLabelImage adds a label to your image.
 (defmagick* MagickLabelImage :
@@ -1171,7 +1172,7 @@
 ;; quantum value.
 (defmagick* MagickLevelImage :
   _MagickWand
-  (black-point : _double) (gamma : _double) (white-point : _double)
+  (black-point : _double*) (gamma : _double*) (white-point : _double*)
   -> _status)
 
 ;; MagickLevelImageChannel adjusts the levels of the specified channel of the
@@ -1184,7 +1185,7 @@
 ;; white point are set to the maximum quantum value.
 (defmagick* MagickLevelImageChannel :
   _MagickWand _ChannelType
-  (black-point : _double) (gamma : _double) (white-point : _double)
+  (black-point : _double*) (gamma : _double*) (white-point : _double*)
   -> _status)
 
 ;; MagickMagnifyImage is a convenience method that scales an image
@@ -1203,7 +1204,7 @@
 ;; neighbor pixel that does not match the bordercolor member of image.
 (defmagick* MagickMatteFloodfillImage :
   _MagickWand
-  (opacity : _Quantum) (fuzz : _double) (border : _PixelWand)
+  (opacity : _Quantum) (fuzz : _double*) (border : _PixelWand)
   (x : _long) (y : _long)
   -> _status)
 
@@ -1211,7 +1212,7 @@
 ;; of a noisy image.  Each pixel is replaced by the median in a set of
 ;; neighboring pixels as defined by radius.
 (defmagick* MagickMedianFilterImage :
-  _MagickWand (radius : _double) -> _status)
+  _MagickWand (radius : _double*) -> _status)
 
 ;; MagickMinifyImage is a convenience method that scales an image
 ;; proportionally to one-half its original size
@@ -1221,7 +1222,7 @@
 ;; MagickModulateImage lets you control the brightness, saturation, and hue of
 ;; an image.
 (defmagick* MagickModulateImage :
-  _MagickWand (brightness : _double) (saturation : _double) (hue : _double)
+  _MagickWand (brightness : _double*) (saturation : _double*) (hue : _double*)
   -> _status)
 
 ;; Use MagickMontageImage to create a composite image by combining several
@@ -1250,7 +1251,7 @@
 ;; and MagickMotionBlurImage selects a suitable radius for you.  Angle gives
 ;; the angle of the blurring motion.
 (defmagick* MagickMotionBlurImage :
-  _MagickWand (radius : _double) (sigma : _double) (angle : _double)
+  _MagickWand (radius : _double*) (sigma : _double*) (angle : _double*)
   -> _status)
 
 ;; MagickNegateImage negates the colors in the reference image.  The Grayscale
@@ -1279,12 +1280,12 @@
 ;; painting.  Each pixel is replaced by the most frequent color occurring in a
 ;; circular region defined by radius.
 (defmagick* MagickOilPaintImage :
-  _MagickWand _double -> _status)
+  _MagickWand _double* -> _status)
 
 ;; MagickOpaqueImage changes any pixel that matches color with the color
 ;; defined by fill.
 (defmagick* MagickOpaqueImage :
-  _MagickWand (target : _PixelWand) (fill : _PixelWand) (fuzz : _double)
+  _MagickWand (target : _PixelWand) (fill : _PixelWand) (fuzz : _double*)
   -> _status)
 
 ;; MagickPingImage is like MagickReadImage except the only valid information
@@ -1348,7 +1349,7 @@
 ;; font metrics: char-width, char-height, ascender, descender, text-width,
 ;; text-height, max-horizontal-advance.
 (defmagick* MagickQueryFontMetrics :
-  _MagickWand _DrawingWand (text : _string) -> (_list o _double 7))
+  _MagickWand _DrawingWand (text : _string) -> (_list o _double* 7))
 
 ;; MagickQueryFonts returns any font that match the specified pattern (e.g. "*"
 ;; for all).
@@ -1362,7 +1363,7 @@
 
 ;; MagickRadialBlurImage radial blurs an image.
 (defmagick* MagickRadialBlurImage :
-  _MagickWand (angle : _double) -> _status)
+  _MagickWand (angle : _double*) -> _status)
 
 ;; MagickRaiseImage creates a simulated three-dimensional button-like effect by
 ;; lightening and darkening the edges of the image.  Members width and height
@@ -1397,7 +1398,7 @@
 ;; with its neighbor closest in value.  A neighbor is defined by radius.  Use a
 ;; radius of 0 and MagickReduceNoiseImage selects a suitable radius for you.
 (defmagick* MagickReduceNoiseImage :
-  _MagickWand (radius : _double) -> _status)
+  _MagickWand (radius : _double*) -> _status)
 
 ;; MagickRelinquishMemory relinquishes memory resources returned by such
 ;; methods as MagickDescribeImage, MagickGetException, etc.
@@ -1421,7 +1422,7 @@
 ;; (brought down to zero) with the Blackman filter.
 (defmagick* MagickResampleImage :
   _MagickWand
-  (x-res : _double) (y-res : _double) _FilterTypes (blur-factor : _double)
+  (x-res : _double*) (y-res : _double*) _FilterTypes (blur-factor : _double*)
   -> _status)
 
 ;; MagickResetIterator resets the wand iterator.  Use it in conjunction with
@@ -1435,7 +1436,7 @@
 ;; Sinc are windowed (brought down to zero) with the Blackman filter.
 (defmagick* MagickResizeImage :
   _MagickWand
-  (width : _ulong) (height : _ulong) _FilterTypes (blur-factor : _double)
+  (width : _ulong) (height : _ulong) _FilterTypes (blur-factor : _double*)
   -> _status)
 
 ;; MagickRollImage offsets an image as defined by x_offset and y_offset.
@@ -1446,7 +1447,7 @@
 ;; triangles left over from rotating the image are filled with the background
 ;; color.
 (defmagick* MagickRotateImage :
-  _MagickWand (background : _PixelWand) (degrees : _double) -> _status)
+  _MagickWand (background : _PixelWand) (degrees : _double*) -> _status)
 
 ;; MagickSampleImage scales an image to the desired dimensions with pixel
 ;; sampling.  Unlike other scaling methods, this method does not introduce any
@@ -1480,7 +1481,7 @@
 
 ;; MagickSetImageBluePrimary sets the image chromaticity blue primary point.
 (defmagick* MagickSetImageBluePrimary :
-  _MagickWand (x : _double) (y : _double) -> _status)
+  _MagickWand (x : _double*) (y : _double*) -> _status)
 
 ;; MagickSetImageBorderColor sets the image border color.
 (defmagick* MagickSetImageBorderColor :
@@ -1531,11 +1532,11 @@
 
 ;; MagickSetImageGamma sets the image gamma.
 (defmagick* MagickSetImageGamma :
-  _MagickWand (gamma : _double) -> _status)
+  _MagickWand (gamma : _double*) -> _status)
 
 ;; MagickSetImageGreenPrimary sets the image chromaticity green primary point.
 (defmagick* MagickSetImageGreenPrimary :
-  _MagickWand (y : _double) (x : _double) -> _status)
+  _MagickWand (y : _double*) (x : _double*) -> _status)
 
 ;; MagickSetImageIndex replaces the last image returned by MagickSetImageIndex,
 ;; MagickNextImage, MagickPreviousImage with the images from the specified
@@ -1601,7 +1602,7 @@
 
 ;; MagickSetImageRedPrimary sets the image chromaticity red primary point.
 (defmagick* MagickSetImageRedPrimary :
-  _MagickWand (x : _double) (y : _double) -> _status)
+  _MagickWand (x : _double*) (y : _double*) -> _status)
 
 ;; MagickSetImageRenderingIntent sets the image rendering intent.
 (defmagick* MagickSetImageRenderingIntent :
@@ -1609,7 +1610,7 @@
 
 ;; MagickSetImageResolution sets the image resolution.
 (defmagick* MagickSetImageResolution :
-  _MagickWand (res-x : _double) (res-y : _double) -> _status)
+  _MagickWand (res-x : _double*) (res-y : _double*) -> _status)
 
 ;; MagickSetImageScene sets the image scene.
 (defmagick* MagickSetImageScene :
@@ -1629,7 +1630,7 @@
 
 ;; MagickSetImageWhitePoint sets the image chromaticity white point.
 (defmagick* MagickSetImageWhitePoint :
-  _MagickWand (x : _double) (y : _double) -> _status)
+  _MagickWand (x : _double*) (y : _double*) -> _status)
 
 ;; MagickSetInterlaceScheme sets the image compression.
 (defmagick* MagickSetInterlaceScheme :
@@ -1647,7 +1648,7 @@
 ;; MagickSetSamplingFactors sets the image sampling factors.
 (defmagick* MagickSetSamplingFactors :
   (w factors) ::
-  (w : _MagickWand) (_ulong = (length factors)) (factors : (_list i _double))
+  (w : _MagickWand) (_ulong = (length factors)) (factors : (_list i _double*))
   -> _status)
 
 ;; MagickSetSize sets the size of the magick wand.  Set it before you read a
@@ -1660,7 +1661,7 @@
 ;; results, the radius should be larger than sigma.  Use a radius of 0 and
 ;; SharpenImage selects a suitable radius for you.
 (defmagick* MagickSharpenImage :
-  _MagickWand (radius : _double) (sigma : _double) -> _status)
+  _MagickWand (radius : _double*) (sigma : _double*) -> _status)
 
 ;; MagickSharpenImageChannel sharpens one or more image channels.  We convolve
 ;; the image cnannel with a gaussian operator of the given radius and standard
@@ -1668,7 +1669,7 @@
 ;; sigma.  Use a radius of 0 and GaussinSharpenImageChannel selects a suitable
 ;; radius for you.
 (defmagick* MagickSharpenImageChannel :
-  _MagickWand _ChannelType (radius : _double) (sigma : _double) -> _status)
+  _MagickWand _ChannelType (radius : _double*) (sigma : _double*) -> _status)
 
 ;; MagickShaveImage shaves pixels from the image edges.  It allocates the
 ;; memory necessary for the new Image structure and returns a pointer to the
@@ -1684,7 +1685,8 @@
 ;; y_shear is measured relative to the X axis.  Empty triangles left over from
 ;; shearing the image are filled with the background color.
 (defmagick* MagickShearImage :
-  _MagickWand (background : _PixelWand) (x-shear : _double) (y-shear : _double)
+  _MagickWand (background : _PixelWand)
+  (x-shear : _double*) (y-shear : _double*)
   -> _status)
 
 ;; MagickSolarizeImage applies a special effect to the image, similar to the
@@ -1692,7 +1694,7 @@
 ;; sensitive paper to light.  Threshold ranges from 0 to MaxRGB and is a
 ;; measure of the extent of the solarization.
 (defmagick* MagickSolarizeImage :
-  _MagickWand (threshold : _double) -> _status)
+  _MagickWand (threshold : _double*) -> _status)
 
 ;; MagickSpliceImage splices a solid color into the image.
 (defmagick* MagickSpliceImage :
@@ -1702,7 +1704,7 @@
 ;; MagickSpreadImage is a special effects method that randomly displaces each
 ;; pixel in a block defined by the radius parameter.
 (defmagick* MagickSpreadImage :
-  _MagickWand (radius : _double) -> _status)
+  _MagickWand (radius : _double*) -> _status)
 
 ;; Use MagickSteganoImage to hide a digital watermark within the image.
 ;; Recover the hidden watermark later to prove that the authenticity of an
@@ -1724,7 +1726,7 @@
 ;; degrees indicates the sweep of the arc through which each pixel is moved.
 ;; You get a more dramatic effect as the degrees move from 1 to 360.
 (defmagick* MagickSwirlImage :
-  _MagickWand (degrees : _double) -> _status)
+  _MagickWand (degrees : _double*) -> _status)
 
 ;; MagickTextureImage repeatedly tiles the texture image across and down the
 ;; image canvas.
@@ -1735,13 +1737,13 @@
 ;; intensity of each pixel compared to threshold.  The result is a
 ;; high-contrast, two color image.
 (defmagick* MagickThresholdImage :
-  _MagickWand _double -> _status)
+  _MagickWand _double* -> _status)
 
 ;; MagickThresholdImageChannel changes the value of individual pixel component
 ;; based on the intensity of each pixel compared to threshold.  The result is a
 ;; high-contrast, two color image.
 (defmagick* MagickThresholdImageChannel :
-  _MagickWand _ChannelType (threshold : _double) -> _status)
+  _MagickWand _ChannelType (threshold : _double*) -> _status)
 
 ;; MagickTintImage applies a color vector to each pixel in the image.  The
 ;; length of the vector is 0 for black and white and at its maximum for the
@@ -1761,27 +1763,27 @@
 ;; MagickTransparentImage changes any pixel that matches color with the color
 ;; defined by fill.
 (defmagick* MagickTransparentImage :
-  _MagickWand (target : _PixelWand) (opacity : _Quantum) (fuzz : _double)
+  _MagickWand (target : _PixelWand) (opacity : _Quantum) (fuzz : _double*)
   -> _status)
 
 ;; MagickTrimImage remove edges that are the background color from the image.
 (defmagick* MagickTrimImage :
-  _MagickWand (fuzz : _double) -> _status)
+  _MagickWand (fuzz : _double*) -> _status)
 
 ;; MagickUnsharpMaskImage sharpens an image.  We convolve the image with a
 ;; Gaussian operator of the given radius and standard deviation (sigma).  For
 ;; reasonable results, radius should be larger than sigma.  Use a radius of 0
 ;; and UnsharpMaskImage selects a suitable radius for you.
 (defmagick* MagickUnsharpMaskImage :
-  _MagickWand (radius : _double) (sigma : _double)
-  (amount-precentage : _double) (threshold : _double)
+  _MagickWand (radius : _double*) (sigma : _double*)
+  (amount-precentage : _double*) (threshold : _double*)
   -> _status)
 
 ;; MagickWaveImage creates a "ripple" effect in the image by shifting the
 ;; pixels vertically along a sine wave whose amplitude and wavelength is
 ;; specified by the given parameters.
 (defmagick* MagickWaveImage :
-  _MagickWand (amplitude : _double) (wave-length : _double) -> _status)
+  _MagickWand (amplitude : _double*) (wave-length : _double*) -> _status)
 
 ;; MagickWhiteThresholdImage is like ThresholdImage but forces all pixels above
 ;; the threshold into white while leaving all pixels below the threshold
@@ -1913,7 +1915,7 @@
 
 ;; PixelGetBlack returns the normalized black color of the pixel wand.
 (defmagick* PixelGetBlack :
-  _PixelWand -> _double)
+  _PixelWand -> _double*)
 
 ;; PixelGetBlackQuantum returns the black color of the pixel wand.  The color
 ;; is in the range of [0..MaxRGB].
@@ -1922,7 +1924,7 @@
 
 ;; PixelGetBlue returns the normalized blue color of the pixel wand.
 (defmagick* PixelGetBlue :
-  _PixelWand -> _double)
+  _PixelWand -> _double*)
 
 ;; PixelGetBlueQuantum returns the blue color of the pixel wand.  The color is
 ;; in the range of [0..MaxRGB].
@@ -1939,7 +1941,7 @@
 
 ;; PixelGetCyan returns the normalized cyan color of the pixel wand.
 (defmagick* PixelGetCyan :
-  _PixelWand -> _double)
+  _PixelWand -> _double*)
 
 ;; PixelGetCyanQuantum returns the cyan color of the pixel wand.  The color is
 ;; in the range of [0..MaxRGB].
@@ -1948,7 +1950,7 @@
 
 ;; PixelGetGreen returns the normalized green color of the pixel wand.
 (defmagick* PixelGetGreen :
-  _PixelWand -> _double)
+  _PixelWand -> _double*)
 
 ;; PixelGetGreenQuantum returns the green color of the pixel wand.  The color
 ;; is in the range of [0..MaxRGB].
@@ -1961,7 +1963,7 @@
 
 ;; PixelGetMagenta returns the normalized magenta color of the pixel wand.
 (defmagick* PixelGetMagenta :
-  _PixelWand -> _double)
+  _PixelWand -> _double*)
 
 ;; PixelGetMagentaQuantum returns the magenta color of the pixel wand.  The
 ;; color is in the range of [0..MaxRGB].
@@ -1970,7 +1972,7 @@
 
 ;; PixelGetOpacity returns the normalized opacity color of the pixel wand.
 (defmagick* PixelGetOpacity :
-  _PixelWand -> _double)
+  _PixelWand -> _double*)
 
 ;; PixelGetOpacityQuantum returns the opacity color of the pixel wand.  The
 ;; color is in the range of [0..MaxRGB].
@@ -1984,7 +1986,7 @@
 
 ;; PixelGetRed returns the normalized red color of the pixel wand.
 (defmagick* PixelGetRed :
-  _PixelWand -> _double)
+  _PixelWand -> _double*)
 
 ;; PixelGetRedQuantum returns the red color of the pixel wand.  The color is in
 ;; the range of [0..MaxRGB].
@@ -1993,7 +1995,7 @@
 
 ;; PixelGetYellow returns the normalized yellow color of the pixel wand.
 (defmagick* PixelGetYellow :
-  _PixelWand -> _double)
+  _PixelWand -> _double*)
 
 ;; PixelGetYellowQuantum returns the yellow color of the pixel wand.  The color
 ;; is in the range of [0..MaxRGB].
@@ -2002,7 +2004,7 @@
 
 ;; PixelSetBlack sets the normalized black color of the pixel wand.
 (defmagick* PixelSetBlack :
-  _PixelWand (black : _double) -> _void)
+  _PixelWand (black : _double*) -> _void)
 
 ;; PixelSetBlackQuantum sets the black color of the pixel wand.  The color must
 ;; be in the range of [0..MaxRGB].
@@ -2011,7 +2013,7 @@
 
 ;; PixelSetBlue sets the normalized blue color of the pixel wand.
 (defmagick* PixelSetBlue :
-  _PixelWand (blue : _double) -> _void)
+  _PixelWand (blue : _double*) -> _void)
 
 ;; PixelSetBlueQuantum sets the blue color of the pixel wand.  The color must
 ;; be in the range of [0..MaxRGB].
@@ -2029,7 +2031,7 @@
 
 ;; PixelSetCyan sets the normalized cyan color of the pixel wand.
 (defmagick* PixelSetCyan :
-  _PixelWand (cyan : _double) -> _void)
+  _PixelWand (cyan : _double*) -> _void)
 
 ;; PixelSetCyanQuantum sets the cyan color of the pixel wand.  The color must
 ;; be in the range of [0..MaxRGB].
@@ -2038,7 +2040,7 @@
 
 ;; PixelSetGreen sets the normalized green color of the pixel wand.
 (defmagick* PixelSetGreen :
-  _PixelWand (green : _double) -> _void)
+  _PixelWand (green : _double*) -> _void)
 
 ;; PixelSetGreenQuantum sets the green color of the pixel wand.  The color must
 ;; be in the range of [0..MaxRGB].
@@ -2051,7 +2053,7 @@
 
 ;; PixelSetMagenta sets the normalized magenta color of the pixel wand.
 (defmagick* PixelSetMagenta :
-  _PixelWand (magenta : _double) -> _void)
+  _PixelWand (magenta : _double*) -> _void)
 
 ;; PixelSetMagentaQuantum sets the magenta color of the pixel wand.  The color
 ;; must be in the range of [0..MaxRGB].
@@ -2060,7 +2062,7 @@
 
 ;; PixelSetOpacity sets the normalized opacity color of the pixel wand.
 (defmagick* PixelSetOpacity :
-  _PixelWand (opacity : _double) -> _void)
+  _PixelWand (opacity : _double*) -> _void)
 
 ;; PixelSetOpacityQuantum sets the opacity color of the pixel wand.  The color
 ;; must be in the range of [0..MaxRGB].
@@ -2073,7 +2075,7 @@
 
 ;; PixelSetRed sets the normalized red color of the pixel wand.
 (defmagick* PixelSetRed :
-  _PixelWand (red : _double) -> _void)
+  _PixelWand (red : _double*) -> _void)
 
 ;; PixelSetRedQuantum sets the red color of the pixel wand.  The color must be
 ;; in the range of [0..MaxRGB].
@@ -2082,7 +2084,7 @@
 
 ;; PixelSetYellow sets the normalized yellow color of the pixel wand.
 (defmagick* PixelSetYellow :
-  _PixelWand (yellow : _double) -> _void)
+  _PixelWand (yellow : _double*) -> _void)
 
 ;; PixelSetYellowQuantum sets the yellow color of the pixel wand.  The color
 ;; must be in the range of [0..MaxRGB].
@@ -2094,7 +2096,8 @@
 ;; DrawGetException returns the severity, reason, and description of any error
 ;; that occurs when using other methods in this API.
 (defmagick* DrawGetException :
-  _DrawingWand (severity : (_ptr o _MagickExceptionType)) -> (message : _string)
+  _DrawingWand (severity : (_ptr o _MagickExceptionType))
+  -> (message : _string)
   -> (unless (eq? severity 'UndefinedException)
        (error 'DrawingWand "(~a) ~a" severity message)))
 
@@ -2106,7 +2109,7 @@
 
 ;; DrawAnnotation draws text on the image.
 (defmagick* DrawAnnotation :
-  _DrawingWand (x : _double) (y : _double) (text : _string) -> _void)
+  _DrawingWand (x : _double*) (y : _double*) (text : _string) -> _void)
 
 ;; DrawAffine adjusts the current affine transformation matrix with the
 ;; specified affine transformation matrix.  Note that the current affine
@@ -2123,8 +2126,8 @@
 ;; image.
 (defmagick* DrawArc :
   _DrawingWand
-  (x1 : _double) (y1 : _double) (x2 : _double) (y2 : _double)
-  (deg1 : _double) (deg2 : _double)
+  (x1 : _double*) (y1 : _double*) (x2 : _double*) (y2 : _double*)
+  (deg1 : _double*) (deg2 : _double*)
   -> _void)
 
 ;; DrawBezier draws a bezier curve through a set of points on the image.
@@ -2135,7 +2138,8 @@
 ;; DrawCircle draws a circle on the image.
 (defmagick* DrawCircle :
   _DrawingWand
-  (x : _double) (y : _double) (perimeter-x : _double) (perimeter-y : _double)
+  (x : _double*) (y : _double*)
+  (perimeter-x : _double*) (perimeter-y : _double*)
   -> _void)
 
 ;; DrawGetClipPath obtains the current clipping path ID.  The value returned
@@ -2172,10 +2176,11 @@
 ;;   PointMethod: Recolors the target pixel
 ;;   ReplaceMethod: Recolor any pixel that matches the target pixel.
 ;;   FloodfillMethod: Recolors target pixels and matching neighbors.
-;;   FillToBorderMethod: Recolor target pixels and neighbors not matching border color.
+;;   FillToBorderMethod: Recolor target pixels and neighbors not matching
+;;     border color.
 ;;   ResetMethod: Recolor all pixels.
 (defmagick* DrawColor :
-  _DrawingWand (x : _double) (y : _double) _PaintMethod -> _void)
+  _DrawingWand (x : _double*) (y : _double*) _PaintMethod -> _void)
 
 ;; DrawComment adds a comment to a vector output stream.
 (defmagick* DrawComment :
@@ -2184,9 +2189,9 @@
 ;; DrawEllipse draws an ellipse on the image.
 (defmagick* DrawEllipse :
   _DrawingWand
-  (x : _double) (y : _double)
-  (radius-x : _double) (radius-y : _double)
-  (start-deg : _double) (end-deg : _double)
+  (x : _double*) (y : _double*)
+  (radius-x : _double*) (radius-y : _double*)
+  (start-deg : _double*) (end-deg : _double*)
   -> _void)
 
 ;; DrawGetFillColor returns the fill color used for drawing filled objects.
@@ -2207,12 +2212,12 @@
 ;; DrawGetFillOpacity returns the opacity used when drawing using the fill
 ;; color or fill texture.  Fully opaque is 1.0.
 (defmagick* DrawGetFillOpacity :
-  _DrawingWand -> _double)
+  _DrawingWand -> _double*)
 
 ;; DrawSetFillOpacity sets the opacity to use when drawing using the fill color
 ;; or fill texture.  Fully opaque is 1.0.
 (defmagick* DrawSetFillOpacity :
-  _DrawingWand (fill-opacity : _double) -> _void)
+  _DrawingWand (fill-opacity : _double*) -> _void)
 
 ;; DrawGetFillRule returns the fill rule used while drawing polygons.
 (defmagick* DrawGetFillRule :
@@ -2241,11 +2246,11 @@
 
 ;; DrawGetFontSize returns the font pointsize used when annotating with text.
 (defmagick* DrawGetFontSize :
-  _DrawingWand -> _double)
+  _DrawingWand -> _double*)
 
 ;; DrawSetFontSize sets the font pointsize to use when annotating with text.
 (defmagick* DrawSetFontSize :
-  _DrawingWand (pointsize : _double) -> _void)
+  _DrawingWand (pointsize : _double*) -> _void)
 
 ;; DrawGetFontStretch returns the font stretch used when annotating with text.
 (defmagick* DrawGetFontStretch :
@@ -2288,13 +2293,13 @@
 ;; size.
 (defmagick* DrawComposite :
   _DrawingWand _CompositeOperator
-  (x : _double) (y : _double) (width : _double) (height : _double) _Image
+  (x : _double*) (y : _double*) (width : _double*) (height : _double*) _Image
   -> _void)
 
 ;; DrawLine draws a line on the image using the current stroke color, stroke
 ;; opacity, and stroke width.
 (defmagick* DrawLine :
-  _DrawingWand (x1 : _double) (y1 : _double) (x2 : _double) (y2 : _double)
+  _DrawingWand (x1 : _double*) (y1 : _double*) (x2 : _double*) (y2 : _double*)
   -> _void)
 
 ;; DrawMatte paints on the image's opacity channel in order to set effected
@@ -2302,10 +2307,11 @@
 ;;   PointMethod: Select the target pixel
 ;;   ReplaceMethod: Select any pixel that matches the target pixel.
 ;;   FloodfillMethod: Select the target pixel and matching neighbors.
-;;   FillToBorderMethod: Select the target pixel and neighbors not matching border color.
+;;   FillToBorderMethod: Select the target pixel and neighbors not matching
+;      border color.
 ;;   ResetMethod: Select all pixels.
 (defmagick* DrawMatte :
-  _DrawingWand (x : _double) (y : _double) _PaintMethod -> _void)
+  _DrawingWand (x : _double*) (y : _double*) _PaintMethod -> _void)
 
 ;; DrawPathClose adds a path element to the current path which closes the
 ;; current subpath by drawing a straight line from the current point to the
@@ -2321,8 +2327,8 @@
 ;; final (x,y) coordinate pair used in the polybezier.
 (defmagick* DrawPathCurveToAbsolute :
   _DrawingWand
-  (x1 : _double) (y1 : _double) (x2 : _double) (y2 : _double)
-  (x : _double) (y : _double)
+  (x1 : _double*) (y1 : _double*) (x2 : _double*) (y2 : _double*)
+  (x : _double*) (y : _double*)
   -> _void)
 
 ;; DrawPathCurveToRelative draws a cubic Bezier curve from the current point to
@@ -2332,8 +2338,8 @@
 ;; final (x,y) coordinate pair used in the polybezier.
 (defmagick* DrawPathCurveToRelative :
   _DrawingWand
-  (x1 : _double) (y1 : _double) (x2 : _double) (y2 : _double)
-  (x : _double) (y : _double)
+  (x1 : _double*) (y1 : _double*) (x2 : _double*) (y2 : _double*)
+  (x : _double*) (y : _double*)
   -> _void)
 
 ;; DrawPathCurveToQuadraticBezierAbsolute draws a quadratic Bezier curve from
@@ -2341,7 +2347,7 @@
 ;; coordinates.  At the end of the command, the new current point becomes the
 ;; final (x,y) coordinate pair used in the polybezier.
 (defmagick* DrawPathCurveToQuadraticBezierAbsolute :
-  _DrawingWand (x1 : _double) (y1 : _double) (x : _double) (y : _double)
+  _DrawingWand (x1 : _double*) (y1 : _double*) (x : _double*) (y : _double*)
   -> _void)
 
 ;; DrawPathCurveToQuadraticBezierRelative draws a quadratic Bezier curve from
@@ -2349,7 +2355,7 @@
 ;; coordinates.  At the end of the command, the new current point becomes the
 ;; final (x,y) coordinate pair used in the polybezier.
 (defmagick* DrawPathCurveToQuadraticBezierRelative :
-  _DrawingWand (x1 : _double) (y1 : _double) (x : _double) (y : _double)
+  _DrawingWand (x1 : _double*) (y1 : _double*) (x : _double*) (y : _double*)
   -> _void)
 
 ;; DrawPathCurveToQuadraticBezierSmoothAbsolute draws a quadratic Bezier curve
@@ -2364,7 +2370,7 @@
 ;; current point becomes the final (x,y) coordinate pair used in the
 ;; polybezier.
 (defmagick* DrawPathCurveToQuadraticBezierSmoothAbsolute :
-  _DrawingWand (x : _double) (y : _double) -> _void)
+  _DrawingWand (x : _double*) (y : _double*) -> _void)
 
 ;; DrawPathCurveToQuadraticBezierSmoothAbsolute draws a quadratic Bezier curve
 ;; (using relative coordinates) from the current point to (x,y).  The control
@@ -2378,7 +2384,7 @@
 ;; current point becomes the final (x,y) coordinate pair used in the
 ;; polybezier.
 (defmagick* DrawPathCurveToQuadraticBezierSmoothRelative :
-  _DrawingWand (x : _double) (y : _double) -> _void)
+  _DrawingWand (x : _double*) (y : _double*) -> _void)
 
 ;; DrawPathCurveToSmoothAbsolute draws a cubic Bezier curve from the current
 ;; point to (x,y) using absolute coordinates.  The first control point is
@@ -2392,7 +2398,7 @@
 ;; current point becomes the final (x,y) coordinate pair used in the
 ;; polybezier.
 (defmagick* DrawPathCurveToSmoothAbsolute :
-  _DrawingWand (x2 : _double) (y2 : _double) (x : _double) (y : _double)
+  _DrawingWand (x2 : _double*) (y2 : _double*) (x : _double*) (y : _double*)
   -> _void)
 
 ;; DrawPathCurveToSmoothRelative draws a cubic Bezier curve from the current
@@ -2407,7 +2413,7 @@
 ;; current point becomes the final (x,y) coordinate pair used in the
 ;; polybezier.
 (defmagick* DrawPathCurveToSmoothRelative :
-  _DrawingWand (x2 : _double) (y2 : _double) (x : _double) (y : _double)
+  _DrawingWand (x2 : _double*) (y2 : _double*) (x : _double*) (y : _double*)
   -> _void)
 
 ;; DrawPathEllipticArcAbsolute draws an elliptical arc from the current point
@@ -2421,9 +2427,9 @@
 ;; larger of the available arcs.  If sweepFlag is true, then draw the arc
 ;; matching a clock-wise rotation.
 (defmagick* DrawPathEllipticArcAbsolute :
-  _DrawingWand (rx : _double) (ry : _double)
-  (x-axis-rotation : _double) (large-arc-flag? : _bool) (sweep-flag? : _bool)
-  (x : _double) (y : _double)
+  _DrawingWand (rx : _double*) (ry : _double*)
+  (x-axis-rotation : _double*) (large-arc-flag? : _bool) (sweep-flag? : _bool)
+  (x : _double*) (y : _double*)
   -> _void)
 
 ;; DrawPathEllipticArcRelative draws an elliptical arc from the current point
@@ -2437,9 +2443,9 @@
 ;; larger of the available arcs.  If sweepFlag is true, then draw the arc
 ;; matching a clock-wise rotation.
 (defmagick* DrawPathEllipticArcRelative :
-  _DrawingWand (rx : _double) (ry : _double)
-  (x-axis-rotation : _double) (large-arc-flag? : _bool) (sweep-flag? : _bool)
-  (x : _double) (y : _double)
+  _DrawingWand (rx : _double*) (ry : _double*)
+  (x-axis-rotation : _double*) (large-arc-flag? : _bool) (sweep-flag? : _bool)
+  (x : _double*) (y : _double*)
   -> _void)
 
 ;; DrawPathFinish terminates the current path.
@@ -2450,49 +2456,49 @@
 ;; coordinate using absolute coordinates.  The coordinate then becomes the new
 ;; current point.
 (defmagick* DrawPathLineToAbsolute :
-  _DrawingWand (x : _double) (y : _double) -> _void)
+  _DrawingWand (x : _double*) (y : _double*) -> _void)
 
 ;; DrawPathLineToRelative draws a line path from the current point to the given
 ;; coordinate using relative coordinates.  The coordinate then becomes the new
 ;; current point.
 (defmagick* DrawPathLineToRelative :
-  _DrawingWand (x : _double) (y : _double) -> _void)
+  _DrawingWand (x : _double*) (y : _double*) -> _void)
 
 ;; DrawPathLineToHorizontalAbsolute draws a horizontal line path from the
 ;; current point to the target point using absolute coordinates.  The target
 ;; point then becomes the new current point.
 (defmagick* DrawPathLineToHorizontalAbsolute :
-  _DrawingWand (x : _double) -> _void)
+  _DrawingWand (x : _double*) -> _void)
 
 ;; DrawPathLineToHorizontalRelative draws a horizontal line path from the
 ;; current point to the target point using relative coordinates.  The target
 ;; point then becomes the new current point.
 (defmagick* DrawPathLineToHorizontalRelative :
-  _DrawingWand (x : _double) -> _void)
+  _DrawingWand (x : _double*) -> _void)
 
 ;; DrawPathLineToVerticalAbsolute draws a vertical line path from the current
 ;; point to the target point using absolute coordinates.  The target point then
 ;; becomes the new current point.
 (defmagick* DrawPathLineToVerticalAbsolute :
-  _DrawingWand (y : _double) -> _void)
+  _DrawingWand (y : _double*) -> _void)
 
 ;; DrawPathLineToVerticalRelative draws a vertical line path from the current
 ;; point to the target point using relative coordinates.  The target point then
 ;; becomes the new current point.
 (defmagick* DrawPathLineToVerticalRelative :
-  _DrawingWand (y : _double) -> _void)
+  _DrawingWand (y : _double*) -> _void)
 
 ;; DrawPathMoveToAbsolute starts a new sub-path at the given coordinate using
 ;; absolute coordinates.  The current point then becomes the specified
 ;; coordinate.
 (defmagick* DrawPathMoveToAbsolute :
-  _DrawingWand (x : _double) (y : _double) -> _void)
+  _DrawingWand (x : _double*) (y : _double*) -> _void)
 
 ;; DrawPathMoveToRelative starts a new sub-path at the given coordinate using
 ;; relative coordinates.  The current point then becomes the specified
 ;; coordinate.
 (defmagick* DrawPathMoveToRelative :
-  _DrawingWand (x : _double) (y : _double) -> _void)
+  _DrawingWand (x : _double*) (y : _double*) -> _void)
 
 ;; DrawPathStart declares the start of a path drawing list which is terminated
 ;; by a matching DrawPathFinish command.  All other DrawPath commands must be
@@ -2509,7 +2515,7 @@
 ;; DrawPoint draws a point using the current stroke color and stroke thickness
 ;; at the specified coordinates.
 (defmagick* DrawPoint :
-  _DrawingWand (x : _double) (y : _double) -> _void)
+  _DrawingWand (x : _double*) (y : _double*) -> _void)
 
 ;; DrawPolygon draws a polygon using the current stroke, stroke width, and fill
 ;; color or texture, using the specified array of coordinates.
@@ -2567,13 +2573,13 @@
 ;; definition.  Named patterns may be used as stroke or brush definitions.
 (defmagick* DrawPushPattern :
   _DrawingWand (pattern-id : _string)
-  (x : _double) (y : _double) (width : _double) (height : _double)
+  (x : _double*) (y : _double*) (width : _double*) (height : _double*)
   -> _void)
 
 ;; DrawRectangle draws a rectangle given two coordinates and using the current
 ;; stroke, stroke width, and fill settings.
 (defmagick* DrawRectangle :
-  _DrawingWand (x1 : _double) (y1 : _double) (x2 : _double) (y2 : _double)
+  _DrawingWand (x1 : _double*) (y1 : _double*) (x2 : _double*) (y2 : _double*)
   -> _void)
 
 ;; DrawRender renders all preceding drawing commands onto the image.
@@ -2582,30 +2588,30 @@
 
 ;; DrawRotate applies the specified rotation to the current coordinate space.
 (defmagick* DrawRotate :
-  _DrawingWand (degrees : _double) -> _void)
+  _DrawingWand (degrees : _double*) -> _void)
 
 ;; DrawRoundRectangle draws a rounted rectangle given two coordinates, x & y
 ;; corner radiuses and using the current stroke, stroke width, and fill
 ;; settings.
 (defmagick* DrawRoundRectangle :
   _DrawingWand
-  (x1 : _double) (y1 : _double) (x2 : _double) (y2 : _double)
-  (rx : _double) (ry : _double)
+  (x1 : _double*) (y1 : _double*) (x2 : _double*) (y2 : _double*)
+  (rx : _double*) (ry : _double*)
   -> _void)
 
 ;; DrawScale adjusts the scaling factor to apply in the horizontal and vertical
 ;; directions to the current coordinate space.
 (defmagick* DrawScale :
-  _DrawingWand (horizontal-scale : _double) (vertical-scale : _double)
+  _DrawingWand (horizontal-scale : _double*) (vertical-scale : _double*)
   -> _void)
 
 ;; DrawSkewX skews the current coordinate system in the horizontal direction.
 (defmagick* DrawSkewX :
-  _DrawingWand (degrees : _double) -> _void)
+  _DrawingWand (degrees : _double*) -> _void)
 
 ;; DrawSkewY skews the current coordinate system in the vertical direction.
 (defmagick* DrawSkewY :
-  _DrawingWand (degrees : _double) -> _void)
+  _DrawingWand (degrees : _double*) -> _void)
 
 ;; DrawGetStrokeColor returns the color used for stroking object outlines.
 (defmagick* DrawGetStrokeColor :
@@ -2636,7 +2642,7 @@
 ;; DrawGetStrokeDashArray returns an array representing the pattern of dashes
 ;; and gaps used to stroke paths (see DrawSetStrokeDashArray).
 (defmagick* DrawGetStrokeDashArray :
-  _DrawingWand (len : (_ptr o _ulong)) -> (_list o _double len))
+  _DrawingWand (len : (_ptr o _ulong)) -> (_list o _double* len))
 
 ;; DrawSetStrokeDashArray specifies the pattern of dashes and gaps used to
 ;; stroke paths.  The strokeDashArray represents an array of numbers that
@@ -2650,18 +2656,18 @@
   ;; the function seem to always expect a 0.0-terminated vector
   (dash-list : _? = (append dash-list '(0.0)))
   (d : _DrawingWand)
-  (_ulong = (length dash-list)) (dash-list : (_list i _double))
+  (_ulong = (length dash-list)) (dash-list : (_list i _double*))
   -> _void)
 
 ;; DrawGetStrokeDashOffset returns the offset into the dash pattern to start
 ;; the dash.
 (defmagick* DrawGetStrokeDashOffset :
-  _DrawingWand -> _double)
+  _DrawingWand -> _double*)
 
 ;; DrawSetStrokeDashOffset specifies the offset into the dash pattern to start
 ;; the dash.
 (defmagick* DrawSetStrokeDashOffset :
-  _DrawingWand (dash-offset : _double) -> _void)
+  _DrawingWand (dash-offset : _double*) -> _void)
 
 ;; DrawGetStrokeLineCap returns the shape to be used at the end of open
 ;; subpaths when they are stroked.  Values of LineCap are UndefinedCap,
@@ -2705,21 +2711,21 @@
 
 ;; DrawGetStrokeOpacity returns the opacity of stroked object outlines.
 (defmagick* DrawGetStrokeOpacity :
-  _DrawingWand -> _double)
+  _DrawingWand -> _double*)
 
 ;; DrawSetStrokeOpacity specifies the opacity of stroked object outlines.
 (defmagick* DrawSetStrokeOpacity :
-  _DrawingWand (stroke-opacity : _double) -> _void)
+  _DrawingWand (stroke-opacity : _double*) -> _void)
 
 ;; DrawGetStrokeWidth returns the width of the stroke used to draw object
 ;; outlines.
 (defmagick* DrawGetStrokeWidth :
-  _DrawingWand -> _double)
+  _DrawingWand -> _double*)
 
 ;; DrawSetStrokeWidth sets the width of the stroke used to draw object
 ;; outlines.
 (defmagick* DrawSetStrokeWidth :
-  _DrawingWand (stroke-width : _double) -> _void)
+  _DrawingWand (stroke-width : _double*) -> _void)
 
 ;; DrawGetTextAntialias returns the current text antialias setting, which
 ;; determines whether text is antialiased.  Text is antialiased by default.
@@ -2767,7 +2773,7 @@
 ;; DrawTranslate applies a translation to the current coordinate system which
 ;; moves the coordinate system origin to the specified coordinate.
 (defmagick* DrawTranslate :
-  _DrawingWand (x : _double) (y : _double) -> _void)
+  _DrawingWand (x : _double*) (y : _double*) -> _void)
 
 ;; DrawSetViewbox sets the overall canvas size to be recorded with the drawing
 ;; vector data.  Usually this will be specified using the same size as the

@@ -63,7 +63,7 @@
           make-sized-byte-string)
 (provide* _void _int8 _uint8 _int16 _uint16 _int32 _uint32 _int64 _uint64
           _byte _word _int _uint _fixint _ufixint _long _ulong _fixnum _ufixnum
-          _float _double
+          _float _double _double*
           _bool _pointer _scheme)
 
 (define-syntax define*

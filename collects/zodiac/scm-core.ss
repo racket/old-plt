@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.50 1999/02/02 19:33:14 mflatt Exp $
+; $Id: scm-core.ss,v 1.51 1999/02/25 22:21:29 mflatt Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -156,6 +156,21 @@
   (define scheme-vocabulary
     (create-vocabulary 'scheme-vocabulary
 		       common-vocabulary))
+
+  (define mred-vocabulary #f)
+  (define (get-mred-vocabulary)
+    (or mred-vocabulary
+	(let ([v (create-vocabulary 'mred-vocabulary
+				    scheme-vocabulary)]
+	      [e (with-input-from-file
+		     (build-path (collection-path "mred") "sig.ss")
+		   read)]
+	      [loc (make-location 0 0 0 "inlined")])
+	  (scheme-expand (structurize-syntax e (make-zodiac #f loc loc))
+			 'previous
+			 v)
+	  (set! mred-vocabulary v)
+	  v)))
 
   (define ensure-not-macro/micro
     (lambda (expr env vocab)

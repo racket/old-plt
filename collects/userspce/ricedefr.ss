@@ -53,7 +53,6 @@
     (if (params:<=-at-least-two-args)
 	(lambda args
 	  (check-arity '+ 2 args)
-	  (printf "2~n")
 	  (apply #%+ args))
 	#%+))
 

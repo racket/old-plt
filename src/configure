@@ -6693,7 +6693,7 @@ if test "${enable_shared}" = "yes" ; then
       if test "$gcc_vers_three" = "" ; then
         need_gcc_static_libgcc=""
       else
-        need_gcc_static_libgcc=" -Wl,-static-libgcc"
+        need_gcc_static_libgcc=" -XCClinker -static-libgcc"
       fi
     fi
   fi
@@ -6701,7 +6701,7 @@ if test "${enable_shared}" = "yes" ; then
 
   plt_lib_version=`grep " MZSCHEME_VERSION " ${srcdir}/mzscheme/src/schvers.h | cut -d '"' -f 2`
 
-  AR="${LTDIR}/libtool --mode=link $CC -release ${plt_lib_version} -rpath ${absprefix}/lib -o"
+  AR="${LTDIR}/libtool --mode=link $CC${need_gcc_static_libgcc} -release ${plt_lib_version} -rpath ${absprefix}/lib -o"
   STATIC_AR="${LTDIR}/libtool --mode=link $CC -o"
   ARFLAGS=""
   RANLIB=":"

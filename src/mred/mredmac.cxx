@@ -43,19 +43,8 @@ static int dispatched = 1;
 
 #define leaveEvt 42
 
-#if defined(OS_X)
-# define XX_USE_OS_X_EVENTHANDLER
-#endif
-
-#ifdef USE_OS_X_EVENTHANDLER
-static OSErr InstallAEventHandler();
-typedef EventRef MrQueueRef;
-static EventQueueRef mainQueue = NULL;
-#else
 static int QueueTransferredEvent(EventRecord *e);
 typedef struct MrQueueElem *MrQueueRef;
-#endif
-
 
 typedef struct {
   int check_only;
@@ -71,12 +60,6 @@ typedef struct {
 
 void MrEdInitFirstContext(MrEdContext *)
 {
-#ifdef USE_OS_X_EVENTHANDLER
-  // result ignored:
-  InstallAEventHandler();
-  
-  mainQueue = GetMainEventQueue();
-#endif
 #ifdef MACINTOSH_EVENTS
   scheme_handle_aewait_event = QueueMrEdEvent;
 #endif
@@ -123,115 +106,25 @@ static wxFrame *wxWindowPtrToFrame(WindowPtr w, MrEdContext *c)
   return NULL;
 }
 
-/* Under classic, there's no way to handle the event queue
-   non-sequentially.  That is, we want to handle certain kinds of
-   events before handling other kinds of events.  The only solution is
-   to suck all of the events into a queue of our own, and deal with
-   them there.  This causes certain problems, but not horrible ones.
-   Under Carbon, in principle, there's no need for this trickery,
-   because we can scan the event queue for certain kinds of
-   events. However, there appears to be no way to sleep until a new
-   event arrives in the queue, except through something like
-   WaitNextEvent(). So we're back to the old solution. */
-
 /***************************************************************************/
-/*                            Carbon Event Queue                           */
+/*                            shadow event queue                           */
 /***************************************************************************/
 
-#ifdef USE_OS_X_EVENTHANDLER
+/*
+   We need two things from the event queue:
 
-UInt32 kEventClassMrEd = 'MrEd';
-UInt32 kEventMrEdLeave = 'LEEV';
+    * We need to handle the event queue non-sequentially.  That is, we
+      want to handle certain kinds of events before handling other
+      kinds of events.
 
-UInt32 typeWxWindowPtr = FOUR_CHAR_CODE('WinP'); /* wxWindow * */
+    * We need to be able to sleep until a new (potentially ready to
+      handle) event arrives in the queue.
 
-static OSErr QueueMrEdCarbonEvent(EventRef e)
-{
-  OSErr err;
-  
-  err = PostEventToQueue(mainQueue, e, kEventPriorityStandard);
-  if (err != noErr) {
-    return err;
-  }
-}
+   The only solution appears to be sucking all of the events into a
+   queue of our own, and dealing with them there.  This causes certain
+   problems, but not horrible ones.
+*/
 
-/* after installing this Apple Event Handler, the main event loop should never even see
- * the apple events coming in.
- */
- 
-static OSStatus myAEventHandler(EventHandlerCallRef inHandlerCallRef, EventRef inEvent, void *inUserData)
-{
-  EventRecord e;
-	
-  // result ignored:
-  ConvertEventRefToEventRecord(inEvent,&e);
-	
-  // dump the apple event on the default handler
-  AEProcessAppleEvent(&e);
-}	
-	
-static OSErr InstallAEventHandler()
-{
-  EventTypeSpec typeSpec = {kEventClassAppleEvent, kEventAppleEvent};
-  EventTargetRef target = GetApplicationEventTarget();
-  char *name = "Apple Events";
-    
-  return InstallEventHandler(target,NewEventHandlerUPP(myAEventHandler),1,&typeSpec,NULL,NULL);
-}
-
-enum {
-  kActionRemove = 0,
-  kActionAccept
-};
-
-static Boolean EventFinder(EventRef inEvent, EventFinderClosure *closure)
-{
-  EventRecord evt;
-
-  if (GetEventClass(inEvent) == kEventClassMrEd) {
-    if (GetEventKind(inEvent) == kEventMrEdLeave) {
-      wxWindow *win;
-      
-      // result ignored:
-      GetEventParameter(inEvent,kEventParamDirectObject,typeWxWindowPtr,
-			NULL, sizeof(wxWindow *), NULL, &win);
-      			
-      
-      evt.what = leaveEvt;
-      evt.message = (long)win;
-    } else
-      return FALSE; // unknown event
-  } else
-    ConvertEventRefToEventRecord(inEvent,&evt);
-
-
-  return closure->checker(&evt, inEvent, closure->check_only, 
-			  closure->c, closure->keyOk, 
-			  closure->event, closure->which);
-}          
-
-
-EventComparatorUPP eventFinderUPP = NewEventComparatorUPP(EventFinder);
-
-static MrQueueRef Find(EventFinderClosure *closure)
-{
-  return FindSpecificEventInQueue(mainQueue,eventFinderUPP,closure);
-}
-
-static void MrDequeue(MrQueueRef e) {
-  RemoveEventFromQueue(mainQueue, e);
-  ReleaseEvent(e);
-}
-
-void QueueMrEdEvent(EventRecord *e)
-{
-}
- 
-#else
-
-/***************************************************************************/
-/*                            Classic Event Queue                          */
-/***************************************************************************/
 
 typedef struct MrQueueElem {
   EventRecord event;
@@ -250,14 +143,9 @@ static MrQueueElem *first, *last;
  *    is empty.  To get around this, QTE clears the update
  *    region manually (and then must reinstate it when it's
  *    time to handle the event.  ick.
- * 2. high level events.  I believe that high level events
- *    actually do not occur any more under OS X.  I could be
- *    wrong.  in any case, they're dispatched immediately.
- *    I'm not sure why.
- * 3. suspendResumeMessage.  Per matthew's comment above, 
- *    these messages evidently don't work somehow.  So 
- *    MrEd detects them manually.  Maybe we can get rid
- *    of this too.
+ * 2. high level events. Dispatched immediately, and the
+ *    handlers queue work in MzScheme threads.
+ * 3. suspendResumeMessage. See comment at top.
  */
 
 static int QueueTransferredEvent(EventRecord *e)
@@ -376,11 +264,10 @@ static void GetSleepTime(int *sleep_time, int *delay_time)
   *delay_time = last_was_front ? DELAY_TIME : 0;
 }
 
-/* TransferQueue sucks all of the pending events out of the 
- * Application queue, sticks them in the MrEd queue, and returns 1,
- * unless it was called less than delay_time ago, in which case do
- * nothing and return 0.
- */
+/* TransferQueue sucks all of the pending events out of the
+   Application queue, sticks them in the MrEd queue, and returns 1,
+   unless it was called less than delay_time ago, in which case do
+   nothing and return 0. */
  
 static int TransferQueue(int all)
 {
@@ -444,7 +331,7 @@ static MrQueueRef Find(EventFinderClosure *closure)
 #endif
 
 /***************************************************************************/
-/*                           Common Event Dispatcher                       */
+/*                               state finder                              */
 /***************************************************************************/
 
 static MrEdContext *KeyOk(int current_only)
@@ -526,6 +413,10 @@ static WindowPtr last_front_window;
 #ifdef RECORD_HISTORY
 FILE *history;
 #endif
+
+/***************************************************************************/
+/*                                event finders                            */
+/***************************************************************************/
 
 static int CheckForLeave(EventRecord *evt, MrQueueRef q, int check_only, MrEdContext *c,   MrEdContext *keyOk, 
 			 EventRecord *event, MrEdContext **which) {
@@ -753,15 +644,11 @@ static int CheckForUpdate(EventRecord *evt, MrQueueRef q, int check_only, MrEdCo
 	  return TRUE;
 	
 	memcpy(event, evt, sizeof(EventRecord));
-#ifdef USE_OS_X_EVENTHANDLER
-	MrDequeue(q);
-#endif
+	/* don't dequeue... done in the dispatcher */
 	return TRUE;
       }
     } else {
-#ifndef USE_OS_X_EVENTHANDLER
       DisposeRgn(q->rgn);
-#endif
       MrDequeue(q);
     }
     break;
@@ -769,6 +656,10 @@ static int CheckForUpdate(EventRecord *evt, MrQueueRef q, int check_only, MrEdCo
 
   return FALSE;
 }
+
+/***************************************************************************/
+/*                             get next event                              */
+/***************************************************************************/
 
 int MrEdGetNextEvent(int check_only, int current_only,
 		     EventRecord *event, MrEdContext **which)
@@ -803,17 +694,8 @@ int MrEdGetNextEvent(int check_only, int current_only,
     if (!StillDown())
       kill_context = 1;
 
-#ifdef USE_OS_X_EVENTHANDLER  
-  // just to give the event manager a little time:
-  EventRecord ignored;
-  WaitNextEvent(0, // no events
-		&ignored, // will never get filled in
-		0, // don't wait at all
-		NULL); // empty mouse region
-#else
   if (!TransferQueue(0))
     kill_context = 0;
-#endif
     
   if (cont_event_context)
     if (!WindowStillHere(cont_event_context_window))
@@ -837,7 +719,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
       TEToScrap();
     }
 
-# ifndef USE_OS_X_EVENTHANDLER  
     /* for OS_X, activate events are automatically generated for the frontmost
      * window in an application when that application comes to the front.
      */
@@ -866,7 +747,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
       if (we_are_front)
         wxSetCursor(NULL); /* reset cursor */
     }
-# endif
   }
 #endif
   
@@ -893,7 +773,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
     cont_event_context = NULL;
   
   if (found) {
-#ifndef USE_OS_X_EVENTHANDLER  
     /* Remove intervening mouse/key events: */
     MrQueueElem *qq, *next;
     for (qq = first; qq && (qq != osq); qq = next) {
@@ -908,7 +787,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
 	break;
       }
     }
-#endif
 
     if (which)
       *which = foundc;
@@ -1000,7 +878,6 @@ void MrEdDispatchEvent(EventRecord *e)
 {
   dispatched = 1;
 
-#ifndef USE_OS_X_EVENTHANDLER
   if (e->what == updateEvt) {
     /* Find the update event for this window: */
     RgnHandle rgn;
@@ -1036,7 +913,6 @@ void MrEdDispatchEvent(EventRecord *e)
     }
 # endif
   }
-#endif
     
   wxTheApp->doMacPreEvent();
   wxTheApp->doMacDispatch(e);
@@ -1047,7 +923,6 @@ void MrEdDispatchEvent(EventRecord *e)
 
 int MrEdCheckForBreak(void)
 {
-#ifndef USE_OS_X_EVENTHANDLER  
   MrQueueElem *q;
   
   if (!KeyOk(TRUE))
@@ -1066,24 +941,58 @@ int MrEdCheckForBreak(void)
       }
     }
   }
-#endif
   
   return FALSE;
 }
 
+/***************************************************************************/
+/*                                 sleep                                   */
+/***************************************************************************/
+
 #ifdef OS_X
-static void StartFDWatcher(void)
+static volatile int thread_running;
+static void (*mzsleep)(float secs, void *fds);
+static pthread_t watcher;
+static float sleep_secs;
+
+static void *do_watch(void *fds)
 {
+  mzsleep(sleep_secs, fds);
+  if (thread_running) {
+    thread_running = 0;
+    /* PostEvent(); */
+  }
+
+  return NULL;
+}
+
+static int StartFDWatcher(void (*mzs)(float secs, void *fds), float secs, fds)
+{
+  mzsleep = mzs;
+  sleep_secs = secs;
+  thread_running = 1;
+
+  if (pthread_create(&watcher, NULL,  do_watch, fds)) {
+    thread_running = 0;
+    return 0;
+  } else
+    return 1;
 }
 
 static void EndFDWatcher(void)
 {
+  if (thread_running) {
+    int val;
+
+    thread_running = 0;
+    scheme_signal_received();
+    pthread_join(watcher, &val);
+  }
 }
 #endif
 
-void MrEdMacSleep(float secs, void *fds)
+void MrEdMacSleep(float secs, void *fds, void (*mzsleep)(float secs, void *fds))
 {
-#ifndef USE_OS_X_EVENTHANDLER
   RgnHandle rgn;
   rgn = ::NewRgn();
   if (rgn) {
@@ -1093,24 +1002,26 @@ void MrEdMacSleep(float secs, void *fds)
     ::SetRectRgn(rgn, pt.h - 1, pt.v - 1, pt.h + 1, pt.v + 1); 
   }
 
-# ifdef OS_X
-  StartFDWatcher(); secs = 0;
-# else 
+#ifdef OS_X
+  if (!StartFDWatcher(mzsleep, secs, fds)) {
+    secs = 0;
+  }
+#else 
   /* No way to know when fds are ready: */
   secs = 0;
-# endif
+#endif
 
   if (WaitNextEvent(everyEvent, &e, secs ? secs * 60 : BG_SLEEP_TIME, rgn))
     QueueTransferredEvent(&e);
 
-# ifdef OS_X
+#ifdef OS_X
   EndFDWatcher();
-# endif
-  
-#endif    
+#endif
 }
 
-/**********************************************************************/
+/***************************************************************************/
+/*               location->window (used for send-message)                  */
+/***************************************************************************/
 
 wxWindow *wxLocationToWindow(int x, int y)
 {

@@ -152,24 +152,25 @@ exec mzscheme -r "$0" "$0" "$@"
      "#define SCHEME_"mname"P(x) (SCHEME_TYPE(x)=="cname"_tag)")
   (_cdefine predname 1)
   (~ "{ return SCHEME_"mname"P(argv[0]) ? scheme_true : scheme_false; }")
-  (~ "#ifdef MZ_PRECISE_GC")
-  (~ "START_XFORM_SKIP;")
-  (~ "int "cname"_SIZE(void *p) {")
-  (~ "  return gcBYTES_TO_WORDS(sizeof("cname"_struct));")
-  (~ "}")
+  (~ "/* 3m stuff for "cname" */" \\
+     "#ifdef MZ_PRECISE_GC" \\
+     "START_XFORM_SKIP;"
+     "int "cname"_SIZE(void *p) {" \\
+     "  return gcBYTES_TO_WORDS(sizeof("cname"_struct));" \\
+     "}")
   (let ([mark/fix (lambda (mode)
-		    (~ "int "cname"_"mode"(void *p) {")
-		    (~ "  "cname"_struct *s = ("cname"_struct *)p;")
-		    (for-each (lambda (s t)
-				(when (regexp-match #rx#"[*]" t)
-				  (~ "  gc"mode"(s->"s");")))
-			      slots types)
-		    (~ "  return gcBYTES_TO_WORDS(sizeof("cname"_struct));")
-		    (~ "}"))])
+                    (~ "int "cname"_"mode"(void *p) {" \\
+                       "  "cname"_struct *s = ("cname"_struct *)p;")
+                    (for-each (lambda (s t)
+                                (when (regexp-match #rx#"[*]" t)
+                                  (~ "  gc"mode"(s->"s");")))
+                              slots types)
+                    (~ "  return gcBYTES_TO_WORDS(sizeof("cname"_struct));" \\
+                       "}"))])
     (mark/fix "MARK")
     (mark/fix "FIXUP"))
-  (~ "END_XFORM_SKIP;")
-  (~ "#endif")
+  (~ "END_XFORM_SKIP;" \\
+     "#endif")
   (set! cstructs (cons (list* name cname slots) cstructs)))
 (define-syntax cdefstruct
   (syntax-rules ()
@@ -980,7 +981,7 @@ static void* ffi_scheme_to_c(Scheme_Object *type, void *dst,
 {:(cdefine ffi-alignof 1):}
 {
   Scheme_Object *type;
-  type  = ffi_base_ctype(argv[0]);
+  type = ffi_base_ctype(argv[0]);
   if (type == NULL) scheme_wrong_type(MYNAME, "C-type", 0, argc, argv);
   else return scheme_make_integer(FFITYPE_PRIMTYPE(type)->alignment);
   return NULL; /* shush the compiler */
@@ -1237,7 +1238,7 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
 /* data := {name, c-function, itypes, otype, cif} */
 {
   /* The name is not currently used */
-  /* char          *name   = SCHEME_BYTE_STR_VAL(((Scheme_Object**)data)[0]); */
+  /* char *name = SCHEME_BYTE_STR_VAL(((Scheme_Object**)data)[0]); */
   void          *c_func = (void*)(((Scheme_Object**)data)[1]);
   Scheme_Object *itypes = ((Scheme_Object**)data)[2];
   Scheme_Object *otype  = ((Scheme_Object**)data)[3];
@@ -1267,10 +1268,8 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   if (FFITYPE_PRIMLABEL(base) == FFI_fmark) {
     /* need to allocate a pointer */
     p = scheme_make_foreign_cpointer(oval.x_pointer);
-    return ffi_c_to_scheme(otype, p);
-  } else {
-    return ffi_c_to_scheme(otype, p);
   }
+  return ffi_c_to_scheme(otype, p);
 }
 
 /* (ffi-call ffi-obj in-types out-type) -> (in-types -> out-value) */
@@ -1280,7 +1279,7 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   static Scheme_Object *ffi_name_prefix = NULL;
   Scheme_Object *itypes = argv[1];
   Scheme_Object *otype  = argv[2];
-  Scheme_Object *obj, **data, *p, *base, *bstr;
+  Scheme_Object *obj, **data, *p, *base;
   ffi_type *rtype, **atypes;
   ffi_cif *cif;
   int i, nargs;
@@ -1311,12 +1310,12 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
     scheme_signal_error("internal error: ffi_prep_cif did not return FFI_OK");
   scheme_end_stubborn_change(cif);
   data = scheme_malloc_stubborn(5 * sizeof(void*));
-  bstr = scheme_append_byte_string
-              (ffi_name_prefix,
-               scheme_make_byte_string_without_copying
-                 (SCHEME_FFIOBJP(argv[0]) ?
-                   ((ffi_obj_struct*)(argv[0]))->name : "proc"));
-  data[0] = bstr;
+  p = scheme_append_byte_string
+        (ffi_name_prefix,
+         scheme_make_byte_string_without_copying
+           (SCHEME_FFIOBJP(argv[0]) ?
+             ((ffi_obj_struct*)(argv[0]))->name : "proc"));
+  data[0] = p;
   data[1] = obj;
   data[2] = itypes;
   data[3] = otype;
@@ -1399,10 +1398,10 @@ void scheme_init_foreign(Scheme_Env *env)
   {:(for-each (lambda (x)
                 (~ (cadr x)"_tag = scheme_make_type(\"<"(car x)">\");"))
               (reverse cstructs)):}
-#ifdef MZ_PRECISE_GC  
+#ifdef MZ_PRECISE_GC
   {:(for-each (lambda (x)
-		(~ "GC_register_traversers("(cadr x)"_tag, "(cadr x)"_SIZE, "
-		   (cadr x)"_MARK, " (cadr x)"_FIXUP, 1, 0);"))
+                (~ "GC_register_traversers("(cadr x)"_tag, "(cadr x)"_SIZE, "
+                   (cadr x)"_MARK, " (cadr x)"_FIXUP, 1, 0);"))
               (reverse cstructs)):}
 #endif
   MZ_REGISTER_STATIC(opened_libs);

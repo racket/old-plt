@@ -63,7 +63,11 @@ if [ "$installplthome" != '' ] ; then
   PROGRAM="/set PLTHOME=.*/ { print \"  set PLTHOME=$installplthome\"; next } /PLTHOME=.*/ { print \"  PLTHOME=$installplthome\"; next } /.*/ {print} "
 
   for f in bin/* ; do
-   if [ -f $f ] ; then
+   if [ "$f" = 'bin/mzscheme' ] ; then
+     echo " skipping $f"
+   elif [ "$f" = 'bin/mred' ] ; then
+     echo " skipping $f"
+   elif [ -f $f ] ; then
      echo " updating $f"
      didnothing=""
      awk "$PROGRAM" $f > $f.tmp

@@ -1,5 +1,6 @@
 
 (module cffi mzscheme
+  (require (lib "stx.ss" "syntax"))
 
   (define-syntax c-lambda
     (let ([re:fname (regexp "^[a-zA-Z_0-9]+$")]
@@ -24,6 +25,14 @@
 			;; FIXME: void is not lexically scoped
 			(eq? (syntax-e t) 'void))
 		   'void]
+		  [(let ([l (syntax->list v)])
+		     (and l (= 2 (length l))
+			  (identifier? (car l))
+			  (string? (syntax-e (cadr l)))
+			  (module-identifier=? (car l) (quote-syntax pointer))
+			  l))
+		   => (lambda (l)
+			`(pointer , (syntax-e (cadr l))))]
 		  [else
 		   (raise-syntax-error
 		    'c-lambda
@@ -31,24 +40,28 @@
 		    stx
 		    t)]))))]
 	  [make-declaration (lambda (type name)
-			      (format "  ~a ~a;\n"
-				      (cadr (assq type
-						  '((bool "int")
-						    (char "char")
-						    (unsigned-char "unsigned char")
-						    (signed-char "signed char") 
-						    (int "int")
-						    (unsigned-int "unsigned int")
-						    (short "short")
-						    (unsigned-short "unsigned short")
-						    (long "long")
-						    (unsigned-long "unsigned long")
-						    (float "float")
-						    (double "double")
-						    (scheme-object "Scheme_Object*")
-						    (char-string "char*")
-						    (nonnull-char-string "char*"))))
-				      name))]
+			      (if (pair? type)
+				  (format "  ~a* ~a;\n"
+					  (cadr type)
+					  name)
+				  (format "  ~a ~a;\n"
+					  (cadr (assq type
+						      '((bool "int")
+							(char "char")
+							(unsigned-char "unsigned char")
+							(signed-char "signed char") 
+							(int "int")
+							(unsigned-int "unsigned int")
+							(short "short")
+							(unsigned-short "unsigned short")
+							(long "long")
+							(unsigned-long "unsigned long")
+							(float "float")
+							(double "double")
+							(scheme-object "Scheme_Object*")
+							(char-string "char*")
+							(nonnull-char-string "char*"))))
+					  name)))]
 	  [extract-c-value (lambda (type c-var scheme-var pos proc-name)
 			     (cond
 			      [(eq? type 'bool) 
@@ -57,45 +70,72 @@
 			       (format "  ~a = ~a;\n" c-var scheme-var)]
 			      [else
 			       (let-values ([(setup tester unwrapper type-name done)
-					     (case type
-					       [(char unsigned-char signed-char) 
-						(values #f
-							"SCHEME_CHARP(~a)"
-							"SCHEME_CHAR_VAL(~a)"
-							"character"
-							#f)]
-					       [(int long) 
-						(values " { long tmp;\n"
-							"scheme_get_int_val(~a, &tmp)"
-							"tmp  /* ~a */"
-							"exact integer between (expt 2 -31) and (sub1 (expr 2 31)) inclusive"
-							" }\n")]
-					       [(unsigned-int unsigned-long)
-						(values " { unsigned long tmp;\n"
-							"scheme_get_unsigned_int_val(~a, &tmp)"
-							"tmp /* ~a */"
-							"exact integer between 0 and (sub1 (expr 2 32)) inclusive"
-							" }\n")]
-					       [(float double)
-						(values #f
-							"SCHEME_REALP(~a)"
-							"scheme_real_to_double(~a)"
-							"real number"
-							#f)]
-					       [(char-string)
-						(values #f
-							(format "SCHEME_FALSEP(~~a) || SCHEME_STRINGP(~a)"
-								scheme-var)
-							(format "(SCHEME_FALSEP(~~a) ? NULL : SCHEME_STR_VAL(~a))" 
-								scheme-var)
-							"string or #f"
-							#f)]
-					       [(nonnull-char-string)
-						(values #f
-							"SCHEME_STRINGP(~a)"
-							"SCHEME_STR_VAL(~a)" 
-							"string"
-							#f)])])
+					     (if (pair? type)
+						 (values #f
+							 (format "(SCHEME_FALSEP(~~a) \
+                                                                  || (SCHEME_CPTRP(~a) && !strcmp(SCHEME_CPTR_TYPE(~a), ~s))"
+								 scheme-var scheme-var (cadr type))
+							 (format "(SCHEME_TRUEP(~~a) ? SCHEME_CPTR_VAL(~a) : NULL)"
+								 scheme-var)
+							 (format "c-pointer of type ~s or #f"
+								 (cadr type))
+							 #f)
+						 (case type
+						   [(char unsigned-char signed-char) 
+						    (values #f
+							    "SCHEME_CHARP(~a)"
+							    "SCHEME_CHAR_VAL(~a)"
+							    "character"
+							    #f)]
+						   [(int long) 
+						    (values " { long tmp;\n"
+							    "scheme_get_int_val(~a, &tmp)"
+							    "tmp  /* ~a */"
+							    "exact integer between (expt 2 -31) \
+                                                             and (sub1 (expr 2 31)) inclusive"
+							    " }\n")]
+						   [(unsigned-int unsigned-long)
+						    (values " { unsigned long tmp;\n"
+							    "scheme_get_unsigned_int_val(~a, &tmp)"
+							    "tmp /* ~a */"
+							    "exact integer between 0 and (sub1 (expr 2 32)) inclusive"
+							    " }\n")]
+						   [(short)
+						    (values #f
+							    "(SCHEME_INTP(~a) \
+                                                             && (long)((short)SCHEME_INT_VAL(~a)) == SCHEME_iNT_VAL(~a))"
+							    "SCHEME_INT_VAL(~a)"
+							    "exact integer between (expt 2 -15) \
+                                                             and (sub1 (expr 2 15)) inclusive"
+							    #f)]
+						   [(unsigned-short)
+						    (values #f
+							    "(SCHEME_INTP(~a) \
+                                                              && (long)((unsigned short)SCHEME_INT_VAL(~a)) \
+                                                                        == SCHEME_iNT_VAL(~a))"
+							    "SCHEME_INT_VAL(~a)"
+							    "exact integer between 0 and (sub1 (expr 2 16)) inclusive"
+							    #f)]
+						   [(float double)
+						    (values #f
+							    "SCHEME_REALP(~a)"
+							    "scheme_real_to_double(~a)"
+							    "real number"
+							    #f)]
+						   [(char-string)
+						    (values #f
+							    (format "SCHEME_FALSEP(~~a) || SCHEME_STRINGP(~a)"
+								    scheme-var)
+							    (format "(SCHEME_FALSEP(~~a) ? NULL : SCHEME_STR_VAL(~a))" 
+								    scheme-var)
+							    "string or #f"
+							    #f)]
+						   [(nonnull-char-string)
+						    (values #f
+							    "SCHEME_STRINGP(~a)"
+							    "SCHEME_STR_VAL(~a)" 
+							    "string"
+							    #f)]))])
 				 (string-append
 				  (or setup "")
 				  (format "  if (~a) {\n" (format tester scheme-var))
@@ -108,21 +148,23 @@
 
 	  [build-scheme-value (lambda (type scheme-var c-var)
 				(let ([builder
-				       (case type
-					 [(bool) "(~a ? scheme_true : scheme_false)"]
-					 [(char unsigned-char signed-char) 
-					  "scheme_make_character((unsigned char)~a)"]
-					 [(int long) 
-					  "scheme_make_integer_value(~a)"]
-					 [(unsigned-int unsigned-long)
-					  "scheme_make_integer_value_from_unsigned(~a)"]
-					 [(char-string)
-					  (format "(~~a ? scheme_make_string(~a) : scheme_false)"
-						  c-var)]
-					 [(float double)
-					  "scheme_make_double(~a)"]
-					 [(nonnull-char-string)
-					  "scheme_make_string(~a)"])])
+				       (if (pair? type)
+					   (format "scheme_make_cptr(~a, ~s)" (cadr type))
+					   (case type
+					     [(bool) "(~a ? scheme_true : scheme_false)"]
+					     [(char unsigned-char signed-char) 
+					      "scheme_make_character((unsigned char)~a)"]
+					     [(int long) 
+					      "scheme_make_integer_value(~a)"]
+					     [(unsigned-int unsigned-long)
+					      "scheme_make_integer_value_from_unsigned(~a)"]
+					     [(char-string)
+					      (format "(~~a ? scheme_make_string(~a) : scheme_false)"
+						      c-var)]
+					     [(float double)
+					      "scheme_make_double(~a)"]
+					     [(nonnull-char-string)
+					      "scheme_make_string(~a)"]))])
 				  (format "  ~a = ~a;\n"
 					  scheme-var
 					  (format builder c-var))))]
@@ -200,6 +242,11 @@
 			       null
 			       (list
 				(build-scheme-value result-type "converted_result" "___result")))
+			   (list
+			    "#ifdef ___AT_END\n"
+			    "  ___AT_END\n"
+			    "#undef ___AT_END\n"
+			    "#endif\n")
 			   (list
 			    (if (eq? result-type 'void)
 				"  return scheme_void;\n"

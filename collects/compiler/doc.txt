@@ -346,7 +346,7 @@ The _embedr-unit.ss_ library provides a signed unit, _compiler:embed@_
 that imports nothing and exports the functions below. The
 _embedr-sig.ss_ library provides the signature, _compiler:embed^_.
 
-> (make-embedding-executable dest-file mred? verbose? mod-list literal-file-list literal-sexpr cmdline-list [aux launcher?])
+> (make-embedding-executable dest-file mred? verbose? mod-list literal-file-list literal-sexpr cmdline-list [aux launcher? variant])
   - Copies the MzScheme (if `mred?' is #f) or MrEd (otherwise) binary,
   embedding code into the copied executable to be loaded on startup.
 
@@ -426,6 +426,11 @@ _embedr-sig.ss_ library provides the signature, _compiler:embed^_.
    executable is created in such a way that `(find-system-path
    'exec-file)' produces the source MzScheme or MrEd path instead of
    the embedding executable.
+
+   The `variant' argument indicates which variant of the original
+   binary to use for embedding. The default is 'normal, and typically
+   the only other possibility is '3m. See `current-launcher-variant'
+   in the "launcher" collection for more information.
 
 
 > (embedding-executable-is-directory? mred?) - Returns #t if

@@ -34,7 +34,7 @@
       (define current-launcher-variant
 	(make-parameter 'normal
 			(lambda (v)
-			  (unless (memq v '(normal 3m script))
+			  (unless (memq v '(normal 3m script script-3m))
 			    (raise-type-error
 			     'current-launcher-variant
 			     "variant symbol"
@@ -42,13 +42,22 @@
 			  v)))
 
       (define (available-variants kind)
-	(let* ([3m (if (eq? 'unix (system-type))
-		       (if (and plthome
-				(file-exists? (build-path plthome "bin" (format "~a3m" kind))))
-			   '(3m)
-			   null)
-		       ;; 3m launchers not yet supported for other platforms:
-		       null)]
+	(let* ([3m (cond
+		    [(or (eq? 'unix (system-type))
+			 (and (eq? 'macosx (system-type))
+			      (eq? kind 'mzscheme)))
+		     (if (and plthome
+			      (file-exists? (build-path plthome "bin" (format "~a3m" kind))))
+			 '(3m)
+			 null)]
+		    [(eq? 'macosx (system-type))
+		     ;; kind must be mred, because mzscheme case caught above
+		     (if (directory-exists? (build-path plthome "MrEd3m.app"))
+			 '(3m)
+			 null)]
+		    [else
+		     ;; 3m launchers not yet supported for other platforms:
+		     null])]
 	       [normal (if (eq? kind 'mzscheme)
 			   '(normal) ; MzScheme is always available
 			   (if (and plthome
@@ -66,8 +75,12 @@
 				(eq? kind 'mred)
 				(pair? normal))
 			   '(script)
-			   null)])
-	  (append 3m normal script)))
+			   null)]
+	       [script-3m (if (and (memq '3m 3m)
+				   (memq 'script script))
+			      '(script-3m)
+			      null)])
+	  (append 3m normal script script-3m)))
 
       (define (available-mred-variants)
 	(available-variants 'mred))
@@ -86,7 +99,7 @@
       (define (variant-suffix variant)
 	(case variant
 	  [(normal script) ""]
-	  [(3m) "3m"]))
+	  [(3m script-3m) "3m"]))
 
       (define (add-file-suffix path variant)
 	(let ([s (variant-suffix variant)])
@@ -229,12 +242,14 @@
 	(install-template dest kind "sh" "sh") ; just for something that's executable
 	(let* ([newline (string #\newline)]
 	       [alt-exe (let ([m (and (eq? kind 'mred)
-				      (eq? variant 'script)
+				      (memq variant '(script script-3m))
 				      (assq 'exe-name aux))])
 			  (and m
-			       (format "~a.app/Contents/MacOS/~a" (cdr m) (cdr m))))]
+			       (format "~a~a.app/Contents/MacOS/~a~a" 
+				       (cdr m) (variant-suffix variant)
+				       (cdr m) (variant-suffix variant))))]
 	       [post-flags (if (and (eq? kind 'mred)
-				    (not (eq? variant 'script)))
+				    (not (memq variant '(script script-3m))))
 			       (skip-x-flags flags)
 			       null)]
 	       [pre-flags (cond
@@ -262,12 +277,12 @@
 		      "exec \"${PLTHOME}/~a~a~a\" ~a"
 		      (if alt-exe "" "bin/")
 		      (or alt-exe kind)
-		      (variant-suffix variant) pre-str)]
+		      (if alt-exe "" (variant-suffix variant)) pre-str)]
 	       [args (format
 		      " ~a ${1+\"$@\"}~n"
 		      post-str)]
 	       [assemble-exec (if (and (eq? kind 'mred)
-				       (not (eq? variant 'script))
+				       (not (memq variant '(script scrip-3m)))
 				       (not (null? post-flags)))
 				  output-x-arg-getter
 				  string-append)])
@@ -287,7 +302,8 @@
 				       null null null
 				       flags
 				       aux
-				       #t)
+				       #t
+				       variant)
 	    ;; Independent launcher (needed for Setup PLT):
 	    (begin
 	      (install-template dest kind "mzstart.exe" "mrstart.exe")
@@ -346,7 +362,8 @@
       ; make-macosx-launcher : symbol (listof str) pathname ->  
       (define (make-macosx-launcher kind variant flags dest aux)
 	(if (or (eq? kind 'mzscheme) 
-		(eq? variant 'script))
+		(eq? variant 'script) 
+		(eq? variant 'script-3m))
 	    ;; MzScheme or script launcher is the same as for Unix
 	    (make-unix-launcher kind variant flags dest aux)
 	    ;; MrEd "launcher" is a stand-alone executable
@@ -354,7 +371,8 @@
 				       null null null
 				       flags
 				       aux
-				       #t)))
+				       #t
+				       variant)))
         
       
       (define (make-macos-launcher kind variant flags dest aux)
@@ -450,7 +468,7 @@
       (define (mred-program-launcher-path name)
 	(let* ([variant (current-launcher-variant)]
 	       [mac-script? (and (eq? (system-type) 'macosx) 
-				 (eq? variant 'script))])
+				 (memq variant '(script script-3m)))])
 	  (string-append
 	   (add-file-suffix 
 	    (build-path 
@@ -460,7 +478,7 @@
 	     ((if mac-script? unix-sfx sfx) name))
 	    variant)
 	   (if (and (eq? (system-type) 'macosx) 
-		    (not (eq? variant 'script)))
+		    (not (memq variant '(script script-3m))))
 	       ".app" 
 	       ""))))
       
@@ -473,7 +491,7 @@
       
       (define (mred-launcher-is-directory?)
 	(and (eq? 'macosx (system-type))
-	     (not (eq? 'script (current-launcher-variant)))))
+	     (not (memq (current-launcher-variant) '(script script-3m)))))
       (define (mzscheme-launcher-is-directory?)
 	#f)
 
@@ -487,7 +505,7 @@
       (define (mred-launcher-put-file-extension+style+filters)
 	(put-file-extension+style+filters 
 	 (if (and (eq? 'macosx (system-type))
-		  (eq? 'script (current-launcher-variant)))
+		  (memq (current-launcher-variant) '(script script-3m)))
 	     'unix
 	     (system-type))))
 

@@ -36,10 +36,10 @@ executables.
               launcher that is independent of the MzScheme or MrEd
               binary, like "Setup PLT.exe"
 
-      -'exe-name_ (Mac OS X, MrEd 'script variant) - provides the base
-              name for a 'normal variant launcher, which the script
-              will call ignoring `args'; if this name is not provided,
-              the script will go through the MrEd executable
+      -'exe-name_ (Mac OS X, MrEd 'script[-3m] variant) - provides the
+              base name for a 'normal variant launcher, which the
+              script will call ignoring `args'; if this name is not
+              provided, the script will go through the MrEd executable
 
    See also `build-aux-from-path' below. The default `aux' is `null'.
 
@@ -149,8 +149,8 @@ executables.
    parameter that indicates a variant of MzScheme or MrEd to use for
    launcher creation and for generating launcher names. The 'normal
    variant is usually available. For Unix platforms, the only other
-   possibility is '3m. For Mac OS X, the 'script variant is also
-   available for MrEd.
+   possibility is '3m. For Mac OS X, the '3m variant is available, and
+   the 'script and 'script-3m variants are available for MrEd.
 
 > (available-mred-variants kind) - Returns a list of symbols
   corresponding to available variants of MrEd.

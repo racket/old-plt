@@ -30,35 +30,40 @@
       ;;  be running in MzScheme when we want MrEd.
       ;;  The fixup process is a bit tricky in OS X, since
       ;;  the MzScheme and MrEd binaries have very different locations.
-      (define (find-exe mred?)
+      (define (find-exe mred? variant)
 	(let* ([sp (find-system-path 'exec-file)]
 	       [exe (find-executable-path sp #f)]
 	       [fail
 		(lambda ()
 		  (error 'make-embedding-executable
 			 "can't find ~a executable"
-			 (if mred? "MrEd" "MzScheme")))])
+			 (if mred? "MrEd" "MzScheme")))]
+	       [variant-suffix (case variant
+				 [(normal) ""]
+				 [(3m) "3m"])])
 	  (unless exe (fail))
 	  (let-values ([(base name dir?) (split-path exe)])
 	    (let* ([mr (regexp-match
-			"^(.*)([Mm][Rr][Ee][Dd])(.*)$"
+			"^(.*)([Mm][Rr][Ee][Dd][a-zA-Z0-9 ]*)(.*)$"
 			name)]
 		   [mz (regexp-match
-			"^(.*)([Mm][Zz][Ss][Cc][Hh][Ee][Mm][Ee])(.*)$"
+			"^(.*)([Mm][Zz][Ss][Cc][Hh][Ee][Mm][Ee][a-zA-Z0-9 ]*)(.*)$"
 			name)]
 		   [r (or mr mz)])
 	      (unless r (fail))
 	      (if (eq? 'macosx (system-type))
 		  (cond
-		   [(and mr (not mred?))
-		    ;; Found MrEd, need MzScheme:
-		    (build-path base 'up 'up 'up "bin" "mzscheme")]
-		   [(and mz mred?)
-		    ;; Found MzScheme, need MrEd:
-		    (build-path base 'up "MrEd.app" "Contents" "MacOS" "MrEd")]
-		   [else 
-		    ;; Found the one we need:
-		    exe])
+		   [(not mred?)
+		    ;; Need MzScheme:
+		    (build-path base 'up 'up 'up "bin" (string-append 
+							"mzscheme"
+							variant-suffix))]
+		   [mred?
+		    ;; Need MrEd:
+		    (build-path base 'up 
+				(format "MrEd~a.app" variant-suffix)
+				"Contents" "MacOS" 
+				(format "MrEd~a" variant-suffix))])
 		  ;; Not OS X --- simply splice in the right name:
 		  (let ([exe
 			 (build-path base
@@ -66,6 +71,7 @@
 						    (if mred?
 							"mred"
 							"mzscheme")
+						    variant-suffix
 						    (cadddr r)))])
 		    (unless (file-exists? exe)
 		      (fail))
@@ -97,11 +103,14 @@
 
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      (define (prepare-macosx-mred exec-name dest aux)
+      (define (prepare-macosx-mred exec-name dest aux variant)
 	(let* ([name (let-values ([(base name dir?) (split-path dest)])
 		       (regexp-replace "[.]app$" name ""))]
+	       [variant-suffix (case variant
+				 [(normal) ""]
+				 [(3m) "3m"])]
 	       [src (build-path (collection-path "launcher")
-				"Starter.app")])
+				(format "Starter~a.app" variant-suffix))])
 	  (when (directory-exists? dest)
 	    (delete-directory/files dest))
 	  (make-directory* (build-path dest "Contents" "Resources"))
@@ -112,9 +121,11 @@
 	  (let ([icon (or (let ([icon (assq 'icns aux)])
 			    (and icon
 				 (cdr icon)))
-			  (build-path src "Contents" "Resources" "Starter.icns"))])
+			  (build-path src "Contents" "Resources" 
+				      (format "Starter~a.icns" variant-suffix)))])
 	    (copy-file icon
-		       (build-path dest "Contents" "Resources" "Starter.icns")))
+		       (build-path dest "Contents" "Resources" 
+				   (format "Starter~a.icns" variant-suffix))))
 	  (let ([orig-plist (call-with-input-file (build-path src
 							      "Contents"
 							      "Info.plist")
@@ -338,7 +349,8 @@
 			  literal-files literal-expression
 			  cmdline
 			  [aux null]
-			  [launcher? #f])
+			  [launcher? #f]
+			  [variant 'normal])
 	  (define long-cmdline? (or (eq? (system-type) 'windows)
 				    (and mred? (eq? 'macosx (system-type)))))
 	  (unless (or long-cmdline?
@@ -374,12 +386,12 @@
 	    (for-each (lambda (f mp) (get-code f mp codes prefix-mapping verbose?)) 
 		      files
 		      collapsed-mps)
-	    (let ([exe (find-exe mred?)])
+	    (let ([exe (find-exe mred? variant)])
 	      (when verbose?
 		(fprintf (current-error-port) "Copying to ~s~n" dest))
 	      (let-values ([(dest-exe osx?)
 			    (if (and mred? (eq? 'macosx (system-type)))
-				(values (prepare-macosx-mred exe dest aux) #t)
+				(values (prepare-macosx-mred exe dest aux variant) #t)
 				(begin
 				  (when (file-exists? dest)
 				    (delete-file dest))

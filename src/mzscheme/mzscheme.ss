@@ -102,6 +102,8 @@
 
   (define-syntax quasiquote
     (lambda (in-form)
+      (if (stx-symbol? in-form)
+	  (raise-syntax-error 'quasiquote "bad syntax" in-form))
       (let-values
 	  (((form) (if (stx-pair? (stx-cdr in-form))
 		       (if (stx-null? (stx-cdr (stx-cdr in-form)))
@@ -243,6 +245,8 @@
 
   (define-syntax and 
     (lambda (x)
+      (if (stx-symbol? x)
+	  (raise-syntax-error 'and "bad syntax" x))
       (let ([e (stx-cdr x)])
 	(if (stx-null? e)
 	    (quote-syntax #t)
@@ -266,6 +270,8 @@
 
   (define-syntax or
     (lambda (x)
+      (if (stx-symbol? x)
+	  (raise-syntax-error 'or "bad syntax" x))
       (let ([e (stx-cdr x)])
 	(if (stx-null? e) 
 	    (quote-syntax #f)
@@ -302,6 +308,8 @@
 
   (define-syntax cond
     (lambda (in-form)
+      (if (stx-symbol? in-form)
+	  (raise-syntax-error 'cond "bad syntax" in-form))
       (datum->syntax
        (let ([form (stx-cdr in-form)]
 	     [serror
@@ -363,6 +371,8 @@
 
   (define-syntax define
     (lambda (code)
+      (if (stx-symbol? code)
+	  (raise-syntax-error 'define "bad syntax" code))
       (let ([body (stx-cdr code)])
 	(if (stx-null? body)
 	    (raise-syntax-error
@@ -461,6 +471,8 @@
 
   (define-syntax define-struct
     (lambda (stx)
+      (if (stx-symbol? stx)
+	  (raise-syntax-error 'define-struct "bad syntax" stx))
       (let ([body (stx->list (stx-cdr stx))])
 	(let ([syntax-error
 	       (lambda (s . detail)

@@ -35,7 +35,7 @@
 #ifdef SMALL_HASH_TABLES
 # define FILL_FACTOR 1.30
 #else
-# define FILL_FACTOR 2.5
+# define FILL_FACTOR 2
 #endif
 
 #ifndef MZ_PRECISE_GC

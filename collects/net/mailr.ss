@@ -49,7 +49,6 @@
 	       (pid (caddr return))
 	       (error-reader (cadddr return)))
 	  (close-output-port reader)
-	  (close-output-port pid)
 	  (close-output-port error-reader)
 	  (fprintf writer "From: ~a~n" sender)
 	  (letrec ((write-recipient-header

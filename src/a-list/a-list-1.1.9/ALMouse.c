@@ -1128,7 +1128,7 @@ cleanup:
 ALIST_API Boolean ALClick(Point mouseLoc, EventModifiers modifiers, unsigned long clickTime, ALHandle hAL)
 {	ALPtr			pAL;
 	short			edge;
-	ALCell			theCell;
+	ALCell			theCell, oldLastClickCell;
 	Boolean			isMultipleClick = false, toContinue;
 	Boolean			saveALLock;
 	short			part;
@@ -1148,6 +1148,8 @@ ALIST_API Boolean ALClick(Point mouseLoc, EventModifiers modifiers, unsigned lon
 	saveALLock = _ALSetHandleLock((Handle) hAL, true);
 	pAL = *hAL;
 
+	oldLastClickCell.h = pAL->lastClickCell.h;
+	oldLastClickCell.v = pAL->lastClickCell.v;
 	pAL->lastClickCell.h = pAL->lastClickCell.v = -1;
 
 #if ALIST_FOR_WX_WINDOWS
@@ -1228,7 +1230,7 @@ ALIST_API Boolean ALClick(Point mouseLoc, EventModifiers modifiers, unsigned lon
 	}
 
 	// determine whether this click is part of a sequence
-	isMultipleClick = ( (clickTime < pAL->clickTime + GetDblTime()) && EqualLongPoint(&theCell, &pAL->lastClickCell) );
+	isMultipleClick = ( (clickTime < pAL->clickTime + GetDblTime()) && EqualLongPoint(&theCell, &oldLastClickCell) );
 	if ( isMultipleClick )
 		pAL->clickCount++;
 	else

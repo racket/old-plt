@@ -1439,19 +1439,50 @@
                     'neg)
           m 1 #t 'x 'y))
   
-  (test/pos-blame
-   'object-contract-drop-method
-   '(contract (object-contract (m (-> integer? integer?)))
-              (new (class object% (define/public (m x) x) (define/public (n x) x) (super-new)))
-              'pos
-              'neg))
+  (test/spec-passed/result
+   'object-contract-drop-method1
+   '(send (contract (object-contract (m (-> integer? integer?)))
+                    (new (class object% (define/public (m x) x) (define/public (n x) x) (super-new)))
+                    'pos
+                    'neg)
+          n 1)
+   1)
   
-  (test/pos-blame
-   'object-contract-drop-field
-   '(contract (object-contract (field f integer?))
-              (new (class object% (field [f 1] [g 2]) (super-new)))
-              'pos
-              'neg))
+  (test/spec-passed/result
+   'object-contract-drop-method2
+   '(let ([o (contract (object-contract (m (-> integer? integer?)))
+                       (new (class object% (define/public (m x) x) (define/public (n x) x) (super-new)))
+                       'pos
+                       'neg)])
+      (with-method ([m (o m)]
+                    [n (o n)])
+        (list (m 1) (n 2))))
+   '(1 2))
+  
+  (test/spec-passed/result
+   'object-contract-drop-field1
+   '(get-field g (contract (object-contract (field f integer?))
+                           (new (class object% (field [f 1] [g 2]) (super-new)))
+                           'pos
+                           'neg))
+   2)
+  
+  (test/spec-passed/result
+   'object-contract-drop-field2
+   '(field-bound? g (contract (object-contract (field f integer?))
+                              (new (class object% (field [f 1] [g 2]) (super-new)))
+                              'pos
+                              'neg))
+   #t)
+  
+  (test/spec-passed/result
+   'object-contract-drop-field3
+   '(field-names
+     (contract (object-contract)
+               (new (class object% (field [g 2]) (super-new)))
+               'pos
+               'neg))
+   '(g))
   
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

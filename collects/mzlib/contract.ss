@@ -1004,7 +1004,6 @@ improve method arity mismatch contract violation error messages?
            (raise-syntax-error 'object-contract "malformed ->d* method contract" stx mtd-stx)]
           [else (raise-syntax-error 'object-contract "unknown method contract syntax" stx mtd-stx)]))
       
-      
       ;; build-methods-stx : syntax[list of lambda arg specs] -> syntax[method realized as proc]
       (define (build-methods-stx arg-spec-stxss)
         (let loop ([arg-spec-stxss arg-spec-stxss]
@@ -1093,7 +1092,6 @@ improve method arity mismatch contract violation error messages?
                                                       (list methods ...)
                                                       '(field-name ...)
                                                       )]
-                             [method-names-list '(method-name ...)]
                              [field-names-list '(field-name ...)])
                          (lambda (val)
                            (unless (object? val)
@@ -1107,15 +1105,7 @@ improve method arity mismatch contract violation error messages?
                                   (interface->method-names
                                    (object-interface
                                     val))])
-                             (for-each (lambda (val-mtd-name)
-                                         (unless (memq val-mtd-name method-names-list)
-                                           (raise-contract-error src-info
-                                                                 pos-blame
-                                                                 neg-blame
-                                                                 orig-str
-                                                                 "object has an extra method ~s" 
-                                                                 val-mtd-name)))
-                                       val-mtd-names)
+                             (void)
                              (unless (memq 'method-name val-mtd-names)
                                (raise-contract-error src-info
                                                      pos-blame
@@ -1125,15 +1115,6 @@ improve method arity mismatch contract violation error messages?
                                                      'method-name))
                              ...)
                            
-                           (for-each (lambda (val-field-name)
-                                       (unless (memq val-field-name field-names-list)
-                                         (raise-contract-error src-info
-                                                               pos-blame
-                                                               neg-blame
-                                                               orig-str
-                                                               "object has an extra field ~s"
-                                                               val-field-name)))
-                                     (field-names val))
                            (unless (field-bound? field-name val)
                              (raise-contract-error src-info
                                                    pos-blame

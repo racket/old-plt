@@ -1919,13 +1919,17 @@
     (unless (object? object)
       (obj-error who "target is not an object: ~e for method: ~a"
 		 object name))
-    (let* ([c (object-ref object)]
-	   [pos (hash-table-get (class-method-ht c) name (lambda () #f))])
-      (if pos
-	  (vector-ref (class-methods c) pos)
-	  (obj-error who "no such method: ~a~a"
-		     name
-		     (for-class (class-name c))))))
+    (let loop ([object object])
+      (let* ([c (object-ref object)]
+             [pos (hash-table-get (class-method-ht c) name (lambda () #f))])
+        (cond
+          [pos (vector-ref (class-methods c) pos)]
+          [(wrapper-object? object)
+           (loop (wrapper-object-wrapped object))]
+          [else
+           (obj-error who "no such method: ~a~a"
+                      name
+                      (for-class (class-name c)))]))))
 
   (define (find-method object name)
     (find-method/who 'send object name))
@@ -2049,18 +2053,23 @@
        'get-field
        "expected an object, got "
        obj))
-    (let* ([cls (object-ref obj)]
-           [field-ht (class-field-ht cls)]
-           [index (hash-table-get 
-                   field-ht
-                   id
-                   (lambda ()
-                     (raise-mismatch-error 
-                      'get-field
-                      (format "expected an object that has a field named ~s, got " id)
-                      obj)))]
-           [getter (class-field-ref cls)])
-      (getter obj (cdr index))))
+    (let loop ([obj obj])
+      (let* ([cls (object-ref obj)]
+             [field-ht (class-field-ht cls)]
+             [index (hash-table-get 
+                     field-ht
+                     id
+                     (lambda () #f))])
+        (cond
+          [index
+           ((class-field-ref cls) obj (cdr index))]
+          [(wrapper-object? obj)
+           (loop (wrapper-object-wrapped obj))]
+          [else
+           (raise-mismatch-error 
+            'get-field
+            (format "expected an object that has a field named ~s, got " id)
+            obj)]))))
   
   (define-syntax (field-bound? stx)
     (syntax-case stx ()
@@ -2077,11 +2086,13 @@
        'field-bound?
        "expected an object, got "
        obj))
-    (let* ([cls (object-ref obj)]
-           [field-ht (class-field-ht cls)])
-      (if (hash-table-get field-ht id (lambda () #f))
-          #t
-          #f)))
+    (let loop ([obj obj])
+      (let* ([cls (object-ref obj)]
+             [field-ht (class-field-ht cls)])
+        (or (and (hash-table-get field-ht id (lambda () #f))
+                 #t) ;; ensure that only #t and #f leak out, not bindings in ht
+            (and (wrapper-object? obj)
+                 (loop (wrapper-object-wrapped obj)))))))
   
   (define (field-names obj)
     (unless (object? obj)
@@ -2089,9 +2100,13 @@
        'field-names
        "expected an object, got "
        obj))
-    (let* ([cls (object-ref obj)]
-           [field-ht (class-field-ht cls)])
-      (filter interned? (hash-table-map field-ht (lambda (x y) x)))))
+    (let loop ([obj obj])
+      (let* ([cls (object-ref obj)]
+             [field-ht (class-field-ht cls)]
+             [flds (filter interned? (hash-table-map field-ht (lambda (x y) x)))])
+        (if (wrapper-object? obj)
+            (append flds (loop (wrapper-object-wrapped obj)))
+            flds))))
     
   (define (find-with-method object name)
     (find-method/who 'with-method object name))

@@ -291,7 +291,7 @@
 
 	(lambda (ftype method . args)
 	  (let ([looked-up-ftype (lookup-ftype ftype)]) 
-	    (when (type-annotation? looked-up-ftype)
+	    (when (is-a? looked-up-ftype type-annotation%)
 		  (pretty-debug-gui `(send-ftype ,(FlowType->pretty ftype)))
 		  (assert (symbol? method) 'send-ftype ftype method args)
 		  (apply (ivar/proc looked-up-ftype method) args))))]
@@ -473,7 +473,7 @@
 	   (lambda (arrow) (send arrow delete))
 	   (append (map cdr src->arrows) (map cdr dest->arrows)))]
 
-       [file-visable?
+       [file-visible?
 	 (lambda (filename)
 	   (send (ivar edit main) filename->frame filename))]
 
@@ -490,7 +490,7 @@
        [shortest-path-source-refresh
 	(lambda ()
 	  ;; Show shortest path to a source
-	  (let ([path (analysis-shortest-path ftype file-visable?)])
+	  (let ([path (analysis-shortest-path ftype file-visible?)])
 	    ;; Returns list of ancestor Tvar-nums, last element is ()
 	    (cond
 	      [(eq? path #f)
@@ -512,7 +512,7 @@
 
        [calc-parents
 	(lambda ()
-	  (analysis-parents ftype  file-visable?))]
+	  (analysis-parents ftype  file-visible?))]
 
        [add-parent-arrows
 	(lambda ()
@@ -533,7 +533,7 @@
 
        [ancestors-refresh
 	(lambda ()
-	  (let ([arrows (analysis-ancestors ftype file-visable?)])
+	  (let ([arrows (analysis-ancestors ftype file-visible?)])
 	    (if (null? arrows)
 	      (report-no-ancestors)
 	      (send edit edit-sequence
@@ -546,7 +546,7 @@
        ;; ------ Children, descendants
 
        [calc-children
-	(lambda () (analysis-children ftype file-visable?))]
+	(lambda () (analysis-children ftype file-visible?))]
 
        [add-child-arrows
 	(lambda ()
@@ -564,7 +564,7 @@
 
        [descendants-refresh
 	(lambda ()
-	  (let ([arrows (analysis-descendants ftype file-visable?)])
+	  (let ([arrows (analysis-descendants ftype file-visible?)])
 	    (if (null? arrows)
 	      (report-no-descendants)
 	      (send edit edit-sequence

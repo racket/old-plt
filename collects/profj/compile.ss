@@ -72,7 +72,8 @@
                                                           'truncate/replace)
                                   (call-with-output-file* (build-path directory (string-append name ".jinfo"))
                                                           (lambda (port) (write-record (send type-recs get-class-record 
-                                                                                             (list name) 
+                                                                                             (list name)
+                                                                                             #f
                                                                                              class-record-error)
                                                                                        port))
                                                           'truncate/replace)))
@@ -99,7 +100,7 @@
                (list package-name
                      (filter (lambda (t) t)
                              (map (lambda (file class)
-                                    (let ((existing-record (send type-recs get-class-record (cons class package-name) 
+                                    (let ((existing-record (send type-recs get-class-record (cons class package-name) #f
                                                                  (lambda () #f))))
                                       (and (or (not existing-record) 
                                                (procedure? existing-record))
@@ -107,7 +108,7 @@
                                              (lambda (port) (compile-java-internal port file type-recs to-file? level))))))
                                   files class-names))
                      (map (lambda (class)
-                            (send type-recs get-class-record (cons class package-name) (lambda () (error 'internal-error))))
+                            (send type-recs get-class-record (cons class package-name) #f (lambda () (error 'internal-error))))
                           class-names))))
            files)))
   

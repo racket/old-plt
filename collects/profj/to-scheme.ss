@@ -714,8 +714,9 @@
            (class-record (send type-recs get-class-record 
                                (make-ref-type (class-name)
                                               (send type-recs lookup-path (class-name) internal-error))
+                               #f
                                internal-error))
-           (parent-record (send type-recs get-class-record  (car (class-record-parents class-record)) internal-error)))
+           (parent-record (send type-recs get-class-record  (car (class-record-parents class-record)) #f internal-error)))
       (memq method-name
             (map (lambda (m) (string->symbol (build-method-name (method-record-name m)
                                                                 (method-record-atypes m))))
@@ -737,7 +738,7 @@
               (let ((mname (id-string (method-name m))))
                 (overrider? (build-identifier ((if (constructor? mname) build-constructor-name build-method-name)
                                                mname
-                                               (map (lambda (t) (type-spec-to-type t 'full type-recs))
+                                               (map (lambda (t) (type-spec-to-type t #f 'full type-recs))
                                                     (map field-type (method-parms m)))))
                             type-recs)))
             methods))
@@ -753,7 +754,7 @@
                                     build-constructor-name
                                     build-method-name)
                                 (id-string (method-name (car methods)))
-                                (map (lambda (t) (type-spec-to-type t 'full type-recs))
+                                (map (lambda (t) (type-spec-to-type t #f 'full type-recs))
                                      (map field-type (method-parms (car methods))))))
              (make-method-names (cdr methods) minus-methods type-recs)))))
   
@@ -762,7 +763,7 @@
     (let* ((final (final? modifiers))
            (method-string ((if (constructor? (id-string id)) build-constructor-name build-method-name)
                            (id-string id)
-                           (map (lambda (t) (type-spec-to-type t 'full type-recs))
+                           (map (lambda (t) (type-spec-to-type t #f 'full type-recs))
                                 (map field-type parms))))
            (method-name (translate-id method-string (id-src id)))
            (over? (overrider? (build-identifier method-string) type-recs))
@@ -780,7 +781,7 @@
   (define (make-static-method-names methods type-recs)
     (map (lambda (m)
            (build-static-name (build-method-name (id-string (method-name m))
-                                                 (map (lambda (t) (type-spec-to-type t 'full type-recs))
+                                                 (map (lambda (t) (type-spec-to-type t #f 'full type-recs))
                                                       (map field-type (method-parms m))))))
          methods))
   
@@ -1160,7 +1161,7 @@
   ;descendent-Runtime?: type-spec type-records -> bool
   (define descendent-Runtime?
     (lambda (type type-recs)
-      (let ((class-record (send type-recs get-class-record (type-spec-to-type type 'full type-recs) 
+      (let ((class-record (send type-recs get-class-record (type-spec-to-type type #f 'full type-recs) #f
                                 (lambda () (error 'descendent-Runtime "Internal Error: class record is not in table")))))
         (member `("java" "lang" "RuntimeException") (class-record-parents class-record)))))
   

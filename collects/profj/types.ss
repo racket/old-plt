@@ -117,28 +117,27 @@
       (else
        (widening-ref-conversion to from type-recs))))
   
-  ;; type-spec-to-type: type-spec symbol type-records -> type
-  (define (type-spec-to-type ts level type-recs)
+  ;; type-spec-to-type: type-spec (U #f (list string) symbol type-records -> type
+  (define (type-spec-to-type ts container-class level type-recs)
     (let* ((ts-name (type-spec-name ts))
            (t (cond
                 ((memq ts-name `(null string boolean char byte short int long float double void ctor)) ts-name)
-                ((name? ts-name) (name->type ts-name (type-spec-src ts) level type-recs)))))
+                ((name? ts-name) (name->type ts-name container-class (type-spec-src ts) level type-recs)))))
       (if (> (type-spec-dim ts) 0)
           (make-array-type t (type-spec-dim ts))
           t)))
 
-  ;name->type: name src symbol type-records -> type
-  (define (name->type n src level type-recs)
+  ;name->type: name (U (list string) #f) src symbol type-records -> type
+  (define (name->type n container-class src level type-recs)
     (let ((name (id-string (name-id n)))
           (path (map id-string (name-path n))))
-      (type-exists? name path src level type-recs)
+      (type-exists? name path container-class src level type-recs)
       (make-ref-type name (if (null? path) (send type-recs lookup-path name (lambda () null)) path)))) 
   
-  ;; type-exists: string (list string) src symbol type-records -> (U record procedure)
-  (define (type-exists? name path src level type-recs)
-    (send type-recs get-class-record (cons name path)
-          ((get-importer type-recs) (cons name path) type-recs level src))
-    type-recs)
+  ;; type-exists: string (list string) (U (list string) #f) src symbol type-records -> (U record procedure)
+  (define (type-exists? name path container-class src level type-recs)
+    (send type-recs get-class-record (cons name path) container-class
+          ((get-importer type-recs) (cons name path) type-recs level src)))
   
   
   ;; (make-class-record (list string) (list symbol) boolean (list field-record) 
@@ -201,17 +200,35 @@
       (define/public (add-to-records key thunk)
         (hash-table-put! records key thunk))
 
-      ;; get-class-record: (U type (list string) 'string) ( -> 'a) -> (U class-record procedure)
-      (define/public (get-class-record ctype . fail) 
-        (let ((fail (if (null? fail) (lambda () null) (car fail)))
-              (key (cond
-                     ((eq? ctype 'string) `("String" "java" "lang"))
-                     ((ref-type? ctype) (cons (ref-type-class/iface ctype) (ref-type-path ctype)))
-                     (else ctype))))
-          (hash-table-get records (if (null? (cdr key))
-                                      (cons (car key) (lookup-path (car key) fail))
-                                      key)
-                          fail)))
+      ;; get-class-record: (U type (list string) 'string) (U (list string) #f) ( -> 'a) -> (U class-record procedure)
+      (define/public get-class-record 
+        (opt-lambda (ctype [container #f] [fail (lambda () null)]) 
+          (let* ((key (cond
+                        ((eq? ctype 'string) `("String" "java" "lang"))
+                        ((ref-type? ctype) (cons (ref-type-class/iface ctype) (ref-type-path ctype)))
+                        (else ctype)))
+                 (key-inner (when (cons? container) (string-append (car container) "." (car key))))
+                 (outer-record (when (cons? container) (get-class-record container))))
+            (cond
+              ((and container 
+                    (not (null? outer-record))
+                    (not (eq? outer-record 'in-progress))
+                    (member (car key) (map inner-record-name (class-record-inners (get-record outer-record this)))))
+               (hash-table-get records (cons key-inner (cdr container)) fail))
+              ((and container
+                    (not (null? outer-record))
+                    (eq? outer-record 'in-progress))
+               (let ((res (hash-table-get records (cons key-inner 
+                                                        (if (null? (cdr key))
+                                                            (lookup-path key-inner (lambda () null))
+                                                            (cdr key)))
+                                          (lambda () #f))))
+                 (if res
+                     res
+                     (hash-table-get records (if (null? (cdr key)) (cons (car key) (lookup-path (car key) fail)) key)
+                                     fail))))
+              (else (hash-table-get records (if (null? (cdr key)) (cons (car key) (lookup-path (car key) fail)) key)
+                                    fail))))))
       
       ;add-package-contents: (list string) (list string) -> void
       (define/public (add-package-contents package classes)

@@ -2969,9 +2969,9 @@ static void wxScheme_Install(Scheme_Env *global_env)
 						    1, 3), 
 			   global_env);
 
-  scheme_install_xc_global("set-ps-draw-text/get-text-extent",
+  scheme_install_xc_global("set-ps-procs",
 			   scheme_make_prim_w_arity(CAST_SP SetPSProcs,
-						    "set-ps-draw-text/get-text-extent",
+						    "set-ps-procs",
 						    4, 4),
 			   global_env);
 

@@ -18,13 +18,16 @@
     (case-lambda
      [(s) (bytes->number s 10)]
      [(s r) (string->number (bytes->string/latin-1 s) r)]))
-  
-  (define adobe-name-to-code-point #f)
-  (define got-long-name-list? #f)
 
+  ;; ------------------------------------------------------------
+  ;; Paths
+
+  ;; Paths that users can set
+  ;;  Location of .afm files:
   (define afm-dirs (path-list-string->path-list 
 		    (or (getenv "PLTAFMDIR") "")
 		    (list (collection-path "afm"))))
+  ;;  Location of CMap files (for CID fonts)
   (define cmap-dirs (path-list-string->path-list 
 		     (or (getenv "PLTCMAPDIR") "")
 		     (list (collection-path "afm" "CMap"))))
@@ -37,6 +40,19 @@
 	       l)
 	(error 'find-path "file not found: ~e in dirs: ~e" f l)))
 
+  ;; ------------------------------------------------------------
+  ;; Adobe <-> Unicode
+
+  ;; Table mapping PS char names (as bytes) to Unicode integers.
+  ;;  It's loaded on demand.
+  (define adobe-name-to-code-point #f)
+  ;; In fact, we load a small table at first, and
+  ;;  only load the full PS char name table if needed;
+  ;;  the following flag indicated whether the full
+  ;;  table has been loaded.
+  (define got-long-name-list? #f)
+
+  ;; Reads the Adobe char name -> Unicode table
   (define (read-names! gl.txt long?)
     (let ([ht (make-hash-table 'equal)])
       (with-handlers ([not-break-exn? report-exn])
@@ -56,6 +72,7 @@
       (set! adobe-name-to-code-point ht)
       (set! got-long-name-list? long?)))
 
+  ;; Maps Adbobe char name to Unicode, loading the table as necesary
   (define (find-unicode name)
     (unless adobe-name-to-code-point
       (read-names! "glyphshortlist.txt" #f))
@@ -68,12 +85,16 @@
 			    (read-names! "glyphlist.txt" #t)
 			    (find-unicode name))))))
 
-  (define make-achar cons)
-  (define achar-enc car)
-  (define achar-width cdr)
-  (define-struct font (descent ascent achars is-cid? char-set-name))
+  
+  ;; ------------------------------------------------------------
+  ;; CMap
 
   ;; read-cmap : path hash-table-or-false -> hash-table[int->int]
+  ;;  A CMap file maps from one character encoding (e.g., Adobe-CNS1-0)
+  ;;  to another (e.g., UTF-16). We'll always have to read one
+  ;;  UTF-32 -> Adobe-CNS table (invert it), and then use that
+  ;;  when reading any other XXX -> Adobe-CNS to generate an 
+  ;;  XXX -> UTF-32 table.
   (define (read-cmap file to-unicode)
     (let* ([ht (make-hash-table 'equal)]
 	   [put! (if to-unicode
@@ -147,6 +168,15 @@
 		 cns->unicode-table)])
 	 (hash-table-put! cmap-table name t)
 	 t))))
+
+  ;; ----------------------------------------
+  ;; AFM
+
+  (define make-achar cons)
+  (define achar-enc car)   ; Number (unicode or CID) or bytes (Adobe char name)
+  (define achar-width cdr) ; Integer, 0 to 1000
+
+  (define-struct font (descent ascent achars is-cid? char-set-name))
 
   (define (parse-afm file)
     (let ([descender #f]
@@ -234,6 +264,8 @@
 						     (format "~a.afm" name)))))
 		      (get-font name))))
 
+  ;; ----------------------------------------
+
   (define font-list #f)
   (define (get-all-fonts)
     (or font-list
@@ -247,7 +279,10 @@
 						  (directory-list dir))))
 				   afm-dirs)))
 	  font-list)))
-  
+
+  ;; ----------------------------------------
+  ;; Draw/measure text
+
   (define (afm-get-text-extent font-name size string)
     (let* ([font (or (get-font font-name)
 		     (make-font 0 1000 #hash() #f #f))]
@@ -256,10 +291,16 @@
       (values (* scale
 		 (apply +
 			(map (lambda (c)
-			       (let ([achar (hash-table-get (font-achars font)
-							    (char->integer c)
-							    (lambda ()
-							      (make-achar 0 500)))])
+			       (let ([achar (hash-table-get 
+					     (font-achars font)
+					     (char->integer c)
+					     (lambda ()
+					       (find-substitute 
+						c
+						(lambda (name font achar)
+						  achar)
+						(lambda ()
+						  (make-achar 0 500)))))])
 				 (achar-width achar)))
 			     (string->list string))))
 	      (+ size descent)
@@ -270,9 +311,13 @@
     (let* ([l (string->list string)]
 	   [font (or (get-font font-name)
 		     (make-font 0 0 #hash() #f #f))]
-	   [show-simples (lambda (simples)
+	   [show-simples (lambda (simples special-font-name special-font)
 			   (unless (null? simples)
-			     (if (font-is-cid? font)
+			     (when special-font
+			       (fprintf out "gsave~n/~a findfont~n~a scalefont setfont~n"
+					(afm-expand-name special-font-name)
+					size))
+			     (if (font-is-cid? (or special-font font))
 				 (fprintf out "<~a> show\n"
 					  (apply
 					   string-append
@@ -281,40 +326,97 @@
 						    (substring s (- (string-length s) 4))))
 						(reverse simples))))
 				 (fprintf out "(~a) show\n"
-					  (list->bytes (reverse simples))))))])
-      (let loop ([l l][simples null])
+					  (list->bytes (reverse simples))))
+			     (when special-font
+			       (fprintf out "grestore~n"))))])
+      (let loop ([l l][simples null][special-font-name #f][special-font #f])
 	(cond
 	 [(null? l)
-	  (show-simples simples)]
+	  (show-simples simples special-font-name special-font)]
 	 [(hash-table-get (font-achars font) (char->integer (car l))
 			  (lambda () #f))
 	  => (lambda (achar)
 	       (if (integer? (achar-enc achar))
-		   (loop (cdr l) 
-			 (cons (achar-enc achar) simples))
+		   ;; It's simple...
+		   (if special-font
+		       ;; Flush simples using special font
+		       (begin
+			 (show-simples simples special-font-name special-font)
+			 (loop (cdr l) (list (achar-enc achar)) #f #f))
+		       ;; Continue simple chain
+		       (loop (cdr l) 
+			     (cons (achar-enc achar) simples)
+			     #f
+			     #f))
 		   ;; Not simple... use glyphshow
 		   (begin
-		     (show-simples simples)
+		     (show-simples simples special-font-name special-font)
 		     (fprintf out "/~a glyphshow\n" (achar-enc achar))
-		     (loop (cdr l) null))))]
+		     (loop (cdr l) null #f #f))))]
 	 [else
-	  ;; No mapping for the character.
-	  (show-simples simples)
-	  ;; Draw a box, eventually...
-	  (loop (cdr l) null)]))))
+	  (find-substitute
+	   (car l)
+	   (lambda (this-font-name this-font achar)
+	     ;; Found a substitute font
+	     (if (and (equal? special-font-name this-font-name)
+		      (integer? (achar-enc achar)))
+		 ;; Continue special-font simple chain:
+		 (loop (cdr l)
+		       (cons (achar-enc achar) simples)
+		       special-font-name
+		       special-font)
+		 ;; End current simples, etc.
+		 (begin
+		   (show-simples simples special-font-name special-font)
+		   (if (integer? (achar-enc achar))
+		       (loop (cdr l)
+			     (list (achar-enc achar))
+			     this-font-name
+			     this-font)
+		       (begin
+			 ;; Not simple... use glyphshow
+			 (fprintf out "gsave~n/~a findfont~n~a scalefont setfont~n"
+				  (afm-expand-name this-font-name)
+				  size)
+			 (fprintf out "/~a glyphshow\n" (achar-enc achar))
+			 (fprintf out "grestore~n")
+			 (loop (cdr l) null #f #f))))))
+	   (lambda ()
+	     ;; No mapping for the character anywhere.
+	     (show-simples simples special-font-name special-font)
+	     ;; Perhaps draw a box, one day
+	     (fprintf out "~a 0 rmoveto\n" (/ size 2))
+	     (loop (cdr l) null #f #f)))]))))
 
+  ;; ----------------------------------------
+  ;; Name expansion
+
+  ;; Adds a char-set to the name, if necessary
   (define (afm-expand-name font-name)
     (let ([f (get-font font-name)])
       (if (and f (font-char-set-name f))
 	  (string-append font-name "-" (bytes->string/latin-1 (font-char-set-name f)))
 	  font-name)))
 
+  ;; ----------------------------------------
+  ;; Font substitution
+
+  (define (find-substitute char find-k none-k)
+    (let ([v (afm-glyph-exists? #f (char->integer char))])
+      (if v
+	  (apply find-k v)
+	  (none-k))))
+
   (define (afm-glyph-exists?* font-name char-val)
     (let ([f (get-font font-name)])
-      (and f (hash-table-get (font-achars f) char-val (lambda () #f)))))
-
+      (and f 
+	   (let ([achar (hash-table-get (font-achars f) char-val (lambda () #f))])
+	     (and achar
+		  (list font-name f achar))))))
+  
   (define (afm-glyph-exists? font-name char-val)
-    (or (afm-glyph-exists?* font-name char-val)
+    (or (and font-name
+	     (afm-glyph-exists?* font-name char-val))
 	(ormap (lambda (fn)
 		 (afm-glyph-exists?* fn char-val))
 	       (get-all-fonts)))))

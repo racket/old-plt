@@ -370,7 +370,7 @@
 	       (mred:gui-utils:local-busy-cursor
 		(get-canvas)
 		(lambda ()
-		  (eval-and-display (get-text start end))))
+		  (eval-and-display (get-text start end #t))))
 	       (do-post-eval))]
 	    [do-pre-eval
 	     (lambda ()
@@ -739,11 +739,9 @@
 					 (cons 
 					  (list title
 						(lambda ()
-						  (let* ([f (make-object mred:hyper-frame:hyper-view-frame% f)]
-							 [g (send f get-frame-group)])
+						  (let* ([f (make-object mred:hyper-frame:hyper-view-frame%
+									 (string-append "file://" f))])
 						    (send f set-title-prefix title)
-						    (when g
-						      (send g set-frame-title-prefix title))
 						    f)))
 					  output))
 				       (begin (mred:debug:printf 'help-menu "couldn't find ~a" f)

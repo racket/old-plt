@@ -333,7 +333,7 @@
 	 (unbox path-box)
 	 default-path))))
 
-'(when (and (eq? wx:platform 'windows))
+(when (and (eq? wx:platform 'windows))
   (let ([hd (getenv "HOMEDRIVE")]
 	[hp (getenv "HOMEPATH")])
     (when (and hd hp)

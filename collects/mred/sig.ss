@@ -9,12 +9,16 @@
 (define-signature mred:url^
   ((struct url (scheme host port path params query fragment))
    unixpath->path
-   http/get-impure-port    ; url [x list (str)] -> in-port
-   display-pure-port      ; in-port -> ()
-   string->url            ; str -> url
-   call/input-url         ; url x (in-port -> ()) [x list (str)] -> ()
-   purify-port            ; in-port -> ()
-   combine-url/relative)) ; url x str -> url
+   get-pure-port			; url [x list (str)] -> in-port
+   get-impure-port			; url [x list (str)] -> in-port
+   display-pure-port			; in-port -> ()
+   purify-port				; in-port -> list (mime-header)
+   string->url				; str -> url
+   url->string
+   call/input-url			; url x (url -> in-port) x
+					; (in-port -> ())
+					; [x list (str)] -> ()
+   combine-url/relative))		; url x str -> url
 
 (define-signature mred:exn^
   ((struct exn ())
@@ -224,6 +228,7 @@
    find-named-format-handler 
    find-named-mode-handler
    edit-file
+   open-url
    open-file))
 
 (define-signature mred:icon^
@@ -295,7 +300,7 @@
 
 (define-signature mred:hyper-edit^
   ((struct hypertag (name position))
-   (struct hyperlink (anchor-start anchor-end reference-file reference-tag))
+   (struct hyperlink (anchor-start anchor-end url-string))
    hyper-buffer-data%
    hyper-data-class
    make-hyper-edit%

@@ -2,6 +2,8 @@
 ; Hyper Edit 
 ; July 17, 1995
 
+(define top-box (box #f))
+
 (define mred:hyper-edit@
   (unit/sig mred:hyper-edit^
     (import [mred:debug : mred:debug^]
@@ -37,8 +39,7 @@
 
     (define-struct hyperlink (anchor-start 
 			      anchor-end
-			      reference-file 
-			      reference-tag))
+			      url-string))
     
     (define-struct hypertag (name position))
 
@@ -49,15 +50,14 @@
 	(class super% ([keep-locked? #t] . args)
 	  (inherit get-start-position get-end-position last-position set-position  
 		   begin-edit-sequence end-edit-sequence lock erase clear-undos
-		   change-style  get-style-list set-modified
-		   find-snip get-snip-position line-start-position
+		   change-style  get-style-list set-modified get-filename
+		   find-snip get-snip-position line-start-position canvases
 		   get-visible-line-range scroll-to-position position-line
 		   begin-write-header-footer-to-file end-write-header-footer-to-file
 		   write-to-file set-filename get-file-format
 		   set-clickback  remove-clickback set-file-format
-		   get-frame get-canvas insert-image)
-	  (rename [super-get-filename get-filename]
-		  [super-do-edit do-edit]
+		   get-canvas insert-image)
+	  (rename [super-do-edit do-edit]
 		  [super-save-file save-file]
 		  [super-get-region-data get-region-data]
 		  [super-set-region-data set-region-data]
@@ -81,7 +81,6 @@
 	    [set-follow-on-click 
 	     (lambda (val)
 	       (set! follow-on-click? val))]
-	    [directory (current-directory)] ;; changes when file is saved.
 	    ;; to be called by on-insert and on-delete (which then return #t):     
 	    [adjust-lists    
 	     (lambda (place amt)
@@ -237,19 +236,19 @@
 		       (send stream put (hyperlink-anchor-start next))
 		       (send stream put (hyperlink-anchor-end next))
 		       (send stream put 
-			     (if (string? (hyperlink-reference-file next))
-				 (string-length(hyperlink-reference-file next))
+			     (if (string? (hyperlink-url-string next))
+				 (string-length(hyperlink-url-string next))
 				 0))
 		       (send stream put 
-			     (string-length(hyperlink-reference-tag next)))
-		       (if (string? (hyperlink-reference-file next))
+			     (string-length (hyperlink-url-string next)))
+		       (if (string? (hyperlink-url-string next))
 			   (send stream put 
-				 (string-length (hyperlink-reference-file next))
-				 (hyperlink-reference-file next))
+				 (string-length (hyperlink-url-string next))
+				 (hyperlink-url-string next))
 			   (send stream put 0 ""))
 		       (send stream put 
-			     (string-length (hyperlink-reference-tag next))
-			     (hyperlink-reference-tag next)))
+			     (string-length "")
+			     ""))
 		     (loop (cdr links-left))))
 		 (end-write-header-footer-to-file stream (unbox buffer)))
 	       #t)]
@@ -291,36 +290,35 @@
 				   (let ([file-str (send stream get-string)]
 					 [tag-str (send stream get-string)])
 				     (make-hyperlink
-				      (unbox anchor-startb)(unbox anchor-endb)
-				      (if (> (string-length file-str) 0) file-str #f)
-				      tag-str)))
+				      (unbox anchor-startb) (unbox anchor-endb)
+				      (string-append "file:"
+						     (if (> (string-length file-str) 0) file-str #f)
+						     "#"
+						     tag-str))))
 				 (loop (sub1 num-links-left)))))))]
 		 [else (super-read-footer-from-file stream name)]))]
 	    [make-clickback-funct
-	     (lambda (filename tag)
+	     (lambda (url-string)
 	       (lambda (edit start end)
-		 '(printf "make-clickback-funct filename: ~a~n" filename)
 		 (catch-errors 
 		  (lambda (err-msg)
 		    (show-message 
-		     (format "Unable to find destination position ~s?~n~a" 
-			     tag err-msg)
+		     (format "Unable to find destination position ~s ~a~n" 
+			     url-string err-msg)
 		     "Error"))
 		  (lambda () #f)
-		  '(printf "follow-on-click? ~a~n" follow-on-click?)
-		  '(printf "filename: ~a tag: ~a~n" (or filename (get-filename)) tag)
 		  (if follow-on-click?
-		      (let ([filename
-			     (if (not filename)
-				 (get-filename)
-				 (mzlib:file:normalize-path filename directory))])
-			(send (get-frame) open-file filename tag))
-		      (show-message 
-		       (string-append "Filename: " (if filename
-						       (mzlib:string:expr->string filename) 
-						       "this file. ")
-				      " Tag: " (mzlib:string:expr->string tag))
-		       "Link")))))]
+		      (let ([e (make-object (object-class this))]
+			    [url-string
+			     (if (string? (get-filename))
+				 (mred:url:url->string
+				  (mred:url:combine-url/relative 
+				   (mred:url:string->url (get-filename))
+				   url-string))
+				 url-string)])
+			(send e load-file url-string)
+			(send (get-canvas) set-media e))
+		      (show-message (format "url: ~a" url-string))))))]
 	    
 	    [install-clickbacks 
 	     (lambda ()
@@ -329,8 +327,7 @@
 		   (set-clickback  (hyperlink-anchor-start (car links-left))
 				   (hyperlink-anchor-end (car links-left))
 				   (make-clickback-funct
-				    (hyperlink-reference-file (car links-left))
-				    (hyperlink-reference-tag (car links-left))))
+				    (hyperlink-url-string (car links-left))))
 		   (install-loop (cdr links-left)))))]
 	    [uninstall-clickbacks 
 	     (lambda ()
@@ -405,28 +402,28 @@
 			      (set-position  (hypertag-position (car tags-left)))]
 			     [else (tags-loop (cdr tags-left))])))))]
 	    [add-link 
-	     (opt-lambda (start end filename tag [promise-ok? #f])
-	       (let* ([new-link (make-hyperlink start end filename tag)]
+	     (opt-lambda (start end url-string [promise-ok? #f])
+	       (let* ([new-link (make-hyperlink start end url-string)]
 		      [set-clickback  (if (not (null? follow-on-click?))
-					  set-clickback 
+					  set-clickback
 					  (lambda args #t))]
 		      [new-links-list
 		       (if promise-ok?
 			   (begin
 			     (set-clickback start end 
-					    (make-clickback-funct filename tag))
+					    (make-clickback-funct url-string))
 			     (cons new-link hyperlinks-list))
 			   (let insert-loop ([links-left hyperlinks-list])
 			     (cond
 			      [(null? links-left)
 			       (set-clickback start end 
-					      (make-clickback-funct filename tag)) 
+					      (make-clickback-funct url-string)) 
 			       (list new-link)]
 			      [(<= end (hyperlink-anchor-start (car links-left)))
 			       (cons (car links-left) (insert-loop (cdr links-left)))]
 			      [(>= start (hyperlink-anchor-end (car links-left)))
 			       (set-clickback start end 
-					      (make-clickback-funct filename tag)) 
+					      (make-clickback-funct url-string)) 
 			       (cons new-link links-left)]
 			      [else (show-message 
 				     "A new link cannot overlap with a current link"
@@ -542,7 +539,7 @@
 					       (reverse
 						(map hypertag-name hypertags-list))
 					       (mred:hyper-dialog:hyper-get-current-tags 
-						directory filename)))
+						'directory filename)))
 					  get-answer)])
 			       (if tag-name tag-name (break #f))))
 			    (make-link-style  start end)))))))]
@@ -556,16 +553,6 @@
 				  (break #f)
 				  name))
 			    pos))))]
-	    [get-filename
-	     (opt-lambda ([temp? null])
-	       (let ([fn (super-get-filename temp?)])
-		 (if (string? fn)(mzlib:file:normalize-path fn)())))]
-	    [update-directory
-	     (opt-lambda ([new-dir 
-			   (if (string? (get-filename))
-			       (mzlib:file:path-only (mzlib:file:normalize-path (get-filename)))
-			       directory)])
-	       (set! directory new-dir))]
 	    [do-edit
 	     (lambda (op)
 	       (if (= op wx:const-edit-insert-image)
@@ -577,76 +564,51 @@
 			 (insert-image filename -1 #t)))
 		   (super-do-edit op)))]
 	    [load-file 
-	     (opt-lambda ([filename ()][format wx:const-media-ff-guess][relative? #f])
-	       '(printf "loading: ~a ~a ~a~n" filename format relative?)
+	     (opt-lambda ([filename ()]
+			  [format wx:const-media-ff-guess])
 	       (set! hyperlinks-list ())
 	       (set! hypertags-list ())
 	       (lock #f)
-	       (let* ([filename 
-		       (if (or (null? filename)
-			       (not relative?))
-			   filename
-			   (build-path directory filename))]
-		      [build-edit
-		       (lambda (p)
-			 (set! htmling? #t)
-			 (erase)
-			 (clear-undos)
-			 (set-filename filename)
-			 (dynamic-wind (lambda ()
-					 (wx:begin-busy-cursor)
-					 (begin-edit-sequence #f))
-				       (lambda ()
-					 (mred:html:html-convert p this))
-				       (lambda ()
-					 (end-edit-sequence)
-					 (wx:end-busy-cursor)
-					 (set! htmling? #f)
-					 (close-input-port p)))
-			 (reverse-links)
-			 (set-modified #f)
-			 (lock #t)
-			 #t)]
-		      [port-proc
-		       (let ([fallback 
-			      (lambda (f)
-				(super-load-file filename format))])
-			 (cond
-			   [(string? filename)
-			    (let* ([url (mred:url:string->url filename)]
-				   [url-method (mred:url:url-scheme url)]
-				   [url-path (mred:url:url-path url)])
-			      (begin0
-				(cond
-				  [(and url-method 
-					(not (string=? url-method "file")))
-				   (lambda (f) (mred:url:call/input-url url f))]
-				  [(and (or (not url-method)
-					    (string=? url-method "file"))
-					(regexp-match re:html url-path))
-				   (lambda (f)
-				     (call-with-input-file (mred:url:unixpath->path url-path)
-				       f))]
-				  [else fallback])))]
-			   [else fallback]))])
-		 (if (port-proc build-edit)
-		     (begin 
-		       (when keep-locked 
-			     (lock #t))
-		       (update-directory)
-		       (install-clickbacks)
-		       (add-h-link-style)
-		       (set-file-format wx:const-media-ff-std)
-		       #t)
-		     (begin 
-		       (set-filename filename)
-		       (set! hypertags-list 
-			     (list (make-hypertag "top" 0)))
-		       #f))))]
+	       (let* ([url
+		       (cond
+			 [(and (or (null? filename) (not filename))
+			       (string? (get-filename)))
+			  (mred:url:string->url (get-filename))]
+			 [(and (string? filename)
+			       (string? (get-filename)))
+			  (mred:url:combine-url/relative (mred:url:string->url (get-filename))
+							 filename)]
+			 [(string? filename)
+			  (mred:url:string->url filename)]
+			 [else (error 'hyper-load-file "not a valid filename: ~a" filename)])]
+		      [url-string (mred:url:url->string url)]
+		      [p (mred:url:get-pure-port url)])
+		 (set-filename url-string)
+		 (dynamic-wind (lambda ()
+				 (wx:begin-busy-cursor)
+				 (begin-edit-sequence #f))
+			       (lambda () 
+				 (set! htmling? #t)
+				 (erase)
+				 (clear-undos)
+				 (mred:html:html-convert p this))
+			       (lambda ()
+				 (end-edit-sequence)
+				 (wx:end-busy-cursor)
+				 (set! htmling? #f)
+				 (close-input-port p)))
+		 (reverse-links)
+		 (set-modified #f)
+		 (when keep-locked 
+		   (lock #t))
+		 (install-clickbacks)
+		 (add-h-link-style)
+		 (set-file-format wx:const-media-ff-std)
+		 '(set! hypertags-list 
+			(list (make-hypertag "top" 0)))))]
 	    [save-file
 	     (opt-lambda ([filename ()][format wx:const-media-ff-same])
-	       (super-save-file filename format)
-	       (update-directory))]
+	       (wx:message-box "You cannot save hyper files"))]
 	    [get-region-data
 	     (lambda (start end)
 	       (let ([data-obj (make-object hyper-buffer-data%)])
@@ -669,8 +631,7 @@
 					[new-end (min end next-end)])
 				    (cons (make-hyperlink 
 					   (- new-start start)(- new-end start)
-					   (hyperlink-reference-file next-link)
-					   (hyperlink-reference-tag next-link))
+					   (hyperlink-url-string next-link))
 					  (links-loop (cdr links-left))))])))))
 		 (send data-obj set-tags-list 
 		       (let tags-loop ([tags-left hypertags-list])
@@ -701,8 +662,7 @@
 			     (add-link  
 			      (+ start (hyperlink-anchor-start next-link))
 			      (+ start (hyperlink-anchor-end next-link))
-			      (hyperlink-reference-file next-link)
-			      (hyperlink-reference-tag next-link))
+			      (hyperlink-url-string next-link))
 			     (links-loop (cdr links-left)))))
 		       (let tags-loop ([tags-left (send data get-tags-list)])
 			 (unless (null? tags-left)

@@ -55,7 +55,7 @@
 			'(lambda let let* letrec letrec* recur
 			   let/cc let/ec letcc catch
 			   let-syntax letrec-syntax syntax-case
-			   let-struct let-macro let-values
+			   let-struct let-macro let-values let*-values
 			   case when unless match
 			   let-enumerate
 			   class class* class-asi class-asi*

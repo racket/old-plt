@@ -13,9 +13,27 @@
     (define cached-name (make-vector 10 ""))
     (define cached-use (make-vector 10 0))
 
+    (define get-image-from-url
+      (lambda (url)
+	(let ([tmp-filename (wx:get-temp-file-name "img")])
+	  (call-with-output-file tmp-filename
+	    (lambda (op)
+	      (mred:url:call/input-url 
+	       url
+	       mred:url:get-pure-port
+	       (lambda (ip)
+		 (let loop ()
+		   (let ([c (read-char ip)])
+		     (unless (eof-object? c)
+		       (write-char c op)
+		       (loop)))))))
+	    'replace)
+	  (begin0 (make-object wx:image-snip% tmp-filename wx:const-bitmap-type-gif)
+		  (delete-file tmp-filename)))))
+			    
     (define cache-image
-      (lambda (filename)
-	(if (null? filename)
+      (lambda (url)
+	(if (null? url)
 	    (make-object wx:image-snip%)
 	    (let loop ([n 0])
 	      (cond
@@ -27,18 +45,13 @@
 			       (loop (add1 n) (vector-ref cached-use n))))])
 		  (let loop ([n 0])
 		    (if (= (vector-ref cached-use n) m)
-			(let ([image  (begin
-					'(printf "cache-image before building snip ~a~n" (normalize-path filename))
-					(make-object wx:image-snip%
-						   (normalize-path filename)
-						   wx:const-bitmap-type-gif))])
-			  '(printf "cache-image after building snip~n")
+			(let ([image (get-image-from-url url)])
 			  (vector-set! cached n image)
-			  (vector-set! cached-name n filename)
+			  (vector-set! cached-name n url)
 			  (vector-set! cached-use n 0)
 			  image)
 			(loop (add1 n)))))]
-	       [(string=? filename (vector-ref cached-name n))
+	       [(equal? url (vector-ref cached-name n))
 		(vector-set! cached-use n (add1 (vector-ref cached-use n)))
 		(send (vector-ref cached n) copy)]
 	       [else
@@ -70,11 +83,7 @@
 			       #\null
 			       v)))]
 
-	     [base-path (let ([f (get-filename)])
-			  (let-values ([(base name dir?) (split-path f)])
-			    (if (string? base)
-				base
-				(current-directory))))]
+	     [base-path (mred:url:string->url (get-filename))]
 	     
 	     [whitespaces (string #\space #\tab #\newline #\return)]
 
@@ -130,67 +139,43 @@
 		      (set! i-buffer null)))]
 
 	     [parse-image-source
-	      (let ([re:quote-img (regexp "SRC=\"([^\"]*)\"")]
-		    [re:img (regexp "SRC=([^ ]*)")])
+	      (let ([re:quote-img (regexp "[Ss][Rr][Cc]=\"([^\"]*)\"")]
+		    [re:img (regexp "[Ss][Rr][Cc]=([^ ]*)")])
 		(lambda (s)
 		  (let ([m (or (regexp-match re:quote-img s)
 			       (regexp-match re:img s))])
 		    (if m
-			(let ([s (mred:url:unixpath->path (cadr m))])
-			  (if (relative-path? s)
-			      (build-path base-path s)
-			      s))
+			(mred:url:combine-url/relative base-path (cadr m))
 			null))))]
 	     
 	     [parse-href
-	      (let ([re:quote-tagged (regexp "[hH][rR][eE][fF]=\"([^\"#]*)#([^\"]*)\"")]
-		    [re:tagged (regexp "[hH][rR][eE][fF]=([^ #]*)#([^ ]*)")]
-		    [re:quote-plain (regexp "[hH][rR][eE][fF]=\"([^\"]*)\"")]
-		    [re:plain (regexp "[hH][rR][eE][fF]=([^ ]*)")]
+	      (let ([re:quote-href (regexp "[hH][rR][eE][fF]=\"([^\"]*)\"")]
+		    [re:href (regexp "[hH][rR][eE][fF]=([^ ]*)")]
 		    [re:quote-name (regexp "[nN][aA][mM][eE]=\"([^\"]*)\"")]
 		    [re:name (regexp "[nN][aA][mM][eE]=([^ ]*)")]
 		    [href-error
 		     (lambda (s)
 		       (html-error "bad reference in ~s" s))])
 		(lambda (s)
-		  (let-values ([(file tag)
-				(cond 
-				 [(or (regexp-match re:quote-tagged s)
-				      (regexp-match re:tagged s))
-				  =>
-				  (lambda (m)
-				    (if (string=? (cadr m) "")
-					(values #f (caddr m))
-					(values (cadr m) (caddr m))))]
-				 [(or (regexp-match re:quote-plain s)
-				      (regexp-match re:plain s))
-				  =>
-				  (lambda (m)
-				    (values (cadr m) #f))]
-				 [else
-				  (values #f #f)])])
-			      (let ([file (if (and file (string=? file ""))
-					      (begin
-						(href-error s)
-						#f)
-					      file)]
-				    [tag (if (and tag (string=? tag ""))
-					     (begin
-					       (href-error s)
-					       "top")
-					     tag)]
-				    [label (let ([m (if file
-							#f
-							(or (regexp-match re:quote-name s)
-							    (regexp-match re:name s)))])
-					     (if m
-						 (cadr m)
-						 #f))])
-				(when tag
-				      (string-lowercase! tag))
-				(when label
-				      (string-lowercase! label))
-				(values file tag label)))))]
+		  (let* ([url-string
+			 (cond 
+			   [(or (regexp-match re:quote-href s)
+				(regexp-match re:href s))
+			    => (lambda (m)
+				 (let ([str (cadr m)])
+				   (if (string=? str "")
+				       (begin (href-error s)
+					      #f)
+				       str)))]
+			   [else #f])]
+			 [label (let ([m (if url-string
+					     #f
+					     (or (regexp-match re:quote-name s)
+						 (regexp-match re:name s)))])
+				  (if m
+				      (cadr m)
+				      #f))])
+				(values url-string label))))]
 	     
 	     ;; Make sure newline strength before pos is count
 	     [try-newline
@@ -392,8 +377,8 @@
 		      [(li dd) (break 1)]
 		      [(dt) (break 2)]
 		      [(img)
-		       (let* ([a (parse-image-source args)]
-			      [b (cache-image a)])
+		       (let* ([url (parse-image-source args)]
+			      [b (cache-image url)])
 			 (insert b pos))
 		       (atomic-values (add1 pos) #f)]
 		      [else 
@@ -459,12 +444,11 @@
 				    [(h1) (heading delta:h1)]
 				    [(h2) (heading delta:h2)]
 				    [(h3) (heading delta:h3)]
-				    [(a) (let-values ([(name tag label) (parse-href args)])
-					   (if (or name tag)
+				    [(a) (let-values ([(url-string label) (parse-href args)])
+					   (if url-string
 					       (begin
 						 (add-link pos end-pos 
-							   name
-							   (or tag "top")
+							   url-string
 							   #t)
 						 (make-link-style pos end-pos))
 					       (when label

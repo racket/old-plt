@@ -243,7 +243,7 @@
 		(send frames insert-frame this)
 		(mred:autosave:register-autosave this))
 	    
-	    (let ([filename (if (string? filename)
+	    (let ([filename (if (and (string? filename) (file-exists? filename))
 				(mzlib:file:normalize-path filename)
 				filename)])
 	      (when filename

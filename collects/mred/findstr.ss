@@ -420,6 +420,14 @@
 					 (lambda args (hide-search)) "Close")]
 	      [hidden? #f])
 	    (sequence
+	      (let ([align
+		     (lambda (x y)
+		       (let ([m (max (send x get-width)
+				     (send y get-width))])
+			 (send x user-min-width m)
+			 (send y user-min-width m)))])
+		(align search-button replace-button)
+		(align replace&search-button replace-all-button))
 	      (send search-panel stretchable-in-y #f)
 	      (for-each (lambda (x) (send* x (stretchable-in-y #f) (stretchable-in-x #f)))
 			(list middle-panel))

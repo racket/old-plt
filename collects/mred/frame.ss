@@ -184,8 +184,11 @@
 					      "n" "&New" "")
 				(make-between 'file-menu 'between-new-and-open #f)
 				(make-an-item 'file-menu:open "Open a file from disk"
-					      'mred:handler:open-file
+					      '(lambda () (mred:handler:open-file))
 					      "o" "&Open" "...")
+				(make-an-item 'file-menu:open-url "Open a Uniform Resource Locater"
+					      '(lambda () (mred:handler:open-url))
+					      #f "&Open Url" "...")
 				(make-between 'file-menu 'between-open-and-save #f)
 				(make-an-item 'file-menu:revert 
 					      "Revert this file to the copy on disk"

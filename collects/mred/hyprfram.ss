@@ -8,7 +8,7 @@
 	    [mred:hyper-edit : mred:hyper-edit^]
 	    [mred:hyper-dialog : mred:hyper-dialog^]
 	    [mred:container : mred:container^]
-	    [mred:editor-frame : mred:editor-frame^]
+	    [mred:frame : mred:frame^]
 	    [mred:canvas : mred:canvas^]
 	    [mred:group : mred:group^]
 	    [mred:handler : mred:handler^])
@@ -104,29 +104,22 @@
 	(class super% ([file-name #f] [group #f] [keep-locked? #t]
 		       [tag "top"] [relative? #f])
 	  (inherit canvas edit panel make-menu menu-bar% show on-size)
-	  (rename [super-open-file open-file])
 	  (public
 	    [get-edit% (lambda () mred:hyper-edit:hyper-edit%)]
 	    [get-canvas% (lambda () hyper-canvas%)]
-	    [get-panel%  
-	     (lambda ()
-	       (class-asi mred:container:vertical-panel%
-			  (public
-			    [default-spacing-width 0]
-			    [default-border-width 2])))]
 	    [file-menu:between-print-and-close
 	     (lambda (file-menu)
 	       (send file-menu append-separator))]
 	    [make-edit
 	     (lambda ()
-	       (make-object (get-edit%) #t))]
-	    [button% mred:container:button%])
+	       (make-object (get-edit%) #t))])
 	  (private
 	    [do-backward
 	     (lambda (button event)
 	       (let* ([backs (ivar canvas history-stack)]
 		      [fors (ivar canvas forward-stack)])
-		 (when (not (or (null? backs)(null? (cdr backs))))
+		 (unless (or (null? backs)
+			     (null? (cdr backs)))
 		   (send canvas set-the-tag (cdadr backs))
 		   (send canvas set-media (caadr backs))
 		   (send canvas set-history (cdr backs))
@@ -154,25 +147,22 @@
 			  (set-history (cons home backs))
 			  (set-forward ())))
 		 (send canvas set-focus)))])
-	  (public
-	    [open-file 
-	     (opt-lambda (filename [tag #f])
-	       (send canvas set-the-tag tag)
-	       (super-open-file filename))])
 	  (sequence
-	    (super-init file-name #f (if group group hyper-frame-group)))
+	    (mred:debug:printf 'super-init "hyper-basic-frame; file-name: ~a" file-name)
+	    (super-init file-name)
+	    (send edit load-file file-name))
 	  
 	  (private
-	    (button-panel (make-object mred:container:horizontal-panel% panel))
-	    (backward-button
-	     (make-object button% 
-			  button-panel do-backward "Back"))
-	    (forward-button
-	     (make-object button%
-			  button-panel do-forward "Forward"))
-	    (home-button
-	     (make-object button%
-			  button-panel do-home "Home")))
+	    [button-panel (make-object mred:container:horizontal-panel% panel)]
+	    [backward-button
+	     (make-object mred:container:button%
+			  button-panel do-backward "Back")]
+	    [forward-button
+	     (make-object mred:container:button%
+			  button-panel do-forward "Forward")]
+	    [home-button
+	     (make-object mred:container:button%
+			  button-panel do-home "Home")])
 	  (sequence
 	    (send button-panel stretchable-in-y #f)
 	    (send panel change-children reverse)
@@ -181,23 +171,17 @@
 		          (set-history ())
 			  (adjust-stacks-on-follow tag))
 	    (show #t)))))
-    (define hyper-basic-frame% (make-hyper-basic-frame% mred:editor-frame:editor-frame%))
 
-    (define make-hyper-view-frame%
-      (lambda (super%)
-	(class-asi super%
-	  (inherit show)
-	  (public
-	    [file-menu:close (lambda () (show #f))]))))
+    (define hyper-basic-frame% (make-hyper-basic-frame% mred:frame:simple-menu-frame%))
 
-    (define hyper-view-frame% 
-      (make-hyper-view-frame% hyper-basic-frame%))
+    (define make-hyper-view-frame% make-hyper-basic-frame%)
 
+    (define hyper-view-frame% (make-hyper-view-frame% mred:frame:simple-menu-frame%))
     
     (define make-hyper-make-frame%
       (lambda (super%)
 	(class super% ([file-name #f] [group #f])
-	  (inherit active-edit active-canvas get-menu-bar make-menu get-edit%)
+	  (inherit active-edit active-canvas get-menu-bar make-menu get-edit% edit)
 	  (rename [super-make-menu-bar make-menu-bar])
 	  (private
 	    follow-item 
@@ -299,8 +283,7 @@
 		 (send menu-bar check follow-item #t)
 		 menu-bar))])
 	  (sequence
-	    (super-init file-name group #f)
-	    ; (wx:yield)
+	    (super-init file-name)
 	    (when (active-canvas)
 	      (send (active-canvas) set-focus)
 	      (send (active-canvas) set-locking #f))))))

@@ -1,3 +1,4 @@
+
 (define mred@
   (let* ([debug/s@ (unit->unit/sig mred:debug@ () mred:debug^)]
 	 [mred:plt-home-directory mred:plt-home-directory]
@@ -25,7 +26,9 @@
 	    [mode : mred:mode^
 		  (mred:mode@ debug keymap)]
 	    [handler : mred:handler^
-		     (mred:handler@ debug group gui-utils editor-frame finder (core file@))] 
+		     (mred:handler@ debug group gui-utils 
+				  editor-frame finder hyper-frame
+				  (core file@))] 
 	    [keymap : mred:keymap^
 		    (mred:keymap@ debug preferences exit finder handler
 				find-string scheme-paren gui-utils)]
@@ -73,7 +76,7 @@
 			 (mred:scheme-mode@ debug preferences application container
 					  mode match-cache paren scheme-paren icon
 					  handler keymap (core string@))]
-	    [url : mred:url^ (mred:url@)]
+	    [url : mred:url^ (mred:url@ (core function@))]
 	    [hyper-dialog : mred:hyper-dialog^ 
 			  (mred:hyper-dialog@ debug hyper-edit (core file@))]
 	    [hyper-edit : mred:hyper-edit^ 
@@ -81,7 +84,7 @@
 					  (core file@) (core string@))]
 	    [hyper-frame : mred:hyper-frame^ 
 			 (mred:hyper-frame@ debug hyper-edit hyper-dialog container
-					  editor-frame canvas group handler)]
+					  frame canvas group handler)]
 	    [html : mred:html^ (mred:html@ debug url
 					   (core file@) (core string@))])
       (export (unit debug)

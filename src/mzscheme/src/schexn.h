@@ -13,7 +13,6 @@ enum {
   MZEXN_APPLICATION_MISMATCH,
   MZEXN_APPLICATION_DIVIDE_BY_ZERO,
   MZEXN_APPLICATION_CONTINUATION,
-  MZEXN_ELSE,
   MZEXN_STRUCT,
   MZEXN_SYNTAX,
   MZEXN_READ,
@@ -53,7 +52,6 @@ static exn_rec exn_table[] = {
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 2, NULL, NULL, 0 },
-  { 2, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
@@ -91,7 +89,6 @@ static exn_rec *exn_table;
   exn_table[MZEXN_APPLICATION_MISMATCH].args = 3;
   exn_table[MZEXN_APPLICATION_DIVIDE_BY_ZERO].args = 3;
   exn_table[MZEXN_APPLICATION_CONTINUATION].args = 3;
-  exn_table[MZEXN_ELSE].args = 2;
   exn_table[MZEXN_STRUCT].args = 2;
   exn_table[MZEXN_SYNTAX].args = 3;
   exn_table[MZEXN_READ].args = 3;
@@ -140,7 +137,6 @@ static const char *MZEXN_MISC_USER_BREAK_FIELDS[1] = { "continuation" };
   SETUP_STRUCT(MZEXN_APPLICATION_MISMATCH, EXN_PARENT(MZEXN_APPLICATION), "exn:application:mismatch", 0, NULL)
   SETUP_STRUCT(MZEXN_APPLICATION_DIVIDE_BY_ZERO, EXN_PARENT(MZEXN_APPLICATION), "exn:application:divide-by-zero", 0, NULL)
   SETUP_STRUCT(MZEXN_APPLICATION_CONTINUATION, EXN_PARENT(MZEXN_APPLICATION), "exn:application:continuation", 0, NULL)
-  SETUP_STRUCT(MZEXN_ELSE, EXN_PARENT(MZEXN), "exn:else", 0, NULL)
   SETUP_STRUCT(MZEXN_STRUCT, EXN_PARENT(MZEXN), "exn:struct", 0, NULL)
   SETUP_STRUCT(MZEXN_SYNTAX, EXN_PARENT(MZEXN), "exn:syntax", 1, MZEXN_SYNTAX_FIELDS)
   SETUP_STRUCT(MZEXN_READ, EXN_PARENT(MZEXN), "exn:read", 1, MZEXN_READ_FIELDS)

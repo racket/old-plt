@@ -89,7 +89,7 @@ static void register_traversers(void);
 static Scheme_Object *any_symbol, *any_one_symbol;
 static Scheme_Object *cr_symbol, *lf_symbol, *crlf_symbol;
 
-static Scheme_Object *all_symbol, *non_elaboration_symbol, *none_symbol;
+static Scheme_Object *all_symbol, *none_symbol;
 
 static Scheme_Object *default_read_handler;
 static Scheme_Object *default_display_handler;
@@ -129,11 +129,9 @@ scheme_init_port_fun(Scheme_Env *env)
   crlf_symbol = scheme_intern_symbol("return-linefeed");
 
   REGISTER_SO(all_symbol);
-  REGISTER_SO(non_elaboration_symbol);
   REGISTER_SO(none_symbol);
   
   all_symbol = scheme_intern_symbol("all");
-  non_elaboration_symbol = scheme_intern_symbol("non-elaboration");
   none_symbol = scheme_intern_symbol("none");
   
   scheme_write_proc = scheme_make_prim_w_arity(sch_write, 
@@ -2309,8 +2307,6 @@ static Scheme_Object *compiled_kind_p(int argc, Scheme_Object **argv)
   Scheme_Object *o = argv[0];
   
   if (SAME_OBJ(o, all_symbol))
-    return o;
-  if (SAME_OBJ(o, non_elaboration_symbol))
     return o;
   if (SAME_OBJ(o, none_symbol))
     return o;

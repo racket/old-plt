@@ -26,8 +26,6 @@ strings are types/comments.
 		  (divide-by-zero [] "divide by zero; \\scm{application-value} is always zero")
 		  (*continuation [] "attempt to cross a continuation boundary or apply another thread's continuation"))
      
-     (*else [] "fall-through in \\scmfirst{cond} or \\scmfirst{case}")
-
      (*struct [] "the supertype expression in a \\scmfirst{struct} form returned a value that was not a structure type value")
 
      (syntax [expr "S-expression" "illegal expression (or \\scm{\\#f} if unknown)"]

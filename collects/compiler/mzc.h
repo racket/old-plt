@@ -3,7 +3,7 @@
 #include <stdarg.h>
 
 #define GLOBAL_VARREF(x) ((x)->val ? (Scheme_Object *)(x)->val : \
-  (scheme_unbound_global((Scheme_Object*)(x)->key), (Scheme_Object *)NULL))
+  (scheme_unbound_global(x), (Scheme_Object *)NULL))
 #define CHECK_GLOBAL_BOUND(x) \
     if (!(x)->val) scheme_raise_exn(MZEXN_UNIT, \
 				    "invoke-unit: cannot link to undefined identifier: %S", \
@@ -108,7 +108,13 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
 	Scheme_Object ** field_names;
 	Scheme_Object * type_name, * field_names_list, * v;
 	Scheme_Object ** struct_names, ** struct_values;
+	Scheme_Object * inspector = NULL;
 	int count;
+
+	if (super && (SCHEME_TYPE(super) == scheme_inspector_type)) {
+	  inspector = super;
+	  super = NULL;
+	}
 
 	if (super && !SAME_TYPE(SCHEME_TYPE(super), scheme_struct_type_type))
 	  scheme_raise_exn(MZEXN_STRUCT,
@@ -125,7 +131,7 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
 	}
 	va_end(marker);
 	field_names_list = scheme_build_list(n_fields, field_names);
-	type_name = scheme_make_struct_type(scheme_intern_symbol(name), super, n_fields);
+	type_name = scheme_make_struct_type(scheme_intern_symbol(name), super, inspector, n_fields);
 	struct_names = scheme_make_struct_names(scheme_intern_symbol(name), field_names_list, 0, &count);
 	struct_values = scheme_make_struct_values(type_name, struct_names, count, 0);
 

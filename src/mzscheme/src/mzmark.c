@@ -1598,34 +1598,6 @@ int mark_comp_env_FIXUP(void *p) {
 }
 
 
-int mark_const_binding_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Constant_Binding));
-}
-
-int mark_const_binding_MARK(void *p) {
-  Constant_Binding *b = (Constant_Binding *)p;
-    
-  gcMARK(b->name);
-  gcMARK(b->val);
-  gcMARK(b->next);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(Constant_Binding));
-}
-
-int mark_const_binding_FIXUP(void *p) {
-  Constant_Binding *b = (Constant_Binding *)p;
-    
-  gcFIXUP(b->name);
-  gcFIXUP(b->val);
-  gcFIXUP(b->next);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(Constant_Binding));
-}
-
-
 int mark_resolve_info_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Resolve_Info));

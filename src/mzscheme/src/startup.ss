@@ -1309,7 +1309,7 @@
     (lambda (stx)
       (syntax-case* stx () module-identifier=?
 	[(_ stxe kl clause ...)
-	 (syntax (syntax-case* stxe kl #f clause ...))])))
+	 (syntax (syntax-case* stxe kl module-identifier=? clause ...))])))
 
   ;; Like syntax, but also takes a syntax object
   ;; that supplies a source location for the

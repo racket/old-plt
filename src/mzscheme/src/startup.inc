@@ -1132,7 +1132,7 @@
 "(lambda(stx)"
 "(syntax-case* stx() module-identifier=?"
 "((_ stxe kl clause ...)"
-"(syntax(syntax-case* stxe kl #f clause ...))))))"
+"(syntax(syntax-case* stxe kl module-identifier=? clause ...))))))"
 "(define-syntax syntax/loc"
 "(lambda(stx)"
 "(syntax-case* stx() module-identifier=?"

@@ -1074,21 +1074,8 @@ static int tcp_check_connect(Scheme_Object *connector)
     return 0;
   if (FD_ISSET(s, exnfds))
     return -1;
-  else {
-# ifdef USE_WINSOCK_TCP
-    if (scheme_stupid_windows_machine > 0) {
-      /* Windows 95. select() doesn't work on non-blocking sockets. */
-      if (recv(s, NULL, 0, 0)) {
-	/* error ... */
-	if (WSAGetLastError() == WSAEWOULDBLOCK)
-	  /* Not yet ready */
-	  return 0;
-      }
-    }
-# endif
-
+  else
     return 1;
-  }
 #else
   return 0;
 #endif
@@ -1917,6 +1904,18 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 	    errno = status; /* for error reporting, below */
 	  }
 
+#ifdef USE_WINSOCK_TCP
+	  if (scheme_stupid_windows_machine > 0) {
+	    /* getsockopt() seems not to work in Windows 95, so use the
+	       result from select(), which seems to reliably detect an error condition */
+	    if (!status) {
+	      if (tcp_check_connect((Scheme_Object *)s) == -1) {
+		status = 1;
+		errno = WSAECONNREFUSED; /* guess! */
+	      }
+	    }
+	  }
+#endif
 	  /* Old way to test for success.
 	   * This seems to cause a problem on later Linux kernels.
 	   * Thanks to John R. Hall for tracking down the problem.

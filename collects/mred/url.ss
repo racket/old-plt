@@ -41,7 +41,7 @@
 					    (url->string arg)
 					    arg))
 				     args))))
-	  (gui:message-box s "URL Error")
+	  (gui:message-box s "Malformed URL")
 	  (raise (mred:make-exn:url s ((debug-info-handler)))))))
 
     ;; if the path is absolute, it just arbitrarily picks the first

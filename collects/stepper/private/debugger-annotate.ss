@@ -10,7 +10,13 @@
   ; what does the iterator need to know about 
   
   ; (-> (-> 
-  '(define (syntax-object-iterator fn stx)
+  (define syntax-object-iterator 
+    (contract
+     (-> (-> syntax-object? syntax-object?)
+         syntax-object?
+         syntax-object?)
+     (lambda (fn stx)
+    
     (kernel:kernel-syntax-case stx
       [(lambda . clause)
        ...]

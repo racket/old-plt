@@ -121,7 +121,7 @@
 	(sgml:gen-may-contain (call-with-input-file (find-library "html-spec" "html") read)))
 
       (define may-contain-anything
-	(sgml:gen-may-contain #f))
+	(sgml:gen-may-contain null))
 
       (define use-html-spec (make-parameter #t))
       

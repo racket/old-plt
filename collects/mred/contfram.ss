@@ -16,11 +16,12 @@
     (define counter 0)  ; used in debugging
     
     ; this is the size of the border that the window system automatically
-    ; places between a panel and its frame.
-    (define XT-BORDER-SIZE
+    ; places between a panel and its frame.  I did it this way to make it
+    ; easily modifiable if necessary.
+    (define WX-BORDER-SIZE
       (case wx:window-system
+	[(xt)  2]  ; grrrr....
 	[(motif) 0]
-	[(xt) 2]
 	[(windows) 0]
 	[(macintosh) 0]))
 
@@ -44,7 +45,6 @@
       (lambda (base%)
 	(class base% args
 	  (inherit
-;	    set-size
 	    get-x
 	    get-y
 	    get-width
@@ -102,9 +102,9 @@
 		   "sizing panel, forcing redraw, and quitting."))
 		(let-values ([(client-w client-h)
 			      (get-two-int-values get-client-size)])
-		  (send panel set-size XT-BORDER-SIZE XT-BORDER-SIZE
-		    (- client-w (* 2 XT-BORDER-SIZE))
-		    (- client-h (* 2 XT-BORDER-SIZE))))
+		  (send panel set-size WX-BORDER-SIZE WX-BORDER-SIZE
+		    (- client-w (* 2 WX-BORDER-SIZE))
+		    (- client-h (* 2 WX-BORDER-SIZE))))
 		(force-redraw))]
 	    
 	    ; undocumented hook to allow me to get the panel for debugging
@@ -160,13 +160,13 @@
 			  (mred:debug:printf
 			    'container-frame-correct-size
 			    "container-frame-correct-size: setting panel's size to ~s ~s ~s ~s"
-			    XT-BORDER-SIZE XT-BORDER-SIZE
-			    (- f-client-w (* 2 XT-BORDER-SIZE))
-			    (- f-client-h (* 2 XT-BORDER-SIZE)))
+			    WX-BORDER-SIZE WX-BORDER-SIZE
+			    (- f-client-w (* 2 WX-BORDER-SIZE))
+			    (- f-client-h (* 2 WX-BORDER-SIZE)))
 			  (send panel set-size
-			    XT-BORDER-SIZE XT-BORDER-SIZE
-			    (- f-client-w (* 2 XT-BORDER-SIZE))
-			    (- f-client-h (* 2 XT-BORDER-SIZE)))))
+			    WX-BORDER-SIZE WX-BORDER-SIZE
+			    (- f-client-w (* 2 WX-BORDER-SIZE))
+			    (- f-client-h (* 2 WX-BORDER-SIZE)))))
 		      (let-values ([(panel-client-w panel-client-h)
 				    (get-two-int-values
 				      (ivar panel get-client-size))])

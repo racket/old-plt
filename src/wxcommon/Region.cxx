@@ -1375,7 +1375,7 @@ Bool wxPolygonPathRgn::Install(long target, Bool reverse, Bool align)
     for (i = n-1; i--; ) {
       xx = XFormX(points[i].x + xoffset, align);
       yy = XFormY(points[i].y + yoffset, align);
-      CGPathAddLineToPoint(CGPATH, CGXFORM, points[i].x + xoffset, points[i].y + yoffset);
+      CGPathAddLineToPoint(CGPATH, CGXFORM, xx, yy);
     }
   } else {
     int i;
@@ -1385,7 +1385,7 @@ Bool wxPolygonPathRgn::Install(long target, Bool reverse, Bool align)
     for (i = 1; i < n; i++) {
       xx = XFormX(points[i].x + xoffset, align);
       yy = XFormY(points[i].y + yoffset, align);
-      CGPathAddLineToPoint(CGPATH, CGXFORM, points[i].x + xoffset, points[i].y + yoffset);
+      CGPathAddLineToPoint(CGPATH, CGXFORM, xx, yy);
     }
   }
   CGPathCloseSubpath(CGPATH);

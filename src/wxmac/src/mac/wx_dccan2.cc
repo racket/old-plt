@@ -534,7 +534,7 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
 {
   wxRegion *rgn;
   Point *xpoints1;
-  int i, j;
+  int i, j, dpx, dpy;
   PolyHandle thePolygon;
 
   if (!Ok() || !cMacDC) return;
@@ -617,6 +617,11 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
 	PaintPoly(thePolygon);
     }
   }
+
+  dpx = (XLOG2DEVREL(current_pen->GetWidth()) >> 1);
+  dpy = (YLOG2DEVREL(current_pen->GetWidth()) >> 1);
+
+  OffsetPoly(thePolygon, -dpx, -dpy);
 
   if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
     wxMacSetCurrentTool(kPenTool);
@@ -753,8 +758,15 @@ void wxCanvasDC::DrawPath(wxPath *p, double xoffset, double yoffset, int fillSty
     }
   }
   if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+    int dpx, dpy;
+
     wxMacSetCurrentTool(kPenTool);
+
+    dpx = (XLOG2DEVREL(current_pen->GetWidth()) >> 1);
+    dpy = (YLOG2DEVREL(current_pen->GetWidth()) >> 1);
+
     if (cnt == 1) {
+      OffsetPoly(thePolygon, -dpx, -dpy);
       FramePoly(thePolygon);
     } else {
       for (i = 0, k = 0; i < cnt; i++) {
@@ -770,6 +782,7 @@ void wxCanvasDC::DrawPath(wxPath *p, double xoffset, double yoffset, int fillSty
 	  k++;
 	}
 	ClosePoly();
+	OffsetPoly(thePolygon, -dpx, -dpy);
 	FramePoly(thePolygon);
 	KillPoly(thePolygon);
 	thePolygon = NULL;

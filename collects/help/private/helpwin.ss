@@ -93,7 +93,7 @@
                                 [done (lambda ()
                                         (framework:preferences:set 'drscheme:help-desk:last-url-string s)
                                         (send d show #f))])
-                           (with-handlers ([(lambda (x) #t)
+                           (with-handlers ([not-break-exn?
                                             (lambda (x)
                                               (if (exn:file-saved-instead? x)
                                                   (done)
@@ -409,7 +409,7 @@
 					; Try to see if this is a link to missing documentation.
 					; Many things can go wrong; give up if anything does...
 				   (let/ec escape
-				     (with-handlers ([(lambda (x) #t)
+				     (with-handlers ([not-break-exn?
 						      (lambda (x) void)])
 				       (let ([start (send (send (get-canvas) get-editor) get-url)])
 					 (when (or (not start)
@@ -489,7 +489,7 @@
                                                                (if (null? l)
                                                                    s
                                                                    (loop (format "~a or ~s" s (car l)) (cdr l)))))
-                                                     (with-handlers ([(lambda (x) #t)
+                                                     (with-handlers ([not-break-exn?
                                                                       (lambda (x) "")])
                                                        (if (url? url)
                                                            (let ([scheme (url-scheme url)])
@@ -613,7 +613,7 @@
                  ; if the initial-url is bad, goto the default
                  ; initial page and re-raise the exception to
                  ; be reported to the user.
-                 (with-handlers ([(lambda (x) #t)
+                 (with-handlers ([not-break-exn?
                                   (lambda (x)
                                     (send html-panel goto-init-page)
                                     (raise x))])
@@ -634,7 +634,7 @@
               (define enbolden (make-object style-delta% 'change-bold))
               
               (define (find-start key name)
-                (with-handlers ([void (lambda (x) #f)])
+                (with-handlers ([not-break-exn? (lambda (x) #f)])
                   (let ([l (string-length key)])
                     (let loop ([n 0])
                       (if (string=? key (substring name n (+ n l)))
@@ -771,7 +771,6 @@
                                                 #f)
                                           (send editor lock #t)))
                                       #f))])
-                    
                     (dynamic-wind
                      (lambda ()
                        (begin-busy-cursor)
@@ -789,9 +788,10 @@
                                         regexp?
                                         exact?
                                         ckey 
-                                        (lambda ()
-                                          (set! maxxed-out? #t)
-                                          (break-thread (current-thread)))
+                                        (let ([search-thread (current-thread)])
+                                          (lambda ()
+                                            (set! maxxed-out? #t)
+                                            (break-thread search-thread)))
                                         add-doc-section
                                         add-kind-section
                                         add-choice))

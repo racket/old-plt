@@ -138,17 +138,11 @@
 
     [URL : mzlib:url^
 	 ((require-library "urlr.ss" "net") (MZLIB file))]
-    [BTREE : relative-btree^ ((require-library "btree.ss" "browser"))]
-    [BULLET : bullet-snip^ ((require-library "bullet.ss" "browser") MRED)]
-    [HTML : browser:html^ ((require-library "html.ss" "browser") 
-			   (MZLIB file)
-			   (MZLIB string)
-			   BTREE URL BULLET MRED)]	
     [BROWSER : browser^
-	     ((require-library "hyper.ss" "browser")
-	      HTML 
+	     ((require-library "browserr.ss" "browser")
 	      (MZLIB function)
 	      (MZLIB string)
+	      (MZLIB file)
 	      URL MRED)]
 
     ; end browser units

@@ -142,6 +142,8 @@
 		   INTERFACE (MZLIB pretty-print) 
 		   (MZLIB file))]
 
+	  [URL : mzlib:url^
+	       ((require-library "urlr.ss" "net") (MZLIB file))]
 	  [BROWSER : browser^
 		   ((require-library "browserr.ss" "browser")
 		    (MZLIB function)

@@ -25,9 +25,18 @@
  (close "Luk") ;; as in, close an open window
  (stop "Stop")
  (&stop "&Stop") ;; for use in button and menu item labels, with short cut.
+ (are-you-sure-delete? "Er du sikker på, du vil slette ~a?") ;; ~a is a filename or directory name
+ (ignore "Ignorer")
+ (revert "Gendan")
+
+ ;; label for a generic check box, often supported on dialogs
+ ;; that ask a binary choice of the user. If checked, the
+ ;; dialog isn't going to be shown again.
+ (dont-ask-again "Spørg ikke igen (brugt altid nuværende valg)")
 
  ;;; important urls
  (web-materials "Relaterede websites") ;; menu item title
+ (tool-web-sites "Tool Web Sites")   ;; menu item title
  (drscheme-homepage "DrScheme")
  (plt-homepage "PLT")
  (how-to-use-scheme "How to Use Scheme") ;; title of a book.
@@ -82,6 +91,13 @@
  (cs-rename-id "Omdøb navn")
  (cs-rename-var-to "Omdøb ~a til:")
  (cs-name-duplication-error "Det nye navn, du har valgt, ~s, er i konflikt med et allerede eksisterende navn i dette virkefelt.")
+ (cs-status-init "Syntakstjek: Initialiserer omgivelser for brugerkode")
+ (cs-status-coloring-program "Syntakstjek: farver udtryk")
+ (cs-status-eval-compile-time "Syntakstjek: evaluering på oversættelsestid")
+ (cs-status-expanding-expression "Syntakstjek: Udvider (expanding) udtryk")
+ (cs-status-teachpacks "Syntakstjek: installerer undervisningspakke")
+ (cs-mouse-over-variable-import "variabel ~s importeret fra ~s")
+ (cs-mouse-over-syntax-import "syntaks ~s importeret fra ~s")
 
  ;;; info bar at botttom of drscheme frame
  (collect-button-label "GC")
@@ -117,6 +133,19 @@
  (close-anyway "Luk alligevel")
  (clear-anyway "Rens Anyway")
 
+ ;; menu item title
+ (log-definitions-and-interactions "Log definitioner og interaktioner...")
+ (stop-logging "Stop logføring")
+ (please-choose-a-log-directory "Vælg en mappe til loggen")
+ (logging-to "Log til: ")
+ (erase-log-directory-contents "Slet indholdet af log-mappen: ~a?")
+ (error-erasing-log-directory "Fejl under sletning ad log-mappens indhold.\n\n~a\n")
+
+ ;; modes
+ (mode-submenu-label "Tilstande")
+ (scheme-mode "Scheme-tilstand")
+ (text-mode "Tekst-tilstand")
+
  (url "URL")
  (url: "URL:")
  (open-url... "Åbn URL...")
@@ -126,69 +155,98 @@
  (bad-url:this "Ugyldig URL: ~a")
 
  ;; Help Desk
- (search-results "Søgeresultater")
- (help-desk "Hjælpebord")
- (help-desk-n "Hjælpebord ~a")
- (about-help-desk "Om hjælpebord")
- (help-desk-about-string
-  "Hjælpebordet indeholder al dokumention om PLT software, inklusive DrScheme, MzScheme og MrEd.\n\nVersion ~a\nCopyright (c) 1995-2001 PLT")
- (help-on-help "Hjælp til hjælp")
- (help-on-help-details "Brug hjælpebordet til at få hjælp. Følg linket `How to use Help Desk' på hjælpebordets startside.
-(For at komme til hjemmesiden, hvis du ikke allerede er der, skal du klikke på `Hjem'-knappen i toppen af hjælpebordets vindue.)")
- (plt:hd:find-docs-for "Find dokumentation om:")
- (search "Søg")
- ; next 3 are popup menu choices at bottom of help desk window
- (search-for-keyword "efter Nøgleord")
- (search-for-keyword-or-index "efter Nøgleord eller Indekseringsopslag")
- (search-for-keyword-or-index-or-text "for Nøgleord, Indekseringsopslag eller Tekst")
- (exact-match "præcis match")
- (containing-match "indeholdende match")
- (regexp-match "regexp match")
- (plt:hd:feeling-lucky "Jeg er heldig")
- (nothing-found-for-search-key "Ingenting blev fundet om \"~a\".")
- (searching "Søger...")
- (search-stopped "(Søgning stoppet.)")
- (search-stopped-too-many-matches "(Søgning stoppet - fandt for mange matches.)")
- (reload "Opdater")
  (help "Hjælp")
- (searching... "Søger...")
- (nothing-found-for-empty-search "Den tomme søgning finder ingenting")
- (nothing-found-for "Ingenting fundet om ~a")
- (and "og")
- (error-finding-docs "Kunne ikke finde dokumentation.\n\n~a")
- (manual-installed-date "(installeret ~a)")
-
+ (help-desk "Hjælpebord")
+ (plt:hd:search-results "Søgeresultater")
+ (plt:hd:search "Søg")
+ (plt:hd:search-for "Søg efter")
+ (plt:hd:lucky "Heldig!")
+ (plt:hd:feeling-lucky "Jeg føler mig heldig")
+ (plt:hd:stop "Stop")   
+ (plt:hd:options "Indstillinger") 
+ (plt:hd:configure "Konfigurer")
+ (plt:hd:home "Hjælpebordets start") 
+ (plt:hd:show-manuals "Vis manualer") 
+ (plt:hd:send-bug-report "Send fejlrapport")
+ (plt:hd:query-bug-reports "Søg efter fejlrapporter")
+ ; next 3 are popup menu choices in help desk search frame
+ (plt:hd:search-for-keyword "Nøgleord")
+ (plt:hd:search-for-keyword-or-index "Nøgleord eller indekseret opslag")
+ (plt:hd:search-for-keyword-or-index-or-text "Nøgleord, indekseret opslag eller tekst")
+ (plt:hd:exact-match "præcis match")
+ (plt:hd:containing-match "indeholdende match")
+ (plt:hd:regexp-match "regulært udtryk")
+ (plt:hd:find-docs-for "Find dokumentation om:")
+ (plt:hd:nothing-found-for-search-key "Intet fundet om \"~a\".")
+ (plt:hd:searching "Søger...")
+ (plt:hd:search-stopped "[Søgning stoppet.]")
+ (plt:hd:search-stopped-too-many-matches "[Søgning afbrudt: for mange resultater")
+ (plt:hd:nothing-found-for "Intet fundet om ~a")
+ (plt:hd:error-finding-docs "Kunne ikke finde dokumentation.\n\n~a")
+ (plt:hd:and "og")
+ (plt:hd:refresh "opdater")
+ (plt:hd:refresh-all-manuals "opdater alle manualer")
+ (plt:hd:manual-installed-date "(~a installeret)")
+ ; Help Desk configuration
+ (plt:hd:configuration "PLT Hjælpebordskonfiguration")
+ (plt:hd:no-frames "Ingen rammer (frames)")
+ (plt:hd:use-frames "Brug rammer (frames)")
+ (plt:hd:use-html-frames "Brug HTML-rammer")
+ (plt:hd:search-pane-options "Indstillinger for søgepanel")
+ (plt:hd:height "Højde")
+ (plt:hd:bg-color "Baggrundsfarve")
+ (plt:hd:pixels "pixels")
+ (plt:hd:text-color "Tekstfarve")
+ (plt:hd:link-color "Linkfarve")
+ (plt:hd:text-sample "Søgepanelet har denne farve")
+ (plt:hd:link-sample "Links i søgepanelet har denne farve")
+ (plt:hd:save-changes "Gem ændringer")
+ (plt:hd:reset "Reset")
+ (plt:hd:defaults "Standardindstillinger")
+ (plt:hd:javascript-note
+    "De valg du gør vil blive vist her, hvis du har JavaScript sat til, og en ny moderne standard-følgende browser.")
  ;; refreshing manuals
- (plt:hd:refreshing-manuals "Downloader manualer igen")
- (plt:hd:refresh-downloading... "Downloader ~a...")
+ (plt:hd:refresh-downloading "Henter ~a")
+ (plt:hd:refresh-installing "Installerer ~a")
+ (plt:hd:refresh-progress "PLT-manualhentningsfremskridt")
+ (plt:hd:refresh-done "Færdig med at opdatere CVS-manualer")
+ (plt:hd:refresh-installation-log "Installationslog")
+ (plt:hd:refresh-stopped "Opdatering af PLT-manualer stoppet")
+ (plt:hd:refreshing-manuals "Genhenter manualer")
+ (plt:hd:refresh-downloading... "Henter ~a...")
  (plt:hd:refresh-deleting... "Sletter gammel version af ~a...")
  (plt:hd:refresh-installing... "Installerer ny version af ~a...")
- (reload "Opdater")
-
- ;;; help-desk-specific menus
- (new-help-desk "Nyt hjælpebord")
-
+ (plt:hd:refreshing-manuals-finished "Færdig.")
  (plt:hd:about-help-desk "Om hjælpebord")
  (plt:hd:help-desk-about-string
-  "Hjælpebordet indeholder al dokumention om PLT software, inklusive DrScheme, MzScheme og MrEd.\n\nVersion ~a\nCopyright (c) 1995-2001 PLT")
- (plt:hd:help-on-help "Hjælp til hjælp")
- (plt:hd:help-on-help-details "Brug hjælpebordet til at få hjælp. Følg linket `How to use Help Desk' på hjælpebordets startside. (For at komme til hjemmesiden, hvis du ikke allerede er der, skal du klikke på `Hjem'-knappen i toppen af hjælpebordets vindue.)")
+  "Hjælpebord er en fuldstændig kilde af information om PLT-software, inklusive DrScheme, MzScheme og MrEd.\n\nVersion ~a\nCopyright (c) 1995-2003 PLT")
+ (plt:hd:help-on-help "Hjælp om hjælp")
+ (plt:hd:help-on-help-details "For hjælp om Hjælpebord, følg linket `How to use Help Desk'-linket på hjælpebordets startside.")
+  (reload "Opdater") ;; refresh the page in a web browser
+  (plt:hd:ask-about-separate-browser
+   "Du har valgt et link til indhold på internettet. Vil du se det i Hjælpebordsbrwoseren eller i et separat browserprogram?")
+  (plt:hd:homebrew-browser "Hjælpebordsbrowser") ;; choice for the above string (in a button)
+  (plt:hd:separate-browser "Separat browser") ;; other choice for the above string (also in a button)
+  (plt:hd:external-link-in-help "Eksterne URL'er i hjælp")
+  (plt:hd:use-homebrew-browser "Brug hjælpebordsbrowseren til eksterne URL'er")
+  (plt:hd:new-help-desk "Nyt hjælpebord")
 
  ; help desk htty proxy
- (http-proxy "HTTP Proxy")
+ (http-proxy "HTTP-proxy")
  (proxy-direct-connection "Direkte forbindelse")
  (proxy-use-proxy "Benyt proxyen:")
  (proxy-host "Host")
  (proxy-port "Port")
- (proxy-bad-host "Ugyldig Proxy Host")
+ (proxy-bad-host "Ugyldig proxyvært")
 
  ;; browser
  (rewind-in-browser-history "Tilbage")
  (forward-in-browser-history "Fremad")
  (home "Hjem")
  (browser "Browser")
+ (external-browser-choice-title "Ekstern browser") ; title for radio-button set
  (choose-browser "Vælg en browser")
- ;; (no-browser "Ingen") ; English changed from "None" to "Ask Later"
+ (no-browser "Spørg senere") ; English changed from "None" to "Ask Later"
  (cannot-display-url "Kan ikke vise URL ~s: ~a")
  (install? "Installér?")  ;; if a .plt file is found (title of dialog)
  (you-have-selected-an-installable-package "Du har valgt en pakke, som kan installeres.")
@@ -212,9 +270,14 @@
  (install-plt-url "URL:")
 
  ;; install plt file when opened in drscheme strings
- (install-plt-file "Installér ~a eller åbn for at redigere?")
- (install-plt-file/yes "Installér")
- (install-plt-file/no "Redigér")
+ (install-plt-file "Installer ~a eller åbn for at redigere?")
+ (install-plt-file/yes "Installer")
+ (install-plt-file/no "Rediger")
+
+ (plt-installer-progress-window-title "Installeringsfremgang")
+ (plt-installer-abort-installation "Afbryd installation") ;; button label
+ (plt-installer-aborted "Afbrudt.") ;; msg that appears in the installation window when installation is aborted
+
 
  ;;; about box
  (about-drscheme-frame-title "Om DrScheme")
@@ -233,7 +296,6 @@
 
  ;;; preferences
  (preferences "Indstillinger")
- (preferences-category "Kategori")
  (saving-preferences "Gemmer indstillinger")
  (error-unmarshalling "Error unmarshalling ~a preference")
  (error-saving-preferences "Fejl under lagring af indstillinger: ~a")
@@ -253,7 +315,7 @@
  (ask-before-changing-format "Spørg før ændring af lagringsformat")
  (wrap-words-in-editor-buffers "Ombryd ord i redigeringsbufferne")
  (show-status-line "Vis statuslinjen")
- (count-from-one "Tæl linje- og kolonnenumre fra et")
+ (count-columns-from-one "Tæl søjlenumger fra en.")
  (display-line-numbers "Vis linjenumre i bufferen; ikke tegn-offsets")
  (enable-keybindings-in-menus "Slå tastaturgenveje i menuer til")
  (automatically-to-ps "Udskriv automatisk til postscriptfil")
@@ -261,6 +323,12 @@
  (separate-dialog-for-searching "Brug separat dialog til søgning")
  (reuse-existing-frames "Genbrug gamle vinduer, når nye filer åbnes")
  (default-fonts "Standardskrifttyper")
+ (paren-match-color "Parentesfremhævningsfarve") ; in prefs dialog
+ (choose-color "Vælg farve") ; in prefs dialog
+
+
+ ; title of the color choosing dialog
+ (choose-paren-highlight-color "Vælg farve til parentesfremhævning")
 
  ; should have entire alphabet
  (font-example-string "Høj bly gom vandt fræk sexquiz på wc.")
@@ -278,9 +346,12 @@
  (font-name "Fontnavn")
  (font-size "Fontstørrelse")
  (set-font "Anvend font...")
- (select-font-name "Vælg fontnavn")
+ (font-smoothing-label  "Skriftypeudglatning")
+ (font-smoothing-none "Ingen")
+ (font-smoothing-some "Nogen")
+ (font-smoothing-all "Fuld")
+ (select-font-name "Vælg skrifttypenavn")
  (example-text "Eksempeltekst:")
- (general-ii "Generelt II")
  (only-warn-once "Advar kun én gang, når kørsler og interaktioner er ude af trit")
 
  ; warning message when lockfile is around
@@ -336,16 +407,19 @@
  (mfs-search-interrupted "Søgning afbrudt.")
 
  ;;; reverting a file
- (error-reverting "DrScheme - Fejl ved tilbagevenden")
+ (error-reverting "DrScheme - Fejl ved gendanning")
  (could-not-read "kunne ikke læse \"~a\"")
  (are-you-sure-revert
-  "Er du sikker på, at du vil vende tilbage til denne fil? En tilbagevenden kan ikke fortrydes.")
- (are-you-sure-revert-title   "Vend tilbage?")
+  "Er du sikker på, at du vil gendanne denne fil? En gendannen kan ikke fortrydes.")
+ (are-you-sure-revert-title "Gendan?")
 
  ;;; saving a file
  ; ~a is filled with the filename
  (error-saving "Fejl under lagring") ;; title of error message dialog
  (error-saving-file/name "Der var en fejl ved lagring af ~a.")
+ (error-loading "Indlæsefejl")
+ (error-loading-file/name "Fejl ved læsning af ~a.")
+ (unknown-filename "<< ukendt >>")
 
  ;;; finder dialog
  (must-specify-a-filename "Du skal angive et filnavn")
@@ -401,8 +475,8 @@
  (open-recent-info "En liste af filer brugt for nylig")
  (open-recent-menu-item "Åbn gammel")
 
- (revert-info "Vend tilbage til diskkopien af denne fil")
- (revert-menu-item "&Vend tilbage")
+ (revert-info "Gendan diskkopien af denne fil")
+ (revert-menu-item "Gendan")
 
  (save-info "Gem filen på disk")
  (save-menu-item "&Gem")
@@ -466,6 +540,9 @@
  (insert-pb-box-item   "Indsæt pasteboard-kasse")
  (insert-image-item    "Indsæt billede...")
  (insert-comment-box-menu-item-label "Indsæt kommentarkasse")
+ (insert-lambda "Indsæt &Lambda")
+ (insert-delta "Indsæt &Delta (define)")
+
  (wrap-text-item       "Ombryd tekst")
 
  (windows-menu-label "&Vinduer")
@@ -473,19 +550,18 @@
  (bring-frame-to-front... "Skift til andet vindue...") ;;; corresponding title of menu item
  (next-window "Næste vindue")
  (previous-window "Forrige vindue")
-
+ (most-recent-window "Sidst besøgte vindue")
 
  (show-menu-label "&Vis")
  (show-overview "Vis programkontur")
  (hide-overview "Skjul programkontur")
+ (show-module-browser "Vis moduloversigt")
+ (hide-module-browser "Skjul moduloversigt")
 
  (help-menu-label "&Hjælp")
  (about-info "Akkrediteringer og detaljer om dette program")
  (about-menu-item "Om...")
  (help-menu-check-for-updates "Undersøg, om der er opdateringer...")
-
- ;;; help-desk-specific menus
- (new-help-desk "Nyt hjælpebord")
 
  ;; open here's new menu item
  (create-new-window-or-clear-current
@@ -505,6 +581,38 @@
  ;;; autosaving
  (error-autosaving "Fejl under autosaving \"~a\".")
  (autosaving-turned-off "Autosaving er slået fra \nindtil filen filen gemmes.")
+ (recover-autosave-files-frame-title "Gendan backupfiler")
+ (autosave-details "Detaljer")
+ (autosave-recover "Gendan")
+ (autosave-unknown-filename "<<ukendt>>")
+
+  ;; these are labels in a dialog that drscheme displays
+  ;; if you have leftover autosave files. to see the dialog,
+  ;; start up drscheme and modify (but don't save) a file
+  ;; (also, do this with an unsaved file). Wait for the autosave
+  ;; files to appear (typically 5 minutes). Kill DrScheme
+  ;; and restart it. You'll see the dialog
+  (autosave-autosave-label: "Autosave-fil:")
+  (autosave-original-label: "Original fil:")
+  (autosave-autosave-label "Autosave-fil")
+  (autosave-original-label "Original fil")
+  (autosave-compare-files "Sammenlign autosavede filer")
+
+  (autosave-show-autosave "Autosave-fil") ;; title of a window showing the autosave file
+
+  (autosave-explanation "DrScheme fandt autosavede filer, som måske indeholde ugemt arbejde.")
+
+  (autosave-recovered! "Gendannet!") ;; status of an autosave file
+  (autosave-deleted "Slettet")       ;; status of an autosave file
+
+  (autosave-error-deleting "Fejl under sletning ~a\n\n~a") ;; first is a filename, second is an error message from mz.
+  (autosave-delete-button "Slet")
+  (autosave-delete-title "Slet")  ;; title of a dialog asking for deletion confirmation
+  (autosave-done "Færdig")
+  
+  ;; appears in the file dialog
+  (autosave-restore-to-where? "Vælg et sted til at gemme autosave-filen.")
+
 
  ;;; file modified warning
  (file-has-been-modified
@@ -521,6 +629,8 @@
  (error-invoking-tool-title "Fejl ved kørsel af værktøj ~s;~s")
  (tool-tool-names-same-length "forventede `tool-names' og `tools' var to lister af samme længde i info.ss for ~s, fik ~e og ~e")
  (tool-tool-icons-same-length  "forventede `tool-icons' og `tools' var to lister af samme længde i info.ss  for ~s, fik ~e and ~e")
+ (tool-tool-urls-same-length
+  "forventede `tool-urls' og `tools' var lister af samme længde  i info.ss-filen for ~s, fik ~e og ~e")
  (error-getting-info-tool  "fejl ved hentning af info.ss file for ~s")
  (tool-error-phase1 "Fejl i fase 1 for værktøjet ~s; ~s")
  (tool-error-phase2 "Fejl i fase 2 for værktøjet ~s; ~s")
@@ -576,31 +686,47 @@
  (clear-error-highlight-item-help-string "Fjerne den pinke farvelægning af fejlene")
  (reindent-menu-item-label "&Indryk igen")
  (reindent-all-menu-item-label "Indryk &alt igen")
- (comment-out-menu-item-label "&Udkommentér")
- (uncomment-menu-item-label "&Fjen kommentar")
+ (semicolon-comment-out-menu-item-label "&Udkommenter med semikoloner")
+ (box-comment-out-menu-item-label "&Udkommenter med en kasse")
+ (uncomment-menu-item-label "&Udkommenter")
+
+ (convert-to-semicolon-comment "Konverter til en semikolon-kommentar")
+
 
  ;;; executables
  (create-executable-menu-item-label "Lav binær kørselfil...")
  (create-executable-title "Lav binær kørselsfil")
  (must-save-before-executable "Du skal gemme dit program, før du laver en binær fil")
- (save-an-executable "Gem en binær kørselsfil")
+ (save-an-executable "Gem en selvstændig kørselsfil (binary)")
+ (save-a-mred-launcher "Gem en MrEd-starter")
+ (save-a-mzscheme-launcher "Gem en MzScheme-starter")
+ (save-a-mred-stand-alone-executable "Gem en selvstændig MrEd-kørselsfil")
+ (save-a-mzscheme-stand-alone-executable "Gen en selvstændig MzScheme kørselsfil")
  (definitions-not-saved "Definitionsvinduet har ikke været gemt. Den binære kørselsfil vil bruge den senest gemte version af definitionsvinduet. Fortsæt?")
  (inline-saved-program-in-executable?  "Indlejr det gemte program i en binær kørselsfil? Hvis ja, så kan du kopiere kørselsfilen til en anden ~a computer, men kørselsfilen vil være ret stor. Hvis ikke, kan du ikke kopiere det gemte program til en anden computer, men den vil være meget mindre. I tilgift, hvis ikke, vil kørselsfilen bruge den seneste version af programmet.")
- (inline-saved-program-in-executable/windows  "Advarsel: Under Windows har du også brug for libmred.dll, libmzsch.dll og libmzgc.dll for at køre programmet.")
+ (use-mred-binary?
+  "Brug mred til denne kørselsfil?\n\nHvis ja, så kan dit program bruge biblioteket (lib \"mred.ss\" \"mred\"). Hvis nej, så vil DrScheme bruge mzscheme til kørselsfilen and du kan ikke bruge mred-biblioteket.\n\nHvis du er i tvivl, så vælg ja.")
  (inline-saved-program-in-executable/windows/path
-   "ADVARSEK! Den frembragte kørselsfil afhænger af tre DLL'er: libmred.dll, libmzsch.gll og libgc.dll, som findes i \n\n~a\n\nKørselsfilen finder DLL'erne enten i kørselsfilens mappe eller gennem miljøvariablen PATH.\n\nDa du installerede DrScheme, tilføjede installationsprogrammet mappen med DLL'erne til brugerens PATH. Vær opmærksom på konfigurationsændringer efter installationen.\n\nHvis du flytter kørselsfilen til en anden maskine, skal du også kopiere DLL'erne til den anden maskine --- enten til samme mappe som kørselsfilen, eller til en mappe i den anden maskines PATH.")
- (use-mred-binary?  "Brug den binære MrEd til denne kørselsfil?\n\nHvis ja, kan dit program bruge (lib \"mred.ss\" \"mred\") biblioteket. Hvis nej, vil DrScheme bruge mzscheme til den binære kørselsfil og du kan ikke bruge det andet bibliotek.\n\nHvis du er i tvivl, så vælg ja.")
-
- (launcher "Afvikler")
+   "ADVARSEL! Den frembragte kørselsfil afhænger af tre DLL'er: libmred.dll, libmzsch.gll og libgc.dll, som findes i \n\n~a\n\nKørselsfilen finder DLL'erne enten i kørselsfilens mappe eller gennem miljøvariablen PATH.\n\nDa du installerede DrScheme, tilføjede installationsprogrammet mappen med DLL'erne til brugerens PATH. Vær opmærksom på konfigurationsændringer efter installationen.\n\nHvis du flytter kørselsfilen til en anden maskine, skal du også kopiere DLL'erne til den anden maskine --- enten til samme mappe som kørselsfilen, eller til en mappe i den anden maskines PATH.")
+ (launcher "Starter")
  (stand-alone "Selvstænding")
  (executable-type "Type")
  (executable-base "Efternavn")
- (filename "Filnaven: ")
+ (filename "Filnavn: ")
  (create "Lav")
- (please-choose-an-executable-filename "Væg et filnavn til kørselsfilen.")
+ (please-choose-an-executable-filename "Vælg et filnavn til kørselsfilen.")
+ (windows-executables-must-end-with-exe
+  "Filnavnet\n\n  ~a\n\ner ikke gyldigt.. Under Windows skal kørselsfiler have efternavnet .exe.")
+ (macosx-executables-must-end-with-app
+  "Filnavnet\n\n  ~a\n\ner ikke gyldigt. Under  MacOS X skal kørselsfiler have efternavnet .app.")
+ (warning-directory-will-be-replaced
+  "ADVARSEL: mappen:\n\n  ~a\n\nvil blive slettet. Fortsæt?")
  
- (create-servlet "Lav en Servelet...")
+ (create-servlet "Lav en Servlet...")
 
+ ; the ~a is a language such as "module" or "algol60"
+ (create-servlet-unsupported-language
+  "Lav Servlet virker ikke med sproget ~a .")
 
  ;;; buttons
  (execute-button-label "Kør")
@@ -613,7 +739,7 @@
 
  ;; collapse and expand popup menu items
  (collapse-sexp "Kollaps s-udtryk")
- (expand-sexp "Ekspandér s-udtryk")
+ (expand-sexp "Ekspander s-udtryk")
 
  ;;; fraction dialog
  (enter-fraction "Indtast brøk")
@@ -626,6 +752,8 @@
  ;; number snip popup menu
  (show-decimal-expansion "Vis som decimaltal")
  (show-fraction-view "Vis som brøk")
+ (show-mixed-fraction-view "Vis som blandet tal")
+ (show-improper-fraction-view "Vis som uægte brøk")
  (show-more-decimal-places "Vis flere decimaler")
 
  ;;; TeachPack messages
@@ -635,8 +763,8 @@
  (teachpack-dne/cant-read "Undervisningspakkefilen ~a findes ikke, eller er ikke læselig.")
  (teachpack-didnt-load "Undervisningspakkefilen ~a blev ikke hentet rigtigt.")
  (teachpack-error-invoke "Undervisningspakkefilen ~a gav en fejl ved kørsel af undervisningspakke...")
+ (add-teachpack-menu-item-label "Tilføj Undervisningspakke")
  (clear-all-teachpacks-menu-item-label "Fjern alle undervisningspakker")
- (teachpack-not-only-one-import "Undervisningspakkens unit/sig i ~a skal have netop en import.")
  (drscheme-teachpack-message-title "DrScheme Undervisningspakke")
  (already-added-teachpack "Undervisningspakken ~a er allerede tilføjet")
 
@@ -649,6 +777,7 @@
  (constructor-printing-style "Konstruktør")
  (quasiquote-printing-style "Kvasicitering")
  (write-printing-style "write")
+ (print-printing-style "current-print")
  (sharing-printing-label "Vis deling i værdier")
  (use-pretty-printer-label "Indsæt linjeskift i printede værdier")
  (input-syntax "Input-syntaks")
@@ -657,6 +786,7 @@
  (no-debugging-or-profiling "Ingen debugning eller profilering")
  (debugging "Debugging")
  (debugging-and-profiling "Debugning og profilering")
+ (test-coverage "Syntaktisk dækning af testsuiten.")
  (whole/fractional-exact-numbers-label "Skriv tal som brøker")
  (booleans-as-true/false-label "Skriv sandhedsværdier som true og false")
  (show-details-button-label "Vis detaljer")
@@ -672,41 +802,43 @@
 
 
  ;;; languages
- (beginning-student "Begynderelev")
+ (beginning-student "Begynder")
  (beginning-one-line-summary "define, cond, strukturer, konstanter og primitiver")
- (beginning-student/abbrev "Begynderelev med listeforkortelser")
- (beginning/abbrev-one-line-summary "Begynder, men udskrivning anvendende listenotation i REPL")
- (intermediate-student "Mellemelev")
- (intermediate-one-line-summary "Begynder plus leksikalske virkefelter")
- (intermediate-student/lambda "Mellem med lambda")
- (intermediate/lambda-one-line-summary "Mellemog funktioner af højreorden")
- (advanced-student "Avanceret elev")
- (advanced-one-line-summary "Mellem samt lambda og mutation")
- (full-language "Fuld") ;; also in the HtDP languages section
- (pretty-big-scheme "Temmelig omfattende Scheme")
- (pretty-big-scheme-one-line-summary "Grafisk, med mange standardbiblioteker")
- (htdp-full-one-line-summary "Avanceret, med PLT-udvidelser og GUI")
+ (beginning-student/abbrev "Begynder med listeforkortelser")
+ (beginning/abbrev-one-line-summary "Begynder, men udskrivning anvender listenotation i REPL")
+ (intermediate-student "Øvet")
+ (intermediate-one-line-summary "Begynder med leksikalske virkefelter")
+ (intermediate-student/lambda "Øvet med lambda")
+ (intermediate/lambda-one-line-summary "Øvet med funktioner af højere orden")
+ (advanced-student "Avanceret")
+ (advanced-one-line-summary "Øvet med lambda og mutation")
+ (full-language "Fuldstændig") ;; also in the HtDP languages section
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "R5RS-lignende")
- (mred-lang-name "Grafisk uden debugging (MrEd)")
- (mzscheme-lang-name "Tekstuel uden debugging (MzScheme)")
+ (pretty-big-scheme "Temmelig omfattende Scheme (inklusiv MrEd og Avanceret)")
+ (pretty-big-scheme-one-line-summary "Grafisk, med mange standardbiblioteker")
  (r5rs-lang-name "Standard (R5RS)")
  (r5rs-one-line-summary "R5RS, uden dikkedarer")
- (unknown-debug-frame "[ukendt]")
+ (expander "Ekspanderen")
+ (expander-one-line-summary "Ekspandere, snarere end evaluerer udtryk")
+ (professional-languages "Professionelle sprog")
+ (teaching-languages "Undervisningssprog")
+ (experimental-languages "Eksperimentale sprog")
 
  (module-language-one-line-summary "Sprog med modul som eneste konstruktion")
- (bad-module-language-specs  "drscheme-sprog-position og drscheme-language-modules er ikke korrekte. Forventede henholdsvis (listof (cons string (listof string))) og (listof (listof string)), hvor længderne af drscheme-language-position og drscheme-language-module listerne er de samme. Fik ~e og ~e")
+
 
  ;;; debug language
+ (unknown-debug-frame "[ukendt]")
  (backtrace-window-title "Tilbagesporing - DrScheme")
  (files-interactions "~a's interaktioner") ;; filled with a filename
  (current-interactions "interaktioner")
  (current-definitions "definitioner")
  (stack-frame-in-current-interactions "interaktioner")
  (stack-frame-in-current-definitions "definitioner")
- (mzscheme-w/debug "Tekstuel (MzScheme)")
+ (mzscheme-w/debug "Tekstuel (MzScheme, inkluderer R5RS)")
  (mzscheme-one-line-summary "PLT Scheme uden GUI ")
- (mred-w/debug "Grafisk (MrEd)")
+ (mred-w/debug "Grafisk (MrEd, inkluderer MzScheme)")
  (mred-one-line-summary "PLT Scheme med GUI")
 
  ;; profiling
@@ -735,6 +867,9 @@
  (profiling-unknown-src "<< ukendt >>")
  (profiling-no-information-available "Der er ingen profileringsinformation tilgængelig. Er du sikker på, at profilering er sat til i dit sprog, og at du har kørt dit program?")
  (profiling-clear? "Ændringer i definitionsvinduet gør profileringsinformationen ugyldig. Fortsæt?")
+
+ ;; test coverage
+ (test-coverage-clear? "Ændringer i definitionsvinduet ugyldiggør testdækningsinformationen. Fortsæt?")
 
  ;;; repl stuff
  (evaluation-terminated "Evaluering termineret")
@@ -767,6 +902,10 @@
  (vc-network-failure "Netværksfejl")
  (vc-old-binaries "De instalerede binaries for DrScheme (eller MzScheme) er ikke up-to-date")
  (vc-binary-information-format "Installeret binær version: ~a (iteration ~a)")
+ (vc-details-format "~a~nDetaljer:~n~a")
+ (vc-details-text "Detaljer:~n")
+ (vc-error-format "Fejl: ~a") 
+ (vc-current-format "~a v.~a (iteration ~a) er up-to-date")
  (vc-update-format "~a v.~a (iteration ~a) behøver opdatering til v.~a (iteration ~a)")
  (vc-binary-name "Binær")
  (vc-updates-available "Opdateringer kan hentes hos")
@@ -774,11 +913,6 @@
  (vc-update-dialog-title "PLT opdateringsstatus")
  (vc-need-update-string "En eller flere installerede PLT software-pakker behøver opdatering")
  (vc-no-update-string "Alle installerede softwarepakker fra PLT er allerede opdaterede")
- (add-teachpack-menu-item-label "Tilføj undervisningspakke...")
- (vc-current-format "~a v.~a (iteration ~a) er up-to-date")
- (vc-details-format "~a~nDetaljer:~n~a")
- (vc-details-text "Detaljer:~n")
- (vc-error-format "Fejl: ~a")
 
  ;; special menu
  (special-menu "Speciel")
@@ -797,31 +931,46 @@
  (module-browser-open-file-format "Åbn ~a")
  (module-browser "Moduloversigt") ;; frame title
  (module-browser... "Moduloversigt...") ;; menu item title
- (module-browser-error-expanding "Fejl under udfoldelse (expansion) af programmet:\n\n~a")
+ (module-browser-error-expanding "Fejl under ekspansion af programmet:\n\n~a")
+ (module-browser-show-lib-paths "Vis filer læst via (lib ..) stier")
+ (module-browser-progress "Moduloversigt: ~a") ;; prefix in the status line
+ (module-browser-compiling-defns "Moduloversigt: oversætter definitioner")
+ (module-browser-show-lib-paths/short "Følg lib requires") ;; check box label in show module browser pane in drscheme window.
+ (module-browser-refresh "Opdater") ;; button label in show module browser pane in drscheme window.
+ (module-browser-only-in-plt-and-module-langs
+  "Moduloversigten er kun tilgængelig for programmer i PLT-sprogene og i modul-sproget (og kun for de programmer, som benytter moduler).")
 
  (happy-birthday-matthias "Tillykke med fødselsdagen, Matthias!")
  (happy-birthday-matthew "Tillykke med fødselsdagen, Matthew!")
 
  (mrflow-using-default-language-title "Sprog, som bruges når andet ikke er valgt")
  (mrflow-using-default-language "Det sprog, som anvendes nu, har ikke en typetabel defineret for dets primitiver. R5RS Scheme bruges i stedet.")
- (mrflow-button-title "Analysér")
+ (mrflow-button-title "Analyser")
+ ;(mrflow-unknown-style-delta-error-title "Unknown Box Style Delta")
+ ;(mrflow-unknown-style-delta-error "Unknown box style delta: ~a")
  (mrflow-coloring-error-title "Ukendt farve")
  (mrflow-coloring-error "Der er ikke defineret en stil for farven: ~a")
  (mrflow-popup-menu-show-type "Vis type")
  (mrflow-popup-menu-hide-type "Skjul type")
  (mrflow-popup-menu-show-errors "Vis fejl")
  (mrflow-popup-menu-hide-errors "Skjul fejl")
- (mrflow-read-exception-title "Læseundtagelse (Read Exception)")
- (mrflow-read-exception "Læseundtagelse (Read exception): ~a")
- (mrflow-syntax-exception-title "Syntaksundtagelse")
- (mrflow-syntax-exception "Syntaksundtagelse: ~a")
- (mrflow-unknown-exception-title "Ukendt undtagelse")
- (mrflow-unknwon-exception "Ukendt undtagelse: ~a")
- (mrflow-language-primitives-error-title "Fejl i sprogprimitiver")
- (mrflow-language-primitives-error "Forkert filnavn for tabellen med typer for sprogets primitiver: ~a")
 
- (snips-and-arrows-popup-menu-tack-all-arrows "Tack alle pile")
- (snips-and-arrows-popup-menu-untack-all-arrows "Untack alle pile")
+ ;(mrflow-read-exception-title "Læseundtagelse (Read Exception)")
+ ;(mrflow-read-exception "Læseundtagelse (Read exception): ~a")
+ ;(mrflow-syntax-exception-title "Syntaksundtagelse")
+ ;(mrflow-syntax-exception "Syntaksundtagelse: ~a")
+ ;(mrflow-unknown-exception-title "Ukendt undtagelse")
+ ;(mrflow-unknwon-exception "Ukendt undtagelse: ~a")
+ ;(mrflow-language-primitives-error-title "Fejl i sprogprimitiver")
+ ;(mrflow-language-primitives-error "Forkert filnavn for tabellen med typer for sprogets primitiver: ~a")
+
+ (snips-and-arrows-popup-menu-tack-all-arrows "Vis alle pile")
+ (snips-and-arrows-popup-menu-untack-all-arrows "Skjul alle pile")
+ (snips-and-arrows-user-action-disallowed-title "Brugerændringer er i øjeblikket ikke tilladt")
+ (snips-and-arrows-user-action-disallowed "Brugerændringer er ikke tilladt i editorer, som indeholder snips (f.eks. pile) indsat fra et tool. Skjul alle snips for at få lov til at ændre editorens indhold.")
+ ;(snips-and-arrows-changing-terms-warning-title "Changing terms will be undoable")
+ ;(snips-and-arrows-changing-terms-warning "Changing terms in an editor containing snips cannot be undone.  You can either cancel this action, remove the snips, and try the change again, or you can continue with the change, in which case the change will not be undoable (all others changes made before and afterward will still be undoable though).")
+ (snips-and-arrows-hide-all-snips-in-editor "Skjul alle snips i editoren")
   
  (xml-tool-menu "XML")
  (xml-tool-insert-xml-box "Indsæt XML-kasse")
@@ -831,13 +980,13 @@
  (xml-tool-scheme-box "Scheme-Kasse")
  (xml-tool-scheme-splice-box "Scheme-splejsningskasse Scheme Splice Box")
  (xml-tool-switch-to-scheme "Skift til Scheme-kasse")
- (xml-tool-switch-to-scheme-splice "Skift til Schepe-splejsningskasse")
+ (xml-tool-switch-to-scheme-splice "Skift til Scheme-splejsningskasse")
  (xml-tool-eliminate-whitespace-in-empty-tags "Fjern blanktegn i tomme tags")
  (xml-tool-leave-whitespace-alone "Bevar blanktegn")
 
  (show-recent-items-window-menu-item "Vis de senest åbnede filer i et separat vindue")
  (show-recent-items-window-label "Senest åbnede filer")
- (number-of-open-recent-items "Number of recent items")
+ (number-of-open-recent-items "Antal nye ting")
  (switch-anyway "Skift fil alligevel")
 
  (stepper-program-has-changed "ADVARSEL: Programmer er ændret.")
@@ -846,6 +995,35 @@
  (wizard-next "Næste")
  (wizard-back "Tilbage")
  (wizard-finish "Færdig")
+
+
+ ;; warnings about closing a drscheme frame when the program
+ ;; might still be doing something interesting
+ (program-is-still-running "Programmet i definitionsvinduet kører stadig. Luk alligevel?")
+  (program-has-open-windows "Programmet i definitionsvinduet har åbne vinduer. Luk dette vindue alligevel?")
+ 
+  ;; ml-cp names are all for the module language collection path
+  ;; configuration. See the details portion of the language dialog
+  ;; for the module language (at the bottom).
+  (ml-cp-default-collection-path "<<standard collection-sti>>")
+
+  ;; in std get-directory 
+  (ml-cp-choose-a-collection-path "Vælg en collection-sti")
+
+  ;; err msg when adding default twice
+  (ml-cp-default-already-present
+   "Standard collection-stien er allerede med")
+  
+  ;; title of this section of the dialog (possibly the word
+  ;; `Collection' should not be translated)
+  (ml-cp-collection-paths "Collection-stier")
+
+  ;; button labels
+  (ml-cp-add "Tilføj")
+  (ml-cp-add-default "Tilføj standard")
+  (ml-cp-remove "Fjern")
+  (ml-cp-raise "Op")
+  (ml-cp-lower "Ned")
 
  )
 

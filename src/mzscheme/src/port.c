@@ -39,10 +39,13 @@
 # include <signal.h>
 # include <sys/types.h>
 # include <sys/wait.h>
-# include <sys/resource.h>
+/* # include <sys/resource.h> */
 #endif
 #ifdef IO_INCLUDE
 # include <io.h>
+#endif
+#ifdef USE_BEOS_SNOOZE
+# include <be/kernel/OS.h>
 #endif
 #ifdef NO_ERRNO_GLOBAL
 static int mzerrno = 0;
@@ -63,7 +66,15 @@ static int mzerrno = 0;
 #  define WIN32_FD_HANDLES
 #  include <process.h>
 #  include <signal.h>
+#  define OS_SEMAPHORE_TYPE HANDLE
+#  define OS_THREAD_TYPE HANDLE
 # endif
+#endif
+
+#ifdef USE_BEOS_PORT_THREADS
+# include <be/kernel/OS.h>
+# define OS_SEMAPHORE_TYPE sem_id
+# define OS_THREAD_TYPE thread_id
 #endif
 
 typedef struct Scheme_Indexed_String {
@@ -227,7 +238,7 @@ static Scheme_Object *user_input_port_type;
 static Scheme_Object *user_output_port_type;
 static Scheme_Object *pipe_read_port_type;
 static Scheme_Object *pipe_write_port_type;
-#ifdef WIN32_FD_HANDLES
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
 static Scheme_Object *tested_file_input_port_type;
 #endif
 
@@ -325,9 +336,9 @@ static Scheme_Object *sch_default_global_port_print_handler(int argc, Scheme_Obj
 
 static void default_sleep(float v, void *fds);
 
-#ifdef WIN32_FD_HANDLES
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
 static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int tested);
-HANDLE scheme_break_semaphore;
+OS_SEMAPHORE_TYPE scheme_break_semaphore;
 #else
 # define make_tested_file_input_port(fp, name, t) scheme_make_named_file_input_port(fp, name)
 #endif
@@ -374,7 +385,7 @@ scheme_init_port (Scheme_Env *env)
     REGISTER_SO(user_output_port_type);
     REGISTER_SO(pipe_read_port_type);
     REGISTER_SO(pipe_write_port_type);
-#ifdef WIN32_FD_HANDLES
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
     REGISTER_SO(tested_file_input_port_type);
 #endif
     REGISTER_SO(default_read_handler);
@@ -424,10 +435,14 @@ scheme_init_port (Scheme_Env *env)
     tcp_output_port_type = scheme_make_port_type("<tcp-output-port>");
 #endif
 
-#ifdef WIN32_FD_HANDLES
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
     tested_file_input_port_type = scheme_make_port_type("<file-input-port>");
-    
+# ifdef WIN32_FD_HANDLES
     scheme_break_semaphore = CreateSemaphore(NULL, 0, 1, NULL);
+# endif
+# ifdef USE_BEOS_PORT_THREADS
+    scheme_break_semaphore = create_sem(0, NULL);
+# endif
 #endif
 
     scheme_orig_stdin_port = (scheme_make_stdin
@@ -882,7 +897,7 @@ void scheme_fdzero(void *fd)
 
 #else
 
-#ifdef WIN32_FD_HANDLES
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
 # define fdset_type win_extended_fd_set
 #else
 # define fdset_type fd_set
@@ -890,15 +905,17 @@ void scheme_fdzero(void *fd)
 
 void *scheme_alloc_fdset_array(int count, int permanent)
 {
-#if defined(FILES_HAVE_FDS) || defined(USE_SOCKETS_TCP) || defined(WIN32_FD_HANDLES)
+#if defined(FILES_HAVE_FDS) || defined(USE_SOCKETS_TCP) || defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
   void *fdarray;
   if (permanent)
     fdarray = scheme_malloc_eternal(count * sizeof(fdset_type));
   else
     fdarray = scheme_malloc_atomic(count * sizeof(fdset_type));
-# ifdef WIN32_FD_HANDLES
-  if (count)
+# if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+  if (count) {
+    ((win_extended_fd_set *)fdarray)->added = 0;
     ((win_extended_fd_set *)fdarray)->num_handles = 0;
+  }
 # endif
   return fdarray;
 #else
@@ -908,16 +925,18 @@ void *scheme_alloc_fdset_array(int count, int permanent)
 
 void *scheme_init_fdset_array(void *fdarray, int count)
 {
-#ifdef WIN32_FD_HANDLES
-  if (count)
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+  if (count) {
+    ((win_extended_fd_set *)fdarray)->added = 0;
     ((win_extended_fd_set *)fdarray)->num_handles = 0;
+  }
 #endif
   return fdarray;
 }
 
 void *scheme_get_fdset(void *fdarray, int pos)
 {
-#if defined(FILES_HAVE_FDS) || defined(USE_SOCKETS_TCP) || defined(WIN32_FD_HANDLES)
+#if defined(FILES_HAVE_FDS) || defined(USE_SOCKETS_TCP) || defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
   return ((fdset_type *)fdarray) + pos;
 #else
   return NULL;
@@ -929,12 +948,19 @@ void scheme_fdzero(void *fd)
 #if defined(FILES_HAVE_FDS) || defined(USE_SOCKETS_TCP)
   FD_ZERO((fd_set *)fd);
 #endif
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+  ((win_extended_fd_set *)fd)->added = 0;
+#endif
 }
 
 #endif
 
 void scheme_fdclr(void *fd, int n)
 {
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+  if (FD_ISSET(n, ((fd_set *)fd)))
+    --((win_extended_fd_set *)fd)->added;
+#endif
 #if defined(FILES_HAVE_FDS) || defined(USE_SOCKETS_TCP)
   FD_CLR(n, ((fd_set *)fd));
 #endif
@@ -942,6 +968,10 @@ void scheme_fdclr(void *fd, int n)
 
 void scheme_fdset(void *fd, int n)
 {
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+  if (!FD_ISSET(n, ((fd_set *)fd)))
+    ((win_extended_fd_set *)fd)->added++;
+#endif
 #if defined(FILES_HAVE_FDS) || defined(USE_SOCKETS_TCP)
   FD_SET(n, ((fd_set *)fd));
 #endif
@@ -956,15 +986,16 @@ int scheme_fdisset(void *fd, int n)
 #endif
 }
 
-#ifdef WIN32_FD_HANDLES
-static void add_fd_handle(HANDLE h, void *fds, int repost)
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+static void add_fd_handle(OS_SEMAPHORE_TYPE h, void *fds, int repost)
 {
   win_extended_fd_set *efd = (win_extended_fd_set *)fds;
-  HANDLE *hs;
+  OS_SEMAPHORE_TYPE *hs;
   int i, *rps;
   
   i = efd->num_handles;
-  hs = MALLOC_N_ATOMIC(HANDLE, i + 3); /* Leave room for two more. */
+  hs = MALLOC_N_ATOMIC(OS_SEMAPHORE_TYPE, i + 3);
+  /*                 Leave room for two more -^ */
   rps = MALLOC_N_ATOMIC(int, i + 3);
   hs[i] = h;
   rps[i] = repost;
@@ -1497,6 +1528,9 @@ static void flush_orig_outputs()
 static int
 file_char_ready (Scheme_Input_Port *port)
 {
+#ifndef FILES_HAVE_FDS
+  return 1;
+#else
   FILE *fp;
   Scheme_Input_File *fip;
 
@@ -1530,7 +1564,6 @@ file_char_ready (Scheme_Input_Port *port)
   if (feof(fp) || ferror(fp))
     return 1;
 
-#ifdef FILES_HAVE_FDS
   {
     int fd;
     DECL_FDSET(readfds, 1);
@@ -1547,8 +1580,6 @@ file_char_ready (Scheme_Input_Port *port)
     
     return select(fd + 1, readfds, NULL, NULL, &time);
   }
-#else
-  return 1;
 #endif
 }
 
@@ -1775,18 +1806,38 @@ make_fd_input_port(int fd, const char *filename)
 
 #endif
 
-/* Win32 input ports that could block on reads */
-#ifdef WIN32_FD_HANDLES
+/* Win32/BeOS input ports that could block on reads */
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
 
 typedef struct {
   FILE *fp;
-  HANDLE th;           /* worker thread */
-  HANDLE ready_sema;   /* hit when a char is ready */
-  HANDLE try_sema;     /* hit when a char is wanted */
+  OS_THREAD_TYPE th;           /* worker thread */
+  OS_SEMAPHORE_TYPE ready_sema;   /* hit when a char is ready */
+  OS_SEMAPHORE_TYPE try_sema;     /* hit when a char is wanted */
   char trying;         /* indicates that it's already trying to read */
   char ready;          /* indicates that a character is ready */
   int c;               /* ready character */
 } Tested_Input_File;
+
+#ifdef WIN32_FD_HANDLES
+# define RELEASE_SEMAPHORE(sem) ReleaseSemaphore(sem, 1, NULL);
+# define TRY_WAIT_SEMAPHORE(sem) (WaitForSingleObject(sem, 0) == WAIT_OBJECT_0)
+# define WAIT_SEMAPHORE(sem) WaitForSingleObject(sem, INFINITE);
+# define WAIT_THREAD(th) WaitForSingleObject(th, INFINITE);
+# define MAKE_SEMAPHORE() CreateSemaphore(NULL, 0, 1, NULL);
+# define FREE_SEMAPHORE(sem) CloseHandle(sem)
+#endif
+#ifdef USE_BEOS_PORT_THREADS
+# define RELEASE_SEMAPHORE(sem) release_sem(sem)
+# define TRY_WAIT_SEMAPHORE(sem) (acquire_sem_etc(sem, 1, B_TIMEOUT, 0) == B_NO_ERROR)
+# define WAIT_SEMAPHORE(sem) while (acquire_sem(sem) != B_NO_ERROR) {}
+static status_t mz_thread_status;
+# define WAIT_THREAD(th) while (wait_for_thread(th, &mz_thread_status) != B_NO_ERROR) {}
+# define MAKE_SEMAPHORE() create_sem(0, NULL)
+# define FREE_SEMAPHORE(sem) delete_sem(sem)
+
+static sem_id got_started;
+#endif
 
 static int tested_file_char_ready(Scheme_Input_Port *p)
 {
@@ -1799,11 +1850,11 @@ static int tested_file_char_ready(Scheme_Input_Port *p)
  
   if (!tip->trying) {
     tip->trying = 1;
-    ReleaseSemaphore(tip->try_sema, 1, NULL);
+    RELEASE_SEMAPHORE(tip->try_sema);
   }
 
   if (tip->trying) {
-    if (WaitForSingleObject(tip->ready_sema, 0) == WAIT_OBJECT_0) {
+    if (TRY_WAIT_SEMAPHORE(tip->ready_sema)) {
       tip->ready = 1;
       tip->trying = 0;
       return 1;
@@ -1833,7 +1884,7 @@ static int tested_file_getc(Scheme_Input_Port *p)
 
   if (tip->c != EOF)
     tip->ready = 0;
-    
+
   return tip->c;
 }
 
@@ -1846,13 +1897,16 @@ static void tested_file_close_input(Scheme_Input_Port *p)
   fclose(tip->fp); /* sends EOF to reader thread */
   --scheme_file_open_count;
 
-  ReleaseSemaphore(tip->try_sema, 1, NULL);
+  RELEASE_SEMAPHORE(tip->try_sema);
 
-  WaitForSingleObject(tip->th, INFINITE);
+  WAIT_THREAD(tip->th);
 
+#ifdef WIN32_FD_HANDLES
   CloseHandle(tip->th);
-  CloseHandle(tip->ready_sema);
-  CloseHandle(tip->try_sema);
+#endif
+
+  FREE_SEMAPHORE(tip->ready_sema);
+  FREE_SEMAPHORE(tip->try_sema);
 }
 
 static void tested_file_need_wakeup(Scheme_Input_Port *p, void *fds)
@@ -1869,12 +1923,17 @@ static long read_for_tested_file(void *data)
   Tested_Input_File *tip;
   int c = 0;
 
+#ifdef USE_BEOS_PORT_THREADS
+  signal(SIGINT, SIG_IGN);
+  RELEASE_SEMAPHORE(got_started);
+#endif
+
   tip = (Tested_Input_File *)data;
 
   while (c != EOF) {
-    WaitForSingleObject(tip->try_sema, INFINITE);
+    WAIT_SEMAPHORE(tip->try_sema);
     c = tip->c = fgetc(tip->fp);
-    ReleaseSemaphore(tip->ready_sema, 1, NULL);
+    RELEASE_SEMAPHORE(tip->ready_sema);
   }
 
   return 0;
@@ -1884,7 +1943,6 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
 {
   Scheme_Input_Port *ip;
   Tested_Input_File *tip;
-  DWORD id;
 
   if (!tested)
     return scheme_make_named_file_input_port(fp, name);
@@ -1895,15 +1953,45 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
 
   tip->ready = 0;
   tip->trying = 0;
-  tip->ready_sema = CreateSemaphore(NULL, 0, 1, NULL);
-  tip->try_sema = CreateSemaphore(NULL, 0, 1, NULL);
+  tip->ready_sema = MAKE_SEMAPHORE();
+  tip->try_sema = MAKE_SEMAPHORE();
 
-#ifdef NO_NEED_FOR_BEGINTHREAD
+#ifdef WIN32_FD_HANDLES
+# ifdef NO_NEED_FOR_BEGINTHREAD
 # define _beginthreadex CreateThread
+# endif
+  {
+    DWORD id;
+    tip->th = _beginthreadex(NULL, 5000, 
+			     (LPTHREAD_START_ROUTINE)read_for_tested_file,
+			     tip, 0, &id);
+  }
 #endif
-  tip->th = _beginthreadex(NULL, 5000, 
-			   (LPTHREAD_START_ROUTINE)read_for_tested_file,
-			   tip, 0, &id);
+
+#ifdef USE_BEOS_PORT_THREADS
+  {
+    sigset_t sigs;
+
+    if (!got_started)
+      got_started = create_sem(0, NULL);
+
+    /* Disable SIGINT until the child starts ignoring it */
+    sigemptyset(&sigs);
+    sigaddset(&sigs, SIGINT);
+    sigprocmask(SIG_BLOCK, &sigs, NULL);
+
+    tip->th = spawn_thread(read_for_tested_file, "port reader", 
+			   B_NORMAL_PRIORITY, tip);
+    if (tip->th < 0)
+      tip->th = 0;
+    else
+      resume_thread(tip->th);
+
+    WAIT_SEMAPHORE(got_started);
+    
+    sigprocmask(SIG_UNBLOCK, &sigs, NULL);
+  }
+#endif
 
   if (!tip->th) {
     /* Thread creation failed; give up niceness: */
@@ -5415,7 +5503,11 @@ static void tcp_write_string(char *s, long len, Scheme_Output_Port *port)
     ((e == WSAEWOULDBLOCK) || (e == WSAEINPROGRESS))
 #else
     errid = errno;
-# define SEND_BAD_MSG_SIZE(errid) (errid == EMSGSIZE)
+# ifdef SEND_IS_NEVER_TOO_BIG
+#  define SEND_BAD_MSG_SIZE(errid) 0
+# else
+#  define SEND_BAD_MSG_SIZE(errid) (errid == EMSGSIZE)
+# endif
 # define SEND_WOULD_BLOCK(errid) \
    ((errid == EWOULDBLOCK) || (errid == EAGAIN)\
     || (errid == EINPROGRESS) || (errid == EALREADY))
@@ -5594,6 +5686,12 @@ make_tcp_output_port(void *data)
 
 #ifndef NO_TCP_SUPPORT
 
+# ifdef PROTOENT_IS_INT
+#  define PROTO_P_PROTO IPPROTO_TCP
+# else
+#  define PROTO_P_PROTO proto->p_proto
+# endif
+
 static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 {
   char *address = "", *errmsg = "";
@@ -5602,7 +5700,9 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 #ifdef USE_SOCKETS_TCP
   struct hostent *host;
   tcp_address dest_addr;
+# ifndef PROTOENT_IS_INT
   struct protoent *proto;
+# endif
 #endif
 
   if (!SCHEME_STRINGP(argv[0]))
@@ -5696,9 +5796,12 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
     memcpy(&dest_addr.sin_addr, host->h_addr_list[0], host->h_length); 
     memset(&dest_addr.sin_zero, 0, sizeof(dest_addr.sin_zero));
 
+#ifndef PROTOENT_IS_INT
     proto = getprotobyname("tcp");
-    if (proto) {
-      tcp_t s = socket(PF_INET, SOCK_STREAM, proto->p_proto);
+    if (proto)
+#endif
+    {
+      tcp_t s = socket(PF_INET, SOCK_STREAM, PROTO_P_PROTO);
       if (s != INVALID_SOCKET) {
 	int status, inprogress;
 #ifdef USE_WINSOCK_TCP
@@ -5760,8 +5863,11 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
       } else
 	errpart = 3;
       errid = errno;
-    } else
+    }
+#ifndef PROTOENT_IS_INT
+    else
       (errid = 1, errpart = 2);
+#endif
   } else {
     errpart = 1;
 #ifdef USE_WINSOCK_TCP
@@ -5793,7 +5899,9 @@ tcp_listen(int argc, Scheme_Object *argv[])
   unsigned short id, origid;
   int backlog, errid;
 #ifdef USE_SOCKETS_TCP
+# ifndef PROTOENT_IS_INT
   struct protoent *proto;
+# endif
 #endif
 
   if (!CHECK_PORT_ID(argv[0]))
@@ -5849,8 +5957,11 @@ tcp_listen(int argc, Scheme_Object *argv[])
 #endif
 
 #ifdef USE_SOCKETS_TCP
+# ifndef PROTOENT_IS_INT
   proto = getprotobyname("tcp");
-  if (proto) {
+  if (proto)
+# endif
+  {
     tcp_address addr;
     tcp_t s;
 
@@ -5859,7 +5970,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
     memset(&addr.sin_addr, 0, sizeof(addr.sin_addr));
     memset(&addr.sin_zero, 0, sizeof(addr.sin_zero));
 
-    s = socket(PF_INET, SOCK_STREAM, proto->p_proto);
+    s = socket(PF_INET, SOCK_STREAM, PROTO_P_PROTO);
     if (s != INVALID_SOCKET) {
 #ifdef USE_WINSOCK_TCP
       unsigned long ioarg = 1;
@@ -6135,7 +6246,7 @@ static Scheme_Object *tcp_port_send_waiting_p(int argc, Scheme_Object *argv[])
 
 #endif /* !NO_TCP_SUPPORT */
 
-#if defined(WINDOWS_PROCESSES) || defined(DETECT_WIN32_CONSOLE_STDIN)
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
 typedef struct 
 {
   fd_set *rd, *wr, *ex;
@@ -6151,17 +6262,137 @@ static long select_for_tcp(void *data)
 }
 #endif
 
-#ifdef WIN32_FD_HANDLES
-static void clean_up_wait(DWORD result, HANDLE *array, int *rps, int count)
+#ifdef USE_BEOS_PORT_THREADS
+# define WAIT_OBJECT_0 1
+
+sem_id siggo, go;
+int32 done;
+int32 enable_sig_count;
+sem_id finished_first;
+
+static void check_enable_signals()
+{
+  signal(SIGINT, SIG_IGN);
+
+  if (atomic_add(&enable_sig_count, -1) == 1) {
+    /* We're the last child; re-enable signals */
+    release_sem(siggo);
+  }
+}
+
+static long wait_one_sema(void *s)
+{
+  int v;
+
+  check_enable_signals();
+
+  while (acquire_sem((sem_id)s) != B_NO_ERROR) {}
+
+  v = atomic_add(&done, 1);
+  if (!v)
+    finished_first = (sem_id)s;
+
+  release_sem(go);
+
+  return 0;
+}
+
+static long wait_timeout(void *t)
+{
+  int v;
+
+  check_enable_signals();
+
+  snooze((bigtime_t)(long)t);
+
+  v = atomic_add(&done, 1);
+  if (!v)
+    finished_first = -1;
+
+  release_sem(go);
+
+  return 0;
+}
+
+static int wait_multiple_sema(int count, sem_id *a, float timeout)
+{
+  int i, got = 0;
+  thread_id tot;
+  sigset_t sigs;
+
+  go = MAKE_SEMAPHORE();
+  siggo = MAKE_SEMAPHORE();
+  done = 0;
+  finished_first = 0;
+
+  if (!got_started)
+    got_started = create_sem(0, NULL);
+
+  /* Disable SIGINT until the children start ignoring it */
+  sigemptyset(&sigs);
+  sigaddset(&sigs, SIGINT);
+  sigprocmask(SIG_BLOCK, &sigs, NULL);
+
+  enable_sig_count = count + (timeout ? 1 : 0);
+
+  for (i = 0; i < count; i++)
+    resume_thread(spawn_thread(wait_one_sema, "multi-waiter", 
+			       B_NORMAL_PRIORITY, (void *)a[i]));
+  
+  if (timeout) {
+    tot = spawn_thread(wait_timeout, "multi-waiter timeout",
+		       B_NORMAL_PRIORITY, 
+		       (void *)(long)(timeout * 1000000));
+    resume_thread(tot);
+  } else
+    tot = 0;
+
+  while (acquire_sem(siggo) != B_NO_ERROR) {}
+
+  sigprocmask(SIG_UNBLOCK, &sigs, NULL);
+
+  /* Might be interrupted by a signal: */
+  acquire_sem(go);
+
+  /* Post to still-waiting semaphores. This dislodges the waiting 
+     threads. They won't change finished_first. */
+  for (i = 0; i < count; i++) {
+    if (a[i] != finished_first)
+      release_sem(a[i]);
+    else
+      got = i + WAIT_OBJECT_0;
+  }
+
+  /* Wait for everybody */
+  for (i = 0; i < count; i++)
+    if (a[i] != finished_first)
+      while (acquire_sem(go) != B_NO_ERROR) {}
+
+  if (tot && (finished_first != -1)) {
+    /* Wait for timeout, too. */
+    /* Be Book says to suspend & resume to wake up a snoozer */
+    suspend_thread(tot);
+    /* Be Book says snooze here - why?! */ snooze(1000);
+    resume_thread(tot);
+    while (acquire_sem(go) != B_NO_ERROR) {}
+  }
+
+  return got;
+}
+#endif
+
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+static void clean_up_wait(long result, OS_SEMAPHORE_TYPE *array, 
+			  int *rps, int count)
 {
   if ((result >= WAIT_OBJECT_0) && (result < WAIT_OBJECT_0 + count)) {
     result -= WAIT_OBJECT_0;
     if (rps[result])
-      ReleaseSemaphore(array[result], 1, NULL);
+      RELEASE_SEMAPHORE(array[result]);
   }
   
   /* Clear out break semaphore */
-  WaitForSingleObject(scheme_break_semaphore, 0);
+  TRY_WAIT_SEMAPHORE(scheme_break_semaphore);
 }
 #endif
 
@@ -6169,14 +6400,18 @@ static void default_sleep(float v, void *fds)
 {
   if (!fds) {
 #ifndef NO_SLEEP
-#ifndef NO_USLEEP
+# ifdef USE_BEOS_SNOOZE
+    snooze((bigtime_t)(v * 1000000));
+# else
+#  ifndef NO_USLEEP
     usleep((unsigned)(v * 1000));
-#else
+#  else
     sleep(v);
-#endif
+#  endif
+# endif
 #endif
   } else {
-#if defined(FILES_HAVE_FDS) || defined(USE_WINSOCK_TCP)
+#if defined(FILES_HAVE_FDS) || defined(USE_WINSOCK_TCP) || defined(USE_BEOS_PORT_THREADS)
     int limit;
     fd_set *rd, *wr, *ex;
     struct timeval time;
@@ -6184,25 +6419,28 @@ static void default_sleep(float v, void *fds)
     time.tv_sec = (long)v;
     time.tv_usec = (long)(fmod(v, 1.0) * 1000000);
 
-#ifdef USE_WINSOCK_TCP
+# ifdef USE_WINSOCK_TCP
     limit = 0;
-#else
-#ifdef USE_ULIMIT
+# else
+# ifdef USE_ULIMIT
     limit = ulimit(4, 0);
-#else
+# else
     limit = getdtablesize();
-#endif    
+# endif    
 #endif
 
     rd = (fd_set *)fds;
     wr = (fd_set *)MZ_GET_FDSET(fds, 1);
     ex = (fd_set *)MZ_GET_FDSET(fds, 2);
 
-#ifdef WIN32_FD_HANDLES
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
     {
-      HANDLE *array, just_two_array[2], break_sema;
-      int count = 0, *rps, just_two_rps[2];
+      long result;
+      OS_SEMAPHORE_TYPE *array, just_two_array[2], break_sema;
+      int count, *rps, just_two_rps[2];
+      int fd_added;
 
+      fd_added = ((win_extended_fd_set *)fds)->added;
       count = ((win_extended_fd_set *)fds)->num_handles;
       array = ((win_extended_fd_set *)fds)->handles;
       rps = ((win_extended_fd_set *)fds)->repost_sema;
@@ -6213,17 +6451,22 @@ static void default_sleep(float v, void *fds)
 	rps = just_two_rps;
       }
       rps[count] = 0;
-#ifdef WIN32_THREADS
+# ifdef WIN32_THREADS
       break_sema = (HANDLE)scheme_win32_get_break_semaphore(scheme_current_process->thread);
-#else
+# else
       break_sema = scheme_break_semaphore;
-#endif
+# endif
       array[count++] = break_sema;
 
-      if (count && !rd->fd_count && !wr->fd_count && !ex->fd_count) {
+      if (count && !fd_added) {
 	/* Simple: just wait for HANDLE-based input: */
-	clean_up_wait(WaitForMultipleObjects(count, array, FALSE, v ? (DWORD)(v * 1000) : INFINITE),
-		      array, rps, count);
+#if defined(WIN32_FD_HANDLES)
+	result = WaitForMultipleObjects(count, array, FALSE, v ? (DWORD)(v * 1000) : INFINITE);
+#endif
+#if defined(USE_BEOS_PORT_THREADS)
+	result = wait_multiple_sema(count, array, v);
+#endif
+	clean_up_wait(result, array, rps, count);
 	return;
       } else if (count) {
 	/* What a mess! We must wait for either HANDLE-based input or TCP
@@ -6231,32 +6474,52 @@ static void default_sleep(float v, void *fds)
 	   hit a semaphore if the status changes. Meanwhile, in this
 	   thread, wait on both the console input and the semaphore.
 	   When either happens, kill the thread. */
-	HANDLE th;
-	DWORD id;
-	Tcp_Select_Info info; 
-	SOCKET fake;
+	OS_THREAD_TYPE th;
+	Tcp_Select_Info *info;
+	tcp_t fake;
+
+	printf("complex\n");
+
+	info = MALLOC_ONE(Tcp_Select_Info);
 
 	fake = socket(PF_INET, SOCK_STREAM, 0);
 	FD_SET(fake, ex);
 
-	info.rd = rd;
-	info.wr = wr;
-	info.ex = ex;
+	info->rd = rd;
+	info->wr = wr;
+	info->ex = ex;
 
-	th = CreateThread(NULL, 5000, 
-			  (LPTHREAD_START_ROUTINE)select_for_tcp,
-			  &info, 0, &id);
-	
+#if defined(WIN32_FD_HANDLES)
+	{
+	  DWORD id;
+	  th = CreateThread(NULL, 5000, 
+			    (LPTHREAD_START_ROUTINE)select_for_tcp,
+			    info, 0, &id);
+	}
+#endif	
+#if defined(USE_BEOS_PORT_THREADS)
+	th = spawn_thread(select_for_tcp, "socket waiter",
+			  B_NORMAL_PRIORITY, info);
+	resume_thread(th);
+#endif
+
 	rps[count] = 0;
 	array[count++] = th;
 
-	clean_up_wait(WaitForMultipleObjects(count, array, FALSE, 
-	                                     v ? (DWORD)(v * 1000) : INFINITE),
-		      array, rps, count);
+#if defined(WIN32_FD_HANDLES)
+	result = WaitForMultipleObjects(count, array, FALSE, 
+					v ? (DWORD)(v * 1000) : INFINITE),
+#endif	
+#if defined(USE_BEOS_PORT_THREADS)
+	result = wait_multiple_sema(count, array, v);
+#endif
+	clean_up_wait(result, array, rps, count);
 
 	closesocket(fake); /* cause selector thread to end */
 
+#if defined(WIN32_FD_HANDLES)
 	CloseHandle(th);
+#endif
 	
 	return;
       }

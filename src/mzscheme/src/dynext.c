@@ -37,6 +37,9 @@
 #if defined(WINDOWS_DYNAMIC_LOAD)
 # include <windows.h>
 #endif
+#if defined(BEOS_IMAGE_DYNAMIC_LOAD)
+# include <be/kernel/image.h>
+#endif
 #if defined(CODEFRAGMENT_DYNAMIC_LOAD)
 # include <CodeFragments.h>
 static Boolean get_ext_file_spec(FSSpec *spec, const char *filename );

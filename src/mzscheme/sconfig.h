@@ -248,6 +248,51 @@ int scheme_solaris_semaphore_try_down(void *);
 
 #endif
 
+  /************** BeOS with egcs (and CodeWarrior?) ****************/
+
+#if defined(__BEOS__)
+
+# ifdef __INTEL__
+#  define SCHEME_PLATFORM_LIBRARY_SUBPATH "i586-beos"
+# else
+#  define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-beos"
+#endif
+
+# include "uconfig.h"
+# undef UNIX_DYNAMIC_LOAD
+# undef UNIX_FIND_STACK_BOUNDS
+# undef USE_GETRUSAGE
+
+# define BEOS_IMAGE_DYNAMIC_LOAD
+
+# undef HAS_STANDARD_IOB
+# undef FILES_HAVE_FDS
+
+# define USE_BEOS_PORT_THREADS
+
+# define USE_FCNTL_O_NONBLOCK
+# define PF_INET AF_INET
+# define PROTOENT_IS_INT
+# define CANT_SET_SOCKET_BUFSIZE
+# define SEND_IS_NEVER_TOO_BIG
+
+# define USE_BEOS_SNOOZE
+
+# define SIGSET_IS_SIGNAL
+
+# define DIRENT_NO_NAMLEN
+
+# define BEOS_FIND_STACK_BOUNDS
+# define STACK_GROWS_DOWN
+
+# ifdef __INTEL__
+#  define REGISTER_POOR_MACHINE
+# endif
+
+# define FLAGS_ALREADY_SET
+
+#endif
+
   /************** SGI/IRIX with SGI cc ****************/
 
 #if  (defined(mips) || defined(__mips)) \
@@ -561,7 +606,7 @@ int scheme_win32_semaphore_try_down(void *);
 
   /************ Macintosh with CodeWarrior *************/
 
-#if defined(__MWERKS__)
+#if defined(__MWERKS__) && !defined(__BEOS__)
 
 # if defined(__POWERPC__)
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-mac"

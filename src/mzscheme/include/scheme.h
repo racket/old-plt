@@ -607,6 +607,9 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 #ifdef USE_DYNAMIC_FDSET_SIZE
 # define USE_FAR_MZ_FDCALLS
 #endif
+#ifdef USE_BEOS_PORT_THREADS
+# define USE_FAR_MZ_FDCALLS
+#endif
 
 #ifdef USE_FAR_MZ_FDCALLS
 # define MZ_GET_FDSET(p, n) scheme_get_fdset(p, n)

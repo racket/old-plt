@@ -35,22 +35,18 @@
 				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="3"/>
 			<Tool
-				Name="VCCustomBuildTool"
-				Description="Copy mxmain.dll to collects"
-				CommandLine="copy /y $(OutDir)\mxmain.dll ..\..\..\collects\mysterx\private\compiled\native\win32\i386\
-"
-				Outputs="..\..\..\collects\mysterx\private\compiled\native\win32\i386\mxmain.dll"/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="htmlhelp.lib libmzgcxxxxxxx.lib libmzschxxxxxxx.lib mzdyn.obj .\mysc\Debug\mysc.lib"
-				OutputFile="$(OutDir)\mxmain.dll"
+				AdditionalDependencies="htmlhelp.lib libmzgcxxxxxxx.lib libmzschxxxxxxx.lib mzdyn.obj mysc\Debug\mysc.lib"
+				OutputFile="..\..\..\collects\mysterx\private\compiled\native\win32\i386\mxmain.dll"
 				LinkIncremental="0"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="..\..\..\lib\msvc"
 				IgnoreDefaultLibraryNames="LIBCMT.lib;LIBCMTD.lib"
 				ModuleDefinitionFile="..\..\mysterx\mxmain.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)\$(InputName).pdb"
+				ProgramDatabaseFile="..\..\..\collects\mysterx\private\compiled\native\win32\i386\mxmain.pdb"
 				SubSystem="2"
 				ImportLibrary="$(OutDir)\$(InputName).lib"
 				TargetMachine="1"/>
@@ -97,22 +93,18 @@
 				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="3"/>
 			<Tool
-				Name="VCCustomBuildTool"
-				Description="Copy mxmain.dll to collects"
-				CommandLine="copy /y $(OutDir)\mxmain.dll ..\..\..\collects\mysterx\private\compiled\native\win32\i386\
-"
-				Outputs="..\..\..\collects\mysterx\private\compiled\native\win32\i386\mxmain.dll"/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="htmlhelp.lib libmzgcxxxxxxx.lib libmzschxxxxxxx.lib mscoree.lib mzdyn.obj .\mysc\Debug\mysc.lib"
-				OutputFile="$(OutDir)\mxmain.dll"
+				AdditionalDependencies="htmlhelp.lib libmzgcxxxxxxx.lib libmzschxxxxxxx.lib mscoree.lib mzdyn.obj mysc\Debug\mysc.lib"
+				OutputFile="..\..\..\collects\mysterx\private\compiled\native\win32\i386\mxmain.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="..\..\..\lib\msvc"
 				IgnoreDefaultLibraryNames="LIBCMT.lib;LIBCMTD.lib"
 				ModuleDefinitionFile="..\..\mysterx\mxmain.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)\$(InputName).pdb"
+				ProgramDatabaseFile="..\..\..\collects\mysterx\private\compiled\native\win32\i386\mxmain.pdb"
 				SubSystem="2"
 				ImportLibrary="$(OutDir)\$(InputName).lib"
 				TargetMachine="1"/>
@@ -164,15 +156,11 @@
 				DebugInformationFormat="0"
 				CompileAs="0"/>
 			<Tool
-				Name="VCCustomBuildTool"
-				Description="Copy mxmain.dll to collects"
-				CommandLine="copy /y $(OutDir)\mxmain.dll ..\..\..\collects\mysterx\private\compiled\native\win32\i386\
-"
-				Outputs="..\..\..\collects\mysterx\private\compiled\native\win32\i386\mxmain.dll"/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="htmlhelp.lib libmzgcxxxxxxx.lib libmzschxxxxxxx.lib mzdyn.obj .\mysc\Release\mysc.lib"
-				OutputFile="$(OutDir)\mxmain.dll"
+				AdditionalDependencies="htmlhelp.lib libmzgcxxxxxxx.lib libmzschxxxxxxx.lib mzdyn.obj mysc\Release\mysc.lib"
+				OutputFile="..\..\..\collects\mysterx\private\compiled\native\win32\i386\mxmain.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="..\..\..\lib\msvc"

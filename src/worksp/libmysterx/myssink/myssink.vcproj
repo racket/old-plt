@@ -34,37 +34,33 @@
 				DebugInformationFormat="3"
 				CompileAs="2"/>
 			<Tool
-				Name="VCCustomBuildTool"
-				Description="Copy $(InputName).dll to collects"
-				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..
-"
-				Outputs="..\..\..\..\$(InputName).dll"/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="libmzgcxxxxxxx.lib libmzschxxxxxxx.lib mzdyn.obj ..\mysc\Debug\mysc.lib"
-				OutputFile="$(OutDir)\$(InputName).dll"
+				OutputFile="..\..\..\..\$(ProjectName).dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="..\..\..\..\lib\msvc"
 				IgnoreDefaultLibraryNames="LIBCMT.lib;LIBCMTD.lib"
-				ModuleDefinitionFile="..\..\..\mysterx\myssink\$(InputName).def"
+				ModuleDefinitionFile="..\..\..\mysterx\myssink\$(ProjectName).def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)\$(InputName).pdb"
+				ProgramDatabaseFile="..\..\..\..\$(ProjectName).pdb"
 				SubSystem="2"
-				ImportLibrary="$(OutDir)\$(InputName).lib"
+				ImportLibrary="$(OutDir)\$(ProjectName).lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
 				WarningLevel="3"
 				GenerateStublessProxies="TRUE"
-				TypeLibraryName="$(InputName).tlb"
+				TypeLibraryName="$(ProjectName).tlb"
 				OutputDirectory="..\..\..\mysterx\myssink"
-				HeaderFileName="$(InputName).h"
+				HeaderFileName="$(ProjectName).h"
 				EnableErrorChecks="2"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Register $(InputName).dll"
-				CommandLine="REGSVR32 /s ..\..\..\..\$(InputName).dll"/>
+				Description="Register $(ProjectName).dll"
+				CommandLine="REGSVR32 /s ..\..\..\..\$(ProjectName).dll"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -100,37 +96,33 @@
 				DebugInformationFormat="3"
 				CompileAs="2"/>
 			<Tool
-				Name="VCCustomBuildTool"
-				Description="Copy $(InputName).dll to collects"
-				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..
-"
-				Outputs="..\..\..\..\$(InputName).dll"/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="libmzgcxxxxxxx.lib libmzschxxxxxxx.lib mzdyn.obj ..\mysc\Debug\mysc.lib"
-				OutputFile="$(OutDir)\$(InputName).dll"
+				OutputFile="..\..\..\..\$(ProjectName).dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="..\..\..\..\lib\msvc"
 				IgnoreDefaultLibraryNames="LIBCMT.lib;LIBCMTD.lib"
-				ModuleDefinitionFile="..\..\..\mysterx\myssink\$(InputName).def"
+				ModuleDefinitionFile="..\..\..\mysterx\myssink\$(ProjectName).def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)\$(InputName).pdb"
+				ProgramDatabaseFile="..\..\..\..\$(ProjectName).pdb"
 				SubSystem="2"
-				ImportLibrary="$(OutDir)\$(InputName).lib"
+				ImportLibrary="$(OutDir)\$(ProjectName).lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
 				WarningLevel="3"
 				GenerateStublessProxies="TRUE"
-				TypeLibraryName="$(InputName).tlb"
+				TypeLibraryName="$(ProjectName).tlb"
 				OutputDirectory="..\..\..\mysterx\myssink"
-				HeaderFileName="$(InputName).h"
+				HeaderFileName="$(ProjectName).h"
 				EnableErrorChecks="2"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Register $(InputName).dll"
-				CommandLine="REGSVR32 /s ..\..\..\..\$(InputName).dll"/>
+				Description="Register $(ProjectName).dll"
+				CommandLine="REGSVR32 /s ..\..\..\..\$(ProjectName).dll"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -172,38 +164,34 @@
 				DebugInformationFormat="0"
 				CompileAs="2"/>
 			<Tool
-				Name="VCCustomBuildTool"
-				Description="Copy $(InputName).dll to collects"
-				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..
-"
-				Outputs="..\..\..\..\$(InputName).dll"/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="libmzgcxxxxxxx.lib libmzschxxxxxxx.lib mzdyn.obj ..\mysc\Release\mysc.lib"
-				OutputFile="$(OutDir)\$(InputName).dll"
+				OutputFile="..\..\..\..\$(ProjectName).dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="..\..\..\..\lib\msvc"
 				IgnoreDefaultLibraryNames="LIBCMT.lib"
-				ModuleDefinitionFile="..\..\..\mysterx\myssink\$(InputName).def"
+				ModuleDefinitionFile="..\..\..\mysterx\myssink\$(ProjectName).def"
 				GenerateDebugInformation="FALSE"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)\$(InputName).lib"
+				ImportLibrary="$(OutDir)\$(ProjectName).lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
 				WarningLevel="3"
 				GenerateStublessProxies="TRUE"
-				TypeLibraryName="$(InputName).tlb"
+				TypeLibraryName="$(ProjectName).tlb"
 				OutputDirectory="..\..\..\mysterx\myssink"
-				HeaderFileName="$(InputName).h"
+				HeaderFileName="$(ProjectName).h"
 				EnableErrorChecks="2"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Register $(InputName).dll"
-				CommandLine="REGSVR32 /s ..\..\..\..\$(InputName).dll"/>
+				Description="Register $(ProjectName).dll"
+				CommandLine="REGSVR32 /s ..\..\..\..\$(ProjectName).dll"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool

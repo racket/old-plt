@@ -12,36 +12,34 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\..\..\..\collects\launcher"
-			IntermediateDirectory=".\Release"
+			OutputDirectory="..\..\..\collects\launcher"
+			IntermediateDirectory="Release"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="1"
-				InlineFunctionExpansion="1"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="TRUE"
+				FavorSizeOrSpeed="1"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,MRSTART"
 				StringPooling="TRUE"
 				RuntimeLibrary="4"
 				EnableFunctionLevelLinking="TRUE"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\Release/mrstart.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
 				WarningLevel="3"
-				SuppressStartupBanner="TRUE"/>
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib"
-				OutputFile=".\..\..\..\collects\launcher/mrstart.exe"
+				OutputFile="..\..\..\collects\launcher\$(ProjectName).exe"
 				LinkIncremental="1"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="..\..\..\collects\launcher\$(ProjectName).pdb"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\..\..\..\collects\launcher/mrstart.pdb"
 				SubSystem="2"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -49,7 +47,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\..\..\..\collects\launcher/mrstart.tlb"/>
+				TypeLibraryName="..\..\..\collects\launcher\$(ProjectName).tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -59,6 +57,7 @@
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG,MRSTART"
+				AdditionalIncludeDirectories="..\starters;$(NoInherit)"
 				Culture="1033"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
@@ -75,12 +74,6 @@
 			</File>
 			<File
 				RelativePath="..\starters\start.rc">
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="\plt\src\worksp\starters;$(NoInherit)"/>
-				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter

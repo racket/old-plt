@@ -35,18 +35,13 @@
 				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
-				Name="VCCustomBuildTool"
-				Description="Copy files to final location"
-				CommandLine="copy /y $(OutDir)\$(ProjectName).exe ..\..\..\$(ProjectName).exe
-copy /y $(OutDir)\$(ProjectName).pdb ..\..\..\$(ProjectName).pdb
-"
-				Outputs="..\..\..\$(ProjectName).exe"
-/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="unicows.lib WSock32.lib"
-				OutputFile="$(OutDir)\$(ProjectName).exe"
+				AdditionalDependencies="Unicows.lib WSock32.lib"
+				OutputFile="..\..\..\$(ProjectName).exe"
+				ProgramDatabaseFile="..\..\..\$(ProjectName).pdb"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				IgnoreDefaultLibraryNames="libcd.lib"
@@ -90,18 +85,13 @@ copy /y $(OutDir)\$(ProjectName).pdb ..\..\..\$(ProjectName).pdb
 				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
-				Name="VCCustomBuildTool"
-				Description="Copy files to target directory"
-				CommandLine="copy /y $(OutDir)\$(ProjectName).pdb ..\..\..\$(ProjectName).pdb
-copy /y $(OutDir)\$(ProjectName).exe ..\..\..\
-"
-				Outputs="..\..\..\$(InputName).pdb,..\..\..\$(InputName).exe"
-/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="unicows.lib WSock32.lib"
-				OutputFile="$(OutDir)\$(ProjectName).exe"
+				AdditionalDependencies="Unicows.lib WSock32.lib"
+				OutputFile="..\..\..\$(ProjectName).exe"
+				ProgramDatabaseFile="..\..\..\$(ProjectName).pdb"
 				SuppressStartupBanner="TRUE"
 				IgnoreDefaultLibraryNames="libcd.lib"
 				GenerateDebugInformation="TRUE"

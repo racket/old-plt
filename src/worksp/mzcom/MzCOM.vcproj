@@ -32,17 +32,12 @@
 				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
-				Name="VCCustomBuildTool"
-				Description="Copy files to final location"
-				CommandLine="copy /y $(OutDir)\$(ProjectName).exe ..\..\..\$(ProjectName).exe
-copy /y $(OutDir)\$(ProjectName).pdb ..\..\..\$(ProjectName).pdb
-"
-				Outputs="..\..\..\$(ProjectName).pdb,..\..\..\$(ProjectName).exe"
-/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				OutputFile="$(OutDir)\$(ProjectName).exe"
+				OutputFile="..\..\..\$(ProjectName).exe"
+				ProgramDatabaseFile="..\..\..\$(ProjectName).pdb"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				SubSystem="2"/>
@@ -91,17 +86,12 @@ copy /y $(OutDir)\$(ProjectName).pdb ..\..\..\$(ProjectName).pdb
 				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
-				Name="VCCustomBuildTool"
-				Description="Copy files to final location"
-				CommandLine="copy /y $(OutDir)\$(ProjectName).exe ..\..\..\$(ProjectName).exe
-copy /y $(OutDir)\$(ProjectName).pdb ..\..\..\$(ProjectName).pdb
-"
-				Outputs="..\..\..\$(ProjectName).pdb,..\..\..\$(ProjectName).exe"
-/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				OutputFile="$(OutDir)\$(ProjectName).exe"
+				OutputFile="..\..\..\$(ProjectName).exe"
+				ProgramDatabaseFile="..\..\..\$(ProjectName).pdb"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"

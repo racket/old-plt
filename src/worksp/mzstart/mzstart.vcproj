@@ -12,24 +12,21 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\..\..\..\collects\launcher"
-			IntermediateDirectory=".\Release"
+			OutputDirectory="..\..\..\collects\launcher"
+			IntermediateDirectory="Release"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="1"
-				InlineFunctionExpansion="1"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="TRUE"
+				FavorSizeOrSpeed="1"
 				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,MZSTART"
 				StringPooling="TRUE"
 				RuntimeLibrary="4"
 				EnableFunctionLevelLinking="TRUE"
-				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\Release/mzstart.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"/>
@@ -38,16 +35,14 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib"
-				OutputFile=".\..\..\..\collects\launcher/mzstart.exe"
+				OutputFile="..\..\..\collects\launcher\$(ProjectName).exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\..\..\..\collects\launcher/mzstart.pdb"
+				ProgramDatabaseFile="..\..\..\collects\launcher\$(ProjectName).pdb"
 				SubSystem="1"/>
 			<Tool
-				Name="VCMIDLTool"
-				TypeLibraryName=".\..\..\..\collects\launcher/mzstart.tlb"/>
+				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -56,6 +51,7 @@
 				Name="VCPreLinkEventTool"/>
 			<Tool
 				Name="VCResourceCompilerTool"
+				AdditionalIncludeDirectories="..\starters;$(NoInherit)"
 				PreprocessorDefinitions="NDEBUG,MZSTART"
 				Culture="1033"/>
 			<Tool
@@ -73,12 +69,6 @@
 			</File>
 			<File
 				RelativePath="..\starters\start.rc">
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="\plt\src\worksp\starters;$(NoInherit)"/>
-				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter

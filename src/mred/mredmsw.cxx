@@ -29,6 +29,8 @@ extern "C" {
   void scheme_forget_thread(struct Scheme_Thread_Memory *);
 };
 
+static int found_nothing;
+
 extern void wxDoPreGM(void);
 extern void wxDoPostGM(void);
 extern int wxCheckMousePosition();
@@ -169,6 +171,7 @@ static BOOL CALLBACK CheckWindow(HWND wnd, LPARAM param)
                     info->remove ? PM_REMOVE : PM_NOREMOVE)) {
       info->wnd = wnd;
       info->c_return = c;
+      found_nothing = 0;
       return FALSE;
     }
   }
@@ -344,8 +347,23 @@ void MrEdMSWSleep(float secs, void *fds)
   if (wxCheckMousePosition())
     return;
 
-  if (GetQueueStatus(QS_ALLINPUT))
-    return;
+  if (GetQueueStatus(QS_ALLINPUT)) {
+    /* Maybe the events are new since we last checked, or maybe
+       they're not going to be dispatched until something else
+       unblocks. Go one more time around, and if none of the events
+       are dispatched, then we're willing to sleep.
+
+       We don't leave this up to MsgWaitForNextEvent because it's
+       possible that something other than the PeekMessage() above
+       modifies the "newness" of queue events. */
+    if (found_nothing) {
+      /* Ok, we've already gone around. Go ahead and block. */
+      found_nothing = 0;
+    } else {
+      found_nothing = 1;
+      return;
+    }
+  }
  
   StopSleepThreadTimer();
 
@@ -421,23 +439,9 @@ void MrEdMSWSleep(float secs, void *fds)
       CloseHandle(th2);
     }
   } else if (wxTheApp->keep_going) {
-#if 1
     MsgWaitForMultipleObjects(0, NULL, FALSE, 
 			      secs ? msecs : INFINITE,
 			      QS_ALLINPUT);
-#else
-    UINT id;
-    
-    if (secs)
-      id = SetTimer(NULL, 0, msecs, NULL);
-    else
-      id = 0;
-  
-    WaitMessage();
-
-    if (id)
-      KillTimer(NULL, id);
-#endif
   }
 
   StartSleepThreadTimer();

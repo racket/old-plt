@@ -226,7 +226,16 @@
   (define (show-backtrace-window dis error-text)
     (kill-backtrace-window)
     (set! current-backtrace-window 
-          (make-object (drscheme:frame:basics-mixin (fw:frame:standard-menus-mixin fw:frame:basic%))
+          (make-object (class (drscheme:frame:basics-mixin (fw:frame:standard-menus-mixin fw:frame:basic%)) args
+			 (override
+			  [file-menu:between-print-and-close
+			   (lambda (file-menu)
+			     (void))])
+			 (override
+			  [edit-menu:between-find-and-preferences
+			   (lambda (file-menu)
+			     (void))])
+			 (sequence (apply super-init args)))
             "Backtrace - DrScheme" #f 400 300))
     (letrec ([text (make-object fw:text:basic%)]
              [ec (make-object fw:canvas:wide-snip% (send current-backtrace-window get-area-container) text)]

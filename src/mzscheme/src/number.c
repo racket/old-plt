@@ -1331,9 +1331,9 @@ static Scheme_Object *complex_atan(Scheme_Object *c)
 
 #ifdef TRIG_ZERO_NEEDS_SIGN_CHECK
 #define MK_SCH_TRIG(SCH_TRIG, c_trig) double SCH_TRIG(double d) { if (d == 0.0) return d; else return c_trig(d); }
-#define MK_SCH_TRIG(SCH_TAN, tan)
-#define MK_SCH_TRIG(SCH_SIN, sin)
-#define MK_SCH_TRIG(SCH_ASIN, asin)
+MK_SCH_TRIG(SCH_TAN, tan)
+MK_SCH_TRIG(SCH_SIN, sin)
+MK_SCH_TRIG(SCH_ASIN, asin)
 #else
 # define SCH_TAN tan
 # define SCH_SIN sin

@@ -550,6 +550,8 @@
 (syntax-test #'(class object% (define/public (x 1) 2)))
 (syntax-test #'(class object% (define/public (1 x) 2)))
 (syntax-test #'(class object% (define/public (x . 1) 2)))
+(syntax-test #'(class object% (define/public ((x 1) . a) 2)))
+(syntax-test #'(class object% (define/public ((x b b) a) 2)))
 
 (syntax-test #'(class object% define/override))
 (syntax-test #'(class object% (define/override)))
@@ -571,6 +573,7 @@
 
 (define c*1% (class object%
 	       (define/public (x) (f))
+	       (define/public ((higher-order a) b) (+ a b))
 	       (public*
 		[y (lambda () 2)]
 		[z (lambda () 3)])
@@ -594,6 +597,7 @@
 (test 1 'o2 (send o*2 x))
 (test 20 'o2 (send o*2 y))
 (test 30 'o2 (send o*2 z))
+(test 7 'o2 ((send o*2 higher-order 1) 6))
 
 ;; ----------------------------------------
 ;; Macro definitions in classes

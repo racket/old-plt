@@ -1580,7 +1580,9 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
   mzshort *skips, skips_fast[5];
   int i, pos, opos, rpos, recbox, num_rec_procs = 0, extra_alloc;
 
-  /* Special case: (let ([x E]) x) where E is lambda, case-lambda, etc. */
+  /* Special case: (let ([x E]) x) where E is lambda, case-lambda,
+     etc.  (If we allowed arbitrary E here, it would affect the
+     tailness of E.) */
   if (!head->recursive && (head->count == 1) && (head->num_clauses == 1)) {
     clv = (Scheme_Compiled_Let_Value *)head->body;
     if (SAME_TYPE(SCHEME_TYPE(clv->body), scheme_local_type)
@@ -1669,7 +1671,7 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
 	  if (skips[j])
 	    scheme_resolve_info_add_mapping(linfo, j, 
 					    ((skips[j] < 0)
-					     ? -skips[j]
+					     ? (k - skips[j] - 1)
 					     : (skips[j] - 1 + frame_size)), 
 					    0);
 	  else
@@ -1678,13 +1680,13 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
 
 	le = scheme_resolve_expr(clv->value, linfo);
 
-	if (0 && SAME_TYPE(SCHEME_TYPE(le), scheme_local_type)) {
+	if (SAME_TYPE(SCHEME_TYPE(le), scheme_local_type)) {
 	  /* This binding is like (let ([x y]) ...)  where y is not
 	     global and never set!ed, so replace all uses of x with
 	     uses of y. In the skips array, if the position is
 	     outside this frame, put 1 + offset relative
 	     the start of the binding group. If this position is
-	     inside this frame, but -SCHEME_LOCAL_POS(le). */
+	     inside this frame, put -pos in the array. */
 	  j = SCHEME_LOCAL_POS(le);
 	  if (j < frame_size)
 	    skips[i] = -j;
@@ -1715,7 +1717,7 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
       for (k = 0, i = head->count; i--; ) {
 	if (skips[i])
 	  scheme_resolve_info_add_mapping(linfo, i, ((skips[i] < 0)
-						     ? -skips[i]
+						     ? (k - skips[i] - 1)
 						     : (skips[i] - 1 + frame_size)), 0);
 	else
 	  scheme_resolve_info_add_mapping(linfo, i, k++, 0);

@@ -713,8 +713,18 @@
 (syntax-test #'(define 1 2))
 (syntax-test #'(define (1) 1))
 (syntax-test #'(define (x 1) 1))
+(syntax-test #'(define (x a a) 1))
+(syntax-test #'(define ((x 1) a) 1))
+(syntax-test #'(define ((x b b) a) 1))
 (syntax-test #'(define x 1 . 2))
 (syntax-test #'(define x 1 2))
+
+(let ()
+  (define ((f x) y z) (list x y z))
+  (test '(1 2 3) (f 1) 2 3))
+(let ()
+  (define ((g a) a b) (list a b))
+  (test '(2 3) (g 1) 2 3))
 
 (define-values (add3) (lambda (x) (+ x 3)))
 (test 6 'define (add3 3))

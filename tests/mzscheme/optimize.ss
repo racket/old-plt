@@ -27,7 +27,7 @@
     (test same? `(compile ,same? ,expr2) (comp=? (compile expr1) (compile expr2)))]))
 
 (let ([x (compile '(lambda (x) x))])
-  (test x compile x))
+  (test #t 'fixpt (eq? x (compile x))))
 
 (test-comp 5 '(if #t 5 (cons 1 2)))
 (test-comp 5 '(if #f (cons 1 2) 5))
@@ -68,6 +68,27 @@
 	   '(f 5))
 (test-comp '(fluid-let () (f 5))
 	   '(f 5))
+
+(test-comp '(let ([i (cons 0 1)]) (let ([j i]) j))
+	   '(let ([i (cons 0 1)]) i))
+
+(define (normalize-depth s)
+  `(let ([a ,s]
+	 [b (let-values ([(a b c d e f) (values 1 2 3 4 5 6)])
+	      (list a b c d e f))])
+     10))
+
+(test-comp (normalize-depth '(let* ([i (cons 0 1)][j i]) j))
+	   (normalize-depth '(let* ([i (cons 0 1)]) i)))
+
+(test-comp (normalize-depth '(let* ([i (cons 0 1)][j (list 2)][k (list 3)][g i]) g))
+	   (normalize-depth '(let* ([i (cons 0 1)][j (list 2)][k (list 3)]) i)))
+
+(test-comp (normalize-depth '(let* ([i (cons 0 1)][j (list 2)][k (list 3)][g i][h g]) h))
+	   (normalize-depth '(let* ([i (cons 0 1)][j (list 2)][k (list 3)]) i)))
+
+(test-comp (normalize-depth '(let* ([i (cons 0 1)][g i][h (car g)][m h]) m))
+	   (normalize-depth '(let* ([i (cons 0 1)][h (car i)]) h)))
 
 (set! maybe-different-depths? #t)
 

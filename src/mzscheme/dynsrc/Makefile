@@ -64,7 +64,7 @@ depend:
 	makedepend -- $(CFLAGS) -- $(SRCS)
 
 clean:
-	/bin/rm -f objects/*/*.o *~ Makefile.bak
+	/bin/rm -f $(OBJDIR)/*.o *~ Makefile.bak
 
 exile:
 	$(XMAKE) clean

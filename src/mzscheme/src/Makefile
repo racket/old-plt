@@ -126,7 +126,7 @@ depend:
 	makedepend -- $(CFLAGS) -- $(SRCS)
 
 clean:
-	/bin/rm -f objects/*/* *~ Makefile.bak $(OBJDIR)/schsys.h
+	/bin/rm -f $(OBJDIR)/*.o *~ Makefile.bak $(OBJDIR)/schsys.h
 
 $(OBJDIR)/salloc.o: salloc.c
 	$(CC) $(CFLAGS) -c salloc.c -o $(OBJDIR)/salloc.o

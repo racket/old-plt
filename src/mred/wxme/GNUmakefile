@@ -85,7 +85,7 @@ $(OBJDIR)/edjrmain.o : edjrmain.cxx edjr.h
 	$(MCC) edjrmain.cxx -o $(OBJDIR)/edjrmain.o
 
 clean:
-	rm -f objects/*/* *~
+	rm -f $(OBJDIR)/*.o $(OBJDIR)/*.a *~
 
 exile-common:
 	rm -f *~ libwxme.a edjr

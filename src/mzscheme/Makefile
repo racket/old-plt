@@ -288,7 +288,7 @@ depend:
 clean:
 	/bin/rm -rf tmp[123456789] tests/tmp[123456789] tests/sub[123]
 	/bin/rm -f tests/*~
-	/bin/rm -f objects/*/*.o *~ Makefile.bak utils/*~ include/*~ ../collects/mzlib/*~ core
+	/bin/rm -f $(OBJDIR)/*.o *~ Makefile.bak utils/*~ include/*~ ../collects/mzlib/*~ core
 	/bin/rm -f aixdlfcn/dlfcn.o aixdlfcn/libdl.a 
 	/bin/rm -f $(LIBDIR)/mzdyn.o $(LIBDIR)/libgc.a $(LIBDIR)/libmzscheme.a $(LIBDIR)/libdl.a
 	cd gc; $(XMAKE) clean

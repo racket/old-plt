@@ -63,7 +63,7 @@ depend:
 	makedepend -- $(CFLAGS) -- $(SRCS)
 
 clean:
-	/bin/rm -f $(OBJS) objects/*/* test *~ Makefile.bak
+	/bin/rm -f $(OBJS) $(OBJDIR)/*.o $(OBJDIR)/*.a test *~ Makefile.bak
 
 # Note: 'make depend' is no longer required. As distributed, the below
 #       dependencies have been trimmed to include only dependencies

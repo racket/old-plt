@@ -130,12 +130,10 @@ depend:
 	cd wxs; $(MAKE) depend
 	cd ../mzscheme; $(MAKE) depend
 
-TILDES=*~ ../collects/mrdemo/*~ demo/turtles/*~ demo/morph/*~ system/*~ collects/mred/*~ tests/*~ misc/*~ windows/*~ ../*~
-
 clean-mred:
 	cd $(WXDIR)/src/x; $(MAKE) clean
-	rm -f objects/*/*.o $(TILDES) core
-	rm -f gc2/objects/*/*.o gc2/xsrc/*.c gc2/xsrc/*.cc
+	rm -f $(OBJDIR)/*.o core
+	rm -f gc2/$(OBJDIR)/*.o gc2/xsrc/*.c gc2/xsrc/*.cc
 	cd wxme; $(MAKE) clean
 	cd wxs; $(MAKE) clean
 

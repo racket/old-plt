@@ -341,7 +341,7 @@ $(EXEDIR)/threadlibs: $(srcdir)/threadlibs.c $(srcdir)/gcconfig.h Makefile
 	$(CC) $(CFLAGS) -o $(EXEDIR)/threadlibs $(srcdir)/threadlibs.c
 
 clean: 
-	rm -f objects/*/* gctest gctest_dyn_link test_cpp \
+	rm -f $(OBJDIR)/*.o $(OBJDIR)/*.a gctest gctest_dyn_link test_cpp \
 	      setjmp_test  $(OBJDIR)/mon.out $(OBJDIR)/gmon.out $(OBJDIR)/a.out \
               core $(EXEDIR)/if_not_there $(EXEDIR)/if_mach $(EXEDIR)/threadlibs \
 	      $(CORD_OBJS) cord/cordtest cord/de

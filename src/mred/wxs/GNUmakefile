@@ -56,7 +56,7 @@ xdepend:
 depend:
 
 clean:
-	rm -f objects/*/*
+	rm -f $(OBJDIR)/*.o $(OBJDIR)/*.a
 
 repatriate:
 	mv $(HIDEDIR)/wxs_objects/objects .

@@ -419,7 +419,7 @@ char *scheme_os_getcwd(char *buf, int buflen, int *actlen, int noexn)
 	    buf[0] = 0;
 	    return buf;
 	  } else {
-	    return "";
+	    return ".";
 	  }
 	}
 

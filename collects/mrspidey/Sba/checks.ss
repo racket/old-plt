@@ -229,12 +229,16 @@
 	     (void))
 	 #f]
 	[($ zodiac:class*/names-form _ open _ _ _ _ super _ _ _)
-	 (let ([ftype (zodiac:parsed-ftype super)])
+	 (let* ([ftype (zodiac:parsed-ftype super)]
+		[sdl (if (FlowType? ftype)
+			 (FlowType->SDL ftype)
+			 #f)])
 	   (unless 
 	    (or (and (zodiac:varref? super)
-		     (eq? 'object% (zodiac:varref-var super)))
+		     (eq? 'object% (zodiac:varref-var super))
+		     (eq? 'empty sdl))
 		(and (FlowType? ftype)
-		     (eq? 'class (FlowType->SDL ftype))))
+		     (eq? 'class sdl)))
 	    (mrspidey:add-summary "Class check" open 0)
 	    (add-check! open "class") ; this turns "class" red
 	    (zodiac:set-parsed-check! M #t)))]

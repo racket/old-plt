@@ -110,7 +110,8 @@
 	(case-lambda
 	 [(string) (text string '() 12)]
 	 [(string style) (text string style 12)]
-	 [(string orig-style size)
+	 [(string style size) (text string style size 0)]
+	 [(string orig-style size angle)
 	  (let ([font
 		 (let loop ([style orig-style])
 		   (cond
@@ -179,12 +180,49 @@
 						    y))
 					(send dc set-font f)))
 				    w wh (- wh wd) wd))
-		    (prog-picture (lambda (dc x y)
-				    (let ([f (send dc get-font)])
-				      (send dc set-font font)
-				      (send dc draw-text string x y)
-				      (send dc set-font f)))
-				  w h (- h d) d)))))]))
+		    (if (zero? angle)
+			;; Normal case: no rotation
+			(prog-picture (lambda (dc x y)
+					(let ([f (send dc get-font)])
+					  (send dc set-font font)
+					  (send dc draw-text string x y)
+					  (send dc set-font f)))
+				      w h (- h d) d)
+			;; Rotation case. Need to find the bounding box.
+			;; Calculate the four corners, relative to top left as origin:
+			(let* ([tlx 0]
+			       [tly 0]
+			       [ca (cos angle)]
+			       [sa (sin angle)]
+			       [trx (* w ca)]
+			       [try (- (* w sa))]
+			       [brx (+ trx (* h sa))]
+			       [bry (- try (* h ca))]
+			       [blx (* h sa)]
+			       [bly (- (* h ca))]
+			       ;;min-x and min-y must be non-positive,
+			       ;; since tlx and tly are always 0
+			       [min-x (min tlx trx blx brx)]
+			       [min-y (min tly try bly bry)])
+			  (let ([pw (- (max tlx trx blx brx) min-x)]
+				[ph (- (max tly try bly bry) min-y)]
+				[dx (cond
+				     [(and (positive? ca) (positive? sa)) 0]
+				     [(positive? ca) (- (* h sa))]
+				     [(positive? sa) (- (* w ca))]
+				     [else (+ (- (* w ca)) (- (* h sa)))])]
+				[dy (cond
+				     [(and (positive? ca) (negative? sa)) 0]
+				     [(positive? ca) (* w sa)]
+				     [(negative? sa) (- (* h ca))]
+				     [else (+ (- (* h ca)) (* w sa))])])
+			    (prog-picture (lambda (dc x y)
+					    (let ([f (send dc get-font)])
+					      (send dc set-font font)
+					      (send dc draw-text string (+ x dx) (+ y dy)
+						    #f 0 angle)
+					      (send dc set-font f)))
+					  pw ph 0 0))))))))]))
 
       (define caps-text
 	(case-lambda

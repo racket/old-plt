@@ -107,3 +107,5 @@ represented by the "Ok" choice (instead of "Smart") in the "Auto-Play
 Options" dialog.
 
 Configure the auto-player by clicking the "Auto-Play Options" button.
+Currently, there's no difference between "Smart" and "Ok" in the 4x4
+game.

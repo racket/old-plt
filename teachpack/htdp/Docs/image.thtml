@@ -78,7 +78,7 @@ pinhole.
 <li><code>{(idx pinhole-y)}</code> :  image -> number <br>
  to determine the y coordinate of the pinhole, measuring down from 
  the left of the image
-<li><code>{(idx move-pinhole)}</code> :  image number number -> number <br>
+<li><code>{(idx move-pinhole)}</code> :  image number number -> image <br>
  to move the pinhole down and to the right (by the specified amounts) of 
  its current location. Use negative numbers to move it up or to the left.
 </menu>

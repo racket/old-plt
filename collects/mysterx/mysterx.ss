@@ -23,6 +23,7 @@
 
   (provide
     mx-browser%
+    mx-element%
     mx-version
     com-invoke
     com-get-property
@@ -196,169 +197,6 @@
 
   (define mx-element%
     (class object% (init document dhtml-element)
-       ; private fields
-
-       (define elt dhtml-element)
-
-       (define doc document)
-
-       (define get-string-as-symbol
-	(lambda (f name)
-	  (let ([s (f elt)])
-	    (if (empty-string? s)	
-		(empty-property-error name)
-		(string->symbol s)))))
-
-       (define set-symbol-as-string
-	 (lambda (sym vals f name)	
-	   (unless (member sym vals)
-		   (error 
-		    (format "~a: Expected value in '~a, got ~a" 
-			    name vals sym)))
-	   (f elt (symbol->string sym))))
-
-       (define html-insertion-maker
-	 (lambda (f)
-	   (lambda (s)
-	     (dynamic-wind
-		 html-wait
-		 (lambda () (f elt s))
-		 html-post))))
-
-       (define insert-object-maker 
-	 (lambda (name->html)
-	   (opt-lambda 
-	    (object width height [size 'pixels])
-	    (dynamic-wind
-		html-wait
-		(lambda () 
-		  (let ([old-objects (mxprims:document-objects doc)])
-		    (mxprims:element-insert-html 
-		     elt 
-		     (name->html object width height size))
-		    (let* ([new-objects (mxprims:document-objects doc)]
-			   [obj (car (mzlib:remove* old-objects new-objects
-						    com-object-eq?))])
-		      (mxprims:com-register-object obj)
-		      obj)))
-		html-post))))
-
-       (define append-object-maker 
-	 (lambda (name->html)
-	   (opt-lambda 
-	    (object width height [size 'pixels])
-	    (dynamic-wind
-		html-wait
-		(lambda ()
-		  (let* ([old-objects (mxprims:document-objects doc)])
-		    (mxprims:element-append-html 
-		     elt 
-		     (name->html object width height size))
-		    (let* ([new-objects (mxprims:document-objects doc)]
-			   [obj (car (mzlib:remove* old-objects
-						    new-objects
-						    com-object-eq?))])
-		      (mxprims:com-register-object obj)
-		      obj)))
-		html-post))))
-
-       (define insert-object-from-coclass-raw
-	(insert-object-maker coclass->html))
-       (define append-object-from-coclass-raw
-	(append-object-maker coclass->html))
-       (define insert-object-from-progid-raw
-	(insert-object-maker progid->html))
-       (define append-object-from-progid-raw
-	(append-object-maker progid->html))
-       (define insert-html 
-	 (lambda (s)
-	   (dynamic-wind
-	       html-wait
-	       (lambda () (mxprims:element-insert-html elt s))
-	       html-post)))
-       (define get-html
-	 (lambda () (mxprims:element-get-html elt)))
-       (define get-text
-	 (lambda () (mxprims:element-get-text elt)))
-       (define insert-text 
-	 (lambda (s)
-	   (dynamic-wind
-	       html-wait
-	       (lambda () (mxprims:element-insert-text elt s))
-	       html-post)))
-       (define append-text
-	 (lambda (s)
-	   (dynamic-wind
-	       html-wait
-	       (lambda () (mxprims:element-append-text elt s))
-	       html-post)))
-       (define append-html
-	 (lambda (s)
-	   (dynamic-wind
-	       html-wait
-	       (lambda () (mxprims:element-append-html elt s))
-	       html-post)))
-       (define replace-html
-	 (lambda (s)
-	   (dynamic-wind
-	       html-wait
-	       (lambda () (mxprims:element-replace-html elt s))
-	       html-post)))
-       (define insert-object-from-coclass 
-	 (lambda args
-	   (apply insert-object-from-coclass-raw args)))
-       (define append-object-from-coclass 
-	 (lambda args
-	   (apply append-object-from-coclass-raw args)))
-       (define insert-object-from-progid
-	 (lambda args
-	   (apply insert-object-from-progid-raw args)))
-       (define append-object-from-progid
-	 (lambda args
-	   (apply append-object-from-progid-raw args)))
-       (define focus
-	 (lambda ()
-	   (mxprims:element-focus elt)))
-       (define selection
-	 (lambda ()
-	   (mxprims:element-selection elt)))
-       (define set-selection!
-	 (lambda (val)
-	   (mxprims:element-set-selection! elt val)))
-       (define attribute
-	 (lambda (s)
-	   (mxprims:element-attribute elt s)))
-       (define set-attribute!
-	 (lambda (a v)
-	   (mxprims:element-set-attribute! elt a v)))
-       (define click
-	 (lambda ()
-	   (mxprims:element-click elt)))
-       (define tag
-	 (lambda ()
-	   (mxprims:element-tag elt)))
-       (define font-family
-	 (lambda ()
-	   (let ([s (mxprims:element-font-family elt)])
-	     (if (empty-string? s)
-		 (empty-property-error "font-family")
-		 (style:string->font-families s)))))
-       (define font-family-native
-	 (lambda ()
-	   (mxprims:element-font-family elt)))
-       (define set-font-family!
-	 (lambda (ff)
-	   (unless (and (list? ff)
-			(andmap string? ff))
-		   (error "set-font-family!: Expected list of strings, got"
-			  ff))
-	   (mxprims:element-set-font-family! 
-	    elt 
-	    (style:font-families->string ff))))
-       (define set-font-family-native!
-	 (lambda (s)
-	   (mxprims:element-set-font-family! elt s)))
-
        (public
 	insert-html
 	append-html
@@ -380,6 +218,8 @@
 	tag
 	font-family
 	font-family-native
+	set-font-family!
+	set-font-family-native!
 	font-style
 	font-style-native
 	set-font-style!
@@ -687,7 +527,168 @@
 	set-z-index!
 	set-z-index-native!)
 
-	(define font-style
+       ; private fields
+       (define elt dhtml-element)
+
+       (define doc document)
+
+       (define get-string-as-symbol
+	(lambda (f name)
+	  (let ([s (f elt)])
+	    (if (empty-string? s)	
+		(empty-property-error name)
+		(string->symbol s)))))
+
+       (define set-symbol-as-string
+	 (lambda (sym vals f name)	
+	   (unless (member sym vals)
+		   (error 
+		    (format "~a: Expected value in '~a, got ~a" 
+			    name vals sym)))
+	   (f elt (symbol->string sym))))
+
+       (define html-insertion-maker
+	 (lambda (f)
+	   (lambda (s)
+	     (dynamic-wind
+		 html-wait
+		 (lambda () (f elt s))
+		 html-post))))
+
+       (define insert-object-maker 
+	 (lambda (name->html)
+	   (opt-lambda 
+	    (object width height [size 'pixels])
+	    (dynamic-wind
+		html-wait
+		(lambda () 
+		  (let ([old-objects (mxprims:document-objects doc)])
+		    (mxprims:element-insert-html 
+		     elt 
+		     (name->html object width height size))
+		    (let* ([new-objects (mxprims:document-objects doc)]
+			   [obj (car (mzlib:remove* old-objects new-objects
+						    com-object-eq?))])
+		      (mxprims:com-register-object obj)
+		      obj)))
+		html-post))))
+
+       (define append-object-maker 
+	 (lambda (name->html)
+	   (opt-lambda 
+	    (object width height [size 'pixels])
+	    (dynamic-wind
+		html-wait
+		(lambda ()
+		  (let* ([old-objects (mxprims:document-objects doc)])
+		    (mxprims:element-append-html 
+		     elt 
+		     (name->html object width height size))
+		    (let* ([new-objects (mxprims:document-objects doc)]
+			   [obj (car (mzlib:remove* old-objects
+						    new-objects
+						    com-object-eq?))])
+		      (mxprims:com-register-object obj)
+		      obj)))
+		html-post))))
+
+       (define insert-object-from-coclass-raw
+	(insert-object-maker coclass->html))
+       (define append-object-from-coclass-raw
+	(append-object-maker coclass->html))
+       (define insert-object-from-progid-raw
+	(insert-object-maker progid->html))
+       (define append-object-from-progid-raw
+	(append-object-maker progid->html))
+       (define insert-html 
+	 (lambda (s)
+	   (dynamic-wind
+	       html-wait
+	       (lambda () (mxprims:element-insert-html elt s))
+	       html-post)))
+       (define get-html
+	 (lambda () (mxprims:element-get-html elt)))
+       (define get-text
+	 (lambda () (mxprims:element-get-text elt)))
+       (define insert-text 
+	 (lambda (s)
+	   (dynamic-wind
+	       html-wait
+	       (lambda () (mxprims:element-insert-text elt s))
+	       html-post)))
+       (define append-text
+	 (lambda (s)
+	   (dynamic-wind
+	       html-wait
+	       (lambda () (mxprims:element-append-text elt s))
+	       html-post)))
+       (define append-html
+	 (lambda (s)
+	   (dynamic-wind
+	       html-wait
+	       (lambda () (mxprims:element-append-html elt s))
+	       html-post)))
+       (define replace-html
+	 (lambda (s)
+	   (dynamic-wind
+	       html-wait
+	       (lambda () (mxprims:element-replace-html elt s))
+	       html-post)))
+       (define insert-object-from-coclass 
+	 (lambda args
+	   (apply insert-object-from-coclass-raw args)))
+       (define append-object-from-coclass 
+	 (lambda args
+	   (apply append-object-from-coclass-raw args)))
+       (define insert-object-from-progid
+	 (lambda args
+	   (apply insert-object-from-progid-raw args)))
+       (define append-object-from-progid
+	 (lambda args
+	   (apply append-object-from-progid-raw args)))
+       (define focus
+	 (lambda ()
+	   (mxprims:element-focus elt)))
+       (define selection
+	 (lambda ()
+	   (mxprims:element-selection elt)))
+       (define set-selection!
+	 (lambda (val)
+	   (mxprims:element-set-selection! elt val)))
+       (define attribute
+	 (lambda (s)
+	   (mxprims:element-attribute elt s)))
+       (define set-attribute!
+	 (lambda (a v)
+	   (mxprims:element-set-attribute! elt a v)))
+       (define click
+	 (lambda ()
+	   (mxprims:element-click elt)))
+       (define tag
+	 (lambda ()
+	   (mxprims:element-tag elt)))
+       (define font-family
+	 (lambda ()
+	   (let ([s (mxprims:element-font-family elt)])
+	     (if (empty-string? s)
+		 (empty-property-error "font-family")
+		 (style:string->font-families s)))))
+       (define font-family-native
+	 (lambda ()
+	   (mxprims:element-font-family elt)))
+       (define set-font-family!
+	 (lambda (ff)
+	   (unless (and (list? ff)
+			(andmap string? ff))
+		   (error "set-font-family!: Expected list of strings, got"
+			  ff))
+	   (mxprims:element-set-font-family! 
+	    elt 
+	    (style:font-families->string ff))))
+       (define set-font-family-native!
+	 (lambda (s)
+	   (mxprims:element-set-font-family! elt s)))
+       (define font-style
 	 (lambda ()
 	   (get-string-as-symbol 
 	    mxprims:element-font-style "font-style")))

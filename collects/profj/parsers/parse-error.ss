@@ -1658,7 +1658,7 @@
         ((local-init-end)
          (case kind
            ((EOF) (parse-error "Expected a ';' or ',' after variable" ps pe))
-           ((COMMA) (parse-definition cur-tok (getter) 'local-list getter))
+           ((COMMA) (parse-statement cur-tok (getter) 'local-list getter id-ok? ctor? super-seen?))
            ((SEMI_COLON) (getter))
            ((IDENTIFIER) (parse-error (format "Variables must be separated by commas, ~a not allowed" out) start end))
            (else (parse-error (format "Expected a ';' to end variable, or more variables, found ~a" out) start end))))

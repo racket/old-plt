@@ -1456,33 +1456,40 @@
 	  (else
 	    (static-error expr "Malformed let-macro"))))))
 
-  (add-micro-form 'begin-elaboration-time scheme-vocabulary
-    (let* ((kwd '(begin-elaboration-time))
-	    (in-pattern '(begin-elaboration-time expr ...))
-	    (m&e (pat:make-match&env in-pattern kwd)))
-      (lambda (expr env attributes vocab)
-	(cond
-	  ((pat:match-against m&e expr env)
-	    =>
-	    (lambda (p-env)
-	      (let ((exprs (pat:pexpand '(expr ...) p-env kwd)))
-		(when (null? exprs)
-		  (static-error expr "Malformed begin-elaboration-time"))
-		(expand-expr
-		  (structurize-syntax
-		    (with-handlers
-		      ((exn? (lambda (exn)
-			       (static-error expr
-				 "Exception at elaboration time: ~a"
-				 (exn-message exn)))))
-		      (with-parameterization
-			zodiac-user-parameterization
-			(lambda ()
-			  (eval `(begin ,@(map sexp->raw exprs))))))
-		    expr)
-		  env attributes vocab))))
-	  (else
-	    (static-error expr "Malformed begin-elaboration-time"))))))
+  (let ((b-e/c-t
+	  (lambda (kwd-symbol kwd-string phase-string)
+	    (add-micro-form kwd-symbol scheme-vocabulary
+	      (let* ((kwd '())
+		      (in-pattern '(_ expr ...))
+		      (m&e (pat:make-match&env in-pattern kwd)))
+		(lambda (expr env attributes vocab)
+		  (cond
+		    ((pat:match-against m&e expr env)
+		      =>
+		      (lambda (p-env)
+			(let ((exprs (pat:pexpand '(expr ...) p-env kwd)))
+			  (when (null? exprs)
+			    (static-error expr
+			      (string-append "Malformed " kwd-string)))
+			  (expand-expr
+			    (structurize-syntax
+			      (with-handlers
+				((exn? (lambda (exn)
+					 (static-error expr
+					   "Exception at ~a time: ~a"
+					   phase-string
+					   (exn-message exn)))))
+				(with-parameterization
+				  zodiac-user-parameterization
+				  (lambda ()
+				    (eval `(begin ,@(map sexp->raw exprs))))))
+			      expr)
+			    env attributes vocab))))
+		    (else
+		      (static-error expr
+			(string-append "Malformed " kwd-string))))))))))
+    (b-e/c-t 'begin-construction-time "begin-construction-time" "construction")
+    (b-e/c-t 'begin-elaboration-time "begin-elaboration-time" "elaboration"))
 
   (add-primitivized-macro-form 'unquote scheme-vocabulary
     (lambda (expr env)

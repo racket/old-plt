@@ -6,7 +6,7 @@
 
   (provide home-no-frames)
 
-  (define search-bg
+  (define (search-bg)
     (get-pref/default 'search-bg search-bg-default))
 	
   (define (home-no-frames)
@@ -14,4 +14,5 @@
       ,(search-pane)
       (HR)
       ,(main-pane))))
+
 

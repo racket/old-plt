@@ -235,7 +235,7 @@
       (BODY
        ,@(if (use-frames?)
 	    '()
-	    `(,(search-pane search-string) (HR)))
+	    `((TABLE,(search-pane search-string) (HR)))
        (FONT ((SIZE "+1"))
 	     ,(color-with "blue" `(B ,(string-constant search-results))))
        (BR)

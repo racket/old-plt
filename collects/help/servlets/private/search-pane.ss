@@ -114,10 +114,14 @@
 
   (define search-pane
     (opt-lambda ([search-string ""])
-      `(TABLE ((CELLPADDING "2")
+      `(TABLE ((CELLPADDING "4")
 	       (CELLSPACING "0")
-	       (BGCOLOR ,(search-bg)))
+	       (BGCOLOR ,(search-bg))
+	       (WIDTH "100%"))
 	      (TR (TD ,(search-pane-form search-string)))))))
+
+
+  
 
 
 

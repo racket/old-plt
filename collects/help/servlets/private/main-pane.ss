@@ -24,7 +24,13 @@
 		  (FONT ((SIZE "-2"))
 			(A ((HREF "/servlets/hd-config.ss")
 			    (TARGET "_top"))
-			   ,(string-constant configure-hd)))))))
+			   ,(string-constant configure-hd))
+			","
+			(A ((HREF "/servlets/toggle-frames.ss")
+			    (TARGET "_top"))
+			   ,(if (use-frames?)
+				(string-constant hd-no-frames)
+				(string-constant hd-use-frames))))))))
 	(UL
 	 (LI
 	  (B

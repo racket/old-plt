@@ -64,7 +64,7 @@ wxMediaSnip::wxMediaSnip(wxMediaBuffer *useme,
   if (useme && !useme->GetAdmin())
     me = useme;
   else
-    me = new wxMediaEdit();
+    me = wxsMakeMediaEdit();
   myAdmin = new wxMediaSnipMediaAdmin(this);
 
   if (!me->GetFilename(&istemp) || istemp)
@@ -371,14 +371,14 @@ wxSnip *wxMediaSnip::Copy(void)
 {
   wxMediaSnip *ms;
 
-  ms = new wxMediaSnip(me ? me->CopySelf() : (wxMediaBuffer *)NULL, 
-		       withBorder,
-		       leftMargin, topMargin,
-		       rightMargin, bottomMargin,
-		       leftInset, topInset,
-		       rightInset, bottomInset,
-		       minWidth, maxWidth,
-		       minHeight, maxHeight);
+  ms = wxsMakeMediaSnip(me ? me->CopySelf() : (wxMediaBuffer *)NULL, 
+			withBorder,
+			leftMargin, topMargin,
+			rightMargin, bottomMargin,
+			leftInset, topInset,
+			rightInset, bottomInset,
+			minWidth, maxWidth,
+			minHeight, maxHeight);
 
   if (!me)
     ms->SetMedia(NULL);

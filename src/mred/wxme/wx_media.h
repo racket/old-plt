@@ -604,5 +604,12 @@ extern const char *(*wxmeExpandFilename)(const char *);
 
 extern void wxmeError(const char *e);
 
-#endif /* __WX_MEDIA__ */
+extern wxMediaSnip *wxsMakeMediaSnip(wxMediaBuffer *useme,
+				     Bool border,
+				     int lm, int tm, int rm, int bm,
+				     int li, int ti, int ri, int bi,
+				     float w, float W, float h, float H);
+extern wxMediaEdit *wxsMakeMediaEdit();
+extern wxMediaPasteboard *wxsMakeMediaPasteboard();
 
+#endif /* __WX_MEDIA__ */

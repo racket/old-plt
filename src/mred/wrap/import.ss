@@ -36,4 +36,7 @@
  unregister-collecting-blit
  bitmap-dc%
  shortcut-visible-in-label?
- in-atomic-region)
+ in-atomic-region
+ set-editor-snip-maker
+ set-text-editor-maker
+ set-pasteboard-editor-maker)

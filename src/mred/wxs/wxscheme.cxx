@@ -26,11 +26,7 @@
 #include "wxs_evnt.h"
 #include "wxs_panl.h"
 #include "wxs_list.h"
-#include "wxs_medi.h"
-#include "wxs_mede.h"
 #include "wxs_madm.h"
-#include "wxs_snip.h"
-#include "wxs_mpb.h"
 #include "wxs_mio.h"
 #include "wxs_styl.h"
 #include "wxs_menu.h"
@@ -50,6 +46,10 @@
 #include "wxs_dc.h"
 #include "wxs_cnvs.h"
 #include "wxs_misc.h"
+#include "wxs_medi.h"
+#include "wxs_mede.h"
+#include "wxs_mpb.h"
+#include "wxs_snip.h"
 
 #include <stdlib.h>
 
@@ -79,6 +79,8 @@ static void wxScheme_Install(Scheme_Env *env, void *global_env);
 static Scheme_Object *setup_file_symbol, *init_file_symbol;
 
 static Scheme_Object *get_file, *put_file, *get_ps_setup_from_user, *message_box, *execute;
+
+static Scheme_Object *make_media_edit, *make_media_pasteboard, *make_media_snip, *none_symbol;
 
 #define INSTALL_COUNT 520
 
@@ -901,6 +903,78 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
 }
 #endif
 
+wxMediaSnip *wxsMakeMediaSnip(wxMediaBuffer *useme,
+			      Bool border,
+			      int lm, int tm, int rm, int bm,
+			      int li, int ti, int ri, int bi,
+			      float w, float W, float h, float H)
+{
+  if (make_media_snip) {
+    Scheme_Object *a[20], *r;
+
+    a[0] = (useme ? objscheme_bundle_wxMediaBuffer(useme) : scheme_false);
+    a[1] = (border ? scheme_true : scheme_false);
+    a[2] = scheme_make_integer(lm);
+    a[3] = scheme_make_integer(tm);
+    a[4] = scheme_make_integer(rm);
+    a[5] = scheme_make_integer(bm);
+    a[6] = scheme_make_integer(li);
+    a[7] = scheme_make_integer(ti);
+    a[8] = scheme_make_integer(ri);
+    a[9] = scheme_make_integer(bi);
+    a[10] = ((w > 0) ? scheme_make_double(w) : none_symbol);
+    a[11] = ((W > 0) ? scheme_make_double(W) : none_symbol);
+    a[12] = ((h > 0) ? scheme_make_double(h) : none_symbol);
+    a[13] = ((H > 0) ? scheme_make_double(H) : none_symbol);
+
+    r = scheme_apply(make_media_snip, 14, a);
+
+    return objscheme_unbundle_wxMediaSnip(r, NULL, 0);
+  } else {
+    return new wxMediaSnip(useme, border,
+			   lm, tm, rm, bm,
+			   li, ti, ri, bi,
+			   w, W, h, H);
+  }
+}
+
+wxMediaEdit *wxsMakeMediaEdit()
+{
+  if (make_media_edit) {
+    return objscheme_unbundle_wxMediaEdit(scheme_apply(make_media_edit, 0, NULL), 
+					  NULL, 0);
+  } else
+    return new wxMediaEdit();
+}
+
+wxMediaPasteboard *wxsMakeMediaPasteboard()
+{
+  if (make_media_pasteboard) {
+    return objscheme_unbundle_wxMediaPasteboard(scheme_apply(make_media_pasteboard, 0, NULL), 
+						NULL, 0);
+  } else
+    return new wxMediaPasteboard();
+}
+
+static Scheme_Object *SetMediaSnipMaker(int, Scheme_Object *a[])
+{
+  make_media_snip = a[0];
+  none_symbol = scheme_intern_symbol("none");
+  return scheme_void;
+}
+
+static Scheme_Object *SetMediaEditMaker(int, Scheme_Object *a[])
+{
+  make_media_edit = a[0];
+  return scheme_void;
+}
+
+static Scheme_Object *SetMediaPasteboardMaker(int, Scheme_Object *a[])
+{
+  make_media_pasteboard = a[0];
+  return scheme_void;
+}
+
 #ifdef wx_mac
 extern short wxMacDisableMods;
 #define SCK_ARG p
@@ -1532,8 +1606,25 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
 						    "in-atomic-region",
 						    1, 1),
 			   global_env);
-  
 
+  scheme_install_xc_global("set-editor-snip-maker",
+			   scheme_make_prim_w_arity(SetMediaSnipMaker,
+						    "set-editor-snip-maker",
+						    1, 1),
+			   global_env);
+  
+  scheme_install_xc_global("set-text-editor-maker",
+			   scheme_make_prim_w_arity(SetMediaEditMaker,
+						    "set-text-editor-maker",
+						    1, 1),
+			   global_env);
+  
+  scheme_install_xc_global("set-pasteboard-editor-maker",
+			   scheme_make_prim_w_arity(SetMediaPasteboardMaker,
+						    "set-pasteboard-editor-maker",
+						    1, 1),
+			   global_env);
+  
   /* Order is important! Base class must be initialized before derived. */
   objscheme_setup_wxObject(global_env);
   objscheme_setup_wxWindow(global_env);

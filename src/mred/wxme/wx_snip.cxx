@@ -1510,13 +1510,13 @@ wxSnip *MediaSnipClass::Read(wxMediaStreamIn &f)
   if (!type)
     media = NULL;
   else if (type == wxEDIT_BUFFER)
-    media = new wxMediaEdit();
+    media = wxsMakeMediaEdit();
   else
-    media = new wxMediaPasteboard();
+    media = wxsMakeMediaPasteboard();
 
-  snip = new wxMediaSnip(media, border, lm, tm, rm, bm, li, ti, ri, bi,
-			 w, W, h, H);
-
+  snip = wxsMakeMediaSnip(media, border, lm, tm, rm, bm, li, ti, ri, bi,
+			  w, W, h, H);
+  
   if (media) {
     media->GetStyleList()->Clear();
     media->ReadFromFile(f);

@@ -693,6 +693,7 @@ typedef struct Scheme_Cont_Mark_Chain {
   MZTAG_IF_REQUIRED
   Scheme_Object *key;
   Scheme_Object *val;
+  MZ_MARK_POS_TYPE pos;
   struct Scheme_Cont_Mark_Chain *next;
 } Scheme_Cont_Mark_Chain;
 
@@ -700,6 +701,7 @@ typedef struct Scheme_Cont_Mark_Set {
   Scheme_Type type;
   MZ_HASH_KEY_EX
   struct Scheme_Cont_Mark_Chain *chain;
+  long cmpos;
 } Scheme_Cont_Mark_Set;
 
 #define SCHEME_LOG_MARK_SEGMENT_SIZE 8
@@ -755,6 +757,7 @@ typedef struct Scheme_Escaping_Cont {
   Scheme_Object *f;
   int suspend_break;
   MZ_MARK_STACK_TYPE cont_mark_stack; /* for `continuation-marks' */
+  MZ_MARK_POS_TYPE cont_mark_pos; /* for `continuation-marks' */
 } Scheme_Escaping_Cont;
 
 #define SCHEME_CONT_HOME(obj)  (((Scheme_Escaping_Cont *)(obj))->home)

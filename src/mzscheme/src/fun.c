@@ -230,7 +230,7 @@ scheme_init_fun (Scheme_Env *env)
   scheme_add_global_constant("continuation-mark-set->list", 
 			     scheme_make_prim_w_arity(extract_cc_marks,  
 						      "continuation-mark-set->list", 
-						      2, 2),
+						      2, 3),
 			     env);
   scheme_add_global_constant("continuation-mark-set?", 
 			     scheme_make_prim_w_arity(cc_marks_p,
@@ -1896,6 +1896,7 @@ scheme_call_ec (int argc, Scheme_Object *argv[])
   cont->suspend_break = p->suspend_break;
   copy_cjs(&cont->cjs, &p->cjs);
   cont->cont_mark_stack = MZ_CONT_MARK_STACK;
+  cont->cont_mark_pos = MZ_CONT_MARK_POS;
   
   return scheme_dynamic_wind(pre_call_ec, do_call_ec, post_call_ec,
 			     handle_call_ec, (void *)cont);
@@ -2114,13 +2115,17 @@ static Scheme_Object *continuation_marks(Scheme_Thread *p,
   Scheme_Cont_Mark_Chain *first = NULL, *last = NULL;
   Scheme_Cont_Mark_Set *set;
   long findpos;
+  long cmpos;
 
   if (cont) {
     findpos = (long)cont->ss.cont_mark_stack;
+    cmpos = (long)cont->ss.cont_mark_pos;
   } else if (econt) {
     findpos = (long)((Scheme_Escaping_Cont *)econt)->cont_mark_stack;
+    cmpos = (long)((Scheme_Escaping_Cont *)econt)->cont_mark_pos;
   } else {
     findpos = (long)MZ_CONT_MARK_STACK;
+    cmpos = (long)MZ_CONT_MARK_POS;
   }
 
   while (findpos--) {
@@ -2153,6 +2158,7 @@ static Scheme_Object *continuation_marks(Scheme_Thread *p,
 #endif      
       pr->key = find[pos].key;
       pr->val = find[pos].val;
+      pr->pos = find[pos].pos;
       pr->next = NULL;
       find[pos].cached_chain = pr;
       if (last)
@@ -2167,6 +2173,7 @@ static Scheme_Object *continuation_marks(Scheme_Thread *p,
   set = MALLOC_ONE_TAGGED(Scheme_Cont_Mark_Set);
   set->type = scheme_cont_mark_set_type;
   set->chain = first;
+  set->cmpos = cmpos;
 
   return (Scheme_Object *)set;
 }
@@ -2213,18 +2220,37 @@ static Scheme_Object *
 extract_cc_marks(int argc, Scheme_Object *argv[])
 {
   Scheme_Cont_Mark_Chain *chain;
-  Scheme_Object *first = scheme_null, *last = NULL, *key;
+  Scheme_Object *first = scheme_null, *last = NULL, *key, *skipval;
+  Scheme_Object *pr;
+  long last_pos;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_cont_mark_set_type))
     scheme_wrong_type("continuation-mark-set->list", "continuation-mark-set", 0, argc, argv);
   chain = ((Scheme_Cont_Mark_Set *)argv[0])->chain;
+  last_pos = ((Scheme_Cont_Mark_Set *)argv[0])->cmpos + 2;
   key = argv[1];
+  if (argc > 2)
+    skipval = argv[2];
+  else
+    skipval = NULL;
 
   while (chain) {
     if (chain->key == key) {
-      Scheme_Object *pr;
+      if (skipval) {
+	long pos;
+	pos = (long)chain->pos;
+	if (pos != last_pos - 2) {
+	  pr = scheme_make_pair(skipval, scheme_null);
+	  if (last)
+	    SCHEME_CDR(last) = pr;
+	  else
+	    first = pr;
+	  last = pr;
+	}
+	last_pos = pos;
+      }
+
       pr = scheme_make_pair(chain->val, scheme_null);
-      
       if (last)
 	SCHEME_CDR(last) = pr;
       else
@@ -2233,6 +2259,14 @@ extract_cc_marks(int argc, Scheme_Object *argv[])
     }
 
     chain = chain->next;
+  }
+
+  if (skipval) {
+    pr = scheme_make_pair(skipval, scheme_null);
+    if (last)
+      SCHEME_CDR(last) = pr;
+    else
+      first = pr;
   }
 
   return first;

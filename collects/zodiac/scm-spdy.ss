@@ -260,7 +260,18 @@
 		(static-error expr "Malformed ~a" form-name))))))))
 
   (reference-maker 'reference #f)
-  (reference-maker 'reference-library #t)
+
+  (add-primitivized-micro-form 'reference-library mrspidey-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ filename))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (static-error expr "reference-library not supported by MrSpidey"))
+	  (else
+	    (static-error expr "Malformed reference-library"))))))
 
   (define reference-unit-maker
     (lambda (form-name signed? library?)

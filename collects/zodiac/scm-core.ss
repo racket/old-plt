@@ -120,6 +120,9 @@
 
   ; --------------------------------------------------------------------
 
+  (define mzscheme-libraries-provided
+    '("refer.ss" "refer"))
+
   (define scheme-vocabulary (create-vocabulary 'scheme-vocabulary))
 
   (add-sym-micro scheme-vocabulary

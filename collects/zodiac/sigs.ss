@@ -37,6 +37,7 @@
     generate-name
     scheme-expand scheme-expand-program
     set-top-level-status get-top-level-status at-top-level?
+    mzscheme-libraries-provided
     scheme-vocabulary
     (struct parsed (back))
     (struct varref (var))

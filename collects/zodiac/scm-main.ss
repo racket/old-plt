@@ -1456,7 +1456,7 @@
 			(z:string? (quote-form-expr f)))
 		    (expand-expr
 		      (structurize-syntax
-			`(load-recent ,(quote-form-expr f))
+			`(#%load/use-compiled ,(quote-form-expr f))
 			expr)
 		      env attributes vocab)
 		    (static-error filename "Does not yield a filename"))))))
@@ -1478,7 +1478,10 @@
 			(z:string? (quote-form-expr f)))
 		    (expand-expr
 		      (structurize-syntax
-			`(#%load/use-compiled ,(quote-form-expr f))
+			(if (member (z:read-object (quote-form-expr f))
+			      mzscheme-libraries-provided)
+			  `(#%void)
+			  `(require-library ,(quote-form-expr f)))
 			expr)
 		      env attributes vocab)
 		    (static-error filename "Does not yield a filename"))))))

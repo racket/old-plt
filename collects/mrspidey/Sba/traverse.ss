@@ -483,7 +483,7 @@
 	      [($ zodiac:app _ _ _ _ fn args)
 	       (handle-application E env #t)]
 	      
-	      [($ zodiac:letrec*-values-form _ _ _ _ varss exps body)
+	      [($ zodiac:letrec-values-form _ _ _ _ varss exps body)
 	       ;; First init each new var
 	       (recur loop
 		      ([env (atenv:extend-undefineds env (apply append varss))]

@@ -57,10 +57,10 @@
 			 (zodiac:make-let-values-form 
 			  o s f b
 			  varss (map cl-fn vals) (cl-fn body)))]
-		      [($ zodiac:letrec*-values-form o s f b  varss vals body)
+		      [($ zodiac:letrec-values-form o s f b  varss vals body)
 		       (let ([varss (map (lambda (vars) (map cl-fn vars))
 					 varss)])
-			 (zodiac:make-letrec*-values-form 
+			 (zodiac:make-letrec-values-form 
 			  o s f b
 			  varss (map cl-fn vals) (cl-fn body)))]
 		      [($ zodiac:define-values-form o s f b vars value)
@@ -232,10 +232,10 @@
 					 varss)])
 			 `(let-values ,(map list varss (map cl-fn vals))
 			    ,(cl-fn body)))]
-		      [($ zodiac:letrec*-values-form _ _ _ _ varss vals body)
+		      [($ zodiac:letrec-values-form _ _ _ _ varss vals body)
 		       (let ([varss (map (lambda (vars) (map cl-fn vars))
 					 varss)])
-			 `(letrec*-values ,(map list varss (map cl-fn vals))
+			 `(letrec-values ,(map list varss (map cl-fn vals))
 			    ,(cl-fn body)))]
 		      [($ zodiac:define-values-form _ _ _ _ vars value)
 		       `(define-values ,(map cl-fn vars) ,(cl-fn value))]
@@ -439,7 +439,7 @@
        ;;($ zodiac:lambda-form)
        ($ zodiac:case-lambda-form)
        ($ zodiac:lexical-varref)) #t]
-     [($ zodiac:letrec*-values-form 
+     [($ zodiac:letrec-values-form 
 	 _ _ _ _ vars 
 	 ((? parsed-value?) ...)
 	 (? parsed-value?)) #t]
@@ -495,7 +495,7 @@
             (lambda (def cl-fn)
               ;;(display `(initialize-mutated ,(stripper def))) (newline)
               (match def
-                [($ zodiac:letrec*-values-form _ _ _ _ varss)
+                [($ zodiac:letrec-values-form _ _ _ _ varss)
 		 (for-each 
 		  (lambda (vars)
 		    (for-each
@@ -548,7 +548,7 @@
 			 (cons (get-top-level-varref-binding def) free)))
 		 #f]
                 [($ zodiac:unit-form) 'do-not-traverse]
-                [($ zodiac:letrec*-values-form _ _ _ _ varss)
+                [($ zodiac:letrec-values-form _ _ _ _ varss)
 		 (for-each 
 		  (lambda (vars)
 		    (for-each
@@ -598,7 +598,7 @@
       (zerostruct begin0-form bodies)
       (zerostruct define-values-form vars val)
       (zerostruct let-values-form vars vals body)
-      (zerostruct letrec*-values-form vars vals body)
+      (zerostruct letrec-values-form vars vals body)
       (zerostruct if-form test then else)
       (zerostruct quote-form expr)
       (zerostruct case-lambda-form args bodies)

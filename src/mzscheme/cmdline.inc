@@ -741,7 +741,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 ", prints version.\n"
 # endif
 # ifdef VERSION_YIELD_FLAG
-	 "  -V, --no-yield : Like -v, also supresses (yield 'wait).\n"
+	 "  -V, --no-yield : Like -v, also suppresses (yield 'wait).\n"
 # endif
 	 "  -b, --binary : Read stdin and write stdout/stderr in binary mode.\n"
 	 "  -h, --help : Shows this information and exits, ignoring other switches.\n"

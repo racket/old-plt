@@ -20,6 +20,7 @@
 # define scheme_malloc_atomic NewPtr
 # define scheme_malloc NewPtr
 # define memcpy(d, s, l) BlockMove(s, d, l)
+# define malloc NewPtr
 
 extern int strlen(char *);
 extern int isspace(int);

@@ -200,6 +200,7 @@
 	  "wxs_slid.cxx"
 	  "wxs_snip.cxx"
 	  "wxs_styl.cxx"
+	  "wxs_tabc.cxx"
 	  "wxs_win.cxx"
 	  "wxscheme.cxx"))))
 
@@ -329,6 +330,7 @@
 	  "wx_app.cc"
 	  "wx_util.cc"
 	  "wx_area.cc"
+	  "wx_tabc.cc"
 	  "wx_win.cc"
 	  "wx_buttn.cc"
 	  "wx_item.cc"

@@ -270,8 +270,13 @@ void wxTabChoice::Append(char *s)
     ::HideControl(cMacControl);
   if (!cActive)
     DeactivateControl(cMacControl);
-  if (!OS_Active())
+  if (!OS_Active()) {
+#ifdef OS_X
     DisableControl(cMacControl);
+#else
+    HiliteControl(cMacControl, 255);
+#endif
+  }
 
   if (s && !cHidden) {
     /* for some reason, the toolbox is stupid about drawing

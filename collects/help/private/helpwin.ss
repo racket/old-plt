@@ -11,6 +11,7 @@
            (lib "browser-sig.ss" "browser")
            (lib "mred-sig.ss" "mred")
            (lib "framework-sig.ss" "framework")
+	   (lib "gui-utils.ss" "framework")
            (lib "plt-installer-sig.ss" "setup")
            
            "notthere.ss"
@@ -72,66 +73,66 @@
                                          (lambda (x) (or (not x) (string? x))))
       
       (define (open-url-from-user parent goto-url)
-        (letrec ([d (make-object dialog% (string-constant open-url) parent 500)]
-                 [t
-                  (framework:keymap:call/text-keymap-initializer
-                   (lambda ()
-                     (make-object text-field% (string-constant url:) d
-                       (lambda (t e)
-                         (update-ok)))))]
-                 [p (make-object horizontal-panel% d)]
-                 [browse (make-object button% (string-constant browse...) p
-                           (lambda (b e)
-                             (let ([f (get-file)])
-                               (when f
-                                 (send t set-value (string-append "file:" f))
-                                 (update-ok)))))]
-                 [spacer (make-object vertical-pane% p)]
-                 [ok (make-object button%
-                       (string-constant ok) p
-                       (lambda (b e)
-                         (let* ([s (send t get-value)]
-                                [done (lambda ()
-					;; Might be called twice!
-                                        (framework:preferences:set 'drscheme:help-desk:last-url-string s)
-                                        (send d show #f))])
-                           (with-handlers ([void
-                                            (lambda (x)
-                                              (if (or (exn:break? x)
-						      (exn:file-saved-instead? x))
-                                                  (done)
-                                                  (unless (exn:cancelled? x)
-                                                    (message-box (string-constant bad-url) 
-                                                                 (format (string-constant bad-url:this)
-                                                                         (exn-message x))
-                                                                 d))))])
-                             (let ([url (string->url
-                                         (cond
-                                           [(regexp-match ":" s) s]
-                                           [(regexp-match "^[a-zA-Z][a-zA-Z.]*($|/)" s)
-                                            (string-append "http://" s)]
-                                           [else
-                                            (string-append "file:" s)]))])
-                               (goto-url url (lambda (will-display?) (done)))
-                               (done)))))
-                       '(border))]
-                 [update-ok
-                  (lambda ()
-                    (send ok enable 
-                          (positive? (send (send t get-editor) 
-                                           last-position))))]
-                 [cancel (make-object button% (string-constant cancel) p 
-                           (lambda (b e) (send d show #f)))])
-          (let ([last-url-string (framework:preferences:get 'drscheme:help-desk:last-url-string)])
-            (when last-url-string 
-              (send t set-value last-url-string)
-              (let ([text (send t get-editor)])
-                (send text set-position 0 (send text last-position)))))
-          (send p set-alignment 'right 'center)
-          (update-ok)
-          (send d center)
-          (send t focus)
-          (send d show #t)))
+        (define d (make-object dialog% (string-constant open-url) parent 500))
+        (define t
+          (framework:keymap:call/text-keymap-initializer
+           (lambda ()
+             (make-object text-field% (string-constant url:) d
+               (lambda (t e)
+                 (update-ok))))))
+        (define p (make-object horizontal-panel% d))
+        [define browse (make-object button% (string-constant browse...) p
+                         (lambda (b e)
+                           (let ([f (get-file)])
+                             (when f
+                               (send t set-value (string-append "file:" f))
+                               (update-ok)))))]
+        [define spacer (make-object vertical-pane% p)]
+        [define (ok-callback b e)
+          (let* ([s (send t get-value)]
+                 [done (lambda ()
+                         ;; Might be called twice!
+                         (framework:preferences:set 'drscheme:help-desk:last-url-string s)
+                         (send d show #f))])
+            (with-handlers ([void
+                             (lambda (x)
+                               (if (or (exn:break? x)
+                                       (exn:file-saved-instead? x))
+                                   (done)
+                                   (unless (exn:cancelled? x)
+                                     (message-box (string-constant bad-url) 
+                                                  (format (string-constant bad-url:this)
+                                                          (exn-message x))
+                                                  d))))])
+              (let ([url (string->url
+                          (cond
+                            [(regexp-match ":" s) s]
+                            [(regexp-match "^[a-zA-Z][a-zA-Z.]*($|/)" s)
+                             (string-append "http://" s)]
+                            [else
+                             (string-append "file:" s)]))])
+                (goto-url url (lambda (will-display?) (done)))
+                (done))))]
+        [define cancel-callback (lambda (b e) (send d show #f))]
+        (define-values (ok cancel)
+          (gui-utils:ok/cancel-buttons
+           p
+           ok-callback
+           cancel-callback))
+        (define (update-ok)
+          (send ok enable 
+                (positive? (send (send t get-editor) 
+                                 last-position))))
+        [define last-url-string (framework:preferences:get 'drscheme:help-desk:last-url-string)]
+        (when last-url-string 
+          (send t set-value last-url-string)
+          (let ([text (send t get-editor)])
+            (send text set-position 0 (send text last-position))))
+        (send p set-alignment 'right 'center)
+        (update-ok)
+        (send d center)
+        (send t focus)
+        (send d show #t))
       
       (define re:tools-notes (regexp "Tools"))
       (define re:mzlib-notes (regexp "MzLib=(.*)"))

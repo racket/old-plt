@@ -804,6 +804,7 @@
                                                      0
                                                      (send definitions-text last-position))
                     (send definitions-text get-next-settings)
+                    #t
                     init-proc
                     kill-termination
                     (lambda (sexp loop) ; =user=

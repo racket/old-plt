@@ -67,6 +67,7 @@
 (drscheme:eval:expand-program
  ((union port? drscheme:language:text/pos?)
   drscheme:language-configuration:language-settings?
+  boolean?
   (-> void?)
   (-> void?)
   ((union eof-object? syntax? (cons/p string? any?))
@@ -75,7 +76,7 @@
    any)
   . -> .
   void?)
- (input language-settings init kill-termination iter)
+ (input language-settings eval-comile-time-part? init kill-termination iter)
 
 "Use this function to expand the contents of the definitions"
 "window for use with external program processing tools."
@@ -87,6 +88,18 @@
 "\\var{kill-termination} are passed to"
 "@flink drscheme:eval:build-user-eventspace/custodian %"
 "."
+""
+"The \\var{eval-compile-time-part?} argument indicates if"
+"\\Mzhyperref{\rawscm{expand}}{mz:expansion}"
+"is called or if"
+"\\scheme|expand-top-level-with-compile-time-evals|"
+"is called when the program is expanded."
+"Roughly speaking, if your tool will evaluate each expression"
+"itself by calling"
+"\\Mzhyperref{\\rawscm{eval}}{mz:evalload}"
+"then pass \\scheme{#f}. Otherwise, if your tool"
+"just processes the expanded program, be sure to pass"
+"\\scheme{#t}."
 ""
 "The first argument to \\var{iter} is the expanded program"
 "(represented as syntax) or eof."

@@ -7,6 +7,7 @@
            ->d*
            case->
 	   opt->
+           opt->*
            (rename -contract? contract?)
            provide/contract)
 
@@ -575,30 +576,36 @@
   (define-syntax (opt-> stx)
     (syntax-case stx ()
       [(_ (reqs ...) (opts ...) res)
-       (let* ([res-v (generate-temporaries (list (syntax res)))]
+       (syntax (opt->* (reqs ...) (opts ...) (res)))]))
+  
+  (define-syntax (opt->* stx)
+    (syntax-case stx ()
+      [(_ (reqs ...) (opts ...) (ress ...))
+       (let* ([res-vs (generate-temporaries (syntax->list (syntax (ress ...))))]
 	      [req-vs (generate-temporaries (syntax->list (syntax (reqs ...))))]
 	      [opt-vs (generate-temporaries (syntax->list (syntax (opts ...))))]
 	      [cases
 	       (reverse
 		(let loop ([opt-vs (reverse opt-vs)])
 		  (cond
-		    [(null? opt-vs) (list (append req-vs res-v))]
-		    [else (cons (append req-vs (reverse opt-vs) res-v)
+		    [(null? opt-vs) (list req-vs)]
+		    [else (cons (append req-vs (reverse opt-vs))
 				(loop (cdr opt-vs)))])))])
-	 (with-syntax ([(res-v) res-v]
-		       [(req-vs ...) req-vs]
+	 (with-syntax ([((double-res-vs ...) ...) (map (lambda (x) res-vs) cases)]
+		       [(res-vs ...) res-vs]
+                       [(req-vs ...) req-vs]
 		       [(opt-vs ...) opt-vs]
-		       [((cases ...) ...) cases])
+		       [((case-doms ...) ...) cases])
 	   (syntax
-	    (let ([res-v res]
+	    (let ([res-vs ress] ...
 		  [req-vs reqs] ...
 		  [opt-vs opts] ...)
-	      (case-> (-> cases ...) ...)))))]))
+	      (case-> (->* (case-doms ...) (double-res-vs ...)) ...)))))]))
 
   (define -contract?
     (let ([contract?
            (lambda (val)
-             (or (contract? val)  ;; refers to struct
+             (or (contract? val)  ;; refers to struct predicate
                  (and (procedure? val)
                       (procedure-arity-includes? val 1))))])
       contract?))

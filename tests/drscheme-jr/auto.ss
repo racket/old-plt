@@ -6,6 +6,15 @@
 ;; There's a little source-position testing here (it checks to make
 ;; sure a reasonable line is reported).
 
+(define language-level/beginner
+  "Beginning Student")
+(define language-level/intermediate
+  "Intermediate Student")
+(define language-level/advanced
+  "Advanced Student")
+(define language-level/mzscheme/debug
+  "Textual Full Scheme (MzScheme)")
+
 (define (go)
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                      Testing utilities                       ;;
@@ -46,7 +55,7 @@
   (define error? #f)
 
   (define (perror s . args)
-    (apply printf (format "ERROR: ~a" s) args)
+    (apply printf (format "~n~nERROR~n~a" s) args)
     (set! error? #t)
     (newline))
 
@@ -138,10 +147,17 @@
   ;;                       Configurations                         ;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (define mz? (string=? language "MzScheme Debug"))
-  (define beg? (string=? language "Beginner"))
-  (define beg/inter? (member language '("Beginner" "Intermediate")))
-  (define adv/mz? (member language '("Advanced" "MzScheme Debug")))
+  (define mz? (string=? language
+		"Textual Full Scheme without Debugging (MzScheme)"))
+  (define beg? (string=? language language-level/beginner))
+  (define int? (string=? language language-level/intermediate))
+  (define adv? (string=? language language-level/advanced))
+  (define beg/inter? (member language
+		       (list language-level/beginner
+			 language-level/intermediate)))
+  (define adv/mz? (member language
+		    (list language-level/advanced
+		      language-level/mzscheme/debug)))
 
   (define print-convert? (not mz?))
   (define case-sens? (not mz?))
@@ -156,6 +172,7 @@
   (define local? (and let? (not mz?)))
   (define imperative? adv/mz?)
   (define symbol-apps? beg/inter?)
+  (define apply-no-lambda-bound? beg/inter?)
   (define proper-list? (not mz?))
   (define define-struct? #t)
   (define explicit-inexact? (not mz?))
@@ -179,6 +196,7 @@
   (define oai-diff (mk-diff one-arm-if?))
   (define mz-diff (mk-diff mzscheme?))
   (define sa-diff (mk-diff symbol-apps?))
+  (define anlb-diff (mk-diff apply-no-lambda-bound?))
   (define pl-diff (mk-diff proper-list?))
   (define ds-diff (mk-diff define-struct?))
   (define qq-diff (mk-diff quasiquote?))
@@ -223,7 +241,7 @@
 			   '(error "'[(]apple[)] is not a symbol")))
   (try "'()" (gq-diff (pc-diff "empty" "()")
 		      '(error "'[(][)] is not a symbol")))
-  (try "()" (mz-diff "()" '(error "Empty combination")))
+  (try "()" (mz-diff "()" '(error "empty combination")))
 
   (try "`(a a a)" (qq-diff
 		   (gq-diff (pc-diff "(list 'a 'a 'a)"
@@ -253,7 +271,7 @@
   (try "(cons 2 (cons 1 null))" (al-diff (pc-diff "(list 2 1)" "(2 1)")
 					 "(cons 2 (cons 1 empty))"))
 
-  (try "4.0" (ei-diff "#i4.0" "4.0"))
+  (try "4.0" (ei-diff "4" "4.0"))
 
   ;; ;;;;;;;;;;;;;;;;;;;;;; prims ;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -270,6 +288,23 @@
   (try "some-undefined-identifier"
        '(error "reference to undefined identifier"))
 
+  ;; ;;;;;;;;;;;;;;;;;;;;;; applications ;;;;;;;;;;;;;;;;;;;
+
+  (try "(17 92)" (sa-diff '(error "must be a function name")
+			  '(error "application")))
+
+  (try "((car (list car cdr)) (list 1 2))"
+    (sa-diff '(error "must be a function name") "1"))
+
+  (try "(define (f x) (x 3))"
+    (anlb-diff '(error "is a function-bound") 'void))
+
+  (if local?
+    (try "(local ([define f car]) (f (list 1 2)))"
+      "1")
+    )
+
+
   ;; ;;;;;;;;;;;;;;;;;;;;;; lambda ;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (try-void "(define test-define-of-five 5)")
@@ -278,25 +313,27 @@
   (try "(lambda (x) 5)" (ldo-diff '(error "only in a definition")
 				  (pc-diff "(lambda (a1) ...)" "#<procedure>")))
   (try "((lambda (x) 592) 92)" (ldo-diff '(error "only in a definition")
-					 (sa-diff '(error "First term after paren")
+					 (sa-diff '(error "must be a function name")
 						  "592")))
-  (try "(17 92)" (sa-diff '(error "First term after paren")
-			  '(error "application")))
   (try "(lambda () 5)" (ldo-diff '(error "only in a definition")
 				 (el-diff (pc-diff "(lambda () ...)" "#<procedure>") 
 					  '(error "at least one argument"))))
   (try "(define (func) 5)" (el-diff 'void
 				    '(error "at least one argument")))
+  (try "(define (testing-implicit-begin-define x) 5 6)"
+    (mz-diff 'void '(error "must have exactly one")))
+  (try "(define (testing-no-body-define x))"
+    (mz-diff 'void '(error "must have exactly one")))
   (try "((lambda () 5))" (ldo-diff '(error "only in a definition")
-				   (el-diff (sa-diff '(error "First term after paren")
+				   (el-diff (sa-diff '(error "must paren")
 						     "5")
 					    '(error "at least one argument"))))
   
   (try "(case-lambda [(x) 10])" (ldo-diff '(error "only in a definition")
 					  (pc-diff "(lambda (a1) ...)" "#<procedure>")))
 
-  (try "lambda" '(error "Invalid use of keyword"))
-  (try "case-lambda" '(error "Invalid use of keyword"))
+  (try "lambda" '(error "invalid use of keyword"))
+  (try "case-lambda" '(error "invalid use of keyword"))
 
   (try-void "(define test-define-f (lambda (x) (+ x 5)))")
   (try "(test-define-f 3)" "8")
@@ -318,7 +355,7 @@
   (try "(if (odd? 10) 5 3)" "3")
   (try "(if #f 51 32)" "32")
   (try "(if #t 10)" (oai-diff "10" '(error "must have an else")))
-  (try "(define (y x) (if #f (set! x 92)))"
+  (try "(define (y x) (if #f (void)))"
        (oai-diff 'void
 		 '(error "must have an else")))
 
@@ -358,6 +395,10 @@
   (if local?
 
       (begin
+
+	(unless mz?
+	  (try "(local () 5 6)" '(error "local: malformed")))
+
 	(try "(local () 5)" "5")
 	(try "(local ((define x 56)) x)" "56")
 
@@ -410,6 +451,7 @@
 	(try '(let ([x (lambda (y) x)])
 		(equal? x (x 5)))
 	     '(error "undefined identifier: x$"))
+
 	(try '(let* ([x 3] 
 		     [z 1])
 		(let* ([x 2] 
@@ -445,13 +487,19 @@
 		x)
 	     "5")
 
+	(try '(let loop ([x 10])
+		(if (zero? x) 1
+		  (* x (loop (sub1 x)))))
+	  (nl-diff "3628800"
+	    '(error "let: malformed")))
+
 	(try '(let f ([x 9] 
 		      [y 100])
 		(if (<= x 4)
 		    y
 		    (f (sub1 x) (add1 y))))
 	     (nl-diff "105"
-		      '(error "Malformed let")))
+		      '(error "let: malformed")))
 
 	(try '(recur f ([x 9] [y 500])
 		(if (<= x 4)
@@ -459,7 +507,7 @@
 		    (f (sub1 x) (add1 y))))
 	     (nl-diff (mz-diff '(error "undefined.*: recur$")
 			       "505")
-		      '(error "First term after paren")))
+		      '(error "must be a function name")))
 
 	(try '(let ([g (rec f (lambda (x) f))])
 		(equal? g (g 5)))
@@ -480,17 +528,17 @@
 	(try '(when #t 50) "50")
 	(try-void '(when #f (cons 1 2)))
 	(try '(let ([x 5])
-		(when #f 
-		  (set! x 92))
-		x)
+		(let ([dummy (when #f 
+			       (set! x 92))])
+		  x))
 	     "5")
 
 
 	(try '(unless #f 50) "50")
 	(try-void '(unless #t (cons 1 2)))
 	(try '(let ([x 56])
-		(unless #t (set! x 92))
-		x)
+		(let ([dummy (unless #t (set! x 92))])
+		  x))
 	     "56")
 
 
@@ -511,16 +559,16 @@
   (try '(or #f #t) true-string)
   (try '(or #f #f) false-string)
 
-  (try '(and) (sao-diff true-string '(error "Malformed and")))
-  (try '(or) (sao-diff false-string '(error "Malformed or")))
+  (try '(and) (sao-diff true-string '(error "and: malformed")))
+  (try '(or) (sao-diff false-string '(error "or: malformed")))
     
-  (try '(and #t) (sao-diff true-string '(error "Malformed and")))
-  (try '(or #t) (sao-diff true-string '(error "Malformed or")))
-  (try '(and #f) (sao-diff false-string '(error "Malformed and")))
-  (try '(or #f) (sao-diff false-string '(error "Malformed or")))
+  (try '(and #t) (sao-diff true-string '(error "and: malformed")))
+  (try '(or #t) (sao-diff true-string '(error "or: malformed")))
+  (try '(and #f) (sao-diff false-string '(error "and: malformed")))
+  (try '(or #f) (sao-diff false-string '(error "or: malformed")))
 
-  (try '(and 7) (sao-diff "7" '(error "Malformed and")))
-  (try '(or 14) (sao-diff "14" '(error "Malformed or")))
+  (try '(and 7) (sao-diff "7" '(error "and: malformed")))
+  (try '(or 14) (sao-diff "14" '(error "or: malformed")))
 
   (try '(and 9 7) (cb-diff '(error "neither true nor false") "7"))
   (try '(or 9 7) (cb-diff '(error "neither true nor false") "9"))
@@ -533,13 +581,26 @@
 
   ;; ;;;;;;;;;;;;;;;;;; set!, begin, begin0, do, delay ;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
+  (if adv?
+
+    (begin
+
+      (try '(lambda (x) (set! x 5))
+	'(error "cannot mutate procedure-bound"))
+
+      (try '(local ([define x 5]) (set! x 4))
+	'void)
+
+      ))
+
   (if imperative?
 
       (begin
 
 	(try '(let ([x 3])
-		(set! x 5)
-		x)
+		(begin
+		  (set! x 5)
+		  x))
 	     "5")
 
 	(try '(begin (cons 2 null) 5) "5")
@@ -582,8 +643,9 @@
 
   (when imperative?
     (try '(call/cc (lambda (x)
-		     (x 55)
-		     ((lambda (x) (x x)) (lambda (x) (x x)))))
+		     (begin
+		       (x 55)
+		       ((lambda (x) (x x)) (lambda (x) (x x))))))
 	 "55"))
 
   (when let?
@@ -599,8 +661,9 @@
       (begin
 	
 	(try '(let/cc x
-		(x 35)
-		((lambda (x) (x x)) (lambda (x) (x x))))
+		(begin
+		  (x 35)
+		  ((lambda (x) (x x)) (lambda (x) (x x)))))
 	     "35")
 
 	(try '(let ([b (let/cc x x)])
@@ -614,6 +677,14 @@
       (begin
 	(try "let/cc" '(error "undefined"))))
   
+  ;; ;;;;;;;;;;;;;;;;;; time ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  (if beg?
+      (try '(time 1)
+	'(error "reference to undefined identifier"))
+    (try '(let ([x (time 1)]) (void))
+      "cpu time: 0 real time: 0 gc time: 0"))
+
   ;; ;;;;;;;;;;;;;;;;;; keywords  ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (let ([kws '(#%interface
@@ -634,7 +705,7 @@
 	       #%class #%class* #%class*/names)])
     (for-each
      (lambda (kw)
-       (try kw `(error ,(format "Invalid use of keyword ~a" 
+       (try kw `(error ,(format "invalid use of keyword ~a" 
 				(non-regexp (symbol->string kw))))))
      kws))
 
@@ -649,13 +720,13 @@
 
 (let ([go go]
       [errs? #f])
-  (set! argv #("-l" "Beginner"))
+  (set! argv `#("-l" ,language-level/beginner))
   (set! errs? (go))
-  (set! argv #("-l" "Intermediate"))
+  (set! argv `#("-l" ,language-level/intermediate))
   (set! errs? (or (go) errs?))
-  (set! argv #("-l" "Advanced"))
+  (set! argv `#("-l" ,language-level/advanced))
   (set! errs? (or (go) errs?))
-  (set! argv #("-l" "MzScheme Debug"))
-  (set! errs? (or (go) errs?))
+;  (set! argv `#("-l" ,language-level/mzscheme/debug))
+;  (set! errs? (or (go) errs?))
   (when errs?
     (printf "THERE WERE ERRORS~n")))

@@ -4974,9 +4974,14 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   fflush(stderr);
 # endif
 
-  if (shell)
+  if (shell) {
+    /* Set real CWD - and hope no other thread changes it! */
+    scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config, 
+						     MZCONFIG_CURRENT_DIRECTORY)),
+		     0);
+
     spawn_status = system(command);
-  else {
+  } else {
     int type;
     int save0, save1, save2;
 
@@ -5011,7 +5016,9 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 #endif
 
     /* Set real CWD - and hope no other thread changes it! */
-    scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config, MZCONFIG_CURRENT_DIRECTORY)), 0);
+    scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config, 
+						     MZCONFIG_CURRENT_DIRECTORY)),
+		     0);
 
     spawn_status = MSC_IZE(spawnv)(type, command, (const char * const *)argv);
 

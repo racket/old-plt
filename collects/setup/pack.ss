@@ -173,9 +173,15 @@
 		    (let* ([base-path #f]
 			   [base-path-setter #f]
 			   [rel-paths 
-			    (map (lambda (dir)
+			    (map (lambda (dir coll)
 				   (let-values ([(base c-name dir?) (split-path dir)])
-				     (let-values ([(base collects-dir-name dir?) (split-path base)])
+				     (let-values ([(base subdir)
+						   (let loop ([l (cdr coll)][base base])
+						     (let-values ([(base x-name dir?) (split-path base)])
+						       (if (null? l)
+							   (values base x-name)
+							   (let-values ([(base subdir) (loop (cdr l) base)])
+							     (values base (build-path subdir x-name))))))])
 				       (if base-path
 					   (unless (equal? base base-path)
 					     (error
@@ -186,8 +192,8 @@
 					   (begin
 					     (set! base-path-setter dir)
 					     (set! base-path base)))
-				       (build-path 'same collects-dir-name c-name))))
-				 dirs)]
+				       (build-path 'same subdir c-name))))
+				 dirs collections)]
 			   [infos (map (lambda (cp) (get-info cp))
 				       collections)]
 			   [coll-list? (lambda (cl)
@@ -224,7 +230,7 @@
       (let ([output (path->complete-path output)])
 	(parameterize ([current-directory dir])
 	  (pack output name
-		(map (lambda (cp) (apply build-path 'same cp)) collections)
+		source-files
 		(append
 		 extra-setup-collections
 		 (filter get-info collections))

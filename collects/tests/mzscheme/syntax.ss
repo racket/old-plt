@@ -616,6 +616,8 @@
 
 (test 5 'implicit-begin (let () (begin) 10 5))
 
+(error-test #'(begin (define foo (let/cc k k)) (foo 10)) exn:application:type?) ; not exn:application:continuation?
+
 (SECTION 4 2 5)
 (define f-check #t)
 (define f (delay (begin (set! f-check #f) 5)))

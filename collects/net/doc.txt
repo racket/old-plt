@@ -215,11 +215,17 @@ The _sendurl.ss_ module defines one procedure:
   sending a message to the local browser to display the url named
   by `str'.
 
-  Under macos, uses the url apple event library
-  Under unix, uses opera if it can be found in the
-    path. If not, tries netscape. If not that, just
-    fails.
-  Under windows, always fails.
+  Under Windows, `send-url' uses the registry to get a
+  browser-launching command line. The registry can be read only from
+  MrEd (i.e., not MzScheme).
+
+  Under Mac OS, `send-url' uses the URL apple event library.
+
+  Under Unix, `send-url' looks for an 'external-browser preference,
+  which can be either 'opera, 'netscape (mozilla), or #f. If #f,
+  `send-url' uses opera if it can be found in the path, netscape
+  otherwise. If the preferred or default browser can't be launched,
+  `send-url' fails.
 
 ==========================================================================
 _CGI_ backends, _WWW_

@@ -182,7 +182,7 @@
 
 (let* ([first-key (dispatch-start 'foo)]
        [second-key (dispatch `(,(deserialize (serialize first-key)) 1))]
-       [third-key (dispatch `(,(deserialize (serialize first-key) -7)))])
+       [third-key (dispatch `(,(deserialize (serialize first-key)) -7))])
   (values
    (= 3 (dispatch `(,second-key 2)))
    (= 4 (dispatch `(,second-key 3)))

@@ -78,10 +78,7 @@
                  #t
                  
                  ;; Directory for last-ditch resolution --------------------
-                 #,(let ([cld (current-load-relative-directory)]
-                         [cd (current-directory)])
-                     (myprint "tag = ~s~ncld = ~s~ncd = ~s~n" (syntax-object->datum tag) cld cd)
-                     (or cld cd))
+                 (or (current-load-relative-directory) (current-directory))
                  ))
             
             #`(define-values (struct:CLOSURE make-CLOSURE CLOSURE? #,@(if (null? fvars)

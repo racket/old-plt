@@ -24,7 +24,11 @@ Check Syntax separates four classes of identifiers:
     
  In addition, the syntax property 'bound-in-source
  specifies additional members of the 3rd category.
-  
+
+ Variables inside #%top are treated specially. 
+ If the namespace has a binding for them, they are colored bound color.
+ If the namespace does not, they are colored the unbound color.
+ 
   TODO:
        
      - write test suite for arrows and menus
@@ -87,69 +91,14 @@ Check Syntax separates four classes of identifiers:
       
             
       ;; all strings naming styles
-      (define unbound-variable-style-str (prefix-style/check 'unbound-variable))
-      (define constant-style-str (prefix-style/check 'constant))
-
-      (define lexically-bound-variable-style-str (prefix-style/check 'lexically-bound-variable))
-      (define lexically-bound-syntax-style-str (prefix-style/check 'lexically-bound-syntax))
-      (define imported-syntax-style-str (prefix-style/check 'imported-syntax))
-      (define imported-variable-style-str (prefix-style/check 'imported-variable))
-      
-      (let ([set-default
-             (lambda (default)
-               (let* ([sym (car default)]
-                      [code-style (cadr default)]
-                      [color (code-style-color code-style)])
-                 (fw:preferences:set-default
-                  sym
-                  (let ([s (make-object style-delta%)])
-                    (send s set-delta-foreground (if (string? color)
-                                                     color
-                                                     (make-object color%
-                                                       (car color)
-                                                       (cadr color)
-                                                       (caddr color))))
-                    (when (code-style-bold? code-style)
-                      (send s set-delta 'change-bold))
-                    (when (code-style-underline? code-style)
-                      (send s set-delta 'change-underline #t))
-                    (when (code-style-slant? code-style)
-                      (send s set-delta 'change-italic))
-                    s)
-                  (lambda (x)
-                    (is-a? x style-delta%)))))])
-        (for-each set-default prefixed-code-styles))
-      
-      (for-each 
-       (lambda (s) 
-         (fw:preferences:set-un/marshall s marshall-style unmarshall-style))
-       delta-symbols)
-      
-      ; a symbol naming the style  and a delta to set it to
-      (define set-slatex-style
-        (lambda (sym delta)
-          (let* ([style-list (fw:editor:get-standard-style-list)]
-                 [name (symbol->string sym)]
-                 [style (send style-list find-named-style name)])
-            (if style
-                (send style set-delta delta)
-                (send style-list new-named-style name
-                      (send style-list find-or-create-style
-                            (send style-list find-named-style "Standard")
-                            delta))))))
-      
-      (for-each set-slatex-style delta-symbols (map fw:preferences:get delta-symbols))
-
-#|
-Scott's addition:
-      (define keyword-style-str (prefix-style 'keyword))
       (define unbound-variable-style-str (prefix-style 'unbound-variable))
-      (define bound-variable-style-str (prefix-style 'bound-variable))
       (define constant-style-str (prefix-style 'constant))
-      (define string-style-str (prefix-style 'string))
-      (define base-style-str (prefix-style 'base))
-|#
-      
+
+      (define lexically-bound-variable-style-str (prefix-style 'lexically-bound-variable))
+      (define lexically-bound-syntax-style-str (prefix-style 'lexically-bound-syntax))
+      (define imported-syntax-style-str (prefix-style 'imported-syntax))
+      (define imported-variable-style-str (prefix-style 'imported-variable))
+            
       ;; used for quicker debugging of the preference panel
       '(define test-preference-panel
          (lambda (name f)
@@ -1097,14 +1046,6 @@ Scott's addition:
                       (reset-offer-kill)
                       (send definitions-text syncheck:init-arrows)
 
-		      ;; use the base colors only when the online color
-		      ;; is disabled (do I really want this?)
-                      (unless (send definitions-text coloring-active?)
-                        (color-range definitions-text
-                                     0
-                                     (send definitions-text last-position)
-                                     base-style-str))
-
                       (drscheme:eval:expand-program
                        (drscheme:language:make-text/pos definitions-text
                                                         0
@@ -1329,7 +1270,7 @@ Scott's addition:
       ;;
       ;; the inputs match the outputs of annotate-basic, except this
       ;; accepts the user's namespace in addition and doesn't accept
-      ;; the boolean from annotate-basic.
+      ;; the boolean or tail call hash-table from annotate-basic.
       (define (annotate-complete user-namespace
                                  user-directory
                                  binders
@@ -1353,6 +1294,223 @@ Scott's addition:
                               non-require-referenced-macros
                               tops))
         (annotate-bound-in-sources bound-in-sources))
+
+      ;; annotate-basic : syntax 
+      ;;                  namespace
+      ;;                  string
+      ;;                  syntax[id]
+      ;;                  -> (values (listof syntax)
+      ;;                             (listof (cons boolean syntax))
+      ;;                             (listof syntax)
+      ;;                             (listof syntax)
+      ;;                             (listof (cons boolean syntax[original]))
+      ;;                             (listof (cons syntax[original] syntax[original]))
+      ;;                             boolean
+      ;;                             hash-table[ ... ])
+      ;; annotates the lexical structure of the program `sexp', except
+      ;; for the variables in the program. returns the variables in several
+      ;; lists -- the first is the ones that occur in binding positions
+      ;; and the second is those that occur in bound positions. The third
+      ;; is those that occur in #%top's. 
+      ;; The next value is all of the require expressions and then all of the
+      ;; require-for-syntax expressions.
+      ;; the next is the list of all original macro references.
+      ;; the next to last is a boolean indicating if there was a `module' in the expanded expression.
+      ;; the last is a hash-table that describes the relative tail positions in the expression
+      
+      ;; the booleans in the lists indicate if the variables or macro references
+      ;; were on the rhs of a define-syntax (boolean is #t) or not (boolean is #f)
+      (define (annotate-basic sexp user-namespace user-directory jump-to-id)
+        (let ([binders null]
+              [varrefs null]
+              [requires null]
+              [require-for-syntaxes null]
+              [referenced-macros null]
+              [bound-in-sources null]
+              [has-module? #f]
+              [tail-ht (make-hash-table)])
+          (let level-loop ([sexp sexp]
+                           [high-level? #f])
+            (annotate-original-keywords sexp)
+            (set! bound-in-sources (combine-bound-in-source sexp bound-in-sources))
+            (set! referenced-macros (get-referenced-macros high-level? sexp referenced-macros))
+            (set! varrefs (flatten-bis-tree #t (syntax-property sexp 'bound-in-source) varrefs))
+            (set! binders (flatten-cons-tree 'no-cons (syntax-property sexp 'binding-in-source) binders))
+            (let ([loop (lambda (sexp) (level-loop sexp high-level?))])
+              (syntax-case* sexp (lambda case-lambda if begin begin0 let-values letrec-values set!
+                                   quote quote-syntax with-continuation-mark 
+                                   #%app #%datum #%top #%plain-module-begin
+                                   define-values define-syntaxes module
+                                   require require-for-syntax provide)
+                (if high-level? module-transformer-identifier=? module-identifier=?)
+                [(lambda args bodies ...)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (annotate-tail-position/last sexp (syntax->list (syntax (bodies ...))) tail-ht)
+                   (set! binders (combine/color-binders (syntax args) binders bound-variable-style-str))
+                   (for-each loop (syntax->list (syntax (bodies ...)))))]
+                [(case-lambda [argss bodiess ...]...)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (for-each (lambda (bodies/stx) (annotate-tail-position/last sexp 
+                                                                               (syntax->list bodies/stx)
+                                                                               tail-ht))
+                             (syntax->list (syntax ((bodiess ...) ...))))
+                   (for-each
+                    (lambda (args bodies)
+                      (set! binders (combine/color-binders args binders bound-variable-style-str))
+                      (for-each loop (syntax->list bodies)))
+                    (syntax->list (syntax (argss ...)))
+                    (syntax->list (syntax ((bodiess ...) ...)))))]
+                [(if test then else)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (annotate-tail-position sexp (syntax then) tail-ht)
+                   (annotate-tail-position sexp (syntax else) tail-ht)
+                   (loop (syntax test))
+                   (loop (syntax else))
+                   (loop (syntax then)))]
+                [(if test then)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (annotate-tail-position sexp (syntax then) tail-ht)
+                   (loop (syntax test))
+                   (loop (syntax then)))]
+                [(begin bodies ...)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (annotate-tail-position/last sexp (syntax->list (syntax (bodies ...))) tail-ht)
+                   (for-each loop (syntax->list (syntax (bodies ...)))))]
+                
+                ;; treat a single body expression specially, since this has
+                ;; different tail behavior.
+                [(begin0 body)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (annotate-tail-position sexp (syntax body) tail-ht)
+                   (loop (syntax body)))]
+                
+                [(begin0 bodies ...)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (for-each loop (syntax->list (syntax (bodies ...)))))]
+                
+                [(let-values (((xss ...) es) ...) bs ...)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (annotate-tail-position/last sexp (syntax->list (syntax (bs ...))) tail-ht)
+                   (for-each (lambda (x) (set! binders (combine/color-binders x binders bound-variable-style-str)))
+                             (syntax->list (syntax ((xss ...) ...))))
+                   (for-each loop (syntax->list (syntax (es ...))))
+                   (for-each loop (syntax->list (syntax (bs ...)))))]
+                [(letrec-values (((xss ...) es) ...) bs ...)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (annotate-tail-position/last sexp (syntax->list (syntax (bs ...))) tail-ht)
+                   (for-each (lambda (x) (set! binders (combine/color-binders x binders bound-variable-style-str)))
+                             (syntax->list (syntax ((xss ...) ...))))
+                   (for-each loop (syntax->list (syntax (es ...))))
+                   (for-each loop (syntax->list (syntax (bs ...)))))]
+                [(set! var e)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (set! varrefs (cons (cons high-level? (syntax var)) varrefs))
+                   (loop (syntax e)))]
+                [(quote datum)
+                 (begin 
+                   (annotate-raw-keyword sexp)
+                   ;(color-internal-structure (syntax datum) constant-style-str)
+                   )]
+                [(quote-syntax datum)
+                 (begin 
+                   (annotate-raw-keyword sexp)
+                   ;(color-internal-structure (syntax datum) constant-style-str)
+                   )]
+                [(with-continuation-mark a b c)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (annotate-tail-position sexp (syntax c) tail-ht)
+                   (loop (syntax a))
+                   (loop (syntax b))
+                   (loop (syntax c)))]
+                [(#%app pieces ...)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (for-each loop (syntax->list (syntax (pieces ...)))))]
+                [(#%datum . datum)
+                 ;(color-internal-structure (syntax datum) constant-style-str)
+                 (void)
+                 ]
+                [(#%top . var)
+                 (begin
+                   (set! tops (cons (syntax var) tops)))]
+                
+                [(define-values vars b)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (set! binders (combine/color-binders (syntax vars) binders bound-variable-style-str))
+                   (when jump-to-id
+                     (for-each (lambda (id)
+                                 (when (module-identifier=? id jump-to-id)
+                                   (jump-to id)))
+                               (syntax->list (syntax vars))))
+                   (loop (syntax b)))]
+                [(define-syntaxes names exp)
+                 (begin
+                   (annotate-raw-keyword sexp)
+                   (set! binders (combine/color-binders (syntax names) binders keyword-style-str))
+                   (level-loop (syntax exp) #t))]
+                [(module m-name lang (#%plain-module-begin bodies ...))
+                 (begin
+                   (set! has-module? #t)
+                   ((annotate-require-open user-namespace user-directory) (syntax lang))
+                   (set! requires (cons (syntax lang) requires))
+                   (annotate-raw-keyword sexp)
+                   (for-each loop (syntax->list (syntax (bodies ...)))))]
+                
+                ; top level or module top level only:
+                [(require require-specs ...)
+                 (let ([new-specs (map trim-require-prefix
+                                       (syntax->list (syntax (require-specs ...))))])
+                   (for-each (annotate-require-open user-namespace user-directory) new-specs)
+                   (set! requires (append new-specs requires))
+                   (annotate-raw-keyword sexp))]
+                [(require-for-syntax require-specs ...)
+                 (let ([new-specs (map trim-require-prefix (syntax->list (syntax (require-specs ...))))])
+                   (for-each (annotate-require-open user-namespace user-directory) new-specs)
+                   (set! require-for-syntaxes (append new-specs require-for-syntaxes))
+                   (annotate-raw-keyword sexp))]
+                
+                ; module top level only:
+                [(provide provide-specs ...)
+                 (let ([provided-vars (apply 
+                                       append
+                                       (map extract-provided-vars
+                                            (syntax->list (syntax (provide-specs ...)))))])
+                   (set! varrefs (append (map (lambda (x) (cons #f x)) provided-vars) varrefs))
+                   (annotate-raw-keyword sexp))]
+                
+                [id
+                 (identifier? (syntax id))
+                 (set! varrefs (cons (cons high-level? sexp) varrefs))]
+                [_
+                 (begin
+                   '(printf "unknown stx: ~e (datum: ~e) (source: ~e)~n"
+                            sexp
+                            (and (syntax? sexp)
+                                 (syntax-object->datum sexp))
+                            (and (syntax? sexp)
+                                 (syntax-source sexp)))
+                   (void))])))
+          (add-tail-ht-links tail-ht)
+          (values binders 
+                  varrefs
+                  tops
+                  requires
+                  require-for-syntaxes
+                  referenced-macros
+                  bound-in-sources
+                  has-module?)))
 
       ;; annotate-require-vars :    (listof (cons boolean syntax[identifier]))
       ;;                            (listof syntax)
@@ -1630,224 +1788,7 @@ Scott's addition:
                            [editor-snip-admin (send enclosing-editor-snip get-admin)]
                            [enclosing-editor (send editor-snip-admin get-editor)])
                       (loop enclosing-editor))))])))
-      
-      ;; annotate-basic : syntax 
-      ;;                  namespace
-      ;;                  string
-      ;;                  syntax[id]
-      ;;                  -> (values (listof syntax)
-      ;;                             (listof (cons boolean syntax))
-      ;;                             (listof syntax)
-      ;;                             (listof syntax)
-      ;;                             (listof (cons boolean syntax[original]))
-      ;;                             (listof (cons syntax[original] syntax[original]))
-      ;;                             boolean)
-      ;; annotates the lexical structure of the program `sexp', except
-      ;; for the variables in the program. returns the variables in several
-      ;; lists -- the first is the ones that occur in binding positions
-      ;; and the second is those that occur in bound positions. The third
-      ;; is those that occur in #%top's. 
-      ;; The next value is all of the require expressions and then all of the
-      ;; require-for-syntax expressions.
-      ;; the next is the list of all original macro references.
-      ;; the last to last is a boolean indicating if there was a `module' in the expanded expression.
-      ;; the last is a hash-table that describes the relative tail positions in the expression
-      
-      ;; the booleans in the lists indicate if the variables or macro references
-      ;; were on the rhs of a define-syntax (boolean is #t) or not (boolean is #f)
-      (define (annotate-basic sexp user-namespace user-directory jump-to-id)
-        (let ([binders null]
-              [varrefs null]
-              [tops null]
-              [requires null]
-              [require-for-syntaxes null]
-              [referenced-macros null]
-              [bound-in-sources null]
-              [has-module? #f]
-              [tail-ht (make-hash-table)])
-          (let level-loop ([sexp sexp]
-                           [high-level? #f])
-            (annotate-original-keywords sexp)
-            (set! bound-in-sources (combine-bound-in-source sexp bound-in-sources))
-            (set! referenced-macros (get-referenced-macros high-level? sexp referenced-macros))
-            (set! varrefs (flatten-bis-tree #t (syntax-property sexp 'bound-in-source) varrefs))
-            (set! binders (flatten-cons-tree 'no-cons (syntax-property sexp 'binding-in-source) binders))
-            (let ([loop (lambda (sexp) (level-loop sexp high-level?))])
-              (syntax-case* sexp (lambda case-lambda if begin begin0 let-values letrec-values set!
-                                   quote quote-syntax with-continuation-mark 
-                                   #%app #%datum #%top #%plain-module-begin
-                                   define-values define-syntaxes module
-                                   require require-for-syntax provide)
-                (if high-level? module-transformer-identifier=? module-identifier=?)
-                [(lambda args bodies ...)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (annotate-tail-position/last sexp (syntax->list (syntax (bodies ...))) tail-ht)
-                   (set! binders (combine/color-binders (syntax args) binders bound-variable-style-str))
-                   (for-each loop (syntax->list (syntax (bodies ...)))))]
-                [(case-lambda [argss bodiess ...]...)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (for-each (lambda (bodies/stx) (annotate-tail-position/last sexp 
-                                                                               (syntax->list bodies/stx)
-                                                                               tail-ht))
-                             (syntax->list (syntax ((bodiess ...) ...))))
-                   (for-each
-                    (lambda (args bodies)
-                      (set! binders (combine/color-binders args binders bound-variable-style-str))
-                      (for-each loop (syntax->list bodies)))
-                    (syntax->list (syntax (argss ...)))
-                    (syntax->list (syntax ((bodiess ...) ...)))))]
-                [(if test then else)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (annotate-tail-position sexp (syntax then) tail-ht)
-                   (annotate-tail-position sexp (syntax else) tail-ht)
-                   (loop (syntax test))
-                   (loop (syntax else))
-                   (loop (syntax then)))]
-                [(if test then)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (annotate-tail-position sexp (syntax then) tail-ht)
-                   (loop (syntax test))
-                   (loop (syntax then)))]
-                [(begin bodies ...)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (annotate-tail-position/last sexp (syntax->list (syntax (bodies ...))) tail-ht)
-                   (for-each loop (syntax->list (syntax (bodies ...)))))]
-                
-                ;; treat a single body expression specially, since this has
-                ;; different tail behavior.
-                [(begin0 body)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (annotate-tail-position sexp (syntax body) tail-ht)
-                   (loop (syntax body)))]
-                
-                [(begin0 bodies ...)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (for-each loop (syntax->list (syntax (bodies ...)))))]
-                
-                [(let-values (((xss ...) es) ...) bs ...)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (annotate-tail-position/last sexp (syntax->list (syntax (bs ...))) tail-ht)
-                   (for-each (lambda (x) (set! binders (combine/color-binders x binders bound-variable-style-str)))
-                             (syntax->list (syntax ((xss ...) ...))))
-                   (for-each loop (syntax->list (syntax (es ...))))
-                   (for-each loop (syntax->list (syntax (bs ...)))))]
-                [(letrec-values (((xss ...) es) ...) bs ...)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (annotate-tail-position/last sexp (syntax->list (syntax (bs ...))) tail-ht)
-                   (for-each (lambda (x) (set! binders (combine/color-binders x binders bound-variable-style-str)))
-                             (syntax->list (syntax ((xss ...) ...))))
-                   (for-each loop (syntax->list (syntax (es ...))))
-                   (for-each loop (syntax->list (syntax (bs ...)))))]
-                [(set! var e)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (set! varrefs (cons (cons high-level? (syntax var)) varrefs))
-                   (loop (syntax e)))]
-                [(quote datum)
-                 (begin 
-                   (annotate-raw-keyword sexp)
-                   ;(color-internal-structure (syntax datum) constant-style-str)
-                   )]
-                [(quote-syntax datum)
-                 (begin 
-                   (annotate-raw-keyword sexp)
-                   ;(color-internal-structure (syntax datum) constant-style-str)
-                   )]
-                [(with-continuation-mark a b c)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (annotate-tail-position sexp (syntax c) tail-ht)
-                   (loop (syntax a))
-                   (loop (syntax b))
-                   (loop (syntax c)))]
-                [(#%app pieces ...)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (for-each loop (syntax->list (syntax (pieces ...)))))]
-                [(#%datum . datum)
-                 ;(color-internal-structure (syntax datum) constant-style-str)
-                 (void)
-                 ]
-                [(#%top . var)
-                 (begin
-                   (set! tops (cons (syntax var) tops)))]
-                
-                [(define-values vars b)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (set! binders (combine/color-binders (syntax vars) binders bound-variable-style-str))
-                   (when jump-to-id
-                     (for-each (lambda (id)
-                                 (when (module-identifier=? id jump-to-id)
-                                   (jump-to id)))
-                               (syntax->list (syntax vars))))
-                   (loop (syntax b)))]
-                [(define-syntaxes names exp)
-                 (begin
-                   (annotate-raw-keyword sexp)
-                   (set! binders (combine/color-binders (syntax names) binders keyword-style-str))
-                   (level-loop (syntax exp) #t))]
-                [(module m-name lang (#%plain-module-begin bodies ...))
-                 (begin
-                   (set! has-module? #t)
-                   ((annotate-require-open user-namespace user-directory) (syntax lang))
-                   (set! requires (cons (syntax lang) requires))
-                   (annotate-raw-keyword sexp)
-                   (for-each loop (syntax->list (syntax (bodies ...)))))]
-                
-                ; top level or module top level only:
-                [(require require-specs ...)
-                 (let ([new-specs (map trim-require-prefix
-                                       (syntax->list (syntax (require-specs ...))))])
-                   (for-each (annotate-require-open user-namespace user-directory) new-specs)
-                   (set! requires (append new-specs requires))
-                   (annotate-raw-keyword sexp))]
-                [(require-for-syntax require-specs ...)
-                 (let ([new-specs (map trim-require-prefix (syntax->list (syntax (require-specs ...))))])
-                   (for-each (annotate-require-open user-namespace user-directory) new-specs)
-                   (set! require-for-syntaxes (append new-specs require-for-syntaxes))
-                   (annotate-raw-keyword sexp))]
-                
-                ; module top level only:
-                [(provide provide-specs ...)
-                 (let ([provided-vars (apply 
-                                       append
-                                       (map extract-provided-vars
-                                            (syntax->list (syntax (provide-specs ...)))))])
-                   (set! varrefs (append (map (lambda (x) (cons #f x)) provided-vars) varrefs))
-                   (annotate-raw-keyword sexp))]
-                
-                [id
-                 (identifier? (syntax id))
-                 (set! varrefs (cons (cons high-level? sexp) varrefs))]
-                [_
-                 (begin
-                   '(printf "unknown stx: ~e (datum: ~e) (source: ~e)~n"
-                            sexp
-                            (and (syntax? sexp)
-                                 (syntax-object->datum sexp))
-                            (and (syntax? sexp)
-                                 (syntax-source sexp)))
-                   (void))])))
-          (add-tail-ht-links tail-ht)
-          (values binders 
-                  varrefs
-                  tops
-                  requires
-                  require-for-syntaxes
-                  referenced-macros
-                  bound-in-sources
-                  has-module?)))
-
+ 
       ;; annotate-tail-position/last : (listof syntax) -> void
       (define (annotate-tail-position/last orig-stx stxs tail-ht)
         (unless (null? stxs)
@@ -1958,7 +1899,7 @@ Scott's addition:
                                  test)))
                         possible-suffixes)))))
 
-      ;; get-referenced-macros : boolean sexp -> (listof (cons boolean syntax[original]))
+      ;; get-referenced-macros : boolean sexp (listof (cons boolean syntax[original])) -> (listof (cons boolean syntax[original]))
       (define (get-referenced-macros high-level? sexp acc)
         (let ([origin (syntax-property sexp 'origin)])
           (if origin
@@ -1969,7 +1910,7 @@ Scott's addition:
       ;; flatten-cons-tree : (union 'no-cons boolean)
       ;;                     cons-tree
       ;;                     (union (listof syntax[original]) (listof (cons boolean syntax[original])))
-      ;;                     -> (listof syntax[original])
+      ;;                  -> (union (listof syntax[original]) (listof (cons boolean syntax[original])))
       ;; flattens the cons tree in one of two ways. If the first
       ;; argument is 'no-cons, `acc' must be a list of syntax; if
       ;; the first argument is a boolean, `acc' must be a list of pairs.

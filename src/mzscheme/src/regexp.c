@@ -2111,10 +2111,9 @@ static int translate(unsigned char *s, int len, char **result)
   
   r = (char *)scheme_malloc_atomic(rs.size + 1);
 
-  /* We need to translate if the pattern contains any use of "."
-     (except before "*"), if there's a big character in a range, if
-     there's a not-range, or if there's a big character before '+',
-     '*', or '?'. */
+  /* We need to translate if the pattern contains any use of ".", if
+     there's a big character in a range, if there's a not-range, or if
+     there's a big character before '+', '*', or '?'. */
 
   for (rs.i = j = 0; rs.i < len;) {
     if (s[rs.i] == '[') {
@@ -2338,16 +2337,20 @@ static int translate(unsigned char *s, int len, char **result)
 	}
       } else
 	r[j++] = s[rs.i++];
-    } else if ((s[rs.i] == '.') && (((rs.i + 1) >= len)
-				 || (s[rs.i+1] != '*'))) {
-      /* "." has to be expanded, but only if it's not followed by "*".
-	 (The ".*" exception is important to the regexp matcher, snce there's
-	 always an implement ".*" at the start of a pattern.) */
-      const char *any_str = "(?:[\000-\177]|[\300-\375][\200-\277]*)";
-      int len = 21;
-      r = make_room(r, j, len - 1, &rs);
-      memcpy(r + j, any_str, len);
-      j += len;
+    } else if (s[rs.i] == '.') {
+      /* "." has to be expanded. */
+      r = make_room(r, j, 8, &rs);
+      r[j++] = '(';
+      r[j++] = '?';
+      r[j++] = ':';
+      r[j++] = '[';
+      r[j++] = '\00';
+      r[j++] = '-';
+      r[j++] = '\177';
+      r[j++] = ']';
+      r = add_range(r, &j, &rs, 128, 0x7FFFFFFF, 0);
+      r = make_room(r, j, 1, &rs);
+      r[j++] = ')';
       rs.i++;
     } else if (s[rs.i] > 127) {
       int k = rs.i + 1;

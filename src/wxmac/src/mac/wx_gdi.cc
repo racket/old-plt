@@ -487,6 +487,7 @@ wxCursor::wxCursor(int cursor_type)
     }
     case wxCURSOR_BULLSEYE:
     {
+      cMacCursor = GetCursor(128);
       break;
     }
     case wxCURSOR_PENCIL:

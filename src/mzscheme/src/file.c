@@ -523,7 +523,7 @@ static int find_mac_file(const char *filename, int use_real_cwd,
     find_vref = wdrec.ioWDVRefNum;
     find_dir_id = wdrec.ioWDDirID;
   } else {
-    int len = filename && strlen(filename);
+    int len = filename ? strlen(filename) : 0;
     find_vref = -1;
     find_dir_id = 0;
     if (!filename || !scheme_is_complete_path(filename, len))
@@ -1881,18 +1881,24 @@ static char *do_path_to_complete_path(char *filename, long ilen, const char *wrt
       wlen = SCHEME_STRTAG_VAL(wd);
     }
 
-# ifdef DOS_FILE_SYSTEM
+#ifdef DOS_FILE_SYSTEM
     if (!scheme_is_relative_path(filename, ilen)) {
       /* Absolute, not complete. Fill in the disk */
       wrt = get_drive_part(wrt, wlen);
       wlen = strlen(wrt);
     }
-# endif
+#endif
 
     naya = (char *)scheme_malloc_atomic(ilen + wlen + 2);
     memcpy(naya, wrt, wlen);
     if (!IS_A_SEP(naya[wlen - 1]))
       naya[wlen++] = FN_SEP;
+#ifdef MAC_FILE_SYSTEM
+    if (IS_A_SEP(filename[0])) {
+      filename++;
+      ilen--;
+    }
+#endif
     memcpy(naya + wlen, filename, ilen);
     naya[wlen + ilen] = 0;
     
@@ -2394,8 +2400,13 @@ static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle
       if (SCHEME_STRINGP(base)) {
 	s = SCHEME_STR_VAL(base);
 	len = SCHEME_STRTAG_VAL(base);
-      } else
+      } else {
+      	/* Start list with root path, not root name.
+      	   This is crucial for MacOS */
+      	accum = scheme_make_pair(scheme_make_sized_string(s, len, 0),
+      				 SCHEME_CDR(accum));
 	break;
+      }
     }
 
     /* Now assemble the result */

@@ -86,7 +86,7 @@ static void push_copied_stacks(void)
       if (!cs->pushed && GC_is_marked(cs->stack_copy)) {
 	pushed_one = 1;
 	cs->pushed = 1;
-	GC_push_all_stack(cs->stack_copy, cs->stack_copy + cs->size);
+	GC_push_all_stack(cs->stack_copy, (char *)cs->stack_copy + cs->size);
       }
   } while (pushed_one);
 }

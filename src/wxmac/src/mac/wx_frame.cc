@@ -109,6 +109,11 @@ wxFrame::wxFrame // Constructor (for frame window)
 	int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
 	int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
 	SizeWindow((WindowPtr)theMacWindow, theMacWidth, theMacHeight, FALSE);
+	
+	wx_cursor = wxSTANDARD_CURSOR;
+	
+	if (wxIsBusy())
+	  cBusyCursor = 1;
 }
 
 //=============================================================================

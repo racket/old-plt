@@ -483,36 +483,48 @@ char *wxGetUserHome (const char *user)
 // Old cursor
 static int wxBusyCursorCount = FALSE;
 
+extern int wxGetBusyState();
+extern void wxSetBusyState(int);
+
 // Set the cursor to the busy cursor for all windows
 void 
 wxBeginBusyCursor (wxCursor * cursor)
 {
-  for (wxChildNode *node = wxTopLevelWindows(NULL)->First(); node; node = node->Next()) {
-    wxFrame *f = (wxFrame *)node->Data();
-    f->cBusyCursor++;
+  int s = wxGetBusyState();
+  wxSetBusyState(s + 1);
+
+  if (!s) {
+    for (wxChildNode *node = wxTopLevelWindows(NULL)->First(); node; node = node->Next()) {
+      wxFrame *f = (wxFrame *)node->Data();
+      f->cBusyCursor = 1;
+    }
+
+    wxTheApp->AdjustCursor();
   }
-    
-  wxTheApp->AdjustCursor();
 }
 
 // Restore cursor to normal
 void 
 wxEndBusyCursor (void)
 {
-  for (wxChildNode *node = wxTopLevelWindows(NULL)->First(); node; node = node->Next()) {
-    wxFrame *f = (wxFrame *)node->Data();
-    if (f->cBusyCursor)
-      --f->cBusyCursor;
-  }
+  int s = wxGetBusyState();
+  wxSetBusyState(s - 1);
+
+  if (s == 1) {
+    for (wxChildNode *node = wxTopLevelWindows(NULL)->First(); node; node = node->Next()) {
+      wxFrame *f = (wxFrame *)node->Data();
+      f->cBusyCursor = 0;
+    }
 	
-  wxTheApp->AdjustCursor();
+    wxTheApp->AdjustCursor();
+  }
 }
 
 // TRUE if we're between the above two calls
 Bool 
 wxIsBusy (void)
 {
-  return (wxBusyCursorCount > 0);
+  return wxGetBusyState() > 0;
 }
 
 // Some additions from Louis Birk

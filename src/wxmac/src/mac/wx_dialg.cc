@@ -241,6 +241,8 @@ wxDialogBox::wxDialogBox // Constructor (for dialog window)
   SetSize(-1, -1, w, h, 0x70);
   
   __type = wxTYPE_DIALOG_BOX;
+  
+  wx_cursor = wxSTANDARD_CURSOR;
 }
 
 //=============================================================================

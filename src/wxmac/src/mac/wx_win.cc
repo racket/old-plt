@@ -1051,6 +1051,7 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent& mouseEvent)
 					ClientToLogical(&clientHitX, &clientHitY); // mouseWindow logical c.s.
 					areaMouseEvent->x = clientHitX; // mouseWindow logical c.s.
 					areaMouseEvent->y = clientHitY; // mouseWindow logical c.s.
+					areaMouseEvent->eventObject = this;
 					if (!doCallPreMouseEvent(this, this, areaMouseEvent)) {
 						if (WantsFocus() && areaMouseEvent->ButtonDown()) {
 							wxFrame *fr = GetRootFrame();
@@ -1058,12 +1059,13 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent& mouseEvent)
 								fr->SetFocusWindow(this);
 						}
 						
-						if (areaMouseEvent->ButtonDown()
-						    && wxSubType(__type, wxTYPE_CANVAS))
-						  CaptureMouse();
-						if (areaMouseEvent->ButtonUp()
-						    && wxSubType(__type, wxTYPE_CANVAS))
-						  ReleaseMouse();
+						if (wxSubType(__type, wxTYPE_CANVAS)) {
+						  if (areaMouseEvent->ButtonDown())
+						    CaptureMouse();
+						  else if (gMouseWindow == this
+						           && !areaMouseEvent->Dragging())
+						    ReleaseMouse();
+						}
 						
 						OnEvent(*areaMouseEvent);
 					}
@@ -1424,9 +1426,14 @@ void wxWindow::DoPeriodicAction(void) // mac platform only
 //-----------------------------------------------------------------------------
 wxCursor* wxWindow::SetCursor(wxCursor* cursor)
 {
+    if (cursor && !cursor->Ok())
+      cursor = wx_cursor;
+
 	wxCursor* old_cursor = wx_cursor;
-	wx_cursor = cursor;
-	wxTheApp->AdjustCursor();
+	if (old_cursor != cursor) {
+	  wx_cursor = cursor;
+	  wxTheApp->AdjustCursor();
+	}
 	return old_cursor;
 }
 
@@ -1495,7 +1502,11 @@ Bool wxWindow::AdjustCursor(int mouseX, int mouseY)
  	int hitY = mouseY - cWindowY; // window c.s.
 
     if (wxWindow::gMouseWindow == this) {
-       wxSetCursor(wx_cursor);
+       wxWindow *p = this;
+       while (p && !p->wx_cursor)
+         p = p->GetParent();
+       if (p)
+         wxSetCursor(p->wx_cursor);
        return TRUE;
     }
 
@@ -1530,7 +1541,11 @@ Bool wxWindow::AdjustCursor(int mouseX, int mouseY)
  			if (hitArea == ClientArea())
  			{
  				result = TRUE;
- 				wxSetCursor(wx_cursor);
+ 				wxWindow *p = this;
+                while (p && !p->wx_cursor)
+                  p = p->GetParent();
+                if (p)
+                  wxSetCursor(p->wx_cursor);
  			}
  		}
  	}

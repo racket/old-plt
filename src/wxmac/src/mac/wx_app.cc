@@ -392,6 +392,11 @@ void wxApp::doMacMouseMotion(void)
 		mouseWindow->ClientToLogical(&hitX, &hitY); // mouseWindow logical c.s.
 		theMouseEvent.x = hitX;
 		theMouseEvent.y = hitY;
+		
+		/* Grab is now only used for grabbing on mouse-down for canvases */
+        if (wxSubType(mouseWindow->__type, wxTYPE_CANVAS))
+           mouseWindow->ReleaseMouse();
+           
 		mouseWindow->OnEvent(theMouseEvent);
 	}
 	else
@@ -535,6 +540,8 @@ void wxApp::doMacKeyDown(void)
 	theKeyEvent.keyCode = key;
 
 	wxWindow *in_win = theMacWxFrame->GetFocusWindow();
+	theKeyEvent.eventObject = in_win ? in_win : theMacWxFrame;
+
 	if (!in_win || !doPreOnChar(in_win, in_win, &theKeyEvent))
 		theMacWxFrame->OnChar(theKeyEvent);
 }

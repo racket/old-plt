@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_win.cc,v 1.3 1994/08/14 21:34:01 edz Exp $
+ * RCS_ID:      $Id: wb_win.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -43,7 +43,7 @@ wxbWindow::wxbWindow(void)
   handle = NULL;
   windowName = NULL;
   callback = 0;
-  wx_cursor = wxSTANDARD_CURSOR;
+  wx_cursor = NULL /* wxSTANDARD_CURSOR */;
 #ifndef wx_mac
   children = new wxChildList;
 #endif
@@ -61,7 +61,7 @@ void wxbWindow::InitDefaults(void)
 	paintingEnabled = TRUE;
 	wx_client_data = NULL;
 	handle = NULL;
-	wx_cursor = wxSTANDARD_CURSOR;
+	wx_cursor = NULL /* wxSTANDARD_CURSOR */;
 	callback = NULL;
 	font = NULL;
 }

@@ -159,14 +159,15 @@ wxCheckBox::~wxCheckBox(void)
 //-----------------------------------------------------------------------------
 char* wxCheckBox::GetLabel(void)
 {
-	Str255	pLabel;
-
 	if (cMacControl) {
+	  Str255 pLabel;
 	  ::GetCTitle(cMacControl, pLabel);
 	  wxMacPtoCString(pLabel, wxBuffer);
       return wxBuffer;
-    } else
-    	return "";
+    } else if (buttonBitmap)
+      return NULL;
+    else
+      return labelString;
 }
 
 //-----------------------------------------------------------------------------
@@ -174,13 +175,16 @@ void wxCheckBox::SetLabel(char* label)
 {
   if (buttonBitmap)
     return;
+    
+  labelString = label ? copystring(label) : NULL;
 
   if (label && cMacControl)
   {
 	SetCurrentDC();
   	wxMacString1 theMacString1 = label;
   	::SetCTitle(cMacControl, theMacString1());
-  }
+  } else
+    Refresh();
 }
 
 //-----------------------------------------------------------------------------

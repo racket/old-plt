@@ -1921,20 +1921,24 @@ is_void_func (int argc, Scheme_Object *argv[])
 
 long scheme_get_milliseconds(void)
 {
-#ifdef USE_FTIME
+#ifdef CLOCK_IS_USER_TIME
+  return scheme_get_process_milliseconds();
+#else
+# ifdef USE_FTIME
   struct MSC_IZE(timeb) now;
   MSC_IZE(ftime)(&now);
   return now.time * 1000 + now.millitm;
-#else
-#ifdef USE_DIFFTIME
+# else
+#  ifdef USE_DIFFTIME
   time_t now;
   now = time(NULL);
   return difftime(now, base_time) * 1000;
-#else
+#  else
   struct timeval now;
   gettimeofday(&now, NULL);
   return now.tv_sec * 1000 + now.tv_usec / 1000;
-#endif
+#  endif
+# endif
 #endif
 }
 

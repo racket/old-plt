@@ -568,6 +568,7 @@ int scheme_win32_semaphore_try_down(void *);
 
 # define TIME_SYNTAX
 # define USE_DIFFTIME
+# define CLOCK_IS_USER_TIME
 # define DIR_FUNCTION
 # define TIME_TYPE_IS_UNSIGNED
 
@@ -668,6 +669,8 @@ int scheme_win32_semaphore_try_down(void *);
  /* USE_FTIME uses ftime instead of gettimeofday; only for TIME_SYNTAX */
  
  /* USE_DIFFTIME uses time and difftime; only for TIME_SYNTAX */
+
+ /* CLOCK_IS_USER_TIME uses the system time for user milliseconds. */
 
  /* TIME_TYPE_IS_UNSIGNED converts time_t values as unsigned. */
 

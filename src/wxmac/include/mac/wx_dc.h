@@ -47,7 +47,9 @@ class wxDC: public wxbDC
  * Ok, so all this isn't neat, but it about works.
  */
 
-#include <math.h>
+extern "C" {
+ #include <math.h>
+}
 
 // Logical to device
 // Absolute

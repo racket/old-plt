@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_stdev.cc,v 1.3 1994/08/14 21:34:01 edz Exp $
+ * RCS_ID:      $Id: wb_stdev.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -47,38 +47,6 @@ wxCommandEvent::wxCommandEvent(WXTYPE commandType)
   labelString = NULL;
 }
 
-Bool wxCommandEvent::ReadEvent(istream& in)
-{
-  switch (eventType) {
-    case wxEVENT_TYPE_BUTTON_COMMAND:
-      return TRUE;
-    case wxEVENT_TYPE_TEXT_COMMAND:
-      // @@@@@ Hugh?
-      if (!wxReadString(in, &commandString))
-        return FALSE;
-    default:
-      return FALSE;
-  }
-  // NOTREADED
-}
-
-Bool wxCommandEvent::WriteEvent(ostream& out)
-{
-  switch (eventType) {
-
-    case wxEVENT_TYPE_BUTTON_COMMAND:
-      return TRUE;
-
-    case wxEVENT_TYPE_TEXT_COMMAND:
-      wxWriteString(out, commandString);
-      return TRUE;
-
-    default:
-      return FALSE;
-  }
-  // NOTREACHED
-}
-
 static wxEvent *wxCommandEventConstructor(WXTYPE eventClass, WXTYPE eventType)
 {
   return new wxCommandEvent(eventType);
@@ -118,15 +86,6 @@ wxMouseEvent& wxMouseEvent::operator =(wxMouseEvent& src)
   return *this;
 }
 
-Bool wxMouseEvent::ReadEvent(istream& in)
-{
-  return FALSE;
-}
-
-Bool wxMouseEvent::WriteEvent(ostream& out)
-{
-  return FALSE;
-}
 
 static wxEvent *wxMouseEventConstructor(WXTYPE eventClass, WXTYPE eventType)
 {
@@ -340,16 +299,6 @@ wxKeyEvent::wxKeyEvent(WXTYPE type)
   controlDown = FALSE;
   altDown = FALSE;
   keyCode = 0;
-}
-
-Bool wxKeyEvent::ReadEvent(istream& in)
-{
-  return FALSE;
-}
-
-Bool wxKeyEvent::WriteEvent(ostream& out)
-{
-  return FALSE;
 }
 
 static wxEvent *wxKeyEventConstructor(WXTYPE eventClass, WXTYPE eventType)

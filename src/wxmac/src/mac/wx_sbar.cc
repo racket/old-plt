@@ -142,7 +142,7 @@ char* wxScrollBar::GetLabel()
 {
 	Str255	pLabel;
 
-	::GetCTitle(cMacControl, pLabel);
+	::GetControlTitle(cMacControl, pLabel);
 	wxMacPtoCString(pLabel, wxBuffer);
     return wxBuffer;
 }
@@ -154,7 +154,7 @@ void wxScrollBar::SetLabel(char* label)
   {
 	SetCurrentDC();
   	wxMacString1 theMacString1 = label;
-  	::SetCTitle(cMacControl, theMacString1());
+  	::SetControlTitle(cMacControl, theMacString1());
   }
 }
 
@@ -162,26 +162,26 @@ void wxScrollBar::SetLabel(char* label)
 void wxScrollBar::SetValue(int val)
 {
 	SetCurrentDC();
-	::SetCtlValue(cMacControl, val);
+	::SetControlValue(cMacControl, val);
 }
 
 //-----------------------------------------------------------------------------
 int wxScrollBar::GetValue(void)
 {
-	return ::GetCtlValue(cMacControl);
+	return ::GetControlValue(cMacControl);
 }
 
 //-----------------------------------------------------------------------------
 void wxScrollBar::SetMaxValue(int maxValue)
 {
 	SetCurrentDC();
-	::SetCtlMax(cMacControl, maxValue);
+	::SetControlMaximum(cMacControl, maxValue);
 }
 
 //-----------------------------------------------------------------------------
 int wxScrollBar::GetMaxValue(void)
 {
-	return ::GetCtlMax(cMacControl);
+	return ::GetControlMaximum(cMacControl);
 }
 
 //-----------------------------------------------------------------------------
@@ -296,7 +296,7 @@ void wxScrollBar::OnEvent(wxMouseEvent& event) // mac platform only
 		int thePart = ::TestControl(cMacControl, startPt);
 		if (thePart)
 		{
-			if (thePart == inThumb)
+			if (thePart == kControlIndicatorPart)
 			{
 				if (::TrackControl(cMacControl, startPt, NULL))
 				{
@@ -330,10 +330,10 @@ void wxScrollBar::TrackAction(short part) // mac platform only
 		int delta = 0;
 		switch (part)
 		{
-			case inUpButton: delta = -1; break;
-			case inDownButton: delta = 1; break;
-			case inPageUp: delta = -scrollsPerPage; break;
-			case inPageDown: delta = scrollsPerPage; break;
+			case kControlUpButtonPart: delta = -1; break;
+			case kControlDownButtonPart: delta = 1; break;
+			case kControlPageUpPart: delta = -scrollsPerPage; break;
+			case kControlPageDownPart: delta = scrollsPerPage; break;
 		}
 
 		int newPosition = GetValue() + delta;

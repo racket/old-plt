@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_sysev.cc,v 1.3 1994/08/14 21:34:01 edz Exp $
+ * RCS_ID:      $Id: wb_sysev.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -215,131 +215,6 @@ void wxRegisterEventName(WXTYPE eventTypeId, WXTYPE eventClassId, char *eventNam
 // registering events from 'outside' the main application
 void wxRegisterExternalEventHandlers(void)
 {
-}
-
-/*
- * Event reading/writing helper functions
- *
- */
-
-void wxWriteString(ostream& out, char *s)
-{
-  out << '"';
-
-  for (;*s;s++) {
-    if (*s == '"')
-      out << '\\' << '"';
-    else
-      out << *s;
-
-  }
-
-  out << '"';
-}
-
-void wxWriteInteger(ostream& out, int i)
-{
-  out << i;
-}
-
-void wxWriteLong(ostream& out, long i)
-{
-  out << i;
-}
-
-void wxWriteFloat(ostream& out, float f)
-{
-  out << f;
-}
-
-void wxWriteSpace(ostream& out)
-{
-  out << " ";
-}
-
-Bool wxReadWhiteSpace(istream& in)
-{
-// Why is there no eatwhite in GCC?
-#ifdef __MSC
-  in.eatwhite();
-#else
-  char ch = in.peek();
-  while ((ch == ' ') || (ch == '\n') || (ch == '\t'))
-  {
-    in.get();
-    ch = in.peek();
-  }
-#endif
-  return TRUE;
-}
-
-extern char *wxBuffer;
-Bool wxReadString(istream& in, char **s)
-{
-  wxReadWhiteSpace(in);
-
-  if (in.peek() != '"')
-    return FALSE;
-  in.get();
-  Bool flag = TRUE;
-  char ch = 0;
-  int i = 0;
-  while (flag && (i < 1000))
-  {
-    ch = in.get();
-    switch (ch)
-    {
-      case EOF:
-      {
-        wxBuffer[i] = 0;
-        flag = FALSE;
-        break;
-      }
-      case '"':
-      {
-        wxBuffer[i] = 0;
-        flag = FALSE;
-        break;
-      }
-      case '\\':
-      {
-        if (in.peek() == '"')
-        {
-          in.get();
-          wxBuffer[i] = '"';
-        }
-        else wxBuffer[i] = '\\';
-        break;
-      }
-      default:
-      {
-        wxBuffer[i] = ch;
-      }
-    }
-    ch = in.get();
-    i ++;
-  }
-  wxBuffer[i] = 0;
-  *s = copystring(wxBuffer);
-  return TRUE;
-}
-
-Bool wxReadInteger(istream& in, int *theInt)
-{
-  in >> *theInt;
-  return TRUE;
-}
-
-Bool wxReadLong(istream& in, long *theLong)
-{
-  in >> *theLong;
-  return TRUE;
-}
-
-Bool wxReadFloat(istream& in, float *theFloat)
-{
-  in >> *theFloat;
-  return TRUE;
 }
 
 void wxDeleteEventLists(void)

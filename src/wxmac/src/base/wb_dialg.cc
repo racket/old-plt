@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_dialg.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
+ * RCS_ID:      $Id: wb_dialg.cc,v 1.2 1998/01/14 23:00:47 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -43,7 +43,7 @@
 #endif
 
 #include "wx.h"
-#include <iostream.h>
+// #include <iostream.h>
 #include <stdio.h>
 
 #define wxDIALOG_DEFAULT_X 300

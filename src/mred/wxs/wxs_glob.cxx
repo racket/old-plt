@@ -80,7 +80,7 @@ static char *wxGet_Scheme(Bool (*f)(char *, int))
 
 static char *wxExpandPath_Scheme(char *path)
 {
-  return wxExpandPath(buffer, (const char *)path);
+  return ""; // wxExpandPath(buffer, (const char *)path);
 }
 
 static char *wxGetEmailAddress_Scheme(void)
@@ -1776,7 +1776,7 @@ static Scheme_Object *wxsGlobalwxConcatFiles(int n,  Scheme_Object *p[])
   x2 = (pathname)objscheme_unbundle_pathname(p[2], "::wx:concat-files");
 
   
-  r = wxConcatFiles(x0, x1, x2);
+  r = 0; // wxConcatFiles(x0, x1, x2);
 
   
   

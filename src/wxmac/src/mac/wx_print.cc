@@ -20,6 +20,8 @@
 #include <tagobj.h>
 #endif
 
+#include <FixMath.h>
+
 #include "common.h"
 
 #if USE_PRINTING_ARCHITECTURE

@@ -934,9 +934,19 @@ void GC_register_data_segments()
 #     if defined(__MWERKS__)
 #       if !__POWERPC__
 	  extern void* GC_MacGetDataStart(void);
+	  /* MATTHEW: Function to handle Far Globals (CW Pro 3) */
+#         if __option(far_data)
+	  extern void* GC_MacGetDataEnd(void);
+#         endif
 	  /* globals begin above stack and end at a5. */
 	  GC_add_roots_inner((ptr_t)GC_MacGetDataStart(),
           		     (ptr_t)LMGetCurrentA5(), FALSE);
+	  /* MATTHEW: Handle Far Globals */          		     
+#         if __option(far_data)
+      /* Far globals follow he QD globals: */
+	  GC_add_roots_inner((ptr_t)LMGetCurrentA5(),
+          		     (ptr_t)GC_MacGetDataEnd(), FALSE);
+#         endif
 #       else
 	  extern char __data_start__[], __data_end__[];
 	  GC_add_roots_inner((ptr_t)&__data_start__,

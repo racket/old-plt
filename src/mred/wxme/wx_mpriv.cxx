@@ -36,7 +36,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <fstream.h>
 #include <ctype.h>
 
 #include "wx_mpriv.h"

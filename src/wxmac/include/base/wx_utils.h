@@ -76,33 +76,6 @@ Bool StringMatch(char *one, char *two, Bool subString = TRUE, Bool exact = FALSE
 
 // Some file utilities
 
-#ifdef IN_CPROTO
-typedef       void    *wxPathList ;
-typedef       void    *wxLogClass;
-#else
-// Path searching
-class wxPathList: public wxList
-{
-  public:
-
-  void AddEnvList(char *envVariable);    // Adds all paths in environment variable
-  void Add(char *path);
-  char *FindValidPath(char *filename);   // Find the first full path
-                                         // for which the file exists
-  void EnsureFileAccessible(char *path); // Given full path and filename,
-                                         // add path to list
-  Bool Member(char *path);
-};
-
-Bool wxFileExists(const char *filename);
-#define FileExists wxFileExists
-
-Bool wxDirExists(const char *dir);
-#define DirExists wxDirExists
-
-Bool wxIsAbsolutePath(const char *filename);
-#define IsAbsolutePath wxIsAbsolutePath
-
 // Get filename
 char *wxFileNameFromPath(char *path);
 #define FileNameFromPath wxFileNameFromPath
@@ -117,67 +90,15 @@ void wxDos2UnixFilename(char *s);
 void wxUnix2DosFilename(char *s);
 #define Unix2DosFilename wxUnix2DosFilename
 
-// Strip the extension, in situ
-void wxStripExtension(char *buffer);
-
 // Get a temporary filename, opening and closing the file.
 char *wxGetTempFileName(const char *prefix, char *buf = NULL);
 
-// Expand file name (~/ and ${OPENWINHOME}/ stuff)
-char *wxExpandPath(char *dest, const char *path);
-
-// Contract w.r.t environment (</usr/openwin/lib, OPENWHOME> -> ${OPENWINHOME}/lib)
-// and make (if under the home tree) relative to home
-// [caller must copy-- volatile]
-char *wxContractPath (const char *filename,
-   const char *envname = NULL, const char *user = NULL);
-
-// Destructive removal of /./ and /../ stuff
-char *wxRealPath(char *path);
-
-// Allocate a copy of the full absolute path
-char *wxCopyAbsolutePath(const char *path);
-
-// Get first file name matching given wild card.
-// Flags are reserved for future use.
-#define wxFILE  1
-#define wxDIR   2
-char *wxFindFirstFile(const char *spec, int flags = wxFILE);
-char *wxFindNextFile(void);
-
-// Does the pattern contain wildcards?
-Bool wxIsWild(const char *pattern);
+void wxRemoveFile(char *filename);
 
 // Does the pattern match the text (usually a filename)?
 // If dot_special is TRUE, doesn't match * against . (eliminating
 // `hidden' dot files)
 Bool wxMatchWild(const char *pattern,  const char *text, Bool dot_special = TRUE);
-
-// Execute another program. Returns FALSE if there was an error.
-Bool wxExecute(char **argv, Bool Async = FALSE);
-Bool wxExecute(const char *command, Bool Async = FALSE);
-
-// Execute a command in an interactive shell window
-// If no command then just the shell
-Bool wxShell(const char *command = NULL);
-
-// Concatenate two files to form third
-Bool wxConcatFiles(const char *file1, const char *file2, const char *file3);
-
-// Copy file1 to file2
-Bool wxCopyFile(const char *file1, const char *file2);
-
-// Remove file
-Bool wxRemoveFile(const char *file);
-
-// Rename file
-Bool wxRenameFile(const char *file1, const char *file2);
-
-// Get current working directory.
-// If buf is NULL, allocates space using new, else
-// copies into buf.
-char *wxGetWorkingDirectory(char *buf = NULL, int sz = 1000);
-Bool wxSetWorkingDirectory(char *d);
 
 // Sleep for nSecs seconds under UNIX, do nothing under Windows
 void wxSleep(int nSecs);
@@ -190,11 +111,6 @@ void wxFlushEvents(void);
 #ifdef wx_mac
 void wxFlushResources(void);
 #endif // wx_mac
-
-// Make directory
-Bool wxMkdir(const char *dir);
-// Delete directory
-Bool wxRmdir(const char *dir);
 
 /*
  * Network and username functions.
@@ -229,31 +145,12 @@ wxWindow *wxFindWindowByName(char *name, wxWindow *parent = NULL);
 // Returns menu item id or -1 if none.
 int wxFindMenuItemId(wxFrame *frame, char *menuString, char *itemString);
 
-// Debug Log
-#ifdef DEBUGLOG
-#include <fstream.h>
-class wxLogClass
-{
-  ofstream *the_stream;
-  char *log_file;
-  public:
-    wxLogClass(const char *file);
-    ~wxLogClass();
-    void Open(void);
-    void Close(void);
-
-    wxLogClass& operator << (char *s);
-    wxLogClass& operator << (int i);
-    wxLogClass& operator << (double i);
-};
-
-extern wxLogClass wxLog;
-#endif
-
-#if (!defined(__MINMAX_DEFINED) && !defined(max))
-#define max(a,b)            (((a) > (b)) ? (a) : (b))
-#define min(a,b)            (((a) < (b)) ? (a) : (b))
-#define __MINMAX_DEFINED 1
+#if 0
+# if (!defined(__MINMAX_DEFINED) && !defined(max))
+#  define max(a,b)            (((a) > (b)) ? (a) : (b))
+#  define min(a,b)            (((a) < (b)) ? (a) : (b))
+#  define __MINMAX_DEFINED 1
+# endif
 #endif
 
 // Format a message on the standard error (UNIX) or the debugging
@@ -285,6 +182,8 @@ void wxError(const char *msg, const char *title = "wxWindows Internal Error");
 // Fatal error (exits)
 void wxFatalError(const char *msg, const char *title = "wxWindows Fatal Error");
 
+Bool wxDirExists(char *f);
+
 // Reading and writing resources (eg WIN.INI, .Xdefaults)
 #if USE_RESOURCES
 Bool wxWriteResource(const char *section, const char *entry, char *value, const char *file = NULL);
@@ -298,20 +197,4 @@ Bool wxGetResource(const char *section, const char *entry, long *value, const ch
 Bool wxGetResource(const char *section, const char *entry, int *value, const char *file = NULL);
 #endif // USE_RESOURCES
 
-#ifdef wx_x
-// 'X' Only, will soon vanish....
-// Get current Home dir and copy to dest
-char *wxGetHomeDir(char *dest);
-#endif
-// Get the user's home dir (caller must copy--- volatile)
-// returns NULL is no HOME dir is known
-char *wxGetUserHome(const char *user = NULL);
-
-// X only
-#ifdef wx_x
-// Get X display: often needed in the wxWindows implementation.
-Display *wxGetDisplay(void);
-#endif
-
-#endif // IN_CPROTO
 #endif // wxb_utilsh

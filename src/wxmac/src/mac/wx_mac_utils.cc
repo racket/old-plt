@@ -7,8 +7,6 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <iostream.h>
-#include <fstream.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -9,12 +9,13 @@
 
 static const char sccsid[] = "%W% %G%";
 
-#include <stdlib.h>
+// #include <stdlib.h>
 #include <Events.h>
 #include <AppleEvents.h>
 #include <DiskInit.h>
 #include <Devices.h>
 #include <Resources.h>
+#include <Balloons.h>
 #include "wx_main.h"	// WCH : should split out stuff for wx_app.h and wb_app.h
 #include "wx_frame.h"
 #include "wx_menu.h"
@@ -670,7 +671,7 @@ void wxApp::doMacInMenuBar(long menuResult)
 	if (macMenuId == 128) {
 		if (macMenuItemNum != 1) {			// if not the "About" entry (or the separator)
 			Str255		daName;
-			GetItem(GetMHandle(128), macMenuItemNum, daName);
+			GetMenuItemText(GetMenuHandle(128), macMenuItemNum, daName);
 			(void) OpenDeskAcc(daName);
 			HiliteMenu(0); // unhilite the hilited menu
 			return;

@@ -639,7 +639,7 @@ static pascal short MyCustomGetDirectoryDlogHook(  short       item,
             GetDialogItem ( theDialog, rGetFolderMessage, &itemType, &itemHandle, 
                         &itemRect );
             mySFRPtr = ((HookExtraPtr)(myDataPtr))->sfr;
-            SetIText ( itemHandle, mySFRPtr->sfFile.name );
+            SetDialogItemText ( itemHandle, mySFRPtr->sfFile.name );
 
             /*-----------------------------------------------------------------+
             | And the name of the currently selected folder in the select      |
@@ -665,7 +665,7 @@ static pascal short MyCustomGetDirectoryDlogHook(  short       item,
                 return (MyCustomGetDirectoryDlogHook);
             }
             
-            GetDItem(theDialog, rGetFolderButton, &itemType, &itemHandle, 
+            GetDialogItem(theDialog, rGetFolderButton, &itemType, &itemHandle, 
                      &itemRect);
             SetButtonTitle( itemHandle, selectedName, &itemRect);
         }
@@ -770,7 +770,7 @@ static void SetButtonTitle(    Handle      ButtonHdl,
     +-------------------------------------------------------------------------*/
     sprintf( TmpStr, "Select \"%#s\"", name );
     c2pstr( TmpStr );
-    SetCTitle((ControlHandle)(ButtonHdl), (StringPtr)TmpStr );
+    SetControlTitle((ControlHandle)(ButtonHdl), (StringPtr)TmpStr );
     ValidRect(ButtonRect);
 }
 

@@ -11,7 +11,6 @@ static const char sccsid[] = "%W% %G%";
 
 
 
-#include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "common.h"

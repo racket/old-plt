@@ -23,42 +23,6 @@
 # endif
 #endif
 
-/*************************************************************************
- *
- * wxIsWild checks whether the pattern contains wildcards, and
- * returns TRUE if it does, and FALSE if it does not (or if the 
- * pattern is NULL -- i.e. no string).
- *
- * The argument is:
- *   
- * 1) pattern - a character string
- */
-Bool 
-wxIsWild (const char *pattern)
-{
-  while (*pattern)
-    {
-      switch (*pattern++)
-	{
-	case '?':
-	case '*':
-#if UNIX_GLOB
-	case '[':
-	case '{':		/* } */
-#endif
-	  return TRUE;
-#if UNIX_GLOB
-	case '\\':
-	  if (!*pattern++)
-	    return FALSE;
-#endif
-	}			/* switch() */
-    }				/* while() */
-  return FALSE;
-}
-
-
-
 #if UNIX_GLOB
 
 // Unix Glob()

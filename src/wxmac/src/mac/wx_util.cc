@@ -15,11 +15,10 @@
 #include "wx_main.h"
 #include <stdarg.h>
 #include <ctype.h>
+#include <unistd.h>
 #if 1
-#include <stat.h>
-#include <unix.h>
-#include <iostream.h>
 #include <Files.h>
+#include <PPCToolbox.h>
 extern "C" long atol(char *);
 extern "C" int atoi(char *);
 #else
@@ -46,6 +45,10 @@ extern "C" {
 #error "GUSI or PYLIB required for this Module"
 #endif
 #endif
+
+extern "C" {
+	#include <stat.h>
+}
 
 #if 0
 static DIR *wxDirStream = NULL;
@@ -88,12 +91,13 @@ char *wxGetTempFileName (const char *prefix, char *dest)
       prefix = "";
   }
   
-  buf = new WXGC_ATOMIC char[temp_len + strlen(prefix) + 20];
+  buf = new char[temp_len + strlen(prefix) + 20];
 
   for (short suffix = last_temp + 1; suffix != last_temp; ++suffix %= 1000)
     {
+    struct stat stbuf;
       sprintf (buf, "%s¥%s%d", temp_folder, prefix, (int) suffix); // CJC FIXME - really should get a temp folder
-      if (!wxFileExists (buf))
+      if (stat ((char *)buf, &stbuf) != 0)
 	{
 	  // Touch the file to create it (reserve name)
 	  FILE *fd = fopen (buf, "w");
@@ -107,350 +111,13 @@ char *wxGetTempFileName (const char *prefix, char *dest)
 	  return dest;
 	}
     }
-  cerr << "wxWindows: error finding temporary file name.\n";
   if (dest) dest[0] = 0;
   return NULL;
 }
 
-Bool 
-wxRemoveFile (const char *file)
+void wxRemoveFile(char *filename)
 {
-#ifdef PYLIB
-  return ((remove ((char*)file) == 0) ? TRUE : FALSE);
-#else
-  return ((unlink ((char*)file) == 0) ? TRUE : FALSE);
-#endif
-}
-
-Bool 
-wxMkdir (const char *dir)
-{
-  // give default perms of owner read and write, group read and
-  // others read. The interface to this func should be changed
-  // to pass the perms info in.
-  // Since directory it must also be searchable @@@
-  // Added S_IXUSR | S_IXGRP | S_IXOTH
-#ifdef PYLIB
-  return (mkdir (dir,  0777) == 0);
-#elif defined(GUSI)
-  return (mkdir (dir, 0777) == 0);
-#else
-  return (mkdir (dir, 0777) == 0);
-#endif
-}
-
-Bool 
-wxRmdir (const char *dir)
-{
-  return (rmdir (dir) == 0);
-}
-
-/* MATTHEW: [5] Mac (use for all platforms?) */
-Bool 
-wxDirExists (const char *filename)
-{
-  struct stat stbuf;
-
-  if (filename && (stat ((char *)filename, &stbuf) == 0))
-    return !!(stbuf.st_mode & S_IFDIR);
-  return FALSE;
-}
-
-
-// Get first file name matching given wild card.
-// Flags are reserved for future use.
-#if 1 || (!defined(GUSI) && !defined(PYLIB)) // i.e. - no other support lib available
-static short find_vref;
-static long find_dir_id;
-static short find_position = -1;
-
-char *wxFindFirstFile(const char *spec, int flags)
-{
-	WDPBRec  wdrec;
-	CInfoPBRec pbrec;
-	
-	wxFindFileFlags = flags;
-	
-	if (wxFileSpec)
-		delete[] wxFileSpec;
-	wxFileSpec = copystring(spec);
-	
-	static char buf[400];
-	
-	// Find path only so we can concatenate
-	// found file onto path
-	char *p = wxPathOnly(wxFileSpec);
-	char *n = wxFileNameFromPath(wxFileSpec);
-	long dirID;
-	
-	/* Get current working dir */
-	wdrec.ioNamePtr = (StringPtr)buf;
-	if (PBHGetVol(&wdrec, FALSE))
-		return NULL;
-	
-	find_vref = wdrec.ioWDVRefNum;
-	find_dir_id = wdrec.ioWDDirID;
-	
-	/* p is NULL => Local directory */
-	if (!p) {
-		// Do nothing; find_wd and dirID are set
-	} else {
-		if (*p == ':') {
-			p++;
-		} else {
-			char *vol = p, vbuf[256];
-			HParamBlockRec hrec;
-			/* It's an absolute path: get the Volume Name and vRefNum */
-			while (*p && *p != ':')
-				p++;
-			if (*p)
-			  *p++ = '\0';
-			strcpy(vbuf, vol);
-			strcat(vbuf, ":");
-			hrec.volumeParam.ioNamePtr = c2pstr(vbuf);
-			hrec.volumeParam.ioVRefNum = 0;
-			hrec.volumeParam.ioVolIndex = -1;
-			if (PBHGetVInfo(&hrec, FALSE))
-				return NULL;
-			find_vref = hrec.volumeParam.ioVRefNum;
-			find_dir_id = 0;
-		}
-		while (p && *p) {
-			char *next = p;
-			while (*next && *next != ':')
-				next++;
-			if (*next)
-				*(next++) = 0;
-			else
-				next = NULL;
-			
-			c2pstr(p);
-			pbrec.hFileInfo.ioNamePtr = (unsigned char *)p;
-			pbrec.hFileInfo.ioVRefNum = find_vref;
-			pbrec.hFileInfo.ioDirID = find_dir_id;
-			pbrec.hFileInfo.ioFDirIndex = 0;
-			if (PBGetCatInfo(&pbrec, FALSE))
-				return NULL;
-			if (!(pbrec.hFileInfo.ioFlAttrib & 0x10))
-				return NULL; // Not a directory
-      		find_dir_id = pbrec.hFileInfo.ioDirID;
-      
-			p = next;
-		}
-	}
- 
-	find_position = 0;
- 
-	return wxFindNextFile();
-}
-
-char *wxFindNextFile(void)
-{
-	CInfoPBRec pbrec;
-	static char buf[400];
-	char file[256];
-	
-	/* No more files or not searching: */
-	if (find_position < 0)
-		return NULL;
-	
-	// Find path only so we can concatenate
-	// found file onto path
-	char *p = wxPathOnly(wxFileSpec);
-	char *n = wxFileNameFromPath(wxFileSpec);
-	
-	while (1) {
-		pbrec.hFileInfo.ioVRefNum = find_vref;
-		pbrec.hFileInfo.ioDirID = find_dir_id;
-		pbrec.hFileInfo.ioFDirIndex = find_position + 1;
-		pbrec.hFileInfo.ioNamePtr = (unsigned char *)file;
-		if (PBGetCatInfo(&pbrec, FALSE) || !*file) {
-			find_position = -1;
-			return NULL;
-		}
-		
-		find_position++;
-	
-		// Is this the right kind of thing?
-		if ((wxFindFileFlags & (wxDIR + wxFILE)) != (wxDIR + wxFILE))
-			if (!!(pbrec.hFileInfo.ioFlAttrib & 0x10) != !!(wxFindFileFlags & wxDIR))
-				continue;
-		
-		p2cstr((unsigned char *)file);
-		
-		if (wxMatchWild(n, file)) {
-			if (p)
-				strcpy(buf, p);
-			else
-		  		buf[0] = 0;
-		  
-			if (buf[0])
-				strcat(buf, ":");
-			strcat(buf, file);
-	      
-			return buf;
-	    }
-	}
-}
-
-#else
-
-char *wxFindFirstFile(const char *spec, int flags)
-{
-  if (wxDirStream)
-    closedir(wxDirStream); // edz 941103: better housekeping
-
-  wxFindFileFlags = flags;
-
-  if (wxFileSpec)
-    delete[] wxFileSpec;
-  wxFileSpec = copystring(spec);
-
-  static char buf[400];
-
-  // Find path only so we can concatenate
-  // found file onto path
-  char *p = wxPathOnly(wxFileSpec);
-  char *n = wxFileNameFromPath(wxFileSpec);
-
-  if ((wxDirStream=opendir(p))==NULL)
-    return NULL;
-
-  // Do the reading
-  struct dirent *nextDir;
-  for (nextDir = readdir(wxDirStream); nextDir != NULL; nextDir = readdir(wxDirStream))
-  {
-    if ((strcmp(nextDir->d_name, ".") == 0) ||
-        (strcmp(nextDir->d_name, "..") == 0))
-    {
-      if (flags == wxDIR)
-      {
-        buf[0] = '\0';
-        if (p && *p)
-        {
-          strcpy(buf, p);
-          if (strcmp(p, ":") != 0)
-            strcat(buf, ":");
-        }
-        strcat(buf, nextDir->d_name);
-        return buf;
-      }
-    }
-    else if (!wxIsWild(n) || wxMatchWild(n, nextDir->d_name))
-    {
-      buf[0] = 0;
-      if (p && *p)
-      {
-        strcpy(buf, p);
-        if (strcmp(p, ":") != 0)
-          strcat(buf, ":");
-      }
-      strcat(buf, nextDir->d_name);
-      // Check for directory
-      if (flags == wxDIR)
-      {
-        if (wxDirExists(buf))
-          return buf;
-      }
-      else
-        return buf;
-    }
-  }
-  closedir(wxDirStream);
-  wxDirStream = NULL;
-  return NULL;
-}
-
-char *wxFindNextFile(void)
-{
-  static char buf[400];
-
-  // Find path only so we can concatenate
-  // found file onto path
-  char *p = wxPathOnly(wxFileSpec);
-  char *n = wxFileNameFromPath(wxFileSpec);
-
-  // Do the reading
-  struct dirent *nextDir;
-  for (nextDir = readdir(wxDirStream); nextDir != NULL; nextDir = readdir(wxDirStream))
-  {
-    if ((strcmp(nextDir->d_name, ".") == 0) ||
-        (strcmp(nextDir->d_name, "..") == 0))
-    {
-      if (wxFindFileFlags == wxDIR)
-      {
-        buf[0] = '\0';
-        if (p && *p)
-        {
-          strcpy(buf, p);
-          if (strcmp(p, ":") != 0)
-            strcat(buf, ":");
-        }
-        strcat(buf, nextDir->d_name);
-        return buf;
-      }
-    }
-    else if (!wxIsWild(n) || wxMatchWild(n, nextDir->d_name))
-    {
-      buf[0] = '\0';
-      if (p && *p)
-      {
-        strcpy(buf, p);
-        if (strcmp(p, ":") != 0)
-          strcat(buf, ":");
-      }
-      strcat(buf, nextDir->d_name);
-      // Check for directory
-      if (wxFindFileFlags == wxDIR)
-      {
-        if (wxDirExists(buf))
-          return buf;
-      }
-      else
-        return buf;
-    }
-  }
-  closedir(wxDirStream);
-  wxDirStream = NULL;
-  return NULL;
-}
-#endif
-
-// Here's some Tough Ones (tm) - could always try to launch ToolServer/MacPerl/MacPython??
-// Execute another program. Returns FALSE if there was an error.
-Bool wxExecute(char **argv, Bool Async) 
-{
-	return FALSE;
-}
-Bool wxExecute(const char *command, Bool Async)
-{
-	return FALSE;
-}
-
-// Execute a command in an interactive shell window
-// If no command then just the shell
-Bool wxShell(const char *command)
-{
-	return FALSE;
-}
-
-// Get current working directory.
-// If buf is NULL, allocates space using new, else
-// copies into buf.
-char *wxGetWorkingDirectory(char *buf, int sz)
-{
-  if (!buf)
-    buf = new char[sz+1];
-  if (getcwd(buf, sz) == NULL) {
-    buf[0] = ':';
-    buf[1] = '\0';
-  }
-  return buf;
-}
-
-Bool wxSetWorkingDirectory(char *d)
-{
-  return (chdir(d) == 0);
+   unlink(filename);
 }
 
 // Get free memory in bytes, or -1 if cannot determine amount (e.g. on UNIX)
@@ -465,17 +132,7 @@ wxGetFreeMemory (void)	// CJC FIXME this could be Macintized.
 void 
 wxSleep (int nSecs)
 {
-  sleep (nSecs);
-}
-
-// Read $HOME for what it says is home, if not
-// read $USER or $LOGNAME for user name else determine
-// the Real User, then determine the Real home dir.
-char *wxGetUserHome (const char *user)
-{
-  char usr[256];
-  strcpy(usr, user);
-  return getcwd(usr, 1000);
+  // sleep (nSecs);
 }
 
 
@@ -857,7 +514,7 @@ wxDebugMsg (const char *fmt...)
   va_start (ap, fmt);
 
   vsprintf (buffer, fmt, ap);
-  cerr << buffer;
+  // cerr << buffer;
 
   va_end (ap);
 }

@@ -299,7 +299,7 @@ Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Schem
 
 /* On the Mac, 68K, store the built-in Scheme code as pc-relative */
 #if defined(__MWERKS__)
-#if !defined(__powerc)
+#if !defined(__POWERPC__)
 #pragma pcrelstrings on
 #endif
 #endif
@@ -522,7 +522,7 @@ Scheme_Env *scheme_make_empty_env(void)
 }
 
 #if defined(__MWERKS__)
-#if !defined(__powerc)
+#if !defined(__POWERPC__)
 #pragma pcrelstrings reset
 #endif
 #endif

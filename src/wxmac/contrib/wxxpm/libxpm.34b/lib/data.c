@@ -36,14 +36,13 @@
 static char *RCS_Version = "$XpmVersion: 3.4b $";
 
 /* Internal version number */
-static char *RCS_Id = "$Id: xpm.shar,v 3.30 1994/05/24 14:00:41 lehors Exp $";
+static char *RCS_Id = "$Id: data.c,v 1.1.1.1 1998/01/13 17:54:55 mflatt Exp $";
 
 #include "xpm34p.h"
 #ifdef VMS
 #include "sys$library:stat.h"
 #include "sys$library:ctype.h"
 #elif defined(FOR_MAC) && !defined(GUSI)
-#include <stat.h>
 #include <ctype.h>
 #else
 #include <sys/types.h>

@@ -19,8 +19,6 @@
 #ifdef wx_mac
 #include <QuickDraw.h>
 #include "wx_setup.h"
-#include <iostream.h>
-#include <fstream.h>
 #include <math.h>
 #include "wx_obj.h"
 #include "wx_dcps.h"

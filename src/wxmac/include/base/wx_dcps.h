@@ -13,6 +13,8 @@
 #ifndef wx_dcpsh
 #define wx_dcpsh
 
+#include <fstream.h>
+
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -26,7 +28,6 @@ class wxFont;
 class wxIcon;
 class wxList;
 class wxPen;
-class ofstream;
 #else
 #include "wx_dc.h"
 #endif
@@ -61,7 +62,7 @@ class wxPostScriptDC: public wxDC
   int page_number;
   ofstream *pstream;    // PostScript output stream
   char *filename;
-  long boundingboxpos;
+  streampos boundingboxpos;
   unsigned char currentRed;
   unsigned char currentGreen;
   unsigned char currentBlue;

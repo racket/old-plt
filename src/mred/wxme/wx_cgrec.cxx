@@ -22,6 +22,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "wx_media.h"
 #include "wx_ptreq.h"
 

@@ -292,10 +292,10 @@ static pascal void TrackActionProc(ControlHandle theControl, short part)
                       / (**trackList).cellSize.v);
 
 	switch (part) {
-	  case inUpButton: delta = -1; break;
-	  case inDownButton: delta = 1; break;
-	  case inPageUp: delta = -scrollsPerPage; break;
-	  case inPageDown: delta = scrollsPerPage; break;
+	  case kControlUpButtonPart: delta = -1; break;
+	  case kControlDownButtonPart: delta = 1; break;
+	  case kControlPageUpPart: delta = -scrollsPerPage; break;
+	  case kControlPageDownPart: delta = scrollsPerPage; break;
 	}
 	
 	::LScroll(0, delta, trackList);
@@ -306,10 +306,10 @@ TrackActionProcUPP = NewControlActionProc(TrackActionProc);
 
 static void ManualScroll(ListHandle list, ControlHandle scroll, Point startPt, int part)
 {
-	if (part == inThumb) {
-	  int oldPos = ::GetCtlValue(scroll);
+	if (part == kControlIndicatorPart) {
+	  int oldPos = ::GetControlValue(scroll);
 	  if (::TrackControl(scroll, startPt, NULL)) {
-         int newPos = ::GetCtlValue(scroll);
+         int newPos = ::GetControlValue(scroll);
          ::LScroll(0, newPos - oldPos, list);
 	  }
 	} else {
@@ -496,12 +496,12 @@ void wxListBox::Delete(int N)
 void wxListBox::Append(char *Item, char *Client_data)
 {
   SetCurrentDC();
-  LDoDraw(FALSE, cListHandle);
+  LSetDrawingMode(FALSE, cListHandle);
   Cell cell = {no_items, 0};		// Point = {v, h} so Cell = {row, col}
   LAddRow(1,no_items, cListHandle);
   LSetCell(Item, strlen(Item) ,cell, cListHandle);
   // LDraw(cell, cListHandle); // mflatt: can't get this to work; co-ordinate problems?
-  LDoDraw(TRUE, cListHandle);
+  LSetDrawingMode(TRUE, cListHandle);
   cDataList->Append(no_items, (wxObject *)Client_data);
   no_items ++;
   if (Client_data) cKeycnt++;
@@ -518,7 +518,7 @@ void wxListBox::Set(int n, char *choices[])
   if (no_items > 0) {
 	this->Clear();
   }
-  LDoDraw(FALSE, cListHandle);
+  LSetDrawingMode(FALSE, cListHandle);
   Cell cell = {0, 0};		// Point = {v, h} so Cell = {row, col}
   for (cell.v = 0; cell.v < n; cell.v++) {
 	  cDataList->Append(cell.v, (wxObject *)NULL);
@@ -526,7 +526,7 @@ void wxListBox::Set(int n, char *choices[])
 	  LSetCell(choices[cell.v], strlen(choices[cell.v]) ,cell, cListHandle);
   }
   no_items = cell.v;
-  LDoDraw(TRUE, cListHandle);
+  LSetDrawingMode(TRUE, cListHandle);
   Paint();
 }
 
@@ -593,7 +593,7 @@ void wxListBox::SetClientData(int N, char *s)
 // Undocumented !
 void wxListBox::InsertItems(int nItems, char **Items, int pos) 
 {
-  LDoDraw(FALSE, cListHandle);
+  LSetDrawingMode(FALSE, cListHandle);
   Cell cell = {pos, 0};		// Point = {v, h} so Cell = {row, col}
   int n;
   for (n = 0;  n < nItems; cell.v++, n++) {
@@ -602,7 +602,7 @@ void wxListBox::InsertItems(int nItems, char **Items, int pos)
 	  LSetCell(Items[n], strlen(Items[n]) ,cell, cListHandle);
   }
   no_items = no_items + nItems;
-  LDoDraw(TRUE, cListHandle);
+  LSetDrawingMode(TRUE, cListHandle);
   Paint();
 }
 

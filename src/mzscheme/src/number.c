@@ -92,7 +92,7 @@ static Scheme_Object *lcm (int argc, Scheme_Object *argv[]);
 static Scheme_Object *floor_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *ceiling (int argc, Scheme_Object *argv[]);
 static Scheme_Object *sch_truncate (int argc, Scheme_Object *argv[]);
-static Scheme_Object *round (int argc, Scheme_Object *argv[]);
+static Scheme_Object *sch_round (int argc, Scheme_Object *argv[]);
 static Scheme_Object *numerator (int argc, Scheme_Object *argv[]);
 static Scheme_Object *denominator (int argc, Scheme_Object *argv[]);
 static Scheme_Object *exp_prim (int argc, Scheme_Object *argv[]);
@@ -421,7 +421,7 @@ scheme_init_number (Scheme_Env *env)
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("round", 
-			     scheme_make_folding_prim(round,
+			     scheme_make_folding_prim(sch_round,
 						      "round",
 						      1, 1, 1),
 			     env);
@@ -1683,7 +1683,7 @@ sch_truncate (int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-round (int argc, Scheme_Object *argv[])
+sch_round (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *o = argv[0];
   Scheme_Type t;

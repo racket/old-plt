@@ -22,6 +22,10 @@ extern int wxOutOfMemory();
 
 #define WXUNUSED(x) /* empty */
 
+#define OPERATOR_NEW_ARRAY
+
 #include "wx.h"
+
+#include <string.h>
 
 #undef GUSI

@@ -17,7 +17,8 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_utils.h"
 #include "wx_mac_utils.h"
 #include "wx_main.h"
-#include <Strings.h>	
+#include <Strings.h>
+#include <Balloons.h>	
 
 int wxNumHelpItems;
 MenuHandle wxHelpMenu;
@@ -595,13 +596,13 @@ Bool wxMenuBar::OnDelete(wxMenu *menu, int pos)
 // Helper function - Add the Apple Menu 
 void wxSetUpAppleMenu(wxMenuBar *mbar)
 {
-	MenuHandle appleMenuHandle = GetMHandle(128);
+	MenuHandle appleMenuHandle = GetMenuHandle(128);
 
 	if (appleMenuHandle == NULL) {
 		char t[2] = {1, appleMark};
 		appleMenuHandle = ::NewMenu(128, (StringPtr)t);
 		CheckMemOK(appleMenuHandle);
-		::AddResMenu(appleMenuHandle, 'DRVR');
+		::AppendResMenu(appleMenuHandle, 'DRVR');
 	}
 	if (mbar && mbar->wxHelpHackMenu && mbar->iHelpMenuHackNum) {
 		Str255 t = "\pAbout…";

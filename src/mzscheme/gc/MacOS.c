@@ -48,6 +48,20 @@ void* GC_MacGetDataStart()
 	return 0;
 }
 
+/* MATTHEW: Function for handling CW Pro 3 far data */
+void* GC_MacGetDataEnd()
+{
+	CodeZeroHandle code0 = (CodeZeroHandle)GetResource('CODE', 0);
+	if (code0) {
+		long aboveA5Size = (**code0).aboveA5;
+		ReleaseResource((Handle)code0);
+		return (LMGetCurrentA5() + aboveA5Size);
+	}
+	fprintf(stderr, "Couldn't load the jump table.");
+	exit(-1);
+	return 0;
+}
+
 /* track the use of temporary memory so it can be freed all at once. */
 
 typedef struct TemporaryMemoryBlock TemporaryMemoryBlock, **TemporaryMemoryHandle;

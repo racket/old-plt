@@ -23,24 +23,28 @@
 
 #include "schpriv.h"
 #ifdef TIME_SYNTAX
-# include <time.h>
-# ifdef USE_FTIME
-#  include <sys/timeb.h>
+# ifdef USE_MACTIME
+#  include <OSUtils.h>
 # else
-#  ifndef USE_DIFFTIME
+#  include <time.h>
+#  ifdef USE_FTIME
+#   include <sys/timeb.h>
+#  else
+#   ifndef USE_DIFFTIME
+#    include <sys/time.h>
+#   endif /* USE_DIFFTIME */
+#  endif /* USE_FTIME */
+#  ifdef USE_GETRUSAGE
+#   include <sys/types.h>
 #   include <sys/time.h>
-#  endif /* USE_DIFFTIME */
-# endif /* USE_FTIME */
-# ifdef USE_GETRUSAGE
-#  include <sys/types.h>
-#  include <sys/time.h>
-#  include <sys/resource.h>
-# endif /* USE_GETRUSAGE */
-# ifdef USE_SYSCALL_GETRUSAGE
-#  include <sys/syscall.h>
-#  define getrusage(a, b)  syscall(SYS_GETRUSAGE, a, b)
-#  define USE_GETRUSAGE
-# endif /* USE_SYSCALL_GETRUSAGE */
+#   include <sys/resource.h>
+#  endif /* USE_GETRUSAGE */
+#  ifdef USE_SYSCALL_GETRUSAGE
+#   include <sys/syscall.h>
+#   define getrusage(a, b)  syscall(SYS_GETRUSAGE, a, b)
+#   define USE_GETRUSAGE
+#  endif /* USE_SYSCALL_GETRUSAGE */
+# endif /* USE_MACTIME */
 #endif /* TIME_SYNTAX */
 
 /* globals */
@@ -1976,26 +1980,36 @@ long scheme_get_process_milliseconds(void)
 
   return s * 1000 + u / 1000;
 #else
+# ifdef USE_MACTIME
+  return TickCount() * 1000/60;
+# else
   return clock()  * 1000 / CLOCKS_PER_SEC;
+# endif
 #endif
 }
 
 static long get_seconds(void)
 {
-#ifdef USE_FTIME
+#ifdef USE_MACTIME
+  unsigned long secs;
+  GetDateTime(&secs);
+  return secs;
+#else
+# ifdef USE_FTIME
   struct MSC_IZE(timeb) now;
   MSC_IZE(ftime)(&now);
   return now.time;
-#else
-#ifdef USE_DIFFTIME
+# else
+#  ifdef USE_DIFFTIME
   time_t now;
   now = time(NULL);
   return now;
-#else
+#  else
   struct timeval now;
   gettimeofday(&now, NULL);
   return now.tv_sec;
-#endif
+#  endif
+# endif
 #endif
 }
 
@@ -2007,12 +2021,24 @@ static long get_seconds(void)
 #define UNBUNDLE_TIME_TYPE long
 #endif
 
+#ifdef USE_MACTIME
+static int month_offsets[12] = { 0, 31, 59, 90,
+                                120, 151, 181, 212,
+                                243, 273, 304, 334 };
+#endif
+
 static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
 {
   UNBUNDLE_TIME_TYPE lnow;
-  time_t now;
   int hour, min, sec, month, day, year, wday, yday, dst;
+#ifdef USE_MACTIME
+# define CHECK_TIME_T unsigned long
+  DateTimeRec localTime;
+#else
+# define CHECK_TIME_T time_t
   struct tm *localTime;
+#endif
+  CHECK_TIME_T now;
   Scheme_Object *p[9], *secs;
 
   secs = argv[0];
@@ -2023,9 +2049,48 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
   }
 
   if (scheme_get_time_val(secs, &lnow) 
-      && ((UNBUNDLE_TIME_TYPE)(now = (time_t)lnow)) == lnow) {
+      && ((UNBUNDLE_TIME_TYPE)(now = (CHECK_TIME_T)lnow)) == lnow) {
+    int success;
+
+#ifdef USE_MACTIME
+	SecondsToDate(lnow, &localTime);
+	success = 1;
+#else
     localTime = localtime(&now);
-    if (localTime) {
+    success = !!localTime;
+#endif
+    
+    if (success) {
+#ifdef USE_MACTIME
+      hour = localTime.hour;
+      min = localTime.minute;
+      sec = localTime.second;
+      
+      month = localTime.month;
+      day = localTime.day;
+      year = localTime.year;
+      
+      wday = localTime.dayOfWeek - 1;
+      
+      yday = month_offsets[localTime.month - 1] + localTime.day;
+      /* If month > 2, is it a leap-year? */
+      if (localTime.month > 2) {
+        DateTimeRec tester;
+        unsigned long ttime;
+        
+        tester.hour = tester.minute = 0;
+        tester.second = 1;
+        tester.month = 1;
+        tester.day = 60;
+        DateToSeconds(&tester, &ttime);
+        SecondsToDate(ttime, &tester);
+        if (tester.month == 2)
+          /* It is a leap-year */
+          yday++;
+      }
+      
+      dst = 0; /* We don't really know */
+#else
       hour = localTime->tm_hour;
       min = localTime->tm_min;
       sec = localTime->tm_sec;
@@ -2038,6 +2103,7 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
       yday = localTime->tm_yday;
       
       dst = localTime->tm_isdst;
+#endif
 
       p[0] = scheme_make_integer(sec);
       p[1] = scheme_make_integer(min);

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.1.1.1 1997/12/22 17:28:47 mflatt Exp $
+ * RCS_ID:      $Id: wb_ps.cc,v 1.3 1998/01/27 00:06:21 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -103,9 +103,7 @@ static double pie = 0.0;
 # define WXXTUNUSED(x) x
 #endif
 
-#ifndef wx_mac
-# define OFSTREAM_HAS_TELLP_AND_SEEKP 1
-#endif
+#define OFSTREAM_HAS_TELLP_AND_SEEKP 1
 
 #define DEFAULT_PAPER "Letter 8 1/2 x 11 in"
 
@@ -1267,7 +1265,7 @@ Bool wxPostScriptDC::StartDoc (char *message)
   if (title)
     *pstream << "%%Title: " << title << "\n";
   *pstream << "%%Creator: " << "wxWindows (MrEd)" << "\n";
-  *pstream << "%%CreationDate: " << wxNow() << "\n";
+  *pstream << "%%CreationDate: " << "???" << "\n";
 
   // User Id information
   char userID[256];
@@ -1340,7 +1338,7 @@ void wxPostScriptDC::EndDoc (void)
   // The Adobe specifications call for integers; we round as to make
   // the bounding larger.
 #ifdef OFSTREAM_HAS_TELLP_AND_SEEKP
-  pstream->seekp(boundingboxpos, ios::beg);
+  pstream->seekp(boundingboxpos);
 #else
   pstream->rdbuf()->seekoff(boundingboxpos, ios::beg, 0 /* <- ?? */);
 #endif

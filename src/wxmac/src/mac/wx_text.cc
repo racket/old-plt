@@ -12,15 +12,6 @@ static const char sccsid[] = "%W% %G%";
 //#include <iostream.h>
 //#include <fstream.h>
 
-#ifdef GUSI
-#  include <sys/types.h>	// Get these from GUSI
-#  include <sys/stat.h>
-#elif !defined(MPW) 		// ie #if Symantec, plain CW
-#  include <unix.h>
-#else
-#  include "macstat.h"		// Python or MPW
-#endif
-#include <stdio.h>
 #include "wx_item.h"
 #include "wx_text.h"
 #include "wx_mtxt.h"
@@ -127,7 +118,6 @@ void wxTextWindow::CreateWxTextWindow(void) // common constructor initialization
 //-----------------------------------------------------------------------------
 Bool wxTextWindow::LoadFile(char* file)
 {
-	struct stat statb;
 	Bool result = FALSE;
 
 	if (!file) return FALSE;
@@ -136,14 +126,10 @@ Bool wxTextWindow::LoadFile(char* file)
 
 	file_name = macCopyString(file);
 
-	if ((stat(file, &statb) == -1) || ((statb.st_mode & S_IFMT) != S_IFREG))
-	{
-		return FALSE;
-	}
 	FILE* fp = fopen(file, "rb"); // WCH: why require "rb" instead of "r" to get newline chars
 	if (!fp) return FALSE;
 
-	long len = statb.st_size;
+	long len = 100;
 	char* text = new char[len + 1];
 	if (text)
 	{

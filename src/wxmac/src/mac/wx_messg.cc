@@ -233,7 +233,7 @@ void wxMessage::Paint(void)
 	if (sBitmap) {
 		sBitmap->DrawMac();
 	} else {
-		::TextBox(cMessage, strlen(cMessage), &clientRect, teJustLeft);
+		::TETextBox(cMessage, strlen(cMessage), &clientRect, teJustLeft);
 	}
 }
 

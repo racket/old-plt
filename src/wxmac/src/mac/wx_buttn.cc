@@ -113,7 +113,7 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 	const short maxValue = 1;
 	short refCon = 0;
 	cMacControl = ::NewControl((WindowPtr)theMacGrafPort, &boundsRect, theMacTitle(),
-			drawNow, offValue, minValue, maxValue, pushButProc + useWFont, refCon);
+			drawNow, offValue, minValue, maxValue, pushButProc + popupUseWFont, refCon);
 	CheckMemOK(cMacControl);
 	
 	if (GetParent()->IsHidden())
@@ -219,7 +219,7 @@ void wxButton::ChangeColour(void)
 	(**cColorTable).ctTable[2].rgb = labelRGB;
 
      if (cMacControl)
-	  ::SetCtlColor(cMacControl, cColorTable);
+	  ::SetControlColor(cMacControl, cColorTable);
 }
 
 //-----------------------------------------------------------------------------
@@ -230,7 +230,7 @@ char* wxButton::GetLabel(void)
 	if (buttonBitmap)
 		return NULL;
 	if (cMacControl)
-	  ::GetCTitle(cMacControl, pTitle);
+	  ::GetControlTitle(cMacControl, pTitle);
 	wxMacPtoCString(pTitle, wxBuffer);
     return wxBuffer;
 }
@@ -245,7 +245,7 @@ void wxButton::SetLabel(char* label)
 	SetCurrentDC();
   	wxMacString1 theMacString1 = label;
   	if (cMacControl)
-  	  ::SetCTitle(cMacControl, theMacString1());
+  	  ::SetControlTitle(cMacControl, theMacString1());
   }
 }
 
@@ -439,7 +439,7 @@ void wxButton::Highlight(Bool flag) // mac platform only
 		if (cEnable)
 		{
 			SetCurrentDC();
-			::HiliteControl(cMacControl, flag ? inButton : 0);
+			::HiliteControl(cMacControl, flag ? kControlButtonPart : 0);
 		}
 	}
 }
@@ -466,7 +466,7 @@ void wxButton::OnEvent(wxMouseEvent& event) // mac platform only
 		} else {
 			Highlight(TRUE); // highlight button
 			long delayTicks = 4; // one tick is 1/60th of a second
-			long finalTicks;
+			unsigned long finalTicks;
 			Delay(delayTicks, &finalTicks);
 			Highlight(FALSE); // unhighlight button
 		
@@ -488,7 +488,7 @@ void wxButton::Command(wxCommandEvent& event) // mac platform only (also xview p
 	{
 		Highlight(TRUE); // highlight button
 		long delayTicks = 10; // one tick is 1/60th of a second
-		long finalTicks;
+		unsigned long finalTicks;
 		Delay(delayTicks, &finalTicks);
 		Highlight(FALSE); // unhighlight button
 	  	ProcessCommand(event);

@@ -6,6 +6,9 @@
  * Copyright:   (c) 1995, Matthew Flatt
  */
 
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
 
 #include "wx_canvs.h"
 #include "wx_media.h"
@@ -14,11 +17,6 @@
 #include "wx_ptreq.h"
 #include "wx_timer.h"
 #include "wx_main.h"
-
-#include <string.h>
-#include <stdlib.h>
-#include <fstream.h>
-#include <ctype.h>
 
 #define XMARGIN 5
 #define YMARGIN 5

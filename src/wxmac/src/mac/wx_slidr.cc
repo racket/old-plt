@@ -11,7 +11,6 @@ static const char sccsid[] = "%W% %G%";
 
 
 
-#include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "common.h"
@@ -131,7 +130,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 			TRUE, value, min_value, max_value, scrollBarProc, 0);
 	CheckMemOK(cMacControl);
 
-	::SetCRefCon(cMacControl, (long)this);
+	::SetControlReference(cMacControl, (long)this);
 	if (label)
 	{
 		cTitle = new wxLabelArea(this, label, labelFont,
@@ -244,7 +243,7 @@ void wxSlider::OnEvent(wxMouseEvent& event) // WCH: mac only ?
 		Point pt = {startV, startH};
 		SetCurrentDC();
 		int part;
-		int oldval = ::GetCtlValue(cMacControl);
+		int oldval = ::GetControlValue(cMacControl);
 #if USE_ACTIONPROC
 		part = ::TestControl(cMacControl, pt);
 		if (part && part == inThumb) {
@@ -257,19 +256,19 @@ void wxSlider::OnEvent(wxMouseEvent& event) // WCH: mac only ?
 			switch (part) {
 			case 0:
 				break;
-			case inUpButton:
-				::SetCtlValue(cMacControl, max(s_min, oldval-1));
+			case kControlUpButtonPart:
+				::SetControlValue(cMacControl, max(s_min, oldval-1));
 				break;
-			case inDownButton:
-				::SetCtlValue(cMacControl, min(s_max, oldval+1));
+			case kControlDownButtonPart:
+				::SetControlValue(cMacControl, min(s_max, oldval+1));
 				break;
-			case inPageUp:
-				::SetCtlValue(cMacControl, max(s_min, oldval-page_size));
+			case kControlPageUpPart:
+				::SetControlValue(cMacControl, max(s_min, oldval-page_size));
 				break;
-			case inPageDown:
-				::SetCtlValue(cMacControl, min(s_max, oldval+page_size));
+			case kControlPageDownPart:
+				::SetControlValue(cMacControl, min(s_max, oldval+page_size));
 				break;
-			case inThumb:
+			case kControlIndicatorPart:
 				break;
 			} // end switch
 			// Draw the new value or should we Invalidate the Rect or don't bother ?

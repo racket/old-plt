@@ -16,9 +16,6 @@
 #include "wx_mtxt.h"
 #include "wx_utils.h"
 #include "wx_mac_utils.h"
-#ifndef GUSI
-#include <unix.h>
-#endif
 #include <string.h>
 //#include <sys/types.h>
 

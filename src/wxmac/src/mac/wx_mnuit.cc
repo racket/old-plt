@@ -137,7 +137,7 @@ void wxMenuItem::SetLabel(char* label)
 	if (macMenuItem > 0)
 	{
 		wxMacString1 theMacString1 = label;
-		SetItem(parentMenu->MacMenu(), macMenuItem, theMacString1());
+		SetMenuItemText(parentMenu->MacMenu(), macMenuItem, theMacString1());
 	}
 }
 

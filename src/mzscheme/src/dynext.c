@@ -445,7 +445,7 @@ static Boolean get_ext_file_spec(FSSpec *spec, const char *filename)
 
 static Boolean load_ext_file_spec(FSSpec *spec, CFragConnectionID *connID)
 {
-	OSErr err = GetDiskFragment(spec, 0, 0, 0, kLoadNewCopy, connID, 0, 0);
+	OSErr err = GetDiskFragment(spec, 0, 0, 0, kPrivateCFragCopy, connID, 0, 0);
 	return err==noErr;
 }
 

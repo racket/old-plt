@@ -57,7 +57,9 @@
 #endif
 #ifdef MACINTOSH_SIOUX
 # include <console.h>
+# pragma far_data on
 # include <SIOUX.h>
+# pragma far_data off
 #endif
 #ifdef MACINTOSH_SET_STACK
 # include <Memory.h>
@@ -213,6 +215,15 @@ static char *make_load_cd(char *file)
   return s;
 }
 
+#ifdef MACINTOSH_SIOUX
+# pragma far_data on
+static void SetSIOUX(void)
+{
+  SIOUXSettings.initializeTB = 0;
+}
+# pragma far_data off
+#endif
+
 static char *make_require_lib(const char *file, const char *coll)
 {
   char *s;
@@ -287,7 +298,9 @@ int actual_main(int argc, char *argv[])
   MoreMasters();
 	
 #ifdef MACINTOSH_SIOUX
+# pragma far_data on
   SIOUXSettings.initializeTB = 0;
+# pragma far_data off
 #endif
 
   scheme_handle_aewait_event = handle_one;
@@ -313,10 +326,10 @@ int actual_main(int argc, char *argv[])
     }
   }
   
-  /* When not using far globals under 68k, CW may not be able to link this.
-     Just comment it out. */
+# pragma far_data on
   SIOUXSettings.autocloseonquit = 0;
   SIOUXSettings.asktosaveonclose = 0;
+# pragma far_data off
 #endif
 
 #ifdef USE_LOCALE

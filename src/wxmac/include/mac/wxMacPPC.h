@@ -8,7 +8,7 @@
  */
 
 #pragma once
-#include <GestaltEqu.h>
+#include <Gestalt.h>
 #include <PPCToolBox.h>
 
 enum { sClosed = 0, sOpening, sOpen, sListening };

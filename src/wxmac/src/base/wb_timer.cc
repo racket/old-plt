@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_timer.cc,v 1.3 1994/08/14 21:34:01 edz Exp $
+ * RCS_ID:      $Id: wb_timer.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -35,26 +35,6 @@
 #define SYSV
 #endif
 
-#include <time.h>
-#ifndef wx_mac
-#include <sys/types.h>
-#endif
-
-#if defined(SVR4) || defined(SYSV) || defined(__sgi) || defined(__alpha)
-#include <sys/time.h>
-#endif
-
-#if defined(sun) || defined(__osf__)
-// At least on Sun, ftime is undeclared.
-// Need to be verified on other platforms.
-extern "C" int ftime(struct timeb *tp);
-// #include <sys/timeb.h>
-#ifdef SVR4
-// dito for gettimeofday on Solaris 2.x.
-extern "C" int gettimeofday(struct timeval *tp, void *);
-#endif
-#endif
-
 wxbTimer::wxbTimer(void)
 {
  #if 0
@@ -76,67 +56,4 @@ void wxbTimer::Notify(void)
 int wxbTimer::Interval(void)
 {
   return interval ;
-}
-
-/*
- * Timer functions
- *
- */
-
-long wxStartTime = 0;
-void wxStartTimer(void)
-{
-#if defined(__xlC__) || defined(_AIX) || defined(SVR4) || defined(SYSV) // || defined(AIXV3)
-  struct timeval tp;
-#ifdef SYSV
-  gettimeofday(&tp, (struct timezone *)NULL);
-#else
-  gettimeofday(&tp);
-#endif
-  wxStartTime = 1000*tp.tv_sec + tp.tv_usec/1000;
-#elif (defined(__SC__) || defined(__sgi) || defined(__bsdi__) || defined(__alpha)) || defined(wx_mac)
-  time_t t0;
-  struct tm *tp;
-  time(&t0);
-  tp = localtime(&t0);
-  wxStartTime = 1000*(60*(60*tp->tm_hour+tp->tm_min)+tp->tm_sec);
-#else
-  struct timeb tp;
-  ftime(&tp);
-  wxStartTime = 1000*tp.time + tp.millitm;
-#endif
-}
-
-// Returns elapsed time in milliseconds
-long wxGetElapsedTime(Bool resetTimer)
-{
-#if defined(__xlC__) || defined(_AIX) || defined(SVR4) || defined(SYSV) // || defined(AIXV3)
-  struct timeval tp;
-#ifdef SYSV
-  gettimeofday(&tp, (struct timezone *)NULL);
-#else
-  gettimeofday(&tp);
-#endif
-  long oldTime = wxStartTime;
-  long newTime = 1000*tp.tv_sec + tp.tv_usec / 1000;
-  if (resetTimer)
-    wxStartTime = newTime;
-#elif (defined(__SC__) || defined(__sgi) || defined(__bsdi__) || defined(__alpha)) || defined(wx_mac)
-  time_t t0;
-  struct tm *tp;
-  time(&t0);
-  tp = localtime(&t0);
-  long oldTime = wxStartTime;
-  long newTime = 1000*(60*(60*tp->tm_hour+tp->tm_min)+tp->tm_sec);
-  if (resetTimer)
-    wxStartTime = newTime;
-#else
-  struct timeb tp;
-  ftime(&tp);
-  long oldTime = wxStartTime;
-  long newTime = 1000*tp.time + tp.millitm;
-  if (resetTimer)
-    wxStartTime = newTime;
-#endif
-  return newTime - oldTime;
 }

@@ -493,4 +493,4 @@ class wxLocationBufferData : public wxBufferData
   Bool Write(wxMediaStreamOut &);
 };
 
-#endif __WX_SNIP__
+#endif /* __WX_SNIP__ */

@@ -22,12 +22,7 @@
 #include "wx_obj.h"
 #include "wx_types.h"
 #ifndef IN_CPROTO
-#ifndef wx_mac
-#include <iostream.h>
-#else
-class istream;
-class ostream;
-#endif
+// #include <iostream.h>
 #endif
 
 /*
@@ -63,10 +58,12 @@ class wxEvent: public wxObject
   wxEvent(void);
   ~wxEvent(void);
 
+#if 0
   // Read event's arguments from any input stream
   virtual Bool ReadEvent(istream& str) = 0;
   // Write event's arguments to any output stream
   virtual Bool WriteEvent(ostream& str) = 0;
+#endif
 
   inline WXTYPE GetEventType(void) { return eventType; }
   inline WXTYPE GetEventClass(void) { return eventClass; }
@@ -151,6 +148,7 @@ void wxInitStandardEvents(void);
 
 void wxDeleteEventLists(void) ;
 
+#if 0
 /*
  * Event reading/writing helper functions
  *
@@ -175,6 +173,8 @@ Bool wxReadInteger(istream& in, int *theInt);
 Bool wxReadLong(istream& in, long *theLong);
 
 Bool wxReadFloat(istream& in, float *theFloat);
+
+#endif
 
 #endif // IN_CPROTO
 #endif // wxb_sysevh

@@ -9,7 +9,6 @@
 
 static const char sccsid[] = "%W% %G%";
 #include <Windows.h>
-#include <iostream.h>
 #include <stdlib.h>
 
 #include "wx_main.h"
@@ -55,7 +54,6 @@ int wxEntry(int argc, char* argv[])
 
 	if (!wxTheApp)
 	{
-		cerr << "wxWindows error: You have to define an instance of wxApp!\n";
 		exit(0);
 	}
 
@@ -104,12 +102,14 @@ int wxEntry(int argc, char* argv[])
 	return retValue;
 }
 
+#if 0
 // In theory, this entry pt won't be used unless the real main does not
 // declare one.
 int main(int argc, char* argv[])
 {
 	return wxEntry(argc, argv);
 }
+#endif
 
 //-----------------------------------------------------------------------------
 void wxCleanUp(void)

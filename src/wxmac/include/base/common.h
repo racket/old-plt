@@ -12,8 +12,6 @@
 #ifndef wxb_commonh
 #define wxb_commonh
 
-#include <stddef.h>
-#include <string.h>
 #include "wx_setup.h"
 #include "wx_ver.h"
 

@@ -31,6 +31,8 @@
 #include "wx_ptreq.h"
 #include <string.h>
 
+extern "C" int scheme_directory_exists(char *dirname);
+
 #define LINE_HEIGHT 16
 
 #define DOT_WIDTH 5
@@ -2350,7 +2352,7 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
   if (!OnLoadFile(file, wxMEDIA_FF_STD))
     return FALSE;
 
-  if (::DirExists(file)) {
+  if (::scheme_directory_exists(file)) {
     if (showErrors)
       wxMessageBox("Can't load a directory.", "Error");
     AfterLoadFile(FALSE);

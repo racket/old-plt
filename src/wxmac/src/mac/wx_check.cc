@@ -161,7 +161,7 @@ char* wxCheckBox::GetLabel(void)
 {
 	if (cMacControl) {
 	  Str255 pLabel;
-	  ::GetCTitle(cMacControl, pLabel);
+	  ::GetControlTitle(cMacControl, pLabel);
 	  wxMacPtoCString(pLabel, wxBuffer);
       return wxBuffer;
     } else if (buttonBitmap)
@@ -182,7 +182,7 @@ void wxCheckBox::SetLabel(char* label)
   {
 	SetCurrentDC();
   	wxMacString1 theMacString1 = label;
-  	::SetCTitle(cMacControl, theMacString1());
+  	::SetControlTitle(cMacControl, theMacString1());
   } else
     Refresh();
 }
@@ -203,7 +203,7 @@ void wxCheckBox::SetValue(Bool value)
 {
 	SetCurrentDC();
 	if (cMacControl) 
-	  ::SetCtlValue(cMacControl, value ? 1 : 0);
+	  ::SetControlValue(cMacControl, value ? 1 : 0);
 	else {
 	  bitmapState = !!value;
 	  if (!cHidden)
@@ -215,7 +215,7 @@ void wxCheckBox::SetValue(Bool value)
 Bool wxCheckBox::GetValue(void)
 {
     if (cMacControl) {
-	  short value = ::GetCtlValue(cMacControl);
+	  short value = ::GetControlValue(cMacControl);
 	  return (value != 0) ? TRUE : FALSE;
 	} else
 		return bitmapState;
@@ -405,7 +405,7 @@ void wxCheckBox::Command(wxCommandEvent& event) // mac platform only (also xview
 	{
 		Highlight(TRUE); // highlight button
 		long delayTicks = 10; // one tick is 1/60th of a second
-		long finalTicks;
+		unsigned long finalTicks;
 		Delay(delayTicks, &finalTicks);
 		Highlight(FALSE); // unhighlight button
 		SetValue(event.Checked()); // set checkbox

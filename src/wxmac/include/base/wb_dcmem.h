@@ -18,7 +18,7 @@
 #endif
 
 #ifndef IN_CPROTO
-#include <fstream.h>
+// #include <fstream.h>
 #endif
 #include "common.h"
 #include "wx_dc.h"

@@ -17,11 +17,6 @@
 #pragma interface
 #endif
 
-#ifndef IN_CPROTO
-#	ifndef wx_mac
-#		include <iostream.h>
-#	endif // wx_mac
-#endif
 #include "common.h"
 #include "wx_frame.h"
 #include "wx_gdi.h"

@@ -18,7 +18,6 @@
 
 #include "common.h"
 #include "wb_timer.h"
-#include "time.h"
 #include <types.h>
 #ifdef IN_CPROTO
 typedef       void    *wxTimer ;

@@ -353,7 +353,7 @@ void wxRadioBox::Command(wxCommandEvent& event) // mac platform only
 		{
 			radioButton->Highlight(TRUE); // highlight button
 			long delayTicks = 10; // one tick is 1/60th of a second
-			long finalTicks;
+			unsigned long finalTicks;
 			Delay(delayTicks, &finalTicks);
 			radioButton->Highlight(FALSE); // unhighlight button
 			SetSelection(selection); // set radioButton

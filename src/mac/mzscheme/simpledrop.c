@@ -1,5 +1,6 @@
 
 #include <Files.h>
+#include <EPPC.h>
 
 #define _scheme_malloc_atomic NewPtr
 # define _scheme_malloc NewPtr

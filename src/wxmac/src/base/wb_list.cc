@@ -4,7 +4,7 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_list.cxx,v 1.3 1998/02/08 15:05:31 mflatt Exp $
+ * RCS_ID:	$Id: wb_list.cc,v 1.2 1998/02/14 15:59:37 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -398,6 +398,40 @@ void wxList::Clear (void)
   n = 0;
 }
 
+#ifdef wx_mac
+long wxList::MemberIndex(wxObject *object) // WCH wx_mac added 8/12/94
+{
+  long result = 0;
+  wxNode *current = First();
+  wxNode *found = NULL;
+  while (current && !found)
+  {
+    wxObject *each = current->Data();
+    if (each == object)
+      found = current;
+    else
+    {
+    	current = current->Next();
+    	result++;
+    }
+  }
+  return (found ? result : -1);
+}
+
+Bool wxList::OnDeleteObject(wxObject *object)  // mac platform only
+{
+  int destroy_data_saved = destroy_data; // kludge
+  destroy_data = kNoDestroyData; // kludge
+
+  DeleteObject(object);
+    
+  destroy_data = destroy_data_saved; // kludge
+  
+  return FALSE;
+}
+#endif // wx_mac
+
+
 // (stefan.hammes@urz.uni-heidelberg.de)
 //
 // function for sorting lists. the concept is borrowed from 'qsort'.
@@ -694,54 +728,6 @@ Bool wxChildList::DeleteObject(wxObject *object)
   return FALSE;
 }
 
-#ifdef wx_mac
-long wxList::MemberIndex(wxObject *object) // WCH wx_mac added 8/12/94
-{
-  long result = 0;
-  wxNode *current = First();
-  wxNode *found = NULL;
-  while (current && !found)
-  {
-    wxObject *each = current->Data();
-    if (each == object)
-      found = current;
-    else
-    {
-    	current = current->Next();
-    	result++;
-    }
-  }
-  return (found ? result : -1);
-}
-
-Bool wxList::OnDeleteObject(wxObject *object)  // mac platform only
-{
-  Bool result;
-
-  wxNode *current = first_node;
-  while (current)
-  {
-    if (current->Data() == object)
-      break;
-    else current = current->Next();
-  }
-
-  if (current)
-  {
-	int destroy_data_saved = destroy_data; // kludge
-	destroy_data = kNoDestroyData; // kludge
-
-    delete current;
-    
-	destroy_data = destroy_data_saved; // kludge
-
-    result = TRUE;
-  }
-  else result = FALSE;
-
-  return result;
-}
-#endif // wx_mac
 
 Bool wxChildList::DeleteNode(wxChildNode *node)
 {

@@ -288,22 +288,13 @@ wxWindow::~wxWindow(void) // Destructor
 	delete children;
     if (cScroll)
 	  delete cScroll;
-#if 1 
-	//CJC: Manually delete cAreas. I don't know why the automatic deletion of the member
-	// doesn't work. This also cleans up cClientArea;
-	if (cAreas.n > 0) {
-		wxNode *w = cAreas.First();
-		while (w) {
-			wxNode *n = w;
-			w = n->Next();
-			delete n;
+
+	{
+		wxNode *w;
+		while ((w = cAreas.First())) {
+			delete (wxArea *)w->Data();
 		}
-		cAreas.first_node = NULL;
-		cAreas.n = 0;
 	}
-#else
-	delete cClientArea;
-#endif 
 }
 
 //=============================================================================

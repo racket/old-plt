@@ -15,6 +15,8 @@
      A much more elegant solution would be achieved through multiple threads (maybe in the future).
 */
 
+#if 0
+
 static const char sccsid[] = "%W% %G%";
 
 #include <stdlib.h>
@@ -1010,3 +1012,5 @@ static lastTime = TickCount();
 *****************************/
 
 #endif // USE_IPC
+
+#endif

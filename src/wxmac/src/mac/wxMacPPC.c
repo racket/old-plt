@@ -138,7 +138,7 @@ long ipcRead(PPCSessRefNum sess,char * buffer, long size)
 long ipcWrite(PPCSessRefNum sess,char *buffer, long size)
 {
 	OSErr err;
-	long t;
+	unsigned long t;
 	long len = 0;
 	
 	if (WritePBptr)

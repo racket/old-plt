@@ -235,7 +235,7 @@ void wxChoice::ReCalcRect(void) {
 	unsigned char temp[256];
 	for (n = 0; n < no_strings; n++) {
 		// attempt to size control by width of largest string
-		::GetItem(hDynMenu, n+1, temp);
+		::GetMenuItemText(hDynMenu, n+1, temp);
 		temp[temp[0]+1] = '\0';
 		GetTextExtent((char *)&temp[1], &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
 		w = fWidth;
@@ -323,7 +323,7 @@ void wxChoice::DrawChoice(Bool active)
 	Str255	s;
 	if (selection < 0)
 		selection = 0;
-	::GetItem(hDynMenu, selection+1, s);
+	::GetMenuItemText(hDynMenu, selection+1, s);
 	SetFont(valueFont);
 	SetTextInfo();
 	::MoveTo(r.left, r.bottom - valuebase);
@@ -494,7 +494,7 @@ void wxChoice::Clear (void)
 {
 	int n;
 	for (n = 0; n < no_strings; n++)
-		::DelMenuItem(hDynMenu, 1);
+		::DeleteMenuItem(hDynMenu, 1);
 	no_strings = 0;
 	selection = 0;
   Paint();
@@ -525,7 +525,7 @@ int wxChoice::FindString (char *s)
 	int i;
 	Str255	ps;
 	for (i = 0; i < no_strings; i++) {
-		::GetItem(hDynMenu, i+1, ps);
+		::GetMenuItemText(hDynMenu, i+1, ps);
 		if (!strcmp(PtoCstr(ps), s))
 			return i;
 	}
@@ -537,7 +537,7 @@ char *wxChoice::GetString (int n)
 	Str255	s;
 	if (n < 0 || n >= no_strings)
 		return NULL; // dummy
-	::GetItem(hDynMenu, n+1, s);
+	::GetMenuItemText(hDynMenu, n+1, s);
 	memcpy(wxBuffer, &s[1], s[0]);
 	wxBuffer[s[0]] = '\0';
 	return copystring(wxBuffer);

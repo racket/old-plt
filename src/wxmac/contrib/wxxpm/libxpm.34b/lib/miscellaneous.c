@@ -42,9 +42,7 @@
 #include "sys$library:stat.h"
 #include "sys$library:fcntl.h"
 #elif defined(FOR_MAC) &!defined(GUSI)
-#include <stat.h>
 #include <stdio.h>
-#include <unix.h>
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -451,41 +449,7 @@ atoui(register char *p, unsigned int l, unsigned int *ui_return)
 int
 XpmReadFileToBuffer(char *filename, char **buffer_return)
 {
-    int fd, fcheck, len;
-    char *ptr;
-    struct stat stats;
-    FILE *fp;
-
-    *buffer_return = NULL;
-
-    fd = open(filename, O_RDONLY);
-    if (fd < 0)
-	return XpmOpenFailed;
-
-    if (fstat(fd, &stats)) {
-	close(fd);
-	return XpmOpenFailed;
-    }
-    fp = fdopen(fd, "r");
-    if (!fp) {
-	close(fd);
-	return XpmOpenFailed;
-    }
-    len = (int) stats.st_size;
-    ptr = (char *) XpmMallocA(len + 1);
-    if (!ptr) {
-	fclose(fp);
-	return XpmNoMemory;
-    }
-    fcheck = fread(ptr, len, 1, fp);
-    fclose(fp);
-    if (fcheck != 1) {
-	XpmFree(ptr);
-	return XpmOpenFailed;
-    }
-    ptr[len] = '\0';
-    *buffer_return = ptr;
-    return XpmSuccess;
+    	return XpmOpenFailed;
 }
 
 int

@@ -35,6 +35,8 @@
 
 #include "wx_mpriv.h"
 
+extern "C" int scheme_directory_exists(char *dirname);
+
 static void StandardWordbreak(wxMediaEdit *win, long *start, long *end, int, void*);
 
 wxMediaWordbreakMap wxTheMediaWordbreakMap;
@@ -55,7 +57,7 @@ const char *(*wxmeExpandFilename)(const char *) = NULL;
 
 static const char *wxCallExpandPath(const char *f)
 {
-  return wxExpandPath(NULL, f);
+  return f; // wxExpandPath(NULL, f);
 }
 
 void wxInitMedia(void)
@@ -2398,7 +2400,7 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
   if (!OnLoadFile(file, format))
     return FALSE;
 
-  if (::DirExists(file)) {
+  if (scheme_directory_exists(file)) {
     if (showErrors)
       wxMessageBox("Can't load a directory.", "Error");
     return FALSE;

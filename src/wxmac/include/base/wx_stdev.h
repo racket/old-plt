@@ -114,9 +114,10 @@ class wxCommandEvent: public wxEvent
 
   // TRUE if the listbox event was a selection.
   inline virtual Bool IsSelection() { return (Bool)extraLong; }
-
+#if 0
   Bool ReadEvent(istream&);
   Bool WriteEvent(ostream&);
+#endif
 };
 
 // Mouse event class
@@ -194,8 +195,10 @@ class wxMouseEvent: public wxEvent
   // Find the position of the event
   virtual void Position(float *x, float *y);
 
+#if 0
   Bool ReadEvent(istream&);
   Bool WriteEvent(ostream&);
+#endif
 };
 
 // Keyboard input event class
@@ -218,8 +221,10 @@ class wxKeyEvent: public wxEvent
 
   virtual void Position(float *x,float *y) ;
 
+#if 0
   Bool ReadEvent(istream&);
   Bool WriteEvent(ostream&);
+#endif
 };
 
 #endif // IN_CPROTO

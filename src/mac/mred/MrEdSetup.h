@@ -16,4 +16,6 @@
 
 #define WXUNUSED(x)
 
+#define OPERATOR_NEW_ARRAY
+
 #define WXME_FOR_MRED 1

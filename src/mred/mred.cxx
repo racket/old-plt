@@ -38,9 +38,6 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdarg.h>
-#if defined(wx_mac) && defined(__MC68K__)
-# include "boundary.h"
-#endif
 
 /* Solaris: getdtablesize sometimes not available */
 #if !defined(USE_ULIMIT) && defined(sun) && defined(__svr4__)
@@ -1906,7 +1903,7 @@ void MrEdApp::RealInit(void)
 
 #ifdef wx_mac
   if (startup_dial) {
-    DisposDialog(startup_dial);
+    DisposeDialog(startup_dial);
     startup_dial = NULL;
   }
 #endif
@@ -1940,7 +1937,7 @@ void MrEdApp::RealInit(void)
  giveup:
 #ifdef wx_mac
   if (startup_dial)
-    DisposDialog(startup_dial);
+    DisposeDialog(startup_dial);
 #endif
 
   MakeEdJrFrame();
@@ -1968,13 +1965,13 @@ void MrEdApp::DoDefaultAboutItem()
   dial = GetNewDialog(edjrMode ? 130 : 129, NULL, (WindowRef)-1);
   GetPort(&port);
   SetPort(dial);
-  TextFont(geneva);
+  TextFont(kFontIDGeneva);
   TextSize(10);
   SetPort(port);
 
   ModalDialog(NULL, &hit);
   
-  DisposDialog(dial);
+  DisposeDialog(dial);
 }
 
 #endif
@@ -2114,15 +2111,6 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
-#if defined(__MC68K__)
-  go_alpha_boundary();
-  go_omega_boundary();
-  if ((unsigned long)_alpha_.my_address < (unsigned long)_omega_.my_address)
-    GC_add_roots((char *)_alpha_.my_address, (char *)_omega_.my_address);
-  else
-    GC_add_roots((char *)_omega_.my_address, (char *)_alpha_.my_address);
-#endif
-  
 #ifdef wx_mac
   /* initialize Mac stuff */
   MaxApplZone();

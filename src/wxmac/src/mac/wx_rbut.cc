@@ -160,7 +160,7 @@ char* wxRadioButton::GetLabel()
 	if (cMacControl) {
 		Str255	pLabel;
 
-		::GetCTitle(cMacControl, pLabel);
+		::GetControlTitle(cMacControl, pLabel);
 		wxMacPtoCString(pLabel, wxBuffer);
 	    return wxBuffer;
 	 } else
@@ -174,7 +174,7 @@ void wxRadioButton::SetLabel(char* label)
   {
 	SetCurrentDC();
   	wxMacString1 theMacString1 = label;
-  	::SetCTitle(cMacControl, theMacString1());
+  	::SetControlTitle(cMacControl, theMacString1());
   }
 }
 
@@ -194,7 +194,7 @@ void wxRadioButton::SetValue(Bool val)
 {
 	SetCurrentDC();
 	if (cMacControl)
-	  ::SetCtlValue(cMacControl, val ? 1 : 0);
+	  ::SetControlValue(cMacControl, val ? 1 : 0);
 	else {
 	  bitmapState = !!val;
 	  if (!cHidden)
@@ -206,7 +206,7 @@ void wxRadioButton::SetValue(Bool val)
 Bool wxRadioButton::GetValue(void)
 {
 	if (cMacControl) {
-		short value = ::GetCtlValue(cMacControl);
+		short value = ::GetControlValue(cMacControl);
 		return (value != 0) ? TRUE : FALSE;
 	} else
 		return bitmapState;
@@ -341,7 +341,7 @@ void wxRadioButton::Command(wxCommandEvent& event) // mac platform only (also xv
 	{
 		Highlight(TRUE); // highlight button
 		long delayTicks = 10; // one tick is 1/60th of a second
-		long finalTicks;
+		unsigned long finalTicks;
 		Delay(delayTicks, &finalTicks);
 		Highlight(FALSE); // unhighlight button
 	  	ProcessCommand(event);

@@ -23,6 +23,7 @@ static const char sccsid[] = "%W% %G%";
 #if USE_IMAGE_LOADING_IN_MAC
 #include "wx_image.h"
 #endif
+
 CGrafPtr gMacFontGrafPort = NULL; // mac platform only
 
 wxGDIList   *wxTheIconList = NULL;

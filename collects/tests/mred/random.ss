@@ -1,7 +1,11 @@
 
+(unless (defined? 'skip-media?)
+  (global-defined-value 'skip-media? #f))
+
 (define example-list%
-  (class '() (parents [filter (lambda (x) (not (void? x)))])
+  (class '() (name-in parents [filter (lambda (x) (not (void? x)))])
       (public
+       [name name-in]
        [items '()]
        [num-items 0]
        
@@ -55,6 +59,7 @@
 (define boxed-example-list%
   (class () (null-ok? parent)
     (public
+     [name `(boxed ,(ivar parent name))]
      [all-examples
       (lambda ()
 	(let ([l (map box (send parent all-examples))])
@@ -70,9 +75,25 @@
 		  (void)
 		  (box ex)))))])))
 
+(define nn-example-list%
+  (class () (parent)
+    (public
+     [name 'nn]
+     [all-examples
+      (lambda ()
+	(filter (lambda (x) (not (negative? x))) (send parent all-examples)))]
+     [choose-example
+      (opt-lambda ([which #f])
+	(let loop ()
+	  (let ([ex (send parent choose-example)])
+	    (if (not (negative? ex))
+		ex
+		(loop)))))])))
+
 (define array-example-list%
   (class () (parent)
     (public
+     [name `(array ,(ivar parent name))]
      [all-examples
       (lambda ()
 	(let ([v1 (cons (send parent choose-example) '())]
@@ -99,6 +120,17 @@
 		     [else
 		      (cons (send parent choose-example) (loop (sub1 count)))]))))))])))
 
+(define-struct (fatal-exn struct:exn) ())
+
+(define (fatal-error name str . args)
+  (raise (make-fatal-exn (apply format (string-append "~a: " str) name args)
+			 ((debug-info-handler)))))
+
+(define trying-class #f)
+(define trying-method #f)
+
+(define null-results null)
+
 (define-macro define-main 
   (lambda list
     (let loop ([l list][rest '()])
@@ -122,18 +154,22 @@
 				      #f))])
 		  (cons
 		   `(define ,(el-name name)
-		      (make-object example-list% (list ,@(map el-name bases))
-				   (lambda (v) (if (null? v)
-						   (error ,name "got null")))))
+		      (make-object example-list% 
+				   ',name
+				   (list ,@(map el-name bases))
+				   (lambda (v) (when (null? v)
+						 (set! null-results (cons (list trying-class trying-method ',name)
+									  null-results))
+						 (error ',name "got null")))))
 		   (if (char=? #\! (string-ref strname (sub1 (string-length strname))))
 		       (let* ([base (substring strname 0 (sub1 (string-length strname)))]
 			      [caret (string->symbol (string-append base "^"))]
 			      [percent (string->symbol (string-append base "%"))])
 			 (list*
 			  `(define ,(el-name caret)
-			     (make-object example-list% (list ,(el-name name))))
+			     (make-object example-list% '(nullable ,name) (list ,(el-name name))))
 			  `(define ,(el-name percent)
-			     (make-object example-list% (list ,(el-name name))))
+			     (make-object example-list% ',name (list ,(el-name name))))
 			  `(send ,(el-name caret) add '())
 			  rest))
 		       rest))))))))
@@ -331,7 +367,7 @@
 			   (make-object array-example-list% ,(make (car l) "")))
 			rest)))))))
 
-(define nstring-example-list (make-object example-list% (list string-example-list)))
+(define nstring-example-list (make-object example-list% '(nullable string) (list string-example-list)))
 (send nstring-example-list add '())
 
 (define long-example-list int-example-list)
@@ -348,10 +384,14 @@
 (define ncstring-example-list nstring-example-list)
 (define ncustring-example-list nstring-example-list)
 
-(define voidARRAY-example-list (make-object example-list% null))
-(define CAPOFunc-example-list (make-object example-list% null))
+(define nnfloat-example-list (make-object nn-example-list% float-example-list))
+(define nnint-example-list (make-object nn-example-list% int-example-list))
+(define nnlong-example-list nnint-example-list)
 
-(define false-example-list (make-object example-list% '()))
+(define voidARRAY-example-list (make-object example-list% 'voidARRAY null))
+(define CAPOFunc-example-list (make-object example-list% 'CAPOFunc null))
+
+(define false-example-list (make-object example-list% 'false '()))
 (send false-example-list add #f)
 
 (define-boxed
@@ -473,7 +513,7 @@
        (add "goodbye adious see you later zai jian seeya bye-bye"))
 
 (send pathname-example-list add "/tmp/x")
-(define npathname-example-list (make-object example-list% (list string-example-list)))
+(define npathname-example-list (make-object example-list% '(nullable pathname) (list string-example-list)))
 (send npathname-example-list add '())
 
 (send wxFunction-example-list add void)
@@ -484,6 +524,17 @@
 (send wxWordbreakFunc-example-list add void)
 
 (define classinfo (make-hash-table))
+
+(define (add-all-combinations example-list items)
+  (for-each
+   (lambda (i) (send example-list add i))
+   (let loop ([items items])
+     (cond
+      [(null? (cdr items)) items]
+      [else (let ([l (loop (cdr items))])
+	      (append
+	       (map (lambda (x) (bitwise-ior (car items) x)) l)
+	       l))]))))
 
 (load-relative "tests.ss")
 
@@ -513,7 +564,7 @@
 			  rest)))))))
 
 (define thread-output-port 
-  (let ([p mred:original-output-port])
+  (let ([p mred:constants:original-output-port])
     (lambda ()
       p)))
   
@@ -523,13 +574,14 @@
       (begin
 	(fprintf (thread-output-port) "~a: ~a" name v)
 	(flush-output (thread-output-port))
-	(with-handlers ((void (lambda (x)
-				(fprintf (thread-output-port)
-					 ": error: ~a~n"
-					 (exn-message x)))))
-		       (send dest add (k v))
-		       (wx:flush-display)
-		       (fprintf (thread-output-port) ": success~n")))
+	(with-handlers (((lambda (x) (not (fatal-exn? x)))
+			 (lambda (x)
+			   (fprintf (thread-output-port)
+				    ": error: ~a~n"
+				    (exn-message x)))))
+	  (send dest add (k v))
+	  (wx:flush-display)
+	  (fprintf (thread-output-port) ": success~n")))
       (fprintf (thread-output-port) "~a: failure~n" name)))
 
 (define (try-args arg-types dest name k)
@@ -577,10 +629,12 @@
 			 [iv (car method)]
 			 [resulttype (cadr method)]
 			 [argtypes (cddr method)])
+		    (set! trying-class (and source (ivar source name)))
+		    (set! trying-method iv)
 		    (try argtypes resulttype (list name iv use)
 			 (lambda (args)
 			   (if use
-			       (apply (uq-ivar use iv) args)
+			       (apply (ivar/proc use iv) args)
 			       (apply (global-defined-value iv) args)))))
 		  (loop (cdr l)))))))
 

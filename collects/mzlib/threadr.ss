@@ -10,7 +10,9 @@
   |#
   
   (define consumer-thread
-    (lambda (f)
+    (case-lambda
+     [(f) (consumer-thread f void)]
+     [(f init)
       (unless (procedure? f) (raise-type-error 'consumer-thread "procedure" f))
       (let ([sema (make-semaphore 0)]
 	    [protect (make-semaphore 1)]
@@ -36,7 +38,9 @@
 				    (semaphore-post protect))))])
 			(apply f local-state))
 		      (loop))])
-	    loop))
+	    (lambda ()
+	      (init)
+	      (loop))))
 	 (lambda new-state
 	   (let ([num (length new-state)])
 	     (unless (procedure-arity-includes? f num) 
@@ -50,7 +54,7 @@
 	   (semaphore-wait protect)
 	   (set! front-state (cons new-state front-state))
 	   (semaphore-post protect)
-	   (semaphore-post sema))))))
+	   (semaphore-post sema))))]))
 
   (define with-semaphore
     (lambda (s f)

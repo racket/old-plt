@@ -44,11 +44,8 @@
 		 (directory-list dir))]
 	   [servlet-files 
 	    (filter 
-	     (lambda (path)
-               (let* ([s (path->bytes path)]
-                      [len (bytes-length s)])
-		 (equal? #".ss"
-                         (subbytes s (- len 3) len))))
+	     (lambda (s)
+	       (regexp-match #rx#"[.]ss$" (path->bytes s)))
 	     all-files)]
 	   [dirs 
 	    (filter directory-exists? all-files)])
@@ -66,7 +63,7 @@
 	      (if (>= n prefix-len)
 		  p
 		  (loop (cdr p) (add1 n))))])
-      (fold-into-web-path relative-exp-path)))
+      (fold-into-web-path (map path->string relative-exp-path))))
   
   ; (listof string) -> string
   ; result is forward-slashed web path

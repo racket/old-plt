@@ -43,14 +43,14 @@
 (reference-library "mzlib.ss")
 (reference-library "pretty.ss")
 
-(load-recent (begin-elaboration-time
-	       (build-path plt-dir "zodiac" "load")))
-
 (reference-library (begin-elaboration-time
 		     (build-path plt-dir "lib" "require.ss")))
 (plt:require-library "ariesu.ss")
 (plt:require-library "sparamu.ss")
 (plt:require-library "userspcu.ss")
+
+(load-recent (begin-elaboration-time
+	       (build-path plt-dir "zodiac" "load")))
 
 (invoke-open-unit/sig plt:mzscheme-parameters@ params)
 

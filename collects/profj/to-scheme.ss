@@ -29,7 +29,7 @@
   (define (stx-for-source) 
     (let ((ip ((input-port))))
       (let loop ((syn (read-syntax #f ip)))
-        (if (pair? (syntax-e syn))
+        (if (and (not (interactions?)) (pair? (syntax-e syn)))
             (loop (read-syntax #f ip))
             syn))))
   (define (create-syntax oddness sexpression source)

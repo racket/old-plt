@@ -1725,7 +1725,7 @@
                                  (equal? (ref-type-path exp-type) (cdr c-class))))
                        (not (eq? this (send type-recs get-class-record exp-type)))))
           (call-access-error 'pri level name exp-type src))
-        (when (and (not (memq 'private mods)) (not (memq 'public mods)) (not (memq 'protected mods))
+        (when (and (not (memq 'private mods)) (not (memq 'public mods)) (not (memq 'protected mods)) (reference-type? exp-type)
                    (not (package-members? c-class (cons (ref-type-class/iface exp-type) 
                                                         (ref-type-path exp-type)) type-recs)))
           (call-access-error 'pac level name exp-type src))

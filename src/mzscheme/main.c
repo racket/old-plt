@@ -187,7 +187,7 @@ void Drop_Runtime(char **argv, int argc)
 
 void Drop_Quit()
 {
-  exit(0);
+  ExitToShell();
 }
 #endif
 
@@ -253,7 +253,7 @@ static void do_scheme_rep(void)
   orig_evaluator = scheme_get_param(scheme_config, MZCONFIG_EVAL_HANDLER);
 #  endif
 # endif
-  
+
   /* enter read-eval-print loop */
   scheme_rep();
   printf("\n");

@@ -1,0 +1,415 @@
+#cs
+(module beginner-parser mzscheme
+  
+  (require "general-parsing.ss"
+           "lexer.ss"
+           "../ast.ss")
+  
+  (require (lib "yacc.ss" "parser-tools")
+           (lib "lex.ss" "parser-tools")           
+           (lib "readerr.ss" "syntax"))
+  
+  (provide parse-beginner parse-beginner-interactions)
+  
+  (define parsers
+    (parser
+     (start CompilationUnit BeginnerInteractions)
+     ;;(debug "parser.output")
+     (tokens java-vals Keywords Separators EmptyLiterals Operators)
+     (error (lambda (tok-ok name val start-pos end-pos)
+              (raise-read-error (format "Parse error near <~a:~a>" name val)
+                                (file-name)
+                                (position-line start-pos)
+                                (position-col start-pos)
+                                (position-offset start-pos)
+                                (- (position-offset end-pos)
+                                   (position-offset start-pos)))))
+     
+     (end EOF)
+     (src-pos)
+     
+     (grammar
+      
+      ;; 19.3
+      (Literal
+       [(INTEGER_LIT) (make-literal 'int (build-src 1) $1)]
+       [(LONG_LIT) (make-literal 'long (build-src 1) $1)]
+       [(FLOAT_LIT) (make-literal 'float (build-src 1) $1)]
+       [(DOUBLE_LIT) (make-literal 'double (build-src 1)  $1)]
+       [(TRUE_LIT) (make-literal 'boolean (build-src 1) #t)]
+       [(FALSE_LIT) (make-literal 'boolean (build-src 1) #f)]
+       [(CHAR_LIT) (make-literal 'char (build-src 1) $1)]
+       [(STRING_LIT) (make-literal 'string (build-src 1) $1)]
+       [(NULL_LIT) (make-literal 'null (build-src 1) #f)])
+      
+      ;; 19.4
+      (Type
+       [(PrimitiveType) $1]
+       [(ReferenceType) $1])
+      
+      (PrimitiveType
+       [(NumericType) $1]
+       [(boolean) (make-type-spec 'boolean 0 (build-src 1))])
+      
+      (NumericType
+       [(IntegralType) $1]
+       [(FloatingPointType) $1])
+      
+      (IntegralType
+       [(byte) (make-type-spec 'byte 0 (build-src 1))]
+       [(short) (make-type-spec 'short 0 (build-src 1))]
+       [(int) (make-type-spec 'int 0 (build-src 1))]
+       [(long) (make-type-spec 'long 0 (build-src 1))]
+       [(char) (make-type-spec 'char 0 (build-src 1))])
+      
+      (FloatingPointType
+       [(float) (make-type-spec 'float 0 (build-src 1))]
+       [(double) (make-type-spec 'double 0 (build-src 1))])
+      
+      (ReferenceType
+       [(Name) (make-type-spec $1 0 (build-src 1))]
+       )
+      
+      (ClassOrInterfaceType
+       [(Name) $1])
+            
+      (ClassType
+       [(ClassOrInterfaceType) $1])
+      
+      ;;19.5
+      (Name
+       [(IDENTIFIER) (make-name (make-id $1 (build-src 1)) null (build-src 1))]
+       [(Name PERIOD IDENTIFIER)
+	(make-name (make-id $3 (build-src 3 3)) 
+                   (append (name-path $1) (list (name-id $1)))
+                   (build-src 3))])
+      ;; 19.6
+      (CompilationUnit
+       [(TypeDeclarations) (make-package #f null $1)]
+       [() (make-package #f null null)])
+      
+      (TypeDeclarations
+       [(TypeDeclaration) (if $1
+                              (list $1)
+                              null)]
+       [(TypeDeclarations TypeDeclaration) (if $2
+                                               (cons $2 $1)
+                                               $1)])
+      
+      (TypeDeclaration
+       [(ClassDeclaration) $1]
+       [(SEMI_COLON) #f])
+      
+      ;; 19.8.1
+      (ClassDeclaration
+       [(class IDENTIFIER Super ClassBody)
+	(make-class-def (make-header (make-id $2 (build-src 2 2))
+                                     (list (make-modifier 'public #f))
+                                     $3 null null (build-src 3))
+                        $4
+                        (build-src 1)
+                        (build-src 4)
+                        (file-name)
+                        null)])
+      
+      (Super
+       [() null]
+       [(extends ClassType) (list $2)])
+      
+      (ClassBody
+       [(O_BRACE ClassBodyDeclarations C_BRACE) (reverse $2)])
+      
+      (ClassBodyDeclarations
+       [() null]
+       [(ClassBodyDeclarations ClassBodyDeclaration)
+        (cond
+          ((not $2) $1)
+          ((list? $2) (append $2 $1))
+          (else (cons $2 $1)))])
+      
+      (ClassBodyDeclaration
+       [(ClassMemberDeclaration) $1]
+       [(ConstructorDeclaration) $1]
+       [(SEMI_COLON) #f])
+      
+      (ClassMemberDeclaration
+       [(FieldDeclaration) $1]
+       [(MethodDeclaration) $1])
+      
+      ;; 19.8.2
+      (FieldDeclaration
+       [(Type VariableDeclaratorId SEMI_COLON)
+        (build-field-decl (list (make-modifier 'private #f)
+                                (make-modifier 'final #f)) $1 $2)])
+      
+      (VariableDeclaratorId
+       [(IDENTIFIER)
+	(make-var-decl (make-id $1 (build-src 1)) null (make-type-spec #f 0 (build-src 1)) (build-src 1))])			
+      
+      ;; 19.8.3
+      (MethodDeclaration
+       [(MethodHeader MethodBody) (make-method (method-modifiers $1)
+                                               (method-type $1)
+                                               (method-type-parms $1)
+                                               (method-name $1)
+                                               (method-parms $1)
+                                               (method-throws $1)
+                                               $2
+                                               (build-src 2))])
+      
+      (MethodHeader
+       [(Type MethodDeclarator) (construct-method-header (list (make-modifier 'public #f)) null $1 $2 null)])
+      
+      (MethodDeclarator
+       [(IDENTIFIER O_PAREN FormalParameterList C_PAREN) (list (make-id $1 (build-src 1)) (reverse $3) 0)]
+       [(IDENTIFIER O_PAREN C_PAREN) (list (make-id $1 (build-src 1)) null 0)])
+      
+      (FormalParameterList
+       [(FormalParameter) (list $1)]
+       [(FormalParameterList COMMA FormalParameter) (cons $3 $1)])
+      
+      (FormalParameter
+       [(Type VariableDeclaratorId) (build-field-decl null $1 $2)])
+      
+      (MethodBody
+       [(Block) $1]
+       [(SEMI_COLON) (make-block null (build-src 1))])
+      
+      ;; 19.8.5      
+      (ConstructorDeclaration
+       [(ConstructorDeclarator ConstructorBody)
+	(make-method (list (make-modifier 'public #f)) (make-type-spec 'ctor 0 (build-src 2)) null (car $1)
+                     (cadr $1) null $2 (build-src 2))])
+      
+      (ConstructorDeclarator
+       [(IDENTIFIER O_PAREN FormalParameterList C_PAREN) (list (make-id $1 (build-src 1)) (reverse $3))]
+       [(IDENTIFIER O_PAREN C_PAREN) (list (make-id $1 (build-src 1)) null)])
+      
+      (ConstructorBody
+       [(O_BRACE ExplicitConstructorInvocation BlockStatements C_BRACE)
+	(make-block (cons $2 (reverse $3)) (build-src 4))]
+       [(O_BRACE ExplicitConstructorInvocation C_BRACE)
+	(make-block (list $2) (build-src 3))]
+       [(O_BRACE BlockStatements C_BRACE)
+	(make-block 
+	 (cons (make-call #f (build-src 1) 
+                          #f (make-special-name #f (build-src 1) "super") null #f)
+	       (reverse $2))
+	 (build-src 3))])
+      
+      (ExplicitConstructorInvocation
+       [(this O_PAREN ArgumentList C_PAREN SEMI_COLON)
+	(make-call #f (build-src 5) 
+                   #f (make-special-name #f (build-src 1) "this") (reverse $3) #f)]
+       [(this O_PAREN C_PAREN SEMI_COLON)
+	(make-call #f (build-src 4) 
+                   #f (make-special-name #f (build-src 1) "this") null #f)]
+       [(super O_PAREN ArgumentList C_PAREN SEMI_COLON)
+	(make-call #f (build-src 5) 
+                   #f (make-special-name #f (build-src 1) "super") (reverse $3) #f)]
+       [(super O_PAREN C_PAREN SEMI_COLON)
+	(make-call #f (build-src 4) 
+                   #f (make-special-name #f (build-src 1) "super") null #f)])
+      
+      
+      ;; 19.11
+      (Block
+       [(O_BRACE BlockStatements C_BRACE) (make-block (reverse $2) (build-src 3))]
+       [(O_BRACE C_BRACE) (make-block null (build-src 2))])
+      
+      (BlockStatements
+       [(Statement) (cond
+                      ((list? $1) $1)
+                      (else (list $1)))]
+       [(BlockStatements Statement) (cond
+                                      ((list? $2)
+                                       (append (reverse $2) $1))
+                                      (else
+                                       (cons $2 $1)))])
+      
+      (BeginnerInteractions
+       [(Statement) $1]
+       [(Expression) $1])
+      
+      (Statement
+       [(StatementWithoutTrailingSubstatement) $1]
+       [(IfThenElseStatement) $1])
+      
+      (StatementNoShortIf
+       [(StatementWithoutTrailingSubstatement) $1]
+       [(IfThenElseStatementNoShortIf) $1])
+      
+      (StatementWithoutTrailingSubstatement
+       [(EmptyStatement) $1]
+       [(ExpressionStatement) $1]
+       [(ReturnStatement) $1])
+      
+      (EmptyStatement
+       [(SEMI_COLON) (make-block null (build-src 1))])
+      
+      (ExpressionStatement
+       [(StatementExpression SEMI_COLON) $1])
+      
+      (StatementExpression
+       [(Assignment) $1]
+       [(MethodInvocation) $1]
+       [(ClassInstanceCreationExpression) $1])
+      
+      (IfThenElseStatement
+       [(if O_PAREN Expression C_PAREN StatementNoShortIf else Statement)
+	(make-ifS $3 $5 $7 (build-src 1) (build-src 7))])
+      
+      (IfThenElseStatementNoShortIf
+       [(if O_PAREN Expression C_PAREN StatementNoShortIf else StatementNoShortIf)
+	(make-ifS $3 $5 $7 (build-src 1) (build-src 7))])
+      
+      (ReturnStatement
+       [(return Expression SEMI_COLON) (make-return $2 (build-src 3))]
+       [(return SEMI_COLON) (make-return #f (build-src 2))])
+      
+      ;; 19.12
+      (Primary
+       [(PrimaryNoNewArray) $1])
+      
+      (PrimaryNoNewArray
+       [(Literal) $1]
+       [(this) (make-special-name #f (build-src 1) "this")]
+       [(O_PAREN Expression C_PAREN) $2]
+       [(ClassInstanceCreationExpression) $1]
+       [(MethodInvocation) $1])
+      
+      (ClassInstanceCreationExpression
+       [(new ClassOrInterfaceType O_PAREN ArgumentList C_PAREN)
+	(make-class-alloc #f (build-src 5) $2 (reverse $4))]
+       [(new ClassOrInterfaceType O_PAREN C_PAREN) 
+	(make-class-alloc #f (build-src 4) $2 null)])
+      
+      (ArgumentList
+       [(Expression) (list $1)]
+       [(ArgumentList COMMA Expression) (cons $3 $1)])
+      
+      (MethodInvocation
+       [(Name O_PAREN ArgumentList C_PAREN) (build-name-call $1 (reverse $3) (build-src 4))]
+       [(Name O_PAREN C_PAREN) (build-name-call $1 null (build-src 3))]
+       [(Primary PERIOD IDENTIFIER O_PAREN ArgumentList C_PAREN)
+        (make-call #f (build-src 6) $1 (make-id $3 (build-src 3 3)) (reverse $5) #f)]
+       [(Primary PERIOD IDENTIFIER O_PAREN C_PAREN)
+        (make-call #f (build-src 5) $1 (make-id $3 (build-src 3 3)) null #f)]
+       [(super PERIOD IDENTIFIER O_PAREN ArgumentList C_PAREN)
+        (make-call #f (build-src 6) 
+                   (make-special-name #f (build-src 1) "super") 
+                   (make-id $3 (build-src 3 3)) (reverse $5) #f)]
+       [(super PERIOD IDENTIFIER O_PAREN C_PAREN)
+        (make-call #f (build-src 5) 
+                   (make-special-name #f (build-src 1) "super") 
+                   (make-id $3 (build-src 3 3)) null #f)])
+      
+      (PostfixExpression
+       [(Primary) $1]
+       [(Name) (name->access $1)])
+      
+      (UnaryExpression
+       [(UnaryExpressionNotPlusMinus) $1])
+      
+      (UnaryExpressionNotPlusMinus
+       [(PostfixExpression) $1]
+       [(~ UnaryExpression) (make-unary #f (build-src 2) '~ $2 (build-src 1))]
+       [(! UnaryExpression) (make-unary #f (build-src 2) '! $2 (build-src 1))])
+      
+      (MultiplicativeExpression
+       [(UnaryExpression) $1]
+       [(MultiplicativeExpression * UnaryExpression)
+        (make-bin-op #f (build-src 3) '* $1 $3 (build-src 2 2))]
+       [(MultiplicativeExpression / UnaryExpression)
+	(make-bin-op #f (build-src 3) '/ $1 $3 (build-src 2 2))]
+       [(MultiplicativeExpression % UnaryExpression)
+	(make-bin-op #f (build-src 3) '% $1 $3 (build-src 2 2))])
+      
+      (AdditiveExpression
+       [(MultiplicativeExpression) $1]
+       [(AdditiveExpression + MultiplicativeExpression)
+	(make-bin-op #f (build-src 3) '+ $1 $3 (build-src 2 2))]
+       [(AdditiveExpression - MultiplicativeExpression)
+	(make-bin-op #f (build-src 3) '- $1 $3 (build-src 2 2))])
+      
+      (ShiftExpression
+       [(AdditiveExpression) $1]
+       [(ShiftExpression << AdditiveExpression)
+	(make-bin-op #f (build-src 3) '<< $1 $3 (build-src 2 2))]
+       [(ShiftExpression >> AdditiveExpression)
+	(make-bin-op #f (build-src 3) '>> $1 $3 (build-src 2 2))]	
+       [(ShiftExpression >>> AdditiveExpression)
+	(make-bin-op #f (build-src 3) '>>> $1 $3 (build-src 2 2))])
+      
+      
+      (RelationalExpression
+       [(ShiftExpression) $1]
+       ;; GJ - changed to remove shift/reduce conflict
+       [(ShiftExpression < ShiftExpression)
+        (make-bin-op #f (build-src 3) '< $1 $3 (build-src 2 2))]		
+       [(RelationalExpression > ShiftExpression)
+	(make-bin-op #f (build-src 3) '> $1 $3 (build-src 2 2))]	
+       [(RelationalExpression <= ShiftExpression)
+	(make-bin-op #f (build-src 3) '<= $1 $3 (build-src 2 2))]	
+       [(RelationalExpression >= ShiftExpression)
+	(make-bin-op #f (build-src 3) '>= $1 $3 (build-src 2 2))])
+      
+      (EqualityExpression
+       [(RelationalExpression) $1]
+       [(EqualityExpression == RelationalExpression)
+	(make-bin-op #f (build-src 3) '== $1 $3 (build-src 2 2))]	
+       [(EqualityExpression != RelationalExpression)
+	(make-bin-op #f (build-src 3) '!= $1 $3 (build-src 2 2))])
+      
+      (AndExpression
+       [(EqualityExpression) $1]
+       [(AndExpression & EqualityExpression)
+	(make-bin-op #f (build-src 3) '& $1 $3 (build-src 2 2))])
+      
+      
+      (ExclusiveOrExpression
+       [(AndExpression) $1]
+       [(ExclusiveOrExpression ^ AndExpression)
+	(make-bin-op #f (build-src 3) '^ $1 $3 (build-src 2 2))])
+      
+      
+      (InclusiveOrExpression
+       [(ExclusiveOrExpression) $1]
+       [(InclusiveOrExpression PIPE ExclusiveOrExpression)
+	(make-bin-op #f (build-src 3) 'or $1 $3 (build-src 2 2))])
+      
+      (ConditionalAndExpression
+       [(InclusiveOrExpression) $1]
+       [(ConditionalAndExpression && InclusiveOrExpression)
+	(make-bin-op #f (build-src 3) '&& $1 $3 (build-src 2 2))])
+      
+      (ConditionalOrExpression
+       [(ConditionalAndExpression) $1]
+       [(ConditionalOrExpression OR ConditionalAndExpression)
+	(make-bin-op #f (build-src 3) 'oror $1 $3 (build-src 2 2))])
+      
+      (ConditionalExpression
+       [(ConditionalOrExpression) $1])
+      
+      (AssignmentExpression
+       [(ConditionalExpression) $1]
+       [(Assignment) $1])
+      
+      (Assignment
+       [(LeftHandSide AssignmentOperator AssignmentExpression)
+	(make-assignment #f (build-src 3) $1 $2 $3 (build-src 2 2))])
+      
+      (LeftHandSide
+       [(Name) (name->access $1)])
+      
+      (AssignmentOperator
+       [(=) '=])
+      
+      (Expression
+       [(AssignmentExpression) $1])
+      
+      )))
+  
+  (define parse-beginner (car parsers))
+  (define parse-beginner-interactions (cadr parsers))
+  )

@@ -1,0 +1,6 @@
+(module info (lib "infotab.ss" "setup")
+  (define name "DrJ")
+  (define tools (list (list "tool.ss")))
+  (define compile-subcollections (list (list "drj" "parsers")
+                                       (list "drj" "libs" "java" "lang")
+				       (list "drj" "libs" "java" "io"))))

@@ -16,7 +16,9 @@
 ;; reading input goes past them (when peeking goes past them, nothing happens).
 
 (define (copy-string! dst skip-k src . ks)
-  (apply peek-string-avail! dst skip-k (open-input-string src) ks))
+  (if (zero? (string-length src))
+    0
+    (apply peek-string-avail! dst skip-k (open-input-string src) ks)))
 
 (define (make-composite-input . ports)
   ;; don't care about concurrency, since multiple uses should use different

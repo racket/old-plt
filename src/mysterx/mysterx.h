@@ -118,30 +118,30 @@ typedef struct _document_window_style_option {
   BOOL enable;
 } DOCUMENT_WINDOW_STYLE_OPTION;
 
-#define MX_COM_OBJP(o) (o->type == mx_com_object_type)
+#define MX_COM_OBJP(o) (!SCHEME_INTP(o) && o->type == mx_com_object_type)
 #define MX_COM_OBJ_VAL(o) (((MX_COM_Object *)o)->pIDispatch)
 
-#define MX_DOCUMENTP(o) (o->type == mx_document_type)
+#define MX_DOCUMENTP(o) (!SCHEME_INTP(o) && o->type == mx_document_type)
 #define MX_DOCUMENT_VAL(o) (((MX_Document_Object *)o)->pIHTMLDocument2)
 #define MX_DOCUMENT_EVENTQUEUE(o) (((MX_Document_Object *)o)->pIEventQueue)
 
-#define MX_ELEMENTP(o) (o->type == mx_element_type)
+#define MX_ELEMENTP(o) (!SCHEME_INTP(o) && o->type == mx_element_type)
 #define MX_ELEMENT_VALIDITY(o) (((MX_Element *)o)->valid)
 #define MX_ELEMENT_VAL(o) (((MX_Element *)o)->pIHTMLElement)
 
-#define MX_EVENTP(o) (o->type == mx_event_type)
+#define MX_EVENTP(o) (!SCHEME_INTP(o) && o->type == mx_event_type)
 #define MX_EVENT_VAL(o) (((MX_Event *)o)->pEvent)
 
-#define MX_CYP(o) (o->type == mx_com_cy_type)
+#define MX_CYP(o) (!SCHEME_INTP(o) && o->type == mx_com_cy_type)
 #define MX_CY_VAL(o) (((MX_COM_Data_Object *)o)->cy)
 
-#define MX_DATEP(o) (o->type == mx_com_date_type)
+#define MX_DATEP(o) (!SCHEME_INTP(o) && o->type == mx_com_date_type)
 #define MX_DATE_VAL(o) (((MX_COM_Data_Object *)o)->date)
 
-#define MX_SCODEP(o) (o->type == mx_com_scode_type)
+#define MX_SCODEP(o) (!SCHEME_INTP(o) && o->type == mx_com_scode_type)
 #define MX_SCODE_VAL(o) (((MX_COM_Data_Object *)o)->scode)
 
-#define MX_IUNKNOWNP(o) (o->type == mx_com_iunknown_type)
+#define MX_IUNKNOWNP(o) (!SCHEME_INTP(o) && o->type == mx_com_iunknown_type)
 #define MX_IUNKNOWN_VAL(o) (((MX_COM_Data_Object *)o)->pIUnknown)
 
 extern Scheme_Type mx_com_object_type; 

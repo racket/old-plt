@@ -2405,6 +2405,13 @@ static void wxDoOnMouseLeave(wxWindow *wx_window, int x, int y, UINT flags)
 }
 
 static int numpad_scan_codes[10];
+static int plus_scan_code;
+static int minus_scan_code;
+static int times_scan_code;
+static int divide_scan_code;
+static int dot_scan_code;
+
+#define THE_SCAN_CODE(lParam) ((((unsigned long)lParam) >> 16) & 0xFF)
 
 void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
 {
@@ -2439,19 +2446,46 @@ void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
       }
     }
 
-    if ((id >= '0') && (id <= '9')) {
-      /* Ignore character created by numpad, since it's
-	 already handled as WM_KEYDOWN */
-      int sc = (lParam >> 16) & 0xF;
-      if (sc && (numpad_scan_codes[id- '0'] == sc))
-	id = -1;
+    /* Ignore character created by numpad, since it's
+       already handled as WM_KEYDOWN */
+    int sc = THE_SCAN_CODE(lParam);
+    if (sc) {
+      if ((id >= '0') && (id <= '9')) {
+	if (numpad_scan_codes[id - '0'] == sc)
+	  id = -1;
+      } else if (id == '+') {
+	if (sc == plus_scan_code)
+	  id = -1;
+      } else if (id == '-') {
+	if (sc == minus_scan_code)
+	  id = -1;
+      } else if (id == '*') {
+	if (sc == times_scan_code)
+	  id = -1;
+      } else if (id == '/') {
+	if (sc == divide_scan_code)
+	  id = -1;
+      } else if (id == '.') {
+	if (sc == dot_scan_code)
+	  id = -1;
+      }
     }
   } else {
     if ((id = wxCharCodeMSWToWX(wParam)) == 0)
       id = -1;
     if ((id >= WXK_NUMPAD0) && (id <= WXK_NUMPAD9)) {
       /* remember scan code so we can ignore the WM_CHAR part */
-      numpad_scan_codes[id - WXK_NUMPAD0] = (lParam >> 16) & 0xF;
+      numpad_scan_codes[id - WXK_NUMPAD0] = THE_SCAN_CODE(lParam);
+    } else if (id == WXK_ADD) {
+      plus_scan_code = THE_SCAN_CODE(lParam);
+    } else if (id == WXK_SUBTRACT) {
+      minus_scan_code = THE_SCAN_CODE(lParam);
+    } else if (id == WXK_MULTIPLY) {
+      times_scan_code = THE_SCAN_CODE(lParam);
+    } else if (id == WXK_DIVIDE) {
+      divide_scan_code = THE_SCAN_CODE(lParam);
+    } else if (id == WXK_DECIMAL) {
+      dot_scan_code = THE_SCAN_CODE(lParam);
     }
   } 
 

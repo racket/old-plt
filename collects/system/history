@@ -1,6 +1,8 @@
 SYSTEM HISTORY
 --------------
 Version 49:
+- mred:frame% and mred:dialog% now have a `delay-updates' parameter-like
+  method. set-perform-updates is obsolete.
 - if your application is unititized, then you need to change the
   startup procedure. See the application startup section in the
   toolbox manual.

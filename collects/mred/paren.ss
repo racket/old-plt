@@ -49,18 +49,19 @@
     
     (define balanced?
       (lambda (edit start end paren-pairs quote-pairs  eol-comments)
-	(if (or (> end (send edit last-position))(<= end start))
-	    #f 
+	(if (or (> end (send edit last-position))
+		(<= end start))
+	    #f
 	    (let* ([balance-point                  
 		    (forward-match edit start end
 				   paren-pairs quote-pairs eol-comments)]
-		   [end-point(if balance-point(skip-whitespace edit balance-point 1)#f)])
-	      (if balance-point
-		  (if (and (<= balance-point end)(>= end-point end))
-		      #t
-		      (balanced? edit end-point end paren-pairs quote-pairs 
-				 eol-comments))
-		  #f))))) 
+		   [end-point 
+		    (and balance-point
+			 (skip-whitespace edit balance-point 1))])
+	      (and balance-point
+		   (or (and (<= balance-point end) (>= end-point end))
+		       (balanced? edit end-point end paren-pairs quote-pairs 
+				  eol-comments))))))) 
 
     (define forward-match
       (opt-lambda (edit pos end-pos paren-pairs quote-pairs eol-comment-list
@@ -125,16 +126,16 @@
 				 (letrec 
 				     ([iterator
 				       (lambda (index)
-					 (if (= index (vector-length spots)) #t
+					 (if (= index (vector-length spots))
+					     #t
 					     (let ([curr (vector-ref spots index)])
-					       (if 
-						(and curr (< curr pos))
-						(vector-set! 
-						 spots index
-						 (search-esc edit pos end-pos
-							     (type 
-							      (vector-ref strings index))
-							     1)))
+					       (when (and curr (< curr pos))
+						 (vector-set! 
+						  spots index
+						  (search-esc edit pos end-pos
+							      (type 
+							       (vector-ref strings index))
+							      1)))
 					       (iterator (add1 index)))))])
 				   (iterator 0)))])	
 			(do-vector open-spots parens car)
@@ -147,9 +148,8 @@
 			  (cons #f (add1 end-pos))
 			  (let ([this (vector-ref vec index)]
 				[rest (get-min-ref vec (add1 index))])
-			    (if 
-			     (or (not (car rest))
-				 (and this (< this (cdr rest))))
+			    (if (or (not (car rest))
+				    (and this (< this (cdr rest))))
 			     (cons index (if this this (add1 end-pos))) 
 			     rest))))]
 		   [find-match
@@ -157,15 +157,14 @@
 		      (let* ([next-open (get-min-ref open-spots 0)]
 			     [next-close (get-min-ref close-spots 0)]
 			     [next-quote(get-min-ref quote-spots 0)]
-			     [next-eol(get-min-ref eol-spots 0)]
+			     [next-eol (get-min-ref eol-spots 0)]
 			     [next-pos (min (cdr next-open)(cdr next-close)
 					    (cdr next-quote)(cdr next-eol))])
 			(cond
 			 [(> next-pos end-pos) #f]
 			 [(= (cdr next-open) next-pos)
-			  (let ([known (if paren-cache
-					   (send paren-cache get next-pos)
-					   #f)])
+			  (let ([known (and paren-cache
+					    (send paren-cache get next-pos))])
 			    (if known
 				(begin
 				  (initialize known)
@@ -177,8 +176,8 @@
 						     (car next-open))])
 				  (if nest
 				      (begin
-					(if paren-cache
-					    (send paren-cache put next-pos nest))
+					(when paren-cache
+					  (send paren-cache put next-pos nest))
 					(find-match nest paren-type))
 				      #f))))]
 			 [(= (cdr next-close) next-pos)
@@ -239,7 +238,20 @@
 			   (cdr first-close)
 			   (cdr first-quote))]))))))
 
-    
+    '(define forward-match
+      (opt-lambda (edit pos end-pos paren-pairs quote-pairs eol-comment-list
+			[paren-cache #f])
+	(let ([cache (and paren-cache
+			  (send paren-cache get pos))])
+	  (or cache
+	      (let ([ans (forward-match-engine
+			  edit pos end-pos paren-pairs quote-pairs eol-comment-list
+			  paren-cache)])
+		(when paren-cache
+		  (send paren-cache put pos ans))
+		ans)))))
+      
+
     (define backward-match
       (opt-lambda (edit pos first-pos
 			paren-pairs quote-pairs eol-comment-list 
@@ -467,9 +479,9 @@
 		       [(= pos first-pos) #f]
 		       [contain-flag (find-match pos #f)]
 		       [else
-			(let*([first-open (get-max-ref open-spots 0)]
-			      [first-close (get-max-ref  close-spots 0)]
-			      [first-quote (get-max-ref quote-spots 0)])
+			(let* ([first-open (get-max-ref open-spots 0)]
+			       [first-close (get-max-ref  close-spots 0)]
+			       [first-quote (get-max-ref quote-spots 0)])
 			  (cond 
 			   [(= (cdr first-close) 
 			       (- pos(string-length 
@@ -482,7 +494,7 @@
 			       close-spots (car first-close)
 			       (search-esc
 				edit new-start first-pos
-				(cdr(vector-ref parens(car first-close))) -1))
+				(cdr (vector-ref parens (car first-close))) -1))
 			      (set-car! cache-closes(cons new-start 
 							  (car cache-closes)))
 			      (set! cache-closes (cons () cache-closes))
@@ -490,7 +502,7 @@
 			      (let ([answer
 				     (find-match new-start (car first-close))])
 				(if paren-cache
-				    (send paren-cache put  new-start answer))
+				    (send paren-cache put new-start answer))
 				answer))]
 			   [(= (cdr first-open) 
 			       (- pos (string-length
@@ -521,11 +533,22 @@
 				(cdr(vector-ref parens(car first-close)))))
 			     (+(cdr first-quote)
 			       (string-length
-				(cdr(vector-ref quotes(car first-quote))))))]
-			   ))]))))))))))
+				(cdr (vector-ref quotes (car first-quote))))))]))])))))))))
 
-
-	    
-			 
-
-
+    '(define backward-match
+      (opt-lambda (edit pos first-pos
+			paren-pairs quote-pairs eol-comment-list 
+			[contain-flag #f]
+			[paren-cache #f])
+	(let ([cached (and paren-cache
+			   (not contain-flag)
+			   (send paren-cache get pos))])
+	  (or cached
+	      (let ([ans (backward-match-engine edit pos first-pos
+						paren-pairs quote-pairs eol-comment-list 
+						contain-flag
+						paren-cache)])
+		(when (and paren-cache
+			   (not contain-flag))
+		  (send paren-cache put pos ans))
+		ans))))))

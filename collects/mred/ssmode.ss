@@ -392,161 +392,159 @@
 	       scheme-mode-match-round-to-square?)]
 	    [tabify    
 	     (opt-lambda (edit [pos (send edit get-start-position)])
-	       (let* ([last-pos (send edit last-position)]
-		      [para (send edit position-paragraph pos)]
-		      [okay (> para 0)]
-		      [end (if okay (send edit paragraph-start-position para) 0)]
-		      [limit (get-limit edit pos)]
-		      [contains 
-		       (if okay
-			   (begin
-			     (send backward-cache invalidate end)
-			     (mred:scheme-paren:scheme-backward-containing-sexp 
-			      edit end limit backward-cache))
-			   #f)]
-		      [contain-para (if contains
-					(send edit position-paragraph contains))]
-		      [last 
-		       (if contains
-			   (mred:scheme-paren:scheme-backward-match 
-			    edit end limit backward-cache) 
-			   #f)]
-		      [last-para (if last 
-				     (send edit position-paragraph last))])
-		 (letrec	
-		     ([find-offset
-		       (lambda (edit pos)
-			 (let loop ([p pos][o 0])
-			   (let ([c (send edit get-character p)])
-			     (cond
-			       [(char=? c #\tab)
-				(loop (add1 p) (+ o (- 8 (modulo o 8))))]
-			       [(char=? c #\newline)
-				(cons o p)]
-			       [(char-whitespace? c)
-				(loop (add1 p) (add1 o))]
-			       [else
-				(cons o p)]))))]
-		      [visual-offset
-		       (lambda (edit pos)
-			 (let loop ([p (sub1 pos)])
-			   (let ([c (send edit get-character p)])
-			     (cond
-			       [(= p -1) 0]
-			       [(char=? c #\null) 0]
-			       [(char=? c #\tab)
-				(let ([o (loop (sub1 p))])
-				  (+ o (- 8 (modulo o 8))))]
-			       [(char=? c #\newline) 0]
-			       [else (add1 (loop (sub1 p)))]))))]
-		      [do-indent
-		       (lambda (amt)
-			 (let* ([pos-start end]
-				[curr-offset (find-offset edit pos-start)])
-			   (if (not (= amt (car curr-offset)))
-			       (begin
-				 (send edit delete pos-start (cdr curr-offset))
-				 (send edit insert
-				       (string-append
-					(make-string (quotient amt tab-size) #\tab)
-					(make-string (remainder amt tab-size)
-						     #\space))
-				       pos-start)))))]
-		      [id-walker
-		       (lambda (str-list)
-			 (if (null? str-list) 0
-			     (let ([current (car str-list)])
-			       (if (or (char-alphabetic? current)
-				       (char-numeric? current))
-				   (add1 (id-walker (cdr str-list)))
-				   (case current
-				     ((#\+ #\- #\. #\* #\/ #\< #\= #\> #\! #\? #\:
-				       #\$ #\% #\_ #\& #\^ #\~)
-				      (add1 (id-walker (cdr str-list))))
-				     (else 0))))))]
-		      [get-proc
-		       (lambda ()
-			 (let* ([text (send edit get-text contains
-					    (send edit paragraph-end-position 
-						  contain-para))])
-			   (substring text 0 (id-walker (string->list text)))))]
-		      [procedure-indent
-		       (lambda ()
-			 (let* ([proc-name (get-proc)])
-			   (case (hash-table-get indents
-						 (string->symbol proc-name)
-						 (lambda () 'other))
-			     [(define) 1]
-			     [(begin) 1]
-			     [(lambda) 3]
-			     [else 0])))]
-		      [special-check
-		       (lambda ()
-			 (let* ([proc-name (get-proc)]
-				[which (hash-table-get indents
-						       (string->symbol proc-name)
-						       (lambda () 'other))])
-			   (or (eq? which 'define)
-			       (eq? which 'lambda))))]
-		      [indent-first-arg
-		       (lambda (start)
-			 (car (find-offset edit start)))])
-		   (if (and okay
-			    (not (char=? (send edit get-character (sub1 end))
-					 #\newline)))
-		       (send edit insert (string #\newline) 
-			     (send edit paragraph-start-position para)))
-		   (cond   
-		     [(let ([real-start (cdr (find-offset edit end))]) 
-			(if
-			 (and(<= (+ 3 real-start) (send edit last-position))
-			     (string=? ";;;"
-				       (send edit get-text real-start (+ 3 real-start))))
-			 real-start
-			 #f))
-		      => (lambda (x) (send edit set-position x))]
-		     [(= para 0)(do-indent 0)]
-		     [(or (not contains)(= contains -1))
-		      (do-indent 0)]
-		     [(= contains last)
-		      (do-indent (+ (visual-offset edit contains)
-				    (procedure-indent)))]
-		     [(special-check)
-		      (do-indent (add1 (visual-offset edit contains)))]
-		     [(= contain-para last-para)
-		      (let ([name-length 
-			     (id-walker (string->list 
-					 (send edit get-text contains
+		(let* ([last-pos (send edit last-position)]
+		       [para (send edit position-paragraph pos)]
+		       [okay (> para 0)]
+		       [end (if okay (send edit paragraph-start-position para) 0)]
+		       [limit (get-limit edit pos)]
+		       [contains 
+			(if okay
+			    (mred:scheme-paren:scheme-backward-containing-sexp 
+			     edit end limit backward-cache)
+			    #f)]
+		       [contain-para (and contains
+					  (send edit position-paragraph contains))]
+		       [last 
+			(if contains
+			    (mred:scheme-paren:scheme-backward-match 
+			     edit end limit backward-cache)
+			    #f)]
+		       [last-para (if last 
+				      (send edit position-paragraph last))])
+		  (letrec	
+		      ([find-offset
+			(lambda (edit pos)
+			  (let loop ([p pos][o 0])
+			    (let ([c (send edit get-character p)])
+			      (cond
+				[(char=? c #\tab)
+				 (loop (add1 p) (+ o (- 8 (modulo o 8))))]
+				[(char=? c #\newline)
+				 (cons o p)]
+				[(char-whitespace? c)
+				 (loop (add1 p) (add1 o))]
+				[else
+				 (cons o p)]))))]
+		       [visual-offset
+			(lambda (edit pos)
+			  (let loop ([p (sub1 pos)])
+			    (let ([c (send edit get-character p)])
+			      (cond
+				[(= p -1) 0]
+				[(char=? c #\null) 0]
+				[(char=? c #\tab)
+				 (let ([o (loop (sub1 p))])
+				   (+ o (- 8 (modulo o 8))))]
+				[(char=? c #\newline) 0]
+				[else (add1 (loop (sub1 p)))]))))]
+		       [do-indent
+			(lambda (amt)
+			  (let* ([pos-start end]
+				 [curr-offset (find-offset edit pos-start)])
+			    (unless (= amt (car curr-offset))
+			      (send* edit
+				(delete pos-start (cdr curr-offset))
+				(insert
+				 (string-append
+				  (make-string (quotient amt tab-size) #\tab)
+				  (make-string (remainder amt tab-size)
+					       #\space))
+				 pos-start)))))]
+		       [id-walker
+			(lambda (string)
+			  (let ([last (string-length string)])
+			    (let loop ([index 0])
+			      (if (= index last)
+				  last
+				  (let ([current (string-ref string index)])
+				    (if (or (char-alphabetic? current)
+					    (char-numeric? current))
+					(loop (add1 index))
+					(case current
+					  [(#\+ #\- #\. #\* #\/ #\< #\= #\> #\! #\? #\:
+					    #\$ #\% #\_ #\& #\^ #\~)
+					   (loop (add1 index))]
+					  [else index])))))))]
+		       [get-proc
+			(lambda ()
+			  (let* ([text (send edit get-text contains
+					     (send edit paragraph-end-position 
+						   contain-para))])
+			    (hash-table-get indents
+					    (string->symbol (substring text 0 (id-walker text)))
+					    (lambda () 'other))))]
+		       [procedure-indent
+			(lambda ()
+			  (case (get-proc)
+			    [(define) 1]
+			    [(begin) 1]
+			    [(lambda) 3]
+			    [else 0]))]
+		       [special-check
+			(lambda ()
+			  (let* ([proc-name (get-proc)])
+			    (or (eq? proc-name 'define)
+				(eq? proc-name 'lambda))))]
+		       [indent-first-arg
+			(lambda (start)
+			  (car (find-offset edit start)))])
+		    (when (and okay
+			       (not (char=? (send edit get-character (sub1 end))
+					    #\newline)))
+		      (send edit insert #\newline
+			    (send edit paragraph-start-position para)))
+		    (cond   
+		      [(let ([real-start (cdr (find-offset edit end))]) 
+			 (if (and (<= (+ 3 real-start) (send edit last-position))
+				  (string=? ";;;"
+					    (send edit get-text real-start (+ 3 real-start))))
+			     real-start
+			     #f))
+		       => (lambda (x) (send edit set-position x))]
+		      [(= para 0) (do-indent 0)]
+		      [(or (not contains) (= contains -1))
+		       (do-indent 0)]
+		      [(= contains last)
+		       (do-indent (+ (visual-offset edit contains)
+				     (procedure-indent)))]
+		      [(special-check)
+		       (do-indent (add1 (visual-offset edit contains)))]
+		      [(= contain-para last-para)
+		       (let ([name-length 
+			      (id-walker (send edit get-text contains
 					       (send edit paragraph-end-position
-						     contain-para))))])
-			(do-indent (+ (visual-offset edit contains)
-				      name-length
-				      (indent-first-arg (+ contains 
-							   name-length)))))]
-		     [else
-		      (do-indent (indent-first-arg 
-				  (send edit paragraph-start-position
-					last-para)))]))))]
+						     contain-para)))])
+			 (do-indent (+ (visual-offset edit contains)
+				       name-length
+				       (indent-first-arg (+ contains 
+							    name-length)))))]
+		      [else
+		       (do-indent (indent-first-arg 
+				   (send edit paragraph-start-position
+					 last-para)))]))))]
 	    [tabify-selection
 	     (opt-lambda (edit 
 			  [start-pos (send edit get-start-position)]
 			  [end-pos (send edit get-end-position)])
 	       (let ([first-para (send edit position-paragraph start-pos)]
 		     [end-para (send edit position-paragraph end-pos)])
-		 (dynamic-wind
-		  (lambda () 
-		    (if (< first-para end-para)
+		 (with-handlers ([exn:misc:user-break?
+				  (lambda (x) #t)])
+		   (dynamic-wind
+		    (lambda () 
+		      (when (< first-para end-para)
 			(wx:begin-busy-cursor))
-		    (send edit begin-edit-sequence))
-		  (lambda ()
-		    (let loop ([para first-para])
-		      (when (<= para end-para)
-			(tabify edit (send edit paragraph-start-position para))
-			(loop (add1 para))))
-		    (if (and (>= (send edit position-paragraph start-pos) end-para)
-			     (<= (mred:paren:skip-whitespace 
-				  edit (send edit get-start-position) -1)
-				 (send edit paragraph-start-position first-para)))
+		      (send edit begin-edit-sequence))
+		    (lambda ()
+		      (let loop ([para first-para])
+			(when (<= para end-para)
+			  (tabify edit (send edit paragraph-start-position para))
+			  (dynamic-enable-break (lambda () (break-enabled)))
+			  (loop (add1 para))))
+		      (when (and (>= (send edit position-paragraph start-pos) end-para)
+				 (<= (mred:paren:skip-whitespace 
+				      edit (send edit get-start-position) -1)
+				     (send edit paragraph-start-position first-para)))
 			(send edit set-position 
 			      (let loop ([new-pos (send edit get-start-position)])
 				(if (let ([next (send edit get-character new-pos)])
@@ -554,10 +552,10 @@
 					   (not (char=? next #\newline))))
 				    (loop (add1 new-pos))
 				    new-pos)))))
-		  (lambda ()
-		    (send edit end-edit-sequence)
-		    (if (< first-para end-para)
-			(wx:end-busy-cursor))))))]
+		    (lambda ()
+		      (send edit end-edit-sequence)
+		      (when (< first-para end-para)
+			(wx:end-busy-cursor)))))))]
 	    [tabify-all
 	     (lambda (edit)
 	       (tabify-selection edit 0 (send edit last-position)))]

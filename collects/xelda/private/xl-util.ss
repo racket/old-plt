@@ -8,9 +8,15 @@
    numbers->cellref
    cellref->numbers
    split-string
+   in-list?
    to-lower
    left-of
    top-of)   
+  
+  (define (in-list? e l)
+    (cond [(empty? l) #f]
+          [(equal? e (first l)) #t]
+          [else (in-list? e (rest l))]))
   
   (define (to-lower str)
     (letrec ([loop (lambda (l)

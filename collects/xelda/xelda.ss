@@ -29,12 +29,72 @@
 (define all-units #f)
 (define all-dollar-formats #f)
 (define hashed-units #f)
+(define hashed-vars #f)
+(define hashed-constraints-vars #f)
+(define constraints #f)
 (define all-leaves-units #f)
 (define error-cells #f)
 (define colored-dependents #f)
 
 (define-struct dependent (count orig-color) (make-inspector))
 
+;; Constraint functions
+(define (init-constraints) (set! constraints (list empty empty)))
+
+(define (push-constraint c)
+  (cond ([eq? (first c) '=] (set! constraints (list (cons c (first constraints))
+                                                    (second constraints))))
+        [else (set! constraints (list (first constraints)
+                                      (cons c (second constraints))))]))
+
+(define (pop-eq-constraint)
+  (let ([c (first (first constraints))])
+    (set! constraints (list (rest (first constraints)) (second constraints)))
+    c))
+
+(define (pop-fun-constraint)
+  (let ([c (first (second constraints))])
+    (set! constraints (list (first constraint) (rest (second constraint))))
+    c))
+
+(define (constraint-var c) (second c))
+(define (constraint-operator c) (first c))
+(define (constraint-left-side c) (third c))
+(define (constraint-right-side c) (fourth c))
+
+(define (eq-constraints-left) (length (first constraints)))
+
+(define (fun-constraints-left) (length (second constraints)))
+
+(define (eq-constraints-left?) (not (empty? (first constraints))))
+
+(define (fun-constraints-left?) (not (empty? (secons constraints))))
+
+(define (show-constraints)
+  (for-each (lambda (c) (printf "constraint: ~a~n" c)) (first constraints))
+  (for-each (lambda (c) (printf "constraint: ~a~n" c)) (second constraints)))
+
+(define (replace-in-constraints sym1 sym2)
+  (let* ([replace (lambda (l) 
+                    (map (lambda (s)
+                           (cond [(eq? s sym1) sym2]
+                                 [else s]))
+                         l))]
+         [map-replace 
+          (lambda (c)
+            (cond [(symbol? sym2) (replace c)]
+                  [else 
+                   (cons (constraint-operator c) 
+                         (cons (constraint-var c)
+                               (replace (rest (rest c)))))]))])
+    (set! constraints 
+          (list
+           (remove-duplicates
+            (filter (lambda (c) (not (eq? (second c) (third c))))
+                    (map map-replace (first constraints))))
+           (remove-duplicates (map map-replace (second constraints)))))))
+
+;; Event handlers
 (com-register-event-handler 
  xl "SheetBeforeRightClick"
  (lambda (ws rng b)
@@ -412,6 +472,9 @@
                                   "Text")))))
                 pair?))))
   (set! hashed-units (make-hash-table))
+  (set! hashed-vars (make-hash-table))
+  (set! hashed-constraints-vars (make-hash-table))
+  (init-constraints)
   (set! all-leaves-units
         (begin
           (printf "DONE~nComputing all leaves units.... ")
@@ -746,7 +809,7 @@
                  ((empty-unit? prec-unit) num-unit)
                  (else '((error/non-empty-precision 1))))))
             (else (error fun "illegal use")))]
-         [(large) (let ([split-units (split-list arg-units empty-unit?)])
+         [(large) (let ([split-units (split-large-args arg-units empty-unit?)])
                     (cond
                       ((= 1 (length (car split-units)))
                        (check-equal-units (cadr split-units)))
@@ -813,12 +876,414 @@
                 (printf "Computed unit for cell ~a~n" (car f))))
             all-formulas))
 
-(define (is-error-unit? u)
-  (let ([str (symbol->string (car (first u)))])
+(define (compute-formulas-circular)
+  (assign-variables)
+  (create-constraints)
+  (prune-constraints)
+  (flatten-constraints)
+  (solve-constraints))
+
+(define (assign-variables)
+  (for-each (lambda (f)
+              (let ([a_s (string->symbol (string-append "a_" (symbol->string (gensym))))])
+                (hash-table-put! hashed-vars a_s (list (car f) '((error/missing-units))))
+                (hash-table-put! hashed-units (car f) a_s)))
+            all-formulas))
+
+(define (create-constraints)
+  (for-each (lambda (f)
+              (let ([a_s (hash-table-get hashed-units (car f))])
+                (create-constraints-for-formula a_s (cadr f) (car f))))
+            all-formulas))
+
+(define (create-constraints-for-formula sym formula cell-loc)
+  (match formula
+    [($ xl-number name deps val) (push-constraint (list '= sym (empty-unit)))]
+    [($ cell-ref name cell-name)
+     (cond [(in-hash? hashed-units name)
+            (push-constraint
+             (list '= sym (hash-table-get hashed-units name)))]
+           [else (push-constraint (list '= sym (empty-unit)))])]
+    [($ named-cell-ref name cell-name actual-name)
+     (cond [(in-hash? hashed-units name)
+            (push-constraint
+             (list '= sym (hash-table-get hashed-units name)))]
+           [else (push-constraint (list '= sym (empty-unit)))])]
+    [($ binary-op name deps op arg1 arg2)
+     (case op
+       [(+ -)
+        (push-constraint 
+         (list '= sym (create-constraints-for-formula (gensym) arg1 cell-loc)))
+        (push-constraint
+         (list '= sym (create-constraints-for-formula (gensym) arg2 cell-loc)))]
+       [(*) 
+        (push-constraint 
+         (list '@ sym 
+               (create-constraints-for-formula (gensym) arg1 cell-loc)
+               (create-constraints-for-formula (gensym) arg2 cell-loc)))]
+       [(/) 
+        (push-constraint 
+         (list '@/ sym
+               (create-constraints-for-formula (gensym) arg1 cell-loc)
+               (create-constraints-for-formula (gensym) arg2 cell-loc)))]
+       [(^)
+        (push-constraint
+         (list '= (create-constraints-for-formula (gensym) arg2 cell-loc) (empty-unit)))])]
+    [($ boolean-op name deps op arg1 arg2)
+     (push-constraint 
+      (list '= 
+            (create-constraints-for-formula (gensym) arg1 cell-loc)
+            (create-constraints-for-formula (gensym) arg2 cell-loc)))
+     (push-constraint (list '= sym (empty-unit)))]
+    [($ unary-op name deps op arg)
+     (push-constraint
+      (list '= sym (create-constraints-for-formula (gensym) arg cell-loc)))]
+    [($ tbl-left name deps input-cell)
+     (let* ([input-cell-sym (create-constraints-for-formula 
+                             (gensym)
+                             (make-cell-ref input-cell empty)
+                             input-cell)]
+            [left-cell (left-of cell-loc)]
+            [formula-cell (get-formula-loc-up cell-loc)]
+            [formula-sym (create-constraints-for-formula 
+                          (gensym) 
+                          (make-cell-ref formula-cell empty)
+                          formula-cell)]
+            [left-cell-sym (create-constraints-for-formula
+                            (gensym) 
+                            (make-cell-ref left-cell empty)
+                            left-cell)])
+       (push-constraint (list '= left-cell-sym input-cell-sym))
+       (push-constraint (list '= sym formula-sym)))]
+    [($ tbl-top name deps input-cell)
+     (let* ([input-cell-sym (create-constraints-for-formula 
+                             (gensym)
+                             (make-cell-ref input-cell empty)
+                             input-cell)]
+            [top-cell (top-of cell-loc)]
+            [formula-cell (get-formula-loc-left cell-loc)]
+            [formula-sym (create-constraints-for-formula
+                          (gensym) 
+                          (make-cell-ref formula-cell empty)
+                          formula-cell)]
+            [top-cell-sym (create-constraints-for-formula 
+                           (gensym) 
+                           (make-cell-ref top-cell empty)
+                           top-cell)])
+       (push-constraint (list '= top-cell-sym input-cell-sym))
+       (push-constraint (list '= sym formula-sym)))]
+    [($ application name deps fun args) 
+     (let ([arg-syms (map (lambda (a)
+                            (create-constraints-for-formula (gensym) a cell-loc)) args)])
+       (case fun
+         [(average sum min max)
+          (for-each (lambda (s)
+                      (push-constraint (list '= sym s))) arg-syms)]
+         [(not or and)
+          (for-each (lambda (s)
+                      (push-constraint (list '= s empty-unit))) arg-syms)
+          (push-constraint (list '= sym (empty-unit)))]
+         [(if) (cond
+                 [(= 3 (length args))
+                  (let ([if-sym (second arg-syms)]
+                        [else-sym (third arg-syms)]
+                        [test-sym (first arg-syms)])
+                    (push-constraint (list '= test-sym (empty-unit)))
+                    (push-constraint (list '= if-sym else-sym))
+                    (push-constraint (list '= sym if-sym)))]
+                 [else (error fun "illegal use")])]
+         [(abs) (cond
+                  [(= 1 (length args)) (push-constraint (list '= sym (first arg-syms)))]
+                  [else (error fun "illegal use")])]
+         [(ceiling round)
+          (cond
+            [(= 2 (length args))
+             (let ([num-sym (first arg-syms)]
+                   [prec-sym (second arg-syms)])
+               (push-constraint (list '= prec-sym (empty-unit)))
+               (push-constraint (list '= sym num-sym)))]
+            [else (error fun "illegal use")])]
+         [(large) (let* ([k-sym (first (reverse arg-syms))]
+                         [array-syms (reverse (rest (reverse arg-syms)))])
+                    (push-constraint (list '= k-sym (empty-unit)))
+                    (for-each (lambda (s)
+                                (push-constraint (list '= sym s)))
+                              array-syms))]
+         [(acos acosh asin asinh atan atanh cos cosh sin sinh tan tanh)
+          (let ([arg-sym (first arg-syms)])
+            (cond [(= 1 (length args))
+                   (push-constraint (list '= arg-sym (empty-unit)))
+                   (push-constraint (list '= sym (empty-unit)))]
+                  [else (error fun "illegal use")]))]
+         [(fact) (let ([arg-sym (first arg-syms)])
+                   (cond
+                     [(= 1 (length args))
+                      (push-constraint (list '= arg-sym (empty-unit)))
+                      (push-constraint (list '= sym (empty-unit)))]
+                     [else (error fun "illegal use")]))]
+         [(isnumber)
+          (cond [(= 1 (length arg-syms)) (push-constraint (list '= sym (empty-unit)))]
+                [else (error fun "illegal use")])]
+         [(median)
+          (for-each (lambda (s) (push-constraint (list '= sym s))) arg-syms)]
+         [(mod)
+          (cond [(= 2 (length args)) (push-constraint (list '= sym (first arg-syms)))]
+                [else (error fun "illegal use")])]
+         [(na pi) (cond [(empty? args) (push-constraint (list '= sym (empty-unit)))]
+                        [else (error fun "illegal use")])]
+         [(mmult) (let* ([formula-text (lookup-formula-text cell-loc)]
+                         [Ms (identify-matrices
+                              (substring formula-text 7
+                                         (sub1 (string-length formula-text))))])
+                    (cond
+                      [(= 2 (length Ms))
+                       (let* ([cell-xy (get-row-col-num cell-loc)]
+                              [M1-row (car cell-xy)]
+                              [M2-col (cadr cell-xy)]
+                              [M1-row-sym (gensym)]
+                              [M2-col-sym (gensym)])
+                         (for-each (lambda (s)
+                                     (push-constraint (list '= M1-row-sym s)))
+                                   (matrix-row-syms (car Ms) M1-row))
+                         (for-each (lambda (s)
+                                     (push-constraint (list '= M2-col-sym s)))
+                                   (matrix-col-syms (cadr Ms) M2-col))
+                         (push-constraint (list '@ sym M1-row-sym M2-col-sym)))]
+                      [else (error fun "illegal use")]))]         
+         [else (push-constraint (list '= sym '((error/unimplemented-function))))]))])
+  sym)
+
+(define (alpha-var? a)
+  (and (symbol? a) (char=? #\a (string-ref (symbol->string a) 0))))
+
+(define (prune-constraints)
+  (letrec ([loop (lambda ()
+                   (when (eq-constraints-left?)
+                     (let* ([c (pop-eq-constraint)]
+                            [get-syms 
+                             (lambda (c)
+                               (cond [(or (and (symbol? (third c))
+                                               (not (alpha-var? (third c))))
+                                          (list? (second c)))
+                                      (list (third c) (second c))]
+                                     [else (list (second c) (third c))]))]
+                            [syms (get-syms c)]
+                            [sym1 (first syms)]
+                            [sym2 (second syms)])
+                       (when (symbol? sym1)
+                         (replace-in-constraints sym1 sym2)
+                         (replace-in-constraints-vars sym1 sym2))
+                       (when (alpha-var? sym1)
+                         (add-to-constraints-vars sym1 sym2))
+                       (loop))))])
+    (loop)))
+
+(define (add-to-constraints-vars sym1 sym2)
+  (cond [(in-hash? hashed-constraints-vars sym1)
+         (hash-table-put!
+          hashed-constraints-vars sym1
+          (cons sym2 (hash-table-get hashed-constraints-vars sym1)))]
+        [else 
+         (hash-table-put! hashed-constraints-vars 
+                          sym1 
+                          (list sym2))]))
+
+(define (replace-in-constraints-vars sym1 sym2)
+  (hash-table-for-each 
+   hashed-constraints-vars
+   (lambda (key val)
+     (hash-table-put! hashed-constraints-vars key
+                      (map (lambda (s)
+                             (cond [(eq? sym1 s) sym2]
+                                   [else s]))
+                           val)))))
+
+(define (flatten-constraints)
+  (let ([flat-constraints 
+         (map (lambda (c)
+                (cons (constraint-var c) (cons '= (flatten-constraint empty c))))
+              (second constraints))])
+    (set! constraints (list (first constraints) (normalize-constraints flat-constraints)))))
+
+(define (flatten-constraint deps constraint)
+  (let ([left-side (constraint-left-side constraint)]
+        [right-side (constraint-right-side constraint)]
+        [operator (constraint-operator constraint)]
+        [var (constraint-var constraint)])
     (cond
-      ((and (> (string-length str) 6)
-            (string=? (substring str 0 6) "error/")) #t)
-      (else #f))))
+      [(and (symbol? left-side) (symbol? right-side))
+       (append (expand-var left-side (cons var deps))
+               (cons operator 
+                     (expand-var right-side (cons var deps))))]
+      [(symbol? left-side)
+       (append (expand-var left-side (cons var deps))
+               (list operator right-side))]
+      [(symbol? right-side)
+       (append (list left-side operator)
+               (expand-var right-side (cons var deps)))]
+      [else (list left-side operator right-side)])))
+
+(define (normalize-constraints constraints)
+  (letrec ([to-dims 
+            (lambda (l)
+              (cond [(empty? l) empty]
+                    [(eq? '@ (first l))
+                     (cond [(symbol? (second l))
+                            (cons (list (list (second l) 1))
+                                  (to-dims (rest (rest l))))]
+                           [else (cons (second l)
+                                       (to-dims (rest (rest l))))])]
+                    [(eq? '@/ (first l))
+                     (cond [(symbol? (second l))
+                            (cons (list (list (second l) -1))
+                                  (to-dims (rest (rest l))))]
+                           [else (cons (list (list (first (first (second l)))
+                                                   (- 0 (second (first (second l))))))
+                                       (to-dims (rest (rest l))))])]
+                    [else
+                          (cond [(symbol? (second l))
+                            (cons (list (list (second l) 1))
+                                  (to-dims (rest (rest l))))]
+                           [else (cons (second l) (to-dims (rest (rest l))))])]))]
+           [simplify (lambda (l)
+                       (cond [(= 1 (length l)) (first l)]
+                             [else (gen-mult-units (first l) (simplify (rest l)))]))])
+    (filter 
+     (lambda (c)
+      (not (and (= 3 (length c))
+                (eq? (first c) (third c)))))
+     (map 
+      (lambda (c)
+        (if (= 3 (length c))
+            (if (eq? (first (third c)) 'empty-unit)
+                (cons (first c) (cons (second c) (empty-unit)))
+                c)
+            (cons 
+             (first c)
+             (cons
+              (second c)
+              (filter
+               (lambda (u)
+                 (not (eq? (first u) 'empty-unit))) (rest (rest c)))))))
+      (map 
+       (lambda (c)
+         (cons (first c) (cons (second c) (simplify (rest (rest c))))))
+       (map 
+        (lambda (c)
+          (cons (first c) (cons (second c) (to-dims (cons '@ (rest (rest c)))))))
+        constraints))))))
+
+(define (solve-constraints)
+  (let* ([cs (second constraints)]
+         [solved-cs (second-pass-solving-constraints
+                     (first-pass-solving-constraints cs))])
+    (set! constraints (list (first constraints) solved-cs))
+    (resolve-constraints-vars)
+    (replace-constraints-vars)))
+
+(define (first-pass-solving-constraints cs)
+  (for-each
+   (lambda (c)
+     (let ([var (first c)]
+           [right-side (rest (rest c))])
+       (when (not (not (assq var right-side)))
+         (let ([var_exp (- (second (assq var right-side)) 1)])
+           (cond [(= 0 var_exp) (add-to-constraints-vars var '((error/infinity 1)))]
+                 [(empty? (filter (lambda (u) (not (symbol? (first u))))
+                                  right-side))
+                  (for-each 
+                   (lambda (u)
+                     (when (symbol? (first u))
+                       (add-to-constraints-vars (first u) (empty-unit))))
+                   right-side)]
+                 [else (add-to-constraints-vars var '((error/not-empty 1)))])))))
+   cs)
+  (filter 
+   (lambda (c) (not (assq (first c) (rest (rest c)))))
+   cs))
+
+(define (second-pass-solving-constraints cs)
+  (for-each
+   (lambda (c)
+     (let ([right-side (rest (rest c))])
+       (cond
+         [(ormap (lambda (u) (symbol? (first u))) right-side)
+          (add-to-constraints-vars (first c) '((error/infinity)))
+          (for-each
+           (lambda (u)
+             (when (symbol? (first u))
+               (add-to-constraints-vars (first u) '((error/infinity)))))
+           right-side)]
+         [else
+          (add-to-constraints-vars (first c) right-side)])))
+   cs)
+  empty)
+
+(define (resolve-constraints-vars)
+  (hash-table-for-each
+   hashed-constraints-vars
+   (lambda (var vals) (resolve-constraints-var var))))
+
+(define (resolve-constraints-var var)
+  (let* ([vals (hash-table-get hashed-constraints-vars var)]
+         [vars-dims (split-list vals (lambda (v) (symbol? v)))]
+         [vars (first vars-dims)]
+         [dims (second vars-dims)]
+         [dims-only 
+          (append  dims
+                   (map 
+                    (lambda (var)
+                      (resolve-constraints-var var)
+                      (first (hash-table-get hashed-constraints-vars var)))
+                    vars))]
+         [errs-actual-dims (split-list dims-only is-error-unit?)]
+         [errs (filter (lambda (e)
+                         (not (eq? (first (first e)) 'error/infinity)))
+                       (first errs-actual-dims))]
+         [actual-dims (second errs-actual-dims)])
+    (cond
+      [(not (empty? errs)) (hash-table-put! hashed-constraints-vars
+                                            var
+                                            (list (first errs)))]
+      [(empty? actual-dims) (hash-table-put! hashed-constraints-vars
+                                              var
+                                              '(((error/missing-dims 1))))]
+      [(= 1 (length actual-dims)) (hash-table-put! hashed-constraints-vars
+                                                   var
+                                                   actual-dims)]
+      [else (hash-table-put! hashed-constraints-vars
+                             var
+                             (list (check-equal-units actual-dims)))])))
+
+(define (replace-constraints-vars)
+  (hash-table-for-each
+   hashed-constraints-vars
+   (lambda (var val)
+     (when (alpha-var? var)
+       (let ([cell-loc (first (hash-table-get hashed-vars var))])
+         (hash-table-put! hashed-vars var (list cell-loc (first val)))
+         (hash-table-put! hashed-units cell-loc (first val)))))))
+         
+(define (expand-var var deps)
+  (if (and (in-constraints? var)
+           (not (in-list? var deps)))
+      (flatten-constraint deps (get-constraint var))
+      (list var)))
+
+(define (in-constraints? var)
+  (ormap (lambda (c) (eq? var (second c))) (second constraints)))
+
+(define (get-constraint var)
+  (first (filter (lambda (c) (eq? var (second c))) (second constraints))))
+
+(define (is-error-unit? u)
+  (if (and (list? u) (pair? (first u)))
+      (let ([str (symbol->string (car (first u)))])
+        (cond
+          ((and (> (string-length str) 6)
+                (string=? (substring str 0 6) "error/")) #t)
+          (else #f)))
+      #f))
 
 (define (mark-error-cells)
   (hash-table-for-each
@@ -924,6 +1389,12 @@
   (compare-actual-annotated)
   (update-status! (format "-----------------UNIT CHECKING DONE!---------------~n")))
 
+(define (unit-check-circular)
+  (compute-formulas-circular)
+  (mark-error-cells)
+  (compare-actual-annotate)
+  (update-status! (format "-----------------UNIT CHECKING DONE!----------------~n")))
+
 (define (cellref->rng cell)
   (let ([xy (cellref->numbers cell)])
     (get-cell (cadr xy) (car xy))))
@@ -986,6 +1457,20 @@
                  (else (empty-unit))))
          row-cells)))
 
+(define (matrix-row-syms M row)
+  (let ([row-cells (get-range-cells (first-cell-in-row M row)
+                                    (last-cell-in-row M row))])
+    (map (lambda (cellref)
+           (let ([sym (gensym)])
+             (cond [(in-hash? hashed-units cellref)
+                    (let ([u (hash-table-get hashed-units cellref)])
+                      (cond [(in-hash? hashed-vars u) u]
+                            [else (push-constraint (list '= sym u)) 
+                                  sym]))]
+                   [else (push-constraint (list '= sym (empty-unit)))
+                         sym])))
+         row-cells)))
+
 (define (first-cell-in-row M row)
   (let ([xy (cellref->numbers (car M))])
     (numbers->cellref (list (sub1 (car xy)) (+ (cadr xy) row)))))
@@ -1002,6 +1487,20 @@
            (cond ((in-hash? hashed-units cellref)
                   (hash-table-get hashed-units cellref))
                  (else (empty-unit))))
+         col-cells)))
+
+(define (matrix-col-syms M col)
+  (let ([col-cells (get-range-cells (first-cell-in-col M col)
+                                    (last-cell-in-col M col))])
+    (map (lambda (cellref)
+           (let ([sym (gensym)])
+             (cond [(in-hash? hashed-units cellref)
+                    (let ([u (hash-table-get hashed-units cellref)])
+                      (cond [(in-hash? hashed-vars u) u]
+                            [else (push-constraint (list '= sym u)) 
+                                  sym]))]
+                   [else (push-constraint (list '= sym (empty-unit)))
+                         sym])))
          col-cells)))
 
 (define (first-cell-in-col M col)
@@ -1054,3 +1553,11 @@
                   valid-us)
              '())))
       (else '()))))
+
+(define (split-large-args l)
+  (letrec ([loop (lambda (l1 l2)
+                   (cond [(= (length l1) 1) (list l1 l2)]
+                         [else (loop (rest l1) (cons (first l1) l2))]))])
+    (cond
+      [(empty? l) (list empty empty)]
+      [else (loop l empty)])))

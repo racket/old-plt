@@ -7,7 +7,7 @@
            (lib "list.ss")
            (prefix drscheme:arrow: "arrow.ss")
            (prefix fw: (lib "framework.ss" "framework"))
-           (prefix mred: (lib "mred.ss" "mred")))
+           (lib "mred.ss" "mred"))
   (provide tool@)
   
   (define tool@
@@ -66,7 +66,7 @@
       
       (define unmarshall-style
         (lambda (info)
-          (let ([style (make-object mred:style-delta%)])
+          (let ([style (make-object style-delta%)])
             (for-each (lambda (fs v) ((cdr fs) style v)) style-delta-get/set info)
             style)))
       
@@ -84,7 +84,7 @@
                (cons
                 (string->symbol (prefix-style (car x)))
                 (cdr x)))
-             (if ((mred:get-display-depth) . < . 8)
+             (if ((get-display-depth) . < . 8)
                  bw-default-code-styles
                  color-default-code-styles)))
       
@@ -106,10 +106,10 @@
                       [color (code-style-color code-style)])
                  (fw:preferences:set-default
                   sym
-                  (let ([s (make-object mred:style-delta%)])
+                  (let ([s (make-object style-delta%)])
                     (send s set-delta-foreground (if (string? color)
                                                      color
-                                                     (make-object mred:color%
+                                                     (make-object color%
                                                        (car color)
                                                        (cadr color)
                                                        (caddr color))))
@@ -121,7 +121,7 @@
                       (send s set-delta 'change-italic))
                     s)
                   (lambda (x)
-                    (is-a? x mred:style-delta%)))))])
+                    (is-a? x style-delta%)))))])
         (for-each set-default prefixed-code-styles))
       
       (for-each 
@@ -148,7 +148,7 @@
       ;; used for quicker debugging of the preference panel
       '(define test-preference-panel
          (lambda (name f)
-           (let ([frame (make-object mred:frame% name)])
+           (let ([frame (make-object frame% name)])
              (f frame)
              (send frame show #t))))
       
@@ -160,8 +160,8 @@
               (lambda (sym parent)
                 (let* ([delta (fw:preferences:get sym)]
                        [style-name (symbol->string sym)]
-                       [h (make-object mred:horizontal-panel% parent '(border))]
-                       [c (make-object mred:editor-canvas% h
+                       [h (make-object horizontal-panel% parent '(border))]
+                       [c (make-object editor-canvas% h
                             #f
                             (list 'hide-hscroll
                                   'hide-vscroll))]
@@ -190,7 +190,7 @@
                                           (on)
                                           (off))
                                       (fw:preferences:set sym delta))]
-                                 [check (make-object mred:check-box% name h c)])
+                                 [check (make-object check-box% name h c)])
                             check))]
                        [_ (send c set-editor e)]
                        [short-style-name (substring style-name
@@ -224,18 +224,18 @@
                                       (send delta set-underlined-off #t)
                                       (send delta set-underlined-on #f)))]
                        [color-button
-                        (and (>= (mred:get-display-depth) 8)
-                             (make-object mred:button%
+                        (and (>= (get-display-depth) 8)
+                             (make-object button%
                                "Change Color"
                                h
                                (lambda (color-button evt)
                                  (let* ([add (send delta get-foreground-add)]
-                                        [color (make-object mred:color%
+                                        [color (make-object color%
                                                  (send add get-r)
                                                  (send add get-g)
                                                  (send add get-b))]
                                         [users-choice
-                                         (mred:get-color-from-user
+                                         (get-color-from-user
                                           (format "Choose a color for ~a~a"
                                                   short-style-name
                                                   (if (string=? "syntax" short-style-name)
@@ -251,7 +251,7 @@
                   (send bold-check set-value (eq? (send style get-weight) 'bold))
                   (send underline-check set-value (send style get-underlined))))])
          (lambda (parent)
-           (let ([v (make-object mred:vertical-panel% parent)])
+           (let ([v (make-object vertical-panel% parent)])
              (for-each (lambda (sym) (delta-panel sym v))
                        delta-symbols)
              v))))
@@ -261,9 +261,9 @@
                                            start-x start-y end-x end-y
                                            id-name same-ids))
       
-      (define tacked-brush (send mred:the-brush-list find-or-create-brush "BLUE" 'solid))
-      (define untacked-brush (send mred:the-brush-list find-or-create-brush "WHITE" 'solid))
-      (define the-pen (send mred:the-pen-list find-or-create-pen "BLUE" 1 'solid))
+      (define tacked-brush (send the-brush-list find-or-create-brush "BLUE" 'solid))
+      (define untacked-brush (send the-brush-list find-or-create-brush "WHITE" 'solid))
+      (define the-pen (send the-pen-list find-or-create-pen "BLUE" 1 'solid))
       
       (define syncheck-text<%>
         (interface ()
@@ -274,7 +274,7 @@
       
       (define make-graphics-text%
         (lambda (super%)
-          (let* ([cursor-arrow (make-object mred:cursor% 'arrow)])
+          (let* ([cursor-arrow (make-object cursor% 'arrow)])
             (class* super% (syncheck-text<%>)
               (inherit set-cursor get-admin invalidate-bitmap-cache set-position
                        position-location
@@ -429,16 +429,16 @@
                                    (cond
                                      [(procedure? arrows) (arrows)]
                                      [else
-                                      (let* ([menu (make-object mred:popup-menu% #f)])
-                                        (make-object mred:menu-item%
+                                      (let* ([menu (make-object popup-menu% #f)])
+                                        (make-object menu-item%
                                           "Tack/Untack Arrow"
                                           menu
                                           (lambda (item evt) (tack/untack-callback arrows)))
-                                        (make-object mred:menu-item%
+                                        (make-object menu-item%
                                           "Jump"
                                           menu
                                           (lambda (item evt) (jump-callback pos arrows)))
-                                        (make-object mred:menu-item%
+                                        (make-object menu-item%
                                           "Rename"
                                           menu
                                           (lambda (item evt) (rename-callback arrows)))
@@ -474,7 +474,7 @@
                          [new-id 
                           (fw:keymap:call/text-keymap-initializer
                            (lambda ()
-                             (mred:get-text-from-user
+                             (get-text-from-user
                               "Rename Identifier"
                               (format "Rename ~a to:" id-name)
                               #f
@@ -486,11 +486,11 @@
                                               ((syntax-position x) . >= . (syntax-position y))))])
                         (unless (null? to-be-renamed)
                           (let ([first-one-source (syntax-source (car to-be-renamed))])
-                            (when (is-a? first-one-source mred:text%)
+                            (when (is-a? first-one-source text%)
                               (send first-one-source begin-edit-sequence)
                               (for-each (lambda (stx) 
                                           (let ([source (syntax-source stx)])
-                                            (when (is-a? source mred:text%)
+                                            (when (is-a? source text%)
                                               (let* ([start (- (syntax-position stx) 1)]
                                                      [end (+ start (syntax-span stx))])
                                                 (send source delete start end #f)
@@ -559,7 +559,7 @@
           
           (public syncheck:clear-highlighting)
           (define (syncheck:clear-highlighting)
-            (hide-error-report-window)
+            (hide-error-report)
             (clear-highlighting))
           
           (public syncheck:enable-checking)
@@ -573,33 +573,59 @@
            [rest-panel 'uninitialized-root]
            [super-root 'uninitialized-super-root]
            [docs-panel 'uninitialized-docs-panel]
-           [docs-messages 'uninitialized-docs-lines])
+           [docs-panel-visible? #f]
+           [docs-messages 'uninitialized-docs-lines]
+           [report-error-panel 'uninitialized-report-error-panel]
+           [report-error-panel-visible? #t]
+           [report-error-text (make-object fw:text:hide-caret/selection%)])
           (override make-root-area-container)
           (define (make-root-area-container % parent)
             (let* ([s-root (super-make-root-area-container
-                            mred:vertical-panel%
+                            vertical-panel%
                             parent)]
                    [r-root (make-object % s-root)])
               (set! super-root s-root)
               (set! rest-panel r-root)
-              (set! docs-panel (make-object mred:vertical-panel% super-root))
+              (set! docs-panel (make-object vertical-panel% super-root))
               (set! docs-messages null)
               (send docs-panel set-label-font
-                    (send mred:the-font-list find-or-create-font 
+                    (send the-font-list find-or-create-font 
                           (send (send docs-panel get-label-font) get-point-size)
                           'modern 'normal 'normal #f))
               (send docs-panel stretchable-height #f)
-              (send super-root change-children (lambda (l) (list rest-panel)))
+              
+              (set! report-error-panel (instantiate horizontal-panel% ()
+                                         (parent super-root)
+                                         (stretchable-height #f)))
+              (let ([message-panel (instantiate vertical-panel% ()
+                                     (parent report-error-panel)
+                                     (stretchable-width #f)
+                                     (alignment '(left center)))])
+                (make-object message% "Check Syntax" message-panel)
+                (make-object message% "Error Message" message-panel))
+              (send (make-object editor-canvas% report-error-panel report-error-text) set-line-count 2)
+
+              (update-docs/report-error-visibility)
+              
               r-root))
-          (field
-           [docs-messages-shown? #f]
-           [docs-lines-shown? #f])
+
+          (define (update-docs/report-error-visibility)
+            (send super-root change-children 
+                  (lambda (l) 
+                    (let* ([first (if docs-panel-visible?
+                                      (list docs-panel)
+                                      null)]
+                           [snd (cons rest-panel first)]
+                           [thrd (if report-error-panel-visible?
+                                     (cons report-error-panel snd)
+                                     snd)])
+                      thrd))))
+
+
           (define (hide-docs-messages)
-            (when docs-messages-shown?
-              (set! docs-messages-shown? #f)
-              (send super-root change-children
-                    (lambda (l)
-                      (list rest-panel)))))
+            (when docs-panel-visible?
+              (set! docs-panel-visible? #f)
+              (update-docs/report-error-visibility)))
           (define (set-docs-messages lines)
             (when (< (length docs-messages) (length lines))
               (set! docs-messages
@@ -609,7 +635,7 @@
                        (cond
                          [(zero? n) null]
                          [else
-                          (let ([m (make-object mred:message% "" docs-panel)])
+                          (let ([m (make-object message% "" docs-panel)])
                             (send m stretchable-width #t)
                             (cons m (loop (- n 1))))])))))
             (let ([to-be-shown
@@ -624,18 +650,19 @@
                                     (cdr docs-messages)))]))])
               (unless (= (length to-be-shown) (length (send docs-panel get-children)))
                 (send docs-panel change-children (lambda (l) to-be-shown)))
-              (unless docs-messages-shown?
-                (set! docs-messages-shown? #t)
-                (send super-root change-children
-                      (lambda (l)
-                        (list rest-panel docs-panel))))))
+              (unless docs-panel-visible?
+                (set! docs-panel-visible? #t)
+                (update-docs/report-error-visibility))))
+           
+          (define (hide-error-report) 
+            (when report-error-panel-visible?
+              (set! report-error-panel-visible? #f)
+              (update-docs/report-error-visibility)))
           
-          (field
-            [report-error-frame (make-object mred:frame% "Check Syntax Error" #f 400 10)]
-            [report-error-text (make-object mred:text%)]
-            [report-error-canvas (make-object mred:editor-canvas% report-error-frame report-error-text
-                                   '(hide-hscroll hide-vscroll))]
-            [hide-error-report-window (lambda () (send report-error-frame show #f))])
+          (define (show-error-report) 
+            (unless report-error-panel-visible?
+              (set! report-error-panel-visible? #t)
+              (update-docs/report-error-visibility)))
           
           (define (report-error message exn)
             (send* report-error-text
@@ -643,11 +670,13 @@
               (lock #f)
               (erase)
               (insert message)
+              (change-style
+               report-error-style
+               0
+               (send report-error-text last-position))
               (lock #t)
               (end-edit-sequence))
-            (send report-error-frame show #t))
-          (send report-error-text hide-caret #t)
-          (send report-error-canvas set-line-count 1)
+            (show-error-report))
           
           (public syncheck:button-callback)
           (define (syncheck:button-callback)
@@ -657,7 +686,10 @@
                          (send (get-definitions-text) last-position)
                          base-style-str)
             (let ([binders null]
-                  [varrefs null])
+                  [varrefs null]
+                  [tops null]
+                  [users-namespace #f]
+                  [err-termination? #f])
               (send (get-interactions-text)
                     expand-program
                     (drscheme:language:make-text/pos (get-definitions-text) 
@@ -667,35 +699,68 @@
                     (fw:preferences:get
                      (drscheme:language-configuration:get-settings-preferences-symbol))
                     (lambda (err? sexp run-in-evaluation-thread loop)
+                      (unless users-namespace
+                        (set! users-namespace (run-in-evaluation-thread current-namespace)))
                       (if err?
-                          (report-error (car sexp) (cdr sexp))
-                          (let-values ([(new-binders new-varrefs) (annotate-basic sexp)])
+                          (begin
+                            (set! err-termination? #t)
+                            (report-error (car sexp) (cdr sexp)))
+                          (let-values ([(new-binders new-varrefs new-tops) (annotate-basic sexp)])
                             (set! binders (append new-binders binders))
-                            (set! varrefs (append new-varrefs varrefs))))
+                            (set! varrefs (append new-varrefs varrefs))
+                            (set! tops (append new-varrefs tops))))
                       (loop)))
-              (annotate-variables binders varrefs))
+              (unless err-termination? 
+                (annotate-variables users-namespace binders varrefs tops)))
             (send (get-definitions-text) end-edit-sequence))
 
-          ;; annotate-variables : (listof syntax) (listof syntax) -> void
+          ;; annotate-variables : namespace (listof syntax) (listof syntax) -> void
           ;; colors the variables, free are turned unbound color, bound are turned
           ;; bound color and all binders are turned bound color.
-          (define (annotate-variables binders varrefs)
+          (define (annotate-variables users-namespace binders varrefs tops)
             (send (get-definitions-text) syncheck:init-arrows)
-            (for-each (lambda (binder) (color binder bound-variable-style-str)) binders)
-            (for-each (lambda (varref)
-                        (let* ([same-as-varref? (lambda (x) (module-identifier=? x varref))]
-                               [binders (filter same-as-varref? binders)]
-                               [same-names (append binders
-                                                   (filter same-as-varref? varrefs))])
-                          (cond
-                            [(null? binders)
-                             (color varref unbound-variable-style-str)]
-                            [else
-                             (for-each 
-                              (lambda (binder) (connect-variables binder varref same-names))
-                              binders)
-                             (color varref bound-variable-style-str)])))
-                      varrefs))
+            (for-each (lambda (binder) 
+                        (when (syntax-original? binder)
+                          (color binder bound-variable-style-str)))
+                      binders)
+            (for-each (annotate-varref handle-no-binders/lexical binders varrefs) varrefs)
+            (for-each (annotate-varref (handle-no-binders/top users-namespace) binders varrefs) tops))
+          
+          ;; annotate-varref : (listof syntax) -> syntax -> void
+          ;; annotates a variable reference with either green or red,
+          ;; and adds the arrows from the varref to the 
+          ;; (possibly multiple) binding locations.
+          (define (annotate-varref handle-no-binders binders all-varrefs)
+            (lambda (varref)
+              (when (syntax-original? varref)
+                (let* ([same-as-varref? (lambda (x) (module-identifier=? x varref))]
+                       [binders (filter same-as-varref? binders)]
+                       [same-names (append binders (filter same-as-varref? all-varrefs))])
+                  (cond
+                    [(null? binders) (handle-no-binders varref)]
+                    [else
+                     (for-each 
+                      (lambda (binder) 
+                        (when (syntax-original? binder)
+                          (connect-variables binder varref same-names)))
+                      binders)
+                     (color varref bound-variable-style-str)])))))
+          
+          ;; handle-no-binders/top : top-level-info -> syntax[original] -> void
+          (define (handle-no-binders/top users-namespace)
+            (lambda (varref)
+              (let ([defined-in-users-namespace?
+                     (with-handlers ([exn:variable? (lambda (x) #f)])
+                       (parameterize ([current-namespace users-namespace])
+                         (eval (syntax-e varref))
+                         #t))])
+                (if defined-in-users-namespace?
+                    (color varref bound-variable-style-str)
+                    (color varref unbound-variable-style-str)))))
+          
+          ;; handle-no-binders/lexical : syntax[original] -> void
+          (define (handle-no-binders/lexical varref)
+            (color varref unbound-variable-style-str))
           
           ;; connect-variable : syntax syntax (listof syntax) -> void
           (define (connect-variables binding bound same-names)
@@ -718,7 +783,8 @@
           ;; and the second is those that occur in bound positions
           (define (annotate-basic sexp)
             (let ([binders null]
-                  [varrefs null])
+                  [varrefs null]
+                  [tops null])
               (let loop ([sexp sexp])
                 (annotate-original-keywords sexp)
                 (syntax-case sexp (lambda case-lambda if begin begin0 let-value letrec-values set!
@@ -781,11 +847,17 @@
                      (set! varrefs (cons (syntax var) varrefs))
                      (loop (syntax E)))]
                   [(quote datum)
-                   (begin (annotate-raw-keyword sexp)
-                          (color (syntax datum) constant-style-str))]
+                   (begin 
+                     (when (syntax-original? sexp)
+                       (annotate-raw-keyword sexp))
+                     (when (syntax-original? (syntax datum))
+                       (color (syntax datum) constant-style-str)))]
                   [(quote-syntax datum)
-                   (begin (annotate-raw-keyword sexp)
-                          (color (syntax datum) constant-style-str))]
+                   (begin 
+                     (when (syntax-original? sexp)
+                       (annotate-raw-keyword sexp))
+                     (when (syntax-original? (syntax datum))
+                       (color (syntax datum) constant-style-str)))]
                   [(with-continuation-mark a b c)
                    (begin
                      (annotate-raw-keyword sexp)
@@ -797,9 +869,12 @@
                      (annotate-raw-keyword sexp)
                      (for-each loop (syntax->list (syntax (pieces ...)))))]
                   [(#%datum . datum)
-                   (color sexp constant-style-str)]
+                   (begin
+                     (when (syntax-original? sexp)
+                       (color sexp constant-style-str)))]
                   [(#%top . var)
-                   (set! varrefs (cons (syntax var) varrefs))]
+                   (begin
+                     (set! tops (cons (syntax var) tops)))]
                   
                   [(define-values vars b)
                    (begin
@@ -818,32 +893,42 @@
                   
                   ; top level or module top level only:
                   [(require require-spec)
-                   (annotate-raw-keyword sexp)]
+                   (begin
+                     (annotate-raw-keyword sexp))]
                   [(require-for-syntax require-spec)
-                   (annotate-raw-keyword sexp)]
+                   (begin
+                     (annotate-raw-keyword sexp))]
                   
                   ; module top level only:
                   [(provide vars)
-                   (annotate-raw-keyword sexp)]
+                   (begin
+                     (annotate-raw-keyword sexp))]
                   
                   [_
-                   (cond
-                     [(identifier? sexp)
-                      (set! varrefs (cons sexp varrefs))]
-                     [else (printf "unknown stx: ~e (datum: ~e) (source: ~e)~n"
-                                   sexp
-                                   (and (syntax? sexp)
-                                        (syntax-object->datum sexp))
-                                   (and (syntax? sexp)
-                                        (syntax-source sexp)))])]))
-              (values binders varrefs)))
+                   (begin
+                     (cond
+                       [(identifier? sexp)
+                        (set! varrefs (cons sexp varrefs))]
+                       [else 
+;                        (printf "unknown stx: ~e (datum: ~e) (source: ~e)~n"
+;                                 sexp
+;                                 (and (syntax? sexp)
+;                                      (syntax-object->datum sexp))
+;                                 (and (syntax? sexp)
+;                                      (syntax-source sexp)))
+                        (void)
+                        ]))]))
+              (values binders varrefs tops)))
 
           ;; combine-binders : syntax (listof syntax) -> (listof syntax)
           ;; transforms an argument list into a bunch of symbols/symbols and puts 
           ;; them on `incoming'
           ;; [could be more efficient if it processed the stx itself instead of append]
           (define (combine-binders stx incoming)
-            (append (syntax->list stx) incoming)
+            (let ([lst (syntax->list stx)])
+              (if lst
+                  (append lst incoming)
+                  (cons stx incoming)))
 ;            (if (null? stx)
 ;                incoming
 ;                (let ([first (syntax-e stx)])
@@ -859,7 +944,7 @@
           (define (annotate-original-keywords stx)
             (let* ([origin (syntax-property stx 'origin)])
               (when origin
-                (let loop ([orign origin])
+                (let loop ([origin origin])
                   (cond
                     [(cons? origin)
                      (loop (car origin))
@@ -884,23 +969,25 @@
           (define (annotate-variable sexp bound-vars)
             (cond
               [(ormap (lambda (x) (and (module-identifier=? sexp x) x)) bound-vars)
-               =>
-               (lambda (binding)
+               (when (syntax-original? sexp)
                  (color sexp bound-variable-style-str))]
               [else
-               (color sexp unbound-variable-style-str)]))
+               (when (syntax-original? sexp)
+                 (color sexp unbound-variable-style-str))]))
 
           ;; annotate-arglist : syntax -> void
           ;; annotates the (possibly improper) syntax list as bound variables
           (define (annotate-arglist stx)
-            (for-each (lambda (stx) (color stx bound-variable-style-str))
+            (for-each (lambda (stx) 
+                        (when (syntax-original? stx)
+                          (color stx bound-variable-style-str)))
                       (syntax->list stx)))
           
           ;; color : syntax str -> void
           ;; colors the syntax with style-name's style
           (define (color stx style-name)
             (let ([source (syntax-source stx)])
-              (when (is-a? source mred:text%)
+              (when (is-a? source text%)
                 (let ([pos (- (syntax-position stx) 1)]
                       [span (syntax-span stx)])
                   (color-range source pos (+ pos span) style-name)))))
@@ -917,7 +1004,7 @@
           
           (field
            [check-syntax-button
-            (make-object mred:button%
+            (make-object button%
               (syncheck-bitmap this)
               (get-button-panel)
               (lambda (button evt) (syncheck:button-callback)))])
@@ -930,5 +1017,11 @@
                   (cons check-syntax-button
                         (remove check-syntax-button l))))))
       
+      (define report-error-style 
+        (send (make-object style-delta% 'change-family 'modern)
+              set-delta
+              'change-italic))
+      (send report-error-style set-delta-foreground "red")
+
       (drscheme:get/extend:extend-definitions-text make-graphics-text%)
       (drscheme:get/extend:extend-unit-frame make-new-unit-frame% #f))))

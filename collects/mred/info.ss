@@ -9,5 +9,6 @@
 			 (require-library "debug.ss" "system"))]
     [(compile-omit-files)
      (list "sig.ss" "stsigs.ss" "minsig.ss" "minwxsig.ss" "wxs.ss"
-	   "wxr.ss" "cppmode.ss")]
+	   "wxr.ss" "cppmode.ss" "linkwx.ss"
+	   "exapp.ss")]
     [else (failure)]))

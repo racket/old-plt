@@ -19,7 +19,7 @@ abstract out the `hole and `(hole name) patterns.
   
   (provide (struct nt (name rhs))
            (struct rhs (pattern))
-           (struct compiled-lang (lang ht across-ht))
+           (struct compiled-lang (lang ht across-ht has-hole-ht cache))
            
            lookup-binding
            compile-pattern
@@ -75,12 +75,13 @@ abstract out the `hole and `(hole name) patterns.
   ;;                                     hash-table[sym -o> compiled-pattern]
   ;;                                     hash-table[sym -o> compiled-pattern]
   ;;                                     hash-table[sym -o> boolean])
+  ;;                                     hash-table[sexp[pattern] -o> (cons compiled-pattern boolean)])
   ;; hole-path = (make-hole-path (union #f symbol) symbol (listof (union 'car 'cdr)))
   (define-struct hole-path (name id path) (make-inspector))
   
   (define compiled-pattern (any/c (listof hole-path?) . -> . (union false/c (listof bindings?))))
   
-  (define-struct compiled-lang (lang ht across-ht has-hole-ht))
+  (define-struct compiled-lang (lang ht across-ht has-hole-ht cache))
   
   ;; lookup-binding : bindings sym [(-> any)] -> any
   (define lookup-binding 
@@ -101,7 +102,8 @@ abstract out the `hole and `(hole name) patterns.
     (let* ([clang-ht (make-hash-table)]
            [across-ht (make-hash-table)]
            [has-hole-ht (build-has-hole-ht lang)]
-           [clang (make-compiled-lang lang clang-ht across-ht has-hole-ht)]
+           [cache (make-hash-table 'equal)]
+           [clang (make-compiled-lang lang clang-ht across-ht has-hole-ht cache)]
            [do-compilation
             (lambda (ht lang prefix-cross?)
               (for-each
@@ -329,9 +331,6 @@ abstract out the `hole and `(hole name) patterns.
   
   (define underscore-allowed '(any number string variable))
 
-  ;; compiled-pattern-cache : hash-table[sexp[pattern] -o> (cons compiled-pattern boolean)]
-  (define compiled-pattern-cache (make-hash-table 'equal))
-  
   ;; compile-pattern : compiled-lang pattern -> compiled-pattern
   (define (compile-pattern clang pattern)
     (let-values ([(pattern has-hole?) (compile-pattern/cross? clang pattern #t)])
@@ -342,6 +341,7 @@ abstract out the `hole and `(hole name) patterns.
     (define clang-ht (compiled-lang-ht clang))
     (define has-hole-ht (compiled-lang-has-hole-ht clang))
     (define across-ht (compiled-lang-across-ht clang))
+    (define compiled-pattern-cache (compiled-lang-cache clang))
     
     (define (compile-pattern/cache pattern)
       (let ([compiled-cache (hash-table-get
@@ -1298,8 +1298,8 @@ abstract out the `hole and `(hole name) patterns.
     (run-test
      'compatible-context-language3
      (build-compatible-context-language
-      (mk-hasheq '((M . ()) (seven . ())))
-      (list (make-nt 'M (list (make-rhs '(M seven M)) (make-rhs 'number)))
+      (mk-hasheq '((m . ()) (seven . ())))
+      (list (make-nt 'm (list (make-rhs '(m seven m)) (make-rhs 'number)))
             (make-nt 'seven (list (make-rhs 7)))))
      `(,(make-nt
          'm-m
@@ -1332,9 +1332,9 @@ abstract out the `hole and `(hole name) patterns.
   ;; returns #t if pat matching exp with the empty language produces ans.
   (define (test-empty pat exp ans)
     (run-test
-     `(match-pattern (compile-pattern (make-compiled-lang '() (make-hash-table) (make-hash-table) (make-hash-table)) ',pat) ',exp)
+     `(match-pattern (compile-pattern (make-compiled-lang '() (make-hash-table) (make-hash-table) (make-hash-table) (make-hash-table 'equal)) ',pat) ',exp)
      (match-pattern 
-      (compile-pattern (make-compiled-lang '() (make-hash-table) (make-hash-table) (make-hash-table)) pat)
+      (compile-pattern (make-compiled-lang '() (make-hash-table) (make-hash-table) (make-hash-table) (make-hash-table 'equal)) pat)
       exp)
      ans))
   

@@ -3,7 +3,7 @@
 
   (define (find-dir name)
     (let ([plt-home (getenv "PLTHOME")])
-      (if name
+      (if plt-home
 	  (build-path plt-home name)
 	  ;; Try one up from each collection path:
 	  (let loop ([l (current-library-collection-paths)])

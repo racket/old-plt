@@ -10,7 +10,7 @@ The following are the executables:
 
   DrScheme Jr.exe -- a text-only version of DrScheme
   MzScheme.exe -- a text-only Scheme interpreter
-  MrEd.exe -- a graphica Scheme interpreter
+  MrEd.exe -- a graphical Scheme interpreter
   mzc.exe -- a Scheme compiler
   Help Desk.exe --- for Help (also built into DrScheme)
 

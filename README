@@ -14,7 +14,7 @@ The following are the executables:
 
   plt/bin/drscheme-jr -- a text-only version of DrScheme
   plt/bin/mzscheme -- a text-only Scheme interpreter
-  plt/bin/mred -- a graphica Scheme interpreter
+  plt/bin/mred -- a graphical Scheme interpreter
   plt/bin/mzc -- a Scheme compiler
   plt/bin/help-desk --- for Help (also built into DrScheme)
 

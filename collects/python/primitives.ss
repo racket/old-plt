@@ -189,7 +189,11 @@
     (hash-table->py-dict% (assoc-list->hash-table al)))
 
   (define (py-object%->bool x)
+;    (printf "pyobj->bool: ~a~n" x)
+;    (if (not x)
+;        (error "foo"))
     (cond
+      [(not (python-node? x)) x]
       [(py-is-a? x py-number%) (not (zero? (py-number%->number x)))]
       [(py-is? x py-none) #f]
       [(py-type? x) #t]
@@ -660,13 +664,23 @@
       (let ([fn (if (symbol? method)
                     (python-get-attribute obj method)
                     method)])
+        ;(printf "got method ~a: ~a  type? ~a~n" method (py-object%->string fn) (py-type? obj))
 ;        (if (py-type? obj) ;; Class.method(obj, arg...)
 ;            (
         (py-call fn
                  (if (and (python-node? fn)
-                          (or (py-is-a? fn py-function%) ; static method
-                              (python-method-bound? fn) ; bound method
-                              (py-type? obj) ;  Class.method(obj, arg...)
+                          (or #|(and|# (py-is-a? fn py-function%) ; static method
+                                   #|(printf "it's a pyfn~n")
+                                   #t)|#
+                              #|(and|# (py-type? fn) ; Module.type()
+                                   #|(printf "it's a type~n")
+                                   #t)|#
+                              #|(and|# (python-method-bound? fn) ; bound method
+                                   #|(printf "it's a bound method~n")
+                                   #t)|#
+                              #|(and|# (py-type? obj) ;  Class.method(obj, arg...)
+                                   #|(printf "it's Class.method()~n")
+                                   #t)|#
                               ))
                      pos-args
                      (cons obj pos-args)) ; add the object to the arg-list for unbound methods or scheme procs
@@ -1194,6 +1208,20 @@
               (cons fn-ptr args)))
      name))
 
+  ;; python-wrap-ext-function-objobj: cptr symbol -> py-function%
+  (define (python-wrap-ext-function-objobj fn-ptr name)
+    (let ([spy-ext-call-fn-objobj (pns-get 'spy-ext-call-fn-objobj)])
+      (procedure->py-function% (lambda (a b)
+                                 (spy-ext-call-fn-objobj fn-ptr a b))
+                               name)))
+
+  ;; python-wrap-ext-function-objobjarg: cptr symbol -> py-function%
+  (define (python-wrap-ext-function-objobjarg fn-ptr name)
+    (let ([spy-ext-call-fn-objobjarg (pns-get 'spy-ext-call-fn-objobjarg)])
+      (procedure->py-function% (lambda (a b c)
+                                 (spy-ext-call-fn-objobjarg fn-ptr a b c))
+                               name)))
+     
   ;; python-wrap-ext-function-intarg: cptr symbol -> py-function%
   (define (python-wrap-ext-function-intarg fn-ptr name)
     (let ([spy-ext-call-fn-intarg (pns-get 'spy-ext-call-fn-intarg)])

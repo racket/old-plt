@@ -36,7 +36,9 @@ PyObject* _PyTrash_delete_later = NULL;
 
 PyObject * PyExc_SystemError = 0;
 PyObject * PyExc_IndexError = 0;
+PyObject * PyExc_RuntimeError = 0;
 PyObject * PyExc_FutureWarning = 0;
+PyObject * PyExc_DeprecationWarning = 0;
 PyObject _Py_NotImplementedStruct; /* Don't use this directly */
 PyObject _Py_TrueStruct;
 PyObject _Py_ZeroStruct;
@@ -124,6 +126,8 @@ Scheme_Object* scheme_initialize(Scheme_Env* env)
   PyExc_IndexError = slookup("py-index-error%");
   PyExc_SystemError = slookup("py-system-error%");
   PyExc_FutureWarning = slookup("py-future-warning%");
+  PyExc_RuntimeError = slookup("py-runtime-error%");
+  PyExc_DeprecationWarning = slookup("py-deprecation-warning%");
 
   // set up globals
   _spy_g_scheme_struct = PyExc_IndexError->type; // scheme object type: STRUCT
@@ -132,7 +136,6 @@ Scheme_Object* scheme_initialize(Scheme_Env* env)
   // BLAH!
   PyString_Type.type = pstring_class->type;
   PyString_Type.stype = SCHEME_STRUCT_TYPE(pstring_class);
-//  memcpy(&PyString_Type, pstring_class, sizeof(PyObject));
   sapply2("set-python-node-type!", (PyObject*) &PyString_Type,
           sapply1("python-node-type", pstring_class));
   sapply2("set-python-node-mutable?!", (PyObject*) &PyString_Type, scheme_false);
@@ -249,7 +252,7 @@ ADD_CALL_GLOBAL(objobjarg, 4);
     printf("methods are fine.\n");
   else
     printf("methods are null.\n");
-  PyModule_AddObject(m, "str", pystr_type);
+  PyModule_AddObject(m, "pstr", pystr_type);
 #endif
 #ifdef SPY_LIST
   printf("SPY now adding the List type\n");
@@ -886,7 +889,7 @@ Scheme_Object* init_spy_ext_method_table(int argc, Scheme_Object* argv[])
     // yeah, that's great.
     }
 */
-  
+
   printf("INIT-SPY-EXT-METHOD-TABLE: added %d methods.\n", i);
   return NULL;
 }
@@ -1124,7 +1127,7 @@ PyList_SetItem (PyObject * tuple, int index, PyObject * new_item)
 
 int PyList_GetSize(PyObject *o)
 {
- return PySequence_Size(o);
+ return Py/*Sequence_*/Size(o);
 }
 
 #endif // SPY_LIST
@@ -1289,6 +1292,10 @@ int PyObject_AsCharBuffer(PyObject *obj,
   return 1;
 }
 
+PyObject * PyObject_Init(PyObject *obj, PyTypeObject *type)
+{
+  //fooo
+}
 
 PyObject * PySequence_Fast(PyObject *o, const char* m)
 {
@@ -1301,12 +1308,48 @@ int PySequence_Size(PyObject *o)
   return PyInt_AsInt(smethod0(o, "__len__"));
 }
 
+PyObject* PySequence_GetItem(PyObject *seq, int index)
+{
+  return smethod1(seq, "__getitem__", PyInt_FromInt(index));
+}
+
 int PyTuple_GetSize(PyObject *o)
 {
  return PySequence_Size(o);
 }
 
+int PyDict_Size(PyObject *o)
+{
+  return PySequence_Size(smethod0(o, "keys"));
+}
 
+PyObject* PyDict_GetItemString(	PyObject *p, const char *key)
+{
+  return PyDict_GetItem(p, PyString_FromString(key));
+}
+
+int PyDict_Next(PyObject *d, int *ppos, PyObject **pkey, PyObject **pvalue)
+{
+  PyObject *keys;
+  if (*ppos >= PyDict_Size(d))
+    return 0;
+  *ppos++;
+  keys = smethod0(d, "keys");
+  *pkey = PyList_GetItem(keys, *ppos);
+  *pvalue = PyDict_GetItem(d, *pkey);
+  return 1;
+}
+
+
+unsigned long PyInt_AsUnsignedLongMask(	PyObject *io)
+{
+  return (unsigned long) PyInt_AsLong(io);
+}
+
+unsigned long PyLong_AsUnsignedLongMask(PyObject *io)
+{
+  return (unsigned long) PyLong_AsLong(io);
+}
 
 // fixme...
 int PyErr_ExceptionMatches(PyObject *obj)
@@ -1444,7 +1487,12 @@ PyObject * PyObject_GetIter(PyObject *obj) { return NULL; }
 
 int PySequence_Check(PyObject *o)
 {
- PyList_Check(o) || PyTuple_Check(o);
+ return PyList_Check(o) || PyTuple_Check(o);
+}
+
+int PyFloat_Check(PyObject *o)
+{
+  return sapply2("py-is-a?", o, seval("py-number%")) != scheme_false;
 }
 
 PyObject * PyIter_Next(PyObject *iter)

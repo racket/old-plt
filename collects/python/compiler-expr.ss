@@ -52,7 +52,7 @@
   ;; generate the enclosing LET bindings for a function
   ;; if scope is not #f, its bindings are defined here (as void)
   (define (generate-function-bindings parms body-so scope)
-    `(let ,(append (normalize-assoc-list
+    #`(let #,(append (normalize-assoc-list
                     (flatten1
                      (map (lambda (tuple)
                             (unpack tuple
@@ -61,7 +61,7 @@
                    (let ([seq (send parms get-seq)])
                      (if seq
                          (let ([seq (send seq to-scheme)])
-                           `([,seq (list->py-tuple% ,seq)]))
+                           #`([,seq (list->py-tuple% #,seq)]))
                          empty))
                    ;(let ([dict (send parms get-dict)])
                    ;  (if dict
@@ -71,16 +71,22 @@
                    ;      empty))
                    (if scope
                        (map (lambda (b)
-                              `[,(send b to-scheme) (void)])
+                              #`[#,(send b to-scheme) (void)])
                             (send scope get-bindings))
                        empty))
-       ,@body-so))
+       #,@body-so))
   
   ;; generate-lambda: parameters% syntax-object -> sexp
   ;; generate a lambda.
   (define (generate-lambda parms body-so)
-    `(opt-lambda ,(send parms to-scheme)
-         ,body-so))
+    (let* ([parms-so (send parms to-scheme)]
+           [parms-src (syntax-e parms-so)])
+      (if (or (null? parms-src)
+              (null? (last-pair parms-src)))
+          `(lambda ,parms-so ,body-so)
+          `(opt-lambda ,parms-so ,body-so))))
+;    `(opt-lambda ,(send parms to-scheme)
+;         ,body-so))
 
   ;; generate-py-lambda: symbol parameters% syntax-object -> sexp
   ;; generate a scheme-lambda->python-lambda wrapper (and the lambda)
@@ -89,17 +95,22 @@
           [dict (send parms get-dict)])
       `(procedure->py-function% ,(generate-lambda parms body-so)
                                 ',name
-                                (list ,@(map (lambda (p)
-                                               `',(send (first-atom p) to-scheme))
-                                             (send parms get-pos)))
-                                (list ,@(map (lambda (k)
-                                               `(cons ',(send (car k) to-scheme)
-                                                      ,(send (cdr k) to-scheme)))
-                                             (send parms get-key)))
+                                ,(generate-list (map (lambda (p)
+                                                       `',(send (first-atom p) to-scheme))
+                                                     (send parms get-pos)))
+                                ,(generate-list (map (lambda (k)
+                                                       `(cons ',(send (car k) to-scheme)
+                                                              ,(send (cdr k) to-scheme)))
+                                                     (send parms get-key)))
                                 ,(and seq (car `(',(send seq to-scheme))))
                                 ,(and dict (car `(',(send dict to-scheme)))))))
 
-  
+
+  (define (generate-list exprs)
+    (if (empty? exprs)
+        'null
+        `(list ,@exprs)))
+
   (define parameters%
     (class ast-node%
       
@@ -273,9 +284,9 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(,(py-so 'list->py-tuple%) (list ,@(map (lambda (e)
-                                                            (send e to-scheme))
-                                                          expressions)))))
+        (->orig-so `(,(py-so 'list->py-tuple%) ,(generate-list (map (lambda (e)
+                                                                      (send e to-scheme))
+                                                                    expressions)))))
       
       (super-instantiate ())))
   
@@ -297,8 +308,8 @@
       (inherit ->orig-so)
       (define/override (to-scheme)
         (->orig-so `(,(py-so 'list->py-list%)
-                                         (list ,@(map (lambda (e) (send e to-scheme))
-                                                      expressions)))))
+                                         ,(generate-list (map (lambda (e) (send e to-scheme))
+                                                              expressions)))))
       
       (super-instantiate ())))
   
@@ -413,16 +424,16 @@
       (inherit ->orig-so)
       (define/override (to-scheme)
         (->orig-so `(,(py-so 'assoc-list->py-dict%)
-                     (list ,@(let ([key-id (gensym 'key)])
-                               (map (lambda (key-value-pair)
-                                      (apply (lambda (key value)
-                                               `(list (let ([,key-id (->scheme ,(send key to-scheme))])
-                                                        (if (string? ,key-id)
-                                                            (string->symbol ,key-id)
-                                                            ,key-id))
-                                                      ,(send value to-scheme)))
-                                               key-value-pair))
-                                      key-values))))))
+                     ,(generate-list (let ([key-id (gensym 'key)])
+                                       (map (lambda (key-value-pair)
+                                              (apply (lambda (key value)
+                                                       `(list (let ([,key-id (->scheme ,(send key to-scheme))])
+                                                                (if (string? ,key-id)
+                                                                    (string->symbol ,key-id)
+                                                                    ,key-id))
+                                                              ,(send value to-scheme)))
+                                                     key-value-pair))
+                                            key-values))))))
       
       (super-instantiate ())))
   
@@ -595,11 +606,11 @@
                                               to-scheme)
                                  ',(send ((class-field-accessor attribute-ref% identifier) expression)
                                               to-scheme)
-                                 (list ,@pos-args)
-                                 (list ,@key-args))
+                                 ,(generate-list pos-args)
+                                 ,(generate-list key-args))
                          `(,(py-so 'py-call) ,(send expression to-scheme)
-                                             (list ,@pos-args)
-                                             (list ,@key-args))))))
+                                             ,(generate-list pos-args)
+                                             ,(generate-list key-args))))))
       
       (super-instantiate ())))
   
@@ -691,7 +702,7 @@
            `(,(py-so 'py-compare) ,(car s-comps)
                                   ,(car (cdr s-comps))
                                   ,(car (cdr (cdr s-comps)))
-                                  (list ,@(cdr (cdr (cdr s-comps))))))))
+                                  ,(generate-list (cdr (cdr (cdr s-comps))))))))
  
       
       (super-instantiate ())))
@@ -723,7 +734,7 @@
       (define/override (to-scheme)
         (->orig-so (generate-py-lambda 'anonymous-function
                                        parms
-                                       (send body to-scheme #f #t))))
+                                       (send body to-scheme)))) ;#f #t))))
 ;                   `(,(py-so 'procedure->py-function%) (lambda ,(send parms to-scheme)
 ;                                                         ,(send body to-scheme)))))
       

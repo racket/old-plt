@@ -2,6 +2,7 @@
   (require (lib "class.ss")
            (lib "list.ss")
            (lib "etc.ss") ; build-list
+           (lib "plt-match.ss")
 	   "compiler.ss"
 	   "compiler-expr.ss"
            "compiler-target.ss"
@@ -35,10 +36,10 @@
       (define/public (set-tail-position!)
         (void))
       
-      ;; nontail-return?: -> bool
-      ;; determine whether this is a non-tail return statement
-      ;; or a compound statement with a non-tail return part
-      (define/public (nontail-return?)
+      ;; needs-escape-continuation?: symbol -> bool
+      ;; determine whether this is a non-tail return/break/continue statement
+      ;; or a compound statement with a non-tail return/break/continue part
+      (define/public (needs-escape-continuation? ec)
         #f)
       
       (super-instantiate ())))
@@ -197,8 +198,8 @@
           (->orig-so ;(if (top?)
                      ;    `(begin (namespace-set-variable-value! ',rhs ,(send expression to-scheme))
                      ;            ,@body)
-                         `(begin (let ([,rhs ,(send expression to-scheme)])
-                                   ,@body))
+                         `(let ([,rhs ,(send expression to-scheme)])
+                                   ,@body)
                      ;    )
                      )))
       
@@ -383,9 +384,10 @@
         ;(printf "TAIL!~n")
         (set! tail-position? #t))
       
-      (define/override (nontail-return?)
+      (define/override (needs-escape-continuation? ec)
         ;(printf "return~n")
-        (not tail-position?))
+        (and (not tail-position?)
+             (eq? ec (send scope get-return-symbol))))
       
       ;;daniel
       (inherit ->orig-so ->lex-so)
@@ -446,6 +448,8 @@
             (send enclosing-loop set-can-break?)
             (stx-err "Break statement must be within loop")))
       
+      
+
       (inherit ->orig-so)
       (define/override (to-scheme)
         (->orig-so `(,(send loop get-break-symbol) (void))))
@@ -467,7 +471,7 @@
       
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(,(send loop get-continue-symbol) (void))))
+        (->orig-so `(,(send loop get-continue-symbol) )))
       
       (super-instantiate ())))
   
@@ -529,12 +533,12 @@
         (->orig-so `(,(py-so 'python-import-from-module)
                      ,(if (eq? ids '*)
                           #f
-                          `(list ,@(map (lambda (id)
-                                          (let ([binding (send (car id) to-scheme)])
-                                            (if (cadr id)
-                                                `(list ',binding ',(send (cadr id) to-scheme))
-                                                `(list ',binding #f))))
-                                        ids)))
+                          (generate-list (map (lambda (id)
+                                                (let ([binding (send (car id) to-scheme)])
+                                                  (if (cadr id)
+                                                      `(list ',binding ',(send (cadr id) to-scheme))
+                                                      `(list ',binding #f))))
+                                              ids)))
                      ,@(map (lambda (id) (car `(',(send id to-scheme))))
                             module))))
       
@@ -647,9 +651,9 @@
       
        
 
-      (define/override (nontail-return?)
+      (define/override (needs-escape-continuation? ec)
         (ormap (lambda (statement)
-                 (send statement nontail-return?))
+                 (send statement needs-escape-continuation? ec))
                statements))
       
       ;;daniel
@@ -657,17 +661,19 @@
       (define/override to-scheme
         (opt-lambda ([escape-continuation-symbol #f] [lambda-suite? #f] [def-suite? #f])
           (let* ([return-is-last? (is-a? last-statement return%)]
-                 [body (let ([statements (sub-stmt-map (lambda (s) (send s to-scheme)))]
-                             [insert-void-return? (and def-suite?
-                                                       (not return-is-last?))])
-                         (if insert-void-return? ; functions that have no return must return None
-                             (append statements `(,(py-so 'py-none)))
-                             statements))]
-                 [body-with-let (if (or lambda-suite? def-suite?)
-                                    (generate-function-bindings (send scope get-parms) body scope)
-                                    body)])
+                 [bodies (let ([statements (sub-stmt-map (lambda (s) (send s to-scheme)))]
+                               [insert-void-return? (and def-suite?
+                                                         (not return-is-last?))])
+                           (if insert-void-return? ; functions that have no return must return None
+                               (append statements `(,(py-so 'py-none)))
+                               statements))]
+                 [body-with-let (cond
+                                  [(or lambda-suite? def-suite?)
+                                   (generate-function-bindings (send scope get-parms) bodies scope)]
+                                  [(= 1 (length bodies)) (first bodies)]
+                                  [else `(begin ,@bodies)])])
             (->orig-so (if (and escape-continuation-symbol
-                                (nontail-return?))
+                                (needs-escape-continuation? escape-continuation-symbol))
                            `(call-with-escape-continuation
                              (lambda (,escape-continuation-symbol)
                                ,body-with-let))
@@ -710,24 +716,33 @@
         (when else
           (send else set-tail-position!)))
       
-      (define/override (nontail-return?)
+      (define/override (needs-escape-continuation? ec)
         (or (ormap (lambda (test&thn)
-                     (send (second test&thn) nontail-return?))
+                     (send (second test&thn) needs-escape-continuation? ec))
                    test-bodies)
-            (and else (send else nontail-return?))))
+            (and else (send else needs-escape-continuation? ec))))
       
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (let ([s-test-bodies (map (lambda (test-body)
-                               `[(,(py-so 'py-if) ,(send (car test-body) to-scheme) #t #f)
-                                 ,(send (cadr test-body) to-scheme)])
-                             test-bodies)])
-        (->orig-so (if else
-                       `(cond
-                          ,@s-test-bodies
-                          [else ,(send else to-scheme)])
-                       `(cond ,@s-test-bodies)))))
+;        (let ([s-test-bodies (map (lambda (test-body)
+;                                    `[(,(py-so 'py-if) ,(send (car test-body) to-scheme) #t #f)
+;                                      ,(send (cadr test-body) to-scheme)])
+;                                  test-bodies)])
+        (->orig-so (let loop ([test-bodies test-bodies])
+                         (match test-bodies
+                           ['() (if else
+                                    (send else to-scheme)
+                                    (void))]
+                           [(list (list test then) rest-bodies ...)
+                            `(py-if ,(send test to-scheme)
+                                    ,(send then to-scheme)
+                                    ,(loop rest-bodies))]))))
+                   ; (if else
+                   ;`(cond
+                       ;   ,@s-test-bodies
+                       ;   [else ,(send else to-scheme)])
+                   ;    `(cond ,@s-test-bodies)))))
       
       (super-instantiate ())))
 
@@ -768,19 +783,20 @@
         (when else
           (send else set-tail-position!)))
       
-      (define/override (nontail-return?)
-        (and else (send else nontail-return?)))
+      (define/override (needs-escape-continuation? ec)
+        (and else (send else needs-escape-continuation? ec)))
       
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (let ([loop (gensym 'loop)])
+        (let* ([loop (gensym 'loop)])
+          (set! continue-symbol loop)
           (->orig-so `(begin
                         (call-with-escape-continuation
                          (lambda (,break-symbol)
-                           (let ,loop ()
+                           (let ,continue-symbol ()
                              (,(py-so 'py-if) ,(send test to-scheme)
-                              (begin ,(send body to-scheme continue-symbol)
-                                     (,loop))))))
+                               (begin ,(send body to-scheme continue-symbol)
+                                       (,continue-symbol))))))
                          ,(if else (send else to-scheme))))))
       
       
@@ -805,7 +821,10 @@
       (define/public (set-can-break?) (set! can-break? #t))
       (define/public (set-can-cont?) (set! can-cont? #t))
       
+      (define scope #f)
+      
       (define/override (set-bindings! enclosing-scope)
+        (set! scope enclosing-scope)
         (send target set-bindings! enclosing-scope)
         (send body set-bindings! enclosing-scope)
         (when else (send else set-bindings! enclosing-scope)))
@@ -828,18 +847,40 @@
       (define/override (set-tail-position!)
         (when else (send else set-tail-position!)))
 
-      (define/override (nontail-return?)
-        (and else (send else nontail-return?)))
+      (define/override (needs-escape-continuation? ec)
+        (and else (send else needs-escape-continuation? ec)))
 
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(begin
-                      (call-with-escape-continuation
-                       (lambda (,break-symbol)
-                         (for-each ,(generate-lambda (target->parameters target)
-                                                     (send body to-scheme continue-symbol)
-                                                     #f)
+        (let ([parm-names (target->parm-tup target)])
+          (->orig-so (let* ([bdy  `(let* ([index -1]
+                                          [seq ,(send vals to-scheme)]
+                                          [len (python-method-call seq '__len__)])
+                                     (let ,continue-symbol ()
+                                       (set! index (+ 1 index))
+                                       (unless (= index len)
+                                         ,(if (is-a? parm-names identifier%)
+                                              `(set! ,(send parm-names to-scheme) (python-index seq index))
+                                              `(let ([current-tuple (python-index seq index)])
+                                                 ,@(map (lambda (parm-index)
+                                                          `(set! ,(send (list-ref parm-names parm-index)
+                                                                        to-scheme)
+                                                                 (python-index current-tuple ,parm-index)))
+                                                        (build-list (length parm-names) identity))))
+                                         ,(send body to-scheme continue-symbol)
+                                         (,continue-symbol))))]
+                            [normal-body (if (send body needs-escape-continuation? break-symbol)
+                                             `(call-with-escape-continuation
+                                               (lambda (,break-symbol)
+                                                 ,bdy))
+                                             bdy)])
+                       (if else
+                           `(begin ,normal-body ,(send else to-scheme))
+                           normal-body)))))
+                      
+                                                     ;#f
+                                                     
 ;                                ,(cond
 ;                                [(is-a? target tidentifier%)
 ;                                 `(lambda (,(send target to-scheme))
@@ -854,9 +895,9 @@
 ;                                         ,(send body to-scheme))
 ;                                       (,(py-so 'py-sequence%->list) ,item))))]
 ;                                [else (error "bad target for a 'for' loop")])
-                                   (,(py-so 'py-sequence%->list) ,(send vals to-scheme)))))
-                      ,(if else
-                          (send else to-scheme)))))
+   ;                                (,(py-so 'py-sequence%->list) ,(send vals to-scheme)))))
+   ;                   ,(if else
+   ;                       (send else to-scheme)))))
       
       (super-instantiate ())))
   

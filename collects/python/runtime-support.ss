@@ -30,6 +30,8 @@
   (define scheme> >)
   
   (define (py> a b)
+    (printf "py>: is ~a greater than ~a ? " (py-object%->string a) (py-object%->string b))
+    (let ([res 
     (cond
       [(py-is-a? a py-number%) (and (py-is-a? b py-number%)
                                     (scheme> (py-number%->number a)
@@ -37,8 +39,14 @@
       [(py-is-a? a py-string%) (and (py-is-a? b py-string%)
                                     (string>? (py-string%->string a)
                                               (py-string%->string b)))]
-      [else (scheme> a b)]))
-  
+      [else (error (format "No runtime support to compare ~a and ~a yet") ;(scheme> a b)]))
+                   (python-get-type-name a)
+                   (python-get-type-name b))])
+    ])
+      (printf "~a~n" res)
+      res))
+                    
+                    
   (define (py< a b)
     (and (not (== a b))
          (not (py> a b))))

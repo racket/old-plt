@@ -188,7 +188,7 @@ DECLARE_CHECKER (String);
 
 long PyInt_AsLong (PyObject * pyint);
 //long PyInt_AsUnsignedLongMask (PyObject * pyint);
-long PyLong_AsUnsignedLongMask (PyObject * pyint);
+unsigned long PyLong_AsUnsignedLongMask (PyObject * pyint);
 double PyFloat_AsDouble (PyObject * pyfloat);
 PyObject* PyInt_FromInt(int value);
 
@@ -433,5 +433,7 @@ void spy_init_obj(PyObject* obj, PyTypeObject* py_type);
 #include <boolobject.h>
 
 #include <sliceobject.h>
+
+#include <cobject.h>
 
 #endif

@@ -5,11 +5,13 @@
            AssertError
            IndexError
            SystemError
+	   RuntimeError
            FutureWarning
            )
   
   (define Exception py-exception%)
   (define TypeError py-type-error%)
+  (define RuntimeError py-runtime-error%)
   (define AssertError py-assert-error%)
   
   (define IndexError py-index-error%)

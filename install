@@ -66,7 +66,7 @@ exit
 			 (send e insert (substring string start end)
 			       (send e last-position))
 			 (send e lock #t))
-		       #t))
+		       #f))
 		    (- end start))
 		  void
 		  void)])
@@ -91,7 +91,8 @@ exit
 					 s ss))
 				 (send e lock #t))
 			       (send b set-label "Quit Installation")
-			       (set! there-was-an-error? #t))))
+			       (set! there-was-an-error? #t))
+			     #f))
 			  (semaphore-wait (make-semaphore)))
 			(old-exit v)))))))
 

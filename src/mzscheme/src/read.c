@@ -78,12 +78,10 @@ static Scheme_Object *read_list(Scheme_Object *port, Scheme_Object *stxsrc,
 				Scheme_Hash_Table **ht);
 static Scheme_Object *read_string(Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos);
-static Scheme_Object *read_quote(Scheme_Object *port, Scheme_Object *stxsrc,
+static Scheme_Object *read_quote(char *who, Scheme_Object *quote_symbol, int len,
+				 Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos,
 				 Scheme_Hash_Table **ht);
-static Scheme_Object *read_syntax_quote(Scheme_Object *port, Scheme_Object *stxsrc,
-					long line, long col, long pos,
-					Scheme_Hash_Table **ht);
 static Scheme_Object *read_vector(Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos,
 				  char closer, 
@@ -96,15 +94,6 @@ static Scheme_Object *read_symbol(Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos);
 static Scheme_Object *read_character(Scheme_Object *port, Scheme_Object *stcsrc, 
 				     long line, long col, long pos);
-static Scheme_Object *read_quasiquote(Scheme_Object *port, Scheme_Object *stxsrc,
-				      long line, long col, long pos,
-				      Scheme_Hash_Table **ht);
-static Scheme_Object *read_unquote(Scheme_Object *port, Scheme_Object *stxsrc,
-				   long line, long col, long pos,
-				   Scheme_Hash_Table **ht);
-static Scheme_Object *read_unquote_splicing(Scheme_Object *port, Scheme_Object *stxsrc,
-					    long line, long col, long pos,
-					    Scheme_Hash_Table **ht);
 static Scheme_Object *read_box(Scheme_Object *port, Scheme_Object *stxsrc,
 			       long line, long col, long pos,
 			       Scheme_Hash_Table **ht);
@@ -157,6 +146,9 @@ static Scheme_Object *quasiquote_symbol;
 static Scheme_Object *unquote_symbol;
 static Scheme_Object *unquote_splicing_symbol;
 static Scheme_Object *syntax_symbol;
+static Scheme_Object *unsyntax_symbol;
+static Scheme_Object *unsyntax_splicing_symbol;
+static Scheme_Object *quasisyntax_symbol;
 
 /* Table of built-in variable refs for .zo loading: */
 static Scheme_Object **variable_references;
@@ -174,12 +166,18 @@ void scheme_init_read(Scheme_Env *env)
   REGISTER_SO(unquote_symbol);
   REGISTER_SO(unquote_splicing_symbol);
   REGISTER_SO(syntax_symbol);
+  REGISTER_SO(unsyntax_symbol);
+  REGISTER_SO(unsyntax_splicing_symbol);
+  REGISTER_SO(quasisyntax_symbol);
     
   quote_symbol = scheme_intern_symbol("quote");
   quasiquote_symbol = scheme_intern_symbol("quasiquote");
   unquote_symbol = scheme_intern_symbol("unquote");
   unquote_splicing_symbol = scheme_intern_symbol("unquote-splicing");
   syntax_symbol = scheme_intern_symbol("syntax");
+  unsyntax_symbol = scheme_intern_symbol("unsyntax");
+  unsyntax_splicing_symbol = scheme_intern_symbol("unsyntax-splicing");
+  quasisyntax_symbol = scheme_intern_symbol("quasisyntax");
 
   scheme_add_global_constant("read-case-sensitive", 
 			     scheme_register_parameter(read_case_sensitive, 
@@ -468,13 +466,13 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht)
       } else
 	return read_list(port, stxsrc, line, col, pos, '}', 0, 0, ht);
     case '"': return read_string(port, stxsrc, line, col, pos);
-    case '\'': return read_quote(port, stxsrc, line, col, pos, ht);
+    case '\'': return read_quote("quoting '", quote_symbol, 1, port, stxsrc, line, col, pos, ht);
     case '`': 
       if (!local_can_read_quasi) {
 	scheme_read_err(port, stxsrc, line, col, pos, 1, 0, "read: illegal use of backquote");
 	return NULL;
       } else
-	return read_quasiquote(port, stxsrc, line, col, pos, ht);
+	return read_quote("quasiquoting `", quasiquote_symbol, 1, port, stxsrc, line, col, pos, ht);
     case ',':
       if (!local_can_read_quasi) {
 	scheme_read_err(port, stxsrc, line, col, pos, 1, 0, "read: illegal use of `,'");
@@ -482,9 +480,9 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht)
       } else {
 	if (scheme_peekc_special_ok(port) == '@') {
 	  ch = scheme_getc(port); /* must be '@' */
-	  return read_unquote_splicing(port, stxsrc, line, col, pos, ht);
+	  return read_quote("unquoting ,@", unquote_splicing_symbol, 2, port, stxsrc, line, col, pos, ht);
 	} else
-	  return read_unquote(port, stxsrc, line, col, pos, ht);
+	  return read_quote("unquoting ,", unquote_symbol, 1, port, stxsrc, line, col, pos, ht);
       }
     case ';':
       while (((ch = scheme_getc_special_ok(port)) != '\n') && (ch != '\r')) {
@@ -601,7 +599,14 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht)
 	case 'e': return read_number(port, stxsrc, line, col, pos, 0, 1, 10, 0);
 	case 'I':
 	case 'i': return read_number(port, stxsrc, line, col, pos, 1, 0, 10, 0);
-	case '\'': return read_syntax_quote(port, stxsrc, line, col, pos, ht);
+	case '\'': return read_quote("quoting #'", syntax_symbol, 2, port, stxsrc, line, col, pos, ht);
+	case '`': return read_quote("quasiquoting #`", quasisyntax_symbol, 2, port, stxsrc, line, col, pos, ht);
+	case ',': 
+	  if (scheme_peekc_special_ok(port) == '@') {
+	    ch = scheme_getc(port); /* must be '@' */
+	    return read_quote("unquoting #`@", unsyntax_splicing_symbol, 3, port, stxsrc, line, col, pos, ht);
+	  } else 
+	    return read_quote("unquoting #`", unsyntax_symbol, 2, port, stxsrc, line, col, pos, ht);
 	case '~': 
 	  if (local_can_read_compiled) {
 	    Scheme_Object *cpld;
@@ -1613,9 +1618,10 @@ read_character(Scheme_Object *port,
 /*                            quote readers                               */
 /*========================================================================*/
 
-/* "'" has been read */
+/* "'", etc. has been read */
 static Scheme_Object *
-read_quote(Scheme_Object *port,
+read_quote(char *who, Scheme_Object *quote_symbol, int len,
+	   Scheme_Object *port,
 	   Scheme_Object *stxsrc, long line, long col, long pos,
 	   Scheme_Hash_Table **ht)
 {
@@ -1623,77 +1629,13 @@ read_quote(Scheme_Object *port,
 
   obj = read_inner(port, stxsrc, ht);
   if (SCHEME_EOFP(obj))
-    scheme_read_err(port, stxsrc, line, col, pos, 1, EOF,
-		    "read: expected an element for quote (found end-of-file)");
+    scheme_read_err(port, stxsrc, line, col, pos, len, EOF,
+		    "read: expected an element for %s (found end-of-file)",
+		    who);
   ret = (stxsrc
-	 ? scheme_make_stx_w_offset(quote_symbol, line, col, pos, 1, stxsrc, STX_SRCTAG)
+	 ? scheme_make_stx_w_offset(quote_symbol, line, col, pos, len, stxsrc, STX_SRCTAG)
 	 : quote_symbol);
   ret = scheme_make_pair(ret, scheme_make_pair(obj, scheme_null));
-  if (stxsrc)
-    ret = scheme_make_stx_w_offset(ret, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
-  return ret;
-}
-
-/* "`" has been read */
-static Scheme_Object *
-read_quasiquote(Scheme_Object *port,
-		Scheme_Object *stxsrc, long line, long col, long pos,
-		Scheme_Hash_Table **ht)
-{
-  Scheme_Object *quoted_obj, *ret;
-  
-  quoted_obj = read_inner(port, stxsrc, ht);
-  if (SCHEME_EOFP(quoted_obj))
-    scheme_read_err(port, stxsrc, line, col, pos, 1, EOF,
-		    "read: expected an element for backquote (found end-of-file)");
-  ret = (stxsrc
-	 ? scheme_make_stx_w_offset(quasiquote_symbol, line, col, pos, 1, stxsrc, STX_SRCTAG)
-	 : quasiquote_symbol);
-  ret = scheme_make_pair(ret, scheme_make_pair(quoted_obj, scheme_null));
-  
-  if (stxsrc)
-    ret = scheme_make_stx_w_offset(ret, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
-  return ret;
-}
-
-/* "," has been read */
-static Scheme_Object *
-read_unquote(Scheme_Object *port,
-	     Scheme_Object *stxsrc, long line, long col, long pos,
-	     Scheme_Hash_Table **ht)
-{
-  Scheme_Object *obj, *ret;
-
-  obj = read_inner(port, stxsrc, ht);
-  if (SCHEME_EOFP(obj))
-    scheme_read_err(port, stxsrc, line, col, pos, 1, EOF,
-		    "read: expected an element for unquoting comma (found end-of-file)");
-  ret = (stxsrc
-	 ? scheme_make_stx_w_offset(unquote_symbol, line, col, pos, 1, stxsrc, STX_SRCTAG)
-	 : unquote_symbol);
-  ret = scheme_make_pair(ret, scheme_make_pair (obj, scheme_null));
-
-  if (stxsrc)
-    ret = scheme_make_stx_w_offset(ret, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
-  return ret;
-}
-
-/* ",@" has been read */
-static Scheme_Object *
-read_unquote_splicing(Scheme_Object *port,
-		      Scheme_Object *stxsrc, long line, long col, long pos,
-		      Scheme_Hash_Table **ht)
-{
-  Scheme_Object *obj, *ret;
-
-  obj = read_inner(port, stxsrc, ht);
-  if (SCHEME_EOFP(obj))
-    scheme_read_err(port, stxsrc, line, col, pos, 2, EOF,
-		    "read: expected an element for unquoting ,@ (found end-of-file)");
-  ret = (stxsrc
-	 ? scheme_make_stx_w_offset(unquote_splicing_symbol, line, col, pos, 2,stxsrc, STX_SRCTAG)
-	 : unquote_splicing_symbol);
-  ret = scheme_make_pair(ret, scheme_make_pair (obj, scheme_null));
   if (stxsrc)
     ret = scheme_make_stx_w_offset(ret, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
   return ret;
@@ -1718,27 +1660,6 @@ static Scheme_Object *read_box(Scheme_Object *port,
     bx = scheme_make_stx_w_offset(bx, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
 
   return bx;
-}
-
-/* "#'" has been read */
-static Scheme_Object *
-read_syntax_quote(Scheme_Object *port,
-		  Scheme_Object *stxsrc, long line, long col, long pos,
-		  Scheme_Hash_Table **ht)
-{
-  Scheme_Object *obj, *ret;
-
-  obj = read_inner(port, stxsrc, ht);
-  if (SCHEME_EOFP(obj))
-    scheme_read_err(port, stxsrc, line, col, pos, 2, EOF,
-		    "read: expected an element for #' syntax (found end-of-file)");
-  ret = (stxsrc
-	 ? scheme_make_stx_w_offset(syntax_symbol, line, col, pos, 2, stxsrc, STX_SRCTAG)
-	 : syntax_symbol);
-  ret = scheme_make_pair(ret, scheme_make_pair(obj, scheme_null));
-  if (stxsrc)
-    ret = scheme_make_stx_w_offset(ret, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
-  return ret;
 }
 
 /*========================================================================*/

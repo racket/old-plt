@@ -187,6 +187,12 @@
 (module #%qq-and-or #%kernel
   (require-for-syntax #%stx #%kernel)
 
+  (define-values (qq-append)
+    (lambda (a b)
+      (if (list? a)
+	  (append a b)
+	  (raise-type-error 'unquote-splicing "proper list" a))))
+
   (define-syntaxes (quasiquote)
     (let ([here (quote-syntax here)] ; id with module bindings, but not lexical
 	  [unquote-stx (quote-syntax unquote)]
@@ -308,7 +314,7 @@
 							(((l) (normal l old-l)))
 						      (let-values
 							  ()
-							(list (quote-syntax append) uqsd l)))
+							(list (quote-syntax qq-append) uqsd l)))
 						    (let-values
 							(((restx) (qq-list rest (sub1 level))))
 						      (let-values
@@ -938,13 +944,11 @@
       (cond
        [(and use-ellipses? (ellipsis? p))
 	(unless (stx-null? (stx-cdr (stx-cdr p)))
-	  (apply
-	   raise-syntax-error 
+	  (raise-syntax-error 
 	   'syntax-case
 	   "misplaced ellipses in pattern"
-	   (pick-specificity
-	    top
-	    local-top)))
+	   top
+	   p))
 	(let* ([p-head (stx-car p)]
 	       [nestings (get-ellipsis-nestings p-head k)])
 	  (let-values ([(match-head mh-did-var?) (m&e p-head p-head #t #f #f)])
@@ -978,13 +982,11 @@
 		       (stx-null? (stx-cdr (stx-cdr p))))
 		  (let ([dp (stx-car (stx-cdr p))])
 		    (m&e dp dp #f last? #f))
-		  (apply
-		   raise-syntax-error 
+		  (raise-syntax-error 
 		   syntax-case-stxsrc
 		   "misplaced ellipses in pattern"
-		   (pick-specificity
-		    top
-		    local-top)))
+		   top
+		   hd))
 	      ;; When just-vars?, do head first for good error ordering.
 	      ;; Otherwise, do tail first to find out if it has variables.
 	      (let*-values ([(-match-head -mh-did-var?) (if just-vars?
@@ -1030,13 +1032,11 @@
 		 #f))
 	    (if (and use-ellipses?
 		     (eq? (syntax-e p) '...))
-		(apply
-		 raise-syntax-error 
+		(raise-syntax-error 
 		 syntax-case-stxsrc
 		 "misplaced ellipses in pattern"
-		 (pick-specificity
-		  top
-		  local-top))
+		 top
+		 p)
 		(if just-vars?
 		    (values (list p) #f)
 		    (values
@@ -1282,13 +1282,11 @@
 		       (stx-null? (stx-cdr (stx-cdr p))))
 		  (let ([dp (stx-car (stx-cdr p))])
 		    (expander dp proto-r dp #f use-tail-pos hash!))
-		  (apply
-		   raise-syntax-error 
+		  (raise-syntax-error 
 		   syntax-stxsrc
 		   "misplaced ellipses in template"
-		   (pick-specificity
-		    top
-		    local-top)))
+		   top
+		   hd))
 	      (let ([ehd (expander hd proto-r hd use-ellipses? use-tail-pos hash!)]
 		    [etl (expander (stx-cdr p) proto-r local-top use-ellipses? use-tail-pos hash!)])
 		(if proto-r
@@ -1300,7 +1298,7 @@
 	(let ([e (expander (vector->list (syntax-e p)) proto-r p use-ellipses? use-tail-pos hash!)])
 	  (if proto-r
 	      `(lambda (r)
-		 (list->vector ,(apply-to-r e)))
+		 (list->vector (stx->list ,(apply-to-r e))))
 	      ;; variables were hashed
 	      (void)))]
        [(identifier? p)
@@ -1315,13 +1313,11 @@
 		      (begin
 			(when (and use-ellipses?
 				   (eq? (syntax-e p) '...))
-			  (apply
-			   raise-syntax-error 
+			  (raise-syntax-error 
 			   syntax-stxsrc
 			   "misplaced ellipses in template"
-			   (pick-specificity
-			    top
-			    local-top)))
+			   top
+			   p))
 			(check-not-pattern p proto-r)
 			`(lambda (r) (quote-syntax ,p)))))
 		(unless (and (eq? (syntax-e p) '...)

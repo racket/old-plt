@@ -114,61 +114,45 @@ static Scheme_Object *bundle_symset_frameStyle(int v) {
 }
 
 
-static Scheme_Object *orientation_wxBOTH_sym = NULL;
-static Scheme_Object *orientation_wxHORIZONTAL_sym = NULL;
-static Scheme_Object *orientation_wxVERTICAL_sym = NULL;
+static Scheme_Object *iconKind_0_sym = NULL;
+static Scheme_Object *iconKind_1_sym = NULL;
+static Scheme_Object *iconKind_2_sym = NULL;
 
-static void init_symset_orientation(void) {
-  orientation_wxBOTH_sym = scheme_intern_symbol("both");
-  orientation_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
-  orientation_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+static void init_symset_iconKind(void) {
+  iconKind_0_sym = scheme_intern_symbol("both");
+  iconKind_1_sym = scheme_intern_symbol("small");
+  iconKind_2_sym = scheme_intern_symbol("large");
 }
 
-static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
-  if (!orientation_wxVERTICAL_sym) init_symset_orientation();
-  Scheme_Object *i, *l = v;
-  long result = 0;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
+static int unbundle_symset_iconKind(Scheme_Object *v, const char *where) {
+  if (!iconKind_2_sym) init_symset_iconKind();
   if (0) { }
-  else if (i == orientation_wxBOTH_sym) { result = result | wxBOTH; }
-  else if (i == orientation_wxHORIZONTAL_sym) { result = result | wxHORIZONTAL; }
-  else if (i == orientation_wxVERTICAL_sym) { result = result | wxVERTICAL; }
-  else { break; } 
-  l = SCHEME_CDR(l);
-  }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "orientation symbol list", -1, 0, &v);
+  else if (v == iconKind_0_sym) { return 0; }
+  else if (v == iconKind_1_sym) { return 1; }
+  else if (v == iconKind_2_sym) { return 2; }
+  if (where) scheme_wrong_type(where, "iconKind symbol", -1, 0, &v);
   return 0;
 }
 
-static int istype_symset_orientation(Scheme_Object *v, const char *where) {
-  if (!orientation_wxVERTICAL_sym) init_symset_orientation();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
+static int istype_symset_iconKind(Scheme_Object *v, const char *where) {
+  if (!iconKind_2_sym) init_symset_iconKind();
   if (0) { }
-  else if (i == orientation_wxBOTH_sym) { ; }
-  else if (i == orientation_wxHORIZONTAL_sym) { ; }
-  else if (i == orientation_wxVERTICAL_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
-  }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "orientation symbol list", -1, 0, &v);
+  else if (v == iconKind_0_sym) { return 1; }
+  else if (v == iconKind_1_sym) { return 1; }
+  else if (v == iconKind_2_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "iconKind symbol", -1, 0, &v);
   return 0;
 }
 
-static Scheme_Object *bundle_symset_orientation(int v) {
-  if (!orientation_wxVERTICAL_sym) init_symset_orientation();
-  Scheme_Object *l = scheme_null;
-  if (v & wxBOTH) l = scheme_make_pair(orientation_wxBOTH_sym, l);
-  if (v & wxHORIZONTAL) l = scheme_make_pair(orientation_wxHORIZONTAL_sym, l);
-  if (v & wxVERTICAL) l = scheme_make_pair(orientation_wxVERTICAL_sym, l);
-  return l;
+static Scheme_Object *bundle_symset_iconKind(int v) {
+  if (!iconKind_2_sym) init_symset_iconKind();
+  switch (v) {
+  case 0: return iconKind_0_sym;
+  case 1: return iconKind_1_sym;
+  case 2: return iconKind_2_sym;
+  default: return NULL;
+  }
 }
-
 
 
 
@@ -743,6 +727,7 @@ static Scheme_Object *os_wxFrameSetIcon(Scheme_Object *obj, int n,  Scheme_Objec
   objscheme_check_valid(obj);
   class wxBitmap* x0;
   class wxBitmap* x1;
+  int x2;
 
   
   x0 = objscheme_unbundle_wxBitmap(p[0], "set-icon in frame%", 0);
@@ -750,9 +735,13 @@ static Scheme_Object *os_wxFrameSetIcon(Scheme_Object *obj, int n,  Scheme_Objec
     x1 = objscheme_unbundle_wxBitmap(p[1], "set-icon in frame%", 1);
   } else
     x1 = NULL;
+  if (n > 2) {
+    x2 = unbundle_symset_iconKind(p[2], "set-icon in frame%");
+  } else
+    x2 = 0;
 
   if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("frame%","set-icon"), "bad bitmap: ", p[0]);if (x1 && !x1->Ok()) scheme_arg_mismatch(METHODNAME("frame%","set-icon"), "bad bitmap: ", p[1]);if (x1 && (x1->GetDepth() != 1)) scheme_arg_mismatch(METHODNAME("frame%","set-icon"), "mask bitmap is not monochrome: ", p[1]);
-  ((wxFrame *)((Scheme_Class_Object *)obj)->primdata)->SetIcon(x0, x1);
+  ((wxFrame *)((Scheme_Class_Object *)obj)->primdata)->SetIcon(x0, x1, x2);
 
   
   
@@ -891,7 +880,7 @@ if (os_wxFrame_class) {
  scheme_add_method_w_arity(os_wxFrame_class, "get-menu-bar", os_wxFrameGetMenuBar, 0, 0);
 #endif
  scheme_add_method_w_arity(os_wxFrame_class, "set-menu-bar", os_wxFrameSetMenuBar, 1, 1);
- scheme_add_method_w_arity(os_wxFrame_class, "set-icon", os_wxFrameSetIcon, 1, 2);
+ scheme_add_method_w_arity(os_wxFrame_class, "set-icon", os_wxFrameSetIcon, 1, 3);
  scheme_add_method_w_arity(os_wxFrame_class, "iconize", os_wxFrameIconize, 1, 1);
  scheme_add_method_w_arity(os_wxFrame_class, "set-title", os_wxFrameSetTitle, 1, 1);
 

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.15 1999/05/15 18:17:06 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.16 1999/07/07 19:32:35 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -65,7 +65,6 @@ wxFrame::wxFrame(void)
   frame_type = 0;
   wx_menu_bar = NULL;
   status_line_exists = FALSE;
-  icon = NULL;
   modal_showing = FALSE;
   window_parent = NULL;
   int i;
@@ -100,7 +99,6 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
   windowStyle = style;
   wx_menu_bar = NULL;
   status_line_exists = FALSE;
-  icon = NULL;
   modal_showing = FALSE;
   handle = NULL;
   
@@ -514,17 +512,22 @@ char *wxFrame::GetTitle(void)
 
 static wxBitmap *black_bg = NULL;
 
-void wxFrame::SetIcon(wxBitmap *wx_icon, wxBitmap *bg)
+void wxFrame::SetIcon(wxBitmap *icon, wxBitmap *bg, int kind)
+/* kind: 1 = small, 2 = large, 0 = both */
 {
-  icon = wx_icon;
-    
+  HICON wnd_icon;
   wxFrameWnd *wnd = (wxFrameWnd *)handle;
 
-  if (wnd->icon)
+  int bigP = ((kind == 2) || (kind == 0));
+  int smallP = ((kind == 1) || (kind == 0));
+
+  if (bigP && wnd->bigIcon)
+    DestroyIcon(wnd->bigIcon);
+  if (smallP && wnd->icon)
     DestroyIcon(wnd->icon);
 
-  if (!wx_icon || !wx_icon->Ok())
-    wnd->icon = 0;
+  if (!icon || !icon->Ok())
+    wnd_icon = 0;
   else {
     ICONINFO info;
 
@@ -545,12 +548,20 @@ void wxFrame::SetIcon(wxBitmap *wx_icon, wxBitmap *bg)
       info.fIcon = TRUE;
       info.hbmMask = bg->ms_bitmap;
       info.hbmColor = icon->ms_bitmap;
-      wnd->icon = CreateIconIndirect(&info);
+      wnd_icon = CreateIconIndirect(&info);
     } else
-      wnd->icon = NULL;
+      wnd_icon = NULL;
   }
 
-  SendMessage(GetHWND(), WM_SETICON, (WORD)FALSE, (DWORD)wnd->icon);
+  if (bigP)
+    wnd->bigIcon = wnd_icon;
+  if (smallP)
+    wnd->icon = wnd_icon;
+
+  if (bigP)
+    SendMessage(GetHWND(), WM_SETICON, (WORD)TRUE, (DWORD)wnd_icon);
+  if (smallP)
+    SendMessage(GetHWND(), WM_SETICON, (WORD)FALSE, (DWORD)wnd_icon);
 }
 
 void wxFrame::CreateStatusLine(int number, char *WXUNUSED(name))
@@ -877,6 +888,10 @@ wxFrameWnd::wxFrameWnd(wxWnd *parent, char *WXUNUSED(wclass), wxWindow *wx_win, 
 
 wxFrameWnd::~wxFrameWnd(void)
 {
+  if (icon)
+    DestroyIcon(icon);
+  if (bigIcon)
+    DestroyIcon(bigIcon);
 }
 
 BOOL wxFrameWnd::OnPaint(void)

@@ -192,6 +192,7 @@ class wxFrameWnd : public wxWnd
 public:
     Bool iconized;
     HICON icon;
+    HICON bigIcon;
     HICON defaultIcon;
 
     wxFrameWnd(void);

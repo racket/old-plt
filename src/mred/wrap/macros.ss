@@ -35,3 +35,13 @@
       `(case-lambda
 	[(,x) (as-entry (lambda () (,f ,x)))]
 	[(,x ,y) (as-entry (lambda () (,f ,x ,y)))]))))
+
+(define-macro entry-point-1-2-3
+  (lambda (f)
+    (let ([x (gensym)]
+	  [y (gensym)]
+	  [z (gensym)])
+      `(case-lambda
+	[(,x) (as-entry (lambda () (,f ,x)))]
+	[(,x ,y) (as-entry (lambda () (,f ,x ,y)))]
+	[(,x ,y ,z) (as-entry (lambda () (,f ,x ,y ,z)))]))))

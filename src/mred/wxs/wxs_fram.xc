@@ -36,12 +36,11 @@
 @SYM "no-resize-border" : wxNO_RESIZE_BORDER
 @ENDSYMBOLS
 
-@BEGINSYMBOLS orientation
-@SYM "both" : wxBOTH
-@SYM "horizontal" : wxHORIZONTAL
-@SYM "vertical" :  wxVERTICAL
+@BEGINSYMBOLS iconKind > ONE
+@SYM "both" : 0
+@SYM "small" : 1
+@SYM "large" : 2
 @ENDSYMBOLS
-
 
 @CLASSBASE wxFrame "frame":"window"
 
@@ -54,7 +53,7 @@
 
 @ "set-title" : void SetTitle(string);
 @ "iconize" : void Iconize(bool);
-@ "set-icon" : void SetIcon(wxBitmap!,wxBitmap^ = NULL); : : /CHECKICONOK[0]|CHECKICONOK[1]|CHECKICONBW[1]
+@ "set-icon" : void SetIcon(wxBitmap!,wxBitmap^ = NULL,SYM[iconKind] = 0); : : /CHECKICONOK[0]|CHECKICONOK[1]|CHECKICONBW[1]
 @ "set-menu-bar" : void SetMenuBar(wxMenuBar!) : : /CHECKHASMENU[ ]
 @IVAR r "menu-bar" : wxMenuBar^ wx_menu_bar ## NO_GET_MENU_BAR
 @ "get-menu-bar" : wxMenuBar^ GetMenuBar() ## HAS_GET_MENU_BAR

@@ -38,7 +38,6 @@ class wxbFrame: public wxWindow
 
   Bool modal_showing;
   wxMenuBar *wx_menu_bar;
-  wxBitmap *icon;
   Bool status_line_exists;
   long frame_type;  // SDI, MDI parent/child
   int nb_status;
@@ -72,7 +71,7 @@ class wxbFrame: public wxWindow
   virtual wxMenuBar *GetMenuBar(void);
 
   // Set icon
-  virtual void SetIcon(wxBitmap *icon, wxBitmap *bg = NULL) = 0;
+  virtual void SetIcon(wxBitmap *icon, wxBitmap *bg = NULL, int kind = 0) = 0;
 
   // Create status line
   virtual void CreateStatusLine(int number = 1, char *name = "status_line") = 0;

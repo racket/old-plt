@@ -352,6 +352,7 @@ _MysterX_
   subkey.
 
 > (cocreate-instance-from-coclass a-coclass [where])
+> (cci/coclass a-coclass [where])
 
   `a-coclass` is the name of a COM class.  Returns
   an instance of the class, of type <com-object>.
@@ -366,6 +367,7 @@ _MysterX_
   below, for more information.
 
 > (cocreate-instance-from-progid a-progid [where])
+> (cci/progid a-progid [where])
 
   `a-progid` is the ProgID for a COM class.
   Returns an instance of the class, of type

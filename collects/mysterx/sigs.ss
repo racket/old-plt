@@ -23,7 +23,9 @@
    coclass->html
    progid->html
    cocreate-instance-from-coclass
+   cci/coclass
    cocreate-instance-from-progid
+   cci/progid
    coclass
    progid
    set-coclass!

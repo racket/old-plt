@@ -288,7 +288,8 @@
    autowrap-bitmap
    reset-console-bitmap
    lock-bitmap
-   unlock-bitmap))
+   unlock-bitmap
+   anchor-bitmap))
 
 (define-signature mred:keymap^
   (keyerr

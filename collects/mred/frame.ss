@@ -427,6 +427,13 @@
 
     (define simple-menu-frame% (make-simple-frame% standard-menus-frame%))
 
+    (mred:preferences:set-preference-default
+     'mred:show-status-line 
+     #t
+     (lambda (x)
+       (or (not x)
+	   (eq? x #t))))
+
     (define make-info-frame%
       (let* ([time-edit (make-object mred:edit:edit%)]
 	     [time-semaphore (make-semaphore 1)]
@@ -480,6 +487,7 @@
 	  (class super-info% args
 	    (rename [super-make-root-panel make-root-panel])
 	    (private
+	      [rest-panel 'unitiaialized-root]
 	      [super-root 'unitiaialized-super-root])
 	    (public
 	      [make-root-panel
@@ -487,18 +495,51 @@
 		 (let* ([s-root (super-make-root-panel
 				 mred:container:vertical-panel%
 				 parent)]
-			[root (make-object % s-root)])
+			[r-root (make-object % s-root)])
 		   (set! super-root s-root)
-		   root))])
+		   (set! rest-panel r-root)
+		   r-root))])
 	    
 	    (rename [super-on-close on-close])
+	    (private
+	      [close-panel-callback
+	       (mred:preferences:add-preference-callback
+		'mred:show-status-line
+		(lambda (p v)
+		  (send super-root change-children
+			(lambda (l)
+			  (if v
+			      (list rest-panel info-panel)
+			      (list rest-panel))))))])
 	    (public
 	      [on-close
 	       (lambda ()
 		 (and (super-on-close)
-		      (send time-canvas set-media null)))])		     
+		      (begin (send time-canvas set-media null)
+			     (close-panel-callback)
+			     #t)))])
 	    
 	    (public
+	      [overwrite-status-changed
+	       (let ([last-state? #f])
+		 (lambda ()
+		   (let ([overwrite-now? (send (get-info-edit)
+					       get-overwrite-mode)])
+		     (unless (eq? overwrite-now? last-state?)
+		       (send overwrite-message
+			     show
+			     overwrite-now?)
+		       (set! last-state? overwrite-now?)))))]
+	      [anchor-status-changed
+	       (let ([last-state? #f])
+		 (lambda ()
+		   (let ([anchor-now? (send (get-info-edit)
+					    get-anchor)])
+		     (unless (eq? anchor-now? last-state?)
+		       (send anchor-message
+			     show
+			     anchor-now?)
+		       (set! last-state? anchor-now?)))))]
 	      [lock-status-changed
 	       (let ([icon-currently-locked? #f])
 	       (lambda ()
@@ -540,6 +581,8 @@
 	    (public
 	      [update-info
 	       (lambda ()
+		 (overwrite-status-changed)
+		 (anchor-status-changed)
 		 (edit-position-changed)
 		 (lock-status-changed))])
 
@@ -550,6 +593,14 @@
 	      [info-panel (make-object mred:container:horizontal-panel% 
 				       super-root)]
 	      [space (make-object mred:container:horizontal-panel% info-panel)]
+	      [anchor-message 
+	       (make-object mred:container:message%
+			    info-panel
+			    mred:icon:anchor-bitmap)]
+	      [overwrite-message 
+	       (make-object mred:container:message%
+			    info-panel
+			    "Overwrite")]
 	      [lock-message (make-object mred:container:message%
 			      info-panel mred:icon:unlock-bitmap)]
 	      [position-canvas (make-object mred:canvas:one-line-canvas%
@@ -559,7 +610,13 @@
 	      [position-edit (make-object mred:edit:edit%)])
 
 	    (sequence
+	      (unless (mred:preferences:get-preference 'mred:show-status-line)
+		(send super-root change-children
+		      (lambda (l)
+			(list rest-panel))))
 	      (send info-panel stretchable-in-y #f)
+	      (send anchor-message show #f)
+	      (send overwrite-message show #f)
 	      (send* position-canvas
 		(set-media position-edit)
 		(stretchable-in-x #f))

@@ -12,7 +12,7 @@
 	  (printf "WARNING: couldn't find ~a~n" p))
 	(make-object % p type)))
 
-
+    (define anchor-bitmap (load-icon wx:bitmap% "anchor.gif" wx:const-bitmap-type-gif))
     (define lock-bitmap (load-icon wx:bitmap% "lock.gif" wx:const-bitmap-type-gif))
     (define unlock-bitmap (load-icon wx:bitmap% "unlock.gif" wx:const-bitmap-type-gif))
     (define icon (load-icon wx:icon% "mred.xbm" wx:const-bitmap-type-bmp))

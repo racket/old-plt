@@ -211,17 +211,19 @@
 	     ;; ----- Sort body into different categories -----
 	     (let ([extract (lambda (kws reverse?)
 			      (let loop ([l defn-and-exprs])
-				(syntax-case l ()
-				  [() null]
-				  [((kw . body) . rest)
-				   (ormap (lambda (k) (module-identifier=? k (syntax kw))) kws)
-				   (if reverse?
-				       (loop (stx-cdr l))
-				       (cons (stx-car l) (loop (stx-cdr l))))]
-				  [_else
-				   (if reverse?
-				       (cons (stx-car l) (loop (stx-cdr l)))
-				       (loop (stx-cdr l)))])))]
+				(cond
+				 [(null? l) null]
+				 [(and (stx-pair? (car l))
+				       (let ([id (stx-car (car l))])
+					 (identifier? id)
+					 (ormap (lambda (k) (module-identifier=? k id)) kws)))
+				  (if reverse?
+				      (loop (cdr l))
+				      (cons (car l) (loop (cdr l))))]
+				 [else
+				  (if reverse?
+				      (cons (car l) (loop (cdr l)))
+				      (loop (cdr l)))])))]
 		   [flatten (lambda (alone l)
 			      (apply append
 				     (map (lambda (i)

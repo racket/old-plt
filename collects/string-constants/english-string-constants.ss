@@ -237,7 +237,7 @@
  (hide "Hide")
  
  ;;; reverting a file
- (error-reverting "Error Reverting")
+ (error-reverting "DrScheme - Error Reverting")
  (could-not-read "could not read \"~a\"")
  
  ;;; finder dialog
@@ -363,6 +363,8 @@
  (bring-frame-to-front... "Bring frame to front...") ;;; corresponding title of menu item
 
  (show-menu-label "&Show")
+ (show-overview "Show overview") 
+ (hide-overview "Hide overview")
 
  (help-menu-label "&Help")
  (about-info "Credits and details for this application")
@@ -492,7 +494,7 @@
  
  ;;; Language dialog
  (introduction-to-language-dialog
-  "Please select a language. Most students in introductory courses can just use the defaults.")
+  "Please select a language. Students in most introductory courses should use the default language.")
  (language-dialog-title "Configure Language")
  (case-sensitive-label "Case sensitive")
  (output-style-label "Output Style")

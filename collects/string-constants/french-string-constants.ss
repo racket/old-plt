@@ -236,7 +236,7 @@
  (hide "Cacher")
  
  ;;;reverting a file
- (error-reverting "Erreur durant le retour à l'original.")
+ (error-reverting "DrScheme - Erreur durant le retour à l'original.")
  (could-not-read "impossible de lire \"~a\".")
  
  ;;; finder dialog

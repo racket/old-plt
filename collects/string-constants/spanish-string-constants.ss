@@ -235,7 +235,7 @@
  (hide "Esconder")
  
  ;;;reverting a file
- (error-reverting "Error al Revertir")
+ (error-reverting "DrScheme - Error al Revertir")
  (could-not-read "no pude leer \"~a\"")
  
  ;;; finder dialog

@@ -237,7 +237,7 @@
  (hide "Verstecken")
  
  ;;;reverting a file
- (error-reverting "Fehler aufgetreten beim Rückgängigmachen")	; islwtm
+ (error-reverting "DrScheme - Fehler aufgetreten beim Rückgängigmachen")	; islwtm
  (could-not-read "\"~a\" konnte nicht gelesen werden")
  
  ;;; finder dialog

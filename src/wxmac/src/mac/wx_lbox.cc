@@ -149,7 +149,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
     cWindowWidth = (int)((labelPosition == wxVERTICAL ? 0 : lblWidth) + DefItemWidth + KSBWidth + 2 * VIEW_RECT_OFFSET);
   }
   if (height < 0) {
-    cWindowHeight = (int)((labelPosition == wxVERTICAL ? lblHeight : 0) + 3 * tHeight + 2 * VIEW_RECT_OFFSET) ;
+    cWindowHeight = (int)((labelPosition == wxVERTICAL ? lblHeight : 0) + 4 * tHeight + 2 * VIEW_RECT_OFFSET) ;
   }
   
   int boxHeight = cWindowHeight ;
@@ -400,43 +400,22 @@ void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
 
       doubleclick = ::ALClick(startPt, modifiers, UNSCALE_TIMESTAMP(event->timeStamp),cListReference);
       
+      ReleaseCurrentDC();
+
       if (!cellWasClicked) { // ie, click was in scroll bars
 	return;
       }
       
       cellWasClicked = false;			
       
-      /* this code has not been updated to work in the post-SetOrigin world */
-      //		if (PtInRect(startPt, &(**cListHandle).rView) == FALSE)
-      //			return;							// ie in the scroll bars
-
-      //		ALCell cell;
-      
-      //		ALLastClick(&cell,cListReference);
-
-      ReleaseCurrentDC();
-
       if (doubleclick) {
 	wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND);
 	ProcessCommand(commandEvent);
 	return;
       }
-    }
+    } else
+      ReleaseCurrentDC();
     
-    /*		if (event->ButtonDown()) {
-		if ((cell.h == cLastClickCell.h)
-		&& (cell.v == cLastClickCell.v)
-		&& (event->timeStamp - cLastClickTime < SCALE_TIMESTAMP(GetDblTime()))) {
-		// Double-click
-		wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND);
-		ProcessCommand(commandEvent);
-		return;
-		}
-		cLastClickTime = event->timeStamp;
-		cLastClickCell.h = cell.h;
-		cLastClickCell.v = cell.v;
-		}
-		*/		
     {
       wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
       ProcessCommand(commandEvent);
@@ -935,6 +914,8 @@ void wxListBox::DoShow(Bool on)
   if (!CanShow(on))
     return;
   
+  ALFeatureFlag(alFInhibitRedraw, on ? alBitClear : alBitSet, cListReference);
+
   wxWindow::DoShow(on);
 
   if (on) {

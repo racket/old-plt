@@ -371,7 +371,7 @@
                        ((#\~) (set-water 0))
                        ((#\#) (set-wall 0))
                        ((#\@) (begin (home-list (cons (cons j i) (home-list)))
-                                     (set-home 0))
+                                     (set-home 0)))
                        (else 0))))
          (loop i (add1 j)))))
     (player-id (read input))
@@ -391,7 +391,7 @@
              (home-list (remove-home px py (home-list)))
              (set-spot (board) (get-player-x) (get-player-y) (set-empty spot)))))))
   )
-    
+      
     (define (remove-home x y hl)
       (if (null? hl)
           hl
@@ -399,3 +399,5 @@
                    (= y (cdar hl)))
               (cdr hl)
               (cons (car hl) (remove-home (cdr hl))))))
+  
+  )

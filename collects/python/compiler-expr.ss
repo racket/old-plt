@@ -326,6 +326,12 @@
       (define/override (set-bindings! enclosing-scope)
         (send expression set-bindings! enclosing-scope))
       
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so `(,(py-so 'get-python-member) ,(send expression to-scheme)
+                                                 ,(send identifier to-scheme))))
+      
       (super-instantiate ())))
   
   ;; 5.3.2
@@ -413,9 +419,17 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(,(send expression to-scheme) ,@(map (lambda (e)
-                                                           (send e to-scheme))
-                                                         pos))))
+        (->orig-so (let ([args (map (lambda (e)
+                                                      (send e to-scheme))
+                                                    pos)])
+                     (if (is-a? expression attribute-ref%)
+                         `(,(py-so 'python-method-call)
+                                 ,(send ((class-field-accessor attribute-ref% expression) expression)
+                                              to-scheme)
+                                 ',(send ((class-field-accessor attribute-ref% identifier) expression)
+                                              to-scheme)
+                                 ,@args)
+                         `(,(send expression to-scheme) ,@args)))))
       
       (super-instantiate ())))
   

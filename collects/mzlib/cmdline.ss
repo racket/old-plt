@@ -15,10 +15,18 @@
 		   msg
 		   stx
 		   detail))])
-	   (let ([extract (lambda (what args . detail)
-			    (if (null? args)
-				(apply serror (format "missing ~a" what) detail)
-				(values (car args) (cdr args))))]
+	   (let ([extract-one
+                  (lambda (what args . detail)
+                    (if (null? args)
+                      (apply serror (format "missing ~a" what) detail)
+                      (values (car args) (cdr args))))]
+                 [extract-list
+                  (lambda (stx/list pred)
+                    (let loop ([xs null]
+                               [rest (if (syntax? stx/list) (syntax->list stx/list) stx/list)])
+                      (if (and (pair? rest) (pred (car rest)))
+                        (loop (cons (car rest) xs) (cdr rest))
+                        (values (reverse xs) rest))))]
 		 [formal-names
 		  (lambda (l)
 		    (map
@@ -80,36 +88,23 @@
 						       [(_ => a b)
 							(syntax (list 'flags a b))]
 						       [(_ rest ...)
-							(let*-values ([(formals rest) 
-								       (let loop ([a null]
-										  [rest (syntax->list 
-											 (syntax
-											  (rest ...)))])
-									 (cond
-									  [(null? rest) (values a null)]
-									  [(identifier? (car rest)) 
-									   (loop 
-									    (append a (list (car rest))) 
-									    (cdr rest))]
-									  [else (values a rest)]))]
-								      [(help rest) 
-								       (extract "help string" rest line)]
-								      [(_) 
-								       (unless (string? (syntax-e help))
-									 (serror 
-									  "help info is not a string" help))]
-								      [(expr1 rest) 
-								       (extract 
+							(let*-values ([(formals rest)
+                                                                       (extract-list (syntax (rest ...)) identifier?)]
+								      [(helps rest)
+                                                                       (extract-list
+                                                                        rest (lambda (x) (string? (syntax-e x))))]
+								      [(expr1 rest)
+								       (extract-one
 									"handler body expressions" rest line)])
 							  (with-syntax ([formals formals]
 									[formal-names (formal-names formals)]
-									[help help]
+									[helps helps]
 									[expr1 expr1]
 									[rest rest])
 							    (syntax (list 'flags
 									  (lambda (flag . formals)
 									    expr1 . rest)
-									  '(help . formal-names)))))]))])
+									  '(helps . formal-names)))))]))])
 					       (syntax (subline . looped)))))])
 				   (loop arest
 					 (syntax (clause
@@ -250,12 +245,12 @@
 					  (lambda (flag)
 					    (or (string? flag)
 						(bad-table (format "flag must be a string: ~e" flag)))
-					    (or (and (or (regexp-match "^-[^-]$" flag)
-							 (regexp-match "^[+][^+]$" flag)
-							 (regexp-match "^--." flag)
-							 (regexp-match "^[+][+]." flag))
-						     (not (or (regexp-match "^--help$" flag)
-							      (regexp-match "^-h$" flag)
+					    (or (and (or (regexp-match #rx"^-[^-]$" flag)
+							 (regexp-match #rx"^[+][^+]$" flag)
+							 (regexp-match #rx"^--." flag)
+							 (regexp-match #rx"^[+][+]." flag))
+						     (not (or (regexp-match #rx"^--help$" flag)
+							      (regexp-match #rx"^-h$" flag)
 							      (regexp-match number-regexp flag))))
 						(bad-table (format "no ill-formed or pre-defined flags: ~e" flag))))
 					  (car line))
@@ -272,7 +267,11 @@
 					       (bad-table (format "flag handler procedure cannot have multiple cases: ~e" (cadr line)))))
 
 					 (or (and (list? (caddr line))
-						  (andmap string? (caddr line)))
+						  (let ([h (caddr line)])
+                                                    (or (null? h)
+                                                        (and (or (string? (car h))
+                                                                 (andmap string? (car h)))
+                                                             (andmap string? (cdr h))))))
 					     (bad-table (format "spec-line help section must be a list of strings")))
 					 
 					 (or (let ([l (length (caddr line))]
@@ -314,6 +313,14 @@
 		  (map
 		   (lambda (line) (cons set line))
 		   lines)))]
+             [first? (lambda (x lst)
+                       (and (pair? lst) (eq? x (car lst))))]
+             [last? (lambda (x lst)
+                      (and (pair? lst)
+                           (let loop ([l lst])
+                             (if (pair? (cdr l))
+                               (loop (cdr l))
+                               (eq? x (car l))))))]
 	     [table
               ;; list of (list <once-set> <spec-line> ...)
               ;; If <once-set> is #f, then flags in <spec-line> are allowed
@@ -344,27 +351,39 @@
 				  (cdr set))
 				 (for-each
 				  (lambda (line)
-				    (fprintf sp (cond
-						 [(and (eq? (car set) 'once-any) 
-						       (pair? (cddr set)))
-						  (cond
-						   [(eq? line (cadr set)) "/"]
-						   [(eq? line (let loop ([l set])
-								(if (pair? (cdr l))
-								    (loop (cdr l))
-								    (car l)))) "\\"]
-						   [else "|"])]
-						 [(memq (car set) '(multi final))
-						  "*"]
-						 [else " "]))
-				    (let loop ([flags (car line)])
-				      (let ([flag (car flags)])
-					(fprintf sp " ~a" flag)
-					(print-args sp (cdaddr line) (cadr line)))
-				      (unless (null? (cdr flags))
-					(fprintf sp ",")
-					(loop (cdr flags))))
-				    (fprintf sp " : ~a~n" (caaddr line)))
+                                    (let* ([helps (caaddr line)]
+                                           [helps (if (string? helps) (list helps) helps)])
+                                      (for-each
+                                       (lambda (help)
+
+                                         (fprintf sp
+                                                  (cond [(and (eq? (car set) 'once-any)
+                                                              (pair? (cddr set)))
+                                                         (cond
+                                                          [(and (first? line (cdr set))
+                                                                (first? help helps))
+                                                           "/"]
+                                                          [(and (last? line (cdr set))
+                                                                (last? help helps))
+                                                           "\\"]
+                                                          [else "|"])]
+                                                        [(and (memq (car set) '(multi final))
+                                                              (first? help helps))
+                                                         "*"]
+                                                        [else " "]))
+                                         (if (first? help helps)
+                                           (begin
+                                             (let loop ([flags (car line)])
+                                               (let ([flag (car flags)])
+                                                 (fprintf sp " ~a" flag)
+                                                 (print-args sp (cdaddr line) (cadr line)))
+                                               (unless (null? (cdr flags))
+                                                 (fprintf sp ",")
+                                                 (loop (cdr flags))))
+                                             (fprintf sp " :"))
+                                           (fprintf sp "  "))
+                                         (fprintf sp " ~a~n" help))
+                                       helps)))
 				  (cdr set))))
 			   table) ; the original table
 			  (fprintf sp "  --help, -h : Show this help~n")

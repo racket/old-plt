@@ -160,6 +160,9 @@
 		'(cons 3/2+3/2i null))
 
      (make-same-test (vector 0 0 0 0 0 0 0 0 0 0) '(vector 0 0 0 0 0 0 0 0 0 0))
+
+     (make-same-test (interface () a b c) '(interface ...))
+
      (make-same-test (delay 1) '(delay ...))
      (make-same-test (let-struct a (a) (make-a 3)) '(make-a 3))
      (make-same-test (box 3) '(box 3))
@@ -335,7 +338,7 @@
   (test-not-shared (make-promise (lambda () 1)) '(delay ...))
   (test-not-shared (class () ()) '(class ...))
   (test-not-shared (unit (import) (export)) '(unit ...))
-  (test-not-shared (make-object (class () ())) '(make-object (class ...)))
+  (test-not-shared (make-object (class () ())) '(make-object (class ...) ...))
 
   (test-shared "abc" "abc")
   (test-shared (list 1 2 3) '(list 1 2 3))

@@ -229,7 +229,7 @@
       ; Numbers that must be built
       [(zodiac:number? ast)
        (let ([n (zodiac:read-object ast)])
-	 (if (and (inexact? n) (real? n)
+	 (if (and (inexact? n) (eqv? 0 (imag-part n))
 		  (not (member n '(+inf.0 -inf.0 +nan.0))))
 	     (compiler:get-inexact-real-const! n ast)
 	     (let ([sym (string->symbol (number->string n))])

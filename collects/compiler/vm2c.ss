@@ -1744,7 +1744,7 @@
 		   [(member num  (list +NaN.0 +inf.0 -inf.0)) 
 		    (emit-expr "scheme_eval_string(\"~a\", env)" num)]
 		   ; complex numbers
-		   [(not (real? num))
+		   [(not (eqv? 0 (imag-part num)))
 		    (emit-expr "scheme_make_complex(")
 		    (process (real-part num))
 		    (emit ", ")

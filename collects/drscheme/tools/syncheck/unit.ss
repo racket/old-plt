@@ -272,7 +272,7 @@
     (define-structure (graphic pos* locs->thunks draw-fn click-fn))
     (define-structure (arrow start-pos-left start-pos-right end-pos-left end-pos-right
 			     start-x start-y end-x end-y
-			     tacked? painted?))
+			     id-name rename))
 
     (define TACKED-BRUSH (send wx:the-brush-list find-or-create-brush "BLUE" wx:const-solid))
     (define UNTACKED-BRUSH (send wx:the-brush-list find-or-create-brush "WHITE" wx:const-solid))
@@ -297,9 +297,10 @@
 	   [super-after-insert after-insert]
 	   [super-after-delete after-delete]
 	   [super-on-paint on-paint]
-	   [super-on-event on-event])
+	   [super-on-local-event on-local-event])
 	  (private
 	    [arrow-vector #f]
+	    [tacked-hash-table (make-hash-table)]
 	    [cursor-location #f]
 	    [find-poss
 	     (lambda (left-pos right-pos)
@@ -325,6 +326,7 @@
 	  (public
 	    [syncheck:init-arrows
 	     (lambda ()
+	       (set! tacked-hash-table (make-hash-table))
 	       (set! arrow-vector
 		     (make-vector (add1 (last-position)) null)))]
 	    [syncheck:clear-arrows
@@ -333,16 +335,20 @@
 	       (set! cursor-location #f)
 	       (invalidate-bitmap-cache))]
 	    [syncheck:add-arrow
-	     (lambda (end-pos-left end-pos-right
-				   start-pos-left start-pos-right id-name rename)
-	       (let ([arrow (make-arrow start-pos-left start-pos-right
-					end-pos-left end-pos-right
-					0 0 0 0 #f #f)])
-		 (let loop ([p start-pos-left])
-		   (when (<= p start-pos-right)
-		     (vector-set! arrow-vector p
-				  (cons arrow (vector-ref arrow-vector p)))
-		     (loop (add1 p))))))])
+	     (lambda (start-pos-left start-pos-right end-pos-left end-pos-right id-name rename)
+	       (let* ([arrow (make-arrow start-pos-left start-pos-right
+					 end-pos-left end-pos-right
+					 0 0 0 0
+					 id-name rename)]
+		      [add-to-range
+		       (lambda (start end)
+			 (let loop ([p start])
+			   (when (<= p end)
+			     (vector-set! arrow-vector p
+					  (cons arrow (vector-ref arrow-vector p)))
+			     (loop (add1 p)))))])
+		 (add-to-range start-pos-left start-pos-right)
+		 (add-to-range end-pos-left end-pos-right)))])
 	  (public
 	    [after-delete
 	     (lambda (start len)
@@ -360,8 +366,7 @@
 	       (when (and arrow-vector
 			  cursor-location
 			  (not before))
-		 (time
-		  (let ([draw-arrow
+		 (let ([draw-arrow
 			 (lambda (arrow)
 			   (let* ([start-x (arrow-start-x arrow)]
 				  [start-y (arrow-start-y arrow)]
@@ -391,8 +396,6 @@
 					     (+ end-y (* sin-angle head-x)
 						(* cos-angle head-y)))]
 				  [pts (list pt1 pt2 pt3)])
-			     (send dc set-brush TACKED-BRUSH)
-			     ;; (send dc set-logical-function wx:const-or)
 			     (send dc draw-line
 				   (+ start-x dx) (+ start-y dy)
 				   (+ end-x dx) (+ end-y dy))
@@ -406,67 +409,86 @@
 			  [old-pen   (send dc get-pen)]
 			  [old-logfn (send dc get-logical-function)])
 		      (send dc set-pen PEN)
+		      (send dc set-brush TACKED-BRUSH)
+		      (hash-table-for-each tacked-hash-table
+					   (lambda (arrow v) 
+					     (when v 
+					       (draw-arrow arrow))))
+		      (send dc set-brush UNTACKED-BRUSH)
 		      (for-each draw-arrow (vector-ref arrow-vector cursor-location))
 		      (send dc set-brush old-brush)
 		      (send dc set-pen old-pen)                    
-		      (send dc set-logical-function old-logfn))))
-		 (printf "on-paint~n")))]
-	    [on-event
-	     (lambda (event)
-	       (when arrow-vector
-		 (time
-		  (cond
-		   [(send event moving?)
-		    (let*-values ([(event-x event-y)
-				   (values (send event get-x)
-					   (send event get-y))]
-				  [(x y) (dc-location-to-buffer-location
-					  event-x event-y)]
-				  [(pos) (find-position x y)])
-		      (unless (and cursor-location
-				   (= pos cursor-location))
-			(set! cursor-location pos)
-			(for-each update-poss (vector-ref arrow-vector cursor-location))
-			(time (invalidate-bitmap-cache))
-			(printf "invalidate bitmap cache~n"))
-		      #f)]
-		   [(and #f (send event button-down? 3))
-		    '(and this-time
-			  (let* ([canvas (get-canvas)]
-				 [JUMP-ID 1]
-				 [STICK-ID 2]
-				 [RENAME-ID 3]
-				 [callback (lambda (menu evt)
-					     (let ([id (send evt get-command-int)])
-					       (cond
-						[(= id STICK-ID)
-						 (set! perm-arrow-on? (not perm-arrow-on?))
-						 (set! tmp-arrow-on? #f)
-						 (send brush set-colour
-						       (if perm-arrow-on?
-							   color-background
-							   color-highlight))
-						 (invalidate-bitmap-cache)]
-						[(= id JUMP-ID)
-						 (set-position end-pos-left end-pos-right)]
-						[(= id RENAME-ID)
-						 (set! tmp-arrow-on? #f)
-						 (rename (mred:get-text-from-user
-							  (format "Rename ~a to:" id-name)
-							  "Rename Identifier"
-							  (format "~a" id-name)))
-						 (invalidate-bitmap-cache)])))]
-				 [menu (make-object wx:menu% null callback)])
-			    (send menu append STICK-ID (if perm-arrow-on?
-							   "Untack Arrow"
-							   "Tack Arrow"))
-			    (send menu append JUMP-ID "Jump")
-			    (send menu append RENAME-ID "Rename")
-			    (send canvas popup-menu menu
-				  (send event get-x)
-				  (send event get-y))))]
-		   [else #f]))
-		 (printf "on-event~n")))]))))
+		      (send dc set-logical-function old-logfn)))))]
+	    [on-local-event
+	     (let ([get-pos
+		    (lambda (event)
+		      (let*-values ([(event-x event-y)
+				     (values (send event get-x)
+					     (send event get-y))]
+				    [(x y) (dc-location-to-buffer-location
+					    event-x event-y)])
+			(find-position x y)))])
+	       (lambda (event)
+		 (and arrow-vector
+		      (cond
+			[(send event moving?)
+			 (let ([pos (get-pos event)])
+			   (unless (and cursor-location
+					(= pos cursor-location))
+			     (set! cursor-location pos)
+			     (for-each update-poss (vector-ref arrow-vector cursor-location))
+			     (invalidate-bitmap-cache))
+			   (super-on-local-event event))]
+			[(send event button-down? 3)
+			 (let* ([pos (get-pos event)]
+				[arrows (vector-ref arrow-vector pos)])
+			   (if (null? arrows)
+			       (super-on-local-event event)
+			       (let* ([canvas (get-canvas)]
+				      [JUMP-ID 1]
+				      [STICK-ID 2]
+				      [RENAME-ID 3]
+				      [callback (lambda (menu evt)
+						  (let* ([id (send evt get-command-int)])
+						    (cond
+						      [(= id STICK-ID)
+						       (for-each 
+							(lambda (arrow)
+							  (hash-table-put! tacked-hash-table 
+									   arrow 
+									   (not (hash-table-get tacked-hash-table
+												arrow
+												(lambda () #f)))))
+							arrows)
+						       (invalidate-bitmap-cache)]
+						      [(= id JUMP-ID)
+						       (unless (null? arrows)
+							 (let* ([arrow (car arrows)]
+								[start-pos-left (arrow-start-pos-left arrow)]
+								[start-pos-right (arrow-start-pos-right arrow)]
+								[end-pos-left (arrow-end-pos-left arrow)]
+								[end-pos-right (arrow-end-pos-right arrow)])
+							   (if (<= start-pos-left pos start-pos-right)
+							       (set-position end-pos-left end-pos-right)
+							       (set-position start-pos-left start-pos-right))))]							     
+						      [(= id RENAME-ID)
+						       (unless (null? arrows)
+							 (let* ([arrow (car arrows)]
+								[id-name (arrow-id-name arrow)])
+							   ((arrow-rename arrow)
+							    (mred:get-text-from-user
+							     (format "Rename ~a to:" id-name)
+							     "Rename Identifier"
+							     (format "~a" id-name))))
+							 (invalidate-bitmap-cache))])))]
+				      [menu (make-object wx:menu% null callback)])
+				 (send menu append STICK-ID "Toggle Tackedness")
+				 (send menu append JUMP-ID "Jump")
+				 (send menu append RENAME-ID "Rename")
+				 (send canvas popup-menu menu
+				       (send event get-x)
+				       (send event get-y)))))]
+			[else (super-on-local-event event)]))))]))))
 
     (define new%
       (class (drscheme:parameters:current-frame%) args
@@ -517,18 +539,19 @@
 		       [syntax-style (send style-list find-named-style "mzprizm:syntax")]
 		       [const-style (send style-list find-named-style "mzprizm:constant")]
 		       [rename-bindings
-			(lambda (occurrances new-name)
+			(lambda (occurrances input-name)
 			  (send definitions-edit begin-edit-sequence)
-			  (let ([sorted (mzlib:function@:quicksort
-					 occurrances
-					 (lambda (x y)
-					   (<= (zodiac:location-offset (zodiac:zodiac-start y))
-					       (zodiac:location-offset (zodiac:zodiac-start x)))))]
-				[rename-one
-				 (lambda (z)
-				   (send definitions-edit insert new-name
-					 (zodiac:location-offset (zodiac:zodiac-start z))
-					 (add1 (zodiac:location-offset (zodiac:zodiac-finish z)))))])
+			  (let* ([new-name (format "~a" (string->symbol input-name))]
+				 [sorted (mzlib:function@:quicksort
+					  occurrances
+					  (lambda (x y)
+					    (<= (zodiac:location-offset (zodiac:zodiac-start y))
+						(zodiac:location-offset (zodiac:zodiac-start x)))))]
+				 [rename-one
+				  (lambda (z)
+				    (send definitions-edit insert new-name
+					  (zodiac:location-offset (zodiac:zodiac-start z))
+					  (add1 (zodiac:location-offset (zodiac:zodiac-finish z)))))])
 			    (for-each rename-one sorted))
 			  (button-callback)
 			  (send definitions-edit end-edit-sequence))]
@@ -591,15 +614,14 @@
 						     (cons binding
 							   (hash-table-get local-bindings
 									   gen-name (lambda () null)))
-						     (format "~a" (string->symbol new-name)))))])
+						     new-name)))])
 				   (hash-table-put!
 				    local-bindings
 				    gen-name
 				    (cons zodiac-ast
 					  (hash-table-get local-bindings
 							  gen-name (lambda () null))))
-				   (add-arrow z:start z:finish start finish user-name rename)
-				   (add-arrow start finish z:start z:finish user-name rename))
+				   (add-arrow z:start z:finish start finish user-name rename))
 				 (color bound-style))]
 			      
 			      [(zodiac:top-level-varref? zodiac-ast)
@@ -626,7 +648,12 @@
 			      [(zodiac:define-values-form? zodiac-ast)
 			       (color-syntax)
 			       (for-each 
-				(lambda (var) (hash-table-put! defineds (zodiac:varref-var var) var))
+				(lambda (var) (hash-table-put! 
+					       defineds (zodiac:varref-var var)
+					       (cons var
+						     (hash-table-get defineds 
+								     (zodiac:varref-var var)
+								     (lambda () null)))))
 				(zodiac:define-values-form-vars zodiac-ast))
 			       (for-each (lambda (var)
 					   (when (eq? 'source (zodiac:origin-who (zodiac:zodiac-origin var)))
@@ -724,14 +751,37 @@
 		  ; color the top-level varrefs
 		  (let ([built-in?
 			 (lambda (s)
-			   (with-parameterization (ivar interactions-edit param)
-			     (lambda ()
-			       (built-in-name s))))])
+			   (parameterize ([current-namespace 
+					   ((in-parameterization (ivar interactions-edit param) 
+								 current-namespace))])
+			     (built-in-name s)))])
 		    (for-each (lambda (var)
 				(let ([id (zodiac:varref-var var)])
 				  (change-style
 				   (cond
-				     [(hash-table-get defineds id (lambda () #f)) bound-style]
+				     [(hash-table-get defineds id (lambda () #f))
+				      => 
+				      (lambda (defn-vars)
+					(let* ([defn-var (car defn-vars)]
+					       [end-pos-left (zodiac:location-offset (zodiac:zodiac-start defn-var))]
+					       [end-pos-right (add1 (zodiac:location-offset (zodiac:zodiac-finish defn-var)))]
+					       [start-pos-left (zodiac:location-offset (zodiac:zodiac-start var))]
+					       [start-pos-right (add1 (zodiac:location-offset (zodiac:zodiac-finish var)))]
+					       [rename (lambda (new-name)
+							 (when new-name
+							   (rename-bindings
+							    (mzlib:function@:foldl
+							     (lambda (test-var l)
+							       (if (eq? (zodiac:varref-var test-var)
+									(zodiac:varref-var defn-var))
+								   (cons test-var l)
+								   l))
+							     defn-vars
+							     top-level-varrefs)
+							    new-name)))])
+					  (add-arrow start-pos-left start-pos-right end-pos-left end-pos-right
+						     (zodiac:varref-var defn-var) rename)
+					  bound-style))]
 				     [(built-in? id) primitive-style]
 				     [else unbound-style])
 				   (zodiac:location-offset (zodiac:zodiac-start var))

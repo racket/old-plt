@@ -9,11 +9,6 @@
 (define-signature help:doc-position^
   (user-defined-doc-position))
 
-(define-signature help:drscheme-interface^
-  (help-desk
-   open-url
-   open-users-url))
-
 (begin-elaboration-time
  (require-relative-library "search-sig.ss"))
 

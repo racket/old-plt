@@ -1,13 +1,12 @@
 
-(module sig.ss mzscheme
-  (require "unitsig.ss")
+(module sig mzscheme
+  (require (lib "unitsig.ss"))
   (provide plt:prims^
            plt:beginner-extras^
            plt:intermediate-extras^
            plt:userspace^
            plt:init-namespace^
            plt:basis^
-           drscheme:interface^
            plt:basis-import^)
   
   (define-signature plt:prims^
@@ -18,8 +17,7 @@
 ;; the extras signatures don't include core-flat anymore --
 ;; they are now added differently.
   (define-signature plt:beginner-extras^
-    ((open mzlib:core-flat^)
-     (struct posn (x y) -setters)))
+    ((struct posn (x y) -setters)))
   
   (define-signature plt:intermediate-extras^
     plt:beginner-extras^)
@@ -27,57 +25,50 @@
 ;; will be redefined in guserspace's plt:userspace^
 ;; file if in drscheme
   (define-signature plt:userspace^
-    ((open mzlib:core-flat^)
-     (struct posn (x y))))
+    ((struct posn (x y))))
   (define-signature plt:advanced-extras^
-    ((struct posn (x y))
-     (open mzlib:core-flat^)))
+    ((struct posn (x y))))
   
 ;; extend structs with a parsing constructor
   (define-syntax (define-struct/parse stx)
     (syntax-case stx ()
-      [(str fields)
+      [(_ str (fields ...))
        (unless (symbol? (syntax-object->datum (syntax str)))
          (error 'define-struct/parse "no super structs allowed"))
        (let* ([first car]
               [second cadr]
-              [second-name 'cadr]
               [third caddr]
-              [defn (expand (syntax (define-struct ,str ,fields)))]
+              [defn (syntax->list (expand (syntax (define-struct str (fields ...)))))]
               [_ (unless (and (pair? defn)
-                              (eq? (car defn) '#%define-values))
+                              (eq? (syntax-e (first defn)) 'define-values))
                    (error 'define-struct/parse
-                          "expand-defmacro didn't return expected value: ~s~n" defn))]
-              [bindings (second defn)]
-              [exp (third defn)]
-              [make-parse (string->symbol (string-append "make-" (symbol->string str) "/parse"))]
-              [unparse (string->symbol (string-append (symbol->string str) "/unparse"))]
-              [maker-name (second bindings)]
-              [unparser
-               `(lambda (ele)
-                  (list
-                   ,@(map (lambda (field-name) 
-                            `(list ',field-name 
-                                   (,(string->symbol (string-append 
-                                                      (symbol->string str)
-                                                      "-"
-                                                      (symbol->string field-name)))
-                                    ele)))
-                          fields)))]
-              [parser
-               `(lambda (inits)
-                  (apply ,maker-name
-                         (map (lambda (field)
+                          "expand didn't return expected value: ~s~n" (syntax-object->datum defn)))]
+              
+              [bindings/list (syntax->list (second defn))]
+              [make-parse (string->symbol 
+                           (string-append
+                            "make-"
+                            (symbol->string (syntax-e (syntax str)))
+                            "/parse"))])
+         (with-syntax ([bindings (cons make-parse (second defn))]
+                       [exp (third defn)]
+                       [make-parser make-parse]
+                       [maker-name (second (syntax->list (second defn)))])
+           (syntax
+            (define-values bindings
+              (let ([make-parser
+                     (lambda (inits)
+                       (let ([select-field
+                              (lambda (field)
                                 (let ([m (assq field inits)])
                                   (unless m
-                                    (error ',make-parse "no binding for: ~a" field))
+                                    (error 'make-parse "no binding for: ~a" field))
                                   (unless (= (length m) 2)
-                                    (error ',make-parse "malformed binding: ~a" m))
-                                  (,second-name m)))
-                              ',fields)))])
-         `(define-values ,(list* make-parse unparse bindings)
-            (call-with-values (lambda () ,exp)
-                              (lambda bindings (apply values ,parser ,unparser bindings)))))]))
+                                    (error 'make-parse "malformed binding: ~a" m))
+                                  (cadr m)))])
+                         (maker-name (select-field 'fields) ...)))])
+                (call-with-values (lambda () exp)
+                                  (lambda bindings (apply values make-parser bindings))))))))]))
   
   (define-signature plt:init-params^
     (initial-line
@@ -169,12 +160,6 @@
   (define-signature plt:basis^
     ((open plt:init-params^)
      (open plt:init-namespace^)))
-  
-  (define-signature drscheme:interface^ 
-    ((open zodiac:interface^)
-     (struct exn:zodiac-syntax (link-tag))
-     (struct exn:zodiac-read (link-tag))
-     set-zodiac-phase))
   
   (define-signature plt:basis-import^
     (in-mzscheme?)))

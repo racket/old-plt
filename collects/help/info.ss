@@ -1,16 +1,6 @@
-(lambda (request failure)
-  (case request
-    [(name) "Help"]
-    [(compile-prefix) `(begin
-			 (require-library "sig.ss" "mred")
-			 (require-library "drsig.ss" "drscheme")
-			 (require-library "sig.ss" "help")
-			 (require-library "xmls.ss" "xml")
-			 (require-library "heads.ss" "net")
-                         (require-library "smtps.ss" "net"))]
-    [(compile-omit-files) (list "sig.ss" "search-sig.ss" "manuals.ss")]
-    [(compile-elaboration-zos) (list "sig.ss" "search-sig.ss")]
-    [(mred-launcher-libraries) (list "help.ss")]
-    [(mred-launcher-names) (list "Help Desk")]
-    [else (failure)]))
+(module info (lib "infotab.ss" "setup")
+  (define name "Help")
+  (define mred-launcher-libraries (list "help.ss"))
+  (define mred-launcher-names (list "Help Desk")))
+
 

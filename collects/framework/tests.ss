@@ -1,8 +1,10 @@
-;;
-;; $Id: tests.ss,v 1.1 1998/11/19 17:23:42 robby Exp $
-;;
-;; Signatures for gui tester.
-;;
+(require-library "refer.ss")
+
+(require-library "mred-interfaces.ss" "framework")
+
+(define-signature framework:keys^
+  (shifted-key-list
+   get-shifted-key-list))
 
 (define-signature framework:test:run^
   (run-interval

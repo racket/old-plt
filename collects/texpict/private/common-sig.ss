@@ -35,8 +35,9 @@
      lift           ; pict -> pict
      drop           ; pict -> pict
      inset          ; pict i -> pict
-     ; pict hi vi -> pict
-     ; pict l t r b -> pict
+                    ; pict hi vi -> pict
+                    ; pict l t r b -> pict
+     refocus        ; pict pict -> pict
 
      hline        ; w h -> pict
      dash-hline   ; w h seg-length -> pict ; default seg-length is 5

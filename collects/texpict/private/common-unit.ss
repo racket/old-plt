@@ -163,6 +163,19 @@
 			 (pict-descent p))
 		     (pict-children p))))
 
+      (define (refocus p c)
+	(let-values ([(x y) (find-lt p c)])
+	  (let ([p (inset p 
+			  (- x) (- y (pict-height p)) 
+			  (- (- (pict-width p) x (pict-width c)))
+			  (- (pict-height c) y))])
+	    p
+	    #;
+	    (make-pict (pict-draw p)
+		       (pict-width c) (pict-height c)
+		       (pict-ascent c) (pict-descent c)
+		       (pict-children p)))))
+
       (define (clip-descent b)
 	(let* ([w (pict-width b)]
 	       [h (pict-height b)]

@@ -84,9 +84,17 @@ if test "${prefix}" = "NONE" ; then
   prefix="${srcdir}/.."
   MAKE_FINISH=inplace-finish
 else
-  echo "----> Installation will go to ${prefix} <-----"
-  MAKE_COPYTREE=copytree
-  MAKE_FINISH=copy-finish
+  # Check whether ${prefix} is redundant, because
+  # $prefix/src is $srcdir.
+  here_inode=`(ls -i -l -d ${srcdir}/. | cut -d d -f 1) 2> /dev/null`
+  there_inode=`(ls -i -l -d ${prefix}/src | cut -d d -f 1) 2> /dev/null`
+  if test "${here_inode}" = "${there_inode}" ; then
+    echo "in-place install, --prefix  specification is redundant"
+  else 
+    echo "----> Installation will go to ${prefix} <-----"
+    MAKE_COPYTREE=copytree
+    MAKE_FINISH=copy-finish
+  fi
 fi
 
 if test "${enable_gl}" = "" ; then

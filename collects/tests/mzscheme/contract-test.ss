@@ -39,6 +39,9 @@
           ensure-contract-failed
           expression))
   
+  (define (test/well-formed stx)
+    (expand stx))
+  
   (test/spec-passed
    'contract-flat1 
    '(contract not #f 'pos 'neg))
@@ -1105,6 +1108,18 @@
               'pos
               'neg)
    'not-integer)
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;                                                        ;;
+  ;;   case-> arity tests                                   ;;
+  ;;                                                        ;;
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  
+  (test/well-formed #'(case-> (-> integer? integer?)))
+  (test/well-formed #'(case-> (-> integer? integer?) (-> integer? integer? integer?)))
+  (test/well-formed #'(case-> (-> integer? integer?) (-> integer? integer? any)))
+  (test/well-formed #'(case-> (-> integer? any) (-> integer? integer? any)))
+  (test/well-formed #'(case-> (integer? integer? . ->d . (lambda x integer?)) ((any?) any? . ->* . (any?))))
   
   ))
 

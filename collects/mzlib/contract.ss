@@ -1401,7 +1401,7 @@
 		   ...
 		   (check-contract dom-rest-x arg-rest-x neg-blame pos-blame src-info))))))
 	    (lambda (body stx) (syntax (lambda x (error 'impl-contract "unimplemented for ->* (any case)"))))
-	    (syntax (x (error 'impl-contract "unimplemented for ->* (any case)")))
+	    (syntax ((dom-x ... . dom-rest-x) (error 'impl-contract "unimplemented for ->* (any case)")))
 	    (syntax (lambda x (error 'impl-contract "unimplemented for ->* (any case)")))))]))
     
     ;; ->d/h : stx -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
@@ -1454,9 +1454,9 @@
                        pos-blame
                        neg-blame
                        src-info))))))
-              (lambda (body stx) (syntax (lambda x (error 'impl-contract "unimplemented for ->d"))))
-              (syntax (x (error 'impl-contract "unimplemented for ->d")))
-              (syntax (lambda x (error 'impl-contract "unimplemented for ->d"))))))]))
+              (lambda (body stx) (syntax (lambda x (error 'impl-contract "unimplemented for ->d.1"))))
+              (syntax ((dom-x ...) (error 'impl-contract "unimplemented for ->d.2")))
+              (syntax (lambda x (error 'impl-contract "unimplemented for ->d.3"))))))]))
     
     ;; ->d*/h : stx -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
     (define (->d*/h stx)
@@ -1592,7 +1592,7 @@
                               rng-contracts
                               results))))))))))
             (lambda (body stx) (syntax (lambda x (error 'impl-contract "unimplemented for ->d*"))))
-            (syntax (x (error 'impl-contract "unimplemented for ->d*")))
+            (syntax ((dom-x ...) (error 'impl-contract "unimplemented for ->d*")))
             (syntax (lambda x (error 'impl-contract "unimplemented for ->d*")))))]))
     
     ;; select/h : syntax -> /h-function

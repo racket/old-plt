@@ -651,7 +651,7 @@
  (r5rs-one-line-summary "R5RS, with no frills")
  (unknown-debug-frame "[unknown]")
  
- (module-language-one-line-summary "Execute creates a REPL in the language of the module")
+ (module-language-one-line-summary "Execute creates a REPL in the module and in the language of the module")
   
  ;;; debug language
  (backtrace-window-title "Backtrace - DrScheme")

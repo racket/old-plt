@@ -116,15 +116,16 @@
 			    (ormap key-proc platforms))
 		   (error 'mred:menu% "append-item: must add the menu to a menubar before appending items when keybings are involved"))
 		 (set! callbacks (cons (cons id callback) callbacks))
-		 (for-each (let ([keymap-string (string-append "append-item:" (number->string id) "/")])
-			     (lambda (symbol)
-			       (let ([keymap (send menu-bar get-platform-menu-keymap symbol)]
-				     [key (key-proc symbol)])
-				 (when key
-				   (let ([name (string-append keymap-string key)])
-				     (send keymap add-key-function name (lambda (x y) (callback)))
-				     (send keymap map-function key name))))))
-			   platforms)
+		 (when menu-bar
+		   (for-each (let ([keymap-string (string-append "append-item:" (number->string id) "/")])
+			       (lambda (symbol)
+				 (let ([keymap (send menu-bar get-platform-menu-keymap symbol)]
+				       [key (key-proc symbol)])
+				   (when key
+				     (let ([name (string-append keymap-string key)])
+				       (send keymap add-key-function name (lambda (x y) (callback)))
+				       (send keymap map-function key name))))))
+			     platforms))
 		 id))]
 	    [append-menu
 	     (opt-lambda (label menu [help ()])

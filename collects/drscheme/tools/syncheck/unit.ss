@@ -239,6 +239,7 @@
 								other-colors))))]
 		     [style (send (send e get-style-list) find-named-style style-name)])
 		(when color-choice
+		  (send color-choice stretchable-in-x #f)
 		  (let ([color (send wx:the-colour-database find-name (send style get-foreground))])
 		    (cond
 		     [(null? color)
@@ -547,27 +548,6 @@
 	(private
 	  [button-callback
 	   (lambda ()
-	     (let ([definitions-edit definitions-edit])
-	       (dynamic-wind
-		(lambda ()
-		  (wx:begin-busy-cursor)
-		  (send definitions-edit set-styles-fixed #f)
-		  (send definitions-edit begin-edit-sequence #f))
-		(lambda ()
-		  (with-handlers
-		      ([void ; should be: zodiac:interface:zodiac-exn?
-			(lambda (exn)
-			  (mred:message-box (exn-message exn) "error")
-			  (send interactions-edit insert-prompt))])
-		    (let* ([thunk (mred:read-snips/chars-from-buffer definitions-edit)]
-			   [reader (zodiac:read thunk (zodiac:make-location 1 1 0 definitions-edit))])
-		      (color-syntax reader))))
-		(lambda ()
-		  (send definitions-edit end-edit-sequence)
-		  (send definitions-edit set-styles-fixed #t)
-		  (wx:end-busy-cursor)))))]
-	  [color-syntax
-	   (lambda (reader)
 	     (letrec* ([user-param (ivar interactions-edit param)]
 		       [add-arrow 
 			(let ([aa (ivar definitions-edit syncheck:add-arrow)])
@@ -639,8 +619,6 @@
 			  (send definitions-edit end-edit-sequence))]
 		       [color-loop
 			(lambda (zodiac-ast)
-			  '(begin (mzlib:pretty-print@:pretty-print zodiac-ast)
-				 (newline))
 			  (let* ([source-object?
 				  (eq? (zodiac:origin-who
 					(zodiac:zodiac-origin zodiac-ast))
@@ -649,6 +627,24 @@
 				 [z:finish (+ 1
 					      (zodiac:location-offset
 					       (zodiac:zodiac-finish zodiac-ast)))]
+				 [search-for-orig-syntax
+				  (lambda ()
+				    (let loop ([zobj zodiac-ast])
+				      (let* ([origin (zodiac:zodiac-origin zobj)]
+					     [who (zodiac:origin-who origin)])
+					(cond
+					 [(eq? who 'macro) (loop (zodiac:origin-how origin))]
+					 [(and (eq? who 'source) (zodiac:symbol? zobj))
+					  (printf "followed to: ~a - ~a~n~a~n"
+						  (zodiac:location-offset (zodiac:zodiac-start zobj))
+						  (add1 (zodiac:location-offset 
+							 (zodiac:zodiac-finish zobj)))
+						  zobj)
+					  (change-style syntax-style
+							(zodiac:location-offset (zodiac:zodiac-start zobj))
+							(add1 (zodiac:location-offset 
+							       (zodiac:zodiac-finish zobj))))]
+					 [else (void)]))))]
 				 [color-syntax
 				  (lambda ()
 				    (if source-object?
@@ -656,19 +652,8 @@
 					       [finish (find-next-whitespace start)])
 					  (when (and finish start)
 					    (change-style syntax-style start finish)))
-					(let loop ([zobj zodiac-ast])
-					  (let* ([origin (zodiac:zodiac-origin zobj)]
-						 [who (zodiac:origin-who origin)])
-					  (cond
-					   [(eq? who 'macro) (loop (zodiac:origin-how origin))]
-					   [(and (eq? who 'source) (zodiac:symbol? zobj))
-					    (change-style syntax-style
-							  (zodiac:location-offset (zodiac:zodiac-start zobj))
-							  (add1 (zodiac:location-offset 
-								 (zodiac:zodiac-finish zobj))))]
-					   [else (void)]))))
-				    '(mred:message-box "color-syntax ending"))]
-					    
+					(search-for-orig-syntax)))]
+				 
 				 [color
 				  (lambda (delta)
 				    (when (and source-object? z:finish z:start)
@@ -680,6 +665,7 @@
 					      argss))])
 			    (cond
 			      [(zodiac:quote-form? zodiac-ast)
+			       (search-for-orig-syntax)
 			       (color const-style)]
 			      
 			      [(zodiac:binding? zodiac-ast) (color bound-style)]
@@ -794,48 +780,55 @@
 							     zodiac-ast))
 						    "Unrecognized Syntax")
 				 (void))])))])
-	       
-	       ; reset all of the buffer to the default style
-	       ; and clear out arrows
-	       (let* ([list (send definitions-edit get-style-list)]
-		      [style (send list find-named-style "Standard")])
-		 (send definitions-edit syncheck:clear-arrows)
-		 (if (null? style)
-		     (printf "Warning: couldn't find Standard style~n")
-		     (change-style style 0 (send definitions-edit last-position))))
-	       
-	       ; read expand and color
-	       (let read-loop ()
-		 '(printf "reading   ")
-		 (let* ([time (lambda (x) x)]
-			[expr (time (reader))])
-		   (unless (zodiac:eof? expr)
-		     '(printf "expanding ")
-		     (let ([expanded (time (call/nal zodiac:scheme-expand/nal
-						     zodiac:scheme-expand
-						     (expression: expr)
-						     (parameterization: user-param)))])
-		       '(printf "coloring  ")
-		       (time (color-loop expanded))
-		       (read-loop)))))
-	       
-	       ; color the top-level varrefs
-	       (let ([built-in?
-		      (lambda (s)
-			(with-parameterization (ivar interactions-edit param)
-			  (lambda ()
-			    (built-in-name s))))])
-		 (for-each (lambda (var)
-			     (let ([id (zodiac:varref-var var)])
-			       (change-style
-				(cond
-				  [(hash-table-get defineds id (lambda () #f)) bound-style]
-				  [(built-in? id) primitive-style]
-				  [else unbound-style])
-				(zodiac:location-offset (zodiac:zodiac-start var))
-				(add1 (zodiac:location-offset (zodiac:zodiac-finish var))))))
-			   top-level-varrefs))))]
-	  
+	       (dynamic-wind
+		(lambda ()
+		  (wx:begin-busy-cursor)
+		  (send definitions-edit set-styles-fixed #f)
+		  (send definitions-edit begin-edit-sequence #f))
+		(lambda ()
+		  
+		  ; reset all of the buffer to the default style
+		  ; and clear out arrows
+		  (let* ([list (send definitions-edit get-style-list)]
+			 [style (send list find-named-style "Standard")])
+		    (send definitions-edit syncheck:clear-arrows)
+		    (if (null? style)
+			(printf "Warning: couldn't find Standard style~n")
+			(change-style style 0 (send definitions-edit last-position))))
+		  
+		  ;; color each exp
+		  (send interactions-edit process-edit/zodiac
+			definitions-edit
+			(lambda (expr recur)
+			  (cond
+			    [(eq? expr #t) (send interactions-edit insert-prompt)]
+			    [(not expr) (void)]
+			    [else
+			     (color-loop expr)
+			     (recur)]))
+			0
+			(send definitions-edit last-position)
+			#f)
+		  ; color the top-level varrefs
+		  (let ([built-in?
+			 (lambda (s)
+			   (with-parameterization (ivar interactions-edit param)
+			     (lambda ()
+			       (built-in-name s))))])
+		    (for-each (lambda (var)
+				(let ([id (zodiac:varref-var var)])
+				  (change-style
+				   (cond
+				     [(hash-table-get defineds id (lambda () #f)) bound-style]
+				     [(built-in? id) primitive-style]
+				     [else unbound-style])
+				   (zodiac:location-offset (zodiac:zodiac-start var))
+				   (add1 (zodiac:location-offset (zodiac:zodiac-finish var))))))
+			      top-level-varrefs)))
+	       (lambda ()
+		 (send definitions-edit end-edit-sequence)
+		 (send definitions-edit set-styles-fixed #t)
+		 (wx:end-busy-cursor)))))]
 	  [button (make-object mred:button% button-panel
 			       (lambda (button evt) (button-callback))
 			       (drscheme:unit:make-bitmap

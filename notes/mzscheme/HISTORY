@@ -21,12 +21,15 @@ Removed constant-name and constant-name-all-globals
 Removed secure-primitive-exception-types
 Removed readable type symbols (e.g., #<procedure>)
 Removed semaphore-callback (MrEd now has queue-callback)
+Removed parameterizations (but not parameters!)
 Fixed unfairness in threads (perpetually creating threads
  would starve certain threads, particularly the main thread)
 Unreachable thread blocked on an unreachable semaphore is
  garbage-collectable
 Added channels
 Added current-memory-use
+Changed TCP writes to block when the underlying implementation
+ blocks, and removed tcp-port-send-waiting?
 Asynchronous breaks are now disabled during dynamic-wind
  pre and post thunks
 Removed user-break-poll-handler; spawn a thread that sleeps and
@@ -35,7 +38,7 @@ Removed dynamic-enable-break (no long needed since dynamic-wind
  post thunks can't be broken), but moved it to MzLib's thread.ss
 Renamed the call-with-escaping-continution procedure to
  call-with-escape-continution (call/ec is unchanged)
-Finalized with-continuation-mark and current-continuation-marks
+Finished with-continuation-mark and current-continuation-marks
  and documented them; the errortrace poor man's debugger relies
  on continuation marks; see plt/collects/errortrace/doc.txt
 Added raise-mismatch-error

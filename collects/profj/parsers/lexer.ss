@@ -305,10 +305,9 @@
      #;("/**" (begin (read-document-comment input-port) (return-without-pos (get-token input-port))))
        
      ((special) 
-      (begin (printf "lexing a special")
-             (syntax-case lexeme ()
-               ((parse-example-box examples) (token-EXAMPLE (make-example-box (syntax examples))))
-               (_ (token-OTHER_SPECIAL (list lexeme start-pos end-pos))))))
+      (syntax-case lexeme ()
+        ((parse-example-box examples) (token-EXAMPLE (make-example-box (syntax examples))))
+        (_ (token-OTHER_SPECIAL (list lexeme start-pos end-pos)))))
      #;(begin(printf "lexing a special")
             (syntax-case lexeme ()
               ((test-case equal? exp1 exp2 exp3 exp4)

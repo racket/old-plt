@@ -16,12 +16,12 @@
     (syntax-rules ()
       ((_ parse-info ...) (parser parse-info ...))))
   
-  (provide parse-advanced parse-advanced-interactions parse-advanced-expression)
+  (provide parse-advanced parse-advanced-interactions parse-advanced-expression parse-advanced-type)
   ;(provide advanced-grammar)  
   
   (define parsers
     (parser
-     (start CompilationUnit AdvancedInteractions VariableInitializer)
+     (start CompilationUnit AdvancedInteractions VariableInitializer Type)
      ;;(debug "parser.output")
      (tokens java-vals special-toks Keywords Separators EmptyLiterals Operators)
      ;(terminals val-tokens special-tokens keyword-tokens separator-tokens literal-tokens operator-tokens)
@@ -801,4 +801,5 @@
   (define parse-advanced (car parsers))
   (define parse-advanced-interactions (cadr parsers))
   (define parse-advanced-expression (caddr parsers))
+  (define parse-advanced-type (cadddr parsers))
   )

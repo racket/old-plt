@@ -9,7 +9,7 @@
            "parameters.ss")
   
   (require (all-except (lib "lex.ss" "parser-tools") input-port))
-  (provide parse parse-interactions parse-expression lex-stream)
+  (provide parse parse-interactions parse-expression parse-type lex-stream)
   
   ;function to lex in the entire port
   ;lex-port: port string -> (list position-token)
@@ -66,7 +66,7 @@
          (parse-advanced-interactions my-get))
         ((full) (parse-full-interactions my-get)))))
   
-  ;parse-method: port string symbol -> method
+  ;parse-expression: port string symbol -> Expression
   (define (parse-expression is loc level)
     (let* ((lexed (lex-port is loc))
            (my-get (getter lexed)))
@@ -82,4 +82,22 @@
          (determine-error find-advanced-error-expression)
          (parse-advanced-expression my-get))
         ((full) (parse-full-expression my-get)))))
+
+  ;parse-type: port string symbol -> type-spec
+  (define (parse-type is loc level)
+    (let* ((lexed (lex-port is loc))
+           (my-get (getter lexed)))
+      (lex-stream (lambda () (getter lexed)))
+      (case level
+        ((beginner)
+         (determine-error find-beginner-error-type)
+         (parse-beginner-type my-get))
+        ((intermediate)
+         (determine-error find-intermediate-error-type)
+         (parse-intermediate-type my-get))
+        ((advanced)
+         (determine-error find-advanced-error-type)
+         (parse-advanced-type my-get))
+        ((full) (parse-full-type my-get)))))
+  
   )

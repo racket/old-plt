@@ -1,4 +1,3 @@
-#cs
 (module tool mzscheme
   (require (lib "tool.ss" "drscheme")
            (lib "mred.ss" "mred") (lib "framework.ss" "framework") (lib "unitsig.ss") 
@@ -130,11 +129,13 @@
         (class* object% (drscheme:language:language<%>)
 
           (define/public (order-manuals x)
-            (values (case level
-                      ((beginner) `(#"profj-beginner" #"tour" #"drscheme" #"help"))
-                      ((intermediate) `(#"profj-intermediate" ,@(order-manuals 'beginner)))
-                      ((advanced full) `(#"profj-advanced" ,@(order-manuals 'intermediate))))
-                    #f))
+            (let* ((beg-list (#"profj-beginner" #"tour" #"drscheme" #"help"))
+                   (int-list (cons #"profj-intermediate" beg-list)))
+              (values (case level
+                        ((beginner) beg-list)
+                        ((intermediate) int-list)
+                        ((advanced full) (cons #"profj-advanced" int-list)))
+                      #f)))
           
           ;default-settings: -> profj-settings
           (define/public (default-settings) 
@@ -341,7 +342,7 @@
                  (let ((end? (eof-object? (peek-char-or-special port))))
                    (if end? 
                        eof 
-                       (datum->syntax-object #f `(parse-java-full-program ,(parse port name level)) #f)))))))          
+                       (datum->syntax-object #f `(parse-java-full-program ,(parse port name level)) #f)))))))
           (define/public (front-end/interaction port settings teachpack-cache)
             (let ([name (object-name port)])
               (lambda ()
@@ -350,8 +351,7 @@
 		    (syntax-as-top
                      (datum->syntax-object 
                       #f 
-                      `(parse-java-interactions ,(begin (printf "parsing interactions")
-                                                        (parse-interactions port name level)) ,name)
+                      `(parse-java-interactions ,(parse-interactions port name level) ,name)
                       #f))))))
 
 	  (define/private (syntax-as-top s)
@@ -364,20 +364,23 @@
               ((null? extras) null)
               ((example-box? (car extras)) 
                (let ((contents (eval (example-box-contents (car extras)))))
-                 (append (map (lambda (example)
-                                (let ((name-text (send (cadr example) get-text)))
-                                  (compile-interactions-ast 
-                                   (make-var-init (make-var-decl (make-id name-text #f)
-                                                                 null
-                                                                 (make-type-spec 'int 0 #f)
-                                                                 #f)
-                                                  (parse-expression (open-input-text-editor (caddr example)) (caddr example) level)
-                                                  #f)
-                                   (caddr example)
-                                   level
-                                   type-recs)))
-                              contents))
-                 (process-extras (cdr extras) type-recs)))
+                 (append 
+                  (map (lambda (example)
+                         (let* ((type-editor (car example))
+                                (type (parse-type (open-input-text-editor type-editor) type-editor level))
+                                (name-editor (cadr example))
+                                (name-text (send name-editor get-text))
+                                (val-editor (caddr example))
+                                (val (parse-expression (open-input-text-editor val-editor) val-editor level)))
+                           (compile-interactions-ast
+                            (make-var-init (make-var-decl 
+                                            (make-id name-text 
+                                                     (make-src 1 1 1 (string-length name-text) name-editor))
+                                            null type #f)
+                                           val #f)
+                            val-editor level type-recs)))
+                       contents)
+                  (process-extras (cdr extras) type-recs))))
               ((test-case? (car extras))
                (cons 
                 (let ((new-test-case
@@ -494,14 +497,13 @@
                                   (old-current-eval (syntax-as-top (car extras)))
                                   (loop mods (cdr extras) require?))
                                  (require? 
-                                  (old-current-eval (syntax-as-top
-                                                     (with-syntax ([name name-to-require])
-                                                       (syntax (require name)))))
+                                  (old-current-eval (with-syntax ([name name-to-require])
+                                                      (syntax (require name))))
                                   (loop mods extras #f))
                                  (else 
                                   (let-values (((name syn) (get-module-name (expand (car mods)))))
                                     (set! name-to-require name)
-                                    (old-current-eval (syntax-as-top syn))
+                                    (old-current-eval syn)
                                     (loop (cdr mods) extras #t))))))))
                         ((parse-java-interactions ex loc)
                          (let ((exp (old-current-eval (syntax ex))))

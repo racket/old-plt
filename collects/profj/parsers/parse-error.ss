@@ -7,9 +7,10 @@
            (lib "readerr.ss" "syntax")
            (all-except (lib "lex.ss" "parser-tools") input-port))
   
-  (provide find-intermediate-error find-intermediate-error-interactions find-intermediate-error-expression
-           find-beginner-error find-beginner-error-interactions find-beginner-error-expression
-           find-advanced-error find-advanced-error-interactions find-advanced-error-expression)
+  (provide
+   find-beginner-error find-beginner-error-interactions find-beginner-error-expression find-beginner-error-type           
+   find-intermediate-error find-intermediate-error-interactions find-intermediate-error-expression find-intermediate-error-type
+   find-advanced-error find-advanced-error-interactions find-advanced-error-expression find-advanced-error-type)
 
   (define level (make-parameter 'beginner))
   (define (beginner?) (eq? (level) 'beginner))
@@ -30,11 +31,20 @@
       (let ((getter ((lex-stream))))
         (parse-expression null (getter) 'start getter #f #f))))
   
+  ;find-type-error: symbol -> (-> (U void #t))
+  (define (find-type-error level-set)
+    (lambda ()
+      (level level-set)
+      (let ((getter ((lex-stream))))
+        (parse-type null (getter) 'start getter))))
+  
   ;find-beginner-error: -> (U void #t)
   (define find-beginner-error (find-error 'beginner))
   
   (define find-beginner-error-expression (find-expression-error 'beginner))
 
+  (define find-beginner-error-type (find-type-error 'beginner))
+  
   ;find-beginner-error-interaction: -> (U bool or token)
   ;Should not return
   (define (find-beginner-error-interactions)
@@ -68,6 +78,9 @@
 
   ;find-intermediate-error-expression: -> void
   (define find-intermediate-error-expression (find-expression-error 'intermediate))
+
+  ;find-intermediate-error-type: -> void
+  (define find-intermediate-error-type (find-type-error 'intermediate))
   
   ;find-error-interaction: -> (U bool or token)
   ;Should not return
@@ -104,6 +117,9 @@
 
   ;find-advanced-error-expression: -> void
   (define find-advanced-error-expression (find-expression-error 'advanced))
+
+  ;find-advanced-error-type: -> void
+  (define find-advanced-error-type (find-type-error 'advanced))
   
   ;find-error-interaction: -> (U bool or token)
   ;Should not return
@@ -568,7 +584,62 @@
                    (parse-error "Unnecessary }, interface body is already closed" srt (get-end next))
                    (parse-definition cur-tok next 'start getter))))
             (else (parse-error (format "Expected a } to close interface body, found ~a" out) ps end)))))))
-               
+
+  
+  ;parse-type: token token symbol (->token) -> void
+  (define (parse-type pre cur state getter)
+    (let* ((tok (get-tok cur))
+           (kind (get-token-name tok))
+           (out (format-out tok))
+           (srt (get-start cur))
+           (end (get-end cur))
+           (ps (if (null? pre) null (get-start pre)))
+           (pe (if (null? pre) null (get-end pre))))
+      (case state
+        ((start)
+         (cond
+           ((eof? tok) (parse-error "Expected a type, found nothing" srt end))
+           ((prim-type? tok) (parse-type cur (getter) 'end-or-array getter))
+           ((id-token? tok) (parse-type cur (getter) 'qualified-or-array getter))
+           ;I can do better here: expand close-to-keyword to specify close to which type of keyword
+           (else
+            (parse-error (format "Expected a type, found ~a, which is not the valid beginning of a type" out)
+                         srt end))))
+         ((end-or-array)
+          (cond
+            ((dot? tok) (parse-error (format "'.' cannot follow primitive type ~a in a type declaration" 
+                                             (format-out (get-tok pre))) ps end))
+            ((and (advanced?) (o-bracket? tok))
+             (parse-type pre (getter) 'array-close getter))
+            (else 
+             (parse-error 
+              (format "Only one item may appear in a type declaration, ~a is a complete type, ~a maynot appear"
+                      (format-out (get-tok pre)) out) ps end))))
+         ((qualified-or-array)
+          (cond
+            ((dot? tok)
+             (parse-error "This type declaration maynot contain a '.'" ps end))
+            ((and (advanced?) (o-bracket? tok))
+             (parse-type pre (getter) 'array-close getter))
+            (else
+             (parse-error 
+              (format "Only one item may appear in a type declaration, ~a appears to be a complete type, ~a maynot appear"
+                      (format-out (get-tok pre)) out) ps end))))
+         ((array-close)
+          (cond
+            ((c-bracket? tok) 
+             (let ((next (getter)))
+               (cond
+                 ((o-bracket? (get-tok next))
+                  (parse-type next (getter) 'array-close getter))
+                 (else 
+                  (parse-error 
+                   (format "Only one type may appear in a type declaration, ] appears to complete the type, ~a maynot appear"
+                           (format-out (get-tok next)))
+                   ps (get-end next))))))
+            (else
+             (parse-error
+              (format "Expected a ] to close the array type, found ~a, which maynot appear here" out) ps end)))))))
               
   ;parse-members: token token symbol (->token) boolean -> token
   (define (parse-members pre cur state getter abstract-method? just-method?)

@@ -624,7 +624,7 @@
 							      [class-name class-name])
 						  (syntax/loc e 
 						    (begin 
-						      (set! id (extract-arg 'class-name 'idpos init-args defval))
+						      (set! id (extract-arg 'class-name `idpos init-args defval))
 						      ...))))]
 					     [(field idp ...)
 					      (syntax/loc e (begin 
@@ -816,17 +816,17 @@
 				     ;; Field count:
 				     num-fields
 				     ;; Field names:
-				     (quote field-names)
-				     (quote inherit-field-names)
+				     `field-names
+				     `inherit-field-names
 				     ;; Method names:
-				     (quote rename-names)
-				     (quote public-final-names)
-				     (quote public-names)
-				     (quote override-final-names)
-				     (quote override-names)
-				     (quote inherit-names)
+				     `rename-names
+				     `public-final-names
+				     `public-names
+				     `override-final-names
+				     `override-names
+				     `inherit-names
 				     ;; Init arg names (in order)
-				     (quote init-names)
+				     `init-names
 				     (quote init-mode)
 				     ;; Methods (when given needed super-methods, etc.):
 				     (lambda (field-accessor ...  ; inherit, public, private
@@ -998,12 +998,28 @@
 	     (syntax/loc stx (define-syntaxes (id ...) (values 'id ...)))
 	     ;; Map names to private indicators:
 	     (with-syntax ([(gen-id ...) (map (lambda (id)
-						(string->uninterned-symbol
-						 (format "~a" (syntax-e id))))
+						;; Need to give the generated id the same context
+						;; as the original id:
+						(datum->syntax-object
+						 id
+						 (gensym (syntax-e id))))
 					      ids)])
-	       (syntax/loc stx
-		 (define-syntaxes (id ...)
-		   (values (make-private-name 'gen-id) ...))))))]))
+	       (with-syntax ([stx-defs
+			      ;; Need to attach srcloc to this definition:
+			      (syntax/loc stx
+				(define-syntaxes (id ...)
+				  (values (make-private-name (quote-syntax id) 
+							     (quote-syntax gen-id)) 
+					  ...)))])
+		 (syntax/loc stx
+		   (begin
+		     (define-values (gen-id ...)
+		       (values (generate-local-member-name 'id) ...))
+		     stx-defs))))))]))
+
+  (define (generate-local-member-name id)
+    (string->uninterned-symbol
+     (symbol->string id)))
 
   ;;--------------------------------------------------------------------
   ;;  class implementation
@@ -1539,7 +1555,7 @@
 	 (with-syntax ([(kw ...) (map localize (syntax->list (syntax (kw ...))))])
 	   (syntax (do-make-object class
 				   args
-				   (list (cons 'kw arg)
+				   (list (cons `kw arg)
 					 ...))))]
 	[(_ super-make-object orig-stx class args kwarg ...)
 	 ;; some kwarg must be bad:
@@ -1718,19 +1734,19 @@
 		      (if flatten?
 			  (if (stx-list? (syntax args))
 			      (syntax (let ([this obj])
-					(apply (find-method this 'name) this . args)))
+					(apply (find-method this `name) this . args)))
 			      (raise-syntax-error
 			       #f
 			       "bad syntax (illegal use of `.')"
 			       stx))
 			  (if (stx-list? (syntax args))
 			      (with-syntax ([call (syntax/loc stx
-						    ((find-method this 'name) this . args))])
+						    ((find-method this `name) this . args))])
 				(syntax/loc stx (let ([this obj])
 						  call)))
 			      (with-syntax ([args (flatten-args (syntax args))])
 				(with-syntax ([call (syntax/loc stx
-						      (apply (find-method this 'name) this . args))])
+						      (apply (find-method this `name) this . args))])
 				  (syntax/loc stx (let ([this obj])
 						    call))))))))])))])
       (values (mk #f) (mk #t))))
@@ -1860,7 +1876,7 @@
 		       name))
 		    (with-syntax ([name (localize name)]
 				  [make make])
-		      (syntax/loc stx (make class-expr 'name))))]
+		      (syntax/loc stx (make class-expr `name))))]
 		 [(_ class-expr)
 		  (raise-syntax-error
 		   #f
@@ -1898,7 +1914,7 @@
 			 [(name ...) (map localize names)])
 	     (syntax/loc stx (let-values ([(method method-obj)
 					   (let ([obj obj-expr])
-					     (values (find-with-method obj 'name) obj))]
+					     (values (find-with-method obj `name) obj))]
 					  ...)
 			       (letrec-syntaxes+values ([(id) (make-with-method-map
 							       (quote-syntax set!)

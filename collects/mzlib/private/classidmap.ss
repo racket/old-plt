@@ -182,12 +182,15 @@
        [else
 	(reverse (cons args accum))])))
 
-  (define-struct private-name (gen-id))
+  (define-struct private-name (orig-id gen-id))
 
   (define (localize id)
     (let ([v (syntax-local-value id (lambda () #f))])
       (if (and v (private-name? v))
-	  (private-name-gen-id v)
+	  (list 'unquote 
+		(binding (private-name-orig-id v)
+			 id
+			 (private-name-gen-id v)))
 	  id)))
 
 

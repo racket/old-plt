@@ -334,13 +334,13 @@
 (error-test '(path->complete-path 1))
 (error-test '(path->complete-path "a" 1))
 
-(test (build-path "a" "b") simplify-path (build-path "a" "b"))
+(test-path (build-path "a" "b") simplify-path (build-path "a" "b"))
 (let ([full-path
        (lambda args (apply build-path (current-directory) args))])
-  (test (full-path "a" "b") simplify-path (build-path "a" 'same "b"))
-  (test (full-path "a" "b") simplify-path (build-path "a" 'same "noexistsdir" 'up "b"))
-  (test (full-path "a" "b") simplify-path (build-path "a" 'same "noexistsdir" 'same 'up "b" 'same 'same))
-  (test (full-path "a" "b") simplify-path (build-path 'same "noexistsdir" 'same 'up "a" 'same "b" 'same 'same)))
+  (test-path (full-path "a" "b") simplify-path (build-path "a" 'same "b"))
+  (test-path (full-path "a" "b") simplify-path (build-path "a" 'same "noexistsdir" 'up "b"))
+  (test-path (full-path "a" "b") simplify-path (build-path "a" 'same "noexistsdir" 'same 'up "b" 'same 'same))
+  (test-path (full-path "a" "b") simplify-path (build-path 'same "noexistsdir" 'same 'up "a" 'same "b" 'same 'same)))
 (arity-test simplify-path 1 1)
 
 (arity-test expand-path 1 1)

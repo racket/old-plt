@@ -103,6 +103,15 @@ A Response is one of the following:
                redirects, authentication, or cookies.
    - body is a (listof string)
 
+ > (make-response/incremental code message seconds mime extras body)
+   all the fields are the same as for response/full, except
+   - body is a ((string -> void) -> void)
+     In other words, body is a function that accepts an output function.
+
+ > (make-html-response/incremental body)
+   Is not a response, but a helper functions that supplies default values
+   appropriate for html to make-response/incremental. 
+
 an environment is a (listof (cons symbol string))
 
 Evaluating (require (lib "servlet-sig.ss" "web-server")) loads

@@ -477,6 +477,10 @@ ptr_t GC_get_stack_base()
 
 #   if defined(SUNOS5SIGS) || defined(IRIX5)
 	static struct sigaction oldact;
+      /* MATTHEW: Irix 5.X also needs SIGBUS handling */
+#     if defined(IRIX5)
+	static struct sigaction oldact_sigbus;
+#     endif
 #   else
         static handler old_segv_handler, old_bus_handler;
 #   endif
@@ -502,6 +506,10 @@ ptr_t GC_get_stack_base()
 	        (void) sigaction(SIGSEGV, &act, 0);
 #	  else
 	        (void) sigaction(SIGSEGV, &act, &oldact);
+            /* MATTHEW: Irix 5.X also needs SIGBUS handling */
+#           if defined(IRIX5)
+	        (void) sigaction(SIGBUS, &act, &oldact_sigbus);
+#           endif /* IRIX5 */
 #	  endif	/* IRIX_THREADS */
 #	else
     	  old_segv_handler = signal(SIGSEGV, GC_fault_handler);
@@ -515,6 +523,10 @@ ptr_t GC_get_stack_base()
     {
 #       if defined(SUNOS5SIGS) || defined(IRIX5)
 	  (void) sigaction(SIGSEGV, &oldact, 0);
+          /* MATTHEW: Irix 5.X also needs SIGBUS handling */
+#         if defined(IRIX5)
+	  (void) sigaction(SIGBUS, &oldact_sigbus, 0);
+#         endif
 #       else
   	  (void) signal(SIGSEGV, old_segv_handler);
 #	  ifdef SIGBUS

@@ -1163,7 +1163,7 @@ typedef struct Q_Callback_Set {
   Q_Callback *last;
 } Q_Callback_Set;
 
-static Q_Callback_Set q_callbacks[2];
+static Q_Callback_Set q_callbacks[3];
 
 static void insert_q_callback(Q_Callback_Set *cs, Q_Callback *cb)
 {

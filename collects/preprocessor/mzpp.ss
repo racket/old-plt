@@ -30,8 +30,8 @@
   (if (no-spaces?)
     (newline)
     (let ([indent (current-indentation)])
-      (cond [(null? indent) (unless (swallow-newline?) (newline))]
-            [else (newline)])
+      (unless (swallow-newline?) (newline))
+      (swallow-newline? #f)
       (unless (null? indent) (display (car indent))))))
 
 (provide show)

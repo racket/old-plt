@@ -412,7 +412,7 @@
                   (if cheap-wrap?
                       (values 
                        (expr-cheap-wrap (if (utils:signal-not-boolean)
-                                            `(#%let ((,if-temp ,annotated-test)) annotated-2)
+                                            `(#%let ((,if-temp ,annotated-test)) ,annotated-2)
                                             `(#%if ,annotated-test ,annotated-then ,annotated-else)))
                        free-vars)
                       (let+ ([val annotated `(#%begin

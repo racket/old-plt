@@ -1,9 +1,9 @@
 ; -*- Scheme -*-
 
-(reference-library "match.ss")
-(reference-library "macro.ss")
-
 (begin-construction-time
+
+(reference-library "match.ss"))
+(reference-library "macro.ss")
 
 (invoke-open-unit
 

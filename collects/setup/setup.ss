@@ -27,7 +27,8 @@
 	  (on? 'make-zo not))
       ;; Don't use .zos, in case they're out of date, and don't load
       ;;  cm:
-      (use-compiled-file-paths null)
+      (when (on? 'clean values)
+	(use-compiled-file-paths null))
   
       ;; Load the cm instance to be installed while loading Setup PLT.
       ;; This has to be dynamic, so we get a chance to turn off compiled

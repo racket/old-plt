@@ -212,6 +212,8 @@ parameters that control the setup process:
 > make-so - #t => compile .so/.dll files [default: #f]
 > make-launchers - #t => make collection "info.ss"-specified launchers
                    [default: #t]
+> make-info-domain - #t => update info-domain/compiled/cache.ss for each
+                   collection path [default: #t]
 > call-install - #t => call collection "info.ss"-specified setup code
                  [default: #t]
 > force-unpack - #t => ignore version and already-installed errors

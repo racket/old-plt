@@ -29,13 +29,16 @@
 	 (add-flags '((clean #t)
 		      (make-zo #f)
 		      (call-install #f)
-		      (make-launchers #f)))]
+		      (make-launchers #f)
+		      (make-info-domain #f)))]
 	[("-n" "--no-zo") "Do not produce .zo files"
 	 (add-flags '((make-zo #f)))]
 	[("-x" "--no-launcher") "Do not produce launcher programs"
 	 (add-flags '((make-launchers #f)))]
 	[("-i" "--no-install") "Do not call collection-specific pre-installers"
 	 (add-flags '((call-install #f)))]
+	[("-d" "--no-info-domain") "Do not produce info-domain caches"
+	 (add-flags '((make-info-domain #f)))]
 	[("-e" "--extension") "Produce native code extensions"
 	 (add-flags '((make-so #t)))]
 	[("-v" "--verbose") "See names of compiled files and info printfs"

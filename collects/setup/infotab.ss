@@ -33,7 +33,10 @@
            (with-syntax ([(name ...) names]
                          [#%info-lookup (datum->syntax-object
                                          (syntax mod-beg) ; target module's context
-                                         '#%info-lookup)])
+                                         '#%info-lookup)]
+                         [#%info-domain (datum->syntax-object
+                                         (syntax mod-beg) ; target module's context
+                                         '#%info-domain)])
              (syntax
                (#%plain-module-begin
                 defn ...
@@ -51,7 +54,8 @@
                       [(name) name]
                       ...
                       [else (fail)])]))
-                (provide #%info-lookup)))))])))
+		(define (#%info-domain) '(name ...))
+                (provide #%info-lookup #%info-domain)))))])))
 
   (define-syntax (limited-require stx)
     (syntax-case stx ()

@@ -44,20 +44,6 @@
 		  (setup-printf "  ~a" (path->string p)))
 		(current-library-collection-paths))
 
-      #;
-      (exit-handler
-       (let ([oh (exit-handler)])
-	 (lambda (num)
-	   (let ([error-log (build-path (collection-path "setup") "errors")])
-	     (if (zero? num)
-		 (when (file-exists? error-log)
-		   (delete-file error-log))
-		 (call-with-output-file error-log
-		   (lambda (port)
-		     (show-errors port))
-		   'truncate))
-	     (oh num)))))
-
       (define (warning s x)
 	(setup-printf s
 		      (if (exn? x)
@@ -71,6 +57,11 @@
 	      v)
 	    (mk-default)))
 
+      (define mode-dir
+	(if (compile-mode)
+	    (build-path "compiled" (compile-mode))
+	    (build-path "compiled")))
+      
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;               Archive Unpacking               ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -97,38 +88,48 @@
 	  (exit 0))) ; done
 
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;           Collection Compilation              ;;
+      ;;              Find Collections                 ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      (define-struct cc (collection path name info))
+      (define-struct cc (collection path name info root-dir))
+
+      (define (warning-handler v)
+	(lambda (exn) 
+	  (setup-printf 
+	   "Warning: ~a"
+	   (if (exn? exn)
+	       (exn-message exn)
+	       exn))
+	  v))
 
       (define collection->cc
 	(lambda (collection-p)
-	  (let* ([info (with-handlers ([exn:fail?
-					(lambda (exn) 
-					  (setup-printf 
-					   "Warning: ~a"
-					   (if (exn? exn)
-					       (exn-message exn)
-					       exn))
-					  #f)])
-			 (get-info collection-p))]
-		 [name (call-info info 'name (lambda () #f)
-				  (lambda (x)
-				    (when x
-				      (unless (string? x)
-					(error 
-					 (format 
-					  "'name' result from collection ~s is not a string:"
-					  collection-p)
-					 x)))))])
-	    (and
-	     name
-	     (make-cc
-	      collection-p
-	      (apply collection-path collection-p)
-	      name
-	      info)))))
+	  (let ([root-dir (ormap (lambda (p)
+				   (parameterize ([current-library-collection-paths
+						   (list p)])
+				     (and (with-handlers ([exn:fail? (lambda (x) #f)])
+					    (apply collection-path collection-p))
+					  p)))
+				 (current-library-collection-paths))])
+	    (let* ([info (with-handlers ([exn:fail? (warning-handler #f)])
+			   (get-info collection-p))]
+		   [name (call-info info 'name (lambda () #f)
+				    (lambda (x)
+				      (when x
+					(unless (string? x)
+					  (error 
+					   (format 
+					    "'name' result from collection ~s is not a string:"
+					    collection-p)
+					   x)))))])
+	      (and
+	       name
+	       (make-cc
+		collection-p
+		(apply collection-path collection-p)
+		name
+		info
+		root-dir))))))
 
       (define (cannot-compile c)
 	(error 'setup-plt "don't know how to compile collection: ~a" 
@@ -176,34 +177,6 @@
 	      x-specific-collections))
 	 (lambda (a b) (string-ci<? (cc-name a) (cc-name b)))))
 
-      (define control-io-apply
-	(lambda (print-doing f args)
-	  (if (make-verbose)
-	      (begin
-		(apply f args)
-		#t)
-	      (let* ([oop (current-output-port)]
-		     [printed? #f]
-		     [on? #f]
-		     [dir-table (make-hash-table 'equal)]
-		     [line-accum #""]
-		     [op (if (verbose)
-			     (current-output-port)
-			     (open-output-nowhere))] 
-		     [doing-path (lambda (path)
-				   (unless printed?
-				     (set! printed? #t)
-				     (print-doing oop))
-				   (unless (verbose)
-				     (let ([path (normal-case-path (path-only path))])
-				       (unless (hash-table-get dir-table path (lambda () #f))
-					 (hash-table-put! dir-table path #t)
-					 (print-doing oop path)))))])
-		(parameterize ([current-output-port op]
-			       [compile-notify-handler doing-path])
-		  (apply f args)
-		  printed?)))))
-
       ;; Close over sub-collections
       (set! collections-to-compile
 	    (let loop ([l collections-to-compile])
@@ -246,6 +219,10 @@
 		     (list cc)
 		     (loop (cdr l)))))))
 
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;                  Clean                        ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
       (define (delete-file/record-dependency path dependencies)
 	(when (regexp-match-positions #rx"[.]dep$" (path->bytes path))
 	  (let ([deps (with-handlers ([exn:fail? (lambda (x) null)])
@@ -271,11 +248,6 @@
 			   "encountered ~a, neither a file nor a directory"
 			   path)])))
 	 (directory-list path)))
-
-      (define mode-dir
-	(if (compile-mode)
-	    (build-path "compiled" (compile-mode))
-	    (build-path "compiled")))
 
       (define (clean-collection cc dependencies)
 	(let* ([info (cc-info cc)]
@@ -320,7 +292,8 @@
 		      (clean-collection cc dependencies))
 		    collections-to-compile)
 	  ;; Unless specific collections were named, also
-	  ;;  delete .zos for referenced modules:
+	  ;;  delete .zos for referenced modules and delete
+	  ;;  info-domain cache
 	  (when (null? x-specific-collections)
 	    (setup-printf "Checking dependencies")
 	    (let loop ([old-dependencies dependencies])
@@ -340,8 +313,46 @@
 			   (delete-file/record-dependency zo dependencies)
 			   (delete-file/record-dependency dep dependencies)))))))
 		(when did-something?
-		  (loop dependencies)))))))
+		  (loop dependencies)))))
+	  (setup-printf "Clearing info-domain caches")
+	  (for-each (lambda (p)
+		      (let ([fn (build-path p "info-domain" "compiled" "cache.ss")])
+			(when (file-exists? fn)
+			  (with-handlers ([exn:fail:filesystem? (warning-handler (void))])
+			    (with-output-to-file fn void 'truncate/replace)))))
+		    (current-library-collection-paths))))
 
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;                  Helpers                      ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      (define control-io-apply
+	(lambda (print-doing f args)
+	  (if (make-verbose)
+	      (begin
+		(apply f args)
+		#t)
+	      (let* ([oop (current-output-port)]
+		     [printed? #f]
+		     [on? #f]
+		     [dir-table (make-hash-table 'equal)]
+		     [line-accum #""]
+		     [op (if (verbose)
+			     (current-output-port)
+			     (open-output-nowhere))] 
+		     [doing-path (lambda (path)
+				   (unless printed?
+				     (set! printed? #t)
+				     (print-doing oop))
+				   (unless (verbose)
+				     (let ([path (normal-case-path (path-only path))])
+				       (unless (hash-table-get dir-table path (lambda () #f))
+					 (hash-table-put! dir-table path #t)
+					 (print-doing oop path)))))])
+		(parameterize ([current-output-port op]
+			       [compile-notify-handler doing-path])
+		  (apply f args)
+		  printed?)))))
 
       (when (or (make-zo) (make-so))
 	(compiler:option:verbose (compiler-verbose))
@@ -399,12 +410,10 @@
                                  (unless (file-exists? p)
                                    (error "installer file does not exist: " p)))))])
                     (let ([installer
-                           (with-handlers
-                               ([exn:fail?
-                                 (lambda (exn)
-                                   (error 'setup-plt
-                                          "error loading installer: ~a"
-                                          (if (exn? exn) (exn-message exn) exn)))])
+                           (with-handlers ([exn:fail? (lambda (exn)
+							(error 'setup-plt
+							       "error loading installer: ~a"
+							       (if (exn? exn) (exn-message exn) exn)))])
                              (dynamic-require `(lib ,fn ,@(map path->string (cc-collection cc)))
                                               (case part
                                                 [(pre)     'pre-installer]
@@ -475,11 +484,79 @@
 				  (thunk)))])
 		(thunk)))))
 
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;                  Make zo                      ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
       (when (make-zo) 
 	(with-specified-mode
 	 (lambda ()
 	   (make-it ".zos" compile-collection-zos))))
       (when (make-so) (make-it "extensions" compile-collection-extension))
+
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;               Info-Domain Cache               ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      (when (make-info-domain)
+	(let ([ht (make-hash-table 'equal)]
+	      [ht-orig (make-hash-table 'equal)])
+	  (for-each (lambda (cc)
+		      (let ([domain (with-handlers ([exn:fail? (lambda (x)
+								 (lambda () null))])
+				      (dynamic-require
+				       (build-path (cc-path cc) "info.ss")
+				       '#%info-domain))])
+			(let ([t (hash-table-get ht (cc-root-dir cc)
+						 (lambda ()
+						   (let ([l (let ([p (build-path (cc-root-dir cc)
+										 "info-domain"
+										 "compiled"
+										 "cache.ss")])
+							      (if (file-exists? p)
+								  (with-handlers ([exn:fail? (warning-handler null)])
+								    (with-input-from-file p
+								      read))
+								  null))])
+						     ;; Convert list to hash table:
+						     (let ([t (make-hash-table 'equal)])
+						       (when (list? l)
+							 (for-each (lambda (i)
+								     (when (and (list? i)
+										(= 2 (length i)))
+								       (let ([a (car i)]
+									     [b (cadr i)])
+									 (when (and (list? a)
+										    (andmap path-string? a)
+										    (list? b)
+										    (andmap symbol? b))
+									   (hash-table-put! t a b)))))
+								   l))
+						       (hash-table-put! ht (cc-root-dir cc) t)
+						       (hash-table-put! ht-orig (cc-root-dir cc) (hash-table-copy t))
+						       t))))])
+			  (hash-table-put! t (map (lambda (s) (if (path? s)
+								  (path->string s)
+								  s))
+						  (cc-collection cc))
+					   (domain)))))
+		    collections-to-compile)
+	  (hash-table-for-each ht
+			       (lambda (root-dir ht)
+				 (unless (equal? ht (hash-table-get ht-orig root-dir))
+				   (make-directory* (build-path root-dir "info-domain" "compiled"))
+				   (let ([p (build-path root-dir "info-domain" "compiled" "cache.ss")])
+				     (setup-printf "Updating ~a~n" p)
+				     (with-handlers ([exn:fail? (warning-handler (void))])
+				       (with-output-to-file p
+					 (lambda ()
+					   (write (hash-table-map ht list))
+					   (newline))
+					 'truncate/replace))))))))
+
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;                  Make Launchers               ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       (when (make-launchers)
 	(let ([name-list

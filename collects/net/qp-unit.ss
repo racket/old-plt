@@ -147,81 +147,51 @@
                 (format "=0~a" ans)
                 (format "=~a" ans)))))
       
-      (define display-qp-encoded
-        (lambda (line out)
-          (let* ((blanks (regexp "[ \t]+$"))
-                 (pos (regexp-match-positions blanks line))
-                 (col (caar pos))
-                 (rest-of-line (substring line col (string-length line))))
-            ;; Print everything up to the last non-blank char in line.
-            (display (substring line 0 col) out)
-            ;; hex-encode the following blanks
-            (let loop ((str rest-of-line) (len (string-length rest-of-line)) (column (add1 col)))
-              (cond  ((= column 76)
-                      ;; Add CRLF to output
-                      (qp-newline out)
-                      ;; return the remainder blanks
-                      str)
-                     ;; Done, the whole line fitted on 76 chars.
-                     ((zero? len) "")
-                     ((<= column 73)
-                      (display (char->hex-octet (string-ref str 0)) out)
-                      (loop (substring str 1 len)
-                            (sub1 len)
-                            (+ column 3)))
-                     (else
-                      (display "=" out);; soft line break
-                      (qp-newline out)
-                      ;; return the remainder blanks
-                      str))))))
+      (define re:blanks (regexp "[ \t]+$"))
       
+      (define display-qp-encoded
+        (lambda (line out newline-string)
+          (let* ((end-pos (string-length line))
+                 (m (regexp-match-positions re:blanks line))
+                 (force-encoding-pos (if m (caar m) end-pos)))
+            (let loop ([p 0][col 0])
+              (unless (= p end-pos)
+                (if (= col 75)
+                    (begin
+                      (write-char #\= out)
+                      (display newline-string out)
+                      (loop p 0))
+                    (let ([i (char->integer (string-ref line p))])
+                      (cond
+                        [(or (<= 33 i 60) (<= 62 i 126)
+                             (and (or (= i 32) (= i 9)) (< p force-encoding-pos)))
+                         ;; single-char mode:
+                         (write-char (integer->char i) out)
+                         (loop (add1 p) (add1 col))]
+                        [(>= col 73)
+                         ;; need a soft newline first
+                         (write-char #\= out)
+                         (display newline-string out)
+                         ;; now the octect
+                         (display (char->hex-octet (integer->char i)) out)
+                         (loop (add1 p) 3)]
+                        [else
+                         ;; the octect
+                         (display (char->hex-octet (integer->char i)) out)
+                         (loop (add1 p) (+ col 3))]))))))))
+
       (define qp-encode-stream
-        (lambda (in out)
+        (opt-lambda (in out [newline-string "\n"])
           (let ((iport (cond ((input-port? in) in)
                              ((string? in) (open-input-string in))
                              (else
                               (raise (make-qp-wrong-input))))))
-            (let loop ((c (read-char iport)) (line "") (column 0))
-              (cond ((eof-object? c)
-                     (if (qp-blank? (string-ref line (sub1 column)))
-                         (let loop ((rem (display-qp-encoded line out)))
-                           (unless (string=? rem "")
-                             (loop (display-qp-encoded rem out))))
-                         (display line out)))
-                    ((= column 76);; Only 76 chars per line
-                     (if (qp-blank? (string-ref line (sub1 column)))
-                         ;; line ends in blank, we 8-bit encode blanks,
-                         ;; print them out, and the remaining is pass to the
-                         ;; following line.
-                         (let ((rem (display-qp-encoded line out)))
-                           (loop c rem (string-length rem)))
-                         (begin
-                           (display line out)
-                           (qp-newline out)
-                           (loop c "" 0))))
-                    ((or (safe-char? c) (qp-blank? c))
-                     (loop (read-char iport)
-                           (string-append line (string c))
-                           (add1 column)))
-                    ;; OK octet is greater than 127.
-                    ((<= column 72)
-                     (loop (read-char iport)
-                           (string-append line (char->hex-octet c))
-                           (+ column 3)))
-                    (else
-                     (display line out);; is shorter that 76! (and greater that 72)
-                     (display "=" out);; soft line break
-                     (qp-newline out)
-                     (loop (read-char iport) "" 0)))))))
-      
-      ;; safe-char := <any octet with decimal value of 33 through
-      ;; 		     60 inclusive, and 62 through 126>
-      ;; 		; Characters not listed as "mail-safe" in
-      ;; 		; RFC 2049 are also not recommended.
-      (define safe-char?
-        (lambda (octet)
-          (let ((dec (char->integer octet)))
-            (or (and (<= 33 dec) (<= dec 60))
-                (and (<= 62 dec) (<= dec 126)))))))))
+            (let loop ([first? #t])
+              (let ([line (read-line iport 'linefeed)])
+                (unless (eof-object? line)
+                  (unless first?
+                    (display newline-string out))
+                  (display-qp-encoded line out newline-string)
+                  (loop #f))))))))))
 
 ;;; qp-unit.ss ends here

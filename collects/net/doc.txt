@@ -1538,10 +1538,11 @@ PROCEDURES -----------------------------------------------------------
   Consumes a string and returns its un-quoted printable representation
   as a new string.
 
-> (qp-encode-stream input output) -> void
+> (qp-encode-stream input output [newline-string]) -> void
 
   Reads characters from `input' and writes the quoted printable
-  encoded result to `output'.
+  encoded result to `output', using `newline-string' as the line
+  separator. The default `newline-string' is "\n".
 
 > (qp-decode-stream input output) -> void
 

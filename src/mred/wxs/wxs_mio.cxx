@@ -1871,7 +1871,6 @@ class wxMediaStreamIn *objscheme_unbundle_wxMediaStreamIn(Scheme_Object *obj, co
 
 
 
-
 class os_wxMediaStreamOut : public wxMediaStreamOut {
  public:
 
@@ -2000,20 +1999,21 @@ static Scheme_Object *os_wxMediaStreamOutPut(int n,  Scheme_Object *p[])
   class wxMediaStreamOut* r INIT_NULLED_OUT;
   objscheme_check_valid(os_wxMediaStreamOut_class, "put in editor-stream-out%", n, p);
   if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_bstring(p[POFFSET+0], NULL))) {
-    bstring x0 INIT_NULLED_OUT;
+    long x0;
+    bstring x1 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, r);
-    VAR_STACK_PUSH(2, x0);
+    VAR_STACK_PUSH(2, x1);
 
     
     if (n != (POFFSET+1)) 
       WITH_VAR_STACK(scheme_wrong_count_m("put in editor-stream-out% (byte string without length case)", POFFSET+1, POFFSET+1, n, p, 1));
-    x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "put in editor-stream-out% (byte string without length case)"));
+    x1 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "put in editor-stream-out% (byte string without length case)"));
 
-    
-    r = WITH_VAR_STACK(((wxMediaStreamOut *)((Scheme_Class_Object *)p[0])->primdata)->Put(x0));
+    x0 = (SCHEME_BYTE_STRTAG_VAL(p[POFFSET+0]) + 1);
+    r = WITH_VAR_STACK(((wxMediaStreamOut *)((Scheme_Class_Object *)p[0])->primdata)->Put(x0, x1));
 
     
     

@@ -163,13 +163,13 @@ static double GetInexact(wxMediaStreamIn *s)
 #define PUT Put
 
 @MACRO CheckBytesLength = if ((x0 - 1) > SCHEME_BYTE_STRTAG_VAL(p[POFFSET+1])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("editor-stream-out","put"), "byte length too large: ", p[POFFSET]));
-
+@MACRO SetBytesLength = x0 = (SCHEME_BYTE_STRTAG_VAL(p[POFFSET+0]) + 1);
 @CLASSBASE wxMediaStreamOut "editor-stream-out" : "object"
 
 @CREATOR (wxMediaStreamOutBase!);
 
 @ "put" : wxMediaStreamOut! Put(nnint////long,bstring); : : /CheckBytesLength/ <> length and byte string 
-@ "put" : wxMediaStreamOut! Put(bstring); <> byte string without length
+@ "put" : wxMediaStreamOut! Put(-long,bstring); : : /SetBytesLength/ <> byte string without length
 @ "put" : wxMediaStreamOut! Put(Long////long); <> exact number
 @ "put" : wxMediaStreamOut! Put(Double); <> inexact number
 

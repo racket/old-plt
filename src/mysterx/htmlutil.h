@@ -28,9 +28,8 @@ Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
   if (MX_ELEMENTP(argv[0]) == FALSE) { \
     scheme_wrong_type(scm_name,"mx-element",0,argc,argv); \
   } \
-  if (SCHEME_STRINGP (argv[1]) == FALSE && \
-      SCHEME_SYMBOLP (argv[1]) == FALSE) { \
-    scheme_wrong_type(scm_name,"string or symbol",1,argc,argv); \
+  if (SCHEME_STRSYMP (argv[1]) == FALSE) { \
+    scheme_wrong_type (scm_name, "string or symbol", 1, argc, argv); \
   } \
   pIHTMLStyle = styleInterfaceFromElement(argv[0]); \
   bstr = schemeStringToBSTR (argv[1]); \

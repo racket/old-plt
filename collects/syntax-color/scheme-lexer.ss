@@ -1,4 +1,3 @@
-#cs
 (module scheme-lexer mzscheme
   
   (require (lib "lex.ss" "parser-tools")
@@ -72,7 +71,7 @@
                   (:: "#\\" (:/ "0" "3") digit8))]
        
    ;; What about byte string regexp strings
-   [str (:or (:: (:? "#rx") "\"" (:* (:or string-element unicode)) "\"")
+   [str (:or (:: (:? "#rx") "\"" (:* string-element (:: "\\" unicode)) "\"")
              byte-str)]
    [byte-str (:: (:? "#rx") "#\"" (:* string-element) "\"")]
    [string-element (:or (:~ "\"" "\\")
@@ -91,9 +90,9 @@
                         (:: "\\" #\newline))]
 
    [bad-str (:: (:? "#rx") (:? "#") "\"" 
-                (:* (:or (:~ "\"" "\\")
-                         (:: "\\" any-char)))
-                (:? (:or "\\" "\"")))]
+                (:* (:~ "\"" "\\")
+                    (:: "\\" any-char))
+                (:? "\\" "\""))]
    
 
    [special-numbers (:or (:: n a n ".0") (:: i n f ".0"))]   
@@ -102,28 +101,28 @@
    [exactness (:or "#i" "#e" "#I" "#E")]
    [radix2 (:or "#b" "#B")]
    [radix8 (:or "#o" "#O")]
-   [radix10 (:or "" "#d" "#D")]
+   [radix10 (:or "#d" "#D")]
    [radix16 (:or "#x" "#X")]
    
-   [script (:: "#!" (:* (:or (:~ #\newline) (:: #\\ #\newline))))]
+   [script (:: "#!" (:* (:~ #\newline) (:: #\\ #\newline)))]
    
    [identifier-delims (:or (char-set "\",'`()[]{};") scheme-whitespace)]
-   [identifier-chars (:~ (:or identifier-delims "\\" "|"))]
+   [identifier-chars (:~ identifier-delims "\\" "|")]
    [identifier-escapes (:or (:: "\\" any-char)
                             (:: "|" (:* (:~ "|")) "|"))]
    [identifier-start (:or identifier-escapes
-                          (:~ (:or identifier-delims "\\" "|" "#"))
+                          (:~ identifier-delims "\\" "|" "#")
                           "#%")]
    [identifier (:: identifier-start
-                   (:* (:or identifier-escapes identifier-chars)))]
+                   (:* identifier-escapes identifier-chars))]
 
    [bad-id-start (:or identifier-escapes
                       (:~ identifier-delims "\\" "|"))]
    [bad-id-escapes (:or identifier-escapes
                         (:: "|" (:* (:~ "|"))))]
    [bad-id (:or (:: bad-id-start
-                    (:* (:or identifier-escapes identifier-chars))
-                    (:? (:or "\\" bad-id-escapes)))
+                    (:* identifier-escapes identifier-chars)
+                    (:? "\\" bad-id-escapes))
                 "\\"
                 bad-id-escapes)]
              
@@ -218,7 +217,7 @@
      [(:or "#t" "#f" "#T" "#F" character
            (make-num digit2 radix2)
            (make-num digit8 radix8)
-           (make-num digit10 radix10)
+           (make-num digit10 (:? radix10))
            (make-num digit16 radix16))
       (ret lexeme 'constant #f start-pos end-pos)]
      [str (ret lexeme 'string #f start-pos end-pos)]

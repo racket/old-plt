@@ -208,7 +208,7 @@
 	  (semaphore-wait lock)
 	  (thread-suspend background-thread)
 	  (semaphore-post lock)
-	  (begin-edit-sequence #f)
+	  (begin-edit-sequence #f #f)
 	  (color)
 	  (end-edit-sequence))
 	(unless up-to-date?

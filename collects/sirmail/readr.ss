@@ -3,6 +3,7 @@
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
 	   (lib "class100.ss")
+           (lib "file.ss")
            (lib "etc.ss")
 	   (lib "mred-sig.ss" "mred"))
 
@@ -693,7 +694,7 @@
 				   (let ([start (send e last-position)])
 				     (send e set-position start)
 				     (send e insert 
-					   (crlf->lf body)
+					   (if (string? body) (crlf->lf body) body)
 					   start 'same #f)
 				     (let ([end (send e last-position)])
 				       (delta e start end))))])
@@ -841,11 +842,10 @@
       
       (define vertical-line-snipclass
 	(make-object
-            (class100 snip-class% ()
-              (override
-                [read (lambda (s) (make-object vertical-line-snip%))])
-              (sequence
-                (super-init)))))
+            (class snip-class% ()
+              (define/override (read s)
+                (make-object vertical-line-snip%))
+              (super-instantiate ()))))
       (send vertical-line-snipclass set-version 1)
       (send vertical-line-snipclass set-classname "sirmail:vertical-line%")
       (send (get-the-snip-class-list) add vertical-line-snipclass)
@@ -1124,16 +1124,14 @@
             mailbox-menu
             (lambda x
               (open-folders-window)))
-	  (make-object (class100 menu-item% args
+	  (make-object (class menu-item%
 			 (inherit enable set-label)
-			 (override
-			   [on-demand
-			    (lambda ()
-			      (let ([folder (get-active-folder)])
-				(enable folder)
-				(when folder
-				  (set-label (format "&Copy Selected to ~a" folder)))))])
-			 (sequence (apply super-init args)))
+                         (define/override (on-demand)
+                           (let ([folder (get-active-folder)])
+                             (enable folder)
+                             (when folder
+                               (set-label (format "&Copy Selected to ~a" folder)))))
+			 (super-instantiate ()))
             "&Copy Selected to Folders Window Selection" 
             mailbox-menu
             (lambda x
@@ -1719,6 +1717,17 @@
                                                 (send t change-style red-delta s e))))])]
                               [else
                                (generic ent)]))]
+                  [(image) 
+                   (generic ent)
+                   (when (memq (mime:entity-subtype ent) '(jpeg jpg gif bmp pict))
+                     (let ([tmp-file (make-temporary-file "sirmail-mime-image-~a")])
+                       (call-with-output-file tmp-file
+                         (lambda (port)
+                           (display (slurp ent) port))
+                         'truncate)
+                       (let ([img (make-object image-snip% tmp-file)])
+                         (insert img void)
+                         (delete-file tmp-file))))]
 		  [(multipart message)
 		   (map (lambda (msg)
 			  (unless (eq? (mime:entity-type ent) 'message)
@@ -1744,31 +1753,29 @@
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
       (define biff%
-	(class100 timer% ()
+	(class timer%
 	  (inherit stop)
-	  (override
-	    [notify (lambda ()
-		      (when can-poll?
-			(unless (or (send disconnected-msg is-shown?)
-				    new-messages?)
-			  (with-handlers ([void
-					   (lambda (x)
-					     (stop)
-					     (send disconnected-msg show #t)
-					     (set! initialized? #f)
-					     (force-disconnect)
-					     (status "Error connecting: ~s"
-						     (if (exn? x)
-							 (exn-message x)
-							 x)))])
-			    (when (as-background
-				   enable-main-frame
-				   (lambda (break-bad break-ok) 
-				     (check-for-new))
-				   void)
-			      (bell))))))])
-	  (sequence
-	    (super-init))))
+          (define/override (notify)
+            (when can-poll?
+              (unless (or (send disconnected-msg is-shown?)
+                          new-messages?)
+                (with-handlers ([void
+                                 (lambda (x)
+                                   (stop)
+                                   (send disconnected-msg show #t)
+                                   (set! initialized? #f)
+                                   (force-disconnect)
+                                   (status "Error connecting: ~s"
+                                           (if (exn? x)
+                                               (exn-message x)
+                                               x)))])
+                  (when (as-background
+                         enable-main-frame
+                         (lambda (break-bad break-ok) 
+                           (check-for-new))
+                         void)
+                    (bell))))))
+          (super-instantiate ())))
       
       (define biff
 	(if BIFF-DELAY

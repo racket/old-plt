@@ -120,7 +120,7 @@
 		    (application mred:application^))
 	    (link [debug mred:debug^ (mred:debug@)]
 		  [exn mred:exn^ (mred:exn@)]
-		  [preferences mred:preferences^ (mred:preferences@ debug exn)]
+		  [preferences mred:preferences^ (mred:preferences@ debug exn ((core function@)))]
 		  [autoload mred:autoload^ (mred:autoload@ debug preferences ((core file@)))]
 		  [autosave mred:autosave^ (mred:autosave@ debug preferences)]
 		  [exit mred:exit^ (mred:exit@ debug)]

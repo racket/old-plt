@@ -11,10 +11,16 @@
 
 (define-signature mred:preferences^
   (get-preference
+   get-preference-box
+   
    set-preference
+   set-preference-default
+   set-preference-un/marshall
+
    save-user-preferences
    read-user-preferences
    restore-defaults
+
    preferences-dialog))
 
 (define-signature mred:autoload^

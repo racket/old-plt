@@ -39,33 +39,42 @@
 	  (rename [super-on-char on-char]
 		  [super-install install])
 	  (public
-	    [indents (make-hash-table)])
+	    [indents (box (make-hash-table))])
 	  (sequence
-	    (for-each (lambda (x) (hash-table-put! indents x 'define))
-		      '(define defmacro define-macro
-			 define-signature define-syntax define-schema))
-	    (for-each (lambda (x) (hash-table-put! indents x 'begin))
-		      '(cond begin begin0 delay
-			public private
-			inherit inherit-from
-			rename rename-from
-			share share-from
-			sequence))
-	    (for-each (lambda (x) (hash-table-put! indents x 'lambda))
-		      '(lambda let let* letrec letrec* recur let-values
-			 let/cc let/ec letcc catch
-			 let-syntax letrec-syntax syntax-case
-			 let-struct let-macro
-			 case when unless match
-			 let-enumerate
-			 class class* class-asi class-asi* define-some
-			 do opt-lambda
-			 local
-			 unit unit/s
-			 with-handlers
-			 call-with-input-file with-input-from-file
-			 with-input-from-port call-with-output-file
-			 with-output-to-file with-output-to-port)))
+	    (let ([hash-table (unbox indents)])
+	      (for-each (lambda (x) (hash-table-put! hash-table x 'define))
+			'(define defmacro define-macro
+			   define-signature define-syntax define-schema))
+	      (for-each (lambda (x) (hash-table-put! hash-table x 'begin))
+			'(cond begin begin0 delay
+			       public private
+			       inherit inherit-from
+			       rename rename-from
+			       share share-from
+			       sequence))
+	      (for-each (lambda (x) (hash-table-put! hash-table x 'lambda))
+			'(lambda let let* letrec letrec* recur let-values
+			   let/cc let/ec letcc catch
+			   let-syntax letrec-syntax syntax-case
+			   let-struct let-macro
+			   case when unless match
+			   let-enumerate
+			   class class* class-asi class-asi* define-some
+			   do opt-lambda
+			   local
+			   unit unit/s
+			   with-handlers
+			   call-with-input-file with-input-from-file
+			   with-input-from-port call-with-output-file
+			   with-output-to-file with-output-to-port))
+	      '(mred:preferences:set-preference-default 'tabify hash-table)
+	      '(mred:preferences:set-preference-un/marshall
+		'tabify 
+	       (lambda (t) (hash-table-map t list))
+	       (lambda (l) (let ([h (make-hash-table)])
+			     (for-each (lambda (x) (apply hash-table-put! h x))
+				       l)
+			     h)))))
 	  (public
 	    [name "Scheme"]
 	    [backward-cache (make-object mred:match-cache:match-cache%)]
@@ -128,12 +137,13 @@
 	     (lambda (edit)
 	       (highlight-parens edit))]
 	    
-	    [no-highlighting (not (mred:preferences:get-preference 'highlight-parens))]
-
+	    [highlight-parens?-box (mred:preferences:get-preference-box 'highlight-parens)]
+	    
 	    [highlight-parens
 	     (let ([clear-old-location (lambda () (void))])
 	       (opt-lambda (edit [just-clear? #f])
-		 (if (or no-highlighting suspend-highlight?)
+		 (if (or (not (unbox highlight-parens?-box))
+			 suspend-highlight?)
 		     (set! just-once #t)
 		     (begin 
 		       (set! just-once #f)
@@ -302,7 +312,8 @@
 		      [procedure-indent
 		       (lambda ()
 			 (let* ([proc-name (get-proc)])
-			   (case (hash-table-get indents (string->symbol proc-name)
+			   (case (hash-table-get (unbox indents)
+						 (string->symbol proc-name)
 						 (lambda () 'other))
 			     [(define) 1]
 			     [(begin) 1]
@@ -311,7 +322,7 @@
 		      [special-check
 		       (lambda ()
 			 (let* ([proc-name (get-proc)]
-				[which (hash-table-get indents
+				[which (hash-table-get (unbox indents)
 						       (string->symbol proc-name)
 						       (lambda () 'other))])
 			   (or (eq? which 'define)

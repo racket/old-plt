@@ -12,7 +12,10 @@
 	 (unless (and (positive? len) (<= len expect))
 		 ((raise-syntax-error sname
 				      (format "expected ~a names; given ~a"
-					      expect len)
+					      (if (= +inf.0 expect)
+						  "some"
+						  expect)
+					      len)
 				      (list* sname names)))))
        (let ([names (if must-string?
 			(map local-expand-defmacro names)

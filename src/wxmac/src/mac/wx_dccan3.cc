@@ -159,7 +159,8 @@ void wxCanvasDC::DrawText(const char* text, double x, double y, Bool combine, Bo
       && (angle == 0.0) 
       && table_key
       && (font->GetFamily() != wxSYMBOL)
-      && (current_bk_mode == wxTRANSPARENT)) {
+      && (current_bk_mode == wxTRANSPARENT)
+      && Colour) {
     int i;
     unsigned int *s = (unsigned int *)text;
     wxKey *k = (wxKey *)SCHEME_BYTE_STR_VAL(table_key);

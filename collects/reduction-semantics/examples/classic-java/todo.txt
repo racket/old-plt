@@ -1,0 +1,5 @@
+* s/ivar/ref/g
+
+* elab-expr arity (elaboration.ss)
+
+* need to tag field records with defining class in parser. <sigh>

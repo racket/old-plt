@@ -99,8 +99,16 @@
 		       (build-src 3))])
       ;; 19.6
       (CompilationUnit
+       [(ImportDeclarations TypeDeclarations) (make-package #f (reverse $1) (reverse $2))]
        [(TypeDeclarations) (make-package #f null (reverse $1))]
        [() (make-package #f null null)])
+      
+      (ImportDeclarations
+       [(ImportDeclaration) (list $1)]
+       [(ImportDeclarations ImportDeclaration) (cons $2 $1)])
+      
+      (ImportDeclaration
+       [(import Name SEMI_COLON) (make-import $2 #f (build-src 1) (build-src 3) (file-path))])
       
       (IntermediateInteractions
        [(Statement) $1]

@@ -3,6 +3,7 @@
   
   (require "lexer.ss" "general-parsing.ss"
            "../parameters.ss"
+           (lib "etc.ss")
            (lib "readerr.ss" "syntax")
            (lib "lex.ss" "parser-tools"))
   
@@ -20,7 +21,7 @@
     (let ((port ((parse-error-port))))
       (port-count-lines! port)
       (let ((getter (lambda () (get-token port))))
-        (parse-definition null (getter) 'start getter))))
+        (parse-program null (getter) 'start getter))))
 
   ;find-error-interaction: -> (U bool or token)
   ;Should not return
@@ -65,7 +66,7 @@
       (port-count-lines! port)
       (let ((getter (lambda () (get-token port))))
         (level 'intermediate)
-        (parse-definition null (getter) 'start getter))))
+        (parse-program null (getter) 'start getter))))
 
   ;find-error-interaction: -> (U bool or token)
   ;Should not return
@@ -102,7 +103,7 @@
       (port-count-lines! port)
       (let ((getter (lambda () (get-token port))))
         (level 'advanced)
-        (parse-definition null (getter) 'start getter))))
+        (parse-package null (getter) 'start getter))))
 
   ;find-error-interaction: -> (U bool or token)
   ;Should not return
@@ -156,32 +157,122 @@
         (cadr (token-value (get-tok token)))
         (caddr token)))
   
-  ;output-format: token -> string
-  (define (output-format tok)
-    (cond
-      ((separator? tok) 
-       (case (get-token-name tok)
-         ((O_BRACE) "{")
-         ((C_BRACE) "}")
-         ((O_PAREN) "(")
-         ((C_PAREN) ")")
-         ((O_BRACKET) "[")
-         ((C_BRACKET) "]")
-         ((SEMI_COLON) ";")
-         ((COMMA) ",")
-         ((PERIOD) ".")))
-      ((eq? (get-token-name tok) 'OR) "operator ||")
-      ((eq? (get-token-name tok) 'PIPE) "operator |")
-      ((keyword? tok) (format "keyword ~a" (get-token-name tok)))
-      ((id-token? tok) (format "identifier ~a" (token-value tok)))
-      ((eq? (get-token-name tok) 'STRING_LIT) (format "string ~a" (car (token-value tok))))
-      ((eq? (get-token-name tok) 'NULL_LIT) "null value")
-      ((eq? (get-token-name tok) 'TRUE_LIT) "boolean value true")
-      ((eq? (get-token-name tok) 'FALSE_LIT) "boolean value false")
-      ((literal-token? tok) (format "value ~a" (token-value tok)))
-      ((eq? (get-token-name tok) 'STRING_ERROR)
-       (format "malformed string ~a" (car (token-value tok))))
-      (else (get-token-name tok))))
+  ;output-format: token bool -> string
+  (define output-format
+    (opt-lambda (tok [full? #t])
+      (cond
+        ((separator? tok) 
+         (case (get-token-name tok)
+           ((O_BRACE) "{")
+           ((C_BRACE) "}")
+           ((O_PAREN) "(")
+           ((C_PAREN) ")")
+           ((O_BRACKET) "[")
+           ((C_BRACKET) "]")
+           ((SEMI_COLON) ";")
+           ((COMMA) ",")
+           ((PERIOD) ".")))
+        ((eq? (get-token-name tok) 'OR) (if full? "operator ||" "||"))
+        ((eq? (get-token-name tok) 'PIPE) (if full? "operator |" "||"))
+        ((keyword? tok) (if full? 
+                            (format "reserved word ~a" (get-token-name tok)) (get-token-name tok)))
+        ((id-token? tok) (if full? (format "identifier ~a" (token-value tok)) (token-value tok)))
+        ((eq? (get-token-name tok) 'STRING_LIT) (if full? (format "string ~a" (car (token-value tok)))
+                                                    (car (token-value tok))))
+        ((eq? (get-token-name tok) 'NULL_LIT) (if full? "null value" "null"))
+        ((eq? (get-token-name tok) 'TRUE_LIT) (if full? "boolean value true" "true"))
+        ((eq? (get-token-name tok) 'FALSE_LIT) (if full? "boolean value false" "false"))
+        ((literal-token? tok) (if full? (format "value ~a" (token-value tok)) (token-value tok)))
+        ((eq? (get-token-name tok) 'STRING_ERROR)
+         (format "malformed string ~a" (car (token-value tok))))
+        (else (get-token-name tok)))))
+
+  ;parse-package: token token symbol (-> token) -> void
+  (define (parse-package pre cur-tok state getter)
+    (let* ((tok (get-tok cur-tok))
+           (tokN (get-token-name tok))
+           (srt (get-start cur-tok))
+           (end (get-end cur-tok))
+           (out (output-format tok))
+           (ps (if (null? pre) null (get-start pre)))
+           (pe (if (null? pre) null (get-end pre))))
+      (case state
+        ((start)
+         (case tokN
+           ((EOF) #t)
+           ((package)
+            (let ((next (getter)))
+              (if (id-token? (get-tok next))
+                  (let ((after-id (getter)))
+                    (cond
+                      ((dot? (get-tok after-id))
+                       (parse-package cur-tok (parse-name (getter) getter) 'semi-colon getter))
+                      ((semi-colon? (get-tok after-id))
+                       (parse-program after-id (getter) 'start getter))
+                      (else
+                       (parse-error 
+                        (format "'package' must have a name followed by ';'. ~a is not allowed" out) 
+                        srt (get-end after-id)))))
+                  (parse-error (format "'package' must have a name followed by ';'. ~a is not allowed" 
+                                       (output-format (get-tok next)))
+                               srt (get-end next)))))
+           ((IDENTIFIER)
+            (if (close-to-keyword? tok 'package)
+                (parse-error 
+                 (format "~a is close to 'package' but is either miscapitalized or mispelled" (token-value tok))
+                 srt end)
+                (parse-package pre cur-tok 'start getter)))
+           (else
+            (parse-package pre cur-tok 'start getter))))
+        ((semi-colon)
+         (case tokN
+           ((EOF) (parse-error "'package' must have a name followed by a ';'" ps pe))
+           ((SEMI_COLON) (parse-program cur-tok (getter) 'start getter))
+           (else (parse-error (format "'package' must have a name followed by a ';'. ~a is not allowed" out) ps end)))))))
+
+  
+  ;parse-program: token token symbol (-> token) -> void
+  (define (parse-program pre cur-tok state getter)
+    (let* ((tok (get-tok cur-tok))
+           (tokN (get-token-name tok))
+           (srt (get-start cur-tok))
+           (end (get-end cur-tok))
+           (out (output-format tok))
+           (ps (if (null? pre) null (get-start pre)))
+           (pe (if (null? pre) null (get-end pre))))
+      (case state
+        ((start)
+         (case tokN
+           ((EOF) #t)
+           ((import) 
+            (let ((next (getter)))
+              (if (id-token? (get-tok next))
+                  (let ((after-id (getter)))
+                    (cond
+                      ((dot? (get-tok after-id))
+                       (parse-program cur-tok (parse-name (getter) getter) 'semi-colon getter))
+                      ((semi-colon? (get-tok after-id))
+                       (parse-program after-id (getter) 'start getter))
+                      (else
+                       (parse-error 
+                        (format "'import' must have a name followed by ';'. ~a is not allowed" 
+                                (output-format (get-tok next))) 
+                        srt (get-end after-id)))))
+                  (parse-error (format "'import' must have a name followed by ';'. ~a is not allowed" out)
+                               srt (get-end next)))))
+           ((IDENTIFIER)
+            (if (close-to-keyword? tok 'import)
+                (parse-error 
+                 (format "~a is close to 'import' but is either miscapitalized or mispelled" (token-value tok))
+                 srt end)
+                (parse-definition pre cur-tok 'start getter)))
+           (else
+            (parse-definition pre cur-tok 'start getter))))
+        ((semi-colon)
+         (case tokN
+           ((EOF) (parse-error "'import' must have a name followed by a ';'" ps pe))
+           ((SEMI_COLON) (parse-program cur-tok (getter) 'start getter))
+           (else (parse-error (format "'import' must have a name followed by a ';'. ~a is not allowed" out) ps end)))))))
   
   ;parse-definition: token token symbol (-> token) -> void
   (define (parse-definition pre cur-tok state getter)
@@ -587,7 +678,7 @@
         ;Intermediate
         ((field-init-end)
          (case kind
-           ((EOF) (parse-error "Expected a ; or comma after field, class body still requires a }" ps pe))
+           ((EOF) (parse-error "Expected a ';' or comma after field, class body still requires a }" ps pe))
            ((COMMA) (parse-definition cur (getter) 'field-list getter))
            ((SEMI_COLON) (parse-definition cur (getter) 'start getter))
            ((IDENTIFIER) (parse-error (format "Fields must be separated by commas, ~a not allowed" out) srt end))
@@ -735,12 +826,12 @@
                    (next-end (get-end next)))
               (cond
                 ((eof? next-tok)
-                 (parse-error "Expected method body, and class body still requires a }" srt end))
+                 (parse-error "Expected method body, and class body still requires a '}'" srt end))
                 ((c-paren? next-tok) 
-                 (parse-error "Method parameter list already closed, unneeded )" next-start next-end))
+                 (parse-error "Method parameter list already closed, unneeded ')'" next-start next-end))
                 ((o-brace? next-tok)
                  (if abstract-method?
-                     (parse-error "abstract methods may not have a body. Found { when ; was expected" next-start next-end)
+                     (parse-error "abstract methods may not have a body. Found '{' when ';' was expected" next-start next-end)
                      (parse-members next (if (or (intermediate?) (advanced?))
                                              (parse-method-body null (getter) getter #f #f)
                                              (parse-statement null (getter) 'start getter #f #f #f))
@@ -748,12 +839,12 @@
                 ((open-separator? next-tok)
                  (if abstract-method?
                      (parse-error (format "abstract methods should end with ';', found ~a" next-out) next-start next-end) 
-                     (parse-error (format "Method body begins with a {, found ~a" next-out) next-start next-end)))
+                     (parse-error (format "Method body begins with a '{', found ~a" next-out) next-start next-end)))
                 ((semi-colon? next-tok) (parse-members next (getter) 'start getter #f))
                 (else
                  (if abstract-method?
                      (parse-error (format "Expected a ';' to end abstract method, found ~a" next-out) next-start next-end)
-                     (parse-error (format "Expected a method body, starting with {, found ~a" next-out) next-start next-end))))))
+                     (parse-error (format "Expected a method body, starting with '{', found ~a" next-out) next-start next-end))))))
            ((or (prim-type? tok) (id-token? tok))
             (let* ((next (getter))
                    (next-tok (get-tok next))
@@ -769,13 +860,13 @@
                         (afterID-tok (get-tok afterID)))
                    (cond
                      ((eof? afterID-tok) 
-                      (parse-error "Expected rest of parameter list, and class body requires a }" next-start next-end))
+                      (parse-error "Expected rest of parameter list, and class body requires a '}'" next-start next-end))
                      ((c-paren? afterID-tok) (parse-members next afterID 'method-parms getter abstract-method?))
                      ((comma? afterID-tok)
                       (let* ((afterC (getter))
                              (afterC-tok (get-tok afterC)))
                         (cond
-                          ((eof? afterC-tok) (parse-error "Expected rest of parameter list, and class body requires a }"
+                          ((eof? afterC-tok) (parse-error "Expected rest of parameter list, and class body requires a '}'"
                                                           (get-start afterID) (get-end afterID)))
                           ((c-paren? afterC-tok)
                            (parse-error "Comma is unneeded before ) unless another variable is desired" 
@@ -1159,19 +1250,41 @@
                                        'return getter id-ok? ctor? super-seen?)))))
            ((IDENTIFIER)
             (if (beginner?)
-                (let ((v (token-value tok)))
-                  (cond
+                (parse-error
+                 (let ((v (token-value tok)))
+                   (cond
                     ((close-to-keyword? tok 'if) 
-                     (parse-error (format "Expected if, found ~a which is perhaps miscapitalized or spelled" v) start end))
+                     (format "Expected 'if', found ~a which is perhaps miscapitalized or spelled" v))
                     ((close-to-keyword? tok 'return)
-                     (parse-error (format "Expected return, found ~a which is perhaps miscapitalized or spelled" v) start end))
+                     (format "Expected 'return', found ~a which is perhaps miscapitalized or spelled" v))
                     (else
-                     (parse-error (format "Expected a statement, found ~a. Statements begin with 'if' or 'return'" out) 
-                                  start end))))                
-                (let ((next (getter)))
-                  (if (dot? (get-tok next)) 
-                      (parse-statement next (parse-name (getter) getter) 'statement-or-var getter id-ok? ctor? super-seen?)
-                      (parse-statement cur-tok next 'statement-or-var getter id-ok? ctor? super-seen?)))))
+                     (format "Expected a statement, found ~a. Statements begin with 'if' or 'return'" out)))) 
+                 start end)
+                (let* ((next (getter))
+                       (next-tok (get-tok next)))
+                  (cond
+                    ((dot? next-tok)
+                     (parse-statement next (parse-name (getter) getter) 'statement-or-var getter id-ok? ctor? super-seen?))
+                    ((literal-token? next-tok)
+                     (parse-error 
+                      (if (close-to-keyword? tok 'return)
+                          (string-append
+                           (format "~a ~a is not the correct beginning of a statement. ~a is similar to 'return'~n"
+                                   (token-value tok) (output-format next-tok #f) (token-value tok))
+                           "Check spelling and capitalization")
+                          (format "It is an error to have ~a ~a as a statement" out (output-format next-tok #f)))
+                      start (get-end next)))
+                    ((this? next-tok)
+                     (parse-error
+                      (if (close-to-keyword? tok 'return)
+                          (string-append 
+                           (format "'~a this' is not the correct beginning of a statement. ~a is similar to 'return'~n"
+                                   (token-value tok) (token-value tok))
+                           "Check spelling and capitalization")
+                          (format "It is an error to have '~a this' as a statement" out))
+                      start (get-end next)))
+                    (else
+                     (parse-statement cur-tok next 'statement-or-var getter id-ok? ctor? super-seen?))))))
            (else
             (when (beginner?)
               (parse-error (format "Expected a statement, found ~a. Statements begin with 'if' or 'return'" out) start end))

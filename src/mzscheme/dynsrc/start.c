@@ -1,4 +1,4 @@
-/* Luancher program for Windows. */
+/* Launcher program for Windows. */
 /* Builds a MzScheme starter if MZSTART is defined. */
 /* Builds a MrEd starter if MRSTART is defined. */
 /* If neither is defined, MZSTART is auto-defined */
@@ -40,6 +40,13 @@
 static char *input = "<Command Line: Replace This ************"
                      "******************************************"
   		     "*****************************************>";
+
+static char *exedir = "<Executable Directory: Replace This ********"
+                      "********************************************"
+                      "********************************************"
+                      "********************************************"
+                      "********************************************"
+                      "********************************************>";
 
 static char *protect(char *s)
 {
@@ -176,14 +183,14 @@ static char *copy_string(char *s)
 #endif
 
 #ifdef MRSTART
-int APIENTRY WinMain(HANDLE hInstance, HANDLE hPrevInstance, 
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, 
 		     LPSTR m_lpCmdLine, int nCmdShow)
 #else
 int main(int argc_in, char **argv_in)
 #endif
 {
-  char *p, *s, *rest = "";
-  char name[1024], go[1024], plthome[1024];
+  char *p;
+  char go[1024];
   char *args[MAX_ARGS + 1];
   int count, i;
   struct MSC_IZE(stat) st;
@@ -195,25 +202,19 @@ int main(int argc_in, char **argv_in)
   out = GetStdHandle(STD_OUTPUT_HANDLE);
 #endif
  
-  GetModuleFileName(NULL, name, 1024);
-
-  p = name;
-  s = name + strlen(name) - 1;
-  while (*s != '\\')
-    --s;
-  *s = 0;
-
 #ifdef DUPLICATE_INPUT
   /* gcc: input is read-only */
   input = copy_string(input);
+  exedir = copy_string(exedir);
 #endif
 
   count = 1;
   count = parse_command_line(count, args, input, MAX_ARGS);
   
-  /* p should be PLTHOME path */
-  strcpy(go, p);
+  /* exedir should be PLTHOME path */
+  strcpy(go, exedir);
   strcat(go, GOSUBDIR GOEXE);
+
   if (_stat(go, &st)) {
 #ifdef MRSTART
     MessageBox(NULL, "Can't find " GOEXE, "Error", MB_OK);
@@ -222,9 +223,6 @@ int main(int argc_in, char **argv_in)
 #endif
     exit(-1);
   }
-
-  strcpy(plthome, "PLTHOME=");
-  strcat(plthome, p);
 
   args[0] = go;
 
@@ -251,7 +249,12 @@ int main(int argc_in, char **argv_in)
     /* MessageBox(NULL, args[i], "Argument", MB_OK); */
   }
   
-  _putenv(plthome);
+  /* make the exedir PLTHOME if it's not currently */
+
+  p = getenv("PLTHOME");
+  if (p == NULL || strcmp(p,exedir)) {
+    _putenv(exedir);
+  }
   
   for (i = 0; i < sizeof(si); i++)
     ((char *)&si)[i] = 0;

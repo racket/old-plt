@@ -35,7 +35,7 @@
                (lambda ()
                  (set! value 'bad-value)
                  (set! has-value? #f)
-                 (clear))]
+                 (clear))])
       
       (private [value 'bad-value]
                [has-value?  #f]
@@ -71,20 +71,13 @@
       (sequence (super-init line-spacing tabstops)
                 (set-style-list (fw:scheme:get-style-list)))))
   
-  (fw:preferences:set-default 'debugger-width 400)
-  (fw:preferences:set-default 'debugger-height 300)
+  (fw:preferences:set-default 'debugger-width 400 number?)
+  (fw:preferences:set-default 'debugger-height 300 number?)
   
   (define debugger-frame%
     (class (fw:frame:standard-menus-mixin fw:frame:basic%) (debugger)
       (rename [super-on-size on-size]
               [super-can-close? can-close?])
-      (public
-        [set-printing-proc 
-         (lambda (proc)
-           (set! printing-proc proc))]
-        [printing-proc (lambda (item evt)
-                         (printf "shouldn't be called~n"))])
-      (inherit show)
       (override
         [on-size
          (lambda (width height)
@@ -95,32 +88,25 @@
         
         [can-close?
          (lambda ()
-           (if (semaphore-try-wait? debugger-available-semaphore)
-               (begin
-                 (semaphore-post debugger-available-semaphore)
-                 (super-can-close?))
-               (begin 
-                 (m:message-box "oops!" (string-append "You cannot close the debugger window "
-                                                       "while a breakpoint is waiting.")
-                                #f '(ok))
-                 #f)))])
+           (and (send debugger can-close-frame?)
+                (super-can-close?)))])
       (sequence (super-init "Debugger" #f
                             (fw:preferences:get 'debugger-width)
                             (fw:preferences:get 'debugger-height)))))
-    
+  
   (define drscheme-eventspace (m:current-eventspace))
-
+  
   ; ----------------------------------------------------------------
-
+  
   ; gui setup
   
-  (define test-dc (make-object bitmap-dc% (make-object bitmap% 1 1)))
-  (define debug-highlight-color (make-object color% 255 255 255))
-  (send test-dc try-color (make-object color% 145 211 219) debug-highlight-color)
+  (define test-dc (make-object m:bitmap-dc% (make-object m:bitmap% 1 1)))
+  (define debug-highlight-color (make-object m:color% 255 255 255))
+  (send test-dc try-color (make-object m:color% 145 211 219) debug-highlight-color)
   (define clear-highlight-thunk #f)
-
+  
   ; ----------------------------------------------------------------
-
+  
   (define (binding-name binding)
     (ccond [(z:binding? binding)
             (z:binding-orig-name binding)]
@@ -129,82 +115,132 @@
                 (e:internal-error #f "empty slot in binding list")
                 (z:varref-var (car (unbox binding))))]))
   
-  ; extend drscheme frame to hold a debugger-frame
+  (define (is-drscheme-definitions-editor? editor)
+    (and (is-a? editor m:editor<%>)
+         (send editor get-canvas)
+         (is-a? (send editor get-canvas) d:unit:definitions-canvas%)))
+  
+  (define (get-drscheme-frame editor)
+    (and (is-drscheme-definitions-editor? editor)
+         (send (send editor get-canvas) get-top-level-window)))
+  
+  (define (find-location-text zodiac)
+    (let* ([source (z:location-file (z:zodiac-start zodiac))])
+      (if (is-drscheme-definitions-editor? source)
+          (let* ([start-offset (z:location-offset (z:zodiac-start zodiac))]
+                 [finish-offset (z:location-offset (z:zodiac-finish zodiac))])
+            "Can't copy text yet")
+          (string-append "~a : ~a" (z:location-offset (z:zodiac-start zodiac)) (z:location-file (z:zodiac-start zodiac))))))
+  
+  (define (highlight-location-text zodiac)
+    (when clear-highlight-thunk (clear-highlight-thunk))
+    (let* ([source (z:location-file (z:zodiac-start zodiac))])
+      (when (is-drscheme-definitions-editor? source)
+        (let* ([start-offset (z:location-offset (z:zodiac-start zodiac))]
+               [finish-offset (z:location-offset (z:zodiac-finish zodiac))])
+          (set! clear-highlight-thunk (send source highlight-range start-offset finish-offset debug-highlight-color))))))
   
   (define debugger%
     (class object% ()
-      (private [frame (make-object debugger-frame%)]
-               [area-container (send f get-area-container)]
-               [button-panel (make-object m:horizontal-panel% area-container)]
-               [listbox-panel (make-object m:horizontal-panel% area-container)]
-               [level-listbox (make-object m:list-box% "level" () listbox-panel level-listbox-callback '(single))]
-               [binding-listbox (make-object m:list-box% "bindings" () binding-listbox-calback '(single))]
-               [interactions-canvas (make-object m:editor-canvas% area-container)]
-               [value-text (make-object value-text%)]
-               [break-semaphore (make-semaphore)])
-      
-      (sequence (send button-panel stretchable-height #f)
-                (make-object m:button% "continue" button-panel continue-callback))
-      
+
       (private [level-listbox-callback
                 (lambda (listbox event)
                   (case (send event get-event-type) 
                     ((list-box) 
                      (let ([selections (send listbox get-selections)])
                        (when (not (null? selections))
-                         (display-bindings (send listbox get-data (car selections))))))))]                
-
-                [binding-listbox-callback
-                 (lambda (listbox event)
-                   (case (send event get-event-type)
-                     ((list-box)
-                      (let ([selections (send listbox get-selections)])
-                        (when (not (null? selections))
-                          (send value-text set-value! (send listbox get-data (car selections))))))))]
-  
-                 [display-bindings 
-                  (lambda (frame-info)
-                    (send binding-listbox clear)
-                    (send interactions-canvas set-editor #f)
-                    (if (frame-info-full? frame-info)
-                        (let ([binding-names (map (function:compose binding-name marks:mark-binding-binding)
-                                                  (frame-info-bindings frame-info))])
-                          (send binding-listbox enable #t)
-                          (for-each (lambda (name data)
-                                      (send binding-listbox append (symbol->string name) data))
-                                    binding-names
-                                    (map marks:mark-binding-value (frame-info-bindings frame-info))))
-                        (send binding-listbox enable #f)))]
-
-                 )
+                         (let ([frame-info (send listbox get-data (car selections))])
+                           (highlight-location-text (frame-info-source frame-info))
+                           (display-bindings frame-info)))))))]                
+               
+               [binding-listbox-callback
+                (lambda (listbox event)
+                  (case (send event get-event-type)
+                    ((list-box)
+                     (let ([selections (send listbox get-selections)])
+                       (when (not (null? selections))
+                         (send value-text set-value! (send listbox get-data (car selections))))))))]
+               
+               [continue-callback
+                (lambda (button event)
+                  (send button-panel enable #f)
+                  (if break-semaphore
+                      (begin (semaphore-post break-semaphore)
+                             (set! break-semaphore #f))
+                      (e:internal-error #f "continue button enabled with no pending breakpoint")))]
+               
+               [display-bindings 
+                (lambda (frame-info)
+                  (send binding-listbox clear)
+                  (send value-text clear-value!)
+                  (if (frame-info-full? frame-info)
+                      (let ([binding-names (map (function:compose binding-name marks:mark-binding-binding)
+                                                (frame-info-bindings frame-info))])
+                        (send binding-listbox enable #t)
+                        (for-each (lambda (name data)
+                                    (send binding-listbox append (symbol->string name) data))
+                                  binding-names
+                                  (map marks:mark-binding-value (frame-info-bindings frame-info))))
+                      (send binding-listbox enable #f)))])
+      
+      (private [frame (make-object debugger-frame% this)]
+               [area-container (send frame get-area-container)]
+               [button-panel (make-object m:horizontal-panel% area-container)]
+               [listbox-panel (make-object m:horizontal-panel% area-container)]
+               [level-listbox (make-object m:list-box% "level" () listbox-panel level-listbox-callback '(single))]
+               [binding-listbox (make-object m:list-box% "bindings" () listbox-panel binding-listbox-callback '(single))]
+               [interactions-canvas (make-object m:editor-canvas% area-container)]
+               [value-text (make-object value-text%)]
+               [break-semaphore #f])
+      
+      (sequence (send button-panel stretchable-height #f)
+                (make-object m:button% "continue" button-panel continue-callback))
       
       (public [on-size-frame
                (lambda ()
                  (send value-text reset-pretty-print-width))]
               
+              [can-close-frame?
+               (lambda ()
+                 (if break-semaphore
+                     (begin 
+                       (m:message-box "oops!" (string-append "You cannot close the debugger window "
+                                                             "while a breakpoint is waiting.")
+                                      #f '(ok))
+                       #f)
+                     #t))]
+              
               [handle-breakpoint
-               (lambda (frame-info)
-                 
-                 
-  )
-      
-    
- 
+               (lambda (frame-info-list semaphore)
+                 (set! break-semaphore semaphore)
+                 (send frame show #t)
+                 (send button-panel enable #t)
+                 (send value-text clear-value!)
+                 (let* ([location-list (map (function:compose find-location-text frame-info-source) frame-info-list)])
+                   (send level-listbox clear)
+                   (send binding-listbox clear)
+                   (for-each (lambda (name data)
+                               (send level-listbox append name data))
+                             location-list
+                             frame-info-list)))])))
+  
+  
+  
   ; add the get-debugger-frame and set-debugger-frame! methods to the drscheme frame
-  (drscheme:get/extend:extend-unit-frame
+  (d:get/extend:extend-unit-frame
    (lambda (super%)
      (class super% args
        (sequence (apply super-init args))
-       (private [debugger-i #f])
+       (private [debugger #f])
        (public
-         [debugger
+         [get-debugger
           (lambda ()
-            (when (not debugger-i)
-              (set! debugger-i (make-object debugger%)))
-            debugger-i)]))))
-
+            (when (not debugger)
+              (set! debugger (make-object debugger%)))
+            debugger)]))))
+  
   ; ----------------------------------------------------------------
-
+  
   ; set up debugger preferences panel
   (fw:preferences:set-default 'ankle-annotation #f boolean?)
   
@@ -225,10 +261,7 @@
   (fw:preferences:add-panel "debugging" create-debugger-prefs-panel)
   
   ; ----------------------------------------------------------------
-
-  (define (continue debugger)
-    (send (debugger-bp debugger) enable #f)
-    (semaphore-post (debugger-bs debugger)))
+  
   
   (define-struct frame-info (source full? bindings))
   
@@ -238,50 +271,25 @@
         (make-frame-info (marks:mark-source mark) #t (marks:mark-bindings mark))))
   
   
-  
-
-  
-
-  
-  ; ----------------------------------------------------------------
-
-  (define (is-drscheme-definitions-editor? editor)
-    (and (send editor get-canvas)
-         (is-a? (send editor get-canvas) d:unit:definitions-canvas%)))
-  
-  (define (find-location-text zodiac)
-    (let* ([source (z:location-file (z:zodiac-start zodiac))])
-      (if (is-drscheme-definitions-editor? source fw:text:basic%)
-          (let* ([start-offset (z:location-offset (z:zodiac-start zodiac))]
-                 [finish-offset (z:location-offset (z:zodiac-finish zodiac))])
-            "Can't copy text yet")
-          (string-append "~a : ~a" (z:location-offset (z:zodiac-start zodiac)) (z:location-file (z:zodiac-start zodiac))))))
-    
-  (define (highlight-location-text zodiac)
-    (when clear-highlight-thunk (clear-highlight-thunk))
-    (let* ([source (z:location-file (z:zodiac-start zodiac))])
-      (when (is-drscheme-definitions-editor? source fw:text:basic%)
-        (let* ([start-offset (z:location-offset (z:zodiac-start zodiac))]
-               [finish-offset (z:location-offset (z:zodiac-finish zodiac))])
-          (set! clear-highlight-thunk (send source highlight-range start-offset finish-offset debug-color))))))
-  
   (define (break)
-    (let ([break-info-list (continuation-mark-set->list (current-continuation-marks) 
-                                                        annotate:debug-key)])
+    (let* ([break-info-list (continuation-mark-set->list (current-continuation-marks) 
+                                                         annotate:debug-key)]
+           [new-semaphore (make-semaphore)])
+      (when (null? break-info-list)
+        (error 'breakpoint "no marks to debug"))
       (parameterize
           ([m:current-eventspace drscheme-eventspace])
         (m:queue-callback 
          (lambda ()
-           (send debugger-frame show #t)
-           (enable-debugger)
            (let* ([frame-info-list (map parse-break-info break-info-list)]
-                  [location-list (map (function:compose find-location-text frame-info-source) frame-info-list)])
-             (send level-listbox clear)
-             (send binding-listbox clear)
-             (for-each (lambda (name data)
-                         (send level-listbox append name data))
-                       location-list
-                       frame-info-list))))
-        (semaphore-wait break-semaphore)
-        (semaphore-post debugger-available-semaphore)
-        break-resume-value))))
+                  [drscheme-frame (let loop ([frame-info-list frame-info-list])
+                                    (if (null? frame-info-list)
+                                        (error "no drscheme marks to hang the debugger from")
+                                        (or (get-drscheme-frame (z:location-file
+                                                                 (z:zodiac-start
+                                                                  (frame-info-source (car frame-info-list)))))
+                                            (loop (cdr frame-info-list)))))]
+                  [debugger (send drscheme-frame get-debugger)])
+             (send debugger handle-breakpoint frame-info-list new-semaphore))))
+        (semaphore-wait new-semaphore)
+        (void)))))

@@ -414,6 +414,10 @@ wxCursor::wxCursor(char bits[], int width, int height, int depth)
   cMacCursor = NULL;
 }
 
+//-----------------------------------------------------------------------------
+static wxMemoryDC *temp_mdc;
+static wxMemoryDC *temp_mask_mdc;
+
 wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
 {
   int w, h, bw, bh, i, j, delta, bit, s;
@@ -437,7 +441,16 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
   if ((bw > w) || (bh > h))
     return;
 
-  bitmap_dc = new wxMemoryDC(1);
+/* Make read-only DCs for reading bits from the bitmaps: */
+  if (!temp_mdc) {
+    wxREGGLOB(temp_mdc);
+    wxREGGLOB(temp_mask_mdc);
+    temp_mdc = new wxMemoryDC(1);
+    temp_mask_mdc = new wxMemoryDC(1);
+  }
+  
+  bitmap_dc = temp_mdc;
+  
   bitmap_dc->SelectObject(bm);
   /* Might fail, so we double-check: */
   if (!bitmap_dc->GetObject())
@@ -447,7 +460,7 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
   if (mask == bm) {
     mask_dc = bitmap_dc;
   } else {
-    mask_dc = new wxMemoryDC(1);
+    mask_dc = temp_mask_mdc;
     mask_dc->SelectObject(mask);
     if (!mask_dc->GetObject()) {
       bitmap_dc->SelectObject(NULL);

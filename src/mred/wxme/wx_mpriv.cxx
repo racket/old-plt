@@ -2573,6 +2573,13 @@ void wxMediaEdit::Refresh(double left, double top, double width, double height,
   if (bgColor && !offscreenInUse && bitmap && bitmap->Ok() && offscreen->Ok() && !ps) {
     /* Need to make sure that difference between coordinates is
        integral; otherwise, roundoff error could affect drawing */
+    int v;
+    unsigned char red, green, blue;
+
+    red = (unsigned char)bgColor->Red();
+    green = (unsigned char)bgColor->Green();
+    blue = (unsigned char)bgColor->Blue();
+
     ddx = (left - x) - (long)(left - x);
     if (ddx < 0)
       ddx = 1 + ddx;
@@ -2593,7 +2600,10 @@ void wxMediaEdit::Refresh(double left, double top, double width, double height,
 	|| (top != lastDrawT) || (bottom != lastDrawB)
 	|| (left != lastDrawL) || (right != lastDrawR)
 	|| (lastDrawCaret != show_caret)
-	|| (lastDrawXSel != show_xsel)) {
+	|| (lastDrawXSel != show_xsel)
+	|| (red != lastDrawRed)
+	|| (green != lastDrawGreen)
+	|| (blue != lastDrawBlue)) {
       offscreen->BeginDrawing();
       Redraw(offscreen, top, bottom, left, right, -top, -left, 
 	     show_caret, show_xsel, bgColor);
@@ -2604,6 +2614,9 @@ void wxMediaEdit::Refresh(double left, double top, double width, double height,
       lastDrawB = bottom;
       lastDrawCaret = show_caret;
       lastDrawXSel = show_xsel;
+      lastDrawRed = red;
+      lastDrawGreen = green;
+      lastDrawBlue = blue;
       drawCachedInBitmap = TRUE;
     }
 

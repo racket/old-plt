@@ -867,7 +867,7 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 
 static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[])
 {
-  if (scheme_module_demand_hook) {
+  if (0 && scheme_module_demand_hook) {
     Scheme_Object *r;
     r = scheme_module_demand_hook(argc, argv);
     if (r) return r;
@@ -2396,7 +2396,7 @@ static void eval_module_body(Scheme_Env *menv)
     _scheme_eval_linked_expr_multi(SCHEME_CAR(body));
   }
 
-  if (scheme_module_demand_hook) {
+  if (0 && scheme_module_demand_hook) {
     Scheme_Object *a[1], *val, *sym;
     a[0] = menv->module->modname;
     sym = scheme_module_demand_hook(1, a);

@@ -553,6 +553,7 @@ class wxMediaEdit : public wxMediaBuffer
   double refreshL, refreshT, refreshR, refreshB;
 
   double lastDrawL, lastDrawT, lastDrawR, lastDrawB;
+  unsigned char lastDrawRed, lastDrawGreen, lastDrawBlue;
 
   long delayedscroll, delayedscrollend;
   int delayedscrollbias;

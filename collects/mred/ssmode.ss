@@ -139,6 +139,8 @@
 	 (make-column "Lambda" 'lambda lambda-keywords)
 	 main-panel)))
 
+    (define scheme-mode-style-list (make-object wx:style-list%))
+
     (define make-scheme-mode% 
       (lambda (super%)
 	(class-asi super%
@@ -685,6 +687,7 @@
 	       (send edit set-wordbreak-map scheme-media-wordbreak-map)
 	       (send edit set-tabs '() 8 #f)
 	       (set! tab-size 8)
+	       (send edit set-style-list scheme-mode-style-list)
 	       (send edit set-styles-fixed #t)
 	       (super-install edit))]
 	    [evaluate-region

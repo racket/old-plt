@@ -1303,14 +1303,14 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterFile(int n,  Scheme_Object *p
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPrintSetupData_class, "set-file in ps-setup%", n, p);
-  wnpathname x0 INIT_NULLED_OUT;
+  nstring x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (wnpathname)WITH_VAR_STACK(objscheme_unbundle_nullable_write_pathname(p[POFFSET+0], "set-file in ps-setup%"));
+  x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+0], "set-file in ps-setup%"));
 
   
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->SetPrinterFile(x0));

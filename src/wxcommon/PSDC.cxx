@@ -62,6 +62,7 @@
 #endif
 
 #include "wx_rgn.h"
+#include "scheme.h"
 
 # define YSCALE(y) ((paper_h) - ((y) * user_scale_y + device_origin_y))
 # define XSCALE(x) ((x) * user_scale_x + device_origin_x)
@@ -101,10 +102,8 @@ class wxCanvas;
 #endif
 
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <assert.h>
 
 static char *default_afm_path = NULL;
 
@@ -123,17 +122,17 @@ wxPrintPaperDatabase *wxThePrintPaperDatabase;
 #endif
 
 class PSStream : public wxObject {
-  FILE *f;
+  Scheme_Object *f;
   int int_width;
 
  public:
 
   PSStream(char *file) {
-    f = fopen(file, "w");
+    f = scheme_open_output_file(file, "post-script-dc%");
     int_width = 0;
   }
   ~PSStream(void) {
-    if (f) fclose(f);
+    if (f) scheme_close_output_port(f);
   }
 
   int good(void) {
@@ -141,10 +140,13 @@ class PSStream : public wxObject {
   }
 
   void Out(char s) {
-    fprintf(f, "%c", s);
+    char s2[2];
+    s2[0] = s;
+    s2[1] = 0;
+    Out(s2);
   }
   void Out(const char *s) {
-    fwrite(s, strlen(s), 1, f);
+    scheme_put_string("post-script-dc%", f, s, 0, strlen(s), 0);
   }
   void Out(float n);
   void Out(double d) {
@@ -156,10 +158,10 @@ class PSStream : public wxObject {
   }
 
   long tellp(void) {
-    return ftell(f);
+    return scheme_set_file_position(f, -1);
   }
   void seekp(long pos) {
-    fseek(f, pos, 0);
+    scheme_set_file_position(f, pos);
   }
 
   void width(int w) {
@@ -169,22 +171,49 @@ class PSStream : public wxObject {
 
 void PSStream::Out(float n)
 {
+  char buf[64];
+
   if ((float)(long)n == n) {
     Out((long)n);
     return;
   }
-  fprintf(f, "%f", n);
+  sprintf(buf, "%f", n);
+  Out(buf);
 }
 
 void PSStream::Out(long l)
 {
+  char buf[64];
+
   if (int_width > 0) {
     char buffer[50];
     sprintf(buffer, "%% %d.%dld", int_width, int_width);
-    fprintf(f, buffer, l);
+    sprintf(buf, buffer, l);
     int_width = 0;
   } else
-    fprintf(f, "%ld", l);
+    sprintf(buf, "%ld", l);
+  Out(buf);
+}
+
+static char *read_line_up_to(char *s, long size, Scheme_Object *port)
+{
+  int i, c;
+  
+  size -= 1;
+  for (i = 0; i < size; i++) {
+    c = scheme_getc(port);
+    if (c == EOF) {
+      if (!i)
+	return NULL;
+      else
+	break;
+    } else if ((c == '\r') || (c == '\n'))
+      break;
+    else
+      s[i] = c;
+  }
+  s[i] = 0;
+  return s;
 }
 
 wxPostScriptDC::wxPostScriptDC (Bool interactive, wxWindow *parent, Bool usePaperBBox)
@@ -355,13 +384,12 @@ Bool wxPostScriptDC::PrinterDialog(Bool interactive, wxWindow *parent, Bool useP
   if ((mode == PS_PREVIEW) || (mode == PS_PRINTER)) {
     // For PS_PRINTER action this depends on a Unix-style print spooler
     // since the wx_printer_file can be destroyed during a session
-    // @@@ TODO: a Windows-style answer for non-Unix
     char userId[256];
     char tmp[256];
     wxGetUserId (userId, sizeof (userId) / sizeof (char));
-    strcpy (tmp, "/tmp/preview_");
-    strcat (tmp, userId);
-    strcat (tmp, ".ps");
+    strcpy(tmp, "/tmp/preview_");
+    strcat(tmp, userId);
+    strcat(tmp, ".ps");
     filename = copystring(tmp);
   } else if (mode == PS_FILE) {
     char *file;
@@ -1806,7 +1834,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
       || Weight != lastWeight) {
     char *name;
     char *afmName;
-    FILE *afmFile;
+    Scheme_Object *afmFile;
 
     // store cached values
     lastFamily = Family;
@@ -1855,7 +1883,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
     // when the font has changed, we read in the right AFM file and store the
     // character widths in an array, which is processed below (see point 3.).
 
-    afmFile = (afmName ? fopen(afmName,"r") : (FILE *)NULL);
+    afmFile = (afmName ? scheme_open_input_file(afmName, "post-script-dc%") : (Scheme_Object *)NULL);
 
     if (afmFile==NULL) {
       int i;
@@ -1884,7 +1912,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
       }
 
       // read in the file and parse it
-      while (fgets(line,sizeof(line),afmFile)) {
+      while (read_line_up_to(line, sizeof(line), afmFile)) {
         if (!strncmp(line, "Descender ", 10)) {
 	  // descender
           if ((sscanf(line, "%s%d", descString, &lastDescender) != 2)
@@ -1920,7 +1948,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
           }
         }
       }
-      fclose(afmFile);
+      scheme_close_input_port(afmFile);
     }
   }
   

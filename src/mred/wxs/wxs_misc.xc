@@ -160,7 +160,7 @@ void check_ps_mode(int v, Scheme_Object *p)
 @ "get-margin" : void GetMargin(nnfloat*,nnfloat*);
 
 @ "set-command" : void SetPrinterCommand(string);
-@ "set-file" : void SetPrinterFile(wnpathname);
+@ "set-file" : void SetPrinterFile(nstring);
 @ "set-preview-command" : void SetPrintPreviewCommand(string); 
 @ "set-mode" : void SetPrinterMode(SYM[psMode]); : : /checkPSMode[0]
 @ "set-orientation" : void SetPrinterOrientation(SYM[psOrientation]);

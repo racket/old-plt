@@ -6,6 +6,10 @@
 
 (test #t syntax? (datum->syntax 'hello #f #f))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Test basic expansion and property propagation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define-syntax mcr
   (lambda (stx)
     (syntax-case stx ()
@@ -159,6 +163,138 @@
 (test 10 syntax-property (expand s) 'testing)
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Test module-identifier=? on different phases via syntax-case*
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(module mta mzscheme
+  (define mtax 10)
+  (export mtax))
+
+(module mtb mzscheme
+  (define mtby 10)
+  (export mtby))
+
+(module mt1 mzscheme
+  (import (prefix a: mta))
+  (import-for-syntax (prefix b: mtb))
+  (import (prefix mz: mzscheme))
+
+  (define (has-lam? x)
+    (syntax-case x (lambda)
+      [(_ lambda) #t]
+      [else #f]))
+
+  (define (has-mz:lam? x)
+    (syntax-case x (mz:lambda)
+      [(_ mz:lambda) #t]
+      [else #f]))
+
+  (define (has-mtax? x)
+    (syntax-case x (a:mtax)
+      [(_ a:mtax) #t]
+      [else #f]))
+
+  (define (has-mtby? x)
+    (syntax-case x (b:mtby)
+      [(_ b:mtby) #t]
+      [else #f]))
+
+  (define (has-et-lam? x)
+    (syntax-case* x (lambda) #t
+      [(_ lambda) #t]
+      [else #f]))
+
+  (define (has-et-mz:lam? x)
+    (syntax-case* x (mz:lambda) #t
+      [(_ mz:lambda) #t]
+      [else #f]))
+
+  (define (has-et-mtax? x)
+    (syntax-case* x (a:mtax) #t
+      [(_ a:mtax) #t]
+      [else #f]))
+
+  (define (has-et-mtby? x)
+    (syntax-case* x (b:mtby) #t
+      [(_ b:mtby) #t]
+      [else #f]))
+
+  (export has-lam? has-mz:lam? has-mtax? has-mtby?
+	  has-et-lam? has-et-mz:lam? has-et-mtax? has-et-mtby?))
+
+(import mt1)
+(import-for-syntax mtb)
+
+(test #t has-lam? #'(any lambda))
+(test #f has-lam? #'(any lambada))
+
+(test #t has-et-lam? #'(any lambda))
+(test #f has-et-lam? #'(any lambada))
+
+;; mz: prefix is there in normal environment:
+(test #t has-mz:lam? #'(any lambda))
+(test #f has-et-mz:lam? #'(any lambda))
+(test #f has-mz:lam? #'(any mz:lambda))
+(test #t has-et-mz:lam? #'(any mz:lambda))
+
+;; No mtax anywhere:
+(test #f has-mtax? #'(any mtax))
+(test #f has-mtax? #'(any a:mtax))
+(test #f has-et-mtax? #'(any mtax))
+(test #t has-et-mtax? #'(any a:mtax))
+
+;; mtby (without prefix) in trans env
+(test #f has-mtby? #'(any mtby))
+(test #t has-mtby? #'(any b:mtby))
+(test #t has-et-mtby? #'(any mtby))
+(test #f has-et-mtby? #'(any b:mtby))
+
+(module mt2 #%kernel
+  (import-for-syntax #%kernel)
+  (import mt1)
+  (import mta)
+
+  ;; For #':
+  (define-syntax syntax
+    (lambda (stx)
+      (datum->syntax
+       (cons
+	(quote-syntax quote-syntax)
+	(cdr (syntax-e stx)))
+       stx
+       stx)))
+
+  (define-values (run-mt2-test)
+    (lambda (test)
+      
+      (test #t has-lam? #'(any lambda))
+      (test #f has-lam? #'(any lambada))
+
+      (test #t has-et-lam? #'(any lambda))
+      (test #f has-et-lam? #'(any lambada))
+
+      ;; mz: prefix is there in normal environment:
+      (test #t has-mz:lam? #'(any lambda))
+      (test #f has-et-mz:lam? #'(any lambda))
+      (test #f has-mz:lam? #'(any mz:lambda))
+      (test #t has-et-mz:lam? #'(any mz:lambda))
+
+      ;; mtax in both places normal env:
+      (test #t has-mtax? #'(any mtax))
+      (test #f has-mtax? #'(any a:mtax))
+      (test #f has-et-mtax? #'(any mtax))
+      (test #t has-et-mtax? #'(any a:mtax))
+
+      ;; no mtby here
+      (test #f has-mtby? #'(any mtby))
+      (test #t has-mtby? #'(any b:mtby))
+      (test #f has-et-mtby? #'(any mtby))
+      (test #f has-et-mtby? #'(any b:mtby))))
+
+  (export run-mt2-test))
+
+(import mt2)
+(run-mt2-test test)
 
 (report-errs)

@@ -175,6 +175,9 @@
 				RelativePath="..\..\mzcom\mzobj.h">
 			</File>
 			<File
+				RelativePath="resource.h">
+			</File>
+			<File
 				RelativePath="..\..\mzcom\resource.h">
 			</File>
 		</Filter>

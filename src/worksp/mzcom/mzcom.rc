@@ -1,6 +1,6 @@
-//Microsoft Developer Studio generated resource script.
+// Microsoft Visual C++ generated resource script.
 //
-#include "../../mzcom/resource.h"
+#include "resource.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -27,18 +27,18 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE DISCARDABLE 
+1 TEXTINCLUDE 
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE DISCARDABLE 
+2 TEXTINCLUDE 
 BEGIN
     "#include ""winres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE DISCARDABLE 
+3 TEXTINCLUDE 
 BEGIN
     "1 TYPELIB ""MzCOM.tlb""\r\n"
     "\0"
@@ -47,7 +47,6 @@ END
 #endif    // APSTUDIO_INVOKED
 
 
-#ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////
 //
 // Version
@@ -55,7 +54,7 @@ END
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION 1,0,0,1
- PRODUCTVERSION 200,0,0,1
+ PRODUCTVERSION 201,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -70,19 +69,13 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "Comments", "\0"
-            VALUE "CompanyName", "\0"
-            VALUE "FileDescription", "MzCOM Module\0"
-            VALUE "FileVersion", "1, 0, 0, 1\0"
-            VALUE "InternalName", "MzCOM\0"
-            VALUE "LegalCopyright", "Copyright 2000-2002 PLT (Paul Steckler)\0"
-            VALUE "LegalTrademarks", "\0"
-            VALUE "OLESelfRegister", "\0"
-            VALUE "OriginalFilename", "MzCOM.EXE\0"
-            VALUE "PrivateBuild", "\0"
-            VALUE "ProductName", "MzCOM Module\0"
-            VALUE "ProductVersion", "200, 0, 0, 1\0"
-            VALUE "SpecialBuild", "\0"
+            VALUE "FileDescription", "MzCOM Module"
+            VALUE "FileVersion", "1, 0, 0, 1"
+            VALUE "InternalName", "MzCOM"
+            VALUE "LegalCopyright", "Copyright 2000-2002 PLT (Paul Steckler)"
+            VALUE "OriginalFilename", "MzCOM.EXE"
+            VALUE "ProductName", "MzCOM Module"
+            VALUE "ProductVersion", "201, 0, 0, 1"
         END
     END
     BLOCK "VarFileInfo"
@@ -91,32 +84,31 @@ BEGIN
     END
 END
 
-#endif    // !_MAC
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // REGISTRY
 //
 
-IDR_MZCOM               REGISTRY MOVEABLE PURE  "MzCOM.rgs"
-IDR_MZOBJ               REGISTRY DISCARDABLE    "MzObj.rgs"
+IDR_MZCOM               REGISTRY                "MzCOM.rgs"
+IDR_MZOBJ               REGISTRY                "MzObj.rgs"
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // Dialog
 //
 
-ABOUTBOX DIALOG DISCARDABLE  0, 0, 203, 97
-STYLE DS_MODALFRAME | DS_SETFOREGROUND | DS_CENTER | WS_POPUP | WS_CAPTION
+ABOUTBOX DIALOGEX 0, 0, 203, 97
+STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_CENTER | WS_POPUP | 
+    WS_CAPTION
 CAPTION "MzCOM"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,76,69,50,14,BS_CENTER
-    CTEXT           "MzCOM v. 200",IDC_STATIC,71,8,61,8
+    CTEXT           "MzCOM v. 201",IDC_STATIC,71,8,61,8
     CTEXT           "Copyright (c) 2000-2002 PLT (Paul Steckler)",IDC_STATIC,
                     41,20,146,9
-    CTEXT           "MzScheme v. 200",IDC_STATIC,64,35,75,8
+    CTEXT           "MzScheme v. 201",IDC_STATIC,64,35,75,8
     CTEXT           "Copyright (c) 1995-2002 PLT (Matthew Flatt)",IDC_STATIC,
                     30,47,143,8
     ICON            MZICON,IDC_STATIC,11,16,20,20
@@ -129,7 +121,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
+GUIDELINES DESIGNINFO 
 BEGIN
     ABOUTBOX, DIALOG
     BEGIN
@@ -149,14 +141,14 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-MZICON                  ICON    DISCARDABLE     "mzcom.ico"
+MZICON                  ICON                    "mzcom.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // String Table
 //
 
-STRINGTABLE DISCARDABLE 
+STRINGTABLE 
 BEGIN
     IDS_PROJNAME            "MzCOM"
 END

@@ -414,8 +414,8 @@
 
 
   (define-struct drawing-line (x1 y1 x2 y2))
-  (define-struct (wipe-line struct:drawing-line) ())
-  (define-struct (draw-line struct:drawing-line) ())
+  (define-struct (wipe-line drawing-line) ())
+  (define-struct (draw-line drawing-line) ())
   (define lines-in-drawing null)
 
   (define (draw-lines-into-dc dc)

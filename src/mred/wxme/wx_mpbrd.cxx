@@ -1913,7 +1913,6 @@ void wxMediaPasteboard::SizeCacheInvalid(void)
 {
   sizeCacheInvalid = TRUE;
   needResize = TRUE;
-  Update(0, 0, -1, -1);
 }
 
 

@@ -15,7 +15,8 @@
 			replace-indices     ;; override
 			init-new-indices    ;; inherit, override, public
 			go go-arity
-			primitive))
+			primitive
+			immediate-primitive?))
   ;; simplistic implementation for now:
   (define-struct interface (name supers public-ids class))
 
@@ -32,7 +33,7 @@
 				(let ([object%-init (lambda () (void))])
 				  object%-init))
 			      0
-			      #f))
+			      #f #f))
   (set-interface-class! object<%> object%)
   (vector-set! (class-supers object%) 0 object%)
 
@@ -76,30 +77,46 @@
 
   (define skip (gensym))
 
+  (define-struct (lazy-prim-method (current-inspector)) (m))
+  (print-struct #t)
+
+  (define (unbox/prim-resolve b o)
+    (let ([v (unbox b)])
+      (if (lazy-prim-method? v)
+	  (begin
+	    (set-box! b (lambda r (apply (lazy-prim-method-m v) o r)))
+	    (unbox b))
+	  v)))
+
   (define (make-prim-class prim-class name super old-mnames new-mnames methods)
     (let ([cls (compose-class name (or super object%) null
 			      null          ;; rename
 			      null          ;; inherit
 			      old-mnames    ;; override
 			      new-mnames    ;; public
-			      (lambda (this super-init . pub-defines+pub-mutables)
-				(lambda args
-				  (if super (super-init skip) (super-init))
-				  (unless (and (pair? args)
-					       (eq? (car args) skip))
-				    (apply init-prim-obj this args))
-				  ;; define all methods:
-				  (let loop ([ms methods]
-					     [l pub-defines+pub-mutables])
-				    (unless (null? ms)
-				      (let ([m (car ms)])
-					(set-box! (car l) (lambda r
-							    (apply m this r))))
-				      (loop (cdr ms) (cdr l))))))
+			      (let ([lazys
+				     (map make-lazy-prim-method
+					  methods)])
+				(lambda (this super-init . pub-defines+pub-mutables)
+				  (lambda args
+				    (if super (super-init skip) (super-init))
+				    (unless (and (pair? args)
+						 (eq? (car args) skip))
+				      (apply init-prim-obj this args))
+				    ;; "define" all methods with lazy tokens:
+				    (let loop ([ms lazys]
+					       [l pub-defines+pub-mutables]) ; longer than ms
+				      (unless (null? ms)
+					(let ([m (car ms)])
+					  (set-box! (car l) m))
+					(loop (cdr ms) (cdr l)))))))
 			      (box 0)
 			      prim-class)])
       (hash-table-put! prim-classes prim-class cls)
       cls))
+
+
+  
 
   (define-struct (exn:object struct:exn) ())
 
@@ -278,7 +295,8 @@
 				  go (if (box? go-arity)
 					 (make-arity-at-least (unbox go-arity))
 					 go-arity)
-				  (or primitive (class-primitive super)))])
+				  (or primitive (class-primitive super))
+				  (and primitive #t))])
 	      (vector-set! (class-supers c) (class-pos c) c)
 	      (set-interface-class! i c)
 	      c))))))
@@ -369,7 +387,11 @@
 									  'object-init)
 								      "multiple intializations of superclass"))
 							 (set! super-called? #t)
-							 (apply super-init args))
+							 (apply super-init args)
+							 ;; Force lazy method boxes that might be used directly:
+							 (unless (class-immediate-primitive? c)
+							   (for-each (lambda (b) (unbox/prim-resolve b this)) old-boxes)
+							   (for-each (lambda (b) (unbox/prim-resolve b this)) new-boxes)))
 						       (append
 							define-boxes  ;; override, public
 							old-boxes     ;; rename
@@ -466,7 +488,7 @@
 		    n
 		    (lambda () #f))])
 	    (if p
-		(unbox (vector-ref (+obj-slots o) p))
+		(unbox/prim-resolve (vector-ref (+obj-slots o) p) o)
 		(fail (+obj-class o)))))))
   
   (define-syntax ivar
@@ -514,7 +536,7 @@
 			 name
 			 "object"
 			 o))))
-		(unbox (vector-ref (+obj-slots o) p)))
+		(unbox/prim-resolve (vector-ref (+obj-slots o) p) o))
 	      (obj-error 'make-generic 
 			 "instance variable not found: ~e~a" 
 			 n 

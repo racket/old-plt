@@ -26,10 +26,10 @@
     (semaphore-wait (channel-available c))
     (dequeue c))
   
-  ; channel-get-available : Channel -> TST
-  (define (channel-get-available c)
+  ; channel-get-available : Channel (TST -> a) -> a
+  (define (channel-get-available c k)
     (when (semaphore-try-wait? (channel-available c))
-      (dequeue c)))
+      (k (dequeue c))))
   
   ; dequeue : Channel -> TST
   ; the "avaiable" semaphore must already have been decremented

@@ -20,8 +20,7 @@
 	    [mred:application : mred:application^]
 	    [mzlib:function : mzlib:function^]
 	    [mzlib:string : mzlib:string^]
-	    [mzlib:pretty-print : mzlib:pretty-print^]
-	    [mzlib:trigger : mzlib:trigger^])
+	    [mzlib:pretty-print : mzlib:pretty-print^])
 	    
     (mred:debug:printf 'invoke "mred:console@")
 
@@ -92,11 +91,8 @@
 	       [p (make-object mred:container:horizontal-panel% f)]
 	       [c (make-object mred:canvas:wide-snip-canvas% p)]
 	       [is (make-object wx:image-snip% 
-				(build-path 
-				 mred:constants:plt-home-directory
-				 "icons"
-				 "mred.gif")
-				wx:const-bitmap-type-gif)]
+		     (build-path (collection-path "icons") "mred.gif")
+		     wx:const-bitmap-type-gif)]
 	       [oe (make-object mred:edit:media-edit%)]
 	       [ie (make-object mred:edit:media-edit%)]
 	       [es (make-object mred:edit:media-snip% ie #f)]
@@ -250,41 +246,6 @@
 	    [needs-to-move-original null]
 	    [edit-sequence-count 0]
 	    [updating-highlighted-prompt #f]
-	    [after-something
-	     (lambda (combine start len)
-	       (when (and (not needs-to-move)
-			  (or resetting?
-			      (and prompt-mode? (< start prompt-position))))
-		 (set! prompt-position (combine prompt-position len)))
-	       '(when needs-to-move
-		 (set! needs-to-move #f)
-		 (set! needs-to-move-right (combine needs-to-move-right len))
-		 (split-snip needs-to-move-left)
-		 (split-snip needs-to-move-right)
-		 (let ([start-selection (get-start-position)]
-		       [end-selection (get-end-position)]
-		       [delta (- prompt-position needs-to-move-left)])
-		   (set! moving-down? #t)
-		   (let loop ([snip (find-snip needs-to-move-left wx:const-snip-after)])
-		     (cond
-		       [(null? snip) (void)]
-		       [(< (get-snip-position snip) needs-to-move-right)
-			(insert (send snip copy) (last-position) (last-position) #t)
-			(loop (send snip next))]
-		       [else (void)]))
-		   (delete needs-to-move-left needs-to-move-right #f)
-		   (wx:message-box (format "3 prompt-position ~a" prompt-position))
-		   (for-each (lambda (s) 
-			       (fprintf mred:constants:original-output-port 
-					"copy: ~s~n" (send s get-text 0 10000))
-			       (insert (send s copy) start start #f)
-			       '(wx:message-box "inserted one"))
-			     needs-to-move-original)
-		   (wx:message-box (format "4 prompt-position ~a" prompt-position))
-		   (set-position (+ start-selection delta)
-				 (+ end-selection delta)))
-		 (set! moving-down? #f)
-		 (end-edit-sequence)))]
 	    [on-something
 	     (opt-lambda (super start len [attend-to-styles-fixed? #f])
 	       (cond
@@ -296,13 +257,14 @@
 		     (and attend-to-styles-fixed? styles-fixed?))
 		 (super start len)]
 		[else 
-		 '(let-values ([(left right) (find-which-previous-sexp)])
+		 (let-values ([(left right) (find-which-previous-sexp)])
 		   (and left
 			(super start len)
-			(begin
-			  (wx:message-box (format "prompt-position ~a" prompt-position))
+			'(begin
 			  (when needs-to-move
 			    (wx:message-box "needs to move already #t!!" "Internal Error"))
+			  (newline)
+			  (newline)
 			  (set! needs-to-move #t)
 			  (set! needs-to-move-left left)
 			  (set! needs-to-move-right right)
@@ -319,10 +281,47 @@
 					      "orig: ~s~n" (send snip get-text 0 10000))
 				     (cons (send snip copy) (loop (send snip next)))]
 				    [else null])))
-			  (wx:message-box (format "prompt-position ~a" prompt-position))
 			  (begin-edit-sequence)
-			  #t)))
-		 #f]))])
+			  #t)))]))]
+	    [after-something
+	     (lambda (combine start len)
+	       (when (and (not needs-to-move)
+			  (not moving-down?)
+			  (or resetting?
+			      (and prompt-mode? (< start prompt-position))))
+		 (set! prompt-position (combine prompt-position len)))
+	       (when needs-to-move
+		 '(wx:message-box (format "1 prompt-position ~a" prompt-position))
+		 (set! needs-to-move #f)
+		 (set! needs-to-move-right (combine needs-to-move-right len))
+		 (split-snip needs-to-move-left)
+		 (split-snip needs-to-move-right)
+		 (let ([start-selection (get-start-position)]
+		       [end-selection (get-end-position)]
+		       [delta (- prompt-position needs-to-move-left)])
+		   (set! moving-down? #t)
+		   (let loop ([snip (find-snip needs-to-move-left wx:const-snip-after)])
+		     '(wx:message-box (format "2 prompt-position ~a" prompt-position))
+		     (cond
+		       [(null? snip) (void)]
+		       [(< (get-snip-position snip) needs-to-move-right)
+			(insert (send snip copy) (last-position) (last-position) #t)
+			(loop (send snip next))]
+		       [else (void)]))
+		   '(wx:message-box (format "3 prompt-position ~a" prompt-position))
+		   (delete needs-to-move-left needs-to-move-right #f)
+		   (wx:message-box (format "4 prompt-position ~a" prompt-position))
+		   (for-each (lambda (s) 
+			       (fprintf mred:constants:original-output-port 
+					"copy: ~s~n" (send s get-text 0 10000))
+			       (insert (send s copy) needs-to-move-left needs-to-move-left #f)
+			       '(wx:message-box "inserted one"))
+			     needs-to-move-original)
+		   (wx:message-box (format "5 prompt-position ~a" prompt-position))
+		   (set-position (+ start-selection delta)
+				 (+ end-selection delta)))
+		 (set! moving-down? #f)
+		 (end-edit-sequence)))])
 	  (public
 	    [resetting? #f]
 	    [set-resetting (lambda (v) (set! resetting? v))])
@@ -702,6 +701,7 @@
 	    [display-result
 	     (lambda (v)
 	       (unless (void? v)
+		 (begin-edit-sequence)
 		 (with-parameterization user-parameterization
 		   (lambda ()
 		     (parameterize 
@@ -709,7 +709,8 @@
 			   (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
 			  [mzlib:pretty-print:pretty-print-print-hook
 			   (lambda (x _ port) (this-result-write x))])
-		       (mzlib:pretty-print:pretty-print v this-result))))))]
+		       (mzlib:pretty-print:pretty-print v this-result))))
+		 (end-edit-sequence)))]
 	    [eval-and-display
 	     (lambda (str)
 	       (catch-errors

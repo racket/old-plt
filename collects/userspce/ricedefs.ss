@@ -1,7 +1,5 @@
 (define-signature ricedefs^
-  (allow-improper-lists
-   eq?-only-compares-symbols?
-   eq?
+  (eq?
    boolean=?
    cons
    set-cdr!

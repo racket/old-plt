@@ -6,8 +6,7 @@
 	    [mred:container : mred:container^]
 	    [mred:canvas : mred:canvas^]
 	    [mred:edit : mred:edit^]
-	    [mzlib:function : mzlib:function^]
-	    [mzlib:trigger : mzlib:trigger^])
+	    [mzlib:function : mzlib:function^])
 
     (mred:debug:printf 'invoke "mred:gui-utils@")
 
@@ -107,18 +106,23 @@
 
     (define delay-action
       (lambda (delay-time open close)
-	(let ([trigger (mzlib:trigger:make-trigger)]
-	      [open-done-trigger (mzlib:trigger:make-trigger)])
+	(let ([semaphore (make-semaphore 1)]
+	      [open? #f]
+	      [skip-it? #f])
 	  (thread 
 	   (lambda ()
 	     (sleep delay-time)
-	     (when (mzlib:trigger:trigger-test-and-hit? trigger)
-	       (open)
-	       (mzlib:trigger:trigger-hit open-done-trigger))))
+	     (semaphore-wait semaphore)
+	     (unless skip-it?
+	       (set! open? #t)
+	       (open))
+	     (semaphore-post semaphore)))
 	  (lambda ()
-	    (when (not (mzlib:trigger:trigger-test-and-hit? trigger))
-	      (mzlib:trigger:trigger-block open-done-trigger #t)
-	      (close))))))
+	    (semaphore-wait semaphore)
+	    (if open?
+		(close)
+		(set! skip-it? #t))
+	    (semaphore-post semaphore)))))
 
     (define local-busy-cursor
       (let ([watch (make-object wx:cursor% wx:const-cursor-watch)])

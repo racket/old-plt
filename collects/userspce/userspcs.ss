@@ -9,3 +9,7 @@
    (open mzlib:compat^)
    (open mzlib:string^)
    (open ricedefs^)))
+
+(define-signature plt:userspace:params^
+  (allow-improper-lists
+   eq?-only-compares-symbols))

@@ -7,7 +7,7 @@
 	    [drscheme:unit : drscheme:unit^]
 	    [drscheme:parameters : drscheme:parameters^]
 	    [drscheme:compound-unit : drscheme:compound-unit^]
-	    [zodiac : zodiac:system^])
+	    [zodiac : drscheme:zodiac^])
     
     (mred:debug:printf 'invoke "drscheme:frame@")
     

@@ -1,5 +1,21 @@
 SYSTEM HISTORY
 --------------
+Version 51:
+ - the startup procedure has changed again. Now, applications are
+   expected to be in a collection. The -a flag has an extra first
+   argument, specifing the collection to load the files from, and 
+   a -A flag has been added. See the startup documentation for more
+   information.
+
+   Also, if you define mred:startup and use the -nu flag, the
+   definition of mred:startup must come after the flag on the command
+   line. For example:
+     mred -e "(define mred:startup (lambda ...))" -nu
+   no longer works.
+
+   Redefinition of mred:initialize and mred:make-invokeable-unit are
+   no longer supported. Create a new system instead.
+
 Version 50:
 
 - fixed a bug in file handlers; if a predicate is supplied, that

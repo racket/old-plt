@@ -10,8 +10,7 @@
 	    [mzlib : mzlib:core^]
 	    [print-convert : mzlib:print-convert^]
 	    [drscheme : drscheme:export^]
-	    [zodiac : zodiac:system^]
-            [params : plt:parameters^])
+	    [zodiac : drscheme:zodiac^])
     
     (define add/mult-set
       (lambda (m v)

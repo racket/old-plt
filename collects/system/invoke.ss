@@ -46,15 +46,4 @@
     (let ([app (require-library app-unit-library app-collection)])
       (unless (unit/sig? app)
 	(error 'invokation "the application file didn't return a unit, got: ~a" app))
-      (let ([U
-	     (compound-unit/sig (import)
-	       (link [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
-		     [trigger : mzlib:trigger^ ((reference-library-unit/sig "triggerr.ss"))]
-		     [mred : mred^ ((reference-library-unit/sig "link.ss" "mred")
-				    core trigger application)]
-		     [application : mred:application^ (app mred core)])
-	       (export (open mred)
-		       (open application)))])
-	(compound-unit/sig (import)
-	  (link [mred : ((open mred^) (open mred:application^)) (U)])
-	  (export (unit mred)))))))
+      app)))

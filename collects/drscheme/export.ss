@@ -7,13 +7,14 @@
 			   [language : drscheme:language^]
 			   [setup : drscheme:setup^]
 			   [snip : drscheme:snip^]
+			   [init : drscheme:init^]
 			   [interface : drscheme:interface^]
 			   [aries : plt:aries^]
-			   [zodiac : zodiac:system^])
+			   [zodiac : drscheme:zodiac^])
   (link [rep : drscheme:rep^
 	     ((reference-unit/sig "rep.ss")
 	      mred mzlib print-convert aries zodiac
-	      interface snip language app basis edit)]
+	      interface init snip language app basis edit)]
 	[frame : drscheme:frame^
 	       ((reference-unit/sig "frame.ss")
 		mred mzlib basis

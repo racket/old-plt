@@ -1,5 +1,5 @@
 (reference-library "cores.ss")
-(reference-library "ricedefs.ss" "userspce")
+(reference-library "userspcs.ss" "userspce")
 (reference-library "graphics.ss" "graphics")
 (reference-library "turtles.ss" "graphics")
 

@@ -7,7 +7,7 @@
 ;   pretty.ss  [for debugging]
 
     (unit/sig plt:aries^
-      (import [z : zodiac:system^]
+      (import [z : drscheme:zodiac^]
 	[z:interface : zodiac:interface^])
 
       (define error-box
@@ -131,8 +131,7 @@
 	      (z:interface:internal-error arglist
 		"Given to arglist->ilist")))))
 
-      (define the-undefined-value
-	(letrec ((x x)) x))
+      (define the-undefined-value (letrec ((x x)) x))
 
       (define-struct (undefined struct:exn) (id))
       (define signal-undefined (make-parameter #t))

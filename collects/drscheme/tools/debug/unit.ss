@@ -3,8 +3,7 @@
             mzlib:core^
             mzlib:print-convert^
             (drscheme : drscheme:export^)
-            zodiac:system^
-            plt:parameters^)
+            drscheme:zodiac^)
 
     (define rep-thread #f)
 

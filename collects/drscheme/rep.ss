@@ -3,8 +3,9 @@
 	  [mzlib : mzlib:core^]
 	  [print-convert : mzlib:print-convert^]
 	  [aries : plt:aries^]
-	  [zodiac : zodiac:system^]
+	  [zodiac : drscheme:zodiac^]
 	  [zodiac:interface : drscheme:interface^]
+	  [drscheme:init : drscheme:init^]
 	  [drscheme:snip : drscheme:snip^]
 	  [drscheme:language : drscheme:language^]
 	  [drscheme:app : drscheme:app^]
@@ -12,31 +13,6 @@
 	  [drscheme:edit : drscheme:edit^])
   
   (mred:debug:printf 'invoke "drscheme:rep@")
-  
-  (define top-parameterization (current-parameterization))
-  (define system-parameterization (make-parameterization top-parameterization))
-  (define eval-thread-parameterization (make-parameterization top-parameterization))
-  (define system-custodian (current-custodian))
-  (current-parameterization system-parameterization)
-  (parameterization-branch-handler
-   (lambda ()
-     (make-parameterization system-parameterization)))
-	  
-  (print-struct #t)
-  (break-enabled #f)
-  ((in-parameterization eval-thread-parameterization break-enabled) #f)
-  ((in-parameterization eval-thread-parameterization print-struct) #t)
-  (define primitive-eval (current-eval))
-  (define primitive-load (current-load))
-
-  (error-display-handler
-   (lambda (msg)
-     (with-parameterization system-parameterization
-       (lambda ()
-	 (display msg)
-	 (newline)
-	 (mred:message-box (format "Internal Error: ~a" msg)
-			   "Internal Error")))))
   
   (define report-exception-error
     (lambda (exn last-resort-edit)
@@ -60,72 +36,55 @@
 			    "Uncaught Exception"))))
 
   (define build-parameterization
-    (let ([orig-eventspace (wx:current-eventspace)])
-      (lambda (user-custodian last-resort-edit)
-	(let* ([p (make-parameterization eval-thread-parameterization)]
-	       [bottom-eventspace (parameterize ([current-custodian user-custodian])
-				    (wx:make-eventspace p))]
-	       [n (make-namespace 'no-constants 'wx 'hash-percent-syntax)]
-	       [exception-handler
-		(lambda (exn)
-		  (with-parameterization system-parameterization
-		    (lambda ()
-		      (report-exception-error exn last-resort-edit)))
-		  ((error-escape-handler)))])
-	  (with-parameterization p
-	    (lambda ()
-	      (parameterization-branch-handler
-	       (lambda ()
-		 (let* ([new (make-parameterization p)])
-		   ((in-parameterization new current-exception-handler)
-		    exception-handler)
-		   new)))
-	      (require-library-use-compiled #f)
-	      (current-custodian user-custodian)
-	      (error-value->string-handler
-	       (lambda (x n)
-		 (let* ([port (open-output-string)]
-			[error-value
-			 (if (eq? (drscheme:language:setting-printing
-				   (mred:get-preference 'drscheme:settings)) 
-				  'r4rs-style)
-			     x
-			     (print-convert:print-convert x))]
-			[long-string
-			 (begin (mzlib:pretty-print@:pretty-print error-value port 'infinity)
-				(get-output-string port))])
-		   (if (<= (string-length long-string) n)
-		       long-string
-		       (let ([short-string (substring long-string 0 n)]
-			     [trim 3])
-			 (unless (<= n trim)
-			   (let loop ([i trim])
-			     (unless (<= i 0)
-			       (string-set! short-string (- n i) #\.)
-			       (loop (sub1 i)))))
-			 short-string)))))
-	      (debug-info-handler (lambda () (unbox aries:error-box)))
-	      (current-namespace n)
-	      (break-enabled #t)
-	      (wx:current-eventspace bottom-eventspace)
-	      ;(wx:eventspace-parameterization bottom-eventspace p)
-	      (current-will-executor (make-will-executor))
-	      (read-curly-brace-as-paren #t)
-	      (read-square-bracket-as-paren #t)
-	      (print-struct #t)
-	      (error-print-width 250)))
-	  (drscheme:basis:add-basis n bottom-eventspace user-custodian)
-	  (with-parameterization p
-	    (lambda ()
-	      (eval
-	       `(allow-improper-lists
-		 ,(drscheme:language:setting-allow-improper-lists?
-		   (mred:get-preference 'drscheme:settings))))
-	      (eval
-	       `(eq?-only-compares-symbols?
-		 ,(drscheme:language:setting-eq?-only-compares-symbols?
-		   (mred:get-preference 'drscheme:settings))))))
-	  p))))
+    (lambda (user-custodian last-resort-edit)
+      (let* ([p (make-parameterization drscheme:init:eval-thread-parameterization)]
+	     [userspace-branch-handler
+	      (lambda ()
+		(make-parameterization-with-sharing 
+		 p p (list current-exception-handler)
+		 (lambda (x) #f)))]
+	     [bottom-eventspace 
+	      (parameterize ([current-custodian user-custodian])
+		(wx:make-eventspace (userspace-branch-handler)))]
+	     [n (make-namespace 'no-constants 'wx 'hash-percent-syntax)])
+	(with-parameterization p
+	  (lambda ()
+	    (parameterization-branch-handler userspace-branch-handler)
+	    (current-custodian user-custodian)
+	    (require-library-use-compiled #f)
+	    (error-value->string-handler
+	     (lambda (x n)
+	       (let* ([port (open-output-string)]
+		      [error-value
+		       (if (drscheme:language:r4rs-style-printing)
+			   x
+			   (print-convert:print-convert x))]
+		      [long-string
+		       (begin (mzlib:pretty-print@:pretty-print error-value port 'infinity)
+			      (get-output-string port))])
+		 (if (<= (string-length long-string) n)
+		     long-string
+		     (let ([short-string (substring long-string 0 n)]
+			   [trim 3])
+		       (unless (<= n trim)
+			 (let loop ([i trim])
+			   (unless (<= i 0)
+			     (string-set! short-string (- n i) #\.)
+			     (loop (sub1 i)))))
+		       short-string)))))
+	    (debug-info-handler (lambda () (unbox aries:error-box)))
+	    (current-namespace n)
+	    (break-enabled #t)
+	    (wx:current-eventspace bottom-eventspace)
+	    ;(wx:eventspace-parameterization bottom-eventspace p)
+	    (current-will-executor (make-will-executor))
+	    (read-curly-brace-as-paren #t)
+	    (read-square-bracket-as-paren #t)
+	    (print-struct #t)
+	    (error-print-width 250)))
+	(drscheme:language:install-language p)
+	(drscheme:basis:add-basis n bottom-eventspace user-custodian)
+	p)))
 
   (define-struct process/zodiac-finish (error?))
 
@@ -173,7 +132,7 @@
 	(public
 	  [init-transparent-io-do-work
 	   (lambda (grab-focus?)
-	     (with-parameterization system-parameterization
+	     (with-parameterization drscheme:init:system-parameterization
 	       (lambda ()
 		 (let ([c-locked? locked?])
 		   (begin-edit-sequence)
@@ -220,13 +179,13 @@
 	(public
 	  [on-set-media void]
 	  [get-prompt (lambda () "> ")]
-	  [param #f]
+	  [user-param #f]
 	  [vocab #f]
 	  [user-custodian (make-custodian)]
 	  
 	  [userspace-eval
 	   (lambda (sexp)
-	     (with-parameterization system-parameterization
+	     (with-parameterization drscheme:init:system-parameterization
 	       (lambda ()
 		 (let* ([z (or (unbox aries:error-box)
 			       (let ([loc (zodiac:make-location 0 0 0 'eval)])
@@ -247,18 +206,16 @@
 			       (begin (set! answer
 					    (call-with-values
 					     (lambda ()
-					       (with-parameterization param
+					       (with-parameterization user-param
 						 (lambda ()
-						   (primitive-eval annotated))))
+						   (drscheme:init:primitive-eval annotated))))
 					     (lambda x x)))
 				      (recur))))])
 		   (apply values (process/zodiac reader f #t))))))]
 	  [display-result
 	   (lambda (v)
 	     (unless (void? v)
-	       (let ([v (if (eq? (drscheme:language:setting-printing
-				  (mred:get-preference 'drscheme:settings))
-				 'r4rs-style)
+	       (let ([v (if (drscheme:language:r4rs-style-printing)
 			    v
 			    (print-convert:print-convert v))])
 		 (parameterize ([mzlib:pretty-print@:pretty-print-size-hook
@@ -270,14 +227,17 @@
 	   (lambda (edit f start end annotate?)
 	     (process/zodiac
 	      (zodiac:read (mred:read-snips/chars-from-buffer edit start end)
-			   (zodiac:make-location 0 0 start edit))
+			   (zodiac:make-location 0 0 start edit)
+			   #t 1 user-param)
 	      f
 	      annotate?))]
 	  [process-file/zodiac
 	   (lambda (filename f annotate?)
 	     (let ([port (open-input-file filename)])
 	       (process/zodiac
-		(zodiac:read port (zodiac:make-location 0 0 0 filename))
+		(zodiac:read port
+			     (zodiac:make-location 0 0 0 filename)
+			     #t 1 user-param)
 		(lambda (x r)
 		  (when (process/zodiac-finish? x)
 		    (close-input-port port))
@@ -285,9 +245,9 @@
 		annotate?)))]
 	  [process/zodiac
 	   (lambda (reader f annotate?)
-	     (let* ([cleanup
-		     (lambda (error?)
-		       (f (make-process/zodiac-finish error?) void))])
+	     (let ([cleanup
+		    (lambda (error?)
+		      (f (make-process/zodiac-finish error?) void))])
 	       (let loop ()
 		 (let ([next-iteration
 			(with-handlers ([zodiac:interface:zodiac-exn?
@@ -300,12 +260,11 @@
 			  (let ([zodiac-read (reader)])
 			    (if (zodiac:eof? zodiac-read)
 				(lambda () (cleanup #f))
-				(let* ([exp (call/nal
-					     zodiac:scheme-expand/nal
-					     zodiac:scheme-expand
-					     (expression: zodiac-read)
-					     (vocabulary: vocab)
-					     (parameterization: param))]
+				(let* ([exp (call/nal zodiac:scheme-expand/nal
+						      zodiac:scheme-expand
+						      (expression: zodiac-read)
+						      (vocabulary: vocab)
+						      (parameterization: user-param))]
 				       [heading-out (if annotate? 
 							(aries:annotate exp)
 							exp)])
@@ -416,7 +375,7 @@
 				     'console-threading
 				     "thread-grace passed.2")
 				    (cleanup-evaluation)
-				    (parameterize ([current-custodian system-custodian])
+				    (parameterize ([current-custodian drscheme:init:system-custodian])
 				      (kill-thread thread-kill)))
 				  (mred:debug:printf
 				   'console-threading
@@ -434,7 +393,7 @@
 				     'console-threading
 				     "thread-kill passed.2")
 				    (cleanup-evaluation)
-				    (parameterize ([current-custodian system-custodian])
+				    (parameterize ([current-custodian drscheme:init:system-custodian])
 				      (kill-thread thread-grace)))
 				  (mred:debug:printf
 				   'console-threading
@@ -498,12 +457,13 @@
 	  [current-thread-directory (current-directory)]
 	  [escape
 	   (lambda ()
-	     (with-parameterization param
+	     (with-parameterization user-param
 	       (lambda ()
 		 ((error-escape-handler))))
 	     (mred:message-box "error-escape-handler didn't escape"
 			       "Error Escape")
 	     (error-escape-handler))]
+	  [exception-handler void]
 	  [init-evaluation-thread
 	   (lambda ()
 	     (parameterize ([current-custodian user-custodian])
@@ -525,21 +485,21 @@
 				 (let/ec k
 				   (call-with-values
 				    (lambda ()
-				      (parameterize ([current-exception-handler
-						      (lambda (exn)
-							(with-parameterization system-parameterization
-							  (lambda ()
-							    (report-exception-error exn this)))
-							((error-escape-handler))
-							(with-parameterization system-parameterization
-							  (lambda ()
-							    (mred:message-box "error-escape-handler didn't escape"
-									      "Error Escape")
-							    (set! user-code-error? #t)))
-							(k (void)))])
-					(with-parameterization param
-					  (lambda ()
-					    (primitive-eval expr)))))
+				      (set! exception-handler
+					    (lambda (exn)
+					      (with-parameterization drscheme:init:system-parameterization
+						(lambda ()
+						  (report-exception-error exn this)))
+					      ((error-escape-handler))
+					      (with-parameterization drscheme:init:system-parameterization
+						(lambda ()
+						  (mred:message-box "error-escape-handler didn't escape"
+								    "Error Escape")
+						  (set! user-code-error? #t)))
+					      (k (void))))
+				      (with-parameterization user-param
+					(lambda ()
+					  (drscheme:init:primitive-eval expr))))
 				    (lambda anss
 				      (let ([c-locked? locked?])
 					(unless (andmap void? anss)
@@ -553,25 +513,25 @@
 				 (set! current-thread-directory (current-directory))
 				 (after user-code-error?))))))
 			(lambda ()
-			  (current-parameterization eval-thread-parameterization)
+			  (current-parameterization drscheme:init:eval-thread-parameterization)
 			  (error-escape-handler escape-handler))))])
 		 (set! send-scheme send-scheme2)
 		 (set! evaluation-thread evaluation-thread2))))])
 	(public
 	  [userspace-load
 	   (lambda (filename)
-	     (with-parameterization system-parameterization
+	     (with-parameterization drscheme:init:system-parameterization
 	       (lambda ()
 		 (unless (and (file-exists? filename)
 			      (member 'read (file-or-directory-permissions filename)))
-		   (with-parameterization param
-		     (lambda () (primitive-load filename))))
+		   (with-parameterization user-param
+		     (lambda () (drscheme:init:primitive-load filename))))
 		 (let* ([p (open-input-file filename)]
 			[loc (zodiac:make-location 0 0 0 filename)]
 			[chars (begin0
 				 (list (read-char p) (read-char p) (read-char p) (read-char p))
 				 (close-input-port p))]
-			[user-load-relative-directory (in-parameterization param current-load-relative-directory)]
+			[user-load-relative-directory (in-parameterization user-param current-load-relative-directory)]
 			[old-load-relative-directory (user-load-relative-directory)])
 		   (dynamic-wind
 		    (lambda ()
@@ -593,11 +553,11 @@
 					  (call-with-values
 					   (lambda ()
 					     (with-handlers ([(lambda (x) #t)
-							      (lambda (exn)
+							      (lambda (exn) 
 								(report-exception-error exn this))])
-					       (with-parameterization param
+					       (with-parameterization user-param
 						 (lambda ()
-						   (primitive-eval sexp)))))
+						   (drscheme:init:primitive-eval sexp)))))
 					   (lambda x x)))
 				    (recur)])))])
 			(apply values 
@@ -626,9 +586,6 @@
 	       (set! should-collect-garbage? #t)
 	       (lock #f) ;; locked if the thread was killed
 	       (init-evaluation-thread)
-	       (set! vocab (zodiac:create-vocabulary
-			    'scheme-w/user-defined-macros/drscheme
-			    zodiac:scheme-vocabulary))
 	       (let ([p (build-parameterization user-custodian this)])
 		 (with-parameterization p
 		   (lambda ()
@@ -638,8 +595,9 @@
 		     (current-input-port this-in)
 		     (current-load userspace-load)
 		     (current-eval userspace-eval)
+		     (current-exception-handler (lambda (exn) (exception-handler exn)))
 		     (exit-handler (lambda (arg)
-				     (with-parameterization system-parameterization
+				     (with-parameterization drscheme:init:system-parameterization
 				       (lambda ()
 					 (kill-thread evaluation-thread)))))
 		     (set! current-thread-directory
@@ -653,7 +611,11 @@
 							     (k first-dir))]
 					   [(base _1 _2) (split-path normalized)])
 			       base)))))
-		 (set! param p))
+		 (set! user-param p))
+	       (set! vocab (zodiac:create-vocabulary
+			    'scheme-w/user-defined-macros/drscheme
+			    zodiac:scheme-vocabulary))
+
 	       (unless (mred:get-preference 'drscheme:keep-interactions-history)
 		 (set-resetting #t)
 		 (delete reset-console-start-position (last-position))

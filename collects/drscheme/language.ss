@@ -1,9 +1,8 @@
-;; set! on unbound identifiers is always allowed now. 
-
   (unit/sig drscheme:language^
     (import [mred : mred^]
 	    [drscheme:basis : drscheme:basis^]
 	    [aries : plt:aries^]
+	    [zodiac : drscheme:zodiac^]
 	    mzlib:function^
 	    mzlib:print-convert^)
 
@@ -51,46 +50,59 @@
 					(apply make-setting x)
 					(get-default))))
 
-    (define set-printer-style/get-number
+    (define get-printer-style-number
       (lambda (printing-setting)
 	(case printing-setting
-	  [(constructor-style) 
-	   (constructor-style-printing #t)
-	   0]
-	  [(quasi-style)
-	   (constructor-style-printing #f)
-	   (quasi-read-style-printing #f)
-	   1]
-	  [(quasi-read-style)
-	   (constructor-style-printing #f)
-	   (quasi-read-style-printing #t)
-	   2]
+	  [(constructor-style) 0]
+	  [(quasi-style) 1]
+	  [(quasi-read-style) 2]
 	  [(r4rs-style) 3]
 	  [else (error 'drscheme:language:update-to "got: ~a as printing style"
 		       printing-setting)])))
 
-    (define case-sensitive? #t)
-    (define allow-set!-on-undefined? #t)
-    (define unmatched-cond/case-is-error? #t)
-    (define allow-improper-lists? #t)
-    (define check-syntax-level (car drscheme:basis:level-symbols)) 
-    (define callback
-      (lambda (pref)
-	(aries:signal-undefined (setting-signal-undefined pref))
-	(aries:signal-not-boolean (setting-signal-not-boolean pref))
-	(show-sharing (setting-sharing-printing? pref))
-	(set-printer-style/get-number (setting-printing pref))
-	(read-case-sensitive (setting-case-sensitive? pref))
-	(set! case-sensitive? (setting-case-sensitive? pref))
-	(compile-allow-set!-undefined (setting-allow-set!-on-undefined? pref))
-	(set! allow-set!-on-undefined? (setting-allow-set!-on-undefined? pref))
-	(compile-allow-cond-fallthrough (not (setting-unmatched-cond/case-is-error? pref)))
-	(set! unmatched-cond/case-is-error? (setting-unmatched-cond/case-is-error? pref))
-	(set! allow-improper-lists? (setting-allow-improper-lists? pref))
-	(abbreviate-cons-as-list (setting-abbreviate-cons-as-list? pref))
-	(set! check-syntax-level (setting-vocabulary-symbol pref))))
-    (callback (mred:get-preference 'drscheme:settings))
-    (mred:add-preference-callback 'drscheme:settings (lambda (p v) (callback v)))
+    (define eq?-only-compares-symbols (make-parameter #f))
+    (define r4rs-style-printing (make-parameter #f))
+
+    (define install-language
+      (lambda (parameterization)
+	(let ([pref (mred:get-preference 'drscheme:settings)])
+	  (zodiac:current-vocabulary (setting-vocabulary-symbol pref))
+
+	  ((in-parameterization parameterization read-case-sensitive)
+	   (setting-case-sensitive? pref))
+	  ;; this sets both the zodiac and the cons procedure settings,
+	  ;; via a dynamic link in basis.ss
+	  (zodiac:allow-improper-lists (setting-allow-improper-lists? pref))
+
+
+	  (eq?-only-compares-symbols (setting-eq?-only-compares-symbols? pref))
+	  
+	  (aries:signal-undefined (setting-signal-undefined pref))
+	  (aries:signal-not-boolean (setting-signal-not-boolean pref))
+
+	  (compile-allow-set!-undefined (setting-allow-set!-on-undefined? pref))
+	  (compile-allow-cond-fallthrough (not (setting-unmatched-cond/case-is-error? pref)))
+	  (setting-allow-improper-lists? pref)
+
+	  ;; need to introduce parameter for constructor-style vs r4 style
+	  (case (setting-printing pref)
+	    [(constructor-style)
+	     (r4rs-style-printing #f)
+	     (constructor-style-printing #t)]
+	    [(quasi-style)
+	     (r4rs-style-printing #f)
+	     (constructor-style-printing #f)
+	     (quasi-read-style-printing #f)]
+	    [(quasi-read-style)
+	     (r4rs-style-printing #f)
+	     (constructor-style-printing #f)
+	     (quasi-read-style-printing #t)]
+	    [(r4rs-style) (r4rs-style-printing #t)]
+	    [else (error 'install-language "found bad setting-printing: ~a~n" 
+			 (setting-printing pref))])
+	  (show-sharing (setting-sharing-printing? pref))
+	  (print-graph (setting-sharing-printing? pref))
+	  (abbreviate-cons-as-list (setting-abbreviate-cons-as-list? pref)))))
 
     (define language-dialog
       (lambda ()
@@ -100,6 +112,7 @@
 	     [main (make-object mred:vertical-panel% f)]
 	     [language-panel (make-object mred:horizontal-panel% main -1 -1 -1 -1 wx:const-border)]
 	     [customization-panel (make-object mred:vertical-panel% main)]
+	     [when-message (make-object mred:message% main "Language changes effective after next execution")]
 	     [make-sub-panel
 	      (lambda (name)
 		(let* ([p (make-object mred:vertical-panel% customization-panel)]
@@ -122,25 +135,18 @@
 		(send main change-children
 		      (lambda (l)
 			(if bool
-			    (list language-panel customization-panel ok-panel)
-			    (list language-panel ok-panel)))))]
+			    (list language-panel customization-panel when-message ok-panel)
+			    (list language-panel when-message ok-panel)))))]
 	     [language-choice (make-object mred:choice% language-panel
-					   (let ([state #t])
-					     (lambda (choice evt)
-					       (let ([which (send evt get-command-int)]
-						     [len (length settings)])
-						 (when (= which len)
-						     (show-specifics #t))
-						 (when state
-						   (set! state #f)
-						   (unless (= which len)
-						     (mred:message-box
-						      "Some language changes only effective on restart"
-						      "Warning")))
-						 (when (< which len)
-						   (mred:set-preference
-						    'drscheme:settings
-						    (copy-setting (second (list-ref settings which))))))))
+					   (lambda (choice evt)
+					     (let ([which (send evt get-command-int)]
+						   [len (length settings)])
+					       (when (= which len)
+						 (show-specifics #t))
+					       (when (< which len)
+						 (mred:set-preference
+						  'drscheme:settings
+						  (copy-setting (second (list-ref settings which)))))))
 					   "Language"
 					   -1 -1 -1 -1
 					   (append language-levels (list "Custom")))]
@@ -214,27 +220,15 @@
 	     [signal-not-boolean
 	      (make-check-box set-setting-signal-not-boolean!
 			      setting-signal-not-boolean
-			      "Cond questions must evaluate to either #t or #f"
+			      "Conditionals must evaluate to either #t or #f"
 			      "next execution"
 			      dynamic-panel)]
 	     [eq?-only-compares-symbols?
 	      (make-check-box set-setting-eq?-only-compares-symbols?!
 			      setting-eq?-only-compares-symbols?
-			      "eq? only compares symbols"
+			      "Eq? only compares symbols"
 			      "next execution"
 			      dynamic-panel)]
-	     [sharing-printing?
-	      (make-check-box set-setting-sharing-printing?!
-			      setting-sharing-printing?
-			      "Show sharing in values?"
-			      "next interaction"
-			      output-syntax-panel)]
-	     [abbreviate-cons-as-list?
-	      (make-check-box set-setting-abbreviate-cons-as-list?!
-			      abbreviate-cons-as-list?
-			      "Abbreviate multiples cons's with list when possible?"
-			      "next interaction"
-			      output-syntax-panel)]
 	     [printer-number->symbol
 	      (lambda (which)
 		(case which
@@ -248,10 +242,10 @@
 	       (lambda (main)
 		 (make-object mred:choice% main
 			      (lambda (box evt)
-				(let ([which (send evt get-command-int)]
-				      [settings (mred:get-preference 'drscheme:settings)])
-				  (set-setting-printing!
-				   settings (printer-number->symbol which))
+				(let* ([which (send evt get-command-int)]
+				       [settings (mred:get-preference 'drscheme:settings)]
+				       [symbol-which (printer-number->symbol which)])
+				  (set-setting-printing! settings symbol-which)
 				  (mred:set-preference 'drscheme:settings settings)))
 			      "Output Style" -1 -1 -1 -1
 			      (list "Constructor"
@@ -260,6 +254,18 @@
 				    "R4RS")))
 	       output-syntax-panel
 	       "next interaction")]
+	     [abbreviate-cons-as-list?
+	      (make-check-box set-setting-abbreviate-cons-as-list?!
+			      abbreviate-cons-as-list?
+			      "Abbreviate multiples cons's with list when possible?"
+			      "next interaction"
+			      output-syntax-panel)]
+	     [sharing-printing?
+	      (make-check-box set-setting-sharing-printing?!
+			      setting-sharing-printing?
+			      "Show sharing in values?"
+			      "next interaction"
+			      output-syntax-panel)]
 	     [ok-panel (make-object mred:horizontal-panel% main)]
 	     [hide-button (make-object mred:button% ok-panel
 				       (lambda (button evt) (show-specifics #f))
@@ -315,7 +321,8 @@
 		(send vocab set-selection
 		      (drscheme:basis:level->number (setting-vocabulary-symbol v)))
 		(send printing set-selection
-		      (set-printer-style/get-number (setting-printing v)))
+		      (get-printer-style-number (setting-printing v)))
+		(send abbreviate-cons-as-list? enable (not (eq? 'r4rs-style (setting-printing v))))
 		(map (lambda (get check-box) (send check-box set-value (get v)))
 		     (list setting-case-sensitive?
 			   setting-allow-set!-on-undefined?
@@ -366,37 +373,4 @@
 			      'drscheme:library-file lib-file)))))
 	  (append-item "Clear Library"
 		       (lambda ()
-			 (mred:set-preference 'drscheme:library-file #f))))))
-
-    
-    '(define fill-language-menu
-      (lambda (language-menu)
-	(send* language-menu
-	       (append-item "Select Library..."
-			    (lambda ()
-			      (let ([lib-file (mred:get-file 
-					       () 
-					       "Select a Library" 
-					       ".*\\.ss$")])
-				(when lib-file
-				  (mred:set-preference
-				   'drscheme:library-file lib-file)))))
-	       (append-item "Clear Library"
-			    (lambda ()
-			      (mred:set-preference 'drscheme:library-file #f)))
-	       (append-separator)
-	       (append-check-set
-		(map cons drscheme:basis:level-strings
-		     drscheme:basis:level-symbols)
-		(let ([state #t])
-		  (lambda (s)
-		    (mred:set-preference 'drscheme:scheme-level s)
-		    (when state
-		      (set! state #f)
-		      (unless (mred:get-choice
-			       "Changes to the language level will not take effect until DrScheme is restarted"
-			       "Continue Working"
-			       "Exit")
-			(mred:exit)))))
-		(drscheme:basis:level->number
-		 (mred:get-preference 'drscheme:scheme-level)))))))
+			 (mred:set-preference 'drscheme:library-file #f)))))))

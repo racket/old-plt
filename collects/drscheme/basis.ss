@@ -1,8 +1,8 @@
   (unit/sig drscheme:basis^
-    (import [params : plt:parameters^]
-	    [drscheme : drscheme:export^]
+    (import [drscheme:init : drscheme:init^]
+	    [drscheme:language : drscheme:language^]
 	    [mred : mred^]
-	    [zodiac : zodiac:system^])
+	    [zodiac : drscheme:zodiac^])
     
     (mred:debug:printf 'invoke "drscheme:basis@")
 
@@ -40,33 +40,26 @@
 	     (set! library-unit #f)))))
     
     (define add-basis
-      (let ([plt:userspace@ (reference-library-unit/sig "gusrspcr.ss" "gusrspce")])
-	(lambda (n eventspace custodian)
-	  (let* ([l@
-		  (unit/sig ()
-		    (import plt:userspace^)
-		    (when library-unit
-		      (invoke-open-unit/sig library-unit #f plt:userspace^)))]
-		 [params@ (unit/sig plt:parameters^
-			    (import)
-			    (define case-sensitive? params:case-sensitive?) 
-			    (define allow-set!-on-undefined? 
-			      params:allow-set!-on-undefined?)
-			    (define allow-improper-lists? 
-			      params:allow-improper-lists?)
-			    (define unmatched-cond/case-is-error?
-			      params:unmatched-cond/case-is-error?) 
-			    (define check-syntax-level 
-			      params:check-syntax-level))]
-		 [c@
-		  (compound-unit/sig (import [drscheme : drscheme:export^])
-				     (link [params : plt:parameters^ (params@)]
-					   [userspace : plt:userspace^ (plt:userspace@
-									params
-									drscheme)]
-					   [library : () (l@ userspace)])
-				     (export (open userspace)))])
-	    (parameterize ([current-namespace n]
-			   [current-custodian custodian]
-			   [wx:current-eventspace eventspace])
-	      (invoke-open-unit/sig c@ #f (drscheme : drscheme:export^))))))))
+      (lambda (n eventspace custodian)
+	(let* ([l@
+		(unit/sig ()
+		  (import plt:userspace^)
+		  (when library-unit
+		    (invoke-open-unit/sig library-unit #f plt:userspace^)))]
+	       [c@
+		(compound-unit/sig (import [drscheme:init : drscheme:init^]
+					   [params : plt:userspace:params^])
+		  (link [userspace : plt:userspace^ 
+				   ((reference-library-unit/sig "gusrspcr.ss" "gusrspce")
+				    drscheme:init
+				    params)]
+			[library : () (l@ userspace)])
+		  (export (open userspace)))])
+	  (parameterize ([current-namespace n]
+			 [current-custodian custodian]
+			 [wx:current-eventspace eventspace])
+	    (let ([allow-improper-lists zodiac:allow-improper-lists]
+		  [eq?-only-compares-symbols drscheme:language:eq?-only-compares-symbols])
+	      (invoke-open-unit/sig c@ #f 
+				    (drscheme:init : drscheme:init^)
+				    plt:userspace:params^)))))))

@@ -149,11 +149,6 @@ int wxImage::LoadXBM(char *fname, int nc)
 
   pWIDE = w;  pHIGH = h;
 
-  /* B/W bitmaps have a two entry colormap */
-  r[0] = g[0] = b[0] = 255;     /* 0 = white */
-  r[1] = g[1] = b[1] = 0;       /* 1 = black */
-
-
   /* initialize the 'hex' array for zippy ASCII-hex -> int conversion */
 
   for (i=0; i<256; i++) { hex[i]=0; }

@@ -110,9 +110,6 @@ class wxImage: public wxObject
   unsigned int  eWIDE, eHIGH;  /* size of epic */
   unsigned int  normFact;      /* factor to shrink picture by for 'norm' */
 
-  byte           rorg[256],gorg[256],borg[256];  /* ORIGINAL colormap */
-
-
 #ifdef wx_x
   XImage        *theImage;     /* X version of epic */
 #endif

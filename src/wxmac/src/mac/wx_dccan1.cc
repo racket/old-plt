@@ -949,7 +949,7 @@ CGContextRef wxCanvasDC::GetCG()
     ClipCGContextToRegion(cg, &portRect, clipRgn);
     DisposeRgn(clipRgn);
   }
-  CGContextTranslateCTM(cg, 0, (float)(portRect.bottom - portRect.top - gdy));
+  CGContextTranslateCTM(cg, gdx, (float)(portRect.bottom - portRect.top - gdy));
   CGContextScaleCTM(cg, 1.0, -1.0 );
  
   if (clipping)

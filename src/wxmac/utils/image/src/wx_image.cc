@@ -39,8 +39,6 @@
 # endif
 #endif
 
-byte r[256], g[256], b[256];
-
 // Save (device dependent) wxBitmap as a DIB
 Bool wxSaveBitmap(char *filename, wxBitmap *bitmap, wxColourMap *colourmap)
 {

@@ -76,7 +76,6 @@
 #define BI_RLE8 1
 #define BI_RLE4 2
 
-
 static long filesize;
 
   static int  loadBMP1(FILE *, byte *, int, int);
@@ -197,6 +196,7 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
       cmaplen = biClrUsed;
     else
       cmaplen = 1 << biBitCount;
+    numcols = cmaplen;
     for (i=0; i<cmaplen; i++) {
       c = getc(fp);
       pinfo->b[i] = c;
@@ -204,11 +204,15 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
       pinfo->g[i] = c;
       c = getc(fp);
       pinfo->r[i] = c;
-      // JACS code to fit in with old xv
-      r[i] = rorg[i] = pinfo->r[i];
-      b[i] = borg[i] = pinfo->b[i];
-      g[i] = gorg[i] = pinfo->g[i];
       getc(fp);         /* unused */
+    }
+    /* In case the file is corrupt, fill out the colormap
+       with black: */
+    while (i < 256) {
+      pinfo->r[i] = 0;
+      pinfo->g[i] = 0;
+      pinfo->b[i] = 0;
+      i++;
     }
 
     if (ferror(fp)) 
@@ -228,7 +232,7 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
 
   if (biBitCount==24) {
     void *v;
-    v = calloc(biWidth * biHeight * 3, 1);
+    v = new WXGC_ATOMIC char[biWidth * biHeight * 3];
     lpic24 = (byte *) v;
     if (!lpic24) {
       fclose(fp);
@@ -236,7 +240,9 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
     }
   }
   else {
-    pic8 = (byte *) calloc(biWidth * biHeight, 1);
+    void *v;
+    v = new WXGC_ATOMIC char[biWidth * biHeight];
+    pic8 = (byte *) v;
     if (!pic8) {
       fclose(fp);
       return(bmpError(fname, "couldn't malloc 'pic8'"));
@@ -588,8 +594,10 @@ int wxImage::WriteBMP(FILE *fp, byte *pic824, int ptype, int w, int h, byte *rma
   if (ptype == PIC24 && colorstyle == F_GREYSCALE) {
     /* generate a faked 8-bit per pixel image with a grayscale cmap,
        so that it can just fall through existing 8-bit code */
+    void *_gp;
 
-    graypic = (byte *) XpmMallocA(w*h);
+    _gp = new WXGC_ATOMIC  char[w*h];
+    graypic = (byte *) _gp;
     if (!graypic) wxFatalError("unable to malloc in WriteBMP()");
 
     for (i=0,sp=0,dp=0; i<w*h; i++,sp+=3, dp++) {
@@ -696,8 +704,6 @@ int wxImage::WriteBMP(FILE *fp, byte *pic824, int ptype, int w, int h, byte *rma
   else if (nbits ==  4) writeBMP4 (fp, pic824, w, h);
   else if (nbits ==  8) writeBMP8 (fp, pic824, w, h);
   else if (nbits == 24) writeBMP24(fp, pic824, w, h);
-
-  if (graypic) XpmFree(graypic);
 
   if (ferror(fp)) return -1;
   
@@ -890,7 +896,6 @@ Bool wxLoadBMPIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		bm->SetHeight(picinfo.h);
 		bm->SetDepth(picinfo.type==PIC8 ? 8 : 24);
 		bm->SetOk(TRUE);
-  		XpmFree (picinfo.pic);
 		DELETE_OBJ xbmImage;
 		return TRUE;
 	}

@@ -28,7 +28,6 @@
      (let ([ans (if (is-a? expr wx:snip%)
 		    expr
 		    (basic-convert expr))])
-       (printf "hook: ~a~n" expr)
        ans)))
 
   '(define (make-basic)

@@ -387,8 +387,8 @@
   (define (check-id who tl s) #t)
       
   (define (make-text-list label parent pref check-item)
-    (let ([p (make-object vertical-panel% parent '(border))])
-      (define l (make-object list-box% label (or (preferences:get pref) null) p
+    (let ([p (make-object group-box-panel% label parent)])
+      (define l (make-object list-box% #f (or (preferences:get pref) null) p
 			     (lambda (l e)
 			       (send delete enable (pair? (send l get-selections))))
 			     '(multiple)))
@@ -460,14 +460,15 @@
                (alignment '(left center)))])
       
       (make-text-field "Username" p 10 'sirmail:username #f check-id (lambda (x) x) (lambda (x) x))
-      (make-text-field "IMAP Server" p 20 'sirmail:imap-server #f check-host-address/port (lambda (x) x) (lambda (x) x))
-      (make-boolean "Encrypt IMAP connection using SSL" p 'sirmail:use-ssl?)
-	
+      (let ([sp (instantiate group-box-panel% ("IMAP Server" p)
+			     [alignment '(left center)])])
+	(make-text-field "Server" sp 20 'sirmail:imap-server #f check-host-address/port (lambda (x) x) (lambda (x) x))
+	(make-boolean "Encrypt connection using SSL" sp 'sirmail:use-ssl?)
+	(make-text-field "Folder List Root" sp 20 'sirmail:root-mailbox-folder #t void (lambda (x) x) (lambda (x) x)))
+
       (make-file/directory-button #t "Local Directory" p
 				  'sirmail:local-directory
 				  #f)
-
-      (make-text-field "Folder List Root" p 20 'sirmail:root-mailbox-folder #t void (lambda (x) x) (lambda (x) x))
 
       (make-text-field "Biff Delay" p 5 'sirmail:biff-delay #t check-biff-delay number->string string->number)
 

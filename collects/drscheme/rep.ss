@@ -1061,12 +1061,16 @@
 	   (set-resetting #f)
 	   (set-position (last-position) (last-position))
 	   (insert-delta "Language: " WELCOME-DELTA)
-	   (insert-delta 
-	    (symbol->string
-	     (basis:find-setting-name 
-	      (fw:preferences:get
-	       'drscheme:settings)))
-	    RED-DELTA)
+	   (let ([setting (fw:preferences:get 'drscheme:settings)])
+	     (insert-delta 
+	      (list-ref
+	       basis:level-strings
+	       (basis:level->number
+		(basis:setting-vocabulary-symbol
+		 setting)))
+	      RED-DELTA)
+	     (unless (basis:find-setting-name setting)
+	       (insert-delta " Custom" RED-DELTA)))
 	   (insert-delta (format ".~n") WELCOME-DELTA)
 	   (set! repl-initially-active? #t)
 	   (end-edit-sequence)

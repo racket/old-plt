@@ -165,14 +165,14 @@
   ;; level-strings : (list-of string)
   (define level-strings (list "Beginner" "Intermediate" "Advanced" "MzScheme" "MzScheme Debug"))
 
-  ;; find-setting-name : setting -> symbol
+  ;; find-setting-name : setting -> (union symbol #f)
   (define (find-setting-name setting)
     (or (ormap (lambda (x)
 		 (if (equal? (vector-ref x 1) setting)
 		     (vector-ref x 0)
 		     #f))
 	       settings)
-	'Custom))
+	#f))
 
   ;; copy-setting : setting -> setting
   (define copy-setting

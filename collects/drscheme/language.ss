@@ -29,7 +29,7 @@
       [(r4rs-style) 3]
       [else (error 'drscheme:language:update-to "got: ~a as printing style"
 		   printing-setting)]))
-  
+
   (define (language-dialog)
     (letrec
 	([dialog% (class mred:dialog% (name)
@@ -52,7 +52,7 @@
 	    (let* ([p (make-object mred:vertical-panel% panel)]
 		   [message (make-object mred:message% name p)])
 	      (make-object mred:vertical-panel% p '(border))))]
-	 [input-syntax-panel (make-sub-panel "Input Syntax" customization-right-panel)]
+	 [input-syntax-panel (make-sub-panel "Input Syntax" customization-left-panel)]
 	 [dynamic-panel (make-sub-panel "Safety Properties" customization-left-panel)]
 	 [output-syntax-panel (make-sub-panel "Output Syntax" customization-right-panel)]
 	 
@@ -189,12 +189,12 @@
 			  (unregister-callback))))]
 	 [compare-setting-to-gui
 	  (lambda (setting)
-	    (let ([compare-check-box
-		   (lambda (check-box selector)
-		     (let ([cbv (send check-box get-value)]
-			   [ss (selector setting)])
-		       (equal? (not cbv)
-			       (not ss))))])
+	    (let* ([compare-check-box
+		    (lambda (check-box selector)
+		      (let* ([cbv (send check-box get-value)]
+			     [ss (selector setting)])
+			(equal? (not cbv)
+				(not ss))))])
 	      (and (eq? (basis:setting-vocabulary-symbol setting)
 			(list-ref basis:level-symbols (send language-choice get-selection)))
 		   (compare-check-box case-sensitive? basis:setting-case-sensitive?)
@@ -209,13 +209,15 @@
 	    (send language-panel
 		  change-children
 		  (lambda (l)
-		    (if (ormap (lambda (name-setting)
-				 (let ([name (vector-ref name-setting 0)]
-				       [setting (vector-ref name-setting 1)])
-				   (compare-setting-to-gui setting)))
-			       basis:settings)
-			(list language-choice custom-message)
-			(list language-choice)))))]
+		    (let ([not-custom?
+			   (ormap (lambda (name-setting)
+				    (let ([name (vector-ref name-setting 0)]
+					  [setting (vector-ref name-setting 1)])
+				      (compare-setting-to-gui setting)))
+				  basis:settings)])
+		      (if not-custom?
+			  (list language-choice)
+			  (list language-choice custom-message))))))]
 	 [update-to
 	  (lambda (v)
 	    (let ([zodiac? (basis:setting-use-zodiac? v)])
@@ -223,6 +225,8 @@
 		(basis:set-setting-signal-undefined! v #f))
 	      (send signal-undefined enable zodiac?))
 	    
+	    (send language-choice set-selection (basis:level->number (basis:setting-vocabulary-symbol v)))
+
 	    (send printing set-selection
 		  (get-printer-style-number (basis:setting-printing v)))
 	    (let ([r4rs-style? (eq? 'r4rs-style (basis:setting-printing v))])
@@ -233,10 +237,14 @@
 	    (map (lambda (get check-box) (send check-box set-value (get v)))
 		 (list basis:setting-case-sensitive?
 		       basis:setting-sharing-printing?
-		       basis:setting-whole/fractional-exact-numbers)
+		       basis:setting-whole/fractional-exact-numbers
+		       basis:setting-unmatched-cond/case-is-error?
+		       basis:setting-signal-undefined)
 		 (list case-sensitive? 
 		       sharing-printing?
-		       whole/fractional-exact-numbers))
+		       whole/fractional-exact-numbers
+		       unmatched-cond/case-is-error?
+		       signal-undefined))
 	    (reset-choice))]
 	 [unregister-callback
 	  (fw:preferences:add-callback 'drscheme:settings 
@@ -256,6 +264,7 @@
       (show-specifics (not (ormap (lambda (x) (compare-setting-to-gui (vector-ref x 1))) basis:settings)))
       (for-each (lambda (x) (send x stretchable-height #f))
 		(list language-panel ok-panel main))
+      (send language-panel set-alignment 'center 'center)
       (send ok-button min-width (send cancel-button get-width))
       (fw:preferences:save)
       (send f center 'both)

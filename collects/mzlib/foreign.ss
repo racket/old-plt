@@ -55,10 +55,19 @@
                    ;; give up: call ffi-lib so it will raise an error
                    (ffi-lib name)))]))))
 
-(define* (get-ffi-obj name lib type)
+;; get-ffi-obj is implemented as a syntax only to be able to propagate the
+;; foreign name into the type syntax, which allows generated wrappers to have a
+;; proper name.
+(provide get-ffi-obj)
+(define (get-ffi-obj* name lib type)
   (let ([lib  (get-ffi-lib lib)]
         [name (get-ffi-obj-name 'get-ffi-obj name)])
     (ptr-ref (ffi-obj name lib) type)))
+(define-syntax (get-ffi-obj stx)
+  (syntax-case stx (get-ffi-obj)
+    [(get-ffi-obj name lib type)
+     #`(get-ffi-obj* name lib #,(syntax-property #`type 'ffi-name #'name))]
+    [get-ffi-obj #'get-ffi-obj*]))
 
 ;; It is important to use the set-ffi-obj! wrapper because it takes care of
 ;; keeping a handle on the object -- otherwise, setting a callback hook will
@@ -252,23 +261,36 @@
                                               inputs))]
                [output-expr (let ([o (caddr output)])
                               (or (and (not (void? o)) o)
-                                  (cadr output)))])
+                                  (cadr output)))]
+               ;; if there is a string 'ffi-name property, use it as a name
+               [name (let ([n (cond [(syntax-property stx 'ffi-name)
+                                     => syntax-object->datum]
+                                    [else #f])])
+                       (if (string? n)
+                         (lambda (x)
+                           (syntax-property
+                            x 'inferred-name
+                            (string->symbol (string-append "ffi-wrapper:" n))))
+                         (lambda (x) x)))])
            #`(ffi-fun (list #,@(filtered-map car inputs)) #,(car output)
                (lambda (ffi)
-                 (lambda #,input-names
-                   (let* (#,@(filtered-map (lambda (i)
-                                             (and (caddr i)
-                                                  (not (void? (caddr i)))
-                                                  #`[#,(cadr i) #,(caddr i)]))
-                                           inputs)
-                          #,@pre
-                          [#,(cadr output)
-                           (ffi #,@(filtered-map
-                                    (lambda (x) (and (car x) (cadr x)))
-                                    inputs))]
-                          #,@post)
-                     #,output-expr)))))
-           #`(ffi-fun (list #,@(filtered-map car inputs)) #,(car output))))]))
+                 #,(name (quasisyntax/loc stx
+                           (lambda #,input-names
+                             (let* (#,@(filtered-map
+                                        (lambda (i)
+                                          (and (caddr i)
+                                               (not (void? (caddr i)))
+                                               #`[#,(cadr i) #,(caddr i)]))
+                                        inputs)
+                                    #,@pre
+                                    [#,(cadr output)
+                                     (ffi #,@(filtered-map
+                                              (lambda (x)
+                                                (and (car x) (cadr x)))
+                                              inputs))]
+                                    #,@post)
+                               #,output-expr)))))))
+         #`(ffi-fun (list #,@(filtered-map car inputs)) #,(car output))))]))
 
 ;; ----------------------------------------------------------------------------
 ;; String types

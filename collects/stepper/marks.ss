@@ -10,9 +10,30 @@
   
   (define (extract-mark-list mark-set)
     (continuation-mark-set->list mark-set debug-key))
+  
+  (define label-list null)
+  (define (get-label-num sym)
+    (let loop ([l-list label-list] [count 0])
+      (if (null? l-list)
+          (begin
+            (set! label-list (append label-list (list sym)))
+            count)
+          (if (eq? sym (car l-list))
+              count
+              (loop (cdr l-list) (+ count 1))))))
 
+  (equal?
+   (list (get-label-num 'foo)
+         (get-label-num 'bar)
+         (get-label-num 'baz)
+         (get-label-num 'bar)
+         (get-label-num 'foo)
+         (get-label-num 'baz)
+         (get-label-num 'quux))
+   '(0 1 2 1 0 2 3))
+  
   (define (make-full-mark location label bindings)
-    `(#%lambda () (#%list ,location (#%quote ,label) ,@(apply append bindings))))
+    `(#%lambda () (#%list ,location ,(get-label-num label) ,@(apply append bindings))))
   
   (define (make-cheap-mark location)
     location)
@@ -42,7 +63,7 @@
       (pair-off (cddr (mark)))))
   
   (define (mark-label mark)
-    (cadr (mark)))
+    (list-ref label-list (cadr (mark))))
   
   (define (mark-binding-value mark-binding)
     (car mark-binding))
@@ -94,8 +115,4 @@
                  (car matches)]))))
   
   (define (lookup-binding-list mark-list binding)
-    (apply append (map (lambda (x) (binding-matches x binding)) mark-list))) 
-  
-  ; I'm not really sure this belongs here, but it's a convenient spot.
-  (define ankle-wrap-enabled 
-    (make-parameter #t (lambda (x) x))))
+    (apply append (map (lambda (x) (binding-matches x binding)) mark-list))))

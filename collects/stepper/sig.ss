@@ -24,7 +24,7 @@
    improper-foreach))
 
 (define-signature plt:aries-no-break^
-  (annotate
+  (annotate  ; (
    w-c-m-key
    extract-zodiac-locations
    extract-mark-list

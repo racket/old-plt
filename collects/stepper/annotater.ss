@@ -134,9 +134,9 @@
   
   (define cheap-wrap
     (lambda (zodiac body)
-      (let ([_ (when (not (z:zodiac? zodiac))
-                 (printf "uh oh, about to fail in cheap-wrap.~n"))]
-            [start (z:zodiac-start zodiac)]
+      (when (not (z:zodiac? zodiac))
+        (error 'cheap-wrap "argument to cheap-wrap is not a zodiac expr: ~a" zodiac))
+      (let ([start (z:zodiac-start zodiac)]
 	    [finish (z:zodiac-finish zodiac)])
 	`(#%with-continuation-mark ,debug-key
 	  ,(make-cheap-mark (z:make-zodiac #f start finish))
@@ -609,7 +609,7 @@
                       (let-body-recur (z:let-values-form-body expr) binding-list)]
                      [(free-bindings) (apply binding-set-union (remq* binding-list free-bindings-body)
                                              free-bindings-vals)])
-                  (ccond [(or cheap-wrap? ankle-wrap?)
+                  (ccond [cheap-wrap?
                           (let* ([bindings
                                   (map (lambda (bindings val)
                                          `(,(map get-binding-name bindings) ,val))
@@ -618,7 +618,7 @@
                                  [annotated
                                   `(#%let-values ,bindings ,annotated-body)])
                             (values (appropriate-wrap annotated free-bindings) free-bindings))]
-                         [foot-wrap?
+                         [(or ankle-wrap? foot-wrap?)
                           (let* ([dummy-binding-sets
                                   (let ([counter 0])
                                     (map (lambda (binding-set)

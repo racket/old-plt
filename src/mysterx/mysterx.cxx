@@ -91,7 +91,8 @@ static MX_PRIM mxPrims[] = {
   
   { mx_cocreate_instance,"cocreate-instance",1,1 },
   { mx_com_object_eq,"com-object-eq?",2,2 },
-  
+  { mx_com_register_object,"com-register-object",1,1 },  
+
   // documents 
   
   { mx_make_document,"make-document",6,6},
@@ -344,6 +345,16 @@ void mx_register_com_object(Scheme_Object *obj,IUnknown *pIUnknown) {
   scheme_register_finalizer(obj,scheme_release_com_object,pIUnknown,NULL,NULL);
 }
 
+Scheme_Object *mx_com_register_object(int argc,Scheme_Object **argv) {
+  if (MX_COM_OBJP(argv[0]) == FALSE) {
+    scheme_wrong_type("com-register-object","com-object",0,argc,argv);
+  }
+
+  mx_register_com_object(argv[0],(IUnknown *)MX_COM_OBJ_VAL(argv[0]));
+
+  return scheme_void;
+}
+
 char *inv_kind_string(INVOKEKIND invKind) {
   switch (invKind) {
   case INVOKE_FUNC :
@@ -509,7 +520,7 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
   int len;
   
   if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-help","mx-object",0,argc,argv);
+    scheme_wrong_type("com-help","com-object",0,argc,argv);
   }
   
   pIDispatch = MX_COM_OBJ_VAL(argv[0]);
@@ -679,7 +690,7 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
   int i;
   
   if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-register-event-handler","mx-object",0,argc,argv);
+    scheme_wrong_type("com-register-event-handler","com-object",0,argc,argv);
   }
   
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
@@ -909,7 +920,7 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
   int i;
   
   if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-methods","mx-object",0,argc,argv);
+    scheme_wrong_type("com-methods","com-object",0,argc,argv);
   }
   
   pIDispatch = MX_COM_OBJ_VAL(argv[0]);
@@ -1079,7 +1090,7 @@ Scheme_Object *mx_com_events(int argc,Scheme_Object **argv) {
   UINT i;
   
   if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-methods","mx-object",0,argc,argv);
+    scheme_wrong_type("com-methods","com-object",0,argc,argv);
   }
   
   if (MX_COM_OBJ_VAL(argv[0])== NULL) {
@@ -1409,7 +1420,7 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
   int i;
   
   if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("mx-method-type","mx-object",0,argc,argv);
+    scheme_wrong_type("mx-method-type","com-object",0,argc,argv);
   }
   
   if (SCHEME_STRINGP(argv[1]) == FALSE) {

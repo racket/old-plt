@@ -210,6 +210,7 @@ MX_PRIM_DECL(mx_com_set_property_type);
 MX_PRIM_DECL(mx_com_event_type);
 MX_PRIM_DECL(mx_cocreate_instance);
 MX_PRIM_DECL(mx_com_object_eq);
+MX_PRIM_DECL(mx_com_register_object);
 MX_PRIM_DECL(mx_com_help);
 MX_PRIM_DECL(mx_com_register_event_handler);
 MX_PRIM_DECL(mx_all_controls);

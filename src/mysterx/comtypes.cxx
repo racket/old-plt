@@ -89,6 +89,8 @@ Scheme_Object *mx_make_idispatch(IDispatch *pIDispatch) {
   retval->pIDispatch = pIDispatch;
   retval->pEventTypeInfo = NULL;
 
+  mx_register_com_object((Scheme_Object *)retval,(IUnknown *)pIDispatch);
+
   return (Scheme_Object *)retval;
 
 }
@@ -101,6 +103,8 @@ Scheme_Object *mx_make_iunknown(IUnknown *pIUnknown) {
 
   retval->type = mx_com_iunknown_type;
   retval->pIUnknown = pIUnknown;
+
+  mx_register_com_object((Scheme_Object *)retval,pIUnknown);
 
   return (Scheme_Object *)retval;
 

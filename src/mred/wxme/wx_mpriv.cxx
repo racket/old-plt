@@ -2311,6 +2311,8 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
 
   caretLocationX = -1;
   caretOn = FALSE;
+  /* (Actually, we assume that the caret's not blinked, otherwise the
+      refresh could be wrong.) */
   caretBlinked = FALSE;
 
   if (ReadyOffscreen(width, height))

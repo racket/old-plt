@@ -33,9 +33,9 @@ Functions
        if there isn't any element or if there are more than one element.
        
        Malformed xml is reported with source locations in
-       the form `l.c/o', where l is the line number, c is
-       the column number and o is the number of characters
-       from the beginning of the file.
+       the form `l.c/o', where l, c, and o are the line number,
+       column number, and next port position, respectively as
+       returned by port-next-location.
 
        Any non-characters other than eof read from the input-port will
        appear in the document content.  Such special values may only appear
@@ -84,7 +84,7 @@ Functions
        often contain whitespace for formating purposes.  Given a list of tag
        names and the identity function, eliminate-whitespace produces a
        function that filters out pcdata consisting solely of whitespace from
-       those elements and raises and error if any non-whitespace text appears.
+       those elements and raises an error if any non-whitespace text appears.
        Passing in the function called "not" instead of the identity function
        filters all elements which are not named in the list.  Using void
        filters all elements regardless of the list.
@@ -337,4 +337,3 @@ Here's what that (hand-formatted) text file looks like:
     <array />
   </dict>
 </plist>
-

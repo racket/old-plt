@@ -48,20 +48,20 @@
   ;;
 
   (test-bad-read-input "<" "read-xml: lex-error: at position 1.2/2: unexpected eof")
-  (test-bad-read-input "<a>" "read-xml: parse-error: unclosed `a' tag at [1.1/1 1.3/3]")
+  (test-bad-read-input "<a>" "read-xml: parse-error: unclosed `a' tag at [1.1/1 1.4/4]")
   (test-bad-read-input
    "<a></b>"
-   "read-xml: parse-error: start tag `a' at [1.1/1 1.3/3] doesn't match end tag `b' at [1.4/4 1.7/7]")
+   "read-xml: parse-error: start tag `a' at [1.1/1 1.4/4] doesn't match end tag `b' at [1.4/4 1.8/8]")
   (test-bad-read-input
-   "<a <a>" "read-xml: lex-error: at position 1.4/4: expected / or > to close tag `a'")
+   "<a <a>" "read-xml: lex-error: at position 1.5/5: expected / or > to close tag `a'")
 
   (test-bad-read-input "~n<" "read-xml: lex-error: at position 2.2/3: unexpected eof")
-  (test-bad-read-input "~n<a>" "read-xml: parse-error: unclosed `a' tag at [2.1/2 2.3/4]")
+  (test-bad-read-input "~n<a>" "read-xml: parse-error: unclosed `a' tag at [2.1/2 2.4/5]")
   (test-bad-read-input
    "~n<a></b>"
-   "read-xml: parse-error: start tag `a' at [2.1/2 2.3/4] doesn't match end tag `b' at [2.4/5 2.7/8]")
+   "read-xml: parse-error: start tag `a' at [2.1/2 2.4/5] doesn't match end tag `b' at [2.4/5 2.8/9]")
   (test-bad-read-input
-   "~n<a <a>" "read-xml: lex-error: at position 2.4/5: expected / or > to close tag `a'")
+   "~n<a <a>" "read-xml: lex-error: at position 2.5/6: expected / or > to close tag `a'")
 
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -29,22 +29,21 @@ handler, etc.
 
 To reuse parts of the code of errortrace, import
 _errortrace-lib.ss_. It contains all of the names here but
-does not set the eval-handler or the error-display-handler.
+does not set the compilation handler or the error display handler.
 
 Exception Information
 ---------------------
 
-Invoking the errortrace.ss module sets the eval handler to instrument
-Scheme source code.
+Invoking the errortrace.ss module sets the compilation handler to
+instrument Scheme source code. It also sets the error display handler
+to report source information for an exception, and it sets the
+`use-compiled-file-paths' parameter to trigger the use of
+errortrace-specific .zo files.
 
  NOTE: errortrace has no effect on code loaded as compiled byte code
  (i.e., from a .zo file) or native code (i.e., from a .dll or .so
- file).
-
-The errortrace.ss module also sets a debug info handler to record
-information about the context of exceptions, and an exception handler
-to print out information recorded by the debug info handler. The load
-handler is changed to correlate source code with source files.
+ file). But use the "--mode errortrace" flag to Setup PLT to create
+ .zo files with errortrace information.
 
 Errortrace's instrumentation can be explicitly disabled via the
 `instrumenting-enabled' boolean parameter. Instrumentation is on by
@@ -186,6 +185,36 @@ counting):
   executed 0 times; an expression underlined with "." has been
   executed 1 time; and an expression underlined with "," has been
   executed multiple times.
+
+_Re-using errortrace handlers_
+-----------------------------------
+
+The _errortrace-lib.ss_ module exports all of the exports of
+"errortrace.ss", plus a few more. It does not install any handlers.
+
+The addition exports are as follows:
+
+> (errortrace-compile-handler stx immediate-eval?) - compiles `stx'
+  using the compilation handler that was active when the
+  "errortrace-lib.ss" module was executed, but first instruments the
+  code for errortrace information. The code is instrumented only if
+  the namespace is the same as when the module was executed. This
+  procedure is suitable for use as a compilation handler.
+
+> (errortrace-error-display-handler string exn) - displays information
+  about the exception; this procedure is suitable for use as an error
+  display handler.
+
+> (errortrace-annotate stx) - macro-expands and instruments the given
+  top-level form. If the form is a module named `errortrace-key', no
+  instrumentation is applied. This annotation function is used by
+  `errortrace-compile-handler'.
+
+> (annotate-top stx) - like `errortrace-annotate', but without the
+  special case for `errortrace-key'. Also, if `stx' is a module
+  declaration, it is not enriched with imports to explicitly load
+  errortrace run-time support.
+
 
 _Re-using errortrace stack tracing_
 -----------------------------------

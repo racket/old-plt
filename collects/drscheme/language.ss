@@ -314,8 +314,11 @@
       (send f show #t)
       f))
   
-  (define library-directory%
-    (class null ()
+  ; object to remember last library directory
+  
+  (define *library-directory*
+    (make-object 
+     (class null ()
 	   (private [the-dir #f])
 	   (public
 	    [set! (lambda (s)
@@ -331,29 +334,7 @@
 			       (build-path home-dir "lib"))
 			 (set! the-dir ())))))])
 	   (sequence
-	     (set-to-default))))
-
-
-  ; object to remember last library directory
-  
-  (define *library-directory*
-    (make-object 
-     (class null ()
-
-	    (private 
-	     [the-dir #f]
-	     [set-to-default 
-	      (lambda ()
-		(set! the-dir
-		      (build-path (getenv "PLTHOME") "lib")))])
-	    (public
-	     [get (lambda () the-dir)]
-	     [set-from-file!
-	      (lambda (file) 
-		(set! the-dir (path-only file)))])
-
-	    (sequence
-	      (set-to-default)))))
+	     (set-to-default)))))
 
   (define (fill-language-menu language-menu)
     (send* language-menu 

@@ -398,9 +398,8 @@ scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
      scheme_top_level_do in fun.c */
   Scheme_Overflow *overflow;
 
-  scheme_overflow_count++;
-
   scheme_overflow_k = k;
+  scheme_overflow_count++;
   
   overflow = MALLOC_ONE_RT(Scheme_Overflow);
 #ifdef MZTAG_REQUIRED

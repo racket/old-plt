@@ -107,10 +107,6 @@
 	      (break-enabled #t)
 	      (wx:current-eventspace bottom-eventspace)
 	      ;(wx:eventspace-parameterization bottom-eventspace p)
-	      (exit-handler (lambda (arg)
-			      (with-parameterization system-parameterization
-				(lambda ()
-				  (mred:exit)))))
 	      (current-will-executor (make-will-executor))
 	      (read-curly-brace-as-paren #t)
 	      (read-square-bracket-as-paren #t)
@@ -166,9 +162,10 @@
 	   (lambda x
 	     (with-parameterization system-parameterization
 	       (lambda ()
-		 (lock #f)
-		 (apply super-init-transparent-io x)
-		 (lock #t))))])
+		 (let ([c-locked? locked?])
+		   (lock #f)
+		   (apply super-init-transparent-io x)
+		   (lock c-locked?)))))])
 
 	(private
 	  [escape-fn #f])
@@ -226,8 +223,13 @@
 			[answer (void)]
 			[f
 			 (lambda (annotated recur)
+			   '(printf "annotated: ~a~n" annotated)
 			   (if (process/zodiac-finish? annotated)
-			       answer
+			       (if (process/zodiac-finish-error? annotated)
+				   (with-parameterization param
+				     (lambda ()
+				       ((error-escape-handler))))
+				   answer)
 			       (begin (set! answer
 					    (with-parameterization param
 					      (lambda ()
@@ -279,17 +281,21 @@
 		   (let ([zodiac-read (reader)])
 		     (if (zodiac:eof? zodiac-read)
 			 (cleanup #f)
-			 (let ([exp (call/nal
-				     zodiac:scheme-expand/nal
-				     zodiac:scheme-expand
-				     (expression: zodiac-read)
-				     (vocabulary: vocab)
-				     (parameterization: 
-				      ;(make-parameterization system-parameterization)
-				      param
-				      ))])
-			   (f (if annotate? (aries:annotate exp) exp)
-			      loop))))))))])
+			 (let* ([exp (call/nal
+				      zodiac:scheme-expand/nal
+				      zodiac:scheme-expand
+				      (expression: zodiac-read)
+				      (vocabulary: vocab)
+				      (parameterization: 
+				       ;(make-parameterization system-parameterization)
+				       param
+				       ))]
+				[heading-out (if annotate? 
+						 (aries:annotate exp)
+						 exp)])
+			   (mred:debug:when 'drscheme:sexp
+					    (mzlib:pretty-print@:pretty-print heading-out))
+			   (f heading-out loop))))))))])
 	(private
 	  [in-evaluation? #f]
 	  [in-evaluation-semaphore (make-semaphore 1)]
@@ -469,9 +475,10 @@
 					      (primitive-eval expr)))))
 				      (lambda anss
 					(let ([c-locked? locked?])
-					  (lock #f)
-					  (for-each display-result anss)
-					  (lock c-locked?))))
+					  (unless (andmap void? anss)
+					    (lock #f)
+					    (for-each display-result anss)
+					    (lock c-locked?)))))
 				     #f)))
 			   (lambda () 
 			     (set! current-thread-directory (current-directory))
@@ -513,7 +520,7 @@
 							     (report-exception-error exn this))])
 					    (with-parameterization param
 					      (lambda ()
-						(primitive-eval sexp)))))
+					(primitive-eval sexp)))))
 				    (recur)])))])
 			(if (equal? chars (list #\W #\X #\M #\E))
 			    (let ([edit (make-object drscheme:edit:edit%)])
@@ -551,6 +558,10 @@
 		     (current-input-port this-in)
 		     (current-load userspace-load)
 		     (current-eval userspace-eval)
+		     (exit-handler (lambda (arg)
+				     (with-parameterization system-parameterization
+				       (lambda ()
+					 (kill-thread evaluation-thread)))))
 		     (set! current-thread-directory
 			   (let/ec k
 			     (unless (get-frame)

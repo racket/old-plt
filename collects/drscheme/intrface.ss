@@ -16,6 +16,7 @@
     (define report-error
       (lambda (type)
 	(lambda (z s . args)
+	  (print-struct #t)
 	  (let ([string (apply format (if (eq? type 'internal)
 					  (string-append "Internal error: "
 							 s)

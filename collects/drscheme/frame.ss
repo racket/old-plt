@@ -10,7 +10,7 @@
 	    [zodiac : zodiac:system^])
     
     (mred:debug:printf 'invoke "drscheme:frame@")
-
+    
     (define frame%
       (class mred:simple-menu-frame% (name snip)
 	(rename [super-make-root-panel make-root-panel]
@@ -88,7 +88,7 @@
 	     '(send file-menu append-item "New Compound Unit"
 		   (lambda ()
 		     (make-object drscheme:compound-unit:frame% #f #f))))]
-	  [file-menu:open (lambda () (mred:open-file))])
+	  [file-menu:open (lambda () (mred:open-file) #t)])
 
 	(sequence 
 	  (mred:debug:printf 'super-init "before drscheme:frame%")

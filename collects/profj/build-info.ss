@@ -87,9 +87,8 @@
       ;Add these to the list for type checking
       (add-to-queue (package-defs prog))))
 
-  ;build-interactions-info: ast symbol location type-records -> void
-  (define (build-interactions-info prog level loc type-recs)
-    (build-info-location loc)
+  ;build-interactions-info: ast type-records -> void
+  (define (build-interactions-info prog level type-recs)
     (when (field? prog)
       (send type-recs add-interaction-field 
             (process-field prog '("scheme-interactions") type-recs level))))
@@ -109,7 +108,7 @@
            (name-path (map id-string (name-path (import-name imp))))
            (path (if star? (append name-path (list name)) name-path))
            (err (lambda ()
-                  (raise-error imp 'import-not-found))))
+                  (raise-error imp import-not-found))))
       (if star?
           (let ((classes (send type-recs get-package-contents path (lambda () #f))))
             (if classes
@@ -122,29 +121,29 @@
                   (send type-recs add-package-contents path classes))))
           (import-class name path (find-directory path err) file type-recs level #t))))
   
-  ;import-class: string (list string) (list string) location type-records symbol bool-> void  
+  ;import-class: string (list string) (list string) location type-records symbol bool-> void
   (define (import-class class path dir loc type-recs level add-to-env)
-    (cond
-      ((send type-recs get-class-record (cons class path) (lambda () #f)) void)
-      ((file-exists? (string-append (build-path (apply build-path dir) "compiled" class) ".jinfo"))
-       (send type-recs add-class-record (read-record (string-append (build-path (apply build-path dir) "compiled" class) ".jinfo")))
-       (send type-recs add-require-syntax (cons class path) (build-require-syntax class path dir #f)))
-      ((file-exists? (string-append (build-path (apply build-path dir) class) ".java"))
-       (send type-recs add-to-records 
-             (cons class path)
-             (lambda () 
-               (let* ((location (string-append class ".java"))
-                      (ast (call-with-input-file (string-append (build-path (apply build-path dir) class) ".java")
-                             (lambda (p) (parse p location level)))))
-                 (send type-recs set-compilation-location location (build-path (apply build-path dir) "compiled"))
-                 (build-info ast level type-recs 'not_look_up)
-                 (send type-recs get-class-record (cons class path) (lambda () 'internal-error "Failed to add record"))
-                 )))
-       (send type-recs add-require-syntax (cons class path) (build-require-syntax class path dir #t)))
-      (else (raise-error (cons class path) 'file-not-found)))
-    (when add-to-env (send type-recs add-to-env class path loc))
-    (send type-recs add-class-req (cons class path) (not add-to-env) loc))
-
+    (let* ((path (apply build-path dir))
+           (jinfo (string-append (build-path path "compiled" class ".jinfo")))
+           (java (string-append (build-path path class) ".java")))
+      (cond
+        ((send type-recs get-class-record (cons class path) (lambda () #f)) void)
+        ((file-exists? jinfo)
+         (send type-recs add-class-record (read-record jinfo))
+         (send type-recs add-require-syntax (cons class path) 
+               (build-require-syntax class path dir #f)))
+        ((file-exists? java)
+         (send type-recs add-to-records 
+               (cons class path)
+               (lambda () 
+                 (let* ((location (string-append class ".java"))
+                        (ast (call-with-input-file java (lambda (p) (parse p location level)))))
+                   (send type-recs set-compilation-location location (build-path path "compiled"))
+                   (build-info ast level type-recs 'not_look_up))))
+         (send type-recs add-require-syntax (cons class path) (build-require-syntax class path dir #t)))
+        (else (raise-error (cons class path) file-not-found)))
+      (when add-to-env (send type-recs add-to-env class path loc))
+      (send type-recs add-class-req (cons class path) (not add-to-env) loc)))
   
   ;add-my-package: type-records (list string) (list defs) loc symbol-> void
   (define (add-my-package type-recs package defs loc level)
@@ -164,7 +163,7 @@
   (define (find-implicit-import name type-recs level)
     (lambda ()
       (let ((original-loc (send type-recs get-location))
-            (dir (find-directory (cdr name) (lambda () (raise-error name 'dir-not-found)))))
+            (dir (find-directory (cdr name) (lambda () (raise-error name dir-not-found)))))
         (import-class (car name) (cdr name) dir original-loc type-recs level #f)
         (begin0
           (get-record (send type-recs get-class-record name (lambda () #f) type-recs))
@@ -222,13 +221,13 @@
   ;;get-parent-record: (list string) name (list string) type-records (list string) -> record
   (define (get-parent-record name name-src child-name level type-recs)
     (when (equal? name child-name)
-      (raise-error name-src 'extends-self))
+      (raise-error name-src extends-self))
     (let ((record (send type-recs get-class-record name (lambda () #f))))
       (cond
         ((class-record? record) record)
         ((procedure? record) (get-record record type-recs))
         ((eq? record 'in-progress)
-         (raise-error name-src 'cyclic-depends))
+         (raise-error name-src cyclic-depends))
         (else (get-record (find-implicit-import name type-recs level) type-recs)))))
   
   (define (class-specific-field? field)
@@ -290,10 +289,10 @@
                    (error 'process-class "Internal error: not all of imports and classes exist"))
                  
                  (when (memq 'final (class-record-modifiers super-record))
-                   (raise-error (car (header-extends info)) 'extend-final))
+                   (raise-error (car (header-extends info)) final-extend))
                  
                  (unless (class-record-class? super-record)
-                   (raise-error (car (header-extends info)) 'class-extend-iface))
+                   (raise-error (car (header-extends info)) class-extend-iface))
                  
                  (when (ormap class-record-class? iface-records)
                    (letrec ((find-class
@@ -301,7 +300,7 @@
                                (if (class-record-class? (car recs))
                                    (car names)
                                    (find-class (cdr recs) (cdr names))))))
-                     (raise-error (find-class iface-records (header-implements info)) 'class-implement-class)))                 
+                     (raise-error (find-class iface-records (header-implements info)) class-implement-class)))                 
                  
                  (valid-iface-implement? iface-records (header-implements info))
                                   
@@ -313,9 +312,10 @@
                    (valid-method-sigs? m members level type-recs)
 
                    (when (not (memq 'abstract (map modifier-kind (header-modifiers info))))
-                     (class-fully-implemented? super-record (header-extends info) 
-                                               iface-records (header-implements info)
-                                               m level))
+                     (and (class-fully-implemented? super-record (header-extends info) 
+                                                    iface-records (header-implements info)
+                                                    m level)
+                          (no-abstract-methods m members)))
                    
                    (valid-inherited-methods? (cons super-record iface-records)
                                              (append (if (null? (header-extends info))
@@ -382,7 +382,7 @@
                                (if (class-record-class? (car recs))
                                    (car names)
                                    (find-class (cdr recs) (cdr names))))))
-                     (raise-error (find-class super-records (header-extends info)) 'iface-extend-class)))
+                     (raise-error (find-class super-records (header-extends info)) iface-extend-class)))
                  
                  (valid-iface-extend? super-records (header-extends info))
                  
@@ -415,19 +415,19 @@
   (define (valid-iface-extend? records extends)
     (or (null? records)
         (and (memq (car records) (cdr records))
-             (raise-error (car extends) 'repeating-inherited-iface))
+             (raise-error (car extends) repeating-inherited-iface))
         (valid-iface-extend? (cdr records) (cdr extends))))
   
   (define (valid-iface-implement? records implements)
     (or (null? records)
         (and (memq (car records) (cdr records))
-             (raise-error (car implements) 'repeating-implement))
+             (raise-error (car implements) repeating-implement))
         (valid-iface-implement? (cdr records) (cdr implements))))
   
   (define (valid-field-names? fields members type-recs)
     (or (null? fields)
         (and (field-member? (car fields) (cdr fields))
-             (raise-error (find-member (car fields) members type-recs) 'repeated-field-name))
+             (raise-error (find-member (car fields) members type-recs) repeated-field-name))
         (valid-field-names? (cdr fields) members type-recs)))
   
   (define (field-member? field fields)
@@ -465,7 +465,7 @@
   (define (valid-method-sigs? methods members level type-recs)
     (or (null? methods)
         (and (method-member? (car methods) (cdr methods) level)
-             (raise-error (find-member (car methods) members type-recs) 'repeated-method))
+             (raise-error (find-member (car methods) members type-recs) repeated-method))
         (valid-method-sigs? (cdr methods) members level type-recs)))
   
   (define (method-member? method methods level)
@@ -492,7 +492,7 @@
         (and (method-conflicts? (car methods) 
                                 (apply append (map class-record-methods records))
                                 level)
-             (raise-error (list from (car methods)) 'inherited-method-conflict))
+             (raise-error (list from (car methods)) inherited-method-conflict))
         (check-inherited-method (cdr methods) records from level)))
   
   (define (method-conflicts? method methods level)
@@ -514,7 +514,7 @@
         (and (method-conflicts? (car methods)
                                 (class-record-methods record)
                                 level)
-             (raise-error (list record (find-member (car methods) members type-recs)) 'conflicting-method))
+             (raise-error (list record (find-member (car methods) members type-recs)) conflicting-method))
         (check-for-conflicts (cdr methods) record members level type-recs)))
   
   (define (class-fully-implemented? super super-name ifaces ifaces-name methods level) 
@@ -531,8 +531,14 @@
   (define (implements-all? inherit-methods methods name level)
     (or (null? inherit-methods)
         (and (not (method-member? (car inherit-methods) methods level))
-             (raise-error (list name (car inherit-methods)) 'method-not-implemented))
+             (raise-error (list name (car inherit-methods)) method-not-implemented))
         (implements-all? (cdr inherit-methods) methods name level)))
+  
+  (define (no-abstract-methods methods members type-recs)
+    (or (null? methods)
+        (and (memq 'abstract (method-record-modifiers (car methods)))
+             (raise-error (find-member (car methods) members type-recs) abstract-in-concrete))
+        (no-abstract-methods (cdr methods) members type-recs)))
     
       
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -580,8 +586,8 @@
                             (check-method-modifiers level (method-modifiers method))
                             (check-method-modifiers level (cons (car args) (method-modifiers method))))
                         (type-spec-to-type (method-type method) type-recs)
-                        (map (lambda (x)
-                               (type-spec-to-type  x type-recs))
+                        (map (lambda (ts)
+                               (type-spec-to-type ts type-recs))
                              (map var-decl-type
                                   (method-parms method)))
                         (map (lambda (t)
@@ -623,7 +629,7 @@
                (one-of-access? mods)
                (valid-field-mods? level mods)
                (not (volatile-and-final? mods)))
-      mods))
+      (map modifier-kind mods)))
   
   ;make-valid-mods: (symbol -> (list symbol)) (symbol -> symbol) -> (symbol (list modifier) -> bool)
   (define (make-valid-mods valids-choice error-type)
@@ -638,10 +644,10 @@
   ;valid-*-mods?: symbol (list modifier) -> bool
   (define valid-class-mods?
     (make-valid-mods (lambda (x) '(public abstract final strictfp))
-                     (lambda (x) 'class-incorrect-modifiers)))
+                     (lambda (x) class-incorrect-modifiers)))
   (define valid-interface-mods?
     (make-valid-mods (lambda (x) '(public abstract strictfp))
-                     (lambda (x) 'interface-incorrect-modifiers)))  
+                     (lambda (x) interface-incorrect-modifiers)))  
   (define valid-field-mods?
     (make-valid-mods
      (lambda (level)
@@ -649,7 +655,7 @@
          ((beginner intermediate) '(private))
          ((advanced) '(public protected private static))
          ((full) `(public protected private static final transient volatile))))
-     (lambda (x) 'invalid-field-mod)))  
+     (lambda (x) invalid-field-mod)))  
   (define valid-method-mods?
     (make-valid-mods
      (lambda (level)
@@ -659,14 +665,14 @@
          ((full) '(public protected private abstract static final synchronized native strictfp))
          ((abstract) '(public protected))))
      (lambda (level)
-       (if (eq? level 'abstract) 'abstract-restrict 'invalid-method-mod))))
+       (if (eq? level 'abstract) abstract-restrict invalid-method-mod))))
   
   ;one-access: symbol symbol symbol (list modifiers) -> bool
   (define (one-access is check1 check2 mods)
     (and (eq? is (modifier-kind (car mods)))
          (or (memq check1 (map modifier-kind (cdr mods)))
              (memq check2 (map modifier-kind (cdr mods))))
-         (raise-error (car mods) 'one-of-access)))
+         (raise-error (car mods) one-of-access)))
 
   ;one-of-access?: (list modifier) -> bool
   (define (one-of-access? mods)
@@ -690,16 +696,16 @@
                          (tester (cdr mods)))))))
       tester))
   
-  (define final-and-abstract? (make-not-two 'final 'abstract 'final-and-abstract))
-  (define volatile-and-final? (make-not-two 'volatile 'final 'final-and-volatile))  
-  (define native-and-fp? (make-not-two 'native 'strictfp 'native-and-fp))
+  (define final-and-abstract? (make-not-two 'final 'abstract final-and-abstract))
+  (define volatile-and-final? (make-not-two 'volatile 'final final-and-volatile))  
+  (define native-and-fp? (make-not-two 'native 'strictfp native-and-fp))
     
   ;duplicate-mods?: (list modifier) -> bool
   (define (duplicate-mods? mods)
     (and (not (null? mods))
          (or (and (memq (modifier-kind (car mods))
                         (map modifier-kind (cdr mods)))
-                  (raise-error (car mods) 'duplicate-mods))
+                  (raise-error (car mods) duplicate-mods))
              (duplicate-mods? (cdr mods)))))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -715,153 +721,133 @@
             #f
             (list (build-info-location) (src-line src) (src-col src) (src-pos src) (src-span src)))))        
 
-  (define get-error-message
-    (let ((dup-mods (lambda (a) 
-                      (format "Modifier ~a cannot appear multiple times in one declaration" a)))
-          (one-of-access (lambda (a)
-                           "Only one of public, private, or protected permitted"))
-          (invalid-mods 
-           (lambda (for)
-             (lambda (a) (format "Modifier ~a is not a legal modifier for ~a" a for))))
-          (fin-and-abs 
-           (lambda (a) "Class cannot be both abstract and final"))
-          (fin-and-vol 
-           (lambda (a) "Field cannot be both final and volatile"))
-          (nat-and-fp 
-           (lambda (a) "Method cannot be both native and strictfp"))
-          (extend-self 
-           (lambda (a) (format "~a may not extend itself" a)))
-          (cycle 
-           (lambda (a)
-             (format "~a is illegally dependent on itself, potentially through other definitions" a)))
-          (iface-repeat-ext 
-           (lambda (a)
-             (format "Interface ~a cannot be extended twice by one interface" a)))
-          (iface-repeat-impl
-           (lambda (a)
-             (format "Interface ~a cannot be implemented twice by one class" a)))
-          (field-repeat 
-           (lambda (a)
-             (format "More than one field is declared with name ~a" a)))
-          (method-repeat 
-           (lambda (a)
-             (format "More than one method is declared as ~a" a)))
-          (method-conflict 
-           (lambda (a meth)
-             (format "Inherited method ~a from ~a has a conflict with another method of the same name" 
-                     meth a)))
-          (conflict-method
-           (lambda (meth a)
-             (format "Method ~a has a conflict with a method inherited from ~a" meth a)))
-          (extend-final
-           (lambda (a)
-             (format "Final class ~a may not be extended" a)))
-          (iface-extend-class
-           (lambda (a)
-             (format "An interface may not extend class: ~a" a)))
-          (class-extend-iface
-           (lambda (a)
-             (format "A class may not extend interface: ~a" a)))
-          (class-imp-iface
-           (lambda (a)
-             (format "A class may not implement class: ~a" a)))
-          (method-not-impl
-           (lambda (a meth)
-             (format "Method ~a from ~a is not implemented" meth a))))
-      (lambda (type)
-        (case type
-          ((duplicate-mods) dup-mods)
-          ((one-of-access) one-of-access)
-          ((interface-incorrect-modifiers) (invalid-mods "interfaces"))
-          ((class-incorrect-modifiers) (invalid-mods "class"))
-          ((invalid-field-mod) (invalid-mods "fields"))
-          ((invalid-method-mod) (invalid-mods "methods"))
-          ((abstract-restrict) (invalid-mods "an abstract method"))
-          ((final-and-abstract) fin-and-abs)
-          ((final-and-volatile) fin-and-vol)
-          ((native-and-fp) nat-and-fp)
-          ((extends-self) extend-self)
-          ((cyclic-depends) cycle)
-          ((final-extend) extend-final)
-          ((repeating-inherited-iface) iface-repeat-ext)
-          ((repeating-implement) iface-repeat-impl)
-          ((repeated-field-name) field-repeat)
-          ((repeated-method) method-repeat)
-          ((inherited-method-conflict) method-conflict)
-          ((iface-extend-class) iface-extend-class)
-          ((class-extend-iface) class-extend-iface)
-          ((class-implement-iface) class-imp-iface)
-          ((method-not-implemented) method-not-impl)
-          ((conflicting-method) conflict-method)))))
   
-  ;raise-error ast symbol -> void
+  (define (duplicate-mods a)
+    (format "Modifier ~a cannot appear multiple times in one declaration" a))
+  
+  (define (one-of-access a) "Only one of public, private, or protected permitted")
+ 
+  (define (invalid-mods for)
+    (lambda (a) (format "Modifier ~a is not a legal modifier for ~a" a for)))  
+  (define interface-incorrect-modifiers (invalid-mods "interfaces"))
+  (define class-incorrect-modifiers (invalid-mods "class"))
+  (define invalid-field-mod (invalid-mods "fields"))
+  (define invalid-method-mod (invalid-mods "methods"))
+  (define abstract-restrict (invalid-mods "an abstract method"))
+  
+  (define (final-and-abstract a) "Class cannot be both abstract and final")
+  (define (final-and-volatile a) "Field cannot be both final and volatile")
+  (define (native-and-fp a) "Method cannot be both native and strictfp")
+  
+  (define (extends-self a) (format "~a may not extend itself" a))
+  (define (cyclic-depends a)
+    (format "~a is illegally dependent on itself, potentially through other definitions" a))
+
+  (define (final-extend a) (format "Final class ~a may not be extended" a))
+
+  (define (abstract-in-concrete a) (format "Abstract method ~a is not allowed in non-abstract class"))
+  
+  (define (repeating-inherited-iface a)
+    (format "Interface ~a cannot be extended twice by one interface" a))
+  (define (repeating-implement a)
+    (format "Interface ~a cannot be implemented twice by one class" a))
+  (define (repeated-field-name a)
+    (format "More than one field is declared with name ~a" a))
+  (define (repeated-method a)
+    (format "More than one method is declared as ~a" a))
+  (define (inherited-method-conflict a meth)
+    (format "Inherited method ~a from ~a has a conflict with another method of the same name" meth a))
+  (define (conflicting-method meth a)
+    (format "Method ~a has a conflict with a method inherited from ~a" meth a))
+  (define (iface-extend-class a) (format "An interface may not extend class: ~a" a))
+  (define (class-extend-iface a) (format "A class may not extend interface: ~a" a))
+
+  (define (class-implement-class a) (format "A class may not implement class: ~a" a))
+  (define (method-not-implemented a meth) (format "Method ~a from ~a is not implemented" meth a))
+
+  (define (import-not-found a) (format "Import ~a not found" a))
+  (define (dir-not-found a) (format "Required directory ~a not found" a))
+  (define (file-not-found a) (format "Required file ~a not found" a))
+  
+  (define (make-so id src)
+    (datum->syntax-object #f id (build-src-list src)))
+  
+  (define (make-parm-string parms)
+    (if (null? parms)
+        ""
+        (substring (apply string-append
+                          (map 
+                           (lambda (p) (string-append (id-string (field-name p)) " "))
+                           parms))
+                   0 (sub1 (length parms)))))
+  
+  ;raise-error ast procedure -> void
   ;raises syntax error to indicate erroneous types
   (define (raise-error wrong-code type)
-    (if (symbol? type)
-        (case type
-          ((duplicate-mods one-of-access interface-incorrect-modifiers class-incorrect-modifiers 
-                           invalid-field-mod invalid-method-mod abstract-restrict final-and-abstract
-                           final-and-volatile native-and-fp) 
-           ;wrong-code : modifier
-           (raise-syntax-error (modifier-kind wrong-code)
-                               ((get-error-message type) (modifier-kind wrong-code))
-                               (datum->syntax-object #f 
-                                                     (modifier-kind wrong-code) 
-                                                     (build-src-list (modifier-src wrong-code)))))
-          ((extends-self cyclic-depends repeating-inherited-iface final-extends iface-extend-class
-                         class-extend-iface class-implement-iface repeating-implement)
+    (if (procedure? type)
+        (cond
+          ((memq type (list duplicate-mods one-of-access interface-incorrect-modifiers class-incorrect-modifiers 
+                            invalid-field-mod invalid-method-mod abstract-restrict final-and-abstract
+                            final-and-volatile native-and-fp))
+           (let ((kind (modifier-kind wrong-code)))
+             ;wrong-code : modifier
+             (raise-syntax-error kind (type kind) (make-so kind (modifier-src wrong-code)))))
+          
+          ((memq type (list extends-self cyclic-depends repeating-inherited-iface final-extend iface-extend-class
+                            class-extend-iface class-implement-class repeating-implement))
            ;wrong-code : name
            (let ((name (string->symbol (id-string (name-id wrong-code)))))
-             (raise-syntax-error name 
-                                 ((get-error-message type) name)
-                                 (datum->syntax-object #f
-                                                       name
-                                                       (build-src-list (name-src wrong-code))))))
-          ((repeated-field-name)
+             (raise-syntax-error name (type name) (make-so name (name-src wrong-code)))))
+
+          ((eq? type repeated-field-name)
            ;wrong-code : field
            (let ((field (string->symbol (id-string (field-name wrong-code)))))
-             (raise-syntax-error field
-                                 ((get-error-message type) field)
-                                 (datum->syntax-object #f field (build-src-list (id-src (field-name wrong-code)))))))
-          ((repeated-method)
+             (raise-syntax-error field (type field) (make-so field (id-src (field-name wrong-code))))))
+          
+          ((memq type (list repeated-method abstract-in-concrete))
            ;wrong-code : method
-           (let ((m-name (id-string (method-name wrong-code)))
-                 (parms (apply string-append
-                               (map (lambda (p) (string-append (id-string (field-name p)) " "))
-                                    (method-parms wrong-code)))))
-             (raise-syntax-error (string->symbol m-name)
-                                 ((get-error-message type) (format "~a(~a)" m-name 
-                                                                   (if (null? parms)
-                                                                       ""
-                                                                       (substring parms 0 (sub1 (string-length parms))))))
-                                 (datum->syntax-object #f 
-                                                       (string->symbol m-name)
-                                                       (build-src-list (method-src wrong-code))))))
-          ((conflicting-method)
-           ;wrong-code : (list class-record method)
-           (let ((m-name (id-string (method-name (cadr wrong-code))))
-                 (parms (apply string-append
-                               (map (lambda (p) (string-append (id-string (field-name p)) " "))
-                                    (method-parms (cadr wrong-code))))))
-             (raise-syntax-error (string->symbol m-name)
-                                 ((get-error-message type) (format "~a(~a)" m-name 
-                                                                   (if (null? (method-parms (cadr wrong-code)))
-                                                                       ""
-                                                                       (substring parms 0 (sub1 (string-length parms)))))
-                                                           (car (class-record-name (car wrong-code))))
-                                 (datum->syntax-object #f 
-                                                       (string->symbol m-name)
-                                                       (build-src-list (method-src (cadr wrong-code)))))))
+           (let* ((m-name (string->symbol (id-string (method-name wrong-code))))
+                  (parms-string (make-parm-string (method-parms wrong-code))))                                                      
+             (raise-syntax-error m-name 
+                                 (type (format "~a(~a)" m-name parms-string)) 
+                                 (make-so m-name (method-src wrong-code)))))
 
-          ((inherited-method-conflict method-not-implemented)
+          ((eq? type conflicting-method)
+           ;wrong-code : (list class-record method)
+           (let ((m-name (string->symbol (id-string (method-name (cadr wrong-code)))))
+                 (parms (make-parm-string (method-parms (cadr wrong-code)))))
+             (raise-syntax-error m-name
+                                 (type (format "~a(~a)" m-name parms) 
+                                       (car (class-record-name (car wrong-code))))
+                                 (make-so m-name (method-src (cadr wrong-code))))))
+
+          ((memq type (list inherited-method-conflict method-not-implemented))
            ;wrong-code : (list name method-record)
-           (let ((name (car wrong-code))
+           (let ((name (string->symbol (id-string (name-id (car wrong-code)))))
                  (method (cadr wrong-code)))
+             (raise-syntax-error name
+                                 (type name (method-record-name method))
+                                 (make-so name (name-src (car wrong-code))))))
+
+          ((eq? type import-not-found)
+           ;wrong-code : import
+           (let ((name (import-name wrong-code)))
              (raise-syntax-error (string->symbol (id-string (name-id name)))
-                                 ((get-error-message type) (string->symbol (id-string (name-id name)))
-                                  (method-record-name method)))))
-          (else
-           (error 'type-error "This file has a type error with uncaught type ~a" type)))
+                                 (type (apply string-append (append (map 
+                                                                     (lambda (a)
+                                                                       (string-append (id-string a) "."))
+                                                                     (name-path name))
+                                                                    (list (id-string (name-id name))))))
+                                 (make-so (string->symbol (id-string (name-id name)))
+                                          (import-src wrong-code)))))
+          ((memq type (list file-not-found dir-not-found))
+           ;wrong-code : (list string)
+           (raise-syntax-error #f
+                               (type (apply string-append (append (map (lambda (a)
+                                                                         (string-append a "."))
+                                                                       (cdr wrong-code))
+                                                                  (list (car wrong-code)))))
+                               #f)))
         (error 'internal-error "raise-error given ~a and ~a" wrong-code type)))
         
   (define build-info-location (make-parameter #f))

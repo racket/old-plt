@@ -32,8 +32,6 @@
 		    (create-public-varref r expr))
 		  ((private-binding? r)
 		    (create-private-varref r expr))
-		  ((local-binding? r)
-		    (create-local-varref r expr))
 		  ((inherit-binding? r)
 		    (create-inherit-varref r expr))
 		  ((share-binding? r)

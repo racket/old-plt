@@ -100,7 +100,6 @@
     (struct superinit-varref ()) create-superinit-varref
     (struct public-varref ())    create-public-varref
     (struct private-varref ())   create-private-varref
-    (struct local-varref ())     create-local-varref
     (struct inherit-varref ())   create-inherit-varref
     (struct share-varref ())     create-share-varref
     (struct rename-varref ())    create-rename-varref
@@ -108,7 +107,6 @@
     (struct superinit-binding ()) create-superinit-binding+marks
     (struct public-binding ())    create-public-binding+marks
     (struct private-binding ())   create-private-binding+marks
-    (struct local-binding ())     create-local-binding+marks
     (struct inherit-binding ())   create-inherit-binding+marks
     (struct share-binding ())     create-share-binding+marks
     (struct rename-binding ())    create-rename-binding+marks
@@ -116,7 +114,6 @@
 			  init-vars inst-clauses))
     (struct public-clause (exports internals exprs))
     (struct private-clause (internals exprs))
-    (struct local-clause (exports internals exprs))
     (struct inherit-clause (inheriteds))
     (struct inherit-from-clause (super))
     (struct rename-clause (internals imports))

@@ -2,7 +2,8 @@
 _Hierarchical List Control_
 
 hierlists.ss defines hierlist^
-hierlistr.ss returns a unit/sig, imports mred^ and mzlib:function^ and exports hierlist^
+hierlistr.ss returns a unit/sig, imports mred^ and 
+mzlib:function^ and exports hierlist^
 hierlist.ss invoke-opens hierlistr.ss
 
 _hierlist_ defines three classes:
@@ -11,7 +12,14 @@ _hierlist_ defines three classes:
 
 > hierarchical-list%, derived from editor-canvas%
    
-  New methods:
+It accepts two initialization arguments. The first
+specifies the GUI parent for the control and is
+required. The second is the `style' parameter
+passed to the super class (editor-canvas%)
+and defaults to: '(no-hscroll).
+
+
+New methods:
 
 >  get-selected :: (send a-list get-selected) - returns #f or an
      instance of hierarchical-list-item<%>

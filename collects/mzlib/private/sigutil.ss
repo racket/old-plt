@@ -469,6 +469,7 @@
 					 (if (eof-object? s)
 					   s
 					   (local-expand s    
+							 'internal-define
 							 (append
 							  user-stx-forms
 							  local-vars))))]

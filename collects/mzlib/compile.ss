@@ -5,6 +5,8 @@
   
   (define -re:suffix (regexp "\\...?.?$"))
 
+  ; (require (lib "src2src.ss" "compiler"))
+
   (define compile-file
     (case-lambda
      [(src)

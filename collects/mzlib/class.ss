@@ -166,12 +166,13 @@
 			   [(private . rest)
 			    (bad "ill-formed private clause" stx)]
 			   [(form idp ...)
-			    (ormap (lambda (f) (module-identifier=? (syntax form) f))
-				   (list (quote-syntax public)
-					 (quote-syntax override)
-					 (quote-syntax public-final)
-					 (quote-syntax override-final)
-					 (quote-syntax inherit)))
+			    (and (identifier? (syntax form))
+				 (ormap (lambda (f) (module-identifier=? (syntax form) f))
+					(list (quote-syntax public)
+					      (quote-syntax override)
+					      (quote-syntax public-final)
+					      (quote-syntax override-final)
+					      (quote-syntax inherit))))
 			    (let ([form (syntax-e (syntax form))])
 			      (for-each
 			       (lambda (idp)
@@ -217,8 +218,8 @@
 				 [(null? l) null]
 				 [(and (stx-pair? (car l))
 				       (let ([id (stx-car (car l))])
-					 (identifier? id)
-					 (ormap (lambda (k) (module-identifier=? k id)) kws)))
+					 (and (identifier? id)
+					      (ormap (lambda (k) (module-identifier=? k id)) kws))))
 				  (if reverse?
 				      (loop (cdr l))
 				      (cons (car l) (loop (cdr l))))]
@@ -528,8 +529,11 @@
 					     [(define-values (id ...) expr)
 					      (syntax/loc e (set!-values (id ...) expr))]
 					     [(-init idp ...)
-					      (ormap (lambda (it) (module-identifier=? it (syntax -init)))
-						     (list (quote-syntax init) (quote-syntax init-field)))
+					      (and (identifier? (syntax -init))
+						   (ormap (lambda (it) 
+							    (module-identifier=? it (syntax -init)))
+							  (list (quote-syntax init)
+								(quote-syntax init-field))))
 					      (let ([ids (map 
 							  (lambda (idp)
 							    (if (identifier? idp)

@@ -90,6 +90,7 @@
 				 (lambda (defn-or-expr)
 				   (local-expand
 				    defn-or-expr
+				    'internal-define
 				    (append
 				     (kernel-form-identifier-list (quote-syntax here))
 				     declared-names)))

@@ -187,9 +187,9 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
 #ifdef wx_mac
   rgn = NewRgn();
   OpenRgn();
-  Rect r;
-  SetRect(&r, ix, iy, ix + iw, iy + ih);
-  FrameRoundRect(&r, xradius, yradius);
+  Rect r2;
+  SetRect(&r2, ix, iy, ix + iw, iy + ih);
+  FrameRoundRect(&r2, xradius, yradius);
   CloseRgn(rgn);
 #endif
 }

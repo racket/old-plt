@@ -244,14 +244,6 @@ void wxScrollBar::DoShow(Bool show)
 //-----------------------------------------------------------------------------
 void wxScrollBar::Enable(Bool enable)
 {
-  if ((enable != cEnable) && cActive && cMacControl) {
-    SetCurrentDC();
-    if (enable) {
-      ActivateControl(cMacControl);
-    } else {
-      DeactivateControl(cMacControl);
-    }
-  }
   wxWindow::Enable(enable);
 }
 
@@ -261,6 +253,19 @@ void wxScrollBar::ShowAsActive(Bool flag)
   if (cEnable && cMacControl) {
     SetCurrentDC();
     if (flag) {
+      ActivateControl(cMacControl);
+    } else {
+      DeactivateControl(cMacControl);
+    }
+  }
+}
+
+//-----------------------------------------------------------------------------
+void wxScrollBar::ChangeToGray(Bool flag)
+{
+  if (cActive && cMacControl) {
+    SetCurrentDC();
+    if (!flag) {
       ActivateControl(cMacControl);
     } else {
       DeactivateControl(cMacControl);

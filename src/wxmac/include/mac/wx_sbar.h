@@ -92,6 +92,7 @@ public:
 
 	virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY); // mac platform only
 	virtual void Enable(Bool enable);
+	virtual void ChangeToGray(Bool enable);
 	virtual void Paint(void);
 	virtual void DoShow(Bool show);
 

@@ -17,23 +17,20 @@
       
       (define (phase1) (void))
       (define (phase2) 
-            (drscheme:get/extend:extend-interactions-text
-                  (lambda (super%)
-                    (class super%
-                      (rename [super-display-results display-results])
-                      
-                      (define/override display-results
-                        (opt-lambda (results)
-                          (super-display-results (map (lambda (result)
-                                                        (if (python-object? result)
-                                                            (py-gbov (py-repr result))
-                                                            result))
-                                                      results))))
-                      
-                      (super-instantiate ()))))
-;                      ))); (if (python-object? to-display)
-;                                                  (py-gbov to-display)
- ;                                                 to-display))))))
+;            (drscheme:get/extend:extend-interactions-text
+;                  (lambda (super%)
+;                    (class super%
+;                      (rename [super-display-results display-results])
+;                      
+;                      (define/override display-results
+;                        (opt-lambda (results)
+;                          (super-display-results (map (lambda (result)
+;                                                        (if (python-node? result)
+;                                                            (py-object%->string result)
+;                                                            result))
+;                                                      results))))
+;                      
+;                      (super-instantiate ()))))
         (drscheme:language-configuration:add-language
          (make-object (override-mrflow-methods
                        ((drscheme:language:get-default-mixin) 
@@ -98,8 +95,15 @@
                                                  (exn-message x)))])
                    (namespace-attach-module n path)
                    (namespace-require path))))))
-          (define/public (render-value value settings port port-write) (write value port))
-          (define/public (render-value/format value settings port port-write width) (write value port))
+          (define/public (render-value value settings port port-write)
+            (let ([to-render (if (python-node? value)
+                                (py-object%->string value)
+                                value)])
+              (if port-write
+                  (port-write to-render)
+                  (write to-render port))))
+          (define/public (render-value/format value settings port port-write width)
+            (render-value value settings port port-write))
           (define/public (unmarshall-settings x) x)
 	  (define/public (create-executable settings parent src-file)
 	    (let ([dst-file (drscheme:language:put-executable

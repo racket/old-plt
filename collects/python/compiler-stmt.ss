@@ -279,7 +279,7 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so (let ([py-return (gensym)])
+        (->orig-so (let ([py-return (gensym 'return)])
                      `(call-with-current-continuation
                        (lambda (,py-return)
                          ,@(sub-stmt-map (lambda (s)
@@ -503,9 +503,13 @@
        ;;daniel
        (inherit ->orig-so)
        (define/override (to-scheme)
-         (->orig-so `(define ,(send name to-scheme)
-                       (,(py-so 'py-lambda) ,(send parms to-scheme)
-                         ,(send body to-scheme)))))
+         (->orig-so (let ([proc (gensym 'procedure)]
+                          [proc-name (send name to-scheme)])
+                      `(define ,proc-name
+                         (let ([,proc (,(py-so 'py-lambda) ,(send parms to-scheme)
+                                            ,(send body to-scheme))])
+                           (,(py-so 'python-set-name!) ,proc ',proc-name)
+                           ,proc)))))
        
        (super-instantiate ()))))
     

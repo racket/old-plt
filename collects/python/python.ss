@@ -35,10 +35,14 @@
             [empty-namespace (make-namespace 'empty)]
             [n (current-namespace)])
         (dynamic-require m-path #f)
-        (parameterize ([current-namespace empty-namespace])
-                          (namespace-attach-module n m-path)
-                          (namespace-require m-path)
-                          (map eval
-                               (python-to-scheme path)))))
-  
+        (map (lambda (result)
+               (if (python-node? result)
+                   (py-object%->string result)
+                   result))
+             (parameterize ([current-namespace empty-namespace])
+               (namespace-attach-module n m-path)
+               (namespace-require m-path)
+               (map eval
+                    (python-to-scheme path))))))
+    
   )

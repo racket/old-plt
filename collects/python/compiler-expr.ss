@@ -287,7 +287,7 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(,(py-so 'py-create) ,(py-so 'py-dictionary%)
+        (->orig-so `(,(py-so 'py-create) ,(py-so 'py-dict%)
                      (list ,@(map (lambda (key-value-pair)
                                     (apply (lambda (key value)
                                              `(list ,(send key to-scheme)

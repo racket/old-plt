@@ -39,4 +39,4 @@
 			(fprintf
 			 (current-error-port) 
 			 "Warning: Can't run REGSVR32 on libraries~n")))))))))
-  (provide installer))
+  (provide post-installer))

@@ -106,7 +106,9 @@
 		 [bid (if (could-player-move? (board) x y p)
 			  (figure-bid (board) x y p)
 			  1)])
-		(values weight (round bid) null null))]
+		(values weight (if (= (round bid) 0)
+                                   1
+                                   (round bid)) null null))]
 	   [(eq? mtype 'd)
 	    (let* ([ptod (get-packages-for x y (search-player-packages))]
 		   [weight (+ (if (could-player-move? (board) x y p)
@@ -123,7 +125,9 @@
 		   [bid (if (or (= (wall-danger? (board) x y) 1) (= (water-danger? (board) x y) 1) (= (blank-danger? (board) x y) 1))
 			    (* (water-escape-bid) (max-bid))
 			    1)])
-	      (values weight (round bid) ptod null))]
+	      (values weight (if (= (round bid) 0)
+                                 1
+                                 (round bid)) ptod null))]
 	   [(eq? mtype 'p)
 	    (let* ([ptop (most-of (wleft p) (quicksort list-of-pack (lambda (p1 p2) (< (pack-val p1) (pack-val p2)))))]
 		   [weight (* (pickup-value)

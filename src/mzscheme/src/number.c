@@ -541,7 +541,7 @@ Scheme_Object *scheme_make_double(double d)
   Scheme_Double *sd;
 
   if (d == 0.0) {
-    if (scheme_minus_zero_p(d))
+    if (minus_zero_p(d))
       return scheme_nzerod;
 #ifdef NAN_EQUALS_ANYTHING
     else if (MZ_IS_NAN(d))
@@ -1329,12 +1329,23 @@ static Scheme_Object *complex_atan(Scheme_Object *c)
 #define NEGATIVE_USES_COMPLEX(d) d < 0.0
 #define OVER_ONE_MAG_USES_COMPLEX(d) (d > 1.0) || (d < -1.0)
 
+#ifdef TRIG_ZERO_NEEDS_SIGN_CHECK
+#define MK_SCH_TRIG(SCH_TRIG, c_trig) double SCH_TRIG(double d) { if (d == 0.0) return d; else return c_trig(d); }
+#define MK_SCH_TRIG(SCH_TAN, tan)
+#define MK_SCH_TRIG(SCH_SIN, sin)
+#define MK_SCH_TRIG(SCH_ASIN, asin)
+#else
+# define SCH_TAN tan
+# define SCH_SIN sin
+# define SCH_ASIN asin
+#endif
+
 GEN_UNARY_OP(exp_prim, exp, exp, scheme_inf_object, scheme_zerod, scheme_nan_object, complex_exp, GEN_ZERO_IS_ONE, NEVER_RESORT_TO_COMPLEX)
 GEN_UNARY_OP(log_prim, log, log, scheme_inf_object, scheme_nan_object, scheme_nan_object, complex_log, GEN_ONE_IS_ZERO_AND_ZERO_IS_ERR, NEGATIVE_USES_COMPLEX)
-GEN_UNARY_OP(sin_prim, sin, sin, scheme_nan_object, scheme_nan_object, scheme_nan_object, complex_sin, GEN_ZERO_IS_ZERO, NEVER_RESORT_TO_COMPLEX)
+GEN_UNARY_OP(sin_prim, sin, SCH_SIN, scheme_nan_object, scheme_nan_object, scheme_nan_object, complex_sin, GEN_ZERO_IS_ZERO, NEVER_RESORT_TO_COMPLEX)
 GEN_UNARY_OP(cos_prim, cos, cos, scheme_nan_object, scheme_nan_object, scheme_nan_object, complex_cos, GEN_ZERO_IS_ONE, NEVER_RESORT_TO_COMPLEX)
-GEN_UNARY_OP(tan_prim, tan, tan, scheme_nan_object, scheme_nan_object, scheme_nan_object, complex_tan, GEN_ZERO_IS_ZERO, NEVER_RESORT_TO_COMPLEX)
-GEN_UNARY_OP(asin_prim, asin, asin, scheme_nan_object, scheme_nan_object, scheme_nan_object, complex_asin, GEN_ZERO_IS_ZERO, OVER_ONE_MAG_USES_COMPLEX)
+GEN_UNARY_OP(tan_prim, tan, SCH_TAN, scheme_nan_object, scheme_nan_object, scheme_nan_object, complex_tan, GEN_ZERO_IS_ZERO, NEVER_RESORT_TO_COMPLEX)
+GEN_UNARY_OP(asin_prim, asin, SCH_ASIN, scheme_nan_object, scheme_nan_object, scheme_nan_object, complex_asin, GEN_ZERO_IS_ZERO, OVER_ONE_MAG_USES_COMPLEX)
 GEN_UNARY_OP(acos_prim, acos, acos, scheme_nan_object, scheme_nan_object, scheme_nan_object, complex_acos, GEN_ONE_IS_ZERO, OVER_ONE_MAG_USES_COMPLEX)
 
 static Scheme_Object *
@@ -1423,7 +1434,13 @@ atan_prim (int argc, Scheme_Object *argv[])
     if (argv[0] == zeroi)
       return zeroi;
 
-    v = atan(v);
+#ifdef TRIG_ZERO_NEEDS_SIGN_CHECK
+    if (v == 0.0) {
+      /* keep v the same */
+    } else
+#endif
+      v = atan(v);
+
 #ifdef MZ_USE_SINGLE_FLOATS
     single++;
 #endif    
@@ -1725,7 +1742,7 @@ static Scheme_Object *angle(int argc, Scheme_Object *argv[])
 	return scheme_single_nan_object;
       else if (v == 0.0f) {
 	int neg;
-	neg = scheme_minus_zero_p(v);
+	neg = minus_zero_p(v);
 	v = (neg ? -1.0f : 1.0f);
       }
       if (v > 0)
@@ -1740,7 +1757,7 @@ static Scheme_Object *angle(int argc, Scheme_Object *argv[])
 	return scheme_nan_object;
       else if (v == 0.0) {
 	int neg;
-	neg = scheme_minus_zero_p(v);
+	neg = minus_zero_p(v);
 	v = (neg ? -1.0 : 1.0);
       }
       if (v > 0)

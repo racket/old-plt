@@ -890,7 +890,6 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       }
     }
 
-#ifdef DOUBLE_CHECK_NEG_ZERO_UNDERFLOW
     if (!d) {
       if (str[delta] == '-') {
 	/* Make sure it's -0.0 */
@@ -900,7 +899,6 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	return scheme_nzerod;
       }
     }
-#endif
 
 #ifdef MZ_USE_SINGLE_FLOATS
     if (single)

@@ -4380,7 +4380,9 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     {
       /* This is for Windows: */
       char *np;
-      np = scheme_normal_path_case(argv[0], strlen(argv[0]));
+      int nplen;
+      nplen = strlen(argv[0]);
+      np = scheme_normal_path_case(argv[0], &nplen);
       argv[0] = np;
     }
     

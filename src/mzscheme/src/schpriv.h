@@ -191,6 +191,7 @@ extern Scheme_Object *scheme_def_exit_proc;
 
 extern Scheme_Object *scheme_orig_stdout_port;
 extern Scheme_Object *scheme_orig_stdin_port;
+extern Scheme_Object *scheme_orig_stderr_port;
 
 extern Scheme_Object *scheme_arity_at_least;
 
@@ -1336,7 +1337,7 @@ int scheme_is_complete_path(const char *s, long len);
 
 Scheme_Object *scheme_get_file_directory(const char *filename);
 
-char *scheme_normal_path_case(char *s, int len);
+char *scheme_normal_path_case(char *s, int *_len);
 
 char *scheme_expand_filename(char* filename, int ilen, char *errorin, int *ex);
 

@@ -967,9 +967,13 @@ char *scheme_getdrive()
 
 #ifdef DOS_FILE_SYSTEM
 
-char *strip_trailing_spaces(const char *s, int len)
+char *strip_trailing_spaces(const char *s, int *_len)
 {
-  if (len < 0)
+  int len;
+
+  if (_len)
+    len = *_len;
+  else
     len = strlen(s);
 
   if (len && (s[len - 1] == ' ')) {
@@ -982,6 +986,9 @@ char *strip_trailing_spaces(const char *s, int len)
     t = (char *)scheme_malloc_atomic(len + 1);
     memcpy(t, s, len);
     t[len] = 0;
+
+    if (_len)
+      *_len = len;
 
     return t;
   }
@@ -1023,7 +1030,7 @@ static int is_special_filename(const char *_f, int not_nul)
     }
     if (j && !sf[j]) {
       j += delta;
-      f = strip_trailing_spaces(f, -1);
+      f = strip_trailing_spaces(f, NULL);
 
       if (!f[j])
 	return 1;
@@ -1525,16 +1532,17 @@ static Scheme_Object *link_exists(int argc, Scheme_Object **argv)
 #endif
 }
 
-char *scheme_normal_path_case(char *si, int len)
+char *scheme_normal_path_case(char *si, int *_len)
 {
 #ifdef PALMOS_STUFF
   return si;
 #else
 # ifndef UNIX_FILE_SYSTEM
   int i;
-  char *s;
+  unsigned char *s;
+  int len = *_len;
 
-  s = MALLOC_N_ATOMIC(char, len + 1);
+  s = (unsigned char *)MALLOC_N_ATOMIC(char, len + 1);
   memcpy(s, si, len + 1);
 
   for (i = 0; i < len; i++) {
@@ -1546,10 +1554,10 @@ char *scheme_normal_path_case(char *si, int len)
   }
 
 #  ifdef DOS_FILE_SYSTEM
-  s = strip_trailing_spaces(s, len);
+  s = (unsigned char *)strip_trailing_spaces((char *)s, _len);
 #  endif
 
-  return s;
+  return (char *)s;
 # else
   return si;
 # endif
@@ -2805,8 +2813,8 @@ static Scheme_Object *normal_path_case(int argc, Scheme_Object *argv[])
   {
     int len = SCHEME_STRTAG_VAL(argv[0]);
     char *nc;
-    nc = scheme_normal_path_case(SCHEME_STR_VAL(argv[0]), len);
-    return scheme_make_sized_string(nc, -1, 0);
+    nc = scheme_normal_path_case(SCHEME_STR_VAL(argv[0]), &len);
+    return scheme_make_sized_string(nc, len, 0);
   }
 #endif
 }

@@ -121,12 +121,25 @@ void *scheme_global_lock;
 int scheme_global_lock_c;
 #endif
 
+static void skip_certain_things(Scheme_Object *o, Scheme_Close_Manager_Client *f, void *data)
+{
+  if ((o == scheme_orig_stdin_port)
+      || (o == scheme_orig_stdout_port)
+      || (o == scheme_orig_stderr_port))
+    return;
+
+  /* f is NULL for threads */
+  if (f)
+    f(o, data);
+}
+
 Scheme_Env *scheme_basic_env()
 {
   Scheme_Env *env;
 
   if (scheme_main_process) {
     /* Reset everything: */
+    scheme_do_close_managed(NULL, skip_certain_things);
     scheme_main_process = NULL;
 
     scheme_reset_finalizations();

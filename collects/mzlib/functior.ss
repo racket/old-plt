@@ -291,7 +291,7 @@
 	     (if (pair? (cdr l))
 		 (last-pair (cdr l))
 		 l)
-	     (error 'last-pair "argument not a pair")))))
+	     (raise-type-error 'last-pair "pair" l)))))
 
     (define cons? (lambda (x) (pair? x)))
     (define empty? (lambda (x) (null? x)))

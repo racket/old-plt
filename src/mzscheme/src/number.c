@@ -688,7 +688,7 @@ Scheme_Object *scheme_make_double(double d)
 {
   Scheme_Double *sd;
 
-  if (!d) {
+  if (d == 0.0) {
     if (minus_zero_p(d))
       return nzerod;
 #ifdef NAN_EQUALS_ANYTHING

@@ -216,8 +216,13 @@
 	     (let-values ([(base name dir?) (split-path (file:normalize-path filename))])
 	       base)))
 
-      (define (get-filename)
-	filename)
+      (define get-filename
+        (case-lambda
+         [() (get-filename #f)]
+         [(b)
+          (when (box? b)
+            (set-box! b #f))
+          filename]))
 
       (define (set-filename _filename)
 	(set! filename _filename)

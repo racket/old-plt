@@ -14,7 +14,7 @@
 ;; Don't forget to raise Invalid arument
 	      (begin
 		(vector-set! arr pos item)
-		(make-<unit> #f)))))
+		(make-<unit>)))))
 
 	(define (make-array k)
 	  (lambda (item)

@@ -188,7 +188,7 @@
      (define (mkdefinestructs scll)
        (if (null? scll)
 	   null
-	   (cons #`(define-struct (#,(datum->syntax-object (current-compile-context) (string->symbol (syntax-object->datum (caar scll)))) <user-type>) (tlist) (make-inspector)) (mkdefinestructs (cdr scll)))))
+	   (cons #`(define-struct (#,(datum->syntax-object (current-compile-context) (string->symbol (syntax-object->datum (caar scll)))) <user-type>) #,(if (null? (cdar scll)) #`() #`(tlist)) (make-inspector)) (mkdefinestructs (cdr scll)))))
 
      (define (mkdefine binding)
        #`(define #,(car binding) #,(cdr binding)))
@@ -282,10 +282,11 @@
 		 (if constr
 		     (if (null? expr)
 			 (begin
-			   ;(pretty-print (format "constr found: ~a" constr))
+;			 (pretty-print (format "constr found: ~a" constr))
 			 (if (symbol? (cdr constr))
-			     #`(#,(cdr constr) #f)
+			     #`(#,(cdr constr))
 			     (create-syntax #f (cdr constr) (build-src (longident-src name))))
+			     
 			 )
 			 (let ([args (compile-expr (ast:expression-pexp_desc expr) (ast:expression-pexp_src expr) context)])
 			   #`(#,(cdr constr) #,@(cond
@@ -340,7 +341,7 @@
 			   (make-<unit>))))]
 
 	      [($ ast:pexp_for var init test up body)
-	       (pretty-print (format "for testc: ~a" test))
+;	       (pretty-print (format "for testc: ~a" test))
 	       (let ([initc (compile-ml init context)]
 		     [testc (compile-ml test context)]
 		     [bodyc (compile-ml body context)]
@@ -403,7 +404,7 @@
 	       (cond [(and (null? pat) (not bool) (if (hash-table-get <constructors> (unlongident name) (lambda () #f)) #t #f))
 		      (let ([cconstr (hash-table-get <constructors> (unlongident name))])
 			(if (tconstructor? (car cconstr))
-			    #`($ #,(string->symbol (unlongident name)) #f)
+			    #`($ #,(string->symbol (unlongident name)))
 			    (cdr cconstr)))]
 		     [(not bool)
 		      (let ([constructor (hash-table-get <constructors> (unlongident name) (lambda () #f))])

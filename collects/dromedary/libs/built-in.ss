@@ -141,6 +141,10 @@
 	  (lambda (b)
 	    (/ a b)))
 
+	(define (<quotient> a)
+	  (lambda (b)
+	    (quotient a b)))
+
 	(define (<mod> a)
 	  (lambda (b)
 	    (modulo a b)))
@@ -487,7 +491,7 @@
 
 	(hash-table-put! <pervasive-funcs> "*" (cons (make-arrow (list "int") (make-arrow (list "int") "int") ) <*>))
 
-	(hash-table-put! <pervasive-funcs> "/" (cons (make-arrow (list "int") (make-arrow (list "int") "int") ) </>))
+	(hash-table-put! <pervasive-funcs> "/" (cons (make-arrow (list "int") (make-arrow (list "int") "int") ) <quotient>))
 
 	(hash-table-put! <pervasive-funcs> "mod" (cons (make-arrow (list "int") (make-arrow (list "int") "int") ) <mod>))
 

@@ -90,9 +90,11 @@
 		   (let ([tkind (ast:type_declaration-kind (cdr (car tdlist)))])
 		     (cond
 		      [(ast:ptype_abstract? tkind)
-		       (pretty-print (format "ptype_abstract: ~a" (syntax-object->datum (car (car tdlist)))))
+;		       (pretty-print (format "ptype_abstract: ~a" (syntax-object->datum (car (car tdlist)))))
 		       (make-tconstructor (car (convert-list (map make-tvar (ast:type_declaration-params (cdr (car tdlist)))) null null)) (syntax-object->datum (car (car tdlist))))]
-		      [(ast:ptype_variant? tkind) (make-usertype (syntax-object->datum (car (car tdlist))) (car (convert-list (map make-tvar (ast:type_declaration-params (cdr (car tdlist)))) null null)))]
+		      [(ast:ptype_variant? tkind) 
+;		       (pretty-print (format "ptype_variant: ~a" (syntax-object->datum (car (car tdlist)))))
+		       (make-usertype (syntax-object->datum (car (car tdlist))) (car (convert-list (map make-tvar (ast:type_declaration-params (cdr (car tdlist)))) null null)))]
 		      [else (raise-error #f
 					 (loc)
 					 (format "Bad kind: ~a" tkind)
@@ -121,7 +123,7 @@
 											      (cond 
 											       [(null? args) null]
 											       [(= (length args) 1) (car args)]
-											       [else (make-<tuple> args)])) "exception" ) #`#,(string->symbol (format "make-~a" (syntax-object->datum name)))))
+											       [else (make-<tuple> args)])) "exception" ) (string->symbol (format "make-~a" (syntax-object->datum name)))))
 			 nconst))]
 		       
 		    [else
@@ -217,11 +219,26 @@
 								   [else (format "something I don't understand: ~a" expr)]))
 						    (string->symbol (unlongident name))
 						    src))
-				   (begin
-				     ;(pretty-print (format "tconstructor-argtype is: ~a" (tconstructor-argtype constructor)))
-				     (when (unify (tconstructor-argtype constructor) (typecheck-ml expr context) (ast:expression-pexp_src expr))
-					   (tconstructor-result constructor)
-				       )
+				   (begin				     
+;				     (pretty-print (format "tconstructor-argtype is: ~a" (tconstructor-argtype constructor)))
+				     (if (null? expr)
+					 (raise-error #f
+						      (loc)
+						      (let ([num
+							     (if (<tuple>? (tconstructor-argtype constructor))
+								 (length (<tuple>-list (tconstructor-argtype constructor)))
+								 1)])
+							(format "The constructor ~a expects ~a argument~a but was given no arguments"
+							(unlongident name)
+							num
+							(if (= 1 num)
+							    ""
+							    "s")))
+						      (string->symbol (unlongident name))
+						      src)
+					 (when (unify (tconstructor-argtype constructor) (typecheck-ml expr context) (ast:expression-pexp_src expr))
+					       (tconstructor-result constructor)
+					       ))
 				     )
 				   )
 			       constructor)
@@ -277,6 +294,7 @@
 		      [($ ast:ptype_abstract dummy)
 		       (let ([rtype (typecheck-type (ast:type_declaration-manifest typedecl) boundlist params)])
 			 (begin
+;			   (pretty-print (format "abstract type being stored: ~a" rtype))
 			   (hash-table-put! <constructors> name (cons rtype "some error"))
 			   (make-tabstract name
 					   (map make-tvar params)
@@ -546,13 +564,11 @@
 		    [($ ast:ptyp_tuple ctlist)
 		     (make-<tuple> (map typecheck-type ctlist (repeat boundlist (length ctlist)) (repeat decl? (length ctlist))))]
 		    [($ ast:ptyp_constr name ctlist)
-		     (pretty-print (format "ptyp_constr ~a ~a" (unlongident name) ctlist))
+;		     (pretty-print (format "ptyp_constr ~a ~a" (unlongident name) ctlist))
 		     (let* ([cexists (get-type (unlongident name) boundlist)]
 			    [fconstructor (if cexists
 					;(car (convert-tvars cexists null))
-					      (begin 
-						(pretty-print (format "cexists: ~a" cexists))
-					      cexists)
+					      cexists
 					      (constructor-lookup (unlongident name)))]
 ;			    [foobar (pretty-print (format "constructor-lookup: ~a" (unlongident name)))]
 			    )
@@ -560,7 +576,7 @@
 		       (if fconstructor
 			   (cond
 			    [(tconstructor? fconstructor)
-			     (pretty-print "fconstructor in typecheck-type is tconstructor - this case should never occur")
+;			     (pretty-print "fconstructor in typecheck-type is tconstructor - this case should never occur")
 			     (if (null? (tconstructor-argtype fconstructor))
 				 (if (null? ctlist)
 				     (tconstructor-result fconstructor)
@@ -645,12 +661,13 @@
 					      (string->symbol fconstructor)
 					      (ast:core_type-src asttype)))]
 			    [else
-			     (raise-error #f
-					  (loc)
-					  (format "I don't know how to handle this. fcontructor: ~a ctlist: ~a"
-						  fconstructor ctlist)
-					  fconstructor
-					  (ast:core_type-src asttype))])
+;			     (raise-error #f
+;					  (loc)
+;					  (format "I don't know how to handle this. fcontructor: ~a ctlist: ~a"
+;						  fconstructor ctlist)
+;					  fconstructor
+;					  (ast:core_type-src asttype))])
+			     fconstructor])
 			   (raise-error #f 
 					(loc)
 					(format "Unbound type constructor: ~a"

@@ -29,7 +29,7 @@
 		(send bitmap get-height))))
 
     (define gc-off-dc 
-      (let ([bitmap (make-object wx:bitmap% gc-width gc-height 1)]
+      (let ([bitmap (make-object wx:bitmap% gc-width gc-height)]
 	    [mdc (make-object wx:memory-dc%)])
 	(send mdc select-object bitmap)
 	(send mdc clear)

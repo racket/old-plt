@@ -230,4 +230,43 @@ THINGS TO DO FOR PLANET IN GENERAL
            [(eof-object? sexpr) '()]
            [else (cons sexpr (read-all ip))]))]))
 
-  (define (wrap x) (begin (write x) (newline) x)))
+  (define (wrap x) (begin (write x) (newline) x))
+  
+  
+  ;; ============================================================
+  ;; TREE STUFF
+  ;; ============================================================
+  
+  ;; tree[X] ::= (make-branch X (listof tree[X])
+  (define-struct branch (node children))
+  
+  ;; directory->tree : directory (string -> bool) -> tree[string]
+  (define (directory->tree directory valid-dir?)
+    (let-values ([(path name _) (split-path directory)])
+      (let* ((files (directory-list directory))
+             (files (map (lambda (d) (build-path directory d)) files))
+             (files (filter (lambda (d) (and (directory-exists? d) (valid-dir? d))) files)))
+        (make-branch name (map (lambda (d) (directory->tree d valid-dir?)) files)))))
+
+  ;; filter-tree-by-pattern : tree[x] (listof (x -> y)) -> tree[y]
+  ;; constraint: depth of the tree <= length of the list
+  ;; converts the tree by applying to each depth the function at that position in the list
+  (define (filter-tree-by-pattern tree pattern)
+    (cond
+      [(null? pattern) (error 'filter-tree-by-pattern "Tree too deep")]
+      [else
+       (make-branch ((car pattern) (branch-node tree))
+                    (map 
+                     (lambda (x) (filter-tree-by-pattern x (cdr pattern)))
+                     (branch-children tree)))]))
+
+  ;; sexp-tree[x] ::= (cons x (listof sexp-tree[x]))
+  
+  ;; tree->list : tree[x] -> sexp-tree[x]
+  (define (tree->list tree)
+    (cons (branch-node tree) (map tree->list (branch-children tree))))
+  
+  
+  
+  
+  )

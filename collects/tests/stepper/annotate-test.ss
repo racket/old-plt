@@ -669,7 +669,17 @@
   (namespace-require '(lib "htdp-beginner.ss" "lang")))
 
 (namespace-annotate-expr #'(or 3 4 5) beginner-namespace)
-(syntax-object->datum (namespace-annotate-expr #'(or true false true) beginner-namespace))
+(syntax-case (namespace-annotate-expr #'(or true false true) beginner-namespace) (let-values if with-continuation-mark begin set-)
+  [(let-values bindings 
+     (with-continuation-mark 
+      key
+      mark
+      (begin
+        
+        
+  
+  
+  )
 
 ;(let ([expanded (namespace-annotate-expr #'(or 3 4 5) beginner-namespace)])
 ;  (test 'comes-from-or syntax-property expanded 'stepper-hint)

@@ -179,6 +179,8 @@
                  ((,highlight-placeholder) ((cond [false 4] [else 9])))
                  ((,highlight-placeholder) (9))))
 
+(map syntax-object->datum (annotate-exprs '((or true false true)) 0 (lambda (x) x) beginner-namespace))
+
 (test-beginner-sequence (list '(or true false true))
                `((((or ,highlight-placeholder false true)) (true))
                  (((or ,highlight-placeholder false true)) (true))

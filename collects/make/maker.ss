@@ -39,7 +39,7 @@
 			     (lambda (s indent)
 			       (printf "~achecking ~a~n" indent s)
 			       (let ([line (assoc s spec)]
-				     [date (if (directory-exists? s)
+				     [date (if (not (directory-exists? s))
 					       +inf.0
 					       (file-or-directory-modify-seconds s))])
 				 (if line

@@ -834,7 +834,7 @@
 	 __typeof
 
 	 ;; These don't act like functions:
-	 setjmp longjmp _setjmp _longjmp scheme_setjmp scheme_longjmp
+	 setjmp longjmp _setjmp _longjmp scheme_setjmp scheme_longjmp scheme_mz_setjmp scheme_mz_longjmp
 	 
 	 ;; The following are functions, but they don't trigger GC, and
 	 ;; they either take one argument or no pointer arguments.

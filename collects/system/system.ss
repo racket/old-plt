@@ -75,7 +75,7 @@
 		   "collection"
 		   "unit file"
 		   "sig/macros file")]
-		 [("-n")
+		 [("-u" "--non-unitized")
 		  ,(lambda (_)
 		     (set! info config-info)
 		     '-n)
@@ -119,6 +119,9 @@
 		    [wx : wx^]
 		    mzlib:command-line^)
 	    (define leftover-args null)
+
+	    (printf "parse command line system: ~a~n" (list->vector input-args))
+
 	    (parse-command-line "mred"
 				(list->vector input-args)
 				table

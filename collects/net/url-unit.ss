@@ -402,24 +402,10 @@
       ;; purify-port : in-port -> header-string
       (define purify-port
         (lambda (port)
-	  (let char-loop ([chars '()][empty-line? #t])
-	    (let ([c (read-char port)])
-	      (if (eof-object? c)
-		  (list->string (reverse chars)) ; INCOMPLETE MIME
-		  (if (char=? c #\return)
-		      ;; Got CR; look for LF:
-		      (let ([c2 (read-char port)])
-			(if (eq? c2 #\newline)
-			    ;; that's a line
-			    (let ([chars (list* c2 c chars)])
-			      (if empty-line?
-				  (list->string (reverse chars))
-				  (char-loop chars #t)))
-			    ;; ERROR: CR without LF
-			    (if (eof-object? c2)
-				(list->string (reverse (cons c chars))) ; INCOMPLETE MIME
-				(char-loop (list* c2 c chars) #f))))
-		      (char-loop (cons c chars) #f)))))))
+	  (let ([m (regexp-match-peek-positions #rx"^.*?\r\n\r\n" port)])
+	    (if m
+		(read-string (cdar m) port)
+		""))))
       
       (define character-set-size 256)
       
@@ -439,7 +425,7 @@
                       url))))))
       
       ;; string->url : str -> url
-      ;; New implemenation, mostly provided by Neil Van Dyke
+      ;; New implementation, mostly provided by Neil Van Dyke
       (define string->url
 	(let ((rx (regexp (string-append
 			   "^"
@@ -488,11 +474,19 @@
 						#f))))
 			       (get-num (lambda (pos skip-left skip-right)
 					  (let ((s (get-str pos skip-left skip-right)))
-					    (if s (string->number s) #f)))))
+					    (if s (string->number s) #f))))
+			       (host (get-str 5  0 0)))
 			  (make-url/user (get-str 2  0 1) ; scheme
-					 (get-str 5  0 0) ; host
+					 host
 					 (get-num 6  1 0) ; port
-					 (get-str 7  0 0) ; path
+					 (let ([path (get-str 7  0 0)])
+					   ;; If path is "" and the input is an absolute URL 
+					   ;; with a hostname, then the intended path is "/", 
+					   ;; but the URL is missing a "/" at the end.
+					   (if (and (string=? path "")
+						    host)
+					       path ; "/"
+					       path))
 					 (get-str 8  1 0) ; params
 					 (get-str 9  1 0) ; query
 					 (get-str 10 1 0) ; fragment
@@ -592,7 +586,6 @@
 			    (and fragment-start
 			      (substring string fragment-start
 				fragment-finish)))))))))))))
-|#
       
       ;; parse-host/port/path : str x num x num -> (str + #f) + (num + #f) + str
       (define parse-host/port/path
@@ -642,4 +635,7 @@
 			   #f
 			   (substring path begin-point end-point)))))
 		 (else
-		  (loop (add1 index) first-colon first-slash)))))))))))
+		  (loop (add1 index) first-colon first-slash))))))))
+|#
+
+)))

@@ -19,7 +19,7 @@
 					  "index.htm"))))
     
     (define frame%
-      (class mred:simple-menu-frame% (name snip)
+      (class (mred:make-searchable-frame% mred:simple-menu-frame%) (name snip)
 	(inherit panel)
 	(public
 	  [file-menu:new-string "Compound Unit"]

@@ -500,6 +500,7 @@
 				[mzlls (call-info info launcher-libraries (lambda () #f) (or-f name-list))]
 				[mzlfs (call-info info launcher-flags (lambda () #f) (or-f flags-list))])
                             (cond
+                             [(null? mzlns) (void)]
                              [(not (or mzlls mzlfs))
                               (unless (null? mzlns)
                                 (setup-printf

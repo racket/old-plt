@@ -25,15 +25,18 @@
   (provide/contract
    (sba-error-gravity (sba-error? . -> . (symbols 'red 'orange 'green)))
    (sba-error-message (sba-error? . -> . string?))
-   (error-table-make  (-> error-table?))
+   (make-error-table  (-> error-table?))
    (error-table? (any? . -> . boolean?))
    (error-table-set (error-table? (listof lab:label?) (symbols 'red 'orange 'green) string? . -> . void?))
    (error-table-get (error-table? lab:label? . -> . (listof sba-error?)))
    )
   
+  (define real-make-error-table make-error-table)
+  
   ; -> error-table
-  (define (error-table-make)
-    (make-error-table (make-assoc-set)))
+  (set! make-error-table
+        (lambda ()
+          (real-make-error-table (make-assoc-set))))
   
   ; top -> boolean
   ; error-table? comes from the structure definition

@@ -4,6 +4,7 @@
   (define-struct (exn:make struct:exn) (target orig-exn))
   
   (define make-print-checking (make-parameter #t))
+  (define make-print-dep-no-line (make-parameter #t))
 
   ;(define-type line (list (union string (list-of string)) (list-of string) thunk))
   ;(define-type spec (list-of line))
@@ -68,47 +69,58 @@
     (check-spec spec)
     (check-argv argv)
 
-    (letrec ([make-file
+    (letrec ([made null]
+	     [make-file
 	      (lambda (s indent)
-		(when (make-print-checking)
-		  (printf "make: ~achecking ~a~n" indent s))
 		(let ([line (find-matching-line s spec)]
-		      [date (if (directory-exists? s)
-				+inf.0
-				(and (file-exists? s)
-				     (file-or-directory-modify-seconds s)))])
+		      [date (and (or (directory-exists? s)
+				     (file-exists? s))
+				 (file-or-directory-modify-seconds s))])
+
+		(when (and (make-print-checking)
+			   (or line
+			       (make-print-dep-no-line)))
+		  (printf "make: ~achecking ~a~n" indent s))
+
 		  (if line
 		      (let ([deps (cadr line)])
 			(for-each (lambda (d) (make-file d (string-append " " indent))) deps)
-			(when (or (not date)
-				  (ormap (lambda (dep) (and (file-exists? dep)
-							    (> (file-or-directory-modify-seconds dep) date))) 
-					 deps))
-			  (let ([l (cddr line)])
-			    (unless (null? l)
-			      (printf "make: ~amaking ~a~n"
-				      (if (make-print-checking) indent "")
-				      s)
-			      (with-handlers ([(lambda (x) (not (exn:misc:user-break? x)))
-					       (lambda (exn)
-						 (raise (make-exn:make (format "make: Failed to make ~a; ~a"
-									       (car line)
-									       (if (exn? exn)
-										   (exn-message exn)
-										   exn))
-								       (if (exn? exn)
-									   (exn-debug-info exn)
-									   ((debug-info-handler)))
-								       (car line)
-								       exn)))])
-				((car l)))))))
+			(let ([reason
+			       (or (not date)
+				   (ormap (lambda (dep) (and (file-exists? dep)
+							     (> (file-or-directory-modify-seconds dep) date)
+							     dep)) 
+					  deps))])
+			  (when reason
+			    (let ([l (cddr line)])
+			      (unless (null? l)
+				(set! made (cons s made))
+				(printf "make: ~amaking ~a~n"
+					(if (make-print-checking) indent "")
+					s)
+				(with-handlers ([(lambda (x) (not (exn:misc:user-break? x)))
+						 (lambda (exn)
+						   (raise (make-exn:make (format "make: Failed to make ~a; ~a"
+										 (car line)
+										 (if (exn? exn)
+										     (exn-message exn)
+										     exn))
+									 (if (exn? exn)
+									     (exn-debug-info exn)
+									     ((debug-info-handler)))
+									 (car line)
+									 exn)))])
+				  ((car l))))))))
 		      (unless date
 			(error 'make "don't know how to make ~a" s)))))])
       (cond
 	[(string? argv) (make-file argv "")]
 	[(equal? argv #()) (make-file (caar spec) "")]
-	[else (for-each (lambda (f) (make-file f "")) (vector->list argv))])))
+	[else (for-each (lambda (f) (make-file f "")) (vector->list argv))])
 
+      (for-each (lambda (item)
+		  (printf "make: made ~a~n" item))
+		(reverse made))))
 
   (define make/proc
     (case-lambda

@@ -44,8 +44,6 @@ wxPrinterDC::wxPrinterDC(THPrint pData) : wxCanvasDC()
 	/* MATTHEW: [6] */
 	__type = wxTYPE_DC_PRINTER;
 
-	GrafPtr oldPort;
-	::GetPort(&oldPort);
     prRecHandle = pData;
     PrOpen();
 	if (PrError()) {
@@ -65,7 +63,6 @@ wxPrinterDC::wxPrinterDC(THPrint pData) : wxCanvasDC()
 
     cMacDC = new wxMacDC((CGrafPtr)&(prPort->gPort));
 	GrafPtr theMacGrafPort = (GrafPtr)cMacDC->macGrafPort();
-	::SetPort((GrafPtr)theMacGrafPort);
 	
 	cMacDoingDrawing = FALSE;
 
@@ -116,8 +113,6 @@ wxPrinterDC::wxPrinterDC(THPrint pData) : wxCanvasDC()
 //  current_text_background = NULL;
   SetBrush(wxWHITE_BRUSH);
   SetPen(wxBLACK_PEN);
-
-  //::SetPort(oldPort);
 
   int clientWidth, clientHeight;
   //the_canvas->GetClientSize(&clientWidth, &clientHeight);

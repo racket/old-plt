@@ -288,7 +288,6 @@ Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		bm->SetHeight(xbmImage->pHIGH);
 		bm->SetDepth(1);
 		bm->SetOk(TRUE);
-  		SetGWorld(saveport, savegw);
   		XpmFree (xbmImage->pic);
 		delete xbmImage;
 		return TRUE;

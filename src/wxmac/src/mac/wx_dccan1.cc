@@ -61,14 +61,11 @@ void wxCanvasDC::Init(wxCanvas* the_canvas)
 {
   __type = wxTYPE_DC_CANVAS;
 
-  GrafPtr oldPort;
-  ::GetPort(&oldPort);
   canvas = the_canvas;
   if (canvas) {
     WXGC_IGNORE(canvas);
    cMacDC = canvas->MacDC();
    CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-   ::SetPort((GrafPtr)theMacGrafPort);
    pixmap = theMacGrafPort->portPixMap;
   }
 
@@ -119,8 +116,6 @@ void wxCanvasDC::Init(wxCanvas* the_canvas)
   SetBrush(wxWHITE_BRUSH);
   SetPen(wxBLACK_PEN);
 
-  ::SetPort(oldPort);
-
   if (the_canvas) {
     int clientWidth, clientHeight;
     the_canvas->GetClientSize(&clientWidth, &clientHeight);
@@ -166,15 +161,27 @@ void wxCanvasDC::EndDrawing(void)
 	cMacDoingDrawing = FALSE;
 }
 
+GDHandle wxGetGDHandle(void)
+{
+  static GDHandle def_dev_handle = 0;
+
+  if (!def_dev_handle) {
+    CGrafPtr p;
+    GetGWorld(&p, &def_dev_handle);
+  }
+  
+  return def_dev_handle;
+}
+
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetCurrentDC(void) // mac platform only
 //-----------------------------------------------------------------------------
 {
 	if (!Ok()) return;
- 
+	 
         CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-	if ((GrafPtr)theMacGrafPort != qd.thePort) 
-		::SetPort((GrafPtr)theMacGrafPort);
+	if ((GrafPtr)theMacGrafPort != qd.thePort)
+	  ::SetGWorld((CGrafPtr)theMacGrafPort, wxGetGDHandle());
 
 	if (cMacDC->currentUser() != this)
 	{ // must setup platform
@@ -212,13 +219,16 @@ void wxCanvasDC::SetCanvasClipping(void)
     	wxObject* theCurrentUser = cMacDC->currentUser();
 	if (theCurrentUser == this)
 	{ // must update platfrom
-		GrafPtr theOldPort = qd.thePort;
+		CGrafPtr savep;
+		GDHandle savegd;
 		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort((GrafPtr)theMacGrafPort);
+		 
+		::GetGWorld(&savep, &savegd);  
+		::SetGWorld((CGrafPtr)theMacGrafPort, wxGetGDHandle());
 
 		wxMacSetClip();
 
-		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort(theOldPort);
+		::SetGWorld(savep, savegd);
 	}
 }
 
@@ -374,13 +384,16 @@ void wxCanvasDC::SetBackground(wxColour* color)
         if (cMacDC->currentUser() == this
 		&& (cMacCurrentTool == kNoTool))
 	{ // must update platform to kNoTool
-		GrafPtr theOldPort = qd.thePort;
+		CGrafPtr savep;
+		GDHandle savegd;
 		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort((GrafPtr)theMacGrafPort);
+		 
+		::GetGWorld(&savep, &savegd);  
+		::SetGWorld((CGrafPtr)theMacGrafPort, wxGetGDHandle());
 
-        InstallColor(*color, FALSE);
+        	InstallColor(*color, FALSE);
 
-		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort(theOldPort);
+		::SetGWorld(savep, savegd);
 	}
     }
 

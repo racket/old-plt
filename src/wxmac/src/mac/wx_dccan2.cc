@@ -540,9 +540,6 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 {
 	if (!Ok() || !source->Ok()) return FALSE;
 
-	// Switch Gworld to this
-	SetGWorld(cMacDC->macGrafPort(), 0);
-	cMacDC->setCurrentUser(NULL); // macDC no longer valid
 	SetCurrentDC();
 	
 	if (source->GetDepth() == 1) {

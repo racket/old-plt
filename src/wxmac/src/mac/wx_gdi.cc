@@ -194,10 +194,12 @@ static long TextFontInfo(int font, int size, int face, FontInfo *finfo, char *st
                 || (fc != face));
       
   if (str || isdiff) {
-    GrafPtr oldPort;
-	::GetPort(&oldPort);
-	::SetPort((GrafPtr)gMacFontGrafPort);
-	
+    CGrafPtr savep;
+    GDHandle savegd;
+		 
+    ::GetGWorld(&savep, &savegd);  
+    ::SetGWorld((CGrafPtr)gMacFontGrafPort, wxGetGDHandle());
+
 	if (isdiff) {
 	  ::TextFont(fn = font);
 	  ::TextSize(sz = size);
@@ -209,7 +211,7 @@ static long TextFontInfo(int font, int size, int face, FontInfo *finfo, char *st
 	if (str)
 	  result = TextWidth(str, 0, strlen(str));
 	
-	::SetPort(oldPort);
+    ::SetGWorld(savep, savegd);
   }
   
   memcpy(finfo, &fontInfo, sizeof(FontInfo));
@@ -768,6 +770,7 @@ Bool wxBitmap::Create(int wid, int hgt, int deep)
                   (deep == 1) ? 0 : noNewDevice);
   if (err == noErr) {
 	  SetGWorld(newGWorld, 0);
+	  ::LockPixels(::GetGWorldPixMap(newGWorld));
 	  if (depth < 1)
 	    depth = wxDisplayDepth();
 	  ::EraseRect(&bounds);

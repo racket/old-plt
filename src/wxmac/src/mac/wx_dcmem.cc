@@ -115,7 +115,6 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
     if (gworldH) {
 	pixmap = ::GetGWorldPixMap(gworldH);
 	
-	SetGWorld(gworldH, 0);
 	cMacDC = new wxMacDC(gworldH);
 	// bitmap->DrawMac(0, 0);
 	ok = TRUE;

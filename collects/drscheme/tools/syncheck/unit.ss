@@ -751,7 +751,7 @@
 			(lambda (expr recur)
 			  (cond
 			    [(drscheme:rep:process/zodiac-finish? expr)
-			     (unless (drscheme:rep:process/zodiac-finish-error? expr)
+			     (when (drscheme:rep:process/zodiac-finish-error? expr)
 			       (send interactions-edit insert-prompt))]
 			    [else
 			     (color-loop expr)

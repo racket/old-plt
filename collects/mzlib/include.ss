@@ -57,6 +57,7 @@
 		      (let loop ()
 			(let ([r (with-handlers ([not-break-exn?
 						  (lambda (exn)
+						    (close-input-port p)
 						    (raise-syntax-error
 						     #f
 						     (format
@@ -69,6 +70,7 @@
 			  (if (eof-object? r)
 			      null
 			      (cons r (loop)))))])
+		 (close-input-port p)
 		 ;; Preserve src info for content, but set its
 		 ;; lexical context to be that of the include expression
 		 (let ([lexed-content

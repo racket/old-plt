@@ -346,17 +346,13 @@
                             (parse-error-port (lambda () (open-input-text-editor text 
                                                                                  (drscheme:language:text/pos-start input)
                                                                                  (drscheme:language:text/pos-end input))))
-                                                ;(open-input-string (send text get-text
-                                                ;                         (drscheme:language:text/pos-start input)
-                                                ;                         (drscheme:language:text/pos-end input)))))
+                            (my-syntax-source (lambda () (open-input-text-editor text
+                                                                              (drscheme:language:text/pos-start input)
+                                                                              (drscheme:language:text/pos-end input))))
                             (values
                              (open-input-text-editor text 
                                                      (drscheme:language:text/pos-start input)
                                                      (drscheme:language:text/pos-end input))
-;                              (send text
-;                                    get-text
-;                                    (drscheme:language:text/pos-start input)
-;                                    (drscheme:language:text/pos-end input)))
                              text))])              
               (let ((main-mod #f)
                     (require? #f)
@@ -401,10 +397,10 @@
                                                 (open-input-text-editor text 
                                                      (drscheme:language:text/pos-start input)
                                                      (drscheme:language:text/pos-end input))))
-;                                                (open-input-string
-;                                                 (send text get-text 
-;                                                       (drscheme:language:text/pos-start input)
-;                                                       (drscheme:language:text/pos-end input)))))
+                            (my-syntax-source (lambda ()
+                                             (open-input-text-editor text
+                                                                     (drscheme:language:text/pos-start input)
+                                                                     (drscheme:language:text/pos-end input))))
                             (values
                              (open-input-text-editor text 
                                                      (drscheme:language:text/pos-start input)

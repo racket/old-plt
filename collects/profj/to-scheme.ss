@@ -26,12 +26,13 @@
   (define module-require (make-parameter ""))
     
   (define stx-for-original-property (read-syntax #f (open-input-string "original")))
+  (define (stx-for-source) (read-syntax #f ((my-syntax-source))))
   (define create-syntax
     (lambda (oddness sexpression source)
-      (datum->syntax-object (or oddness (syntax-location)) sexpression source stx-for-original-property)))
+      (datum->syntax-object (or oddness (syntax-location) (stx-for-source)) sexpression source stx-for-original-property)))
   (define make-syntax
     (lambda (oddness sexpression source)
-      (datum->syntax-object (or oddness (syntax-location)) sexpression source)))
+      (datum->syntax-object (or oddness (syntax-location) (stx-for-source)) sexpression source)))
   
   ;-------------------------------------------------------------------------------------------------------------
   
@@ -457,6 +458,7 @@
     (let ((old-class-name (class-name))
           (old-parent-name (parent-name))
           (old-override-table (class-override-table)))
+      (unless (> depth 0) (loc (def-file class)))
       
       (let*-values (((header) (def-header class))
                     ((parent parent-src) 
@@ -469,7 +471,6 @@
                     ((fields) (separate-fields (members-field class-members) (make-accesses null null null null null null))))
         
         ;set class specific parameters - old ones are safe
-        (when (> depth 0) (loc (def-file class)))
         (class-name (id-string (header-id header)))
         (parent-name parent)
         (class-override-table (make-hash-table))

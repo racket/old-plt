@@ -1715,7 +1715,8 @@
                 
         (when (and (memq 'protected mods) (reference-type? exp-type) 
                    (or (not (is-eq-subclass? this exp-type))
-                       (not (package-members? (cdr c-class) (ref-type-path exp-type) type-recs))))
+                       (not (package-members? c-class (cons (ref-type-class/iface exp-type) (ref-type-path exp-type))
+                                              type-recs))))
           (call-access-error 'pro level name exp-type src))
         (when (and (memq 'private mods)
                    (reference-type? exp-type)
@@ -1725,7 +1726,8 @@
                        (not (eq? this (send type-recs get-class-record exp-type)))))
           (call-access-error 'pri level name exp-type src))
         (when (and (not (memq 'private mods)) (not (memq 'public mods)) (not (memq 'protected mods))
-                   (package-members? (cdr c-class) (ref-type-path exp-type) type-recs))
+                   (not (package-members? c-class (cons (ref-type-class/iface exp-type) 
+                                                        (ref-type-path exp-type)) type-recs)))
           (call-access-error 'pac level name exp-type src))
         (when (eq? level 'full)
           (for-each (lambda (thrown)
@@ -1797,10 +1799,11 @@
         (when (and (memq 'private mods) (not (eq? class-record this)))
           (class-access-error 'pri level type src))
         (when (and (memq 'protected mods) (or (not (is-eq-subclass? this type)) 
-                                              (package-members? (cdr c-class) (ref-type-path type) type-recs)))
+                                              (not (package-members? c-class (cons (ref-type-class/iface type) 
+                                                                                   (ref-type-path type)) type-recs))))
           (class-access-error 'pro level type src))
         (when (and (not (memq 'private mods)) (not (memq 'protected mods)) (not (memq 'public mods))
-                   (package-members? (cdr c-class) (ref-type-path type) type-recs))
+                   (not (package-members? c-class (cons (ref-type-class/iface type) (ref-type-path type)) type-recs)))
           (class-access-error 'pac level type src))
         ((if (class-alloc? exp) set-class-alloc-ctor-record! set-inner-alloc-ctor-record!)exp const)
         type)))
@@ -2220,7 +2223,7 @@
           (c (string->symbol class)))
       (raise-error n
                    (case level
-                     ((intermediate) (format "Attempt to use class or interface ~a as an object to call method ~a" c n))
+                     ((beginner intermediate) (format "Attempt to use class or interface ~a as an object to call method ~a" c n))
                      ((advanced) (format "Attempt to use method ~a from class ~a as though it were static" n c)))
                    c src)))
   

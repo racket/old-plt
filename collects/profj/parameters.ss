@@ -28,4 +28,7 @@
   ;Stores a function to get the port for parse errors
   (define parse-error-port (make-parameter (lambda () void)))
   
+  ;Stores a function to get the port for syntax-source to be fed to read-syntax
+  (define my-syntax-source (make-parameter #f))
+  
   ) 

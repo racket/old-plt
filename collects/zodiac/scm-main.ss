@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.194 1999/10/21 04:53:21 shriram Exp $
+; $Id: scm-main.ss,v 1.195 1999/10/26 15:03:36 robby Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1932,7 +1932,7 @@
 			      (else
 			       (static-error expr
 					     (string-append "Malformed " kwd-string))))))])
-	      (add-micro-form kwd-symbol beginner-vocabulary micro)
+	      (add-micro-form kwd-symbol full-vocabulary micro)
 	      (if on-demand?
 		  (add-on-demand-form 'micro kwd-symbol scheme-vocabulary micro)
 		  (add-micro-form kwd-symbol scheme-vocabulary micro))))))

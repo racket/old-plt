@@ -88,19 +88,23 @@
       ;; ---------- Set up the menus
 
       [flush-type-cache (lambda () (void))]
-
+      [check-alist #f]
+      [set-show-mode-and-menu
+       (lambda (which)
+	 (set-show-mode which)
+	 (for-each
+	  (lambda (c)
+	    (send (car c) check (eq? (cadr c) which)))
+	  check-alist))]
       [calc-show
-        (lambda ()
-          (set-show-mode 'program)
-          (when (and 
-                  summary-canvas
-                  ;; Show summary only if some real content
-                  (> (send summary-edit last-line) 3))
-            ;;(printf "Summary-edit size ~s~n" (send summary-edit last-line))
-            (set-show-mode 'both)))]
-
-      [init-show-menu #f]
-      )
+       (lambda ()
+	 (set-show-mode-and-menu
+	  (if (and summary-canvas
+		   ;; Show summary only if some real content
+		   (> (send summary-edit last-line) 3))
+	       'both
+	       'program)))]
+      [init-show-menu #f])
     
     (override
 
@@ -140,7 +144,6 @@
           ;; and to load and annotate file
           (set! program-edit 
             (send main annotated-edit display-mode filename program-canvas))
-	  (send program-edit set-style-list (scheme:get-style-list))
           (send program-canvas set-editor program-edit))]
 
       [focus-def
@@ -196,7 +199,6 @@
 	     [check-program #f]
 	     [check-summary #f]
 	     [check-both #f]
-	     [check-alist #f]
 	     [show-callback 
 	      (lambda (item _)
 		(for-each
@@ -327,20 +329,7 @@
                      )])
          (when (send icon ok?) (set-icon icon)))
 
-      ;; ------------------------------------------------------------
-      ;; status help line 
-
-      ;;(unless (eq? mred:platform 'macintosh)
-      ;;  (create-status-line))
-
-      ;;(set-status-text 
-      ;; "Mouse: Left-type/parents  Midde-Ancestors  Right-Close")
-      ;; ------------------------------------------------------------
-
-      ;;(set-display-mode display-mode)
       (calc-show)
-      (show #t)
-      
-      ))))
+      (show #t)))))
 
 

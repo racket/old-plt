@@ -57,6 +57,14 @@ const CLSID emptyClsId;
 static Scheme_Object *mx_omit_obj; /* omitted argument placeholder */
 static Scheme_Object *mx_name;     /* module name */
 
+/* Normally false, but when true, mysterx will marshal any scheme */
+/* object it would otherwise fail to marshal by simply sticking   */
+/* the 32-bit value in an UNSIGNED I4 variant and hoping for the  */
+/* best.  Obviously this has GC implications, so don't use it.    */
+/* jrm uses it for dotnet.                                        */
+
+static int mx_marshal_raw_scheme_objects;
+
 Scheme_Object *scheme_date_type;
 
 static MX_TYPE_TBL_ENTRY *typeTable[TYPE_TBL_SIZE];
@@ -382,6 +390,8 @@ static MX_PRIM mxPrims[] = {
 
 };
 
+#define SCHEME_NONNEGATIVE(thing) (SCHEME_INTP(thing) && SCHEME_INT_VAL(thing) >= 0)
+
 BOOL isEmptyClsId(CLSID clsId) {
   if (memcmp(&clsId,&emptyClsId,sizeof(CLSID)) == 0) {
     return TRUE;
@@ -491,11 +501,7 @@ void mx_register_object(Scheme_Object *obj,IUnknown *pIUnknown,
 Scheme_Object *mx_com_add_ref(int argc,Scheme_Object **argv) {
   IDispatch *pIDispatch;
 
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-add-ref","com-object",0,argc,argv);
-  }
-
-  pIDispatch = MX_COM_OBJ_VAL(argv[0]);
+  pIDispatch = MX_COM_OBJ_VAL (GUARANTEE_COM_OBJ ("com-add-ref", 0));
 
   pIDispatch->AddRef();
 
@@ -506,11 +512,7 @@ Scheme_Object *mx_com_ref_count(int argc,Scheme_Object **argv) {
   IDispatch *pIDispatch;
   unsigned long n;
 
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-add-ref","com-object",0,argc,argv);
-  }
-
-  pIDispatch = MX_COM_OBJ_VAL(argv[0]);
+  pIDispatch = MX_COM_OBJ_VAL (GUARANTEE_COM_OBJ ("com-ref-count", 0));
 
   n = pIDispatch->AddRef();
   n--;
@@ -524,12 +526,11 @@ void mx_register_com_object(Scheme_Object *obj,IDispatch *pIDispatch) {
   mx_register_object(obj,pIDispatch,scheme_release_com_object);
 }
 
-Scheme_Object *mx_com_register_object(int argc,Scheme_Object **argv) {
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-register-com-object","com-object",0,argc,argv);
-  }
+Scheme_Object *mx_com_register_object(int argc,Scheme_Object **argv)
+{
+  GUARANTEE_COM_OBJ ("com-register-com-object", 0);
 
-  mx_register_com_object(argv[0],MX_COM_OBJ_VAL(argv[0]));
+  mx_register_com_object (argv[0], MX_COM_OBJ_VAL(argv[0]));
 
   return scheme_void;
 }
@@ -596,10 +597,9 @@ void scheme_release_document(void *doc,void *) {
   MX_MANAGED_OBJ_RELEASED(doc) = TRUE;
 }
 
-Scheme_Object *mx_com_release_object(int argc,Scheme_Object **argv) {
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-release-object","com-object",0,argc,argv);
-  }
+Scheme_Object *mx_com_release_object(int argc,Scheme_Object **argv)
+{
+  GUARANTEE_COM_OBJ ("com-release-object", 0);
 
   scheme_release_com_object((void *)argv[0],MX_COM_OBJ_VAL(argv[0]));
 
@@ -842,30 +842,18 @@ Scheme_Object *mx_cocreate_instance_from_coclass(int argc,Scheme_Object **argv) 
   char *location;
   char *machine;
 
-  if (SCHEME_STRINGP (argv[0]) == FALSE &&
-      SCHEME_SYMBOLP (argv[0]) == FALSE) {
-    scheme_wrong_type("cocreate-instance-from-coclass","string or symbol",0,argc,argv);
-  }
-
   bindCocreateLocation(argc,argv,&location,&machine,
 		       "cocreate-instance-from-coclass");
 
-  coclass = SCHEME_STRINGP (argv[0])
-      ? SCHEME_STR_VAL (argv[0])
-      : SCHEME_SYM_VAL (argv[0]);
+  coclass = SCHEME_STRSYM_VAL (GUARANTEE_STRSYM ("cocreate-instance-from-coclass", 0));
 
   return do_cocreate_instance (getCLSIDFromCoClass (coclass), coclass, location, machine);
 }
 
 CLSID schemeProgIdToCLSID(Scheme_Object *obj,char *fname) {
   HRESULT hr;
-  const char *progId;
   CLSID clsId;
   BSTR wideProgId;
-
-  progId = SCHEME_STRINGP (obj)
-      ? SCHEME_STR_VAL (obj)
-      : SCHEME_SYM_VAL (obj);
 
   wideProgId = schemeStringToBSTR(obj);
 
@@ -875,9 +863,9 @@ CLSID schemeProgIdToCLSID(Scheme_Object *obj,char *fname) {
 
   if (FAILED (hr)) {
     char errBuff[2048];
-    sprintf(errBuff,"%s: Error retrieving CLSID from ProgID %s",
-	    fname,progId);
-    codedComError(errBuff,hr);
+    sprintf(errBuff, "%s: Error retrieving CLSID from ProgID %s",
+	    fname, SCHEME_STRSYM_VAL (obj));
+    codedComError (errBuff,hr);
   }
 
   return clsId;
@@ -888,35 +876,22 @@ Scheme_Object *mx_cocreate_instance_from_progid(int argc,
   char *location;
   char *machine;
 
-  if (SCHEME_STRINGP (argv[0]) == FALSE &&
-      SCHEME_SYMBOLP (argv[0]) == FALSE) {
-    scheme_wrong_type("cocreate-instance-from-progid","string or symbol",0,argc,argv);
-  }
+  GUARANTEE_STRSYM ("cocreate-instance-from-progid", 0);
 
   bindCocreateLocation(argc,argv,&location,&machine,
 		       "cocreate-instance-from-progid");
 
   return do_cocreate_instance (schemeProgIdToCLSID (argv[0],"cocreate-instance-from-progid"),
-                               SCHEME_STRINGP (argv[0])
-                               ? SCHEME_STR_VAL (argv[0])
-                               : SCHEME_SYM_VAL (argv[0]),
+                               SCHEME_STRSYM_VAL (argv[0]),
                                location,machine);
 }
 
-Scheme_Object *mx_set_coclass(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_set_coclass(int argc,Scheme_Object **argv)
+{
+  GUARANTEE_COM_OBJ ("set-coclass!", 0);
+  GUARANTEE_STRSYM ("set-coclass!", 1);
 
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("set-coclass!","com-object",0,argc,argv);
-  }
-
-  if (SCHEME_STRINGP (argv[1]) == FALSE &&
-      SCHEME_SYMBOLP (argv[1]) == FALSE) {
-    scheme_wrong_type("set-coclass!","string or symbol",1,argc,argv);
-  }
-
-  MX_COM_OBJ_CLSID(argv[0]) = getCLSIDFromCoClass(SCHEME_STRINGP (argv[1])
-                                                  ? SCHEME_STR_VAL (argv[1])
-                                                  : SCHEME_SYM_VAL (argv[1]));
+  MX_COM_OBJ_CLSID(argv[0]) = getCLSIDFromCoClass (SCHEME_STRSYM_VAL (argv[1]));
 
   return scheme_void;
 }
@@ -937,11 +912,7 @@ Scheme_Object *mx_coclass(int argc,Scheme_Object **argv) {
   int count;
   Scheme_Object *retval;
 
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("coclass","com-object",0,argc,argv);
-  }
-
-  clsId = MX_COM_OBJ_CLSID(argv[0]);
+  clsId = MX_COM_OBJ_CLSID (GUARANTEE_COM_OBJ ("coclass", 0));
 
   if (isEmptyClsId(clsId)) {
     scheme_signal_error("coclass: No coclass for object");
@@ -1050,11 +1021,7 @@ Scheme_Object *mx_progid(int argc,Scheme_Object **argv) {
   char *buff;
   unsigned int len;
 
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("progid","com-object",0,argc,argv);
-  }
-
-  clsId = MX_COM_OBJ_CLSID(argv[0]);
+  clsId = MX_COM_OBJ_CLSID (GUARANTEE_COM_OBJ ("progid", 0));
 
   if (isEmptyClsId(clsId)) {
     scheme_signal_error("progid: No coclass for object");
@@ -1080,21 +1047,12 @@ Scheme_Object *mx_progid(int argc,Scheme_Object **argv) {
   return scheme_make_string(buff);
 }
 
-Scheme_Object *mx_set_coclass_from_progid(int argc,Scheme_Object **argv) {
-  CLSID clsid;
+Scheme_Object *mx_set_coclass_from_progid(int argc,Scheme_Object **argv)
+{
+  GUARANTEE_COM_OBJ ("set-coclass-from-progid!", 0);
+  GUARANTEE_STRSYM ("set-coclass-from-progid!", 1);
 
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("set-coclass-from-progid!","com-object",0,argc,argv);
-  }
-
-  if (SCHEME_STRINGP(argv[1]) == FALSE &&
-      SCHEME_SYMBOLP(argv[1]) == FALSE) {
-    scheme_wrong_type("set-coclass-from-progid!","string or symbol",1,argc,argv);
-  }
-
-  clsid = schemeProgIdToCLSID (argv[1], "set-coclass-from-progid!");
-
-  MX_COM_OBJ_CLSID(argv[0]) = clsid;
+  MX_COM_OBJ_CLSID(argv[0]) = schemeProgIdToCLSID (argv[1], "set-coclass-from-progid!");
 
   return scheme_void;
 }
@@ -1135,9 +1093,7 @@ Scheme_Object *mx_com_get_object_type(int argc,Scheme_Object **argv) {
   MX_COM_Type *retval;
   MX_COM_Object *obj;
 
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-object-type","com-object",0,argc,argv);
-  }
+  GUARANTEE_COM_OBJ ("com-object-type", 0);
 
   obj = (MX_COM_Object *)argv[0];
   pITypeInfo = typeInfoFromComObject(obj);
@@ -1188,13 +1144,8 @@ BOOL typeInfoEq(ITypeInfo *pITypeInfo1,ITypeInfo *pITypeInfo2) {
 Scheme_Object *mx_com_is_a(int argc,Scheme_Object **argv) {
   ITypeInfo *pITypeInfo1,*pITypeInfo2;
 
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-is-a?","com-object",0,argc,argv);
-  }
-
-  if (MX_COM_TYPEP(argv[1]) == FALSE) {
-    scheme_wrong_type("com-is-a?","com-type",1,argc,argv);
-  }
+  GUARANTEE_COM_OBJ ("com-is-a?", 0);
+  GUARANTEE_COM_TYPE ("com-is-a?", 1);
 
   pITypeInfo1 = typeInfoFromComObject((MX_COM_Object *)argv[0]);
   pITypeInfo2 = MX_COM_TYPE_VAL((MX_COM_Type *)argv[1]);
@@ -1209,20 +1160,17 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
   char buff[MAX_PATH];
   unsigned int len;
 
-  if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-help","com-object or com-type",0,argc,argv);
-  }
+  GUARANTEE_COM_OBJ_OR_TYPE ("com-help", 0);
 
-  if (argc == 2 && SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("com-help","string",1,argc,argv);
-  }
+  if (argc == 2)
+      GUARANTEE_STRSYM ("com-help", 1);
 
-  if (MX_COM_OBJP(argv[0])) {
-    pITypeInfo = typeInfoFromComObject((MX_COM_Object *)argv[0]);
-  }
-  else {
-    pITypeInfo = MX_COM_TYPE_VAL(argv[0]);
-  }
+  pITypeInfo =
+      MX_COM_TYPEP (argv[0])
+      ? MX_COM_TYPE_VAL(argv[0])
+      : (MX_COM_OBJ_VAL(argv[0]) == NULL)
+      ? (scheme_signal_error ("com-help: NULL COM object"), (ITypeInfo *) NULL)
+      : typeInfoFromComObject((MX_COM_Object *)argv[0]);
 
   hr = pITypeInfo->GetDocumentation(MEMBERID_NIL,NULL,NULL,NULL,
 				    &helpFileName);
@@ -1249,7 +1197,7 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
 
     if (argc >= 2) {
       hwnd = HtmlHelp(NULL,buff,
-		      HH_DISPLAY_INDEX,(DWORD)SCHEME_STR_VAL(argv[1]));
+		      HH_DISPLAY_INDEX,PtrToInt (SCHEME_STRSYM_VAL (argv[1])));
     }
     else {
       hwnd = HtmlHelp(NULL,buff,HH_DISPLAY_TOPIC,0);
@@ -1261,7 +1209,7 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
   }
   else if (stricmp(buff + len - 4,".HLP") == 0) {
     if (argc >= 2) {
-      WinHelp(NULL,buff,HELP_KEY,(DWORD)(SCHEME_STR_VAL(argv[1])));
+      WinHelp(NULL,buff,HELP_KEY,PtrToInt (SCHEME_STRSYM_VAL (argv[1])));
     }
     else {
       WinHelp(NULL,buff,HELP_FINDER,0);
@@ -1414,28 +1362,14 @@ FUNCDESC *getFuncDescForEvent(LPOLESTR name,ITypeInfo *pITypeInfo) {
 }
 
 Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
-  const char *eventName;
   ITypeInfo *pITypeInfo;
   ISink *pISink;
   FUNCDESC *pFuncDesc;
   BSTR unicodeName;
 
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-register-event-handler","com-object",0,argc,argv);
-  }
-
-  if (SCHEME_STRINGP (argv[1]) == FALSE &&
-      SCHEME_SYMBOLP (argv[1]) == FALSE) {
-    scheme_wrong_type("com-register-event-handler","string or symbol",1,argc,argv);
-  }
-
-  if (SCHEME_PROCP(argv[2]) == FALSE) {
-    scheme_wrong_type("com-register-event-handler","procedure",2,argc,argv);
-  }
-
-  eventName = SCHEME_STRINGP (argv[1])
-      ? SCHEME_STR_VAL (argv[1])
-      : SCHEME_SYM_VAL (argv[1]);
+  GUARANTEE_COM_OBJ   ("com-register-event-handler", 0);
+  GUARANTEE_STRSYM    ("com-register-event-handler", 1);
+  GUARANTEE_PROCEDURE ("com-register-event-handler", 2);
 
   connectComObjectToEventSink((MX_COM_Object *)argv[0]);
 
@@ -1448,9 +1382,8 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
 
   SysFreeString(unicodeName);
 
-  if (pFuncDesc == NULL) {
-    scheme_signal_error("Can't find event %s in type description",eventName);
-  }
+  if (pFuncDesc == NULL)
+      scheme_signal_error ("Can't find event %s in type description", SCHEME_STRSYM_VAL (argv[1]));
 
   pISink->register_handler(pFuncDesc->memid, argv[2]);
 
@@ -1460,26 +1393,14 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
 }
 
 Scheme_Object *mx_com_unregister_event_handler(int argc,Scheme_Object **argv) {
-  const char *eventName;
   ITypeInfo *pITypeInfo;
   ISink *pISink;
   FUNCDESC *pFuncDesc;
   BSTR unicodeName;
 
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-unregister-event-handler","com-object",0,argc,argv);
-  }
+  GUARANTEE_STRSYM  ("com-unregister-event-handler", 1);
 
-  if (SCHEME_STRINGP (argv[1]) == FALSE &&
-      SCHEME_SYMBOLP (argv[1]) == FALSE) {
-    scheme_wrong_type("com-unregister-event-handler","string or symbol",1,argc,argv);
-  }
-
-  eventName = SCHEME_STRINGP (argv[1])
-      ? SCHEME_STR_VAL (argv[1])
-      : SCHEME_SYM_VAL (argv[1]);
-
-  pITypeInfo = MX_COM_OBJ_EVENTTYPEINFO(argv[0]);
+  pITypeInfo = MX_COM_OBJ_EVENTTYPEINFO (GUARANTEE_COM_OBJ ("com-unregister-event-handler", 0));
 
   if (pITypeInfo == NULL) {
     scheme_signal_error("No event type information for object");
@@ -1497,9 +1418,8 @@ Scheme_Object *mx_com_unregister_event_handler(int argc,Scheme_Object **argv) {
 
   SysFreeString(unicodeName);
 
-  if (pFuncDesc == NULL) {
-    scheme_signal_error("Can't find event %s in type description",eventName);
-  }
+  if (pFuncDesc == NULL)
+      scheme_signal_error ("Can't find event %s in type description", SCHEME_STRSYM_VAL (argv[1]));
 
   pISink->unregister_handler(pFuncDesc->memid);
 
@@ -1867,20 +1787,14 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
   TYPEATTR *pTypeAttr;
   Scheme_Object *retval;
 
-  if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-{methods,{get,set}-properties}",
-		      "com-object or com-type",0,argc,argv);
-  }
+  GUARANTEE_COM_OBJ_OR_TYPE ("com-{methods,{get,set}-properties}", 0);
 
-  if (MX_COM_OBJP(argv[0])) {
-    if (MX_COM_OBJ_VAL(argv[0]) == NULL) {
-      scheme_signal_error("com-{methods,{get,set}-properties}: NULL COM object");
-    }
-    pITypeInfo = typeInfoFromComObject((MX_COM_Object *)argv[0]);
-  }
-  else {
-    pITypeInfo = MX_COM_TYPE_VAL(argv[0]);
-  }
+  pITypeInfo =
+      MX_COM_TYPEP (argv[0])
+      ? MX_COM_TYPE_VAL(argv[0])
+      : (MX_COM_OBJ_VAL(argv[0]) == NULL)
+      ? (scheme_signal_error("com-{methods,{get,set}-properties}: NULL COM object"), (ITypeInfo *) NULL)
+      : typeInfoFromComObject((MX_COM_Object *)argv[0]);
 
   hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
 
@@ -2191,22 +2105,16 @@ Scheme_Object *mx_com_events(int argc,Scheme_Object **argv) {
   unsigned int len;
   UINT i;
 
-  if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-events","com-object or com-type",0,argc,argv);
-  }
+  GUARANTEE_COM_OBJ_OR_TYPE ("com-events", 0);
 
-  if (MX_COM_OBJP(argv[0]) && MX_COM_OBJ_VAL(argv[0])== NULL) {
-    scheme_signal_error("NULL COM object");
-  }
+  pEventTypeInfo =
+      MX_COM_TYPEP (argv[0])
+      ? eventTypeInfoFromComType ((MX_COM_Type *)argv[0])
+      : (MX_COM_OBJ_VAL (argv[0]) == NULL)
+      ? (scheme_signal_error ("com-events: NULL COM object"), (ITypeInfo *) NULL)
+      : eventTypeInfoFromComObject ((MX_COM_Object *)argv[0]);
 
   // query for outbound interface info
-
-  if (MX_COM_OBJP(argv[0])) {
-    pEventTypeInfo = eventTypeInfoFromComObject((MX_COM_Object *)argv[0]);
-  }
-  else {
-    pEventTypeInfo = eventTypeInfoFromComType((MX_COM_Type *)argv[0]);
-  }
 
   if (pEventTypeInfo == NULL) {
     scheme_signal_error("Can't find event type information");
@@ -2608,19 +2516,14 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
   BOOL lastParamIsRetval;
   int i;
 
-  if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-method-type","com-object or com-type",0,argc,argv);
-  }
+  GUARANTEE_COM_OBJ_OR_TYPE ("com-method-type", 0);
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("com-method-type","string",1,argc,argv);
-  }
 
   if (MX_COM_OBJ_VAL(argv[0]) == NULL) {
     scheme_signal_error("NULL COM object");
   }
 
-  name = SCHEME_STR_VAL(argv[1]);
+  name = SCHEME_STRSYM_VAL (GUARANTEE_STRSYM ("com-method-type", 1));
 
   if (invKind == INVOKE_FUNC && isDispatchName(name)) {
     scheme_signal_error("com-method-type: IDispatch methods not available");
@@ -2819,7 +2722,7 @@ BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
 
   case VT_BSTR :
 
-    return SCHEME_STRINGP (val) || SCHEME_SYMBOLP (val);
+    return SCHEME_STRSYMP (val);
 
   case VT_CY :
 
@@ -3003,86 +2906,77 @@ void marshalSchemeValueToVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
   if (SCHEME_CHARP(val)) {
     pVariantArg->vt = VT_UI1;
     pVariantArg->bVal = SCHEME_CHAR_VAL(val);
-    return;
   }
 
-  if (SCHEME_EXACT_INTEGERP(val)) {
+  else if (SCHEME_EXACT_INTEGERP(val)) {
     pVariantArg->vt = VT_I4;
     scheme_get_int_val(val,&pVariantArg->lVal);
-    return;
   }
 
 #ifdef MZ_USE_SINGLE_FLOATS
-  if (SCHEME_FLTP(val)) {
+  else if (SCHEME_FLTP(val)) {
     pVariantArg->vt = VT_R4;
     pVariantArg->fltVal = SCHEME_FLT_VAL(val);
-    return;
   }
 #endif
 
-  if (SCHEME_DBLP(val)) {
+  else if (SCHEME_DBLP(val)) {
     pVariantArg->vt = VT_R8;
     pVariantArg->dblVal = SCHEME_DBL_VAL(val);
-    return;
   }
 
-  if (SCHEME_STRINGP (val) ||
-      SCHEME_SYMBOLP (val)) {
+  else if (SCHEME_STRSYMP (val)) {
     pVariantArg->vt = VT_BSTR;
     pVariantArg->bstrVal = schemeStringToBSTR (val);
-    return;
   }
 
-  if (MX_CYP(val)) {
+  else if (MX_CYP(val)) {
     pVariantArg->vt = VT_CY;
     pVariantArg->cyVal = MX_CY_VAL(val);
-    return;
   }
 
-  if (MX_DATEP(val)) {
+  else if (MX_DATEP(val)) {
     pVariantArg->vt = VT_DATE;
     pVariantArg->date = MX_DATE_VAL(val);
-    return;
   }
 
-  if (val == scheme_false) {
+  else if (val == scheme_false) {
     pVariantArg->vt = VT_BOOL;
     pVariantArg->boolVal = 0;
-    return;
   }
 
-  if (val == scheme_true) {
+  else if (val == scheme_true) {
     pVariantArg->vt = VT_BOOL;
     pVariantArg->boolVal = -1;
-    return;
   }
 
-  if (MX_SCODEP(val)) {
+  else if (MX_SCODEP(val)) {
     pVariantArg->vt = VT_ERROR;
     pVariantArg->scode = MX_SCODE_VAL(val);
-    return;
   }
 
-  if (MX_COM_OBJP(val)) {
+  else if (MX_COM_OBJP(val)) {
     pVariantArg->pdispVal = MX_COM_OBJ_VAL(val);
     pVariantArg->vt = VT_DISPATCH;
-    return;
   }
 
-  if (MX_IUNKNOWNP(val)) {
+  else if (MX_IUNKNOWNP(val)) {
     pVariantArg->vt = VT_UNKNOWN;
     pVariantArg->punkVal = MX_IUNKNOWN_VAL(val);
-    return;
   }
 
-  if (SCHEME_VECTORP (val)) {
+  else if (SCHEME_VECTORP (val)) {
     pVariantArg->vt = VT_ARRAY | VT_VARIANT;
     pVariantArg->parray = schemeVectorToSafeArray(val);
-    return;
   }
 
-  scheme_signal_error("Unable to inject Scheme value %V into VARIANT",val);
-
+  else if (scheme_get_param (scheme_config, mx_marshal_raw_scheme_objects) == scheme_false)
+      scheme_signal_error("Unable to inject Scheme value %V into VARIANT",val);
+  else {
+      pVariantArg->vt = VT_INT;
+      pVariantArg->intVal = PtrToInt (val);
+      }
+  return;
 }
 
 void marshalSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
@@ -3784,7 +3678,7 @@ void checkArgTypesAndCounts(FUNCDESC *pFuncDesc,
       sprintf(errBuff,"%s (%s \"%s\")",
 	      mx_fun_string(invKind),
 	      inv_kind_string(invKind),
-	      SCHEME_STR_VAL(argv[1]));
+	      SCHEME_STRSYM_VAL (argv[1]));
       scheme_wrong_count(errBuff,numParamsPassed-1,-1,argc-2,argv+2);
     }
   }
@@ -3798,7 +3692,7 @@ void checkArgTypesAndCounts(FUNCDESC *pFuncDesc,
       sprintf(errBuff,"%s (%s \"%s\")",
 	      mx_fun_string(invKind),
 	      inv_kind_string(invKind),
-	      SCHEME_STR_VAL(argv[1]));
+	      SCHEME_STRSYM_VAL (argv[1]));
       scheme_wrong_count(errBuff,numParamsPassed-numOptParams,numParamsPassed,argc-2,argv+2);
     }
   }
@@ -3816,7 +3710,7 @@ void checkArgTypesAndCounts(FUNCDESC *pFuncDesc,
 
     if (schemeValueFitsElemDesc(argv[j],&pFuncDesc->lprgelemdescParam[k]) == FALSE) {
       sprintf(errBuff,"%s (%s \"%s\")",mx_fun_string(invKind),
-	      inv_kind_string(invKind),SCHEME_STR_VAL(argv[1]));
+	      inv_kind_string(invKind), SCHEME_STRSYM_VAL(argv[1]));
       scheme_wrong_type(errBuff,
 			SCHEME_SYM_VAL(elemDescToSchemeType(&(pFuncDesc->lprgelemdescParam[k]),FALSE,FALSE)),
 			j,argc,argv);
@@ -3932,7 +3826,7 @@ short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
     sprintf(errBuff,"%s (%s \"%s\")",
 	    mx_fun_string(invKind),
 	    inv_kind_string(invKind),
-	    SCHEME_STR_VAL(argv[1]));
+	    SCHEME_STRSYM_VAL (argv[1]));
     scheme_wrong_count(errBuff,
 		       numParamsPassed + 2,numParamsPassed + 2,
 		       argc,argv);
@@ -3947,7 +3841,7 @@ short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
     if (schemeValueFitsElemDesc(argv[2],
 				&pVarDesc->elemdescVar) == FALSE) {
       sprintf(errBuff,"%s (%s \"%s\")",mx_fun_string(invKind),
-	      inv_kind_string(invKind),SCHEME_STR_VAL(argv[1]));
+	      inv_kind_string(invKind), SCHEME_STRSYM_VAL(argv[1]));
       scheme_wrong_type(errBuff,
 			SCHEME_SYM_VAL(elemDescToSchemeType(&(pVarDesc->elemdescVar),FALSE,FALSE)),2,argc,argv);
     }
@@ -4108,7 +4002,7 @@ static Scheme_Object *mx_make_direct_call(int argc,Scheme_Object **argv,
   lcidIndex = argsCount.lcidIndex;
 
   if (pTypeDesc->pInterface == NULL) {
-    DWORD *vtbl;
+    COMPTR *vtbl;
 
     hr = pIDispatch->QueryInterface(pTypeDesc->implGuid,(void **)&pInterface);
 
@@ -4116,9 +4010,9 @@ static Scheme_Object *mx_make_direct_call(int argc,Scheme_Object **argv,
       sprintf(buff,"Failed to get direct interface for call to `%s'",name);
       codedComError(buff,hr);
     }
-    vtbl = (DWORD *)reinterpret_cast<int *>(pInterface)[0];
+    vtbl = ((COMPTR * *)pInterface)[0];
     pTypeDesc->pInterface = pInterface;
-    pTypeDesc->funPtr = funPtr = (COMPTR)(vtbl[pTypeDesc->funOffset]);
+    pTypeDesc->funPtr = funPtr = vtbl[pTypeDesc->funOffset];
   }
   else {
     pInterface = pTypeDesc->pInterface;
@@ -4127,13 +4021,10 @@ static Scheme_Object *mx_make_direct_call(int argc,Scheme_Object **argv,
 
   // push return value ptr
 
-  VariantInit(&retvalVa);
-  if (argsCount.retvalInParams) {
-    retvalVa.vt = getVarTypeFromElemDesc(&pFuncDesc->lprgelemdescParam[pFuncDesc->cParams-1]);
-  }
-  else {
-    retvalVa.vt = getVarTypeFromElemDesc(&pFuncDesc->elemdescFunc);
-  }
+  VariantInit (&retvalVa);
+  retvalVa.vt = getVarTypeFromElemDesc (argsCount.retvalInParams
+                                        ? &pFuncDesc->lprgelemdescParam[pFuncDesc->cParams-1]
+                                        : &pFuncDesc->elemdescFunc);
 
   if (invKind != INVOKE_PROPERTYPUT &&
       retvalVa.vt != VT_VOID &&
@@ -4211,21 +4102,13 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   HRESULT hr;
   char buff[256];
 
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type(mx_fun_string(invKind),"com-object",0,argc,argv);
-  }
-
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type(mx_fun_string(invKind),"string",1,argc,argv);
-  }
-
-  pIDispatch = MX_COM_OBJ_VAL(argv[0]);
+  pIDispatch = MX_COM_OBJ_VAL (GUARANTEE_COM_OBJ (mx_fun_string (invKind), 0));
 
   if (pIDispatch == NULL) {
     scheme_signal_error("NULL COM object");
   }
 
-  name = SCHEME_STR_VAL(argv[1]);
+  name = SCHEME_STRSYM_VAL (GUARANTEE_STRSYM (mx_fun_string (invKind), 1));
 
   if (invKind == INVOKE_FUNC && isDispatchName(name)) {
     sprintf(buff,"%s: IDispatch methods may not be called",
@@ -4351,7 +4234,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   if (FAILED (hr)) {
     char buff[2048];
     sprintf(buff,"\"%s\" (%s) failed",
-	    SCHEME_STR_VAL(argv[1]),inv_kind_string(invKind));
+	    SCHEME_STRSYM_VAL(argv[1]), inv_kind_string(invKind));
     codedComError(buff,hr);
   }
 
@@ -4509,14 +4392,8 @@ Scheme_Object *mx_com_object_eq(int argc,Scheme_Object **argv) {
   IDispatch *pIDispatch1,*pIDispatch2;
   Scheme_Object *retval;
 
-  for (int i = 0; i < 2; i++) {
-    if (MX_COM_OBJP(argv[i]) == FALSE) {
-      scheme_wrong_type("com-object-eq?","com-object",i,argc,argv);
-    }
-  }
-
-  pIDispatch1 = MX_COM_OBJ_VAL(argv[0]);
-  pIDispatch2 = MX_COM_OBJ_VAL(argv[1]);
+  pIDispatch1 = MX_COM_OBJ_VAL (GUARANTEE_COM_OBJ ("com-object-eq?", 0));
+  pIDispatch2 = MX_COM_OBJ_VAL (GUARANTEE_COM_OBJ ("com-object-eq?", 1));
 
   // these should never fail
 
@@ -4537,11 +4414,7 @@ Scheme_Object *mx_document_title(int argc,Scheme_Object **argv) {
   BSTR bstr;
   Scheme_Object *retval;
 
-  if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("document-title","mx-document",0,argc,argv);
-  }
-
-  pDocument = MX_DOCUMENT_VAL(argv[0]);
+  pDocument = MX_DOCUMENT_VAL (GUARANTEE_DOCUMENT ("document-title", 0));
 
   hr = pDocument->get_title(&bstr);
 
@@ -4567,11 +4440,7 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
   IDispatch *pObjectDispatch;
   MX_COM_Object *com_object;
 
-  if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("document-objects","mx-document",0,argc,argv);
-  }
-
-  pDocument = MX_DOCUMENT_VAL(argv[0]);
+  pDocument = MX_DOCUMENT_VAL (GUARANTEE_DOCUMENT ("document-objects", 0));
 
   hr = pDocument->get_body(&pBody);
 
@@ -4646,15 +4515,9 @@ Scheme_Object *mx_elements_with_tag(int argc,Scheme_Object **argv) {
   IDispatch *pDispatch;
   int i;
 
-  if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("elements-with-tag","mx-document",0,argc,argv);
-  }
+  GUARANTEE_STRSYM ("elements-with-tag", 1);
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("elements-with-tag","string",1,argc,argv);
-  }
-
-  pDocument = MX_DOCUMENT_VAL(argv[0]);
+  pDocument = MX_DOCUMENT_VAL (GUARANTEE_DOCUMENT ("elements-with-tag", 0));
 
   pDocument->get_body(&pBody);
 
@@ -4662,12 +4525,12 @@ Scheme_Object *mx_elements_with_tag(int argc,Scheme_Object **argv) {
     scheme_signal_error("elements-with-tag: Can't find document BODY");
   }
 
-  if (stricmp(SCHEME_STR_VAL(argv[1]),"BODY") == 0) {
+  if (stricmp (SCHEME_STRSYM_VAL (argv[1]), "BODY") == 0) {
     return scheme_make_pair((Scheme_Object *)(make_mx_element(pBody)),
 			    scheme_null);
   }
 
-  pCollection = getBodyElementsWithTag(pBody,SCHEME_STR_VAL(argv[1]));
+  pCollection = getBodyElementsWithTag(pBody, SCHEME_STRSYM_VAL (argv[1]));
 
   pBody->Release();
 
@@ -4846,22 +4709,12 @@ Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
   MX_Element *retval;
   int index;
 
-  if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("find-element","mx-document",0,argc,argv);
-  }
+  GUARANTEE_DOCUMENT ("find-element", 0);
+  GUARANTEE_STRSYM   ("find-element", 1);
+  GUARANTEE_STRSYM   ("find-element", 2);
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("find-element","string",1,argc,argv);
-  }
-
-  if (SCHEME_STRINGP(argv[2]) == FALSE) {
-    scheme_wrong_type("find-element","string",2,argc,argv);
-  }
-
-  if (argc > 3 && (SCHEME_INTP(argv[3]) == FALSE ||
-		   SCHEME_INT_VAL(argv[3]) < 0)) {
-    scheme_wrong_type("find-element","nonnegative integer",3,argc,argv);
-  }
+  if (argc > 3)
+      GUARANTEE_NONNEGATIVE ("find-element", 3);
   if (argc > 3) {
     index = SCHEME_INT_VAL(argv[3]);
   }
@@ -4870,13 +4723,14 @@ Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
   }
 
   pIHTMLElement = findBodyElement(MX_DOCUMENT_VAL(argv[0]),
-				  SCHEME_STR_VAL(argv[1]),
-				  SCHEME_STR_VAL(argv[2]),
+				  SCHEME_STRSYM_VAL (argv[1]),
+				  SCHEME_STRSYM_VAL (argv[2]),
 				  index);
 
   if (pIHTMLElement == NULL) {
     scheme_signal_error("find-element: HTML element with tag = %s, id = %s not found",
-			SCHEME_STR_VAL(argv[1]),SCHEME_STR_VAL(argv[2]));
+			SCHEME_STRSYM_VAL(argv[1]),
+                        SCHEME_STRSYM_VAL(argv[2]));
   }
 
   retval = make_mx_element(pIHTMLElement);
@@ -4890,29 +4744,13 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
   IHTMLElementCollection *pIHTMLElementCollection;
   IHTMLDocument2 *pIHTMLDocument2;
   VARIANT name,index;
-  const char * id_or_name;
   BSTR bstr;
   IDispatch *pEltDispatch;
 
-  if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("find-element-by-id-or-name","mx-document",0,argc,argv);
-  }
+  if (argc > 2)
+      GUARANTEE_NONNEGATIVE ("find-element-by-id-or-name", 2);
 
-  if (SCHEME_STRINGP (argv[1]) == FALSE &&
-      SCHEME_SYMBOLP (argv[1]) == FALSE) {
-    scheme_wrong_type("find-element-by-id-or-name","string or symbol",1,argc,argv);
-  }
-
-  id_or_name = SCHEME_STRINGP (argv[1])
-      ? SCHEME_STR_VAL (argv[1])
-      : SCHEME_SYM_VAL (argv[1]);
-
-  if (argc > 2 && (SCHEME_INTP(argv[2]) == FALSE ||
-		   SCHEME_INT_VAL(argv[2]) < 0)) {
-    scheme_wrong_type("find-element-by-id-or-name","nonnegative integer",2,argc,argv);
-  }
-
-  pIHTMLDocument2 = MX_DOCUMENT_VAL(argv[0]);
+  pIHTMLDocument2 = MX_DOCUMENT_VAL (GUARANTEE_DOCUMENT ("find-element-by-id-or-name", 0));
 
   hr = pIHTMLDocument2->get_all(&pIHTMLElementCollection);
 
@@ -4922,7 +4760,7 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
 			"from HTML document");
   }
 
-  bstr = schemeStringToBSTR (argv[1]);
+  bstr = schemeStringToBSTR (GUARANTEE_STRSYM ("find-element-by-id-or-name", 1));
 
   name.vt = VT_BSTR;
   name.bstrVal = bstr;
@@ -4938,7 +4776,7 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
 
   if (pEltDispatch == NULL) {
     scheme_signal_error("find-element-by-id-or-name: "
-			"Couldn't find element with id = %s", id_or_name);
+			"Couldn't find element with id = %s", SCHEME_STRSYM_VAL (argv[1]));
   }
 
   hr = pEltDispatch->QueryInterface(IID_IHTMLElement,(void **)&pIHTMLElement);
@@ -4946,7 +4784,8 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
   if (FAILED (hr) || pIHTMLElement == NULL) {
     scheme_signal_error("find-element-by-id-or-name: "
 			"Couldn't retrieve element interface "
-			"for element with id = %s", id_or_name);
+			"for element with id = %s",
+                        SCHEME_STRSYM_VAL (argv[1]));
   }
 
   return (Scheme_Object *)(make_mx_element(pIHTMLElement));
@@ -4962,24 +4801,16 @@ Scheme_Object *mx_clsid_to_html(CLSID clsId,
   char heightBuff[25];
   char buff[512];
   char *format;
-  int i;
 
-  for (i = 1; i <= 2; i++) {
-    if (SCHEME_INTP(argv[i]) == FALSE) {
-      scheme_wrong_type(fname,"int",i,argc,argv);
-    }
-  }
+  GUARANTEE_INTEGER (fname, 1);
+  GUARANTEE_INTEGER (fname, 2);
 
   format = "%u";
 
   if (argc > 3) {
     char *symString;
 
-    if (SCHEME_SYMBOLP(argv[3]) == FALSE) {
-      scheme_wrong_type(fname,"symbol",3,argc,argv);
-    }
-
-    symString = SCHEME_SYM_VAL(argv[3]);
+    symString = SCHEME_STRSYM_VAL (GUARANTEE_STRSYM (fname, 3));
 
     if (stricmp(symString,"percent") == 0) {
       format = "%u%%";
@@ -5016,13 +4847,9 @@ Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
   char *controlName;
   CLSID clsId;
 
-  if (SCHEME_STRINGP(argv[0]) == FALSE) {
-    scheme_wrong_type("coclass->html","string",0,argc,argv);
-  }
+  controlName = SCHEME_STRSYM_VAL (GUARANTEE_STRSYM ("coclass->html", 0));
 
-  controlName = SCHEME_STR_VAL(argv[0]);
-
-  clsId = getCLSIDFromCoClass(controlName);
+  clsId = getCLSIDFromCoClass (controlName);
 
   if (isEmptyClsId(clsId)) {
     scheme_signal_error("coclass->html: Coclass \"%s\" not found",
@@ -5035,29 +4862,19 @@ Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
 
 Scheme_Object *mx_progid_to_html(int argc,Scheme_Object **argv) {
   HRESULT hr;
-  const char * name;
   BSTR wideProgId;
   CLSID clsId;
 
-  if (SCHEME_STRINGP (argv[0]) == FALSE &&
-      SCHEME_SYMBOLP (argv[0]) == FALSE) {
-    scheme_wrong_type("progid->html","string or symbol",0,argc,argv);
-  }
-
-  name = SCHEME_STRINGP (argv[0])
-      ? SCHEME_STR_VAL (argv[0])
-      : SCHEME_SYM_VAL (argv[0]);
-
-  wideProgId = schemeStringToBSTR (argv[0]);
+  wideProgId = schemeStringToBSTR (GUARANTEE_STRSYM ("progid->html", 0));
 
   hr = CLSIDFromProgID(wideProgId,&clsId);
 
   SysFreeString(wideProgId);
 
   if (FAILED (hr))
-      scheme_signal_error("progid->html: ProgID \"%s\" not found", name);
+      scheme_signal_error("progid->html: ProgID \"%s\" not found", SCHEME_STRSYM_VAL (argv[0]));
 
-  return mx_clsid_to_html(clsId,name,"progid->html", argc,argv);
+  return mx_clsid_to_html(clsId,SCHEME_STRSYM_VAL (argv[0]),"progid->html", argc,argv);
 }
 
 Scheme_Object *mx_stuff_html(int argc,Scheme_Object **argv,
@@ -5066,18 +4883,9 @@ Scheme_Object *mx_stuff_html(int argc,Scheme_Object **argv,
   IHTMLElement *pBody;
   BSTR where,html;
 
-  if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type(scheme_name,"mx-document",0,argc,argv);
-  }
+  pDocument = MX_DOCUMENT_VAL (GUARANTEE_DOCUMENT (scheme_name, 0));
 
-  if (SCHEME_STRINGP (argv[1]) == FALSE &&
-      SCHEME_SYMBOLP (argv[1]) == FALSE) {
-    scheme_wrong_type(scheme_name,"string or symbol",1,argc,argv);
-  }
-
-  pDocument = MX_DOCUMENT_VAL(argv[0]);
-
-  html = schemeStringToBSTR (argv[1]);
+  html = schemeStringToBSTR (GUARANTEE_STRSYM (scheme_name, 1));
   pDocument->get_body(&pBody);
 
   if (pBody == NULL) {
@@ -5108,17 +4916,8 @@ Scheme_Object *mx_replace_html(int argc,Scheme_Object **argv) {
   IHTMLElement *pBody;
   BSTR html;
 
-  if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("replace-html","mx-document",0,argc,argv);
-  }
-
-  if (SCHEME_STRINGP (argv[1]) == FALSE &&
-      SCHEME_SYMBOLP (argv[1]) == FALSE) {
-    scheme_wrong_type("replace-html","string or symbol",1,argc,argv);
-  }
-
-  pDocument = MX_DOCUMENT_VAL(argv[0]);
-  html = schemeStringToBSTR (argv[1]);
+  pDocument = MX_DOCUMENT_VAL (GUARANTEE_DOCUMENT ("replace-html", 0));
+  html = schemeStringToBSTR (GUARANTEE_STRSYM ("replace-html", 1));
 
   pDocument->get_body(&pBody);
 
@@ -5275,7 +5074,9 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   }
 
   mx_unmarshal_strings_as_symbols = scheme_new_param();
+  mx_marshal_raw_scheme_objects = scheme_new_param();
   scheme_set_param (scheme_config, mx_unmarshal_strings_as_symbols, scheme_false);
+  scheme_set_param (scheme_config, mx_marshal_raw_scheme_objects, scheme_false);
 
   // export prims + omit value
 
@@ -5361,7 +5162,7 @@ void browserHwndMsgLoop(LPVOID p) {
 		  GetWindowLong(hwnd,GWL_STYLE) & ~1L);
   }
 
-  SetClassLong(hwnd,GCL_HICON,(LONG)hIcon);
+  SetClassLong(hwnd,GCL_HICON,HandleToLong (hIcon));
 
   SetWindowText(hwnd,pBrowserWindowInit->browserWindow.label);
 
@@ -5485,6 +5286,7 @@ initialize_dotnet_runtime (int argc, Scheme_Object **argv)
         scheme_signal_error ("%%%%initialize-dotnet-runtime:  QueryInterface for IDispatch failed.");
 
     scheme_set_param (scheme_config, mx_unmarshal_strings_as_symbols, scheme_true);
+    scheme_set_param (scheme_config, mx_marshal_raw_scheme_objects, scheme_true);
 
     return mx_make_idispatch (pAppDomainDispatch);
 }

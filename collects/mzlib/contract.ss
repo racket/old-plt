@@ -2537,7 +2537,7 @@ add struct contracts for immutable structs?
        (let printable? ([x x])
 	 (or (symbol? x)
 	     (string? x)
-	     ;(bytes? x) ;; no bytes in 206
+	     (bytes? x)
 	     (boolean? x)
 	     (char? x)
 	     (null? x)

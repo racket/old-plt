@@ -23,82 +23,11 @@ treats its command line arguments as filenames and loads them after
 starting up.
 .SH OPTIONS
 
-Startup file and expression switches:
-.TP
-.BI \-l \ language ,\ \-\-language \ language
-Set the language to one of the following:
-"Beginning Student"
-"Intermediate Student"
-"Advanced Student"
-"Textual Full Scheme (MzScheme)"
-.TP
-.BI \-t \ file ,\ \-\-teachpack \ file
-Sets the teachpack to file.
-.TP
-.BR  \-\-case\-sens \ { on , off }
-Enable/disable case-sensitive symbols and variables
-.TP
-.BR \-\-auto\-else\-error \ { on , off }
-Enable/disable non-matching cond/case produces an error
-.TP 
-.BR \-\-improper\-lists \ { on , off }
-Enable/disable improper lists
-.TP
-.BR \-\-print\-sharing \ { on , off }
-Enable/disable show sharing in values
-.TP
-.BR \-\-print\-list \ { on , off }
-Enable/disable use `list' where appropriate in constructor style printing
-.TP
-.BR  \-\-signal\-undef \ { on , off }
-Enable/disable error if using #<undefined> variable
-.TP
-.BR \-\-boolean\-conds \ { on , off }
-Enable/disable conditionals must be #t or #f
-.TP
-.BR \-\-eq\-syms \ { on , off }
-Enable/disable eq? only for symbols
-.TP
-.BR \-\-tag\-inexacts \ { on , off }
-Enable/disable print inexact numbers with #i
-.TP
-.BR \-\-whole\-frac \ { on , off }
-Enable/disable separate whole and fractional parts of exact numbers in printer
-.TP
-.BR \-\-constructor\-printing \ { on , off }
-Enable/disable print values using constructor style input syntax
-.TP
-.BR \-\-quasi\-printing \ { on , off }
-Enable/disable print values using quasi-quote style input syntax
-.TP
-.BI \-\-choose
-Interactively choose the language level
-.TP
-.BI \-\-save\ \ \ 
-Save current settings to ~/.drscheme-jr.settings
-.TP
-.BI \-\-show\ \ \ 
-Show the current settings
-.TP
-.BI \-\-lhelp \ language
-Show the flags implied by a particular language
-.TP
-.B \-\-help,\ \-h
-Show help
-.TP 
-.B \-\-\ \ \ \ \ 
-Do not treat any remaining argument as a flag (at this level)
-
-.PP
-Multiple single-letter flags can be combined after one `-'.
-For example, `-h-' is the same as `-h --'
-If ~/.drscheme-jr.settings exists, it initializes the language settings.
-
 .pp
 For further information on
 .I DrScheme Jr,
-please consult the on-line
-documentation and other information available at
+(including command-line switches) please consult help-desk
+and other information available on the web at:
 .PP
 .ce 1
 http://www.cs.rice.edu/CS/PLT/packages/drschemejr/
@@ -114,7 +43,9 @@ the on-line documentation has been installed locally.
 .SH BUGS
 Submit bug reports via
 .ce 1
-http://www.cs.rice.edu/CS/PLT/Bugs/ (encouraged)
+help-desk
+.ce 1
+http://www.cs.rice.edu/CS/PLT/Bugs/ (discouraged)
 or by e-mail to
 .ce 1
 plt-bugs@cs.rice.edu (discouraged)
@@ -128,3 +59,4 @@ and Paul Steckler (steck@cs.rice.edu).
 .BR drscheme(1),
 .BR mred(1),
 .BR mzscheme(1)
+.BR help-desk(1)

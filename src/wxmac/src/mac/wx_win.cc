@@ -1732,6 +1732,7 @@ void wxWindow::ShowAsActive(Bool flag) // mac platform only
     } else {
       ActivateControl(cPaintControl);
     }
+    Refresh();
   }
 }
 

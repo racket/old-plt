@@ -1,8 +1,5 @@
 - in the language dialog box, "allow set! on undefined" is ignored
 
-- printouts don't break, you must use `kill' to get out of an infinite
-  loop that does lots of printing.
-
 - check syntax doesn't traverse unit or class expressions
 
 - check syntax: identifiers with newlines in them have their arrows

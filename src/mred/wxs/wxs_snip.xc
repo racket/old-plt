@@ -20,7 +20,6 @@
 @SYM "height-depends-on-x" : wxSNIP_HEIGHT_DEPENDS_ON_X
 @SYM "width-depends-on-y" : wxSNIP_WIDTH_DEPENDS_ON_Y
 @SYM "height-depends-on-y" : wxSNIP_HEIGHT_DEPENDS_ON_Y
-@SYM "anchored" : wxSNIP_ANCHORED
 @SYM "uses-buffer-path" : wxSNIP_USES_BUFFER_PATH
 @ENDSYMBOLS
 

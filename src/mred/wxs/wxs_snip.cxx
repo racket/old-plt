@@ -79,7 +79,6 @@ static Scheme_Object *flags_wxSNIP_WIDTH_DEPENDS_ON_X_sym = NULL;
 static Scheme_Object *flags_wxSNIP_HEIGHT_DEPENDS_ON_X_sym = NULL;
 static Scheme_Object *flags_wxSNIP_WIDTH_DEPENDS_ON_Y_sym = NULL;
 static Scheme_Object *flags_wxSNIP_HEIGHT_DEPENDS_ON_Y_sym = NULL;
-static Scheme_Object *flags_wxSNIP_ANCHORED_sym = NULL;
 static Scheme_Object *flags_wxSNIP_USES_BUFFER_PATH_sym = NULL;
 
 static void init_symset_flags(void) {
@@ -104,8 +103,6 @@ static void init_symset_flags(void) {
   flags_wxSNIP_WIDTH_DEPENDS_ON_Y_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("width-depends-on-y"));
   wxREGGLOB(flags_wxSNIP_HEIGHT_DEPENDS_ON_Y_sym);
   flags_wxSNIP_HEIGHT_DEPENDS_ON_Y_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("height-depends-on-y"));
-  wxREGGLOB(flags_wxSNIP_ANCHORED_sym);
-  flags_wxSNIP_ANCHORED_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("anchored"));
   wxREGGLOB(flags_wxSNIP_USES_BUFFER_PATH_sym);
   flags_wxSNIP_USES_BUFFER_PATH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("uses-buffer-path"));
 }
@@ -129,7 +126,6 @@ static int unbundle_symset_flags(Scheme_Object *v, const char *where) {
   else if (i == flags_wxSNIP_HEIGHT_DEPENDS_ON_X_sym) { result = result | wxSNIP_HEIGHT_DEPENDS_ON_X; }
   else if (i == flags_wxSNIP_WIDTH_DEPENDS_ON_Y_sym) { result = result | wxSNIP_WIDTH_DEPENDS_ON_Y; }
   else if (i == flags_wxSNIP_HEIGHT_DEPENDS_ON_Y_sym) { result = result | wxSNIP_HEIGHT_DEPENDS_ON_Y; }
-  else if (i == flags_wxSNIP_ANCHORED_sym) { result = result | wxSNIP_ANCHORED; }
   else if (i == flags_wxSNIP_USES_BUFFER_PATH_sym) { result = result | wxSNIP_USES_BUFFER_PATH; }
   else { break; } 
   l = SCHEME_CDR(l);
@@ -153,7 +149,6 @@ static Scheme_Object *bundle_symset_flags(int v) {
   if (v & wxSNIP_HEIGHT_DEPENDS_ON_X) l = WITH_REMEMBERED_STACK(scheme_make_pair(flags_wxSNIP_HEIGHT_DEPENDS_ON_X_sym, l));
   if (v & wxSNIP_WIDTH_DEPENDS_ON_Y) l = WITH_REMEMBERED_STACK(scheme_make_pair(flags_wxSNIP_WIDTH_DEPENDS_ON_Y_sym, l));
   if (v & wxSNIP_HEIGHT_DEPENDS_ON_Y) l = WITH_REMEMBERED_STACK(scheme_make_pair(flags_wxSNIP_HEIGHT_DEPENDS_ON_Y_sym, l));
-  if (v & wxSNIP_ANCHORED) l = WITH_REMEMBERED_STACK(scheme_make_pair(flags_wxSNIP_ANCHORED_sym, l));
   if (v & wxSNIP_USES_BUFFER_PATH) l = WITH_REMEMBERED_STACK(scheme_make_pair(flags_wxSNIP_USES_BUFFER_PATH_sym, l));
   return l;
 }

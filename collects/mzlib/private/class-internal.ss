@@ -1944,19 +1944,22 @@
 		      (if flatten?
 			  (if (stx-list? (syntax args))
 			      (syntax (let ([this obj])
-					(apply (find-method this `name) this . args)))
+                                        (let-values ([(mth unwrap) (find-method this `name)])
+                                          (apply mth (unwrap this) . args))))
 			      (raise-syntax-error
 			       #f
 			       "bad syntax (illegal use of `.')"
 			       stx))
 			  (if (stx-list? (syntax args))
 			      (with-syntax ([call (syntax/loc stx
-						    ((find-method this `name) this . args))])
+                                                    (let-values ([(mth unwrap) (find-method this `name)])
+                                                      (mth (unwrap this) . args)))])
 				(syntax/loc stx (let ([this obj])
 						  call)))
 			      (with-syntax ([args (flatten-args (syntax args))])
 				(with-syntax ([call (syntax/loc stx
-						      (apply (find-method this `name) this . args))])
+                                                      (let-values ([(mth unwrap) (find-method this `name)])
+                                                        (apply mth (unwrap this) . args)))])
 				  (syntax/loc stx (let ([this obj])
 						    call))))))))])))])
       (values (mk #f) (mk #t))))
@@ -1979,17 +1982,22 @@
 	     (let ([o obj])
 	       . sends)))])))
     
+  ;; find-method/who : ... -> (values method-proc (object -> object))
+  ;; returns the method's procedure and a function to unwrap `this' in the case
+  ;; that this is a wrapper object that is just "falling thru".
   (define (find-method/who who object name)
     (unless (object? object)
       (obj-error who "target is not an object: ~e for method: ~a"
 		 object name))
-    (let loop ([object object])
+    (let loop ([object object]
+               [unwrap (lambda (x) x)])
       (let* ([c (object-ref object)]
              [pos (hash-table-get (class-method-ht c) name (lambda () #f))])
         (cond
-          [pos (vector-ref (class-methods c) pos)]
+          [pos (values (vector-ref (class-methods c) pos) unwrap)]
           [(wrapper-object? object)
-           (loop (wrapper-object-wrapped object))]
+           (loop (wrapper-object-wrapped object)
+                 (compose wrapper-object-wrapped unwrap))]
           [else
            (obj-error who "no such method: ~a~a"
                       name
@@ -2045,7 +2053,8 @@
 			 (string->symbol (format "generic:~a~a" name (for-intf (interface-name intf))))
 			 (format "instance~a" (for-intf (interface-name intf)))
 			 obj))
-		      (find-method obj name)))
+		      (let-values ([(mth unw) (find-method obj name)])
+                        mth)))
 		  (let ([pos (hash-table-get (class-method-ht class) name
 					     (lambda ()
 					       (obj-error 'make-generic "no such method: ~a~a"
@@ -2054,7 +2063,7 @@
 		    (lambda (obj)
 		      (unless ((class-object? class) obj)
 			(raise-type-error 
-			 (symbol->string (format "generic:~a~a" name (for-class (class-name class))))
+			 (string->symbol (format "generic:~a~a" name (for-class (class-name class))))
 			 (format "instance~a" (for-class (class-name class)))
 			 obj))
 		      (vector-ref (class-methods (object-ref obj)) pos))))))])
@@ -2198,7 +2207,8 @@
 			 [(name ...) (map localize names)])
 	     (syntax/loc stx (let-values ([(method method-obj)
 					   (let ([obj obj-expr])
-					     (values (find-with-method obj `name) obj))]
+                                             (let-values ([(mth unwrap) (find-with-method obj `name)])
+                                               (values mth (unwrap obj))))]
 					  ...)
 			       (letrec-syntaxes+values ([(id) (make-with-method-map
 							       (quote-syntax set!)

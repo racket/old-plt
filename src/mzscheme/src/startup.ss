@@ -806,7 +806,7 @@
 	       (let ([defined-names (map 
 				     (lambda (n) (datum->syntax-object name n name)) 
 				     (build-struct-names name field-names))]
-		     [delay? (and (not (memq (syntax-local-context) '(module top-level expression)))
+		     [delay? (and (not (memq (syntax-local-context) '(module module-begin top-level expression)))
 				  super-id)])
 		 (let-values ([(super-id/struct: stx-info) (if delay?
 							       (values #f #f)
@@ -2547,51 +2547,60 @@
 
   (define-syntaxes (begin-for-syntax)
     (lambda (stx)
-      (unless (memq (syntax-local-context) '(module top-level))
-	(raise-syntax-error #f "allowed only at the top-level or a module top-level" stx))
-      (syntax-case stx ()
-	[(_) #'(begin)]
-	[(_ elem elems ...)
-	 ;; We peel off just the first one so that someone else can
-	 ;; worry about the fact that properly expanding the second
-	 ;; things might depend somehow on the first thing.
-	 (with-syntax ([elem  
-			(let ([e (local-transformer-expand
-				  #'elem
-				  (syntax-local-context)
-				  (syntax->list
-				   #'(begin
-				       define-values
-				       define-syntaxes
-				       define-values-for-syntax
-				       set!
-				       let-values
-				       let*-values
-				       letrec-values
-				       lambda
-				       case-lambda
-				       if
-				       quote
-				       letrec-syntaxes+values
-				       fluid-let-syntax
-				       with-continuation-mark
-				       #%app
-				       #%top
-				       #%datum)))])
-			  (syntax-case* e (begin define-values require require-for-template) 
-					module-transformer-identifier=?
-			    [(begin v ...)
-			     #'(begin-for-syntax v ...)]
-			    [(define-values (id ...) expr)
-			     #'(define-values-for-syntax (id ...) expr)]
-			    [(require v ...)
-			     #'(require-for-syntax v ...)]
-			    [(require-for-template v ...)
-			     #'(require v ...)]
-			    [other 
-			     #'(define-values-for-syntax () (begin other (values)))]))]
-		       [rest (syntax/loc stx (begin-for-syntax elems ...))])
-	   (syntax/loc stx (begin elem rest)))]))))
+      (let ([ctx (syntax-local-context)])
+	(unless (memq ctx '(module module-begin top-level))
+	  (raise-syntax-error #f "allowed only at the top-level or a module top-level" stx))
+	(syntax-case stx ()
+	  [(_) #'(begin)]
+	  [(_ elem)
+	   (not (eq? ctx 'module-begin))
+	   (let ([e (local-transformer-expand
+		     #'elem
+		     ctx
+		     (syntax->list
+		      #'(begin
+			  define-values
+			  define-syntaxes
+			  define-values-for-syntax
+			  set!
+			  let-values
+			  let*-values
+			  letrec-values
+			  lambda
+			  case-lambda
+			  if
+			  quote
+			  letrec-syntaxes+values
+			  fluid-let-syntax
+			  with-continuation-mark
+			  #%app
+			  #%top
+			  #%datum)))])
+	     (syntax-case* e (begin define-values define-syntaxes require require-for-template) 
+			   module-transformer-identifier=?
+	       [(begin v ...)
+		#'(begin-for-syntax v ...)]
+	       [(define-values (id ...) expr)
+		#'(define-values-for-syntax (id ...) expr)]
+	       [(require v ...)
+		#'(require-for-syntax v ...)]
+	       [(require-for-template v ...)
+		#'(require v ...)]
+	       [(define-syntaxes (id ...) expr)
+		(raise-syntax-error
+		 #f
+		 "syntax definitions not allowed within begin-for-syntax"
+		 #'elem)]
+	       [other 
+		#'(define-values-for-syntax () (begin other (values)))]))]
+	  [(_ elem ...)
+	   ;; We split up the elems so that someone else can
+	   ;;  worry about the fact that properly expanding the second
+	   ;;  things might depend somehow on the first thing.
+	   ;; This also avoids a problem when `begin-for-syntax' is the
+	   ;;  only thing in a module body, and `module' has to expand
+	   ;;  it looking for #%module-begin.
+	   (syntax/loc stx (begin (begin-for-syntax elem) ...))])))))
 
 ;;----------------------------------------------------------------------
 ;; #%more-scheme : case, do, etc. - remaining syntax

@@ -1203,7 +1203,12 @@ int scheme_is_toplevel(Scheme_Comp_Env *env)
 
 int scheme_is_module_env(Scheme_Comp_Env *env)
 {
-  return !!(env->flags & (SCHEME_MODULE_FRAME | SCHEME_MODULE_BEGIN_FRAME));
+  return !!(env->flags & SCHEME_MODULE_BEGIN_FRAME); /* name is backwards compared to symbol! */
+}
+
+int scheme_is_module_begin_env(Scheme_Comp_Env *env)
+{
+  return !!(env->flags & SCHEME_MODULE_FRAME); /* name is backwards compared to symbol! */
 }
 
 Scheme_Comp_Env *scheme_extend_as_toplevel(Scheme_Comp_Env *env)
@@ -2872,6 +2877,8 @@ local_context(int argc, Scheme_Object *argv[])
     return env->intdef_name;
   } else if (scheme_is_module_env(env))
     return scheme_intern_symbol("module");
+  else if (scheme_is_module_begin_env(env))
+    return scheme_intern_symbol("module-begin");
   else if (scheme_is_toplevel(env))
     return scheme_intern_symbol("top-level");
   else

@@ -189,6 +189,7 @@ static Scheme_Object *let_symbol;
 
 static Scheme_Object *internal_define_symbol;
 static Scheme_Object *module_symbol;
+static Scheme_Object *module_begin_symbol;
 static Scheme_Object *expression_symbol;
 static Scheme_Object *top_level_symbol;
 
@@ -277,11 +278,13 @@ scheme_init_eval (Scheme_Env *env)
   begin_symbol = scheme_intern_symbol("begin");
   
   REGISTER_SO(module_symbol);
+  REGISTER_SO(module_begin_symbol);
   REGISTER_SO(internal_define_symbol);
   REGISTER_SO(expression_symbol);
   REGISTER_SO(top_level_symbol);
 
   module_symbol = scheme_intern_symbol("module");
+  module_begin_symbol = scheme_intern_symbol("module");
   internal_define_symbol = scheme_intern_symbol("internal-define");
   expression_symbol = scheme_intern_symbol("expression");
   top_level_symbol = scheme_intern_symbol("top-level");
@@ -4478,7 +4481,9 @@ do_local_expand(const char *name, int for_stx, int argc, Scheme_Object **argv)
   }
 
   if (SAME_OBJ(argv[1], module_symbol))
-    kind = SCHEME_MODULE_BEGIN_FRAME;
+    kind = SCHEME_MODULE_BEGIN_FRAME; /* name is backwards compared to symbol! */
+  else if (SAME_OBJ(argv[1], module_begin_symbol))
+    kind = SCHEME_MODULE_FRAME; /* name is backwards compared to symbol! */
   else if (SAME_OBJ(argv[1], top_level_symbol))
     kind = SCHEME_TOPLEVEL_FRAME;
   else if (SAME_OBJ(argv[1], expression_symbol))

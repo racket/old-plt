@@ -1589,7 +1589,7 @@ read_list(Scheme_Object *port,
 	    car = scheme_make_stx_w_offset(car, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
 	  list = scheme_make_pair(car, list);
 	  if (stxsrc)
-	    SCHEME_SET_PAIR_IMMUTABLE(pair);
+	    SCHEME_SET_PAIR_IMMUTABLE(list);
 	}
       } else {
 	if (!list) {

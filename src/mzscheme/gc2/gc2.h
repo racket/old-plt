@@ -60,9 +60,14 @@ void GC_dump(void);
 /*
    Dumps memory state info to stderr. */
 
-long GC_get_memory_use();
+long GC_get_memory_use(void *c);
 /*
    Returns the number of currently-allocated bytes. */
+
+/* ACW: Adds in a memory accounting hook */
+#define MZACCT_REQUIRE		0
+#define MZACCT_LIMIT		1
+extern void GC_set_account_hook(int type, void *cust, unsigned long b, void *f);
 
 void GC_gcollect(void);
 /*

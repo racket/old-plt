@@ -4010,10 +4010,12 @@ void GC_gcollect()
   gcollect(1);
 }
 
-long GC_get_memory_use()
+long GC_get_memory_use(void *)
 {
   return memory_in_use;
 }
+
+void GC_set_account_hook(int type, void *cust, unsigned long b, void *f) {}
 
 unsigned long GC_get_stack_base(void)
 {

@@ -197,7 +197,11 @@ static int process_ended_with_activity;
 
 static int tls_pos = 0;
 
+#ifdef MZ_PRECISE_GC
+extern long GC_get_memory_use(void *c);
+#else
 extern long GC_get_memory_use();
+#endif
 
 static Scheme_Object *empty_symbol;
 
@@ -208,6 +212,9 @@ static Scheme_Object *closers;
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
+
+static Scheme_Object *custodian_require_mem(int argc, Scheme_Object *args[]);
+static Scheme_Object *custodian_limit_mem(int argc, Scheme_Object *args[]);
 
 static Scheme_Object *collect_garbage(int argc, Scheme_Object *args[]);
 static Scheme_Object *current_memory_use(int argc, Scheme_Object *args[]);
@@ -500,10 +507,24 @@ void scheme_init_thread(Scheme_Env *env)
 						      0, 0), 
 			     env);
   scheme_add_global_constant("current-memory-use", 
+#ifdef MZ_PRECISE_GC
+			     // ACW: Changed to allow the extra parameter
 			     scheme_make_prim_w_arity(current_memory_use, 
 						      "current-memory-use",
-						      0, 0), 
-			     env);
+						      0, 1), env);
+#else
+                              scheme_make_prim_w_arity(current_memory_use,
+						      "current-memory-use",
+						      0, 0), env);
+#endif
+  scheme_add_global_constant("custodian-require-memory",
+			     scheme_make_prim_w_arity(custodian_require_mem,
+						      "custodian-require-memory",
+						      2, 2), env);
+  scheme_add_global_constant("custodian-limit-memory",
+			   scheme_make_prim_w_arity(custodian_limit_mem,
+						    "custodian-limit-memory",
+						    3, 3), env);
 
   REGISTER_SO(namespace_options);
 
@@ -530,12 +551,72 @@ static Scheme_Object *collect_garbage(int c, Scheme_Object *p[])
 
 static Scheme_Object *current_memory_use(int argc, Scheme_Object *args[])
 {
+#ifdef MZ_PRECISE_GC
+  long retval = 0;
+
+  if(argc) {
+    // ACW: FIXME: This is the wrong way to call scheme_wrong_type,
+    // I'm pretty sure
+    if(NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_custodian_type))
+      scheme_wrong_type("current-memory-use", "custodian", 0, argc, args);
+
+    retval = GC_get_memory_use(args[0]);
+  } else {
+    retval = GC_get_memory_use(NULL);
+  }
+
+  return scheme_make_integer(retval);
+#else
   return scheme_make_integer(GC_get_memory_use());
+#endif
 }
+
 
 /*========================================================================*/
 /*                              custodians                                */
 /*========================================================================*/
+
+// ACW: the new accounting hooks
+static Scheme_Object *custodian_require_mem(int argc, Scheme_Object *args[]) {
+#ifndef MZ_PRECISE_GC
+  scheme_raise_exn(MZEXN_VARIABLE, 
+		   args[0],
+		   "reference to undefined identifier: %S",
+		   scheme_make_string("custodian-require-memory"));
+#else
+  if(!SCHEME_INTP(args[0])) {
+    scheme_wrong_type("custodian-require-memory", "number", 0, argc, args);
+  }
+  if(!SCHEME_PROCP(args[1])) {
+    scheme_wrong_type("custodian-require-memory", "procedure", 1, argc, args);
+  }
+  scheme_check_proc_arity("custodian-require-memory", 0, 1, argc, args);
+  GC_set_account_hook(MZACCT_REQUIRE, NULL, SCHEME_INT_VAL(args[0]), args[1]);
+#endif
+  return scheme_void;
+}
+
+static Scheme_Object *custodian_limit_mem(int argc, Scheme_Object *args[]) {
+#ifndef MZ_PRECISE_GC
+  scheme_raise_exn(MZEXN_VARIABLE, 
+		   args[0],
+		   "reference to undefined identifier: %S",
+		   scheme_make_string("custodian-limit-memory"));
+#else
+  if(NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_custodian_type)) {
+    scheme_wrong_type("custodian-limit-memory", "custodian", 0, argc, args);
+  }
+  if(!SCHEME_INTP(args[1])) {
+    scheme_wrong_type("custodian-limit-memory", "number", 1, argc, args);
+  }
+  if(!SCHEME_PROCP(args[2])) {
+    scheme_wrong_type("custodian-limit-memory", "procedure", 2, argc, args);
+  }
+  scheme_check_proc_arity("custodian-limit-memory", 0, 2, argc, args);
+  GC_set_account_hook(MZACCT_LIMIT, args[0], SCHEME_INT_VAL(args[1]), args[2]);
+#endif
+  return scheme_void;
+}
 
 static void ensure_custodian_space(Scheme_Custodian *m, int k)
 {

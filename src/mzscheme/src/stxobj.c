@@ -1638,9 +1638,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
   {
 # include "mzstkchk.h"
     {
-# ifndef MZ_REAL_THREADS
       Scheme_Thread *p = scheme_current_thread;
-# endif
       p->ku.k.p1 = (void *)o;
       p->ku.k.p2 = (void *)ht;
       p->ku.k.i1 = with_marks;
@@ -1768,9 +1766,7 @@ static int syntax_is_graph_inner(Scheme_Object *o)
   {
 # include "mzstkchk.h"
     {
-# ifndef MZ_REAL_THREADS
       Scheme_Thread *p = scheme_current_thread;
-# endif
       p->ku.k.p1 = (void *)o;
       return (int)scheme_handle_stack_overflow(syntax_is_graph_k);
     }
@@ -1986,9 +1982,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
   {
 # include "mzstkchk.h"
     {
-# ifndef MZ_REAL_THREADS
       Scheme_Thread *p = scheme_current_thread;
-# endif
       p->ku.k.p1 = (void *)o;
       p->ku.k.p2 = (void *)stx_src;
       p->ku.k.p3 = (void *)stx_wraps;

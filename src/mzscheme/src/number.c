@@ -133,9 +133,9 @@ static Scheme_Object *inf_object, *minus_inf_object, *nan_object;
 
 #define zeroi scheme_make_integer(0)
 
-static Scheme_Object *zerod, *scheme_pi, *plus_i, *minus_i;
+static Scheme_Object *zerod, *nzerod, *scheme_pi, *plus_i, *minus_i;
 #ifdef MZ_USE_SINGLE_FLOATS
-static Scheme_Object *zerof, *single_scheme_pi;
+static Scheme_Object *zerof, *nzerof, *single_scheme_pi;
 static Scheme_Object *single_inf_object, *single_minus_inf_object, *single_nan_object;
 #endif
 
@@ -157,9 +157,11 @@ scheme_init_number (Scheme_Env *env)
   if (scheme_starting_up) {
     REGISTER_SO(scheme_pi);
     REGISTER_SO(zerod);
+    REGISTER_SO(nzerod);
 #ifdef MZ_USE_SINGLE_FLOATS
     REGISTER_SO(single_scheme_pi);
     REGISTER_SO(zerof);
+    REGISTER_SO(nzerof);
 #endif
     REGISTER_SO(plus_i);
     REGISTER_SO(minus_i);
@@ -209,9 +211,11 @@ scheme_init_number (Scheme_Env *env)
     not_a_number_val = scheme_infinity_val + scheme_minus_infinity_val;
 
     zerod = scheme_make_double(0.0);
+    nzerod = scheme_make_double(-0.0);
     scheme_pi = scheme_make_double(atan2(0, -1));
 #ifdef MZ_USE_SINGLE_FLOATS
     zerof = scheme_make_float(0.0f);
+    nzerof = scheme_make_float(-0.0f);
     single_scheme_pi = scheme_make_float((float)atan2(0, -1));
 #endif
     plus_i = scheme_make_complex(scheme_make_integer(0), scheme_make_integer(1));
@@ -638,6 +642,22 @@ Scheme_Object *scheme_make_float(float f)
 
 /* locals */
 
+static int minus_zero_p(double d) {
+  double a[2];
+  long *f, *s;
+
+  a[0] = d;
+  a[1] = -0.0;
+
+  f = (long *)a;
+  s = (long *)(a + 1);
+
+  if (f[0] == s[0] && f[1] == s[1])
+    return 1;
+
+  return 0;
+}
+
 #define NEED_NUMBER(name) \
   scheme_wrong_type(#name, "number", 0, argc, argv)
 #define NEED_REAL(name) \
@@ -822,6 +842,17 @@ zero_p (int argc, Scheme_Object *argv[])
 #endif
     return SCHEME_DBL_VAL(o) ? scheme_false : scheme_true;
   }
+#if INEXACT_ZERO_COMPLEX_PART_IMPLIES_REAL
+  if (t == scheme_complex_type) {
+    Scheme_Complex *c = (Scheme_Complex *)o;
+    Scheme_Object *a[1];
+    a[0] = c->r;
+    if (SCHEME_TRUEP(zero_p(1, a))) {
+      a[0] = c->i;
+      return zero_p(1, a);
+    }
+  }
+#endif
   if ((t >= scheme_bignum_type) && (t <= scheme_complex_type))
     return scheme_false;
  
@@ -1099,8 +1130,8 @@ static Scheme_Object *scheme_complex_not_real(const Scheme_Object *a, const Sche
   return scheme_void;
 }
 
-GEN_BIN_OP(scheme_bin_plus, "+", ADD, F_ADD, FS_ADD, scheme_bignum_add, scheme_rational_add, scheme_complex_add, GEN_OMIT, GEN_OMIT, NO_NAN_CHECK, NO_NAN_CHECK)
-GEN_BIN_OP(scheme_bin_minus, "-", SUBTRACT, F_SUBTRACT, FS_SUBTRACT, scheme_bignum_subtract, scheme_rational_subtract, scheme_complex_subtract, GEN_OMIT, GEN_RETURN_N1, NO_NAN_CHECK, NO_NAN_CHECK)
+GEN_BIN_OP(scheme_bin_plus, "+", ADD, F_ADD, FS_ADD, scheme_bignum_add, scheme_rational_add, scheme_complex_add, GEN_RETURN_N2, GEN_RETURN_N1, NO_NAN_CHECK, NO_NAN_CHECK)
+GEN_BIN_OP(scheme_bin_minus, "-", SUBTRACT, F_SUBTRACT, FS_SUBTRACT, scheme_bignum_subtract, scheme_rational_subtract, scheme_complex_subtract, GEN_SINGLE_SUBTRACT_N2, GEN_RETURN_N1, NO_NAN_CHECK, NO_NAN_CHECK)
 GEN_BIN_OP(scheme_bin_mult, "*", MULTIPLY, F_MULTIPLY, FS_MULTIPLY, scheme_bignum_multiply, scheme_rational_multiply, scheme_complex_multiply, GEN_RETURN_0, GEN_RETURN_0, NO_NAN_CHECK, NO_NAN_CHECK)
 GEN_BIN_DIV_OP(scheme_bin_div, "/", DIVIDE, F_DIVIDE, FS_DIVIDE, scheme_make_rational, scheme_rational_divide, scheme_complex_divide)
 
@@ -1132,6 +1163,13 @@ minus (int argc, Scheme_Object *argv[])
 
   ret = argv[0];
   if (argc == 1) {
+    if (SCHEME_FLOATP(ret)) {
+#ifdef MZ_USE_SINGLE_FLOATS
+      if (SCHEME_FLTP(ret))
+	return scheme_make_float(-SCHEME_FLT_VAL(ret));
+#endif
+      return scheme_make_double(-SCHEME_DBL_VAL(ret));
+    }
     if (!SCHEME_NUMBERP(ret)) {
       scheme_wrong_type("-", "number", 0, argc, argv);
       return NULL;
@@ -2133,9 +2171,7 @@ Scheme_Object *scheme_sqrt (int argc, Scheme_Object *argv[])
     n = scheme_rational_sqrt(n);
 
   if (imaginary)
-    return scheme_make_complex(SCHEME_DBLP(n) 
-			       ? scheme_make_double(0)
-			       : zeroi, n);
+    return scheme_make_complex(zeroi, n);
   else
     return n;
 }
@@ -2179,7 +2215,7 @@ static double sch_pow(double x, double y)
 # define FS_EXPT(x, y) scheme_make_float(sch_pow((double)x, (double)y))
 #endif
 
-static GEN_BIN_OP(bin_expt, "expt", fixnum_expt, F_EXPT, FS_EXPT, scheme_bignum_power, scheme_rational_power, scheme_complex_power, GEN_RETURN_0, GEN_RETURN_1, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
+static GEN_BIN_OP(bin_expt, "expt", fixnum_expt, F_EXPT, FS_EXPT, scheme_bignum_power, scheme_rational_power, scheme_complex_power, GEN_RETURN_0_USUALLY, GEN_RETURN_1, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
 
 Scheme_Object *
 scheme_expt(int argc, Scheme_Object *argv[])
@@ -2492,6 +2528,12 @@ static char *double_to_string (double d)
     return infinity_str;
   else if (MZ_IS_NEG_INFINITY(d))
     return minus_infinity_str;
+
+  if (!d) {
+    /* Check for -0.0, since some printers get it wrong. */
+    if (minus_zero_p(d))
+      return "-0.0";
+  }
 
   sprintf (buffer, "%." INEXACT_PRINT_DIGITS "g", d);
   l = strlen(buffer);
@@ -3271,9 +3313,13 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     } 
 
     if (!saw_nonzero_digit) {
-      /* Assert: d = 0.0 */
+      /* Assert: d = 0.0 or -0.0 */
       if (str[0] == '-') {
-	d = -d;
+	/* Make sure it's -0.0 */
+#ifdef MZ_USE_SINGLE_FLOATS
+	if (single) return nzerof;
+#endif
+	return nzerod;
       }
     }
 
@@ -3458,7 +3504,10 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   } else if (is_float) {
     /* Special case: "#i-0" => -0. */
     if ((o == zeroi) && str[0] == '-') {
-      return scheme_make_double(-0.0);
+#ifdef MZ_USE_SINGLE_FLOATS
+      if (single) return nzerof;
+#endif
+      return nzerod;
     }
 
     return CHECK_SINGLE(TO_DOUBLE(o), single);

@@ -83,10 +83,10 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
   Small_Bignum sb; \
   Small_Rational sr; \
   Scheme_Type t1, t2; \
-  exactzerowrapr( if (n2 == zeroi) return ) \
+  exactzerowrapr( if (n2 == zeroi) ) \
   if (SCHEME_INTP(n1)) \
     { \
-      exactzerowrapl( if (n1 == zeroi) return ) \
+      exactzerowrapl( if (n1 == zeroi) ) \
       if (SCHEME_INTP(n2)) \
 	return iop(SCHEME_INT_VAL(n1), SCHEME_INT_VAL(n2)); \
       t2 = _SCHEME_TYPE(n2); \
@@ -152,7 +152,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
         snanchk(d1); \
         wrap(if (MZ_IS_POS_INFINITY(d1)) return combineinf(swaybigf, n2);) \
         wrap(if (MZ_IS_NEG_INFINITY(d1)) return combineinf(swaysmallf, n2);) \
-        wrap(if (!d1) return combinezero(sfirstzero, n2);) \
+        wrap(if (!d1) return combinezero(sfirstzero, n2, d1);) \
 	return fop(d1, scheme_rational_to_float(n2)); \
       } \
       complexwrap( \
@@ -198,7 +198,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
         nanchk(d1); \
         wrap(if (MZ_IS_POS_INFINITY(d1)) return combineinf(waybigf, n2);) \
         wrap(if (MZ_IS_NEG_INFINITY(d1)) return combineinf(waysmallf, n2);) \
-        wrap(if (!d1) return combinezero(firstzero, n2);) \
+        wrap(if (!d1) return combinezero(firstzero, n2, d1);) \
 	return fop(d1, scheme_rational_to_double(n2)); \
       } \
       complexwrap( \
@@ -263,7 +263,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
          snanchk(d2); \
          wrap(if (MZ_IS_POS_INFINITY(d2)) return combineinf(swaysmalls, n1);) \
          wrap(if (MZ_IS_NEG_INFINITY(d2)) return combineinf(swaybigs, n1);) \
-         wrap(if (!d2) return combinezero(ssecondzero, n1);) \
+         wrap(if (!d2) return combinezero(ssecondzero, n1, d2);) \
 	 return fop(scheme_rational_to_float(n1), d2); \
        } \
        ) \
@@ -273,7 +273,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
          nanchk(d2); \
          wrap(if (MZ_IS_POS_INFINITY(d2)) return combineinf(waysmalls, n1);) \
          wrap(if (MZ_IS_NEG_INFINITY(d2)) return combineinf(waybigs, n1);) \
-         wrap(if (!d2) return combinezero(secondzero, n1);) \
+         wrap(if (!d2) return combinezero(secondzero, n1, d2);) \
 	 return fop(scheme_rational_to_double(n1), d2); \
        } \
        if (t2 == scheme_bignum_type) \
@@ -330,19 +330,29 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
 #define GEN_OMIT(x) 
 #define GEN_FIRST_ONLY(x, y) x
 #define GEN_APPLY(x, y) x(y)
-#define GEN_SCHEME_BOOL_APPLY(x, y) SCHEME_TRUEP(x(1, (Scheme_Object **)&y))
+#define GEN_APPLY3(x, y, z) x(y, z)
+#define GEN_SCHEME_BOOL_APPLY(x, y, z) SCHEME_TRUEP(x(1, (Scheme_Object **)&y))
 
-#define GEN_RETURN_0(x) x zeroi;
-#define GEN_RETURN_1(x) x scheme_make_integer(1);
-#define GEN_RETURN_N1(x) x (Scheme_Object *)n1;
+#define GEN_RETURN_0(x) x return zeroi;
+#define GEN_RETURN_0_USUALLY(x) x if (!SCHEME_FLOATP(n2) || (SCHEME_FLOAT_VAL(n2) != 0)) return zeroi;
+#define GEN_RETURN_1(x) x return scheme_make_integer(1);
+#define GEN_RETURN_N1(x) x return (Scheme_Object *)n1;
+#define GEN_RETURN_N2(x) x return (Scheme_Object *)n2;
+#define GEN_SINGLE_SUBTRACT_N2(x) x if SCHEME_FLOATP(n2) return minus(1, (Scheme_Object **)&n2);
 
 #define GEN_SAME_INF(x) ((SCHEME_TRUEP(positive_p(1, (Scheme_Object **)&x))) ? inf_object : minus_inf_object)
 #define GEN_OPP_INF(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? inf_object : minus_inf_object)
-#define GEN_MAKE_ZERO(x) zerod
+#define GEN_MAKE_PZERO(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? nzerod : zerod)
+#define GEN_MAKE_NZERO(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? zerod : nzerod)
+#define GEN_MAKE_ZERO_Z(x, y) (minus_zero_p(y) ? GEN_MAKE_NZERO(x) : GEN_MAKE_PZERO(x))
+#define GEN_SAME_INF_Z(x, y) (minus_zero_p(y) ?  GEN_OPP_INF(x) : GEN_SAME_INF(x))
 
 #define GEN_SAME_SINF(x) ((SCHEME_TRUEP(positive_p(1, (Scheme_Object **)&x))) ? single_inf_object : single_minus_inf_object)
 #define GEN_OPP_SINF(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? single_inf_object : single_minus_inf_object)
-#define GEN_MAKE_SZERO(x) zerof
+#define GEN_MAKE_PSZERO(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? nzerof : zerof)
+#define GEN_MAKE_NSZERO(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? zerof : nzerof)
+#define GEN_MAKE_SZERO_Z(x, y) (minus_zero_p(y) ? GEN_MAKE_NSZERO(x) : GEN_MAKE_PSZERO(x))
+#define GEN_SAME_SINF_Z(x, y) (minus_zero_p(y) ?  GEN_OPP_SINF(x) : GEN_SAME_SINF(x))
 
 #define NO_NAN_CHECK(x) /* empty */
 #define NAN_RETURNS_NAN(x) if (MZ_IS_NAN(x)) return nan_object
@@ -373,8 +383,8 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
                 iop, fop, fsop, bn_op, rop, cxop, \
                 GEN_IDENT, GEN_APPLY, \
                 GEN_SAME_INF, GEN_SAME_SINF, GEN_OPP_INF, GEN_OPP_SINF, \
-                GEN_MAKE_ZERO, GEN_MAKE_SZERO, GEN_MAKE_ZERO, GEN_MAKE_SZERO, \
-                GEN_APPLY, GEN_MAKE_ZERO, GEN_MAKE_SZERO, GEN_SAME_INF, GEN_SAME_SINF, \
+                GEN_MAKE_NZERO, GEN_MAKE_SNZERO, GEN_MAKE_PZERO, GEN_MAKE_SPZERO, \
+                GEN_APPLY3, GEN_MAKE_ZERO_Z, GEN_MAKE_SZERO_Z, GEN_SAME_INF_Z, GEN_SAME_SINF_Z, \
                 NAN_CHECK_NAN_IF_WEIRD, SNAN_CHECK_NAN_IF_WEIRD, \
                 GEN_IDENT, GEN_RETURN_0, GEN_OMIT, "number")
 

@@ -131,74 +131,56 @@ int scheme_eqv (Scheme_Object *obj1, Scheme_Object *obj2)
   t1 = SCHEME_TYPE(obj1);
   t2 = SCHEME_TYPE(obj2);
 
-  if (NOT_SAME_TYPE(t1, t2)) {
-#ifdef MZ_USE_SINGLE_FLOATS
-    /* One case where different types can be eqv: float & doubles */
-    if (((t1 == scheme_float_type) || (t1 == scheme_double_type))
-	&& ((t2 == scheme_float_type) || (t2 == scheme_double_type))) {
-      double d1, d2;
-      d1 = SCHEME_FLOAT_VAL(obj1);
-      d2 = SCHEME_FLOAT_VAL(obj2);
-      if (MZ_IS_NAN(d1)) {
-	if (MZ_IS_NAN(d2))
-	  return 1;
-	else
-	  return 0;
-      }
-#ifdef NAN_EQUALS_ANYTHING
-      if (MZ_IS_NAN(d2))
-	return 0;
-#endif
-      return d1 == d2;
-    }
-#endif
+  if (NOT_SAME_TYPE(t1, t2))
     return 0;
-  }
-
 #ifndef FAST_NUMBERS
   else if (t1 == scheme_integer_type)
     return SCHEME_INT_VAL(obj1) == SCHEME_INT_VAL(obj2);
 #endif
 #ifdef MZ_USE_SINGLE_FLOATS
   else if (t1 == scheme_float_type) {
-    float d1, d2;
-    d1 = SCHEME_FLT_VAL(obj1);
-    d2 = SCHEME_FLT_VAL(obj2);
-    if (MZ_IS_NAN(d1)) {
-      if (MZ_IS_NAN(d2))
-	return 1;
-      else
+    int i;
+    char *a = (char *)&((Scheme_Float *)obj1)->float_val;
+    char *b = (char *)&((Scheme_Float *)obj2)->float_val;
+    for (i = sizeof(float); i--; )
+      if (a[i] != b[i]) {
+	/* Double-check for NANs with different signs: */
+	float f = SCHEME_FLT_VAL(obj1);
+	if (MZ_IS_NAN(f)) {
+	  f = SCHEME_FTL_VAL(obj2);
+	  if (MZ_IS_NAN(f))
+	    return 1;
+	}
 	return 0;
-    }
-#ifdef NAN_EQUALS_ANYTHING
-    if (MZ_IS_NAN(d2))
-      return 0;
-#endif
-    return d1 == d2;
+      }
+    return 1;
   }
 #endif
   else if (t1 == scheme_double_type) {
-    double d1, d2;
-    d1 = SCHEME_DBL_VAL(obj1);
-    d2 = SCHEME_DBL_VAL(obj2);
-    if (MZ_IS_NAN(d1)) {
-      if (MZ_IS_NAN(d2))
-	return 1;
-      else
+    int i;
+    char *a = (char *)&((Scheme_Double *)obj1)->double_val;
+    char *b = (char *)&((Scheme_Double *)obj2)->double_val;
+    for (i = sizeof(double); i--; )
+      if (a[i] != b[i]) {
+	/* Double-check for NANs with different signs: */
+	double d = SCHEME_DBL_VAL(obj1);
+	if (MZ_IS_NAN(d)) {
+	  d = SCHEME_DBL_VAL(obj2);
+	  if (MZ_IS_NAN(d))
+	    return 1;
+	}
 	return 0;
-    }
-#ifdef NAN_EQUALS_ANYTHING
-    if (MZ_IS_NAN(d2))
-      return 0;
-#endif
-    return d1 == d2;
+      }
+    return 1;
   } else if (t1 == scheme_bignum_type)
     return scheme_bignum_eq(obj1, obj2);
   else if (t1 == scheme_rational_type)
     return scheme_rational_eq(obj1, obj2);
-  else if (t1 == scheme_complex_type)
-    return scheme_complex_eq(obj1, obj2);
-  else
+  else if (t1 == scheme_complex_type) {
+    Scheme_Complex *c1 = (Scheme_Complex *)obj1;
+    Scheme_Complex *c2 = (Scheme_Complex *)obj2;
+    return scheme_eqv(c1->r, c2->r) && scheme_eqv(c1->i, c2->i);
+  } else
     return 0;
 }
 

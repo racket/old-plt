@@ -388,7 +388,8 @@
 		       (lambda ()
 			 (send child set-size
 			       (+ x xm) (+ y ym)
-			       (- w (* 2 xm)) (- h (* 2 ym))))
+			       (max 1 (- w (* 2 xm)))
+			       (max 1 (- h (* 2 ym)))))
 		       (lambda () (set! ignore-redraw-request? #f)))
 		      (send child on-container-resize))))
 		childs

@@ -13,7 +13,7 @@
 
   (define (shell-path/args who argstr)
     (case (system-type)
-      ((unix) (append '("/bin/sh" "-c") argstr))
+      ((unix) (append '("/bin/sh" "-c") (list argstr)))
       ((windows) (let ([cmd 		  
 			(let ([d (find-system-path 'sys-dir)])
 			  (let ([cmd (build-path d "cmd.exe")])

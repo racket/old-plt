@@ -1,10 +1,14 @@
 
 (module doctable mzscheme
+  (require (lib "moddep.ss" "syntax"))
 
-  (define ht (make-hash-table))
+  (define ht (make-hash-table 'equal))
 
   (define (register-documentation src-stx label v)
-    (let ([mod (syntax-source-module src-stx)])
+    (let ([mod (let ([s (syntax-source-module src-stx)])
+		 (if (module-path-index? s)
+		     (collapse-module-path-index s `(lib "docprovide.ss" "syntax"))
+		     s))])
       (let ([mht (hash-table-get ht mod
 				 (lambda ()
 				   (let ([mht (make-hash-table)])

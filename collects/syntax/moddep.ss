@@ -177,7 +177,9 @@
     ;; relto must be a complete path
     (let-values ([(path base) (module-path-index-split mpi)])
       (if path
-	  (resolve-module-path path (resolve-module-path-index base relto))
+	  (resolve-module-path path (if base
+					(resolve-module-path-index base relto)
+					relto))
 	  relto)))
 
   (define re:path-only (regexp "^(.*)/[^/]*$"))
@@ -251,7 +253,9 @@
   (define (collapse-module-path-index mpi relto-mp)
     (let-values ([(path base) (module-path-index-split mpi)])
       (if path
-	  (collapse-module-path path (resolve-module-path-index base relto-mp))
+	  (collapse-module-path path (if base
+					 (resolve-module-path-index base relto-mp)
+					 relto-mp))
 	  relto-mp)))
 
   (define (show-import-tree module-path)

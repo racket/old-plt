@@ -1,15 +1,10 @@
-# XfwfRowCol -- lays out children in rows and columns
-# Bert Bos <bert@let.rug.nl>
-# 14 Oct '92
-# Version 2.3 for FWF V4.0
-#
-# $Id: xwRowCol.w,v 1.1.1.1 1997/12/22 17:29:05 mflatt Exp $
+
 
 
 @CLASS XfwfRowCol (XfwfBoard)  @file=xwRowCol
 
 @ The RowCol widget forces all its children into rows and columns. The
-children keep their preferred size, but the preferred position is
+chion is
 ignored. Resources determine how many rows or columns their should be
 (or as many as will fit) and if the children should be layed out in
 rows or in columns. In both methods, the children are placed on a

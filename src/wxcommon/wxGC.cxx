@@ -3,6 +3,8 @@
 MrEd interface to various garbage collectors, including the Boehm
  collector, SenoraGC, and MzScheme's precise collector.
 
+Copyright (c) 2004 PLT Scheme, Inc.
+
 *************************************************************************/
 
 /*************************************************************************

@@ -1,4 +1,5 @@
 /* A new accouting precise GC for MzScheme
+   Copyright (C) 2004 PLT Scheme, Inc.
    Copyright (C) 2001, 2002 Matthew Flatt and Adam Wick
    All rights reserved.
 

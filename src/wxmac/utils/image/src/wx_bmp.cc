@@ -5,8 +5,7 @@
  * WriteBMP(fp, pic, ptype, w, h, r, g, b, numcols, style);
  */
 
-/* Copyright Notice
- * ================
+/* ================
  * Copyright 1989, 1990, 1991, 1992, 1993 by John Bradley
  * 
  * Permission to use, copy, and distribute XV in its entirety, for 

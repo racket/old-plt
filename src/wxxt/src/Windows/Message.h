@@ -1,10 +1,10 @@
 /*								-*- C++ -*-
- * $Id: Message.h,v 1.3 2002/09/03 23:30:07 mflatt Exp $
  *
  * Purpose: message panel item
  *
  * Authors: Markus Holzem and Julian Smart
  *
+ * Copyright: (C) 2004 PLT Scheme, Inc.
  * Copyright: (C) 1995, AIAI, University of Edinburgh (Julian)
  * Copyright: (C) 1995, GNU (Markus)
  *

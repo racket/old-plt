@@ -1,11 +1,6 @@
-#
-# 1.0 (Feb 1995)
-#
-# $Id: xwCanvas.w,v 1.1.1.1 1997/12/22 17:29:05 mflatt Exp $
 
-@class XfwfCanvas (XfwfBoard) @file=xwCanvas
 
-@ The Canvas widget is used as like the |core| widget. It adds only a
+@class XfwfCanvas s like the |core| widget. It adds only a
 handling for the |backing_store| window attribute.
 
 @PUBLIC

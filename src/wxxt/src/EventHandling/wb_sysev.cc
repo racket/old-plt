@@ -4,7 +4,7 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_sysev.cc,v 1.2 1998/08/08 03:33:02 mflatt Exp $
+ * Copyright:	(c) 2004 PLT Scheme, Inc.
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 

@@ -1,10 +1,10 @@
 /*								-*- C++ -*-
- * $Id: Button.h,v 1.4 1999/11/25 16:32:23 mflatt Exp $
  *
  * Purpose: button panel item
  *
  * Authors: Markus Holzem and Julian Smart
  *
+ * Copyright: (C) 2004 PLT Scheme, Inc.
  * Copyright: (C) 1995, AIAI, University of Edinburgh (Julian)
  * Copyright: (C) 1995, GNU (Markus)
  *

@@ -1,4 +1,5 @@
 /***********************************************************
+Copyright 2004 PLT Scheme, Inc.
 Copyright 1995 by Markus Holzem
 
                         All Rights Reserved

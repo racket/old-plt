@@ -1,11 +1,12 @@
-/*///////////////////////////////////////////////////////////////////////////// */
-/* File:	wx_win.h */
-/* Purpose:	wxWindow class declaration (Macintosh version). */
-/* Author:	Bill Hale */
-/* Created:	1994 */
-/* Updated:	 */
-/* Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved. */
-/*///////////////////////////////////////////////////////////////////////////// */
+/////////////////////////////////////////////////////////////////////////////// 
+// File:	wx_win.h 
+// Purpose:	wxWindow class declaration (Macintosh version). 
+// Author:	Bill Hale 
+// Created:	1994 
+// Updated:	 
+// Copyright:  (c) 2004 PLT Scheme, Inc.
+// Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved. 
+/////////////////////////////////////////////////////////////////////////////// 
 
 #ifndef wx_winh
 #define wx_winh

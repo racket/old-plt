@@ -1,13 +1,8 @@
-# Slider2 widget
-# Bert Bos <bert@let.rug.nl>
-# Version 2.1 for FWF V4.0
-#
-# $Id: xwSlider2.w,v 1.7 2002/03/13 22:49:21 mflatt Exp $
+
 
 @class XfwfSlider2 (XfwfLabel) @file=xwSlider2
 
-@ A Slider2 widget consists of a rectangular area in which a `thumb' can be
-moved about. A Slider2 is typically used to pan or scroll another window; as
+@ A Slider2 widget consiabout. A Slider2 is typically used to pan or scroll another window; as
 such is can replace two scrollbars. The thumb can be dragged with the mouse,
 or the mouse can be clicked next to the thumb, to move it in the direction of
 the mouse. The thumb may contain one or more lines of text, although there

@@ -1,10 +1,10 @@
 /*								-*- C++ -*-
- * $Id: Date+Time.cc,v 1.2 1998/11/09 17:25:08 mflatt Exp $
  *
  * Purpose: time and date related functions
  *
  * Authors: Markus Holzem and Julian Smart
  *
+ * Copyright: (C) 2004 PLT Scheme, Inc.
  * Copyright: (C) 1995, AIAI, University of Edinburgh (Julian)
  * Copyright: (C) 1995, GNU (Markus)
  *

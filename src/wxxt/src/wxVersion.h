@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: wxVersion.h,v 1.1 1996/01/10 14:55:10 markus Exp $
  */
 
 #ifndef wxVersion_h

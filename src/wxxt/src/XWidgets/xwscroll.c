@@ -1,5 +1,4 @@
 /*
- * $Id: scroll.c,v 1.1 1996/01/10 14:57:55 markus Exp $
  */
 
 #include <X11/Intrinsic.h>

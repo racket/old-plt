@@ -1,10 +1,10 @@
 /*								-*- C++ -*-
- * $Id: Item.h,v 1.4 1999/11/18 16:35:07 mflatt Exp $
  *
  * Purpose: base class for all panel items
  *
  * Authors: Markus Holzem and Julian Smart
  *
+ * Copyright: (C) 2004 PLT Scheme, Inc.
  * Copyright: (C) 1995, AIAI, University of Edinburgh (Julian)
  * Copyright: (C) 1995, GNU (Markus)
  *

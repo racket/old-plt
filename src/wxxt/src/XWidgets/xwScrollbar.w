@@ -1,14 +1,8 @@
-# Scrollbar.w -- scrollbar widget
-# Author: Bert Bos <bert@let.rug.nl>
-# 2 Nov '92
-# Version 1.0 for FWF V4.0
-# 
-# $Id: xwScrollbar.w,v 1.5 1999/08/28 16:14:52 mflatt Exp $
+
 
 @CLASS XfwfScrollbar (XfwfBoard)  @file = xwScrollbar
 
-@ The scrollbar widget helps the user to view data that is too large
-to be displayed all at once.  They are often used through a
+@ The scrollbar widget helps the user to view data thatsed through a
 ScrolledWindow (see there), where they are put next to and/or below
 the widget that contains the data. The scrollbar controls which part
 is visible. By manipulating the scrollbar the user can move (`scroll')

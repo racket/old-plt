@@ -4,6 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	
+ * Copyright:	(c) 2004 PLT Scheme, Inc.
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 

@@ -3,6 +3,7 @@
  * Purpose:	Group box item
  * Author:	Matthew
  * Created:	2003
+ * Copyright:	(c) 2004 PLT Scheme, Inc.
  * Copyright:	(c) 2003, PLT
  */
 

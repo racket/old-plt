@@ -3,6 +3,7 @@
  * Purpose:     wxMediaCanvas & wxDrawableMediaAdmin implementation
  * Author:      Matthew Flatt
  * Created:     1995
+ * Copyright:   (c) 2004 PLT Scheme, Inc.
  * Copyright:   (c) 1995, Matthew Flatt
  */
 

@@ -1,10 +1,10 @@
 /*								-*- C++ -*-
- * $Id: Layout.h,v 1.2 1999/11/04 17:25:38 mflatt Exp $
  *
  * Purpose: layout classes
  *
  * Authors: Markus Holzem and Julian Smart
  *
+ * Copyright: (C) 2004 PLT Scheme, Inc.
  * Copyright: (C) 1995, AIAI, University of Edinburgh (Julian)
  * Copyright: (C) 1995, GNU (Markus)
  *

@@ -1,15 +1,8 @@
-# Board -- Board widget
-# Bert Bos <bert@let.rug.nl>
-# Version 2.0.1 for FWF V4.0 (See README for history)
-#
-# $Id: xwBoard.w,v 1.1.1.1 1997/12/22 17:29:04 mflatt Exp $
+
 
 @class XfwfBoard (XfwfFrame) @file=xwBoard
 
-@ The Board class adds one thing to the capabilities already present
-in the Frame class, viz., location management.
-
-Location management is an improved version of the standard X geometry
+@ The Board class adds one thing to the capabilities already pocation management is an improved version of the standard X geometry
 management. Size and position of a Board widget (or subclass) can be
 given as a combination of absolute and relative sizes.
 

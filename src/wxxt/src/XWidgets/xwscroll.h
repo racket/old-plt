@@ -1,7 +1,6 @@
 /*
  * File: <scroll.h>
  *
- * $Id: scroll.h,v 1.1 1996/01/10 14:57:56 markus Exp $
  *
  * Declarations and typedefs for the Free Widget Foundation
  * Scrolling Widget Interface Policy.

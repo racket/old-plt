@@ -358,6 +358,12 @@
                   (add-to-range/key start-pos-left start-pos-right arrow #f #f)
                   (add-to-range/key end-pos-left end-pos-right arrow #f #f)))
 
+              ;; add-to-range/key : number number any any boolean -> void
+              ;; adds `key' to the range `start' - `end' in the editor
+              ;; If use-key? is #t, it adds `to-add' with the key, and doesnot
+              ;; replace a value with that key already there.
+              ;; If use-key? is #f, it adds `to-add' without a key.
+              ;; pre: arrow-vector is not #f
               (define (add-to-range/key start end to-add key use-key?)
                 (let loop ([p start])
                   (when (<= p end)
@@ -755,9 +761,10 @@
                      [user-custodian #f]
                      [normal-termination? #f]
                      [cleanup
-                      (lambda ()
+                      (lambda () ; =drs=
                         (set-breakables old-break-thread old-kill-eventspace)
-                        (enable-evaluation))]
+                        (enable-evaluation)
+                        (send definitions-text end-edit-sequence))]
                      [kill-termination
                       (lambda ()
                         (unless normal-termination?
@@ -767,22 +774,30 @@
                                (syncheck:clear-highlighting)
                                (cleanup)
                                (custodian-shutdown-all user-custodian))))))]
-                     [error-display
-                      (lambda (msg exn)
-                        (report-error msg exn))]
+                     [error-display-semaphore (make-semaphore 0)]
                      [uncaught-exception-raised
-                      (lambda ()
+                      (lambda () ;; =user=
                         (set! normal-termination? #t)
-                        (syncheck:clear-highlighting)
-                        (cleanup)
-                        (custodian-shutdown-all user-custodian))]
+                        (parameterize ([current-eventspace drs-eventspace])
+                          (queue-callback
+                           (lambda () ;;  =drs=
+                             (yield error-display-semaphore) ;; let error display go first
+                             (syncheck:clear-highlighting)
+                             (cleanup)
+                             (custodian-shutdown-all user-custodian)))))]
                      [teachpacks (fw:preferences:get 'drscheme:teachpacks)]
                      [init-proc
                       (lambda () ; =user=
                         (set-breakables (current-thread) (current-custodian))
                         (set-directory definitions-text)
-                        (error-display-handler (lambda (msg exn)
-						 (error-display msg exn)))
+                        (error-display-handler (lambda (msg exn) ;; =user=
+                                                 (parameterize ([current-eventspace drs-eventspace])
+                                                   (queue-callback
+                                                    (lambda () ;; =drs=
+                                                      (report-error msg exn)
+                                                      ;; tell uncaught-expception-raised to cleanup
+                                                      (semaphore-post error-display-semaphore))))))
+                        ;; (error-print-source-location #f) ; need to build code to render error first
                         (current-exception-handler
                          (let ([oh (current-exception-handler)])
                            (lambda (exn)
@@ -793,6 +808,7 @@
 			(set! user-directory (current-directory)) ;; set by set-directory above
                         (set! user-namespace (current-namespace)))])
                 (disable-evaluation) ;; this locks the editor, so must be outside.
+                (send definitions-text begin-edit-sequence)
                 (with-lock/edit-sequence
                  (lambda ()
                    (clear-annotations)

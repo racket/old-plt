@@ -10,8 +10,8 @@
   (define server-port 4004)
 
   (define num-players 2)
-  (define board-file "~/tmp/map2")
-  (define pack-file "~/tmp/packs2")
+  (define board-file "~/tmp/map2")  ; maps available at the contest web site
+  (define pack-file "~/tmp/packs2") ; pkg configuartions available there, too
   
   (define robot-capacity 100)
   (define start-money 100)

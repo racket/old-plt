@@ -847,7 +847,7 @@
                      (lambda (item evt)
                        (edit-menu:replace-and-find-again-callback item evt))))
                edit-menu:replace-and-find-again-callback))
-            (shortcut #\h)
+            (shortcut (if (eq? (system-type) 'macosx) #f #\h))
             (help-string (edit-menu:replace-and-find-again-help-string))
             (demand-callback
              (lambda (menu-item)

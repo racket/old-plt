@@ -1,41 +1,17 @@
 #|
 
-Check Syntax separates four classes of identifiers:
+Check Syntax separates two classes of identifiers,
+those bound in this file and those bound by require,
+and uses identifier-binding and identifier-transformer-binding
+to distinguish them. 
 
-  - bound by a macro whose definition is in this file
-     
-     Found in origin fields except those that are module-identifier=? 
-     to a 'disappeared-use variable that is 'bound-as-variable
+Variables come from 'origin, 'disappeared-use, and 'disappeared-binding 
+syntax properties, as well as from variable references and binding (letrec-values,
+let-values, define-values) in the fully expanded text.
 
-     identifier-binding returns #f for these
-  
-  - bound by a macro whose definition comes from `require'
-
-     Found in origin fields except those that are module-identifier=? 
-     to a 'disappeared-use variable that is 'bound-as-variable
-
-     identifier-binding identifies the incoming module
-
-  - regular variable whose definition is in this file
-  
-    variables in fully expanded text where
-    identifier-binding returns #f
-
-    also found in origin fields when they are module-identifier=? 
-    to a 'disappeared-use variable that is 'bound-as-variable
-
-  - regular variable whose definition comes from `require'
-
-    variables in fully expanded text where
-    identifier-binding identifies the input module.
-
-    also found in origin fields when they are module-identifier=? 
-    to a 'disappeared-use variable that is 'bound-as-variable
-
- Variables inside #%top are treated specially. 
- If the namespace has a binding for them, they are colored bound color.
- If the namespace does not, they are colored the unbound color.
- 
+Variables inside #%top (not inside a module) are treated specially. 
+If the namespace has a binding for them, they are colored bound color.
+If the namespace does not, they are colored the unbound color.
 |#
 
 (module syncheck mzscheme
@@ -983,106 +959,107 @@ Check Syntax separates four classes of identifiers:
             (case-lambda
               [() (syncheck:button-callback #f)]
               [(jump-to-id)
-               (open-status-line 'drscheme:check-syntax)
-               (update-status-line 'drscheme:check-syntax status-init)
-               (let-values ([(expanded-expression expansion-completed) (make-traversal)]
-                            [(old-break-thread old-custodian) (get-breakables)])
-                 (let* ([definitions-text (get-definitions-text)]
-                        [drs-eventspace (current-eventspace)]
-                        [user-namespace #f]
-                        [user-directory #f]
-                        [user-custodian #f]
-                        [normal-termination? #f]
-                        [cleanup
-                         (lambda () ; =drs=
-                           (set-breakables old-break-thread old-custodian)
-                           (enable-evaluation)
-                           (send definitions-text end-edit-sequence)
-                           (close-status-line 'drscheme:check-syntax))]
-                        [kill-termination
-                         (lambda ()
-                           (unless normal-termination?
+               (when (send check-syntax-button is-enabled?)
+                 (open-status-line 'drscheme:check-syntax)
+                 (update-status-line 'drscheme:check-syntax status-init)
+                 (let-values ([(expanded-expression expansion-completed) (make-traversal)]
+                              [(old-break-thread old-custodian) (get-breakables)])
+                   (let* ([definitions-text (get-definitions-text)]
+                          [drs-eventspace (current-eventspace)]
+                          [user-namespace #f]
+                          [user-directory #f]
+                          [user-custodian #f]
+                          [normal-termination? #f]
+                          [cleanup
+                           (lambda () ; =drs=
+                             (set-breakables old-break-thread old-custodian)
+                             (enable-evaluation)
+                             (send definitions-text end-edit-sequence)
+                             (close-status-line 'drscheme:check-syntax))]
+                          [kill-termination
+                           (lambda ()
+                             (unless normal-termination?
+                               (parameterize ([current-eventspace drs-eventspace])
+                                 (queue-callback
+                                  (lambda ()
+                                    (syncheck:clear-highlighting)
+                                    (cleanup)
+                                    (custodian-shutdown-all user-custodian))))))]
+                          [error-display-semaphore (make-semaphore 0)]
+                          [uncaught-exception-raised
+                           (lambda () ;; =user=
+                             (set! normal-termination? #t)
                              (parameterize ([current-eventspace drs-eventspace])
                                (queue-callback
-                                (lambda ()
+                                (lambda () ;;  =drs=
+                                  (yield error-display-semaphore) ;; let error display go first
                                   (syncheck:clear-highlighting)
                                   (cleanup)
-                                  (custodian-shutdown-all user-custodian))))))]
-                        [error-display-semaphore (make-semaphore 0)]
-                        [uncaught-exception-raised
-                         (lambda () ;; =user=
-                           (set! normal-termination? #t)
-                           (parameterize ([current-eventspace drs-eventspace])
-                             (queue-callback
-                              (lambda () ;;  =drs=
-                                (yield error-display-semaphore) ;; let error display go first
-                                (syncheck:clear-highlighting)
-                                (cleanup)
-                                (custodian-shutdown-all user-custodian)))))]
-                        [init-proc
-                         (lambda () ; =user=
-                           (set-breakables (current-thread) (current-custodian))
-                           (set-directory definitions-text)
-                           (error-display-handler (lambda (msg exn) ;; =user=
-                                                    (parameterize ([current-eventspace drs-eventspace])
-                                                      (queue-callback
-                                                       (lambda () ;; =drs=
-                                                         (report-error msg exn)
-                                                         ;; tell uncaught-expception-raised to cleanup
-                                                         (semaphore-post error-display-semaphore))))))
-                           (error-print-source-location #f) ; need to build code to render error first
-                           (current-exception-handler
-                            (let ([oh (current-exception-handler)])
-                              (lambda (exn)
-                                (uncaught-exception-raised)
-                                (oh exn))))
-                           (update-status-line 'drscheme:check-syntax status-expanding-expression)
-                           (set! user-custodian (current-custodian))
-                           (set! user-directory (current-directory)) ;; set by set-directory above
-                           (set! user-namespace (current-namespace)))])
-                   (disable-evaluation) ;; this locks the editor, so must be outside.
-                   (send definitions-text begin-edit-sequence #f)
-                   (with-lock/edit-sequence
-                    (lambda ()
-                      (clear-annotations)
-                      (reset-offer-kill)
-                      (send definitions-text syncheck:init-arrows)
-
-                      (drscheme:eval:expand-program
-                       (drscheme:language:make-text/pos definitions-text
-                                                        0
-                                                        (send definitions-text last-position))
-                       (send definitions-text get-next-settings)
-                       #t
-                       init-proc
-                       kill-termination
-                       (lambda (sexp loop) ; =user=
-                         (cond
-                           [(eof-object? sexp)
-                            (set! normal-termination? #t)
-                            (parameterize ([current-eventspace drs-eventspace])
-                              (queue-callback
-                               (lambda () ; =drs=
-                                 (with-lock/edit-sequence
-                                  (lambda ()
-                                    (expansion-completed user-namespace user-directory)
-                                    (send definitions-text syncheck:sort-bindings-table)))
-                                 (cleanup)
-                                 (custodian-shutdown-all user-custodian))))]
-                           [else
-                            (update-status-line 'drscheme:check-syntax status-eval-compile-time)
-                            (eval-compile-time-part-of-top-level sexp)
-                            (parameterize ([current-eventspace drs-eventspace])
-                              (queue-callback
-                               (lambda () ; =drs=
-                                 (with-lock/edit-sequence
-                                  (lambda ()
-                                    (open-status-line 'drscheme:check-syntax)
-                                    (update-status-line 'drscheme:check-syntax status-coloring-program)
-                                    (expanded-expression user-namespace user-directory sexp jump-to-id)
-                                    (close-status-line 'drscheme:check-syntax))))))
-                            (update-status-line 'drscheme:check-syntax status-expanding-expression)
-                            (loop)])))))))]))
+                                  (custodian-shutdown-all user-custodian)))))]
+                          [init-proc
+                           (lambda () ; =user=
+                             (set-breakables (current-thread) (current-custodian))
+                             (set-directory definitions-text)
+                             (error-display-handler (lambda (msg exn) ;; =user=
+                                                      (parameterize ([current-eventspace drs-eventspace])
+                                                        (queue-callback
+                                                         (lambda () ;; =drs=
+                                                           (report-error msg exn)
+                                                           ;; tell uncaught-expception-raised to cleanup
+                                                           (semaphore-post error-display-semaphore))))))
+                             (error-print-source-location #f) ; need to build code to render error first
+                             (current-exception-handler
+                              (let ([oh (current-exception-handler)])
+                                (lambda (exn)
+                                  (uncaught-exception-raised)
+                                  (oh exn))))
+                             (update-status-line 'drscheme:check-syntax status-expanding-expression)
+                             (set! user-custodian (current-custodian))
+                             (set! user-directory (current-directory)) ;; set by set-directory above
+                             (set! user-namespace (current-namespace)))])
+                     (disable-evaluation) ;; this locks the editor, so must be outside.
+                     (send definitions-text begin-edit-sequence #f)
+                     (with-lock/edit-sequence
+                      (lambda ()
+                        (clear-annotations)
+                        (reset-offer-kill)
+                        (send definitions-text syncheck:init-arrows)
+                        
+                        (drscheme:eval:expand-program
+                         (drscheme:language:make-text/pos definitions-text
+                                                          0
+                                                          (send definitions-text last-position))
+                         (send definitions-text get-next-settings)
+                         #t
+                         init-proc
+                         kill-termination
+                         (lambda (sexp loop) ; =user=
+                           (cond
+                             [(eof-object? sexp)
+                              (set! normal-termination? #t)
+                              (parameterize ([current-eventspace drs-eventspace])
+                                (queue-callback
+                                 (lambda () ; =drs=
+                                   (with-lock/edit-sequence
+                                    (lambda ()
+                                      (expansion-completed user-namespace user-directory)
+                                      (send definitions-text syncheck:sort-bindings-table)))
+                                   (cleanup)
+                                   (custodian-shutdown-all user-custodian))))]
+                             [else
+                              (update-status-line 'drscheme:check-syntax status-eval-compile-time)
+                              (eval-compile-time-part-of-top-level sexp)
+                              (parameterize ([current-eventspace drs-eventspace])
+                                (queue-callback
+                                 (lambda () ; =drs=
+                                   (with-lock/edit-sequence
+                                    (lambda ()
+                                      (open-status-line 'drscheme:check-syntax)
+                                      (update-status-line 'drscheme:check-syntax status-coloring-program)
+                                      (expanded-expression user-namespace user-directory sexp jump-to-id)
+                                      (close-status-line 'drscheme:check-syntax))))))
+                              (update-status-line 'drscheme:check-syntax status-expanding-expression)
+                              (loop)]))))))))]))
 
           ;; set-directory : text -> void
           ;; sets the current-directory and current-load-relative-directory
@@ -1165,18 +1142,14 @@ Check Syntax separates four classes of identifiers:
         (send keymap map-function "c:x;n" "jump to next bound occurrence")
         (send keymap map-function "c:x;d" "jump to definition (in other file)"))
 
-      (define lexically-bound-variable-style-pref 'drscheme:check-syntax:lexically-bound-variable)
-      (define lexically-bound-syntax-style-pref 'drscheme:check-syntax:lexically-bound-syntax)
-      (define imported-syntax-style-pref 'drscheme:check-syntax:imported-syntax)
-      (define imported-variable-style-pref 'drscheme:check-syntax:imported-variable)
+      (define lexically-bound-variable-style-pref 'drscheme:check-syntax:lexically-bound-identifier)
+      (define imported-variable-style-pref 'drscheme:check-syntax:imported-identifier)
       
-      (define lexically-bound-variable-style-name "drscheme:check-syntax:lexically-bound-variable")
-      (define lexically-bound-syntax-style-name "drscheme:check-syntax:lexically-bound-syntax")
-      (define imported-syntax-style-name "drscheme:check-syntax:imported-syntax")
-      (define imported-variable-style-name "drscheme:check-syntax:imported-variable")
+      (define lexically-bound-variable-style-name (symbol->string lexically-bound-variable-style-pref))
+      (define imported-variable-style-name (symbol->string imported-variable-style-pref))
 
       (define error-style-name (fw:scheme:short-sym->style-name 'error))
-      (define constant-style-name (fw:scheme:short-sym->style-name 'constant))
+      ;(define constant-style-name (fw:scheme:short-sym->style-name 'constant))
       
       (define (syncheck-add-to-preferences-panel parent)
         (fw:color-prefs:build-color-selection-panel parent
@@ -1184,29 +1157,15 @@ Check Syntax separates four classes of identifiers:
                                                     lexically-bound-variable-style-name
                                                     (string-constant cs-lexical-variable))
         (fw:color-prefs:build-color-selection-panel parent
-                                                    lexically-bound-syntax-style-pref
-                                                    lexically-bound-syntax-style-name
-                                                    (string-constant cs-lexical-syntax))
-        (fw:color-prefs:build-color-selection-panel parent
                                                     imported-variable-style-pref
                                                     imported-variable-style-name
-                                                    (string-constant cs-imported-variable))
-        (fw:color-prefs:build-color-selection-panel parent
-                                                    imported-syntax-style-pref
-                                                    imported-syntax-style-name
-                                                    (string-constant cs-imported-syntax)))
+                                                    (string-constant cs-imported-variable)))
       
       (fw:color-prefs:register-color-pref lexically-bound-variable-style-pref
                                           lexically-bound-variable-style-name
                                           (make-object color% 81 112 203))
       (fw:color-prefs:register-color-pref imported-variable-style-pref
                                           imported-variable-style-name
-                                          (make-object color% 122 81 203))
-      (fw:color-prefs:register-color-pref lexically-bound-syntax-style-pref
-                                          lexically-bound-syntax-style-name
-                                          (make-object color% 0 51 203))
-      (fw:color-prefs:register-color-pref imported-syntax-style-pref
-                                          imported-syntax-style-name
                                           (make-object color% 68 0 203))
 
 
@@ -1243,11 +1202,6 @@ Check Syntax separates four classes of identifiers:
                [tl-varrefs (make-id-set)]
                [tl-high-varrefs (make-id-set)]
                [tl-tops (make-id-set)]
-               [tl-mac-binders (make-id-set)]
-               [tl-macrefs (make-id-set)]
-               [tl-high-macrefs (make-id-set)]
-               [tl-disappeared-refs (make-id-set)]
-               [tl-high-disappeared-refs (make-id-set)]
                [tl-requires (make-hash-table 'equal)]
                [tl-require-for-syntaxes (make-hash-table 'equal)]
                [expanded-expression
@@ -1262,37 +1216,21 @@ Check Syntax separates four classes of identifiers:
                                [varrefs (make-id-set)]
                                [high-varrefs (make-id-set)]
                                [tops (make-id-set)]
-                               [mac-binders (make-id-set)]
-                               [macrefs (make-id-set)]
-                               [high-macrefs (make-id-set)]
-                               [disappeared-refs (make-id-set)]
-                               [high-disappeared-refs (make-id-set)]
                                [requires (make-hash-table 'equal)]
                                [require-for-syntaxes (make-hash-table 'equal)])
                            (annotate-basic sexp user-namespace user-directory jump-to-id
-                                           binders varrefs high-varrefs
-                                           tops
-                                           mac-binders macrefs high-macrefs
-                                           disappeared-refs high-disappeared-refs
+                                           binders varrefs high-varrefs tops
                                            requires require-for-syntaxes) 
                            (annotate-variables user-namespace
                                                binders
                                                varrefs
                                                high-varrefs
                                                tops
-                                               mac-binders
-                                               macrefs
-                                               high-macrefs
-                                               disappeared-refs
-                                               high-disappeared-refs
                                                requires
                                                require-for-syntaxes))]
                         [else
                          (annotate-basic sexp user-namespace user-directory jump-to-id
-                                         tl-binders tl-varrefs tl-high-varrefs
-                                         tl-tops 
-                                         tl-mac-binders tl-macrefs tl-high-macrefs
-                                         tl-disappeared-refs tl-high-disappeared-refs
+                                         tl-binders tl-varrefs tl-high-varrefs tl-tops 
                                          tl-requires tl-require-for-syntaxes)]))))]
                [expansion-completed
                 (lambda (user-namespace user-directory)
@@ -1302,11 +1240,6 @@ Check Syntax separates four classes of identifiers:
                                         tl-varrefs
                                         tl-high-varrefs
                                         tl-tops
-                                        tl-mac-binders
-                                        tl-macrefs
-                                        tl-high-macrefs
-                                        tl-disappeared-refs
-                                        tl-high-disappeared-refs
                                         tl-requires
                                         tl-require-for-syntaxes)))])
           (values expanded-expression expansion-completed)))
@@ -1319,24 +1252,23 @@ Check Syntax separates four classes of identifiers:
       ;;                  namespace
       ;;                  string[directory]
       ;;                  syntax[id]
-      ;;                  id-set (eight of them)
+      ;;                  id-set (four of them)
       ;;                  hash-table[require-spec -> syntax] (two of them)
       ;;               -> void
       (define (annotate-basic sexp user-namespace user-directory jump-to-id
-                              binders varrefs high-varrefs tops mac-binders macrefs high-macrefs 
-                              disappeared-refs high-disappeared-refs
+                              binders low-varrefs high-varrefs tops
                               requires require-for-syntaxes)
         (let ([tail-ht (make-hash-table)])
                  
           (let level-loop ([sexp sexp]
                            [high-level? #f])
-            (let ([loop (lambda (sexp) (level-loop sexp high-level?))]
-                  [collect-general-info
-                   (lambda (stx)
-                     (add-origins stx (if high-level? high-disappeared-refs disappeared-refs))
-                     (add-disappeared-bindings stx binders mac-binders 
-                                               (if high-level? high-disappeared-refs disappeared-refs))
-                     (add-disappeared-uses stx (if high-level? high-disappeared-refs disappeared-refs)))])
+            (let* ([loop (lambda (sexp) (level-loop sexp high-level?))]
+                   [varrefs (if high-level? high-varrefs low-varrefs)]
+                   [collect-general-info
+                    (lambda (stx)
+                      (add-origins stx varrefs)
+                      (add-disappeared-bindings stx binders varrefs)
+                      (add-disappeared-uses stx varrefs))])
               (collect-general-info sexp)
               (syntax-case* sexp (lambda case-lambda if begin begin0 let-values letrec-values set!
                                    quote quote-syntax with-continuation-mark 
@@ -1346,13 +1278,13 @@ Check Syntax separates four classes of identifiers:
                 (if high-level? module-transformer-identifier=? module-identifier=?)
                 [(lambda args bodies ...)
                  (begin
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    (annotate-tail-position/last sexp (syntax->list (syntax (bodies ...))) tail-ht)
                    (add-binders (syntax args) binders)
                    (for-each loop (syntax->list (syntax (bodies ...)))))]
                 [(case-lambda [argss bodiess ...]...)
                  (begin
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    (for-each (lambda (bodies/stx) (annotate-tail-position/last sexp 
                                                                                (syntax->list bodies/stx)
                                                                                tail-ht))
@@ -1365,7 +1297,7 @@ Check Syntax separates four classes of identifiers:
                     (syntax->list (syntax ((bodiess ...) ...)))))]
                 [(if test then else)
                  (begin
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    (annotate-tail-position sexp (syntax then) tail-ht)
                    (annotate-tail-position sexp (syntax else) tail-ht)
                    (loop (syntax test))
@@ -1373,13 +1305,13 @@ Check Syntax separates four classes of identifiers:
                    (loop (syntax then)))]
                 [(if test then)
                  (begin
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    (annotate-tail-position sexp (syntax then) tail-ht)
                    (loop (syntax test))
                    (loop (syntax then)))]
                 [(begin bodies ...)
                  (begin
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    (annotate-tail-position/last sexp (syntax->list (syntax (bodies ...))) tail-ht)
                    (for-each loop (syntax->list (syntax (bodies ...)))))]
                 
@@ -1387,18 +1319,18 @@ Check Syntax separates four classes of identifiers:
                 ;; different tail behavior.
                 [(begin0 body)
                  (begin
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    (annotate-tail-position sexp (syntax body) tail-ht)
                    (loop (syntax body)))]
                 
                 [(begin0 bodies ...)
                  (begin
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    (for-each loop (syntax->list (syntax (bodies ...)))))]
                 
                 [(let-values (bindings ...) bs ...)
                  (begin
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    (for-each collect-general-info (syntax->list (syntax (bindings ...))))
                    (annotate-tail-position/last sexp (syntax->list (syntax (bs ...))) tail-ht)
                    (with-syntax ([(((xss ...) es) ...) (syntax (bindings ...))])
@@ -1408,7 +1340,7 @@ Check Syntax separates four classes of identifiers:
                      (for-each loop (syntax->list (syntax (bs ...))))))]
                 [(letrec-values (bindings ...) bs ...)
                  (begin
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    (for-each collect-general-info (syntax->list (syntax (bindings ...))))
                    (annotate-tail-position/last sexp (syntax->list (syntax (bs ...))) tail-ht)
                    (with-syntax ([(((xss ...) es) ...) (syntax (bindings ...))])
@@ -1418,7 +1350,7 @@ Check Syntax separates four classes of identifiers:
                      (for-each loop (syntax->list (syntax (bs ...))))))]
                 [(set! var e)
                  (begin
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    
                    ;; tops are used here because a binding free use of a set!'d variable
                    ;; is treated just the same as (#%top . x).
@@ -1429,32 +1361,32 @@ Check Syntax separates four classes of identifiers:
                    (loop (syntax e)))]
                 [(quote datum)
                  ;(color-internal-structure (syntax datum) constant-style-name)
-                 (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))]
+                 (annotate-raw-keyword sexp varrefs)]
                 [(quote-syntax datum)
                  ;(color-internal-structure (syntax datum) constant-style-name)
-                 (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))]
+                 (annotate-raw-keyword sexp varrefs)]
                 [(with-continuation-mark a b c)
                  (begin
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    (annotate-tail-position sexp (syntax c) tail-ht)
                    (loop (syntax a))
                    (loop (syntax b))
                    (loop (syntax c)))]
                 [(#%app pieces ...)
                  (begin
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    (for-each loop (syntax->list (syntax (pieces ...)))))]
                 [(#%datum . datum)
                    ;(color-internal-structure (syntax datum) constant-style-name)
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))]
+                   (annotate-raw-keyword sexp varrefs)]
                 [(#%top . var)
                  (begin
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    (when (syntax-original? (syntax var))
                      (add-id tops (syntax var))))]
                 [(define-values vars b)
                  (begin
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    (add-binders (syntax vars) binders)
                    (when jump-to-id
                      (for-each (lambda (id)
@@ -1464,12 +1396,12 @@ Check Syntax separates four classes of identifiers:
                    (loop (syntax b)))]
                 [(define-syntaxes names exp)
                  (begin
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
-                   (add-binders (syntax names) mac-binders)
+                   (annotate-raw-keyword sexp varrefs)
+                   (add-binders (syntax names) binders)
                    (level-loop (syntax exp) #t))]
                 [(module m-name lang (#%plain-module-begin bodies ...))
                  (begin
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    ((annotate-require-open user-namespace user-directory) (syntax lang))
                    (hash-table-put! requires 
                                     (syntax-object->datum (syntax lang))
@@ -1483,14 +1415,14 @@ Check Syntax separates four classes of identifiers:
                 [(require require-specs ...)
                  (let ([new-specs (map trim-require-prefix
                                        (syntax->list (syntax (require-specs ...))))])
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    (for-each (annotate-require-open user-namespace user-directory) new-specs)
                    (for-each (add-require-spec requires)
                              new-specs
                              (syntax->list (syntax (require-specs ...)))))]
                 [(require-for-syntax require-specs ...)
                  (let ([new-specs (map trim-require-prefix (syntax->list (syntax (require-specs ...))))])
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    (for-each (annotate-require-open user-namespace user-directory) new-specs)
                    (for-each (add-require-spec require-for-syntaxes)
                              new-specs
@@ -1500,7 +1432,7 @@ Check Syntax separates four classes of identifiers:
                 [(provide provide-specs ...)
                  (let ([provided-varss (map extract-provided-vars
                                             (syntax->list (syntax (provide-specs ...))))])
-                   (annotate-raw-keyword sexp (if high-level? high-macrefs macrefs))
+                   (annotate-raw-keyword sexp varrefs)
                    (for-each (lambda (provided-vars)
                                (for-each
                                 (lambda (provided-var)
@@ -1510,7 +1442,7 @@ Check Syntax separates four classes of identifiers:
                 [id
                  (identifier? (syntax id))
                  (when (syntax-original? sexp)
-                   (add-id (if high-level? high-varrefs varrefs) sexp))]
+                   (add-id varrefs sexp))]
                 [_
                  (begin
                    '(printf "unknown stx: ~e (datum: ~e) (source: ~e)~n"
@@ -1522,8 +1454,8 @@ Check Syntax separates four classes of identifiers:
                    (void))])))
           (add-tail-ht-links tail-ht)))
 
-      ;; add-disappeared-bindings : syntax id-set id-set -> void
-      (define (add-disappeared-bindings stx binders mac-binders disappaeared-uses)
+      ;; add-disappeared-bindings : syntax id-set -> void
+      (define (add-disappeared-bindings stx binders disappaeared-uses)
         (let ([prop (syntax-property stx 'disappeared-binding)])
           (when prop
             (let loop ([prop prop])
@@ -1533,9 +1465,7 @@ Check Syntax separates four classes of identifiers:
                  (loop (cdr prop))]
                 [(identifier? prop)
                  (add-origins prop disappaeared-uses)
-                 (if (syntax-property prop 'bind-as-variable)
-                     (add-id binders prop)
-                     (add-id mac-binders prop))])))))
+                 (add-id binders prop)])))))
       
       ;; add-disappeared-uses : syntax id-set -> void
       (define (add-disappeared-uses stx id-set)
@@ -1568,7 +1498,7 @@ Check Syntax separates four classes of identifiers:
         (unless (req/tag-used? req/tag)
           (color (req/tag-req-stx req/tag) error-style-name)))
 
-      ;; annotate-variables : namespace string id-set[six of them] (listof syntax) (listof syntax) -> void
+      ;; annotate-variables : namespace string id-set[four of them] (listof syntax) (listof syntax) -> void
       ;; colors in and draws arrows for variables, according to their classifications
       ;; in the various id-sets
       (define (annotate-variables user-namespace
@@ -1576,35 +1506,14 @@ Check Syntax separates four classes of identifiers:
                                   varrefs
                                   high-varrefs
                                   tops
-                                  mac-binders
-                                  macrefs
-                                  high-macrefs
-                                  disappeared-refs
-                                  high-disappeared-refs
                                   requires
                                   require-for-syntaxes)
         
         (let ([unused-requires (make-hash-table 'equal)]
               [unused-require-for-syntaxes (make-hash-table 'equal)]
-              [id-sets (list binders varrefs high-varrefs mac-binders macrefs high-macrefs tops)])
+              [id-sets (list binders varrefs high-varrefs tops)])
           (hash-table-for-each requires (lambda (k v) (hash-table-put! unused-requires k #t)))
           (hash-table-for-each require-for-syntaxes (lambda (k v) (hash-table-put! unused-require-for-syntaxes k #t)))
-          
-          (for-each-ids disappeared-refs
-                        (lambda (ids)
-                          (cond
-                            [(ormap (lambda (id) (get-ids binders id)) ids)
-                             (for-each (lambda (id) (add-id varrefs id)) ids)]
-                            [else ; (ormap (lambda (id) (get-ids mac-binders id)) ids)
-                             (for-each (lambda (id) (add-id macrefs id)) ids)])))
-          
-          (for-each-ids high-disappeared-refs
-                        (lambda (ids)
-                          (cond
-                            [(ormap (lambda (id) (get-ids binders id)) ids)
-                             (for-each (lambda (id) (add-id high-varrefs id)) ids)]
-                            [else ; (ormap (lambda (id) (get-ids mac-binders id)) ids)
-                             (for-each (lambda (id) (add-id high-macrefs id)) ids)])))
           
           (for-each (lambda (vars) (for-each (lambda (var)
                                                (when (syntax-original? var)
@@ -1612,6 +1521,7 @@ Check Syntax separates four classes of identifiers:
                                                  (make-rename-menu var id-sets)))
                                              vars))
                     (get-idss binders))
+          
           (for-each (lambda (vars) (for-each 
                                     (lambda (var)
                                       (color-variable var identifier-binding)
@@ -1623,6 +1533,7 @@ Check Syntax separates four classes of identifiers:
                                                           id-sets))
                                     vars))
                     (get-idss varrefs))
+          
           (for-each (lambda (vars) (for-each 
                                     (lambda (var)
                                       (color-variable var identifier-transformer-binding)
@@ -1634,36 +1545,6 @@ Check Syntax separates four classes of identifiers:
                                                           id-sets))
                                     vars))
                     (get-idss high-varrefs))
-          
-          (for-each (lambda (vars) (for-each (lambda (var)
-                                               (when (syntax-original? var)
-                                                 (color-syntax var identifier-binding)
-                                                 (make-rename-menu var id-sets)))
-                                             vars))
-                    (get-idss mac-binders))
-          (for-each (lambda (vars) (for-each
-                                    (lambda (var)
-                                      (color-syntax var identifier-binding)
-                                      (connect-identifier var
-                                                          mac-binders
-                                                          unused-requires
-                                                          requires
-                                                          identifier-binding
-                                                          id-sets))
-                                    vars))
-                    (get-idss macrefs))
-          
-          (for-each (lambda (vars) (for-each
-                                    (lambda (var)
-                                      (color-syntax var identifier-transformer-binding)
-                                      (connect-identifier var
-                                                          mac-binders
-                                                          unused-require-for-syntaxes
-                                                          require-for-syntaxes
-                                                          identifier-transformer-binding
-                                                          id-sets))
-                                    vars))
-                    (get-idss high-macrefs))
           
           (for-each 
            (lambda (vars) 
@@ -1744,16 +1625,8 @@ Check Syntax separates four classes of identifiers:
               (color var error-style-name))
           (connect-identifier var binders #f #f identifier-binding id-sets)))
       
-      ;; color-syntax : syntax (union identifier-binding identifier-transformer-binding) -> void
-      (define (color-syntax var get-binding)
-        (color-identifier var get-binding lexically-bound-syntax-style-name imported-syntax-style-name))
-      
       ;; color-variable : syntax (union identifier-binding identifier-transformer-binding) -> void
       (define (color-variable var get-binding)
-        (color-identifier var get-binding lexically-bound-variable-style-name imported-variable-style-name))
-
-      ;; color-identifier : syntax (union identifier-binding identifier-transformer-binding) string string -> void
-      (define (color-identifier var get-binding lexical-color imported-color)
         (let* ([b (get-binding var)]
                [lexical? 
                 (or (not b)
@@ -1765,8 +1638,8 @@ Check Syntax separates four classes of identifiers:
                                   (and (not a)
                                        (not b)))))))])
           (cond
-            [lexical? (color var lexical-color)]
-            [(pair? b) (color var imported-color)])))
+            [lexical? (color var lexically-bound-variable-style-name)]
+            [(pair? b) (color var imported-variable-style-name)])))
       
       ;; add-var : hash-table -> syntax -> void
       ;; adds the variable to the hash table.

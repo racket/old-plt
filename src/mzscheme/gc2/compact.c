@@ -33,6 +33,7 @@
 
 #ifdef _WIN32
 # include <windows.h>
+# define gcINLINE _inline
 #endif
 #ifdef OSKIT
 # undef GENERATIONS
@@ -336,6 +337,13 @@ static void CRASH()
 static int just_checking, the_size;
 #endif
 
+#if defined(sparc) || defined(__sparc) || defined(__sparc__)
+/* Sun's qsort() is broken. */
+# include "my_qsort.c"
+#else
+# define my_qsort qsort
+#endif
+
 /******************************************************************************/
 /*                     OS-specific low-level allocator                        */
 /******************************************************************************/
@@ -407,13 +415,6 @@ void flush_freed_pages(void)
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <errno.h>
-
-#if defined(sparc) || defined(__sparc) || defined(__sparc__)
-/* Sun's qsort() is broken. */
-# include "my_qsort.c"
-#else
-# define my_qsort qsort
-#endif
 
 #ifndef MAP_ANON
 int fd, fd_created;
@@ -4217,7 +4218,11 @@ void *GC_malloc_one_tagged(size_t size_in_bytes)
   return m;
 }
 
-static inline void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, MSet *set)
+#ifndef gcINLINE
+# define gcINLINE inline
+#endif
+
+static gcINLINE void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, MSet *set)
 {
   size_t size_in_words;
   void **m, **naya;

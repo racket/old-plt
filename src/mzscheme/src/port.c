@@ -3507,6 +3507,10 @@ make_fd_input_port(int fd, const char *filename, int regfile, int win_textmode)
 
 # ifdef WINDOWS_FILE_HANDLES
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 static long WindowsFDReader(Win_FD_Input_Thread *th)
 {
   DWORD toget, got;
@@ -3559,6 +3563,10 @@ static void WindowsFDICleanup(Win_FD_Input_Thread *th)
   free(th->buffer);
   free(th);
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 # endif
 
@@ -4489,6 +4497,10 @@ static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Custodian_Client 
 
 #ifdef WINDOWS_FILE_HANDLES
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 static long WindowsFDWriter(Win_FD_Output_Thread *oth)
 {
   DWORD towrite, wrote, start;
@@ -4560,6 +4572,10 @@ static void WindowsFDOCleanup(Win_FD_Output_Thread *oth)
     free(oth->buffer);
   free(oth);
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 #endif
 

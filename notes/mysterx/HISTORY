@@ -1,13 +1,17 @@
+Version 206
+
+No changes
+
 Version 205
 
 No changes
 
 Version 204
 
-Method and property invocation use COM direct 
- interfaces when possible, instead of 
+Method and property invocation use COM direct
+ interfaces when possible, instead of
  IDispatch::Invoke()
-Methods and properties in inherited COM classes 
+Methods and properties in inherited COM classes
  now reported by com-methods, com-get-properties,
  com-set-properties, and used properly by com-invoke,
  com-get-property, and com-set-property!
@@ -16,18 +20,18 @@ Better support for some COM VARIANT types, VT_UINT
 
 Version 203
 
-The installer no longer displays dialog boxes 
+The installer no longer displays dialog boxes
  when registering the MysterX .DLL files.
- Instead, successful registration prints a 
+ Instead, successful registration prints a
  message to the current output port; a failure
  prints a message to the current error port.
 Changes contributed by Joe Marshall:
- internal Marshall... procecedures renamed to 
+ internal Marshall... procecedures renamed to
   Marshal... :-)
  mx_make_iunknown attempts to get IDispatch pointer
- if type information for a COM method is 
-  unavailable, the Scheme arguments are 
-  heuristically injected into a variant and passed 
+ if type information for a COM method is
+  unavailable, the Scheme arguments are
+  heuristically injected into a variant and passed
   to Invoke() without checking
 
 Version 202
@@ -42,17 +46,17 @@ Version 200
 
 Ported to PLT Scheme 200
 COM cleanup at shutdown now gets all objects
-In the demo (plt/collects/mxdemo.ss), the 
+In the demo (plt/collects/mxdemo.ss), the
  mx-browser% object is instantiated using by-name
  arguments
 Added block-while-browsers
 
 Version 103-p3
 
-Browser windows get reclaimed when browsers are 
- shutdown by a custodian in DrScheme (was fixed 
+Browser windows get reclaimed when browsers are
+ shutdown by a custodian in DrScheme (was fixed
  in 103-p1, broken again in 103-p2)
-The first HTML event is received properly after 
+The first HTML event is received properly after
  a custodian shutdown in DrScheme (PR 1893)
 
 Version 103-p2
@@ -61,19 +65,19 @@ Added support for paths of property names in
  com-get-property and com-set-property!
 Fixed typechecking of values supplied to
  com-set-property!
-Removed right-click context menu from browser 
+Removed right-click context menu from browser
  windows, because Language option caused errors
-Added navigate/status, refresh, iconize, restore, and 
+Added navigate/status, refresh, iconize, restore, and
  print methods to mx-browser%
-Fixed and documented keycode, alt-key, ctrl-key, 
+Fixed and documented keycode, alt-key, ctrl-key,
  and shift-key attributes of key-{down,up,pressed}
  HTML events
 Increased size of HTML event queue to 8192 from 50
-Changed browser Windows event loop to use blocking 
+Changed browser Windows event loop to use blocking
 
 Version 103-p1:
 
-Added optional index argument to 
+Added optional index argument to
  find-element, find-element-by-id-or-name
  methods of mx-document%
 Added methods get-html, get-text to
@@ -84,9 +88,9 @@ Methods find-element, find-element-by-id-or-name,
  element itself, as well as its children
 When a custodian shuts down an mx-browser% object,
  its Win32 window is destroyed
-Fixed marshalling of BYREF parameters to COM event 
- handlers, for several types; added VT_INT and 
- VT_INT | VT_BYREF 
+Fixed marshalling of BYREF parameters to COM event
+ handlers, for several types; added VT_INT and
+ VT_INT | VT_BYREF
 Added com-add-ref, com-ref-count procedures
 Secondary Windows event loop checks for
  WM_TIMER messages; some programs were blocking
@@ -94,7 +98,7 @@ Secondary Windows event loop checks for
 
 Version 103:
 
-Added support for VT_INT 
+Added support for VT_INT
 Added conversions com-scode->number,
  number->com-scode, com-currency->number,
  number->com-currency, com-date->date,
@@ -106,7 +110,7 @@ Removed 'no-caption option for mx-browser%,
 
 Version 102-p1:
 
-Added synonyms cci/coclass for 
+Added synonyms cci/coclass for
  cocreate-instance-from-coclass, and cci/progid
  for cocreate-instance-from-progid
 com-all-coclasses, com-all-controls return
@@ -117,50 +121,50 @@ Added procedure mx-version
 
 Version 102:
 
-cocreate-instance renamed to 
+cocreate-instance renamed to
  cocreate-instance-from-coclass;
  added cocreate-instance-from-progid;
- both of these procedures support 
+ both of these procedures support
  running remote servers
 for mx-document% and mx-element% classes, split
  insert-object and append-object methods into
- {insert,append}-object-from-coclass and  
+ {insert,append}-object-from-coclass and
  {insert,append}-object-from-progid
-added Scheme-syntax property getters and 
+added Scheme-syntax property getters and
  setters for HTML elements; old string versions
  are available as "-native" methods
 created mx-browser% class with methods
- navigate, go-back, go-forward, 
- current-url, register-navigate-handler, 
- unregister-navigate-handler, 
+ navigate, go-back, go-forward,
+ current-url, register-navigate-handler,
+ unregister-navigate-handler,
  current-document; show and event-handling
  method of mx-document% moved to the new class
 constructor for mx-browser% takes same arguments
  as old constructor for mx-document%; style
  list may include 'scrollbars
-com-methods no longer returns methods inherited from 
+com-methods no longer returns methods inherited from
  IDispatch; results are alphabetically-sorted,
  also true for com-get-properties, com-set-properties
-for COM event-handling procedures, added 
- check for ambiguous COM class; added 
- procedures set-coclass! and 
- set-coclass-from-progid! to allow 
- explicit disambiguation; procedures 
+for COM event-handling procedures, added
+ check for ambiguous COM class; added
+ procedures set-coclass! and
+ set-coclass-from-progid! to allow
+ explicit disambiguation; procedures
  coclass and progid return current value
 added find-element-by-id-or-name,
  elements-with-tag to mx-document%
-added methods selection and 
+added methods selection and
  set-selection to mx-element%
 added focus method to mx-element%;
  works with IE5 or newer only
 removed getter and setter for whitespace
- and word-spacing properties, since not 
+ and word-spacing properties, since not
  implemented by IE4/5 for Windows
-fixed GC-related problems with COM 
+fixed GC-related problems with COM
  event handlers
-fixed error text formatting bug when 
+fixed error text formatting bug when
  COM methods returned an error code
-DHTML test code added, 
+DHTML test code added,
  plt/tests/mysterx/dhtmltests.ss
 improved Makefiles
 Setup PLT prints warning when no binaries
@@ -170,8 +174,8 @@ Version 101:
 
 moved Windows event loop from mx-document% class
   initialization to unit
-extra Windows processing loop handles only 
-  WM_USER events, fixing various problems 
+extra Windows processing loop handles only
+  WM_USER events, fixing various problems
   running MysterX under DrScheme
 added AddRef() for HTML elements, fixing
   occasional crashes on GC
@@ -189,7 +193,7 @@ made changes for IE5:
     of mx-document% and mx-element% take width, height
     arguments
 added call to CoUninitialize() from exit handler
-  
+
 Version 100alpha4:
 
 added support for multidimensional arrays,
@@ -199,15 +203,15 @@ COM event handlers accept named arguments
 unit exit-handler forces Release() on global
   COM objects on exit
 COM objects passed as VARIANTs in methods,
-  properties 
-garbage collection of COM objects passed to 
+  properties
+garbage collection of COM objects passed to
   COM event handlers works correctly
 added procedures for com-type's,
   com-object-type and com-is-a?
-procedures com-methods, com-get-properties, 
+procedures com-methods, com-get-properties,
   com-set-properties, com-events,
   com-method-type, com-get-property-type,
-  com-set-property-type, and 
+  com-set-property-type, and
   com-event-type allow a com-type
   in place of a com-object
 
@@ -217,10 +221,10 @@ unitized C++ and Scheme code
 added support for COM events
 added com-object?
 added finalizers for COM objects inserted
-	into HTML or returned from methods
-	and properties
+        into HTML or returned from methods
+        and properties
 added support for optional and default
-	parameters to COM methods
+        parameters to COM methods
 minimal support for SAFEARRAY arguments
-	added
+        added
 test object added, code in plt/tests/mysterx/mystests.ss

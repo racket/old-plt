@@ -1,12 +1,12 @@
-Versions 202, 203, 204, 205
----------------------------
+Versions 202, 203, 204, 205, 206
+--------------------------------
 
 No changes.
 
 Version 201
 -----------
 
-MzScheme namespace-initialization bug caused 
+MzScheme namespace-initialization bug caused
 the Reset() method to fail.  Fixed for v201.
 
 Version 200
@@ -24,7 +24,7 @@ COM error object is created when
 Version 103
 -----------
 
-Evaluation loop processes Windows events 
+Evaluation loop processes Windows events
  that may occur as the result of evaluation;
  motivating example is loading MysterX into
  MzCOM, running plt\collects\mysterx\mxdemo.ss
@@ -33,4 +33,3 @@ Version 102
 -----------
 
 Initial release
-

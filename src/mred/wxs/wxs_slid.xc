@@ -13,7 +13,7 @@
 @SYM "vertical" : wxVERTICAL
 @SYM "horizontal" : wxHORIZONTAL
 @SYM "plain" : wxPLAIN_SLIDER
-@SYM "inactive" : wxINVISIBLE
+@SYM "deleted" : wxINVISIBLE
 @ENDSYMBOLS
 
 @CLASSBASE wxSlider "slider" : "item"

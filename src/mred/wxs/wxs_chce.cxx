@@ -38,7 +38,7 @@ static Scheme_Object *choiceStyle_wxINVISIBLE_sym = NULL;
 static void init_symset_choiceStyle(void) {
   REMEMBER_VAR_STACK();
   wxREGGLOB(choiceStyle_wxINVISIBLE_sym);
-  choiceStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
+  choiceStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
 }
 
 static int unbundle_symset_choiceStyle(Scheme_Object *v, const char *where) {

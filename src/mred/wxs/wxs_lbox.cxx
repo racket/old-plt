@@ -93,7 +93,7 @@ static void init_symset_style(void) {
   wxREGGLOB(style_wxHSCROLL_sym);
   style_wxHSCROLL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hscroll"));
   wxREGGLOB(style_wxINVISIBLE_sym);
-  style_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
+  style_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
 }
 
 static int unbundle_symset_style(Scheme_Object *v, const char *where) {

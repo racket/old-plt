@@ -97,7 +97,7 @@ static void init_symset_gaugeStyle(void) {
   wxREGGLOB(gaugeStyle_wxHORIZONTAL_sym);
   gaugeStyle_wxHORIZONTAL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("horizontal"));
   wxREGGLOB(gaugeStyle_wxINVISIBLE_sym);
-  gaugeStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
+  gaugeStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
 }
 
 static int unbundle_symset_gaugeStyle(Scheme_Object *v, const char *where) {

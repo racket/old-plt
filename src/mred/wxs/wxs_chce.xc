@@ -8,7 +8,7 @@
 @HEADER
 
 @BEGINSYMBOLS choiceStyle > > BUNDLE
-@SYM "inactive" : wxINVISIBLE
+@SYM "deleted" : wxINVISIBLE
 @ENDSYMBOLS
 
 

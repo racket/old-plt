@@ -202,7 +202,7 @@ static Scheme_Object *tabStyle_wxINVISIBLE_sym = NULL;
 static void init_symset_tabStyle(void) {
   REMEMBER_VAR_STACK();
   wxREGGLOB(tabStyle_wxINVISIBLE_sym);
-  tabStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
+  tabStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
 }
 
 static int unbundle_symset_tabStyle(Scheme_Object *v, const char *where) {

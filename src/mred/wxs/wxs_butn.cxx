@@ -41,7 +41,7 @@ static void init_symset_buttonStyle(void) {
   wxREGGLOB(buttonStyle_1_sym);
   buttonStyle_1_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("border"));
   wxREGGLOB(buttonStyle_wxINVISIBLE_sym);
-  buttonStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
+  buttonStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
 }
 
 static int unbundle_symset_buttonStyle(Scheme_Object *v, const char *where) {

@@ -44,7 +44,7 @@ static void init_symset_radioboxStyle(void) {
   wxREGGLOB(radioboxStyle_wxHORIZONTAL_sym);
   radioboxStyle_wxHORIZONTAL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("horizontal"));
   wxREGGLOB(radioboxStyle_wxINVISIBLE_sym);
-  radioboxStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
+  radioboxStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
 }
 
 static int unbundle_symset_radioboxStyle(Scheme_Object *v, const char *where) {

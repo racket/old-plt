@@ -85,7 +85,7 @@ static void init_symset_canvasStyle(void) {
   wxREGGLOB(canvasStyle_wxGL_CONTEXT_sym);
   canvasStyle_wxGL_CONTEXT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("gl"));
   wxREGGLOB(canvasStyle_wxINVISIBLE_sym);
-  canvasStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
+  canvasStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
 }
 
 static int unbundle_symset_canvasStyle(Scheme_Object *v, const char *where) {

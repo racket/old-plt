@@ -49,7 +49,7 @@ static void init_symset_sliderStyle(void) {
   wxREGGLOB(sliderStyle_wxPLAIN_SLIDER_sym);
   sliderStyle_wxPLAIN_SLIDER_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("plain"));
   wxREGGLOB(sliderStyle_wxINVISIBLE_sym);
-  sliderStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
+  sliderStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
 }
 
 static int unbundle_symset_sliderStyle(Scheme_Object *v, const char *where) {

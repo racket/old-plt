@@ -8,7 +8,7 @@
 @HEADER
 
 @BEGINSYMBOLS checkboxStyle > > BUNDLE
-@SYM "inactive" : wxINVISIBLE
+@SYM "deleted" : wxINVISIBLE
 @ENDSYMBOLS
 
 @CLASSBASE wxCheckBox "check-box":"item"

@@ -38,7 +38,7 @@ static Scheme_Object *checkboxStyle_wxINVISIBLE_sym = NULL;
 static void init_symset_checkboxStyle(void) {
   REMEMBER_VAR_STACK();
   wxREGGLOB(checkboxStyle_wxINVISIBLE_sym);
-  checkboxStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
+  checkboxStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
 }
 
 static int unbundle_symset_checkboxStyle(Scheme_Object *v, const char *where) {

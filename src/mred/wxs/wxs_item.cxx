@@ -215,7 +215,7 @@ static Scheme_Object *messageStyle_wxINVISIBLE_sym = NULL;
 static void init_symset_messageStyle(void) {
   REMEMBER_VAR_STACK();
   wxREGGLOB(messageStyle_wxINVISIBLE_sym);
-  messageStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
+  messageStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
 }
 
 static int unbundle_symset_messageStyle(Scheme_Object *v, const char *where) {

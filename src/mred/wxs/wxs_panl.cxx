@@ -49,7 +49,7 @@ static void init_symset_panelStyle(void) {
   wxREGGLOB(panelStyle_wxBORDER_sym);
   panelStyle_wxBORDER_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("border"));
   wxREGGLOB(panelStyle_wxINVISIBLE_sym);
-  panelStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
+  panelStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
 }
 
 static int unbundle_symset_panelStyle(Scheme_Object *v, const char *where) {

@@ -47,7 +47,7 @@ static void wxThisContextCurrent(wxCanvas* c)
 @SYM "vscroll" : wxVSCROLL
 @SYM "hscroll" : wxHSCROLL
 @SYM "gl" : wxGL_CONTEXT
-@SYM "inactive" : wxINVISIBLE
+@SYM "deleted" : wxINVISIBLE
 @ENDSYMBOLS
 
 @INCLUDE wxs_ornt.xci

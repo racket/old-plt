@@ -536,8 +536,6 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define ZERO_MINUS_ZERO_IS_POS_ZERO
 # define LOG_ZERO_ISNT_NEG_INF
 
-# define NO_INLINE_KEYWORD
-
 # define USE_ULIMIT
 
 # define USE_TIMEZONE_VAR_W_DLS
@@ -1328,7 +1326,6 @@ int scheme_pthread_semaphore_try_down(void *);
 /***********************/
 
 #define UNISTD_INCLUDE
-#define NO_INLINE_KEYWORD
 
  /* REGISTER_POOR_MACHINE guides a hand optimization that seems to
     be work best one way for Sparc machines, and better the other

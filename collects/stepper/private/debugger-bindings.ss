@@ -115,7 +115,7 @@
 
   (define (binding sym)
     (map (lambda (binding) (list (mark-binding-binding binding) (mark-binding-value binding)))
-    (lookup-binding-list-with-symbol (do-n-times cdr (current-frame-num) (current-mark-list)) sym)))
+    (lookup-all-bindings (lambda (id) (eq? (syntax-e id) sym)) (do-n-times cdr (current-frame-num) (current-mark-list)))))
 
   (define (bound)
     (map (lambda (binding) (list (syntax-e binding) binding))

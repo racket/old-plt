@@ -1,4 +1,3 @@
-
 ;; A kind of lambda-lifting
 ;; (c) 1997-2001 PLT
 

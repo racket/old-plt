@@ -228,7 +228,7 @@ static void dcGetARGBPixels(wxMemoryDC *dc, double x, double y, int w, int h, ch
   dc->GetDeviceOrigin(&xo, &yo);
   p = 0;
 
-  if (xs == 1 && ys == 1 && xo == 1 && yo == 1
+  if (xs == 1 && ys == 1 && xo == 0 && yo == 0
       && WITH_VAR_STACK(dc->BeginGetPixelFast((int)x, (int)y, w, h))) {
     int xi = (int)x;
     int yi = (int)y;
@@ -276,7 +276,7 @@ static void dcSetARGBPixels(wxMemoryDC *dc, double x, double y, int w, int h, ch
   dc->GetDeviceOrigin(&xo, &yo);
   p = 0;    
 
-  if (xs == 1 && ys == 1 && xo == 1 && yo == 1
+  if (xs == 1 && ys == 1 && xo == 0 && yo == 0
       && WITH_VAR_STACK(dc->BeginSetPixelFast((int)x, (int)y, w, h))) {
     int xi = (int)x;
     int yi = (int)y;
@@ -317,6 +317,13 @@ static wxBitmap *dc_target(Scheme_Object *obj)
 }
 
 static wxMemoryDC *temp_mdc;
+
+static inline double approx_dist(double x, double y) 
+{
+  x = fabs(x);
+  y = fabs(y);
+  return ((x < y) ? x : y);
+}
 
 static void ScaleSection(wxMemoryDC *dest, wxBitmap *src, 
 			 double tx, double ty, double ww2, double hh2,
@@ -419,7 +426,7 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
 	for (xj = startj; xj <= endj; xj++) {
 	  dx = ((xi * xs) - i);
 	  dy = ((xj * ys) - j);
-	  wt = ((double)1 / (0.001 + sqrt((dx * dx) + (dy * dy))));
+	  wt = ((double)1 / (0.001 + approx_dist(dx, dy)));
 	  p = ((xj * w) + xi) * 4;
 	  r += (wt * s[p+1]);
 	  g += (wt * s[p+2]);

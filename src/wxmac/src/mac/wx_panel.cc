@@ -37,6 +37,7 @@ wxPanel::wxPanel // Constructor (given parentArea)
 	CreateWxPanel(x, y, width, height);
 }
 
+#if 0
 //-----------------------------------------------------------------------------
 wxPanel::wxPanel // Constructor (given parentArea and control to embed to)
 // this is a cheap hack because I don't understand how wxAreas work and I don't want to.
@@ -61,6 +62,7 @@ wxPanel::wxPanel // Constructor (given parentArea and control to embed to)
             ::EmbedControl(cEmbeddingControl,parentEmbeddingControl);
         }
 }
+#endif
 
 //-----------------------------------------------------------------------------
 wxPanel::wxPanel // Constructor (given parentFrame)

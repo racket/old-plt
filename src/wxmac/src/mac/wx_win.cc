@@ -714,7 +714,8 @@ void wxWindow::SetCurrentDC(void) // mac platform only
 		if (cHidden) {
 			theClipRect.top = theClipRect.bottom = 0;
 			theClipRect.left = theClipRect.right = 0;
-		} else {
+		}
+                else {
 			GetClipRect(cClientArea, &theClipRect);
                         OffsetRect(&theClipRect,SetOriginX,SetOriginY);
 			MacSetBackground();
@@ -723,10 +724,13 @@ void wxWindow::SetCurrentDC(void) // mac platform only
 			wxWindow *parent = GetParent();
 			int dx, dy;
 			GetPosition(&dx, &dy);
-			rgn = parent ? parent->GetCoveredRegion(dx + theClipRect.left, dy + theClipRect.top,
+#ifndef OS_X // under OS_X, you don't need to mask out the resize rect, the OS does it for you.
+                        if (parent) {
+                            rgn = parent->GetCoveredRegion(dx + theClipRect.left, dy + theClipRect.top,
 			                                        theClipRect.right - theClipRect.left,
-			                                        theClipRect.bottom - theClipRect.top) 
-			              : NULL;
+			                                        theClipRect.bottom - theClipRect.top);
+                        }
+#endif                
 		}
 		
 		if (rgn) {
@@ -1222,7 +1226,7 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
 					result = TRUE; // WCH: should this be before this if statement
 					int clientHitX = (int)(areaMouseEvent->x);
 					int clientHitY = (int)(areaMouseEvent->y);
-					ClientToLogical(&clientHitX, &clientHitY); // mouseWindow logical c.s.
+					//ClientToLogical(&clientHitX, &clientHitY); // mouseWindow logical c.s.
 					areaMouseEvent->x = clientHitX; // mouseWindow logical c.s.
 					areaMouseEvent->y = clientHitY; // mouseWindow logical c.s.
 					if (!doCallPreMouseEvent(this, this, areaMouseEvent)) {
@@ -1258,7 +1262,7 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
 	  *areaMouseEvent = *mouseEvent;
 	  int clientHitX = (int)(areaMouseEvent->x);
 	  int clientHitY = (int)(areaMouseEvent->y);
-	  ClientToLogical(&clientHitX, &clientHitY); // mouseWindow logical c.s.
+	  //ClientToLogical(&clientHitX, &clientHitY); // mouseWindow logical c.s.
 	  areaMouseEvent->x = clientHitX; // mouseWindow logical c.s.
 	  areaMouseEvent->y = clientHitY; // mouseWindow logical c.s.
 	  if (!doCallPreMouseEvent(this, this, areaMouseEvent))

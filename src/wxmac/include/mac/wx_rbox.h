@@ -99,7 +99,7 @@ public:
   int ButtonFocus(int);
   
   ControlHandle cEmbeddingControl;
-  void OnClientAreaDSize(int dW, int dH, int dX, int dY);
+  // void OnClientAreaDSize(int dW, int dH, int dX, int dY);
 
 };
 

@@ -554,6 +554,7 @@ void wxCanvas::DoShow(Bool show)
 //-----------------------------------------------------------------------------
 void wxCanvas::ClientToLogical(int* x, int* y) // mac platform only; testing
 { // Transform point from client c.s. to logical c.s. (virtual canvas, scrolling)
+        // trying without all this gunk:
 	wxDC* theDC = GetDC();
 	if (theDC)
 	{

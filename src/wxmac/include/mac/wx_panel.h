@@ -63,6 +63,7 @@ public:
 		WXTYPE		objectType = wxTYPE_PANEL
 	);
 
+#if 0
 	wxPanel // Constructor (given parentArea and embedding control)
         // see implementation for explanation of this ugly hack.
 	(
@@ -76,6 +77,7 @@ public:
 		char*		windowName = "panel",
 		WXTYPE		objectType = wxTYPE_PANEL
 	);
+#endif
 
 	wxPanel // Constructor (given parentFrame)
 	(

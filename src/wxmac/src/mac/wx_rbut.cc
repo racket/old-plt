@@ -68,7 +68,7 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
 	
 	font = buttonFont; // WCH: mac platform only
 
-#ifndef OS_X
+#if 1
 	float fLabelWidth = 100.0;
 	float fLabelHeight = 20.0;
 	if (label)

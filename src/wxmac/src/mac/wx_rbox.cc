@@ -62,6 +62,8 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
 {
 	Callback(function);
 
+#if 0
+// failed experiment
         // create an embedding control so that embedded controls get moved.
         SetCurrentMacDCNoMargin();
         Rect cRect;
@@ -70,9 +72,10 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
         OffsetRect(&cRect,SetOriginX,SetOriginY);
         cEmbeddingControl = ::NewControl(GetWindowFromPort(cMacDC->macGrafPort()),&cRect,embeddingTitle,TRUE,
                                             kControlSupportsEmbedding,0,0,kControlUserPaneProc,NULL);
+#endif
 
+	cRadioPanel = new wxPanel(this->ClientArea(), 0, 0, 0, 0, 0);
 
-	cRadioPanel = new wxPanel(this->ClientArea(), cEmbeddingControl, 0, 0, 0, 0, 0);
 	cRadioPanel->SetButtonFont(buttonFont);
 	cRadioPanel->SetLabelFont(labelFont);
 
@@ -144,6 +147,7 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
 {
 	Callback(function);
 
+#if 0
         // create an embedding control so that embedded controls get moved.
         SetCurrentMacDCNoMargin();
         Rect cRect;
@@ -152,8 +156,9 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
         OffsetRect(&cRect,SetOriginX,SetOriginY);
         cEmbeddingControl = ::NewControl(GetWindowFromPort(cMacDC->macGrafPort()),&cRect,embeddingTitle,TRUE,
                                             kControlSupportsEmbedding,0,0,kControlUserPaneProc,NULL);
+#endif
 
-	cRadioPanel = new wxPanel(this->ClientArea(), cEmbeddingControl, 0, 0, 0, 0, 0);
+	cRadioPanel = new wxPanel(this->ClientArea(), 0, 0, 0, 0, 0);
 	cRadioPanel->SetButtonFont(buttonFont);
 	cRadioPanel->SetLabelFont(labelFont);
 	
@@ -378,6 +383,8 @@ int wxRadioBox::ButtonFocus(int)
   return -1;
 }
 
+#if 0
+// failed experiment, for the moment at least.
 //-----------------------------------------------------------------------------
 void wxRadioBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
@@ -389,4 +396,5 @@ void wxRadioBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
         }
 }
 
+#endif
 	

@@ -949,9 +949,10 @@ void wxFrame::Paint(void)
 	  cStatusPanel->GetSize(&w, &h);
 
 	  cStatusPanel->SetCurrentDC();
-      Rect r = { -1, 0, h + 1, w };
-      
-      ClipRect(&r); /* hack! */
+          Rect r = { -1, 0, h + 1, w };
+          ::OffsetRect(&r,SetOriginX, SetOriginY);
+          
+          ClipRect(&r); /* hack! */
       
 	  EraseRect(&r);
 	  cStatusPanel->Paint();
@@ -969,7 +970,7 @@ RgnHandle wxFrame::GetCoveredRegion(int x, int y, int w, int h)
        	    || (theMacWidth >= x && theMacWidth <= x + w))
            && (theMacHeight-15 >= y && theMacHeight-15 <= y + h)
        	       || (theMacHeight >= y && theMacHeight <= y + h)) {
-       RgnHandle rgn = NewRgn();  // this can fail.  use MaxMem to determine validity?
+       RgnHandle rgn = NewRgn();  // this can fail.  use MaxMem to determine validity?       
        if (FALSE) {  //(cIsResizableDialog) {
          OpenRgn();
          MoveTo(theMacHeight, theMacWidth - 15);

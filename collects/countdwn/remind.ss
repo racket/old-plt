@@ -5,6 +5,8 @@
 	  mzlib:pretty-print^
 	  [mred : mred^])
 
+  (date-display-format 'american)
+
   (define seconds->delta
     (let ([seconds-per-minute 60]
 	  [minutes-per-hour 60]
@@ -32,8 +34,11 @@
 		  weeks
 		  total-years)))))
   
+  (define label-delta (make-object wx:style-delta% wx:const-change-bold))
+  (define date-delta (make-object wx:style-delta% wx:const-change-italic))
+
   (define date%
-    (class wx:media-snip% (main-edit i-second i-minute i-hour i-day i-month i-year)
+    (class wx:media-snip% (date-edit main-edit i-second i-minute i-hour i-day i-month i-year)
       (private
 	[TMP-date (seconds->date (current-seconds))]
 	[second i-second]
@@ -72,6 +77,12 @@
 		   (send edit insert (if (< delta 0) "until" "ago")
 			 last last #f))
 		 (send edit insert "NOW" (send edit get-start-position) -1 #f))))]
+	[update-date-edit
+	 (lambda ()
+	   (send* date-edit
+	     (delete 0 (send date-edit last-position))
+	     (insert (date->string (seconds->date seconds) #t) (send date-edit get-start-position) -1 #f)
+	     (change-style date-delta 0 (send date-edit last-position))))]
 	[init-seconds
 	 (lambda (current-secs)
 	   (let* ([leap?
@@ -154,15 +165,15 @@
 		 (when (< seconds current)
 		   (init-seconds current)
 		   (loop)))
+	       (update-date-edit)
 	       (send main-edit sort-lines))
 	     (let ([delta (- current seconds)])
 	       (let-values ([(d-seconds d-minutes d-hours d-days d-weeks d-years)
 			     (seconds->delta (abs delta))])
 		 (redisplay delta d-seconds d-minutes d-hours d-days d-weeks d-years)))))])
       (sequence (super-init edit #f)
-		(init-seconds (current-seconds)))))
-
-  (define label-delta (make-object wx:style-delta% wx:const-change-bold))
+		(init-seconds (current-seconds))
+		(update-date-edit))))
   
   (define main-edit%
     (class mred:media-edit% args
@@ -210,7 +221,9 @@
 	
 	[new-counter
 	 (lambda (name second minute hour day month year)
-	   (let* ([display (make-object date% this second minute hour day month year)]
+	   (let* ([date-edit (make-object wx:media-edit%)]
+		  [date-snip (make-object wx:media-snip% date-edit #f)]
+		  [display (make-object date% date-edit this second minute hour day month year)]
 		  [label-edit (make-object wx:media-edit%)]
 		  [label (make-object wx:media-snip% label-edit #f)]
 		  [main (make-object wx:media-edit%)]
@@ -224,6 +237,8 @@
 	       (change-style label-delta 0 (string-length name)))
 	     (send* main
 	       (insert label (send main get-start-position) -1 #f)
+	       (insert (string #\newline) (send main get-start-position) -1 #f)
+	       (insert date-snip (send main get-start-position) -1 #f)
 	       (insert (string #\newline) (send main get-start-position) -1 #f)
 	       (insert display (send main get-start-position) -1 #f))))]
 	[sync

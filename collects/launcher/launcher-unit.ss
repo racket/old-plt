@@ -99,9 +99,10 @@
 	  (if (string=? "" s)
 	      path
 	      (if (and (eq? 'windows (system-type))
-		       (regexp-match #rx"[.]exe$" path))
-		  (regexp-replace #rx"[.]exe$" path (format "~a.exe" s))
-		  (string-append path s)))))
+		       (regexp-match #rx#"[.]exe$" (path->bytes path)))
+		  (path-replace-suffix path (string->bytes/utf-8
+					     (format "~a.exe" s)))
+		  (path-replace-suffix path (string->bytes/utf-8 s))))))
       
       (define (string-append/spaces f flags)
 	(if (null? flags)
@@ -267,7 +268,9 @@
 			 "  export PLTHOME" newline
 			 "fi" newline
 			 newline)
-			kind (regexp-replace* "\"" plthome "\\\\\""))]
+			kind (regexp-replace* "\"" 
+					      (path->string plthome)
+					      "\\\\\""))]
 	       [exec (format
 		      "exec \"${PLTHOME}/~a~a~a\" ~a"
 		      (if alt-exe "" "bin/")
@@ -380,9 +383,9 @@
 	(let ([p (open-input-file dest)])
 	  (let ([m (regexp-match-positions "<Insert offset here>" p)])
 	    ;; fast-forward to the end:
-	    (let ([s (make-string 4096)])
+	    (let ([s (make-bytes 4096)])
 	      (let loop ()
-		(if (eof-object? (read-string-avail! s p))
+		(if (eof-object? (read-bytes! s p))
 		    (file-position p)
 		    (loop))))
 	    (let ([data-fork-size (file-position p)])
@@ -394,8 +397,8 @@
 						'("-Z"))
 					    flags))])
 		(file-position p (caar m))
-		(display (integer->integer-byte-string (string-length str) 4 #t #t) p)
-		(display (integer->integer-byte-string data-fork-size 4 #t #t) p)
+		(display (integer->integer-bytes (string-length str) 4 #t #t) p)
+		(display (integer->integer-bytes data-fork-size 4 #t #t) p)
 		(file-position p data-fork-size)
 		(display str p)
 		(close-output-port p))))))
@@ -418,46 +421,49 @@
 	    ((get-maker) 'mzscheme variant flags dest aux))))
       
       (define (strip-suffix s)
-	(regexp-replace "[.]..?.?$" s ""))
+	(path-replace-suffix s #""))
 
       (define (build-aux-from-path aux-root)
-	(let ([try (lambda (key suffix)
-		     (let ([p (string-append aux-root suffix)])
-		       (if (file-exists? p)
-			   (list (cons key p))
-			   null)))])
-	  (append
-	   (try 'icns ".icns")
-	   (try 'ico ".ico")
-	   (try 'independent? ".lch")
-	   (let ([l (try 'creator ".creator")])
-	     (with-handlers ([not-break-exn? (lambda (x) null)])
-	       (with-input-from-file (cdar l)
-		 (lambda () 
-		   (let ([s (read-string 4)])
-		     (if s
-			 (list (cons (caar l) s))
-			 null))))))
-	   (let ([l (try 'file-types ".filetypes")])
-	     (with-handlers ([not-break-exn? (lambda (x) null)])
-	       (with-input-from-file (cdar l)
-		 (lambda () 
-		   (let ([d (read)])
-		     (let-values ([(local-dir base dir?) (split-path aux-root)])
-		       (let ([icon-files
-			      (apply
-			       append
-			       (map (lambda (spec)
-				      (let ([m (assoc "CFBundleTypeIconFile" spec)])
-					(if m
-					    (list (build-path 
-						   (path->complete-path local-dir)
-						   (format "~a.icns" (cadr m))))
-					    null)))
-				    d))])
-			 (list
-			  (cons 'file-types d)
-			  (cons 'resource-files icon-files))))))))))))
+	(let ([aux-root (if (string? aux-root)
+			    (string->path aux-root)
+			    aux-root)])
+	  (let ([try (lambda (key suffix)
+		       (let ([p (path-replace-suffix aux-root suffix)])
+			 (if (file-exists? p)
+			     (list (cons key p))
+			     null)))])
+	    (append
+	     (try 'icns #".icns")
+	     (try 'ico #".ico")
+	     (try 'independent? #".lch")
+	     (let ([l (try 'creator #".creator")])
+	       (with-handlers ([not-break-exn? (lambda (x) null)])
+		 (with-input-from-file (cdar l)
+		   (lambda () 
+		     (let ([s (read-string 4)])
+		       (if s
+			   (list (cons (caar l) s))
+			   null))))))
+	     (let ([l (try 'file-types #".filetypes")])
+	       (with-handlers ([not-break-exn? (lambda (x) null)])
+		 (with-input-from-file (cdar l)
+		   (lambda () 
+		     (let ([d (read)])
+		       (let-values ([(local-dir base dir?) (split-path aux-root)])
+			 (let ([icon-files
+				(apply
+				 append
+				 (map (lambda (spec)
+					(let ([m (assoc "CFBundleTypeIconFile" spec)])
+					  (if m
+					      (list (build-path 
+						     (path->complete-path local-dir)
+						     (format "~a.icns" (cadr m))))
+					      null)))
+				      d))])
+			   (list
+			    (cons 'file-types d)
+			    (cons 'resource-files icon-files)))))))))))))
 
       (define (make-mred-program-launcher file collection dest)
 	(make-mred-launcher (list "-mqvL" file collection "--") 
@@ -497,18 +503,17 @@
 	(let* ([variant (current-launcher-variant)]
 	       [mac-script? (and (eq? (system-type) 'macosx) 
 				 (memq variant '(script script-3m)))])
-	  (string-append
-	   (add-file-suffix 
-	    (build-path 
-	     (if mac-script?
-		 l-home-macosx-mzscheme
-		 l-home)
-	     ((if mac-script? unix-sfx sfx) name))
-	    variant)
+	  (let ([p (add-file-suffix 
+		    (build-path 
+		     (if mac-script?
+			 l-home-macosx-mzscheme
+			 l-home)
+		     ((if mac-script? unix-sfx sfx) name))
+		    variant)])
 	   (if (and (eq? (system-type) 'macosx) 
 		    (not (memq variant '(script script-3m))))
-	       ".app" 
-	       ""))))
+	       (path-replace-suffix p #".app")
+	       p))))
       
       (define (mzscheme-program-launcher-path name)
 	(case (system-type)

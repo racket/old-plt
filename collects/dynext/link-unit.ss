@@ -14,8 +14,11 @@
     (unit/sig dynext:link^
       (import)
 
-      ;; ---- Find a linker for this platform --------------------
+      (define (path-string->string s)
+	(if (string? s) s (path->string s)))
       
+      ;; ---- Find a linker for this platform --------------------
+
       (define (get-windows-linker)
 	(or (find-executable-path "cl.exe" #f)
 	    (find-executable-path "ld.exe" #f)
@@ -23,7 +26,7 @@
 
       (define (get-unix-linker)
 	(or (getenv "MZSCHEME_DYNEXT_LINKER")
-	    (let ([s (case (string->symbol (system-library-subpath))
+	    (let ([s (case (string->symbol (path->string (system-library-subpath)))
 		       [(rs6k-aix ppc-macosx ppc-darwin) "cc"]
 		       [else "ld"])])
 	      (find-executable-path s s))))
@@ -37,12 +40,12 @@
 	   [else #f])
 	 (lambda (v)
 	   (when v 
-	     (if (and (string? v) (or (relative-path? v) (absolute-path? v)))
+	     (if (path-string? v)
 		 (unless (and (file-exists? v)
 			      (memq 'execute (file-or-directory-permissions v)))
 		   (error 'current-extension-linker 
 			  "linker not found or not executable: ~s" v))
-		 (raise-type-error 'current-extension-linker "pathname string or #f" v)))
+		 (raise-type-error 'current-extension-linker "path, valid-path string, or #f" v)))
 	   v)))
 
       ;; Helpers to tell us about the selected linker in Windows:
@@ -50,11 +53,11 @@
       (define (still-win-gcc?)
 	(and (eq? 'windows (system-type))
 	     (let ([c (current-extension-linker)])
-	       (and c (regexp-match "ld.exe$" c)))))
+	       (and c (regexp-match #"ld.exe$" (path-string->string c))))))
       (define (still-win-borland?)
 	(and (eq? 'windows (system-type))
 	     (let ([c (current-extension-linker)])
-	       (and c (regexp-match "ilink32.exe$" c)))))
+	       (and c (regexp-match #"ilink32.exe$" (path-string->string c))))))
 
       (define win-gcc? (still-win-gcc?))
       (define win-borland? (still-win-borland?))
@@ -85,11 +88,11 @@
 	      (list s))))
       
       (define (expand-for-link-variant l)
-	(apply append (map (lambda (s) (if (string? s) (list s) (s))) l)))
+	(apply append (map (lambda (s) (if (path-string? s) (list (path-string->string s)) (s))) l)))
 
 
       (define (get-unix-link-flags)
-	(case (string->symbol (system-library-subpath))
+	(case (string->symbol (path->string (system-library-subpath)))
 	  [(sparc-solaris i386-solaris) (list "-G")]
 	  [(sparc-sunos4) (list "-Bdynamic")]
 	  [(i386-freebsd-2.x) (list "-Bshareable")]
@@ -127,33 +130,34 @@
       ;; See doc.txt:
       (define current-make-link-input-strings
 	(make-parameter
-	 (lambda (s) (list s))
+	 (lambda (s) (list (path-string->string s)))
 	 (lambda (p)
 	   (unless (procedure-arity-includes? p 1)
 	     (raise-type-error 'current-make-link-input-strings "procedure of arity 1" p))
 	   p)))
             
       (define win-gcc-link-output-strings (lambda (s) (list "--base-file"
-							    (make-win-gcc-temp "base")
+							    (path->string (make-win-gcc-temp "base"))
 							    "-e" "_dll_entry@12" 
-							    "-o" s)))
-      (define msvc-link-output-strings (lambda (s) (list (string-append "/Fe" s))))
-      (define borland-link-output-strings (lambda (s) (list "," s
+							    "-o" (path-string->string s))))
+      (define msvc-link-output-strings (lambda (s) (list (string-append "/Fe" (path-string->string s)))))
+      (define borland-link-output-strings (lambda (s) (list "," (path-string->string s)
 							    "," "," "c0d32.obj" "cw32.lib" "import32.lib"
-							    "," (build-path std-library-dir 
-									    "bcc" 
-									    "mzdynb.def"))))
+							    "," (path->string
+								 (build-path std-library-dir 
+									     "bcc" 
+									     "mzdynb.def")))))
       
       ;; See doc.txt:
       (define current-make-link-output-strings
 	(make-parameter
 	 (case (system-type)
-	   [(unix macosx) (lambda (s) (list "-o" s))]
+	   [(unix macosx) (lambda (s) (list "-o" (path-string->string s)))]
 	   [(windows) (cond
 		       [win-gcc? win-gcc-link-output-strings]
 		       [win-borland? borland-link-output-strings]
 		       [else msvc-link-output-strings])]
-	   [(macos) (lambda (s) (list "-o" s))])
+	   [(macos) (lambda (s) (list "-o" (path-string->string s)))])
 	 (lambda (p)
 	   (unless (procedure-arity-includes? p 1)
 	     (raise-type-error 'current-make-link-output-strings "procedure of arity 1" p))
@@ -161,12 +165,13 @@
 
       (define (make-win-link-libraries win-gcc? win-borland?)
 	(let* ([file (lambda (f)
-                       (build-path std-library-dir 
-                                   (cond
+		       (path->string
+			(build-path std-library-dir 
+				    (cond
                                      [win-gcc? "gcc"]
                                      [win-borland? "bcc"]
                                      [else "msvc"])
-                                   f))]
+				    f)))]
                [filethunk (lambda (f)
                             (lambda ()
 			      (map file (f))))]
@@ -199,7 +204,7 @@
       (define (get-unix/macos-link-libraries)
 	(list (lambda ()
 		(map (lambda (mz.o)
-		       (build-path std-library-dir mz.o))
+		       (path->string (build-path std-library-dir mz.o)))
 		     ((wrap-3m "mzdyn~a.o"))))))
 
       ;; See doc.txt:
@@ -210,10 +215,10 @@
 	   [(windows) (make-win-link-libraries win-gcc? win-borland?)])
 	 (lambda (l)
 	   (unless (and (list? l) 
-			(andmap (lambda (s) (or (string? s)
+			(andmap (lambda (s) (or (path-string? s)
 						(and (procedure? s) (procedure-arity-includes? s 0))))
 				l))
-	     (raise-type-error 'current-stand-link-libraries "list of strings and thunks" l))
+	     (raise-type-error 'current-stand-link-libraries "list of paths/strings and thunks" l))
 	   l)))
       
       ;; ---- Function to install standard linker parameters --------------------
@@ -227,8 +232,8 @@
 	   (case name
 	     [(cc gcc) (current-extension-linker (get-unix-linker))
 	      (current-extension-linker-flags (get-unix-link-flags))
-	      (current-make-link-input-strings (lambda (s) (list s)))
-	      (current-make-link-output-strings (lambda (s) (list "-o" s)))
+	      (current-make-link-input-strings (lambda (s) (list (path-string->string s))))
+	      (current-make-link-output-strings (lambda (s) (list "-o" (path-string->string s))))
 	      (current-standard-link-libraries (get-unix/macos-link-libraries))]
 	     [else (bad-name name)])]
 	  [(windows)
@@ -238,7 +243,7 @@
 			(error 'use-standard-linker "cannot find gcc's ld.exe"))
 		      (current-extension-linker f)
 		      (current-extension-linker-flags win-gcc-linker-flags)
-		      (current-make-link-input-strings (lambda (s) (list s)))
+		      (current-make-link-input-strings (lambda (s) (list (path-string->string s))))
 		      (current-make-link-output-strings win-gcc-link-output-strings)
 		      (current-standard-link-libraries (make-win-link-libraries #t #f)))]
 	     [(borland) (let ([f (find-executable-path "ilink32.exe" #f)])
@@ -246,7 +251,7 @@
 			    (error 'use-standard-linker "cannot find ilink32.exe"))
 			  (current-extension-linker f)
 			  (current-extension-linker-flags borland-linker-flags)
-			  (current-make-link-input-strings (lambda (s) (list s)))
+			  (current-make-link-input-strings (lambda (s) (list (path-string->string s))))
 			  (current-make-link-output-strings borland-link-output-strings)
 			  (current-standard-link-libraries (make-win-link-libraries #f #t)))]
 	     [(msvc) (let ([f (find-executable-path "cl.exe" #f)])
@@ -254,7 +259,7 @@
 			 (error 'use-standard-linker "cannot find MSVC's cl.exe"))
 		       (current-extension-linker f)
 		       (current-extension-linker-flags msvc-linker-flags)
-		       (current-make-link-input-strings (lambda (s) (list s)))
+		       (current-make-link-input-strings (lambda (s) (list (path-string->string s))))
 		       (current-make-link-output-strings msvc-link-output-strings)
 		       (current-standard-link-libraries (make-win-link-libraries #f #f)))]
 	     [else (bad-name name)])]
@@ -262,8 +267,8 @@
 	   (case name
 	     [(cw) (current-extension-linker #f)
 	      (current-extension-linker-flags null)
-	      (current-make-link-input-strings (lambda (s) (list s)))
-	      (current-make-link-output-strings (lambda (s) (list "-o" s)))
+	      (current-make-link-input-strings (lambda (s) (list (path-string->string s))))
+	      (current-make-link-output-strings (lambda (s) (list "-o" (path-string->string s))))
 	      (current-standard-link-libraries (get-unix/macos-link-libraries))]
 	     [else (bad-name name)])]))
 
@@ -303,14 +308,14 @@
 			(let* ([dll-command
 				;; Generate DLL link information
 				`("--dllname" ,out 
-				  "--def" ,(build-path std-library-dir "gcc" "mzdyn.def")
+				  "--def" ,(path->string (build-path std-library-dir "gcc" "mzdyn.def"))
 				  "--base-file" ,basefile
-				  "--output-exp" ,expfile)]
+				  "--output-exp" ,(path->string expfile))]
 			       ;; Command to link with new .exp, re-create .base:
 			       [command1
 				(map (lambda (s)
 				       (if (regexp-match "[.]exp$" s)
-					   expfile
+					   (path->string expfile)
 					   s))
 				     command)]
 			       ;; Command to link with new .exp file, no .base needed:

@@ -2,8 +2,8 @@
   (provide plthome plthome-ify un-plthome-ify)
 
   (define plthome
-    (or (let ([v (getenv #"PLTHOME")])
-	  (and v (bytes->path v)))
+    (or (let ([v (getenv "PLTHOME")])
+	  (and v (string->path v)))
         (with-handlers ([void (lambda (e) #f)])
           ;; use `split-path' to strip off the trailing "/"
           (let-values ([(base name dir?)

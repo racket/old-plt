@@ -173,9 +173,6 @@
 	      x-specific-collections))
 	 (lambda (a b) (string-ci<? (cc-name a) (cc-name b)))))
 
-      (define re:making (byte-regexp #"making (.*) because "))
-      (define re:compiling (byte-regexp #"compiling: (.*)"))
-
       (define control-io-apply
 	(lambda (print-doing f args)
 	  (if (make-verbose)
@@ -187,48 +184,25 @@
 		     [on? #f]
 		     [dir-table (make-hash-table 'equal)]
 		     [line-accum #""]
-		     [op (make-custom-output-port 
-			  #f
-			  (lambda (s start end flush?)
-			    (let loop ([s (subbytes s start end)])
-			      (if on?
-				  (let ([m (regexp-match-positions #rx#"\n" s)])
-				    (if m
-					(begin
-					  (set! on? #f)
-					  (when (verbose)
-					    (display (subbytes s 0 (add1 (caar m))) oop)
-					    (flush-output oop))
-					  (loop (subbytes s (add1 (caar m)))))
-					(when (verbose)
-					  (display s oop)
-					  (flush-output oop))))
-				  (let ([s (bytes-append line-accum s)])
-				    (let ([m (or (regexp-match-positions re:making s)
-						 (regexp-match-positions re:compiling s))])
-				      (unless m
-					(set! line-accum s)
-					(let ([m (regexp-match-positions #rx#".*[\r\n]" line-accum)])
-					  (when m
-					    (set! line-accum (subbytes line-accum (cdar m))))))
-				      (when m
-					(unless printed?
-					  (set! printed? #t)
-					  (print-doing oop))
-					(set! on? #t)
-					(unless (verbose)
-					  (let ([path (path-only (bytes->path
-								  (subbytes s (caadr m) (cdadr m))))])
-					    (unless (hash-table-get dir-table path (lambda () #f))
-					      (hash-table-put! dir-table path #t)
-					      (print-doing oop path))))
-					(when (verbose)
-					  (display "  " oop)) ; indentation 
-					(loop (subbytes s (caar m))))))))
-			    (- end start))
-			  void
-			  void)])
-		(parameterize ([current-output-port op])
+		     [op (if (verbose)
+			     (current-output-port)
+			     (make-custom-output-port 
+			      #f
+			      (lambda (s start end flush?)
+				(- end start))
+			      void
+			      void))]
+		     [doing-path (lambda (path)
+				   (unless printed?
+				     (set! printed? #t)
+				     (print-doing oop))
+				   (unless (verbose)
+				     (let ([path (path-only path)])
+				       (unless (hash-table-get dir-table path (lambda () #f))
+					 (hash-table-put! dir-table path #t)
+					 (print-doing oop path)))))])
+		(parameterize ([current-output-port op]
+			       [compile-notify-handler doing-path])
 		  (apply f args)
 		  printed?)))))
 
@@ -388,7 +362,7 @@
 		 [x (caddr e)])
 	     (setup-fprintf port
 			    "Error during ~a for ~a (~a)"
-			    desc (cc-name cc) (cc-path cc))
+			    desc (cc-name cc) (path->string (cc-path cc)))
 	     (if (exn? x)
 		 (setup-fprintf port "  ~a" (exn-message x))
 		 (setup-fprintf port "  ~s" x))))
@@ -521,13 +495,13 @@
                                                    kind (if (eq? (current-launcher-variant) 'normal)
                                                           ""
                                                           (current-launcher-variant))
-                                                   p)
+                                                   (path->string p))
                                      (make-launcher
                                       (or mzlf
                                           (if (= 1 (length (cc-collection cc)))
                                             ;; Common case (simpler parsing for Windows to
                                             ;; avoid cygwin bug):
-                                            (list "-qmvL-" mzll (car (cc-collection cc)))
+                                            (list "-qmvL-" mzll (path->string (car (cc-collection cc))))
                                             (list "-qmve-"
                                                   (format "~s" `(require (lib ,mzll ,@(map path->string 
 											   (cc-collection cc))))))))

@@ -200,8 +200,10 @@
         [(pair? l)
 	 (let* ([stx (car l)]
 		[file (cond
-		       [(string? (syntax-source stx))
-			(string->symbol (syntax-source stx))]
+		       [(path-string? (syntax-source stx))
+			(string->symbol (if (path? (syntax-source stx))
+					    (path->string (syntax-source stx))
+					    (syntax-source stx)))]
 		       [(not (syntax-source stx))
 			#f]
 		       [else

@@ -8,15 +8,15 @@ _compile.ss_
 
 > (compile-extension quiet? input-file output-file includes)
    quiet? - Boolean indicating whether command should be echoed to stdout
-   input-file - A C source filename
-   output-file - A compiled object filename
-   includes - A list of include directories; MzScheme's include is
-              added automatically.
+   input-file - A C source path/string
+   output-file - A compiled object path/string
+   includes - A list of include directory paths/strings; MzScheme's
+              include is added automatically.
 
 Compilation is controlled by a number of parameters for Windows
 and Unix:
 
->  current-extension-compiler - compiler executable pathname or
+>  current-extension-compiler - compiler executable path/string or
     #f. The default is set by searching for an executable using the
     PATH environment variable. Under windows, the search looks for
     cl.exe, then gcc.exe, then bcc32.exe (Borland). Under Unix, it
@@ -24,8 +24,8 @@ and Unix:
     looks for gcc, then cc. #f indicates that no compiler could be
     found.
 
->  current-extension-compiler-flags - list of strings and thunks (see
-    `expand-for-compile-variant' below) for strings passed to the
+>  current-extension-compiler-flags - list of paths/strings and thunks
+    (see `expand-for-compile-variant' below) for strings passed to the
     compiler as flags. Under Windows, the default is (list "/c" "/O2"
     3m-flag-thunk) for cl.exe and (list "-c" "-O2" 3m-flag-thunk) for
     gcc.exe and bcc32.exe, where 3m-flag-thunk returns (list
@@ -33,18 +33,20 @@ and Unix:
     variant; under Unix, (list "-c" "-O2" 3m-flag-thunk).
 
 >  current-make-compile-include-strings - procedure that takes an
-    include directory path and returns a list of strings for the
-    command line.  Windows: "dir" -> (list "/Idir") for cl.exe, (list
-    "-Idir") for gcc.exe and bcc32.exe; Unix: "dir" -> (list "-Idir")
+    include directory path/string and returns a list of strings for
+    the command line.  Windows: "dir" -> (list "/Idir") for cl.exe,
+    (list "-Idir") for gcc.exe and bcc32.exe; Unix: "dir" -> (list
+    "-Idir")
 
 >  current-make-compile-input-strings - procedure that takes an
-    input file and returns a list of strings for the command line.
-    The default is `list'.
+    input file path/string and returns a list of strings for the
+    command line.  The default is `list'.
 
 >  current-make-compile-output-strings - procedure that takes an
-    output file and returns a list of strings for the command line.
-    Windows: "file" -> (list "/Fofile") for cl.exe, (list "-o" "file")
-    for gcc.exe and bcc32.exe; Unix: "file" -> (list "-o" "file")
+    output file path/string and returns a list of strings for the
+    command line.  Windows: "file" -> (list "/Fofile") for cl.exe,
+    (list "-o" "file") for gcc.exe and bcc32.exe; Unix: "file" ->
+    (list "-o" "file")
 
 >  compile-variant - a symbol, either 'normal or '3m, that indicates the
     target for compilation.
@@ -61,9 +63,9 @@ Helper functions:
 > (get-standard-compilers) returns a list of standard compiler
     names for the current platform.
 
-> (expand-for-compile-variant l) takes a list of strings and thunks
-    and returns a list of strings. Each thunk in the input list is
-    applied to get a list of strings that is inlined in the
+> (expand-for-compile-variant l) takes a list of paths/strings and
+    thunks and returns a list of strings. Each thunk in the input list
+    is applied to get a list of strings that is inlined in the
     corresponding position in the output list. This expansion enables
     occasional parameterization of flag lists, etc., depending on the
     current compile variant.
@@ -80,15 +82,15 @@ _link.ss_
 
 > (link-extension quiet? input-files output-file)
    quiet? - Boolean indicating whether command should be echoed to stdout
-   input-files - A list of compiled object filenames
-   output-file - An extension filename
+   input-files - A list of compiled object filename paths/strings
+   output-file - An extension filename path/string
 
    For Windows, a special linking sequence is initiated if the
    linker's name is ld.exe (for gcc).
 
 Linking parameters:
 
->  current-extension-linker - linker executable pathname or #f. 
+>  current-extension-linker - linker executable path/string or #f. 
      The default is set by searching for an executable using the PATH
      environment variable. Under Windows, it looks for cl.exe, then
      ld.exe (gcc), then ilink32.exe (Borland). Under Unix it checks
@@ -96,23 +98,24 @@ Linking parameters:
      AIX, it looks for ld. Under AIX, it looks for cc. #f indicates
      that no linker could be found.
 
->  current-extension-linker-flags - list of strings and thunks (see
-     `expand-for-link-variant' below). Under Windows, default is
+>  current-extension-linker-flags - list of paths/strings and thunks
+     (see `expand-for-link-variant' below). Under Windows, default is
      (list "/LD") for cl.exe, (list "--dll") for ld.exe, (list "/Tpd"
      "/c") for ilink32.exe.  Under Unix, the default varies greatly
      among platforms.
 
 >  current-make-link-input-strings - procedure that takes an
-     input file and returns a list of strings for the command line.
-     The default is `list'.
+     input file path/string and returns a list of strings for the
+     command line.  The default is `list'.
 
 >  current-make-link-output-strings - procedure that takes an output
-     file and returns a list of strings for the command line.
-     Windows: "file" -> (list "/Fefile") for cl.exe, something like
-     (list "-e" "_dll_entry@12" "-o" "file") for ld.exe, something
-     complex for ilink32.exe; Unix: "file" -> (list "-o" "file")
+     file path/string and returns a list of strings for the command
+     line.  Windows: "file" -> (list "/Fefile") for cl.exe, something
+     like (list "-e" "_dll_entry@12" "-o" "file") for ld.exe,
+     something complex for ilink32.exe; Unix: "file" -> (list "-o"
+     "file")
 
->  current-standard-link-libraries - a list of strings and thunks
+>  current-standard-link-libraries - a list of paths/strings and thunks
      (see `expand-for-link-variant' below) for file paths to be linked
      with all supplied files.  For most platforms, the default is
         (list (build-path (collection-path "mzscheme" "lib") 
@@ -143,22 +146,23 @@ requires no imports.
 _file.ss_
 ---------
 
-> (append-zo-suffix s) - appends the .zo file suffix to s.
+> (append-zo-suffix s) - appends the .zo file suffix to the
+  path/string s, returning a path.
 
 > (append-object-suffix s) - appends the platform-standard compiled
-   object file suffix to s.
+   object file suffix to the path/string s, returning a path.
 
 > (append-c-suffix s) - appends the platform-standard C source
-   file suffix to s.
+   file suffix to the path/string s, returning a path.
 
 > (append-constant-pool-suffix s) - appends the constant pool file
-   suffix (.kp) to s.
+   suffix (.kp) to the path/string s, returning a path.
 
 > (append-extension-suffix s) - appends the platform-standard dynamic
-   extension file suffix to s.
+   extension file suffix to the path/string s, returning a path.
 
 > (extract-base-filename/ss s program) - strips the Scheme file suffix
-   from the path s and returns the stripped pathname. If s is not a
+   from the path/string s and returns a stripped path. If s is not a
    Scheme file name and `program' is a symbol, and error is signalled.
    If s is not a Scheme file and `program' is #f, #f is returned. The
    `program' argument is optional and defaults to #f.

@@ -6,7 +6,7 @@
 	   (lib "launcher.ss" "launcher"))
 
   (define (do-pre-installer plthome)
-    (define mach-id (string->symbol (system-library-subpath #f)))
+    (define mach-id (string->symbol (path->string (system-library-subpath #f))))
 
     (with-handlers ([(lambda (x)
 		       (and (not-break-exn? x)

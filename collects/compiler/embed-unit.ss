@@ -84,20 +84,6 @@
 	       (format
 		"can't find cmdline position in executable")))))
 
-      (define (data-fork-size dest)
-	(if (eq? (system-type) 'macos)
-	    ;; Can't use `file-size', because that includes the resource fork.
-	    (let ([p (open-input-file dest)]
-		  [s (make-string 4096)])
-	      (let loop ()
-		(if (eof-object? (read-string-avail! s p))
-		    (begin0
-		     (file-position p)
-		     (close-input-port p))
-		    (loop))))
-	    ;; File has only a "data fork":
-	    (file-size dest)))
-
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       (define (prepare-macosx-mred exec-name dest aux variant)
@@ -475,7 +461,7 @@
 					    (when (file-exists? dest)
 					      (delete-file dest)))
 					(raise x))])
-		  (let ([start (data-fork-size dest-exe)])
+		  (let ([start (file-size dest-exe)])
 		    (call-with-output-file* 
 		     dest-exe
 		     (lambda (o)
@@ -503,7 +489,7 @@
 		       (when literal-expression
 			 (write literal-expression o)))
 		     'append)
-		    (let ([end (data-fork-size dest-exe)])
+		    (let ([end (file-size dest-exe)])
 		      (when verbose?
 			(fprintf (current-error-port) "Setting command line~n"))
 		      (let ([start-s (number->string start)]
@@ -533,7 +519,7 @@
 				      (for-each
 				       (lambda (s)
 					 (fprintf out "~a~a~c"
-						  (integer->integer-byte-string (add1 (string-length s)) 4 #t #f)
+						  (integer->integer-bytes (add1 (string-length s)) 4 #t #f)
 						  s
 						  #\000))
 				       full-cmdline)
@@ -545,8 +531,8 @@
 					  (file-position out cmdpos)
 					  (fprintf out "~a...~a~a"
 						   (if keep-exe? "*" "?")
-						   (integer->integer-byte-string end 4 #t #f)
-						   (integer->integer-byte-string (- new-end end) 4 #t #f)))))
+						   (integer->integer-bytes end 4 #t #f)
+						   (integer->integer-bytes (- new-end end) 4 #t #f)))))
 				    (lambda ()
 				      (close-output-port out)))
 				(let ([m (and (eq? 'windows (system-type))

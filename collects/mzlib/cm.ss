@@ -6,8 +6,10 @@
 	   managed-compile-zo
 	   make-caching-managed-compile-zo
 	   trust-existing-zos
+	   manager-compile-notify-handler
 	   (rename trace manager-trace-handler))
   
+  (define manager-compile-notify-handler (make-parameter void))
   (define trace (make-parameter void))
   (define indent (make-parameter ""))
   (define trust-existing-zos (make-parameter #f))
@@ -73,7 +75,8 @@
     ((trace) (format "~afailure" (indent))))
 
   (define (compile-zo path)
-    ((trace) (format "~acompiling: ~a" (indent) (path->bytes path)))
+    ((manager-compile-notify-handler) path)
+    ((trace) (format "~acompiling: ~a" (indent) path))
     (parameterize ([indent (string-append "  " (indent))])
       (let ([zo-name (bytes->path (bytes-append (get-compilation-path path) #".zo"))])
         (cond
@@ -106,19 +109,21 @@
                     (lambda () (write code out))
                     (lambda () (close-output-port out)))))
               (let ([ss-sec (file-or-directory-modify-seconds path)]
-                    [zo-sec (file-or-directory-modify-seconds zo-name)])
+                    [zo-sec (if (file-exists? zo-name)
+				(file-or-directory-modify-seconds zo-name)
+				+inf.0)])
                 (when (< zo-sec ss-sec)
                   (error 'compile-zo
                          "date for newly created .zo file (~a @ ~a) is before source-file date (~a @ ~a)~a"
-                         (path->bytes zo-name)
+                         zo-name
                          (format-date (seconds->date zo-sec))
-                         (path->bytes path)
+                         path
                          (format-date (seconds->date ss-sec))
                          (if (> ss-sec (current-seconds))
                            ", which appears to be in the future"
                            ""))))
               (write-deps code path external-deps)))])))
-    ((trace) (format "~aend compile: ~a" (indent) (path->bytes path))))
+    ((trace) (format "~aend compile: ~a" (indent) path)))
 
   (define (format-date date)
     (format "~a:~a:~a:~a:~a:~a"
@@ -142,7 +147,7 @@
        (lambda () (build-path dir "native" (system-library-subpath) _loader-path))
        (lambda () (build-path dir "native" (system-library-subpath) (append-object-suffix name)))
        (lambda () (build-path dir (path-replace-suffix name #".zo")))
-       (and w/fail? (lambda () (build-path dir (path-replace-suffix name #".zo" #".fail")))))))
+       (and w/fail? (lambda () (build-path dir (path-replace-suffix name #".fail")))))))
 
   (define first-date
     (case-lambda
@@ -162,12 +167,12 @@
 	(cond
           (stamp stamp)
           (else
-           ((trace) (format "~achecking: ~a" (indent) (path->bytes path)))
+           ((trace) (format "~achecking: ~a" (indent) path))
            (let ((path-zo-time (get-compiled-time path #f))
                  (path-time 
                   (with-handlers ((exn:i/o:filesystem? 
                                    (lambda (ex)
-                                     ((trace) (format "~a~a does not exist" (indent) (path->bytes path)))
+                                     ((trace) (format "~a~a does not exist" (indent) path))
                                      #f)))
                     (file-or-directory-modify-seconds path))))
              (cond
@@ -228,29 +233,29 @@
 		(lambda (path mod-name)
 		  (cond
                     [(not mod-name)
-                     ((trace) (format "~askipping:  ~a mod-name ~s" (indent) (path->bytes path) mod-name))
+                     ((trace) (format "~askipping:  ~a mod-name ~s" (indent) path mod-name))
                      (default-handler path mod-name)]
                     [(eq? 'none (use-compiled-file-kinds))
-                     ((trace) (format "~askipping:  ~a file-kinds ~s" (indent) (path->bytes path) (use-compiled-file-kinds)))
+                     ((trace) (format "~askipping:  ~a file-kinds ~s" (indent) path (use-compiled-file-kinds)))
                      (default-handler path mod-name)]
                     [(not (eq? compilation-manager-load-handler (current-load/use-compiled)))
                      ((trace) (format "~askipping:  ~a current-load/use-compiled changed ~s"
-                                      (indent) (path->bytes path) (current-load/use-compiled)))
+                                      (indent) path (current-load/use-compiled)))
                      (default-handler path mod-name)]
                     [(not (eq? orig-eval (current-eval)))
                      ((trace) (format "~askipping:  ~a orig-eval ~s current-eval ~s" 
-                                      (indent) (path->bytes path) orig-eval (current-eval)))
+                                      (indent) path orig-eval (current-eval)))
                      (default-handler path mod-name)]
                     [(not (eq? orig-load (current-load)))
                      ((trace) (format "~askipping:  ~a orig-load ~s current-load ~s" 
-                                      (indent) (path->bytes path) orig-load (current-load)))
+                                      (indent) path orig-load (current-load)))
                      (default-handler path mod-name)]
                     [(not (eq? orig-namespace (current-namespace)))
                      ((trace) (format "~askipping:  ~a orig-namespace ~s current-namespace ~s" 
-                                      (indent) (path->bytes path) orig-namespace (current-namespace)))
+                                      (indent) path orig-namespace (current-namespace)))
                      (default-handler path mod-name)]
                     [else 
-                     ((trace) (format "~aprocessing: ~a" (indent) (path->bytes path)))
+                     ((trace) (format "~aprocessing: ~a" (indent) path))
                      (compile-root path cache)
                      (default-handler path mod-name)]))])
 	compilation-manager-load-handler))))

@@ -15,18 +15,25 @@
       (define make-print-checking (make-parameter #t))
       (define make-print-dep-no-line (make-parameter #t))
       (define make-print-reasons (make-parameter #t))
+      (define make-notify-handler (make-parameter void))
 
-      ;(define-type line (list (union string (list-of string)) (list-of string) thunk))
+      ;(define-type line (list (union path-string (list-of path-string)) (list-of path-string) thunk))
       ;(define-type spec (list-of line))
 
-      ; find-matching-line : string spec -> (union line #f)
+      (define (path-string=? a b)
+	(equal? (if (string? a) (string->path a) a)
+		(if (string? b) (string->path b) b)))
+      (define (path-string->string s)
+	(if (string? s) s (path->string s)))
+
+      ; find-matching-line : path-string spec -> (union line #f)
       (define (find-matching-line str spec)
-	(let ([match? (lambda (s) (string=? s str))])
+	(let ([match? (lambda (s) (path-string=? s str))])
 	  (let loop ([lines spec])
 	    (cond
 	     [(null? lines) #f]
 	     [else (let* ([line (car lines)]
-			  [names (if (string? (car line))
+			  [names (if (path-string? (car line))
 				     (list (car line))
 				     (car line))])
 		     (if (ormap match? names)
@@ -48,16 +55,16 @@
 	      (lambda (line)
 		(and (or (and (list? line) (<= 2 (length line) 3))
 			 (form-error "list is not a list with 2 or 3 parts" line))
-		     (or (or (string? (car line))
+		     (or (or (path-string? (car line))
 			     (and (list? (car line))
-				  (andmap string? (car line))))
-			 (form-error "line does not start with a string or list of strings" line))
+				  (andmap path-string? (car line))))
+			 (form-error "line does not start with a path/string or list of paths/strings" line))
 		     (let ([name (car line)])
 		       (or (list? (cadr line))
 			   (line-error "second part of line is not a list" (cadr line) name)
 			   (andmap (lambda (dep)
-				     (or (string? dep)
-					 (form-error "dependency item is not a string" dep name)))
+				     (or (path-string? dep)
+					 (form-error "dependency item is not a path/string" dep name)))
 				   (cadr line)))
 		       (or (null? (cddr line))
 			   (and (procedure? (caddr line))
@@ -66,14 +73,14 @@
 	      spec)))
 
       ; check-spec : TST -> #t
-      ; effect : calls error if input is not a (union string (vector-of string))
+      ; effect : calls error if input is not a (union path-string (vector-of path-string))
       (define (check-argv argv)
-	(or (string? argv)
+	(or (path-string? argv)
 	    (and (vector? argv)
-		 (andmap string? (vector->list argv)))
-	    (raise-type-error 'make/proc "string or string vector" argv)))
+		 (andmap path-string? (vector->list argv)))
+	    (raise-type-error 'make/proc "path/string or path/string vector" argv)))
 
-      ; make/proc/helper : spec (union string (vector-of string)) -> void
+      ; make/proc/helper : spec (union path-string (vector-of path-string)) -> void
       ; effect : make, according to spec and argv. See doc.txt for details
       (define (make/proc/helper spec argv)
 	(check-spec spec)
@@ -110,15 +117,16 @@
 				(let ([l (cddr line)])
 				  (unless (null? l)
 				    (set! made (cons s made))
+				    ((make-notify-handler) s)
 				    (printf "make: ~amaking ~a~a~n"
 					    (if (make-print-checking) indent "")
-					    s
+					    (path-string->string s)
 					    (if (make-print-reasons)
 						(cond
 						 [(not date)
-						  (string-append " because " s " does not exist")]
-						 [(string? reason)
-						  (string-append " because " reason " changed")]
+						  (string-append " because " (path-string->string s) " does not exist")]
+						 [(path-string? reason)
+						  (string-append " because " (path-string->string reason) " changed")]
 						 [else
 						  (string-append 
 						   (format " because (reason: ~a date: ~a)" 
@@ -128,7 +136,7 @@
 						     (lambda (exn)
 						       (raise (make-exn:make 
 							       (format "make: Failed to make ~a; ~a"
-								       (car line)
+								       (path-string->string (car line))
 								       (if (exn? exn)
 									   (exn-message exn)
 									   exn))
@@ -139,14 +147,14 @@
 							       exn)))])
 				      ((car l))))))))
 			  (unless date
-			    (error 'make "don't know how to make ~a" s)))))])
+			    (error 'make "don't know how to make ~a" (path-string->string s))))))])
 	  (cond
-	   [(string? argv) (make-file argv "")]
+	   [(path-string? argv) (make-file argv "")]
 	   [(equal? argv #()) (make-file (caar spec) "")]
 	   [else (for-each (lambda (f) (make-file f "")) (vector->list argv))])
 
 	  (for-each (lambda (item)
-		      (printf "make: made ~a~n" item))
+		      (printf "make: made ~a~n" (path-string->string item)))
 		    (reverse made))))
 
       (define make/proc

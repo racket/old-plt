@@ -46,7 +46,7 @@
 				     path)])
 		  (let loop ([full-path orig-path][seen-paths (list orig-path)])
 		    (let ([resolved (resolve-path full-path)])
-		      (if (string=? resolved full-path)
+		      (if (equal? resolved full-path)
 			  (do-normalize-path resolved #f)
 			  (let ([path (if (relative-path? resolved)
 					  (build-path
@@ -67,7 +67,7 @@
 				  (loop spath (cons path seen-paths))))))))))]
 	     [resolve
 	      (lambda (path)
-		(if (string=? path (resolve-path path))
+		(if (equal? path (resolve-path path))
 		    path
 		    (resolve-all path #f)))]
 	     [normalize-path
@@ -139,8 +139,8 @@
       (let loop ([path orig-path][rest '()])
 	(let-values ([(base name dir?) (split-path path)])
 	  (when (or (and base
-			 (not (string? base)))
-		    (not (string? name)))
+			 (not (path? base)))
+		    (not (path? name)))
 	    (raise-type-error who "path in normal form" orig-path))
 	  (if base
 	      (loop base (cons name rest))
@@ -155,13 +155,13 @@
     (lambda (directory filename)
       (let ([dir (do-explode-path 'find-relative-path directory)]
 	    [file (do-explode-path 'find-relative-path filename)])
-	(if (string=? (car dir) (car file))
+	(if (equal? (car dir) (car file))
 	    (let loop ([dir (cdr dir)]
 		       [file (cdr file)])
 	      (cond
 	       [(null? dir) (if (null? file) filename (apply build-path file))]
 	       [(null? file) (apply build-path (map (lambda (x) 'up) dir))]
-	       [(string=? (car dir) (car file))
+	       [(equal? (car dir) (car file))
 		(loop (cdr dir) (cdr file))]
 	       [else
 		(apply build-path 
@@ -187,15 +187,12 @@
   ;; name can be any string; we just look for a dot
   (define filename-extension
     (lambda (name)
-      (let* ([len (string-length name)]
-	     [extension
-	      (let loop ([p (sub1 len)])
-		(cond
-		 [(negative? p) #f]
-		 [(char=? (string-ref name p) #\.)
-		  (substring name (add1 p) len)]
-		 [else (loop (sub1 p))]))])
-	extension)))
+      (let ([name (if (string? name)
+		      name
+		      (path->bytes name))])
+	(let ([m (regexp-match #rx#".(.?)$")])
+	  (and m
+	       (cadr m))))))
 
   (define (delete-directory/files path)
     (cond
@@ -224,7 +221,7 @@
 
   (define (make-directory* dir)
     (let-values ([(base name dir?) (split-path dir)])
-      (when (and (string? base)
+      (when (and (path? base)
 		 (not (directory-exists? base)))
 	(make-directory* base))
       (unless (directory-exists? dir)
@@ -232,19 +229,24 @@
 
   (define make-temporary-file
     (case-lambda
-     [(template copy-from)
+     [(template copy-from base-dir)
       (with-handlers ([not-break-exn?
 		       (lambda (x)
 			 (raise-type-error 'make-temporary-file
 					   "format string for 1 argument"
 					   template))])
 	(format template void))
+      (unless (or (not copy-from) (path-string? copy-from))
+	(raise-type-error 'make-temporary-file "path, valid-path string, or #f" copy-from))
+      (unless (or (not base-dir) (path-string? base-dir))
+	(raise-type-error 'make-temporary-file "path, valid-path, string, or #f" base-dir))
       (let ([tmpdir (find-system-path 'temp-dir)])
 	(let loop ([s (current-seconds)][ms (current-milliseconds)])
 	  (let ([name (let ([n (format template (format "~a~a" s ms))])
-			(if (relative-path? n)
-			    (build-path tmpdir n)
-			    n))])
+			(cond
+			 [base-dir (build-path base-dir n)]
+			 [(relative-path? n) (build-path tmpdir n)]
+			 [else n]))])
 	    (with-handlers ([exn:i/o:filesystem? (lambda (x) 
 						   (if (eq? (exn:i/o:filesystem-detail x)
 							    'already-exists)
@@ -257,8 +259,9 @@
 		  (copy-file copy-from name)
 		  (close-output-port (open-output-file name)))
 	      name))))]
-     [(template) (make-temporary-file template #f)]
-     [() (make-temporary-file "mztmp~a" #f)]))
+     [(template copy-from) (make-temporary-file template copy-from #f)]
+     [(template) (make-temporary-file template #f #f)]
+     [() (make-temporary-file "mztmp~a" #f #f)]))
   
   (define find-library
     (case-lambda 
@@ -374,12 +377,16 @@
 			(let ([dir (if (symbol? base)
 				       (current-directory)
 				       base)])
+			  (unless (directory-exists? dir)
+			    (make-directory* dir))
 			  (values filename
-				  (build-path dir (format "~aLOCK~a" 
-							  (if (eq? 'windows (system-type))
-							      "_"
-							      ".")
-							  name))
+				  (build-path dir (bytes->path
+						   (bytes-append
+						    (if (eq? 'windows (system-type))
+							#"_"
+							#".")
+						    #"LOCK"
+						    (path->bytes name))))
 				  dir))))])
 	(with-handlers ([(lambda (x)
 			   (and (exn:i/o:filesystem? x)
@@ -405,8 +412,9 @@
 		  ;; (preserves permissions, etc), write to the temp file,
 		  ;; then move (atomicly) the temp file to the normal name.
 		  (let* ([tmp-file (make-temporary-file
-				    (build-path (regexp-replace "~" pref-dir "~~") "TMPPREF~a")
-				    (and (file-exists? pref-file) pref-file))])
+				    "TMPPREF~a"
+				    (and (file-exists? pref-file) pref-file)
+				    pref-dir)])
 		    (with-output-to-file tmp-file
 		      (lambda ()
 			(with-pref-params

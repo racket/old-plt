@@ -9,19 +9,19 @@
   (define (byte->integer p)
     (char->integer (read-char p)))
   (define (word->integer p)
-    (integer-byte-string->integer (read-string 2 p) #f #f))
+    (integer-bytes->integer (read-string 2 p) #f #f))
   (define (dword->integer p)
-    (integer-byte-string->integer (read-string 4 p) #f #f))
+    (integer-bytes->integer (read-string 4 p) #f #f))
   
   ;; The 0 added in the alpha position apparently means "ignore the alpha
   ;;  and use the mask, instead"
   (define (3/2word->integer p)
-    (integer-byte-string->integer (string-append (read-string 3 p) "\0") #f #f))
+    (integer-bytes->integer (string-append (read-string 3 p) "\0") #f #f))
 
   (define (integer->word i p)
-    (display (integer->integer-byte-string i 2 #f #f) p))
+    (display (integer->integer-bytes i 2 #f #f) p))
   (define (integer->dword i p)
-    (display (integer->integer-byte-string i 4 #f #f) p))
+    (display (integer->integer-bytes i 4 #f #f) p))
 
   (define (flag v)
     (positive? (bitwise-and #x80000000 v)))

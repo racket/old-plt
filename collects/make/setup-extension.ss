@@ -25,6 +25,9 @@
     (let-values ([(base name dir?) (split-path (extract-base-filename/c file.c 'pre-install))])
       name))
 
+  (define (string-path->string s)
+    (if (string? s) s (path->string s)))
+
   (define (pre-install plthome collection-dir file.c . rest)
     (let* ([base-dir (build-path collection-dir
 				 "precompiled"
@@ -65,7 +68,7 @@
 			      extra-depends
 			      last-chance-k)
     (parameterize ([current-directory collection-dir])
-      (define mach-id (string->symbol (system-library-subpath #f)))
+      (define mach-id (string->symbol (path->string (system-library-subpath #f))))
       (define is-win? (eq? mach-id 'win32\\i386))
 
       ;; We look for libraries and includes in the 
@@ -105,7 +108,9 @@
 			      (if is-win?
 				  find-windows-libs
 				  find-unix-libs))
-		      x))
+		      (if (string? x)
+			  (string->path x)
+			  x)))
 	       search-path))
 
       (unless sys-path
@@ -130,14 +135,14 @@
 
 	(with-new-flags 
 	 current-extension-compiler-flags
-	 (list (format "-I~a" (build-path sys-path "include")))
+	 (list (format "-I~a" (path->string (build-path sys-path "include"))))
 	  
 	 ;; Add -L and -l for Unix:
 	 (with-new-flags
 	  current-extension-linker-flags 
 	  (if is-win?
 	      null
-	      (list (format "-L~a/lib" sys-path)))
+	      (list (format "-L~a/lib" (path->string sys-path))))
 	  
 	  ;; Add libs for Windows:
 	  (with-new-flags
@@ -173,14 +178,17 @@
 							 (if is-win?
 							     null
 							     (map (lambda (l)
-								    (string-append "-l" l))
+								    (string-append "-l" (string-path->string l)))
 								  (append find-unix-libs unix-libs))))
 					      file.so)))
 		      
 		      (list file.o 
 			    (append (list file.c)
 				    (filter (lambda (x)
-					      (regexp-match #rx"mzdyn[a-z0-9]*[.]o" x))
+					      (regexp-match #rx#"mzdyn[a-z0-9]*[.]o" 
+							    (if (string? x)
+								x
+								(path->string x))))
 					    (expand-for-link-variant (current-standard-link-libraries)))
 				    headers
 				    extra-depends)

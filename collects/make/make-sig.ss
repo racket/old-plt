@@ -9,5 +9,6 @@
      make-print-checking
      make-print-dep-no-line
      make-print-reasons
+     make-notify-handler
      (struct exn:make (target orig-exn)))))
 

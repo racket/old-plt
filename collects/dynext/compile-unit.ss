@@ -32,31 +32,31 @@
 	   [else #f])
 	 (lambda (v)
 	   (when v 
-	     (if (and (string? v) (or (relative-path? v) (absolute-path? v)))
+	     (if (path-string? v)
 		 (unless (and (file-exists? v)
 			      (memq 'execute (file-or-directory-permissions v)))
 		   (error 'current-extension-compiler 
 			  "compiler not found or not executable: ~s" v))
-		 (raise-type-error 'current-extension-compiler "pathname string or #f" v)))
+		 (raise-type-error 'current-extension-compiler "path, valid-path string, or #f" v)))
 	   v)))
 
       (define win-gcc?
 	(let ([c (current-extension-compiler)])
-	  (and c (regexp-match "gcc.exe$" c))))
+	  (and c (regexp-match #"gcc.exe$" (path->bytes c)))))
       (define win-borland?
 	(let ([c (current-extension-compiler)])
-	  (and c (regexp-match "bcc32.exe$" c))))
+	  (and c (regexp-match #"bcc32.exe$" (path->bytes c)))))
       (define unix-cc?
 	(let ([c (current-extension-compiler)])
-	  (and c (regexp-match "[^g]cc$" c))))
+	  (and c (regexp-match #"[^g]cc$" (path->bytes c)))))
 
       (define gcc-compile-flags (append '("-c" "-O2")
-					(case (string->symbol (system-library-subpath))
+					(case (string->symbol (path->string (system-library-subpath)))
 					  [(parisc-hpux) '("-D_HPUX_SOURCE" "-fpic")]
 					  [(ppc-macosx) '("-fno-common" "-DOS_X" )]
 					  [(ppc-darwin) '("-fno-common" "-DOS_X" "-DXONX" )]
 					  [else null])))
-      (define unix-compile-flags (case (string->symbol (system-library-subpath))
+      (define unix-compile-flags (case (string->symbol (path->string (system-library-subpath)))
 				   [(parisc-hpux) '("-c" "-O2" "-Aa" "-D_HPUX_SOURCE" "+z")]
 				   [else gcc-compile-flags]))
       (define msvc-compile-flags '("/c" "/MT" "/O2"))
@@ -72,10 +72,10 @@
 			  msvc-compile-flags)]
 	   [(macos) '()])
 	 (lambda (l)
-	   (unless (and (list? l) (andmap (lambda (s) (or (string? s)
+	   (unless (and (list? l) (andmap (lambda (s) (or (path-string? s)
 							  (and (procedure? s) (procedure-arity-includes? s 0))))
 					  l))
-	     (raise-type-error 'current-extension-compiler-flags "list of strings and thunks" l))
+	     (raise-type-error 'current-extension-compiler-flags "list of paths/strings and thunks" l))
 	   l)))
 
       (define compile-variant (make-parameter 
@@ -92,7 +92,7 @@
 			      null)))))
 
       (define (expand-for-compile-variant l)
-	(apply append (map (lambda (s) (if (string? s) (list s) (s))) l)))
+	(apply append (map (lambda (s) (if (path-string? s) (list s) (s))) l)))
 
       (define current-make-extra-extension-compiler-flags
 	(make-parameter
@@ -104,8 +104,13 @@
 	     (raise-type-error 'current-make-extra-extension-compiler-flags "procedure (arity 0)" p))
 	   p)))
       
-      (define unix-compile-include-strings (lambda (s) (list (string-append "-I" s))))
-      (define msvc-compile-include-strings (lambda (s) (list (string-append "/I" s))))
+      (define (path-string->string s)
+	(if (string? s) s (path->string s)))
+
+      (define unix-compile-include-strings (lambda (s) 
+					     (list (string-append "-I" (path-string->string s)))))
+      (define msvc-compile-include-strings (lambda (s) 
+					     (list (string-append "/I" (path-string->string s)))))
 
       (define current-make-compile-include-strings
 	(make-parameter
@@ -128,8 +133,8 @@
 	     (raise-type-error 'current-make-compile-input-strings "procedure of arity 1" p))
 	   p)))
       
-      (define unix-compile-output-strings (lambda (s) (list "-o" s)))
-      (define msvc-compile-output-strings (lambda (s) (list (string-append "/Fo" s))))
+      (define unix-compile-output-strings (lambda (s) (list "-o" (path-string->string s))))
+      (define msvc-compile-output-strings (lambda (s) (list (string-append "/Fo" (path-string->string s)))))
 
       (define current-make-compile-output-strings
 	(make-parameter
@@ -166,7 +171,7 @@
 						     gcc-compile-flags
 						     unix-compile-flags)))
 	      (current-make-compile-include-strings unix-compile-include-strings)
-	      (current-make-compile-input-strings (lambda (s) (list s)))
+	      (current-make-compile-input-strings (lambda (s) (list (path-string->string s))))
 	      (current-make-compile-output-strings unix-compile-output-strings)]
 	     [else (bad-name name)])]
 	  [(windows) 
@@ -177,7 +182,7 @@
 		      (current-extension-compiler f))
 	      (current-extension-compiler-flags (add-variant-flags gcc-compile-flags))
 	      (current-make-compile-include-strings unix-compile-include-strings)
-	      (current-make-compile-input-strings (lambda (s) (list s)))
+	      (current-make-compile-input-strings (lambda (s) (list (path-string->string s))))
 	      (current-make-compile-output-strings unix-compile-output-strings)]
 	     [(borland) (let ([f (find-executable-path "bcc32.exe" #f)])
 			  (unless f
@@ -185,7 +190,7 @@
 			  (current-extension-compiler f))
 	      (current-extension-compiler-flags (add-variant-flags gcc-compile-flags))
 	      (current-make-compile-include-strings unix-compile-include-strings)
-	      (current-make-compile-input-strings (lambda (s) (list s)))
+	      (current-make-compile-input-strings (lambda (s) (list (path-string->string s))))
 	      (current-make-compile-output-strings unix-compile-output-strings)]
 	     [(msvc) (let ([f (find-executable-path "cl.exe" #f)])
 		       (unless f
@@ -193,7 +198,7 @@
 		       (current-extension-compiler f))
 	      (current-extension-compiler-flags (add-variant-flags msvc-compile-flags))
 	      (current-make-compile-include-strings msvc-compile-include-strings)
-	      (current-make-compile-input-strings (lambda (s) (list s)))
+	      (current-make-compile-input-strings (lambda (s) (list (path-string->string s))))
 	      (current-make-compile-output-strings msvc-compile-output-strings)]
 	     [else (bad-name name)])]
 	  [(macos) 
@@ -201,7 +206,7 @@
 	     [(cw) (current-extension-compiler #f)
 	      (current-extension-compiler-flags (add-variant-flags unix-compile-flags))
 	      (current-make-compile-include-strings unix-compile-include-strings)
-	      (current-make-compile-input-strings (lambda (s) (list s)))
+	      (current-make-compile-input-strings (lambda (s) (list (path-string->string s))))
 	      (current-make-compile-output-strings unix-compile-output-strings)]
 	     [else (bad-name name)])]))
       

@@ -15,14 +15,16 @@ Scheme_Object *do_readline(int argc, Scheme_Object **argv)
   char *s;
   Scheme_Object *o;
 
-  if (!SCHEME_STRINGP(argv[0]))
+  if (!SCHEME_CHAR_STRINGP(argv[0]))
     scheme_wrong_type("readline", "string", 0, argc, argv);
 
-  s = readline(SCHEME_STR_VAL(argv[0]));
+  o = scheme_char_string_to_byte_string(argv[0]);
+
+  s = readline(SCHEME_BYTE_STR_VAL(o));
   if (!s)
     return scheme_eof;
 
-  o = scheme_make_string(s);
+  o = scheme_make_locale_string(s);
   
   free(s);
 
@@ -34,10 +36,12 @@ Scheme_Object *do_add_history(int argc, Scheme_Object **argv)
   char *s;
   Scheme_Object *o;
 
-  if (!SCHEME_STRINGP(argv[0]))
+  if (!SCHEME_CHAR_STRINGP(argv[0]))
     scheme_wrong_type("add-history", "string", 0, argc, argv);
   
-  add_history(SCHEME_STR_VAL(argv[0]));
+  o = scheme_char_string_to_byte_string_locale(argv[0]);
+
+  add_history(SCHEME_BYTE_STR_VAL(o));
 
   return scheme_void;
 }

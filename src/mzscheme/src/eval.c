@@ -1905,6 +1905,18 @@ unbound_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *r
 
   c = SCHEME_STX_CDR(form);
 
+  if (env->genv->module && !rec[drec].resolve_module_ids) {
+    /* Self-reference in a module; need to remember the modidx */
+    Scheme_Object *val;
+
+    val = scheme_alloc_object();
+    val->type = scheme_module_variable_type;
+    SCHEME_PTR1_VAL(val) = env->genv->module->self_modidx;
+    SCHEME_PTR2_VAL(val) = SCHEME_STX_SYM(c);
+
+    return val;
+  }
+
   return (Scheme_Object *)scheme_global_bucket(SCHEME_STX_SYM(c), env->genv);
 }
 

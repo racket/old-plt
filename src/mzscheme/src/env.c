@@ -1148,7 +1148,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
     SCHEME_PTR1_VAL(val) = mrel;
     SCHEME_PTR2_VAL(val) = SCHEME_STX_SYM(symbol);
-    
+
     return val;
   }
 
@@ -1656,10 +1656,14 @@ static Scheme_Object *write_variable(Scheme_Object *obj)
   home = ((Scheme_Bucket_With_Home *)obj)->home;
   m = home->module;
 
+  /* If we get a writeable variable (instead of a module variable),
+     it must be a reference to a module referenced directly by its
+     a symbolic name (i.e., no path). */
+
   if (m) {
-    if (home->for_syntax_of)
+    if (home->for_syntax_of && home->for_syntax_of->link_midx)
       sym = scheme_make_pair(scheme_make_pair(m->modname, 
-					      home->for_syntax_of->module->modname),
+					      home->for_syntax_of->link_midx),
 			     sym);
     else
       sym = scheme_make_pair(m->modname, sym);

@@ -473,7 +473,7 @@
     (define (find-char ch pos)
       (if (>= pos (string-length text))
           -1
-          (if (char=? ch (string-ref pos))
+          (if (char=? ch (string-ref text pos))
               pos
               (find-char ch (add1 pos)))))
       
@@ -481,13 +481,13 @@
       (define (find-last-char ch pos lpos)
         (if (>= pos (string-length text))
             lpos
-            (if (char=? ch (string-ref pos))
+            (if (char=? ch (string-ref text pos))
                 (find-last-char ch (add1 pos) pos)
                 (find-last-char ch (add1 pos) lpos))))
       
       ; string int -> int
       (define (find-str sch-str str pos)
-        (if (>= (+ pos (string-length sch-str)) (string-length text))
+        (if (> (+ pos (string-length sch-str)) (string-length text))
             -1
             (if (startsWith-java.lang.String-int str pos)
                 pos
@@ -495,16 +495,16 @@
     
       ; string int int -> int
       (define (find-last-string sch-str str pos lpos)
-        (if (>= (+ pos (string-length sch-str)) (string-length text))
+        (if (> (+ pos (string-length sch-str)) (string-length text))
             lpos
             (if (startsWith-java.lang.String-int str pos)
                 (find-last-string sch-str str (add1 pos) pos)
                 (find-last-string sch-str str (add1 pos) lpos))))
     
-      (define/public (indexOf-int ch) (find-char (integer->char ch) 0))
-      (define/public (indexOf-int-int ch offset) (find-char (integer->char ch) offset))
-      (define/public (indexOf-java.lang.String str) (find-str (send str get-mzscheme-string) 0))    
-      (define/public (indexOf-java.lang.String-int str offset) (find-str (send str get-mzscheme-string) offset))
+      (define/public (indexOf-int ch) (find-char (if (number? ch) (integer->char ch) ch) 0))
+      (define/public (indexOf-int-int ch offset) (find-char (if (number? ch) (integer->char ch) ch) offset))
+      (define/public (indexOf-java.lang.String str) (find-str (send str get-mzscheme-string) str 0))    
+      (define/public (indexOf-java.lang.String-int str offset) (find-str (send str get-mzscheme-string) str offset))
       
       (define/public (lastIndexOf-int ch) (find-last-char (integer->char ch) 0 -1))
       (define/public (lastIndexOf-int-int ch offset) (find-last-char (integer->char ch) offset -1))    

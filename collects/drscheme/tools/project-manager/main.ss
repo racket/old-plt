@@ -121,7 +121,7 @@
 	       [super-file-menu:between-new-and-open file-menu:between-new-and-open]
 	       [super-on-close on-close]
 	       [super-can-close? can-close?])
-       (override file-menu:save file-menu:save-as
+       (override file-menu:save file-menu:save-as get-filename
 		 edit-menu:between-select-all-and-find
 		 file-menu:between-print-and-close
                  make-root-area-container
@@ -131,6 +131,8 @@
        (public project-name ;; : string
                has-file? ;; : (string -> boolean)
                ))
+
+      (define (get-filename) filename)
 
       (define (on-close)
         (set! project-frames (function:remove this project-frames))
@@ -162,6 +164,8 @@
 	   (lambda ()
 	     (semaphore-wait sema)
 	     (set! changed? #t)
+             (when (is-a? save-button button%)
+               (send save-button show #t))
 	     (semaphore-post sema))
 	   (lambda (f)
 	     (dynamic-wind
@@ -169,9 +173,21 @@
 		(semaphore-wait sema))
 	      (lambda ()
 		(f)
-		(set! changed? #f))
+		(set! changed? #f)
+                (when (is-a? save-button button%)
+                  (send save-button show #f)))
 	      (lambda ()
 		(semaphore-post sema)))))))
+
+      (define (set-filename _filename)
+        (set! filename _filename)
+        (update-name-message))
+      
+      (define (update-name-message)
+        (if filename
+            (let-values ([(base name dir?) (split-path filename)])
+              (send name-message set-message filename name))
+            (send name-message set-message #f "Untitled")))
 
       (define (can-close?)
 	(and (super-can-close?)
@@ -195,7 +211,7 @@
       (define (save-as)
 	(let ([new-fn (put-file "Choose a project filename" this)])
 	  (if new-fn
-	      (begin (set! filename new-fn)
+	      (begin (set-filename new-fn)
 		     (save-file filename)
 		     #t)
 	      #f)))
@@ -334,7 +350,7 @@
 		    (let ([p (make-object horizontal-panel% dialog)])
 		      (make-object button% "Break evaluation" p
 				   (lambda xxx
-				     (when running-thread
+                                     (when running-thread
 				       (break-thread running-thread))))
 		      (make-object button% "Kill evaluation" p
 				   (lambda xxx
@@ -677,11 +693,11 @@
 					   drs-collections)
 				   drs-collections))]
 		[exploded-collection-paths (map (function:compose file:explode-path file:normalize-path)
-						(current-library-collection-paths))])
+						(function:filter directory-exists? (current-library-collection-paths)))])
 	    (for-each
 	     (lambda (new-file)
 	       (let ([exploded (file:explode-path (file:normalize-path new-file))])
-		 (let loop ([exploded-collection-paths exploded-collection-paths ])
+		 (let loop ([exploded-collection-paths exploded-collection-paths])
 		   (cond
 		    [(null? exploded-collection-paths)
 		     (set! files (append files (list new-file)))]
@@ -695,7 +711,7 @@
 				   (cond
 				    [(null? pieces) null]
 				    [(null? (cdr pieces))
-				     (set! filename (car pieces))
+				     (set-filename (car pieces))
 				     null]
 				    [else (cons (car pieces)
 						(loop (cdr pieces)))]))])
@@ -1102,9 +1118,20 @@
       (define rep (make-object localized-rep-text%))
       (define rep-canvas (make-object (canvas:wide-snip-mixin canvas:info%) rep-panel rep))
 
+      (define button-panel (make-object horizontal-panel% top-panel))
+      (send button-panel stretchable-height #f)
+      (define name-message (make-object drscheme:frame:name-message% button-panel))
+      (define save-button (make-object button%
+                            ((drscheme:unit:make-bitmap "save") this)
+                            button-panel (lambda x (save))))
+      (send save-button show is-changed?)
+      (make-object horizontal-panel% button-panel) ;; spacer
       (define execute-button (make-object button%
 			       ((drscheme:unit:make-bitmap "execute") this)
-			       top-panel (lambda x (execute-project))))
+			       button-panel (lambda x (execute-project))))
+      (define break-button (make-object button%
+			       ((drscheme:unit:make-bitmap "break") this)
+			       button-panel (lambda x (break-project))))
 
       (define top-horizontal-panel (make-object horizontal-panel% top-panel))
 
@@ -1146,8 +1173,9 @@
       (update-to-load-files-shown)
       (update-rep-shown)
       (update-buttons)
+      (update-name-message)
 
-      (send top-panel change-children (lambda (l) (list execute-button top-horizontal-panel rep-outer-panel)))
+      (send top-panel change-children (lambda (l) (list button-panel top-horizontal-panel rep-outer-panel)))
 
       (when (and filename
 		 (file-exists? filename))
@@ -1167,4 +1195,17 @@
   (define (new-project)
     (send (make-object project-frame% #f) show #t))
 
-  (drscheme:get/extend:extend-unit-frame make-project-aware-unit-frame))
+  (drscheme:get/extend:extend-unit-frame make-project-aware-unit-frame)
+  
+  (fw:handler:insert-format-handler 
+   "Projects"
+   (lambda (filename) 
+     (call-with-input-file filename
+       (lambda (port)
+         (let ([l (let loop ([i (string-length project-save-file-tag)])
+                    (cond
+                      [(zero? i) null]
+                      [else (cons (read-char port) (loop (- i 1)))]))])
+           (and (equal? l (string->list project-save-file-tag))
+                (gui-utils:get-choice "Open this file as a project file?" "Yes" "No"))))))
+   open-drscheme-window))

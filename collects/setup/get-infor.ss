@@ -2,7 +2,9 @@
   (import)
 
   (define (warning s x)
-    (printf (string-append s "~n") (if (exn? x) (exn-message x) x)))
+    (printf (string-append s "~n") (if (exn? x) (exn-message x) x))
+    (when (and (global-defined-value 'print-error-trace) (exn? x))
+      ((global-defined-value 'print-error-trace) (current-output-port) x)))
 
   ;; get-info : (listof string) -> (union #f (string (-> TST) -> TST))
   (define get-info
@@ -23,6 +25,9 @@
 	      (lambda (key default)
 		(with-handlers ([(lambda (x) #t)
 				 (lambda (x)
-				   (warning "Warning: error calling info.ss proc: ~a" x)
+				   (warning (format 
+                                             "Warning: error calling info.ss proc with ~a: ~~a" 
+                                             key)
+                                            x)
 				   (default))])
 		  (info key default))))))))))

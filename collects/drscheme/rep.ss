@@ -325,7 +325,7 @@
                   (let ([c (send file get-canvas)])
                     (if c
                         (let* ([win (send c get-top-level-window)]
-                               [def-filename (send (ivar win definitions-text) get-filename)])
+                               [def-filename (send win get-filename)])
                           (if def-filename
                               (format "~a's interactions" def-filename)
                               "interactions"))

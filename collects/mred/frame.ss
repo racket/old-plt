@@ -65,7 +65,7 @@
 		 (super-pre-on-event receiver event)))])))
 
     (define time-edit (make-object mred:edit:edit%))
-    (send time-edit lock #t)
+    (send* time-edit (lock #t) (hide-caret #t))
     (letrec ([loop
 	      (lambda ()
 		(let* ([date (seconds->date (current-seconds))]
@@ -93,10 +93,10 @@
 	    [panel (make-object (get-panel%) super-panel)])
 	  (private
 	    [horiz-panel (make-object mred:container:horizontal-panel% super-panel)])
-	  (public
-	    [status-line-panel (make-object mred:container:horizontal-panel% horiz-panel)])
 	  (sequence
 	    (make-object mred:container:vertical-panel% horiz-panel))
+	  (public
+	    [status-line-panel (make-object mred:container:horizontal-panel% horiz-panel)])
 	  (private
 	    [canvas (make-object mred:container:media-canvas% horiz-panel -1 -1 -1 -1
 				 "" (+ wx:const-mcanvas-no-h-scroll
@@ -120,9 +120,9 @@
 	    (send* status-line-panel (border 2) (spacing 2) (stretchable-in-y #f))
 	    (send* horiz-panel (border 0) (spacing 0) (stretchable-in-y #f))
 	    (send* super-panel (border 0) (spacing 0))
-	    (send* canvas (set-media time-edit) (user-min-height 35) (user-min-width 65)
+	    (send* canvas (set-media time-edit) (user-min-height 35) (user-min-width 75)
 		          (stretchable-in-x #f))
-	    (send status-line-panel stretchable-in-y #f)
+	    (send status-line-panel stretchable-in-x #f)
 	    (unless (mred:preferences:get-preference 'mred:status-line)
 	      (send super-panel change-children (lambda (l) (list panel))))))))
 
@@ -367,8 +367,7 @@
       (lambda (super%)
 	(class super% ([name frame-name])
 	  (inherit panel get-client-size get-title set-title set-icon
-		   ;status-line-panel
-		   )
+		   status-line-panel)
 	  (rename [super-on-close on-close])
 	  (public
 	    [WIDTH frame-width]
@@ -446,9 +445,6 @@
 	  
 
 	  (public
-	    [lock-icon '(make-object mred:container:message% status-line-panel "Locked")]
-	    [saved-icon '(make-object mred:container:message% status-line-panel "Saved")]
-
 	    [last-focus-canvas #f] ; Does this need to be inited during make-canvas?
 	    [canvas (make-canvas)])
 	  (sequence

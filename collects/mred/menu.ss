@@ -203,6 +203,14 @@
 	    [macintosh-keymap (make-object wx:keymap%)]
 	    [windows-keymap (make-object wx:keymap%)]
 	    [unix-keymap (make-object wx:keymap%)])
+	  (sequence
+	    (send macintosh-keymap set-error-callback 
+		  (lambda (x) (error 'macintosh-menu-keymap x)))
+	    (send windows-keymap set-error-callback 
+		  (lambda (x) (error 'windows-menu-keymap x)))
+	    (send unix-keymap set-error-callback 
+		  (lambda (x) (error 'unix-menu-keymap x))))
+
 	  (public
 	    [frame #f]
 	    [set-frame (lambda (f) 

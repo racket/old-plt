@@ -153,6 +153,7 @@
 	      [todo-to-new-frames null])
 	    
 	    (public
+	      [get-frames (lambda () frames)]
 	      [buffer-group% b-group%]
 	      [frame% mred:editor-frame:editor-frame%]
 	      [get-frame% (lambda () frame%)]

@@ -12,7 +12,7 @@
 
     (define scheme-project-frame-group%
       (class mred:project-frame-group% args
-	(inherit project)
+	(inherit project get-frames)
 	(public
 	 [frame%
 	  (class drscheme:aries:frame% args
@@ -56,7 +56,6 @@
 	    [use-aries? #t])
 	  (public
 	    [quit (lambda () (send console-edit shut-down))]
-	    [visible? (mred:get-preference 'drscheme:project-visible?)]
 	    [project-extension "spj"]
 	    [group% scheme-project-frame-group%]
 	    
@@ -70,7 +69,7 @@
 	     (lambda (name)
 	       (super-remove-file name)
 	       (when (and (zero? (send project-item-list number))
-			  (not visible?))
+			  (not (mred:get-preference 'drscheme:project-visible?)))
 		 (quit)))]
 	    [parse-options
 	     (lambda (options error-escape)
@@ -146,11 +145,6 @@
 		     [project-menu (make-menu)])
 		 
 		 (send mb append project-menu "P&roject")
-		 
-		 '(unless weak-menus?
-		    (send project-menu append-item "Set Project Type..."
-			  set-project-type)
-		    (send project-menu append-separator))
 		 (send project-menu append-item "&Execute Project"
 		       load-project-into-scheme)
 		 (send project-menu append-item "Execute &Selected Files"
@@ -242,7 +236,7 @@
 	    (send button-panel stretchable-in-y #f)
 	    
 	    (mred:debug:printf 'super-init "before visibility check")
-	    (if visible?
+	    (if (mred:get-preference 'drscheme:project-visible?)
 		(show #t)
 		(make-object drscheme:aries:frame% #f #t group))
 	    (mred:debug:printf 'super-init "after visibility check")
@@ -258,10 +252,21 @@
     (define scheme-project-frame%
       (make-scheme-project-frame% mred:project-frame%))
 
+
     (mred:debug:printf 'super-init "before console")
     (define console (make-object scheme-project-frame%))
     (mred:debug:printf 'super-init "after console")
     (define eval-string (ivar (ivar console console-edit) do-eval))
+
+    (mred:add-preference-callback 'drscheme:project-visible?
+				  (lambda (p v)
+				    (if v
+					(send console show #t)
+					(when (< 0 (send (ivar console project) 
+							 get-frames))
+					  (send console show #f)))))
+					  
+     
 
     (mred:insert-format-handler "Scheme Project" "spj"
 				(lambda (filename group-ignored)

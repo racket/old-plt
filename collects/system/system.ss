@@ -130,7 +130,9 @@
 (constant mred:plt-home-directory)
 (mred:debug:printf 'startup "mred:plt-home-directory: ~a" mred:plt-home-directory)
 
-(require-library (build-path mred:plt-home-directory "lib" "require.ss"))
+(let ([p (build-path mred:plt-home-directory "lib" "require.ss")])
+  (when (file-exists? p)
+    (require-library p)))
 
 (for-each load-recent
 	  (list "sig" "macros"

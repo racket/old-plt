@@ -79,13 +79,13 @@
 			get-text
 			get-character
 			find-string
+			erase
 			set-mode
 			get-canvas
 			get-style-list)
 	       (rename [super-on-local-char on-local-char]
 		       [super-after-insert after-insert]
-		       [super-after-delete after-delete]
-		       [super-erase erase])
+		       [super-after-delete after-delete])
 	       (private old-stdout
 			old-stderr
 			old-stdin)
@@ -119,13 +119,13 @@
 		[super-on-delete on-delete]
 		[super-on-change-style on-change-style])
 	       (private
-		[erasing? #f]
+		[resetting? #f]
 		[on-something
 		 (lambda (super)
 		   (lambda (start len)
 		     (and (or (not (number? prompt-position))
 			      (>= start prompt-position)
-			      erasing?)
+			      resetting?)
 			  ((super) start len))))])
 	       (public
 		[on-insert (on-something (lambda () super-on-insert))]
@@ -447,21 +447,21 @@
 		     (semaphore-post timer-sema)))]
 		[after-insert
 		 (lambda (start len)
-		   (if (or erasing?
+		   (if (or resetting?
 			   (and prompt-mode? (< start prompt-position)))
 		       (set! prompt-position (+ len prompt-position)))
 		   (super-after-insert start len))]
 		[after-delete
 		 (lambda (start len)
-		   (if (or erasing?
+		   (if (or resetting?
 			   (and prompt-mode? (< start prompt-position)))
 		       (set! prompt-position (- prompt-position len)))
 		   (super-after-delete start len))]
-		[erase
+		[reset-console
 		 (lambda ()
-		   (set! erasing? #t)
-		   (super-erase)
-		   (set! erasing? #f))]
+		   (set! resetting? #t)
+		   (erase)
+		   (set! resetting? #f))]
 		
 		[ready-non-prompt
 		 (lambda ()

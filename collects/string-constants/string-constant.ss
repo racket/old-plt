@@ -102,7 +102,9 @@
 		    lang2-name)
                    (for-each
                     (lambda (x) (fprintf (current-error-port) "   ~s\n" x))
-                    constants)
+                    (quicksort
+		     constants
+		     (lambda (x y) (string<=? (symbol->string (car x)) (symbol->string (car y))))))
                    (newline (current-error-port))))
 	       warning-table)))))
            

@@ -192,7 +192,6 @@
  (error-unmarshalling "Fehler beim Lesen der ~a Voreinstellung")	;islwtm, pbliE! :
  (error-saving-preferences "Fehler beim Abspeichern der Voreinstellungen: ~a")
  (error-reading-preferences "Fehler beim Lesen der Voreinstellungen")
- (found-bad-pref "Ungültige Voreinstellung in Datei \"~a\"")
  (expected-list-of-length2 "Eine Liste der Länge 2 erwartet")
  (general-prefs-panel-label "Allgemein")
  (highlight-parens "zwischen entsprechenden Klammern Text hervorheben")

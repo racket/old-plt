@@ -197,7 +197,6 @@
  (error-unmarshalling "Erreur durant la dessérialisation de la préférence ~a.")
  (error-saving-preferences "Erreur durant la sauvegarde des préférences: ~a.")
  (error-reading-preferences "Erreur durant la lecture des préférences.")
- (found-bad-pref "Mauvaise préférence dans le fichier \"~a\".")
  (expected-list-of-length2 "espérait une liste de longueur 2.")
  (general-prefs-panel-label "Général")
  (highlight-parens "Griser les paires de parenthèses.")

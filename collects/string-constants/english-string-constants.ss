@@ -209,7 +209,6 @@
  (error-unmarshalling "Error unmarshalling ~a preference")
  (error-saving-preferences "Error saving preferences: ~a")
  (error-reading-preferences "Error reading preferences")
- (found-bad-pref "found bad pref in file \"~a\"")
  (expected-list-of-length2 "expected a list of length 2")
  (general-prefs-panel-label "General")
  (highlight-parens "Highlight between matching parens")

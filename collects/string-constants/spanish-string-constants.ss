@@ -168,7 +168,6 @@
  (error-unmarshalling "Error mientras desempacaba la preferencia ~a")
  (error-saving-preferences "Error al salvar preferencias: ~a")
  (error-reading-preferences "Error al leer preferencias")
- (found-bad-pref "Encontré una mala preferencia, \"~a\", en el archivo.")
  (expected-list-of-length2 "esperaba un lista de longitud 2")
  (general-prefs-panel-label "General")
  (highlight-parens "Resaltar entre parejas de paréntesis")

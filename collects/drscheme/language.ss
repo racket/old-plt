@@ -23,7 +23,17 @@
     (letrec
 	([settings (basis:copy-setting original-settings)]
 	 [language-levels (map basis:setting-name basis:settings)]
-	 [f (make-object mred:dialog% "Language")]
+
+	 [dialog%
+	  (class mred:dialog% args
+	    (override
+	     [on-close
+	      (lambda ()
+		(set! settings #f))])
+	    (sequence
+	      (apply super-init args)))]
+	      
+	 [f (make-object dialog% "Language")]
 	 [main (make-object mred:vertical-pane% f)]
 	 [language-panel (make-object mred:horizontal-panel% main '(border))]
 	 [customization-panel (make-object mred:horizontal-panel% main)]
@@ -212,8 +222,8 @@
 			  "Cancel"
 			  ok-panel
 			  (lambda (button evt) 
-			    (send f show #f)
-			    (set! settings original-settings)))]
+			    (set! settings #f)
+			    (send f show #f)))]
 	 [ok-button (make-object mred:button%
 		      "OK"
 		      ok-panel
@@ -322,9 +332,11 @@
       "Choose Language..."
       language-menu
       (lambda (_1 _2)
-	(fw:preferences:set
-	 'drscheme:settings
-	 (language-dialog (fw:preferences:get 'drscheme:settings))))
+	(let ([new-settings (language-dialog (fw:preferences:get 'drscheme:settings))])
+	  (when new-settings
+	    (fw:preferences:set
+	     'drscheme:settings
+	     new-settings))))
       (and
        (fw:preferences:get 'framework:menu-bindings)
        #\l))

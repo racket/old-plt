@@ -1,6 +1,7 @@
 version 104:
 
-Added com-get-property*, com-set-property*!
+Added support for paths of property names in
+ com-get-property and com-set-property!
 Fixed typechecking of values supplied to
  com-set-property!
 Removed right-click context menu from browser 

@@ -2115,11 +2115,8 @@ bitwise_shift(int argc, Scheme_Object *argv[])
     if (i > 0) {
       if (shift < 0) {
 	int shft = -shift;
-	if (shft < MAX_SHIFT_EVER) {
-	  i = i >> shft;
-	  return scheme_make_integer(i);
-	} else
-	  return scheme_make_integer(0);
+	i = i >> shft;
+	return scheme_make_integer(i);
       } else if (shift <= MAX_SHIFT_TRY) {
 	long n;
 	

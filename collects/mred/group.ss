@@ -98,7 +98,7 @@
 	       (let* ([normalized
 		       ;; allow for the possiblity of filenames that are urls
 		       (with-handlers ([(lambda (x) #t)
-					(lambda (x) x)])
+					(lambda (x) name)])
 			 (mzlib:file:normalize-path name))]
 		      [test-frame
 		       (lambda (frame)
@@ -108,8 +108,9 @@
 				(and (string? filename)
 				     (string=? normalized
 					       (with-handlers ([(lambda (x) #t)
-								(lambda (x) x)])
-						 (mzlib:file:normalize-path filename)))))))])
+								(lambda (x) filename)])
+						 (mzlib:file:normalize-path 
+						  filename)))))))])
 		 (let loop ([frames frames])
 		   (cond
 		     [(null? frames) #f]

@@ -2610,7 +2610,7 @@ Scheme_Object *srp_SQLColAttribute(int argc,Scheme_Object **argv) {
 
   case sqlbool :
 
-    bufflen = SQL_IS_INTEGER;
+    bufflen = 0;
     sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
 			 buff,bufflen,&actualLen,&numBuffer);
     retcode = checkSQLReturn(sr,"col-attribute");		       

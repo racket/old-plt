@@ -45,7 +45,7 @@ After an image has been built up using overlays, it is
 possible to recover the position of the pieces of the image,
 using the next two functions.
 <menu>
-<li><code>{(idx image-inside)}</code> : image image -> boolean <br>
+<li><code>{(idx image-inside?)}</code> : image image -> boolean <br>
  to determine whether the pixels of the second image appear in the first
 <li><code>{(idx find-image)}</code> : image image -> posn <br>
  to determine where the pixels of the second image appear in the first
@@ -65,7 +65,7 @@ manipulating images and colors.
  
 <li><code>{(idx image->color-list)}</code> : image -> list-of-color <br>
  to convert an image to a list of colors
-<li><code>{(idx color-list->image)}</code> : list-of-color int int -> image <br>
+<li><code>{(idx color-list->image)}</code> : list-of-color int int int int -> image <br>
  to convert a list of colors to an image with the given width and height
  
 <li><code>{(idx make-color)}</code> : int int int -> color <br>

@@ -2404,6 +2404,8 @@ static void wxDoOnMouseLeave(wxWindow *wx_window, int x, int y, UINT flags)
       wx_window->GetEventHandler()->OnEvent(event);
 }
 
+static int numpad_scan_codes[10];
+
 void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
 {
   int id;
@@ -2411,8 +2413,7 @@ void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
   if (isASCII) {
     // If 1 -> 26, translate to CTRL plus a letter.
     id = wParam;
-    if ((id > 0) && (id < 27))
-    {
+    if ((id > 0) && (id < 27)) {
       switch (id)
       {
         case 13:
@@ -2437,9 +2438,22 @@ void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
         }
       }
     }
-  } else
+
+    if ((id >= '0') && (id <= '9')) {
+      /* Ignore character created by numpad, since it's
+	 already handled as WM_KEYDOWN */
+      int sc = (lParam >> 16) & 0xF;
+      if (sc && (numpad_scan_codes[id- '0'] == sc))
+	id = -1;
+    }
+  } else {
     if ((id = wxCharCodeMSWToWX(wParam)) == 0)
       id = -1;
+    if ((id >= WXK_NUMPAD0) && (id <= WXK_NUMPAD9)) {
+      /* remember scan code so we can ignore the WM_CHAR part */
+      numpad_scan_codes[id - WXK_NUMPAD0] = (lParam >> 16) & 0xF;
+    }
+  } 
 
   if ((id > -1) && wx_window) {
     wxKeyEvent *event = new wxKeyEvent(wxEVENT_TYPE_CHAR);

@@ -152,7 +152,7 @@
   
   ;flat-expr is one of
   ;  variable
-  ;  (p-lambda identifier flat-expr ...1)
+  ;  (p-lambda identifier flat-expr ...)
   ;  (if flat-expr flat-expr)
   ;  (if flat-expr flat-expr flat-expr)
   ;  (begin flat-expr ...1)
@@ -323,4 +323,178 @@
       [(args ... . restarg) #`(#,@fv args ... . restarg)]
       [restarg #`(#,@fv . restarg)]))
   
+  ;; ****************************************
+  ;; A-NORMALIZING
+  
+  ;A-expr is one of
+  ;  value
+  ;  (if value A-expr)
+  ;  (if value A-expr A-expr)
+  ;  (let-values ([(variable ...) (#%app value value ...)] ...) A-expr)
+  ;  (let-values ([(variable ...) (#%app primop value ...)] ...) A-expr)
+  ;  (letrec-values ([(variable ...) (#%app value value ...)] ...) A-expr)
+  ;  (letrec-values ([(variable ...) (#%app primop value ...)] ...) A-expr)
+  ;  (#%app primop value ...)
+  ;  (#%app value value ...)
+  
+  ;value is one of
+  ;  (quote datum)
+  ;  (#%datum . datum)
+  ;  (#%top . variable)
+  ;  (#%app p-lambda identifier value ...)
+  ;  variable
+  
+  ;; value?: expr -> boolean
+  (define (value? expr)
+    (syntax-case expr (#%app #%top #%datum p-lambda quote)
+      [(#%top . d) #t]
+      [(#%datum . d) #t]
+      [(quote . whatever) #t]
+      [id (identifier? #'id) #t]
+      [(#%app p-lambda id exprs ...)
+       (andmap value? (syntax->list #'(exprs ...)))]
+      [something_else #f]))
+  
+  ;; this data def is handy for contracts:
+  ;app-v-expr is one of
+  ;   value
+  ;   (#%app primop value ...)
+  ;   (#%app value value ...)
+  
+  ;; Notes:
+  ;; (1) Not worrying about with-continuation-mark yet:
+  ;;     (with-continuation-mark expr expr expr)
+  ;; (2) I think I will unroll begin forms into lets:
+  ;;     (begin flat-expr ...1)
+  ;;     (begin0 flat-expr flat-expr ...)
+  ;; (3) No set! for now
+  ;;     (set! variable flat-expr)
+  
+  ;; normalize-term: flat-expr -> A-expr
+  (define (normalize-term f-expr)
+    (normalize f-expr (lambda (x) x)))
+  
+  ;; normalize: flat-expr (app-v-expr -> A-expr) -> A-expr
+  ;; convert an expression into A-normal form
+  (define (normalize f-expr k)
+    (syntax-case f-expr (p-lambda if begin begin0 let-values letrec-values
+                                  quote #%app #%datum #%top)
+      [(p-lambda proc-id f-exprs ...)
+       (normalize-name* (syntax->list #'(f-exprs ...))
+                        (lambda (vals)
+                          (k #`(p-lambda proc-id #,@vals))))]
+      [(if test-f-expr csq-f-expr)
+       (normalize-name #'test-f-expr
+                       (lambda (val)
+                         (k #`(if val #,(normalize-term #'csq-f-expr)))))]
+      [(if test-f-expr csq-f-expr alt-f-expr)
+       (normalize-name #'test-f-expr
+                       (lambda (val)
+                         (k #`(if val
+                                  #,(normalize-term #'csq-f-expr)
+                                  #,(normalize-term #'alt-f-expr)))))]
+      [(begin f-exprs ...)
+       (syntax-case #'(f-exprs ...) ()
+         [(e) (normalize #'e k)]
+         [(e es ...) (normalize #'(let-values ([(x) e]) (begin es ...)) k)])]
+      [(begin0 f-exprs ...)
+       (syntax-case #'(f-exprs ...) ()
+         [(e) (normalize #'e k)]
+         [(e es ...) (normalize #'(let-values ([(x) e]) (begin es ... x)))])]
+      [(let-values ([(varss ...) rhs-f-exprs] ...) body-f-exprs ...)
+       (normalize-let f-expr k)]
+      [(letrec-values ([(varss ...) rhs-f-exprs] ...) body-f-exprs ...)
+       (normalize-letrec f-expr k)]
+      [(quote datum) (k f-expr)]
+      [(#%app fn f-exprs ...)
+       (if (primop? #'fn)
+           (normalize-name* (syntax->list #'(f-exprs ...))
+                            (lambda (vals)
+                              (k #`(fn #,@vals))))
+           (normalize-name #'fn
+                           (lambda (val)
+                             (normalize-name* (syntax->list #'(f-exprs ...))
+                                              (lambda (vals)
+                                                (k #`(#,val #,@vals)))))))]
+      [(#%datum . datum) (k f-expr)]
+      [(#%top . var) (k f-expr)]
+      [s (identifier? #'s) (k f-expr)]))
+  
+  ;; normalize-name: flat-expr (value -> A-expr) -> A-expr
+  ;; name the result of evaluating flat-expr if it is not a value
+  (define (normalize-name f-expr k)
+    (normalize
+     f-expr
+     (lambda (n)
+       (if (value? n)
+           (k n)
+           (let ([t (namespace-syntax-introduce
+                     (datum->syntax-object #f (gensym)))])
+             #`(let-values ([(#,t) #,n]) #,(k t)))))))
+  
+  ;; normalize-name*: (listof flat-expr) ((listof value) -> A-expr) -> A-expr
+  ;; name the results of evaluating flat-exprs if they are not values
+  (define (normalize-name* f-exprs k)
+    (if (null? f-exprs)
+        (k '())
+        (normalize-name
+         (car f-exprs)
+         (lambda (val)
+           (normalize-name* (cdr f-exprs)
+                            (lambda (vals)
+                              (k #`(#,val #,@vals))))))))
+  
+  ;; normalize-let: flat-expr (app-v-expr -> A-expr) -> A-expr
+  ;; convert a let-values expresion into A-normal form
+  (define (normalize-let l-expr k)
+    (syntax-case l-expr (let-values)
+      ;; make the implicit begin explicit
+      [(let-values ([(varss ...) rhs-f-exprs] ...) body-f-exprs ...)
+       (normalize-let
+        #'(let-values ([(varss ...) rhs-f-exprs] ...) (begin body-f-exprs ...))
+        k)]
+      [(let-values ([(vars ...) rhs-f-expr]) body-f-expr)
+       (normalize #'rhs-f-expr
+                  (lambda (a-v-e)
+                    #`(let-values ([(vars ...) #,a-v-e]) #,(normalize #'body-f-expr k))))]
+      
+      ;; just unroll the let into nested lets
+      ;; hopfully the syntax magic will prevent variable capture
+      ;; syntax magic will only work with expanded code.
+      [(let-values ([(vars ...) rhs-f-expr]
+                    [(rest-varss ...) rest-rhs-f-exprs] ...)
+         body-f-expr)
+       (normalize-let
+        #`(let-values ([(vars ...) rhs-f-expr])
+            (let-values ([(rest-varss ...) rest-rhs-f-exprs] ...)
+              #'body-f-expr)))]))
+  
+  ;; normalize-letrec: flat-expr (app-v-expr -> A-expr) -> A-expr
+  ;; convert a letrec-values expression into A-normal form (sort of)
+  ;; Note: right now I'm not going to convert the r.h.s.
+  ;;       the justification is that there should be no interaction
+  ;;       while evaluation the r.h.s. of a letrec. To make this safe,
+  ;;       I will put a mark around the r.h.s. and raise an error
+  ;;       if a stack serialization happens during a r.h.s.  
+  (define (normalize-letrec l-expr k)
+    (syntax-case l-expr (letrec-values)
+      ;; make the implicit begin explicit
+      [(letrec-values ([(varss ...) rhs-f-exprs] ...) body-f-exprs ...)
+       (normalize-letrec
+        #'(letrec-values ([(varss ...) rhs-f-exprs] ...) (begin body-f-exprs ...))
+        k)]
+      [(letrec-values ([(varss ...) rhs-f-exprs] ...) body-f-expr)
+       (normalize #'body-f-expr
+                  (lambda (new-body-expr)
+                    #`(letrec-values ([(varss ...) rhs-f-exprs] ...)
+                        #,(k new-body-expr))))]))
+  
+  ;; primop?: x -> boolean
+  (define (primop? x)
+    (syntax-case x (#%top)
+      [(#%top . d) (primop? #'d)]
+      [id (identifier? #'id)
+          (and (namespace-defined? (syntax-object->datum #'id))
+               (primitive? (namespace-variable-value (syntax-object->datum #'id))))]
+      [_else #f]))
   )

@@ -1,22 +1,4 @@
-;; Requires a module and exposes some of its unprovided (non-syntax!)
-;; identifiers.
-;; USAGE: (require/expose MODULE-NAME (IDS ...))
-;;   where MODULE-NAME is as in the MzScheme manual (i.e., a standard
-;;   module spec) and IDS are the un-provided identifiers that you wish to
-;;   expose in the current module.
-;; Based on a macro by Raymond Racine (rracine@adelphia.net) posted to
-;; plt-scheme in Dec 2003.
-(define-syntax require/expose
-  (syntax-rules ()
-    [(_ mod (ids ...))
-     (begin
-       (require mod)
-       (define-values (ids ...)
-         (let ([ns (module->namespace 'mod)])
-           (parameterize ([current-namespace ns])
-             (values
-              (namespace-variable-value 'ids)...)))))]))
-
+(require "test-helpers.ss")
 (require/expose "p-lambda-lib.ss" (lift))
 
 (define (lift-eval expr)
@@ -204,6 +186,52 @@
 (even1? 4)
 (not (even1? 5))
 (even1? 6)
+
+
+(= 3 (lift-eval (syntax (((lambda (n)
+                            (lambda (m)
+                              (+ n m))) 1) 2))))
+
+(= (/ 1 2) (lift-eval (syntax (((lambda (x)
+                                  (lambda (y)
+                                    (/ x y))) 1) 2))))
+
+(= 6 (lift-eval (syntax ((lambda (f n)
+                           (f f n))
+                         (lambda (f n)
+                           (if (zero? n)
+                               1
+                               (* n (f f (- n 1)))))
+                         3))))
+
+(= 6 (lift-eval (syntax ((lambda (f n)
+                           (f f n))
+                         (lambda (f n)
+                           (cond
+                             [(zero? n) 1]
+                             [else (* n (f f (sub1 n)))]))
+                         3))))
+
+(= 6 (lift-eval (syntax (let ([fact (lambda (f n)
+                                      (cond
+                                        [(zero? n) 1]
+                                        [else (* n (f f (sub1 n)))]))])
+                          (fact fact 3)))))
+
+(= 6 (lift-eval (syntax (let ([fix (lambda (f)
+                                     (lambda (n)
+                                       (f f n)))])
+                          (let ([fact (fix (lambda (fact n)
+                                             (cond
+                                               [(zero? n) 1]
+                                               [else (* n (fact fact (sub1 n)))])))])
+                            (fact 3))))))
+
+;(= 6 (lift-eval (syntax (begin
+;                          (define (fact n)
+;                            (if (zero? n) 1
+;                                (* n (fact (sub1 n)))))
+;                          (fact 3)))))
 
 
 

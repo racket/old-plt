@@ -486,7 +486,7 @@
 		  (gw s1)))))]
 
 	  [this-err-write/exn
-	   (let ([fallthru-regexp (regexp "^()([a-z:-]*):")]
+	   (let ([fallthru-regexp (regexp "^()([a-z:-]*): ")]
 		 [class-regexp (regexp "^(.*[^a-z:-])([a-z:-]+(<%>|%))")]
 		 [ivar-regexp (regexp "^(ivar: instance variable not found: )([a-z:-]*)")])
 	     (lambda (s exn)

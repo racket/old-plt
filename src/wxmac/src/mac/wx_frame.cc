@@ -719,12 +719,14 @@ void wxFrame::MacUpdateWindow(void)
 {
   WindowPtr theMacWindow;
   theMacWindow = macWindow();
-  if (theMacWindow && SetCurrentDC()) {
+  if (!is_in_update && theMacWindow && SetCurrentDC()) {
+    is_in_update++;
     ::BeginUpdate(theMacWindow);
 
     Paint();
 
     ::EndUpdate(theMacWindow);
+    --is_in_update;
   }
 }
 

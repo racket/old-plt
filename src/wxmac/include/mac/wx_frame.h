@@ -48,6 +48,7 @@ class wxFrame: public wxbFrame
   /*============================================================================= */
  public:
   int         cBusyCursor;
+  Bool        is_in_update;
 
   wxDialogBox* cDialogPanel;
 

@@ -277,7 +277,7 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
     FlushDisplay();
 
     /* in case paint didn't take, because an update is already in progress: */
-    Refresh(); 
+    RefreshIfUpdating();
   }
 }
 
@@ -295,7 +295,7 @@ void wxMessage::SetLabel(char* label)
     FlushDisplay();
 
     /* in case paint didn't take, because an update is already in progress: */
-    Refresh();
+    RefreshIfUpdating();
   }
 }
 

@@ -118,8 +118,9 @@ void wxItem::ChangeToGray(Bool gray)
     }
   } else {
     Paint(); /* to paint custom control */
-    Refresh(); /* in case an update is in progress */
   }
+
+  RefreshIfUpdating();
   
   wxWindow::ChangeToGray(gray);
 }
@@ -133,6 +134,7 @@ void wxItem::Activate(Bool on)
     } else {
       ActivateControl(cMacControl);
     }
+    RefreshIfUpdating();
   }
 
   wxWindow::Activate(on);

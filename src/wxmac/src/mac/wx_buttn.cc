@@ -233,6 +233,7 @@ void wxButton::SetLabel(char* label)
 	llabel = CFStringCreateWithCString(NULL, wxItemStripLabel(label), kCFStringEncodingISOLatin1);
 	SetControlTitleWithCFString(cMacControl, llabel);
 	CFRelease(llabel);
+	RefreshIfUpdating();
       }
     }
   }
@@ -406,6 +407,7 @@ void wxButton::DoShow(Bool show)
     } else {
       ::HideControl(cMacControl);
     }
+    RefreshIfUpdating();
   }
   
   wxWindow::DoShow(show);

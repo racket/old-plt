@@ -203,6 +203,7 @@ void wxCheckBox::SetLabel(char* label)
     llabel = CFStringCreateWithCString(NULL, labelString, kCFStringEncodingISOLatin1);
     SetControlTitleWithCFString(cMacControl, llabel);
     CFRelease(llabel);
+    RefreshIfUpdating();
   } else
     Refresh();
 }
@@ -224,12 +225,13 @@ void wxCheckBox::SetValue(Bool value)
   if (cMacControl) {
     SetCurrentDC();
     ::SetControlValue(cMacControl, value ? 1 : 0);
+    RefreshIfUpdating();
   } else {
     bitmapState = !!value;
     if (!cHidden) {
       Paint();
       /* in case paint didn't take, because an update is already in progress: */
-      Refresh();
+      RefreshIfUpdating();
     }
   }
 }
@@ -383,6 +385,7 @@ void wxCheckBox::DoShow(Bool show)
     } else {
       ::HideControl(cMacControl);
     }
+    RefreshIfUpdating();
   }
   
   wxWindow::DoShow(show);

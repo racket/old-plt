@@ -587,6 +587,16 @@ void wxWindow::Refresh(void)
   }
 }
 
+void wxWindow::RefreshIfUpdating(void)
+{
+  wxFrame *fr;
+
+  fr = GetRootFrame();
+  if (fr && fr->is_in_update) {
+    Refresh();
+  }
+}
+
 //-----------------------------------------------------------------------------
 void wxWindow::SetClientSize(int newClientWidth, int newClientHeight)
 {

@@ -192,7 +192,7 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
     codedComError("make-browser: Can't get event queue interface",hr);
   }
 
-  pIEventQueue->GetReaderSemaphore(&browser->readSem);
+  pIEventQueue->GetReaderSemaphore((long *)(&browser->readSem));
 
   if (browser->readSem == 0) {
     scheme_signal_error("make-browser: Error retrieving browser event read semaphore");

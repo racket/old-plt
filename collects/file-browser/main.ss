@@ -33,11 +33,12 @@
               (rename (f-int name) ...)
               (define f-int name) ...)))))))
   
+  (define orig-output (current-output-port))
   (define trace? #t)
   (define-syntax trace
     (syntax-rules ()
       ((_ str arg ...)
-       (cond (trace? (printf str arg ...) (newline))))))
+       (cond (trace? (fprintf orig-output str arg ...) (newline orig-output))))))
   
   (define tool@
     (unit/sig drscheme:tool-exports^
@@ -141,7 +142,7 @@
             (let ((s (make-semaphore)))
               (trace "starting setup-namespace user-thread")
               (run-thread
-               (lambda () (void)))
+               (lambda () (trace "in setup-namespace user-thread")))
 ;                 (with-handlers ((void (lambda (x) (printf "~a~n" (exn-message x)))))
 ;                   (script-unit-param unit)
 ;                   (namespace-require `(lib "script.ss" "file-browser"))
@@ -169,6 +170,7 @@
                      (trace "starting on-execute user-thread")
                      (run-in-user-thread
                       (lambda ()
+                        (trace "in on-execute user-thread")
                         (with-handlers ((void (lambda (x) (printf "~a~n" (exn-message x)))))
                           (namespace-attach-module prog-namespace module-name)
                           (set! user-namespace (current-namespace)))

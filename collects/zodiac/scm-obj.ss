@@ -555,7 +555,7 @@
     (add-micro-form 'class* scheme-vocabulary
       (let* ((kwd '())
 	      (in-pattern `(class* this ((super-name super-expr) ...)
-			     ,optarglist-pattern
+			     ,paroptarglist-pattern
 			     inst-vars ...))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env attributes vocab)
@@ -567,7 +567,7 @@
 		       (in:this (pat:pexpand 'this p-env kwd))
 		       (in:supervars (pat:pexpand '(super-name ...) p-env kwd))
 		       (in:supervals (pat:pexpand '(super-expr ...) p-env kwd))
-		       (in:initvars (pat:pexpand `,optarglist-pattern
+		       (in:initvars (pat:pexpand `,paroptarglist-pattern
 				      p-env kwd))
 		       (in:ivars (pat:pexpand '(inst-vars ...) p-env kwd)))
 		  (valid-syntactic-id? in:this)
@@ -591,14 +591,14 @@
 			  (proc:this (create-lexical-binding+marks in:this))
 			  (proc:initvar-info
 			    (expand-expr in:initvars env attributes
-			      optarglist-decls-vocab))
+			      paroptarglist-decls-vocab))
 			  (proc:ivar-info
 			    (map (lambda (iv-decl)
 				   (expand-expr iv-decl env attributes
 				     ivar-decls-vocab))
 			      in:ivars)))
-		    (let ((proc:initvars (map optarglist-entry-var+marks
-					   (optarglist-vars
+		    (let ((proc:initvars (map paroptarglist-entry-var+marks
+					   (paroptarglist-vars
 					     proc:initvar-info)))
 			   (proc:ivars (apply append
 					 (map (lambda (i)
@@ -616,7 +616,7 @@
 					 (expand-expr e env attributes vocab))
 				    in:supervals))
 				(parsed-initvars
-				  (make-optargument-list proc:initvar-info
+				  (make-paroptargument-list proc:initvar-info
 				    env attributes vocab)))
 			  (distinct-valid-id/s? (append new-names
 						  (map car proc:initvars)))
@@ -721,11 +721,11 @@
     (add-micro-form 'class scheme-vocabulary
       (let* ((kwd '())
 	      (in-pattern `(class super-expr
-			     ,optarglist-pattern
+			     ,paroptarglist-pattern
 			     inst-vars ...))
 	      (out-pattern `(class* this
 			      ((super super-expr))
-			      ,optarglist-pattern
+			      ,paroptarglist-pattern
 			      inst-vars ...))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env attributes vocab)

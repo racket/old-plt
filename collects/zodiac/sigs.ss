@@ -61,6 +61,15 @@
     (struct ilist-optarglist ())
     optarglist-decls-vocab
     make-optargument-list
+    paroptarglist-pattern
+    (struct paroptarglist-entry (var+marks))
+    (struct initialized-paroptarglist-entry (expr))
+    (struct paroptarglist (vars))
+    (struct sym-paroptarglist ())
+    (struct list-paroptarglist ())
+    (struct ilist-paroptarglist ())
+    paroptarglist-decls-vocab
+    make-paroptargument-list
     arglist-pattern
     (struct arglist (vars))
     (struct sym-arglist ())

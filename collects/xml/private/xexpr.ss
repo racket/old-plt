@@ -61,7 +61,7 @@
       ;; srep->attribute : Attribute-srep -> Attribute
       (define (srep->attribute a)
 	(unless (and (pair? a) (pair? (cdr a)) (null? (cddr a)) (symbol? (car a)) (string? (cadr a)))
-	  (error 'srep->attribute "expected (cons Symbol String) given ~e" a))
+	  (error 'srep->attribute "expected (list Symbol String) given ~e" a))
 	(make-attribute 'scheme 'scheme (car a) (cadr a)))
       
       ;; xexpr->xml : Xexpr -> Content

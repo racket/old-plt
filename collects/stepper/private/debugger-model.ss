@@ -60,6 +60,7 @@
            (define (step-through-expression expanded expand-next-expression)
              (let* ([annotated (annotate-top-level expanded)])
                (set! current-expr expanded)
+               (current-breakpoint-handler break)
                (let ([expression-result
                       (parameterize ([current-eval basic-eval])
                         (eval annotated))])
@@ -74,6 +75,7 @@
         (parameterize ([current-custodian user-custodian])
           (program-expander
            (lambda ()
+             (error-display-handler 4) ; should cause error
              (error-display-handler err-display-handler)
              (current-breakpoint-handler break)) ; init
            (lambda (expanded continue-thunk) ; iter

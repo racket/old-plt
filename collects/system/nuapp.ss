@@ -1,6 +1,6 @@
 (compound-unit/sig (import [I : mred:application-imports^])
   (link
-   [mred : ((open mred^) (open mred:application^) (open (startup)))
+   [mred : ((open mred^) (open mred:application^))
 	 ((compound-unit/sig (import [I : mred:application-imports^])
 	    (link
 	     [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
@@ -18,18 +18,11 @@
 						 (send ce insert-prompt)
 						 #t)
 					       #f)))
-		     (define console (make-object mred:console-frame%))
-		     (for-each mred:edit-file (vector->list argv))
-		     console)
+		     (for-each mred:edit-file (vector->list argv)))
 		   I
-		   mred)]
-	     [dummy : (startup)
-		    ((unit/sig (startup)
-		       (import)
-		       (define startup (lambda () (void)))))])
+		   mred)])
 	    (export (open mred)
-		    (open app)
-		    (open dummy)))
+		    (open app)))
 	  I)])
   (export (unit mred)))
 

@@ -31,6 +31,10 @@
   (reference-library "sig.ss" "mred")
   (reference-library "invoke.ss" "system"))
 
+(define mred:startup
+  (lambda ()
+    (make-object mred:console%)))
+
 ;; called with the arguments on the command line
 (define mred:initialize
   (let ([extra-args null]

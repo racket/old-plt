@@ -439,7 +439,6 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
 #endif
 
 #ifndef MZ_PRECISE_GC
-  /* FIXME */
   if (v != GC_base(v))
     return;
 #endif

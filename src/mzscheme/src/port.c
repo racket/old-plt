@@ -6017,7 +6017,7 @@ static TCPiopbX *mac_make_xpb(Scheme_Tcp *data)
 {
   TCPiopbX *xpb;
 
-  /* FIXME: no GC tag... */
+  /* FIXME, precise GC: no GC tag... */
   xpb = (TCPiopbX *)scheme_malloc(sizeof(TCPiopbX));
   
   memcpy(xpb, data->tcp.create_pb, sizeof(TCPiopb));
@@ -6038,7 +6038,7 @@ static int mac_tcp_make(TCPiopbX **_xpb, TCPiopb **_pb, Scheme_Tcp **_data)
 
   data = make_tcp_port_data(2);
   
-  /* FIXME: no GC tag... */
+  /* FIXME, precise GC: no GC tag... */
   xpb = (TCPiopbX *)scheme_malloc(sizeof(TCPiopbX));
   xpb->next = active_pbs;
   active_pbs = xpb;

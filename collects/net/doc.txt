@@ -23,28 +23,28 @@ Module files: _url.ss_ - provides the procedures documented below
 
 ABSTRACT -------------------------------------------------------------
 
-The url package helps programmers use URLs as specified in RFC 1738:
-http://www.ietf.org/rfc/rfc1738.txt
+The url package helps programmers use URIs as specified in RFC 2396:
+http://www.ietf.org/rfc/rfc2396.txt
 
 TYPES ----------------------------------------------------------------
 
 > url
-  struct url (scheme host port path params query fragment)
+  struct url (scheme user host port path fragment)
   scheme : string or #f
+  user : string or #f
   host : string or #f
   port : number or #f
-  path : string
-  params : string or #f
+  path : (listof (union string path/params))
   query : string or #f
   fragment : string or #f
 
   The basic structure for all URLs.
 
-  http://www.cs.rice.edu:80/cgi-bin/finger;xyz?name=shriram&host=nw#top
-    1          2          3       4         5           6            7
+  http://sk@www.cs.brown.edu:80/cgi-bin/finger;xyz?name=shriram&host=nw#top
+    1     2      3           4    5            6       7                8
 
-  1 = scheme, 2 = host, 3 = port, 4 = path,
-  5 = params, 6 = query, 7 = fragment
+  1 = scheme, 2 = user, 3 = host, 4 = port, 
+  5 = path,  6 = param, 7 = query, 8 = fragment
 
   If the scheme is "file", then the path is a platform-dependent
   string assumed to have been constructed using build-path.  The library
@@ -52,10 +52,16 @@ TYPES ----------------------------------------------------------------
   there is one, separates it from the rest of the path.  For non-"file"
   schemes, the path is a URL path as defined in the standard.
 
-> url/user
+  If a path segment has a parameter, it is represented with
+  an instance of the path/params struct. Otherwise, it is
+  just represented as a string.
 
-  Extends `url' with a `user' field, which is non-#f when the URL
-  contains a user attached to the host.
+> path/params
+
+  A pair of strings, accessible with _path/params-path_ and
+  path/params-params_ that joins a path segment with its
+  params in a url. The function _path/params?_ recognizes
+  such pairs.
 
 > pure-port
 

@@ -15,16 +15,16 @@
       [U : net:url^ (url@ T)])
      (export (open U))))
   
-  (provide (struct url/user (user)))
-  
   (provide/contract
    (struct url ([scheme (union false? string?)]
+                [user (union false? string?)]
                 [host (union false? string?)]
                 [port (union false? number?)]
-                [path (listof string?)]
-                [params (union false? string?)]
+                [path (listof (union string? path/param?))]
                 [query (union false? string?)]
                 [fragment (union false? string?)]))
+   (struct path/param ([path string?]
+                       [param string?]))
    (string->url ((union bytes? string?) . -> . url?))
    (url->string (url? . -> . string?))
    
@@ -35,7 +35,6 @@
    (display-pure-port (input-port? . -> . void?))
    (purify-port (input-port? . -> . (listof string?)))
    (netscape/string->url (string? . -> . url?))
-   (decode-some-url-parts (url? . -> . url?))
    (call/input-url (opt->* (url? 
                             (url? . -> . input-port?)
                             (input-port? . -> . any))

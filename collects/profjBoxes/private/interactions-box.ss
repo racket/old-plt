@@ -115,6 +115,8 @@
           
           (super-new)
           
+          (define (ctrl-enter b e) (send (get-parent) add-new this))
+          
           (field [io (new vertical-alignment% (parent this))]
                  [input (new horizontal-alignment% (parent io))])
           (new embedded-message% (label " > ") (parent input))
@@ -128,7 +130,7 @@
           (new embedded-text-button%
                (parent input)
                (label "Ctrl + Enter")
-               (callback (lambda (b e) (send (get-parent) add-new this))))
+               (callback ctrl-enter))
           
           (field [output (new vertical-alignment% (parent io) (show? false))])
           (new snip-wrapper%

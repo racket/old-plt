@@ -334,7 +334,7 @@ case $OS in
       # gcc 2.95.2
       if test "${enable_quartz}" = "yes" ; then
         MROPTIONS="$MROPTIONS -cpp-precomp"
-      else
+      fi
     else
       # gcc 3.x
       MROPTIONS="$MROPTIONS -fno-rtti"

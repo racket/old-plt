@@ -1,6 +1,4 @@
 
-; For information about texpict, see texpicts.ss
-
 (require-library "refer.ss")
 
 (require-library "texpicts.ss" "texpict")

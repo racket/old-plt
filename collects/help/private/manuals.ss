@@ -2,8 +2,8 @@
   (require (lib "list.ss")
            (lib "date.ss")
            (lib "string-constant.ss" "string-constants")
-           "private/colldocs.ss"
-           "private/docpos.ss")
+           "colldocs.ss"
+           "docpos.ss")
 
   (provide find-manuals)
  

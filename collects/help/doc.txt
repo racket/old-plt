@@ -394,10 +394,9 @@ These libraries are used to build dynamic portions of the documentation.
   This opens a window for a user to submit a bug report about DrScheme.
 
 > Known Manuals
-  The _manuals.ss_ library contains a module that defines one procedure:
-> (find-manuals)
-  It returns a string version of html code that, when rendered, shows
-  the installed and known uninstalled manuals.
+  The _manuals.html_ html file, when visited in Help Desk,
+  shows the currently installed manuals, plus a list
+  of uninstalled manuals.
 
 > Refresh Manuals
   The _refresh-manuals.ss_ library contains a module that defines a

@@ -48,7 +48,6 @@
                
   
   (define (update actions)
-    (printf "~a~n" actions)
     (send (drawn) queue-robot-actions
           ;; Each robot action is (list id bid (one-of 'e 'w 'n 's (list 'pick id...) (list 'drop id ...)))
           actions)

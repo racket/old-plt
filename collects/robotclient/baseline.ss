@@ -81,7 +81,6 @@
              ((not (null? picks)) (make-command 1 'p picks))
              (else
               (let ((goal (compute-goal (get-player-x) (get-player-y))))
-                (printf "~a~n" goal)
                 (make-command
                  1
                  (cond

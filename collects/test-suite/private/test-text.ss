@@ -73,10 +73,6 @@
       (inherit set-modified refresh-delayed?)
       (init-field case)
       
-      ;; autosave? (-> boolean?)
-      ;; called to test whether to auto save this editor
-      (define/override (autosave?) false)
-      
       ;; after-insert (number? number? . -> . void?)
       ;; called when something is inserted into the editor
       (rename [super-after-insert after-insert])

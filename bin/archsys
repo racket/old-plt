@@ -21,14 +21,21 @@ fi
 
 case $OS in
   SunOS)
-    case `$UNAME -r` in
-      5.*)
-       SYS=sparc${SEP}solaris
+    case `$UNAME -p` in
+      sparc)
+        case `$UNAME -r` in
+          5.*)
+           SYS=sparc${SEP}solaris
+           ;;
+          *)
+           SYS=sparc${SEP}sunos4
+           ;;
+        esac
        ;;
-      *)
-       SYS=sparc${SEP}sunos4
+     i386)
+       SYS=i386${SEP}solaris
        ;;
-    esac
+     esac
     ;;
   AIX)
     SYS=rs6k${SEP}aix

@@ -98,14 +98,16 @@ Check Syntax separates four classes of identifiers:
       (define lexically-bound-syntax-style-str (prefix-style 'lexically-bound-syntax))
       (define imported-syntax-style-str (prefix-style 'imported-syntax))
       (define imported-variable-style-str (prefix-style 'imported-variable))
-            
+      
+      (define bound-variable-style-str lexically-bound-variable-style-str)
+      (define keyword-style-str lexically-bound-syntax-style-str)
+      
       ;; used for quicker debugging of the preference panel
       '(define test-preference-panel
          (lambda (name f)
            (let ([frame (make-object frame% name)])
              (f frame)
              (send frame show #t))))
-      
       
       (define-struct graphic (pos* locs->thunks draw-fn click-fn))
       
@@ -1323,6 +1325,7 @@ Check Syntax separates four classes of identifiers:
       (define (annotate-basic sexp user-namespace user-directory jump-to-id)
         (let ([binders null]
               [varrefs null]
+              [tops null]
               [requires null]
               [require-for-syntaxes null]
               [referenced-macros null]
@@ -1690,7 +1693,7 @@ Check Syntax separates four classes of identifiers:
                   binders)
                  (color varref
                         (if keyword?
-                            lexically-bound-styntax-style-str
+                            lexically-bound-syntax-style-str
                             lexically-bound-variable-style-str))])))))
       
       ;; handle-no-binders/top : top-level-info -> syntax[original] -> void
@@ -1701,7 +1704,7 @@ Check Syntax separates four classes of identifiers:
                    (namespace-variable-value (syntax-e varref) #t (lambda () #f)))])
             ;; namespace-variable-value doesn't tell enough.
             (if defined-in-user-namespace?
-                (color varref lexically-bound-varible-style-str)
+                (color varref lexically-bound-variable-style-str)
                 (color varref unbound-variable-style-str)))))
       
       ;; handle-no-binders/lexical : boolean -> syntax[original] -> void

@@ -386,7 +386,12 @@
 					  (+ key-start start (string-length key))))
 				  (send editor set-clickback start end
 					(lambda (edit start end)
-					  (send results goto-url 
+					  ; We don't catch errors explicitly because the
+					  ;  page is always documentation, an on-url-click
+					  ;  will catch it.
+					  (send html-panel on-url-click
+						(lambda (url)
+						  (send results goto-url url #f))
 						(make-url
 						 "file"
 						 #f ; host
@@ -394,8 +399,7 @@
 						 page
 						 #f ; params
 						 #f ; query
-						 label)
-						#f))))))
+						 label)))))))
 			    (begin
 			      (let ([pos (send editor last-position)])
 				(send editor insert (format"~a~a:~n" label name) pos 'same #f)

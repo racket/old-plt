@@ -19,14 +19,6 @@
   
   (define closure-temp (gensym "closure-temp-"))
   
-  ; the `if-temp' symbol is used for the temp which gets the value of the test
-  ; expression.  It exists so that we can do a runtime check to insure that it's 
-  ; a boolean (required in some language levels).
-  
-  ; if-temp : uninterned-symbol
-  
-  (define if-temp (gensym "if-temp-"))
-   
   ; var-set-union takes some lists of varrefs where no element appears twice in one list, and 
   ; forms a new list which is the union of the sets.  when a top-level and a non-top-level
   ; varref have the same name, we must keep the non-top-level one.
@@ -39,13 +31,17 @@
                     (z:varref-var b-var)))))
     
   (define (varref-set-pair-union a-set b-set)
-    (append a-set (varref-remove* a-set b-set)))
+    (cond [(or (eq? a-set 'all) (eq? b-set 'all)) 'all]
+          [else (append a-set (varref-remove* a-set b-set))]))
   
   (define var-set-union
     (lambda args
       (foldl varref-set-pair-union
 	     null
 	     args)))
+  
+  (define (var-set-intersect a-set b-set)
+    (varref-remove* (varref-remove* a-set b-set) a-set))
       
   #| .
      somehow, we need to translate zodiac structures back into scheme structures so that 
@@ -122,14 +118,6 @@
            b))
   
   
-  (define (read-exprs text)
-    (let ([reader (z:read (open-input-string text) 
-                          (z:make-location 1 1 0 "stepper-string"))])
-      (let read-loop ([new-expr (reader)])
-        (if (z:eof? new-expr)
-            ()
-            (cons new-expr (read-loop (reader)))))))
-  
   (define (find-defined-vars expr)
     (cond ([z:define-values-form? expr]
            (map z:varref-var (z:define-values-form-vars expr)))
@@ -153,26 +141,25 @@
   (define debug-key (gensym "debug-key-"))
   
   (define (make-debug-info source tail-bound top-env free-vars label)
-    (let* ([top-level-varrefs (filter z:top-level-varref free-vars)]
-           [lexical-varrefs (filter z:lexical-varref free-vars)]
+    (let* ([top-level-varrefs (filter z:top-level-varref? free-vars)]
+           [bound-varrefs (filter z:bound-varref? free-vars)]
            [top-level-kept (if (eq? tail-bound 'all)
-                               (append top-level-varrefs top-env)
+                               (var-set-union top-level-varrefs top-env)
                                null)]
            [lexical-kept (if (eq? tail-bound 'all)
-                             lexical-varrefs
-                             (varref-intersect lexical-varrefs 
-                                               (var-set-union extra-tail-bound
-                                                              tail-bound)))];;; HERE
+                             bound-varrefs
+                             (var-set-intersect bound-varrefs 
+                                                tail-bound))]
            [kept-vars (append top-level-kept lexical-kept)]
            ; the reason I don't need var-set-union here is that these sets are guaranteed
            ; not to overlap.
-           [var-clauses (map (lambda (x) 
-                               (let ([var (varref-var x)])
+            [var-clauses (map (lambda (x) 
+                               (let ([var (z:varref-var x)])
                                  `(cons (#%lambda () ,var)
                                         (cons ,x
                                               null))))
                              kept-vars)])
-      `(#%lambda () (list ,source ,label ,@var-clauses))))
+      `(#%lambda () (list ,source (#%quote ,label) ,@var-clauses))))
   
   ; How do we know which bindings we need?  For every lambda body, there is a
   ; `tail-spine' of expressions which is the smallest set including:
@@ -207,7 +194,7 @@
          ; wrap creates the w-c-m expression.
          
          (define (wcm-wrap debug-info expr)
-           `(#%with-continuation-mark (#%quote ,debug-key) ,debug-info))
+           `(#%with-continuation-mark (#%quote ,debug-key) ,debug-info ,expr))
          
          (define (break-wrap expr)
            `(#%begin (,my-break) ,expr))
@@ -268,7 +255,9 @@
                   [non-tail-recur (lambda (expr) (annotate/inner expr null top-env))]
                   [lambda-body-recur (lambda (expr) (annotate/inner expr 'all top-env))]
                   [make-debug-info-normal (lambda (free-vars)
-                                            (make-debug-info expr free-vars null 'none))]
+                                            (make-debug-info expr tail-bound top-env free-vars 'none))]
+                  [make-debug-info-app (lambda (tail-bound free-vars label)
+                                         (make-debug-info expr tail-bound top-env free-vars label))]
                   
                   [translate-varref
                    (lambda (maybe-undef? top-level?)
@@ -287,7 +276,8 @@
                                                        (#%quote ,v)))
                                              ,v)
                                            v)])
-                       (values (wcm-break-wrap debug-info annotated) free-vars)))])
+                       ; I'm (temporarily?) removing the break around variables
+                       (values (wcm-wrap debug-info annotated) free-vars)))])
 	     
              ; find the source expression and associate it with the parsed expression
              
@@ -325,12 +315,12 @@
 		  [val set!-list (map (lambda (arg-symbol annotated-sub-expr)
 					`(#%set! ,arg-symbol ,annotated-sub-expr))
 				      arg-temp-syms annotated-sub-exprs)]
-		  [val app-debug-info (make-debug-info expr arg-temps arg-temps 'called)]
-		  [val final-app (break-wrap (wcm-wrap app-debug-info arg-sym-list))]
-		  [val debug-info (make-debug-info (var-set-union arg-temps free-vars)
-                                                   expr 
-                                                   arg-varrefs 
-                                                   'not-yet-called)]
+                  [val new-tail-bound (var-set-union tail-bound arg-temps)]
+		  [val app-debug-info (make-debug-info-app new-tail-bound arg-temps 'called)]
+		  [val final-app (break-wrap (wcm-wrap app-debug-info arg-temp-syms))]
+		  [val debug-info (make-debug-info-app new-tail-bound
+                                                       (var-set-union free-vars arg-temps)
+                                                       'not-yet-called)]
 		  [val let-body (wcm-wrap debug-info `(#%begin ,@set!-list ,final-app))])
 		 (values `(#%let ,let-clauses ,let-body) free-vars))]
 	       
@@ -359,20 +349,28 @@
 		       (tail-recur (z:if-form-then expr))]
 		  [val (values annotated-else free-vars-else) 
 		       (tail-recur (z:if-form-else expr))]
-		  ; in beginner-mode, we must insert the boolean-test
-		  [val annotated `(#%let ((,if-temp ,annotated-test))
-				   (#%if (#%boolean? ,if-temp)
-				    ,(break-wrap `(#%if ,if-temp
-                                                   ,annotated-then
-                                                   ,annotated-else))
-				    (#%raise (,make-not-boolean
-					      (#%format ,not-boolean-error-format
-					       ,if-temp)
-					      ((#%debug-info-handler))
-					      ,if-temp))))]
-		  [val free-vars (var-set-union free-vars-test free-vars-then free-vars-else)]
-		  [val debug-info (make-debug-info-normal free-vars)])
-		 (values (wcm-break-wrap debug-info annotated) free-vars))]
+		  [val annotated `(#%begin
+                                   (#%set! ,if-temp ,annotated-test)
+                                   (#%if (#%boolean? ,if-temp)
+                                   ,(break-wrap `(#%if ,if-temp
+                                                  ,annotated-then
+                                                  ,annotated-else))
+                                   (#%raise (,make-not-boolean
+                                             (#%format ,not-boolean-error-format
+                                              ,if-temp)
+                                             ((#%debug-info-handler))
+                                             ,if-temp))))]
+                  [val if-temp-varref-list (list (create-bogus-bound-varref if-temp))]
+		  [val free-vars (var-set-union if-temp-varref-list
+                                                free-vars-test 
+                                                free-vars-then 
+                                                free-vars-else)]
+		  [val debug-info (make-debug-info-app (var-set-union tail-bound if-temp-varref-list)
+                                                       free-vars
+                                                       'none)]
+                  [val wcm-wrapped (wcm-wrap debug-info annotated)]
+                  [val outer-annotated `(#%let ((,if-temp (#%quote ,*unevaluated*))) ,wcm-wrapped)])
+		 (values outer-annotated free-vars))]
 	       
 	       [(z:quote-form? expr)
                 (values `(#%quote ,(read->raw (z:quote-form-expr expr))) null)]
@@ -401,11 +399,11 @@
 	       [(z:case-lambda-form? expr)
 		(let* ([annotate-case
 			(lambda (arglist body)
-			  (let ([var-list (z:arglist-vars arglist)])
+			  (let ([var-list (map create-bogus-bound-varref 
+                                               (map z:binding-var
+                                                    (z:arglist-vars arglist)))])
 			    (let-values ([(annotated free-vars)
 					  (lambda-body-recur body)])
-                              (printf "var-list: ~a~n" (map varref-var var-list))
-                              (printf "free-vars: ~a~n" (map varref-var free-vars))
 			      (let* ([new-free-vars (varref-remove* var-list free-vars)]
                                      [args (arglist->ilist arglist)]
                                      [new-annotated (list (improper-map z:binding-var args) annotated)])
@@ -417,12 +415,11 @@
 		       [annotated-bodies (map car pile-of-results)]
 		       [annotated-case-lambda (cons '#%case-lambda annotated-bodies)] 
 		       [new-free-vars (apply var-set-union (map cadr pile-of-results))]
-		       [closure-info (make-debug-info new-free-vars #t expr null)] ;;; FIX THIS
+		       [closure-info (make-debug-info-app 'all new-free-vars 'none)]
 		       [hash-wrapped `(#%let ([,closure-temp ,annotated-case-lambda])
-				       ; that closure-table-put! thing needs to be protected
 				       (,closure-table-put! ,(closure-key-maker closure-temp) ,closure-info)
 				       ,closure-temp)])
-		  (values (wrap debug-info hash-wrapped)
+		  (values hash-wrapped
 			  new-free-vars))]
 	       
 	       ; there's no with-continuation-mark in beginner level.
@@ -440,11 +437,11 @@
          (let* ([defined-top-vars (top-defs parsed-exprs)]
                 [top-env-vars (build-list (length defined-top-vars)
                                           (lambda (n) (flatten-take n defined-top-vars)))]
-                [top-env-varrefs (map (lambda (env) (map (lambda (var) (make-varref var #t)) env))
+                [top-env-varrefs (map (lambda (env) (map (lambda (var) (create-bogus-top-level-varref var)) env))
                                       top-env-vars)]
                 [annotated-exprs (map (lambda (expr top-env) 
                                         (let-values ([(annotated dont-care)
-                                                      (annotate/inner expr #t top-env)])
+                                                      (annotate/inner expr 'all top-env)])
                                           annotated)) 
                                       parsed-exprs
                                       top-env-varrefs)]
@@ -455,8 +452,6 @@
            
            (values (append top-vars-annotation top-annotated-exprs)
                    parsed-exprs))))
-      
-  
 	 
   )
     

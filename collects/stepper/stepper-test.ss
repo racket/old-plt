@@ -71,10 +71,34 @@
 ;  (define c (+ 4 3))
 ;  3")
 
-(stepper:stepper-start
- "(define (fact n) (if (= n 0) 1 (* n (fact (- n 1)))))
- (fact 4)")
-   
+(define fact-program
+  '((define (fact n) (if (= n 0) 1 (* n (fact (- n 1)))))
+    (fact 4)))
+
+(define cond-program
+  '((define result (cond [(eq? #t #f) 3]
+                         [(= 3 4) 4]
+                         [else 5]))
+    (+ 3 4)))
+
+(define (program->string program)
+  (apply string-append
+         (map (lambda (clause) (format "~a~n" clause)) program)))
+
+
+(define step
+  (let ([first-time #t])
+    (lambda ()
+      (if first-time
+          (begin
+            (set! first-time #f)
+            (stepper:stepper-start
+             (program->string cond-program)))
+          (stepper:stepper-step)))))
+
+;(require-library "view.ss" "stepper")
+;(view step)
+
 ;(stepper:stepper-start
 ; "(define (fact n) (if (= n 0) 1 (* n (- n 1))))
 ; (fact 4)")  

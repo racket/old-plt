@@ -38,6 +38,8 @@
     (printf "not implemented"))
   
   (define (display-break-info)
-    (for-each pretty-print (apply r:reconstruct expr-list break-info)))
+    ;(for-each pretty-print (apply r:reconstruct expr-list break-info))
+    (apply r:reconstruct expr-list break-info)
+    )
   
   )

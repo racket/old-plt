@@ -203,12 +203,11 @@
       
       (define (colorer-callback)
 	(unless (in-edit-sequence?)
-	  (unless up-to-date?
-	    (thread-resume background-thread)
-	    (sleep .01)    ;; This is when the background thread is working.
-	    (semaphore-wait lock)
-	    (thread-suspend background-thread)
-	    (semaphore-post lock))
+	  (thread-resume background-thread)
+	  (sleep .01)    ;; This is when the background thread is working.
+	  (semaphore-wait lock)
+	  (thread-suspend background-thread)
+	  (semaphore-post lock)
 	  (begin-edit-sequence #f)
 	  (color)
 	  (end-edit-sequence))

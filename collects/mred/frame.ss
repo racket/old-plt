@@ -560,6 +560,11 @@
 	     (public
 	       [help-menu:about (lambda () (mred:console:credits))]
 	       [help-menu:about-string (mred:application:current-app-name)]
+	       [help-menu:compare string-ci<?]
+	       [help-menu:insert-items
+		(lambda (items)
+		  (for-each (lambda (x) (apply (ivar (ivar this help-menu) append-item) x))
+			    items))]
 	       [help-menu:after-about
 		(let ([reg (regexp "<TITLE>(.*)</TITLE>")])
 		  (lambda (help-menu)
@@ -594,11 +599,10 @@
 				 [item-pairs 
 				  (mzlib:function:quicksort
 				   (mzlib:function:foldl build-item null dirs)
-				   (lambda (x y) (string-ci<? (car x) (car y))))])
+				   (lambda (x y) (help-menu:compare (car x) (car y))))])
 			    (unless (null? item-pairs)
 			      (send help-menu append-separator))
-			    (for-each (lambda (x) (apply (ivar help-menu append-item) x))
-				      item-pairs))
+			    (help-menu:insert-items item-pairs))
 			  (mred:debug:printf 'help-menu "couldn't find PLTHOME/doc directory")))))])
 	     
 	     (sequence

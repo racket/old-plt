@@ -352,7 +352,7 @@
 	  (public
 	    [keep-locked keep-locked?]
 	    [hyper-delta (make-object wx:style-delta% 
-				      wx:const-change-underline 1)])
+				      wx:const-change-underline #t)])
 	  (sequence
 	    (let ([mult (send hyper-delta get-foreground-mult)]
 		  [add (send hyper-delta get-foreground-add)])

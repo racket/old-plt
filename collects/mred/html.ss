@@ -107,7 +107,7 @@
 	     [delta:bold (make-object wx:style-delta% 
 				      wx:const-change-bold)] 
 	     [delta:underline (make-object wx:style-delta% 
-					   wx:const-change-underline)] 
+					   wx:const-change-underline #t)]
 	     [delta:slant (make-object wx:style-delta% 
 				       wx:const-change-style 
 				       wx:const-slant)]

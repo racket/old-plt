@@ -476,7 +476,7 @@
 			   (lambda ()
 			     (thunk))))
 		       (loop))))))
-	     (semaphore-post dummy-s)))])
+	       (semaphore-post dummy-s))))])
 
       (public
 	[userspace-load

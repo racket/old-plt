@@ -40,6 +40,8 @@
    current-setting
    intermediate-values-during-load
 
+   drscheme-print
+
    primitive-eval
    primitive-load
    syntax-checking-primitive-eval

@@ -9,8 +9,6 @@
 	  [mzlib:pretty-print : mzlib:pretty-print^]
 	  [mzlib:function : mzlib:function^])
 
-  (mred:debug:printf 'invoke "userspace:basis@")
-
   (define (report-error . x) (error 'report-error))
   (define (report-unlocated-error . x) (error 'report-unlocated-error))
 
@@ -344,7 +342,7 @@
 		  short-string)))))))
 
   ;; intermediate-values-during-load : (parameter (TST *-> void))
-  (define intermediate-values-during-load (parameter (lambda x (void))))
+  (define intermediate-values-during-load (make-parameter (lambda x (void))))
 
   ;; drscheme-load-handler : string ->* TST
   ;;   It should call intermediate-values-during-load in all 3 branches.
@@ -357,21 +355,21 @@
 	      filename
 	      'string)))
     (let ([zo-file?
-	   (let ([l (string-length f)])
+	   (let ([l (string-length filename)])
 	     (and (<= 3 l)
-		  (string=? ".zo" (substring f (- l 3) l))))])
+		  (string=? ".zo" (substring filename (- l 3) l))))])
       (cond
        [zo-file?
 	(let ([load-dir/path
 	       (lambda (f)
 		 (let-values ([(base name must-be-dir?)
-			       (split-path (path->complete-path f (current-directory)))])
+			       (split-path (path->complete-path filename (current-directory)))])
 		   base))])
 	  (parameterize ((current-eval primitive-eval)
 
 			 ;; why set current-load-relative-directory ?
-			 (current-load-relative-directory (load-dir/path f)))
-	    (primitive-load f)))]
+			 (current-load-relative-directory (load-dir/path filename)))
+	    (primitive-load filename)))]
        [(setting-use-zodiac? (current-setting))
 	(let* ([process-sexps
 		(let ([last (list (void))])
@@ -409,6 +407,17 @@
 	(primitive-eval sexp)))
 
 
+  ;; drscheme-print : TST -> void
+  ;; effect: prints the value, on the screen, attending to the values of the current setting
+  (define drscheme-print
+    (lambda (v)
+      (unless (void? v)
+	(let ([value (if (r4rs-style-printing? (current-setting))
+			 v
+			 (mzlib:print-convert:print-convert v))])
+	  (mzlib:pretty-print:pretty-print-handler value)))))
+
+
   ;; build-parameterization : setting
   ;;                          (unit (import plt:userspace:params^))
   ;;                       -> parameterization
@@ -420,6 +429,8 @@
 		  (make-namespace 'wx))])
       (with-parameterization parameterization
 	(lambda ()
+	  (when (setting-use-zodiac? setting)
+	    (require-library-use-compiled #f))
 	  (current-setting setting)
 	  (parameterization-branch-handler drscheme-branch-handler)
 	  (compile-allow-set!-undefined #f)
@@ -437,7 +448,9 @@
 	  (read-curly-brace-as-paren #t)
 	  (read-square-bracket-as-paren #t)
 	  (print-struct #t)
+
 	  (error-print-width 250)
+	  (current-print drscheme-print)
 
 	  ;; ordering of these two is important;
 	  ;; zodiac:current-vocabulary-symbol bangs on zodiac:scheme-vocabulary

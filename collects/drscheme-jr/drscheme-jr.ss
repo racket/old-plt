@@ -2,27 +2,24 @@
 ;;;                      Debugging                         ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(when (getenv "MREDDEBUG")
+(when (or #t (getenv "MREDDEBUG"))
   (letrec* ([old-handler (current-load)]
-	    [offset-string "  "]
+	    [offset 2]
+	    [indent 0]
 	    [indent-string ""])
     (current-load (lambda (f)
 		    (let ([file (if (relative-path? f)
 				    (build-path (current-directory) f)
 				    f)])
-		      (printf "~aLoading ~a...~n" indent-string file)
 		      (dynamic-wind
 		       (lambda ()
-			 (set! indent-string
-			       (string-append offset-string indent-string)))
+			 (set! indent-string (list->string (vector->list (make-vector indent #\space))))
+			 (set! indent (+ indent offset))
+			 (printf "~aLoading ~a...~n" indent-string file))
 		       (lambda () (old-handler file))
 		       (lambda ()
-			 (set! indent-string
-			       (substring indent-string
-					  0
-					  (max (- (string-length indent-string)
-						  (string-length offset-string))
-					       0))))))))))
+			 (printf "~aLoaded ~a...~n" indent-string file)
+			 (set! indent (- indent offset)))))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -34,6 +31,7 @@
 
 (require-library "refer.ss")
 (require-library "cores.ss")
+(require-library "cmdlines.ss")
 (require-library "macro.ss")
 (require-library "cmdline.ss")
 (require-library "pconvers.ss")
@@ -48,19 +46,19 @@
 (require-library "sig.ss" "userspce")
 
 (define-signature prims^ (program argv))
+(define-signature drscheme-jr:settings^ (setting startup-file))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;              Flag and Language Definitions             ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define build-settingU
-  (unit/sig ()
+  (unit/sig drscheme-jr:settings^
     (import [mz : prims^]
 	    [cmd-line : mzlib:command-line^]
-	    [zodiac : zodiac:system^]
 	    [basis : userspace:basis^]
-	    [print-convert : mzlib:print-convert^]
-	    [mzlib:pretty-print : mzlib:pretty-print^])
+	    [mzlib:pretty-print : mzlib:pretty-print^]
+	    [mzlib:function : mzlib:function^])
     
     (define setting (basis:get-default-setting))
 
@@ -101,7 +99,7 @@
        (list "--print-list"
 	     (make-get/set basis:setting-abbreviate-cons-as-list?
 			   basis:set-setting-abbreviate-cons-as-list?!)
-	     "`list' in --print-convert output"
+	     "use `list' where appropriate in constructor style printing"
 	     basis:setting-abbreviate-cons-as-list?)
        (list "--signal-undef"
 	     (make-get/set basis:setting-signal-undefined
@@ -128,23 +126,23 @@
 			   basis:set-setting-whole/fractional-exact-numbers!)
 	     "separate whole and fractional parts of exact numbers in printer"
 	     basis:setting-whole/fractional-exact-numbers)
-       (list "--print-convert"
+       (list "--constructor-printing"
 	     (case-lambda
 	      [() (eq? (basis:setting-printing setting) 'constructor-style)]
 	      [(x) (basis:set-setting-printing!
 		    (if x
 			'constructor-style
 			'quasi-r4rs-style))])
-	     "print values using constructor input syntax"
+	     "print values using constructor style input syntax"
 	     (lambda (setting) (eq? (basis:setting-printing setting) 'constructor-style)))
-       (list "--print-convert-quasi"
+       (list "--quasi-printing"
 	     (case-lambda
 	      [() (eq? (basis:setting-printing setting) 'quasi-style)]
 	      [(x) (basis:set-setting-printing!
 		    (if x
 			'quasi-style
 			'quasi-r4rs-style))])
-	     "print values using quasi-quote input syntax"
+	     "print values using quasi-quote style input syntax"
 	     (lambda (setting) (eq? (basis:setting-printing setting) 'quasi-style)))))
 
     ;; Mapping from language to flag settings
@@ -231,33 +229,29 @@
 		(choose-mode))))))
 
     (define (set-level level)
-      (let ([p (assoc level (map (lambda (p)
-				   (list (string->symbol (car p)) (cadr p)))
-				 language-levels))])
+      (let ([p (assoc level (map list basis:level-symbols basis:settings))])
 	(if p
-	    (begin
-	      (set! syntax-level (cadr p))
-	      (install-level))
+	    (set! setting (mzlib:function:second p))
 	    (bad-arguments "bad language name: ~s" level))))
 
-    (define (make-implies-string level)
-      (let ([orig syntax-level]
-	    [s (lambda (v) (if v "on" "off"))])
-	(when level
-	  (set! syntax-level level)
-	  (install-level))
-	(let ([s (apply
-		  string-append
-		  (map
-		   (lambda (f)
-		     (format "~n                     ~a ~a" 
-			     (car f)
-			     (s ((cadr f)))))
-		   flags))])
-	  (when level
-	    (set! syntax-level orig)
-	    (install-level))
-	  s)))
+    (define (make-implies-string vocab-symbol)
+      (let ([impl-setting (if vocab-symbol
+			      (let ([a (assoc (map list basis:level-symbols basis:settings))])
+				(unless a
+				  (error 'drscheme-jr "unkown level: ~a~n" vocab-symbol))
+				(mzlib:function:second a))
+			      setting)])
+	(fluid-let ([setting impl-setting])
+	  (let* ([on/off (lambda (x) (if x "on" "off"))]
+		 [s (apply
+		     string-append
+		     (map
+		      (lambda (f)
+			(format "~n                     ~a ~a" 
+				(car f)
+				(on/off ((cadr f)))))
+		      flags))])
+	    s))))
 
     (define (on? v)
       (cond
@@ -299,12 +293,12 @@
 	   ,(lambda (_)
 	      (with-output-to-file (get-argv-file)
 		(lambda ()
-		  (write syntax-level)
+		  (write (basis:setting-vocabulary-symbol setting))
 		  (newline)
-		  (write (map (lambda (s)
-				(cons (car s)
-				      ((cadr s))))
-			      flags))
+		  (mzlib:pretty-print:pretty-print (map (lambda (s)
+							  (cons (car s)
+								((cadr s))))
+							flags))
 		  (newline))
 		'truncate/replace))
 	   (,(format "Save current settings to:~n           ~a" (get-argv-file)))]
@@ -313,10 +307,9 @@
 	   ("Show the current settings")]
 	  [("--lhelp")
 	   ,(lambda (_ level)
-	      (set-level (string->symbol level))
 	      (printf "~a implies the following flags: ~a~n" 
 		      level
-		      (make-implies-string syntax-level))
+		      (make-implies-string (string->symbol level)))
 	      (exit))
 	   ("Show the flags implied by a particular language" "language")]])
        (case-lambda 
@@ -333,7 +326,11 @@
 
 (define dr-jrU
   (unit/sig ()
-    (import)
+    (import [zodiac : zodiac:system^]
+	    [print-convert : mzlib:print-convert^]
+	    [basis : userspace:basis^]
+	    [mzlib:pretty-print : mzlib:pretty-print^]
+	    [settings : drscheme-jr:settings^])
     (define system-parameterization (current-parameterization))
     (define user-parameterization (current-parameterization))
 
@@ -362,19 +359,11 @@
 		  eof
 		  (zodiac:sexp->raw v)))))))
 
-    (define drscheme-jr-print
-      (lambda (v)
-	(unless (void? v)
-	  (let ([value (if (basis:r4rs-style-printing? (basis:current-setting))
-			   v
-			   (print-convert:print-convert v))])
-	    (mzlib:pretty-print:pretty-print-handler value)))))
-
     (define drscheme-jr-print-load
       (lambda (f)
 	(parameterize ([basis:intermediate-values-during-load
 			(lambda values
-			  (for-each drscheme-jr-print values))])
+			  (for-each basis:drscheme-print values))])
 	  (load f))))
 
     (define (load/prompt f)
@@ -389,78 +378,49 @@
 	     (error-escape-handler eeh)
 	     (set! eeh #f))))))
 
-    (error-print-width 200)
-
-    (define params@
-      (let ([eq?-only-on-syms eq?-only-on-syms]
-	    [allow-.-lists allow-.-lists])
-	(unit/sig plt:userspace:params^
-	  (import)
-	  (define allow-improper-lists allow-.-lists)
-	  (define eq?-only-compares-symbols eq?-only-on-syms))))
-
-    (define (repl file restart)
-      (let ([parameterization (make-parameterization)])
-	(set! user-parameterization parameterization)
-	(with-parameterization parameterization
-	  (let ([u@ (unit/sig->unit
-		     (compound-unit/sig (import)
-		       (link
-			[params : plt:userspace:params^ (params@)]
-			[userspace : plt:userspace^
-				   ((require-library-unit/sig "userspcr.ss" "userspce")
-				    params)])
-		       (export (open params)
-			       (open userspace))))])
-	    (lambda ()
-	      (global-defined-value 'read/zodiac read/zodiac)
-	      (global-defined-value 'restart restart)
-	      (invoke-open-unit u@)
-	      
-	      (require-library-use-compiled #f)))))
-
-      (printf "Welcome to DrScheme Jr version ~a, Copyright (c) 1995-98 PLT~n"
-	      (version))
-      (printf "Language: ~a~n"
-	      (cadr (assoc (basis:setting-vocabulary-symbol (basis:current-setting))
-			   (map (lambda (p) (list (cadr p) (car p))) language-levels))))
-      
-      (require-library-use-compiled #f)
-      (when (string? file)
-	(load/prompt file))
-
-      (current-prompt-read prompt-read)
-      (current-print drscheme-jr-print)
-      
-      (read-eval-print-loop))
-
     (define (go)
-      (let ([file startup-file])
+      (let ([file settings:startup-file])
 	(let loop ()
-	  (let ([continue? #f])
-	    (thread-wait
-	     (with-parameterization user-parm ;; breaking!
-	       (lambda ()
+	  (let ([continue? #f]
+		[param
+		 (basis:build-parameterization
+		  settings:setting
+		  (require-library-unit/sig "userspcr.ss" "userspce"))])
+	    (with-parameterization param
+	      (lambda ()
+		(global-defined-value 'read/zodiac read/zodiac)
+		(global-defined-value 'restart
+				      (let* ([c (current-custodian)]
+					     [die (lambda ()
+						    (set! continue? #t)
+						    (custodian-shutdown-all c))])
+					(rec restart
+					     (case-lambda
+					      [(new-file)
+					       (unless (or (relative-path? file)
+							   (absolute-path? file))
+						 (raise-type-error 'restart "path string" file))
+					       (set! file new-file)
+					       (die)]
+					      [() (die)]))))
+		(current-prompt-read prompt-read)
+		(printf "Welcome to DrScheme Jr version ~a, Copyright (c) 1995-98 PLT~n"
+			(version))
+		(printf "Language: ~a~n"
+			(cadr (assoc (basis:setting-vocabulary-symbol (basis:current-setting))
+				     (map list basis:level-symbols basis:level-strings))))
+		(thread-wait
 		 (thread
 		  (lambda ()
-		    (repl file
-			  (let ([die
-				 (lambda ()
-				   (set! continue? #t)
-				   (custodian-shutdown-all c))])
-			    (rec restart
-				 (case-lambda
-				  [(new-file)
-				   (unless (or (relative-path? file)
-					       (absolute-path? file))
-				     (raise-type-error 'restart "path string" file))
-				   (set! file new-file)
-				   (die)]
-				  [() (die)]))))))))))
-	  (when continue?
-	    (loop)))))))
+		    
+		    (when (string? file)
+		      (load/prompt file))
 
+		    (read-eval-print-loop))))))
+	    (when continue?
+	      (loop))))))
 
+    go))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                     DrScheme Jr                        ;;;
@@ -470,27 +430,50 @@
 
 (require-library "pconver.ss")
 
-(define cu@
-  (compound-unit/sig (import)
-    (link [mzlib : mzlib:core^ ((require-library "corer.ss"))]
-	  [aries : plt:aries^ ((require-library-unit/sig "ariesr.ss" "cogen")
-			       (drzodiac : zodiac:system^)
-			       (interface : zodiac:interface^))]
-	  [interface : drscheme:interface^
-		     ((require-library-unit/sig "interface.ss" "userspce") drzodiac)]
-	  [drzodiac : drscheme:zodiac^
-		    ((require-library-unit/sig "zlink.ss" "userspce")
-		     basis
-		     (interface : zodiac:interface^)
-		     (mzlib pretty-print@)
-		     (mzlib file@))]
-	  [basis : userspace:basis^
-		 ((require-library-unit/sig "basis.ss" "userspce")
-		  zodiac
-		  interface
-		  aries
-		  print-convert
-		  (mzlib pretty-print@)
-		  (mzlib function@))])
-    (export)))
+(define go
+  (invoke-unit/sig
+   (compound-unit/sig (import)
+     (link [mz : prims^ ((let ([_argv argv]
+			       [_program program])
+			   (unit/sig prims^
+			     (import)
+			     (define argv _argv)
+			     (define program _program))))]
+	   [mzlib : mzlib:core^ ((require-library "corer.ss"))]
+	   [print-convert : mzlib:print-convert^ ((require-library "pconverr.ss")
+						  (mzlib string@)
+						  (mzlib function@))]
+	   [cmd-line : mzlib:command-line^ ((require-library "cmdliner.ss"))]
+	   [aries : plt:aries^ ((require-library-unit/sig "ariesr.ss" "cogen")
+				(drzodiac : zodiac:system^)
+				(interface : zodiac:interface^))]
+	   [interface : drscheme:interface^
+		      ((require-library-unit/sig "interface.ss" "userspce") drzodiac)]
+	   [drzodiac : drscheme:zodiac^
+		     ((require-library-unit/sig "zlink.ss" "userspce")
+		      basis
+		      (interface : zodiac:interface^)
+		      (mzlib pretty-print@)
+		      (mzlib file@))]
+	   [basis : userspace:basis^
+		  ((require-library-unit/sig "basis.ss" "userspce")
+		   drzodiac
+		   interface
+		   aries
+		   print-convert
+		   (mzlib pretty-print@)
+		   (mzlib function@))]
+	   [settings : drscheme-jr:settings^
+		     (build-settingU mz
+				     cmd-line
+				     basis
+				     (mzlib pretty-print@)
+				     (mzlib function@))]
+	   [dr-jr : () (dr-jrU
+			(drzodiac : zodiac:system^)
+			print-convert
+			basis
+			(mzlib pretty-print@)
+			settings)])
+     (export))))
 

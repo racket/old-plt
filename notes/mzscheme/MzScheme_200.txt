@@ -141,3 +141,6 @@ MzLib changes:
     re-implementation matches the Chez form)
 
  * "process.ss" is new
+
+ * the default for the whole/fractional-exact-numbers parameter in
+   the pconvert.ss library is now #f

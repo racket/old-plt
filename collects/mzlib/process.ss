@@ -51,15 +51,16 @@
 	     "input port"
 	     p))))
 
-  (define (streamify-in cin in get-thread?)
+  (define (streamify-in cin in get-thread? ready-for-break)
     (if (and cin (not (file-stream-port? cin)))
 	(let ([t (thread (lambda () 
-			   (with-handlers ([exn:break? void])
-			     (dynamic-wind
-				 void
-				 (lambda () 
-				   (copy-port cin in))
-				 (lambda () (close-output-port in))))))])
+			   (dynamic-wind
+			       void
+			       (lambda ()
+				 (ready-for-break)
+				 (with-handlers ([exn:break? void])
+				   (copy-port cin in)))
+			       (lambda () (close-output-port in)))))])
 	  (and get-thread? t))
 	in))
 
@@ -78,7 +79,7 @@
 					   (if-stream-out cerr)
 					   exe args)])      
       (list (streamify-out cout out #f)
-	    (streamify-in cin in #f)
+	    (streamify-in cin in #f void)
 	    (subprocess-pid subp)
 	    (streamify-out cerr err #f)
 	    (letrec ((control
@@ -113,7 +114,8 @@
 	  (subprocess #f #f #f exe))
 	(let ([cout (current-output-port)]
 	      [cin (current-input-port)]
-	      [cerr (current-error-port)])
+	      [cerr (current-error-port)]
+	      [it-ready (make-semaphore)])
 	  (let-values ([(subp out in err)
 			(apply
 			 subprocess
@@ -122,11 +124,12 @@
 			 (if-stream-out cerr)
 			 exe args)])
 	    (let ([ot (streamify-out cout out #t)]
-		  [it (streamify-in cin in #t)]
+		  [it (streamify-in cin in #t (lambda () (semaphore-post it-ready)))]
 		  [et (streamify-out cerr err #t)])
 	      (subprocess-wait subp)
 	      (when it
 		;; stop piping output to subprocess
+		(semaphore-wait it-ready)
 		(break-thread it))
 	      ;; wait for other pipes to run dry:
 	      (when (thread? ot)

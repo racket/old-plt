@@ -1,0 +1,150 @@
+;;; mxdemo.ss -- demo program for MysterX
+
+(load "mysterx.ss")
+
+; the document with the calendar
+(define caldoc (make-object mx-document% "Demo or die!" 500 600 100 100 '()))
+
+(send caldoc insert-html 
+	(string-append	
+	"<H1>MysterX Calendar Demo</H1>"
+	"<p>"
+	"<hr>"
+	"<p>"
+	(object->html "Calendar Control 8.0")))
+
+(define cal (car (send caldoc objects)))
+
+; the control panel document 
+(define ctrldoc (make-object mx-document% "Control Panel" 180 320 600 300 '()))
+
+(send ctrldoc insert-html 
+	(string-append	
+	"<table align = center>"
+
+	"<caption><b>Control Panel</b></caption>"
+
+	"<colgroup align=left>"
+	"<colgroup align=center>"
+	"<colgroup align=right>"
+
+	"<tr>"
+	"<td><BUTTON id=\"Yesterday\" style=\"color: blue\">&LT----</BUTTON></td>"
+	"<td><b>Day</b></td>"
+	"<td><BUTTON id=\"Tomorrow\" style=\"color: red\">----&GT</BUTTON></td>"
+	"</tr>"
+
+	"<tr>"
+	"<td><BUTTON id=\"Last-month\" style=\"color: green\">&LT----</BUTTON></td>"
+	"<td><b>Month</b></td>"
+	"<td><BUTTON id=\"Next-month\" style=\"color: indigo\">----&GT</BUTTON></td>"
+	"</tr>"
+
+	"<tr>"
+	"<td><BUTTON id=\"Last-year\" style=\"color: yellow\">&LT----</BUTTON></td>"
+	"<td><b>Year</b></td>"
+	"<td><BUTTON id=\"Next-year\" style=\"color: purple\">----&GT</BUTTON></td>"
+	"</tr>"
+
+	"</table>"
+
+	"<table align=center>"
+	
+	"<td><BUTTON id=\"Today\">Today</BUTTON></td>"
+
+	"</table>"
+	
+	"<hr>"
+
+	"<table align=center>"
+
+	"<tr>"
+	"<td><BUTTON id=\"Hide\">Hide</BUTTON></td>"
+	"<td><BUTTON id=\"Show\">Show</BUTTON></td>"
+	"</tr>"
+
+	"</table>"
+
+	"<table align=center>"
+	
+	"<td><BUTTON id=\"Rub-me\">Rub me!</BUTTON></td>"
+
+	"</table>"
+	
+	"<table align=center>"
+
+	"<td><BUTTON id=\"About\">About</BUTTON></td>"))
+	
+(define (about-handler ev)
+  (when (event-click? ev)
+	(invoke cal "AboutBox")))
+
+(define (hide-handler ev)
+  (when (event-click? ev)
+	(send caldoc show #f)))
+
+(define (show-handler ev)
+  (when (event-click? ev)
+	(send caldoc show #t)))
+
+(define rub-me-handler
+  (let ([count 0])
+    (lambda (ev)
+      (when (event-mousemove? ev)
+	    (printf "mousemove #~a, but who's counting?~n" count)
+	    (set! count (add1 count))))))
+
+(define (today-handler ev)
+  (when (event-click? ev)
+	(invoke cal "Today")))
+
+(define (yesterday-handler ev)
+  (when (event-click? ev)
+	(invoke cal "PreviousDay")))
+
+(define (tomorrow-handler ev)
+  (when (event-click? ev)
+	(invoke cal "NextDay")))
+
+(define (last-month-handler ev)
+  (when (event-click? ev)
+	(invoke cal "PreviousMonth")))
+
+(define (next-month-handler ev)
+  (when (event-click? ev)
+	(invoke cal "NextMonth")))
+
+(define (last-year-handler ev)
+  (when (event-click? ev)
+	(invoke cal "PreviousYear")))
+
+(define (next-year-handler ev)
+  (when (event-click? ev)
+	(invoke cal "NextYear")))
+
+(define button-handlers
+  `((About ,about-handler)
+    (Hide ,hide-handler)
+    (Show ,show-handler)
+    (Rub-me ,rub-me-handler)
+    (Today ,today-handler)
+    (Yesterday ,yesterday-handler)
+    (Tomorrow ,tomorrow-handler)
+    (Last-month ,last-month-handler)
+    (Next-month ,next-month-handler)
+    (Last-year ,last-year-handler)
+    (Next-year ,next-year-handler)))
+
+(for-each
+ (lambda (sym-handler)
+   (send ctrldoc register-event-handler 
+	'BUTTON              ; tag
+	(car sym-handler)    ; id
+	(cadr sym-handler))) ; handler
+ button-handlers)
+
+(send ctrldoc handle-events)
+ 
+
+
+

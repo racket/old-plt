@@ -17,22 +17,22 @@ Compilation is controlled by a number of parameters for Windows
 and Unix:
 
 >  current-extension-compiler - compiler executable pathname or
-     #f. The default is set by searching for an executable using
-     the PATH environment variable. Under windows, the search
-     looks for cl.exe and then gcc.exe. Under Unix, it check the
-     MZSCHEME_DYNEXT_COMPILER environment variable, then looks for
-     gcc and then cc. #f indicates that no compiler could be
-     found.
+    #f. The default is set by searching for an executable using the
+    PATH environment variable. Under windows, the search looks for
+    cl.exe, then gcc.exe, then bcc32.exe (Borland). Under Unix, it
+    checks the MZSCHEME_DYNEXT_COMPILER environment variable, then
+    looks for gcc, then cc. #f indicates that no compiler could be
+    found.
 
 >  current-extension-compiler-flags - list of strings passed to the
-    compiler as flags. Under Windows, the default is (list "/c"
-    "/O2") for cl.exe or (list "-c" "-O2") for gcc.exe; under Unix,
-    (list "-c" "-O2").
+    compiler as flags. Under Windows, the default is (list "/c" "/O2")
+    for cl.exe, (list "-c" "-O2") for gcc.exe and bcc32.exe; under
+    Unix, (list "-c" "-O2").
 
 >  current-make-compile-include-strings - procedure that takes an
     include directory path and returns a list of strings for the
-    command line.  Windows: "dir" -> (list "/Idir") for cl.exe
-    or (list "-Idir") for gcc.exe ; Unix: "dir" -> (list "-Idir")
+    command line.  Windows: "dir" -> (list "/Idir") for cl.exe, (list
+    "-Idir") for gcc.exe and bcc32.exe; Unix: "dir" -> (list "-Idir")
 
 >  current-make-compile-input-strings - procedure that takes an
     input file and returns a list of strings for the command line.
@@ -40,14 +40,14 @@ and Unix:
 
 >  current-make-compile-output-strings - procedure that takes an
     output file and returns a list of strings for the command line.
-    Windows: "file" -> (list "/Fofile") for cl.exe or (list "-o" 
-    "file") for gcc.exe; Unix: "file" -> (list "-o" "file")
+    Windows: "file" -> (list "/Fofile") for cl.exe, (list "-o" "file")
+    for gcc.exe and bcc32.exe; Unix: "file" -> (list "-o" "file")
 
 > (use-standard-compiler name) sets the above parameters for a
     particular known compiler. The acceptable names are 
     platforms-specific:
       Unix: 'cc or 'gcc
-      Windows: 'gcc or 'msvc
+      Windows: 'gcc, 'msvc, or 'borland
       MacOS: 'cw
 
 > (get-standard-compilers) returns a list of standard compiler
@@ -68,28 +68,33 @@ _link.ss_
    input-files - A list of compiled object filenames
    output-file - An extension filename
 
+   For Windows, a special linking sequence is initiated if the
+   linker's name is ld.exe (for gcc).
+
 Linking parameters:
 
 >  current-extension-linker - linker executable pathname or #f. 
-     The default is set by searching for an executable using
-     the PATH environment variable. Under Windows, it looks for 
-     cl.exe and then ld.exe. Under Unix it checks the
-     MZSCHEME_DYNEXT_LINKER environment variable, then, except AIX, it
-     looks for ld. Under AIX, it looks for cc. #f indicates that no
-     linker could be found.
+     The default is set by searching for an executable using the PATH
+     environment variable. Under Windows, it looks for cl.exe, then
+     ld.exe (gcc), then ilink32.exe (Borland). Under Unix it checks
+     the MZSCHEME_DYNEXT_LINKER environment variable, then, except
+     AIX, it looks for ld. Under AIX, it looks for cc. #f indicates
+     that no linker could be found.
 
 >  current-extension-linker-flags - list of strings. Under Windows,
-     default is (list "/LD") fo cl.exe and (list "--dll") for ld.exe. 
-     Under Unix, the default varies greatly among platforms.
+     default is (list "/LD") for cl.exe, (list "--dll") for ld.exe,
+     (list "/Tpd" "/c") for ilink32.exe.  Under Unix, the default
+     varies greatly among platforms.
 
 >  current-make-link-input-strings - procedure that takes an
      input file and returns a list of strings for the command line.
      The default is `list'.
 
->  current-make-link-output-strings - procedure that takes an output
+> current-make-link-output-strings - procedure that takes an output
     file and returns a list of strings for the command line.  Windows:
-    "file" -> (list "/Fefile") for cl.exe or (list "-e" "_dll_entry@12"
-     "-o" "file") for ld.exe; Unix: "file" -> (list "-o" "file")
+    "file" -> (list "/Fefile") for cl.exe, something like (list "-e"
+    "_dll_entry@12" "-o" "file") for ld.exe, something complex for
+    ilink32.exe; Unix: "file" -> (list "-o" "file")
 
 >  current-standard-link-libraries - list of file paths; For
     most platforms, the default is 

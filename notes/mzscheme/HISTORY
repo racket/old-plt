@@ -12,6 +12,7 @@ New procedures:
   local-transformer-expand
   syntax-transforming?
 module-compiled-imports now returns 3 values
+[Need to change module-binding?]
 
 Version 299.10
 Changed the class system; see MzScheme_300.txt

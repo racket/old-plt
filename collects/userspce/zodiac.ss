@@ -178,7 +178,7 @@
 				(loop (cdr other-names))))]))
 		 x)
 	       (error 'current-vocabulary-symbol
-		      "supplied non-vocab symbol: ~a" x)))))
+		      "supplied non-vocabulary symbol: ~a" x)))))
       
       (define make-function
 	(lambda (name core structured side-effecting advanced args)

@@ -14,8 +14,10 @@
 	  [basis : userspace:basis^]
 	  [drscheme:edit : drscheme:edit^])
   
-  (mred:debug:printf 'invoke "drscheme:rep@")
+  (define (printf . args) (apply fprintf mred:constants:original-output-port args))
   
+  (mred:debug:printf 'invoke "drscheme:rep@")
+
   (define WELCOME-DELTA (make-object wx:style-delta%
 				     wx:const-change-family
 				     wx:const-decorative))
@@ -249,23 +251,15 @@
 		 (insert-warning)))
 	     (do-many-buffer-evals this start end)))]
 	[cleanup-evaluation
-	 (opt-lambda ()
-	   (mred:debug:printf 'console-threading "cleanup-evaluation: waiting in-evaluation")
-	   (semaphore-wait in-evaluation-semaphore)
-	   (mred:debug:printf 'console-threading "cleanup-evaluation: passed in-evaluation")
-	   (set! in-evaluation? #f)
-	   (mred:debug:printf 'console-threading "cleanup-evaluation: posting in-evaluation")
-	   (semaphore-post in-evaluation-semaphore)
-	   
+	 (lambda (thread-to-watch)
 	   (mred:debug:printf 'console-threading "cleanup-evaluation: turning off busy cursor")
 	   (wx:end-busy-cursor)
 	   (cleanup-transparent-io)
 	   (send (get-frame) enable-evaluation)
-	   (reset-break-state)
 	   (begin-edit-sequence)	     
 	   (set-caret-owner null wx:const-focus-display)
 
-	   (if (thread-running? evaluation-thread)
+	   (if (thread-running? thread-to-watch)
 	       (let ([c-locked? locked?])
 		 (lock #f)
 		 (insert-prompt)
@@ -302,144 +296,188 @@
 	       (end-edit-sequence))))]
 	[do-many-buffer-evals
 	 (lambda (edit start end)
-	   (mred:debug:printf 'console-threading "do-many-buffer-evals: waiting in-evaluation")
-	   (semaphore-wait in-evaluation-semaphore)
-	   (mred:debug:printf 'console-threading "do-many-buffer-evals: passed in-evaluation")
-	   (if in-evaluation?
-	       (begin
-		 (mred:debug:printf 'console-threading "do-many-buffer-evals: posting in-evaluation.1")
-		 (semaphore-post in-evaluation-semaphore))
-	       (begin
-		 (set! in-evaluation? #t)
-		 (mred:debug:printf 'console-threading "do-many-buffer-evals: posting in-evaluation.2")
-		 (semaphore-post in-evaluation-semaphore)
-		 (send (get-frame) disable-evaluation)
-		 (cleanup-transparent-io)
-		 (reset-pretty-print-width)
-		 (ready-non-prompt)
-		 (mred:debug:printf 'console-threading "do-many-buffer-evals: turning on busy cursor")
-		 (wx:begin-busy-cursor)
-		 (when should-collect-garbage?
-		   (set! should-collect-garbage? #f)
-		   (collect-garbage))
-		 (reset-break-state)
-		 (let ([evaluation-sucessful 'not-yet-evaluation-sucessful]
-		       [cleanup-semaphore 'not-yet-cleanup-semaphore]
-		       [thread-grace 'not-yet-thread-grace]
-		       [thread-kill 'not-yet-thread-kill])
-		   (run-in-evaluation-thread
-		    (lambda ()
-		      (dynamic-wind
-		       (lambda ()
-			 (mred:debug:printf 'console-threading "initializing thread-grace and thread-kill")
-			 (set! evaluation-sucessful  (make-semaphore 0))
-			 (set! cleanup-semaphore (make-semaphore 1))
-			 (set! thread-grace
-			       (thread
-				(lambda ()
-				  (semaphore-wait evaluation-sucessful)
-				  (mred:debug:printf 'console-threading "thread-grace passed.1")
-				  (when (semaphore-try-wait? cleanup-semaphore)
-				    (mred:debug:printf
-				     'console-threading
-				     "thread-grace passed.2")
-				    (cleanup-evaluation)
-				    (parameterize ([current-custodian drscheme:init:system-custodian])
-				      (kill-thread thread-kill)))
-				  (mred:debug:printf
-				   'console-threading
-				   "thread-grace terminating (thread-kill running? ~s)"
-				   (thread-running? thread-kill)))))
-			 (set! thread-kill
-			       (thread 
-				(lambda ()
-				  (thread-wait evaluation-thread)
-				  (mred:debug:printf
-				   'console-threading
-				   "thread-kill passed.1")
-				  (when (semaphore-try-wait? cleanup-semaphore)
-				    (mred:debug:printf
-				     'console-threading
-				     "thread-kill passed.2")
-				    (cleanup-evaluation)
-				    (parameterize ([current-custodian drscheme:init:system-custodian])
-				      (kill-thread thread-grace)))
-				  (mred:debug:printf
-				   'console-threading
-				   "thread-kill terminating (thread-grace running? ~s)"
-				   (thread-running? thread-grace))))))
-		       (lambda ()
-			 (with-parameterization user-param
-			   (lambda ()
-			     (let/ec k
-			       (fluid-let ([error-escape-k 
-					    (lambda ()
-					      (mred:debug:printf 'console-threading "error-escape-k: posting evaluation-sucessful")
-					      (semaphore-post evaluation-sucessful)
-					      (k (void)))])
-				 (process-edit edit
-					       (lambda (expr recur)
-						 (mred:debug:printf 'console-threading "process-edit-f: looping~n")
-						 (cond
-						  [(basis:process-finish? expr)
-						   (mred:debug:printf 'console-threading "process-edit-f: posting evaluation-sucessful")
-						   (semaphore-post evaluation-sucessful)]
-						  [else
-						   (let ([answers (call-with-values
-								   (lambda ()
-								     (dynamic-enable-break
-								      (lambda ()
-									(if (basis:setting-use-zodiac? (basis:current-setting))
-									    (basis:syntax-checking-primitive-eval expr)
-									    (basis:primitive-eval expr)))))
-								   (lambda x x))])
-						     (display-results answers)
-						     (recur))]))
-					       start
-					       end
-					       #t))))))
-		       (lambda () (void)))))))))])
+	   (mred:debug:printf 'console-threading "do-many-buffer-evals: testing in-evaluation: ~a" in-evaluation?)
+	   (unless in-evaluation?
+	     (mred:debug:printf 'console-threading "do-many-buffer-evals: posting in-evaluation.2")
+	     (send (get-frame) disable-evaluation)
+	     (reset-break-state)
+	     (cleanup-transparent-io)
+	     (reset-pretty-print-width)
+	     (ready-non-prompt)
+	     (mred:debug:printf 'console-threading "do-many-buffer-evals: turning on busy cursor")
+	     (wx:begin-busy-cursor)
+	     (when should-collect-garbage?
+	       (set! should-collect-garbage? #f)
+	       (collect-garbage))
+	     (run-in-evaluation-thread
+	      (lambda ()
+		(mred:debug:printf 'console-threading "do-many-buffer-evals: in evaluation thread")
+		(protect-user-evaluation
+		 cleanup-evaluation
+		 (lambda ()
+		   (with-parameterization user-param
+		     (lambda ()
+		       (process-edit edit
+				     (lambda (expr recur)
+				       (mred:debug:printf 'console-threading "process-edit-f: looping")
+				       (cond
+					[(basis:process-finish? expr)
+					 (void)]
+					[else
+					 (let ([answers (call-with-values
+							 (lambda ()
+							   (dynamic-enable-break
+							    (lambda ()
+							      (if (basis:setting-use-zodiac? (basis:current-setting))
+								  (basis:syntax-checking-primitive-eval expr)
+								  (basis:primitive-eval expr)))))
+							 (lambda x x))])
+					   (display-results answers)
+					   (recur))]))
+				     start
+				     end
+				     #t)))))))))])
       (private
 	[shutdown-user-custodian
 	 (lambda ()
 	   (let* ([frame (get-frame)]
 		  [interactions-edit (ivar frame interactions-edit)])
-	     (send interactions-edit kill-allow-protected
-		   (lambda ()
-		     (custodian-shutdown-all user-custodian)))))])
+	     (set! in-evaluation? #f)
+	     (send (get-frame) not-running)
+
+	     ;; this thread is created to run the actual shutdown, in
+	     ;; case the custodian is going to shutdown the current
+	     ;; thread!  The semaphore is there for when the case when
+	     ;; current thread is not shutdown.
+	     (let ([sema (make-semaphore 0)])
+	       (parameterize ([current-custodian drscheme:init:system-custodian])
+		 (thread (lambda ()
+			   (send interactions-edit kill-allow-protected
+				 (lambda ()
+				   (custodian-shutdown-all user-custodian)))
+			   (semaphore-post sema))))
+	       (semaphore-wait sema))))])
       (public
 	[reset-break-state (lambda () (set! ask-about-kill? #f))]
+	[breakable-thread #f]
 	[break (lambda ()
 		 (cond
-		  [(not evaluation-thread)
-		   (void)]
+		  [(or (not in-evaluation?)
+		       (not breakable-thread))
+		   (wx:bell)]
 		  [ask-about-kill? 
 		   (if (mred:get-choice
 			"Do you want to kill the evaluation?"
 			"Just Break"
 			"Kill"
 			"Kill?")
-		       (break-thread evaluation-thread)
-		       (shutdown-user-custodian))]
+		       (break-thread breakable-thread)
+		       (begin 
+			 (shutdown-user-custodian)))]
 		  [else 
-		   (break-thread evaluation-thread)
+		   (break-thread breakable-thread)
 		   (set! ask-about-kill? #t)]))])
       (public
-	[error-escape-k void]
-	[escape-handler
-	 (rec drscheme-error-escape-handler
-	      (lambda ()
-		(mred:debug:printf 'console-threading "drscheme-error-escape-handler: escaping")
-		(error-escape-k)))])
+	[error-escape-k void])
 
       (private
 	[eval-thread-thunks null]
 	[eval-thread-state-sema (make-semaphore 1)]
-	[eval-thread-queue-sema (make-semaphore 0)])
+	[eval-thread-queue-sema (make-semaphore 0)]
+
+	[yield-count 0]
+	
+	[evaluation-sucessful 'not-yet-evaluation-sucessful]
+	[cleanup-sucessful 'not-yet-cleanup-sucessful]
+	[cleanup-semaphore 'not-yet-cleanup-semaphore]
+	[thread-grace 'not-yet-thread-grace]
+	[thread-kill 'not-yet-thread-kill]
+
+	[protect-user-evaluation
+	 (lambda (cleanup thunk)
+	   (mred:debug:printf 'console-threading "waiting in-evaluation-semaphore.1")
+	   (semaphore-wait in-evaluation-semaphore)
+	   (set! in-evaluation? #t)
+	   (semaphore-post in-evaluation-semaphore)
+	   (mred:debug:printf 'console-threading "finished with in-evaluation-semaphore.1")
+
+	   ;; this is evaluation-thread, unless that was kill and user event
+	   ;; callbacks are still being handled. in that case, it will be
+	   ;; whatever thread is handling the callback
+	   (let ([thread-to-watch (current-thread)])
+
+	     (mred:debug:printf 'console-threading "protect-user-evaluation: initializing thread-grace and thread-kill")
+	     (fluid-let ([breakable-thread thread-to-watch]
+			 [evaluation-sucessful  (make-semaphore 0)]
+			 [cleanup-semaphore (begin
+					      (mred:debug:printf 'console-threading "protect-user-evaluation: setting cleanup semaphore")
+					      (make-semaphore 1))]
+			 [cleanup-sucessful (make-semaphore 0)]
+			 [thread-grace
+			  (thread
+			   (lambda ()
+			     (semaphore-wait evaluation-sucessful)
+			     (mred:debug:printf 'console-threading "thread-grace passed.1")
+
+			     (semaphore-wait cleanup-semaphore)
+			     (mred:debug:printf 'console-threading "thread-grace passed.2")
+
+			     (parameterize ([current-custodian drscheme:init:system-custodian])
+			       (kill-thread thread-kill))
+			     (mred:debug:printf
+			      'console-threading
+			      "after terminating thread-kill (thread-kill running? ~s)"
+			      (thread-running? thread-kill))
+
+
+			     (cleanup thread-to-watch)
+			     (mred:debug:printf 'console-threading "posting cleanup-sucessful.1")
+			     (semaphore-post cleanup-sucessful)))]
+			 [thread-kill
+			  (thread 
+			   (lambda ()
+			     (thread-wait thread-to-watch)
+			     (mred:debug:printf 'console-threading "thread-kill passed.1")
+
+			     (semaphore-wait cleanup-semaphore)
+			     (mred:debug:printf 'console-threading "thread-kill passed.2")
+
+			     (parameterize ([current-custodian drscheme:init:system-custodian])
+			       (kill-thread thread-grace))
+			     (mred:debug:printf
+			      'console-threading
+			      "after terminating thread-grage (thread-grace running? ~s)"
+			      (thread-running? thread-grace))
+
+			     (cleanup thread-to-watch)
+			     (mred:debug:printf 'console-threading "posting cleanup-sucessful.2")
+			     (semaphore-post cleanup-sucessful)))])
+
+	       (let/ec k
+		 (fluid-let ([error-escape-k 
+			      (lambda ()
+				(mred:debug:printf 'console-threading "error-escape-k: posting evaluation-sucessful")
+				(semaphore-post evaluation-sucessful)
+				(k (void)))])
+
+		   (mred:debug:printf 'console-threading "protect-user-evaluation: running thunk")
+		   (thunk)
+		   (mred:debug:printf 'console-threading "protect-user-evaluation: finished thunk")))
+
+	       (mred:debug:printf 'console-threading "protect-user-evaluation: posting evaluation-sucessful")
+	       (semaphore-post evaluation-sucessful)
+	       (mred:debug:printf 'console-threading "waiting cleanup-sucessful")
+	       (semaphore-wait cleanup-sucessful)
+	       (mred:debug:printf 'console-threading "passed cleanup-sucessful")
+
+
+	       (mred:debug:printf 'console-threading "waiting in-evaluation-semaphore.2")
+	       (semaphore-wait in-evaluation-semaphore)
+	       (set! in-evaluation? #f)
+	       (semaphore-post in-evaluation-semaphore)
+	       (mred:debug:printf 'console-threading "finished with in-evaluation-semaphore.2"))))])
       (public
 	[evaluation-thread #f]
-	[impl-thread #f]
-	[impl-eventspace #f]
 	[run-in-evaluation-thread 
 	 (lambda (thunk)
 	   (semaphore-wait eval-thread-state-sema)
@@ -447,71 +485,51 @@
 	   (semaphore-post eval-thread-state-sema)
 	   (semaphore-post eval-thread-queue-sema))]
 	[init-evaluation-thread
-	 (lambda ()
-	   (set! impl-thread (current-thread))
-	   (set! impl-eventspace (wx:current-eventspace))
+	 (lambda (user-param first-box)
+
+	   ;; this semaphore is only used to get time on the user eventspace's
+	   ;; event handling thread
 	   (let ([dummy-s (make-semaphore 0)])
+
+
 	     (parameterize ([wx:current-eventspace
 			     ((in-parameterization user-param
 						   wx:current-eventspace))])
 	       (semaphore-callback
 		dummy-s
 		(lambda ()
-		  (dynamic-disable-break
+		  (mzlib:function@:dynamic-disable-break
 		   (lambda ()
+		     (set-box! first-box #f)
+		     (let ([escape-handler
+			    (rec drscheme-error-escape-handler
+				 (lambda ()
+				   (mred:debug:printf 'console-threading "drscheme-error-escape-handler: escaping")
+				   (error-escape-k)))])
+		       (error-escape-handler escape-handler)
+		       (basis:bottom-escape-handler escape-handler))
+
+		     (set! yield-count 0)
+		     (send (get-frame) not-running)
 		     (set! evaluation-thread (current-thread))
-		     (error-escape-handler escape-handler)
 		     (let loop ()
-		       (when (semaphore-try-wait? eval-thread-queue-sema)
-			 (wx:yield eval-thread-queue-sema))
+		       (unless (semaphore-try-wait? eval-thread-queue-sema)
+			 (fluid-let ([yield-count (+ yield-count 1)])
+			   (wx:yield eval-thread-queue-sema)))
 		       (semaphore-wait eval-thread-state-sema)
 		       (let ([thunk (car eval-thread-thunks)])
 			 (set! eval-thread-thunks (cdr eval-thread-thunks))
 			 (semaphore-post eval-thread-state-sema)
-			 (with-parameterization drscheme:init:system-parameterization
-			   (lambda ()
-			     (thunk))))
+			 (dynamic-wind
+			  (lambda () (send (get-frame) running))
+			  (lambda ()
+			    (with-parameterization drscheme:init:system-parameterization
+			      (lambda ()
+				(thunk))))
+			  (lambda () (send (get-frame) not-running))))
 		       (loop))))))
 	       (semaphore-post dummy-s))))])
 
-      (public
-	[userspace-load
-	 (lambda (filename)
-	   (with-parameterization drscheme:init:system-parameterization
-	     (lambda ()
-	       (if (basis:setting-use-zodiac? user-setting)
-		   (let* ([p (with-parameterization user-param
-			       (lambda ()
-				 (open-input-file filename)))]
-			  [loc (zodiac:make-location 0 0 0 filename)]
-			  [chars (begin0
-				  (list (read-char p) (read-char p) (read-char p) (read-char p))
-				  (close-input-port p))]
-			  [process-sexps
-			   (let ([last (list (void))])
-			     (lambda (sexp recur)
-			       (cond
-				[(basis:process-finish? sexp) last]
-				[else
-				 (set! last
-				       (call-with-values
-					(lambda () (basis:syntax-checking-primitive-eval sexp))
-					(lambda x x)))
-				 (recur)])))])
-		     (with-parameterization user-param
-		       (lambda ()
-			 (apply values 
-				(if (equal? chars (list #\W #\X #\M #\E))
-				    (let ([edit (make-object drscheme:edit:edit%)])
-				      (send edit load-file filename)
-				      (process-edit edit process-sexps
-						    0 
-						    (send edit last-position)
-						    #t))
-				    (process-file filename process-sexps #t))))))
-		   (with-parameterization user-param
-		     (lambda ()
-		       (drscheme:init:primitive-load filename)))))))])
       (private 
 	[insert-delta
 	 (lambda (s delta)
@@ -531,12 +549,15 @@
 	[reset-console
 	 (let ([first-dir (current-directory)])
 	   (lambda ()
+	     (mred:debug:printf 'console-threading "initializing repl")
 	     (clear-previous-expr-positions)
 	     (shutdown-user-custodian)
 	     (cleanup-transparent-io)
 	     (set! should-collect-garbage? #t)
-	     (lock #f) ;; locked if the thread was killed
-	     ;(drscheme:language:set-use-zodiac)
+
+	     ;; in case the last evaluation thread will killed, clean up some state.
+	     (lock #f)
+	     (set! in-evaluation? #f)
 
 	     (begin-edit-sequence)
 	     (if (mred:get-preference 'drscheme:keep-interactions-history)
@@ -559,9 +580,10 @@
 	     (set! repl-initially-active? #t)
 	     (end-edit-sequence)
 
-
 	     (set! user-setting (mred:get-preference 'drscheme:settings))
+
 	     (let ([p (basis:build-parameterization
+		       (lambda () (load (build-path (collection-path "system") "debug.ss")))
 		       (list 'wx)
 		       (mred:get-preference 'drscheme:settings)
 		       (let ([l@
@@ -582,6 +604,8 @@
 					     params)]
 				 [library : () (l@ userspace)])
 			   (export (open userspace)))))])
+
+	       (mred:debug:printf 'console-threading "built parameterization")
 	       (set! user-custodian ((in-parameterization p current-custodian)))
 	       (with-parameterization p
 		 (lambda ()
@@ -589,9 +613,48 @@
 		   (current-output-port this-out)
 		   (current-error-port this-err)
 		   (current-input-port this-in)
-		   ;(current-load userspace-load)
 
-		   (wx:current-eventspace (wx:make-eventspace))
+		   (current-load
+		    (let ([userspace-load (current-load)])
+		      (rec drscheme-load-handler
+			   (lambda (filename)
+			     (unless (string? filename)
+			       (raise (make-exn:application:arity
+				       (format "drscheme-load-handler: expects argument of type <string>; given: ~e" filename)
+				       ((debug-info-handler))
+				       filename
+				       'string)))
+			     (if (and (basis:setting-use-zodiac? user-setting)
+				      (let* ([p (open-input-file filename)]
+					     [loc (zodiac:make-location 0 0 0 filename)]
+					     [chars (begin0
+						     (list (read-char p) (read-char p) (read-char p) (read-char p))
+						     (close-input-port p))])
+					(equal? chars (string->list "WXME"))))
+				 (let ([process-sexps
+					(let ([last (list (void))])
+					  (lambda (sexp recur)
+					    (cond
+					     [(basis:process-finish? sexp) last]
+					     [else
+					      (set! last
+						    (call-with-values
+						     (lambda () (basis:syntax-checking-primitive-eval sexp))
+						     (lambda x x)))
+					      (recur)])))])
+				   (apply values 
+					  (let ([edit (with-parameterization drscheme:init:system-parameterization
+							(lambda ()
+							  (make-object drscheme:edit:edit%)))])
+					    (with-parameterization drscheme:init:system-parameterization
+					      (lambda ()
+						(send edit load-file filename)))
+					    (process-edit edit process-sexps
+							  0 
+							  (send edit last-position)
+							  #t))))
+				 (userspace-load filename))))))
+
 
 		   (basis:error-display/debug-handler report-located-error)
 		   
@@ -619,12 +682,26 @@
 				  first-dir)))])
 		     (current-directory directory))
 
-		   (let ([dispatch-handler (wx:event-dispatch-handler)]
-			 [frame (get-frame)]
-			 [semaphore (make-semaphore 1)]
-			 [set-running-flag? #t]
-			 [running-flag-on? #f]
-			 [event-semaphore (make-semaphore 0)])
+		   (exit-handler (lambda (arg)
+				   (with-parameterization drscheme:init:system-parameterization
+				     (lambda ()
+				       (shutdown-user-custodian)))))
+		   
+		   ;; set all parameter before constructing eventspace
+		   ;; so that the parameters are set in the eventspace's
+		   ;; parameterization
+		   (let* ([user-eventspace #f]
+			  [primitive-dispatch-handler (wx:event-dispatch-handler)]
+			  [frame (get-frame)]
+			  [semaphore (make-semaphore 1)]
+			  [set-running-flag? #t]
+			  [running-flag-on? #f]
+			  [event-semaphore (make-semaphore 0)]
+
+			  [first-box (box #t)]
+
+			  [dispatch-handler-procedure primitive-dispatch-handler])
+
 		     (thread (rec f
 				  (lambda ()
 				    (semaphore-wait event-semaphore)
@@ -636,29 +713,51 @@
 				      (send frame running))
 				    (semaphore-post semaphore)
 				    (f))))
+
 		     (wx:event-dispatch-handler
-		      (rec drscheme:event-dispatch-handler
+		      (rec drscheme-event-dispatch-handler
 			   (lambda (eventspace)
-			     (semaphore-wait semaphore)
-			     (set! set-running-flag? #t)
-			     (semaphore-post semaphore)
-			     (semaphore-post event-semaphore)
-			     (fluid-let ([evaluation-thread (current-thread)])
-			       (dispatch-handler eventspace))
-			     (semaphore-wait semaphore)
-			     (set! set-running-flag? #f)
-			     (when running-flag-on?
-			       (set! running-flag-on? #f)
-			       (send frame not-running))
-			     (semaphore-post semaphore)))))
-		   
-		   (exit-handler (lambda (arg)
-				   (with-parameterization drscheme:init:system-parameterization
-				     (lambda ()
-				       (shutdown-user-custodian)))))))
+			     (when (and (eq? eventspace user-eventspace)
+					(not (unbox first-box)))
+			       (mred:debug:printf 'console-threading "drscheme-event-dispatch-handler")
+
+			       (semaphore-wait semaphore)
+			       (set! set-running-flag? #t)
+			       (semaphore-post semaphore)
+			       (semaphore-post event-semaphore)
+
+			       (reset-break-state)
+
+			       (protect-user-evaluation
+				void
+				(lambda ()
+				  (dynamic-enable-break
+				   (lambda ()
+				     (primitive-dispatch-handler eventspace)))))
+
+			       (semaphore-wait semaphore)
+			       (set! set-running-flag? #f)
+			       (when running-flag-on?
+				 (set! running-flag-on? #f)
+				 (send frame not-running))
+			       (semaphore-post semaphore)))))
+
+		     (set! user-eventspace (wx:make-eventspace))
+		     (wx:current-eventspace user-eventspace)
+		     (init-evaluation-thread p first-box)
+
+		     ;; this subterfuge with the extra variable indirection is necessary
+		     ;; so that the correct event-dispatch-handler is installed in
+		     ;; eventspace's parameterization, but the real dispatch handler
+		     ;; cannot actually be installed until after init-evaluation-thread
+		     ;; returns, since initializing the evaluation thread requires dispatching
+		     ;; on an event. (could have used a boolean flag "first-event?" but this
+		     ;; seems better for all the events after the first one. No more test,
+		     ;; only one extra indirection (probably doens't really matter...))
+		     '(set! dispatch-handler-procedure real-dispatch-handler-procedure))))
+	       (mred:debug:printf 'console-threading "extended parameterization")
+
 	       (set! user-param p))
-	     
-	     (init-evaluation-thread)
 	     (super-reset-console)))]
 	[initialize-console
 	 (lambda ()

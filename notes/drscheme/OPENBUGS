@@ -1,3 +1,6 @@
+- even if breaking is turned off, read will still be breakable. Eg:
+  (dynamic-disable-break (lambda () (read)))
+
 - the yellow execute warning in the interactions window does not go
   away if the user undoes their changes to the defintions window.
 

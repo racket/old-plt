@@ -10,7 +10,7 @@
       (error 'set-zodiac-phase "unknown phase: ~a~n" sym))
     (set! zodiac-phase sym))
 
-  ;; dispatch-report : symbol string number number -> ALPHA 
+  ;; dispatch-report : string zodiac:zodiac -> ALPHA 
   ;; escapes
   (define dispatch-report
     (lambda (string object)
@@ -18,7 +18,7 @@
        (case zodiac-phase
 	 [(expander) (make-exn:syntax string object #f)]
 	 [(reader) (make-exn:read string object #f)]
-	 [else (error 'dispatch-report "unknown phase: ~a (~a ~a)~n" zodiac-phase string object)]))))
+	 [else (make-exn:user (string-append "unknown-phase: " string) object)]))))
   
   ;; report-error : symbol -> (+ zodiac:zodiac zodiac:eof zodiac:period) string (listof TST) ->* ALPHA
   ;; escapes

@@ -6,16 +6,20 @@
 	  (drscheme : drscheme:export^)
 	  [zodiac : drscheme:zodiac^])
   
+  (define system-parameterization (current-parameterization))
+
   (define test-thread
     (let ([kill-old void])
       (lambda (test thunk)
 	(kill-old)
 	(let ([thread-desc (thread
 			    (lambda ()
-			      (let ([p (core:file@:normalize-path test)])
-				(printf "t>> ~a started~n" p)
-				(thunk)
-				(printf "t>> ~a finished~n" p))))])
+			      (with-parameterization system-parameterization
+				(lambda ()
+				  (let ([p (core:file@:normalize-path test)])
+				    (printf "t>> ~a started~n" p)
+				    (thunk)
+				    (printf "t>> ~a finished~n" p))))))])
 	  (set! kill-old
 		(lambda ()
 		  (when (thread-running? thread-desc)

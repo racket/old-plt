@@ -165,10 +165,11 @@
 	      ((load-relative "spidey.ss") output-spidey-file
 					   app-collection
 					   info))
-	    (mred:startup-application app-collection
-				      info
-				      leftover-args
-				      void))]
+	    (begin0
+	     (mred:startup-application app-collection
+				       info
+				       leftover-args
+				       void)))]
 	 [compound
 	  (compound-unit/sig (import (I : (input-args)))
 	    (link [wx : wx^ (wx@)]

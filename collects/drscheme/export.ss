@@ -12,8 +12,12 @@
 			   [face : drscheme:face^]
 			   [aries : plt:aries^]
 			   [zodiac : drscheme:zodiac^])
-  (link [basis : userspace:basis^
+  (link [basis-import : userspace:basis-import^ ((unit/sig userspace:basis-import^
+						   (import)
+						   (define in-mzscheme? #f)))]
+	[basis : userspace:basis^
 	       ((require-library-unit/sig "basis.ss" "userspce")
+		basis-import
 		zodiac
 		interface
 		aries

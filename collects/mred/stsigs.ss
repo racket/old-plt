@@ -1,5 +1,5 @@
 ;;
-;; $Id: stsigs.ss,v 1.14 1998/02/12 22:54:59 steck Exp $
+;; $Id: stsigs.ss,v 1.15 1998/02/26 23:54:57 steck Exp $
 ;;
 ;; Signatures for gui tester.
 ;;
@@ -7,6 +7,7 @@
 (define-signature mred:testable-window^
   (test:get-active-frame
    test:get-focused-window
+   test:current-get-eventspaces
    testable-panel%
    testable-canvas%
    testable-media-canvas%

@@ -39,6 +39,7 @@
    current-vocabulary
    current-setting
    intermediate-values-during-load
+   bottom-escape-handler
 
    drscheme-print
 
@@ -91,3 +92,6 @@
 (define-signature drscheme:zodiac^
   ((open drscheme:exported-zodiac^)
    current-vocabulary-symbol))
+
+(define-signature userspace:basis-import^
+  (in-mzscheme?))

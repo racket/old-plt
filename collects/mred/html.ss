@@ -126,12 +126,10 @@
 
 	     ;; Don't report error; don't raise an exception
 	     [html-error
-	      (mred:debug:if 'html
-			     (lambda args
-			       (begin
+	      (lambda args
+		(mred:debug:when 'html
 				 (apply fprintf (current-error-port) args)
-				 (newline (current-error-port))))
-			     void)]
+				 (newline (current-error-port))))]
 
 	     [i-buffer null]
 	     [buffer-pos 0]

@@ -510,9 +510,7 @@
     (define syncheck-bitmap
       (drscheme:unit:make-bitmap
        (build-path (collection-path "icons") "syncheck.bmp")
-       (mred:debug:if 'mrslatex
-		      "CS"
-		      "Check Syntax")))
+       "Check Syntax"))
 
     (define make-new-unit-frame%
       (lambda (super%)

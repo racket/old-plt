@@ -338,36 +338,34 @@
     (define system-parameterization (current-parameterization))
     (define user-parameterization (current-parameterization))
 
+    (define primitive-eval (current-eval))
+
     (define (repl)
       (let ([escape-k void]
 	    [display-prompt
 	     (lambda ()
 	       (display "> ")
 	       (flush-output))])
-	(error-escape-handler (lambda () (escape-k (void))))
+	(error-escape-handler (lambda () (escape-k #t)))
 	(let outer-loop ()
-	  (let/ec k
-	    (display-prompt)
-	    (fluid-let ([escape-k k])
-	      (basis:process/zodiac
-	       (zodiac:read (current-input-port)
-			    (zodiac:make-location 1 1 (file-position (current-output-port)) "stdin"))
-	       (lambda (sexp loop)
-		 (unless (basis:process-finish? sexp)
-		   (dynamic-enable-break
-		    (lambda ()
-		      '(let ([ct (current-thread)])
-			(thread
-			 (lambda () 
-			   (sleep 10)
-			   (break-thread ct))))
-		      ((current-print)
-		       ((current-eval)
-			sexp))))
-		   (display-prompt)
-		   (loop)))
-	       #t)))
-	  (outer-loop))))
+	  (when (let/ec k
+		  (display-prompt)
+		  (fluid-let ([escape-k k])
+		    (basis:process/zodiac
+		     (zodiac:read (current-input-port)
+				  (zodiac:make-location 1 1 (file-position (current-output-port)) "stdin"))
+		     (lambda (sexp loop)
+		       (unless (basis:process-finish? sexp)
+			 (dynamic-enable-break
+			  (lambda ()
+			    ((current-print)
+			     (primitive-eval
+			      sexp))))
+			 (display-prompt)
+			 (loop)))
+		     #t))
+		  #f)
+	    (outer-loop)))))
 
     (define read/zodiac
       (lambda (port)
@@ -405,6 +403,7 @@
 	  (let ([continue? #f]
 		[param
 		 (basis:build-parameterization
+		  void
 		  null
 		  settings:setting
 		  (require-library-unit/sig "userspcr.ss" "userspce"))])
@@ -478,8 +477,12 @@
 		      (interface : zodiac:interface^)
 		      (mzlib pretty-print@)
 		      (mzlib file@))]
+	   [basis-import : userspace:basis-import^ ((unit/sig userspace:basis-import^
+						      (import)
+						      (define in-mzscheme? #t)))]
 	   [basis : userspace:basis^
 		  ((require-library-unit/sig "basis.ss" "userspce")
+		   basis-import
 		   drzodiac
 		   interface
 		   aries

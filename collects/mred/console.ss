@@ -643,10 +643,9 @@
 	   (lambda (f)
 	     (set! want-kill? #t)
 	     (semaphore-wait kill-lock)
-	     (begin0
-	      (f)
-	      (set! want-kill? #f)
-	      (semaphore-post kill-lock)))]
+	     (begin0 (f)
+		     (set! want-kill? #f)
+		     (semaphore-post kill-lock)))]
 
 	  [generic-write
 	   ; This must be called within a procedure wrapped by
@@ -1246,53 +1245,58 @@
 	  [this-in (make-this-in)]
 	  [set-display/write-handlers
 	   (lambda ()
-	     (mred:debug:unless 
-	      'no-takeover
-	      (for-each (lambda (port port-out-write)
-			  (let ([original-write-handler (port-write-handler port)]
-				[original-display-handler (port-display-handler port)]
-				[handler-maker
-				 (lambda (port-handler pretty original)
-				   (port-handler
-				    port
-				    (rec console-pp-handler
-					 (lambda (v p)
-					   (if (or (string? v) 
-						   (char? v)
-						   (number? v)
-						   (symbol? v))
-					       (original v p)
-					       (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-							       (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
-							      [mzlib:pretty-print:pretty-print-print-hook
-							       (lambda (x _ port) (port-out-write x))])
-						 (pretty v p 'infinity)))))))])
-			    (handler-maker port-display-handler 
-					   mzlib:pretty-print:pretty-display 
-					   original-display-handler)
-			    (handler-maker port-write-handler
-					   mzlib:pretty-print:pretty-print
-					   original-write-handler)))
-			(list this-out this-err this-result)
-			(list this-out-write this-err-write this-result-write))))]
+	     (let/ec k
+	   
+	       (mred:debug:when 'no-takeover (k (void))) ;; debugging mode, jump out
+
+	       (for-each (lambda (port port-out-write)
+			   (let ([original-write-handler (port-write-handler port)]
+				 [original-display-handler (port-display-handler port)]
+				 [handler-maker
+				  (lambda (port-handler pretty original)
+				    (port-handler
+				     port
+				     (rec console-pp-handler
+					  (lambda (v p)
+					    (if (or (string? v) 
+						    (char? v)
+						    (number? v)
+						    (symbol? v))
+						(original v p)
+						(parameterize ([mzlib:pretty-print:pretty-print-size-hook
+								(lambda (x _ port) (and (is-a? x wx:snip%) 1))]
+							       [mzlib:pretty-print:pretty-print-print-hook
+								(lambda (x _ port) (port-out-write x))])
+						  (pretty v p 'infinity)))))))])
+			     (handler-maker port-display-handler 
+					    mzlib:pretty-print:pretty-display 
+					    original-display-handler)
+			     (handler-maker port-write-handler
+					    mzlib:pretty-print:pretty-print
+					    original-write-handler)))
+			 (list this-out this-err this-result)
+			 (list this-out-write this-err-write this-result-write))))]
 	  [takeover
 	   (lambda ()
-	     (mred:debug:unless 
-	      'no-takeover
-	      (error-display-handler
-	       (let ([old (error-display-handler)])
-		 (rec console-error-display-handler
-		      (lambda (x)
-			(old x)
-			(flush-console-output)))))
-	      (current-output-port this-out)
-	      (current-input-port this-in)
-	      (current-error-port this-err)
-	      (port-read-handler this-in (lambda (x) (transparent-read)))
-	      (mzlib:pretty-print:pretty-print-display-string-handler 
-	       (lambda (string port)
-		 (for-each (lambda (x) (write-char x port))
-			   (string->list string))))))])
+	     (let/ec k
+
+	       ;; jump out, only in debugging mode
+	       (mred:debug:when 'no-takeover (k (void)))
+	       
+	       (error-display-handler
+		(let ([old (error-display-handler)])
+		  (rec console-error-display-handler
+		       (lambda (x)
+			 (old x)
+			 (flush-console-output)))))
+	       (current-output-port this-out)
+	       (current-input-port this-in)
+	       (current-error-port this-err)
+	       (port-read-handler this-in (lambda (x) (transparent-read)))
+	       (mzlib:pretty-print:pretty-print-display-string-handler 
+		(lambda (string port)
+		  (for-each (lambda (x) (write-char x port))
+			    (string->list string))))))])
 	(sequence
 	  (mred:debug:printf 'super-init "before console-edit%")
 	  (apply super-init args)
@@ -1562,7 +1566,7 @@
 	    (send edit clear-undos)
 	    (when show?
 	      (show #t)))))))
-  
+
   '(define console-frame% 
      (class wx:frame% ()
        (inherit show)

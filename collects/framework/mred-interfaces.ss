@@ -1,6 +1,6 @@
-(unless (equal? (version) "100/29")
+(unless (equal? (version) "100/30")
   (error 'mred-interfaces
-         "mred-interfaces.ss and mred-interfacess.ss compiled for version 100/29, not version ~a"
+         "mred-interfaces.ss and mred-interfacess.ss compiled for version 100/30, not version ~a"
          (version)))
 (require-library "mred-interfacess.ss" "framework")
 
@@ -172,15 +172,14 @@
                           get-control-font
                           set-label-font
                           get-label-font
-                          get-alignment
                           get-top-level-window
                           get-graphical-min-size
-                          on-new-child
                           get-plain-label
                           accept-drop-files
                           stretchable-width
                           stretchable-height
                           set-alignment
+                          get-alignment
                           horiz-margin
                           reflow-container
                           get-children
@@ -192,6 +191,7 @@
                           client->screen
                           screen->client
                           on-subwindow-char
+                          on-new-child
                           min-width
                           min-height
                           vert-margin
@@ -207,13 +207,12 @@
                         (interface
                           ()
                           get-parent
-                          get-alignment
                           get-top-level-window
                           get-graphical-min-size
-                          on-new-child
                           stretchable-width
                           stretchable-height
                           set-alignment
+                          get-alignment
                           horiz-margin
                           reflow-container
                           get-children
@@ -221,6 +220,7 @@
                           container-size
                           place-children
                           delete-child
+                          on-new-child
                           min-width
                           min-height
                           vert-margin
@@ -335,7 +335,6 @@
                           set-load-overwrites-styles
                           get-load-overwrites-styles
                           set-position
-                          get-snip-position
                           get-character
                           get-file-format
                           set-file-format
@@ -422,6 +421,7 @@
                           paragraph-start-position
                           paragraph-end-position
                           paragraph-start-line
+                          set-paragraph-margins
                           can-set-size-constraint?
                           on-set-size-constraint
                           after-set-size-constraint
@@ -464,6 +464,7 @@
                           paragraph-end-line
                           last-paragraph
                           find-string-all
+                          get-snip-position
                           get-canvases
                           get-active-canvas
                           set-active-canvas
@@ -854,9 +855,9 @@
                           get-char-height
                           get-char-width
                           draw-bitmap-section
-                          set-background-mode
+                          set-text-mode
                           get-background
-                          get-background-mode
+                          get-text-mode
                           get-text-background
                           get-text-foreground))
                       ($$post-script-dc<%>
@@ -899,9 +900,9 @@
                           get-char-height
                           get-char-width
                           draw-bitmap-section
-                          set-background-mode
+                          set-text-mode
                           get-background
-                          get-background-mode
+                          get-text-mode
                           get-text-background
                           get-text-foreground))
                       ($$popup-menu<%> (interface () get-items))
@@ -1122,15 +1123,14 @@
                           get-control-font
                           set-label-font
                           get-label-font
-                          get-alignment
                           get-top-level-window
                           get-graphical-min-size
-                          on-new-child
                           get-plain-label
                           accept-drop-files
                           stretchable-width
                           stretchable-height
                           set-alignment
+                          get-alignment
                           horiz-margin
                           reflow-container
                           get-children
@@ -1142,6 +1142,7 @@
                           client->screen
                           screen->client
                           on-subwindow-char
+                          on-new-child
                           min-width
                           min-height
                           vert-margin
@@ -1157,13 +1158,12 @@
                         (interface
                           ()
                           get-parent
-                          get-alignment
                           get-top-level-window
                           get-graphical-min-size
-                          on-new-child
                           stretchable-width
                           stretchable-height
                           set-alignment
+                          get-alignment
                           horiz-margin
                           reflow-container
                           get-children
@@ -1171,6 +1171,7 @@
                           container-size
                           place-children
                           delete-child
+                          on-new-child
                           min-width
                           min-height
                           vert-margin
@@ -1431,15 +1432,14 @@
                           get-control-font
                           set-label-font
                           get-label-font
-                          get-alignment
                           get-top-level-window
                           get-graphical-min-size
-                          on-new-child
                           get-plain-label
                           accept-drop-files
                           stretchable-width
                           stretchable-height
                           set-alignment
+                          get-alignment
                           horiz-margin
                           reflow-container
                           get-children
@@ -1451,6 +1451,7 @@
                           client->screen
                           screen->client
                           on-subwindow-char
+                          on-new-child
                           min-width
                           min-height
                           vert-margin
@@ -1466,13 +1467,12 @@
                         (interface
                           ()
                           get-parent
-                          get-alignment
                           get-top-level-window
                           get-graphical-min-size
-                          on-new-child
                           stretchable-width
                           stretchable-height
                           set-alignment
+                          get-alignment
                           horiz-margin
                           reflow-container
                           get-children
@@ -1480,6 +1480,7 @@
                           container-size
                           place-children
                           delete-child
+                          on-new-child
                           min-width
                           min-height
                           vert-margin
@@ -1567,17 +1568,16 @@
                           set-label-font
                           get-label-font
                           resize
-                          get-alignment
                           get-top-level-window
                           get-graphical-min-size
                           get-edit-target-window
                           get-edit-target-object
-                          on-new-child
                           get-plain-label
                           accept-drop-files
                           stretchable-width
                           stretchable-height
                           set-alignment
+                          get-alignment
                           reflow-container
                           get-children
                           change-children
@@ -1595,6 +1595,7 @@
                           is-iconized?
                           on-traverse-char
                           on-subwindow-char
+                          on-new-child
                           min-width
                           min-height
                           spacing
@@ -1812,17 +1813,16 @@
                           set-label-font
                           get-label-font
                           resize
-                          get-alignment
                           get-top-level-window
                           get-graphical-min-size
                           get-edit-target-window
                           get-edit-target-object
-                          on-new-child
                           get-plain-label
                           accept-drop-files
                           stretchable-width
                           stretchable-height
                           set-alignment
+                          get-alignment
                           reflow-container
                           get-children
                           change-children
@@ -1837,6 +1837,7 @@
                           get-focus-object
                           on-traverse-char
                           on-subwindow-char
+                          on-new-child
                           min-width
                           min-height
                           spacing
@@ -2068,9 +2069,9 @@
                           get-char-height
                           get-char-width
                           draw-bitmap-section
-                          set-background-mode
+                          set-text-mode
                           get-background
-                          get-background-mode
+                          get-text-mode
                           get-text-background
                           get-text-foreground))
                       ($$bitmap<%>

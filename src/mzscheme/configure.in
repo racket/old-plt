@@ -449,7 +449,7 @@ esac
 
 MACH=`$UNAME -m`
 case "$MACH" in
-  alpha | SunOS)
+  alpha | SunOS | Darwin)
     if test "$CC" = "gcc" ; then
       if test "$as_was_set" = "no" ; then
        AS="gcc -c -x assembler-with-cpp"

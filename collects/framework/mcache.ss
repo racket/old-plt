@@ -7,7 +7,7 @@
   (define-struct node (left right pos jump-to))
   
   (define %
-    (class null ()
+    (class object% ()
       (private
 	[tree #f]
 	[offset 0])
@@ -153,5 +153,6 @@
 		 (list (loop (node-left tree))
 		       (node-pos tree)
 		       (loop (node-right tree)))
-		 '())))]))))
+		 '())))])
+      (sequence (super-init)))))
 

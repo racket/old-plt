@@ -199,7 +199,7 @@ void scheme_import_from_original_env(Scheme_Env *env)
 
   rn = env->rename;
   if (!rn) {
-    rn = scheme_make_module_rename(0);
+    rn = scheme_make_module_rename(env->phase);
     env->rename = rn;
   }
 
@@ -1295,12 +1295,18 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
 static Scheme_Object *
 top_level_import_execute(Scheme_Object *data)
 {
-  Scheme_Object *rn = SCHEME_CAR(data), *brn;
+  Scheme_Object *rn = SCHEME_CAR(SCHEME_CAR(data)), *brn;
+  int for_exp = (SCHEME_TRUEP(SCHEME_CDR(SCHEME_CAR(data))) ? 1 : 0);
   Scheme_Env *env = (Scheme_Env *)SCHEME_CDR(data);
+
+  if (for_exp) {
+    scheme_prepare_exp_env(env);
+    env = env->exp_env;
+  }
 
   brn = env->rename;
   if (!brn) {
-    brn = scheme_make_module_rename(0);
+    brn = scheme_make_module_rename(for_exp);
     env->rename = brn;
   }
 
@@ -1334,32 +1340,46 @@ static void check_dup_import(Scheme_Object *name,
 
 static Scheme_Object *do_import(Scheme_Object *form, Scheme_Comp_Env *env, 
 				Scheme_Compile_Info *rec, int drec,
-				int depth, Scheme_Object *boundname)
+				int depth, Scheme_Object *boundname,
+				int for_exp)
 {
   Scheme_Hash_Table *ht;
   Scheme_Object *rn;
+  char *name;
+  Scheme_Env *genv;
+
+  name = for_exp ? "import-for-expansion" : "import";
 
   if (!scheme_is_toplevel(env))
-    scheme_wrong_syntax("open", NULL, form,  "not at top-level or in module body");
+    scheme_wrong_syntax(name, NULL, form, "not at top-level or in module body");
 
   /* If we get here, it must be a top-level import. */
 
   /* Hash table is for checking duplicate names in import list: */
   ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
 
-  rn = scheme_make_module_rename(0);
+  rn = scheme_make_module_rename(for_exp);
 
-  (void)parse_imports(form, form, env->genv, rn, check_dup_import, ht, 1);
+  genv = env->genv;
+  if (for_exp) {
+    scheme_prepare_exp_env(genv);
+    genv = genv->exp_env;
+  }
+
+  (void)parse_imports(form, form, genv, rn, check_dup_import, ht, 1);
 
   /* Check syntax: */
   if ((scheme_stx_proper_list_length(form) != 2)
       || !SCHEME_STX_SYMBOLP(SCHEME_STX_CADR(form)))
-    scheme_wrong_syntax("import", NULL, form, NULL);
+    scheme_wrong_syntax(name, NULL, form, NULL);
 
   if (rec) {
     scheme_compile_rec_done_local(rec, drec);
     scheme_default_compile_rec(rec, drec);
-    return scheme_make_syntax_compiled(top_level_import_resolve, rn);
+    return scheme_make_syntax_compiled(top_level_import_resolve, 
+				       cons(rn, (for_exp 
+						 ? scheme_true 
+						 : scheme_false)));
   } else
     return form;
 }
@@ -1367,32 +1387,30 @@ static Scheme_Object *do_import(Scheme_Object *form, Scheme_Comp_Env *env,
 static Scheme_Object *
 import_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
-  return do_import(form, env, rec, drec, 1, scheme_false);
+  return do_import(form, env, rec, drec, 1, scheme_false, 0);
 }
 
 static Scheme_Object *
 import_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
-  return do_import(form, env, NULL, 0, depth, boundname);
+  return do_import(form, env, NULL, 0, depth, boundname, 0);
 }
-
-/**********************************************************************/
-/*                            dummy forms                             */
-/**********************************************************************/
 
 static Scheme_Object *
 import_for_expansion_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
-  scheme_wrong_syntax("import-for-expansion", NULL, form, "not at top-level or in module body");
-  return NULL;
+  return do_import(form, env, rec, drec, 1, scheme_false, 1);
 }
 
 static Scheme_Object *
 import_for_expansion_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
-  scheme_wrong_syntax("import-for-expansion", NULL, form, "not in module body");
-  return NULL;
+  return do_import(form, env, NULL, 0, depth, boundname, 1);
 }
+
+/**********************************************************************/
+/*                            dummy forms                             */
+/**********************************************************************/
 
 static Scheme_Object *
 export_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)

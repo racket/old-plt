@@ -2538,7 +2538,8 @@ static Scheme_Object *defmacro_link(Scheme_Object *data, Link_Info *info)
   Scheme_Object *name = SCHEME_CAR(data);
   Scheme_Object *val = SCHEME_CDR(data);
 
-  val = scheme_link_expr(val, info);
+  scheme_prepare_exp_env(info);
+  val = scheme_link_expr(val, info->exp_env);
 
   return scheme_make_syntax_linked(defmacro_execute, scheme_make_pair(name, val));
 }
@@ -2567,7 +2568,9 @@ defmacro_syntax(Scheme_Object *form, Scheme_Comp_Env *env,
 
   scheme_defmacro_parse(form, &name, &code, env);
 
-  val = scheme_compile_expr(code, env, rec, drec);
+  scheme_prepare_exp_env(env->genv);
+
+  val = scheme_compile_expr(code, env->genv->exp_env->init, rec, drec);
   name = (Scheme_Object *)scheme_global_keyword_bucket(SCHEME_STX_SYM(name),
 						       env->genv);
 

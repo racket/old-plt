@@ -1328,6 +1328,8 @@ static void *compile_k(void)
   /* Renamings for imports: */
   if (env->genv->rename)
     form = scheme_add_rename(form, env->genv->rename);
+  if (env->genv->exp_env && env->genv->exp_env->rename)
+    form = scheme_add_rename(form, env->genv->exp_env->rename);
 
   o = scheme_compile_expr(form, env, &rec, 0);
   o = scheme_resolve_expr(o, scheme_resolve_info_create());
@@ -1821,7 +1823,7 @@ static void check_unbound(char *when, Scheme_Object *form, Scheme_Comp_Env *env)
   if (!SCHEME_STX_SYMBOLP(c))
     scheme_wrong_syntax("#%unbound", NULL, form, NULL);
 
-  if (env->genv->phase || SCHEME_TRUEP(env->genv->modname)) {
+  if (SCHEME_TRUEP(env->genv->modname)) {
     Scheme_Object *modname, *symbol = c;
     Scheme_Env *home;
 
@@ -3385,6 +3387,8 @@ static void *expand_k(void)
   /* Renamings for imports: */
   if (env->genv->rename)
     obj = scheme_add_rename(obj, env->genv->rename);
+  if (env->genv->exp_env && env->genv->exp_env->rename)
+    obj = scheme_add_rename(obj, env->genv->exp_env->rename);
 
   return scheme_expand_expr(obj, env, p->ku.k.i1, scheme_false);
 }

@@ -139,6 +139,9 @@ Scheme_Env *scheme_basic_env()
 
     env = scheme_make_empty_env();
     scheme_import_from_original_env(env);
+    
+    scheme_prepare_exp_env(env);
+    scheme_import_from_original_env(env->exp_env);
 
     scheme_set_param(scheme_config, MZCONFIG_ENV, (Scheme_Object *)env); 
     scheme_init_port_config();
@@ -246,6 +249,9 @@ Scheme_Env *scheme_basic_env()
 
   env = scheme_make_empty_env();
   scheme_import_from_original_env(env);
+
+  scheme_prepare_exp_env(env);
+  scheme_import_from_original_env(env->exp_env);
 
   scheme_add_embedded_builtins(env);
 
@@ -456,8 +462,6 @@ static Scheme_Env *make_env(Scheme_Env *base)
   env = MALLOC_ONE_TAGGED(Scheme_Env);
   env->type = scheme_namespace_type;
 
-  env->exp_env = env;
-
   env->modname = scheme_false;
   env->imports = scheme_null;
 
@@ -495,8 +499,6 @@ scheme_new_module_env(Scheme_Env *env, Scheme_Object *modname)
   menv->modname = modname;
   menv->init->flags |= SCHEME_MODULE_FRAME;
 
-  menv->exp_env = NULL; /* Create on demand. */
-
   return menv;
 }
 
@@ -506,8 +508,8 @@ void scheme_prepare_exp_env(Scheme_Env *env)
     Scheme_Env *eenv;
     eenv = make_env(NULL);
     eenv->phase = env->phase + 1;
-    eenv->exp_env = NULL;
 
+    eenv->modname = env->modname;
     eenv->module_registry = env->module_registry;
 
     env->exp_env = eenv;

@@ -64,6 +64,7 @@ All zero-length vectors are eq
 Vectors are written (but not displayed) using the Chez-style
  #n(...) shorthand by default; added print-vector-length
  parameter
+Replaced require-library-use-compiled with use-compiled-file-kinds
 MzLib cleanup:
  Removed `@' suffix for embedded units in mzlib:core@ and mzlib@
  Removed all c.ss libraries, plus constan[t].ss

@@ -1380,7 +1380,7 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
 //-----------------------------------------------------------------------------
 void wxWindow::SetFocus(void)
 {
-  if (WantsFocus() && CanAcceptEvent()) {
+  if (WantsFocus() && IsEnable() && !cHidden) {
     wxFrame* rootFrame;
     rootFrame = GetRootFrame();
     rootFrame->SetFocusWindow(this);

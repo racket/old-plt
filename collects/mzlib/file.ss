@@ -190,7 +190,7 @@
       (let ([name (if (string? name)
 		      name
 		      (path->bytes name))])
-	(let ([m (regexp-match #rx#".(.?)$")])
+	(let ([m (regexp-match #rx#".(.?)$" name)])
 	  (and m
 	       (cadr m))))))
 

@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.81 1999/04/07 22:38:04 mflatt Exp $
+; $Id: scm-unit.ss,v 1.82 1999/04/22 21:09:28 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -458,7 +458,6 @@
   ;; lexical bindings that are shadowed by unit definitions.
 
   (define (fixup expr binding-map)
-    (print-struct #f)
     (let fix ([expr expr])
       (if (bound-varref? expr)
 	  (let ([fixed (assoc (bound-varref-binding expr) binding-map)])

@@ -16,8 +16,8 @@
         (else
          (send sd set-weight-on 'base)
          (send sd set-weight-off 'bold)))
-      (send sd set-underline-on underline?)
-      (send sd set-underline-off (not underline?))
+      (send sd set-underlined-on underline?)
+      (send sd set-underlined-off (not underline?))
       (cond
         (italic?
          (send sd set-style-on 'italic)

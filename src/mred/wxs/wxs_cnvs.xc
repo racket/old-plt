@@ -27,7 +27,7 @@ static void FillZero(int *a, int *b) {
 static void wxSwapBuffers(wxCanvas* c)
 {
 #ifdef wx_msw
-  c->SwapBuffers();
+  c->CanvasSwapBuffers();
 #endif
 }
 

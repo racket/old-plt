@@ -3696,7 +3696,7 @@
       (emit-newline))))
 
 (define output-navigation-bar
-  (lambda ()
+  (lambda (top-or-bottom)
     (let* ((first-page? (= *html-page-count* 0))
            (last-page-not-determined? (< *last-page-number* 0))
            (last-page? (= *html-page-count* *last-page-number*))
@@ -3722,7 +3722,10 @@
                  *html-page-suffix*
                  (number->string (+ *html-page-count* 1))
                  *output-extension*)))))
-      (unless (and first-page? (or last-page? last-page-not-determined?))
+      (unless (and
+               first-page?
+               (or last-page?
+                   (and (eq? top-or-bottom 'top) last-page-not-determined?)))
         (do-end-para)
         (emit "<div align=right class=navigation><i>[")
         (emit *navigation-sentence-begin*)
@@ -3859,12 +3862,12 @@
   (lambda ()
     (set! *footnote-list* '())
     (output-html-preamble #t)
-    (output-navigation-bar)))
+    (output-navigation-bar 'top)))
 
 (define do-end-page
   (lambda ()
     (output-footnotes)
-    (output-navigation-bar)
+    (output-navigation-bar 'bottom)
     (when (and *colophon-on-first-page?* (= *html-page-count* 0))
       (output-colophon))
     (do-end-para)

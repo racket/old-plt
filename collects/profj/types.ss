@@ -391,6 +391,8 @@
         (set! interaction-fields (cons rec interaction-fields)))
       (define/public (get-interactions-fields)
         interaction-fields)
+      (define/public (clear-interactions)
+        (set! interaction-fields null))
       (define/public (add-interactions-box box)
         (set! interaction-boxes (cons box interaction-boxes)))
       (define/public (get-interactions-boxes) (reverse interaction-boxes))

@@ -202,7 +202,7 @@
   ;           |  instanceof
   ;           |  assignment
 
-  ;(make-literal (U #f type) symbol src value)
+  ;(make-literal (U #f type) src value)
   (p-define-struct (literal expr) (val))
   
   ;value => number | string

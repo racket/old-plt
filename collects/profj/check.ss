@@ -720,7 +720,7 @@
                     (format "Expected ~a to be of declared type ~a, given an array" 
                             name (type->ext-name dec-type)))
                    ((other)
-                    (format "Expected ~a to be assignable to declared type ~a, given ~a"
+                    (format "Expected ~a to be assignable to declared type ~a, given ~a which is unrelated"
                             name (type->ext-name dec-type) (type->ext-name given))))
                  name src))
 
@@ -1275,6 +1275,11 @@
        (prim-check prim-numeric-type? (lambda (l r) 'boolean) 'num l r op src))
       ((== !=)      ;; 15.21
        (cond
+         ((eq? level 'beginner)
+          (if (or (and (prim-integral-type? l) (prim-integral-type? r))
+                  (and (eq? 'boolean l) (eq? 'boolean r)))
+              'boolean
+              (bin-op-beginner-error op l r src)))
          ((or (and (prim-numeric-type? l) (prim-numeric-type? r))
               (and (eq? 'boolean l) (eq? 'boolean r)))
           'boolean)
@@ -2077,6 +2082,15 @@
          ((left) (format "Left hand side of ~a should be of type ~a, but given ~a" op ext-out lt))
          (else (format "~a expects arguments of type ~a, but given ~a and ~a" op ext-out lt rt)))
        op src)))
+  
+  ;bin-op-beginner-error symbol type type src -> void
+  (define (bin-op-beginner-error op left right src)
+    (let ((rt (type->ext-name right))
+          (lt (type->ext-name left)))
+      (raise-error op
+                   (format "~a only compares integer or boolean values. ~a to ~a is not allowed"
+                           op rt lt)
+                   op src)))
   
   ;bin-op-equality-error symbol symbol type type src -> void
   (define (bin-op-equality-error type op left right src)

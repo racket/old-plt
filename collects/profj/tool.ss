@@ -450,12 +450,18 @@
                       (else syn))))
                 (process-extras (cdr extras))))
               ((interact-case? (car extras))
-               (send (interact-case-box (car extras)) set-level level)
-               (send (interact-case-box (car extras)) set-records execute-types)
-               (send (interact-case-box (car extras)) set-ret-kind #t)
-               (append 
-                (let-values (((syn-list t t2) (send (interact-case-box (car extras)) read-one-special 0 #f #f #f #f))) syn-list)
-                (process-extras (cdr extras))))))
+               (let ((interact-box (interact-case-box (car extras))))
+                 (send interact-box set-level level)
+                 (send interact-box set-records execute-types)
+                 (send interact-box set-ret-kind #t)
+                 (append 
+                  (with-handlers ((exn? 
+                                   (lambda (e)
+                                     (send execute-types clear-interactions)
+                                     (raise e))))
+                    (let-values (((syn-list t t2) 
+                                  (send interact-box read-one-special 0 #f #f #f #f))) syn-list))
+                  (process-extras (cdr extras)))))))
           
           ;find-main-module: (list compilation-unit) -> (U syntax #f)
           (define (find-main-module mod-lists)

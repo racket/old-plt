@@ -2341,7 +2341,7 @@
            (type-lists (get-string-of-types (filter (lambda (a) (= (length a) predominant-number)) method-args))))
       (let ((n (id->ext-name name))
             (e (get-call-type exp-type))
-            (givens (map type->ext-name args)))
+            (givens (get-string-of-types (list args))))
         (raise-error n
                      (case kind
                        ((number)
@@ -2465,14 +2465,14 @@
   ;ctor-arg-error symbol (list type) (list type) type src -> void
   (define (ctor-arg-error kind args atypes name src)
     (let ((n (type->ext-name name))
-          (givens (map type->ext-name args))
+          (givens (get-string-of-types (list args)))
           (expecteds (get-string-of-types (list atypes)))
           (awitht "arguments with types"))
       (raise-error n
                    (case kind
                      ((number)
                       (format "Constructor for ~a expects ~a ~a ~a. Given ~a ~a ~a"
-                              n (length expecteds) awitht expecteds (length givens) awitht givens))
+                              n (length atypes) awitht expecteds (length args) awitht givens))
                      ((type)
                       (format "Constructor for ~a expects ~a ~a, but given a ~a instead of ~a for one argument"
                               n awitht (get-string-of-types (list (cdr atypes))) (car givens) (type->ext-name (car atypes)))))

@@ -530,7 +530,7 @@
 			      ((exn:i/o:filesystem:filename?
 				 (lambda (exn)
 				   (static-error filename
-				     "Unable to open file"))))
+				     "Unable to open file ~s" raw-filename))))
 			      (open-input-file raw-filename))))
                     (dynamic-wind
                       (lambda ()

@@ -139,6 +139,7 @@ static Scheme_Object *byte_string_utf8_length (int argc, Scheme_Object *argv[]);
 static Scheme_Object *byte_string_to_char_string (int argc, Scheme_Object *argv[]);
 static Scheme_Object *byte_string_to_char_string_permissive (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_string_to_byte_string (int argc, Scheme_Object *argv[]);
+static Scheme_Object *char_string_utf8_length (int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *version(int argc, Scheme_Object *argv[]);
 static Scheme_Object *format(int argc, Scheme_Object *argv[]);
@@ -564,6 +565,12 @@ scheme_init_string (Scheme_Env *env)
 			     scheme_make_prim_w_arity(char_string_to_byte_string,
 						      "string->bytes/utf8",
 						      1, 1),
+			     env);
+
+  scheme_add_global_constant("string-utf8-length",
+			     scheme_make_prim_w_arity(char_string_utf8_length,
+						      "string-utf8-length",
+						      1, 3),
 			     env);
 
 
@@ -1057,6 +1064,21 @@ Scheme_Object *char_string_to_byte_string(int argc, Scheme_Object *argv[])
   return do_char_string_to_byte_string(argv[0], istart, ifinish);
 }
 
+static Scheme_Object *char_string_utf8_length (int argc, Scheme_Object *argv[])
+{
+  long istart, ifinish, len;
+
+  if (!SCHEME_CHAR_STRINGP(argv[0]))
+    scheme_wrong_type("string-utf8-length", "string", 0, argc, argv);
+  
+  scheme_get_substring_indices("string-utf8-length", argv[0], argc, argv, 
+			       1, 2, &istart, &ifinish);
+
+  len = scheme_utf8_encode(SCHEME_CHAR_STR_VAL(argv[0]), istart, ifinish,
+			   NULL, 0, 0);
+
+  return scheme_make_integer(len);
+}
 
 static Scheme_Object *
 byte_string_utf8_length (int argc, Scheme_Object *argv[])
@@ -1293,7 +1315,7 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
   for (used = offset, i = start = 0; i < flen; i++) {
     if (format[i] == '~') {
       if (start < i) {
-	(void)scheme_put_char_string(procname, port, format, start, i - start, 0);
+	(void)scheme_put_char_string(procname, port, format, start, i - start);
       }
       i++;
       if (scheme_isspace(format[i])) {
@@ -1390,7 +1412,7 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
   SCHEME_USE_FUEL(flen);
 
   if (start < i) {
-    (void)scheme_put_char_string(procname, port, format, start, i - start, 0);
+    (void)scheme_put_char_string(procname, port, format, start, i - start);
   }
 }
 
@@ -1601,13 +1623,13 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
       || scheme_any_string_has_null(argv[1]))
     scheme_wrong_type("putenv", STRING_OR_BYTE_STRING_W_NO_NULLS, 1, argc, argv);
 
-  if (SCHEME_CHAR_STRINGP(argv[0]))
+  if (SCHEME_BYTE_STRINGP(argv[0]))
     var = SCHEME_BYTE_STR_VAL(argv[0]);
   else {
     bs = scheme_char_string_to_byte_string(argv[0]);
     var = SCHEME_BYTE_STR_VAL(bs);
   }
-  if (SCHEME_CHAR_STRINGP(argv[1]))
+  if (SCHEME_BYTE_STRINGP(argv[1]))
     val = SCHEME_BYTE_STR_VAL(argv[1]);
   else {
     bs = scheme_char_string_to_byte_string(argv[1]);
@@ -3090,6 +3112,14 @@ int scheme_utf8_decode(const unsigned char *s, int start, int end,
 {
   return utf8_decode_x(s, start, end, us, dstart, dend, 
 		       ipos, NULL, utf16, utf16, 0, permissive);
+}
+
+int scheme_utf8_decode_as_prefix(const unsigned char *s, int start, int end, 
+				 unsigned int *us, int dstart, int dend,
+				 long *ipos, char utf16, int permissive)
+{
+  return utf8_decode_x(s, start, end, us, dstart, dend, 
+		       ipos, NULL, utf16, utf16, 1, permissive);
 }
 
 int scheme_utf8_decode_all(const unsigned char *s, int len, unsigned int *us, int permissive)

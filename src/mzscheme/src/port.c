@@ -332,6 +332,9 @@ static Scheme_Object *none_symbol, *line_symbol, *block_symbol;
 
 static Scheme_Object *exact_symbol;
 
+#define READ_STRING_BYTE_BUFFER_SIZE 1024
+static char *read_string_byte_buffer;
+
 #define fail_err_symbol scheme_false
 
 #include "schwinfd.h"
@@ -562,6 +565,8 @@ scheme_init_port (Scheme_Env *env)
 						      "shell-execute",
 						      5, 5),
 			     env);
+
+  REGISTER_SO(read_string_byte_buffer);
 }
 
 void scheme_init_port_config(void)
@@ -1495,6 +1500,73 @@ long scheme_get_byte_string(const char *who,
   return total_got;
 }
 
+long scheme_get_char_string(const char *who,
+			    Scheme_Object *port,
+			    mzchar *buffer, long offset, long size,
+			    int peek, Scheme_Object *peek_skip)
+{
+  char *s;
+  int total_got = 0, bsize, leftover = 0, got;
+
+  /* read_string_byte_buffer helps avoid allocation */
+  if (read_string_byte_buffer) {
+    s = read_string_byte_buffer;
+    read_string_byte_buffer = NULL;
+  } else
+    s = (char *)scheme_malloc_atomic(READ_STRING_BYTE_BUFFER_SIZE);
+
+  while (1) {
+    /* Since we want "size" more chars, we need at least "size" more
+       bytes. "leftover" is the number of bytes (<
+       MAX_UTF8_CHAR_BYTES) that we already have toward the first
+       character. If size is big enough, though, we only read as many
+       characters as our buffer holds. */
+
+    if (size + leftover > READ_STRING_BYTE_BUFFER_SIZE)
+      bsize = READ_STRING_BYTE_BUFFER_SIZE - leftover;
+    else
+      bsize = size;
+
+    got = scheme_get_byte_string(who, port,
+				 s, leftover, bsize,
+				 0, peek, peek_skip);
+
+    if (got > 0) {
+      long ulen, glen;
+      glen = scheme_utf8_decode_as_prefix(s, 0, got + leftover,
+					  buffer, offset, offset + size,
+					  &ulen, 0, '?');
+      total_got += glen;
+      if (glen == size) {
+	/* Got enough */
+	read_string_byte_buffer = s;
+	return total_got;
+      }
+      offset += glen;
+      size -= glen;
+      leftover = (got + leftover) - ulen;
+      if (leftover)
+	memmove(s, s + ulen, leftover);
+      if (peek) {
+	peek_skip = scheme_bin_plus(peek_skip, scheme_make_integer(got));
+      }
+    } else {
+      read_string_byte_buffer = s;
+
+      if (!total_got)
+	return got; /* must be EOF */
+      
+      if (leftover) {
+	/* First byte in s must have high bit set */
+	buffer[offset] = '?';
+	total_got++;
+      }
+
+      return total_got;
+    }
+  }
+}
+
 int
 scheme_getc(Scheme_Object *port)
 {
@@ -2194,8 +2266,7 @@ void scheme_write_char_string(const mzchar *str, long len, Scheme_Object *port)
 
 long
 scheme_put_char_string(const char *who, Scheme_Object *port,
-		       const mzchar *str, long d, long len,
-		       int rarely_block)
+		       const mzchar *str, long d, long len)
 {
   long blen;
   char *bstr, buf[64];
@@ -2207,7 +2278,7 @@ scheme_put_char_string(const char *who, Scheme_Object *port,
     bstr = (char *)scheme_malloc_atomic(blen);
   scheme_utf8_encode(str, d, d + len, bstr, 0, 0);
 
-  return scheme_put_byte_string(who, port, bstr, 0, blen, rarely_block);
+  return scheme_put_byte_string(who, port, bstr, 0, blen, 0);
 }
 
 long

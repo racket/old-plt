@@ -234,6 +234,7 @@
   scheme_extension_table->scheme_make_cptr = scheme_make_cptr;
   scheme_extension_table->scheme_get_proc_name = scheme_get_proc_name;
   scheme_extension_table->scheme_utf8_decode = scheme_utf8_decode;
+  scheme_extension_table->scheme_utf8_decode_as_prefix = scheme_utf8_decode_as_prefix;
   scheme_extension_table->scheme_utf8_decode_all = scheme_utf8_decode_all;
   scheme_extension_table->scheme_utf8_decode_prefix = scheme_utf8_decode_prefix;
   scheme_extension_table->scheme_utf8_decode_to_buffer = scheme_utf8_decode_to_buffer;
@@ -317,6 +318,7 @@
   scheme_extension_table->scheme_peekc_is_ungetc = scheme_peekc_is_ungetc;
   scheme_extension_table->scheme_need_wakeup = scheme_need_wakeup;
   scheme_extension_table->scheme_get_byte_string = scheme_get_byte_string;
+  scheme_extension_table->scheme_get_char_string = scheme_get_char_string;
   scheme_extension_table->scheme_get_bytes = scheme_get_bytes;
   scheme_extension_table->scheme_tell = scheme_tell;
   scheme_extension_table->scheme_output_tell = scheme_output_tell;

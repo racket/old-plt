@@ -57,6 +57,7 @@ static Scheme_Object *integer_to_char (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_upcase (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_downcase (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_titlecase (int argc, Scheme_Object *argv[]);
+static Scheme_Object *char_utf8_length (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_map_list (int argc, Scheme_Object *argv[]);
 
 void scheme_init_portable_case(void)
@@ -223,6 +224,12 @@ void scheme_init_char (Scheme_Env *env)
 						      1, 1, 1),
 			     env);
 
+  scheme_add_global_constant("char-utf8-length", 
+			     scheme_make_folding_prim(char_utf8_length, 
+						      "char-utf8-length", 
+						      1, 1, 1),
+			     env);
+
   scheme_add_global_constant("make-char-mapped-list", 
 			     scheme_make_prim_w_arity(char_map_list, 
 						      "make-char-mapped-list", 
@@ -351,17 +358,40 @@ integer_to_char (int argc, Scheme_Object *argv[])
 #define GEN_RECASE(func_name, scheme_name, cvt) \
 static Scheme_Object *func_name (int argc, Scheme_Object *argv[]) \
 { \
-  mzchar c;    \
+  mzchar c, nc;    \
   if (!SCHEME_CHARP(argv[0]))  \
     scheme_wrong_type(scheme_name, "character", 0, argc, argv); \
   c = SCHEME_CHAR_VAL(argv[0]);                    \
-  c = cvt(c);                                      \
-  return scheme_make_character(c);   \
+  nc = cvt(c);                                      \
+  if (nc == c) return argv[0];       \
+  return scheme_make_character(nc);  \
 }
 
 GEN_RECASE(char_upcase, "char-upcase", scheme_toupper)
 GEN_RECASE(char_downcase, "char-downcase", scheme_tolower)
 GEN_RECASE(char_titlecase, "char-titlecase", scheme_totitle)
+
+static Scheme_Object *char_utf8_length (int argc, Scheme_Object *argv[])
+{
+  mzchar wc;
+  if (!SCHEME_CHARP(argv[0]))
+    scheme_wrong_type("char-utf8-length", "character", 0, argc, argv);
+
+  wc = SCHEME_CHAR_VAL(argv[0]);
+  if (wc < 0x80) {
+    return scheme_make_integer(1);
+  } else if (wc < 0x800) {
+    return scheme_make_integer(2);
+  } else if (wc < 0x10000) {
+    return scheme_make_integer(3);
+  } else if (wc < 0x200000) {
+    return scheme_make_integer(4);
+  } else if (wc < 0x4000000) {
+    return scheme_make_integer(5);
+  } else {
+    return scheme_make_integer(6);
+  }
+}
 
 static Scheme_Object *char_map_list (int argc, Scheme_Object *argv[])
 {

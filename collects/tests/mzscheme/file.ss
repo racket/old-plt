@@ -461,12 +461,12 @@
 (close-input-port out)
 
 (define-values (in out) (make-pipe 3))
-(test 3 write-string-avail "12345" out)
-(let ([s (make-string 5 #\-)])
-  (test 3 read-string-avail! s in)
-  (test "123--" values s))
+(test 3 write-bytes-avail #"12345" out)
+(let ([s (make-bytes 5 (char->integer #\-))])
+  (test 3 read-bytes-avail! s in)
+  (test #"123--" values s))
 (display 1 out)
-(test 2 write-string-avail "2345" out)
+(test 2 write-bytes-avail #"2345" out)
 (let ([th1 (thread (lambda ()
 		     (display "a" out)))]
       [th2 (thread (lambda ()
@@ -477,7 +477,7 @@
   (test #t thread-running? th2)
   (test #t thread-running? th3)
 
-  (test #\1 read-char in)
+  (test 49 read-byte in)
   
   (sleep 0.1)
 
@@ -486,7 +486,7 @@
 	(if (thread-running? th2) 1 0)
 	(if (thread-running? th3) 1 0))
 
-  (test #\2 read-char in)
+  (test 50 read-byte in)
 
   (sleep 0.1)
 
@@ -495,7 +495,7 @@
 	(if (thread-running? th2) 1 0)
 	(if (thread-running? th3) 1 0))
   
-  (test #\3 read-char in)
+  (test 51 read-byte in)
   
   (sleep 0.1)
 
@@ -505,12 +505,12 @@
 
   (close-output-port out)
 
-  (test "aaa" read-string 10 in))
+  (test #"aaa" read-bytes 10 in))
 (close-input-port in)
 
-(arity-test write-string-avail 1 4)
-(arity-test write-string-avail* 1 4)
-(arity-test write-string-avail/enable-break 1 4)
+(arity-test write-bytes-avail 1 4)
+(arity-test write-bytes-avail* 1 4)
+(arity-test write-bytes-avail/enable-break 1 4)
 
 (arity-test make-pipe 0 1)
 (err/rt-test (make-pipe 0))
@@ -543,10 +543,10 @@
 (err/rt-test (make-custom-output-port #f void void add1))
 
 (let ([p (make-custom-input-port 
-	  (lambda (s) (string-set! s 0 #\a) 1)
+	  (lambda (s) (bytes-set! s 0 97) 1)
 	  (lambda (s skip)
 	    (test 0 'skip-is-0 skip)
-	    (string-set! s 0 #\b) 1)
+	    (bytes-set! s 0 98) 1)
 	  void)])
   (test #\a read-char p)
   (test #\b peek-char p)
@@ -558,29 +558,43 @@
 
 (let* ([s (open-input-string "(apple \"banana\" [coconut])")]
        [p (make-custom-input-port 
-	   (lambda (str) (if (or (char-ready? s)
+	   (lambda (str) (if (or (byte-ready? s)
 				 (zero? (random 2)))
 			     (begin
-			       (string-set! str 0 (read-char s))
+			       (bytes-set! str 0 (read-byte s))
 			       1)
 			     s))
-	   (lambda (str skip) (if (or (char-ready? s)
+	   (lambda (str skip) (if (or (byte-ready? s)
 				      (zero? (random 2)))
 				  (begin
-				    (string-set! str 0 (peek-char s))
+				    (bytes-set! str 0 (peek-byte s))
 				    1)
 				  s))
 	   void)])
   (test '(apple "banana" [coconut]) read p))
 
 (let ([test-file (open-output-file "tmp2" 'truncate)])
-  (test 7 write-string-avail (make-string 7 #\a) test-file)
-  (test 4095 write-string-avail (make-string 4095 #\b) test-file)
-  (test 4096 write-string-avail (make-string 4096 #\c) test-file)
-  (test 4097 write-string-avail (make-string 4097 #\d) test-file)
+  (test 7 write-string (make-string 7 #\a) test-file)
+  (test 4095 write-string (make-string 4095 #\b) test-file)
+  (test 4096 write-string (make-string 4096 #\c) test-file)
+  (test 4097 write-string (make-string 4097 #\d) test-file)
   (test (+ 7 4095 4096 4097) file-position test-file)
   (close-output-port test-file)
   (test (+ 7 4095 4096 4097) file-size "tmp2"))
+
+(let ([go
+       (lambda (write-bytes)
+	 (let ([test-file (open-output-file "tmp2" 'truncate)])
+	   (test 7 write-bytes-avail (make-bytes 7 97) test-file)
+	   (test 4095 write-bytes (make-bytes 4095 98) test-file)
+	   (test 4096 write-bytes (make-bytes 4096 99) test-file)
+	   (test 4097 write-bytes (make-bytes 4097 100) test-file)
+	   (test (+ 7 4095 4096 4097) file-position test-file)
+	   (close-output-port test-file)
+	   (test (+ 7 4095 4096 4097) file-size "tmp2")))])
+  (go write-bytes)
+  (go write-bytes-avail)
+  (go write-bytes-avail*))
 
 (let ([p (open-input-file "tmp1")]
       [q (open-input-file "tmp2")])
@@ -598,7 +612,7 @@
 (close-output-port test-file)
 (check-test-file "tmp2")
 
-(define ui (make-custom-input-port (lambda (s) (string-set! s 0 #\") 1) #f void))
+(define ui (make-custom-input-port (lambda (s) (bytes-set! s 0 (char->integer #\")) 1) #f void))
 (test "" read ui)
 (arity-test (port-read-handler ui) 1 3 '(2))
 (err/rt-test ((port-read-handler ui) 8))
@@ -717,41 +731,41 @@
   (test eof peek-string 7 600 p))
 
 (define (test-a-port p go sync)
-  (let* ([s (string #\1 #\2 #\3)]
+  (let* ([s (bytes 49 50 51)]
 	 [reset-s! (lambda ()
-		     (string-set! s 0 #\1)
-		     (string-set! s 1 #\2)
-		     (string-set! s 2 #\3))]
+		     (bytes-set! s 0 49)
+		     (bytes-set! s 1 50)
+		     (bytes-set! s 2 51))]
 	 [test-empty (lambda()
-		       (test #f char-ready? p)
-		       (test 0 peek-string-avail!* s 0 p)
-		       (test 0 peek-string-avail!* s 1 p)
-		       (test 0 read-string-avail!* s p))])
+		       (test #f byte-ready? p)
+		       (test 0 peek-bytes-avail!* s 0 p)
+		       (test 0 peek-bytes-avail!* s 1 p)
+		       (test 0 read-bytes-avail!* s p))])
     (test-empty)
 
-    (test 0 peek-string-avail!* s 500 p)
-    (test 0 read-string-avail!* s p)
+    (test 0 peek-bytes-avail!* s 500 p)
+    (test 0 read-bytes-avail!* s p)
 
     (let ([test-basic
 	   (lambda (str sync?)
 	     (go) 
 	     (when sync?
 	       (sync p)
-	       (test #t char-ready? p)
-	       (test 1 peek-string-avail!* s 0 p)
+	       (test #t byte-ready? p)
+	       (test 1 peek-bytes-avail!* s 0 p)
 	       (test str values s)
 	       (reset-s!))
-	     (test 1 peek-string-avail! s 0 p)
+	     (test 1 peek-bytes-avail! s 0 p)
 	     (test str values s)
 	     (reset-s!)
-	     (test 1 peek-string-avail!* s 0 p)
+	     (test 1 peek-bytes-avail!* s 0 p)
 	     (test str values s)
 	     (reset-s!)
-	     (test 1 read-string-avail!* s p)
+	     (test 1 read-bytes-avail!* s p)
 	     (test str values s)
 	     (reset-s!))])
-      (test-basic "A23" #t)
-      (test-basic "B23" #f))
+      (test-basic #"A23" #t)
+      (test-basic #"B23" #f))
 
     (test-empty)
 
@@ -759,50 +773,50 @@
 
     (let ([peek0
 	   (lambda ()
-	     (let ([avail (peek-string-avail! s 0 p)])
+	     (let ([avail (peek-bytes-avail! s 0 p)])
 	       (cond
-		[(= avail 1) (test "C23" values s)]
-		[(= avail 2) (test "CD3" values s)]
-		[else (test 1-or-2 valuies avail)])))])
+		[(= avail 1) (test #"C23" values s)]
+		[(= avail 2) (test #"CD3" values s)]
+		[else (test 1-or-2 values avail)])))])
       (peek0)
       (reset-s!)  
-      (test 1 peek-string-avail! s 1 p)
-      (test "D23" values s)
+      (test 1 peek-bytes-avail! s 1 p)
+      (test #"D23" values s)
       (reset-s!)
       (peek0)
       (reset-s!)
-      (test 0 peek-string-avail!* s 2 p)
-      (test 2 read-string-avail! s p)
-      (test "CD3" values s)
+      (test 0 peek-bytes-avail!* s 2 p)
+      (test 2 read-bytes-avail! s p)
+      (test #"CD3" values s)
 
       (test-empty)
 
       (go) (go) (go)
-      (test "E" peek-string 1 0 p)
-      (test "F" peek-string 1 1 p)
-      (test "G" peek-string 1 2 p)
-      (test 0 peek-string-avail!* s 3 p)
-      (test "EFG" read-string 3 p)
+      (test #"E" peek-bytes 1 0 p)
+      (test #"F" peek-bytes 1 1 p)
+      (test #"G" peek-bytes 1 2 p)
+      (test 0 peek-bytes-avail!* s 3 p)
+      (test #"EFG" read-bytes 3 p)
 
       (test-empty)
 
       (go) (go) (go)
-      (test "HI" peek-string 2 0 p)
-      (test "IJ" peek-string 2 1 p)
-      (test "J" peek-string 1 2 p)
-      (test 0 peek-string-avail!* s 3 p)
-      (test "HI" read-string 2 p)
-      (test "J" read-string 1 p)
+      (test #"HI" peek-bytes 2 0 p)
+      (test #"IJ" peek-bytes 2 1 p)
+      (test #"J" peek-bytes 1 2 p)
+      (test 0 peek-bytes-avail!* s 3 p)
+      (test #"HI" read-bytes 2 p)
+      (test #"J" read-bytes 1 p)
 
       (test-empty)
 
       (go) (go) (go)
-      (test "KLM" peek-string 3 0 p)
-      (test "LM" peek-string 2 1 p)
-      (test "M" peek-string 1 2 p)
-      (test "K" read-string 1 p)
-      (test "L" read-string 1 p)
-      (test "M" read-string 1 p)
+      (test #"KLM" peek-bytes 3 0 p)
+      (test #"LM" peek-bytes 2 1 p)
+      (test #"M" peek-bytes 1 2 p)
+      (test #"K" read-bytes 1 p)
+      (test #"L" read-bytes 1 p)
+      (test #"M" read-bytes 1 p)
       
       (test-empty))))
 
@@ -826,15 +840,15 @@
 	       (set! extras null)
 	       (semaphore-post lock))]
 	 [p (make-custom-input-port
-	     ;; read-string:
+	     ;; read-bytes:
 	     (lambda (s)
 	       (if (semaphore-try-wait? lock)
 		   (begin0
 		    (let loop ([got 0])
-		      (if (and (got . < . (string-length s))
+		      (if (and (got . < . (bytes-length s))
 			       (semaphore-try-wait? ready-sema))
 			  (begin
-			    (string-set! s got (integer->char (+ 65 counter)))
+			    (bytes-set! s got (+ 65 counter))
 			    (set! counter (add1 counter))
 			    (loop (add1 got)))
 			  (if (zero? got)
@@ -851,7 +865,7 @@
 			       (begin0
 				(cond
 				 [(zero? d)
-				  (string-set! s 0 (integer->char (+ 65 counter)))
+				  (bytes-set! s 0 (+ 65 counter))
 				  1]
 				 [else
 				  (loop (sub1 d) (add1 counter))])
@@ -876,28 +890,34 @@
   (let-values ([(r w) (make-pipe)])
     (let* ([counter 0]
 	   [go (lambda ()
-		 (write-char (integer->char (+ 65 counter)) w)
+		 (write-byte (+ 65 counter) w)
 		 (set! counter (add1 counter)))])
       (test-a-port r (gdelay go) gsync))))
 
 (test-a-pipe values void)
 (test-a-pipe gdelay gsync)
 
+(arity-test read-bytes 1 2)
+(arity-test peek-bytes 2 3)
 (arity-test read-string 1 2)
 (arity-test peek-string 2 3)
-(arity-test read-string-avail! 1 4)
-(arity-test peek-string-avail! 2 5)
-(arity-test read-string-avail!* 1 4)
-(arity-test peek-string-avail!* 2 5)
-(arity-test read-string-avail!/enable-break 1 4)
-(arity-test peek-string-avail!/enable-break 2 5)
+(arity-test read-bytes! 1 4)
+(arity-test peek-bytes! 2 5)
+(arity-test read-string! 1 4)
+(arity-test peek-string! 2 5)
+(arity-test read-bytes-avail! 1 4)
+(arity-test peek-bytes-avail! 2 5)
+(arity-test read-bytes-avail!* 1 4)
+(arity-test peek-bytes-avail!* 2 5)
+(arity-test read-bytes-avail!/enable-break 1 4)
+(arity-test peek-bytes-avail!/enable-break 2 5)
 
 (let ([fill-a
        (lambda (s pos)
-	 (let ([l (string-length s)])
+	 (let ([l (bytes-length s)])
 	   (let loop ([i 0])
 	     (unless (= i l)
-	       (string-set! s i (integer->char (+ 48 (modulo (+ i pos) 10))))
+	       (bytes-set! s i (+ 48 (modulo (+ i pos) 10)))
 	       (loop (add1 i))))
 	   l))]
       [pos 0])
@@ -907,20 +927,20 @@
 			  n))
 	    (lambda (s skip) (fill-a s (+ pos skip)))
 	    void)])
-    (test #\0 read-char p)
-    (test #\1 peek-char p)
-    (test #\1 read-char p)
-    (test "234" read-string 3 p)
-    (test "567" peek-string 3 0 p)
-    (test "567890" read-string 6 p)
-    (test "123" peek-string 3 500 p)
-    (test "123" peek-string 3 (expt 10 100) p)
-    (test "567" peek-string 3 (+ 4 (expt 10 100)) p)
-    (test #f regexp-match "11" p 0 10000)
-    (test "123" read-string 3 p)
-    (test '("0") regexp-match "0" p 0)
+    (test 48 read-byte p)
+    (test 49 peek-byte p)
+    (test 49 read-byte p)
+    (test #"234" read-bytes 3 p)
+    (test #"567" peek-bytes 3 0 p)
+    (test #"567890" read-bytes 6 p)
+    (test #"123" peek-bytes 3 500 p)
+    (test #"123" peek-bytes 3 (expt 10 100) p)
+    (test #"567" peek-bytes 3 (+ 4 (expt 10 100)) p)
+    (test #f regexp-match #"11" p 0 10000)
+    (test #"123" read-bytes 3 p)
+    (test '(#"0") regexp-match #"0" p 0)
     (let ([x (+ 9 (expt 10 100))])
-      (test (list (cons x (add1 x))) regexp-match-peek-positions "0" p (expt 10 100)))))
+      (test (list (cons x (add1 x))) regexp-match-peek-positions #"0" p (expt 10 100)))))
 
 ;;------------------------------------------------------------
 
@@ -1045,11 +1065,10 @@
 (err/rt-test (putenv (string #\a #\nul #\b) "hi"))
 (err/rt-test (putenv "hi" (string #\a #\nul #\b)))
 (collect-garbage)
-(unless (eq? (system-type) 'macos)
-	(test #t 'success-1 success-1?)
-	(test #t 'success-2 success-2?)
-	(test "AnApple" getenv "APPLE")
-	(test "AnotherApple" getenv "BANANA"))
+(test #t 'success-1 success-1?)
+(test #t 'success-2 success-2?)
+(test #"AnApple" getenv "APPLE")
+(test #"AnotherApple" getenv "BANANA")
 (test #f getenv "AnUndefinedEnvironmentVariable")
 
 (arity-test getenv 1 1)
@@ -1150,15 +1169,15 @@
 (err/rt-test (udp-connected? 5))
 (err/rt-test (udp-bind! 5 #f 40000))
 (err/rt-test (udp-connect! 5 "localhost" 40000))
-(err/rt-test (udp-send-to 5 "localhost" 40000 "hello"))
-(err/rt-test (udp-send-to* 5 "localhost" 40000 "hello"))
-(err/rt-test (udp-send-to/enable-break 5 "localhost" 40000 "hello"))
-(err/rt-test (udp-send 5 "hello"))
-(err/rt-test (udp-send* 5 "hello"))
-(err/rt-test (udp-send/enable-break 5 "hello"))
-(err/rt-test (udp-receive! 5 (make-string 10)))
-(err/rt-test (udp-receive!* 5 (make-string 10)))
-(err/rt-test (udp-receive!/enable-break 5 (make-string 10)))
+(err/rt-test (udp-send-to 5 "localhost" 40000 #"hello"))
+(err/rt-test (udp-send-to* 5 "localhost" 40000 #"hello"))
+(err/rt-test (udp-send-to/enable-break 5 "localhost" 40000 #"hello"))
+(err/rt-test (udp-send 5 #"hello"))
+(err/rt-test (udp-send* 5 #"hello"))
+(err/rt-test (udp-send/enable-break 5 #"hello"))
+(err/rt-test (udp-receive! 5 (make-bytes 10)))
+(err/rt-test (udp-receive!* 5 (make-bytes 10)))
+(err/rt-test (udp-receive!/enable-break 5 (make-bytes 10)))
 (err/rt-test (udp->send-waitable 5))
 (err/rt-test (udp->receive-waitable 5))
 
@@ -1201,7 +1220,7 @@
 		   (eq? (cdr x) who))))
   
 (parameterize ([current-security-guard (make-file-sg '(exists read))])
-  (test #t string? (expand-path "tmp1"))
+  (test #t bytes? (expand-path "tmp1"))
   (test #t file-exists? "tmp1")
   (test #f directory-exists? "tmp1")
   (test #f link-exists? "tmp1")
@@ -1216,7 +1235,7 @@
   (test #t list? (directory-list)))
 
 (parameterize ([current-security-guard (make-file-sg '(exists write))])
-  (test #t string? (expand-path "tmp1"))
+  (test #t bytes? (expand-path "tmp1"))
   (err/rt-test (open-input-file "tmp1") (fs-reject? 'open-input-file))
   (err/rt-test (open-output-file "tmp1" 'append) (fs-reject? 'open-output-file))
   (err/rt-test (open-output-file "tmp1" 'update) (fs-reject? 'open-output-file))
@@ -1262,12 +1281,12 @@
 				     void
 				     (lambda (who host port mode)
 				       (raise (list* 'net-reject who host port mode))))])
-  (err/rt-test (tcp-connect "other" 123)  (net-reject? 'tcp-connect "other" 123 'client))
+  (err/rt-test (tcp-connect "other" 123)  (net-reject? 'tcp-connect #"other" 123 'client))
   (err/rt-test (tcp-listen 123)  (net-reject? 'tcp-listen #f 123 'server))
   (unless (eq? 'macos (system-type)) ; no UDP in Mac OS Classic
     (err/rt-test (udp-open-socket)  (net-reject? 'udp-open-socket #f #f 'client))
-    (err/rt-test (udp-bind! early-udp "localhost" 40000)  (net-reject? 'udp-bind! "localhost" 40000 'server))
-    (err/rt-test (udp-connect! early-udp "localhost" 40000)  (net-reject? 'udp-connect! "localhost" 40000 'client))
-    (err/rt-test (udp-send-to early-udp "localhost" 40000 "hi")  (net-reject? 'udp-send-to "localhost" 40000 'client))))
+    (err/rt-test (udp-bind! early-udp "localhost" 40000)  (net-reject? 'udp-bind! #"localhost" 40000 'server))
+    (err/rt-test (udp-connect! early-udp "localhost" 40000)  (net-reject? 'udp-connect! #"localhost" 40000 'client))
+    (err/rt-test (udp-send-to early-udp "localhost" 40000 #"hi")  (net-reject? 'udp-send-to #"localhost" 40000 'client))))
 
 (report-errs)

@@ -3310,7 +3310,7 @@ static Scheme_Object *expand_path(int argc, Scheme_Object *argv[])
 				1, 0,
 				SCHEME_GUARD_FILE_EXISTS);
 
-  if (!expanded)
+  if (!expanded && SCHEME_BYTE_STRINGP(argv[0]))
     return argv[0];
   else
     return scheme_make_sized_byte_string(filename, strlen(filename), 1);
@@ -3326,7 +3326,7 @@ static Scheme_Object *normal_path_case(int argc, Scheme_Object *argv[])
   bs = BYTE_STRING(argv[0]);
 
 #ifdef UNIX_FILE_SYSTEM
-  return argv[0];
+  return bs;
 #else
   {
     int len = SCHEME_BYTE_STRTAG_VAL(bs);

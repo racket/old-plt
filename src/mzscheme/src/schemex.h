@@ -355,6 +355,9 @@ const char *(*scheme_get_proc_name)(Scheme_Object *p, int *len, int for_error);
 int (*scheme_utf8_decode)(const unsigned char *s, int start, int end, 
 				 unsigned int *us, int dstart, int dend,
 				 long *ipos, char utf16, int permissive);
+int (*scheme_utf8_decode_as_prefix)(const unsigned char *s, int start, int end, 
+					   unsigned int *us, int dstart, int dend,
+					   long *ipos, char utf16, int permissive);
 int (*scheme_utf8_decode_all)(const unsigned char *s, int len, unsigned int *us, 
 				     int permissive);
 int (*scheme_utf8_decode_prefix)(const unsigned char *s, int len, unsigned int *us, 
@@ -441,8 +444,7 @@ long (*scheme_put_byte_string)(const char *who, Scheme_Object *port,
 				      const char *str, long d, long len,
 				      int rarely_block);
 long (*scheme_put_char_string)(const char *who, Scheme_Object *port,
-				      const mzchar *str, long d, long len,
-				      int rarely_block);
+				      const mzchar *str, long d, long len);
 char *(*scheme_write_to_string)(Scheme_Object *obj, long *len);
 char *(*scheme_display_to_string)(Scheme_Object *obj, long *len);
 char *(*scheme_write_to_string_w_max)(Scheme_Object *obj, long *len, long maxl);
@@ -470,10 +472,14 @@ int (*scheme_char_ready)(Scheme_Object *port);
 int (*scheme_peekc_is_ungetc)(Scheme_Object *port);
 void (*scheme_need_wakeup)(Scheme_Object *port, void *fds);
 long (*scheme_get_byte_string)(const char *who,
-				 Scheme_Object *port,
-				 char *buffer, long offset, long size,
-				 int only_avail,
-				 int peek, Scheme_Object *peek_skip);
+				      Scheme_Object *port,
+				      char *buffer, long offset, long size,
+				      int only_avail,
+				      int peek, Scheme_Object *peek_skip);
+long (*scheme_get_char_string)(const char *who,
+				      Scheme_Object *port,
+				      mzchar *buffer, long offset, long size,
+				      int peek, Scheme_Object *peek_skip);
 long (*scheme_get_bytes)(Scheme_Object *port, long size, char *buffer, int offset);
 long (*scheme_tell)(Scheme_Object *port);
 long (*scheme_output_tell)(Scheme_Object *port);

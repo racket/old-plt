@@ -2712,9 +2712,9 @@ static Scheme_Object *read_compact(CPort *port,
 	RANGE_CHECK_GETS(el);
 	s = read_compact_chars(port, buffer, BLK_BUF_SIZE, el);
 	us = (mzchar *)scheme_malloc_atomic((l + 1) * sizeof(mzchar));
-	scheme_utf8_decode_all(s, l, us, 0);
-	us[el] = 0;
-	v = scheme_make_immutable_sized_char_string(us, el, 0);
+	scheme_utf8_decode_all(s, el, us, 0);
+	us[l] = 0;
+	v = scheme_make_immutable_sized_char_string(us, l, 0);
       }
       break;
     case CPT_CHAR:
@@ -3213,15 +3213,15 @@ static long read_compact_number_from_port(Scheme_Object *port)
 
   long flag, v, a, b, c, d;
 
-  flag = scheme_getc(port);
+  flag = scheme_get_byte(port);
 
   if (flag < 252)
     return flag;
   if (flag == 254)
-    return -scheme_getc(port);
+    return -scheme_get_byte(port);
   
-  a = scheme_getc(port);
-  b = scheme_getc(port);
+  a = scheme_get_byte(port);
+  b = scheme_get_byte(port);
 
   if (flag == 252) {
     v = a
@@ -3229,8 +3229,8 @@ static long read_compact_number_from_port(Scheme_Object *port)
     return v;
   }
 
-  c = scheme_getc(port);
-  d = scheme_getc(port);
+  c = scheme_get_byte(port);
+  d = scheme_get_byte(port);
 
   v = a
     + (b << 8)

@@ -56,6 +56,8 @@ extern int wxGetPreference(const char *, int *);
 
 wxStyleList *wxTheStyleList;
 
+static wxStyleDelta *quick_delta;
+
 #ifdef WX_USE_XFT
 extern int wxXRenderHere(void);
 #endif
@@ -74,6 +76,8 @@ void wxInitStyles(void)
 
   wxREGGLOB(wxTheStyleList);
   wxTheStyleList = new wxStyleList;
+
+  wxREGGLOB(quick_delta);
 }
 
 void wxMultColour::Get(double *rf, double *gf, double *bf)
@@ -462,19 +466,9 @@ Bool wxStyleDelta::Collapse(wxStyleDelta *deltaIn)
 
 Bool wxStyleDelta::Equal(wxStyleDelta *deltaIn)
 {
-  double ambr, ambb, ambg, amfr, amfb, amfg;
-  double bmbr, bmbb, bmbg, bmfr, bmfb, bmfg;
-  short aabr, aabb, aabg, aafr, aafb, aafg;
-  short babr, babb, babg, bafr, bafb, bafg;
-  
-  foregroundMult->Get(&amfr, &amfb, &amfg);
-  backgroundMult->Get(&ambr, &ambb, &ambg);
-  foregroundAdd->Get(&aafr, &aafb, &aafg);
-  backgroundAdd->Get(&aabr, &aabb, &aabg);
-  deltaIn->foregroundMult->Get(&bmfr, &bmfb, &bmfg);
-  deltaIn->backgroundMult->Get(&bmbr, &bmbb, &bmbg);
-  deltaIn->foregroundAdd->Get(&bafr, &bafb, &bafg);
-  deltaIn->backgroundAdd->Get(&babr, &babb, &babg);
+#define SAME_C(fld) ((fld->r == deltaIn->fld->r) \
+                     && (fld->g == deltaIn->fld->g) \
+                     && (fld->b == deltaIn->fld->b))
 
   return ((family == deltaIn->family)
 	  && ((face && deltaIn->face && !strcmp(face, deltaIn->face))
@@ -493,12 +487,13 @@ Bool wxStyleDelta::Equal(wxStyleDelta *deltaIn)
 	  && sipOff == deltaIn->sipOff
 	  && transparentTextBackingOn == deltaIn->transparentTextBackingOn
 	  && transparentTextBackingOff == deltaIn->transparentTextBackingOff
-	  && amfr == bmfr && amfb == bmfb && amfg == bmfg
-	  && aafr == bafr && aafb == bafb && aafg == bafg
-	  && ambr == bmbr && ambb == bmbb && ambg == bmbg
-	  && aabr == babr && aabb == babb && aabg == babg
+	  && SAME_C(foregroundMult)
+	  && SAME_C(backgroundMult)
+	  && SAME_C(foregroundAdd)
+	  && SAME_C(backgroundAdd)
 	  && alignmentOn == deltaIn->alignmentOn
 	  && alignmentOff == deltaIn->alignmentOff);
+#undef SAME_C
 }
 
 void wxStyleDelta::Copy(wxStyleDelta *in)
@@ -1042,7 +1037,11 @@ wxStyle *wxStyleList::FindOrCreateStyle(wxStyle *baseStyle,
     baseStyle = basic;
 
   /* Collapse the delta: */
-  delta = new wxStyleDelta;
+  if (quick_delta) {
+    delta = quick_delta;
+    quick_delta = NULL;
+  } else
+    delta = new wxStyleDelta;
   delta->Copy(deltain);
   while (!baseStyle->name && !baseStyle->join_shiftStyle) {
     if (!delta->Collapse(baseStyle->nonjoin_delta))
@@ -1055,8 +1054,10 @@ wxStyle *wxStyleList::FindOrCreateStyle(wxStyle *baseStyle,
     if (!style->name
 	&& !style->join_shiftStyle
 	&& PTREQ(style->baseStyle, baseStyle)
-	&& delta->Equal(style->nonjoin_delta))
+	&& delta->Equal(style->nonjoin_delta)) {
+      quick_delta = delta;
       return style;
+    }
   }
 
   style = new wxStyle;
@@ -1065,8 +1066,7 @@ wxStyle *wxStyleList::FindOrCreateStyle(wxStyle *baseStyle,
 
   style->name = NULL;
 
-  style->nonjoin_delta = new wxStyleDelta;
-  style->nonjoin_delta->Copy(delta);
+  style->nonjoin_delta = delta;
 
   style->baseStyle = baseStyle;
   baseStyle->children->Append(style);

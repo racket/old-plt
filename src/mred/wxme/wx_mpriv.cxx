@@ -246,8 +246,8 @@ void wxMediaEdit::_ChangeStyle(long start, long end,
 {
   wxSnip *gsnip, *startSnip, *endSnip;
   wxStyleChangeRecord *rec;
-  wxStyle *style, *style2;
-  long p;
+  wxStyle *style, *style2, *prev_style;
+  long p, prev_style_pos;
   int something;
 
   if (writeLocked || userLocked)
@@ -313,6 +313,8 @@ void wxMediaEdit::_ChangeStyle(long start, long end,
 
   something = FALSE;
 
+  prev_style = NULL;
+  prev_style_pos = start;
   p = start;
   for (gsnip = startSnip; PTRNE(gsnip, endSnip); gsnip = gsnip->next) {
     style = gsnip->style;
@@ -324,8 +326,12 @@ void wxMediaEdit::_ChangeStyle(long start, long end,
 
     if (PTRNE(style, style2)) {
       gsnip->style = style2;
-      if (rec)
-	rec->AddStyleChange(p, p + gsnip->count, style);
+
+      if (rec && (style != prev_style)) {
+	rec->AddStyleChange(prev_style_pos, p, prev_style);
+	prev_style_pos = p;
+	prev_style = style;
+      }
 
       gsnip->SizeCacheInvalid();
       gsnip->line->MarkRecalculate();
@@ -333,9 +339,16 @@ void wxMediaEdit::_ChangeStyle(long start, long end,
 	gsnip->line->MarkCheckFlow();
 
       something = TRUE;
+    } else if (rec && prev_style) {
+      rec->AddStyleChange(prev_style_pos, p, prev_style);
+      prev_style = NULL;
     }
 
     p += gsnip->count;
+  }
+
+  if (rec && prev_style) {
+    rec->AddStyleChange(prev_style_pos, p, prev_style);
   }
 
   if (something) {

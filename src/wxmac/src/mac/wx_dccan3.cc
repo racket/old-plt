@@ -27,6 +27,13 @@ static ATSUStyle theATSUstyle, theATSUqdstyle;
 static Scheme_Hash_Table *width_table, *old_width_table;
 static Scheme_Object *table_key;
 
+typedef struct {
+  double scale_x, scale_y;
+  int code;
+  short txFont, txSize, txFace;
+  char use_cgctx, smoothing;
+} wxKey;
+
 typedef void (*atomic_timeout_t)(void);
 
 static void init_ATSU_style(void);
@@ -566,13 +573,17 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   /* Set up measure cache                 */
 
   if (!width_table) {
+    char *s;
+
     wxREGGLOB(width_table);
     wxREGGLOB(old_width_table);
     wxREGGLOB(table_key);
 
     width_table = scheme_make_hash_table_equal();
     old_width_table = scheme_make_hash_table_equal();
-    table_key = scheme_make_vector(8, NULL);
+    s = new WXGC_ATOMIC char[sizeof(wxKey)];
+    memset(s, 0, sizeof(wxKey));
+    table_key = scheme_make_sized_byte_string(s, sizeof(wxKey), 0);
   }
   if (!given_font && qd_spacing) {
     txFont = GetPortTextFont(qdp);
@@ -580,15 +591,14 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     txFace = GetPortTextFace(qdp);
   }
   if (qd_spacing) {
-    SCHEME_VEC_ELS(table_key)[1] = scheme_make_integer(txFont);
-    SCHEME_VEC_ELS(table_key)[2] = scheme_make_integer(txSize);
-    SCHEME_VEC_ELS(table_key)[3] = scheme_make_integer(txFace);
-    SCHEME_VEC_ELS(table_key)[4] = (use_cgctx ? scheme_true : scheme_false);
-    val = scheme_make_double(scale_x);
-    SCHEME_VEC_ELS(table_key)[5] = val;
-    val = scheme_make_double(scale_y);
-    SCHEME_VEC_ELS(table_key)[6] = val;
-    SCHEME_VEC_ELS(table_key)[7] = scheme_make_integer(smoothing);
+    wxKey *k = (wxKey *)SCHEME_BYTE_STR_VAL(table_key);
+    k->scale_x = scale_x;
+    k->scale_y = scale_y;
+    k->txFont = txFont;
+    k->txSize = txSize;
+    k->txFace = txFace;
+    k->use_cgctx = (char)use_cgctx;
+    k->smoothing = (char)smoothing;
   }
 
   if (qd_spacing) {
@@ -608,8 +618,18 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     scheme_current_thread->suspend_break++;
 
     for (i = 0; i < (int)ulen; i++) {
-      SCHEME_VEC_ELS(table_key)[0] = scheme_make_integer(unicode[i]);
+      ((wxKey *)SCHEME_BYTE_STR_VAL(table_key))->code = unicode[i];
       val = scheme_hash_get(width_table, table_key);
+      if (!val) {
+	val = scheme_hash_get(old_width_table, table_key);
+	if (val) {
+	  /* Move it to the new table, so we find it faster, and
+	     so it's kept on the next rotation: */
+	  Scheme_Object *new_key;
+	  new_key = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(table_key), sizeof(wxKey), 1);
+	  scheme_hash_set(width_table, new_key, val);
+	}
+      }
       if (!val) {
 	all = 0;
 	widths[i] = -1;
@@ -961,7 +981,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     /* Record collected widths. (We can't record these during the
        drawing loop because it might trigger a GC, which might try to
        draw a GC bitmap, etc. */
-    int i, j;
+    int j;
     atomic_timeout_t old;
 
     old = scheme_on_atomic_timeout;
@@ -971,12 +991,15 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 
     for (j = 0; j < (int)ulen; j++) {
       if (widths[j] >= 0) {
-	SCHEME_VEC_ELS(table_key)[0] = scheme_make_integer(unicode[j]);
-	val = scheme_make_vector(SCHEME_VEC_SIZE(table_key), NULL);
-	for (i = SCHEME_VEC_SIZE(table_key); i--; ) {
-	  SCHEME_VEC_ELS(val)[i] = SCHEME_VEC_ELS(table_key)[i];
-	}
+	val = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(table_key), sizeof(wxKey), 1);
+	((wxKey *)SCHEME_BYTE_STR_VAL(val))->code = unicode[j];
 	scheme_hash_set(width_table, val, scheme_make_double(widths[j]));
+	if (width_table->mcount >= MAX_WIDTH_MAPPINGS) {
+	  /* rotate tables, so width_table doesn't grow indefinitely,
+	     but we also don't throw away recent information completely */
+	  old_width_table = width_table;
+	  width_table = scheme_make_hash_table_equal();
+	}
       }
     }
 

@@ -542,32 +542,32 @@ void wxWindow::GravitateJustify(Direction gravitate, Direction justify,
 	int windowHeight = cWindowHeight;
 
 // do gravitate
-	if (gravitate & Direction::wxLeft && gravitate & Direction::wxRight)
+	if ((int)gravitate & Direction::wxLeft && (int)gravitate & Direction::wxRight)
 		windowX = (left + right - cWindowWidth) / 2;
-	else if (gravitate & Direction::wxLeft) windowX = left;
-	else if (gravitate & Direction::wxRight) windowX = right - cWindowWidth;
+	else if ((int)gravitate & Direction::wxLeft) windowX = left;
+	else if ((int)gravitate & Direction::wxRight) windowX = right - cWindowWidth;
 
-	if (gravitate & Direction::wxTop && gravitate & Direction::wxBottom)
+	if ((int)gravitate & Direction::wxTop && (int)gravitate & Direction::wxBottom)
 		windowY = (top + bottom - cWindowHeight) / 2;
-	else if (gravitate & Direction:: wxTop) windowY = top;
-	else if (gravitate & Direction::wxBottom) windowY = bottom - cWindowHeight;
+	else if ((int)gravitate & Direction:: wxTop) windowY = top;
+	else if ((int)gravitate & Direction::wxBottom) windowY = bottom - cWindowHeight;
 
 // do justify
-	if (justify & Direction::wxLeft)
+	if ((int)justify & Direction::wxLeft)
 	{
 		windowWidth += windowX - left;
 		windowX = left;
 	}
 
-	if (justify & Direction::wxTop)
+	if ((int)justify & Direction::wxTop)
 	{
 		windowHeight += windowY - top;
 		windowY = top;
 	}
 
-	if (justify & Direction::wxBottom) windowHeight = bottom - windowY;
+	if ((int)justify & Direction::wxBottom) windowHeight = bottom - windowY;
 
-	if (justify & Direction::wxRight) windowWidth = right - windowX;
+	if ((int)justify & Direction::wxRight) windowWidth = right - windowX;
 
 // do size
 	SetSize(windowX, windowY, windowWidth, windowHeight, wxPOS_USE_MINUS_ONE);
@@ -1053,7 +1053,7 @@ static void SendEnterLeaveEvent(wxWindow *target, int eventtype, wxWindow *evtsr
    }
 }
 
-extern QueueMrEdEvent(EventRecord *e);
+extern int QueueMrEdEvent(EventRecord *e);
 
 static void QueueLeaveEvent(wxWindow *target, wxWindow *evtsrc, wxMouseEvent *evt)
 {

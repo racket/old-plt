@@ -44,7 +44,7 @@ wxLabelArea::wxLabelArea
 		labelHeight = fLabelHeight;
 	}
 
-	if (cDirection & Direction::wxTop)
+	if ((int)cDirection & Direction::wxTop)
 	{
 		SetMargin(labelHeight + 3, Direction::wxTop);
 	}

@@ -666,7 +666,7 @@ char *wxListBox::GetString(int N)
 	Handle stringHandle;
 	OSErr result;
 	
-	result = ALGetCell(&stringHandle, &cell, cListReference);
+	result = ALGetCell((void **)&stringHandle, &cell, cListReference);
 	if (result != noErr)
 		return NULL;
 
@@ -680,7 +680,7 @@ void wxListBox::SetString(int N, char *s)
 	LongPt cell = {N, 0};
     SetCurrentDC();
     Handle oldHandle; 
-    ALGetCell(&oldHandle,&cell,cListReference);
+    ALGetCell((void **)&oldHandle,&cell,cListReference);
     Handle newHandle = NewHandle(strlen(s)+1);
     strcpy(*newHandle,s);
     c2pstr(*newHandle);

@@ -149,6 +149,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_interface_type, "<interface>");
   set_name(scheme_random_state_type, "<pseudo-random-generator>");
   set_name(scheme_regexp_type, "<regexp>");
+  set_name(scheme_rename_table_type, "<rename-table>");
 
   set_name(scheme_unit_type, "<unit>");
   set_name(scheme_compiled_unit_type, "<unit-code>");

@@ -217,9 +217,14 @@ Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
     wraps = stx->wraps;
 
     here_wraps = SCHEME_FALSEP(stx->wraps) ? scheme_null : SCHEME_CAR(stx->wraps);
-    here_wraps = add_remove_mark(here_wraps, m);
     lazy_wraps = SCHEME_FALSEP(stx->wraps) ? scheme_null : SCHEME_CDR(stx->wraps);
-    lazy_wraps = add_remove_mark(lazy_wraps, m);
+    if (SAME_OBJ(here_wraps, lazy_wraps)) {
+      here_wraps = add_remove_mark(here_wraps, m);
+      lazy_wraps = here_wraps;
+    } else {
+      here_wraps = add_remove_mark(here_wraps, m);
+      lazy_wraps = add_remove_mark(lazy_wraps, m);
+    }
     
     wraps = scheme_make_pair(here_wraps, lazy_wraps);
   } else {
@@ -342,9 +347,15 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
     wraps = stx->wraps;
 
     here_wraps = SCHEME_FALSEP(stx->wraps) ? scheme_null : SCHEME_CAR(stx->wraps);
-    here_wraps = scheme_make_pair(rename, here_wraps);
     lazy_wraps = SCHEME_FALSEP(stx->wraps) ? scheme_null : SCHEME_CDR(stx->wraps);
-    lazy_wraps = scheme_make_pair(rename, lazy_wraps);
+
+    if (SAME_OBJ(here_wraps, lazy_wraps)) {
+      here_wraps = scheme_make_pair(rename, here_wraps);
+      lazy_wraps = here_wraps;
+    } else {
+      here_wraps = scheme_make_pair(rename, here_wraps);
+      lazy_wraps = scheme_make_pair(rename, lazy_wraps);
+    }
 
     wraps = scheme_make_pair(here_wraps, lazy_wraps);
   } else {
@@ -363,8 +374,29 @@ Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift, Scheme_Env
 							    (Scheme_Object *)home)));
 }
 
-static Scheme_Object *propagate_wraps(Scheme_Object *o, Scheme_Object *wl)
+static Scheme_Object *propagate_wraps(Scheme_Object *o, Scheme_Object *wl, Scheme_Object *orig_wraps)
 {
+  /* No marks on syntax, yet? */
+  {
+    Scheme_Stx *stx = (Scheme_Stx *)o;
+
+    if (HAS_SUBSTX(stx->val)) {
+      if (SCHEME_FALSEP(stx->wraps))
+	orig_wraps = scheme_make_pair(orig_wraps, orig_wraps);
+      else
+	orig_wraps = NULL;
+    } else {
+      if (!SCHEME_NULLP(stx->wraps))
+	orig_wraps = NULL;
+    }
+
+    if (orig_wraps) {
+      stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src);
+      stx->wraps = orig_wraps;
+      return (Scheme_Object *)stx;
+    }
+  }
+
   while (!SCHEME_NULLP(wl)) {
     if (SCHEME_NUMBERP(SCHEME_CAR(wl)))
       o = scheme_add_remove_mark(o, SCHEME_CAR(wl));
@@ -385,11 +417,11 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
       && !SCHEME_FALSEP(stx->wraps)
       && !SCHEME_NULLP(SCHEME_CDR(stx->wraps))) {
     Scheme_Object *v = stx->val, *result;
-    Scheme_Object *wraps, *here_wraps;
+    Scheme_Object *wraps, *orig_wraps, *here_wraps;
     Scheme_Object *ml = scheme_null;
     
     here_wraps = SCHEME_CAR(stx->wraps);
-    wraps = SCHEME_CDR(stx->wraps);
+    wraps = orig_wraps = SCHEME_CDR(stx->wraps);
     
     /* Reverse the list of wraps, to preserve order: */
     while (!SCHEME_NULLP(wraps)) {
@@ -402,7 +434,7 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
 
       while (SCHEME_PAIRP(v)) {
 	Scheme_Object *p;
-	result = propagate_wraps(SCHEME_CAR(v), ml);
+	result = propagate_wraps(SCHEME_CAR(v), ml, orig_wraps);
 	p = scheme_make_pair(result, scheme_null);
 	if (last)
 	  SCHEME_CDR(last) = p;
@@ -412,7 +444,7 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
 	v = SCHEME_CDR(v);
       }
       if (!SCHEME_NULLP(v)) {
-	result = propagate_wraps(v, ml);
+	result = propagate_wraps(v, ml, orig_wraps);
 	if (last)
 	  SCHEME_CDR(last) = result;
 	else
@@ -420,7 +452,7 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
       }
       v = first;
     } else if (SCHEME_BOXP(v)) {
-      result = propagate_wraps(SCHEME_BOX_VAL(v), ml);
+      result = propagate_wraps(SCHEME_BOX_VAL(v), ml, orig_wraps);
       v = scheme_box(result);
     } else if (SCHEME_VECTORP(v)) {
       Scheme_Object *v2;
@@ -429,7 +461,7 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
       v2 = scheme_make_vector(size, NULL);
 
       for (i = 0; i < size; i++) {
-	result = propagate_wraps(SCHEME_VEC_ELS(v)[i], ml);
+	result = propagate_wraps(SCHEME_VEC_ELS(v)[i], ml, orig_wraps);
 	SCHEME_VEC_ELS(v2)[i] = result;
       }
 
@@ -892,6 +924,13 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w, int subs,
   if (subs) {
     if (SCHEME_FALSEP(w))
       return w;
+
+    if (SAME_OBJ(SCHEME_CAR(w), SCHEME_CDR(w))) {
+      /* #f as second marhalled obj means "same as first": */
+      return scheme_make_pair(wraps_to_datum(SCHEME_CAR(w), 0, rns),
+			      scheme_false);
+    }
+    
     return scheme_make_pair(wraps_to_datum(SCHEME_CAR(w), 0, rns),
 			    wraps_to_datum(SCHEME_CDR(w), 0, rns));
   }
@@ -1096,15 +1135,51 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
     /* Propagate marks: */
     scheme_stx_content((Scheme_Object *)stx);
   }
-    
+
   v = stx->val;
   
   if (SCHEME_PAIRP(v)) {
     Scheme_Object *first = NULL, *last = NULL, *p;
     
+    /* If with_marks = 2, try to un-propagate wraps in a simple case
+       where wraps are the same: */
+    if ((with_marks == 2)
+	&& !SCHEME_FALSEP(stx->wraps)
+	&& SCHEME_NULLP(SCHEME_CDR(stx->wraps))) {
+      Scheme_Object *w = SCHEME_CAR(stx->wraps);
+      Scheme_Stx *astx;
+
+      p = v;
+      while (w && !SCHEME_NULLP(p)) {
+	if (SCHEME_PAIRP(p)) {
+	  astx = (Scheme_Stx *)SCHEME_CAR(p);
+	  p = SCHEME_CDR(p);
+	} else {
+	  astx = (Scheme_Stx *)p;
+	  p = scheme_null;
+	}
+	
+	if (HAS_SUBSTX(astx->val)) {
+	  if (SCHEME_FALSEP(astx->val)
+	      || !SAME_OBJ(SCHEME_CAR(astx->wraps), w)
+	      || !SAME_OBJ(SCHEME_CDR(astx->wraps), w)) {
+	    w = NULL; /* mismatch */
+	  }
+	} else {
+	  if (!SAME_OBJ(astx->wraps, w)) {
+	    w = NULL; /* mismatch */
+	  }
+	}
+      }
+
+      if (w) {
+	printf("unprop\n");
+      }
+    }
+    
     while (SCHEME_PAIRP(v)) {
       Scheme_Object *a;
-      
+
       a = syntax_to_datum_inner(SCHEME_CAR(v), ht, with_marks, rns);
       
       p = scheme_make_pair(a, scheme_null);
@@ -1180,6 +1255,13 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w, int subs,
   if (subs) {
     if (SCHEME_FALSEP(w))
       return w;
+
+    if (SCHEME_FALSEP(SCHEME_CDR(w))) {
+      /* #f as second item means same as first: */
+      w = datum_to_wraps(SCHEME_CAR(w), 0, rns);
+      return scheme_make_pair(w, w);
+    }
+
     return scheme_make_pair(datum_to_wraps(SCHEME_CAR(w), 0, rns),
 			    datum_to_wraps(SCHEME_CDR(w), 0, rns));
   }

@@ -2997,7 +2997,9 @@ int main(int argc, char *argv[])
      is called by wxWindows. */
 #ifndef wx_msw
 # ifndef MACOS_FIND_STACK_BOUNDS
+#  ifndef OS_X
   scheme_set_stack_base(stack_start, 1);
+#  endif
 # endif
 #endif
 

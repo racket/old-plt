@@ -1,6 +1,7 @@
 (module util mzscheme
   
   (require "config.ss"
+           "private/planet-shared.ss"
            (lib "list.ss")
            (lib "pack.ss" "setup"))
 
@@ -50,12 +51,17 @@
        tree)))
   
   
-  ;; current-linkage : -> ((filename (package-name nat nat) ...) ...)
+  ;; current-linkage : -> ((symbol (package-name nat nat) ...) ...)
   ;; gives the current "linkage table"; a table that links modules to particular versions
   ;; of planet requires that satisfy those linkages
   (define (current-linkage)
-    (void))
-  
+    (let* ((links (with-input-from-file (LINKAGE-FILE) read-all))
+           (buckets (categorize caar links)))
+      (display buckets)
+      (map
+       (lambda (x) (cons (car x) (map (lambda (y) (drop-last (cadr y))) (cadr x))))
+       buckets)))
+       
   ;; make-planet-archive: directory [file] -> file
   ;; Makes a .plt archive file suitable for PLaneT whose contents are
   ;; all files in the given directory and returns that file's name.

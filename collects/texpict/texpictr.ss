@@ -16,7 +16,14 @@
 (define draw-bezier-lines
   (make-parameter #f
 		  (lambda (x)
-		    (and x #t))))
+		    (if (procedure? x)
+			(begin
+			  (unless (procedure-arity-includes? x 1)
+			      (raise-type-error 'draw-bezier-lines
+						"boolean or procedure of one argument"
+						x))
+			  x)
+			(and x #t)))))
 
 (define-struct pict (draw ; drawing instructions
 		     width ; total width
@@ -621,7 +628,11 @@
       (if (> dd (if (draw-bezier-lines) 0 4))
 	  ; give up
 	  (if (draw-bezier-lines)
-	      `(qbezier #f ,x1 ,y1 ,(quotient (+ x1 x2) 2) ,(quotient (+ y1 y2) 2) ,x2 ,y2)
+	      (let ([c (if (procedure? (draw-bezier-lines))
+			   ((draw-bezier-lines) (sqrt (+ (* (- x1 x2) (- x1 x2))
+							 (* (- y1 y2)  (- y1 y2)))))
+			   #f)])
+		`(qbezier ,c ,x1 ,y1 ,(quotient (+ x1 x2) 2) ,(quotient (+ y1 y2) 2) ,x2 ,y2))
 	      (let ([xd (- x2 x1)])
 		`(put ,x1 ,y1 (line ,(if (negative? xd) -1 1) 0 ,(abs xd)))))
 	  (let-values ([(s l) (find-slope (- x2 x1) (- y2 y1) 

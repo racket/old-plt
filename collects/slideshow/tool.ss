@@ -212,8 +212,8 @@ todo:
             (if picts
                 (send slideshow-canvas 
                       init-auto-scrollbars
-                      (apply max (map p-width picts))
-                      (apply + (map p-height picts))
+                      (inexact->exact (floor (apply max (map p-width picts))))
+                      (inexact->exact (floor (apply + (map p-height picts))))
                       0
                       0)
                 (send slideshow-canvas init-auto-scrollbars #f #f 0 0)))

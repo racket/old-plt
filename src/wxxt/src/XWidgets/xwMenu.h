@@ -101,6 +101,8 @@ SOFTWARE.
 
 #define XtNshadowWidth          "shadowWidth"
 #define XtCShadowWidth          "ShadowWidth"
+#define XtNrequestedWidth       "requestedWidth"
+#define XtCRequestedWidth       "RequestedWidth"
 #define XtNbeNiceToColormap     "beNiceToColormap"
 #define XtCBeNiceToColormap     "BeNiceToColormap"
 #define XtNtopShadowPixel       "topShadowPixel"

@@ -50,6 +50,7 @@ typedef struct _menu_state {
 typedef struct _MenuPart {
     /* public resources */
     Dimension       shadow_width;   /* shadow data */
+    Dimension       requested_width;
     Boolean         be_nice_to_cmap;
     Pixel           top_shadow_pixel;
     Pixmap          top_shadow_pxmap;

@@ -36,6 +36,7 @@ public:
     Widget	  frame;			// frame widgets
     Widget	  scroll;			// optional scrollable widget
     Widget	  handle;			// X implementation of functionality
+    Widget        extra;
     Region	  expose_region;		// exposed region
     XEvent*	  expose_event;			// expose event 
     EventMask	  translations_eventmask;	// events selected by widget-translations
@@ -117,12 +118,12 @@ public:
     virtual void  EnableScrolling(Bool x, Bool y);
     virtual int   GetScrollPos(int orient);
     virtual int   GetScrollRange(int orient);
-    virtual int   GetScrollPage(int orient); /* MATTHEW */
+    virtual int   GetScrollPage(int orient);
     virtual void  Scroll(int x_pos, int y_pos);
     virtual void  SetScrollArea(int hsize, int vsize);
     virtual void  SetScrollPos(int orient, int pos);
     virtual void  SetScrollRange(int orient, int range);
-    virtual void  SetScrollPage(int orient, int range); /* MATTHEW */
+    virtual void  SetScrollPage(int orient, int range);
     // layout
     virtual wxLayoutConstraints *GetConstraints(void)
         { return constraints; }
@@ -155,7 +156,6 @@ public:
     // get the associated device context
     wxWindowDC* GetDC(void);
 
-    /* MATTHEW */
     void MakeModal(int on);
     void InternalEnable(Bool enable, Bool gray = FALSE);
     virtual void ChangeToGray(Bool gray);
@@ -189,8 +189,8 @@ protected:
     void RegisterAll(Widget ww);
 #   endif
 protected:
-    friend void wxXSetBusyCursor(wxWindow *, wxCursor *); /* MATTHEW */
-    friend void wxXSetNoCursor(wxWindow *, wxCursor *); /* MATTHEW */
+    friend void wxXSetBusyCursor(wxWindow *, wxCursor *);
+    friend void wxXSetNoCursor(wxWindow *, wxCursor *);
     // X representation
     wxWindow_Xintern *X;
     // device context

@@ -71,6 +71,8 @@ static XtResource MenuResources[] =
 	(XtPointer)0},
     {XtNshadowWidth, XtCShadowWidth, XtRDimension, sizeof(Dimension),
 	offset(menu.shadow_width), XtRImmediate, (XtPointer) 2},
+    {XtNrequestedWidth, XtCRequestedWidth, XtRDimension, sizeof(Dimension),
+	offset(menu.requested_width), XtRImmediate, (XtPointer) 0},
 
     /* Foreground Colour */
     {XtNforeground, XtCForeground, XtRPixel, sizeof(Pixel),
@@ -955,6 +957,8 @@ static void ComputeMenuSize(MenuWidget mw, menu_state *ms)
     }
     ms->w       = max_left_width + max_label_width + max_right_width
 	          + 2*mw->menu.shadow_width;
+    if (ms->w < mw->menu.requested_width)
+      ms->w = mw->menu.requested_width;
     ms->h       = max_height + 2*mw->menu.shadow_width;
     ms->wLeft   = max_left_width;
     ms->wMiddle = max_label_width;

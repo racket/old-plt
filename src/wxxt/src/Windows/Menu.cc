@@ -49,6 +49,8 @@ wxMenu::wxMenu(char *_title, wxFunction _func)
     // widgets are created by PopupMenu and destroyed by EventCallback
     X    = NULL;
 
+    requested_width = 0;
+
     font = wxSYSTEM_FONT;
     callback = _func;
     top = topdummy = title = last = 0;
@@ -183,6 +185,7 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
 	 XtNbackground, wxGREY_PIXEL,
 	 XtNhighlightPixel,  wxCTL_HIGHLIGHT_PIXEL,
 	 XtNforChoice,  forChoice,
+	 XtNrequestedWidth, requested_width,
 	 NULL);
     X->menu = wgt;
     XtRealizeWidget(X->shell);
@@ -564,6 +567,11 @@ wxMenuItem *wxMenu::FindItemForId(long id, wxMenu **req_menu)
     if (req_menu)
       *req_menu = EXTRACT_TOP_MENU(answer);
     return ((wxMenuItem*)answer);
+}
+
+void wxMenu::SetWidth(int n)
+{
+  requested_width = n;
 }
 
 //-----------------------------------------------------------------------------

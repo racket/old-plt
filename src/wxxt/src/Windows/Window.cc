@@ -1506,6 +1506,28 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
 #endif
 }
 
+
+static void AdjustMousePosition(Window xevwin, Widget handle, wxWindow *win, wxMouseEvent *wxevent)
+{
+  if (xevwin != XtWindow(handle)) {
+    Widget wgt;
+    wgt = XtWindowToWidget(XtDisplay(handle), xevwin);
+    if (wgt) {
+      Position cx, cy, wx, wy;
+      XtTranslateCoords(wgt, 0, 0, &cx, &cy);
+      XtTranslateCoords(handle, 0, 0, &wx, &wy);
+      wxevent->x += (cx - wx);
+      wxevent->y += (cy - wy);
+    }
+  } else if (wxSubType(win->__type, wxTYPE_CANVAS)) {
+    /* Reverse scroll effects: */
+    int dx, dy;
+    ((wxCanvas *)win)->ViewStart(&dx, &dy);
+    wxevent->x -= dx;
+    wxevent->y -= dy;
+  }
+}
+
 extern Bool wxIsAlt(KeySym key_sym);
 
 /* Used for XLookupString */
@@ -1789,24 +1811,8 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxevent->timeStamp       = xev->xbutton.time; /* MATTHEW */
 
 	/* Adjust location of mouse-moved events when it's
-	   over sub-parts: */
-	if (xev->xbutton.window != XtWindow(win->X->handle)) {
-	  Widget wgt;
-	  wgt = XtWindowToWidget(XtDisplay(win->X->handle), xev->xbutton.window);
-	  if (wgt) {
-	    Position cx, cy, wx, wy;
-	    XtTranslateCoords(wgt, 0, 0, &cx, &cy);
-	    XtTranslateCoords(win->X->handle, 0, 0, &wx, &wy);
-	    wxevent->x += (cx - wx);
-	    wxevent->y += (cy - wy);
-	  }
-	} else if (wxSubType(win->__type, wxTYPE_CANVAS)) {
-	  /* Reverse scroll effects: */
-	  int dx, dy;
-	  ((wxCanvas *)win)->ViewStart(&dx, &dy);
-	  wxevent->x -= dx;
-	  wxevent->y -= dy;
-	}
+	   over sub-parts, and counter canvas scroll: */
+	AdjustMousePosition(xev->xbutton.window, win->X->handle, win, wxevent);
 
 	*continue_to_dispatch_return = FALSE;
 	if (!win->CallPreOnEvent(win, wxevent)) {
@@ -1924,12 +1930,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	  *continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */
 
 	  /* Reverse scroll effects: */
-	  if (wxSubType(win->__type, wxTYPE_CANVAS)) {
-	    int dx, dy;
-	    ((wxCanvas *)win)->ViewStart(&dx, &dy);
-	    wxevent->x -= dx;
-	    wxevent->y -= dy;
-	  }
+	  AdjustMousePosition(xev->xbutton.window, win->X->handle, win, wxevent);
 
 	  if (!win->CallPreOnEvent(win, wxevent)) {
 	    if (subWin)

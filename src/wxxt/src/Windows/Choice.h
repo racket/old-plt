@@ -69,6 +69,8 @@ public:
     void OnEvent(wxMouseEvent*);
     void OnChar(wxKeyEvent*);
 
+    virtual void ChangeToGray(Bool gray);
+
 private:
 #   ifdef Have_Xt_Types
     static void EventCallback(Widget, XtPointer, XtPointer);

@@ -60,7 +60,7 @@ class wxWindow: public wxbWindow
 			     double *descent = NULL, double *externalLeading = NULL, 
 			     wxFont *theFont = NULL, Bool use16bit = FALSE);
 
-  void GetSize(int *width, int *height);
+  virtual void GetSize(int *width, int *height);
   void GetPosition(int *x, int *y);
   void GetClientSize(int *width, int *height); // Size client can use
   void SetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO);

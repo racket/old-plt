@@ -127,6 +127,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
     // set data declared in wxItem
     callback = function;
     XtAddCallback(button, XtNcallback, wxChoice::EventCallback, (XtPointer)saferef);
+    X->extra = button;
 
     selection = n > 0 ? 0 : -1;
     for (int i = 0; i < n; ++i) {
@@ -324,6 +325,11 @@ void wxChoice::Command(wxCommandEvent *event)
   ProcessCommand(event);
 }
 
+void wxChoice::ChangeToGray(Bool gray)
+{
+  XtVaSetValues(X->extra, XtNdrawgrayArrow, (Boolean)gray, NULL);
+  wxItem::ChangeToGray(gray);
+}
 
 //-----------------------------------------------------------------------------
 // callback for commandWidgetClass
@@ -335,7 +341,7 @@ void wxChoice::EventCallback(Widget WXUNUSED(w),
 			     XtPointer clientData, XtPointer WXUNUSED(ptr))
 {
     wxChoice *choice = (wxChoice *)GET_SAFEREF(clientData);
-    Dimension hh;
+    Dimension hh, ww;
 
     choice->SetFocus();
 
@@ -343,10 +349,12 @@ void wxChoice::EventCallback(Widget WXUNUSED(w),
     choice->choice_menu->SetFont(choice->font);
 
     // popup menu below "button"
-    XtVaGetValues(choice->X->handle, XtNheight, &hh, NULL);
+    XtVaGetValues(choice->X->handle, XtNheight, &hh, XtNwidth, &ww, NULL);
+
+    choice->choice_menu->SetWidth(ww);
 
     wxPopupForChoice = 1;
-    choice->PopupMenu(choice->choice_menu, 2, (int)hh - 2);
+    choice->PopupMenu(choice->choice_menu, 0, (int)hh - 2);
 
 #ifdef MZ_PRECISE_GC
     XFORM_RESET_VAR_STACK;

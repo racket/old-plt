@@ -89,6 +89,8 @@ public:
     void Stop(void);
     void Unpop(void);
 
+    void SetWidth(int w);
+
 private:
     // allow callback and menubar access to private data
     friend class wxMenuBar;
@@ -113,6 +115,8 @@ private:
 #ifdef MZ_PRECISE_GC
     wxChildList *children;
 #endif
+
+    int requested_width;
 
     void *client_data;
     void **saferefs; /* cons-like chain of saferefs */

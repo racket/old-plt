@@ -64,6 +64,8 @@ class wxCanvas: public wxbCanvas
 
   virtual Bool Show(Bool show);
 
+  virtual void GetSize(int *width, int *height);
+
  private:
   wxColour *bgcol;
 };

@@ -69,6 +69,8 @@ public:
     virtual void SetCanvasBackground(wxColor *c);
     wxColor *GetCanvasBackground();
 
+    virtual void ChangeToGray(Bool gray);
+
 private:
     int	h_size, h_units, h_units_per_page,
 	v_size, v_units, v_units_per_page;

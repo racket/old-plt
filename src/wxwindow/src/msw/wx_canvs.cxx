@@ -123,6 +123,13 @@ wxCanvas::~wxCanvas (void)
   }
 }
 
+void wxCanvas::GetSize(int *width, int *height)
+{
+  wxWindow::GetSize(width, height);
+  if (width && combo)
+    *width += COMBO_WIDTH;
+}
+
 void wxCanvas::SetSize (int x, int y, int w, int h, int sizeFlags)
 {
   int currentX, currentY;
@@ -135,7 +142,7 @@ void wxCanvas::SetSize (int x, int y, int w, int h, int sizeFlags)
   if (y == -1)
     y = currentY;
 
-  GetSize (&ww, &hh);
+  GetSize(&ww, &hh);
   if (w == -1)
     w = ww;
   if (h == -1)

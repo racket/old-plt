@@ -130,6 +130,8 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 	 (XtEventHandler)wxWindow::WindowEventHandler,
 	 (XtPointer)saferef,
 	 XtListHead);
+
+      X->extra = combo;
     }
     // create canvas
 #ifdef USE_GL
@@ -412,8 +414,14 @@ void wxCanvas::ViewStart(int *x, int *y)
 
 void wxCanvas::WarpPointer(int x, int y)
 {
-  /* MATTHEW: [5] scroll => handle */
   XWarpPointer(XtDisplay(X->handle), None, XtWindow(X->handle), 0, 0, 0, 0, x, y);
+}
+
+void wxCanvas::ChangeToGray(Bool gray)
+{
+  if (X->extra)
+    XtVaSetValues(X->extra, XtNdrawgrayArrow, (Boolean)gray, NULL);
+  wxItem::ChangeToGray(gray);
 }
 
 //-----------------------------------------------------------------------------

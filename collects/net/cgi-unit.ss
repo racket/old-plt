@@ -113,9 +113,9 @@
 	       "<!-- The form was processed, and this document was generated,"
 	       "     using the CGI utilities for MzScheme.  For more information"
 	       "     on MzScheme, see"
-	       "     http://www.cs.rice.edu/CS/PLT/packages/mzscheme/"
-	       "     and for the CGI utilities, contact Shriram Krishnamurthi"
-	       "     (shriram@cs.rice.edu). -->"
+	       "      http://www.plt-scheme.org/software/mzscheme/"
+	       "     and for the CGI utilities, contact"
+	       "     (sk@cs.brown.edu). -->"
 	       
 	       "<head>"
 	       ,(sa "<title>" title "</title>")

@@ -390,7 +390,7 @@ BOOL isEmptyClsId(CLSID clsId) {
 void scheme_release_typedesc(void *p,void *) {
   MX_TYPEDESC *pTypeDesc;
   ITypeInfo *pITypeInfo,*pITypeInfoImpl;
-  IDispatch *pInterface;  
+  IDispatch *pInterface;
 
   /* NEED TO DO SOME NEW CLEANUP HERE */
 
@@ -1336,7 +1336,7 @@ void connectComObjectToEventSink(MX_COM_Object *obj) {
   }
 
   // COM won't take a function ptr
-  pISink->set_extension_table((int)scheme_extension_table); 
+  pISink->set_extension_table((int)scheme_extension_table);
 
   pISink->set_myssink_table((int)&myssink_table);
 
@@ -1613,7 +1613,7 @@ MX_TYPEDESC *doTypeDescFromTypeInfo(BSTR name,INVOKEKIND invKind,
       // release interfaces
       pITypeInfoImpl->ReleaseTypeAttr(pTypeAttrImpl);
       pITypeInfoImpl->Release();
-      
+
       if (pTypeDesc) {
 	return pTypeDesc;
       }
@@ -1671,7 +1671,7 @@ MX_TYPEDESC *doTypeDescFromTypeInfo(BSTR name,INVOKEKIND invKind,
 	  pITypeInfoImpl->ReleaseTypeAttr(pTypeAttrImpl);
 	}
 	else {
-	  pITypeInfoImpl->Release(); 
+	  pITypeInfoImpl->Release();
 	}
       }
     }
@@ -2471,7 +2471,7 @@ Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL is
 
   case VT_USERDEFINED :
     // Reporting this as `user-defined' is sure to confuse somebody.
-    // The convention is that these are ENUMs that the caller and the 
+    // The convention is that these are ENUMs that the caller and the
     // callee have agreed upon.  For our purposes, they will be INTs,
     // but we'll report them as an enumeration.
     // s = "user-defined";
@@ -2571,7 +2571,7 @@ short getOptParamCount(FUNCDESC *pFuncDesc,short hi) {
 
 BOOL isLastParamRetval(short int numParams,
 		       INVOKEKIND invKind,FUNCDESC *pFuncDesc) {
-  return (numParams > 0 && 
+  return (numParams > 0 &&
 	  (invKind == INVOKE_PROPERTYGET || invKind == INVOKE_FUNC)
 	  &&
 	  (pFuncDesc->lprgelemdescParam[numParams-1].paramdesc.wParamFlags
@@ -2650,7 +2650,7 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
       }
     }
     else {
-      lastParamIsRetval = 
+      lastParamIsRetval =
 	isLastParamRetval(numActualParams,invKind,pFuncDesc);
 
       if (lastParamIsRetval) {
@@ -3096,7 +3096,7 @@ void marshalSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
 
   case VT_I1 | VT_BYREF :
 
-    pVariantArg->pcVal = 
+    pVariantArg->pcVal =
       (char *)allocParamMemory(sizeof(char));
     *pVariantArg->pcVal = SCHEME_CHAR_VAL(SCHEME_BOX_VAL(val));
     break;
@@ -3279,7 +3279,7 @@ void marshalSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
     // the IUnknown pointer of a COM object.
     // VT_USERDEFINED | VT_BYREF is illegal in the DISPPARAMS, so
     // we bash it out to VT_UNKNOWN.
- 
+
   case VT_USERDEFINED | VT_BYREF :
       pVariantArg->vt = VT_UNKNOWN;
 
@@ -3361,7 +3361,7 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
   case VT_I8 :
     LARGE_INTEGER li;
     li.QuadPart = pVariantArg->llVal;
-    
+
     return scheme_make_integer_value_from_long_long (li.u.LowPart, li.u.HighPart);
 
   case VT_UI1 :
@@ -3371,7 +3371,7 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
   case VT_UI2 :
 
     return scheme_make_integer (pVariantArg->uiVal);
- 
+
   case VT_UI4 :
 
     return scheme_make_integer_value_from_unsigned (pVariantArg->ulVal);
@@ -3381,7 +3381,7 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
     uli.QuadPart = pVariantArg->ullVal;
 
     return scheme_make_integer_value_from_unsigned_long_long (uli.u.LowPart, uli.u.HighPart);
-     
+
   case VT_INT :
 
     return scheme_make_integer(pVariantArg->intVal);
@@ -3427,7 +3427,7 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
     return mx_make_idispatch(pVariantArg->pdispVal);
 
   case VT_UNKNOWN :
-      
+
     return mx_make_iunknown (pVariantArg->punkVal);
 
   default :
@@ -3457,7 +3457,7 @@ Scheme_Object *retvalVariantToSchemeObject(VARIANTARG *pVariantArg) {
   case VT_BYREF|VT_I8 :
     LARGE_INTEGER li;
     li.QuadPart = *pVariantArg->pllVal;
-    return 
+    return
       scheme_make_integer_value_from_long_long(li.u.LowPart,li.u.HighPart);
   case VT_BYREF|VT_R4 :
 #ifdef MZ_USE_SINGLE_FLOATS
@@ -3496,7 +3496,7 @@ Scheme_Object *retvalVariantToSchemeObject(VARIANTARG *pVariantArg) {
   case VT_BYREF|VT_UI8 :
     ULARGE_INTEGER uli;
     uli.QuadPart = *pVariantArg->pullVal;
-    return 
+    return
       scheme_make_integer_value_from_unsigned_long_long(uli.u.LowPart,
 							uli.u.HighPart);
   case VT_BYREF|VT_INT :
@@ -3535,7 +3535,7 @@ void unmarshalVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
 
   case VT_UI2 | VT_BYREF :
 
-    SCHEME_BOX_VAL(val) = 
+    SCHEME_BOX_VAL(val) =
       scheme_make_integer_value_from_unsigned(*pVariantArg->puiVal);
     scheme_gc_ptr_ok(pVariantArg->puiVal);
     break;
@@ -3548,7 +3548,7 @@ void unmarshalVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
 
   case VT_UI4 | VT_BYREF :
 
-    SCHEME_BOX_VAL(val) = 
+    SCHEME_BOX_VAL(val) =
       scheme_make_integer_value_from_unsigned(*pVariantArg->pulVal);
     scheme_gc_ptr_ok(pVariantArg->pulVal);
     break;
@@ -3561,7 +3561,7 @@ void unmarshalVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
 
   case VT_UINT | VT_BYREF :
 
-    SCHEME_BOX_VAL(val) = 
+    SCHEME_BOX_VAL(val) =
       scheme_make_integer_value_from_unsigned(*pVariantArg->puintVal);
     scheme_gc_ptr_ok(pVariantArg->puintVal);
     break;
@@ -3659,7 +3659,7 @@ short int buildMethodArgumentsUsingDefaults (INVOKEKIND invKind,
 
   // First argument is object, second is name of method.
   numParamsPassed = argc - 2;
-  
+
   // Need a return value if property get or invoking a function.
   lastParamIsRetval = (invKind == INVOKE_PROPERTYGET || invKind == INVOKE_FUNC);
 
@@ -3742,7 +3742,7 @@ void checkArgTypesAndCounts(FUNCDESC *pFuncDesc,
 
   numParamsPassed = pFuncDesc->cParams;
 
-  argsCount->retvalInParams = 
+  argsCount->retvalInParams =
     isLastParamRetval(numParamsPassed,invKind,pFuncDesc);
 
   if (argsCount->retvalInParams) {
@@ -3779,7 +3779,7 @@ void checkArgTypesAndCounts(FUNCDESC *pFuncDesc,
   }
   else {
 
-    // optional parameters with default values 
+    // optional parameters with default values
     // not counted in pFuncDesc->cParamsOpt
 
     if (argc < numParamsPassed - numOptParams + 2 ||  // too few
@@ -3799,7 +3799,7 @@ void checkArgTypesAndCounts(FUNCDESC *pFuncDesc,
     // i = index of ELEMDESC's
     // j = index of actual args in argv
 
-    if (direct && k == lcidIndex) { // skip an entry 
+    if (direct && k == lcidIndex) { // skip an entry
       k++;
     }
 
@@ -3984,7 +3984,7 @@ short int buildMethodArguments(MX_TYPEDESC *pTypeDesc,
 			       int argc, Scheme_Object **argv,
 			       DISPPARAMS *methodArguments) {
     return (pTypeDesc == NULL)
-        ? buildMethodArgumentsUsingDefaults (invKind, argc, argv, 
+        ? buildMethodArgumentsUsingDefaults (invKind, argc, argv,
                                              methodArguments)
         : (pTypeDesc->descKind == funcDesc)
         ? buildMethodArgumentsUsingFuncDesc (pTypeDesc->funcdescs.pFuncDesc,
@@ -4117,15 +4117,15 @@ static Scheme_Object *mx_make_direct_call(int argc,Scheme_Object **argv,
   // push return value ptr
 
   VariantInit(&retvalVa);
-  if (argsCount.retvalInParams) { 
+  if (argsCount.retvalInParams) {
     retvalVa.vt = getVarTypeFromElemDesc(&pFuncDesc->lprgelemdescParam[pFuncDesc->cParams-1]);
   }
   else {
     retvalVa.vt = getVarTypeFromElemDesc(&pFuncDesc->elemdescFunc);
   }
 
-  if (invKind != INVOKE_PROPERTYPUT && 
-      retvalVa.vt != VT_VOID && 
+  if (invKind != INVOKE_PROPERTYPUT &&
+      retvalVa.vt != VT_VOID &&
       retvalVa.vt != VT_HRESULT) {
     retvalVa.vt |= VT_BYREF;
     allocateDirectRetval(&retvalVa);
@@ -4152,14 +4152,14 @@ static Scheme_Object *mx_make_direct_call(int argc,Scheme_Object **argv,
      char buff[128];
      sprintf(buff,"COM method `%s' failed",name);
      codedComError(buff,hr);
-  } 
+  }
 
   // unmarshal boxed values, cleanup
   i = argc - 1;
-  j = argc - 3; 
+  j = argc - 3;
   if (lcidIndex != NO_LCID && lcidIndex <= j + 1) {
-    j++; 
-  } 
+    j++;
+  }
   vaPtr = argVas + j;
   for ( ; j >= 0; i--,j--,vaPtr--) {
     if (j == lcidIndex) {
@@ -4229,7 +4229,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   // try direct call via function pointer
   // otherwise, use COM Automation
 
-  if (pTypeDesc && 
+  if (pTypeDesc &&
       (pTypeDesc->funOffset != NO_FUNPTR) &&
       /* assignment */
       (retval = mx_make_direct_call(argc,argv,invKind,
@@ -4240,7 +4240,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   if (pTypeDesc) {
     dispid = pTypeDesc->memID;
   }
-  else { 
+  else {
     // If there is no pTypeDesc, then we have to wing it.
     // Look for a dispid for the method name.  If we find it, just push
     // the arguments and let the COM object figure things out.
@@ -4255,13 +4255,13 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
       sprintf(buff,"%s: Unable to translate name \"%s\" to Unicode",
 	      mx_fun_string(invKind),name);
       scheme_signal_error(buff);
-    }      
-    
+    }
+
     LPOLESTR namearray = (LPOLESTR)&namebuf;
-    
-    hr = pIDispatch->GetIDsOfNames (IID_NULL,&namearray,1, 
-				    LOCALE_SYSTEM_DEFAULT,&dispid); 
-    
+
+    hr = pIDispatch->GetIDsOfNames (IID_NULL,&namearray,1,
+				    LOCALE_SYSTEM_DEFAULT,&dispid);
+
     if (FAILED (hr)) {
       char *funString = mx_fun_string(invKind);
       switch (hr) {
@@ -4295,7 +4295,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   hr = pIDispatch->Invoke(dispid,IID_NULL,LOCALE_SYSTEM_DEFAULT,
 			  invKind,
 			  &methodArguments,
-			  (invKind == INVOKE_PROPERTYPUT) ? 
+			  (invKind == INVOKE_PROPERTYPUT) ?
 			    NULL : &methodResult,
 			  &exnInfo,
 			  &errorIndex);

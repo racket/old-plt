@@ -152,7 +152,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
         snanchk(d1); \
         wrap(if (MZ_IS_POS_INFINITY(d1)) return combineinf(swaybigf, n2);) \
         wrap(if (MZ_IS_NEG_INFINITY(d1)) return combineinf(swaysmallf, n2);) \
-        wrap(if (!d1) return combinezero(sfirstzero, n2, d1);) \
+        wrap(if (d1 == 0.0) return combinezero(sfirstzero, n2, d1);) \
 	return fop(d1, scheme_rational_to_float(n2)); \
       } \
       complexwrap( \
@@ -198,7 +198,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
         nanchk(d1); \
         wrap(if (MZ_IS_POS_INFINITY(d1)) return combineinf(waybigf, n2);) \
         wrap(if (MZ_IS_NEG_INFINITY(d1)) return combineinf(waysmallf, n2);) \
-        wrap(if (!d1) return combinezero(firstzero, n2, d1);) \
+        wrap(if (d1 == 0.0) return combinezero(firstzero, n2, d1);) \
 	return fop(d1, scheme_rational_to_double(n2)); \
       } \
       complexwrap( \
@@ -263,7 +263,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
          snanchk(d2); \
          wrap(if (MZ_IS_POS_INFINITY(d2)) return combineinf(swaysmalls, n1);) \
          wrap(if (MZ_IS_NEG_INFINITY(d2)) return combineinf(swaybigs, n1);) \
-         wrap(if (!d2) return combinezero(ssecondzero, n1, d2);) \
+         wrap(if (d2 == 0.0) return combinezero(ssecondzero, n1, d2);) \
 	 return fop(scheme_rational_to_float(n1), d2); \
        } \
        ) \
@@ -273,7 +273,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
          nanchk(d2); \
          wrap(if (MZ_IS_POS_INFINITY(d2)) return combineinf(waysmalls, n1);) \
          wrap(if (MZ_IS_NEG_INFINITY(d2)) return combineinf(waybigs, n1);) \
-         wrap(if (!d2) return combinezero(secondzero, n1, d2);) \
+         wrap(if (d2 == 0.0) return combinezero(secondzero, n1, d2);) \
 	 return fop(scheme_rational_to_double(n1), d2); \
        } \
        if (t2 == scheme_bignum_type) \

@@ -905,7 +905,7 @@ zero_p (int argc, Scheme_Object *argv[])
     if (MZ_IS_NAN(SCHEME_FLT_VAL(o)))
       return scheme_false;
 # endif
-    return SCHEME_FLT_VAL(o) ? scheme_false : scheme_true;
+    return (SCHEME_FLT_VAL(o) == 0.0f) ? scheme_true : scheme_false;
   }
 #endif
   if (t == scheme_double_type) {
@@ -913,7 +913,7 @@ zero_p (int argc, Scheme_Object *argv[])
     if (MZ_IS_NAN(SCHEME_DBL_VAL(o)))
       return scheme_false;
 #endif
-    return SCHEME_DBL_VAL(o) ? scheme_false : scheme_true;
+    return (SCHEME_DBL_VAL(o) == 0.0) ? scheme_true : scheme_false;
   }
 
   if (t == scheme_complex_izi_type) {
@@ -1030,7 +1030,7 @@ scheme_odd_p (int argc, Scheme_Object *argv[])
     double d = SCHEME_FLOAT_VAL(v);
     if (MZ_IS_POS_INFINITY(d) || MZ_IS_NEG_INFINITY(d))
       return scheme_true;
-    return fmod(d, 2.0) ? scheme_true : scheme_false;
+    return (fmod(d, 2.0) == 0.0) ? scheme_false : scheme_true;
   }
 
   NEED_INTEGER(odd?);
@@ -1056,7 +1056,7 @@ even_p (int argc, Scheme_Object *argv[])
     double d = SCHEME_FLOAT_VAL(v);
     if (MZ_IS_POS_INFINITY(d) || MZ_IS_NEG_INFINITY(d))
       return scheme_true;
-    return fmod(d, 2.0) ? scheme_false : scheme_true;
+    return (fmod(d, 2.0) == 0.0) ? scheme_true : scheme_false;
   }
 
   NEED_INTEGER(even?);
@@ -1385,9 +1385,9 @@ scheme_bin_quotient (const Scheme_Object *n1, const Scheme_Object *n2)
 		     "quotient: undefined for 0");
   if (
 #ifdef MZ_USE_SINGLE_FLOATS
-      (SCHEME_FLTP(n2) && !SCHEME_FLT_VAL(n2)) ||
+      (SCHEME_FLTP(n2) && (SCHEME_FLT_VAL(n2) == 0.0f)) ||
 #endif
-      (SCHEME_DBLP(n2) && !SCHEME_DBL_VAL(n2)))
+      (SCHEME_DBLP(n2) && (SCHEME_DBL_VAL(n2) == 0.0)))
     scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, n2,
 		     "quotient: undefined for 0.0");
 
@@ -1462,14 +1462,16 @@ rem_mod (int argc, Scheme_Object *argv[], char *name, int first_sign)
 
   if (SCHEME_INTP(n2) && !SCHEME_INT_VAL(n2))
     scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, n2,
-			"%s: undefined for 0", name);
+		     "%s: undefined for 0", name);
   if (
 #ifdef MZ_USE_SINGLE_FLOATS
-      (SCHEME_FLTP(n2) && !SCHEME_FLT_VAL(n2)) ||
+      (SCHEME_FLTP(n2) && (SCHEME_FLT_VAL(n2) == 0.0f)) ||
 #endif
-      (SCHEME_DBLP(n2) && !SCHEME_DBL_VAL(n2)))
+      (SCHEME_DBLP(n2) && (SCHEME_DBL_VAL(n2) == 0.0)))
     scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, n2,
-			"%s: undefined for 0.0", name);
+		     "%s: undefined for %s0.0",
+		     name,
+		     minus_zero_p(SCHEME_FLOAT_VAL(n2)) ? "-" : "");
 
   if (SCHEME_INTP(n1) && SCHEME_INTP(n2)) {
     long a, b, na, nb, v;
@@ -2239,7 +2241,7 @@ atan_prim (int argc, Scheme_Object *argv[])
       return NULL;
     }
 
-    if (!v && !v2) {
+    if ((v == 0.0) && (v2 == 0.0)) {
 #ifdef MZ_USE_SINGLE_FLOATS
       if (single == 2)
 	return zerof;
@@ -2340,12 +2342,12 @@ static double sch_pow(double x, double y)
   } else if (MZ_IS_NEG_INFINITY(y)) {
     return 0.0;
   } else if (MZ_IS_POS_INFINITY(x)) {
-    if (!y)
+    if (y == 0.0)
       return 1.0;
     else
       return scheme_infinity_val;
   } else if (MZ_IS_NEG_INFINITY(x)) {
-    if (!y)
+    if (y == 0.0)
       return 1.0;
     else {
       if (fmod(y, 2.0) == 1.0)
@@ -2508,9 +2510,10 @@ static Scheme_Object *angle (int argc, Scheme_Object *argv[])
 #ifdef MZ_USE_SINGLE_FLOATS
     if (SCHEME_FLTP(o)) {
       float v = SCHEME_FLT_VAL(o);
-      if (!v)
+      if (v == 0.0f)
 	scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, o,
-			 "angle: undefined for 0.0");
+			 "angle: undefined for %s0.0",
+			 minus_zero_p(v) ? "-" : "");
       if (v > 0)
 	return zeroi;
       else
@@ -2519,9 +2522,10 @@ static Scheme_Object *angle (int argc, Scheme_Object *argv[])
 #endif
     if (SCHEME_DBLP(o)) {
       double v = SCHEME_DBL_VAL(o);
-      if (!v)
+      if (v == 0.0)
 	scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, o,
-			 "angle: undefined for 0.0");
+			 "angle: undefined for %s0.0",
+			 minus_zero_p(v) ? "-" : "");
       if (v > 0)
 	return zeroi;
       else
@@ -2670,7 +2674,7 @@ static char *double_to_string (double d)
   else if (MZ_IS_NEG_INFINITY(d))
     return minus_infinity_str;
 
-  if (!d) {
+  if (d == 0.0) {
     /* Check for -0.0, since some printers get it wrong. */
     if (minus_zero_p(d))
       return "-0.0";
@@ -3264,7 +3268,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	return scheme_false;
 
       /* Special case: angle is zero => real number */
-      if (!d2)
+      if (d2 == 0.0)
 	return scheme_read_number(first, has_at,
 				  is_float, is_not_float,
 				  radix, 1, next_complain,
@@ -3591,7 +3595,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       n = CHECK_SINGLE(n, single);
 
     if (SCHEME_FLOATP(n) && str[0] == '-') {
-      if (!SCHEME_FLOAT_VAL(n)) {
+      if (SCHEME_FLOAT_VAL(n) == 0.0) {
 	/* 0.0 => -0.0 */
 #ifdef MZ_USE_SINGLE_FLOATS
 	if (SCHEME_FLTP(n)) {

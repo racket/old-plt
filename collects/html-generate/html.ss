@@ -67,6 +67,11 @@
 	    ((number? input) input)
 	    (else "Cannot canonicalize this option" input)))))
 
+; canonicalize-html : take an html object (?) and leave it alone if it is a
+; symbol or html, make it safe if it is a string, and otherwise run it through
+; format and then recur. I'm a wee bit confused.
+; (union string symbol html other) -> (union string symbol html number)
+
 (define (canonicalize-html object)
   (cond 
 	((string? object)        (safe-html object))
@@ -409,13 +414,16 @@
    ;; Kathi added
    (border integer?)
    (width string?)
+   (height string?) ; added by jbc 5/1999
    (cellpadding integer?)
    (cellspacing integer?)
    (bgcolor color?)))
 (define-html-container (TABLE-DATA "TD")
   ((ALIGN (member-of? '(LEFT CENTER RIGHT)))
    (VALIGN (member-of? '(TOP CENTER BOTTOM)))
-   (bgcolor color?)))
+   (bgcolor color?)
+   ;; following added by jbc 5/1999
+   (colspan number?)))
 (define-html-container (TABLE-ROW "TR")
   ((ALIGN (member-of? '(LEFT CENTER RIGHT)))))
 (define-html-container TITLE ())

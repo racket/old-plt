@@ -1,0 +1,76 @@
+To use the html-generate library, you must create elements of the 
+html-page datatype, and then emit them to a file.  I'm confused about what 
+all this has to do with CGI, and what the mime stuff is all about.
+
+How do you stick stuff together in a page?
+
+*********
+
+okay, the file cgi-support.ss is actually written by kathi fisler, and is
+not really part of the package. So, it's back to the drawing board vis a 
+vis how the thing actually works.
+
+functions in html.ss:
+
+; safe-html : takes a symbol or string or number and replaces all occurrences
+; of the dangerous characters with their HTML equivalents
+; ((union string symbol number) -> (union string number))
+
+an html-type is (make-html-type name tag)
+an html is (make-html type)
+
+okay, so this whole type hierarchy thing is a bit wierd.  Why? because we
+have the html-type structure, but then the types of html objects also appear
+to be represented through the derivation hierarchy; i.e., 
+
+
+
+..
+
+files in the package:
+
+html.ss : most of the code for the creation of html-type stuff. This file
+seems to encapsulate most of the type and structure hierarchy for the html
+package
+
+http.ss : described as "Wrapper for ``parsed header'' scripts." I don't
+know what "parsed header" scripts are.  In fact, I'm probably the wrong
+person to be doing this, as I don't really know how CGI works.
+
+httphtml.ss : simply a wrapper file that loads both html.ss and http.ss. I'm
+going to delete it.  Good-bye.
+
+inet.ss : it appears that inet.ss was unit-ized. except that inet.ss refers
+to inetu.ss, which, er, doesn't exist.  plus, the unit has a mzlib:inet@ 
+name, which would seem to suggest that it was part of mzlib.  I'm confused.
+What else is new?
+
+inets.ss: signature for the non-existent unit mzlib:inet@.
+
+list.ss: some kind of list library from MIT. I'd really love to eliminate all
+dependencies on this code.
+
+mime.ss: a short file to "Emit objects with correct MIME codes." Basically a 
+table which allows you to register routines attached to predicates.  If an
+object is passed in, this code finds a predicate which the object passes
+and then invokes the attached routine.  Just a guess, mind you.
+
+***************
+
+Here's my understanding of the basic mechanism: the world here is divided
+into two types of things: html elements, and html containers. Each one is 
+declared using a macro which creates:
+(1) a type (?)
+(2) a maker* (?)
+(3) a maker
+(4) a predicate
+
+The type is used so that the predicate can work.  I really don't see why 
+all of this can't be subsumed by the predicates that you get when you 
+use define-struct.
+
+Also, what the heck is "style" and why is it always #f?
+
+Okay, I've figured this out: each item is curried w.r.t. its options and its 
+contents.  For example, html-body is a function which takes a set of options
+and returns a function which takes a body and returns a ... whatever.

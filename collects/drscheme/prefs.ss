@@ -88,7 +88,7 @@
 		  choice)]
 	       [else
 		(make-object button%
-		  "Set Font"
+		  "Set Font..."
 		  options-panel
 		  (lambda xxx
 		    (let ([choice (get-choices-from-user

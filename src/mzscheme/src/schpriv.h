@@ -988,7 +988,7 @@ Scheme_Object *scheme_bignum_max(const Scheme_Object *a, const Scheme_Object *b)
 Scheme_Object *scheme_bignum_min(const Scheme_Object *a, const Scheme_Object *b);
 void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
 			  Scheme_Object **qp, Scheme_Object **rp, int norm);
-Scheme_Object *scheme_bignum_power(const Scheme_Object *a, const Scheme_Object *b);
+Scheme_Object *scheme_generic_integer_power(const Scheme_Object *a, const Scheme_Object *b);
 Scheme_Object *scheme_bignum_gcd(const Scheme_Object *a, const Scheme_Object *b);
 Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n);
 Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r);
@@ -1199,8 +1199,6 @@ Scheme_Object *scheme_bitwise_shift(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_bitwise_and(int argc, Scheme_Object *argv[]);
 
 int scheme_nonneg_exact_p(Scheme_Object *n);
-
-Scheme_Object *scheme_generic_integer_power(const Scheme_Object *o, const Scheme_Object *p);
 
 #ifdef TIME_TYPE_IS_UNSIGNED
 # define scheme_make_integer_value_from_time(t) scheme_make_integer_value_from_unsigned((unsigned long)t)

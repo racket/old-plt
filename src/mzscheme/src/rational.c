@@ -340,43 +340,6 @@ Scheme_Object *scheme_rational_divide(const Scheme_Object *n, const Scheme_Objec
   return scheme_rational_multiply(n, (Scheme_Object *)&d_inv);
 }
 
-Scheme_Object *scheme_generic_integer_power(const Scheme_Object *o, const Scheme_Object *p)
-{
-  Scheme_Object *r = one, *zero = scheme_make_integer(0);
-  Scheme_Object *two = scheme_make_integer(2);
-  char *bitstream;
-  int bs_size = 0, bs_alloc = 10;
-
-  bitstream = (char *)scheme_malloc_atomic(bs_alloc);
-
-  while (p != zero) {
-    if (bs_size >= bs_alloc) {
-      char *old = bitstream;
-
-      bs_alloc *= 2;
-      bitstream = (char *)scheme_malloc_atomic(bs_alloc);
-      memcpy(bitstream, old, bs_size);
-    }
-
-    if (SCHEME_TRUEP(scheme_odd_p(1, (Scheme_Object **)&p))) {
-      bitstream[bs_size] = 1;
-      p = scheme_sub1(1, (Scheme_Object **)&p);
-    } else
-      bitstream[bs_size] = 0;
-
-    bs_size++;
-    p = scheme_bin_quotient(p, two);
-  }
-
-  while (bs_size--) {
-    r = scheme_bin_mult(r, r);
-    if (bitstream[bs_size])
-      r = scheme_bin_mult(r, o);
-  }
-
-  return r;
-}
-
 Scheme_Object *scheme_rational_power(const Scheme_Object *o, const Scheme_Object *p)
 {
   double b, e, v;

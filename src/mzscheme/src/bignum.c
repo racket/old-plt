@@ -645,31 +645,31 @@ Scheme_Object *do_big_power(const Scheme_Object *a, const Scheme_Object *b)
   /* This is really a fancy way of sleeping, because it's only used
      when b is a bignum, which means that we have no chance of actually
      reaching the result. But just in case... */
-  Scheme_Object *a_acc, *b_acc, *result, *two;
+  Scheme_Object *result, *v[2];
 
-  a_acc = bignum_copy(a, 0);
-  b_acc = bignum_copy(b, 0);
-  result = scheme_make_bignum(1);
-  two = scheme_make_bignum(2);
+  result = scheme_make_integer(1);
+  v[1] = scheme_make_integer(-1);
 
-  while (SCHEME_BIGLEN(b_acc) > 0)
-  {
-    if (SCHEME_BIGDIG(b_acc)[0] & 0x1) /* if (odd?) */
-      result = bignum_multiply(a_acc, result, 0);
-    a_acc = bignum_multiply(a_acc, a_acc, 0);
-    scheme_bignum_divide(b_acc, two, &b_acc, NULL, 0);
+  while (SCHEME_FALSEP(scheme_zero_p(1, (Scheme_Object **)&b))) {
+    if (SCHEME_TRUEP(scheme_odd_p(1, (Scheme_Object **)&b)))
+      result = scheme_bin_mult(a, result);
+    a = scheme_bin_mult(a, a);
+
+    v[0] = (Scheme_Object *)b;
+    b = scheme_bitwise_shift(2, v);
   }
-  return scheme_bignum_normalize(result);
+
+  return result;
 }
 
 
-Scheme_Object *scheme_bignum_power(const Scheme_Object *a, const Scheme_Object *b)
+Scheme_Object *scheme_generic_integer_power(const Scheme_Object *a, const Scheme_Object *b)
 {
   unsigned long exponent;
   if (scheme_get_unsigned_int_val((Scheme_Object *)b, &exponent))
-    return scheme_bignum_normalize(do_power(a, exponent));
+    return do_power(a, exponent);
   else
-    return scheme_bignum_normalize(do_big_power(a, b));
+    return do_big_power(a, b);
 }
 
 Scheme_Object *scheme_bignum_max(const Scheme_Object *a, const Scheme_Object *b)

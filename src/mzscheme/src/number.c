@@ -1717,13 +1717,13 @@ static Scheme_Object *fixnum_expt(int x, int y)
     {
       /* x^y*result is invariant and result <= x */
       if (x > 46339 && y > 1) /* x * x won't fit in 31 bits */
-        return scheme_bignum_power(scheme_make_integer_value(orig_x), scheme_make_integer_value(orig_y));
+        return scheme_generic_integer_power(scheme_make_integer_value(orig_x), scheme_make_integer_value(orig_y));
 
       if (y & 0x1) /* if (odd?) */
       {
         long next_result = x * result;
         if (y == 1 && x > 46339 && !(next_result / x == result))
-          return scheme_bignum_power(scheme_make_integer_value(orig_x), scheme_make_integer_value(orig_y));
+          return scheme_generic_integer_power(scheme_make_integer_value(orig_x), scheme_make_integer_value(orig_y));
         else
           result = next_result;
       }
@@ -1783,7 +1783,7 @@ GEN_BIN_PROT(bin_expt);
 				              scheme_real_to_complex(scheme_make_float(y))) \
                         : scheme_make_float(sch_pow((double)x, (double)y)))
 
-static GEN_BIN_OP(bin_expt, "expt", fixnum_expt, F_EXPT, FS_EXPT, scheme_bignum_power, scheme_rational_power, scheme_complex_power, GEN_RETURN_0_USUALLY, GEN_RETURN_1, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
+static GEN_BIN_OP(bin_expt, "expt", fixnum_expt, F_EXPT, FS_EXPT, scheme_generic_integer_power, scheme_rational_power, scheme_complex_power, GEN_RETURN_0_USUALLY, GEN_RETURN_1, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
 
 Scheme_Object *
 scheme_expt(int argc, Scheme_Object *argv[])

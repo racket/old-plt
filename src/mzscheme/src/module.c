@@ -1344,7 +1344,11 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
 	for (l = menv->require_names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
 	  idx = SCHEME_CAR(l);
 	  name = scheme_module_resolve(idx);
-	  im = (Scheme_Module *)scheme_hash_get(menv->module_registry, name);
+
+	  if (SAME_OBJ(name, kernel_symbol))
+	    im = kernel;
+	  else
+	    im = (Scheme_Module *)scheme_hash_get(menv->module_registry, name);
 
 	  add_require_renames(rn, im, idx);
 	}

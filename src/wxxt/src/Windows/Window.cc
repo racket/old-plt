@@ -502,7 +502,7 @@ wxCursor *wxWindow::SetCursor(wxCursor *new_cursor)
 				      | ButtonMotionMask | PointerMotionMask
 				      | PointerMotionHintMask 
 				      | EnterWindowMask | LeaveWindowMask),
-				     GETCURSOR(cursor), 
+				     c, 
 				     grabbing_panel_time);
 	  }
 	}
@@ -1634,12 +1634,14 @@ void wxWindow::WindowEventHandler(Widget w,
 	}
 	
 	if (p && p->cursor->Ok()) {
+	  Cursor c;
+	  c = GETCURSOR(p->cursor);
 	  XChangeActivePointerGrab(wxAPP_DISPLAY, 
 				   (ButtonPressMask | ButtonReleaseMask
 				    | ButtonMotionMask | PointerMotionMask
 				    | PointerMotionHintMask 
 				    | EnterWindowMask | LeaveWindowMask),
-				   GETCURSOR(p->cursor), 
+				   c, 
 				   xev->xbutton.time);
 	  if (!grabbing_panel_regsitered) {
 	    wxREGGLOB(grabbing_panel);

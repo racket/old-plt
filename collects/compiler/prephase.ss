@@ -123,6 +123,8 @@
 
  (define (new-binding gensym set-box!)
    (lambda (tlv)
+     (unless (zodiac:top-level-varref/bind/unit-unit? tlv)
+       (compiler:internal-error tlv "`binding' is not a unit-bound top-level-varref"))
      (let ([bind (zodiac:make-lexical-binding
 		  (zodiac:zodiac-origin tlv)
 		  (zodiac:zodiac-start tlv)
@@ -444,7 +446,7 @@
 			  (zodiac:lexical-binding? 
 			   (unbox (zodiac:top-level-varref/bind-slot ast))))
 		     ; This is a unit-`defined' variable; change to lexical
-		     (let* ([binding (unbox (zodiac:top-level-varref/bind-slot ast))]
+     		     (let* ([binding (unbox (zodiac:top-level-varref/bind-slot ast))]
 			    [ref (zodiac:make-lexical-varref
 				  (zodiac:zodiac-origin ast)
 				  (zodiac:zodiac-start ast)
@@ -452,10 +454,21 @@
 				  (make-empty-box)
 				  (zodiac:binding-var binding)
 				  binding)])
+		       (unless (zodiac:top-level-varref/bind/unit-unit? ast)
+			 (compiler:internal-error 
+			  ast 
+			  "lexically mapped varref is not a unit-bound top-level-varref"))
+
 		       (mrspidey:copy-annotations! ref ast)
 		       (prephase! ref in-unit? need-val? name))
 		     
 		     (begin
+		       (when (and (zodiac:top-level-varref/bind/unit? ast)
+				  (zodiac:top-level-varref/bind/unit-unit? ast))
+			 (compiler:internal-error 
+			  ast 
+			  "found unit-boiund top-level-varref without a lexical mapping"))
+
 		       (set-annotation! ast (varref:empty-attributes))
 		       
 		       (when (and (zodiac:top-level-varref? ast)

@@ -283,7 +283,12 @@
 		 ;; VARIABLE REFERENCES (A-VALUES)
 		 ;;
 		 [(zodiac:bound-varref? ast) ast]
-		 [(zodiac:top-level-varref? ast) ast]
+		 [(zodiac:top-level-varref? ast) 
+		  ;; Make sure no unit defs slipped through:
+		  (when (and (zodiac:top-level-varref/bind/unit? ast)
+			     (zodiac:top-level-varref/bind/unit-unit? ast))
+		    (compiler:internal-error ast "unit-top-level found after prephase"))
+		  ast]
 						
 		 ;;--------------------------------------------------------------------
 		 ;; LAMBDA EXPRESSIONS

@@ -102,8 +102,9 @@ are documented in the next section.
        `compile-omit-files' - a list of filenames (without paths); all
          Scheme files in the collection are compiled except for the
          files in this list.  If a file contains elaboration time
-         expressions (e.g., macros) that are not intended to be local
-         to the file, then the file should be included in this list.
+         expressions (e.g., macros, signatures) that are not intended
+         to be local to the file, then the file should be included in
+         this list.
 
        `compile-extension-omit-files' - a list of filenames to extend
          the list returned for `compile-omit-files'. Unlike the list

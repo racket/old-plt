@@ -935,12 +935,11 @@ static Scheme_Object *foreign_cpointer_p(int argc, Scheme_Object *argv[])
 #define MYNAME "cpointer-tag"
 static Scheme_Object *foreign_cpointer_tag(int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *type;
+  Scheme_Object *tag = NULL;
   if (!SCHEME_FFIANYPTRP(argv[0]))
     scheme_wrong_type(MYNAME, "cpointer", 0, argc, argv);
-  type = NULL;
-  if (SCHEME_CPTRP(argv[0])) type = SCHEME_CPTR_TYPE(argv[0]);
-  return (type==NULL) ? scheme_false : type;
+  if (SCHEME_CPTRP(argv[0])) tag = SCHEME_CPTR_TYPE(argv[0]);
+  return (tag == NULL) ? scheme_false : tag;
 }
 
 #undef MYNAME

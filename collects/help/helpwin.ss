@@ -244,9 +244,18 @@
   (define choices-sema (make-semaphore 1))
   (define choices null)
 
-  (define (add-choice type name title page label ckey)
+  (define enbolden (make-object style-delta% 'change-bold))
+
+  (define (find-start key name)
+    (let ([l (string-length key)])
+      (let loop ([n 0])
+	(if (string=? key (substring name n (+ n l)))
+	    n
+	    (loop (add1 n))))))
+
+  (define (add-choice key name title page label ckey)
     (semaphore-wait choices-sema)
-    (set! choices (cons (list type name title page label) choices))
+    (set! choices (cons (list key name title page label) choices))
     (semaphore-post choices-sema)
     (queue-callback
      (lambda ()
@@ -260,15 +269,18 @@
 	   (send editor begin-edit-sequence)
 	   (for-each
 	    (lambda (i)
-	      (let-values ([(type name title page label) (apply values i)])
-		(if type
+	      (let-values ([(key name title page label) (apply values i)])
+		(if key
 		    (begin
-		      (send editor insert " " (send editor last-position) 'same #f)
+		      (send editor insert "  " (send editor last-position) 'same #f)
 		      (let ([start (send editor last-position)])
 			(send editor insert name start 'same #f)
-			(let ([end (send editor last-position)])
+			(let ([end (send editor last-position)]
+			      [key-start (find-start key name)])
 			  (send editor insert (format " in ~s~n" title) end 'same #f)
 			  (send editor make-link-style start end)
+			  (send editor change-style enbolden (+ key-start start) 
+				(+ key-start start (string-length key)))
 			  (send editor set-clickback start end
 				(lambda (edit start end)
 				  (send results goto-url 
@@ -283,16 +295,19 @@
 					#f))))))
 		    (begin
 		      (let ([pos (send editor last-position)])
-			(send editor insert (format "In ~a:~n" name) pos 'same #f)
-			(send editor change-style (make-object style-delta% 'change-bold) 
-			      (+ pos 3) (- (send editor last-position) 2)))))))
+			(send editor insert (format"~a~a:~n" label name) pos 'same #f)
+			(send editor change-style (make-object style-delta% (car page) (cdr page))
+			      (+ pos (string-length label)) (- (send editor last-position) 2)))))))
 	    (reverse l))
 	   (send editor end-edit-sequence)
 	   (send editor lock #t))))
      #f))
 
-  (define (add-section name ckey)
-    (add-choice #f name #f #f #f ckey))
+  (define (add-doc-section name ckey)
+    (add-choice #f name #f '(change-weight . bold) "In " ckey))
+
+  (define (add-kind-section name ckey)
+    '(add-choice #f name #f '(change-style . slant) " " ckey))
 
   (define not-break? (lambda (x) (not (exn:misc:user-break? x))))
 
@@ -347,12 +362,15 @@
      (regexp-replace*
       "<[^>]*>"
       (regexp-replace* 
-       "&gt;"
-       (regexp-replace*
-	"&lt;"
-	s
-	"<")
-       ">")
+       "&amp;"
+       (regexp-replace* 
+	"&gt;"
+	(regexp-replace*
+	 "&lt;"
+	 s
+	 "<")
+	">")
+       "\\&")
       "")
      ""))
 
@@ -522,11 +540,13 @@
 	   (set! hit-count 0)
 	   (for-each
 	    (lambda (doc doc-name doc-kind)
-	      (define found-one? #f)
-	      (define (found)
-		(unless found-one?
-		  (set! found-one? #t)
-		  (add-section doc-name ckey))
+	      (define found-one #f)
+	      (define (found kind)
+		(unless found-one
+		  (add-doc-section doc-name ckey))
+		(unless (equal? found-one kind)
+		  (set! found-one kind)
+		  (add-kind-section kind ckey))
 		(set! hit-count (add1 hit-count))
 		(when (= hit-count MAX-HIT-COUNT)
 		  (break-thread (current-thread))))
@@ -536,11 +556,13 @@
 			    [(text) (load-txt-keywords doc)]
 			    [else null])]
 		    [add-key-choice (lambda (v)
-				      (found)
+				      (found "keyword entries")
 				      (add-choice
-				       "key" (cadr v) (list-ref v 4)
+				       (car v) ; key
+				       (cadr v) ; display
+				       (list-ref v 4) ; title
 				       (build-path doc (list-ref v 2))
-				       (list-ref v 3)
+				       (list-ref v 3) ; label
 				       ckey))])
 		(unless regexp?
 		  (for-each
@@ -564,15 +586,15 @@
 		      [add-index-choice (lambda (name desc)
 					  (case doc-kind
 					    [(html)
-					     (found)
-					     (add-choice "idx" name
+					     (found "index entries")
+					     (add-choice "" name
 							 (list-ref desc 2)
 							 (build-path doc (list-ref desc 0))
 							 (list-ref desc 1)
 							 ckey)]
 					    [(text)
-					     (found)
-					     (add-choice "idx" name
+					     (found "index entries")
+					     (add-choice "" name
 							 "indexed content"
 							 (build-path doc "doc.txt")
 							 desc
@@ -608,16 +630,17 @@
 			     (let ([pos (file-position (current-input-port))]
 				   [r (read-line)])
 			       (unless (eof-object? r)
-				 (when (regexp-match find r)
-				   (found)
-				   (add-choice "txt" 
-					       (if (eq? doc-kind 'html)
-						   (clean-html r)
-						   r)
-					       "content"
-					       (build-path doc f)
-					       (if (eq? doc-kind 'text) pos "NO TAG")
-					       ckey))
+				 (let ([m (regexp-match find r)])
+				   (when m
+				     (found "text")
+				     (add-choice (car m)
+						 (if (eq? doc-kind 'html)
+						     (clean-html r)
+						     r)
+						 "content"
+						 (build-path doc f)
+						 (if (eq? doc-kind 'text) pos "NO TAG")
+						 ckey)))
 				 (loop))))))))
 		   files))))
 	    docs doc-names doc-kinds)

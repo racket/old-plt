@@ -1237,10 +1237,11 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
     clause = SCHEME_STX_CAR(form);
     case_lambda_check_line(clause, orig_form, env);
 
-    c = icons(icons(lambda_symbol, clause),
-	      scheme_null);
+    c = icons(lambda_symbol, clause);
 
     c = scheme_datum_to_syntax(c, clause, clause, 0, 0);
+
+    c = cons(c, scheme_null);
 
     if (list)
       SCHEME_CDR(last) = c;
@@ -1271,10 +1272,10 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 
   for (i = 0; i < count; i++) {
     Scheme_Object *ce;
-    ce = SCHEME_STX_CAR(list);
+    ce = SCHEME_CAR(list);
     ce = scheme_compile_expr(ce, env, recs, i);
     cl->array[i] = ce;
-    list = SCHEME_STX_CDR(list);
+    list = SCHEME_CDR(list);
   }
 
   scheme_end_stubborn_change((void *)cl);

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_mgstr.cc,v 1.4 1994/08/15 21:53:50 edz Exp edz $
+ * RCS_ID:      $Id: wb_mgstr.cxx,v 1.1.1.1 1997/12/22 16:11:56 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -26,6 +26,8 @@
 #include "wx_main.h"
 
 #endif
+
+#include "ctype.h"
 
 static const char *msg_english[] =
 {
@@ -99,6 +101,34 @@ static const char *msg_german[] =
 //      (3) Add in sub-font mechanism for Unicode
 //      (4) Add in support for non 8859 languages
 
+// Match a string INDEPENDENT OF CASE
+Bool String_Match (char *str1, char *str2)
+{
+  if (str1 == NULL || str2 == NULL)
+    return FALSE;
+  if (str1 == str2)
+    return TRUE;
+
+  int len1 = strlen (str1);
+  int len2 = strlen (str2);
+  int i;
+  
+  // Search for str1 in str2
+  // Slow .... but acceptable for short strings
+  for (i = 0; i <= len2 - len1; i++) {
+    int j;
+    for (j = 0; j < len2; j++) {
+      if (toupper(str2[i + j]) != toupper(str1[j]))
+	break;
+    }
+    if (j >= len2)
+      return TRUE;
+  }
+  
+  return FALSE;
+}
+
+
 void 
 wxSetLanguage (wxlanguage_t language)
 {
@@ -109,9 +139,9 @@ wxSetLanguage (wxlanguage_t language)
       char *lang;
       if (wxGetResource ("intl", "sLanguage", (char **)&lang, "WIN.INI") == FALSE) /* MATTHEW: BC */
 	lang = copystring ("eng");
-      if (StringMatch (lang, "eng"))
+      if (String_Match (lang, "eng"))
 	wxSetLanguage (wxLANGUAGE_ENGLISH);
-      else if (StringMatch (lang, "ger"))
+      else if (String_Match (lang, "ger"))
 	wxSetLanguage (wxLANGUAGE_GERMAN);
       else
 	wxSetLanguage (wxLANGUAGE_ENGLISH);

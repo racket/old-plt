@@ -219,36 +219,21 @@ static Scheme_Object *equal_k(void)
 #endif
 }
 
+/* Number of lists/vectors/structs/boxes to compare before
+   paying for a stack check. */
+#define EQUAL_COUNT_START 20
+
 int scheme_equal (Scheme_Object *obj1, Scheme_Object *obj2)
 {
+  static int equal_counter = EQUAL_COUNT_START;
+
  top:
   if (scheme_eqv (obj1, obj2))
     return 1;
   else if (NOT_SAME_TYPE(SCHEME_TYPE(obj1), SCHEME_TYPE(obj2)))
     return 0;
   else if (SCHEME_PAIRP(obj1)) {
-#define EQUAL_COUNT_START 20
-    static int equal_counter = EQUAL_COUNT_START;
-
-    if (!--equal_counter) {
-      equal_counter = EQUAL_COUNT_START;
-      SCHEME_USE_FUEL(EQUAL_COUNT_START);
-    
-#ifdef DO_STACK_CHECK
-      {
-#include "mzstkchk.h"
-	{
-#ifndef ERROR_ON_OVERFLOW
-	  Scheme_Process *p = scheme_current_process;
-	  p->ku.k.p1 = (void *)obj1;
-	  p->ku.k.p2 = (void *)obj2;
-#endif
-	  return SCHEME_TRUEP(scheme_handle_stack_overflow(equal_k));
-	}
-      }
-#endif
-    }
-
+#   include "mzeqchk.inc"
     if (SCHEME_NULLP(obj1) && SCHEME_NULLP(obj2))
       return 1;
     if (scheme_equal(SCHEME_CAR(obj1), SCHEME_CAR(obj2))) {
@@ -257,17 +242,19 @@ int scheme_equal (Scheme_Object *obj1, Scheme_Object *obj2)
       goto top;
     } else
       return 0;
-  } else if (SCHEME_VECTORP(obj1))
+  } else if (SCHEME_VECTORP(obj1)) {
+#   include "mzeqchk.inc"
     return vector_equal(obj1, obj2);
-  else if (SCHEME_STRINGP(obj1)) {
+  } else if (SCHEME_STRINGP(obj1)) {
     int l1, l2;
     l1 = SCHEME_STRTAG_VAL(obj1);
     l2 = SCHEME_STRTAG_VAL(obj2);
     return ((l1 == l2) 
 	    && !memcmp(SCHEME_STR_VAL(obj1), SCHEME_STR_VAL(obj2), l1));
-  } else  if (SCHEME_STRUCTP(obj1))
+  } else  if (SCHEME_STRUCTP(obj1)) {
+#   include "mzeqchk.inc"
     return scheme_equal_structs(obj1, obj2);
-  else if (SCHEME_BOXP(obj1)) {
+  } else if (SCHEME_BOXP(obj1)) {
     SCHEME_USE_FUEL(1);
     obj1 = SCHEME_BOX_VAL(obj1);
     obj2 = SCHEME_BOX_VAL(obj2);

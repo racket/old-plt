@@ -269,21 +269,22 @@ void scheme_longjmpup(Scheme_Jumpup_Buf *b)
 void scheme_init_jmpup_buf(Scheme_Jumpup_Buf *b)
 {
   b->stack_size = b->stack_max_size = 0;
-  if (b->stack_copy) {
-    /* Remove the finalizer, and explicit call the finalization proc */
-    GC_register_finalizer(b->stack_copy, NULL, NULL, NULL, NULL);
-    remove_cs(b->stack_copy, NULL);
-  }
   b->stack_from = b->stack_copy = NULL;
 }
 
 void scheme_reset_jmpup_buf(Scheme_Jumpup_Buf *b)
 {
   if (b->stack_copy) {
+    /* Drop the copy of the stack */
 #ifndef USE_SENORA_GC
     GC_free(get_copy(b->stack_copy));
 #endif
     get_copy(b->stack_copy) = NULL;
+
+    /* Remove the finalizer, and explicitly call the finalization proc */
+    GC_register_finalizer(b->stack_copy, NULL, NULL, NULL, NULL);
+    remove_cs(b->stack_copy, NULL);
+
     scheme_init_jmpup_buf(b);
   }
 }

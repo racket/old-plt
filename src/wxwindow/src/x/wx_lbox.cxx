@@ -28,65 +28,32 @@
 void 
 wxListBoxCallback (Widget, XtPointer clientData, XmListCallbackStruct *cbs)
 {
-/*
-   if (cbs->reason == XmCR_EXTENDED_SELECT)
-   cout << "*** Extend select\n";
-   else if (cbs->reason == XmCR_SINGLE_SELECT)
-   cout << "*** Single select\n";
-   else if (cbs->reason == XmCR_MULTIPLE_SELECT)
-   cout << "*** Multiple select\n";
-   else if (cbs->reason == XmCR_BROWSE_SELECT)
-   cout << "*** Browse select\n";
-
-   if (cbs->selection_type == XmMODIFICATION)
-   cout << "*** Modification\n";
-   else if (cbs->selection_type == XmINITIAL)
-   cout << "*** Initial\n";
-   else if (cbs->selection_type == XmADDITION)
-   cout << "*** Addition\n";
- */
-
   wxListBox *item = (wxListBox *) clientData;
 
   wxCommandEvent *_event  = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
   wxCommandEvent &event = *_event;
 
-  switch (cbs->reason)
+  switch (cbs->reason) {
+  case XmCR_MULTIPLE_SELECT:
+  case XmCR_BROWSE_SELECT:
+  case XmCR_EXTENDED_SELECT:
     {
-    case XmCR_MULTIPLE_SELECT:
-    case XmCR_BROWSE_SELECT:
-      {
-	event.clientData = item->GetClientData (cbs->item_position - 1);
-	//event.commandString = item->GetStringSelection();
+      if (!(item->multiple & (wxMULTIPLE | wxEXTENDED))) {
 	event.commandInt = cbs->item_position - 1;
-	event.commandString = item->GetString (event.commandInt);
-	event.extraLong = TRUE;
-	event.eventObject = item;
-	item->ProcessCommand (event);
-	// NO! result of GetStringSelection is wxBuffer
-	//delete[] event.commandString;
-	break;
+	event.clientData = item->GetClientData(event.commandInt);
+	event.commandString = item->GetString(event.commandInt);
+	event.extraLong = 1;
+      } else {
+	event.commandInt = -1;
+	event.clientData = NULL;
+	event.commandString = NULL;
+	event.extraLong = 0;
       }
-    case XmCR_EXTENDED_SELECT:
-      {
-	switch (cbs->selection_type)
-	  {
-	  case XmINITIAL:
-	  case XmADDITION:
-	  case XmMODIFICATION:
-	    {
-	      event.clientData = item->GetClientData (cbs->item_position - 1);
-	      //event.commandString = item->GetStringSelection();
-	      event.commandInt = cbs->item_position - 1;
-	      event.commandString = item->GetString (event.commandInt);
-	      event.extraLong = TRUE;
-	      event.eventObject = item;
-	      item->ProcessCommand (event);
-	      break;
-	    }
-	  }
-      }
+      event.eventObject = item;
+      item->ProcessCommand (event);
+      break;
     }
+  }
 }
 
 /* Respond by getting the
@@ -181,14 +148,13 @@ Create (wxPanel * panel, wxFunction func,
 		       NULL);
 
       XmStringFree (text);
-      delete[]the_label;
     }
 
   Widget listWidget;
   Arg args[3];
   int count;
   XtSetArg (args[0], XmNlistSizePolicy, XmCONSTANT);
-//  XtSetArg(args[0], XmNlistSizePolicy, XmRESIZE_IF_POSSIBLE);
+  //  XtSetArg(args[0], XmNlistSizePolicy, XmRESIZE_IF_POSSIBLE);
   //  XtSetArg(args[0], XmNlistSizePolicy, XmVARIABLE);
   if (multiple == wxEXTENDED)
     XtSetArg (args[1], XmNselectionPolicy, XmMULTIPLE_SELECT);
@@ -196,15 +162,12 @@ Create (wxPanel * panel, wxFunction func,
     XtSetArg (args[1], XmNselectionPolicy, XmEXTENDED_SELECT);
   else
     XtSetArg (args[1], XmNselectionPolicy, XmBROWSE_SELECT);
-//  XtSetArg(args[2], XmNscrollBarDisplayPolicy, XmSTATIC);
-  if ((Multiple & wxALWAYS_SB) || (style & wxALWAYS_SB))
-    {
-      XtSetArg (args[2], XmNscrollBarDisplayPolicy, XmSTATIC);
-      count = 3;
-    }
-  else
+  //  XtSetArg(args[2], XmNscrollBarDisplayPolicy, XmSTATIC);
+  if ((Multiple & wxALWAYS_SB) || (style & wxALWAYS_SB)) {
+    XtSetArg (args[2], XmNscrollBarDisplayPolicy, XmSTATIC);
+    count = 3;
+  } else
     count = 2;
-
 
   listWidget = XmCreateScrolledList (formWidget, "listWidget", args, count);
 
@@ -217,42 +180,38 @@ Create (wxPanel * panel, wxFunction func,
 
   handle = (char *) listWidget;
 
-  if (panel->label_position == wxHORIZONTAL)
-    {
-      if (labelWidget)
-	XtVaSetValues (labelWidget,
-		       XmNtopAttachment, XmATTACH_FORM,
-		       XmNleftAttachment, XmATTACH_FORM,
-		       XmNalignment, XmALIGNMENT_BEGINNING,
-		       NULL);
-      XtVaSetValues (XtParent (listWidget),
-		     XmNleftOffset, 4,
+  if (panel->label_position == wxHORIZONTAL) {
+    if (labelWidget)
+      XtVaSetValues (labelWidget,
 		     XmNtopAttachment, XmATTACH_FORM,
-		     XmNbottomAttachment, XmATTACH_FORM,
-	   XmNleftAttachment, labelWidget ? XmATTACH_WIDGET : XmATTACH_FORM,
-		     XmNleftWidget, labelWidget ? labelWidget : formWidget,
-		     XmNrightAttachment, XmATTACH_FORM,
-		     NULL);
-    }
-  else
-    {
-      if (labelWidget)
-	XtVaSetValues (labelWidget,
-		       XmNtopAttachment, XmATTACH_FORM,
-		       XmNleftAttachment, XmATTACH_FORM,
-		       XmNalignment, XmALIGNMENT_BEGINNING,
-		       NULL);
-
-      XtVaSetValues (XtParent (listWidget),
-	    XmNtopAttachment, labelWidget ? XmATTACH_WIDGET : XmATTACH_FORM,
-		     XmNtopWidget, labelWidget ? labelWidget : formWidget,
-		     XmNbottomAttachment, XmATTACH_FORM,
 		     XmNleftAttachment, XmATTACH_FORM,
-		     XmNrightAttachment, XmATTACH_FORM,
+		     XmNalignment, XmALIGNMENT_BEGINNING,
 		     NULL);
-    }
-
-
+    XtVaSetValues (XtParent (listWidget),
+		   XmNleftOffset, 4,
+		   XmNtopAttachment, XmATTACH_FORM,
+		   XmNbottomAttachment, XmATTACH_FORM,
+		   XmNleftAttachment, labelWidget ? XmATTACH_WIDGET : XmATTACH_FORM,
+		   XmNleftWidget, labelWidget ? labelWidget : formWidget,
+		   XmNrightAttachment, XmATTACH_FORM,
+		   NULL);
+  } else {
+    if (labelWidget)
+      XtVaSetValues (labelWidget,
+		     XmNtopAttachment, XmATTACH_FORM,
+		     XmNleftAttachment, XmATTACH_FORM,
+		     XmNalignment, XmALIGNMENT_BEGINNING,
+		     NULL);
+    
+    XtVaSetValues (XtParent (listWidget),
+		   XmNtopAttachment, labelWidget ? XmATTACH_WIDGET : XmATTACH_FORM,
+		   XmNtopWidget, labelWidget ? labelWidget : formWidget,
+		   XmNbottomAttachment, XmATTACH_FORM,
+		   XmNleftAttachment, XmATTACH_FORM,
+		   XmNrightAttachment, XmATTACH_FORM,
+		   NULL);
+  }
+  
   XtManageChild (listWidget);
 
   if (width == -1)
@@ -273,8 +232,7 @@ Create (wxPanel * panel, wxFunction func,
   panel->AttachWidget (this, formWidget, x, y, width, height);
   ChangeColour ();
 
-  if (N > 0)
-  {
+  if (N > 0) {
     int i;
     for (i = 0; i < N; i++)
       Append (Choices[i]);
@@ -317,8 +275,6 @@ Create (wxPanel * panel, wxFunction func,
 wxListBox::~wxListBox (void)
 {
   wxWidgetHashTable->Delete((long)handle);
-  if (selections)
-    delete[]selections;
 }
 
 void wxListBox::ChangeColour (void)
@@ -621,7 +577,6 @@ void wxListBox::Set (int n, char *choices[])
   XmListAddItems (listBox, text, n, 0);
   for (i = 0; i < n; i++)
     XmStringFree (text[i]);
-  delete[]text;
 //wxDebugMsg("End Add\n") ;
 
   // It seems that if the list is cleared, we must re-ask for
@@ -771,8 +726,6 @@ int wxListBox::GetSelections (int **list_selections)
     {
       if (posCnt > 0)
 	{
-	  if (selections)
-	    delete[]selections;
 	  selections = new int[posCnt];
 	  int i;
 	  for (i = 0; i < posCnt; i++)
@@ -920,8 +873,6 @@ wxListBox::InsertItems(int nItems, char **Items, int /* pos */)
 #endif
   for (i = 0; i < nItems; i++)
 	XmStringFree(text[i]);
-
-  delete[] text;
 
  
  // It seems that if the list is cleared, we must re-ask for

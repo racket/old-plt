@@ -134,21 +134,6 @@ void wxStripExtension(char *buffer);
 // Get a temporary filename, opening and closing the file.
 char *wxGetTempFileName(const char *prefix, char *buf = NULL);
 
-// Expand file name (~/ and ${OPENWINHOME}/ stuff)
-char *wxExpandPath(char *dest, const char *path);
-
-// Contract w.r.t environment (</usr/openwin/lib, OPENWHOME> -> ${OPENWINHOME}/lib)
-// and make (if under the home tree) relative to home
-// [caller must copy-- volatile]
-char *wxContractPath (const char *filename,
-   const char *envname = NULL, const char *user = NULL);
-
-// Destructive removal of /./ and /../ stuff
-char *wxRealPath(char *path);
-
-// Allocate a copy of the full absolute path
-char *wxCopyAbsolutePath(const char *path);
-
 // Get first file name matching given wild card.
 // Flags are reserved for future use.
 #define wxFILE  1
@@ -236,32 +221,6 @@ wxWindow *wxFindWindowByName(char *name, wxWindow *parent = NULL);
 
 // Returns menu item id or -1 if none.
 int wxFindMenuItemId(wxFrame *frame, char *menuString, char *itemString);
-
-// A debugging stream buffer.
-// Under Windows, this writes to the Windows debug output.
-// Under other platforms, it writes to cerr.
-
-// ALl this horrible gubbins required for Borland, because the calling
-// convention needs to be the same as for streambuf.
-// Thanks to Gerhard.Vogt@embl-heidelberg.de for this solution.
-
-#if defined(__BORLANDC__) && defined(__BCOPT__) && !defined(_RTL_ALLOW_po) && !defined(__FLAT__)
-#pragma option -po-
-#endif
-
-class wxDebugStreamBuf: public streambuf
-{
-  public:
-    wxDebugStreamBuf(void);
-    ~wxDebugStreamBuf(void) {}
-
-    int overflow(int i);
-    inline int underflow(void) { return EOF; }
-    int sync(void);
-};
-#if defined(__BORLANDC__) && defined(__BCOPT__) && !defined(_RTL_ALLOW_po) && !defined(__FLAT__)
-#pragma option -po.
-#endif
 
 #if (!defined(__MINMAX_DEFINED) && !defined(max))
 #define max(a,b)            (((a) > (b)) ? (a) : (b))

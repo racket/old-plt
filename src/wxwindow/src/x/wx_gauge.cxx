@@ -82,16 +82,19 @@ Create (wxPanel * panel, char *label, int range,
 					XmNmarginWidth, 0,
 					NULL);
 
+  char *the_label = NULL;
+
   if (label)
     {
       char buf[400];
       wxStripMenuCodes(label, buf);
-      char *the_label = (style & wxFIXED_LENGTH) ? fillCopy (buf) : copystring (buf);
+      the_label = (style & wxFIXED_LENGTH) ? fillCopy(buf) : copystring(buf);
       XmString text = XmStringCreateSimple (the_label);
       labelWidget = XtVaCreateManagedWidget (buf,
 #if USE_GADGETS
-					     style & wxCOLOURED ?
-				    xmLabelWidgetClass : xmLabelGadgetClass,
+					     (style & wxCOLOURED
+					      ? xmLabelWidgetClass 
+					      : xmLabelGadgetClass),
 					     formWidget,
 #else
 					     xmLabelWidgetClass, formWidget,
@@ -106,7 +109,6 @@ Create (wxPanel * panel, char *label, int range,
 		       NULL);
 
       XmStringFree (text);
-      delete[]the_label;
     }
 
   Arg args[4];
@@ -172,19 +174,60 @@ Create (wxPanel * panel, char *label, int range,
 
   XtManageChild (gaugeWidget);
 
-  if (width == -1)
-    width = ((windowStyle & wxHORIZONTAL) ? 100 : 24);
-  if (height == -1)
-    height = ((windowStyle & wxHORIZONTAL) ? 24 : 100);
+  float lw, lh;
+  if (the_label && labelWidget) {
+    /* Get the size of the label; there should be a better way than essentially
+       inlining GetTextExtent... */
+    XFontStruct *fontStruct;
 
-  panel->AttachWidget (this, formWidget, x, y, width, height);
+    if (labelFont)
+      (void)labelFont->GetInternalFont(GetXDisplay(), &fontStruct);
+    else {
+      XmFontList list;
+      XmFontContext context;
+      XmStringCharSet ignored;
+
+      XtVaGetValues((Widget)labelWidget, XmNfontList, &list, NULL);
+      if (XmFontListInitFontContext(&context, list)) {
+	if (!XmFontListGetNextFont(context, &ignored, &fontStruct))
+	  fontStruct = 0;
+	XmFontListFreeFontContext(context);
+      } else
+	fontStruct = 0;
+    }
+
+    if (fontStruct) {
+      int direction, ascent, descent2;
+      XCharStruct overall;
+      
+      XTextExtents(fontStruct, the_label, strlen(the_label), &direction, &ascent,
+		   &descent2, &overall);
+      lw = overall.width;
+      lh = ascent + descent2;
+    } else
+      lw = lh = 0;
+  } else
+    lw = lh = 0;
+
+  if (width == -1) {
+    width = ((windowStyle & wxHORIZONTAL) ? 100 : 24);
+    if (panel->label_position == wxHORIZONTAL)
+      width += lw;
+  }
+  if (height == -1) {
+    height = ((windowStyle & wxHORIZONTAL) ? 24 : 100);
+    if (panel->label_position != wxHORIZONTAL)
+      height += lh;
+  }
+
+  panel->AttachWidget(this, formWidget, x, y, width, height);
 
   // Using a value of 0 causes a divide by zero crash in xmgauge
   // ratio = .../ (float)THIS.value;
   
   SetValue(1);
 
-//  ChangeColour ();
+  //  ChangeColour ();
 
   /* After creating widgets, no more resizes. */
   if (style & wxFIXED_LENGTH)

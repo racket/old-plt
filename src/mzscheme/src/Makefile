@@ -214,7 +214,7 @@ $(OBJDIR)/salloc.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
 $(OBJDIR)/bignum.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
           ../src/stypes.h    
 $(OBJDIR)/bool.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
-          ../src/stypes.h  
+          ../src/stypes.h mzeqchk.inc
 $(OBJDIR)/char.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
         ../src/stypes.h  
 $(OBJDIR)/complex.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h  \

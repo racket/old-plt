@@ -4,11 +4,14 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_utils.cxx,v 1.2 1998/04/11 13:58:22 mflatt Exp $
+ * RCS_ID:      $Id: wx_utils.cxx,v 1.3 1998/04/23 20:40:07 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
 // $Log: wx_utils.cxx,v $
+// Revision 1.3  1998/04/23 20:40:07  mflatt
+// menus: count, rename submenu, delete bool
+//
 // Revision 1.2  1998/04/11 13:58:22  mflatt
 // cursors
 //
@@ -365,51 +368,6 @@ wxGetFreeMemory (void)
   return -1;
 }
 
-// Sleep for nSecs seconds.
-// XView implementation according to the Heller manual
-void 
-wxSleep (int nSecs)
-{
-#if defined(__sgi) || defined(VMS)
-  sleep (nSecs);
-#else
-#if defined(SVR4) || (defined(sun) && defined(ECHRNG))
-//  struct sigset_t oldmask, mask;
-  sigset_t oldmask, mask;
-  struct timeval tv;
-
-  tv.tv_sec = nSecs;
-  tv.tv_usec = 0;
-
-  sigemptyset (&mask);
-  sigaddset (&mask, SIGIO);
-  sigaddset (&mask, SIGALRM);
-  sigprocmask (SIG_BLOCK, &mask, &oldmask);
-  if ((select (0, 0, 0, 0, &tv)) == -1)
-    {
-      perror ("select in wxSleep");
-    }
-//  sigprocmask(SIG_BLOCK, &oldmask, (sigset_t *) NULL); // Bug according to Kari
-  sigprocmask (SIG_SETMASK, &oldmask, (sigset_t *) NULL);
-#else
-  int oldmask, mask;
-  struct timeval tv;
-
-  tv.tv_sec = nSecs;
-  tv.tv_usec = 0;
-
-  mask = sigmask (SIGIO);
-  mask |= sigmask (SIGALRM);
-  oldmask = sigblock (mask);
-  if ((select (0, 0, 0, 0, &tv)) == -1)
-    {
-      perror ("select in wxSleep");
-    }
-  sigsetmask (oldmask);
-#endif
-#endif // __sgi
-}
-
 void 
 wxFlushEvents (void)
 {
@@ -469,39 +427,6 @@ wxBell ()
 
   // Use current setting for the bell
   XBell (display, 0);
-}
-
-int 
-wxGetOsVersion (int *majorVsn, int *minorVsn)
-{
-#ifdef wx_xview
-  Display *display = wxGetDisplay();
-
-  // Edward, xview_version not defined!
-  if (majorVsn)
-    *majorVsn = ProtocolVersion (display);
-  if (minorVsn)
-    *minorVsn = ProtocolRevision (display);
-
-/*
-  // Fetch Version of XView (not X11)
-  if (majorVsn)
-    *majorVsn = xview_version / 1000;
-  if (minorVsn)
-    *minorVsn = xview_version % 1000;
-*/
-  return wxXVIEW_X;
-#elif defined(wx_motif)
-  // This code is WRONG!! Does NOT return the
-  // Motif version of the libs but the X protocol
-  // version! @@@@@ Fix ME!!!!!!!!!
-  Display *display = XtDisplay (wxTheApp->topLevel);
-  if (majorVsn)
-    *majorVsn = ProtocolVersion (display);
-  if (minorVsn)
-    *minorVsn = ProtocolRevision (display);
-  return wxMOTIF_X;
-#endif
 }
 
 // Reading and writing resources (eg WIN.INI, .Xdefaults)

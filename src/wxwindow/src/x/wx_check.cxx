@@ -139,11 +139,11 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 
   handle = (char *) buttonWidget;
 
-  if (labelFont)
+  if (buttonFont)
     XtVaSetValues (buttonWidget,
 		   XmNfontList, 
 		   /* MATHEW: [4] Provide display */
-		   labelFont->GetInternalFont(XtDisplay(formWidget)), /* MATTHEW: [5] use formWidget */
+		   buttonFont->GetInternalFont(XtDisplay(formWidget)), /* MATTHEW: [5] use formWidget */
 		   NULL);
 
   XmStringFree (text);
@@ -223,18 +223,18 @@ Create (wxPanel * panel, wxFunction func, wxBitmap * bitmap,
 
   handle = (char *) buttonWidget;
 
-  if (labelFont)
+  if (buttonFont)
     XtVaSetValues (buttonWidget,
 		   XmNfontList,
 		   /* MATHEW: [4] Provide display */
-		   labelFont->GetInternalFont(XtDisplay(formWidget)), /* MATTHEW: [5] use formWidget */
+		   buttonFont->GetInternalFont(XtDisplay(formWidget)), /* MATTHEW: [5] use formWidget */
 		   NULL);
 
   XtVaSetValues (buttonWidget,
 		 XmNlabelPixmap, bitmap->GetLabelPixmap (buttonWidget),
 		 XmNselectPixmap, bitmap->GetLabelPixmap (buttonWidget),
-	  XmNlabelInsensitivePixmap, bitmap->GetInsensPixmap (buttonWidget),
-	 XmNselectInsensitivePixmap, bitmap->GetInsensPixmap (buttonWidget),
+		 XmNlabelInsensitivePixmap, bitmap->GetInsensPixmap (buttonWidget),
+		 XmNselectInsensitivePixmap, bitmap->GetInsensPixmap (buttonWidget),
 		 XmNarmPixmap, bitmap->GetArmPixmap (buttonWidget),
 		 XmNlabelType, XmPIXMAP,
 		 NULL);

@@ -398,9 +398,9 @@ ScanOtherColors(display, colors, ncolors, pixels, mask, cpp, attributes)
 
     /* retrieve information from the XpmAttributes */
     if (attributes && (attributes->valuemask & XpmColormap))
-	colormap = attributes->colormap;
+        colormap = attributes->colormap;
     else
-	colormap = XDefaultColormap(display, XDefaultScreen(display));
+        colormap = XDefaultColormap(display, XDefaultScreen(display));
     if (attributes && (attributes->valuemask & XpmRgbFilename))
 	rgb_fname = attributes->rgb_fname;
     else
@@ -707,7 +707,7 @@ GetImagePixels32(image, width, height, pmap)
 		pixel = ((unsigned long) addr[0] << 24 |
 			 (unsigned long) addr[1] << 16 |
 			 (unsigned long) addr[2] << 8 |
-			 addr[4]);
+			 (unsigned long) addr[3]);
 		if (depth != 32)
 		    pixel &= lbt;
 		if (storePixel(pixel, pmap, iptr))

@@ -121,7 +121,7 @@ parse.o:
 	$(XPM_CC) $(srcdir)/parse.c -o parse.o
 rgb.o:
 	$(XPM_CC) $(srcdir)/rgb.c -o rgb.o
-scan.o:
+scan.o: $(srcdir)/scan.c
 	$(XPM_CC) $(srcdir)/scan.c -o scan.o
 Attrib.o:
 	$(XPM_CC) $(srcdir)/Attrib.c -o Attrib.o

@@ -575,13 +575,13 @@ static Scheme_Object *check_waitable_property_value_ok(int argc, Scheme_Object *
   if (scheme_is_waitable(v))
     return v;
 
-  if (scheme_check_proc_arity(NULL, 0, 0, 1, &v))
+  if (scheme_check_proc_arity(NULL, 1, 0, 1, &v))
     return v;
   
   if (!((SCHEME_INTP(v) && (SCHEME_INT_VAL(v) >= 0))
 	|| (SCHEME_BIGNUMP(v) && SCHEME_BIGPOS(v))))
-    scheme_arg_mismatch("waitable-property-guard",
-			"property value is not a waitable, procedure (arity 0), or exact non-negative integer: ",
+    scheme_arg_mismatch("prop:waitable-guard",
+			"property value is not a waitable, procedure (arity 1), or exact non-negative integer: ",
 			v);
 
   l = argv[1];

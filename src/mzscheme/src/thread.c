@@ -2758,6 +2758,7 @@ int scheme_block_until(Scheme_Ready_Fun _f, Scheme_Needs_Wakeup_Fun fdf,
     if (sinfo.spin) {
       init_schedule_info(&sinfo, 0);
       scheme_thread_block(0.0);
+      scheme_current_thread->ran_some = 1;
     } else {
       p->block_descriptor = GENERIC_BLOCKED;
       p->blocker = (Scheme_Object *)data;

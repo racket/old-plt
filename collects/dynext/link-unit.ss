@@ -67,6 +67,8 @@
       ;;   3) a way to wrap the output on the command line
       ;;   4) needed base libraries and objects
 
+      (define link-variant (make-parameter 'normal))
+
       (define (get-unix-link-flags)
 	(case (string->symbol (system-library-subpath))
 	  [(sparc-solaris i386-solaris) (list "-G")]
@@ -153,7 +155,9 @@
 				 "mzdyn.obj"))])))
       
       (define (get-unix/macos-link-libraries)
-	(list (build-path std-library-dir "mzdyn.o")))
+	(list (build-path std-library-dir (format "mzdyn~a.o" (case (link-variant)
+								[(normal) ""]
+								[(3m) "3m"])))))
 
       ;; See doc.txt:
       (define current-standard-link-libraries

@@ -11,4 +11,5 @@
      current-make-link-input-strings
      current-make-link-output-strings
      current-standard-link-libraries
-     use-standard-linker)))
+     use-standard-linker
+     link-variant)))

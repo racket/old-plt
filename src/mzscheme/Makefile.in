@@ -219,6 +219,7 @@ install:
 
 install-3m-basic:
 	cd ..; cp mzscheme/mzscheme3m $(prefix)/bin/mzscheme3m
+	cp mzdyn3m.o $(prefix)/lib/
 
 install-3m@NOT_OSX@:
 	$(MAKE) install-3m-basic

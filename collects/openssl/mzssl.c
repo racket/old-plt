@@ -55,6 +55,9 @@
 #endif
 
 struct sslplt {
+#ifdef MZ_PRECISE_GC
+  Scheme_Type type;
+#endif
   SSL *ssl;
   char ibuffer, obuffer;
   char ib_used, ob_used;
@@ -72,6 +75,9 @@ typedef struct {
 } listener_t;
 
 static Scheme_Type ssl_listener_type;
+#ifdef MZ_PRECISE_GC
+static Scheme_Type sslplt_type;
+#endif
 
 #define LISTENER_WAS_CLOSED(x) (((listener_t *)(x))->s == INVALID_SOCKET)
 
@@ -79,7 +85,14 @@ static Scheme_Type ssl_listener_type;
    created. */
 struct sslplt *create_register_sslplt(SSL *ssl)
 {
-  struct sslplt *sslplt = scheme_malloc(sizeof(struct sslplt));
+  struct sslplt *sslplt;
+
+#ifdef MZ_PRECISE_GC
+  sslplt = (struct sslplt *)scheme_malloc_tagged(sizeof(struct sslplt));
+  sslplt->type = sslplt_type;
+#else
+  sslplt = (struct sslplt *)scheme_malloc(sizeof(struct sslplt));
+#endif
 
   sslplt->ssl = ssl;
   sslplt->ib_used = 0; sslplt->ob_used = 0; 
@@ -463,9 +476,11 @@ void sslin_close(Scheme_Input_Port *port)
 static void sslin_need_wakeup(Scheme_Input_Port *port, void *fds)
 {
   struct sslplt *ssl = SCHEME_INPORT_VAL(port);
-  long rfd = BIO_get_fd(SSL_get_rbio(ssl->ssl), NULL);
+  long rfd;
   void *fds2;
   int stuck_why;
+
+  rfd = BIO_get_fd(SSL_get_rbio(ssl->ssl), NULL);
 
   if (sslin_do_char_ready(port, &stuck_why)) {
     /* Need wakeup now! */
@@ -486,7 +501,8 @@ Scheme_Input_Port *make_sslin_port(SSL *ssl, struct sslplt *wrapper)
 
 Scheme_Input_Port *make_named_sslin_port(SSL *ssl, struct sslplt *d, char *n)
 {
-  Scheme_Input_Port *retval = make_sslin_port(ssl, d);
+  Scheme_Input_Port *retval;
+  retval = make_sslin_port(ssl, d);
   retval->name = n;
   return retval;
 }
@@ -925,10 +941,10 @@ static void TCP_INIT(char *name)
 
 static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
 {
-  char *address = check_host_and_convert("ssl-connect", argc, argv, 0);
-  unsigned short nport = check_port_and_convert("ssl-connect", argc, argv, 1);
-  int port = SCHEME_INT_VAL(argv[1]);
-  SSL_METHOD *meth = check_encrypt_and_convert("ssl-connect", argc, argv, 2, 1);
+  char *address;
+  unsigned short nport;
+  int port;
+  SSL_METHOD *meth;
   int status;
   const char *errstr = "Unknown error";
   int err = 0;
@@ -937,6 +953,11 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
 #ifndef PROTOENT_IS_INT
   struct protoent *proto;
 #endif
+
+  address = check_host_and_convert("ssl-connect", argc, argv, 0);
+  nport = check_port_and_convert("ssl-connect", argc, argv, 1);
+  port = SCHEME_INT_VAL(argv[1]);
+  meth = check_encrypt_and_convert("ssl-connect", argc, argv, 2, 1);
 
   /* check we have the security clearance to actually do this */
   scheme_security_check_network("ssl-connect", address, port, 1);
@@ -1343,6 +1364,60 @@ static Scheme_Object *ssl_accept_break(int argc, Scheme_Object *argv[]) {
 }
 
 /*****************************************************************************
+ * PRECISE GC                                                                *
+ *****************************************************************************/
+
+#ifdef MZ_PRECISE_GC
+
+int sslplt_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(struct sslplt));
+}
+
+int sslplt_MARK(void *p) {
+  struct sslplt *ssl = (struct sslplt *)p;
+
+  gcMARK(ssl->next);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(struct sslplt));
+}
+
+int sslplt_FIXUP(void *p) {
+  struct sslplt *ssl = (struct sslplt *)p;
+
+  gcFIXUP(ssl->next);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(struct sslplt));
+}
+
+int listener_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(listener_t));
+}
+
+int listener_MARK(void *p) {
+  listener_t *l = (listener_t *)p;
+
+  gcMARK(l->mref);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(listener_t));
+}
+
+int listener_FIXUP(void *p) {
+  listener_t *l = (listener_t *)p;
+
+  gcFIXUP(l->mref);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(listener_t));
+}
+
+#endif
+
+/*****************************************************************************
  * REGISTRATION FUNCTIONS: The functions that register the above externals so*
  * everybody else can use them.                                              *
  *****************************************************************************/
@@ -1350,14 +1425,20 @@ static Scheme_Object *ssl_accept_break(int argc, Scheme_Object *argv[]) {
 /* scheme_initialize: called when the extension is first loaded */
 Scheme_Object *scheme_initialize(Scheme_Env *env)
 {
-  Scheme_Object *thread = scheme_make_prim_w_arity(write_close_thread,
-                                                   "SSL Flushing Thread",
-                                                   0, 0);
-  Scheme_Custodian *newcust = scheme_make_custodian(NULL);
+  Scheme_Object *thread;
+  Scheme_Custodian *newcust;
+
+  thread = scheme_make_prim_w_arity(write_close_thread,
+				    "SSL Flushing Thread",
+				    0, 0);
+  newcust = scheme_make_custodian(NULL);
   
   SSL_library_init();
   daemon_attn = scheme_make_sema(0);
   ssl_listener_type = scheme_make_type("<ssl-listener>");
+#ifdef MZTAG_REQUIRED
+  sslplt_type = scheme_make_type("<ssl-plt-internal>");
+#endif
   ssl_input_port_type = scheme_make_port_type("<ssl-input-port>");
   ssl_output_port_type = scheme_make_port_type("<ssl-output-port>");
   scheme_register_extension_global(&daemon_attn, 4);
@@ -1365,6 +1446,15 @@ Scheme_Object *scheme_initialize(Scheme_Env *env)
   scheme_register_extension_global(&ssl_input_port_type, 4);
   scheme_register_extension_global(&ssl_output_port_type, 4);
   
+#ifdef MZ_PRECISE_GC
+  GC_register_traversers(ssl_listener_type, listener_SIZE,
+			 listener_MARK, listener_FIXUP,
+			 1, 0);
+  GC_register_traversers(sslplt_type, sslplt_SIZE,
+			 sslplt_MARK, sslplt_FIXUP,
+			 1, 0);
+#endif
+
   SSL_load_error_strings();
 
 

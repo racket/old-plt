@@ -102,6 +102,9 @@ Linking parameters:
                        (system-library-subpath)
                        "mzdyn.o"))
 
+> link-variant - a symbol, either 'normal or '3m
+
+
 > (use-standard-linker name) sets the above parameters for a
     particular known linker. The acceptable names are 
     platforms-specific, the same as for use-standard-compiler.

@@ -613,6 +613,7 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	  }
 	  
 	  scheme_thread_block(0); /* ok if it returns multiple times */ 
+	  scheme_current_thread->ran_some = 1;
 	  /* [but why would it return multiple times?! there must have been a reason...] */
 	} else {
 
@@ -654,6 +655,7 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 
 	  if (i == -1) {
 	    scheme_thread_block(0); /* dies or suspends */
+	    scheme_current_thread->ran_some = 1;
 	  }
 
 	  if (i < n)

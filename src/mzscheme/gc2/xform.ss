@@ -1124,7 +1124,7 @@
 						(and struct-array?
 						     (struct-array-type-count (cdr base-is-ptr?))))])
 			   (when (and struct-array?
-				      (> array-size 10))
+				      (> array-size 16))
 			     (log-error "[SIZE] ~a in ~a: Large array of structures at ~a."
 					(tok-line v) (tok-file v) name))
 			   (when (and (not union-ok?)

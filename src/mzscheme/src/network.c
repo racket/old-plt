@@ -1481,6 +1481,7 @@ static long tcp_get_string(Scheme_Input_Port *port,
     do {
       scheme_thread_block((float)0.0);
     } while (!tcp_char_ready(port));
+    scheme_current_thread->ran_some = 1;
 #endif
   }
 

@@ -1027,7 +1027,7 @@
                        (,(py-so 'py-call) ,(py-so 'py-type%)
                         (list (,(py-so 'symbol->py-string%) #cs',class-name)
                               (,(py-so 'list->py-tuple%) (list ,@(if (empty? inherit-list)
-                                                                     `(,(->lex-so 'object (current-runtime-support-context)))
+                                                                     `(,(->lex-so 'object (current-toplevel-context)))
                                                                      inherit-list)))
                         ,(let* ([exprs null]
                                 [keys null]

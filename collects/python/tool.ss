@@ -7,7 +7,7 @@
            (lib "class.ss")
 	   (lib "embed.ss" "compiler")
 	   (lib "string-constant.ss" "string-constants")
-          ; (lib "etc.ss")
+           (lib "etc.ss")
            "python.ss"
            "compile-python.ss"
            ;"base.ss"

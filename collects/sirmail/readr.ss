@@ -308,7 +308,8 @@
 
       (define (check-validity v cleanup)
 	(when (and uid-validity
-		   (not (= uid-validity v)))
+		   (not (= uid-validity v))
+		   (pair? mailbox))
 	  ;; This is really very unlikely, but we checked
 	  ;; to guard against disaster.
 	  (cleanup)

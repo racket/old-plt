@@ -3,8 +3,9 @@
    MzScheme 299.X. Minor changes are listed below.
 
 Version 299.23
-Changed find-system-path to use the registry-specified profile
- directory for a user's home, instead of HOMEDRIVE and HOMEPATH
+Windows: changed find-system-path to use the registry-specified
+ profile directory for a user's home, instead of HOMEDRIVE and
+ HOMEPATH
 Added 'doc-dir and 'desk-dir to find-system-path
 Removed use of #%top from references to a module's own bindings
 Changed generate-temporaries and syntax-local-module-introduce

@@ -46,9 +46,10 @@
     (define make-simple-frame-canvas%
       (lambda (super%)
 	(class super% args
-	  (inherit get-media edit-modified edit-renamed)
+	  (inherit get-media edit-modified edit-renamed get-parent)
 	  (rename
 	    [super-on-size on-size]
+	    [super-force-redraw force-redraw]
 	    [super-set-media set-media]
 	    [super-on-set-focus on-set-focus])
 	  (private
@@ -82,21 +83,36 @@
 	       (set-frame-title)
 	       (super-on-set-focus)
 	       (if frame
-		   (send frame on-frame-active)))]
+		   (send frame on-frame-active)))])
+	  (private
+	    [must-resize-edit #f])
+	  (public
+	    [force-redraw 
+	     (lambda ()
+	       (set! must-resize-edit #t)
+	       (super-force-redraw))]
 	    [on-size
 	     (lambda (width height)
 	       (super-on-size width height)
-	       (let ([edit (get-media)])
-		 (if (and (not (null? edit))
-			  (ivar edit auto-set-wrap?))
-		     (let ([admin (send edit get-admin)]
-			   [w-box (box 0)]
-			   [h-box (box 0)])
-		       (unless (null? admin)
-			 (send admin get-view 
-			       () () w-box h-box #f)
-			 (send edit set-max-width 
-			       (unbox w-box)))))))]
+
+	       ;; only resize the edit when the canvas is in a good state,
+	       ;; a good state is when the container classes are 
+	       ;; force redrawing or when the frame is shown.
+	       (when (or must-resize-edit
+			 (let loop ([t (get-parent)])
+			   (if (is-a? t wx:frame%)
+			       (ivar t shown)
+			       (loop (send t get-parent)))))
+		 (let ([edit (get-media)])
+		   (if (and (not (null? edit))
+			    (ivar edit auto-set-wrap?))
+		       (let ([admin (send edit get-admin)]
+			     [w-box (box 0)]
+			     [h-box (box 0)])
+			 (unless (null? admin)
+			   (set! must-resize-edit #f)
+			   (send admin get-view () () w-box h-box #f)
+			   (send edit set-max-width (unbox w-box))))))))]
 	       
 	    [set-media
 	     (opt-lambda (m [redraw? #t])

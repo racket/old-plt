@@ -40,6 +40,8 @@ typedef short Type_Tag;
 #define NOISY 0
 #define MARK_STATS 0
 
+#define GENERATIONS 1
+
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
 
@@ -893,10 +895,12 @@ static int is_marked(void *p)
 	return 1;
       else {
 	long offset = ((long)p & MPAGE_MASK) >> 2;
+#if 0
 	OffsetTy v;
 	
 	v = page->u.offsets[offset];
 	offset -= (v & OFFSET_MASK);
+#endif
 	return page->u.offsets[offset] & COLOR_MASK;
       }
     }
@@ -928,7 +932,7 @@ static void init_tagged_mpage(void **p, MPage *page)
   
   while (p < top) {
     Type_Tag tag;
-    long size, i;
+    long size;
 
     tag = *(Type_Tag *)p;
 
@@ -957,8 +961,13 @@ static void init_tagged_mpage(void **p, MPage *page)
 
       size = size_table[tag](p);
 
+#if 1
+      offsets[offset] = size;
+      offset += size;
+#else
       for (i = 0; i < size; i++, offset++)
 	offsets[offset] = i;
+#endif
 
 #if SAFETY
       if (prev_var_stack != GC_variable_stack) {
@@ -989,7 +998,7 @@ static void init_untagged_mpage(void **p, MPage *page)
   top = p + MPAGE_WORDS;
 
   while (p < top) {
-    long size, i;
+    long size;
 
     size = *(long *)p + 1;
 
@@ -1002,8 +1011,13 @@ static void init_untagged_mpage(void **p, MPage *page)
 
     the_size = size;
 
+#if 1
+    offsets[offset] = 0;
+    offset += size;
+#else
     for (i = 0; i < size; i++, offset++)
       offsets[offset] = i;
+#endif
 
     p += size;
   } 
@@ -1020,10 +1034,12 @@ static void init_all_mpages(int young)
     void *p = page->block_start;
 	
     if (!is_old && !(page->type & MTYPE_MODIFIED)) {
+#if GENERATIONS
       if (page->type & MTYPE_BIGBLOCK)
 	protect_pages((void *)p, page->u.size, 1);
       else
 	protect_pages((void *)p, MPAGE_SIZE, 1);
+#endif
       page->type |= MTYPE_MODIFIED;
     }
 
@@ -1078,10 +1094,12 @@ static void init_all_mpages(int young)
       page->gray_end = page->alloc_boundary - 2;
 
       if (!(page->type & MTYPE_MODIFIED)) {
+#if GENERATIONS
 	if (page->type & MTYPE_BIGBLOCK)
 	  protect_pages((void *)p, page->u.size, 1);
 	else
 	  protect_pages((void *)p, MPAGE_SIZE, 1);
+#endif
 	page->type |= MTYPE_MODIFIED;
       }
 
@@ -1156,8 +1174,12 @@ void GC_mark(const void *p)
 	  page->type |= MTYPE_INITED;
 	}
 
+	if (!(type & MTYPE_TAGGED))
+	  p -= sizeof(void *);
+
 	offset = ((long)p & MPAGE_MASK) >> 2;
 
+#if 0
 	if (offset >= page->alloc_boundary) {
 	  /* Past allocation region. */
 	  return;
@@ -1165,6 +1187,7 @@ void GC_mark(const void *p)
 
 	v = page->u.offsets[offset];
 	offset -= (v & OFFSET_MASK);
+#endif
 
 	v = page->u.offsets[offset];
 	if (!(v & COLOR_MASK)) {
@@ -1176,7 +1199,7 @@ void GC_mark(const void *p)
 	      && (mark_stack_pos < MARK_STACK_MAX)) {
 	    page->type |= BLACK_BIT;
 	    page->u.offsets[offset] = (v | BLACK_BIT); /* black can mean on stack */
-	    mark_stack[mark_stack_pos] = ((void **)page->block_start) + offset;
+	    mark_stack[mark_stack_pos] = (void *)p;
 	    mark_stack_type[mark_stack_pos++] = type;
 	  } else {
 	    page->u.offsets[offset] = (v | GRAY_BIT);
@@ -1245,6 +1268,8 @@ static void propagate_tagged_mpage(void **bottom, MPage *page)
       OffsetTy v;
       Type_Tag tag;
       long size;
+
+      tag = *(Type_Tag *)p;
 
 #if ALIGN_DOUBLES
       if (tag != SKIP) {
@@ -1604,26 +1629,13 @@ static MPage *array_compact_page, *tagged_array_compact_page;
 static void compact_tagged_mpage(void **p, MPage *page)
 {
   int to_near = 0, set_age = 0;
-  OffsetTy offset, zoffset, *offsets, dest_offset, dest_start_offset;
+  OffsetTy offset, *offsets, dest_offset, dest_start_offset;
   void **dest, **startp;
   void **top;
 
   offsets = page->u.offsets;
 
   top = p + page->alloc_boundary;
-
-  /* First, we zap object sizes into the offsets array */
-  zoffset = page->alloc_boundary;
-  while (zoffset) {
-    OffsetTy zs = zoffset;
-
-    /* Move to start: */
-    zoffset -= offsets[zoffset - 1] + 1;
-    /* Install size: */
-    offsets[zoffset] = (zs - zoffset) | (offsets[zoffset] & COLOR_MASK);
-  }
-
-  /* Now we can use the offset array to traverse foward. */
 
   startp = p;
   dest = tagged_compact_to;
@@ -1925,11 +1937,13 @@ void GC_fixup(void *pp)
 	OffsetTy v;
 	void *r;
 
+#if 0
 	if (offset >= page->alloc_boundary) {
 	  /* Past allocation region. */
 	  return;
 	}
-	
+#endif
+
 	v = page->u.offsets[offset] & OFFSET_MASK;
 	if (offset < page->compact_boundary)
 	  r = (void *)(page->o.compact_to + v) + ((long)p & 0x3);
@@ -2205,6 +2219,7 @@ void protect_old_mpages()
 {
   MPage *page;
 
+#if GENERATIONS
   for (page = first; page; page = page->next) {
     if (page->age && !(page->type & MTYPE_ATOMIC)) {
       void *p;
@@ -2220,6 +2235,7 @@ void protect_old_mpages()
       }
     }
   }
+#endif
 }
 
 
@@ -2519,13 +2535,14 @@ static void gcollect(int full)
     GC_add_roots(&park, (char *)&park + sizeof(park) + 1);
     initialized = 1;
 
-#ifdef NEED_SIGSEGV
+#if GENERATIONS
+# ifdef NEED_SIGSEGV
     signal(SIGSEGV, (void (*)(int))fault_handler);
-#endif
-#ifdef NEED_SIGBUS
+# endif
+# ifdef NEED_SIGBUS
     signal(SIGBUS, (void (*)(int))fault_handler);
-#endif
-#ifdef NEED_SIGACTION
+# endif
+# ifdef NEED_SIGACTION
     {
       struct sigaction act, oact;
       act.sa_sigaction = fault_handler;
@@ -2533,6 +2550,7 @@ static void gcollect(int full)
       act.sa_flags = SA_SIGINFO;
       sigaction(SIGSEGV, &act, &oact);
     }
+# endif
 #endif
   }
 
@@ -2575,6 +2593,10 @@ static void gcollect(int full)
       young = 1;
     else
       young = 0;
+
+#if !GENERATIONS
+    young = 15;
+#endif
 
     init_all_mpages(young);
   }
@@ -2779,7 +2801,7 @@ static void gcollect(int full)
     if (!is_marked(wb->val)) {
       wb->val = NULL;
       if (wb->secondary_erase) {
-	*(wb->secondary_erase + wb_soffset) = NULL;
+	*(wb->secondary_erase + wb->soffset) = NULL;
 	wb->secondary_erase = NULL;
       }
     }
@@ -3188,6 +3210,11 @@ static void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, void ***low, v
 void *GC_malloc(size_t size_in_bytes)
 {
   return malloc_untagged(size_in_bytes, MTYPE_ARRAY, &array_low, &array_high);
+}
+
+void *GC_malloc_allow_interior(size_t size_in_bytes)
+{
+  return malloc_bigblock(size_in_bytes, MTYPE_ARRAY);
 }
 
 void *GC_malloc_array_tagged(size_t size_in_bytes)

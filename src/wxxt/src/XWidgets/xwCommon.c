@@ -1046,7 +1046,7 @@ static void hilite_callbacks(self)Widget self;
 #endif
 #line 532 "XWidgets/xwCommon.w"
 {
-  XtPointer on = (XtPointer)((XfwfCommonWidget)self)->xfwfCommon.traversal_focus;
+  XtPointer on = (XtPointer)(long)((XfwfCommonWidget)self)->xfwfCommon.traversal_focus;
 
   while (self && XtIsSubclass(self, xfwfCommonWidgetClass) && !((XfwfCommonWidget)self)->xfwfCommon.focusHiliteChange)
     self = XtParent(self);

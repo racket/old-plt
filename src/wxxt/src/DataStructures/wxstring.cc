@@ -105,7 +105,7 @@ wxString::wxString(char *s)
 
 // used also for normal construction 'wxString a("hello");'
 // fmt == NULL is allowed!
-wxString::wxString(const char *fmt, ...) // formatted construction
+wxString::wxString(const char */* fmt */, ...) // formatted construction
 {
 #if 0
     va_list args;
@@ -124,7 +124,7 @@ wxString::wxString(const char *fmt, ...) // formatted construction
 #endif
 }
 
-int wxString::sprintf(const char *fmt, ...)
+int wxString::sprintf(const char */* fmt */, ...)
 {
 #if 0
     va_list args;

@@ -459,9 +459,9 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
     attributes->cursor = ((XfwfFrameWidget)self)->xfwfFrame.cursor;
     xfwfCommonClassRec.core_class.realize(self, mask, attributes);
 
-    ((XfwfFrameWidget)self)->xfwfFrame.gray = NULL;
-    ((XfwfFrameWidget)self)->xfwfFrame.lightGray = NULL;
-    ((XfwfFrameWidget)self)->xfwfFrame.darkGray = NULL;
+    ((XfwfFrameWidget)self)->xfwfFrame.gray = (Pixmap)NULL;
+    ((XfwfFrameWidget)self)->xfwfFrame.lightGray = (Pixmap)NULL;
+    ((XfwfFrameWidget)self)->xfwfFrame.darkGray = (Pixmap)NULL;
 
     create_lightgc(self);
     create_darkgc(self);

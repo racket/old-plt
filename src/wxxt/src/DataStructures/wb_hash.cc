@@ -4,7 +4,7 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_hash.cc,v 1.1 1996/01/10 23:46:28 markus Exp $
+ * RCS_ID:	$Id: wb_hash.cc,v 1.1.1.1 1997/12/22 17:28:45 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -175,7 +175,7 @@ wxObject *wxHashTable::Get (long key)
   else
     {
       wxNode *node = hash_table[position]->Find (key);
-      return node ? node->Data () : NULL;
+      return node ? node->Data() : (wxObject *)NULL;
     }
 }
 
@@ -188,7 +188,7 @@ wxObject *wxHashTable::Get (const char *key)
   else
     {
       wxNode *node = hash_table[position]->Find (key);
-      return node ? node->Data () : NULL;
+      return node ? node->Data() : (wxObject *)NULL;
     }
 }
 

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: PrintSetup.cc,v 1.1 1996/01/10 14:55:32 markus Exp $
+ * $Id: PrintSetup.cc,v 1.1.1.1 1997/12/22 17:28:46 mflatt Exp $
  *
  * Purpose: print setup for postscript printing (setup/papertype/paperdatabase)
  *
@@ -302,7 +302,7 @@ wxPrintPaperType *wxPrintPaperDatabase::FindPaperType(char *name)
 {
   wxNode *node;
 
-    if (node = Find(name))
+    if ((node = Find(name)))
 	return (wxPrintPaperType*)node->Data();
     else
 	return NULL;

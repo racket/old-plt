@@ -3,6 +3,8 @@
 ;; 
 ;; - thread synchronization1 for save state
 ;; - remember shown-state of loaded window
+;; - make sure that project menus are the same on unit frames and
+;;   project frames (collection-project menu)
 
 (require-library "errortrace.ss" "errortrace")
 
@@ -143,6 +145,10 @@
 	      (queue-callback
 	       (lambda ()
 		 (drscheme:basis:initialize-parameters project-custodian language-settings)
+
+		 (exit-handler
+		  (lambda x
+		    (custodian-shutdown-all project-custodian)))
 
 		 (drscheme:basis:error-display/debug-handler
 		  (let ([project-manager-error-display/debug-handler

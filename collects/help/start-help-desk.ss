@@ -10,7 +10,7 @@
 
   (include "startup-url.ss")
 
-  (define (start-help-desk)
+  (define (start-help-desk new-drscheme)
     (unless new-help-frame
       (set! new-help-frame
 	    (invoke-unit/sig
@@ -21,7 +21,11 @@
 	     mzlib:url^
 	     mred^
 	     framework^)))
-    (new-help-frame startup-url)))
+    (new-help-frame startup-url
+		    (lambda (file-menu)
+		      (make-object menu-item% "New DrScheme" file-menu
+				   (lambda (m i)
+				     (new-drscheme)))))))
 
 
 

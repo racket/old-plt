@@ -10,7 +10,7 @@
 	  (framework : framework^))
 
   (define go-unit
-    (unit (import startup-url)
+    (unit (import startup-url extend-file-menu)
 	  (export)
 
 	  (define collecting-thread #f)
@@ -289,8 +289,10 @@
 			     (send d show #t)))
 			 #\O)
 	    (make-object menu-item% "New Help Desk" file 
-			 (lambda (m i) (new-help-frame startup-url))
+			 (lambda (m i) (new-help-frame startup-url extend-file-menu))
 			 #\N)
+	    (when extend-file-menu
+	      (extend-file-menu file))
 	    (make-object separator-menu-item% file)
 	    (make-object menu-item% "Print" file
 			 (lambda (m i) (send (send results get-editor) print))
@@ -467,8 +469,8 @@
 	  ; Return the frame as the result
 	  f))
 
-  (define (new-help-frame startup-url)
-    (invoke-unit go-unit startup-url))
+  (define (new-help-frame startup-url extend-file-menu)
+    (invoke-unit go-unit startup-url extend-file-menu))
 
   new-help-frame)
 

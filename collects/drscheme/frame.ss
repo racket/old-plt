@@ -15,7 +15,9 @@
       (case-lambda
        [()
 	(mred:begin-busy-cursor)
-	(set! help-desk-frame (help:start-help-desk))
+	(set! help-desk-frame (help:start-help-desk 
+			       (lambda () 
+				 (send (drscheme:unit:make-unit #f) create-frame))))
 	(mred:end-busy-cursor)]
        [(key)
 	(let ([turn-cursor-off? (not help-desk-frame)])

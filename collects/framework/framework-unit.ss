@@ -74,7 +74,7 @@
 	    [scheme : framework:scheme^ 
 		    (scheme@ mred preferences match-cache paren
 			     scheme-paren icon keymap text editor frame)]
-	    [main : framework:main^ (main@ mred preferences exit group)])
+	    [main : framework:main^ (main@ mred preferences exit group handler)])
       (export
        (unit menu)
        (unit application)

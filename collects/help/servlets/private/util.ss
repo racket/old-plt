@@ -1,10 +1,9 @@
 (module util mzscheme
   (require (lib "file.ss")
 	   (lib "etc.ss")
-	   (lib "finddoc.ss" "help")
-	   (lib "xml.ss" "xml")
+	   (lib "finddoc.ss" "help" "private")
+	   (lib "xml.ss" "xml") 
 	   (lib "url.ss" "net"))
-
 
   (provide get-pref/default
 	   put-prefs

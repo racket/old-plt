@@ -252,11 +252,6 @@
   "Hides the backtrace window.")
 
 
-(drscheme:debug:add-prefs-panel
- (-> void?)
- ()
- "Adds the profiling preferences panel.")
-
 (drscheme:debug:profiling-enabled
  (case-> (boolean? . -> . void?)
 	 (-> boolean?))
@@ -268,6 +263,40 @@
  "Only applies if"
  "@flink drscheme:debug:make-debug-eval-handler"
  "has been added to the eval handler.")
+
+(drscheme:debug:add-prefs-panel
+ (-> void?)
+ ()
+ "Adds the profiling preferences panel.")
+
+(drscheme:debug:open-and-highlight-in-file
+ ((cons/p (union symbol? (is-a?/c editor<%>))
+	  (cons/p number? number?))
+  . -> .
+  void?)
+ (debug-info)
+ "This function opens a DrScheme to display"
+ "\\var{debug-info}. The first element in"
+ "the cons indicates where the file is"
+ "and the two number indicate a range of"
+ "text to show."
+ ""
+ "See also"
+ "@flink drscheme:debug:get-cm-key %"
+ ".")
+
+;(drscheme:debug:show-backtrace-window )
+
+(drscheme:debug:get-cm-key
+ (-> any)
+ ()
+ "Returns a key used with \\scheme|contination-mark-set->list|."
+ "The contination mark set attached to an exception record"
+ "for the user's program may use this mark. If it does,"
+ "each mark on the continuation is the same type as"
+ "the input to"
+ "@flink drscheme:debug:open-and-highlight-in-file %"
+ ".")
 
 
                             
@@ -1064,15 +1093,6 @@
 "If the third and fourth arguments are omitted, "
 "they default to \\rawscm{'keyword+index} and \\rawscm{'exact},"
 "respectively.")
-
-(drscheme:help-desk:open-users-url
- ((union false? (is-a?/c frame%))
-  . -> .
-  void?)
- (frame)
-
-"Queries the user for a URL and opens it in a new help desk window. The"
-"\\var{frame} argument is used as a parent for the dialog box.")
 
 
                                                            

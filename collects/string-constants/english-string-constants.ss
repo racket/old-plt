@@ -190,6 +190,11 @@
  (package-was-installed "The package was installed.")
  (download-was-saved "The downloaded file was saved.")
  (getting-page "Getting Page") ;; dialog title
+
+ (install-plt-file-menu-item... "Install .plt File...")
+ (install-plt-file-dialog-title "Install .plt File")
+ (plt-from-web "Download and install .plt file from the web")
+ (plt-from-file "Install .plt file from a local file")
  
  ;; install plt file when opened in drscheme strings
  (install-plt-file "Install ~a or open for editing?")
@@ -798,6 +803,7 @@
  
  (show-recent-items-window-menu-item "Show Recently Opened Files in Separate Window")
  (show-recent-items-window-label "Recently Opened Files")
+ (number-of-open-recent-items "Number of recent items")
  (switch-anyway "Switch File Anyway")
 
  (stepper-program-has-changed "WARNING: The program has changed.")

@@ -309,7 +309,7 @@
 		     (write literal-expression o)))
 		 'append)
 		(let ([end (file-size dest)]
-		      [cmdpos (with-input-from-file* dest find-cmdline)])
+		      [cmdpos (with-input-from-file dest find-cmdline)])
 		  (when verbose?
 		    (fprintf (current-error-port) "Setting command line~n"))
 		  (let ([out (open-output-file dest 'update)]

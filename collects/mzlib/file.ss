@@ -12,9 +12,7 @@
 	  make-temporary-file
 	  find-library
 
-	  with-input-from-file*
 	  call-with-input-file*
-	  with-output-to-file*
 	  call-with-output-file*)
 
   (require "list.ss")
@@ -249,24 +247,6 @@
 		  #f))
 	    #f))]))
 
-  (define with-input-from-file*
-    (lambda (file thunk . flags)
-      (let ([p (apply open-input-file file flags)])
-	(parameterize ([current-input-port p])
-	  (dynamic-wind
-	      void
-	      thunk
-	      (lambda () (close-input-port p)))))))
-	  
-  (define with-output-to-file*
-    (lambda (file thunk . flags)
-      (let ([p (apply open-output-file file flags)])
-	(parameterize ([current-output-port p])
-	  (dynamic-wind
-	      void
-	      thunk
-	      (lambda () (close-output-port p)))))))
-  
   (define call-with-input-file*
     (lambda (file thunk . flags)
       (let ([p (apply open-input-file file flags)])
@@ -282,6 +262,3 @@
 	    void
 	    (lambda () (thunk p))
 	    (lambda () (close-output-port p)))))))
-
-
-	  

@@ -11,7 +11,7 @@
 	   [file (build-path dir "info.ss")])
       (if (file-exists? file)
 	  (begin
-	    (with-input-from-file* file
+	    (with-input-from-file file
 	      (lambda ()
 		(let ([r (read)])
 		  (unless (eof-object? (read))

@@ -1540,6 +1540,7 @@ static int try_subproc(Scheme_Object *subprocess_proc, char *prog)
     _scheme_apply_multi(subprocess_proc, 5, a);
     return 1;
   } else {
+    scheme_clear_escape();
     return 0;
   }
 }
@@ -1570,6 +1571,7 @@ void machine_details(char *buff)
 	scheme_close_input_port(serr);
 
 	/* Read result: */
+	strcpy(buff, "<unknown machine>");
 	c = scheme_get_chars(sout, 1023, buff, 0);
 	buff[c] = 0;
 	
@@ -1580,10 +1582,14 @@ void machine_details(char *buff)
 	  buff[--c] = 0;
 	}
 
+	memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+
 	return;
       }
     }
   }
+
+  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 
   strcpy(buff, "<unknown machine>");
 }

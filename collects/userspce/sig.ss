@@ -6,8 +6,6 @@
 (require-library "sigs.ss" "zodiac")
 (require-library "coreflats.ss")
 (require-relative-library "ricedefs.ss")
-(require-library "sig.ss" "mred")
-(require-library "turtles.ss" "graphics")
 
 (define-signature plt:beginner-extras^
   ((struct posn (x y) -setters)
@@ -16,26 +14,14 @@
 (define-signature plt:intermediate-extras^
   plt:beginner-extras^)
 
-(begin-construction-time
- (if (defined? 'mred@)
-     `(define-signature plt:userspace^
-	((open mred^)
-	 (open mzlib:core-flat^)
-	 (open turtle^)
-	 (struct posn (x y))))
-     `(define-signature plt:userspace^
-	((open mzlib:core-flat^)
-	 (struct posn (x y))))))
-
-(begin-construction-time
- (if (defined? 'mred@)
-     `(define-signature plt:advanced-extras^
-	((struct posn (x y))
-	 (open mzlib:core-flat^)
-	 (open turtle^)))
-     `(define-signature plt:advanced-extras^
-	((struct posn (x y))
-	 (open mzlib:core-flat^)))))
+;; will be redefined in guserspace's plt:userspace^
+;; file if in drscheme
+(define-signature plt:userspace^
+  ((open mzlib:core-flat^)
+   (struct posn (x y))))
+(define-signature plt:advanced-extras^
+  ((struct posn (x y))
+   (open mzlib:core-flat^)))
 
 ;; extend structs with a parsing constructor
 (define-macro define-struct/parse

@@ -1,3 +1,6 @@
+(begin-elaboration-time
+ (require-library "sig.ss" "guserspce"))
+
 (require-library "load-handlers.ss" "drscheme")
 (require-library "guiutils.ss" "framework")
 

@@ -6,5 +6,5 @@
 
 ((make-go
   (if (defined? 'mred@)
-      (load-relative "launcher-bootstrap-mred.ss")
-      (load-relative "launcher-bootstrap-mzscheme.ss"))))
+      (require-library "launcher-bootstrap-mred.ss" "guserspce")
+      (require-library "launcher-bootstrap-mzscheme.ss" "userspce"))))

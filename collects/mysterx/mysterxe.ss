@@ -13,10 +13,6 @@
   (define com-invoke mxprims:com-invoke)
   (define com-set-property! mxprims:com-set-property!)
   (define com-get-property mxprims:com-get-property)
-  (define com-methods mxprims:com-methods)
-  (define com-get-properties mxprims:com-get-properties)
-  (define com-set-properties mxprims:com-set-properties)
-  (define com-events mxprims:com-events)
   (define com-method-type mxprims:com-method-type)
   (define com-get-property-type mxprims:com-get-property-type)
   (define com-set-property-type mxprims:com-set-property-type)
@@ -39,6 +35,20 @@
   (define com-object-eq? mxprims:com-object-eq?)
   (define com-object? mxprims:com-object?)
   (define com-omit mxprims:com-omit)
+
+  ;; sort results of "reflection" results
+
+  (define (make-sorted-fun f)
+    (lambda (obj)
+      (let ([ps (f obj)])
+	(mzlib:quicksort ps string<?))))
+
+  (define com-methods (make-sorted-fun mxprims:com-methods))
+  (define com-get-properties (make-sorted-fun mxprims:com-get-properties))
+  (define com-set-properties (make-sorted-fun mxprims:com-set-properties))
+  (define com-events (make-sorted-fun mxprims:com-events))
+
+  ;; style-related procedures 
 
   (define make-css-percentage style:make-css-percentage)
   (define css-percentage? style:css-percentage?) 

@@ -25,13 +25,8 @@
         returns #f (not overridden by a non-primitive method) or a
         method procedure.
 
-      (primitive-class->method-name-list prim-class) - gets a list of
-        symbolic method names for the class.
-
-      (primitive-class->method-vector prim-class) - gets an array (in
-        parallel to the name list) of methods. Each method expects an
-        instance of the class as its first argument, and the remaining
-        arguments are method-specific.
+      (primitive-class-find-method prim-class sym) - gets the method
+        for the given symbol.
 
       (primitive-class->superclass prim-class) - gets the superclass.
 
@@ -76,7 +71,6 @@ typedef struct Scheme_Class {
   int num_methods, num_installed;
   Scheme_Object **names;
   Scheme_Object **methods;
-  Scheme_Object *cache_nl, *cache_mv;
   Scheme_Object *base_struct_type;
   Scheme_Object *struct_type;
 } Scheme_Class;
@@ -106,8 +100,6 @@ int gc_class_mark(void *_c)
   gcMARK(c->initf);
   gcMARK(c->names);
   gcMARK(c->methods);
-  gcMARK(c->cache_nl);
-  gcMARK(c->cache_mv);
   gcMARK(c->base_struct_type);
   gcMARK(c->struct_type);
   
@@ -123,8 +115,6 @@ int gc_class_fixup(void *_c)
   gcFIXUP(c->initf);
   gcFIXUP(c->names);
   gcFIXUP(c->methods);
-  gcFIXUP(c->cache_nl);
-  gcFIXUP(c->cache_mv);
   gcFIXUP(c->base_struct_type);
   gcFIXUP(c->struct_type);
   
@@ -261,50 +251,25 @@ static Scheme_Object *class_sup(int argc, Scheme_Object **argv)
   return ((Scheme_Class *)argv[0])->sup;
 }
 
-static Scheme_Object *class_meth_list(int argc, Scheme_Object **argv)
+static Scheme_Object *class_find_meth(int argc, Scheme_Object **argv)
 {
   Scheme_Class *sclass = (Scheme_Class *)argv[0];
-  Scheme_Object *l = scheme_null;
+  Scheme_Object *s;
   int i;
 
   if (SCHEME_TYPE(argv[0]) != objscheme_class_type)
-    scheme_wrong_type("primitive-class->method-name-list", "primitive-class", 0, argc, argv);
+    scheme_wrong_type("primitive-class-find-method", "primitive-class", 0, argc, argv);
+  if (!SCHEME_SYMBOLP(argv[1]))
+    scheme_wrong_type("primitive-class-find-method", "symbol", 1, argc, argv);
 
-  if (sclass->cache_nl)
-    return sclass->cache_nl;
-
-  for (i = sclass->num_installed; i--; ) {
-    l = scheme_make_pair(sclass->names[i], l);
-    SCHEME_SET_PAIR_IMMUTABLE(l);
-  }
-
-  sclass->cache_nl = l;
-
-  return l;
-}
-
-static Scheme_Object *class_meth_vec(int argc, Scheme_Object **argv)
-{
-  Scheme_Class *sclass = (Scheme_Class *)argv[0];
-  Scheme_Object *v;
-  int i;
-
-  if (SCHEME_TYPE(argv[0]) != objscheme_class_type)
-    scheme_wrong_type("primitive-class->method-vector", "primitive-class", 0, argc, argv);
-  
-  if (sclass->cache_mv)
-    return sclass->cache_mv;
-
-  v = scheme_make_vector(sclass->num_installed, NULL);
-  SCHEME_SET_VECTOR_IMMUTABLE(v);
+  s = argv[1];
 
   for (i = sclass->num_installed; i--; ) {
-    SCHEME_VEC_ELS(v)[i] = sclass->methods[i];
+    if (SAME_OBJ(sclass->names[i], s))
+      return sclass->methods[i];
   }
 
-  sclass->cache_mv = v;
-  
-  return v;
+  return scheme_false;
 }
 
 static Scheme_Object *find_meth(int argc, Scheme_Object **argv)
@@ -535,16 +500,10 @@ void objscheme_init(Scheme_Env *env)
 						    4, 4),
 			   env);
   
-  scheme_install_xc_global("primitive-class->method-name-list",
-			   scheme_make_prim_w_arity(class_meth_list,
-						    "primitive-class->method-name-list",
-						    1, 1),
-			   env);
-  
-  scheme_install_xc_global("primitive-class->method-vector",
-			   scheme_make_prim_w_arity(class_meth_vec,
-						    "primitive-class->method-vector",
-						    1, 1),
+  scheme_install_xc_global("primitive-class-find-method",
+			   scheme_make_prim_w_arity(class_find_meth,
+						    "primitive-class-find-method",
+						    2, 2),
 			   env);
   
   scheme_install_xc_global("primitive-class->superclass",

@@ -1781,6 +1781,7 @@ static int mred_init(int argc, char **argv)
 	wxMessageBox("Error evaluating --pre expression.", "Error");
 #endif
 	exit(-1);
+	return 0;
       }
     } else {
       scheme_console_printf("%s: --pre flag needs an expression", argv[0]);
@@ -1788,6 +1789,7 @@ static int mred_init(int argc, char **argv)
       wxMessageBox("--pre command-line flag needs an expression", "Error");
 #endif
       exit(-1);
+      return 0;
     }
   } else
     return argc;

@@ -402,7 +402,7 @@ wxKeycode *wxKeymap::MapFunction(long code, int shift, int ctrl,
 
 static long GetCode(unsigned char **keyseqp)
 {
-  char *keyseq = *keyseqp;
+  unsigned char *keyseq = *keyseqp;
   long i, code;
 #define MAX_BUF 256
   unsigned char buffer[MAX_BUF], first;

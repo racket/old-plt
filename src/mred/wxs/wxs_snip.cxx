@@ -965,7 +965,7 @@ void os_wxSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
     READY_TO_RETURN; ASSELF wxSnip::GetTextBang(x0, x1, x2, x3);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_mzstring((mzchar *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(scheme_make_sized_char_string(x0, x2+x3, 0));
   p[POFFSET+1] = scheme_make_integer(x1);
   p[POFFSET+2] = scheme_make_integer(x2);
   p[POFFSET+3] = scheme_make_integer(x3);
@@ -3158,7 +3158,7 @@ void os_wxTextSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
     READY_TO_RETURN; ASSELF wxTextSnip::GetTextBang(x0, x1, x2, x3);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_mzstring((mzchar *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(scheme_make_sized_char_string(x0, x2+x3, 0));
   p[POFFSET+1] = scheme_make_integer(x1);
   p[POFFSET+2] = scheme_make_integer(x2);
   p[POFFSET+3] = scheme_make_integer(x3);
@@ -5158,7 +5158,7 @@ void os_wxTabSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
     READY_TO_RETURN; ASSELF wxTabSnip::GetTextBang(x0, x1, x2, x3);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_mzstring((mzchar *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(scheme_make_sized_char_string(x0, x2+x3, 0));
   p[POFFSET+1] = scheme_make_integer(x1);
   p[POFFSET+2] = scheme_make_integer(x2);
   p[POFFSET+3] = scheme_make_integer(x3);
@@ -7174,7 +7174,7 @@ void os_wxImageSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
     READY_TO_RETURN; ASSELF wxImageSnip::GetTextBang(x0, x1, x2, x3);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_mzstring((mzchar *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(scheme_make_sized_char_string(x0, x2+x3, 0));
   p[POFFSET+1] = scheme_make_integer(x1);
   p[POFFSET+2] = scheme_make_integer(x2);
   p[POFFSET+3] = scheme_make_integer(x3);
@@ -9337,7 +9337,7 @@ void os_wxMediaSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
     READY_TO_RETURN; ASSELF wxMediaSnip::GetTextBang(x0, x1, x2, x3);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_mzstring((mzchar *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(scheme_make_sized_char_string(x0, x2+x3, 0));
   p[POFFSET+1] = scheme_make_integer(x1);
   p[POFFSET+2] = scheme_make_integer(x2);
   p[POFFSET+3] = scheme_make_integer(x3);

@@ -1,5 +1,5 @@
 
-@MACRO makeNoCopyString[len] = WITH_VAR_STACK(scheme_make_sized_char_string(r, <len>, 0))
+@MACRO makeNoCopyString[str.len] = WITH_VAR_STACK(scheme_make_sized_char_string(<str>, <len>, 0))
 
 @MACRO gtSTRINGENOUGH[who] = if (SCHEME_CHAR_STRTAG_VAL(p[0+POFFSET]) < (x2 + x3)) WITH_VAR_STACK(scheme_arg_mismatch(<who>, "string too short: ", p[0+POFFSET]));
 
@@ -8,8 +8,8 @@
 @ s "draw" : void Draw(wxDC!,float,float,float,float,float,float,float,float,SYM[caret]); : : /CHECKDCOK[0.METHODNAME("snip%","draw")]
 @ s "split" : void Split(nnlong,wxSnip!*,wxSnip!*);
 @ s "merge-with" : wxSnip^ MergeWith(wxSnip!);
-@ s "get-text" : mzstring/makeNoCopyString[_x3] GetText(nnlong,nnlong,bool=FALSE,-long*=NULL);
-@ s "get-text!" : void GetTextBang(wmzstring,nnlong,nnlong,nnlong); : : /gtSTRINGENOUGH[METHODNAME("snip%","get-text!")]
+@ s "get-text" : mzstring/makeNoCopyString[r._x3] GetText(nnlong,nnlong,bool=FALSE,-long*=NULL);
+@ s "get-text!" : void GetTextBang(wmzstring/makeNoCopyString[x0.x2+x3],nnlong,nnlong,nnlong); : : /gtSTRINGENOUGH[METHODNAME("snip%","get-text!")]
 @ s "copy" : wxSnip! Copy();
 @ s "size-cache-invalid" : void SizeCacheInvalid();
 

@@ -4,6 +4,7 @@
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <xwTools3d.h>
+#include <xwTabString.h>
 #include <./xwToggleP.h>
 static void toggle(
 #if NeedFunctionPrototypes
@@ -261,8 +262,13 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
 {
     ((XfwfToggleWidget)self)->xfwfToggle.saveLeftMargin = ((XfwfToggleWidget)self)->xfwfLabel.leftMargin;
 
-    if (!((XfwfToggleWidget)self)->xfwfToggle.indicatorSize || ((XfwfToggleWidget)self)->xfwfToggle.indicatorSize > ((XfwfToggleWidget)self)->xfwfLabel.font->ascent + 2)
+    if (((XfwfToggleWidget)self)->xfwfLabel.xfont) {
+      if (!((XfwfToggleWidget)self)->xfwfToggle.indicatorSize || ((XfwfToggleWidget)self)->xfwfToggle.indicatorSize > ((wxExtFont)((XfwfToggleWidget)self)->xfwfLabel.xfont)->ascent)
+	((XfwfToggleWidget)self)->xfwfToggle.indicatorSize = ((wxExtFont)((XfwfToggleWidget)self)->xfwfLabel.xfont)->ascent;
+    } else {
+      if (!((XfwfToggleWidget)self)->xfwfToggle.indicatorSize || ((XfwfToggleWidget)self)->xfwfToggle.indicatorSize > ((XfwfToggleWidget)self)->xfwfLabel.font->ascent)
 	((XfwfToggleWidget)self)->xfwfToggle.indicatorSize = ((XfwfToggleWidget)self)->xfwfLabel.font->ascent + 2;
+    }
 
     ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc = NULL;
 

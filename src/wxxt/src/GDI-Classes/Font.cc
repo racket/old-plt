@@ -667,9 +667,9 @@ static XFontStruct *wxLoadQueryNearestFont(int point_size, float scale_x, float 
 			   1, sip, angle);
 
     if (!font) {
-      // search up and down by stepsize 10
-      int max_size = point_size + 20 * (1 + (point_size/180));
-      int min_size = point_size - 20 * (1 + (point_size/180));
+      // search up and down by stepsize 1
+      int max_size = point_size + 2 * (1 + (point_size/18));
+      int min_size = point_size - 2 * (1 + (point_size/18));
       int i;
 
       // Try plain style
@@ -678,7 +678,7 @@ static XFontStruct *wxLoadQueryNearestFont(int point_size, float scale_x, float 
 			     1, sip, angle);
 
       // Search for smaller size (approx.)
-      for (i=point_size-10; !font && i >= 10 && i >= min_size; i -= 10) {
+      for (i=point_size-1; !font && i >= 1 && i >= min_size; i -= 1) {
 	font = wxLoadQueryFont(i, scale_x, scale_y,
 			       fontid, style, weight, underlined, 
 			       1, sip, angle);
@@ -688,7 +688,7 @@ static XFontStruct *wxLoadQueryNearestFont(int point_size, float scale_x, float 
 				 1, sip, angle);
       }
       // Search for larger size (approx.)
-      for (i=point_size+10; !font && i <= max_size; i += 10) {
+      for (i=point_size+1; !font && i <= max_size; i += 1) {
 	font = wxLoadQueryFont(i, scale_x, scale_y, 
 			       fontid, style, weight, underlined, 
 			       1, sip, angle);
@@ -710,7 +710,7 @@ static XFontStruct *wxLoadQueryNearestFont(int point_size, float scale_x, float 
   /* Last-ditch efforts */
   if (!font) {
     char buffer[40];
-    sprintf(buffer, "-*-*-*-*-*-*-*-%d-*-*-*-*-*-*", point_size);
+    sprintf(buffer, "-*-*-*-*-*-*-*-%d-*-*-*-*-*-*", point_size * 10);
     font = XLoadQueryFont(wxAPP_DISPLAY, buffer);
     
     if (!font) /* really last-ditch */

@@ -1363,10 +1363,23 @@ void wxDC::SetMapMode(int mode)
   if (::GetMapMode(dc) != MM_ANISOTROPIC)
     ::SetMapMode(dc, MM_ANISOTROPIC);
 
-  ::SetViewportExtEx(dc, 1000, 1000, NULL);
-  ::SetWindowExtEx(dc, MS_XDEV2LOGREL(1000), MS_YDEV2LOGREL(1000), NULL);
-  ::SetViewportOrgEx(dc, (int)device_origin_x, (int)device_origin_y, NULL);
-  ::SetWindowOrgEx(dc, (int)logical_origin_x, (int)logical_origin_y, NULL);
+  if ((logical_scale_x != logical_scale_y)
+      && (::SetGraphicsMode(dc, GM_ADVANCED) == 0)) {
+    XFORM xform;
+    xform.eM11 = logical_scale_x;
+    xform.eM21 = 0;
+    xform.eM12 = logical_scale_y;
+    xform.eM22 = 0;
+    xform.eDx = logical_origin_x;
+    xform.eDy = logical_origin_y;
+    ::SetWorldTransform(dc, &xform);
+  } else {
+    ::SetGraphicsMode(dc, GM_COMPATIBLE);
+    ::SetViewportExtEx(dc, 1000, 1000, NULL);
+    ::SetWindowExtEx(dc, MS_XDEV2LOGREL(1000), MS_YDEV2LOGREL(1000), NULL);
+    ::SetViewportOrgEx(dc, (int)device_origin_x, (int)device_origin_y, NULL);
+    ::SetWindowOrgEx(dc, (int)logical_origin_x, (int)logical_origin_y, NULL);
+  }
 
   DoneDC(dc);
 }

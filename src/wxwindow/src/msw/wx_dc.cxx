@@ -1691,7 +1691,7 @@ static void wxTextSize(HDC dc, wxFont *font, wchar_t *ustring, int d, int alen, 
 	font->size_cache = ht;
       }
 
-      ((wxSizeKey *)SCHEME_BYTE_CHAR_VAL(theSizeKey))->c = ustring[d];
+      ((wxSizeKey *)SCHEME_BYTE_STR_VAL(theSizeKey))->c = ustring[d];
       sz = (double *)scheme_hash_get(ht, theSizeKey);
     } else {
       ht = NULL;
@@ -1710,9 +1710,13 @@ static void wxTextSize(HDC dc, wxFont *font, wchar_t *ustring, int d, int alen, 
       *oh = (double)sizeRect.cy;
 
       if (ht) {
+	Scheme_Object *key;
 	sz = (double *)scheme_malloc_atomic(sizeof(double) * 2);
 	sz[0] = *ow;
 	sz[1] = *oh;
+	key = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(theSizeKey), 
+					    sizeof(wxSizeKey), 
+					    1);
 	scheme_hash_set(ht, theSizeKey, (Scheme_Object *)sz);
       }
     }
@@ -1758,10 +1762,10 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
   theFont = font;
   if (theFont->redirect)
     theFont = theFont->redirect;
-  ((wxSizeKey *)SCHEME_BYTE_CHAR_VAL(theSizeKey))->sx = MS_XLOG2DEVREL(1);
-  ((wxSizeKey *)SCHEME_BYTE_CHAR_VAL(theSizeKey))->sy = MS_YLOG2DEVREL(1);
+  ((wxSizeKey *)SCHEME_BYTE_STR_VAL(theSizeKey))->sx = MS_XLOG2DEVREL(1);
+  ((wxSizeKey *)SCHEME_BYTE_STR_VAL(theSizeKey))->sy = MS_YLOG2DEVREL(1);
   oh = theFont->GetRotation();
-  ((wxSizeKey *)SCHEME_BYTE_CHAR_VAL(theSizeKey))->angle = oh;
+  ((wxSizeKey *)SCHEME_BYTE_STR_VAL(theSizeKey))->angle = oh;
 
 
   ustring = convert_to_drawable_format(text, d, ucs4, &len, fam == wxSYMBOL);
@@ -2073,10 +2077,10 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
 
   if (theFont->redirect)
     theFont = theFont->redirect;
-  ((wxSizeKey *)SCHEME_BYTE_CHAR_VAL(theSizeKey))->sx = MS_XLOG2DEVREL(1);
-  ((wxSizeKey *)SCHEME_BYTE_CHAR_VAL(theSizeKey))->sy = MS_YLOG2DEVREL(1);
+  ((wxSizeKey *)SCHEME_BYTE_STR_VAL(theSizeKey))->sx = MS_XLOG2DEVREL(1);
+  ((wxSizeKey *)SCHEME_BYTE_STR_VAL(theSizeKey))->sy = MS_YLOG2DEVREL(1);
   oh = theFont->GetRotation();
-  ((wxSizeKey *)SCHEME_BYTE_CHAR_VAL(theSizeKey))->angle = oh;
+  ((wxSizeKey *)SCHEME_BYTE_STR_VAL(theSizeKey))->angle = oh;
 
   fam = theFont->GetFamily();
 

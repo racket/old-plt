@@ -4740,10 +4740,17 @@ static void TCP_INIT(char *name)
 
 static int tcp_addr(char *address, struct hostInfo *info)
 {
+  int tries = 3;
   long *done = MALLOC_ONE_ATOMIC(long);
+ try_again:
   *done = 0;
+  info->rtnCode = 0;
   if (StrToAddr(address, info, u_dnr_done, (char *)done) == cacheFault) {
     while (!*done) { scheme_process_block(0.25); }
+  }
+  if (info->rtnCode == cacheFault) {
+    if (--tries)
+      goto try_again;
   }
   if (info->rtnCode)
     return info->rtnCode;

@@ -99,7 +99,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 	window_parent = panel;
 	labelPosition = panel->label_position;
 	windowStyle = style;
-	valueFont = buttonFont;
+	valueFont = buttonFont ? buttonFont : wxNORMAL_FONT;
 	Callback (func);
 	
 	SetCurrentMacDC();

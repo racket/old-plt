@@ -592,7 +592,7 @@ int scheme_check_float(const char *where, float v, const char *dest);
 
 unsigned long scheme_get_deeper_address(void);
 
-#if defined(UNIX_FIND_STACK_BOUNDS) || defined(WINDOWS_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE)
+#if defined(UNIX_FIND_STACK_BOUNDS) || defined(WINDOWS_FIND_STACK_BOUNDS) || defined(MACOS_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE)
 #ifndef MZ_REAL_THREADS
 extern unsigned long scheme_stack_boundary;
 #endif

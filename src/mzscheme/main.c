@@ -104,11 +104,14 @@ static void user_break_hit(int ignore)
 #ifdef MACINTOSH_EVENTS
 static int check_break_flag()
 {
-  QHdrPtr start;
-  EvQEl *q;
-  EventRecord event;
+  static long last_time;
+
+  if (TickCount() > last_time + 30) {
+    QHdrPtr start;
+    EvQEl *q;
+    EventRecord event;
   
-  start = GetEvQHdr();
+    start = GetEvQHdr();
   q = (EvQEl *)start->qHead;
   while (q) {
     if (q->evtQWhat == keyDown) {
@@ -124,16 +127,14 @@ static int check_break_flag()
   }
 #ifdef MACINTOSH_GIVE_TIME
   {
-    static long last_time;
-    if (TickCount() > last_time + 30) {
       EventRecord e;
-      if (WaitNextEvent(everyEvent, &e, 30, NULL)) {
+      if (WaitNextEvent(everyEvent, &e, 10, NULL)) {
 # ifdef MACINTOSH_SIOUX
         SIOUXHandleOneEvent(&e);
 # endif
 	  }
-      last_time = TickCount();
     }
+    last_time = TickCount();
   }
 #endif
   return 0;

@@ -27,7 +27,9 @@
 #include <Events.h>
 #include <Processes.h>
 
-#define SLEEP_TIME 30
+#define FG_SLEEP_TIME 0
+#define BG_SLEEP_TIME 30
+#define DELAY_TIME 5
 
 static long resume_ticks;
 
@@ -82,9 +84,9 @@ typedef struct MrQueueElem {
   struct MrQueueElem *next, *prev;
 } MrQueueElem;
 
-MrQueueElem *first, *last;
+static MrQueueElem *first, *last;
 
-WindowPtr needsActive, needsDeactive;
+static int last_was_front;
 
 static int QueueTransferredEvent(EventRecord *e)
 {
@@ -174,14 +176,29 @@ static int QueueTransferredEvent(EventRecord *e)
   return 1;
 }
 
+static int GetSleepTime(void)
+{
+  if (last_was_front && Button())
+    return 0;
+    
+  return last_was_front ? FG_SLEEP_TIME : BG_SLEEP_TIME;
+}
+
 static void TransferQueue(int all)
 {
   EventRecord e;
   short mask;
+  int sleep_time, delay_time;
+  
+  sleep_time = GetSleepTime();
+  if (sleep_time < DELAY_TIME)
+    delay_time = DELAY_TIME;
+  else
+    delay_time = sleep_time;
   
   /* Don't call WaitNextEvent too often. */
   static long lastTime;
-  if (TickCount() <= lastTime + 5)
+  if (TickCount() <= lastTime + delay_time)
     return;
 
 #ifdef USE_OS_QUEUE
@@ -193,7 +210,7 @@ static void TransferQueue(int all)
   mask = everyEvent;
 #endif
   
-  while (WaitNextEvent(mask, &e, dispatched ? SLEEP_TIME : 0, NULL)) {
+  while (WaitNextEvent(mask, &e, dispatched ? sleep_time : 0, NULL)) {
     if (!QueueTransferredEvent(&e))
       break;
   }
@@ -286,7 +303,6 @@ static int WeAreFront()
 static MrEdContext *cont_event_context;
 static short cont_event_context_modifiers;
 static Point last_mouse;
-static int last_was_front;
 
 #ifdef RECORD_HISTORY
 FILE *history;
@@ -797,7 +813,6 @@ void MrEdMacSleep(float secs)
   RgnHandle rgn = NULL;
 #endif
   
-  if (WaitNextEvent(0, &e, secs ? secs * 60 : SLEEP_TIME, rgn))
+  if (WaitNextEvent(0, &e, secs ? secs * 60 : BG_SLEEP_TIME, rgn))
     QueueTransferredEvent(&e);
 }
-

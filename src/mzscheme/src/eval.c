@@ -114,7 +114,7 @@ static Scheme_Object *let_symbol;
 	}
 #endif
 
-#if defined(UNIX_FIND_STACK_BOUNDS) || defined(WINDOWS_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE)
+#if defined(UNIX_FIND_STACK_BOUNDS) || defined(WINDOWS_FIND_STACK_BOUNDS) || defined(MACOS_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE)
 #ifndef MZ_REAL_THREADS
 unsigned long scheme_stack_boundary;
 #endif
@@ -1684,6 +1684,10 @@ void scheme_init_stack_check()
 #ifdef WINDOWS_FIND_STACK_BOUNDS
   scheme_stack_boundary = GC_get_stack_base();
   scheme_stack_boundary += (STACK_SAFETY_MARGIN - 0x100000);
+#endif
+
+#ifdef MACOS_FIND_STACK_BOUNDS
+  scheme_stack_boundary = (unsigned long)&v +  STACK_SAFETY_MARGIN - StackSpace();
 #endif
 
 #ifdef UNIX_FIND_STACK_BOUNDS

@@ -175,8 +175,7 @@
 						rewritten expr (list m)))
 				(expanded (expand-expr structurized env
 					    attributes vocab)))
-			  (set-macro-origin expanded app-pos)
-			  expanded))
+			  (set-macro-origin expanded app-pos)))
 		      ((micro-resolution? r)
 			((micro-resolution-rewriter r)
 			  expr env attributes vocab))

@@ -71,7 +71,8 @@
 	    (if (z:symbol? head-sexp)
 	      head-sexp
 	      (internal-error 'set-macro-origin
-		"Shouldn't get ~s here" head-sexp)))))))
+		"Shouldn't get ~s here" head-sexp))))
+	parsed-term)))
 
   (define sexp->raw
     (opt-lambda (expr (table #f))
@@ -104,7 +105,7 @@
 	(else
 	  expr))))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define syntax-null?
     (lambda (l)

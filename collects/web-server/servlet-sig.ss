@@ -1,24 +1,19 @@
 (module servlet-sig mzscheme
   (provide servlet^
            (struct response/full (code message seconds mime extras body))
-           ;(struct response/incremental ())
+           (struct response/incremental ())
            (struct request (method uri headers host-ip client-ip))
            (rename request-bindings request-bindings/raw)
            (rename get-parsed-bindings request-bindings))
   (require (lib "unitsig.ss"))
 
-  ; more here - delete this or provide backwards compatability
-  ;(define-signature servlet-old^
-  ;  (method uri headers bindings host-ip client-ip send/suspend send/finish adjust-timeout
-  ;   (struct response/full (code message seconds mime extras body) -setters)))
-  
   (define-signature servlet^
     (initial-request send/suspend send/finish adjust-timeout!))
   
   ; more here - these should really have a common super type, but I don't want to break
   ; the existing interface.
   (define-struct response/full (code message seconds mime extras body))
-  ;(define-struct (response/incremental response/full) ())
+  (define-struct (response/incremental response/full) ())
   
   ; request = (make-request sym URL (listof (cons sym str)) (U (listof (cons sym str))) str str)
   ; Outside this module, bindings looks like an association list (due to renaming request-bindings).

@@ -11,6 +11,7 @@
     [(mred) 2]
     [(framework) 4]
     [(misclib) 5]
+    [(teach) 8]
     [(mzc) 10]
     [(insidemz) 50]
     [else 100]))

@@ -149,7 +149,16 @@
 							    ""
 							    "Beg/Int/Adv: not available   ")
 							lib)
-						       "")))]
+						       (let ([drlib 
+							      (ormap (lambda (s)
+								       (let ([m (regexp-match "teach=(.*)" s)])
+									 (and m
+									      (format "Teaching library: select ~s using Set Library To... in DrScheme"
+										      (cadr m)))))
+								     l)])
+							 (if drlib
+							     drlib
+							     "")))))]
 					      [on-navigate stop-search])
 					    (sequence (super-init #t (send f get-area-container))))))
 	  (define results (send html-panel get-canvas))

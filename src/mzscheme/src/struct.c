@@ -2250,8 +2250,8 @@ Scheme_Object *scheme_extract_struct_procedure(Scheme_Object *obj, int num_rands
     proc = a;
   }
 
-  if (rands) {
-    /* rands is non-NULL => do arity check */
+  if (num_rands >= 0) {
+    /* num_rands is non-negative => do arity check */
     if (!SCHEME_PROCP(proc)
 	|| !scheme_check_proc_arity(NULL, num_rands, -1, 0, &obj)) {
       scheme_wrong_count_m((char *)obj,

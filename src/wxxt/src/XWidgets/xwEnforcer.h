@@ -15,6 +15,16 @@ _XFUNCPROTOBEGIN
 #define XtRBoolean "Boolean"
 #endif
 
+#ifndef XtNmultipleKids
+#define XtNmultipleKids "multipleKids"
+#endif
+#ifndef XtCMultipleKids
+#define XtCMultipleKids "MultipleKids"
+#endif
+#ifndef XtRBoolean
+#define XtRBoolean "Boolean"
+#endif
+
 #ifndef XtNlabel
 #define XtNlabel "label"
 #endif

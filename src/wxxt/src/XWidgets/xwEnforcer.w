@@ -7,7 +7,8 @@
 @ The Enforcer widget can be used to apply location resources to a
 widget that is not a subclass of XfwfBoard. The Widget accepts a
 single child and forces that child to the same size as itself (minus
-the frame).
+the frame) --- unless multipleKids is true, in which case the enforcer
+is used merely to propagate key events.
 
 It can also be used to put a frame around some widget and to add a label.
 
@@ -18,6 +19,8 @@ the geometry may be forced to fit to the Enforcer, or second the Enforcer
 may shrink to fit around the child.
 
 	@var Boolean shrinkToFit = FALSE
+
+	@var Boolean multipleKids = FALSE
 
 @ The default width and height are changed to 10 x 10.
 
@@ -215,6 +218,9 @@ decreasing the area by the amount needed for the frame.
 
 @proc resize
 {
+  if ($multipleKids) {
+    #resize($);
+  } else {
     Position x, y;
     int w, h;
     Widget child;
@@ -225,6 +231,7 @@ decreasing the area by the amount needed for the frame.
     w -= 2 * $child$border_width;
     h -= 2 * $child$border_width;
     XtConfigureWidget(child, x, y, max(1, w), max(1, h), $child$border_width);
+  }
 }
 
 @ The |insert_child| method is called, when a child is inserted
@@ -235,9 +242,10 @@ widget has to be resized to fit around the frame.
 {
     #insert_child(child);
 
-    if (child == $children[0] && $shrinkToFit) {
+    if (!$multipleKids) {
+      if (child == $children[0] && $shrinkToFit) {
 	Position x, y; int w, h, cw;
-
+	
 	$compute_inside($, &x, &y, &w, &h);
 	if ($alignment == XfwfTop)
 	  cw = max($child$width, $labelWidth);
@@ -246,6 +254,7 @@ widget has to be resized to fit around the frame.
 	w = cw + 2*$child$border_width + $width - w;
 	h = $height - h + $child$height + 2*$child$border_width;
 	XtVaSetValues($, XtNwidth, max(1, w), XtNheight, max(1, h), NULL);
+      }
     }
 }
 
@@ -256,6 +265,9 @@ frame, or the frame around the child.
 
 @proc change_managed
 {
+  if ($multipleKids) {
+    #change_managed($);
+  } else {
     Widget child;
     Position x, y; int w, h;
 
@@ -282,6 +294,7 @@ frame, or the frame around the child.
     }
     
     XtConfigureWidget(child, x, y, max(1, w), max(1, h), $child$border_width);
+  }
 }
 
 @ If a child requests to be resized, the request is always ignored, or if 

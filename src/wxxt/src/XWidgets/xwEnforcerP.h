@@ -25,6 +25,7 @@ XfwfEnforcerClassPart xfwfEnforcer_class;
 typedef struct {
 /* resources */
 Boolean  shrinkToFit;
+Boolean  multipleKids;
 String  label;
 XFontStruct * font;
 void * xfont;

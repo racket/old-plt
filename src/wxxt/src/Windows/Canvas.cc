@@ -72,32 +72,20 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 
     // create frame
     wgt = XtVaCreateWidget
-	(name, xfwfBoardWidgetClass, ph->handle,
+	(name, 
+	 xfwfEnforcerWidgetClass, 
+	 ph->handle,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNtraversalTranslationDone, TRUE,
 	 XtNhighlightThickness, ((style & wxNO_CAPTION) ? 1 : 0),
 	 XtNframeWidth, 0,
+	 XtNmultipleKids, !!(style & wxCOMBO_SIDE),
 	 NULL);
     if (!(style & wxINVISIBLE))
       XtManageChild(wgt);
     X->frame = wgt;
-    // Create combo, if requested
-    if (style & wxCOMBO_SIDE) {
-      XtVaCreateManagedWidget
-	("choice_button", xfwfArrowWidgetClass, X->frame,
-	 XtNbackground,  wxGREY_PIXEL,
-	 XtNforeground,  wxBLACK_PIXEL,
-	 XtNdirection,   XfwfBottom,
-	 XtNrepeat,      FALSE,
-	 XtNarrowShadow, 0,
-	 XtNframeWidth, 2,
-	 XtNframeType, XfwfRaised,
-	 XtNlocation,    "1.0 - 16 0 16 1.0",
-	 XtNhighlightThickness, 0,
-	 NULL);
-    }
     // create scrolled area
     wgt = XtVaCreateManagedWidget
 	("viewport", xfwfScrolledWindowWidgetClass, X->frame,
@@ -115,6 +103,34 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 	 XtNlocation, ((style & wxCOMBO_SIDE) ? "0 0 1.0 - 16 1.0" : "0 0 1.0 1.0"),
 	 NULL);
     X->scroll = wgt;
+    // Create combo, if requested
+    if (style & wxCOMBO_SIDE) {
+      Widget combo;
+      combo = XtVaCreateManagedWidget
+	("choice_button", xfwfArrowWidgetClass, X->frame,
+	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
+	 XtNdirection,   XfwfBottom,
+	 XtNrepeat,      FALSE,
+	 XtNarrowShadow, 0,
+	 XtNframeWidth, 2,
+	 XtNframeType, XfwfRaised,
+	 XtNlocation,    "1.0 - 16 0 16 1.0",
+	 XtNhighlightThickness, 0,
+	 NULL);
+      
+      XtInsertEventHandler
+	(combo,
+	 KeyPressMask | KeyReleaseMask |
+	 ButtonPressMask |	// for OnEvent
+	 ButtonReleaseMask |
+	 ButtonMotionMask |
+	 PointerMotionMask | PointerMotionHintMask,
+	 FALSE,
+	 (XtEventHandler)wxWindow::WindowEventHandler,
+	 (XtPointer)saferef,
+	 XtListHead);
+    }
     // create canvas
 #ifdef USE_GL
     wx_common_use_visual = wxGetGLWindowVisual();
@@ -161,7 +177,6 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 
     // add event handlers
     AddEventHandlers();
-    /* MATTHEW */
     // propagate key events from frame to canvas widget
     XtVaSetValues(X->frame, XtNpropagateTarget, X->handle, NULL);
 

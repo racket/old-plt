@@ -167,7 +167,7 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
     X = new wxMenu_Widgets;
     X->shell = XtVaCreatePopupShell
 	("popup", overrideShellWidgetClass, in_w, 
-	 XtNborderWidth, forChoice ? 0 : 1,
+	 XtNborderWidth, 0,
 	 XtNvisual, wxAPP_VISUAL,
 	 XtNdepth, wx_visual_depth,
 	 XtNcolormap, wx_default_colormap,
@@ -309,7 +309,7 @@ void wxMenu::Append(long id, char *label, wxMenu *submenu, char *help)
   menu_item *item;
   void *tm;
 
-  /* MATTHEW: enforce one-menu-owner: */
+  /* enforce one-menu-owner: */
   if (submenu->owner)
     return;
 
@@ -342,7 +342,6 @@ void wxMenu::AppendSeparator(void)
     item->type      = MENU_SEPARATOR;
 }
 
-/* MATTHEW: */
 Bool wxMenu::DeleteItem(long id, int pos)
 {
   menu_item *found, *prev;
@@ -599,7 +598,7 @@ void wxMenu::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer dcal
     /* zero out to prevent future callbacks: */
     *(void **)dclient = NULL;
 
-    /* MATTHEW: remove grab */
+    /* remove grab */
     XtRemoveGrab(menu->X->shell);
     wxRemoveGrab(menu->X->shell);
 

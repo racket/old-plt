@@ -165,6 +165,7 @@ static void make_graygc(self)Widget self;
 
 static XtResource resources[] = {
 {XtNshrinkToFit,XtCShrinkToFit,XtRBoolean,sizeof(((XfwfEnforcerRec*)NULL)->xfwfEnforcer.shrinkToFit),XtOffsetOf(XfwfEnforcerRec,xfwfEnforcer.shrinkToFit),XtRImmediate,(XtPointer)FALSE },
+{XtNmultipleKids,XtCMultipleKids,XtRBoolean,sizeof(((XfwfEnforcerRec*)NULL)->xfwfEnforcer.multipleKids),XtOffsetOf(XfwfEnforcerRec,xfwfEnforcer.multipleKids),XtRImmediate,(XtPointer)FALSE },
 {XtNrel_width,XtCRel_width,XtRFloat,sizeof(((XfwfEnforcerRec*)NULL)->xfwfBoard.rel_width),XtOffsetOf(XfwfEnforcerRec,xfwfBoard.rel_width),XtRString,(XtPointer)"0.0"},
 {XtNrel_height,XtCRel_height,XtRFloat,sizeof(((XfwfEnforcerRec*)NULL)->xfwfBoard.rel_height),XtOffsetOf(XfwfEnforcerRec,xfwfBoard.rel_height),XtRString,(XtPointer)"0.0"},
 {XtNabs_width,XtCAbs_width,XtRPosition,sizeof(((XfwfEnforcerRec*)NULL)->xfwfBoard.abs_width),XtOffsetOf(XfwfEnforcerRec,xfwfBoard.abs_width),XtRImmediate,(XtPointer)10 },
@@ -192,10 +193,10 @@ XfwfEnforcerClassRec xfwfEnforcerClassRec = {
 /* actions      	*/  actionsList,
 /* num_actions  	*/  1,
 /* resources    	*/  resources,
-/* num_resources 	*/  12,
+/* num_resources 	*/  13,
 /* xrm_class    	*/  NULLQUARK,
 /* compres_motion 	*/  True ,
-/* compress_exposure 	*/  XtExposeCompressMultiple ,
+/* compress_exposure 	*/  XtExposeCompressMaximal ,
 /* compress_enterleave 	*/  True ,
 /* visible_interest 	*/  False ,
 /* destroy      	*/  destroy,
@@ -412,6 +413,9 @@ static void resize(Widget self)
 static void resize(self)Widget self;
 #endif
 {
+  if (((XfwfEnforcerWidget)self)->xfwfEnforcer.multipleKids) {
+    xfwfBoardClassRec.core_class.resize(self);
+  } else {
     Position x, y;
     int w, h;
     Widget child;
@@ -422,6 +426,7 @@ static void resize(self)Widget self;
     w -= 2 * ((XfwfEnforcerWidget)child)->core.border_width;
     h -= 2 * ((XfwfEnforcerWidget)child)->core.border_width;
     XtConfigureWidget(child, x, y, max(1, w), max(1, h), ((XfwfEnforcerWidget)child)->core.border_width);
+  }
 }
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
@@ -432,9 +437,10 @@ static void insert_child(child)Widget  child;
 { Widget self = XtParent(child); {
     xfwfBoardClassRec.composite_class.insert_child(child);
 
-    if (child == ((XfwfEnforcerWidget)self)->composite.children[0] && ((XfwfEnforcerWidget)self)->xfwfEnforcer.shrinkToFit) {
+    if (!((XfwfEnforcerWidget)self)->xfwfEnforcer.multipleKids) {
+      if (child == ((XfwfEnforcerWidget)self)->composite.children[0] && ((XfwfEnforcerWidget)self)->xfwfEnforcer.shrinkToFit) {
 	Position x, y; int w, h, cw;
-
+	
 	((XfwfEnforcerWidgetClass)self->core.widget_class)->xfwfCommon_class.compute_inside(self, &x, &y, &w, &h);
 	if (((XfwfEnforcerWidget)self)->xfwfEnforcer.alignment == XfwfTop)
 	  cw = max(((XfwfEnforcerWidget)child)->core.width, ((XfwfEnforcerWidget)self)->xfwfEnforcer.labelWidth);
@@ -443,6 +449,7 @@ static void insert_child(child)Widget  child;
 	w = cw + 2*((XfwfEnforcerWidget)child)->core.border_width + ((XfwfEnforcerWidget)self)->core.width - w;
 	h = ((XfwfEnforcerWidget)self)->core.height - h + ((XfwfEnforcerWidget)child)->core.height + 2*((XfwfEnforcerWidget)child)->core.border_width;
 	XtVaSetValues(self, XtNwidth, max(1, w), XtNheight, max(1, h), NULL);
+      }
     }
 }
 }
@@ -453,6 +460,9 @@ static void change_managed(Widget self)
 static void change_managed(self)Widget self;
 #endif
 {
+  if (((XfwfEnforcerWidget)self)->xfwfEnforcer.multipleKids) {
+    xfwfBoardClassRec.composite_class.change_managed(self);
+  } else {
     Widget child;
     Position x, y; int w, h;
 
@@ -479,6 +489,7 @@ static void change_managed(self)Widget self;
     }
     
     XtConfigureWidget(child, x, y, max(1, w), max(1, h), ((XfwfEnforcerWidget)child)->core.border_width);
+  }
 }
 /*ARGSUSED*/
 #if NeedFunctionPrototypes

@@ -4,7 +4,7 @@
 
 ;;; Author: Paul Steckler 
 
-(load "/home/steck/plt/tests/drscheme/drscheme-test-util.ss")
+(load-relative "drscheme-test-util.ss")
 
 (define-macro check-for-button 
   (lambda (button s)

@@ -76,8 +76,8 @@
              [fn-map-begin  (lambda (stx) (fn-map-begin/0 stx #f))]
              [fn-map-begin0 (lambda (stx) (fn-map-begin/0 stx #t))]
              [rebuild
-              (lambda (new-sexp) 
-                (rebuild-stx new-sexp (syntax->list stx)))]
+              (lambda (new-stx) 
+                (rebuild-stx (syntax->list new-stx) stx))]
              [lambda-clause-abstraction
               (lambda (clause)
                 (kernel:kernel-syntax-case clause #f
@@ -131,8 +131,8 @@
   
   (define (top-level-expr-iterator stx)
     (let ([rebuild
-           (lambda (new-sexp) 
-             (rebuild-stx new-sexp (syntax->list stx)))])
+           (lambda (new-stx) 
+             (rebuild-stx (syntax->list new-stx) stx))])
       (kernel:kernel-syntax-case #f
         [(module identifier name (#%plain-module-begin . module-level-exprs))
          (rebuild #`(module identifier name (#%plain-module-begin #,@(map module-level-expr-iterator
@@ -141,12 +141,30 @@
          (general-top-level-expr-iterator stx)])))
 
   (define (module-level-expr-iterator stx)
-    (syntax-case
+    (kernel:kernel-syntax-case stx #f
+      [(provide . provide-specs)
+       stx]
+      [else-stx
+       (general-top-level-expr-iterator stx)]))
   
-module-level-expr is one of
-  general-top-level-expr
-  (provide provide-spec ...)
-
+  (define (general-top-level-expr-iterator stx)
+    (let ([rebuild 
+           (lambda (new-stx) 
+             (rebuild-stx (syntax->list new-stx) stx))])
+      (kernel:kernel-syntax-case stx #f
+        [(define-values (var ...) expr)
+         (rebuild #`(define-values (var ...) #,@(]
+        [(define-syntaxes (var ...) expr)
+         ...]
+        [(begin . top-level-exprs)
+         ...]
+        [(require . require-specs)
+         ...]
+        [(require-for-syntax . require-specs)
+         ...]
+        [else
+         ...]))
+      
 general-top-level-expr is one of
   expr
   (define-values (variable ссс) expr)

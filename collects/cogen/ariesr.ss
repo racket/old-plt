@@ -35,7 +35,18 @@
 	    [(z:list? read) (map unparse-read (z:read-object read))]
 	    [else (z:read-object read)]))))
 
-    (define unparse-read z:sexp->raw)
+    ; Objects that are passed to eval get quoted by M3.  These objects
+    ; do not belong in the `read' structure framework.  Hence, if they
+    ; are passed to z:sexp->raw, they will error.  Thus, we first check
+    ; before sending things there.
+
+    (define read->raw
+      (lambda (read)
+	(if (z:zodiac? read)
+	  (z:sexp->raw read)
+	  read)))
+
+    (define unparse-read read->raw)
 
     (define wrap
       (lambda (zodiac x)
@@ -126,10 +137,10 @@
 	  [(z:struct-form? expr)
 	    `(#%struct
 	       ,(if (z:struct-form-super expr)
-		  (list (z:sexp->raw (z:struct-form-type expr))
+		  (list (read->raw (z:struct-form-type expr))
 		    (annotate (z:struct-form-super expr)))
-		  (z:sexp->raw (z:struct-form-type expr)))
-	       ,(map z:sexp->raw (z:struct-form-fields expr)))]
+		  (read->raw (z:struct-form-type expr)))
+	       ,(map read->raw (z:struct-form-fields expr)))]
 
 	  [(z:if-form? expr)
 	    `(#%if ,(annotate (z:if-form-test expr))
@@ -217,14 +228,14 @@
 		((links
 		   (map
 		     (lambda (link-clause)
-		       (let ((tag (z:sexp->raw (car link-clause)))
+		       (let ((tag (read->raw (car link-clause)))
 			      (sub-unit (annotate (cadr link-clause)))
 			      (imports
 				(map (lambda (import)
 				       (if (z:lexical-varref? import)
 					 (annotate import)
-					 `(,(z:sexp->raw (car import))
-					    ,(z:sexp->raw (cdr import)))))
+					 `(,(read->raw (car import))
+					    ,(read->raw (cdr import)))))
 				  (cddr link-clause))))
 			 `(,tag (,sub-unit ,@imports))))
 		     links))
@@ -233,10 +244,10 @@
 		      (lambda (export-clause)
 			(let ((tag (car export-clause))
 			       (exports (map (lambda (export)
-					       `(,(z:sexp->raw (car export))
-						  ,(z:sexp->raw (cdr export))))
+					       `(,(read->raw (car export))
+						  ,(read->raw (cdr export))))
 					  (cdr export-clause))))
-			  `(,(z:sexp->raw tag) ,@exports)))
+			  `(,(read->raw tag) ,@exports)))
 		      exports)))
 		`(#%compound-unit
 		   (import ,@imports)
@@ -280,7 +291,7 @@
 			 `(public
 			    ,@(map (lambda (internal export expr)
 				     `((,(z:binding-var internal)
-					 ,(z:sexp->raw export))
+					 ,(read->raw export))
 					,(annotate expr)))
 				(z:public-clause-internals clause)
 				(z:public-clause-exports clause)
@@ -296,7 +307,7 @@
 			 `(local
 			    ,@(map (lambda (internal export expr)
 				     `((,(z:binding-var internal)
-					 ,(z:sexp->raw export))
+					 ,(read->raw export))
 					,(annotate expr)))
 				(z:local-clause-internals clause)
 				(z:local-clause-exports clause)
@@ -317,7 +328,7 @@
 			 `(rename
 			    ,@(map (lambda (internal inherited)
 				     `(,(z:binding-var internal)
-					,(z:sexp->raw inherited)))
+					,(read->raw inherited)))
 				(z:rename-clause-internals clause)
 				(z:rename-clause-inheriteds clause))))
 		       ((z:rename-from-clause? clause)
@@ -326,15 +337,15 @@
 			       (z:rename-from-clause-super clause))
 			    ,@(map (lambda (internal inherited)
 				     `(,(z:binding-var internal)
-					,(z:sexp->raw inherited)))
+					,(read->raw inherited)))
 				(z:rename-from-clause-internals clause)
 				(z:rename-from-clause-inheriteds clause))))
 		       ((z:share-clause? clause)
 			 `(share
 			    ,@(map (lambda (internal export inherited)
 				     `((,(z:binding-var internal)
-					 ,(z:sexp->raw export))
-					,(z:sexp->raw inherited)))
+					 ,(read->raw export))
+					,(read->raw inherited)))
 				(z:share-clause-internals clause)
 				(z:share-clause-exports clause)
 				(z:share-clause-inheriteds clause))))
@@ -344,8 +355,8 @@
 			       (z:share-from-clause-super clause))
 			    ,@(map (lambda (internal export inherited)
 				     `((,(z:binding-var internal)
-					 ,(z:sexp->raw export))
-					,(z:sexp->raw inherited)))
+					 ,(read->raw export))
+					,(read->raw inherited)))
 				(z:share-from-clause-internals clause)
 				(z:share-from-clause-exports clause)
 				(z:share-from-clause-inheriteds clause))))

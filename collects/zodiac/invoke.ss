@@ -1,7 +1,7 @@
 (reference-library "file.ss")
 (reference-library "prettyu.ss")
 
-(begin-elaboration-time
+(begin-construction-time
   (define plt-home-directory
     (let ([plt (getenv "PLTHOME")])
       (normalize-path
@@ -14,10 +14,10 @@
 		    (if (string? base)
 		      base
 		      (current-directory)))]))))))
-(require-library (begin-elaboration-time
+(require-library (begin-construction-time
 		   (build-path plt-home-directory
 		     "lib" "require.ss")))
-(reference (begin-elaboration-time
+(reference (begin-construction-time
 	     (build-path plt-home-directory "lib" "sparams.ss")))
 
 (reference "load.ss")
@@ -38,7 +38,7 @@
       (default-error-handler 'run-time-error))))
 
 (define plt:mzscheme-parameters@
-  (reference (begin-elaboration-time
+  (reference (begin-construction-time
 	       (build-path plt-home-directory "lib" "sparamu.ss"))))
 
 (define zodiac:system@

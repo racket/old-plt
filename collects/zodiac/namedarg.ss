@@ -1,7 +1,7 @@
 (reference-library "match.ss")
 (reference-library "macro.ss")
 
-(begin-elaboration-time
+(begin-construction-time
 
 (invoke-open-unit
 
@@ -211,16 +211,16 @@
 
 )					; invoke-open-unit
 
-)					; begin-elaboration-time
+)					; begin-construction-time
 
 (define-macro define-argument-list
-  (begin-elaboration-time define-argument-list))
+  (begin-construction-time define-argument-list))
 
 (define-macro lambda/nal
-  (begin-elaboration-time lambda/nal))
+  (begin-construction-time lambda/nal))
 
 (define-macro call/nal
-  (begin-elaboration-time call/nal))
+  (begin-construction-time call/nal))
 
 #|
 

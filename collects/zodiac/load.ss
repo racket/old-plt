@@ -6,7 +6,7 @@
 
 ; All this stuff needs to be disappeared.
 
-(begin-elaboration-time
+(begin-construction-time
   (reference-library "file.ss")
   (define plt-home-directory
     (let ([plt (getenv "PLTHOME")])
@@ -20,7 +20,7 @@
 		    (if (string? base)
 		      base
 		      (current-directory)))]))))))
-(require-library (begin-elaboration-time
+(require-library (begin-construction-time
 		   (build-path plt-home-directory
 		     "lib" "require.ss")))
 (plt:require-library "sparams.ss")

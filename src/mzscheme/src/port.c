@@ -1251,6 +1251,8 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
       ip->charsSinceNewline += c;
   }
 
+  END_LOCK_PORT(ip->sema);
+
   /************************************/
   /* `read-string' on a generic port? */
   /************************************/
@@ -1266,8 +1268,6 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
 	break;
     }
   }
-
-  END_LOCK_PORT(ip->sema);
 
   return got;
 }

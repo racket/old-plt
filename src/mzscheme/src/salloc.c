@@ -43,7 +43,7 @@ static void *fin_mutex = NULL;
 # ifdef MZ_KEEP_LOCK_INFO
 int scheme_fin_lock_c;
 # endif
-# define GET_FIN_LOCK() ((fin_mutex = (fin_mutex ? fin_mutex : (REGISTER_SO(fin_mutex), SCHEME_MAKE_MUTEX()))), SCHEME_LOCK_MUTEX(fin_mutex) _MZ_LOCK_INFO(scheme_fin_lock_c++))
+# define GET_FIN_LOCK() (SCHEME_LOCK_MUTEX(fin_mutex) _MZ_LOCK_INFO(scheme_fin_lock_c++))
 # define RELEASE_FIN_LOCK()  (MZ_LOCK_INFO_(--scheme_fin_lock_c) SCHEME_UNLOCK_MUTEX(fin_mutex))
 #endif
 
@@ -472,6 +472,15 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
   prealloced = MALLOC_ONE_RT(Finalizations); /* may not need this... */
 #ifdef MZTAG_REQUIRED
   prealloced->type = scheme_rt_finalizations;
+#endif
+
+#ifdef MZ_REAL_THREADS
+  /* This function will be called at least once before threads are
+     created, so there's no need to protect the setting of fin_mutex. */
+  if (!fin_mutex) {
+    REGISTER_SO(fin_mutex);
+    fin_mutex = SCHEME_MAKE_MUTEX();
+  }
 #endif
 
   GET_FIN_LOCK();

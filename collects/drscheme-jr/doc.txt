@@ -6,7 +6,7 @@ DrScheme Jr is split up into 3 files:
      
   - core.ss
      This file defines a function make-go that accepts a unit that imports 
-     three units matching the signatures: prims^ (defined in this file) 
+     three units matching the signatures: prims^ (defined in core.ss) 
      userspace:basis^, and mzlib:core^ and exports drscheme-jr:settings.
      The function make-go returns a thunk which starts drscheme-jr.
      

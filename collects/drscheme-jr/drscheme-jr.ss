@@ -30,23 +30,18 @@
 (printf "DrScheme Jr is loading. Please wait...~n")
 (flush-output)
 
-(require-library "refer.ss")
-(require-library "cores.ss")
 (require-library "cmdlines.ss")
 (require-library "macro.ss")
 (require-library "cmdline.ss")
 (require-library "pconvers.ss")
 
-(require-library "zsigs.ss" "zodiac")
-(require-library "sigs.ss" "zodiac")
-
 (require-library "sig.ss" "stepper")
-(require-library "params.ss" "userspce")
 
-(require-library "sig.ss" "userspce")
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                       Core                             ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-signature prims^ (program argv))
-(define-signature drscheme-jr:settings^ (setting startup-file))
+(require-library "core.ss" "drscheme-jr")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;              Flag and Language Definitions             ;;;
@@ -59,6 +54,10 @@
 	    [basis : userspace:basis^]
 	    [mzlib:pretty-print : mzlib:pretty-print^]
 	    [mzlib:function : mzlib:function^])
+
+    (define repl? #t)
+    (define show-banner? #t)
+    (define initialize-userspace void)
     
     (define setting (basis:get-default-setting))
 
@@ -348,143 +347,24 @@
 		 (get-argv-file))
 	 (exit 0))))))
 
-(define dr-jrU
-  (unit/sig ()
-    (import [zodiac : zodiac:system^]
-	    [print-convert : mzlib:print-convert^]
-	    [basis : userspace:basis^]
-	    [mzlib:pretty-print : mzlib:pretty-print^]
-	    [mzlib:function : mzlib:function^]
-	    [mzlib:thread : mzlib:thread^]
-	    [settings : drscheme-jr:settings^])
-    (define user-custodian (make-custodian))
-
-    (define primitive-eval (current-eval))
-
-    (define (repl)
-      (let ([escape-k void]
-	    [display-prompt
-	     (lambda ()
-	       (display "> ")
-	       (flush-output))]
-	    [input #f])
-	(error-escape-handler (lambda () (escape-k #t)))
-	(let outer-loop ()
-	  (when (let/ec k
-		  (display-prompt)
-		  (fluid-let ([escape-k k])
-		    (unless input
-		      (set! input
-			    (zodiac:read (current-input-port)
-					 (zodiac:make-location 1 1 (file-position (current-output-port)) "stdin"))))
-		    (basis:process/zodiac
-		     input
-		     (lambda (sexp loop)
-		       (unless (basis:process-finish? sexp)
-			 (mzlib:thread:dynamic-enable-break
-			  (lambda ()
-			    (call-with-values
-			     (lambda () (primitive-eval sexp))
-			     (lambda args (for-each (current-print) args)))))
-			 (display-prompt)
-			 (loop)))
-		     #t))
-		  #f)
-	    (outer-loop)))))
-
-    (define read/zodiac
-      (lambda (port)
-	(let ([r (zodiac:read
-		  port
-		  (zodiac:make-location 1 1 0 "port"))])
-	  (lambda ()
-	    (let ([v (r)])
-	      (if (zodiac:eof? v)
-		  eof
-		  (zodiac:sexp->raw v)))))))
-
-    (define drscheme-jr-print-load
-      (lambda (f)
-	(parameterize ([basis:intermediate-values-during-load
-			(lambda values
-			  (for-each basis:drscheme-print values))])
-	  (load f))))
-
-    (define (load/prompt f)
-      (let/ec jump
-	(let* ([eeh #f])
-	  (dynamic-wind
-	   (lambda () 
-	     (set! eeh (error-escape-handler))
-	     (error-escape-handler jump))
-	   (lambda () (drscheme-jr-print-load f))
-	   (lambda () 
-	     (error-escape-handler eeh)
-	     (set! eeh #f))))))
-
-    (define (go)
-      (let ([file settings:startup-file])
-	(let loop ()
-	  (let ([continue? #f])
-
-	    (basis:initialize-parameters
-	     user-custodian
-	     settings:setting)
-	
-	    (mzlib:thread:dynamic-disable-break
-	     (lambda ()
-	       (global-defined-value 'read/zodiac read/zodiac)
-	       (global-defined-value 'restart
-				     (let ([die (lambda ()
-						  (set! continue? #t)
-						  (custodian-shutdown-all user-custodian))])
-				       (rec restart
-					    (case-lambda
-					     [(new-file)
-					      (when (or (not (string? new-file))
-							(not (or (relative-path? new-file)
-								 (absolute-path? new-file))))
-						(raise-type-error 'restart "path string" new-file))
-					      (set! file new-file)
-					      (die)]
-					     [() (die)]))))
-	       (printf "Welcome to DrScheme Jr version ~a, Copyright (c) 1995-99 PLT~n"
-		       (version))
-	       (printf "Language: ~a~n"
-		       (cadr (assoc (basis:setting-vocabulary-symbol (basis:current-setting))
-				    (map (lambda (s)
-					   (list (basis:setting-vocabulary-symbol s)
-						 (basis:setting-name s)))
-					 basis:settings))))
-	       
-	       (let ([repl-thread (thread
-				   (lambda ()
-				     
-				     (when (string? file)
-				       (load/prompt file))
-				     
-				     (repl)))])
-		 (mzlib:thread:dynamic-enable-break
-		  (lambda ()
-		    (let loop ()
-		      (with-handlers ([exn:misc:user-break? (lambda (x)
-							      (break-thread repl-thread)
-							      (loop))])
-			(thread-wait repl-thread))))))))
-	    (when continue?
-	      (loop))))))
-
-    go))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                     DrScheme Jr                        ;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; Dont' require mzlib or pretty-print here; they are linked with zodiac
-
-(require-library "pconver.ss")
-
 (define go
+  (make-go
+   (compound-unit/sig
+     (import [mz : prims^]
+             [basis : userspace:basis^]
+             [mzlib : mzlib:core^])
+     (link
+      [cmd-line : mzlib:command-line^ ((require-library "cmdliner.ss"))]
+      [settings : drscheme-jr:settings^
+                (build-settingU mz
+                                cmd-line
+                                basis
+                                (mzlib pretty-print)
+                                (mzlib function))])
+     (export (open settings)))))
+
+#|
+
   (invoke-unit/sig
    (compound-unit/sig (import)
      (link [mz : prims^ ((let ([_argv argv]
@@ -538,4 +418,4 @@
 			(mzlib thread)
 			settings)])
      (export))))
-
+|#

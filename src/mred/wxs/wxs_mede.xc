@@ -120,8 +120,8 @@
 @ "insert" : void Insert(nnlong,mzstring,nnlong,nnls[same]=-1,bool=TRUE);  : : /checkStringLen[0.1] <> length and string without position
 @ "insert" : void Insert(nnlong,mzstring);  : : /checkStringLen[0.1] <> length, string, and position
 @ "insert" : void Insert(wxSnip!,nnlong,nnls[same]=-1,bool=TRUE); <> snip% and position
-@ "insert" : void Insert(uchar); <> character without position
-@ "insert" : void Insert(uchar,nnlong,nnls[same]=-1); <> character and position
+@ "insert" : void Insert(mzchar); <> character without position
+@ "insert" : void Insert(mzchar,nnlong,nnls[same]=-1); <> character and position
 
 @ "delete" : void Delete(nnls[start],nnls[back]=-1,bool=TRUE); <> position
 @ "delete" : void Delete(); <> no position

@@ -6051,7 +6051,7 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
     
     READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+2)) && WITH_REMEMBERED_STACK(objscheme_istype_char(p[POFFSET+0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+1], NULL))) {
-    unsigned char x0;
+    mzchar x0;
     nnlong x1;
     long x2;
 
@@ -6061,7 +6061,7 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+3))) 
       WITH_VAR_STACK(scheme_wrong_count_m("insert in text% (character and position case)", POFFSET+2, POFFSET+3, n, p, 1));
-    x0 = ((unsigned char)WITH_VAR_STACK(objscheme_unbundle_char(p[POFFSET+0], "insert in text% (character and position case)")));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_char(p[POFFSET+0], "insert in text% (character and position case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+1], "insert in text% (character and position case)"));
     if (n > (POFFSET+2)) {
       x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer(p[POFFSET+2], "same", "insert in text% (character and position case)"));
@@ -6075,7 +6075,7 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
     
     READY_TO_PRE_RETURN;
   } else  {
-    unsigned char x0;
+    mzchar x0;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(1);
     VAR_STACK_PUSH(0, p);
@@ -6083,7 +6083,7 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
     
     if (n != (POFFSET+1)) 
       WITH_VAR_STACK(scheme_wrong_count_m("insert in text% (character without position case)", POFFSET+1, POFFSET+1, n, p, 1));
-    x0 = ((unsigned char)WITH_VAR_STACK(objscheme_unbundle_char(p[POFFSET+0], "insert in text% (character without position case)")));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_char(p[POFFSET+0], "insert in text% (character without position case)"));
 
     
     WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->Insert(x0));

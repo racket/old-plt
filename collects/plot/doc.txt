@@ -15,26 +15,12 @@ in two ways: either by combining the higher-level primitives provided,
 or by importing more of the functionality provided by the plplot C library,
 upon which this library is based. 
 
-Installation
-------------
 
-Compile libgd with jpeg support.
+--------
+Examples
+--------
 
-Compile plplot to use the jpeg driver (using libgd), make sure dynamic drivers 
-are disabled.
-
-mzc ++ldf "/path/to/plplot/lib.so" ++ccf "-I/path/to/plplot/lib/headers" plplot-low-level.ss
-
-copy plplot-low-level.[so|dll] into  plt/plplot/compiled/native/your-archtecture/ 
-
-
-The actual compilation of plplot/libgd/libjpeg can be tricky, and will be further 
-documented at a later point. 
-
-Also, libgd/jpeg will be deprecated and replaced with a plplot driver that plots
-directly to a scheme dc% (drawing-context)
-
-For a quick demo load up and execute "run-tests.ss"
+See the files in the "demos" subdirectory.
 
 
 Structural Layout
@@ -78,23 +64,31 @@ plplot-low-level.ss :
   does a lots of scheme->c conversion.
 
 plot.scm
-   This file contains the middle and top tier of the plotting library. The middle tier consists of
-   the plot-view% , 2d-view% and 3d-view% classes, that provide (somewhat) safe access to the low-level
-   library. The top tier consists of the data renderers, which interpret the data given to them and
-   render it using the provided views.
+
+   This file contains the middle and top tier of the plotting
+   library. The middle tier consists of the plot-view% , 2d-view% and
+   3d-view% classes, that provide (somewhat) safe access to the
+   low-level library. The top tier consists of the data renderers,
+   which interpret the data given to them and render it using the
+   provided views.
 
    Renderers:
 
-   A renderer takes in a source of data and creates a function that interprets that data and 
-   produces a visual output when applied to a view.
+   A renderer takes in a source of data and creates a function that
+   interprets that data and produces a visual output when applied to a
+   view.
 
-   Renderers are currently higher order functions that use closures+macros to keep information about 
-   their given parameters. A macro, called "r-lambda" was created to implement a keyword-argument-like
-   lambda that processes a list of arguments given in an associative array. This was done to allow renderers
-   to have reasonable defaults (such as pen color, width, etc), allow the user to change only the 
-   parameters they want, and at the same time remain syntactically simple. The downside is that the "instantiate"
-   functionality of objects is being copied, as well as the fact that the 'renderers' really are objects, 
-   and there are cases where subclassing would be useful.
+   Renderers are currently higher order functions that use
+   closures+macros to keep information about their given parameters. A
+   macro, called "r-lambda" was created to implement a
+   keyword-argument-like lambda that processes a list of arguments
+   given in an associative array. This was done to allow renderers to
+   have reasonable defaults (such as pen color, width, etc), allow the
+   user to change only the parameters they want, and at the same time
+   remain syntactically simple. The downside is that the "instantiate"
+   functionality of objects is being copied, as well as the fact that
+   the 'renderers' really are objects, and there are cases where
+   subclassing would be useful.
  
    
    The following renderers are currently defined:
@@ -145,11 +139,12 @@ plot.scm
 
 >   plot-view% extends image-snip
       Base class for a plot-view
-      Provides facilities for starting and finishing plots. The underlying c-library
-      follows and implicit sequence contract and this class will (at some point) enforce
-      that contract.
 
-      Also provides access to settings affecting all types of plots
+      Provides facilities for starting and finishing plots. The
+      underlying c-library follows and implicit sequence contract and
+      this class will (at some point) enforce that contract.
+
+      Also provides access to settings affecting all types of plots.
 
       methods:
 >        (start-plot ...) : starts the plot - calls plplot to open a file stream for writing
@@ -168,8 +163,9 @@ plot.scm
 >        (reset-to-default ...) : resets the state of the c-code to default, called after every renderer
 
 >   2d-view% extends plot-view
-      Provides an interface to drawing 2d plots. Some methods call low level functions, others are 
-      written in scheme.
+
+      Provides an interface to drawing 2d plots. Some methods call low
+      level functions, others are written in scheme.
 
       Methods:
   
@@ -230,7 +226,8 @@ plot initializes the 2d-view, saves it's argument list and the list of renderers
  plot repeats the indented block for each renderer
 plot calls finalizes the view, and returns it
 
-the view is an image-snip, and can be viewed by being evaluated in the drscheme interactions window
+the view is an image-snip, and can be viewed by being evaluated in the
+drscheme interactions window
 
 the views can be superimposed (primitively for now) 
 

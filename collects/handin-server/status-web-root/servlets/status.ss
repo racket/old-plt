@@ -110,7 +110,7 @@
 			   f
 			   (let ([l (directory-list soln-dir)])
 			     (if (= 1 (length l))
-				 (car l)
+				 (build-path soln-dir (car l))
 				 f))))])
 	  (if (file-exists? soln)
 	      `((a ((href ,(make-k k soln)))
@@ -206,10 +206,18 @@
 		    (unless (eq? base 'relative)
 		      (error "bad")))))))
 	  ;; Return the downloaded file
-	  (list "application/data"
-		(with-input-from-file tag
-		  (lambda ()
-		    (read-string (file-size tag)))))))
+	  (let ([data (with-input-from-file tag
+			(lambda ()
+			  (read-string (file-size tag))))])
+	    (make-response/full 200 "Okay"
+				(current-seconds)
+				"application/data"
+				`(("Content-length: " ,(string-length data))
+				  ("Content-disposition: " 
+				   (format "attachment; filename=~s"
+					   (let-values ([(base name dir?) (split-path tag)])
+					     name))))
+				(list data)))))
 
       (define (status-page status for-handin)
 	(if for-handin

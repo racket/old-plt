@@ -566,6 +566,8 @@
  (break-menu-item-help-string "Stopper l'exécution.")
  (kill-menu-item-label "Tuer")
  (kill-menu-item-help-string "Tuer l'exécution.")
+ (clear-error-highlight-menu-item-label "Effacer le surlignage d'erreur")
+ (clear-error-highlight-item-help-string "Efface le surlignage rose après une erreur")
  (reindent-menu-item-label "&Réindenter")
  (reindent-all-menu-item-label "Réindenter &tout")
  (comment-out-menu-item-label "&Commenter")

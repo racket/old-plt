@@ -259,37 +259,7 @@ is positive.
 @METHODS
 @proc realize
 {
-#ifdef USE_GL
-  if (wx_gl_create_window)
-  {
-    Display *dpy;
-    int screen;
-    XVisualInfo* vi;
-
-    int gl_attribs[] = { GLX_DOUBLEBUFFER, GLX_RGBA, None };
-
-    dpy = XtDisplay($);
-    screen = XScreenNumberOfScreen(XtScreen($));
-
-    vi = glXChooseVisual(dpy, screen, gl_attribs);
-    if (vi) {
-      attributes->colormap = XCreateColormap(dpy, RootWindow(dpy, vi->screen),
-                  	                     vi->visual, AllocNone);
-      *mask = *mask | CWColormap;
-      XtCreateWindow($, InputOutput, vi->visual, *mask, attributes);
-      wx_temp_visual_info = vi;
-    } else {
-      /* Probably GL isn't available from the X server */
-      #realize($, mask, attributes);
-    }
-  }
-  else
-  {
-    #realize($, mask, attributes);
-  }
-#else
-#realize($, mask, attributes);
-#endif
+  #realize($, mask, attributes);
 }
 
 @ The type converter |cvtStringToAlignment| is installed in the
@@ -1232,5 +1202,4 @@ highlight border with.
 @incl <X11/keysym.h>
 @incl "wxAllocColor.h"
 @incl "wxAllocColor.c"
-@incl "wxgl.h"
 

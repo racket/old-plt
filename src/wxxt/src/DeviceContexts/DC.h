@@ -31,8 +31,12 @@
 # endif
 #endif
 
-/* MATTHEW: for floor(): */
+/* for floor(): */
 #include <math.h>
+
+#ifdef USE_GL
+class wxGL;
+#endif
 
 // wxPoint
 class wxPoint : public wxObject {
@@ -236,6 +240,10 @@ public:
       { *xs = user_scale_x; *ys = user_scale_y; }
     void GetDeviceOrigin(float *x, float *y) 
       { *x = device_origin_x; *y = device_origin_y; }
+
+#ifdef USE_GL
+    virtual wxGL *GetGL();
+#endif
   
     // public data members
     Bool  Colour;

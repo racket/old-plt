@@ -68,7 +68,7 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
   FreeGetPixelCache();
 
   if (!read_only) {
-    /* MATTHEW: [4] Bitmap selection memory and safety */
+    /* Bitmap selection memory and safety */
     if (bitmap && bitmap->selectedIntoDC)
       bitmap = NULL;
 
@@ -93,6 +93,13 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 	pm = GETPIXMAP(bitmap);
 	init->drawable = pm;
 	Initialize(init);
+#ifdef USE_GL
+	if (X->wx_gl) {
+	  int depth;
+	  depth = bitmap->GetDepth();
+	  X->wx_gl->Reset((depth == 1) ? 0 : (long)pm, 1);
+	}
+#endif
 	// If another colourmap is associated with the bitmap,
 	//  use it instead of the current colourmap.
 	if (bitmap->GetColourMap() != current_cmap) {
@@ -107,9 +114,6 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 	}
     } else {
 	DRAWABLE = 0;
-#ifdef WX_USE_XRENDER
-	X->picture = 0;
-#endif
 	WIDTH = HEIGHT = 0;
 	selected = NULL;
     }

@@ -34,7 +34,6 @@
 #define  Uses_ScrollWinWidget
 #define  Uses_CanvasWidget
 #include "widgets.h"
-#include "../XWidgets/wxgl.h"
 
 //-----------------------------------------------------------------------------
 // create and destroy canvas
@@ -50,15 +49,6 @@ wxCanvas::wxCanvas(wxWindow *parent, int x, int y, int width, int height,
 
     Create((wxPanel *)parent, x, y, width, height, style, name);
 }
-
-#ifdef USE_GL
-/* For communicating with xwCommon.w: */
-int wx_gl_create_window = 0;
-XVisualInfo* wx_temp_visual_info = NULL;
-
-static wxCanvas *current_gl_context = NULL;
-static int gl_registered;
-#endif
 
 Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 		      int style, char *name)
@@ -97,10 +87,6 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 	 XtNbackground,  wxGREY_PIXEL,
 	 NULL);
     X->scroll = wgt;
-#ifdef USE_GL
-    if (style & wxGL_CONTEXT)
-      wx_gl_create_window = 1;
-#endif
     // create canvas
     wgt = XtVaCreateManagedWidget
       ("canvas", xfwfCanvasWidgetClass, X->scroll,
@@ -112,18 +98,6 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
        XtNtraversalOn, FALSE,
        NULL);
     X->handle = wgt;
-#ifdef USE_GL
-    if (style & wxGL_CONTEXT)
-    {
-      wx_gl_create_window = 0;
-      GLctxt = glXCreateContext(XtDisplay(X->handle), 
-				wx_temp_visual_info,
-				NULL,
-				GL_TRUE);
-      XFree(wx_temp_visual_info);
-      wx_temp_visual_info = NULL;
-    }
-#endif
     // In case this window or the parent is hidden; we
     // need windows to create DCs
     XtRealizeWidget(X->frame);
@@ -166,16 +140,6 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 
 wxCanvas::~wxCanvas(void)
 {
-#ifdef USE_GL
-  if (this == current_gl_context) {
-    current_gl_context = NULL;
-    glXMakeCurrent(XtDisplay(X->handle), None, NULL);
-  }
-  if (GLctxt) {
-    glXDestroyContext(XtDisplay(X->handle), GLctxt);
-    GLctxt = NULL;
-  }
-#endif
 }
 
 void wxCanvas::SetBackgroundToGray(void)
@@ -413,27 +377,3 @@ void wxCanvas::OnChar(wxKeyEvent *event)
     }
 }
 
-// OpenGL
-#ifdef USE_GL
-
-void wxCanvas::CanvasSwapBuffers(void)
-{
-  if (GLctxt) {
-    glXSwapBuffers(XtDisplay(X->handle), XtWindow(X->handle));
-  }
-}
-
-void wxCanvas::ThisContextCurrent(void)
-{
-  if (GLctxt) {
-    if (!gl_registered) {
-      wxREGGLOB(current_gl_context); 
-      gl_registered = 1;
-    }
-    
-    current_gl_context = this;
-    glXMakeCurrent(XtDisplay(X->handle), XtWindow(X->handle), GLctxt);
-  }
-}
-
-#endif

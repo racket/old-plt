@@ -33,6 +33,11 @@
 #define  Uses_wxList
 #include "wx.h"
 
+#ifdef USE_GL
+# include <GL/glx.h>
+# include <X11/Xcms.h>
+#endif
+
 #ifdef WX_USE_XRENDER
 # include <X11/Xcms.h>
 # include <X11/extensions/Xrender.h>
@@ -143,12 +148,31 @@ wxWindowDC::~wxWindowDC(void)
     if (current_brush) current_brush->Lock(-1);
     if (clipping) --clipping->locked;
 
-#ifdef WX_USE_XRENDER
-    wxFreePicture(X->picture);
-#endif
-
     Destroy();
+
+#ifdef USE_GL
+    X->wx_gl = NULL;
+#endif
 }
+
+#ifdef USE_GL
+wxGL *wxWindowDC::GetGL()
+{
+  wxGL *gl;
+
+  if (X->wx_gl)
+    return X->wx_gl;
+
+  gl = new wxGL();
+  X->wx_gl = gl;
+
+  if (DRAWABLE) {
+    gl->Reset((long)DRAWABLE, __type == wxTYPE_DC_MEMORY);
+  }
+
+  return gl;
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // drawing methods
@@ -2058,6 +2082,16 @@ void wxWindowDC::Destroy(void)
     if (CURRENT_REG) XDestroyRegion(CURRENT_REG);
     if (EXPOSE_REG) XDestroyRegion(EXPOSE_REG);
     CURRENT_REG = USER_REG = EXPOSE_REG = NULL;
+
+#ifdef WX_USE_XRENDER
+    wxFreePicture(X->picture);
+    X->picture = 0;
+#endif
+#ifdef USE_GL
+    if (X->wx_gl) {
+      X->wx_gl->Reset(0, 0);
+    }
+#endif
 }
 
 void wxWindowDC::SetCanvasClipping(void)
@@ -2350,3 +2384,100 @@ void wxWindowDC::DoFreeGetPixelCache(void)
   EndSetPixel();
 }
 
+
+// OpenGL
+#ifdef USE_GL
+static wxGL *current_gl_context = NULL;
+static int gl_registered;
+static XVisualInfo *vi, *sb_vi;
+
+wxGL::wxGL()
+: wxObject(WXGC_NO_CLEANUP)
+{
+  if (!gl_registered) {
+    Visual *vis;      
+    GC_CAN_IGNORE int gl_attribs[] = { GLX_DOUBLEBUFFER, GLX_RGBA, None };
+    GC_CAN_IGNORE int gl_sb_attribs[] = { GLX_RGBA, None };
+
+    wxREGGLOB(current_gl_context); 
+    gl_registered = 1;
+
+    vi = glXChooseVisual(wxAPP_DISPLAY, XScreenNumberOfScreen(wxAPP_SCREEN), gl_attribs);
+    sb_vi = glXChooseVisual(wxAPP_DISPLAY, XScreenNumberOfScreen(wxAPP_SCREEN), gl_sb_attribs);
+  }  
+}
+
+wxGL::~wxGL()
+{
+}
+
+int wxGL::Ok()
+{
+  return !!GLctx;
+}
+
+void wxGL::Reset(long d, int offscreen)
+{
+  draw_to = 0;
+
+  if (this == current_gl_context) {
+    glXMakeCurrent(wxAPP_DISPLAY, None, NULL);
+  }
+  
+  if (GLctx && !d) {
+    glXDestroyContext(wxAPP_DISPLAY, (GLXContext)GLctx);
+    GLctx = 0;
+  }
+
+  if (glx_pm) {
+    glXDestroyGLXPixmap(wxAPP_DISPLAY, (GLXPixmap)glx_pm);
+    glx_pm = 0;
+  }
+
+  if ((offscreen ? sb_vi : vi) && d) {
+    GLXContext ctx;
+
+    ctx = glXCreateContext(wxAPP_DISPLAY,
+			   offscreen ? sb_vi : vi,
+			   NULL,
+			   offscreen ? GL_FALSE : GL_TRUE);
+
+    GLctx = (long)ctx;
+
+    if (GLctx) {
+      if (offscreen) {
+	GLXPixmap pm;
+	
+	pm = glXCreateGLXPixmap(wxAPP_DISPLAY, sb_vi, (Drawable)d);
+	glx_pm = (long)pm;
+	draw_to = (long)pm;
+      } else
+	draw_to = d;
+	
+      if (current_gl_context == this) {
+	ThisContextCurrent();
+      }
+    }
+  }
+}
+
+void wxGL::SwapBuffers(void)
+{
+  if (GLctx) {
+    glXSwapBuffers(wxAPP_DISPLAY, (Drawable)draw_to);
+    if (glx_pm)
+      glXWaitGL();
+  }
+}
+
+void wxGL::ThisContextCurrent(void)
+{
+  current_gl_context = this;
+  if (GLctx) {
+    glXMakeCurrent(wxAPP_DISPLAY, (Drawable)draw_to, (GLXContext)GLctx);
+  } else {
+    glXMakeCurrent(wxAPP_DISPLAY, None, NULL);
+  }
+}
+
+#endif

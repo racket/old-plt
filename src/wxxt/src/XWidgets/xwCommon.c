@@ -11,7 +11,6 @@
 #include <X11/keysym.h>
 #include "wxAllocColor.h"
 #include "wxAllocColor.c"
-#include "wxgl.h"
 #include <./xwCommonP.h>
 #define focus_detail(detail) (detail ==NotifyAncestor ?"NotifyAncestor":detail ==NotifyVirtual ?"NotifyVirtual":detail ==NotifyInferior ?"NotifyInferior":detail ==NotifyNonlinear ?"NotifyNonlinear":detail ==NotifyNonlinearVirtual ?"NotifyNonlinearVirtual":detail ==NotifyPointer ?"NotifyPointer":detail ==NotifyPointerRoot ?"NotifyPointerRoot":detail ==NotifyDetailNone ?"NotifyDetailNone":"???")
 
@@ -660,37 +659,7 @@ static void realize(Widget self,XtValueMask * mask,XSetWindowAttributes * attrib
 static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWindowAttributes * attributes;
 #endif
 {
-#ifdef USE_GL
-  if (wx_gl_create_window)
-  {
-    Display *dpy;
-    int screen;
-    XVisualInfo* vi;
-
-    int gl_attribs[] = { GLX_DOUBLEBUFFER, GLX_RGBA, None };
-
-    dpy = XtDisplay(self);
-    screen = XScreenNumberOfScreen(XtScreen(self));
-
-    vi = glXChooseVisual(dpy, screen, gl_attribs);
-    if (vi) {
-      attributes->colormap = XCreateColormap(dpy, RootWindow(dpy, vi->screen),
-                  	                     vi->visual, AllocNone);
-      *mask = *mask | CWColormap;
-      XtCreateWindow(self, InputOutput, vi->visual, *mask, attributes);
-      wx_temp_visual_info = vi;
-    } else {
-      /* Probably GL isn't available from the X server */
-      compositeClassRec.core_class.realize(self, mask, attributes);
-    }
-  }
-  else
-  {
-    compositeClassRec.core_class.realize(self, mask, attributes);
-  }
-#else
-compositeClassRec.core_class.realize(self, mask, attributes);
-#endif
+  compositeClassRec.core_class.realize(self, mask, attributes);
 }
 /*ARGSUSED*/
 #if NeedFunctionPrototypes

@@ -66,6 +66,10 @@ public:
     unsigned int width, height, depth;
     wxWindow     *owner;
 
+#ifdef USE_GL
+    wxGL *wx_gl;
+#endif
+
     /* Implement GetPixel */
     XImage *get_pixel_image_cache;
     int get_pixel_cache_pos;
@@ -171,6 +175,10 @@ public:
     virtual void InitPicture();
 #endif
 
+#ifdef USE_GL
+    virtual wxGL *GetGL();
+#endif
+
 protected:
     friend class wxWindow;
     friend class wxPostScriptDC;
@@ -178,7 +186,7 @@ protected:
     void  Initialize(wxWindowDC_Xinit* init);
     void  Destroy(void);
 
-    /* MATTHEW: [5] Implement GetPixel */
+    /* Implement GetPixel */
     void DoFreeGetPixelCache(void);
 
     wxWindowDC_Xintern* X;
@@ -190,6 +198,26 @@ extern int wxXRenderHere(void);
 extern long wxMakePicture(Drawable d, int color); // returns Picture or XftDraw*
 extern void wxFreePicture(long);
 # endif
+#endif
+
+
+#ifdef USE_GL
+class wxGL : public wxObject {
+public:
+  wxGL();
+  virtual ~wxGL();
+
+  int Ok();
+
+  void Reset(long d, Bool offscreen);
+
+  long draw_to; /* really a Drawable */
+  long GLctx; /* really a GLXContext */
+  long glx_pm; /* really a GLXPixmap */
+
+  void SwapBuffers(void);
+  void ThisContextCurrent(void);
+};
 #endif
 
 #endif // WindowDC_hh

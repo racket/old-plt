@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.h,v 1.9 2002/03/05 22:45:19 mflatt Exp $
+ * $Id: Canvas.h,v 1.10 2003/03/02 14:30:32 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -28,10 +28,6 @@
 
 #ifdef __GNUG__
 #pragma interface
-#endif
-
-#ifdef USE_GL
-#include <GL/glx.h>
 #endif
 
 class wxColourMap;
@@ -68,17 +64,10 @@ public:
     void WarpPointer(int x, int y);
     // overriden callback methods
     virtual void OnChar(wxKeyEvent *event);
-#ifdef USE_GL
-    void CanvasSwapBuffers(void);
-    void ThisContextCurrent(void);
-#endif
 
 private:
     int	h_size, h_units, h_units_per_page,
 	v_size, v_units, v_units_per_page;
-#ifdef USE_GL
-    GLXContext GLctxt;
-#endif
 };
 
 #endif // Canvas_h

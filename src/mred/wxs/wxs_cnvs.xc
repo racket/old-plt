@@ -24,31 +24,6 @@ static void FillZero(int *a, int *b) {
   *a = *b = 0;
 }
 
-#ifndef wxGL_CONTEXT
-# define wxGL_CONTEXT 0
-#endif
-
-#ifdef wx_msw
-# define USE_GL
-#endif
-#ifdef wx_mac
-# define USE_GL
-#endif
-
-static void wxSwapBuffers(wxCanvas* c)
-{
-#ifdef USE_GL
-  c->CanvasSwapBuffers();
-#endif
-}
-
-static void wxThisContextCurrent(wxCanvas* c)
-{
-#ifdef USE_GL
-  c->ThisContextCurrent();
-#endif
-}
-
 static void wxSetBackgroundToGray(wxCanvas *c)
 {
 #ifdef wx_xt
@@ -61,7 +36,7 @@ static void wxSetBackgroundToGray(wxCanvas *c)
 @SYM "control-border" : wxCONTROL_BORDER
 @SYM "vscroll" : wxVSCROLL
 @SYM "hscroll" : wxHSCROLL
-@SYM "gl" : wxGL_CONTEXT
+@SYM "gl" : 0
 @SYM "no-autoclear" : wxNO_AUTOCLEAR
 @SYM "deleted" : wxINVISIBLE
 @ENDSYMBOLS
@@ -97,9 +72,6 @@ static void wxSetBackgroundToGray(wxCanvas *c)
 @ "set-scroll-page" : void SetScrollPage(SYM[orientation], rint[1|10000]);
 
 @ v "on-scroll" : void OnScroll(wxScrollEvent!); : JMPDECL/SETJMP/RESETJMP : / PANELREDIRECT[return scheme_void]
-
-@ m "swap-buffers" : void wxSwapBuffers()
-@ m "this-context-current" : void wxThisContextCurrent()
 
 @ m "set-background-to-gray" : void wxSetBackgroundToGray()
 

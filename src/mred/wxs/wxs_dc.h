@@ -1,4 +1,5 @@
 #ifndef WXS_SETUP_ONLY
+extern Scheme_Object *objscheme_bundle_wxGL(class wxGL *);
 extern Scheme_Object *objscheme_bundle_wxColour(class wxColour *);
 extern Scheme_Object *objscheme_bundle_wxColour(class wxColour *);
 extern Scheme_Object *objscheme_bundle_wxPen(class wxPen *);
@@ -52,4 +53,10 @@ void objscheme_setup_basePrinterDC(Scheme_Env *env);
 int objscheme_istype_basePrinterDC(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_basePrinterDC(class basePrinterDC *realobj);
 class basePrinterDC *objscheme_unbundle_basePrinterDC(Scheme_Object *obj, const char *where, int nullOK);
+#endif
+void objscheme_setup_wxGL(Scheme_Env *env);
+#ifndef WXS_SETUP_ONLY
+int objscheme_istype_wxGL(Scheme_Object *obj, const char *stop, int nullOK);
+Scheme_Object *objscheme_bundle_wxGL(class wxGL *realobj);
+class wxGL *objscheme_unbundle_wxGL(Scheme_Object *obj, const char *where, int nullOK);
 #endif

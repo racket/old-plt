@@ -78,6 +78,14 @@ wxColour *wxDC::GetBackground(void){
   return c;
 }
 
+
+#ifdef USE_GL
+wxGL *wxDC::GetGL()
+{
+  return NULL;
+}
+#endif
+
 //-----------------------------------------------------------------------------
 // Set scale and origin
 //-----------------------------------------------------------------------------

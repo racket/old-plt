@@ -349,22 +349,22 @@ static int gl_param;
 
 #ifdef USE_GL
 
-static wxCanvas *prev_param;
+static wxGL *prev_param;
 
 static Scheme_Object *on_thread_swap(Scheme_Object *)
 {
   Scheme_Object *o;
-  wxCanvas *c;
+  wxGL *c;
 
   o = scheme_get_param(scheme_config, gl_param);
   if (SCHEME_TRUEP(o))
-    c = objscheme_unbundle_wxCanvas(o, NULL, 0);
+    c = objscheme_unbundle_wxGL(o, NULL, 0);
   else
     c = NULL;
  
   if (c != prev_param) {
     prev_param = c;
-    if (c && (c->__type != -1))
+    if (c)
       c->ThisContextCurrent();
   }
 
@@ -378,6 +378,43 @@ static void init_gl_mgr(void)
   scheme_add_swap_callback(on_thread_swap, NULL);
 }
 
+static void swap_ctx(void *c)
+{
+  Scheme_Object *o, *n;
+  wxGL *gl;
+
+  o = scheme_get_param(scheme_config, gl_param);
+  n = ((Scheme_Object **)c)[1];
+  scheme_set_param(scheme_config, gl_param, n);
+  ((Scheme_Object **)c)[1] = o;
+
+  if (SCHEME_TRUEP(n)) {
+    gl = objscheme_unbundle_wxGL(n, NULL, 0);
+    if (gl) {
+      gl->ThisContextCurrent();
+    }
+  }
+}
+
+static Scheme_Object *do_call_ctx(void *c)
+{
+  return _scheme_apply_multi(((Scheme_Object **)c)[0], 0, NULL);
+}
+
+void *wxWithGLContext(wxGL *gl, void *thunk)
+{
+  Scheme_Object **a, *glo;
+  a = (Scheme_Object **)scheme_malloc(2 * sizeof(Scheme_Object *));
+  glo = objscheme_bundle_wxGL(gl);
+  a[0] = (Scheme_Object *)thunk;
+  a[1] = glo;
+
+  scheme_check_proc_arity("with-context in gl<%>", 0, 0, 1, a);
+
+  return scheme_dynamic_wind(swap_ctx, do_call_ctx, swap_ctx,
+			     NULL, a);
+}
+
 #endif
 
 
@@ -386,7 +423,7 @@ void wxscheme_early_gl_init(void)
   gl_param = scheme_new_param();
 }
 
-static Scheme_Object *canvas_p(int argc, Scheme_Object **argv)
+static Scheme_Object *gl_p(int argc, Scheme_Object **argv)
 {
   return argv[0];
 }
@@ -398,7 +435,7 @@ static Scheme_Object *wxsCurrentGLContext(int argc, Scheme_Object **argv)
   v = scheme_param_config("current-gl-context",
 			  scheme_make_integer(gl_param),
 			  argc, argv,
-			  -1, CAST_SP canvas_p, "canvas", 1);
+			  -1, CAST_SP gl_p, "gl", 1);
 
 #ifdef USE_GL
   on_thread_swap(NULL);
@@ -2714,6 +2751,7 @@ static void wxScheme_Install(Scheme_Env *global_env)
   objscheme_setup_wxMemoryDC(global_env);
   objscheme_setup_wxPostScriptDC(global_env);
   objscheme_setup_basePrinterDC(global_env);
+  objscheme_setup_wxGL(global_env);
   objscheme_setup_wxCanvas(global_env);
   objscheme_setup_wxPanel(global_env);
   objscheme_setup_wxDialogBox(global_env);

@@ -31,6 +31,7 @@
 @INCLUDE wxs_drws.xci
 
 @MACRO CastToSO = (Scheme_Object*){x}
+@MACRO CastFromSO = (void*){x}
 @MACRO spAnything = _
 
 static wxColour* dcGetTextBackground(wxDC *dc)
@@ -301,6 +302,8 @@ static wxBitmap *dc_target(Scheme_Object *obj)
 
 @ m "get-size" : void[]/CastToSO//spAnything MyGetSize(); : : /CheckOk[METHODNAME("dc<%>","get-size")]
 
+@ q "get-gl" : wxGL^ GetGL();
+
 @ q "ok?" : bool Ok();
 
 @ Q "start-doc" : bool StartDoc(string); : : /CheckOk[METHODNAME("dc<%>","start-doc")] : rFALSE
@@ -388,6 +391,54 @@ START_XFORM_SKIP;
 
 @END
 
+
+#ifdef wx_msw
+# define USE_GL
+#endif
+#ifdef wx_mac
+# define USE_GL
+#endif
+
+#ifndef USE_GL
+class wxGL : public wxObject {
+public:
+  wxGL();
+
+  int Ok();
+
+  void Reset(long d);
+  void SwapBuffers(void);
+  void ThisContextCurrent(void);
+};
+
+wxGL::wxGL()
+: wxObject(WXGC_NO_CLEANUP)
+{
+}
+int wxGL::OK() { return 0; }
+void wxGL::SwapBuffers(void) { }
+void wxGL::ThisContextCurrent(void) { }
+#endif
+
+
+#ifdef USE_GL
+extern void *wxWithGLContext(wxGL *gl, void *thunk);
+#endif
+
+static void *WithContext(wxGL *gl, void *thunk)
+{
+  return wxWithGLContext(gl, thunk);
+}
+
+@CLASSBASE wxGL "gl" : "object"
+@INTERFACE "gl"
+
+@ "ok?" : bool Ok()
+@ "swap-buffers" : void SwapBuffers()
+@ "set-as-context" : void ThisContextCurrent()
+@ m "with-context" : void[]/CastToSO//spAnything WithContext(void[]/CastToSO/CastFromSO/spAnything///push)
+
+@END
 
 
 

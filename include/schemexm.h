@@ -392,3 +392,6 @@
 #define scheme_no_dumps (scheme_extension_table->scheme_no_dumps)
 #define scheme_system_library_subpath (scheme_extension_table->scheme_system_library_subpath)
 #define scheme_signal_received (scheme_extension_table->scheme_signal_received)
+#ifdef MZ_PRECISE_GC
+#pragma GC_VARIABLE_SATCK_THOUGH_TABLE
+#endif

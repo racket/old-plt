@@ -95,7 +95,7 @@ case $OS in
     else
       COMP='CC=cc WARN=""'
     fi
-    make $COMP LIBS="" $GCOPTS "$@"
+    make $COMP LIBS="" $GCOPTS PERL="" "$@"
     ;;
   *)
     make $GCOPTS "$@"

@@ -81,6 +81,8 @@ static int mzerrno = 0;
 #ifdef USE_BEOS_PORT_THREADS
 # include <be/kernel/OS.h>
 # define OS_SEMAPHORE_TYPE sem_id
+typedef struct { int32 v; sem_id s; } mutex_id;
+# define OS_MUTEX_TYPE mutex_id
 # define OS_THREAD_TYPE thread_id
 #endif
 
@@ -1849,7 +1851,7 @@ make_fd_input_port(int fd, const char *filename)
 /* Win32/BeOS input ports that could block on reads */
 #if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
 
-#define TIF_BUFFER 100
+#define TIF_BUFFER 500
 
 typedef struct {
   FILE *fp;
@@ -1884,6 +1886,10 @@ static status_t mz_thread_status;
 # define WAIT_THREAD(th) wait_for_thread(th, &mz_thread_status)
 # define MAKE_SEMAPHORE() create_sem(0, NULL)
 # define FREE_SEMAPHORE(sem) delete_sem(sem)
+# define MAKE_MUTEX(m) (m.v = 0, m.s = MAKE_SEMAPHORE())
+# define ACQUIRE_MUTEX(m) if (atomic_add(&m.v, 1) >= 1) { WAIT_SEMAPHORE(m.s); }
+# define RELEASE_MUTEX(m) if (atomic_add(&m.v, -1) > 1) { RELEASE_SEMAPHORE(m.s); }
+# define FREE_MUTEX(m) FREE_SEMAPHORE(m.s)
 
 static sem_id got_started;
 #endif

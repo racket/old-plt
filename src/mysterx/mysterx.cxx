@@ -332,7 +332,7 @@ DOCUMENT_WINDOW_STYLE_OPTION styleOptions[] = {
   
   // keep alphabetic for bsearch()
   
-  // { symbol,Win32 constant,add/remove } 
+  // { symbol,Win32 constant,TRUE=add/FALSE=remove } 
   
   { "iconize",WS_ICONIC,TRUE },
   { "maximize",WS_MAXIMIZE,TRUE },
@@ -533,10 +533,18 @@ Scheme_Object *mx_unit_init(Scheme_Object **boxes,Scheme_Object **anchors,
 }
 
 void codedComError(char *s,HRESULT hr) {
-  char buff[256];
-  
-  sprintf(buff,"%s, code = %%X",s);
-  scheme_signal_error(buff,hr);
+  char buff[1024];
+  char finalBuff[2048];
+
+  if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+		    0,hr,0,buff,sizeof(buff),NULL) > 0) {
+    sprintf(finalBuff,"%s, code = %X: %s",s,hr,buff);
+    scheme_signal_error(finalBuff);
+  }
+  else {
+    sprintf(buff,"%s, code = %%X",s);    
+    scheme_signal_error(buff,hr);
+  }
 }
 
 Scheme_Object *mx_cocreate_instance(int argc,Scheme_Object **argv) {
@@ -3433,9 +3441,9 @@ void docHwndMsgLoop(LPVOID p) {
   DOCUMENT_WINDOW_INIT *pDocWindowInit;
   
   pDocWindowInit = (DOCUMENT_WINDOW_INIT *)p;
-  
+
   hwnd = CreateWindow("AtlAxWin","myspage.DHTMLPage.1",
-		      WS_VISIBLE|pDocWindowInit->docWindow.style,
+		      WS_VISIBLE | pDocWindowInit->docWindow.style,
 		      pDocWindowInit->docWindow.x,pDocWindowInit->docWindow.y,
 		      pDocWindowInit->docWindow.width,pDocWindowInit->docWindow.height,
 		      NULL,NULL,hInstance,NULL);
@@ -3449,9 +3457,10 @@ void docHwndMsgLoop(LPVOID p) {
   SetClassLong(hwnd,GCL_HICON,(LONG)hIcon);
   
   SetWindowText(hwnd,pDocWindowInit->docWindow.label);
+
   ShowWindow(hwnd,SW_SHOW);
   SetForegroundWindow(hwnd);
-  
+
   pIUnknown = NULL;
   
   while (IsWindow(hwnd)) {
@@ -3472,7 +3481,7 @@ void docHwndMsgLoop(LPVOID p) {
 	ReleaseSemaphore(createHwndSem,1,NULL);
       }
     }
-    
+
     while (GetMessage(&msg,NULL,0,0)) {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
@@ -3681,9 +3690,8 @@ Scheme_Object *mx_document_show(int argc,Scheme_Object **argv) {
   }
   
   pDoc = (MX_Document_Object *)argv[0];
-  
-  ShowWindow(pDoc->hwnd,
-	     argv[1] == scheme_false ? SW_HIDE : SW_SHOW);
+
+  ShowWindow(pDoc->hwnd,argv[1] == scheme_false ? SW_HIDE : SW_SHOW);
   
   return scheme_void;
 }

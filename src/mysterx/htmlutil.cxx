@@ -62,7 +62,7 @@ IHTMLElement *findBodyElement(IHTMLDocument2 *pDocument,char *tag,char *id) {
 
     pIHTMLElement->getAttribute(idAttribute,FALSE,&variant);
 
-    if (variant.vt == VT_BSTR &&
+    if (variant.vt == VT_BSTR && variant.bstrVal &&
         _wcsicmp(idBSTR,variant.bstrVal) == 0) {
       retval = pIHTMLElement;
       break;

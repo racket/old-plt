@@ -1179,7 +1179,7 @@ the ITypeInfo interface.
 
 > padding-left :: (send an-mx-element padding-left)
 
-  Retrieves the CSS line-height for the element.
+  Retrieves the CSS padding-left for the element.
 
 > set-padding-left! :: (send an-mx-element set-padding-left! ml)
 

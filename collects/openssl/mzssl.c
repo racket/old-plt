@@ -1369,8 +1369,8 @@ Scheme_Object *scheme_initialize(Scheme_Env *env)
 
 
   scheme_add_waitable(ssl_listener_type,
-		      tcp_check_accept, tcp_accept_needs_wakeup,
-		      NULL);
+		      (Scheme_Ready_Fun_FPC)tcp_check_accept, tcp_accept_needs_wakeup,
+		      NULL, 0);
 
   scheme_thread_w_custodian(thread, scheme_config, newcust);
   return scheme_reload(env);

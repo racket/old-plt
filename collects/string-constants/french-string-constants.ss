@@ -114,7 +114,7 @@
  (goto-position "Aller à la position")
  (no-full-name-since-not-saved
   "Le fichier n'a pas encore de nom complet car il n'a pas encore été sauvegardé.")
- (cannot-open-because-dne "Impossible d'ouvrir ~a car il n'existe pas.")
+ (cannot-open-because-dne "Impossible d'ouvrir ~a car le fichier n'existe pas.")
  (interactions-out-of-sync
   "ATTENTION: la fenêtre d'interaction et la fenêtre de définition ne sont pas synchronisées. Cliquez sur Exécuter.")
  (file-is-not-saved "Le fichier \"~a\" n'a pas été sauvegardé.")

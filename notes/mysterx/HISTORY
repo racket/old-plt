@@ -14,6 +14,7 @@ When a custodian shuts down an mx-browser% object,
 Fixed marshalling of BYREF parameters to COM event 
  handlers, for several types; added VT_INT and 
  VT_INT | VT_BYREF 
+Added com-add-ref, com-ref-count procedures
 
 Version 103:
 

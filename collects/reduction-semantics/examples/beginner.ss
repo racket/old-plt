@@ -1,5 +1,4 @@
 
-
 (module beginner mzscheme
   (require (lib "reduction-semantics.ss" "reduction-semantics")
 	   (lib "gui.ss" "reduction-semantics")
@@ -49,7 +48,7 @@
         boolean
         string)
         
-     (prim-op + / cons car cdr empty?)
+     (prim-op + / cons first rest empty?)
      
      (p-ctxt (d/e-v ... d/e-ctxt d/e ...))
      (d/e-ctxt (define x e-ctxt)
@@ -128,6 +127,37 @@
       [(_ lhs rhs)
        (syntax (reduction lang (in-hole p-ctxt lhs) rhs))]))
 
+  #|
+  (define-syntax (template stx)
+    (define (build name depth)
+      (let loop ([depth depth]
+                 [exp name])
+        (cond
+          [(zero? depth) name]
+          [else (loop (- depth 1) 
+                      (datum->syntax-object
+                       name 
+                       `(,exp ...)))])))
+    (syntax-case stx ()
+      ([_ ([name depth] ...) exp]
+       (with-syntax ([(name-d ...) 
+                      (map (lambda (name depth)
+                             (build name
+                                    (syntax-object->datum depth)))
+                           (syntax->list (syntax (name ...)))
+                           (syntax->list (syntax (depth ...))))])
+         (syntax
+          (with-syntax ([name name-d] ...)
+            (syntax-object->datum (syntax exp))))))))
+  
+  (let ([xs (list 1 2 3)]
+        [ys (list 4 5 6)])
+    (template ([xs 1]
+               [ys 1])
+              ((xs ys) ...)))
+  
+  |#
+  
   (define reductions
     (list
      
@@ -206,24 +236,24 @@
       . e--> .
       "cons: second argument must be of type <list>")
      
-     ((car (cons (name v v) list-value)) . --> . v)
-     ((car) . e--> . "car: expects one argument")
-     ((car v v v ...) . e--> . "car: expects one argument")
-     ((side-condition (car (name v v))
+     ((first (cons (name v v) list-value)) . --> . v)
+     ((first) . e--> . "first: expects one argument")
+     ((first v v v ...) . e--> . "first: expects one argument")
+     ((side-condition (first (name v v))
                       (or (not (pair? v))
                           (not (eq? 'cons (car v)))))
       . e--> .
-      "car: expects argument of type <pair>")
+      "first: expects argument of type <pair>")
      
-     ((cdr (cons v (name list-value list-value))) . --> . list-value)
-     ((cdr v v v ...) . e--> . "cdr: expects one argument")
-     ((cdr) . e--> . "cdr: expects one argument")
+     ((rest (cons v (name list-value list-value))) . --> . list-value)
+     ((rest v v v ...) . e--> . "rest: expects one argument")
+     ((rest) . e--> . "rest: expects one argument")
      
-     ((side-condition (cdr (name v v))
+     ((side-condition (rest (name v v))
                       (or (not (pair? v))
                           (not (eq? 'cons (car v)))))
       . e--> .
-      "cdr: expects argument of type <pair>")
+      "rest: expects argument of type <pair>")
      
      ((+ (name n number) ...) . --> . (apply + n))
      
@@ -587,42 +617,42 @@
     (test '((cons 1 empty)) '((cons 1 empty)))
     (test '((cons 1 2))
           "cons: second argument must be of type <list>")
-    (test '((+ (car (cons 1 2)) 2))
+    (test '((+ (first (cons 1 2)) 2))
           "cons: second argument must be of type <list>")
-    (test '((+ (car (cons 1 empty)) 2))
+    (test '((+ (first (cons 1 empty)) 2))
           '(3))
     
     (test
-     '((car (cons 1 empty)))
+     '((first (cons 1 empty)))
      '(1))
     
     (test
-     '((car 1))
-     "car: expects argument of type <pair>")
+     '((first 1))
+     "first: expects argument of type <pair>")
     
     (test
-     '((car 1 2))
-     "car: expects one argument")
+     '((first 1 2))
+     "first: expects one argument")
     
     (test
-     '((car))
-     "car: expects one argument")
+     '((first))
+     "first: expects one argument")
     
     (test
-     '((cdr (cons 1 empty)))
+     '((rest (cons 1 empty)))
      '(empty))
     
     (test
-     '((cdr 1))
-     "cdr: expects argument of type <pair>")
+     '((rest 1))
+     "rest: expects argument of type <pair>")
     
     (test
-     '((cdr 1 2))
-     "cdr: expects one argument")
+     '((rest 1 2))
+     "rest: expects one argument")
     
     (test
-     '((cdr))
-     "cdr: expects one argument")
+     '((rest))
+     "rest: expects one argument")
     
     (test
      '((empty? empty))

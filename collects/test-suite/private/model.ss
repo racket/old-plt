@@ -35,7 +35,8 @@
            [program (instantiate text% ())]
            [language (preferences:get
                       (drscheme:language-configuration:get-settings-preferences-symbol))]
-           [teachpacks empty])
+           [teachpacks empty]
+           [has-highlighting? false])
           
           ;; get-program (-> string?)
           ;; the filename of the program to be tested by the test-suite
@@ -69,6 +70,11 @@
           (define/public (add-teachpack tp)
             (set! teachpacks (append teachpacks (list tp))))
           
+          ;; set-has-highlighting (boolean? . -> . void?)
+          ;; sets whether or not the model contains texts with error highlighting in them
+          (define/public (set-has-highlighting v)
+            (set! has-highlighting? v))
+          
           ;; insert-case (-> void?)
           ;; adds a new test case to the test-suite
           (define/public (insert-case)
@@ -88,6 +94,7 @@
             (send window update-executing true)
             (set-expander)
             (reset-cases)
+            (clear-highlighting)
             (let ([program-filename (send program get-text)])
               (if (string=? program-filename "")
                   (eval-cases)
@@ -180,6 +187,16 @@
           (define/override (set-modified modified?)
             (send window update-modified modified?)
             (super-set-modified modified?))
+          
+          ;; clear-highlighting (-> void?)
+          ;; clear the error highlighting
+          (define/public (clear-highlighting)
+            (when has-highlighting?
+              (for-each-snip
+               (lambda (case)
+                 (send case clear-highlighting))
+               (find-first-snip))
+              (set! has-highlighting? false)))
           
           ;; load-file (boolean? . -> . void?)
           ;; called after a file is loaded into the editor

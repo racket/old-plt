@@ -61,6 +61,16 @@
                       *success*
                       *failure*)))
           
+          ;; clear-highlighting (-> void?)
+          ;; clear any highlighting from the text boxes
+          (define/public (clear-highlighting)
+            (let ([sd (make-object style-delta%)])
+              (send sd set-delta-background "white")
+              (for-each
+               (lambda (text)
+                 (send text change-style sd 0 (send text last-position)))
+               (list call expected test))))
+          
           ;; execute ((is-a?/c expand-program%) ((union (id-s?/c snip%) false?) . -> . void?) . -> . void?)
           ;; execute the test case
           (define/public (execute expander continue) ; =drscheme-eventspace=

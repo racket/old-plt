@@ -5,7 +5,8 @@
    (lib "framework.ss" "framework")
    (lib "etc.ss")
    (lib "mred.ss" "mred")
-   (lib "aligned-pasteboard.ss" "mrlib"))
+   (lib "aligned-pasteboard.ss" "mrlib")
+   "interfaces.ss")
   
   (provide
    def-text%
@@ -118,7 +119,7 @@
   
   (define base-text%
     (class scheme:text%
-      (inherit set-modified)
+      (inherit set-modified refresh-delayed?)
       (init-field case)
       
       ;; autosave? (-> boolean?)
@@ -129,8 +130,23 @@
       ;; called when something is inserted into the editor
       (rename [super-after-insert after-insert])
       (define/override (after-insert start len)
-        (set-modified true)
+        (clear-highlighting)
         (super-after-insert start len))
+      
+      ;; after-delete (number? number? . -> . void?)
+      ;; called when something is deleted from the editor
+      (rename [super-after-delete after-delete])
+      (define/override (after-delete start len)
+        (clear-highlighting)
+        (super-after-delete start len))
+      
+      ;; clear-highlighting
+      ;; globally clear highlighting
+      (define/private (clear-highlighting)
+          (let ([editor 
+                 (with-handlers ([exn? (lambda (exn) false)])
+                   (send (send case get-admin) get-editor))])
+            (when editor (send editor clear-highlighting))))
       
       ;; get-keymaps (-> (listof keymap%))
       ;; the list of keymaps associated with this text

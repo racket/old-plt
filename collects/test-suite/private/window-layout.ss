@@ -198,7 +198,7 @@
           (define/override (get-error-handler)
             (letrec ([highlight-errors
                      (match-lambda
-                       [() (void)]
+                       [() (send model set-has-highlighting true)]
                        [((text start stop) errors ...)
                         (let ([sd (make-object style-delta%)])
                           (send sd set-delta-background "lightpink")

@@ -41,7 +41,6 @@ public:
 	  STDMETHOD(get_EventAvailable)(VARIANT_BOOL *pVal);
 	  STDMETHOD(QueueEvent)(IEvent *pEvent);
 	  STDMETHOD(GetEvent)(IEvent **ppEvent);
-	  STDMETHOD(PumpMsgs)(void);
 	  STDMETHOD(GetReaderSemaphore)(int *);
 	  STDMETHOD(set_extension_table)(int);
 };

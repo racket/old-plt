@@ -100,7 +100,6 @@ static MX_PRIM mxPrims[] = {
   { mx_find_element,"document-find-element",3,3 },
   { mx_document_objects,"document-objects",1,1 },
   { mx_document_show,"document-show",2,2},
-  { mx_document_pump_msgs,"document-pump-msgs",1,1 },
 
   // elements
 
@@ -2992,15 +2991,14 @@ void docHwndMsgLoop(LPVOID p) {
       }
     }
 
-    MsgWaitForMultipleObjects(0,NULL,FALSE,INFINITE,QS_ALLINPUT);
+    MsgWaitForMultipleObjects(0,NULL,FALSE,INFINITE,
+			      QS_ALLINPUT | QS_ALLPOSTMESSAGE);
 
     while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
     }
   }
-
-  //  return 0;
 }
 
 int cmpDwso(char *key,DOCUMENT_WINDOW_STYLE_OPTION *dwso) {
@@ -3196,17 +3194,21 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   return (Scheme_Object *)doc;
 }
 
-Scheme_Object *mx_document_pump_msgs(int argc,Scheme_Object **argv) {
-  MX_Document_Object *pDoc;
+int win_event_available(Scheme_Object *) {
+  MSG msg;
 
-  if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("document-pump-msgs","mx-document",0,argc,argv);
+  return PeekMessage(&msg,NULL,0,0,PM_NOREMOVE);
+}
+
+void win_event_wait(Scheme_Object *,void *fds) {
+  static HANDLE dummySem;
+  
+  if (dummySem == (HANDLE)0) {
+    dummySem = CreateSemaphore(NULL,0,1,NULL);
   }
 
-  pDoc = (MX_Document_Object *)argv[0];
-  pDoc->pIEventQueue->PumpMsgs(); 
-
-  return scheme_void;
+  puts("f2");
+  scheme_add_fd_handle(dummySem,fds,FALSE); 
 }
 
 Scheme_Object *mx_document_show(int argc,Scheme_Object **argv) {

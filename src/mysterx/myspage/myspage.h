@@ -2,7 +2,7 @@
 
 
 /* File created by MIDL compiler version 5.01.0164 */
-/* at Tue Jun 01 16:13:53 1999
+/* at Tue Jun 08 12:58:13 1999
  */
 /* Compiler settings for myspage.idl:
     Oicf (OptLev=i2), W1, Zp8, env=Win32, ms_ext, c_ext
@@ -1165,8 +1165,6 @@ EXTERN_C const IID IID_IEventQueue;
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE QueueEvent( 
             IEvent __RPC_FAR *__MIDL_0020) = 0;
         
-        virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE PumpMsgs( void) = 0;
-        
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE GetReaderSemaphore( 
             int __RPC_FAR *__MIDL_0021) = 0;
         
@@ -1232,9 +1230,6 @@ EXTERN_C const IID IID_IEventQueue;
             IEventQueue __RPC_FAR * This,
             IEvent __RPC_FAR *__MIDL_0020);
         
-        /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *PumpMsgs )( 
-            IEventQueue __RPC_FAR * This);
-        
         /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *GetReaderSemaphore )( 
             IEventQueue __RPC_FAR * This,
             int __RPC_FAR *__MIDL_0021);
@@ -1289,9 +1284,6 @@ EXTERN_C const IID IID_IEventQueue;
 #define IEventQueue_QueueEvent(This,__MIDL_0020)	\
     (This)->lpVtbl -> QueueEvent(This,__MIDL_0020)
 
-#define IEventQueue_PumpMsgs(This)	\
-    (This)->lpVtbl -> PumpMsgs(This)
-
 #define IEventQueue_GetReaderSemaphore(This,__MIDL_0021)	\
     (This)->lpVtbl -> GetReaderSemaphore(This,__MIDL_0021)
 
@@ -1326,17 +1318,6 @@ void __RPC_STUB IEventQueue_GetEvent_Stub(
 
 
 void __RPC_STUB IEventQueue_QueueEvent_Stub(
-    IRpcStubBuffer *This,
-    IRpcChannelBuffer *_pRpcChannelBuffer,
-    PRPC_MESSAGE _pRpcMessage,
-    DWORD *_pdwStubPhase);
-
-
-/* [helpstring][id] */ HRESULT STDMETHODCALLTYPE IEventQueue_PumpMsgs_Proxy( 
-    IEventQueue __RPC_FAR * This);
-
-
-void __RPC_STUB IEventQueue_PumpMsgs_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,

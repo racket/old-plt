@@ -99,11 +99,10 @@ typedef enum _mouse_button_ {
 	{
 		[id(1), helpstring("method GetEvent")] HRESULT GetEvent(IEvent **);
 		[id(2), helpstring("method QueueEvent")] HRESULT QueueEvent(IEvent *);
-		[id(3), helpstring("method PumpMsgs")] HRESULT PumpMsgs(void);
-		[id(4), helpstring("method getReaderSemaphore")] HRESULT GetReaderSemaphore(int *);
-                [id(5), helpstring("method set_extension_table"
+		[id(3), helpstring("method getReaderSemaphore")] HRESULT GetReaderSemaphore(int *);
+                [id(4), helpstring("method set_extension_table"
 )] HRESULT set_extension_table(int);
-		[propget, id(6), helpstring("property EventAvailable")] HRESULT EventAvailable([out, retval] VARIANT_BOOL *pVal);
+		[propget, id(5), helpstring("property EventAvailable")] HRESULT EventAvailable([out, retval] VARIANT_BOOL *pVal);
 	};
     [
 	uuid(0E7D1480-8948-11D2-B54E-0060089002FE),

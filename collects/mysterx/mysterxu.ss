@@ -795,11 +795,4 @@
 
 	   (sequence 
 
-	     (super-init)
-
-	     (thread 	
-	      (lambda () 
-		(let loop ()	
-		  (mxprims:document-pump-msgs doc)
-		  (sleep)
-		  (loop))))))))
+	     (super-init)))))

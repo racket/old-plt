@@ -44,7 +44,7 @@ wxPrinterDC::wxPrinterDC(wxWindow *parent) : wxCanvasDC()
   PrintDefault(pr);
   PrValidate(pr);
   if (PrError() != fnfErr) {
-    if (!PrJobDialog(printData.macPrData)) {
+    if (!PrJobDialog(pr)) {
       ok = FALSE;
     }
     if (PrError())
@@ -159,7 +159,7 @@ wxPrinterDC::~wxPrinterDC(void)
   if (ok) {
     PrCloseDoc(prPort);
     if (close_handle)
-      disposeHandle((Handle)prRecHandle);
+      DisposeHandle((Handle)prRecHandle);
   }
 
   wxPrClose();

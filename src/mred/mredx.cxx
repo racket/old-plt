@@ -480,13 +480,24 @@ void MrEdDispatchEvent(XEvent *event)
 	    && !strcmp(XGetAtomName(d, event->xclient.message_type), "WM_PROTOCOLS")
 	    && !strcmp(XGetAtomName(d, event->xclient.data.l[0]), "WM_DELETE_WINDOW"))) {
       Window window = GetEventWindow(event);
-      Widget widget, ow;
+      Widget widget, ow, exempt = 0;
 
       if (window)
 	widget = XtWindowToWidget(d, window);
       else
 	widget = 0;
       ow = widget;
+
+      MrEdContext *c = MrEdGetContext();
+      wxWindow *ew = c->modal_window;
+      if (ew) {
+#ifdef wx_xt
+	exempt = ew->GetHandle()->frame;
+#endif
+#ifdef wx_motif
+	exempt = (Widget)ew->handle;
+#endif
+      }
 
       while (widget) {
 #ifdef wx_xt
@@ -511,6 +522,10 @@ void MrEdDispatchEvent(XEvent *event)
 #endif
 	  return;
 	}
+
+	if (widget == exempt)
+	  break;
+
 	widget = XtParent(widget);
       }
     }

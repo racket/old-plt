@@ -1,8 +1,5 @@
 #|
 
-TODO:
- - problem with coordinates
-
 Check Syntax separates four classes of identifiers:
 
   - bound by a macro whose definition is in this file

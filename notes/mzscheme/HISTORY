@@ -12,6 +12,17 @@ Fixed unfairness in threads (perpetually creating threads
  would cause certain threads, particularly the main thread,
  to never get any time)
 Added current-memory-use
+Asynchronous breaks are now disabled during dyamic-wind
+ pre and post thunks
+Removed user-break-poll-handler; spawn a thread that sleeps and
+ calls break-thread instead
+Removes dynamic-enable-break (no long needed since dynamic-wind
+ post thunks can't be broken), but moved it to MzLib's thread.ss
+Renamed call-with-escaping-continution procedure to
+ call-with-escape-continution (call/ec unchanged)
+Cut down the exn hierarchy to about 1/4 of its previous size,
+ which minor renaming on the remainder; see the manual for
+ details
 MzLib cleanup:
  Removed `@' suffix for embedded units in mzlib:core@ and mzlib@
  Removed all c.ss libraries, plus constan[t].ss
@@ -20,7 +31,9 @@ MzLib cleanup:
  Removed zsin, zcos, ztan, zasin, zacos, zatan, zlog, zexp,
   and zsqrt from zmath.ss (MzScheme's built-ins do complex)
  Moved from functio.ss to thread.ss: dynamic-disable-break,
-  dynamic-wind/protect-break, make-single-threader
+  make-single-threader
+ Removed from functio.ss: dynamic-wind/protect-break
+ Added to thread.ss: dynamic-enable-break
  Moved MzLib's compat.ss out of the core
 
 Version 53, July 25, 1998

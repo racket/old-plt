@@ -5127,8 +5127,11 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 	  /* Hopefully, the signal is delivered here. */
 	  if (tries) {
 	    /* Stubborn OS (e.g.,MacOS X) that doesn't deliver the signal during sleep(0) */
+	    /* Worse: !@#$ library bug; this doesn't work right if the stack is aligned wrong */
 #ifdef OS_X
-	    int unused = 0; /*  !@#$ library bug; this doesn't work right if the stack is aligned wrong */
+# ifndef MZ_PRECISE_GC
+	    int unused = 0;
+# endif
 #endif
 	    struct timeval time;
 

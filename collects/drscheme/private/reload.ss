@@ -25,28 +25,29 @@
 			    ((current-module-name-resolver) spec #f #f))]
 	   [module-filename (module-name->filename module-name)])
 
-      ;; since we don't know what to do with top-level defined modules,
+      ;; since we don't know what to do with top-level defined modules, (without a filename)
       ;; we just assume that they never change (which isn't necessarily true)
       (and module-filename
 
-	   (let ([depends
-		  (fetch-from-cache
-		   cache
-		   module-name
-		   (lambda () (calculate-imports module-name module-filename)))])
-
-	     (if (or (ormap (lambda (spec) (reload/cache spec timestamp cache))
-			    depends)
-		     ((file-or-directory-modify-seconds module-filename) . > . timestamp))
-		 (begin
-
-		   (parameterize ([current-module-name-prefix
-				   (let-values ([(base _1 _2) (split-path module-filename)])
-				     (string->symbol (string-append "," base)))])
-		     (load module-filename))
-
-		   #t)
-		 #f)))))
+           (parameterize ([current-directory (let-values ([(base name dir?) (split-path module-filename)])
+                                               base)])
+             (let ([depends
+                    (fetch-from-cache
+                     cache
+                     module-name
+                     (lambda () (calculate-imports module-name module-filename)))])
+               (if (or (ormap (lambda (spec) (reload/cache spec timestamp cache))
+                              depends)
+                       ((file-or-directory-modify-seconds module-filename) . > . timestamp))
+                   (begin
+                     
+                     (parameterize ([current-module-name-prefix
+                                     (let-values ([(base _1 _2) (split-path module-filename)])
+                                       (string->symbol (string-append "," base)))])
+                       (load module-filename))
+                     
+                     #t)
+                   #f))))))
 
   ;; get/create-cache : -> ht
   ;; returns the current cache table for this namespace
@@ -102,7 +103,7 @@
 	(and m
 	     (string->symbol (cadr m))))))
 
-  ;; module-name->filename : symbol -> (union #f string)
+  ;; module-name->filename : symbol -> (union #f string[normalized-path])
   ;; given a symbol naming a module, returns the corresponding
   ;; filename it was loaded from (checks for .scm, .ss, and just raw names)
   ;; or #f, if there isn't a filename recoverable.

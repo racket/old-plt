@@ -1,8 +1,8 @@
-Time-stamp: <98/03/16 23:12:32 shriram>
+Time-stamp: <98/03/17 16:00:08 shriram>
 
 Package: mail
 Collection: net
-Files: mail.ss, mail.ss, mail.ss, mail.ss
+Files: mail.ss, mailr.ss, mails.ss, mailu.ss
 
 ABSTRACT -------------------------------------------------------------
 

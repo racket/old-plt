@@ -12,7 +12,8 @@
           [utils : stepper:cogen-utils^]
           [marks : stepper:marks^])
 
-  ;;;;;; copied from /plt/collects/drscheme/snip.ss :
+
+;;;;;; copied from /plt/collects/drscheme/snip.ss :
   
   (define separator-snipclass
     (make-object
@@ -55,9 +56,10 @@
 		  [widthb (box 0)]
 		  [space 2])
 	     (send reporting-admin get-view #f #f widthb #f)
-	     (set! width (- (unbox widthb) 
-			    space
-			    2)))
+	     (set! width (max 0.0
+                              (- (unbox widthb) 
+                                 space
+                                 2))))
 	   (set! height 1)
 	   (unless (not w-box)
 	     (set-box! w-box width))
@@ -138,7 +140,7 @@
 	       (send dc set-brush body-brush)
 	       
 	       (send dc draw-rectangle (+ white-around x)
-		     0 width height)
+		     y width height)
 	       
 	       (send dc set-pen orig-pen)
 	       (send dc set-brush orig-brush))))])
@@ -149,29 +151,6 @@
   
   ;;;; end of vertical snip-stuff
   
-  (define stepper-frame%
-    (class (d:frame:basics-mixin (f:frame:standard-menus-mixin f:frame:basic%)) (drscheme-frame)
-      (rename [super-on-close on-close])
-      (override
-        [on-close
-         (lambda ()
-           (send drscheme-frame stepper-frame #f)
-           (super-on-close))])
-      (sequence (super-init "The Foot"))))
-
-  (define stepper-canvas%
-    (class editor-canvas% (parent (editor #f) (style null) (scrolls-per-page 100))
-      (rename (super-on-size on-size))
-      (inherit get-editor)
-      (override 
-        [on-size 
-         (lambda (width height)
-           (super-on-size width height)
-           (let ([editor (get-editor)])
-             (when editor
-               (send editor reset-pretty-print-width this))))])
-      (sequence (super-init parent editor style scrolls-per-page))))
-  
   (define (image? val)
    (is-a? val snip%))
   
@@ -180,49 +159,47 @@
         (boolean? val)
         (string? val)
         (symbol? val)))
+
+  (define stepper-editor-snip%
+    (class editor-snip% ()
+      (inherit get-editor set-min-width)
+      (private [inset 5])
+      (public
+        [set-new-min-width
+         (lambda (width canvas)
+           (set-min-width width)
+           (let ([editor (get-editor)])
+             (when editor
+               (send editor reset-pretty-print-width (- width (* 2 inset)) canvas))))])
+      (sequence (super-init #f #f))))
   
-  
-  ; constructor : ((listof sexp) (union sexp no-sexp) (union sexp no-sexp) 
-  ;                (union sexp no-sexp multiple-highlight) (union sexp no-sexp) (union string #f) ... -> )
-  
-  ; redexes MUST NOT OVERLAP. all warranties void if this is violated.
-  
-  (define stepper-text%
-    (class f:text:basic% (finished-exprs exps redex-list post-exps reduct-list 
-                                         error-msg after-exprs (line-spacing 1.0) (tabstops null))
-      (inherit find-snip insert change-style highlight-range last-position lock erase auto-wrap
-               begin-edit-sequence end-edit-sequence get-start-position get-style-list set-style-list)
-      (public [reset-pretty-print-width 
-               (lambda (canvas)
+  (define stepper-sub-text%
+    (class f:text:basic% (exps highlights highlight-color (line-spacing 1.0) (tabstops null))
+      (inherit insert get-style-list set-style-list change-style highlight-range last-position lock erase
+               begin-edit-sequence end-edit-sequence get-start-position select-all clear)
+      (public [reset-pretty-print-width
+               (lambda (inner-width canvas)
                  (begin-edit-sequence)
                  (let* ([style (send (get-style-list) find-named-style "Standard")]
                         [char-width (send style get-text-width (send canvas get-dc))]
-                        [canvas-width (let-values ([(client-width client-height)
-                                                    (send canvas get-client-size)])
-                                        client-width)]
-                        [min-columns-main 40]
-                        [width-main (max min-columns-main (floor (/ (- canvas-width 18) char-width)))]
-                        [min-columns-narrow 20]
-                        [width-narrow (max min-columns-narrow 
-                                           (floor (/ (- (/ (- canvas-width separator-width) 2) 18) char-width)))])
-                   (reformat-sexp min-columns-main min-columns-narrow)
+                        [min-columns 20]
+                        [width (max min-columns (floor (/ (- inner-width 18) char-width)))])
+                   (reformat-sexp width)
                    (end-edit-sequence)))])
-
-      (private [pretty-printed-width-main #f]
-               [pretty-printed-width-narrow #f]
+      
+      (private [pretty-printed-width #f]
                [clear-highlight-thunks null]               
                [reset-style
                 (lambda ()
                   (change-style (send (get-style-list) find-named-style "Standard")))]
                
                [reformat-sexp
-                (lambda (main narrow)
-                  (when (not (and (= pretty-printed-width-main main)
-                                  (= pretty-printed-width-narrow narrow)))
-                    (set! pretty-printed-width (pretty-print-columns))
+                (lambda (width)
+                  (when (not (eq? pretty-printed-width width))
+                    (set! pretty-printed-width width)
                     (format-whole-step)))]
+               
                [highlight-begin #f]
-               [highlight-color #f]
                [remaining-highlights null]
                [highlight-pop
                 (lambda ()
@@ -237,10 +214,12 @@
                   (set! next-is-placeholder?
                         (or (null? remaining-highlights)
                             (confusable-value? (car remaining-highlights)))))]
+               
                [format-sexp
                 (lambda (sexp)
                   (let ([real-print-hook (pretty-print-print-hook)])
-                    (parameterize ([pretty-print-size-hook
+                    (parameterize ([pretty-print-columns pretty-printed-width]
+                                   [pretty-print-size-hook
                                     (lambda (value display? port)
                                       (if (eq? value highlight-placeholder) ; must be a confusable value
                                           (string-length (format "~s" (car remaining-highlights)))
@@ -283,7 +262,7 @@
                                                       clear-highlight-thunks))
                                           (set! highlight-begin #f))))])
                       (pretty-print sexp))))]
-              
+               
                [advance-substitute
                 (lambda (exp)
                   (letrec ([stack-copy remaining-highlights]
@@ -303,65 +282,122 @@
                                     [else
                                      exp]))])
                     (substitute exp)))]
-              
+               
                [format-whole-step
                 (lambda ()
                   (lock #f)
                   (begin-edit-sequence)
                   (for-each (lambda (fun) (fun)) clear-highlight-thunks)
                   (set! clear-highlight-thunks null)
-                  (erase)
+                  (select-all)
+                  (clear)
+                  (reset-style)
+                  (set! remaining-highlights highlights)
+                  (stack-top-decide)
                   (for-each
-                   (lambda (expr)
-                     (format-sexp expr)
-                     (insert #\newline))
-                   finished-exprs)
-                  (insert (make-object separator-snip%))
-                  (when (not (eq? redex-list no-sexp))
-                    (insert #\newline)
-                    (reset-style)
-                    (set! remaining-highlights redex-list)
-                    (stack-top-decide)
-                    (set! highlight-color redex-highlight-color)
-                    (unless (= (length exps) 1)
-                      (error 'format-sexp "wrong length exp list in pre-step: ~s" exps))
-                    (format-sexp (advance-substitute (car exps)))
-                    (unless (null? remaining-highlights)
-                      (error 'format-whole-step "left-over highlights in pre-step"))
-                    (insert #\newline)
-                    (insert (make-object separator-snip%))
-                    (insert #\newline))
-                  (cond [(not (eq? reduct-list no-sexp))
-                         (reset-style)
-                         (set! remaining-highlights reduct-list)
-                         (stack-top-decide)
-                         (set! highlight-color reduct-highlight-color)
-                         (for-each
-                          (lambda (exp) (format-sexp (advance-substitute exp)))
-                          post-exps)
-                         (unless (null? remaining-highlights)
-                           (error 'format-whole-step "left-over highlights in post-step"))]
-                        [error-msg
-                         (let ([before-error-msg (last-position)])
-                           (reset-style)
-                           (auto-wrap #t)
-                           (insert error-msg)
-                           (change-style error-delta before-error-msg (last-position))
-                           (insert #\newline))])
-                  (unless (eq? after-exprs no-sexp)
-                    (insert #\newline)
-                    (insert (make-object separator-snip%))
-                    (insert #\newline)
-                    (reset-style)
-                    (for-each
-                     (lambda (expr)
-                       (format-sexp expr)
-                       (insert #\newline))
-                     after-exprs))
+                   (lambda (exp) (format-sexp (advance-substitute exp)))
+                   exps)
+                  (unless (null? remaining-highlights)
+                    (error 'format-whole-step "leftover highlights"))
                   (end-edit-sequence)
                   (lock #t))])
       (sequence (super-init line-spacing tabstops)
                 (set-style-list (f:scheme:get-style-list)))))
+  
+  (define stepper-sub-error-text%
+    (class f:text:basic% (error-msg (line-spacing 1.0) (tabstops null))
+      (inherit get-style-list last-position set-style-list insert change-style auto-wrap)
+      (sequence (super-init line-spacing tabstops)
+                (set-style-list (f:scheme:get-style-list))
+                (let ([before-error-msg (last-position)])
+                  (change-style (send (get-style-list) find-named-style "Standard"))
+                  (auto-wrap #t)
+                  (insert error-msg)
+                  (change-style error-delta before-error-msg (last-position))))))
+  
+  (define stepper-canvas%
+    (class editor-canvas% (parent (editor #f) (style null) (scrolls-per-page 100))
+      (rename (super-on-size on-size))
+      (inherit get-editor)
+      (override 
+        [on-size 
+         (lambda (width height)
+           (super-on-size width height)
+           (let ([editor (get-editor)])
+             (when editor
+               (send editor reset-width this))))])
+      (sequence (super-init parent editor style scrolls-per-page))))
+  
+  ; constructor : ((listof sexp) (union sexp no-sexp) (union sexp no-sexp) 
+  ;                (union sexp no-sexp multiple-highlight) (union sexp no-sexp) (union string #f) ... -> )
+  
+  ; redexes MUST NOT OVERLAP. all warranties void if this is violated.
+  
+  (define stepper-text%
+    (class f:text:basic% (finished-exprs exps redex-list post-exps reduct-list 
+                                         error-msg after-exprs (line-spacing 1.0) (tabstops null))
+      (inherit find-snip insert change-style highlight-range last-position lock erase auto-wrap
+               begin-edit-sequence end-edit-sequence get-start-position get-style-list set-style-list)
+      (public [reset-width 
+               (lambda (canvas)
+                 (let* ([canvas-width (let-values ([(client-width client-height)
+                                                    (send canvas get-client-size)])
+                                        client-width)]
+                        [dc (send canvas get-dc)])
+                   (unless (eq? canvas-width old-width)
+                     (set! old-width canvas-width)
+                     (let* ([minus-cursor-margin (- canvas-width 2)]
+                            [vert-separator-width-box (box 0)]
+                            [_ (send vert-separator get-extent dc 0 0 vert-separator-width-box
+                                     #f #f #f #f #f)]
+                            [vert-separator-width (unbox vert-separator-width-box)]
+                            [minus-center-bar (- minus-cursor-margin vert-separator-width)]
+                            [l-r-box-widths (floor (/ minus-center-bar 2))])
+                       (send top-defs-snip set-new-min-width minus-cursor-margin canvas)
+                       (send before-snip set-new-min-width l-r-box-widths canvas)
+                       (send after-snip set-new-min-width l-r-box-widths canvas)
+                       (send bottom-defs-snip set-new-min-width minus-cursor-margin canvas)))))])
+
+      (private [old-width #f]
+               [top-defs-snip (make-object stepper-editor-snip%)]
+               [horiz-separator-1 (make-object separator-snip%)]
+               [before-snip (make-object stepper-editor-snip%)]
+               [vert-separator (make-object vertical-separator-snip% 100)]
+               [after-snip (make-object stepper-editor-snip%)]
+               [horiz-separator-2 (make-object separator-snip%)]
+               [bottom-defs-snip (make-object stepper-editor-snip%)])
+      
+      
+
+      (sequence (super-init line-spacing tabstops)
+                (set-style-list (f:scheme:get-style-list))
+                (for-each insert (list top-defs-snip (string #\newline) horiz-separator-1
+                                       before-snip vert-separator 
+                                       after-snip (string #\newline) 
+                                       horiz-separator-2 bottom-defs-snip))
+                (send top-defs-snip set-editor 
+                      (make-object stepper-sub-text% finished-exprs null #f))
+                (send before-snip set-editor
+                      (make-object stepper-sub-text% exps redex-list redex-highlight-color))
+                (if (not (eq? reduct-list no-sexp))
+                    (send after-snip set-editor
+                          (make-object stepper-sub-text% post-exps reduct-list reduct-highlight-color))
+                    (send after-snip set-editor
+                          (make-object stepper-sub-error-text% error-msg)))
+                (send bottom-defs-snip set-editor
+                      (make-object stepper-sub-text% after-exprs null #f)))))
+
+  (define stepper-frame%
+    (class (d:frame:basics-mixin (f:frame:standard-menus-mixin f:frame:basic%)) (drscheme-frame)
+      (rename [super-on-close on-close])
+      (override
+        [on-close
+         (lambda ()
+           (send drscheme-frame stepper-frame #f)
+           (super-on-close))])
+      (sequence (super-init "The Foot"))))
+
+
 
   
 ;  (define (stepper-text-test . args)
@@ -453,7 +489,7 @@
             (define (update-view new-view)
               (set! view new-view)
               (let ([e (list-ref view-history view)])
-                (send e reset-pretty-print-width canvas)
+                (send e reset-width canvas)
                 (send canvas lazy-refresh #t)
                 (send canvas set-editor e)
                 (send e set-position (send e last-position))

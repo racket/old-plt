@@ -873,7 +873,8 @@
 					  (recur)]))
 				      0
 				      (send definitions-text last-position)
-				      #f)))))
+				      #f
+				      #t)))))
 			 (semaphore-wait semaphore)
 			 (when error-raised?
 			   (send interactions-text report-located-error msg debug error)))

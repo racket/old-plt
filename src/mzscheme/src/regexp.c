@@ -1407,7 +1407,12 @@ regmatch(Regwork *rw, rxpos prog)
   }
 #endif
 
-  SCHEME_USE_FUEL(1);
+  if (DECREMENT_FUEL(scheme_fuel_counter, n) <= 0) { 
+    char *rs;
+    rs = regstr;
+    scheme_out_of_fuel();
+    regstr = rs;
+  }
 
   scan = prog;
   while (scan != 0) {

@@ -907,15 +907,12 @@
                  [symbol-chars (format "[~a]" raw-symbol-chars)]
                  [not-symbol-chars (format "[^~a]" raw-symbol-chars)]
                  [fallthru-regexp-str (format "^()(~a*): " symbol-chars)]
-                 ;[_ (printf "fallthru-regex-str: ~s~n" fallthru-regexp-str)]
                  [fallthru-regexp (regexp fallthru-regexp-str)]
                  [class-regexp-str (format "^(.*~a)(~a+(<%>|%)).*$" not-symbol-chars symbol-chars)]
-                 ;[_ (printf "class-regex-str: ~s~n" class-regexp-str)]
                  [class-regexp (regexp class-regexp-str)]
                  [ivar-regexp-str (format
                                    "^(ivar: instance variable not found: )(~a*)"
                                    symbol-chars)]
-                 ;[_ (printf "ivar-regex-str: ~s~n" ivar-regexp-str)]
                  [ivar-regexp (regexp ivar-regexp-str)])
             (lambda (s exn) ; =User=
               (queue-output
@@ -1071,7 +1068,7 @@
                 (let* ([start (zodiac:zodiac-start (car dis))]
                        [finish (zodiac:zodiac-finish (car dis))]
 		       [error-filename (zodiac:location-file start)]
-                       [old-locked? locked?]
+                       [old-locked? (locked?)]
                        [show-bug? (not (= 1 (length dis)))]
                        [show-file? (string? error-filename)])
                   (begin-edit-sequence)
@@ -1109,7 +1106,7 @@
         (define report-unlocated-error ; =Kernel=
           (lambda (message exn)
             (send context ensure-rep-shown)
-            (let ([old-locked? locked?])
+            (let ([old-locked? (locked?)])
               (begin-edit-sequence)
               (lock #f)
               (this-err-write/exn (string-append message (string #\newline))
@@ -1196,9 +1193,10 @@
       ;;;                                            ;;;
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         
-        (define get-prompt (lambda () "> "))
-        (define eval-busy? (lambda () (not (and user-thread
-                                                (thread-running? user-thread)))))
+        (define (get-prompt) "> ")
+        (define (eval-busy?)
+	  (not (and user-thread
+		    (thread-running? user-thread))))
         
         (define (get-user-setting) (fw:preferences:get drscheme:language:settings-preferences-symbol))
         (define user-setting (get-user-setting))
@@ -1821,10 +1819,8 @@
                    do-pre-eval
                    do-eval
                    do-post-eval
-                   eval-busy?)
-           
-           )
-          
+                   eval-busy?))
+
           (define autosave? (lambda () #f))
           
           (define edit-sequence-count 0)
@@ -2097,30 +2093,29 @@
 		   (super-on-local-char key)]))))
           
           (define inserting-prompt #f)
-          (define insert-prompt
-            (lambda ()
-              (set! prompt-mode? #t)
-              (fluid-let ([inserting-prompt #t])
-                (begin-edit-sequence)
-                (let* ([last (last-position)]
-		       [c-locked? (locked?)]
-                       [start-selection (get-start-position)]
-                       [end-selection (get-end-position)]
-                       [last-str (if (= last 0)
-                                     ""
-                                     (get-text (- last 1) last))])
-		  (lock #f)
-                  (unless (or (string=? last-str newline-string)
-                              (= last 0))
-                    (insert #\newline last))
-                  (let ([last (last-position)])
-                    (insert (get-prompt) last)
-                    (change-style normal-delta last (last-position)))
-                  (set! prompt-position (last-position))
-                  ;(clear-undos)
-		  (lock c-locked?)
-                  (end-edit-sequence)
-                  (scroll-to-position start-selection #f (last-position) 'start)))))
+          (define (insert-prompt)
+	    (set! prompt-mode? #t)
+	    (fluid-let ([inserting-prompt #t])
+	      (begin-edit-sequence)
+	      (let* ([last (last-position)]
+		     [c-locked? (locked?)]
+		     [start-selection (get-start-position)]
+		     [end-selection (get-end-position)]
+		     [last-str (if (= last 0)
+				   ""
+				   (get-text (- last 1) last))])
+		(lock #f)
+		(unless (or (string=? last-str newline-string)
+			    (= last 0))
+		  (insert #\newline last))
+		(let ([last (last-position)])
+		  (insert (get-prompt) last)
+		  (change-style normal-delta last (last-position)))
+		(set! prompt-position (last-position))
+					;(clear-undos)
+		(lock c-locked?)
+		(end-edit-sequence)
+		(scroll-to-position start-selection #f (last-position) 'start))))
           (define reset-console
             (lambda ()
               (void)))

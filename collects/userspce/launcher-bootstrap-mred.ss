@@ -14,6 +14,7 @@
 	    (define show-banner? #f)
 	    (define repl? #f)
 
+	    (define orig-eventspace (current-eventspace))
 	    (define user-eventspace #f)
 
 	    (define (run-in-new-user-thread thunk)
@@ -31,8 +32,10 @@
 		  thread)))
 	    
 	    (define (number-open-windows)
-	      (parameterize ([current-eventspace user-eventspace])
-		(length (get-top-level-windows))))
+	      (+ (parameterize ([current-eventspace orig-eventspace])
+		   (length (get-top-level-windows)))
+		 (parameterize ([current-eventspace user-eventspace])
+		   (length (get-top-level-windows)))))
 
 	    (define (load-and-repl-done)
 	      (if (= 0 (number-open-windows))

@@ -75,7 +75,7 @@
 		(substring s 1 (string-length s)))))]
 	[else (file://rel-path->fs-path s)])))
 
-  (define (fs-path->file://url p)
+  (define (fs-path->file://url-string p)
     (let ([paths
            (let loop ([p p]
                       [acc null])

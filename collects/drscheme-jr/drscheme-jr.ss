@@ -90,7 +90,7 @@
 	     "set! on undefined variables"
 	     basis:setting-allow-set!-on-undefined?)
 |#
-       (list "--auto-else"
+       (list "--auto-else-error"
 	     (make-get/set basis:setting-unmatched-cond/case-is-error?
 			   basis:set-setting-unmatched-cond/case-is-error?!)
 	     "non-matching cond/case produces an error"

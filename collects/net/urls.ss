@@ -5,7 +5,7 @@
   ((struct url (scheme host port path params query fragment))
    (struct mime-header (name value))
    unixpath->path
-   fs-path->file://path                 ; str -> path
+   fs-path->file://url-string           ; string -> string
    file://path->fs-path                 ; path -> str
    get-pure-port			; url [x list (str)] -> in-port
    get-impure-port			; url [x list (str)] -> in-port

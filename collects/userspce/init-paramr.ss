@@ -526,6 +526,8 @@
   ;; probably obsolete
   (define intermediate-values-during-load (make-parameter (lambda x (void))))
   
+  (define re:zo (regexp "[.][zZ][oO]$"))
+
   ;; drscheme-load-handler : string ->* TST
   (define (drscheme-load-handler filename)
     (unless (string? filename)
@@ -534,11 +536,7 @@
 	      (current-continuation-marks)
 	      filename
 	      'string)))
-    (let ([zo-file?
-	   (let ([l (string-length filename)])
-	     (and (<= 3 l)
-		  (string=? ".zo" (substring filename (- l 3) l))))])
-      
+    (let ([zo-file? (regexp-match re:zo filename)])
       (cond
         [zo-file?
 	 (primitive-load filename)]

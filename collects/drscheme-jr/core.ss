@@ -136,9 +136,10 @@
 		 (mzlib:thread:dynamic-enable-break
 		  (lambda ()
 		    (let loop ()
-		      (with-handlers ([exn:misc:user-break? (lambda (x)
-							      (break-thread repl-thread)
-							      (loop))])
+		      (with-handlers ([exn:misc:user-break?
+				       (lambda (x)
+					 (break-thread repl-thread)
+					 (loop))])
 			(thread-wait repl-thread))))))))
 	    (when continue?
 	      (loop))))))

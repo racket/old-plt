@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.52 1999/03/28 21:37:08 mflatt Exp $
+; $Id: scm-core.ss,v 1.53 1999/04/07 22:38:03 mflatt Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -308,6 +308,9 @@
   ; --------------------------------------------------------------------
 
   (define previous-attribute (make-attributes))
+
+  (define (reset-previous-attribute)
+    (set! previous-attribute (make-attributes)))
 
   (define (reset-internal-attributes attr)
     (set-top-level-status attr #t)

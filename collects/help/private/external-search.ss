@@ -1,8 +1,8 @@
 (module external-search mzscheme
   (require "browser.ss"
 	   "server.ss"
-	   (lib "util.ss" "help" "servlets" "private")
-	   (lib "specs.ss" "framework"))
+	   (lib "contracts.ss")
+	   (lib "util.ss" "help" "servlets" "private"))
 
   (provide/contract 
    (search-for-docs

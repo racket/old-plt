@@ -147,10 +147,9 @@
   (define (reraise-exn-as-submission-problem thunk)
     (with-handlers ([void (lambda (exn)
 			    (error
-			     (format "ERROR: ~a"
-				     (if (exn? exn)
-					 (exn-message exn)
-					 (format "~s" exn)))))])
+			     (if (exn? exn)
+				 (exn-message exn)
+				 (format "~s" exn))))])
       (thunk)))
   
   )

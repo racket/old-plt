@@ -10,58 +10,60 @@
 	   (lib "file.ss"))
 
   (provide serve-status)
-  
-  (define config
-    `((port 7980)
-      (max-waiting 40)
-      (initial-connection-timeout 30)
-      (default-host-table
-	(host-table
-	 (default-indices "index.html")
-	 (log-format parenthesized-default)
-	 (messages
-	  (servlet-message "servlet-error.html")
-	  (authentication-message "forbidden.html")
-	  (servlets-refreshed "servlet-refresh.html")
-	  (passwords-refreshed "passwords-refresh.html")
-	  (file-not-found-message "not-found.html")
-	  (protocol-message "protocol-error.html"))
-	 (timeouts
-	  (default-servlet-timeout 120)
-	  (password-connection-timeout 300)
-	  (servlet-connection-timeout 86400)
-	  (file-per-byte-connection-timeout 1/20)
-	  (file-base-connection-timeout 30))
-	 (paths
-	  (configuration-root "conf")
-	  (host-root ,(build-path (collection-path "handin-server") "status-web-root"))
-	  (log-file-path ,(build-path (current-directory) "web-status-log.ss"))
-	  (file-root "htdocs")
-	  (servlet-root same)
-	  (password-authentication ,(build-path (current-directory) "web-status-passwords")))))
-      (virtual-host-table)))
 
-  (define config@
-    (let ([file (make-temporary-file)])
-      (with-output-to-file file
-	(lambda ()
-	  (write config))
-	'truncate)
-      (begin0
-       (load-configuration file)
-       (delete-file file))))
+  (define (serve-status port-no)
+    
+    (define config
+      `((port ,port-no)
+	(max-waiting 40)
+	(initial-connection-timeout 30)
+	(default-host-table
+	  (host-table
+	   (default-indices "index.html")
+	   (log-format parenthesized-default)
+	   (messages
+	    (servlet-message "servlet-error.html")
+	    (authentication-message "forbidden.html")
+	    (servlets-refreshed "servlet-refresh.html")
+	    (passwords-refreshed "passwords-refresh.html")
+	    (file-not-found-message "not-found.html")
+	    (protocol-message "protocol-error.html"))
+	   (timeouts
+	    (default-servlet-timeout 120)
+	    (password-connection-timeout 300)
+	    (servlet-connection-timeout 86400)
+	    (file-per-byte-connection-timeout 1/20)
+	    (file-base-connection-timeout 30))
+	   (paths
+	    (configuration-root "conf")
+	    (host-root ,(build-path (collection-path "handin-server") "status-web-root"))
+	    (log-file-path ,(build-path (current-directory) "web-status-log.ss"))
+	    (file-root "htdocs")
+	    (servlet-root same)
+	    (password-authentication ,(build-path (current-directory) "web-status-passwords")))))
+	(virtual-host-table)))
 
-  (define-values/invoke-unit/sig web-server^
-    (compound-unit/sig
-     (import)
-     (link
-      [t : net:tcp^ ((make-ssl-tcp@
-		      "server-cert.pem" "private-key.pem" #f #f
-		      #f #f #f))]
-      [c : web-config^ (config@)]
-      [s : web-server^ (web-server@ T C)])
-     (export (open s)))
-    #f)
+    (define config@
+      (let ([file (make-temporary-file)])
+	(with-output-to-file file
+	  (lambda ()
+	    (write config))
+	  'truncate)
+	(begin0
+	 (load-configuration file)
+	 (delete-file file))))
 
-  (define serve-status serve))
+    (define-values/invoke-unit/sig web-server^
+      (compound-unit/sig
+       (import)
+       (link
+	[t : net:tcp^ ((make-ssl-tcp@
+			"server-cert.pem" "private-key.pem" #f #f
+			#f #f #f))]
+	[c : web-config^ (config@)]
+	[s : web-server^ (web-server@ T C)])
+       (export (open s)))
+      #f)
+
+    (serve)))
 

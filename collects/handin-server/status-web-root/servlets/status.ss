@@ -92,6 +92,20 @@
 		      l))))
 	      (list (format "No handins accepted so far for user ~s, assignment ~s" user hi)))))
 
+      (define (handin-grade user hi)
+	(let* ([dir (build-path (if (directory-exists? (build-path "active" hi))
+				    "active"
+				    "inactive")
+				hi
+				user)]
+	       [grade (let ([filename (build-path dir "grade")])
+			(and (file-exists? filename)
+			     (with-input-from-file filename
+			       (lambda () (read-string (file-size filename))))))])
+	  (if grade
+	      grade
+	      "no grade so far")))
+
       (define (one-status-page status for-handin)
 	(let ([user (get-status status 'user (lambda () "???"))])
 	  (let ([next
@@ -100,6 +114,7 @@
 		    (make-page
 		     (format "User: ~a, Handin: ~a" user for-handin)
 		     `(p ,@(handin-link k user for-handin))
+		     `(p "Grade: " ,(handin-grade user for-handin))
 		     `(p (a ((href ,(make-k k "allofthem")))
 			    ,(format "All handins for ~a" user))))))])
 	    (let ([tag (select-k next)])
@@ -123,7 +138,8 @@
 		       ((bgcolor "#ddddff"))
 		       ,@(map (lambda (hi)
 				`(tr (td ((bgcolor "white")) ,hi)
-				     (td ((bgcolor "white")) ,@(handin-link k user hi))))
+				     (td ((bgcolor "white")) ,@(handin-link k user hi))
+				     (td ((bgcolor "white")) ,(handin-grade user hi))))
 			      l)))))])
 	    (let ([tag (select-k next)])
 	      (download tag)))))

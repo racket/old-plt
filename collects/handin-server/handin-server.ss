@@ -221,13 +221,22 @@
 					     (exn-message exn)
 					     (format "~e" exn))])
 				(LOG "ERROR: ~a" msg)
-				(fprintf w "(server error: ~s)\n" msg)))])
+				(fprintf w "~s\n" msg)
+				;; see note on close-output-port below
+				(close-output-port w)))])
 	     (let ([protocol (read r-safe)])
 	       (if (eq? protocol 'original)
 		   (fprintf w "original\n")
 		   (error 'handin "unknown protocol: ~s" protocol)))
 	     (accept-submission-or-update assignment-list r r-safe w)
-	     (LOG "normal exit")))))
+	     (LOG "normal exit")
+	     ;; This close-output-port should not be necessary, and it's
+	     ;; here due to a deficiency in the SLL binding.
+	     ;; The problem is that a custodian shutdown of w is harsher
+	     ;; for SSL output than a normal close. A normal close
+	     ;; flushes an internal buffer that's not supposed to exist, while
+	     ;; the shutdown gives up immediately.
+	     (close-output-port w)))))
      SESSION-TIMEOUT
      (lambda (exn)
        (printf "~a~n" (if (exn? exn)

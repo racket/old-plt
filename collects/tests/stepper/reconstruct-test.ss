@@ -3,7 +3,8 @@
 (require (prefix reconstruct: (lib "reconstruct.ss" "stepper" "private")))
 (require (lib "shared.ss" "stepper" "private"))
 (require (lib "highlight-placeholder.ss" "stepper" "private"))
-     
+(require (lib "etc.ss"))
+
 (load "/Users/clements/plt/tests/mzscheme/testing.ss")
 
 (SECTION 'stepper-reconstruct)
@@ -42,26 +43,72 @@
   (let/ec k
     (eval (selector (annotate-expr stx lang num-steps k)))))
 
+(define (test-sequence source lang result-list oper)
+  (for-each (lambda (result step-num)
+              (test result test-expr source lang step-num oper))
+            result-list
+            (build-list (length result-list) (lambda (x) x))))
+
+(define (test-mz-sequence source result-list)
+  (test-sequence source 'mzscheme result-list cadr))
+
 (test `((,highlight-placeholder) (+)) test-expr #'+ 'mzscheme 0 cadr)
-(test `(((,highlight-placeholder 3 4)) (+)) test-expr #'(+ 3 4) 'mzscheme 0 cadr)
-(test `(((,highlight-placeholder 3 4)) (+)) test-expr #'(+ 3 4) 'mzscheme 1 cadr)
-(test `((,highlight-placeholder) ((+ 3 4))) test-expr #'(+ 3 4) 'mzscheme 2 cadr)
-(test `((,highlight-placeholder) (7)) test-expr #'(+ 3 4) 'mzscheme 3 cadr)
-(define test2 
-  #'((lambda (x) (+ x 3)) 4))
-(test `((,highlight-placeholder) (((lambda (x) (+ x 3)) 4))) test-expr test2 'mzscheme  0 cadr)
-(test `((,highlight-placeholder) ((+ 4 3))) test-expr test2 'mzscheme 1 cadr)
-(test `(((,highlight-placeholder 4 3)) (+)) test-expr test2 'mzscheme 2 cadr)
-(test `(((,highlight-placeholder 4 3)) (+)) test-expr test2 'mzscheme 3 cadr)
-(test `((,highlight-placeholder) ((+ 4 3))) test-expr test2 'mzscheme 4 cadr)
-(test `((,highlight-placeholder) (7)) test-expr test2 'mzscheme 5 cadr)
+(test-mz-sequence #'(+ 3 4)
+                  `((((,highlight-placeholder 3 4)) (+))            
+                    (((,highlight-placeholder 3 4)) (+))
+                    ((,highlight-placeholder) ((+ 3 4)))
+                    ((,highlight-placeholder) (7))))
 
-(define test3
-  #'(if 3 4 5))
-(test `((,highlight-placeholder) ((if 3 4 5))) test-expr test3 'mzscheme 0 cadr)
-(test `((,highlight-placeholder) ((4))) test-expr test3 'mzscheme 1 cadr)
-  
+(test-mz-sequence #'((lambda (x) (+ x 3)) 4)
+                  `(((,highlight-placeholder) (((lambda (x) (+ x 3)) 4)))
+                    ((,highlight-placeholder) ((+ 4 3)))
+                    (((,highlight-placeholder 4 3)) (+))
+                    (((,highlight-placeholder 4 3)) (+))
+                    ((,highlight-placeholder) ((+ 4 3)))
+                    ((,highlight-placeholder) (7))))
 
+(test-mz-sequence #'(if 3 4 5)
+                  `(((,highlight-placeholder) ((if 3 4 5)))
+                    ((,highlight-placeholder) (4))))
+
+(test-mz-sequence #'((lambda (x) x) 3)
+                  `(((,highlight-placeholder) (((lambda (x) x) 3)))
+                    ((,highlight-placeholder) (3))))
+
+; 'begin' not yet supported by reconstruct
+;(test-mz-sequence #'((lambda (x) x) (begin (+ 3 4) (+ 4 5)))
+;                  `((((begin (,highlight-placeholder 3 4) (+ 4 5))) (+))
+;                    (((begin (,highlight-placeholder 3 4) (+ 4 5))) (+))
+;                    (((begin ,highlight-placeholder (+ 4 5))) ((+ 3 4)))
+;                    (((begin ,highlight-placeholder (+ 4 5))) (7))
+;                    ((,highlight-placeholder) ((begin 7 (+ 4 5))))
+;                    ((,highlight-placeholder) ((+ 4 5)))
+;                    (((,highlight-placeholder 4 5)) (+))
+;                    (((,highlight-placeholder 4 5)) (+))
+;                    ((,highlight-placeholder) ((+ 4 5)))
+;                    ((,highlight-placeholder) (9))))
+
+(test-mz-sequence #'((lambda (a) (lambda (b) (+ a b))) 14)
+                  `(((,highlight-placeholder) (((lambda (a) (lambda (b) (+ a b))) 14)))
+                    ((,highlight-placeholder) ((lambda (b) (+ 14 b))))))
+
+(test-mz-sequence #'((case-lambda ((a) 3) ((b c) (+ b c))) 5 6)
+                  `(((,highlight-placeholder) (((case-lambda ((a) 3) ((b c) (+ b c))) 5 6)))
+                    ((,highlight-placeholder) ((+ 5 6)))
+                    (((,highlight-placeholder 5 6)) (+))
+                    (((,highlight-placeholder 5 6)) (+))
+                    ((,highlight-placeholder) ((+ 5 6)))
+                    ((,highlight-placeholder) (11))))
+
+; reconstruct does not handle one-armed if's:
+;(test-mz-sequence #'(if 3 4)
+;                  `(((,highlight-placeholder) ((if 3 4)))
+;                    ((,highlight-placeholder) (4))))
+
+; reconstruct does not handle begin0
+
+(test-mz-sequence #'(let ([a 3]) 4)
+                  `(((,highlight-placeholder) ((let ([a 3]) 4))) (,highlight-placeholder ,highlight-placeholder) ((define a 3) (begin 4))))) 
 
 ;(syntax-object->datum (cadr (annotate-expr test2 'mzscheme 0 (lambda (x) x))))
 

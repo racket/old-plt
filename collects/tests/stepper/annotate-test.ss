@@ -105,7 +105,7 @@
 (test '((if (#%app verify-boolean (#%datum . 3) 'if) (#%datum . 4) (#%datum . 5)))
       map syntax-object->datum (wrap-expand-unwrap (list #'(if 3 4 5)) '(lib "htdp-beginner.ss" "lang")))
          
-(define (break) 3)
+(define break void)
 
 (define (annotate-expr stx lang)
   (let loop ([env annotate:initial-env-package] [exprs (if lang 
@@ -167,16 +167,18 @@
                         (with-continuation-mark
                          debug-key-2
                          debug-mark-2
-                         begin-body-2)
+                         a-var-0)
                         (with-continuation-mark
                          debug-key-3
                          debug-mark-3
-                         begin-body-3)
+                         b-var-0)
                         (with-continuation-mark
                          debug-key-4
                          debug-mark-4
                          begin-body-4))))
                    (begin
+                     (test 'a syntax-e (syntax a-var-0))
+                     (test 'b syntax-e (syntax b-var-0))
                      (test (void) check-mark (syntax debug-mark-1) '(a b c) 'all)
                      (test (void) check-mark (syntax debug-mark-2) '() 'all)
                      (test (void) check-mark (syntax debug-mark-3) '() 'all)
@@ -277,21 +279,23 @@
                     debug-mark-1
                     (begin
                       pre-break-1
-                      (if (let-values temp-bindings
-                            (with-continuation-mark
-                             debug-key_2
-                             debug-mark-test
-                             . test-clauses))
-                          (let-values temp-bindings_2
-                            (with-continuation-mark
-                             debug-key_3
-                             debug-mark-then
-                             . then-clauses))
-                          (let-values temp-bindings-3
-                            (with-continuation-mark
-                             debug-key-4
-                             debug-mark-else
-                             . else-clauses)))))
+                      (begin
+                        break-0
+                        (if (let-values temp-bindings
+                              (with-continuation-mark
+                               debug-key_2
+                               debug-mark-test
+                               . test-clauses))
+                            (let-values temp-bindings_2
+                              (with-continuation-mark
+                               debug-key_3
+                               debug-mark-then
+                               . then-clauses))
+                            (let-values temp-bindings-3
+                              (with-continuation-mark
+                               debug-key-4
+                               debug-mark-else
+                               . else-clauses))))))
                    (begin
                      (test (void) check-mark (syntax debug-mark-1) '(a b c d) '())
                      (test (void) check-mark (syntax debug-mark-test) '() '(a b c d))
@@ -307,14 +311,16 @@
                     debug-mark-1
                     (begin
                       pre-break-1
-                      (if (with-continuation-mark
+                      (begin
+                        break-0
+                        (if (with-continuation-mark
                              debug-key_2
                              debug-mark-test
                              . test-clauses)
-                          (with-continuation-mark
+                            (with-continuation-mark
                              debug-key_3
                              debug-mark-then
-                             . then-clauses))))
+                             . then-clauses)))))
                    (begin
                      (test (void) check-mark (syntax debug-mark-1) '(a b c) 'all)
                      (test (void) check-mark (syntax debug-mark-test) '() 'all)
@@ -621,5 +627,8 @@
 (andmap (lambda (test-case)
             ((cadddr test-case) ((caddr test-case) (annotate-expr (car test-case) (cadr test-case)))))
         test-cases)
- 
+
+(test 7 eval (cadr (annotate-expr #'(begin (+ 3 4) (+ 4 5)) 'mzscheme)))
+(test 9 eval (caddr (annotate-expr #'(begin (+ 3 4) (+ 4 5)) 'mzscheme)))
+
 (report-errs)

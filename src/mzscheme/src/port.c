@@ -149,7 +149,7 @@ struct SOCKADDR_IN {
 #ifdef USE_TCP
 
 #ifdef USE_MAC_TCP
-# define TCP_BUFFER_SIZE 32768
+# define TCP_BUFFER_SIZE 16384
 #else
 # define TCP_BUFFER_SIZE 512
 #endif
@@ -201,6 +201,9 @@ typedef struct Scheme_Tcp {
   int sendbufsize, sendbuflen;
   short sendbuftrying;
   short hiteof;
+#ifdef USE_MAC_TCP
+  TCPiopb *activeRcv;
+#endif
 } Scheme_Tcp;
 
 #endif
@@ -5369,7 +5372,7 @@ static int tcp_addr(char *address, struct hostInfo *info)
 /* Forward prototype: */
 static Scheme_Tcp *make_tcp_port_data(MAKE_TCP_ARG int refcount);
 
-#define STREAM_BUFFER_SIZE 16384
+#define STREAM_BUFFER_SIZE 131072
 
 static TCPiopbX *mac_make_xpb(Scheme_Tcp *data)
 {
@@ -5400,7 +5403,7 @@ static int mac_tcp_make(TCPiopbX **_xpb, TCPiopb **_pb, Scheme_Tcp **_data)
   active_pbs = xpb;
   
   pb = (TCPiopb *)xpb;
-  
+
   pb->ioCRefNum = tcpDriverId;
   pb->csCode = TCPCreate;
   pb->csParam.create.rcvBuff = (char *)scheme_malloc_atomic(STREAM_BUFFER_SIZE);
@@ -5632,9 +5635,9 @@ static void tcp_read_needs_wakeup(Scheme_Object *connector, void *fds)
 {
 }
 
-static int tcp_check_read(Scheme_Object *connector)
+static int tcp_check_read(Scheme_Object *pb)
 {
-  return (((TCPiopb *)connector)->ioResult != inProgress);
+  return (((TCPiopb *)pb)->ioResult != inProgress);
 }
 #endif
 
@@ -5793,8 +5796,11 @@ static int tcp_getc(Scheme_Input_Port *port)
   if (data->hiteof)
     return EOF;
 
-  if (data->bufpos < data->bufmax)
-    return (unsigned char)data->buffer[data->bufpos++];
+#ifdef USE_MAC_TCP
+  if (!data->activeRcv)
+#endif
+    if (data->bufpos < data->bufmax)
+      return (unsigned char)data->buffer[data->bufpos++];
 
   if (!tcp_char_ready(port)) {
 #ifdef USE_SOCKETS_TCP
@@ -5828,24 +5834,30 @@ static int tcp_getc(Scheme_Input_Port *port)
     }
   }
   
-  if (data->tcp.state == SOCK_STATE_CONNECTED) {
-    /* socket is connected */
-    TCPiopbX *xpb;
-    TCPiopb *pb;
-    
-    xpb = mac_make_xpb(data);
-    pb = (TCPiopb *)xpb;
-    
-    pb->csCode = TCPRcv;
-    pb->ioCompletion = u_tcp_recv_done;
-    pb->csParam.receive.commandTimeoutValue = 0; /* seconds, 0 = blocking */
-    pb->csParam.receive.rcvBuff = data->buffer;
-    pb->csParam.receive.rcvBuffLen = TCP_BUFFER_SIZE;
+  if (data->activeRcv || (data->tcp.state == SOCK_STATE_CONNECTED)) {
+    /* socket is connected or an old recv is unfinished */
+    TCPiopb *pb;    
 
-    PBControlAsync((ParamBlockRec*)pb);
+    if (data->activeRcv) {
+      pb = data->activeRcv;
+    } else {
+      pb = (TCPiopb *)mac_make_xpb(data);
+    
+      pb->csCode = TCPRcv;
+      pb->ioCompletion = u_tcp_recv_done;
+      pb->csParam.receive.commandTimeoutValue = 0; /* seconds, 0 = blocking */
+      pb->csParam.receive.rcvBuff = data->buffer;
+      pb->csParam.receive.rcvBuffLen = TCP_BUFFER_SIZE;
+    
+      data->activeRcv = pb;
+
+      PBControlAsync((ParamBlockRec*)pb);
+    }
 
     scheme_block_until(tcp_check_read, tcp_read_needs_wakeup, pb, 0);
 
+    data->activeRcv = NULL;
+    
     switch((errid = pb->ioResult)) {
     case noErr:
     case connectionClosing:

@@ -25,9 +25,11 @@
 			   (apply build-path dll-path-list)))
 			 (for-each	
 			  (lambda (dll)
-			    (system*
-			     (build-path winsys-dir "REGSVR32.EXE")
-			     dll))
+			    (system
+			     (string-append 
+			      (build-path winsys-dir "REGSVR32.EXE")
+			      " "
+			      dll)))
 			  dlls))
 			(fprintf
 			 (current-error-port) 

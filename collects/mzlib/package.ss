@@ -54,8 +54,11 @@
   ;; Used with `fluid-let-syntax' to communicate to `open'
   ;; when an expression is within the body of a `package' declaration.
   ;; This matters for choosing the right shadower of an id.
-  (define-syntax current-package #f)
+  (define-syntax current-package null)
 
+  ;; The *ed define forms are the same as the usual
+  ;; forms, except inside a package, where the
+  ;; *ed names are specially detected.
   (define-syntax-set (define*-syntaxes
 		       define*-values
 		       define*-syntax
@@ -104,16 +107,13 @@
 
   (define-syntax-set (package/derived)
 
+    ;; Adds the *ed "primitive" definition forms to the
+    ;;  kernel-form list:
     (define kernel-form-identifier-list+defines
       (append (list #'define*-values #'define*-syntaxes)
 	      (kernel-form-identifier-list #'here)))
 
-    (define (remove-begins def)
-      (kernel-syntax-case def #f
-        ((begin defs ...)
-         (apply append (map remove-begins (syntax->list #'(defs ...)))))
-        (_ (list def))))
-    
+    ;; Ensures that a single package element is a definition:
     (define (fix-expr e)
       (kernel-syntax-case e #f
         ((define-values x y) e)
@@ -203,15 +203,23 @@
        `(,kw ,ids ,(if compile-time?
 		       body
 		       #`(fluid-let-syntax ([#,(syntax-local-introduce #'current-package)
-					     (quote-syntax #,package-name)])
+					     (cons
+					      (quote-syntax #,package-name)
+					      (syntax-local-value
+					       (quote-syntax #,(syntax-local-introduce #'current-package))))])
 			   #,body)))
        orig
        orig))
 
+    ;;  mark-ids : defn-stx 
+    ;;             (list (cons id-stx (stx . -> . stx)))
+    ;;             id-stx 
+    ;;              ->  (list (cons id-stx (stx . -> . stx)))
     ;; Convert a definition from a package body, and add marks as
     ;; appropriate to map to hidden names within the package. Also
     ;; accumulate new hidden names from starred bindings.
-    (define (mark-ids def introducers package-name)
+    (define (mark-ids def introducers package-name expand-ctx)
+      ;; Note: new-ids is null if this is a non-* definition
       (let ((new-ids (map (lambda (id) (cons id (make-syntax-introducer)))
                           (get/let*-ids def))))
         (values
@@ -233,14 +241,14 @@
            ((d vars body) 
 	    (module-identifier=? (quote-syntax define*-values) #'d)
             (rebuild-def def package-name
-			 #'d
+			 #'define-values
 			 (mark-to-localize #'vars (append new-ids introducers) #'protect)
 			 (mark-to-localize #'body introducers #'protect)
 			 #t))
            ((d vars body) 
 	    (module-identifier=? (quote-syntax define*-syntaxes) #'d)
-            (rebuild-def def package-name
-			 #'d
+	    (rebuild-def def package-name
+			 #'define-syntaxes
 			 (mark-to-localize #'vars (append new-ids introducers) #'protect)
 			 (mark-to-localize #'body introducers #'protect)
 			 #t)))
@@ -268,6 +276,7 @@
       (syntax-case derived-stx ()
         ((_ orig-stx name provides body ...)
          (let ([stx #'orig-stx])
+	   ;; --- Error checking
 	   (check-defn-context stx)
            (unless (identifier? #'name)
              (raise-syntax-error #f "structure name must be an identifier" stx #'name))
@@ -297,6 +306,7 @@
 		    "identifier exported multiple times"
 		    stx
 		    dup))))
+	     ;; --- Parse package body
 	     (let*-values ([(expand-context) (build-expand-context (gensym 'package-define))]
 			   [(defs) (get-defs expand-context
 					     (syntax->list #'(body ...))
@@ -305,6 +315,7 @@
 			   ;; normal-ids and let*-ids are in same order as in package:
 			   [(normal-ids let*-ids) (extract-ids defs stx)]
 			   [(bt) (make-bound-identifier-mapping)])
+	       ;; --- More error checking (duplicate defns)
 	       (for-each (lambda (id)
 			   (when (bound-identifier-mapping-get bt id (lambda () #f))
 			     (raise-syntax-error
@@ -322,6 +333,8 @@
 			      stx
 			      id)))
 			 let*-ids)
+	       ;; --- Convert package body, accumulating introducers
+	       ;; The `defined-ids' variable is a (list (cons id-stx (stx . -> . stx)))
 	       (let-values ([(converted-defs defined-ids)
 			     (let loop ((defined-ids (map (lambda (id) (cons id (make-syntax-introducer)))
 							  normal-ids))
@@ -332,35 +345,38 @@
 				 (values (reverse accum) defined-ids))
 				(else
 				 (let-values (((marked-def new-defined-ids)
-					       (mark-ids (car defs) defined-ids #'name)))
+					       (mark-ids (car defs) defined-ids #'name expand-context)))
 				   (loop (append new-defined-ids defined-ids)
 					 (cdr defs)
 					 (cons marked-def accum))))))]
 			    [(reverse-orig-ids) (reverse (append normal-ids let*-ids))])
+		 ;; --- Create the list of exported identifiers
 		 (let ([export-renames
 			(remove-dups
-			       (cond
-				[(not specific-exports)
-				 (map (lambda (id)
-					(cons (car id)
-					      ((cdr id) (car id))))
-				      defined-ids)]
-				[else
-				 (map (lambda (provide)
-					(let ((introducer (stx-assoc provide defined-ids)))
-					  (unless introducer
-					    (raise-syntax-error
-					     #f
-					     "exported identifier not defined"
-					     stx
-					       provide))
-					    (cons (car introducer)
-						  ((cdr introducer) provide))))
-					specific-exports)]))]
-		       [all-renames (map (lambda (id)
-					   (cons (car id)
-						 ((cdr id) (car id))))
-					 defined-ids)])
+			 (cond
+			  [(not specific-exports)
+			   (map (lambda (id)
+				  (cons (car id)
+					((cdr id) (car id))))
+				defined-ids)]
+			  [else
+			   (map (lambda (provide)
+				  (let ((introducer (stx-assoc provide defined-ids)))
+				    (unless introducer
+				      (raise-syntax-error
+				       #f
+				       "exported identifier not defined"
+				       stx
+				       provide))
+				    (cons (car introducer)
+					  ((cdr introducer) provide))))
+				specific-exports)]))]
+		       [all-renames (remove-dups
+				     (map (lambda (id)
+					    (cons (car id)
+						  ((cdr id) (car id))))
+					  defined-ids))])
+		   ;; --- Shuffle the package body to put syntax definitions first
 		   (let ([pre-decls
 			  (if (eq? 'top-level (syntax-local-context))
 			      (extract-declarations converted-defs)
@@ -373,19 +389,26 @@
 							 (or (module-identifier=? (stx-car def) #'define-values)
 							     (module-identifier=? (stx-car def) #'define*-values)))
 						       converted-defs)])
+		     ;; --- Register this package, in case an `open' appears before the
+		     ;;     syntax definition is executed.
+		     ;;       export-renames provides an (id-stx . id-stx) mapping for exported ids 
+		     ;;       all-renames is (id-stx . id-stx) mapping for all ids (superset of export-renames)
 		     (pre-register-package expand-context #'name export-renames all-renames defined-ids #'protect)
+		     ;; --- Assemble the result
 		     #`(begin
 			 (define-syntaxes (name)
 			   (make-str (list #,@(map (lambda (i)
-						     ;; use of `protect' keeps the id from being localized
-						     ;; if this package is in another
+						     ;; Use of `protect' keeps the id from being localized
+						     ;; if this package is in another. That way, the
+						     ;; source name in the mapping is always the original
+						     ;; name.
 						     #`(cons (protect #,(car i))
 							     (quote-syntax #,(cdr i))))
 						   export-renames))
 				     (list #,@(map (lambda (i)
 						     #`(cons (protect #,(car i))
 							     (quote-syntax #,(cdr i))))
-						   all-renames))))			 
+						   all-renames))))
 			 #,@pre-decls
 			 #,@converted-syntax-defs
 			 #,@converted-value-defs))))))))))
@@ -417,31 +440,55 @@
 		     path
 		     ex-name bind-name
 		     def)
-      (let* (;; If we're in a package's body, get it's rename environment
-	     [cp-env+rns+subs (let ([cp (syntax-local-value #'current-package (lambda () #f))])
-				(and cp (open cp cp stx)))]
-	     [cp-rename (lambda (id)
-			  ;; Reverse-map renaming due to being in a package body:
-			  (let ([in-pack-bind
-				 (and cp-env+rns+subs
-				      (ormap (lambda (p)
-					       (and (bound-identifier=? (cdr p) id)
-						    p))
-					     (cadr cp-env+rns+subs)))])
-			    (if in-pack-bind
-				(car in-pack-bind)
-				id)))])
-	;; Find the package:
+      (let* (;; If we're in an enclosing package's body, get it's rename environment, etc.
+	     ;;   env is an (id-stx . id-stx) mapping - names exported by the package
+	     ;;   rns is an (id-stx . id-stx) mapping - names defined in the package
+	     ;;   subs is a table mapping defined id-stx to sub-package mappings
+	     [cp-env+rns+subs/s (let ([cps (syntax-local-value #'current-package (lambda () #f))])
+				  (map (lambda (cp) (open cp cp stx))
+				       cps))]
+	     ;; Reverse-map renaming due to being in a package body. In other words,
+	     ;;  we find id "x", but it's been renamed because we're in an enclosing
+	     ;;  package, and we're about to look in a table that maps original
+	     ;;  names to something, so we need to reverse-map the name.
+	     [cp-orig-name (lambda (id)
+			     (let loop ([id id][cp-env+rns+subs/s cp-env+rns+subs/s])
+			       (if (null? cp-env+rns+subs/s)
+				   id
+				   (let ([in-pack-bind
+					  (ormap (lambda (p)
+						   (and (bound-identifier=? (cdr p) id)
+							p))
+						 (cadr (car cp-env+rns+subs/s)))])
+				     (loop (if in-pack-bind
+					       (car in-pack-bind)
+					       id)
+					   (cdr cp-env+rns+subs/s))))))]
+	     ;; Reverse-map renaming due to being in a package
+	     ;;  body. For example, we have an "x" that we want to
+	     ;;  shadow, but the correct shadower must use the new name
+	     ;;  in the enclosing package.
+	     [cp-current-name (lambda (id)
+				(let loop ([id id][cp-env+rns+subs/s cp-env+rns+subs/s])
+				  (if (null? cp-env+rns+subs/s)
+				      id
+				      (let ([in-pack-bind (stx-assoc id (cadr (car cp-env+rns+subs/s)))])
+					(loop (if in-pack-bind
+						  (cdr in-pack-bind)
+						  id)
+					      (cdr cp-env+rns+subs/s))))))])
+	;; Find the package. See above for a remainder of env+rns+subs.
+	;; The `rename-chain' variable binds an (stx . -> stx).
 	(let*-values ([(env+rns+subs rename-chain)
 		       ;; Find the initial package. `open' reports an error if it can't find one
 		       (let ([env+rns+subs (open (car path) orig-name stx)])
-			 (walk-path (cdr path) env+rns+subs stx values cp-rename))])
+			 (walk-path (cdr path) env+rns+subs stx values cp-orig-name))])
 	  (let* ([env (and env+rns+subs 
 			   (let ([e (car env+rns+subs)])
 			     (if ex-name
 				 (let ([a (stx-assoc 
 					   (let ([id (syntax-local-introduce ex-name)])
-					     (cp-rename id))
+					     (cp-orig-name id))
 					   (car env+rns+subs))])
 				   (unless a
 				     (raise-syntax-error
@@ -455,13 +502,9 @@
 		 [shadowers (if bind-name
 				(list bind-name)
 				(map (lambda (x)
-				       (let ([in-pack-bind (and cp-env+rns+subs
-								(stx-assoc (car x) (cadr cp-env+rns+subs)))])
-					 (if in-pack-bind
-					     (syntax-local-get-shadower
-					      (cdr in-pack-bind))
-					     (syntax-local-get-shadower
-					      (car x)))))
+				       (syntax-local-get-shadower
+					(cp-current-name
+					 (car x))))
 				     env))])
 	    ;; Set up the defined-name -> opened-name mapping
 	    (with-syntax ([((pub . hid) ...)
@@ -469,7 +512,7 @@
 				  (cons (if bind-name
 					    shadower ; which is bind-name
 					    (syntax-local-introduce shadower))
-					(syntax-local-introduce (rename-chain (cdr x)))))
+					(syntax-local-introduce (cp-current-name (cdr x)))))
 				env shadowers)]
 			  [def-stxes def])
 	      ;; In case another `open' follows this one in an

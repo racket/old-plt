@@ -384,7 +384,7 @@
 		  ;; (preserves permissions, etc), write to the temp file,
 		  ;; then move (atomicly) the temp file to the normal name.
 		  (let* ([tmp-file (make-temporary-file
-				    (build-path pref-dir "TMPPREF~a")
+				    (build-path (regexp-replace "~" pref-dir "~~") "TMPPREF~a")
 				    (and (file-exists? pref-file) pref-file))])
 		    (with-output-to-file tmp-file
 		      (lambda ()

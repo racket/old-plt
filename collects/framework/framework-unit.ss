@@ -1,6 +1,12 @@
 (module framework-unit mzscheme
-  (require "sig.ss"
-	   "private/application.ss"
+  (require "gui-utils-sig.ss"
+	   "gui-utils-unit.ss"
+
+           "test-sig.ss"
+           "test-unit.ss"
+           
+           "sig.ss"
+           "private/application.ss"
 	   "private/version.ss"
 	   "private/color-model.ss"
 	   "private/exn.ss"
@@ -18,7 +24,7 @@
 	   "private/editor.ss"
 	   "private/pasteboard.ss"
 	   "private/text.ss"
-	   "private/gui-utils.ss"
+	   
 	   "private/finder.ss"
 	   "private/group.ss"
 	   "private/canvas.ss"
@@ -81,7 +87,7 @@
 	    [text : framework:text^
 		  (text@ icon editor preferences keymap gui-utils color-model frame)]
 	    [gui-utils : framework:gui-utils^ (gui-utils@)]
-	    [finder : framework:finder^ (finder@ preferences gui-utils keymap)]
+	    [finder : framework:finder^ (finder@ mred preferences gui-utils keymap)]
 	    [group : framework:group^ (group@ application frame preferences)]
 	    [canvas : framework:canvas^ (canvas@ preferences frame)]
 	    [panel : framework:panel^ (panel@)]

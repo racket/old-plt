@@ -47,7 +47,8 @@ strings are types/comments.
 	  (filesystem [pathname "path" "file or directory pathname"
 				detail "symbol or {\\scmfalse}" "\\SymbolFirst{ill-formed-path}, \\SymbolFirst{already-exists}, or \\SymbolFirst{wrong-version}, indicating the reason for the exception (if available), or \\rawscm{\\#f}"] 
 		      "illegal pathname or error manipulating a filesystem object")
-	  (*tcp [] "TCP errors"))
+	  (tcp [] "TCP errors")
+	  (udp [] "UDP errors"))
      
      (thread [] "raised by \\scmfirst{call-with-custodian}")
 

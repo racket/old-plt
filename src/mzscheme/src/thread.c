@@ -3599,7 +3599,7 @@ void scheme_security_check_network(const char *who, const char *host, int port, 
 
     a[0] = scheme_intern_symbol(who);
     a[1] = (host ? scheme_make_immutable_sized_string((char *)host, -1, 1) : scheme_false);
-    a[2] = scheme_make_integer(port);
+    a[2] = ((port < 1) ? scheme_false : scheme_make_integer(port));
     a[3] = (client ? client_symbol : server_symbol);
 
     while (sg->parent) {

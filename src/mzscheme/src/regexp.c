@@ -1816,7 +1816,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
   if (argc > 2) {
     int len = endset;
 
-    offset = scheme_extract_index(name, 2, argc, argv, len + 1);
+    offset = scheme_extract_index(name, 2, argc, argv, len + 1, 0);
 
     if (!iport && (offset > len)) {
       scheme_out_of_string_range(name, "offset ", argv[2], argv[1], 0, len);
@@ -1830,7 +1830,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
 
     if (argc > 3) {
       if (!SCHEME_FALSEP(argv[3])) {
-	endset = scheme_extract_index(name, 3, argc, argv, len + 1);
+	endset = scheme_extract_index(name, 3, argc, argv, len + 1, 1);
 
 	if (iport) {
 	  if (endset < 0) {
@@ -1853,9 +1853,11 @@ static Scheme_Object *gen_compare(char *name, int pos,
       }
 
       if (argc > 4) {
-	if (!SCHEME_OUTPORTP(argv[4]))
-	  scheme_wrong_type(name, "output-port", 4, argc, argv);
-	oport = argv[4];
+	if (SCHEME_TRUEP(argv[4])) {
+	  if (!SCHEME_OUTPORTP(argv[4]))
+	    scheme_wrong_type(name, "output-port or #f", 4, argc, argv);
+	  oport = argv[4];
+	}
       }
     }
   }

@@ -141,7 +141,7 @@ make_vector (int argc, Scheme_Object *argv[])
   Scheme_Object *vec, *fill;
   long len;
 
-  len = scheme_extract_index("make-vector", 0, argc, argv, -1);
+  len = scheme_extract_index("make-vector", 0, argc, argv, -1, 0);
 
   if (len == -1) {
     scheme_raise_out_of_memory("make-vector", "making vector of length %s",
@@ -217,7 +217,7 @@ vector_ref (int argc, Scheme_Object *argv[])
 
   len = SCHEME_VEC_SIZE(argv[0]);
 
-  i = scheme_extract_index("vector-ref", 1, argc, argv, len);
+  i = scheme_extract_index("vector-ref", 1, argc, argv, len, 0);
 
   if (i >= len)
     return bad_index("vector-ref", argv[1], argv[0]);
@@ -235,7 +235,7 @@ vector_set(int argc, Scheme_Object *argv[])
 
   len = SCHEME_VEC_SIZE(argv[0]);
 
-  i = scheme_extract_index("vector-set!", 1, argc, argv, len);
+  i = scheme_extract_index("vector-set!", 1, argc, argv, len, 0);
 
   if (i >= len)
     return bad_index("vector-set!", argv[1], argv[0]);

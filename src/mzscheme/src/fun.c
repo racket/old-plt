@@ -1696,7 +1696,7 @@ static Scheme_Object *procedure_arity_includes(int argc, Scheme_Object *argv[])
   if (!SCHEME_PROCP(argv[0]))
     scheme_wrong_type("procedure-arity-includes?", "procedure", 0, argc, argv);
 
-  n = scheme_extract_index("procedure-arity-includes?", 1, argc, argv, -2);
+  n = scheme_extract_index("procedure-arity-includes?", 1, argc, argv, -2, 0);
   
   return get_or_check_arity(argv[0], n);
 }

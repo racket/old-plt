@@ -21,7 +21,7 @@
   All rights reserved.
 */
 
-/* This file implements the TCP interface. */
+/* This file implements the TCP and UDP interfaces. */
 
 #include "schpriv.h"
 #include <ctype.h>
@@ -161,6 +161,14 @@ static int num_tcp_send_buffers = 0;
 static void **tcp_send_buffers;
 #endif
 
+typedef struct Scheme_UDP {
+  Scheme_Type type; /* scheme_udp_type */
+  MZ_HASH_KEY_EX
+  tcp_t s; /* ok, tcp_t was a bad name */
+  char bound, connected;
+  Scheme_Object *previous_from_addr;
+} Scheme_UDP;
+
 #endif /* USE_TCP */
 
 static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[]);
@@ -173,6 +181,11 @@ static Scheme_Object *tcp_accept_break(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_listener_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_abandon_port(int argc, Scheme_Object *argv[]);
+
+static Scheme_Object *make_udp(int argc, Scheme_Object *argv[]);
+static Scheme_Object *udp_bind(int argc, Scheme_Object *argv[]);
+static Scheme_Object *udp_send_to(int argc, Scheme_Object *argv[]);
+static Scheme_Object *udp_receive(int argc, Scheme_Object *argv[]);
 
 static void register_tcp_listener_wait();
 
@@ -243,6 +256,27 @@ void scheme_init_network(Scheme_Env *env)
 			     scheme_make_prim_w_arity(tcp_abandon_port,
 						      "tcp-abandon_port", 
 						      1, 1), 
+			     env);
+
+  scheme_add_global_constant("make-udp-socket", 
+			     scheme_make_prim_w_arity(make_udp,
+						      "make-udp-socket", 
+						      0, 0), 
+			     env);
+  scheme_add_global_constant("udp-bind!", 
+			     scheme_make_prim_w_arity(udp_bind,
+						      "udp-bind!", 
+						      2, 2), 
+			     env);
+  scheme_add_global_constant("udp-send-to", 
+			     scheme_make_prim_w_arity(udp_send_to,
+						      "udp-send-to", 
+						      3, 5), 
+			     env);
+  scheme_add_global_constant("udp-receive!", 
+			     scheme_make_prim_w_arity(udp_receive,
+						      "udp-receive!", 
+						      2, 2), 
 			     env);
 
   register_tcp_listener_wait();
@@ -429,20 +463,41 @@ static unsigned long *by_number_array[2];
 static struct hostent by_number_host;
 #endif
 
-static struct hostent *get_host_by_number(const char *address)
+static int get_host_address(const char *address, int id, tcp_address *result) {
 {
-  if (parse_numerical(address, &by_number_id)) {
-#ifdef HOST_RESULT_IS_ADDR
-    return (struct hostent *)by_number_id;
-#else
-    by_number_array[0] = &by_number_id;
-    by_number_host.h_addr_list = (char **)by_number_array;
-    by_number_host.h_length = sizeof(long);
-    return &by_number_host;
-#endif
-  }
+  struct hostent *host;
 
-  return NULL;
+  if (address) {
+    if (parse_numerical(address, &by_number_id)) {
+#ifdef HOST_RESULT_IS_ADDR
+      host = (struct hostent *)by_number_id;
+#else
+      by_number_array[0] = &by_number_id;
+      by_number_host.h_addr_list = (char **)by_number_array;
+      by_number_host.h_length = sizeof(long);
+      host = &by_number_host;
+#endif
+    } else {
+      host = MZ_GETHOSTBYNAME(address);
+    }
+  } else
+    host = NULL;
+
+  if (!address || host) {
+    result->sin_family = AF_INET;
+    result->sin_port = id;
+    memset(&(result->sin_addr), 0, sizeof(result->sin_addr));
+    memset(&(result->sin_zero), 0, sizeof(result->sin_zero));
+    if (host) {
+#ifdef HOST_RESULT_IS_ADDR
+      memcpy(&result->sin_addr, &host, sizeof(long)); 
+#else
+      memcpy(&result->sin_addr, host->h_addr_list[0], host->h_length); 
+#endif
+    }
+    return 1;
+  } else
+    return 0;
 }
 #endif
 
@@ -1841,20 +1896,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 #endif
 
 #ifdef USE_SOCKETS_TCP
-  host = get_host_by_number(address);
-  if (!host)
-    host = MZ_GETHOSTBYNAME(address);
-  if (host) {
-    tcp_connect_dest_addr.sin_family = AF_INET;
-    tcp_connect_dest_addr.sin_port = id;
-    memset(&tcp_connect_dest_addr.sin_addr, 0, sizeof(tcp_connect_dest_addr.sin_addr));
-    memset(&tcp_connect_dest_addr.sin_zero, 0, sizeof(tcp_connect_dest_addr.sin_zero));
-#ifdef HOST_RESULT_IS_ADDR
-    memcpy(&tcp_connect_dest_addr.sin_addr, &host, sizeof(long)); 
-#else
-    memcpy(&tcp_connect_dest_addr.sin_addr, host->h_addr_list[0], host->h_length); 
-#endif
-
+  if (get_host_address(address, id, &tcp_connect_dest_addr)) {
 #ifndef PROTOENT_IS_INT
     proto = getprotobyname("tcp");
     if (proto)
@@ -2095,30 +2137,10 @@ tcp_listen(int argc, Scheme_Object *argv[])
   if (proto)
 # endif
   {
-    struct hostent *host;
+    GC_CAN_IGNORE tcp_address tcp_listen_addr;
 
-    if (address) {
-      host = get_host_by_number(address);
-      if (!host)
-	host = MZ_GETHOSTBYNAME(address);
-    } else
-      host = NULL;
-
-    if (!address || host) {
-      tcp_address tcp_listen_addr; /* Use a long name for precise GC's xform.ss */
+    if (get_host_address(address, id, &tcp_listen_addr)) {
       tcp_t s;
-
-      tcp_listen_addr.sin_family = AF_INET;
-      tcp_listen_addr.sin_port = id;
-      memset(&tcp_listen_addr.sin_addr, 0, sizeof(tcp_listen_addr.sin_addr));
-      memset(&tcp_listen_addr.sin_zero, 0, sizeof(tcp_listen_addr.sin_zero));
-      if (host) {
-#ifdef HOST_RESULT_IS_ADDR
-	memcpy(&tcp_listen_addr.sin_addr, &host, sizeof(long)); 
-#else
-	memcpy(&tcp_listen_addr.sin_addr, host->h_addr_list[0], host->h_length); 
-#endif
-      }
 
       s = socket(MZ_PF_INET, SOCK_STREAM, PROTO_P_PROTO);
       if (s != INVALID_SOCKET) {
@@ -2526,6 +2548,328 @@ static Scheme_Object *tcp_abandon_port(int argc, Scheme_Object *argv[])
   scheme_wrong_type("tcp-abandon-port", "tcp-port", 0, argc, argv);
 
   return NULL;
+}
+
+/*========================================================================*/
+/*                                 UDP                                    */
+/*========================================================================*/
+
+static Scheme_Object *make_udp(int argc, Scheme_Object *argv[])
+{
+  Scheme_UDP *udp;
+  tcp_t s;
+
+  TCP_INIT("make-udp-socket");
+
+  scheme_security_check_network("make-udp-socket", address, origid, 1);
+
+  s = socket(PF_INET, SOCK_DGRAM, 0);
+
+  if (s == INVALID_SOCKET) {
+    int errid;
+    errid = SOCK_ERRNO();
+    scheme_raise_exn(MZEXN_I_O_UDP,
+		     "make-udp: creation failed (%E)", errid);
+    return NULL;
+  }
+
+  udp = (Scheme_UDP *)scheme_malloc_atomic_tagged(sizeof(Scheme_UDP));
+  udp->type = scheme_udp_type;
+  udp->s = s;
+  udp->bound = 0;
+  udp->connected = 0;
+
+#ifdef USE_WINSOCK_TCP
+  {
+    unsigned long ioarg = 1;
+    ioctlsocket(s, FIONBIO, &ioarg);
+  }
+#else
+  fcntl(s, F_SETFL, MZ_NONBLOCKING);
+#endif
+
+  return (Scheme_Object *)udp;
+}
+
+static Scheme_Object *udp_bind(int argc, Scheme_Object *argv[])
+{
+  Scheme_UDP *udp;
+  char *address = "";
+  unsigned short origid, id;
+  GC_CAN_IGNORE tcp_address udp_bind_addr;
+
+  udp = (Scheme_UDP *)argv[0];
+
+  if (!SCHEME_UDPP(argv[0]) || udp->bound)
+    scheme_wrong_type("udp-bind", "unbound-udp-socket", 0, argc, argv);
+  if (!SCHEME_FALSEP(argv[1]) && !SCHEME_STRINGP(argv[1]))
+    scheme_wrong_type("udp-bind", "string or #f", 1, argc, argv);
+  if (!CHECK_PORT_ID(argv[2]))
+    scheme_wrong_type("udp-bind", PORT_ID_TYPE, 2, argc, argv);
+
+  if (SCHEME_TRUEP(argv[1]))
+    address = SCHEME_STR_VAL(argv[1]);
+  else
+    address = NULL;
+  origid = (unsigned short)SCHEME_INT_VAL(argv[2]);
+
+  scheme_security_check_network("udp-bind", address, origid, 0);
+
+  /* Set id in network order: */
+  id = htons(origid);
+
+  if (get_host_address(address, id, &udp_bind_addr)) {
+    if (!bind(udp->s, &udp_bind_addr, sizeof(udp_bind_addr))) {
+      udp->bound = 1;
+      return scheme_void;
+    } else {
+      int errid;
+      errid = SOCK_ERRNO();
+      scheme_raise_exn(MZEXN_I_O_UDP,
+		       "udp-bind: can't bind to port: %d on address: %s (%E)", 
+		       origid,
+		       address ? address : "#f",
+		       errid);
+      return NULL;
+    }
+  } else {
+    scheme_raise_exn(MZEXN_I_O_UDP,
+		     "udp-bind: can't resolve address: %s", 
+		     address);
+    return NULL;
+  }
+}
+
+static int udp_check_send(Scheme_Object *_udp)
+{
+  Scheme_UDP *udp = (Scheme_UDP *)_udp;
+
+  if (udp->s == INVALID_SOCKET)
+    return 1;
+
+  {
+    DECL_FDSET(writefds, 1);
+    DECL_FDSET(exnfds, 1);
+    struct timeval time = {0, 0};
+    int sr;
+    
+    INIT_DECL_FDSET(writefds, 1);
+    INIT_DECL_FDSET(exnfds, 1);
+    
+    MZ_FD_ZERO(writefds);
+    MZ_FD_SET(udp->s, writefds);
+    MZ_FD_ZERO(exnfds);
+    MZ_FD_SET(udp->s, exnfds);
+    
+    do {
+      sr = select(udp->s + 1, NULL, writefds, exnfds, &time);
+    } while ((sr == -1) && (NOT_WINSOCK(errno) == EINTR));
+    
+    return sr;
+  }
+}
+
+static void udp_write_needs_wakeup(Scheme_Object *_udp, void *fds)
+{
+  Scheme_UDP *udp = (Scheme_UDP *)_udp;
+  void *fds1, *fds2;
+  tcp_t s = udp->s;
+  
+  fds1 = MZ_GET_FDSET(fds, 1);
+  fds2 = MZ_GET_FDSET(fds, 2);
+  
+  MZ_FD_SET(s, (fd_set *)fds1);
+  MZ_FD_SET(s, (fd_set *)fds2);
+}
+
+static Scheme_Object *udp_send(const char *name, int argc, Scheme_Object *argv[],
+			       int with_addr, int can_block);
+{
+  Scheme_UDP *udp;
+  char *address = "";
+  long start, end;
+  int delta;
+  unsigned short origid, id;
+  GC_CAN_IGNORE tcp_address udp_dest_addr;
+
+  udp = (Scheme_UDP *)argv[0];
+
+  if (!SCHEME_UDPP(argv[0]) || (!with_addr && !udp->connected))
+    scheme_wrong_type(name, with_addr ? "udp-socket" : "connected-udp-socket", 0, argc, argv);
+  if (with_addr) {
+    if (!SCHEME_STRINGP(argv[1]))
+      scheme_wrong_type(name, "string", 1, argc, argv);
+    if (!CHECK_PORT_ID(argv[2]))
+      scheme_wrong_type(name, PORT_ID_TYPE, 2, argc, argv);
+    delta = 0;
+  } else
+    delta = -2;
+  
+  scheme_get_substring_indices(name, argv[1], 
+			       argc, argv,
+			       3 + delta, 4 + delta, &start, &end);
+
+  if (with_addr) {
+    address = SCHEME_STR_VAL(argv[1]);
+    origid = (unsigned short)SCHEME_INT_VAL(argv[2]);
+
+    scheme_security_check_network(name, address, origid, 1);
+    
+    /* Set id in network order: */
+    id = htons(origid);
+  } else {
+    address = NULL;
+    id = origid = 0;
+  }
+
+  if (!with_addr || get_host_address(address, id, &udp_dest_addr)) {
+    long x;
+    int errid = 0;
+
+    while (1) {
+      if (udp->s == INVALID_SOCKET) {
+	/* socket was closed, maybe while we slept */
+	scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+			 (Scheme_Object *)udp,
+			 "%s: udp socket is closed: %v",
+			 name, udp);
+	return NULL;
+      }
+
+      if (with_addr)
+	x = sendto(udp->s, data + start, end - start, 0, &udp_dest_addr, sizeof(udp_dest_addr));
+      else
+	x = send(udp->s, data + start, end - start);
+
+      if (x == -1) {
+	errid = SOCK_ERRNO();
+	if (WAS_EAGAIN(errid)) {
+	  if (can_block) {
+	    /* Block and eventually try again. */
+	    scheme_block_until(udp_check_send, udp_send_needs_wakeup, (Scheme_Object *)udp, 0);
+	  } else
+	    return scheme_false;
+	} else if (NOT_WINSOCK(errid) != EINTR)
+	  break;
+      } else if (x != (end - start)) {
+	/* this isn't supposed to happen: */
+	scheme_raise_exn(MZEXN_I_O_UDP,
+			 "%s: didn't send enough (%d != %d)", 
+			 name,
+			 x, end - start);
+	return NULL;
+      }
+    }
+    
+    if (x > -1) {
+      return (can_block ? scheme_true : scheme_void);
+    } else {
+      scheme_raise_exn(MZEXN_I_O_UDP,
+		       "%s: send failed (%E)", 
+		       name,
+		       errid);
+      return NULL;
+    }
+  } else {
+    scheme_raise_exn(MZEXN_I_O_UDP,
+		     "%s: can't resolve address: %s", 
+		     name,
+		     address);
+    return NULL;
+  }
+}
+
+static Scheme_Object *udp_send_to(const char *name, int argc, Scheme_Object *argv[])
+{
+  return udp_send("udp-send-to", argc, argv, 1, 1);
+}
+
+static Scheme_Object *udp_send(const char *name, int argc, Scheme_Object *argv[])
+{
+  return udp_send("udp-send", argc, argv, 0, 1);
+}
+
+static Scheme_Object *udp_send_to_star(const char *name, int argc, Scheme_Object *argv[])
+{
+  return udp_send("udp-send-to*", argc, argv, 1, 0);
+}
+
+static Scheme_Object *udp_send_star(const char *name, int argc, Scheme_Object *argv[])
+{
+  return udp_send("udp-send*", argc, argv, 0, 0);
+}
+
+static Scheme_Object *udp_recv(const char *name, int argc, Scheme_Object *argv[])
+{
+  Scheme_UDP *udp;
+  long start, end, x;
+  int errid = 0;
+  Scheme_Object *v[3];
+  GC_CAN_IGNORE tcp_address udp_src_addr;
+
+  udp = (Scheme_UDP *)argv[0];
+
+  if (!SCHEME_UDPP(argv[0]) || !udp->bound)
+    scheme_wrong_type(name, "bound-udp-socket", 0, argc, argv);
+  if (!SCHEME_STRINGP(argv[1]) || !SCHEME_MUTABLEP(argv[1]))
+      scheme_wrong_type(name, "mutable-string", 1, argc, argv);
+  
+  scheme_get_substring_indices(name, argv[1], 
+			       argc, argv,
+			       2, 3, &start, &end);
+
+  while (1) {
+    if (udp->s == INVALID_SOCKET) {
+      /* socket was closed, maybe while we slept */
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+		       (Scheme_Object *)udp,
+		       "%s: udp socket is closed: %v",
+		       name, udp);
+      return NULL;
+    }
+
+    x = recvfrom(udp->s, SCHEME_STR_VAL(argv[1]) + start, start - end, 0,
+		 &udp_src_addr, sizeof(udp_src_addr));
+    
+    if (x == -1) {
+      errid = SOCK_ERRNO();
+      if (WAS_EAGAIN(errid)) {
+	if (can_block) {
+	  /* Block and eventually try again. */
+	  scheme_block_until(udp_check_recv, udp_recv_needs_wakeup, (Scheme_Object *)udp, 0);
+	} else {
+	  v[0] = scheme_false;
+	  v[1] = scheme_false;
+	  v[2] = scheme_false;
+	  return scheme_values(3,v);
+	}
+      } else if (NOT_WINSOCK(errid) != EINTR)
+	break;
+    }
+  }
+  
+  if (x > -1) {
+    int id;
+    char buf[16];
+    unsigned char *a;
+
+    v[0] = scheme_make_integer(x);
+
+    a= (unsigned char *)udp_src_addr.h_addr_list;
+    sprintf(buf, "%d.%d.%d.%d", a[0], a[1], a[2], a[3]);
+    if (udp->previous_from_addr && !strcmp(SCHEME_STR_VAL(udp->previous_from_addr), buf)) {
+    } else {
+    }
+
+    id = nstoh(udp_src_addr.sin_port);
+    v[2] = scheme_make_integer(id);
+  } else {
+    scheme_raise_exn(MZEXN_I_O_UDP,
+		     "%s: send failed (%E)", 
+		     name,
+		     errid);
+    return NULL;
+  }
 }
 
 /*========================================================================*/

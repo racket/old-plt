@@ -1769,7 +1769,7 @@ char *scheme_make_arity_expect_string(Scheme_Object *proc,
 				      long *len);
 
 long scheme_extract_index(const char *name, int pos, int argc, 
-			  Scheme_Object **argv, long top);
+			  Scheme_Object **argv, long top, int false_ok);
 
 void scheme_get_substring_indices(const char *name, Scheme_Object *str, 
 				  int argc, Scheme_Object **argv, 

@@ -474,7 +474,7 @@ void scheme_out_of_string_range(const char *name, const char *which,
   }
 }
 
-long scheme_extract_index(const char *name, int pos, int argc, Scheme_Object **argv, long top)
+long scheme_extract_index(const char *name, int pos, int argc, Scheme_Object **argv, long top, int false_ok)
 {
   long i;
   int is_top = 0;
@@ -491,7 +491,9 @@ long scheme_extract_index(const char *name, int pos, int argc, Scheme_Object **a
     i = -1;
 
   if (!is_top && (i < 0))
-    scheme_wrong_type(name, "non-negative exact integer", pos, argc, argv);
+    scheme_wrong_type(name, 
+		      (false_ok ? "non-negative exact integer" : "non-negative exact integer or #f"), 
+		      pos, argc, argv);
   
   return i;
 }
@@ -511,7 +513,7 @@ make_string (int argc, Scheme_Object *argv[])
   char fill;
   Scheme_Object *str;
 
-  len = scheme_extract_index("make-string", 0, argc, argv, -1);
+  len = scheme_extract_index("make-string", 0, argc, argv, -1, 0);
 
   if (len == -1) {
     scheme_raise_out_of_memory("make-string", "making string of length %s",
@@ -567,7 +569,7 @@ string_ref (int argc, Scheme_Object *argv[])
   str = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
 
-  i = scheme_extract_index("string-ref", 1, argc, argv, len);
+  i = scheme_extract_index("string-ref", 1, argc, argv, len, 0);
 
   if (i >= len) {
     scheme_out_of_string_range("string-ref", "", argv[1], argv[0], 0, len - 1);
@@ -589,7 +591,7 @@ string_set (int argc, Scheme_Object *argv[])
   str = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
 
-  i = scheme_extract_index("string-set!", 1, argc, argv, len);
+  i = scheme_extract_index("string-set!", 1, argc, argv, len, 0);
 
   if (!SCHEME_CHARP(argv[2]))
     scheme_wrong_type("string-set!", "character", 2, argc, argv);
@@ -650,11 +652,11 @@ void scheme_get_substring_indices(const char *name, Scheme_Object *str,
   long start, finish;
 
   if (argc > spos)
-    start = scheme_extract_index(name, spos, argc, argv, len + 1);
+    start = scheme_extract_index(name, spos, argc, argv, len + 1, 0);
   else
     start = 0;
   if (argc > fpos)
-    finish = scheme_extract_index(name, fpos, argc, argv, len + 1);
+    finish = scheme_extract_index(name, fpos, argc, argv, len + 1, 0);
   else
     finish = len;
 

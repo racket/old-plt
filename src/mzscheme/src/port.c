@@ -2775,9 +2775,8 @@ scheme_file_position(int argc, Scheme_Object *argv[])
     long n = SCHEME_INT_VAL(argv[1]);
     if (f) {
       if (fseek(f, n, 0)) {
-	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+	scheme_raise_exn(MZEXN_I_O_PORT,
 			 argv[0],
-			 fail_err_symbol,
 			 "file-position: position change failed on file (%e)",
 			 errno);
       }
@@ -2809,9 +2808,8 @@ scheme_file_position(int argc, Scheme_Object *argv[])
 # ifdef WINDOWS_FILE_HANDLES
 	errno = GetLastError();
 # endif
-	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+	scheme_raise_exn(MZEXN_I_O_PORT,
 			 argv[0],
-			 fail_err_symbol,
 			 "file-position: position change failed on stream (" FILENAME_EXN_E ")",
 			 errno);
       }

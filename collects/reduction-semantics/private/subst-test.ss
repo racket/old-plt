@@ -1,5 +1,5 @@
 (module subst-test mzscheme
-  (require "subst.ss"
+  (require "../subst.ss"
            (lib "match.ss"))
   
   (define (lc-subst1 var val exp) (subst/proc var val exp lc-separate))

@@ -851,15 +851,17 @@ void *scheme_malloc(size_t size);
 # else
 #  include "../gc2/gc2.h"
 # endif
-# define scheme_malloc_tagged GC_malloc_tagged
+# define scheme_malloc_tagged GC_malloc_one_tagged
+# define scheme_malloc_array_tagged GC_malloc_array_tagged
 # define scheme_malloc_atomic_tagged GC_malloc_atomic_tagged
-# define scheme_malloc_stubborn_tagged GC_malloc_stubborn_tagged
+# define scheme_malloc_stubborn_tagged GC_malloc_one_stubborn_tagged
 # define scheme_malloc_eternal_tagged GC_malloc_eternal_tagged
 # define scheme_malloc_uncollectable_tagged GC_malloc_uncollectable_tagged
 # define scheme_malloc_envunbox GC_malloc
 #else
 # ifdef USE_TAGGED_ALLOCATION
 extern void *scheme_malloc_tagged(size_t);
+#  define scheme_malloc_array_tagged scheme_malloc
 extern void *scheme_malloc_atomic_tagged(size_t);
 extern void *scheme_malloc_stubborn_tagged(size_t);
 extern void *scheme_malloc_eternal_tagged(size_t);
@@ -867,6 +869,7 @@ extern void *scheme_malloc_uncollectable_tagged(size_t);
 extern void *scheme_malloc_envunbox(size_t);
 # else
 #  define scheme_malloc_tagged scheme_malloc
+#  define scheme_malloc_array_tagged scheme_malloc
 #  define scheme_malloc_atomic_tagged scheme_malloc_atomic
 #  define scheme_malloc_stubborn_tagged scheme_malloc_stubborn
 #  define scheme_malloc_eternal_tagged scheme_malloc_eternal

@@ -28,6 +28,7 @@
 (printf "#define PREPARE_VAR_STACK(size) void **__gc_var_stack__ = GC_prepare_stack_frame(size)~n")
 (printf "#define SETUP(x) GC_set_stack_frame(__gc_var_stack__ + (x))~n")
 (printf "#define PUSH(v, x) (__gc_var_stack__[x] = (void *)&(v))~n")
+(printf "#define PUSHARRAY(v, l, x) (__gc_var_stack__[x] = (void *)0, __gc_var_stack__[x+1] = (void *)&(v), __gc_var_stack__[x+2] = (void *)l)")
 
 (define-struct tok (n line col))
 (define-struct (seq struct:tok) (close in))
@@ -74,7 +75,7 @@
 (define (get-variable-size vtype)
   (cond
    [(array-type? vtype)
-    (array-type-count vtype)]
+    3]
    [(struct-type? vtype)
     (let ([size (let ([m (assq (struct-type-struct vtype) struct-defs)])
 		  (apply + (map get-variable-size
@@ -141,9 +142,11 @@
 		    (loop (cdr l)
 			  (let push-var ([full-name (caar l)][vtype (cdar l)][n n])
 			    (cond
+			     [(union-type? vtype)
+			      (error 'xform "Hoffa lives: can't push union ~a." full-name)]
 			     [(array-type? vtype)
 			      (printf "PUSHARRAY(~a, ~a, ~a), " full-name (array-type-count vtype) n)
-			      (+ (array-type-count vtype) n)]
+			      (+ 3 n)]
 			     [(struct-type? vtype)
 			      (let aloop ([array-index 0][n n])
 				;; Push each struct in array (or only struct if not an array)
@@ -317,8 +320,9 @@
 							  (and (struct-type? v)
 							       (has-union? (struct-type-struct v)))))
 						    v))))))
-			     (error 'xform "Not kosher. Can't handle union or record with union. ~a in line ~a."
-				    name (tok-line v)))
+			     (fprintf (current-error-port)
+				      "Warning: can't handle union or record with union. ~a in line ~a.~n"
+				      name (tok-line v)))
 			   (if (or pointer?
 				   base-is-ptr?
 				   base-struct
@@ -342,9 +346,9 @@
 						   (cond
 						    [struct-array?
 						     (make-struct-array-type base-struct array-size)]
-						    [pointer? (make-vtype)]
 						    [(number? array-size)
 						     (make-array-type array-size)]
+						    [pointer? (make-vtype)]
 						    [base-struct
 						     (make-struct-type base-struct)]
 						    [union?
@@ -479,13 +483,15 @@
        [(and (parens? (car e-))
 	     ;; Something precedes
 	     (not (null? (cdr e-)))
-	     ;; Not an assignment, sizeof, if
+	     ;; Not an assignment, sizeof, if, string
 	     (not (memq (tok-n (cadr e-)) '(<= < > >= == != !
 					       \| \|\| & && : ? % + - * / ^ >> << 
 					       = >>= <<= ^= += *= /= -= %= \|= &= ++ --
-					       return sizeof if for while else
+					       return sizeof if for while else switch case
+					       __asm__ __volatile__ __extension__
 					       ;; These are functions, but they don't trigger GC:
 					       strcpy strlen memcpy)))
+	     (not (string? (tok-n (cadr e-))))
 	     ;; Look back one more for if, etc. if preceeding is paren
 	     (not (and (parens? (cadr e-))
 		       (not (null? (cddr e-)))
@@ -614,20 +620,27 @@
     (if (null? el)
 	(values (reverse! decls) null)
 	(let ([e (car el)])
-	  (if (and
-	       ;; Decl needs at least three parts:
-	       (< 2 (length e))
-	       ;; Decl ends in seimicolon
-	       (eq? semi (tok-n (list-ref e (sub1 (length e)))))
-	       ;; Doesn't start with a star
-	       (eq? '* (tok-n (car e)))
-	       ;; Not an assignemnt
-	       (not (eq? '= (tok-n (cadr e))))
-	       ;; Not a return
-	       (not (eq? 'return (tok-n (car e))))
-	       ;; No parens/braces in first two parts
-	       (not (seq? (car e)))
-	       (not (seq? (cadr e))))
+	  (if (or 
+	       ;; These keywords appear only in decls:
+	       (memq (tok-n (car e)) '(union struct static))
+	       ;; Otherwise try harder:
+	       (and
+		;; Decl needs at least three parts:
+		(< 2 (length e))
+		;; Decl ends in seimicolon
+		(eq? semi (tok-n (list-ref e (sub1 (length e)))))
+		;; Doesn't start with a star
+		(not (eq? '* (tok-n (car e))))
+		;; Not an assignemnt
+		(not (eq? '= (tok-n (cadr e))))
+		;; Not a return
+		(not (eq? 'return (tok-n (car e))))
+		;; Not a label, field lookup, pointer deref
+		(not (memq (tok-n (cadr e)) '(: |.| ->)))
+		;; No parens/braces in first two parts
+		(not (seq? (car e)))
+		(not (seq? (cadr e)))))
+	      ;; Looks like a decl
 	      (loop (cdr el) (cons e decls))
 	      ;; Not a decl
 	      (values (reverse! decls) el))))))

@@ -916,6 +916,8 @@ read_vector (Scheme_Object *port, char closer,
   return (vec);
 }
 
+typedef int (*Getc_Fun)(Scheme_Object *port);
+
 /* nothing has been read, except maybe some flags */
 static Scheme_Object  *
 read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float, 
@@ -931,7 +933,7 @@ read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float,
   int braces = local_curly_braces_are_parens;
   Scheme_Object *o;
   int ungetc_ok = scheme_peekc_is_ungetc(port);
-  int (*getc_fun)(Scheme_Object *port);
+  Getc_Fun getc_fun;
 
   if (ungetc_ok)
     getc_fun = scheme_getc;

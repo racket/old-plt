@@ -135,6 +135,7 @@ static Scheme_Object *let_id_macro_symbol;
 static Scheme_Object *let_expansion_time_symbol;
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   Scheme_Object *sym;
   Scheme_Syntax_Registered *f;
 } Linker_Name;

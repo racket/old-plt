@@ -16,7 +16,7 @@ extern void (*GC_custom_finalize)(void);
 
 /* Needed for stack-overflow checks: */
 void GC_set_stack_base(void *base);
-void *GC_get_stack_base(void);
+unsigned long GC_get_stack_base(void);
 
 void GC_dump(void);
 
@@ -31,8 +31,9 @@ void *GC_malloc(size_t size_in_bytes);
 #define GC_malloc_stubborn GC_malloc
 
 /* Tagged item: */
-void *GC_malloc_tagged(size_t);
-#define GC_malloc_stubborn_tagged GC_malloc_stubborn
+void *GC_malloc_one_tagged(size_t);
+#define GC_malloc_one_stubborn_tagged GC_malloc_one_tagged
+void *GC_malloc_array_tagged(size_t);
 
 /* Pointerless */
 void *GC_malloc_atomic(size_t size_in_bytes);

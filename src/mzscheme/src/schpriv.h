@@ -813,6 +813,7 @@ extern Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
 #define _MALLOC_N(x, n, malloc) ((x*)malloc(sizeof(x)*(n)))
 #define MALLOC_ONE(x) _MALLOC_N(x, 1, scheme_malloc)
 #define MALLOC_ONE_TAGGED(x) _MALLOC_N(x, 1, scheme_malloc_tagged)
+#define MALLOC_N_TAGGED(x, n) _MALLOC_N(x, n, scheme_malloc_array_tagged)
 #ifdef MZTAG_REQUIRED
 # define scheme_malloc_rt(x) scheme_malloc_tagged(x)
 # define MALLOC_ONE_RT(x) MALLOC_ONE_TAGGED(x)

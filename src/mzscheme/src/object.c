@@ -169,6 +169,7 @@ typedef struct Interface_Data {
 } Interface_Data;
 
 typedef struct Scheme_Interface_Assembly {
+  MZTAG_IF_REQUIRED
   Interface_Data data;
 } Scheme_Interface_Assembly;
 
@@ -877,6 +878,8 @@ static short *MapIvars(Scheme_Class *sclass, ClassVariable *item)
   return ivar_map;
 }
 
+typedef int (*Compare_Proc)(const void *, const void *);
+
 static void InsureNamesReady(ClassVariable *ivars, int count, Scheme_Object ***names)
 {
   int i;
@@ -891,7 +894,7 @@ static void InsureNamesReady(ClassVariable *ivars, int count, Scheme_Object ***n
 
     qsort((char *)*names, count,
 	  sizeof(Scheme_Object *), 
-	  (int (*)(const void *, const void *))CompareObjectPtrs); 
+	  (Compare_Proc)CompareObjectPtrs); 
   }
 }
 
@@ -1188,7 +1191,7 @@ static Scheme_Object *Do_Interface(Scheme_Object *form, Scheme_Comp_Env *env,
     /* Sort names: */
     qsort((char *)data->names, num_names,
 	  sizeof(Scheme_Object *), 
-	  (int (*)(const void *, const void *))CompareObjectPtrs); 
+	  (Compare_Proc)CompareObjectPtrs); 
 
     recs = MALLOC_N_RT(Scheme_Compile_Info, num_supers);
     scheme_init_compile_recs(rec, recs, num_supers);
@@ -2177,7 +2180,7 @@ static Scheme_Object *write_Interface_Data(Scheme_Object *obj)
   memcpy(sortednames, data->names, data->num_names * sizeof(Scheme_Object *));
   qsort((char *)sortednames, data->num_names,
 	sizeof(Scheme_Object *), 
-	(int (*)(const void *, const void *))CompareSymbolNames); 
+	(Compare_Proc)CompareSymbolNames); 
 
   for (i = 0; i < data->num_names; i++)
     l = cons(sortednames[i], l);
@@ -2221,7 +2224,7 @@ static Scheme_Object *read_Interface_Data(Scheme_Object *obj)
   /* Sort names: */
   qsort((char *)data->names, data->num_names,
 	sizeof(Scheme_Object *), 
-	(int (*)(const void *, const void *))CompareObjectPtrs); 
+	(Compare_Proc)CompareObjectPtrs); 
 
   return (Scheme_Object *)data;
 }
@@ -2669,7 +2672,7 @@ scheme_make_interface_assembly(const char *name, int n_supers, int n_names, Sche
   /* Sort names: */
   qsort((char *)a->data.names, n_names,
 	sizeof(Scheme_Object *), 
-	(int (*)(const void *, const void *))CompareObjectPtrs); 
+	(Compare_Proc)CompareObjectPtrs); 
 
   return a;
 }

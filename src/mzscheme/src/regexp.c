@@ -1197,6 +1197,10 @@ regstrcspn(char *s1, char *s2)
   return(count);
 }
 
+#ifndef strncpy
+  extern char *strncpy();
+#endif
+
 /*
    - regsub - perform substitutions after a regexp match
    */
@@ -1211,10 +1215,6 @@ char *regsub(regexp *prog, char *source, long *lenout)
   register long len;
   long destalloc, destlen;
 	
-#ifndef strncpy
-  extern char *strncpy();
-#endif
-
   destalloc = 2 * strlen(source);
   destlen = 0;
   dest = (char *)scheme_malloc_atomic(destalloc + 1);

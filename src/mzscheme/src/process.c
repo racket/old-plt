@@ -1820,12 +1820,15 @@ static Scheme_Object *raise_user_break(int argc, Scheme_Object **argv)
   return scheme_void;
 }
 
+typedef int (*Block_Check_Procedure)(Scheme_Object *blocker);
+typedef void (*Block_Needs_Wakeup_Procedure)(Scheme_Object *blocker, void *fds);
+
 static void signal_break(Scheme_Process *p)
 {
   int block_descriptor;
   Scheme_Object *blocker; /* semaphore or port */
-  int (*block_check)(Scheme_Object *blocker);
-  void (*block_needs_wakeup)(Scheme_Object *blocker, void *fds);
+  Block_Check_Procedure block_check;
+  Block_Needs_Wakeup_Procedure block_needs_wakeup;
   Scheme_Object *a[1];
 
   p->external_break = 0;

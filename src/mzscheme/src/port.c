@@ -97,6 +97,7 @@ typedef struct { int32 v; sem_id s; } mutex_id;
 #endif
 
 typedef struct Scheme_Indexed_String {
+  MZTAG_IF_REQUIRED
   char *string;
   int size;
   int index;
@@ -4200,7 +4201,7 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
 
   lhd = MALLOC_ONE_RT(LoadHandlerData);
 #ifdef MZTAG_REQUIRED
-  ldh->type = scheme_rt_load_handler_data;
+  lhd->type = scheme_rt_load_handler_data;
 #endif
   lhd->p = p;
   lhd->config = config;

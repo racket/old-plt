@@ -37,7 +37,8 @@ OBJS =  $(OBJDIR)/salloc.o \
 	$(OBJDIR)/syntax.o \
 	$(OBJDIR)/type.o \
         $(OBJDIR)/unit.o \
-	$(OBJDIR)/vector.o
+	$(OBJDIR)/vector.o \
+	$(OBJDIR)/main.o
 
 XSRCS = $(XSRCDIR)/salloc.c \
 	$(XSRCDIR)/bignum.c \
@@ -70,7 +71,8 @@ XSRCS = $(XSRCDIR)/salloc.c \
 	$(XSRCDIR)/syntax.c \
 	$(XSRCDIR)/type.c \
         $(XSRCDIR)/unit.c \
-	$(XSRCDIR)/vector.c
+	$(XSRCDIR)/vector.c \
+	$(XSRCDIR)/main.c
 
 all: objects $(OBJDIR)
 	$(XMAKE) xobjects
@@ -148,6 +150,8 @@ $(XSRCDIR)/unit.c: $(SRCDIR)/$(OBJDIR)/unit.o
 	$(XFORM) $(SRCDIR)/unit.c $(XSRCDIR)/unit.c
 $(XSRCDIR)/vector.c: $(SRCDIR)/$(OBJDIR)/vector.o
 	$(XFORM) $(SRCDIR)/vector.c $(XSRCDIR)/vector.c
+$(XSRCDIR)/main.c: ../$(OBJDIR)/main.o
+	$(XFORM) ../main.c $(XSRCDIR)/main.c
 
 
 $(OBJDIR)/salloc.o: $(XSRCDIR)/salloc.c
@@ -214,6 +218,8 @@ $(OBJDIR)/unit.o: $(XSRCDIR)/unit.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/unit.c -o $(OBJDIR)/unit.o
 $(OBJDIR)/vector.o: $(XSRCDIR)/vector.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/vector.c -o $(OBJDIR)/vector.o
+$(OBJDIR)/main.o: $(XSRCDIR)/main.c
+	$(CC) $(CFLAGS) -c $(XSRCDIR)/main.c -o $(OBJDIR)/main.o
 
 ctok: lex.yy.c
 	gcc -g -o ctok lex.yy.c

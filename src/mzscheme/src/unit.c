@@ -83,7 +83,7 @@ typedef struct BodyVar {
 
 typedef struct BodyExpr {
   MZTAG_IF_REQUIRED
-  short type;
+  short btype;
   union {
     struct {
       short count;
@@ -366,7 +366,7 @@ static Scheme_Object *unit_varlist(BodyExpr *e,
   }
 
   for (; e; e = e->next) {
-    switch (e->type) {
+    switch (e->btype) {
     case mm_body_def:
       {
 	BodyVar *vs, *v;
@@ -506,7 +506,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 	}
 
 	/* A poor hack: set expr to NULL now, filter it out in a second pass. */
-	e->type = mm_body_seq;
+	e->btype = mm_body_seq;
 	e->u.seq.expr = NULL;
       } else if (SAME_OBJ(gval, scheme_define_values_syntax)) {
 	Scheme_Object *l = SCHEME_CDR(expr);
@@ -530,7 +530,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 	  if (SCHEME_NULLP(ns)) {
 	    BodyVar *vs;
 	    
-	    e->type = mm_body_def;
+	    e->btype = mm_body_def;
 	    e->u.def.expr = value;
 	    e->u.def.count = count;
 
@@ -554,11 +554,11 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 			      expr, form,
 			      "bad syntax (bad `define' form)");
       } else {
-	e->type = mm_body_seq;
+	e->btype = mm_body_seq;
 	e->u.seq.expr = expr;
       }
     } else {
-      e->type = mm_body_seq;
+      e->btype = mm_body_seq;
       e->u.seq.expr = expr;
     }
 
@@ -576,7 +576,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
     e = body->first;
     while (e) {
       next = e->next;
-      if ((e->type == mm_body_seq) && !e->u.seq.expr) {
+      if ((e->btype == mm_body_seq) && !e->u.seq.expr) {
 	if (!prev)
 	  body->first = e->next;
 	else
@@ -607,7 +607,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
     for (e = body->first; e; e = e->next) {
       Scheme_Object *name;
 
-      if (e->type == mm_body_def) {
+      if (e->btype == mm_body_def) {
 	int i, c = e->u.def.count;
 	BodyVar *vs = e->u.def.vars;
 	
@@ -642,7 +642,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   /* Check that imported ids are not redefined: */
   check_params(MAKE_UNIT, params, form, NULL, &drec, 0, 0);
   for (e = body->first; e; e = e->next) {
-    if (e->type == mm_body_def) {
+    if (e->btype == mm_body_def) {
       int i, c = e->u.def.count;
       BodyVar *vs = e->u.def.vars;
 
@@ -678,7 +678,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   for (e = body->first; e; e = e->next) {
     Scheme_Object *expr;
 
-    if (e->type == mm_body_def) {
+    if (e->btype == mm_body_def) {
       int i, c = e->u.def.count;
       BodyVar *vs = e->u.def.vars;
 
@@ -693,7 +693,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
     if (!rec)
       expr = scheme_expand_expr(expr, env, depth);
     else {
-      if ((e->type == mm_body_def)
+      if ((e->btype == mm_body_def)
 	  && e->u.def.count == 1) {
 	Scheme_Object *s = e->u.def.vars[0].id;
 
@@ -714,7 +714,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
       expr_count++;
     }
 
-    if (e->type == mm_body_def)
+    if (e->btype == mm_body_def)
       e->u.def.expr = expr;
     else
       e->u.seq.expr = expr;
@@ -957,7 +957,7 @@ static Scheme_Object *link_unit(Scheme_Object *o, Link_Info *info)
   }
 
   for (e = label->body; e; e = e->next) {
-    switch (e->type) {
+    switch (e->btype) {
     case mm_body_def:
       e->u.def.expr = scheme_link_expr(e->u.def.expr, info);
       break;
@@ -1030,7 +1030,7 @@ static Scheme_Object *make_unit_expand(Scheme_Object *form,
   for (e = body.first; e; e = e->next) {
     Scheme_Object *c = NULL;
 
-    switch (e->type) {
+    switch (e->btype) {
     case mm_body_def:
       {
 	int i, count = e->u.def.count;
@@ -1142,8 +1142,11 @@ make_compound_unit_record(int count, /* subunits */
     data->param_counts[i] = j;
     param_maps[i] = MALLOC_N_RT(ParamMap, j);
 #ifdef MZTAG_REQUIRED
-    for (k = 0; k < j; k++)
-      param_maps[i][k].type = scheme_rt_param_map;
+    {
+      int k;
+      for (k = 0; k < j; k++)
+	param_maps[i][k].type = scheme_rt_param_map;
+    }
 #endif
   }
 
@@ -2030,7 +2033,7 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
   }
 
   for (e = data->body; e; e = e->next) {
-    if (e->type == mm_body_def) {
+    if (e->btype == mm_body_def) {
       BodyVar *vs = e->u.def.vars;
       for (i = 0; i < e->u.def.count; i++) {
 	if (!vs[i].exported) {
@@ -2045,7 +2048,7 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
     if (result_expr)
       _scheme_eval_compiled_expr_multi(result_expr);
 
-    switch(e->type) {
+    switch(e->btype) {
     case mm_body_def:
       {
 	int i, c;
@@ -2331,7 +2334,7 @@ static Scheme_Object *write_body_data(Scheme_Object *o)
   l = scheme_null;
 
   for (body = data->body; body; body = body->next) {
-    switch (body->type) {
+    switch (body->btype) {
     case mm_body_def:
       {
 	int i, count = body->u.def.count;
@@ -2353,7 +2356,7 @@ static Scheme_Object *write_body_data(Scheme_Object *o)
       break;
     }
     
-    l = cons(scheme_make_integer(body->type), l);
+    l = cons(scheme_make_integer(body->btype), l);
     counter++;
   }
 
@@ -2407,10 +2410,10 @@ static Scheme_Object *read_body_data(Scheme_Object *o)
     body->next = data->body;
     data->body = body;
 
-    body->type = SCHEME_INT_VAL(SCHEME_CAR(o));
+    body->btype = SCHEME_INT_VAL(SCHEME_CAR(o));
     o = SCHEME_CDR(o);
 
-    switch (body->type) {
+    switch (body->btype) {
     case mm_body_def: 
       {
 	int i, c;

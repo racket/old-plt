@@ -275,10 +275,12 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
       --sema->value;
     else {
 # if SEMAPHORE_WAITING_IS_COLLECTABLE
-      Scheme_Sema_Waiter *w = MALLOC_ONE_RT(Scheme_Sema_Waiter);
+      Scheme_Sema_Waiter *w;
+
+      w = MALLOC_ONE_RT(Scheme_Sema_Waiter);
 
 #ifdef MZTAG_REQUIRED
-      wp->type = scheme_rt_sema_waiter;
+      w->type = scheme_rt_sema_waiter;
 #endif
       
       w->p = scheme_current_process;

@@ -144,6 +144,7 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
 
 static void clean_symbol_table(void)
 {
+#ifndef MZ_PRECISE_GC
   /* Clean the symbol table by removing pointers to collected
      symbols. The correct way to do this is to install a GC
      finalizer on symbol pointers, but that would be expensive. */
@@ -163,6 +164,7 @@ static void clean_symbol_table(void)
 	buckets[i] = scheme_false;
     }
   }
+#endif
 }
 
 /**************************************************************************/

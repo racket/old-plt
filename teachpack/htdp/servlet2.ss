@@ -4,12 +4,7 @@
            (lib "servlet-sig.ss" "web-server")
            (lib "unitsig.ss"))
   
-  (provide (all-from-except (lib "servlet2-unit.ss" "htdp") servlet2@ servlet2^)
-           
-           string->number
-           number->string
-           string->symbol
-           symbol->string)
+  (provide (all-from-except (lib "servlet2-unit.ss" "htdp") servlet2@ servlet2^))
   
   (provide-signature-elements servlet2^)
   

@@ -164,7 +164,8 @@ scheme_init_type (Scheme_Env *env)
   
   set_name(scheme_stx_type, "<syntax>");
   set_name(scheme_stx_offset_type, "<internal-syntax-offset>");
-  set_name(scheme_id_macro_type, "<id-macro>");
+  set_name(scheme_set_macro_type, "<set!-transformer>");
+  set_name(scheme_id_macro_type, "<rename-transformer>");
 
   set_name(scheme_module_type, "<module-code>");
   set_name(scheme_module_index_type, "<module-path-index>");
@@ -181,8 +182,6 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_udp_type, "<udp-socket>");
   set_name(scheme_udp_waitable_type, "<udp-socket-waitable>");
-
-  set_name(scheme_reserved_5_type, "<reserved-5>");
 
   set_name(_scheme_values_types_, "<resurrected>");
   set_name(_scheme_compiled_values_types_, "<internal>");
@@ -442,6 +441,7 @@ void scheme_register_traversers(void)
 
   GC_REG_TRAV(scheme_svector_type, svector_val);
 
+  GC_REG_TRAV(scheme_set_macro_type, small_object);
   GC_REG_TRAV(scheme_id_macro_type, small_object);
 
   GC_REG_TRAV(scheme_stx_type, stx_val);

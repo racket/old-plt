@@ -1357,7 +1357,8 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 
 Scheme_Object *scheme_apply_macro(Scheme_Object *name,
 				  Scheme_Object *f, Scheme_Object *code,
-				  Scheme_Comp_Env *env, Scheme_Object *boundname);
+				  Scheme_Comp_Env *env, Scheme_Object *boundname,
+				  int for_set);
 
 Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags, Scheme_Comp_Env *env);
 void scheme_add_compilation_binding(int index, Scheme_Object *val, 

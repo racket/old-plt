@@ -351,7 +351,11 @@ void *malloc_pages(size_t len, size_t alignment)
  try_again:
 
   my_call = 1;
+#ifdef USE_MAP_ANON
+  r = mmap(NULL, len + extra, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+#else
   r = mmap(NULL, len + extra, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+#endif
   my_call = 0;
 
   if (r  == (void *)-1)

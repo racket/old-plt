@@ -54,7 +54,6 @@
              (let ([mark-list (extract-mark-list (current-continuation-marks))])
                (queue-result (make-normal-breakpoint-info mark-list 'debugger-break null))
                (queue-result (make-breakpoint-halt))
-               (printf (
                (semaphore-wait go-semaphore)))
 
            

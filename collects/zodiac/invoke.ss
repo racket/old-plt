@@ -38,7 +38,7 @@
 	  (begin
 	    (newline)
 	    (pretty-print
-	      (let ((e (zodiac:scheme-expand-program (list r))))
-		(if (null? args) (zodiac:parsed->raw (car e)) e)))
+	      (let ((e (car (zodiac:scheme-expand-program (list r)))))
+		(if (null? args) (zodiac:parsed->raw e) e)))
 	    (newline)
 	    (loop)))))))

@@ -1,7 +1,10 @@
+;; TeachPack: pingp.ss
+;; Language: Advanced
+
 ;; ---------------------------------------------------------------------------
-;; To test: set library to pingp-lib.ss and uncomment the last line.
+;; To test: uncomment the last line.
 ;; The file tests the function play from pingp-lib.ss. 
-;; The file is used to build pinpgp-play-lib.ss.
+;; The file is used to build protect-text.ss. 
 
 ;; Speed and its relationship to positions
 ;; ---------------------------------------
@@ -96,4 +99,4 @@
 ;; ew-bounce-west : ball -> ball
 (define ew-bounce (make-bounce (make-speed -1 1)))
 
-; (play make-ball make-speed ball-posn move-in-box)
+(play make-ball make-speed ball-posn move-in-box)

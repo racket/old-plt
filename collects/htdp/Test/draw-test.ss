@@ -1,3 +1,8 @@
+;; TeachPack: draw.ss
+;; Language: Beginner 
+
+;; Other test cases got lost
+
 (start 100 100)
 
 (draw-solid-line (make-posn 10 10) (make-posn 20 80))

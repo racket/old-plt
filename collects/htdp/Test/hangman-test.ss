@@ -1,3 +1,6 @@
+;; TeachPack: hangman.ss
+;; Language: Beginner
+
 ;; A letter is 'a ... 'z, plus '_
 
 (define-struct word (a b c))
@@ -19,18 +22,13 @@
     (else st)))
 
 
-
-;; draw-next-part : symbol -> #t
-;; a cheat 
-(define (draw-next-part x)
-  (printf "~a~n" x))
-
 #| ------------------------------------------------------------------------
    draw-next-part :
     { 'noose 'head 'right-arm 'left-arm 'body 'right-leg 'left-leg } -> #t
    result: #t if things went okay
    effect: to draw the specified body part in a canvas of size W x H
-   credit: John Clements |#
+   credit: John Clements 
+|#
 (define (draw-next-part body-part)
   (cond ((eq? body-part 'body)
          (draw-solid-line (make-posn 100 60) (make-posn 100 130) BLACK))
@@ -72,5 +70,5 @@
 ;(hangman-list-repl (list 'd 'e 'r) (list '_ '_) reveal-list draw-next-part)
 
 (start 200 200)
-(hangman-repl (make-word 'd 'e 'r) (make-word '_ '_ '_) reveal draw-next-part)
+(hangman make-word reveal draw-next-part)
 ; (hangman-list-repl (list 'd 'e 'r) (list '_ '_ '_) reveal-list draw-next-part)

@@ -1,3 +1,6 @@
+;; TeachPack: master.ss
+;; Language: Advanced
+
 ;; This file tests the trace functions. It is not used anywhere else. 
 
 ;; Speed and its relationship to positions

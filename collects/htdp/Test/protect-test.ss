@@ -1,18 +1,22 @@
+
 ;; ---------------------------------------------------------------------------
-;; To test: set library to pingp-lib.ss and uncomment the block at the bottom.
+;; TeachPack: pingp.ss
+;; Language: Advanced
+
+;; To test: uncomment the block at the bottom.
 ;; The file tests the function protect from pingp-lib.ss.
 ;; The file is used to build protect-play-lib.ss.
 
 (define (test-go x) (void))
 
-;(load "pingp-test-play.ss")
-;(define (test-go x)
-;  (protect ; (mk-balls 10)
-;	   (list (make-ball (make-posn 100 100) (make-speed 8 -16)))
-;	   move-balls
-;	   remove-balls-hit-paddle
-;	   remove-outside-balls
-;	   balls-posn))
+(load "pingp-test-play.ss")
+(define (test-go x)
+  (protect (mk-balls 10)
+	   ; (list (make-ball (make-posn 100 100) (make-speed 8 -16)))
+	   move-balls
+	   remove-balls-hit-paddle
+	   remove-outside-balls
+	   balls-posn))
 
 
 ;; Adapting the relevant functions from the pingp game

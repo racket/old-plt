@@ -3010,8 +3010,6 @@ local_module_introduce(int argc, Scheme_Object *argv[])
   Scheme_Comp_Env *env;
   Scheme_Object *s, *v;
 
-  return argv[0];
-
   env = scheme_current_thread->current_local_env;
   if (!env)
     scheme_raise_exn(MZEXN_FAIL_CONTRACT, 

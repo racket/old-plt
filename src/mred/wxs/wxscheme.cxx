@@ -1613,7 +1613,7 @@ Bool wxSchemeYield(void *sema)
     if (!scheme_is_waitable((Scheme_Object *)sema))
       scheme_wrong_type("yield", "waitable or 'wait", -1, 0, (Scheme_Object **)&sema);
 
-    wxDispatchEventsUntilWaitable(NULL, NULL, sema);
+    wxDispatchEventsUntilWaitable((wxDispatch_Check_Fun)NULL, NULL, sema);
 
     return 1;
   } else

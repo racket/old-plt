@@ -1525,7 +1525,7 @@ void wxDispatchEventsUntilWaitable(wxDispatch_Check_Fun f, void *data, Scheme_Ob
 
 void wxDispatchEventsUntil(wxDispatch_Check_Fun f, void *data)
 {
-  wxDispatchEventsUntilWaitable(f, NULL, data);
+  wxDispatchEventsUntilWaitable(f, data, NULL);
 }
 
 static SLEEP_PROC_PTR mzsleep;

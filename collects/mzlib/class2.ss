@@ -5,33 +5,40 @@
 		      (lib "stx.ss" "syntax")
 		      "private/classidmap.ss")
 
-  (define insp (make-inspector)) (print-struct #t)
+  (define insp (current-inspector))
 
   ;;--------------------------------------------------------------------
-  ;;  main class macro                                                 
+  ;;  class macros
   ;;--------------------------------------------------------------------
 
   (define-syntax class*/names
     (lambda (stx)
       (syntax-case stx ()
-	[(_  (this-id super-id) super-expression (interface-expr ...)
+	[(_  (this-id super-instantiate-id super-make-object-id) super-expression (interface-expr ...)
 	     defn-or-expr
 	     ...)
 	 (let ([defn-and-exprs (syntax->list (syntax (defn-or-expr ...)))]
 	       [this-id (syntax this-id)]
-	       [super-id (syntax super-id)])
+	       [super-instantiate-id (syntax super-instantiate-id)]
+	       [super-make-object-id (syntax super-make-object-id)])
 	   (unless (identifier? this-id)
 	     (raise-syntax-error
 	      'class*/names
 	      "not an identifier for `this'"
 	      stx
 	      this-id))
-	   (unless (identifier? super-id)
+	   (unless (identifier? super-instantiate-id)
 	     (raise-syntax-error
 	      'class*/names
-	      "not an identifier for `super-init'"
+	      "not an identifier for `super-instantiate'"
 	      stx
-	      super-id))
+	      super-instantiate-id))
+	   (unless (identifier? super-make-object-id)
+	     (raise-syntax-error
+	      'class*/names
+	      "not an identifier for `super-make-object'"
+	      stx
+	      super-make-object-id))
 
 	   ;; ----- Expand definitions -----
 	   (let ([defn-and-exprs (map
@@ -49,10 +56,12 @@
 				       (quote-syntax rename)
 				       (quote-syntax inherit)
 				       this-id
-				       super-id))))
+				       super-instantiate-id
+				       super-make-object-id))))
 				  defn-and-exprs)]
 		 [bad (lambda (msg expr)
-			(raise-syntax-error 'class* msg stx expr))])
+			(raise-syntax-error 'class* msg stx expr))]
+		 [class-name (syntax-local-name)])
 
 	     ;; ------ Basic syntax checks -----
 	     (for-each (lambda (stx)
@@ -186,24 +195,38 @@
 		 ;; ----- Extract method definitions; check that they look like procs -----
 		 ;;  Optionally transform them, can expand even if not transforming.
 		 (let ([local-public-names (map car (append publics overrides))]
-		       [proc-shape (lambda (expr xforms)
+		       [proc-shape (lambda (name expr xforms)
 				     (define (vars-ok? vars)
 				       (or (identifier? vars)
 					   (stx-null? vars)
 					   (and (stx-pair? vars)
 						(identifier? (stx-car vars))
 						(vars-ok? (stx-cdr vars)))))
+				     (define (mk-name)
+				       (datum->syntax-object 
+					#f 
+					(string->symbol (format "~a method~a~a" 
+								(syntax-e name)
+								(if class-name
+								    " in "
+								    "")
+								(or class-name 
+								    ""))) 
+					#f))
 				     (let loop ([stx expr])
 				       (syntax-case stx (lambda case-lambda letrec-values let-values)
 					 [(lambda vars body1 body ...)
 					  (vars-ok? (syntax vars))
 					  (if xforms
 					      (with-syntax ([this-id this-id]
-							    [xforms xforms])
+							    [xforms xforms]
+							    [name (mk-name)])
 						(syntax/loc stx 
-						    (lambda (this-id . vars) 
-						      (letrec-syntax xforms
-							  body1 body ...))))
+						  (let ([name
+							 (lambda (this-id . vars) 
+							   (letrec-syntax xforms
+							     body1 body ...))])
+						    name)))
 					      stx)]
 					 [(lambda . _)
 					  (bad "ill-formed lambda expression for method" stx)]
@@ -211,11 +234,14 @@
 					  (andmap vars-ok? (syntax->list (syntax (vars ...))))
 					  (if xforms
 					      (with-syntax ([this-id this-id]
-							    [xforms xforms])
+							    [xforms xforms]
+							    [name (mk-name)])
 						(syntax/loc stx
-						    (case-lambda [(this-id . vars) 
-								  (letrec-syntax xforms
-								      body1 body ...)] ...)))
+						  (let ([name
+							 (case-lambda [(this-id . vars) 
+								       (letrec-syntax xforms
+									 body1 body ...)] ...)])
+						    name)))
 					      stx)]
 					 [(case-lambda . _)
 					  (bad "ill-formed case-lambda expression for method" stx)]
@@ -234,7 +260,8 @@
 							       (quote-syntax here))
 							      (list 
 							       this-id
-							       super-id))))])
+							       super-instantiate-id
+							       super-make-object-id))))])
 					    (syntax/loc stx (let- ([(id1) proc]) id2)))]
 					 [_else 
 					  (bad "bad form for method definition" stx)])))])
@@ -256,7 +283,7 @@
 					    (unless (null? (cdr ids))
 					      (bad "each method variable needs its own definition"
 						   (car exprs)))
-					    (let ([expr (proc-shape (syntax expr) #f)])
+					    (let ([expr (proc-shape #f (syntax expr) #f)])
 					      (loop (cdr exprs) 
 						    (cons (cons (car ids) expr) ms)
 						    es)))]
@@ -299,7 +326,7 @@
 					   plain-init-names
 					   (map car inherits)
 					   (map car renames)
-					   (list this-id super-id)))])
+					   (list this-id super-instantiate-id super-make-object-id)))])
 			 (when dup
 			   (bad "duplicate declared identifier" dup)))
 		       
@@ -350,7 +377,7 @@
 								  (syntax->list (syntax (idp ...))))])
 						(syntax/loc e 
 						  (begin 
-						    (set! id (extract-arg 'id init-args argorder defval))
+						    (set! id (extract-arg 'id init-args defval))
 						    ...)))]
 					     [(field idp ...)
 					      (syntax/loc e (begin 
@@ -406,10 +433,13 @@
 							(quote-syntax method-accessor))]
 				      ...)))]
 				 [extra-init-mappings
-				  (with-syntax ([this-id this-id])
+				  (with-syntax ([super-instantiate-id super-instantiate-id]
+						[super-make-object-id super-make-object-id])
 				    (syntax 
 				     ([plain-init-name init-error-map]
-				      ...)))])
+				      ...
+				      [super-instantiate-id super-error-map]
+				      [super-make-object-id super-error-map])))])
 
 			     (let ([find-method (let ([all-mappings
 						       (with-syntax ([(mapping ...) mappings]
@@ -418,7 +448,7 @@
 						  (lambda (name)
 						    (ormap (lambda (m)
 							     (and (bound-identifier=? (car m) name)
-								  (proc-shape (cdr m) all-mappings)))
+								  (proc-shape (car m) (cdr m) all-mappings)))
 							   methods)))])
 			       
 			       ;; ---- build final result ----
@@ -448,13 +478,13 @@
 					     [mappings mappings]
 					     [exprs exprs]
 					     [this-id this-id]
-					     [super-id super-id]
-					     [name (syntax-local-name)])
+					     [super-instantiate-id super-instantiate-id]
+					     [super-make-object-id super-make-object-id]
+					     [name class-name])
 
-				 (syntax 
+				 (syntax
 				  (let ([superclass super-expression]
-					[interfaces (list interface-expr ...)]
-					[argorder 'init-names])
+					[interfaces (list interface-expr ...)])
 				    (compose-class 
 				     'name superclass interfaces
 				     ;; Field count:
@@ -466,6 +496,8 @@
 				     (quote public-names)
 				     (quote override-names)
 				     (quote inherit-names)
+				     ;; Init arg names (in order)
+				     (quote init-names)
 				     ;; Methods (when given needed super-methods, etc.):
 				     (lambda (field-accessor ...
 							     field-mutator ...
@@ -476,10 +508,44 @@
 					(list . override-methods)
 					;; Initialization
 					(lambda (this-id super-id init-args)
-					  (let ([plain-init-name undefined]
-						...)
-					    (letrec-syntax mappings
-					      . exprs))))))))))))))))))))])))
+					  (letrec-syntax ([super-instantiate-id
+							   (syntax-rules () 
+							     [(_ (arg (... ...)) (kw kwarg) (... ...))
+							      (-instantiate super-id _ #f (arg (... ...)) (kw kwarg) (... ...))])]
+							  [super-make-object-id
+							   (syntax-rules () 
+							     [(_ arg (... ...))
+							      (-instantiate super-id _ #f (list arg (... ...)))])])
+					    (let ([plain-init-name undefined]
+						  ...)
+					      (letrec-syntax mappings
+						. exprs)))))))))))))))))))))])))
+
+  (define-syntax class*
+    (lambda (stx)
+      (syntax-case stx ()
+	[(form super-expression (interface-expr ...)
+	       defn-or-expr
+	       ...)
+	 (with-syntax ([this (datum->syntax-object (syntax form) 'this stx)]
+		       [super-init (datum->syntax-object (syntax form) 'super-instantiate stx)]
+		       [super-make (datum->syntax-object (syntax form) 'super-make-object stx)])
+	   (syntax/loc stx
+	    (class*/names (this super-init super-make) super-expression (interface-expr ...)
+			  defn-or-expr
+			  ...)))])))
+
+  (define-syntax class
+    (lambda (stx)
+      (syntax-case stx ()
+	[(form super-expression
+	       defn-or-expr
+	       ...)
+	 (with-syntax ([class* (datum->syntax-object (syntax form) 'class* stx)])
+	   (syntax/loc stx
+	    (class* super-expression ()
+		    defn-or-expr
+		    ...)))])))
 
   ;;--------------------------------------------------------------------
   ;;  class implementation
@@ -487,7 +553,7 @@
 
   (define-struct class (name
 			pos supers     ; pos is subclass depth, supers is vector
-			interface      ; self interface
+			>interface     ; self interface
 
 			method-width   ; total number of methods
 			method-ht      ; maps public names to vector positions
@@ -502,6 +568,8 @@
 			struct:object  ; structure type for instances
 			object?        ; predicate
 			make-object    ; constructor
+
+			init-args      ; list of symbols in order
 
 			init           ; initializer
 			)
@@ -518,6 +586,8 @@
 			 public-names
 			 override-names
 			 inherit-names
+
+			 init-args          ; list of symbols in order
 			 
 			 make-methods)      ; takes field and method accessors
     ;; -- Check superclass --
@@ -534,7 +604,7 @@
 			       (format "derived-from-~a" s)
 			       s))))])
       ;; -- Check interfaces ---
-      '(for-each
+      (for-each
        (lambda (intf)
 	 (unless (interface? intf)
 	   (obj-error 'class*/names "interface expression returned a non-interface: ~a~a" 
@@ -598,7 +668,7 @@
 		[new-indices (get-indices public-names)])
 
 	    ;; -- Check that all interfaces are satisfied --
-	    '(for-each
+	    (for-each
 	     (lambda (intf)
 	       (for-each
 		(lambda (var)
@@ -610,7 +680,7 @@
 			       (for-intf (interface-name intf)))))
 		(interface-public-ids intf)))
 	     interfaces)
-	    '(let ([c (get-implement-requirement interfaces 'class*/names (for-class name))])
+	    (let ([c (get-implement-requirement interfaces 'class*/names (for-class name))])
 	      (when (and c (not (subclass? super c)))
 		(obj-error 'class*/names 
 			   "interface-required implementation not satisfied~a~a"
@@ -633,7 +703,7 @@
 				       make-interface)]
 		   [method-names (append super-method-ids public-names)]
 		   [field-names (append super-field-ids public-field-names)]
-		   [super-interfaces (cons (class-interface super) interfaces)]
+		   [super-interfaces (cons (class->interface super) interfaces)]
 		   [i (interface-make name super-interfaces method-names #f)]
 		   [methods (make-vector method-width)]
 		   [c (class-make name
@@ -644,10 +714,12 @@
 				  methods
 				  field-width field-ht field-names
 				  'struct:object 'object? 'make-object
+				  init-args
 				  'init)]
 		   [obj-name (if name
 				 (string->symbol (format "object:~a" name))
 				 'object)])
+	      (vector-set! (class-supers c) (add1 (class-pos super)) c)
 
 	      ;; --- Mane the new object struct ---
 	      (let*-values ([(struct:object object-make object? object-field-ref object-field-set!)
@@ -658,6 +730,9 @@
 					       num-fields undefined
 					       null
 					       insp)]
+			    ;; The second structure associates prop:object with the class.
+			    ;; Other classes extend struct:object, so we can't put the
+			    ;; property there.
 			    [(struct:tagged-object tagged-object-make tagged-object? -ref -set!)
 			     (make-struct-type obj-name
 					       struct:object
@@ -670,18 +745,31 @@
 		(set-class-make-object! c tagged-object-make)
 
 		;; --- Build field accessors and mutators ---
-		(let ([accessors (let loop ([n num-fields][l null])
-				   (if (zero? n)
-				       l
-				       (loop (sub1 n)
-					     (cons (make-struct-field-accessor object-field-ref (sub1 n))
-						   l))))]
-		      [mutators  (let loop ([n num-fields][l null])
-				   (if (zero? n)
-				       l
-				       (loop (sub1 n)
-					     (cons (make-struct-field-mutator object-field-set! (sub1 n))
-						   l))))])
+		;;  Use public field names to name the accessors and mutators
+		(let-values ([(accessors mutators)
+			      (let ([rev-fields (reverse public-field-names)])
+				(let ([mk
+				       (lambda (mk obj-)
+					 (let loop ([n num-fields]
+						    [l null]
+						    [skip (- num-fields (length public-field-names))]
+						    [field-ids rev-fields])
+					   (if (zero? n)
+					       l
+					       (loop (sub1 n)
+						     (cons (apply
+							    mk obj- (sub1 n)
+							    (if (zero? skip)
+								(list (car field-ids))
+								null))
+							   l)
+						     (max 0 (sub1 skip))
+						     (if (zero? skip)
+							 (cdr field-ids)
+							 field-ids)))))])
+				  (values
+				   (mk make-struct-field-accessor object-field-ref)
+				   (mk make-struct-field-mutator object-field-set!))))])
 		  ;; -- Reset field table to register accessors and mutators --
 		  ;;  There are more accessors and mutators than public fields...
 		  (let loop ([ids public-field-names][accessors accessors][mutators mutators])
@@ -737,12 +825,108 @@
   ;;  interfaces
   ;;--------------------------------------------------------------------
   
+  ;; >> Simplistic implementation for now <<
+
+  (define-syntax interface
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ (interface-expr ...) var ...)
+	 (let ([vars (syntax->list (syntax (var ...)))]
+	       [name (syntax-local-name)])
+	   (for-each
+	    (lambda (v)
+	      (unless (identifier? v)
+		(raise-syntax-error 'interface
+				    "not an identifier"
+				    stx
+				    v)))
+	    vars)
+	   (let ([dup (check-duplicate-identifier vars)])
+	     (when dup
+	       (raise-syntax-error 'interface
+				   "duplicate name"
+				   stx
+				   dup)))
+	   (with-syntax ([name (datum->syntax-object #f name #f)])
+	     (syntax/loc
+	      stx
+	      (compose-interface
+	       'name
+	       (list interface-expr ...)
+	       '(var ...)))))])))
+
   (define-struct interface (name supers public-ids class) insp)
+
+  (define (compose-interface name supers vars)
+    (for-each
+     (lambda (intf)
+       (unless (interface? intf)
+	 (obj-error 'interface 
+		    "superinterface expression returned a non-interface: ~a~a" 
+		    intf
+		    (for-intf name))))
+     supers)
+    (let ([ht (make-hash-table)])
+      (for-each
+       (lambda (var)
+	 (hash-table-put! ht var #t))
+       vars)
+      ;; Check that vars don't already exist in supers:
+      (for-each
+       (lambda (super)
+	 (for-each
+	  (lambda (var)
+	    (when (hash-table-get ht var (lambda () #f))
+	      (obj-error 'interface "variable already in superinterface: ~a~a~a" 
+			 var
+			 (for-intf name)
+			 (let ([r (interface-name super)])
+			   (if r
+			       (format " already in: ~a" r)
+			       "")))))
+	  (interface-public-ids super)))
+       supers)
+      ;; Check for [conflicting] implementation requirements
+      (let ([class (get-implement-requirement supers 'interface (for-intf name))]
+	    [interface-make (if name
+				(make-naming-constructor 
+				 struct:interface
+				 (string->symbol (format "interface:~a" name)))
+				make-interface)])
+	;; Add supervars to table:
+	(for-each
+	 (lambda (super)
+	   (for-each
+	    (lambda (var) (hash-table-put! ht var #t))
+	    (interface-public-ids super)))
+	 supers)
+	;; Done
+	(interface-make name supers (hash-table-map ht (lambda (k v) k)) class))))
+
+  (define (get-implement-requirement interfaces where for)
+    (let loop ([class #f]
+	       [supers interfaces])
+      (if (null? supers)
+	  class
+	  (let ([c (interface-class (car supers))])
+	    (loop
+	     (cond
+	      [(not c) class]
+	      [(not class) c]
+	      [(subclass? c class) class]
+	      [(subclass? class c) c]
+	      [else
+	       (obj-error 
+		where
+		"conflicting class implementation requirements in superinterfaces~a"
+		for)])
+	     (cdr supers))))))
 
   ;;--------------------------------------------------------------------
   ;;  object%
   ;;--------------------------------------------------------------------
   
+  (define object<%> (make-interface 'object% null null #f))
   (define object% (make-class 'object%
 			      0 (vector #f) 
 			      'object<%>
@@ -753,9 +937,14 @@
 			      0 (make-hash-table) null
 			      
 			      'struct:object object? 'make-object
-			      (lambda (this super-init args)
-				;; FIXME: check that args is empty
+
+			      null
+
+			      (lambda (this super-init args) 
+				(unless (null? args)
+				  (obj-error "make-object" "unused initialization arguments: ~e" args))
 				(void))))
+
   (vector-set! (class-supers object%) 0 object%)
   (let*-values ([(struct:obj make-obj obj? -get -set!)
 		 (make-struct-type 'object #f 0 0 #f null insp)]
@@ -765,27 +954,244 @@
     (set-class-object?! object% obj?)
     (set-class-make-object! object% make-tagged-obj))
 
+  (set-interface-class! object<%> object%)
+
   ;;--------------------------------------------------------------------
   ;;  instantiation
   ;;--------------------------------------------------------------------
   
-  (define (make-object class . args)
+  (define-syntax make-object 
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ class arg ...)
+	 (syntax (instantiate class (arg ...)))])))
+  
+  (define-syntax instantiate
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ . x) (syntax (-instantiate do-make-object _ . x))])))
+
+  (define-syntax -instantiate
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ do-make-object form class (by-pos-arg ...) (kw arg) ...)
+	 (andmap identifier? (syntax->list (syntax (kw ...))))
+	 (syntax (do-make-object class
+				 (list by-pos-arg ...)
+				 (list (cons 'kw arg)
+				       ...)))]
+	[(_ super-make-object form class (by-pos-arg ...) kwarg ...)
+	 ;; some kwarg must be bad:
+	 (for-each (lambda (kwarg)
+		     (syntax-case kwarg ()
+		       [(kw arg)
+			(identifier? (syntax kw))
+			'ok]
+		       [(kw arg)
+			(raise-syntax-error
+			 (syntax-e (syntax form))
+			 "keyword-based argument does not start with an identifier"
+			 kwarg)]
+		       [_else
+			(raise-syntax-error
+			 (syntax-e (syntax form))
+			 "ill-formed keyword-based argument"
+			 kwarg)]))
+		   (syntax->list (syntax (kwarg ...))))])))
+
+  (define (do-make-object class by-pos-args named-args)
     (unless (class? class)
       (raise-type-error 'make-object "class" class))
     (let ([o ((class-make-object class))])
       ;; Initialize it:
-      ((class-init class) o 'super-init args)
+      (let loop ([c class][by-pos-args by-pos-args][named-args named-args])
+	;; Merge by-pos into named args:
+	(let ([named-args (let loop ([al by-pos-args][nl (class-init-args c)])
+			    (cond
+			     [(null? al) named-args]
+			     [(null? nl) (obj-error "make-object" "too many initialization arguments: ~e~a" 
+						    by-pos-args
+						    (for-class (class-name c)))]
+			     [else (cons (cons (car nl) (car al))
+					 (loop (cdr al) (cdr nl)))]))])
+	  ;; Check for duplicate arguments
+	  (unless (null? named-args)
+	    (let loop ([l named-args])
+	      (unless (null? (cdr l))
+		(if (assq (caar l) (cdr l))
+		    (obj-error "make-object" "duplicate initialization argument: ~a in: ~e~a"
+			       (caar l)
+			       named-args
+			       (for-class (class-name c)))
+		    (loop (cdr l))))))
+	  (let ([inited? (eq? c object%)])
+	    ((class-init c) 
+	     o 
+	     ;;; ----- This is the super-init function -----
+	     (lambda (ignore-false by-pos-args new-named-args)
+	       (when inited?
+		 (obj-error "make-object" "superclass already initialized by class initialization~a"
+			    (for-class (class-name c))))
+	       (set! inited? #t)
+	       (let ([named-args (let loop ([l named-args])
+				   (cond
+				    [(null? l) new-named-args]
+				    [(memq (caar l) (class-init-args c))
+				     (loop (cdr l))]
+				    [else (cons (car l) (loop (cdr l)))]))])
+		 (loop (vector-ref (class-supers c) (sub1 (class-pos c))) by-pos-args named-args)))
+	     named-args)
+	    (unless inited?
+	      (obj-error "make-object" "superclass initialization not invoked by initialization~a"
+			 (for-class (class-name c)))))))
       o))
 
-  (define (extract-arg name arguments by-pos-names default)
-    (let loop ([arguments arguments][by-pos-names by-pos-names])
+  (define (extract-arg name arguments default)
+    (let ([a (assq name arguments)])
       (cond
-       [(null? arguments) (if default
-			      (default)
-			      (obj-error "make-object" "no argument for required init variable: ~a" name))]
-       [(eq? (car by-pos-names) name) (car arguments)]
-       [else (loop (cdr arguments) (cdr by-pos-names))])))
-	  
+       [a (cdr a)]
+       [default (default)]
+       [else (obj-error "make-object" "no argument for required init variable: ~a" name)])))
+
+  ;;--------------------------------------------------------------------
+  ;;  methods and fields
+  ;;--------------------------------------------------------------------
+  
+  (define-syntax send
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ obj name arg ...)
+	 (begin
+	   (unless (identifier? (syntax name))
+	     (raise-syntax-error
+	      'send
+	      "method name is not an identifier"
+	      stx
+	      (syntax name)))
+	   (syntax (let ([this obj])
+		     ((find-method obj 'name) obj arg ...))))])))
+    
+  (define (find-method object name)
+    (unless (object? object)
+      (obj-error 'send "target is not an object: ~e for method: ~a"
+		 object name))
+    (let* ([c (object-ref object)]
+	   [pos (hash-table-get (class-method-ht c) name (lambda () #f))])
+      (if pos
+	  (vector-ref (class-methods c) pos)
+	  (obj-error 'send "no such method: ~a~a"
+		     name
+		     (for-class (class-name c))))))
+
+
+  (define (class-field-X who which class name)
+    (unless (class? class)
+      (raise-type-error who "class" class))
+    (unless (symbol? name)
+      (raise-type-error who "symbol" name))
+    (which (hash-table-get (class-field-ht class) name
+			   (lambda ()
+			     (obj-error who "no such field: ~a~a"
+					name
+					(for-class (class-name class)))))))
+  
+  (define (class-field-accessor class name)
+    (class-field-X 'class-field-accessor car class name))
+  
+  (define (class-field-mutator class name)
+    (class-field-X 'class-field-mutator cdr class name))
+
+
+  (define-struct generic (applicable))
+
+  (define (make-generic/proc class name)
+    (unless (or (class? class) (interface? class))
+      (raise-type-error 'make-generic "class or interface" class))
+    (unless (symbol? name)
+      (raise-type-error 'make-generic "symbol" name))
+    (make-generic
+     (if (interface? class)
+	 (let ([intf class])
+	   (unless (method-in-interface? name intf)
+	     (obj-error 'make-generic "no such method: ~a~a"
+			name
+			(for-intf (interface-name intf))))
+	   (lambda (obj)
+	     (unless (is-a? obj intf)
+	       (raise-type-error 
+		(symbol->string (format "generic:~a~a" name (for-intf (interface-name intf))))
+		(format "instance~a" (for-intf (interface-name intf)))
+		obj))
+	     (find-method obj name)))
+	 (let ([pos (hash-table-get (class-method-ht class) name
+				    (lambda ()
+				      (obj-error 'make-generic "no such method: ~a~a"
+						name
+						(for-class (class-name class)))))])
+	   (lambda (obj)
+	     (unless ((class-object? class) obj)
+	       (raise-type-error 
+		(symbol->string (format "generic:~a~a" name (for-class (class-name class))))
+		(format "instance~a" (for-class (class-name class)))
+		obj))
+	     (vector-ref (class-methods (object-ref obj)) pos))))))
+
+  (define-syntax apply-generic
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ generic obj arg ...)
+	 (syntax (let ([this obj])
+		   (((generic-applicable generic) this) this arg ...)))])))
+	      
+
+  ;;--------------------------------------------------------------------
+  ;;  class, interface, and object properties
+  ;;--------------------------------------------------------------------
+  
+  (define (is-a? v c)
+    (cond
+     [(class? c) ((class-object? c) v)]
+     [(interface? c)
+      (and (object? v)
+	   (implementation? (object-ref v) c))]
+     [else (raise-type-error 'is-a? "class or interface" 1 v c)]))
+  
+  (define (subclass? v c)
+    (unless (class? c)
+      (raise-type-error 'subclass? "class" 1 v c))
+    (and (class? v)
+	 (let ([p (class-pos c)])
+	   (and (<= p (class-pos v))
+		(eq? c (vector-ref (class-supers v) p))))))
+
+  (define (object-interface o) (class->interface (object-ref o)))
+  
+  (define (implementation? v i)
+    (unless (interface? i)
+      (raise-type-error 'implementation? "interface" 1 v i))
+    (and (class? v)
+	 (interface-extension? (class->interface v) i)))
+
+  (define (interface-extension? v i)
+    (unless (interface? i)
+      (raise-type-error 'interface-extension? "interface" 1 v i))
+    (and (interface? i)
+	 '(let loop ([v v])
+	   (or (eq? v i)
+	       (ormap loop (interface-supers v))))))
+  
+  (define (method-in-interface? s i)
+    (unless (symbol? s)
+      (raise-type-error 'method-in-interface? "symbol" 0 s i))
+    (unless (interface? i)
+      (raise-type-error 'method-in-interface? "interface" 1 s i))
+    (and (memq s (interface-public-ids i)) #t))
+
+  (define (interface->method-names i)
+    (unless (interface? i)
+      (raise-type-error 'interface->method-names "interface" i))
+    ;; copy list
+    (map values (interface-public-ids i)))
 
   ;;--------------------------------------------------------------------
   ;;  misc utils
@@ -814,8 +1220,13 @@
     (if name (format " for interface: ~a" name) ""))
 
 
-  (provide class*/names 
-	   make-object 
-	   object%))
-
+  (provide class class* class*/names class?
+	   interface interface?
+	   object% object?
+	   make-object instantiate
+	   send class-field-accessor class-field-mutator
+	   (rename make-generic/proc make-generic) apply-generic
+	   is-a? subclass? implementation? interface-extension?
+	   method-in-interface? interface->method-names
+	   exn:object? struct:exn:object make-exn:object))
 

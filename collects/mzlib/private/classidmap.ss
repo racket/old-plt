@@ -55,7 +55,7 @@
 	    (raise-syntax-error 'class "cannot mutate super method" stx)]
 	   [(id . args)
 	    (datum->syntax-object 
-	     rename-temp
+	     this-id
 	     (list* rename-temp this-id (syntax args))
 	     stx)]
 	   [_else
@@ -72,7 +72,15 @@
 	"cannot use non-field init variable in a method"
 	stx))))
 
+  (define super-error-map
+    (make-set!-transformer
+     (lambda (stx)
+       (raise-syntax-error 
+	'class
+	"cannot use superclass initialization form in a method"
+	stx))))
+
   (provide make-field-map make-method-map make-rename-map
-	   init-error-map))
+	   init-error-map super-error-map))
 
     

@@ -510,12 +510,16 @@
                                         (get-non-statics (accesses-private fields))))
                          ,@(create-private-setters/getters (get-non-statics (accesses-private fields)))
                          
+                         ,@(generate-inner-makers (members-inner class-members) type-recs) 
+                         
                          ,@(map (lambda (m) (translate-method (method-type m)
                                                               (map modifier-kind (method-modifiers m))
                                                               (method-name m)
                                                               (method-parms m)
                                                               (method-body m)
                                                               (method-src m)
+                                                              #f
+                                                              0
                                                               type-recs))
                                 (append (accesses-public methods)
                                         (accesses-package methods)
@@ -549,6 +553,9 @@
                          
                          (super-instantiate ())))
 
+                      ,@(map (lambda (def) (translate-inner-class def type-recs 0))
+                             (members-inner class-members))
+                      
                       ,@(create-static-methods (append static-method-names
                                                        (make-static-method-names 
                                                         (get-statics (accesses-private methods)) 
@@ -695,7 +702,149 @@
   ;------------------------------------------------------------
   ;Inner class translation functions
   
+  ;translate-inner-class: def type-records int -> syntax
+  (define (translate-inner-class class type-recs depth)
+    ;Let's grab onto the enclosing class-specific info
+    (let ((old-class-name (class-name))
+          (old-parent-name (parent-name))
+          (old-override-table (class-override-table)))
+      
+      (let*-values (((header) (def-header class))
+                    ((parent parent-src) 
+                     (if (null? (header-extends header))
+                         (values "Object" #f)
+                         (get-parent (header-extends header))))
+                    ((class*) (create-syntax #f 'class* (build-src (def-key-src class))))
+                    ((class-members) (separate-members (def-members class)))
+                    ((methods) (separate-methods (members-method class-members) (make-accesses null null null null null)))
+                    ((fields) (separate-fields (members-field class-members) (make-accesses null null null null null))))
+        
+        (class-name (id-string (header-id header)))
+        (parent-name parent)
+        (class-override-table (make-hash-table))
+            
+        (let* ((class (translate-id (class-name) (id-src (header-id header))))
+               (overridden-methods (get-overridden-methods (append (accesses-public methods) 
+                                                                   (accesses-package methods) 
+                                                                   (accesses-protected methods))
+                                                           type-recs))
+               (restricted-methods (make-method-names ;(append (accesses-package methods)
+                                    (accesses-protected methods);)
+                                    overridden-methods
+                                    type-recs))
+               (field-getters/setters (make-field-accessor-names (append (accesses-public fields)
+                                                                         (accesses-package fields)
+                                                                         (accesses-protected fields))))
+               (provides `(provide ,(build-identifier (class-name))
+                                   ;                                   ,@restricted-methods
+                                   ,@field-getters/setters)))
+        
+          (begin0
+            (create-syntax 
+             #f
+             `(begin ,provides
+                     ,(create-local-names (append (make-method-names (accesses-private methods) null type-recs)
+                                                  restricted-methods))
+                     (define ,class
+                       (,class* ,(translate-id parent parent-src) ,(translate-implements (header-implements header))
+                        
+                        ,@(map (lambda (f) (translate-field (map modifier-kind (field-modifiers f))
+                                                            (field-type f)
+                                                            (field-name f)
+                                                            (and (var-init? f) f)
+                                                            (if (var-init? f)
+                                                                (var-init-src f)
+                                                                (var-decl-src f))
+                                                            #f))
+                               (append (accesses-public fields)
+                                       (accesses-package fields)
+                                       (accesses-protected fields)
+                                       (accesses-private fields)))
+                        ,@(create-private-setters/getters (accesses-private fields))
+                        
+                        (field (encl-this-1-f null))
+                        
+                        ,@(map (lambda (m) (translate-method (method-type m)
+                                                             (map modifier-kind (method-modifiers m))
+                                                             (method-name m)
+                                                             (method-parms m)
+                                                             (method-body m)
+                                                             (method-src m)
+                                                             #t
+                                                             depth
+                                                             type-recs))
+                               (append (accesses-public methods)
+                                       (accesses-package methods)
+                                       (accesses-protected methods)
+                                       (accesses-private methods)))
+                        
+                        (define/override (my-name) ,(class-name))
+                        
+                        (rename (super-field-names field-names))
+                        (define/override (field-names)
+                          (append (super-field-names)
+                                  (list ,@(map (lambda (n) (id-string (field-name n)))
+                                               (append (accesses-public fields)
+                                                       (accesses-package fields)
+                                                       (accesses-protected fields)
+                                                       (accesses-private fields))))))
+                        (rename (super-field-values field-values))
+                        (define/override (field-values)
+                          (append (super-field-values)
+                                  (list ,@(map (lambda (n) (build-identifier (build-var-name (id-string (field-name n)))))
+                                               (append (accesses-public fields)
+                                                       (accesses-package fields)
+                                                       (accesses-protected fields)
+                                                       (accesses-private fields))))))
+                        
+                        ,@(map (lambda (i) (translate-initialize (initialize-static i)
+                                                                 (initialize-block i)
+                                                                 (initialize-src i)
+                                                                 type-recs))
+                               (members-init class-members))
+                      
+                        (super-instantiate ())))
+                   
+                     ,@(create-field-accessors field-getters/setters
+                                               (append (accesses-public fields)
+                                                       (accesses-package fields)
+                                                       (accesses-protected fields))))
+             #f)
+            ;reset the old class-specific info
+            (begin (class-name old-class-name)
+                   (parent-name old-parent-name)
+                   (class-override-table old-override-table)))))))              
   
+  ;generate-inner-makers: (list def) type-records -> (list syntax)
+  (define (generate-inner-makers defs type-recs)
+    (apply append
+           (map (lambda (d) (build-inner-makers d type-recs)) defs)))
+  
+  ;build-inner-makers: def type-records -> (list syntax)
+  (define (build-inner-makers def type-recs)
+    (let* ((class-name (id-string (def-name def)))
+           (ctor-name (string-append "construct-" class-name))
+           (parms (map method-parms (get-ctors (def-members def) type-recs))))
+      (map (build-inner-maker class-name ctor-name type-recs) parms)))
+  
+  ;build-inner-maker: string string type-records -> ((list field) -> syntax)
+  (define (build-inner-maker class-name ctor-name type-recs)
+    (lambda (parms)
+      (let ((translated-parms (translate-parms parms))
+            (parm-types (map (lambda (p) (type-spec-to-type (field-type p) #f 'full type-recs)) parms)))
+        (make-syntax #f
+                     `(define/public (,(build-identifier (build-method-name ctor-name parm-types)) ,@translated-parms)
+                        (let ((temp-obj (make-object ,(build-identifier class-name))))
+                          (send temp-obj ,(build-identifier (build-constructor-name class-name parm-types))
+                                this ,@translated-parms)))
+                     #f))))
+
+  ;get-ctors: (list method) -> (list method)
+  (define (get-ctors methods type-recs)
+    (filter
+     (lambda (method)
+       (eq? 'ctor (type-spec-to-type (method-type method) #f 'full type-recs)))
+     methods))
   
   ;------------------------------------------------------------
   ;;Method translation functions
@@ -750,10 +899,11 @@
                                      (map field-type (method-parms (car methods))))))
              (make-method-names (cdr methods) minus-methods type-recs)))))
   
-  ;translate-method: type-spec (list symbol) id (list parm) statement src type-records -> syntax
-  (define (translate-method type modifiers id parms block src type-recs)
+  ;translate-method: type-spec (list symbol) id (list parm) statement src bool int type-records -> syntax
+  (define (translate-method type modifiers id parms block src inner? depth type-recs)
     (let* ((final (final? modifiers))
-           (method-string ((if (constructor? (id-string id)) build-constructor-name build-method-name)
+           (ctor? (constructor? (id-string id)))
+           (method-string ((if ctor? build-constructor-name build-method-name)
                            (id-string id)
                            (map (lambda (t) (type-spec-to-type t #f 'full type-recs))
                                 (map field-type parms))))
@@ -766,7 +916,7 @@
                          (else 'define/public))))
       (create-syntax #f
                      `(,definition ,method-name 
-                       ,(translate-method-body method-string parms block modifiers type type-recs))
+                       ,(translate-method-body method-string parms block modifiers type ctor? inner? depth type-recs))
                      (build-src src))))
   
   ;make-static-method-names: (list method) type-recs -> (list string)
@@ -790,21 +940,34 @@
                                                           (method-body method)
                                                           (map modifier-kind (method-modifiers method))
                                                           (method-type method)
+                                                          #f
+                                                          #f
+                                                          0
                                                           type-recs))
                                (build-src (method-src method)))
                 (create-static-methods (cdr names) (cdr methods) type-recs)))))
   
   (define static-method (make-parameter #f))
   
-  ;translate-method-body (list field) statement (list symbol) type-spec type-record -> syntax
-  (define (translate-method-body method-name parms block modifiers rtype type-recs)
+  ;translate-method-body (list field) statement (list symbol) type-spec bool bool int type-record -> syntax
+  (define (translate-method-body method-name parms block modifiers rtype ctor? inner? depth type-recs)
     (let ((parms (translate-parms parms))
           (void? (eq? (type-spec-name rtype) 'void))
           (native? (memq 'native modifiers))
           (static? (memq 'static modifiers)))
+      
+      (when (and ctor? inner?)
+        (set! parms (cons 'encl-this-1 parms)))
+      
       (static-method static?)
       (make-syntax #f
                    (cond
+                     ((and ctor? inner?)
+                      `(lambda ,parms
+                         (let/ec return-k
+                           (set! encl-this-1-f encl-this-1)
+                           ,(translate-statement block type-recs)
+                           (void))))
                      ((and block void?)
                       `(lambda ,parms 
                          (let/ec return-k

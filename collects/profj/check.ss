@@ -1385,10 +1385,12 @@
                      (cdr acc)))
                    (first-binding
                     (let* ((encl-depth (lookup-containing-class-depth (id-string (car acc)) env))
-                           (encl-type (if (= encl-depth 0) 
-                                          (var-type-type (lookup-var-in-env "this" env))
-                                          (lookup-var-in-env (format "encl-this-~a" encl-depth) env)))
-                           (encl-class (cons (ref-type-class/iface encl-type) (ref-type-path encl-type))))
+                           (encl-type (unless interactions?
+                                        (if (= encl-depth 0) 
+                                            (var-type-type (lookup-var-in-env "this" env))
+                                            (lookup-var-in-env (format "encl-this-~a" encl-depth) env))))
+                           (encl-class (unless interactions?
+                                         (cons (ref-type-class/iface encl-type) (ref-type-path encl-type)))))
                       (if (properties-static? (var-type-properties first-binding))
                           (build-field-accesses
                            (make-access #f (expr-src exp)

@@ -39,6 +39,9 @@ extern int write_JPEG_file(char *filename, wxBitmap *bm, int quality_val);
 extern int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg);
 extern int wx_write_png(char *file_name, wxBitmap *bm);
 
+extern void wxAlphaBlit(wxBitmap *label_bm, wxBitmap *bm, wxBitmap *loaded_mask, 
+			int br, int bg, int bb);
+
 wxFont::wxFont(void)
 {
   COUNT_P(font_count);
@@ -1852,10 +1855,11 @@ wxBitmap *wxLoadBitmap(char *filename, wxColourMap **pal)
 
 /****************************************/
 
+static int tried_ab = 0, got_alpha = 0;
+
 HBITMAP wxBitmap::GetLabelBitmap(Bool panel_bg)
 {
   wxBitmap *bm;
-  wxMemoryDC *dc;
   DWORD v;
   wxColor *c;
 
@@ -1877,19 +1881,39 @@ HBITMAP wxBitmap::GetLabelBitmap(Bool panel_bg)
   if (!bm->Ok())
     return ms_bitmap;
 
-  dc = new wxMemoryDC(0);
-  dc->SelectObject(bm);
   if (panel_bg) {
     v = GetSysColor(COLOR_BTNFACE);
     c = new wxColour(GetRValue(v), GetGValue(v), GetBValue(v));
   } else
     c = wxWHITE;
-  dc->SetBackground(c);
-  dc->Clear();
-  dc->Blit(0, 0, GetWidth(), GetHeight(),
-	   this, 0, 0, wxSOLID,
-	   wxBLACK, mask);
-  dc->SelectObject(NULL);
+  
+  if (!tried_ab) {
+    HMODULE mod;
+    mod = LoadLibrary("Msimg32.dll");
+    if (mod)
+      got_alpha = !!GetProcAddress(mod, "AlphaBlend");
+    tried_ab = 1;
+  }
+
+  if (!got_alpha && (mask->GetDepth() != 1)) {
+    /* Blit can't alpha-blend, so do it ourselves */
+    int r, g, b;
+    r = c->Red();
+    g = c->Green();
+    b = c->Blue();
+    wxAlphaBlit(bm, this, mask, r, g, b);
+  } else {
+    wxMemoryDC *dc;
+
+    dc = new wxMemoryDC(0);
+    dc->SelectObject(bm);
+    dc->SetBackground(c);
+    dc->Clear();
+    dc->Blit(0, 0, GetWidth(), GetHeight(),
+	     this, 0, 0, wxSOLID,
+	     wxBLACK, mask);
+    dc->SelectObject(NULL);
+  }
 
   /* Take over ownership of label_bitmap: */
   if (panel_bg)

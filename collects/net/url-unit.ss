@@ -128,9 +128,9 @@
 			  (url-host url))))
             (tcp-connect host port-number))))
       
-      ;; http://getpost-impure-port : bool x url x list (str) -> in-port
+      ;; http://getpost-impure-port : bool x url x union (str, #f) x list (str) -> in-port
       (define http://getpost-impure-port
-	(lambda (get? url strings)
+	(lambda (get? url post-data strings)
           (let*-values (((proxy) (assoc (url-scheme url) (current-proxy-servers)))
 			((server->client client->server)
 			 (make-ports url proxy)))
@@ -146,8 +146,15 @@
                           (display "\r\n" client->server))
                         (cons (format "~a ~a HTTP/1.0" (if get? "GET" "POST") access-string)
                               (cons (format "Host: ~a" (url-host url))
-                                    strings))))
+				    (if post-data
+					(cons
+					 (format "Content-Length: ~a" (string-length post-data))
+					 strings)
+					strings)))))
             (display "\r\n" client->server)
+	    (when post-data
+	      (display post-data client->server)
+	      (flush-output client->server)) ;; technically not needed for TCP ports
             (tcp-abandon-port client->server)
             server->client)))
       
@@ -163,13 +170,13 @@
 
       ;; getpost-impure-port : bool x url x list (str) -> in-port
       (define getpost-impure-port
-	(lambda (get? url strings)
+	(lambda (get? url post-data strings)
           (let ((scheme (url-scheme url)))
             (cond
 	     ((not scheme)
 	      (schemeless-url url))
 	     ((string=? scheme "http")
-	      (http://getpost-impure-port get? url strings))
+	      (http://getpost-impure-port get? url post-data strings))
 	     ((string=? scheme "file")
 	      (url-error "There are no impure file: ports"))
 	     (else
@@ -179,30 +186,27 @@
       (define get-impure-port
         (case-lambda
          [(url) (get-impure-port url '())]
-         [(url strings) (getpost-impure-port #t url strings)]))
+         [(url strings) (getpost-impure-port #t url #f strings)]))
 
       ;; post-impure-port : url [x list (str)] -> in-port
       (define post-impure-port
         (case-lambda
-         [(url) (post-impure-port url '())]
-         [(url strings) (getpost-impure-port #f url strings)]))
+         [(url post-data) (post-impure-port url post-data '())]
+         [(url post-data strings) (getpost-impure-port #f url post-data strings)]))
 
       ;; getpost-pure-port : bool x url x list (str) -> in-port
       (define getpost-pure-port
-        (lambda (get? url strings)
+        (lambda (get? url post-data strings)
           (let ((scheme (url-scheme url)))
             (cond
 	     ((not scheme)
 	      (schemeless-url url))
 	     ((string=? scheme "http")
-	      (let ((port (http://getpost-impure-port get? url strings)))
+	      (let ((port (http://getpost-impure-port get? url post-data strings)))
 		(with-handlers ([void (lambda (exn)
 					(close-input-port port)
 					(raise exn))])
 		  (purify-port port))
-		;; Note: if a break happens here, the port
-		;;  never gets closed! Same is true before
-		;;  and outside the `with-handlers'
 		port))
 	     ((string=? scheme "file")
 	      (file://get-pure-port url))
@@ -213,13 +217,13 @@
       (define get-pure-port
         (case-lambda
          [(url) (get-pure-port url '())]
-         [(url strings) (getpost-pure-port #t url strings)]))
+         [(url strings) (getpost-pure-port #t url #f strings)]))
 
       ;; post-pure-port : url [x list (str)] -> in-port
       (define post-pure-port
         (case-lambda
-         [(url) (post-pure-port url '())]
-         [(url strings) (getpost-pure-port #f url strings)]))
+         [(url post-data) (post-pure-port url '())]
+         [(url post-data strings) (getpost-pure-port #f url post-data strings)]))
 
       ;; display-pure-port : in-port -> ()
       (define display-pure-port

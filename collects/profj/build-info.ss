@@ -248,10 +248,12 @@
     (let ((class-path (get-classpath)))
       (cond
         ((null? path) (list (build-path 'same)))
-        ((and (scheme-ok?) (equal? (car path) "scheme")) 
-         (if (not (equal? (cadr path) "libs"))
-             (find-directory (cddr path) fail)
-             path))
+        ((and (scheme-ok?) (equal? (car path) "scheme"))
+         (cond
+           ((not (equal? (cadr path) "lib")) (cons "scheme" (find-directory (cdr path) fail)))
+           ((and (equal? (cadr path) "lib") (not (null? (cddr path))))
+            (list "scheme" (apply collection-path (cddr path))))
+           (else (error 'temp-error ""))))
         (else
          (let loop ((paths class-path))
            (cond
@@ -263,10 +265,14 @@
 
   ;get-class-list: (list string) -> (list string)
   (define (get-class-list dir)
-    (filter (lambda (c-name) (not (equal? c-name "")))
-            (map (lambda (fn) (substring fn 0 (- (string-length fn) 5)))
-                 (filter (lambda (f) (equal? (filename-extension f) "java"))
-                         (directory-list (apply build-path dir))))))
+    (if (and (scheme-ok?) (equal? (car dir) "scheme"))
+        (filter (lambda (f) (or (equal? (filename-extension f) ".ss")
+                                (equal? (filename-extension f) ".scm")))
+                (directory-list (cadr dir)))
+        (filter (lambda (c-name) (not (equal? c-name "")))
+                (map (lambda (fn) (substring fn 0 (- (string-length fn) 5)))
+                     (filter (lambda (f) (equal? (filename-extension f) "java"))
+                             (directory-list (apply build-path dir)))))))
   
   ;load-lang: type-records -> void (adds lang to type-recs)
   (define (load-lang type-recs)

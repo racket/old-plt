@@ -95,10 +95,11 @@ void scheme_dont_gc_ptr(void *p)
 
   for (; i < dgc_size; i++) {
     naya[i] = NULL;
-    dgc_count[i] = 0;
+    nayac[i] = 0;
   }
 
   dgc_array = naya;
+  dgc_count = nayac;
 
   dgc_array[oldsize] = p;
   dgc_count[oldsize] = 1;

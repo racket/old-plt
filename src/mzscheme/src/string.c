@@ -226,7 +226,7 @@ scheme_init_string (Scheme_Env *env)
   scheme_add_global_constant("substring", 
 			     scheme_make_prim_w_arity(substring,
 						      "substring", 
-						      3, 3),
+						      2, 3),
 			     env);
   scheme_add_global_constant("string-append", 
 			     scheme_make_prim_w_arity(string_append,
@@ -492,7 +492,7 @@ long scheme_extract_index(const char *name, int pos, int argc, Scheme_Object **a
 
   if (!is_top && (i < 0))
     scheme_wrong_type(name, 
-		      (false_ok ? "non-negative exact integer" : "non-negative exact integer or #f"), 
+		      (false_ok ? "non-negative exact integer or #f" : "non-negative exact integer"), 
 		      pos, argc, argv);
   
   return i;

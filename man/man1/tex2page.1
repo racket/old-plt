@@ -129,7 +129,7 @@
 .\" ========================================================================
 .\"
 .IX Title "TEX2PAGE 1"
-.TH TEX2PAGE 1 "2003-08-16" "" ""
+.TH TEX2PAGE 1 "2003-08-17" "" ""
 .SH "NAME"
 TeX2page \- converts TeX documents to Web pages 
 .SH "SYNOPSIS"
@@ -253,16 +253,21 @@ requires a different argument style, use \s-1TEXEDIT\s0.
 .IX Item "<jobname>.hdir, .tex2page.hdir, ~/.tex2page.hdir"
 By default, tex2page generates its output \s-1HTML\s0 files in
 the current directory.  You can specify a different
-directory by naming it in the file <jobname>.hdir
-(where <jobname> is the basename of the input
-document) in the current directory, the file
-\&.tex2page.hdir in the current directory, or the file
-\&.tex2page.hdir in your home directory.  The first of
-these files that exists is considered.
+directory by naming it in one of the following files:
+.Sp
+.Vb 3
+\&  <jobname>.hdir in the current directory,
+\&  .tex2page.hdir in the current directory, or
+\&  .tex2page.hdir in your home directory,
+.Ve
+.Sp
+where <jobname> is the basename of the input document.
+The first of these three files that exists overrides 
+the rest.
 .Sp
 The name in the .hdir file can be, or contain, the TeX
 control-sequence \ejobname, which expands to
-<jobname>, the basename of the input file.
+<jobname>, the basename of the input document.
 .IP "<jobname>.t2p" 4
 .IX Item "<jobname>.t2p"
 Before processing a TeX source file whose basename is

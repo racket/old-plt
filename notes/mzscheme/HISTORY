@@ -12,7 +12,7 @@ Fixed unfairness in threads (perpetually creating threads
  would cause certain threads, particularly the main thread,
  to never get any time)
 Added current-memory-use
-Asynchronous breaks are now disabled during dyamic-wind
+Asynchronous breaks are now disabled during dynamic-wind
  pre and post thunks
 Removed user-break-poll-handler; spawn a thread that sleeps and
  calls break-thread instead
@@ -23,6 +23,10 @@ Renamed call-with-escaping-continution procedure to
 Cut down the exn hierarchy to about 1/4 of its previous size,
  which minor renaming on the remainder; see the manual for
  details
+Added raise-mismatch-error
+MacOS: getenv and putenv work within MzScheme; in a file called
+ "Environment" resides in MzScheme's folder, it provides the
+ initial environment
 MzLib cleanup:
  Removed `@' suffix for embedded units in mzlib:core@ and mzlib@
  Removed all c.ss libraries, plus constan[t].ss

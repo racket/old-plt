@@ -194,35 +194,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   panel->AttachWidget (this, formWidget, x, y, width, height);
   ChangeColour ();
 
-  /* After creating widgets, no more resizes. */
-  if (style & wxFIXED_LENGTH)
-    {
-      XtVaSetValues (formWidget,
-		     XmNpacking, XmPACK_NONE,
-		     NULL);
-
-      if (labelWidget)
-	{
-/**
-Doesn't seem to work... Bad boy, Motif!!
-      if (labelPosition==wxHORIZONTAL)
-      {
-      Position y_label;
-      Dimension h_label,h_option ;
-        XtVaGetValues(labelWidget,XmNy,&y_label,XmNheight,&h_label,NULL) ;
-        XtVaGetValues(buttonWidget,XmNheight,&h_option,NULL) ;
-        XtVaSetValues(labelWidget,XmNy,y_label+(h_option-h_label)/2,NULL) ;
-      }
-**/
-	  XmString text = XmStringCreateSimple (Title);
-	  XtVaSetValues (labelWidget,
-			 XmNlabelString, text,
-			 NULL);
-	  XmStringFree (text);
-	}
-    }
-
-    XtVaSetValues(formWidget, XmNresizePolicy, XmRESIZE_NONE, NULL);
+  XtVaSetValues(formWidget, XmNresizePolicy, XmRESIZE_NONE, NULL);
 
   Callback (func);
 

@@ -26,6 +26,7 @@
 #include <Xm/Scale.h>
 #endif
 
+#define LABEL_OFFSET_PIXELS 4
 
 // Slider
 
@@ -76,7 +77,7 @@ Create (wxPanel * panel, wxFunction func, char *label, int value,
 
   formWidget = XtVaCreateManagedWidget (windowName,
 					xmRowColumnWidgetClass, panelForm,
-					XmNorientation, XmHORIZONTAL,
+					XmNorientation, panel->label_position == wxHORIZONTAL ? XmHORIZONTAL : XmVERTICAL,
 					XmNmarginHeight, 0,
 					XmNmarginWidth, 0,
 					NULL);
@@ -121,7 +122,7 @@ Create (wxPanel * panel, wxFunction func, char *label, int value,
 						 XmNmaximum, max_value,
 						 XmNminimum, min_value,
 						 XmNvalue, value,
-						 XmNshowValue, True,
+						 XmNshowValue, (style & (wxHORIZONTAL << 2)) ? False : True,
 						 NULL);
 
   if (buttonFont)
@@ -141,21 +142,6 @@ Create (wxPanel * panel, wxFunction func, char *label, int value,
   
   ChangeColour ();
 
-  /* After creating widgets, no more resizes. */
-  if (style & wxFIXED_LENGTH) {
-    XtVaSetValues (formWidget,
-		   XmNpacking, XmPACK_NONE,
-		   NULL);
-    
-    if (labelWidget) {
-      XmString text = XmStringCreateSimple (label);
-      XtVaSetValues (labelWidget,
-		     XmNlabelString, text,
-		       NULL);
-      XmStringFree (text);
-    }
-  }
-  
   Callback (func);
 
   wxWidgetHashTable->Put((long)sliderWidget, this);
@@ -267,18 +253,18 @@ void wxSlider::SetSize (int x, int y, int width, int height, int /* sizeFlags */
   if (((windowStyle & wxHORIZONTAL) == wxHORIZONTAL) && width > -1)
   {
     Dimension labelWidth = 0;
-    if (labelWidget)
+    if (labelWidget && (labelPosition == wxHORIZONTAL))
       XtVaGetValues (labelWidget, XmNwidth, &labelWidth, NULL);
 
-    /* Why -3? I have no idea. */
+    /* -3: why? */
     XtVaSetValues (sliderWidget, XmNwidth /* XmNscaleWidth */, max ((width - labelWidth) - 3, 10), NULL);
   }
 
   if (((windowStyle & wxVERTICAL) == wxVERTICAL) && height > -1)
   {
     Dimension labelHeight = 0;
-//    if (labelWidget)
-//      XtVaGetValues (labelWidget, XmNheight, &labelHeight, NULL);
+    if (labelWidget && (labelPosition == wxVERTICAL))
+      XtVaGetValues (labelWidget, XmNheight, &labelHeight, NULL);
 
     XtVaSetValues (sliderWidget, XmNheight /* XmNscaleHeight */, max ((height - labelHeight), 10), NULL);
   }

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Slider.cc,v 1.4 1998/08/15 15:05:48 mflatt Exp $
+ * $Id: Slider.cc,v 1.5 1998/09/06 01:54:03 mflatt Exp $
  *
  * Purpose: slider panel item
  *
@@ -85,10 +85,17 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label,
 	 XtNshrinkToFit, TRUE,
 	 NULL);
     // compute sizes of the slider widget
-    float swidth, sheight; char tempstring[80];
-    sprintf(tempstring, "-%d", max(abs(max_value), abs(min_value)));
-    GetTextExtent(tempstring, &swidth, &sheight);
-    swidth += 8; sheight += 8; // shadows and margin
+    float swidth, sheight; 
+    if (style & (wxHORIZONTAL << 2)) {
+      swidth = sheight = 20;
+    } else {
+      char tempstring[80];
+      sprintf(tempstring, "-%d", max(abs(max_value), abs(min_value)));
+      GetTextExtent(tempstring, &swidth, &sheight);
+      swidth += 8; sheight += 8; // shadows and margin
+    }
+    if (length <= 0)
+      length = 100;
     // create the slider widget
     X->handle = XtVaCreateManagedWidget
 	("slider", xfwfSlider2WidgetClass, X->frame,
@@ -121,19 +128,27 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label,
 
 void wxSlider::OnSize(int width, int height)
 {
-  float swidth, sheight; char tempstring[80];
-  Dimension length;
-  sprintf(tempstring, "-%d", max(abs(maximum), abs(minimum)));
-  GetTextExtent(tempstring, &swidth, &sheight);
-  swidth += 8; sheight += 8; // shadows and margin
-  if (style & wxVERTICAL) {
-    XtVaGetValues(X->handle, XtNheight, &length, NULL);
-    if (length > height) length = height;
-    XfwfResizeThumb(X->handle, 1.0, min(0.9,sheight/length));
+  if (style & (wxHORIZONTAL << 2)) {
+    if (style & wxVERTICAL) {
+      XfwfResizeThumb(X->handle, 1.0, 0.2);
+    } else {
+      XfwfResizeThumb(X->handle, 0.2, 1.0);
+    }
   } else {
-    XtVaGetValues(X->handle, XtNwidth, &length, NULL);
-    if (length > width) length = width;
-    XfwfResizeThumb(X->handle, min(0.9, swidth/length), 1.0);
+    float swidth, sheight; char tempstring[80];
+    Dimension length;
+    sprintf(tempstring, "-%d", max(abs(maximum), abs(minimum)));
+    GetTextExtent(tempstring, &swidth, &sheight);
+    swidth += 8; sheight += 8; // shadows and margin
+    if (style & wxVERTICAL) {
+      XtVaGetValues(X->handle, XtNheight, &length, NULL);
+      if (length > height) length = height;
+      XfwfResizeThumb(X->handle, 1.0, min(0.9,sheight/length));
+    } else {
+      XtVaGetValues(X->handle, XtNwidth, &length, NULL);
+      if (length > width) length = width;
+      XfwfResizeThumb(X->handle, min(0.9, swidth/length), 1.0);
+    }
   }
 
   wxItem::OnSize(width, height);
@@ -146,16 +161,18 @@ void wxSlider::OnSize(int width, int height)
 void wxSlider::SetValue(int new_value)
 {
     if (minimum <= new_value && new_value <= maximum) {
-	value = new_value;
+      value = new_value;
+      if (!(style & (wxHORIZONTAL << 2))) {
 	char tempstring[80];
 	sprintf(tempstring, "%d", value);
 	XtVaSetValues(X->handle, XtNlabel, tempstring, NULL);
-	if (style & wxVERTICAL)
-	    XfwfMoveThumb(X->handle,
-			  0.0, float(value-minimum)/float(maximum-minimum));
-	else
-	    XfwfMoveThumb(X->handle,
-			  float(value-minimum)/float(maximum-minimum), 0.0);
+      }
+      if (style & wxVERTICAL)
+	XfwfMoveThumb(X->handle,
+		      0.0, float(value-minimum)/float(maximum-minimum));
+      else
+	XfwfMoveThumb(X->handle,
+		      float(value-minimum)/float(maximum-minimum), 0.0);
     }
 }
 
@@ -194,9 +211,11 @@ void wxSlider::EventCallback(Widget WXUNUSED(w),
     if (process && new_value != slider->value) {
 	// set and display new value
 	slider->value = new_value;
-	char tempstring[80];
-	sprintf(tempstring, "%d", new_value);
-	XtVaSetValues(slider->X->handle, XtNlabel, tempstring, NULL);
+	if (!(slider->style & (wxHORIZONTAL << 2))) {
+	  char tempstring[80];
+	  sprintf(tempstring, "%d", new_value);
+	  XtVaSetValues(slider->X->handle, XtNlabel, tempstring, NULL);
+	}
 	// process event
 	wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_SLIDER_COMMAND);
 	slider->ProcessCommand(*event);

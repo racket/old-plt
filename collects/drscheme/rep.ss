@@ -833,8 +833,7 @@
               (add-text text))
             
             (when prompt-mode?
-              (insert (string #\newline) (last-position) (last-position) #f)
-              (set-prompt-mode #f))
+              (insert (string #\newline) (last-position) (last-position) #f))
             
             (let* ([start (send text last-position)]
                    [c-locked? (send text locked?)])
@@ -850,6 +849,9 @@
               (let ([end (send text last-position)])
                 (style-func start end)
                 (send text set-prompt-position end))
+
+	      (set-prompt-mode #f)
+
               (send text lock c-locked?)
               (send text end-edit-sequence))))
         
@@ -1575,7 +1577,6 @@
 	    
 	    (current-load drscheme:load-handler:drscheme-load-handler)
 	    
-	    
 	    (basis:error-display/debug-handler
 	     (lambda (msg zodiacs exn)
 	       (queue-system-callback/sync
@@ -1717,7 +1718,6 @@
               (set-clickback before after 
                              (lambda args (drscheme:app:about-drscheme))
                              click-delta))
-            
             (reset-console)
 	    (insert-prompt)
 	    (clear-undos)))
@@ -2071,16 +2071,16 @@
                          (delete start last)
                          (do-save-and-eval prompt-position start)))]
                   [(< start prompt-position)
-                   (let ([match
-                             (fw:scheme-paren:backward-match
-                              this start 0)])
+                   (let ([match (fw:scheme-paren:backward-match
+				 this start 0)])
                      (if match
                          (begin
                            (begin-edit-sequence)
                            (copy-to-end/set-position match start)
                            (end-edit-sequence))
                          (super-on-local-char key)))]
-                  [else (super-on-local-char key)]))))
+                  [else
+		   (super-on-local-char key)]))))
           
           (define inserting-prompt #f)
           (define insert-prompt
@@ -2089,11 +2089,13 @@
               (fluid-let ([inserting-prompt #t])
                 (begin-edit-sequence)
                 (let* ([last (last-position)]
+		       [c-locked? (locked?)]
                        [start-selection (get-start-position)]
                        [end-selection (get-end-position)]
                        [last-str (if (= last 0)
                                      ""
                                      (get-text (- last 1) last))])
+		  (lock #f)
                   (unless (or (string=? last-str newline-string)
                               (= last 0))
                     (insert #\newline last))
@@ -2102,6 +2104,7 @@
                     (change-style normal-delta last (last-position)))
                   (set! prompt-position (last-position))
                   ;(clear-undos)
+		  (lock c-locked?)
                   (end-edit-sequence)
                   (scroll-to-position start-selection #f (last-position) 'start)))))
           (define reset-console

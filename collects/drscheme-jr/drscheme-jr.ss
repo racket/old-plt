@@ -61,6 +61,8 @@
     (define initialize-userspace void)
     (define run-in-new-user-thread thread)
     
+    (define (load-and-repl-done) (void))
+
     (define setting (basis:get-default-setting))
 
     (define omit-languages '("MzScheme"))

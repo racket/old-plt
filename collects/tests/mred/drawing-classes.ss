@@ -25,12 +25,12 @@
      (list  color%-example-list integer-example-list)
      (list  string-example-list integer-example-list))
   (list 'get-color  color%-example-list)
-  (list 'get-stipple  (optional bitmap%-example-list))
+  (list 'get-stipple  (optional #f bitmap%-example-list))
   (list 'get-style  integer-example-list)
   (list 'set-color  void-example-list color%-example-list)
   (list 'set-color  void-example-list string-example-list)
   (list 'set-color  void-example-list integer-example-list integer-example-list integer-example-list)
-  (list 'set-stipple  void-example-list (optional bitmap%-example-list))
+  (list 'set-stipple  void-example-list (optional #f bitmap%-example-list))
   (list 'set-style  void-example-list integer-example-list)))
 
 (hash-table-put! classinfo brush-list%
@@ -38,7 +38,7 @@
   (list
      (list ))
   (list 'find-or-create-brush  brush%-example-list color%-example-list integer-example-list)
-  (list 'find-or-create-brush  (optional brush%-example-list) string-example-list integer-example-list)))
+  (list 'find-or-create-brush  (optional #f brush%-example-list) string-example-list integer-example-list)))
 
 (hash-table-put! classinfo canvas-dc%
  (list canvas-dc%-example-list 'canvas-dc%
@@ -82,9 +82,9 @@
   (list 'get-pixel  boolean-example-list real-example-list real-example-list color%-example-list)
   (list 'get-size  void-example-list (boxed real-example-list) (boxed real-example-list))
   (list 'get-text-background  color%-example-list)
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)) (optional (boxed real-example-list)) (optional font%-example-list))
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)) (optional (boxed real-example-list)))
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)) (optional #f (boxed real-example-list)) (optional #f font%-example-list))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)) (optional #f (boxed real-example-list)))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)))
   (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list))
   (list 'get-text-foreground  color%-example-list)
   (list 'ok?  boolean-example-list)
@@ -120,8 +120,8 @@
  (list color-database%-example-list 'color-database%
   (list)
   (list 'append  void-example-list string-example-list color%-example-list)
-  (list 'find-color  (optional color%-example-list) string-example-list)
-  (list 'find-name  (optional string-example-list) color%-example-list)))
+  (list 'find-color  (optional #f color%-example-list) string-example-list)
+  (list 'find-name  (optional #f string-example-list) color%-example-list)))
 
 (hash-table-put! classinfo dc<%>
  (list dc<%>-example-list 'dc<%>
@@ -162,9 +162,9 @@
   (list 'get-pen  pen%-example-list)
   (list 'get-size  void-example-list (boxed real-example-list) (boxed real-example-list))
   (list 'get-text-background  color%-example-list)
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)) (optional (boxed real-example-list)) (optional font%-example-list))
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)) (optional (boxed real-example-list)))
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)) (optional #f (boxed real-example-list)) (optional #f font%-example-list))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)) (optional #f (boxed real-example-list)))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)))
   (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list))
   (list 'get-text-foreground  color%-example-list)
   (list 'ok?  boolean-example-list)
@@ -191,7 +191,7 @@
      (list  integer-example-list symbol-example-list symbol-example-list symbol-example-list)
      (list  integer-example-list string-example-list symbol-example-list symbol-example-list symbol-example-list boolean-example-list)
      (list  integer-example-list string-example-list symbol-example-list symbol-example-list symbol-example-list))
-  (list 'get-face  (optional string-example-list))
+  (list 'get-face  (optional #f string-example-list))
   (list 'get-family  symbol-example-list)
   (list 'get-font-id  integer-example-list)
   (list 'get-point-size  integer-example-list)
@@ -208,18 +208,18 @@
   (list 'find-or-create-font  void-example-list integer-example-list string-example-list symbol-example-list symbol-example-list symbol-example-list boolean-example-list)
   (list 'find-or-create-font  void-example-list integer-example-list string-example-list symbol-example-list symbol-example-list symbol-example-list)))
 
-(hash-table-put! classinfo font-name-directory%
- (list font-name-directory%-example-list 'font-name-directory%
+(hash-table-put! classinfo font-name-directory<%>
+ (list font-name-directory<%>-example-list 'font-name-directory<%>
   (list)
   (list 'find-family-default-font-id  integer-example-list symbol-example-list)
   (list 'find-or-create-font-id  integer-example-list string-example-list symbol-example-list)
-  (list 'get-afm-name  (optional string-example-list) integer-example-list symbol-example-list symbol-example-list)
-  (list 'get-face-name  (optional string-example-list) integer-example-list)
+  (list 'get-afm-name  (optional #f string-example-list) integer-example-list symbol-example-list symbol-example-list)
+  (list 'get-face-name  (optional #f string-example-list) integer-example-list)
   (list 'get-family  symbol-example-list integer-example-list)
   (list 'get-font-id  integer-example-list string-example-list)
   (list 'get-new-font-id  integer-example-list)
-  (list 'get-post-script-name  (optional string-example-list) integer-example-list symbol-example-list symbol-example-list)
-  (list 'get-screen-name  (optional string-example-list) integer-example-list symbol-example-list symbol-example-list)
+  (list 'get-post-script-name  (optional #f string-example-list) integer-example-list symbol-example-list symbol-example-list)
+  (list 'get-screen-name  (optional #f string-example-list) integer-example-list symbol-example-list symbol-example-list)
   (list 'initialize  void-example-list integer-example-list symbol-example-list string-example-list)))
 
 (hash-table-put! classinfo icon%
@@ -277,13 +277,13 @@
   (list 'get-pixel  boolean-example-list real-example-list real-example-list color%-example-list)
   (list 'get-size  void-example-list (boxed real-example-list) (boxed real-example-list))
   (list 'get-text-background  color%-example-list)
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)) (optional (boxed real-example-list)) (optional font%-example-list))
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)) (optional (boxed real-example-list)))
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)) (optional #f (boxed real-example-list)) (optional #f font%-example-list))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)) (optional #f (boxed real-example-list)))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)))
   (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list))
   (list 'get-text-foreground  color%-example-list)
   (list 'ok?  boolean-example-list)
-  (list 'select-object  void-example-list (optional bitmap%-example-list))
+  (list 'select-object  void-example-list (optional #f bitmap%-example-list))
   (list 'set-background  void-example-list brush%-example-list)
   (list 'set-background-mode  void-example-list symbol-example-list)
   (list 'set-brush  void-example-list brush%-example-list)
@@ -351,9 +351,9 @@
   (list 'get-pen  pen%-example-list)
   (list 'get-size  void-example-list (boxed real-example-list) (boxed real-example-list))
   (list 'get-text-background  color%-example-list)
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)) (optional (boxed real-example-list)) (optional font%-example-list))
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)) (optional (boxed real-example-list)))
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)) (optional #f (boxed real-example-list)) (optional #f font%-example-list))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)) (optional #f (boxed real-example-list)))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)))
   (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list))
   (list 'get-text-foreground  color%-example-list)
   (list 'ok?  boolean-example-list)
@@ -381,7 +381,7 @@
   (list 'get-cap  integer-example-list)
   (list 'get-color  color%-example-list)
   (list 'get-join  integer-example-list)
-  (list 'get-stipple  (optional bitmap%-example-list))
+  (list 'get-stipple  (optional #f bitmap%-example-list))
   (list 'get-style  integer-example-list)
   (list 'get-width  integer-example-list)
   (list 'set-cap  void-example-list integer-example-list)
@@ -389,7 +389,7 @@
   (list 'set-color  void-example-list string-example-list)
   (list 'set-color  void-example-list 0-to-255-example-list 0-to-255-example-list 0-to-255-example-list)
   (list 'set-join  void-example-list integer-example-list)
-  (list 'set-stipple  void-example-list (optional bitmap%-example-list))
+  (list 'set-stipple  void-example-list (optional #f bitmap%-example-list))
   (list 'set-style  void-example-list integer-example-list)
   (list 'set-width  void-example-list integer-example-list)))
 
@@ -398,7 +398,7 @@
   (list
      (list ))
   (list 'find-or-create-pen  pen%-example-list color%-example-list integer-example-list integer-example-list)
-  (list 'find-or-create-pen  (optional pen%-example-list) string-example-list integer-example-list integer-example-list)))
+  (list 'find-or-create-pen  (optional #f pen%-example-list) string-example-list integer-example-list integer-example-list)))
 
 (hash-table-put! classinfo point%
  (list point%-example-list 'point%
@@ -413,7 +413,7 @@
 (hash-table-put! classinfo post-script-dc%
  (list post-script-dc%-example-list 'post-script-dc%
   (list
-     (list  string-example-list boolean-example-list (optional (choice frame%-example-list dialog%-example-list)))
+     (list  string-example-list boolean-example-list (optional #f (choice frame%-example-list dialog%-example-list)))
      (list  string-example-list boolean-example-list)
      (list  string-example-list))
   (list 'begin-drawing  void-example-list)
@@ -452,9 +452,9 @@
   (list 'get-pen  pen%-example-list)
   (list 'get-size  void-example-list (boxed real-example-list) (boxed real-example-list))
   (list 'get-text-background  color%-example-list)
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)) (optional (boxed real-example-list)) (optional font%-example-list))
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)) (optional (boxed real-example-list)))
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)) (optional #f (boxed real-example-list)) (optional #f font%-example-list))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)) (optional #f (boxed real-example-list)))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)))
   (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list))
   (list 'get-text-foreground  color%-example-list)
   (list 'ok?  boolean-example-list)
@@ -476,8 +476,8 @@
 (hash-table-put! classinfo printer-dc%
  (list printer-dc%-example-list 'printer-dc%
   (list
-     (list  (optional string-example-list) (optional string-example-list) (optional string-example-list) boolean-example-list)
-     (list  (optional string-example-list) (optional string-example-list) (optional string-example-list)))
+     (list  (optional #f string-example-list) (optional #f string-example-list) (optional #f string-example-list) boolean-example-list)
+     (list  (optional #f string-example-list) (optional #f string-example-list) (optional #f string-example-list)))
   (list 'begin-drawing  void-example-list)
   (list 'blit  boolean-example-list real-example-list real-example-list real-example-list real-example-list canvas-dc%-example-list real-example-list real-example-list integer-example-list)
   (list 'blit  boolean-example-list real-example-list real-example-list real-example-list real-example-list canvas-dc%-example-list real-example-list real-example-list)
@@ -514,9 +514,9 @@
   (list 'get-pen  pen%-example-list)
   (list 'get-size  void-example-list (boxed real-example-list) (boxed real-example-list))
   (list 'get-text-background  color%-example-list)
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)) (optional (boxed real-example-list)) (optional font%-example-list))
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)) (optional (boxed real-example-list)))
-  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional (boxed real-example-list)))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)) (optional #f (boxed real-example-list)) (optional #f font%-example-list))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)) (optional #f (boxed real-example-list)))
+  (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list) (optional #f (boxed real-example-list)))
   (list 'get-text-extent  void-example-list string-example-list (boxed real-example-list) (boxed real-example-list))
   (list 'get-text-foreground  color%-example-list)
   (list 'ok?  boolean-example-list)
@@ -539,7 +539,7 @@
  (list ps-setup%-example-list 'ps-setup%
   (list)
   (list 'copy-from  void-example-list ps-setup%-example-list)
-  (list 'get-afm-path  (optional string-example-list))
+  (list 'get-afm-path  (optional #f string-example-list))
   (list 'get-command  string-example-list)
   (list 'get-file  string-example-list)
   (list 'get-level-2  boolean-example-list)
@@ -550,7 +550,7 @@
   (list 'get-preview-command  string-example-list)
   (list 'get-scaling  void-example-list (boxed real-example-list) (boxed real-example-list))
   (list 'get-translation  void-example-list (boxed real-example-list) (boxed real-example-list))
-  (list 'set-afm-path  void-example-list (optional string-example-list))
+  (list 'set-afm-path  void-example-list (optional #f string-example-list))
   (list 'set-command  void-example-list string-example-list)
   (list 'set-file  void-example-list string-example-list)
   (list 'set-level-2  void-example-list boolean-example-list)
@@ -579,4 +579,9 @@
   (list 'register-collecting-blit  void-example-list canvas%-example-list real-example-list real-example-list real-example-list real-example-list memory-dc%-example-list memory-dc%-example-list real-example-list real-example-list)
   (list 'register-collecting-blit  void-example-list canvas%-example-list real-example-list real-example-list real-example-list real-example-list memory-dc%-example-list memory-dc%-example-list real-example-list)
   (list 'register-collecting-blit  void-example-list canvas%-example-list real-example-list real-example-list real-example-list real-example-list memory-dc%-example-list memory-dc%-example-list)
+  'the-brush-list
+  'the-color-database
+  'the-font-list
+  'the-font-name-directory
+  'the-pen-list
   (list 'unregister-collecting-blit  void-example-list canvas%-example-list)))

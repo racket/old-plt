@@ -71,20 +71,20 @@
 	      (box ex))))])))
 
 (define optional-example-list%
-  (class () (parent)
+  (class () (parent val)
     (public
      [name `(optional ,(ivar parent name))]
      [all-examples
       (lambda ()
 	(let ([l (map box (send parent all-examples))])
-	  (cons #f l)))]
+	  (cons val l)))]
      [add
       (lambda (x)
 	(and x (send parent add x)))]
      [choose-example
       (opt-lambda ([which #f])
 	(if (zero? (random 2))
-	    #f
+	    val
 	    (send parent choose-example)))])))
 
 (define choose-example-list%
@@ -247,7 +247,7 @@
   pen-list%
   brush-list%
   color-database%
-  font-name-directory%
+  font-name-directory<%>
 
   color-map%
   cursor%
@@ -341,7 +341,7 @@
   editor-stream-in%
   editor-stream-out%
   
-  clipboard%
+  clipboard<%>
   clipboard-client%)
 
 (send bitmap%-example-list set-filter (lambda (bm) (send bm ok?)))
@@ -456,7 +456,7 @@
 
 (define unknown-example-list (make-object unknown-example-list%))
 
-(define (optional l) (make-object optional-example-list% l))
+(define (optional v l) (make-object optional-example-list% l v))
 (define (boxed l) (make-object boxed-example-list% l))
 (define (unknown s) unknown-example-list)
 (define (choice . l) (make-object choose-example-list% l))
@@ -590,14 +590,14 @@
 (hash-table-for-each classinfo 
 		     (lambda (key v)
 		       (let* ([methods (cdddr v)]
-			      [names (map car methods)])
+			      [names (map (lambda (x) (if (pair? x) (car x) x)) methods)])
 			 (if (string? key)
-			     ;; Check global procs
+			     ;; Check global procs/values
 			     (for-each
 			      (lambda (name)
-				(unless (procedure? (with-handlers ([void void])
-						      (global-defined-value name)))
-				  (printf "No such procedure: ~a~n" name))
+				(unless (not (void? (with-handlers ([void void])
+						      (global-defined-value name))))
+				  (printf "No such procedure/value: ~a~n" name))
 				(set! in-top-level (cons name in-top-level)))
 			      names)
 			     ;; Check intf/class methods

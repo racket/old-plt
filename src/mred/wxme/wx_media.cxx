@@ -637,7 +637,6 @@ Bool wxMediaEdit::CanChangeStyle(long WXUNUSED(start), long WXUNUSED(len))
 void wxMediaEdit::OnChangeStyle(long WXUNUSED(start), long WXUNUSED(len))
 {
   /* Do nothing */
-  return TRUE;
 }
 
 void wxMediaEdit::AfterChangeStyle(long WXUNUSED(start), long WXUNUSED(len))

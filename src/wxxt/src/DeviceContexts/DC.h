@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.h,v 1.4 1998/09/20 21:48:46 mflatt Exp $
+ * $Id: DC.h,v 1.5 1998/09/23 00:11:55 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -139,13 +139,13 @@ public:
 	{ auto_setting = set_auto; }
     void BeginDrawing(void)
 	{}
-    float DeviceToLogicalX(int x)
+    virtual float DeviceToLogicalX(int x)
 	{ return XDEV2LOG(x); }
-    float DeviceToLogicalXRel(int x)
+    virtual float DeviceToLogicalXRel(int x)
 	{ return XDEV2LOGREL(x); }
-    float DeviceToLogicalY(int y)
+    virtual float DeviceToLogicalY(int y)
 	{ return YDEV2LOG(y); }
-    float DeviceToLogicalYRel(int y)
+    virtual float DeviceToLogicalYRel(int y)
 	{ return YDEV2LOGREL(y); }
 #if USE_SPLINES
     void  DrawSpline(int n, wxPoint pts[]);
@@ -182,13 +182,13 @@ public:
 	{ return current_text_bg; }
     wxColour& GetTextForeground(void)
 	{ return current_text_fg; }
-    int LogicalToDeviceX(float x)
+    virtual int LogicalToDeviceX(float x)
 	{ return XLOG2DEV(x); }
-    int LogicalToDeviceXRel(float x)
+    virtual int LogicalToDeviceXRel(float x)
 	{ return XLOG2DEVREL(x); }
-    int LogicalToDeviceY(float y)
+    virtual int LogicalToDeviceY(float y)
 	{ return YLOG2DEV(y); }
-    int LogicalToDeviceYRel(float y)
+    virtual int LogicalToDeviceYRel(float y)
 	{ return YLOG2DEVREL(y); }
     float MaxX(void)
 	{ return max_x; }

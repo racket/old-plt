@@ -189,6 +189,7 @@ mark:
 	$(MAKE) $(srcdir)/src/mzmark.c
 
 headers:
+	if [ ! -d $(srcdir)/../../include ] ; then mkdir $(srcdir)/../../include ; fi
 	$(MAKE) $(srcdir)/../../include/scheme.h
 	$(MAKE) $(srcdir)/../../collects/mzscheme/lib/mzdyn.c
 
@@ -257,6 +258,7 @@ clean@OSX@:
 	$(MAKE) clean@NOT_OSX@
 
 install:
+	$(MAKE) headers
 	$(MAKE) @MZINSTALLTARGET@
 
 install-3m-basic:

@@ -12,8 +12,7 @@
 
 ;(require-library "refer.ss")
 
-(begin-elaboration-time
- (require-relative-library "drsig.ss"))
+(require-relative-library "drsig.ss")
 
 (let ([unit (require-relative-library "link.ss")])
   (shutdown-splash)

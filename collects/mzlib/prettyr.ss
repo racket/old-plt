@@ -392,6 +392,7 @@
 						  ((#\linefeed) "linefeed")
 						  ((#\return)   "return")
 						  ((#\rubout)   "rubout")
+						  ((#\backspace)"backspace")
 						  ((#\nul)      "nul")
 						  ((#\page)     "page")
 						  ((#\tab)      "tab")

@@ -713,23 +713,24 @@
 								    (append publics
 									    overrides
 									    inherits)))]
-				       [(field-accessor ...) (generate-temporaries
-							      (map (lambda (id)
-								     (format "get-~a"
-									     (syntax-e id)))
-								   (append inherit-field-names
-									   field-names
-									   private-field-names)))]
-				       [(field-mutator ...) (generate-temporaries
-							     (map (lambda (id)
-								    (format "set-~a!"
-									    (syntax-e id)))
-								  (append inherit-field-names
-									  field-names
-									  private-field-names)))]
-				       [(all-field ...) (append inherit-field-names
-								field-names
-								private-field-names)]
+				       [(inherit-field-accessor ...) (generate-temporaries
+								      (map (lambda (id)
+									     (format "get-~a"
+										     (syntax-e id)))
+									   inherit-field-names))]
+				       [(inherit-field-mutator ...) (generate-temporaries
+								     (map (lambda (id)
+										  (format "set-~a!"
+											  (syntax-e id)))
+									  inherit-field-names))]
+				       [(inherit-field-name ...) inherit-field-names]
+				       [(local-field ...) (append field-names
+								  private-field-names)]
+				       [(local-field-pos ...) (let loop ([pos 0][l (append field-names
+											   private-field-names)])
+								(if (null? l)
+								    null
+								    (cons pos (loop (add1 pos) (cdr l)))))]
 				       [(plain-init-name ...) plain-init-names])
 			   (let ([mappings
 				  ;; make-XXX-map is supplied by private/classidmap.ss
@@ -738,7 +739,8 @@
 						[this-id this-id])
 				    (syntax 
 				     ([(this-id
-					all-field ...
+					inherit-field-name ...
+					local-field ...
 					rename-orig ...
 					method-name ...
 					private-name ...
@@ -749,9 +751,17 @@
 						       (quote the-obj))
 					(make-field-map (quote-syntax the-finder)
 							(quote the-obj)
-							(quote-syntax all-field)
-							(quote-syntax field-accessor)
-							(quote-syntax field-mutator))
+							(quote-syntax inherit-field-name)
+							(quote-syntax inherit-field-accessor)
+							(quote-syntax inherit-field-mutator)
+							'())
+					...
+					(make-field-map (quote-syntax the-finder)
+							(quote the-obj)
+							(quote-syntax local-field)
+							(quote-syntax local-accessor)
+							(quote-syntax local-mutator)
+							'(local-field-pos))
 					...
 					(make-rename-map (quote-syntax the-finder)
 							 (quote the-obj)
@@ -869,10 +879,12 @@
 				     `init-names
 				     (quote init-mode)
 				     ;; Methods (when given needed super-methods, etc.):
-				     (lambda (field-accessor ...  ; inherit, public, private
-							     field-mutator ...
-							     rename-temp ...
-							     method-accessor ...) ; public, override, inherit
+				     (lambda (local-accessor
+					      local-mutator
+					      inherit-field-accessor ...  ; inherit
+					      inherit-field-mutator ...
+					      rename-temp ...
+					      method-accessor ...) ; public, override, inherit
 				       (letrec-syntaxes+values mappings ()
 					 stx-def ...
 					 (letrec ([private-temp private-method]
@@ -1340,39 +1352,19 @@
 		(set-class-struct:object! c struct:object)
 		(set-class-object?! c object?)
 		(set-class-make-object! c tagged-object-make)
-		(set-class-field-ref! c object-field-ref)
-		(set-class-field-set!! c object-field-set!)
+		(unless (null? public-field-names)
+		  ;; We need these only if there are new public fields
+		  (set-class-field-ref! c object-field-ref)
+		  (set-class-field-set!! c object-field-set!))
 
 		;; --- Build field accessors and mutators ---
 		;;  Use public field names to name the accessors and mutators
-		(let-values ([(accessors mutators)
-			      (let ([rev-fields (reverse public-field-names)])
-				(let ([mk
-				       (lambda (mk obj-)
-					 (let loop ([n num-fields]
-						    [l null]
-						    [skip (- num-fields (length public-field-names))]
-						    [field-ids rev-fields])
-					   (if (zero? n)
-					       l
-					       (loop (sub1 n)
-						     (cons (apply
-							    mk obj- (sub1 n)
-							    (if (zero? skip)
-								(list (car field-ids))
-								null))
-							   l)
-						     (max 0 (sub1 skip))
-						     (if (zero? skip)
-							 (cdr field-ids)
-							 field-ids)))))])
-				  (values
-				   (append (map (lambda (id) (make-class-field-accessor super id))
-						inherit-field-names)
-					   (mk make-struct-field-accessor object-field-ref))
-				   (append (map (lambda (id) (make-class-field-mutator super id))
-						inherit-field-names)
-					   (mk make-struct-field-mutator object-field-set!)))))])
+		(let-values ([(inh-accessors inh-mutators)
+			      (values
+			       (map (lambda (id) (make-class-field-accessor super id))
+				    inherit-field-names)
+			       (map (lambda (id) (make-class-field-mutator super id))
+				    inherit-field-names))])
 		  ;; -- Reset field table to register accessor and mutator info --
 		  ;;  There are more accessors and mutators than public fields...
 		  (let loop ([ids public-field-names][pos 0])
@@ -1395,8 +1387,10 @@
 		      ;; -- Get new methods and initializers --
 		      (let-values ([(new-methods override-methods init)
 				    (apply make-methods
-					   (append accessors
-						   mutators
+					   object-field-ref
+					   object-field-set!
+					   (append inh-accessors
+						   inh-mutators
 						   renames
 						   method-accessors))])
 			;; -- Fill in method tables --

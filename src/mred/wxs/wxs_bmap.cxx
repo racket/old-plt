@@ -140,7 +140,7 @@ static int unbundle_symset_saveBitmapType(Scheme_Object *v, const char *where) {
 
 static Bool IsColor(wxBitmap *bm)
 {
-  return (bm->GetDepth() == 1);
+  return (bm->GetDepth() != 1);
 }
 
 

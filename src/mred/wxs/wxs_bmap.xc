@@ -18,7 +18,7 @@
 
 static Bool IsColor(wxBitmap *bm)
 {
-  return (bm->GetDepth() == 1);
+  return (bm->GetDepth() != 1);
 }
 
 @CLASSBASE wxBitmap "bitmap" : "object"

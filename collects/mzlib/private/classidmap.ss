@@ -40,7 +40,7 @@
 	     stx)]
 	   [id (find the-finder the-obj stx)])))))
 
-  (define (make-field-map the-finder the-obj the-binder field-accessor field-mutator)
+  (define (make-field-map the-finder the-obj the-binder field-accessor field-mutator field-pos/null)
     (let ([set!-stx (datum->syntax-object the-finder 'set!)])
       (make-set!-transformer
        (lambda (stx)
@@ -51,21 +51,21 @@
 	     the-binder (syntax id)
 	     (datum->syntax-object 
 	      the-finder
-	      (list field-mutator (find the-finder the-obj stx) (syntax expr))
+	      (list* field-mutator (find the-finder the-obj stx) (append field-pos/null (list (syntax expr))))
 	      stx))]
 	   [(id . args)
 	    (binding
 	     the-binder (syntax id)
 	     (datum->syntax-object 
 	      the-finder
-	      (cons (list field-accessor (find the-finder the-obj stx)) (syntax args))
+	      (cons (list* field-accessor (find the-finder the-obj stx) field-pos/null) (syntax args))
 	      stx))]
 	   [_else
 	    (binding
 	     the-binder stx
 	     (datum->syntax-object 
 	      the-finder
-	      (list field-accessor (find the-finder the-obj stx))
+	      (list* field-accessor (find the-finder the-obj stx) field-pos/null)
 	      stx))])))))
 
   (define (make-method-map the-finder the-obj the-binder method-accessor)

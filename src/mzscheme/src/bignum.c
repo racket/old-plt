@@ -609,17 +609,24 @@ Scheme_Object *scheme_bignum_multiply(const Scheme_Object *a, const Scheme_Objec
 static Scheme_Object *do_power(const Scheme_Object *a, unsigned long b)
 {
   Scheme_Object *result;
+  int i;
 
-  if (b == 0) {
-    return scheme_make_integer(1);
-  } else {
-    result = do_power(a, b >> 1);
-    result = scheme_bin_mult(result, result);
-    if (b & 0x1)  /* odd? */
-      return scheme_bin_mult(a, result);
-    else
-      return result;
+  result = scheme_make_integer(1);
+
+  i = sizeof(unsigned long) * 8- 1;
+  while (!((b >> i) & 0x1) && i >= 0)
+  {
+    i = i - 1;
   }
+  
+  while (i >= 0)
+  {
+    result = scheme_bin_mult(result, result);
+    if ((b >> i) & 0x1)
+      result = scheme_bin_mult(a, result);
+    i = i - 1;
+  }
+  return result;
 }
 
 Scheme_Object *do_big_power(const Scheme_Object *a, const Scheme_Object *b)
@@ -1254,60 +1261,110 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
   }
 }
 
+static unsigned long fixnum_sqrt(unsigned long n, unsigned long *rem)
+{
+  double r = sqrt(n);
+  unsigned long root = r;
+
+  if (rem)
+    *rem = n - root * root;
+  return root;
+}
+
+Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **remainder);
 
 Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n)
 {
+  return scheme_integer_sqrt_rem(n, NULL);
+}
+
+Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **remainder)
+{
   Scheme_Object *o;
-  long n_size, res_alloc;
-  bigdig* res_digs, *sqr_digs;
+  int rem_size;
+
   SAFE_SPACE(qsd)
 
   if (SCHEME_INTP(n)) {
-    long t = SCHEME_INT_VAL(n);
-    if (t == 0)
-      return scheme_make_integer(0);
-    n_size = 1;
-    sqr_digs = allocate_bigdig_array(1);
-    sqr_digs[0] = t;
+    unsigned long root, rem;
+    root = fixnum_sqrt(SCHEME_INT_VAL(n), &rem);
+    if (remainder)
+      *((Scheme_Object**)remainder) = scheme_make_integer_value(rem);
+    rem_size = (rem == 0 ? 0 : 1);
+    o = scheme_make_integer(root);
   } else {
+    long n_size, res_alloc, rem_alloc;
+    bigdig *res_digs, *rem_digs, *sqr_digs;
+
     n_size = SCHEME_BIGLEN(n);
     if (n_size == 0)
       return scheme_make_integer(0);
     sqr_digs = SCHEME_BIGDIG_SAFE(n, qsd);
+    
+    if (n_size & 0x1)
+      res_alloc = (n_size + 1) >> 1;
+    else
+      res_alloc = n_size >> 1;
+    
+    res_digs = PROTECT_RESULT(res_alloc);
+    
+    if (remainder)
+    {
+      rem_alloc = n_size;
+      rem_digs = PROTECT_RESULT(rem_alloc);
+    }
+    else
+    {
+      rem_alloc = 0;
+      rem_digs = NULL;
+    }
+    
+    PROTECT(sqr_digs, n_size);  
+    
+    
+    rem_size = mpn_sqrtrem(res_digs, rem_digs, sqr_digs, n_size);
+    
+    if (remainder || rem_size == 0) {
+      /* An integer result */
+      RELEASE(sqr_digs);
+      FINISH_RESULT(res_digs, res_alloc);
+      
+      if (remainder && rem_size == 0)
+	*remainder = scheme_make_integer(0);
+      else if (remainder)
+      {
+	Scheme_Object *p = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
+	p->type = scheme_bignum_type;
+	rem_alloc = bigdig_length(rem_digs, rem_alloc);
+	SCHEME_BIGLEN(p) = rem_alloc;
+	SCHEME_BIGDIG(p) = rem_digs;
+	SCHEME_BIGPOS(p) = 1;
+	*remainder = scheme_bignum_normalize(p);
+      }
+      
+      o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
+      o->type = scheme_bignum_type;
+      res_alloc = bigdig_length(res_digs, res_alloc);
+      SCHEME_BIGLEN(o) = res_alloc;
+      SCHEME_BIGDIG(o) = res_digs;
+      SCHEME_BIGPOS(o) = 1;
+      return scheme_bignum_normalize(o);
+    }
   }
-
-  if (n_size & 0x1)
-    res_alloc = (n_size + 1) >> 1;
-  else
-    res_alloc = n_size >> 1;
-
-  res_digs = PROTECT_RESULT(res_alloc);
-
-  PROTECT(sqr_digs, n_size);
-
-  if (mpn_sqrtrem(res_digs, NULL, sqr_digs, n_size) == 0) {
-    /* An integer result */
-    RELEASE(sqr_digs);
-    FINISH_RESULT(res_digs, res_alloc);
-
-    o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
-    o->type = scheme_bignum_type;
-    res_alloc = bigdig_length(res_digs, res_alloc);
-    SCHEME_BIGLEN(o) = res_alloc;
-    SCHEME_BIGDIG(o) = res_digs;
-    SCHEME_BIGPOS(o) = 1;
-    return scheme_bignum_normalize(o);
-  } else {
+  
+  if (remainder || rem_size == 0)
+    return o;
+  else {
     double v;
     
     RELEASE(res_digs);
     RELEASE(sqr_digs);
-
+    
     if (SCHEME_INTP(n))
       v = (double)SCHEME_INT_VAL(n);
     else {
       v = scheme_bignum_to_double(n);
-
+      
       if (MZ_IS_POS_INFINITY(v)) {
 #ifdef USE_SINGLE_FLOATS_AS_DEFAULT
 	return scheme_make_float(v);
@@ -1318,7 +1375,7 @@ Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n)
     }
     
     v = sqrt(v);
-
+    
 #ifdef USE_SINGLE_FLOATS_AS_DEFAULT
     return scheme_make_float(v);
 #else

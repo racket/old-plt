@@ -1914,6 +1914,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 # define RUNSTACK_CHANGED() /**/
 #endif
 
+#define RUNSTACK_START MZ_RUNSTACK_START
+
 #define UPDATE_THREAD_RSPTR_FOR_GC() UPDATE_THREAD_RSPTR()
 #define UPDATE_THREAD_RSPTR_FOR_ERROR() UPDATE_THREAD_RSPTR()
 
@@ -1922,7 +1924,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
   if (num_rands >= 0) {
 
-    if ((RUNSTACK - MZ_RUNSTACK_START) < TAIL_COPY_THRESHOLD) {
+    if ((RUNSTACK - RUNSTACK_START) < TAIL_COPY_THRESHOLD) {
       /* It's possible that a sequence of primitive _scheme_tail_apply()
 	 calls will exhaust the Scheme stack. Watch out for that. */
       p->ku.k.p1 = (void *)obj;
@@ -1991,7 +1993,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       
       data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(obj);
 
-      if ((RUNSTACK - MZ_RUNSTACK_START) < data->max_let_depth) {
+      if ((RUNSTACK - RUNSTACK_START) < data->max_let_depth) {
 	p->ku.k.p1 = (void *)obj;
 	p->ku.k.i1 = num_rands;
 	p->ku.k.p2 = (void *)rands;

@@ -240,7 +240,7 @@ sub DoPrintClass
 	print "Scheme_Class_Object *cobj;\n  ";
 	print &NormalType($ivartype, 1) . " v;\n\n";
 	print "  objscheme_check_valid(obj);\n";
-	print "  if (n) scheme_wrong_count($getname, 0, 0, n, p);\n";
+	print "  if (n) scheme_wrong_count($longgetname, 0, 0, n, p);\n";
 	print "  cobj = (Scheme_Class_Object *)obj;\n";
 	print "  if (cobj->primflag)\n";
 	print "    v = ";
@@ -261,7 +261,7 @@ sub DoPrintClass
 	    print "objscheme_check_valid(obj);\n  ";
 	    print "Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;\n  ";
 	    print &NormalType($ivartype, 1) . " v;\n\n";
-	    print "  if (n != 1) scheme_wrong_count($setname, 1, 1, n, p);\n\n";
+	    print "  if (n != 1) scheme_wrong_count($longsetname, 1, 1, n, p);\n\n";
 	    print "  v = ";
 	    &PrintUnbundleVar("p[0]", $ivartype);
 	    print ";\n  ";
@@ -317,16 +317,6 @@ sub DoPrintClass
 	    print "  cobj->primflag = -1;\n\n";
 	    print "  return scheme_void;\n}\n\n";
 	}
-	
-	# Class Name function
-	print "static Scheme_Object *objscheme_classname_${newclass}(";
-	print $scheme_args;
-	print ")\n{\n";
-	print " WXS_USE_ARGUMENT(obj);\n";
-	print "  if (n) scheme_wrong_count(${classstring} \"::get-class-name\", ";
-	print "0, 0, n, p);\n";
-	print "  return scheme_intern_symbol(${classstring});\n";
-	print "}\n\n";
     }
 
     # Setup function
@@ -351,7 +341,7 @@ sub DoPrintClass
 
 	# Count methods to be installed:
 	@funcs = ();
-	$nmethod = 1; # count get-class-name, first
+	$nmethod = 0; # count
 	foreach $function (@functions) {
 	    &ReadFields($function);
 	    @l = grep($_ =~ /^$func$/, @funcs);
@@ -384,12 +374,6 @@ sub DoPrintClass
 	}
 	print ", ${nmethod})";
 	print ";\n\n";
-
-	# print "  scheme_add_method(${newclass}_class, ";
-	# print "\"destroy\", objscheme_destroy_${newclass});\n\n";
-
-	print "  scheme_add_method_w_arity(${newclass}_class,";
-	print "\"get-class-name\",objscheme_classname_${newclass}, 0, 0);\n\n";
 
 	@funcs = ();
 	foreach $function (@functions) {

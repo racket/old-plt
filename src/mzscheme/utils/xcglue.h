@@ -111,10 +111,11 @@ char objscheme_unbundle_char(Scheme_Object *, const char *);
 #define COPY_JMPBUF(dest, src) memcpy(&dest, &src, sizeof(mz_jmp_buf));
 #endif
 
-
 typedef Scheme_Object *(*Objscheme_Bundler)(void *);
 void objscheme_install_bundler(Objscheme_Bundler f, long id);
 Scheme_Object *objscheme_bundle_by_type(void *realobj, long type);
+
+#define METHODNAME(x, y) y" in "x
 
 #ifndef _MSC_VER
 typedef char byte;

@@ -410,8 +410,17 @@ sub ReadFields {
 	$exception = 'SUPER';
     }
 
-    $method = '"' . substr($classstring, 1, length($classstring) - 2)
-	. "::" . substr($fname, 1, length($fname) - 2) . '"';
+    if ($classstring eq '') {
+	$method = $fname;
+    } else {
+	if ($interfacestring eq '') {
+	    $sourcestring = $classstring;
+	} else {
+	    $sourcestring = substr($interfacestring, 0, length($interfacestring) - 1) . '<%>"';
+	}
+	$method = '"' . substr($fname, 1, length($fname) - 2) . " in "
+	    . substr($sourcestring, 1, length($sourcestring) - 2) . '"';
+    }
 }
 
 sub ReadIvarFields
@@ -440,8 +449,12 @@ sub ReadIvarFields
     $ivartype = &Wash($itype);
     $ivarname = &Wash($ivarname);
 
-    $method = '"' . substr($classstring, 1, length($classstring) - 2)
-	. "::" . substr($iname, 1, length($iname) - 2) . '"';
+    $method = 'et-' . substr($iname, 1, length($iname) - 2) 
+	    . " in " . substr($classstring, 1, length($classstring) - 2) . '"';
+
+    $longsetname = '"s' . $method;
+    $longgetname = '"g' . $method;
+    $method = $longsetname;
 }
 
 sub ReadConstFields

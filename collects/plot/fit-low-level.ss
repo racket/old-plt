@@ -1,5 +1,5 @@
 (module fit-low-level mzscheme
-  (require (lib "foreign.ss") (lib "etc.ss") (lib "foreign-helpers.ss" "plot"))
+  (require (lib "foreign.ss") (lib "etc.ss"))
   (unsafe!)
 
   (define libfit

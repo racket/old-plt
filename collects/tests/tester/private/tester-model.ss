@@ -1,6 +1,5 @@
 (module tester-model mzscheme
   (require (lib "class.ss"))
-  (require (lib "fsm.ss"             "tests" "tester" "private"))
   (require (lib "growable-vector.ss" "tests" "tester" "private"))
   (require (lib "tester-structs.ss"  "tests" "tester" "private"))
 

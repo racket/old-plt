@@ -29,7 +29,7 @@
        "Based on the following: "
        newline-indent-string
        "wxWindows (c) 1994 Artificial Intelligence"
-       "Applications Institute, The University of Edinburgh."
+       " Applications Institute, The University of Edinburgh."
        (if (eq? wx:window-system 'xt)
 	   (string-append
 	    newline-indent-string
@@ -47,7 +47,7 @@
        " (c) 1994 Xerox Corp."
        newline-string
        "See the license agreement or"
-       " http://www.cs.rice.edu/CS/PLT/ (under DrScheme) for more info."))		     
+       " http://www.cs.rice.edu/CS/PLT/packages/mred/ for more info."))
 
     (define make-scheme-mode-edit%
       (lambda (super%)
@@ -482,17 +482,6 @@
 	       (load file))]
 	    [on-quit mred:exit:exit]
 
-	    [file-menu:open mred:handler:open-file]
-	    [file-menu:open-string
-	     (let ([tab (string #\tab)])
-	       (case wx:platform
-		 [(windows) "&Open..."]
-		 [(macintosh) (string-append "Open..." tab "Cmd+O")]
-		 [else (string-append "Open..." tab "Ctl+x Ctl+f")]))]
-	    [file-menu:new (lambda ()
-			     (let ([file (mred:finder:put-file)])
-			       (if file
-				   (mred:handler:edit-file file))))]
 	    [file-menu:revert #f]
 	    [file-menu:close
 	     (if close-item?
@@ -508,16 +497,12 @@
 		       (let ((file (mred:finder:get-file)))
 			 (if file
 			     (load-file file)))))
-	       (send file-menu append-separator)
-	       (send file-menu append-item "New Frame"
-		     (lambda ()
-		       (mred:handler:edit-file #f)))
 	       (send file-menu append-separator))]
 	    [file-menu:save (lambda ()
 			      (send edit save-file
 				    (send edit get-filename)))]
 	    [file-menu:save-as (lambda () (send edit save-file ""))]
-
+	    [file-menu:print (lambda () (send edit print '()))]
 	    [edit-menu:before-preferences
 	     (let ([edit-menu:do  (lambda (const) (lambda () (send edit do-edit const)))])
 	       (lambda (edit-menu)

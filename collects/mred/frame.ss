@@ -267,14 +267,16 @@
 
     (define make-standard-menus-frame%
       (lambda (super%)
-	(class-asi super%
+	(class super% ([name frame-name])
 	  (inherit make-menu)
 	  (rename [super-make-menu-bar make-menu-bar])
 
 	  (public
 	    [file-menu:between-open-and-save 
 	     (lambda (file-menu) (send file-menu append-separator))]
-	    [file-menu:between-save-and-close 
+	    [file-menu:between-save-and-print 
+	     (lambda (file-menu) (send file-menu append-separator))]
+	    [file-menu:between-print-and-close
 	     (lambda (file-menu) (send file-menu append-separator))]
 	    [file-menu:between-close-and-quit
 	     (lambda (file-menu) (void))]
@@ -282,57 +284,63 @@
 
 	    [edit-menu:after-std-items (lambda (edit-menu) (void))]
 
-	    [file-menu:open (lambda () (void))]
+	    [file-menu:open mred:handler:open-file]
 	    [file-menu:open-string (case wx:platform
 				     [(windows) "&Open..."]
 				     [(macintosh) (string-append "Open..." tab "Cmd+O")]
-				     [else "Open"])]
+				     [else (string-append "&Open..." tab "Ctl+x Ctl+f")])]
 
-	    [file-menu:new (lambda () (void))]
+	    [file-menu:new (lambda () (mred:handler:edit-file #f))]
 	    [file-menu:new-string (case wx:platform 
-				    [(windows) "&New..."]
-				    [(macintosh) (string-append "New..." tab "Cmd+N")]
-				    [else "New..."])]
+				    [(windows) "&New"]
+				    [(macintosh) (string-append "New" tab "Cmd+N")]
+				    [else "&New"])]
 
 	    [file-menu:revert (lambda () (void))]
 	    [file-menu:revert-string (case wx:platform
 				       [(windows) "&Revert"]
 				       [(macintosh) "Revert"]
-				       [else "Revert"])]
+				       [else "&Revert"])]
 
 	    [file-menu:save (lambda () (void))]
 	    [file-menu:save-string (case wx:platform
 				     [(windows) "&Save"]
 				     [(macintosh) (string-append "Save" tab "Cmd+S")]
-				     [else (string-append "Save" tab "Ctl+x Ctl+s")])]
+				     [else (string-append "&Save" tab "Ctl+x Ctl+s")])]
 
 	    [file-menu:save-as (lambda () (void))]
 	    [file-menu:save-as-string (case wx:platform
 					[(windows) "Save &As..."]
-					[else "Save As..."])]
+					[else "Save &As..."])]
+
+	    [file-menu:print #f]
+	    [file-menu:print-string (case wx:platform
+				      [(windows) "&Print..."]
+				      [(macintosh) (string-append "Print..." tab "Cmd+P")]
+				      [else "&Print..."])]
 
 	    [file-menu:close (lambda () (void))]
 	    [file-menu:close-string (case wx:platform
 				     [(windows) "&Close"]
 				     [(macintosh) (string-append "Close" tab "Cmd+W")]
-				     [else "Close"])]
-	    [file-menu:quit (lambda () (mred:exit:exit))]
+				     [else "&Close"])]
+	    [file-menu:quit mred:exit:exit]
 	    [file-menu:quit-string (case wx:platform
 				     [(windows) "E&xit"]
 				     [(macintosh) (string-append "Quit" tab "Cmd+Q")]
-				     [else (string-append "Quit" tab "Ctl-x Ctl-c")])]
+				     [else (string-append "E&xit" tab "Ctl-x Ctl-c")])]
 
 	    [edit-menu:undo (lambda () (void))]
 	    [edit-menu:undo-string (case wx:platform
 				     [(windows) "&Undo"]
 				     [(macintosh) (string-append "Undo" tab "Cmd+Z")]
-				     [else (string-append "Undo" tab "Ctl+x u")])]
+				     [else (string-append "&Undo" tab "Ctl+x u")])]
 
 	    [edit-menu:redo (lambda () (void))]
 	    [edit-menu:redo-string (case wx:platform
 				     [(windows) "&Redo"]
 				     [(macintosh) "Redo"]
-				     [else "Redo"])]
+				     [else "&Redo"])]
 
 	    [edit-menu:clear (lambda () (void))]
 	    [edit-menu:clear-string (case wx:platform
@@ -344,25 +352,25 @@
 	    [edit-menu:copy-string (case wx:platform
 				     [(windows) "&Copy"]
 				     [(macintosh) (string-append "Copy" tab "Cmd+C")]
-				     [else (string-append "Copy" tab "Alt+w")])]
+				     [else (string-append "&Copy" tab "Alt+w")])]
 
 	    [edit-menu:cut (lambda () (void))]
 	    [edit-menu:cut-string (case wx:platform
 				     [(windows) "Cu&t"]
 				     [(macintosh) (string-append "Cut" tab "Cmd+X")]
-				     [else (string-append "Cut" tab "Ctl+w")])]
+				     [else (string-append "Cu&t" tab "Ctl+w")])]
 
 	    [edit-menu:paste (lambda () (void))]
 	    [edit-menu:paste-string (case wx:platform
 				     [(windows) "&Paste"]
 				     [(macintosh) (string-append "Paste" tab "Cmd+V")]
-				     [else (string-append "Paste" tab "Ctl+y")])]
+				     [else (string-append "&Paste" tab "Ctl+y")])]
 
 	    [edit-menu:select-all (lambda () (void))]
 	    [edit-menu:select-all-string (case wx:platform
 					   [(windows) "Select A&ll"]
 					   [(macintosh) (string-append "Select All" tab "Cmd+A")]
-					   [else "Select All"])]
+					   [else "Select A&ll"])]
 
 	    [edit-menu:before-preferences
 	     (lambda (edit-menu)
@@ -384,7 +392,10 @@
 		 (when file-menu:save
 		   (send file-menu append-item file-menu:save-string file-menu:save))
 		 (send file-menu append-item file-menu:save-as-string file-menu:save-as)
-		 (file-menu:between-save-and-close file-menu)
+		 (file-menu:between-save-and-print file-menu)
+		 (when file-menu:print
+		   (send file-menu append-item file-menu:print-string file-menu:print))
+		 (file-menu:between-print-and-close file-menu)
 		 (when file-menu:close
 		   (send file-menu append-item file-menu:close-string file-menu:close))
 		 (file-menu:between-close-and-quit file-menu)
@@ -408,7 +419,9 @@
 		 (let ([mb (super-make-menu-bar)])
 		   (send mb append file-menu "&File")
 		   (send mb append edit-menu "&Edit")
-		   mb)))]))))
+		   mb)))])
+	  (sequence
+	    (super-init name)))))
 
     ; This defines the standard editing window.
     (define standard-menus-frame% (make-standard-menus-frame% simple-menu-frame%))
@@ -589,15 +602,10 @@
 				   (send m do-autosave))))
 			     canvases)))]
 
-
-	    [file-menu:open (lambda () 		
-			      (let ((file (mred:finder:get-file)))
-				(if file
-				    (open-file file))))]
-	    [file-menu:new (lambda ()
-			     (let ((file (mred:finder:put-file)))
-			       (if file
-				   (open-file file))))]
+	    [file-menu:new (lambda () 
+			     (if (is-a? frameset mred:group:frame-group%)
+				 (send frames new-frame #f)
+				 (mred:handler:edit-file #f)))]
 	    [file-menu:revert (lambda () (send (active-edit) load-file))]
 	    [file-menu:save (lambda () (send (active-edit) save-file))]
 	    [file-menu:save-as (lambda () (save-as wx:const-media-ff-same))]
@@ -607,21 +615,14 @@
 	       (if keep-buffers?
 		   (send file-menu append-item "Switch to..."
 			 (lambda () (send buffers pick (active-canvas)))))
-	       (send file-menu append-separator)
-	       (send file-menu append-item "New Frame"
-		     (lambda () 
-		       (if keep-buffers?
-			   (send frames new-frame #f)
-			   (mred:handler:edit-file #f))))
 	       (send file-menu append-separator))]
-	    [file-menu:between-save-and-close
+	    [file-menu:print (lambda () (send (active-edit) print '()))]
+	    [file-menu:between-save-and-print
 	     (lambda (file-menu)
 	       (send file-menu append-item "Save As Text..."
 		     (lambda () (save-as wx:const-media-ff-text)))
 	       (send file-menu append-item "Save As Text and Styles..."
 		     (lambda () (save-as wx:const-media-ff-std)))
-	       (send file-menu append-item "Print..."
-		     (lambda () (send (active-edit) print '())))
 	       (when allow-split?
 		 (send file-menu append-separator)
 		 (send file-menu append-item "Split"

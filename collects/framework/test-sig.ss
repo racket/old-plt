@@ -1,10 +1,7 @@
 (module test-sig mzscheme
   (require (lib "unitsig.ss"))
-  (provide framework:keys^
-	   framework:test^)
 
-  (define-signature framework:keys^
-    (get-shifted-key-list))
+  (provide framework:test^)
 
   (define-signature framework:test^
     (run-interval

@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.28 2000/04/25 14:17:34 robby Exp $
+;; $Id: test-unit.ss,v 1.1 2001/02/25 21:13:26 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -16,12 +16,21 @@
 ;; useful value, but does reraise errors from the actions.
 ;;
 
+(module test-unit mzscheme
+  (require (lib "unitsig.ss")
+	   (lib "class.ss")
+	   (lib "mred-sig.ss" "mred")
+	   (lib "etc.ss")
+	   "test-sig.ss")
+
+  (provide test@)
+
+  (define test@
 (unit/sig framework:test^
-  (import [mred : mred^]
-	  [keys : framework:keys^])
+  (import [mred : mred^])
 
   (define initial-run-interval 100)  ;; milliseconds
-  
+
   ;;
   ;; The minimum time an action is allowed to run before returning from
   ;; mred:test:action.  Controls the rate at which actions are started, 
@@ -495,18 +504,14 @@
 	      [else  (error key-tag "unknown key modifier: ~e" mod)])
 	    (loop (cdr l)))))))
   
-  ;; A-Z and keymap:get-shifted-key-list are implicitly shifted.
-  ;; keymap:get-shifted-key-list is list of strings of length 1.
-  ;; vector-ref is faster than member.
-  
   (define shifted?
-    (let* ([letters  (list  #\A #\B #\C #\D #\E #\F #\G #\H #\I #\J #\K #\L #\M 
-			    #\N #\O #\P #\Q #\R #\S #\T #\U #\V #\W #\X #\Y #\Z)]
-	   [all #f])
+    (let* ([shifted-keys '(#\? #\: #\~ #\\ #\|
+			   #\< #\> #\{ #\} #\[ #\] #\( #\)
+			   #\! #\@ #\# #\$ #\% #\^ #\& #\* #\_ #\+
+			   #\A #\B #\C #\D #\E #\F #\G #\H #\I #\J #\K #\L #\M 
+			   #\N #\O #\P #\Q #\R #\S #\T #\U #\V #\W #\X #\Y #\Z)])
       (lambda (key)
-	(unless all
-	  (set! all (append letters (map (lambda (s) (string-ref s 0)) (keys:get-shifted-key-list)))))
-	(memq key all))))
+	(memq shifted-keys shifted-keys))))
     
   ;;
   ;; MENU ITEMS 
@@ -758,4 +763,4 @@
   (define (close-top-level-window tlw)
     (when (send tlw can-close?)
       (send tlw on-close)
-      (send tlw show #f))))
+      (send tlw show #f))))))

@@ -672,6 +672,7 @@ void wxApp::doMacInMenuBar(long menuResult)
 			Str255		daName;
 			GetItem(GetMHandle(128), macMenuItemNum, daName);
 			(void) OpenDeskAcc(daName);
+			HiliteMenu(0); // unhilite the hilited menu
 			return;
 		}
 	}
@@ -685,11 +686,13 @@ void wxApp::doMacInMenuBar(long menuResult)
 	wxFrame* theMacWxFrame = findMacWxFrame(theMacWindow);
 	if (!theMacWxFrame) wxFatalError("No wxFrame for theMacWindow.");
 
+#if 0
 	if (theMacWxFrame->IsModal())
 	{
 		::SysBeep(3);
 		return;
 	}
+#endif
 
 	wxMenuBar* theWxMenuBar = theMacWxFrame->wx_menu_bar;
 	if (!theWxMenuBar) {

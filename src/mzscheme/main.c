@@ -123,9 +123,15 @@ static int check_break_flag()
 #ifdef MACINTOSH_GIVE_TIME
   {
     static long last_time;
-    if (TickCount() > last_time + 5)
-      WaitNextEvent(0, &event, 0, NULL);
-    last_time = TickCount();
+    if (TickCount() > last_time + 30) {
+      EventRecord e;
+      if (WaitNextEvent(everyEvent, &e, 30, NULL)) {
+# ifdef MACINTOSH_SIOUX
+        SIOUXHandleOneEvent(&e);
+# endif
+	  }
+      last_time = TickCount();
+    }
   }
 #endif
   return 0;

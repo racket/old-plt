@@ -130,7 +130,7 @@ class wxBitmap: public wxObject
 
   // Some Mac extensions ---- should only be used inside wxWindows, Please.
   void DrawMac(void);
-  void DrawMac(int x, int y);
+  void DrawMac(int x, int y, int mode = srcCopy);
 };
 
 // Icon

@@ -560,6 +560,7 @@ wxCursor::wxCursor(int cursor_type)
     default:
     case wxCURSOR_ARROW:
     {
+      cMacCursor = (Cursor **)0x1;
       break;
     }
     case wxCURSOR_BLANK:
@@ -594,7 +595,8 @@ void wxSetCursor(wxCursor *cursor)
   static wxCursor *curCursor;
   
   if (cursor != curCursor) {
-	  if (cursor->cMacCursor)
+      /* 0x1 is the arrow cursor */
+	  if (cursor->cMacCursor && (cursor->cMacCursor != (Cursor **)0x1))
 		::SetCursor(*(cursor->cMacCursor));
 	  else
 	 	::SetCursor(&(qd.arrow));
@@ -1011,7 +1013,7 @@ void wxBitmap::DrawMac(void)
 	DrawMac(0, 0);
 }
 
-void wxBitmap::DrawMac(int x, int y)
+void wxBitmap::DrawMac(int x, int y, int mode)
 {
 	if (x_pixmap) {
 		Rect sbounds = {0, 0, height, width};
@@ -1021,6 +1023,6 @@ void wxBitmap::DrawMac(int x, int y)
 		::GetPort( (GrafPtr *)&here);
 		PixMapHandle destpixh = here->portPixMap;
 		::CopyBits( (BitMap *) (*srcpixh), (BitMap *) (*destpixh),
-			&sbounds, &dbounds, srcCopy, NULL);
+			&sbounds, &dbounds, mode, NULL);
 	}
 }

@@ -875,6 +875,7 @@ char* wxMenu::GetLabel(int Id)
 void wxMenu::SetLabel(int Id , char* label)
 {
 	wxMenuItem* theMenuItem = FindItemForId(Id);
+	label = wxItemStripLabel(label);
 	if (theMenuItem)
 		theMenuItem->SetLabel(label);
 

@@ -797,6 +797,7 @@ void MrEdMacSleep(float secs)
   RgnHandle rgn = NULL;
 #endif
   
-  WaitNextEvent(0, &e, secs ? secs * 60 : SLEEP_TIME, rgn);
+  if (WaitNextEvent(0, &e, secs ? secs * 60 : SLEEP_TIME, rgn))
+    QueueTransferredEvent(&e);
 }
 

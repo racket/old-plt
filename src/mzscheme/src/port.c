@@ -1157,7 +1157,7 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
 
   if (ip->ungotten_count) {
     long l, i;
-    char *s;
+    unsigned char *s;
 
     if (ip->ungotten_count < size)
       l = ip->ungotten_count;
@@ -1165,7 +1165,7 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
       l = size;
     
     i = ip->ungotten_count;
-    s = (char *)ip->ungotten;
+    s = (unsigned char *)ip->ungotten;
     while (l--)
       buffer[got++] = s[--i];
     
@@ -4986,7 +4986,7 @@ static void tcp_accept_needs_wakeup(Scheme_Object *listener, void *fds)
 static int tcp_check_connect(Scheme_Object *connector)
 {
 #ifdef USE_MAC_TCP
-  ((TCPiopb *)connector)->ioResult != inProgress;
+  return ((TCPiopb *)connector)->ioResult != inProgress;
 #else
 #ifdef USE_SOCKETS_TCP
   tcp_t s;

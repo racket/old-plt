@@ -116,6 +116,8 @@ void wxScrollBar::CreateWxScrollBar // common constructor initialization
 	
 	if (GetParent()->IsHidden())
 		DoShow(FALSE);
+		
+	cGrandcursor = TRUE;
 }
 
 //-----------------------------------------------------------------------------

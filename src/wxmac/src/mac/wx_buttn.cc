@@ -315,7 +315,8 @@ void wxButton::Enable(Bool enable)
 }
 
 //-----------------------------------------------------------------------------
-static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, int cColour)
+static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Bool isgray, 
+                              int cColour)
 {
   static wxColour *dark, *darker, *lite;
   wxColour *back, *bright, *dim;
@@ -357,7 +358,13 @@ static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, int
   if (cColour)
     RGBBackColor(&back->pixel);
   ::EraseRect(&rr);
+
+  if (isgray && cColour)
+    RGBForeColor(&dark->pixel);
+  else
+    ForeColor(blackColor);
   FrameRoundRect(r, 2 * IB_MARGIN_X, 2 * IB_MARGIN_Y);
+  
   if (cColour) {
     RGBForeColor(&bright->pixel);  
     MoveTo(rr.left + 1, rr.top);
@@ -373,7 +380,11 @@ static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, int
     MoveTo(rr.right - 1, rr.top + 1);
     LineTo(rr.right - 1, rr.bottom - 2);
     
-    ForeColor(blackColor);
+    // Reset color for blit
+    if (isgray && cColour)
+      RGBForeColor(&dark->pixel);
+    else
+      ForeColor(blackColor);
   }
   buttonBitmap->DrawMac(IB_MARGIN_X, IB_MARGIN_Y);
 }
@@ -384,7 +395,7 @@ void wxButton::Paint(void)
 	SetCurrentDC();
 	Rect r = { 0, 0, cWindowHeight, cWindowWidth };
 	if (buttonBitmap) {
-	    PaintBitmapButton(&r, buttonBitmap, 0, cColour);
+	    PaintBitmapButton(&r, buttonBitmap, 0, IsGray(), cColour);
 	} else if (cMacControl) {
 	    ::EraseRect(&r);
 	    Bool isVisible = (**cMacControl).contrlVis == 255;
@@ -423,7 +434,7 @@ void wxButton::Highlight(Bool flag) // mac platform only
 	if (buttonBitmap) {
 		SetCurrentDC();
 		Rect bounds = {0, 0, cWindowHeight, cWindowWidth};
-		PaintBitmapButton(&bounds, buttonBitmap, flag, cColour);
+		PaintBitmapButton(&bounds, buttonBitmap, flag, FALSE, cColour);
 	} else if (cMacControl) {
 		if (cEnable)
 		{

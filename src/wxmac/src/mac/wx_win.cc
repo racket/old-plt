@@ -53,6 +53,8 @@ wxWindow::wxWindow(void)
 	window_parent = NULL;
 
 	cMacDC = NULL;
+	
+	cGrandcursor = FALSE;
 
 	cClientArea = new wxArea(this);
 }
@@ -87,6 +89,8 @@ wxWindow::wxWindow // Constructor (for screen window)
 	window_parent = NULL;
 
 	cMacDC = NULL; // WCH: should set to screen grafPort ??
+
+	cGrandcursor = FALSE;
 
 	cClientArea = new wxArea(this);
 }
@@ -130,6 +134,8 @@ wxWindow::wxWindow // Constructor (given parentScreen; i.e., this is frame)
 
 	cMacDC = NULL; // will set cMacDC later
 
+	cGrandcursor = FALSE;
+
 	cClientArea = new wxArea(this);
 }
 
@@ -164,6 +170,8 @@ wxWindow::wxWindow // Constructor (given parentArea)
 	window_parent = cParentArea->ParentWindow();
 
 	cMacDC = window_parent->MacDC();
+
+	cGrandcursor = FALSE;
 
 	InitWindowPostion(x, y);
 	window_parent->AddChild(this);
@@ -202,6 +210,8 @@ wxWindow::wxWindow // Constructor (given parentWindow)
 	window_parent = parentWindow;
 
 	cMacDC = window_parent->MacDC();
+	
+	cGrandcursor = FALSE;
 
 	InitWindowPostion(x, y);
 	window_parent->AddChild(this);
@@ -233,6 +243,8 @@ wxWindow::wxWindow // Constructor (given objectType; i.e., menu or menuBar)
 	window_parent = NULL;
 
 	cMacDC = NULL;
+	
+	cGrandcursor = FALSE;
 
 	cClientArea = new wxArea(this);
 }
@@ -1502,11 +1514,9 @@ Bool wxWindow::AdjustCursor(int mouseX, int mouseY)
  	int hitY = mouseY - cWindowY; // window c.s.
 
     if (wxWindow::gMouseWindow == this) {
-       wxWindow *p = this;
-       while (p && !p->wx_cursor)
-         p = p->GetParent();
-       if (p)
-         wxSetCursor(p->wx_cursor);
+       wxCursor *c = GetEffectiveCursor();
+       if (c)
+         wxSetCursor(c);
        return TRUE;
     }
 
@@ -1541,11 +1551,9 @@ Bool wxWindow::AdjustCursor(int mouseX, int mouseY)
  			if (hitArea == ClientArea())
  			{
  				result = TRUE;
- 				wxWindow *p = this;
-                while (p && !p->wx_cursor)
-                  p = p->GetParent();
-                if (p)
-                  wxSetCursor(p->wx_cursor);
+ 				wxCursor *c = GetEffectiveCursor();
+                if (c)
+                  wxSetCursor(c);
  			}
  		}
  	}
@@ -1592,3 +1600,20 @@ void wxWindow::ForEach(void (*foreach)(wxWindow *w, void *data), void *data)
 	
 	foreach(this, data);
 }
+
+wxCursor *wxWindow::GetEffectiveCursor(void)
+{
+  wxWindow *p = this;
+  if (!wx_cursor && cGrandcursor) {
+     p = p->GetParent();
+     if (p)
+       p = p->GetParent();
+  }
+  while (p && !p->wx_cursor)
+    p = p->GetParent();
+  if (p)
+    return p->wx_cursor;
+  else
+  	return NULL;
+}
+

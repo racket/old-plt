@@ -61,6 +61,7 @@ protected:
 	Bool		cEnable;		// enabled window accepts mouse/keyboard events
 	Bool		cHidden;		// Hidden?
 	Bool		cUserHidden;	// Hidden because user asked (not just inherited)?
+	Bool        cGrandcursor;   // Skip parent for retriving the effective cursor
 	long		cStyle;			// mac platform only
 	Direction	cGravitate;		// mac platform only
 	Direction	cJustify;		// mac platform only
@@ -316,6 +317,8 @@ public:
 	int Track(Point start);
 
 	void ForEach(void (*foreach)(wxWindow *w, void *data), void *data);
+	
+	wxCursor *GetEffectiveCursor(void);
 
 //=============================================================================
 // Private methods

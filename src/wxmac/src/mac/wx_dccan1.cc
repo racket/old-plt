@@ -104,7 +104,7 @@ wxCanvasDC::wxCanvasDC(void)
   current_brush = NULL;
   current_background_brush = NULL;
   current_text_foreground = *wxBLACK;
-//  current_text_background = NULL;
+  current_text_background = *wxWHITE;
   SetBackground(wxWHITE_BRUSH);
 }
 
@@ -176,7 +176,7 @@ __type = wxTYPE_DC_CANVAS;
   current_brush = NULL;
   current_background_brush = NULL;
   current_text_foreground = *wxBLACK;
-//  current_text_background = NULL;
+  current_text_background = *wxWHITE;
   SetBackground(wxWHITE_BRUSH);
   SetBrush(wxWHITE_BRUSH);
   SetPen(wxBLACK_PEN);
@@ -672,6 +672,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			::TextFont(font->GetMacFontNum());
 	        ::TextSize(font->GetPointSize());
 	        ::TextFace(font->GetMacFontStyle());
+	        ::TextMode((current_bk_mode == wxTRANSPARENT) ? srcOr : srcCopy);
 			InstallLogicalFunction(wxCOPY);
 			break;
 		case kBlitTool:

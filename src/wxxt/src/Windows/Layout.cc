@@ -190,8 +190,8 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 		done = TRUE;
 	    } else if (wxLC_MEM(constraints->centreX, done) && wxLC_MEM(constraints->width, done)) {
 		// compute using centreX and width
-		value = int(wxLC_MEM(constraints->centreX, value) - (wxLC_MEM(constraints->width, value)/2)
-			    + margin);
+		value = (int)(wxLC_MEM(constraints->centreX, value) - (wxLC_MEM(constraints->width, value)/2)
+			      + margin);
 		done = TRUE;
 	    }
 	    break;
@@ -226,8 +226,8 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 		done = TRUE;
 	    } else if (wxLC_MEM(constraints->centreX, done) && wxLC_MEM(constraints->width, done)) {
 		// compute using centreX and width
-		value = int(wxLC_MEM(constraints->centreX, value) + (wxLC_MEM(constraints->width, value)/2)
-			    - margin);
+		value = (int)(wxLC_MEM(constraints->centreX, value) + (wxLC_MEM(constraints->width, value)/2)
+			      - margin);
 		done = TRUE;
 	    }
 	    break;
@@ -262,8 +262,8 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 		done = TRUE;
 	    } else if (wxLC_MEM(constraints->centreY, done) && wxLC_MEM(constraints->height, done)) {
 		// compute using centreY and height
-		value = int(wxLC_MEM(constraints->centreY, value) - (wxLC_MEM(constraints->height, value)/2)
-			    + margin);
+		value = (int)(wxLC_MEM(constraints->centreY, value) - (wxLC_MEM(constraints->height, value)/2)
+			      + margin);
 		done = TRUE;
 	    }
 	    break;
@@ -298,8 +298,8 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 		done = TRUE;
 	    } else if (wxLC_MEM(constraints->centreY, done) && wxLC_MEM(constraints->height, done)) {
 		// compute using centreY and height
-		value = int(wxLC_MEM(constraints->centreY, value) + (wxLC_MEM(constraints->height, value)/2)
-			    - margin);
+		value = (int)(wxLC_MEM(constraints->centreY, value) + (wxLC_MEM(constraints->height, value)/2)
+			      - margin);
 		done = TRUE;
 	    }
 	    break;
@@ -330,18 +330,18 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 	case wxUnconstrained:
 	    if (wxLC_MEM(constraints->left, done) && wxLC_MEM(constraints->width, done)) {
 		// compute using left edge and width
-		value = int(wxLC_MEM(constraints->left, value) + (wxLC_MEM(constraints->width, value)/2)
-			    + margin);
+		value = (int)(wxLC_MEM(constraints->left, value) + (wxLC_MEM(constraints->width, value)/2)
+			      + margin);
 		done = TRUE;
 	    } else if (wxLC_MEM(constraints->right, done) && wxLC_MEM(constraints->width, done)) {
 		// compute using right edge and width
-		value = int(wxLC_MEM(constraints->right, value) - (wxLC_MEM(constraints->width, value)/2)
-			    + margin);
+		value = (int)(wxLC_MEM(constraints->right, value) - (wxLC_MEM(constraints->width, value)/2)
+			      + margin);
 		done = TRUE;
 	    } else if (wxLC_MEM(constraints->left, done) && wxLC_MEM(constraints->right, done)) {
 		// compute using left and right edge
-		value = int(wxLC_MEM(constraints->left, value) 
-			    + (wxLC_MEM(constraints->right, value)-wxLC_MEM(constraints->left, value))/2
+		value = (int)(wxLC_MEM(constraints->left, value) 
+			      + (wxLC_MEM(constraints->right, value)-wxLC_MEM(constraints->left, value))/2
 			    + margin);
 		done = TRUE;
 	    }
@@ -373,19 +373,19 @@ Bool wxIndividualLayoutConstraint::SatisfyConstraint(wxLayoutConstraints *constr
 	case wxUnconstrained:
 	    if (wxLC_MEM(constraints->top, done) && wxLC_MEM(constraints->height, done)) {
 		// compute using top edge and height
-		value = int(wxLC_MEM(constraints->top, value) + (wxLC_MEM(constraints->height, value)/2)
-			    + margin);
+		value = (int)(wxLC_MEM(constraints->top, value) + (wxLC_MEM(constraints->height, value)/2)
+			      + margin);
 		done = TRUE;
 	    } else if (wxLC_MEM(constraints->bottom, done) && wxLC_MEM(constraints->height, done)) {
 		// compute using bottom edge and height
-		value = int(wxLC_MEM(constraints->bottom, value) - (wxLC_MEM(constraints->height, value)/2)
-			    + margin);
+		value = (int)(wxLC_MEM(constraints->bottom, value) - (wxLC_MEM(constraints->height, value)/2)
+			      + margin);
 		done = TRUE;
 	    } else if (wxLC_MEM(constraints->top, done) && wxLC_MEM(constraints->bottom, done)) {
 		// compute using top and bottom edge
-		value = int(wxLC_MEM(constraints->top, value) 
-			    + (wxLC_MEM(constraints->bottom, value)-wxLC_MEM(constraints->top, value))/2
-			    + margin);
+		value = (int)(wxLC_MEM(constraints->top, value) 
+			      + (wxLC_MEM(constraints->bottom, value)-wxLC_MEM(constraints->top, value))/2
+			      + margin);
 		done = TRUE;
 	    }
 	    break;

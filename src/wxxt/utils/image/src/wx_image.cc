@@ -388,8 +388,6 @@ int wxImage::openPic(char *fullname)
   tmp = rindex(fullname,'/');
   if (!tmp) tmp = fullname; else tmp++;
   strcpy(basename,tmp);
-  if (strlen(basename)>2 && strcmp(basename+strlen(basename)-2,".Z")==0) 
-    basename[strlen(basename)-2]='\0';     /* chop off .Z, if any */
 
   /* if fullname doesn't start with a '/' (ie, it's a relative path), 
      (and it's not the special case '<stdin>') prepend 'initpath' to it */
@@ -403,34 +401,7 @@ int wxImage::openPic(char *fullname)
     freename = 1;
   }
     
-  /* uncompress if it's a .Z file */
-
-  i = strlen(fullname);
-  if (i>2 && strcmp(fullname+i-2,".Z")==0) {
-    strcpy(filename,"/tmp/xvXXXXXX");
-    mktemp(filename);
-    sprintf(wxBuffer,"%s -c %s >%s",UNCOMPRESS,fullname,filename);
-    if (system(wxBuffer)) {
-      goto FAILED;
-    }
-  }
-  else strcpy(filename,fullname);
-    
-
-  /* if the file is stdio, write it out to a temp file */
-  if (strcmp(filename,STDINSTR)==0) {
-    strcpy(filename,"/tmp/xvXXXXXX");
-    mktemp(filename);
-
-    fp = fopen(filename,"w");
-    if (!fp) FatalError("can't write /tmp/xv****** file");
-    
-    while ( (i=getchar()) != EOF) {
-      putc(i,fp);
-    }
-    fclose(fp);
-  }
-
+  strcpy(filename,fullname);
 
   /* now, try to determine what type of file we've got by reading the
      first couple bytes and looking for a Magic Number */

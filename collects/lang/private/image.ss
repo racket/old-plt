@@ -48,7 +48,6 @@
 	(send a-dc draw-bitmap (image-snip->bitmap a) 0 0)
 	a-dc)))
 
-
   (define (check name p? v desc)
     (unless (p? v)
       (raise-type-error
@@ -126,31 +125,56 @@
     (check 'offset-image+ real? dx "real number")
     (check 'offset-image+ real? dy "real number")
     (check 'offset-image+ image? b "image")
-    (let ([a-dc (image-snip->dc+bitmap a)])
-      (send a-dc draw-bitmap 
-	    (image-snip->bitmap b) dx dy
-	    'solid black (snip->mask b))
-      (dc->snip a-dc)))
+    (real-offset-masked-image+ a dx dy (snip->mask b) b))
 
-  (define (offset-masked-image+ a x y mask b)
+  (define (offset-masked-image+ a dx dy mask b)
     (check 'offset-masked-image+ image? a "image")
-    (check 'offset-masked-image+ real? x "real number")
-    (check 'offset-masked-image+ real? y "real number")
+    (check 'offset-masked-image+ real? dx "real number")
+    (check 'offset-masked-image+ real? dy "real number")
     (check 'offset-masked-image+ image? mask "image")
     (check 'offset-masked-image+ image? b "image")
     (let ([a-dc (image-snip->dc+bitmap a)]
-	  [b-bm (image-snip->bitmap b)]
-	  [mask-bm (image-snip->bitmap mask)])
+          [b-bm (image-snip->bitmap b)]
+          [mask-bm (image-snip->bitmap mask)])
       (unless (and (= (send b-bm get-width)
-		      (send mask-bm get-width))
-		   (= (send b-bm get-height)
-		      (send mask-bm get-height)))
-	(error 'offset-masked-image+
-	       "cannot use a mask and last image with different sizes"))
-      (send a-dc draw-bitmap b-bm
-	    x y 'solid black
-	    mask-bm)
-      (dc->snip a-dc)))
+                      (send mask-bm get-width))
+                   (= (send b-bm get-height)
+                      (send mask-bm get-height)))
+        (error 'offset-masked-image+
+               "cannot use a mask and last image with different sizes"))
+      (offset-masked-image+ a dx dy mask-bm b)))
+  
+  (define (real-offset-masked-image+ a dx dy mask-bm b)
+    (let-values ([(a-w a-h) (snip-size a)]
+                 [(b-w b-h) (snip-size b)])
+      (let* ([left (min 0 dx)]
+             [top (min 0 dy)]
+             [right (max (+ dx b-w) a-w)]
+             [bottom (max (+ dy b-h) a-h)]
+             [new-w (- right left)]
+             [new-h (- bottom top)]
+             [bm (make-object bitmap% 
+                   (inexact->exact (ceiling new-w))
+                   (inexact->exact (ceiling new-h)))]
+             [res-dc (make-object bitmap-dc% bm)])
+        (unless (send bm ok?)
+          (error (format "cannot make ~a x ~a image" new-w new-h)))
+        (send res-dc clear)
+        (send res-dc draw-bitmap 
+              (image-snip->bitmap a) 
+              (- left)
+              (- top)
+              'solid
+              black
+              #f)
+        (send res-dc draw-bitmap 
+              (image-snip->bitmap b) 
+              (- dx left)
+              (- dy top)
+              'solid 
+              black
+              mask-bm)
+        (dc->snip res-dc))))
 
   ;; ------------------------------------------------------------
 

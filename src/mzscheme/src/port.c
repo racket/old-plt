@@ -1037,7 +1037,12 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
       size -= n;
 
       if (size) {
-	n = read(fip->fd, buffer + offset + got, size);
+	/* Since this is a regular file, we assume EINTR means no
+	   data was read yet. We could probably assume that EINTR wouldn't
+	   happen. */
+	do {
+	  n = read(fip->fd, buffer + offset + got, size);
+	} while ((n == -1) && (errno == EINTR));
 	if (n > 0)
 	  got += n;
       }
@@ -1781,13 +1786,19 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
 
 #ifdef USE_FD_PORTS
   /* Note: assuming there's no difference between text and binary mode */
-  fd = open(filename, O_RDONLY);
+  do {
+    fd = open(filename, O_RDONLY);
+  } while ((fd == -1) && (errno == EINTR));
+
   if (fd == -1) {
     filename_exn(name, "cannot open input file", filename, errno);
   } else {
     fstat(fd, &buf);
     if (S_ISDIR(buf.st_mode)) {
-      close(fd);
+      int cr;
+      do {
+	cr = close(fd);
+      } while ((cr == -1) && (errno == EINTR));
       filename_exn(name, "cannot open directory as a file", filename, 0);
     } else {
       regfile = S_ISREG(buf.st_mode);
@@ -1922,7 +1933,9 @@ scheme_do_open_output_file (char *name, int offset, int argc, Scheme_Object *arg
   else if (existsok > -1)
     flags |= O_EXCL;
 
-  fd = open(filename, flags, 0666);
+  do {
+    fd = open(filename, flags, 0666);
+  } while ((fd == -1) && (errno == EINTR));
 
   if (fd == -1) {
     if (errno == EISDIR) {
@@ -1944,7 +1957,9 @@ scheme_do_open_output_file (char *name, int offset, int argc, Scheme_Object *arg
 			   fail_err_symbol,
 			   "%s: error deleting \"%q\"", 
 			   name, filename);
-	fd = open(filename, flags, 0666);
+	do {
+	  fd = open(filename, flags, 0666);
+	} while ((fd == -1) && (errno == EINTR));
       }
     }
     
@@ -2255,7 +2270,9 @@ static int try_get_fd_char(int fd, int *ready)
 
   old_flags = fcntl(fd, F_GETFL, 0);
   fcntl(fd, F_SETFL, old_flags | MZ_NONBLOCKING);
-  c = read(fd, buf, 1);
+  do {
+    c = read(fd, buf, 1);
+  } while ((c == -1) && errno == EINTR);
   fcntl(fd, F_SETFL, old_flags);
 
   if (c < 0) {
@@ -2337,7 +2354,9 @@ file_char_ready (Scheme_Input_Port *port)
     MZ_FD_ZERO(readfds);
     MZ_FD_SET(fd, readfds);
 
-    r = select(fd + 1, readfds, NULL, NULL, &time);
+    do {
+      r = select(fd + 1, readfds, NULL, NULL, &time);
+    } while ((r == -1) && (errno == EINTR));
 
 #ifdef SOME_FDS_ARE_NOT_SELECTABLE
     /* Try a non-blocking read: */
@@ -2524,7 +2543,9 @@ fd_char_ready (Scheme_Input_Port *port)
     MZ_FD_SET(fip->fd, readfds);
     MZ_FD_SET(fip->fd, exnfds);
     
-    r = select(fip->fd + 1, readfds, NULL, exnfds, &time);
+    do {
+      r = select(fip->fd + 1, readfds, NULL, exnfds, &time);
+    } while ((r == -1) && (errno == EINTR));
 
 #ifdef SOME_FDS_ARE_NOT_SELECTABLE
     /* Try a non-blocking read: */
@@ -2575,7 +2596,9 @@ static int fd_getc(Scheme_Input_Port *port)
       scheme_getc((Scheme_Object *)port);
     }
 
-    bc = read(fip->fd, fip->buffer, MZPORT_FD_BUFFSIZE);
+    do {
+      bc = read(fip->fd, fip->buffer, MZPORT_FD_BUFFSIZE);
+    } while ((bc == -1) && (errno == EINTR));
     fip->bufcount = bc;
 
     if (fip->bufcount < 0) {
@@ -2607,10 +2630,13 @@ static void
 fd_close_input(Scheme_Input_Port *port)
 {
   Scheme_FD *fip;
+  int cr;
 
   fip = (Scheme_FD *)port->port_data;
 
-  close(fip->fd);
+  do {
+    cr = close(fip->fd);
+  } while ((cr == -1) && (errno == EINTR));
 }
 
 static void
@@ -3755,6 +3781,7 @@ fd_write_ready (Scheme_Object *port)
     DECL_FDSET(writefds, 1);
     DECL_FDSET(exnfds, 1);
     struct timeval time = {0, 0};
+    int sr;
 
     INIT_DECL_FDSET(writefds, 1);
     INIT_DECL_FDSET(exnfds, 1);
@@ -3764,7 +3791,11 @@ fd_write_ready (Scheme_Object *port)
     MZ_FD_SET(fop->fd, writefds);
     MZ_FD_SET(fop->fd, exnfds);
     
-    return select(fop->fd + 1, NULL, writefds, exnfds, &time);
+    do {
+      sr = select(fop->fd + 1, NULL, writefds, exnfds, &time);
+    } while ((sr == -1) && (errno == EINTR));
+
+    return sr;
   }
 }
 
@@ -3826,7 +3857,11 @@ static int flush_fd(Scheme_Output_Port *op,
       
       flags = fcntl(fop->fd, F_GETFL, 0);
       fcntl(fop->fd, F_SETFL, flags | MZ_NONBLOCKING);
-      len = write(fop->fd, bufstr + offset, buflen - offset);
+
+      do {
+	len = write(fop->fd, bufstr + offset, buflen - offset);
+      } while ((len == -1) && (errno == EINTR));
+
       errsaved = errno;
       fcntl(fop->fd, F_SETFL, flags);
 
@@ -3916,6 +3951,7 @@ static void
 fd_close_output(Scheme_Output_Port *port)
 {
   Scheme_FD *fop = (Scheme_FD *)port->port_data;
+  int cr;
 
   if (fop->bufcount)
     flush_fd(port, NULL, 0, 0, 0);
@@ -3923,7 +3959,9 @@ fd_close_output(Scheme_Output_Port *port)
   if (fop->flushing && !force_port_closed)
     wait_until_fd_flushed(port);
   
-  close(fop->fd);
+  do {
+    cr = close(fop->fd);
+  } while ((cr == -1) && (errno == EINTR));
 }
 
 static Scheme_Object *
@@ -4439,15 +4477,13 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   
   if (!synchonous) {
     if (!inport && PIPE_FUNC(to_subprocess _EXTRA_PIPE_ARGS))
-      scheme_raise_exn(MZEXN_MISC,
-		       "%s: pipe failed (too many ports open?)", name);
+      scheme_raise_exn(MZEXN_MISC, "%s: pipe failed (%e)", name, errno);
     if (!outport && PIPE_FUNC(from_subprocess _EXTRA_PIPE_ARGS)) {
       if (!inport) {
 	MSC_IZE(close)(to_subprocess[0]);
 	MSC_IZE(close)(to_subprocess[1]);
       }
-      scheme_raise_exn(MZEXN_MISC,
-		       "%s: pipe failed (too many ports open?)", name);
+      scheme_raise_exn(MZEXN_MISC, "%s: pipe failed (%e)", name, errno);
     }
     if (!errport && PIPE_FUNC(err_subprocess _EXTRA_PIPE_ARGS)) {
       if (!inport) {
@@ -4458,8 +4494,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 	MSC_IZE(close)(from_subprocess[0]);
 	MSC_IZE(close)(from_subprocess[1]);
       }
-      scheme_raise_exn(MZEXN_MISC,
-		       "%s: pipe failed (too many ports open?)", name);
+      scheme_raise_exn(MZEXN_MISC, "%s: pipe failed (%e)", name, errno);
     }
   }
 
@@ -4637,7 +4672,10 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 	i = getdtablesize();
 #endif
 	while (i-- > 3) {
-	  close(i);
+	  int cr;
+	  do {
+	    cr = close(i);
+	  } while ((cr == -1) && (errno == EINTR));
 	}
 #endif	   
       } else {
@@ -5250,6 +5288,7 @@ static void default_sleep(float v, void *fds)
     /******* End Windows/BeOS stuff *******/
 
     select(limit, rd, wr, ex, v ? &time : NULL);
+    /* Note: we want signals to break the above select()! */
 #endif
   }
 }

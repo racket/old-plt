@@ -69,6 +69,7 @@ static int mzerrno = 0;
 # include <sys/socket.h>
 # include <fcntl.h>
 # define TCP_SOCKSENDBUF_SIZE 32768
+# define NOT_WINSOCK(x) x
 #endif
 
 #ifdef USE_WINSOCK_TCP
@@ -79,6 +80,7 @@ struct SOCKADDR_IN {
   struct in_addr sin_addr;
   char sin_zero[8];
 };
+# define NOT_WINSOCK(x) 0
 #endif
 
 #ifdef USE_MAC_TCP
@@ -90,7 +92,12 @@ struct SOCKADDR_IN {
 #ifdef USE_UNIX_SOCKETS_TCP
 typedef long tcp_t;
 # define INVALID_SOCKET (-1)
-#define closesocket close
+static void closesocket(long s) {
+  int cr;
+  do { 
+    cr = close(s);
+  } while ((cr == -1) && (errno == EINTR));
+}
 #endif
 
 #ifdef USE_WINSOCK_TCP
@@ -721,6 +728,7 @@ static int tcp_check_accept(Scheme_Object *listener)
   DECL_FDSET(readfds, 1);
   DECL_FDSET(exnfds, 1);
   struct timeval time = {0, 0};
+  int sr;
 
   INIT_DECL_FDSET(readfds, 1);
   INIT_DECL_FDSET(exnfds, 1);
@@ -734,8 +742,12 @@ static int tcp_check_accept(Scheme_Object *listener)
   MZ_FD_ZERO(exnfds);
   MZ_FD_SET(s, readfds);
   MZ_FD_SET(s, exnfds);
-    
-  return select(s + 1, readfds, NULL, exnfds, &time);
+  
+  do {
+    sr = select(s + 1, readfds, NULL, exnfds, &time);
+  } while ((sr == -1) && (NOT_WINSOCK(errno) == EINTR));
+
+  return sr;
 #endif
 #ifdef USE_MAC_TCP
   int i, count;
@@ -777,6 +789,7 @@ static int tcp_check_connect(Scheme_Object *connector)
   DECL_FDSET(writefds, 1);
   DECL_FDSET(exnfds, 1);
   struct timeval time = {0, 0};
+  int sr;
 
   INIT_DECL_FDSET(writefds, 1);
   INIT_DECL_FDSET(exnfds, 1);
@@ -788,7 +801,11 @@ static int tcp_check_connect(Scheme_Object *connector)
   MZ_FD_ZERO(exnfds);
   MZ_FD_SET(s, exnfds);
     
-  if (!select(s + 1, NULL, writefds, exnfds, &time))
+  do {
+    sr = select(s + 1, NULL, writefds, exnfds, &time);
+  } while ((sr == -1) && (NOT_WINSOCK(errno) == EINTR));
+
+  if (!sr)
     return 0;
   if (FD_ISSET(s, exnfds))
     return -1;
@@ -834,6 +851,7 @@ static int tcp_check_write(Scheme_Object *conn)
   DECL_FDSET(writefds, 1);
   DECL_FDSET(exnfds, 1);
   struct timeval time = {0, 0};
+  int sr;
 
   INIT_DECL_FDSET(writefds, 1);
   INIT_DECL_FDSET(exnfds, 1);
@@ -845,7 +863,11 @@ static int tcp_check_write(Scheme_Object *conn)
   MZ_FD_ZERO(exnfds);
   MZ_FD_SET(s, exnfds);
   
-  return select(s + 1, NULL, writefds, exnfds, &time);
+  do {
+    sr = select(s + 1, NULL, writefds, exnfds, &time);
+  } while ((sr == -1) && (NOT_WINSOCK(errno) == EINTR));
+
+  return sr;
 #else
   TCPiopbX *xpb;
   TCPiopb *pb;
@@ -921,6 +943,7 @@ static int tcp_char_ready (Scheme_Input_Port *port)
 {
   Scheme_Tcp *data;
 #ifdef USE_SOCKETS_TCP
+  int sr;
   DECL_FDSET(readfds, 1);
   DECL_FDSET(exfds, 1);
   struct timeval time = {0, 0};
@@ -942,7 +965,11 @@ static int tcp_char_ready (Scheme_Input_Port *port)
   MZ_FD_SET(data->tcp, readfds);
   MZ_FD_SET(data->tcp, exfds);
     
-  return select(data->tcp + 1, readfds, NULL, exfds, &time);
+  do {
+    sr = select(data->tcp + 1, readfds, NULL, exfds, &time);
+  } while ((sr == -1) && (NOT_WINSOCK(errno) == EINTR));
+
+  return sr;
 #endif
 
 #ifdef USE_MAC_TCP
@@ -1006,7 +1033,13 @@ static int tcp_getc(Scheme_Input_Port *port)
   }
 
 #ifdef USE_SOCKETS_TCP
-  data->b.bufmax = recv(data->tcp, data->b.buffer, TCP_BUFFER_SIZE, 0);
+  {
+    int rn;
+    do {
+      rn = recv(data->tcp, data->b.buffer, TCP_BUFFER_SIZE, 0);
+    } while ((rn == -1) && (errno = EINTR));
+    data->b.bufmax = rn;
+  }
   errid = errno;
 #endif
 #ifdef USE_MAC_TCP
@@ -1160,7 +1193,11 @@ int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block,
  top:
 
 #ifdef USE_SOCKETS_TCP
-  if ((sent = send(data->tcp, s + offset, len, 0)) != len) {
+  do {
+    sent = send(data->tcp, s + offset, len, 0);
+  } while ((sent == -1) && (errno == EINTR));
+
+  if (sent != len) {
 #ifdef USE_WINSOCK_TCP
     errid = WSAGetLastError();
 # define SEND_BAD_MSG_SIZE(e) (e == WSAEMSGSIZE)
@@ -1517,6 +1554,8 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 #ifdef USE_UNIX_SOCKETS_TCP
 	if (status)
 	  status = errno;
+	if (status == EINTR)
+	  status = EINPROGRESS;
 	
 	inprogress = (status == EINPROGRESS);
 #endif
@@ -1536,9 +1575,14 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 	  END_ESCAPEABLE();
 	  if (status == 1) {
 #ifdef USE_UNIX_SOCKETS_TCP
-	    status = recv(s, NULL, 0, 0); /* test input */
-	    if (!status)
-	      status = send(s, NULL, 0, 0); /* test output */
+	    do {
+	      status = recv(s, NULL, 0, 0); /* test input */
+	    } while ((status == -1) && (errno == EINTR));
+	    if (!status) {
+	      do {
+		status = send(s, NULL, 0, 0); /* test output */
+	      } while ((status == -1) && (errno == EINTR));
+	    }
 #else
 	    status = send(s, "", 0, 0); /* test output */
 	    if (status)
@@ -1869,7 +1913,11 @@ tcp_accept(int argc, Scheme_Object *argv[])
   s = ((listener_t *)listener)->s;
 
   l = sizeof(tcp_accept_addr);
-  s = accept(s, (struct sockaddr *)&tcp_accept_addr, &l);
+
+  do {
+    s = accept(s, (struct sockaddr *)&tcp_accept_addr, &l);
+  } while ((s == -1) && (NOT_WINSOCK(errno) = EINTR));
+
   if (s != INVALID_SOCKET) {
     Scheme_Object *v[2];
     Scheme_Tcp *tcp;

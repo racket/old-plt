@@ -1,4 +1,9 @@
 
+103/2:
+
+ * Changed order of first two arguments to `process[*]/ports', and
+   fixed bugs.
+
 103/1:
 
  * Changed `define-values' to require distinct variables for binding.
@@ -54,6 +59,8 @@ Added not-break-exn?, useful mainly as a predicate in a
 Fixed load/use-compiled, require-library, and many MzLib functions to
  propagate break exceptions correctly
 Added check-parameter-procedure and changed parameterize
+Changed order of first two arguments to process[*]/ports, and
+ fixed bugs
 Fixed bugs in (eval (compile e))
 
 Version 102, June 26, 2000

@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2005-03-08")
+(define *tex2page-version* "2005-03-14")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -2446,11 +2446,7 @@
 
 (defstruct footnotev mark text tag caller)
 
-(define do-numbered-footnote
-  (lambda ()
-    (let ((num (+ (get-gcount "\\footnotenumber") 1)))
-      (set-gcount! "\\footnotenumber" num)
-      (let ((s (number->string num))) (do-footnote-aux s)))))
+(define do-numbered-footnote (lambda () (do-footnote-aux #f)))
 
 (define do-symfootnote
   (lambda ()
@@ -2479,10 +2475,16 @@
     ((if (eqv? *tex-format* 'latex) do-numbered-footnote do-plain-footnote))))
 
 (define do-footnote-aux
-  (lambda (fnmark)
-    (let* ((fnlabel (gen-temp-string))
-           (fntag (string-append "footnote_" fnlabel))
-           (fncalltag (string-append "call_footnote_" fnlabel))
+  (lambda (non-number-mark)
+    (let* ((fnmark
+             (or non-number-mark
+                 (let ((n (+ (get-gcount "\\footnotenumber") 1)))
+                   (set-gcount! "\\footnotenumber" n)
+                   (number->string n))))
+           (fnlabel (if non-number-mark (gen-temp-string) fnmark))
+           (fntag (string-append *html-node-prefix* "footnote_" fnlabel))
+           (fncalltag
+             (string-append *html-node-prefix* "call_footnote_" fnlabel))
            (fn-tmp-port (open-output-string)))
       (emit-anchor fncalltag)
       (emit-page-node-link-start #f fntag)

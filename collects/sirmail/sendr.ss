@@ -188,6 +188,7 @@
                        "text/plain"
                        "image/jpeg"
                        "image/gif"
+                       "image/png"
                        "application/octet-stream")]
               [encodings '("7bit"
                            "quoted-printable"
@@ -218,21 +219,23 @@
                                          (send d show #f))
                                        (lambda (b e)
                                          (send d show #f)))])
-              (let ([default (lambda (t e)
+              (let ([default (lambda (t e inline?)
                                (letrec ([findpos (lambda (l s)
                                                    (if (string=? (car l) s)
                                                        0
                                                        (add1 (findpos (cdr l) s))))])
 				 (send type-list set-selection (findpos types t))
-				 (send encoding-list set-selection (findpos encodings e))))]
+				 (send encoding-list set-selection (findpos encodings e))
+                                 (send inline-check set-value inline?)))]
                     [suffix (let ([m (regexp-match "[.](.?.?.?)$" filename)])
                               (and m (cadr m)))])
                 (case (if suffix (string->symbol suffix) '???)
-                  [(txt ss scm) (default "text/plain" "quoted-printable")]
-                  [(ps) (default "application/postscript" "base64")]
-                  [(jpeg jpg) (default "image/jpeg" "base64")]
-                  [(gif) (default "image/gif" "base64")]
-                  [else (default "application/octet-stream" "base64")]))
+                  [(txt ss scm) (default "text/plain" "quoted-printable" #f)]
+                  [(ps) (default "application/postscript" "base64" #f)]
+                  [(jpeg jpg) (default "image/jpeg" "base64" #t)]
+                  [(png) (default "image/png" "base64" #t)]
+                  [(gif) (default "image/gif" "base64" #t)]
+                  [else (default "application/octet-stream" "base64" #f)]))
               (send d show #t)
               (if ok?
                   (values (list-ref types (send type-list get-selection))

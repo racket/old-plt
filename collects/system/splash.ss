@@ -14,13 +14,7 @@
 			 mred:splash-max mred:splash-counter))))
 
 (define-values (mred:no-more-splash-messages mred:open-splash)
-  ;; thanks for this binding Richard!!
-  (let ([WX-BORDER-SIZE (case wx:window-system
-			  [(xt)  2]  ; grrrr....
-			  [(motif) 0]
-			  [(windows) 0]
-			  [(macintosh) 0])]
-	[clear-state void]
+  (let ([clear-state void]
 	[splitup-path
 	 (lambda (f)
 	   (let*-values ([(absf) (if (relative-path? f)
@@ -111,10 +105,8 @@
 				   (let ([cwidth (box 0.)]
 					 [cheight (box 0.)])
 				     (send frame get-client-size cwidth cheight)
-				     (values (+ (* 2 WX-BORDER-SIZE)
-						(- panel-width (unbox cwidth)))
-					     (+ (* 2 WX-BORDER-SIZE)
-						(- panel-height (unbox cheight)))))])
+				     (values (- panel-width (unbox cwidth))
+					     (- panel-height (unbox cheight))))])
 		       
 		       ;; center by the client width here
 		       (let ([frame-width (+ c-x-offset panel-width)]

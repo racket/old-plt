@@ -34,7 +34,7 @@
 				(make-verbose #t)
 				(compiler-verbose #t)]
     [("-l") =>
-	    (lambda collections 
+	    (lambda (flag . collections)
 	      (map list collections))
 	    '("Setup specific <collection>s only" "collection")])
    (=>

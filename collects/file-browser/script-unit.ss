@@ -84,7 +84,7 @@
         (set! selection (cons f selection))
         (gui:selection-added f))
       
-      ;; internal-remove-selection: file ->
+      ;; internal-remove-selection: file -> bool
       (define (internal-remove-selection f)
         (let ((found #f))
           (set! selection
@@ -96,7 +96,22 @@
                      (loop (cdr s)))
                     (else (cons (car s) (loop (cdr s)))))))
           found))
-              
+
+      ;; internal-remove-copy-selection: file -> bool
+      (define (internal-remove-copy-selection f)
+        (let ((found #f))
+          (set! copy-selection
+                (let loop ((s copy-selection))
+                  (cond
+                    ((null? s) null)
+                    ((fs:file=? f (car s)) 
+                     (set! found #t)
+                     (loop (cdr s)))
+                    (else (cons (car s) (loop (cdr s)))))))
+          found))
+
+
+      
       ;; remove-selection: (file U string) ->
       (define (remove-selection f)
         (file-arg! f 'remove-selection 0 f)
@@ -121,15 +136,18 @@
       
       ;; cut: ->
       (define (cut)
-        (set! is-cut #t)
+        (set! is-cut? #t)
         (set! copy-selection (map (lambda (x) x) selection)))
       
-      ;; paste: ->
-      (define (paste)
+      ;; paste: file ->
+      (define (paste dest)
+        (file-arg! dest 'paste 0 dest)
         (for-each
          (lambda (file)
-           (
-      
+           (if is-cut?
+               (move-file file dest)
+               (copy-file file dest)))
+         copy-selection))
       
       ;; directory-list: (file U string) -> file list
       (define (directory-list dir)
@@ -144,10 +162,13 @@
       ;; delete-file: (file U string) ->
       (define (delete-file f)
         (file-arg! f 'delete-file 0 f)
-        (let ((was-selected (internal-remove-selection f)))
+        (let ((was-selected (internal-remove-selection f))
+              (was-copy-selected (internal-remove-copy-selection f)))
           (with-handlers ((exn:i/o:filesystem? (lambda (ex)
                                                  (if was-selected
                                                      (set! selection (cons f selection)))
+                                                 (if was-copy-selected
+                                                     (set! selection (cons f copy-selection)))
                                                  (raise ex))))
             (fs:delete-file f))))
         
@@ -167,10 +188,14 @@
       (define (rename-file file new-name)
         (file-arg! file 'rename-file 0 file new-name)
         (check-arg new-name string? 'rename-file "string" 1 file new-name)
-        (let ((was-selected (internal-remove-selection file)))
+        (let ((was-selected (internal-remove-selection file))
+              (was-copy-selected (internal-remove-copy-selection file)))
           (with-handlers ((exn:i/o:filesystem? (lambda (ex)
                                                  (if was-selected
                                                      (set! selection (cons file selection)))
+                                                 (if was-copy-selected
+                                                     (set! selection 
+                                                           (cons file copy-selection)))
                                                  (raise ex))))
             (let ((new-file (fs:rename-file file new-name)))
               (cons-selection new-file)
@@ -180,15 +205,33 @@
       (define (move-file file new-dir)
         (file-arg! file 'move-file 0 file new-dir)
         (file-arg! new-dir 'move-file 1 file new-dir)
-        (let ((was-selected (internal-remove-selection file)))
+        (let ((was-selected (internal-remove-selection file))
+              (was-copy-selected (internal-remove-copy-selection file)))
           (with-handlers ((exn:i/o:filesystem? (lambda (ex)
                                                  (if was-selected
                                                      (set! selection (cons file selection)))
+                                                 (if was-copy-selected
+                                                     (set! selection 
+                                                           (cons file copy-selection)))
                                                  (raise ex))))
             (let ((new-file (fs:move-file file new-dir)))
               (cons-selection new-file)
               new-file))))
       
+      ;; copy-file: (file U string) (file U string) -> file
+      (define (copy-file file new-dir)
+        (file-arg! file 'copy-file 0 file new-dir)
+        (file-arg! new-dir 'copy-file 1 file new-dir)
+        (cond
+          ((is-directory? file)
+           (let ((nd (new-directory (file-name file) new-dir)))
+             (for-each
+              (lambda (f) (copy-file f nd))
+              (directory-list file))))
+          (else
+           (fs:copy-file file new-dir))))
+        
+        
       ;; edit-scheme: file ->
       (define (edit-scheme file)
         (file-arg! file 'edit-scheme 0 file)
@@ -206,6 +249,11 @@
                    'toolbar-add "string < 200 chars or bitmap% object" 0 label action)
         (check-arg action procedure? 'toolbar-add "procedure" 1 label action)
         (gui:toolbar-add label action) 
+        (void))
+      
+      ;; toolbar-spacer: ->
+      (define (toolbar-spacer)
+        (gui:toolbar-spacer)
         (void))
       
       ;; open-dir-window: (file U string) ->

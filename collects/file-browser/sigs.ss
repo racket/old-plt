@@ -14,7 +14,8 @@
      new-file
      rename-file
      move-file
-     delete-file))
+     delete-file
+     copy-file))
   (define-signature gui^ 
     (selection-updated
      selection-added
@@ -23,7 +24,8 @@
      change-dir
      add-window
      close-window
-     toolbar-add))
+     toolbar-add
+     toolbar-spacer))
   (define-signature script^ 
     (make-file
      file-name
@@ -49,10 +51,14 @@
      rename-file
      move-file
      copy-file
+     copy
+     cut
+     paste
      
      edit-scheme
      change-dir
      open-dir-window
      close-dir-window
-     toolbar-add))
+     toolbar-add
+     toolbar-spacer))
   (define-signature code-engine^ (user-eval get-user-value open-drscheme)))

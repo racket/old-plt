@@ -262,6 +262,9 @@
           (lambda (a b)
             (user-eval `(,action) void))))
 
+      (define (toolbar-spacer)
+        (make-object button% "     " toolbar void))
+      
       (define (close-window)
         (send window-pane close-current))
       

@@ -46,7 +46,7 @@
                      (string->immutable-string dir)
                      (string->immutable-string full-path))))
 
-      ;; make-file-from-path: string -> path
+      ;; make-file-from-path: string -> file
       (define (make-file-from-path path)
         (let ((full-path
                (mz:simplify-path
@@ -108,6 +108,14 @@
           (mz:rename-file-or-directory (file-full-path file) (file-full-path new-file))
           (send state notify-all-add new-file)
           (send state notify-all-delete file)
+          new-file))
+      
+      ;; copy-file: file * file -> file
+      (define (copy-file file new-dir)
+        (let ((new-file (make-file-from-name-dir (file-name file) 
+                                                 (file-full-path new-dir))))
+          (mz:copy-file (file-full-path file) (file-full-path new-file))
+          (send state notify-all-add new-file)
           new-file))
       
       ;; delete-file: file ->

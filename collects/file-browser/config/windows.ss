@@ -15,7 +15,7 @@
   (define single-mouse-dir single-mouse)
   
   (define (double-mouse-file file keys)
-    (if (regexp-match ".*\\.ss" (file-name file))
+    (if (regexp-match ".*\\.ss$" (file-name file))
         (edit-scheme file)
         (process (format "emacs ~a" (file-full-path file)))))
   
@@ -32,7 +32,11 @@
   
   (define sort-files dirs-first)
   
+  (toolbar-spacer)
   (add-new-window-button)
   (add-close-button)
-
-)
+  (toolbar-spacer)
+  (add-copy-button)
+  (add-cut-button)
+  (add-paste-button)
+  )

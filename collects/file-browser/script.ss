@@ -6,6 +6,8 @@
   (provide (all-defined))
   (define-values/invoke-unit/sig script^ (script-unit-param))
   
+  
+  ;; ------------------------------ FILTERS -------------------------------
   ;; all-files: file -> bool
   (define (all-files f) #t)
   
@@ -14,6 +16,8 @@
     (not (char=? (string-ref (file-name f) 0)
                  #\.)))
   
+  
+  ;; ------------------------------ SORTS ----------------------------------
   ;; alphabet: file * file -> bool
   (define (alphabet f1 f2)
     (string<? (file-name f1) (file-name f2)))
@@ -29,6 +33,8 @@
       ((and (is-directory? f2) (not (is-directory? f1))) #f)
       (else (alphabet f1 f2))))
   
+  
+  ;; ------------------------------- UTILS --------------------------------
   ;; find: (string U file) * (file ->) -> ()
   (define (find start-dir func)
     (let ((files (directory-list start-dir)))
@@ -37,11 +43,18 @@
                   (if (is-directory? file)
                       (find file func)))
                 files)))
-  
+    
   (define (add-close-button)
     (toolbar-add "close" (lambda () (close-dir-window))))
   (define (add-new-window-button)
     (toolbar-add "new" (lambda () (open-dir-window (get-current-dir)))))
-
+  (define (add-copy-button)
+    (toolbar-add "copy" copy))
+  (define (add-cut-button)
+    (toolbar-add "cut" cut))
+  (define (add-paste-button)
+    (toolbar-add "paste" (lambda () (paste (get-current-dir)))))
+    
+           
            
   )

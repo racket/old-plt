@@ -439,18 +439,10 @@ char *userDataPtr;
     return(CallAddrToNameProc((AddrToNameUPP) dnr, ADDRTONAME, addr, rtnStruct, resultproc, userDataPtr));
 }
 
-
-typedef OSErr (*HInfoProcPtr)(long selector, char* hostName, struct returnRec* returnRecPtr,
-                                long resultProc, char* userData);
-
+typedef long ResultUPP;
 enum {
-    uppHInfoProcInfo = kCStackBased
-         | RESULT_SIZE(SIZE_CODE(sizeof(long)))
-         | STACK_ROUTINE_PARAMETER(1, SIZE_CODE(sizeof(short)))
-         | STACK_ROUTINE_PARAMETER(2, SIZE_CODE(sizeof(char *)))
-         | STACK_ROUTINE_PARAMETER(3, SIZE_CODE(sizeof(struct returnRec *)))
-         | STACK_ROUTINE_PARAMETER(4, SIZE_CODE(sizeof(long)))
-         | STACK_ROUTINE_PARAMETER(5, SIZE_CODE(sizeof(char *)))
-
-};
-
+	uppResultProcInfo = kPascalStackBased
+		 | STACK_ROUTINE_PARAMETER(1, SIZE_CODE(sizeof(struct hostInfo*)))
+		 | STACK_ROUTINE_PARAMETER(2, SIZE_CODE(sizeof(Ptr))),
+      };
+#define NewResultProc(proc) (ResultUPP)mzNewRoutineDescriptor((ProcPtr)proc, uppResultProcInfo, GetCurrentArchitecture())

@@ -2419,7 +2419,7 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
 #ifdef USE_MAC_FILE_TOOLBOX
   if (find_mac_file(src, 0, &srcspec, 0, -3, NULL, &swas_dir, &sexists, NULL, NULL, NULL, NULL, NULL)
       && sexists) {
-    if (exists_ok || find_mac_file(dest, 0, &destspec, 0, 0, NULL, NULL, &dexists, NULL, NULL, NULL, NULL, NULL)) {
+    if (find_mac_file(dest, 0, &destspec, 0, 0, NULL, NULL, &dexists, NULL, NULL, NULL, NULL, NULL)) {
       /* Already exists or different volumes => failure */
       if ((exists_ok || !dexists) && (srcspec.vRefNum == destspec.vRefNum)) {
         int rename;
@@ -2432,8 +2432,7 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
           pb.hFileInfo.ioVRefNum = srcspec.vRefNum;
           pb.hFileInfo.ioFDirIndex = -1;
           pb.hFileInfo.ioDirID = srcspec.parID;
-          if (PBGetCatInfo(&pb, 0)) {
-	    errno = -1;
+          if ((errno = PBGetCatInfo(&pb, 0))) {
             goto failed;
 	  }
             
@@ -2443,6 +2442,11 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
         rename = ((destspec.name[0] != srcspec.name[0])
                   || memcmp(destspec.name, srcspec.name, destspec.name[0] + 1));
         
+	if (dexists && exists_ok) {
+	  if ((errno = FSpDelete(&destspec)))
+	    goto failed;
+	}
+
         if (srcspec.parID != destspec.parID) {
           CMovePBRec mv;
           mv.ioNamePtr = srcspec.name;
@@ -2450,16 +2454,14 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
           mv.ioDirID = srcspec.parID;
           mv.ioNewName = NULL;
           mv.ioNewDirID = destspec.parID;
-          if (PBCatMove(&mv, 0)) {
-	    errno = -1;
+          if ((errno = PBCatMove(&mv, 0))) {
             goto failed;
 	  }
         }
         
         if (rename) {
           srcspec.parID = destspec.parID;
-          if (FSpRename(&srcspec, destspec.name)) {
-	    errno = -1;
+          if ((errno = FSpRename(&srcspec, destspec.name))) {
 	    goto failed;
 	  }
       	}
@@ -2468,8 +2470,8 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
       } else if (!exists_ok && dexists)
 	exists_ok = -1;
     }
-    errno = -1;
   }
+  errno = -1;
 # define MOVE_ERRNO_FORMAT "%e"
 #else
 # ifdef DOS_FILE_SYSTEM
@@ -4128,6 +4130,14 @@ Scheme_Object *scheme_set_exec_cmd(char *s)
 
   return exec_cmd;
 #endif
+}
+
+char *scheme_get_exec_path(void)
+{
+  if (exec_cmd)
+    return SCHEME_STR_VAL(exec_cmd);
+  else
+    return NULL;
 }
 
 /********************************************************************************/

@@ -401,10 +401,6 @@ static pascal void dnr_done(struct hostInfo *hi, int * done)
   *done = true;
 }
 
-typedef long ResultUPP;
-enum { uppResultProcInfo = 0x000003C1 };  /* no_return_value Func(4_bytes, 4_bytes) */
-#define NewResultProc(proc) (ResultUPP)mzNewRoutineDescriptor((ProcPtr)proc, uppResultProcInfo, GetCurrentArchitecture())
-
 static ResultUPP u_dnr_done;
 
 static pascal void tcp_notify(StreamPtr stream, unsigned short eventCode,
@@ -519,21 +515,36 @@ static void TCP_INIT(char *name)
   CFragConnectionID connID;
   OSErr err;
   void (*f)(...);
+  char *netglue;
 
-  if (!scheme_mac_path_to_spec("nethack", &spec))
+  netglue = scheme_get_exec_path();
+  if (netglue) {
+    char *file;
+    int i;
+    i = strlen(netglue);
+    file = scheme_malloc_atomic(i + 20);
+    memcpy(file, netglue, i);
+    for (i--; (i >= 0) && (file[i] != ':'); i--) {
+    }
+    memcpy(file + i + 1, "netglue", 8);
+    netglue = file;
+  } else
+    netglue = "netglue";
+
+  if (!scheme_mac_path_to_spec(netglue, &spec))
     scheme_raise_exn(MZEXN_I_O_TCP,
-		     "%s: TCP initialization error (can't find nethack)",
-		     name);
+		     "%s: TCP initialization error (can't find %q)",
+		     name, netglue);
 
   err = GetDiskFragment(&spec, 0, 0, 0, kPrivateCFragCopy, &connID, 0, NULL);
   if (err != noErr)
     scheme_raise_exn(MZEXN_I_O_TCP,
-		     "%s: TCP initialization error (can't load nethack: %e)",
-		     name, err);
+		     "%s: TCP initialization error (can't load %q: %e)",
+		     name, netglue, err);
   err = FindSymbol(connID, "\pFillInNetPointers", (Ptr *)&f, 0);
   if (err != noErr)
     scheme_raise_exn(MZEXN_I_O_TCP,
-		     "%s: TCP initialization error (can't get nethack function: %e)",
+		     "%s: TCP initialization error (can't get netglue function: %e)",
 		     name, err);
 
   f(&mzPBOpenSync, &mzPBControlSync, &mzPBControlAsync, 
@@ -1705,7 +1716,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
       errmsg = "; host not found";
       goto tcp_error;
     }
-    
+
     if ((errNo = mac_tcp_make(&xpb, &pb, &data))) {
       errpart = 2;
       goto tcp_error;

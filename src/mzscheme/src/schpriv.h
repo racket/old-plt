@@ -1804,6 +1804,8 @@ int scheme_is_special_filename(const char *_f, int not_nul);
 # define NUM_SPECIAL_FILE_KINDS 30
 #endif
 
+char *scheme_get_exec_path(void);
+
 /*========================================================================*/
 /*                               ports                                    */
 /*========================================================================*/

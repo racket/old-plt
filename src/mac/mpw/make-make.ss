@@ -3,6 +3,8 @@
 (define debug? #f)
 (define debug-only null)
 
+(require (lib "thread.ss"))
+
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utils
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -23,29 +25,37 @@
        [else
 	(format ":~a~a" (car l) (loop (cdr l)))]))))
 
+(define (mk-includes-cmdline includes)
+  (let loop ([includes includes])
+    (if (null? includes)
+	""
+	(format "-i ~a ~a"
+		(car includes)
+		(loop (cdr includes))))))
+
+(define cpp-defines
+  (format "-d FOR_MAC -d SILENT -d WX_CARBON -d __STDC__~a"
+	  (if sgc? 
+	      " -d USE_SENORA_GC" 
+	      "")))
 
 (define (make-comp includes)
   (lambda (f)
     (let* ([base (cadr (regexp-match ".*:([^:]*)$" f))]
 	   [obj (format "~a.o" base)]
 	   [is-c? (regexp-match "[.]c$" base)])
-      (cons
+      (list
        obj
-       (format "~a \304~a ~a\r\t~a ~a ~a -opt off -w off -d FOR_MAC -d SILENT -d WX_CARBON -d __STDC__~a -includes unix -curdir~a -o ~a.o"
+       f
+       (format "~a \304~a ~a\r\t~a ~a ~a -opt off -w off ~a -includes unix -make ~a.dep -curdir~a -o ~a.o"
 	       obj
 	       (if is-c? "" " carbon.dump")
 	       f
 	       (if is-c? "MrC" "MrCpp -load carbon.dump -rtti off")
 	       f
-	       (let loop ([includes includes])
-		 (if (null? includes)
-		     ""
-		     (format "-i ~a ~a"
-			     (car includes)
-			     (loop (cdr includes)))))
-	       (if sgc? 
-		   " -d USE_SENORA_GC" 
-		   "")
+	       (mk-includes-cmdline includes)
+	       cpp-defines
+	       base
 	       (if debug?
 		   " -sym full"
 		   "")
@@ -467,12 +477,16 @@
     (for-each (lambda (p)
 		(printf "  ~a\266\r" (car p)))
 	      all-srcs)
+    (printf "\r\rSRCS = \266\r")
+    (for-each (lambda (p)
+		(printf "  ~a\266\r" (cadr p)))
+	      all-srcs)
     
-    (printf "\r::::nethack \304 nethack.c\r")
+    (printf "\r\r::::netglue \304 nethack.c\r")
     (printf "\tMrC nethack.c -o nethack.c.o\r")
-    (printf "\tPPCLink nethack.c.o -export FillInNetPointers -o ::::nethack \"{SharedLibraries}InterfaceLib\" -xm s\r\r")
+    (printf "\tPPCLink nethack.c.o -export FillInNetPointers -o ::::netglue \"{SharedLibraries}InterfaceLib\" -xm s\r\r")
 
-    (printf "\rall \304 ::::MrEd ::::nethack\r\r")
+    (printf "\rall \304 ::::MrEd ::::netglue\r\r")
 
     (printf "\r::::MrEd \304 {OBJS}\r")
     (printf "\tPPCLink {OBJS} \"{SharedLibraries}CarbonLib\" \"{SharedLibraries}StdCLib\"  \"{PPCLibraries}MrCPlusLib.o\" \"{PPCLibraries}PPCCRuntime.o\" \"{PPCLibraries}StdCRuntime.o\" -o ::::MrEd -c 'MrEd' -m __appstart~a\r"
@@ -487,10 +501,19 @@
 						  debug-only)))
 	      (with-spaces " -i" (lambda (x) (x)) src-dirs)))
     
-    (printf "\rcarbon.dump \304 carbon.c\r\tMrCpp carbon.c -rtti off -dump carbon.dump\r\r\r")
+    (printf "\rcarbon.dump \304 carbon.c\r\tMrCpp carbon.c -rtti off -dump carbon.dump\r\r")
     
     (for-each (lambda (p)
-		(printf "~a\r\r" (cdr p)))
-	      all-srcs))
+		(printf "~a\r\r" (caddr p)))
+	      all-srcs)
+    
+    ;; Append all .dep files:
+    (for-each (lambda (f)
+		(when (regexp-match "[.]dep$" f)
+		  (call-with-input-file f
+		    (lambda (f)
+		      (copy-port f (current-output-port))))
+		  (printf "\r")))
+	      (directory-list)))
   'truncate)
 

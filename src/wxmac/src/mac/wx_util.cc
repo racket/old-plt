@@ -309,11 +309,7 @@ Bool wxGetUserName(char *buf, int maxSize)
 
 #ifdef WX_CARBON
 
-/* wxFSRefToPath converts an FSRef to a path.  This code is copied from 
- * scheme_mac_spec_to_path in MzScheme, but I don't want to widen the 
- * MzScheme interface any more than I already have.
- * 
- * May return NULL.
+/* wxFSRefToPath converts an FSRef to a path.
  */
 char *wxFSRefToPath(FSRef fsref)
 {
@@ -332,6 +328,10 @@ char *wxFSRefToPath(FSRef fsref)
     } else if (err == noErr) {
       longEnough = TRUE;
     } else {
+      char b[20];
+      sprintf(b + 1, "%d", err);
+      b[0] = strlen(b + 1);
+      DebugStr((unsigned char *)b);
       return NULL;
     }
   }

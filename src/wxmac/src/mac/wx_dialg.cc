@@ -268,6 +268,40 @@ int log_base_10(int i)
   }
 }
 
+#ifdef OS_X
+# define PATH_SEPARATOR "/"
+#else
+// Result from the dialog already has a separator:
+# define PATH_SEPARATOR ""
+#endif
+
+static char *GetNthPath(NavReplyRecord *reply, int index)
+{
+  AEKeyword   theKeyword;
+  DescType    actualType;
+  Size        actualSize;
+  FSRef	      fsref;
+  OSErr       err;
+
+  err = AEGetNthPtr(&(reply->selection), index, typeFSRef, &theKeyword, &actualType, 
+		    &fsref, sizeof(fsref), &actualSize);
+  if (err != noErr) {
+    if (err == errAECoercionFail) {
+      /* Try FSSpec: */
+      FSSpec spec;
+
+      err = AEGetNthPtr(&(reply->selection), index, typeFSS, &theKeyword, &actualType, 
+			&spec, sizeof(FSSpec), &actualSize);
+      if (err == noErr) {
+	return scheme_mac_spec_to_path(&spec);
+      }
+    }
+    return NULL;
+  }
+
+  return wxFSRefToPath(fsref);
+}
+
 char *wxFileSelector(char *message, char *default_path,
                      char *default_filename, char *default_extension,
                      char *wildcard, int flags,
@@ -354,11 +388,7 @@ char *wxFileSelector(char *message, char *default_path,
     }
     
     // parse the results
-    AEKeyword   theKeyword;
-    DescType    actualType;
-    Size        actualSize;
     char		*temp;
-    FSRef		fsref;
 
     if (flags & wxMULTIOPEN) {
       long count, index;
@@ -372,12 +402,7 @@ char *wxFileSelector(char *message, char *default_path,
       }
       
       for (index=1; index<=count; index++) {
-        err = AEGetNthPtr(&(reply->selection),index,typeFSRef, &theKeyword, &actualType, &fsref,sizeof(fsref),&actualSize);
-        if (err != noErr) {
-          NavDisposeReply(reply);
-          return NULL;
-        }
-        temp = wxFSRefToPath(fsref);
+	temp = GetNthPath(reply, index);
         if (temp != NULL) {
           newpath = new WXGC_ATOMIC char[strlen(aggregate) + 
                                          strlen(temp) +
@@ -390,15 +415,12 @@ char *wxFileSelector(char *message, char *default_path,
       NavDisposeReply(reply);
       
       return aggregate;
-      
     } else if (flags & wxOPEN) {
-      
-      AEGetNthPtr(&(reply->selection), 1, typeFSRef, &theKeyword, &actualType, &fsref, sizeof(fsref), &actualSize);
-      
-      NavDisposeReply(reply);
+      char *path;
 
-      return wxFSRefToPath(fsref);
-      
+      path = GetNthPath(reply, 1);
+      NavDisposeReply(reply);
+      return path;
     } else { // saving file
       int strLen = CFStringGetLength(reply->saveFileName) + 1;
       char *filename = new char[strLen];
@@ -409,10 +431,8 @@ char *wxFileSelector(char *message, char *default_path,
 	NavDisposeReply(reply);
 	return NULL;
       }
-      
-      AEGetNthPtr(&(reply->selection), 1, typeFSRef, &theKeyword, &actualType, &fsref, sizeof(fsref), &actualSize);
-      
-      path = wxFSRefToPath(fsref);
+
+      path = GetNthPath(reply, 1);
       
       if (path == NULL) {
 	NavDisposeReply(reply);
@@ -421,7 +441,7 @@ char *wxFileSelector(char *message, char *default_path,
       
       wholepath = new WXGC_ATOMIC char[strlen(path) + strlen(filename) + 2];
       
-      sprintf(wholepath,"%s/%s",path,filename);
+      sprintf(wholepath,"%s" PATH_SEPARATOR "%s",path,filename);
       
       NavDisposeReply(reply);
       

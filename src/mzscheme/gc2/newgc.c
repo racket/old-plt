@@ -884,6 +884,7 @@ inline static void repair_tracking_vals(void)
       } else manual_alias_table[i] = (void*)1;
     }
   }
+  gcFIXUP(man_account_key);
 }
 
 unsigned long scheme_get_tracking_val_memory(void *val)

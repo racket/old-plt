@@ -18,7 +18,8 @@ to the original stdout of DrScheme.
            (lib "unitsig.ss")
            (lib "class.ss")
            (lib "tool.ss" "drscheme")
-           (lib "mred.ss" "mred"))
+           (lib "mred.ss" "mred")
+	   (lib "marks.ss" "stepper" "private"))
   
   (provide tool@)
   
@@ -343,34 +344,32 @@ to the original stdout of DrScheme.
             [(exn? exn) 
              (let ([cms (continuation-mark-set->list (exn-continuation-marks exn) cm-key)])
                (when (and cms (not (null? cms)))
-                 (let* ([first-cms (car cms)]
+                 (let* ([dis (map mark-source cms)]
+			[first-cms (car dis)]
                         [src (car first-cms)]
                         [start-position (cadr first-cms)]
                         [end-position (+ start-position (cddr first-cms))])
                    (send rep highlight-error src start-position end-position))))]
             [else (void)])))
       
-      ;; wrap : syntax syntax -> syntax
+      ;; wrap : syntax (any -> syntax) syntax -> syntax
       ;; a member of stacktrace-imports^
       ;; guarantees that the continuation marks associated with cm-key are
       ;; members of the debug-source type
-      (define (with-mark mark expr)
-        (let ([source (syntax-source mark)]
-              [start-position (syntax-position mark)]
-              [span (syntax-span mark)])
+      (define (with-mark source-stx mark-maker expr)
+        (let ([source (syntax-source source-stx)]
+              [start-position (syntax-position source-stx)]
+              [span (syntax-span source-stx)])
           (if (and (is-a? source text:basic<%>)
                    (number? start-position)
                    (number? span))
               (with-syntax ([expr expr]
-                            [source source]
-                            [offset (- start-position 1)]
-                            [span span]
+                            [mark (mark-maker `(,source ,(- start-position 1) . ,span))]
                             [cm-key cm-key])
-                (syntax
-                 (with-continuation-mark
-                  'cm-key
-                  '(source offset . span)
-                  expr)))
+                #`(with-continuation-mark
+                   'cm-key
+                   mark
+                  expr))
               expr)))
       
       ;; profiling infrastructure. Not used.

@@ -2,9 +2,9 @@
   (require
    (lib "list.ss")
    (lib "etc.ss")
-   (lib "syntax.ss" "plot")
    (lib "math.ss" "plot")
    (lib "view.ss" "plot")
+   (lib "renderer-helpers.ss" "plot")
    (lib "renderers.ss" "plot")   
    (lib "fit.ss" "plot")
    (lib "class.ss"))

@@ -1,6 +1,5 @@
 (module renderers mzscheme
   (require 
-   (lib "syntax.ss" "plot")
    (lib "math.ss" "plot")
    (lib "renderer-helpers.ss" "plot")
    (lib "class.ss"))

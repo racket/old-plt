@@ -22,5 +22,9 @@ Under Windows, the `system' procedure blocks all MzScheme threads
 Under AIX 3.2, write to tcp output port blocks MzScheme when the
   low-level buffer is full
 
+Under HP/UX, (- 0.0 0.0) produces 0.0 instead of -0.0; input, output,
+ multiplication, and division operations produce -0.0 correctly (e.g.,
+ (* -1 0.0) produces -0.0)
+
 On Alpha machines, floating-point overflow is not handled properly
  (so +inf.0, -inf.0, and +nan.0 are messed up)

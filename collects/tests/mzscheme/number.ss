@@ -2,6 +2,8 @@
 (if (not (defined? 'SECTION))
     (load-relative "testing.ss"))
 
+(SECTION 'numbers)
+
 (SECTION 6 5 5)
 (test #f number? 'a)
 (test #f complex? 'a)

@@ -141,13 +141,18 @@
 								[def (car init-defs)])
 						    (cons (syntax (init [id def]))
 							  (loop (cdr init-ids)
+								(cdr init-defs))))]
+						 [else
+						  (with-syntax ([id (car init-ids)])
+						    (cons (syntax (init id))
+							  (loop (cdr init-ids)
 								(cdr init-defs))))]))])
 		 (syntax
 		  (class*/names 
 		   (this-id super-initialize super-make-object) super-expr (interface-expr ...)
 		   (define (super-init-id . args)
 		     (super-make-object . args))
-		   (init-expr ...)
+		   init-expr ...
 		   (public . public-ipds)
 		   (override . override-ipds)
 		   (rename . rename-ipds)

@@ -492,15 +492,17 @@
 				      [super-instantiate-id super-error-map]
 				      [super-make-object-id super-error-map])))])
 
-			     (let ([find-method (let ([all-mappings
-						       (with-syntax ([(mapping ...) mappings]
-								     [extra-init-mappings extra-init-mappings])
-							 (syntax (mapping ... . extra-init-mappings)))])
-						  (lambda (name)
-						    (ormap (lambda (m)
-							     (and (bound-identifier=? (car m) name)
-								  (proc-shape (car m) (cdr m) all-mappings)))
-							   methods)))])
+			     (let ([find-method 
+				    (lambda (name)
+				      (ormap 
+				       (lambda (m)
+					 (and (bound-identifier=? (car m) name)
+					      (with-syntax ([proc (proc-shape (car m) (cdr m) mappings)]
+							    [extra-init-mappings extra-init-mappings])
+						(syntax
+						 (letrec-syntax extra-init-mappings
+						     proc)))))
+				       methods))])
 			       
 			       ;; ---- build final result ----
 			       (with-syntax ([public-names (map cdr publics)]
@@ -1069,6 +1071,13 @@
 	 (andmap identifier? (syntax->list (syntax (kw ...))))
 	 (syntax (do-make-object class
 				 (list by-pos-arg ...)
+				 (list (cons 'kw arg)
+				       ...)))]
+	[(_ do-make-object form class args (kw arg) ...)
+	 (and (andmap identifier? (syntax->list (syntax (kw ...))))
+	      (not (syntax-e (syntax class))))
+	 (syntax (do-make-object class
+				 args
 				 (list (cons 'kw arg)
 				       ...)))]
 	[(_ super-make-object form class (by-pos-arg ...) kwarg ...)

@@ -117,7 +117,7 @@
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define mz-inc "/I ../../mzscheme/include ")
+(define mz-inc "/I ../../mzscheme/include /I .. ")
 
 (try "precomp.c" (list* "../../mzscheme/src/schvers.h"
 			common-deps)
@@ -236,6 +236,7 @@
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define wx-inc (string-append "/I ../../mzscheme/include "
+			      "/I .. "
 			      "/I ../../mzscheme/gc2 "
 			      "/I ../../wxwindow/include/msw "
 			      "/I ../../wxwindow/include/base "
@@ -428,7 +429,7 @@
 	     "../../../libmred3mxxxxxxx.lib")])
   (link-dll objs (list "advapi32.lib") "../../../MrEd3m.exe" "/link /subsystem:windows" #t))
 
-(system- "cl.exe /MT /O2 /DMZ_PRECISE_GC /I../../mzscheme/include /c ../../mzscheme/dynsrc/mzdyn.c /Fomzdyn3m.obj")
+(system- "cl.exe /MT /O2 /DMZ_PRECISE_GC /I../../mzscheme/include /I.. /c ../../mzscheme/dynsrc/mzdyn.c /Fomzdyn3m.obj")
 (system- "lib.exe -def:../../mzscheme/dynsrc/mzdyn.def -out:mzdyn3m.lib")
 
 (define (copy-file/diff src dest)

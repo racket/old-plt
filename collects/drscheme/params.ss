@@ -43,7 +43,7 @@
 
   (define current-definitions-edit%
     (make-parameter 
-     mred:edit%
+     mred:backup-autosave-edit%
      (lambda (x)
        (if (subclass? x wx:media-edit%)
 	   x

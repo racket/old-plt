@@ -392,6 +392,9 @@
 # define SIXTY_FOUR_BIT_INTEGERS
 
 # define ALPHA_CONTROL_FP
+# define USE_OSF_FP_PREDS
+# define USE_DIVIDE_MAKE_INFINITY
+# define ATAN2_DOESNT_WORK_WITH_INFINITIES
 
 # define FLAGS_ALREADY_SET
 
@@ -596,7 +599,6 @@
 #ifndef XONX
 # undef SYSTEM_TYPE_NAME
 # define SYSTEM_TYPE_NAME "macosx"
-# define MACROMAN_CHAR_SET
 #endif
 
 # define STACK_GROWS_DOWN
@@ -605,6 +607,7 @@
 
 # define USE_IEEE_FP_PREDS
 # define POW_HANDLES_INF_CORRECTLY
+# define TRIG_ZERO_NEEDS_SIGN_CHECK
 
 # define UNDERSCORE_DYNLOAD_SYMBOL_PREFIX
 
@@ -687,7 +690,6 @@
 
 # define SIGSET_IS_SIGNAL
 
-# define MACROMAN_CHAR_SET
 # ifdef MPW_C
 #  define NO_INLINE_KEYWORD
 # endif
@@ -1019,10 +1021,13 @@
     instead of using HUGE_VAL. */
 
  /* USE_IEEE_FP_PREDS uses isinf() and isnan() to implement tests for
-    infinity. */
+    infinity and not-a-number. */
+
+ /* USE_OSF_FP_PREDS uses fp-class() and isnan() to implement tests for
+    infinity and not-a-number. */
 
  /* USE_SCO_IEEE_FP_PREDS uses fpclass() and isnan() to implement tests for
-    infinity. */
+    infinity and not-a-number. */
 
  /* DEFEAT_FP_COMP_OPTIMIZATION avoids a compiler optimization that
     converts (a == a) to TRUE, even if `a' is floating-point. Used

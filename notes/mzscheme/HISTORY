@@ -51,7 +51,7 @@ Changed read-eval-print-loop, removing its cooperation with
  own error escape handler
 Improved the support for dynamic extensions that gives an 
  error if an extension is already loaded, or calls a
- reloading function provided by the extension
+ reloading function provided by the extension (scheme_reload)
 
 Version 50, August 26, 1997
 Added compile-time inferrence of names for closures, classes,

@@ -313,6 +313,17 @@
               ;;;    
 
 
+(drscheme:rep:get-drs-bindings-keymap
+ (-> (is-a?/c keymap%))
+ ()
+ "Returns a keymap that bindings various DrScheme-specific"
+ "keybindings. This keymap is used in the definitions"
+ "and interactions window."
+ ""
+ "Defaultly binds C-x;o to a function that switches"
+ "the focus between the definitions and interactions"
+ "windows. Also binds f5 to Execute.")
+
 (drscheme:rep:current-rep
   (-> (is-a?/c drscheme:rep:text%))
   ()

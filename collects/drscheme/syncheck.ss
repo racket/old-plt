@@ -534,8 +534,13 @@
          (string-constant check-syntax)
          (build-path (collection-path "icons") "syncheck.bmp")))
       
+      (define syncheck-frame<%>
+        (interface ()
+          syncheck:clear-highlighting
+          syncheck:button-callback))
+      
       (define (make-new-unit-frame% super%)
-        (class super%
+        (class* super% (syncheck-frame<%>)
           (rename [super-clear-annotations clear-annotations])
           (define/override (clear-annotations)
             (super-clear-annotations)
@@ -859,6 +864,21 @@
       
       (define report-error-style (make-object style-delta% 'change-style 'slant))
       (send report-error-style set-delta-foreground "red")
+      
+      (define (add-check-syntax-key-bindings keymap)
+        (send keymap add-function
+              "check syntax"
+              (lambda (obj evt)
+                (when (is-a? obj editor<%>)
+                  (let ([canvas (send obj get-canvas)])
+                    (when canvas
+                      (let ([frame (send canvas get-top-level-window)])
+                        (when (is-a? frame syncheck-frame<%>)
+                          (send frame syncheck:button-callback))))))))
+        
+        (send keymap map-function "f6" "check syntax")
+        (send keymap map-function "c:c;c:c" "check syntax"))
+        
       
                                           
                                           
@@ -1752,6 +1772,8 @@
                                  (syntax-position (car rst)))
                               (loop fst (cdr rst))
                               (cons fst (loop (car rst) (cdr rst))))]))]))
+      
+      (add-check-syntax-key-bindings (drscheme:rep:get-drs-bindings-keymap))
       
       (drscheme:get/extend:extend-definitions-text make-graphics-text%)
       (drscheme:get/extend:extend-unit-frame make-new-unit-frame% #f))))

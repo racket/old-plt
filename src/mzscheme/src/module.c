@@ -882,11 +882,14 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
   from_modchain = from_env->modchain;
   to_modchain = to_env->modchain;
 
-  /* Check whether todo, or anything it needs, is already declared incompatibly: */
+  /* Check whether todo, or anything it needs, is already declared
+     incompatibly. Successive iterations of the outer loop explore
+     successive phases (i.e, for-syntax levels). */
   while (!SCHEME_NULLP(todo)) {
     checked = scheme_make_hash_table(SCHEME_hash_ptr);
     next_checked = scheme_make_hash_table(SCHEME_hash_ptr);
 
+    /* This loop iterates through require chains in the same phase */
     while (!SCHEME_NULLP(todo)) {
       name = SCHEME_CAR(todo);
 
@@ -908,6 +911,10 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 				name);
 	}
 
+	/* If to_modchain goes to #f, then our source check has gone
+	   deeper in phases (for-syntax levels) than the target
+	   namespace has ever gone, so there's definitely no conflict
+	   at this level in that case. */
 	if (SCHEME_TRUEP(to_modchain)) {
 	  menv2 = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(to_modchain), name);
 	  if (menv2) {
@@ -921,11 +928,25 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 	      m2 = NULL;
 	  }
 	  
-	  if (m2)
-	    scheme_arg_mismatch("namespace-attach-module",
-				"a different module with the same name is already "
-				"in the destination namespace, for name: ",
-				name);
+	  if (m2) {
+	    char *phase, buf[32], *err;
+
+	    if (!menv->phase)
+	      phase = "";
+	    else if (menv->phase == 1)
+	      phase = " for syntax";
+	    else {
+	      sprintf(buf, " at phase %ld", menv->phase);
+	      phase = buf;
+	    }
+
+	    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
+			     "namespace-attach-module: "
+			     "a different module with the same name is already "
+			     "in the destination namespace%s, for name: %S",
+			     phase, name);
+	    return NULL;
+	  }
 	} else
 	  menv2 = NULL;
 
@@ -981,7 +1002,9 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
   from_modchain = from_env->modchain;
   to_modchain = to_env->modchain;
 
+  /* Again, outer loop iterates through phases. */
   while (!SCHEME_NULLP(todo)) {
+    /* Inner loop iterates through requires within a phase. */
     while (!SCHEME_NULLP(todo)) {
       name = SCHEME_CAR(todo);
       name = scheme_module_resolve(name);
@@ -1015,6 +1038,8 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
     next_phase_todo = scheme_null;
     from_modchain = SCHEME_VEC_ELS(from_modchain)[1];
     to_modchain = SCHEME_VEC_ELS(to_modchain)[1];
+    /* Preceding scheme_clone_module_env ensures that we don't get a
+       #f for to_modchain if there's more to do. */
   }
 
   if (!skip_notify) {

@@ -700,6 +700,7 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   Scheme_Comp_Env *frame;
   Closure_Info *cl;
   int i;
+  long num_params;
   short dcs, *dcm;
 
   data  = MALLOC_ONE_TAGGED(Scheme_Closure_Compilation_Data);
@@ -710,14 +711,18 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   params = SCHEME_STX_CAR(params);
   allparams = params;
 
-  data->num_params = 0;
+  num_params = 0;
   for (; SCHEME_STX_PAIRP(params); params = SCHEME_STX_CDR(params)) {
-    data->num_params++;
+    num_params++;
   }
   data->flags = 0;
   if (!SCHEME_STX_NULLP(params)) {
     data->flags |= CLOS_HAS_REST;
-    data->num_params++;
+    num_params++;
+  }
+  data->num_params = num_params;
+  if ((long)data->num_params != num_params) {
+    /* scheme_too_deep(code); */
   }
   if ((data->num_params > 0) && scheme_has_method_property(code))
     data->flags |= CLOS_IS_METHOD;

@@ -19,6 +19,9 @@ in several significant ways:
    string (and implicitly convert it); procedures that produce a path
    never produce a string.
 
+ * The built-in exception hierarchy has been revised and streamlined
+   (again).
+
  * A continuation is no longer tied to its creating thread.
 
    Various continuation barriers remain in place, such as around the
@@ -165,6 +168,54 @@ byte string that is not a UTF-8 encoding will never correspond to a
 pathname under Windows.
 
 ======================================================================
+ Exceptions
+======================================================================
+
+The new exception hierarchy distinguishes between breaks and failures
+at nearly the top level of the hierarchy. In particular, most
+`with-handlers' expressions should use the `exn:fail?' predicate,
+insteda of the old (and now removed) `not-exn-break?' predicate.
+
+The "type" and "mismatch" exceptions have been merged into
+`exn:fail:contract'. Similarly, `exn:i/o:tcp' and `exn:i/o:udp'
+have been merged into `exn:fail:network'.
+
+Many exception fields have been eliminated, but certain exceptions
+contain multiple source loations instead of just one. Instead of a
+single type for all exceptions with source locations, the
+`exn:srclocs' property identifies exceptions with source-location
+information.
+
+Structs:
+
+  exn  - message continuation-marks
+    exn:fail
+      exn:fail:contract
+        exn:fail:contract:arity
+        exn:fail:contract:divide-by-zero
+        exn:fail:contract:continuation
+        exn:fail:contract:variable  - id
+      exn:fail:syntax  - exprs
+      exn:fail:read  - sources
+        exn:fail:read:eof
+        exn:fail:read:non-char
+      exn:fail:filesystem
+        exn:fail:filesystem:exists
+        exn:fail:filesystem:version
+      exn:fail:network
+      exn:fail:out-of-memory
+      exn:fail:unsupported
+    exn:break  - continuation
+
+  special-comment  - width
+  ; Note: not exn:special-comment, because it doesn't need
+  ;  a message or marks
+
+Properties:
+
+ exn:srclocs  - accessor
+
+======================================================================
  Inside MzScheme (extend MzScheme via C)
 ======================================================================
 
@@ -180,4 +231,3 @@ Several UTF-8 <-> mzchar conversion functions are also provided.
 SCHEME_PATHP() recognizes the new path type. Use SCHEME_STRING_PATHP()
 to recognize either a string or path, and use scheme_string_to_path()
 to convert a string to a path.
-

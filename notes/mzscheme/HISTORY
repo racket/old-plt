@@ -15,6 +15,9 @@
   happens when there is a %20 in the original url (as a string). The
   %20 is restored when calling url->string.
 
+Version 299.4
+Changed use-compiled-file-kinds to use-compiled-file-paths
+
 Version 299.3
 Simplified the built-in exn hierarchy; the built-in exn structures
  are immutable, and fields guards enforce "type" contraints; the

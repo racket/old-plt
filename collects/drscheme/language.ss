@@ -331,12 +331,12 @@
       f))
   
   
-  ; object to remember last library directory
+  ; object to remember last teachpack directory
   
-  (define library-directory 
+  (define teachpack-directory 
     (let ([lib-dir (build-path 
 		    (collection-path "mzlib")
-		    'up 'up "lib")])
+		    'up 'up "teachpack")])
       (if (directory-exists? lib-dir)
 	  lib-dir
 	  #f)))
@@ -351,19 +351,19 @@
        #\l))
     (make-object mred:separator-menu-item% language-menu)
     (make-object mred:menu-item%
-      "Set Library To..."
+      "Set Teachpack To..."
       language-menu
       (lambda (_1 _2)
 	(let ([lib-file (fw:finder:get-file 
-			 library-directory
-			 "Select a library" 
+			 teachpack-directory
+			 "Select a Teachpack" 
 			 ".*\\.ss$")])
 	  (when lib-file
 	    (fw:preferences:set
-	     'drscheme:library-file lib-file)
-	    (set! library-directory (path-only lib-file))))))
+	     'drscheme:teachpack-file lib-file)
+	    (set! teachpack-directory (path-only lib-file))))))
     (make-object mred:menu-item%
-      "Clear Library"
+      "Clear Teackpack"
       language-menu
-      (lambda (_1 _2) (fw:preferences:set 'drscheme:library-file #f)))))
+      (lambda (_1 _2) (fw:preferences:set 'drscheme:teachpack-file #f)))))
 

@@ -1,9 +1,9 @@
 
                        -----------------------
                             P A T C H E S
-					   _PATCH BUILDER'S GUIDE_
+                       _PATCH BUILDER'S GUIDE_
                        -----------------------
-						
+                                                
 Each patch is named <version-number>p<n>, where n begins at 1 for each 
 version and is incremented by 1 for each sucessive patch.  This guide 
 currently only supports files that are part of a collection in one of the 
@@ -39,8 +39,8 @@ code, according to the comments.
 
   (pack "<version-number>p<n>.plt"
         "<version-number>p<n>"
-		'("collects/<version-number>p<n>") 
-		'(("<version-number>p<n>") ...))
+                '("collects/<version-number>p<n>") 
+                '(("<version-number>p<n>") ...))
 
   Be sure to replace <verstion-number>p<n> with the actual version number 
   and patch number. Also, the ellipses must be filled in with the names of 
@@ -49,7 +49,7 @@ code, according to the comments.
   argument must be:
   
   '(("<version-number>p<n>") ("mzlib") ("drscheme"))
-		
+                
   This step will place a .plt file in the current directory. This file is
   the patch file.
   
@@ -102,7 +102,7 @@ compiled them before). This should be fixed (in such a way that users who
 did not compile .zo files remain .zo-less).
 
                WHAT HAPPENS WHEN THE PATCH IS INSTALLED
-			  
+                          
 When Setup PLT starts to work on a .plt file, it first undoes the packing 
 step (step 6 above), which creates a new collection called 
 <version-number>p<n>. Then, it runs the usual Setup PLT stuff for each 
@@ -128,7 +128,7 @@ a signature is changed)
 
 
                                   CODE
-								  
+                                                                  
 (let ([version-string ...]    ;;; FILL IN version number as a scheme string
       [patch-number ...])     ;;; FILL IN patch number as a scheme number
   (lambda (request failure)
@@ -194,10 +194,10 @@ a signature is changed)
                  (unless (> patch-number latest-installed-patch-number)
                    (printf
                     "Patch ~a has already been installed; cannot install ~
-					patch ~a~n" 
+                                        patch ~a~n" 
                     latest-installed-patch-number
                     patch-number)
-					(skip-it (void)))
+                                        (skip-it (void)))
                  
                  ;; for each directory in the patch collection,
                  ;;     copy the files over from those directories 

@@ -17,7 +17,7 @@
   (parameterize ([current-output-port original-output-port])
     (t)))
 
-(define drscheme-namespace #f)
+(define drscheme-namespace (current-namespace))
 (define drscheme-custodian #f)
 (define drscheme-eventspace #f)
 
@@ -28,16 +28,17 @@
   (set! drscheme-custodian (make-custodian))
   (parameterize ([current-custodian drscheme-custodian])
     (set! drscheme-eventspace (make-eventspace))
-    (set! drscheme-namespace (make-namespace))
+    ;(set! drscheme-namespace (make-namespace 'mred))
     (when (or graphical-debug? textual-debug?)
       (parameterize ([current-eventspace drscheme-eventspace])
         (queue-callback 
          (lambda ()
-           [current-namespace drscheme-namespace]
-           [current-eventspace drscheme-eventspace]
+           (current-namespace drscheme-namespace)
+           ;(current-eventspace drscheme-eventspace)
            (exit-handler (lambda ___ (custodian-shutdown-all drscheme-custodian)))
            (invoke-unit (require-library "errortracer.ss" "errortrace"))))))
-    (queue-callback start-drscheme)))
+    (parameterize ([current-eventspace drscheme-eventspace])
+      (queue-callback start-drscheme))))
 
 (cond
   [graphical-debug?

@@ -352,7 +352,8 @@ services:
    arguments to Setup PLT, the files contained in the .plt
    archive are unpacked (according to specifications embedded in
    the .plt file; see below) and only the collections specified
-   by the plt file are compiled and setup.
+   by the plt file are compiled and setup (they are setup as if
+   the "-c" or "--clean" flag had been passed to setup plt)
 
  Compiling and Setting Up Collections
  ------------------------------------
@@ -436,15 +437,16 @@ The raw format is
    The procedure is extracted from the archive using MzScheme's
    `read' and `eval' procedures.
 
- * An unsigned unit that drives the unpacking process. The unit 
-   accepts two imports: a path string for the plt directory and
-   an `unmztar' procedure. The remainder of the unpacking process
-   consists of invoking ths unit. It is expected that the unit will
-   call `unmztar' procedure to unpack directories and files that are
-   defined in the input archive afer this unit. The result of invoking
-   the unit must be a list of collection paths (where each collection
-   path is a list of strings); once the archive is unpacked, Setup
-   PLT will compile and setup the specified collections.
+ * An unsigned unit that drives the unpacking process. The unit accepts two
+   imports: a path string for the plt directory and an `unmztar'
+   procedure. The remainder of the unpacking process consists of invoking
+   ths unit. It is expected that the unit will call `unmztar' procedure to
+   unpack directories and files that are defined in the input archive afer
+   this unit. The result of invoking the unit must be a list of collection
+   paths (where each collection path is a list of strings); once the
+   archive is unpacked, Setup PLT will compile and setup the specified
+   collections, as if it was invoked with the "-c" option, so the
+   "compiled" directories will be deleted.
 
    The `unmztar' procedure takes one argument: a filter
    procedure. The filter procedure is called for each directory and

@@ -1,9 +1,9 @@
-
 (begin-elaboration-time
  (require-library "invoke.ss")
  (require-relative-library "drsig.ss"))
 
 (define (start-drscheme)  
+
   (let-values ([(shutdown-splash close-splash)
 		((require-library "splash.ss" "framework")
 		 (build-path (collection-path "icons") "plt.gif")

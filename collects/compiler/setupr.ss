@@ -201,8 +201,7 @@
 					archive)
 				x)
 		       null)])
-      (call-with-input-file
-	  archive
+      (call-with-input-file archive
 	(lambda (p64)
 	  (let* ([p (port64gz->port p64)])
 	    (unless (and (eq? #\P (read-char p))
@@ -214,14 +213,16 @@
 	      (unless (and (procedure? info)
 			   (procedure-arity-includes? info 2))
 		(error "expected a procedure of arity 2, got" info))
-	      (let ([name (call-info info 'name #f (lambda (n) 
-						     (unless (string? n)
-						       (if n
-							   (error "couldn't find the package name")
-							   (error "expected a string")))))]
-		    [unpacker (call-info info 'unpacker #f (lambda (n) 
-							     (unless (eq? n 'mzscheme)
-							       (error "unpacker isn't mzscheme:" n))))])
+	      (let ([name (call-info info 'name #f
+				     (lambda (n) 
+				       (unless (string? n)
+					 (if n
+					     (error "couldn't find the package name")
+					     (error "expected a string")))))]
+		    [unpacker (call-info info 'unpacker #f
+					 (lambda (n) 
+					   (unless (eq? n 'mzscheme)
+					     (error "unpacker isn't mzscheme:" n))))])
 		(unless (and name unpacker)
 		  (error "bad name or unpacker"))
 		(setup-printf "Unpacking ~a from ~a" name archive)
@@ -241,6 +242,10 @@
 
   (define (done)
     (setup-printf "Done setting up"))
+
+  ;; automatically delete .zo files when installing a .plt file.
+  (unless (null? (archives))
+    (clean #t))
 
   (unless (null? (archives))
     (when (null? x-specific-collections)

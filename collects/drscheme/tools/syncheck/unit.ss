@@ -542,7 +542,7 @@
 					     (drscheme:basis:initialize-parameters
 					      (current-custodian)
 					      (ivar interactions-text user-setting))
-                                             (drscheme:rep:invoke-library)
+                                             (drscheme:rep:invoke-teachpack)
 					     (let loop ()
 					       (semaphore-wait producer-sem)
 					       (unless shutdown?

@@ -63,19 +63,19 @@
     (set-delta-foreground "BLACK")
     (set-delta-background "YELLOW"))
 
-  (define invoke-library void)
+  (define invoke-teachpack void)
   (define core-flat@ (require-library-unit/sig "coreflatr.ss"))
   
-  (fw:preferences:set-default 'drscheme:library-file
+  (fw:preferences:set-default 'drscheme:teachpack-file
 			       #f
 			       (lambda (x) (or (string? x) (not x))))
   (fw:preferences:add-callback 
-   'drscheme:library-file
+   'drscheme:teachpack-file
    (lambda (p v)
      (with-handlers
 	 ([(lambda (x) #t)
 	   (lambda (x)
-	     (mred:message-box "Invalid Library" (exn-message x))
+	     (mred:message-box "Invalid Teacpack" (exn-message x))
 	     #f)])
        (if v
 	   (let ([new-unit (parameterize ([read-case-sensitive #t])
@@ -101,14 +101,14 @@
 						      prefix
 						      (symbol->string s))))
 						  sub))))])))])
-		   (set! invoke-library
+		   (set! invoke-teachpack
 			 (eval
 			  `(lambda ()
 			     (with-handlers ([(lambda (x) #t)
 					      (lambda (x)
 						((error-display-handler)
 						 (format
-						  "Invalid Library:~n~a"
+						  "Invalid Teachpack:~n~a"
 						  (if (exn? x) (exn-message x) x))))])
 			       (global-define-values/invoke-unit/sig
 				,signature
@@ -121,14 +121,14 @@
 							  [mred : mred^ (,mred:mred@)])
 						    (export (open core)
 							    (open mred))))]
-				       [library : ,signature (,new-unit userspace)])
-				 (export (open library)))))))))
+				       [teachpack : ,signature (,new-unit userspace)])
+				 (export (open teachpack)))))))))
 		 (begin
 		   (mred:message-box 
-		    "Invalid Library"
-		    "Library file does not contain a unit")
+		    "Invalid Teachpack"
+		    "loading Teachpack file does not result in a unit")
 		   #f)))
-	   (set! invoke-library void)))))
+	   (set! invoke-teachpack void)))))
     
   (define exception-reporting-rep (make-parameter #f))
 
@@ -1252,7 +1252,7 @@
 	     (exit-handler (lambda (arg) ; =User=
 			     (custodian-shutdown-all user-custodian)))
 	     
-	     (invoke-library)
+	     (invoke-teachpack)
 	     
 	     ;; set all parameters before constructing eventspace
 	     ;; so that the parameters are set in the eventspace's

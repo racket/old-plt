@@ -189,7 +189,7 @@
 			      "/I ../../mred/wxme "
 			      "/I ../../wxwindow/contrib/wxxpm/libxpm.34b/lib "
 			      "/I ../../wxWindow/contrib/fafa "
-			      "/I ../../wxcommon/jpeg /I ../../worksp/jpeg "))
+			      "/I ../../wxcommon/jpeg /I ../../worksp/jpeg /I ../../wxcommon/zlib "))
 (try "wxprecomp.cxx" common-deps "xsrc/wxprecomp.h" #f wx-inc #f "" "-DGC2_AS_IMPORT")
 
 (define (wx-try base proj x use-precomp? suffix)
@@ -347,7 +347,9 @@
       [libs (list
 	     "../../../libmzsch3mxxxxxxx.lib"
 	     "../../worksp/wxutils/Release/wxutils.lib"
-	     "../../worksp/jpeg/Release/jpeg.lib")]
+	     "../../worksp/jpeg/Release/jpeg.lib"
+	     "../../worksp/png/Release/png.lib"
+	     "../../worksp/zlib/Release/zlib.lib")]
       [win-libs (list
 		 "comctl32.lib" "glu32.lib" "opengl32.lib"
 		 "gdi32.lib" "comdlg32.lib" "advapi32.lib" 

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.141 1998/02/26 16:55:28 shriram Exp $
+; $Id: scm-main.ss,v 1.142 1998/03/03 20:02:48 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1333,17 +1333,6 @@
 		   (string-append "Malformed " kwd-text))))))))
       (add-primitivized-macro-form 'let/ec scheme-vocabulary
 	(rewriter 'let/ec "let/ec"))))
-
-  (add-macro-form
-    'define-schema
-    scheme-vocabulary
-    (let* ((kwd '(define-schema))
-	    (in-pattern '(define-schema var exp))
-	    (out-pattern '(#%void))
-	    (m&e (pat:make-match&env in-pattern kwd)))
-      (lambda (expr env)
-	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
-	  (static-error expr "Malformed define-schema")))))
 
   (when (language>=? 'side-effecting)
     (add-primitivized-macro-form 'do scheme-vocabulary

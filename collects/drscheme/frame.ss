@@ -81,7 +81,9 @@
 	       (append-separator)))]
 	  [file-menu:new
 	   (lambda ()
-	     (make-object drscheme:unit:frame% #f #f))]
+	     (let ([f (make-object drscheme:unit:frame% #f #f)])
+	       (send f show #t)
+	       f))]
 	  [file-menu:between-new-and-open
 	   (lambda (file-menu)
 	     '(send file-menu append-item "New Compound Unit"

@@ -7,8 +7,8 @@ The alpha-renaming feature of Check Syntax may miss some
   to rename. The arrows point to all known bound occurrances, which
   are the identifiers that are renamed by alpha renaming.
 
-After breaking a long interaction several times, some of the breaks
-  may carry over to the next interactions.
+After breaking a long interaction several times, one of the breaks
+  may carry over to the next interaction.
 
 The yellow execute warning in the interactions window does not go away
   if the user undoes all changes to the defintions window.

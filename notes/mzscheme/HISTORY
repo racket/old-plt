@@ -5,6 +5,8 @@ Added optional namespace argument to most of the
 Added an optional argument to peek-char and 
  peek-char-or-special to indicate the number of characters
  to skip in the input stream
+Added a hook for (planet ...) module paths to the standard
+ module name resolver
 
 Version 205.3
 Changed syntax-local-get-shadower to add the current

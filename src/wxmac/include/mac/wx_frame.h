@@ -38,6 +38,8 @@ class wxFrame: public wxbFrame
   wxWindow*	cFocusWindow;
   Bool		cIsModal;
 
+  Rect          size_limits;
+
   wxFrame*      cSheetParent;
   wxFrame*      sheet;	/* child sheet */
 
@@ -151,6 +153,7 @@ class wxFrame: public wxbFrame
   void SetFrameModified(Bool is_modified);
 
   void EnforceSize(int minw, int minh, int maxw, int maxh, int incw=1, int inch=1);
+  void GetSizeLimits(Rect *r);
 
   /*============================================================================= */
   /* Protected methods */

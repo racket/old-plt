@@ -186,6 +186,8 @@ wxFrame::wxFrame // Constructor (for frame window)
   ::CreateRootControl(theMacWindow,&rootControl);
   cMacControl = rootControl;
 
+  EnforceSize(-1, -1, -1, -1, 1, 1);
+
 #ifdef OS_X
   {
     /* Enable updates for a frame just before it is shown.
@@ -558,27 +560,52 @@ void wxFrame::Maximize(Bool maximize)
 
 void wxFrame::EnforceSize(int minw, int minh, int maxw, int maxh, int incw, int inch)
 {
-  HISize minl, maxl;
+  BitMap screenBits;
 
   if (minw < 0)
-    minw = 0;
+    minw = 1;
   if (minh < 0)
-    minh = 0;
-  minl.width = minw;
-  minl.height = minh;
+    minh = 1;
+      
+  GetQDGlobalsScreenBits(&screenBits);
 
-  /* Here, again, we assume that 65000 is effectively infinity.  The
-     fields of a HISize are floats, so there's no danger of
-     overflow. */
   if (maxh < 0)
-    maxh = 65000;
+    maxh = screenBits.bounds.bottom - screenBits.bounds.top;
   if (maxw < 0)
-    maxh = 65000;
+    maxw = screenBits.bounds.right - screenBits.bounds.left;
 
-  maxl.width = maxw;
-  maxl.height = maxh;
+  size_limits.left = minw;
+  size_limits.top = minh;
+  size_limits.right = maxw;
+  size_limits.bottom = maxh;
+}
 
-  SetWindowResizeLimits(GetWindowFromPort(cMacDC->macGrafPort()), &minl, &maxl);
+void wxFrame::GetSizeLimits(Rect *r)
+{
+  wxArea *parea;
+  wxMargin pam;
+  int dh, dv;
+
+  memcpy(r, &size_limits, sizeof(Rect));
+
+  parea = PlatformArea();
+  pam = parea->Margin();
+  dh = pam.Offset(wxHorizontal);
+  dv = pam.Offset(wxVertical);
+
+  r->left -= dh;
+  r->top -= dv;
+  r->right -= dh;
+  r->bottom -= dv;
+
+  if (r->left < 1)
+    r->left = 1;
+  if (r->top < 1)
+    r->top = 1;
+  if (r->right < r->left)
+    r->right = r->left;
+  if (r->bottom < r->top)
+    r->bottom = r->top;
 }
 
 //-----------------------------------------------------------------------------

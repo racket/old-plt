@@ -1125,18 +1125,13 @@ void wxApp::doMacInGrow(WindowPtr window)
     wxFrame* theMacWxFrame;
     theMacWxFrame = findMacWxFrame(window);
     if (theMacWxFrame && theMacWxFrame->CanAcceptEvent()) {
-      BitMap screenBits;
       Rect growSizeRect; // WCH: growSizeRect should be a member of wxFrame class
       long windSize;
 
-      GetQDGlobalsScreenBits(&screenBits);
-
       wxTracking();
-      
-      growSizeRect.top = 1; // minimum window height
-      growSizeRect.left = 1; // minimum window width
-      growSizeRect.bottom = screenBits.bounds.bottom - screenBits.bounds.top;
-      growSizeRect.right = screenBits.bounds.right - screenBits.bounds.left;
+
+      theMacWxFrame->GetSizeLimits(&growSizeRect);
+
       windSize = ::GrowWindow(window, cCurrentEvent.where, &growSizeRect);
       if (windSize != 0) {
 	wxArea* contentArea;

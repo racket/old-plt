@@ -16,7 +16,13 @@
     (define (remove-prefixes rows)
       (map (lambda (row)
 	     (cons (car row)
-		   (map cdr (cdr row))))
+		   (map (lambda (proc)
+			  (let ([rest (cdr proc)])
+			    (if (pair? (car rest))
+				(cons (cadar rest)
+				      (cdr rest))
+				rest)))
+			(cdr row))))
 	   rows))
 
     (syntax-case stx ()
@@ -37,7 +43,11 @@
 				 (map (lambda (proc)
 					(syntax-case proc ()
 					  [(name type-sexpr doc-string ...)
-					   (and (identifier? (syntax name))
+					   (and (or (identifier? (syntax name))
+						    (let ([l (syntax->list (syntax name))])
+						      (and l
+							   (= (length l) 2)
+							   (andmap identifier? l))))
 						(andmap (lambda (s) (string? (syntax-e s)))
 							(syntax->list (syntax (doc-string ...)))))
 					   'ok]))
@@ -108,19 +118,31 @@
 	     (let ([procs (let ([ht (make-hash-table)])
 			    (for-each
 			     (lambda (proc-line)
-			       (hash-table-put! ht (cadr proc-line) (cons (car proc-line)
-									  (cadr proc-line))))
+			       (let-values ([(loc-name ext-name)
+					     (let ([n (cadr proc-line)])
+					       (if (pair? n)
+						   (values (car n) (cadr n))
+						   (values n n)))])
+				 (hash-table-put! ht ext-name (list* (car proc-line)
+								     loc-name
+								     ext-name))))
 			     (apply append (map cdr rows)))
 			    (hash-table-map ht (lambda (key val) val)))])
 	       (with-syntax ([procs (map (lambda (proc)
-					   (if (car proc)
-					       ;; Prefixed:
-					       `(rename ,(string->symbol (format "~a~a" 
-										 (syntax-e (car proc))
-										 (cdr proc)))
-							,(cdr proc))
-					       ;; Plain
-					       (cdr proc)))
+					   (cond
+					    [(car proc)
+					     ;; Source prefixed:
+					     `(rename ,(string->symbol (format "~a~a" 
+									       (syntax-e (car proc))
+									       (cadr proc)))
+						      ,(cadr proc))]
+					    [(eq? (cadr proc) (cddr proc))
+					     ;; Plain
+					     (cadr proc)]
+					    [else
+					     ;; Local renamed:
+					     `(rename ,(cadr proc)
+						      ,(cddr proc))]))
 					 procs)]
 			     [(import ...) imports]
 			     [src (datum->syntax-object stx 'source)]

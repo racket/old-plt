@@ -30,7 +30,7 @@ static long bhashsize = 201, bhashcount = 0, bhashstep = 17;
 
 static long num_objects_allocated = 0;
 
-#if defined(MZ_PRECISE_GC) || defined(USE_SENORA_GC)
+#if defined(MZ_PRECISE_GC) || defined(USE_SENORA_GC) || defined(GC_MIGHT_USE_REGISTERED_STATICS)
 # define wxREGGLOB(x) scheme_register_extension_global((void *)&x, sizeof(x))
 #else
 # define wxREGGLOB(x) /* empty */
@@ -107,7 +107,7 @@ Scheme_Object *objscheme_find_method(Scheme_Object *obj, Scheme_Object *sclass,
     Scheme_Object *s;
     s = scheme_intern_symbol(name);
     gdata = scheme_get_generic_data(sclass, s);
-#if defined(MZ_PRECISE_GC) || defined(USE_SENORA_GC)
+#if defined(MZ_PRECISE_GC) || defined(USE_SENORA_GC) || defined(GC_MIGHT_USE_REGISTERED_STATICS)
     scheme_register_extension_global(cache, sizeof(void *));
 #endif
     *cache = (void *)gdata;

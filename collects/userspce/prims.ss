@@ -137,6 +137,7 @@
        posn?
        posn-x
        posn-y
+       read
        error
        struct?
        equal?
@@ -290,6 +291,7 @@
        posn?
        posn-x
        posn-y
+       read
        error
        struct?
        equal?
@@ -445,6 +447,7 @@
        posn-y
        set-posn-x!
        set-posn-y!
+       read
        error
        struct?
        equal?

@@ -420,7 +420,7 @@ void *MrEdGetWindowContext(wxWindow *w)
     if (wxSubType(w->__type, wxTYPE_FRAME))
       return MrEdGetContext(w);
 #if !defined(wx_xt) && !defined(wx_mac)
-    if (wxSubType(w->__type, wxTYPE_DIALOG))
+    if (wxSubType(w->__type, wxTYPE_DIALOG_BOX))
       return MrEdGetContext(w);
 #endif
 

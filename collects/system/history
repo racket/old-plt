@@ -1,5 +1,9 @@
 SYSTEM HISTORY
 --------------
+Version 46:
+- pretty-print-out is gone, use display-result instead, if you want to
+  display results
+
 Version 45:
 - frame groups no longer set the frame title prefix
 - there is a new edit%, mred:return-edit%. It takes an extra arg at

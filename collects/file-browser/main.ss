@@ -44,40 +44,42 @@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
       
-      (define active? #f)
-      (define user-namespace #f)
-      (define user-thread #f)
-      
       (define activate-bitmap
         (drscheme:unit:make-bitmap "Browse Files"
                                    (build-path (collection-path "icons") "file.gif")))
       
-      (define code-engine@
-        (unit/sig code-engine^
-          (import script^)
-          
-          (trace "invoking code-engine")
-          
-          (script-unit-param
-           (make-unit script^ (signature->symbols script^)))
-          
-          (setup-namespace user-thread (script-unit-param))
-          
-          (trace "code-engine through")
-          
-          (define (get-user-value sym)
-            (parameterize ((current-namespace user-namespace))
-              (namespace-variable-value sym)))
-          
-          (define (user-thread-eval code-string callback)
-            (user-thread
-             (lambda ()
-               (callback (eval (read (open-input-string code-string)))))))))
+
+      (define active? (make-parameter #f))
       
       (drscheme:get/extend:extend-unit-frame
        (lambda (frame%)
          (class frame%
-           (inherit get-button-panel get-area-container get-execute-button)
+           (inherit get-button-panel get-area-container get-execute-button get-interactions-text)
+
+           (define code-engine@
+             (unit/sig code-engine^
+               (import script^)
+               
+               (trace "invoking code-engine")
+               
+               (script-unit-param
+                (make-unit script^ (signature->symbols script^)))
+               
+               (setup-namespace (lambda (t)
+                                  (send (get-interactions-text) run-in-evaluation-thread t))
+                                (script-unit-param))
+               
+               (trace "code-engine through")
+               
+               (define (get-user-value sym)
+                 (parameterize ((current-namespace
+                                 (send (get-interactions-text) get-user-namespace)))
+                   (namespace-variable-value sym)))
+               
+               (define (user-thread-eval code-string callback)
+                 (send (get-interactions-text) run-in-evaluation-thread
+                       (lambda ()
+                         (callback (eval (read (open-input-string code-string)))))))))
            
            (rename (super-enable-evaluation enable-evaluation))
            (define/override (enable-evaluation)
@@ -107,15 +109,13 @@
              (make-object button% (activate-bitmap this) (get-button-panel)
                (lambda (a b)
                  (cond
-                   (active?
-                    (set! active? #f)
-                    (set! user-thread #f)
-                    (set! user-namespace #f)
+                   ((active?)
+                    (active? #f)
                     (script-unit-param null)
                     (send browser-panel delete-child (car (send browser-panel get-children)))
                     (send (get-execute-button) command b))
                    (else
-                    (set! active? #t)
+                    (active? #t)
                     (send (get-execute-button) command b)
                     (let ((container browser-panel))
                       (send container begin-container-sequence)
@@ -142,13 +142,15 @@
             (let ((s (make-semaphore)))
               (trace "starting setup-namespace user-thread")
               (run-thread
-               (lambda () (trace "in setup-namespace user-thread")))
-;                 (with-handlers ((void (lambda (x) (printf "~a~n" (exn-message x)))))
-;                   (script-unit-param unit)
-;                   (namespace-require `(lib "script.ss" "file-browser"))
-;                   (load (build-path (find-system-path 'pref-dir) ".file-browser.ss")))
-;                 (semaphore-post s)))
-;              (semaphore-wait s)
+               (lambda () 
+                 (trace "in setup-namespace user-thread")
+                 (with-handlers ((void (lambda (x) (printf "~a~n" (exn-message x)))))
+                   (script-unit-param unit)
+                   (namespace-require `(lib "script.ss" "file-browser"))
+                   ;(load (build-path (find-system-path 'pref-dir) ".file-browser.ss"))
+                   (trace "no exception in setup-namespace user-thread"))
+                 (semaphore-post s)))
+              (semaphore-wait s)
               (trace "finished setup-namespace user-thread")))
         (trace "leaving setup-namespace"))
       
@@ -160,8 +162,7 @@
              (rename (super-on-execute on-execute))
              (define/override (on-execute settings run-in-user-thread)
                (trace "entering on-execute")
-               (set! user-thread run-in-user-thread)
-               (if active?
+               (if (active?)
                    (let ((module-name ((current-module-name-resolver) 
                                        '(lib "script-param.ss" "file-browser")
                                        'script-param #f))
@@ -172,8 +173,7 @@
                       (lambda ()
                         (trace "in on-execute user-thread")
                         (with-handlers ((void (lambda (x) (printf "~a~n" (exn-message x)))))
-                          (namespace-attach-module prog-namespace module-name)
-                          (set! user-namespace (current-namespace)))
+                          (namespace-attach-module prog-namespace module-name))
                         (semaphore-post s)))
                      (semaphore-wait s)
                      (trace "finish on-execute user-thread")

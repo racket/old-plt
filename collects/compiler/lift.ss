@@ -273,7 +273,8 @@
 
 		    (if (zodiac:case-lambda-form? v)
 
-			(let ([lifted (procedure-code-liftable (get-annotation v))])
+			(let ([lifted (let ([l (procedure-code-liftable (get-annotation v))])
+					(if (pair? l) (car l) l))])
 			  (if lifted
 			      
 			      ;; The procedure was lifted

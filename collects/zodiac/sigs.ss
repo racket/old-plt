@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.72 2000/01/10 22:51:13 clements Exp $
+; $Id: sigs.ss,v 1.74 2000/04/30 22:37:35 clements Exp $
 
 (begin-elaboration-time (require-library "macro.ss"))
 (begin-elaboration-time (require-library "prettys.ss"))
@@ -66,7 +66,7 @@
     set-top-level-status get-top-level-status at-top-level?
     set-internal-define-status get-internal-define-status at-internal-define?
     as-nested
-    process-top-level-resolution ensure-not-macro/micro
+    process-top-level-resolution ensure-not-keyword
     check-for-signature-name
     (struct parsed (back))
     (struct varref (var))

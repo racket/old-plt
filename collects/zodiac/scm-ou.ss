@@ -1,4 +1,4 @@
-; $Id: scm-ou.ss,v 1.18 1999/04/07 22:38:04 mflatt Exp $
+; $Id: scm-ou.ss,v 1.19 2000/05/28 03:47:32 shriram Exp $
 
 (unit/sig zodiac:scheme-objects+units^
   (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
@@ -36,10 +36,8 @@
 		  ((or (macro-resolution? r) (micro-resolution? r))
 		    (if (and (inside-unit? attributes)
 			     (check-export expr attributes))
-			(loop top-level-resolution)
-		      (static-error
-			"keyword" 'term:keyword-out-of-context expr
-			"invalid use of keyword ~s" (z:symbol-orig-name expr))))
+		      (loop top-level-resolution)
+		      (loop (ensure-not-keyword expr env vocab))))
 		  (else
 		    (internal-error expr "Invalid resolution in ou: ~s" r))))))))
 

@@ -1,4 +1,4 @@
-; $Id: scm-obj.ss,v 1.44 1999/05/21 12:53:29 mflatt Exp $
+; $Id: scm-obj.ss,v 1.45 2000/05/28 03:47:32 shriram Exp $
 
 (unit/sig zodiac:scheme-objects^
   (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
@@ -145,10 +145,9 @@
 	    (create-supervar-varref r expr))
 	  ((superinit-binding? r)
 	    (create-superinit-varref r expr))
-	  ((or (macro-resolution? r) (micro-resolution? r))
-	    (static-error
-	      "keyword" 'term:keyword-out-of-context expr
-	      "invalid use of keyword ~s" (z:symbol-orig-name expr)))
+	  ((ensure-not-keyword expr env vocab)
+	    (internal-error expr
+	      "Not keyword or anything recognized in obj: ~s" r))
 	  (else
 	    (internal-error expr "Invalid resolution in obj: ~s" r))))))
 

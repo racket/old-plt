@@ -1,4 +1,4 @@
-; $Id: x.ss,v 1.53 1999/07/09 18:44:34 mflatt Exp $
+; $Id: x.ss,v 1.54 2000/05/28 03:47:32 shriram Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -164,7 +164,7 @@
       ; (printf "in ~s~n" (get-vocabulary-name vocab))
       ;	(printf "in vocabulary~n") (print-env vocab)
       ;	(printf "in attributes~n") (hash-table-map attributes cons)
-      ;	(printf "in~n") (print-env env)
+      ; (printf "in~n") (print-env env)
       ; (newline)
       (cond
 	((z:symbol? expr)

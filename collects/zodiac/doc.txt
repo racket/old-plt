@@ -629,15 +629,40 @@ These tags can appear at any language level:
   read:syntax-error
   scan:syntax-error
 
-#|
+)#|
 
 kwd: Tags
 ---------
 
-If these are inserted at some language level, they are automatically
-present at all subsequent language levels.
+The r4rs language level is special because it is unrelated to all
+other language levels.  It can signal the following keyword errors.
 
-    common:         |#
+    r4rs:	    |#(
+
+  kwd:lambda
+  kwd:begin
+  kwd:if
+  kwd:quote
+  kwd:set!
+  kwd:define
+  kwd:let
+  kwd:let*
+  kwd:letrec
+  kwd:delay
+  kwd:or
+  kwd:and
+  kwd:cond
+  kwd:case
+  kwd:do
+  kwd:quasiquote
+
+)#|
+
+The other languages are arranged in a hierarchy.  If a tag is inserted
+at some language level, it is automatically present at all subsequent
+language levels.
+
+    common:         |#(
 
   kwd:define-macro
   kwd:let-macro
@@ -830,6 +855,18 @@ do not occur (fallbacks that are never fallen back to):
   term:macro-error
   term:set!-no-mutate-lambda-bound
 
+)#|  r4rs:          |#(
+
+  term:internal-def-not-foll-by-expr
+  term:duplicate-internal-def
+  term:define-internal-invalid-posn
+  term:cond-else-only-in-last
+  term:cond-=>-not-foll-by-1-rcvr
+  term:keyword-out-of-context
+  term:expected-an-identifier
+  term:repeated-identifier
+  term:invalid-intl-defn-posn
+  term:cannot-bind-kwd
 
 )#|  full scheme:   |#(
 

@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.59 2000/04/30 22:37:34 clements Exp $
+; $Id: scm-core.ss,v 1.60 2000/05/28 03:47:31 shriram Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -174,14 +174,26 @@
 	      "signature" 'term:signature-out-of-context expr
 	     "invalid use of signature name ~s" (z:symbol-orig-name expr)))))))
 
-  (define ensure-not-macro/micro
-    (lambda (expr env vocab attributes)
-      (let ((r (resolve expr env vocab)))
-	(if (or (macro-resolution? r) (micro-resolution? r))
-            (static-error
+  (define mzscheme-kwd?
+    (let ((ns (make-namespace)))
+      (lambda (name)
+	(or (keyword-name? name)
+	  (parameterize ((current-namespace ns))
+	    (keyword-name? name))))))
+
+  (define ensure-not-keyword
+    (let ((top-level-resolution (make-top-level-resolution 'dummy #f)))
+      (lambda (expr env vocab)
+	(let ((name (z:symbol-orig-name expr)))
+	  (if (mzscheme-kwd? name)
+	    (static-error
 	      "keyword" 'term:keyword-out-of-context expr
-	     "invalid use of keyword ~s" (z:symbol-orig-name expr))
-	    r))))
+	      "invalid use of keyword ~s" name)
+	    (let ((r (resolve expr env vocab)))
+	      (cond
+		((or (macro-resolution? r) (micro-resolution? r))
+		  top-level-resolution)
+		(else r))))))))
 
   (define process-top-level-resolution
     (lambda (expr attributes)
@@ -202,19 +214,23 @@
 		ref)
 	      (create-top-level-varref id expr))))))      
 
-  (add-sym-micro common-vocabulary
-    (lambda (expr env attributes vocab)
-      (let ((r (ensure-not-macro/micro expr env vocab attributes)))
-	(cond
-	  ((lambda-binding? r)
-           (create-lambda-varref r expr))
-          ((lexical-binding? r)
-           (create-lexical-varref r expr))
-	  ((top-level-resolution? r)
-	   (check-for-signature-name expr attributes)
-	   (process-top-level-resolution expr attributes))
-	  (else
-	   (internal-error expr "Invalid resolution in core: ~s" r))))))
+  (let ((f
+	  (let ((top-level-resolution (make-top-level-resolution 'dummy #f)))
+	    (lambda (expr env attributes vocab)
+	      (let loop ((r (resolve expr env vocab)))
+		(cond
+		  ((lambda-binding? r)
+		    (create-lambda-varref r expr))
+		  ((lexical-binding? r)
+		    (create-lexical-varref r expr))
+		  ((top-level-resolution? r)
+		    (check-for-signature-name expr attributes)
+		    (process-top-level-resolution expr attributes))
+		  ((or (macro-resolution? r) (micro-resolution? r))
+		    (loop (ensure-not-keyword expr env vocab)))
+		  (else
+		    (internal-error expr "Invalid resolution in core: ~s" r))))))))
+    (add-sym-micro common-vocabulary f))
 
   (define (make-list-micro null-ok? lambda-bound-ok? expr-ok?)
     (lambda (expr env attributes vocab)

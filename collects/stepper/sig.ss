@@ -66,8 +66,8 @@
    print-convert))
 
 (define-signature stepper:shared^
-  ((struct before-after-result (finished-exprs exp redex post-exp reduct))
-   (struct before-error-result (finished-exprs exp redex err-msg))
+  ((struct before-after-result (finished-exprs exp redex post-exp reduct after-exprs))
+   (struct before-error-result (finished-exprs exp redex err-msg after-exprs))
    (struct error-result (finished-exprs err-msg))
    (struct finished-result (finished-exprs))
    get-binding-name
@@ -90,7 +90,6 @@
    flatten-take
    closure-table-put!
    closure-table-lookup
-   static-binding-indexer
    insert-highlighted-value))
 
 (define-signature stepper:annotate^

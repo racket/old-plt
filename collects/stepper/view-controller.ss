@@ -192,7 +192,7 @@
                                      (when (or (and (not placeholder-present?)
                                                     (eq? value redex-ending))
                                                (eq? value highlight-placeholder))
-                                       (set! redex-end (get-start-position))))])
+                                       (set! highlight-end (get-start-position))))])
                      (pretty-print sexp))))]
 
               [format-sexp-single-highlight
@@ -206,7 +206,7 @@
               
               [do-highlight 
                (lambda (color)
-                 (unless redex-begin
+                 (unless highlight-begin
                    (e:internal-error 'format-whole-step "no highlighted region in after step."))
                  (set! clear-highlight-thunks
                        (cons (highlight-range highlight-begin highlight-end color #f #f)

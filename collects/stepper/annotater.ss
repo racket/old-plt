@@ -92,7 +92,7 @@
                                  (list var x)))
                              kept-bindings)]
            [let-bindings (filter (lambda (x) (not (z:lambda-binding? x))) kept-bindings)]
-           [lifter-gensyms (map get-lifter-gensym let-bindings)]
+           [lifter-gensyms (map get-lifted-gensym let-bindings)]
            [let-clauses (map list let-bindings lifter-gensyms)])
       (make-full-mark source label (append var-clauses))))
   
@@ -112,7 +112,7 @@
     (let ([indexer-table (make-hash-table-weak)])
       (lambda (binding)
         (let ([old-index (hash-table-get indexer-table binding (lambda () -1))])
-          (hash-table-put indexer-table binding (+ old-index 1))
+          (hash-table-put! indexer-table binding (+ old-index 1))
           (+ old-index 1)))))
   
   ; wrap-struct-form 
@@ -505,15 +505,15 @@
                [(z:let-values-form? expr)
                 (let*-values
                     ([(binding-sets) (z:let-values-form-vars expr)]
-                     [(binding-set-list) (apply append binding-sets)]
+                     [(binding-list) (apply append binding-sets)]
                      [(vals) (z:let-values-form-vals expr)]
-                     [(_1) (for-each utils:check-for-keyword binding-set-list)]
-                     [(_2) (for-each mark-never-undefined binding-set-list)]
+                     [(_1) (for-each utils:check-for-keyword binding-list)]
+                     [(_2) (for-each mark-never-undefined binding-list)]
                      [(annotated-vals free-bindings-vals)
                       (dual-map non-tail-recur vals)]
                      [(annotated-body free-bindings-body)
-                      (let-body-recur (z:let-values-form-body expr) binding-set-list)]
-                     [(free-bindings) (apply binding-set-union (remq* binding-set-list free-bindings-body)
+                      (let-body-recur (z:let-values-form-body expr) binding-list)]
+                     [(free-bindings) (apply binding-set-union (remq* binding-list free-bindings-body)
                                              free-bindings-vals)])
                   (if cheap-wrap?
                       (let ([bindings
@@ -546,11 +546,11 @@
                                    dummy-binding-sets
                                    annotated-vals)]
                              [inner-transference
-                              `([,(map get-binding-name binding-set-list) 
+                              `([,(map get-binding-name binding-list) 
                                  (values ,@(map z:binding-var dummy-binding-list))])]
                              ; time to work from the inside out again
                              [inner-let-values
-                              `(#%let-values ,inner-transference ,(late-let-break-wrap binding-set-list
+                              `(#%let-values ,inner-transference ,(late-let-break-wrap binding-list
                                                                                        lifted-gensyms
                                                                                        annotated-body))]
                              [middle-begin
@@ -591,7 +591,7 @@
                                 free-bindings-outer))
                       (let* ([create-index-finder (lambda (binding)
                                                     `(,binding-indexer binding))]
-                             [lifted-name-gensyms (map get-lifted-name binding-list)]
+                             [lifted-name-gensyms (map get-lifted-gensym binding-list)]
                              [outer-initialization
                               `((,(append lifted-name-gensyms binding-names) 
                                  (#%values ,@(append (map create-index-finder binding-list)

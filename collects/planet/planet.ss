@@ -34,6 +34,10 @@ PLANNED FEATURES:
        plt-file owner maj min
        "Install local file <plt-file> as though it had been downloaded from the planet server. The installed package has path (planet (<owner> <plt-file's filename> <maj> <min>))"
        (set! actions (cons (lambda () (install-plt-file plt-file owner maj min)) actions)))
+      (("-c" "--create-archive")
+       path
+       "Create a PLaneT archive in the current directory whose contents are the directory <path>"
+       (set! actions (cons (lambda () (do-archive path)) actions)))
       (("-i" "--install")
        owner pkg maj min
        "Download and install the package (require (planet \"file.ss\" (<owner> <pkg> <maj> <min>)) would install"
@@ -87,6 +91,10 @@ PLANNED FEATURES:
         (unless spec (fail "invalid spec: ~a" spec))
         (install-pkg fullspec file maj min))))
   
+  (define (do-archive p)
+    (unless (directory-exists? p)
+      (fail (format "No such directory: ~a" p)))
+    (make-planet-archive p))
   
   (define (remove owner pkg majstr minstr)
     (let ((maj (string->number majstr))

@@ -1,9 +1,7 @@
-(require-library "pretty.ss")
-
-(unit/sig drscheme:teachpack^
+(unit/sig plt:init-namespace^
   (import [basis : userspace:basis^]
-	  [mred : mred^]
-	  mzlib:function^)
+	  mzlib:function^
+	  (invalid-teachpack))
   
   (define (exploded->flattened exploded)
     (let ([sig exploded])
@@ -35,7 +33,7 @@
     (with-handlers
      ([(lambda (x) #t)
        (lambda (x)
-	 (mred:message-box "Invalid Teachpack" (exn-message x))
+	 (invalid-teachpack (exn-message x))
 	 #f)])
      (let ([new-unit (parameterize ([read-case-sensitive #t])
 				   (load/cd v))])
@@ -62,16 +60,15 @@
 		    #f
 		    plt:userspace^)))))
 	   (begin
-	     (mred:message-box 
-	      "Invalid Teachpack"
+	     (invalid-teachpack 
 	      (format "loading Teachpack file does not result in a unit/sig, got: ~e"
 		      new-unit))
 	     #f)))))
 
-  ;; build-teachpack-thunk : (listof string) -> (union #f (list (union 'mz 'mr) (-> void)))
+  ;; build-namespace-thunk : (listof string) -> (union #f (list (union 'mz 'mr) (-> void)))
   ;; accepts a filename and returns a thunk that invokes the corresponding teachpack and
   ;; a symbol indicating if this is a mzscheme teachpack or a mred teachpack.
-  (define (build-teachpack-thunk v)
+  (define (build-namespace-thunk v)
     (unless (and (list? v)
 		 (andmap string? v))
 	    (error 'build-teachpack-thunk "expected a list of strings, got: ~e" v))
@@ -95,20 +92,30 @@
 		(import)
 		(link ,@(list*
 			 `[userspace : plt:userspace^ 
-				     ((compound-unit/sig 
-					(import)
-					(link [core : mzlib:core-flat^ (,core-flat@)]
-					      [mred : mred^ (,mred:mred@)]
-					      [turtles : turtle^ ((require-library "turtler.ss" "graphics")
-								   (core : mzlib:function^))]
-					      [posn : ((struct posn (x y)))
-						    ((unit/sig ((struct posn (x y)))
-						       (import)
-						       (define-struct posn (x y))))])
-					(export (open core)
-						(open mred)
-						(open posn)
-						(open turtles))))]
+				     (,(if (defined? 'mred@)
+					   `(compound-unit/sig
+					      (import)
+					      (link [core : mzlib:core-flat^ (,core-flat@)]
+						    [mred : mred^ (,(global-defined-value 'mred@))]
+						    [turtles : turtle^ ((require-library "turtler.ss" "graphics")
+									(core : mzlib:function^))]
+						    [posn : ((struct posn (x y)))
+							  ((unit/sig ((struct posn (x y)))
+							     (import)
+							     (define-struct posn (x y))))])
+					      (export (open core)
+						      (open mred)
+						      (open posn)
+						      (open turtles)))
+					   `(compound-unit/sig 
+					      (import)
+					      (link [core : mzlib:core-flat^ (,core-flat@)]
+						    [posn : ((struct posn (x y)))
+							  ((unit/sig ((struct posn (x y)))
+							     (import)
+							     (define-struct posn (x y))))])
+					      (export (open core)
+						      (open posn)))))]
 			 `[language-specific-additions
 			   : ()
 			   ((unit/sig ()

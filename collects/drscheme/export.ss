@@ -36,7 +36,16 @@
 		(mzlib pretty-print)
 		(mzlib function))]
 
-	[teachpack : drscheme:teachpack^ ((require-library "teachpackr.ss" "drscheme") basis mred (mzlib function))]
+	[invalid-teachpack : (invalid-teachpack) ((unit/sig (invalid-teachpack)
+						    (import mred^)
+						    (define (invalid-teachpack s)
+						      (message-box "Invalid Teachpack" s)))
+						  mred)]
+	[init-namespace : plt:init-teachpack^
+			((require-library "init-teachpackr.ss" "userspce")
+			 basis
+			 (mzlib function)
+			 invalid-teachpack)]
 
         [load-handler : drscheme:load-handler^
                       ((require-library "load-handler.ss" "drscheme")
@@ -47,7 +56,7 @@
 	     ((require-relative-library "rep.ss")
 	      mred mzlib framework print-convert zodiac
 	      interface init snip language app frame unit
-	      basis text teachpack load-handler
+	      basis text init-namespace load-handler
               help-desk)]
 	[frame : drscheme:frame^
 	       ((require-relative-library "frame.ss")

@@ -425,14 +425,14 @@
 			  (set! needs-to-move-right right)
 			  (split-snip left)
 			  (split-snip right)
-			  (fprintf mred:constants:original-output-port 
+			  '(fprintf mred:constants:original-output-port 
 				   "left ~a right ~a~n" left right)
 			  (set! needs-to-move-original
 				(let loop ([snip (find-snip left wx:const-snip-after)])
 				  (cond
 				    [(null? snip) null]
 				    [(< (get-snip-position snip) right)
-				     (fprintf mred:constants:original-output-port 
+				     '(fprintf mred:constants:original-output-port 
 					      "orig: ~s~n" (send snip get-text 0 10000))
 				     (cons (send snip copy) (loop (send snip next)))]
 				    [else null])))
@@ -467,7 +467,7 @@
 		   (delete needs-to-move-left needs-to-move-right #f)
 		   (wx:message-box (format "4 prompt-position ~a" prompt-position))
 		   (for-each (lambda (s) 
-			       (fprintf mred:constants:original-output-port 
+			       '(fprintf mred:constants:original-output-port 
 					"copy: ~s~n" (send s get-text 0 10000))
 			       (insert (send s copy) needs-to-move-left needs-to-move-left #f)
 			       '(wx:message-box "inserted one"))
@@ -566,13 +566,13 @@
 	    [on-edit-sequence
 	     (lambda ()
 	       (and (super-on-edit-sequence)
-		    (begin (fprintf mred:constants:original-output-port "on-edit-sequence ~a~n" edit-sequence-count)
+		    (begin '(fprintf mred:constants:original-output-port "on-edit-sequence ~a~n" edit-sequence-count)
 			   (set! edit-sequence-count (add1 edit-sequence-count))
 			   #t)))]
 	    [after-edit-sequence
 	     (lambda ()
 	       (set! edit-sequence-count (sub1 edit-sequence-count))
-	       (fprintf mred:constants:original-output-port "after-edit-sequence ~a~n" edit-sequence-count)
+	       '(fprintf mred:constants:original-output-port "after-edit-sequence ~a~n" edit-sequence-count)
 	       (update-highlighted-prompt)
 	       (super-after-edit-sequence))]
 	    [after-set-position

@@ -25,9 +25,6 @@ typedef struct Scheme_Env Link_Info;
 /*                         allocation and GC                              */
 /*========================================================================*/
 
-#define MAKE_CLOSED_PRIM(f,v,n,mi,ma) \
-  scheme_make_closed_prim_w_arity((Scheme_Closed_Prim *)f, (void *)v, n, mi, ma)
-
 #define _MALLOC_N(x, n, malloc) ((x*)malloc(sizeof(x)*(n)))
 #define MALLOC_ONE(x) _MALLOC_N(x, 1, scheme_malloc)
 #define MALLOC_ONE_TAGGED(x) _MALLOC_N(x, 1, scheme_malloc_tagged)
@@ -463,7 +460,7 @@ Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase);
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase);
 int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid, long phase);
 
-Scheme_Object *scheme_stx_source_module(Scheme_Object *stx);
+Scheme_Object *scheme_stx_source_module(Scheme_Object *stx, int resolve);
 
 Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
 				   Scheme_Object *key,
@@ -597,7 +594,7 @@ typedef struct {
 typedef struct {
   Scheme_Type type;
   short count;
-  Scheme_Object *name;
+  Scheme_Object *name; /* symbol or (cons name-sym src-modname) */
   Scheme_Object *array[1];
 } Scheme_Case_Lambda;
 
@@ -615,21 +612,21 @@ typedef struct Scheme_Promise {
 } Scheme_Promise;
 
 Scheme_Object *
-scheme_make_prim_w_everything(Scheme_Prim *fun, int eternal,
-			      const char *name,
+scheme_make_prim_w_everything(Scheme_Prim *fun,
+			      const char *name, Scheme_Object *modidx,
 			      short mina, short maxa,
 			      short folding,
 			      short minr, short maxr);
 Scheme_Object *
 scheme_make_closed_prim_w_everything(Scheme_Closed_Prim *fun, 
 				     void *data,
-				     const char *name, 
+				     const char *name, Scheme_Object *modidx,
 				     short mina, short maxa,
 				     short folding,
 				     short minr, short maxr);
 
-#define scheme_make_prim_w_arity2(f, n, mina, maxa, minr, maxr) \
-  scheme_make_prim_w_everything(f, 0, n, mina, maxa, 0, minr, maxr)
+#define scheme_make_prim_w_arity2(f, n, mod, mina, maxa, minr, maxr) \
+  scheme_make_prim_w_everything(f, n, mod, mina, maxa, 0, minr, maxr)
 
 /*========================================================================*/
 /*                              control flow                              */
@@ -1226,7 +1223,7 @@ typedef struct Scheme_Closure_Compilation_Data
   short closure_size;
   short *closure_map;
   Scheme_Object *code;
-  Scheme_Object *name;
+  Scheme_Object *name; /* symbol or (cons name-sym src-modname) */
 } Scheme_Closure_Compilation_Data;
 
 typedef struct {
@@ -1584,6 +1581,8 @@ Scheme_Bucket_Table *scheme_clone_toplevel(Scheme_Bucket_Table *ht, Scheme_Env *
 Scheme_Env *scheme_clone_module_env(Scheme_Env *menv, Scheme_Env *ns, Scheme_Object *modchain);
 
 void scheme_clean_dead_env(Scheme_Env *env);
+
+extern Scheme_Object *scheme_kernel_symbol;
 
 /*========================================================================*/
 /*                         errors and exceptions                          */

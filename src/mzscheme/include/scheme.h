@@ -390,6 +390,7 @@ typedef struct {
   short flags; /* keep flags at same place as in closed */
   Scheme_Prim *prim_val;
   const char *name;
+  Scheme_Object *srcmod;
   short mina, maxa;
 } Scheme_Primitive_Proc;
 
@@ -405,6 +406,7 @@ typedef struct {
   Scheme_Closed_Prim *prim_val;
   void *data;
   const char *name;
+  Scheme_Object *srcmod;
   short mina, maxa; /* mina == -2 => maxa is negated case count and
 		       record is a Scheme_Closed_Case_Primitive_Proc */
 } Scheme_Closed_Primitive_Proc;

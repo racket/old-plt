@@ -157,43 +157,43 @@ scheme_init_struct (Scheme_Env *env)
 
   scheme_add_global_constant("make-struct-type", 
 			    scheme_make_prim_w_arity2(make_struct_type,
-						      "make-struct-type",
+						      "make-struct-type", scheme_kernel_symbol,
 						      4, 7,
 						      4, 4),
 			    env);
 
   scheme_add_global_constant("make-struct-type-property", 
 			    scheme_make_prim_w_arity2(make_struct_type_property,
-						      "make-struct-type-property",
+						      "make-struct-type-property", scheme_kernel_symbol,
 						      1, 1,
 						      3, 3),
 			    env);
 
   scheme_add_global_constant("make-struct-field-accessor",
 			     scheme_make_prim_w_arity(make_struct_field_accessor,
-						      "make-struct-field-accessor",
+						      "make-struct-field-accessor", scheme_kernel_symbol,
 						      2, 3),
 			     env);
   scheme_add_global_constant("make-struct-field-mutator",
 			     scheme_make_prim_w_arity(make_struct_field_mutator,
-						      "make-struct-field-mutator",
+						      "make-struct-field-mutator", scheme_kernel_symbol,
 						      2, 3),
 			     env);
 
 
   scheme_add_global_constant("struct?",
 			     scheme_make_folding_prim(struct_p,
-						      "struct?",
+						      "struct?", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("struct-type?",
 			     scheme_make_folding_prim(struct_type_p,
-						     "struct-type?",
+						     "struct-type?", scheme_kernel_symbol,
 						     1, 1, 1),
 			    env);
   scheme_add_global_constant("struct-type-property?",
 			     scheme_make_folding_prim(struct_type_property_p,
-						     "struct-type-property?",
+						     "struct-type-property?", scheme_kernel_symbol,
 						     1, 1, 1),
 			    env);
 
@@ -201,19 +201,19 @@ scheme_init_struct (Scheme_Env *env)
 
   scheme_add_global_constant("struct-info",
 			     scheme_make_prim_w_arity2(struct_info,
-						       "struct-info",
+						       "struct-info", scheme_kernel_symbol,
 						       1, 1,
 						       2, 2),
 			     env);
   scheme_add_global_constant("struct-type-info",
 			     scheme_make_prim_w_arity2(struct_type_info,
-						       "struct-type-info",
+						       "struct-type-info", scheme_kernel_symbol,
 						       1, 1,
 						       6, 6),
 			     env);
   scheme_add_global_constant("struct->vector",
 			     scheme_make_prim_w_arity(struct_to_vector,
-						      "struct->vector",
+						      "struct->vector", scheme_kernel_symbol,
 						      1, 2),
 			     env);
 
@@ -221,22 +221,22 @@ scheme_init_struct (Scheme_Env *env)
 
   scheme_add_global_constant("struct-mutator-procedure?",
 			     scheme_make_prim_w_arity(struct_setter_p,
-						      "struct-mutator-procedure?",
+						      "struct-mutator-procedure?", scheme_kernel_symbol,
 						      1, 1),
 			    env);
   scheme_add_global_constant("struct-accessor-procedure?",
 			     scheme_make_prim_w_arity(struct_getter_p,
-						      "struct-accessor-procedure?",
+						      "struct-accessor-procedure?", scheme_kernel_symbol,
 						      1, 1),
 			    env);
   scheme_add_global_constant("struct-predicate-procedure?",
 			     scheme_make_prim_w_arity(struct_pred_p,
-						      "struct-predicate-procedure?",
+						      "struct-predicate-procedure?", scheme_kernel_symbol,
 						      1, 1),
 			     env);
   scheme_add_global_constant("struct-constructor-procedure?",
 			     scheme_make_prim_w_arity(struct_constr_p,
-						      "struct-constructor-procedure?",
+						      "struct-constructor-procedure?", scheme_kernel_symbol,
 						      1, 1),
 			     env);
   
@@ -244,17 +244,17 @@ scheme_init_struct (Scheme_Env *env)
 
   scheme_add_global_constant("make-inspector",
 			     scheme_make_prim_w_arity(make_inspector,
-						      "make-inspector",
+						      "make-inspector", scheme_kernel_symbol,
 						      0, 1),
 			     env);
   scheme_add_global_constant("inspector?",
 			     scheme_make_prim_w_arity(inspector_p,
-						      "inspector?",
+						      "inspector?", scheme_kernel_symbol,
 						      1, 1),
 			     env);
   scheme_add_global_constant("current-inspector", 
 			     scheme_register_parameter(current_inspector,
-						       "current-inspector",
+						       "current-inspector", scheme_kernel_symbol,
 						       MZCONFIG_INSPECTOR),
 			     env);
 
@@ -290,7 +290,7 @@ Scheme_Object *make_inspector(int argc, Scheme_Object **argv)
   if (argc) {
     superior = argv[0];
     if (!SAME_TYPE(SCHEME_TYPE(superior), scheme_inspector_type))
-      scheme_wrong_type("make-inspector", "inspector", 0, argc, argv);
+      scheme_wrong_type("make-inspector", scheme_kernel_symbol, "inspector", 0, argc, argv);
   } else
     superior = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
 
@@ -392,7 +392,7 @@ static Scheme_Object *prop_accessor(Scheme_Object *prop, int argc, Scheme_Object
   }
   
   if (argc < 2) /* hack; see scheme_struct_type_property_ref */
-    scheme_wrong_type("property accessor", 
+    scheme_wrong_type("property accessor", scheme_kernel_symbol, 
 		      "struct or struct-type with property", 
 		      0, argc, args);
   return NULL;
@@ -406,7 +406,7 @@ static Scheme_Object *make_struct_type_property(int argc, Scheme_Object *argv[])
   int len;
 
   if (!SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("make-struct-type-property", "symbol", 0, argc, argv);
+    scheme_wrong_type("make-struct-type-property", scheme_kernel_symbol, "symbol", 0, argc, argv);
 
   p = MALLOC_ONE_TAGGED(Scheme_Struct_Property);
   p->type = scheme_struct_property_type;
@@ -422,7 +422,7 @@ static Scheme_Object *make_struct_type_property(int argc, Scheme_Object *argv[])
 
   v = scheme_make_folding_closed_prim((Scheme_Closed_Prim *)prop_pred,
 				      (void *)p,
-				      name,
+				      name, NULL,
 				      1, 1, 0);
   a[1] = v;
 
@@ -432,7 +432,7 @@ static Scheme_Object *make_struct_type_property(int argc, Scheme_Object *argv[])
 
   v = scheme_make_folding_closed_prim((Scheme_Closed_Prim *)prop_accessor,
 				      (void *)p,
-				      name,
+				      name, NULL,
 				      1, 1, 0);
   a[2] = v;
 
@@ -475,14 +475,14 @@ static void wrong_struct_type(char *name,
 			      Scheme_Object **argv)
 {
   if (SAME_OBJ(expected, received))
-    scheme_raise_exn(MZEXN_APPLICATION_TYPE, argv[which], expected,
+    scheme_raise_exn(MZEXN_APPLICATION_TYPE, scheme_kernel_symbol, argv[which], expected,
 		     "%s: expects args of type <%s>; "
 		     "given instance of a different <%s>",
 		     name,
 		     type_name_string(expected), 
 		     type_name_string(received));
   else
-    scheme_wrong_type(name,
+    scheme_wrong_type(name, scheme_kernel_symbol,
 		      type_name_string(expected), 
 		      which, argc, argv);
 }
@@ -576,7 +576,7 @@ static int parse_pos(const char *who, Struct_Proc_Info *i, Scheme_Object **args,
     } else {
       if (!who)
 	who = i->func_name;
-      scheme_wrong_type(who, 
+      scheme_wrong_type(who, scheme_kernel_symbol, 
 			"non-negative exact integer", 
 			1, argc, args);
       return 0;
@@ -600,13 +600,13 @@ static int parse_pos(const char *who, Struct_Proc_Info *i, Scheme_Object **args,
 	  : i->struct_type->num_slots);
 
     if (!sc) {
-      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, args[1],
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol, args[1],
 		       "%s: no slots in <struct:%S>; given index: %V",
 		       who,
 		       i->struct_type->name,
 		       args[1]);
     } else {
-      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, args[1],
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol, args[1],
 		       "%s: slot index for <struct:%S> not in [0, %d]: %V",
 		       who,
 		       i->struct_type->name,
@@ -626,7 +626,7 @@ static Scheme_Object *struct_getter(Struct_Proc_Info *i, int argc, Scheme_Object
   int pos;
 
   if (NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_structure_type)) {
-    scheme_wrong_type(i->func_name, 
+    scheme_wrong_type(i->func_name, scheme_kernel_symbol, 
 		      type_name_string(i->struct_type->name), 
 		      0, argc, args);
     return NULL;
@@ -657,7 +657,7 @@ static Scheme_Object *struct_setter(Struct_Proc_Info *i, int argc, Scheme_Object
   Scheme_Object *v;
 
   if (NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_structure_type))
-    scheme_wrong_type(i->func_name, 
+    scheme_wrong_type(i->func_name, scheme_kernel_symbol, 
 		      type_name_string(i->struct_type->name), 
 		      0, argc, args);
 	
@@ -727,7 +727,7 @@ static Scheme_Object *struct_info(int argc, Scheme_Object *argv[])
   Scheme_Object *insp, *a[2];
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type))
-    scheme_wrong_type("struct-info", "struct", 0, argc, argv);
+    scheme_wrong_type("struct-info", scheme_kernel_symbol, "struct", 0, argc, argv);
 
   s = (Scheme_Structure *)argv[0];
 
@@ -759,14 +759,14 @@ static Scheme_Object *struct_type_info(int argc, Scheme_Object *argv[])
   int p;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_struct_type_type))
-    scheme_wrong_type("struct-type-info", "struct-type", 0, argc, argv);
+    scheme_wrong_type("struct-type-info", scheme_kernel_symbol, "struct-type", 0, argc, argv);
 
   stype = (Scheme_Struct_Type *)argv[0];
 
   insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
 
   if (!scheme_is_subinspector(stype->inspector, insp)) {
-    scheme_arg_mismatch("struct-type-info", 
+    scheme_arg_mismatch("struct-type-info", scheme_kernel_symbol, 
 			"current inspector cannot extract info for struct-type: ",
 			argv[0]);
     return NULL;
@@ -878,7 +878,7 @@ Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown
 static Scheme_Object *struct_to_vector(int argc, Scheme_Object *argv[])
 {
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type))
-    scheme_wrong_type("struct->vector", "struct", 0, argc, argv);
+    scheme_wrong_type("struct->vector", scheme_kernel_symbol, "struct", 0, argc, argv);
 
   return scheme_struct_to_vector(argv[0], 
 				 (argc > 1) ? argv[1] : NULL, 
@@ -961,7 +961,7 @@ static Scheme_Object *make_struct_field_xxor(const char *who, int getter,
 			      ? SCHEME_PRIM_IS_STRUCT_GETTER
 			      : SCHEME_PRIM_IS_STRUCT_SETTER))
       || (((Scheme_Closed_Primitive_Proc *)argv[0])->mina == 1)) {
-    scheme_wrong_type(who, (getter 
+    scheme_wrong_type(who, scheme_kernel_symbol, (getter 
 			    ? "accessor procedure that requires a field index"
 			    : "mutator procedure that requires a field index"),
 		      0, argc, argv);
@@ -974,7 +974,7 @@ static Scheme_Object *make_struct_field_xxor(const char *who, int getter,
   
   if (argc > 2) {
     if (!SCHEME_SYMBOLP(argv[2])) {
-      scheme_wrong_type(who, "symbol", 2, argc, argv);
+      scheme_wrong_type(who, scheme_kernel_symbol, "symbol", 2, argc, argv);
       return NULL;
     }
     fieldstr = scheme_symbol_val(argv[2]);
@@ -1249,7 +1249,7 @@ make_struct_proc(Scheme_Struct_Type *struct_type,
   if (proc_type == SCHEME_CONSTR) {
     p = scheme_make_folding_closed_prim((Scheme_Closed_Prim *)scheme_make_struct_instance,
 					(void *)struct_type,
-					func_name,
+					func_name, NULL,
 					struct_type->num_islots,
 					struct_type->num_islots,
 					0);
@@ -1257,7 +1257,7 @@ make_struct_proc(Scheme_Struct_Type *struct_type,
   } else if (proc_type == SCHEME_PRED) {
     p = scheme_make_folding_closed_prim((Scheme_Closed_Prim *)struct_pred,
 					(void *)struct_type,
-					func_name,
+					func_name, NULL,
 					1, 1, 1);
     flags |= SCHEME_PRIM_IS_STRUCT_PRED;
   } else {
@@ -1281,7 +1281,7 @@ make_struct_proc(Scheme_Struct_Type *struct_type,
     if ((proc_type == SCHEME_GETTER) || (proc_type == SCHEME_GEN_GETTER)) {
       p = scheme_make_folding_closed_prim((Scheme_Closed_Prim *)struct_getter,
 					  (void *)i,
-					  func_name,
+					  func_name, NULL,
 					  1 + need_pos, 1 + need_pos, 1);
       flags |= SCHEME_PRIM_IS_STRUCT_GETTER;
       if (need_pos)
@@ -1289,7 +1289,7 @@ make_struct_proc(Scheme_Struct_Type *struct_type,
     } else {
       p = scheme_make_folding_closed_prim((Scheme_Closed_Prim *)struct_setter,
 					  (void *)i,
-					  func_name,
+					  func_name, NULL,
 					  2 + need_pos, 2 + need_pos, 0);
       flags |= SCHEME_PRIM_IS_STRUCT_SETTER;
       if (need_pos)
@@ -1403,7 +1403,7 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
 	  && ((struct_type->num_slots < parent_type->num_slots)
 	      || (struct_type->num_islots < parent_type->num_islots)))) {
     /* Too many fields. */
-    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, scheme_kernel_symbol,
 		     "too many fields for struct-type; maximum total field count is 32768");
     return NULL;
   }
@@ -1493,7 +1493,7 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
     if (!SCHEME_NULLP(l)) {
       /* SCHEME_CAR(l) is a duplicate */
       a = SCHEME_CAR(l);
-      scheme_arg_mismatch("make-struct-type", "duplicate property binding", a);
+      scheme_arg_mismatch("make-struct-type", scheme_kernel_symbol, "duplicate property binding", a);
     }
   }
 
@@ -1534,16 +1534,16 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
   Scheme_Struct_Type *type;
 
   if (!SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("make-struct-type", "symbol", 0, argc, argv);
+    scheme_wrong_type("make-struct-type", scheme_kernel_symbol, "symbol", 0, argc, argv);
   if (!SCHEME_FALSEP(argv[1])
       && !SAME_TYPE(SCHEME_TYPE(argv[1]), scheme_struct_type_type))
-    scheme_wrong_type("make-struct-type", "struct-type or #f", 1, argc, argv);
+    scheme_wrong_type("make-struct-type", scheme_kernel_symbol, "struct-type or #f", 1, argc, argv);
 
   if (!SCHEME_INTP(argv[2]) || (SCHEME_INT_VAL(argv[2]) < 0)) {
     if (SCHEME_BIGNUMP(argv[2]) && SCHEME_BIGPOS(argv[2]))
       initc = -1;
     else {
-      scheme_wrong_type("make-struct-type", "non-negative exact integer", 2, argc, argv);
+      scheme_wrong_type("make-struct-type", scheme_kernel_symbol, "non-negative exact integer", 2, argc, argv);
       return NULL;
     }
   } else
@@ -1553,7 +1553,7 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
     if (SCHEME_BIGNUMP(argv[3]) && SCHEME_BIGPOS(argv[3]))
       uninitc = -1;
     else {
-      scheme_wrong_type("make-struct-type", "non-negative exact integer", 3, argc, argv);
+      scheme_wrong_type("make-struct-type", scheme_kernel_symbol, "non-negative exact integer", 3, argc, argv);
       return NULL;
     }
   } else
@@ -1572,7 +1572,7 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
 	num_props++;
       }
       if (!SCHEME_NULLP(l)) {
-	scheme_wrong_type("make-struct-type", "list of struct-type-property--value pairs", 5, argc, argv);
+	scheme_wrong_type("make-struct-type", scheme_kernel_symbol, "list of struct-type-property--value pairs", 5, argc, argv);
       }
 
       if (argc > 6) {
@@ -1580,7 +1580,7 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
 	  inspector = NULL;
 	else {
 	  if (!SAME_TYPE(SCHEME_TYPE(argv[6]), scheme_inspector_type))
-	    scheme_wrong_type("make-struct-type", "inspector", 6, argc, argv);
+	    scheme_wrong_type("make-struct-type", scheme_kernel_symbol, "inspector", 6, argc, argv);
 	  
 	  inspector = argv[6];
 	}

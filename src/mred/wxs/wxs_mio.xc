@@ -29,7 +29,7 @@ static char *VectorToArray(char *r, Scheme_Object *vec, long *len)
 
   if (!SCHEME_VECTORP(vec))
     WITH_VAR_STACK(scheme_wrong_type(METHODNAME("editor-stream-in-base%","read"), 
-		                     "character vector", -1, 0, &vec));
+		                     objscheme_modidx, "character vector", -1, 0, &vec));
 
   c = *len = SCHEME_VEC_SIZE(vec);
 
@@ -39,7 +39,7 @@ static char *VectorToArray(char *r, Scheme_Object *vec, long *len)
   for (a = SCHEME_VEC_ELS(vec), i = 0; i < c; i++) {
     if (!SCHEME_CHARP(a[i]))
       WITH_VAR_STACK(scheme_wrong_type(METHODNAME("editor-stream-in-base%","read"), 
-				       "character vector", -1, 0, &vec));
+				       objscheme_modidx, "character vector", -1, 0, &vec));
     r[i] = SCHEME_CHAR_VAL(a[i]);
   }
 
@@ -59,7 +59,7 @@ static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
     vec = WITH_VAR_STACK(scheme_make_vector(len, WITH_VAR_STACK(scheme_make_char(0))));
   else if (!SCHEME_VECTORP(vec))
     WITH_VAR_STACK(scheme_wrong_type(METHODNAME("editor-stream-in-base%","read"), 
-		                     "character vector", -1, 0, &vec));
+		                     objscheme_modidx, "character vector", -1, 0, &vec));
   
   for (a = SCHEME_VEC_ELS(vec), i = 0; i < len; i++)
     a[i] = WITH_VAR_STACK(scheme_make_char(r[i]));

@@ -912,7 +912,7 @@ sub DoPrintClass
 	print ";\n";
 	print "  REMEMBER_VAR_STACK();\n\n";
 	print "  objscheme_check_valid(${newclass}_class, $longgetname, n, p);\n";
-	print "  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count($longgetname, POFFSET, POFFSET, n, p));\n";
+	print "  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count($longgetname, objscheme_modidx, POFFSET, POFFSET, n, p));\n";
 	print "  cobj = (Scheme_Class_Object *)p[0];\n";
 	print "  if (cobj->primflag)\n";
 	print "    v = ";
@@ -935,7 +935,7 @@ sub DoPrintClass
 	    print ";\n";
 	    print "  SETUP_VAR_STACK(1);\n  VAR_STACK_PUSH(0, cobj);\n\n";
 	    print "  WITH_VAR_STACK(objscheme_check_valid(${newclass}_class, $longsetname, n, p));\n";
-	    print "  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count($longsetname, POFFSET+1, POFFSET+1, n, p));\n\n";
+	    print "  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count($longsetname, objscheme_modidx, POFFSET+1, POFFSET+1, n, p));\n\n";
 	    print "  v = ";
 	    &PrintUnbundleVar("p[POFFSET]", $ivartype);
 	    print ";\n  ";
@@ -1163,7 +1163,7 @@ sub DoPrintClass
 		}
 		print "(${globalname}${func}";
 		if ($justoneok{$func}) {
-		    print ", ${fname}, ";
+		    print ", ${fname}, objscheme_modidx, ";
 		    print $justonemin{$func};
 		    print ", ";
 		    print $justonemax{$func};
@@ -1208,7 +1208,7 @@ sub DoPrintClass
 	print "    if (!stop)\n";
 	print "       return 0;\n";
 	$cs = &Unquote($classstring, 1);
-	print "    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? \"$cs object or \" XC_NULL_STR: \"$cs object\", -1, 0, &obj));\n";
+	print "    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? \"$cs object or \" XC_NULL_STR: \"$cs object\", -1, 0, &obj));\n";
 	print "    return 0;\n";
 	print "  }\n";
 	print "}\n\n";
@@ -1972,7 +1972,7 @@ sub PrintSpecificFunction
 	print "$prefix    WITH_VAR_STACK(scheme_wrong_count(";
 	print "\"${aname}${casename}\"";
 	
-	print ", $POFFSET+${minimumok}, $POFFSET+${possible}, n, p));\n";
+	print ", objscheme_modidx, $POFFSET+${minimumok}, $POFFSET+${possible}, n, p));\n";
     }
 
     &PrintUnbundles($prefix, "\"${aname}${casename}\"");
@@ -2802,7 +2802,7 @@ sub PrintSymSet
 	if (!($omit =~ /PRED/)) {
 	    print "static int istype_symset_${name}(Scheme_Object *v, const char *where) {\n";
 	    print "  if SCHEME_NULLP(v) return 1;\n";
-	    print "  if (where) scheme_wrong_type(where, \"$name symbol${lname}\", -1, 0, &v);\n";
+	    print "  if (where) scheme_wrong_type(where, objscheme_modidx, \"$name symbol${lname}\", -1, 0, &v);\n";
 	    print "  return 0;\n";
 	    print "}\n\n";
 	}
@@ -2897,7 +2897,7 @@ sub PrintSymSet
 		print "  }\n";
 		print "  if (SCHEME_NULLP(l)) return result;\n";
 	    }
-	    print "  if (where) WITH_VAR_STACK(scheme_wrong_type(where, \"$name symbol${lname}\", -1, 0, &v));\n";
+	    print "  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, \"$name symbol${lname}\", -1, 0, &v));\n";
 	    print "  return 0;\n";
 	    print "}\n\n";
 	}

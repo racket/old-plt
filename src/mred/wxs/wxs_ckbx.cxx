@@ -32,7 +32,7 @@ START_XFORM_SKIP;
 
 static int istype_symset_checkboxStyle(Scheme_Object *v, const char *where) {
   if SCHEME_NULLP(v) return 1;
-  if (where) scheme_wrong_type(where, "checkboxStyle symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, objscheme_modidx, "checkboxStyle symbol list", -1, 0, &v);
   return 0;
 }
 
@@ -348,10 +348,10 @@ static Scheme_Object *os_wxCheckBoxSetLabel(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("set-label in check-box% (bitmap label case)", POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("set-label in check-box% (bitmap label case)", objscheme_modidx, POFFSET+1, POFFSET+1, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "set-label in check-box% (bitmap label case)", 0));
 
-    { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","set-label"), "bad bitmap: ", p[POFFSET+0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","set-label"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+0])); }
+    { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","set-label"), objscheme_modidx, "bad bitmap: ", p[POFFSET+0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","set-label"), objscheme_modidx, "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+0])); }
     WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)p[0])->primdata)->SetLabel(x0));
 
     
@@ -365,7 +365,7 @@ static Scheme_Object *os_wxCheckBoxSetLabel(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("set-label in check-box% (string label case)", POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("set-label in check-box% (string label case)", objscheme_modidx, POFFSET+1, POFFSET+1, n, p));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-label in check-box% (string label case)"));
 
     
@@ -598,7 +598,7 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(int n,  Scheme_Object *p[])
 
     int cb_pos = 0;
     if ((n < (POFFSET+3)) || (n > (POFFSET+9))) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in check-box% (bitmap label case)", POFFSET+3, POFFSET+9, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("initialization in check-box% (bitmap label case)", objscheme_modidx, POFFSET+3, POFFSET+9, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in check-box% (bitmap label case)", 0));
     x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
     x2 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+2], "initialization in check-box% (bitmap label case)", 0));
@@ -627,7 +627,7 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(int n,  Scheme_Object *p[])
     } else
       x8 = "checkBox";
 
-    { if (x2 && !x2->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","initialization"), "bad bitmap: ", p[POFFSET+2])); if (x2 && BM_SELECTED(x2)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+2])); }if (!x5) x5 = -1;if (!x6) x6 = -1;
+    { if (x2 && !x2->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","initialization"), objscheme_modidx, "bad bitmap: ", p[POFFSET+2])); if (x2 && BM_SELECTED(x2)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","initialization"), objscheme_modidx, "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+2])); }if (!x5) x5 = -1;if (!x6) x6 = -1;
     realobj = WITH_VAR_STACK(new os_wxCheckBox CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8)));
 #ifdef MZ_PRECISE_GC
     WITH_VAR_STACK(realobj->gcInit_wxCheckBox(x0, x1, x2, x3, x4, x5, x6, x7, x8));
@@ -655,7 +655,7 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(int n,  Scheme_Object *p[])
 
     int cb_pos = 0;
     if ((n < (POFFSET+3)) || (n > (POFFSET+9))) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in check-box% (string label case)", POFFSET+3, POFFSET+9, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("initialization in check-box% (string label case)", objscheme_modidx, POFFSET+3, POFFSET+9, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in check-box% (string label case)", 0));
     x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
     x2 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+2], "initialization in check-box% (string label case)"));
@@ -734,7 +734,7 @@ int objscheme_istype_wxCheckBox(Scheme_Object *obj, const char *stop, int nullOK
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "check-box% object or " XC_NULL_STR: "check-box% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "check-box% object or " XC_NULL_STR: "check-box% object", -1, 0, &obj));
     return 0;
   }
 }

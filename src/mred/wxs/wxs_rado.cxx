@@ -56,7 +56,7 @@ static int unbundle_symset_radioboxStyle(Scheme_Object *v, const char *where) {
   l = SCHEME_CDR(l);
   }
   if (SCHEME_NULLP(l)) return result;
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "radioboxStyle symbol list", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "radioboxStyle symbol list", -1, 0, &v));
   return 0;
 }
 
@@ -160,7 +160,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   VAR_STACK_PUSH(2, f);
 
   len = WITH_VAR_STACK(scheme_proper_list_length(l));
-  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, "proper-list", -1, 0, &l));
+  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, objscheme_modidx, "proper-list", -1, 0, &l));
   if (c) *c = len;
 
   if (!(len + l_EXTRA))
@@ -174,7 +174,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {
-      WITH_VAR_STACK(scheme_arg_mismatch(who, "expected a proper list: ", orig_l));
+      WITH_VAR_STACK(scheme_arg_mismatch(who, objscheme_modidx, "expected a proper list: ", orig_l));
       return NULL;
     }
 
@@ -220,7 +220,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 #define l_EXTRA 0
 #define l_TERMINATE 
 #define l_COPY l_COPYDEST=l_COPYSRC;
-#define l_OKTEST { if (!((l_COPYDEST)->Ok())) WITH_VAR_STACK(scheme_arg_mismatch(OKTESTWHERE, "bad bitmap: ", SCHEME_CAR(l))); if (BM_SELECTED(l_COPYDEST)) WITH_VAR_STACK(scheme_arg_mismatch(OKTESTWHERE, "bitmap is currently installed into a bitmap-dc%: ", SCHEME_CAR(l))); }
+#define l_OKTEST { if (!((l_COPYDEST)->Ok())) WITH_VAR_STACK(scheme_arg_mismatch(OKTESTWHERE, objscheme_modidx, "bad bitmap: ", SCHEME_CAR(l))); if (BM_SELECTED(l_COPYDEST)) WITH_VAR_STACK(scheme_arg_mismatch(OKTESTWHERE, objscheme_modidx, "bitmap is currently installed into a bitmap-dc%: ", SCHEME_CAR(l))); }
 #define l_INTTYPE int
 #define l_DIRECTMALLOC 0
 
@@ -261,7 +261,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   VAR_STACK_PUSH(2, f);
 
   len = WITH_VAR_STACK(scheme_proper_list_length(l));
-  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, "proper-list", -1, 0, &l));
+  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, objscheme_modidx, "proper-list", -1, 0, &l));
   if (c) *c = len;
 
   if (!(len + l_EXTRA))
@@ -275,7 +275,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {
-      WITH_VAR_STACK(scheme_arg_mismatch(who, "expected a proper list: ", orig_l));
+      WITH_VAR_STACK(scheme_arg_mismatch(who, objscheme_modidx, "expected a proper list: ", orig_l));
       return NULL;
     }
 
@@ -602,7 +602,7 @@ static Scheme_Object *os_wxRadioBoxEnable(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count("enable in radio-box% (single-button case)", POFFSET+2, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("enable in radio-box% (single-button case)", objscheme_modidx, POFFSET+2, POFFSET+2, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "enable in radio-box% (single-button case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "enable in radio-box% (single-button case)"));
 
@@ -619,7 +619,7 @@ static Scheme_Object *os_wxRadioBoxEnable(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("enable in radio-box% (all-buttons case)", POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("enable in radio-box% (all-buttons case)", objscheme_modidx, POFFSET+1, POFFSET+1, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "enable in radio-box% (all-buttons case)"));
 
     
@@ -963,7 +963,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(int n,  Scheme_Object *p[])
 
     int cb_pos = 0;
     if ((n < (POFFSET+8)) || (n > (POFFSET+11))) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in radio-box% (bitmap list case)", POFFSET+8, POFFSET+11, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("initialization in radio-box% (bitmap list case)", objscheme_modidx, POFFSET+8, POFFSET+11, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in radio-box% (bitmap list case)", 0));
     x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
     x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+2], "initialization in radio-box% (bitmap list case)"));
@@ -1017,7 +1017,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(int n,  Scheme_Object *p[])
 
     int cb_pos = 0;
     if ((n < (POFFSET+3)) || (n > (POFFSET+11))) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in radio-box% (string list case)", POFFSET+3, POFFSET+11, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("initialization in radio-box% (string list case)", objscheme_modidx, POFFSET+3, POFFSET+11, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in radio-box% (string list case)", 0));
     x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
     x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+2], "initialization in radio-box% (string list case)"));
@@ -1110,7 +1110,7 @@ int objscheme_istype_wxRadioBox(Scheme_Object *obj, const char *stop, int nullOK
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "radio-box% object or " XC_NULL_STR: "radio-box% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "radio-box% object or " XC_NULL_STR: "radio-box% object", -1, 0, &obj));
     return 0;
   }
 }

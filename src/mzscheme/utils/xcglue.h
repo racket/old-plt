@@ -14,7 +14,7 @@ void scheme_install_xc_global(char *name, Scheme_Object *val, Scheme_Env *env);
 Scheme_Object *scheme_lookup_xc_global(char *name, Scheme_Env *env);
 
 /* initialization: */
-void objscheme_init(Scheme_Env *);
+void objscheme_init(Scheme_Env *env, Scheme_Object *mod);
 
 /******************************************************************/
 /*                   Utilites used by xctocc                      */
@@ -40,7 +40,7 @@ typedef Scheme_Prim Scheme_Method_Prim;
 
 typedef long ExactLong;
 
-void objscheme_init(Scheme_Env *env);
+extern Scheme_Object *objscheme_modidx;
 
 /* Defining a primitive class: */
 Scheme_Object *

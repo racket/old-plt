@@ -221,131 +221,131 @@ void scheme_init_file(Scheme_Env *env)
 
   scheme_add_global_constant("file-exists?", 
 			     scheme_make_prim_w_arity(file_exists, 
-						      "file-exists?", 
+						      "file-exists?", scheme_kernel_symbol, 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("directory-exists?", 
 			     scheme_make_prim_w_arity(directory_exists, 
-						      "directory-exists?", 
+						      "directory-exists?", scheme_kernel_symbol, 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("link-exists?", 
 			     scheme_make_prim_w_arity(link_exists, 
-						      "link-exists?", 
+						      "link-exists?", scheme_kernel_symbol, 
 						      1, 1), 
 			     env);
 #ifndef NO_FILE_SYSTEM_UTILS
   scheme_add_global_constant("delete-file", 
 			     scheme_make_prim_w_arity(delete_file, 
-						      "delete-file", 
+						      "delete-file", scheme_kernel_symbol, 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("rename-file-or-directory", 
 			     scheme_make_prim_w_arity(rename_file, 
-						      "rename-file-or-directory", 
+						      "rename-file-or-directory", scheme_kernel_symbol, 
 						      2, 2), 
 			     env);
   scheme_add_global_constant("copy-file", 
 			     scheme_make_prim_w_arity(copy_file, 
-						      "copy-file", 
+						      "copy-file", scheme_kernel_symbol, 
 						      2, 2), 
 			     env);
   scheme_add_global_constant("build-path", 
 			     scheme_make_prim_w_arity(scheme_build_pathname,
-						      "build-path", 
+						      "build-path", scheme_kernel_symbol, 
 						      1, -1), 
 			     env);
   scheme_add_global_constant("split-path", 
 			     scheme_make_prim_w_arity2(split_pathname,
-						       "split-path",
+						       "split-path", scheme_kernel_symbol,
 						       1, 1,
 						       3, 3), 
 			     env);
   scheme_add_global_constant("relative-path?", 
 			     scheme_make_prim_w_arity(relative_pathname_p,
-						      "relative-path?",
+						      "relative-path?", scheme_kernel_symbol,
 						      1, 1), 
 			     env);
   scheme_add_global_constant("absolute-path?", 
 			     scheme_make_prim_w_arity(absolute_pathname_p,
-						      "absolute-path?",
+						      "absolute-path?", scheme_kernel_symbol,
 						      1, 1), 
 			     env);
   scheme_add_global_constant("complete-path?", 
 			     scheme_make_prim_w_arity(complete_pathname_p,
-						      "complete-path?",
+						      "complete-path?", scheme_kernel_symbol,
 						      1, 1), 
 			     env);
   scheme_add_global_constant("path->complete-path",
 			     scheme_make_prim_w_arity(path_to_complete_path,
-						      "path->complete-path",
+						      "path->complete-path", scheme_kernel_symbol,
 						      1, 2), 
 			     env);
   scheme_add_global_constant("resolve-path",
 			     scheme_make_prim_w_arity(resolve_path,
-						      "resolve-path",
+						      "resolve-path", scheme_kernel_symbol,
 						      1, 1), 
 			     env);
   scheme_add_global_constant("simplify-path",
 			     scheme_make_prim_w_arity(simplify_path,
-						      "simplify-path",
+						      "simplify-path", scheme_kernel_symbol,
 						      1, 1), 
 			     env);
   scheme_add_global_constant("expand-path",
 			     scheme_make_prim_w_arity(expand_path,
-						      "expand-path",
+						      "expand-path", scheme_kernel_symbol,
 						      1, 1), 
 			     env);
   scheme_add_global_constant("normal-case-path",
 			     scheme_make_prim_w_arity(normal_path_case,
-						      "normal-case-path",
+						      "normal-case-path", scheme_kernel_symbol,
 						      1, 1), 
 			     env);
   scheme_add_global_constant("directory-list",
 			     scheme_make_prim_w_arity(directory_list,
-						      "directory-list",
+						      "directory-list", scheme_kernel_symbol,
 						      0, 1), 
 			     env);
   scheme_add_global_constant("filesystem-root-list",
 			     scheme_make_prim_w_arity(filesystem_root_list,
-						      "filesystem-root-list",
+						      "filesystem-root-list", scheme_kernel_symbol,
 						      0, 0), 
 			     env);
   scheme_add_global_constant("make-directory",
 			     scheme_make_prim_w_arity(make_directory,
-						      "make-directory",
+						      "make-directory", scheme_kernel_symbol,
 						      1, 1), 
 			     env);
   scheme_add_global_constant("delete-directory",
 			     scheme_make_prim_w_arity(delete_directory,
-						      "delete-directory",
+						      "delete-directory", scheme_kernel_symbol,
 						      1, 1), 
 			     env);
   scheme_add_global_constant("file-or-directory-modify-seconds",
 			     scheme_make_prim_w_arity(file_modify_seconds,
-						      "file-or-directory-modify-seconds",
+						      "file-or-directory-modify-seconds", scheme_kernel_symbol,
 						      1, 1), 
 			     env);
   scheme_add_global_constant("file-or-directory-permissions",
 			     scheme_make_prim_w_arity(file_or_dir_permissions,
-						      "file-or-directory-permissions",
+						      "file-or-directory-permissions", scheme_kernel_symbol,
 						      1, 1), 
 			     env);
   scheme_add_global_constant("file-size",
 			     scheme_make_prim_w_arity(file_size,
-						      "file-size",
+						      "file-size", scheme_kernel_symbol,
 						      1, 1), 
 			     env);
 
   scheme_add_global_constant("current-drive", 
 			     scheme_make_prim_w_arity(current_drive, 
-						      "current-drive", 
+						      "current-drive", scheme_kernel_symbol, 
 						      0, 0), 
 			     env);
 
   scheme_add_global_constant("find-system-path", 
 			     scheme_make_prim_w_arity(find_system_path, 
-						      "find-system-path", 
+						      "find-system-path", scheme_kernel_symbol, 
 						      1, 1), 
 			     env);
 
@@ -354,7 +354,7 @@ void scheme_init_file(Scheme_Env *env)
 #ifdef DIR_FUNCTION
   scheme_add_global_constant("current-directory",
 			     scheme_register_parameter(current_directory,
-						       "current-directory", 
+						       "current-directory", scheme_kernel_symbol,
 						       MZCONFIG_CURRENT_DIRECTORY),
 			     env);
 #endif
@@ -362,7 +362,7 @@ void scheme_init_file(Scheme_Env *env)
 #ifndef NO_FILE_SYSTEM_UTILS
   scheme_add_global_constant("current-library-collection-paths",
 			     scheme_register_parameter(current_library_collection_paths,
-						       "current-library-collection-paths",
+						       "current-library-collection-paths", scheme_kernel_symbol,
 						       MZCONFIG_COLLECTION_PATHS),
 			     env);
 #endif
@@ -439,7 +439,7 @@ char *scheme_os_getcwd(char *buf, int buflen, int *actlen, int noexn)
 	  }
 	}
 	
-	scheme_raise_exn(MZEXN_I_O, "current-directory: unknown failure (%e)", errno);
+	scheme_raise_exn(MZEXN_I_O, scheme_kernel_symbol, "current-directory: unknown failure (%e)", errno);
       }
 
       buflen = strlen(r) + 1;
@@ -496,7 +496,7 @@ int scheme_os_setcwd(char *expanded, int noexn)
 #endif
 
   if (err && !noexn)
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 		       scheme_make_string(expanded),
 		       fail_err_symbol,
 		       "current-directory: unable to switch to directory: \"%q\"",
@@ -900,13 +900,13 @@ static int has_null(const char *s, long l)
 static void raise_null_error(const char *name, Scheme_Object *path, const char *mod)
 {
   if (!SCHEME_STRTAG_VAL(path))
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+    scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 		     path,
 		     path_err_symbol,
 		     "%s: pathname%s is empty", 
 		     name, mod);
   else
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+    scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 		     path,
 		     path_err_symbol,
 		     "%s: pathname%s contains a null character: %Q", 
@@ -1133,7 +1133,7 @@ static char *do_expand_filename(char* filename, int ilen, char *errorin,
 
     if (filename[f] && filename[f] != '/') {
       if (errorin && report_bad_user)
-	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+	scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 			 scheme_make_string(filename),
 			 path_err_symbol,
 			 "%s: bad username in path: \"%q\"", 
@@ -1163,7 +1163,7 @@ static char *do_expand_filename(char* filename, int ilen, char *errorin,
 
     if (!home) {
       if (errorin && report_bad_user)
-	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+	scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 			 scheme_make_string(filename),
 			 path_err_symbol,
 			 "%s: bad username in path: \"%q\"", 
@@ -1509,7 +1509,7 @@ static Scheme_Object *file_exists(int argc, Scheme_Object **argv)
   char *f;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("file-exists?", "string", 0, argc, argv);
+    scheme_wrong_type("file-exists?", scheme_kernel_symbol, "string", 0, argc, argv);
 
   f = do_expand_filename(SCHEME_STR_VAL(argv[0]),
 			 SCHEME_STRTAG_VAL(argv[0]),
@@ -1525,7 +1525,7 @@ static Scheme_Object *directory_exists(int argc, Scheme_Object **argv)
   char *f;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("directory-exists?", "string", 0, argc, argv);
+    scheme_wrong_type("directory-exists?", scheme_kernel_symbol, "string", 0, argc, argv);
 
   f = do_expand_filename(SCHEME_STR_VAL(argv[0]),
 			 SCHEME_STRTAG_VAL(argv[0]),
@@ -1541,7 +1541,7 @@ static Scheme_Object *link_exists(int argc, Scheme_Object **argv)
   char *filename;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("link-exists?", "string", 0, argc, argv);
+    scheme_wrong_type("link-exists?", scheme_kernel_symbol, "string", 0, argc, argv);
 
   filename = SCHEME_STR_VAL(argv[0]);
 
@@ -1687,7 +1687,7 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 	  long alen;
 
 	  astr = scheme_make_args_string("other ", i, argc, argv, &alen);
-	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 			   scheme_make_string(next),
 			   path_err_symbol,
 			   "build-path: %d%s pathname element is an empty string%t", 
@@ -1720,7 +1720,7 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
       if (next[0] == '/') {
 	rel = 0;
 	if (i) {
-	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 			   scheme_make_string(next),
 			   path_err_symbol,
 			   "build-path: absolute path \"%q\" cannot be"
@@ -1762,7 +1762,7 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 	      str[30] = 0;
 	    } else
 	      str[pos] = 0;
-	    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+	    scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 			     scheme_make_string(next),
 			     path_err_symbol,
 			     "build-path: %s \"%s\" cannot be"
@@ -1805,14 +1805,14 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 #ifdef MZ_PRECISE_GC
 	      /* Can't pass unaligned pointer to scheme_raise_exn: */
 	      if (next_off & 0x1) {
-		nstr = MALLOC_N_ATOMIC(char, len+1);
+		nstr = MALLOC_N_ATOMIC(char, scheme_kernel_symbol, len+1);
 		memcpy(nstr, next + next_off, len);
 		nstr[len] = 0;
 	      } else
 #endif
 		nstr = next + next_off;
 
-	      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+	      scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 			       scheme_make_string(nstr),
 			       path_err_symbol,
 			       "build-path: absolute path \"%q\" cannot be"
@@ -1867,7 +1867,7 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 #endif
       }
     } else {
-      scheme_wrong_type("build-path", "string or 'up or 'same", i, argc, argv);
+      scheme_wrong_type("build-path", scheme_kernel_symbol, "string or 'up or 'same", i, argc, argv);
       return scheme_false;
     }
   }
@@ -2075,13 +2075,13 @@ static Scheme_Object *split_pathname(int argc, Scheme_Object **argv)
   inpath = argv[0];
 
   if (!SCHEME_STRINGP(inpath))
-    scheme_wrong_type("split-path", "string", 0, argc, argv);
+    scheme_wrong_type("split-path", scheme_kernel_symbol, "string", 0, argc, argv);
 
   s = SCHEME_STR_VAL(inpath);
   len = SCHEME_STRTAG_VAL(inpath);
 
   if (!len) {
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+    scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 		     inpath, 
 		     path_err_symbol,
 		     "split-path: pathname is an empty string");
@@ -2208,11 +2208,11 @@ static Scheme_Object *path_to_complete_path(int argc, Scheme_Object **argv)
 
   p = argv[0];
   if (!SCHEME_STRINGP(p))
-    scheme_wrong_type("path->complete-path", "string", 0, argc, argv);
+    scheme_wrong_type("path->complete-path", scheme_kernel_symbol, "string", 0, argc, argv);
   if (argc > 1) {
     wrt = argv[1];
     if (!SCHEME_STRINGP(wrt))
-      scheme_wrong_type("path->complete-path", "string", 1, argc, argv);
+      scheme_wrong_type("path->complete-path", scheme_kernel_symbol, "string", 1, argc, argv);
   } else
     wrt = NULL;
 
@@ -2232,7 +2232,7 @@ static Scheme_Object *path_to_complete_path(int argc, Scheme_Object **argv)
       raise_null_error("path->complete-path", p, "");
 
     if (!scheme_is_complete_path(ws, wlen))
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 		       wrt,
 		       path_err_symbol,
 		       "path->complete-path: second argument is not a complete path: \"%q\"",
@@ -2266,7 +2266,7 @@ static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
   int errid;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("delete-file", "string", 0, argc, argv);
+    scheme_wrong_type("delete-file", scheme_kernel_symbol, "string", 0, argc, argv);
 
 #ifdef USE_MAC_FILE_TOOLBOX
   {
@@ -2296,7 +2296,7 @@ static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
   errid = errno;
 #endif
   
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, 
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol, 
 		   argv[0], 
 		   fail_err_symbol,
 		   "delete-file: cannot delete file: \"%q\" (%e)",
@@ -2315,9 +2315,9 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
 #endif
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("rename-file-or-directory", "string", 0, argc, argv);
+    scheme_wrong_type("rename-file-or-directory", scheme_kernel_symbol, "string", 0, argc, argv);
   if (!SCHEME_STRINGP(argv[1]))
-    scheme_wrong_type("rename-file-or-directory", "string", 1, argc, argv);
+    scheme_wrong_type("rename-file-or-directory", scheme_kernel_symbol, "string", 1, argc, argv);
 
 #ifdef USE_MAC_FILE_TOOLBOX
   src = SCHEME_STR_VAL(argv[0]);
@@ -2396,7 +2396,7 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
 #endif
 
 failed:
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, 
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol, 
 		   argv[0],
 		   fail_err_symbol,
 		   "rename-file-or-directory: cannot rename file or directory: %q to: %q",
@@ -2429,9 +2429,9 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
   int pre_exists = 0;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("copy-file", "string", 0, argc, argv);
+    scheme_wrong_type("copy-file", scheme_kernel_symbol, "string", 0, argc, argv);
   if (!SCHEME_STRINGP(argv[1]))
-    scheme_wrong_type("copy-file", "string", 1, argc, argv);
+    scheme_wrong_type("copy-file", scheme_kernel_symbol, "string", 1, argc, argv);
 
 #ifdef MAC_FILE_SYSTEM
   src = SCHEME_STR_VAL(argv[0]);
@@ -2587,7 +2587,7 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
   }
 #endif
 
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, 
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol, 
 		   argv[0],
 		   pre_exists ? exists_err_symbol : fail_err_symbol,
 		   "copy-file: %s; cannot copy: %q to: %q",
@@ -2603,7 +2603,7 @@ static Scheme_Object *relative_pathname_p(int argc, Scheme_Object **argv)
   int len;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("relative-path?", "string", 0, argc, argv);
+    scheme_wrong_type("relative-path?", scheme_kernel_symbol, "string", 0, argc, argv);
 
   s = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
@@ -2622,7 +2622,7 @@ static Scheme_Object *complete_pathname_p(int argc, Scheme_Object **argv)
   int len;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("complete-path?", "string", 0, argc, argv);
+    scheme_wrong_type("complete-path?", scheme_kernel_symbol, "string", 0, argc, argv);
 
   s = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
@@ -2641,7 +2641,7 @@ static Scheme_Object *absolute_pathname_p(int argc, Scheme_Object **argv)
   int len;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("absolute-path?", "string", 0, argc, argv);
+    scheme_wrong_type("absolute-path?", scheme_kernel_symbol, "string", 0, argc, argv);
 
   s = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
@@ -2668,7 +2668,7 @@ static Scheme_Object *resolve_path(int argc, Scheme_Object *argv[])
   int expanded;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("resolve-path", "string", 0, argc, argv);
+    scheme_wrong_type("resolve-path", scheme_kernel_symbol, "string", 0, argc, argv);
 
   filename = do_expand_filename(SCHEME_STR_VAL(argv[0]),
 				SCHEME_STRTAG_VAL(argv[0]),
@@ -2751,7 +2751,7 @@ static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle
 	if ((len == SCHEME_STRTAG_VAL(p))
 	    && !strcmp(s, SCHEME_STR_VAL(p))) {
 	  /* Cycle of links detected */
-	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 			   path,
 			   fail_err_symbol,
 			   "simplify-path: cycle detected at link: \"%q\"",
@@ -2855,7 +2855,7 @@ static Scheme_Object *simplify_path(int argc, Scheme_Object *argv[])
   int len;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("simplify-path", "string", 0, argc, argv);
+    scheme_wrong_type("simplify-path", scheme_kernel_symbol, "string", 0, argc, argv);
 
   s = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
@@ -2875,7 +2875,7 @@ static Scheme_Object *current_drive(int argc, Scheme_Object *argv[])
 
   return scheme_make_sized_string(drive, strlen(drive), 0);
 #else
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, "current-drive: not supported");
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, scheme_kernel_symbol, "current-drive: not supported");
   return NULL;
 #endif
 }
@@ -2886,7 +2886,7 @@ static Scheme_Object *expand_path(int argc, Scheme_Object *argv[])
   int expanded;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("expand-path", "string", 0, argc, argv);
+    scheme_wrong_type("expand-path", scheme_kernel_symbol, "string", 0, argc, argv);
 
   filename = do_expand_filename(SCHEME_STR_VAL(argv[0]),
 				SCHEME_STRTAG_VAL(argv[0]),
@@ -2903,7 +2903,7 @@ static Scheme_Object *expand_path(int argc, Scheme_Object *argv[])
 static Scheme_Object *normal_path_case(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("normal-case-path", "string", 0, argc, argv);
+    scheme_wrong_type("normal-case-path", scheme_kernel_symbol, "string", 0, argc, argv);
 
 #ifdef UNIX_FILE_SYSTEM
   return argv[0];
@@ -2944,7 +2944,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
 #endif
 
   if (argc && !SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("directory-list", "string", 0, argc, argv);
+    scheme_wrong_type("directory-list", scheme_kernel_symbol, "string", 0, argc, argv);
 
 #if defined(NO_READDIR) && !defined(USE_MAC_FILE_TOOLBOX) && !defined(USE_FINDFIRST)
   return scheme_null;
@@ -2960,7 +2960,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     filename = SCHEME_STR_VAL(CURRENT_WD());
 
   if (filename && !scheme_directory_exists(filename))
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+    scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 		     scheme_make_string(filename),
 		     fail_err_symbol,
 		     "directory-list: could not open \"%q\"",
@@ -2976,7 +2976,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     filename = "";
   if (!find_mac_file(filename, 0, &dir, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
     if (argc) {
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 		       argv[0],
 		       fail_err_symbol,
 		       "directory-list: could not open \"%q\"",
@@ -3172,7 +3172,7 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
   char *filename;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("make-directory", "string", 0, argc, argv);
+    scheme_wrong_type("make-directory", scheme_kernel_symbol, "string", 0, argc, argv);
 
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 				    SCHEME_STRTAG_VAL(argv[0]),
@@ -3192,7 +3192,7 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
       break;
   }
 
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 		   argv[0],
 		   (errno == EEXIST) ? exists_err_symbol : fail_err_symbol,
 		   "make-directory: cannot make directory: %q (%e)",
@@ -3210,7 +3210,7 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
   char *filename;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("delete-directory", "string", 0, argc, argv);
+    scheme_wrong_type("delete-directory", scheme_kernel_symbol, "string", 0, argc, argv);
 
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 				    SCHEME_STRTAG_VAL(argv[0]),
@@ -3226,7 +3226,7 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
       break;
   }
 
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 		   argv[0],
 		   fail_err_symbol,
 		   "delete-directory: cannot delete directory: %q (%e)",
@@ -3250,7 +3250,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 #endif
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("file-or-directory-modify-seconds", "string", 0, argc, argv);
+    scheme_wrong_type("file-or-directory-modify-seconds", scheme_kernel_symbol, "string", 0, argc, argv);
 
 #ifdef USE_MAC_FILE_TOOLBOX	  
   file = SCHEME_STR_VAL(argv[0]);
@@ -3288,7 +3288,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 # endif
 #endif
 
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 		   argv[0],
 		   fail_err_symbol,
 		   "file-or-directory-modify-seconds: file or directory not found: \"%q\"",
@@ -3352,7 +3352,7 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
 #endif
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("file-or-directory-permissions", "string", 0, argc, argv);
+    scheme_wrong_type("file-or-directory-permissions", scheme_kernel_symbol, "string", 0, argc, argv);
 
 #ifdef USE_MAC_FILE_TOOLBOX	  
   filename = SCHEME_STR_VAL(argv[0]);
@@ -3439,7 +3439,7 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
 #endif
   
   if (!l) {
-    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+    scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 		     argv[0],
 		     fail_err_symbol,
 		     "file-or-directory-permissions: file or directory not found: \"%q\"",
@@ -3458,7 +3458,7 @@ static Scheme_Object *file_size(int argc, Scheme_Object *argv[])
   unsigned long len = 0;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("file-size", "string", 0, argc, argv);
+    scheme_wrong_type("file-size", scheme_kernel_symbol, "string", 0, argc, argv);
 
 #ifdef USE_MAC_FILE_TOOLBOX	  
   filename = SCHEME_STR_VAL(argv[0]);
@@ -3496,7 +3496,7 @@ static Scheme_Object *file_size(int argc, Scheme_Object *argv[])
   return scheme_make_integer_value_from_unsigned(len);
 
 failed:
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 		   argv[0],
 		   fail_err_symbol,
 		   "file-size: file not found: \"%q\"",
@@ -3523,7 +3523,7 @@ static Scheme_Object *cwd_check(int argc, Scheme_Object **argv)
     expanded = scheme_expand_filename(s, len, "current-directory", NULL);
     ed = scheme_make_sized_string(expanded, strlen(expanded), 1);
     if (!scheme_directory_exists(expanded)) {
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
 		       ed,
 		       fail_err_symbol,
 		       "current-directory: directory not found or not a directory: \"%q\"",
@@ -3658,7 +3658,7 @@ find_system_path(int argc, Scheme_Object **argv)
     }
     return exec_cmd;
   } else {
-    scheme_wrong_type("find-system-path", "system-path-symbol",
+    scheme_wrong_type("find-system-path", scheme_kernel_symbol, "system-path-symbol",
 		      0, argc, argv);
     return NULL;
   }
@@ -3860,7 +3860,7 @@ static long check_four(char *name, int which, int argc, Scheme_Object **argv)
   Scheme_Object *o = argv[which];
 
   if (!SCHEME_STRINGP(o))
-    scheme_wrong_type(name, "MacOS type/creator 4-character string", which, argc, argv);
+    scheme_wrong_type(name, scheme_kernel_symbol, "MacOS type/creator 4-character string", which, argc, argv);
 
   if (SCHEME_STRTAG_VAL(o) != 4) {
     char *astr;
@@ -3868,7 +3868,7 @@ static long check_four(char *name, int which, int argc, Scheme_Object **argv)
 
     astr = scheme_make_args_string("other ", which, argc, argv, &alen);
     
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
 		     o,
 		     "%s: string is not a 4-character type or creator signature: %s%V",
 		     name,
@@ -3910,7 +3910,7 @@ static int appl_name_to_spec(char *name, int find_path, Scheme_Object *o, FSSpec
     char *s;
     
     if (!SCHEME_STRINGP(o))
-      scheme_wrong_type(name, "string", 0, 1, &o);
+      scheme_wrong_type(name, scheme_kernel_symbol, "string", 0, 1, &o);
   
     s = scheme_expand_filename(SCHEME_STR_VAL(o),
 			       SCHEME_STRTAG_VAL(o),
@@ -4016,14 +4016,14 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
 	    }
 	  }
 	}
-	scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+	scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, scheme_kernel_symbol,
 			 "%s: cannot interpret vector as a file specification: %V",
 			 name,
 			 v);
       }
       /* record case falls through to list */
     } else {
-      scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+      scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, scheme_kernel_symbol,
 		       "%s: cannot convert ill-tagged or untagged vector: %V",
 		       name,
 		       v);
@@ -4060,7 +4060,7 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
 		|| !SCHEME_NULLP(SCHEME_CDR(SCHEME_CDR(a)))
 		|| !SCHEME_STRINGP(SCHEME_CAR(a))) {
 	      /* Bad record form. */
-	      scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+	      scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, scheme_kernel_symbol,
 			       "%s: cannot interpret vector part as a record field: %s",
 			       name,
 			       scheme_make_provided_string(a, 1, NULL));
@@ -4106,7 +4106,7 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
     }
   default:
     /* Don't know how to marshall */
-    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, scheme_kernel_symbol,
 		     "%s: cannot convert value for sending: %s",
 		     name,
 		     scheme_make_provided_string(v, 1, NULL));
@@ -4448,7 +4448,7 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv,
       l = SCHEME_CDR(l);
     }
     if (!SCHEME_NULLP(l))
-      scheme_wrong_type(name, expected, 4, argc, argv);
+      scheme_wrong_type(name, scheme_kernel_symbol, expected, 4, argc, argv);
   }
   
   reply = MALLOC_ONE_ATOMIC(AppleEvent);

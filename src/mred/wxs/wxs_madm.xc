@@ -21,7 +21,7 @@
 @MACRO cAnything = 1
 
 extern Bool wxsCheckIsPopupMenu(void *m);
-@MACRO CHECKMENU[n.p] = if (!wxsCheckIsPopupMenu(p[POFFSET+<p>])) scheme_wrong_type(<n>, "popup-menu% object", <p>+POFFSET, n, p);
+@MACRO CHECKMENU[n.p] = if (!wxsCheckIsPopupMenu(p[POFFSET+<p>])) scheme_wrong_type(<n>, objscheme_modidx, "popup-menu% object", <p>+POFFSET, n, p);
 
 @BEGINSYMBOLS style > > PRED BUNDLE
 @SYM "no-hscroll" : wxMCANVAS_NO_H_SCROLL

@@ -2,7 +2,7 @@
 @MACRO ZeroReturn[p] = if (x<p> <= 0) return scheme_void;
 @MACRO ZeroBoundary[p] = if (x<p> < 0) x<p> = 0;
 
-@MACRO CheckRgn[p] = if (x<p> && (x<p>->GetDC() != ((wxDC *)((Scheme_Class_Object *)THEOBJ)->primdata))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","set-clipping-region"), "provided a different dc's region: ", p[POFFSET+<p>]));
+@MACRO CheckRgn[p] = if (x<p> && (x<p>->GetDC() != ((wxDC *)((Scheme_Class_Object *)THEOBJ)->primdata))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","set-clipping-region"), objscheme_modidx, "provided a different dc's region: ", p[POFFSET+<p>]));
 
 @ Q "clear" : void Clear(); : : /CheckOk[METHODNAME("dc<%>","clear")]
 

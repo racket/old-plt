@@ -231,27 +231,27 @@ scheme_init_symbol (Scheme_Env *env)
 {
   scheme_add_global_constant("symbol?", 
 			     scheme_make_folding_prim(symbol_p_prim, 
-						      "symbol?", 
+						      "symbol?", scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("string->symbol", 
 			     scheme_make_prim_w_arity(string_to_symbol_prim,
-						      "string->symbol",
+						      "string->symbol", scheme_kernel_symbol,
 						      1, 1), env);
   scheme_add_global_constant("string->uninterned-symbol", 
 			     scheme_make_prim_w_arity(string_to_uninterned_symbol_prim,
-						      "string->uninterned-symbol",
+						      "string->uninterned-symbol", scheme_kernel_symbol,
 						      1, 1), 
 			     env);
   scheme_add_global_constant("symbol->string", 
 			     scheme_make_prim_w_arity(symbol_to_string_prim,
-						      "symbol->string", 
+						      "symbol->string", scheme_kernel_symbol, 
 						      1, 1), 
 			     env);
 
   scheme_add_global_constant("gensym", 
 			     scheme_make_prim_w_arity(gensym,
-						      "gensym",
+						      "gensym", scheme_kernel_symbol,
 						      0, 1),
 			     env);
 }
@@ -491,7 +491,7 @@ static Scheme_Object *
 string_to_symbol_prim (int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("string->symbol", "string", 0, argc, argv);
+    scheme_wrong_type("string->symbol", scheme_kernel_symbol, "string", 0, argc, argv);
   return scheme_intern_exact_symbol(SCHEME_STR_VAL(argv[0]),
 				    SCHEME_STRTAG_VAL(argv[0]));
 }
@@ -500,7 +500,7 @@ static Scheme_Object *
 string_to_uninterned_symbol_prim (int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("string->uninterned-symbol", "string", 0, argc, argv);
+    scheme_wrong_type("string->uninterned-symbol", scheme_kernel_symbol, "string", 0, argc, argv);
   return scheme_make_exact_symbol(SCHEME_STR_VAL(argv[0]),
 				  SCHEME_STRTAG_VAL(argv[0]));
 }
@@ -509,7 +509,7 @@ static Scheme_Object *
 symbol_to_string_prim (int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("symbol->string", "symbol", 0, argc, argv);
+    scheme_wrong_type("symbol->string", scheme_kernel_symbol, "symbol", 0, argc, argv);
   
   return scheme_make_sized_offset_string((char *)(argv[0]),
 					 SCHEME_SYMSTR_OFFSET(argv[0]),
@@ -528,7 +528,7 @@ static Scheme_Object *gensym(int argc, Scheme_Object *argv[])
     r = NULL;
 
   if (r && !SCHEME_SYMBOLP(r) && !SCHEME_STRINGP(r))
-    scheme_wrong_type("gensym", "symbol or string", 0, argc, argv);
+    scheme_wrong_type("gensym", scheme_kernel_symbol, "symbol or string", 0, argc, argv);
   
   if (r) {
     if (SCHEME_STRINGP(r))

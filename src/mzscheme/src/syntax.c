@@ -461,7 +461,7 @@ void scheme_set_global_bucket(char *who, Scheme_Bucket *b, Scheme_Object *val,
   if (b->val || set_undef)
     b->val = val;
   else {
-    scheme_raise_exn(MZEXN_VARIABLE, b->key,
+    scheme_raise_exn(MZEXN_VARIABLE, scheme_kernel_symbol, b->key,
 		     "%s: cannot set undefined identifier: %S",
 		     who,
 		     (Scheme_Object *)b->key);
@@ -549,7 +549,7 @@ define_execute(Scheme_Object *vars, Scheme_Object *vals,
   {
     const char *symname;
     symname = (show_any ? scheme_symbol_name(name) : "");
-    scheme_wrong_return_arity(defmacro ? "define-syntaxes" : "define-values",
+    scheme_wrong_return_arity(defmacro ? "define-syntaxes" : "define-values", scheme_kernel_symbol,
 			      i, g,
 			      (g == 1) ? (Scheme_Object **)vals : scheme_current_thread->ku.multiple.array,
 			      "%s%s%s",
@@ -3019,7 +3019,7 @@ do_letrec_syntaxes(const char *where, int normal,
       } else
 	name = NULL;
       symname = (name ? scheme_symbol_name(name) : "");
-      scheme_wrong_return_arity(where,
+      scheme_wrong_return_arity(where, scheme_kernel_symbol,
 				nc, vc,
 				(vc == 1) ? (Scheme_Object **)a : scheme_current_thread->ku.multiple.array,
 				"%s%s%s",

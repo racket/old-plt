@@ -32,7 +32,7 @@ START_XFORM_SKIP;
 
 static int istype_symset_choiceStyle(Scheme_Object *v, const char *where) {
   if SCHEME_NULLP(v) return 1;
-  if (where) scheme_wrong_type(where, "choiceStyle symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, objscheme_modidx, "choiceStyle symbol list", -1, 0, &v);
   return 0;
 }
 
@@ -139,7 +139,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   VAR_STACK_PUSH(2, f);
 
   len = WITH_VAR_STACK(scheme_proper_list_length(l));
-  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, "proper-list", -1, 0, &l));
+  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, objscheme_modidx, "proper-list", -1, 0, &l));
   if (c) *c = len;
 
   if (!(len + l_EXTRA))
@@ -153,7 +153,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {
-      WITH_VAR_STACK(scheme_arg_mismatch(who, "expected a proper list: ", orig_l));
+      WITH_VAR_STACK(scheme_arg_mismatch(who, objscheme_modidx, "expected a proper list: ", orig_l));
       return NULL;
     }
 
@@ -799,7 +799,7 @@ static Scheme_Object *os_wxChoice_ConstructScheme(int n,  Scheme_Object *p[])
 
   int cb_pos = 0;
   if ((n < (POFFSET+3)) || (n > (POFFSET+10))) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in choice%", POFFSET+3, POFFSET+10, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in choice%", objscheme_modidx, POFFSET+3, POFFSET+10, n, p));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in choice%", 0));
   x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
   x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+2], "initialization in choice%"));
@@ -886,7 +886,7 @@ int objscheme_istype_wxChoice(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "choice% object or " XC_NULL_STR: "choice% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "choice% object or " XC_NULL_STR: "choice% object", -1, 0, &obj));
     return 0;
   }
 }

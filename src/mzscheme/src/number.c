@@ -211,202 +211,202 @@ scheme_init_number (Scheme_Env *env)
 
   scheme_add_global_constant("number?", 
 			     scheme_make_folding_prim(number_p,
-						      "number?",
+						      "number?", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("complex?", 
 			     scheme_make_folding_prim(complex_p,
-						      "complex?",
+						      "complex?", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("real?", 
 			     scheme_make_folding_prim(real_p,
-						      "real?",
+						      "real?", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("rational?", 
 			     scheme_make_folding_prim(rational_p,
-						      "rational?",
+						      "rational?", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("integer?", 
 			     scheme_make_folding_prim(integer_p,
-						      "integer?",
+						      "integer?", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("exact?", 
 			     scheme_make_folding_prim(exact_p,
-						      "exact?",
+						      "exact?", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("inexact?", 
 			     scheme_make_folding_prim(scheme_inexact_p,
-						      "inexact?",
+						      "inexact?", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("odd?", 
 			     scheme_make_folding_prim(scheme_odd_p,
-						      "odd?",
+						      "odd?", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("even?", 
 			     scheme_make_folding_prim(even_p,
-						      "even?",
+						      "even?", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("bitwise-and", 
 			     scheme_make_folding_prim(bitwise_and,
-						      "bitwise-and",
+						      "bitwise-and", scheme_kernel_symbol,
 						      1, -1, 1),
 			     env);
   scheme_add_global_constant("bitwise-ior", 
 			     scheme_make_folding_prim(bitwise_or,
-						      "bitwise-ior",
+						      "bitwise-ior", scheme_kernel_symbol,
 						      1, -1, 1),
 			     env);
   scheme_add_global_constant("bitwise-xor", 
 			     scheme_make_folding_prim(bitwise_xor,
-						      "bitwise-xor",
+						      "bitwise-xor", scheme_kernel_symbol,
 						      1, -1, 1),
 			     env);
   scheme_add_global_constant("bitwise-not", 
 			     scheme_make_folding_prim(bitwise_not,
-						      "bitwise-not",
+						      "bitwise-not", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("arithmetic-shift", 
 			     scheme_make_folding_prim(bitwise_shift,
-						      "arithmetic-shift",
+						      "arithmetic-shift", scheme_kernel_symbol,
 						      2, 2, 1),
 			     env);
   scheme_add_global_constant("gcd", 
 			     scheme_make_folding_prim(gcd,
-						      "gcd", 
+						      "gcd", scheme_kernel_symbol, 
 						      0, -1, 1),
 			     env);
   scheme_add_global_constant("lcm", 
 			     scheme_make_folding_prim(lcm,
-						      "lcm", 
+						      "lcm", scheme_kernel_symbol, 
 						      0, -1, 1),
 			     env);
   scheme_add_global_constant("floor", 
 			     scheme_make_folding_prim(floor_prim,
-						      "floor",
+						      "floor", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("ceiling", 
 			     scheme_make_folding_prim(ceiling,
-						      "ceiling",
+						      "ceiling", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("truncate", 
 			     scheme_make_folding_prim(sch_truncate,
-						      "truncate",
+						      "truncate", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("round", 
 			     scheme_make_folding_prim(sch_round,
-						      "round",
+						      "round", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("numerator", 
 			     scheme_make_folding_prim(numerator,
-						      "numerator",
+						      "numerator", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("denominator", 
 			     scheme_make_folding_prim(denominator,
-						      "denominator",
+						      "denominator", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("exp", 
 			     scheme_make_folding_prim(exp_prim,
-						      "exp",
+						      "exp", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("log", 
 			     scheme_make_folding_prim(log_prim,
-						      "log",
+						      "log", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("sin", 
 			     scheme_make_folding_prim(sin_prim,
-						      "sin",
+						      "sin", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("cos", 
 			     scheme_make_folding_prim(cos_prim,
-						      "cos",
+						      "cos", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("tan", 
 			     scheme_make_folding_prim(tan_prim,
-						      "tan",
+						      "tan", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("asin", 
 			     scheme_make_folding_prim(asin_prim,
-						      "asin",
+						      "asin", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("acos", 
 			     scheme_make_folding_prim(acos_prim,
-						      "acos",
+						      "acos", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("atan", 
 			     scheme_make_folding_prim(atan_prim,
-						      "atan",
+						      "atan", scheme_kernel_symbol,
 						      1, 2, 1),
 			     env);
   scheme_add_global_constant("sqrt", 
 			     scheme_make_folding_prim(scheme_sqrt,
-						      "sqrt",
+						      "sqrt", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("expt", 
 			     scheme_make_folding_prim(scheme_expt,
-						      "expt", 
+						      "expt", scheme_kernel_symbol, 
 						      2, 2, 1),
 			     env);
   scheme_add_global_constant("make-rectangular", 
 			     scheme_make_folding_prim(make_rectangular,
-						      "make-rectangular", 
+						      "make-rectangular", scheme_kernel_symbol, 
 						      2, 2, 1),
 			     env);
   scheme_add_global_constant("make-polar", 
 			     scheme_make_folding_prim(scheme_make_polar,
-						      "make-polar", 
+						      "make-polar", scheme_kernel_symbol, 
 						      2, 2, 1),
 			     env);
   scheme_add_global_constant("real-part", 
 			     scheme_make_folding_prim(real_part,
-						      "real-part",
+						      "real-part", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("imag-part", 
 			     scheme_make_folding_prim(imag_part,
-						      "imag-part",
+						      "imag-part", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("angle", 
 			     scheme_make_folding_prim(angle,
-						      "angle",
+						      "angle", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("magnitude", 
 			     scheme_make_folding_prim(magnitude,
-						      "magnitude",
+						      "magnitude", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("exact->inexact", 
 			     scheme_make_folding_prim(scheme_exact_to_inexact,
-						      "exact->inexact",
+						      "exact->inexact", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("inexact->exact", 
 			     scheme_make_folding_prim(scheme_inexact_to_exact,
-						      "inexact->exact",
+						      "inexact->exact", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
 }
@@ -646,7 +646,7 @@ int scheme_is_exact(Scheme_Object *n)
     else if (type == scheme_complex_izi_type)
       return 0;
     else {
-      scheme_wrong_type("exact?", "number", 0, 1, &n);
+      scheme_wrong_type("exact?", scheme_kernel_symbol, "number", 0, 1, &n);
       return 0;
     }
   }
@@ -680,7 +680,7 @@ int scheme_is_inexact(Scheme_Object *n)
     else if (type == scheme_complex_izi_type)
       return 1;
     else {
-      scheme_wrong_type("inexact?", "number", 0, 1, &n);
+      scheme_wrong_type("inexact?", scheme_kernel_symbol, "number", 0, 1, &n);
       return 0;
     }
   }
@@ -1195,7 +1195,7 @@ static Scheme_Object *get_frac(char *name, int low_p,
     else
       n = scheme_rational_numerator(n);
   } else {
-    scheme_wrong_type(name, REAL_NUMBER_STR, 0, argc, argv);
+    scheme_wrong_type(name, scheme_kernel_symbol, REAL_NUMBER_STR, 0, argc, argv);
     ESCAPED_BEFORE_HERE;   
   }
   
@@ -1346,7 +1346,7 @@ static Scheme_Object *complex_atan(Scheme_Object *c)
 #define GEN_ZERO_IS_ZERO() if (o == zeroi) return zeroi;
 #define GEN_ZERO_IS_ONE() if (o == zeroi) return scheme_make_integer(1);
 #define GEN_ONE_IS_ZERO() if (o == scheme_make_integer(1)) return zeroi;
-#define GEN_ONE_IS_ZERO_AND_ZERO_IS_ERR() if (o == scheme_make_integer(1)) return zeroi; else if (o == zeroi) scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, zeroi, "log: undefined for 0");
+#define GEN_ONE_IS_ZERO_AND_ZERO_IS_ERR() if (o == scheme_make_integer(1)) return zeroi; else if (o == zeroi) scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, scheme_kernel_symbol, zeroi, "log: undefined for 0");
 #define GEN_ZERO_IS_HALF_PI() if (o == zeroi) return scheme_half_pi;
 
 #define NEVER_RESORT_TO_COMPLEX(d) 0
@@ -1418,7 +1418,7 @@ atan_prim (int argc, Scheme_Object *argv[])
     v = scheme_rational_to_double(n1);
   else if (SCHEME_COMPLEXP(n1)) {
     if (argc > 1) {
-      scheme_wrong_type("atan (with two arguments)", REAL_NUMBER_STR, 0, argc, argv);
+      scheme_wrong_type("atan (with two arguments)", scheme_kernel_symbol, REAL_NUMBER_STR, 0, argc, argv);
       ESCAPED_BEFORE_HERE;
     } else
       return complex_atan(n1);
@@ -1434,7 +1434,7 @@ atan_prim (int argc, Scheme_Object *argv[])
     n2 = argv[1];
 
     if ((n1 == zeroi) && (n2 == zeroi)) {
-      scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, zeroi,
+      scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, scheme_kernel_symbol, zeroi,
 		       "atan: undefined for 0 and 0");
       ESCAPED_BEFORE_HERE;
     }
@@ -1461,7 +1461,7 @@ atan_prim (int argc, Scheme_Object *argv[])
     else if (SCHEME_RATIONALP(n2))
       v2 = scheme_rational_to_double(n2);
     else {
-      scheme_wrong_type("atan", REAL_NUMBER_STR, 1, argc, argv);
+      scheme_wrong_type("atan", scheme_kernel_symbol, REAL_NUMBER_STR, 1, argc, argv);
       ESCAPED_BEFORE_HERE;
     }
 
@@ -1531,7 +1531,7 @@ Scheme_Object *scheme_sqrt (int argc, Scheme_Object *argv[])
     return scheme_complex_sqrt(n);
 
   if (!SCHEME_REALP(n))
-    scheme_wrong_type("sqrt", "number", 0, argc, argv);
+    scheme_wrong_type("sqrt", scheme_kernel_symbol, "number", 0, argc, argv);
 
   if (SCHEME_TRUEP(scheme_negative_p(1, &n))) {
     n = scheme_bin_minus(zeroi, n);
@@ -1629,7 +1629,7 @@ scheme_expt(int argc, Scheme_Object *argv[])
   e = argv[1];
 
   if (!SCHEME_NUMBERP(n))
-    scheme_wrong_type("expt", "number", 0, argc, argv);
+    scheme_wrong_type("expt", scheme_kernel_symbol, "number", 0, argc, argv);
 
   if (e == zeroi)
     return scheme_make_integer(1);
@@ -1665,7 +1665,7 @@ scheme_expt(int argc, Scheme_Object *argv[])
     }
     
     if (neg) {
-      scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, argv[0],
+      scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, scheme_kernel_symbol, argv[0],
 		       "expt: undefined for 0 and %s",
 		       scheme_make_provided_string(e, 0, NULL));
       ESCAPED_BEFORE_HERE;
@@ -1768,9 +1768,9 @@ static Scheme_Object *make_rectangular (int argc, Scheme_Object *argv[])
   a = argv[0];
   b = argv[1];
   if (!SCHEME_REALP(a))
-    scheme_wrong_type("make-rectangular", REAL_NUMBER_STR, 0, argc, argv);
+    scheme_wrong_type("make-rectangular", scheme_kernel_symbol, REAL_NUMBER_STR, 0, argc, argv);
   if (!SCHEME_REALP(b))
-    scheme_wrong_type("make-rectangular", REAL_NUMBER_STR, 1, argc, argv);
+    scheme_wrong_type("make-rectangular", scheme_kernel_symbol, REAL_NUMBER_STR, 1, argc, argv);
 
   if (SCHEME_COMPLEX_IZIP(a)) a = IZI_REAL_PART(a);
   if (SCHEME_COMPLEX_IZIP(b)) b = IZI_REAL_PART(b);
@@ -1797,9 +1797,9 @@ Scheme_Object *scheme_make_polar (int argc, Scheme_Object *argv[])
   a = argv[0];
   b = argv[1];
   if (!SCHEME_REALP(a))
-    scheme_wrong_type("make-polar", REAL_NUMBER_STR, 0, argc, argv);
+    scheme_wrong_type("make-polar", scheme_kernel_symbol, REAL_NUMBER_STR, 0, argc, argv);
   if (!SCHEME_REALP(b))
-    scheme_wrong_type("make-polar", REAL_NUMBER_STR, 1, argc, argv);
+    scheme_wrong_type("make-polar", scheme_kernel_symbol, REAL_NUMBER_STR, 1, argc, argv);
 
   if (b == zeroi)
     return a;
@@ -1820,7 +1820,7 @@ static Scheme_Object *real_part (int argc, Scheme_Object *argv[])
   Scheme_Object *o = argv[0];
 
   if (!SCHEME_NUMBERP(o))
-    scheme_wrong_type("real-part", "number", 0, argc, argv);
+    scheme_wrong_type("real-part", scheme_kernel_symbol, "number", 0, argc, argv);
 
   if (SCHEME_COMPLEXP(o))
     return _scheme_complex_real_part(o);
@@ -1833,7 +1833,7 @@ static Scheme_Object *imag_part (int argc, Scheme_Object *argv[])
   Scheme_Object *o = argv[0];
 
   if (!SCHEME_NUMBERP(o))
-    scheme_wrong_type("imag-part", "number", 0, argc, argv);
+    scheme_wrong_type("imag-part", scheme_kernel_symbol, "number", 0, argc, argv);
 
   if (SCHEME_COMPLEXP(o))
     return scheme_complex_imaginary_part(o);
@@ -1846,7 +1846,7 @@ static Scheme_Object *magnitude(int argc, Scheme_Object *argv[])
   Scheme_Object *o = argv[0];
 
   if (!SCHEME_NUMBERP(o))
-    scheme_wrong_type("magnitude", "number", 0, argc, argv);
+    scheme_wrong_type("magnitude", scheme_kernel_symbol, "number", 0, argc, argv);
 
   if (SCHEME_COMPLEXP(o)) {
     Scheme_Object *r = _scheme_complex_real_part(o);
@@ -1866,7 +1866,7 @@ static Scheme_Object *angle(int argc, Scheme_Object *argv[])
   Scheme_Object *o = argv[0];
 
   if (!SCHEME_NUMBERP(o))
-    scheme_wrong_type("angle", "number", 0, argc, argv);
+    scheme_wrong_type("angle", scheme_kernel_symbol, "number", 0, argc, argv);
 
   if (SCHEME_COMPLEXP(o)) {
     Scheme_Object *r = (Scheme_Object *)_scheme_complex_real_part(o);
@@ -1922,7 +1922,7 @@ static Scheme_Object *angle(int argc, Scheme_Object *argv[])
       else
 	return scheme_pi;
     } else if (o == zeroi) {
-      scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, o,
+      scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, scheme_kernel_symbol, o,
 		       "angle: undefined for 0");
       ESCAPED_BEFORE_HERE;
     } else if (SCHEME_TRUEP(scheme_positive_p(1, argv)))
@@ -2049,7 +2049,7 @@ static int double_to_int(const char *where, double d, long *v)
 	|| (d > 0 && ((double)(long)d) + 1 < d)
 	|| (d < 0 && ((double)(long)d) - 1 > d)) {
       if (where)
-	scheme_raise_exn(MZEXN_APPLICATION_TYPE,
+	scheme_raise_exn(MZEXN_APPLICATION_TYPE, scheme_kernel_symbol,
 			 scheme_make_double(d),
 			 scheme_intern_symbol("small integer"),
 			 "%s: no fixnum representation for %f",
@@ -2113,7 +2113,7 @@ bitwise_not(int argc, Scheme_Object *argv[])
   } else if (_SCHEME_TYPE(o) == scheme_bignum_type)
     return scheme_bignum_not(o);
    
-  scheme_wrong_type("bitwise-not", "exact integer", 0, argc, argv);
+  scheme_wrong_type("bitwise-not", scheme_kernel_symbol, "exact integer", 0, argc, argv);
   ESCAPED_BEFORE_HERE;
 }
 
@@ -2126,7 +2126,7 @@ bitwise_shift(int argc, Scheme_Object *argv[])
   v = argv[0];
   
   if (!SCHEME_EXACT_INTEGERP(v)) {
-    scheme_wrong_type("arithmetic-shift", "exact integer", 1, argc, argv);
+    scheme_wrong_type("arithmetic-shift", scheme_kernel_symbol, "exact integer", 1, argc, argv);
     ESCAPED_BEFORE_HERE;
   }
   so = argv[1];
@@ -2140,7 +2140,7 @@ bitwise_shift(int argc, Scheme_Object *argv[])
       } else
 	scheme_raise_out_of_memory("arithmetic-shift", NULL);
     } else
-      scheme_wrong_type("arithmetic-shift", "exact integer", 1, argc, argv);
+      scheme_wrong_type("arithmetic-shift", scheme_kernel_symbol, "exact integer", 1, argc, argv);
     ESCAPED_BEFORE_HERE;
   }
   

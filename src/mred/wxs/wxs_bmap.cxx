@@ -75,7 +75,7 @@ static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
   else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
   else if (v == bitmapType_wxBITMAP_TYPE_JPEG_sym) { return wxBITMAP_TYPE_JPEG; }
   else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { return wxBITMAP_TYPE_UNKNOWN; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "bitmapType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -122,7 +122,7 @@ static int unbundle_symset_saveBitmapType(Scheme_Object *v, const char *where) {
   else if (v == saveBitmapType_wxBITMAP_TYPE_XBM_sym) { return wxBITMAP_TYPE_XBM; }
   else if (v == saveBitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
   else if (v == saveBitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "saveBitmapType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "saveBitmapType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -360,7 +360,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+3))) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in bitmap% (width/height case)", POFFSET+2, POFFSET+3, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("initialization in bitmap% (width/height case)", objscheme_modidx, POFFSET+2, POFFSET+3, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+0], 1, 10000, "initialization in bitmap% (width/height case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+1], 1, 10000, "initialization in bitmap% (width/height case)"));
     if (n > (POFFSET+2)) {
@@ -388,12 +388,12 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+3)) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in bitmap% (datastring case)", POFFSET+3, POFFSET+3, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("initialization in bitmap% (datastring case)", objscheme_modidx, POFFSET+3, POFFSET+3, n, p));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "initialization in bitmap% (datastring case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+1], 1, 10000, "initialization in bitmap% (datastring case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 1, 10000, "initialization in bitmap% (datastring case)"));
 
-    if (SCHEME_STRTAG_VAL(p[POFFSET]) < (((x1 * x2) + 7) >> 3)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "string too short: ", p[POFFSET]));
+    if (SCHEME_STRTAG_VAL(p[POFFSET]) < (((x1 * x2) + 7) >> 3)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), objscheme_modidx, "string too short: ", p[POFFSET]));
     realobj = WITH_VAR_STACK(new os_wxBitmap CONSTRUCTOR_ARGS((x0, x1, x2)));
 #ifdef MZ_PRECISE_GC
     WITH_VAR_STACK(realobj->gcInit_wxBitmap(x0, x1, x2));
@@ -412,7 +412,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+1)) || (n > (POFFSET+2))) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in bitmap% (pathname case)", POFFSET+1, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("initialization in bitmap% (pathname case)", objscheme_modidx, POFFSET+1, POFFSET+2, n, p));
     x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "initialization in bitmap% (pathname case)"));
     if (n > (POFFSET+1)) {
       x1 = WITH_VAR_STACK(unbundle_symset_bitmapType(p[POFFSET+1], "initialization in bitmap% (pathname case)"));
@@ -467,7 +467,7 @@ int objscheme_istype_wxBitmap(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "bitmap% object or " XC_NULL_STR: "bitmap% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "bitmap% object or " XC_NULL_STR: "bitmap% object", -1, 0, &obj));
     return 0;
   }
 }

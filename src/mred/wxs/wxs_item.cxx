@@ -160,7 +160,7 @@ int objscheme_istype_wxItem(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "item% object or " XC_NULL_STR: "item% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "item% object or " XC_NULL_STR: "item% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -209,7 +209,7 @@ class wxItem *objscheme_unbundle_wxItem(Scheme_Object *obj, const char *where, i
 
 static int istype_symset_messageStyle(Scheme_Object *v, const char *where) {
   if SCHEME_NULLP(v) return 1;
-  if (where) scheme_wrong_type(where, "messageStyle symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, objscheme_modidx, "messageStyle symbol list", -1, 0, &v);
   return 0;
 }
 
@@ -491,10 +491,10 @@ static Scheme_Object *os_wxMessageSetLabel(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("set-label in message% (bitmap label case)", POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("set-label in message% (bitmap label case)", objscheme_modidx, POFFSET+1, POFFSET+1, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "set-label in message% (bitmap label case)", 0));
 
-    { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","set-label"), "bad bitmap: ", p[POFFSET+0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","set-label"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+0])); }
+    { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","set-label"), objscheme_modidx, "bad bitmap: ", p[POFFSET+0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","set-label"), objscheme_modidx, "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+0])); }
     WITH_VAR_STACK(((wxMessage *)((Scheme_Class_Object *)p[0])->primdata)->SetLabel(x0));
 
     
@@ -508,7 +508,7 @@ static Scheme_Object *os_wxMessageSetLabel(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("set-label in message% (string label case)", POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("set-label in message% (string label case)", objscheme_modidx, POFFSET+1, POFFSET+1, n, p));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-label in message% (string label case)"));
 
     
@@ -697,7 +697,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+6))) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in message% (bitmap label case)", POFFSET+2, POFFSET+6, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("initialization in message% (bitmap label case)", objscheme_modidx, POFFSET+2, POFFSET+6, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in message% (bitmap label case)", 0));
     x1 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+1], "initialization in message% (bitmap label case)", 0));
     if (n > (POFFSET+2)) {
@@ -717,7 +717,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
     } else
       x5 = "message";
 
-    { if (x1 && !x1->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","initialization"), "bad bitmap: ", p[POFFSET+1])); if (x1 && BM_SELECTED(x1)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+1])); }
+    { if (x1 && !x1->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","initialization"), objscheme_modidx, "bad bitmap: ", p[POFFSET+1])); if (x1 && BM_SELECTED(x1)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","initialization"), objscheme_modidx, "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+1])); }
     realobj = WITH_VAR_STACK(new os_wxMessage CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5)));
 #ifdef MZ_PRECISE_GC
     WITH_VAR_STACK(realobj->gcInit_wxMessage(x0, x1, x2, x3, x4, x5));
@@ -742,7 +742,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+6))) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in message% (string label case)", POFFSET+2, POFFSET+6, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("initialization in message% (string label case)", objscheme_modidx, POFFSET+2, POFFSET+6, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in message% (string label case)", 0));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "initialization in message% (string label case)"));
     if (n > (POFFSET+2)) {
@@ -810,7 +810,7 @@ int objscheme_istype_wxMessage(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "message% object or " XC_NULL_STR: "message% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "message% object or " XC_NULL_STR: "message% object", -1, 0, &obj));
     return 0;
   }
 }

@@ -22,13 +22,13 @@
 */
 
 #define NEED_NUMBER(name) \
-  scheme_wrong_type(#name, "number", 0, argc, argv)
+  scheme_wrong_type(#name, scheme_kernel_symbol, "number", 0, argc, argv)
 #define NEED_REAL(name) \
-  scheme_wrong_type(#name, REAL_NUMBER_STR, 0, argc, argv)
+  scheme_wrong_type(#name, scheme_kernel_symbol, REAL_NUMBER_STR, 0, argc, argv)
 #define NEED_INTEGER(name) \
-  scheme_wrong_type(#name, "integer", 0, argc, argv)
+  scheme_wrong_type(#name, scheme_kernel_symbol, "integer", 0, argc, argv)
 #define WRONG_TYPE(name, expected, value) \
-  scheme_wrong_type(name, expected, -1, 0, (Scheme_Object **)&value)
+  scheme_wrong_type(name, scheme_kernel_symbol, expected, -1, 0, (Scheme_Object **)&value)
 
 #ifdef MZ_USE_SINGLE_FLOATS
 # define FLOATWRAP(x) x
@@ -56,17 +56,17 @@ name (int argc, Scheme_Object *argv[]) \
   Scheme_Object *p; \
   p = argv[0]; \
   if (argc == 1) if (!TYPEP(p)) \
-   scheme_wrong_type(scheme_name, type, 0, argc, argv); \
+   scheme_wrong_type(scheme_name, scheme_kernel_symbol, type, 0, argc, argv); \
   for (i = 1; i < argc; i++) {\
     Scheme_Object *o = argv[i]; \
     if (!TYPEP(o)) { \
-      scheme_wrong_type(scheme_name, type, i, argc, argv); \
+      scheme_wrong_type(scheme_name, scheme_kernel_symbol, type, i, argc, argv); \
       return NULL; \
     } \
     if (!bin_name(p, o)) { \
         for (i++; i < argc; i++) { \
           if (!TYPEP(argv[i])) \
-           scheme_wrong_type(scheme_name, type, i, argc, argv); \
+           scheme_wrong_type(scheme_name, scheme_kernel_symbol, type, i, argc, argv); \
         } \
         return scheme_false; \
     } \
@@ -449,17 +449,17 @@ name (int argc, Scheme_Object *argv[]) \
   int i; \
   if (!argc) return scheme_make_integer(ident); \
   ret = argv[0]; \
-  if (!TYPEP(ret)) { scheme_wrong_type(scheme_name, type, 0, argc, argv); return NULL; } \
+  if (!TYPEP(ret)) { scheme_wrong_type(scheme_name, scheme_kernel_symbol, type, 0, argc, argv); return NULL; } \
   if (argc == 2) { \
     Scheme_Object *b; \
     b = argv[1]; \
-    if (!TYPEP(b)) { scheme_wrong_type(scheme_name, type, 1, argc, argv); return NULL; } \
+    if (!TYPEP(b)) { scheme_wrong_type(scheme_name, scheme_kernel_symbol, type, 1, argc, argv); return NULL; } \
     return bin_name(ret, b); \
   } \
   for (i = 1 ; i<argc ; ++i ) { \
     Scheme_Object *o; \
     o = argv[i]; \
-    if (!TYPEP(o)) { scheme_wrong_type(scheme_name, type, i, argc, argv); return NULL; } \
+    if (!TYPEP(o)) { scheme_wrong_type(scheme_name, scheme_kernel_symbol, type, i, argc, argv); return NULL; } \
     ret = bin_name (ret, o); \
   } \
   return (ret); \
@@ -472,17 +472,17 @@ name (int argc, Scheme_Object *argv[]) \
   Scheme_Object *ret; \
   int i; \
   if (!TYPEP(argv[0])) \
-    scheme_wrong_type(scheme_name, type, 0, argc, argv); \
+    scheme_wrong_type(scheme_name, scheme_kernel_symbol, type, 0, argc, argv); \
   if (argc == 1) return argv[0]; \
   if (argc == 2) { \
     if (!TYPEP(argv[1])) \
-      scheme_wrong_type(scheme_name, type, 1, argc, argv); \
+      scheme_wrong_type(scheme_name, scheme_kernel_symbol, type, 1, argc, argv); \
     return bin_name(argv[0], argv[1]); \
   } \
   ret = argv[0]; \
   for ( i=1 ; i<argc ; ++i ) { \
     if (!TYPEP(argv[i])) \
-      scheme_wrong_type(scheme_name, type, i, argc, argv); \
+      scheme_wrong_type(scheme_name, scheme_kernel_symbol, type, i, argc, argv); \
     ret = bin_name (ret, argv[i]); \
   } \
   return ret; \
@@ -519,7 +519,7 @@ name (int argc, Scheme_Object *argv[]) \
    } else if ((t == scheme_complex_type) || (t == scheme_complex_izi_type)) \
      return complex_fun(o); \
    else { \
-     scheme_wrong_type(#scheme_name, "number", 0, argc, argv); \
+     scheme_wrong_type(#scheme_name, scheme_kernel_symbol, "number", 0, argc, argv); \
      return NULL; \
     } \
   } \

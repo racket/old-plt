@@ -605,7 +605,7 @@ print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, int notdispla
   
   op = (Scheme_Output_Port *)port;
   if (op->closed)
-    scheme_raise_exn(MZEXN_I_O_PORT_CLOSED, port, "%s: output port is closed", name);
+    scheme_raise_exn(MZEXN_I_O_PORT_CLOSED, scheme_kernel_symbol, port, "%s: output port is closed", name);
 
   str = print_to_string(obj, &len, notdisplay, port, maxl, p, config);
 
@@ -1120,7 +1120,9 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       } else {
 	int len;
 	const char *s;
-	s = scheme_get_proc_name(obj, &len, 0);
+	Scheme_Object *srcmod;
+
+	s = scheme_get_proc_name(obj, &len, 0, &srcmod);
 	
 	print_named(obj, "procedure", s, len, p);
       }

@@ -73,112 +73,112 @@ void scheme_init_char (Scheme_Env *env)
 
   scheme_add_global_constant("char?", 
 			     scheme_make_folding_prim(char_p, 
-						      "char?", 
+						      "char?", scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("char=?", 
 			     scheme_make_folding_prim(char_eq, 
-						      "char=?", 
+						      "char=?", scheme_kernel_symbol, 
 						      2, -1, 1), 
 			     env);
   scheme_add_global_constant("char<?", 
 			     scheme_make_folding_prim(char_lt, 
-						      "char<?", 
+						      "char<?", scheme_kernel_symbol, 
 						      2, -1, 1), 
 			     env);
   scheme_add_global_constant("char>?", 
 			     scheme_make_folding_prim(char_gt, 
-						      "char>?", 
+						      "char>?", scheme_kernel_symbol, 
 						      2, -1, 1), 
 			     env);
   scheme_add_global_constant("char<=?", 
 			     scheme_make_folding_prim(char_lt_eq, 
-						      "char<=?", 
+						      "char<=?", scheme_kernel_symbol, 
 						      2, -1, 1), 
 			     env);
   scheme_add_global_constant("char>=?", 
 			     scheme_make_folding_prim(char_gt_eq, 
-						      "char>=?", 
+						      "char>=?", scheme_kernel_symbol, 
 						      2, -1, 1), 
 			     env);
   scheme_add_global_constant("char-ci=?", 
 			     scheme_make_folding_prim(char_eq_ci, 
-						      "char-ci=?", 
+						      "char-ci=?", scheme_kernel_symbol, 
 						      2, -1, 1), 
 			     env);
   scheme_add_global_constant("char-ci<?", 
 			     scheme_make_folding_prim(char_lt_ci, 
-						      "char-ci<?", 
+						      "char-ci<?", scheme_kernel_symbol, 
 						      2, -1, 1), 
 			     env);
   scheme_add_global_constant("char-ci>?", 
 			     scheme_make_folding_prim(char_gt_ci, 
-						      "char-ci>?", 
+						      "char-ci>?", scheme_kernel_symbol, 
 						      2, -1, 1), 
 			     env);
   scheme_add_global_constant("char-ci<=?", 
 			     scheme_make_folding_prim(char_lt_eq_ci, 
-						      "char-ci<=?", 
+						      "char-ci<=?", scheme_kernel_symbol, 
 						      2, -1, 1), 
 			     env);
   scheme_add_global_constant("char-ci>=?", 
 			     scheme_make_folding_prim(char_gt_eq_ci, 
-						      "char-ci>=?", 
+						      "char-ci>=?", scheme_kernel_symbol, 
 						      2, -1, 1), 
 			     env);
   scheme_add_global_constant("char-alphabetic?", 
 			     scheme_make_folding_prim(char_alphabetic, 
-						      "char-alphabetic?", 
+						      "char-alphabetic?", scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("char-numeric?", 
 			     scheme_make_folding_prim(char_numeric, 
-						      "char-numeric?", 
+						      "char-numeric?", scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("char-whitespace?", 
 			     scheme_make_folding_prim(char_whitespace, 
-						      "char-whitespace?", 
+						      "char-whitespace?", scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("char-upper-case?", 
 			     scheme_make_folding_prim(char_upper_case, 
-						      "char-upper-case?", 
+						      "char-upper-case?", scheme_kernel_symbol, 
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("char-lower-case?", 
 			     scheme_make_folding_prim(char_lower_case, 
-						      "char-lower-case?", 
+						      "char-lower-case?", scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("char->integer", 
 			     scheme_make_folding_prim(char_to_integer, 
-						      "char->integer", 
+						      "char->integer", scheme_kernel_symbol, 
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("integer->char",
 			     scheme_make_folding_prim(integer_to_char, 
-						      "integer->char",
+						      "integer->char", scheme_kernel_symbol,
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("char->latin-1-integer", 
 			     scheme_make_folding_prim(char_to_latin1_integer, 
-						      "char->latin-1-integer", 
+						      "char->latin-1-integer", scheme_kernel_symbol, 
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("latin-1-integer->char",
 			     scheme_make_folding_prim(latin1_integer_to_char, 
-						      "latin-1-integer->char",
+						      "latin-1-integer->char", scheme_kernel_symbol,
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("char-upcase", 
 			     scheme_make_folding_prim(char_upcase, 
-						      "char-upcase", 
+						      "char-upcase", scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("char-downcase", 
 			     scheme_make_folding_prim(char_downcase, 
-						      "char-downcase", 
+						      "char-downcase", scheme_kernel_symbol, 
 						      1, 1, 1),
 			     env);
 }
@@ -203,19 +203,19 @@ char_p (int argc, Scheme_Object *argv[])
 static void char_un_error(char *name, int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_CHARP(argv[0]))
-    scheme_wrong_type(name, "character", 0, argc, argv);
+    scheme_wrong_type(name, scheme_kernel_symbol, "character", 0, argc, argv);
 }
 
 #define GEN_CHAR_COMP(func_name, scheme_name, comp, uc)          \
  static Scheme_Object *func_name(int argc, Scheme_Object *argv[])     \
  { int c, prev, i; Scheme_Object *rv = scheme_true; \
    if (!SCHEME_CHARP(argv[0]))      \
-     scheme_wrong_type(#scheme_name, "character", 0, argc, argv);     \
+     scheme_wrong_type(#scheme_name, scheme_kernel_symbol, "character", 0, argc, argv);     \
    prev = ((unsigned char)SCHEME_CHAR_VAL(argv[0]));     \
    if (uc) { prev = toupper(prev); }     \
    for (i = 1; i < argc; i++) {     \
      if (!SCHEME_CHARP(argv[i]))      \
-       scheme_wrong_type(#scheme_name, "character", i, argc, argv);     \
+       scheme_wrong_type(#scheme_name, scheme_kernel_symbol, "character", i, argc, argv);     \
      c = ((unsigned char)SCHEME_CHAR_VAL(argv[i]));     \
      if (uc) { c = toupper(c); }     \
      if (!(prev comp c)) rv = scheme_false;     \
@@ -314,11 +314,11 @@ integer_to_char (int argc, Scheme_Object *argv[])
   long v;
 
   if (!SCHEME_INTP(argv[0]))
-    scheme_wrong_type("integer->char", "exact in [0, 255]", 0, argc, argv);
+    scheme_wrong_type("integer->char", scheme_kernel_symbol, "exact in [0, 255]", 0, argc, argv);
 
   v = SCHEME_INT_VAL(argv[0]);
   if ((v < 0) || (v > 255))
-    scheme_wrong_type("integer->char", "exact in [0, 255]", 0, argc, argv);
+    scheme_wrong_type("integer->char", scheme_kernel_symbol, "exact in [0, 255]", 0, argc, argv);
 
   return _scheme_make_char(v);
 }
@@ -375,11 +375,11 @@ latin1_integer_to_char (int argc, Scheme_Object *argv[])
   long v;
 
   if (!SCHEME_INTP(argv[0]))
-    scheme_wrong_type("latin1-integer->char", "exact in [0, 255]", 0, argc, argv);
+    scheme_wrong_type("latin1-integer->char", scheme_kernel_symbol, "exact in [0, 255]", 0, argc, argv);
 
   v = SCHEME_INT_VAL(argv[0]);
   if ((v < 0) || (v > 255))
-    scheme_wrong_type("latin1-integer->char", "exact in [0, 255]", 0, argc, argv);
+    scheme_wrong_type("latin1-integer->char", scheme_kernel_symbol, "exact in [0, 255]", 0, argc, argv);
 
 #if defined(MACROMAN_CHAR_SET) || defined(WINLATIN_CHAR_SET)
   if ((0x80 <= v) && (v <= 0x9F))

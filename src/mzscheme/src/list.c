@@ -114,341 +114,341 @@ scheme_init_list (Scheme_Env *env)
 
   scheme_add_global_constant ("pair?", 
 			      scheme_make_folding_prim(pair_p_prim, 
-						       "pair?", 
+						       "pair?", scheme_kernel_symbol, 
 						       1, 1, 1), 
 			      env);
   scheme_add_global_constant ("cons", 
 			      scheme_make_prim_w_arity(cons_prim, 
-						       "cons", 
+						       "cons", scheme_kernel_symbol, 
 						       2, 2), 
 			      env);
   scheme_add_global_constant ("car", 
 			      scheme_make_prim_w_arity(car_prim, 
-						       "car", 
+						       "car", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("cdr", 
 			      scheme_make_prim_w_arity(cdr_prim,  
-						       "cdr", 
+						       "cdr", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("set-car!", 
 			      scheme_make_prim_w_arity(set_car_prim, 
-						       "set-car!", 
+						       "set-car!", scheme_kernel_symbol, 
 						       2, 2), 
 			      env);
   scheme_add_global_constant ("set-cdr!", 
 			      scheme_make_prim_w_arity(set_cdr_prim, 
-						       "set-cdr!", 
+						       "set-cdr!", scheme_kernel_symbol, 
 						       2, 2), 
 			      env);
   scheme_add_global_constant ("pair->immutable-pair", 
 			      scheme_make_prim_w_arity(pair_to_immutable, 
-						       "pair->immutable-pair", 
+						       "pair->immutable-pair", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("null?", 
 			      scheme_make_folding_prim(null_p_prim, 
-						       "null?", 
+						       "null?", scheme_kernel_symbol, 
 						       1, 1, 1), 
 			      env);
   scheme_add_global_constant ("list?", 
 			      scheme_make_prim_w_arity(list_p_prim, 
-						       "list?", 
+						       "list?", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("list", 
 			      scheme_make_prim_w_arity(list_prim, 
-						       "list", 
+						       "list", scheme_kernel_symbol, 
 						       0, -1), 
 			      env);
   scheme_add_global_constant ("list*", 
 			      scheme_make_prim_w_arity(list_star_prim, 
-						       "list*", 
+						       "list*", scheme_kernel_symbol, 
 						       1, -1), 
 			      env);
   scheme_add_global_constant ("length", 
 			      scheme_make_prim_w_arity(length_prim, 
-						       "length", 
+						       "length", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("append", 
 			      scheme_make_prim_w_arity(append_prim, 
-						       "append", 
+						       "append", scheme_kernel_symbol, 
 						       0, -1), 
 			      env);
   scheme_add_global_constant ("append!", 
 			      scheme_make_prim_w_arity(append_bang_prim, 
-						       "append!", 
+						       "append!", scheme_kernel_symbol, 
 						       0, -1), 
 			      env);
   scheme_add_global_constant ("reverse", 
 			      scheme_make_prim_w_arity(reverse_prim, 
-						       "reverse", 
+						       "reverse", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("reverse!", 
 			      scheme_make_prim_w_arity(reverse_bang_prim, 
-						       "reverse!", 
+						       "reverse!", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("list-tail", 
 			      scheme_make_prim_w_arity(list_tail_prim, 
-						       "list-tail", 
+						       "list-tail", scheme_kernel_symbol, 
 						       2, 2), 
 			      env);
   scheme_add_global_constant ("list-ref", 
 			      scheme_make_prim_w_arity(list_ref_prim, 
-						       "list-ref", 
+						       "list-ref", scheme_kernel_symbol, 
 						       2, 2), 
 			      env);
   scheme_add_global_constant ("memq", 
 			      scheme_make_prim_w_arity(memq, 
-						       "memq", 
+						       "memq", scheme_kernel_symbol, 
 						       2, 2), 
 			      env);
   scheme_add_global_constant ("memv", 
 			      scheme_make_prim_w_arity(memv, 
-						       "memv", 
+						       "memv", scheme_kernel_symbol, 
 						       2, 2), 
 			      env);
   scheme_add_global_constant ("member", 
 			      scheme_make_prim_w_arity(member, 
-						       "member", 
+						       "member", scheme_kernel_symbol, 
 						       2, 2), 
 			      env);
   scheme_add_global_constant ("assq", 
 			      scheme_make_prim_w_arity(assq, 
-						       "assq", 
+						       "assq", scheme_kernel_symbol, 
 						       2, 2), 
 			      env);
   scheme_add_global_constant ("assv", 
 			      scheme_make_prim_w_arity(assv, 
-						       "assv", 
+						       "assv", scheme_kernel_symbol, 
 						       2, 2), 
 			      env);
   scheme_add_global_constant ("assoc", 
 			      scheme_make_prim_w_arity(assoc, 
-						       "assoc", 
+						       "assoc", scheme_kernel_symbol, 
 						       2, 2), 
 			      env);
   scheme_add_global_constant ("caar", 
 			      scheme_make_prim_w_arity(caar_prim,  
-						       "caar", 
+						       "caar", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("cadr", 
 			      scheme_make_prim_w_arity(cadr_prim, 
-						       "cadr", 
+						       "cadr", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("cdar", 
 			      scheme_make_prim_w_arity(cdar_prim, 
-						       "cdar", 
+						       "cdar", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("cddr", 
 			      scheme_make_prim_w_arity(cddr_prim, 
-						       "cddr", 
+						       "cddr", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("caaar", 
 			      scheme_make_prim_w_arity(caaar_prim, 
-						       "caaar", 
+						       "caaar", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("caadr", 
 			      scheme_make_prim_w_arity(caadr_prim, 
-						       "caadr", 
+						       "caadr", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("cadar", 
 			      scheme_make_prim_w_arity(cadar_prim, 
-						       "cadar", 
+						       "cadar", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("cdaar", 
 			      scheme_make_prim_w_arity(cdaar_prim, 
-						       "cdaar", 
+						       "cdaar", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("cdadr", 
 			      scheme_make_prim_w_arity(cdadr_prim, 
-						       "cdadr", 
+						       "cdadr", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("cddar", 
 			      scheme_make_prim_w_arity(cddar_prim, 
-						       "cddar", 
+						       "cddar", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("caddr", 
 			      scheme_make_prim_w_arity(caddr_prim, 
-						       "caddr", 
+						       "caddr", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);
   scheme_add_global_constant ("cdddr", 
 			      scheme_make_prim_w_arity(cdddr_prim, 
-						       "cdddr", 
+						       "cdddr", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);  
   scheme_add_global_constant ("cddddr", 
 			      scheme_make_prim_w_arity(cddddr_prim, 
-						       "cddddr", 
+						       "cddddr", scheme_kernel_symbol, 
 						       1, 1), 
 			      env);  
   
   scheme_add_global_constant ("cadddr", 
 			      scheme_make_prim_w_arity(cadddr_prim, 
-						       "cadddr", 
+						       "cadddr", scheme_kernel_symbol, 
 						       1, 1), 
 			      env); 
   scheme_add_global_constant ("cdaddr", 
 			      scheme_make_prim_w_arity(cdaddr_prim, 
-						       "cdaddr", 
+						       "cdaddr", scheme_kernel_symbol, 
 						       1, 1), 
 			      env); 
   scheme_add_global_constant ("cddadr", 
 			      scheme_make_prim_w_arity(cddadr_prim, 
-						       "cddadr", 
+						       "cddadr", scheme_kernel_symbol, 
 						       1, 1), 
 			      env); 
   scheme_add_global_constant ("cdddar", 
 			      scheme_make_prim_w_arity(cdddar_prim, 
-						       "cdddar", 
+						       "cdddar", scheme_kernel_symbol, 
 						       1, 1), 
 			      env); 
   scheme_add_global_constant ("caaddr", 
 			      scheme_make_prim_w_arity(caaddr_prim, 
-						       "caaddr", 
+						       "caaddr", scheme_kernel_symbol, 
 						       1, 1), 
 			      env); 
   scheme_add_global_constant ("cadadr", 
 			      scheme_make_prim_w_arity(cadadr_prim, 
-						       "cadadr", 
+						       "cadadr", scheme_kernel_symbol, 
 						       1, 1), 
 			      env); 
   scheme_add_global_constant ("caddar", 
 			      scheme_make_prim_w_arity(caddar_prim, 
-						       "caddar", 
+						       "caddar", scheme_kernel_symbol, 
 						       1, 1), 
 			      env); 
   scheme_add_global_constant ("cdaadr", 
 			      scheme_make_prim_w_arity(cdaadr_prim, 
-						       "cdaadr", 
+						       "cdaadr", scheme_kernel_symbol, 
 						       1, 1), 
 			      env); 
   scheme_add_global_constant ("cdadar", 
 			      scheme_make_prim_w_arity(cdadar_prim, 
-						       "cdadar", 
+						       "cdadar", scheme_kernel_symbol, 
 						       1, 1), 
 			      env); 
   scheme_add_global_constant ("cddaar", 
 			      scheme_make_prim_w_arity(cddaar_prim, 
-						       "cddaar", 
+						       "cddaar", scheme_kernel_symbol, 
 						       1, 1), 
 			      env); 
   scheme_add_global_constant ("cdaaar", 
 			      scheme_make_prim_w_arity(cdaaar_prim, 
-						       "cdaaar", 
+						       "cdaaar", scheme_kernel_symbol, 
 						       1, 1), 
 			      env); 
   scheme_add_global_constant ("cadaar", 
 			      scheme_make_prim_w_arity(cadaar_prim, 
-						       "cadaar", 
+						       "cadaar", scheme_kernel_symbol, 
 						       1, 1), 
 			      env); 
   scheme_add_global_constant ("caadar", 
 			      scheme_make_prim_w_arity(caadar_prim, 
-						       "caadar", 
+						       "caadar", scheme_kernel_symbol, 
 						       1, 1), 
 			      env); 
   scheme_add_global_constant ("caaadr", 
 			      scheme_make_prim_w_arity(caaadr_prim, 
-						       "caaadr", 
+						       "caaadr", scheme_kernel_symbol, 
 						       1, 1), 
 			      env); 
   scheme_add_global_constant ("caaaar", 
 			      scheme_make_prim_w_arity(caaaar_prim, 
-						       "caaaar", 
+						       "caaaar", scheme_kernel_symbol, 
 						       1, 1), 
 			      env); 
   
   scheme_add_global_constant(BOX, 
 			     scheme_make_prim_w_arity(box, 
-						      BOX, 
+						      BOX, scheme_kernel_symbol, 
 						      1, 1), 
 			     env);
   scheme_add_global_constant(BOXP, 
 			     scheme_make_folding_prim(box_p, 
-						      BOXP, 
+						      BOXP, scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant(UNBOX, 
 			     scheme_make_prim_w_arity(unbox,  
-						      UNBOX, 
+						      UNBOX, scheme_kernel_symbol, 
 						      1, 1), 
 			     env);
   scheme_add_global_constant(SETBOX, 
 			     scheme_make_prim_w_arity(set_box, 
-						      SETBOX, 
+						      SETBOX, scheme_kernel_symbol, 
 						      2, 2), 
 			     env);
   
   scheme_add_global_constant("make-hash-table", 
 			     scheme_make_prim_w_arity(make_hash_table, 
-						      "make-hash-table", 
+						      "make-hash-table", scheme_kernel_symbol, 
 						      0, 0), 
 			     env);
   scheme_add_global_constant("make-hash-table-weak", 
 			     scheme_make_prim_w_arity(make_hash_table_weak, 
-						      "make-hash-table-weak", 
+						      "make-hash-table-weak", scheme_kernel_symbol, 
 						      0, 0), 
 			     env);
   scheme_add_global_constant("hash-table?", 
 			     scheme_make_folding_prim(hash_table_p, 
-						      "hash-table?", 
+						      "hash-table?", scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("hash-table-put!", 
 			     scheme_make_prim_w_arity(hash_table_put, 
-						      "hash-table-put!", 
+						      "hash-table-put!", scheme_kernel_symbol, 
 						      3, 3), 
 			     env);
   scheme_add_global_constant("hash-table-get", 
 			     scheme_make_prim_w_arity(hash_table_get, 
-						      "hash-table-get", 
+						      "hash-table-get", scheme_kernel_symbol, 
 						      2, 3), 
 			     env);
   scheme_add_global_constant("hash-table-remove!", 
 			     scheme_make_prim_w_arity(hash_table_remove, 
-						      "hash-table-remove!", 
+						      "hash-table-remove!", scheme_kernel_symbol, 
 						      2, 2), 
 			     env);
   scheme_add_global_constant("hash-table-map", 
 			     scheme_make_prim_w_arity(hash_table_map, 
-						      "hash-table-map", 
+						      "hash-table-map", scheme_kernel_symbol, 
 						      2, 2), 
 			     env);
   scheme_add_global_constant("hash-table-for-each", 
 			     scheme_make_prim_w_arity(hash_table_for_each, 
-						      "hash-table-for-each", 
+						      "hash-table-for-each", scheme_kernel_symbol, 
 						      2, 2), 
 			     env);
 
   scheme_add_global_constant("make-weak-box",
 			     scheme_make_prim_w_arity(make_weak_box,
-						      "make-weak-box",
+						      "make-weak-box", scheme_kernel_symbol,
 						      1, 1),
 			     env);
   scheme_add_global_constant("weak-box-value",
 			     scheme_make_prim_w_arity(weak_box_value,
-						      "weak-box-value",
+						      "weak-box-value", scheme_kernel_symbol,
 						      1, 1),
 			     env);
   scheme_add_global_constant("weak-box?",
 			     scheme_make_folding_prim(weak_boxp,
-						      "weak-box?",
+						      "weak-box?", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
 }
@@ -631,7 +631,7 @@ static Scheme_Object *
 car_prim (int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_PAIRP(argv[0]))
-    scheme_wrong_type("car", "pair", 0, argc, argv);
+    scheme_wrong_type("car", scheme_kernel_symbol, "pair", 0, argc, argv);
   return (SCHEME_CAR (argv[0]));
 }
 
@@ -639,7 +639,7 @@ static Scheme_Object *
 cdr_prim (int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_PAIRP(argv[0]))
-    scheme_wrong_type("cdr", "pair", 0, argc, argv);
+    scheme_wrong_type("cdr", scheme_kernel_symbol, "pair", 0, argc, argv);
 
   return (SCHEME_CDR (argv[0]));
 }
@@ -648,7 +648,7 @@ static Scheme_Object *
 set_car_prim (int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_MUTABLE_PAIRP(argv[0]))
-    scheme_wrong_type("set-car!", "mutable-pair", 0, argc, argv);
+    scheme_wrong_type("set-car!", scheme_kernel_symbol, "mutable-pair", 0, argc, argv);
 
   SCHEME_CAR (argv[0]) = argv[1];
   return scheme_void;
@@ -658,7 +658,7 @@ static Scheme_Object *
 set_cdr_prim (int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_MUTABLE_PAIRP(argv[0]))
-    scheme_wrong_type("set-cdr!", "mutable-pair", 0, argc, argv);
+    scheme_wrong_type("set-cdr!", scheme_kernel_symbol, "mutable-pair", 0, argc, argv);
 
   SCHEME_CDR (argv[0]) = argv[1];
   return scheme_void;
@@ -672,7 +672,7 @@ pair_to_immutable (int argc, Scheme_Object *argv[])
   p = argv[0];
 
   if (!SCHEME_PAIRP(p))
-    scheme_wrong_type("pair->immutable-pair", "pair", 0, argc, argv);
+    scheme_wrong_type("pair->immutable-pair", scheme_kernel_symbol, "pair", 0, argc, argv);
 
   if (SCHEME_MUTABLE_PAIRP(p)) {
     Scheme_Object *p2;
@@ -753,12 +753,12 @@ length_prim (int argc, Scheme_Object *argv[])
   int l;
 
   if (!SCHEME_LISTP(argv[0]))
-    scheme_wrong_type("length", "proper list", 0, argc, argv);
+    scheme_wrong_type("length", scheme_kernel_symbol, "proper list", 0, argc, argv);
 
   l = scheme_proper_list_length(argv[0]);
 
   if (l < 0)
-    scheme_wrong_type("length", "proper list", 0, argc, argv);
+    scheme_wrong_type("length", scheme_kernel_symbol, "proper list", 0, argc, argv);
 
   return scheme_make_integer(l);
 }
@@ -784,7 +784,7 @@ scheme_append (Scheme_Object *lst1, Scheme_Object *lst2)
   }
   
   if (!SCHEME_NULLP(lst1))
-    scheme_wrong_type("append", "proper list", -1, 0, &orig1);
+    scheme_wrong_type("append", scheme_kernel_symbol, "proper list", -1, 0, &orig1);
 
   if (!last)
     return lst2;
@@ -807,14 +807,14 @@ scheme_append_bang (Scheme_Object *lst1, Scheme_Object *lst2)
     do {
       prev = lst1;
       if (!SCHEME_PAIRP(lst1))
-	scheme_wrong_type("append!", "proper list", -1, 0, &lst1);
+	scheme_wrong_type("append!", scheme_kernel_symbol, "proper list", -1, 0, &lst1);
       lst1 = SCHEME_CDR(lst1);
 
       SCHEME_USE_FUEL(1);
     } while (!SCHEME_NULLP(lst1));
 
     if (!SCHEME_MUTABLE_PAIRP(prev))
-      scheme_wrong_type("append!", "mutable proper list", -1, 0, &lst1);
+      scheme_wrong_type("append!", scheme_kernel_symbol, "mutable proper list", -1, 0, &lst1);
     SCHEME_CDR(prev) = lst2;
 
     return orig;
@@ -864,7 +864,7 @@ reverse_prim (int argc, Scheme_Object *argv[])
   lst = argv[0];
   while (!SCHEME_NULLP (lst)) {
     if (!SCHEME_PAIRP(lst))
-      scheme_wrong_type("reverse", "proper list", 0, argc, argv);
+      scheme_wrong_type("reverse", scheme_kernel_symbol, "proper list", 0, argc, argv);
     last = scheme_make_pair (SCHEME_CAR (lst), last);
     lst = SCHEME_CDR (lst);
 
@@ -882,7 +882,7 @@ reverse_bang_prim (int argc, Scheme_Object *argv[])
   lst = argv[0];
   while (!SCHEME_NULLP(lst)) {
     if (!SCHEME_MUTABLE_PAIRP(lst))
-      scheme_wrong_type("reverse!", "mutable proper list", 0, argc, argv);
+      scheme_wrong_type("reverse!", scheme_kernel_symbol, "mutable proper list", 0, argc, argv);
     next = SCHEME_CDR(lst);
     if (prev)
       SCHEME_CDR(lst) = prev;
@@ -915,7 +915,7 @@ do_list_ref(char *name, int takecar, int argc, Scheme_Object *argv[])
 
 #if 0
   if (!SCHEME_LISTP(argv[0]))
-    scheme_wrong_type(name, "list", 0, argc, argv);
+    scheme_wrong_type(name, scheme_kernel_symbol, "list", 0, argc, argv);
 #endif
 
   if (SCHEME_BIGNUMP(argv[1])) {
@@ -927,7 +927,7 @@ do_list_ref(char *name, int takecar, int argc, Scheme_Object *argv[])
     d = SCHEME_DBL_VAL(argv[1]);
     bnindex = scheme_double_to_integer(name, d);
     if (!bnindex)
-      scheme_wrong_type(name, "non-negative integer", 1, argc, argv);
+      scheme_wrong_type(name, scheme_kernel_symbol, "non-negative integer", 1, argc, argv);
     if (SCHEME_INTP(bnindex)) {
       k = SCHEME_INT_VAL(bnindex);
       bnindex = NULL;
@@ -935,7 +935,7 @@ do_list_ref(char *name, int takecar, int argc, Scheme_Object *argv[])
       k = 0;
 #endif
   } else if (!SCHEME_INTP(argv[1])) {
-    scheme_wrong_type(name, "non-negative exact integer", 1, argc, argv);
+    scheme_wrong_type(name, scheme_kernel_symbol, "non-negative exact integer", 1, argc, argv);
     return NULL;
   } else {
     bnindex = NULL;
@@ -947,7 +947,7 @@ do_list_ref(char *name, int takecar, int argc, Scheme_Object *argv[])
 
   if ((bnindex && !SCHEME_BIGPOS(bnindex))
       || (!bnindex && (k < 0))) {
-    scheme_wrong_type(name, "non-negative exact integer", 1, argc, argv);
+    scheme_wrong_type(name, scheme_kernel_symbol, "non-negative exact integer", 1, argc, argv);
     return NULL;
   }
 
@@ -968,7 +968,7 @@ do_list_ref(char *name, int takecar, int argc, Scheme_Object *argv[])
 	int llen;
 	
 	lstr = scheme_make_provided_string(argv[0], 2, &llen);
-	scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+	scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
 			 index,
 			 "%s: index %s too large for list%s: %t", name,
 			 scheme_make_provided_string(index, 2, NULL),
@@ -988,7 +988,7 @@ do_list_ref(char *name, int takecar, int argc, Scheme_Object *argv[])
       int llen;
       
       lstr = scheme_make_provided_string(argv[0], 2, &llen);
-      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
 		       index,
 		       "%s: index %s too large for list%s: %t", name,
 		       scheme_make_provided_string(index, 2, NULL),
@@ -1030,7 +1030,7 @@ name (int argc, Scheme_Object *argv[]) \
       list = SCHEME_CDR (list); \
     } \
   if (!SCHEME_NULLP(list)) { \
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[1], \
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol, argv[1], \
 		     "%s: not a proper list: %V", #scheme_name, \
 		     argv[1]); \
   } \
@@ -1055,7 +1055,7 @@ name (int argc, Scheme_Object *argv[]) \
         int nplen, llen; \
         npstr = scheme_make_provided_string(pair, 2, &nplen); \
         lstr = scheme_make_provided_string(argv[1], 2, &llen); \
-	scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[1], \
+	scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol, argv[1], \
 			 "%s: non-pair found in list: %t in %t", #scheme_name, \
 			 npstr, nplen, \
 			 lstr, llen); \
@@ -1068,7 +1068,7 @@ name (int argc, Scheme_Object *argv[]) \
       list = SCHEME_CDR (list); \
     } \
   if (!SCHEME_NULLP(list)) {\
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[1], \
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol, argv[1], \
 		     "%s: not a proper list: %V", #scheme_name, \
 		     argv[1]); \
   } \
@@ -1085,7 +1085,7 @@ name ## _prim (int argc, Scheme_Object *argv[]) \
 { \
   if (!(SCHEME_PAIRP(argv[0]) \
 	&& SCHEME_PAIRP(D(argv[0])))) \
-      scheme_wrong_type(#name, #name "able value", 0, argc, argv); \
+      scheme_wrong_type(#name, scheme_kernel_symbol, #name "able value", 0, argc, argv); \
   return C(D(argv[0])); \
 }
 
@@ -1101,7 +1101,7 @@ name ## _prim (int argc, Scheme_Object *argv[]) \
   if (!((SCHEME_PAIRP(argv[0])) \
 	&& SCHEME_PAIRP(D(argv[0])) \
 	&& SCHEME_PAIRP(C(D(argv[0]))))) \
-    scheme_wrong_type(#name, #name "able value", 0, argc, argv); \
+    scheme_wrong_type(#name, scheme_kernel_symbol, #name "able value", 0, argc, argv); \
   return B (C (D (argv[0]))); \
 }
 
@@ -1126,7 +1126,7 @@ name ## _prim (int argc, Scheme_Object *argv[]) \
 	&& SCHEME_PAIRP(D (argv[0])) \
 	&& SCHEME_PAIRP(C(D(argv[0]))) \
 	&&SCHEME_PAIRP(B(C(D(argv[0]))))))\
-    scheme_wrong_type(#name, #name "able value", 0, argc, argv); \
+    scheme_wrong_type(#name, scheme_kernel_symbol, #name "able value", 0, argc, argv); \
   return A(B(C(D(argv[0]))));\
 }
 
@@ -1165,14 +1165,14 @@ Scheme_Object *scheme_box(Scheme_Object *v)
 Scheme_Object *scheme_unbox(Scheme_Object *obj)
 {  
   if (!SCHEME_BOXP(obj))
-      scheme_wrong_type(UNBOX, "box", 0, 1, &obj);
+      scheme_wrong_type(UNBOX, scheme_kernel_symbol, "box", 0, 1, &obj);
   return (Scheme_Object *)SCHEME_BOX_VAL(obj);
 }
 
 void scheme_set_box(Scheme_Object *b, Scheme_Object *v)
 {
   if (!SCHEME_MUTABLE_BOXP(b))
-      scheme_wrong_type(SETBOX, "mutable box", 0, 1, &b);
+      scheme_wrong_type(SETBOX, scheme_kernel_symbol, "mutable box", 0, 1, &b);
   SCHEME_BOX_VAL(b) = v;
 }
 
@@ -1223,7 +1223,7 @@ static Scheme_Object *hash_table_p(int argc, Scheme_Object *argv[])
 static Scheme_Object *hash_table_put(int argc, Scheme_Object *argv[])
 {
   if (!(SCHEME_HASHTP(argv[0]) || SCHEME_BUCKTP(argv[0])))
-    scheme_wrong_type("hash-table-put!", "hash table", 0, argc, argv);
+    scheme_wrong_type("hash-table-put!", scheme_kernel_symbol, "hash table", 0, argc, argv);
 
   if (SCHEME_BUCKTP(argv[0]))
     scheme_add_to_table((Scheme_Bucket_Table *)argv[0], (char *)argv[1], 
@@ -1239,7 +1239,7 @@ static Scheme_Object *hash_table_get(int argc, Scheme_Object *argv[])
   void *v;
 
   if (!(SCHEME_HASHTP(argv[0]) || SCHEME_BUCKTP(argv[0])))
-    scheme_wrong_type("hash-table-get", "hash table", 0, argc, argv);
+    scheme_wrong_type("hash-table-get", scheme_kernel_symbol, "hash table", 0, argc, argv);
 
   if (SCHEME_BUCKTP(argv[0]))
     v = scheme_lookup_in_table((Scheme_Bucket_Table *)argv[0], (char *)argv[1]);
@@ -1251,7 +1251,7 @@ static Scheme_Object *hash_table_get(int argc, Scheme_Object *argv[])
   else if (argc == 3)
     return _scheme_tail_apply(argv[2], 0, NULL);
   else {
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
 		     argv[1],
 		     "hash-table-get: no value found for key: %V",
 		     argv[1]);
@@ -1262,7 +1262,7 @@ static Scheme_Object *hash_table_get(int argc, Scheme_Object *argv[])
 static Scheme_Object *hash_table_remove(int argc, Scheme_Object *argv[])
 {
   if (!(SCHEME_HASHTP(argv[0]) || SCHEME_BUCKTP(argv[0])))
-    scheme_wrong_type("hash-table-remove!", "hash table", 0, argc, argv);
+    scheme_wrong_type("hash-table-remove!", scheme_kernel_symbol, "hash table", 0, argc, argv);
 
   if (SCHEME_BUCKTP(argv[0])) {
     Scheme_Bucket *b;
@@ -1287,7 +1287,7 @@ static Scheme_Object *do_map_hash_table(int argc,
   Scheme_Object *first, *last = NULL, *v, *p[2];
 
   if (!(SCHEME_HASHTP(argv[0]) || SCHEME_BUCKTP(argv[0])))
-    scheme_wrong_type(name, "hash table", 0, argc, argv);
+    scheme_wrong_type(name, scheme_kernel_symbol, "hash table", 0, argc, argv);
   scheme_check_proc_arity(name, 2, 1, argc, argv);
 
   f = argv[1];
@@ -1387,7 +1387,7 @@ static Scheme_Object *weak_box_value(int argc, Scheme_Object *argv[])
   Scheme_Object *o;
 
   if (!SCHEME_WEAKP(argv[0]))
-    scheme_wrong_type("weak-box-value", "weak-box", 0, argc, argv);
+    scheme_wrong_type("weak-box-value", scheme_kernel_symbol, "weak-box", 0, argc, argv);
 
   o = SCHEME_BOX_VAL(argv[0]);
   if (!o)

@@ -175,39 +175,39 @@ void scheme_init_network(Scheme_Env *env)
 
   scheme_add_global_constant("tcp-connect", 
 			     scheme_make_prim_w_arity2(tcp_connect,
-						       "tcp-connect", 
+						       "tcp-connect", scheme_kernel_symbol, 
 						       2, 2,
 						       2, 2), 
 			     env);
   scheme_add_global_constant("tcp-listen", 
 			     scheme_make_prim_w_arity(tcp_listen,
-						      "tcp-listen", 
+						      "tcp-listen", scheme_kernel_symbol, 
 						      1, 2),
 			     env);
   scheme_add_global_constant("tcp-close", 
 			     scheme_make_prim_w_arity(tcp_stop,
-						      "tcp-close", 
+						      "tcp-close", scheme_kernel_symbol, 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("tcp-accept-ready?", 
 			     scheme_make_prim_w_arity(tcp_accept_ready,
-						      "tcp-accept-ready?", 
+						      "tcp-accept-ready?", scheme_kernel_symbol, 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("tcp-accept", 
 			     scheme_make_prim_w_arity2(tcp_accept,
-						       "tcp-accept", 
+						       "tcp-accept", scheme_kernel_symbol, 
 						       1, 1,
 						       2, 2), 
 			     env);
   scheme_add_global_constant("tcp-listener?", 
 			     scheme_make_folding_prim(tcp_listener_p,
-						      "tcp-listener?", 
+						      "tcp-listener?", scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("tcp-addresses", 
 			     scheme_make_folding_prim(tcp_addresses,
-						      "tcp-addresses", 
+						      "tcp-addresses", scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);
 }
@@ -321,7 +321,7 @@ static void TCP_INIT(char *name)
   } else
     return;
   
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, scheme_kernel_symbol,
 		   "%s: not supported on this machine"
 		   " (no winsock driver)",
 		   name);
@@ -477,7 +477,7 @@ static void TCP_INIT(char *name)
   
   if ((errNo = PBOpenSync(&pb))
       || (errNo = OpenResolver(NULL))) {
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_I_O_TCP, scheme_kernel_symbol,
 		     "%s: TCP initialization error (%e)",
 		     name, (int)errNo);
   }
@@ -1121,7 +1121,7 @@ static int tcp_getc(Scheme_Input_Port *port)
     if (scheme_return_eof_for_error()) {
       return EOF;
     } else {
-      scheme_raise_exn(MZEXN_I_O_PORT_READ,
+      scheme_raise_exn(MZEXN_I_O_PORT_READ, scheme_kernel_symbol,
 		       port,
 		       "tcp-read: error reading (%e)",
 		       errid);
@@ -1350,7 +1350,7 @@ int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block,
   }
 
   if (errid)
-    scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
+    scheme_raise_exn(MZEXN_I_O_PORT_WRITE, scheme_kernel_symbol,
 		     port,
 		     "tcp-write: error writing (%e)",
 		     errid);
@@ -1456,9 +1456,9 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 #endif
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("tcp-connect", "string", 0, argc, argv);
+    scheme_wrong_type("tcp-connect", scheme_kernel_symbol, "string", 0, argc, argv);
   if (!CHECK_PORT_ID(argv[1]))
-    scheme_wrong_type("tcp-connect", PORT_ID_TYPE, 1, argc, argv);
+    scheme_wrong_type("tcp-connect", scheme_kernel_symbol, PORT_ID_TYPE, 1, argc, argv);
 
 #ifdef USE_TCP
   TCP_INIT("tcp-connect");
@@ -1660,11 +1660,11 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 #endif
 
 #ifdef USE_TCP
-  scheme_raise_exn(MZEXN_I_O_TCP,
+  scheme_raise_exn(MZEXN_I_O_TCP, scheme_kernel_symbol,
 		   "tcp-connect: connection to %s, port %d failed%s (at step %d: %E)",
 		   address, origid, errmsg, errpart, errid);
 #else
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, scheme_kernel_symbol,
 		   "tcp-connect: not supported on this platform");
 #endif
 
@@ -1683,10 +1683,10 @@ tcp_listen(int argc, Scheme_Object *argv[])
 #endif
 
   if (!CHECK_PORT_ID(argv[0]))
-    scheme_wrong_type("tcp-listen", PORT_ID_TYPE, 0, argc, argv);
+    scheme_wrong_type("tcp-listen", scheme_kernel_symbol, PORT_ID_TYPE, 0, argc, argv);
   if (argc > 1)
     if (!SCHEME_INTP(argv[1]) || (SCHEME_INT_VAL(argv[1]) < 1))
-      scheme_wrong_type("tcp-listen", "small positive integer", 1, argc, argv);
+      scheme_wrong_type("tcp-listen", scheme_kernel_symbol, "small positive integer", 1, argc, argv);
     
 #ifdef USE_TCP
   TCP_INIT("tcp-listen");
@@ -1791,11 +1791,11 @@ tcp_listen(int argc, Scheme_Object *argv[])
 #endif
 
 #ifdef USE_TCP
-  scheme_raise_exn(MZEXN_I_O_TCP,
+  scheme_raise_exn(MZEXN_I_O_TCP, scheme_kernel_symbol,
 		   "tcp-listen: listen on %d failed (%e)",
 		   origid, errid);
 #else
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, scheme_kernel_symbol,
 		   "tcp-listen: not supported on this platform");
 #endif
 
@@ -1848,21 +1848,21 @@ tcp_stop(int argc, Scheme_Object *argv[])
   int was_closed;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_listener_type))
-    scheme_wrong_type("tcp-close", "tcp-listener", 0, argc, argv);
+    scheme_wrong_type("tcp-close", scheme_kernel_symbol, "tcp-listener", 0, argc, argv);
 
   TCP_INIT("tcp-close");
 
   was_closed = stop_listener(argv[0]);
 
   if (was_closed) {
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_I_O_TCP, scheme_kernel_symbol,
 		     "tcp-close: listener was already closed");
     return NULL;
   }
 
   return scheme_void;
 #else
-  scheme_wrong_type("tcp-close", "tcp-listener", 0, argc, argv);
+  scheme_wrong_type("tcp-close", scheme_kernel_symbol, "tcp-listener", 0, argc, argv);
   return NULL;
 #endif
 }
@@ -1874,12 +1874,12 @@ tcp_accept_ready(int argc, Scheme_Object *argv[])
   int ready;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_listener_type))
-    scheme_wrong_type("tcp-accept-rady?", "tcp-listener", 0, argc, argv);
+    scheme_wrong_type("tcp-accept-rady?", scheme_kernel_symbol, "tcp-listener", 0, argc, argv);
 
   TCP_INIT("tcp-accept-ready?");
 
   if (LISTENER_WAS_CLOSED(argv[0])) {
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_I_O_TCP, scheme_kernel_symbol,
 		     "tcp-accept-ready?: listener is closed");
     return NULL;
   }
@@ -1888,7 +1888,7 @@ tcp_accept_ready(int argc, Scheme_Object *argv[])
 
   return (ready ? scheme_true : scheme_false);
 #else
-  scheme_wrong_type("tcp-accept-rady?", "tcp-listener", 0, argc, argv);
+  scheme_wrong_type("tcp-accept-rady?", scheme_kernel_symbol, "tcp-listener", 0, argc, argv);
   return NULL;
 #endif
 }
@@ -1911,7 +1911,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
 # endif
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_listener_type))
-    scheme_wrong_type("tcp-accept", "tcp-listener", 0, argc, argv);
+    scheme_wrong_type("tcp-accept", scheme_kernel_symbol, "tcp-listener", 0, argc, argv);
 
   TCP_INIT("tcp-accept?");
 
@@ -1936,7 +1936,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
   }
 
   if (was_closed) {
-    scheme_raise_exn(MZEXN_I_O_TCP,
+    scheme_raise_exn(MZEXN_I_O_TCP, scheme_kernel_symbol,
 		     "tcp-accept: listener is closed");
     return NULL;
   }
@@ -2003,10 +2003,10 @@ tcp_accept(int argc, Scheme_Object *argv[])
   }
 # endif
 
-  scheme_raise_exn(MZEXN_I_O_TCP,
+  scheme_raise_exn(MZEXN_I_O_TCP, scheme_kernel_symbol,
 		   "tcp-accept: accept from listener failed (%e)", errid);
 #else
-  scheme_wrong_type("tcp-accept", "tcp-listener", 0, argc, argv);
+  scheme_wrong_type("tcp-accept", scheme_kernel_symbol, "tcp-listener", 0, argc, argv);
 #endif
 
   return NULL;
@@ -2043,10 +2043,10 @@ static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[])
   }
 
   if (!tcp)
-    scheme_wrong_type("tcp-addresses", "tcp-port", 0, argc, argv);
+    scheme_wrong_type("tcp-addresses", scheme_kernel_symbol, "tcp-port", 0, argc, argv);
 
   if (closed)
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
 		     argv[0],
 		     "tcp-addresses: port is closed");
 
@@ -2058,13 +2058,13 @@ static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[])
     
     l = sizeof(tcp_here_addr);
     if (getsockname(tcp->tcp, (struct sockaddr *)&tcp_here_addr, &l)) {
-      scheme_raise_exn(MZEXN_I_O_TCP,
+      scheme_raise_exn(MZEXN_I_O_TCP, scheme_kernel_symbol,
 		       "tcp-addresses: could not get local address (%e)",
 		       errno);
     }
     l = sizeof(tcp_there_addr);
     if (getpeername(tcp->tcp, (struct sockaddr *)&tcp_there_addr, &l)) {
-      scheme_raise_exn(MZEXN_I_O_TCP,
+      scheme_raise_exn(MZEXN_I_O_TCP, scheme_kernel_symbol,
 		       "tcp-addresses: could not get peer address (%e)",
 		       errno);
     }

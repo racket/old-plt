@@ -62,7 +62,7 @@ static int unbundle_symset_sliderStyle(Scheme_Object *v, const char *where) {
   l = SCHEME_CDR(l);
   }
   if (SCHEME_NULLP(l)) return result;
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "sliderStyle symbol list", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "sliderStyle symbol list", -1, 0, &v));
   return 0;
 }
 
@@ -570,7 +570,7 @@ static Scheme_Object *os_wxSlider_ConstructScheme(int n,  Scheme_Object *p[])
 
   int cb_pos = 0;
   if ((n < (POFFSET+7)) || (n > (POFFSET+11))) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in slider%", POFFSET+7, POFFSET+11, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in slider%", objscheme_modidx, POFFSET+7, POFFSET+11, n, p));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in slider%", 0));
   x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
   x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+2], "initialization in slider%"));
@@ -595,7 +595,7 @@ static Scheme_Object *os_wxSlider_ConstructScheme(int n,  Scheme_Object *p[])
   } else
     x10 = "slider";
 
-  if (x3 < x4 || x5 < x3) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("slider%","initialization"), "minimum, value, and maximum must be increasing; given minimum: ", p[POFFSET+4]));if (x6 <= 0) x6 = 1;
+  if (x3 < x4 || x5 < x3) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("slider%","initialization"), objscheme_modidx, "minimum, value, and maximum must be increasing; given minimum: ", p[POFFSET+4]));if (x6 <= 0) x6 = 1;
   realobj = WITH_VAR_STACK(new os_wxSlider CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)));
 #ifdef MZ_PRECISE_GC
   WITH_VAR_STACK(realobj->gcInit_wxSlider(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10));
@@ -642,7 +642,7 @@ int objscheme_istype_wxSlider(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "slider% object or " XC_NULL_STR: "slider% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "slider% object or " XC_NULL_STR: "slider% object", -1, 0, &obj));
     return 0;
   }
 }

@@ -110,134 +110,134 @@ scheme_init_string (Scheme_Env *env)
 
   scheme_add_global_constant("string?", 
 			     scheme_make_folding_prim(string_p,
-						      "string?",
+						      "string?", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("make-string", 
 			     scheme_make_prim_w_arity(make_string,
-						      "make-string",
+						      "make-string", scheme_kernel_symbol,
 						      1, 2),
 			     env);
   scheme_add_global_constant("string", 
 			     scheme_make_prim_w_arity(string,
-						      "string", 
+						      "string", scheme_kernel_symbol, 
 						      0, -1),
 			     env);
   scheme_add_global_constant("string-length", 
 			     scheme_make_folding_prim(string_length,
-						      "string-length",
+						      "string-length", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("string-ref", 
 			     scheme_make_prim_w_arity(string_ref,
-						      "string-ref", 
+						      "string-ref", scheme_kernel_symbol, 
 						      2, 2),
 			     env);
   scheme_add_global_constant("string-set!", 
 			     scheme_make_prim_w_arity(string_set,
-						      "string-set!", 
+						      "string-set!", scheme_kernel_symbol, 
 						      3, 3),
 			     env);
   scheme_add_global_constant("string=?", 
 			     scheme_make_prim_w_arity(string_eq,
-						      "string=?",
+						      "string=?", scheme_kernel_symbol,
 						      2, -1),
 			     env);
   scheme_add_global_constant("string-ci=?", 
 			     scheme_make_prim_w_arity(string_ci_eq,
-						      "string-ci=?",
+						      "string-ci=?", scheme_kernel_symbol,
 						      2, -1),
 			     env);
   scheme_add_global_constant("string<?", 
 			     scheme_make_prim_w_arity(string_lt,
-						      "string<?",
+						      "string<?", scheme_kernel_symbol,
 						      2, -1),
 			     env);
   scheme_add_global_constant("string>?", 
 			     scheme_make_prim_w_arity(string_gt,
-						      "string>?",
+						      "string>?", scheme_kernel_symbol,
 						      2, -1),
 			     env);
   scheme_add_global_constant("string<=?", 
 			     scheme_make_prim_w_arity(string_lt_eq,
-						      "string<=?",
+						      "string<=?", scheme_kernel_symbol,
 						      2, -1),
 			     env);
   scheme_add_global_constant("string>=?", 
 			     scheme_make_prim_w_arity(string_gt_eq,
-						      "string>=?",
+						      "string>=?", scheme_kernel_symbol,
 						      2, -1),
 			     env);
   scheme_add_global_constant("string-ci<?", 
 			     scheme_make_prim_w_arity(string_ci_lt,
-						      "string-ci<?",
+						      "string-ci<?", scheme_kernel_symbol,
 						      2, -1),
 			     env);
   scheme_add_global_constant("string-ci>?", 
 			     scheme_make_prim_w_arity(string_ci_gt,
-						      "string-ci>?",
+						      "string-ci>?", scheme_kernel_symbol,
 						      2, -1),
 			     env);
   scheme_add_global_constant("string-ci<=?", 
 			     scheme_make_prim_w_arity(string_ci_lt_eq,
-						      "string-ci<=?",
+						      "string-ci<=?", scheme_kernel_symbol,
 						      2, -1),
 			     env);
   scheme_add_global_constant("string-ci>=?", 
 			     scheme_make_prim_w_arity(string_ci_gt_eq,
-						      "string-ci>=?",
+						      "string-ci>=?", scheme_kernel_symbol,
 						      2, -1),
 			     env);
   scheme_add_global_constant("substring", 
 			     scheme_make_prim_w_arity(substring,
-						      "substring", 
+						      "substring", scheme_kernel_symbol, 
 						      3, 3),
 			     env);
   scheme_add_global_constant("string-append", 
 			     scheme_make_prim_w_arity(string_append,
-						      "string-append", 
+						      "string-append", scheme_kernel_symbol, 
 						      0, -1),
 			     env);
   scheme_add_global_constant("string->list", 
 			     scheme_make_prim_w_arity(string_to_list,
-						      "string->list",
+						      "string->list", scheme_kernel_symbol,
 						      1, 1),
 			     env);
   scheme_add_global_constant("list->string", 
 			     scheme_make_prim_w_arity(list_to_string,
-						      "list->string",
+						      "list->string", scheme_kernel_symbol,
 						      1, 1),
 			     env);
   scheme_add_global_constant("string-copy", 
 			     scheme_make_prim_w_arity(string_copy,
-						      "string-copy",
+						      "string-copy", scheme_kernel_symbol,
 						      1, 1),
 			     env);
   scheme_add_global_constant("string-fill!", 
 			     scheme_make_prim_w_arity(string_fill,
-						      "string-fill!", 
+						      "string-fill!", scheme_kernel_symbol, 
 						      2, 2),
 			     env);
   scheme_add_global_constant("string->immutable-string", 
 			     scheme_make_prim_w_arity(string_to_immutable,
-						      "string->immutable-string",
+						      "string->immutable-string", scheme_kernel_symbol,
 						      1, 1),
 			     env);
   
 
   scheme_add_global_constant("format", 
 			     scheme_make_folding_prim(format,
-						      "format", 
+						      "format", scheme_kernel_symbol, 
 						      1, -1, 1),
 			     env);
   scheme_add_global_constant("printf", 
 			     scheme_make_prim_w_arity(sch_printf,
-						      "printf", 
+						      "printf", scheme_kernel_symbol, 
 						      1, -1),
 			     env);
   scheme_add_global_constant("fprintf", 
 			     scheme_make_prim_w_arity(sch_fprintf,
-						      "fprintf", 
+						      "fprintf", scheme_kernel_symbol, 
 						      2, -1),
 			     env);
   
@@ -247,23 +247,23 @@ scheme_init_string (Scheme_Env *env)
 
   scheme_add_global_constant("version", 
 			     scheme_make_prim_w_arity(version,
-						      "version", 
+						      "version", scheme_kernel_symbol, 
 						      0, 0),
 			     env);
   scheme_add_global_constant("banner", 
 			     scheme_make_prim_w_arity(banner,
-						      "banner", 
+						      "banner", scheme_kernel_symbol, 
 						      0, 0),
 			     env);
   
   scheme_add_global_constant("getenv", 
 			     scheme_make_prim_w_arity(sch_getenv,
-						      "getenv",
+						      "getenv", scheme_kernel_symbol,
 						      1, 1),
 			     env);
   scheme_add_global_constant("putenv", 
 			     scheme_make_prim_w_arity(sch_putenv,
-						      "putenv", 
+						      "putenv", scheme_kernel_symbol, 
 						      2, 2),
 			     env);
   
@@ -271,12 +271,12 @@ scheme_init_string (Scheme_Env *env)
 
   scheme_add_global_constant("system-type", 
 			     scheme_make_prim_w_arity(system_type,
-						      "system-type", 
+						      "system-type", scheme_kernel_symbol, 
 						      0, 0),
 			     env);
   scheme_add_global_constant("system-library-subpath",
 			     scheme_make_prim_w_arity(system_library_subpath,
-						      "system-library-subpath",
+						      "system-library-subpath", scheme_kernel_symbol,
 						      0, 0),
 			     env);
 }
@@ -383,7 +383,7 @@ scheme_alloc_string(int size, char fill)
   
   if (size < 0) {
     str = scheme_make_integer(size);
-    scheme_wrong_type("make-string", "non-negative exact integer",
+    scheme_wrong_type("make-string", scheme_kernel_symbol, "non-negative exact integer",
 		      -1, 0, &str);
   }
 
@@ -409,7 +409,7 @@ void scheme_out_of_string_range(const char *name, const char *which,
     int slen;
     
     sstr = scheme_make_provided_string(s, 2, &slen);
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
 		     scheme_make_integer(i),
 		     "%s: %sindex %s out of range [%d, %d] for string: %t",
 		     name, which,
@@ -417,7 +417,7 @@ void scheme_out_of_string_range(const char *name, const char *which,
 		     start, len,
 		     sstr, slen);
   } else {
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
 		     scheme_make_integer(i),
 		     "%s: %sindex %s out of range for empty string",
 		     name, which,
@@ -442,7 +442,7 @@ long scheme_extract_index(const char *name, int pos, int argc, Scheme_Object **a
     i = -1;
 
   if (!is_top && (i < 0))
-    scheme_wrong_type(name, "non-negative exact integer", pos, argc, argv);
+    scheme_wrong_type(name, scheme_kernel_symbol, "non-negative exact integer", pos, argc, argv);
   
   return i;
 }
@@ -471,7 +471,7 @@ make_string (int argc, Scheme_Object *argv[])
 
   if (argc == 2) {
     if (!SCHEME_CHARP(argv[1]))
-      scheme_wrong_type("make-string", "character", 1, argc, argv);
+      scheme_wrong_type("make-string", scheme_kernel_symbol, "character", 1, argc, argv);
     fill = SCHEME_CHAR_VAL(argv[1]);
   } else
     fill = 0;
@@ -490,7 +490,7 @@ string (int argc, Scheme_Object *argv[])
 
   for ( i=0 ; i<argc ; ++i ) {
     if (!SCHEME_CHARP (argv[i]))
-      scheme_wrong_type("string", "character", i, argc, argv);
+      scheme_wrong_type("string", scheme_kernel_symbol, "character", i, argc, argv);
     SCHEME_STR_VAL(str)[i] = SCHEME_CHAR_VAL(argv[i]);
   }
 
@@ -501,7 +501,7 @@ static Scheme_Object *
 string_length (int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("string-length", "string", 0, argc, argv);
+    scheme_wrong_type("string-length", scheme_kernel_symbol, "string", 0, argc, argv);
 
   return scheme_make_integer(SCHEME_STRTAG_VAL(argv[0]));
 }
@@ -513,7 +513,7 @@ string_ref (int argc, Scheme_Object *argv[])
   char *str;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("string-ref", "string", 0, argc, argv);
+    scheme_wrong_type("string-ref", scheme_kernel_symbol, "string", 0, argc, argv);
 
   str = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
@@ -535,7 +535,7 @@ string_set (int argc, Scheme_Object *argv[])
   char *str;
 
   if (!SCHEME_MUTABLE_STRINGP(argv[0]))
-    scheme_wrong_type("string-set!", "mutable-string", 0, argc, argv);
+    scheme_wrong_type("string-set!", scheme_kernel_symbol, "mutable-string", 0, argc, argv);
 
   str = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
@@ -543,7 +543,7 @@ string_set (int argc, Scheme_Object *argv[])
   i = scheme_extract_index("string-set!", 1, argc, argv, len);
 
   if (!SCHEME_CHARP(argv[2]))
-    scheme_wrong_type("string-set!", "character", 2, argc, argv);
+    scheme_wrong_type("string-set!", scheme_kernel_symbol, "character", 2, argc, argv);
 
   if (i >= len) {
     scheme_out_of_string_range("string-set!", "", argv[1], argv[0], 0, len - 1);
@@ -561,11 +561,11 @@ string_set (int argc, Scheme_Object *argv[])
 static Scheme_Object * name (int argc, Scheme_Object *argv[]) \
 {  char *s, *prev; int i, sl, pl; int falz = 0;\
    if (!SCHEME_STRINGP(argv[0])) \
-    scheme_wrong_type(scheme_name, "string", 0, argc, argv); \
+    scheme_wrong_type(scheme_name, scheme_kernel_symbol, "string", 0, argc, argv); \
    prev = SCHEME_STR_VAL(argv[0]); pl = SCHEME_STRTAG_VAL(argv[0]); \
    for (i = 1; i < argc; i++) { \
      if (!SCHEME_STRINGP(argv[i])) \
-      scheme_wrong_type(scheme_name, "string", i, argc, argv); \
+      scheme_wrong_type(scheme_name, scheme_kernel_symbol, "string", i, argc, argv); \
      s = SCHEME_STR_VAL(argv[i]); sl = SCHEME_STRTAG_VAL(argv[i]); \
      if (!falz) if (!(comp((unsigned char *)prev, pl, \
                            (unsigned char *)s, sl) op 0)) falz = 1; \
@@ -621,7 +621,7 @@ substring (int argc, Scheme_Object *argv[])
   Scheme_Object *str;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("substring", "string", 0, argc, argv);
+    scheme_wrong_type("substring", scheme_kernel_symbol, "string", 0, argc, argv);
 
   chars = SCHEME_STR_VAL(argv[0]);
 
@@ -650,9 +650,9 @@ string_append (int argc, Scheme_Object *argv[])
   if (argc == 2) {
     Scheme_Object *s1 = argv[0], *s2 = argv[1];
     if (!SCHEME_STRINGP(s1))
-      scheme_wrong_type("string-append", "string", 0, argc, argv);
+      scheme_wrong_type("string-append", scheme_kernel_symbol, "string", 0, argc, argv);
     if (!SCHEME_STRINGP(s2))
-      scheme_wrong_type("string-append", "string", 1, argc, argv);
+      scheme_wrong_type("string-append", scheme_kernel_symbol, "string", 1, argc, argv);
     return scheme_append_string(s1, s2);
   }
 
@@ -665,7 +665,7 @@ string_append (int argc, Scheme_Object *argv[])
   for (i = 0; i < argc; i++) {
     s = argv[i];
     if (!SCHEME_STRINGP(s))
-      scheme_wrong_type("string-append", "string", i, argc, argv);
+      scheme_wrong_type("string-append", scheme_kernel_symbol, "string", i, argc, argv);
     len += SCHEME_STRLEN_VAL(s);
   }
 
@@ -690,9 +690,9 @@ scheme_append_string(Scheme_Object *str1, Scheme_Object *str2)
   Scheme_Object *naya;
 
   if (!SCHEME_STRINGP(str1))
-    scheme_wrong_type("string-append", "string", -1, 0, &str1);
+    scheme_wrong_type("string-append", scheme_kernel_symbol, "string", -1, 0, &str1);
   if (!SCHEME_STRINGP(str2))
-    scheme_wrong_type("string-append", "string", -1, 0, &str2);
+    scheme_wrong_type("string-append", scheme_kernel_symbol, "string", -1, 0, &str2);
 
   chars1 = SCHEME_STR_VAL(str1);
   chars2 = SCHEME_STR_VAL(str2);
@@ -723,7 +723,7 @@ string_to_list (int argc, Scheme_Object *argv[])
   Scheme_Object *first, *last, *pair;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("string->list", "string", 0, argc, argv);
+    scheme_wrong_type("string->list", scheme_kernel_symbol, "string", 0, argc, argv);
 
   chars = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
@@ -755,7 +755,7 @@ list_to_string (int argc, Scheme_Object *argv[])
       ch = SCHEME_CAR (list);
 
       if (!SCHEME_CHARP(ch))
-	scheme_wrong_type("list->string", "proper character list", 0, 
+	scheme_wrong_type("list->string", scheme_kernel_symbol, "proper character list", 0, 
 			  argc, argv);
 
       SCHEME_STR_VAL(str)[i] = SCHEME_CHAR_VAL(ch);
@@ -764,7 +764,7 @@ list_to_string (int argc, Scheme_Object *argv[])
     }  
 
   if (!SCHEME_NULLP(list))
-    scheme_wrong_type("list->string", "proper character list", 0, argc, argv);
+    scheme_wrong_type("list->string", scheme_kernel_symbol, "proper character list", 0, argc, argv);
 
   return (str);
 }
@@ -775,7 +775,7 @@ string_copy (int argc, Scheme_Object *argv[])
   Scheme_Object *naya;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("string-copy", "string", 0, argc, argv);
+    scheme_wrong_type("string-copy", scheme_kernel_symbol, "string", 0, argc, argv);
 
   naya = scheme_make_sized_string(SCHEME_STR_VAL(argv[0]), 
 				  SCHEME_STRTAG_VAL(argv[0]), 1);
@@ -789,9 +789,9 @@ string_fill (int argc, Scheme_Object *argv[])
   char *chars, ch;
 
   if (!SCHEME_MUTABLE_STRINGP(argv[0]))
-    scheme_wrong_type("string-fill!", "mutable-string", 0, argc, argv);
+    scheme_wrong_type("string-fill!", scheme_kernel_symbol, "mutable-string", 0, argc, argv);
   if (!SCHEME_CHARP(argv[1]))
-    scheme_wrong_type("string-fill!", "character", 1, argc, argv);
+    scheme_wrong_type("string-fill!", scheme_kernel_symbol, "character", 1, argc, argv);
   
   chars = SCHEME_STR_VAL (argv[0]);
   ch = SCHEME_CHAR_VAL (argv[1]);
@@ -808,7 +808,7 @@ static Scheme_Object *string_to_immutable (int argc, Scheme_Object *argv[])
   Scheme_Object *s = argv[0];
 
   if (!SCHEME_STRINGP(s))
-    scheme_wrong_type("string->immutable-string", "string", 0, argc, argv);
+    scheme_wrong_type("string->immutable-string", scheme_kernel_symbol, "string", 0, argc, argv);
 
   if (SCHEME_MUTABLE_STRINGP(s)) {
     Scheme_Object *s2;
@@ -930,7 +930,7 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
 
   if (!format) {
     if (!SCHEME_STRINGP(argv[fpos])) {
-      scheme_wrong_type(procname, "format-string", fpos, argc, argv);
+      scheme_wrong_type(procname, scheme_kernel_symbol, "format-string", fpos, argc, argv);
       return;
     }
     format = (unsigned char *)SCHEME_STR_VAL(argv[fpos]);
@@ -991,14 +991,14 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
 	{
 	  char buffer[64];
 	  sprintf(buffer, "pattern-string (tag ~%c not allowed)", format[i]);
-	  scheme_wrong_type(procname, buffer, fpos, argc, argv);
+	  scheme_wrong_type(procname, scheme_kernel_symbol, buffer, fpos, argc, argv);
 	  return;
 	}
       }
     }
   }
   if ((format[end] == '~') && !end_ok) {
-    scheme_wrong_type(procname, "pattern-string (cannot end in ~)", fpos, argc, argv);
+    scheme_wrong_type(procname, scheme_kernel_symbol, "pattern-string (cannot end in ~)", fpos, argc, argv);
     return;
   }
   if (used != argc) {
@@ -1008,12 +1008,12 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
     args = scheme_make_args_string("", -1, argc, argv, &alen);
 
     if (used > argc) {
-      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
 		       argv[fpos],
 		       "%s: format string requires %d arguments, given %d%t",
 		       procname, used - offset, argc - offset, args, alen);
     } else {
-      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
 		       argv[fpos],
 		       "%s: format string requires %d arguments, given %d%t",
 		       procname, used - offset, argc - offset, args, alen);
@@ -1030,7 +1030,7 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
 
     args = scheme_make_args_string("other ", pos, argc, argv, &alen);
     bstr = scheme_make_provided_string(bad, 1, &blen);
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
 		     bad,
 		     "%s: format string requires argument of type <%s>, given %t%t",
 		     procname, type, 
@@ -1184,7 +1184,7 @@ static Scheme_Object *
 sch_fprintf(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_OUTPORTP(argv[0]))
-    scheme_wrong_type("fprintf", "output-port", 0, argc, argv);
+    scheme_wrong_type("fprintf", scheme_kernel_symbol, "output-port", 0, argc, argv);
 
   scheme_do_format("fprintf", argv[0], NULL, 0, 1, 2, argc, argv);
   return scheme_void;
@@ -1263,7 +1263,7 @@ static Scheme_Object *sch_getenv(int argc, Scheme_Object *argv[])
   char *s;
 
   if (!SCHEME_STRINGP(argv[0]) || scheme_string_has_null(argv[0]))
-    scheme_wrong_type("getenv", STRING_W_NO_NULLS, 0, argc, argv);
+    scheme_wrong_type("getenv", scheme_kernel_symbol, STRING_W_NO_NULLS, 0, argc, argv);
 
 #ifdef GETENV_FUNCTION
   s = getenv(SCHEME_STR_VAL(argv[0]));
@@ -1289,9 +1289,9 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
   long varlen, vallen;
 
   if (!SCHEME_STRINGP(argv[0]) || scheme_string_has_null(argv[0]))
-    scheme_wrong_type("putenv", STRING_W_NO_NULLS, 0, argc, argv);
+    scheme_wrong_type("putenv", scheme_kernel_symbol, STRING_W_NO_NULLS, 0, argc, argv);
   if (!SCHEME_STRINGP(argv[1]) || scheme_string_has_null(argv[1]))
-    scheme_wrong_type("putenv", STRING_W_NO_NULLS, 1, argc, argv);
+    scheme_wrong_type("putenv", scheme_kernel_symbol, STRING_W_NO_NULLS, 1, argc, argv);
 
   var = SCHEME_STR_VAL(argv[0]);
   val = SCHEME_STR_VAL(argv[1]);

@@ -77,7 +77,7 @@ static Scheme_Object *os_wxObject_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in object%", POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in object%", objscheme_modidx, POFFSET+0, POFFSET+0, n, p));
 
   
   realobj = WITH_VAR_STACK(new os_wxObject CONSTRUCTOR_ARGS(()));
@@ -118,7 +118,7 @@ int objscheme_istype_wxObject(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "object% object or " XC_NULL_STR: "object% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "object% object or " XC_NULL_STR: "object% object", -1, 0, &obj));
     return 0;
   }
 }

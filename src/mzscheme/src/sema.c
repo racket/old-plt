@@ -41,32 +41,32 @@ void scheme_init_sema(Scheme_Env *env)
 
   scheme_add_global_constant("make-semaphore", 
 			     scheme_make_prim_w_arity(make_sema,
-						      "make-semaphore", 
+						      "make-semaphore", scheme_kernel_symbol, 
 						      0, 1), 
 			     env);
   scheme_add_global_constant("semaphore?", 
 			     scheme_make_folding_prim(semap,
-						      "semaphore?", 
+						      "semaphore?", scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("semaphore-post", 
 			     scheme_make_prim_w_arity(hit_sema, 
-						      "semaphore-post", 
+						      "semaphore-post", scheme_kernel_symbol, 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("semaphore-try-wait?", 
 			     scheme_make_prim_w_arity(block_sema_p, 
-						      "semaphore-try-wait?", 
+						      "semaphore-try-wait?", scheme_kernel_symbol, 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("semaphore-wait", 
 			     scheme_make_prim_w_arity(block_sema, 
-						      "semaphore-wait", 
+						      "semaphore-wait", scheme_kernel_symbol, 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("semaphore-wait/enable-break", 
 			     scheme_make_prim_w_arity(block_sema_breakable, 
-						      "semaphore-wait/enable-break", 
+						      "semaphore-wait/enable-break", scheme_kernel_symbol, 
 						      1, 1), 
 			     env);
 
@@ -108,15 +108,15 @@ static Scheme_Object *make_sema(int n, Scheme_Object **p)
   if (n) {
     if (!SCHEME_INTP(p[0])) {
       if (!SCHEME_BIGNUMP(p[0]) || !SCHEME_BIGPOS(p[0]))
-	scheme_wrong_type("make-semaphore", "non-negative exact integer", 0, n, p);
+	scheme_wrong_type("make-semaphore", scheme_kernel_symbol, "non-negative exact integer", 0, n, p);
     }
 
     if (!scheme_get_int_val(p[0], &v)) {
-      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
 		       "make-semaphore: starting value %s is too large",
 		       scheme_make_provided_string(p[0], 0, NULL));
     } else if (v < 0)
-      scheme_wrong_type("make-semaphore", "non-negative exact integer", 0, n, p);
+      scheme_wrong_type("make-semaphore", scheme_kernel_symbol, "non-negative exact integer", 0, n, p);
   } else
     v = 0;
 
@@ -164,14 +164,14 @@ void scheme_post_sema(Scheme_Object *o)
   }
 #endif
 
-  scheme_raise_exn(MZEXN_MISC,
+  scheme_raise_exn(MZEXN_MISC, scheme_kernel_symbol,
 		   "semaphore-post: the maximum post count has already been reached");
 }
 
 static Scheme_Object *hit_sema(int n, Scheme_Object **p)
 {
   if (!SCHEME_SEMAP(p[0]))
-    scheme_wrong_type("semaphore-post", "semaphore", 0, n, p);
+    scheme_wrong_type("semaphore-post", scheme_kernel_symbol, "semaphore", 0, n, p);
 
   scheme_post_sema(p[0]);
 
@@ -380,7 +380,7 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 static Scheme_Object *block_sema_p(int n, Scheme_Object **p)
 {
   if (!SCHEME_SEMAP(p[0]))
-    scheme_wrong_type("semaphore-try-wait?", "sema", 0, n, p);
+    scheme_wrong_type("semaphore-try-wait?", scheme_kernel_symbol, "sema", 0, n, p);
 
   return scheme_wait_sema(p[0], 1) ? scheme_true : scheme_false;
 }
@@ -388,7 +388,7 @@ static Scheme_Object *block_sema_p(int n, Scheme_Object **p)
 static Scheme_Object *block_sema(int n, Scheme_Object **p)
 {
   if (!SCHEME_SEMAP(p[0]))
-    scheme_wrong_type("semaphore-wait", "sema", 0, n, p);
+    scheme_wrong_type("semaphore-wait", scheme_kernel_symbol, "sema", 0, n, p);
 
   scheme_wait_sema(p[0], 0);
 
@@ -398,7 +398,7 @@ static Scheme_Object *block_sema(int n, Scheme_Object **p)
 static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p)
 {
   if (!SCHEME_SEMAP(p[0]))
-    scheme_wrong_type("semaphore-wait/enable-break", "sema", 0, n, p);
+    scheme_wrong_type("semaphore-wait/enable-break", scheme_kernel_symbol, "sema", 0, n, p);
 
   scheme_wait_sema(p[0], -1);
 

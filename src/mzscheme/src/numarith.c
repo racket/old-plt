@@ -38,52 +38,52 @@ void scheme_init_numarith(Scheme_Env *env)
 {
   scheme_add_global_constant("add1", 
 			     scheme_make_folding_prim(scheme_add1,
-						      "add1",
+						      "add1", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("sub1", 
 			     scheme_make_folding_prim(scheme_sub1,
-						      "sub1",
+						      "sub1", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("+", 
 			     scheme_make_folding_prim(plus,
-						      "+", 
+						      "+", scheme_kernel_symbol, 
 						      0, -1, 1),
 			     env);
   scheme_add_global_constant("-", 
 			     scheme_make_folding_prim(minus,
-						      "-",
+						      "-", scheme_kernel_symbol,
 						      1, -1, 1),
 			     env);
   scheme_add_global_constant("*", 
 			     scheme_make_folding_prim(mult,
-						      "*", 
+						      "*", scheme_kernel_symbol, 
 						      0, -1, 1),
 			     env);
   scheme_add_global_constant("/", 
 			     scheme_make_folding_prim(div_prim,
-						      "/",
+						      "/", scheme_kernel_symbol,
 						      1, -1, 1),
 			     env);
   scheme_add_global_constant("abs", 
 			     scheme_make_folding_prim(scheme_abs,
-						      "abs",
+						      "abs", scheme_kernel_symbol,
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("quotient", 
 			     scheme_make_folding_prim(quotient,
-						      "quotient", 
+						      "quotient", scheme_kernel_symbol, 
 						      2, 2, 1),
 			     env);
   scheme_add_global_constant("remainder", 
 			     scheme_make_folding_prim(rem_prim,
-						      "remainder", 
+						      "remainder", scheme_kernel_symbol, 
 						      2, 2, 1),
 			     env);
   scheme_add_global_constant("modulo", 
 			     scheme_make_folding_prim(scheme_modulo,
-						      "modulo", 
+						      "modulo", scheme_kernel_symbol, 
 						      2, 2, 1),
 			     env);
 }
@@ -245,7 +245,7 @@ minus (int argc, Scheme_Object *argv[])
 
   ret = argv[0];
   if (!SCHEME_NUMBERP(ret)) {
-    scheme_wrong_type("-", "number", 0, argc, argv);
+    scheme_wrong_type("-", scheme_kernel_symbol, "number", 0, argc, argv);
     ESCAPED_BEFORE_HERE;
   }
   if (argc == 1) {
@@ -261,7 +261,7 @@ minus (int argc, Scheme_Object *argv[])
   for (i = 1; i < argc; i++) {
     Scheme_Object *o = argv[i];
     if (!SCHEME_NUMBERP(o)) {
-      scheme_wrong_type("-", "number", i, argc, argv);
+      scheme_wrong_type("-", scheme_kernel_symbol, "number", i, argc, argv);
       ESCAPED_BEFORE_HERE;
     }
     ret = scheme_bin_minus(ret, o);
@@ -277,14 +277,14 @@ div_prim (int argc, Scheme_Object *argv[])
 
   ret = argv[0];
   if (!SCHEME_NUMBERP(ret)) {
-    scheme_wrong_type("/", "number", 0, argc, argv);
+    scheme_wrong_type("/", scheme_kernel_symbol, "number", 0, argc, argv);
     ESCAPED_BEFORE_HERE;
   }
   if (argc == 1) {
     if (ret != zeroi)
       return scheme_bin_div(scheme_make_integer(1), ret);
     else {
-      scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, ret,
+      scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, scheme_kernel_symbol, ret,
 		       "/: division by zero");
       ESCAPED_BEFORE_HERE;
     }
@@ -293,14 +293,14 @@ div_prim (int argc, Scheme_Object *argv[])
     Scheme_Object *o = argv[i];
 
     if (!SCHEME_NUMBERP(o)) {
-      scheme_wrong_type("/", "number", i, argc, argv);
+      scheme_wrong_type("/", scheme_kernel_symbol, "number", i, argc, argv);
       ESCAPED_BEFORE_HERE;
     }
 
     if (o != zeroi)
       ret = scheme_bin_div(ret, o);
     else {
-      scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, o,
+      scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, scheme_kernel_symbol, o,
 		       "/: division by zero");
       ESCAPED_BEFORE_HERE;
     }
@@ -359,27 +359,27 @@ scheme_bin_quotient (const Scheme_Object *n1, const Scheme_Object *n2)
     Scheme_Object *a[2];
     a[0] = (Scheme_Object *)n1;
     a[1] = (Scheme_Object *)n2;
-    scheme_wrong_type("quotient", "integer", 0, 2, a);
+    scheme_wrong_type("quotient", scheme_kernel_symbol, "integer", 0, 2, a);
   }
   if (!scheme_is_integer(n2)) {
     Scheme_Object *a[2];
     a[0] = (Scheme_Object *)n1;
     a[1] = (Scheme_Object *)n2;
-    scheme_wrong_type("quotient", "integer", 1, 2, a);
+    scheme_wrong_type("quotient", scheme_kernel_symbol, "integer", 1, 2, a);
   }
 
   if (SCHEME_COMPLEX_IZIP(n1)) n1 = IZI_REAL_PART(n1);
   if (SCHEME_COMPLEX_IZIP(n2)) n2 = IZI_REAL_PART(n2);
 
   if (SCHEME_INTP(n2) && !SCHEME_INT_VAL(n2))
-    scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, n2,
+    scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, scheme_kernel_symbol, n2,
 		     "quotient: undefined for 0");
   if (
 #ifdef MZ_USE_SINGLE_FLOATS
       (SCHEME_FLTP(n2) && (SCHEME_FLT_VAL(n2) == 0.0f)) ||
 #endif
       (SCHEME_DBLP(n2) && (SCHEME_DBL_VAL(n2) == 0.0)))
-    scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, n2,
+    scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, scheme_kernel_symbol, n2,
 		     "quotient: undefined for 0.0");
 
   if (SCHEME_INTP(n1) && SCHEME_INTP(n2)) {
@@ -465,15 +465,15 @@ rem_mod (int argc, Scheme_Object *argv[], char *name, int first_sign)
   n2 = argv[1];
 
   if (!scheme_is_integer(n1))
-    scheme_wrong_type(name, "integer", 0, argc, argv);
+    scheme_wrong_type(name, scheme_kernel_symbol, "integer", 0, argc, argv);
   if (!scheme_is_integer(n2))
-    scheme_wrong_type(name, "integer", 1, argc, argv);
+    scheme_wrong_type(name, scheme_kernel_symbol, "integer", 1, argc, argv);
 
   if (SCHEME_COMPLEX_IZIP(n1)) n1 = IZI_REAL_PART(n1);
   if (SCHEME_COMPLEX_IZIP(n2)) n2 = IZI_REAL_PART(n2);
 
   if (SCHEME_INTP(n2) && !SCHEME_INT_VAL(n2))
-    scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, n2,
+    scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, scheme_kernel_symbol, n2,
 		     "%s: undefined for 0", name);
   if (
 #ifdef MZ_USE_SINGLE_FLOATS
@@ -482,7 +482,7 @@ rem_mod (int argc, Scheme_Object *argv[], char *name, int first_sign)
       (SCHEME_DBLP(n2) && (SCHEME_DBL_VAL(n2) == 0.0))) {
     int neg;
     neg = scheme_minus_zero_p(SCHEME_FLOAT_VAL(n2));
-    scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, n2,
+    scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, scheme_kernel_symbol, n2,
 		     "%s: undefined for %s0.0",
 		     name,
 		     neg ? "-" : "");

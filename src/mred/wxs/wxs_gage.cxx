@@ -109,7 +109,7 @@ static int unbundle_symset_gaugeStyle(Scheme_Object *v, const char *where) {
   l = SCHEME_CDR(l);
   }
   if (SCHEME_NULLP(l)) return result;
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "gaugeStyle symbol list", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "gaugeStyle symbol list", -1, 0, &v));
   return 0;
 }
 
@@ -621,7 +621,7 @@ static Scheme_Object *os_wxsGauge_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if ((n < (POFFSET+3)) || (n > (POFFSET+9))) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in gauge%", POFFSET+3, POFFSET+9, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in gauge%", objscheme_modidx, POFFSET+3, POFFSET+9, n, p));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in gauge%", 0));
   x1 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+1], "initialization in gauge%"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+2], "initialization in gauge%"));
@@ -699,7 +699,7 @@ int objscheme_istype_wxsGauge(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "gauge% object or " XC_NULL_STR: "gauge% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "gauge% object or " XC_NULL_STR: "gauge% object", -1, 0, &obj));
     return 0;
   }
 }

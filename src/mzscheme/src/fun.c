@@ -139,61 +139,61 @@ scheme_init_fun (Scheme_Env *env)
   scheme_tail_call_waiting->type = scheme_tail_call_waiting_type;
 #endif
 
-  scheme_void_func = scheme_make_folding_prim(void_func, "void", 0, -1, 1);
+  scheme_void_func = scheme_make_folding_prim(void_func, "void", scheme_kernel_symbol, 0, -1, 1);
 
   scheme_add_global_constant("procedure?", 
 			     scheme_make_folding_prim(procedure_p, 
-						      "procedure?", 
+						      "procedure?", scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("apply", 
 			     scheme_make_prim_w_arity2(apply,  
-						       "apply", 
+						       "apply", scheme_kernel_symbol, 
 						       2, -1,
 						       0, -1), 
 			     env);
   scheme_add_global_constant("map", 
 			     scheme_make_prim_w_arity(map,  
-						      "map", 
+						      "map", scheme_kernel_symbol, 
 						      2, -1), 
 			     env);
   scheme_add_global_constant("for-each", 
 			     scheme_make_prim_w_arity(for_each,  
-						      "for-each", 
+						      "for-each", scheme_kernel_symbol, 
 						      2, -1), 
 			     env);
   scheme_add_global_constant("andmap", 
 			     scheme_make_prim_w_arity(andmap,  
-						      "andmap", 
+						      "andmap", scheme_kernel_symbol, 
 						      2, -1), 
 			     env);
   scheme_add_global_constant("ormap", 
 			     scheme_make_prim_w_arity(ormap,  
-						      "ormap", 
+						      "ormap", scheme_kernel_symbol, 
 						      2, -1), 
 			     env);
   scheme_add_global_constant("call-with-values",
 			     scheme_make_prim_w_arity2(call_with_values,  
-						       "call-with-values",
+						       "call-with-values", scheme_kernel_symbol,
 						       2, 2,
 						       0, -1),
 			     env);
   scheme_add_global_constant("values",
 			     scheme_make_prim_w_arity2(scheme_values,  
-						       "values",
+						       "values", scheme_kernel_symbol,
 						       0, -1,
 						       0, -1),
 			     env);
 
   o = scheme_make_prim_w_arity2(scheme_call_ec,  
-				"call-with-escape-continuation",
+				"call-with-escape-continuation", scheme_kernel_symbol,
 				1, 1,
 				0, -1), 
   scheme_add_global_constant("call-with-escape-continuation", o, env);
   scheme_add_global_constant("call/ec", o, env);  
 
   o = scheme_make_prim_w_arity2(call_cc,  
-				"call-with-current-continuation", 
+				"call-with-current-continuation", scheme_kernel_symbol, 
 				1, 1,
 				0, -1);
   
@@ -202,113 +202,113 @@ scheme_init_fun (Scheme_Env *env)
 
   scheme_add_global_constant("current-continuation-marks", 
 			     scheme_make_prim_w_arity(cc_marks,  
-						      "current-continuation-marks", 
+						      "current-continuation-marks", scheme_kernel_symbol, 
 						      0, 0),
 			     env);
   scheme_add_global_constant("continuation-marks", 
 			     scheme_make_prim_w_arity(cont_marks,  
-						      "continuation-marks", 
+						      "continuation-marks", scheme_kernel_symbol, 
 						      1, 1),
 			     env);
   scheme_add_global_constant("continuation-mark-set->list", 
 			     scheme_make_prim_w_arity(extract_cc_marks,  
-						      "continuation-mark-set->list", 
+						      "continuation-mark-set->list", scheme_kernel_symbol, 
 						      2, 2),
 			     env);
   scheme_add_global_constant("continuation-mark-set?", 
 			     scheme_make_prim_w_arity(cc_marks_p,
-						      "continuation-mark-set?", 
+						      "continuation-mark-set?", scheme_kernel_symbol, 
 						      1, 1),
 			     env);
 
   scheme_add_global_constant("void", scheme_void_func, env);  
   scheme_add_global_constant("void?", 
 			     scheme_make_folding_prim(is_void_func,  
-						      "void?", 
+						      "void?", scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);  
 #ifdef TIME_SYNTAX
   scheme_add_global_constant("time-apply", 
 			     scheme_make_prim_w_arity2(time_apply,  
-						       "time-apply", 
+						       "time-apply", scheme_kernel_symbol, 
 						       2, 2,
 						       4, 4), 
 			     env);
   scheme_add_global_constant("current-milliseconds",
 			     scheme_make_prim_w_arity(current_milliseconds,
-						      "current-milliseconds",
+						      "current-milliseconds", scheme_kernel_symbol,
 						      0, 0),
 			     env);
   scheme_add_global_constant("current-process-milliseconds",
 			     scheme_make_prim_w_arity(current_process_milliseconds,
-						      "current-process-milliseconds",
+						      "current-process-milliseconds", scheme_kernel_symbol,
 						      0, 0),
 			     env);
   scheme_add_global_constant("current-gc-milliseconds",
 			     scheme_make_prim_w_arity(current_gc_milliseconds,
-						      "current-gc-milliseconds",
+						      "current-gc-milliseconds", scheme_kernel_symbol,
 						      0, 0),
 			     env);
   scheme_add_global_constant("current-seconds",
 			     scheme_make_prim_w_arity(current_seconds,
-						      "current-seconds",
+						      "current-seconds", scheme_kernel_symbol,
 						      0, 0),
 			     env);
   scheme_add_global_constant("seconds->date",
 			     scheme_make_prim_w_arity(seconds_to_date,
-						      "seconds->date",
+						      "seconds->date", scheme_kernel_symbol,
 						      1, 1),
 			     env);
 #endif
 
   scheme_add_global_constant("dynamic-wind", 
 			     scheme_make_prim_w_arity(dynamic_wind,  
-						      "dynamic-wind", 
+						      "dynamic-wind", scheme_kernel_symbol, 
 						      3, 3), 
 			     env);
 
   scheme_add_global_constant("object-name", 
 			     scheme_make_folding_prim(object_name,  
-						      "object-name",
+						      "object-name", scheme_kernel_symbol,
 						      1, 1, 1), 
 			     env);
 
   scheme_add_global_constant("procedure-arity", 
 			     scheme_make_folding_prim(procedure_arity,  
-						      "procedure-arity", 
+						      "procedure-arity", scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("procedure-arity-includes?", 
 			     scheme_make_folding_prim(procedure_arity_includes,  
-						      "procedure-arity-includes?", 
+						      "procedure-arity-includes?", scheme_kernel_symbol, 
 						      2, 2, 1), 
 			     env);
 
   scheme_add_global_constant("primitive?", 
 			     scheme_make_folding_prim(primitive_p, 
-						      "primitive?", 
+						      "primitive?", scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("primitive-closure?", 
 			     scheme_make_folding_prim(primitive_closure_p, 
-						      "primitive-closure?", 
+						      "primitive-closure?", scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);
 
   scheme_add_global_constant("primitive-result-arity", 
 			     scheme_make_folding_prim(primitive_result_arity, 
-						      "primitive-result-arity", 
+						      "primitive-result-arity", scheme_kernel_symbol, 
 						      1, 1, 1), 
 			     env);
 
   scheme_add_global_constant("current-print",
 			     scheme_register_parameter(current_print, 
-						       "current-print",
+						       "current-print", scheme_kernel_symbol,
 						       MZCONFIG_PRINT_HANDLER),
 			     env);
   scheme_add_global_constant("current-prompt-read",
 			     scheme_register_parameter(current_prompt_read, 
-						       "current-prompt-read",
+						       "current-prompt-read", scheme_kernel_symbol,
 						       MZCONFIG_PROMPT_READ_HANDLER),
 			     env);
 
@@ -348,8 +348,8 @@ scheme_force_value(Scheme_Object *obj)
 }
 
 Scheme_Object *
-scheme_make_prim_w_everything(Scheme_Prim *fun, int eternal,
-			      const char *name,
+scheme_make_prim_w_everything(Scheme_Prim *fun,
+			      const char *name, Scheme_Object *modidx,
 			      short mina, short maxa,
 			      short folding,
 			      short minr, short maxr)
@@ -360,7 +360,7 @@ scheme_make_prim_w_everything(Scheme_Prim *fun, int eternal,
   hasr = ((minr != 1) || (maxr != 1));
   size = hasr ? sizeof(Scheme_Prim_W_Result_Arity) : sizeof(Scheme_Primitive_Proc);
 
-  if (eternal && scheme_starting_up)
+  if (scheme_starting_up)
     prim = (Scheme_Primitive_Proc *)scheme_malloc_eternal_tagged(size);
   else
     prim = (Scheme_Primitive_Proc *)scheme_malloc_tagged(size);
@@ -383,42 +383,28 @@ scheme_make_prim_w_everything(Scheme_Prim *fun, int eternal,
 
 Scheme_Object *scheme_make_prim(Scheme_Prim *fun)
 {
-  return scheme_make_prim_w_everything(fun, 1, NULL, 0, -1, 0, 1, 1);
+  return scheme_make_prim_w_everything(fun, NULL, NULL, 0, -1, 0, 1, 1);
 }
 
 Scheme_Object *
-scheme_make_noneternal_prim (Scheme_Prim *fun)
-{
-  return scheme_make_prim_w_everything(fun, 0, NULL, 0, -1, 0, 1, 1);
-}
-
-Scheme_Object *
-scheme_make_prim_w_arity(Scheme_Prim *fun, const char *name, 
+scheme_make_prim_w_arity(Scheme_Prim *fun, const char *name, Scheme_Object *modidx,
 			 short mina, short maxa)
 {
-  return scheme_make_prim_w_everything(fun, 1, name, mina, maxa, 0, 1, 1);
+  return scheme_make_prim_w_everything(fun, name, modidx, mina, maxa, 0, 1, 1);
 }
 
 Scheme_Object *
-scheme_make_folding_prim(Scheme_Prim *fun, const char *name, 
+scheme_make_folding_prim(Scheme_Prim *fun, const char *name, Scheme_Object *modidx,
 			 short mina, short maxa,
 			 short folding)
 {
-  return scheme_make_prim_w_everything(fun, 1, name, mina, maxa, 
-				       folding, 1, 1);
-}
-
-Scheme_Object *
-scheme_make_noneternal_prim_w_arity(Scheme_Prim *fun, const char *name,
-				    short mina, short maxa)
-{
-  return scheme_make_prim_w_everything(fun, 0, name, mina, maxa, 0, 1, 1);
+  return scheme_make_prim_w_everything(fun, name, modidx, mina, maxa, folding, 1, 1);
 }
 
 Scheme_Object *
 scheme_make_closed_prim_w_everything(Scheme_Closed_Prim *fun, 
 				     void *data,
-				     const char *name, 
+				     const char *name,  Scheme_Object *modidx,
 				     short mina, short maxa,
 				     short folding,
 				     short minr, short maxr)
@@ -452,24 +438,25 @@ scheme_make_closed_prim_w_everything(Scheme_Closed_Prim *fun,
 Scheme_Object *
 scheme_make_folding_closed_prim(Scheme_Closed_Prim *fun, 
 				void *data,
-				const char *name, 
+				const char *name, Scheme_Object *modidx,
 				short mina, short maxa,
 				short folding)
 {
-  return scheme_make_closed_prim_w_everything(fun, data, name, mina, maxa, folding, 1, 1);
+  return scheme_make_closed_prim_w_everything(fun, data, name, modidx, mina, maxa, folding, 1, 1);
 }
 
 Scheme_Object *
 scheme_make_closed_prim_w_arity(Scheme_Closed_Prim *fun, void *data,
-				const char *name, short mina, short maxa)
+				const char *name, Scheme_Object *modidx,
+				short mina, short maxa)
 {
-  return scheme_make_closed_prim_w_everything(fun, data, name, mina, maxa, 0, 1, 1);
+  return scheme_make_closed_prim_w_everything(fun, data, name, modidx, mina, maxa, 0, 1, 1);
 }
 
 Scheme_Object *
 scheme_make_closed_prim(Scheme_Closed_Prim *fun, void *data)
 {
-  return scheme_make_closed_prim_w_everything(fun, data, NULL, 0, -1, 0, 1, 1);
+  return scheme_make_closed_prim_w_everything(fun, data, NULL, NULL, 0, -1, 0, 1, 1);
 }
 
 Scheme_Object *
@@ -1159,7 +1146,7 @@ scheme_apply_macro(Scheme_Object *name,
   code = scheme_apply(rator, 1, rands_vec);
 
   if (!SCHEME_STXP(code)) {
-    scheme_raise_exn(MZEXN_MISC,
+    scheme_raise_exn(MZEXN_MISC, scheme_kernel_symbol,
 		     "%S: return value from syntax expander was not syntax",
 		     SCHEME_STX_SYM(name));
   }
@@ -1205,7 +1192,7 @@ static Scheme_Object *primitive_closure_p(int argc, Scheme_Object *argv[])
   return isprim ? scheme_true : scheme_false;
 }
 
-const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
+const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error, Scheme_Object **srcmod)
 {
   Scheme_Type type;
   int dummy;
@@ -1214,12 +1201,16 @@ const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
   if (!len)
     len = &dummy;
 
+  if (srcmod) *srcmod = NULL;
+
   type = SCHEME_TYPE(p);
   if (type == scheme_prim_type) {
     *len = strlen(((Scheme_Primitive_Proc *)p)->name);
+    if (srcmod) *srcmod = ((Scheme_Primitive_Proc *)p)->srcmod;
     return ((Scheme_Primitive_Proc *)p)->name;
   } else if (type == scheme_closed_prim_type) {
     *len = strlen(((Scheme_Closed_Primitive_Proc *)p)->name);
+    if (srcmod) *srcmod = ((Scheme_Closed_Primitive_Proc *)p)->srcmod;
     return ((Scheme_Closed_Primitive_Proc *)p)->name;
   } else if (type == scheme_cont_type || type == scheme_escaping_cont_type) {
     return NULL;
@@ -1228,8 +1219,15 @@ const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
 
     seq = (Scheme_Case_Lambda *)p;
     if (seq->name) {
-      *len = SCHEME_SYM_LEN(seq->name);
-      s = scheme_symbol_val(seq->name);
+      Scheme_Object *name;
+      if (SCHEME_PAIRP(seq->name)) {
+	name = SCHEME_CAR(seq->name);
+	if (srcmod) *srcmod = SCHEME_CDR(seq->name);
+      } else
+	name = seq->name;
+	
+      *len = SCHEME_SYM_LEN(name);
+      s = scheme_symbol_val(name);
     } else
       return NULL;
   } else {
@@ -1237,8 +1235,15 @@ const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
 
     data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(p);
     if (data->name) {
-      *len = SCHEME_SYM_LEN(data->name);
-      s = scheme_symbol_val(data->name);
+      Scheme_Object *name;
+      if (SCHEME_PAIRP(data->name)) {
+	name = SCHEME_CAR(data->name);
+	if (srcmod) *srcmod = SCHEME_CDR(data->name);
+      } else
+	name = data->name;
+
+      *len = SCHEME_SYM_LEN(name);
+      s = scheme_symbol_val(name);
     } else
       return NULL;
   }
@@ -1276,7 +1281,7 @@ static Scheme_Object *primitive_result_arity(int argc, Scheme_Object *argv[])
       return scheme_make_arity(p->minr, p->maxr);
     }
   } else {
-    scheme_wrong_type("primitive-result_arity", "primitive", 0, argc, argv);
+    scheme_wrong_type("primitive-result_arity", scheme_kernel_symbol, "primitive", 0, argc, argv);
     return NULL;
   }
 
@@ -1289,7 +1294,7 @@ static Scheme_Object *object_name(int argc, Scheme_Object **argv)
     const char *s;
     int len;
 
-    s = scheme_get_proc_name(argv[0], &len, 0);
+    s = scheme_get_proc_name(argv[0], &len, 0, NULL);
     if (s) 
       return scheme_intern_exact_symbol(s, len);
   } else if (SCHEME_STRUCTP(argv[0])) {
@@ -1454,7 +1459,7 @@ int scheme_check_proc_arity(const char *where, int a,
       
       sprintf(buffer, "procedure (arity %d)", a);
       
-      scheme_wrong_type(where, buffer, which, argc, argv);
+      scheme_wrong_type(where, scheme_kernel_symbol, buffer, which, argc, argv);
     } else
       return 0;
   }
@@ -1470,7 +1475,7 @@ Scheme_Object *scheme_arity(Scheme_Object *p)
 static Scheme_Object *procedure_arity(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_PROCP(argv[0]))
-    scheme_wrong_type("procedure-arity", "procedure", 0, argc, argv);
+    scheme_wrong_type("procedure-arity", scheme_kernel_symbol, "procedure", 0, argc, argv);
   
   return get_or_check_arity(argv[0], -1);
 }
@@ -1480,7 +1485,7 @@ static Scheme_Object *procedure_arity_includes(int argc, Scheme_Object *argv[])
   long n;
 
   if (!SCHEME_PROCP(argv[0]))
-    scheme_wrong_type("procedure-arity-includes?", "procedure", 0, argc, argv);
+    scheme_wrong_type("procedure-arity-includes?", scheme_kernel_symbol, "procedure", 0, argc, argv);
 
   n = scheme_extract_index("procedure-arity-includes?", 1, argc, argv, -2);
   
@@ -1496,7 +1501,7 @@ apply(int argc, Scheme_Object *argv[])
   Scheme_Thread *p = scheme_current_thread;
 
   if (!SCHEME_PROCP(argv[0])) {
-    scheme_wrong_type("apply", "procedure", 0, argc, argv);
+    scheme_wrong_type("apply", scheme_kernel_symbol, "procedure", 0, argc, argv);
     return NULL;
   }
 
@@ -1504,7 +1509,7 @@ apply(int argc, Scheme_Object *argv[])
 
   num_rands = scheme_proper_list_length(rands);
   if (num_rands < 0) {
-    scheme_wrong_type("apply", "proper list", argc - 1, argc, argv);
+    scheme_wrong_type("apply", scheme_kernel_symbol, "proper list", argc - 1, argc, argv);
     return NULL;
   }
   num_rands += (argc - 2);
@@ -1540,16 +1545,16 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
   can_multi = (!make_result && !and_mode && !or_mode);
 
   if (!SCHEME_PROCP(argv[0]))
-    scheme_wrong_type(name, "procedure", 0, argc, argv);
+    scheme_wrong_type(name, scheme_kernel_symbol, "procedure", 0, argc, argv);
 
   for (i = 1; i < argc; i++) {
     if (!SCHEME_LISTP (argv[i]))
-      scheme_wrong_type(name, "list", i, argc, argv);
+      scheme_wrong_type(name, scheme_kernel_symbol, "list", i, argc, argv);
 
     l = scheme_proper_list_length(argv[i]);
 
     if (l < 0)
-      scheme_wrong_type(name, "proper list", i, argc, argv);
+      scheme_wrong_type(name, scheme_kernel_symbol, "proper list", i, argc, argv);
     
     if (i == 1)
       size = l;
@@ -1559,7 +1564,7 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
 
       argstr = scheme_make_args_string("", -1, argc, argv, &alen);
 
-      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[i],
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol, argv[i],
 		       "%s: all lists must have same size%t", 
 		       name, argstr, alen);
       return NULL;
@@ -1572,7 +1577,7 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
 
     s = scheme_make_arity_expect_string(argv[0], argc - 1, NULL, &aelen);
 
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[0],
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol, argv[0],
 		     "%s: arity mismatch for %t", name, 
 		     s, aelen);
     return NULL;
@@ -1666,7 +1671,7 @@ static Scheme_Object *call_with_values(int argc, Scheme_Object *argv[])
 
   scheme_check_proc_arity("call-with-values", 0, 0, argc, argv);
   if (!SCHEME_PROCP(argv[1]))
-    scheme_wrong_type("call-with-values", "procedure", 1, argc, argv);
+    scheme_wrong_type("call-with-values", scheme_kernel_symbol, "procedure", 1, argc, argv);
 
   v = _scheme_apply_multi(argv[0], 0, NULL);
   if (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES)) {
@@ -2068,11 +2073,11 @@ static Scheme_Object *
 cont_marks(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_CONTP(argv[0]) && !SCHEME_ECONTP(argv[0]))
-    scheme_wrong_type("continuation-marks", "continuation", 1, argc, argv);
+    scheme_wrong_type("continuation-marks", scheme_kernel_symbol, "continuation", 1, argc, argv);
 
   if (SCHEME_ECONTP(argv[0])) {
     if (!SCHEME_CONT_HOME(argv[0])) {
-      scheme_arg_mismatch("continuation-marks", 
+      scheme_arg_mismatch("continuation-marks", scheme_kernel_symbol, 
 			  "escape continuation no long applicable: ",
 			  argv[0]);
     }
@@ -2098,7 +2103,7 @@ extract_cc_marks(int argc, Scheme_Object *argv[])
   Scheme_Object *first = scheme_null, *last = NULL, *key;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_cont_mark_set_type))
-    scheme_wrong_type("continuation-mark-set->list", "continuation-mark-set", 0, argc, argv);
+    scheme_wrong_type("continuation-mark-set->list", scheme_kernel_symbol, "continuation-mark-set", 0, argc, argv);
   chain = ((Scheme_Cont_Mark_Set *)argv[0])->chain;
   key = argv[1];
 
@@ -2418,7 +2423,7 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
   secs = argv[0];
 
   if (!SCHEME_INTP(secs) && !SCHEME_BIGNUMP(secs)) {
-    scheme_wrong_type("seconds->date", "exact integer", 0, argc, argv);
+    scheme_wrong_type("seconds->date", scheme_kernel_symbol, "exact integer", 0, argc, argv);
     return NULL;
   }
 
@@ -2554,7 +2559,7 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
     }
   }
 
-  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
 		   secs,
 		   "seconds->date: integer %s is out-of-range",
 		   scheme_make_provided_string(secs, 0, NULL));
@@ -2572,7 +2577,7 @@ static Scheme_Object *time_apply(int argc, Scheme_Object *argv[])
   Scheme_Object *v, *p[4], **rand_vec, *rands, *r;
 
   if (!SCHEME_PROCP(argv[0]))
-    scheme_wrong_type("time-apply", "procedure", 0, argc, argv);
+    scheme_wrong_type("time-apply", scheme_kernel_symbol, "procedure", 0, argc, argv);
 
   rands = argv[1];
 
@@ -2580,7 +2585,7 @@ static Scheme_Object *time_apply(int argc, Scheme_Object *argv[])
   r = rands;
   while (!SCHEME_NULLP(r)) {
     if (!SCHEME_PAIRP(r))
-      scheme_wrong_type("time-apply", "proper list", 1, argc, argv);
+      scheme_wrong_type("time-apply", scheme_kernel_symbol, "proper list", 1, argc, argv);
     r = SCHEME_CDR(r);
     num_rands++;
   }
@@ -2591,7 +2596,7 @@ static Scheme_Object *time_apply(int argc, Scheme_Object *argv[])
 
     s = scheme_make_arity_expect_string(argv[0], num_rands, NULL, &aelen);
 
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[0],
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol, argv[0],
 		     "time-apply: arity mismatch for %t", 
 		     s, aelen);
     return NULL;

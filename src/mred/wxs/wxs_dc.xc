@@ -149,7 +149,7 @@ static void* MyGetOrigin(wxDC *dc)
   return WITH_VAR_STACK(scheme_values(2, a));
 }
 
-@MACRO CheckStringIndex[n.s.i] = if (x<i> > SCHEME_STRLEN_VAL(p[POFFSET+<s>])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>",<n>), "string index too large: ", p[POFFSET+<i>]));
+@MACRO CheckStringIndex[n.s.i] = if (x<i> > SCHEME_STRLEN_VAL(p[POFFSET+<s>])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>",<n>), objscheme_modidx, "string index too large: ", p[POFFSET+<i>]));
 
 @CLASSBASE wxDC "dc":"object"
 @INTERFACE "dc"
@@ -251,7 +251,7 @@ public:
 
 basePrinterDC::basePrinterDC(wxWindow *)
 {
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, objscheme_modidx, 
 		   "%s", 
 		   METHODNAME("printer-dc%","initialization")": not supported for X Windows");
 }

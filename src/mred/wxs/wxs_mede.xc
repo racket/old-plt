@@ -113,7 +113,7 @@
 @ "get-top-line-base" : float GetTopLineBase(); : : : : XrZERO
 
 @MACRO setStringLen[i.s] = x<i> = SCHEME_STRTAG_VAL(p[POFFSET+<s>]);
-@MACRO checkStringLen[i.s] = if ((x<i> < 0) || (x<i> > SCHEME_STRTAG_VAL(p[POFFSET+<s>]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[POFFSET+<i>]));
+@MACRO checkStringLen[i.s] = if ((x<i> < 0) || (x<i> > SCHEME_STRTAG_VAL(p[POFFSET+<s>]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), objscheme_modidx, "bad string length: ", p[POFFSET+<i>]));
 
 @ "insert" : void Insert(-long,string,nnlong,nnls[same]=-1,bool=TRUE);  : : /setStringLen[0.0] <> string and position
 @ "insert" : void Insert(-long,string);  : : /setStringLen[0.0] <> string without position

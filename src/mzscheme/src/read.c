@@ -188,67 +188,67 @@ void scheme_init_read(Scheme_Env *env)
 
   scheme_add_global_constant("read-case-sensitive", 
 			     scheme_register_parameter(read_case_sensitive, 
-						       "read-case-sensitive",
+						       "read-case-sensitive", scheme_kernel_symbol,
 						       MZCONFIG_CASE_SENS), 
 			     env);
   scheme_add_global_constant("read-square-bracket-as-paren", 
 			     scheme_register_parameter(read_bracket_as_paren, 
-						       "read-square-bracket-as-paren",
+						       "read-square-bracket-as-paren", scheme_kernel_symbol,
 						       MZCONFIG_SQUARE_BRACKETS_ARE_PARENS), 
 			     env);
   scheme_add_global_constant("read-curly-brace-as-paren", 
 			     scheme_register_parameter(read_brace_as_paren, 
-						       "read-curly-brace-as-paren",
+						       "read-curly-brace-as-paren", scheme_kernel_symbol,
 						       MZCONFIG_CURLY_BRACES_ARE_PARENS), 
 			     env);
   scheme_add_global_constant("read-accept-graph", 
 			     scheme_register_parameter(read_accept_graph, 
-						       "read-accept-graph",
+						       "read-accept-graph", scheme_kernel_symbol,
 						       MZCONFIG_CAN_READ_GRAPH), 
 			     env);
   scheme_add_global_constant("read-accept-compiled", 
 			     scheme_register_parameter(read_accept_compiled, 
-						       "read-accept-compiled",
+						       "read-accept-compiled", scheme_kernel_symbol,
 						       MZCONFIG_CAN_READ_COMPILED), 
 			     env);
   scheme_add_global_constant("read-accept-box", 
 			     scheme_register_parameter(read_accept_box, 
-						       "read-accept-box",
+						       "read-accept-box", scheme_kernel_symbol,
 						       MZCONFIG_CAN_READ_BOX), 
 			     env);
   scheme_add_global_constant("read-accept-bar-quote",
 			     scheme_register_parameter(read_accept_pipe_quote,
-						       "read-accept-bar-quote",
+						       "read-accept-bar-quote", scheme_kernel_symbol,
 						       MZCONFIG_CAN_READ_PIPE_QUOTE), 
 			     env);
   scheme_add_global_constant("read-decimal-as-inexact",
 			     scheme_register_parameter(read_decimal_as_inexact,
-						       "read-decimal-as-inexact",
+						       "read-decimal-as-inexact", scheme_kernel_symbol,
 						       MZCONFIG_READ_DECIMAL_INEXACT), 
 			     env);
   scheme_add_global_constant("read-dot-as-symbol",
 			     scheme_register_parameter(read_dot_as_symbol,
-						       "read-dot-as-symbol",
+						       "read-dot-as-symbol", scheme_kernel_symbol,
 						       MZCONFIG_CAN_READ_DOT), 
 			     env);
   scheme_add_global_constant("print-graph", 
 			     scheme_register_parameter(print_graph, 
-						       "print-graph",
+						       "print-graph", scheme_kernel_symbol,
 						       MZCONFIG_PRINT_GRAPH), 
 			     env);
   scheme_add_global_constant("print-struct", 
 			     scheme_register_parameter(print_struct, 
-						       "print-struct",
+						       "print-struct", scheme_kernel_symbol,
 						       MZCONFIG_PRINT_STRUCT), 
 			     env);
   scheme_add_global_constant("print-box", 
 			     scheme_register_parameter(print_box, 
-						       "print-box",
+						       "print-box", scheme_kernel_symbol,
 						       MZCONFIG_PRINT_BOX), 
 			     env);
   scheme_add_global_constant("print-vector-length", 
 			     scheme_register_parameter(print_vec_shorthand, 
-						       "print-vector-length",
+						       "print-vector-length", scheme_kernel_symbol,
 						       MZCONFIG_PRINT_VEC_SHORTHAND), 
 			     env);
 }

@@ -921,6 +921,7 @@ static Scheme_Object *def_event_dispatch_handler(int argc, Scheme_Object *argv[]
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), mred_eventspace_type)
       || !c->ready_to_go) {
     scheme_wrong_type("default-event-dispatch-handler",
+		      scheme_intern_symbol("#%mred-kernel"),
 		      "eventspace (with ready event)",
 		      0, argc, argv);
     return NULL;
@@ -2636,7 +2637,8 @@ static Scheme_Env *setup_basic_env()
 
   wxREGGLOB(def_dispatch);
   def_dispatch = scheme_make_prim_w_arity(def_event_dispatch_handler,
-					  "default-event-dispatch-handler",
+					  "default-event-dispatch-handler", 
+					  scheme_intern_symbol("#%mred-kernel"),
 					  1, 1);
   scheme_set_param(scheme_config, mred_event_dispatch_param, def_dispatch);
 

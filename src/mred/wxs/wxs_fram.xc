@@ -62,8 +62,8 @@ static void frameMenu(wxFrame *XTMAC_UNUSED(f))
 
 @CREATOR (wxFrame^, string, int = -1, int = -1, int = -1, int = -1, SYM[frameStyle]=0, string = "frame") : : /CHECKEVENTSPACE[METHODNAME("frame%","initialization")]|NOZERO[4]|NOZERO[5]/
 
-@MACRO CHECKICONOK[p] = if (x<p> && !x<p>->Ok()) scheme_arg_mismatch(METHODNAME("frame%","set-icon"), "bad bitmap: ", p[POFFSET+<p>]);
-@MACRO CHECKICONBW[p] = if (x<p> && (x<p>->GetDepth() != 1)) scheme_arg_mismatch(METHODNAME("frame%","set-icon"), "mask bitmap is not monochrome: ", p[POFFSET+<p>]);
+@MACRO CHECKICONOK[p] = if (x<p> && !x<p>->Ok()) scheme_arg_mismatch(METHODNAME("frame%","set-icon"), objscheme_modidx, "bad bitmap: ", p[POFFSET+<p>]);
+@MACRO CHECKICONBW[p] = if (x<p> && (x<p>->GetDepth() != 1)) scheme_arg_mismatch(METHODNAME("frame%","set-icon"), objscheme_modidx, "mask bitmap is not monochrome: ", p[POFFSET+<p>]);
 
 @ "set-title" : void SetTitle(string);
 @ "iconize" : void Iconize(bool);

@@ -228,7 +228,7 @@ STATIC int regstrcspn(char *, char *, char *);
 static void
 regerror(char *s)
 {
-  scheme_raise_exn(MZEXN_MISC,
+  scheme_raise_exn(MZEXN_MISC, scheme_kernel_symbol,
 		   "regexp: %s", s);
 }
 
@@ -1362,7 +1362,7 @@ static Scheme_Object *make_regexp(int argc, Scheme_Object *argv[])
   Scheme_Object *re;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("string->regexp", "string", 0, argc, argv);
+    scheme_wrong_type("string->regexp", scheme_kernel_symbol, "string", 0, argc, argv);
 
   GET_RE_LOCK();
 
@@ -1383,9 +1383,9 @@ static Scheme_Object *gen_compare(char *name, int pos,
   
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
       && !SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type(name, "regexp-or-string", 0, argc, argv);
+    scheme_wrong_type(name, scheme_kernel_symbol, "regexp-or-string", 0, argc, argv);
   if (!SCHEME_STRINGP(argv[1]))
-    scheme_wrong_type(name, "string", 1, argc, argv);
+    scheme_wrong_type(name, scheme_kernel_symbol, "string", 1, argc, argv);
 
   endset = SCHEME_STRLEN_VAL(argv[1]);
   if (argc > 2) {
@@ -1470,11 +1470,11 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
 
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
       && !SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("regexp-replace", "regexp-or-string", 0, argc, argv);
+    scheme_wrong_type("regexp-replace", scheme_kernel_symbol, "regexp-or-string", 0, argc, argv);
   if (!SCHEME_STRINGP(argv[1]))
-    scheme_wrong_type("regexp-replace", "string", 1, argc, argv);
+    scheme_wrong_type("regexp-replace", scheme_kernel_symbol, "string", 1, argc, argv);
   if (!SCHEME_STRINGP(argv[2]))
-    scheme_wrong_type("regexp-replace", "string", 2, argc, argv);
+    scheme_wrong_type("regexp-replace", scheme_kernel_symbol, "string", 2, argc, argv);
 
   if (SCHEME_STRINGP(argv[0])) {
     GET_RE_LOCK();
@@ -1592,33 +1592,33 @@ void scheme_regexp_initialize(Scheme_Env *env)
   REGISTER_SO(reginstr);
 
   scheme_add_global_constant("regexp", 
-			     scheme_make_prim_w_arity(make_regexp, 
-						      "regexp", 
+			     scheme_make_prim_w_arity(make_regexp,
+						      "regexp", scheme_kernel_symbol, 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("regexp-match",
 			     scheme_make_prim_w_arity(compare,
-						      "regexp-match",
+						      "regexp-match", scheme_kernel_symbol,
 						      2, 4),
 			     env);
   scheme_add_global_constant("regexp-match-positions", 
-			     scheme_make_prim_w_arity(positions, 
-						      "regexp-match-positions", 
+			     scheme_make_prim_w_arity(positions,
+						      "regexp-match-positions", scheme_kernel_symbol, 
 						      2, 4),
 			     env);
   scheme_add_global_constant("regexp-replace", 
-			     scheme_make_prim_w_arity(replace, 
-						      "regexp-replace", 
+			     scheme_make_prim_w_arity(replace,
+						      "regexp-replace", scheme_kernel_symbol, 
 						      3, 3), 
 			     env);
   scheme_add_global_constant("regexp-replace*", 
-			     scheme_make_prim_w_arity(replace_star, 
-						      "regexp-replace*", 
+			     scheme_make_prim_w_arity(replace_star,
+						      "regexp-replace*", scheme_kernel_symbol, 
 						      3, 3), 
 			     env);
   scheme_add_global_constant("regexp?", 
-			     scheme_make_prim_w_arity(regexp_p, 
-						      "regexp?", 
+			     scheme_make_prim_w_arity(regexp_p,
+						      "regexp?", scheme_kernel_symbol, 
 						      1, 1), 
 			     env);
 }

@@ -40,7 +40,7 @@
    The C interface is mostly for the output of xctocc. In addition,
    there is
 
-     void objscheme_init(Scheme_Env *);
+       void objscheme_init(Scheme_Env *, Scheme_Object *modname);
 
    The argument doesn't really have to be a Scheme_Env* value; see
    below.
@@ -80,6 +80,8 @@ Scheme_Type objscheme_class_type;
 static Scheme_Object *object_struct;
 static Scheme_Object *object_property;
 static Scheme_Object *dispatcher_property;
+
+Scheme_Object *objscheme_modidx;
 
 #ifdef MZ_PRECISE_GC
 # include "../gc2/gc2.h"
@@ -134,7 +136,7 @@ static Scheme_Object *init_prim_obj(int argc, Scheme_Object **argv)
 
   if (!SCHEME_STRUCTP(argv[0])
       || !scheme_is_struct_instance(object_struct, argv[0]))
-    scheme_wrong_type("init-primitive-object", "primitive-object", 0, argc, argv);
+    scheme_wrong_type("init-primitive-object", objscheme_modidx, "primitive-object", 0, argc, argv);
   
   c = (Scheme_Class *)scheme_struct_type_property_ref(object_property, (Scheme_Object *)obj);
 
@@ -149,9 +151,9 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
   int flags, count;
 
   if (SCHEME_TYPE(argv[0]) != objscheme_class_type)
-    scheme_wrong_type("primitive-class-prepare-struct-type!", "primitive-class", 0, argc, argv);
+    scheme_wrong_type("primitive-class-prepare-struct-type!", objscheme_modidx, "primitive-class", 0, argc, argv);
   if (SCHEME_TYPE(argv[1]) != scheme_struct_property_type)
-    scheme_wrong_type("primitive-class-prepare-struct-type!", "struct-type-property", 1, argc, argv);
+    scheme_wrong_type("primitive-class-prepare-struct-type!", objscheme_modidx, "struct-type-property", 1, argc, argv);
   scheme_check_proc_arity("primitive-class-prepare-struct-type!", 2, 3, argc, argv);
 
   c = ((Scheme_Class *)argv[0]);
@@ -161,14 +163,14 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
   name = scheme_intern_symbol(c->name);
 
   if (stype) {
-    scheme_arg_mismatch("primitive-class-prepare-struct-type!",
+    scheme_arg_mismatch("primitive-class-prepare-struct-type!", objscheme_modidx,
 			"struct-type already prepared for primitive-class: ",
 			name);
     return NULL;
   }
 
   if (SCHEME_TRUEP(c->sup) && !((Scheme_Class *)c->sup)->base_struct_type) {
-    scheme_arg_mismatch("primitive-class-prepare-struct-type!",
+    scheme_arg_mismatch("primitive-class-prepare-struct-type!", objscheme_modidx,
 			"super struct-type not yet prepared for primitive-class: ",
 			name);
     return NULL;
@@ -246,7 +248,7 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
 static Scheme_Object *class_sup(int argc, Scheme_Object **argv)
 {
   if (SCHEME_TYPE(argv[0]) != objscheme_class_type)
-    scheme_wrong_type("primitive-class->superclass", "primitive-class", 0, argc, argv);
+    scheme_wrong_type("primitive-class->superclass", objscheme_modidx, "primitive-class", 0, argc, argv);
 
   return ((Scheme_Class *)argv[0])->sup;
 }
@@ -258,9 +260,9 @@ static Scheme_Object *class_find_meth(int argc, Scheme_Object **argv)
   int i;
 
   if (SCHEME_TYPE(argv[0]) != objscheme_class_type)
-    scheme_wrong_type("primitive-class-find-method", "primitive-class", 0, argc, argv);
+    scheme_wrong_type("primitive-class-find-method", objscheme_modidx, "primitive-class", 0, argc, argv);
   if (!SCHEME_SYMBOLP(argv[1]))
-    scheme_wrong_type("primitive-class-find-method", "symbol", 1, argc, argv);
+    scheme_wrong_type("primitive-class-find-method", objscheme_modidx, "symbol", 1, argc, argv);
 
   s = argv[1];
 
@@ -278,9 +280,9 @@ static Scheme_Object *find_meth(int argc, Scheme_Object **argv)
   Scheme_Object *sym = argv[1];
 
   if (SCHEME_TYPE(argv[0]) != objscheme_class_type)
-    scheme_wrong_type("find-in-primitive-class", "primitive-class", 0, argc, argv);
+    scheme_wrong_type("find-in-primitive-class", objscheme_modidx, "primitive-class", 0, argc, argv);
   if (!SCHEME_SYMBOLP(sym))
-    scheme_wrong_type("find-in-primitive-class", "symbol", 1, argc, argv);
+    scheme_wrong_type("find-in-primitive-class", objscheme_modidx, "symbol", 1, argc, argv);
   
   while (sclass) {
     int i;
@@ -310,7 +312,7 @@ Scheme_Object *scheme_make_uninited_object(Scheme_Object *sclass)
 
   stype = ((Scheme_Class *)sclass)->struct_type;
   if (!stype) {
-    scheme_arg_mismatch("make-primitive-object",
+    scheme_arg_mismatch("make-primitive-object", objscheme_modidx,
 			"struct-type not yet prepared: ",
 			sclass);
     return NULL;
@@ -362,7 +364,7 @@ void scheme_add_method_w_arity(Scheme_Object *c, const char *name,
 
   sclass = (Scheme_Class *)c;
 
-  s = scheme_make_prim_w_arity(f, name, mina + 1, (maxa < 0) ? -1 : (maxa + 1));
+  s = scheme_make_prim_w_arity(f, name, objscheme_modidx, mina + 1, (maxa < 0) ? -1 : (maxa + 1));
 
   sclass->methods[sclass->num_installed] = s;
 
@@ -451,7 +453,7 @@ static long num_objects_allocated = 0;
 # define wxREGGLOB(x) /* empty */
 #endif
 
-void objscheme_init(Scheme_Env *env)
+void objscheme_init(Scheme_Env *env, Scheme_Object *mod)
 {
   long i;
 
@@ -469,6 +471,9 @@ void objscheme_init(Scheme_Env *env)
   for (i = 0; i < bhashsize; i++) {
     bhash[i].id = 0;
   }
+
+  wxREGGLOB(objscheme_modidx);
+  objscheme_modidx = mod;
 
   objscheme_class_type = scheme_make_type("<primitive-class>");
 
@@ -490,37 +495,37 @@ void objscheme_init(Scheme_Env *env)
 
   scheme_install_xc_global("initialize-primitive-object",
 			   scheme_make_prim_w_arity(init_prim_obj,
-						    "initialize-primitive-object",
+						    "initialize-primitive-object", mod,
 						    1, -1),
 			   env);
 
   scheme_install_xc_global("primitive-class-prepare-struct-type!",
 			   scheme_make_prim_w_arity(class_prepare_struct_type,
-						    "primitive-class-prepare-struct-type!",
+						    "primitive-class-prepare-struct-type!", mod,
 						    4, 4),
 			   env);
   
   scheme_install_xc_global("primitive-class-find-method",
 			   scheme_make_prim_w_arity(class_find_meth,
-						    "primitive-class-find-method",
+						    "primitive-class-find-method", mod,
 						    2, 2),
 			   env);
   
   scheme_install_xc_global("primitive-class->superclass",
 			   scheme_make_prim_w_arity(class_sup,
-						    "primitive-class->superclass",
+						    "primitive-class->superclass", mod,
 						    1, 1),
 			   env);
   
   scheme_install_xc_global("primitive-class?",
 			   scheme_make_prim_w_arity(class_p,
-						    "primitive-class?",
+						    "primitive-class?", mod,
 						    1, 1),
 			   env);
 
   scheme_install_xc_global("find-in-primitive-class",
 			   scheme_make_prim_w_arity(find_meth,
-						    "find-in-primitive-class",
+						    "find-in-primitive-class", mod,
 						    2, 2),
 			   env);
 }
@@ -598,7 +603,7 @@ int objscheme_istype_integer(Scheme_Object *obj, const char *stopifbad)
   if (SCHEME_INTP(obj) || SCHEME_BIGNUMP(obj))
     return 1;
   else if (stopifbad) {
-    scheme_wrong_type(stopifbad, "exact integer", -1, 0, &obj);
+    scheme_wrong_type(stopifbad, objscheme_modidx, "exact integer", -1, 0, &obj);
   }
   return 0;
 }
@@ -614,7 +619,7 @@ int objscheme_istype_number(Scheme_Object *obj, const char *stopifbad)
       || SCHEME_RATIONALP(obj))
     return 1;
   else if (stopifbad) {
-    scheme_wrong_type(stopifbad, "real number", -1, 0, &obj);
+    scheme_wrong_type(stopifbad, objscheme_modidx, "real number", -1, 0, &obj);
   }
   return 0;
 }
@@ -624,7 +629,7 @@ int objscheme_istype_float(Scheme_Object *obj, const char *stopifbad)
   if (SCHEME_DBLP(obj))
     return 1;
   else if (stopifbad)
-    scheme_wrong_type(stopifbad, "inexact real number", -1, 0, &obj);
+    scheme_wrong_type(stopifbad, objscheme_modidx, "inexact real number", -1, 0, &obj);
   return 0;
 }
 
@@ -633,7 +638,7 @@ int objscheme_istype_pair(Scheme_Object *obj, const char *stopifbad)
   if (SCHEME_PAIRP(obj))
     return 1;
   else if (stopifbad)
-    scheme_wrong_type(stopifbad, "pair", -1, 0, &obj);
+    scheme_wrong_type(stopifbad, objscheme_modidx, "pair", -1, 0, &obj);
   return 0;
 }
 
@@ -642,7 +647,7 @@ int objscheme_istype_string(Scheme_Object *obj, const char *stopifbad)
   if (SCHEME_STRINGP(obj))
     return 1;
   else if (stopifbad)
-    scheme_wrong_type(stopifbad, "string", -1, 0, &obj);
+    scheme_wrong_type(stopifbad, objscheme_modidx, "string", -1, 0, &obj);
   return 0;
 }
 
@@ -651,7 +656,7 @@ int objscheme_istype_pathname(Scheme_Object *obj, const char *stopifbad)
   if (SCHEME_STRINGP(obj))
     return 1;
   else if (stopifbad)
-    scheme_wrong_type(stopifbad, "pathname string", -1, 0, &obj);
+    scheme_wrong_type(stopifbad, objscheme_modidx, "pathname string", -1, 0, &obj);
   return 0;
 }
 
@@ -660,7 +665,7 @@ int objscheme_istype_char(Scheme_Object *obj, const char *stopifbad)
   if (SCHEME_CHARP(obj))
     return 1;
   else if (stopifbad)
-    scheme_wrong_type(stopifbad, "character", -1, 0, &obj);
+    scheme_wrong_type(stopifbad, objscheme_modidx, "character", -1, 0, &obj);
   return 0;
 }
 
@@ -669,7 +674,7 @@ int objscheme_istype_closed_prim(Scheme_Object *obj, const char *stopifbad)
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_closed_prim_type))
     return 1;
   else if (stopifbad)
-    scheme_wrong_type(stopifbad, "procedure", -1, 0, &obj);
+    scheme_wrong_type(stopifbad, objscheme_modidx, "procedure", -1, 0, &obj);
   return 0;
 }
 
@@ -683,7 +688,7 @@ int objscheme_istype_box(Scheme_Object *obj, const char *stopifbad)
   if (SCHEME_BOXP(obj))
     return 1;
   else if (stopifbad)
-    scheme_wrong_type(stopifbad, "box", -1, 0, &obj);
+    scheme_wrong_type(stopifbad, objscheme_modidx, "box", -1, 0, &obj);
   return 0;
 }
 
@@ -711,7 +716,7 @@ int objscheme_istype_nonnegative_symbol_integer(Scheme_Object *obj, const char *
     b = (char *)scheme_malloc_atomic(50);
     strcpy(b, "non-negative exact integer or '");
     strcat(b, sym);
-    scheme_wrong_type(where, b, -1, 0, &obj);
+    scheme_wrong_type(where, objscheme_modidx, b, -1, 0, &obj);
   }
 
   return 0;
@@ -741,7 +746,7 @@ int objscheme_istype_nonnegative_symbol_float(Scheme_Object *obj, const char *sy
     b = (char *)scheme_malloc_atomic(50);
     strcpy(b, "non-negative number or '");
     strcat(b, sym);
-    scheme_wrong_type(where, b, -1, 0, &obj);
+    scheme_wrong_type(where, objscheme_modidx, b, -1, 0, &obj);
   }
 
   return 0;
@@ -799,7 +804,7 @@ long objscheme_unbundle_nonnegative_integer(Scheme_Object *obj, const char *wher
   }
 
   if (where)
-    scheme_wrong_type(where, "non-negative exact integer", -1, 0, &obj);
+    scheme_wrong_type(where, objscheme_modidx, "non-negative exact integer", -1, 0, &obj);
 
   return -1;
 }
@@ -816,7 +821,7 @@ long objscheme_unbundle_integer_in(Scheme_Object *obj, long minv, long maxv, con
   if (stopifbad) {
     char buffer[100];
     sprintf(buffer, "exact integer in [%ld, %ld]", minv, maxv);
-    scheme_wrong_type(stopifbad, buffer, -1, 0, &obj);
+    scheme_wrong_type(stopifbad, objscheme_modidx, buffer, -1, 0, &obj);
   }
 
   return 0;
@@ -853,7 +858,7 @@ ExactLong objscheme_unbundle_ExactLong(Scheme_Object *obj, const char *where)
   (void)objscheme_istype_integer(obj, where);
   if (!scheme_get_int_val(obj, &v)) {
     if (where)
-      scheme_arg_mismatch(where, "argument integer is out of platform-specific bounds", obj);
+      scheme_arg_mismatch(where, objscheme_modidx, "argument integer is out of platform-specific bounds", obj);
   }
 
   return v;
@@ -908,7 +913,7 @@ double objscheme_unbundle_float_in(Scheme_Object *obj, double minv, double maxv,
   if (stopifbad) {
     char buffer[100];
     sprintf(buffer, "real number in [%f, %f]", minv, maxv);
-    scheme_wrong_type(stopifbad, buffer, -1, 0, &obj);
+    scheme_wrong_type(stopifbad, objscheme_modidx, buffer, -1, 0, &obj);
   }
 
   return 0;
@@ -924,7 +929,7 @@ double objscheme_unbundle_nonnegative_float(Scheme_Object *obj, const char *wher
   }
 
   if (where)
-    scheme_wrong_type(where, "non-negative number", -1, 0, &obj);
+    scheme_wrong_type(where, objscheme_modidx, "non-negative number", -1, 0, &obj);
 
   return -1.0;
 }
@@ -956,7 +961,7 @@ char *objscheme_unbundle_nullable_string(Scheme_Object *obj, const char *where)
   else if (!where || SCHEME_STRINGP(obj))
     return objscheme_unbundle_string(obj, where);
   else {
-    scheme_wrong_type(where, "string or "  XC_NULL_STR, -1, 0, &obj);
+    scheme_wrong_type(where, objscheme_modidx, "string or "  XC_NULL_STR, -1, 0, &obj);
     return NULL;
   }
 }
@@ -968,7 +973,7 @@ char *objscheme_unbundle_nullable_pathname(Scheme_Object *obj, const char *where
   else  if (!where || SCHEME_STRINGP(obj))
     return objscheme_unbundle_pathname(obj, where);
   else  {
-    scheme_wrong_type(where, "pathname string or " XC_NULL_STR, -1, 0, &obj);
+    scheme_wrong_type(where, objscheme_modidx, "pathname string or " XC_NULL_STR, -1, 0, &obj);
     return NULL;
   }
     
@@ -996,7 +1001,7 @@ Scheme_Object *objscheme_nullable_unbox(Scheme_Object *obj, const char *where)
 {  
   if (!SCHEME_BOXP(obj)) {
     if (where)
-      scheme_wrong_type(where, "box or " XC_NULL_STR, -1, 0, &obj);
+      scheme_wrong_type(where, objscheme_modidx, "box or " XC_NULL_STR, -1, 0, &obj);
     return NULL;
   } else
     return scheme_unbox(obj);
@@ -1084,7 +1089,7 @@ void objscheme_check_valid(Scheme_Object *sclass, const char *name, int n, Schem
 
   if (!SCHEME_STRUCTP((Scheme_Object *)obj)
       || !scheme_is_struct_instance(object_struct, (Scheme_Object *)obj)) {
-    scheme_wrong_type(name ? name : "unbundle", "primitive object", 0, n, argv);
+    scheme_wrong_type(name ? name : "unbundle", objscheme_modidx, "primitive object", 0, n, argv);
     return;
   }
 
@@ -1092,7 +1097,7 @@ void objscheme_check_valid(Scheme_Object *sclass, const char *name, int n, Schem
     Scheme_Object *osclass;
     osclass = scheme_struct_type_property_ref(object_property, (Scheme_Object *)obj);
     if (!objscheme_is_subclass(osclass, sclass)) {
-      scheme_wrong_type(name ? name : "unbundle", ((Scheme_Class *)sclass)->name, 0, n, argv);
+      scheme_wrong_type(name ? name : "unbundle", objscheme_modidx, ((Scheme_Class *)sclass)->name, 0, n, argv);
       return;
     }
   }

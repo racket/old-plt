@@ -39,6 +39,8 @@ PLTHOME="$installplthome"
 export PLTHOME
 PLTCOLLECTS=""
 export PLTCOLLECTS
+PLTEXTENSION=""
+export PLTEXTENSION
 
 echo "setting PLTHOME to $installplthome in scripts:"
 
@@ -101,8 +103,8 @@ checklink ()
   SPECIALNAME=$5
   STDNAME=$6
 
-  if [ -d $SPECIAL ] ; then
-   if [ ! \( -d $STD \) ] ; then
+  if [ -r $SPECIAL ] ; then
+   if [ ! \( -r $STD \) ] ; then
      echo "If you *do not* plan to install the $STDNAME "
      echo " version of the PLT software, a soft-link to"
      echo " the $SPECIALNAME version should be installed for"
@@ -120,12 +122,13 @@ checklink ()
   fi
 }
 
-checklink "MrEd/DrScheme" "mred/.bin/rs6k-aix-xt" "mred/.bin/rs6k-aix" "rs6k-aix-xt" "AIX Xt" "AIX Motif"
-checklink "MrEd/DrScheme" "mred/.bin/sparc-solaris-motif" "mred/.bin/sparc-solaris" "sparc-solaris-motif" "Solaris Motif" "Solaris Xt"
+checklink "MrEd/DrScheme" ".bin/rs6k-aix-xt/mred" ".bin/rs6k-aix/mred" "../rs6k-aix-xt/mred" "AIX Xt" "AIX Motif"
+checklink "MrEd/DrScheme" ".bin/sparc-solaris-motif/mred" ".bin/sparc-solaris/mred" "../sparc-solaris-motif/mred" "Solaris Motif" "Solaris Xt"
+checklink "MzScheme/MrEd/DrScheme" ".bin/sparc-sunos4-static" ".bin/sparc-sunos4" "sparc-sunos4-static" "SunOS4 Static" "Regular SunOS4"
 
 if [ `bin/archsys` = "sparc-solaris" ] ; then
-  checklink "MrEd/DrScheme" "mred/.bin/sparc-sunos4" "mred/.bin/sparc-solaris" "sparc-sunos4" "SunOS4" "Solaris"
-  checklink "MzScheme" "mzscheme/.bin/sparc-sunos4" "mzscheme/.bin/sparc-solaris" "sparc-sunos4" "SunOS4" "Solaris"
+  checklink "MzScheme/MrEd/DrScheme" ".bin/sparc-sunos4" ".bin/sparc-solaris" "sparc-sunos4" "SunOS4" "Solaris"
+  checklink "MzScheme/MrEd/DrScheme" ".bin/sparc-sunos4-static" ".bin/sparc-solaris" "sparc-sunos4-static" "SunOS4 Static" "Solaris"
 fi
 
 echo 'DrScheme starts up much faster with ".zo" files, but creating ".zo"'

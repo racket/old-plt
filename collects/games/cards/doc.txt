@@ -177,6 +177,13 @@ Table methods:
         raises the cards, and reverses the front-to-back order of the
         cards
 
+> set-single-click-action :: (send t set-single-click-action) - sets
+        the procedure to be called when a card is single-clicked,
+        after the button action is initiated. (If the card is
+        double-clicked, this action is inoked for the first click,
+        then the double-click action is invoked.) The default action
+        does nothing.
+
 > pause :: (send t pause n-secs) - pauses, allowing the table display
         to be updated (unless a sequence is active), but does not let
         the user click on the cards.
@@ -221,13 +228,14 @@ Card methods:
 > user-can-move :: (send c user-can-move)
 > user-can-move :: (send c user-can-move can?)
        Determines whether the user can move the card interactively,
-       usually by dragging it.  Initially #t.
+       usually by dragging it. Disabling moves has the side-effect of
+       disabling raises and double-clicks. Initially #t.
 
 > snap-back-after-move :: (send c snap-back-after-move)
 > snap-back-after-move :: (send c snap-back-after-move on?)
        Assuming user can move the card interactively, determines
        whether the card stays where the user dragged it or snaps back
-       to its original place.  Initially #f.
+       to its original place. Initially #f.
 
 > stay-in-region :: (send c stay-in-region r)
 > stay-in-region :: (send c stay-in-region)

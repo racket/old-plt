@@ -1,0 +1,396 @@
+Intermediate level tests of DrScheme Jr
+Date: Fri Mar 20 17:39:45 CST 1998
+DrScheme Jr is loading. Please wait...
+Welcome to DrScheme Jr version 51, Copyright (c) 1995-98 PLT
+Language: Intermediate
+|- |- |- |- |- |- |- |- |- 'define
+|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+|- |- 5
+|- 'lambda
+|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+|- (lambda (a1) ...)
+|- 'app
+|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+|- |- 5
+|- 'cond-1
+|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+|- 5
+|- 'cond-2
+|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+|- 5
+|- 'cond-3
+|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+|- 5
+|- 'cond-4
+|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+|- 5
+|- 'if-1
+|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+|- 5
+|- 'if-2
+|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+|- 5
+|- 'quote-1
+|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+|- 'a
+|- 'quote-2
+|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+|- 'a
+|- 'local-1
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- 5
+|- 'local-2
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- 5
+|- 'local-3
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- #t
+|- 'local-4
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- #t
+|- 'let-1
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- 5
+|- 'let-2
+|- null
+|- stdin[1369-1369]:1.22-1.22
+   reference to undefined identifier: x
+|- 'let-3
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- 5
+|- 'let-4
+|- null
+|- stdin[1517-1517]:1.23-1.23
+   reference to undefined identifier: x
+|- 'letrec-1
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- #t
+|- 'letrec-2
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- #t
+|- 'letrec-3
+|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+|- 5
+|- 'case-sense
+|- (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+|- #t
+|- 'set!
+|- (list "Advanced" "R4RS+")
+|- stdin[1878-1907]:1.1-3.4
+   Malformed let
+|- 'begin
+|- (list "Advanced" "R4RS+")
+|- stdin[1963-1967]:1.2-1.6
+   reference to undefined identifier: begin
+|- 'begin0
+|- (list "Advanced" "R4RS+")
+|- stdin[2075-2080]:1.2-1.7
+   reference to undefined identifier: begin0
+|- 'recur-1
+|- (list "Advanced" "R4RS+")
+|- stdin[2188-2262]:1.1-5.29
+   Malformed let
+|- 'recur-2
+|- (list "Advanced" "R4RS+")
+|- stdin[2292-2304]:2.8-2.20
+   First term after parenthesis is illegal in an application
+|- 'recur-3
+|- (list "Advanced" "R4RS+")
+|- stdin[2416-2418]:1.11-1.13
+   reference to undefined identifier: rec
+|- 'do-1
+|- (list "Advanced" "R4RS+")
+|- stdin[2525-2536]:1.10-1.21
+   '(1 3 5 7 9) is not a symbol
+|- 'do-2
+|- (list "Advanced" "R4RS+")
+|- stdin[2620-2661]:1.5-2.19
+   First term after parenthesis is illegal in an application
+|- 'call-cc-1
+|- (list "Advanced" "R4RS+")
+|- stdin[2758-2823]:1.10-3.51
+   Malformed lambda
+|- 'call-cc-2
+|- (list "Advanced" "R4RS+")
+|- 5
+|- 'let-cc-1
+|- (list "Advanced" "R4RS+")
+|- stdin[2907-2945]:3.9-3.47
+   First term after parenthesis is illegal in an application
+|- 'let-cc-2
+|- (list "Advanced" "R4RS+")
+|- stdin[3031-3036]:1.11-1.16
+   reference to undefined identifier: let/cc
+|- 'when-1
+|- (list "Advanced" "R4RS+")
+|- stdin[3137-3140]:1.2-1.5
+   reference to undefined identifier: when
+|- 'when-2
+|- (list "Advanced" "R4RS+")
+|- stdin[3263-3266]:2.4-2.7
+   reference to undefined identifier: when
+|- 'unless-1
+|- (list "Advanced" "R4RS+")
+|- stdin[3361-3366]:1.2-1.7
+   reference to undefined identifier: unless
+|- 'unless-2
+|- (list "Advanced" "R4RS+")
+|- stdin[3475-3517]:1.1-3.4
+   Malformed let
+|- 'one-armed-if-1
+|- (list "Advanced" "R4RS+")
+|- stdin[3568-3576]:1.1-1.9
+   If must have an else clause
+|- 'one-armed-if-2
+|- (list "Advanced" "R4RS+")
+|- stdin[3675-3713]:1.1-3.4
+   Malformed let
+|- 'eq?-1
+|- (list "Advanced" "R4RS+")
+|- stdin[3759-3767]:1.1-1.9
+   eq?: expected symbols as arguments, received 5, and 5
+|- 'quote-num-1
+|- (list "Advanced" "R4RS+")
+|- stdin[3889-3890]:1.1-1.2
+   '5 is not a symbol
+|- 'quote-num-2
+|- (list "Advanced" "R4RS+")
+|- stdin[3984-3992]:1.1-1.9
+   '5 is not a symbol
+|- 'if-3
+|- (list "Advanced" "R4RS+")
+|- stdin[4076-4076]:1.5-1.5
+   value 5 is neither #t nor #f
+|- 'cond-1
+|- (list "Advanced" "R4RS+")
+|- stdin[4179-4179]:1.8-1.8
+   value 5 is neither #t nor #f
+|- 'thunk
+|- (list "Advanced" "R4RS+")
+|- stdin[4288-4289]:1.18-1.19
+   All procedures must take at least one argument
+|- 'anonymous-fun-app
+|- (list "Advanced" "R4RS+")
+|- stdin[4402-4420]:1.1-1.19
+   First term after parenthesis is illegal in an application
+|- 'keyword-interface
+|- null
+|- stdin[4522-4532]:1.1-1.11
+   Invalid use of keyword #%interface
+|- 'keyword-unit
+|- null
+|- stdin[4614-4619]:1.1-1.6
+   Invalid use of keyword #%unit
+|- 'keyword-struct
+|- null
+|- stdin[4702-4709]:1.1-1.8
+   Invalid use of keyword #%struct
+|- 'keyword-unquote
+|- null
+|- stdin[4793-4801]:1.1-1.9
+   Invalid use of keyword #%unquote
+|- 'keyword-let-macro
+|- null
+|- stdin[4887-4897]:1.1-1.11
+   Invalid use of keyword #%let-macro
+|- 'keyword-set!
+|- null
+|- stdin[4979-4984]:1.1-1.6
+   Invalid use of keyword #%set!
+|- 'keyword-if
+|- null
+|- stdin[5063-5066]:1.1-1.4
+   Invalid use of keyword #%if
+|- 'keyword-quote
+|- null
+|- stdin[5148-5154]:1.1-1.7
+   Invalid use of keyword #%quote
+|- 'keyword-begin0
+|- null
+|- stdin[5237-5244]:1.1-1.8
+   Invalid use of keyword #%begin0
+|- 'keyword-begin
+|- null
+|- stdin[5326-5332]:1.1-1.7
+   Invalid use of keyword #%begin
+|- 'keyword-let
+|- null
+|- stdin[5412-5416]:1.1-1.5
+   Invalid use of keyword #%let
+|- 'keyword-let*
+|- null
+|- stdin[5497-5502]:1.1-1.6
+   Invalid use of keyword #%let*
+|- 'keyword-letrec*
+|- null
+|- stdin[5586-5594]:1.1-1.9
+   Invalid use of keyword #%letrec*
+|- 'keyword-letrec
+|- null
+|- stdin[5677-5684]:1.1-1.8
+   Invalid use of keyword #%letrec
+|- 'keyword-lambda
+|- null
+|- stdin[5767-5774]:1.1-1.8
+   Invalid use of keyword #%lambda
+|- 'keyword-let-expansion-time
+|- null
+|- stdin[5869-5888]:1.1-1.20
+   Invalid use of keyword #%let-expansion-time
+|- 'keyword-define-expansion-time
+|- null
+|- stdin[5987-6009]:1.1-1.23
+   Invalid use of keyword #%define-expansion-time
+|- 'keyword-invoke-open-unit
+|- null
+|- stdin[6103-6120]:1.1-1.18
+   Invalid use of keyword #%invoke-open-unit
+|- 'keyword-invoke-unit
+|- null
+|- stdin[6209-6221]:1.1-1.13
+   Invalid use of keyword #%invoke-unit
+|- 'keyword-compound-unit
+|- null
+|- stdin[6312-6326]:1.1-1.15
+   Invalid use of keyword #%compound-unit
+|- 'keyword-unquote-splicing
+|- null
+|- stdin[6420-6437]:1.1-1.18
+   Invalid use of keyword #%unquote-splicing
+|- 'keyword-let-id-macro
+|- null
+|- stdin[6527-6540]:1.1-1.14
+   Invalid use of keyword #%let-id-macro
+|- 'keyword-define-id-macro
+|- null
+|- stdin[6633-6649]:1.1-1.17
+   Invalid use of keyword #%define-id-macro
+|- 'keyword-define-macro
+|- null
+|- stdin[6739-6752]:1.1-1.14
+   Invalid use of keyword #%define-macro
+|- 'keyword-case-lambda
+|- null
+|- stdin[6841-6853]:1.1-1.13
+   Invalid use of keyword #%case-lambda
+|- 'keyword-let-values
+|- null
+|- stdin[6941-6952]:1.1-1.12
+   Invalid use of keyword #%let-values
+|- 'keyword-let*-values
+|- null
+|- stdin[7041-7053]:1.1-1.13
+   Invalid use of keyword #%let*-values
+|- 'keyword-letrec*-values
+|- null
+|- stdin[7145-7160]:1.1-1.16
+   Invalid use of keyword #%letrec*-values
+|- 'keyword-letrec-values
+|- null
+|- stdin[7251-7265]:1.1-1.15
+   Invalid use of keyword #%letrec-values
+|- 'keyword-define-values
+|- null
+|- stdin[7356-7370]:1.1-1.15
+   Invalid use of keyword #%define-values
+|- 'keyword-cond
+|- null
+|- stdin[7452-7457]:1.1-1.6
+   Invalid use of keyword #%cond
+|- 'keyword-class*/names
+|- null
+|- stdin[7546-7559]:1.1-1.14
+   Invalid use of keyword #%class*/names
+|- 'struct-1
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- |- (list (lambda (a1 a2) ...)
+      (lambda (a1) ...)
+      (lambda (a1) ...)
+      (lambda (a1) ...)
+      (lambda (a1 a2) ...)
+      (lambda (a1 a2) ...))
+|- 'struct-2
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- |- (list (lambda () ...) (lambda (a1) ...))
+|- 'struct-3
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- |- 5
+|- 'struct-4
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- |- 5
+|- 'struct-5
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- |- 5
+|- 'delay-1
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- stdin[8188-8196]:1.1-1.9
+   All procedures must take at least one argument
+|- 'delay-2
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- stdin[8322-8367]:1.1-2.16
+   All procedures must take at least one argument
+|- 'delay-3
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- stdin[8480-8488]:2.11-2.19
+   All procedures must take at least one argument
+|- 'quote-list-1
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- stdin[8598-8612]:1.1-1.15
+   '(a a a) is not a symbol
+|- 'quote-list-2
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- stdin[8716-8723]:1.1-1.8
+   '(a a a) is not a symbol
+|- 'empty-list-1
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- stdin[8833-8835]:1.1-1.3
+   '() is not a symbol
+|- 'empty-list-2
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- stdin[8945-8954]:1.1-1.10
+   '() is not a symbol
+|- 'back-quote-1
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- stdin[9058-9065]:1.1-1.8
+   '(a a a) is not a symbol
+|- 'back-quote-2
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- stdin[9185-9190]:1.11-1.16
+   '(a a) is not a symbol
+|- 'back-quote-3
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- (list 'a 'a 'a)
+|- 'quasi-quote-1
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- 'a
+|- 'quasi-quote-2
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- stdin[9441-9460]:1.1-1.20
+   '(a a a) is not a symbol
+|- 'quasi-quote-3
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- stdin[9589-9601]:1.30-1.42
+   '(a a) is not a symbol
+|- 'quasi-quote-4
+|- (list "Intermediate" "Advanced" "R4RS+")
+|- stdin[9699-9711]:1.22-1.34
+   '(a a) is not a symbol
+|- 'set!-id
+|- "R4RS+"
+|- stdin[9758-9761]:1.2-1.5
+   reference to undefined identifier: set!
+|- stdin[9828-9852]:1.1-1.25
+   reference to undefined identifier: some-undefined-identifier
+|- 'non-list
+|- "R4RS+"
+|- stdin[9945-9954]:1.1-1.10
+   cons: second argument must be of type <list>, given 3 and 4
+|- 'fallthrough-cond-1
+|- "R4RS+"
+|- stdin[10078-10091]:1.8-1.21
+   no matching cond clause
+|- 'fallthrough-cond-2
+|- "R4RS+"
+|- stdin[10179-10188]:1.17-1.26
+   First term after parenthesis is illegal in an application
+|- 

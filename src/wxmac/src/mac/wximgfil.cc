@@ -726,7 +726,7 @@ void CreateOffScreenPixMap (CGrafPtr *cport, wxGIF *gif)
 	    ::SetCPixel(j, i, &cpix);
 	  }
 	}
-	UnlockPixels(GetGWorldPixMap(newGWorld));
+	// UnlockPixels(GetGWorldPixMap(newGWorld));
 	SetGWorld(saveport, savegw);
 	*cport = newGWorld;
 }

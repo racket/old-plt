@@ -594,18 +594,16 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
           dstbm = (BitMap *) &((GrafPtr)(cMacDC->macGrafPort()))->portBits;
         } else {
           destpixh = ((CGrafPtr)theMacGrafPort)->portPixMap;
-		  ::LockPixels(destpixh);
 		  dstbm = (BitMap *)(* destpixh);
         }
 
 		// Lock PixMaps
 		PixMapHandle srpixh = pixmap = ::GetGWorldPixMap(source->x_pixmap);
-		int rs = ::LockPixels(srpixh);
+		// ::LockPixels(srpixh);
 
 		::CopyBits((BitMap *)(*srpixh), dstbm, &srcr, &destr, mode, NULL);
 
-		if (destpixh) ::UnlockPixels(destpixh);
-		::UnlockPixels(srpixh);
+		// ::UnlockPixels(srpixh);
 		CalcBoundingBox(xdest, ydest);
 		CalcBoundingBox(xdest + width, ydest + height);
 		theResult = TRUE;

@@ -280,7 +280,7 @@ Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 				}
 			}
 		}
-		UnlockPixels(GetGWorldPixMap(newGWorld));
+		// UnlockPixels(GetGWorldPixMap(newGWorld));
 		SetGWorld(saveport, savegw);
 			
 		//  bm->pixmap = colorPort->portPixMap;

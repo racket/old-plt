@@ -134,6 +134,11 @@ wxCanvasDC::~wxCanvasDC(void)
 {
   if (current_pen) current_pen->Lock(-1);
   if (current_brush) current_brush->Lock(-1);
+  
+  if (current_reg) ::DisposeRgn(current_reg);
+  current_reg = NULL;
+  if (onpaint_reg) ::DisposeRgn(onpaint_reg);
+  onpaint_reg = NULL;
 }
 
 //-----------------------------------------------------------------------------

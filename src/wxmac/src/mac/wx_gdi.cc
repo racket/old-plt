@@ -902,7 +902,7 @@ Bool wxBitmap::SaveFile(char *name, int type, wxColourMap *cmap)
 	  GetGWorld(&saveport, &savegw);
 	
 	  SetGWorld(x_pixmap, 0);
-	  LockPixels(GetGWorldPixMap(x_pixmap));
+	  // LockPixels(GetGWorldPixMap(x_pixmap));
 	
 	  ximage.width = GetWidth(); 
 	  ximage.height = GetHeight();
@@ -913,7 +913,7 @@ Bool wxBitmap::SaveFile(char *name, int type, wxColourMap *cmap)
                                               &ximage, (XImage *)NULL, 
                                               (XpmAttributes *)NULL);
 
-	  UnlockPixels(GetGWorldPixMap(x_pixmap));
+	  // UnlockPixels(GetGWorldPixMap(x_pixmap));
 	  SetGWorld(saveport, savegw);
 
       ok = (errorStatus == XpmSuccess);

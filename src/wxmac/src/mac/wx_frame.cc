@@ -842,7 +842,7 @@ void wxFrame::Paint(void)
 		  }
 		  DisposeRgn(subrgn);
 		}
-		DisposeRgn(subrgn);
+		DisposeRgn(rgn);
 	}
 	wxWindow::Paint();
 	if (cStatusPanel) {

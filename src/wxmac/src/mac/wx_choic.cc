@@ -223,7 +223,6 @@ int wxChoice::Number(void)
 
 wxChoice::~wxChoice (void)
 {
-	::DeleteMenu(PopUpID);		// Make Menu Mgr forget
 	::DisposeMenu(hDynMenu);
 	delete[] sTitle;
 }
@@ -313,6 +312,7 @@ void wxChoice::DrawChoice(Bool active)
 	    Line(-(TRIANGLE_WIDTH / 2), -TRIANGLE_HEIGHT);
 		ClosePoly();
 		PaintPoly(poly);
+		KillPoly(poly);
 	}
 	
 	if (!no_strings)

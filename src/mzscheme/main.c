@@ -115,6 +115,14 @@ static void user_break_hit(int ignore)
 
 # ifdef MACINTOSH_EVENTS
 
+extern void (*GC_out_of_memory)(void);
+
+static void MacOutOfMemory(void)
+{
+  Alert(101, NULL);
+  ExitToShell();
+}
+
 static int WeAreFront()
 {
   static int inited;
@@ -301,8 +309,9 @@ int actual_main(int argc, char *argv[])
   long calcLimit;
   THz zone;
 	
+  /* 1 MB stack: */
   zone = GetZone();
-  calcLimit = ((long)LMGetCurStackBase()-(*(long *)zone)-sizeof(Zone))*3/4;
+  calcLimit = ((long)LMGetCurStackBase()-(*(long *)zone)-sizeof(Zone)) - 1048576;
   if (calcLimit % 2)
     calcLimit++;
   SetApplLimit((Ptr)((*(long *)zone)+sizeof(Zone)+calcLimit));
@@ -330,6 +339,8 @@ int actual_main(int argc, char *argv[])
   scheme_handle_aewait_event = handle_one;
 
   scheme_sleep = MacSleep;
+  
+  GC_out_of_memory = MacOutOfMemory;
 
   Drop_GetArgs(&argc, &argv);
 #endif

@@ -2348,11 +2348,12 @@ int main(int argc, char *argv[])
   wxMediaCreatorId = 'MrEd';
 
 #if !defined(__powerc)
-  long calcLimit;
+  long calcLimit, size;
   THz zone;
 	
   zone = GetZone();
-  calcLimit = ((long)LMGetCurStackBase()-(*(long *)zone)-sizeof(Zone))*3/4;
+  size = ((long)LMGetCurStackBase()-(*(long *)zone)-sizeof(Zone));
+  calcLimit = size - 1048576; /* 1 MB stack */
   if (calcLimit % 2)
     calcLimit++;
   SetApplLimit((Ptr)((*(long *)zone)+sizeof(Zone)+calcLimit));

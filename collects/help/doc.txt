@@ -200,7 +200,7 @@ documentation.
   entry, to be passed to the Help Desk web server.  For manuals in the 
   doc collection, that path is of the form "/doc/manual/page#anchor"; 
   for Help Desk entries, that path is of the form 
-  "/servlets/<rest-of-path>#anchor.  If the manual is not found, or the 
+  "/servlets/<rest-of-path>#anchor".  If the manual is not found, or the 
   index-key is not in the manual, an error occurs.
 
 > (finddoc-page manual index-key)

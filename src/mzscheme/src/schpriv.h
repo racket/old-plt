@@ -340,15 +340,26 @@ typedef struct Scheme_Inspector {
   struct Scheme_Inspector *superior;
 } Scheme_Inspector;
 
+typedef struct Scheme_Struct_Property {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  Scheme_Object *name; /* a symbol */
+} Scheme_Struct_Property;
+
 int scheme_is_subinspector(Scheme_Object *i, Scheme_Object *sup);
 
 typedef struct Scheme_Struct_Type {
   Scheme_Type type;
   MZ_HASH_KEY_EX
-  short num_slots;
+  short num_slots, num_islots, delta_slots;
   short name_pos;
   Scheme_Object *type_name;
   Scheme_Object *inspector;
+
+  int num_props;
+  Scheme_Object **props; /* array of pair of (property, value) */
+  Scheme_Hash_Table *props_ht; /* alternate lookup mechanism */
+
   struct Scheme_Struct_Type *parent_types[1];
 } Scheme_Struct_Type;
 

@@ -19,21 +19,15 @@
 
 #include "schpriv.h"
 
-typedef struct {
-  Scheme_Type type;
-  Scheme_Object *name;
-  Scheme_Object *fields;
-  Scheme_Object *parent_type_expr;
-  int num_fields;
-  int count;
-  Scheme_Object **memo_names; /* Memoize name generation */
-} Struct_Info;
+#define PROP_USE_HT_COUNT 5
 
 typedef enum {
   SCHEME_CONSTR = 1, 
   SCHEME_PRED, 
   SCHEME_GETTER, 
-  SCHEME_SETTER
+  SCHEME_SETTER,
+  SCHEME_GEN_GETTER, 
+  SCHEME_GEN_SETTER
 } Scheme_ProcT;
 
 typedef struct {
@@ -51,15 +45,13 @@ static Scheme_Object *make_inspector(int argc, Scheme_Object *argv[]);
 static Scheme_Object *inspector_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_inspector(int argc, Scheme_Object *argv[]);
 
-static Scheme_Object *struct_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
-static Scheme_Object *struct_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
+static Scheme_Object *make_struct_type_property(int argc, Scheme_Object *argv[]);
+static Scheme_Object *struct_type_property_p(int argc, Scheme_Object *argv[]);
 
-static Scheme_Object *make_named_constructor(int argc, Scheme_Object *argv[]);
+static Scheme_Object *make_struct_type(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *struct_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_type_p(int argc, Scheme_Object *argv[]);
-static Scheme_Object *struct_length(int argc, Scheme_Object *argv[]);
-static Scheme_Object *struct_ref(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *struct_to_vector(int argc, Scheme_Object *argv[]);
 
@@ -71,13 +63,6 @@ static Scheme_Object *struct_constr_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_struct_proc(Scheme_Struct_Type *struct_type, Scheme_Object *func_name, Scheme_ProcT proc_type, int field_num);
 
 static Scheme_Object *make_name(const char *pre, const char *tn, int tnl, const char *post1, const char *fn, int fnl, const char *post2);
-
-static Scheme_Object *struct_execute(Scheme_Object *form);
-static Scheme_Object *struct_link(Scheme_Object *form, Link_Info *info);
-static Scheme_Object *struct_resolve(Scheme_Object *form, Resolve_Info *info);
-
-static Scheme_Object *write_struct_info(Scheme_Object *obj);
-static Scheme_Object *read_struct_info(Scheme_Object *obj);
 
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
@@ -98,8 +83,6 @@ static Scheme_Object **ts_values;
 static int ts_count;
 #endif
 
-static Scheme_Object *struct_symbol;
-
 void
 scheme_init_struct (Scheme_Env *env)
 {
@@ -115,52 +98,58 @@ scheme_init_struct (Scheme_Env *env)
 #ifdef MZ_PRECISE_GC
   register_traversers();
 #endif
-  
+
+  /* Add arity structure */
   REGISTER_SO(scheme_arity_at_least);
   REGISTER_SO(as_names);
   REGISTER_SO(as_values);
-#ifdef TIME_SYNTAX
-  REGISTER_SO(scheme_date);
-  REGISTER_SO(ts_names);
-  REGISTER_SO(ts_values);
-#endif
-  
-  REGISTER_SO(struct_symbol);
-  
-  scheme_register_syntax(STRUCT_EXPD, struct_resolve, struct_link, struct_execute, 1);
-  
-  struct_symbol = scheme_intern_symbol("struct");
-  
-  scheme_install_type_writer(scheme_struct_info_type, write_struct_info);
-  scheme_install_type_reader(scheme_struct_info_type, read_struct_info);
-  
-  scheme_arity_at_least = scheme_make_struct_type_from_string("arity-at-least", NULL, 1);
-  
+  scheme_arity_at_least = scheme_make_struct_type_from_string("arity-at-least", NULL, 1);  
   as_names = scheme_make_struct_names_from_array("arity-at-least",
 						 1, arity_fields,
 						 BUILTIN_STRUCT_FLAGS, 
 						 &as_count);
-  
-#ifdef TIME_SYNTAX
-  scheme_date = scheme_make_struct_type_from_string("date", NULL, 10);
-  
-  ts_names 
-    = scheme_make_struct_names_from_array("date",
-					  10, date_fields,
-					  BUILTIN_STRUCT_FLAGS, &ts_count);
-#endif
-
   as_values = scheme_make_struct_values(scheme_arity_at_least, as_names, as_count, 
 					BUILTIN_STRUCT_FLAGS);
+  for (i = 0; i < as_count; i++) {
+    scheme_add_global_constant(scheme_symbol_val(as_names[i]), as_values[i],
+			       env);
+  }
+
 #ifdef TIME_SYNTAX
+  /* Add date structure: */
+  REGISTER_SO(scheme_date);
+  REGISTER_SO(ts_names);
+  REGISTER_SO(ts_values);
+  scheme_date = scheme_make_struct_type_from_string("date", NULL, 10);
+  
+  ts_names = scheme_make_struct_names_from_array("date",
+						 10, date_fields,
+						 BUILTIN_STRUCT_FLAGS, &ts_count);
+
   ts_values = scheme_make_struct_values(scheme_date, ts_names, ts_count, 
 					BUILTIN_STRUCT_FLAGS);
+  for (i = 0; i < ts_count; i++) {
+    scheme_add_global_constant(scheme_symbol_val(ts_names[i]), ts_values[i], 
+			       env);
+  }
 #endif
 
-  scheme_add_global_keyword("struct", 
-			    scheme_make_compiled_syntax(struct_syntax, 
-							struct_expand), 
+  /*** Normal interface ****/
+
+  scheme_add_global_keyword("make-struct-type", 
+			    scheme_make_prim_w_arity2(make_struct_type,
+						      "make-struct-type",
+						      4, 7,
+						      4, 4),
 			    env);
+
+  scheme_add_global_keyword("make-struct-type-property", 
+			    scheme_make_prim_w_arity2(make_struct_type_property,
+						      "make-struct-type-property",
+						      0, 1,
+						      2, 2),
+			    env);
+
 
   scheme_add_global_constant("struct?",
 			    scheme_make_folding_prim(struct_p,
@@ -168,41 +157,46 @@ scheme_init_struct (Scheme_Env *env)
 						     1, 1, 1),
 			    env);
   scheme_add_global_constant("struct-type?",
-			    scheme_make_folding_prim(struct_type_p,
+			     scheme_make_folding_prim(struct_type_p,
 						     "struct-type?",
 						     1, 1, 1),
 			    env);
-  scheme_add_global_constant("struct-length",
-			    scheme_make_folding_prim(struct_length,
-						     "struct-length",
+  scheme_add_global_constant("struct-type-property?",
+			     scheme_make_folding_prim(struct_type_property_p,
+						     "struct-type-property?",
 						     1, 1, 1),
 			    env);
-  scheme_add_global_constant("struct-ref",
-			    scheme_make_prim_w_arity(struct_ref,
-						     "struct-ref",
+
+  /*** Debugging ****/
+
+#if 0
+  scheme_add_global_constant("struct-type",
+			    scheme_make_prim_w_arity(struct_type,
+						     "struct-type",
 						     2, 2),
 			    env);
-  
-  scheme_add_global_constant("make-naming-constructor",
-			     scheme_make_prim_w_arity(make_named_constructor,
-						      "make-naming-constructor",
-						      2, 2),
+  scheme_add_global_constant("struct-type-info",
+			     scheme_make_prim_w_arity(struct_type_info,
+						      "struct-type-info",
+						      5, 5),
+			     env);
+#endif
+  scheme_add_global_constant("struct->vector",
+			     scheme_make_prim_w_arity(struct_to_vector,
+						      "struct->vector",
+						      1, 1),
 			     env);
 
-  scheme_add_global_constant("struct->vector",
-			    scheme_make_prim_w_arity(struct_to_vector,
-						     "struct->vector",
-						     1, 1),
-			    env);
+  /*** Predicates ****/
 
-  scheme_add_global_constant("struct-setter-procedure?",
+  scheme_add_global_constant("struct-accessor-procedure?",
 			     scheme_make_prim_w_arity(struct_setter_p,
-						      "struct-setter-procedure?",
+						      "struct-accessor-procedure?",
 						      1, 1),
 			    env);
-  scheme_add_global_constant("struct-getter-procedure?",
+  scheme_add_global_constant("struct-mutator-procedure?",
 			     scheme_make_prim_w_arity(struct_getter_p,
-						      "struct-getter-procedure?",
+						      "struct-mutator-procedure?",
 						      1, 1),
 			    env);
   scheme_add_global_constant("struct-predicate-procedure?",
@@ -216,6 +210,8 @@ scheme_init_struct (Scheme_Env *env)
 						      1, 1),
 			    env);
   
+  /*** Inspectors ****/
+
   scheme_add_global_constant("make-inspector",
 			     scheme_make_prim_w_arity(make_inspector,
 						      "make-inspector",
@@ -231,21 +227,11 @@ scheme_init_struct (Scheme_Env *env)
 						       "current-inspector",
 						       MZCONFIG_INSPECTOR),
 			     env);
-
-
-  /* Add arity structure */
-  for (i = 0; i < as_count; i++) {
-    scheme_add_global_constant(scheme_symbol_val(as_names[i]), as_values[i],
-			       env);
-  }
-
-#ifdef TIME_SYNTAX
-  for (i = 0; i < ts_count; i++) {
-    scheme_add_global_constant(scheme_symbol_val(ts_names[i]), ts_values[i], 
-			       env);
-  }
-#endif
 }
+
+/*========================================================================*/
+/*                             inspectors                                 */
+/*========================================================================*/
 
 Scheme_Object *scheme_make_initial_inspectors(void)
 {
@@ -317,7 +303,34 @@ static Scheme_Object *current_inspector(int argc, Scheme_Object *argv[])
 			     -1, inspector_p, "inspector", 0);
 }
 
-/**********************************************************************/
+/*========================================================================*/
+/*                             properties                                 */
+/*========================================================================*/
+
+static Scheme_Object *make_struct_type_property(int argc, Scheme_Object *argv[])
+{
+  Scheme_Struct_Property *p;
+
+  if (argc && !SCHEME_SYMBOLP(argv[0]))
+    scheme_wrong_type("make-struct-type-property", "symbol", 0, argc, argv);
+
+  p = MALLOC_ONE_TAGGED(Scheme_Struct_Property);
+  p->type = scheme_struct_property_type;
+  if (argc)
+    p->name = argv[1]; 
+
+  return (Scheme_Object *)p;
+}
+
+static Scheme_Object *struct_type_property_p(int argc, Scheme_Object *argv[])
+{
+  return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_struct_property_type)
+	  ? scheme_true : scheme_false);
+}
+
+/*========================================================================*/
+/*                             struct ops                                 */
+/*========================================================================*/
 
 static void wrong_struct_type(Scheme_Object *name, 
 			      Scheme_Object *expected,
@@ -373,19 +386,39 @@ scheme_make_struct_instance(Scheme_Object *_stype, int argc, Scheme_Object **arg
 {
   Scheme_Structure *inst;
   Scheme_Struct_Type *stype;
-  int i;
+  int p, i, j, nis, ns, c;
 
   stype = (Scheme_Struct_Type *)_stype;
-  
+
+  c = stype->num_slots;
   inst = (Scheme_Structure *)
     scheme_malloc_tagged(sizeof(Scheme_Structure) 
-			 + ((stype->num_slots - 1) * sizeof(Scheme_Object *)));
+			 + ((c - 1) * sizeof(Scheme_Object *)));
   
   inst->type = scheme_structure_type;
   inst->stype = stype;
 
-  for (i = 0; i < argc; i++) {
-    inst->slots[i] = args[i];
+  j = c;
+  i = argc;
+  for (p = stype->name_pos; p >= 0; p--) {
+    /* Fill in defaults: */
+    if (p) {
+      ns = stype->parent_types[p]->num_slots - stype->parent_types[p - 1]->num_slots;
+      nis = stype->parent_types[p]->num_islots - stype->parent_types[p - 1]->num_islots;
+    } else {
+      ns = stype->parent_types[0]->num_slots;
+      nis = stype->parent_types[0]->num_islots;
+    }
+
+    ns -= nis;
+
+    while (ns--) {
+      inst->slots[--j] = scheme_false;
+    }
+
+    while (nis--) {
+      inst->slots[--j] = args[--i];
+    }
   }
   
   return (Scheme_Object *)inst;
@@ -400,28 +433,77 @@ static Scheme_Object *struct_pred(Scheme_Struct_Type *stype, int argc, Scheme_Ob
     return scheme_false;
 }
 
+static int parse_pos(Struct_Proc_Info *i, Scheme_Object **args, int argc)
+{
+  int pos;
+
+  if (!SCHEME_INTP(args[1]) || (SCHEME_INT_VAL(args[1]) < 0)) {
+    if (SCHEME_BIGNUMP(args[1]) && SCHEME_BIGPOS(args[1])) {
+      pos = 32769; /* greater than max field count */
+    } else {
+      scheme_wrong_type(scheme_symbol_name(i->func_name), 
+			"non-negative exact integer", 
+			1, argc, args);
+      return NULL;
+    }
+  } else
+    pos = SCHEME_INT_VAL(args[1]);
+  
+  if ((pos < i->struct_type->num_slots)
+      && i->struct_type->name_pos)
+    pos += i->struct_type->parent_types[i->struct_type->name_pos - 1]->num_slots;
+  
+  if (pos >= i->struct_type->num_slots) {
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, args[1],
+		     "%s: slot index for <%S> not in [0, %d]: %V",
+		     scheme_symbol_name(i->func_name),
+		     i->struct_type->type_name,
+		     (i->struct_type->name_pos
+		      ? (i->struct_type->num_slots
+			 - i->struct_type->parent_types[i->struct_type->name_pos - 1]->num_slots)
+		      : i->struct_type->num_slots),
+		     args[1]);
+    return NULL;
+  }
+
+  return pos;
+}
+
 static Scheme_Object *struct_getter(Struct_Proc_Info *i, int argc, Scheme_Object **args)
 {
   Scheme_Structure *inst;
+  int pos;
 
-  if (NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_structure_type))
+  if (NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_structure_type)) {
     scheme_wrong_type(scheme_symbol_name(i->func_name), 
 		      scheme_symbol_name(i->struct_type->type_name), 
 		      0, argc, args);
+    return NULL;
+  }
   
   inst = (Scheme_Structure *)args[0];
-  if (!STRUCT_TYPEP(i->struct_type, inst))
+
+  if (!STRUCT_TYPEP(i->struct_type, inst)) {
     wrong_struct_type(i->func_name, 
 		      i->struct_type->type_name, 
 		      SCHEME_STRUCT_NAME_SYM(inst), 
 		      0, argc, args);
+    return NULL;
+  }
   
-  return inst->slots[i->field];
+  if (argc == 2)
+    pos = parse_pos(i, args, argc);
+  else
+    pos = i->field;
+
+  return inst->slots[pos];
 }
 
 static Scheme_Object *struct_setter(Struct_Proc_Info *i, int argc, Scheme_Object **args)
 {
   Scheme_Structure *inst;
+  int pos;
+  Scheme_Object *v;
 
   if (NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_structure_type))
     scheme_wrong_type(scheme_symbol_name(i->func_name), 
@@ -435,12 +517,20 @@ static Scheme_Object *struct_setter(Struct_Proc_Info *i, int argc, Scheme_Object
 		      SCHEME_STRUCT_NAME_SYM(inst),
 		      0, argc, args);
 	
-  inst->slots[i->field] = args[1];
+  if (argc == 3) {
+    pos = parse_pos(i, args, argc);
+    v = args[2];
+  } else {
+    pos = i->field;
+    v = args[1];
+  }
+
+  inst->slots[pos] = v;
   
   return scheme_void;
 }
 
-int scheme_equal_structs (Scheme_Object *obj1, Scheme_Object *obj2)
+int scheme_equal_structs(Scheme_Object *obj1, Scheme_Object *obj2)
 {
   Scheme_Structure *s1, *s2;
   int i;
@@ -466,60 +556,16 @@ int scheme_equal_structs (Scheme_Object *obj1, Scheme_Object *obj2)
 static Scheme_Object *
 struct_p(int argc, Scheme_Object *argv[])
 {
-  return SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type)
-    ? scheme_true : scheme_false;
+  return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type)
+	  ? scheme_true 
+	  : scheme_false);
 }
 
 static Scheme_Object *
 struct_type_p(int argc, Scheme_Object *argv[])
 {
-  return SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_struct_type_type)
-    ? scheme_true : scheme_false;
-}
-
-static Scheme_Object *
-struct_length(int argc, Scheme_Object *argv[])
-{
-  Scheme_Structure *s;
-
-  if (NOT_SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type))
-    scheme_wrong_type("struct-length", "struct", 0, argc, argv);
-
-  s = (Scheme_Structure *)argv[0];
-
-  return scheme_make_integer(SCHEME_STRUCT_NUM_SLOTS(s));
-}
-
-static Scheme_Object *
-struct_ref(int argc, Scheme_Object *argv[])
-{
-  Scheme_Structure *s;
-  long i, m;
-  char *name = "struct-ref";
-
-  if (NOT_SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type))
-    scheme_wrong_type(name, "struct", 0, argc, argv);
-  
-  if (!scheme_is_subinspector(SCHEME_STRUCT_INSPECTOR(argv[0]), 
-			      scheme_get_param(scheme_config, MZCONFIG_INSPECTOR))) {
-    scheme_arg_mismatch(name, "current inspector cannot inspect struct: ", argv[0]);
-    return NULL;
-  }
-
-  s = (Scheme_Structure *)argv[0];
-  m = SCHEME_STRUCT_NUM_SLOTS(s);
-
-  i = scheme_extract_index(name, 1, argc, argv, m);
-
-  if (i >= m)
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
-		     argv[1],
-		     "%s: index %s out of range [%d, %d]",
-		     name, 
-		     scheme_make_provided_string(argv[1], 0, NULL), 
-		     0, m - 1);
-
-  return s->slots[i];
+  return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_struct_type_type)
+	  ? scheme_true : scheme_false);
 }
 
 static Scheme_Object *struct_to_vector(int argc, Scheme_Object *argv[])
@@ -583,6 +629,10 @@ struct_constr_p(int argc, Scheme_Object *argv[])
 	  ? scheme_true : scheme_false);
 }
 
+/*========================================================================*/
+/*                          struct op maker                               */
+/*========================================================================*/
+
 #define NUM_BASE_VALUES 3
 #define NUM_VALUES_PER_FIELD 2
 
@@ -591,6 +641,8 @@ struct_constr_p(int argc, Scheme_Object *argv[])
 #define PRED_NAME(base, blen) make_name("", base, blen, "?", NULL, 0, "")
 #define GET_NAME(base, blen, field, flen) make_name("", base, blen, "-", field, flen, "")
 #define SET_NAME(base, blen, field, flen) make_name("set-", base, blen, "-", field, flen, "!")
+#define GENGET_NAME(base, blen) make_name("", base, blen, "-ref", NULL, 0, "")
+#define GENSET_NAME(base, blen) make_name("", base, blen, "-set!", NULL, 0, "")
 
 Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
 					  Scheme_Object **names,
@@ -634,6 +686,11 @@ Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
     pos++;
   }
 
+  if (flags & SCHEME_STRUCT_GEN_GET)
+    --count;
+  if (flags & SCHEME_STRUCT_GEN_SET)
+    --count;
+
   slot_num = (struct_type->name_pos
 	      ? struct_type->parent_types[struct_type->name_pos - 1]->num_slots 
 	      : 0);
@@ -659,6 +716,25 @@ Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
     }
 
     slot_num++;
+  }
+
+  if (flags & SCHEME_STRUCT_GEN_GET) {
+    Scheme_Object *vi;
+    vi = make_struct_proc(struct_type,
+			  names[pos],
+			  SCHEME_GEN_GETTER,
+			  slot_num);
+    values[pos] = vi;
+    pos++;
+  }
+  if (flags & SCHEME_STRUCT_GEN_SET) {
+    Scheme_Object *vi;
+    vi = make_struct_proc(struct_type,
+			  names[pos],
+			  SCHEME_GEN_SETTER,
+			  slot_num);
+    values[pos] = vi;
+    pos++;
   }
   
   scheme_end_stubborn_change((void *)values);
@@ -689,6 +765,10 @@ static Scheme_Object **_make_struct_names(const char *base, int blen,
     count += fcount;
   if (!(flags & SCHEME_STRUCT_NO_SET))
     count += fcount;
+  if (flags & SCHEME_STRUCT_GEN_GET)
+    count++;
+  if (flags & SCHEME_STRUCT_GEN_SET)
+    count++;
 
   if (count_out) {
     *count_out = count;
@@ -748,6 +828,17 @@ static Scheme_Object **_make_struct_names(const char *base, int blen,
     }
   }
 
+  if (flags & SCHEME_STRUCT_GEN_GET) {
+    Scheme_Object *nm;
+    nm = GENGET_NAME(base, blen);
+    names[pos++] = nm;
+  }
+  if (flags & SCHEME_STRUCT_GEN_SET) {
+    Scheme_Object *nm;
+    nm = GENSET_NAME(base, blen);
+    names[pos++] = nm;
+  }
+
   scheme_end_stubborn_change((void *)names);
 
   return names;
@@ -779,275 +870,6 @@ Scheme_Object **scheme_make_struct_names_from_array(const char *base,
 			    flags, count_out);
 }
 
-static Scheme_Object *_make_struct_type(const char *base, int blen,
-					Scheme_Object *parent,
-					Scheme_Object *inspector,
-					int num_fields)
-{
-  Scheme_Struct_Type *struct_type, *parent_type;
-  int j, depth;
-  
-  parent_type = (Scheme_Struct_Type *)parent;
-
-  depth = parent_type ? (1 + parent_type->name_pos) : 0;
-
-  struct_type =(Scheme_Struct_Type *)scheme_malloc_tagged(sizeof(Scheme_Struct_Type)
-							  + (depth 
-							     * sizeof(Scheme_Struct_Type *)));
-  
-  struct_type->type = scheme_struct_type_type;
-  struct_type->name_pos = depth;
-  struct_type->parent_types[depth] = struct_type;
-  for (j = depth; j--; ) {
-    struct_type->parent_types[j] = parent_type->parent_types[j];
-  }
-
-  {
-    Scheme_Object *tn;
-    tn = TYPE_NAME(base, blen);
-    struct_type->type_name = tn;
-  }
-  struct_type->num_slots = num_fields + (parent_type ? parent_type->num_slots : 0);
-
-  if (!inspector) {
-    if (parent_type)
-      inspector = parent_type->inspector;
-    else {
-      inspector = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
-      inspector = (Scheme_Object *)((Scheme_Inspector *)inspector)->superior;
-    }
-  }
-  struct_type->inspector = inspector;
-
-  return (Scheme_Object *)struct_type;
-}
-
-Scheme_Object *scheme_make_struct_type(Scheme_Object *base,
-				       Scheme_Object *parent,
-				       Scheme_Object *inspector,
-				       int num_fields)
-{
-  return _make_struct_type(scheme_symbol_val(base),
-			   SCHEME_SYM_LEN(base),
-			   parent, inspector, num_fields);
-}
-
-Scheme_Object *scheme_make_struct_type_from_string(const char *base,
-						   Scheme_Object *parent,
-						   int num_fields)
-{
-  return _make_struct_type(base, strlen(base), parent, scheme_false, num_fields);
-}
-
-static Scheme_Object *
-struct_execute (Scheme_Object *form)
-{
-  Struct_Info *info;
-  Scheme_Object **values, **names, *parent, *inspector;
-  Scheme_Object *type;
-
-  info = (Struct_Info *)form;
-
-  parent = (SCHEME_NULLP(info->parent_type_expr)
-	    ? NULL 
-	    : _scheme_eval_linked_expr(info->parent_type_expr));
-
-  if (parent && (SCHEME_FALSEP(parent) 
-		 || SAME_TYPE(SCHEME_TYPE(parent), scheme_inspector_type))) {
-    inspector = parent;
-    parent = NULL;
-  } else
-    inspector = NULL;
-
-  if (parent && !SAME_TYPE(SCHEME_TYPE(parent),
-			   scheme_struct_type_type))
-    scheme_raise_exn(MZEXN_STRUCT,
-		     "struct: supertype expression returned "
-		     "a value that is not a struct type value");
-
-  type = scheme_make_struct_type(info->name,
-				 parent, 
-				 inspector,
-				 info->num_fields);
-
-  if (!info->memo_names) {
-    Scheme_Object **sa;
-    int c;
-    sa = scheme_make_struct_names(info->name,
-				  info->fields,
-				  0, 
-				  &c);
-    info->count = c;
-    info->memo_names = sa;
-  }
-  names = info->memo_names;
-
-  values = scheme_make_struct_values(type, names, info->count, 0);
-
-  return scheme_values(info->count, values);
-}
-
-static Scheme_Object *
-struct_link(Scheme_Object *expr, Link_Info *info)
-{
-  Struct_Info *osinfo = (Struct_Info *)expr;
-  Struct_Info *nsinfo;
-  Scheme_Object *e;
-
-  e = osinfo->parent_type_expr;
-  if (e)
-    e = scheme_link_expr(e, info);
-
-  /* If expression needs no linking, reuse old one */
-  if (e == osinfo->parent_type_expr)
-    return (Scheme_Object *)osinfo;
-
-  nsinfo = MALLOC_ONE_TAGGED(Struct_Info);
-  memcpy(nsinfo, osinfo, sizeof(Struct_Info));
-  nsinfo->parent_type_expr = e;
-
-  return scheme_make_syntax_linked(STRUCT_EXPD, (Scheme_Object *)nsinfo);
-}
-
-static Scheme_Object *
-struct_resolve(Scheme_Object *expr, Resolve_Info *info)
-{
-  Struct_Info *sinfo;
-
-  sinfo = (Struct_Info *)expr;
-
-  if (sinfo->parent_type_expr) {
-    Scheme_Object *le;
-    le = scheme_resolve_expr(sinfo->parent_type_expr, info);
-    sinfo->parent_type_expr = le;
-  }
-
-  return scheme_make_syntax_resolved(STRUCT_EXPD, expr);
-}
-
-static Scheme_Object *
-do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env, 
-		  Scheme_Compile_Info *in_rec, int drec, 
-		  int depth, Scheme_Object *boundname)
-{
-  Struct_Info *info;
-  Scheme_Object *base_symbol, *field_symbols, *l, *form, *parent_expr;
-  int count;
-
-  form = SCHEME_STX_CDR(forms);
-  if (!SCHEME_STX_PAIRP(form))
-    scheme_wrong_syntax("struct", form, forms, NULL);
-  base_symbol = SCHEME_STX_CAR(form);
-  form = SCHEME_STX_CDR(form);
-  if (!SCHEME_STX_PAIRP(form))
-    scheme_wrong_syntax("struct", form, forms, NULL);
-  field_symbols = SCHEME_STX_CAR(form);
-  form = SCHEME_STX_CDR(form);
-  if (!SCHEME_STX_NULLP(form)) 
-    scheme_wrong_syntax("struct", form, forms, NULL);
-
-  if (in_rec)
-    scheme_compile_rec_done_local(in_rec, drec);
-
-  if (SCHEME_STX_PAIRP(base_symbol)) {
-    parent_expr = SCHEME_STX_CDR(base_symbol);
-    base_symbol = SCHEME_STX_CAR(base_symbol);
-    if (!SCHEME_STX_PAIRP(parent_expr) || !SCHEME_STX_NULLP(SCHEME_STX_CDR(parent_expr))) {
-      scheme_wrong_syntax("struct", parent_expr, forms, "improper name-parent expression");
-      return NULL;
-    }
-    parent_expr = SCHEME_STX_CAR(parent_expr);
-    if (in_rec)
-      parent_expr = scheme_compile_expr(parent_expr, env, in_rec, drec);
-    else
-      parent_expr = scheme_expand_expr(parent_expr, env, depth, scheme_false);
-  } else {
-    parent_expr = NULL;
-
-    if (in_rec)
-      in_rec[drec].max_let_depth = 0;
-  }
-
-  if (!SCHEME_STX_SYMBOLP(base_symbol))
-    scheme_wrong_syntax("struct", base_symbol, form, "struct name must be an identifier");
-  
-  if (in_rec) {
-    Scheme_Object *fields;
-
-    info = MALLOC_ONE_TAGGED(Struct_Info);
-    info->type = scheme_struct_info_type;
-    
-    info->name = SCHEME_STX_SYM(base_symbol);
-    fields = scheme_syntax_to_datum(field_symbols, 0, NULL);
-    info->fields = fields;
-    info->parent_type_expr = parent_expr ? parent_expr : scheme_null;
-  } else
-    info = NULL;
-
-  count = 0;
-  l = field_symbols;
-  while (!SCHEME_STX_NULLP(l)) {
-    Scheme_Object *a;
-    count++;
-    if (!SCHEME_STX_PAIRP(l))
-      scheme_wrong_syntax("struct", l, form, "badly formed field list");
-    a = SCHEME_STX_CAR(l);
-    if (!SCHEME_STX_SYMBOLP(a))
-      scheme_wrong_syntax("struct", a, form, "field name must be an identifier");
-    l = SCHEME_STX_CDR(l);
-  }
-
-  if (in_rec) {
-    info->num_fields = count;
-    info->memo_names = NULL;
-
-    return scheme_make_syntax_compiled(STRUCT_EXPD, (Scheme_Object *)info);
-  } else {
-    Scheme_Object *base, *rest;
-    base = (parent_expr 
-	    ? icons(base_symbol,
-		    icons(parent_expr, scheme_null))
-	    : base_symbol);
-    rest = SCHEME_STX_CAR(forms);
-    return scheme_datum_to_syntax(icons(rest,
-					icons(base,
-					      icons(field_symbols, scheme_null))),
-				  forms, forms, 0, 1);
-  }
-}
-
-static Scheme_Object *
-struct_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
-		   Scheme_Compile_Info *rec, int drec)
-{
-  return do_struct_syntax(form, env, rec, drec, 0, scheme_false);
-}
-
-static Scheme_Object *
-struct_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
-{
-  return do_struct_syntax(form, env, NULL, 0, depth, boundname);
-}
-
-static Scheme_Object *make_named_constructor(int argc, Scheme_Object *argv[])
-{
-  Scheme_Object *t, **nms, **vs;
-  int c, flags;
-
-  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_struct_type_type))
-    scheme_wrong_type("make-naming-constructor", "struct type", 0, argc, argv);
-  if (!SCHEME_SYMBOLP(argv[1]))
-    scheme_wrong_type("make-naming-constructor", "symbol", 1, argc, argv);
-
-  flags = SCHEME_STRUCT_NO_TYPE | SCHEME_STRUCT_NO_PRED;
-
-  t = scheme_make_struct_type(argv[1], argv[0], NULL, 0);
-  nms = scheme_make_struct_names(argv[1], scheme_null, flags, &c);
-  vs = scheme_make_struct_values(t, nms, c, flags);
-
-  return vs[0];
-}
-
 static Scheme_Object *
 make_struct_proc(Scheme_Struct_Type *struct_type, 
 		 Scheme_Object *func_name, 
@@ -1060,8 +882,8 @@ make_struct_proc(Scheme_Struct_Type *struct_type,
     p = scheme_make_folding_closed_prim((Scheme_Closed_Prim *)scheme_make_struct_instance,
 					(void *)struct_type,
 					scheme_symbol_name(func_name),
-					struct_type->num_slots,
-					struct_type->num_slots,
+					struct_type->num_islots,
+					struct_type->num_islots,
 					0);
     flags |= SCHEME_PRIM_IS_STRUCT_CONSTR;
   } else if (proc_type == SCHEME_PRED) {
@@ -1072,6 +894,7 @@ make_struct_proc(Scheme_Struct_Type *struct_type,
     flags |= SCHEME_PRIM_IS_STRUCT_PRED;
   } else {
     Struct_Proc_Info *i;
+    int need_pos;
 
     i = MALLOC_ONE_RT(Struct_Proc_Info);
 #ifdef MZTAG_REQUIRED
@@ -1081,17 +904,23 @@ make_struct_proc(Scheme_Struct_Type *struct_type,
     i->func_name = func_name;
     i->field = field_num;
 
-    if (proc_type == SCHEME_GETTER) {
+    if ((proc_type == SCHEME_GEN_GETTER)
+	|| (proc_type == SCHEME_GEN_SETTER))
+      need_pos = 1;
+    else
+      need_pos = 0;
+
+    if ((proc_type == SCHEME_GETTER) || (proc_type == SCHEME_GEN_GETTER)) {
       p = scheme_make_folding_closed_prim((Scheme_Closed_Prim *)struct_getter,
 					  (void *)i,
 					  scheme_symbol_name(func_name),
-					  1, 1, 1);
+					  1 + need_pos, 1 + need_pos, 1);
       flags |= SCHEME_PRIM_IS_STRUCT_GETTER;
     } else {
       p = scheme_make_folding_closed_prim((Scheme_Closed_Prim *)struct_setter,
 					  (void *)i,
 					  scheme_symbol_name(func_name),
-					  2, 2, 0);
+					  2 + need_pos, 2 + need_pos, 0);
       flags |= SCHEME_PRIM_IS_STRUCT_SETTER;
     }
   }
@@ -1135,94 +964,211 @@ static Scheme_Object *make_name(const char *pre, const char *tn, int ltn,
   return scheme_intern_exact_symbol(name, total);
 }
 
-/************************************************************************/
+/*========================================================================*/
+/*                             struct type                                */
+/*========================================================================*/
 
-#define cons scheme_make_pair
-
-static Scheme_Object *write_struct_info(Scheme_Object *obj)
+static Scheme_Object *_make_struct_type(const char *base, int blen,
+					Scheme_Object *parent,
+					Scheme_Object *inspector,
+					int num_fields,
+					int num_uninit_fields)
 {
-  Struct_Info *info;
-
-  info = (Struct_Info *)obj;
-
-  return cons(scheme_make_integer(info->count),
-	      cons(scheme_make_integer(info->num_fields),
-		   cons(info->name, 
-			cons(scheme_protect_quote(info->parent_type_expr),
-			     info->fields))));
-}
-
-#define X_SCHEME_ASSERT(x, y)
-
-static Scheme_Object *read_struct_info(Scheme_Object *obj)
-{
-  Scheme_Object *v, *first = scheme_null, *last = NULL;
-  Struct_Info *info;
-
-#define BAD_CS "bad compiled structure info"
-
-  info = (Struct_Info *)scheme_malloc_stubborn_tagged(sizeof(Struct_Info));
-  info->type = scheme_struct_info_type;
-
-  X_SCHEME_ASSERT(SCHEME_PAIRP(obj), BAD_CS);
-  v = SCHEME_CAR(obj);
-  obj = SCHEME_CDR(obj);
-  X_SCHEME_ASSERT(SCHEME_INTP(v), BAD_CS);
-  info->count = SCHEME_INT_VAL(v);
-
-  X_SCHEME_ASSERT(SCHEME_PAIRP(obj), BAD_CS);
-  v = SCHEME_CAR(obj);
-  obj = SCHEME_CDR(obj);
-  X_SCHEME_ASSERT(SCHEME_INTP(v), BAD_CS);
-  info->num_fields = SCHEME_INT_VAL(v);
-
-  X_SCHEME_ASSERT(SCHEME_PAIRP(obj), BAD_CS);
-  info->name = SCHEME_CAR(obj);
-  obj = SCHEME_CDR(obj);
+  Scheme_Struct_Type *struct_type, *parent_type;
+  int j, depth;
   
-  X_SCHEME_ASSERT(SCHEME_PAIRP(obj), BAD_CS);
-  info->parent_type_expr = SCHEME_CAR(obj);
-  obj = SCHEME_CDR(obj);
+  parent_type = (Scheme_Struct_Type *)parent;
+
+  depth = parent_type ? (1 + parent_type->name_pos) : 0;
+
+  struct_type =(Scheme_Struct_Type *)scheme_malloc_tagged(sizeof(Scheme_Struct_Type)
+							  + (depth 
+							     * sizeof(Scheme_Struct_Type *)));
   
-  X_SCHEME_ASSERT(SCHEME_LISTP(obj), BAD_CS);
-
-  /* must copy obj */
-  while (SCHEME_PAIRP(obj)) {
-    Scheme_Object *pair;
-    pair = scheme_make_pair(SCHEME_CAR(obj), scheme_null);
-
-    if (last)
-      SCHEME_CDR(last) = pair;
-    else
-      first = pair;
-    last = pair;
-
-    obj = SCHEME_CDR(obj);
+  struct_type->type = scheme_struct_type_type;
+  struct_type->name_pos = depth;
+  struct_type->parent_types[depth] = struct_type;
+  for (j = depth; j--; ) {
+    struct_type->parent_types[j] = parent_type->parent_types[j];
   }
 
-  info->fields = first;
+  {
+    Scheme_Object *tn;
+    tn = TYPE_NAME(base, blen);
+    struct_type->type_name = tn;
+  }
+  struct_type->num_slots = num_fields + num_uninit_fields + (parent_type ? parent_type->num_slots : 0);
+  struct_type->num_islots = num_fields + (parent_type ? parent_type->num_islots : 0);
 
-  info->memo_names = NULL;
+  /* Check for integer overflow or total more than 32768: */
+  if ((num_fields < 0) || (num_uninit_fields < 0)
+      || (num_fields > 32768)
+      || (num_uninit_fields > 32768)
+      || (num_uninit_fields + num_fields > 32768)
+      || (parent_type
+	  && ((struct_type->num_slots < parent_type->num_slots)
+	      || (struct_type->num_islots < parent_type->num_islots)))) {
+    /* Too many fields. */
+    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		     "too many fields for struct-type; maximum total field count is 32768");
+    return NULL;
+  }
   
-  scheme_end_stubborn_change((void *)info);
+  if (!inspector) {
+    if (parent_type)
+      inspector = parent_type->inspector;
+    else {
+      inspector = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+      inspector = (Scheme_Object *)((Scheme_Inspector *)inspector)->superior;
+    }
+  }
+  struct_type->inspector = inspector;
 
-  return (Scheme_Object *)info;
+  if (parent_type) {
+    struct_type->num_props = parent_type->num_props;
+    struct_type->props = parent_type->props;
+    struct_type->props_ht = parent_type->props_ht;
+  }
+
+  return (Scheme_Object *)struct_type;
 }
 
-#ifdef MEMORY_COUNTING_ON
-void scheme_count_struct_info(Scheme_Object *o, long *s, long *e, 
-			      Scheme_Hash_Table *ht)
+Scheme_Object *scheme_make_struct_type(Scheme_Object *base,
+				       Scheme_Object *parent,
+				       Scheme_Object *inspector,
+				       int num_fields)
 {
-  Struct_Info *info = (Struct_Info *)o;
-
-  *s = sizeof(Struct_Info);
-  *e = (ht 
-	? (scheme_count_memory(info->name, ht)
-	   + scheme_count_memory(info->parent_type_expr, ht)
-	   + scheme_count_memory(info->fields, ht))
-	: 0);
+  return _make_struct_type(scheme_symbol_val(base),
+			   SCHEME_SYM_LEN(base),
+			   parent, inspector, num_fields, 0);
 }
-#endif
+
+Scheme_Object *scheme_make_struct_type_from_string(const char *base,
+						   Scheme_Object *parent,
+						   int num_fields)
+{
+  return _make_struct_type(base, strlen(base), parent, scheme_false, num_fields, 0);
+}
+
+static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
+{
+  int initc, uninitc, num_props = 0, opaque = 1, i;
+  Scheme_Object *props = scheme_null, *l, *a, **r;
+  Scheme_Object *inspector = NULL, **names;
+  Scheme_Struct_Type *type;
+
+  if (!SCHEME_SYMBOLP(argv[0]))
+    scheme_wrong_type("make-struct-type", "symbol", 0, argc, argv);
+  if (!SCHEME_FALSEP(argv[1])
+      && !SAME_TYPE(SCHEME_TYPE(argv[1]), scheme_struct_type_type))
+    scheme_wrong_type("make-struct-type", "struct-type or #f", 1, argc, argv);
+
+  if (!SCHEME_INTP(argv[2]) || (SCHEME_INT_VAL(argv[2]) < 0)) {
+    if (SCHEME_BIGNUMP(argv[2]) && SCHEME_BIGPOS(argv[2]))
+      initc = -1;
+    else {
+      scheme_wrong_type("make-struct-type", "non-negative exact integer", 2, argc, argv);
+      return NULL;
+    }
+  } else
+    initc = SCHEME_INT_VAL(argv[2]);
+
+  if (!SCHEME_INTP(argv[3]) || (SCHEME_INT_VAL(argv[3]) < 0)) {
+    if (SCHEME_BIGNUMP(argv[3]) && SCHEME_BIGPOS(argv[3]))
+      uninitc = -1;
+    else {
+      scheme_wrong_type("make-struct-type", "non-negative exact integer", 3, argc, argv);
+      return NULL;
+    }
+  } else
+    uninitc = SCHEME_INT_VAL(argv[3]);
+  
+  if (argc > 4) {
+    props = argv[4];
+    for (l = props; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+      a = SCHEME_CAR(l);
+      if (!SCHEME_PAIRP(a)
+	  || !SAME_TYPE(SCHEME_TYPE(SCHEME_CAR(a)), scheme_struct_property_type))
+	break;
+      num_props++;
+    }
+    if (!SCHEME_NULLP(l)) {
+      scheme_wrong_type("make-struct-type", "list of struct-type-property--value pairs", 4, argc, argv);
+    }
+
+    if (argc > 5) {
+      if (!SAME_TYPE(SCHEME_TYPE(argv[5]), scheme_inspector_type))
+	scheme_wrong_type("make-struct-type", "inspector", 5, argc, argv);
+
+      inspector = argv[5];
+      if (argc > 6)
+	opaque = SCHEME_TRUEP(argv[6]);
+    }
+  }
+
+  type = (Scheme_Struct_Type *)_make_struct_type(SCHEME_SYM_VAL(argv[0]), SCHEME_SYM_LEN(argv[0]),
+						 SCHEME_FALSEP(argv[1]) ? NULL : argv[1],
+						 inspector,
+						 initc, uninitc);
+
+  if (num_props) {
+    if (type->props_ht || (type->num_props + num_props > PROP_USE_HT_COUNT)) {
+      Scheme_Hash_Table *ht;
+
+      ht = scheme_hash_table(type->num_props + num_props, SCHEME_hash_ptr, 0, 0);
+    
+      if (!type->props_ht) {
+	for (i = 0; i < type->num_props; i++) {
+	  scheme_add_to_table(ht, (char *)SCHEME_CAR(type->props[i]), SCHEME_CDR(type->props[i]), 0);
+	}
+	type->props_ht = ht;
+	type->num_props = 0;
+	type->props = NULL;
+      } else {
+	/* Duplicate hash table: */
+	Scheme_Bucket **bs;
+	bs = type->props_ht->buckets;
+	for (i =  type->props_ht->count; i--; ) {
+	  if (bs[i] && bs[i]->key) {
+	    scheme_add_to_table(ht, bs[i]->key, bs[i]->val, 0);
+	  }
+	}
+      }
+
+      /* Add new props: */
+      for (l = props; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	a = SCHEME_CAR(l);
+	scheme_add_to_table(ht, (char *)SCHEME_CAR(a), SCHEME_CDR(a), 0);
+      }
+    } else {
+      /* Make props array: */
+      Scheme_Object **pa;
+
+      i = type->num_props;
+      
+      pa = MALLOC_N(Scheme_Object *, i + num_props);
+      memcpy(pa, type->props, sizeof(Scheme_Object *) * i);
+
+      for (l = props; SCHEME_PAIRP(l); l = SCHEME_CDR(l), i++) {
+	a = SCHEME_CAR(l);
+	a = scheme_make_pair(SCHEME_CAR(a), SCHEME_CDR(a));
+	pa[i] = a;
+      }
+      
+      type->num_props += num_props;
+      type->props = pa;
+    }
+  }
+
+  names = scheme_make_struct_names(argv[0],
+				   NULL,
+				   SCHEME_STRUCT_GEN_GET | SCHEME_STRUCT_GEN_SET, 
+				   &i);
+  r = scheme_make_struct_values((Scheme_Object *)type, names, i, 
+				SCHEME_STRUCT_GEN_GET | SCHEME_STRUCT_GEN_SET);
+
+  return scheme_values(i, r);
+}
 
 /**********************************************************************/
 
@@ -1237,7 +1183,7 @@ static void register_traversers(void)
 {
   GC_REG_TRAV(scheme_structure_type, mark_struct_val);
   GC_REG_TRAV(scheme_struct_type_type, mark_struct_type_val);
-  GC_REG_TRAV(scheme_struct_info_type, mark_struct_info_val);
+  GC_REG_TRAV(scheme_struct_property_type, mark_struct_prop_val);
 
   GC_REG_TRAV(scheme_inspector_type, mark_inspector);
 

@@ -251,7 +251,7 @@ Scheme_Env *scheme_basic_env()
   scheme_set_param(scheme_current_thread->config, MZCONFIG_ENV, 
 		   (Scheme_Object *)env); 
 
-  scheme_add_embedded_builtins(env);
+  // scheme_add_embedded_builtins(env);
 
   scheme_save_initial_module_set(env);
 

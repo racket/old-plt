@@ -119,7 +119,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_output_port_type, "<output-port>");
   set_name(scheme_thread_type, "<thread>");
   set_name(scheme_string_type, "<string>");
-  set_name(scheme_struct_info_type, "<struct-info>");
+  set_name(scheme_struct_property_type, "<struct-property>");
   set_name(scheme_structure_type, "<struct>");
   set_name(scheme_symbol_type, "<symbol>");
   set_name(scheme_syntax_compiler_type, "<syntax-compiler>");

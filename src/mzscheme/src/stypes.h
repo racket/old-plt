@@ -93,7 +93,7 @@ enum {
   scheme_eval_waiting_type,
   scheme_tail_call_waiting_type,
   scheme_undefined_type,
-  scheme_struct_info_type,
+  scheme_struct_property_type,
   scheme_multiple_values_type,
   scheme_placeholder_type,
   scheme_case_lambda_sequence_type,   /* 80 */

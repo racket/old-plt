@@ -1272,6 +1272,8 @@ extern Scheme_Extension_Table *scheme_extension_table;
 #define SCHEME_STRUCT_NO_PRED 0x04
 #define SCHEME_STRUCT_NO_GET 0x08
 #define SCHEME_STRUCT_NO_SET 0x10
+#define SCHEME_STRUCT_GEN_GET 0x20
+#define SCHEME_STRUCT_GEN_SET 0x40
 
 /*========================================================================*/
 /*                           file descriptors                             */

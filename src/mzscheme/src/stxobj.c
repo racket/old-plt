@@ -48,6 +48,15 @@ static Scheme_Object *module_eq(int argc, Scheme_Object **argv);
 
 #define HAS_SUBSTX(obj) (SCHEME_PAIRP(obj) || SCHEME_VECTORP(obj) || SCHEME_BOXP(obj))
 
+typedef struct Module_Renames {
+  Scheme_Type type; /* = scheme_rename_table_type */
+  char plus_kernel, nonmodule;
+  Scheme_Hash_Table *ht;
+  long phase;
+} Module_Renames;
+
+#define SCHEME_RENAMESP(obj) (SAME_TYPE(SCHEME_TYPE(obj), scheme_rename_table_type))
+
 /* Wraps:
 
    A wrap is a list of wrap-elems.
@@ -56,10 +65,8 @@ static Scheme_Object *module_eq(int argc, Scheme_Object **argv);
    - A wrap-elem (vector <sym> <stx> ... <sym-or-#f> ...) is a lexical rename
                           env   var      var-resolved
                                          #f => not yet computed
-   - A wrap-elem <hash-table> is a module rename set
-         the hash table maps renamed syms to modname-srcname pairs,
-         and maps phase_key to phase,
-         and may map nonmodule_key to scheme_true
+   - A wrap-elem <rename-table> is a module rename set
+         the hash table maps renamed syms to modname-srcname pairs
    - A wrap-elem (box (cons <num> <env>)) is a phase shift by <num>
          with phase-2 imports acessible via <env>
 
@@ -247,15 +254,19 @@ void scheme_set_rename(Scheme_Object *rnm, int pos, Scheme_Object *oldname)
 
 Scheme_Object *scheme_make_module_rename(long phase, int nonmodule)
 {
+  Module_Renames *mr;
   Scheme_Hash_Table *ht;
 
-  ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
-  scheme_add_to_table(ht, (const char *)phase_key, scheme_make_integer(phase), 0);
-  
-  if (nonmodule)
-    scheme_add_to_table(ht, (const char *)nonmodule_key, scheme_true, 0);
+  mr = MALLOC_ONE_TAGGED(Module_Renames);
+  mr->type = scheme_rename_table_type;
 
-  return (Scheme_Object *)ht;
+  ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+
+  mr->ht = ht;
+  mr->phase = phase;
+  mr->nonmodule = nonmodule;
+
+  return (Scheme_Object *)mr;
 }
 
 void scheme_extend_module_rename(Scheme_Object *mrn,

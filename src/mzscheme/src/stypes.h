@@ -105,7 +105,7 @@ enum {
   scheme_begin0_sequence_type,
 
   scheme_compiled_unit_type,
-  scheme_unit_body_data_type,
+  scheme_rename_table_type,
   scheme_module_type,
   scheme_unit_compound_data_type,
   scheme_invoke_unit_data_type,  /* 90 */

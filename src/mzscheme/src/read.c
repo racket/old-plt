@@ -3078,7 +3078,8 @@ static Scheme_Object *read_compact(CPort *port, int use_stack)
 	params.can_read_pipe_quote = 1;
 	params.can_read_box = 1;
 	params.can_read_graph = 1;
-	params.case_sensitive = 0;
+	// Use startup value of case sensitivity so legacy code will work.
+	params.case_sensitive = scheme_case_sensitive;
 	params.square_brackets_are_parens = 1;
 	params.curly_braces_are_parens = 1;
 	params.read_decimal_inexact = 1;

@@ -61,8 +61,9 @@
 	     ;; Build the class expression first, to give it a good src location:
 	     (with-syntax ([class-expr
 			    (syntax/loc stx
-			      (class*/names (this super-instantiate super-make-object super-new) super% (to-ids ...)
-					    clauses ...))])
+			      (class*/names
+			       (this super-instantiate super-make-object super-new) super% (to-ids ...)
+			       clauses ...))])
 
 	       ;; Now build mixin proc, again to give it a good src location:
 	       (with-syntax ([mixin-expr
@@ -70,12 +71,9 @@
 				(lambda (super%)
 				  (unless (class? super%)
 				    (error mixin-name "argument ~a not a class" super%))
-				  (begin
-				    (void)
-				    (unless (implementation? super% from-ids)
-				      (error mixin-name "argument ~s does not implement ~s" super% from-ids))
-				    ...)
-				  
+				  (unless (implementation? super% from-ids)
+				    (error mixin-name "argument ~s does not implement ~s" super% from-ids))
+				  ...
 				  class-expr))])
 
 		 ;; Finally, build the complete mixin expression:

@@ -22,23 +22,24 @@
 	  (when mred:app-sig-location
 	    (pretty-print `(reference ,mred:app-sig-location) port))
 	  (pretty-print
-	   `(compound-unit/sig (import)
-	      (link [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
-		    [trigger : mzlib:trigger^ ((reference-library-unit/sig "triggerr.ss"))]
-		    [mred : mred^ ((reference-unit/sig ,(build-path mred:system-source-directory 
-								    "link.ss"))
-				   core trigger application)]
-		    [application : mred:application^
-				 ((reference-unit/sig ,(cond
-							[(complete-path? mred:app-location)
-							 mred:app-location]
-							[(relative-path? mred:app-location)
-							   (build-path mred:system-source-directory 
-								       mred:app-location)]
-							[else (build-path (current-drive)
-									  mred:app-location)]))
-				  mred core)])
-	      (export))
+	   `(invoke-unit/sig
+	     (compound-unit/sig (import)
+	       (link [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
+		     [trigger : mzlib:trigger^ ((reference-library-unit/sig "triggerr.ss"))]
+		     [mred : mred^ ((reference-unit/sig ,(build-path mred:system-source-directory 
+								     "link.ss"))
+				    core trigger application)]
+		     [application : mred:application^
+				  ((reference-unit/sig ,(cond
+							 [(complete-path? mred:app-location)
+							  mred:app-location]
+							 [(relative-path? mred:app-location)
+							  (build-path mred:system-source-directory 
+								      mred:app-location)]
+							 [else (build-path (current-drive)
+									   mred:app-location)]))
+				   mred core)])
+	       (export)))
 	      port))
 	'replace))))
 

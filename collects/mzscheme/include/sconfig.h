@@ -741,9 +741,9 @@ int scheme_win32_semaphore_try_down(void *);
 # define SYSTEM_TYPE_NAME "macos"
 # define MAC_FILE_SYSTEM
 
-#define NO_READDIR
-#define NO_READLINK
-#define USE_MAC_FILE_TOOLBOX
+# define NO_READDIR
+# define NO_READLINK
+# define USE_MAC_FILE_TOOLBOX
 
 # define MACINTOSH_EVENTS
 # define MACINTOSH_GIVE_TIME
@@ -834,6 +834,41 @@ int scheme_win32_semaphore_try_down(void *);
 
 #endif
 
+  /************ PalmOS *************/
+
+#if defined(__palmos__)
+
+# define SCHEME_PLATFORM_LIBRARY_SUBPATH "68k-palm"
+
+# define SYSTEM_TYPE_NAME "palm"
+
+# define NO_FILE_SYSTEM_UTILS
+# define NO_TCP_SUPPORT
+
+# define PALMOS_STUFF
+# define NO_STAT_PROC
+
+# define STACK_GROWS_DOWN
+
+# define DO_STACK_CHECK
+# define PALM_FIND_STACK_BOUNDS
+# define STACK_SAFETY_MARGIN 1000
+
+# define TIME_SYNTAX
+# define USE_PALMTIME
+# define CLOCK_IS_USER_TIME
+# define TIME_TYPE_IS_UNSIGNED
+
+# define DONT_IGNORE_PIPE_SIGNAL
+# define DONT_IGNORE_FPE_SIGNAL
+
+# define POW_HANDLES_INF_CORRECTLY
+
+# define JMP_BUF_IS_JMPBUF
+
+# define FLAGS_ALREADY_SET
+
+#endif
 
   /***************************************************/
 

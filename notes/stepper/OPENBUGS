@@ -2,6 +2,9 @@ The stepper no longer works with the "Intermediate" language.
 More accurately, perhaps, the Intermediate language is no 
 longer compatible with the stepper.  
 
+The stepper doesn't handle 'include' provided as a teachpack
+element.
+
 Primitives like 'make-number/make-numeric' that are renamed
 as module provides are not displayed using their renamed
 names.

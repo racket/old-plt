@@ -1870,25 +1870,29 @@
           
           (let loop ([stx stx]
                      [datum (syntax-object->datum stx)])
-            (when (syntax? stx)
-              (unless (hash-table-get ht datum (lambda () #f))
-                (hash-table-put! ht datum #t)
+	    (unless (hash-table-get ht datum (lambda () #f))
+	      (hash-table-put! ht datum #t)
+	      (cond
+	       [(pair? stx) 
+		(loop (car stx) (car datum))
+		(loop (cdr stx) (cdr datum))]
+	       [(syntax? stx)
                 (when (syntax-original? stx)
                   (color stx style-name))
                 (let ([stx-e (syntax-e stx)])
                   (cond
-                    [(cons? stx-e)
-                     (loop (car stx-e) (car datum))
-                     (loop (cdr stx-e) (cdr datum))]
-                    [(null? stx-e)
-                     (void)]
-                    [(vector? stx-e)
-                     (for-each loop
-                               (vector->list stx-e)
-                               (vector->list datum))]
-                    [(box? stx-e)
-                     (loop (unbox stx-e) (unbox datum))]
-                    [else (void)])))))))
+		   [(cons? stx-e)
+		    (loop (car stx-e) (car datum))
+		    (loop (cdr stx-e) (cdr datum))]
+		   [(null? stx-e)
+		    (void)]
+		   [(vector? stx-e)
+		    (for-each loop
+			      (vector->list stx-e)
+			      (vector->list datum))]
+		   [(box? stx-e)
+		    (loop (unbox stx-e) (unbox datum))]
+		   [else (void)]))])))))
 
       
       ;; color : syntax[original] str -> void

@@ -12,6 +12,7 @@
 (module url-unit mzscheme
   (require (lib "file.ss")
            (lib "unitsig.ss")
+	   (lib "thread.ss")
            "url-sig.ss")
   (provide url@)
   
@@ -112,7 +113,7 @@
                               (cons (format "Host: ~a" (url-host url))
                                     strings))))
             (newline client->server)
-            (close-output-port client->server)
+            (tcp-abandon-port client->server)
             server->client)]))
       
       ;; file://get-pure-port : url -> in-port
@@ -159,11 +160,7 @@
       ;; display-pure-port : in-port -> ()
       (define display-pure-port
         (lambda (server->client)
-          (let loop ()
-            (let ((c (read-char server->client)))
-              (unless (eof-object? c)
-                (display c)
-                (loop))))
+	  (copy-port server->client (current-output-port))
           (close-input-port server->client)))
       
       (define empty-url?

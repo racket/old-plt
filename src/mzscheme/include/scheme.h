@@ -326,8 +326,9 @@ typedef struct Scheme_Vector {
 # define SCHEME_FLT_VAL(obj)  (((Scheme_Float *)(obj))->float_val)
 # define SCHEME_FLOAT_VAL(obj) (SCHEME_DBLP(obj) ? SCHEME_DBL_VAL(obj) : SCHEME_FLT_VAL(obj))
 #else
-# define SCHEME_FLT_VAL SCHEME_DBL_VAL
+# define SCHEME_FLT_VAL(x) ((float)(SCHEME_DBL_VAL(x)))
 # define SCHEME_FLOAT_VAL SCHEME_DBL_VAL
+# define scheme_make_float(x) scheme_make_double((double)x)
 #endif
 
 #define SCHEME_STR_VAL(obj)  ((obj)->u.str_val.string_val)

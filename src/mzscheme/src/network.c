@@ -144,7 +144,11 @@ typedef struct Scheme_Tcp {
 #ifdef USE_MAC_TCP
   struct TCPiopb *activeRcv;
 #endif
+  int flags;
 } Scheme_Tcp;
+
+# define MZ_TCP_ABANDON_OUTPUT 0x1
+# define MZ_TCP_ABANDON_INPUT  0x2
 
 #ifdef USE_MAC_TCP
 static int num_tcp_send_buffers = 0;
@@ -162,6 +166,7 @@ static Scheme_Object *tcp_accept(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_accept_break(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_listener_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[]);
+static Scheme_Object *tcp_abandon_port(int argc, Scheme_Object *argv[]);
 
 static void register_tcp_listener_wait();
 
@@ -227,6 +232,11 @@ void scheme_init_network(Scheme_Env *env)
 			     scheme_make_folding_prim(tcp_addresses,
 						      "tcp-addresses", 
 						      1, 1, 1), 
+			     env);
+  scheme_add_global_constant("tcp-abandon-port", 
+			     scheme_make_prim_w_arity(tcp_abandon_port,
+						      "tcp-abandon_port", 
+						      1, 1), 
 			     env);
 
   register_tcp_listener_wait();
@@ -1188,7 +1198,8 @@ static void tcp_close_input(Scheme_Input_Port *port)
   data = (Scheme_Tcp *)port->port_data;
 
 #ifdef USE_SOCKETS_TCP
-  shutdown(data->tcp, 0);
+  if (!(data->flags & MZ_TCP_ABANDON_INPUT))
+    shutdown(data->tcp, 0);
 #endif
 
   if (--data->b.refcount)
@@ -1404,11 +1415,14 @@ static void tcp_close_output(Scheme_Output_Port *port)
   data = (Scheme_Tcp *)port->port_data;
 
 #ifdef USE_SOCKETS_TCP
-  shutdown(data->tcp, 1);
+  if (!(data->flags & MZ_TCP_ABANDON_OUTPUT))
+    shutdown(data->tcp, 1);
 #endif
 
 #ifdef USE_MAC_TCP
-  mac_tcp_close(data, 1, data->b.refcount == 1);
+  if (!(data->flags & MZ_TCP_ABANDON_OUTPUT)
+      || (data->b.refcount == 1))
+    mac_tcp_close(data, 1, data->b.refcount == 1);
 #endif
 
   if (--data->b.refcount)
@@ -2151,6 +2165,37 @@ static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[])
   result[1] = scheme_make_string(sa);
 
   return scheme_values(2, result);
+}
+
+static Scheme_Object *tcp_abandon_port(int argc, Scheme_Object *argv[])
+{
+  if (SCHEME_OUTPORTP(argv[0])) {
+    Scheme_Output_Port *op;
+    op = (Scheme_Output_Port *)argv[0];
+    if (op->sub_type == scheme_tcp_output_port_type) {
+      if (!op->closed) {
+	((Scheme_Tcp *)op->port_data)->flags |= MZ_TCP_ABANDON_OUTPUT;
+	scheme_close_output_port(argv[0]);
+      }
+      return scheme_void;
+    }
+  } else if (SCHEME_INPORTP(argv[0])) {
+    /* Abandon is not really useful on input ports from the Schemer's
+       perspective, but it's here for completeness. */
+    Scheme_Input_Port *ip;
+    ip = (Scheme_Input_Port *)argv[0];
+    if (ip->sub_type == scheme_tcp_input_port_type) {
+      if (!ip->closed) {
+	((Scheme_Tcp *)ip->port_data)->flags |= MZ_TCP_ABANDON_INPUT;
+	scheme_close_input_port(argv[0]);
+      }
+      return scheme_void;
+    }
+  }
+
+  scheme_wrong_type("tcp-abandon-port", "tcp-port", 0, argc, argv);
+
+  return NULL;
 }
 
 /*========================================================================*/

@@ -1,10 +1,10 @@
 
-Do not read this file. If you want to change the fonts in MrEd,
-use the preferences dialog instead.
+Do not read this file. If you want to change the fonts in MrEd, use
+the preferences dialog instead.
 
 Ok, if you're still reading, you must really want to do something that
 can't be done via the preferences dialog. Most likely, it *can* be
-done, and this file will tell you how if you're pantient enough.
+done, and this file will tell you how if you're patient enough.
 
 ---------------------------------------------------
     1. Welcome to the Weird World of MrEd Fonts
@@ -30,8 +30,8 @@ for a screen or a printer. MrEd handles three kinds of real fonts:
   * PostScript font names
   * AFM font files
 
-An "abstract font" is a platform- and device-independent entity
-that describes a font. MrEd uses 8 abstract fonts:
+An "abstract font" is a platform- and device-independent entity that
+describes a font. MrEd uses 7 abstract fonts:
 
   * "Default"
   * "Decorative"
@@ -39,11 +39,10 @@ that describes a font. MrEd uses 8 abstract fonts:
   * "Script"
   * "Swiss"
   * "Modern"
-  * "Teletype"
   * "System"
 
 The "System" abstract font is intended only for use with screen-based
-controls. The "Teletype" abstract font is rarely used.
+controls.
 
 There are two basic problems:
 
@@ -62,16 +61,16 @@ resources can be specified in any way, but specifying X resources
 through the startup file is the preferred mechanism.)
 
 In the case of real fonts for an X Windows screen, it is necssary to
-map not only an abstract font toa real font, but an abstract font
-combined with a weight, style, and size to a real font - hence, the
+map not only an abstract font to a real font, but an abstract font
+combined with a weight, style, and size to a real font --- hence the
 insane complexity of MrEd's font system.
 
 ---------------------------
     1. Resource Entries
 ---------------------------
 
-First, we consider the mechanism tha maps abstract fonts to real fonts
-in the case that the information is provided via resources.
+First, we consider the mechanism that maps abstract fonts to real
+fonts in the case that the information is provided via resources.
 
 To find a font name in the resource, MrEd looks for a resource item
 named by:
@@ -81,22 +80,22 @@ named by:
 Where
 
   <dest> is either "Screen", "PostScript", or "AFM"
-  <type> is either "Default", "Decorative", "Roman", "Script", "Swiss", 
-         "Modern", "Teletype", or "Screen", or a programmer- or 
-         user-generated abstract font name
+  <type> is either "Default", "Decorative", "Roman", "Script",
+         "Swiss", "Modern"", "System", or a programmer- or
+         user-generated abstract font name prefixed with
+         "@"
   <weight> is either "Medium", "Bold", or "Light"
   <style> is either "Straight", "Italic", or "Slant"
 
 Once the resource value is obtained, the way in which is it used is
-destination- and platform-specific (surprise, surprise):
+destination- and platform-specific:
 
- * A PostScript name value is always used as a PostScript 
-   font name (the preceeding slash is added automatically).
+ * A PostScript name value is always used as a PostScript font name
+   (the preceeding slash is added automatically).
 
- * An AFM name is used as the base file name.  The ".afm"
-   extension is added automatically. The AFM file is found
-   according to the path maintained by wx:get-afm-path
-   and wx:set-afm-path.
+ * An AFM name is used as the base file name.  The ".afm" extension is
+   added automatically. The AFM file is found according to the path
+   maintained by the ps-setup% methods get-afm-path and set-afm-path.
 
  * A screen name is interpreted in a platform-specific way:
  
@@ -141,7 +140,7 @@ with a resource item named by Family<x> where the value is the name
 of a core abstract font. For example, the new abstract font "Century" 
 might be asscoaited with the "Roman" core abstract class:
 
-  mred.FamilyCentury: Roman
+  mred.Family@Century: Roman
 
 
 1.1. Wildcards
@@ -251,9 +250,9 @@ Wildcarding can be specified in a reference by separating each
 wildcardable field with a comma. This resource specification does
 what we want:
 
-  wxApp.ScreenDefault__: -*-*-medium-r-normal-*-*-%d-*-*-*-*-*-*
-  wxApp.ScreenDefaultBold_: -*-*-bold-r-normal-*-*-%d-*-*-*-*-*-*
-  wxApp.ScreenRoman__: ${ScreenDefault,$[weight],_}
+  MrEd.ScreenDefault__: -*-*-medium-r-normal-*-*-%d-*-*-*-*-*-*
+  MrEd.ScreenDefaultBold_: -*-*-bold-r-normal-*-*-%d-*-*-*-*-*-*
+  MrEd.ScreenRoman__: ${ScreenDefault,$[weight],_}
 
 Since "$[weight]" is set off by commas, it can be wildcarded if no
 name excatly matching "SchemeDefault$[weight]_" is found. In this case
@@ -279,7 +278,7 @@ When no information is available mapping a non-core abstract font to a
 real font for the screen, the abstract font name is used as the font
 name. This heuristic means that MrEd generally does the expected thing
 when a program provides an arbitrary platform-specific face name to a
-wx:font constructor (see section 2.).
+font constructor (see section 2.).
 
 The core abstract fonts all have defaults screen real fonts used as a
 last resort. Under Windows and MacOS, these real fonts correspond to
@@ -288,19 +287,18 @@ abstract font in the case of non-core abstract fonts).
 
 
 -----------------------------------------------
-    2. wx:font%
+    2. font%
 -----------------------------------------------
 
-The remaining question is how MrEd maps information specified in
-wx:font% constructions to obtain real fonts via the abstract font
-mapping:
+The remaining question is how MrEd maps information specified in font%
+constructions to obtain real fonts via the abstract font mapping:
 
- * If only a "family" is supplied to wx:font%, the corresponding
-   core abstract font is used.
+ * If only a "family" is supplied to font%, the corresponding core
+   abstract font is used.
 
- * If a "face name" is supplied to wx:font%, then the face name
-   is used as a new abstract font name. The provided "family"
-   specifies the associated core abstract font.
+ * If a "face name" is supplied to font%, then the face name is used
+   as a new abstract font name. The provided "family" specifies the
+   associated core abstract font.
 
 That's it. Sounds too easy? Then you didn't read the preceding
 sections closely enough.
@@ -313,7 +311,6 @@ sections closely enough.
  FamilyRoman: Roman
  FamilyDecorative: Decorative
  FamilyModern: Modern
- FamilyTeletype: Teletype
  FamilySwiss: Swiss
  FamilyScript: Script
  FamilySystem: System
@@ -333,8 +330,6 @@ sections closely enough.
  
  AfmSwiss__: ${AfmHelvetica}${Afm$[weight]}${Afm$[style]}
  AfmModern__: ${AfmCourier}${Afm$[weight]}${Afm$[style]}
- 
- AfmTeletype__: ${AfmModern,$[weight],$[style]}
  
  
  PostScriptMediumStraight: 
@@ -360,20 +355,17 @@ sections closely enough.
  PostScriptSwiss__: Helvetica${PostScript$[weight]$[style]}
  PostScriptModern__: Courier${PostScript$[weight]$[style]}
  
- PostScriptTeletype__: ${PostScriptModern,$[weight],$[style]}
-
  PostScript___: ${PostScriptTimes,$[weight],$[style]} 
- 
+
+ AfmBold: bo
+ AfmSlant: ob
+ AfmRoman: ro
+ AfmTimes: time
+ AfmHelvetica: helv
+ AfmCourier: cour   
 
 X Windows only:
 
- AfmBold: Bo
- AfmSlant: O
- AfmRoman: Ro
- AfmTimes: Times
- AfmHelvetica: Helv
- AfmCourier: Cour
- 
  ScreenMedium: medium
  ScreenBold: bold
  ScreenLight: light
@@ -385,7 +377,6 @@ X Windows only:
  ScreenRomanBase: *-times
  ScreenDecorativeBase: *-helvetica
  ScreenModernBase: *-courier
- ScreenTeletypeBase: *-courier
  ScreenSwissBase: *-lucida
  ScreenScriptBase: *-zapfchancery
 
@@ -395,28 +386,17 @@ X Windows only:
  ScreenRoman__: +-${ScreenRomanBase}${ScreenStdSuffix}
  ScreenDecorative__: +-${ScreenDecorativeBase}${ScreenStdSuffix}
  ScreenModern__: +-${ScreenModernBase}${ScreenStdSuffix}
- ScreenTeletype__: +-${ScreenTeletypeBase}${ScreenStdSuffix}
  ScreenSwiss__: +-${ScreenSwissBase}${ScreenStdSuffix}
  ScreenScript__: +-${ScreenScriptBase}${ScreenStdSuffix}
-
-
-Windows/MacOS only:
-
- AfmBold: bo
- AfmSlant: ob
- AfmRoman: ro
- AfmTimes: time
- AfmHelvetica: helv
- AfmCourier: cour  
  
 
 Windows only:
 
- Screen___: MS Sans Serif
+ ScreenSystem__: MS Sans Serif
+ ScreenDefault__: MS Sans Serif
  ScreenRoman__: Times New Roman
- ScreenDecorative__: Modern
+ ScreenDecorative__: Arial
  ScreenModern__: Courier New
- ScreenTeletype__: ${ScreenModern$[weight];$[style]}
  ScreenSwiss__: Arial
  ScreenScript__: Script
  
@@ -427,6 +407,5 @@ MacOS only:
  ScreenRoman__: times
  ScreenDecorative__: geneva
  ScreenModern__: monaco
- ScreenTeletype__: ${ScreenModern,$[weight],$[style]}
  ScreenSwiss__  helvetica
  ScreenScript__: geneva

@@ -7,6 +7,6 @@
        (make-mred-launcher (list "-aqge-" "(require-library \"framework-test-engine.ss\" \"tests\" \"framework\")")
 			   (mred-program-launcher-path
 			    "Framework Test Engine"))
-       (make-mred-launcher (list "-aqge-" "(require-library \"main.ss\" \"tests\" \"framework\")")
-			   (mred-program-launcher-path
-			    "Framework Test")))]))
+       (make-mzscheme-launcher (list "-aqge-" "(require-library \"main.ss\" \"tests\" \"framework\")")
+			       (mred-program-launcher-path
+				"Framework Test")))]))

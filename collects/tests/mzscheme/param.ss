@@ -346,8 +346,29 @@
 
 (define test-param3 (make-parameter 'hi))
 (test 'hi test-param3)
+(test 'hi 'thread-param
+      (let ([v #f])
+	(thread-wait (thread
+		      (lambda ()
+			(set! v (test-param3)))))
+	v))
 (test (void) test-param3 'bye)
 (test 'bye test-param3)
+(test 'bye 'thread-param
+      (let* ([v #f]
+	     [r (make-semaphore)]
+	     [s (make-semaphore)]
+	     [t (thread
+		 (lambda ()
+		   (semaphore-post r)
+		   (semaphore-wait s)
+		   (set! v (test-param3))))])
+	(semaphore-wait r)
+	(test-param3 'bye-again)
+	(semaphore-post s)
+	(thread-wait t)
+	v))
+(test 'bye-again test-param3)
 
 (test #f parameter? add1)
 
@@ -376,6 +397,7 @@
 (error-test '(parameter-procedure=? read-accept-compiled 5))
 (error-test '(parameter-procedure=? 5 read-accept-compiled))
 (arity-test parameter-procedure=? 2 2)
+(arity-test parameter? 1 1)
 
 ; Test current-library-collection-paths?
 ; Test require-library-use-compiled?

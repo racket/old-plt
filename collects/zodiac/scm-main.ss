@@ -1358,7 +1358,11 @@
 		       (macro-handler (pat:pexpand 'macro-handler p-env kwd)))
 		  (valid-syntactic-id? macro-name)
 		  (let ((real-name (sexp->raw macro-name))
-			 (real-handler (sexp->raw macro-handler))
+			 (real-handler (with-parameterization
+					 zodiac-user-parameterization
+					 (lambda ()
+					   (eval
+					     (sexp->raw macro-handler)))))
 			 (cache-table (make-hash-table)))
 		    (add-macro-form real-name vocab
 		      (with-parameterization zodiac-user-parameterization

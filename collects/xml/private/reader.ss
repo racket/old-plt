@@ -370,8 +370,11 @@
                        (when (equal? c #\newline)
                          (set! line (+ line 1))
                          (set! char 0))
-                       (string-set! s 0 c)
-		       1))
+		       (if (eof-object? c)
+			   c
+			   (begin
+			     (string-set! s 0 c)
+			     1))))
 		   #f
 		   void)
                   (lambda () (make-location line char offset)))))

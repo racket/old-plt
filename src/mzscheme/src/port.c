@@ -125,10 +125,20 @@ typedef struct Win_FD_Output_Thread {
 		       works. We still use a thread to detect when the
 		       write has ben flushed, which in turn is needed to
 		       know whether future writes will immediately succeed. */
-  volatile flushed; /* used for non-blocking, only */
+  volatile flushed, needflush; /* Used for non-blocking, only. The flushed
+				  flag communicates from the flush-testing thread
+				  to the main thread. For efficiency, we request
+				  flush checking only when needed (instead of
+				  after every write); needflush indicates that
+				  a flush check is currently needed, but hasn't
+				  been started. */
   volatile int done, err_no, buflen, bufstart, bufend; /* used for blocking, only */
-  unsigned char *buffer; /* used for blocking */
+  unsigned char *buffer; /* used for blocking, only */
   HANDLE lock_sema, work_sema, ready_sema, you_clean_up_sema;
+  /* lock_sema protects the fields, work_sema starts the flush or
+     flush-checking thread to work, ready_sema indicates that a flush
+     finished, and you_clean_up_sema is essentially a reference
+     count */
 } Win_FD_Output_Thread;
 
 static int stupid_windows_machine;
@@ -3430,7 +3440,12 @@ static long WindowsFDReader(Win_FD_Input_Thread *th)
       if (!got)
 	th->eof = 1;
     } else {
-      th->err = GetLastError();
+      int err;
+      err = GetLastError();
+      if (err == ERROR_BROKEN_PIPE)
+	th->eof = 1;
+      else
+	th->err = err;
     }
 
     /* Notify main program that we found something: */
@@ -3760,9 +3775,15 @@ static int win_fd_flush_done(Scheme_Object *_oth)
   int done;
   
   WaitForSingleObject(oth->lock_sema, INFINITE);
-  if (oth->nonblocking)
-    done = oth->flushed;
-  else
+  if (oth->nonblocking) {
+    if (oth->needflush) {
+      oth->needflush = 0;
+      oth->flushed = 0;
+      ReleaseSemaphore(oth->work_sema, 1, NULL); /* start trying to flush */
+      done = 0;
+    } else
+      done = oth->flushed;
+  } else
     done = (oth->err_no || !oth->buflen);
   ReleaseSemaphore(oth->lock_sema, 1, NULL);
 
@@ -3777,7 +3798,7 @@ static void win_fd_flush_needs_wakeup(Scheme_Object *_oth, void *fds)
   if (win_fd_flush_done(_oth))
     scheme_add_fd_nosleep(fds);
   else {
-    /* Not done. thread will notify us through ready_sema: */
+    /* Not done. Thread will notify us through ready_sema: */
     Win_FD_Output_Thread *oth = (Win_FD_Output_Thread *)_oth;
     
     scheme_add_fd_handle(oth->ready_sema, fds, 1);
@@ -3799,19 +3820,26 @@ fd_write_ready (Scheme_Object *port)
   if (fop->oth) {
     /* Pipe output that can block... */
     int retval;
+    Win_FD_Output_Thread *oth = fop->oth;
 
-    WaitForSingleObject(fop->oth->lock_sema, INFINITE);
-    if (fop->oth->nonblocking)
-      retval = fop->oth->flushed;
-    else
-      retval = (fop->oth->err_no || (fop->oth->buflen < MZPORT_FD_BUFFSIZE));
+    WaitForSingleObject(oth->lock_sema, INFINITE);
+    if (oth->nonblocking) {
+      if (oth->needflush) {
+	oth->needflush = 0;
+	oth->flushed = 0;
+	ReleaseSemaphore(oth->work_sema, 1, NULL); /* start trying to flush */
+	retval = 0;
+      } else
+	retval = oth->flushed;
+    } else
+      retval = (oth->err_no || (oth->buflen < MZPORT_FD_BUFFSIZE));
     if (!retval)
-      WaitForSingleObject(fop->oth->ready_sema, 0); /* clear any leftover state */
-    ReleaseSemaphore(fop->oth->lock_sema, 1, NULL);
+      WaitForSingleObject(oth->ready_sema, 0); /* clear any leftover state */
+    ReleaseSemaphore(oth->lock_sema, 1, NULL);
 
     return retval;
   } else
-    return 1; /* non-blocking output, such as a console */
+    return 1; /* non-blocking output, such as a console, or haven't written yet */
 #else
   {
     DECL_FDSET(writefds, 1);
@@ -3944,18 +3972,45 @@ static int flush_fd(Scheme_Output_Port *op,
 	    int ok, flushed;
 
 	    if (fop->oth) {
-	      WaitForSingleObject(fop->oth->lock_sema, INFINITE);
-	      flushed = fop->oth->flushed;
-	      ReleaseSemaphore(fop->oth->lock_sema, 1, NULL);
+	      if (fop->oth->needflush) {
+		/* Not flushed, but we haven't promised not to block: */
+		flushed = 1;
+	      } else {
+		WaitForSingleObject(fop->oth->lock_sema, INFINITE);
+		flushed = fop->oth->flushed;
+		ReleaseSemaphore(fop->oth->lock_sema, 1, NULL);
+	      }
 	    } else
 	      flushed = 1; /* haven't written anything before */
 
 	    if (flushed) {
-	      /* Put the pipe in non-blocking mode: */
-	      GetNamedPipeHandleState((HANDLE)fop->fd, &old, NULL, NULL, NULL, NULL, 0);
-	      SetNamedPipeHandleState((HANDLE)fop->fd, &nonblock, NULL, NULL);
-	      ok = WriteFile((HANDLE)fop->fd, bufstr + offset, buflen - offset, &wrote, NULL);
-	      SetNamedPipeHandleState((HANDLE)fop->fd, &old, NULL, NULL);
+	      /* Put the pipe in non-blocking mode and write. */
+	      
+	      int towrite;
+
+	      towrite = buflen - offset;
+
+	      /* Apparently, the semantics of non-blocking pipe writes
+	         is not partial writes, but giving up entirely when
+	         the other end isn't being read. In other words, if we
+	         try to write too much and nothing is being pulled
+	         from the pipe, wrote will be set to 0. Account for
+	         this by trying to write less each iteration when the
+	         write fails. (Yuck.) */
+	      while (1) {
+		GetNamedPipeHandleState((HANDLE)fop->fd, &old, NULL, NULL, NULL, NULL, 0);
+		SetNamedPipeHandleState((HANDLE)fop->fd, &nonblock, NULL, NULL);
+		ok = WriteFile((HANDLE)fop->fd, bufstr + offset, towrite, &wrote, NULL);
+		SetNamedPipeHandleState((HANDLE)fop->fd, &old, NULL, NULL);
+
+		if (ok && !wrote) {
+		  towrite = towrite >> 1;
+		  if (!towrite) {
+		    break;
+		  }
+		} else
+		  break;
+	      }
 	    } else {
 	      /* Don't try to write while flushing. */
 	      ok = 1;
@@ -3990,15 +4045,18 @@ static int flush_fd(Scheme_Output_Port *op,
 	    
 	    if (!nonblocking) {
 	      bfr = (unsigned char *)malloc(MZPORT_FD_BUFFSIZE);
-	      oth->buffer = bfr;
-	    } else
+	      oth->buffer = bfr;	    
+	      oth->flushed = 0;
+	      oth->needflush = 0;
+	    } else {
 	      oth->buffer = NULL;
+	      oth->flushed = (len <= 0);
+	      oth->needflush = 1;
+	    }
 
 	    oth->buflen = 0;
 	    oth->bufstart = 0;
 	    oth->bufend = 0;
-
-	    oth->flushed = 0;
 
 	    oth->fd = (HANDLE)fop->fd;
 	    oth->err_no = 0;
@@ -4089,13 +4147,10 @@ static int flush_fd(Scheme_Output_Port *op,
 	    Sleep(0); /* to decrease the chance of re-ordering flushes */
 	  }
 	  ReleaseSemaphore(oth->lock_sema, 1, NULL);
-	} else {
-	  /* We've already written. Set up a flush request: */
-	  Win_FD_Output_Thread *oth = fop->oth;
-	  WaitForSingleObject(oth->lock_sema, INFINITE);
-	  oth->flushed = 0;
-	  ReleaseSemaphore(oth->lock_sema, 1, NULL);
-	  ReleaseSemaphore(oth->work_sema, 1, NULL); /* start trying to flush */
+	} else if (len > 0) {
+	  /* We've already written, which implies that no flush is
+	     in progress. We'll need a flush check in the future. */
+	  fop->oth->needflush = 1;
 	}
       }
 #else
@@ -4942,6 +4997,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
       sc = (void *)spawn_status;
   }
 
+# define mzCLOSE_PIPE_END(x) CloseHandle((HANDLE)(x))
 #else
 
 
@@ -5112,6 +5168,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 
       break;
     }
+# define mzCLOSE_PIPE_END(x) MSC_IZE(close)(x)
 #endif
 
   /*--------------------------------------*/
@@ -5119,19 +5176,19 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   /*--------------------------------------*/
 
   if (!inport) {
-    MSC_IZE(close)(to_subprocess[0]);
+    mzCLOSE_PIPE_END(to_subprocess[0]);
     out = NULL;
     scheme_file_open_count += 1;
   } else
     out = scheme_false;
   if (!outport) {
-    MSC_IZE(close)(from_subprocess[1]);
+    mzCLOSE_PIPE_END(from_subprocess[1]);
     in = NULL;
     scheme_file_open_count += 1;
   } else
     in = scheme_false;
   if (!errport) {
-    MSC_IZE(close)(err_subprocess[1]);
+    mzCLOSE_PIPE_END(err_subprocess[1]);
     err = NULL;
     scheme_file_open_count += 1;
   } else

@@ -1,6 +1,7 @@
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(load-relative "testing.ss")
+
+(require (lib "process.ss"))
 
 (SECTION 'SUBPROCESS)
 

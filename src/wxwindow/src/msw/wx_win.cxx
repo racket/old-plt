@@ -859,7 +859,7 @@ LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
       if (wnd->OnDestroy())
 	retval = 0;
       else 
-	retval = wnd->DefWindowProc(message, wParam, lParam );
+	retval = wnd->DefWindowProc(message, wParam, lParam);
       break;
     }
   case WM_COMMAND:
@@ -868,7 +868,7 @@ LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
       HWND hwnd = (HWND)lParam;
       WORD cmd = HIWORD(wParam);
       if (!wnd->OnCommand(id, cmd, hwnd))
-	retval = wnd->DefWindowProc(message, wParam, lParam );
+	retval = wnd->DefWindowProc(message, wParam, lParam);
       break;
     }
   case WM_INITMENU:
@@ -945,8 +945,8 @@ LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
       HWND control = (HWND)lParam;
       HDC pDC = (HDC)wParam;
       retval = (DWORD)wnd->OnCtlColor(pDC, control, nCtlColor,
-				      message, wParam, lParam);\
-								 break;
+				      message, wParam, lParam);
+      break;
     }
   case WM_CTLCOLORLISTBOX:
     {

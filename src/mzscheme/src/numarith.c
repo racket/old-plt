@@ -532,14 +532,28 @@ rem_mod (int argc, Scheme_Object *argv[], char *name, int first_sign)
       b = SCHEME_DBL_VAL(n2);
     else
       b = scheme_bignum_to_double(n2);
+
+    if (a == 0.0) {
+      /* Avoid sign problems. */
+#ifdef MZ_USE_SINGLE_FLOATS
+      if (was_single)
+	return scheme_zerof;
+#endif
+      return scheme_zerod;
+    }
+
     na =  (a < 0) ? -a : a;
     nb =  (b < 0) ? -b : b;
 
     if (MZ_IS_POS_INFINITY(nb))
       v = na;
-    else if (MZ_IS_POS_INFINITY(na))
+    else if (MZ_IS_POS_INFINITY(na)) {
+#ifdef MZ_USE_SINGLE_FLOATS
+      if (was_single)
+	return scheme_zerof;
+#endif
       return scheme_zerod;
-    else
+    } else
       v = fmod(na, nb);
 
     if (v) {

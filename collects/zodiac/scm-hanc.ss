@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.39 1997/08/24 19:27:19 shriram Exp shriram $
+; $Id: scm-hanc.ss,v 1.40 1997/12/01 16:26:14 shriram Exp mflatt $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -80,6 +80,21 @@
 	     (else
 	       (internal-error elt "Invalid signature element"))))
       elements)))
+
+(define sig-list->sig-vector
+  (lambda (l)
+    (list->vector
+     (map
+      (lambda (e)
+	(if (symbol? e)
+	    e
+	    (named-sig-list->named-sig-vector e)))
+      l))))
+
+(define named-sig-list->named-sig-vector
+  (lambda (l)
+    (cons (car l)
+	  (sig-list->sig-vector (cdr l)))))
 
 (define create-signature
   (opt-lambda (elements (name immediate-signature-name))
@@ -714,8 +729,8 @@
 			   (import ,@prim-unit:imports)
 			   (export ,@prim-unit:exports)
 			   ,@prim-unit:clauses)
-			 (quote ,sign-unit:imports)
-			 (quote ,sign-unit:exports))
+			 (quote ,(map named-sig-list->named-sig-vector sign-unit:imports))
+			 (quote ,(sig-list->sig-vector sign-unit:exports)))
 		      expr)
 		    env attributes vocab)))))
 	  ((pat:match-against m&e-2 expr env)
@@ -1007,9 +1022,9 @@
 		  (verify-signature-match 'compound-unit/sig
 		    #f
 		    (format "signature ~s" (signature-name small-sig))
-		    (signature-exploded small-sig)
+		    (sig-list->sig-vector (signature-exploded small-sig))
 		    (format "signature ~s" (signature-name final-sig))
-		    (signature-exploded final-sig))
+		    (sig-list->sig-vector (signature-exploded final-sig)))
 		  small-sig)))))
 	((pat:match-against m&e-2 expr env)
 	  =>
@@ -1026,9 +1041,9 @@
 		(verify-signature-match 'compound-unit/sig
 		  #f
 		  (format "signature ~s" (signature-name small-sig))
-		  (signature-exploded small-sig)
+		  (sig-list->sig-vector (signature-exploded small-sig))
 		  (format "signature ~s" (signature-name big-sig))
-		  (signature-exploded big-sig))
+		  (sig-list->sig-vector (signature-exploded big-sig)))
 		small-sig))))
 	((pat:match-against m&e-3 expr env)
 	  =>
@@ -1095,9 +1110,9 @@
 		  (verify-signature-match 'compound-unit/sig
 		    #f
 		    (format "signature ~s" (signature-name small-sig))
-		    (signature-exploded small-sig)
+		    (sig-list->sig-vector (signature-exploded small-sig))
 		    (format "signature ~s" (signature-name final-sig))
-		    (signature-exploded final-sig))
+		    (sig-list->sig-vector (signature-exploded final-sig)))
 		  (cons (z:read-object tag)
 		    (signature-exploded small-sig)))))))
 	((pat:match-against m&e-2 expr env)
@@ -1116,9 +1131,9 @@
 		(verify-signature-match 'compound-unit/sig
 		  #f
 		  (format "signature ~s" (signature-name small-sig))
-		  (signature-exploded small-sig)
+		  (sig-list->sig-vector (signature-exploded small-sig))
 		  (format "signature ~s" (signature-name big-sig))
-		  (signature-exploded big-sig))
+		  (sig-list->sig-vector (signature-exploded big-sig)))
 		(cons (z:read-object tag)
 		  (signature-exploded small-sig))))))
 	((pat:match-against m&e-3 expr env)
@@ -1709,8 +1724,8 @@
 			       'compound-unit/sig
 			       ',linkage:tags
 			       (#%list ,@linkage:unit-vars)
-			       ',linkage:link-exports
-			       ',linkage:link-imports)
+			       ',(map sig-list->sig-vector linkage:link-exports)
+			       ',(map (lambda (l) (map named-sig-list->named-sig-vector l)) linkage:link-imports))
 			     (#%make-unit-with-signature
 			       (compound-unit
 				 (import ,@prim:imports)
@@ -1721,8 +1736,8 @@
 						     ,@body)))
 					   linkage:tags prim:links))
 				 (export ,@prim:exports))
-			       ',sign:imports
-			       ',sign:exports))))
+			       ',(map named-sig-list->named-sig-vector sign:imports)
+			       ',(sig-list->sig-vector sign:exports)))))
 		    (expand-expr
 		      (structurize-syntax
 			output
@@ -1833,8 +1848,8 @@
 			   'invoke-unit/sig
 			   '(invoke)
 			   (#%list unit)
-			   '(())
-			   '(,proc:linkage))
+			   '(#())
+			   '(,(map (lambda (l) (map named-sig-list->named-sig-vector l)) proc:linkage)))
 			 (invoke-unit
 			   (#%unit-with-signature-unit unit)
 			   ,@proc:imports))
@@ -1883,8 +1898,8 @@
 			   'invoke-open-unit/sig
 			   '(invoke)
 			   (#%list unit)
-			   '(())
-			   '(,proc:linkage))
+			   '(#())
+			   '(,(map (lambda (l) (map named-sig-list->named-sig-vector l)) proc:linkage)))
 			 (invoke-open-unit
 			   (#%unit-with-signature-unit unit)
 			   ,in:name-spec
@@ -1911,16 +1926,19 @@
 		  (structurize-syntax
 		    `(#%make-unit-with-signature
 		       ,in-expr
-		       ',(map (lambda (s)
+		       ',(map
+			  named-sig-list->named-sig-vector
+			  (map (lambda (s)
 				(let ((proc:s
 					(expand-expr s env attributes
 					  sig-vocab)))
 				  (cons (signature-name proc:s)
 				    (signature-exploded proc:s))))
-			   in-sigs)
-		       ',(let ((proc:s
+			   in-sigs))
+		       ',(sig-list->sig-vector
+			  (let ((proc:s
 				 (expand-expr out-sig env attributes sig-vocab)))
-			   (signature-exploded proc:s)))
+			   (signature-exploded proc:s))))
 		    expr)
 		  env attributes vocab))))
 	  (else

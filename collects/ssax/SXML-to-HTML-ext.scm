@@ -16,23 +16,7 @@
 ; OS:file-length, unless it is included into the core system
 ;   (see myenv-bigloo.scm for example)
 ;
-; $Id: SXML-to-HTML-ext.scm,v 1.8 2004/07/07 16:02:30 sperber Exp $
-
-
-; Look up a value associated with a symbolic key in alist (key value)
-; and return (value)
-; If failed, write a warning and return the default value, if non-#f
-; A lookup failure is fatal if the default value is #f
-(define (lookup-def key alist default-value)
-  (cond
-   ((assq key alist) => cdr)
-   (default-value
-     (cerr "Failed to find a binding for a key " key
-	   ". The default value " default-value " will be used")
-     default-value)
-   (else
-    (error "Failed to find a binding for a key " key))))
-
+; $Id: SXML-to-HTML-ext.scm,v 1.9 2004/11/03 22:45:29 oleg Exp $
 
 ; skip the lst trough the first significant element
 ; return the tail of lst such that (car result) is significant
@@ -65,10 +49,10 @@
 
 (define (make-header head-parms)
   `(head
-    (title ,(car (lookup-def 'title head-parms #f)))
+    (title ,(lookup-def 'title head-parms))
     ,(map
       (lambda (key)
-	(let ((val (car (lookup-def key head-parms '(#f)))))
+	(let ((val (lookup-def key head-parms warn: #f)))
 	  (and val
 	       `(meta (@ (name ,(symbol->string key)) (content ,val))))))
       '(description AuthorAddress keywords
@@ -77,11 +61,12 @@
       (and (pair? links)
 	   (map
 	    (lambda (link-key)
-	      (let ((val (lookup-def link-key links '())))
-		(and (pair? val)
+	      (let ((val (lookup-def link-key links #f)))
+		(and val
+		  (let ((val (if (not (pair? val)) (list val) val)))
 		     `(link (@ (rel ,(symbol->string link-key))
 			       (href ,(car val))
-			       ,@(cdr val))))))
+			       ,@(cdr val)))))))
 	    '(start contents prev next)))))
 )
 
@@ -98,8 +83,7 @@
       `(div (@ (align "center") (class "navbar"))
 	 ,(let loop ((nav-labels nav-labels) (first? #t))
 	    (if (null? nav-labels) '()
-		(let ((val (car
-			    (lookup-def (caar nav-labels) links '(#f)))))
+		(let ((val (lookup-def (caar nav-labels) links warn: #f)))
 		  (if (not val)
 		      (loop (cdr nav-labels) first?)
 		      (cons
@@ -117,7 +101,7 @@
     (div (hr))
     (h3 "Last updated "
 	,(let* ((date-revised
-		 (car (lookup-def 'Date-Revision-yyyymmdd head-parms #f)))
+		  (lookup-def 'Date-Revision-yyyymmdd head-parms))
 		(year (string->integer date-revised 0 4))
 		(month (string->integer date-revised 4 6))
 		(day   (string->integer date-revised 6 8))
@@ -130,7 +114,7 @@
 	   (list month-name " " day ", " year)))
     ,(let ((links (lookup-def 'Links head-parms '())))
        (and (pair? links)
-	    (let ((home (car (lookup-def 'home links '(#f)))))
+	    (let ((home (lookup-def 'home links warn: #f)))
 	      (and home
 		   `(p "This site's top page is "
 		       (a (@ (href ,home)) (strong ,home)))))))
@@ -139,9 +123,8 @@
        (br)
        "Your comments, problem reports, questions are very welcome!"))
     (p (font (@ (size "-2")) "Converted from SXML by SXML->HTML"))
-    ,(let ((rcs-id (lookup-def 'rcs-id head-parms '())))
-       (and (pair? rcs-id)
-	    `(h4 ,rcs-id)))
+    ,(let ((rcs-id (lookup-def 'rcs-id head-parms #f)))
+       (and rcs-id `(h4 ,rcs-id)))
     ))
 
 ; Bindings for the post-order function, which traverses the SXML tree
@@ -203,7 +186,7 @@
 	   )))
     (lookup-def 'Header
 		(list (pre-post-order Content search-rules))
-		#f)))
+		)))
 
 
 ; Transformation rules that define a number of higher-order tags,
@@ -252,7 +235,7 @@
       . ,(lambda (tag)		; and create the page title rule
 	   (let ((header-parms (find-Header Content)))
 	     (list "<h1 align=center>" 
-		   (lookup-def 'long-title header-parms #f) "</h1>" nl))))
+		   (lookup-def 'long-title header-parms) "</h1>" nl))))
 
 
      (Section	; (Section level "content ...")

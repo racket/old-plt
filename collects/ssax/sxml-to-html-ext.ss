@@ -12,6 +12,7 @@
   (require "coutputs.ss")
   (require "assertions.ss")
   (require "crementing.ss")
+  (require "lookup-def.ss")
   (require "sxml-to-html.ss")
   (require "sxml-tree-trans.ss")
 

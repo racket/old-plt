@@ -425,6 +425,38 @@
    'union7
    '((contract (union false? (-> integer? integer?)) (lambda (x) x) 'pos 'neg) 1))
 
-  )
+  (test/spec-passed
+   'define/contract1
+   '(let ()
+      (define/contract i integer? 1)
+      i))
+  
+  (test/spec-failed
+   'define/contract2
+   '(let ()
+      (define/contract i integer? #t)
+      i)
+   "i")
+  
+  (test/spec-failed
+   'define/contract3
+   '(let ()
+      (define/contract i (-> integer? integer?) (lambda (x) #t))
+      (i 1))
+   "i")
+  
+  (test/spec-failed
+   'define/contract4
+   '(let ()
+      (define/contract i (-> integer? integer?) (lambda (x) 1))
+      (i #f))
+   "<<unknown>>")
+  
+  (test/spec-failed
+   'define/contract5
+   '(let ()
+      (define/contract i (-> integer? integer?) (lambda (x) (i #t)))
+      (i 1))
+   "<<unknown>>"))
 
 (report-errs)

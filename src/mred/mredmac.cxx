@@ -728,7 +728,7 @@ int MrEdCheckForBreak(void)
   for (q = first; q; q = q->next) {
     if (q->event.what == keyDown) {
       if ((((q->event.message & charCodeMask) == '.') 
-	   && (q->event.message & cmdKey))
+	   && (q->event.modifiers & cmdKey))
       	  || (((q->event.message & charCodeMask) == 3) 
 	      && (q->event.modifiers & controlKey))) {
         MrDequeue(q);

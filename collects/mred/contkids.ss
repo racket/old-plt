@@ -129,11 +129,6 @@
 	    min-width
 	    min-height
 
-	    [set-label
-	     (lambda args
-	       (error 'set-label
-		      "This operation is not supported on this class."))]
-	    
 	    ; default-x: gets/sets default x position.  Errors out if new
 	    ; value is not a real number; forces a redraw upon a set.
 	    [default-x
@@ -184,6 +179,14 @@
 		  (error 'stretchable-in-y?
 		    "Expected a boolean; received ~s" val)))]
 	    
+	    ; set-label: replace the superclass's method with a call to
+	    ; error.
+	    [set-label
+	     (lambda (args)
+	       (error
+		 'set-label
+		 "This operation is not supported on objects of this type"))]
+	    
 	    ; get-info: passes necessary info up to parent.
 	    ; input: none
 	    ; returns: child-info struct containing the info about this
@@ -191,14 +194,16 @@
 	    ; intended to be called by item's parent upon resize.
 	    [get-info
 	      (lambda ()
-		(mred:debug:printf 'container-get-info
-		  "Entering get-info; object ~s" object-ID)
+		(mred:debug:printf 'container-child-get-info
+		  "container-child-get-info: Entering get-info; object ~s"
+		  object-ID)
 		(let* ([min-size (get-min-size)]
 		       [result (make-child-info (default-x) (default-y)
 						(car min-size) (cadr min-size)
 						(stretchable-in-x?)
 						(stretchable-in-y?))])
-		  (mred:debug:printf 'container-get-info "Result: ~s"
+		  (mred:debug:printf 'container-child-get-info
+		    "container-child-get-info: Result: ~s"
 		    result)
 		  result))]
 	    
@@ -210,10 +215,13 @@
 	    ;   invalid.
 	    [force-redraw
 	      (lambda ()
-		(mred:debug:printf 'container-force-redraw
-		  "Entering force-redraw; object ~s" object-ID)
+		(mred:debug:printf 'container-child-force-redraw
+		  "container-child-force-redraw: Entering force-redraw; object ~s"
+		  object-ID)
 		(let ([parent (get-parent)])
 		  (unless (null? parent)
+		    (mred:debug:printf 'container-child-force-redraw
+		      "container-child-force-redraw: calling parent's force-redraw and quitting")
 		    (send parent force-redraw))))]
 	    
 	    ; get-min-size: computes the minimum size the item can
@@ -222,17 +230,20 @@
 	    ; returns: a list containing the minimum width & height.
 	    [get-min-size
 	      (lambda ()
-		(mred:debug:printf 'container-get-min-size
-		  "get-min-size; object ~s;  "
+		(mred:debug:printf 'container-child-get-min-size
+		  "container-child-get-min-size; object ~s;  "
 		  object-ID)
-		(mred:debug:printf 'container-get-min-size
-		  "Result:  ~s"
-		  (list min-width min-height))
+		(mred:debug:printf 'container-child-get-min-size
+		  "container-child-get-min-size: Result:  ~s"
+		  (list
+		    (max min-width (user-min-width))
+		    (max min-height (user-min-height))))
 		(list
 		  (max min-width (user-min-width))
 		  (max min-height (user-min-height))))])
 	  (sequence
-	    (mred:debug:printf 'container-child-init "Args to super-init: ~s"
+	    (mred:debug:printf 'container-child-init
+	      "container-child-init: Args to super-init: ~s"
 	      (apply make-default-size args))
 	    (apply super-init (apply make-default-size args))
 	    (set! min-width (get-width))
@@ -322,15 +333,17 @@
 		      [delta-h (- (get-height) client-height)]
 		      [horizontal? (positive? (bitwise-and style
 						wx:const-horizontal))])
-		  (mred:debug:printf 'container-set-min-sizes
-		    "entering gauge set-min-size; args ~s ~s"
+		  (mred:debug:printf 'container-child-set-min-sizes
+		    "container-child-set-min-sizes: entering gauge set-min-size; args ~s ~s"
 		    range style)
-		  (mred:debug:printf 'container-set-min-sizes
-		    "client size: ~s x ~s"
+		  (mred:debug:printf 'container-child-set-min-sizes
+		    "container-child-set-min-sizes: client size: ~s x ~s"
 		    client-width client-height)
-		  (mred:debug:printf 'container-set-min-sizes
-		    "actual size: ~s x ~s"
+		  (mred:debug:printf 'container-child-set-min-sizes
+		    "container-child-set-min-sizes: actual size: ~s x ~s"
 		    (get-width) (get-height))
+		  (mred:debug:printf 'container-child-set-min-sizes
+		    "container-child-set-min-sizes: setting sizes & leaving")
 		  (set! min-width (if horizontal?
 				      (+ (* range pixels-per-value)
 					 delta-w)
@@ -354,7 +367,7 @@
 				  const-default-size style args))
 		    args)])
 	    (mred:debug:printf 'container-gauge-init
-	      "Args to gauge: ~s" new-args)
+	      "container-gauge-init: Args to gauge: ~s" new-args)
 	    (apply super-init new-args)
 	    (apply (lambda (parent lable range x y w h style . args)
 		     (set-min-sizes range style)
@@ -405,7 +418,10 @@
 	  get-height)
 	(private
 	  ; # pixels per possible setting.
-	  [pixels-per-value 1]
+	  [pixels-per-value 3]
+	  ; 3 is good because with horizontal sliders under Xt, with 1 or 2
+	  ; pixels per value, the thumb is too small to display the number,
+	  ; which looks bad.
 
 	  ; default value for the width parameter (which we ignore
 	  ; completely).
@@ -429,15 +445,17 @@
 		      [range (add1 (- max-val min-val))]
 		      [horizontal? (positive? (bitwise-and style
 						wx:const-horizontal))])
-		  (mred:debug:printf 'container-set-min-sizes
-		    "Entering slider's set-min-size; args ~s ~s ~s"
+		  (mred:debug:printf 'container-child-set-min-sizes
+		    "container-child-set-min-sizes: Entering slider's set-min-size; args ~s ~s ~s"
 		    min-val max-val style)
-		  (mred:debug:printf 'container-set-min-sizes
-		    "Client size: ~s x ~s"
+		  (mred:debug:printf 'container-child-set-min-sizes
+		    "container-child-set-min-sizes: Client size: ~s x ~s"
 		    client-w client-h)
-		  (mred:debug:printf 'container-set-min-sizes
-		    "Full size: ~s x ~s"
+		  (mred:debug:printf 'container-child-set-min-sizes
+		    "container-child-set-min-sizes: Full size: ~s x ~s"
 		    full-width full-height)
+		  (mred:debug:printf 'container-child-set-min-sizes
+		    "container-child-set-min-sizes: setting sizes and leaving")
 		  (set! min-width
 		    (if horizontal?
 			(+ (* range pixels-per-value)
@@ -538,13 +556,15 @@
 	      (lambda ()
 		(let-values ([(width height)
 			      (get-two-int-values get-client-size)])
-		  (mred:debug:printf 'conatiner-canvas-find-min-size
-		    "Entering find-min-size.  client size: ~s x ~s"
+		  (mred:debug:printf 'container-canvas-find-min-size
+		    "container-canvas-find-min-size: entering find-min-size.  client size: ~s x ~s"
 		    width height)
 		  (mred:debug:printf 'container-canvas-find-min-size
-		    "Full size: ~s x ~s" (get-width) (get-height))
+		    "container-canvas-find-min-size: Full size: ~s x ~s" (get-width) (get-height))
 		  (let* ([delta-x (- (get-width) width)]
 			 [delta-y (- (get-height) height)])
+		    (mred:debug:printf 'container-canvas-find-min-size
+		      "container-canvas-find-min-size: setting sizes, forcing redraw, and quitting.")
 		    (set! min-height (+ smallest-client-size delta-y))
 		    (set! min-width (+ smallest-client-size delta-x))
 		    ; we have to invalidate the parent's child-info cache

@@ -7,8 +7,11 @@
 		[I : () ((unit/sig () (import (quicksort)) quicksort) F)])
 	  (export)))]
        [docpos (require-library "docpos.ss" "help")]
-       [d (collection-path "doc")]
-       [docs (let loop ([l (directory-list d)])
+       [d (with-handlers ([void (lambda (x) #f)])
+	    (collection-path "doc"))]
+       [docs (let loop ([l (if d
+			       (directory-list d)
+			       null)])
 	       (cond
 		[(null? l) null]
 		[(file-exists? (build-path d (car l) "index.htm"))

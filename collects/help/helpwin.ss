@@ -20,6 +20,7 @@
 	 (exit-handler (lambda (x) (exit-help)))
 	 (invoke-unit/sig
 	  (require-relative-library "helpr.ss")
+	  help:option^
 	  mzlib:function^
 	  mzlib:string^
 	  mzlib:file^
@@ -297,8 +298,11 @@
 
   ; Locate standard HTML documentation
   (define-values (std-docs std-doc-names)
-    (let* ([path (collection-path "doc")]
-	   [doc-names (directory-list path)]
+    (let* ([path (with-handlers ([void (lambda (x) #f)])
+		   (collection-path "doc"))]
+	   [doc-names (if path
+			  (directory-list path)
+			  null)]
 	   [docs (map (lambda (x) (build-path path x)) doc-names)])
       ; Order the standard docs:
       (let ([ordered (quicksort
@@ -384,17 +388,19 @@
      doc
      (lambda ()
        (with-handlers ([not-break? (lambda (x) 
-				     ; (printf "~a~n" (exn-message x))
+				     (printf "~a~n" (exn-message x))
 				     null)])
 	 (with-input-from-file (build-path doc "doc.txt")
 	   (lambda ()
-	     (let loop ()
-	       (let ([start (file-position (current-input-port))]
-		     [r (read-line)])
+	     (let loop ([start 0])
+	       (let* ([r (read-line (current-input-port) 'any)]
+		      [next (if (eof-object? r)
+				start
+				(+ start (string-length r) 1))])
 		 (cond
 		  [(eof-object? r) null]
-		  [(handle-one r start) => (lambda (vs) (append vs (loop)))]
-		  [else (loop)])))))))))
+		  [(handle-one r start) => (lambda (vs) (append vs (loop next)))]
+		  [else (loop next)])))))))))
 
   (define re:keyword-line (regexp "^>[^I]"))
   (define text-keywords (make-hash-table))

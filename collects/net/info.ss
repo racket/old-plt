@@ -6,4 +6,7 @@
   (define blurb 
     (list
      "The net collection provides a suite of libraries to handle standard "
-     "internet-based protocols.")))
+     "internet-based protocols."))
+
+  ;; Should be removed when openssl is part of main distribution
+  (define compile-omit-files '("ssl-tcp-unit.ss")))

@@ -8,5 +8,5 @@ if [ "$PLTHOME" = '' ] ; then
   export PLTHOME
 fi
 
-exec ${PLTHOME}/bin/mzscheme -qemv '(require-library "dolink.ss" "mzscheme" "dynext")' -- "$@"
+exec ${PLTHOME}/bin/mzscheme -qemv '(require-library "dolink.ss" "mzscheme" "dynext")' -- ${1+"$@"}
 

@@ -4,6 +4,9 @@
 
 Version 299.25
 Changed character datatype to include #\uFFFE and #\uFFFF
+Removed optional argument of continuation-mark-set->list
+Fixed syntax-recertify bug that affected mzc compilation
+ with contracts
 
 Version 299.23
 Windows: changed find-system-path to use the registry-specified
@@ -258,6 +261,10 @@ Regexp grammar changed to match docs with respect to "-"
 Changed pref dir (all platforms) and pref file name
  (except Windows)
 
+
+Version 209, December 2004
+Fixed (abs -1073741824)
+Avoided gcc 3.4 bug(?) related to inline checking for -0.0
 
 Version 208, August 2004
 Added string-copy! and hash-table-count

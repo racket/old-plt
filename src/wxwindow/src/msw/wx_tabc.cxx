@@ -233,7 +233,7 @@ void wxTabChoice::Set(int N, char **Choices)
     TabCtrl_DeleteItem((HWND)ms_handle, i);
   }
   for (i = N; i--; ) {
-    Append(Choices[N]);
+    Append(Choices[i]);
   }
   if (N) {
     if (sel >= N)

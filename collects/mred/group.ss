@@ -91,17 +91,26 @@
 	       (if (string? filename)
 		   (mred:handler:edit-file filename this #f
 					   (lambda (fn group)
-					     (make-object frame% fn #t group)))
+					     (make-object (get-frame%)
+					       fn #t group)))
 		   (make-object (get-frame%) filename #t this)))]
 	    [locate-file
 	     (lambda (name)
-	       (let* ([normalized (mzlib:file:normalize-path name)]
+	       (let* ([normalized
+		       ;; allow for the possiblity of filenames that are urls
+		       (with-handlers ([(lambda (x) #t)
+					(lambda (x) x)])
+			 (mzlib:file:normalize-path name))]
 		      [test-frame
 		       (lambda (frame)
 			 (and (ivar-in-class? 'get-edit (object-class frame))
-			      (let ([filename (send (send frame get-edit) get-filename)])
+			      (let ([filename (send (send frame get-edit)
+						    get-filename)])
 				(and (string? filename)
-				     (string=? normalized (mzlib:file:normalize-path filename))))))])
+				     (string=? normalized
+					       (with-handlers ([(lambda (x) #t)
+								(lambda (x) x)])
+						 (mzlib:file:normalize-path filename)))))))])
 		 (let loop ([frames frames])
 		   (cond
 		     [(null? frames) #f]
@@ -111,12 +120,4 @@
 			    frame
 			    (loop (cdr frames))))]))))]))))
 
-    (define the-frame-group (make-object frame-group%))
-    
-    (define current-frames (make-parameter
-			    #f
-			    (lambda (x)
-			      (if (or (not x)
-				      (is-a? x frame-group%))
-				  x
-				  (raise 'illegal-current-frames))))))
+    (define the-frame-group (make-object frame-group%)))

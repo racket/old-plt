@@ -20,7 +20,16 @@
    (unit/sig drscheme:tool-exports^
      (import drscheme:tool^)
 
-     (define (phase1) (void))
+     (define mrflow-render-value<%> (interface () render-value-set))
+     (define (add-render-value-set-mixin %)
+       (class* % (mrflow-render-value<%>)
+         (define/public (render-value-set val) "render-value-set-mixin")
+         (super-instantiate ())))
+     
+     (define (phase1) 
+       (drscheme:language:extend-language-interface
+        mrflow-render-value<%>
+        add-render-value-set-mixin))
      (define (phase2) (void))
 
      ; used for clickable locations in the program

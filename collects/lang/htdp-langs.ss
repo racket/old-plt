@@ -29,7 +29,6 @@ to the original stdout of DrScheme.
       (import drscheme:tool^)
 
       (define (phase1) (void))
-      (define (phase2) (void))
       
       (define (printf . args)
         (apply fprintf o args))
@@ -445,97 +444,100 @@ to the original stdout of DrScheme.
 
       
       
-      (define htdp-language%
-        (language-extension
-         (drscheme:language:module-based-language->language-mixin
-          (module-based-language-extension
-           (drscheme:language:simple-module-based-language->module-based-language-mixin
-            simple-htdp-language%)))))
-      
       ;; add-htdp-language : (instanceof htdp-language<%>) -> void
       (define (add-htdp-language o)
         (drscheme:language-configuration:add-language o))
       
-      (add-htdp-language
-       (instantiate htdp-language% ()
-         (one-line-summary (string-constant htdp-full-one-line-summary))
-         (sharing-printing #t)
-         (abbreviate-cons-as-list #t)
-         (allow-sharing? #t)
-         (language-numbers '(-500 6))
-         (module '(lib "htdp-full-graphics.ss" "lang"))
-         (language-position
-          (list (string-constant how-to-design-programs)
-                (string-constant full-language)))
-         (read-accept-dot #t)))
+      ;; phase2 : -> void
+      (define (phase2)
+        (define htdp-language%
+          ((drscheme:language:get-default-mixin)
+           (language-extension
+            (drscheme:language:module-based-language->language-mixin
+             (module-based-language-extension
+              (drscheme:language:simple-module-based-language->module-based-language-mixin
+               simple-htdp-language%))))))
       
-      (add-htdp-language
-       (instantiate htdp-language% ()
-         (one-line-summary (string-constant advanced-one-line-summary))
-         (module '(lib "htdp-advanced.ss" "lang"))
-         (language-position
-          (list (string-constant how-to-design-programs)
-                (string-constant advanced-student)))
-         (language-numbers '(-500 5))
-         (sharing-printing #t)
-         (abbreviate-cons-as-list #t)
-         (allow-sharing? #t)))
-      
-      (add-htdp-language
-       (instantiate htdp-language% ()
-         (one-line-summary (string-constant intermediate/lambda-one-line-summary))
-         (module '(lib "htdp-intermediate-lambda.ss" "lang"))
-         (language-position
-          (list (string-constant how-to-design-programs)
-                (string-constant intermediate-student/lambda)))
-         (style-delta (let ([match (regexp-match-positions
-                                    "lambda"
-                                    (string-constant intermediate-student/lambda))])
-                        (if match
-                            (let ([pos (car match)])
-                              (list (list (make-object style-delta% 'change-family 'modern)
-                                          (car pos)
-                                          (cdr pos))))
-                            #f)))
-         (language-numbers '(-500 4))
-         (sharing-printing #f)
-         (abbreviate-cons-as-list #t)
-         (allow-sharing? #f)))
-      
-      (add-htdp-language
-       (instantiate htdp-language% ()
-         (one-line-summary (string-constant intermediate-one-line-summary))
-         (module '(lib "htdp-intermediate.ss" "lang"))
-         (language-position
-          (list (string-constant how-to-design-programs)
-                (string-constant intermediate-student)))
-         (language-numbers '(-500 3))
-         (sharing-printing #f)
-         (abbreviate-cons-as-list #t)
-         (allow-sharing? #f)
-         (use-function-output-syntax? #t)))
-      
-      (add-htdp-language
-       (instantiate htdp-language% ()
-         (one-line-summary (string-constant beginning/abbrev-one-line-summary))
-         (module '(lib "htdp-beginner-abbr.ss" "lang"))
-         (language-position
-          (list (string-constant how-to-design-programs)
-                (string-constant beginning-student/abbrev)))
-         (language-numbers '(-500 2))
-         (sharing-printing #f)
-         (abbreviate-cons-as-list #t)
-         (allow-sharing? #f)))
-      
-      (add-htdp-language
-       (instantiate htdp-language% ()
-         (one-line-summary (string-constant beginning-one-line-summary))
-         (module '(lib "htdp-beginner.ss" "lang"))
-         (language-position
-          (list (string-constant how-to-design-programs)
-                (string-constant beginning-student)))
-         (language-numbers '(-500 1))
-         (sharing-printing #f)
-         (abbreviate-cons-as-list #f)
-         (allow-sharing? #f)
-         (accept-quasiquote? #f))))))
+        (add-htdp-language
+         (instantiate htdp-language% ()
+           (one-line-summary (string-constant htdp-full-one-line-summary))
+           (sharing-printing #t)
+           (abbreviate-cons-as-list #t)
+           (allow-sharing? #t)
+           (language-numbers '(-500 6))
+           (module '(lib "htdp-full-graphics.ss" "lang"))
+           (language-position
+            (list (string-constant how-to-design-programs)
+                  (string-constant full-language)))
+           (read-accept-dot #t)))
+        
+        (add-htdp-language
+         (instantiate htdp-language% ()
+           (one-line-summary (string-constant advanced-one-line-summary))
+           (module '(lib "htdp-advanced.ss" "lang"))
+           (language-position
+            (list (string-constant how-to-design-programs)
+                  (string-constant advanced-student)))
+           (language-numbers '(-500 5))
+           (sharing-printing #t)
+           (abbreviate-cons-as-list #t)
+           (allow-sharing? #t)))
+        
+        (add-htdp-language
+         (instantiate htdp-language% ()
+           (one-line-summary (string-constant intermediate/lambda-one-line-summary))
+           (module '(lib "htdp-intermediate-lambda.ss" "lang"))
+           (language-position
+            (list (string-constant how-to-design-programs)
+                  (string-constant intermediate-student/lambda)))
+           (style-delta (let ([match (regexp-match-positions
+                                      "lambda"
+                                      (string-constant intermediate-student/lambda))])
+                          (if match
+                              (let ([pos (car match)])
+                                (list (list (make-object style-delta% 'change-family 'modern)
+                                            (car pos)
+                                            (cdr pos))))
+                              #f)))
+           (language-numbers '(-500 4))
+           (sharing-printing #f)
+           (abbreviate-cons-as-list #t)
+           (allow-sharing? #f)))
+        
+        (add-htdp-language
+         (instantiate htdp-language% ()
+           (one-line-summary (string-constant intermediate-one-line-summary))
+           (module '(lib "htdp-intermediate.ss" "lang"))
+           (language-position
+            (list (string-constant how-to-design-programs)
+                  (string-constant intermediate-student)))
+           (language-numbers '(-500 3))
+           (sharing-printing #f)
+           (abbreviate-cons-as-list #t)
+           (allow-sharing? #f)
+           (use-function-output-syntax? #t)))
+        
+        (add-htdp-language
+         (instantiate htdp-language% ()
+           (one-line-summary (string-constant beginning/abbrev-one-line-summary))
+           (module '(lib "htdp-beginner-abbr.ss" "lang"))
+           (language-position
+            (list (string-constant how-to-design-programs)
+                  (string-constant beginning-student/abbrev)))
+           (language-numbers '(-500 2))
+           (sharing-printing #f)
+           (abbreviate-cons-as-list #t)
+           (allow-sharing? #f)))
+        
+        (add-htdp-language
+         (instantiate htdp-language% ()
+           (one-line-summary (string-constant beginning-one-line-summary))
+           (module '(lib "htdp-beginner.ss" "lang"))
+           (language-position
+            (list (string-constant how-to-design-programs)
+                  (string-constant beginning-student)))
+           (language-numbers '(-500 1))
+           (sharing-printing #f)
+           (abbreviate-cons-as-list #f)
+           (allow-sharing? #f)
+           (accept-quasiquote? #f)))))))

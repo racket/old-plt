@@ -36,54 +36,72 @@
               (identifier? (syntax neg-blame))
               (identifier? (syntax pos-blame)))
          
-         (syntax-case (syntax a-contract) (-> ->d case-> case->d)
-           [(->)
-            (raise-syntax-error 
-             #f
-             "unknown contract specification"
-             stx
-             (syntax type))]
-           [(-> funs ...)
-            (with-syntax ([(doms ...) (all-but-last (syntax->list (syntax (funs ...))))]
-                          [rng (car (last-pair (syntax->list (syntax (funs ...)))))]
-                          [arity (- (length (syntax->list (syntax (funs ...))))
-                                    1)])
-              (with-syntax ([(ins ...) (generate-temporaries (syntax (doms ...)))])
+         (let ()
+           ;; build-single-case : syntax[(listof contracts)] -> syntax[(list syntax[args] syntax)]
+           ;; builds the arguments and result for a single case of a case-lambda or
+           ;; just a single lambda expression.
+           (define (build-single-case funs)
+             (with-syntax ([(doms ...) (all-but-last (syntax->list funs))]
+                           [rng (car (last-pair (syntax->list funs)))])
+               (with-syntax ([(ins ...) (generate-temporaries (syntax (doms ...)))])
+                 (syntax
+                  ((ins ...)
+                   (let ([out (name (contract/internal orig-stx doms ins neg-blame pos-blame) ...)])
+                     (contract/internal orig-stx rng out pos-blame neg-blame)))))))
+           
+           (syntax-case (syntax a-contract) (-> ->d case-> case->d)
+             [(->)
+              (raise-syntax-error 
+               #f
+               "unknown contract specification"
+               stx
+               (syntax type))]
+             [(-> fun funs ...)
+              (with-syntax ([(args body) (build-single-case (syntax (fun funs ...)))]
+                            [arity (- (length (syntax->list (syntax (fun funs ...))))
+                                      1)])
                 (syntax
                  (if (and (procedure? name)
                           (procedure-arity-includes? name arity))
-                     (lambda (ins ...)
-                       (let ([out (name (contract/internal orig-stx doms ins neg-blame pos-blame) ...)])
-                         (contract/internal orig-stx rng out pos-blame neg-blame)))
+                     (lambda args body)
                      (raise-error
                       pos-blame
                       "expected a procedure that accepts ~a arguments, got: ~e"
                       arity
-                      name)))))]
-;           [(case-> (cases ...))
-;            (let ([cases (syntax->list (syntax cases))])
-;              (with-syntax ([bodies (map build-single-body cases)])
-;                (syntax
-;                 (case-lambda bodies ...))))]
-           [(->d funs ...)
-            (with-syntax ([(doms ...) (all-but-last (syntax->list (syntax (funs ...))))]
-                          [rng (car (last-pair (syntax->list (syntax (funs ...)))))])
-              (with-syntax ([(ins ...) (generate-temporaries (syntax (doms ...)))])
+                      name))))]
+             [(case-> (-> funs funss ...) ...)
+              (with-syntax ([((args bodies) ...) (map build-single-case
+                                                      (syntax->list (syntax ((funs funss ...) ...))))]
+                            [(arities ...) (map (lambda (x) (- (length (syntax->list x)) 1))
+                                                (syntax->list (syntax ((funs funss ...) ...))))])
                 (syntax
-                 (if (procedure? name)
-                     (lambda (ins ...)
-                       (let ([out (name (contract/internal orig-stx doms ins neg-blame pos-blame) ...)])
-                         (contract/internal orig-stx (rng ins ...) out pos-blame neg-blame)))
+                 (if (and (procedure? name)
+                          (procedure-arity-includes? name arities) ...)
+                     (case-lambda [args bodies] ...)
                      (raise-error
                       pos-blame
-                      "expected a procedure, got: ~e" name)))))]
-           [_
-            (syntax
-             (if (a-contract name)
-                 name
-                 (raise-error
-                  pos-blame
-                  "contract failure: ~e" name)))])])))
+                      "expected a procedure that accepts these arities: ~a, got: ~e"
+                      (list arities ...)
+                      name))))]
+             [(->d funs ...)
+              (with-syntax ([(doms ...) (all-but-last (syntax->list (syntax (funs ...))))]
+                            [rng (car (last-pair (syntax->list (syntax (funs ...)))))])
+                (with-syntax ([(ins ...) (generate-temporaries (syntax (doms ...)))])
+                  (syntax
+                   (if (procedure? name)
+                       (lambda (ins ...)
+                         (let ([out (name (contract/internal orig-stx doms ins neg-blame pos-blame) ...)])
+                           (contract/internal orig-stx (rng ins ...) out pos-blame neg-blame)))
+                       (raise-error
+                        pos-blame
+                        "expected a procedure, got: ~e" name)))))]
+             [_
+              (syntax
+               (if (a-contract name)
+                   name
+                   (raise-error
+                    pos-blame
+                    "contract failure: ~e" name)))]))])))
   
   
   

@@ -33,7 +33,7 @@
 		   'modern))
        (if (null? (car fixed-faces))
 	   #f
-	   fixed-faces))
+	   (car fixed-faces)))
    (lambda (x) (or (string? x) (not x))))
 
   (framework:preferences:set-default

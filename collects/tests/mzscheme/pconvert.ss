@@ -160,7 +160,9 @@
 		'(cons 3/2+3/2i null))
 
      (make-same-test (vector 0 0 0 0 0 0 0 0 0 0) '(vector 0 0 0 0 0 0 0 0 0 0))
-
+     (make-same-test #t 'true)
+     (make-same-test #f 'false)
+     
      (make-same-test (interface () a b c) '(interface ...))
 
      (make-same-test (delay 1) '(delay ...))
@@ -324,8 +326,8 @@
   (define test-shared (make-test-shared #t))
   (define test-not-shared (make-test-shared #f))
 
-  (test-not-shared #t #t)
-  (test-not-shared #f #f)
+  (test-not-shared #t true)
+  (test-not-shared #f false)
   (test-not-shared 1 1)
   (test-not-shared 3276832768327683276832768327683276832768
 		   3276832768327683276832768327683276832768)

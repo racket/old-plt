@@ -10,15 +10,16 @@
   (print-struct #t)
   (break-enabled #f)
 
-  (Define system-custodian (current-custodian))
-  (Define system-eventspace (current-eventspace))
+  (define system-custodian (current-custodian))
+  (define system-eventspace (mred:current-eventspace))
+  (define first-dir (current-directory))
 
   (error-display-handler
    (lambda (msg)
-     (with-parameterization system-parameterization
-       (lambda ()
-	 (display msg)
-	 (newline)
-	 (mred:message-box (format "Internal Error: ~a" msg)
-			   "Internal Error"))))))
+     (parameterize ([mred:current-eventspace system-eventspace]
+		    [current-custodian system-custodian])
+       (display msg)
+       (newline)
+       (mred:message-box (format "Internal Error: ~a" msg)
+			 "Internal Error")))))
   

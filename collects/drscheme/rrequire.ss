@@ -52,7 +52,9 @@
 		  (hash-table-get ht value (lambda () (k #f)))
 		  #t))])
 	(begin0
-	  (if (hash-table-maps? value-ht sym)
+	  (if (and (hash-table-maps? value-ht sym)
+		   (hash-table-maps? mods-ht sym)
+		   (hash-table-maps? file-ht sym))
 	      (let* ([secs (hash-table-get mods-ht sym)]
 		     [reason (ormap (lambda (fn)
 				      (if (< (hash-table-get mods-ht (string->symbol fn))

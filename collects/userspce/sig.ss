@@ -39,7 +39,7 @@
 			   (lambda bindings (apply values (cons ,parser bindings))))))))
 
 (define-signature userspace:basis^
-  (build-parameterization
+  (initialize-parameters
    settings
    get-default-setting
 

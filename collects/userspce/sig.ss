@@ -10,7 +10,7 @@
       [(_ str (fields ...))
        (unless (symbol? (syntax-object->datum (syntax str)))
          (error 'define-struct/parse "no super structs allowed"))
-       (let* ([defn (syntax->list (expand (syntax (define-struct str (fields ...)))))]
+       (let* ([defn (syntax->list (local-expand (syntax (define-struct str (fields ...))) 'define-values))]
               [_ (unless (and (pair? defn)
                               (eq? (syntax-e (first defn)) 'define-values))
                    (error 'define-struct/parse

@@ -531,6 +531,10 @@ scheme_do_add_global_symbol(Scheme_Env *env, Scheme_Object *sym,
     b = scheme_bucket_from_table(env->toplevel, (const char *)sym);
     b->val = obj;
     ((Scheme_Bucket_With_Home *)b)->home = env;
+    if (constant) {
+      ((Scheme_Bucket_With_Flags *)b)->id = builtin_ref_counter++;
+      ((Scheme_Bucket_With_Flags *)b)->flags |= GLOB_HAS_REF_ID;
+    }
   } else
     scheme_add_to_table(env->syntax, (char *)sym, obj, constant);
 }
@@ -551,7 +555,7 @@ void
 scheme_add_global_constant(const char *name, Scheme_Object *obj, 
 			   Scheme_Env *env)
 {
-  scheme_do_add_global_symbol(env, scheme_intern_symbol(name), obj, 1, 0);
+  scheme_do_add_global_symbol(env, scheme_intern_symbol(name), obj, 1, 1);
 }
 
 void

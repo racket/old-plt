@@ -41,9 +41,6 @@ static Scheme_Object *bound_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *free_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *module_eq(int argc, Scheme_Object **argv);
 
-#define phase_key scheme_true
-#define nonmodule_key scheme_false
-
 #define HOME_MAP(a) ((a) ? ((Scheme_Env *)a)->modules : NULL)
 
 #define HAS_SUBSTX(obj) (SCHEME_PAIRP(obj) || SCHEME_VECTORP(obj) || SCHEME_BOXP(obj))
@@ -54,6 +51,8 @@ typedef struct Module_Renames {
   Scheme_Hash_Table *ht;
   long phase;
 } Module_Renames;
+
+static Module_Renames *krn;
 
 #define SCHEME_RENAMESP(obj) (SAME_TYPE(SCHEME_TYPE(obj), scheme_rename_table_type))
 
@@ -266,7 +265,19 @@ Scheme_Object *scheme_make_module_rename(long phase, int nonmodule)
   mr->phase = phase;
   mr->nonmodule = nonmodule;
 
+  if (!krn) {
+    REGISTER_SO(krn);
+    krn = mr;
+  }
+
   return (Scheme_Object *)mr;
+}
+
+void scheme_extend_module_rename_with_kernel(Scheme_Object *mrn)
+{
+  /* Don't use on a non-module namespace, where renames may need
+     to be removed... */
+  ((Module_Renames *)mrn)->plus_kernel = 1;
 }
 
 void scheme_extend_module_rename(Scheme_Object *mrn,
@@ -274,7 +285,7 @@ void scheme_extend_module_rename(Scheme_Object *mrn,
 				 Scheme_Object *localname, 
 				 Scheme_Object *exname)
 {
-  scheme_add_to_table((Scheme_Hash_Table *)mrn, (const char *)localname,
+  scheme_add_to_table(((Module_Renames *)mrn)->ht, (const char *)localname,
 		      scheme_make_pair(modname, exname), 0);
 }
 
@@ -283,7 +294,8 @@ void scheme_remove_module_rename(Scheme_Object *mrn,
 {
   Scheme_Bucket *b;
 
-  b = scheme_bucket_or_null_from_table((Scheme_Hash_Table *)mrn, (const char *)localname, 0);
+  b = scheme_bucket_or_null_from_table(((Module_Renames *)mrn)->ht, 
+				       (const char *)localname, 0);
   if (b)
     b->val = NULL;
 }
@@ -294,8 +306,11 @@ void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest)
   Scheme_Bucket **bs, *b;
   int i;
 
-  ht = (Scheme_Hash_Table *)dest;
-  hts = (Scheme_Hash_Table *)src;
+  if (((Module_Renames *)dest)->plus_kernel)
+    ((Module_Renames *)src)->plus_kernel = 1;
+
+  ht = ((Module_Renames *)dest)->ht;
+  hts = ((Module_Renames *)src)->ht;
   
   /* Mappings in src overwrite mappings in dest: */
 
@@ -499,16 +514,18 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase, Scheme_Object **
       if (SCHEME_FALSEP(result))
 	result = mresult;
       return result;
-    } else if (SCHEME_HASHTP(SCHEME_CAR(wraps)) && home && !phase_found) {
+    } else if (SCHEME_RENAMESP(SCHEME_CAR(wraps)) && home && !phase_found) {
       /* Module rename: */
-      Scheme_Hash_Table *ht = (Scheme_Hash_Table *)SCHEME_CAR(wraps);
-      if (SAME_OBJ(scheme_make_integer(phase),
-		   scheme_lookup_in_table(ht, (const char *)phase_key))) {
+      Module_Renames *mrn = (Module_Renames *)SCHEME_CAR(wraps);
+      if (phase == mrn->phase) {
 	Scheme_Object *rename;
 	
 	phase_found = 1;
 
-	rename = scheme_lookup_in_table(ht, (const char *)SCHEME_STX_VAL(a));
+	rename = scheme_lookup_in_table(mrn->ht, (const char *)SCHEME_STX_VAL(a));
+	if (!rename && mrn->plus_kernel)
+	  rename = scheme_lookup_in_table(krn->ht, (const char *)SCHEME_STX_VAL(a));
+
 	if (rename) {
 	  /* Match: set mresult for the case of no lexical capture: */
 	  mresult = SCHEME_CAR(rename);
@@ -576,16 +593,18 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, int always, long pha
 	return SCHEME_STX_VAL(a);
       else
 	return result;
-    } else if (SCHEME_HASHTP(SCHEME_CAR(wraps)) && !phase_found) {
-      Scheme_Hash_Table *ht = (Scheme_Hash_Table *)SCHEME_CAR(wraps);
-      if (SAME_OBJ(scheme_make_integer(phase),
-		   scheme_lookup_in_table(ht, (const char *)phase_key))) {
+    } else if (SCHEME_RENAMESP(SCHEME_CAR(wraps)) && !phase_found) {
+      Module_Renames *mrn = (Module_Renames *)SCHEME_CAR(wraps);
+      if (phase == mrn->phase) {
 	/* Module rename: */
 	Scheme_Object *rename;
 	
 	phase_found = 1;
 
-	rename = scheme_lookup_in_table(ht, (const char *)SCHEME_STX_VAL(a));
+	rename = scheme_lookup_in_table(mrn->ht, (const char *)SCHEME_STX_VAL(a));
+	if (!rename && mrn->plus_kernel)
+	  rename = scheme_lookup_in_table(krn->ht, (const char *)SCHEME_STX_VAL(a));
+
 	if (rename) {
 	  /* Match: set result: */
 	  result = SCHEME_CDR(rename);
@@ -884,39 +903,53 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w, int subs,
     if (SCHEME_NUMBERP(a)) {
       stack = scheme_make_pair(a, stack);
     } else if (SCHEME_VECTORP(a)) {
-      Scheme_Object *other_env, *envname, *vec, *m;
-      int i, c;
-      
-      envname = SCHEME_VEC_ELS(a)[0];
+      Scheme_Object *local_key;
 
-      c = SCHEME_VEC_SIZE(a);
-      c = (c - 1) >> 1;
-
-      for (i = 0; i < c; i++) {
-	other_env = SCHEME_VEC_ELS(a)[1+c+i];
-	if (SCHEME_FALSEP(other_env)) {
-	  other_env = resolve_env(SCHEME_VEC_ELS(a)[1+i], 0, NULL);
-	  SCHEME_VEC_ELS(a)[1+c+i] = other_env;
+      local_key = scheme_lookup_in_table(rns, (const char *)a);
+      if (local_key) {
+	stack = scheme_make_pair(local_key, stack);
+      } else {
+	Scheme_Object *other_env, *envname, *vec, *m;
+	int i, c;
+	
+	envname = SCHEME_VEC_ELS(a)[0];
+	
+	c = SCHEME_VEC_SIZE(a);
+	c = (c - 1) >> 1;
+	
+	for (i = 0; i < c; i++) {
+	  other_env = SCHEME_VEC_ELS(a)[1+c+i];
+	  if (SCHEME_FALSEP(other_env)) {
+	    other_env = resolve_env(SCHEME_VEC_ELS(a)[1+i], 0, NULL);
+	    SCHEME_VEC_ELS(a)[1+c+i] = other_env;
+	  }
 	}
-      }
-      
-      /* We only need the names and marks of the stxes. */
-      vec = scheme_make_vector(1 + (3 * c), NULL);
-      SCHEME_VEC_ELS(vec)[0] = envname;
-      for (i = 0; i < c; i++) {
-	SCHEME_VEC_ELS(vec)[1+i] = SCHEME_STX_VAL(SCHEME_VEC_ELS(a)[1+i]);
-	m = get_marks(((Scheme_Stx *)(SCHEME_VEC_ELS(a)[1+i]))->wraps);
-	SCHEME_VEC_ELS(vec)[1+c+i] = m;
-	SCHEME_VEC_ELS(vec)[1+(2 * c)+i] = SCHEME_VEC_ELS(a)[1+c+i];
-      }
+	
+	/* We only need the names and marks of the stxes. */
+	vec = scheme_make_vector(2 + (3 * c), NULL);
+	SCHEME_VEC_ELS(vec)[0] = envname;
+	for (i = 0; i < c; i++) {
+	  SCHEME_VEC_ELS(vec)[1+i] = SCHEME_STX_VAL(SCHEME_VEC_ELS(a)[1+i]);
+	  m = get_marks(((Scheme_Stx *)(SCHEME_VEC_ELS(a)[1+i]))->wraps);
+	  SCHEME_VEC_ELS(vec)[1+c+i] = m;
+	  SCHEME_VEC_ELS(vec)[1+(2 * c)+i] = SCHEME_VEC_ELS(a)[1+c+i];
+	}
 
-      stack = scheme_make_pair(vec, stack);
-    } else if (SCHEME_HASHTP(a)) {
-      Scheme_Object *phse;
+	local_key = scheme_make_integer(rns->count);
+	scheme_add_to_table(rns, 
+			    (const char *)a, 
+			    scheme_make_pair(local_key, scheme_null), 
+			    0);
+
+	SCHEME_VEC_ELS(vec)[1+(3 * c)] = local_key;
+	
+	stack = scheme_make_pair(vec, stack);
+      }
+    } else if (SCHEME_RENAMESP(a)) {
+      Module_Renames *mrn = (Module_Renames *)a;
       int phase;
 
-      phse = scheme_lookup_in_table((Scheme_Hash_Table *)a, (const char *)phase_key);
-      phase = SCHEME_INT_VAL(phse) + phase_shift;
+      phase = mrn->phase + phase_shift;
 
       /* Already did this phase? */
       if (phase >= num_phases) {
@@ -932,7 +965,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w, int subs,
 
       if (!phases[phase]) {
 	phases[phase] = 1;
-	if (scheme_lookup_in_table((Scheme_Hash_Table *)a, (const char *)nonmodule_key)) {
+	if (mrn->nonmodule) {
 	  stack = scheme_make_pair(((phase == 0)
 				    ? scheme_true
 				    : scheme_false), 
@@ -940,7 +973,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w, int subs,
 	} else {
 	  Scheme_Object *local_key;
 
-	  local_key = scheme_lookup_in_table(rns, (const char *)a);
+	  local_key = scheme_lookup_in_table(rns, (const char *)mrn);
 	  if (local_key) {
 	    stack = scheme_make_pair(local_key, stack);
 	  } else {
@@ -949,8 +982,8 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w, int subs,
 	    Scheme_Bucket **bs, *b;
 	    Scheme_Object *l = scheme_null, *v;
 	    
-	    bs = ((Scheme_Hash_Table *)a)->buckets;
-	    for (i = ((Scheme_Hash_Table *)a)->size; i--; ) {
+	    bs = mrn->ht->buckets;
+	    for (i = mrn->ht->size; i--; ) {
 	      b = bs[i];
 	      if (b && b->val) {
 		v = (Scheme_Object *)b->val;
@@ -964,10 +997,13 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w, int subs,
 
 	    local_key = scheme_make_integer(rns->count);
 	    scheme_add_to_table(rns, 
-				(const char *)a, 
+				(const char *)a,
 				scheme_make_pair(local_key, scheme_null), 
 				0);
 
+	    l = scheme_make_pair(scheme_make_integer(mrn->phase), l);
+	    if (mrn->plus_kernel)
+	      l = scheme_make_pair(scheme_true,l);
 	    l = scheme_make_pair(local_key, l);
 	    
 	    stack = scheme_make_pair(l, stack);
@@ -1167,7 +1203,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w, int subs,
 
       stack = scheme_make_pair(n, stack);
     } else if (SCHEME_VECTORP(a)) {
-      Scheme_Object *envname, *vec, *marks, *name, *s;
+      Scheme_Object *envname, *vec, *marks, *name, *s, *local_key;
       int i, c;
       
       /* a is a vector: <envname> <name> ... <marks> ... <resolved-envname> ... */
@@ -1175,7 +1211,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w, int subs,
       envname = SCHEME_VEC_ELS(a)[0];
 
       c = SCHEME_VEC_SIZE(a);
-      c = (c - 1) / 3;
+      c = (c - 2) / 3;
 
       vec = scheme_make_vector(1 + (2 * c), NULL);
 
@@ -1193,14 +1229,19 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w, int subs,
 	SCHEME_VEC_ELS(vec)[1+c+i] = SCHEME_VEC_ELS(a)[1+(2 * c)+i];
       }
 
+      local_key = SCHEME_VEC_ELS(a)[1+(3 * c)];
+      
+      scheme_add_to_table(rns, 
+			  (const char *)local_key, 
+			  vec,
+			  0);
+
       stack = scheme_make_pair(vec, stack);
     } else if (SCHEME_PAIRP(a)) {
       /* A rename table, one of:
-           - (<index-num>)
+           - (<index-num>) ; could be env rename
            - (<index-num> <table-elem> ...)
 	where a <table-elem> is one of
-           - (<phase_key> . <phase>)
-           - (<nonmodule_key> . #t)
            - (<modname> . <exname/defname>)
            - (<exname> . (<modname> . <defname>))
       */
@@ -1210,7 +1251,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w, int subs,
       a = SCHEME_CDR(a);
       if (SCHEME_NULLP(a)) {
 	/* Re-use table */
-	a = scheme_lookup_in_table(rns, (const char *)local_key);
+	a = scheme_lookup_in_table(rns, (const char *)local_key); /* might be env rename */
 	if (!a) {
 	  scheme_raise_exn(MZEXN_READ,
 			   scheme_false, /* FIXME? should be port, but exn shouldn't happen. */
@@ -1218,12 +1259,25 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w, int subs,
 			   SCHEME_INT_VAL(local_key));
 	}
       } else {
-	Scheme_Hash_Table *rn;
+	Module_Renames *mrn;
 	Scheme_Object *p, *key;
+	int plus_kernel;
+	long phase;
 
-	/* Convert list to hash table: */
+	/* Convert list to rename table: */
 
-	rn = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+	if (SCHEME_BOOLP(SCHEME_CAR(a))) {
+	  plus_kernel = 1;
+	  a = SCHEME_CDR(a);
+	} else
+	  plus_kernel = 0;
+
+	phase = SCHEME_INT_VAL(SCHEME_CAR(a));
+	a = SCHEME_CDR(a);
+
+	mrn = (Module_Renames *)scheme_make_module_rename(phase, 0);
+	mrn->plus_kernel = plus_kernel;
+
 	for (; !SCHEME_NULLP(a) ; a = SCHEME_CDR(a)) {
 	  p = SCHEME_CAR(a);
 	  
@@ -1234,14 +1288,14 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w, int subs,
 	    p = SCHEME_CDR(p);
 	  }
 	  
-	  scheme_add_to_table(rn, (const char *)key, p, 0);
+	  scheme_add_to_table(mrn->ht, (const char *)key, p, 0);
 	}
 
 	scheme_add_to_table(rns, 
 			    (const char *)local_key, 
-			    rn,
+			    mrn,
 			    0);
-	a = (Scheme_Object *)rn;
+	a = (Scheme_Object *)mrn;
       }
       stack = scheme_make_pair(a, stack);
     } else if (SCHEME_TRUEP(a)) {

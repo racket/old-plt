@@ -152,7 +152,6 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_unit_type, "<unit>");
   set_name(scheme_compiled_unit_type, "<unit-code>");
-  set_name(scheme_unit_body_data_type, "<unit-body-code>");
   set_name(scheme_unit_compound_data_type, "<compound-unit-code>");
   set_name(scheme_invoke_unit_data_type, "<invoke-unit-code>");
 

@@ -1296,7 +1296,7 @@
 		       ((dummy . pattern) (syntax template))
 		       ...))))))))
 
-  (export (all-from .syntax-case) (all-from .kernel) (all-from .small-scheme)
+  (export (all-from .syntax-case) (all-from .small-scheme)
 	  (all-from .with-syntax) (all-from .syntax-loc) check-duplicate-identifier
 	  let-syntax syntax-rules))
 
@@ -1305,7 +1305,7 @@
 
 (module .more-scheme .kernel
   (import .small-scheme)
-  (import-for-syntax .syntax-case-scheme)
+  (import-for-syntax .kernel .syntax-case-scheme)
 
   (define (check-parameter-procedure p)
     (unless (and (procedure? p)

@@ -59,7 +59,6 @@ static Scheme_Env *kenv;
 static Scheme_Object *module_symbol;
 static Scheme_Object *module_begin_symbol;
 
-static Scheme_Object *map_symbol;
 static Scheme_Object *rename_symbol;
 static Scheme_Object *all_except_symbol;
 static Scheme_Object *all_from_symbol;
@@ -136,7 +135,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   Scheme_Hash_Table *ht;
   int i, j, count, syntax_start = 0;
   Scheme_Bucket **bs;
-  Scheme_Object **exs, *w;
+  Scheme_Object **exs, *w, *rn;
 
   REGISTER_SO(kernel);
   REGISTER_SO(kenv);
@@ -194,6 +193,11 @@ void scheme_finish_kernel(Scheme_Env *env)
 
   kenv->running = 1;
 
+  rn = scheme_make_module_rename(0, 0);
+  for (i = kernel->num_exports; i--; ) {
+    scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i]);
+  }
+
   scheme_sys_wraps(NULL);
 
   REGISTER_SO(begin_stx);
@@ -218,12 +222,10 @@ void scheme_finish_kernel(Scheme_Env *env)
   app_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%app"), scheme_false, w);
   unbound_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%unbound"), scheme_false, w);
 
-  REGISTER_SO(map_symbol);
   REGISTER_SO(rename_symbol);
   REGISTER_SO(all_except_symbol);
   REGISTER_SO(all_from_symbol);
   REGISTER_SO(all_from_except_symbol);
-  map_symbol = scheme_intern_symbol("map");
   rename_symbol = scheme_intern_symbol("rename");
   all_except_symbol = scheme_intern_symbol("all-except");
   all_from_symbol = scheme_intern_symbol("all-from");
@@ -250,7 +252,6 @@ void scheme_import_from_original_env(Scheme_Env *env)
 Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env)
 {
   Scheme_Object *rn, *w;
-  int i;
   long phase;
 
   if (!env)
@@ -265,10 +266,8 @@ Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env)
 
   rn = scheme_make_module_rename(phase, 0);
 
-  /* Add a module mapping for all kernel syntax exports: */
-  for (i = kernel->num_var_exports; i < kernel->num_exports; i++) {
-    scheme_extend_module_rename(rn, kernel_symbol, kernel->exports[i], kernel->exports[i]);
-  }
+  /* Add a module mapping for all kernel exports: */
+  scheme_extend_module_rename_with_kernel(rn);
   
   w = scheme_datum_to_syntax(kernel_symbol, scheme_false, scheme_false);
   w = scheme_add_rename(w, rn);
@@ -627,7 +626,9 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   fm = scheme_add_rename(fm, et_rn);
 
   /* For each (direct) export in iim, add a module rename to fm */
-  {
+  if (SAME_OBJ(iim, kernel)) {
+    scheme_extend_module_rename_with_kernel(rn);
+  } else {
     int i;
     Scheme_Object **exs, **exss, **exsns;
 
@@ -1429,7 +1430,7 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
 			     int start)
 {
   Scheme_Module *m;
-  int j, var_count;
+  int j, var_count, is_kern;
   Scheme_Object **exs, **exsns, **exss;
   Scheme_Object *name, *i, *exns, *prefix, *iname, *ename;
   Scheme_Object *imods;
@@ -1475,10 +1476,11 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
 
       for (l = exns; SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l)) {
 	if (!SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(l)))
-	  scheme_wrong_syntax("import", SCHEME_STX_CAR(l), form, "bad syntax (except name is not an identifier)");
+	  scheme_wrong_syntax("import", SCHEME_STX_CAR(l), form,
+			      "bad syntax (excluded name is not an identifier)");
       }
     } else if (SCHEME_STX_PAIRP(i)
-	       && SAME_OBJ(map_symbol, SCHEME_STX_VAL(SCHEME_STX_CAR(i)))) {
+	       && SAME_OBJ(rename_symbol, SCHEME_STX_VAL(SCHEME_STX_CAR(i)))) {
       int len;
 
       len = scheme_stx_proper_list_length(i);
@@ -1528,6 +1530,11 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
     else
       expstart_module(m, env, 0);
 
+    is_kern = (SAME_OBJ(name, kernel_symbol)
+	       && !exns
+	       && !prefix
+	       && !iname);
+
     /* Add name to import list, if it's not there: */
     {
       Scheme_Object *l, *last = NULL, *p;
@@ -1573,7 +1580,8 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
 
       ck(iname, name, modname, exsns[j], (j < var_count), data, i);
 
-      scheme_extend_module_rename(rn, modname, iname, exsns[j]);
+      if (!is_kern)
+	scheme_extend_module_rename(rn, modname, iname, exsns[j]);
 
       iname = NULL;
 
@@ -1585,7 +1593,11 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
 
     if (ename) {
       scheme_wrong_syntax("import", i, form, "no such exported variable");
+      return NULL;
     }
+
+    if (is_kern)
+      scheme_extend_module_rename_with_kernel(rn);
   }
 
   return imods;

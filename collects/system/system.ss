@@ -41,7 +41,7 @@
 (define mred:default-splash-title "MrEd")
 
 (current-library-collection-paths
- (list* (build-path plt:home-directory "lib")
+ (list* (build-path plt:home-directory "collects")
 	mred:system-source-directory
 	(current-library-collection-paths)))
 

@@ -995,8 +995,12 @@
   (kill? "Tuer ?")
   
   ;;; version checker
+  ;; vc-check-prompt is gone, I'm leaving this comment to make it easier to generate
+  ;; vc-wizard-check-prompt which is similar, only it is used as part of the initial
+  ;; wizard dialog.  Note that vc-wizard-check-prompt can (should) have newlines so
+  ;; it will not make the dialog too wide.
+  ;; (vc-check-prompt "Regarder sur Internet pour d'éventuelles mises à jour des logiciels PLT ?")
   (vc-update-check "Vérification des mises à jour")
-  (vc-check-prompt "Regarder sur Internet pour d'éventuelles mises à jour des logiciels PLT ?")
   (vc-please-wait "Veuillez patienter")
   (vc-connecting-version-server "Connexion au server de version de PLT en cours")
   (vc-network-timeout "Expiration du compte-à-rebours lors de la connexion réseau") 

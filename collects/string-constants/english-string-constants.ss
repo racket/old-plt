@@ -995,8 +995,12 @@ please adhere to these guidelines:
  (kill? "Kill?")
 
  ;;; version checker
+ ;; the next two are used in the initial wizard dialog.
+ ;; Note that vc-wizard-check-prompt can (should) have newlines so
+ ;; it will not make the dialog too wide.
+ (vc-wizard-check-prompt "Do you want to check online for~na newer version of DrScheme?")
+ (vc-wizard-check-button "Check now!")
  (vc-update-check "Update check")
- (vc-check-prompt "Check for PLT software updates over the Internet?")
  (vc-please-wait "Please wait")
  (vc-connecting-version-server "Connecting to PLT version server")
  (vc-network-timeout "Network timeout") 

@@ -743,8 +743,12 @@
  (kill? "Beëindigen?")
 
  ;;; version checker
+ ;; vc-check-prompt is gone, I'm leaving this comment to make it easier to generate
+ ;; vc-wizard-check-prompt which is similar, only it is used as part of the initial
+ ;; wizard dialog.  Note that vc-wizard-check-prompt can (should) have newlines so
+ ;; it will not make the dialog too wide.
+ ;; (vc-check-prompt "Kijk op het Internet voor nieuwere versies van PLT-programmatuur?")
  (vc-update-check "Versie bijwerken")
- (vc-check-prompt "Kijk op het Internet voor nieuwere versies van PLT-programmatuur?")
  (vc-please-wait "Even wachten a.u.b.")
  (vc-connecting-version-server "Legt verbinding met PLT versieleverancier")
  (vc-network-timeout "Netwerk plat") 

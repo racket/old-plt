@@ -171,7 +171,6 @@ exit 1
             (error 'install "Errors in compilation process! (~a)" n)))]
        ;; also, protect `current-directory' since it will change
        [current-directory (current-directory)])
-    (set! didnothing? #f)
     (dynamic-require '(lib "setup.ss" "setup") #f)))
 
 (define (main args)

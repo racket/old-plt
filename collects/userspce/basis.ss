@@ -477,7 +477,9 @@
     (define (drscheme-eval-handler sexp)
       (if (and (zodiac-vocabulary? (current-setting))
 	       (eq? (current-namespace) (current-zodiac-namespace)))
-	  (let* ([z (let ([continuation-stack (current-continuation-marks aries:w-c-m-key)])
+	  (let* ([z (let ([continuation-stack (continuation-mark-set->list
+					       (current-continuation-marks)
+					       aries:w-c-m-key)])
 		      (if (null? continuation-stack)
 			  (let ([loc (zodiac:make-location 
 				      initial-line initial-column initial-offset

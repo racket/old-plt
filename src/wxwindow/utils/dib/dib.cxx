@@ -449,22 +449,18 @@ BOOL ReadDIB(LPSTR lpFileName, HBITMAP *bitmap, HPALETTE *palette)
     if (lpbi->biClrUsed == 0)
 	lpbi->biClrUsed = nNumColors;
 
-    if (lpbi->biSizeImage == 0)
+    /* Always compute the image size. Sometimes the file is wrong. */
+    if (1 || (lpbi->biSizeImage == 0))
     {
 	lpbi->biSizeImage = ((((lpbi->biWidth * (DWORD)lpbi->biBitCount) + 31) & ~31) >> 3)
 			 * lpbi->biHeight;
     }
 
-    if ((3 * lpbi->biWidth) & 0x3) {
-      extra_space = lpbi->biHeight * (4 - ((3 * lpbi->biWidth) & 0x3));
-    } else
-      extra_space = 0;
-
     /* get a proper-sized buffer for header, color table and bits */ 
     GlobalUnlock(hDIB);
     hDIB = GlobalReAlloc(hDIB, (lpbi->biSize
 				+ nNumColors * sizeof(RGBQUAD)
-				+ lpbi->biSizeImage + extra_space), 0);
+				+ lpbi->biSizeImage), 0);
     if (!hDIB)	/* can't resize buffer for loading */
 	goto ErrExit2;
 
@@ -500,9 +496,9 @@ BOOL ReadDIB(LPSTR lpFileName, HBITMAP *bitmap, HPALETTE *palette)
         _llseek(fh,bf.bfOffBits,SEEK_SET);
     }
 
-	got = lread(fh, (LPSTR)lpbi + offBits, lpbi->biSizeImage + extra_space);
+    got = lread(fh, (LPSTR)lpbi + offBits, lpbi->biSizeImage);
 
-    if (lpbi->biSizeImage == (got - extra_space))
+    if (lpbi->biSizeImage == got)
     {
 	GlobalUnlock(hDIB);
 

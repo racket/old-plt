@@ -20,7 +20,8 @@
       (import (drscheme:app : drscheme:app^)
               (drscheme:unit : drscheme:unit^)
               (drscheme:get/extend : drscheme:get/extend^)
-              (drscheme:language : drscheme:language^))
+              (drscheme:language : drscheme:language^)
+	      (drscheme:language-tower : drscheme:language-tower^))
       
       (finder:default-extension "scm")
       (application:current-app-name "DrScheme")
@@ -57,14 +58,26 @@
   ;; specified below.
       (preferences:set-un/marshall
        drscheme:language:settings-preferences-symbol
-       (lambda (x) (cdr (vector->list (struct->vector x))))
-       (lambda (x) #f))
-      
-      (preferences:set-default
-       drscheme:language:settings-preferences-symbol
-       'dummy-default-language
-       (lambda (x) #t))
-      
+       (lambda (x)
+	 (let ([lang (drscheme:language:language-settings-language x)]
+	       [settings (drscheme:language:language-settings-settings x)])
+	   (list (send lang get-language-position)
+		 (send lang marshall-settings settings))))
+       (lambda (x)
+	 (and (list? x)
+	      (= 2 (length x))
+	      (let* ([lang-position (first x)]
+		     [marshalled-settings (second x)]
+		     [lang (ormap
+			    (lambda (x)
+			      (equal? lang-position
+				      (send x get-language-position)))
+			    (drscheme:language:get-languages))])
+		(and lang
+		     (let ([settings (send lang unmarshall-settings marshalled-settings)])
+		       (drscheme:language:make-language-settings
+			lang
+			(or settings (send lang default-settings)))))))))
       
       (preferences:set-default
        'drscheme:enable-backtrace-in-teaching-levels
@@ -250,6 +263,19 @@
            (make-object vertical-panel% main)
            main)))
       
+      (let ([make-simple
+	     (lambda (lang ps)
+	       (make-object drscheme:language-tower:module-based-language->language%
+		 (make-object drscheme:language-tower:simple-module-based-language->module-based-language%
+		   (make-object drscheme:language-tower:simple-module-based-language%
+		     `(lib ,lang "langs")
+		     ps))))])
+	(drscheme:language:add-language
+	 (make-simple "full-mred.ss" '("Full" "Graphical (MrEd)")))
+	(drscheme:language:add-language
+	 (make-simple "full-mzscheme.ss" '("Full" "Textual (MzScheme)"))))
+
+
   ;; add a handler to open .plt files.
       (handler:insert-format-handler 
        "Projects"

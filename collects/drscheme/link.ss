@@ -10,7 +10,8 @@
 				       (mzlib string)
 				       (mzlib file)
 				       url
-				       (mred : mred^))]
+				       (mred : mred^)
+				       framework)]
 
 	[framework : framework^ ((require-library "frameworkr.ss" "framework") mzlib mred)]
 	[print-convert : mzlib:print-convert^

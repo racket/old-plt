@@ -3,7 +3,7 @@
   (require "../servlets/private/util.ss"
            "cookie.ss"
            "finddoc.ss"
-	   (lib "contracts.ss"))
+	   (lib "contract.ss"))
   
   (provide make-results-url
 	   make-relative-results-url

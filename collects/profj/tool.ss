@@ -39,7 +39,7 @@
                                                    (list '|(| '|)|)
                                                    (list '|[| '|]|)))
 				    (get-token get-syntax-token)
-                                    (prefix "Java"))
+                                    (tab-name "Java"))
                                (lambda (text prompt-position) 
                                  (let ((is-if? #f)
                                        (is-string? #f)

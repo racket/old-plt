@@ -124,9 +124,6 @@
              (define (print-current-view item evt)
                (send (send canvas get-editor) print))
                 
-             (define (line-append . strings)
-               (apply string-append (map (lx (format "---\n~e\n" _)) strings)))
-
              ; receive-result takes a result from the model and renders it on-screen
              ; : (string semaphore -> void)
              (define (receive-result result continue-user-computation-semaphore)

@@ -41,10 +41,12 @@
            
            (define (break mark-set break-kind returned-value-list)
              (let* ([mark-list (extract-mark-list mark-set)]
-                    [exposed (map expose-mark mark-list)])
+                    [formatted (map (lambda (num mark) (format "mark ~a:\n~a" num (display-mark mark)))
+                                    (build-list (length mark-list) (lx _))
+                                    mark-list)])
                (send-to-drscheme-eventspace
                 (lambda ()
-                  (receive-result (format "*breakpoint*\nmark-list: ~e\nbreak-kind: ~e\nreturned-value-list: ~e\n" exposed break-kind returned-value-list)
+                  (receive-result (format "*breakpoint*\nmark-list:\n~abreak-kind: ~a\nreturned-value-list: ~a\n" formatted break-kind returned-value-list)
                                   user-computation-semaphore)))
                (semaphore-wait user-computation-semaphore)))
            
@@ -58,7 +60,7 @@
                         (eval annotated))])
                  (send-to-drscheme-eventspace
                   (lambda ()
-                    (receive-result (format "*expression finished*\nresulting value: ~e" expression-result)
+                    (receive-result (format "*expression finished*\nresulting value: ~a" expression-result)
                                     user-computation-semaphore)))
                  (semaphore-wait user-computation-semaphore)
                  (expand-next-expression))))
@@ -66,7 +68,7 @@
            (define (err-display-handler message exn)
              (send-to-drscheme-eventspace
               (lambda ()
-                (receive-result (format "*error*\nmessage: ~e" message)
+                (receive-result (format "*error*\nmessage: ~a" message)
                                 user-computation-semaphore)))))
         
         (program-expander

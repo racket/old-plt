@@ -195,11 +195,16 @@ wxMediaBuffer::~wxMediaBuffer()
 
 /******************************************************************/
 
+extern int objscheme_something_prepared;
+
 void wxMediaBuffer::OnLocalEvent(wxMouseEvent *event)
 {
   if (map) {
     Scheme_Object *edit;
-    edit = objscheme_bundle_wxMediaBuffer(this);
+    if (objscheme_something_prepared)
+      edit = objscheme_bundle_wxMediaBuffer(this);
+    else
+      edit = NULL; /* could happen in Mac or Windows with -Z */
     if (map->HandleMouseEvent(edit, event))
       return;
     else if (!event->Moving())
@@ -213,7 +218,10 @@ void wxMediaBuffer::OnLocalChar(wxKeyEvent *event)
 {
   if (map) {
     Scheme_Object *edit;
-    edit = objscheme_bundle_wxMediaBuffer(this);
+    if (objscheme_something_prepared)
+      edit = objscheme_bundle_wxMediaBuffer(this);
+    else
+      edit = NULL; /* could happen in Mac or Windows with -Z */
     if (map->HandleKeyEvent(edit, event))
       return;
     else

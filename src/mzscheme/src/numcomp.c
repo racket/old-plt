@@ -122,6 +122,10 @@ GEN_BIN_COMP(scheme_bin_gt, ">", GREATER_THAN, GREATER_THAN, scheme_bignum_gt, s
 GEN_BIN_COMP(scheme_bin_lt_eq, "<=", LESS_OR_EQUAL, fLESS_OR_EQUAL, scheme_bignum_le, scheme_rational_le, COMP_IZI_LT_EQ, 0, 1, scheme_positive_p, scheme_negative_p, GEN_IDENT_FOR_IZI, GEN_OMIT, REAL_NUMBER_STR)
 GEN_BIN_COMP(scheme_bin_gt_eq, ">=", GREATER_OR_EQUAL, GREATER_OR_EQUAL, scheme_bignum_ge, scheme_rational_ge, COMP_IZI_GT_EQ, 1, 0, scheme_negative_p, scheme_positive_p, GEN_IDENT_FOR_IZI, GEN_OMIT, REAL_NUMBER_STR)
 
+#ifdef MPW_C
+# pragma options opt off
+#endif
+
 Scheme_Object *
 scheme_zero_p (int argc, Scheme_Object *argv[])
 {
@@ -162,6 +166,10 @@ scheme_zero_p (int argc, Scheme_Object *argv[])
 
   ESCAPED_BEFORE_HERE;
 }
+
+#ifdef MPW_C
+# pragma options opt reset
+#endif
 
 Scheme_Object *
 scheme_positive_p (int argc, Scheme_Object *argv[])

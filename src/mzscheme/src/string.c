@@ -1575,9 +1575,16 @@ static void machine_details(char *s)
    if (err != noErr) {
      strcpy(sysvers, "<unknown system>");
    } else {
+     int i;
      sprintf(sysvers, "%X.%X",
 	     (lng >> 8) & 0xff,
 	     lng & 0xff);
+     /* remove trailing zeros: */
+     i = strlen(sysvers);
+     while ((i > 1) && (sysvers[i-1] == '0') && (sysvers[i-2] != '.')) {
+       sysvers[i] = 0;
+       i--;
+     }
    }
 
    err = Gestalt(gestaltMachineType, &lng);

@@ -1161,9 +1161,6 @@ void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep)
     if (!StartFDWatcher(mzsleep, secs, fds)) {
       secs = 0;
     }
-#else 
-    /* No way to know when fds are ready: */
-    secs = 0.1;
 #endif
 
     if (WNE(&e, secs ? secs : kEventDurationForever))

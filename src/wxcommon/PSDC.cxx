@@ -1816,11 +1816,11 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
       // get the directory of the AFM files
       afmName = new char[strlen(name) + len + 256];
       strcpy(afmName, afm_path);
-#ifdef wx_mac
+#if defined(wx_mac) && !defined(OS_X)
       if (len && (afm_path[len - 1] != ':'))
 	strcat(afmName, ":");
 #endif
-#ifdef wx_x
+#if defined(wx_x) || defined(OS_X)
       if (len && (afm_path[len - 1] != '/'))
 	strcat(afmName, "/");
 #endif

@@ -374,6 +374,8 @@ static void TCP_INIT(char *name)
 
 static short tcpDriverId;
 
+static ProcessSerialNumber tcp_psn;
+
 #define	SOCK_STATE_NO_STREAM 0 /* Socket doesn't have a MacTCP stream yet */
 #define	SOCK_STATE_UNCONNECTED 1 /* Socket is unconnected. */
 #define	SOCK_STATE_LISTENING 2 /* Socket is listening for connection. */
@@ -399,6 +401,7 @@ static TCPiopbX *active_pbs;
 static pascal void dnr_done(struct hostInfo *hi, int * done)
 {
   *done = true;
+  WakeUpProcess(&tcp_psn);
 }
 
 static ResultUPP u_dnr_done;
@@ -423,6 +426,8 @@ static pascal void tcp_notify(StreamPtr stream, unsigned short eventCode,
       t->state = SOCK_STATE_UNCONNECTED;
     break;
   }
+
+  WakeUpProcess(&tcp_psn);
 }
 
 static TCPNotifyUPP u_tcp_notify;
@@ -431,6 +436,8 @@ static void tcp_connect_done(TCPiopbX *pbx)
 {
   if (!pbx->pb.ioResult)
     pbx->data->tcp.state = SOCK_STATE_CONNECTED;
+
+  WakeUpProcess(&tcp_psn);
 }
 
 static TCPIOCompletionUPP u_tcp_connect_done;
@@ -455,6 +462,8 @@ static void tcp_listen_done(TCPiopbX *pbx)
     data->tcp.async_errid = -pb->ioResult;
     break;
   }
+
+  WakeUpProcess(&tcp_psn);
 }
 
 static TCPIOCompletionUPP u_tcp_listen_done;
@@ -466,6 +475,8 @@ static void tcp_recv_done(TCPiopbX *pbx)
   
   if (!pb->ioResult)
     data->b.bufmax = pb->csParam.receive.rcvBuffLen;
+
+  WakeUpProcess(&tcp_psn);
 }
 
 static TCPIOCompletionUPP u_tcp_recv_done;
@@ -494,6 +505,8 @@ static void tcp_send_done(TCPiopbX *pbx)
     data->tcp.async_errid = -pb->ioResult;
     break;
   }
+
+  WakeUpProcess(&tcp_psn);
 }
 
 static TCPIOCompletionUPP u_tcp_send_done;
@@ -510,12 +523,13 @@ static void TCP_INIT(char *name)
 {
   ParamBlockRec pb;
   short errNo;
-
   FSSpec spec;
   CFragConnectionID connID;
   OSErr err;
   void (*f)(...);
   char *netglue;
+
+  GetCurrentProcess(&tcp_psn);
 
   netglue = scheme_get_exec_path();
   if (netglue) {
@@ -762,9 +776,9 @@ static int mac_tcp_listen(int id, long host_id, Scheme_Tcp **_data)
     pb->csParam.open.ulpTimeoutValue = 0 /* seconds; 0 = infinity */;
     pb->csParam.open.ulpTimeoutAction = 0 /* 1:abort 0:report */;
     pb->csParam.open.commandTimeoutValue = 0 /* seconds; 0 = infinity */;
-    pb->csParam.open.remoteHost = 0;
+    pb->csParam.open.remoteHost = host_id;
     pb->csParam.open.remotePort = 0;
-    pb->csParam.open.localHost = host_id;
+    pb->csParam.open.localHost = 0;
     pb->csParam.open.localPort = id;
     pb->csParam.open.dontFrag = 0;
     pb->csParam.open.timeToLive = 0;

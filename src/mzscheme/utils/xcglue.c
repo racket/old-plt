@@ -62,6 +62,8 @@
 
 /***************************************************************************/
 
+int objscheme_something_prepared = 0;
+
 typedef struct Scheme_Class {
   Scheme_Type type;
   short hash; /* for Precise GC */
@@ -153,6 +155,8 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
   if (SCHEME_TYPE(argv[1]) != scheme_struct_property_type)
     scheme_wrong_type("primitive-class-prepare-struct-type!", "struct-type-property", 1, argc, argv);
   scheme_check_proc_arity("primitive-class-prepare-struct-type!", 2, 3, argc, argv);
+
+  objscheme_something_prepared = 1;
 
   c = ((Scheme_Class *)argv[0]);
   

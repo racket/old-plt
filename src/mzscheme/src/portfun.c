@@ -561,14 +561,14 @@ scheme_init_port_fun(Scheme_Env *env)
 						      1, 2), 
 			     env);
 
-  scheme_add_global_constant("peeked-read",
+  scheme_add_global_constant("port-commit-peeked",
 			     scheme_make_prim_w_arity(peeked_read,
-						      "peeked-read",
+						      "port-commit-peeked",
 						      3, 4),
 			     env);
-  scheme_add_global_constant("progress-evt",
+  scheme_add_global_constant("port-progress-evt",
 			     scheme_make_prim_w_arity(progress_evt,
-						      "progress-evt",
+						      "port-progress-evt",
 						      0, 1),
 			     env);
 
@@ -977,13 +977,10 @@ static long user_read_result(const char *who, Scheme_Input_Port *port,
       a[0] = val;
       if (SCHEME_BIGNUMP(val) && SCHEME_BIGPOS(val)) {
 	n = -1;
-      } else if (SCHEME_PAIRP(val)) {
+      } else if (SCHEME_PROCP(val)) {
 	Scheme_Object *orig = val;
-	a[0] = SCHEME_CDR(val);
-	val = SCHEME_CAR(val);
-	if (scheme_check_proc_arity(NULL, 4, 0, 1, a)
-	    && ((SCHEME_INTP(val) && (SCHEME_INT_VAL(val) >= 0))
-		|| (SCHEME_BIGNUMP(val) && SCHEME_BIGPOS(val)))) {
+	a[0] = val;
+	if (scheme_check_proc_arity(NULL, 4, 0, 1, a)) {
 	  if (!special_ok) {
 	    scheme_arg_mismatch(who, 
 				"the port has no specific peek procedure, so"
@@ -991,7 +988,6 @@ static long user_read_result(const char *who, Scheme_Input_Port *port,
 				orig);
 	    return 0;
 	  }
-	  port->special_width = val;
 	  port->special = a[0];
 	  return SCHEME_SPECIAL;
 	} else
@@ -1034,9 +1030,9 @@ static long user_read_result(const char *who, Scheme_Input_Port *port,
 	scheme_wrong_type(who, 
 			  (evt_ok
 			   ? (special_ok
-			      ? "non-negative exact integer, eof, evt, or pair for special"
+			      ? "non-negative exact integer, eof, evt, or procedure for special"
 			      : "non-negative exact integer, eof, or evt")
-			   : "non-negative exact integer, eof, or pair for special"),
+			   : "non-negative exact integer, eof, or procedure for special"),
 			  -1, -1, a);
 	return 0;
       }
@@ -1113,7 +1109,7 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
     scheme_pop_break_enable(&cframe, 0);
 
     if ((size <= MAX_USER_INPUT_REUSE_SIZE)
-	&& (SCHEME_INTP(val) || SCHEME_EOFP(val) || SCHEME_PAIRP(val))) {
+	&& (SCHEME_INTP(val) || SCHEME_EOFP(val) || SCHEME_PROCP(val))) {
       uip->reuse_str = bstr;
     }
 
@@ -2972,26 +2968,26 @@ peeked_read(int argc, Scheme_Object *argv[])
     else
       size = 0x7FFFFFFF;
   } else {
-    scheme_wrong_type("peeked-read", "positive exact integer", 0, argc, argv);
+    scheme_wrong_type("port-commit-peeked", "positive exact integer", 0, argc, argv);
     return NULL;
   }
 
   unless_evt = argv[1];
   target_evt = argv[2];
   if (!SAME_TYPE(SCHEME_TYPE(unless_evt), scheme_progress_evt_type))
-    scheme_wrong_type("peeked-read", "progress evt", 1, argc, argv);
+    scheme_wrong_type("port-commit-peeked", "progress evt", 1, argc, argv);
   if (!scheme_is_evt(target_evt))
-    scheme_wrong_type("peeked-read", "evt", 2, argc, argv);
+    scheme_wrong_type("port-commit-peeked", "evt", 2, argc, argv);
 
   if (argc > 3) {
     port = argv[3];
     if (!SCHEME_INPORTP(port))
-      scheme_wrong_type("peeked-read", "input port", 3, argc, argv);
+      scheme_wrong_type("port-commit-peeked", "input port", 3, argc, argv);
   } else
     port = CURRENT_INPUT_PORT(scheme_current_config());
 
   if (!SAME_OBJ(port, SCHEME_PTR1_VAL(unless_evt))) {
-    scheme_arg_mismatch("peeked-read", 
+    scheme_arg_mismatch("port-commit-peeked", 
 			"event is not a progress-evt for the given port: ",
 			unless_evt);
     return NULL;
@@ -3057,7 +3053,7 @@ progress_evt(int argc, Scheme_Object *argv[])
 
   if (argc) {
     if (!SCHEME_INPORTP(argv[0])) {
-      scheme_wrong_type("progress-evt", "input port", 0, argc, argv);
+      scheme_wrong_type("port-progress-evt", "input port", 0, argc, argv);
       return NULL;
     }
     port = argv[0];
@@ -3068,7 +3064,7 @@ progress_evt(int argc, Scheme_Object *argv[])
   v = scheme_progress_evt(port);
   
   if (!v) {
-    scheme_arg_mismatch("progress-evt", "port does not provide progress evts: ", port);
+    scheme_arg_mismatch("port-progress-evt", "port does not provide progress evts: ", port);
     return NULL;
   } else
     return v;

@@ -1066,7 +1066,7 @@ struct Scheme_Input_Port
   Scheme_Object *progress_evt, *input_lock, *input_giveup;
   unsigned char ungotten[24];
   int ungotten_count;
-  Scheme_Object *special, *ungotten_special, *special_width;
+  Scheme_Object *special, *ungotten_special;
   long position, readpos, lineNumber, charsSinceNewline, utf8cont;
   long column, oldColumn; /* column tracking with one tab/newline ungetc */
   int count_lines, was_cr;

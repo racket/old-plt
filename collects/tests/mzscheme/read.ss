@@ -523,9 +523,9 @@
 
 (define-struct special (size))
 
-(define a-special (make-special 7))
-(define b-special (make-special 19))
-(define special-comment (make-special 6))
+(define a-special (make-special 1))
+(define b-special (make-special 1))
+(define special-comment (make-special 1))
 
 (define (make-p stream special-size check-pos)
   ;; The `stream' arg is a list of strings and non-strings;
@@ -550,24 +550,21 @@
 				 ;; a special:
 				 (cond
 				  [(zero? p) (incpos!)
-				   (cons
-				    (cond
-				     [(eq? i special-comment)
-				      (special-size i)]
-				     [(number? i)
-				      i]
-				     [else (special-size i)])
-				    (lambda (where line col pos)
-				      (check-pos where line col pos)
-				      (cond
-				       [(symbol? i) (i)]
-				       [(eq? i special-comment)
-					(make-special-comment i)]
-				       [(number? i)
-					(if (inexact? i)
-					    (make-special-comment i)
-					    'aha)]
-				       [else i])))]
+				   (if (and (number? i) 
+					    (or (inexact? i)
+						(negative? i)))
+				       i ; creates an error
+				       (lambda (where line col pos)
+					 (check-pos where line col pos)
+					 (cond
+					  [(symbol? i) (i)]
+					  [(eq? i special-comment)
+					   (make-special-comment i)]
+					  [(number? i)
+					   (if (inexact? i)
+					       (make-special-comment i)
+					       'aha)]
+					  [else i])))]
 				  [else (loop (cdr s) (sub1 p))]))))))])
     (make-input-port
      'specializer
@@ -640,7 +637,7 @@
 		    (test #f 'no-place1 w)
 		    (test 1 'no-place2 l)
 		    (test (and p (sub1 p)) 'no-place3 c)
-		    (test #f not (memq p '(7 15)))))]
+		    (test #f not (memq p '(7 9)))))]
        [_ (port-count-lines! p)]
        [v (read p)])
   (test 'list car v)
@@ -658,7 +655,7 @@
 		    (test l 'no-place4 l)
 		    (test #f 'no-place5 w)
 		    (test 0 'no-place6 c)
-		    (test #f not (memq p '(7 15)))
+		    (test #f not (memq p '(7 9)))
 		    (test #f not (memq l '(2 3)))))]
        [_ (port-count-lines! p)]
        [v (read p)])
@@ -677,7 +674,7 @@
 		    (test 'dk 'dk-place w)
 		    (test 8 'no-place7 l)
 		    (test p + c 631)
-		    (test #f not (memq p '(707 715)))))]
+		    (test #f not (memq p '(707 709)))))]
        [_ (port-count-lines! p)]
        [v (read-syntax 'dk p '(7 70 700))]
        [l (syntax->list v)]
@@ -689,8 +686,8 @@
   
   (test 702 syntax-position (car l))
   (test 707 syntax-position (cadr l))
-  (test 715 syntax-position (caddr l))
-  (test 735 syntax-position (cadddr l))
+  (test 709 syntax-position (caddr l))
+  (test 711 syntax-position (cadddr l))
 
   ;; Read with specials as syntax syntax already:
   (let* ([stx v]
@@ -698,8 +695,8 @@
 		      ,stx
 		      #" end))")
 		    (lambda (x)
-		      ;; pretend it's 100 wide
-		      100)
+		      ;; it's 1 wide
+		      1)
 		    (lambda (w l c p)
 		      (test 'dk 'dk-place w)
 		    (test #f 'no-place8 l)
@@ -709,7 +706,7 @@
 	 [l (syntax->list v)])
     ;; make sure syntax object is intact:
     (test stx cadr l)
-    (test 108 syntax-position (caddr l))
+    (test 9 syntax-position (caddr l))
 
     ;; Check that plain read performs a syntax-object->datum:
     (let* ([p (make-p `(#"(list "
@@ -730,7 +727,7 @@
 		    ,(list a-special b-special)
 		    #" end))")
 		  (lambda (x)
-		    100)
+		    1)
 		  (lambda (w l c p)
 		    (test 'dk 'dk-place w)
 		    (test #f 'no-place13 l)
@@ -742,7 +739,7 @@
   (test #t list? (syntax-e (cadr l)))
   (test a-special syntax-e (car (syntax-e (cadr l))))
   (test b-special syntax-e (cadr (syntax-e (cadr l))))
-  (test 108 syntax-position (caddr l)))
+  (test 9 syntax-position (caddr l)))
 
 ;; Test delimitting and unsupported positions:
 (test (list 1 a-special) read (make-p (list #"(1" a-special #")") (lambda (x) 1) void))
@@ -793,11 +790,11 @@
   (test a-special peek-char-or-special p)
   (test 1 file-position p)
   (test a-special read-char-or-special p)
-  (test 6 file-position p)
+  (test 2 file-position p)
   (test #\y peek-char-or-special p)
-  (test 6 file-position p)
+  (test 2 file-position p)
   (test #\y read-char-or-special p)
-  (test 7 file-position p))
+  (test 3 file-position p))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Test read-syntax offsets:

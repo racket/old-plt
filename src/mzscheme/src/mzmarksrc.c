@@ -475,7 +475,6 @@ input_port {
   gcMARK(ip->output_half);
   gcMARK(ip->special);
   gcMARK(ip->ungotten_special);
-  gcMARK(ip->special_width);
   gcMARK(ip->consumed_evt);
   gcMARK(ip->input_lock);
   gcMARK(ip->input_giveup);

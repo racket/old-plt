@@ -2300,19 +2300,8 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
   special = ip->special;
   ip->special = NULL;
 
-  if (!peek) {
-    /* Track location */
-    long pos_delta;
-    if (SCHEME_INTP(ip->special_width))
-      pos_delta = SCHEME_INT_VAL(ip->special_width) - 1;
-    else
-      pos_delta = -(ip->position+1); /* drive position to -1 -> lost track */
-    if (ip->position >= 0)
-      ip->position += pos_delta;
-    ip->readpos += pos_delta;
-    ip->column += pos_delta;
-    ip->charsSinceNewline += pos_delta;
-  } else {
+  if (peek) {
+    /* undo location */
     if (line > 0)
       line++;
     if (col > 0)

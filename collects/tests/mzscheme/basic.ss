@@ -1224,6 +1224,12 @@
       regexp-match 
       (regexp "^(?:[^\\\"]|\\\\.)*\"") "load-extension: couldn't open \\\" (%s)\"")
 
+;; Test bounded byte consumption on failure:
+(let ([is (open-input-string "barfoo")]) 
+  (test '(#f #\f) list (regexp-match "^foo" is 0 3) (read-char is)))
+(let ([is (open-input-string "barfoo")]) 
+  (test '(#f #\f) list (regexp-match "foo" is 0 3) (read-char is)))
+
 (arity-test regexp 1 1)
 (arity-test regexp? 1 1)
 (arity-test regexp-match 2 5)

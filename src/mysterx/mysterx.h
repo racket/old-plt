@@ -259,6 +259,7 @@ MX_PRIM_DECL(mx_current_url);
 MX_PRIM_DECL(mx_register_navigate_handler);
 MX_PRIM_DECL(mx_make_browser);
 MX_PRIM_DECL(mx_current_document);
+MX_PRIM_DECL(mx_print);
 
 // documents
 

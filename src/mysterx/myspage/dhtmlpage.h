@@ -3,6 +3,8 @@
 #ifndef __DHTMLPAGE_H_
 #define __DHTMLPAGE_H_
 
+#define _ATL_NO_DOCHOSTUIHANDLER
+
 #include "resource.h"       // main symbols
 #include <atlctl.h>
 #include <stdio.h>

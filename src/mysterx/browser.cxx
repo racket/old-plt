@@ -368,7 +368,7 @@ Scheme_Object *mx_current_document(int argc,Scheme_Object **argv) {
   MX_Document_Object *doc;
 
   if (MX_BROWSERP(argv[0]) == FALSE) {
-    scheme_wrong_type("unregister-navigate-handler!","mx-browser",0,argc,argv);
+    scheme_wrong_type("current-document","mx-browser",0,argc,argv);
   }
 
   pIHTMLDocument2 = IHTMLDocument2FromBrowser(argv[0]);
@@ -385,6 +385,31 @@ Scheme_Object *mx_current_document(int argc,Scheme_Object **argv) {
   scheme_register_finalizer(doc,scheme_release_document,NULL,NULL,NULL);
 
   return (Scheme_Object *)doc;
+}
+
+Scheme_Object *mx_print(int argc,Scheme_Object **argv) {
+  HRESULT hr;
+  IWebBrowser2 *pIWebBrowser2;
+  VARIANT varIn, varOut;
+
+  if (MX_BROWSERP(argv[0]) == FALSE) {
+    scheme_wrong_type("print","mx-browser",0,argc,argv);
+  }
+
+  pIWebBrowser2 = MX_BROWSER_VAL(argv[0]);
+
+  VariantInit(&varIn);
+  VariantInit(&varOut);
+
+  hr = pIWebBrowser2->ExecWB(OLECMDID_PRINT,
+			     OLECMDEXECOPT_DONTPROMPTUSER,
+			     &varIn,&varOut);
+
+  if (hr != S_OK) {
+    codedComError("print: Error printing",hr);
+  }
+
+  return scheme_void;  
 }
 
 Scheme_Object *mx_current_url(int argc,Scheme_Object **argv) {

@@ -186,6 +186,11 @@ HRESULT CDHTMLPage::AtAnyEvent(void) {
 LRESULT CDHTMLPage::OnCreate(UINT,WPARAM,LPARAM,BOOL&) {
   CAxWindow wnd(m_hWnd);
   CComObject<CWrapperDispatch> *pdispWrapper;
+  CComObject<CWrapperUIHandler> *pUIHandlerWrapper;
+  IDispatch *pContDisp;
+  IDocHostUIHandler *pUIHandler;
+  IDispatch *pDocDispatch;
+  ICustomDoc *pCustomDoc;
   HRESULT hr;
   BOOL hasScrollBars;
 
@@ -209,7 +214,7 @@ LRESULT CDHTMLPage::OnCreate(UINT,WPARAM,LPARAM,BOOL&) {
 
   hr = pdispWrapper->CreateInstance(&pdispWrapper);
   if (SUCCEEDED(hr) == FALSE) {
-    ::failureBox("Can't create Wrapper dispatch for DHTML control");
+    ::failureBox("Can't create dispatch wrapper for DHTML control");
     return -1;
   }
 
@@ -229,6 +234,46 @@ LRESULT CDHTMLPage::OnCreate(UINT,WPARAM,LPARAM,BOOL&) {
   hr = wnd.QueryControl(IID_IWebBrowser2, (void**)&m_spBrowser);
   if (SUCCEEDED(hr) == FALSE) {
     ::failureBox("Can't find browser in DHTML control");
+    return -1; 
+  }
+
+  // setup custom UI handler to block context menu
+
+  hr = ((IWebBrowser2 *)(m_spBrowser))->get_Container(&pContDisp);
+  if (SUCCEEDED(hr) == FALSE || pContDisp == NULL) {
+    ::failureBox("Can't get container from browser");
+    return -1;
+  }
+
+  hr = pContDisp->QueryInterface(IID_IDocHostUIHandler,
+				 (void **)&pUIHandler);
+  if (SUCCEEDED(hr) == FALSE || pUIHandler == NULL) {
+    ::failureBox("Can't get UI handler from browser container");
+    return -1;
+  }
+
+  hr = ((IWebBrowser2 *)(m_spBrowser))->get_Document(&pDocDispatch);
+  if (SUCCEEDED(hr) == FALSE || pDocDispatch == NULL) {
+    ::failureBox("Can't get document from browser");
+    return -1;
+  }
+
+  hr = pDocDispatch->QueryInterface(IID_ICustomDoc,(void **)&pCustomDoc);
+  if (SUCCEEDED(hr) == FALSE || pCustomDoc == NULL) {
+    ::failureBox("Can't get custom document from document");
+    return -1;
+  }
+
+  hr = pUIHandlerWrapper->CreateInstance(&pUIHandlerWrapper);
+  if (SUCCEEDED(hr) == FALSE) {
+    ::failureBox("Can't create UI wrapper for DHTML control");
+    return -1;
+  }
+
+  pUIHandlerWrapper->SetUIHandler(pUIHandler); // never fails 
+  hr = pCustomDoc->SetUIHandler(pUIHandlerWrapper);
+  if (SUCCEEDED(hr) == FALSE) {
+    ::failureBox("Can't set UI handler for DHTML control");
     return -1;
   }
 
@@ -269,3 +314,7 @@ STDMETHODIMP CDHTMLPage::marshalEventQueueToStream(IStream **ppIStream)
   
   return S_OK;
 }
+
+
+
+

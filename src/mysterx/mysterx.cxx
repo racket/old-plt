@@ -29,6 +29,7 @@
 
 // ATL support
 
+#define _ATL_NO_DOCHOSTUIHANDLER /* no context menu */
 #include <atlbase.h>
 extern CComModule _Module;
 #include <atlcom.h>
@@ -145,6 +146,7 @@ static MX_PRIM mxPrims[] = {
   { mx_current_url,"current-url",1,1 },
   { mx_register_navigate_handler,"register-navigate-handler",2,2 },
   { mx_current_document,"current-document",1,1 },
+  { mx_print,"print",1,1 },
 
   // documents 
   

@@ -94,18 +94,22 @@ Serving Content
 ===============
 
 By default, the Web server serves files out of the directory
-(build-path (collection-path "web-server") "default-web-root" "htdocs"),
-unless the function serve was called with a virtual-hosts argument or
-the configuration tool modified the location.
+(build-path (collection-path "web-server") "default-web-root"
+"htdocs"), unless the function serve was called with a virtual-hosts
+argument or the configuration tool modified the location.
 
-The Web server also generates HTTP responses dynamically, based on files in a
-special directory.  By default, the special directory  is named "servlets"
-within the "default-web-root" of the "web-server" collection directory. 
-Instead of serving the files in this directory verbatim, the server evaluates
-the contained Scheme _servlet_ and serves the output.  A servlet is a unit/sig
-that imports the servlet^ signature and exports nothing.  (Search in help-desk
-for more information on unit/sig and on signatures.)  To construct a unit/sig
-with the appropriate imports, the servlet must require the two modules
+The Web server also generates HTTP responses dynamically, based on
+files in a special directory.  By default, the special directory is
+named "servlets" within the "default-web-root" of the "web-server"
+collection directory.  Instead of serving the files in this directory
+verbatim, the server evaluates the contained Scheme _servlet_ and
+serves the output.  Servlets are (by default) loaded in a
+case-sensitive manner. (Seach in help-desk for read-case-sensitive.)
+
+A servlet is a unit/sig that imports the servlet^ signature and
+exports nothing.  (Search in help-desk for more information on
+unit/sig and on signatures.)  To construct a unit/sig with the
+appropriate imports, the servlet must require the two modules
 providing unit/sigs and the servlet^ signature:
 
 (require (lib "unitsig.ss")

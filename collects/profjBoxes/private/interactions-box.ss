@@ -12,6 +12,7 @@
    (lib "framework.ss" "framework")
    (lib "readerr.ss" "syntax")
    (lib "parser.ss" "profj")
+   (lib "string-constant.ss" "string-constants")
    (lib "text-syntax-object.ss" "test-suite" "private")
    (lib "print-to-text.ss" "test-suite" "private")
    (lib "make-snipclass.ss" "test-suite" "private")
@@ -38,10 +39,12 @@
               #;((is-a?/c text%) . -> . syntax-object?)
               (define (text->syntax-object text)
                 (match (text->syntax-objects text)
-                  [() (raise-read-error "Empty box" source line #f position 1)]
+                  [() (raise-read-error
+                       (string-constant profjBoxes-empty-error)
+                       source line #f position 1)]
                   [(stx) stx]
                   [(stx next rest-stx ...)
-                   (raise-read-error "Too many expressions"
+                   (raise-read-error (string-constant profjBoxes-too-many-expressions-error)
                                      text
                                      (syntax-line next)
                                      (syntax-column next)
@@ -100,7 +103,10 @@
            [header (new horizontal-alignment% (parent main))])
           
           (new horizontal-alignment% (parent header)) ; left spacer
-          (new snip-wrapper% (snip (make-object string-snip% "Interactions")) (parent header))
+          (new snip-wrapper%
+               (snip (make-object string-snip%
+                       (string-constant profjBoxes-interactions-label)))
+               (parent header))
           (new horizontal-alignment% (parent header)) ; right spacer
           
           (field [interactions (new (table interaction%)
@@ -230,7 +236,13 @@
             (add-function "make-new"
                           (lambda (ignored event)
                             (send interaction make-new)))
-            (map-function ":c:return" "make-new"))
+            (map-function ":c:return" "make-new")
+            (add-function "delete"
+                          (lambda (ignored event)
+                            (let ([next (send interaction next)])
+                              (send (send interaction get-parent) delete-child interaction)
+                              (goto next))))
+            (map-function ":c:delete" "delete"))
           
           #;(-> (listof keymap%))
           ;; the list of keymaps associated with this text

@@ -13,6 +13,7 @@
    (lib "parser.ss" "profj")
    (lib "readerr.ss" "syntax")
    (lib "make-snipclass.ss" "test-suite" "private")
+   (lib "string-constant.ss" "string-constants")
    "table.ss"
    "box-helpers.ss")
   
@@ -64,7 +65,7 @@
                     ;; highlighting using the GUI because there won't always
                     ;; be text in the box to highlight.
                     [else (raise-read-error
-                           "Malformed Java ID"
+                           (string-constant profjBoxes-bad-java-id-error)
                            atext 1 1 1 (send atext last-position))])))
               (let ([level 'beginner])
                 #`(begin #,@(send examples map-children
@@ -115,7 +116,9 @@
           ;; Since I don't have an icon I'll just center this for now and leave out the image
           (new horizontal-alignment% (parent header)) ; left spacer
           #;(new snip-wrapper% (parent header) (snip (make-object image-snip%)))
-          (new embedded-message% (parent header) (label "Examples"))
+          (new embedded-message%
+               (parent header)
+               (label (string-constant profjBoxes-examples-label)))
           (new horizontal-alignment% (parent header)) ; right spacer
           
           (field
@@ -125,7 +128,7 @@
            [button-bar (new horizontal-alignment% (parent main))]
            [add-button (new embedded-text-button%
                             (parent button-bar)
-                            (label "Add new example")
+                            (label (string-constant profjBoxes-add-new-example-button))
                             (callback (lambda (b e) (send examples add-new))))])
           (super-new (editor pb))
           (unless examples-to-copy
@@ -142,9 +145,20 @@
           (init (copy-constructor #f))
           
           (field
-           [type (new (get-single-line-editor))]
-           [name (new (get-single-line-editor))]
-           [value (new (get-program-editor))])
+           [program-editor%
+            (cue-text-mixin
+             (tabbable-text-mixin
+              ((drscheme:unit:get-program-editor-mixin)
+               (editor:keymap-mixin text:basic%))))]
+           [type (new (single-line-text-mixin program-editor%)
+                      (cue-text (string-constant profjBoxes-type))
+                      (behavior '(on-char)))]
+           [name (new (single-line-text-mixin program-editor%)
+                      (cue-text (string-constant profjBoxes-name))
+                      (behavior '(on-char)))]
+           [value (new program-editor%
+                       (cue-text (string-constant profjBoxes-value))
+                       (behavior '(on-char)))])
           
           #;(-> (is-a?/c text%))
           ;; The first text in the item that can be typed into
@@ -214,17 +228,5 @@
                (callback (lambda (b e) (send (get-parent) delete-child this))))
           (send (get-pasteboard) lock-alignment false)
           ))
-      
-      #;(-> (is-a?/c text%))
-      ;; A program editor with tabbing
-      (define (get-program-editor)
-        (tabbable-text-mixin
-         ((drscheme:unit:get-program-editor-mixin)
-          scheme:text%)))
-
-       #;(-> (is-a?/c text%))
-       ;; A Single lined program editor
-       (define (get-single-line-editor)
-         (single-line-text-mixin (get-program-editor)))
       ))
   )

@@ -112,7 +112,7 @@ xsrc:
 
 xobjects: $(OBJS) main.@LTO@
 
-XFORMDEP = $(srcdir)/gc2.h $(srcdir)/xform.ss
+XFORMDEP = $(srcdir)/gc2.h $(srcdir)/xform.ss $(srcdir)/xform-mod.ss
 
 $(XSRCDIR)/salloc.c: ../src/salloc.@LTO@ $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/salloc.c $(XSRCDIR)/salloc.c

@@ -9,6 +9,8 @@
 		  (when (directory-exists? x)
 		    (loop x))))
 	      (directory-list dir))))
+
+(printf "Copying tree...\n")
   
 (use-compiled-file-paths null)
 
@@ -26,25 +28,28 @@
     (current-library-collection-paths 
      (list p))))
 
-(define (go mod-path rel-to)
-  (let ([path (if (module-path-index? mod-path)
-		  (resolve-module-path-index mod-path rel-to)
-		  (resolve-module-path mod-path rel-to))])
+(define (go mod-path rel-to target)
+  (let ([path (if target
+		  mod-path
+		  (if (module-path-index? mod-path)
+		      (resolve-module-path-index mod-path rel-to)
+		      (resolve-module-path mod-path rel-to)))])
     ;; Copy file to here:
     (let ([target 
-	   (let-values ([(src-base rel-path)
-			 (let loop ([path path][accum null])
-			   (let-values ([(base name dir?) (split-path path)])
-			     (if (string=? (path->string name) "collects")
-				 (values base (cons "xform-collects" accum))
-				 (loop base (cons name accum)))))])
-	     (let loop ([place (current-directory)][rel-path rel-path])
-	       (if (null? (cdr rel-path))
-		   (build-path place (car rel-path))
-		   (let ([next (build-path place (car rel-path))])
-		     (unless (directory-exists? next)
-		       (make-directory next))
-		     (loop next (cdr rel-path))))))])
+	   (or target
+	       (let-values ([(src-base rel-path)
+			     (let loop ([path path][accum null])
+			       (let-values ([(base name dir?) (split-path path)])
+				 (if (string=? (path->string name) "collects")
+				     (values base (cons "xform-collects" accum))
+				     (loop base (cons name accum)))))])
+		 (let loop ([place (current-directory)][rel-path rel-path])
+		   (if (null? (cdr rel-path))
+		       (build-path place (car rel-path))
+		       (let ([next (build-path place (car rel-path))])
+			 (unless (directory-exists? next)
+			   (make-directory next))
+			 (loop next (cdr rel-path)))))))])
       (unless (file-exists? target)
 	(printf "Copying ~a to ~a~n" path target)
 	(copy-file path target)
@@ -52,12 +57,19 @@
 	  (let-values ([(a b c) (module-compiled-imports code)])
 	    (map (lambda (x)
 		   (unless (symbol? x)
-		     (go x path)))
+		     (go x path #f)))
 		 (append a b c))))))))
 
-(go '(lib "list.ss") #f)
-(go '(lib "process.ss") #f)
-(go '(lib "cm-ctime.ss" "mzlib" "private") #f)
+(unless (directory-exists? "xform-collects")
+  (make-directory "xform-collects"))
+(unless (directory-exists? "xform-collects/xform")
+  (make-directory "xform-collects/xform"))
+
+(go (build-path (current-load-relative-directory) "xform-mod.ss")
+    #f
+    "xform-collects/xform/xform-mod.ss")
+;; Needed for cm:
+(go '(lib "cm-ctime.ss" "mzlib" "private") #f #f)
 
 (current-library-collection-paths 
  (list (build-path (current-directory) "xform-collects")))
@@ -69,8 +81,7 @@
   (use-compiled-file-paths (list "compiled"))
   (current-load/use-compiled (mk-cm)))
 
-(require (lib "list.ss")
-	 (lib "process.ss"))
+(dynamic-require '(lib "xform-mod.ss" "xform") (void))
 
 (with-output-to-file "xform-collects/version.ss"
   (lambda () (write (version))))

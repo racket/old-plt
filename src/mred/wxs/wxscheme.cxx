@@ -1255,7 +1255,7 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
       first = scheme_make_pair(scheme_make_utf8_string(fl[i]), first);
     }
 
-    first = scheme_make_pair(scheme_make_utf8_string(" Sans"), first);
+    first = scheme_make_pair(scheme_make_utf8_string(" Sans-Serif"), first);
     first = scheme_make_pair(scheme_make_utf8_string(" Serif"), first);
     first = scheme_make_pair(scheme_make_utf8_string(" Monospace"), first);
   }

@@ -257,7 +257,7 @@
 			       exact-match?
 			       key
 			       (build-maxxed-out k)
-			       add-header<
+			       add-header
 			       set-current-kind!
 			       (if lucky? goto-lucky-entry add-entry)))]
 	   [html (make-results-page

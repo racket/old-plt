@@ -3,7 +3,11 @@ SrPersist
 
 Version 102
 
-Registered global variables with garbage collector
+Registered global variables with garbage collector, 
+Fixed docs to mention the possible signatures of
+ srpersist@
+Added failure cases when odbc-version < 1.0 or not a
+ number
 
 Version 101
 

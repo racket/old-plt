@@ -2440,12 +2440,12 @@ static Scheme_Object *do_make_regexp(const char *who, int is_byte, int argc, Sch
 
 static Scheme_Object *make_regexp(int argc, Scheme_Object *argv[])
 {
-  return do_make_regexp("regexp", 0, argc, argv);
+  return do_make_regexp("regexp", 1, argc, argv);
 }
 
-static Scheme_Object *make_byte_regexp(int argc, Scheme_Object *argv[])
+static Scheme_Object *make_utf8_regexp(int argc, Scheme_Object *argv[])
 {
-  return do_make_regexp("regexp-byte", 1, argc, argv);
+  return do_make_regexp("regexp-utf8", 0, argc, argv);
 }
 
 Scheme_Object *scheme_make_regexp(Scheme_Object *str, int is_byte, int * volatile result_is_err_string)
@@ -2460,9 +2460,9 @@ Scheme_Object *scheme_make_regexp(Scheme_Object *str, int is_byte, int * volatil
   failure_msg_for_read = "yes";
   if (!scheme_setjmp(scheme_error_buf)) {
     if (is_byte)
-      result = make_byte_regexp(1, &str);
-    else
       result = make_regexp(1, &str);
+    else
+      result = make_utf8_regexp(1, &str);
   } else {
     result = (Scheme_Object *)failure_msg_for_read;
     *result_is_err_string = 1;
@@ -2553,7 +2553,6 @@ static Scheme_Object *gen_compare(char *name, int pos,
   if (SCHEME_STRINGP(argv[0])) {
     char *s = SCHEME_STR_VAL(argv[0]);
     long slen = SCHEME_STRTAG_VAL(argv[0]);
-    slen = translate((unsigned char *)s, slen, &s);
     r = regcomp(s, 0, slen);
   } else
     r = (regexp *)argv[0];
@@ -2653,7 +2652,6 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
   if (SCHEME_STRINGP(argv[0])) {
     char *s = SCHEME_STR_VAL(argv[0]);
     long slen = SCHEME_STRTAG_VAL(argv[0]);
-    slen = translate((unsigned char *)s, slen, &s);
     r = regcomp(s, 0, slen);
   } else
     r = (regexp *)argv[0];
@@ -2780,9 +2778,9 @@ void scheme_regexp_initialize(Scheme_Env *env)
 						      "regexp", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("regexp-byte", 
-			     scheme_make_prim_w_arity(make_byte_regexp, 
-						      "regexp-byte", 
+  scheme_add_global_constant("regexp-utf8", 
+			     scheme_make_prim_w_arity(make_utf8_regexp, 
+						      "regexp-utf8", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("regexp-match",

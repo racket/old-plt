@@ -205,7 +205,7 @@
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (define (trans pattern)
-    (regexp-byte (format "^(~a)" pattern)))
+    (regexp (format "^(~a)" pattern)))
 
   (define (translations . t)
     (let loop ([t t])

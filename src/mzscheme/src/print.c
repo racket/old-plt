@@ -1298,8 +1298,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	 Scheme_Object *src;
 	 src = scheme_regexp_source(obj);
 	 if (src) {
-	   if (scheme_regexp_is_byte(obj))
-	     print_this_string(p, "#rxb", 0, 4);
+	   if (!scheme_regexp_is_byte(obj))
+	     print_this_string(p, "#rxu", 0, 4);
 	   else
 	     print_this_string(p, "#rx", 0, 3);
 	   print_string(src, 1, p);

@@ -795,14 +795,14 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	  }
 	case 'r':
 	  {
-	    int cnt = 0, is_byte = 0;
+	    int cnt = 0, is_byte = 1;
 
 	    ch = scheme_getc_special_ok(port);
 	    if (ch == 'x') {
 	      ch = scheme_getc_special_ok(port);
 	      cnt++;
-	      if (ch == 'b') {
-		is_byte = 1;
+	      if (ch == 'u') {
+		is_byte = 0;
 		ch = scheme_getc_special_ok(port);
 		cnt++;
 	      }
@@ -838,7 +838,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	      char a[1], b[1], c[1];
 
 	      a[0] = 'x';
-	      b[0] = 'b';
+	      b[0] = 'u';
 	      c[0] = ch;
 		
 	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 

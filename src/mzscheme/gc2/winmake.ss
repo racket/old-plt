@@ -59,7 +59,7 @@
 				      "xform.ss")
 				(if objdest
 				    (if use-precomp?
-					(list "--precompiled" "precomp.pss")
+					(list "--precompiled" "xsrc/precomp.h")
 					null)
 				    (list "--precompile"))
 				(list
@@ -88,7 +88,7 @@
 (define common-deps (list "xform.ss" "ctok.ss"))
 (define (find-obj f d) (format "../../worksp/~a/release/~a.obj" d f))
 
-(try "precomp.c" common-deps "precomp.pss" #f "/I ../include /I ../src" #f)
+(try "precomp.c" common-deps "xsrc/precomp.h" #f "/I ../include /I ../src" #f)
 
 (for-each
  (lambda (x)

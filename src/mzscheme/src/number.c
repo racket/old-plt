@@ -1356,13 +1356,24 @@ static Scheme_Object *complex_atan(Scheme_Object *c)
 #define OVER_ONE_MAG_USES_COMPLEX(d) (d > 1.0) || (d < -1.0)
 
 #ifdef TRIG_ZERO_NEEDS_SIGN_CHECK
-#define MK_SCH_TRIG(SCH_TRIG, c_trig) double SCH_TRIG(double d) { if (d == 0.0) return d; else return c_trig(d); }
+#define MK_SCH_TRIG(SCH_TRIG, c_trig) static double SCH_TRIG(double d) { if (d == 0.0) return d; else return c_trig(d); }
 MK_SCH_TRIG(SCH_TAN, tan)
 MK_SCH_TRIG(SCH_SIN, sin)
 MK_SCH_TRIG(SCH_ASIN, asin)
+# define SCH_COS cos
 #else
-# define SCH_TAN tan
-# define SCH_SIN sin
+# ifdef SIN_COS_NEED_DEOPTIMIZE
+#  pragma optimize("g", off)
+#  define MK_SCH_TRIG(SCH_TRIG, c_trig) static double SCH_TRIG(double d) { return c_trig(d); }
+MK_SCH_TRIG(SCH_SIN, tan)
+MK_SCH_TRIG(SCH_COS, cos)
+MK_SCH_TRIG(SCH_TAN, tan)
+#  pragma optimize("g", on)
+# else
+#  define SCH_SIN sin
+#  define SCH_COS cos
+#  define SCH_TAN tan
+# endif
 # define SCH_ASIN asin
 #endif
 
@@ -1375,7 +1386,7 @@ double SCH_LOG(double d) { if (d == 0.0) return scheme_minus_infinity_val; else 
 GEN_UNARY_OP(exp_prim, exp, exp, scheme_inf_object, scheme_single_inf_object, scheme_zerod, scheme_zerof, scheme_nan_object, scheme_single_nan_object, complex_exp, GEN_ZERO_IS_ONE, NEVER_RESORT_TO_COMPLEX)
 GEN_UNARY_OP(log_prim, log, SCH_LOG, scheme_inf_object, scheme_single_inf_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_log, GEN_ONE_IS_ZERO_AND_ZERO_IS_ERR, NEGATIVE_USES_COMPLEX)
 GEN_UNARY_OP(sin_prim, sin, SCH_SIN, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_sin, GEN_ZERO_IS_ZERO, NEVER_RESORT_TO_COMPLEX)
-GEN_UNARY_OP(cos_prim, cos, cos, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_cos, GEN_ZERO_IS_ONE, NEVER_RESORT_TO_COMPLEX)
+GEN_UNARY_OP(cos_prim, cos, SCH_COS, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_cos, GEN_ZERO_IS_ONE, NEVER_RESORT_TO_COMPLEX)
 GEN_UNARY_OP(tan_prim, tan, SCH_TAN, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_tan, GEN_ZERO_IS_ZERO, NEVER_RESORT_TO_COMPLEX)
 GEN_UNARY_OP(asin_prim, asin, SCH_ASIN, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_asin, GEN_ZERO_IS_ZERO, OVER_ONE_MAG_USES_COMPLEX)
 GEN_UNARY_OP(acos_prim, acos, acos, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_acos, GEN_ONE_IS_ZERO, OVER_ONE_MAG_USES_COMPLEX)

@@ -227,7 +227,7 @@
 	      ;;line-by-line, so we can filter:
 	      (begin
 		(let loop ()
-		  (let ([l (read-line (car cpp-process))])
+		  (let ([l (read-line (car cpp-process) 'any)])
 		    (unless (eof-object? l)
 		      (unless (regexp-match-positions re:boring l)
 			(display l recorded-cpp-out)

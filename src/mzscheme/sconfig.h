@@ -532,6 +532,7 @@
 #ifdef _MSC_VER
 # define NAN_EQUALS_ANYTHING
 # define POW_HANDLES_INF_CORRECTLY
+# define SIN_COS_NEED_DEOPTIMIZE
 #endif
 #ifdef __CYGWIN32__
 # define USE_DIVIDE_MAKE_INFINITY
@@ -1113,6 +1114,9 @@
 
  /* NEED_TO_DEFINE_MATHERR defines _matherr to quiet warnings from the
     math library. */
+
+ /* SIN_COS_NEED_DEOPTIMIZE disables optimization for calls to sin()
+    and cos() (for MSVC) */
 
   /**************/
  /* Byte Order */

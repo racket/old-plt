@@ -491,7 +491,8 @@
 					  ; Known proc returns a single value, so we can
 					  ; use the more efficient multi call form
 					  (set-vm:apply-multi?! ast #t)))])
-			 (if (or (and cl-case (not (zodiac:list-arglist? arglist)))
+			 (if (or (not cl-case)
+				 (and cl-case (not (zodiac:list-arglist? arglist)))
 				 (and cl-case (not (satisfies-arity? (vm:apply-argc ast) L arglist))))
 			     (list ast)
 			     (with-closure closure

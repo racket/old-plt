@@ -441,7 +441,7 @@
 	      (tok-line body-v)
 	      (tok-file body-v)
 	      (seq-close body-v)
-	      (list->seq (process-top-level (seq->list (seq-in body-v))))))
+	      (list->seq (process-top-level (seq->list (seq-in body-v)) where))))
 	   (cdddr e))]
    
    [(prototype? e) 
@@ -819,7 +819,9 @@
 		      (tok-n (list-ref e (sub1 body-pos)))
 		      #f)]
 	   [cl (make-c++-class super
-			       super
+			       (if (or super (eq? name 'gc))
+				   super
+				   'gc)
 			       null
 			       null)]
 	   [pt (prototyped)]
@@ -828,7 +830,7 @@
       (prototyped null)
       (top-vars null)
       (let* ([body-v (list-ref e body-pos)]
-	     [body-e (process-top-level (seq->list (seq-in body-v)))]
+	     [body-e (process-top-level (seq->list (seq-in body-v)) ".h")]
 	     [methods (prototyped)])
 	;; Save prototype list, but remove constructor and statics:
 	(set-c++-class-prototyped! cl (filter (lambda (x)
@@ -1079,7 +1081,9 @@
 						    (convert-class-vars body-e all-arg-vars c++-class new-vars-box))])
 					  (append
 					   ;; If sElF is used, add its declaration.
-					   (if used-self?
+					   (if (or used-self?
+						   (and function-name
+							(eq? class-name function-name)))
 					       (list
 						(make-tok class-name #f #f)
 						(make-tok '* #f #f)
@@ -2130,12 +2134,12 @@
 
 ; (print-it e 0 #t) (exit)
 
-(define (process-top-level e)
+(define (process-top-level e init-file)
   (foldl-statement
    e
    #f
    (lambda (sube l)
-     (let* ([sube (top-level sube ".h")])
+     (let* ([sube (top-level sube init-file)])
        (append l sube)))
    null))
 

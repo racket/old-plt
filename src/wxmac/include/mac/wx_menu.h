@@ -61,13 +61,15 @@ public:
 	void AppendSeparator(void);
 	void Append(int Id, char* Label, char* helpString=NULL, Bool checkable=FALSE);
 	void Append(int Id, char* Label, wxMenu* SubMenu, char* helpString = NULL);
-	void Delete(int Id); // mflatt
-	void DeleteByPosition(int pos); // mflatt
+	Bool Delete(int Id); // mflatt
+	Bool DeleteByPosition(int pos); // mflatt
 	void Enable(int Id, Bool Flag);
 	void Check(int Id, Bool Flag);
 	Bool Checked(int Id);
 	char* GetTitle(void);
 	void SetTitle(char* label);
+
+        int Number();
 
 	char* GetLabel(void);			// override virtual from superclass
 	char* GetLabel(int id);			// add new method for this class
@@ -103,7 +105,7 @@ protected:
 //=============================================================================
 private:
 
-	void Delete(wxMenu* menu, int Id, int pos); // mflatt: for removing deleted sunmenus
+	Bool Delete(wxMenu* menu, int Id, int pos); // mflatt: for removing deleted sunmenus
 
 	friend class wxMenuBar;
 	friend class wxMenuItem;

@@ -88,9 +88,11 @@ class wxbMenuBar: public wxItem
   ~wxbMenuBar(void);
 
   virtual void Append(wxMenu *menu, char *title);
-  virtual void Delete(wxMenu *menu, int index = 0); // mflatt
+  virtual Bool Delete(wxMenu *menu, int index = 0); // mflatt
   virtual Bool OnAppend(wxMenu *menu, char *title) = 0; // mflatt
   virtual Bool OnDelete(wxMenu *menu, int index) = 0; // mflatt
+
+  int Number();
 
   // Avoids compiler warning
   inline void Enable(Bool enable) { wxWindow::Enable(enable) ; }

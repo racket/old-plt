@@ -24,7 +24,6 @@
 
 void CreateOffScreenPixMap (HBITMAP *,wxGIF *gif);
 
-#pragma pack(1) Yes
 static struct {           
   char header[6];       
   ushort scrwidth;
@@ -48,8 +47,6 @@ static struct {
   ushort sogct;
   rgb paleta[256];
 } TabCol;
-
-#pragma pack No
 
 
 static long Code_Mask[] = {
@@ -632,8 +629,6 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal, int ge
 	COLORREF cref;
 	int white;
 	
-	data = (unsigned char *)gifImage->GetRawImage();
-	
 	bm->Create(w, h, -1);
 
 	if (!bm->Ok()) {
@@ -661,6 +656,8 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal, int ge
 	    break;
 	  }
 
+	data = (unsigned char *)gifImage->GetRawImage();
+	
 	for (j = 0; j < h; j++) {
 	  for (i = 0; i < w; i++, data++) {
 	    int v = *data;
@@ -679,9 +676,9 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal, int ge
 
 	  mbm = new wxBitmap(w, h, 1);
 	  if (mbm->Ok()) {
-	    mem = new wxMemoryDC();
-	    mem->SelectObject(bm);
+	    mem->SelectObject(mbm);
 	    hdc = mem->cdc;
+	    data = (unsigned char *)gifImage->GetRawImage();
 	    for (j = 0; j < h; j++) {
 	      for (i = 0; i < w; i++, data++) {
 		int v = *data;

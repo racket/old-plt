@@ -2505,7 +2505,7 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
   if (PTRNE(file, filename))
     SetFilename(file, FALSE);
 
-  ok = InsertFile(f, file, loadoverwritesstyles, showErrors);
+  ok = InsertFile("load-file in pasteboard%", f, file, loadoverwritesstyles, showErrors);
 
   EndEditSequence();
 
@@ -2532,7 +2532,7 @@ Bool wxMediaPasteboard::InsertFile(char *file, int WXUNUSED(format), Bool showEr
   if (!f)
     return FALSE;
 
-  return InsertFile(f, file, FALSE, showErrors);
+  return InsertFile("insert-file in pasteboard%", f, file, FALSE, showErrors);
 }
 
 Bool wxMediaPasteboard::InsertFile(Scheme_Object *f, int WXUNUSED(format), Bool showErrors)
@@ -2540,10 +2540,11 @@ Bool wxMediaPasteboard::InsertFile(Scheme_Object *f, int WXUNUSED(format), Bool 
   if (userLocked || writeLocked)
     return FALSE;
 
-  return InsertFile(f, NULL, FALSE, showErrors);
+  return InsertFile("insert-file in pasteboard%", f, NULL, FALSE, showErrors);
 }
 
-Bool wxMediaPasteboard::InsertFile(Scheme_Object *f, const char *filename, Bool clearStyles, Bool showErrors)
+Bool wxMediaPasteboard::InsertFile(const char *who, Scheme_Object *f, const char *filename, 
+				   Bool clearStyles, Bool showErrors)
 {
   int n;
   char buffer[MRED_START_STR_LEN + 1];
@@ -2554,7 +2555,7 @@ Bool wxMediaPasteboard::InsertFile(Scheme_Object *f, const char *filename, Bool 
 
   showErrors = TRUE;
 
-  n = scheme_get_string("insert-file in pasteboard%", f, buffer, 0, MRED_START_STR_LEN, 0, 0, NULL);
+  n = scheme_get_string(who, f, buffer, 0, MRED_START_STR_LEN, 0, 0, NULL);
   buffer[MRED_START_STR_LEN] = 0;
   if ((n != MRED_START_STR_LEN) || strcmp(buffer, MRED_START_STR)) {
     if (showErrors)

@@ -1953,6 +1953,7 @@ static Bool RecordInput(void *m, wxEvent *event, void *data)
 static Bool SendBreak(void *m, wxEvent *event, void *data)
 {
   scheme_break_thread(user_main_thread);
+  return TRUE;
 }
 
 #else  /* !WINDOW_STDIO */

@@ -584,7 +584,7 @@ class wxMediaEdit : public wxMediaBuffer
 		      long start, long end, long **positions, 
 		      Bool, Bool, Bool);
   
-  Bool InsertFile(Scheme_Object *f, char *filename, int *format, Bool clearStyles, Bool showErrors);
+  Bool InsertFile(const char *who, Scheme_Object *f, char *filename, int *format, Bool clearStyles, Bool showErrors);
 
   void RecalcLines(wxDC *dc, Bool calcGraphic = TRUE);
   Bool CheckFlow(float maxw, wxDC *dc, float Y, long startp, wxSnip *start);

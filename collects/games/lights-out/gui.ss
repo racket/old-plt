@@ -121,7 +121,6 @@
 				(- j 1))
 		     (loop (- i 1))]))
 		 (loop (- j 1))]))))])
-
       (override
 	[on-size
 	 (lambda (w h)

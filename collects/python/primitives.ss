@@ -117,6 +117,12 @@
   (define (assoc-list->py-dict% al)
     (hash-table->py-dict% (assoc-list->hash-table al)))
 
+  (define (py-sequence%->list s)
+    (cond
+      [(py-is-a? s py-list%) (py-list%->list s)]
+      [(py-is-a? s py-tuple%) (py-tuple%->list s)]
+      [else (error (format "~a is not a sequence" (py-object%->string s)))]))
+  
   ;; python-set-name!: py-object% symbol ->
   (define (python-set-name! obj name)
     (python-set-member! obj '__name__ (if (symbol? name)
@@ -524,7 +530,9 @@
                         (__sub__ ,(py-bin-op -))
                         (__mul__ ,(py-bin-op *))
                         (__div__ ,(py-bin-op /))
-                        (__mod__ ,(py-bin-op modulo))))
+                        (__mod__ ,(py-bin-op modulo))
+                        (__neg__ ,(lambda (this)
+                                    (number->py-number% (- (py-number%->number this)))))))
   
   
   (python-add-members py-string%

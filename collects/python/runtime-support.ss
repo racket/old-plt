@@ -78,6 +78,16 @@
                             stx)))
        
   
+  (define-syntax py-if
+    (lambda (stx)
+      (syntax-case stx ()
+        [(_ test then else) #`(if (zero? (py-number%->number #,(syntax test)))
+                                  #,(syntax else)
+                                  #,(syntax then))]
+        [(_ test then) #`(unless (zero? (py-number%->number #,(syntax test)))
+                           #,(syntax then))])))
+  
+  
   (define-syntax build-class-body
     (lambda (stx)
       (datum->syntax-object

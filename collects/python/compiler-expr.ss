@@ -202,26 +202,30 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so
-         (let* ([targ (send for get-targ)]
-                [scheme-targ (send targ to-scheme)]
-                [scheme-vals (send (send for get-vals) to-scheme)]
-                [scheme-expr (send expr to-scheme)])
-           (cond
-             [(is-a? targ tidentifier%)
-              `(map (lambda (,scheme-targ)
-                      ,scheme-expr)
-                    ,scheme-vals)]
-             [(is-a? targ ttuple%)
-              (let ([tuple-name (gensym)])
-                `(,(py-so 'list->py-list%)
-                  (map (lambda (,tuple-name) 
-                         ;; the cdr eats the "list" part of "`(list x y)"
-                         (apply (lambda ,(cdr (syntax-e scheme-targ))
-                                  ,scheme-expr)
-                                (,(py-so 'py-tuple%->list) ,tuple-name)))
-                       (,(py-so 'py-list%->list) ,scheme-vals))))]
-             [else (raise "not implemented yet")]))))
+        (->orig-so (let ([result (gensym 'result)])
+                     `(let ([,result null])
+                        ,(send for to-scheme (send expr to-scheme) result)
+                        (,(py-so 'list->py-list%) ,result)))))
+;        (->orig-so
+;         (let* ([targ (send for get-targ)]
+;                [scheme-targ (send targ to-scheme)]
+;                [scheme-vals (send (send for get-vals) to-scheme)]
+;                [scheme-expr (send expr to-scheme)])
+;           (cond
+;             [(is-a? targ tidentifier%)
+;              `(map (lambda (,scheme-targ)
+;                      ,scheme-expr)
+;                    ,scheme-vals)]
+;             [(is-a? targ ttuple%)
+;              (let ([tuple-name (gensym)])
+;                `(,(py-so 'list->py-list%)
+;                  (map (lambda (,tuple-name) 
+;                         ;; the cdr eats the "list" part of "`(list x y)"
+;                         (apply (lambda ,(cdr (syntax-e scheme-targ))
+;                                  ,scheme-expr)
+;                                (,(py-so 'py-tuple%->list) ,tuple-name)))
+;                       (,(py-so 'py-list%->list) ,scheme-vals))))]
+;             [else (raise "not implemented yet")]))))
       
       (super-instantiate ())))
   
@@ -250,8 +254,13 @@
       (define/public (get-vals) vals)
       
       ;;daniel
-      ;      (inherit ->orig-so)
-      ;      (define/override (to-scheme)
+      (inherit ->orig-so)
+      (define/override (to-scheme expr-so result)
+        (->orig-so `(for-each (lambda (,(send targ to-scheme))
+                                ,(if iter
+                                     (send iter to-scheme expr-so result)
+                                     `(set! ,result (append ,result (cons ,expr-so null)))))
+                              (,(py-so 'py-sequence%->list) ,(send vals to-scheme)))))
       ;        (->orig-so (let ([targ (send targ-exp to-scheme)])
       ;                     `(map (lambda (,targ)
       ;                             (f ,targ))
@@ -269,6 +278,13 @@
       (define/override (set-bindings! enclosing-scope)
         (send test set-bindings! enclosing-scope)
         (when iter (send iter set-bindings! enclosing-scope)))
+
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme expr-so result)
+        (->orig-so `(,(py-so 'py-if) ,(send test to-scheme)
+                                   (set! ,result (append ,result
+                                                         (cons ,expr-so null))))))
       
       (super-instantiate ())))
   

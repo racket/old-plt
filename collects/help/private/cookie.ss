@@ -1,6 +1,7 @@
 (module cookie mzscheme
   (require (lib "class.ss")
-           (lib "contract.ss"))
+           (lib "contract.ss")
+           (lib "mred.ss" "mred"))
   
   (define-struct hd-cookie (port 
                             shutdown-server
@@ -11,9 +12,12 @@
                             new-browser)
                  (make-inspector))
   
+  (define (hd-cookie->browser hd-cookie)
+    (or ((hd-cookie-find-browser hd-cookie))
+        ((hd-cookie-new-browser hd-cookie))))
+  
   (define (visit-url-in-browser hd-cookie url)
-    (let ([browser (or ((hd-cookie-find-browser hd-cookie))
-                       ((hd-cookie-new-browser hd-cookie)))])
+    (let ([browser (hd-cookie->browser hd-cookie)])
       (send browser show #t)
       (let* ([hp (send browser get-hyper-panel)]
              [hc (send hp get-canvas)])
@@ -32,6 +36,7 @@
                     (visit-url-in-new-browser (hd-cookie? string? . -> . void?)))
   
   (provide
+   hd-cookie->browser
    (struct hd-cookie (port 
                       shutdown-server
                       url-on-server-test

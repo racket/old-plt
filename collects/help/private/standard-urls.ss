@@ -88,7 +88,7 @@
   
   (define hd-location-syms (map car hd-locations))
 
-  (define (search-for-docs cookie search-string search-type match-type lucky? manuals doc.txt? manual-name)
+  (define (search-for-docs cookie search-string search-type match-type lucky? manuals doc.txt? lang-name)
     (unless (string=? search-string "")
       (let* ([port (hd-cookie-port cookie)]
              [url (make-results-url (hd-cookie-port cookie)
@@ -98,7 +98,7 @@
                                     lucky?
                                     manuals 
                                     doc.txt?
-                                    manual-name)])
+                                    lang-name)])
         (visit-url-in-browser cookie url))))
 
   (define (goto-manual-link cookie manual index-key)

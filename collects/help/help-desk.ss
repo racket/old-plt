@@ -17,11 +17,13 @@
    (hd-cookie? (any? . -> . boolean?))
    (hd-cookie-shutdown-server (hd-cookie? . -> . (-> any)))
    (hd-cookie-find-browser (hd-cookie? . -> . (-> (union false? (is-a?/c frame%)))))
+   (hd-cookie->browser (hd-cookie? . -> . (is-a?/c frame%)))
    (hd-cookie-port (hd-cookie? . -> . number?))
    (visit-url-in-browser (hd-cookie? string? . -> . void?))
    (visit-url-in-new-browser (hd-cookie? string? . -> . void?)))
   
   (provide 
+   
    ;; manual ordering
    standard-html-doc-position
    user-defined-doc-position

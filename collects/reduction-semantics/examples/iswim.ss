@@ -131,22 +131,22 @@
   ;; beta_v reduction
   (define beta_v
     (reduction iswim-grammar
-               (("lam" (name X1 variable) (name M1 M)) (name V1 V))
-               (iswim-subst M1 X1 V1)))
+               (("lam" X_1 M_1) V_1)
+               (iswim-subst (term M_1) (term X_1) (term V_1))))
   
   
   (define delta
     (list
-     (reduction iswim-grammar ("add1" (name b1 b)) (add1 b1))
-     (reduction iswim-grammar ("sub1" (name b1 b)) (sub1 b1))
-     (reduction iswim-grammar ("iszero" (name b1 b))
-                (if (zero? b1) 
+     (reduction iswim-grammar ("add1" b_1) (add1 (term b_1)))
+     (reduction iswim-grammar ("sub1" b_1) (sub1 (term b_1)))
+     (reduction iswim-grammar ("iszero" b_1)
+                (if (zero? (term b_1)) 
                     '("lam" x ("lam" y x))
                     '("lam" x ("lam" y y))))
-     (reduction iswim-grammar ("+" (name b1 b) (name b2 b)) (+ b1 b2))
-     (reduction iswim-grammar ("-" (name b1 b) (name b2 b)) (- b1 b2))
-     (reduction iswim-grammar ("*" (name b1 b) (name b2 b)) (* b1 b2))
-     (reduction iswim-grammar ("^" (name b1 b) (name b2 b)) (expt b1 b2))))
+     (reduction iswim-grammar ("+" b_1 b_2) (+ (term b_1) (term b_2)))
+     (reduction iswim-grammar ("-" b_1 b_2) (- (term b_1) (term b_2)))
+     (reduction iswim-grammar ("*" b_1 b_2) (* (term b_1) (term b_2)))
+     (reduction iswim-grammar ("^" b_1 b_2) (expt (term b_1) (term b_2)))))
   
   ;; ->v
   (define ->v (map (lambda (red)
@@ -166,14 +166,20 @@
 		       ;; letcc rule:
 		       (reduction
 			iswim-grammar
-			(in-hole (name E E) ("letcc" (name X X) (name M M)))
-			(replace E hole (iswim-subst M X `("[" ,(replace E hole '||) "]"))))
+			(in-hole E_1 ("letcc" X_1 M_1))
+			(replace (term E_1) 
+                                 (term hole)
+                                 (iswim-subst (term M_1) (term X_1) `("[" 
+                                                                      ,(replace (term E_1)
+                                                                                (term hole)
+                                                                                '||) 
+                                                                      "]"))))
 
 		       ;; cc rule:
 		       (reduction
 			iswim-grammar
-			(in-hole E ("cc" ("[" (in-hole* inner-hole (name E2 E) ||) "]") (name V V)))
-			(replace E2 inner-hole V)))))
+			(in-hole E ("cc" ("[" (in-hole* inner-hole E_2 ||) "]") V_1))
+			(replace (term E_2) (term inner-hole) (term V_1))))))
 			
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -51,11 +51,11 @@ semaphores make things much more predictable...
   (define reductions
     (list
      (reduction lang
-                (in-hole (name c p-ctxt) (begin v (name e1 e) (name e2 e) (name es e) ...))
+                (in-hole (name c p-ctxt) (begin v e_1 e_2 e_rest ...))
                 (replace 
                  (term c)
                  (term hole)
-                 (term (begin e1 e2 es ...))))
+                 (term (begin e_1 e_2 e_rest ...))))
      (reduction lang
                 (in-hole (name c p-ctxt) 
                          (cons v_1 (list v_2s ...)))
@@ -92,17 +92,17 @@ semaphores make things much more predictable...
      (reduction lang
                 ((store
                   (name befores (variable v)) ...
-                  ((name x variable) v)
+                  (variable_i v)
                   (name afters (variable v)) ...)
                  (name semas any)
                  (threads
                   (name e-before e) ...
-                  (in-hole (name c e-ctxt) (set! (name x variable) (name new-v v)))
+                  (in-hole (name c e-ctxt) (set! variable_i v_new))
                   (name e-after e) ...))
                 (term 
                  ((store
                    befores ...
-                   (x new-v)
+                   (variable_i v_new)
                    afters ...)
                   semas
                   (threads
@@ -113,19 +113,19 @@ semaphores make things much more predictable...
                 ((name store any)
                  (semas
                   (name befores (variable v)) ...
-                  ((name x variable) (name n number))
+                  (variable_sema number_n)
                   (name afters (variable v)) ...)
                  (threads
                   (name e-before e) ...
-                  (in-hole (name c e-ctxt) (semaphore-wait (semaphore (name x variable))))
+                  (in-hole (name c e-ctxt) (semaphore-wait (semaphore variable_sema)))
                   (name e-after e) ...))
                 (term 
                  (store
                   (semas
                    befores ...
-                   (x ,(if (= (term n) 1)
-                           (term none)
-                           (- (term n) 1)))
+                   (variable_sema ,(if (= (term number_n) 1)
+                                       (term none)
+                                       (- (term number_n) 1)))
                    afters ...)
                    (threads
                     e-before ...
@@ -135,17 +135,17 @@ semaphores make things much more predictable...
                 ((name store any)
                  (semas
                   (name befores (variable v)) ...
-                  ((name x variable) (name n number))
+                  (variable_sema number_n)
                   (name afters (variable v)) ...)
                  (threads
                   (name e-before e) ...
-                  (in-hole (name c e-ctxt) (semaphore-post (semaphore (name x variable))))
+                  (in-hole (name c e-ctxt) (semaphore-post (semaphore variable_sema)))
                   (name e-after e) ...))
                 (term 
                  (store
                   (semas
                    befores ...
-                   (x ,(+ (term n) 1))
+                   (variable_sema ,(+ (term number_n) 1))
                    afters ...)
                   (threads
                    e-before ...
@@ -156,17 +156,17 @@ semaphores make things much more predictable...
                 ((name store any)
                  (semas
                   (name befores (variable v)) ...
-                  ((name x variable) none)
+                  (variable_sema none)
                   (name afters (variable v)) ...)
                  (threads
                   (name e-before e) ...
-                  (in-hole (name c e-ctxt) (semaphore-post (semaphore (name x variable))))
+                  (in-hole (name c e-ctxt) (semaphore-post (semaphore variable_sema)))
                   (name e-after e) ...))
                 (term 
                  (store
                   (semas
                    befores ...
-                   (x 1)
+                   (variable_sema 1)
                    afters ...)
                   (threads
                    e-before ...

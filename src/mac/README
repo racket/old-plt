@@ -8,7 +8,10 @@ Read the instructions in plt/src/mac/cw/README
  Compiling for MacOS X using X Windows
 ========================================================================
 
-Build as indicated by plt/src/README for UNIX platforms
+Build as indicated by plt/src/README for UNIX platforms.  Note that 
+since this build uses X Windows, you'll need to have X Windows installed.
+All in-house testing has been done using XFree86, and more specifically
+the fink project, on the web at <http://www.sourceforge.net/projects/fink/>.
 
 ========================================================================
  Compiling for MacOS X
@@ -18,28 +21,24 @@ THESE INSTRUCTIONS ARE IN FLUX.  I am in the process of moving from
 all-IDE development to (hopefully) all-makefile.  There are some
 issues, as you'll see.
 
-In order to compile MzScheme and MrEd for OS X, you will need to have
-_both_ the Metrowerks tools (currently 7.1) and the Apple developer
-tools installed. This compilation uses 'make', so you will need to be
-comfortable with the command-line (Terminal).
+In order to compile MzScheme for OS X, you will need to have the 
+Apple Developer Tools installed, as well as the dlcompat library.
+The first is available on the freeware CD of the same name, the second
+is available at <http://www.sourceforge.net/projects/fink/>.
 
-Hmmm... I think you'll also need to have the dlcompat library installed.
-You can get this from fink.
+In order to compile MrEd, you will need the same things you need for
+MzScheme compilation, as well as the Metrowerks compiler (currently
+we're using v7.1).
+
+Finally, this compilation uses 'make', so you will need to be
+comfortable with the command-line (Terminal).
 
 Also, these instructions are needlessly complicated because I haven't
 yet written scripts to do everything in the right order.
 
-0) You must have the Apple Developer Tools installed, as well
-as Codewarrior 7.1 (or higher). Make sure that 'mwccppc', the
-metrowerks command-line compiler, is in your path, and the various
-shell variables used by mwccppc are in place.  After a full install
-of Metrowerks, both of these should be true (although I think the
-installation assumes you're using tcsh, and just plops everything
-in a .tchsrc)
+1) cd to the plt/src directory, and execute './configure -enable-quartz'
 
-1) cd to the plt/src directory, and execute 'env CC="mwccppc" ./configure'
-
-2) cd to plt/src/mzscheme, and execute 'make mz'
+2) execute 'make mz'
 
 3) now execute 'make mzinstall'
 

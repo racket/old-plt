@@ -28,7 +28,7 @@
       
       (finder:default-extension "scm")
       (application:current-app-name (string-constant drscheme))
-      (version:add-spec 'd 7)
+      ;(version:add-spec 'd 7)
       
       (preferences:set-default 'drscheme:unit-window-size-percentage 1/2 
                                (lambda (x) (and (number? x) (<= 0 x 1))))

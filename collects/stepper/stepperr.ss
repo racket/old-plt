@@ -127,7 +127,7 @@
       (global-defined-value identifier)))
     
   (define (image? val)
-   (is-a? val image-snip%))
+   (is-a? val snip%))
   
   (define print-convert #f)
   

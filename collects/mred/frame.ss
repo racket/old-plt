@@ -264,7 +264,7 @@
 	       (let ([t (if (or (string=? "" title)
 				(string=? "" title-prefix))
 			    (string-append title-prefix title)
-			    (string-append title-prefix ": " title))])
+			    (string-append title " - " title-prefix))])
 		 (super-set-title t)))])
 	  
 	  (public

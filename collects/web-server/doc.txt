@@ -9,6 +9,22 @@ starts the Web server.  The "web-server-monitor" launcher monitors a Web
 server by periodically sending it requests.  Both launchers support the
 -h or --help flags which describe other available options.
 
+The command line 
+  web-server [-p <port>] [-f <configuration-table-file>]
+starts the server on port 80 or <port> and uses the configuration options
+from the "configuration-table" file of the web-server collection or from
+the specified configuration file.
+
+The command line
+  web-server-monitor [-p <port>]
+                     [-f <frequency>]
+                     [-t <timeout>]
+		     <alert-email> <host-name>
+polls any Web server running on host <host-name> at port <port> (or port 80)
+every <frequency> seconds (or 1 hour).  If the server does not respond to
+a HEAD HTTP request for the homepage within <timeout> (or 75) seconds or
+sends an error response, the monitor will notify <alert-email> of the problem.
+
 Another Start
 =============
 

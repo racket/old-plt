@@ -75,20 +75,16 @@
 #define VSLOP 3
 #define HSLOP 4
 #ifdef OS_X
-#define MSPACEX 18
-#define MSPACEY 2
 #define PAD_Y 4
 #define PAD_X 2
-#define FONT_WIDTH_FUDGE 1.2
-#define TRIANGLE_BOX_WIDTH 21
 #else
 #define MSPACEX 4
-#define MSPACEY 1
 #define TRIANGLE_WIDTH 10
 #define TRIANGLE_RIGHT_SPACE 5
-#endif
 #define TRIANGLE_HEIGHT 5
 #define Checkem	TRUE;		// adds code to do checkmarks to selected item
+#endif
+#define MSPACEY 1
 
 
 wxChoice::wxChoice (wxPanel * panel, wxFunction func, char *Title,
@@ -186,9 +182,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 		::SetMenuItemText(hDynMenu, n + 1,temp);
 	}
 	no_strings = N;
-	maxdflth += MSPACEY*2;			// extra pixels on top & bottom
 #ifdef OS_X
-
         // First, create the control with a bogus rectangle;
         OSErr err;
         Rect r = {0,0,0,0};
@@ -198,17 +192,14 @@ Create (wxPanel * panel, wxFunction func, char *Title,
         ::SetControlMinimum(cMacControl,1);
         ::SetControlMaximum(cMacControl,no_strings);
     
-        // Now, find the "best" size
-        Rect r = {0,0,0,0};
+        // Now, ignore the font data and let the control find the "best" size 
+        ::SetRect(&r,0,0,0,0);
         SInt16 baselineOffset; // ignored
-        err = ::GetBestControlSize(cMacControl,&r,&baselineOffset);
-        fprintf(stderr,"l: %d t: %d r: %d b: %d",r.left,r.top,r.right,r.bottom);
-
-        maxdflth = r.right - r.left + (PAD_Y * 2);
-        
-        maxdfltw *= FONT_WIDTH_FUDGE;
-        maxdfltw += (int)(TRIANGLE_BOX_WIDTH + MSPACEX + 2*PAD_X);
+        err = ::GetBestControlRect(cMacControl,&r,&baselineOffset);
+        maxdfltw = r.right - r.left + (PAD_X * 2);
+        maxdflth = r.bottom - r.top + (PAD_Y * 2);
 #else        
+	maxdflth += MSPACEY*2;			// extra pixels on top & bottom
 	char checkm[] = {18, 0};
 	GetTextExtent(checkm, &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
 	maxdfltw += (int)(fWidth + TRIANGLE_WIDTH + TRIANGLE_RIGHT_SPACE + MSPACEX);
@@ -245,6 +236,13 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 	SetSelection(0);
 	//DrawChoice(TRUE);
 
+#ifdef OS_X
+        r = ValueRect;
+        ::OffsetRect(&r,SetOriginX+PAD_X,SetOriginY+PAD_Y);
+        ::InsetRect(&r,PAD_X,PAD_Y);
+        ::MoveControl(cMacControl,r.left,r.top);
+        ::SizeControl(cMacControl,r.right-r.left,r.bottom-r.top);
+#endif        
         
 	if (GetParent()->IsHidden())
 		DoShow(FALSE);
@@ -263,13 +261,23 @@ wxChoice::~wxChoice (void)
 	delete[] sTitle;
 }
 // --------- Calculate the ValueRect based on the menu's strings ----
-void wxChoice::ReCalcRect(void) {
+
+void wxChoice::ReCalcRect(void) 
+{
 	int maxdfltw = 30;
 	int maxdflth = 12;
 	float	fWidth, fHeight, fDescent, fLeading;
 	int n,w,h;
 	unsigned char temp[256];
-	for (n = 0; n < no_strings; n++) {
+
+#ifdef OS_X
+    Rect r = {0,0,0,0};
+    SInt16 baselineOffset; // ignored
+    ::GetBestControlRect(cMacControl,&r,&baselineOffset);
+    maxdfltw = r.right - r.left + (2 * PAD_X);
+    maxdflth = r.bottom - r.top + (2 * PAD_Y);
+#else
+        for (n = 0; n < no_strings; n++) {
 		// attempt to size control by width of largest string
 		::GetMenuItemText(hDynMenu, n+1, temp);
 		temp[temp[0]+1] = '\0';
@@ -280,11 +288,6 @@ void wxChoice::ReCalcRect(void) {
 		maxdflth = max(h, maxdflth);
 	}
 	maxdflth += MSPACEY*2;			// extra pixels on top & bottom
-#ifdef OS_X
-        maxdflth += PAD_Y*2; // pad necessary for aqua
-        maxdfltw *= FONT_WIDTH_FUDGE;
-        maxdfltw += (int)(TRIANGLE_BOX_WIDTH + MSPACEX + 2*PAD_X);
-#else        
 	char checkm[] = {18, 0};
 	GetTextExtent(checkm, &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
 	maxdfltw += (int)(fWidth + TRIANGLE_WIDTH + TRIANGLE_RIGHT_SPACE + MSPACEX);
@@ -459,17 +462,6 @@ void wxChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY)
             ::MoveControl(cMacControl,r.left,r.top);
         }
 #endif                 
-#if 0
-	if (dW || dH || dX || dY)
-	{
-		GetClientSize(&clientWidth, &clientHeight);
-		Rect clientRect = {0, 0, clientHeight, clientWidth};
-                OffsetRect(&clientRect,SetOriginX,SetOriginY);
-		::InvalidRect(&clientRect); 
-                // evidently this illegal function name InvalidRect? has been around for a long 
-                // long time. At least since revision 1.1.  Should this have been InvalRect all along?
-	}
-#endif
 }
 
 void wxChoice::ChangeToGray(Bool gray)

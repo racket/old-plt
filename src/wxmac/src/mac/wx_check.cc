@@ -20,6 +20,10 @@ static const char sccsid[] = "%W% %G%";
   #include <QuickDraw.h>
 #endif
 
+#ifdef OS_X
+#define PAD_X 6
+#define PAD_Y 6
+#endif
 #define IC_BOX_SIZE 12
 #define IC_X_SPACE 3
 #define IC_Y_SPACE 2
@@ -70,6 +74,35 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
 	
     label = wxItemStripLabel(label);
 
+#ifdef OS_X
+	SetCurrentMacDC();
+	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+	Rect boundsRect = {0, 0, 0, 0};
+        OffsetRect(&boundsRect,SetOriginX + PAD_X,SetOriginY + PAD_Y);
+	wxMacString theMacLabel = label;
+	const Bool drawNow = FALSE; // WCH: use FALSE, then show after ChangeColour??
+	const short offValue = 0;
+	const short minValue = 0;
+	const short maxValue = 1;
+	short refCon = 0;
+	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel(),
+			drawNow, offValue, minValue, maxValue, checkBoxProc, refCon);
+	CheckMemOK(cMacControl);
+        
+        Rect r = {0,0,0,0};
+        SInt16 baselineOffset; // ignored
+        OSErr err;
+        err = ::GetBestControlRect(cMacControl,&r,&baselineOffset);
+        
+        fprintf(stderr,"err: %d, t: %d l: %d r: %d b: %d\n",err,r.top,r.left,r.right,r.bottom);
+        
+        cWindowWidth = r.right - r.left + (2 * PAD_X);
+        cWindowHeight = r.bottom - r.top + (2 * PAD_Y);
+        
+        ::SizeControl(cMacControl,r.right-r.left,r.bottom-r.top);
+        
+#else
+
 	if (width <= 0 || height <= 0)
 	{
 		float fLabelWidth = 20.0;
@@ -82,23 +115,9 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
 		}
 		if (width <= 0) cWindowWidth = (int)fLabelWidth;
 		if (height <= 0) cWindowHeight = (int)fLabelHeight;
+                
 	}
 
-#ifdef OS_X
-	SetCurrentMacDC();
-	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-	Rect boundsRect = {0, 0, cWindowHeight, cWindowWidth};
-        OffsetRect(&boundsRect,SetOriginX,SetOriginY);
-	wxMacString theMacLabel = label;
-	const Bool drawNow = TRUE; // WCH: use FALSE, then show after ChangeColour??
-	const short offValue = 0;
-	const short minValue = 0;
-	const short maxValue = 1;
-	short refCon = 0;
-	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel(),
-			drawNow, offValue, minValue, maxValue, checkBoxProc, refCon);
-	CheckMemOK(cMacControl);
-#else
 	labelString = label;
 	cMacControl = NULL;
 #endif
@@ -246,20 +265,19 @@ void wxCheckBox::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platfo
 	{
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
-		::SizeControl(cMacControl, clientWidth, clientHeight);
+		::SizeControl(cMacControl, clientWidth - (2 * PAD_X), clientHeight - (2 * PAD_Y));
 	}
 
 	if (dX || dY)
 	{
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
 		SetCurrentDC(); // put new "origin" at (SetOriginX, SetOriginY)
-		::MoveControl(cMacControl,SetOriginX,SetOriginY);
+		::MoveControl(cMacControl,SetOriginX + PAD_X,SetOriginY + PAD_Y);
 	}
 
 #ifndef OS_X
 	if (hideToPreventFlicker) ::ShowControl(cMacControl);
 #endif
-
 	if (!cHidden && (dW || dH || dX || dY))
 	{
 		int clientWidth, clientHeight;

@@ -219,7 +219,7 @@ void wxCommonInit(void)
 
 #ifdef WX_USE_XFT
     if (wxXRenderHere())
-      XftInitFtLibrary();
+      XftInit(NULL);
 #endif
   
     wxREGGLOB(wxAPP_COLOURMAP);

@@ -938,28 +938,34 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
      front. */
 #ifdef WX_USE_XFT
   {
-    FcFontSet *fs;
-    int i, len;
-    char *s, *copy;
+    XftFontSet *fs;
+    int i, len, ssize;
+    char *s, *copy, buf[256];
 
     fs = XftListFonts(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY), NULL, XFT_FAMILY, NULL);
 
     for (i = 0; i < fs->nfont; i++) {
-      s = (char *)FcNameUnparse(fs->fonts[i]);
+      s = buf;
+      ssize = 256;
+      do {
+	if (XftNameUnparse(fs->fonts[i], s, ssize))
+	  break;
+	ssize *= 2;
+	s = new WXGC_ATOMIC char[ssize];
+      } while (1);
       /* Add a space at the fton to indicate "Xft" */
       len = strlen(s);
       copy = new WXGC_ATOMIC char[len + 2];
       memcpy(copy + 1, s, len + 1);
       copy[0] = ' ';
       first = scheme_make_pair(scheme_make_sized_string(copy, len + 1, 0), first);
-      free(s);
     }
 
     first = scheme_make_pair(scheme_make_string(" Sans"), first);
     first = scheme_make_pair(scheme_make_string(" Serif"), first);
     first = scheme_make_pair(scheme_make_string(" Monospace"), first);
 
-    FcFontSetDestroy(fs);
+    XftFontSetDestroy(fs);
   }
 #endif
 

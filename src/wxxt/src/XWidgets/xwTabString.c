@@ -51,11 +51,11 @@ static void xdoDraw(display, drawable, gc, x, y, string, length, image
   } else 
 #endif
     {
-    if (image)
-      XDrawImageString(display, drawable, gc, x, y, string, length);
-    else
-      XDrawString(display, drawable, gc, x, y, string, length);
-  }
+      if (image)
+	XDrawImageString(display, drawable, gc, x, y, string, length);
+      else
+	XDrawString(display, drawable, gc, x, y, string, length);
+    }
 }
 #ifdef WX_USE_XFT
 # define doDraw xdoDraw

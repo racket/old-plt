@@ -191,6 +191,7 @@ if test "${enable_oskit}" = "no" ; then
   AC_PROG_CC
   AC_PROG_CPP
   AC_PROG_CXX
+  AC_PROG_CXXCPP
   if test "$AS" = '' ; then 
     AS=as
     as_was_set=no
@@ -406,6 +407,7 @@ case $OS in
       fi
     else
       CFLAGS="$CFLAGS -DXONX "
+      X_EXTRA_LIBS="$X_EXTRA_LIBS -lz"
     fi
     ;;
   *)
@@ -471,6 +473,7 @@ fi
 
 if test "${enable_mred}" = "yes" ; then
   CXXFLAGS="$CXXFLAGS $X_CFLAGS"
+  CPPFLAGS="$CXXFLAGS"
   AC_LANG_CPLUSPLUS 
 
 [ msg="whether new and new[] are different"   ]
@@ -629,9 +632,20 @@ fi
 if test "${enable_xft}" = "yes" ; then  
   xft_config_ok=`xft-config --version  2> /dev/null`
   if test "$xft_config_ok" = "" ; then
-    echo "xft-config not in path; Xft support disabled"
-    enable_xft=no
+    AC_CHECK_HEADER(X11/Xft/Xft.h, enable_xft=yes, enable_xft=no)
+    if test "${enable_xft}" = "yes" ; then  
+      AC_CHECK_LIB(Xft, XftTextExtents8, enable_xft="yes", enable_xft="no", $X_LIBS -lX11 -lXext -Xrender -lXft)
+      if test "${enable_xft}" = "yes" ; then  
+        MROPTIONS="$MROPTIONS -DWX_USE_XFT"
+        X_EXTRA_LIBS="$X_EXTRA_LIBS -lXft"
+      else
+        echo "no Xft libs; Xft support disabled"
+      fi
+    else
+      echo "no Xft headers; Xft support disabled"
+    fi
   else
+    echo "Using xft-config..."
     xft_cflags=`xft-config --cflags`
     xft_libs=`xft-config --libs`
     echo "Xft flags: $xft_cflags"
@@ -654,6 +668,8 @@ if test "${enable_libpng}" = "yes" ; then
     if test "${enable_libpng}" = "yes" ; then  
       PNG_A=""
       PNG_INC=""
+      ZLIB_A=""
+      ZLIB_INC=""
       X_EXTRA_LIBS="$X_EXTRA_LIBS -lpng -lz"
       MROPTIONS="$MROPTIONS -DWX_USE_LIBPNG"
     else
@@ -677,8 +693,6 @@ if test "${enable_libjpeg}" = "yes" ; then
     if test "${enable_libjpeg}" = "yes" ; then  
       JPEG_A=""
       JPEG_INC=""
-      ZLIB_A=""
-      ZLIB_INC=""
       X_EXTRA_LIBS="$X_EXTRA_LIBS -ljpeg"
       MROPTIONS="$MROPTIONS -DWX_USE_LIBJPEG"
     else

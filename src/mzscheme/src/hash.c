@@ -506,6 +506,7 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_placeholder_type, hash_general);
   PROC(scheme_inspector_type, hash_general);
   PROC(scheme_struct_property_type, hash_general);
+  PROC(scheme_rename_table_type, hash_general);
 #undef PROC
 }
 

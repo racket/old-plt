@@ -24,7 +24,7 @@
 
 #define STX_GRAPH_FLAG 0x1
 
-#define STX_DEBUG 1
+#define STX_DEBUG 0
 
 static Scheme_Object *syntax_p(int argc, Scheme_Object **argv);
 static Scheme_Object *graph_syntax_p(int argc, Scheme_Object **argv);

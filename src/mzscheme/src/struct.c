@@ -33,7 +33,7 @@ typedef enum {
 typedef struct {
   MZTAG_IF_REQUIRED
   Scheme_Struct_Type *struct_type;
-  Scheme_Object *func_name;
+  char *func_name;
   short field;
 } Struct_Proc_Info;
 
@@ -65,11 +65,11 @@ static Scheme_Object *struct_getter_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_pred_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_constr_p(int argc, Scheme_Object *argv[]);
 
-static Scheme_Object *make_struct_proc(Scheme_Struct_Type *struct_type, Scheme_Object *func_name, 
+static Scheme_Object *make_struct_proc(Scheme_Struct_Type *struct_type, char *func_name, 
 				       Scheme_ProcT proc_type, int field_num);
 
 static Scheme_Object *make_name(const char *pre, const char *tn, int tnl, const char *post1, 
-				const char *fn, int fnl, const char *post2);
+				const char *fn, int fnl, const char *post2, int sym);
 
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
@@ -92,13 +92,15 @@ static int ts_count;
 
 Scheme_Object *ellipses_symbol;
 
-#define TYPE_NAME(base, blen) make_name("struct:", base, blen, "", NULL, 0, "")
-#define CSTR_NAME(base, blen) make_name("make-", base, blen, "", NULL, 0, "")
-#define PRED_NAME(base, blen) make_name("", base, blen, "?", NULL, 0, "")
-#define GET_NAME(base, blen, field, flen) make_name("", base, blen, "-", field, flen, "")
-#define SET_NAME(base, blen, field, flen) make_name("set-", base, blen, "-", field, flen, "!")
-#define GENGET_NAME(base, blen) make_name("", base, blen, "-ref", NULL, 0, "")
-#define GENSET_NAME(base, blen) make_name("", base, blen, "-set!", NULL, 0, "")
+#define TYPE_NAME(base, blen) make_name("struct:", base, blen, "", NULL, 0, "", 1)
+#define CSTR_NAME(base, blen) make_name("make-", base, blen, "", NULL, 0, "", 1)
+#define PRED_NAME(base, blen) make_name("", base, blen, "?", NULL, 0, "", 1)
+#define GET_NAME(base, blen, field, flen, sym) make_name("", base, blen, "-", field, flen, "", sym)
+#define SET_NAME(base, blen, field, flen, sym) make_name("set-", base, blen, "-", field, flen, "!", sym)
+#define GENGET_NAME(base, blen, sym) make_name("", base, blen, "-ref", NULL, 0, "", sym)
+#define GENSET_NAME(base, blen, sym) make_name("", base, blen, "-set!", NULL, 0, "", sym)
+
+#define TYPE_NAME_STR(sym) (char *)make_name("struct:", (char *)sym, -1, "", NULL, 0, "", 0)
 
 void
 scheme_init_struct (Scheme_Env *env)
@@ -349,8 +351,8 @@ static Scheme_Object *prop_pred(Scheme_Object *prop, int argc, Scheme_Object **a
   else
       return scheme_false;
 
-  if (stype->props_ht) {
-    if (scheme_lookup_in_table(stype->props_ht, (char *)prop))
+  if (stype->num_props < 0) {
+    if (scheme_lookup_in_table((Scheme_Hash_Table *)stype->props, (char *)prop))
       return scheme_true;
   } else {
     int i;
@@ -375,9 +377,9 @@ static Scheme_Object *prop_accessor(Scheme_Object *prop, int argc, Scheme_Object
     stype = NULL;
 
   if (stype) {
-    if (stype->props_ht) {
+    if (stype->num_props < 0) {
       Scheme_Object *v;
-      v = (Scheme_Object *)scheme_lookup_in_table(stype->props_ht, (char *)prop);
+      v = (Scheme_Object *)scheme_lookup_in_table((Scheme_Hash_Table *)stype->props, (char *)prop);
       if (v)
 	return v;
     } else {
@@ -461,25 +463,27 @@ static Scheme_Object *struct_type_property_p(int argc, Scheme_Object *argv[])
 /*                             struct ops                                 */
 /*========================================================================*/
 
-static void wrong_struct_type(Scheme_Object *name, 
+static char *type_name_string(Scheme_Object *sym)
+{
+  return TYPE_NAME_STR(sym);
+}
+
+static void wrong_struct_type(char *name, 
 			      Scheme_Object *expected,
 			      Scheme_Object *received,
 			      int which, int argc,
 			      Scheme_Object **argv)
 {
-  if ((SCHEME_SYM_LEN(expected) == SCHEME_SYM_LEN(received))
-      && !scheme_strncmp(SCHEME_SYM_VAL(expected), 
-			 SCHEME_SYM_VAL(received),
-			 SCHEME_SYM_LEN(expected)))
+  if (SAME_OBJ(expected, received))
     scheme_raise_exn(MZEXN_APPLICATION_TYPE, argv[which], expected,
-			"%s: expects args of type <%s>; "
-			"given instance of a different <%s>",
-			scheme_symbol_name(name), 
-			scheme_symbol_name(expected), 
-			scheme_symbol_name(received));
+		     "%s: expects args of type <%s>; "
+		     "given instance of a different <%s>",
+		     name,
+		     type_name_string(expected), 
+		     type_name_string(received));
   else
-    scheme_wrong_type(scheme_symbol_name(name), 
-		      scheme_symbol_name(expected), 
+    scheme_wrong_type(name,
+		      type_name_string(expected), 
 		      which, argc, argv);
 }
 
@@ -571,7 +575,7 @@ static int parse_pos(const char *who, Struct_Proc_Info *i, Scheme_Object **args,
       pos = 32769; /* greater than max field count */
     } else {
       if (!who)
-	who = scheme_symbol_name(i->func_name);
+	who = i->func_name;
       scheme_wrong_type(who, 
 			"non-negative exact integer", 
 			1, argc, args);
@@ -588,7 +592,7 @@ static int parse_pos(const char *who, Struct_Proc_Info *i, Scheme_Object **args,
     int sc;
 
     if (!who)
-      who = scheme_symbol_name(i->func_name);
+      who = i->func_name;
 
     sc = (i->struct_type->name_pos
 	  ? (i->struct_type->num_slots
@@ -597,15 +601,15 @@ static int parse_pos(const char *who, Struct_Proc_Info *i, Scheme_Object **args,
 
     if (!sc) {
       scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, args[1],
-		       "%s: no slots in <%S>; given index: %V",
+		       "%s: no slots in <struct:%S>; given index: %V",
 		       who,
-		       i->struct_type->type_name,
+		       i->struct_type->name,
 		       args[1]);
     } else {
       scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, args[1],
-		       "%s: slot index for <%S> not in [0, %d]: %V",
+		       "%s: slot index for <struct:%S> not in [0, %d]: %V",
 		       who,
-		       i->struct_type->type_name,
+		       i->struct_type->name,
 		       sc - 1,
 		       args[1]);
     }
@@ -622,8 +626,8 @@ static Scheme_Object *struct_getter(Struct_Proc_Info *i, int argc, Scheme_Object
   int pos;
 
   if (NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_structure_type)) {
-    scheme_wrong_type(scheme_symbol_name(i->func_name), 
-		      scheme_symbol_name(i->struct_type->type_name), 
+    scheme_wrong_type(i->func_name, 
+		      type_name_string(i->struct_type->name), 
 		      0, argc, args);
     return NULL;
   }
@@ -632,7 +636,7 @@ static Scheme_Object *struct_getter(Struct_Proc_Info *i, int argc, Scheme_Object
 
   if (!STRUCT_TYPEP(i->struct_type, inst)) {
     wrong_struct_type(i->func_name, 
-		      i->struct_type->type_name, 
+		      i->struct_type->name, 
 		      SCHEME_STRUCT_NAME_SYM(inst), 
 		      0, argc, args);
     return NULL;
@@ -653,14 +657,14 @@ static Scheme_Object *struct_setter(Struct_Proc_Info *i, int argc, Scheme_Object
   Scheme_Object *v;
 
   if (NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_structure_type))
-    scheme_wrong_type(scheme_symbol_name(i->func_name), 
-		      scheme_symbol_name(i->struct_type->type_name), 
+    scheme_wrong_type(i->func_name, 
+		      type_name_string(i->struct_type->name), 
 		      0, argc, args);
 	
   inst = (Scheme_Structure *)args[0];
   if (!STRUCT_TYPEP(i->struct_type, inst))
     wrong_struct_type(i->func_name, 
-		      i->struct_type->type_name, 
+		      i->struct_type->name, 
 		      SCHEME_STRUCT_NAME_SYM(inst),
 		      0, argc, args);
 	
@@ -771,15 +775,13 @@ static Scheme_Object *struct_type_info(int argc, Scheme_Object *argv[])
   /* Make sure generic accessor and mutator are created: */
   if (!stype->accessor) {
     Scheme_Object *p;
-    char *base;
-    int blen;
-
-    base = scheme_symbol_val(stype->name);
-    blen = SCHEME_SYM_LEN(stype->name);
-
-    p = make_struct_proc(stype, GENGET_NAME(base, blen), SCHEME_GEN_GETTER, 0);
+    char *fn;
+    
+    fn = (char *)GENGET_NAME((char *)stype->name, -1, 0);
+    p = make_struct_proc(stype, fn, SCHEME_GEN_GETTER, 0);
     stype->accessor = p;
-    p = make_struct_proc(stype, GENSET_NAME(base, blen), SCHEME_GEN_SETTER, 0);
+    fn = (char *)GENSET_NAME((char *)stype->name, -1, 0);
+    p = make_struct_proc(stype, fn, SCHEME_GEN_SETTER, 0);
     stype->mutator = p;
   }
 
@@ -810,7 +812,7 @@ Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown
 {
   Scheme_Structure *s;
   Scheme_Struct_Type *stype;
-  Scheme_Object *v, **array;
+  Scheme_Object *v, **array, *name;
   int i, m, p, n, last_is_unknown;
 
   if (!unknown_val)
@@ -842,11 +844,13 @@ Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown
   i = stype->num_slots;
   last_is_unknown = 0;
  
+  name = TYPE_NAME((char *)SCHEME_STRUCT_NAME_SYM(s), -1);
+
   /* Precise GC >>> BEWARE <<<, array is not GC_aligned. */
 
   v = scheme_make_vector(m + 1, NULL);
   array = SCHEME_VEC_ELS(v);
-  array[0] = SCHEME_STRUCT_NAME_SYM(s);
+  array[0] = name;
   array++;
   while (p--) {
     stype = stype->parent_types[p];
@@ -948,7 +952,7 @@ static Scheme_Object *make_struct_field_xxor(const char *who, int getter,
 {
   Struct_Proc_Info *i;
   int pos;  
-  Scheme_Object *name;
+  char *name;
   const char *fieldstr;
   char digitbuf[20];
   int fieldstrlen;
@@ -982,13 +986,11 @@ static Scheme_Object *make_struct_field_xxor(const char *who, int getter,
   }
 
   if (getter) {
-    name = GET_NAME(scheme_symbol_val(i->struct_type->name), 
-		    SCHEME_SYM_LEN(i->struct_type->name),
-		    fieldstr, fieldstrlen);
+    name = (char *)GET_NAME((char *)i->struct_type->name, -1,
+			    fieldstr, fieldstrlen, 0);
   } else {
-    name = SET_NAME(scheme_symbol_val(i->struct_type->name), 
-		    SCHEME_SYM_LEN(i->struct_type->name),
-		    fieldstr, fieldstrlen);
+    name = (char *)SET_NAME((char *)i->struct_type->name, -1,
+			    fieldstr, fieldstrlen, 0);
   }
 
   return make_struct_proc(i->struct_type, 
@@ -1040,7 +1042,7 @@ Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
   if (!(flags & SCHEME_STRUCT_NO_CONSTR)) {
     Scheme_Object *vi;
     vi = make_struct_proc(struct_type,
-			  names[pos],
+			  scheme_symbol_val(names[pos]),
 			  SCHEME_CONSTR, 
 			  struct_type->num_slots);
     values[pos] = vi;
@@ -1049,7 +1051,7 @@ Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
   if (!(flags & SCHEME_STRUCT_NO_PRED)) {
     Scheme_Object *vi;
     vi = make_struct_proc(struct_type,
-			  names[pos],
+			  scheme_symbol_val(names[pos]),
 			  SCHEME_PRED,
 			  0);
     values[pos] = vi;
@@ -1068,7 +1070,7 @@ Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
     if (!(flags & SCHEME_STRUCT_NO_GET)) {
       Scheme_Object *vi;
       vi = make_struct_proc(struct_type,
-			    names[pos],
+			    scheme_symbol_val(names[pos]),
 			    SCHEME_GETTER,
 			    slot_num);
       values[pos] = vi;
@@ -1078,7 +1080,7 @@ Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
     if (!(flags & SCHEME_STRUCT_NO_SET)) {
       Scheme_Object *vi;
       vi = make_struct_proc(struct_type,
-			    names[pos],
+			    scheme_symbol_val(names[pos]),
 			    SCHEME_SETTER,
 			    slot_num);
       values[pos] = vi;
@@ -1091,7 +1093,7 @@ Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
   if (flags & SCHEME_STRUCT_GEN_GET) {
     Scheme_Object *vi;
     vi = make_struct_proc(struct_type,
-			  names[pos],
+			  scheme_symbol_val(names[pos]),
 			  SCHEME_GEN_GETTER,
 			  slot_num);
     values[pos] = vi;
@@ -1100,7 +1102,7 @@ Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
   if (flags & SCHEME_STRUCT_GEN_SET) {
     Scheme_Object *vi;
     vi = make_struct_proc(struct_type,
-			  names[pos],
+			  scheme_symbol_val(names[pos]),
 			  SCHEME_GEN_SETTER,
 			  slot_num);
     values[pos] = vi;
@@ -1187,12 +1189,12 @@ static Scheme_Object **_make_struct_names(const char *base, int blen,
 
       if (!(flags & SCHEME_STRUCT_NO_GET)) {
 	Scheme_Object *nm;
-	nm = GET_NAME(base, blen, field_name, fnlen);
+	nm = GET_NAME(base, blen, field_name, fnlen, 1);
 	names[pos++] = nm;
       }
       if (!(flags & SCHEME_STRUCT_NO_SET)) {
 	Scheme_Object *nm;
-	nm = SET_NAME(base, blen, field_name, fnlen);
+	nm = SET_NAME(base, blen, field_name, fnlen, 1);
 	names[pos++] = nm;
       }
     }
@@ -1200,12 +1202,12 @@ static Scheme_Object **_make_struct_names(const char *base, int blen,
 
   if (flags & SCHEME_STRUCT_GEN_GET) {
     Scheme_Object *nm;
-    nm = GENGET_NAME(base, blen);
+    nm = GENGET_NAME(base, blen, 1);
     names[pos++] = nm;
   }
   if (flags & SCHEME_STRUCT_GEN_SET) {
     Scheme_Object *nm;
-    nm = GENSET_NAME(base, blen);
+    nm = GENSET_NAME(base, blen, 1);
     names[pos++] = nm;
   }
 
@@ -1242,7 +1244,7 @@ Scheme_Object **scheme_make_struct_names_from_array(const char *base,
 
 static Scheme_Object *
 make_struct_proc(Scheme_Struct_Type *struct_type, 
-		 Scheme_Object *func_name, 
+		 char *func_name, 
 		 Scheme_ProcT proc_type, int field_num)
 {
   Scheme_Object *p;
@@ -1251,7 +1253,7 @@ make_struct_proc(Scheme_Struct_Type *struct_type,
   if (proc_type == SCHEME_CONSTR) {
     p = scheme_make_folding_closed_prim((Scheme_Closed_Prim *)scheme_make_struct_instance,
 					(void *)struct_type,
-					scheme_symbol_name(func_name),
+					func_name,
 					struct_type->num_islots,
 					struct_type->num_islots,
 					0);
@@ -1259,7 +1261,7 @@ make_struct_proc(Scheme_Struct_Type *struct_type,
   } else if (proc_type == SCHEME_PRED) {
     p = scheme_make_folding_closed_prim((Scheme_Closed_Prim *)struct_pred,
 					(void *)struct_type,
-					scheme_symbol_name(func_name),
+					func_name,
 					1, 1, 1);
     flags |= SCHEME_PRIM_IS_STRUCT_PRED;
   } else {
@@ -1283,7 +1285,7 @@ make_struct_proc(Scheme_Struct_Type *struct_type,
     if ((proc_type == SCHEME_GETTER) || (proc_type == SCHEME_GEN_GETTER)) {
       p = scheme_make_folding_closed_prim((Scheme_Closed_Prim *)struct_getter,
 					  (void *)i,
-					  scheme_symbol_name(func_name),
+					  func_name,
 					  1 + need_pos, 1 + need_pos, 1);
       flags |= SCHEME_PRIM_IS_STRUCT_GETTER;
       if (need_pos)
@@ -1291,7 +1293,7 @@ make_struct_proc(Scheme_Struct_Type *struct_type,
     } else {
       p = scheme_make_folding_closed_prim((Scheme_Closed_Prim *)struct_setter,
 					  (void *)i,
-					  scheme_symbol_name(func_name),
+					  func_name,
 					  2 + need_pos, 2 + need_pos, 0);
       flags |= SCHEME_PRIM_IS_STRUCT_SETTER;
       if (need_pos)
@@ -1306,36 +1308,49 @@ make_struct_proc(Scheme_Struct_Type *struct_type,
 
 static Scheme_Object *make_name(const char *pre, const char *tn, int ltn,
 				const char *post1, const char *fn, int lfn,
-				const char *post2)
+				const char *post2, int sym)
 {
-  int total, lp, lp1, lp2;
+  int total, lp, lp1, lp2, xltn, xlfn;
   char *name, buffer[256];
 
+  if (ltn < 0)
+    xltn = SCHEME_SYM_LEN((Scheme_Object *)tn);
+  else
+    xltn = ltn;
+  
+  if (lfn < 0)
+    xlfn = SCHEME_SYM_LEN((Scheme_Object *)fn);
+  else
+    xlfn = lfn;
+  
   total = lp = strlen(pre);
-  total += ltn;
+  total += xltn;
   total += (lp1 = strlen(post1));
-  total += lfn;
+  total += xlfn;
   total += (lp2 = strlen(post2));
 
-  if (total < 256)
+  if (sym && (total < 256))
     name = buffer;
   else
     name = (char *)scheme_malloc_atomic(sizeof(char)*(total + 1));
   
   memcpy(name, pre, lp);
   total = lp;
-  memcpy(name + total, tn, ltn);
-  total += ltn;
+  memcpy(name + total, (ltn < 0) ? SCHEME_SYM_VAL((Scheme_Object *)tn) : tn, xltn);
+  total += xltn;
   memcpy(name + total, post1, lp1);
   total += lp1;
-  memcpy(name + total, fn, lfn);
-  total += lfn;
+  memcpy(name + total, (lfn < 0) ? SCHEME_SYM_VAL((Scheme_Object *)fn) : fn, xlfn);
+  total += xlfn;
   memcpy(name + total, post2, lp2);
   total += lp2;
 
   name[total] = 0;
 
-  return scheme_intern_exact_symbol(name, total);
+  if (sym)
+    return scheme_intern_exact_symbol(name, total);
+  else
+    return (Scheme_Object *)name;
 }
 
 /*========================================================================*/
@@ -1379,12 +1394,6 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
     else
       tn = scheme_intern_exact_symbol(base, blen);
     struct_type->name = tn;
-    if (basesym) {
-      base = scheme_symbol_val(basesym);
-      blen = SCHEME_SYM_LEN(basesym);
-    }
-    tn = TYPE_NAME(base, blen);
-    struct_type->type_name = tn;
   }
   struct_type->num_slots = num_fields + num_uninit_fields + (parent_type ? parent_type->num_slots : 0);
   struct_type->num_islots = num_fields + (parent_type ? parent_type->num_islots : 0);
@@ -1416,7 +1425,6 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
   if (parent_type) {
     struct_type->num_props = parent_type->num_props;
     struct_type->props = parent_type->props;
-    struct_type->props_ht = parent_type->props_ht;
   }
 
   if (props) {
@@ -1424,23 +1432,22 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
     Scheme_Object *l, *a;
 
     num_props = scheme_list_length(props);
-    if (struct_type->props_ht || (struct_type->num_props + num_props > PROP_USE_HT_COUNT)) {
+    if ((struct_type->num_props < 0) || (struct_type->num_props + num_props > PROP_USE_HT_COUNT)) {
       Scheme_Hash_Table *ht;
 
-      ht = scheme_hash_table(struct_type->num_props + num_props, SCHEME_hash_ptr);
+      ht = scheme_hash_table(num_props, SCHEME_hash_ptr);
     
-      if (!struct_type->props_ht) {
+      if (struct_type->num_props >= 0) {
 	for (i = 0; i < struct_type->num_props; i++) {
-	  scheme_add_to_table(ht, (char *)SCHEME_CAR(struct_type->props[i]), SCHEME_CDR(struct_type->props[i]), 0);
+	  scheme_add_to_table(ht, 
+			      (char *)SCHEME_CAR(struct_type->props[i]), 
+			      SCHEME_CDR(struct_type->props[i]), 0);
 	}
-	struct_type->props_ht = ht;
-	struct_type->num_props = 0;
-	struct_type->props = NULL;
       } else {
 	/* Duplicate hash table: */
 	Scheme_Bucket **bs;
-	bs = struct_type->props_ht->buckets;
-	for (i =  struct_type->props_ht->count; i--; ) {
+	bs = ((Scheme_Hash_Table *)struct_type->props)->buckets;
+	for (i =  ((Scheme_Hash_Table *)struct_type->props)->count; i--; ) {
 	  if (bs[i] && bs[i]->key) {
 	    scheme_add_to_table(ht, bs[i]->key, bs[i]->val, 0);
 	  }
@@ -1456,6 +1463,9 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
 	}
 	scheme_add_to_table(ht, (char *)SCHEME_CAR(a), SCHEME_CDR(a), 0);
       }
+
+      struct_type->props = (Scheme_Object **)ht;
+      struct_type->num_props = -1;
     } else {
       /* Make props array: */
       Scheme_Object **pa;

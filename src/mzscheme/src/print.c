@@ -1050,7 +1050,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	  obj = scheme_struct_to_vector(obj, NULL, p->quick_inspector);
 	  closed = print(obj, notdisplay, compact, ht, symtab, rnht, p);
 	} else {
-	  print_this_string(p, "#<", 2);
+	  print_this_string(p, "#<struct:", 9);
 	  {
 	    int l;
 	    const char *s;

@@ -356,16 +356,14 @@ typedef struct Scheme_Struct_Type {
   short name_pos;
 
   Scheme_Object *name;
-  Scheme_Object *type_name; /* struct: prefix */
 
   Scheme_Object *inspector;
   Scheme_Object *accessor, *mutator;
 
   Scheme_Object *uninit_val;
 
-  int num_props;
-  Scheme_Object **props; /* array of pair of (property, value) */
-  Scheme_Hash_Table *props_ht; /* alternate lookup mechanism */
+  Scheme_Object **props; /* normally an array of pair of (property, value) pairs */
+  int num_props; /* < 0 => props is really a hash table */
 
   struct Scheme_Struct_Type *parent_types[1];
 } Scheme_Struct_Type;
@@ -381,7 +379,7 @@ typedef struct Scheme_Structure
 #define SCHEME_STRUCT_TYPE(o) (((Scheme_Structure *)o)->stype)
 
 #define SCHEME_STRUCT_NUM_SLOTS(o) (SCHEME_STRUCT_TYPE(o)->num_slots)
-#define SCHEME_STRUCT_NAME_SYM(o) (SCHEME_STRUCT_TYPE(o)->type_name)
+#define SCHEME_STRUCT_NAME_SYM(o) (SCHEME_STRUCT_TYPE(o)->name)
 
 Scheme_Object **scheme_make_struct_names_from_array(const char *base, 
 						    int fcount,

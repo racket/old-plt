@@ -2817,14 +2817,12 @@ int mark_struct_type_val_MARK(void *p) {
   for (i = t->name_pos + 1; i--; ) {
     gcMARK(t->parent_types[i]);
   }
-  gcMARK(t->type_name);
   gcMARK(t->name);
   gcMARK(t->inspector);
   gcMARK(t->accessor);
   gcMARK(t->mutator);
   gcMARK(t->uninit_val);
   gcMARK(t->props);
-  gcMARK(t->props_ht);
 
   return
   gcBYTES_TO_WORDS((sizeof(Scheme_Struct_Type)
@@ -2838,14 +2836,12 @@ int mark_struct_type_val_FIXUP(void *p) {
   for (i = t->name_pos + 1; i--; ) {
     gcFIXUP(t->parent_types[i]);
   }
-  gcFIXUP(t->type_name);
   gcFIXUP(t->name);
   gcFIXUP(t->inspector);
   gcFIXUP(t->accessor);
   gcFIXUP(t->mutator);
   gcFIXUP(t->uninit_val);
   gcFIXUP(t->props);
-  gcFIXUP(t->props_ht);
 
   return
   gcBYTES_TO_WORDS((sizeof(Scheme_Struct_Type)

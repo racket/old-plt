@@ -1248,14 +1248,12 @@ mark_struct_type_val {
   for (i = t->name_pos + 1; i--; ) {
     gcMARK(t->parent_types[i]);
   }
-  gcMARK(t->type_name);
   gcMARK(t->name);
   gcMARK(t->inspector);
   gcMARK(t->accessor);
   gcMARK(t->mutator);
   gcMARK(t->uninit_val);
   gcMARK(t->props);
-  gcMARK(t->props_ht);
 
  size:
   gcBYTES_TO_WORDS((sizeof(Scheme_Struct_Type)

@@ -80,8 +80,8 @@
                   (let* ([p (make-object vertical-pane% panel)]
                          [message (make-object message% name p)])
                     (make-object vertical-panel% parent '(border))))]
-               [input-syntax-panel (make-sub-panel "Input Syntax" parent)]
-               [output-syntax-panel (make-sub-panel "Output Syntax" parent)]
+               [input-syntax-panel (make-sub-panel (string-constant input-syntax) parent)]
+               [output-syntax-panel (make-sub-panel (string-constant output-syntax) parent)]
                [right-align
                 (opt-lambda (mo panel)
                   (let* ([hp (make-object horizontal-pane% panel)])
@@ -94,7 +94,8 @@
                    (lambda (hp)
                      (make-object check-box% name hp void))
                    panel))]
-               [case-sensitive? (make-check-box (string-constant case-sensitive-?-label) input-syntax-panel)]
+               [case-sensitive? (make-check-box (string-constant case-sensitive-?-label)
+						input-syntax-panel)]
                
                [printer-number->symbol
                 (lambda (which)

@@ -2,7 +2,9 @@
   (provide string-constants)
   
   (define english-string-constants
-    '((case-sensitive?-label "Case sensitive")
+    '(
+      ;; Language dialog
+      (case-sensitive?-label "Case sensitive")
       (output-style-label "Output Style")
       (constructor-printing-style "Constructor")
       (quasiquote-printing-style "Quasiquote")
@@ -11,7 +13,8 @@
       (pring-rationals-label "Print rationals in whole/part notation")
       (booleans-as-true/false-label "Print booleans as true and false") 
       (use-pretty-printer?-label "Insert newlines in printed values")
-      
+      (input-syntax "Input Syntax")
+      (output-syntax "Output Syntax")
       ))
   
   ;; use mred resources to save this -- framework prefs won't work

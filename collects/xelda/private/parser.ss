@@ -45,19 +45,19 @@
   
   (define-lex-abbrevs 
     [digit (- "0" "9")]
-    [number-sequence (+ (digit))]
-    [number-with-point (@ (number-sequence) "." (number-sequence))]
-    [unsigned-number (: (number-sequence) (number-with-point))]
-    [signed-number (@ "-" (unsigned-number))]
-    [number (: (unsigned-number) (signed-number))]
+    [number-sequence (+ digit)]
+    [number-with-point (@ number-sequence "." number-sequence)]
+    [unsigned-number (: number-sequence number-with-point)]
+    [signed-number (@ "-" unsigned-number)]
+    [number (: unsigned-number signed-number)]
     [letter (: (- "a" "z") (- "A" "Z"))]
-    [alphanum_ (: (digit) (letter) "_")]
-    [alphanum (: (letter) (digit))]
-    [cell-letter-sequence (@ (letter) (? (letter)))]
-    [cell-number-sequence (: (digit) (@ (digit) (digit))
-                             (@ (digit) (digit) (digit))
-                             (@ (digit) (digit) (digit) (digit)))]
-    [cell-reference (@ (? "$") (cell-letter-sequence) (cell-number-sequence))]
+    [alphanum_ (: digit letter "_")]
+    [alphanum (: letter digit)]
+    [cell-letter-sequence (@ letter (? letter))]
+    [cell-number-sequence (: digit (@ digit digit)
+                             (@ digit digit digit)
+                             (@ digit digit digit digit))]
+    [cell-reference (@ (? "$") cell-letter-sequence cell-number-sequence)]
     [whitespace (: #\space #\tab #\newline #\return)]
     [add-op (: "+" "-")]
     [mult-op (: "*" "/")]
@@ -73,29 +73,29 @@
 	"MIN"
 	"MAX"
 	)]
-    [identifier (: (@ (* (letter)) (* (alphanum_)) "_" (* (alphanum_)))
-                   (@ (* (alphanum)) (letter))
-                   (@ (letter) (letter) (letter) (* (alphanum))))])
+    [identifier (: (@ (* letter) (* alphanum_) "_" (* alphanum_))
+                   (@ (* alphanum) letter)
+                   (@ letter letter letter (* alphanum)))])
   
   (define xl-lex
     (lexer
-     [(whitespace) 
+     [whitespace 
       (xl-lex input-port)]
      [(eof) 'EOF]
-     [(number)
+     [number
       (token-NUMBER (string->number lexeme))]
-     [(add-op) 
+     [add-op
       (token-ADD-OP (string->symbol lexeme))]
-     [(mult-op) 
+     [mult-op
       (token-MULT-OP (string->symbol lexeme))]
-     [(exp-op) 
+     [exp-op
       (token-EXP-OP (string->symbol lexeme))]
-     [(bool-op)
+     [bool-op
       (token-BOOL-OP (string->symbol lexeme))]
-     [(cell-reference)
+     [cell-reference
       (token-CELL-REF (string->symbol (string-downcase lexeme)))]
-     [(identifier) (token-IDENTIFIER lexeme)]
-     [(tbl-begin) (token-TBL-BEGIN lexeme)]
+     [identifier (token-IDENTIFIER lexeme)]
+     [tbl-begin (token-TBL-BEGIN lexeme)]
      [":" (token-RANGE-SEP)]
      ["," (token-COMMA)]
      ["(" (token-LPAREN)]

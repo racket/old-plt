@@ -1,7 +1,9 @@
-;;(module xelda mzscheme
+(module xelda mzscheme
+(require (lib "class.ss"))
 (require (lib "list.ss"))
 (require (lib "match.ss"))
 (require (lib "pretty.ss"))
+(require (lib "mred.ss" "mred"))
 (require (lib "mysterx.ss" "mysterx"))
 
 (require "private/xl-util.ss")
@@ -57,7 +59,7 @@
 
 (define (pop-fun-constraint)
   (let ([c (first (second constraints))])
-    (set! constraints (list (first constraint) (rest (second constraint))))
+    (set! constraints (list (first constraints) (rest (second constraints))))
     c))
 
 (define (constraint-var c) (second c))
@@ -71,7 +73,7 @@
 
 (define (eq-constraints-left?) (not (empty? (first constraints))))
 
-(define (fun-constraints-left?) (not (empty? (secons constraints))))
+(define (fun-constraints-left?) (not (empty? (second constraints))))
 
 (define (show-constraints)
   (for-each (lambda (c) (printf "constraint: ~a~n" c)) (first constraints))
@@ -140,6 +142,9 @@
 (define (update-status! str)
   (send *status-text-editor* insert str))
 
+(define (next-update-status! str)
+  (update-status! (format "done~n~a.... " str)))
+
 (define xelda-frame%
   (class frame%
     (field
@@ -193,7 +198,7 @@
         (set! status-text
               (instantiate text-field% ()
                 (label #f)
-                (init-value (format "Load Exel file~n"))
+                (init-value (format "Ready to load Excel file~n"))
                 (parent status-panel)
                 (style (list 'multiple))
                 (stretchable-height #t)
@@ -394,8 +399,8 @@
                   (string=? (substring formula 0 1) "="))))))
   (set! all-names
         (begin
-          (printf "DONE~nPreprocessing all names.... ")
-          (update-status! (format "DONE~nPreprocessing all names.... "))
+          (printf "done~nPreprocessing all names.... ")
+          (next-update-status! "Preprocessing all names")
           (iterate-over-worksheet
            (lambda (cell) (with-handlers
                               ([void (lambda _ "")])
@@ -405,14 +410,14 @@
            (lambda (s) (not (string=? s ""))))))
   (set! symbol-table
         (begin
-          (printf "DONE~nPreprocessing symbol-table.... ")
-          (update-status! (format "DONE~nPreprocessing symbol-table.... "))
+          (printf "done~nPreprocessing symbol-table.... ")
+          (next-update-status! "Preprocessing symbol-table")
           (map (lambda (pr) (list (cadr pr) (car pr))) all-names)))
   (set! parser (make-parser symbol-table))
   (set! all-formulas
         (begin
-          (printf "DONE~nPreprocessing all formulas.... ")
-          (update-status! (format "DONE~nPreprocessing all formulas.... "))
+          (printf "done~nPreprocessing all formulas.... ")
+          (next-update-status! "Preprocessing all formulas")
           (formula-sort
            (map (lambda (f)
                   (let ([cell (car f)]
@@ -441,8 +446,8 @@
   ; assumes comment containing Scheme pair is a unit annotation
   (set! all-units
         (begin
-          (printf "DONE~nPreprocessing all units.... ")
-          (update-status! (format "DONE~nPreprocessing all units.... "))
+          (printf "done~nPreprocessing all units.... ")
+          (next-update-status! "Preprocessing all units")
           (map (lambda (entry)
                  (list (car entry)
                        (canonicalize-units (cadr entry))))
@@ -459,8 +464,8 @@
   (set! hashed-vars (make-hash-table))
   (set! hashed-constraints-vars (make-hash-table))
   (init-constraints)
-  (printf "DONE~n")
-  (update-status! (format "DONE~n"))
+  (printf "done~n")
+  (update-status! (format "done~n"))
   (update-status! (format "+++SPREADSHEET PREPROCESSING END+++~n"))
   (init-hash
    hashed-units
@@ -876,22 +881,22 @@
   (compute-formulas)
   (printf "Assigning dimension variables for formulas.... ")
   (update-status! (format "+++UNIT CHECKING BEGIN+++~n"))
-  (update-status! "Assigning dimension variables for formulas.... ");
+  (update-status! "Assigning dimension variables for formulas");
   (assign-variables)
-  (printf "DONE~nCreating constraints.... ")
-  (update-status! (format "DONE~nCreating constraints.... "))
+  (printf "done~nCreating constraints.... ")
+  (next-update-status! "Creating constraints")
   (create-constraints)
-  (printf "DONE~nPruning constraints.... ")
-  (update-status! (format "DONE~nPruning constraints.... "))
+  (printf "done~nPruning constraints.... ")
+  (next-update-status! "Pruning constraints")
   (prune-constraints)
-  (printf "DONE~nFlattening constraints.... ")
-  (update-status! (format "DONE~nFlattening constraints.... "))
+  (printf "done~nFlattening constraints.... ")
+  (next-update-status! "Flattening constraints")
   (flatten-constraints)
-  (printf "DONE~nSolving constraints.... ")
-  (update-status! (format "DONE~nSolving constraints.... "))
+  (printf "done~nSolving constraints.... ")
+  (next-update-status! "Solving constraints")
   (solve-constraints)
-  (printf "DONE~n")
-  (update-status! (format "DONE~n"))
+  (printf "done~n")
+  (update-status! (format "done~n"))
   (update-status! (format "+++UNIT CHECKING END+++~n")))
 
 
@@ -1447,7 +1452,7 @@
   (compute-formulas-circular)
   (update-status! (format "+++ERROR REPORTING+++~n"))
   (mark-error-cells)
-  (compare-actual-annotate))
+  (compare-actual-annotated))
 
 (define (cellref->rng cell)
   (let ([xy (cellref->numbers cell)])
@@ -1610,4 +1615,4 @@
 
 (define (split-large-args l)
   (let ([reversed-l (reverse l)])
-    (list (list (first reversed-l)) (reverse (rest reversed-l)))))
+    (list (list (first reversed-l)) (reverse (rest reversed-l))))))

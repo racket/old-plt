@@ -228,6 +228,17 @@ An environment is a (listof (cons symbol string)), as before.
   password was provided.  This only extracts the provided username and
   password.  The servlet must perform any desired checking.
 
+> report-errors-to-browser : (response -> void) -> void
+  Calling this function at the beginning of a servlet causes otherwise
+  uncaught exceptions to send an error page displaying the exception
+  to the client.  The argument should be send/finish if errors are
+  fatal or send/back if the user may correct the failed form
+  submission via the back button.  For some applications, revealing
+  the contents of an exception to a client may cause security problems
+  by leaking sensitive information.  For such applications, consider
+  setting the current-exception-handler to email the error to the
+  servlet author or store the exception in a log file.
+
 > redirect-to : str [redirection-status] -> response
   constructs a reponse that redirects to the given url(str).
   The optional argument specifies which kind of redirection to perform:

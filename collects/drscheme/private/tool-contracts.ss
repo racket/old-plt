@@ -1388,6 +1388,12 @@
   (drscheme:help-desk:help-desk
    (case->
     (-> void?)
+    (string? boolean? 
+             (symbols 'keyword 'keyword+index 'all)
+             (symbols 'exact 'contains 'regexp)
+             (symbols 'student 'professional 'all)
+             . -> .
+             void?)
     (string? boolean? (symbols 'keyword 'keyword+index 'all) (symbols 'exact 'contains 'regexp)
              . -> .
              void?)
@@ -1410,9 +1416,9 @@
    "If any arguments are supplied, this function"
    "opens a help-desk window and searches for \\var{key}, according to "
    "\\var{lucky?}, \\var{type}, and \\var{mode}."
-   "If the third and fourth arguments are omitted, "
-   "they default to \\rawscm{'keyword+index} and \\rawscm{'exact},"
-   "respectively.")
+   "If the second, third, fourth, and/or fifth arguments are omitted, "
+   "they default to \rawscm{\\#t} \\rawscm{'keyword+index} and \\rawscm{'exact},"
+   "and \\rawscm{'all} respectively.")
   
   ;                                                                  
   ;                                                                  

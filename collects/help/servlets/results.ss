@@ -1,3 +1,4 @@
+
 (module results mzscheme
   (require (lib "file.ss")
            (lib "list.ss")
@@ -246,7 +247,7 @@
              (BR)
              ,@items))))
       
-      (define (search-results lucky? search-string search-type match-type)
+      (define (search-results lucky? search-string search-type match-type search-manuals)
         (semaphore-wait search-sem)
         (set! search-responses '())
         (set! max-reached #f)
@@ -293,19 +294,20 @@
       
       (let* ([bindings (request-bindings initial-request)]
              [maybe-get (lambda (sym)
-                          (with-handlers
-                              ([void (lambda _ "")])
+                          (with-handlers ([not-break-exn? (lambda _ "")])
                             (extract-binding/single sym bindings)))]
-             [binding-vals (map maybe-get
-                                '(search-string search-type match-type))])
-        ; store search type, match type to maintain search pane
-        (put-prefs '(plt:hd:search-type plt:hd:match-type)
-                   (cdr binding-vals))
+             [search-string (maybe-get 'search-string)]
+             [search-type (maybe-get 'search-type)]
+             [match-type (maybe-get 'match-type)]
+             [manuals (maybe-get 'search-manuals)])
         (cond
-          [(= (string-length (car binding-vals)) 0)
+          [(= (string-length search-string) 0)
            empty-search-page]
           [else
-           (apply search-results 
-                  (lucky-search? bindings)
-                  binding-vals)])))))
+           (search-results 
+            (lucky-search? bindings)
+            search-string
+            search-type
+            match-type
+            manuals)])))))
 

@@ -278,9 +278,9 @@ please adhere to these guidelines:
  (plt:hd:search-for-keyword "Keyword entry")
  (plt:hd:search-for-keyword-or-index "Keyword or index entry")
  (plt:hd:search-for-keyword-or-index-or-text "Keyword, index entry, or text")
- (plt:hd:exact-match "exact match")
- (plt:hd:containing-match "containing match")
- (plt:hd:regexp-match "regexp match")
+ (plt:hd:exact-match "Exact match")
+ (plt:hd:containing-match "Containing match")
+ (plt:hd:regexp-match "Regexp match")
  (plt:hd:find-docs-for "Find docs for:")
  (plt:hd:nothing-found-for-search-key "Nothing found for \"~a\".")
  (plt:hd:searching "Searching...")
@@ -336,6 +336,10 @@ please adhere to these guidelines:
   (plt:hd:external-link-in-help "External URLs in Help")
   (plt:hd:use-homebrew-browser "Use Help Desk browser for external URLs")
   (plt:hd:new-help-desk "New Help Desk")
+  (plt:hd:teaching-manuals "Student manuals")
+  (plt:hd:professional-manuals "Professional manuals")
+  (plt:hd:all-manuals "All manuals")
+
 
  ;; Help desk htty proxy
  (http-proxy "HTTP Proxy")

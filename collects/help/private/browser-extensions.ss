@@ -445,6 +445,20 @@
                               (lambda (x y)
                                 (preferences:set 'drscheme:help-desk:search-how
                                                  (send search-how get-selection))))))
+        
+        (define search-manuals (instantiate choice% ()
+                                 (label #f)
+                                 (parent choices-panel)
+                                 (selection 0)
+                                 (choices
+                                  (list
+                                   (string-constant plt:hd:teaching-manuals)
+                                   (string-constant plt:hd:professional-manuals)
+                                   (string-constant plt:hd:all-manuals)))
+                                  (callback
+                                   (lambda (x y)
+                                     (void)))))
+        
         (define grow-box-spacer (make-object grow-box-spacer-pane% choices-panel))
         (define (search-callback lucky?)
           (let ([url (make-results-url
@@ -458,6 +472,10 @@
                         [(0) "exact-match"]
                         [(1) "containing-match"]
                         [(2) "regexp-match"])
+                      (case (send search-manuals get-selection)
+                        [(0) "student-manuals"]
+                        [(1) "professional-manuals"]
+                        [(2) "all-manuals"])
                       lucky?)])
             ;; have to use `send this' since I don't know yet
             ;; *which* (unit) instantiation of the hyper panel I might

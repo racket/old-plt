@@ -1,5 +1,10 @@
 #|
 
+TODO:
+  - fix relative path problem
+  - figure out whether or not to color syntax differently...
+    (maybe in teaching languages, do no coloring, thanks to Scott?)
+
 Check Syntax separates four classes of identifiers:
 
   - bound by a macro whose definition is in this file
@@ -36,8 +41,6 @@ Check Syntax separates four classes of identifiers:
  If the namespace has a binding for them, they are colored bound color.
  If the namespace does not, they are colored the unbound color.
  
-  TODO:
-     - test case for requires in relative directories
 |#
 
 (module syncheck mzscheme
@@ -531,8 +534,6 @@ Check Syntax separates four classes of identifiers:
                                               tail-arrow-from-pos tail-arrow-from-text)
                 (for-each-tail-arrows/to/from tail-arrow-from-pos tail-arrow-from-text
                                               tail-arrow-to-pos tail-arrow-to-text))
-              
-              
               
               ;; get-pos/text : event -> (values (union #f text%) (union number #f))
               ;; returns two #fs to indicate the event doesn't correspond to
@@ -1250,62 +1251,68 @@ Check Syntax separates four classes of identifiers:
                [tl-macrefs (make-id-set)]
                [tl-high-macrefs (make-id-set)]
                [tl-disappeared-refs (make-id-set)]
+               [tl-high-disappeared-refs (make-id-set)]
                [tl-requires (make-hash-table 'equal)]
                [tl-require-for-syntaxes (make-hash-table 'equal)]
                [expanded-expression
                 (lambda (user-namespace user-directory sexp jump-to-id)
-                  (let ([is-module? (syntax-case sexp (module)
-                                      [(module . rest) #t]
-                                      [else #f])])
-                    (cond
-                      [is-module?
-                       (let ([binders (make-id-set)]
-                             [varrefs (make-id-set)]
-                             [high-varrefs (make-id-set)]
-                             [tops (make-id-set)]
-                             [mac-binders (make-id-set)]
-                             [macrefs (make-id-set)]
-                             [high-macrefs (make-id-set)]
-                             [disappeared-refs (make-id-set)]
-                             [requires (make-hash-table 'equal)]
-                             [require-for-syntaxes (make-hash-table 'equal)])
+                  (parameterize ([current-load-relative-directory user-directory])
+                    (let ([is-module? (syntax-case sexp (module)
+                                        [(module . rest) #t]
+                                        [else #f])])
+                      (cond
+                        [is-module?
+                         (let ([binders (make-id-set)]
+                               [varrefs (make-id-set)]
+                               [high-varrefs (make-id-set)]
+                               [tops (make-id-set)]
+                               [mac-binders (make-id-set)]
+                               [macrefs (make-id-set)]
+                               [high-macrefs (make-id-set)]
+                               [disappeared-refs (make-id-set)]
+                               [high-disappeared-refs (make-id-set)]
+                               [requires (make-hash-table 'equal)]
+                               [require-for-syntaxes (make-hash-table 'equal)])
+                           (annotate-basic sexp user-namespace user-directory jump-to-id
+                                           binders varrefs high-varrefs
+                                           tops
+                                           mac-binders macrefs high-macrefs
+                                           disappeared-refs high-disappeared-refs
+                                           requires require-for-syntaxes) 
+                           (annotate-variables user-namespace
+                                               binders
+                                               varrefs
+                                               high-varrefs
+                                               tops
+                                               mac-binders
+                                               macrefs
+                                               high-macrefs
+                                               disappeared-refs
+                                               high-disappeared-refs
+                                               requires
+                                               require-for-syntaxes))]
+                        [else
                          (annotate-basic sexp user-namespace user-directory jump-to-id
-                                         binders varrefs high-varrefs
-                                         tops
-                                         mac-binders macrefs high-macrefs
-                                         disappeared-refs
-                                         requires require-for-syntaxes) 
-                         (annotate-variables user-namespace
-                                             binders
-                                             varrefs
-                                             high-varrefs
-                                             tops
-                                             mac-binders
-                                             macrefs
-                                             high-macrefs
-                                             disappeared-refs
-                                             requires
-                                             require-for-syntaxes))]
-                      [else
-                       (annotate-basic sexp user-namespace user-directory jump-to-id
-                                       tl-binders tl-varrefs tl-high-varrefs
-                                       tl-tops 
-                                       tl-mac-binders tl-macrefs tl-high-macrefs
-                                       tl-disappeared-refs
-                                       tl-requires tl-require-for-syntaxes)])))]
+                                         tl-binders tl-varrefs tl-high-varrefs
+                                         tl-tops 
+                                         tl-mac-binders tl-macrefs tl-high-macrefs
+                                         tl-disappeared-refs tl-high-disappeared-refs
+                                         tl-requires tl-require-for-syntaxes)]))))]
                [expansion-completed
                 (lambda (user-namespace user-directory)
-                  (annotate-variables user-namespace
-                                      tl-binders
-                                      tl-varrefs
-                                      tl-high-varrefs
-                                      tl-tops
-                                      tl-mac-binders
-                                      tl-macrefs
-                                      tl-high-macrefs
-                                      tl-disappeared-refs
-                                      tl-requires
-                                      tl-require-for-syntaxes))])
+                  (parameterize ([current-load-relative-directory user-directory])
+                    (annotate-variables user-namespace
+                                        tl-binders
+                                        tl-varrefs
+                                        tl-high-varrefs
+                                        tl-tops
+                                        tl-mac-binders
+                                        tl-macrefs
+                                        tl-high-macrefs
+                                        tl-disappeared-refs
+                                        tl-high-disappeared-refs
+                                        tl-requires
+                                        tl-require-for-syntaxes)))])
           (values expanded-expression expansion-completed)))
       
       
@@ -1320,7 +1327,8 @@ Check Syntax separates four classes of identifiers:
       ;;                  hash-table[require-spec -> syntax] (two of them)
       ;;               -> void
       (define (annotate-basic sexp user-namespace user-directory jump-to-id
-                              binders varrefs high-varrefs tops mac-binders macrefs high-macrefs disappeared-refs
+                              binders varrefs high-varrefs tops mac-binders macrefs high-macrefs 
+                              disappeared-refs high-disappeared-refs
                               requires require-for-syntaxes)
         (let ([tail-ht (make-hash-table)])
                  
@@ -1329,9 +1337,10 @@ Check Syntax separates four classes of identifiers:
             (let ([loop (lambda (sexp) (level-loop sexp high-level?))]
                   [collect-general-info
                    (lambda (stx)
-                     (add-origins stx disappeared-refs)
-                     (add-disappeared-bindings stx binders mac-binders disappeared-refs)
-                     (add-disappeared-uses stx disappeared-refs))])
+                     (add-origins stx (if high-level? high-disappeared-refs disappeared-refs))
+                     (add-disappeared-bindings stx binders mac-binders 
+                                               (if high-level? high-disappeared-refs disappeared-refs))
+                     (add-disappeared-uses stx (if high-level? high-disappeared-refs disappeared-refs)))])
               (collect-general-info sexp)
               (syntax-case* sexp (lambda case-lambda if begin begin0 let-values letrec-values set!
                                    quote quote-syntax with-continuation-mark 
@@ -1563,7 +1572,7 @@ Check Syntax separates four classes of identifiers:
         (unless (req/tag-used? req/tag)
           (color (req/tag-req-stx req/tag) error-style-name)))
 
-      ;; annotate-variables : namespace id-set[six of them] (listof syntax) (listof syntax) -> void
+      ;; annotate-variables : namespace string id-set[six of them] (listof syntax) (listof syntax) -> void
       ;; colors in and draws arrows for variables, according to their classifications
       ;; in the various id-sets
       (define (annotate-variables user-namespace
@@ -1575,20 +1584,31 @@ Check Syntax separates four classes of identifiers:
                                   macrefs
                                   high-macrefs
                                   disappeared-refs
+                                  high-disappeared-refs
                                   requires
                                   require-for-syntaxes)
+        
         (let ([unused-requires (make-hash-table 'equal)]
               [unused-require-for-syntaxes (make-hash-table 'equal)]
-              [id-sets (list binders varrefs high-varrefs mac-binders macrefs high-macrefs)])
+              [id-sets (list binders varrefs high-varrefs mac-binders macrefs high-macrefs tops)])
           (hash-table-for-each requires (lambda (k v) (hash-table-put! unused-requires k #t)))
           (hash-table-for-each require-for-syntaxes (lambda (k v) (hash-table-put! unused-require-for-syntaxes k #t)))
-        
+          
           (for-each-ids disappeared-refs
                         (lambda (ids)
-                          (when (ormap (lambda (id) (get-ids mac-binders id)) ids)
-                            (for-each (lambda (id) (add-id macrefs id)) ids))
-                          (when (ormap (lambda (id) (get-ids binders id)) ids)
-                            (for-each (lambda (id) (add-id varrefs id)) ids))))
+                          (cond
+                            [(ormap (lambda (id) (get-ids binders id)) ids)
+                             (for-each (lambda (id) (add-id varrefs id)) ids)]
+                            [else ; (ormap (lambda (id) (get-ids mac-binders id)) ids)
+                             (for-each (lambda (id) (add-id macrefs id)) ids)])))
+          
+          (for-each-ids high-disappeared-refs
+                        (lambda (ids)
+                          (cond
+                            [(ormap (lambda (id) (get-ids binders id)) ids)
+                             (for-each (lambda (id) (add-id high-varrefs id)) ids)]
+                            [else ; (ormap (lambda (id) (get-ids mac-binders id)) ids)
+                             (for-each (lambda (id) (add-id high-macrefs id)) ids)])))
           
           (for-each (lambda (vars) (for-each (lambda (var)
                                                (when (syntax-original? var)
@@ -1599,25 +1619,23 @@ Check Syntax separates four classes of identifiers:
           (for-each (lambda (vars) (for-each 
                                     (lambda (var)
                                       (color-variable var identifier-binding)
-                                      (when (get-ids binders var)
-                                        (make-rename-menu var id-sets))
                                       (connect-identifier var
                                                           binders
                                                           unused-requires
                                                           requires
-                                                          identifier-binding))
+                                                          identifier-binding
+                                                          id-sets))
                                     vars))
                     (get-idss varrefs))
           (for-each (lambda (vars) (for-each 
                                     (lambda (var)
                                       (color-variable var identifier-transformer-binding)
-                                      (when (get-ids binders var)
-                                        (make-rename-menu var id-sets))
                                       (connect-identifier var
                                                           binders 
                                                           unused-require-for-syntaxes
                                                           require-for-syntaxes
-                                                          identifier-transformer-binding))
+                                                          identifier-transformer-binding
+                                                          id-sets))
                                     vars))
                     (get-idss high-varrefs))
           
@@ -1630,31 +1648,35 @@ Check Syntax separates four classes of identifiers:
           (for-each (lambda (vars) (for-each
                                     (lambda (var)
                                       (color-syntax var identifier-binding)
-                                      (when (get-ids binders var)
-                                        (make-rename-menu var id-sets))
                                       (connect-identifier var
                                                           mac-binders
                                                           unused-requires
                                                           requires
-                                                          identifier-binding))
+                                                          identifier-binding
+                                                          id-sets))
                                     vars))
                     (get-idss macrefs))
           
           (for-each (lambda (vars) (for-each
                                     (lambda (var)
                                       (color-syntax var identifier-transformer-binding)
-                                      (when (get-ids binders var)
-                                        (make-rename-menu var id-sets))
                                       (connect-identifier var
                                                           mac-binders
                                                           unused-require-for-syntaxes
                                                           require-for-syntaxes
-                                                          identifier-transformer-binding))
+                                                          identifier-transformer-binding
+                                                          id-sets))
                                     vars))
                     (get-idss high-macrefs))
           
-          (for-each (lambda (vars) (for-each (lambda (x) (color/connect-top user-namespace binders x)) vars))
-                  (get-idss tops))
+          (for-each 
+           (lambda (vars) 
+             (for-each
+              (lambda (var) 
+                (color/connect-top user-namespace binders var id-sets))
+              vars))
+           (get-idss tops))
+          
           (color-unused require-for-syntaxes unused-require-for-syntaxes)
           (color-unused requires unused-requires)))
       
@@ -1671,8 +1693,22 @@ Check Syntax separates four classes of identifiers:
       ;;                      (union #f hash-table)
       ;;                      (union #f hash-table)
       ;;                      (union identifier-binding identifier-transformer-binding)
+      ;;                      (listof id-set)
       ;;                   -> void
-      (define (connect-identifier var all-binders unused requires get-binding)
+      ;; adds arrows and rename menus for binders/bindings
+      (define (connect-identifier var all-binders unused requires get-binding id-sets)
+        (connect-identifier/arrow var all-binders unused requires get-binding)
+        (when (get-ids all-binders var)
+          (make-rename-menu var id-sets)))
+      
+      ;; connect-identifier/arrow : syntax
+      ;;                            id-set 
+      ;;                            (union #f hash-table)
+      ;;                            (union #f hash-table)
+      ;;                            (union identifier-binding identifier-transformer-binding)
+      ;;                         -> void
+      ;; adds the arrows that correspond to binders/bindings
+      (define (connect-identifier/arrow var all-binders unused requires get-binding)
         (let ([binders (get-ids all-binders var)])
           (when binders
             (for-each (lambda (x)
@@ -1702,7 +1738,7 @@ Check Syntax separates four classes of identifiers:
                   mod-path]))))
       
       ;; color/connect-top : namespace id-set syntax -> void
-      (define (color/connect-top user-namespace binders var)
+      (define (color/connect-top user-namespace binders var id-sets)
         (let ([top-bound?
                (or (get-ids binders var)
                    (parameterize ([current-namespace user-namespace])
@@ -1710,7 +1746,7 @@ Check Syntax separates four classes of identifiers:
           (if top-bound?
               (color var lexically-bound-variable-style-name)
               (color var error-style-name))
-          (connect-identifier var binders #f #f identifier-binding)))
+          (connect-identifier var binders #f #f identifier-binding id-sets)))
       
       ;; color-syntax : syntax (union identifier-binding identifier-transformer-binding) -> void
       (define (color-syntax var get-binding)
@@ -2213,7 +2249,7 @@ Check Syntax separates four classes of identifiers:
       (define (make-id-set) (make-module-identifier-mapping))
       
       ;; add-id : id-set set -> void
-      (define (add-id mapping id) 
+      (define (add-id mapping id)
         (let ([old (module-identifier-mapping-get mapping id (lambda () '()))])
           (module-identifier-mapping-put! mapping id (cons id old))))
       

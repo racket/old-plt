@@ -117,6 +117,8 @@
 	    (thread
 	     (lambda ()
 	       (current-namespace n)
+	       ;; TEMPORARY: avoids a bug in mzscheme's make-namespace:
+	       (namespace-transformer-require 'mzscheme)
 	       (let ([program (find-system-path 'exec-file)])
 		 (read-case-sensitive case-sensitive?)
 		 (compile-allow-set!-undefined allow-set!-undefined?)

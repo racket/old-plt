@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.193 1999/07/19 16:25:54 mflatt Exp $
+; $Id: scm-main.ss,v 1.194 1999/10/21 04:53:21 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -2134,4 +2134,14 @@
 	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	  (static-error expr "Malformed polymorphic")))))
 
+    (add-primitivized-macro-form 
+   'schedule scheme-vocabulary 
+   (let* ([kwd '(line)]
+          [in-pattern '(_ <schedule-name> (line <name> <exp>) ...)]
+          [out-pattern '(let* ([<name> <exp>] ...) (list (quote <schedule-name>) <name> ...))]
+          [m&e (pat:make-match&env in-pattern kwd)])
+     (lambda (expr env)
+       (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+           (static-error expr "Malformed Schedule")))))
+  
   )

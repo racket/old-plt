@@ -525,11 +525,15 @@
 	       (send check-syntax-button show on?)))])
 	
 	(public
-	  [syncheck:source-object?
+	  [syncheck:principal?
 	   (lambda (zodiac-ast)
 	     (let ([who (zodiac:origin-who
 			 (zodiac:zodiac-origin zodiac-ast))])
-	       (or (eq? who 'source) (eq? who 'reader))))]
+	       (or (eq? who 'source)
+                   (eq? who 'reader)
+                   (and (or (eq? who 'micro)
+                            (eq? who 'macro))
+                        (syncheck:principal? (zodiac:origin-how (zodiac:zodiac-origin zodiac-ast)))))))]
 	  [syncheck:button-callback
 	   (lambda ()
 	     (letrec ([built-in?
@@ -624,7 +628,7 @@
 				[search-for-orig-syntax
 				 (lambda (zobj)
 				   (let loop ([zobj zobj])
-				     (or (syncheck:source-object? zobj)
+				     (or (syncheck:principal? zobj)
 					 (let* ([origin (zodiac:zodiac-origin zobj)]
 						[who (zodiac:origin-who origin)])
 					   (cond
@@ -642,13 +646,13 @@
 				
 				[color
 				 (lambda (delta)
-				   (when (and (syncheck:source-object? zodiac-ast)
+				   (when (and (syncheck:principal? zodiac-ast)
 					      z:finish z:start)
 				     (change-style delta z:start z:finish)))])
 					; No matter what this expression is,
 					; if it's not direct from the
 					; source, it might be a macro or micro expansion.
-			   (unless (syncheck:source-object? zodiac-ast)
+			   (unless (syncheck:principal? zodiac-ast)
 			     (color-syntax))
 
 			   (cond
@@ -656,9 +660,9 @@
 			     (color const-style)]
 			    [(zodiac:binding? zodiac-ast) (color bound-style)]
 			    [(zodiac:bound-varref? zodiac-ast)
-			     (when (syncheck:source-object? zodiac-ast)
+			     (when (syncheck:principal? zodiac-ast)
 			       (let* ([binding (zodiac:bound-varref-binding zodiac-ast)])
-				 (when (syncheck:source-object? binding)
+				 (when (syncheck:principal? binding)
 				   (let* ([user-name (zodiac:binding-orig-name binding)]
 					  [gen-name (zodiac:varref-var zodiac-ast)]
 					  [start (zodiac:location-offset
@@ -683,7 +687,7 @@
 			       (color bound-style))]
 			    
 			    [(zodiac:top-level-varref? zodiac-ast)
-			     (when (syncheck:source-object? zodiac-ast)
+			     (when (syncheck:principal? zodiac-ast)
 			       (set! top-level-varrefs (cons zodiac-ast top-level-varrefs)))]
 			    
 			    [(or (zodiac:list? zodiac-ast)
@@ -715,7 +719,7 @@
 						       (lambda () null)))))
 			      (zodiac:define-values-form-vars zodiac-ast))
 			     (for-each (lambda (var)
-					 (when (syncheck:source-object? var)
+					 (when (syncheck:principal? var)
 					   (change-style bound-style 
 							 (zodiac:location-offset (zodiac:zodiac-start var))
 							 (add1 (zodiac:location-offset (zodiac:zodiac-finish var))))))
@@ -874,7 +878,7 @@
 			      [(hash-table-get defineds id (lambda () #f))
 			       => 
 			       (lambda (defn-vars)
-				 (when (syncheck:source-object? (car defn-vars))
+				 (when (syncheck:principal? (car defn-vars))
 				   (let* ([defn-var (car defn-vars)]
 					  [end-pos-left (zodiac:location-offset (zodiac:zodiac-start defn-var))]
 					  [end-pos-right (add1 (zodiac:location-offset (zodiac:zodiac-finish defn-var)))]

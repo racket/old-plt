@@ -52,7 +52,8 @@ extern HINSTANCE wxhInstance;
 MRED_EXTERN int wxEntry(int argc, char **argv);
 MRED_EXTERN void wxQueueLeaveEvent(void *ctx, wxWindow *wnd, int x, int y, int flags);
 
-MRED_EXTERN int wxWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR m_lpCmdLine, int nCmdShow,
+MRED_EXTERN int wxWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, 
+			  int argc, char **argv, int nCmdShow,
 			  int (*main)(int, char**));
 
 

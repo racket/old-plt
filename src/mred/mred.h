@@ -211,3 +211,8 @@ MRED_EXTERN MrEd_Run_From_Cmd_Line_Proc mred_run_from_cmd_line;
 # endif
 #endif
 
+#define MRED_GUID "B2261834-D535-44dd-8511-A26FC8F97DD0"
+
+#if defined(wx_mac) || defined(wx_msw)
+MRED_EXTERN void Drop_Runtime(char **argv, int argc);
+#endif

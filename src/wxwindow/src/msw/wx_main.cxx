@@ -282,13 +282,12 @@ extern void wxCreateApp(void);
 extern "C" __declspec(dllimport) void scheme_set_stack_base(void *, int);
 
 int wxWinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance), 
-	      LPSTR m_lpCmdLine, int nCmdShow,
+	      int count, char **command, int nCmdShow,
 	      int (*main)(int, char**))
 {
   void *mzscheme_stack_start;
   char **command;
   int count;
-  char *buf;
 
   mzscheme_stack_start = (void *)&mzscheme_stack_start;
 
@@ -307,25 +306,13 @@ int wxWinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance),
 
   wxCreateApp();
 
-  // Split command line into tokens, as in usual main(argc, argv)
-  command = new char*[50];
-  count = 0;
-  buf = (char *)malloc(strlen(m_lpCmdLine) + 1);
-  // Hangs around until end of app. in case
-  // user carries pointers to the tokens
-
-  strcpy(buf, m_lpCmdLine);
-
   // Get application name
   {
-    char name[1024];
+    char *name;
     char *d, *p;
     
-    ::GetModuleFileName(hInstance, name, 1023);
+    name = copystring(argv[0]);
 
-    d = copystring(name);
-    command[count++] = d;
-    
     strcpy(name, wxFileNameFromPath(name));
     wxStripExtension(name);
     wxTheApp->SetAppName(name);
@@ -369,14 +356,11 @@ int wxWinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance),
     }
   }
 
-  count = parse_command_line(count, command, buf, 49);
-  command[count] = NULL; /* argv[] is NULL terminated list! */
-
   wxTheApp->hInstance = hInstance;
   // store the show-mode parameter of MSW for (maybe) later use.
   // this can be used to inform the program about special show modes
   // under MSW
-  wxTheApp->nCmdShow = nCmdShow; // added by steve, 27.11.94
+  wxTheApp->nCmdShow = nCmdShow;
 
   return main(count, command);
 }

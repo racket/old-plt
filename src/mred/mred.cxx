@@ -3579,7 +3579,7 @@ static unsigned long get_deeper_base()
 /*                              Mac AE support                              */
 /****************************************************************************/
 
-#ifdef wx_mac
+#if defined(wx_mac) || defined(wx_msw)
 void Drop_Runtime(char **argv, int argc)
 {
   int i;
@@ -3600,7 +3600,9 @@ void Drop_Runtime(char **argv, int argc)
 
   memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 }
+#endif
 
+#ifdef wx_mac
 static void wxDo(Scheme_Object *proc)
 {
   mz_jmp_buf savebuf;

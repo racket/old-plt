@@ -377,30 +377,204 @@ int main(int argc, char *argv[])
 
 #ifdef wx_msw 
 
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored, int nCmdShow)
+static int name_len;
+static wchar_t *my_name, *other_name;
+
+static BOOL CALLBACK CheckWindow(HWND wnd, LPARAM param)
 {
-  LPWSTR m_lpCmdLine;
-  long l, j;
-  char *a;
-  
-  m_lpCmdLine = GetCommandLineW();
-  for (j = 0; m_lpCmdLine[j]; j++) {
+  int i, len, gl;
+  DWORD w;
+  char **argv, *v;
+  COPYDATASTRUCT cd;
+
+  GetWindowModuleFileNameW(wnd, other_name, name_len + 1);
+  other_name[name_len + 1] = 0;
+
+  for (i = 0; i < name_len; i++) {
+    if (my_name[i] != other_name[i])
+      return FALSE;
   }
-  l = scheme_utf8_encode((unsigned int *)m_lpCmdLine, 0, j, 
+
+  /* This window is owned by another instance of this application. */
+
+  SetForegroundWindow(wnd);
+  if (IsIconic(wnd)) 
+    ShowWindow(wnd, SW_RESTORE);
+
+  argv = (char **)param;
+  
+  len = gl = strlen(MRED_GUID);
+  len += 4 + sizeof(WORD);
+  for (i = 1; argv[i]; i++) {
+    len += sizeof(DWORD) + strlen(argv[i]);
+  }
+  w = i - 1;
+
+  v = malloc(len);
+  memcpy(v, MRED_GUID, gl);
+  memcpy(v + gl, "OPEN", 4);
+  memcpy(v + gl + 4, &w, sizeof(DWORD));
+  len = gl + 4 + sizeof(DWORD);
+  for (i = 1; argv[i]; i++) {
+    w = strlen(argv[i]);
+    memcpy(v + len, &w, sizeof(DWORD));
+    len += sizeof(DWORD);
+    memcpy(v + len, argv[i], w);
+    len += w;
+  }
+
+  cd.dwData = 79;
+  cd.cbData = len;
+  cd.lpData = v;
+
+  SendMessage(wnd, WM_COPYDATA, (WPARAM)0, (LPARAM)&cd);
+
+  free(v);
+
+  return TRUE;
+}
+
+char *wchar_to_char(wchar_t *wa, int len)
+{
+  char *a;
+
+  l = scheme_utf8_encode((unsigned int *)wa, 0, len, 
 			 NULL, 0,
 			 1 /* UTF-16 */);
   a = (char *)malloc(l + 1);
-  scheme_utf8_encode((unsigned int *)m_lpCmdLine, 0, j, 
+  scheme_utf8_encode((unsigned int *)wa, 0, len, 
 		     (unsigned char *)a, 0,
 		     1 /* UTF-16 */);
 
-  /* Skip argv[0], which is the name of the executable */
-  a[l] = 0;
-  while (*a && a[0] != ' ') {
-    a = a XFORM_OK_PLUS 1;
+  return a;
+}
+
+static int parse_command_line(char ***_command, char *buf)
+{
+  GC_CAN_IGNORE unsigned char *parse, *created, *write;
+  int maxargs;
+  int findquote = 0;
+  char **command;
+  int count = 0;
+
+  maxargs = 49;
+  command = malloc((maxargs + 1) * sizeof(char *));
+  
+  parse = created = write = (unsigned char *)buf;
+  while (*parse) {
+    while (*parse && isspace(*parse)) { parse++; }
+    while (*parse && (!isspace(*parse) || findquote))	{
+      if (*parse== '"') {
+	findquote = !findquote;
+      } else if (*parse== '\\') {
+	unsigned char *next;
+	for (next = parse; *next == '\\'; next++) { }
+	if (*next == '"') {
+	  /* Special handling: */
+	  int count = (next - parse), i;
+	  for (i = 1; i < count; i += 2) {
+	    *(write++) = '\\';
+	  }
+	  parse += (count - 1);
+	  if (count & 0x1) {
+	    *(write++) = '\"';
+	    parse++;
+	  }
+	}	else
+	  *(write++) = *parse;
+      } else
+	*(write++) = *parse;
+      parse++;
+    }
+    if (*parse)
+      parse++;
+    *(write++) = 0;
+    
+    if (*created)	{
+      command[count++] = (char *)created;
+      if (count == maxargs) {
+	char **c2;
+	c2 = malloc(((2 * maxargs) + 1) * sizeof(char *));
+	memcpy(c2, command, maxargs * sizeof(char *));
+	maxargs *= 2;
+      }
+    }
+    created = write;
   }
 
-  return wxWinMain(hInstance, hPrevInstance, a, nCmdShow, main);
+  command[count] = NULL;
+  *_command = command;
+
+  return count;
+}
+
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored, int nCmdShow)
+{
+  LPWSTR m_lpCmdLine;
+  long argc, j;
+  char *a, **argv;
+  HANDLE mutex;
+  
+  /* Get command line: */
+  m_lpCmdLine = GetCommandLineW();
+  for (j = 0; m_lpCmdLine[j]; j++) {
+  }
+  a = wchar_to_char(m_lpCmdLine, j);
+
+  argc = parse_command_line(&argv, a);
+
+  /* argv[0] should be the name of the executable, but Windows doesn't
+     specify really where this name comes from, so we get it from
+     GetModuleFileName, just in case */
+  name_len = 1024;
+  while (1) {
+    my_name = malloc(sizeof(wchar_t) * name_len);
+    l = GetModuleFileNameW(NULL, my_name, name_len);
+    if (!l) {
+      free(my_name);
+      my_name = NULL;
+      break;
+    } if (l < name_len) {
+      name_len = l;
+      break;
+    } else {
+      free(my_name);
+      name_len = name_len * 2;
+    }
+  }
+
+  /* Check for an existing instance: */
+  if (my_name) {
+    a = wchar_to_char(my_name, name_len);
+    argv[0] = a;
+  
+    /* This mutex creation synchronizes multiple instances of
+       the application that may have been started. */
+    j = strlen(argv[0]);
+    a = malloc(j + 50);
+    memcpy(a, argv[0], j);
+    memcpy(a + j, "MrEd-" MRED_GUID, strlen(MRED_GUID) + 6);
+    mutex = CreateMutex(NULL, FALSE, cmdline_bytes);
+    alreadyrunning = (::GetLastError() == ERROR_ALREADY_EXISTS || 
+		      ::GetLastError() == ERROR_ACCESS_DENIED);
+    // The call fails with ERROR_ACCESS_DENIED if the Mutex was 
+    // created in a different users session because of passing
+    // NULL for the SECURITY_ATTRIBUTES on Mutex creation);
+    free(a);
+    
+    if (my_name && already_running) {
+      /* If another instance has been started, try to find it. */
+      other_name = malloc(sizeof(wchar_t) * (name_len + 2));
+      if (EnumWindows((WNDENUMPROC)CheckWindow, (LPARAM)argv)) {
+	return 0;
+      }
+      free(other_name);
+    }
+
+    free(my_name);
+  }
+
+  return wxWinMain(hInstance, hPrevInstance, argc, argv, nCmdShow, main);
 }
 
 #endif

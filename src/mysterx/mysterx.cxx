@@ -54,8 +54,6 @@ HANDLE eventSinkMutex;
 
 const CLSID emptyClsId;
 
-static Scheme_Module *mx_module;  /* the module returned by the extension */
-
 static Scheme_Object *mx_omit_obj; /* omitted argument placeholder */
 
 Scheme_Object *scheme_date_type;
@@ -3805,6 +3803,13 @@ MX_Element *make_mx_element(IHTMLElement *pIHTMLElement) {
   elt->valid = TRUE;
   elt->pIHTMLElement = pIHTMLElement;
 
+  // this should not be necessary
+  // apparently, IE does not always call AddRef()
+  //  for HTML elements
+  if (pIHTMLElement->AddRef() > 2) {
+    pIHTMLElement->Release();
+  }
+
   mx_register_simple_com_object((Scheme_Object *)elt,pIHTMLElement);
 
   return elt;
@@ -4462,7 +4467,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 }
 
 Scheme_Object *scheme_reload(Scheme_Env *env) {
-  return (Scheme_Object *)mx_module;
+  return scheme_void;
 }
 
 // for some reason, couldn't put ATL stuff in browser.cxx

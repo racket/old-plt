@@ -5,3 +5,7 @@ Unimplemented:
   - interfaces
   - abstract methods
   - subject reduction predicate
+
+Added:
+  - integer and boolean types, literals, operations:
+        + - * == and or not zero? null? if

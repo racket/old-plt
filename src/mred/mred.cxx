@@ -1777,6 +1777,11 @@ static void MrEdSchemeMessages(char *msg, ...)
 #endif
   va_end(args);
 }
+
+static void MrEdSchemeMessagesOutput(char *s, long l)
+{
+  MrEdSchemeMessages(NULL, s, l);
+}
 #endif
 
 #if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
@@ -2264,6 +2269,7 @@ static char *pltcollects_from_resource;
 #ifdef wx_x
 # define CMDLINE_STDIO_FLAG
 #endif
+#define VERSION_YIELD_FLAG
 
 #if defined(_IBMR2)
 static void dangerdanger(int)
@@ -2273,6 +2279,13 @@ static void dangerdanger(int)
   scheme_collect_garbage();
 }
 #endif
+
+static void yield_indefinitely()
+{
+  Scheme_Object *sema;
+  sema = scheme_make_sema(0);
+  wxSchemeYield(sema);
+}
 
 #ifdef INCLUDE_WITHOUT_PATHS
 # include "cmdline.inc"
@@ -2375,6 +2388,7 @@ wxFrame *MrEdApp::OnInit(void)
 
 #if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
   scheme_console_printf = MrEdSchemeMessages;
+  scheme_console_output = MrEdSchemeMessagesOutput;
 #endif
 
   mred_eventspace_param = scheme_new_param();

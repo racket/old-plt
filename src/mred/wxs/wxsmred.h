@@ -20,3 +20,5 @@ extern Scheme_Object *MrEd_mid_queue_key;
 
 extern Scheme_Object *wxs_app_file_proc;
 extern Scheme_Object *wxs_app_quit_proc;
+
+extern Bool wxSchemeYield(void *sema);

@@ -40,7 +40,7 @@
 		      (lib "boundmap.ss" "syntax")
 		      (lib "context.ss" "syntax")
                       (lib "list.ss"))
-  
+
   (provide package package*
 	   open define-dot
 	   open* define*-dot
@@ -250,7 +250,7 @@
 			 #'define-values
 			 (mark-to-localize #'vars (append new-ids introducers) #'protect)
 			 (mark-to-localize #'body introducers #'protect)
-			 #t))
+			 #f))
            ((d vars body) 
 	    (module-identifier=? (quote-syntax define*-syntaxes) #'d)
 	    (rebuild-def def package-name rename-length

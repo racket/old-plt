@@ -8,10 +8,10 @@
  (require-relative-library "threads.ss"))
 
 (define-signature mzlib:core^
-  ((unit pretty-print@ : mzlib:pretty-print^)
-   (unit file@ : mzlib:file^)
-   (unit function@ : mzlib:function^)
-   (unit string@ : mzlib:string^)
-   (unit compile@ : mzlib:compile^)
-   (unit thread@ : mzlib:thread^)))
+  ((unit pretty-print : mzlib:pretty-print^)
+   (unit file : mzlib:file^)
+   (unit function : mzlib:function^)
+   (unit string : mzlib:string^)
+   (unit compile : mzlib:compile^)
+   (unit thread : mzlib:thread^)))
 

@@ -10,10 +10,12 @@ component presentation and event-handling.
  ------------
 
  Three Windows .DLL's support low-level operations in MysterX.  
- Two of them, myspage.dll and myssink.dll, must be installed in the 
- Registry, by entering `regsvr32 <name-of-DLL>'.  The third .DLL, 
- mysterx.dll, is loaded as a MzScheme extension by the file `mysterx.ss' 
- in the mysterx collection. 
+ Two of them, myspage.dll and myssink.dll, may need to be installed in the 
+ Registry, by entering `regsvr32 <name-of-DLL>'.  Ordinarily,
+ the PLT installation program registers these .DLL's, but 
+ if the files are copied, manual registration becomes necessary.  
+ The third .DLL,  mysterx.dll, is loaded as a MzScheme 
+ extension by the file `mysterx.ss' in the mysterx collection. 
 
  Loading
  -------
@@ -549,7 +551,7 @@ the ITypeInfo interface.
 
 > text-transform :: (send an-mx-element text-transform)
 
-  Retrieves a string indicating the CSS text-transform for the
+  Retrieves a string indicating the CSS text-decoration for the
   element.
 
 > set-text-transform! :: (send an-mx-element set-text-transform! tt)

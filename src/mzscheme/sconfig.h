@@ -535,6 +535,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define USE_IEEE_FP_PREDS
 # define USE_EXPLICT_FP_FORM_CHECK
 # define ZERO_MINUS_ZERO_IS_POS_ZERO
+# define LOG_ZERO_ISNT_NEG_INF
 
 # define NO_INLINE_KEYWORD
 
@@ -1218,6 +1219,9 @@ int scheme_pthread_semaphore_try_down(void *);
 
  /* FMOD_CAN_RETURN_NEG_ZERO is fmod() on positive numbers can produce
     a negative zero. */
+
+ /* LOG_ZERO_ISNT_NEG_INF defines a version of log that checks for an
+    inexact zero argument and return negative infinity. */
 
   /***********************/
  /* Stack Maniuplations */

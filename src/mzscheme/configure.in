@@ -201,10 +201,10 @@ case $OS in
   HP-UX)
     if test "$CC" = "gcc"; then
       CFLAGS="$CFLAGS -fPIC"
-      LIBS="$LIBS -Wl,-E"
     else
-      CFLAGS="$CFLAGS -Wp,-H,64000 -Aa -D_HPUX_SOURCE +k +z"
+      CFLAGS="$CFLAGS -Wp,-H,64000 -Aa -D_HPUX_SOURCE +Z"
     fi
+    LIBS="$LIBS -Wl,-E"
     # For -lXaw and -lXmu
     X_LIBS="-L/usr/contrib/X11R6/lib/ $X_LIBS"
     ;;

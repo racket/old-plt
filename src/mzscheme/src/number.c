@@ -1340,6 +1340,12 @@ MK_SCH_TRIG(SCH_ASIN, asin)
 # define SCH_ASIN asin
 #endif
 
+#ifdef LOG_ZERO_ISNT_NEG_INF
+double SCH_LOG(double d) { if (d == 0.0) return scheme_minus_infinity_val; else return log(d); }
+#else
+# define SCH_LOG log
+#endif
+
 GEN_UNARY_OP(exp_prim, exp, exp, scheme_inf_object, scheme_zerod, scheme_nan_object, complex_exp, GEN_ZERO_IS_ONE, NEVER_RESORT_TO_COMPLEX)
 GEN_UNARY_OP(log_prim, log, log, scheme_inf_object, scheme_nan_object, scheme_nan_object, complex_log, GEN_ONE_IS_ZERO_AND_ZERO_IS_ERR, NEGATIVE_USES_COMPLEX)
 GEN_UNARY_OP(sin_prim, sin, SCH_SIN, scheme_nan_object, scheme_nan_object, scheme_nan_object, complex_sin, GEN_ZERO_IS_ZERO, NEVER_RESORT_TO_COMPLEX)

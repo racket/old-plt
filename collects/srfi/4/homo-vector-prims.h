@@ -1,7 +1,16 @@
 #ifndef _HOMO_<type-name>_VECTOR_PRIMS_H
 #define _HOMO_<type-name>_VECTOR_PRIMS_H
 
-#include <inttypes.h>
+#ifdef _WIN32 /* Windows isn't C99 in this regard */
+ typedef uint32_t UINT32;
+ typedef uint16_t UINT16;
+ typedef uint8_t UINT8;
+ typedef int32_t INT32;
+ typedef int16_t INT16;
+ typedef int8_t INT8;  
+#else
+ #include <inttypes.h>
+#endif
 
 typedef struct 
 {

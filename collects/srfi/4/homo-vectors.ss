@@ -1,6 +1,13 @@
 (module homo-vectors mzscheme
-  (require (lib "contract.ss"))
+  (require (lib "contract.ss")
+           "tests.ss")
   
+  (define (test desired proc . args)
+    (let ([result (apply proc args)])
+    (unless (equal? test result)
+      (printf "test failed.  Expected: ~v\nGot: ~v\nAs a result of this test: ~v\n"
+              desired result (cons proc args)))))
+ 
   (define (vector-fn-bundle filename)
     (let-values (((prim:vector->homo-vector prim:homo-vector->vector prim:homo-vector-length prim:homo-vector-ref
                                             prim:homo-vector-set! prim:homo-vector? prim:homo-vector+ prim:homo-vector- 
@@ -145,47 +152,66 @@
   
   (define-syntax (make-vector-funs stx)
     (syntax-case stx ()
-      ((_ type-symbol pred/length-assoc type-assoc)
+      ((_ type-symbol pred/length-assoc type-assoc test-fn-list)
        (let* ([type-string (symbol->string (syntax-e (syntax type-symbol)))]
-              [name-format-strings (list "vector->~avector"   ; warning! re-ordering this list will break the list-refs below!
-                                         "~avector"
-                                         "~avector->vector" 
-                                         "~avector-length" 
-                                         "~avector-ref"
-                                         "~avector-set!" 
-                                         "~avector?" 
-                                         "~avector-sum" 
-                                         "~avector-difference" 
-                                         "~avector-scale" 
-                                         "~avector-norm" 
-                                         "~avector-type"
-                                         "make-~avector"
-                                         "list->~avector"
-                                         "~avector->list")]
-              [names (map (lambda (format-string) (string->symbol (format format-string type-string)))
-                          name-format-strings)])
-         (with-syntax ([(name ...) names]
-                       [length-fn (list-ref names 3)] ; warning! bad abstraction!
-                       [predicate-fn (list-ref names 6)] ; warning! bad abstraction!
-                       [type-number (list-ref names 11)]) ; warning! bad abstraction!
+              [name-maker (lambda (str) (string->symbol (format str type-string)))]
+              [vec->homo (name-maker "vector->~avector")]
+              [maker (name-maker "~avector")]
+              [homo->vec (name-maker "~avector->vector")]  
+              [length (name-maker "~avector-length")]
+              [getter (name-maker "~avector-ref")]
+              [setter (name-maker "~avector-set!")]
+              [pred (name-maker "~avector?")]
+              [sum (name-maker "~avector-sum")]
+              [difference (name-maker "~avector-difference")]
+              [scale (name-maker "~avector-scale")]
+              [norm (name-maker "~avector-norm")]
+              [type-idx (name-maker "~avector-type")]
+              [functional-maker (name-maker "make-~avector")]
+              [list->homo (name-maker "list->~avector")]
+              [homo->list (name-maker "~avector->list")]
+              ; warning! the order of the list below must match the definitions in the 'values' above, and the
+              ; order of the names expected by the 'test' procedure.
+              [names (list vec->homo   
+                           maker
+                           homo->vec
+                           length
+                           getter
+                           setter
+                           pred
+                           sum
+                           difference
+                           scale
+                           norm
+                           type-idx
+                           functional-maker
+                           list->homo
+                           homo->list)])
+         (with-syntax ([(name ...) names])
            #`(begin
                (provide name ...)
                
                (define-values (name ...)
                  (let ([filename (make-filename (quote type-symbol))])
                    (vector-fn-bundle filename)))
-               (set! pred/length-assoc (cons (list predicate-fn length-fn) pred/length-assoc))
-               (set! type-assoc (cons (list #,type-string type-number) type-assoc))))))))
+               (set! pred/length-assoc (cons (list #,pred #,length) pred/length-assoc))
+               (set! type-assoc (cons (list #,type-string #,type-idx) type-assoc))
+               (set! test-fn-list
+                     (cons (lambda () ; test procedure
+                             (homo-vec-test name ...))
+                           test-fn-list))))))))
   
   (define-syntax (make-all-vector-funs stx)
     (syntax-case stx ()
       [(_ type ...)
        (let ([pred/length-assoc-stx #`pred/length-assoc]
-             [type-assoc-stx #`type-assoc])
+             [type-assoc-stx #`type-assoc]
+             [test-fn-list-stx #`test-fn-list])
          #`(begin 
              (define #,pred/length-assoc-stx null)
              (define #,type-assoc-stx null)
-             (begin (make-vector-funs type #,pred/length-assoc-stx #,type-assoc-stx)
+             (define #,test-fn-list-stx null)
+             (begin (make-vector-funs type #,pred/length-assoc-stx #,type-assoc-stx #,test-fn-list-stx)
                     ...)
              (provide/contract [homo-vector-length (-> any? number?)])
              (define (homo-vector-length v)
@@ -198,7 +224,12 @@
                      ((cadr match) v)
                      (error 'homo-vector-length "expects input of homo-vector, given: ~v" v))))
              
-             (provide/contract [#,type-assoc-stx (listof (list/p string? number?))])))]))
+             (provide/contract [#,type-assoc-stx (listof (list/p string? number?))])
+             
+             (provide/contract [run-homo-vec-tests (-> void?)])
+             
+             (define (run-homo-vec-tests)
+               (for-each (lambda (thunk) (thunk)) #,test-fn-list-stx))))]))
   
   (make-all-vector-funs f64 f32 s32 s16 s8 u32 u16 u8))
 

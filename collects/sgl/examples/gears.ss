@@ -1,4 +1,4 @@
-;; $Id: gears.ss,v 1.1.2.1 2003/06/18 23:43:35 sowens Exp $
+;; $Id: gears.ss,v 1.2 2003/06/19 00:13:31 sowens Exp $
 ;;
 ;; This is a version of the venerable "gears" demo for PLT Scheme 200 using
 ;; Scott Owens' SGL OpenGL bindings.  It was ported from "glxgears.c" 1.3 from
@@ -22,8 +22,8 @@
 ;;     This is a port of the infamous "gears" demo to straight GLX (i.e. no
 ;;     GLUT).  Port by Brian Paul 23 March 2001.
 ;;
-;; To run, evaluate this file in DrScheme, or execute "mred -r gears.ss"
-;; from your OS shell.
+;; To run, evaluate this file in DrScheme in the "module" language level,
+;; or execute "mred -qu gears.ss" from your OS shell.
 ;;
 ;; Scheme port by Neil W. Van Dyke <neil@neilvandyke.org>, 23 November 2002.
 ;; Originally called glxgears.ss.  Minor modifications since.

@@ -24,6 +24,41 @@ functions that consume array arguments.
 Many thanks to Robert Kooima who wrote the GL binding that the gl and
 gl-unsafe modules are based on.
 
+_gl-vectors.ss_
+
+The gl-vectors module provides homogeneous vectors of the different
+numeric types.  6 functions are provided for each of 9 types of
+vectors, gl-double-vector, gl-float-vector, gl-int-vector,
+gl-short-vector, gl-byte-vector, gl-uint-vector, gl-ushort-vector,
+gl-ubyte-vector, gl-boolean-vector.
+
+The functions are as follows (replacing [type] with double, float,
+etc...):
+
+(vector->gl-[type]-vector v): takes a Scheme vector and converts it to
+a gl-[type]vector.  Fails if v is not a vector containing only Scheme
+real numbers.
+
+(gl-[type]-vector->vector v): Takes a gl-[type]-vector and returns a
+Scheme vector with the same numbers.
+
+(gl-[type]-vector-ref v i): Returns the ith element of v.  Fails if i
+>= the length of v.
+
+(gl-[type]-vector-set! v i n): Makes n be the ith element of
+gl-[type]-vector v.  Fails if i >= length of v or if n is not a Scheme
+real number.
+
+(gl-[type]-vector-length v): Returns the length of v.  Fails if v is
+not a gl-[type]-vector.
+
+(gl-[type]-vector? v): Return #t if v is a gl-[type]-vector.  Returns
+#f otherwise.
+
+In the future these vectors should support some mathematical
+operations directly, for convenience and efficiency.
+
+
 _gl.ss_
 
 Use the gl module by adding (require (lib "gl.ss" "gl")) to your
@@ -88,12 +123,6 @@ Examples:
 (gl-vertex-v (vector->gl-float-vector (vector 1 2 3 4)))
 (gl-end)
 
-
-_gl-vectors.ss_
-
-Use the gl-vectors by adding (require (lib "gl-vectors.ss" "sgl")) to
-the program.  For each type defined in GL (double, float, uint, ushort
-ubyte, int, short, byte, boolean) the following functions exist
 
 
 Function lists:

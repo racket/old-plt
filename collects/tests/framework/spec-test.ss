@@ -19,7 +19,7 @@
     (test name
           (lambda (x) 
             (and (string? x)
-                 (let ([m (regexp-match "blame ([^:]*):" x)])
+                 (let ([m (regexp-match "blame: ([^;]*);" x)])
                    (equal? (cadr m) blame))))
           (lambda ()
             (send-sexp-to-mred `(with-handlers ([(lambda (x) (and (not-break-exn? x) (exn? x)))
@@ -145,7 +145,7 @@
   (test/spec-failed
    'contract-d-protect-shared-state
    '(let ([x 1])
-      ((contract (((lambda () #t) . ->d . (lambda () (let ([pre-x 1]) (lambda (res) (= x pre-x)))))
+      ((contract ((->d (lambda () (let ([pre-x x]) (lambda (res) (= x pre-x)))))
                   . -> .
                   (lambda (x) #t))
                  (lambda (thnk) (thnk))
@@ -153,6 +153,61 @@
                  'neg)
        (lambda () (set! x 2))))
    "neg")
+  
+  (test/spec-passed
+   'contract-arrow-star1
+   '(let-values ([(a b) ((contract (->* (integer?) (integer? integer?))
+                                   (lambda (x) (values x x))
+                                   'pos
+                                   'neg)
+                         2)])
+      1))
+  
+  (test/spec-failed
+   'contract-arrow-star2
+   '((contract (->* (integer?) (integer? integer?))
+               (lambda (x) (values x x))
+               'pos
+               'neg)
+     #f)
+   "neg")
+  
+  (test/spec-failed
+   'contract-arrow-star3
+   '((contract (->* (integer?) (integer? integer?))
+               (lambda (x) (values 1 #t))
+               'pos
+               'neg)
+     1)
+   "pos")
+  
+  (test/spec-failed
+   'contract-arrow-star4
+   '((contract (->* (integer?) (integer? integer?))
+               (lambda (x) (values #t 1))
+               'pos
+               'neg)
+     1)
+   "pos")
+ 
+  (test/spec-failed
+   'combo1
+   '(let ([cf (contract (case->
+                         ((class? . ->d . (lambda (%) (lambda (x) #f))) . -> . void?)
+                         ((class? . ->d . (lambda (%) (lambda (x) #f))) boolean? . -> . void?))
+                        (letrec ([c% (class object% (super-instantiate ()))]
+                                 [f
+                                  (case-lambda
+                                    [(class-maker) (f class-maker #t)]
+                                    [(class-maker b) 
+                                     (class-maker c%)
+                                     (void)])])
+                          f)
+                        'pos
+                        'neg)])
+      (cf (lambda (x%) 'going-to-be-bad)))
+   "neg")   
+
   
   )
   

@@ -88,15 +88,28 @@ carry over the computation of the original
            [barred-portion #f])
           
           (field
-           ;; wholes : string
-           ;; the whole-number portion of the fraction or decimal, as a string
-           [wholes (cond
-                     [(= (floor number) 0) ""]
-                     [(= (ceiling number) 0) "-"]
-                     [(< number 0)
-                      (number->string (ceiling number))]
-                     [else
-                      (number->string (floor number))])])
+           ;; wholes/frac : string
+           ;; the whole-number portion of the number as a fraction
+           [wholes/frac
+            (cond
+              [(= (floor number) 0) ""]
+              [(= (ceiling number) 0) "-"]
+              [(< number 0)
+               (number->string (ceiling number))]
+              [else
+               (number->string (floor number))])])
+          
+          (field
+           ;; wholes/dec : string
+           ;; the whole-number portion of decimal expansion
+           [wholes/dec
+            (cond
+              [(= (floor number) 0) "0"]
+              [(= (ceiling number) 0) "-0"]
+              [(< number 0)
+               (number->string (ceiling number))]
+              [else
+               (number->string (floor number))])])
 
           ;; these fields are for the fractional printing view
           (field
@@ -214,7 +227,7 @@ carry over the computation of the original
                (set! unbarred-portion
                      (string-append
                       decimal-prefix
-                      wholes
+                      wholes/dec
                       "."
                       (apply string-append (map number->string (extract-non-cycle)))))
                (set! barred-portion #f)
@@ -223,7 +236,7 @@ carry over the computation of the original
                (set! unbarred-portion
                      (string-append
                       decimal-prefix
-                      wholes
+                      wholes/dec
                       "."
                       (apply string-append 
                              (map number->string (extract-non-cycle)))))
@@ -233,7 +246,7 @@ carry over the computation of the original
                (set! unbarred-portion
                      (string-append
                       decimal-prefix
-                      wholes
+                      wholes/dec
                       "."
                       (apply string-append
                              (map number->string (extract-non-cycle)))))
@@ -278,7 +291,7 @@ carry over the computation of the original
               [(offset num) (get-text offset num #f)]
               [(offset num flattened?) 
                (if fraction-view?
-                   (string-append wholes " " nums "/" dens)
+                   (string-append wholes/frac " " nums "/" dens)
                    (string-append 
                     unbarred-portion
                     (or barred-portion "")
@@ -310,7 +323,7 @@ carry over the computation of the original
               (send dc set-font (send style get-font))
               (let-values ([(nw nh na nd) (send dc get-text-extent nums)]
                            [(dw dh da dd) (send dc get-text-extent dens)]
-                           [(ww wh wa wd) (send dc get-text-extent wholes)])
+                           [(ww wh wa wd) (send dc get-text-extent wholes/frac)])
                 (set-box/f! h (+ nh dh 1))
                 (set-box/f! w (+ ww (max nw dw)))
                 (set-box/f! descent (+ wd (/ dh 2)))
@@ -348,11 +361,11 @@ carry over the computation of the original
           (define (draw-fraction dc x y)
             (let-values ([(nw nh na nd) (send dc get-text-extent nums)]
                          [(dw dh da dd) (send dc get-text-extent dens)]
-                         [(ww wh wa wd) (send dc get-text-extent wholes)])
+                         [(ww wh wa wd) (send dc get-text-extent wholes/frac)])
               (let ([frac-w (max nw dw)])
                 (send dc draw-text nums (+ x ww (- frac-w nw)) y)
                 (send dc draw-text dens (+ x ww (- (/ dw 2)) (/ frac-w 2)) (+ y nh 1))
-                (send dc draw-text wholes x (+ y (/ nh 2)))
+                (send dc draw-text wholes/frac x (+ y (/ nh 2)))
                 (send dc draw-line
                       (+ x ww) (+ y dh)
                       (+ x ww (max nw dw) -1) (+ y dh)))))

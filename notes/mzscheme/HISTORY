@@ -1,7 +1,9 @@
 Version 100, ??, 1998
 Changed class syntax, splitting public clause use into:
- `public' : defines ivars not in superclass
- `override' : defines ivars already in superclass
+ public : defines ivars not in superclass
+ override : defines ivars already in superclass
+Changed empty superclass from the empty list to object%;
+ every class initialization must call super-init
 Added ivar-in-interface?
 Changed interface: raises an exception if a superinterface
  declares a variable that is also declared in the interface
@@ -75,6 +77,7 @@ file.ss library: added make-directory*
 pretty-print: default display string handler is now the default
  port display handler instead of the display procedure
 Ported to BeOS
+Ported to OSKit
 Inside MzScheme: new built-in type: scheme_complex_izi_type
 Inside MzScheme: changed scheme_eval_string to raise an exception
  if the expression returns multiple values, and added

@@ -25,10 +25,6 @@ NULL=
 NULL=nul
 !ENDIF 
 
-CPP=cl.exe
-MTL=midl.exe
-RSC=rc.exe
-
 !IF  "$(CFG)" == "MzCOM - Win32 Debug"
 
 OUTDIR=.\Debug
@@ -37,7 +33,7 @@ INTDIR=.\Debug
 OutDir=.\Debug
 # End Custom Macros
 
-ALL : "$(OUTDIR)\MzCOM.dll" ".\MzCOM.h" ".\Debug\regsvr32.trg"
+ALL : "$(OUTDIR)\MzCOM.dll" ".\MzCOM.tlb" ".\MzCOM.h" ".\MzCOM_i.c" ".\Debug\regsvr32.trg"
 
 
 CLEAN :
@@ -60,7 +56,42 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
+CPP=cl.exe
 CPP_PROJ=/nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\collects\mzscheme\include" /I "../../mzcom" /I "." /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_ATL_STATIC_REGISTRY" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+MTL=midl.exe
+MTL_PROJ=
+RSC=rc.exe
 RSC_PROJ=/l 0x409 /fo"$(INTDIR)\MzCOM.res" /i "../../mzcom" /d "_DEBUG" 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\MzCOM.bsc" 
@@ -122,7 +153,42 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
+CPP=cl.exe
 CPP_PROJ=/nologo /MT /W3 /O1 /I "..\..\..\collects\mzscheme\include" /I "..\..\src\mzcom" /I "." /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_ATL_STATIC_REGISTRY" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+MTL=midl.exe
+MTL_PROJ=
+RSC=rc.exe
 RSC_PROJ=/l 0x409 /fo"$(INTDIR)\MzCOM.res" /i "../../mzcom" /d "NDEBUG" 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\MzCOM.bsc" 
@@ -158,37 +224,6 @@ SOURCE="$(InputPath)"
 
 !ENDIF 
 
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-MTL_PROJ=
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
 !IF EXISTS("MzCOM.dep")
@@ -202,11 +237,14 @@ MTL_PROJ=
 !IF "$(CFG)" == "MzCOM - Win32 Debug" || "$(CFG)" == "MzCOM - Win32 Release"
 SOURCE=..\..\mzcom\mzcom.cxx
 
-"$(INTDIR)\mzcom.obj" : $(SOURCE) "$(INTDIR)" ".\MzCOM_i.c"
+"$(INTDIR)\mzcom.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=..\..\mzcom\MzCOM.idl
+
+!IF  "$(CFG)" == "MzCOM - Win32 Debug"
+
 MTL_SWITCHES=/tlb ".\MzCOM.tlb" /h "MzCOM.h" /iid "MzCOM_i.c" /Oicf 
 
 ".\MzCOM.tlb"	".\MzCOM.h"	".\MzCOM_i.c" : $(SOURCE) "$(INTDIR)"
@@ -215,9 +253,21 @@ MTL_SWITCHES=/tlb ".\MzCOM.tlb" /h "MzCOM.h" /iid "MzCOM_i.c" /Oicf
 <<
 
 
+!ELSEIF  "$(CFG)" == "MzCOM - Win32 Release"
+
+MTL_SWITCHES=/tlb ".\MzCOM.tlb" /h "MzCOM.h" /iid "MzCOM_i.c" /Oicf 
+
+".\MzCOM.tlb"	".\MzCOM.h"	".\MzCOM_i.c" : $(SOURCE) "$(INTDIR)"
+	$(MTL) @<<
+  $(MTL_SWITCHES) $(SOURCE)
+<<
+
+
+!ENDIF 
+
 SOURCE=.\MzCOM.rc
 
-"$(INTDIR)\MzCOM.res" : $(SOURCE) "$(INTDIR)" ".\MzCOM.tlb"
+"$(INTDIR)\MzCOM.res" : $(SOURCE) "$(INTDIR)"
 	$(RSC) $(RSC_PROJ) $(SOURCE)
 
 

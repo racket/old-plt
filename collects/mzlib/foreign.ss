@@ -176,13 +176,29 @@
 ;; foreign name into the type syntax, which allows generated wrappers to have a
 ;; proper name.
 (provide* (unsafe get-ffi-obj))
-(define (get-ffi-obj* name lib type)
+(define (get-ffi-obj* name lib type . failure)
   (ffi-get (ffi-obj (get-ffi-obj-name 'get-ffi-obj name) (get-ffi-lib lib))
            type))
+(define get-ffi-obj*
+  (case-lambda
+   [(name lib type) (get-ffi-obj* name lib type #f)]
+   [(name lib type failure)
+    (let ([name (get-ffi-obj-name 'get-ffi-obj name)]
+          [lib  (get-ffi-lib lib)])
+      (let-values ([(obj error?)
+                    (with-handlers
+                        ([exn:fail:filesystem?
+                          (lambda (e)
+                            (if failure (values (failure) #t) (raise e)))])
+                      (values (ffi-obj name lib) #f))])
+        (if error? obj (ffi-get obj type))))]))
 (define-syntax (get-ffi-obj stx)
   (syntax-case stx ()
     [(_ name lib type)
      #`(get-ffi-obj* name lib #,(syntax-property #`type 'ffi-name #'name))]
+    [(_ name lib type failure)
+     #`(get-ffi-obj* name lib #,(syntax-property #`type 'ffi-name #'name)
+                     failure)]
     [x (identifier? #'x) #'get-ffi-obj*]))
 
 ;; It is important to use the set-ffi-obj! wrapper because it takes care of

@@ -250,13 +250,26 @@
                                (unless (pair? x)
                                  (raise-type-error 'first "non-empty list" x))
                                (car x))))
-  (define second (polymorphic (lambda (x) (cadr x))))
-  (define third (polymorphic (lambda (x) (caddr x))))
-  (define fourth (polymorphic (lambda (x) (cadddr x))))
-  (define fifth (polymorphic (lambda (x) (fourth (cdr x)))))
-  (define sixth (polymorphic (lambda (x) (fourth (cddr x)))))
-  (define seventh (polymorphic (lambda (x) (fourth (cdddr x)))))
-  (define eighth (polymorphic (lambda (x) (fourth (cddddr x)))))
+  (define (lget name npos)
+    (lambda (x)
+      (let loop ([l x][pos npos])
+	(cond
+	 [(and (= pos 1) (pair? l))
+	  (car l)]
+	 [(pair? l)
+	  (loop (cdr l) (sub1 pos))]
+	 [else
+	  (raise-type-error name 
+			    (format "list with ~a or more items" npos) 
+			    x)]))))
+
+  (define second (polymorphic (lget 'second 2)))
+  (define third (polymorphic (lget 'third 3)))
+  (define fourth (polymorphic (lget 'fourth 4)))
+  (define fifth (polymorphic (lget 'fifth 5)))
+  (define sixth (polymorphic (lget 'sixth 6)))
+  (define seventh (polymorphic (lget 'seventh 7)))
+  (define eighth (polymorphic (lget 'eighth 8)))
   
   (define rest (polymorphic (lambda (x) 
                               (unless (pair? x)

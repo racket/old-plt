@@ -204,14 +204,13 @@ exec mzscheme -r "$0" "$0" "$@"
 
 :}
 
-#include <scheme.h>
+#include <schpriv.h>
 #ifndef WINDOWS_DYNAMIC_LOAD
 # include <dlfcn.h>
 # include <inttypes.h>
 #else
 # include <windows.h>
 # include <wtypes.h>
-# define alloca(x) _alloca(x)
   typedef INT8    int8_t;
   typedef UINT8  uint8_t;
   typedef INT16   int16_t;
@@ -1033,8 +1032,11 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
                  [f (lambda (p)
                       (if (string? p) (concat p"(val)") (p "val" x)))])
             (if s->c
-              (~ "  if ("(f pred)") { "ctype" tmp; tmp = ("ctype")("(f s->c)"); "x" = tmp; }" \\
-                 "  else "(wrong-type "val" stype))
+              (~ "  if ("(f pred)") {" \\
+                 "    "ctype" tmp;" \\
+                 "    tmp = ("ctype")("(f s->c)");" \\
+                 "    "x" = tmp;" \\
+                 "  } else "(wrong-type "val" stype))
               (~ "  if (!("(pred "val" x)")) "(wrong-type "val" stype)))
             (~ "  return NULL;"))
           (~ "  "(wrong-type "type" "non-void-C-type")))):}
@@ -1336,8 +1338,8 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   GC_CAN_IGNORE ForeignAny oval, *ival;
   void **avalues, *p;
   int i;
-  ival    = alloca(nargs*sizeof(ForeignAny));
-  avalues = alloca(nargs*sizeof(void*));
+  ival    = alloca(nargs*sizeof(ForeignAny)); //!!!!!!
+  avalues = alloca(nargs*sizeof(void*));  //!!!!!!
   /* iterate on input values and types */
   for (i=0; i<nargs; i++, itypes=SCHEME_CDR(itypes)) {
     /* convert argv[i] according to current itype */
@@ -1423,7 +1425,7 @@ void ffi_do_callback(ffi_cif* cif, void* resultp, void** args, void *userdata)
   ffi_callback_struct *data = (ffi_callback_struct*)userdata;
   int argc = cif->nargs, i;
   Scheme_Object **argv, *p, *v;
-  argv = alloca(argc*sizeof(Scheme_Object*));
+  argv = alloca(argc*sizeof(Scheme_Object*)); //!!!!!!!!
   for (i=0, p=data->itypes; i<argc; i++, p=SCHEME_CDR(p)) {
     v = c_to_scheme(SCHEME_CAR(p),args[i]);
     argv[i] = v;

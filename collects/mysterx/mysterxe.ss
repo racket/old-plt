@@ -810,14 +810,14 @@
 		thread-post))])
 
 	   (sequence 
-	     (super-init)
+	     (super-init))))
 	     
-	     (thread
-	      (lambda () 
-		(let loop ()
-		  (mxprims:process-win-events)
-		     (sleep)
-		     (loop)))))))
+  (thread	
+   (lambda () 
+     (let loop ()
+       (mxprims:process-win-events)
+	  (sleep)
+	  (loop))))
 
   (let ([old-exit-handler (exit-handler)])
     (exit-handler 

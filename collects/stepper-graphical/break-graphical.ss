@@ -40,7 +40,6 @@
       
       (private [d-value 'bad-value]
                [has-value?  #f]
-               [print-converted (pc:print-convert d-value)]
                [pretty-printed-width #f]               
                [reset-style
                 (lambda ()
@@ -66,7 +65,7 @@
                                       (when (and number (not (eq? number 0)))
                                         (insert #\newline))
                                       0)])
-                      (pp:pretty-print print-converted)))
+                      (pp:pretty-print (pc:print-convert d-value))))
                   (lock #t)
                   (end-edit-sequence))])
       (sequence (super-init line-spacing tabstops)
@@ -131,7 +130,7 @@
           (let* ([start-offset (z:location-offset (z:zodiac-start zodiac))]
                  [finish-offset (z:location-offset (z:zodiac-finish zodiac))])
             "Can't copy text yet")
-          (string-append "~a : ~a" (z:location-offset (z:zodiac-start zodiac)) (z:location-file (z:zodiac-start zodiac))))))
+          (format "~a : ~a" (z:location-offset (z:zodiac-start zodiac)) (z:location-file (z:zodiac-start zodiac))))))
   
   (define (highlight-location-text zodiac)
     (when clear-highlight-thunk (clear-highlight-thunk))

@@ -1,7 +1,12 @@
+;;
+;; $Id$
+;;
+
   (unit/sig mred:connections^
     (import mred:wx^
 	    [mred:constants : mred:constants^]
-	    [mzlib:function : mzlib:function^])
+	    [mzlib:function : mzlib:function^]
+            [mred:test : mred:self-test^])
 
     (mred:debug:printf 'invoke "mred:connections@")
 
@@ -163,8 +168,8 @@
 	       (set! canvases (mzlib:function:remq old-canvas canvases)))]))))
 
     (define connections-panel% (make-connections-panel% wx:panel%))
-    (define connections-frame% (make-connections-frame% wx:frame%))
-    (define connections-dialog-box% (make-connections-frame% wx:dialog-box%))
+    (define connections-frame% (make-connections-frame% mred:test:testable-frame%))
+    (define connections-dialog-box% (make-connections-frame% mred:test:testable-dialog-box%))
     (define connections-media-edit% (make-connections-media-buffer% wx:media-edit%)) 
     (define connections-media-pasteboard% (make-connections-media-buffer% wx:media-pasteboard%))
     (define connections-media-canvas% (make-connections-media-canvas% wx:media-canvas%)))

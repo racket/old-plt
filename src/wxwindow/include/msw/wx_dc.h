@@ -25,6 +25,7 @@ typedef       void    *wxPrinterDC;
 
 class wxRegion;
 class wxGL;
+class wxPath;
 
 // Since Windows handles DCs quite uniformly, we can have
 // a general wxWindowsDC, and derive canvas and printer DCs from this
@@ -97,6 +98,8 @@ class wxDC: public wxbDC
   // See MS C7 comment above
   inline void DrawPolygon(wxList *list, double xoffset = 0, double yoffset = 0, int fillStyle=wxODDEVEN_RULE)
   { wxbDC::DrawPolygon(list, xoffset, yoffset,fillStyle); }
+
+  void DrawPath(wxPath *p, double xoffset = 0, double yoffset = 0, int fillStyle=wxODDEVEN_RULE);
 
   void DrawRectangle(double x, double y, double width, double height);
   void DrawRoundedRectangle(double x, double y, double width, double height, double radius = 20.0);

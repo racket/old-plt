@@ -52,6 +52,7 @@ WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathAddLine)(GraphicsPath *gp, double x1, do
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathAddBezier)(GraphicsPath *gp, double x1, double y1, double x2, double y2,
 						   double x3, double y3, double x4, double y4);
 
+WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathAddPath)(GraphicsPath *gp, GraphicsPath *gp2, int conn);
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathCloseFigure)(GraphicsPath *gp);
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathTransform)(GraphicsPath *gp, Matrix *m);
 

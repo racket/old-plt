@@ -916,6 +916,7 @@ void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
   POINT *pts;
   int xoffset1;
   int yoffset1;
+  int prev;
 
   dc = ThisDC();
 
@@ -963,32 +964,34 @@ void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
   
   pts = new WXGC_ATOMIC POINT[total_cnt];
 
-  for (i = 0, k = 0; i < cnt; i++) {
-    for (j = 0; j < lens[i]; j += 2) {
-      ShiftXY(ptss[i][j] + xoffset, ptss[i][j+1] + yoffset, &xoffset1, &yoffset1);
-      pts[k].x = xoffset1;
-      pts[k].y = yoffset1;
-      k++;
-    }
-  }
-
-
-   {
-     (void)Polygon(dc, cpoints, n);
-    DoneBrush(dc);
-  }
-  if (StartPen(dc)) {
-    (void)Polygon(dc, cpoints, n);
-    DonePen(dc);
-  }
-
   prev = SetPolyFillMode(dc, (fillStyle == wxODDEVEN_RULE) ? ALTERNATE : WINDING);
 
   if (StartBrush(dc, 1)) {
     if (cnt == 1) {
+      /* Unscaled version for Polygon(): */
+      for (i = 0, k = 0; i < cnt; i++) {
+	for (j = 0; j < lens[i]; j += 2) {
+	  ShiftXY(ptss[i][j] + xoffset, ptss[i][j+1] + yoffset, &xoffset1, &yoffset1);
+	  pts[k].x = xoffset1;
+	  pts[k].y = yoffset1;
+	  k++;
+	}
+      }
+
       (void)Polygon(dc, pts, total_cnt);
     } else {
       HRGN rgn = 0, rgn1;
+
+      /* Scaled version for clipping region: */
+      for (i = 0, k = 0; i < cnt; i++) {
+	for (j = 0; j < lens[i]; j += 2) {
+	  xoffset1 = MS_XLOG2DEV(ptss[i][j] + xoffset);
+	  yoffset1 = MS_YLOG2DEV(ptss[i][j+1] + yoffset);
+	  pts[k].x = xoffset1;
+	  pts[k].y = yoffset1;
+	  k++;
+	}
+      }
 
       for (i = 0, k = 0; i < cnt; i++) {
 	j = (lens[i] / 2);
@@ -1003,6 +1006,9 @@ void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
 	k += j;
       }
 
+      if (clipping && clipping->rgn)
+	CombineRgn(rgn, clipping->rgn, rgn, RGN_AND);
+
       SelectClipRgn(dc, rgn);
       
       (void)Rectangle(dc, 0, 0, 32000, 32000);
@@ -1010,9 +1016,20 @@ void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
       DoClipping(dc);
 
       DeleteObject(rgn);
-    }      
+    }
+    DoneBrush(dc);
   }
   if (StartPen(dc)) {
+    /* Unscaled version for draw-line */
+    for (i = 0, k = 0; i < cnt; i++) {
+      for (j = 0; j < lens[i]; j += 2) {
+	ShiftXY(ptss[i][j] + xoffset, ptss[i][j+1] + yoffset, &xoffset1, &yoffset1);
+	pts[k].x = xoffset1;
+	pts[k].y = yoffset1;
+	k++;
+      }
+    }
+
     for (i = 0, k = 0; i < cnt; i++) {
       j = (lens[i] / 2);
       if ((i + 1 == cnt) && p->IsOpen()) {
@@ -1022,6 +1039,7 @@ void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
       }
       k += j;
     }
+    DonePen(dc);
   }
 
   SetPolyFillMode(dc, prev);

@@ -28,7 +28,7 @@ typedef struct {
 } PathTarget;
 # define GP ((PathTarget *)target)->path
 # define PathTargetPath_t GraphicsPath*
-# define THIS_GP current_path
+# define CURRENT_GP current_path
 # define PATH_GP ((GraphicsPath *)target)
 #endif
 
@@ -1033,7 +1033,8 @@ long wxPathRgn::PrepareScale(long target, Bool oe)
   return 0;
 #endif
 #ifdef wx_msw
-  current_path = wxGPathNew(oe ?  FillModeAlterate : FillModeWinding);
+  current_path = wxGPathNew(oe ?  FillModeAlternate : FillModeWinding);
+  return 0;
 #endif
 }
 
@@ -1053,7 +1054,7 @@ void wxPathRgn::RestoreScale(long target, long v)
   wxGMatrixScale(m, sx, sy);
   wxGPathTransform(current_path, m);
   wxGMatrixRelease(m);
-  wxGPathAddPath(GP, current_path);
+  wxGPathAddPath(GP, current_path, TRUE);
   wxGPathRelease(current_path);
 #endif
 }

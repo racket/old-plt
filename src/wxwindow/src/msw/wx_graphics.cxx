@@ -147,6 +147,11 @@ void wxGPathAddBezier(GraphicsPath *gp, double x1, double y1, double x2, double 
 		(REAL)x3, (REAL)y3, (REAL)x4, (REAL)y4);
 }
 
+void wxGPathAddPath(GraphicsPath *gp, GraphicsPath *gp2, int conn)
+{
+  gp->AddPath(gp2, conn);
+}
+
 void wxGPathCloseFigure(GraphicsPath *gp)
 {
   gp->CloseFigure();

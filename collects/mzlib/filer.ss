@@ -190,6 +190,11 @@
    (define make-temporary-file
      (case-lambda
       [(template)
+       (with-handlers ([void (lambda (x)
+			       (raise-type-error 'make-temporary-file
+						 "format string for 1 argument"
+						 template))])
+	 (format template void))
        (let ([tmpdir (find-system-path 'temp-dir)])
 	 (let loop ([s (current-seconds)][ms (current-milliseconds)])
 	   (let ([name (build-path tmpdir (format template (format "~a~a" s ms)))])

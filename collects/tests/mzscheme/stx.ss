@@ -380,74 +380,78 @@
 ;; eval versus eval-syntax, etc.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(test eval eval 'eval)
-(test eval eval eval)
-(test eval eval #'eval)
-(test eval eval (datum->syntax-object #f 'eval))
+(unless building-flat-tests?
 
-(err/rt-test (eval-syntax 'eval))
-(err/rt-test (eval-syntax eval))
-(test eval eval-syntax #'eval)
-(test #t 
-      'eval-syntax
-      (with-handlers ([exn:syntax? (lambda (x) #t)])
-	(eval-syntax (datum->syntax-object #f 'eval))))
+  (test eval eval 'eval)
+  (test eval eval eval)
+  (test eval eval #'eval)
+  (test eval eval (datum->syntax-object #f 'eval))
 
-(test eval (current-eval) 'eval)
-(test eval (current-eval) eval)
-(test eval (current-eval) #'eval)
-(test #t 
-      'current-eval-syntax
-      (with-handlers ([exn:syntax? (lambda (x) #t)])
-	((current-eval) (datum->syntax-object #f 'eval))))
+  (err/rt-test (eval-syntax 'eval))
+  (err/rt-test (eval-syntax eval))
+  (test eval eval-syntax #'eval)
+  (test #t 
+	'eval-syntax
+	(with-handlers ([exn:syntax? (lambda (x) #t)])
+	  (eval-syntax (datum->syntax-object #f 'eval))))
 
-(test eval 'compile (eval (compile 'eval)))
-(test eval 'compile (eval (compile eval)))
-(test eval 'compile (eval (compile #'eval)))
-(test eval 'compile (eval (compile (datum->syntax-object #f 'eval))))
+  (test eval (current-eval) 'eval)
+  (test eval (current-eval) eval)
+  (test eval (current-eval) #'eval)
+  (test #t 
+	'current-eval-syntax
+	(with-handlers ([exn:syntax? (lambda (x) #t)])
+	  ((current-eval) (datum->syntax-object #f 'eval))))
 
-(err/rt-test (compile-syntax 'eval))
-(err/rt-test (compile-syntax eval))
-(test eval 'compile (eval (compile-syntax #'eval)))
-(test #t 
-      'compile-syntax
-      (with-handlers ([exn:syntax? (lambda (x) #t)])
-	(compile-syntax (datum->syntax-object #f 'eval))))
+  (test eval 'compile (eval (compile 'eval)))
+  (test eval 'compile (eval (compile eval)))
+  (test eval 'compile (eval (compile #'eval)))
+  (test eval 'compile (eval (compile (datum->syntax-object #f 'eval))))
 
-(test eval 'expand (eval (expand 'eval)))
-(test eval 'expand (eval (expand eval)))
-(test eval 'expand (eval (expand #'eval)))
-(test eval 'expand (eval (expand (datum->syntax-object #f 'eval))))
+  (err/rt-test (compile-syntax 'eval))
+  (err/rt-test (compile-syntax eval))
+  (test eval 'compile (eval (compile-syntax #'eval)))
+  (test #t 
+	'compile-syntax
+	(with-handlers ([exn:syntax? (lambda (x) #t)])
+	  (compile-syntax (datum->syntax-object #f 'eval))))
 
-(err/rt-test (expand-syntax 'eval))
-(err/rt-test (expand-syntax eval))
-(test eval 'expand (eval (expand-syntax #'eval)))
-(test #t 
-      'expand-syntax
-      (with-handlers ([exn:syntax? (lambda (x) #t)])
-	(expand-syntax (datum->syntax-object #f 'eval))))
+  (test eval 'expand (eval (expand 'eval)))
+  (test eval 'expand (eval (expand eval)))
+  (test eval 'expand (eval (expand #'eval)))
+  (test eval 'expand (eval (expand (datum->syntax-object #f 'eval))))
 
-(test eval 'expand-once (eval (expand-once 'eval)))
-(test eval 'expand-once (eval (expand-once eval)))
-(test eval 'expand-once (eval (expand-once #'eval)))
-(test eval 'expand-once (eval (expand-once (datum->syntax-object #f 'eval))))
+  (err/rt-test (expand-syntax 'eval))
+  (err/rt-test (expand-syntax eval))
+  (test eval 'expand (eval (expand-syntax #'eval)))
+  (test #t 
+	'expand-syntax
+	(with-handlers ([exn:syntax? (lambda (x) #t)])
+	  (expand-syntax (datum->syntax-object #f 'eval))))
 
-(err/rt-test (expand-syntax-once 'eval))
-(err/rt-test (expand-syntax-once eval))
-(test eval 'expand-once (eval (expand-syntax-once #'eval)))
-(test #t 
-      'expand-syntax-once
-      (with-handlers ([exn:syntax? (lambda (x) #t)])
-	(expand-syntax-once (datum->syntax-object #f 'eval))))
+  (test eval 'expand-once (eval (expand-once 'eval)))
+  (test eval 'expand-once (eval (expand-once eval)))
+  (test eval 'expand-once (eval (expand-once #'eval)))
+  (test eval 'expand-once (eval (expand-once (datum->syntax-object #f 'eval))))
 
-(test eval 'expand-to-top-form (eval (expand-to-top-form 'eval)))
-(test eval 'expand-to-top-form (eval (expand-to-top-form eval)))
-(test eval 'expand-to-top-form (eval (expand-to-top-form #'eval)))
-(test eval 'expand-to-top-form (eval (expand-to-top-form (datum->syntax-object #f 'eval))))
+  (err/rt-test (expand-syntax-once 'eval))
+  (err/rt-test (expand-syntax-once eval))
+  (test eval 'expand-once (eval (expand-syntax-once #'eval)))
+  (test #t 
+	'expand-syntax-once
+	(with-handlers ([exn:syntax? (lambda (x) #t)])
+	  (expand-syntax-once (datum->syntax-object #f 'eval))))
 
-(err/rt-test (expand-syntax-to-top-form 'eval))
-(err/rt-test (expand-syntax-to-top-form eval))
-(test eval 'expand-to-top-form (eval (expand-syntax-to-top-form #'eval)))
-(test #t syntax? (expand-syntax-to-top-form (datum->syntax-object #f 'eval)))
+  (test eval 'expand-to-top-form (eval (expand-to-top-form 'eval)))
+  (test eval 'expand-to-top-form (eval (expand-to-top-form eval)))
+  (test eval 'expand-to-top-form (eval (expand-to-top-form #'eval)))
+  (test eval 'expand-to-top-form (eval (expand-to-top-form (datum->syntax-object #f 'eval))))
+
+  (err/rt-test (expand-syntax-to-top-form 'eval))
+  (err/rt-test (expand-syntax-to-top-form eval))
+  (test eval 'expand-to-top-form (eval (expand-syntax-to-top-form #'eval)))
+  (test #t syntax? (expand-syntax-to-top-form (datum->syntax-object #f 'eval))))
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (report-errs)

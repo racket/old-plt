@@ -13,13 +13,7 @@ The directory is named "deep". If the test suite passes, the directory
 should be removed, but some "tmp<N>" files will remain. (The "tmp<N>"
 files are automatically replaced if the test suite is run again.)
 
-Unless your machine clock is always exactly in sync with your disk,
-don't worry about failures that look like this:
-  ((path) (#f #t (#<|primitive:<=|> 11 39 11)))
-  ((path) (#f #t (#<|primitive:<=|> 11 39 11)))
-  ((path) (#f #t (#<|primitive:<=|> 11 39 11)))
-
-Additionally, test expand-defmacro by running:
+Additionally, test `expand' by running:
  > (load "PATHTOHERE/expand.ss")
 
 Test compilation and writing/reading compiled code with:
@@ -30,9 +24,6 @@ Run the standard tests with no output except for the results with:
 
 Run 3 copies of the test suite concurrently in separate threads:
  > (load "PATHTOHERE/parallel.ss")
-
-MzLib tests are run with:
- > (load "PATHTOHERE/mzlib.ss")
 
 
 Please report bugs using

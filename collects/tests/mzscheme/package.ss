@@ -10,33 +10,33 @@
 
 
 ;; syntax
-(syntax-test #'(dot))             ;;Improve error message
+(syntax-test #'(dot))
 (syntax-test #'(dot 1))
 (syntax-test #'(dot 1 2))
 (syntax-test #'(dot 1 x))
 
-(syntax-test #'(open))            ;;Improve error message
+(syntax-test #'(open))
 (syntax-test #'(open 1))
 (syntax-test #'(open 1 2))
 (syntax-test #'(open 1 x))
 
-(syntax-test #'(define-dot))            ;;Improve error message
-(syntax-test #'(define-dot 1))          ;;Improve error message
-(syntax-test #'(define-dot x))          ;;Improve error message
-(syntax-test #'(define-dot 1 2))        ;;Improve error message
-(syntax-test #'(define-dot 1 x))        ;;Improve error message
-(syntax-test #'(define-dot x 1))        ;;Improve error message
-(syntax-test #'(define-dot x y))        ;;Improve error message
+(syntax-test #'(define-dot))
+(syntax-test #'(define-dot 1))
+(syntax-test #'(define-dot x))
+(syntax-test #'(define-dot 1 2))
+(syntax-test #'(define-dot 1 x))
+(syntax-test #'(define-dot x 1))
+(syntax-test #'(define-dot x y))
 (syntax-test #'(define-dot 1 x y))
 (syntax-test #'(define-dot x y 3))
 (syntax-test #'(define-dot x 2 y))
 
-(syntax-test #'(package))       ;;Improve error message
-(syntax-test #'(package x))     ;;Improve error message
-(syntax-test #'(package 1))     ;;Improve error message
+(syntax-test #'(package))
+(syntax-test #'(package x))
+(syntax-test #'(package 1))
 (syntax-test #'(package x 1))
 (syntax-test #'(package x x))
-(syntax-test #'(package x (1))) ;;Improve error message
+(syntax-test #'(package x (1)))
 
 
 
@@ -58,7 +58,7 @@
     (define x 10)
     (define y 11)))
 
-(err/rt-test x exn:variable?)
+(err/rt-test xxxx exn:variable?)
 (test 10 "" (dot p1 x))
 (test 12 "" (dot p1 y x))
 (syntax-test #'(dot p2 x))

@@ -3,7 +3,7 @@
 		 (lambda (exn)
 		   (namespace-set-variable-value!
 		    'flat-load
-		    "all.ss"))])
+		    "mz.ss"))])
   (namespace-variable-value 'flat-load))
 
 (with-handlers ([not-break-exn?

@@ -2235,11 +2235,18 @@ static void copy_in_runstack(Scheme_Thread *p, Scheme_Saved_Stack *isaved)
   }
 }
 
-static void copy_in_mark_stack(Scheme_Thread *p, Scheme_Cont_Mark *cont_mark_stack_copied)
+static void copy_in_mark_stack(Scheme_Thread *p, Scheme_Cont_Mark *cont_mark_stack_copied,
+			       MZ_MARK_STACK_TYPE cms, MZ_MARK_STACK_TYPE base_cms)
+     /* Copies in the mark stack up to depth cms, but assumes that the
+	stack up to depth base_cms is already in place (probably in
+	place for a dynamic-wind context in an continuation
+	restoration.) */
 {
-  long cmcount;
+  long cmcount, base_cmcount;
 
-  cmcount = (long)MZ_CONT_MARK_STACK;
+  cmcount = (long)cms;
+  base_cmcount = (long)base_cms;
+
   if (cmcount) {
     /* First, make sure we have enough segments */
     long needed = ((cmcount - 1) >> SCHEME_LOG_MARK_SEGMENT_SIZE) + 1;
@@ -2269,7 +2276,7 @@ static void copy_in_mark_stack(Scheme_Thread *p, Scheme_Cont_Mark *cont_mark_sta
       p->cont_mark_stack_segments = segs;
     }
   }
-  while (cmcount--) {
+  while (cmcount-- > base_cmcount) {
     Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[cmcount >> SCHEME_LOG_MARK_SEGMENT_SIZE];
     long pos = cmcount & SCHEME_MARK_SEGMENT_MASK;
     Scheme_Cont_Mark *cm = seg + pos;
@@ -2351,6 +2358,7 @@ call_cc (int argc, Scheme_Object *argv[])
 
   if (scheme_setjmpup(&cont->buf, cont, p->next ? p->stack_start : p->o_start)) {
     /* We arrive here when the continuation is applied */
+    MZ_MARK_STACK_TYPE copied_cms = 0;
     Scheme_Object *result = cont->value;
     cont->value = NULL;
 
@@ -2362,35 +2370,6 @@ call_cc (int argc, Scheme_Object *argv[])
     p->stack_start = cont->stack_start;
     p->o_start = cont->o_start;
     p->init_config = cont->init_config;
-
-    /* For dynamic-winds after the "common" intersection
-       (see eval.c), execute the pre thunks. Make a list
-       of these first because they have to be done in the
-       inverse order of `prev' linkage. */
-    if (cont->dw) {
-      Scheme_Dynamic_Wind_List *dwl = NULL;
-
-      for (dw = cont->dw; dw != cont->common; dw = dw->prev) {
-	Scheme_Dynamic_Wind_List *cell;
-
-	cell = MALLOC_ONE_RT(Scheme_Dynamic_Wind_List);
-#ifdef MZTAG_REQUIRED
-	cell->type = scheme_rt_dyn_wind_cell;
-#endif
-	cell->dw = dw;
-	cell->next = dwl;
-	dwl = cell;
-      }
-      for (; dwl; dwl = dwl->next) {
-	if (dwl->dw->pre) {
-	  DW_PrePost_Proc pre = dwl->dw->pre;
-	  p->dw = dwl->dw->prev;
-	  pre(dwl->dw->data);
-	  p = scheme_current_thread;
-	}
-      }
-    }
-    p->dw = cont->dw;
 
     p->suspend_break = cont->suspend_break;
     
@@ -2427,9 +2406,53 @@ call_cc (int argc, Scheme_Object *argv[])
       *p->cont_mark_stack_owner = p;
     }
 
-    /* Copy cont mark stack back in. */
-    copy_in_mark_stack(p, cont->cont_mark_stack_copied);
+    /* For dynamic-winds after the "common" intersection
+       (see eval.c), execute the pre thunks. Make a list
+       of these first because they have to be done in the
+       inverse order of `prev' linkage. */
+    if (cont->dw) {
+      Scheme_Dynamic_Wind_List *dwl = NULL;
 
+      p->suspend_break++;
+      for (dw = cont->dw; dw != cont->common; dw = dw->prev) {
+	Scheme_Dynamic_Wind_List *cell;
+
+	cell = MALLOC_ONE_RT(Scheme_Dynamic_Wind_List);
+#ifdef MZTAG_REQUIRED
+	cell->type = scheme_rt_dyn_wind_cell;
+#endif
+	cell->dw = dw;
+	cell->next = dwl;
+	dwl = cell;
+      }
+      for (; dwl; dwl = dwl->next) {
+	if (dwl->dw->pre) {
+	  DW_PrePost_Proc pre = dwl->dw->pre;
+
+	  /* Restore the needed part of the mark stack for this
+	     dynamic-wind context. */
+	  MZ_CONT_MARK_POS = dwl->dw->envss.cont_mark_pos;
+	  MZ_CONT_MARK_STACK = dwl->dw->envss.cont_mark_stack;
+	  copy_in_mark_stack(p, cont->cont_mark_stack_copied, 
+			     MZ_CONT_MARK_STACK, copied_cms);
+
+	  p->dw = dwl->dw->prev;
+	  pre(dwl->dw->data);
+	  p = scheme_current_thread;
+	}
+      }
+      --p->suspend_break;
+    }
+
+    p->dw = cont->dw;
+
+    /* Finish copying cont mark stack back in. */
+    
+    MZ_CONT_MARK_POS = cont->ss.cont_mark_pos;
+    MZ_CONT_MARK_STACK = cont->ss.cont_mark_stack;
+    copy_in_mark_stack(p, cont->cont_mark_stack_copied, 
+		       MZ_CONT_MARK_STACK, copied_cms);
+    
     /* We may have just re-activated breaking: */
     scheme_check_break_now();
 
@@ -2477,7 +2500,7 @@ void scheme_takeover_stacks(Scheme_Thread *p)
       op->cont_mark_stack_swapped = swapped;
     }
     *(p->cont_mark_stack_owner) = p;
-    copy_in_mark_stack(p, p->cont_mark_stack_swapped);
+    copy_in_mark_stack(p, p->cont_mark_stack_swapped, MZ_CONT_MARK_STACK, 0);
     p->cont_mark_stack_swapped = NULL;
   }
 }

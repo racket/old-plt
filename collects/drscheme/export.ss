@@ -19,7 +19,7 @@
 					       (message-box "Invalid Teachpack" s))
 					     (define in-mzscheme? #f))
 					   mred)]
-	[params : plt:userspace:params^ ((require-library "paramr.ss" "userspce"))]
+        [params : plt:userspace:params^ ((require-library "paramr.ss" "userspce"))]
 	[basis : plt:basis^
 	       ((require-library "basis.ss" "userspce")
 		basis-import
@@ -30,26 +30,26 @@
 		print-convert
 		(mzlib pretty-print)
 		(mzlib function))]
-
-        [load-handler : drscheme:load-handler^
+	[load-handler : drscheme:load-handler^
                       ((require-library "load-handler.ss" "drscheme")
 		       mred zodiac basis 
 		       (framework gui-utils))]
 
-	[rep : drscheme:rep^
+        [rep : drscheme:rep^
 	     ((require-relative-library "rep.ss")
 	      mred mzlib framework print-convert zodiac
 	      interface init snip language app frame unit
 	      basis text load-handler
               help-desk)]
+
 	[frame : drscheme:frame^
 	       ((require-relative-library "frame.ss")
 		mred mzlib mzlib:date framework
 		unit app
 		help-desk zodiac)]
-        [launcher : launcher-maker^ ((require-library "launcherr.ss" "launcher")
+	[launcher : launcher-maker^ ((require-library "launcherr.ss" "launcher")
                                      (mzlib file))]
-	[unit : drscheme:unit^
+        [unit : drscheme:unit^
 	  ((require-relative-library "unit.ss")
 	   mred mzlib mzlib:date 
            framework
@@ -69,6 +69,11 @@
 		   (mzlib function) 
 		   (mzlib file)
 		   print-convert)]
+
+	[help-info : help:get-info^ ((require-relative-library "help-info.ss")
+                                     framework
+                                     basis
+                                     language)]
         [help-desk : help:drscheme-interface^
 		   ((require-library "start-help-desk.ss" "help")
 		    (mzlib function)
@@ -82,7 +87,8 @@
 		    basis)])
 
 	
-  (export (unit interface)
+  (export (unit help-info)
+          (unit interface)
           (unit basis)
 	  (unit frame)
 	  (unit unit)

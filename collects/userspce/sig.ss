@@ -53,7 +53,17 @@
 	   [bindings (second defn)]
 	   [exp (third defn)]
 	   [make-parse (string->symbol (string-append "make-" (symbol->string str) "/parse"))]
+           [unparse (string->symbol (string-append (symbol->string str) "/unparse"))]
 	   [maker-name (second bindings)]
+           [unparser
+            `(lambda (ele)
+               (list
+                ,@(map (lambda (field-name) `(list ',field-name (,(string->symbol (string-append 
+                                                                                   (symbol->string str)
+                                                                                   "-"
+                                                                                   (symbol->string field-name)))
+                                                                 ele)))
+                       fields)))]
 	   [parser
 	    `(lambda (inits)
 	       (apply ,maker-name
@@ -65,9 +75,9 @@
 				 (error ',make-parse "malformed binding: ~a" m))
 			       (,second-name m)))
 			   ',fields)))])
-      `(define-values ,(cons make-parse bindings)
+      `(define-values ,(list* make-parse unparse bindings)
 	 (call-with-values (lambda () ,exp)
-			   (lambda bindings (apply values (cons ,parser bindings))))))))
+			   (lambda bindings (apply values ,parser ,unparser bindings)))))))
 
 (define-signature plt:init-params^
   (initial-line
@@ -113,6 +123,7 @@
 
    setting-name->number
    number->setting
+   setting/unparse
    (struct setting (name
 		    vocabulary-symbol
 		    macro-libraries

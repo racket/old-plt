@@ -14,7 +14,7 @@
 
 (let ([unit (require-relative-library "link.ss")])
   (shutdown-splash)
-  (global-define-values/invoke-unit/sig framework^
+  (global-define-values/invoke-unit/sig drscheme^
                                         unit
                                         #f
                                         (program argv get-dropped-files))

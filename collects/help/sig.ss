@@ -28,3 +28,8 @@
 (define-signature help:help^
   ((open help:help-window^)
    doc-collections-changed))
+
+(define-signature help:get-info^
+  (get-language-level
+   get-teachpack-names))
+

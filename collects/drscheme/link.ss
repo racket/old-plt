@@ -11,7 +11,8 @@
 	[text : drscheme:text^ ((require-relative-library "edit.ss")
 				mzlib:date framework zodiac)]
 	[snip : drscheme:snip^ ((require-relative-library "snip.ss") mred)]
-	[graph : drscheme:graph^ ((require-relative-library "graph.ss") mred framework (mzlib string) (mzlib function))]
+	[graph : drscheme:graph^ ((require-relative-library "graph.ss")
+                                  mred framework (mzlib string) (mzlib function))]
         [export* : drscheme:export^ ((require-relative-library "export.ss")
 				     mred mzlib mzlib:date framework print-convert app
 				     text snip

@@ -43,6 +43,15 @@
 ;                                 just after each object is printed
 ;    initial setting: (lambda (x port) (void))
 ;
+;  pretty-print-show-inexactness - parameter for printing #i before an
+;                                  inexact number
+;    initial setting: #f
+;
+;  pretty-print-exact-as-decimal - parameter for printing exact numbers
+;                                  with decimal representations in decimal
+;                                  notation instead of fractions
+;    initial setting: #f
+;
 ;  (pretty-print-handler v) - pretty-prints v if v is not #<void>
 ;
 ; TO INSTALL this pretty-printer into a MzScheme's read-eval-print loop,
@@ -66,6 +75,10 @@
    (import)
    
    (define pretty-print-show-inexactness 
+     (make-parameter #f
+		     (lambda (x) (and x #t))))
+
+   (define pretty-print-exact-as-decimal
      (make-parameter #f
 		     (lambda (x) (and x #t))))
 
@@ -208,7 +221,8 @@
      (define table (make-hash-table)) ; Hash table for looking for loops
 
      (define show-inexactness? (pretty-print-show-inexactness))
-
+     (define exact-as-decimal? (pretty-print-exact-as-decimal))
+     
      (define-struct mark (str def))
 
      (define found-cycle
@@ -439,9 +453,12 @@
 		     (when (and show-inexactness?
 				(inexact? obj))
 		       (out "#i" col))
-		     (out (number->string obj) col))
-		    ; Let symbol get printed by default case to get proper quoting
-		    ; ((symbol? obj)      (out (symbol->string obj) col))
+		     (out ((if exact-as-decimal?
+			       number->decimal-string
+			       number->string)
+			   obj) col))
+		    ;; Let symbol get printed by default case to get proper quoting
+		    ;; ((symbol? obj)      (out (symbol->string obj) col))
 		    ((string? obj)      (if display?
 					    (out obj col)
 					    (let loop ((i 0) (j 0) (col (out "\"" col)))
@@ -768,4 +785,54 @@
      (lambda (v)
        (unless (void? v)
 	       (pretty-print v))))
+
+   (define (number->decimal-string x)
+     (cond
+      [(or (inexact? x)
+	   (integer? x))
+       (number->string x)]
+      [(not (real? x))
+       (let ([r (real-part x)]
+	     [i (imag-part x)])
+	 (format "~a~a~ai"
+		 (number->decimal-string r)
+		 (if (negative? i)
+		     ""
+		     "+")
+		 (number->decimal-string i)))]
+      [else
+       (let ([n (numerator x)]
+	     [d (denominator x)])
+	 ;; Count powers of 2 in denomintor
+	 (let loop ([v d][2-power 0])
+	   (if (and (positive? v)
+		    (even? v))
+	       (loop (arithmetic-shift v -1) (add1 2-power))
+	       ;; Count powers of 5 in denominator
+	       (let loop ([v v][5-power 0])
+		 (if (zero? (remainder v 5))
+		     (loop (quotient v 5) (add1 5-power))
+		     ;; No more 2s or 5s. Anything left?
+		     (if (= v 1)
+			 ;; Denominator = (* (expt 2 2-power) (expt 5 5-power)).
+			 ;; Print number as decimal.
+			 (let* ([10-power (max 2-power 5-power)]
+				[scale (* (expt 2 (- 10-power 2-power))
+					  (expt 5 (- 10-power 5-power)))]
+				[s (number->string (* (abs n) scale))]
+				[orig-len (string-length s)]
+				[len (max (add1 10-power) orig-len)]
+				[padded-s (if (< orig-len len)
+					      (string-append
+					       (make-string (- len orig-len) #\0)
+					       s)
+					      s)])
+			   (format "~a~a.~a"
+				   (if (negative? n) "-" "")
+				   (substring padded-s 0 (- len 10-power))
+				   (substring padded-s (- len 10-power) len)))
+			 ;; d has factor(s) other than 2 and 5.
+			 ;; Print as a fraction.
+			 (number->string x)))))))]))
+
    )

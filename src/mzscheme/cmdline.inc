@@ -270,8 +270,12 @@ static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
     if (!scheme_setjmp(scheme_error_buf)) {
       f = scheme_initialize(fa->global_env);
       a[0] = scheme_true;
-      f = _scheme_apply(f, 1, a);
-      _scheme_apply(f, 0, NULL);
+      f = _scheme_apply_multi(f, 1, a);
+      if (SAME_OBJ(f, SCHEME_MULTIPLE_VALUES)
+	  && (scheme_multiple_count == 2)) {
+	f = scheme_multiple_array[0];
+	_scheme_apply(f, 0, NULL);
+      }
     } else {
       exit_val = 1;
     }
@@ -856,12 +860,16 @@ static int run_from_cmd_line(int argc, char *_argv[],
     SCHEME_SET_VECTOR_IMMUTABLE(sch_argv);
   scheme_set_param(scheme_config, MZCONFIG_CMDLINE_ARGS, sch_argv);
 
+#ifndef DONT_PARSE_COMMAND_LINE
   if (!no_argv)
+#endif
     scheme_add_global("argv", sch_argv, global_env);
   {	
     Scheme_Object *ps;
     ps = scheme_set_exec_cmd(prog);
+#ifndef DONT_PARSE_COMMAND_LINE
     if (!no_argv)
+#endif
       scheme_add_global("program", ps, global_env);
   }
 

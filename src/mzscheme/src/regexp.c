@@ -2708,6 +2708,7 @@ static Scheme_Object *positions_peek(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *gen_replace(const char *name, int argc, Scheme_Object *argv[], int all)
 {
+  Scheme_Object *orig;
   regexp *r;
   char *source, *prefix = NULL, *deststr;
   rxpos *startp, *endp;
@@ -2743,19 +2744,17 @@ static Scheme_Object *gen_replace(const char *name, int argc, Scheme_Object *arg
     r = (regexp *)argv[0];
 
   if (SCHEME_CHAR_STRINGP(argv[1])) {
-    Scheme_Object *bs;
-    bs = scheme_char_string_to_byte_string(argv[1]);
-    source = SCHEME_BYTE_STR_VAL(bs);
-    sourcelen = SCHEME_BYTE_STRTAG_VAL(bs);
+    orig = scheme_char_string_to_byte_string(argv[1]);
     if (r->is_utf8)
       was_non_byte = 1;
     else
       was_non_byte = 0;
   } else {
-    source = SCHEME_BYTE_STR_VAL(argv[1]);
-    sourcelen = SCHEME_BYTE_STRTAG_VAL(argv[1]);
+    orig = argv[1];
     was_non_byte = 0;
   }
+  source = SCHEME_BYTE_STR_VAL(orig);
+  sourcelen = SCHEME_BYTE_STRTAG_VAL(orig);
   deststr = NULL;
   destlen = 0;
 
@@ -2786,7 +2785,7 @@ static Scheme_Object *gen_replace(const char *name, int argc, Scheme_Object *arg
 
       insert = regsub(r, deststr, destlen, &len, source, startp, endp);
       
-      end = SCHEME_BYTE_STRTAG_VAL(argv[1]);
+      end = sourcelen;
       
       startpd = startp[0];
       endpd = endp[0];
@@ -2827,9 +2826,12 @@ static Scheme_Object *gen_replace(const char *name, int argc, Scheme_Object *arg
 
 	srcoffset = endpd;
       }
-    } else if (!prefix)
-      return argv[1];
-    else {
+    } else if (!prefix) {
+      if (was_non_byte)
+	return argv[0];
+      else
+	return orig;
+    } else {
       char *result;
       long total, slen;
       

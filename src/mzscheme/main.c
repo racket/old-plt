@@ -82,7 +82,7 @@ extern BOOL WINAPI DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved);
 #if defined(_IBMR2)
 static void dangerdanger(int ignored)
 {
-  char *s = "mzscheme: danger - paging space low\n";
+  char *s = "mzscheme: Danger - paging space low\n";
   write(2, s, strlen(s));
   scheme_collect_garbage();
 }

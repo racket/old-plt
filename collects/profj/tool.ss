@@ -24,12 +24,12 @@
 
       (define styles
         `((keyword ,(color-prefs:make-style-delta "black" #f #f #f))
-          (string ,(color-prefs:make-style-delta "darkgreen" #f #f #f))
-          (literal ,(color-prefs:make-style-delta "darkgreen" #f #f #f))
-          (comment ,(color-prefs:make-style-delta "dimgray" #f #f #f))
+          (string ,(color-prefs:make-style-delta "ForestGreen" #f #f #f))
+          (literal ,(color-prefs:make-style-delta "ForestGreen" #f #f #f))
+          (comment ,(color-prefs:make-style-delta (make-object color% 0 105 255) #f #f #f))
           (error ,(color-prefs:make-style-delta "red" #f #f #f))
-          (identifier ,(color-prefs:make-style-delta "darkblue" #f #f #f))
-          (default ,(color-prefs:make-style-delta "darkgray" #f #f #f))))
+          (identifier ,(color-prefs:make-style-delta "navy" #f #f #f))
+          (default ,(color-prefs:make-style-delta "black" #f #f #f))))
       
       (color-prefs:add "Java" styles)
       

@@ -14,8 +14,8 @@
   (define pasteboard<%> (interface (fw:editor:basic<%>)))
 
   (define pasteboard-mixin
-    (mixin (fw:pasteboard:basic<%>) (pasteboard<%>) ()
-      (inherit find-first-snip get-snip-location get-frame get-canvas
+    (mixin (mred:pasteboard<%> fw:editor:basic<%>) (pasteboard<%>) ()
+      (inherit find-first-snip get-snip-location get-canvas
 	       find-next-selected-snip get-dc find-snip
 	       invalidate-bitmap-cache begin-write-header-footer-to-file
 	       end-write-header-footer-to-file)
@@ -25,7 +25,7 @@
       (private
 	[size-footer-string "graph-pasteboard%-size"]
 	[children-footer-string "graph-pasteboard%-children"])
-      (public
+      (override
 	[read-footer-from-file
 	 (lambda (stream footer)
 	   (cond
@@ -64,8 +64,11 @@
 			 info))]
 	    [(string=? footer size-footer-string)
 	     (let* ([s (send stream get-string)]
-		    [l (mzlib:string:read-from-string s)])
-	       '(send (get-frame) set-size -1 -1 (car l) (cadr l))
+		    [l (mzlib:string:read-from-string s)]
+		    [canvas (get-canvas)]
+		    [frame (and canvas (send canvas get-top-level-window))])
+	       (when frame
+		 (send frame resize (car l) (cadr l)))
 	       #t)]
 	    [else (super-read-footer-from-file stream footer)]))]
 	[write-footers-to-file
@@ -83,9 +86,12 @@
 	      (lambda ()
 		(send stream put
 		      (format "~s" 
-			      (let ([f (get-frame)])
-				(list (send f get-width)
-				      (send f get-height)))))))
+			      (let* ([canvas (get-canvas)]
+				     [frame (and canvas (send canvas get-top-level-window))])
+				(if frame
+				    (list (send frame get-width)
+					  (send frame get-height))
+				    (list 100 100)))))))
 	     (write-footer
 	      children-footer-string
 	      (lambda ()
@@ -133,7 +139,7 @@
 	      [super-on-move-to on-move-to]
 	      [super-on-default-event on-default-event]
 	      [super-on-paint on-paint])
-      (public
+      (override
 	[after-delete
 	 (lambda (snip)
 	   (super-after-delete snip)
@@ -372,7 +378,8 @@
       (public
 	[snip% node-snip%]
 	[classname "drscheme:unit:snip%"]
-	[version 3]
+	[version 3])
+      (override
 	[write-header
 	 (lambda (p)
 	   (send p put "h"))]
@@ -466,11 +473,16 @@
 	     (let ([admin (get-admin)])
 	       (unless (null? admin)
 		 (send (send admin get-media) set-modified #t))))]
+	  [min-width 10]
+	  [min-height 10]
+	  [draw-border
+	   (lambda (dc x y width height)
+	     (send dc draw-rectangle x y width height))]
+	  [snipclass node-snip-class])
+	(override
 	  [write (lambda (s) 
 		   (let* ([string (format "~s" (get-name))])
 		     (send s put string)))]
-	  [min-width 10]
-	  [min-height 10]
 	  [resize
 	   (lambda (w h)
 	     (if (and (>= w min-width)
@@ -480,9 +492,6 @@
 			(send (get-admin) resized this #t)
 			#t)
 		 #f))]
-	  [draw-border
-	   (lambda (dc x y width height)
-	     (send dc draw-rectangle x y width height))]
 	  [draw
 	   (let ([xbox (box 0)]
 		 [ybox (box 0)]
@@ -543,8 +552,7 @@
 	       ((size width) width-box)
 	       ((size height) height-box)
 	       (for-each (size 3) 
-			 (list descent-box space-box lspace-box rspace-box))))]
-	  [snipclass node-snip-class])
+			 (list descent-box space-box lspace-box rspace-box))))])
 	(sequence
 	  (super-init)
 	  (set-snipclass snipclass)))))

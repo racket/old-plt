@@ -1,3 +1,77 @@
+(require-library "refer.ss")
+(define file-stack null)
+(define file-ht (make-hash-table))
+(define value-ht (make-hash-table))
+(define mods-ht (make-hash-table))
+
+(current-load
+ (let ([ol (current-load)])
+   (lambda (fn)
+     (unless (file-exists? fn)
+       (error 'load-handler "file ~a does not exist" fn))
+     (let ([sym (string->symbol fn)])
+       (dynamic-wind
+	(lambda ()
+	  (hash-table-put! file-ht sym null)
+	  (for-each (lambda (stack-fn)
+		      (hash-table-put! file-ht stack-fn (cons fn (hash-table-get file-ht stack-fn))))
+		    file-stack)
+	  (hash-table-put! mods-ht sym (file-or-directory-modify-seconds fn))
+	  (set! file-stack (cons sym file-stack)))
+	(lambda ()
+	  (let ([res (ol fn)])
+	    (hash-table-put! value-ht sym res)
+	    res))
+	(lambda ()
+	  (set! file-stack (cdr file-stack))))))))
+
+(define check-require/proc
+  (lambda (filename)
+    (unless (file-exists? filename)
+      (error 'check-require/proc "file does not exist: ~a~n" filename))
+    (let* ([sym (string->symbol filename)]
+	   [load/save
+	    (lambda (filename reason)
+	      (printf "loading: ~a because ~a~n" filename reason)
+	      (let ([ans (load filename)])
+		(hash-table-put! value-ht sym ans)
+		ans))]
+	   [hash-table-maps?
+	    (lambda (ht value)
+	      (let/ec k
+		(hash-table-get ht value (lambda () (k #f)))
+		#t))])
+      (if (hash-table-maps? value-ht sym)
+	  (let ([secs (hash-table-get mods-ht sym)])
+	    (if (ormap (lambda (fn) (< secs (file-or-directory-modify-seconds fn)))
+		       (cons filename (hash-table-get file-ht sym)))
+		(load/save filename "cached version expired")
+		(hash-table-get value-ht sym)))
+	  (load/save filename "never before loaded")))))
+
+(define-macro require-relative-library
+  (lambda (filename)
+    `(let ([require-relative-collection (current-require-relative-collection)])
+       (unless require-relative-collection
+	 (error 'require-relative-library "no collection~n"))
+       ((global-defined-value 'check-require/proc)
+	(build-path
+	 (apply collection-path require-relative-collection)
+	 ,filename)))))
+
+(define-macro require-library
+  (lambda (filename . collections)
+    `(let ([g (list ,@collections)]
+	   [f ,filename])
+       (let ([h (if (null? g)
+		    (list "mzlib")
+		    g)])
+	 (parameterize ([current-require-relative-collection h])
+	   ((global-defined-value 'check-require/proc)
+	    (build-path
+	     (apply collection-path h)
+	     f)))))))
+
 (define debug? #t)
 
 (define start-drscheme-expression

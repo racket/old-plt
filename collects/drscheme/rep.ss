@@ -842,7 +842,7 @@
   (define separator-snipclass
     (make-object
      (class-asi mred:snip-class%
-       (public
+       (override
 	 [read (lambda (s) 
 		 (let ([size-box (box 0)])
 		   (send s get size-box)
@@ -861,7 +861,7 @@
       (private [width 500]
 	       [height 1]
 	       [white-around 2])
-      (public
+      (override
 	[write (lambda (s) 
 		 (send s put (char->integer #\r)))]
 	[copy (lambda () 
@@ -1036,11 +1036,10 @@
 		 last-position get-start-position get-end-position
 		 get-text get-snip-position
 		 get-character find-snip find-string
-		 erase set-mode get-canvas
+		 erase get-canvas get-canvases
 		 invalidate-bitmap-cache
-		 get-extent get-style-list canvases)
-	(rename [super-set-auto-set-wrap set-auto-set-wrap]
-		[super-on-local-char on-local-char]
+		 get-extent get-style-list)
+	(rename [super-on-local-char on-local-char]
 		[super-on-paint on-paint]
 		[super-after-set-size-constraint after-set-size-constraint])
 	(private
@@ -1186,7 +1185,7 @@
 	(public
 	  [resetting? #f]
 	  [set-resetting (lambda (v) (set! resetting? v))])
-	(public
+	(override
 	  [on-insert
 	   (lambda (start len)
 	     (on-something super-on-insert start len))]
@@ -1444,10 +1443,6 @@
 		   (send a grab-caret)))		 
 	       (send transparent-edit lock #t)
 	       (set! transparent-edit #f)))]
-	  [set-auto-set-wrap
-	   (lambda (x)
-	     (super-set-auto-set-wrap x)
-	     (for-each (lambda (c) (send c widen-snips x)) canvases))]
 	  [init-transparent-io-do-work
 	   (lambda (grab-focus?)
 	     (let ([starting-at-prompt-mode? prompt-mode?])
@@ -1472,13 +1467,13 @@
 
 		  (unless transparent-edit
 		    (printf "transparent-edit is ~a!" transparent-edit))
-		  (send transparent-edit set-auto-set-wrap #t)
+		  (send transparent-edit auto-wrap #t)
 		  (let ([snip (make-object mred:string-snip% transparent-edit)])
 		    (set! transparent-snip snip)
 		    (insert snip (last-position) (last-position))
 		    (insert (string #\newline) (last-position) (last-position))
 		    (for-each (lambda (c) (send c add-wide-snip snip))
-			      canvases))
+			      (get-canvases)))
 		  (when grab-focus?
 		    (let ([a (send transparent-edit get-admin)])
 		      (unless (null? a)
@@ -1683,7 +1678,8 @@
 			   #f))))))])
 	
 	(public
-	  [eval-busy? (lambda () #f)]
+	  [eval-busy? (lambda () #f)])
+	(override
 	  [on-local-char
 	   (lambda (key)
 	     (let ([cr-code 13]
@@ -1740,8 +1736,8 @@
 			  (copy-to-end/set-position match start)
 			  (end-edit-sequence))
 			(super-on-local-char key)))]
-		 [else (super-on-local-char key)])))]
-	  
+		 [else (super-on-local-char key)])))])
+	(public
 	  [insert-prompt
 	   (lambda ()
 	     (set! prompt-mode? #t)
@@ -1783,14 +1779,16 @@
 	  [set-last-header-position
 	   (lambda (p)
 	     (set! reset-console-start-position p)
-	     (reset-console-locations))]
+	     (reset-console-locations))])
+	(override
 	  [after-set-size-constraint
 	   (lambda ()
 	     (super-after-set-size-constraint)
 	     (run-after-edit-sequence
 	      (lambda ()
 		(reset-console-locations))
-	      'reset-console-locations))]
+	      'reset-console-locations))])
+	(public
 	  [reset-console
 	   (let* ([delta (make-object mred:style-delta%)]
 		  [color-add (send delta get-foreground-add)]
@@ -1809,7 +1807,8 @@
 			      reset-console-start-position)
 		     (change-style delta reset-console-start-position 
 				   reset-console-end-position)))
-	       (set-resetting #f)))]
+	       (set-resetting #f)))])
+	(override
 	  [on-paint
 	   (lambda (before dc left top right bottom dx dy draw-caret)
 	     (super-on-paint before dc left top right bottom
@@ -1839,7 +1838,8 @@
 		     (send dc draw-rectangle x y width height)
 		     (send dc set-pen old-pen)
 		     (send dc set-brush old-brush)
-		     (send dc set-logical-function old-logical))))))]
+		     (send dc set-logical-function old-logical))))))])
+	(public
 	  [ready-non-prompt
 	   (lambda ()
 	     (when prompt-mode?
@@ -1928,7 +1928,7 @@
 	(inherit change-style prompt-position set-prompt-position
 		 resetting? set-resetting lock get-text
 		 flush-console-output set-position last-position get-character
-		 clear-undos set-auto-set-wrap locked? set-cursor
+		 clear-undos locked? set-cursor
 		 do-pre-eval do-post-eval)
 	(rename [super-on-insert on-insert]
 		[super-on-local-char on-local-char])
@@ -1942,8 +1942,8 @@
 	    (send add set 0 150 0)))
 	(private [shutdown? #f])
 
-	(public [reset-console-end-position #f]
-		[reset-console-start-position #f])
+	(override [reset-console-end-position #f]
+		  [reset-console-start-position #f])
 
 	(public
 	  [potential-sexps-protect (make-semaphore 1)]
@@ -2047,15 +2047,16 @@
 		        (mzlib:thread:dynamic-enable-break (lambda () (mred:yield wait-for-sexp)))
 			loop))])))))]
 	  [takeover void]
-	  [get-prompt (lambda () "")]
+	  [get-prompt (lambda () "")])
+	(override
 	  [on-insert
 	   (lambda (start len)
 	     (let ([old-r resetting?])
 	       (set-resetting #t)
 	       (change-style input-delta start (+ start len))
 	       (set-resetting old-r))
-	     (super-on-insert start len))]
-	  
+	     (super-on-insert start len))])
+	(public
 	  [do-eval
 	   (lambda (start end)
 	     (do-pre-eval)

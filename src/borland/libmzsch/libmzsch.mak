@@ -173,9 +173,6 @@ $(PROJECT): $(IDLGENFILES) $(OBJFILES) $(RESDEPEN) $(DEFFILE)
     $(DEFFILE), +
     $(ALLRES)
 !
-..\..\mzscheme\src\mzsj86.obj: ..\..\mzscheme\src\mzsj86.c
-	$(BCB)\BIN\$(BCC32) -S $(CFLAG1) $(WARNINGS) -I$(INCLUDEPATH) -D$(USERDEFINES);$(SYSDEFINES) -n$(@D) ..\..\mzscheme\src\mzsj86.c
-	ml /Zm /c /Cx /Cp /Dmodel=\; /Dpublicdll=public ..\..\mzscheme\src\mzsj86.asm
 # ---------------------------------------------------------------------------
 .pas.hpp:
     $(BCB)\BIN\$(DCC32) $(PFLAGS) -U$(INCLUDEPATH) -D$(USERDEFINES);$(SYSDEFINES) -O$(INCLUDEPATH) --BCB {$< }

@@ -162,9 +162,6 @@ $(PROJECT): $(IDLGENFILES) $(OBJFILES) $(RESDEPEN) $(DEFFILE)
     $(DEFFILE), +
     $(ALLRES)
 !
-..\..\mzscheme\gc\mach_dep.obj: ..\..\mzscheme\gc\mach_dep.c
-	$(BCB)\BIN\$(BCC32) -S $(CFLAG1) $(WARNINGS) -I$(INCLUDEPATH) -D$(USERDEFINES);$(SYSDEFINES) -n$(@D) ..\..\mzscheme\gc\mach_dep.c
-	ml /Zm /c /Cx /Dmodel=\; ..\..\mzscheme\gc\mach_dep.asm
 # ---------------------------------------------------------------------------
 .pas.hpp:
     $(BCB)\BIN\$(DCC32) $(PFLAGS) -U$(INCLUDEPATH) -D$(USERDEFINES);$(SYSDEFINES) -O$(INCLUDEPATH) --BCB {$< }

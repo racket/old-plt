@@ -6,7 +6,10 @@ MSVC makefile and project file for MzCOM.
 MzScheme (but not MzCOM or MrEd) also compiles with Cygwin gcc (a
 free compiler from GNU and Cygnus Solutions); to compile with gcc,
 follow the instructions in plt\src\README (there is a short
-Windows-specific section in that file.)
+Windows-specific section in that file).
+
+Finally, MzScheme compiles with Borland's compiler. See
+plt\src\borland\README for information.
 
 
 As always, please report bugs via one of the following:

@@ -257,7 +257,7 @@
 						(cond
 						 [(symbol? p) (symbol->string p)]
 						 [(eq? p #t) (generate-prefix)]
-						 [(not p) '||]
+						 [(not p) ""]
 						 [else (error
 							'make-embedding-executable
 							"bad prefix: ~e"

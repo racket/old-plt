@@ -813,7 +813,17 @@
 (error-test #'(get-field x (new object%)) exn:application:mismatch?)
 (error-test #'(get-field x (new (class object% (define x 1) (super-new))))
             exn:application:mismatch?)
+(error-test #'(let ([o (let ()
+                         (define-local-member-name f)
+                         (new (class object%
+                                (field [f 0])
+                                (super-new))))])
+                (get-field f o))
+            exn:application:mismatch?)
 (test #t zero? (get-field x (new (class object% (field [x 0]) (super-new)))))
+(test #t zero? (let ()
+                 (define-local-member-name f)
+                 (get-field f (new (class object% (field [f 0]) (super-new))))))
 
 (syntax-test #'(field-bound?))
 (syntax-test #'(field-bound? a))
@@ -828,20 +838,14 @@
 (test #f
       (lambda (x) x)
       (let ([o (let ()
-                 (define-local-member-name m)
-                 (new (class object%
-                        (field [f 10])
-                        (super-new))))])
+                 (define-local-member-name f)
+                 (new (class object% (field [f 10]) (super-new))))])
         (field-bound? f o)))
 
 (test #t
       (lambda (x) x)
       (let ()
-        (define-local-member-name m)
-        (field-bound? 
-         f
-         (new (class object%
-                (field [f 10])
-                (super-new))))))
+        (define-local-member-name f)
+        (field-bound? f (new (class object% (field [f 10]) (super-new))))))
 
 (report-errs)

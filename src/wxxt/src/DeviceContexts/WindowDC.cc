@@ -142,12 +142,156 @@ wxWindowDC::~wxWindowDC(void)
 // drawing methods
 //-----------------------------------------------------------------------------
 
+static wxBitmap *ScaleBitmap(wxBitmap *src, 
+			     float scale_x, float scale_y,
+			     float xsrc, float ysrc, float w, float h, 
+			     Display *dpy, 
+			     wxBitmap **_tmp, int *retval,
+			     int forceMono, unsigned long whiteVal)
+{
+  int sw, sh, tw, th, i, j, ti, tj, xs, ys, mono;
+  unsigned long pixel;
+  wxBitmap *tmp;
+
+  *retval = TRUE;
+
+  xs = (int)xsrc;
+  ys = (int)ysrc;
+  
+  sw = src->GetWidth();
+  sh = src->GetHeight();
+
+  if (xs > sw)
+    return NULL;
+  if (ys > sh)
+    return NULL;
+
+  if (sw > w)
+    sw = (int)w;
+  if (sh > h)
+    sh = (int)h;
+  sw -= xs;
+  sh -= ys;
+
+  tw = (int)(sw * scale_x);
+  th = (int)(sh * scale_y);
+  mono = (src->GetDepth() == 1);
+  if (forceMono && !mono)
+    mono = 1;
+  else
+    forceMono = 0;
+  tmp = new wxBitmap(tw, th, mono);
+  *_tmp = tmp;
+      
+  if (tmp->Ok()) {
+    XImage *simg, *timg;
+    XGCValues values;
+    GC agc;
+    Pixmap spm, tpm;
+    
+    if (src->selectedTo)
+      src->selectedTo->EndSetPixel();
+    
+    spm = GETPIXMAP(src);
+    simg = XGetImage(dpy, spm, xs, ys, sw, sh, AllPlanes, ZPixmap);
+    tpm = GETPIXMAP(tmp);
+    timg = XGetImage(dpy, tpm, 0, 0, tw, th, AllPlanes, ZPixmap);
+    
+    if (tw > sw) {
+      for (ti = 0; ti < tw; ti++) {
+	i = (int)(ti / scale_x);
+	if (th > h) {
+	  for (tj = 0; tj < th; tj++) {
+	    j = (int)(tj / scale_y);
+	    pixel = XGetPixel(simg, i + xs, j + ys);
+	    if (forceMono) {
+	      if (pixel == whiteVal)
+		pixel = 0;
+	      else
+		pixel = 1;
+	    }
+	    XPutPixel(timg, ti, tj, pixel);
+	  }
+	} else {
+	  for (j = 0; j < sh; j++) {
+	    tj = (int)(j * scale_y);
+	    pixel = XGetPixel(simg, i + xs, j + ys);
+	    if (forceMono) {
+	      if (pixel == whiteVal)
+		pixel = 0;
+	      else
+		pixel = 1;
+	    }
+	    XPutPixel(timg, ti, tj, pixel);
+	  }
+	}
+      }
+    } else {
+      for (i = 0; i < sw; i++) {
+	ti = (int)(i * scale_x);
+	if (th > h) {
+	  for (tj = 0; tj < th; tj++) {
+	    j = (int)(tj / scale_y);
+	    pixel = XGetPixel(simg, i + xs, j + ys);
+	    if (forceMono) {
+	      if (pixel == whiteVal)
+		pixel = 0;
+	      else
+		pixel = 1;
+	    }
+	    XPutPixel(timg, ti, tj, pixel);
+	  }
+	} else {
+	  for (j = 0; j < sh; j++) {
+	    tj = (int)(j * scale_y);
+	    pixel = XGetPixel(simg, i + xs, j + ys);
+	    if (forceMono) {
+	      if (pixel == whiteVal)
+		pixel = 0;
+	      else
+		pixel = 1;
+	    }
+	    XPutPixel(timg, ti, tj, pixel);
+	  }
+	}
+      }
+    }
+
+    agc = XCreateGC(dpy, tpm, 0, &values);
+    if (agc) {
+      XPutImage(dpy, tpm, agc, timg, 0, 0, 0, 0, tw, th);
+      XFreeGC(dpy, agc);
+      *retval = 1;
+    } else
+      *retval = 0;
+
+    /* Resultof XGetImage isn't supposed to be destroyed? */
+    /* XDestroyImage(simg); */
+    /* XDestroyImage(timg); */
+
+    xsrc = ysrc = 0;
+    src = tmp;
+
+    if (!*retval) {
+      DELETE_OBJ tmp;
+      *retval = FALSE;
+      return NULL;
+    }
+  } else {
+    DELETE_OBJ tmp;
+    *retval = FALSE;
+    return NULL;
+  }
+
+  return src;
+}
+
 static wxBitmap *IntersectBitmapRegion(GC agc, Region user_reg, Region expose_reg, wxBitmap *bmask, 
 				       Region *_free_rgn,
 				       int *_tx, int *_ty,
 				       int *_scaled_width, int *_scaled_height,
 				       float *_xsrc, float *_ysrc,
-				       Display *dpy)
+				       Display *dpy, unsigned long whiteVal)
 {
   int overlap;
   Region free_rgn = *_free_rgn, rgn = NULL;
@@ -207,13 +351,16 @@ static wxBitmap *IntersectBitmapRegion(GC agc, Region user_reg, Region expose_re
 	  simg = XGetImage(dpy, bpm, (long)xsrc, (long)ysrc, scaled_width, scaled_height, AllPlanes, ZPixmap);
 	  
 	  bmrgn = XCreateRegion();
+
+	  if (bmask->GetDepth() == 1)
+	    whiteVal = 0;
 	  
 	  for (mj = 0; mj < scaled_height; mj++) {
 	    encl.y = mj + ty;
 	    encl.height = 1;
 	    encl.width = 0;
 	    for (mi = 0; mi < scaled_width; mi++) {
-	      if (!XGetPixel(simg, mi + (long)xsrc, mj + (long)ysrc)) {
+	      if (XGetPixel(simg, mi + (long)xsrc, mj + (long)ysrc) == whiteVal) {
 		if (encl.width) {
 		  XUnionRectWithRegion(&encl, bmrgn, bmrgn);
 		  encl.width = 0;
@@ -253,9 +400,26 @@ static wxBitmap *IntersectBitmapRegion(GC agc, Region user_reg, Region expose_re
 
   if (bmask) {
     Pixmap mpm;
-    mpm = GETPIXMAP(bmask);
+    int monoized = 0;
+
+    if (bmask->GetDepth() != 1) {
+      int ok;
+      wxBitmap *tmp;
+      monoized = 1;
+      bmask = ScaleBitmap(bmask, 1, 1, 0, 0, 
+			  bmask->GetWidth(), bmask->GetHeight(),
+			  dpy, &tmp, &ok,
+			  1, whiteVal);
+      mpm = GETPIXMAP(bmask);
+      bmask = tmp;
+    } else
+      mpm = GETPIXMAP(bmask);
+
     XSetClipMask(dpy, agc, mpm);
     XSetClipOrigin(dpy, agc, tx - (long)xsrc, ty - (long)ysrc);
+
+    if (!monoized)
+      bmask = NULL; /* => no special mask to free */
   }
   
   *_free_rgn = free_rgn;
@@ -267,122 +431,6 @@ static wxBitmap *IntersectBitmapRegion(GC agc, Region user_reg, Region expose_re
   *_ysrc = ysrc;
 
   return bmask;
-}
-
-
-static wxBitmap *ScaleBitmap(wxBitmap *src, 
-			     float scale_x, float scale_y,
-			     float xsrc, float ysrc, float w, float h, 
-			     Display *dpy, 
-			     wxBitmap **_tmp, int *retval)
-{
-  int sw, sh, tw, th, i, j, ti, tj, xs, ys, mono;
-  unsigned long pixel;
-  wxBitmap *tmp;
-
-  *retval = TRUE;
-
-  xs = (int)xsrc;
-  ys = (int)ysrc;
-  
-  sw = src->GetWidth();
-  sh = src->GetHeight();
-
-  if (xs > sw)
-    return NULL;
-  if (ys > sh)
-    return NULL;
-
-  if (sw > w)
-    sw = (int)w;
-  if (sh > h)
-    sh = (int)h;
-  sw -= xs;
-  sh -= ys;
-
-  tw = (int)(sw * scale_x);
-  th = (int)(sh * scale_y);
-  mono = (src->GetDepth() == 1);
-  tmp = new wxBitmap(tw, th, mono);
-  *_tmp = tmp;
-      
-  if (tmp->Ok()) {
-    XImage *simg, *timg;
-    XGCValues values;
-    GC agc;
-    Pixmap spm, tpm;
-    
-    if (src->selectedTo)
-      src->selectedTo->EndSetPixel();
-    
-    spm = GETPIXMAP(src);
-    simg = XGetImage(dpy, spm, xs, ys, sw, sh, AllPlanes, ZPixmap);
-    tpm = GETPIXMAP(tmp);
-    timg = XGetImage(dpy, tpm, 0, 0, tw, th, AllPlanes, ZPixmap);
-    
-    if (tw > sw) {
-      for (ti = 0; ti < tw; ti++) {
-	i = (int)(ti / scale_x);
-	if (th > h) {
-	  for (tj = 0; tj < th; tj++) {
-	    j = (int)(tj / scale_y);
-	    pixel = XGetPixel(simg, i + xs, j + ys);
-	    XPutPixel(timg, ti, tj, pixel);
-	  }
-	} else {
-	  for (j = 0; j < sh; j++) {
-	    tj = (int)(j * scale_y);
-	    pixel = XGetPixel(simg, i + xs, j + ys);
-	    XPutPixel(timg, ti, tj, pixel);
-	  }
-	}
-      }
-    } else {
-      for (i = 0; i < sw; i++) {
-	ti = (int)(i * scale_x);
-	if (th > h) {
-	  for (tj = 0; tj < th; tj++) {
-	    j = (int)(tj / scale_y);
-	    pixel = XGetPixel(simg, i + xs, j + ys);
-	    XPutPixel(timg, ti, tj, pixel);
-	  }
-	} else {
-	  for (j = 0; j < sh; j++) {
-	    tj = (int)(j * scale_y);
-	    pixel = XGetPixel(simg, i + xs, j + ys);
-	    XPutPixel(timg, ti, tj, pixel);
-	  }
-	}
-      }
-    }
-
-    agc = XCreateGC(dpy, tpm, 0, &values);
-    if (agc) {
-      XPutImage(dpy, tpm, agc, timg, 0, 0, 0, 0, tw, th);
-      XFreeGC(dpy, agc);
-      *retval = 1;
-    } else
-      *retval = 0;
-
-    /* Resultof XGetImage isn't supposed to be destroyed? */
-    /* XDestroyImage(simg); */
-    /* XDestroyImage(timg); */
-
-    xsrc = ysrc = 0;
-    src = tmp;
-
-    if (!*retval) {
-      DELETE_OBJ tmp;
-      *retval = FALSE;
-      return NULL;
-    }
-  } else {
-    DELETE_OBJ tmp;
-    *retval = FALSE;
-    return NULL;
-  }
-
-  return src;
 }
 
 Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
@@ -404,11 +452,12 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     /* Handle scaling by creating a new, tmeporary bitmap: */
     if ((scale_x != 1) || (scale_y != 1)) {
       int retval;
-      src = ScaleBitmap(src, scale_x, scale_y, xsrc, ysrc, w, h, DPY, &tmp, &retval);
+      src = ScaleBitmap(src, scale_x, scale_y, xsrc, ysrc, w, h, DPY, &tmp, &retval, 0, 0);
       if (!src)
 	return retval;
       if (mask) {
-	mask = ScaleBitmap(mask, scale_x, scale_y, xsrc, ysrc, w, h, DPY, &tmp_mask, &retval);
+	mask = ScaleBitmap(mask, scale_x, scale_y, xsrc, ysrc, w, h, DPY, &tmp_mask, &retval, 
+			   1, WhitePixelOfScreen(SCN));
 	if (!mask) {
 	  DELETE_OBJ tmp;
 	  return retval;
@@ -457,12 +506,12 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
       ty = YLOG2DEV(ydest);
 
       if (mask)
-	IntersectBitmapRegion(PEN_GC, EXPOSE_REG, USER_REG, mask,
-			      &free_rgn,
-			      &tx, &ty,
-			      &scaled_width, &scaled_height,
-			      &xsrc, &ysrc,
-			      DPY);
+	tmp_mask = IntersectBitmapRegion(PEN_GC, EXPOSE_REG, USER_REG, mask,
+					 &free_rgn,
+					 &tx, &ty,
+					 &scaled_width, &scaled_height,
+					 &xsrc, &ysrc,
+					 DPY, WhitePixelOfScreen(SCN));
 
       // Check if we're copying from a mono bitmap
       retval = TRUE;
@@ -544,6 +593,7 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
       int mask = 0;
       Region free_rgn = (Region)NULL;
       int tx, ty;
+      wxBitmap *tmp_mask;
 
       tx = XLOG2DEV(xdest);
       ty = YLOG2DEV(ydest);
@@ -557,12 +607,12 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
       }
 
       agc = XCreateGC(DPY, DRAWABLE, mask, &values);
-      IntersectBitmapRegion(agc, EXPOSE_REG, USER_REG, bmask, 
-			    &free_rgn,
-			    &tx, &ty,
-			    &scaled_width, &scaled_height,
-			    &xsrc, &ysrc,
-			    DPY);
+      tmp_mask = IntersectBitmapRegion(agc, EXPOSE_REG, USER_REG, bmask, 
+				       &free_rgn,
+				       &tx, &ty,
+				       &scaled_width, &scaled_height,
+				       &xsrc, &ysrc,
+				       DPY, WhitePixelOfScreen(SCN));
 	  
       retval = TRUE;
       if ((src->GetDepth() == 1) || (DEPTH == 1)) {
@@ -588,6 +638,9 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
 
       if (free_rgn)
 	XDestroyRegion(free_rgn);
+
+      if (tmp_mask)
+	DELETE_OBJ tmp_mask;
     }
 
     return retval; // someting wrong with the drawables

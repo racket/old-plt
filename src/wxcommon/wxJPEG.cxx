@@ -493,10 +493,9 @@ static void user_warn_proc(png_structp info, png_const_charp msg)
 {
 }
 
-static void png_draw_line(png_bytep row, int cols, int rownum, wxMemoryDC *dc, wxMemoryDC *mdc)
+static void png_draw_line(png_bytep row, int cols, int rownum, wxMemoryDC *dc, wxMemoryDC *mdc, int step)
 {
   int colnum, delta;
-  int step = (mdc ? 4 : 3);
 
   if (!the_color) {
     wxREGGLOB(the_color);
@@ -599,7 +598,7 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
    int bit_depth, color_type, interlace_type, is_mono = 0;
    unsigned int number_passes, pass, y;
    FILE *fp;
-   png_bytep *rows;
+   png_bytep *rows, row;
    wxMemoryDC *dc = NULL;
    wxMemoryDC *mdc = NULL;
    wxBitmap *mbm = NULL;
@@ -656,6 +655,13 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
 
    png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type,
 		&interlace_type, int_p_NULL, int_p_NULL);
+
+   if (w_mask) {
+     /* Is the mask actually useful? */
+     if (!png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)
+	 && !(color_type & PNG_COLOR_MASK_ALPHA))
+       w_mask = 0;
+   }
 
    if ((bit_depth == 1)
        && (color_type == PNG_COLOR_TYPE_GRAY)
@@ -745,14 +751,7 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
    }
 
    dc = create_dc(width, height, bm, is_mono);
-   if (w_mask && !is_mono) {
-     mbm = new wxBitmap(width, height, 0);
-     if (mbm->Ok())
-       mdc = create_dc(-1, -1, mbm, 1);
-     else
-       mdc = NULL;
-   }
-   if (!dc || (w_mask && !is_mono && !mdc)) {
+   if (!dc) {
      if (dc)
        dc->SelectObject(NULL);
      png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
@@ -769,8 +768,34 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
        png_draw_line1(rows[y], width, y, dc);
      }
    } else {
+     if (w_mask) {
+       int mono_mask;
+       unsigned int x;
+
+       /* Will a monochrome mask do? */
+       for (y = 0; y < height; y++) {
+	 row = rows[y];
+	 for (x = 0; x < width; x++) {
+	   int val;
+	   val = row[(x * 4) + 3];
+	   if ((val != 0) && (val != 255))
+	     break;
+	 }
+	 if (x < width)
+	   break;
+       } 
+
+       mono_mask = ((y < height) ? 0 : 1);
+
+       mbm = new wxBitmap(width, height, mono_mask);
+       if (mbm->Ok())
+	 mdc = create_dc(-1, -1, mbm, mono_mask);
+       else
+	 mdc = NULL;
+     }
+
      for (y = 0; y < height; y++) {
-       png_draw_line(rows[y], width, y, dc, mdc);
+       png_draw_line(rows[y], width, y, dc, mdc, w_mask ? 4 : 3);
      }
    }
 
@@ -885,7 +910,7 @@ int wx_write_png(char *file_name, wxBitmap *bm)
 		PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, 
 		PNG_FILTER_TYPE_DEFAULT);
 
-   if (mbm && (mbm->GetDepth() == 1))
+   if (mbm)
      png_set_invert_alpha(png_ptr);
 
    /* Write the file header information.  REQUIRED */

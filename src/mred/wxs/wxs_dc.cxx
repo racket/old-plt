@@ -952,7 +952,7 @@ static Scheme_Object *os_wxDCDrawBitmap(int n,  Scheme_Object *p[])
   } else
     x5 = NULL;
 
-  if (x5 && !(x5->Ok())) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-bitmap"), "mask bitmap is not ok: ", p[POFFSET+5]));if (x5 && (x5->GetDepth() != 1)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-bitmap"), "mask bitmap is not monochrome: ", p[POFFSET+5]));if (x5 && ((x0->GetWidth() != x5->GetWidth()) || (x0->GetHeight() != x5->GetHeight()))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-bitmap"), "mask bitmap size does not match bitmap to draw: ", p[POFFSET+0]));DO_OK_CHECK(METHODNAME("dc<%>","draw-bitmap"))
+  if (x5 && !(x5->Ok())) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-bitmap"), "mask bitmap is not ok: ", p[POFFSET+5]));if (x5 && ((x0->GetWidth() != x5->GetWidth()) || (x0->GetHeight() != x5->GetHeight()))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-bitmap"), "mask bitmap size does not match bitmap to draw: ", p[POFFSET+0]));DO_OK_CHECK(METHODNAME("dc<%>","draw-bitmap"))
   r = WITH_VAR_STACK(DrawBitmap(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4, x5));
 
   
@@ -1005,7 +1005,7 @@ static Scheme_Object *os_wxDCDrawBitmapRegion(int n,  Scheme_Object *p[])
   } else
     x9 = NULL;
 
-  if (x9 && !(x9->Ok())) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-bitmap-section"), "mask bitmap is not ok: ", p[POFFSET+9]));if (x9 && (x9->GetDepth() != 1)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-bitmap-section"), "mask bitmap is not monochrome: ", p[POFFSET+9]));if (x9 && ((x0->GetWidth() != x9->GetWidth()) || (x0->GetHeight() != x9->GetHeight()))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-bitmap-section"), "mask bitmap size does not match bitmap to draw: ", p[POFFSET+0]));DO_OK_CHECK(METHODNAME("dc<%>","draw-bitmap-section"))
+  if (x9 && !(x9->Ok())) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-bitmap-section"), "mask bitmap is not ok: ", p[POFFSET+9]));if (x9 && ((x0->GetWidth() != x9->GetWidth()) || (x0->GetHeight() != x9->GetHeight()))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-bitmap-section"), "mask bitmap size does not match bitmap to draw: ", p[POFFSET+0]));DO_OK_CHECK(METHODNAME("dc<%>","draw-bitmap-section"))
   r = WITH_VAR_STACK(DrawBitmapRegion(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4, x5, x6, x7, x8, x9));
 
   

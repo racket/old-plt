@@ -179,7 +179,7 @@
           [else (let* ([collection (car collections)]
                        [info (get-info collection)]
                        [dir (apply collection-path collection)]
-                       [html-doc-paths (info 'html-docs)])
+                       [html-doc-paths (info 'html-docs (lambda () #f))]) ;; this call fails if the info domains are out of sync
                   (cond
                     [(and (list? html-doc-paths)
                           (andmap path-string? html-doc-paths))

@@ -1604,7 +1604,7 @@ static void MrEdSleep(float secs, void *fds)
     }
     
     if (timer) {
-      double done = (long)timer->expiration;
+      double done = timer->expiration;
       double diff = done - now;
 
       diff /= 1000;

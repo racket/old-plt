@@ -1,11 +1,52 @@
 
+Using Zodiac
+------------
+
+The top-level way:
+
+   (require-library "invoke.ss" "zodiac")
+   (zodiac:invoke-system)
+   ; binds global names prefixed with `zodiac:';
+   ; zodiac:internal-error and zodiac:static-error
+   ;  can be redefined afterwards.
+
+The unit/sig way:
+
+  Elaboration time:
+   (require-library "zsigs.ss" "zodiac")
+   (require-library "sigs.ss" "zodiac")
+
+  Link time:
+   (require-library-unit/sig "link.ss" "zodiac")
+   Imports:
+      zodiac:interface^
+      mzlib:pretty-print^
+      mzlib:file^
+   Exports:
+      zodiac:system^
+
+Reader Procedures
+-----------------
+
+(read p (make-location 1 1 0 filename)) - reads from the port `p',
+  which represents the file indicated by the `filename' string.
+  Returns a PROCEDURE that gets each expression as a zodiac AST.
+
 Expander Procedures
 -------------------
 
-(scheme-expand expr [attr 'previous] [vocab #f]) - expands one expression
+(scheme-expand expr [attr 'previous] [vocab #f]) - expands one
+  expression, reprsented as a zodiac AST, returning a zodiac AST.
 
 (scheme-expand-program exprs [attr 'previous] [vocab #f]) - expands
-  several expressions
+  several expressions, reprsented as a list of zodiac ASTs, returning
+  a list of zodiac ASTs.
+
+Zodiac AST -> S-Expression
+--------------------------
+
+ (parsed->raw expr) - converts a zodiac AST to an S-expression (losing
+   location information, obviously).
 
 Vocabularies
 ------------
@@ -23,14 +64,33 @@ Handler Parameters
 ------------------
 
 elaboration-evaluator - parameter for the evaluatotr used to evaluate
- begin-elaboration-time bodies and the RHS of a macro definition
+ begin-elaboration-time bodies and the RHS of a macro definition.
 
  default: (lambda (expr parsed->raw phase)
             (eval (parsed->raw expr)))
 
 user-macro-body-evaluator - parameter for the evaluator used to
- evaluate macro applications
+ evaluate macro applications.
 
  default: (lambda (x . args)
             (eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))
 
+Error Handlers
+--------------
+
+A zodiac error handler takes a zodiac AST followed by format-style
+ arguments. For example:
+
+ (define (static-error where fmt-spec . args)
+    (printf "Error at: ~s~n" where) ; or, pull location out of `where'
+    (apply error 'syntax-error fmt-spec args))
+
+Example
+-------
+
+> (require-library "invoke.ss" "zodiac")
+> (zodiac:invoke-system)
+> (let ([r ((zodiac:read (open-input-string "(cons 1 null)")
+                         (zodiac:make-location 1 1 0 "string")))])
+    (eval (zodiac:parsed->raw (zodiac:scheme-expand r))))
+  = (list 1)

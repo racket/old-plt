@@ -59,17 +59,16 @@
 # define MZ_HASH_KEY_EX /**/
 #endif
 
+#ifdef PALMOS_STUFF
+#include <Pilot.h>
+#endif
+
 #include <stdio.h>
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
-
-#ifdef PALMOS_STUFF
-#include <Pilot.h>
-typedef void FILE;
-#endif
 
 #ifndef SCHEME_DIRECT_EMBEDDED
 #define SCHEME_DIRECT_EMBEDDED 1
@@ -365,11 +364,7 @@ typedef void Scheme_Instance_Init_Proc(Scheme_Object **init_boxes,
 #ifdef USE_MZ_SETJMP
 typedef long mz_jmp_buf[8];
 #else
-# ifdef JMP_BUF_IS_JMPBUF
-#  define mz_jmp_buf jmpbuf
-# else
-#  define mz_jmp_buf jmp_buf
-# endif
+# define mz_jmp_buf jmp_buf
 #endif
 
 /* Like setjmp & longjmp, but you can jmp to a deeper stack position */
@@ -1059,6 +1054,22 @@ extern Scheme_Extension_Table *scheme_extension_table;
 #  define scheme_longjmp(b, v) longjmp(b, v)
 #  define scheme_setjmp(b) setjmp(b)
 # endif
+#endif
+
+#ifdef MZ_PRECISE_GC
+# define MZ_CWVR(x) (GC_variable_stack = __gc_var_stack__, x)
+# define MZ_DECL_VAR_REG(size) void *__gc_var_stack__[size+2]; \
+                               __gc_var_stack__[0] = GC_variable_stack; \
+                               __gc_var_stack__[1] = (void *)size;
+# define MZ_VAR_REG(x, v) (__gc_var_stack__[x+2] = (void *)&(v))
+# define MZ_ARRAY_VAR_REG(x, v, l) (__gc_var_stack__[x+2] = (void *)0, \
+                                    __gc_var_stack__[x+3] = (void *)&(v), \
+                                    __gc_var_stack__[x+4] = (void *)l)
+#else
+# define MZ_CWVR(x)                x
+# define MZ_DECL_VAR_REG(size)     /* empty */
+# define MZ_VAR_REG(x, v)          /* empty */
+# define MZ_ARRAY_VAR_REG(x, v, l) /* empty */
 #endif
 
 #define SAME_PTR(a, b) ((a) == (b))

@@ -87,6 +87,9 @@ scheme_current_continuation_marks
 scheme_do_eval
 GC_malloc
 GC_malloc_atomic
+GC_malloc_one_tagged
+GC_malloc_atomic_uncollectable
+GC_malloc_array_tagged
 GC_malloc_stubborn
 GC_malloc_uncollectable
 scheme_malloc_eternal
@@ -301,4 +304,3 @@ scheme_make_provided_string
 scheme_make_args_string
 scheme_no_dumps
 scheme_system_library_subpath
-scheme_blocking_output

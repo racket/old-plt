@@ -119,7 +119,7 @@ void (*scheme_wrong_return_arity)(const char *where,
 			       int expected, int got,
 			       Scheme_Object **argv,
 			       const char *context_detail, ...);
-void (*scheme_unbound_global)(Scheme_Object *name);
+void (*scheme_unbound_global)(Scheme_Object *name) ;
 Scheme_Object *(*scheme_dynamic_wind)(void (*pre)(void *),
 				   Scheme_Object *(*act)(void *),
 				   void (*post)(void *), 
@@ -196,12 +196,18 @@ Scheme_Object *(*scheme_do_eval_w_process)(Scheme_Object *obj, int _num_rands, S
 #endif
 /* Allocation */
 #ifndef SCHEME_NO_GC
-#ifndef SCHEME_NO_GC_PROTO
+# ifndef SCHEME_NO_GC_PROTO
 void *(*GC_malloc)(size_t size_in_bytes);
 void *(*GC_malloc_atomic)(size_t size_in_bytes);
+#  ifdef MZ_PRECISE_GC
+void *(*GC_malloc_one_tagged)(size_t size_in_bytes);
+void *(*GC_malloc_atomic_uncollectable)(size_t size_in_bytes);
+void *(*GC_malloc_array_tagged)(size_t size_in_bytes);
+#  else
 void *(*GC_malloc_stubborn)(size_t size_in_bytes);
 void *(*GC_malloc_uncollectable)(size_t size_in_bytes);
-#endif
+#  endif
+# endif
 #endif
 void *(*scheme_malloc_eternal)(size_t n);
 void (*scheme_end_stubborn_change)(void *p);
@@ -263,7 +269,7 @@ Scheme_Object *(*scheme_make_integer_value)(long i);
 Scheme_Object *(*scheme_make_integer_value_from_unsigned)(unsigned long i);
 Scheme_Object *(*scheme_make_double)(double d);
 #ifdef MZ_USE_SINGLE_FLOATS
-Scheme_Object *(*scheme_make_float)(float f);
+Scheme_Object *(*scheme_make_float)(float f) ;
 #endif
 Scheme_Object *(*scheme_make_char)(char ch);
 Scheme_Object *(*scheme_make_promise)(Scheme_Object *expr, Scheme_Env *env);
@@ -293,7 +299,7 @@ Scheme_Object *(*scheme_bignum_from_float)(float d);
 char *(*scheme_bignum_to_string)(const Scheme_Object *n, int radix);
 Scheme_Object *(*scheme_read_bignum)(const char *str, int radix);
 Scheme_Object *(*scheme_bignum_normalize)(const Scheme_Object *n);
-long (*scheme_double_to_int)(const char *where, double d);
+long (*scheme_double_to_int)(const char *where, double d) ;
 /* Rationals */
 Scheme_Object *(*scheme_make_rational)(const Scheme_Object *r, const Scheme_Object *d);
 double (*scheme_rational_to_double)(const Scheme_Object *n);
@@ -516,7 +522,6 @@ char *(*scheme_make_provided_string)(Scheme_Object *o, int count, int *len);
 char *(*scheme_make_args_string)(char *s, int which, int argc, Scheme_Object **argv);
 void (*scheme_no_dumps)(char *why);
 const char *(*scheme_system_library_subpath)();
-void (*scheme_blocking_output)(int block);
 #ifndef SCHEME_EX_INLINE
 } Scheme_Extension_Table;
 #endif

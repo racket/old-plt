@@ -407,7 +407,7 @@ cord/de: $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(UTILS)
 if_mach: $(srcdir)/if_mach.c $(srcdir)/include/private/gcconfig.h
 	$(HOSTCC) $(HOSTCFLAGS) -o if_mach $(srcdir)/if_mach.c
 
-threadlibs: $(srcdir)/threadlibs.c $(srcdir)/include/private/gcconfig.h Makefile
+threadlibs: $(srcdir)/threadlibs.c $(srcdir)/include/private/gcconfig.h # Makefile
 	$(HOSTCC) $(HOSTCFLAGS) -o threadlibs $(srcdir)/threadlibs.c
 
 if_not_there: $(srcdir)/if_not_there.c

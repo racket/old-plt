@@ -42,9 +42,11 @@ wxArea::wxArea
 wxArea::~wxArea(void)
 {
   wxChildNode *node, *next;
+  wxWindow *win;
+
   for (node = cWindows->First(); node; node = next) {
     next = node->Next();
-    wxWindow *win = (wxWindow *)(node->Data());
+    win = (wxWindow *)(node->Data());
     if (win)
       delete win;
   }
@@ -66,25 +68,22 @@ wxMargin wxArea::Margin(wxArea* outerArea)
 {
   wxMargin result;
   wxArea* area = this;
-  wxWindow* window = ParentWindow();
-  while (area && area != outerArea)
-    {
-      area = area->Previous();
-      if (area)
-	{
-	  result += area->Margin();
-	}
-      else
-	{
-	  if (window != wxScreen::gScreenWindow)
-	    {
-	      result += window->Margin(window->ParentArea());
-	      area = window->ParentArea();
-	      window = area->ParentWindow();
-	    }
-	}
-    }
+  wxWindow* window;
 
+  window = ParentWindow();
+  while (area && area != outerArea) {
+    area = area->Previous();
+    if (area)
+      result += area->Margin();
+    else {
+      if (window != wxScreen::gScreenWindow) {
+	result += window->Margin(window->ParentArea());
+	area = window->ParentArea();
+	window = area->ParentWindow();
+      }
+    }
+  }
+  
   return result;
 }
 
@@ -95,27 +94,23 @@ wxMargin wxArea::Margin(wxWindow* outerWindow)
 {
   wxMargin result;
   wxArea* area = this;
-  wxWindow* window = ParentWindow();
-  while (area)
-    {
-      area = area->Previous();
-      if (area)
-	{
-	  result += area->Margin();
+  wxWindow* window;
+
+  window = ParentWindow();
+  while (area) {
+    area = area->Previous();
+    if (area)
+      result += area->Margin();
+    else {
+      if (window != outerWindow) {
+	if (window != wxScreen::gScreenWindow) {
+	  result += window->Margin(window->ParentArea());
+	  area = window->ParentArea();
+	  window = area->ParentWindow();
 	}
-      else
-	{
-	  if (window != outerWindow)
-	    {
-	      if (window != wxScreen::gScreenWindow)
-		{
-		  result += window->Margin(window->ParentArea());
-		  area = window->ParentArea();
-		  window = area->ParentWindow();
-		}
-	    }
-	}
+      }
     }
+  }
 
   return result;
 }
@@ -123,14 +118,16 @@ wxMargin wxArea::Margin(wxWindow* outerWindow)
 //-----------------------------------------------------------------------------
 int wxArea::Width(void)
 {
-  wxMargin margin = Margin(ParentWindow());
+  wxMargin margin;
+  margin = Margin(ParentWindow());
   return ParentWindow()->Width() - margin.Offset(wxHorizontal);
 }
 
 //-----------------------------------------------------------------------------
 int wxArea::Height(void)
 {
-  wxMargin margin = Margin(ParentWindow());
+  wxMargin margin;
+  margin = Margin(ParentWindow());
   return ParentWindow()->Height() - margin.Offset(wxVertical);
 }
 
@@ -139,7 +136,8 @@ int wxArea::Height(void)
 //-----------------------------------------------------------------------------
 void wxArea::AreaToScreen(int* h, int* v)
 {
-  wxMargin screenMargin = Margin(wxScreen::gScreenWindow);
+  wxMargin screenMargin;
+  screenMargin = Margin(wxScreen::gScreenWindow);
   *h += screenMargin.Offset(wxLeft);
   *v += screenMargin.Offset(wxTop);
 }
@@ -149,7 +147,8 @@ void wxArea::AreaToScreen(int* h, int* v)
 //-----------------------------------------------------------------------------
 void wxArea::ScreenToArea(int* h, int* v)
 {
-  wxMargin screenMargin = Margin(wxScreen::gScreenWindow);
+  wxMargin screenMargin;
+  screenMargin = Margin(wxScreen::gScreenWindow);
   *h -= screenMargin.Offset(wxLeft);
   *v -= screenMargin.Offset(wxTop);
 }
@@ -157,7 +156,8 @@ void wxArea::ScreenToArea(int* h, int* v)
 //-----------------------------------------------------------------------------
 Bool wxArea::WindowPointInArea(int windowH, int windowV)
 {
-  wxMargin margin = Margin(ParentWindow());
+  wxMargin margin;
+  margin = Margin(ParentWindow());
   int areaH = windowH - margin.Offset(wxLeft); // area c.s.
   int areaV = windowV - margin.Offset(wxTop); // area c.s.
   return (0 <= areaH && areaH <= Width() && 0 <= areaV && areaV <= Height());
@@ -166,9 +166,12 @@ Bool wxArea::WindowPointInArea(int windowH, int windowV)
 //-----------------------------------------------------------------------------
 void wxArea::FrameContentAreaOffset(int* x, int* y)
 {
-  wxFrame* frame = ParentWindow()->GetRootFrame();
-  wxArea* frameContentArea = frame->ContentArea();
-  wxMargin frameContentAreaMargin = Margin(frameContentArea);
+  wxFrame* frame;
+  wxArea* frameContentArea;
+  wxMargin frameContentAreaMargin;
+  frame = ParentWindow()->GetRootFrame();
+  frameContentArea = frame->ContentArea();
+  frameContentAreaMargin = Margin(frameContentArea);
   *x = frameContentAreaMargin.Offset(wxLeft);
   *y = frameContentAreaMargin.Offset(wxTop);
 }
@@ -180,9 +183,13 @@ void wxArea::FrameContentAreaOffset(int* x, int* y)
 //-----------------------------------------------------------------------------
 void wxArea::SetSize(int width, int height)
 {
-  wxMargin margin = Margin(ParentWindow());
-  int	newWindowWidth = width + margin.Offset(wxHorizontal);
-  int newWindowHeight = height + margin.Offset(wxVertical);
+  wxMargin margin;
+  int newWindowWidth, newWindowHeight;
+
+  margin = Margin(ParentWindow());
+  newWindowWidth = width + margin.Offset(wxHorizontal);
+  newWindowHeight = height + margin.Offset(wxVertical);
+
   ParentWindow()->SetWidthHeight(newWindowWidth, newWindowHeight);
 }
 
@@ -196,28 +203,30 @@ void wxArea::SetMargin(int margin, Direction direction)
 //-----------------------------------------------------------------------------
 void wxArea::SetMargin(wxMargin margin, Direction direction)
 {
-  int oldLeft = cMargin.Offset(wxLeft);
-  int oldTop = cMargin.Offset(wxTop);
-  int oldRight = cMargin.Offset(wxRight);
-  int oldBottom = cMargin.Offset(wxBottom);
+  int oldLeft, oldTop, oldRight, oldBottom, dL, dT, dR, dB, dW, dH, dX, dY;
+  wxArea* area;
+
+  oldLeft = cMargin.Offset(wxLeft);
+  oldTop = cMargin.Offset(wxTop);
+  oldRight = cMargin.Offset(wxRight);
+  oldBottom = cMargin.Offset(wxBottom);
 
   cMargin.SetMargin(margin, direction);
 
-  int dL = cMargin.Offset(wxLeft) - oldLeft;
-  int dT = cMargin.Offset(wxTop) - oldTop;
-  int dR = cMargin.Offset(wxRight) - oldRight;
-  int dB = cMargin.Offset(wxBottom) - oldBottom;
-
-  int dW = -(dR + dL);
-  int dH = -(dB + dT);
-  int dX = dL;
-  int dY = dT;
-  wxArea* area = Next(); // Resize younger sibling areas
-  while (area)
-    {
-      area->OnSiblingDSize(dW, dH, dX, dY);
-      area = area->Next();
-    }
+  dL = cMargin.Offset(wxLeft) - oldLeft;
+  dT = cMargin.Offset(wxTop) - oldTop;
+  dR = cMargin.Offset(wxRight) - oldRight;
+  dB = cMargin.Offset(wxBottom) - oldBottom;
+  
+  dW = -(dR + dL);
+  dH = -(dB + dT);
+  dX = dL;
+  dY = dT;
+  area = Next(); // Resize younger sibling areas
+  while (area) {
+    area->OnSiblingDSize(dW, dH, dX, dY);
+    area = area->Next();
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -227,55 +236,58 @@ void wxArea::SetMargin(wxMargin margin, Direction direction,
 {
   // SetSize of parentWindow
   int oldWindowX, oldWindowY;
+  int oldWindowWidth, oldWindowHeight;
+  int newWindowX, newWindowY;
+  int newWindowWidth, newWindowHeight, dW, dH, dX, dY;
+  wxArea* area;
+  int oldLeft, oldTop, oldRight, oldBottom, dL, dT, dR, dB;
+  
   cParentWindow->GetPosition(&oldWindowX, &oldWindowY);
-  int oldWindowWidth = cParentWindow->Width();
-  int oldWindowHeight = cParentWindow->Height();
+  oldWindowWidth = cParentWindow->Width();
+  oldWindowHeight = cParentWindow->Height();
 
   cParentWindow->DoSetSize(parentWindowX, parentWindowY, parentWindowWidth, parentWindowHeight);
 
-  int newWindowX, newWindowY;
   cParentWindow->GetPosition(&newWindowX, &newWindowY);
-  int newWindowWidth = cParentWindow->Width();
-  int newWindowHeight = cParentWindow->Height();
-  int dW = newWindowWidth - oldWindowWidth;
-  int dH = newWindowHeight - oldWindowHeight;
-  int dX = newWindowX - oldWindowX;
-  int dY = newWindowY - oldWindowY;
+  newWindowWidth = cParentWindow->Width();
+  newWindowHeight = cParentWindow->Height();
+  dW = newWindowWidth - oldWindowWidth;
+  dH = newWindowHeight - oldWindowHeight;
+  dX = newWindowX - oldWindowX;
+  dY = newWindowY - oldWindowY;
 
   // Notify older siblings and this area of parentWindow resizing
-  wxArea* area = First();
-  while (area && area != this)
-    {
-      area->OnSiblingDSize(dW, dH, dX, dY);
-      area = area->Next();
-    }
+  area = First();
+  while (area && area != this) {
+    area->OnSiblingDSize(dW, dH, dX, dY);
+    area = area->Next();
+  }
   if (area != this) wxFatalError("Error in wxArea::SetMargin");
   OnSiblingDSize(dW, dH, dX, dY);
 
   // SetMargin of this area
-  int oldLeft = cMargin.Offset(wxLeft);
-  int oldTop = cMargin.Offset(wxTop);
-  int oldRight = cMargin.Offset(wxRight);
-  int oldBottom = cMargin.Offset(wxBottom);
+  oldLeft = cMargin.Offset(wxLeft);
+  oldTop = cMargin.Offset(wxTop);
+  oldRight = cMargin.Offset(wxRight);
+  oldBottom = cMargin.Offset(wxBottom);
 
   cMargin.SetMargin(margin, direction);
 
   // Notify younger siblings of parentWindow resizing and margin changes for this area
-  int dL = cMargin.Offset(wxLeft) - oldLeft;
-  int dT = cMargin.Offset(wxTop) - oldTop;
-  int dR = cMargin.Offset(wxRight) - oldRight;
-  int dB = cMargin.Offset(wxBottom) - oldBottom;
-
+  dL = cMargin.Offset(wxLeft) - oldLeft;
+  dT = cMargin.Offset(wxTop) - oldTop;
+  dR = cMargin.Offset(wxRight) - oldRight;
+  dB = cMargin.Offset(wxBottom) - oldBottom;
+  
   dW += -(dR + dL); // accumulate changes for parentWindow and this area
   dH += -(dB + dT); // accumulate changes for parentWindow and this area
   dX += dL; // accumulate changes for parentWindow and this area
   dY += dT; // accumulate changes for parentWindow and this area
   area = Next(); // Resize younger sibling areas
-  while (area)
-    {
-      area->OnSiblingDSize(dW, dH, dX, dY);
-      area = area->Next();
-    }
+  while (area) {
+    area->OnSiblingDSize(dW, dH, dX, dY);
+    area = area->Next();
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -301,13 +313,14 @@ void wxArea::OnAreaDSize(int dW, int dH, int dX, int dY)
 	}
       else
 	{ // Notify child windows of area resize.
-	  wxChildNode* childWindowNode = Windows()->First();
-	  while (childWindowNode)
-	    {
-	      wxWindow* childWindow = (wxWindow*)childWindowNode->Data();
-	      childWindow->OnAreaDSize(dW, dH, dX, dY);
-	      childWindowNode = childWindowNode->Next();
-	    }
+	  wxChildNode* childWindowNode;
+	  wxWindow* childWindow;
+	  childWindowNode = Windows()->First();
+	  while (childWindowNode) {
+	    childWindow = (wxWindow*)childWindowNode->Data();
+	    childWindow->OnAreaDSize(dW, dH, dX, dY);
+	    childWindowNode = childWindowNode->Next();
+	  }
 	}
     }
 }
@@ -326,7 +339,8 @@ wxChildList* wxArea::Windows(void) { return cWindows; } // kludge
 wxArea* wxArea::First(void)
 {
   wxArea* result = NULL;
-  wxNode* nodeArea = ParentWindow()->Areas()->First();
+  wxNode* nodeArea;
+  nodeArea = ParentWindow()->Areas()->First();
   if (nodeArea) result = (wxArea*) nodeArea->Data();
 
   return result;
@@ -336,7 +350,8 @@ wxArea* wxArea::First(void)
 wxArea* wxArea::Previous(void)
 {
   wxArea* result = NULL;
-  wxNode* nodeArea = ParentWindow()->Areas()->Member(this);
+  wxNode* nodeArea;
+  nodeArea = ParentWindow()->Areas()->Member(this);
   nodeArea = nodeArea->Previous();
   if (nodeArea) result = (wxArea*) nodeArea->Data();
 
@@ -347,7 +362,8 @@ wxArea* wxArea::Previous(void)
 wxArea* wxArea::Next(void)
 {
   wxArea* result = NULL;
-  wxNode* nodeArea = ParentWindow()->Areas()->Member(this);
+  wxNode* nodeArea;
+  nodeArea = ParentWindow()->Areas()->Member(this);
   nodeArea = nodeArea->Next();
   if (nodeArea) result = (wxArea*) nodeArea->Data();
 

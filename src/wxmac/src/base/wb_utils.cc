@@ -27,10 +27,13 @@
 char *
 copystring (const char *s)
 {
-  if (s == NULL) s = "";
-  size_t len = strlen (s) + 1;
+  char *news;
+  size_t len;
 
-  char *news = new char[len];
+  if (s == NULL) s = "";
+  len = strlen (s) + 1;
+
+  news = new char[len];
   memcpy (news, s, len);	// Should be the fastest
 
   return news;
@@ -108,21 +111,21 @@ wxFileNameFromPath (char *path)
   return path;
 }
 
+static char *po_buf = NULL;
+
 // Return just the directory, or NULL if no directory
 char *
 wxPathOnly (char *path)
 {
   if (path && *path)
     {
-      static char *buf = NULL;
-
-      if (!buf) {
-	wxREGGLOB(buf);
-	buf = new char[_MAXPATHLEN];
+      if (!po_buf) {
+	wxREGGLOB(po_buf);
+	po_buf = new char[_MAXPATHLEN];
       }
 
       // Local copy
-      strcpy (buf, path);
+      strcpy (po_buf, path);
 
       int l = strlen(path);
       Bool done = FALSE;
@@ -141,8 +144,8 @@ wxPathOnly (char *path)
 	      )
 	    {
 	      done = TRUE;
-	      buf[i] = 0;
-	      return buf;
+	      po_buf[i] = 0;
+	      return po_buf;
 	    }
 	  else i --;
 	}
@@ -164,13 +167,13 @@ wxGetEmailAddress (char *address, int maxSize)
 {
   char host[65];
   char user[65];
+  char tmp[130];
 
   if (wxGetHostName(host, 64) == FALSE)
     return FALSE;
   if (wxGetUserId(user, 64) == FALSE)
     return FALSE;
 
-  char tmp[130];
   strcpy(tmp, user);
   strcat(tmp, "@");
   strcat(tmp, host);
@@ -186,13 +189,15 @@ wxGetEmailAddress (char *address, int maxSize)
 
 char *wxStripMenuCodes (char *in, char *out)
 {
+  char *tmpOut;
+
   if (!in)
     return NULL;
   
   if (!out)
     out = copystring(in);
 
-  char *tmpOut = out;
+  tmpOut = out;
   
   while (*in)
     {
@@ -224,7 +229,8 @@ char *wxStripMenuCodes (char *in, char *out)
 int 
 wxFindMenuItemId (wxFrame * frame, char *menuString, char *itemString)
 {
-  wxMenuBar *menuBar = frame->GetMenuBar ();
+  wxMenuBar *menuBar;
+  menuBar = frame->GetMenuBar ();
   if (!menuBar)
     return -1;
   return menuBar->FindMenuItem (menuString, itemString);

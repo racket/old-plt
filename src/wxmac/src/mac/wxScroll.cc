@@ -20,11 +20,11 @@ wxScroll::wxScroll // root scroll
 (
  wxWindow*		scrollWindow,
  wxScrollData*	scrollData
- ) :
-  cScrollWindow (scrollWindow),
-  cScrollData (scrollData),
-  cParentScroll (NULL)
+ )
 {
+  cScrollWindow = scrollWindow;
+  cScrollData = scrollData;
+  cParentScroll = NULL;
   cScrolls = new wxList(wxList::kNoDestroyData);
   WXGC_IGNORE(this, scrollWindow);
 }
@@ -34,10 +34,10 @@ wxScroll::wxScroll // child scroll
 (
  wxWindow*	scrollWindow,
  wxWindow*	parentScrollWindow
- ) :
-  cScrollWindow (scrollWindow),
-  cScrollData (NULL)
+ )
 {
+  cScrollWindow = scrollWindow;
+  cScrollData = NULL;
   WXGC_IGNORE(this, scrollWindow);
 
   cScrolls = new wxList(wxList::kNoDestroyData);
@@ -59,10 +59,13 @@ wxScroll::~wxScroll(void)	// destructor
   // NOTE: Only the wxWindow object that owns this wxScroll should invoke its deletion.
   //       Hence, owner will NULL out its cScroll link to this object
 
-  wxNode* childScrollNode = cScrolls->First();
+  wxNode* childScrollNode;
+
+  childScrollNode = cScrolls->First();
   while (childScrollNode)
     {
-      wxScroll* childScroll = (wxScroll*)childScrollNode->Data();
+      wxScroll* childScroll;
+      childScroll = (wxScroll*)childScrollNode->Data();
       childScroll->cParentScroll = cParentScroll;
       if (cParentScroll) cParentScroll->cScrolls->Append(this);
       childScrollNode = childScrollNode->Next();
@@ -78,8 +81,11 @@ wxScroll::~wxScroll(void)	// destructor
 //-----------------------------------------------------------------------------
 wxScrollData* wxScroll::GetScrollData (void)
 {
-  wxScroll* rootScroll = RootScroll();
-  wxScrollData* rootScrollData = rootScroll->cScrollData;
+  wxScroll* rootScroll; 
+  wxScrollData* rootScrollData;
+
+  rootScroll = RootScroll();
+  rootScrollData = rootScroll->cScrollData;
 
   if (!rootScrollData) wxFatalError("No scroll data for scroll.");
 
@@ -94,7 +100,8 @@ void wxScroll::SetScrollData
  wxScrollEvent*		e
  )
 {
-  wxScrollData* scrollData = GetScrollData();
+  wxScrollData* scrollData;
+  scrollData = GetScrollData();
   scrollData->SetValue(newScrollData, whatScrollData);
   RootScroll()->OnSetScrollData(scrollData, whatScrollData, e);
 }
@@ -107,7 +114,8 @@ void wxScroll::SetScrollData
  wxScrollEvent*		e
  )
 {
-  wxScrollData* scrollData = GetScrollData();
+  wxScrollData* scrollData;
+  scrollData = GetScrollData();
   scrollData->SetValue(value, whatScrollData);
   RootScroll()->OnSetScrollData(scrollData, whatScrollData, e);
 }
@@ -127,7 +135,10 @@ wxScroll* wxScroll::RootScroll(void)
 //-----------------------------------------------------------------------------
 void wxScroll::AddChildScrollWindow(wxWindow* childScrollWindow)
 {
-  wxScroll* childScroll = childScrollWindow->GetScroll();
+  wxScroll* childScroll;
+  wxScrollData* scrollData;
+
+  childScroll = childScrollWindow->GetScroll();
   childScroll->cParentScroll = this;
 
   cScrolls->Append(childScroll);
@@ -138,7 +149,7 @@ void wxScroll::AddChildScrollWindow(wxWindow* childScrollWindow)
       childScroll->cScrollData = NULL;
     }
 
-  wxScrollData* scrollData = GetScrollData();
+  scrollData = GetScrollData();
   childScroll->OnSetScrollData(scrollData, wxWhatScrollData::wxAll, NULL);
 }
 
@@ -160,13 +171,15 @@ void wxScroll::OnSetScrollData
  wxScrollEvent*		e
  )
 {
-  wxNode* childScrollNode = cScrolls->First();
-  while (childScrollNode)
-    {
-      wxScroll* childScroll = (wxScroll*)childScrollNode->Data();
-      childScroll->OnSetScrollData(scrollData, whatScrollData, e);
-      childScrollNode = childScrollNode->Next();
-    }
+  wxNode* childScrollNode;
 
+  childScrollNode = cScrolls->First();
+  while (childScrollNode) {
+    wxScroll* childScroll;
+    childScroll = (wxScroll*)childScrollNode->Data();
+    childScroll->OnSetScrollData(scrollData, whatScrollData, e);
+    childScrollNode = childScrollNode->Next();
+  }
+  
   cScrollWindow->SetScrollData(scrollData, whatScrollData, e);
 }

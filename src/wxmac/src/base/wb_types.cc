@@ -92,7 +92,8 @@ wxTypeTree::~wxTypeTree(void)
 
 void wxTypeTree::AddType(WXTYPE type, WXTYPE parent, char *name)
 {
-  wxTypeDef *typ = new wxTypeDef;
+  wxTypeDef *typ;
+  typ = new wxTypeDef;
   typ->type = type;
   typ->parent = parent;
   typ->name = copystring(name);
@@ -101,29 +102,33 @@ void wxTypeTree::AddType(WXTYPE type, WXTYPE parent, char *name)
 
 Bool wxSubType(WXTYPE type1, WXTYPE type2)
 {
+  WXTYPE t;
+  wxTypeDef *typ;
+  
   if (type1 == type2)
     return TRUE;
 
-  WXTYPE t = type1;
-  while (TRUE)
-    {
-      wxTypeDef *typ = (wxTypeDef *)wxAllTypes->Get((long)t);
-      if (!typ)
-	return FALSE;
-
-      if (type2 == typ->parent)
-	return TRUE;
-
-      t = typ->parent;
-    }
+  t = type1;
+  while (TRUE) {
+    typ = (wxTypeDef *)wxAllTypes->Get((long)t);
+    if (!typ)
+      return FALSE;
+    
+    if (type2 == typ->parent)
+      return TRUE;
+    
+    t = typ->parent;
+  }
 }
 
 char *wxGetTypeName(WXTYPE type)
 {
+  wxTypeDef *typ;
+
   if (type == wxTYPE_ANY)
     return "any";
 
-  wxTypeDef *typ = (wxTypeDef *)wxAllTypes->Get((long)type);
+  typ = (wxTypeDef *)wxAllTypes->Get((long)type);
   if (!typ)
     return NULL;
   return typ->name;

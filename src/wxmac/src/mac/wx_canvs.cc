@@ -164,9 +164,15 @@ void wxCanvas::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
   // update deviceContext
   if (wx_dc) {
-    int clientWidth = ClientArea()->Width();
-    int clientHeight= ClientArea()->Height();
-    Rect paintRect = {0, 0, clientHeight, clientWidth};
+    int clientWidth, clientHeight;
+    Rect paintRect;
+
+    clientWidth = ClientArea()->Width();
+    clientHeight= ClientArea()->Height();
+    paintRect.top = 0;
+    paintRect.left = 0;
+    paintRect.bottom = clientHeight;
+    paintRect.right = clientWidth;
     wx_dc->SetPaintRegion(&paintRect);
   }
   
@@ -190,6 +196,11 @@ void wxCanvas::SetScrollbars(int horizontal, int vertical,
                              int x_pos, int y_pos,
 			     Bool automgmt)
 {
+  wxWhatScrollData whatScrollData; // track what scrolldata changes
+  wxScrollData* oldScrollData;
+  wxScrollData scrollData;
+  int sizeH, unitH, sizeW, unitW;
+
   if (!cScroll) 
     return;
   
@@ -215,10 +226,11 @@ void wxCanvas::SetScrollbars(int horizontal, int vertical,
   }
   
   if (automgmt) {
+    int tw, th, w, h, dw, dh;
+
     requested_x_step_size = horizontal;
     requested_y_step_size = vertical;
     
-    int tw, th, w, h, dw, dh;
     GetClientSize(&w, &h);
     if (hExtent) {
       tw = hExtent;
@@ -247,19 +259,18 @@ void wxCanvas::SetScrollbars(int horizontal, int vertical,
 
   scrollAutomanaged = automgmt;
 
-  wxWhatScrollData whatScrollData; // track what scrolldata changes
-  wxScrollData* oldScrollData = cScroll->GetScrollData();
-  wxScrollData scrollData;
+  oldScrollData = cScroll->GetScrollData();
+
   if (oldScrollData) scrollData = *oldScrollData;
 
-  int sizeH = (vertical > 0 ? max(y_length, 1) : 0);
+  sizeH = (vertical > 0 ? max(y_length, 1) : 0);
   if (sizeH != scrollData.GetValue(wxWhatScrollData::wxSizeH))
     {
       scrollData.SetValue(sizeH, wxWhatScrollData::wxSizeH);
       whatScrollData |= wxWhatScrollData::wxSizeH;
     }
-
-  int unitH = (vertical > 0 ? vertical : 0);
+  
+  unitH = (vertical > 0 ? vertical : 0);
   if (unitH != scrollData.GetValue(wxWhatScrollData::wxUnitH))
     {
       scrollData.SetValue(unitH, wxWhatScrollData::wxUnitH);
@@ -280,14 +291,14 @@ void wxCanvas::SetScrollbars(int horizontal, int vertical,
       whatScrollData |= wxWhatScrollData::wxPositionV;
     }
 
-  int sizeW = (horizontal > 0 ? max(x_length, 1) : 0);
+  sizeW = (horizontal > 0 ? max(x_length, 1) : 0);
   if (sizeW != scrollData.GetValue(wxWhatScrollData::wxSizeW))
     {
       scrollData.SetValue(sizeW, wxWhatScrollData::wxSizeW);
       whatScrollData |= wxWhatScrollData::wxSizeW;
     }
 
-  int unitW = (horizontal > 0 ? horizontal : 0);
+  unitW = (horizontal > 0 ? horizontal : 0);
   if (unitW != scrollData.GetValue(wxWhatScrollData::wxUnitW))
     {
       scrollData.SetValue(unitW, wxWhatScrollData::wxUnitW);
@@ -320,6 +331,8 @@ void wxCanvas::SetScrollData
  wxScrollEvent*		evnt
  )
 {
+  wxDC* theDC;
+
   // if (iniatorWindow == this) return;
 
   if ((long)whatScrollData & wxWhatScrollData::wxSizeW)
@@ -340,7 +353,7 @@ void wxCanvas::SetScrollData
   if ((long)whatScrollData & wxWhatScrollData::wxPageH)
     units_per_page_y = scrollData->GetValue(wxWhatScrollData::wxPageH);
 
-  wxDC* theDC = GetDC();
+  theDC = GetDC();
 
   if (!scrollAutomanaged) {
     if (theDC) {
@@ -355,15 +368,15 @@ void wxCanvas::SetScrollData
 
   if (theDC) {
     int need_paint = 0;
-
     int dH = 0;
+    int dV = 0;
+
     {
       int newH = scrollData->GetValue(wxWhatScrollData::wxPositionH) *
 	scrollData->GetValue(wxWhatScrollData::wxUnitW);
       dH = (int)(newH - (-theDC->device_origin_x));
     }
     
-    int dV = 0;
     {
       int newV = scrollData->GetValue(wxWhatScrollData::wxPositionV) *
 	scrollData->GetValue(wxWhatScrollData::wxUnitH);
@@ -372,11 +385,17 @@ void wxCanvas::SetScrollData
     
     if (dH != 0 || dV != 0) {
       if (!IsHidden()) {
-	wxArea* clientArea = ClientArea();
-	RgnHandle theUpdateRgn = ::NewRgn();
+	wxArea* clientArea;
+	RgnHandle theUpdateRgn;
+	Rect scrollRect;
+	clientArea = ClientArea();
+	theUpdateRgn = ::NewRgn();
 	CheckMemOK(theUpdateRgn);
 	SetCurrentDC();
-	Rect scrollRect = {0, 0, clientArea->Height(), clientArea->Width()};
+	scrollRect.top = 0;
+	scrollRect.left = 0;
+	scrollRect.bottom = clientArea->Height();
+	scrollRect.right = clientArea->Width()};
 	OffsetRect(&scrollRect,SetOriginX,SetOriginY);
 	::ScrollRect(&scrollRect, -dH, -dV, theUpdateRgn);
 	if (!EmptyRgn(theUpdateRgn))
@@ -407,8 +426,10 @@ void wxCanvas::Scroll(int xPos, int yPos)
   if (!cScroll) return;
 
   wxWhatScrollData whatScrollData; // track what scrolldata changes
-  wxScrollData* oldScrollData = cScroll->GetScrollData();
+  wxScrollData* oldScrollData;
   wxScrollData scrollData;
+
+  oldScrollData = cScroll->GetScrollData();
   if (oldScrollData) scrollData = *oldScrollData;
 
   if (xPos != -1)
@@ -501,7 +522,8 @@ void wxCanvas::GetVirtualSize(int* x, int* y)
 //-----------------------------------------------------------------------------
 void wxCanvas::ViewStart(int* x, int* y)
 {
-  wxDC* theDC = GetDC();
+  wxDC* theDC;
+  theDC = GetDC();
   if (theDC) {
     *x = (int)(-(theDC->device_origin_x));
     *y = (int)(-(theDC->device_origin_y));
@@ -526,14 +548,17 @@ void wxCanvas::WarpPointer(int x_pos, int y_pos)
 //-----------------------------------------------------------------------------
 void wxCanvas::DoShow(Bool show)
 {
+  wxChildNode* node;
+  wxWindow* theChildWindow;
+
   if (!CanShow(show)) return;
 
   if (show)
     wxWindow::DoShow(show);
 
-  wxChildNode* node = GetChildren()->First();
+  node = GetChildren()->First();
   while (node) {
-    wxWindow* theChildWindow = (wxWindow*)node->Data();
+    theChildWindow = (wxWindow*)node->Data();
     theChildWindow->DoShow(show);
     node = node->Next();
   }
@@ -546,7 +571,8 @@ void wxCanvas::DoShow(Bool show)
 void wxCanvas::ClientToLogical(int* x, int* y) // mac platform only; testing
 { // Transform point from client c.s. to logical c.s. (virtual canvas, scrolling)
   // trying without all this gunk:
-  wxDC* theDC = GetDC();
+  wxDC* theDC;
+  theDC = GetDC();
   if (theDC) {
     float fX = theDC->DeviceToLogicalX(*x);
     float fY = theDC->DeviceToLogicalY(*y);

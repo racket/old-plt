@@ -92,15 +92,17 @@ void wxbWindow::MakeModal(Bool modal)
   // Disable all other windows
   if (wxSubType(__type, wxTYPE_DIALOG_BOX) || wxSubType(__type, wxTYPE_FRAME))
     {
-      wxChildNode *node = wxTopLevelWindows(ContextWindow())->First();
-      while (node)
-	{
-	  wxWindow *win = (wxWindow *)(node->Data());
-	  if (win != this)
-	    win->Enable(!modal);
+      wxChildNode *node;
+      wxWindow *win;
 
-	  node = node->Next();
-	}
+      node = wxTopLevelWindows(ContextWindow())->First();
+      while (node) {
+	win = (wxWindow *)(node->Data());
+	if (win != this)
+	  win->Enable(!modal);
+	
+	node = node->Next();
+      }
     }
 }
 

@@ -29,16 +29,16 @@
 // Constructor (given parentScreen)
 wxbFrame::wxbFrame (char* windowName, wxScreen* parentScreen,
 		int x, int y, int width, int height, long style)
-	:
-		wxWindow ( windowName, parentScreen, x, y, width, height, style),
-		modal_showing (FALSE),
-		wx_menu_bar (NULL),
-		icon (NULL),
-		status_line_exists (FALSE),
-		frame_type (style & (wxSDI | wxMDI_PARENT | wxMDI_CHILD)),
-		nb_status (0)
+: wxWindow ( windowName, parentScreen, x, y, width, height, style)
 {
   __type = wxTYPE_FRAME;
+  
+  modal_showing = FALSE;
+  wx_menu_bar = NULL;
+  icon = NULL;
+  status_line_exists = FALSE;
+  frame_type = style & (wxSDI | wxMDI_PARENT | wxMDI_CHILD);
+  nb_status =0;
   
   context = wxGetContextForFrame();
   
@@ -55,37 +55,32 @@ wxbFrame::~wxbFrame(void)
 // resize to client rectangle size
 void wxbFrame::OnSize(int x, int y)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxbFrame::OnSize\n");
-#endif
+  wxWindow *child = NULL, *win;
+  int noChildren = 0;
+  wxChildNode *node;
+  int client_x, client_y;
+
   if (frame_type == wxMDI_PARENT)
     return;
 
   // Search for a child which is a subwindow, not another frame.
-  wxWindow *child = NULL;
   // Count the number of _subwindow_ children
-  int noChildren = 0;
-  for(wxChildNode *node = GetChildren()->First(); node; node = node->Next())
+  for (node = GetChildren()->First(); node; node = node->Next())
   {
-    wxWindow *win = (wxWindow *)(node->Data());
-    WXTYPE winType = win->__type;
+    WXTYPE winType;
 
-    if (wxSubType(winType, wxTYPE_PANEL) ||
-        wxSubType(winType, wxTYPE_TEXT_WINDOW) ||
-        wxSubType(winType, wxTYPE_CANVAS))
-    {
+    win = (wxWindow *)(node->Data());
+    winType = win->__type;
+
+    if (wxSubType(winType, wxTYPE_PANEL)
+        || wxSubType(winType, wxTYPE_TEXT_WINDOW)
+        || wxSubType(winType, wxTYPE_CANVAS)) {
       child = win;
       noChildren ++;
     }
   }
   if (!child || (noChildren > 1))
     return;
-
-  int client_x, client_y;
-
-#if DEBUG > 1
-  wxDebugMsg("wxbFrame::OnSize: about to set the child's size.\n");
-#endif
 
   GetClientSize(&client_x, &client_y);
   child->SetSize(0, 0, client_x, client_y, 0x70);
@@ -99,16 +94,15 @@ void wxbFrame::OnActivate(Bool flag)
 // Default menu selection behaviour - display a help string
 void wxbFrame::OnMenuSelect(int id)
 {
-  if (StatusLineExists())
-  {
+  if (StatusLineExists()) {
     if (id == -1)
       SetStatusText("");
-    else
-    {
-      wxMenuBar *menuBar = GetMenuBar();
-      if (menuBar)
-      {
-        char *helpString = GetMenuBar()->GetHelpString(id);
+    else {
+      wxMenuBar *menuBar;
+      menuBar = GetMenuBar();
+      if (menuBar) {
+        char *helpString;
+	helpString = GetMenuBar()->GetHelpString(id);
         if (helpString)
           SetStatusText(helpString);
       }
@@ -154,16 +148,18 @@ void wxbFrame::Command(int id)
 
 void wxbFrame::ProcessCommand(int id)
 {
-  wxMenuBar *bar = GetMenuBar();
+  wxMenuBar *bar;
+  wxMenuItem *item;
+
+  bar = GetMenuBar();
 
   if (!bar)
     return;
 
-  wxMenuItem *item = bar->FindItemForId(id);
+  item = bar->FindItemForId(id);
   if (item && item->IsCheckable()) {
     bar->Check(id,!bar->Checked(id));
   }
 
   OnMenuCommand(id);
 }
-

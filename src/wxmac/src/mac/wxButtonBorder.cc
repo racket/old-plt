@@ -49,13 +49,16 @@ wxButtonBorder::~wxButtonBorder(void)
 //-----------------------------------------------------------------------------
 void wxButtonBorder::Paint(void)
 {
+  int margin;
+
   if (cHidden) return;
 
-  int margin = ParentArea()->Margin().Offset(wxTop);
+  margin = ParentArea()->Margin().Offset(wxTop);
   if (margin)
     {	
-      int clientWidth = ClientArea()->Width();
-      int clientHeight = ClientArea()->Height();
+      int clientWidth, clientHeight;
+      clientWidth = ClientArea()->Width();
+      clientHeight = ClientArea()->Height();
       SetCurrentDC();
       Rect clientRect = {0, 0, clientHeight, clientWidth};
       OffsetRect(&clientRect,SetOriginX,SetOriginY);

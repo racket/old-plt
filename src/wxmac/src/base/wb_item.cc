@@ -107,8 +107,6 @@ wxbItem::wxbItem (void)
   __type = wxTYPE_ITEM;
 }
 
-#ifdef wx_mac		// need additional constructors 
-
 wxbItem::wxbItem // Constructor (given parentArea)
 	(
 		char*		windowName,
@@ -122,27 +120,25 @@ wxbItem::wxbItem // Constructor (given parentArea)
 		wxWindow ( windowName, parentArea, x, y, width, height, style)
 {
     if (wxSubType(window_parent->__type, wxTYPE_PANEL) &&
-    	cParentArea == window_parent->ClientArea())
-	{
-    	wxPanel* parentPanel = (wxPanel*) window_parent;
-		backColour = parentPanel->backColour;
-		buttonColour = parentPanel->buttonColour;
-		buttonFont = parentPanel->buttonFont;
-		if (!buttonFont) buttonFont = wxNORMAL_FONT; // mflatt
-		labelColour = parentPanel->labelColour;
-		labelFont = parentPanel->labelFont;
-		labelPosition = parentPanel->label_position;
-	}
-	else
-	{
-		backColour = NULL;
-		buttonColour = NULL;
-		buttonFont = NULL;
-		if (!buttonFont) buttonFont = wxNORMAL_FONT; // mflatt
-		labelColour = NULL;
-		labelFont = NULL;
-		labelPosition = wxHORIZONTAL;
-	}
+    	cParentArea == window_parent->ClientArea()) {
+      wxPanel* parentPanel;
+      parentPanel = (wxPanel*) window_parent;
+      backColour = parentPanel->backColour;
+      buttonColour = parentPanel->buttonColour;
+      buttonFont = parentPanel->buttonFont;
+      if (!buttonFont) buttonFont = wxNORMAL_FONT;
+      labelColour = parentPanel->labelColour;
+      labelFont = parentPanel->labelFont;
+      labelPosition = parentPanel->label_position;
+    } else {
+      backColour = NULL;
+      buttonColour = NULL;
+      buttonFont = NULL;
+      if (!buttonFont) buttonFont = wxNORMAL_FONT;
+      labelColour = NULL;
+      labelFont = NULL;
+      labelPosition = wxHORIZONTAL;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -159,27 +155,25 @@ wxbItem::wxbItem // Constructor (given parentWindow)
 		wxWindow ( windowName, parentWindow, x, y, width, height, style)
 {
     if (wxSubType(window_parent->__type, wxTYPE_PANEL) &&
-    	cParentArea == window_parent->ClientArea())
-	{
-    	wxPanel* parentPanel = (wxPanel*) window_parent;
-		backColour = parentPanel->backColour;
-		buttonColour = parentPanel->buttonColour;
-		buttonFont = parentPanel->buttonFont;
-		if (!buttonFont) buttonFont = wxNORMAL_FONT;
-		labelColour = parentPanel->labelColour;
-		labelFont = parentPanel->labelFont;
-		labelPosition = parentPanel->label_position;
-	}
-	else
-	{
-		backColour = NULL;
-		buttonColour = NULL;
-		buttonFont = NULL;
-		if (!buttonFont) buttonFont = wxNORMAL_FONT; // KLUDGE
-		labelColour = NULL;
-		labelFont = NULL;
-		labelPosition = wxHORIZONTAL;
-	}
+    	cParentArea == window_parent->ClientArea()) {
+      wxPanel* parentPanel;
+      parentPanel = (wxPanel*) window_parent;
+      backColour = parentPanel->backColour;
+      buttonColour = parentPanel->buttonColour;
+      buttonFont = parentPanel->buttonFont;
+      if (!buttonFont) buttonFont = wxNORMAL_FONT;
+      labelColour = parentPanel->labelColour;
+      labelFont = parentPanel->labelFont;
+      labelPosition = parentPanel->label_position;
+    } else {
+      backColour = NULL;
+      buttonColour = NULL;
+      buttonFont = NULL;
+      if (!buttonFont) buttonFont = wxNORMAL_FONT; // KLUDGE
+      labelColour = NULL;
+      labelFont = NULL;
+      labelPosition = wxHORIZONTAL;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -187,20 +181,20 @@ wxbItem::wxbItem // Constructor (given objectType; i.e., menu or menuBar)
 	(
 		char*		windowName
 	) :
-		wxWindow ( windowName),
-		buttonFont (NULL),
-		labelFont (NULL),
-		backColour (NULL),
-		labelColour (NULL),
-		buttonColour (NULL),
-		labelPosition (wxHORIZONTAL)
+		wxWindow ( windowName)
 {
+  buttonFont = NULL;
+  labelFont = NULL;
+  backColour = NULL;
+  labelColour = NULL;
+  buttonColour = NULL;
+  labelPosition = wxHORIZONTAL;
 }
-#endif // wx_mac
 
 wxbItem::~wxbItem (void)
 {
-  wxPanel *parent = (wxPanel *) GetParent ();
+  wxPanel *parent;
+  parent = (wxPanel *) GetParent ();
   if (parent)
   {
     // parent is not always a wxPanel: can be a wxMenu...
@@ -212,12 +206,10 @@ wxbItem::~wxbItem (void)
   }
 }
 
-#ifndef wx_mac
 void wxbItem::SetClientSize (int width, int height)
 {
   SetSize (-1, -1, width, height);
 }
-#endif // wx_mac
 
 int wxbItem::GetLabelPosition (void)
 {
@@ -232,8 +224,9 @@ void wxbItem::SetLabelPosition (int pos)
 void wxbItem::Centre (int direction)
 {
   int x, y, width, height, panel_width, panel_height, new_x, new_y;
+  wxPanel *panel;
 
-  wxPanel *panel = (wxPanel *) GetParent ();
+  panel = (wxPanel *) GetParent ();
   if (!panel)
     return;
 
@@ -261,8 +254,8 @@ void wxbItem::Command (wxCommandEvent * event)
 void wxbItem::ProcessCommand (wxCommandEvent * event)
 {
   wxFunction fun = callback;
-  if (fun && *fun)
-    (void) (*(fun)) (this, event);
+  if (fun)
+    fun(this, event);
 }
 
 wxbButton::wxbButton (wxPanel * panel, wxFunction Function,
@@ -321,51 +314,52 @@ int wxbMenu::FindItem (char *itemString)
 {
   char buf1[200];
   char buf2[200];
+  wxNode *node;
+  wxMenuItem *item;
+
   wxStripMenuCodes (itemString, buf1);
 
-  for (wxNode * node = menuItems->First (); node; node = node->Next ())
-    {
-      wxMenuItem *item = (wxMenuItem *) node->Data ();
-      if (item->subMenu)
-	{
-	  int ans = item->subMenu->FindItem (itemString);
-	  if (ans > -1)
-	    return ans;
-	}
-      if ((item->itemId > -1) && item->itemName)
-	{
-	  wxStripMenuCodes (item->itemName, buf2);
-	  if (strcmp (buf1, buf2) == 0)
-	    return item->itemId;
-	}
+  for (node = menuItems->First (); node; node = node->Next ()) {
+    item = (wxMenuItem *) node->Data ();
+    if (item->subMenu) {
+      int ans = item->subMenu->FindItem (itemString);
+      if (ans > -1)
+	return ans;
     }
-
+    if ((item->itemId > -1) && item->itemName) {
+      wxStripMenuCodes (item->itemName, buf2);
+      if (strcmp (buf1, buf2) == 0)
+	return item->itemId;
+    }
+  }
+  
   return -1;
 }
 
 wxMenuItem *wxbMenu::FindItemForId (int itemId, wxMenu ** itemMenu)
 {
+  wxNode *node;
+  wxMenuItem *item;
+
   if (itemMenu)
     *itemMenu = NULL;
-  for (wxNode * node = menuItems->First (); node; node = node->Next ())
-    {
-      wxMenuItem *item = (wxMenuItem *) node->Data ();
+  
+  for (node = menuItems->First (); node; node = node->Next ()) {
+    item = (wxMenuItem *) node->Data ();
 
-      if (item->itemId == itemId)
-	{
-	  if (itemMenu)
-	    *itemMenu = (wxMenu *) this;
-	  return item;
-	}
-
-      if (item->subMenu)
-	{
-	  wxMenuItem *ans = item->subMenu->FindItemForId (itemId, itemMenu);
-	  if (ans)
-	    return ans;
-	}
+    if (item->itemId == itemId) {
+      if (itemMenu)
+	*itemMenu = (wxMenu *) this;
+      return item;
     }
 
+    if (item->subMenu) {
+      wxMenuItem *ans = item->subMenu->FindItemForId (itemId, itemMenu);
+      if (ans)
+	return ans;
+    }
+  }
+  
   if (itemMenu)
     *itemMenu = NULL;
   return NULL;
@@ -373,7 +367,8 @@ wxMenuItem *wxbMenu::FindItemForId (int itemId, wxMenu ** itemMenu)
 
 void wxbMenu::SetHelpString (int itemId, char *helpString)
 {
-  wxMenuItem *item = FindItemForId (itemId);
+  wxMenuItem *item;
+  item = FindItemForId (itemId);
   if (item) {
     item->helpString = helpString ? copystring (helpString) : NULL;
   }
@@ -381,7 +376,8 @@ void wxbMenu::SetHelpString (int itemId, char *helpString)
 
 char *wxbMenu::GetHelpString (int itemId)
 {
-  wxMenuItem *item = FindItemForId (itemId);
+  wxMenuItem *item;
+  item = FindItemForId (itemId);
   if (item)
     return item->helpString;
   else
@@ -493,13 +489,15 @@ int wxbMenuBar::FindMenuItem (char *menuString, char *itemString)
 
 wxMenuItem *wxbMenuBar::FindItemForId (int Id, wxMenu ** itemMenu)
 {
+  wxMenuItem *item = NULL;
+
   if (itemMenu)
     *itemMenu = NULL;
 
-  wxMenuItem *item = NULL;
-  for (int i = 0; i < n; i++)
+  for (int i = 0; i < n; i++) {
     if ((item = menus[i]->FindItemForId (Id, itemMenu)))
       return item;
+  }
   return NULL;
 }
 
@@ -568,7 +566,8 @@ wxbChoice::~wxbChoice (void)
 
 char *wxbChoice::GetStringSelection (void)
 {
-  int sel = GetSelection ();
+  int sel;
+  sel = GetSelection ();
   if (sel > -1)
     return this->GetString (sel);
   else
@@ -577,7 +576,8 @@ char *wxbChoice::GetStringSelection (void)
 
 Bool wxbChoice::SetStringSelection (char *s)
 {
-  int sel = FindString (s);
+  int sel;
+  sel = FindString (s);
   if (sel > -1)
     {
       SetSelection (sel);
@@ -622,7 +622,8 @@ int wxbListBox::Number (void)
 // For single selection items only
 char *wxbListBox::GetStringSelection (void)
 {
-  int sel = GetSelection ();
+  int sel;
+  sel = GetSelection ();
   if (sel > -1)
     return this->GetString (sel);
   else
@@ -631,7 +632,8 @@ char *wxbListBox::GetStringSelection (void)
 
 Bool wxbListBox::SetStringSelection (char *s)
 {
-  int sel = FindString (s);
+  int sel;
+  sel  = FindString (s);
   if (sel > -1)
     {
       SetOneSelection(sel);
@@ -672,7 +674,8 @@ int wxbRadioBox::Number (void)
 // For single selection items only
 char *wxbRadioBox::GetStringSelection (void)
 {
-  int sel = GetSelection ();
+  int sel;
+  sel = GetSelection ();
   if (sel > -1)
     return this->GetString (sel);
   else
@@ -681,7 +684,8 @@ char *wxbRadioBox::GetStringSelection (void)
 
 Bool wxbRadioBox::SetStringSelection (char *s)
 {
-  int sel = FindString (s);
+  int sel;
+  sel = FindString (s);
   if (sel > -1)
     {
       SetSelection (sel);
@@ -715,7 +719,6 @@ wxbMessage::wxbMessage (wxPanel * panel, char *label, int x, int y, long style, 
   buttonColour = panel->buttonColour;
 }
 
-#if USE_BITMAP_MESSAGE
 wxbMessage::wxbMessage (wxPanel * panel, wxBitmap *image, int x, int y, long style, char *name)
 {
   __type = wxTYPE_MESSAGE;
@@ -728,9 +731,7 @@ wxbMessage::wxbMessage (wxPanel * panel, wxBitmap *image, int x, int y, long sty
   labelColour = panel->labelColour;
   buttonColour = panel->buttonColour;
 }
-#endif
 
-#ifdef wx_mac
 //-----------------------------------------------------------------------------
 wxbMessage::wxbMessage // Constructor (given parentArea)
 	(
@@ -762,7 +763,7 @@ wxbMessage::wxbMessage // Constructor (given parentWindow)
 {
   __type = wxTYPE_MESSAGE;
 }
-#endif // wx_mac
+
 
 wxbMessage::~wxbMessage (void)
 {
@@ -786,7 +787,6 @@ wxbSlider::~wxbSlider (void)
 {
 }
 
-#if  USE_GAUGE
 
 wxbGauge::wxbGauge (wxPanel * panel, char *label,
 	   int range, int x, int y, int width, int height, long style, char *name)
@@ -806,4 +806,3 @@ wxbGauge::wxbGauge (wxPanel * panel, char *label,
 wxbGauge::~wxbGauge (void)
 {
 }
-#endif // USE_GAUGE

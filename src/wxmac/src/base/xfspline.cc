@@ -16,10 +16,14 @@
 
 void wxbDC::DrawSpline(int n, wxPoint pts[])
 {
-  wxList list;
-  for (int i=0; i<n; ++i)
-    list.Append((wxObject*)&pts[i]);
-  DrawSpline(&list);
+  wxList *list;
+  int i;
+
+  list = new wxList;
+  for (i=0; i<n; ++i) {
+    list->Append((wxObject*)&pts[i]);
+  }
+  DrawSpline(list);
 }
 
 // defines and static declarations for DrawSpline
@@ -51,8 +55,9 @@ void wxbDC::DrawSpline(wxList *pts)
   wxPoint *p;
   float  cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4;
   float  x1,  y1,  x2 , y2;
+  wxNode *node;
 
-  wxNode *node = pts->First();
+  node = pts->First();
   p = (wxPoint*)node->Data();
   x1 = p->x; y1 = p->y;
 
@@ -180,7 +185,8 @@ int wx_spline_pop(float *x1, float *y1, float *x2, float *y2,
 
 static Bool wx_spline_add_point(float x, float y)
 {
-  wxPoint *point = new wxPoint ;
+  wxPoint *point;
+POINT  = new wxPoint ;
   point->x = x;
   point->y = y;
   wx_spline_point_list->Append((wxObject*)point);
@@ -189,8 +195,10 @@ static Bool wx_spline_add_point(float x, float y)
 
 static void wx_spline_draw_point_array(wxbDC *dc)
 {
+  wxNode *node;
+
   dc->DrawLines(wx_spline_point_list, 0.0, 0.0);
-  wxNode *node = wx_spline_point_list->First();
+  node = wx_spline_point_list->First();
   while (node) {
     wx_spline_point_list->DeleteNode(node);
     node = wx_spline_point_list->First();

@@ -124,17 +124,9 @@ float wxbCanvas::GetCharWidth(void)
   return wx_dc->GetCharWidth();
 }
 
-#ifdef wx_mac
 void wxbCanvas::GetTextExtent(const char* string, float* x, float* y, float* descent,
-  						float* externalLeading, wxFont* the_font, Bool use16)
+			      float* externalLeading, wxFont* the_font, Bool use16)
 {
   wx_dc->GetTextExtent(string, x, y, descent, externalLeading, the_font, use16);
 }
-#else // wx_mac
-void wxbCanvas::GetTextExtent(const char *string, float *x, float *y,
-                              float *descent, float *externalLeading)
-{
-  wx_dc->GetTextExtent(string, x, y, descent, externalLeading);
-}
-#endif // wx_mac
 

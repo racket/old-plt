@@ -29,19 +29,18 @@ wxbPanel::~wxbPanel(void)
 
 wxObject* wxbPanel::GetChild(int number)
 {
+  wxChildNode *node;
   // Return a pointer to the Nth object in the Panel
   if (!children)
     return(NULL) ;
-  wxChildNode *node = GetChildren()->First();
-  while (node && number--)
+  node = GetChildren()->First();
+  while (node && number--) {
     node = node->Next() ;
-  if (node)
-    {
-      wxObject *obj = (wxObject *)node->Data();
-      return(obj) ;
-    }
-  else
-    return NULL ;
+  }
+  if (node) {
+    return (wxObject *)node->Data();
+  } else
+    return NULL;
 }
 
 void wxbPanel::SetLabelPosition(int pos)  // wxHORIZONTAL or wxVERTICAL
@@ -60,28 +59,28 @@ void wxbPanel::OnDefaultAction(wxItem *initiatingItem)
 
 void wxbPanel::SetLabelFont(wxFont *fnt)
 {
-  labelFont = fnt ;
+  labelFont = fnt;
   this->font=labelFont; 
 }
 
 void wxbPanel::SetButtonFont(wxFont *font)
 {
-  buttonFont = font ;
+  buttonFont = font;
 }
 
 void wxbPanel::SetBackgroundColour(wxColour *col)
 {
-  backColour = col ;
+  backColour = col;
 }
 
 void wxbPanel::SetLabelColour(wxColour *col)
 {
-  labelColour = col ;
+  labelColour = col;
 }
 
 void wxbPanel::SetButtonColour(wxColour *col)
 {
-  buttonColour = col ;
+  buttonColour = col;
 }
 
 //=============================================================================
@@ -148,24 +147,21 @@ void wxbPanel::InitDefaults(void)
 //-----------------------------------------------------------------------------
 void wxbPanel::InitMoreDefaults(void) // Poor name for this method
 {
-  if (wxSubType(window_parent->__type, wxTYPE_PANEL) &&
-      cParentArea == window_parent->ClientArea())
-    {
-      wxPanel* parentPanel = (wxPanel*) window_parent;
-      backColour = parentPanel->backColour;
-      buttonColour = parentPanel->buttonColour;
-      buttonFont = parentPanel->buttonFont;
-      labelColour = parentPanel->labelColour;
-      labelFont = parentPanel->labelFont;
-      label_position = parentPanel->label_position;
-    }
-  else
-    {
-      backColour = NULL;
-      buttonColour = NULL;
-      buttonFont = wxNORMAL_FONT;
-      labelColour = NULL;
-      labelFont = wxNORMAL_FONT;
-      label_position = wxHORIZONTAL;
-    }
+  if (wxSubType(window_parent->__type, wxTYPE_PANEL)
+      && (cParentArea == window_parent->ClientArea())) {
+    wxPanel* parentPanel = (wxPanel*)window_parent;
+    backColour = parentPanel->backColour;
+    buttonColour = parentPanel->buttonColour;
+    buttonFont = parentPanel->buttonFont;
+    labelColour = parentPanel->labelColour;
+    labelFont = parentPanel->labelFont;
+    label_position = parentPanel->label_position;
+  } else {
+    backColour = NULL;
+    buttonColour = NULL;
+    buttonFont = wxNORMAL_FONT;
+    labelColour = NULL;
+    labelFont = wxNORMAL_FONT;
+    label_position = wxHORIZONTAL;
+  }
 }

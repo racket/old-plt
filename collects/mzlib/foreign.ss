@@ -520,7 +520,9 @@
 ;; existing value.  Note that if the pre: expression is not (id => expr), then
 ;; it means that there is no input for this argument.  Also note that if a
 ;; custom type is used as an output type of a function, then only the post:
-;; code is used.  The resulting wrapper looks like:
+;; code is used -- for example, this is useful for foreign functions that
+;; allocate a memory block and return it to the user.  The resulting wrapper
+;; looks like:
 ;;   (let* (...bindings for arguments...
 ;;          ...bindings for bind: identifiers...
 ;;          ...bindings for pre-code...
@@ -617,11 +619,26 @@
          ;; make-cvector* is a dangerous operation
          (rename make-cvector make-cvector*))
 
-(define* _cvector
+(define _cvector* ; used only as input types
   (make-ctype _pointer cvector-ptr
     (lambda (x)
       (error '_cvector
              "cannot automatically convert a C pointer to a cvector"))))
+
+;; (_cvector <mode> [<type> <len>]) | _cevector
+;; Same as _list etc above, except that it uses C vectors.
+(provide _cvector)
+(define-syntax _cvector
+  (syntax-id-rules (_cvector i o io)
+    [(_ i     ) _cvector*]
+    [(_ o  t n) (type: _pointer ; needs to be a pointer, not a cvector*
+                 pre:  (malloc n t)
+                 post: (x => (make-cvector x t n)))]
+    [(_ io    ) (type: _cvector*
+                 bind: tmp
+                 pre:  (x => (cvector-ptr x))
+                 post: (x => tmp))]
+    [_cvector   _cvector*]))
 
 (provide (rename allocate-cvector make-cvector))
 (define (allocate-cvector type len)

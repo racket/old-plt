@@ -651,6 +651,9 @@
 	  [change-children
 	   (lambda (f)
 	     (let ([new-children (f children)])
+	       (mred:debug:printf 'container-change-children
+				  "Old children ~s~nNew children ~s"
+				  children new-children)q
 	       (unless (andmap (lambda (child)
 				 (eq? this (send child get-parent)))
 			 new-children)
@@ -1314,6 +1317,13 @@
 	  [change-children
 	    (lambda (f)
 	      (let ([new-children (f children)])
+		(mred:debug:printf 'container-change-children
+				   "Inside single-panel ~s~n~s ~s~n~s ~s"
+				   "change-children"
+				   "Old children: "
+				   children
+				   "New children: "
+				   new-children)
 		(unless (andmap (lambda (child)
 				  (eq? this (send child get-parent)))
 			  new-children)

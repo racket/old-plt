@@ -14,13 +14,13 @@
 #else
 # include <windows.h>
 # include <wtypes.h>
-  typedef _int8    int8_t;
+  typedef          _int8   int8_t;
   typedef unsigned _int8  uint8_t;
-  typedef _int16   int16_t;
+  typedef          _int16  int16_t;
   typedef unsigned _int16 uint16_t;
-  typedef _int32   int32_t;
+  typedef          _int32  int32_t;
   typedef unsigned _int32 uint32_t;
-  typedef _int64   int64_t;
+  typedef          _int64  int64_t;
   typedef unsigned _int64 uint64_t;
 #endif
 #include "ffi.h"
@@ -1014,11 +1014,12 @@ static Scheme_Object *c_to_scheme(Scheme_Object *type, void *src)
   return NULL; /* shush the compiler */
 }
 
-/* Usually writes the C object to dst and returns NULL.  When copy_structs is 0
- * (false) and the type is a struct, then return a pointer to the struct
- * object (not touching dst). */
+/* Usually writes the C object to dst and returns NULL.  When basetype_p is not
+ * NULL, then any pointer value (any pointer or a struct) is returned, and the
+ * basetype_p is set to the corrsponding number tag.  If basetype_p is NULL,
+ * then a struct value will be *copied* into dst. */
 static void* scheme_to_c(Scheme_Object *type, void *dst,
-                         Scheme_Object *val, int copy_structs)
+                         Scheme_Object *val, long *basetype_p)
 {
   if (!SCHEME_CTYPEP(type))
     scheme_wrong_type("Scheme->C", "C-type", 0, 1, &type);
@@ -1043,30 +1044,38 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
       if (SCHEME_INTP(val)) {
         int8_t tmp;
         tmp = (int8_t)(SCHEME_INT_VAL(val));
-        (((int8_t*)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "int8", 0, 1, &(val));
-      return NULL;
+        (((int8_t*)dst)[0]) = tmp; return NULL;
+      } else {
+        scheme_wrong_type("Scheme->C", "int8", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_uint8:
       if (SCHEME_INTP(val)) {
         uint8_t tmp;
         tmp = (uint8_t)(SCHEME_UINT_VAL(val));
-        (((uint8_t*)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "uint8", 0, 1, &(val));
-      return NULL;
+        (((uint8_t*)dst)[0]) = tmp; return NULL;
+      } else {
+        scheme_wrong_type("Scheme->C", "uint8", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_int16:
       if (SCHEME_INTP(val)) {
         int16_t tmp;
         tmp = (int16_t)(SCHEME_INT_VAL(val));
-        (((int16_t*)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "int16", 0, 1, &(val));
-      return NULL;
+        (((int16_t*)dst)[0]) = tmp; return NULL;
+      } else {
+        scheme_wrong_type("Scheme->C", "int16", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_uint16:
       if (SCHEME_INTP(val)) {
         uint16_t tmp;
         tmp = (uint16_t)(SCHEME_UINT_VAL(val));
-        (((uint16_t*)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "uint16", 0, 1, &(val));
-      return NULL;
+        (((uint16_t*)dst)[0]) = tmp; return NULL;
+      } else {
+        scheme_wrong_type("Scheme->C", "uint16", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_int32:
       if (!(scheme_get_realint_val(val,&(((int32_t*)dst)[0])))) scheme_wrong_type("Scheme->C", "int32", 0, 1, &(val));
       return NULL;
@@ -1083,16 +1092,20 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
       if (SCHEME_INTP(val)) {
         int32_t tmp;
         tmp = (int32_t)(SCHEME_INT_VAL(val));
-        (((int32_t*)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "fixint", 0, 1, &(val));
-      return NULL;
+        (((int32_t*)dst)[0]) = tmp; return NULL;
+      } else {
+        scheme_wrong_type("Scheme->C", "fixint", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_ufixint:
       if (SCHEME_INTP(val)) {
         uint32_t tmp;
         tmp = (uint32_t)(SCHEME_UINT_VAL(val));
-        (((uint32_t*)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "ufixint", 0, 1, &(val));
-      return NULL;
+        (((uint32_t*)dst)[0]) = tmp; return NULL;
+      } else {
+        scheme_wrong_type("Scheme->C", "ufixint", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_long:
       if (!(scheme_get_int_val(val,&(((long*)dst)[0])))) scheme_wrong_type("Scheme->C", "long", 0, 1, &(val));
       return NULL;
@@ -1103,95 +1116,148 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
       if (SCHEME_INTP(val)) {
         long tmp;
         tmp = (long)(SCHEME_INT_VAL(val));
-        (((long*)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "fixnum", 0, 1, &(val));
-      return NULL;
+        (((long*)dst)[0]) = tmp; return NULL;
+      } else {
+        scheme_wrong_type("Scheme->C", "fixnum", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_ufixnum:
       if (SCHEME_INTP(val)) {
         unsigned long tmp;
         tmp = (unsigned long)(SCHEME_UINT_VAL(val));
-        (((unsigned long*)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "ufixnum", 0, 1, &(val));
-      return NULL;
+        (((unsigned long*)dst)[0]) = tmp; return NULL;
+      } else {
+        scheme_wrong_type("Scheme->C", "ufixnum", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_float:
       if (SCHEME_FLTP(val)) {
         float tmp;
         tmp = (float)(SCHEME_FLT_VAL(val));
-        (((float*)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "float", 0, 1, &(val));
-      return NULL;
+        (((float*)dst)[0]) = tmp; return NULL;
+      } else {
+        scheme_wrong_type("Scheme->C", "float", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_double:
       if (SCHEME_DBLP(val)) {
         double tmp;
         tmp = (double)(SCHEME_DBL_VAL(val));
-        (((double*)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "double", 0, 1, &(val));
-      return NULL;
+        (((double*)dst)[0]) = tmp; return NULL;
+      } else {
+        scheme_wrong_type("Scheme->C", "double", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_bool:
       if (1) {
         int tmp;
         tmp = (int)(SCHEME_TRUEP(val));
-        (((int*)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "bool", 0, 1, &(val));
-      return NULL;
+        (((int*)dst)[0]) = tmp; return NULL;
+      } else {
+        scheme_wrong_type("Scheme->C", "bool", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_string_ucs_4:
       if (SCHEME_CHAR_STRINGP(val)) {
         mzchar* tmp;
         tmp = (mzchar*)(SCHEME_CHAR_STR_VAL(val));
-        (((mzchar**)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "string/ucs-4", 0, 1, &(val));
-      return NULL;
+        if (basetype_p == NULL) {
+          (((mzchar**)dst)[0]) = tmp; return NULL;
+        } else {
+          *basetype_p = FOREIGN_string_ucs_4; return tmp;
+        }
+      } else {
+        scheme_wrong_type("Scheme->C", "string/ucs-4", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_string_utf_16:
       if (SCHEME_CHAR_STRINGP(val)) {
         unsigned short* tmp;
         tmp = (unsigned short*)(ucs4_string_to_utf16_pointer(val));
-        (((unsigned short**)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "string/utf-16", 0, 1, &(val));
-      return NULL;
+        if (basetype_p == NULL) {
+          (((unsigned short**)dst)[0]) = tmp; return NULL;
+        } else {
+          *basetype_p = FOREIGN_string_utf_16; return tmp;
+        }
+      } else {
+        scheme_wrong_type("Scheme->C", "string/utf-16", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_bytes:
       if (SCHEME_FALSEP(val)||SCHEME_BYTE_STRINGP(val)) {
         char* tmp;
         tmp = (char*)(SCHEME_FALSEP(val)?NULL:SCHEME_BYTE_STR_VAL(val));
-        (((char**)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "bytes", 0, 1, &(val));
-      return NULL;
+        if (basetype_p == NULL) {
+          (((char**)dst)[0]) = tmp; return NULL;
+        } else {
+          *basetype_p = FOREIGN_bytes; return tmp;
+        }
+      } else {
+        scheme_wrong_type("Scheme->C", "bytes", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_path:
       if (SCHEME_FALSEP(val)||SCHEME_PATH_STRINGP(val)) {
         char* tmp;
         tmp = (char*)(SCHEME_FALSEP(val)?NULL:SCHEME_PATH_VAL(val));
-        (((char**)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "path", 0, 1, &(val));
-      return NULL;
+        if (basetype_p == NULL) {
+          (((char**)dst)[0]) = tmp; return NULL;
+        } else {
+          *basetype_p = FOREIGN_path; return tmp;
+        }
+      } else {
+        scheme_wrong_type("Scheme->C", "path", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_symbol:
       if (SCHEME_SYMBOLP(val)) {
         char* tmp;
         tmp = (char*)(SCHEME_SYM_VAL(val));
-        (((char**)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "symbol", 0, 1, &(val));
-      return NULL;
+        if (basetype_p == NULL) {
+          (((char**)dst)[0]) = tmp; return NULL;
+        } else {
+          *basetype_p = FOREIGN_symbol; return tmp;
+        }
+      } else {
+        scheme_wrong_type("Scheme->C", "symbol", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_pointer:
       if (SCHEME_FFIANYPTRP(val)) {
         void* tmp;
         tmp = (void*)(SCHEME_FFIANYPTR_VAL(val));
-        (((void**)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "pointer", 0, 1, &(val));
-      return NULL;
+        if (basetype_p == NULL) {
+          (((void**)dst)[0]) = tmp; return NULL;
+        } else {
+          *basetype_p = FOREIGN_pointer; return tmp;
+        }
+      } else {
+        scheme_wrong_type("Scheme->C", "pointer", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_scheme:
       if (1) {
         Scheme_Object* tmp;
         tmp = (Scheme_Object*)(val);
-        (((Scheme_Object**)dst)[0]) = tmp;
-      } else scheme_wrong_type("Scheme->C", "scheme", 0, 1, &(val));
-      return NULL;
+        if (basetype_p == NULL) {
+          (((Scheme_Object**)dst)[0]) = tmp; return NULL;
+        } else {
+          *basetype_p = FOREIGN_scheme; return tmp;
+        }
+      } else {
+        scheme_wrong_type("Scheme->C", "scheme", 0, 1, &(val));
+        return NULL; /* shush the compiler */
+      }
     case FOREIGN_fmark:
       scheme_wrong_type("Scheme->C", "non-void-C-type", 0, 1, &(type));
     case FOREIGN_struct:
       if (!SCHEME_FFIANYPTRP(val))
         scheme_wrong_type("Scheme->C", "pointer", 0, 1, &val);
-      if (copy_structs) {
+      if (basetype_p == NULL) {
         memcpy(dst, SCHEME_FFIANYPTR_VAL(val), CTYPE_PRIMTYPE(type)->size);
         return NULL;
       } else {
+        *basetype_p = FOREIGN_struct;
         return SCHEME_FFIANYPTR_VAL(val);
       }
     default: scheme_signal_error("corrupt foreign type: %V", type);
@@ -1406,7 +1472,7 @@ static Scheme_Object *foreign_ptr_set(int argc, Scheme_Object *argv[])
       scheme_wrong_type(MYNAME, "integer", 2, argc, argv);
     ptr = (char*)ptr XFORM_OK_PLUS (size * SCHEME_INT_VAL(argv[2]));
   }
-  scheme_to_c(argv[1], ptr, val, 1);
+  scheme_to_c(argv[1], ptr, val, NULL);
   return scheme_void;
 }
 
@@ -1512,37 +1578,89 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   Scheme_Object *base;
   ffi_cif       *cif    = (ffi_cif*)(((Scheme_Object**)data)[4]);
   int           nargs   = cif->nargs;
-  GC_CAN_IGNORE ForeignAny oval, *ivals;
-  void **avalues, *p;
+  /* When the foreign function is called, we need an array (ivals) of nargs
+   * ForeignAny objects to store the actual C values that are created, and we
+   * need another array (avalues) for the pointers to these values (this is
+   * what libffi actually uses).  To make things more fun, ForeignAny is
+   * problematic for the precise GC, since it is sometimes a pointer and
+   * sometime not.  To deal with this, while converting argv objects into
+   * ivals, scheme_to_c will save pointer values in avalues, so the GC can,
+   * ignore ivals -- just before we reach the actual call, avalues is
+   * overwritten, but from that point on it is all C code so there is no
+   * problem.  Hopefully.
+   * (Things get complicated if the C call can involve GC (usually due to a
+   * Scheme callback), but then the programmer need to arrange for pointers
+   * that cannot move.  Because of all this, the *only* array that should not
+   * be ignored by the GC is avalues.)
+   */
+  GC_CAN_IGNORE ForeignAny *ivals, oval;
+  void **avalues, *p, *newp, *tmp;
   GC_CAN_IGNORE ForeignAny stack_ivals[MAX_QUICK_ARGS];
-  GC_CAN_IGNORE void *stack_avalues[MAX_QUICK_ARGS];
+  void *stack_avalues[MAX_QUICK_ARGS];
   int i;
+  long basetype;
   if (nargs <= MAX_QUICK_ARGS) {
     ivals   = stack_ivals;
     avalues = stack_avalues;
   } else {
-    ivals   = scheme_malloc(nargs * sizeof(ForeignAny));
+    ivals   = malloc(nargs * sizeof(ForeignAny));
     avalues = scheme_malloc(nargs * sizeof(void*));
   }
   /* iterate on input values and types */
   for (i=0; i<nargs; i++, itypes=SCHEME_CDR(itypes)) {
     /* convert argv[i] according to current itype */
-    p = scheme_to_c(SCHEME_CAR(itypes), &(ivals[i]), argv[i], 0);
-    /* Establish links from avalues to the actual ivals */
-    avalues[i] = (p == NULL) ? (&(ivals[i])) : p;
+    p = scheme_to_c(SCHEME_CAR(itypes), &(ivals[i]), argv[i], &basetype);
+    if (p != NULL) {
+      avalues[i] = p;
+      ivals[i].x_long = basetype; /* remember the base type */
+    } else {
+      avalues[i] = NULL;
+    }
   }
   base = get_ctype_base(otype); /* verified below, so cannot be NULL */
   /* If this is a struct return value, then need to malloc in any case, even if
    * the size is smaller than ForeignAny, because this value will be
    * returned. */
-  p = (CTYPE_PRIMLABEL(base) == FOREIGN_struct)
-        ? scheme_malloc(CTYPE_PRIMTYPE(base)->size)
-        : &oval;
-  /* call the function */
+  if (CTYPE_PRIMLABEL(base) == FOREIGN_struct) {
+    /* need to have p be a pointer that is invisible to the GC */
+    p = malloc(CTYPE_PRIMTYPE(base)->size);
+    newp = scheme_malloc(CTYPE_PRIMTYPE(base)->size);
+  } else {
+    p = &oval;
+    newp = NULL;
+  }
+  /* We finished with all possible mallocs, clear up the avalues mess */
+  for (i=0; i<nargs; i++) {
+    if (avalues[i] == NULL)     /* if this was a non-pointer... */
+      avalues[i] = &(ivals[i]); /* ... set the avalues pointer */
+    else if (ivals[i].x_long != FOREIGN_struct) { /* if *not* a struct... */
+      /* ... set the ivals pointer (pointer type doesn't matter) and avalues */
+      ivals[i].x_pointer = avalues[i];
+      avalues[i] = &(ivals[i]);
+    }
+    /* Otherwise it was a struct pointer, and avalues[i] is already fine */
+  }
+  /* Finally, call the function */
   ffi_call(cif, c_func, p, avalues);
-  if (CTYPE_PRIMLABEL(base) == FOREIGN_fmark) {
-    /* need to allocate a pointer */
+  if (ivals != stack_ivals) free(ivals);
+  ivals = NULL; /* no need now to hold on to this */
+  for (i=0; i<nargs; i++) avalues[i] = NULL; /* no need for these references */
+  avalues = NULL;
+  switch (CTYPE_PRIMLABEL(base)) {
+  case FOREIGN_fmark: /* need to allocate a pointer */
     p = scheme_make_foreign_cpointer(oval.x_pointer);
+    break;
+  case FOREIGN_struct:
+    memcpy(newp, p, CTYPE_PRIMTYPE(base)->size);
+    free(p);
+    p = newp;
+    break;
+  default:
+    if (CTYPE_PRIMTYPE(base) == &ffi_type_pointer) {
+      tmp = ((void**)p)[0];
+      p = &tmp;
+    }
+    break;
   }
   return c_to_scheme(otype, p);
 }
@@ -1618,7 +1736,7 @@ void ffi_do_callback(ffi_cif* cif, void* resultp, void** args, void *userdata)
     argv[i] = v;
   }
   p = _scheme_apply(data->proc, argc, argv);
-  scheme_to_c(data->otype, resultp, p, 1);
+  scheme_to_c(data->otype, resultp, p, NULL);
 }
 
 /* (ffi-callback scheme-proc in-types out-type) -> ffi-callback */
@@ -1655,13 +1773,14 @@ static Scheme_Object *foreign_ffi_callback(int argc, Scheme_Object *argv[])
   cif = scheme_malloc(sizeof(ffi_cif));
   if (ffi_prep_cif(cif, FFI_DEFAULT_ABI, nargs, rtype, atypes) != FFI_OK)
     scheme_signal_error("internal error: ffi_prep_cif did not return FFI_OK");
-  cl = scheme_malloc(sizeof(ffi_closure));
+  cl = scheme_malloc(sizeof(ffi_closure)); /*!!!*/
   data = (ffi_callback_struct*)scheme_malloc_tagged(sizeof(ffi_callback_struct));
   data->so.type = ffi_callback_tag;
   data->callback = (cl);
   data->proc = (argv[0]);
   data->itypes = (argv[1]);
   data->otype = (argv[2]);
+  /* put data in immobile box */
   if (ffi_prep_closure(cl, cif, &ffi_do_callback, (void*)data) != FFI_OK)
     scheme_signal_error
       ("internal error: ffi_prep_closure did not return FFI_OK");
@@ -1922,3 +2041,7 @@ void scheme_init_foreign(Scheme_Env *env)
 }
 
 /*****************************************************************************/
+/*
+access to raw malloc + free
+imobile box used a lot in mred
+*/

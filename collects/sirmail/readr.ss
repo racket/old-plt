@@ -473,7 +473,7 @@
 	(let* ([goofy-margin 15]
 	       [calc-w (- (get-pref 'sirmail:frame-width) goofy-margin)])
 	  (set! FROM-WIDTH (quotient calc-w 4))
-          (set! UID-WIDTH (quotient calc-w 6))
+          (set! UID-WIDTH (quotient calc-w 5))
 	  (set! SUBJECT-WIDTH (- calc-w FROM-WIDTH UID-WIDTH)))
 	
         (when (object? sorting-from-snip)

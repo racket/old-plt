@@ -14,20 +14,20 @@
 
 all : 
 	cd myspage
-        nmake /f myspage.mak
+	nmake /f myspage.mak
 	cd ../mysc
-        nmake /f mysc.mak
+	nmake /f mysc.mak
 	cd ../myssink
-        nmake /f myssink.mak
+	nmake /f myssink.mak
 	cd ..
-        nmake /f mysterx.mak
+	nmake /f mysterx.mak
 
 clean :
 	cd myspage
-        nmake clean /f myspage.mak
+	nmake clean /f myspage.mak
 	cd ../mysc
-        nmake clean /f mysc.mak
+	nmake clean /f mysc.mak
 	cd ../myssink
-        nmake clean /f myssink.mak
+	nmake clean /f myssink.mak
 	cd ..
-        nmake clean /f mysterx.mak
+	nmake clean /f mysterx.mak

@@ -21,8 +21,7 @@ LINK32=$(MZC)
 LINK32_LIBS= \
 	kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib \
 	advapi32.lib $(SHELL32)\LIB\shell32.lib ole32.lib oleaut32.lib \
-	uuid.lib odbc32.lib \
-        odbccp32.lib mapi32.lib "$(HTMLHELP)\lib/htmlhelp.lib" 
+	uuid.lib "$(HTMLHELP)\lib/htmlhelp.lib" 
 
 LINK32_OBJS= \
         bstr.obj

@@ -13,11 +13,11 @@
     (hash-table-get ht k (let ((d (if (null? d) #f (car d)))) (lambda () d)))))
 
 ; ensure shell-magic above
-;Configured for Scheme dialect plt by scmxlate, v 1a6,
+;Configured for Scheme dialect plt by scmxlate, v 1a7,
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "4r7")
+(define *tex2page-version* "4r8")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -1916,21 +1916,22 @@
 
 (define do-cssblock
   (lambda ()
-    (unless *css-port*
-      (let* ((f (string-append *jobname* *css-file-suffix*))
-             (real-f (string-append *aux-dir/* f)))
-        (when (null? *stylesheets*) (flag-missing-piece 'stylesheets))
-        (write-aux `(!stylesheet ,f))
-        (ensure-file-deleted real-f)
-        (set! *css-port* (open-output-file real-f))))
     (fluid-let
       ((*dumping-nontex?* #t))
       (dump-till-end-env "cssblock" *css-port*))))
 
-(define link-stylesheet
-  (lambda (css)
+(define link-stylesheets
+  (lambda ()
+    (for-each
+      (lambda (css)
+        (emit "<link rel=\"stylesheet\" type=\"text/css\" href=\"")
+        (emit css)
+        (emit "\" title=default>")
+        (emit-newline))
+      *stylesheets*)
     (emit "<link rel=\"stylesheet\" type=\"text/css\" href=\"")
-    (emit css)
+    (emit *jobname*)
+    (emit *css-file-suffix*)
     (emit "\" title=default>")
     (emit-newline)))
 
@@ -2579,19 +2580,30 @@
            (let ((old-in-small-caps? *in-small-caps?*))
              (set! *in-small-caps?* #t)
              (lambda () (set! *in-small-caps?* old-in-small-caps?))))
-          ((tiny) (emit "<font size=-4>") (lambda () (emit "</font>")))
-          ((scriptsize) (emit "<font size=-3>") (lambda () (emit "</font>")))
+          ((tiny) (emit "<span class=tiny>") (lambda () (emit "</span>")))
+          ((scriptsize)
+           (emit "<span class=scriptsize>")
+           (lambda () (emit "</span>")))
           ((footnotesize fiverm)
-           (emit "<font size=-2>")
-           (lambda () (emit "</font>")))
+           (emit "<span class=footnotesize>")
+           (lambda () (emit "</span>")))
           ((small sevenrm)
-           (emit "<font size=-1>")
-           (lambda () (emit "</font>")))
-          ((large) (emit "<font size=+1>") (lambda () (emit "</font>")))
-          ((large-cap) (emit "<font size=+2>") (lambda () (emit "</font>")))
-          ((large-up) (emit "<font size=+3>") (lambda () (emit "</font>")))
-          ((huge) (emit "<font size=+4>") (lambda () (emit "</font>")))
-          ((huge-cap) (emit "<font size=+5>") (lambda () (emit "</font>")))
+           (emit "<span class=small>")
+           (lambda () (emit "</span>")))
+          ((normalsize)
+           (emit "<span class=normalsize>")
+           (lambda () (emit "</span>")))
+          ((large) (emit "<span class=large>") (lambda () (emit "</span>")))
+          ((large-cap)
+           (emit "<span class=largecap>")
+           (lambda () (emit "</span>")))
+          ((large-up)
+           (emit "<span class=largeup>")
+           (lambda () (emit "</span>")))
+          ((huge) (emit "<span class=huge>") (lambda () (emit "</span>")))
+          ((huge-cap)
+           (emit "<span class=hugecap>")
+           (lambda () (emit "</span>")))
           ((cmyk)
            (bgroup)
            (let* ((i
@@ -3793,7 +3805,7 @@
     (emit "<head>")
     (emit-newline)
     (output-external-title)
-    (for-each link-stylesheet *stylesheets*)
+    (link-stylesheets)
     (emit "<meta name=robots content=\"")
     (unless (and top-level-page? (= *html-page-count* 0)) (emit "no"))
     (emit "index,follow\">")
@@ -3801,9 +3813,7 @@
     (for-each emit *html-head*)
     (emit "</head>")
     (emit-newline)
-    (emit "<body")
-    (when (null? *stylesheets*) (emit " bgcolor=\"#ffffff\" text=\"#000000\""))
-    (emit ">")
+    (emit "<body>")
     (emit-newline)))
 
 (define output-html-postamble
@@ -3835,12 +3845,12 @@
 
 (define close-all-open-ports
   (lambda ()
-    (if *aux-port* (close-output-port *aux-port*))
-    (if *css-port* (close-output-port *css-port*))
-    (if *index-port* (close-output-port *index-port*))
-    (if *label-port* (close-output-port *label-port*))
-    (if *bib-aux-port* (close-output-port *bib-aux-port*))
-    (if *verb-port* (close-output-port *verb-port*))
+    (when *aux-port* (close-output-port *aux-port*))
+    (when *css-port* (close-output-port *css-port*))
+    (when *index-port* (close-output-port *index-port*))
+    (when *label-port* (close-output-port *label-port*))
+    (when *bib-aux-port* (close-output-port *bib-aux-port*))
+    (when *verb-port* (close-output-port *verb-port*))
     (for-each
       (lambda (c) (let ((p (cdr c))) (when p (close-input-port p))))
       *input-streams*)
@@ -5138,12 +5148,12 @@
 
 (define actual-tex-filename
   (lambda (f check-timestamp?)
-    (let ((f2 (find-tex-file f)))
-      (when (and (not *main-tex-file*) f2)
+    (let ((doing-main-file? (not *main-tex-file*)) (f2 (find-tex-file f)))
+      (when (and doing-main-file? f2)
         (set! *jobname* (file-stem-name f2))
         (make-target-dir)
         (initialize-global-texframe))
-      (when (not *main-tex-file*) (load-aux-file))
+      (when doing-main-file? (load-aux-file))
       (when (and f2 check-timestamp?) (update-last-modification-time f2))
       f2)))
 
@@ -5699,9 +5709,8 @@
          ((char=? c #\{) '())
          (else
           (cond
-           ((char-whitespace? c)
-            (ignorespaces)
-            (unless (char=? c #\newline) (set! c #\space)))
+           ((char=? c #\newline) (get-actual-char) (ignorespaces))
+           ((char-whitespace? c) (ignorespaces) (set! c #\space))
            (else (get-actual-char)))
           (cons c (aux))))))))
 
@@ -6892,38 +6901,6 @@
        (f (tex2page-string then-txt) (tex2page-file f))
        (else (tex2page-string else-txt))))))
 
-(define do-input
-  (lambda ()
-    (ignorespaces)
-    (let ((f (get-filename-possibly-braced)))
-      (let ((boilerplate-index *inputting-boilerplate?*))
-        (when (eqv? *inputting-boilerplate?* 0)
-          (set! *inputting-boilerplate?* #f))
-        (fluid-let
-          ((*inputting-boilerplate?*
-             (and boilerplate-index (+ boilerplate-index 1))))
-          (unless (or
-                   (latex-style-file? f)
-                   (member/string-ci=?
-                     f
-                     '("btxmac"
-                       "btxmac.tex"
-                       "eplain"
-                       "eplain.tex"
-                       "epsf"
-                       "epsf.tex"
-                       "tex2page"
-                       "tex2page.tex")))
-            (let ((f2 (actual-tex-filename f (check-input-file-timestamp? f))))
-              (cond
-               (f2 (tex2page-file f2))
-               (else
-                (write-log #\()
-                (write-log f)
-                (write-log 'separation-space)
-                (write-log "not found)")
-                (write-log 'separation-space))))))))))
-
 (define tex2page-file
   (lambda (f)
     (write-log #\()
@@ -6935,6 +6912,43 @@
       (write-log #\))
       (write-log 'separation-space)
       r)))
+
+(define do-input
+  (lambda ()
+    (ignorespaces)
+    (let ((f (get-filename-possibly-braced)))
+      (let ((boilerplate-index *inputting-boilerplate?*))
+        (when (eqv? *inputting-boilerplate?* 0)
+          (set! *inputting-boilerplate?* #f))
+        (fluid-let
+          ((*inputting-boilerplate?*
+             (and boilerplate-index (+ boilerplate-index 1))))
+          (cond
+           ((or (latex-style-file? f)
+                (member/string-ci=?
+                  f
+                  '("btxmac"
+                    "btxmac.tex"
+                    "eplain"
+                    "eplain.tex"
+                    "epsf"
+                    "epsf.tex"
+                    "tex2page"
+                    "tex2page.tex")))
+            #f)
+           ((ormap (lambda (z) (string=? f z)) '("texinfo" "texinfo.tex"))
+            (tex2page-file (actual-tex-filename "texinfo.t2p" #f))
+            (tex2page-file *current-tex-file*)
+            ':encountered-endinput)
+           ((actual-tex-filename f (check-input-file-timestamp? f))
+            =>
+            tex2page-file)
+           (else
+            (write-log #\()
+            (write-log f)
+            (write-log 'separation-space)
+            (write-log "not found)")
+            (write-log 'separation-space))))))))
 
 (define do-includeonly
   (lambda ()
@@ -7182,14 +7196,17 @@
       (when (file-exists? aux-file)
         (load-tex2page-data-file aux-file)
         (delete-file aux-file))
-      (set! *aux-port* (open-output-file aux-file))
-      (when (eqv? *tex-format* 'latex)
-        (!definitely-latex)
-        (write-aux `(!definitely-latex)))
-      (unless (null? *toc-list*) (set! *toc-list* (reverse! *toc-list*)))
-      (unless (null? *stylesheets*)
-        (set! *stylesheets* (reverse! *stylesheets*)))
-      (unless (null? *html-head*) (set! *html-head* (reverse! *html-head*))))))
+      (set! *aux-port* (open-output-file aux-file)))
+    (let ((css-file (string-append *aux-dir/* *jobname* *css-file-suffix*)))
+      (ensure-file-deleted css-file)
+      (set! *css-port* (open-output-file css-file)))
+    (when (eqv? *tex-format* 'latex)
+      (!definitely-latex)
+      (write-aux `(!definitely-latex)))
+    (unless (null? *toc-list*) (set! *toc-list* (reverse! *toc-list*)))
+    (unless (null? *stylesheets*)
+      (set! *stylesheets* (reverse! *stylesheets*)))
+    (unless (null? *html-head*) (set! *html-head* (reverse! *html-head*)))))
 
 (define update-last-modification-time
   (lambda (f)

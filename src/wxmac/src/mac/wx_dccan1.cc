@@ -162,11 +162,9 @@ void wxCanvasDC::EndDrawing(void)
 
 static GDHandle def_dev_handle = 0;
 static CGrafPtr def_grafptr = NULL;
-static int fast_mode;
-static wxCanvasDC *fast_dc;
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::SetCurrentDC(void) // mac platform only
+void wxCanvasDC::SetCurrentDC(Bool cgok)
 //-----------------------------------------------------------------------------
 {
   CGrafPtr theMacGrafPort;
@@ -179,50 +177,39 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
       || def_grafptr)
     printf("Nested SetDCs\n");
 
-  theMacGrafPort = cMacDC->macGrafPort();
+  if (!cgok)
+    cMacDC->EndCG();
+  else if (cMacDC->currentUser() != this)
+    cMacDC->EndCG();
 
-  if (!canvas)
-    GetGWorld(&def_grafptr, &def_dev_handle);
+  if (!cMacDC->GetCG(TRUE)) {
+    theMacGrafPort = cMacDC->macGrafPort();
 
-  if (!canvas /* IsPortOffscreen(theMacGrafPort) */) {
-    ::SetGWorld(theMacGrafPort, NULL);
-  } else {
-    ::SetPort(theMacGrafPort);
-  }
+    if (!canvas)
+      GetGWorld(&def_grafptr, &def_dev_handle);
 
-  SetOriginX = gdx;
-  SetOriginY = gdy;
+    if (!canvas /* IsPortOffscreen(theMacGrafPort) */) {
+      ::SetGWorld(theMacGrafPort, NULL);
+    } else {
+      ::SetPort(theMacGrafPort);
+    }
+
+    SetOriginX = gdx;
+    SetOriginY = gdy;
 #if 0
-  if (canvas) {
-    wxArea *area;
-    area = canvas->ClientArea();
-    area->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
-  }
+    if (canvas) {
+      wxArea *area;
+      area = canvas->ClientArea();
+      area->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
+    }
 #endif
 
-  if (cMacDC->currentUser() != this) { 
-    // must setup platform
-    cMacDC->setCurrentUser(this);
-    wxMacSetClip();
-    ToolChanged(kNoTool);
-  }
-}
-
-void wxCanvasDC::BeginCurrentDCFast()
-{
-  if (!fast_mode) {
-    GetGWorld(&def_grafptr, &def_dev_handle);
-    fast_mode++;
-  }
-}
-
-void wxCanvasDC::SetCurrentDCFast()
-{
-  if (fast_dc != this) {
-    CGrafPtr theMacGrafPort;
-    theMacGrafPort = cMacDC->macGrafPort();
-    ::SetGWorld(theMacGrafPort, NULL);
-    fast_dc = this;
+    if (cMacDC->currentUser() != this) { 
+      // must setup platform
+      cMacDC->setCurrentUser(this);
+      wxMacSetClip();
+      ToolChanged(kNoTool);
+    }
   }
 }
 
@@ -246,23 +233,11 @@ void wxCanvasDC::ReleaseCurrentDC(void)
   }
 }
 
-void wxCanvasDC::ReleaseCurrentDCFast(void)
-{
-}
-
-void wxCanvasDC::EndCurrentDCFast()
-{
-  --fast_mode;
-  if (!fast_mode) {
-    SetGWorld(def_grafptr, def_dev_handle);
-    def_grafptr = NULL;
-    fast_dc = NULL;
-  }
-}
-
 void wxCanvasDC::ResetBackground()
 {
   CGrafPtr theMacGrafPort;
+
+  cMacDC->EndCG();
 
   theMacGrafPort = cMacDC->macGrafPort();
   ::SetPort(theMacGrafPort);
@@ -329,6 +304,8 @@ void wxCanvasDC::SetCanvasClipping(void)
     GDHandle savegd;
     CGrafPtr theMacGrafPort;
     long oox, ooy;
+
+    cMacDC->EndCG();
 
     theMacGrafPort = cMacDC->macGrafPort();
     
@@ -645,10 +622,14 @@ static void HiliteMode()
 void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
   /* assumes that SetCurrentDC() has been called, already */  
 {
+  CGContextRef cg;
+
   if (!Ok() || !cMacDC) return;
 
   if (whichTool == cMacCurrentTool)
     return;
+
+  cg = cMacDC->GetCG(TRUE);
 
   switch (whichTool) {
   case kNoTool:
@@ -659,7 +640,16 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
     PenMode(patCopy);
     break;
   case kBrushTool:
-    {
+    if (cg) {
+      wxColor *c = current_brush->GetColour();
+      int r, g, b;
+
+      r = c->Red();
+      g = c->Green();
+      b = c->Blue();
+      
+      CGContextSetRGBFillColor(cg, r / 255.0, g / 255.0, b / 255.0, 1.0);
+    } else {
       int theBrushStyle;
       theBrushStyle = current_brush->GetStyle();
       if (theBrushStyle == wxPANEL_PATTERN) {
@@ -694,7 +684,17 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
     }
     break;
   case kPenTool:
-    {
+    if (cg) {
+      wxColor *c = current_pen->GetColour();
+      int r, g, b;
+
+      r = c->Red();
+      g = c->Green();
+      b = c->Blue();
+      
+      CGContextSetRGBStrokeColor(cg, r / 255.0, g / 255.0, b / 255.0, 1.0);
+      CGContextSetLineWidth(cg, current_pen->GetWidthF());
+    } else {
       int pensize;
       int thePenWidth;
       int thePenStyle, origPenStyle;
@@ -832,6 +832,48 @@ Bool wxCanvasDC::GlyphAvailable(int c, wxFont *f)
 void wxCanvasDC::SetAntiAlias(Bool v)
 {
   wxbCanvasDC::SetAntiAlias(v);
+}
+
+CGContextRef wxCanvasDC::GetCG()
+{
+  CGContextRef cg;
+  CGrafPtr qdp;
+  Rect portRect;
+  RgnHandle clipRgn;
+
+  cg = cMacDC->GetCG(TRUE);
+  if (cg)
+    return cg; /* Must be up-to-date */
+  
+  qdp = cMacDC->macGrafPort();
+  GetPortBounds(qdp, &portRect);
+   
+  /* Make clipping regions match (including BeginUpdate effect) */
+  clipRgn = NewRgn();
+  if (clipRgn) {
+    RgnHandle visRgn;
+    visRgn = NewRgn();
+    if (visRgn) {
+      GetPortClipRegion(qdp, clipRgn);
+      GetPortVisibleRegion(qdp, visRgn);
+      SectRgn(clipRgn, visRgn, clipRgn);
+      DisposeRgn(visRgn);
+    }
+  }
+
+  cg = cMacDC->GetCG();
+
+  SyncCGContextOriginWithPort(cg, qdp);
+  if (clipRgn) {
+    ClipCGContextToRegion(cg, &portRect, clipRgn);
+    DisposeRgn(clipRgn);
+  }
+  CGContextTranslateCTM(cg, 0, (float)(portRect.bottom - portRect.top));
+  CGContextScaleCTM(cg, 1.0, -1.0 );
+ 
+  CGContextScaleCTM(cg, user_scale_x, user_scale_y);
+
+  return cg;
 }
 
 /************************************************************************/

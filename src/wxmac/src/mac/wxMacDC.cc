@@ -46,5 +46,33 @@ wxObject* wxMacDC::currentUser(void)
 //-----------------------------------------------------------------------------
 void wxMacDC::setCurrentUser(wxObject* user)
 {
-  cCurrentUser = user;
+  if (cCurrentUser != user) {
+    EndCG();
+    cCurrentUser = user;
+  }
+}
+
+CGContextRef wxMacDC::GetCG(Bool only_if_already)
+{
+  CGContextRef cgctx;
+
+  if (cgcref)
+    return cgcref;
+  else if (only_if_already)
+    return 0;
+
+  QDBeginCGContext(cMacGrafPort, &cgctx);
+  cgcref = cgctx;
+  
+  return cgcref;
+}
+
+void wxMacDC::EndCG()
+{
+  if (cgcref) {
+    CGContextRef cgctx = cgcref;
+    CGContextSynchronize(cgctx);
+    QDEndCGContext(cMacGrafPort, &cgctx);
+    cgcref = NULL;
+  }
 }

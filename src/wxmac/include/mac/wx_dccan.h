@@ -50,8 +50,6 @@ class wxCanvasDC: public wxbCanvasDC
   void *fast_pb;
   long fast_rb;
 
-  CGContextRef cgcref;
-
   int gdx, gdy;
   wxCanvasDC *chain_next, *chain_prev;
 
@@ -68,14 +66,10 @@ class wxCanvasDC: public wxbCanvasDC
   virtual void BeginDrawing(void);
   virtual void EndDrawing(void);
   
-  void SetCurrentDC(void);
+  void SetCurrentDC(Bool cgok = FALSE);
   void ReleaseCurrentDC(void);
 
-  void SetCurrentDCFast(void);
-  void ReleaseCurrentDCFast(void);
-
-  void BeginCurrentDCFast(void);
-  void EndCurrentDCFast(void);
+  CGContextRef GetCG();
 
   void FloodFill(double x1, double y1, wxColour* col, int style=wxFLOOD_SURFACE) ;
   Bool GetPixel(double x1, double y1, wxColour* col) ;

@@ -19,6 +19,7 @@ extern CGrafPtr wxMainColormap;
 
 // constant to convert radian to degree
 #define RAD2DEG 57.2957795131
+#define wxPI 3.141592653589793
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::Clear(void)
@@ -133,6 +134,7 @@ Bool wxCanvasDC::BeginSetPixelFast(int x, int y, int w, int h)
       && ((x + w) <= pixmapWidth)
       && ((y + h) <= pixmapHeight)) {
     PixMapHandle ph;
+    cMacDC->EndCG();
     ph = GetGWorldPixMap(cMacDC->macGrafPort());
     fast_pb = GetPixBaseAddr(ph);
     fast_rb = GetPixRowBytes(ph);
@@ -254,6 +256,28 @@ void wxCanvasDC::DrawLine(double x1, double y1, double x2, double y2)
   if (!current_pen || current_pen->GetStyle() == wxTRANSPARENT)
     return;
 
+  if (anti_alias) {
+    CGContextRef cg;
+
+    SetCurrentDC(TRUE);
+    cg = GetCG();
+
+    CGContextSaveGState(cg);
+
+    CGContextMoveToPoint(cg, x1, y1);
+    CGContextAddLineToPoint(cg, x2, y2);
+    
+    wxMacSetCurrentTool(kPenTool);
+    CGContextStrokePath(cg);
+    wxMacSetCurrentTool(kNoTool);
+
+    CGContextRestoreGState(cg);
+
+    ReleaseCurrentDC();
+
+    return;
+  }
+
   dpx = (XLOG2DEVREL(current_pen->GetWidth()) >> 1);
   dpy = (YLOG2DEVREL(current_pen->GetWidth()) >> 1);
 
@@ -345,6 +369,43 @@ void wxCanvasDC::DrawArc(double x,double y,double w,double h,double start,double
   Rect rect;
 
   if (!Ok() || !cMacDC) return;
+
+  if (anti_alias) {
+    CGContextRef cg;
+    CGMutablePathRef path;
+    CGAffineTransform xform;
+
+    SetCurrentDC(TRUE);
+    cg = GetCG();
+
+    CGContextSaveGState(cg);
+
+    path = CGPathCreateMutable();
+    xform = CGAffineTransformScale(CGAffineTransformMakeTranslation(x, y), w, h);
+    CGPathAddArc(path, &xform, 0.5, 0.5, 0.5, start, end, FALSE);
+
+    if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+      wxMacSetCurrentTool(kBrushTool);
+      CGContextBeginPath(cg);
+      CGContextAddPath(cg, path);
+      CGContextFillPath(cg);
+    }
+    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+      wxMacSetCurrentTool(kPenTool);
+      CGContextBeginPath(cg);
+      CGContextAddPath(cg, path);
+      CGContextStrokePath(cg);
+    }
+    wxMacSetCurrentTool(kNoTool);
+
+    CGPathRelease(path);
+
+    CGContextRestoreGState(cg);
+
+    ReleaseCurrentDC();
+
+    return;
+  }
   
   if (start == end) {
     DrawEllipse(x, y, w, h);
@@ -625,6 +686,11 @@ void wxCanvasDC::DrawEllipse(double x, double y, double width, double height)
 
   if (!Ok() || !cMacDC) return;
   
+  if (anti_alias) {
+    DrawArc(x, y, width, height, 0, 2 * wxPI);
+    return;
+  }
+
   if ((rgn = BrushStipple())) {
     rgn->SetEllipse(x, y, width, height);
     PaintStipple(rgn);

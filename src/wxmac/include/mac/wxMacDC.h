@@ -16,6 +16,7 @@ class wxMacDC
   protected:
 	CGrafPtr	cMacGrafPort;
 	wxObject*	cCurrentUser;
+	CGContextRef    cgcref;
 
   public:
 	wxMacDC(CGrafPtr port);		// constructor
@@ -26,6 +27,9 @@ class wxMacDC
 	void setCurrentUser(wxObject* user);
 
 	Bool isCurrentPort(void);
+
+	CGContextRef GetCG(Bool only_if_already = FALSE);
+	void EndCG();
 };
 
 #endif // wxMacDCh

@@ -450,14 +450,14 @@
    '(let ()
       (define/contract i (-> integer? integer?) (lambda (x) 1))
       (i #f))
-   "<<unknown>>")
+   "")
   
   (test/spec-failed
    'define/contract5
    '(let ()
       (define/contract i (-> integer? integer?) (lambda (x) (i #t)))
       (i 1))
-   "<<unknown>>")
+   "")
   
   (test/spec-passed
    'define/contract6

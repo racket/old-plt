@@ -116,6 +116,8 @@ please adhere to these guidelines:
  (stop "Stop")   
  (&stop "&Stop") ;; for use in button and menu item labels, with short cut.
  (are-you-sure-delete? "Are you sure you want to delete ~a?") ;; ~a is a filename or directory name
+ (ignore "Ignore")
+ (revert "Revert")
 
  ;;; important urls
  (web-materials "Related Web Sites") ;; menu item title
@@ -662,7 +664,7 @@ please adhere to these guidelines:
   
  ;;; file modified warning
  (file-has-been-modified
-  "The file has beeen modified since it was last saved. Overwrite the modifications?")
+  "The file has been modified since it was last saved. Overwrite the modifications?")
  (overwrite-file-button-label "Overwrite")
  
  (definitions-modified 

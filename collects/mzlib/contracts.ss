@@ -63,7 +63,7 @@
                            (format
                             "ACK-define/contract-id-~a"
                             (syntax-object->datum (syntax name)))))])
-         (syntax 
+         (syntax/loc define-stx 
           (begin
             (define contract-id contract-expr)
             (define-syntax name
@@ -96,7 +96,7 @@
                                           stx 
                                           (syntax _))]
                      [(_ arg (... ...))
-                      (syntax 
+                      (syntax/loc stx
                        ((-contract contract-id
                                    id
                                    (syntax-object->datum (quote-syntax _))
@@ -106,7 +106,7 @@
                         (... ...)))]
                      [_
                       (identifier? (syntax _))
-                      (syntax 
+                      (syntax/loc stx
                        (-contract contract-id
                                   id  
                                   (syntax-object->datum (quote-syntax _)) 
@@ -157,7 +157,8 @@
                   [(struct struct-name ((field-name contract) ...))
                    (and (identifier? (syntax struct-name))
                         (andmap identifier? (syntax->list (syntax (field-name ...)))))
-                   (let ([sc (build-struct-code (syntax struct-name)
+                   (let ([sc (build-struct-code provide-stx
+                                                (syntax struct-name)
                                                 (syntax->list (syntax (field-name ...)))
                                                 (syntax->list (syntax (contract ...))))])
                      (cons sc (code-for-each-clause (cdr clauses))))]
@@ -194,7 +195,7 @@
                                        clause)]
                   [(name contract)
                    (identifier? (syntax name))
-                   (cons (code-for-one-id (syntax name) (syntax contract))
+                   (cons (code-for-one-id provide-stx (syntax name) (syntax contract))
                          (code-for-each-clause (cdr clauses)))]
                   [(name contract)
                    (raise-syntax-error 'provide/contract
@@ -207,9 +208,10 @@
                                        provide-stx
                                        (syntax unk))]))]))
          
-         ;; build-struct-code : syntax (listof syntax) (listof syntax) -> syntax
+         ;; build-struct-code : syntax syntax (listof syntax) (listof syntax) -> syntax
          ;; constructs the code for a struct clause
-         (define (build-struct-code struct-name field-names field-contracts)
+         ;; first arg is the original syntax object, for source locations
+         (define (build-struct-code stx struct-name field-names field-contracts)
            (let* ([field-contract-ids (map (lambda (field-name) 
                                              (mangle-id "provide/contract-field-contract"
                                                         field-name
@@ -225,7 +227,8 @@
                   [constructor-id (build-constructor-id struct-name)])
              (with-syntax ([(selector-codes ...)
                             (map (lambda (selector-id field-contract-id) 
-                                   (code-for-one-id selector-id
+                                   (code-for-one-id stx
+                                                    selector-id
                                                     (build-selector-contract struct-name 
                                                                              predicate-id
                                                                              field-contract-id)))
@@ -233,21 +236,23 @@
                                  field-contract-ids)]
                            [(mutator-codes ...)
                             (map (lambda (mutator-id field-contract-id)
-                                   (code-for-one-id mutator-id 
+                                   (code-for-one-id stx
+                                                    mutator-id 
                                                     (build-mutator-contract struct-name 
                                                                             predicate-id
                                                                             field-contract-id)))
                                  mutator-ids
                                  field-contract-ids)]
-                           [predicate-code (code-for-one-id predicate-id (syntax (-> any? boolean?)))]
-                           [constructor-code (code-for-one-id 
+                           [predicate-code (code-for-one-id stx predicate-id (syntax (-> any? boolean?)))]
+                           [constructor-code (code-for-one-id
+                                              stx
                                               constructor-id
                                               (build-constructor-contract field-contract-ids 
                                                                           predicate-id))]
                            [(field-contracts ...) field-contracts]
                            [(field-contract-ids ...) field-contract-ids]
                            [struct-name struct-name])
-               (syntax 
+               (syntax/loc stx
                 (begin
                   (define field-contract-ids field-contracts) ...
                   selector-codes ...
@@ -328,10 +333,11 @@
               (symbol->string (syntax-object->datum field-name))
               "!"))))
          
-         ;; code-for-one-id : syntax syntax -> syntax
+         ;; code-for-one-id : syntax syntax syntax -> syntax
          ;; given the syntax for an identifier and a contract,
          ;; builds a begin expression for the entire contract and provide
-         (define (code-for-one-id id ctrct)
+         ;; the first syntax object is used for source locations
+         (define (code-for-one-id stx id ctrct)
            (with-syntax ([id-rename (mangle-id "provide/contract-id" id)]
                          [contract-id (mangle-id "provide/contract-contract-id" id)]
                          [pos-module-source (mangle-id "provide/contract-pos-module-source" id)]
@@ -339,14 +345,14 @@
                          [module-source-as-symbol (datum->syntax-object provide-stx 'module-source-as-symbol)]
                          [id id]
                          [ctrct ctrct])
-             (syntax
+             (syntax/loc stx
               (begin
                 (provide (rename id-rename id))
                 
                 ;; unbound id check
                 (if #f id)
                 (define pos-module-source (module-source-as-symbol #'pos-stx))
-                (define contract-id ctrct)
+                (define contract-id (let ([id ctrct]) id))
                 (define-syntax id-rename
                   (make-set!-transformer
                    (lambda (stx)
@@ -424,43 +430,38 @@
       (syntax-case stx ()
         [(_ a-contract to-check pos-blame-e neg-blame-e)
          (with-syntax ([src-loc (datum->syntax-object stx 'here)])
-           (syntax
-            (-contract a-contract to-check pos-blame-e neg-blame-e
-                       (quote-syntax src-loc))))]
+           (syntax/loc stx
+             (-contract a-contract to-check pos-blame-e neg-blame-e
+                        (quote-syntax src-loc))))]
         [(_ a-contract-e to-check pos-blame-e neg-blame-e src-info-e)
-         (let ([name (syntax-local-infer-name (syntax a-contract-e))])
-           (with-syntax ([named-a-contract-e
-                          (if name
-                              (syntax-property (syntax a-contract-e) 'inferred-name name)
-                              (syntax a-contract-e))])
-             (syntax
-              (let ([a-contract named-a-contract-e]
-                    [name to-check]
-                    [neg-blame neg-blame-e]
-                    [pos-blame pos-blame-e]
-                    [src-info src-info-e])
-                (unless (-contract? a-contract)
-                  (error 'contract "expected a contract as first argument, given: ~e, other args ~e ~e ~e ~e" 
-                         a-contract
-                         name
-                         pos-blame
-                         neg-blame
-                         src-info))
-                (unless (and (symbol? neg-blame)
-                             (symbol? pos-blame))
-                  (error 'contract "expected symbols as names for assigning blame, given: ~e and ~e, other args ~e ~e ~e"
-                         neg-blame pos-blame
-                         a-contract 
-                         name
-                         src-info))
-                (unless (syntax? src-info)
-                  (error 'contract "expected syntax as last argument, given: ~e, other args ~e ~e ~e ~e"
-                         src-info
-                         neg-blame 
-                         pos-blame
-                         a-contract 
-                         name))
-                (check-contract a-contract name pos-blame neg-blame src-info)))))])))
+         (syntax/loc stx
+           (let ([a-contract a-contract-e]
+                 [name to-check]
+                 [neg-blame neg-blame-e]
+                 [pos-blame pos-blame-e]
+                 [src-info src-info-e])
+             (unless (-contract? a-contract)
+               (error 'contract "expected a contract as first argument, given: ~e, other args ~e ~e ~e ~e" 
+                      a-contract
+                      name
+                      pos-blame
+                      neg-blame
+                      src-info))
+             (unless (and (symbol? neg-blame)
+                          (symbol? pos-blame))
+               (error 'contract "expected symbols as names for assigning blame, given: ~e and ~e, other args ~e ~e ~e"
+                      neg-blame pos-blame
+                      a-contract 
+                      name
+                      src-info))
+             (unless (syntax? src-info)
+               (error 'contract "expected syntax as last argument, given: ~e, other args ~e ~e ~e ~e"
+                      src-info
+                      neg-blame 
+                      pos-blame
+                      a-contract 
+                      name))
+             (check-contract a-contract name pos-blame neg-blame src-info)))])))
 
   ;; check-contract : contract any symbol symbol syntax -> ...
   (define (check-contract contract val pos neg src-info)
@@ -630,13 +631,13 @@
                (with-syntax ([inner-lambda 
                               (set-inferred-name-from
                                stx
-                               (syntax (case-lambda body ...)))])
+                               (syntax/loc stx (case-lambda body ...)))])
                  (add-outer-check
-                  (syntax
-                   (make-contract
-                    (lambda outer-args
-                      inner-check ...
-                      inner-lambda))))))))]))
+                  (syntax/loc stx
+                    (make-contract
+                     (lambda outer-args
+                       inner-check ...
+                       inner-lambda))))))))]))
     
     (define (class-contract/proc stx)
       (syntax-case stx ()
@@ -659,7 +660,7 @@
                                               build-pieces)])
                (foldr
                 (lambda (f stx) (f stx))
-                (syntax 
+                (syntax/loc stx
                  (make-contract
                   (lambda outer-args
                     (unless (class? val)
@@ -758,7 +759,7 @@
                (let ([->add-outer-check
                       (lambda (body)
                         (with-syntax ([body body])
-                          (syntax
+                          (syntax/loc stx
                            (let ([dom-x dom] ...
                                  [rng-x rng])
                              (unless (-contract? dom-x)
@@ -1053,6 +1054,7 @@
                               results))))))))))))]))
     
     ;; make-/proc : (syntax -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))) 
+    ;;              syntax
     ;;           -> (syntax -> syntax)
     (define (make-/proc /h stx)
       (let-values ([(add-outer-check make-inner-check make-main) (/h stx)])
@@ -1063,13 +1065,16 @@
             (with-syntax ([inner-lambda 
                            (set-inferred-name-from
                             stx
-                            (syntax (lambda inner-args body)))])
+                            (syntax/loc stx (lambda inner-args body)))])
               (add-outer-check
-               (syntax
-                (make-contract
-                 (lambda outer-args
-                   inner-check
-                   inner-lambda)))))))))
+               
+               (set-inferred-name-from
+                stx
+                (syntax/loc stx
+                  (make-contract
+                  (lambda outer-args
+                    inner-check
+                    inner-lambda))))))))))
     
     ;; case->/h : syntax (listof syntax) -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
     ;; like the other /h functions, but composes the wrapper functions
@@ -1108,10 +1113,12 @@
     ;; set-inferred-name-from : syntax syntax -> syntax
     (define (set-inferred-name-from with-name to-be-named)
       (let ([name (syntax-local-infer-name with-name)])
-        (if name
-            (syntax-property to-be-named 'inferred-name name)
-            to-be-named)))
-    
+        (cond
+          [(identifier? name)
+           (syntax-property to-be-named 'inferred-name (syntax-e name))]
+          [(symbol? name)
+           (syntax-property to-be-named 'inferred-name name)]
+          [else to-be-named])))
     
     ;; (cons X (listof X)) -> (listof X)
     ;; returns the elements of `l', minus the last
@@ -1145,7 +1152,7 @@
                        [(req-vs ...) req-vs]
 		       [(opt-vs ...) opt-vs]
 		       [((case-doms ...) ...) cases])
-	   (syntax
+	   (syntax/loc stx
 	    (let ([res-vs ress] ...
 		  [req-vs reqs] ...
 		  [opt-vs opts] ...)

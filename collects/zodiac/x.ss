@@ -1,4 +1,4 @@
-; $Id: x.ss,v 1.54 2000/05/28 03:47:32 shriram Exp $
+; $Id: x.ss,v 1.55 2000/06/07 06:20:12 shriram Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -16,7 +16,26 @@
 
   ; ----------------------------------------------------------------------
 
-  (define-struct vocabulary-record (name this rest
+  (define reference-namespace (make-namespace))
+
+  (define (make-mz-binding s)
+    (parameterize ([current-namespace reference-namespace])
+      (eval `(#%define-macro ,s (#%lambda args (error 'macro "dummy ~s macro got ~a" ',s args))))
+      (global-defined-value s)))
+  
+  (define (syntax-symbol->id s)
+    (with-handlers ([void (lambda (x)
+			    (let ([mzb (make-mz-binding s)])
+			      (global-defined-value s mzb)
+			      mzb))])
+      (parameterize ([current-namespace reference-namespace])
+	(global-defined-value s))))
+
+  ; ----------------------------------------------------------------------
+
+  (define-struct vocabulary-record (name namespace-based? this rest
+					 symbol-x literal-x
+					 list-x ilist-x
 					 symbol-error literal-error
 					 list-error ilist-error
 					 on-demand subexpr-vocab))
@@ -32,22 +51,26 @@
 
   (define create-vocabulary
     (opt-lambda (name (root #f)
-		  (symbol-error (if root
-				  (vocabulary-record-symbol-error root)
-				  "symbol invalid in this position"))
-		  (literal-error (if root
-				   (vocabulary-record-literal-error root)
-				   "literal invalid in this position"))
-		  (list-error (if root
-				(vocabulary-record-list-error root)
-				"list invalid in this position"))
-		  (ilist-error (if root
-				 (vocabulary-record-ilist-error root)
-				 "improper-list syntax invalid in this position")))
+		      (namespace-based? (if root
+					    (vocabulary-record-namespace-based? root)
+					    #t))
+		      (symbol-error (if root
+					(vocabulary-record-symbol-error root)
+					"symbol invalid in this position"))
+		      (literal-error (if root
+					 (vocabulary-record-literal-error root)
+					 "literal invalid in this position"))
+		      (list-error (if root
+				      (vocabulary-record-list-error root)
+				      "list invalid in this position"))
+		      (ilist-error (if root
+				       (vocabulary-record-ilist-error root)
+				       "improper-list syntax invalid in this position")))
       (let ((h (make-hash-table)))
 	(self-subexpr-vocab
 	 (make-vocabulary-record
-	  name h root
+	  name namespace-based? h root
+	  #f #f #f #f
 	  symbol-error literal-error list-error ilist-error
 	  null #f)))))
 
@@ -59,10 +82,15 @@
 	  (self-subexpr-vocab
 	   (make-vocabulary-record
 	    name
+	    (vocabulary-record-namespace-based? this)
 	    (vocabulary-record-this this)
 	    (if (vocabulary-record-rest this)
 		(loop (vocabulary-record-rest this) #f)
 		old)
+	    (vocabulary-record-symbol-x this)
+	    (vocabulary-record-literal-x this)
+	    (vocabulary-record-list-x this)
+	    (vocabulary-record-ilist-x this)
 	    (vocabulary-record-symbol-error this)
 	    (vocabulary-record-literal-error this)
 	    (vocabulary-record-list-error this)
@@ -73,13 +101,16 @@
   (define add-micro/macro-form
     (lambda (constructor)
       (lambda (name/s vocab rewriter)
-	(let ((v (vocabulary-record-this vocab))
+	(let* ((v (vocabulary-record-this vocab))
 	       (names (if (symbol? name/s) (list name/s) name/s))
+	       (ids (if (vocabulary-record-namespace-based? vocab)
+			(map syntax-symbol->id names)
+			names))
 	       (r (constructor rewriter)))
 	  (set-resolutions-name! r name/s)
-	  (map (lambda (n)
-		 (hash-table-put! v n r))
-	    names)))))
+	  (map (lambda (n id)
+		 (hash-table-put! v id r))
+	       names ids)))))
 
   (define vocab->list
     (lambda (vocab)
@@ -109,34 +140,34 @@
   (define lit-micro-kwd
     (string->uninterned-symbol "literal-expander"))
 
-  (define add-list/sym/lit-micro
-    (lambda (kwd)
-      (lambda (vocab rewriter)
-	(hash-table-put! (vocabulary-record-this vocab)
-	  kwd
-	  (make-micro-resolution kwd #f rewriter)))))
+  (define (add-list/sym/lit-micro setter! kwd)
+    (lambda (vocab rewriter)
+      (setter! vocab (make-micro-resolution kwd #f rewriter))))
 
-  (define add-list-micro (add-list/sym/lit-micro list-micro-kwd))
-  (define add-ilist-micro (add-list/sym/lit-micro ilist-micro-kwd))
-  (define add-sym-micro (add-list/sym/lit-micro sym-micro-kwd))
-  (define add-lit-micro (add-list/sym/lit-micro lit-micro-kwd))
+  (define add-list-micro (add-list/sym/lit-micro 
+			  set-vocabulary-record-list-x!
+			  list-micro-kwd))
+  (define add-ilist-micro (add-list/sym/lit-micro
+			   set-vocabulary-record-ilist-x!
+			   ilist-micro-kwd))
+  (define add-sym-micro (add-list/sym/lit-micro 
+			 set-vocabulary-record-symbol-x!
+			 sym-micro-kwd))
+  (define add-lit-micro (add-list/sym/lit-micro
+			 set-vocabulary-record-literal-x!
+			 lit-micro-kwd))
+  
+  (define (get-list/lit/sym getter)
+    (letrec ([get (lambda (vocab)
+		    (and vocab
+			 (or (getter vocab)
+			     (get (vocabulary-record-rest vocab)))))])
+      get))
 
-  (define get-list/sym/lit-micro
-    (lambda (kwd)
-      (lambda (vocab)
-	(let loop ((vocab vocab))
-	  (hash-table-get (vocabulary-record-this vocab)
-	    kwd
-	    (lambda ()
-	      (let ((v (vocabulary-record-rest vocab)))
-		(if v
-		  (loop v)
-		  #f))))))))
-
-  (define get-list-micro (get-list/sym/lit-micro list-micro-kwd))
-  (define get-ilist-micro (get-list/sym/lit-micro ilist-micro-kwd))
-  (define get-sym-micro (get-list/sym/lit-micro sym-micro-kwd))
-  (define get-lit-micro (get-list/sym/lit-micro lit-micro-kwd))
+  (define get-list-micro (get-list/lit/sym vocabulary-record-list-x))
+  (define get-ilist-micro (get-list/lit/sym vocabulary-record-ilist-x))
+  (define get-sym-micro (get-list/lit/sym vocabulary-record-symbol-x))
+  (define get-lit-micro (get-list/lit/sym vocabulary-record-literal-x))
 
   (define (add-on-demand-form kind name vocab micro)
     (set-vocabulary-record-on-demand!
@@ -342,14 +373,44 @@
   (define resolve-in-vocabulary
     (let ((top-level-resolution (make-top-level-resolution 'dummy #f))) ; name-eq?
       (lambda (name vocab)
-	(let loop ((vocab vocab))
-	  (hash-table-get (vocabulary-record-this vocab)
-	    name
-	    (lambda ()
-	      (let ((v (vocabulary-record-rest vocab)))
-		(if v
-		  (loop v)
-		  top-level-resolution))))))))
+	(let ([id (if (vocabulary-record-namespace-based? vocab)
+		      (with-handlers ([void (lambda (x) #f)])
+			(global-defined-value name))
+		      name)])
+	  (if id
+	      (let loop ((vocab vocab))
+		(hash-table-get 
+		 (vocabulary-record-this vocab)
+		 id
+		 (lambda ()
+		   (let ((v (vocabulary-record-rest vocab)))
+		     (if v
+			 (loop v)
+			 top-level-resolution)))))
+	      top-level-resolution)))))
+
+  (define (prepare-current-namespace-for-vocabulary vocab)
+    ;; For everything in the vocabulary, ensure that the 
+    ;;  namespace contains a binding to the expected key.
+    ;;  Assume pre-existing bindings are ok (especially
+    ;;  since we can't change the bindings of keywords).
+    (let loop ((vocab vocab))
+      (hash-table-for-each
+       (vocabulary-record-this vocab)
+       (lambda (k v)
+	 (for-each
+	  (lambda (n)
+	    (with-handlers ([void (lambda (x)
+				    (global-defined-value n k))])
+	      (global-defined-value n)))
+	  (let ([ns (resolutions-name v)])
+	    (if (symbol? ns)
+		(list ns)
+		ns)))))
+      (let ([v (vocabulary-record-rest vocab)])
+	(when v
+	  (loop v)))))
+    
 
   (define print-env
     (lambda (env)

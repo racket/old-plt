@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.60 2000/05/28 03:47:31 shriram Exp $
+; $Id: scm-core.ss,v 1.61 2000/06/07 06:20:11 shriram Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -174,26 +174,21 @@
 	      "signature" 'term:signature-out-of-context expr
 	     "invalid use of signature name ~s" (z:symbol-orig-name expr)))))))
 
-  (define mzscheme-kwd?
-    (let ((ns (make-namespace)))
-      (lambda (name)
-	(or (keyword-name? name)
-	  (parameterize ((current-namespace ns))
-	    (keyword-name? name))))))
+  (define allow-global-rebind-syntax (make-parameter #f))
 
-  (define ensure-not-keyword
+  (define ensure-not-syntax
     (let ((top-level-resolution (make-top-level-resolution 'dummy #f)))
       (lambda (expr env vocab)
-	(let ((name (z:symbol-orig-name expr)))
-	  (if (mzscheme-kwd? name)
-	    (static-error
-	      "keyword" 'term:keyword-out-of-context expr
-	      "invalid use of keyword ~s" name)
-	    (let ((r (resolve expr env vocab)))
-	      (cond
-		((or (macro-resolution? r) (micro-resolution? r))
-		  top-level-resolution)
-		(else r))))))))
+	(let ((r (resolve expr env vocab)))
+	  (if (or (macro-resolution? r) (micro-resolution? r))
+	      (if (allow-global-rebind-syntax)
+		  top-level-resolution
+
+		  (static-error 
+		   "keyword" 'term:keyword-out-of-context
+		   expr
+		   "Invalid use of syntax name ~s" (z:symbol-orig-name expr)))
+	      r)))))
 
   (define process-top-level-resolution
     (lambda (expr attributes)
@@ -227,7 +222,7 @@
 		    (check-for-signature-name expr attributes)
 		    (process-top-level-resolution expr attributes))
 		  ((or (macro-resolution? r) (micro-resolution? r))
-		    (loop (ensure-not-keyword expr env vocab)))
+		    (loop (ensure-not-syntax expr env vocab)))
 		  (else
 		    (internal-error expr "Invalid resolution in core: ~s" r))))))))
     (add-sym-micro common-vocabulary f))
@@ -506,7 +501,7 @@
   ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   (define optarglist-decl-entry-parser-vocab
-    (create-vocabulary 'optarglist-decl-entry-parser-vocab #f
+    (create-vocabulary 'optarglist-decl-entry-parser-vocab #f #f
       "malformed argument list entry"
       "malformed argument list entry"
       "malformed argument list entry"
@@ -563,7 +558,7 @@
 	      expr "invalid init-var declaration"))))))
 
   (define optarglist-decls-vocab
-    (create-vocabulary 'optarglist-decls-vocab #f
+    (create-vocabulary 'optarglist-decls-vocab #f #f
       "malformed argument list entry"
       "malformed argument list entry"
       "malformed argument list entry"
@@ -673,7 +668,7 @@
   ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   (define paroptarglist-decl-entry-parser-vocab
-    (create-vocabulary 'paroptarglist-decl-entry-parser-vocab #f
+    (create-vocabulary 'paroptarglist-decl-entry-parser-vocab #f #f
       "malformed argument list entry"
       "malformed argument list entry"
       "malformed argument list entry"
@@ -731,7 +726,7 @@
 	      expr "invalid init-var declaration"))))))
 
   (define paroptarglist-decls-vocab
-    (create-vocabulary 'paroptarglist-decls-vocab #f
+    (create-vocabulary 'paroptarglist-decls-vocab #f #f
       "malformed argument list entry"
       "malformed argument list entry"
       "malformed argument list entry"
@@ -840,7 +835,7 @@
   ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   (define (make-arglist-decls-vocab)
-    (create-vocabulary 'arglist-decls-vocab #f
+    (create-vocabulary 'arglist-decls-vocab #f #f
       "malformed argument list entry"
       "malformed argument list entry"
       "malformed argument list entry"

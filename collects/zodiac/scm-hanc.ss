@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.65 2000/05/28 03:47:31 shriram Exp $
+; $Id: scm-hanc.ss,v 1.66 2000/05/31 18:32:09 shriram Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -268,7 +268,7 @@
 ; --------------------------------------------------------------------
 
 (define sig-vocab
-  (create-vocabulary 'sig-vocab #f
+  (create-vocabulary 'sig-vocab #f #f
     "malformed signature expression"
     "malformed signature expression"
     "malformed signature expression"
@@ -290,7 +290,7 @@
 ; --------------------------------------------------------------------
 
 (define sig-element-vocab
-  (create-vocabulary 'sig-element-vocab #f
+  (create-vocabulary 'sig-element-vocab #f #f
     "malformed signature element"
     "malformed signature element"
     "malformed signature element"
@@ -354,7 +354,7 @@
 	    "malformed clause"))))))
 
 (define signature-struct-omission-checker-vocab
-  (create-vocabulary 'signature-struct-omission-checker-vocab #f
+  (create-vocabulary 'signature-struct-omission-checker-vocab #f #f
     "malformed signature structure omission declaration"
     "malformed signature structure omission declaration"
     "malformed signature structure omission declaration"
@@ -426,7 +426,7 @@
 ; --------------------------------------------------------------------
 
 (define u/s-prim-imports-vocab
-  (create-vocabulary 'u/s-prim-imports-vocab #f
+  (create-vocabulary 'u/s-prim-imports-vocab #f #f
     "malformed imports declaration"
     "malformed imports declaration"
     "malformed imports declaration"
@@ -505,7 +505,7 @@
 ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 (define u/s-sign-imports-vocab
-  (create-vocabulary 'u/s-sign-imports-vocab #f
+  (create-vocabulary 'u/s-sign-imports-vocab #f #f
     "malformed signature imports declaration"
     "malformed signature imports declaration"
     "malformed signature imports declaration"
@@ -576,7 +576,7 @@
 ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 (define u/s-sign-exports-vocab
-  (create-vocabulary 'u/s-sign-exports-vocab #f
+  (create-vocabulary 'u/s-sign-exports-vocab #f #f
     "malformed signature exports declaration"
     "malformed signature exports declaration"
     "malformed signature exports declaration"
@@ -721,7 +721,7 @@
 (add-primitivized-micro-form 'let-signature scheme-vocabulary let-signature-micro)
 
 (define u/s-expand-includes-vocab
-  (create-vocabulary 'u/s-expand-includes-vocab))
+  (create-vocabulary 'u/s-expand-includes-vocab #f #f))
 
 (add-primitivized-micro-form 'include u/s-expand-includes-vocab
   (let* ((kwd '())
@@ -858,8 +858,8 @@
 			   (import ,@prim-unit:imports)
 			   (export ,@prim-unit:exports)
 			   ,@prim-unit:clauses)
-			 (quote ,(map named-sig-list->named-sig-vector sign-unit:imports))
-			 (quote ,(sig-list->sig-vector sign-unit:exports)))
+			 (#%quote ,(map named-sig-list->named-sig-vector sign-unit:imports))
+			 (#%quote ,(sig-list->sig-vector sign-unit:exports)))
 		      expr '()
 		      #f
 		      (z:make-origin 'micro expr))
@@ -889,7 +889,7 @@
 ; --------------------------------------------------------------------
 
 (define cu/s-imports-record-tag-sigs-vocab
-  (create-vocabulary 'cu/s-imports-record-tag-sigs-vocab #f
+  (create-vocabulary 'cu/s-imports-record-tag-sigs-vocab #f #f
     "malformed import clause"
     "malformed import clause"
     "malformed import clause"
@@ -919,7 +919,7 @@
 	    "malformed import clause"))))))
 
 (define cu/s-sign-imports-vocab
-  (create-vocabulary 'cu/s-sign-imports-vocab #f
+  (create-vocabulary 'cu/s-sign-imports-vocab #f #f
     "malformed import clause"
     "malformed import clause"
     "malformed import clause"
@@ -946,7 +946,7 @@
 	    "malformed import clause"))))))
 
 (define cu/s-link-imports-vocab
-  (create-vocabulary 'cu/s-link-imports-vocab #f
+  (create-vocabulary 'cu/s-link-imports-vocab #f #f
     "malformed link imports declaration"
     "malformed link imports declaration"
     "malformed link imports declaration"
@@ -976,7 +976,7 @@
 ; --------------------------------------------------------------------
 
 (define cu/s-link-record-tag-sigs-vocab
-  (create-vocabulary 'cu/s-link-record-tag-sigs-vocab #f
+  (create-vocabulary 'cu/s-link-record-tag-sigs-vocab #f #f
     "malformed link clause"
     "malformed link clause"
     "malformed link clause"
@@ -1007,7 +1007,7 @@
 	    expr "malformed link clause"))))))
 
 (define cu/s-link-exports-vocab
-  (create-vocabulary 'cu/s-link-exports-vocab #f
+  (create-vocabulary 'cu/s-link-exports-vocab #f #f
     "malformed link export declaration"
     "malformed link export declaration"
     "malformed link export declaration"
@@ -1033,7 +1033,7 @@
 	    expr "malformed link clause"))))))
 
 (define cu/s-link-tags-vocab
-  (create-vocabulary 'cu/s-link-tags-vocab #f
+  (create-vocabulary 'cu/s-link-tags-vocab #f #f
     "malformed link tag declaration"
     "malformed link tag declaration"
     "malformed link tag declaration"
@@ -1056,7 +1056,7 @@
 	    expr "malformed link clause"))))))
 
 (define cu/s-link-exprs-vocab
-  (create-vocabulary 'cu/s-link-exprs-vocab #f
+  (create-vocabulary 'cu/s-link-exprs-vocab #f #f
     "malformed link expression"
     "malformed link expression"
     "malformed link expression"
@@ -1079,7 +1079,7 @@
 	    expr "malformed link clause"))))))
 
 (define cu/s-link-linking-sigs-vocab
-  (create-vocabulary 'cu/s-link-linking-sigs-vocab #f
+  (create-vocabulary 'cu/s-link-linking-sigs-vocab #f #f
     "malformed link clause"
     "malformed link clause"
     "malformed link clause"
@@ -1118,7 +1118,7 @@
 	  "self import of tag ~s" (z:read-object tag))))))
 
 (define cu/s-link-prim-unit-names-vocab
-  (create-vocabulary 'cu/s-link-prim-unit-names-vocab #f
+  (create-vocabulary 'cu/s-link-prim-unit-names-vocab #f #f
     "malformed link clause"
     "malformed link clause"
     "malformed link clause"
@@ -1148,7 +1148,7 @@
 ; --------------------------------------------------------------------
 
 (define cu/s-unit-path-extract-final-sig-vocab
-  (create-vocabulary 'cu/s-unit-path-extract-final-sig-vocab))
+  (create-vocabulary 'cu/s-unit-path-extract-final-sig-vocab #f #f))
 
 (add-sym-micro cu/s-unit-path-extract-final-sig-vocab
   (lambda (expr env attributes vocab)
@@ -1243,7 +1243,7 @@
 	    expr "malformed unit path element"))))))
 
 (define cu/s-unit-path-linkage-vocab
-  (create-vocabulary 'cu/s-unit-path-linkage-vocab #f
+  (create-vocabulary 'cu/s-unit-path-linkage-vocab #f #f
     "malformed linkage"
     "malformed linkage"
     "malformed linkage"
@@ -1350,7 +1350,7 @@
 	    expr "malformed unit path element"))))))
 
 (define cu/s-unit-path-prim-links-vocab
-  (create-vocabulary 'cu/s-unit-path-prim-links-vocab #f
+  (create-vocabulary 'cu/s-unit-path-prim-links-vocab #f #f
     "malformed linkage"
     "malformed linkage"
     "malformed linkage"
@@ -1470,7 +1470,7 @@
 	    expr "malformed unit path element"))))))
 
 (define cu/s-unit-path-tag+build-prefix-vocab
-  (create-vocabulary 'cu/s-unit-path-tag+build-prefix-vocab))
+  (create-vocabulary 'cu/s-unit-path-tag+build-prefix-vocab #f #f))
 
 ; Returns a pair of values:
 ; - Prefix tag of unit-path as Scheme symbol
@@ -1532,7 +1532,7 @@
 	    expr "malformed unit path element"))))))
 
 (define cu/s-unit-path-tag-vocab
-  (create-vocabulary 'cu/s-unit-path-tag-vocab))
+  (create-vocabulary 'cu/s-unit-path-tag-vocab #f #f))
 
 ; Returns prefix tag of unit-path as Scheme symbol
 
@@ -1633,7 +1633,7 @@
 	    (loop (cdr elements))))))))
 
 (define cu/s-prim-export-vocab
-  (create-vocabulary 'cu/s-prim-export-vocab #f
+  (create-vocabulary 'cu/s-prim-export-vocab #f #f
     "malformed export declaration"
     "malformed export declaration"
     "malformed export declaration"
@@ -1774,7 +1774,7 @@
 	    expr "malformed unit export"))))))
 
 (define cu/s-export-sign-vocab
-  (create-vocabulary 'cu/s-export-sign-vocab))
+  (create-vocabulary 'cu/s-export-sign-vocab #f #f))
 
 (add-micro-form 'var cu/s-export-sign-vocab
   (let* ((kwd '(var))
@@ -1937,17 +1937,17 @@
 					  in:exports))))
 		  (check-unique-cu/s-exports in:exports sign:exports)
 		  (let ((output
-			  `(let ,(map list linkage:unit-vars linkage:unit-exprs)
+			  `(#%let ,(map list linkage:unit-vars linkage:unit-exprs)
 			     (#%verify-linkage-signature-match
-			       'compound-unit/sig
-			       ',linkage:tags
+			       (#%quote compound-unit/sig)
+			       (#%quote ,linkage:tags)
 			       (#%list ,@linkage:unit-vars)
-			       ',(map sig-list->sig-vector linkage:link-exports)
-			       ',(map (lambda (l)
-					(map named-sig-list->named-sig-vector l))
-				   linkage:link-imports))
+			       (#%quote ,(map sig-list->sig-vector linkage:link-exports))
+			       (#%quote ,(map (lambda (l)
+						(map named-sig-list->named-sig-vector l))
+					      linkage:link-imports)))
 			     (#%make-unit-with-signature
-			       (compound-unit
+			       (#%compound-unit
 				 (import ,@prim:imports)
 				 (link ,@(map (lambda (tag body)
 						`(,tag
@@ -1956,8 +1956,8 @@
 						     ,@body)))
 					   linkage:tags prim:links))
 				 (export ,@prim:exports))
-			       ',(map named-sig-list->named-sig-vector sign:imports)
-			       ',(sig-list->sig-vector sign:exports)))))
+			       (#%quote ,(map named-sig-list->named-sig-vector sign:imports))
+			       (#%quote ,(sig-list->sig-vector sign:exports))))))
 		    (expand-expr
 		      (structurize-syntax
 			output
@@ -1977,7 +1977,7 @@
 ; --------------------------------------------------------------------
 
 (define iu/s-linkage-vocab
-  (create-vocabulary 'iu/s-linkage-vocab #f
+  (create-vocabulary 'iu/s-linkage-vocab #f #f
     "malformed linkage declaration"
     "malformed linkage declaration"
     "malformed linkage declaration"
@@ -2015,7 +2015,7 @@
 	      (expand-expr expr env attributes sig-vocab))))))))
 
 (define iu/s-imports-vocab
-  (create-vocabulary 'iu/s-imports-vocab #f
+  (create-vocabulary 'iu/s-imports-vocab #f #f
     "malformed import declaration"
     "malformed import declaration"
     "malformed import declaration"
@@ -2067,13 +2067,13 @@
 				     in:linkage))))
       (expand-expr
        (structurize-syntax
-	`(let ((unit ,in:expr))
+	`(#%let ((unit ,in:expr))
 	   (#%verify-linkage-signature-match
-	    'invoke-unit/sig
-	    '(invoke)
+	    (#%quote invoke-unit/sig)
+	    (#%quote (invoke))
 	    (#%list unit)
-	    '(#())
-	    '(,(map named-sig-list->named-sig-vector proc:linkage)))
+	    (#%quote (#()))
+	    (#%quote (,(map named-sig-list->named-sig-vector proc:linkage))))
 	   (#%invoke-unit
 	    (#%unit-with-signature-unit unit)
 	    ;; Structurize proc:imports without marks to allow capture
@@ -2123,7 +2123,8 @@
 		  (structurize-syntax
 		    `(#%make-unit-with-signature
 		       ,in-expr
-		       ',(map
+		       (#%quote
+			,(map
 			  named-sig-list->named-sig-vector
 			  (map (lambda (s)
 				(let ((proc:s
@@ -2131,11 +2132,12 @@
 					  sig-vocab)))
 				  (cons (signature-name proc:s)
 				    (signature-exploded proc:s))))
-			   in-sigs))
-		       ',(sig-list->sig-vector
+			   in-sigs)))
+		       (#%quote
+			,(sig-list->sig-vector
 			  (let ((proc:s
 				 (expand-expr out-sig sigenv attributes sig-vocab)))
-			   (signature-exploded proc:s))))
+			   (signature-exploded proc:s)))))
 		    expr '(-1)
 		    #f
 		    (z:make-origin 'micro expr))

@@ -99,6 +99,7 @@
 	     (lambda ()
 
                (settings:initialize-userspace)
+
 	       (global-defined-value 'read/zodiac read/zodiac)
 	       (global-defined-value 'restart
 				     (let ([die (lambda ()
@@ -115,7 +116,7 @@
 					      (die)]
 					     [() (die)]))))
                (when settings:show-banner?
-                 (printf "Welcome to DrScheme Jr version ~a, Copyright (c) 1995-99 PLT~n"
+                 (printf "Welcome to DrScheme Jr version ~a, Copyright (c) 1995-2000 PLT~n"
                          (version))
                  (printf "Language: ~a~n"
                          (cadr (assoc (basis:setting-vocabulary-symbol (basis:current-setting))

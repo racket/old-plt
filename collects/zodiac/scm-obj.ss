@@ -1,4 +1,4 @@
-; $Id: scm-obj.ss,v 1.45 2000/05/28 03:47:32 shriram Exp $
+; $Id: scm-obj.ss,v 1.46 2000/06/07 06:20:12 shriram Exp $
 
 (unit/sig zodiac:scheme-objects^
   (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
@@ -145,7 +145,7 @@
 	    (create-supervar-varref r expr))
 	  ((superinit-binding? r)
 	    (create-superinit-varref r expr))
-	  ((ensure-not-keyword expr env vocab)
+	  ((ensure-not-syntax expr env vocab)
 	    (internal-error expr
 	      "Not keyword or anything recognized in obj: ~s" r))
 	  (else
@@ -174,21 +174,21 @@
 					; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
   (define ivar-decls-vocab
-    (create-vocabulary 'ivar-decls-vocab #f
+    (create-vocabulary 'ivar-decls-vocab #f #f
       "malformed ivar declaration"
       "malformed ivar declaration"
       "malformed ivar declaration"
       "malformed ivar declaration"))
 
   (define public-ivar-decl-entry-parser-vocab
-    (create-vocabulary 'public-ivar-decl-entry-parser-vocab #f
+    (create-vocabulary 'public-ivar-decl-entry-parser-vocab #f #f
       "malformed public declaration"
       "malformed public declaration"
       "malformed public declaration"
       "malformed public declaration"))
 
   (define override-ivar-decl-entry-parser-vocab
-    (create-vocabulary 'override-ivar-decl-entry-parser-vocab #f
+    (create-vocabulary 'override-ivar-decl-entry-parser-vocab #f #f
       "malformed override declaration"
       "malformed override declaration"
       "malformed override declaration"
@@ -281,7 +281,7 @@
 					; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
   (define private-ivar-decl-entry-parser-vocab
-    (create-vocabulary 'private-ivar-decl-entry-parser-vocab #f
+    (create-vocabulary 'private-ivar-decl-entry-parser-vocab #f #f
       "malformed private declaration"
       "malformed private declaration"
       "malformed private declaration"
@@ -344,7 +344,7 @@
 					; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
   (define inherit-ivar-decl-entry-parser-vocab
-    (create-vocabulary 'inherit-ivar-decl-entry-parser-vocab #f
+    (create-vocabulary 'inherit-ivar-decl-entry-parser-vocab #f #f
       "malformed inherit declaration"
       "malformed inherit declaration"
       "malformed inherit declaration"
@@ -402,7 +402,7 @@
 					; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
   (define rename-ivar-decl-entry-parser-vocab
-    (create-vocabulary 'rename-ivar-decl-entry-parser-vocab #f
+    (create-vocabulary 'rename-ivar-decl-entry-parser-vocab #f #f
       "malformed rename declaration"
       "malformed rename declaration"
       "malformed rename declaration"
@@ -472,7 +472,7 @@
   (define class-micro
     (let* ((kwd '())
 	    (in-pattern `(kwd super args insts ...))
-	    (out-pattern '(class*/names (this super-init)
+	    (out-pattern '(#%class*/names (this super-init)
 			    super () args insts ...))
 	    (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env attributes vocab)
@@ -509,7 +509,7 @@
   (define class*-micro
     (let* ((kwd '())
 	    (in-pattern `(kwd super interfaces args insts ...))
-	    (out-pattern '(class*/names (this super-init)
+	    (out-pattern '(#%class*/names (this super-init)
 			    super interfaces args insts ...))
 	    (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env attributes vocab)
@@ -715,7 +715,7 @@
 		   (lambda ()
 		     (expand-expr
 		      (structurize-syntax
-		       `(#%ivar/proc ,object (quote ,name))
+		       `(#%ivar/proc ,object (#%quote ,name))
 		       expr '(-1)
 		       #f
 		       (z:make-origin 'micro expr))
@@ -731,7 +731,7 @@
   (define send-macro
       (let* ((kwd '())
 	      (in-pattern '(_ object name arg ...))
-	      (out-pattern '((ivar object name) arg ...))
+	      (out-pattern '((#%ivar object name) arg ...))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
@@ -746,8 +746,8 @@
       (let* ((kwd '())
 	      (in-pattern '(_ object (n0 a0 ...) ...))
 	      (m&e (pat:make-match&env in-pattern kwd))
-	      (out-pattern '(begin
-			      (send object n0 a0 ...)
+	      (out-pattern '(#%begin
+			      (#%send object n0 a0 ...)
 			      ...)))
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
@@ -775,7 +775,7 @@
 		  (lambda ()
 		    (expand-expr
 		      (structurize-syntax
-			`(#%make-generic/proc ,ci (quote ,name))
+			`(#%make-generic/proc ,ci (#%quote ,name))
 			expr '(-1)
 			#f
 			(z:make-origin 'micro expr))
@@ -799,7 +799,8 @@
 	    (if p-env
 	      (let* ((var-p (pat:pexpand 'var p-env kwd))
 		     (_ (valid-syntactic-id? var-p))
-		     (id-expr (expand-expr var-p env attributes vocab))
+		     (id-expr (parameterize ([allow-global-rebind-syntax #t])
+				(expand-expr var-p env attributes vocab)))
 		     (expr-expr (as-nested
 				 attributes
 				 (lambda ()
@@ -824,7 +825,7 @@
 
   (extend-parsed->raw class*/names-form?
     (lambda (expr p->r)
-      `(class*/names
+      `(#%class*/names
 	 (,(p->r (class*/names-form-this expr))
 	   ,(p->r (class*/names-form-super-init expr)))
 	 ,(p->r (class*/names-form-super-expr expr))

@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.88 2000/05/28 03:47:32 shriram Exp $
+; $Id: scm-unit.ss,v 1.89 2000/06/07 06:20:12 shriram Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -342,7 +342,7 @@
   ; ----------------------------------------------------------------------
 
   (define c/imports-vocab
-    (create-vocabulary 'c/imports-vocab #f
+    (create-vocabulary 'c/imports-vocab #f #f
       "malformed import declaration"
       "malformed import declaration"
       "malformed import declaration"
@@ -356,7 +356,7 @@
   ; ----------------------------------------------------------------------
 
   (define unit-register-exports-vocab
-    (create-vocabulary 'unit-register-exports-vocab #f
+    (create-vocabulary 'unit-register-exports-vocab #f #f
       "malformed export declaration"
       "malformed export declaration"
       "malformed export declaration"
@@ -388,7 +388,7 @@
   ;; ----------------------------------------------------------------------
 
   (define unit-generate-external-names-vocab
-    (create-vocabulary 'unit-generate-external-names-vocab #f
+    (create-vocabulary 'unit-generate-external-names-vocab #f #f
       "malformed export declaration"
       "malformed export declaration"
       "malformed export declaration"
@@ -416,7 +416,7 @@
   ;; --------------------------------------------------------------------
 
   (define unit-verify-exports-vocab
-    (create-vocabulary 'unit-verify-exports-vocab #f
+    (create-vocabulary 'unit-verify-exports-vocab #f #f
       "malformed export declaration"
       "malformed export declaration"
       "malformed export declaration"
@@ -645,7 +645,7 @@
   ; ----------------------------------------------------------------------
 
   (define c-unit-link-import-vocab
-    (create-vocabulary 'c-unit-link-import-vocab #f
+    (create-vocabulary 'c-unit-link-import-vocab #f #f
       "malformed link import declaration"
       "malformed link import declaration"
       "malformed link import declaration"
@@ -685,7 +685,7 @@
 	      expr "invalid syntax"))))))
 
   (define c-unit-link-body-vocab
-    (create-vocabulary 'c-unit-link-body-vocab #f
+    (create-vocabulary 'c-unit-link-body-vocab #f #f
       "malformed link body declaration"
       "malformed link body declaration"
       "malformed link body declaration"
@@ -717,7 +717,7 @@
 	      expr "malformed body"))))))
 
   (define c-unit-exports-vocab
-    (create-vocabulary 'c-unit-exports-vocab #f
+    (create-vocabulary 'c-unit-exports-vocab #f #f
       "malformed unit export declaration"
       "malformed unit export declaration"
       "malformed unit export declaration"
@@ -747,7 +747,7 @@
 	      expr "malformed export clause"))))))
 
   (define c-unit-export-clause-vocab
-    (create-vocabulary 'c-unit-export-clause-vocab #f
+    (create-vocabulary 'c-unit-export-clause-vocab #f #f
       "malformed export clause declaration"
       "malformed export clause declaration"
       "malformed export clause declaration"
@@ -912,7 +912,7 @@
 
   (extend-parsed->raw unit-form?
     (lambda (expr p->r)
-      `(unit (import ,@(map p->r (unit-form-imports expr)))
+      `(#%unit (import ,@(map p->r (unit-form-imports expr)))
 	 (export ,@(map (lambda (e)
 			  `(,(p->r (car e)) ,(sexp->raw (cdr e))))
 		     (unit-form-exports expr)))
@@ -920,7 +920,7 @@
 
   (extend-parsed->raw compound-unit-form?
     (lambda (expr p->r)
-      `(compound-unit
+      `(#%compound-unit
 	 (import ,@(map p->r (compound-unit-form-imports expr)))
 	 (link
 	   ,@(map (lambda (link-clause)
@@ -945,13 +945,13 @@
 
   (extend-parsed->raw invoke-unit-form?
     (lambda (expr p->r)
-      `(invoke-unit ,(p->r (invoke-unit-form-unit expr))
+      `(#%invoke-unit ,(p->r (invoke-unit-form-unit expr))
 	 ,@(map p->r (invoke-unit-form-variables expr)))))
 
   ; ----------------------------------------------------------------------
 
   (define unit-clauses-vocab-delta
-    (create-vocabulary 'unit-clauses-vocab-delta))
+    (create-vocabulary 'unit-clauses-vocab-delta #f #f))
 
   (let* ((kwd '())
 	  (in-pattern-1 `(_ (var ...) val))
@@ -1013,7 +1013,7 @@
 	      (create-define-values-form id-exprs expr-expr expr)))))))
 
   (define define-values-id-parse-vocab
-    (create-vocabulary 'define-values-id-parse-vocab #f
+    (create-vocabulary 'define-values-id-parse-vocab #f #f
       "malformed in identifier position"
       "malformed in identifier position"
       "malformed in identifier position"
@@ -1092,7 +1092,7 @@
 	    ((or (macro-resolution? r) (micro-resolution? r))
 	      (if (check-export expr attributes)
 		(loop top-level-resolution)
-		(loop (ensure-not-keyword expr env vocab))))
+		(loop (ensure-not-syntax expr env vocab))))
 	    (else
 	      (internal-error expr "Invalid resolution in unit delta: ~s"
 		r)))))))

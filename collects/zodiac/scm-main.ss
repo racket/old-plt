@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.209 2000/05/31 22:31:55 shriram Exp $
+; $Id: scm-main.ss,v 1.210 2000/06/07 06:20:11 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -113,23 +113,23 @@
 
   (extend-parsed->raw if-form?
     (lambda (expr p->r)
-      `(if ,(p->r (if-form-test expr))
-	 ,(p->r (if-form-then expr))
-	 ,(p->r (if-form-else expr)))))
+      `(#%if ,(p->r (if-form-test expr))
+	     ,(p->r (if-form-then expr))
+	     ,(p->r (if-form-else expr)))))
 
   (extend-parsed->raw set!-form?
     (lambda (expr p->r)
-      `(set! ,(p->r (set!-form-var expr))
-	 ,(p->r (set!-form-val expr)))))
+      `(#%set! ,(p->r (set!-form-var expr))
+	       ,(p->r (set!-form-val expr)))))
 
   (extend-parsed->raw define-values-form?
     (lambda (expr p->r)
-      `(define-values ,(map p->r (define-values-form-vars expr))
+      `(#%define-values ,(map p->r (define-values-form-vars expr))
 	 ,(p->r (define-values-form-val expr)))))
 
   (extend-parsed->raw let-values-form?
     (lambda (expr p->r)
-      `(let-values
+      `(#%let-values
 	 ,(map (lambda (vars val)
 		 (list (map p->r vars) (p->r val)))
 	    (let-values-form-vars expr) (let-values-form-vals expr))
@@ -137,7 +137,7 @@
 
   (extend-parsed->raw letrec-values-form?
     (lambda (expr p->r)
-      `(letrec-values 
+      `(#%letrec-values 
 	 ,(map (lambda (vars val)
 		 (list (map p->r vars) (p->r val)))
 	    (letrec-values-form-vars expr) (letrec-values-form-vals expr))
@@ -145,19 +145,19 @@
 
   (extend-parsed->raw quote-form?
     (lambda (expr p->r)
-      `(quote ,(sexp->raw (quote-form-expr expr)))))
+      `(#%quote ,(sexp->raw (quote-form-expr expr)))))
 
   (extend-parsed->raw begin-form?
     (lambda (expr p->r)
-      `(begin ,@(map p->r (begin-form-bodies expr)))))
+      `(#%begin ,@(map p->r (begin-form-bodies expr)))))
 
   (extend-parsed->raw begin0-form?
     (lambda (expr p->r)
-      `(begin0 ,@(map p->r (begin0-form-bodies expr)))))
+      `(#%begin0 ,@(map p->r (begin0-form-bodies expr)))))
 
   (extend-parsed->raw case-lambda-form?
     (lambda (expr p->r)
-      `(case-lambda
+      `(#%case-lambda
 	 ,@(map (lambda (arg body)
 		  `(,(p->r arg) ,(p->r body)))
 	     (case-lambda-form-args expr)
@@ -165,7 +165,7 @@
 
   (extend-parsed->raw struct-form?
     (lambda (expr p->r)
-      `(struct
+      `(#%struct
 	 ,(if (struct-form-super expr)
 	    (list (sexp->raw (struct-form-type expr))
 	      (p->r (struct-form-super expr)))
@@ -174,7 +174,7 @@
 
   (extend-parsed->raw with-continuation-mark-form?
     (lambda (expr p->r)
-      `(with-continuation-mark
+      `(#%with-continuation-mark
 	   ,(p->r (with-continuation-mark-form-key expr))
 	   ,(p->r (with-continuation-mark-form-val expr))
 	 ,(p->r (with-continuation-mark-form-body expr)))))
@@ -190,12 +190,12 @@
 
   ;; meant to hold begin:
   (define base-internal-vocab-delta
-    (create-vocabulary 'base-internal-vocab-delta))
+    (create-vocabulary 'base-internal-vocab-delta #f #t))
 
   ;; meant to also hold define-values, for MzScheme languages:
   (define internal-define-vocab-delta
     (create-vocabulary 'internal-define-vocab-delta
-      base-internal-vocab-delta))
+      base-internal-vocab-delta #t))
   
   (define parse-expr
     (lambda (who-str kwd:who expr bodies env attributes vocab source
@@ -384,7 +384,7 @@
   (define (make-lambda-macro begin?)
     (let* ((kwd '())
 	    (in-pattern `(_ args ,@(get-expr-pattern begin?)))
-	    (out-pattern `(case-lambda
+	    (out-pattern `(#%case-lambda
 			    (args ,@(get-expr-pattern begin?))))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env)
@@ -420,9 +420,9 @@
   (define (make-define-forms begin?)
     (let* ((kwd '())
 	   (in-pattern-1 `(_ (fun . args) ,@(get-expr-pattern begin?)))
-	   (out-pattern-1 `(define-values (fun) (lambda args ,@(get-expr-pattern begin?))))
+	   (out-pattern-1 `(#%define-values (fun) (#%lambda args ,@(get-expr-pattern begin?))))
 	   (in-pattern-2 `(_ var val))
-	   (out-pattern-2 `(define-values (var) val))
+	   (out-pattern-2 `(#%define-values (var) val))
 	   (in-pattern-3 `(_ (fun . args) b0 b1 ...)) ;; for error reporting
 	   (in-pattern-4 `(_ (fun . args))) ;; for error reporting
 	   (m&e-1 (pat:make-match&env in-pattern-1 kwd))
@@ -717,7 +717,7 @@
   (add-primitivized-micro-form 'quote intermediate-vocabulary (make-quote-micro #t))
   (add-primitivized-micro-form 'quote scheme-vocabulary (make-quote-micro #t))
 
-  (define (make-set!-micro dont-mutate-lambda-varrefs?)
+  (define (make-set!-micro dont-mutate-lambda-varrefs? rebind-syntax?)
     (let* ((kwd '())
 	   (in-pattern `(_ var val))
 	   (m&e (pat:make-match&env in-pattern kwd)))
@@ -726,8 +726,10 @@
 	  (if p-env
 	      (let* ((var-p (pat:pexpand 'var p-env kwd))
 		     (_ (valid-syntactic-id? var-p))
-		     (id-expr (expand-expr var-p env attributes
-					   vocab))
+		     (id-expr (parameterize ([allow-global-rebind-syntax
+					      rebind-syntax?])
+				(expand-expr var-p env attributes
+					     vocab)))
 		     (expr-expr (as-nested
 				 attributes
 				 (lambda ()
@@ -746,10 +748,10 @@
 
   (add-primitivized-micro-form 'set! 
 			       advanced-vocabulary
-			       (make-set!-micro #t))
+			       (make-set!-micro #t #f))
   (add-primitivized-micro-form 'set!
 			       scheme-vocabulary
-			       (make-set!-micro #f))
+			       (make-set!-micro #f #t))
   
   (define set!-values-micro
       (let* ((kwd '())
@@ -766,9 +768,9 @@
 		  (let ((new-names (map generate-name vars)))
 		    (expand-expr
 		      (structurize-syntax
-			`(let-values ((,new-names ,val))
+			`(#%let-values ((,new-names ,val))
 			   ,@(map (lambda (var new-name)
-				    `(set! ,var ,new-name))
+				    `(#%set! ,var ,new-name))
 			       vars new-names)
 			   (#%void))
 			expr '(-1)
@@ -784,7 +786,7 @@
   (add-primitivized-micro-form 'set!-values scheme-vocabulary set!-values-micro)
 
   (define (make-local-extract-vocab)
-    (create-vocabulary 'local-extract-vocab #f
+    (create-vocabulary 'local-extract-vocab #f #f
       "invalid expression for local clause"
       "invalid expression for local clause"
       "invalid expression for local clause"
@@ -820,7 +822,7 @@
 		    (set-macro-origin
 		      (expand-expr
 			(structurize-syntax
-			  `(letrec-values
+			  `(#%letrec-values
 			     ,(map (lambda (vars+expr)
 				     `(,(car vars+expr) ,(cdr vars+expr)))
 				vars+exprs)
@@ -897,14 +899,16 @@
 			  expr
 			  "malformed definition")))))))
       (let ([make-dv-micro
-	     (lambda (internal-ok? use-beg-lambda-vocab?)
+	     (lambda (internal-ok? use-beg-lambda-vocab? rebind-syntax?)
 	       (define-values-helper
 		 internal-ok?
 		 (lambda (expr env attributes vocab vars val)
-		   (let* ((id-exprs (map (lambda (v)
-					   (expand-expr v env
-							attributes vocab))
-					 vars))
+		   (let* ((id-exprs (parameterize ([allow-global-rebind-syntax
+						    rebind-syntax?])
+				      (map (lambda (v)
+					     (expand-expr v env
+							  attributes vocab))
+					   vars)))
 			  (expr-expr (as-nested
 				      attributes
 				      (lambda ()
@@ -917,16 +921,16 @@
 						expr-expr expr)))))])
 	(add-primitivized-micro-form 'define-values
 				     beginner-vocabulary
-				     (make-dv-micro #f #t))
+				     (make-dv-micro #f #t #f))
 	(add-primitivized-micro-form 'define-values
 				     intermediate-vocabulary
-				     (make-dv-micro #f #f))
+				     (make-dv-micro #f #f #f))
 	(add-primitivized-micro-form 'define-values
 				     advanced-vocabulary
-				     (make-dv-micro #f #f))
+				     (make-dv-micro #f #f #f))
 	(add-primitivized-micro-form 'define-values 
 				     scheme-vocabulary
-				     (make-dv-micro #t #f)))
+				     (make-dv-micro #t #f #t)))
       (let ([int-dv-micro (define-values-helper
 			    #t
 			    (lambda (expr env attributes vocab vars val)
@@ -1050,7 +1054,7 @@
 			   (((type super) (extract-type&super type-spec env allow-supertype?))
 			    ((names) (generate-struct-names type fields expr))
 			    ((struct-expr)
-			     `(struct ,type-spec ,fields)))
+			     `(#%struct ,type-spec ,fields)))
 			 (handler expr env attributes vocab
 				  names struct-expr)))))
 		  (else
@@ -1061,7 +1065,7 @@
 	       (lambda (expr env attributes vocab names struct-expr)
 		 (expand-expr
 		  (structurize-syntax
-		   `(define-values ,names ,struct-expr)
+		   `(#%define-values ,names ,struct-expr)
 		   expr '(-1)
 		   #f
 		   (make-origin 'micro expr))
@@ -1108,9 +1112,9 @@
 			     (extract-type&super type-spec env allow-supertype?)))
 		 (expand-expr
 		  (structurize-syntax
-		   `(let-values
+		   `(#%let-values
 			((,(generate-struct-names type fields expr)
-			  (struct ,type-spec ,fields)))
+			  (#%struct ,type-spec ,fields)))
 		      ,@body)
 		   expr '(-1)
 		   #f
@@ -1169,7 +1173,7 @@
   (define delay-macro
       (let* ((kwd '())
 	      (in-pattern '(_ expr))
-	      (out-pattern '(#%make-promise (lambda () expr)))
+	      (out-pattern '(#%make-promise (#%lambda () expr)))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
@@ -1187,16 +1191,16 @@
 		'(_ e0 e1 ...)
 		'(_ e0)))
 	    (out-pattern
-	      `(let-values (((v cpu user gc)
-			      (#%time-apply (lambda (dont-care)
+	      `(#%let-values (((v cpu user gc)
+			       (#%time-apply (#%lambda (dont-care)
 					      ,@(if begin?
 						  '(e0 e1 ...)
 						  '(e0)))
 				(#%cons (#%quote dont-care) #%null))))
-		 (#%begin
-		   (#%printf
-		     "cpu time: ~s real time: ~s gc time: ~s~n"
-		     cpu user gc)
+		 (#%let-values ([(ignored)
+			       (#%printf
+				"cpu time: ~s real time: ~s gc time: ~s~n"
+				cpu user gc)])
 		   (#%apply #%values v))))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env)
@@ -1282,12 +1286,12 @@
       (let* ((kwd '())
 	     
 	     (in-pattern-1 `(_ fun ((v e) ...) ,@(get-expr-pattern begin?)))
-	     (out-pattern-1 `((letrec ((fun (lambda (v ...) ,@(get-expr-pattern begin?))))
+	     (out-pattern-1 `((#%letrec ((fun (#%lambda (v ...) ,@(get-expr-pattern begin?))))
 				fun-copy) ; fun-copy is fun with a different source
 			      e ...))
 	     
 	     (in-pattern-2 `(_ ((v e) ...) ,@(get-expr-pattern begin?)))
-	     (out-pattern-2 `(let-values (((v) e) ...) ,@(get-expr-pattern begin?)))
+	     (out-pattern-2 `(#%let-values (((v) e) ...) ,@(get-expr-pattern begin?)))
 
 	     (m&e-1 (and named? (pat:make-match&env in-pattern-1 kwd)))
 	     (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
@@ -1315,9 +1319,9 @@
   (define (make-let*-macro begin?)
       (let* ((kwd '())
 	      (in-pattern-1 `(_ () ,@(get-expr-pattern begin?)))
-	      (out-pattern-1 `(let-values () ,@(get-expr-pattern begin?)))
+	      (out-pattern-1 `(#%let-values () ,@(get-expr-pattern begin?)))
 	      (in-pattern-2 `(_ ((v0 e0) (v1 e1) ...) ,@(get-expr-pattern begin?)))
-	      (out-pattern-2 `(let ((v0 e0)) (let* ((v1 e1) ...) ,@(get-expr-pattern begin?))))
+	      (out-pattern-2 `(#%let ((v0 e0)) (#%let* ((v1 e1) ...) ,@(get-expr-pattern begin?))))
 	      (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	      (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
 	(lambda (expr env)
@@ -1337,11 +1341,11 @@
   (define (make-let*-values-micro begin?)
       (let* ((kwd '())
 	      (in-pattern-1 `(_ () ,@(get-expr-pattern begin?)))
-	      (out-pattern-1 `(let-values () ,@(get-expr-pattern begin?)))
+	      (out-pattern-1 `(#%let-values () ,@(get-expr-pattern begin?)))
 	      (in-pattern-2 `(_ ((v0 e0) (v1 e1) ...)
 			       ,@(get-expr-pattern begin?)))
-	      (out-pattern-2 `(let-values ((v0 e0))
-				(let*-values ((v1 e1) ...)
+	      (out-pattern-2 `(#%let-values ((v0 e0))
+				(#%let*-values ((v1 e1) ...)
 				  ,@(get-expr-pattern begin?))))
 	      (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	      (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
@@ -1430,7 +1434,7 @@
       (let* ((kwd '())
 	      (in-pattern `(_ ((v e) ...) ,@(get-expr-pattern begin?)))
 	      (m&e (pat:make-match&env in-pattern kwd))
-	      (out-pattern `(letrec-values (((v) e) ...) ,@(get-expr-pattern begin?))))
+	      (out-pattern `(#%letrec-values (((v) e) ...) ,@(get-expr-pattern begin?))))
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	    (static-error
@@ -1451,15 +1455,15 @@
 	   (in-pattern-2 '(_ e))
 	   (out-pattern-2 (if (not boolean-result?)
 			      'e
-			      '(if e #t #f)))
+			      '(#%if e #t #f)))
 	   (in-pattern-3 '(_ e0 e1))
 	   (out-pattern-3 (if (not boolean-result?)
-			      '(let ((t e0)) (if t t e1))
-			      '(if e0 #t (if e1 #t #f))))
+			      '(#%let ((t e0)) (#%if t t e1))
+			      '(#%if e0 #t (#%if e1 #t #f))))
 	   (in-pattern-4 '(_ e0 e1 ...))
 	   (out-pattern-4 (if (not boolean-result?)
-			      '(let ((t e0)) (if t t (or e1 ...)))
-			      '(if e0 #t (or e1 ...))))
+			      '(#%let ((t e0)) (#%if t t (#%or e1 ...)))
+			      '(#%if e0 #t (#%or e1 ...))))
 	   (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	   (m&e-2 (pat:make-match&env in-pattern-2 kwd))
 	   (m&e-3 (pat:make-match&env in-pattern-3 kwd))
@@ -1487,7 +1491,7 @@
     beginner-vocabulary
     (let* ((kwd '())
 	   (in-pattern '(_ e0 e1 ...))
-	   (out-pattern '(#%not (or e0 e1 ...)))
+	   (out-pattern '(#%not (#%or e0 e1 ...)))
 	   (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env)
 	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
@@ -1503,10 +1507,10 @@
 	   (out-pattern-2 'e)
 	   (in-pattern-3 '(_ e0 e1))
 	   (out-pattern-3 (if (not boolean-result?)
-			      '(if e0 e1 #f)
-			      '(if e0 (if e1 #t #f) #f)))
+			      '(#%if e0 e1 #f)
+			      '(#%if e0 (#%if e1 #t #f) #f)))
 	   (in-pattern-4 '(_ e0 e1 ...))
-	   (out-pattern-4 '(if e0 (and e1 ...) #f))
+	   (out-pattern-4 '(#%if e0 (#%and e1 ...) #f))
 	   (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	   (m&e-2 (pat:make-match&env in-pattern-2 kwd))
 	   (m&e-3 (pat:make-match&env in-pattern-3 kwd))
@@ -1532,7 +1536,7 @@
    beginner-vocabulary
    (let* ((kwd '())
 	  (in-pattern '(_ e0 e1 ...))
-	  (out-pattern '(#%not (and e0 e1 ...)))
+	  (out-pattern '(#%not (#%and e0 e1 ...)))
 	  (m&e (pat:make-match&env in-pattern kwd)))
      (lambda (expr env)
        (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
@@ -1543,7 +1547,7 @@
   (define recur-macro
       (let* ((kwd '())
 	      (in-pattern '(_ fun ((v e) ...) b ...))
-	      (out-pattern '(let fun ((v e) ...) b ...))
+	      (out-pattern '(#%let fun ((v e) ...) b ...))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
@@ -1557,7 +1561,7 @@
   (define rec-macro
       (let* ((kwd '())
 	      (in-pattern '(_ looper body))
-	      (out-pattern '(letrec ((looper body)) looper-copy))
+	      (out-pattern '(#%letrec ((looper body)) looper-copy))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env)
 	  (let ((p-env (pat:match-against m&e expr env)))
@@ -1581,7 +1585,7 @@
 
   (define (make-cond-clause-vocab)
     (let([qa-error-msg "clause is not in question-answer format"])
-      (create-vocabulary 'cond-clause-vocab #f
+      (create-vocabulary 'cond-clause-vocab #f #f
 			 qa-error-msg    ; symbol
 			 qa-error-msg    ; literal
 			 qa-error-msg    ; list
@@ -1597,7 +1601,7 @@
 			    '(else answer ...)))
 	    (get-pattern-1 (if (not begin?)
 			       'answer
-			       '(begin answer ...)))
+			       '(#%begin answer ...)))
 	    (in-pattern-3 '(question => answer))
 	    (in-pattern-2 '(question => answer ...))
 	    (in-pattern-5 (if (not answerless?)
@@ -1608,7 +1612,7 @@
 			    '(question answer ...)))
 	    (get-pattern-4 (if (not begin?)
 			     'answer 
-			     '(begin answer ...)))
+			     '(#%begin answer ...)))
 	    (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	    (m&e-2 (pat:make-match&env in-pattern-2 kwd))
 	    (m&e-3 (pat:make-match&env in-pattern-3 kwd))
@@ -1686,8 +1690,8 @@
 				   (rest (cdr exps)))
 			      (cond
 				((cond-clause-=>? first)
-				  `(let ((test ,(cond-clause-question first)))
-				     (if test
+				  `(#%let ((test ,(cond-clause-question first)))
+				     (#%if test
 				       (,(cond-clause-answer first) test)
 				       ,(loop rest))))
 				((cond-clause-else? first)
@@ -1698,10 +1702,10 @@
 				      (cond-clause-text first)
 				      "else allowed only in last position")))
 				((cond-clause-or? first)
-				  `(or ,(cond-clause-question first)
+				  `(#%or ,(cond-clause-question first)
 				     ,(loop rest)))
 				(else
-				  `(if ,(cond-clause-question first)
+				  `(#%if ,(cond-clause-question first)
 				     ,(cond-clause-answer first)
 				     ,(loop rest)))))))
 			expr '(-1)
@@ -1719,7 +1723,7 @@
   (define case-macro
       (let* ((kwd-1 '(else))
 	     (in-pattern-1 `(_ val (else ,@(get-expr-pattern #t))))
-	     (out-pattern-1 `(begin val ,@(get-expr-pattern #t)))
+	     (out-pattern-1 `(#%begin val ,@(get-expr-pattern #t)))
 	     (kwd-2 '())
 	     (in-pattern-2 '(_ val))
 	     (out-pattern-2-signal-error
@@ -1729,10 +1733,10 @@
 	     (out-pattern-2-no-error
 	      '(begin val (#%void)))
 	     (in-pattern-3 `(_ val ((keys ...) ,@(get-expr-pattern #t)) rest ...))
-	     (out-pattern-3 `(let ((tmp val))
-			       (if (#%memv tmp (quote (keys ...)))
-				   (begin ,@(get-expr-pattern #t))
-				   (case tmp rest ...))))
+	     (out-pattern-3 `(#%let ((tmp val))
+			       (#%if (#%memv tmp (#%quote (keys ...)))
+				   (#%begin ,@(get-expr-pattern #t))
+				   (#%case tmp rest ...))))
 	     (m&e-1 (pat:make-match&env in-pattern-1 kwd-1))
 	     (m&e-2 (pat:make-match&env in-pattern-2 kwd-2))
 	     (m&e-3 (pat:make-match&env in-pattern-3 kwd-2)))
@@ -1754,7 +1758,7 @@
   (define evcase-macro
       (let* ((kwd-1 '(else))
 	     (in-pattern-1 `(_ val (else ,@(get-expr-pattern #t))))
-	     (out-pattern-1 `(begin val ,@(get-expr-pattern #t)))
+	     (out-pattern-1 `(#%begin val ,@(get-expr-pattern #t)))
 	     (kwd-2 '())
 	     (in-pattern-2 '(_ val))
 	     (out-pattern-2-signal-error
@@ -1767,10 +1771,10 @@
 	     (in-pattern-3 `(_ val (else ,@(get-expr-pattern #t)) rest))
 	     (kwd-4 '())
 	     (in-pattern-4 `(_ val (test-expr ,@(get-expr-pattern #t)) rest ...))
-	     (out-pattern-4 `(let ((tmp val))
-			       (if (#%eqv? tmp test-expr)
-				   (begin ,@(get-expr-pattern #t))
-				   (evcase tmp rest ...))))
+	     (out-pattern-4 `(#%let ((tmp val))
+			       (#%if (#%eqv? tmp test-expr)
+				   (#%begin ,@(get-expr-pattern #t))
+				   (#%evcase tmp rest ...))))
 	     (m&e-1 (pat:make-match&env in-pattern-1 kwd-1))
 	     (m&e-2 (pat:make-match&env in-pattern-2 kwd-2))
 	     (m&e-3 (pat:make-match&env in-pattern-3 kwd-3))
@@ -1798,7 +1802,7 @@
   (define when-macro
       (let* ((kwd '())
 	      (in-pattern `(_ test ,@(get-expr-pattern #t)))
-	      (out-pattern `(if test (begin ,@(get-expr-pattern #t)) (#%void)))
+	      (out-pattern `(#%if test (#%begin ,@(get-expr-pattern #t)) (#%void)))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
@@ -1813,7 +1817,7 @@
   (define unless-macro
       (let* ((kwd '())
 	      (in-pattern `(_ test ,@(get-expr-pattern #t)))
-	      (out-pattern `(if test (#%void) (begin ,@(get-expr-pattern #t))))
+	      (out-pattern `(#%if test (#%void) (#%begin ,@(get-expr-pattern #t))))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
@@ -1828,7 +1832,7 @@
 	 (lambda (call/cc the-kwd kwd-text kwd:the-kwd)
 	   (let* ((kwd '())
 		  (in-pattern `(_ var ,@(get-expr-pattern #t)))
-		  (out-pattern `(,call/cc (lambda (var) ,@(get-expr-pattern #t))))
+		  (out-pattern `(,call/cc (#%lambda (var) ,@(get-expr-pattern #t))))
 		  (m&e (pat:make-match&env in-pattern kwd)))
 	     (lambda (expr env)
 	       (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
@@ -1850,11 +1854,11 @@
 	      (in-pattern `(_ (var-init-step ...)
 			     (test seq ...)
 			     ,@(get-expr-pattern 'optional)))
-	      (out-pattern `(letrec ((loop
-				       (lambda (var ...)
-					 (if test
-					   (begin (#%void) seq ...)
-					   (begin ,@(get-expr-pattern 'optional)
+	      (out-pattern `(#%letrec ((loop
+				        (#%lambda (var ...)
+					 (#%if test
+					   (#%begin (#%void) seq ...)
+					   (#%begin ,@(get-expr-pattern 'optional)
 					     (loop step ...))))))
 			      (loop init ...)))
 	      (in-m&e (pat:make-match&env in-pattern in-kwd))
@@ -1901,11 +1905,11 @@
 			   (inits (map cadr normalized-var-init-steps))
 			   (steps (map caddr normalized-var-init-steps)))
 		      (structurize-syntax
-			`(letrec ((loop
-				    (lambda (,@vars)
-				      (if ,test
-					(begin (#%void) ,@seqs)
-					(begin ,@body
+			`(#%letrec ((loop
+				     (#%lambda (,@vars)
+				      (#%if ,test
+					(#%begin (#%void) ,@seqs)
+					(#%begin ,@body
 					  (loop ,@steps))))))
 			   (loop ,@inits))
 			expr '(-1)
@@ -1936,18 +1940,18 @@
 		    (expand-expr
 		      (structurize-syntax
 			(if (null? vars)
-			  `(let-values () ,@body)
-			  `(let ,(map list new-vars vars)
+			  `(#%let-values () ,@body)
+			  `(#%let ,(map list new-vars vars)
 			     (#%dynamic-wind
-			       (lambda ()
+			       (#%lambda ()
 				 ,@(map (lambda (var val)
-					  `(set! ,var ,val))
+					  `(#%set! ,var ,val))
 				     vars vals))
-			       (lambda ()
+			       (#%lambda ()
 				 ,@body)
-			       (lambda ()
+			       (#%lambda ()
 				 ,@(map (lambda (var tmp)
-					  `(set! ,(dup-symbol var) ,tmp))
+					  `(#%set! ,(dup-symbol var) ,tmp))
 				     vars new-vars)))))
 			expr '(-1)
 			#f
@@ -1988,18 +1992,18 @@
 		(expand-expr
 		 (structurize-syntax
 		  (if (null? params)
-		      `(let-values () ,@body)
-		      `(let ,(append
-			      (map list pzs params)
-			      (map list saves vals))
-			 (let ((,swap (lambda ()
-					,@(map 
-					   (lambda (save pz)
-					     `(let ([x ,save])
-						(begin
-						  (set! ,save (,pz))
-						  (,pz x))))
-					   saves pzs))))
+		      `(#%let-values () ,@body)
+		      `(#%let ,(append
+				(map list pzs params)
+				(map list saves vals))
+			 (#%let ((,swap (#%lambda ()
+					 ,@(map 
+					    (#%lambda (save pz)
+					      `(#%let ([x ,save])
+						 (#%begin
+						   (#%set! ,save (,pz))
+						   (,pz x))))
+					    saves pzs))))
 			   (#%dynamic-wind
 			    ,swap
 			    (#%lambda () ,@body)
@@ -2020,21 +2024,21 @@
 	     (in-pattern-1 `(_ () ,@(get-expr-pattern begin?)))
 	     (out-pattern-1 (if (not begin?)
 				'expr
-				`(let-values () ,@(get-expr-pattern begin?))))
+				`(#%let-values () ,@(get-expr-pattern begin?))))
 	     (in-pattern-2 `(_ ((pred handler) ...) ,@(get-expr-pattern begin?)))
 	     (out-pattern-2
 	      `((#%call/ec
-		 (lambda (k)
-		   (let ((handlers (#%list
-				    (#%cons pred handler)
-				    ...)))
-		     (parameterize
+		 (#%lambda (k)
+		   (#%let ((handlers (#%list
+				      (#%cons pred handler)
+				      ...)))
+		     (#%parameterize
 			 ((#%current-exception-handler
-			   (lambda (e)
+			   (#%lambda (e)
 			     (k
-			      (lambda ()
-				(let loop ((handlers handlers))
-				  (cond
+			      (#%lambda ()
+				(#%let loop ((handlers handlers))
+				  (#%cond
 				   ((#%null? handlers)
 				    (#%raise e))
 				   (((#%caar handlers) e)
@@ -2042,9 +2046,9 @@
 				   (else
 				    (loop (#%cdr handlers))))))))))
 		       (#%call-with-values
-			(lambda () ,@(get-expr-pattern begin?))
-			(lambda args
-			  (lambda () (#%apply #%values args))))))))))
+			(#%lambda () ,@(get-expr-pattern begin?))
+			(#%lambda args
+			  (#%lambda () (#%apply #%values args))))))))))
 	      (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	      (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
 	(lambda (expr env)

@@ -159,14 +159,16 @@
 	       (append
 		(map
 		 (lambda (doc-pair)
-		   (format "<LI> <A HREF=\"/servlets/missing-manual.ss?manual=~a&name=~a\">~a</A>~a"
-			   (car doc-pair)
-			   (hexify-string (cdr doc-pair))
-			   (cdr doc-pair)
-			   (if (file-exists? 
-				(build-path doc-collection-path (car doc-pair) "hdindex"))
-			       " (index installed)"
-			       "")))
+		   (let ([manual (car doc-pair)]
+			 [name (cdr doc-pair)])
+		     (format "<LI> <A HREF=\"/servlets/missing-manual.ss?manual=~a&name=~a\">~a</A>~a"
+			     manual
+			     (hexify-string name)
+			     name
+			     (if (file-exists? 
+				  (build-path doc-collection-path manual "hdindex"))
+				 " (index installed)"
+				 ""))))
 		 uninstalled)
 		(list "</UL>")))]))
 	  (list "</body></html>")))))))

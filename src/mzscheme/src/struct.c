@@ -1827,7 +1827,7 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
     n = struct_type->num_slots;
     if (parent_type)
       n -= parent_type->num_slots;
-    ims = (char *)scheme_malloc_atomic(n);
+    ims = (char *)scheme_malloc_atomic(n+2);
     memset(ims, 0, n);
 
     if (SCHEME_INTP(struct_type->proc_attr)) {
@@ -1843,9 +1843,6 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
 	p = SCHEME_INT_VAL(a);
       else
 	p = struct_type->num_slots; /* too big */
-
-      if (parent_type)
-	p -= parent_type->num_slots;
 
       if (p >= struct_type->num_islots) {
 	scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,

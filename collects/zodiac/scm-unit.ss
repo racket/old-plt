@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.57 1998/03/14 21:28:02 mflatt Exp $
+; $Id: scm-unit.ss,v 1.58 1998/03/14 22:05:16 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -821,7 +821,8 @@
 	    (lambda (handler)
 	      (lambda (expr env attributes vocab)
 		(unless (at-top-level? attributes)
-		  (static-error expr "Not at top-level"))
+		  (static-error expr
+		    "Invalid definition: must be at the top level"))
 		(cond
 		  ((pat:match-against m&e-1 expr env)
 		    =>

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.145 1998/03/13 21:20:44 shriram Exp $
+; $Id: scm-main.ss,v 1.146 1998/03/13 21:52:31 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -590,7 +590,7 @@
 		(unless (at-top-level? attributes)
 		  (static-error expr
 		    (if (language<=? 'structured)
-		      "Not at top-level"
+		      "Invalid definition: must be at the top level"
 		      "Invalid position for internal definition")))
 		(cond
 		  ((pat:match-against m&e-1 expr env)

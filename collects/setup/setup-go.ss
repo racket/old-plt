@@ -11,6 +11,8 @@
   (define-values/invoke-unit/sig setup-option^
     setup:option@)
 
+  (require (lib "cm.ss"))
+
   (define-values (x-specific-collections x-archives)
     (command-line
      "setup-plt"
@@ -36,6 +38,8 @@
       [("-r" "--compile-verbose") "See make and compiler verbose messages"
 				  (make-verbose #t)
 				  (compiler-verbose #t)]
+      [("--trust-zos") "Trust existing zo files (use only with prepackaged zo distributions)"
+                       (trust-existing-zos #t)]
       [("-p" "--pause") "Pause at the end if there are any errors"
 			(pause-on-errors #t)]
       [("--force") "Treat version mismatches for archives as mere warnings"

@@ -38,6 +38,11 @@ exit 1
 (current-library-collection-paths
  (list (build-path plthome "collects")))
 
+;; this will be the same as plthome, except when a `-p' argument is used.
+;; `plthome' always points at the current plthome, the one we use to load
+;; stuff.
+(define fake-plthome plthome)
+
 (define zos?         'ask)
 (define scripts?     #t)
 (define deps?        #f)
@@ -71,7 +76,7 @@ exit 1
     "skip modifying .dep files (default)."
     (set! deps? #f))
    (("+d")
-    "modify .dep files paths and .zo timestamps (ignore unless `+s' and `-z')."
+    "modify .dep files paths and compiled timestamps (ignore unless `+s' and `-z')."
     (set! deps? #t))
    (("-u")
     "skip on-line updates checking."
@@ -88,16 +93,17 @@ exit 1
    (("-p") explicit-home
     "use explicit PLTHOME value instead of the current directory."
     (if (absolute-path? explicit-home)
-      (set! plthome explicit-home)
+      (set! fake-plthome explicit-home)
       (error './install
              "bad value for PLTHOME, expected an absolute path, got ~s"
              explicit-home)))))
 
 (when (and deps? (or (not scripts?) zos?))
-  (printf "Warning: can't modify .dep files.\n")
+  (printf "Warning: can't modify .dep files due to command-line flags.\n")
   (set! deps? #f))
 
 (define didnothing? #t)
+(define old-plthome #f)
 
 (when in-osx-install?
   (namespace-require '(lib "mred.ss" "mred"))
@@ -170,8 +176,8 @@ exit 1
                (not (regexp-match "^ *[nN]" r))))))
 
 (define (update-scripts)
-  (printf "setting PLTHOME to ~s in scripts:\n" plthome)
-  (parameterize ((current-directory "bin"))
+  (printf "setting PLTHOME to ~s in scripts:\n" fake-plthome)
+  (parameterize ([current-directory "bin"])
     (for-each
      (lambda (f)
        (cond
@@ -181,20 +187,31 @@ exit 1
         [else
          (set! didnothing? #f)
          (printf " checking ~a..." f)
-         (let-values ([(lines changed?)
-                       (with-input-from-file f
-                         (lambda ()
-                           (let loop ([ls null] [changed? #f])
-                             (let ([l (read-line)])
-                               (cond
-                                ((eof-object? l) (values (reverse ls) changed?))
-                                ((regexp-match #rx"^( *)PLTHOME=(.*)$" l) =>
-                                 (lambda (m)
-                                   (loop (cons (format "~aPLTHOME=~s"
-                                                       (cadr m) plthome)
-                                               ls)
-                                         #t)))
-                                (else (loop (cons l ls) changed?)))))))])
+         (let-values
+             ([(lines changed?)
+               (with-input-from-file f
+                 (lambda ()
+                   (let loop ([ls null] [changed? #f])
+                     (let ([l (read-line)])
+                       (cond
+                        ((eof-object? l) (values (reverse ls) changed?))
+                        ((regexp-match #rx"^( *)PLTHOME=(.*)$" l) =>
+                         (lambda (m)
+                           (let ((m (regexp-match #rx"\"(.+)\"" (caddr m))))
+                             (when (and deps? m)
+                               (let ((old (regexp-replace
+                                           #rx"\\\\(.)" (cadr m) "\\1")))
+                                 (when (and old-plthome deps?
+                                            (not (equal? old old-plthome)))
+                                   (printf "Warning: can't modify .dep files, ~a.\n"
+                                           "got inconsistent PLTHOMEs in scripts")
+                                   (set! deps? #f))
+                                 (set! old-plthome old))))
+                           (loop (cons (format "~aPLTHOME=~s"
+                                               (cadr m) fake-plthome)
+                                       ls)
+                                 #t)))
+                        (else (loop (cons l ls) changed?)))))))])
            (if changed?
              (begin (printf " updating\n")
                     (with-output-to-file f
@@ -203,6 +220,53 @@ exit 1
                       'truncate))
              (printf " nothing to do\n")))]))
      (directory-list))))
+
+(define (update-deps)
+  (printf "Touching compiled files, ~a...\n"
+          (if (and old-plthome (not (equal? fake-plthome old-plthome)))
+            (format "and updating dependencies: ~s -> ~s"
+                    old-plthome fake-plthome)
+            (begin (set! old-plthome #f)
+                   "no need to change dependencies")))
+  (parameterize ([current-directory (build-path plthome "collects")])
+    (define (recurse op)
+      (define (do-files path)
+        (lambda (x)
+          (if (directory-exists? x)
+            (parameterize ((current-directory x))
+              (let ((do-dir (do-files (cons (string->symbol x) path))))
+                (map do-dir (directory-list))))
+            (op x path))))
+      (map (do-files null) (directory-list)))
+    (define current-time (current-seconds))
+    (define (touch f delta)
+      (file-or-directory-modify-seconds f (+ delta current-time)))
+    (define old-plthome-len
+      (and (string? old-plthome) (string-length old-plthome)))
+    (define (plthome:old->new path)
+      (cond ((and (string? path)
+                  old-plthome-len
+                  (<= old-plthome-len (string-length path))
+                  (string=? old-plthome (substring path 0 old-plthome-len)))
+             (string-append
+              fake-plthome
+              (substring path old-plthome-len (string-length path))))
+            ((pair? path)
+             (cons (plthome:old->new (car path)) (plthome:old->new (cdr path))))
+            (else path)))
+    (recurse (lambda (f path)
+               (when (memq 'compiled path)
+                 (cond ((regexp-match #rx"\\.dep$" f)
+                        (when old-plthome
+                          (let ((dep (with-input-from-file f read)))
+                            (with-output-to-file f
+                              (lambda () (write (plthome:old->new dep)))
+                              'truncate))))
+                       ((regexp-match #rx"\\.zo$" f)
+                        (touch f 0))
+                       ((and (memq 'native path)
+                             (regexp-match #rx"\\.(dll|so)$" f))
+                        (touch f 5))))))))
 
 ;; ============================================================================
 ;; Start working here
@@ -223,6 +287,10 @@ exit 1
 (require (lib "check-text.ss" "version"))
 (when updates? (check-version))
 
+;; ---------- update .deps and compiled timestamps ----------
+
+(when deps? (update-deps))
+
 ;; ---------- make .zo files ----------
 
 (when (eq? 'ask zos?)
@@ -231,6 +299,8 @@ exit 1
          '("PLT software starts up much faster with .zo files, but\n"
            "creating .zo files now takes a few minutes and requires\n"
            "several MB of additional disk space.\n"
+           "(If your distribution contains .zo files, this process\n"
+           "will be very fast.)\n"
            "  Create .zo files now (y/n)?")))
   (unless zos?
     (printf "Skipping .zo-file creation; create .zo files later by running\n")
@@ -241,7 +311,8 @@ exit 1
   ;; ones we've already loaded.  We also need to re-enable compiled files,
   ;; since cm.ss checks on that flag.
   (parameterize ([current-namespace (make-namespace)]
-		 [use-compiled-file-kinds 'all])
+		 [use-compiled-file-kinds 'all]
+                 [current-command-line-arguments #("--trust-zos")])
     (dynamic-require '(lib "setup.ss" "setup") #f)))
 
 ;; ---------- done ----------

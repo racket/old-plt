@@ -7,7 +7,8 @@
 	   "compile.ss"
 	   "typecheck.ss"
 	   "parse.ss"
-	   "prims.ss")
+	   "prims.ss"
+           (lib "string-constant.ss" "string-constants"))
 
   (provide tool@)
 
@@ -195,10 +196,10 @@
           (define/public (front-end/complete-program input settings) (front-end input settings))
           (define/public (front-end/interaction input settings) (front-end input settings))
 	  (define/public (get-style-delta) #f)
-          (define/public (get-language-position) (list "Dromedary"))
+          (define/public (get-language-position) (list (string-constant experimental-languages) "Dromedary"))
           (define/public (get-language-name) "Dromedary")
           (define/public (get-language-url) #f)
-          (define/public (get-language-numbers) (list 10))
+          (define/public (get-language-numbers) (list 1000 20))
           (define/public (get-teachpack-names) null)
           (define/public (marshall-settings x) x)
           (define/public (on-execute settings run-in-user-thread)

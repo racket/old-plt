@@ -825,6 +825,7 @@ void wxCanvas::ResetGLView()
 {
   if (wx_dc->gl) {
     wxArea* clientArea, *topClientArea;
+    wxFrame *fr;
     int h, w, th;
 
     SetCurrentMacDC();
@@ -833,7 +834,8 @@ void wxCanvas::ResetGLView()
     w = clientArea->Width();
     h = clientArea->Height();
 
-    topClientArea = GetRootFrame()->ContentArea();
+    fr = GetRootFrame();
+    topClientArea = fr->ContentArea();
     th = topClientArea->Height();
 
     wx_dc->gl->ResetGLView(SetOriginX,

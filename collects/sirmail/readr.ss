@@ -14,7 +14,6 @@
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
            (lib "file.ss")
-           (lib "etc.ss")
 	   (lib "mred-sig.ss" "mred")
            (lib "framework.ss" "framework")
            (lib "process.ss"))
@@ -2526,11 +2525,11 @@
                    (loop (substring string (car after) (cdr after))
                          (+ (car after) line-offset))))]
               [else (void)]))))
-      
+
       ;; emoticon-path (may not exist)
-      (define emoticon-path 
-        (build-path (this-expression-source-directory) "emoticon"))
-      
+      (define emoticon-path
+        (build-path (collection-path "sirmail") "emoticon"))
+
       ;; emoticon : string string -> (listof (list regexp (text number number -> void)))
       (define (emoticon img . icons)
         (let ([snip (make-object image-snip% (build-path emoticon-path img))])

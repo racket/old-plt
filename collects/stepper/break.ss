@@ -24,7 +24,7 @@
   (provide/contract [break (-> any)])
   
   (define (break)
-    (current-breakpoint-handler))
+    ((current-breakpoint-handler)))
   
   (define (stop-box title message)
     (message-box/custom title

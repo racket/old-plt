@@ -9,5 +9,4 @@
      user-custodian))
   
   (define-signature debugger-vc^
-    (receive-result
-     debugger-output-port)))
+    (receive-result)))

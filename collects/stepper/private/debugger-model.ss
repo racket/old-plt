@@ -5,11 +5,12 @@
            (lib "contracts.ss")
            (lib "etc.ss")
            (lib "mred.ss" "mred")
+           (lib "debugger-sig.ss" "stepper")
+           (lib "break.ss" "stepper")
            "my-macros.ss"
-           (prefix a: "annotate.ss")
+           "debugger-annotate.ss"
            "shared.ss"
            "marks.ss"
-           (lib "debugger-sig.ss" "stepper")
            "debugger-vc.ss")
  
   
@@ -41,8 +42,6 @@
            
            (define current-expr #f)
            
-           (define packaged-envs (a:make-initial-env-package))
-           
            (define (queue-result result)
              (send-to-eventspace 
               queue-eventspace
@@ -51,16 +50,15 @@
            
            (define basic-eval (current-eval))
 
-           (define (break mark-set break-kind returned-value-list)
-             (let* ([mark-list (extract-mark-list mark-set)])
-               (queue-result (make-normal-breakpoint-info mark-list break-kind returned-value-list))
+           (define (break)
+             (let ([mark-list (extract-mark-list (current-continuation-marks))])
+               (queue-result (make-normal-breakpoint-info mark-list 'debugger-break null))
                (queue-result (make-breakpoint-halt))
                (semaphore-wait go-semaphore)))
+
            
            (define (step-through-expression expanded expand-next-expression)
-             (let*-values ([(annotated envs) (a:annotate expanded packaged-envs break 
-                                                         'foot-wrap)])
-               (set! packaged-envs envs)
+             (let*-values ([(annotated envs) (annotate-top-level expanded)])
                (set! current-expr expanded)
                (let ([expression-result
                       (parameterize ([current-eval basic-eval])
@@ -78,10 +76,8 @@
         (parameterize ([current-custodian user-custodian])
           (program-expander
            (lambda ()
-             (current-output-port debugger-output-port)
              (error-display-handler err-display-handler)
-  
-             ) ; init
+             (current-breakpoint-handler break)) ; init
            (lambda (expanded continue-thunk) ; iter
              (unless (eof-object? expanded)
                (step-through-expression expanded continue-thunk)))))))))

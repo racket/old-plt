@@ -65,6 +65,12 @@ Vocabularies
                      `define-macro' expression in MzLib is evaluated
                      at elaboration time)
 
+When using a vocabulary other than `scheme-vocabulary', the initial
+namespace must be prepped with the following:
+
+> (prepare-current-namespace-for-vocabulary vocab) - adds macro
+  bindings into the current namespace to join it to the namespace.
+
 Handler Parameters
 ------------------
 

@@ -27,7 +27,7 @@ more information about color structs.
 <li><code>{(idx add-line)}</code> : image int int int int image-color -> image <br>
  to add a line to an existing image, drawn between the two given points
 <li><code>{(idx text)}</code> : string size image-color -> image <br>
- to create an image from the given string, point size, and background color
+ to create an image of the text in the given string, with the point size, and color specified by the last two arguments
 </menu>
 
 These functions build complex images from the basic

@@ -732,20 +732,21 @@ Check Syntax separates four classes of identifiers:
                                                             (var-arrow-start-pos-left arrow-key)
                                                             (var-arrow-start-pos-right arrow-key))
                                                       (lambda () '()))])
-                    (unless (or (null? orig-arrows)
-                                (null? (cdr orig-arrows))
-                                (null? (cddr orig-arrows))) ;; need at least 2 arrows
-                      (let loop ([arrows orig-arrows])
-                        (cond
-                          [(null? arrows) (jump-to (car orig-arrows))]
-                          [else (let ([arrow (car arrows)])
-                                  (cond
-                                    [(and (object=? txt (first arrow))
-                                          (<= (second arrow) pos (third arrow)))
-                                     (jump-to (if (null? (cdr arrows))
-                                                  (car orig-arrows)
-                                                  (cadr arrows)))]
-                                    [else (loop (cdr arrows))]))]))))))
+                    (cond
+                      [(null? orig-arrows) (void)]
+                      [(null? (cdr orig-arrows)) (jump-to (car orig-arrows))]
+                      [else
+                       (let loop ([arrows orig-arrows])
+                         (cond
+                           [(null? arrows) (jump-to (car orig-arrows))]
+                           [else (let ([arrow (car arrows)])
+                                   (cond
+                                     [(and (object=? txt (first arrow))
+                                           (<= (second arrow) pos (third arrow)))
+                                      (jump-to (if (null? (cdr arrows))
+                                                   (car orig-arrows)
+                                                   (cadr arrows)))]
+                                     [else (loop (cdr arrows))]))]))]))))
               
               ;; jump-to : (list text number number) -> void
               (define (jump-to to-arrow)

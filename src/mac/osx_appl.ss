@@ -139,6 +139,8 @@ exit 1
 	   (assoc-pair "CFBundleSignature"
 		       ,signature)
 	   (assoc-pair "CFBundleVersion"
+		       ,(version))
+	   (assoc-pair "CFBundleShortVersionString"
 		       ,(version))))
 
     (create-app (current-directory)

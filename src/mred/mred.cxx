@@ -571,7 +571,7 @@ wxPrintSetupData *wxGetThePrintSetupData()
   if (ps_ready) {
     Scheme_Object *o;
     o = scheme_get_param(scheme_current_config(), mred_ps_setup_param);
-    if (o)
+    if (o && SCHEME_TRUEP(o))
       return wxsUnbundlePSSetup(o);
   }
   return orig_ps_setup;

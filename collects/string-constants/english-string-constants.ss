@@ -743,4 +743,22 @@
 
  (happy-birthday-matthias "Happy Birthday, Matthias!")
 
+ (mrflow-button-title "Analyze")
+ (mrflow-coloring-error-title "Unknown Color")
+ (mrflow-coloring-error "No style defined for color: ~a")
+ (mrflow-popup-menu-show-type "Show Type")
+ (mrflow-popup-menu-hide-type "Hide Type")
+ (mrflow-popup-menu-show-errors "Show Errors")
+ (mrflow-popup-menu-hide-errors "Hide Errors")
+ (mrflow-popup-menu-tack-all-arrows "Tack All Arrows")
+ (mrflow-popup-menu-untack-all-arrows "Untack All Arrows")
+ (mrflow-read-exception-title "Read Exception")
+ (mrflow-read-exception "Read exception: ~a")
+ (mrflow-syntax-exception-title "Syntax Exception")
+ (mrflow-syntax-exception "Syntax exception: ~a")
+ (mrflow-unknown-exception-title "Unknown Exception")
+ (mrflow-unknwon-exception "Unknown exception: ~a")
+ (mrflow-language-primitives-error-title "Language Primitives Error")
+ (mrflow-language-primitives-error "Wrong filename for language primitives types table: ~a")
+ 
  )

@@ -23,6 +23,50 @@
 ;      (tand 5 #f 9)
 ;      #f)
 
+; check-mark : test the validity of a mark.  the symbols in 'binding-ids' must be included. the symbols
+; in excluded-ids must not appear in the list.  If binding-ids is 'all, then no symbols other than those
+; in the binding-ids may appear.
+; (syntax-object (listof symbol) (union (listof symbol) 'all) -> void)
+(define (check-mark mark-stx label binding-ids excluded-ids) 
+  (let* ([bindings (syntax-case mark-stx (lambda )
+                     [(lambda ()
+                        (mark-maker
+                         source
+                         label
+                         . bindings))
+                      (let loop ([binding-list (syntax->list (syntax bindings))])
+                        (cond [(null? binding-list) null]
+                              [(null? (cdr binding-list)) 
+                               (error 'check-mark "odd number of elements in binding list: ~a" (syntax-object->datum (syntax bindings)))]
+                              [else
+                               (when (not (eq? (car binding-list)
+                                               (syntax-case (cadr binding-list) (quote-syntax)
+                                                 [(quote-syntax stx)
+                                                  (syntax stx)])))
+                                 (error 'check-mark "binding pair does not match: ~a, ~a" (syntax-object->datum (car binding-list))
+                                        (syntax-ojbect->datum (cadr binding-list))))
+                               (when (not (identifier? (car binding-list)))
+                                 (error 'check-mark "syntax object is not an identifier: ~a" (syntax-object->datum (car bindings-list))))
+                               (cons (syntax-e (car binding-list))
+                                     (loop (cddr binding-list)))]))])])
+    (for-each (lambda (desired)
+                (when (not (memq desired bindings))
+                  (error 'check-mark "binding ~a not contained in binding-list: ~a" desired bindings)))
+              binding-ids)
+    (if (eq? excluded-ids 'all)
+        (for-each (lambda (binding)
+                    (when (not (memq binding binding-ids))
+                      (error 'check-mark "binding ~a does not appear in desired list: ~a" binding binding-ids)))
+                  bindings)
+        (for-each (lambda (not-desired)
+                    (when (memq not-desired bindings)
+                      (error 'check-mark "excluded binding ~a contained in binding-list: ~a" not-desired bindings)))
+                  excluded-ids))))
+    
+                           
+                       
+  
+  
 ; syntax-symbol=? : compares a list of symbols to a given symbol (or to each other if sym = #f)
 ; (union symbol #f) (listof syntax-object) -> boolean
 
@@ -98,6 +142,7 @@
                 (syntax-case (strip-outer-let stx) (with-continuation-mark begin let*-values let-values lambda quote-syntax)
                   [(with-continuation-mark
                     debug-key
+                    debug-mark-1
                     (lambda ()
                       (make-full-mark-proc
                        source
@@ -127,7 +172,7 @@
                         lifted-label_3
                         (quote-syntax lifted-label_4)))))
                     (printf "my-mark: ~a~n" (syntax-object->datum (syntax my-mark-2)))
-                    (tand (= (syntax-object->datum (syntax label-num)) 0)
+                    (tand (check-mark (syntax debug-mark-1) '(+ a) '(b c))
                           (syntax-symbol=? 'a (syntax->list (syntax (a-label a-label_2 a-label_3 a-label_4))))
                           (syntax-symbol=? #f (syntax->list (syntax (lifted-label lifted-label_2 lifted-label_3 lifted-label_4)))))])))
         ; test of lambda's one-label inferred-names :
@@ -191,20 +236,26 @@
                          (syntax-symbol=? #f (syntax->list (syntax (e-lifter_1 e-lifter_2)))))])))
         
         ; if
-        (list #'(let ([a 1] [b 2] [c 3] [d 4]) (if (a b) (a c) (a d))) '(lib "htdp-intermediate.ss" "lang")
+        (list #'(let ([a 1] [b 2] [c 3] [d 4]) (if (a b) (a c) (a d))) 'mzscheme
               (lambda (stx)
-                (syntax-case (strip-outer-let stx) ()
+                (syntax-case (strip-outer-let stx) (with-continuation-mark lambda begin if let-values)
                   [(with-continuation-mark
                     debug-key_1
-                    (lambda ()
-                      (mark-maker_1
-                       source_1
-                       label_1
-                       . 
-                       bindings))
-                    annotated)
-                   (printf " bindings : ~a~n" (syntax bindings))
-                   (printf " annotated: ~a~n" (syntax annotated))])))
+                    debug-mark_1
+                    (if (let-values temp-bindings
+                          (with-continuation-mark
+                           debug-key_2
+                           debug-mark-test
+                           . test-clauses))
+                        (let-values temp-bindings_2
+                          (with-continuation-mark
+                           debug-key_3
+                           debug-mark_3
+                        then-expr
+                        else-expr))
+                   (begin
+                     (printf " bindings : ~a~n" (syntax-object->datum (syntax bindings)))
+                     (printf " annotated: ~a~n" (syntax-object->datum (syntax annotated))))])))
         ; let 
 ;        (list #'( (let ([c 1] [d 2]) 
         

@@ -8,6 +8,7 @@
 (constant recur)
 (constant rec)
 (constant let+)
+(constant signature->symbols)
 
 (constant opt-lambda)
 (constant let-enumerate)

@@ -9,7 +9,4 @@
 (define-macro local local)
 (define-macro recur recur)
 (define-macro rec rec)
-(define-macro signature->symbols
-  (lambda (name)
-    (global-expansion-time-value name)))
-
+(define-macro signature->symbols signature->symbols)

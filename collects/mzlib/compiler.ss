@@ -123,7 +123,7 @@
 				  s)))])
 	 (let ([out (if (output-port? dest)
 			dest
-			(open-output-file dest 'truncate))])
+			(open-output-file dest 'truncate/replace))])
 	   (dynamic-wind
 	    void
 	    (lambda ()

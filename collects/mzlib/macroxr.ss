@@ -4,7 +4,8 @@
  (export send*
 	 local
 	 recur
-	 rec)
+	 rec
+	 signature->symbols)
  
  (define send*
   (lambda (x . rest)
@@ -49,5 +50,29 @@
 	`(letrec ([,x ,rest])
 	   ,x)
 	(raise-syntax-error 'rec "identifier must be a symbol" 
-			    (list 'rec x rest) x)))))
+			    (list 'rec x rest) x))))
 
+
+ (define signature->symbols
+   (lambda (name)
+     (unless (symbol? name)
+	     (raise-syntax-error 'signature->symbols
+				 "not an identifier"
+				 (list 'signature->symbols name)
+				 name))
+     (let ([v (global-expansion-time-value name)])
+       (letrec ([sig? (lambda (v)
+			(and (vector? v)
+			     (andmap
+			      (lambda (s)
+				(or (and (pair? s)
+					 (symbol? (car s))
+					 (sig? (cdr s)))
+				    (symbol? s)))
+			      (vector->list v))))])
+	 (unless (sig? v)
+		 (raise-syntax-error 'signature->symbols
+				     "expansion-time value is not a signature"
+				     (list 'signature->symbols name)
+				     name))
+	 v)))))

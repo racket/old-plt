@@ -876,13 +876,13 @@ static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2, i
 	else if (str2[l1])
 	  endres = -1;
 
-	v = strcoll(str1 + l1 + 1, str2 + l1 + 1);
+	v = strcoll((char *)str1 + l1 + 1,(char *) str2 + l1 + 1);
 	if (v)
 	  endres = v;
       }
     }
 
-    v = strcoll(str1, str2);
+    v = strcoll((char *)str1, (char *)str2);
     if (v)
       endres = v;
 

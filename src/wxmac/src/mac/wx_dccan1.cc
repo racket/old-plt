@@ -926,19 +926,23 @@ CGContextRef wxCanvasDC::GetCG()
    
   /* Make clipping regions match (including BeginUpdate effect) */
   clipRgn = NewRgn();
-  if (clipRgn) {
-    if (onpaint_reg) {
-      RgnHandle visRgn;
-      visRgn = NewRgn();
-      if (visRgn) {
-	::CopyRgn(onpaint_reg, clipRgn); // GetPortClipRegion(qdp, clipRgn);
-	::OffsetRgn(clipRgn, gdx, gdy);
-	GetPortVisibleRegion(qdp, visRgn);
-	SectRgn(clipRgn, visRgn, clipRgn);
-	DisposeRgn(visRgn);
+  if (canvas && canvas->IsHidden()) {
+    /* Leave the region empty */
+  } else {
+    if (clipRgn) {
+      if (onpaint_reg) {
+	RgnHandle visRgn;
+	visRgn = NewRgn();
+	if (visRgn) {
+	  ::CopyRgn(onpaint_reg, clipRgn); // GetPortClipRegion(qdp, clipRgn);
+	  ::OffsetRgn(clipRgn, gdx, gdy);
+	  GetPortVisibleRegion(qdp, visRgn);
+	  SectRgn(clipRgn, visRgn, clipRgn);
+	  DisposeRgn(visRgn);
+	}
+      } else {
+	GetPortVisibleRegion(qdp, clipRgn);
       }
-    } else {
-      GetPortVisibleRegion(qdp, clipRgn);
     }
   }
 

@@ -142,7 +142,7 @@ would be written like this:
                          ((lambda ((name xs variable) ...) (name body e))
                           (name args v) ...))
                 (replace c hole 
-                 (foldl (lambda (term var arg) (lc-subst x arg term))
+                 (foldl (lambda (term var arg) (lc-subst var arg term))
                         body
                         args
                         xs)))

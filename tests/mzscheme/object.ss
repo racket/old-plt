@@ -354,6 +354,18 @@
 (error-test '(ivar o1 a) ivar?)
 (test 4 ivar/proc o2 'a)
 
+(define (ivar-tests -ivar xtra-ok?)
+  (syntax-test  `(,-ivar))
+  (syntax-test  `(,-ivar 7))
+  (syntax-test  `(,-ivar 7 8))
+  (syntax-test  `(,-ivar 7 (x)))
+  (syntax-test  `(,-ivar 7 8 9))
+  (unless xtra-ok?
+    (syntax-test  `(,-ivar 7 x 9))))
+(ivar-tests 'ivar #f)
+(ivar-tests 'send #t)
+(ivar-tests 'make-generic #f)
+
 (test 0 'send (send o1 f-1-a))
 (test 1 'send (send o2 f-1-a))
 (test 4 'send (send o2 f-2-a))

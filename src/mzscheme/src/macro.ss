@@ -506,12 +506,24 @@
 
 (#%define-macro #%send 
   (#%lambda (obj msg . params)
+    (#%unless (#%symbol? msg)
+      (#%raise-syntax-error
+       'send
+       "bad syntax (expected an ivar name)"
+       (#%list* 'send obj msg params)
+       msg))
     `((#%ivar ,obj ,msg) ,@params)))
 
 > kstop send <
 
 (#%define-macro #%make-generic 
   (#%lambda (c% name)
+    (#%unless (#%symbol? name)
+      (#%raise-syntax-error
+       'make-generic
+       "bad syntax (expected an ivar name)"
+       (#%list 'make-generic c% name)
+       name))
     `(#%make-generic/proc ,c% (quote ,name))))
 
 > kstop make-generic <
@@ -521,7 +533,14 @@
       (#%if (#%list? args)
 	  (#%let ([l (#%length args)])
 	    (#%cond
-	     [(#%= l 2) `(#%ivar/proc ,(#%car args) (#%quote ,(#%cadr args)))]
+	     [(#%= l 2)
+	      (#%unless (#%symbol? (#%cadr args))
+		 (#%raise-syntax-error
+		  'ivar
+		  "bad syntax (expected an ivar name)"
+		  (#%cons 'ivar args)
+		  (#%cadr args)))
+	      `(#%ivar/proc ,(#%car args) (#%quote ,(#%cadr args)))]
 	     [else (#%raise-syntax-error
 		    'ivar
 		    (#%format "bad syntax (~s parts after the keyword)" l)

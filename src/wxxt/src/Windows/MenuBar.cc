@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: MenuBar.cc,v 1.12 1999/11/04 17:25:38 mflatt Exp $
+ * $Id: MenuBar.cc,v 1.13 1999/11/22 20:29:35 mflatt Exp $
  *
  * Purpose: menu bar class
  *
@@ -89,17 +89,19 @@ Bool wxMenuBar::Create(wxPanel *panel)
     int ph, pw;
     Dimension hh, ww;
     wxWindow_Xintern *parenth;
+    Widget wgt;
 
     ChainToPanel(panel, 0, "menubar");
 
     parenth = panel->GetHandle();
 
     // create widgets
-    X->frame = XtVaCreateManagedWidget
+    wgt = XtVaCreateManagedWidget
 	("menubar", xfwfEnforcerWidgetClass, parenth->handle,
 	 XtNtraversalOn, FALSE, XtNhighlightThickness, 0,
 	 NULL);
-    X->handle = XtVaCreateWidget
+    X->frame = wgt;
+    wgt = XtVaCreateWidget
 	("menubar", menuWidgetClass, X->frame,
 	 XtNbackground,  bg->GetPixel(cmap),
 	 XtNforeground,  fg->GetPixel(cmap),
@@ -108,6 +110,7 @@ Bool wxMenuBar::Create(wxPanel *panel)
 	 XtNmenu,        top,
 	 XtNcursor,      None,
 	 NULL);
+    X->handle = wgt;
     // callbacks
     XtAddCallback(X->handle, XtNonSelect,  wxMenuBar::CommandEventCallback, this);
     XtAddCallback(X->handle, XtNonNewItem, wxMenuBar::SelectEventCallback, this);
@@ -426,7 +429,7 @@ void wxMenuBar::CommandEventCallback(Widget WXUNUSED(w),
       
       // call OnMenuCommandt of parent (usually of a frame)
       if (menu->parent)
-	menu->parent->GetEventHandler()->OnMenuCommand(item->ID);
+	menu->parent->OnMenuCommand(item->ID);
     }
 }
 
@@ -438,7 +441,7 @@ void wxMenuBar::SelectEventCallback(Widget WXUNUSED(w),
 
     // call OnMenuSelect of parent (usually of a frame)
     if (menu->parent)
-	menu->parent->GetEventHandler()->OnMenuSelect(item->ID);
+	menu->parent->OnMenuSelect(item->ID);
 }
 
 void wxMenuBar::Stop(void)

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Item.cc,v 1.5 1999/11/18 16:35:07 mflatt Exp $
+ * $Id: Item.cc,v 1.6 1999/11/23 17:29:57 mflatt Exp $
  *
  * Purpose: base class for all panel items
  *
@@ -109,7 +109,7 @@ void wxItem::ProcessCommand(wxCommandEvent *event)
     callback(this, event);
   } else {
     if (parent)
-      parent->GetEventHandler()->OnCommand(this, event);
+      parent->OnCommand(this, event);
   }
 }
 

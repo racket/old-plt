@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Panel.cc,v 1.5 1999/11/23 17:29:57 mflatt Exp $
+ * $Id: Panel.cc,v 1.6 1999/11/25 16:32:23 mflatt Exp $
  *
  * Purpose: base class for all panels
  *
@@ -201,8 +201,10 @@ void wxPanel::Fit(void)
 void wxPanel::ChangeToGray(Bool gray)
 {
   wxChildNode *cn;
+  wxChildList *cl;
   wxWindow::ChangeToGray(gray);
-  for (cn = GetChildren()->First(); cn; cn = cn->Next()) {
+  cl = GetChildren();
+  for (cn = cl->First(); cn; cn = cn->Next()) {
     wxWindow *w;
     w = (wxWindow *)cn->Data();
     w->InternalEnable(!gray, TRUE);

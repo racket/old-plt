@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: ListBox.cc,v 1.17 1999/11/18 16:35:07 mflatt Exp $
+ * $Id: ListBox.cc,v 1.18 1999/11/22 20:29:35 mflatt Exp $
  *
  * Purpose: list box panel item
  *
@@ -261,7 +261,6 @@ void wxListBox::Delete(int n)
       count = GetSelections(&selections);
 
 
-      delete choices[n]; // free string;
       for (i=n+1; i<num_choices; ++i) { // shrink arrays
 	choices[i-1] = choices[i];
 	client_data[i-1] = client_data[i];
@@ -302,8 +301,8 @@ void wxListBox::InsertItems(int n_items, char **items, int pos)
     }
     num_choices+=n_items;
     // delete old arrays
-    delete choices;      choices = new_choices;
-    delete client_data;  client_data = new_client_data;
+    choices = new_choices;
+    client_data = new_client_data;
 
     SetInternalData();
 }

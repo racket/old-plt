@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: RadioBox.cc,v 1.11 1999/11/18 16:35:08 mflatt Exp $
+ * $Id: RadioBox.cc,v 1.12 1999/11/22 20:29:35 mflatt Exp $
  *
  * Purpose: radio box panel item
  *
@@ -255,7 +255,11 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     toggles = new long[num_toggles];
     enabled = new Bool[num_toggles];
 #ifdef MZ_PRECISE_GC
-    bm_labels = (wxBitmap *)GC_malloc(num_toggles * sizeof(wxBitmap *));
+    {
+      wxBitmap **ba;
+      ba = (wxBitmap **)GC_malloc(num_toggles * sizeof(wxBitmap *));
+      bm_labels = ba;
+    }
 #else
     bm_labels = new wxBitmap*[num_toggles];
 #endif
@@ -264,16 +268,18 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 
 	char *kind;
 	void *label;
+	wxBitmap *achoice;
 
 	sprintf(num_name, "%d", i);
 
 	enabled[i] = 1;
 
-	if (choices[i]->Ok() && (choices[i]->selectedIntoDC >= 0)) {
+	achoice = choices[i];
+	if (achoice->Ok() && (achoice->selectedIntoDC >= 0)) {
 	  kind = XtNpixmap;
-	  label = (void *)GETPIXMAP(choices[i]);
-	  bm_labels[i] = choices[i];
-	  choices[i]->selectedIntoDC++;
+	  label = (void *)GETPIXMAP(achoice);
+	  bm_labels[i] = achoice;
+	  achoice->selectedIntoDC++;
 	} else {
 	  kind = XtNlabel;
 	  label = (char *)"<bad-image>";
@@ -330,7 +336,8 @@ wxRadioBox::~wxRadioBox(void)
     int i;
     for (i = 0; i < num_toggles; i++) {
       if (bm_labels[i]) {
-	--bm_labels[i]->selectedIntoDC;
+	wxBitmap *bm = bm_labels[i];
+	--bm->selectedIntoDC;
 	XtVaSetValues(((Widget*)toggles)[i], XtNpixmap, NULL, NULL);
       }
     }
@@ -434,10 +441,12 @@ void wxRadioBox::SetLabel(int item, wxBitmap *bitmap)
   if (0 <= item && item < num_toggles
       && bm_labels && bm_labels[item]) {
     Pixmap pm;
+    wxBitmap *obm;
     pm = GETPIXMAP(bitmap);
-    --bm_labels[item]->selectedIntoDC;
+    obm = bm_labels[item];
+    --obm->selectedIntoDC;
     bm_labels[item] = bitmap;
-    bm_labels[item]->selectedIntoDC++;
+    bitmap->selectedIntoDC++;
     XtVaSetValues(TOGGLES[item], XtNlabel, NULL,
 		  XtNpixmap, pm, NULL);
   }

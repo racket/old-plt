@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Layout.cc,v 1.3 1999/11/19 22:02:38 mflatt Exp $
+ * $Id: Layout.cc,v 1.4 1999/11/22 20:29:35 mflatt Exp $
  *
  * Purpose: layout classes
  *
@@ -548,7 +548,8 @@ void wxWindow::Layout(void)
 	child  = (wxWindow *)node->Data();
 	if (wxSubType(child->__type, wxTYPE_FRAME))
 	    continue;
-	child->GetConstraints()->UnDone();
+	constr = child->GetConstraints();
+	constr->UnDone();
     }
     // iterate through child until (no changes) || (no left iterations)
     {
@@ -560,7 +561,8 @@ void wxWindow::Layout(void)
 	  child  = (wxWindow *)node->Data();
 	  if (wxSubType(child->__type, wxTYPE_FRAME))
 	    continue;
-	  changes |= child->GetConstraints()->SatisfyConstraints(child);
+	  child->GetConstraints();
+	  changes |= constr->SatisfyConstraints(child);
 	}
       } while (changes && --left_iterations);
     }

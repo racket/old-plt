@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.33 1999/11/21 00:08:47 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.34 1999/11/22 20:29:34 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -744,7 +744,11 @@ void wxWindowDC::SetBrush(wxBrush *brush)
 
     values.fill_style = FillSolid;
     // wxXOR shall work the correct way
-    pixel = brush->GetColour()->GetPixel(current_cmap, IS_COLOR, 1);
+    {
+      wxColour *bcol;
+      bcol = brush->GetColour();
+      pixel = bcol->GetPixel(current_cmap, IS_COLOR, 1);
+    }
     if (brush->GetStyle() == wxXOR) {
 	XGCValues values_req;
 	XGetGCValues(DPY, BRUSH_GC, GCBackground, &values_req);
@@ -844,7 +848,11 @@ void wxWindowDC::SetPen(wxPen *pen)
     scale = XLOG2DEVREL(pw);
     values.line_width = scale;
     // wxXOR shall work the correct way
-    pixel = pen->GetColour()->GetPixel(current_cmap, IS_COLOR, 1);
+    {
+      wxColour *pcol;
+      pcol = pen->GetColour();
+      pixel = pcol->GetPixel(current_cmap, IS_COLOR, 1);
+    }
     style = pen->GetStyle();
     xor = 0;
 

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.37 1999/11/22 20:29:35 mflatt Exp $
+ * $Id: Window.cc,v 1.38 1999/11/25 19:56:29 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -80,8 +80,6 @@ wxWindow::wxWindow(void)
     // child <-> parent relationships
     parent   = NULL;
     children = DEBUG_NEW wxChildList;
-    // event handler
-    event_handler = this;
     // layout information
     constraints = DEBUG_NEW wxLayoutConstraints;
     constraints->left.Absolute(0);
@@ -335,7 +333,7 @@ void wxWindow::Configure(int x, int y, int width, int height)
 
     if (i) {
       XtSetValues(X->frame, args, i);
-      GetEventHandler()->OnSize(width, height);
+      OnSize(width, height);
     }
 }
 
@@ -888,8 +886,11 @@ void wxWindow::SetFocus(void)
 
 Bool wxWindow::Show(Bool show)
 {
-    if (parent)
-      parent->GetChildren()->Show(this, show);
+    if (parent) {
+      wxChildList *cl;
+      cl = parent->GetChildren();
+      cl->Show(this, show);
+    }
 
     if (!X->handle) // forbid, if no widget associated
       return TRUE;
@@ -986,8 +987,8 @@ void wxWindow::OnChar(wxKeyEvent* wxevent)
 void wxWindow::OnCommand(wxWindow* win, wxCommandEvent* event)
 {
     // OnCommand events are routed to the parent by default
-    if (parent && parent->GetEventHandler())
-	parent->GetEventHandler()->OnCommand(win, event);
+    if (parent)
+      parent->OnCommand(win, event);
 }
 
 void wxWindow::OnEvent(wxMouseEvent* wxevent)
@@ -1085,15 +1086,16 @@ void wxWindow::FocusChangeCallback(void*,
 				   void*on)
 {
   wxWindow *win = *winp;
+
   if (!win)
     return;
 
   if (on) {
     win->misc_flags |= FOCUS_FLAG;
-    win->GetEventHandler()->OnSetFocus();
+    win->OnSetFocus();
   } else { 
     win->misc_flags -= (win->misc_flags & FOCUS_FLAG);
-    win->GetEventHandler()->OnKillFocus();
+    win->OnKillFocus();
   }
 }
 
@@ -1245,10 +1247,11 @@ void wxWindow::ExposeEventHandler(Widget     WXUNUSED(w),
     if (win->painting_enabled) { // painting is allowed
 	if (win->dc) {
 	    if (!(win->dc->ok)) { // setup drawable of dc on first expose
-		win->dc->X->draw_window = win->dc->X->drawable = XtWindow(win->X->handle);
-		win->dc->SetBackground(&win->dc->current_background_color);
-		win->dc->Clear();
-		win->dc->ok = TRUE;
+	      win->dc->X->drawable = XtWindow(win->X->handle);
+	      win->dc->X->draw_window = win->dc->X->drawable;
+	      win->dc->SetBackground(&win->dc->current_background_color);
+	      win->dc->Clear();
+	      win->dc->ok = TRUE;
 	    }
 	    // setup clipping region
 	    win->dc->X->expose_reg = einfo->region;
@@ -1257,7 +1260,7 @@ void wxWindow::ExposeEventHandler(Widget     WXUNUSED(w),
 	// call refresh method
 	win->X->expose_region = einfo->region;
 	win->X->expose_event  = einfo->event;
-	win->GetEventHandler()->OnPaint();
+	win->OnPaint();
 	if (win->dc) {
 	    // reset clipping region
 	    win->dc->X->expose_reg = NULL;
@@ -1288,7 +1291,7 @@ void wxWindow::FrameEventHandler(Widget w,
 	return;
 	
       // delete frame, if allowed
-      if (win->GetEventHandler()->OnClose())
+      if (win->OnClose())
 	win->Show(FALSE);
     }
     break;
@@ -1298,8 +1301,8 @@ void wxWindow::FrameEventHandler(Widget w,
     // layout window
     win->Layout();
     // notify size and position change
-    win->GetEventHandler()->OnMove(xev->xconfigure.width, xev->xconfigure.height);
-    win->GetEventHandler()->OnSize(xev->xconfigure.width, xev->xconfigure.height);
+    win->OnMove(xev->xconfigure.width, xev->xconfigure.height);
+    win->OnSize(xev->xconfigure.width, xev->xconfigure.height);
     break;
   case UnmapNotify:
     if (wxSubType(win->__type, wxTYPE_DIALOG_BOX)) {
@@ -1421,7 +1424,7 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
       break;
     }
 
-    win->GetEventHandler()->OnScroll(wxevent);
+    win->OnScroll(wxevent);
 
     wxevent->eventHandle = NULL;
   }
@@ -1481,7 +1484,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	  if (subWin)
 	    *continue_to_dispatch_return = TRUE;
 	  else
-	    win->GetEventHandler()->OnChar(wxevent);
+	    win->OnChar(wxevent);
 	}
 	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
         /* Event was handled by OnFunctionKey and/or OnChar */ }
@@ -1568,7 +1571,7 @@ void wxWindow::WindowEventHandler(Widget w,
 		&& !wxSubType(win->__type, wxTYPE_MENU_BAR)
 		&& !wxSubType(win->__type, wxTYPE_PANEL))
 	      win->SetFocus();
-	    win->GetEventHandler()->OnEvent(wxevent);
+	    win->OnEvent(wxevent);
 	  }
 	}
 	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
@@ -1590,7 +1593,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	      win->misc_flags |= ACTIVE_VIA_POINTER_FLAG;
 	    else
 	      win->misc_flags -= (win->misc_flags & ACTIVE_VIA_POINTER_FLAG);
-	    win->GetEventHandler()->OnActivate(Enter);
+	    win->OnActivate(Enter);
 	  }
 	}
       } else {
@@ -1614,7 +1617,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxevent->timeStamp       = xev->xbutton.time; /* MATTHEW */
 	*continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */ 
 	if (!win->CallPreOnEvent(win, wxevent))
-	  win->GetEventHandler()->OnEvent(wxevent);
+	  win->OnEvent(wxevent);
 	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
       }
       break;
@@ -1648,7 +1651,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	  if (subWin)
 	    *continue_to_dispatch_return = TRUE;
 	  else
-	    win->GetEventHandler()->OnEvent(wxevent);
+	    win->OnEvent(wxevent);
 	}
 	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
       }
@@ -1680,7 +1683,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	    else
 	      win->misc_flags -= (win->misc_flags & ACTIVE_VIA_POINTER_FLAG);
 	  }
-	  win->GetEventHandler()->OnActivate(Enter);
+	  win->OnActivate(Enter);
 	}
       }
       break;
@@ -1688,13 +1691,14 @@ void wxWindow::WindowEventHandler(Widget w,
 	if (win->dc && win->painting_enabled) { // expose only if DC available
 	    // setup drawable of dc if dc available
 	    if (!(win->dc->ok)) { // first expose call
-		win->dc->X->draw_window = win->dc->X->drawable = XtWindow(win->X->handle);
-		win->dc->SetBackground(&win->dc->current_background_color);
-		win->dc->Clear();
-		win->dc->ok = TRUE;
+	      win->dc->X->drawable = XtWindow(win->X->handle);
+	      win->dc->X->draw_window = win->dc->X->drawable;
+	      win->dc->SetBackground(&win->dc->current_background_color);
+	      win->dc->Clear();
+	      win->dc->ok = TRUE;
 	    }
 	    // call refresh method
-	    win->GetEventHandler()->OnPaint();
+	    win->OnPaint();
 	}
         break;
     }

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cxx,v 1.4 1999/11/21 00:09:16 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cxx,v 1.5 1999/11/24 21:20:32 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -984,9 +984,13 @@ void wxPostScriptDC::SetPen (wxPen * pen)
   }
 
   // Line colour
-  red = pen->GetColour()->Red();
-  blue = pen->GetColour()->Blue();
-  green = pen->GetColour()->Green();
+  {
+    wxColour *pc;
+    pc = pen->GetColour();
+    red = pc->Red();
+    blue = pc->Blue();
+    green = pc->Green();
+  }
 
   if (!Colour)
     {
@@ -1053,9 +1057,13 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
   }
 
   // Brush colour
-  red = brush->GetColour()->Red();
-  blue = brush->GetColour()->Blue();
-  green = brush->GetColour()->Green();
+  {
+    wxColour *bc;
+    bc = brush->GetColour(); 
+    red = bc->Red();
+    blue = bc->Blue();
+    green = bc->Green();
+  }
 
   if (!Colour) {
     // Anything not black is white
@@ -1531,7 +1539,11 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
   }
 
   /* Output data as hex digits: */
-  mono = (src->GetObject()->GetDepth() == 1);
+  {
+    wxBitmap *sbm;
+    sbm = src->GetObject();
+    mono = (sbm->GetDepth() == 1);
+  }
 
   if (mono && dcolor) {
     pr = dcolor->Red();

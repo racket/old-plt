@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.22 1999/11/04 17:25:37 mflatt Exp $
+ * $Id: Frame.cc,v 1.23 1999/11/18 23:25:14 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -439,7 +439,7 @@ void wxFrame::SetMenuBar(wxMenuBar *new_menubar)
 
 void wxFrame::Command(int id)
 {
-    GetEventHandler()->OnMenuCommand(id);
+  OnMenuCommand(id);
 }
 
 static void ForceFocus(Widget frame)

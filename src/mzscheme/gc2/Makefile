@@ -81,7 +81,7 @@ XSRCS = $(XSRCDIR)/salloc.c \
 	$(XSRCDIR)/vector.c \
 	$(XSRCDIR)/main.c
 
-all: objects $(OBJDIR)
+all: objects $(OBJDIR) ctok
 	$(XMAKE) xobjects
 
 xsrcs: $(XSRCS)

@@ -25,16 +25,15 @@
 					     "~astarting ~a at ~a~n" tab sym
 					     (current-process-milliseconds))
 				    (let ([s tab])
-				      (dynamic-wind
-				       (lambda () (set! tab (string-append " " tab)))
-				       (lambda ()
-					 (begin0
-					  (loader)
-					  (fprintf (current-error-port)
-						   "~adone ~a at ~a~n"
-						   tab sym
-						   (current-process-milliseconds))))
-				       (lambda () (set! tab s)))))))))
+				      (begin0
+				       (dynamic-wind
+					(lambda () (set! tab (string-append " " tab)))
+					(lambda () (loader))
+					(lambda () (set! tab s)))
+				       (fprintf (current-error-port)
+						"~adone ~a at ~a~n"
+						tab sym
+						(current-process-milliseconds)))))))))
 		       (load filename)))
 		 (lambda () (set! tab s))))
 	      (fprintf (current-error-port)

@@ -140,12 +140,18 @@
 				     (send edit get-start-position)
 				     (send edit get-end-position))
 			       (send find-edit get-text))
-		 (send edit insert (send replace-edit get-text))))]
+		 (let ([text (send replace-edit get-text)]
+		       [position (send edit get-start-position)])
+		   (send edit insert text)
+		   (send edit set-position position (+ position (string-length text))))))]
 	    [done-find #f]
 	    [on-replace-and-find
 	     (lambda args
-	       (if done-find (on-replace))
-	       (on-find))]
+	       (dynamic-wind (lambda () (send edit begin-edit-sequence))
+			     (lambda () 
+			       (when done-find (on-replace))
+			       (on-find))
+			     (lambda () (send edit end-edit-sequence))))]
 	    
 	    [on-replace-all
 	     (lambda args

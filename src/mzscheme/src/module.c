@@ -734,12 +734,19 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
     start_module(m, env, 0, modidx, 1, scheme_null);
 
   if (SCHEME_SYMBOLP(name)) {
+    Scheme_Bucket *b;
+
     menv = scheme_module_access(srcmname, env);
 
+    b = scheme_bucket_from_table(menv->toplevel, (const char *)srcname);
+
     if (get_bucket)
-      return (Scheme_Object *)scheme_bucket_from_table(menv->toplevel, (const char *)srcname);
-    else
-      return (Scheme_Object *)scheme_lookup_in_table(menv->toplevel, (const char *)srcname);
+      return (Scheme_Object *)b;
+    else {
+      if (!b->val && fail_with_error)
+	scheme_unbound_global(b);
+      return b->val;
+    }
   } else
     return scheme_void;
 }

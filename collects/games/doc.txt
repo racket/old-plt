@@ -36,9 +36,9 @@ Run Games and select a game by clicking one of the buttons:
       - 1 player (not counting the dealer)
       - 4 decks, reshuffled after 3/4 of the cards are used
       - Dealer stands on soft 17s
-      - Splitting is allowed only on the first two cards, and only if they
-        are equal; 10 and the face cards are all considered equal for
-        splitting
+      - Splitting is allowed only on the first two cards, and only if
+        they are equal; 10 and the face cards are all considered equal
+        for splitting
       - Doubling is allowed on all unsplit hands, not on split hands
       - No blackjacks after splitting
       - No surrender

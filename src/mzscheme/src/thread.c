@@ -209,6 +209,8 @@ static Scheme_Object *thread_swap_callbacks;
 static void register_traversers(void);
 #endif
 
+static void prepare_thread_for_GC(Scheme_Object *t);
+
 static Scheme_Object *custodian_require_mem(int argc, Scheme_Object *args[]);
 static Scheme_Object *custodian_limit_mem(int argc, Scheme_Object *args[]);
 
@@ -386,6 +388,33 @@ void scheme_init_thread(Scheme_Env *env)
   scheme_add_global_constant("break-thread", 
 			     scheme_make_prim_w_arity(break_thread,
 						      "break-thread", 
+						      1, 1), 
+			     env);
+
+  scheme_add_global_constant("thread-suspend", 
+			     scheme_make_prim_w_arity(thread_suspend,
+						      "thread-suspend", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("thread-resume", 
+			     scheme_make_prim_w_arity(thread_resume,
+						      "thread-resume", 
+						      1, 2), 
+			     env);
+
+  scheme_add_global_constant("make-thread-resume-waitable", 
+			     scheme_make_prim_w_arity(make_thread_resume,
+						      "make-thread-resume-waitable", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("make-thread-suspend-waitable", 
+			     scheme_make_prim_w_arity(make_thread_suspend,
+						      "make-thread-suspend-waitable", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("make-thread-dead-waitable", 
+			     scheme_make_prim_w_arity(make_thread_dead,
+						      "make-thread-dead-waitable", 
 						      1, 1), 
 			     env);
 
@@ -1453,18 +1482,53 @@ static void select_thread(Scheme_Thread *start_thread)
     if (!new_thread && !start_thread) {
       /* The main thread must be blocked on a nestee, and everything
 	 else is suspended. But we have to go somewhere.  Weakly
-	 resume the main thread's innermost nestee. */
+	 resume the main thread's innermost nestee. If it's
+         suspended by the user, then we've deadlocked. */
       new_thread = scheme_main_thread;
       while (new_thread->nestee) {
 	new_thread = new_thread->nestee;
       }
-      scheme_weak_resume_thread(new_thread);
+      if (new_thread->running & MZTHREAD_USER_SUSPENDED) {
+	scheme_console_printf("unbreakable deadlock\n");
+	exit(-1);
+      } else {
+	scheme_weak_resume_thread(new_thread);
+      }
       break;
     } 
     start_thread = NULL;
   } while (!new_thread);
 
   scheme_swap_thread(new_thread);
+}
+
+static void thread_is_dead(Scheme_Thread *r)
+{
+  if (r->dead_box) {
+    Scheme_Object *o;
+    SCHEME_PINT_VAL(r->dead_box) = 1;
+    o = SCHEME_IPTR_VAL(r->dead_box);
+    scheme_post_sema_all(o);
+    r->dead_box = NULL;
+  }
+  if (r->suspend_box) {
+    SCHEME_PTR2_VAL(r->suspend_box) = NULL;
+    r->suspend_box = NULL;
+  }
+  if (r->resume_box) {
+    SCHEME_PTR2_VAL(r->resume_box) = NULL;
+    r->resume_box = NULL;
+  }
+  
+  r->list_stack = NULL;
+
+  r->dw = NULL;
+  r->config = NULL;
+  r->cont_mark_stack_segments = NULL;
+  r->overflow = NULL;
+
+  memset(r->error_buf, 0, sizeof(mz_jmp_buf));
+  memset(r->overflow_buf, 0, sizeof(mz_jmp_buf));
 }
 
 static void remove_thread(Scheme_Thread *r)
@@ -1513,15 +1577,8 @@ static void remove_thread(Scheme_Thread *r)
   if (r->list_stack)
     GC_free(r->list_stack);
 #endif
-  r->list_stack = NULL;
 
-  r->dw = NULL;
-  r->config = NULL;
-  r->cont_mark_stack_segments = NULL;
-  r->overflow = NULL;
-
-  memset(r->error_buf, 0, sizeof(mz_jmp_buf));
-  memset(r->overflow_buf, 0, sizeof(mz_jmp_buf));
+  thread_is_dead(r);
 
   /* In case we kill a thread while in a bignum operation: */
   scheme_gmp_tls_restore_snapshot(r->gmp_tls, NULL, ((r == scheme_current_thread) ? 1 : 2));
@@ -1909,6 +1966,10 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   scheme_init_error_escape_proc(np);
   scheme_set_param(np->config, MZCONFIG_EXN_HANDLER, nested_exn_handler);
 
+  /* zero out anything we need now, because nestee disables
+     GC cleaning for this thread: */
+  prepare_thread_for_GC((Scheme_Object *)nestee);
+
   np->nester = p;
   p->nestee = np;
   np->external_break = p->external_break;
@@ -1938,6 +1999,9 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 #endif
 
   scheme_current_thread = np;
+
+  if (p->next) /* not main thread... */
+    scheme_weak_suspend_thread(p);
 
   /* Call thunk, catch escape: */
   if (scheme_setjmp(np->error_buf)) {
@@ -1971,20 +2035,20 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   p->nestee = NULL;
   np->nester = NULL;
 
-  np->runstack_start = NULL;
-  np->runstack_saved = NULL;
-  np->list_stack = NULL;
-  np->config = NULL;
-  np->dw = NULL;
+  thread_is_dead(np);
 
   scheme_current_thread = p;
+
+  if (p->next) /* not main thread... */
+    scheme_weak_resume_thread(p);
 
 #ifdef RUNSTACK_IS_GLOBAL
   MZ_CONT_MARK_STACK = p->cont_mark_stack;
   MZ_CONT_MARK_POS = p->cont_mark_pos;
 #endif
 
-  if (p->running & MZTHREAD_KILLED)
+  if ((p->running & MZTHREAD_KILLED)
+      || (p->running & MZTHREAD_USER_SUSPENDED))
     scheme_thread_block(0.0);
 
   if (failure) {
@@ -2318,6 +2382,15 @@ void scheme_thread_block(float sleep_time)
       exit_or_escape(p);
   }
 
+  if (p->running & MZTHREAD_USER_SUSPENDED) {
+    /* This thread was suspended. */
+    if (!p->next) {
+      /* Suspending the main thread... */
+      select_thread(NULL);
+    } else
+      scheme_weak_suspend_thread(p);
+  }
+
   /* Check scheduled_kills early and often. */
   check_scheduled_kills();
 
@@ -2362,6 +2435,13 @@ void scheme_thread_block(float sleep_time)
       
       if (next->nestee) {
 	/* Blocked on nestee */
+      } else if (next->running & MZTHREAD_USER_SUSPENDED) {
+	if (next->next) {
+	  /* If a non-main thread is still in the queue, 
+	     it needs to be swapped in so it can clean up
+	     and suspend itself. */
+	  break;
+	}
       } else if (next->running & MZTHREAD_KILLED) {
 	/* This one has been terminated. */
 	if ((next->running & MZTHREAD_NEED_KILL_CLEANUP) 
@@ -2458,6 +2538,14 @@ void scheme_thread_block(float sleep_time)
       if (!do_atomic)
 	exit_or_escape(p);
     }
+  }
+
+  /* Suspended while I was asleep? */
+  if (p->running & MZTHREAD_USER_SUSPENDED) {
+    if (!p->next)
+      scheme_thread_block(0.0); /* main thread handled at top of this function */
+    else
+      scheme_weak_suspend_thread(p);
   }
 
   /* Check for external break again after swap or sleep */
@@ -2583,6 +2671,9 @@ void scheme_weak_suspend_thread(Scheme_Thread *r)
 {
   Scheme_Thread *swap_to = r->next;
 
+  if (r->running & MZTHREAD_SUSPENDED)
+    return;
+
   if (r->prev) {
     r->prev->next = r->next;
     r->next->prev = r->prev;
@@ -2595,6 +2686,8 @@ void scheme_weak_suspend_thread(Scheme_Thread *r)
   r->next = r->prev = NULL;
 
   r->running |= MZTHREAD_SUSPENDED;
+
+  prepare_thread_for_GC((Scheme_Object *)r);
 
   if (r == scheme_current_thread) {
     /* NOTE: swap_to might not be a good choice, because it
@@ -2610,13 +2703,15 @@ void scheme_weak_suspend_thread(Scheme_Thread *r)
 
 void scheme_weak_resume_thread(Scheme_Thread *r)
 {
-  if (r->running & MZTHREAD_SUSPENDED) {
-    r->running -= MZTHREAD_SUSPENDED;
-    r->next = scheme_first_thread;
-    r->prev = NULL;
-    scheme_first_thread = r;
-    r->next->prev = r;
-    r->ran_some = 1;
+  if (!(r->running & MZTHREAD_USER_SUSPENDED)) {
+    if (r->running & MZTHREAD_SUSPENDED) {
+      r->running -= MZTHREAD_SUSPENDED;
+      r->next = scheme_first_thread;
+      r->prev = NULL;
+      scheme_first_thread = r;
+      r->next->prev = r;
+      r->ran_some = 1;
+    }
   }
 }
 
@@ -2669,16 +2764,8 @@ static int do_kill_thread(Scheme_Thread *p)
     return 0;
   }
 
-  {
-    Scheme_Thread *nestee;
-
-    nestee = p->nestee;
-
-    if (nestee)
-      scheme_break_thread(nestee);
-  }
-
-  scheme_weak_resume_thread(p);
+  if (p->nestee)
+    scheme_break_thread(p->nestee);
 
   while (p->private_on_kill) {
     p->private_on_kill(p->private_kill_data);
@@ -2698,9 +2785,19 @@ static int do_kill_thread(Scheme_Thread *p)
   scheme_remove_managed(p->mref, (Scheme_Object *)p->mr_hop);
 
   if (p->running) {
+    if (p->running & MZTHREAD_USER_SUSPENDED) {
+      /* end user suspension, because we need to kill the thread */
+      p->running -= MZTHREAD_USER_SUSPENDED;
+    }
+
     p->running |= MZTHREAD_KILLED;
-    if (p->running & MZTHREAD_NEED_KILL_CLEANUP)
+    if ((p->running & MZTHREAD_NEED_KILL_CLEANUP)
+	|| p->nester)
       scheme_weak_resume_thread(p);
+    else if (p != scheme_current_thread) {
+      /* Do kill stuff... */
+      remove_thread(p);
+    }
   }
   if (p == scheme_current_thread)
     kill_self = 1;
@@ -2784,6 +2881,58 @@ void scheme_pop_kill_action()
     p->private_on_kill = NULL;
     p->private_kill_data = NULL;
   }
+}
+
+/*========================================================================*/
+/*                      suspend/resume and waitables                      */
+/*========================================================================*/
+
+static Scheme_Object *suspend_thread(int argc, Scheme_Object *argv[])
+{
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
+    scheme_wrong_type("suspend-thread", "thread", 0, argc, argv);
+
+  if (!MZTHREAD_STILL_RUNNING(p->running))
+    return scheme_void;
+  
+  if (p->running & MZTHREAD_USER_SUSPENDED)
+    return scheme_void;
+
+  if (!p->next) {
+    /* p is the main thread, which we're not allowed to
+       suspend in the normal way. */
+    p->running |= MZTHREAD_USER_SUSPENDED;
+    if (p == scheme_current_thread)
+      scheme_thread_block(0.0);
+  } else if ((p->running & MZTHREAD_NEED_KILL_CLEANUP)
+	     && (p->running & MZTHREAD_SUSPENDED)) {
+    /* p probably needs to get out of semaphore-wait lines, etc. */
+    scheme_weak_resume_thread(p);
+    p->running |= MZTHREAD_USER_SUSPENDED;
+  } else {
+    p->running |= MZTHREAD_USER_SUSPENDED;
+    scheme_weak_suspend_thread(p); /* ok if p is scheme_current_thread */
+  }
+
+  return scheme_void;
+}
+
+static Scheme_Object *resume_thread(int argc, Scheme_Object *argv[])
+{
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
+    scheme_wrong_type("resume-thread", "thread", 0, argc, argv);
+
+  if (!MZTHREAD_STILL_RUNNING(p->running))
+    return scheme_void;
+  
+  if (!(p->running & MZTHREAD_USER_SUSPENDED))
+    return scheme_void;
+
+  p->running -= MZTHREAD_USER_SUSPENDED;
+
+  scheme_weak_resume_thread(p);
+
+  return scheme_void;
 }
 
 /*========================================================================*/

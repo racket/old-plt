@@ -676,6 +676,9 @@ typedef struct Scheme_Thread {
   struct Scheme_Dynamic_Wind *dw;
 
   int running;
+  Scheme_Object *suspended_box; /* contains pointer to thread when it's suspended */
+  Scheme_Object *resumed_box;   /* contains pointer to thread when it's resumed */
+  Scheme_Object *dead_box;      /* contains non-zero when the thread is dead */
 
   struct Scheme_Thread *nester, *nestee;
 

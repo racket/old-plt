@@ -569,6 +569,10 @@ thread_val {
   gcMARK(pr->mr_hop);
   gcMARK(pr->mref);
 
+  gcMARK(pr->suspend_box);
+  gcMARK(pr->resume_box);
+  gcMARK(pr->dead_box);
+
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Thread));
 }

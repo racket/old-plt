@@ -119,10 +119,10 @@ enum {
   scheme_semaphore_repost_type,
   scheme_channel_type,
   scheme_channel_put_type,
+  scheme_thread_resume_type,
+  scheme_thread_suspend_type,
+  scheme_thread_dead_type,
 
-  scheme_reserved_1_type,
-  scheme_reserved_2_type,
-  scheme_reserved_3_type,
   scheme_reserved_4_type,
 
 #ifdef MZTAG_REQUIRED

@@ -250,6 +250,7 @@ extern Scheme_Thread *scheme_main_thread;
 #define MZTHREAD_SUSPENDED 0x2
 #define MZTHREAD_KILLED 0x4
 #define MZTHREAD_NEED_KILL_CLEANUP 0x8
+#define MZTHREAD_USER_SUSPENDED 0x10
 #define MZTHREAD_STILL_RUNNING(running) ((running) && !((running) & MZTHREAD_KILLED))
 
 #ifdef WINDOWS_PROCESSES

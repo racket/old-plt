@@ -310,6 +310,10 @@ static int out_of_line(Scheme_Object *a)
       return 1; 
   }
 
+  /* Suspended by user? */
+  if (p->running & SCHEME_USER_SUSPENDED)
+    return 1;
+
   return 0;
 }
 
@@ -543,10 +547,12 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 
 	if (!scheme_current_thread->next) {
 	  void **a;
-	  a = MALLOC_N(void*, 3);
+
 	  /* We're not allowed to suspend the main thread. Delay
 	     breaks so we get a chance to clean up. */
 	  scheme_current_thread->suspend_break++;
+
+	  a = MALLOC_N(void*, 3);
 	  a[0] = scheme_make_integer(n);
 	  a[1] = ws;
 	  a[2] = scheme_current_thread;
@@ -556,7 +562,6 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	} else {
 	  /* Mark the thread to indicate that we need to clean up
 	     if the thread is killed. */
-	  scheme_current_thread->running |= MZTHREAD_NEED_KILL_CLEANUP;
 	  scheme_weak_suspend_thread(scheme_current_thread);
 	  scheme_current_thread->running -= MZTHREAD_NEED_KILL_CLEANUP;
 	}
@@ -604,8 +609,9 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	  /* [but why would it return multiple times?! there must have been a reason...] */
 	}
 
-	if (scheme_current_thread->running & MZTHREAD_KILLED) {
-	  /* We've been killed! */
+	if ((scheme_current_thread->running & MZTHREAD_KILLED)
+	    (scheme_current_thread->running & MZTHREAD_USER_SUSPENDED)) {
+	  /* We've been killed or suspended! */
 	  i = -1;
 	}
 
@@ -640,7 +646,7 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	}
 
 	if (i == -1) {
-	  scheme_thread_block(0); /* dies */
+	  scheme_thread_block(0); /* dies or suspends */
 	}
 
 	if (i < n)

@@ -48,7 +48,7 @@ class wxKeyFunc FUNC_REC_INHERITANCE
 #if !WXGARBAGE_COLLECTION_ON
   ~wxKeyFunc();
 #endif
-  Bool Call(wxObject *, wxKeyEvent &);
+  Bool Call(UNKNOWN_OBJ , wxKeyEvent &);
 };
 
 class wxMouseFunc FUNC_REC_INHERITANCE
@@ -62,7 +62,7 @@ class wxMouseFunc FUNC_REC_INHERITANCE
 #if !WXGARBAGE_COLLECTION_ON
   ~wxMouseFunc();
 #endif
-  Bool Call(wxObject *, wxMouseEvent &);
+  Bool Call(UNKNOWN_OBJ , wxMouseEvent &);
 };
 
 class wxKeycode FUNC_REC_INHERITANCE
@@ -595,7 +595,7 @@ void wxKeymap::RemoveGrabKeyFunction(void)
   grabKeyData = NULL;
 }
 
-Bool wxKeymap::HandleKeyEvent(wxObject *media, wxKeyEvent &event)
+Bool wxKeymap::HandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent &event)
 {
   if (event.keyCode == WXK_SHIFT
       || event.keyCode == WXK_CONTROL
@@ -605,7 +605,7 @@ Bool wxKeymap::HandleKeyEvent(wxObject *media, wxKeyEvent &event)
   return ChainHandleKeyEvent(media, event, NULL, NULL, 0) ? TRUE : FALSE;
 }
 
-int wxKeymap::OtherHandleKeyEvent(wxObject *media, wxKeyEvent &event,
+int wxKeymap::OtherHandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent &event,
 				  wxGrabKeyFunction grab, void *grabData,
 				  int try_state)
 {
@@ -623,7 +623,7 @@ int wxKeymap::OtherHandleKeyEvent(wxObject *media, wxKeyEvent &event,
   return result;
 }
 
-int wxKeymap::ChainHandleKeyEvent(wxObject *media, wxKeyEvent &event,
+int wxKeymap::ChainHandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent &event,
 				  wxGrabKeyFunction grab, void *grabData,
 				  int try_state)
 {
@@ -701,12 +701,12 @@ void wxKeymap::RemoveGrabMouseFunction(void)
   grabMouseData = NULL;
 }
 
-Bool wxKeymap::HandleMouseEvent(wxObject *media, wxMouseEvent &event)
+Bool wxKeymap::HandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent &event)
 {
   return ChainHandleMouseEvent(media, event, NULL, NULL, 0) ? TRUE : FALSE;
 }
 
-int wxKeymap::OtherHandleMouseEvent(wxObject *media, wxMouseEvent &event,
+int wxKeymap::OtherHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent &event,
 				    wxGrabMouseFunction grab, void *grabData,
 				    int try_state)
 {
@@ -724,7 +724,7 @@ int wxKeymap::OtherHandleMouseEvent(wxObject *media, wxMouseEvent &event,
   return result;
 }
 
-int wxKeymap::ChainHandleMouseEvent(wxObject *media, wxMouseEvent &event,
+int wxKeymap::ChainHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent &event,
 				    wxGrabMouseFunction grab, void *grabData,
 				    int try_state)
 {
@@ -854,7 +854,7 @@ void wxKeymap::AddMouseFunction(char *name, wxMouseFunction func,
   mousefunctions->Put(f->name, (wxObject *)f);
 }
   
-Bool wxKeymap::CallFunction(char *name, wxObject *media, wxKeyEvent &event,
+Bool wxKeymap::CallFunction(char *name, UNKNOWN_OBJ media, wxKeyEvent &event,
 			    Bool try_chained)
 {
   wxKeyFunc *f;
@@ -881,7 +881,7 @@ Bool wxKeymap::CallFunction(char *name, wxObject *media, wxKeyEvent &event,
   return 0;
 }
 
-Bool wxKeymap::CallFunction(char *name, wxObject *media, wxMouseEvent &event,
+Bool wxKeymap::CallFunction(char *name, UNKNOWN_OBJ media, wxMouseEvent &event,
 			    Bool try_chained)
 {
   wxMouseFunc *f;
@@ -1012,7 +1012,7 @@ wxKeyFunc::~wxKeyFunc()
 }
 #endif
 
-Bool wxKeyFunc::Call(wxObject *media, wxKeyEvent &event)
+Bool wxKeyFunc::Call(UNKNOWN_OBJ media, wxKeyEvent &event)
 {
   return f(media, event, data);
 }
@@ -1033,7 +1033,7 @@ wxMouseFunc::~wxMouseFunc()
 }
 #endif
 
-Bool wxMouseFunc::Call(wxObject *media, wxMouseEvent &event)
+Bool wxMouseFunc::Call(UNKNOWN_OBJ media, wxMouseEvent &event)
 {
   return f(media, event, data);
 }

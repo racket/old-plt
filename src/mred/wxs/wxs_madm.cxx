@@ -3495,12 +3495,13 @@ class wxSnipClassList *objscheme_unbundle_wxSnipClassList(Scheme_Object *obj, co
 typedef Scheme_Object KeymapCallbackToSchemeRec;
 #define kctsr(o) o
 
-static int KeyCallbackToScheme(wxObject *, wxKeyEvent &, KeymapCallbackToSchemeRec *data);
-static int MouseCallbackToScheme(wxObject *, wxMouseEvent &, KeymapCallbackToSchemeRec *data);
-static int GrabKeyCallbackToScheme(char *s, wxKeymap *km, wxObject *, wxKeyEvent &, KeymapCallbackToSchemeRec *data);
-static int GrabMouseCallbackToScheme(char *s, wxKeymap *km, wxObject *, wxMouseEvent &, KeymapCallbackToSchemeRec *data);
+static int KeyCallbackToScheme(UNKNOWN_OBJ, wxKeyEvent &, KeymapCallbackToSchemeRec *data);
+static int MouseCallbackToScheme(UNKNOWN_OBJ, wxMouseEvent &, KeymapCallbackToSchemeRec *data);
+static int GrabKeyCallbackToScheme(char *s, wxKeymap *km, UNKNOWN_OBJ, wxKeyEvent &, KeymapCallbackToSchemeRec *data);
+static int GrabMouseCallbackToScheme(char *s, wxKeymap *km, UNKNOWN_OBJ, wxMouseEvent &, KeymapCallbackToSchemeRec *data);
 static void ErrorCallbackToScheme(KeymapCallbackToSchemeRec *data, char *str);
 static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
+
 
 
 
@@ -3516,8 +3517,8 @@ class os_wxKeymap : public wxKeymap {
 
   os_wxKeymap(Scheme_Object * obj);
   ~os_wxKeymap();
-  Bool HandleMouseEvent(class wxObject* x0, class wxMouseEvent& x1);
-  Bool HandleKeyEvent(class wxObject* x0, class wxKeyEvent& x1);
+  Bool HandleMouseEvent(UNKNOWN_OBJ x0, class wxMouseEvent& x1);
+  Bool HandleKeyEvent(UNKNOWN_OBJ x0, class wxKeyEvent& x1);
 };
 
 Scheme_Object *os_wxKeymap_class;
@@ -3535,7 +3536,7 @@ os_wxKeymap::~os_wxKeymap()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-Bool os_wxKeymap::HandleMouseEvent(class wxObject* x0, class wxMouseEvent& x1)
+Bool os_wxKeymap::HandleMouseEvent(UNKNOWN_OBJ x0, class wxMouseEvent& x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
@@ -3557,7 +3558,7 @@ Bool os_wxKeymap::HandleMouseEvent(class wxObject* x0, class wxMouseEvent& x1)
 return wxKeymap::HandleMouseEvent(x0, x1);
   } else {
   
-  p[0] = objscheme_bundle_wxObject(x0);
+  p[0] = ((Scheme_Object *)x0);
   p[1] = objscheme_bundle_wxMouseEvent(&x1);
   
 
@@ -3570,7 +3571,7 @@ return wxKeymap::HandleMouseEvent(x0, x1);
   }
 }
 
-Bool os_wxKeymap::HandleKeyEvent(class wxObject* x0, class wxKeyEvent& x1)
+Bool os_wxKeymap::HandleKeyEvent(UNKNOWN_OBJ x0, class wxKeyEvent& x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
@@ -3592,7 +3593,7 @@ Bool os_wxKeymap::HandleKeyEvent(class wxObject* x0, class wxKeyEvent& x1)
 return wxKeymap::HandleKeyEvent(x0, x1);
   } else {
   
-  p[0] = objscheme_bundle_wxObject(x0);
+  p[0] = ((Scheme_Object *)x0);
   p[1] = objscheme_bundle_wxKeyEvent(&x1);
   
 
@@ -3687,9 +3688,9 @@ static Scheme_Object *os_wxKeymapCallFunction(Scheme_Object *obj, int n,  Scheme
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   Bool r;
   objscheme_check_valid(obj);
-  if ((n >= 3) && objscheme_istype_string(p[0], NULL) && objscheme_istype_wxObject(p[1], NULL, 0) && objscheme_istype_wxKeyEvent(p[2], NULL, 0)) {
+  if ((n >= 3) && objscheme_istype_string(p[0], NULL) && 1 && objscheme_istype_wxKeyEvent(p[2], NULL, 0)) {
     string x0;
-    class wxObject* x1;
+    UNKNOWN_OBJ x1;
     class wxKeyEvent* x2;
     Bool x3;
 
@@ -3697,7 +3698,7 @@ static Scheme_Object *os_wxKeymapCallFunction(Scheme_Object *obj, int n,  Scheme
     if ((n < 3) ||(n > 4)) 
       scheme_wrong_count("call-function in keymap% (key-event% case)", 3, 4, n, p);
     x0 = (string)objscheme_unbundle_string(p[0], "call-function in keymap% (key-event% case)");
-    x1 = objscheme_unbundle_wxObject(p[1], "call-function in keymap% (key-event% case)", 0);
+    x1 = ((void *)p[1]);
     x2 = objscheme_unbundle_wxKeyEvent(p[2], "call-function in keymap% (key-event% case)", 0);
     if (n > 3) {
       x3 = objscheme_unbundle_bool(p[3], "call-function in keymap% (key-event% case)");
@@ -3711,7 +3712,7 @@ static Scheme_Object *os_wxKeymapCallFunction(Scheme_Object *obj, int n,  Scheme
     
   } else  {
     string x0;
-    class wxObject* x1;
+    UNKNOWN_OBJ x1;
     class wxMouseEvent* x2;
     Bool x3;
 
@@ -3719,7 +3720,7 @@ static Scheme_Object *os_wxKeymapCallFunction(Scheme_Object *obj, int n,  Scheme
     if ((n < 3) ||(n > 4)) 
       scheme_wrong_count("call-function in keymap% (mouse-event% case)", 3, 4, n, p);
     x0 = (string)objscheme_unbundle_string(p[0], "call-function in keymap% (mouse-event% case)");
-    x1 = objscheme_unbundle_wxObject(p[1], "call-function in keymap% (mouse-event% case)", 0);
+    x1 = ((void *)p[1]);
     x2 = objscheme_unbundle_wxMouseEvent(p[2], "call-function in keymap% (mouse-event% case)", 0);
     if (n > 3) {
       x3 = objscheme_unbundle_bool(p[3], "call-function in keymap% (mouse-event% case)");
@@ -3908,11 +3909,11 @@ static Scheme_Object *os_wxKeymapHandleMouseEvent(Scheme_Object *obj, int n,  Sc
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   Bool r;
   objscheme_check_valid(obj);
-  class wxObject* x0;
+  UNKNOWN_OBJ x0;
   class wxMouseEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxObject(p[0], "handle-mouse-event in keymap%", 0);
+  x0 = ((void *)p[0]);
   x1 = objscheme_unbundle_wxMouseEvent(p[1], "handle-mouse-event in keymap%", 0);
 
   
@@ -3932,11 +3933,11 @@ static Scheme_Object *os_wxKeymapHandleKeyEvent(Scheme_Object *obj, int n,  Sche
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   Bool r;
   objscheme_check_valid(obj);
-  class wxObject* x0;
+  UNKNOWN_OBJ x0;
   class wxKeyEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxObject(p[0], "handle-key-event in keymap%", 0);
+  x0 = ((void *)p[0]);
   x1 = objscheme_unbundle_wxKeyEvent(p[1], "handle-key-event in keymap%", 0);
 
   
@@ -4088,7 +4089,7 @@ class wxKeymap *objscheme_unbundle_wxKeymap(Scheme_Object *obj, const char *wher
 }
 
 
-static Bool KeyCallbackToScheme(wxObject *media, wxKeyEvent &event, 
+static Bool KeyCallbackToScheme(UNKNOWN_OBJ media, wxKeyEvent &event, 
 			       KeymapCallbackToSchemeRec *data)
 {
   extern Scheme_Object *objscheme_bundle_wxKeyEvent(wxKeyEvent *);
@@ -4096,7 +4097,7 @@ static Bool KeyCallbackToScheme(wxObject *media, wxKeyEvent &event,
   Bool retval;
   jmp_buf savebuf;
 
-  p[0] = objscheme_bundle_wxObject(media);
+  p[0] = (Scheme_Object *)media;
   p[1] = objscheme_bundle_wxKeyEvent(&event);
 
   COPY_JMPBUF(savebuf, scheme_error_buf);
@@ -4113,7 +4114,7 @@ static Bool KeyCallbackToScheme(wxObject *media, wxKeyEvent &event,
 }
 
 static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km,
-				    wxObject *media, wxKeyEvent &event, 
+				    UNKNOWN_OBJ media, wxKeyEvent &event, 
 				    KeymapCallbackToSchemeRec *data)
 {
   extern Scheme_Object *objscheme_bundle_wxKeyEvent(wxKeyEvent *);
@@ -4123,7 +4124,7 @@ static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km,
 
   p[0] = objscheme_bundle_string(s);
   p[1] = objscheme_bundle_wxKeymap(km);
-  p[2] = objscheme_bundle_wxObject(media);
+  p[2] = (Scheme_Object *)media;
   p[3] = objscheme_bundle_wxKeyEvent(&event);
 
   COPY_JMPBUF(savebuf, scheme_error_buf);
@@ -4139,7 +4140,7 @@ static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km,
   return retval;
 }
 
-static Bool MouseCallbackToScheme(wxObject *media, wxMouseEvent &event, 
+static Bool MouseCallbackToScheme(UNKNOWN_OBJ media, wxMouseEvent &event, 
 				 KeymapCallbackToSchemeRec *data)
 {
   extern Scheme_Object *objscheme_bundle_wxMouseEvent(wxMouseEvent *);
@@ -4147,7 +4148,7 @@ static Bool MouseCallbackToScheme(wxObject *media, wxMouseEvent &event,
   Bool retval;
   jmp_buf savebuf;
 
-  p[0] = objscheme_bundle_wxObject(media);
+  p[0] = (Scheme_Object *)media;
   p[1] = objscheme_bundle_wxMouseEvent(&event);
 
   COPY_JMPBUF(savebuf, scheme_error_buf);
@@ -4164,7 +4165,7 @@ static Bool MouseCallbackToScheme(wxObject *media, wxMouseEvent &event,
 }
 
 static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km,
-				      wxObject *media, wxMouseEvent &event, 
+				      UNKNOWN_OBJ media, wxMouseEvent &event, 
 				      KeymapCallbackToSchemeRec *data)
 {
   extern Scheme_Object *objscheme_bundle_wxMouseEvent(wxMouseEvent *);
@@ -4174,7 +4175,7 @@ static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km,
 
   p[0] = objscheme_bundle_string(s);
   p[1] = objscheme_bundle_wxKeymap(km);
-  p[2] = objscheme_bundle_wxObject(media);
+  p[2] = (Scheme_Object *)media;
   p[3] = objscheme_bundle_wxMouseEvent(&event);
 
   COPY_JMPBUF(savebuf, scheme_error_buf);

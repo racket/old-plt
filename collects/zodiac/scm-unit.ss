@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.55 1998/03/13 21:20:45 shriram Exp $
+; $Id: scm-unit.ss,v 1.56 1998/03/14 21:03:25 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -137,7 +137,7 @@
 	  (begin
 	    (put-attribute attributes 'unresolved-unit-vars null)
 	    (unless (null? unresolveds)
-	      (static-error (car unresolveds)
+	      (static-error (unresolved-id (car unresolveds))
 		"Unbound unit identifier ~a"
 		(z:read-object (unresolved-id (car unresolveds))))))
 	  (put-attribute attributes 'unresolved-unit-vars
@@ -308,18 +308,20 @@
 		(cond
 		  ((or (internal-id? entry) (export-id? entry))
 		    ; Need to set the box here
-		    (let* ([id  (if (internal-id? entry)
-				    (internal-id-id entry)
-				    (export-id-id entry))]
-			   [box (hash-table-get top-level-space
-						(z:read-object uid)
-						(lambda ()
-						  (internal-error
-						   entry
-						   "Can't find box in check-unresolved-vars")))])
-		      (set-top-level-varref/bind-slot!
-		       (unresolved-varref u)
-		       box))
+		    (when (top-level-varref/bind? (unresolved-varref u))
+		      (let* ([id  (if (internal-id? entry)
+				      (internal-id-id entry)
+				      (export-id-id entry))]
+			     [box (and top-level-space
+				       (hash-table-get top-level-space
+					 (z:read-object uid)
+					 (lambda ()
+					   (internal-error
+					    entry
+					    "Can't find box in check-unresolved-vars"))))])
+			(set-top-level-varref/bind-slot!
+			 (unresolved-varref u)
+			 box)))
 		    (loop (cdr remaining) unr))
 		  ((not entry)
 		    (loop (cdr remaining) (cons u unr)))
@@ -975,23 +977,25 @@
 	    ((top-level-resolution? r)
 	      (let ((id (z:read-object expr)))
 		(let ((top-level-space (get-attribute attributes 'top-levels)))
-		  (if top-level-space
-		    (begin
-		      (let ((ref
-			      (create-top-level-varref/bind
-				id
-				(hash-table-get top-level-space id
-				  (lambda ()
-				    (let ((b (box '())))
-				      (hash-table-put! top-level-space id b)
-				      b)))
-				expr)))
-			(let ((b (top-level-varref/bind-slot ref)))
-			  (set-box! b (cons ref (unbox b))))
-			(unless (built-in-name id)
-			  (update-unresolved-attribute attributes expr ref))
-			ref))
-		    (create-top-level-varref id expr)))))
+		  (let ((varref
+			 (if top-level-space
+			     (begin
+			       (let ((ref
+				      (create-top-level-varref/bind
+				       id
+				       (hash-table-get top-level-space id
+					 (lambda ()
+					   (let ((b (box '())))
+					     (hash-table-put! top-level-space id b)
+					     b)))
+				       expr)))
+				 (let ((b (top-level-varref/bind-slot ref)))
+				   (set-box! b (cons ref (unbox b))))
+				 ref))
+			     (create-top-level-varref id expr))))
+		    (unless (built-in-name id)
+		      (update-unresolved-attribute attributes expr varref))
+		    varref))))
 	    (else
 	      (internal-error expr "Invalid resolution in unit delta: ~s"
 		r)))))))

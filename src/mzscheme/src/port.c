@@ -4757,7 +4757,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       
       if (spawn_status != -1)
         sc = (void *)pid;
-    } else if ((spawn_status != -1) && !as_child) {
+    } else if ((spawn_status != -1) && as_child) {
       sc = (void *)spawn_status;
 
       scheme_block_until(subp_done, subp_needs_wakeup, (void *)sc, (float)0.0);

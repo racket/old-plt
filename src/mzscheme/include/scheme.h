@@ -190,7 +190,7 @@ typedef int mzchar_int; /* includes EOF */
 
 #ifdef INT64_AS_LONG_LONG
 typedef _int64 mzlonglong;
-typedef unsigned _int64 mzlonglong;
+typedef unsigned _int64 umzlonglong;
 #else
 # if defined(NO_LONG_LONG_TYPE) || defined(SIXTY_FOUR_BIT_INTEGERS)
 typedef long mzlonglong;

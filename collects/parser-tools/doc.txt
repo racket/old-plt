@@ -17,8 +17,8 @@ A regular expression is one of the following:
  (concatenation re ...)    matches each sub-expression in succession
  (char-range char char)    matches any character between the two (inclusive)
                              (A single character string can be used here)
- (char-complement re ...)  matches any character not listed
-                             Each sub-expression must be a 1-char re.
+ (char-complement re)      matches any character not matched by the sub-re.
+                             The sub-expression must be a set of characters re.
  (char-set string)         matches any character in the string
  (op form ...)             expands the re macro named op
 

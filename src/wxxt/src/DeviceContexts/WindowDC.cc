@@ -1755,13 +1755,21 @@ void wxWindowDC::SetBackground(wxColour *c)
   if ((style >= wxXOR_DOT) && (style <= wxXOR_DOT_DASH))
     style = wxXOR;
   if (current_pen && ((style == wxXOR) || (style == wxCOLOR)))
-    SetPen(current_pen);
+    ResetPen(current_pen);
   
   if (current_brush && (current_brush->GetStyle() == wxXOR))
-    SetBrush(current_brush);
+    ResetBrush(current_brush);
 }
 
 void wxWindowDC::SetBrush(wxBrush *brush)
+{
+  if (brush == current_brush)
+    return;
+
+  ResetBrush(brush);
+}
+    
+void wxWindowDC::ResetBrush(wxBrush *brush)
 {
   XGCValues     values;
   unsigned long mask;
@@ -1772,9 +1780,6 @@ void wxWindowDC::SetBrush(wxBrush *brush)
   if (!DRAWABLE)
     return;
 
-  if (brush == current_brush)
-      return;
-    
   if (current_brush) current_brush->Lock(-1);
 
   if (!(current_brush = brush)) // nothing to do without brush
@@ -1872,6 +1877,14 @@ static int    num_dashes[] = { 2, 2, 2, 4 };
 
 void wxWindowDC::SetPen(wxPen *pen)
 {
+  if (pen == current_pen)
+    return;
+
+  ResetPen(pen);
+}
+
+void wxWindowDC::ResetPen(wxPen *pen)
+{
   XGCValues     values;
   unsigned long mask;
   wxBitmap *bm;
@@ -1880,9 +1893,6 @@ void wxWindowDC::SetPen(wxPen *pen)
   unsigned long pixel;
 
     if (!DRAWABLE) /* MATTHEW: [5] */
-      return;
-
-    if (pen == current_pen)
       return;
 
     if (current_pen) current_pen->Lock(-1);
@@ -2790,8 +2800,8 @@ void wxWindowDC::Initialize(wxWindowDC_Xinit* init)
     SetTextForeground(current_text_fg);
     SetTextBackground(current_text_bg);
     SetBackground(current_background_color); 
-    SetBrush(current_brush);
-    SetPen(current_pen);
+    ResetBrush(current_brush);
+    ResetPen(current_pen);
 
     font = current_font;
     current_font = NULL;

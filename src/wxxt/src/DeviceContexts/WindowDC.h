@@ -150,12 +150,14 @@ public:
 		      Bool combine=FALSE, Bool use16bit=FALSE, int dt=0);
   void  SetBackground(wxColour *c);
   void  SetBrush(wxBrush *brush);
+  void  ResetBrush(wxBrush *brush);
   void  SetClippingRect(double x, double y, double w, double h);
   void  SetClippingRegion(wxRegion*);
   wxRegion* GetClippingRegion();
   void  SetColourMap(wxColourMap *cmap);
   void  SetFont(wxFont *font);
   void  SetPen(wxPen *pen);
+  void  ResetPen(wxPen *pen);
   void  SetTextBackground(wxColour *col);
   void  SetTextForeground(wxColour *col);
 

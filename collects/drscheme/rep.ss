@@ -914,7 +914,7 @@
 						   (define allow-improper-lists in-allow-improper-lists)
 						   (define eq?-only-compares-symbols in-eq?-only-compares-symbols)))]
 					[userspace : plt:userspace^ 
-						   ((require-library-unit/sig "gusrspcr.ss" "gusrspce")
+						   ((require-library "gusrspcr.ss" "gusrspce")
 						    params)]
 					[library : () ((unit/sig ()
 							 (import plt:userspace^)

@@ -35,12 +35,14 @@
 	  (unless filename
 	    (send interactions-edit reset-console)
 	    (send interactions-edit insert-prompt)
-	    (send frame toggle-show/hide (ivar frame interactions-item))
 	    (send frame update-shown)
 	    (send (ivar frame interactions-canvas) focus))))
       (send frame show #t)))
 
   (let ([files-to-open (reverse (vector->list I:argv))])
+    (printf "files-to-open: ~a~n" files-to-open)
     (if (null? files-to-open)
 	(make-basic)
-	(for-each fw:handler:edit-file files-to-open))))
+	(for-each (lambda (x)
+		    (send (drscheme:unit:make-unit x) create-frame))
+		  files-to-open))))

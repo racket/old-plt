@@ -807,6 +807,7 @@
 	       (let ([a (get-admin)])
 		 (unless (null? a)
 		   (send a grab-caret)))		 
+	       (send transparent-edit lock #t)
 	       (set! transparent-edit #f)))]
 	  [set-auto-set-wrap
 	   (lambda (x)

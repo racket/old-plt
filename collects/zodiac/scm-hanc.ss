@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.43 1998/02/25 22:57:42 shriram Exp $
+; $Id: scm-hanc.ss,v 1.44 1998/03/13 21:20:43 shriram Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -48,7 +48,7 @@
 	    (loop (cdr in:all) (cdr sign:all)
 	      in:names sign:names
 	      (cons in in:rest)
-	      (cons sign sign:names))))))))
+	      (cons sign sign:rest))))))))
 
 ; This is based on code lifted from Matthew's implementation (note the
 ; use of brackets (-:).

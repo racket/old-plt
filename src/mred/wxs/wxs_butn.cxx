@@ -621,7 +621,7 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent &event)
   COPY_JMPBUF(savebuf, scheme_error_buf);
 
   if (!scheme_setjmp(scheme_error_buf)) {
-    scheme_apply(((CALLBACKCLASS *)obj->primdata)->callback_closure, 2, p);
+    scheme_apply_multi(((CALLBACKCLASS *)obj->primdata)->callback_closure, 2, p);
   }
 
   COPY_JMPBUF(scheme_error_buf, savebuf);

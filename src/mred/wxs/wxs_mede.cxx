@@ -283,7 +283,7 @@ static void WordbreakCallbackToScheme(wxMediaEdit *media,
     p[2] = e;
     p[3] = scheme_make_integer(reason);
 
-    scheme_apply(f, 4, p);
+    scheme_apply_multi(f, 4, p);
     if (start)
       *start = objscheme_unbundle_integer(scheme_unbox(s), "Scheme wordbreak callback");
     if (end)
@@ -307,7 +307,7 @@ static void ClickbackToScheme(wxMediaEdit *media,
   COPY_JMPBUF(savebuf, scheme_error_buf);
 
   if (!scheme_setjmp(scheme_error_buf))
-    scheme_apply(f, 3, p);
+    scheme_apply_multi(f, 3, p);
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
 }

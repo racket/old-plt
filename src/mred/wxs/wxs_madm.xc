@@ -23,7 +23,7 @@ static void *DoCAPOCallback(void *data)
   COPY_JMPBUF(savebuf, scheme_error_buf);
 
   if (!scheme_setjmp(scheme_error_buf))
-    r = (void *)scheme_apply((Scheme_Object *)data, 0, NULL);
+    r = (void *)scheme_apply_multi((Scheme_Object *)data, 0, NULL);
   else
     r = (void *)scheme_false;
 
@@ -353,7 +353,7 @@ static void ErrorCallbackToScheme(KeymapCallbackToSchemeRec *data, char *err)
   COPY_JMPBUF(savebuf, scheme_error_buf);
 
   if (!scheme_setjmp(scheme_error_buf)) {
-    scheme_apply(kctsr(data), 1, p);
+    scheme_apply_multi(kctsr(data), 1, p);
   }
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -366,7 +366,7 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data)
   COPY_JMPBUF(savebuf, scheme_error_buf);
 
   if (!scheme_setjmp(scheme_error_buf)) {
-    scheme_apply(kctsr(data), 0, NULL);
+    scheme_apply_multi(kctsr(data), 0, NULL);
   }
 
   COPY_JMPBUF(scheme_error_buf, savebuf);

@@ -68,17 +68,15 @@ Several values are also provided:
 > (make-lex-buf input-port) creates a lex-buf from an input-port
 > (make-lex-buf input-port offsets) creates a lex-buf from an
   input-port that starts at the source location provided at offsets
-  rather than at 0.  Offsets must be a list of 3 non-negative integers
+  rather than at 1.  Offsets must be a list of 3 non-negative integers
   whose car is the line number, whose cadr is the column number and
   whose caddr is the total character offset.
 
-> (get-position lex-buf) returns a position structure for the current
-  state of the lex-buf (modified by the offsets given when creating
-  the lex-buf).
-> (position-offset position) extracts the number of characters read.
-> (position-line position) extracts the number of lines read.
-> (position-col position) extracts the number of characters read on the 
-  current line.
+> (get-position lex-buf) returns a position structure for the next
+  character in the lex-buf
+> (position-offset position) the offset of the character in the stream.
+> (position-line position) the line number of the character.
+> (position-col position) the offset of the character in the current line.
 > (position? x) the question associated with a position struct
 
 Each time the scheme code for a lexer is compiled (e.g. when a .ss

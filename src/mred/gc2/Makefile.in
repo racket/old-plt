@@ -276,6 +276,8 @@ xsrc/wxs_snip.cc: $(srcdir)/../wxs/wxs_snip.cxx ../wxs/wxs_snip.o $(XFORMDEP)
 	$(XFORM) $(srcdir)/../wxs/wxs_snip.cxx xsrc/wxs_snip.cc
 xsrc/wxs_styl.cc: $(srcdir)/../wxs/wxs_styl.cxx ../wxs/wxs_styl.o $(XFORMDEP)
 	$(XFORM) $(srcdir)/../wxs/wxs_styl.cxx xsrc/wxs_styl.cc
+xsrc/wxs_tabc.cc: $(srcdir)/../wxs/wxs_tabc.cxx ../wxs/wxs_tabc.o $(XFORMDEP)
+	$(XFORM) $(srcdir)/../wxs/wxs_tabc.cxx xsrc/wxs_tabc.cc
 xsrc/wxs_win.cc: $(srcdir)/../wxs/wxs_win.cxx ../wxs/wxs_win.o $(XFORMDEP)
 	$(XFORM) $(srcdir)/../wxs/wxs_win.cxx xsrc/wxs_win.cc
 
@@ -485,6 +487,8 @@ wxs_snip.o: xsrc/wxs_snip.cc
 	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_snip.o xsrc/wxs_snip.cc
 wxs_styl.o: xsrc/wxs_styl.cc
 	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_styl.o xsrc/wxs_styl.cc
+wxs_tabc.o: xsrc/wxs_tabc.cc
+	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_tabc.o xsrc/wxs_tabc.cc
 wxs_win.o: xsrc/wxs_win.cc
 	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o wxs_win.o xsrc/wxs_win.cc
 wxJPEG.o: xsrc/wxJPEG.cc
@@ -615,6 +619,7 @@ XSRCS = xsrc/Window.cc \
   xsrc/wxs_slid.cc \
   xsrc/wxs_snip.cc \
   xsrc/wxs_styl.cc \
+  xsrc/wxs_tabc.cc \
   xsrc/wxs_win.cc \
 \
   xsrc/wxJPEG.cc \
@@ -735,6 +740,7 @@ XOBJS = Window.o \
   wxs_slid.o \
   wxs_snip.o \
   wxs_styl.o \
+  wxs_tabc.o \
   wxs_win.o \
 \
   wxJPEG.o \

@@ -308,7 +308,7 @@ static void init_symset_actionType(void) {
   wxREGGLOB(actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym);
   actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("text-field-enter"));
   wxREGGLOB(actionType_wxEVENT_TYPE_TAB_CHOICE_COMMAND_sym);
-  actionType_wxEVENT_TYPE_TAB_CHOICE_COMMAND_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("tab-group"));
+  actionType_wxEVENT_TYPE_TAB_CHOICE_COMMAND_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("tab-panel"));
   wxREGGLOB(actionType_wxEVENT_TYPE_MENU_SELECT_sym);
   actionType_wxEVENT_TYPE_MENU_SELECT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("menu"));
   wxREGGLOB(actionType_wxEVENT_TYPE_MENU_POPDOWN_sym);

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.26 1999/03/23 14:58:56 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.27 1999/04/07 17:38:35 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1814,11 +1814,13 @@ void wxWnd::OnMenuSelect(WORD WXUNUSED(item), WORD WXUNUSED(flags), HMENU WXUNUS
 {
 }
 
-BOOL wxWnd::OnActivate(BOOL state, BOOL WXUNUSED(minimized), HWND WXUNUSED(activate))
+BOOL wxWnd::OnActivate(BOOL state, BOOL minimized, HWND WXUNUSED(activate))
 {
   if (wx_window)
   {
     if ((state == WA_ACTIVE) || (state == WA_CLICKACTIVE)) {
+      if (minimized) return TRUE; /* Ignore spurious activate while iconized */
+
       if (!wx_window->focusWindow) {
 	/* Try to find one... */
 	wx_window->focusWindow = wx_window->FindFocusWindow();

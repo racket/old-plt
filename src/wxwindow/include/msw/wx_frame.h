@@ -24,7 +24,7 @@ class wxFrame: public wxbFrame
 
  public:
   wxStatusWnd *status_window[wxMAX_STATUS];
-  short hiddenmax;
+  short hiddenmax, client_dw, client_dh;
 
   wxFrame(void);
   wxFrame(wxFrame *parent, char *title,

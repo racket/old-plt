@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.12 1999/03/23 14:58:56 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.13 1999/04/11 15:55:28 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -141,6 +141,15 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
 
   wxCreatedWindow(this);
 
+  {
+    /* Initialize client_d{w,h}, needed when GetCLientSize()
+       is called while the frame is iconized. */
+    int w, h, cw, ch;
+    GetSize(&w, &h);
+    GetClientSize(&cw, &ch);
+    client_dh = h - ch;
+    client_dw = w - cw;
+  }
 
   return TRUE;
 }
@@ -202,7 +211,18 @@ void wxFrame::ChangeToGray(Bool gray)
 void wxFrame::GetClientSize(int *x, int *y)
 {
   RECT rect;
-  GetClientRect(GetHWND(), &rect);
+
+  if (Iconized()) {
+    /* Iconized window's client size is always (0,0).
+       Use stored client_d{w,h} to calculate the client
+       size for the window as shown. */
+    GetSize(x, y);
+    rect.top = rect.left = 0;
+    rect.right = *x - client_dw;
+    rect.bottom = *y - client_dh;
+  } else {
+    GetClientRect(GetHWND(), &rect);
+  }
 
   switch (frame_type)
   {
@@ -282,10 +302,20 @@ void wxFrame::SetClientSize(int width, int height)
 
 void wxFrame::GetSize(int *width, int *height)
 {
-  RECT rect;
-  GetWindowRect(GetHWND(), &rect);
-  *width = rect.right - rect.left;
-  *height = rect.bottom - rect.top;
+  HWND hwnd = GetHWND();
+
+  if (::IsIconic(hwnd)) {
+    WINDOWPLACEMENT wp;
+    wp.length = sizeof(wp);
+    GetWindowPlacement(hwnd, &wp);
+    *width = wp.rcNormalPosition.right - wp.rcNormalPosition.left;
+    *height = wp.rcNormalPosition.bottom - wp.rcNormalPosition.top;
+  } else {
+    RECT rect;
+    GetWindowRect(hwnd, &rect);
+    *width = rect.right - rect.left;
+    *height = rect.bottom - rect.top;
+  }
 }
 
 void wxFrame::GetPosition(int *x, int *y)
@@ -320,6 +350,11 @@ void wxFrame::GetPosition(int *x, int *y)
 
 void wxFrame::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFlags))
 {
+  /* Can't set size of an iconized frame. (We could actually play games
+     with SetWindowPlacement, but it doesn't seem worthwhile.) */
+  if (Iconized())
+    Iconize(FALSE);
+
   int currentX, currentY;
   GetPosition(&currentX, &currentY);
   if (x == -1)
@@ -383,7 +418,7 @@ Bool wxFrame::Show(Bool show)
     ShowWindow(GetHWND(), cshow);
   if (show) {
     wxwmBringWindowToTop(GetHWND());
-    OnActivate(TRUE);
+    /* OnActivate(TRUE); */
   }
 
   return TRUE;

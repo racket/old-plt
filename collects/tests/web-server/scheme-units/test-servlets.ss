@@ -55,6 +55,7 @@
 
   (define test-servlets
     (make-test-suite
+      "Miscellaneous servlet tests"
 
       ;; Non-incrementals
       (make-test-case
@@ -203,7 +204,7 @@
                                  THE-IP THE-PORT))))
                  (m1 (regexp-match #rx"action=\"([^\"]*)\"" p1)))
             (stop-server)
-            (or
+            (and
               (regexp-match #rx"/servlets;id[0-9]*\\*0/add.ss"
                             (bytes->string/utf-8 (cadr m1)))
               (fail)))))

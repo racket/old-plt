@@ -1,0 +1,5 @@
+- through-tests.ss
+- buckaroo-banzai stepper test suite
+- images
+- changing editor text while stepping
+- closing editor text while stepping

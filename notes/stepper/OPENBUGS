@@ -6,10 +6,9 @@ Inexact numbers are not printed with a leading #i.
 
 XML boxes evaluate successfully but are printed poorly.
 
-Changes to language level in other windows affect stepper.
-
 For a more complete listing of known bugs, see our
 <a href="http://bugs.plt-scheme.org/query/">
 online bug report database</a>, or click on the 
 "Query bug reports" link in the Help Desk search 
 frame.
+

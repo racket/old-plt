@@ -4,6 +4,7 @@
 	    [mzlib : mzlib:core^]
 	    [print-convert : mzlib:print-convert^]
 	    [drscheme : drscheme:export^]
-	    [zodiac : zodiac:system^])
+	    [zodiac : zodiac:system^]
+	    [params : plt:parameters^])
     (wx:message-box "MrSpidey is not available in DrScheme Version 43.")))
 

@@ -1,6 +1,7 @@
 (define drscheme:tool@
   (unit/sig drscheme:tool^
-    (import mred^ mzlib:core^ mzlib:print-convert^ zodiac:system^ drscheme:export^)
+    (import mred^ mzlib:core^ mzlib:print-convert^ 
+	    zodiac:system^ drscheme:export^ plt:parameters^)
 
     (define-struct tool (name file))
 
@@ -25,7 +26,8 @@
 			 mzlib:core^
 			 mzlib:print-convert^
 			 drscheme:export^
-			 zodiac:system^)))))
+			 zodiac:system^
+			 plt:parameters^)))))
 
 (define drscheme@
   (compound-unit/sig
@@ -37,7 +39,7 @@
 	    [params : plt:parameters^])
     (link [setup : drscheme:setup^ (drscheme:setup@ mred mzlib)]
 	  [tool : drscheme:tool^ 
-	    (drscheme:tool@ mred mzlib print-convert zodiac (project : drscheme:export^))]
+	    (drscheme:tool@ mred mzlib print-convert zodiac (project : drscheme:export^) params)]
 	  [spawn : drscheme:spawn^ (drscheme:spawn@ mred mzlib print-convert params aries zodiac)]
 	  [edit : drscheme:edit^ (drscheme:edit@ mred print-convert spawn)]
 	  [frame : drscheme:frame^

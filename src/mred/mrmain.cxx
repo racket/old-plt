@@ -253,8 +253,8 @@ int main(int argc, char *argv[])
   wxMacDisableMods = controlKey;
 
 # ifndef OS_X
-  scheme_creator_id = 'MrEd';
-  wxMediaCreatorId = 'MrEd';
+  scheme_creator_id = 'mReD';
+  wxMediaCreatorId = 'mReD';
 # endif
 
 # if !defined(__powerc) && !defined(__ppc__)

@@ -1443,7 +1443,7 @@ static Scheme_Object *file_type_and_creator(int argc, Scheme_Object **argv)
     FInfo info;
 
 #ifndef OS_X
-    spec_ok = scheme_mac_path_to_spec(const char *filename, &spec);
+    spec_ok = scheme_mac_path_to_spec(file, &spec);
 # else
     {
       FSRef ref;

@@ -2477,22 +2477,48 @@ void wxStandardSnipAdmin::Modified(wxSnip *snip, Bool modified)
 # include <Files.h>
 #endif
 
+#ifndef OS_X
 long wxMediaCreatorId = 'WXME';
+#endif
 
 void wxMediaSetFileCreatorType(char *file, Bool is_binary)
 {
   FSSpec spec;
   FInfo info;
-  Str255 filename;
+  int spec_ok;
 
-  CopyCStringToPascal(file,filename);
+#ifndef OS_X
+  spec_ok = scheme_mac_path_to_spec(file, &spec);
+# else
+  {
+    FSRef ref;
+    Boolean isd = 0;
+    OSErr err;
+      
+    err = FSPathMakeRef((UInt8*)file, &ref, &isd);
+    if (!err && isd)
+      spec_ok = 0;
+    else if (!err) {
+      err = FSGetCatalogInfo(&ref, kFSCatInfoNone, NULL, NULL, &spec, NULL);
+      if (!err) {
+	err = FSpGetFInfo(&spec, &info);
+	spec_ok = !err;
+      } else
+	spec_ok = 0;
+    } else
+      spec_ok = 0;
+  }
+# endif
 
-  FSMakeFSSpec(0, 0, filename, &spec);
-
-  FSpGetFInfo(&spec, &info);
-  info.fdCreator = wxMediaCreatorId;
-  info.fdType = is_binary ? 'WXME' : 'TEXT';
-  FSpSetFInfo(&spec, &info);
+  if (spec_ok) {
+    if (FSpGetFInfo(&spec, &info) == noErr) {
+# ifndef OS_X
+      info.fdCreator = wxMediaCreatorId;
+# endif
+      info.fdType = is_binary ? 'WXME' : 'TEXT';
+      FSpSetFInfo(&spec, &info);
+    }
+  }
 }
 
 #endif

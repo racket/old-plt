@@ -127,8 +127,7 @@
    (define pretty-print-print-line
      (make-parameter (lambda (line port offset width)
 		       (if (and (number? width)
-				line
-				(not (zero? line)))
+				(not (eq? 0 line)))
 			   (newline port)))
 		     (lambda (x)
 		       (unless (can-accept-n? 4 x)

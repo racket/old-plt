@@ -7,6 +7,125 @@
 
 (SECTION 'OBJECT)
 
+;; ------------------------------------------------------------
+;; Test syntax errors
+
+(syntax-test #'class)
+(syntax-test #'(class))
+(syntax-test #'(class . object%))
+(test #t class? (class object%))
+(syntax-test #'(class object% . 10))
+
+(define (test-init/field init)
+  (teval #`(test #t class? (class object% (#,init))))
+  (syntax-test #`(class object% (#,init . x)))
+  (syntax-test #`(class object% (#,init 10)))
+  (syntax-test #`(class object% (#,init (x . 10))))
+  (syntax-test #`(class object% (#,init (x 10 10))))
+  (syntax-test #`(class object% (#,init (x 10 . 10))))
+  (syntax-test #`(class object% (#,init (10 10))))
+  (teval #`(test #t class? (class object% (#,init (x 10)))))
+  (syntax-test #`(class object% (#,init ((x) 10))))
+  (syntax-test #`(class object% (#,init ((x . y) 10))))
+  (syntax-test #`(class object% (#,init ((x y . z) 10))))
+  (syntax-test #`(class object% (#,init ((x y z) 10))))
+  (syntax-test #`(class object% (#,init ((x 10) 10))))
+  (syntax-test #`(class object% (#,init ((10 x) 10))))
+  (teval #`(test #t class? (class object% (#,init ((x y) 10)))))
+  (syntax-test #`(class object% (#,init ((x y) 10) . z)))
+  (syntax-test #`(class object% (#,init ((x y) 10) z)))
+  (syntax-test #`(class object% (#,init ((x y) 10) (z))))
+  (teval #`(test #t class? (class object% (#,init ((x y) 10) (z 5)))))
+  (syntax-test #`(class object% (#,init (x 10) y)))
+  (syntax-test #`(class object% (#,init (x 10)) (#,init y)))
+
+  (syntax-test #`(class object% (#,init x x)))
+  (syntax-test #`(class object% (#,init x) (#,init x)))
+  (syntax-test #`(class object% (#,init x) (#,init (x 10))))
+  (syntax-test #`(class object% (#,init (x 10)) (#,init (x 10))))
+  (syntax-test #`(class object% (#,init ((x y) 10)) (#,init (x 10))))
+  (syntax-test #`(class object% (#,init ((x y) 10)) (#,init ((x z) 10))))
+  (syntax-test #`(class object% (#,init ((x y) 10)) (#,init ((x z) 10))))
+  (syntax-test #`(class object% (#,init ((y x) 10)) (#,init ((z x) 10))))
+  (syntax-test #`(class object% (#,init x) (#,init x)))
+  (syntax-test #`(class object% (#,init x) (#,init (x 10))))
+  (syntax-test #`(class object% (#,init (x 10)) (#,init (x 10))))
+  (syntax-test #`(class object% (#,init ((x y) 10)) (#,init (x 10))))
+  (syntax-test #`(class object% (#,init ((x y) 10)) (#,init ((x z) 10))))
+  (syntax-test #`(class object% (#,init ((x y) 10)) (#,init ((x z) 10))))
+  (syntax-test #`(class object% (#,init ((y x) 10)) (#,init ((z x) 10))))
+
+  (teval #`(test #t class? (class object% (#,init ((x x) 10)))))
+  (teval #`(test #t class? (class object% (#,init ((x x) 10) ((y y) 10)))))
+  (teval #`(test #t class? (class object% (#,init ((x x) 10)) (#,init ((y y) 10)))))
+  (teval #`(test #t class? (class object% (#,init ((x y) 10)) (#,init ((y x) 10)))))
+
+  'ok)
+
+(define (test-init init)
+  (teval #`(test #t class? (class object% (#,init x))))
+  (teval #`(test #t class? (class object% (#,init ((x y))))))
+  (test-init/field init)
+
+  (syntax-test #`(class object% (init-rest) (#,init y)))
+  (syntax-test #`(class object% (#,init x) (init-rest) (#,init y)))
+  (syntax-test #`(class object% (#,init y) (init-rest y)))
+  (teval #`(test #t class? (class object% (#,init [(x y)]) (init-rest y))))
+
+  'ok)
+
+(test-init #'init)
+(test-init #'init-field)
+(test-init/field #'field)
+
+(syntax-test #'(class object% (init-rest 10)))
+(syntax-test #'(class object% (init-rest . x)))
+(syntax-test #'(class object% (init-rest x y)))
+(syntax-test #'(class object% (init-rest) (init-rest x)))
+(syntax-test #'(class object% (init-rest x) (init-rest)))
+
+(syntax-test #'(class object% (init-field (x 10)) (init y)))
+(syntax-test #'(class object% (init (x 10)) (init-field y)))
+(syntax-test #'(class object% (init-rest x) (init y)))
+(syntax-test #'(class object% (init-rest x) (init-field y)))
+
+(define to-override-class%
+  (class object%
+    (public x y)
+    (define (x) 1)
+    (define (y) 2)))
+
+(define (test-method public object%)
+  (teval #`(test #t class? (class #,object% (#,public))))
+  (syntax-test #`(class #,object% (#,public . x)))
+  (syntax-test #`(class #,object% (#,public 10)))
+  (syntax-test #`(class #,object% (#,public (x))))
+  (syntax-test #`(class #,object% (#,public (x . y))))
+  (syntax-test #`(class #,object% (#,public (x 10))))
+  (syntax-test #`(class #,object% (#,public (10 x))))
+  (syntax-test #`(class #,object% (#,public x . y)))
+  (syntax-test #`(class #,object% (#,public x 10)))
+
+  (syntax-test #`(class #,object% (#,public x x)))
+  (syntax-test #`(class #,object% (#,public x) (#,public x)))
+  (syntax-test #`(class #,object% (#,public (x y) (x y))))
+  (syntax-test #`(class #,object% (#,public (x y1) (x y))))
+  (syntax-test #`(class #,object% (#,public (x y) (x2 y))))
+  (unless (module-identifier=? public #'private)
+    (teval #`(test #t class? (class #,object% (#,public (x x)) (define (x) 1))))
+    (teval #`(test #t class? (class #,object% (#,public (x y) (y x)) (define (x) 1) (define (y) 2)))))
+
+  'ok)
+
+(test-method #'public #'object%)
+(test-method #'public-final #'object%)
+(test-method #'override #'to-override-class%)
+(test-method #'override-final #'to-override-class%)
+(test-method #'private #'object%)
+
+;; ------------------------------------------------------------
+;; Test badic functionality
+
 (define eater<%> (interface () eat))
 
 (define-syntax mk-noop
@@ -350,6 +469,43 @@
   (test '(9 7 3) 'dotted (send/apply dotted f 3 '(7 9))))
 
 (syntax-test #'(send/apply dotted f 2 . l))
+
+;; ------------------------------------------------------------
+;; Test init & feld external names
+
+(define many-fields% (class object%
+		       (init i1
+			     [(i2* i2)])
+		       (init-field i3
+				   [(i4* i4)])
+		       (init [i5 5]
+			     [(i6* i6) 6])
+		       (init-field (i7 7)
+				   [(i8* i8) 8])
+		       (field [a 10]
+			      [(b* b) 12])
+		       (define inits+fields (list i1 i2* i3 i4* i5 i6* i7 i8* a b*))
+		       (define/public (get-fields)
+			 (list i3 i4* i7 i8* a b*))
+		       (define/public (get-inits+fields)
+			 inits+fields)
+		       (super-instantiate ())))
+
+(let ([om1 (make-object many-fields% 10 20 30 40)]
+      [oi1 (instantiate many-fields% () [i1 11] [i2 21] [i3 31] [i4 41])]
+      [om2 (make-object many-fields% 12 22 32 42 52 62 72 82)]
+      [oi2 (instantiate many-fields% () [i1 13] [i2 23] [i3 33] [i4 43] [i5 53] [i6 63] [i7 73] [i8 83])])
+  (test '(10 20 30 40 5 6 7 8 10 12) 'om1-if (send om1 get-inits+fields))
+  (test '(11 21 31 41 5 6 7 8 10 12) 'oi1-if (send oi1 get-inits+fields))
+  (test '(30 40 7 8 10 12) 'om1-f (send om1 get-fields))
+  (test '(31 41 7 8 10 12) 'oi1-f (send oi1 get-fields))
+  (test '(12 22 32 42 52 62 72 82 10 12) 'om2-if (send om2 get-inits+fields))
+  (test '(13 23 33 43 53 63 73 83 10 12) 'oi2-if (send oi2 get-inits+fields))
+  (test '(32 42 72 82 10 12) 'om2-f (send om2 get-fields))
+  (test '(33 43 73 83 10 12) 'oi2-f (send oi2 get-fields))
+  (test 10 (class-field-accessor many-fields% a) om1)
+  (test 12 (class-field-accessor many-fields% b) om1))
+
 
 ;; ------------------------------------------------------------
 ;; Test public*, define-public, etc.

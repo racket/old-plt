@@ -123,11 +123,15 @@
 			       (lambda (idp)
 				 (syntax-case idp ()
 				   [id (identifier? (syntax id)) 'ok]
+				   [((iid eid)) (and (identifier? (syntax iid))
+						     (identifier? (syntax eid))) 'ok]
 				   [(id expr) (identifier? (syntax id)) 'ok]
+				   [((iid eid) expr) (and (identifier? (syntax iid))
+							  (identifier? (syntax eid))) 'ok]
 				   [else
 				    (bad 
 				     (format
-				      "~a element is not an identifier or identifier-expression pair"
+				      "~a element is not an optionally renamed identifier or identifier-expression pair"
 				      form)
 				     idp)]))
 			       (syntax->list (syntax (idp ...)))))]
@@ -146,21 +150,16 @@
 			    (for-each (lambda (idp)
 					(syntax-case idp ()
 					  [(id expr) (identifier? (syntax id)) 'ok]
+					  [((iid eid) expr) (and (identifier? (syntax iid))
+								  (identifier? (syntax eid)))
+					   'ok]
 					  [else
 					   (bad 
-					    "field element is not an identifier-expression pair"
+					    "field element is not an optionally renamed identifier-expression pair"
 					    idp)]))
 				      (syntax->list (syntax (idp ...))))]
 			   [(field . rest)
 			    (bad "ill-formed field clause" stx)]
-			   [(inherit-field id ...)
-			    (for-each
-			     (lambda (id)
-			       (unless (identifier? id)
-				 (bad "inherit-field element is not an identifier" id)))
-			     (syntax->list (syntax (id ...))))]
-			   [(inherit-field . rest)
-			    (bad "ill-formed inherit-field clause" stx)]
 			   [(private id ...)
 			    (for-each
 			     (lambda (id)
@@ -176,13 +175,14 @@
 								  override
 								  public-final
 								  override-final
-								  inherit)))))
+								  inherit
+								  inherit-field)))))
 			    (let ([form (syntax-e (syntax form))])
 			      (for-each
 			       (lambda (idp)
 				 (syntax-case idp ()
 				   [id (identifier? (syntax id)) 'ok]
-				   [(iid eid) (and (identifier? (syntax id)) (identifier? (syntax eid))) 'ok]
+				   [(iid eid) (and (identifier? (syntax iid)) (identifier? (syntax eid))) 'ok]
 				   [else
 				    (bad 
 				     (format
@@ -200,6 +200,8 @@
 			    (bad "ill-formed override-final clause" stx)]
 			   [(inherit . rest)
 			    (bad "ill-formed inherit clause" stx)]
+			   [(inherit-field . rest)
+			    (bad "ill-formed inherit-field clause" stx)]
 			   [(rename idp ...)
 			    (for-each 
 			     (lambda (idp)
@@ -235,14 +237,26 @@
 			      (apply append
 				     (map (lambda (i)
 					    (let ([l (cdr (syntax->list i))])
-					      (map (lambda (i)
-						     (if (identifier? i)
-							 (alone i)
-							 (cons (stx-car i)
-							       (stx-car (stx-cdr i)))))
-						   l)))
+					      (if alone
+						  (map (lambda (i)
+							 (if (identifier? i)
+							     (alone i)
+							     (cons (stx-car i)
+								   (stx-car (stx-cdr i)))))
+						       l)
+						  l)))
 					  l)))]
-		   [pair (lambda (i) (cons i i))])
+		   [pair (lambda (i) (cons i i))]
+		   [normalize-init/field (lambda (i)
+					   ;; Put i in ((iid eid) optional-expr) form
+					   (cond
+					    [(identifier? i) (list (list i i))]
+					    [else (let ([a (stx-car i)])
+						    (if (identifier? a)
+							(cons (list a a) (stx-cdr i))
+							i))]))]
+		   [norm-init/field-iid (lambda (norm) (stx-car (stx-car norm)))]
+		   [norm-init/field-eid (lambda (norm) (stx-car (stx-cdr (stx-car norm))))])
 	       (let*-values ([(extract*) (lambda (kws l)
 					   (let-values ([(in out) (extract kws l void)])
 					     in))]
@@ -258,28 +272,31 @@
 				       defn-and-exprs
 				       cons)]
 			     [(plain-inits)
-			      (flatten values 
-				       (extract* (syntax-e 
-						  (quote-syntax (init init-rest)))
-						 exprs))]
-			     [(init-rest-decls _) 
+			      ;; Normalize after, but keep un-normal for error reporting
+			      (flatten #f (extract* (syntax-e 
+						     (quote-syntax (init init-rest)))
+						    exprs))]
+			     [(normal-plain-inits) (map normalize-init/field plain-inits)]
+			     [(init-rest-decls _)
 			      (extract (list (quote-syntax init-rest))
 				       exprs
 				       void)]
 			     [(inits)
-			      (flatten values (extract* (syntax-e 
-							 (quote-syntax (init init-field)))
-							exprs))]
-			     [(plain-inits)
-			      (flatten values (extract* (list (quote-syntax init)
-							      (quote-syntax init-rest))
-							exprs))]
+			      (flatten #f (extract* (syntax-e 
+						     (quote-syntax (init init-field)))
+						    exprs))]
+			     [(normal-inits)
+			      (map normalize-init/field inits)]
 			     [(plain-fields)
-			      (flatten values (extract* (list (quote-syntax field)) exprs))]
+			      (flatten #f (extract* (list (quote-syntax field)) exprs))]
+			     [(normal-plain-fields)
+			      (map normalize-init/field plain-fields)]
 			     [(plain-init-fields)
-			      (flatten values (extract* (list (quote-syntax init-field)) exprs))]
+			      (flatten #f (extract* (list (quote-syntax init-field)) exprs))]
+			     [(normal-plain-init-fields)
+			      (map normalize-init/field plain-init-fields)]
 			     [(inherit-fields)
-			      (flatten values (extract* (list (quote-syntax inherit-field)) decls))]
+			      (flatten pair (extract* (list (quote-syntax inherit-field)) decls))]
 			     [(privates)
 			      (flatten pair (extract* (list (quote-syntax private)) decls))]
 			     [(publics)
@@ -295,37 +312,48 @@
 			     [(inherits)
 			      (flatten pair (extract* (list (quote-syntax inherit)) decls))])
 		 
+		 ;; At most one init-rest:
 		 (unless (or (null? init-rest-decls)
 			     (null? (cdr init-rest-decls)))
 		   (bad "multiple init-rest clauses" (cadr init-rest-decls)))
 
+		 ;; Make sure init-rest is last
+		 (unless (null? init-rest-decls)
+		   (let loop ([l exprs] [saw-rest? #f])
+		     (unless (null? l)
+		       (cond
+			[(and (stx-pair? (car l))
+			      (identifier? (stx-car (car l))))
+			 (let ([form (stx-car (car l))])
+			   (cond
+			    [(module-identifier=? #'init-rest form)
+			     (loop (cdr l) #t)]
+			    [(not saw-rest?) (loop (cdr l) #f)]
+			    [(module-identifier=? #'init form)
+			     (bad "init clause follows init-rest clause" (car l))]
+			    [(module-identifier=? #'init-field form)
+			     (bad "init-field clause follows init-rest clause" (car l))]
+			    [else (loop (cdr l) #t)]))]
+			[else (loop (cdr l) saw-rest?)]))))
+
 		 ;; --- Check initialization on inits: ---
-		 (let loop ([inits inits])
-		   (unless (null? inits)
-		     (if (identifier? (car inits))
-			 (loop (cdr inits))
-			 (let loop ([inits (cdr inits)])
+		 (let loop ([inits inits] [normal-inits normal-inits])
+		   (unless (null? normal-inits)
+		     (if (stx-null? (stx-cdr (car normal-inits)))
+			 (loop (cdr inits)(cdr normal-inits))
+			 (let loop ([inits (cdr inits)] [normal-inits (cdr normal-inits)])
 			   (unless (null? inits)
-			     (if (identifier? (car inits))
+			     (if (stx-null? (stx-cdr (car normal-inits)))
 				 (bad "initializer without default follows an initializer with default"
 				      (car inits))
-				 (loop (cdr inits))))))))
+				 (loop (cdr inits) (cdr normal-inits))))))))
 		 
 		 ;; ----- Extract method definitions; check that they look like procs -----
 		 ;;  Optionally transform them, can expand even if not transforming.
-		 (let* ([field-names (map
-				      (lambda (i)
-					(if (identifier? i)
-					    i
-					    (stx-car i)))
-				      (append plain-fields plain-init-fields))]
-			[inherit-field-names inherit-fields]
-			[plain-init-names (map
-					   (lambda (i)
-					     (if (identifier? i)
-						 i
-						 (stx-car i)))
-					   plain-inits)]
+		 (let* ([field-names (map norm-init/field-iid
+					  (append normal-plain-fields normal-plain-init-fields))]
+			[inherit-field-names (map car inherit-fields)]
+			[plain-init-names (map norm-init/field-iid normal-plain-inits)]
 			[inherit-names (map car inherits)]
 			[rename-names (map car renames)]
 			[local-public-normal-names (map car (append publics overrides))]
@@ -565,6 +593,22 @@
 			 (when dup
 			   (bad "duplicate declared identifier" dup)))
 		       
+		       ;; -- Check for duplicate external method names, init names, or field names
+		       (let ([check-dup
+			      (lambda (what l)
+				(let ([ht (make-hash-table)])
+				  (for-each (lambda (id)
+					      (when (hash-table-get ht (syntax-e id) (lambda () #f))
+						(bad (format "duplicate declared external ~a name" what) id))
+					      (hash-table-put! ht (syntax-e id) #t))
+					    l)))])
+			 ;; method names
+			 (check-dup "method" (map cdr (append publics overrides public-finals override-finals)))
+			 ;; inits
+			 (check-dup "init" (map norm-init/field-eid (append normal-inits)))
+			 ;; fields
+			 (check-dup "field" (map norm-init/field-eid (append normal-plain-fields normal-plain-init-fields))))
+
 		       ;; -- Check that private/public/override are defined --
 		       (let ([ht (make-hash-table)]
 			     [stx-ht (make-hash-table)])
@@ -606,34 +650,39 @@
 							    (module-identifier=? it (syntax -init)))
 							  (syntax-e (quote-syntax (init
 										   init-field)))))
-					      (let ([ids (map 
-							  (lambda (idp)
-							    (if (identifier? idp)
-								idp
-								(stx-car idp)))
-							  (syntax->list (syntax (idp ...))))])
-						(with-syntax ([(id ...) ids]
-							      [(idpos ...) (map localize ids)]
+					      (let* ([norms (map normalize-init/field
+								 (syntax->list (syntax (idp ...))))]
+						     [iids (map norm-init/field-iid norms)]
+						     [exids (map norm-init/field-eid norms)])
+						(with-syntax ([(id ...) iids]
+							      [(idpos ...) (map localize exids)]
 							      [(defval ...) 
-							       (map (lambda (idp)
-								      (if (identifier? idp)
+							       (map (lambda (norm)
+								      (if (stx-null? (stx-cdr norm))
 									  (syntax #f)
-									  (with-syntax ([defexp (stx-car (stx-cdr idp))])
+									  (with-syntax ([defexp (stx-car (stx-cdr norm))])
 									    (syntax (lambda () defexp)))))
-								    (syntax->list (syntax (idp ...))))]
+								    norms)]
 							      [class-name class-name])
 						  (syntax/loc e 
 						    (begin 
+						      1 ; to ensure a non-empty body
 						      (set! id (extract-arg 'class-name `idpos init-args defval))
 						      ...))))]
 					     [(field idp ...)
-					      (syntax/loc e (begin 
-							      (set! . idp)
-							      ...))]
-					     [(init-rest id)
+					      (with-syntax ([(((iid eid) expr) ...)
+							     (map normalize-init/field (syntax->list #'(idp ...)))])
+						(syntax/loc e (begin 
+								1 ; to ensure a non-empty body
+								(set! iid expr)
+								...)))]
+					     [(init-rest id/rename)
 					      (with-syntax ([n (+ (length plain-inits)
 								  (length plain-init-fields)
-								  -1)])
+								  -1)]
+							    [id (if (identifier? #'id/rename)
+								    #'id/rename
+								    (stx-car #'id/rename))])
 						(syntax/loc e (set! id (extract-rest-args n init-args))))]
 					     [(init-rest)
 					      (syntax (void))]
@@ -681,11 +730,7 @@
 				       [(all-field ...) (append inherit-field-names
 								field-names
 								private-field-names)]
-				       [(plain-init-name ...) (map (lambda (i)
-								     (if (identifier? i)
-									 i
-									 (car i)))
-								   plain-inits)])
+				       [(plain-init-name ...) plain-init-names])
 			   (let ([mappings
 				  ;; make-XXX-map is supplied by private/classidmap.ss
 				  (with-syntax ([the-obj the-obj]
@@ -776,21 +821,16 @@
 							  (+ (length private-field-names)
 							     (length plain-init-fields)
 							     (length plain-fields)))]
-					     [field-names (map (lambda (i)
-								 (localize
-								  (if (identifier? i)
-								      i
-								      (car i))))
+					     [field-names (map (lambda (norm)
+								 (localize (norm-init/field-eid norm)))
 							       (append
-								plain-fields
-								plain-init-fields))]
-					     [inherit-field-names (map localize inherit-field-names)]
-					     [init-names (map (lambda (i)
+								normal-plain-fields
+								normal-plain-init-fields))]
+					     [inherit-field-names (map localize (map cdr inherit-fields))]
+					     [init-names (map (lambda (norm)
 								(localize
-								 (if (identifier? i)
-								     i
-								     (car i))))
-							      inits)]
+								 (norm-init/field-eid norm)))
+							      normal-inits)]
 					     [init-mode init-mode]
 					     [(private-method ...) (map (find-method private-methods) (map car privates))]
 					     [public-methods (map (find-method methods) (map car publics))]

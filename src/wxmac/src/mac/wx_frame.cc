@@ -550,6 +550,7 @@ void wxFrame::Maximize(Bool maximize)
 	int dX = cWindowX - oldWindowX;
 	int dY = cWindowY - oldWindowY;
 	OnWindowDSize(dW, dH, dX, dY);
+	OnSize(cWindowWidth, cWindowHeight);
       }
     }
 }

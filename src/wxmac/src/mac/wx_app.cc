@@ -363,6 +363,7 @@ void wxApp::doMacMouseDown(void)
 	if ((!StillDown()) || (TrackBox(window, cCurrentEvent.where, inCollapseBox)))
 	  CollapseWindow(window, TRUE);
       }
+      break;
 #ifdef OS_X
     case inToolbarButton:
       {
@@ -376,6 +377,7 @@ void wxApp::doMacMouseDown(void)
 	  } 
 	}
       }
+      break;
 #endif
     case inZoomIn:
     case inZoomOut:

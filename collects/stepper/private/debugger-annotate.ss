@@ -11,45 +11,35 @@
   ; what does the iterator need to know about 
   
   
-  (define (tree-iterator-maker-abstract in? out?)
-    (contract
-     (-> (-> syntax? (vectorof/n (listof syntax?) (-> (listof syntax?) syntax?))) ; tree-knower
-         (-> (-> syntax? in? (vectorof/n syntax? out?)) syntax? in?               ; f
-             (vectorof/n syntax? out?)) 
-         (-> syntax? in? (vectorof/n syntax? out?)))                              ; iterator
-     (lambda (tree-knower f)
-       (lambda (s in)
-         (let*-2vals ([(s-list reassemble) (tree-knower s)])
-           ´
-           
-         (let ([new-iterator 
-                (lambda (s in)
-         (f 
   
-  
-  ; (-> (-> 
-  (define expr-syntax-object-iterator 
-    (contract
-     (-> syntax?
-         (list/n
-          (listof syntax?)
-          (syntax?))
-     (lambda (fn stx)
-       (let* ([rebuild
-               (lambda (new-sexp) 
-                 (rebuild-stx new-sexp stx))]
-              [lambda-clause-abstraction
-               (lambda (clause)
-                 (kernel:kernel-syntax-case stx #f
-                   [((variable ...) . bodies)
-                    (rebuild `(#'(variable ...) ,@(map fn (syntax->list #'bodies))))]
+  (define/contract expr-iterator
+    (-> syntax?
+        (-> syntax? (vector/f syntax? any?))
+        (vector/f syntax? any?))
+    (lambda (fn stx)
+      (let* ([rebuild
+              (lambda (new-sexp) 
+                (rebuild-stx new-sexp stx))]
+             [lambda-clause-abstraction
+              (lambda (clause)
+                (kernel:kernel-syntax-case stx #f
+                  [((variable ...) . bodies)
+                   (let*-2vals ([(new-bodies outs)
+                                 (2vals-map fn (map fn (syntax->list #'bodies)))])
+                     (2vals
+                      `(#'(variable ...) ,@new-bodies)
+                      outs))]
                    [else
                     (error 'expr-syntax-object-iterator "unexpected (case-)lambda clause: ~a\n" (syntax-object->datum stx))]))]
               [let-values-abstraction
                (lambda (stx)
                  (kernel:kernel-syntax-case stx #f
                    [(kwd ((variable ...) ...) . bodies)
-                    (rebuild `(#'kwd #'((variable ...) ...) ,@(map fn (syntax->list #'bodies))))]
+                    (let*-2vals ([(new-bodies outs)
+                                  (2vals-map fn (map fn (syntax->list #'bodies)))])
+                    (2vals 
+                     (rebuild `(#'kwd #'((variable ...) ...) ,@new-bodies))
+                     outs))]
                    [else
                     (error 'expr-syntax-object-iterator "unexpected let(rec) expression: ~a\n" (syntax-object->datum stx))]))]) 
          (kernel:kernel-syntax-case stx #f
@@ -57,8 +47,12 @@
             (identifier? (syntax var-stx))
             stx]
            [(lambda . clause)
-            (rebuild `(#'lambda ,@(lambda-clause-abstraction #'clause)))]
+            (let*-2vals ([(clause outs)  (lambda-clause-abstraction #'clause)])
+              (2vals 
+               (rebuild `(#'lambda ,@clause))
+               outs))]
            [(case-lambda . clauses)
+            (let*-2vals ([(clauses outs)
             (rebuild `(case-lambda ,@(map lambda-clause-abstraction (syntax->list #'clauses))))]
            [(if test then)
             (rebuild `(#'if ,(fn #'test) ,(fn #'then)))]

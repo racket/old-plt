@@ -35,17 +35,13 @@
  /* NO_SCHEME_THREADS removes MzScheme's threads from the Scheme user. 
     In this case, custodian-shutdown-all doesn't kill threads. */
 
- /* NO_SCHEME_EXNS removes MzScheme's exception system. (DOESN'T WORK
-    since macro.ss and unitsig.ss rely on exceptions.) */
-
  /* NO_FILE_SYSTEM_UTILS removes most file system utilities. */
 
 #if defined(NO_FILE_SYSTEM_UTILS) \
 	|| defined(NO_OBJECT_SYSTEM) \
 	|| defined(NO_TCP_SUPPORT) \
 	|| defined(NO_REGEXP_UTILS) \
-	|| defined(NO_SCHEME_THREADS) \
-	|| defined(NO_SCHEME_EXNS)
+	|| defined(NO_SCHEME_THREADS)
 # define MZSCHEME_SOMETHING_OMITTED
 #endif
 

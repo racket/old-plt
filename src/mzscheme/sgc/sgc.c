@@ -182,7 +182,7 @@
 /* Implements GC_prim_stringout using Windows console
    functions. */
 
-#define AUTO_STATIC_ROOTS_IF_POSSIBLE 0
+#define AUTO_STATIC_ROOTS_IF_POSSIBLE 1
 /* Automatically registers static C variables as roots if
    platform-specific code is porvided */
 

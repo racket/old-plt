@@ -1,0 +1,204 @@
+
+_Handin Server and Client_
+
+The "handin-server" directory contains a server to be run by a course
+instructor for accepting homework assignments.
+
+The "handin-client" directory contains a client to be customized then
+re-distributed to students in the course. The customized client will
+embed a particular hostname and port where the server is running, as
+well as a server certificate.
+
+With a customized client, students simply install a ".plt" file --- so
+there's no futzing with configuration dialogs and certificates. A
+student can install any number of clients at once (assuming that the
+clients are properly customized, as described below).
+
+The result, on the student's side, is a "Handin" button in DrScheme's
+toolbar. Clicking the "Handin" button allows the student to type a
+password and upload the current content of the definitions and
+interactions window to the course instructor's server. The "File" menu
+is also extended with a "Manage..." menu item for managing a handin
+account (i.e., changing the password, or creating a new account if the
+instructor configures the server to allow new accounts).
+
+On the instructor's side, the handin server can be configured to check
+the student's submission before accepting it. Other configuration of
+the server includes setting the list of currently active assignments
+(i.e., those for which handins are accepted).
+
+The handin process uses SSL, so it is as secure as the server and each
+user's password.
+
+Client Customization
+============================================
+
+To customize the client:
+
+  1. Rename (of make a copy of) the "handin-client" collection
+     directory that is distibuted with this server. The new name
+     should describe your class fairly uniquely to students. For
+     example, "uu-cpsc2010" is a good name for CPSC 2010 at the
+     University of Utah.
+
+  2. Edit the first four definitions of "info.ss" in your renamed
+     collection directory:
+
+       * For `name', choose a name for the handin tool as it will
+         appear in DrScheme's interface (e.g., for the "Manage XXX..."
+         menu item). Again, make the name specific to the course, in
+         case a student installs multiple handin tools.  It's a good
+         idea to use "Handin" as the last part of the name.
+
+       * For `collection', use the name that you chose for your
+         collection directory (i.e., whatever you changed
+         "handin-client" to).
+
+       * For `server', use the hostname where the server will be
+         running to accept handin submissions.
+
+       * For `port', use the port number where the server will be
+         running to accept handin submissions. (The default is fine.)
+
+   3. Replace "icon.png" in your renamed directory with a new 32x32
+      icon. This icon is displayed on startup, and it is displayed on
+      teh "Handin" button. Again, choosing a distinct icon is
+      important for students who install multiple handin tools.
+
+   4. Replace "server-cert.pem" in your renamed directory with a
+      server certificate. The file "server-cert.pem" in
+      "handin-client" collection is ok for testing, but the point of
+      this certificate is to make handins secure, so you should
+      generate a new (self-certifying) certificate and keep its key
+      private.
+
+   5. Run
+           mzc --collection-plt <name>.plt <name>
+
+      where <name> is the name that you chose for your (i.e., whatever
+      you changed "handin-client" to).
+
+   6. Distribute <name>.plt to students for installation into their
+      copies of DrScheme. The students need not have access to the
+      DrScheme installation directory; the tool will be installed in
+      the student's personal space on the filesystem.
+
+
+Server Setup
+============================================
+
+Quick start for testing:
+------------------------
+
+ 1. Create a new directory
+ 2. Copy "server-cert.pem" from "handin-client" to the new directory
+       NOTE: for real use, you need a new certificate
+ 3. Copy "private-key.pem" from "handin-server" to the new directory
+       NOTE: for real use, you need a new key
+ 4. Create a file "users.ss" with the following content:
+       ((tester ("pw" "Chester Tester" "123")))
+ 5. Make an "active" subdirectory in your new directory
+ 6. Make a "test" subdirectory in "active"
+
+ 7. In your new directory, run
+       mzscheme -mvqM handin-server
+
+ 8. Start DrScheme, click "Handin", handin as "tester" with
+    password "pw"
+
+Details:
+--------
+
+The server must be run from a directory that is specially prepared to
+host the server. This directory must contain the following files and
+directories:
+
+  * server-cert.pem --- the server's certificate; to create a
+    ceritificate and key with openssl:
+
+     openssl req -new -nodes -x509 -days 365 -out server-cert.pem 
+                 -keyout private-key.pem 
+
+  * private-key.pem --- the private key to go with "server-cert.pem"
+
+  * config.ss (optional) --- configuration options. The file format
+    is 
+
+         ((<key> <val>) ...)
+
+    for the following keys:
+
+      'session-timeout : number of seconds a session can last,
+         including execution of the submit-validation function;
+         the default is 300
+
+      'max-upload : maximum size in bytes of an acceptable submission;
+         the default is 500000
+
+      'max-upload-keep : maximum index of submissions to keep; the
+         most recent submission is "handin0", the next oldest is
+         "handin1", next oldest is "handin2", etc.; the default is 9
+
+      'id-regexp : a regular expression used to validate a user id for
+         a created account; the default is #rx"^.*$"
+
+      'id-desc : a plain-words description of the acceptable format
+         for an id; the default is "anything"
+
+      'allow-new-users : a boolean indicating whether to allow
+         new-user requests from a client tool; the default is #f
+
+  * users.ss (created if not present if a user is added) --- keeps
+    the list of user accounts, along with the associate password,
+    full name, and id of the account. The file format is
+
+      ((<username-sym> (<passwd-str> <full-name-str> <id-str>)) ...)
+
+    If the 'allow-new-users configuration allows new users, the
+    "users.ss" file can be updated by the server with new users. It
+    can always be updated by the server to change password.
+
+  * active/ --- sub-directory for active assignments; a list of these
+    directory names is sent to client tools, and a student selects
+    from this list. The list is built once when the server starts.
+
+    Within each directory, the student id is used for a sub-directory
+    name. Within the sub-directory are "handin0", etc., for each
+    student who submits an assignment.
+
+ * active/<assignment>/checker.ss (optional) --- a module that exports
+   a `checker' function. This function receives two strings. The first
+   is a username and the second is the user's submission as a
+   string. (See also `unpack-submission' from "util.ss", below.) To
+   reject the submission, the `checker' function can raise an
+   exception; the exception message will be relayed back to the user.
+
+The server currently provides to mechanism for a graceful
+shutdown. Terminiating the server should at worst annoy a student in
+the same way as a network outage. In particular, no data should be
+lost.
+
+The client and server are designed with the expectation that network
+problems and timeouts will be common. The tool always provides a
+"cancel" button for any network transaction. For submissions, "cancel"
+is guaranteed to work up to the point that the client sends a "commit"
+command, which happens only after the server is ready to accept the
+submission (having run it through thew checker, if any), but before
+the server writes the file. The server responds to a commit with "ok"
+only after it has written the file. Thus, when the tool says that the
+handin was successful, the report is reliable. Meanwhile, the tool can
+also report successful cancels most of the time. In the (normally
+brief) time between a commit and an "ok" response, the tool gives the
+student a suitable warning that the cancel is unreliable.
+
+To minimize handin error, the number of active assignments should be
+limited to 1 whenever possible. When multiple assignments are active,
+design a checker to help ensure that the student has selected the
+correct assignment in the handin dialog.
+
+
+The _utils.ss_ module provides utilities helpful in implementing
+`checker' functions:
+
+> (unpack-submission string) - returns two text% objects correcponding
+  to the submitted definitions and interactions windows

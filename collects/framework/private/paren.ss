@@ -287,10 +287,12 @@
 						    (loop pos))))))])])))))))))))))
   
   (define forward-match
-    (opt-lambda (edit pos end-pos 
-		      paren-pairs quote-pairs eol-comment-list
-		      [paren-cache #f])
-      (do-match #t #f edit pos end-pos paren-pairs quote-pairs eol-comment-list quote-pairs paren-cache)))
+    (case-lambda
+     [(edit pos end-pos paren-pairs quote-pairs eol-comment-list)
+      (forward-match
+       edit pos end-pos paren-pairs quote-pairs eol-comment-list #f)]
+     [(edit pos end-pos paren-pairs quote-pairs eol-comment-list paren-cache)
+      (do-match #t #f edit pos end-pos paren-pairs quote-pairs eol-comment-list quote-pairs paren-cache)]))
   
   (define prev-paren-pairs null)
   (define prev-rev-paren-pairs null)
@@ -300,10 +302,14 @@
   (define (backwards pairs) (map (lambda (p) (cons (cdr p) (car p))) pairs))
   
   (define backward-match
-    (opt-lambda (edit pos end-pos 
-		      paren-pairs quote-pairs eol-comment-list
-		      [contains? #f]
-		      [paren-cache #f])
+    (case-lambda
+     [(edit pos end-pos paren-pairs quote-pairs eol-comment-list)
+      (backward-match
+       edit pos end-pos paren-pairs quote-pairs eol-comment-list #f)]
+     [(edit pos end-pos paren-pairs quote-pairs eol-comment-list contains?)
+      (backward-match
+       (edit pos end-pos paren-pairs quote-pairs eol-comment-list contains? #f))]
+     [(edit pos end-pos paren-pairs quote-pairs eol-comment-list contains? paren-cache)
       (let* ([backward-paren-pairs (backwards paren-pairs)]
 	     [backward-quote-pairs (backwards quote-pairs)]
 	     [match (lambda (pos ret-val)
@@ -330,4 +336,4 @@
 		  [(eq? next-match 'bad-match) #f]
 		  [(not next-match) last-match]
 		  [else (loop last-match next-match)])))
-	    (match pos #f))))))))
+	    (match pos #f)))])))))

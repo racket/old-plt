@@ -8,7 +8,7 @@
 	   "private/menu.ss"
 	   "private/preferences.ss"
 	   "private/autosave.ss"
-	   "private/handler".ss 
+	   "private/handler.ss" 
 	   "private/keymap.ss"
 	   "private/match-cache.ss"
 	   "private/paren.ss"

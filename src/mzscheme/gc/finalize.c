@@ -13,8 +13,7 @@
  */
 /* Boehm, February 1, 1996 1:19 pm PST */
 # define I_HIDE_POINTERS
-# include "private/gc_priv.h"
-# include "private/gc_mark.h"
+# include "private/gc_pmark.h"
 
 /* Type of mark procedure used for marking from finalizable object.	*/
 /* This procedure normally does not mark the object, only its		*/
@@ -89,7 +88,7 @@ static signed_word log_fo_table_size = -1;
 
 word GC_fo_entries = 0;
 
-void GC_push_finalizer_structures()
+void GC_push_finalizer_structures GC_PROTO((void))
 {
     GC_push_all((ptr_t)(&dl_head), (ptr_t)(&dl_head) + sizeof(word));
     GC_push_all((ptr_t)(&fo_head), (ptr_t)(&fo_head) + sizeof(word));
@@ -224,16 +223,27 @@ void GC_register_late_disappearing_link(void **link, void *obj)
     }
     new_dl = (struct disappearing_link *)
       GC_INTERNAL_MALLOC(sizeof(struct disappearing_link),NORMAL);
-    if (new_dl != 0) {
-        new_dl -> dl_hidden_obj = HIDE_POINTER(obj);
-        new_dl -> dl_hidden_link = HIDE_POINTER(link);
-	new_dl -> dl_special.kind = late_dl ? LATE_DL : (obj ? NORMAL_DL : RESTORE_DL); /* PLTSCHEME: Set flag */
-        dl_set_next(new_dl, dl_head[index]);
-        dl_head[index] = new_dl;
-        GC_dl_entries++;
-    } else {
-        GC_finalization_failures++;
+    if (0 == new_dl) {
+#     ifdef THREADS
+	UNLOCK();
+    	ENABLE_SIGNALS();
+#     endif
+      new_dl == GC_oom_fn(sizeof(struct disappearing_link));
+      if (0 == new_dl) {
+	GC_finalization_failures++;
+	return(0);
+      }
+      /* It's not likely we'll make it here, but ... */
+#     ifdef THREADS
+        DISABLE_SIGNALS();
+	LOCK();
+#     endif
     }
+    new_dl -> dl_hidden_obj = HIDE_POINTER(obj);
+    new_dl -> dl_hidden_link = HIDE_POINTER(link);
+    dl_set_next(new_dl, dl_head[index]);
+    dl_head[index] = new_dl;
+    GC_dl_entries++;
 #   ifdef THREADS
         UNLOCK();
         ENABLE_SIGNALS();
@@ -268,7 +278,7 @@ void GC_register_late_disappearing_link(void **link, void *obj)
             UNLOCK();
     	    ENABLE_SIGNALS();
 #           ifdef DBG_HDRS_ALL
-              dl_next(curr_dl) = 0;
+              dl_set_next(curr_dl, 0);
 #           else
                 GC_free((GC_PTR)curr_dl);
 #           endif
@@ -306,7 +316,7 @@ ptr_t p;
     ptr_t scan_limit;
     ptr_t target_limit = p + WORDS_TO_BYTES(hhdr -> hb_sz) - 1;
     
-    if ((descr & DS_TAGS) == DS_LENGTH) {
+    if ((descr & GC_DS_TAGS) == GC_DS_LENGTH) {
        scan_limit = p + descr - sizeof(word);
     } else {
        scan_limit = target_limit + 1 - sizeof(word);
@@ -461,19 +471,30 @@ int eager_level; /* PLTSCHEME */
     }
     new_fo = (struct finalizable_object *)
       GC_INTERNAL_MALLOC(sizeof(struct finalizable_object),NORMAL);
-    if (new_fo != 0) {
-        new_fo -> fo_hidden_base = (word)HIDE_POINTER(base);
-	new_fo -> fo_fn = fn;
-	new_fo -> fo_client_data = (ptr_t)cd;
-	new_fo -> fo_object_size = hhdr->hb_sz;
-	new_fo -> fo_mark_proc = mp;
-	new_fo -> eager_level = eager_level; /* PLTSCHEME */
-	fo_set_next(new_fo, fo_head[index]);
-	GC_fo_entries++;
-	fo_head[index] = new_fo;
-    } else {
-     	GC_finalization_failures++;
+    if (0 == new_fo) {
+#     ifdef THREADS
+	UNLOCK();
+    	ENABLE_SIGNALS();
+#     endif
+      new_fo == GC_oom_fn(sizeof(struct finalizable_object));
+      if (0 == new_fo) {
+	GC_finalization_failures++;
+	return;
+      }
+      /* It's not likely we'll make it here, but ... */
+#     ifdef THREADS
+        DISABLE_SIGNALS();
+	LOCK();
+#     endif
     }
+    new_fo -> fo_hidden_base = (word)HIDE_POINTER(base);
+    new_fo -> fo_fn = fn;
+    new_fo -> fo_client_data = (ptr_t)cd;
+    new_fo -> fo_object_size = hhdr -> hb_sz;
+    new_fo -> fo_mark_proc = mp;
+    fo_set_next(new_fo, fo_head[index]);
+    GC_fo_entries++;
+    fo_head[index] = new_fo;
 #   ifdef THREADS
         UNLOCK();
     	ENABLE_SIGNALS();
@@ -971,6 +992,25 @@ int GC_invoke_finalizers()
     doing--; /* PLTSCHEME */
 
     return count;
+}
+
+void (* GC_finalizer_notifier)() = (void (*) GC_PROTO((void)))0;
+
+static GC_word last_finalizer_notification = 0;
+
+void GC_notify_or_invoke_finalizers GC_PROTO((void))
+{
+    if (GC_finalize_now == 0) return;
+    {
+	(void) GC_invoke_finalizers();
+	GC_ASSERT(GC_finalize_now == 0);
+	return;
+    }
+    if (GC_finalizer_notifier != (void (*) GC_PROTO((void)))0
+	&& last_finalizer_notification != GC_gc_no) {
+	last_finalizer_notification = GC_gc_no;
+	GC_finalizer_notifier();
+    }
 }
 
 # ifdef __STDC__

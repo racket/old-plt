@@ -1,4 +1,7 @@
 # PLTSCHEME: slightly modified version of Makefile
+# This is the original manually generated Makefile.  It may still be used
+# to build the collector.
+#
 # Primary targets:
 # gc.a - builds basic library
 # c++ - adds C++ interface to library
@@ -27,6 +30,11 @@ OPTIONS=@OPTIONS@
 BASEFLAGS= -I$(srcdir)/include -DNO_SIGNALS @CFLAGS@ 
 CFLAGS= $(BASEFLAGS) @PROFFLAGS@ $(OPTIONS) -DNO_EXECUTE_PERMISSION -DSILENT -DOLD_BLOCK_ALLOC -DLARGE_CONFIG
 
+# To build the parallel collector on Linux, add to the above:
+# -DGC_LINUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
+# To build the parallel collector n a static library on HP/UX, add to the above:
+# -DGC_HPUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC -DUSE_HPUX_TLS -D_POSIX_C_SOURCE=199506L
+
 # HOSTCC and HOSTCFLAGS are used to build executables that will be run as
 # part of the build process, i.e. on the build machine.  These will usually
 # be the same as CC and CFLAGS, except in a cross-compilation environment.
@@ -54,7 +62,7 @@ HOSTCFLAGS=$(BASEFLAGS)
 #   Define SOLARIS_THREADS as well.
 # -DGC_IRIX_THREADS enables support for Irix pthreads.  See README.irix.
 # -DGC_HPUX_THREADS enables support for HP/UX 11 pthreads.
-#   Also requires -D_REENTRANT. See README.hp.
+#   Also requires -D_REENTRANT or -D_POSIX_C_SOURCE=199506L. See README.hp.
 # -DGC_LINUX_THREADS enables support for Xavier Leroy's Linux threads.
 #   see README.linux.  -D_REENTRANT may also be required.
 # -DALL_INTERIOR_POINTERS allows all pointers to the interior
@@ -85,10 +93,11 @@ HOSTCFLAGS=$(BASEFLAGS)
 #   code from the heap.  Currently this only affects the incremental
 #   collector on UNIX machines.  It may greatly improve its performance,
 #   since this may avoid some expensive cache synchronization.
-# -DOPERATOR_NEW_ARRAY declares that the C++ compiler supports the
-#   new syntax "operator new[]" for allocating and deleting arrays.
+# -DGC_NO_OPERATOR_NEW_ARRAY declares that the C++ compiler does not support
+#   the  new syntax "operator new[]" for allocating and deleting arrays.
 #   See gc_cpp.h for details.  No effect on the C part of the collector.
-#   This is defined implicitly in a few environments.
+#   This is defined implicitly in a few environments.  Must also be defined
+#   by clients that use gc_cpp.h.
 # -DREDIRECT_MALLOC=X causes malloc, realloc, and free to be defined
 #   as aliases for X, GC_realloc, and GC_free, respectively.
 #   Calloc is redefined in terms of the new malloc.  X should
@@ -205,11 +214,15 @@ HOSTCFLAGS=$(BASEFLAGS)
 #   These may otherwise alter its configuration, or turn off GC altogether.
 #   I don't know of a reason to disable this, except possibly if the
 #   resulting process runs as a privileged user?
+# -DSTUBBORN_ALLOC allows allocation of "hard to change" objects, and thus
+#   makes incremental collection easier.  Was enabled by default until 6.0.
+#   Rarely used, to my knowledge.
 #
 
 CXXFLAGS= $(CFLAGS) 
 AR= @AR@
 RANLIB= @RANLIB@
+
 
 OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o irix_threads.o linux_threads.o typd_mlc.o ptr_chck.o mallocx.o solaris_pthreads.o gcj_mlc.o specific.o gc_dlopen.o
 
@@ -222,10 +235,10 @@ CORD_OBJS=  cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
     sparc_mach_dep.s include/gc.h include/gc_typed.h \
     include/private/gc_hdrs.h include/private/gc_priv.h \
-    include/private/gcconfig.h include/private/gc_mark.h \
-    include/gc_inl.h include/gc_inline.h \
+    include/private/gcconfig.h include/private/gc_pmark.h \
+    include/gc_inl.h include/gc_inline.h include/gc_mark.h \
     threadlibs.c if_mach.c if_not_there.c gc_cpp.cc include/gc_cpp.h \
-    include/weakpointer.h include/private/gc_locks.h \
+    gcname.c include/weakpointer.h include/private/gc_locks.h \
     gcc_support.c mips_ultrix_mach_dep.s include/gc_alloc.h \
     include/new_gc_alloc.h include/javaxfc.h sparc_sunos4_mach_dep.s \
     sparc_netbsd_mach_dep.s \
@@ -237,24 +250,35 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
     include/gc_pthread_redirects.h $(CORD_SRCS)
 
 DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
-	doc/README.amiga doc/README.cords doc/README.debugging \
+	doc/README.amiga doc/README.cords doc/debugging.html \
 	doc/README.dj doc/README.hp doc/README.linux doc/README.rs6000 \
 	doc/README.sgi doc/README.solaris2 doc/README.uts \
 	doc/README.win32 doc/barrett_diagram doc/README \
         doc/README.contributors doc/README.changes doc/gc.man \
-	doc/README.environment
+	doc/README.environment doc/tree.html doc/gcdescr.html \
+	doc/README.autoconf doc/README.macros
 
 TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
 	tests/leak_test.c tests/thread_leak_test.c
-OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
-           setjmp_t.c SMakefile.amiga \
-           callprocs pc_excludes \
-           MacProjects.sit.hqx MacOS.c EMX_MAKEFILE makefile.depend \
+
+GNU_BUILD_FILES= configure.in Makefile.am configure acinclude.m4 \
+		 libtool.m4 install-sh configure.host Makefile.in \
+		 aclocal.m4 config.sub config.guess ltconfig \
+		 ltmain.sh mkinstalldirs
+
+OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE gc.mak \
+		 BCC_MAKEFILE EMX_MAKEFILE WCC_MAKEFILE Makefile.dj \
+		 PCR-Makefile SMakefile.amiga Makefile.DLLs \
+		 digimars.mak Makefile.direct
+#	Makefile and Makefile.direct are copies of each other.
+
+OTHER_FILES= Makefile setjmp_t.c callprocs pc_excludes \
+           MacProjects.sit.hqx MacOS.c \
            Mac_files/datastart.c Mac_files/dataend.c \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
-           add_gc_prefix.c \
-	   win32_threads.c NT_THREADS_MAKEFILE gc.mak Makefile.dj \
-	   version.h Makefile.DLLs WCC_MAKEFILE AmigaOS.c $(TESTS)
+           add_gc_prefix.c gc_cpp.cpp win32_threads.c \
+	   version.h AmigaOS.c \
+	   $(TESTS) $(GNU_BUILD_FILES) $(OTHER_MAKEFILES)
 
 CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
 	$(srcdir)/include/ec.h $(srcdir)/include/private/cord_pos.h
@@ -303,7 +327,7 @@ $(OBJS) tests/test.o dyn_load.o dyn_load_sunos53.o: \
 # options such as -DSILENT affects the size of GC_arrays,
 # invalidating all .o files that rely on gc_priv.h
 
-mark.o typd_mlc.o finalize.o: $(srcdir)/include/private/gc_mark.h
+mark.o typd_mlc.o finalize.o ptr_chck.o: $(srcdir)/include/gc_mark.h $(srcdir)/include/private/gc_pmark.h
 
 specific.o linux_threads.o: $(srcdir)/include/private/specific.h
 
@@ -415,9 +439,6 @@ mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s $(srcdir)/mips_ul
 	./if_mach SPARC SUNOS4 $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
 	./if_mach SPARC OPENBSD $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
 	./if_mach SPARC NETBSD $(AS) -o mach_dep.o $(srcdir)/sparc_netbsd_mach_dep.s
-	./if_mach HP_PA HPUX $(AS) -o hpux_test_and_clear.o $(srcdir)/hpux_test_and_clear.s
-	./if_mach HP_PA HPUX $(CC) -c -o md_tmp.o $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
-	./if_mach HP_PA HPUX ld -r -o mach_dep.o md_tmp.o hpux_test_and_clear.o
 	./if_not_there mach_dep.o $(CC) -c $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
 
 mark_rts.o: $(srcdir)/mark_rts.c $(UTILS)
@@ -474,7 +495,7 @@ if_not_there: $(srcdir)/if_not_there.c
 	$(HOSTCC) $(HOSTCFLAGS) -o if_not_there $(srcdir)/if_not_there.c
 
 clean: 
-	rm -f gc.a *.o gctest gctest_dyn_link test_cpp \
+	rm -f gc.a *.o *.exe tests/*.o gctest gctest_dyn_link test_cpp \
 	      setjmp_test  mon.out gmon.out a.out core if_not_there if_mach \
 	      threadlibs $(CORD_OBJS) cord/cordtest cord/de
 	-rm -f *~
@@ -500,12 +521,22 @@ KandRtest: setjmp_test gctest
 	./setjmp_test
 	./gctest
 
-add_gc_prefix: add_gc_prefix.c
+add_gc_prefix: $(srcdir)/add_gc_prefix.c $(srcdir)/version.h
 	$(CC) -o add_gc_prefix $(srcdir)/add_gc_prefix.c
 
-gc.tar: $(SRCS) $(DOC_FILES) $(OTHER_FILES) add_gc_prefix
+gcname: $(srcdir)/gcname.c $(srcdir)/version.h
+	$(CC) -o gcname $(srcdir)/gcname.c
+
+gc.tar: $(SRCS) $(DOC_FILES) $(OTHER_FILES) add_gc_prefix gcname
+	cp Makefile Makefile.old
+	cp Makefile.direct Makefile
+	rm -f `./gcname`
+	ln -s . `./gcname`
 	./add_gc_prefix $(SRCS) $(DOC_FILES) $(OTHER_FILES) > /tmp/gc.tar-files
 	tar cvfh gc.tar `cat /tmp/gc.tar-files`
+	cp gc.tar `./gcname`.tar
+	gzip `./gcname`.tar
+	rm `./gcname`
 
 pc_gc.tar: $(SRCS) $(OTHER_FILES)
 	tar cvfX pc_gc.tar pc_excludes $(SRCS) $(OTHER_FILES)

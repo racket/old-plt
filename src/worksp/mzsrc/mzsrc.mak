@@ -51,6 +51,7 @@ CLEAN :
 	-@erase "$(INTDIR)\Eval.obj"
 	-@erase "$(INTDIR)\File.obj"
 	-@erase "$(INTDIR)\Fun.obj"
+	-@erase "$(INTDIR)\gmp.obj"
 	-@erase "$(INTDIR)\Hash.obj"
 	-@erase "$(INTDIR)\image.obj"
 	-@erase "$(INTDIR)\List.obj"
@@ -163,7 +164,8 @@ LIB32_OBJS= \
 	"$(INTDIR)\Syntax.obj" \
 	"$(INTDIR)\thread.obj" \
 	"$(INTDIR)\Type.obj" \
-	"$(INTDIR)\vector.obj"
+	"$(INTDIR)\vector.obj" \
+	"$(INTDIR)\gmp.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -193,6 +195,7 @@ CLEAN :
 	-@erase "$(INTDIR)\Eval.obj"
 	-@erase "$(INTDIR)\File.obj"
 	-@erase "$(INTDIR)\Fun.obj"
+	-@erase "$(INTDIR)\gmp.obj"
 	-@erase "$(INTDIR)\Hash.obj"
 	-@erase "$(INTDIR)\image.obj"
 	-@erase "$(INTDIR)\List.obj"
@@ -305,7 +308,8 @@ LIB32_OBJS= \
 	"$(INTDIR)\Syntax.obj" \
 	"$(INTDIR)\thread.obj" \
 	"$(INTDIR)\Type.obj" \
-	"$(INTDIR)\vector.obj"
+	"$(INTDIR)\vector.obj" \
+	"$(INTDIR)\gmp.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -335,6 +339,7 @@ CLEAN :
 	-@erase "$(INTDIR)\Eval.obj"
 	-@erase "$(INTDIR)\File.obj"
 	-@erase "$(INTDIR)\Fun.obj"
+	-@erase "$(INTDIR)\gmp.obj"
 	-@erase "$(INTDIR)\Hash.obj"
 	-@erase "$(INTDIR)\image.obj"
 	-@erase "$(INTDIR)\List.obj"
@@ -447,7 +452,8 @@ LIB32_OBJS= \
 	"$(INTDIR)\Syntax.obj" \
 	"$(INTDIR)\thread.obj" \
 	"$(INTDIR)\Type.obj" \
-	"$(INTDIR)\vector.obj"
+	"$(INTDIR)\vector.obj" \
+	"$(INTDIR)\gmp.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -477,6 +483,7 @@ CLEAN :
 	-@erase "$(INTDIR)\Eval.obj"
 	-@erase "$(INTDIR)\File.obj"
 	-@erase "$(INTDIR)\Fun.obj"
+	-@erase "$(INTDIR)\gmp.obj"
 	-@erase "$(INTDIR)\Hash.obj"
 	-@erase "$(INTDIR)\image.obj"
 	-@erase "$(INTDIR)\List.obj"
@@ -589,7 +596,8 @@ LIB32_OBJS= \
 	"$(INTDIR)\Syntax.obj" \
 	"$(INTDIR)\thread.obj" \
 	"$(INTDIR)\Type.obj" \
-	"$(INTDIR)\vector.obj"
+	"$(INTDIR)\vector.obj" \
+	"$(INTDIR)\gmp.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -619,6 +627,7 @@ CLEAN :
 	-@erase "$(INTDIR)\Eval.obj"
 	-@erase "$(INTDIR)\File.obj"
 	-@erase "$(INTDIR)\Fun.obj"
+	-@erase "$(INTDIR)\gmp.obj"
 	-@erase "$(INTDIR)\Hash.obj"
 	-@erase "$(INTDIR)\image.obj"
 	-@erase "$(INTDIR)\List.obj"
@@ -731,7 +740,8 @@ LIB32_OBJS= \
 	"$(INTDIR)\Syntax.obj" \
 	"$(INTDIR)\thread.obj" \
 	"$(INTDIR)\Type.obj" \
-	"$(INTDIR)\vector.obj"
+	"$(INTDIR)\vector.obj" \
+	"$(INTDIR)\gmp.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -1296,6 +1306,12 @@ CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 
 !ENDIF 
+
+SOURCE=..\..\mzscheme\src\gmp\gmp.c
+
+"$(INTDIR)\gmp.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
 
 SOURCE=..\..\Mzscheme\Src\Hash.c
 

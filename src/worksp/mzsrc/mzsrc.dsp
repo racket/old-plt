@@ -384,6 +384,10 @@ SOURCE=..\..\Mzscheme\Src\Fun.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\mzscheme\src\gmp\gmp.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Mzscheme\Src\Hash.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"

@@ -95,7 +95,40 @@ MA 02111-1307, USA.
 #endif
 
 #if ! defined (HAVE_ALLOCA) || USE_STACK_ALLOC
-#include "gmp-alloca.h"
+struct tmp_stack
+{
+  void *end;
+  void *alloc_point;
+  struct tmp_stack *prev;
+};
+
+struct tmp_marker
+{
+  struct tmp_stack *which_chunk;
+  void *alloc_point;
+};
+
+typedef struct tmp_marker tmp_marker;
+
+#if __STDC__
+void *__gmp_tmp_alloc (unsigned long);
+void __gmp_tmp_mark (tmp_marker *);
+void __gmp_tmp_free (tmp_marker *);
+#else
+void *__gmp_tmp_alloc ();
+void __gmp_tmp_mark ();
+void __gmp_tmp_free ();
+#endif
+
+#ifndef __TMP_ALIGN
+#define __TMP_ALIGN 8
+#endif
+
+#define TMP_DECL(marker) tmp_marker marker
+#define TMP_ALLOC(size) \
+  __gmp_tmp_alloc (((unsigned long) (size) + __TMP_ALIGN - 1) & -__TMP_ALIGN)
+#define TMP_MARK(marker) __gmp_tmp_mark (&marker)
+#define TMP_FREE(marker) __gmp_tmp_free (&marker)
 #else
 #define TMP_DECL(m)
 #define TMP_ALLOC(x) alloca(x)

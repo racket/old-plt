@@ -9,7 +9,7 @@
 @HEADER
 
 #ifdef wx_mac
-#define Move(x, y) SetSize(-1, -1, x, y)
+#define Move(x, y) SetSize(x, y, -1, -1)
 #endif
 
 #if defined(wx_xt)

@@ -8,8 +8,8 @@ students from non-students, partnerships, assignments, file submission, student
 creation, and instructor-level partnership management.  Future goals are task
 assignment, and online grading.
 
-RUNNING
-=======
+SETUP
+=====
 
 To run the homework submission servlet the following tasks need to be done:
 
@@ -53,3 +53,43 @@ To test memory usage, run `tests/test-memory.ss'; this will loop over the same
 action repeatedly, so kill it when you either get bored or notice that it uses 
 too much memory. `tests/test-concurrency.ss' will test that the servlet can 
 handle multiple concurrent users.
+
+RUNNING
+=======
+
+DATABASE
+--------
+
+The following environment variables should be set
+ * LD_LIBRARY_PATH to include /arch/gnu/packages/gcc-3.2.3/lib
+ * PGDATA to /course/csu211/pgsql/data
+ * PATH to include /course/csu211/pgsql/bin
+ * MANPATH to include /course/csu211/pgsql/man
+
+For sh (zsh, bash, ash, sh, etc.):
+ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/arch/gnu/packages/gcc-3.2.3/lib
+ export PGDATA=/course/csu211/pgsql/data
+ export PATH=$PATH:/course/csu211/pgsql/bin
+ export MANPATH=$MANPATH:/course/csu211/pgsql/man
+
+Start it on subra.ccs.neu.edu with:
+ pg_ctl start
+
+WEB SERVER
+----------
+
+This requires an appropriate configuration-table .
+
+Start this on subra.ccs.neu.edu with:
+ web-server-text -f configuration-table
+
+OTHER
+=====
+
+The course directory will have subdirectories created each time a student
+submits an assignment. Its format is:
+
+<course-dir>/hw/<assignment-name>
+
+Under this directory will be files named after the students in the
+partnerships; these are the submitted assignment.

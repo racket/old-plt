@@ -214,7 +214,7 @@
 			
 			(define (with-disconnect-handler thunk)
 			  (with-handlers ([void (lambda (exn)
-						  (custodian-shutdown-all connection-custodian)
+						  (force-disconnect)
 						  (status "")
 						  (raise exn))])
 			    (break-ok)
@@ -302,8 +302,7 @@
 		enable-main-frame
 		(lambda (break-bad break-ok)
 		  (with-handlers ([void (lambda (exn)
-					  (status "")
-					  (force-disconnect)
+					  (force-disconnect/status)
 					  (raise exn))])
 		    (break-ok)
 		    (imap-disconnect connection)))
@@ -314,6 +313,13 @@
 	     (custodian-shutdown-all connection-custodian)
 	     (set! connection #f)))))
       
+      (define (force-disconnect/status)
+	(force-disconnect)
+	(send disconnected-msg show #t)
+	(set! initialized? #f)
+	(set! current-next-uid 0)
+	(status ""))
+
       (define (check-validity v cleanup)
 	(when (and uid-validity
 		   (not (= uid-validity v)))
@@ -359,9 +365,15 @@
 	    
 	    (unless (null? new)
 	      (status "Getting new headers..."))
-	    (let* ([new-data (imap-get-messages imap 
-						(map cdr new)
-						'(header size))]
+	    (let* ([new-data (with-handlers ([void (lambda (exn)
+						     (force-disconnect/status)
+						     (raise exn))])
+			       (break-ok)
+			       (begin0
+				(imap-get-messages imap 
+						   (map cdr new)
+						   '(header size))
+				(break-bad)))]
 		   [new-headers (map car new-data)]
 		   [new-sizes (map cadr new-data)]
 		   [new-uid/size-map (map cons (map car new) new-sizes)])
@@ -467,10 +479,17 @@
 		  (status "")
 		  (error "Download aborted"))))
 	    (let*-values ([(imap count new next-uid) (connect 'reuse break-bad break-ok)])
-	      (let ([body (caar (imap-get-messages 
-				 imap 
-				 (list (message-position v))
-				 '(body)))])
+	      (let ([body (with-handlers ([exn:break?
+					   (lambda (exn)
+					     (force-disconnect/status)
+					     (raise exn))])
+			    (break-ok)
+			    (begin0
+			     (caar (imap-get-messages 
+				    imap 
+				    (list (message-position v))
+				    '(body)))
+			     (break-bad)))])
 		(status "Saving message ~a..." uid)
 		(with-output-to-file file
 		  (lambda () (write-bytes body))
@@ -1486,10 +1505,7 @@
 					       "Error"
 					       (format "There was an communication error.~nClose the connection?")
 					       main-frame))
-				     (send disconnected-msg show #t)
-				     (set! initialized? #f)
-				     (set! current-next-uid 0)
-				     (force-disconnect))))))])
+				     (force-disconnect/status))))))])
 	  (header-changing-action
 	   #f
 	   (lambda ()
@@ -2365,10 +2381,7 @@
                 (with-handlers ([void
                                  (lambda (x)
                                    (stop)
-                                   (send disconnected-msg show #t)
-                                   (set! initialized? #f)
-				   (set! current-next-uid 0)
-                                   (force-disconnect)
+                                   (force-disconnect/status)
                                    (status "Error connecting: ~s"
                                            (if (exn? x)
                                                (exn-message x)

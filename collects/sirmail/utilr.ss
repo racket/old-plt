@@ -285,7 +285,7 @@
 
       ;; Bug: encode-for-header should make sure that each line is short enough
       (define (encode-for-header s)
-	(let ([m (regexp-match #rx"^(.*?)([^\u0-\uFF]+)(.*)$" s)])
+	(let ([m (regexp-match #rx"^(.*?)([^\u0-\u7F]+)(.*)$" s)])
 	  (if m
 	      (string-append
 	       (protect-equal-question (cadr m))

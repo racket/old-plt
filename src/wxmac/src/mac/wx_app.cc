@@ -231,7 +231,7 @@ void wxApp::doMacMouseDown(void)
 	{
 		case inMenuBar:
 			long menuResult = MenuSelect(cCurrentEvent.where);
-			doMacInMenuBar(menuResult);
+			doMacInMenuBar(menuResult, FALSE);
 			break;
 		case inContent:
 			doMacInContent(window); break;
@@ -399,8 +399,10 @@ void wxApp::doMacKeyDown(void)
 			  char key = cCurrentEvent.message & charCodeMask;
 			  long menuResult = MenuKey(key);
 			  if (menuResult) {
-			    doMacInMenuBar(menuResult);
-			    return;
+			    if (doMacInMenuBar(menuResult, TRUE))
+			      return;
+			    else
+			      HiliteMenu(0);
 			  }
 		}
 	  }
@@ -617,39 +619,31 @@ void wxApp::doMacMouseMovedMessage(void)
 }
 
 //-----------------------------------------------------------------------------
-void wxApp::doMacInMenuBar(long menuResult)
+Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
 {
 	int macMenuId = HiWord(menuResult);
 	int macMenuItemNum = LoWord(menuResult); // counting from 1
 
 	if (macMenuId == 0) 					// no menu item selected;
-		 return;
+		 return FALSE;
 	if (macMenuId == 128) {
 		if (macMenuItemNum != 1) {			// if not the "About" entry (or the separator)
 			Str255		daName;
 			GetMenuItemText(GetMenuHandle(128), macMenuItemNum, daName);
 			(void) OpenDeskAcc(daName);
 			HiliteMenu(0); // unhilite the hilited menu
-			return;
+			return TRUE;
 		}
 	}
 
 	WindowPtr theMacWindow = ::FrontWindow();
 	if (!theMacWindow) {
 		wxTheApp->ExitMainLoop();
-		return;
+		return TRUE;
 	}
 	
 	wxFrame* theMacWxFrame = findMacWxFrame(theMacWindow);
 	if (!theMacWxFrame) wxFatalError("No wxFrame for theMacWindow.");
-
-#if 0
-	if (theMacWxFrame->IsModal())
-	{
-		::SysBeep(3);
-		return;
-	}
-#endif
 
 	wxMenuBar* theWxMenuBar = theMacWxFrame->wx_menu_bar;
 	if (!theWxMenuBar) {
@@ -660,8 +654,14 @@ void wxApp::doMacInMenuBar(long menuResult)
 	    if (theMacWxFrame->OnClose())
 	      theMacWxFrame->Show(FALSE);
 	  }
-	  return;
+	  return TRUE;
 	  // wxFatalError("No wxMenuBar for wxFrame.");
+	}
+	
+	if (externOnly) {
+	  // Don't handle other keybindings automatically; in MrEd,
+	  //  they'll be handled by a frame's PreOnChar method
+	  return FALSE;
 	}
 
 	wxMenu* theWxMenu;
@@ -670,7 +670,7 @@ void wxApp::doMacInMenuBar(long menuResult)
 		   theWxMenu = theWxMenuBar->wxHelpHackMenu;
 		   macMenuItemNum -= wxNumHelpItems;
 		} else
-		  return;
+		  return TRUE;
 	} else if (macMenuId == 128 && macMenuItemNum == 1) {
 		// This will Help/About selection
 		if ((theWxMenu = theWxMenuBar->wxHelpHackMenu)
@@ -678,7 +678,7 @@ void wxApp::doMacInMenuBar(long menuResult)
 			macMenuItemNum = theWxMenuBar->iHelpMenuHackNum;
 		} else {
 			DoDefaultAboutItem();
-			return;
+			return TRUE;
 		}
 	} else {
 		theWxMenu = theWxMenuBar->wxMacFindMenu(macMenuId);
@@ -692,6 +692,8 @@ void wxApp::doMacInMenuBar(long menuResult)
 	if (!theWxMenuItem) wxFatalError("No wxMenuItem for wxNode.");
 
 	theMacWxFrame->ProcessCommand(theWxMenuItem->itemId);
+	
+	return TRUE;
 }
 
 //-----------------------------------------------------------------------------

@@ -234,6 +234,7 @@ int wxMessageBox(char* message, char* caption, long style,
 
 extern "C" {
  extern char *scheme_build_mac_filename(FSSpec *f, int);
+ extern int scheme_mac_path_to_spec(const char *filename, FSSpec *spec, long *type);
 };
 
 //= T.P. ==============================================================================
@@ -249,6 +250,15 @@ char *wxFileSelector(char *message, char *default_path,
 	Str255	p_prompt,p_defname;
 	OSErr err;
 
+
+	if (default_path) {
+	   FSSpec sp;
+	   if (scheme_mac_path_to_spec(default_path, &sp, NULL)) {
+	     LMSetCurDirStore(sp.parID);
+	     LMSetSFSaveDisk(-sp.vRefNum);
+	   }
+	}
+	
 			
 	if ((flags == 0) || (flags & wxOPEN))
 	{	// get file

@@ -74,7 +74,7 @@ class wxbFrame: public wxWindow
 
   // Default behaviour is to display a help string for the menu item.
   virtual void OnMenuSelect(int id);
-  inline virtual void OnMenuCommand(int id) {};         // Called on frame menu command ( 16.2)
+  inline virtual void OnMenuCommand(long id) {};         // Called on frame menu command ( 16.2)
 
   // Set menu bar
   virtual void SetMenuBar(wxMenuBar *menu_bar) = 0;			//  from 16.2

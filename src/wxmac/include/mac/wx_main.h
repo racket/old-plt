@@ -76,7 +76,7 @@ public:
 	void doMacSuspendEvent(void);
 	void doMacMouseMovedMessage(void);
 
-	void doMacInMenuBar(long menuResult);
+	Bool doMacInMenuBar(long menuResult, Bool externOnly = FALSE);
 	void doMacInContent(WindowPtr window);
 	void doMacContentClick(wxFrame* frame);
 	void doMacInDrag(WindowPtr window);

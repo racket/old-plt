@@ -143,11 +143,11 @@
 				  (url-query url) (url-fragment url))))))
               (for-each (lambda (s)
                           (display s client->server)
-                          (newline client->server))
+                          (display "\r\n" client->server))
                         (cons (format "GET ~a HTTP/1.0" access-string)
                               (cons (format "Host: ~a" (url-host url))
                                     strings))))
-            (newline client->server)
+            (display "\r\n" client->server)
             (tcp-abandon-port client->server)
             server->client)]))
       

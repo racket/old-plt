@@ -18,7 +18,7 @@
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
+wxPrinterDC::wxPrinterDC(wxPrintData *printData, Bool interactive) : wxCanvasDC()
 {
   PMRect pageRect;
   
@@ -39,7 +39,7 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
   }
 
   cPrintData = printData;
-  {
+  if (interactive) {
     wxPrintDialog *dialog;
 
     dialog = new wxPrintDialog(NULL, printData);

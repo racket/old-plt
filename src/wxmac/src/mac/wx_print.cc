@@ -199,12 +199,16 @@ void wxPrintData::SetToPage(int p)
 
 void wxPrintData::SetMinPage(int p)
 {
-  SetFromPage(p);
+  UInt32 low, high;
+  PMGetPageRange(cPrintSettings, &low, &high);
+  PMSetPageRange(cPrintSettings, p, high);
 }
 
 void wxPrintData::SetMaxPage(int p)
 {
-  SetToPage(p);
+  UInt32 low, high;
+  PMGetPageRange(cPrintSettings, &low, &high);
+  PMSetPageRange(cPrintSettings, low, p);
 }
 
 void wxPrintData::SetNoCopies(int c)
@@ -349,7 +353,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   }
   
   // Create a suitable device context  
-  dc = new wxPrinterDC(printData); 
+  dc = new wxPrinterDC(printData, 0); 
 
   if (!dc->Ok()) {
     if (dc) DELETE_OBJ dc; // PrSetError
@@ -486,9 +490,9 @@ Bool wxPrintout::HasPage(int page)
 void wxPrintout::GetPageInfo(int *minPage, int *maxPage, int *fromPage, int *toPage)
 {
   *minPage = 1;
-  *maxPage = 32000;
-  *fromPage = 1;
-  *toPage = 1;
+  *maxPage = kPMPrintAllPages;
+  *fromPage = 0;
+  *toPage = 0;
 }
 
 /****************************************************************************

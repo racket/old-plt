@@ -131,6 +131,10 @@
                               (let loop ([j 0])
                                 (unless (= j h)
                                   (send tmp-src get-pixel i j c)
+                                  (send c set
+                                        (if (= 255 (send c red)) 255 0)                                        
+                                        (if (= 255 (send c green)) 255 0)
+                                        (if (= 255 (send c blue)) 255 0))
                                   (send tmp-dest set-pixel i j c)
                                   (loop (add1 j))))
                               (loop (add1 i))))

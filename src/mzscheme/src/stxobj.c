@@ -1160,7 +1160,7 @@ Scheme_Object *scheme_stx_extract_marks(Scheme_Object *stx)
 /*                           stx comparison                               */
 /*========================================================================*/
 
-static int same_marks(WRAP_POS *_awl, WRAP_POS *_bwl, int a_ignore_barrier)
+static int same_marks(WRAP_POS *_awl, WRAP_POS *_bwl, int a_ignore_barrier, int b_ignore_barrier)
 /* Compares the marks in two wraps lists */
 {
   WRAP_POS awl;
@@ -1208,7 +1208,7 @@ static int same_marks(WRAP_POS *_awl, WRAP_POS *_bwl, int a_ignore_barrier)
 	  bcur_mark = WRAP_POS_FIRST(bwl);
 	  WRAP_POS_INC(bwl);
 	}
-      } else if (SAME_OBJ(WRAP_POS_FIRST(bwl), barrier_symbol)) {
+      } else if (!b_ignore_barrier && SAME_OBJ(WRAP_POS_FIRST(bwl), barrier_symbol)) {
 	WRAP_POS_INIT_END(bwl);
       } else {
 	WRAP_POS_INC(bwl);
@@ -1403,7 +1403,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 	  else {
 	    WRAP_POS w2;
 	    WRAP_POS_INIT(w2, ((Scheme_Stx *)renamed)->wraps);
-	    same = same_marks(&w2, &wraps, 0);
+	    same = same_marks(&w2, &wraps, 0, 0);
 	  }
 
 	  if (same) {
@@ -1616,7 +1616,7 @@ Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase,
 int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid, long phase)
      /* If uid is given, it's the environment for b. */
 {
-  Scheme_Object *asym, *bsym;
+  Scheme_Object *asym, *bsym, *ae, *be;
 
   if (!a || !b)
     return (a == b);
@@ -1634,27 +1634,32 @@ int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *u
   if (!SAME_OBJ(asym, bsym))
     return 0;
 
+  ae = resolve_env(a, phase, 0, NULL);
+  /* No need to module_resolve ae, because we ignored module renamings. */
+
+  if (uid)
+    be = uid;
+  else {
+    be = resolve_env(b, phase, 0, NULL);
+    /* No need to module_resolve be, because we ignored module renamings. */
+  }
+
+  /* Same binding environment? */
+  if (!SAME_OBJ(ae, be))
+    return 0;
+
+  /* Same marks? (If not lexically bound, ignore
+     mark barriers. */
   if (!uid) {
     WRAP_POS aw;
     WRAP_POS bw;
     WRAP_POS_INIT(aw, ((Scheme_Stx *)a)->wraps);
     WRAP_POS_INIT(bw, ((Scheme_Stx *)b)->wraps);
-    if (!same_marks(&aw, &bw, 0))
+    if (!same_marks(&aw, &bw, SCHEME_FALSEP(ae), SCHEME_FALSEP(ae)))
       return 0;
   }
 
-  a = resolve_env(a, phase, 0, NULL);
-  a = scheme_module_resolve(a);
-
-  if (uid)
-    b = uid;
-  else {
-    b = resolve_env(b, phase, 0, NULL);
-    b = scheme_module_resolve(b);
-  }
-
-  /* Same binding environment? */
-  return SAME_OBJ(a, b);
+  return 1;
 }
 
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase)
@@ -1941,7 +1946,7 @@ static void simplify_lex_renames(Scheme_Object *wraps, Scheme_Hash_Table *lex_ca
 	  name = SCHEME_STX_VAL(stx);
 	  SCHEME_VEC_ELS(v2)[2+pos] = name;
 	  WRAP_POS_INIT(w2, ((Scheme_Stx *)stx)->wraps);
-	  if (same_marks(&w2, &w, 0)) {
+	  if (same_marks(&w2, &w, 0, 0)) {
 	    /* Either this name is in prev, in which case the answer
 	       must match this rename's target, or this rename's
 	       answer applies. */
@@ -3342,7 +3347,7 @@ static Scheme_Object *syntax_original_p(int argc, Scheme_Object **argv)
   WRAP_POS_INIT(awl, stx->wraps);
   WRAP_POS_INIT_END(ewl);
 
-  if (same_marks(&awl, &ewl, 1))
+  if (same_marks(&awl, &ewl, 1, 0))
     return scheme_true;
   else
     return scheme_false;

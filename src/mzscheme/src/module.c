@@ -1340,7 +1340,7 @@ int same_modidx(Scheme_Object *a, Scheme_Object *b)
 
 static Scheme_Object *_module_resolve(Scheme_Object *modidx, Scheme_Object *stx)
 {
-  if (SCHEME_SYMBOLP(modidx))
+  if (SCHEME_SYMBOLP(modidx) || SCHEME_FALSEP(modidx))
     return modidx;
 
   if (SAME_OBJ(modidx, empty_self_modidx))

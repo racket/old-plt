@@ -3,7 +3,9 @@
            (lib "url.ss" "net")
            (lib "list.ss")
            "util.ss"
-           "connection-manager.ss")
+           "connection-manager.ss"
+           (lib "port.ss")
+           )
 
   ;; the request struct as currently doc'd
   (define-struct request (method uri headers bindings host-ip client-ip))
@@ -144,7 +146,7 @@
       (cond
         [(or (= c 32) (= c 9)) ;(or (eq? c #\space) (eq? c #\tab))
 
-         ; (read-line in 'any) can't return eof
+         ; (read-bytes-line in 'any) can't return eof
          ; because we just checked with peek-char
          ; Spidey: FLOW
          (read-one-head in (bytes-append rhs (read-bytes-line in 'any)))]
@@ -168,7 +170,7 @@
                          ;; more here - better checks, avoid string-append
                          (cons (get-field-name (cdr (assq 'content-disposition (car part))))
                                (apply string-append (cdr part))))
-                       (read-mime-multipart (cadr content-boundary) (connection-i-port conn))))]
+                       (read-mime-multipart (bytes->string/utf-8 (cadr content-boundary)) (connection-i-port conn))))]
              [else
              (let ([len-str (assq 'content-length headers)]
                    [in (connection-i-port conn)])

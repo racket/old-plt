@@ -7,17 +7,18 @@
 
 (require "private/search-pane.ss")
 (require "private/util.ss")
+(require "private/hd-css.ss")
 
 (unit/sig ()
   (import servlet^)
 
   (adjust-timeout! +inf.0)
 
-  (define search-bg
+  (define (search-bg)
     (get-pref/default 'search-bg search-bg-default))
 
   `(HTML 
-    (HEAD (TITLE "PLT Help Desk search"))
-    (BODY ((BGCOLOR ,search-bg))
+    (HEAD (TITLE "PLT Help Desk search")
+	  ,hd-css)
+    (BODY ((STYLE ,(string-append "background-color:" (search-bg))))
 	,(search-pane))))
-

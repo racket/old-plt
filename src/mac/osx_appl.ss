@@ -21,6 +21,8 @@ exit 1
 
 |#
 
+(use-compiled-file-kinds 'none)
+
 (let ([p (getenv "PLTHOMEBASE")])
   (let ([plthome (path->complete-path p)])
     (putenv "PLTHOME" plthome)

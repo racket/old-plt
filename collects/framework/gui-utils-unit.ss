@@ -1,6 +1,7 @@
 (module gui-utils-unit mzscheme
   (require (lib "unitsig.ss")
-	   (lib "sig.ss" "mred")
+	   (lib "class.ss")
+	   (lib "mred-sig.ss" "mred")
 	   "gui-utils-sig.ss")
 
   (provide gui-utils@)

@@ -1,4 +1,4 @@
-(module guiutils-sig mzscheme
+(module gui-utils-sig mzscheme
   (require (lib "unitsig.ss"))
 
   (provide framework:gui-utils^)

@@ -2198,9 +2198,12 @@
 			(cond
 			 [(pair? l)
 			  (if (and (stx-pair? (car l))
-				   (identifier? (stx-car (car l)))
-				   (module-identifier=? (stx-car (car l)) (quote-syntax unsyntax-splicing)))
-			      ;; Found an `unsyntax-splicing'; stop the special
+				   (let ([a (stx-car (car l))])
+				     (and (identifier? a)
+					  (or (module-identifier=? a (quote-syntax unsyntax))
+					      (module-identifier=? a (quote-syntax unsyntax-splicing))
+					      (module-identifier=? a (quote-syntax quasisyntax))))))
+			      ;; Found something important, like `unsyntax'; stop the special
 			      ;; handling for pairs
 			      (loop (datum->syntax-object #f l #f) depth
 				    same-k 

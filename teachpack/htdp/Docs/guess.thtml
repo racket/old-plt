@@ -1,5 +1,4 @@
 { (define LIBNAME "Guess")
-  (define FILENAME "guess.ss")
   (include "head.tinc") }
 
 <p>The teachpack <code>guess.ss</code> provides operations to play a

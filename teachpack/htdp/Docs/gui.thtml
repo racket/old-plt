@@ -1,5 +1,4 @@
 { (define LIBNAME "GUI")
-  (define FILENAME "gui.ss")
   (include "head.tinc") }
 
 <p>The teachpack <code>gui.ss</code> provides the following operations:

@@ -1,5 +1,4 @@
 { (define LIBNAME "Convert")
-  (define FILENAME "convert.ss")
   (include "head.tinc") }
 
 <p>The teachpack <code>convert.ss</code> provides three functions:

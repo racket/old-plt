@@ -1,5 +1,4 @@
 { (define LIBNAME "Show Queen")
-  (define FILENAME "show-queen.ss")
   (include "head.tinc") }
 
 <p>The teachpack <code>show-queen.ss</code> provides the

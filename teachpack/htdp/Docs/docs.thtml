@@ -1,5 +1,4 @@
 { (define LIBNAME "Documents")
-  (define FILENAME "docs.ss")
   (include "head.tinc") }
 
 The teachpack <code>docs.ss</code> provides three operations:

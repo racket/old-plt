@@ -1,5 +1,4 @@
 { (define LIBNAME "Directories")
-  (define FILENAME "dir.ss")
   (include "head.tinc") }
 
 <p>The teachpack <code>dir.ss</code> provides two-structures and one

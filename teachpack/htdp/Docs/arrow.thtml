@@ -1,5 +1,4 @@
 { (define LIBNAME "Arrows")
-  (define FILENAME "arrow.ss")
   (include "head.tinc") }
 
 <p>A shape is a class of data for which <code>move</code> and

@@ -1,5 +1,4 @@
 { (define LIBNAME "Elevator")
-  (define FILENAME "elevator.ss")
   (include "head.tinc") }
 
 <p>The teachpack <code>elevator.ss</code> implements an elevator simulator.

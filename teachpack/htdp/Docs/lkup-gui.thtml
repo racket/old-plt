@@ -1,5 +1,4 @@
 { (define LIBNAME "Lkup GUI")
-  (define FILENAME "lkup-gui.ss")
   (include "head.tinc") }
 
 <p>The teachpack <code>lkup-gui.ss</code> implements three functions:

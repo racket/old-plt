@@ -1,5 +1,4 @@
 { (define LIBNAME "Guess GUI")
-  (define FILENAME "guess-gui.ss")
   (include "head.tinc") }
 
 <p>The teachpack <code>guess-gui.ss</code> implements three functions:

@@ -1,14 +1,19 @@
 #!/bin/sh
-string=? ; exec $PLTHOME/bin/mzscheme -qgr $0 "$@"
+#|
+if [ -x "$PLTHOME/bin/mzscheme" ]; then
+  exec "$PLTHOME/bin/mzscheme" -qgr "$0" "$@"
+else
+  exec "mzscheme" -qgr "$0" "$@"
+fi
+|#
 
-(current-directory
- (build-path (dynamic-require '(lib "plthome.ss" "setup") 'plthome)
-             "teachpack" "htdp" "Docs"))
+(require (lib "etc.ss"))
+(current-directory (this-expression-source-directory))
 
 ; for john?
 
-; This list determines the order of libraries in the index file:
-(define libraries
+;; This list determines the order of libraries in the index file:
+(define libraries*
   '("Animated Images"
     "Composing Images"
     "Convert"
@@ -35,28 +40,33 @@ string=? ; exec $PLTHOME/bin/mzscheme -qgr $0 "$@"
 
 (require (lib "list.ss"))
 
-(define src-files
+(define thtml-files
   (filter (lambda (x) (regexp-match #rx"[.]thtml$" x)) (directory-list)))
 
-(unless (directory-exists? dest-dir)
-  (make-directory dest-dir))
+(unless (directory-exists? dest-dir) (make-directory dest-dir))
 
-;; Get list of (cons name file) for library names
+;; Get list of (list name file-basename) for library names
+;; (assuming that foo.thtml is always the documentation for ../foo.ss)
 (define lib-names
-  (map (lambda (s)
-         (cons (cadr (or (regexp-match #rx"\\(define *LIBNAME *\"(.*?)\"\\)"
-                                       (open-input-file s))
-                         (error 'mkdocs "LIBNAME not found in ~s" s)))
-               s))
-       (filter (lambda (f) (not (equal? f "index.thtml"))) src-files)))
-;; Check library list:
+  (let ([rx (regexp (string-append "\\(define +LIBNAME +\"(.*?)\"\\)"))])
+    (map (lambda (s)
+           (let* ([m (or (regexp-match rx (open-input-file s))
+                         (error 'mkdocs "LIBNAME+FILENAME not found in ~s" s))]
+                  [basename (regexp-replace #rx"[.]thtml$" s "")])
+             (unless (file-exists?
+                      (build-path 'up (string-append basename ".ss")))
+               (error 'mkdocs "Found ~s but no ~s teachpack found"
+                      s (string-append s ".ss")))
+             (list (cadr m) basename)))
+         (filter (lambda (f) (not (equal? f "index.thtml"))) thtml-files))))
+;; Check that `lib-names' exactly match `libraires':
 (let ([file-libs (map car lib-names)])
   (define (test x) (and (pair? x) x))
   (cond
-   [(test (remove* libraries lib-names (lambda (x y) (equal? x (car y))))) =>
+   [(test (remove* libraries* lib-names (lambda (x y) (equal? x (car y))))) =>
     (lambda (libs)
       (error 'mkdocs "found libraries unlisted in mkdocs: ~s" libs))]
-   [(test (remove* file-libs libraries)) =>
+   [(test (remove* file-libs libraries*)) =>
     (lambda (libs)
       (error 'mkdocs "non-existent libraries listed in mkdocs: ~s" libs))])
   (let loop ([libs lib-names])
@@ -67,13 +77,15 @@ string=? ; exec $PLTHOME/bin/mzscheme -qgr $0 "$@"
                     (caar libs) (cdar libs) (cdr m)))]
           [else (loop (cdr libs))])))
 
-(define (thtml-name->html s)
-  (regexp-replace "[.]thtml$" s ".html"))
+;; Just like lib-names, but ordered according to libraries*
+(define libraries (map (lambda (l) (assoc l lib-names)) libraries*))
 
 (define LIBLINKS
   (map (lambda (lib)
-         (let ([file (thtml-name->html (cdr (assoc lib lib-names)))])
-           (format "<li> <a href=~s>~a</a>\n" file lib)))
+         (format "<li><a href=~s>~a (<tt>~a</tt>)</a></li>\n"
+                 (string-append (cadr lib) ".html")
+                 (car lib)
+                 (string-append (cadr lib) ".ss")))
        libraries))
 
 ;; Stuff for the preprocessed files
@@ -92,13 +104,14 @@ string=? ; exec $PLTHOME/bin/mzscheme -qgr $0 "$@"
 
 ;; Make html files
 (for-each (lambda (thtml)
-            (define html (thtml-name->html thtml))
+            (define html (regexp-replace #rx"[.]thtml" thtml ".html"))
             (printf "Processing ~a...\n" thtml)
             (set! HTMLNAME html)
+            (set! FILENAME (regexp-replace #rx"[.]thtml" thtml ".ss"))
             (with-output-to-file (build-path dest-dir html)
               (lambda () (preprocess thtml))
               'replace))
-          src-files)
+          thtml-files)
 
 ;; Make hdindex file:
 (let ([ifile (build-path dest-dir "hdindex")])

@@ -1,5 +1,4 @@
 { (define LIBNAME "Mastermind")
-  (define FILENAME "master.ss")
   (include "head.tinc") }
 
 <p>The teachpack <code>master.ss</code> provides the operation

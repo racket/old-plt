@@ -1,5 +1,4 @@
 { (define LIBNAME "Graphing Functions")
-  (define FILENAME "graphing.ss")
   (include "head.tinc") }
 
 The teachpack <code>graphing.ss</code> provides two operations for

@@ -1,5 +1,4 @@
 { (define LIBNAME "Hangman")
-  (define FILENAME "hangman.ss")
   (include "head.tinc") }
 
 <p>The teachpack <code>hangman.ss</code> provides all the operations that

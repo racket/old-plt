@@ -1,5 +1,4 @@
 { (define LIBNAME "Arrows GUI")
-  (define FILENAME "arrow-gui.ss")
   (include "head.tinc") }
 
 <p>The teachpack <code>arrow-gui.ss</code> implements three functions:

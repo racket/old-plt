@@ -1,7 +1,16 @@
 # Makefile for all foreign-related libraires
 
+srcdir = @srcdir@
+CC = @CC@
+CFLAGS = @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ \
+         -I$(srcdir)/../mzscheme/include -Igcc/libffi/include
+
 all:
 	$(MAKE) libffi
+	$(MAKE) foreign
 
 libffi:
 	cd gcc/libffi; $(MAKE) libffi.la
+
+foreign:
+	$(CC) $(CFLAGS) -c $(srcdir)/foreign.c -o foreign.o

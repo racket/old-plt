@@ -2,7 +2,6 @@ Version 101:
 
 moved Windows event loop from mx-document% class
   initialization to unit
-moved .DLL's to compiled/native/win32/i386
 extra Windows processing loop handles only 
   WM_USER events, fixing various problems 
   running MysterX under DrScheme

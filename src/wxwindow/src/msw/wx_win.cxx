@@ -425,6 +425,33 @@ HCURSOR wxMSWSetCursor(HCURSOR c)
   return SetCursor(c);
 }
 
+wxWindow *wxLocationToWindow(int x, int y)
+{
+  POINT p;
+  HWND hwnd;
+
+  p.x = x;
+  p.y = y;
+
+  hwnd = WindowFromPoint(p);
+
+  if (hwnd) {
+    wxWnd *wnd = NULL;
+    while (hwnd) {
+      wnd = wxFindWinFromHandle(hwnd);
+      if (wnd)
+	break;
+      else
+	hwnd = GetParent(hwnd);
+    }
+
+    if (wnd && wnd->wx_window)
+      return wnd->wx_window->GetTopLevel();
+  }
+
+  return NULL;
+}
+
 static wxWnd *wxCurrentWindow(int in_content)
 {
   HWND hwnd;

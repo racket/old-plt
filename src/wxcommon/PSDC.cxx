@@ -1669,9 +1669,12 @@ Bool wxPostScriptDC::Blit (float xdest, float ydest, float fwidth, float fheight
   }
   
   temp_mdc->SelectObject(bm);
-  v = Blit(xdest, ydest, fwidth, fheight,
-	   temp_mdc, xsrc, ysrc, rop, c);
-  temp_mdc->SelectObject(NULL);
+  /* Might fail, so we double-check: */
+  if (temp_mdc->GetObject()) {
+    v = Blit(xdest, ydest, fwidth, fheight,
+	     temp_mdc, xsrc, ysrc, rop, c);
+    temp_mdc->SelectObject(NULL);
+  }
 
   return v;
 }

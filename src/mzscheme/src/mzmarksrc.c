@@ -569,8 +569,8 @@ thread_val {
   gcMARK(pr->mr_hop);
   gcMARK(pr->mref);
 
-  gcMARK(pr->suspend_box);
-  gcMARK(pr->resume_box);
+  gcMARK(pr->suspended_box);
+  gcMARK(pr->resumed_box);
   gcMARK(pr->dead_box);
 
  size:

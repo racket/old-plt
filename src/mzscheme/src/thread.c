@@ -354,6 +354,11 @@ void scheme_init_thread(Scheme_Env *env)
 						      "thread",
 						      1, 1),
 			     env);
+  scheme_add_global_constant("thread/suspend-as-kill",
+			     scheme_make_prim_w_arity(sch_thread,
+						      "thread/suspend-as-kill",
+						      1, 1),
+			     env);
 #endif
   
   scheme_add_global_constant("sleep",
@@ -1532,8 +1537,8 @@ static void thread_is_dead(Scheme_Thread *r)
   r->cont_mark_stack_segments = NULL;
   r->overflow = NULL;
 
-  memset(r->error_buf, 0, sizeof(mz_jmp_buf));
-  memset(r->overflow_buf, 0, sizeof(mz_jmp_buf));
+  memset(&r->error_buf, 0, sizeof(mz_jmp_buf));
+  memset(&r->overflow_buf, 0, sizeof(mz_jmp_buf));
 }
 
 static void remove_thread(Scheme_Thread *r)

@@ -1,6 +1,6 @@
 ;;
 ;;  zodiac:scanner-code@
-;;  $Id: scanner.ss,v 1.6 1997/09/05 17:29:43 shriram Exp robby $
+;;  $Id: scanner.ss,v 1.7 1997/12/03 19:20:21 robby Exp $
 ;;
 ;;  Zodiac Scanner  July 96.
 ;;  mwk, plt group, Rice university.
@@ -641,15 +641,18 @@
 		       (z:symbol (text->symbol text param)
 				 start-loc (prev-loc))
 		       (with-handlers
-			   ([(lambda (x) #t)
+			   ([exn:read?
 			     (lambda (x) (z:error "`~a' is not a valid number"
 						  text))])
 			 (let*
 			     ([str  (text->string text)]
 			      [num  (read (open-input-string str))])
 			   (if (number? num)
-			       (z:number (if (read-exact-numbers)
-					     (read (open-input-string (string-append "#e" str)))
+			       (z:number (if (and (inexact? num) 
+						  (disallow-untagged-inexact-numbers))
+					     (z:error (format "`~~a' is not a valid number; try ~a"
+							      (read (open-input-string (string-append "#e" str))))
+						      text)
 					     num)
 					 start-loc (prev-loc))
 			       (z:symbol (text->symbol text param)
@@ -668,10 +671,7 @@
 		      ([(lambda (x) #t)
 			(lambda (x) (z:error "`~a' is not a valid number" text))])
 		    (let* ([str  (text->string text)]
-			   [num  (read (open-input-string 
-					(if (read-exact-numbers)
-					    (string-append "#e" str)
-					    str)))])
+			   [num  (read (open-input-string str))])
 		      (if (number? num)
 			  (z:number  num  start-loc  (prev-loc))
 			  (z:error "`~a' is not a valid number" text))))))]

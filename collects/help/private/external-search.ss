@@ -3,7 +3,8 @@
 	   "server.ss"
 	   "finddoc.ss"
 	   (lib "contracts.ss")
-	   (lib "util.ss" "help" "servlets" "private"))
+	   (lib "util.ss" "help" "servlets" "private")
+	   (lib "search-util.ss" "help" "servlets" "private"))
 
   ; sym, string assoc list
   (define hd-locations
@@ -37,16 +38,20 @@
   ; hd-cookie string string string any -> void
   ; shows search result in default browser
   (define (search-for-docs cookie search-string search-type match-type lucky?)
-    (let* ([port (hd-cookie->port cookie)]
-	   [url (format 
-		 (string-append search-url-prefix
-				"search-string=~a&"
-				"search-type=~a&"
-				"match-type=~a&"
-				"lucky=~a")
-		 port (hexify-string search-string) search-type match-type
-		 (if lucky? "true" "false"))])
-      (help-desk-navigate url)))
+    (if (string=? search-string "")
+	(help-desk-browser cookie)
+	(let* ([port (hd-cookie->port cookie)]
+	       [url (format 
+		     (string-append search-url-prefix
+				    "search-string=~a&"
+				    "search-type=~a&"
+				    "match-type=~a&"
+				    "lucky=~a")
+		     port (hexify-string search-string) search-type match-type
+		     (if lucky? "true" "false"))])
+	  (set-box! curr-search-type-box search-type)
+	  (set-box! curr-match-type-box match-type)
+	  (help-desk-navigate url))))
 
   ; cookie is an hd-cookie struct
   ; hd-url is /doc/<manual>/... or /servlet/...

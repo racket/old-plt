@@ -234,7 +234,9 @@
 	    '()
 	    `(,(search-pane search-string) (HR)))
        (FONT ((SIZE "+1"))
-	     ,(color-with "blue" `(B ,(string-constant plt:hd:search-results))))
+	     ,(color-with 
+	       "blue" 
+	       `(B ,(string-constant plt:hd:search-results))))
        (BR)
        ,@items)))
 

@@ -47,6 +47,7 @@
 	  (HEAD ,hd-css
 		(TITLE "PLT Help Desk"))
 	  ,(make-main-frameset
+	    search-string
 	    (if hd-url 
 		;; from goto-manual-link
 		hd-url   

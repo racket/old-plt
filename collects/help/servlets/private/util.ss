@@ -73,13 +73,20 @@
 
   (define (use-frames?)
     (get-bool-pref/default 'plt:hd:use-frames use-frames-default))
+
+  (define search-frame-servlet "/servlets/search.ss")
   
-  (define (make-main-frameset lower-url)
+  (define (make-main-frameset search-string lower-url)
     (let ([search-height 
 	   (get-pref/default 'plt:hd:search-height search-height-default)])
       `(FRAMESET ((ROWS ,(string-append search-height ",*")))
 		 (FRAME ((NAME "search")
-			 (SRC "/servlets/search.ss")
+			 (SRC ,(if search-string
+				   (string-append 
+				    search-frame-servlet
+				    "?search-string="
+				    (hexify-string search-string))
+				   search-frame-servlet))
 			 (MARGINHEIGHT "2")
 			 (MARGINWIDTH "2")))
 		 (FRAME ((NAME "main")

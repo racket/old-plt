@@ -11,7 +11,7 @@
   `(HTML 
     (HEAD ,hd-css
 	  (TITLE "PLT Help Desk"))
-    ,(make-main-frameset "/servlets/main.ss")))
+    ,(make-main-frameset #f "/servlets/main.ss")))
 
 
 

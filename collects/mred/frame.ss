@@ -353,28 +353,22 @@
 			       [help-menu 'help-menu-uninitialized]
 			       [show 
 				(lambda (on?)
-
+				  (super-show on?)
 				  (when on?
-
 					(let ([frames (send mred:group:the-frame-group get-frames)])
 
-					  (case (length frames)
+					  (if (eq? (length frames) 1)
 
-					    [(0) 
+					      ; disable File|Close if frame is singleton
 
-					     ; disable File|Close if frame is singleton
+					      (set-close-menu-item-state! this #f)
 
-					     (set-close-menu-item-state! this #f)]
+					      ; otherwise, enable for all frames
 
-					    [(1)
-
-					     ; enable File|Close in existing singleton frame
-
-					     (set-close-menu-item-state! (car frames) #t)]
-					    
-					    [else void])))
-
-				  (super-show on?))]
+					      (send mred:group:the-frame-group
+						    for-each-frame
+						    (lambda (a-frame)
+						      (set-close-menu-item-state! a-frame #t)))))))]
 			       [do-close
 				(lambda ()
 

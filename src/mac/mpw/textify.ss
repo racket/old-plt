@@ -20,6 +20,6 @@
 		 (close-output-port (cadr p))
 		 (close-input-port (cadddr p))))
 	(printf "Textifying ~a~n" p)
-	'(system (format "/Developer/Tools/Rez /dev/null -t TEXT -o ~a" p))))]))
+	(system (format "/Developer/Tools/Rez /dev/null -t TEXT -o ~a" p))))]))
 
 (go (build-path (this-expression-source-directory) 'up 'up))

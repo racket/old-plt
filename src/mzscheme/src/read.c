@@ -897,7 +897,7 @@ _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc)
 {
   Scheme_Object *v;
   Scheme_Config *config = scheme_config;
-  Scheme_Hash_Table *ht = NULL;
+  Scheme_Hash_Table **ht = NULL;
 
   local_can_read_compiled = crc;
   local_can_read_pipe_quote = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE));
@@ -910,9 +910,10 @@ _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc)
   local_can_read_quasi = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_QUASI));
   local_can_read_dot = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_DOT));
   
-  v = read_inner(port, stxsrc, &ht);
+  ht = MALLOC_N(Scheme_Hash_Table *, 1);
+  v = read_inner(port, stxsrc, ht);
 
-  if (ht) {
+  if (*ht) {
     /* Resolve placeholders: */
     v = resolve_references(v, port, !!stxsrc);
   }
@@ -1862,21 +1863,57 @@ static Scheme_Object *read_compact_svector(CPort *port, int l)
 
 static int cpt_branch[256];
 
+static int delayit = 41000;
+
+static Scheme_Object *read_compact(CPort *port, 
+				   Scheme_Hash_Table **ht,
+				   Scheme_Object **symtab,
+				   int use_stack);
+
+static Scheme_Object *read_compact_k(void)
+{
+  Scheme_Thread *p = scheme_current_thread;
+  CPort *port = (CPort *)p->ku.k.p1;
+  Scheme_Hash_Table **ht = (Scheme_Hash_Table **)p->ku.k.p2;
+  Scheme_Object **symtab = (Scheme_Object **)p->ku.k.p3;
+
+  p->ku.k.p1 = NULL;
+  p->ku.k.p2 = NULL;
+  p->ku.k.p3 = NULL;
+
+  return read_compact(port, ht, symtab, p->ku.k.i1);
+}
+
 static Scheme_Object *read_compact(CPort *port, 
 				   Scheme_Hash_Table **ht,
 				   Scheme_Object **symtab,
 				   int use_stack)
 {
 #define BLK_BUF_SIZE 32
-  int ch;
   unsigned int l;
   char *s, buffer[BLK_BUF_SIZE];
+  int ch;
   int need_car = 0, proper = 0;
   Scheme_Object *v, *first = NULL, *last = NULL;
+
+#ifdef DO_STACK_CHECK
+  {
+# include "mzstkchk.h"
+    {
+      Scheme_Thread *p = scheme_current_thread;
+      p->ku.k.p1 = (void *)port;
+      p->ku.k.p2 = (void *)ht;
+      p->ku.k.p3 = (void *)symtab;
+      p->ku.k.i1 = use_stack;
+      return scheme_handle_stack_overflow(read_compact_k);
+    }
+  }
+#endif
 
   while (1) {
     ZO_CHECK(port->pos < port->size);
     ch = CP_GETC(port);
+
     switch(cpt_branch[ch]) {
     case CPT_ESCAPE:
       {
@@ -2217,6 +2254,7 @@ static Scheme_Object *read_compact(CPort *port,
 	}
 
 	scheme_finish_application(a);
+
 	v = (Scheme_Object *)a;
       }
       break;
@@ -2326,15 +2364,16 @@ static Scheme_Object *read_compact_quote(CPort *port,
 					 Scheme_Object **symtab,
 					 int embedded)
 {
-  Scheme_Hash_Table *q_ht;
+  Scheme_Hash_Table **q_ht;
   Scheme_Object *v;
 
   /* Use a new hash table. A compiled quoted form may have graph
      structure, but only local graph structure is allowed. */
-  q_ht = NULL;
-  v = read_compact(port, &q_ht, symtab, 0);
+  q_ht = MALLOC_N(Scheme_Hash_Table *, 1);
+  *q_ht = NULL;
+  v = read_compact(port, q_ht, symtab, 0);
 
-  if (q_ht)
+  if (*q_ht)
     resolve_references(v, NULL, 0);
   
   return v;
@@ -2416,7 +2455,6 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
 {
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *result;
-  CPort cp;
   long size, got;
   CPort *rp;
   long symtabsize;
@@ -2470,21 +2508,24 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   symtabsize = read_compact_number_from_port(port);
 
   size = read_compact_number_from_port(port);
-  cp.start = (unsigned char *)scheme_malloc_atomic(size);
-  cp.pos = 0;
-  cp.base = scheme_tell(port);
-  cp.orig_port = port;
-  cp.size = size;
-  if ((got = scheme_get_chars(port, size, (char *)cp.start, 0)) != size)
+  rp = MALLOC_ONE_RT(CPort);
+#ifdef MZ_PRECISE_GC
+  fix me!;
+#endif
+  rp->start = (unsigned char *)scheme_malloc_atomic(size);
+  rp->pos = 0;
+  rp->base = scheme_tell(port);
+  rp->orig_port = port;
+  rp->size = size;
+  if ((got = scheme_get_chars(port, size, (char *)rp->start, 0)) != size)
     scheme_read_err(port, NULL, -1, -1, -1, -1, 0,
 		    "read (compiled): ill-formed code (bad count: %ld != %ld, started at %ld)",
-		    got, size, cp.base);
-  rp = &cp;
+		    got, size, rp->base);
 
   local_rename_memory = NULL;
 
   symtab = MALLOC_N(Scheme_Object *, symtabsize);
-  cp.symtab_size = symtabsize;
+  rp->symtab_size = symtabsize;
 
   result = read_marshalled(scheme_compilation_top_type, rp, ht, symtab);
 
@@ -2500,10 +2541,6 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
     /* If no exception, the the resulting code is ok. */
   } else
     scheme_ill_formed_code(rp);
-
-# ifdef MZ_PRECISE_GC
-  rp = &cp; /* Ensures that cp is known to be alive. */
-# endif
 
   return result;
 }

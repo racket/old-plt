@@ -471,7 +471,7 @@ enum {
   sector_kind_other
 };
 
-typedef struct MemoryBlock {
+typedef struct BlockOfMemory {
   struct Finalizer *finalizers;
   unsigned long start;
   unsigned long end;
@@ -484,7 +484,7 @@ typedef struct MemoryBlock {
   short set_no;
 #endif
   int *positions; /* maps displacement in ptrs => position in objects */
-  struct MemoryBlock *next;
+  struct BlockOfMemory *next;
 #if STAMP_AND_REMEMBER_SOURCE
   long make_time;
   long use_time;
@@ -492,7 +492,7 @@ typedef struct MemoryBlock {
   unsigned long high_marker;
 #endif
   unsigned char free[1];
-} MemoryBlock;
+} BlockOfMemory;
 
 #if DISTINGUISH_FREE_FROM_UNMARKED
 
@@ -654,8 +654,8 @@ typedef struct GC_Set {
   short locked;
 #endif
   char *name;
-  MemoryBlock **blocks;
-  MemoryBlock **block_ends;
+  BlockOfMemory **blocks;
+  BlockOfMemory **block_ends;
   MemoryChunk **othersptr;
 #if DUMP_BLOCK_COUNTS
   unsigned long total;
@@ -686,17 +686,17 @@ typedef struct GC_SetWithOthers {
 static GC_Set **common_sets;
 static int num_common_sets;
 
-static MemoryBlock *common[2 * NUM_COMMON_SIZE]; /* second half is `ends' array */
-static MemoryBlock *atomic_common[2 * NUM_COMMON_SIZE];
-static MemoryBlock *uncollectable_common[2 * NUM_COMMON_SIZE];
-static MemoryBlock *uncollectable_atomic_common[2 * NUM_COMMON_SIZE];
+static BlockOfMemory *common[2 * NUM_COMMON_SIZE]; /* second half is `ends' array */
+static BlockOfMemory *atomic_common[2 * NUM_COMMON_SIZE];
+static BlockOfMemory *uncollectable_common[2 * NUM_COMMON_SIZE];
+static BlockOfMemory *uncollectable_atomic_common[2 * NUM_COMMON_SIZE];
 static MemoryChunk *others, *atomic_others;
 static MemoryChunk *uncollectable_others, *uncollectable_atomic_others;
 
 static int *common_positionses[NUM_COMMON_SIZE];
 
 #if PROVIDE_MALLOC_AND_FREE
-static MemoryBlock *sys_malloc[2 * NUM_COMMON_SIZE];
+static BlockOfMemory *sys_malloc[2 * NUM_COMMON_SIZE];
 static MemoryChunk *sys_malloc_others;
 #endif
 
@@ -1593,7 +1593,7 @@ void *GC_get_stack_base(void)
 }
 
 static void *find_ptr(void *d, int *_size,
-		      MemoryBlock **_block, int *_pos,
+		      BlockOfMemory **_block, int *_pos,
 		      MemoryChunk **_chunk,
 		      int find_anyway)
 {
@@ -1610,7 +1610,7 @@ static void *find_ptr(void *d, int *_size,
 
       if (kind == sector_kind_block) {
 	/* Found common block: */
-	MemoryBlock *block = (MemoryBlock *)INT_TO_PTR(page->start);
+	BlockOfMemory *block = (BlockOfMemory *)INT_TO_PTR(page->start);
 	if (p >= block->start && p < block->top) {
 	  int size = block->size;
 	  int diff = p - block->start;
@@ -1689,7 +1689,7 @@ int GC_size(void *d)
 
 int GC_is_atomic(void *d)
 {
-  MemoryBlock *block = NULL;
+  BlockOfMemory *block = NULL;
   MemoryChunk *chunk = NULL;
   
   if (find_ptr(d, NULL, &block, NULL, &chunk, 0)) {
@@ -1717,7 +1717,7 @@ void *GC_orig_base(void *d)
 GC_Set *GC_set(void *d)
 {
 #if KEEP_SET_NO
-  MemoryBlock *block = NULL;
+  BlockOfMemory *block = NULL;
   MemoryChunk *chunk = NULL;
   
   if (!initialized)
@@ -1874,7 +1874,7 @@ void GC_dump(void)
 	      cs->uncollectable ? "eternal" : "collectable");
 
       for (i = 0; i < NUM_COMMON_SIZE; i++) {
-	MemoryBlock *block;
+	BlockOfMemory *block;
 	int counter = 0;
 
 	block = (cs)->blocks[i];
@@ -2117,12 +2117,12 @@ static int num_newblock_allocs_stat;
 
 static void *do_malloc(SET_NO_BACKINFO
 		       unsigned long size, 
-		       MemoryBlock **common,
+		       BlockOfMemory **common,
 		       MemoryChunk **othersptr,
 		       int flags)
 {
-  MemoryBlock **find, *block;
-  MemoryBlock **common_ends;
+  BlockOfMemory **find, *block;
+  BlockOfMemory **common_ends;
   void *s;
   long c;
   unsigned long p;
@@ -2339,30 +2339,30 @@ static void *do_malloc(SET_NO_BACKINFO
 #endif
 
   /* upper bound: */
-  elem_per_block = (SECTOR_SEGMENT_SIZE - sizeof(MemoryBlock)) / sizeElemBit;
+  elem_per_block = (SECTOR_SEGMENT_SIZE - sizeof(BlockOfMemory)) / sizeElemBit;
   /*                ^- mem area size      ^- block record */
   /* use this one: */
-  elem_per_block = ((SECTOR_SEGMENT_SIZE - sizeof(MemoryBlock) - elem_per_block
+  elem_per_block = ((SECTOR_SEGMENT_SIZE - sizeof(BlockOfMemory) - elem_per_block
   /*                ^- mem area size      ^- block record       ^- elems     */
 		     - (extra_alignment + PTR_SIZE - 2)) / sizeElemBit);
-  /*                     ^- possible elem padding, -2 since MemoryBlock has free[1] */
+  /*                     ^- possible elem padding, -2 since BlockOfMemory has free[1] */
   if (elem_per_block) {
     /* Small enough to fit into one segment */
     c = SECTOR_SEGMENT_SIZE;
   } else {
     elem_per_block = 1;
     /* Add (PTR_SIZE - 1) to ensure enough room after alignment: */
-    c = sizeof(MemoryBlock) + (PTR_SIZE - 1) + sizeElemBit;
+    c = sizeof(BlockOfMemory) + (PTR_SIZE - 1) + sizeElemBit;
   }
 
-  block = (MemoryBlock *)malloc_sector(c, sector_kind_block, 1);
+  block = (BlockOfMemory *)malloc_sector(c, sector_kind_block, 1);
   if (!block) {
     if (mem_use >= mem_limit) {
       GC_gcollect();
       return do_malloc(KEEP_SET_INFO_ARG(set_no)
 		       size, common, othersptr, flags);
     } else
-      block = (MemoryBlock *)malloc_sector(c, sector_kind_block, 0);
+      block = (BlockOfMemory *)malloc_sector(c, sector_kind_block, 0);
   }
 
   
@@ -2378,7 +2378,7 @@ static void *do_malloc(SET_NO_BACKINFO
 #endif
 
   /* offset for data (ptr aligned): */
-  c = sizeof(MemoryBlock) + (elem_per_block - 1);
+  c = sizeof(BlockOfMemory) + (elem_per_block - 1);
   if (c & (PTR_SIZE - 1))
     c += (PTR_SIZE - (c & (PTR_SIZE - 1)));
 #if !PAD_BOUNDARY_BYTES
@@ -2522,10 +2522,10 @@ GC_Set *GC_new_set(char *name,
   c->locked = 0;
 #endif
   c->name = name;
-  c->blocks = (MemoryBlock **)malloc_managed(sizeof(MemoryBlock*) * 2 * NUM_COMMON_SIZE);
-  memset(c->blocks, 0, sizeof(MemoryBlock*) * NUM_COMMON_SIZE);
+  c->blocks = (BlockOfMemory **)malloc_managed(sizeof(BlockOfMemory*) * 2 * NUM_COMMON_SIZE);
+  memset(c->blocks, 0, sizeof(BlockOfMemory*) * NUM_COMMON_SIZE);
   c->block_ends = c->blocks + NUM_COMMON_SIZE;
-  memset(c->block_ends, 0, sizeof(MemoryBlock*) * NUM_COMMON_SIZE);
+  memset(c->block_ends, 0, sizeof(BlockOfMemory*) * NUM_COMMON_SIZE);
 
   ((GC_SetWithOthers *)c)->others = NULL;
   c->othersptr = &((GC_SetWithOthers *)c)->others;
@@ -2694,7 +2694,7 @@ static void register_finalizer(void *p, void (*f)(void *p, void *data),
 			       void *data, void (**oldf)(void *p, void *data), 
 			       void **olddata, int eager_level, int ignore_self)
 {
-  MemoryBlock *block = NULL;
+  BlockOfMemory *block = NULL;
   MemoryChunk *chunk = NULL;
   int pos;
 
@@ -2787,7 +2787,7 @@ void GC_for_each_element(GC_Set *set,
 			 void *data)
 {
   int i;
-  MemoryBlock **blocks = set->blocks;
+  BlockOfMemory **blocks = set->blocks;
   MemoryChunk *c = *(set->othersptr);
 
 #if ALLOW_SET_LOCKING
@@ -2796,8 +2796,8 @@ void GC_for_each_element(GC_Set *set,
 #endif
 
   for (i = 0; i < NUM_COMMON_SIZE; i++) {
-    MemoryBlock **prev = &blocks[i];
-    MemoryBlock *block = *prev;
+    BlockOfMemory **prev = &blocks[i];
+    BlockOfMemory *block = *prev;
 
     while (block) {
       int j;
@@ -2889,7 +2889,7 @@ static void free_chunk(MemoryChunk *k, MemoryChunk **prev, GC_Set *set)
 void GC_free(void *p) 
 {
 #if PROVIDE_GC_FREE || PROVIDE_CHUNK_GC_FREE
-  MemoryBlock *block = NULL;
+  BlockOfMemory *block = NULL;
   MemoryChunk *chunk = NULL;
   int fpos;
   void *found;
@@ -3131,13 +3131,13 @@ static void collect_finish_chunk(MemoryChunk **c, GC_Set *set)
   high_plausible = local_high_plausible;
 }
 
-static void collect_init_common(MemoryBlock **blocks, int uncollectable)
+static void collect_init_common(BlockOfMemory **blocks, int uncollectable)
 {
   int i, j;
   int boundary, boundary_val = 0;
 
   for (i = 0; i < NUM_COMMON_SIZE; i++) {
-    MemoryBlock *block = blocks[i];
+    BlockOfMemory *block = blocks[i];
 
     while (block) {
 #if CHECK
@@ -3218,8 +3218,8 @@ static void collect_init_common(MemoryBlock **blocks, int uncollectable)
   }
 }
 
-static void collect_finish_common(MemoryBlock **blocks, 
-				  MemoryBlock **block_ends, 
+static void collect_finish_common(BlockOfMemory **blocks, 
+				  BlockOfMemory **block_ends, 
 				  GC_Set *set)
 {
   int i;
@@ -3233,8 +3233,8 @@ static void collect_finish_common(MemoryBlock **blocks,
   local_high_plausible = high_plausible;
 
   for (i = 0; i < NUM_COMMON_SIZE; i++) {
-    MemoryBlock **prev = &blocks[i];
-    MemoryBlock *block = *prev;
+    BlockOfMemory **prev = &blocks[i];
+    BlockOfMemory *block = *prev;
 #if CHECK
     long size = size_map[i];
 #endif
@@ -3612,12 +3612,12 @@ static void push_locked_chunk(MemoryChunk *c, int atomic)
   }
 }
 
-static void push_locked_common(MemoryBlock **blocks, int atomic)
+static void push_locked_common(BlockOfMemory **blocks, int atomic)
 {
   int i;
 
   for (i = 0; i < NUM_COMMON_SIZE; i++) {
-    MemoryBlock *block = blocks[i];
+    BlockOfMemory *block = blocks[i];
     
     for (; block; block = block->next) {
       unsigned long size = block->size;
@@ -3697,7 +3697,7 @@ static void push_uncollectable_chunk(MemoryChunk *c, GC_Set *set)
 #endif
 }
 
-static void push_uncollectable_common(MemoryBlock **blocks, GC_Set *set)
+static void push_uncollectable_common(BlockOfMemory **blocks, GC_Set *set)
 {
   int i;
 
@@ -3705,7 +3705,7 @@ static void push_uncollectable_common(MemoryBlock **blocks, GC_Set *set)
   if (!collecting_with_trace_count) {
 #endif
     for (i = 0; i < NUM_COMMON_SIZE; i++) {
-      MemoryBlock *block = blocks[i];
+      BlockOfMemory *block = blocks[i];
       
       while (block) {
 	PUSH_COLLECT(block->start, block->top, 0);
@@ -3717,7 +3717,7 @@ static void push_uncollectable_common(MemoryBlock **blocks, GC_Set *set)
     int save_count = collect_trace_count;
 
     for (i = 0; i < NUM_COMMON_SIZE; i++) {
-      MemoryBlock *block = blocks[i];
+      BlockOfMemory *block = blocks[i];
       
       while (block) {
 	unsigned long size = block->size;
@@ -3823,12 +3823,12 @@ static void mark_chunks_for_finalizations(MemoryChunk *c)
   collect();
 }
 
-static void mark_common_for_finalizations(MemoryBlock **blocks, int atomic)
+static void mark_common_for_finalizations(BlockOfMemory **blocks, int atomic)
 {
   int i;
 
   for (i = 0; i < NUM_COMMON_SIZE; i++) {
-    MemoryBlock *block = blocks[i];
+    BlockOfMemory *block = blocks[i];
     for (; block; block = block->next) {
       Finalizer *fn = block->finalizers;
       for (; fn ; fn = fn->next) {
@@ -3925,14 +3925,14 @@ static void queue_chunk_finalizeable(MemoryChunk *c, int eager_level)
   }
 }
 
-static void queue_common_finalizeable(MemoryBlock **blocks, int eager_level)
+static void queue_common_finalizeable(BlockOfMemory **blocks, int eager_level)
 {
   /* DO NOT COLLECT FROM collect_stack DURING THIS PROCEDURE */
 
   int i;
   
   for (i = 0; i < NUM_COMMON_SIZE; i++) {
-    MemoryBlock *block = blocks[i];
+    BlockOfMemory *block = blocks[i];
     for (; block; block = block->next) {
       Finalizer *fn = block->finalizers, *next;
       

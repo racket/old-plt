@@ -27,6 +27,7 @@
 #   endif
 # endif
 
+
 #if defined(__MWERKS__) && !defined(POWERPC)
 
 asm static void PushMacRegisters()

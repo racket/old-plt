@@ -32,8 +32,10 @@ extern "C" {
   typedef void (*GC_F_PTR)(void *, void *);
 }
 # define CAST_GCP (GC_F_PTR)
+# define CAST_GCPP (GC_F_PTR *)
 #else
 # define CAST_GCP /* empty */
+# define CAST_GCPP /* empty */
 #endif
 
 #ifdef USE_SENORA_GC
@@ -101,7 +103,7 @@ void gc_cleanup::install_cleanup(void)
 
   GC_register_finalizer_ignore_self(gcOBJ_TO_PTR(this), 
 				    CAST_GCP GC_cleanup, NULL, 
-				    &old_fn, &old_data);
+				    CAST_GCPP &old_fn, &old_data);
 
 # if CHECK_BASE
   if (old_fn) {
@@ -180,6 +182,8 @@ void *GC_cpp_malloc(size_t size)
   return GC_malloc_specific(size, wx_objects);
 }
 
+# ifdef SGC_STD_DEBUGGING
+
 void GC_cpp_for_each(void (*f)(void *, int, void *), void *data)
 {
   if (wx_objects)
@@ -190,6 +194,8 @@ int GC_is_wx_object(void *v)
 {
   return wx_objects && (GC_set(v) == wx_objects);
 }
+
+# endif
 
 #endif
 

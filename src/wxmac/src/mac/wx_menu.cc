@@ -616,7 +616,9 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
     char t[2] = {1, appleMark};
     appleMenuHandle = ::NewMenu(128, (StringPtr)t);
     CheckMemOK(appleMenuHandle);
+#ifndef WX_CARBON
     ::AppendResMenu(appleMenuHandle, 'DRVR');
+#endif
   }
   if (mbar && mbar->wxHelpHackMenu && mbar->iHelpMenuHackNum) {
     Str255 t = "\pAboutä";

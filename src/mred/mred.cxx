@@ -105,7 +105,9 @@ extern "C" {
   typedef void (*GC_F_PTR)(void *, void *);
   typedef void (*ON_KILL_PTR)(struct Scheme_Thread *p);
   typedef Scheme_Object *(*MK_PTR)(void);
+# if !defined(USE_SENORA_GC) && !defined(MZ_PRECISE_GC)
   typedef void (*IGNORE_PTR)(char *, GC_word);
+# endif
   typedef void (*CONSOLE_PRINTF_PTR)(char *str, ...);
   typedef void (*CONSOLE_OUTPUT_PTR)(char *str, long len);
   typedef void (*EXIT_PTR)(int);

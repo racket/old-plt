@@ -142,7 +142,7 @@ static void COLLECT(OFFSET_ARG)
 
 	  if (kind == sector_kind_block) {
 	    /* Found common block: */
-	    MemoryBlock *block = (MemoryBlock *)INT_TO_PTR(page->start);
+	    BlockOfMemory *block = (BlockOfMemory *)INT_TO_PTR(page->start);
 	    unsigned long bstart = block->start;
 
 	    MARK_STATISTIC(num_blocks_stat++);

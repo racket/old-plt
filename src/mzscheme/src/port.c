@@ -2726,14 +2726,15 @@ static long file_get_string(Scheme_Input_Port *port,
 
   c = fread(buffer + offset, 1, size, fp);
 
-  if (c == EOF) {
+  if (c <= 0) {
     if (!feof(fp)) {
       scheme_raise_exn(MZEXN_I_O_PORT_READ,
 		       port,
 		       "error reading from file port \"%q\" (%e)",
 		       port->name, errno);
       return 0;
-    }
+    } else
+      c = EOF;
 #ifndef DONT_CLEAR_FILE_EOF
     clearerr(fp);
 #endif

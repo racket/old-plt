@@ -1,4 +1,7 @@
 
+(define sgc? #f)
+(define debug? #f)
+(define debug-only null)
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utils
@@ -28,7 +31,7 @@
 	   [is-c? (regexp-match "[.]c$" base)])
       (cons
        obj
-       (format "~a \304~a ~a\r\t~a ~a ~a -w off -d FOR_MAC -d WX_CARBON -d __STDC__ -includes unix -curdir -sym full -o ~a.o"
+       (format "~a \304~a ~a\r\t~a ~a ~a -opt off -w off -d FOR_MAC -d WX_CARBON -d __STDC__~a -includes unix -curdir~a -o ~a.o"
 	       obj
 	       (if is-c? "" " carbon.dump")
 	       f
@@ -40,6 +43,12 @@
 		     (format "-i ~a ~a"
 			     (car includes)
 			     (loop (cdr includes)))))
+	       (if sgc? 
+		   " -d USE_SENORA_GC" 
+		   "")
+	       (if debug?
+		   " -sym full"
+		   "")
 	       base)))))
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -48,78 +57,89 @@
 
 (define mz-include ((mk-src-path "mzscheme" "include")))
 
+(define mz-files
+  (map (mk-src-path "mzscheme" "src")
+       '("salloc.c"
+	 "bignum.c"
+	 "bool.c"
+	 "builtin.c"
+	 "char.c"
+	 "complex.c"
+	 "dynext.c"
+	 "env.c"
+	 "error.c"
+	 "eval.c"
+	 "file.c"
+	 "fun.c"
+	 "gmp:gmp.c"
+	 "hash.c"
+	 "image.c"
+	 "list.c"
+	 "module.c"
+	 "network.c"
+	 "numarith.c"
+	 "number.c"
+	 "numcomp.c"
+	 "numstr.c"
+	 "port.c"
+	 "portfun.c"
+	 "print.c"
+	 "rational.c"
+	 "read.c"
+	 "regexp.c"
+	 "sema.c"
+	 "setjmpup.c"
+	 "string.c"
+	 "struct.c"
+	 "stxobj.c"
+	 "symbol.c"
+	 "syntax.c"
+	 "thread.c"
+	 "type.c"
+	 "vector.c")))
+
 (define mz-srcs
   (map
    (make-comp (list mz-include))
-   (map (mk-src-path "mzscheme" "src")
-	'("salloc.c"
-	  "bignum.c"
-	  "bool.c"
-	  "builtin.c"
-	  "char.c"
-	  "complex.c"
-	  "dynext.c"
-	  "env.c"
-	  "error.c"
-	  "eval.c"
-	  "file.c"
-	  "fun.c"
-	  "gmp:gmp.c"
-	  "hash.c"
-	  "image.c"
-	  "list.c"
-	  "module.c"
-	  "network.c"
-	  "numarith.c"
-	  "number.c"
-	  "numcomp.c"
-	  "numstr.c"
-	  "port.c"
-	  "portfun.c"
-	  "print.c"
-	  "rational.c"
-	  "read.c"
-	  "regexp.c"
-	  "sema.c"
-	  "setjmpup.c"
-	  "string.c"
-	  "struct.c"
-	  "stxobj.c"
-	  "symbol.c"
-	  "syntax.c"
-	  "thread.c"
-	  "type.c"
-	  "vector.c"))))
+   mz-files))
 
+(define gc-include 
+  (if sgc?
+      ((mk-src-path "mzscheme" "sgc"))
+      ((mk-src-path "mzscheme" "gc" "include"))))
 
-(define gc-include ((mk-src-path "mzscheme" "gc" "include")))
+(define gc-files
+  (if sgc?
+      (list ((mk-src-path "mzscheme" "sgc") "sgc.c"))
+      (map (mk-src-path "mzscheme" "gc")
+	   '("alloc.c"
+	     "reclaim.c"
+	     "allchblk.c"
+	     "misc.c"
+	     "mach_dep.c"
+	     "os_dep.c"
+	     "mark_rts.c"
+	     "headers.c"
+	     "mark.c"
+	     "obj_map.c"
+	     "blacklst.c"
+	     "finalize.c"
+	     "new_hblk.c"
+	     "dbg_mlc.c"
+	     "malloc.c"
+	     "stubborn.c"
+	     "checksums.c"
+	     "typd_mlc.c"
+	     "ptr_chck.c"
+	     "mallocx.c"
+	     "MacOS.c"))))
 
 (define gc-srcs
   (map
    (make-comp (list gc-include))
-   (map (mk-src-path "mzscheme" "gc")
-	'("alloc.c"
-	  "reclaim.c"
-	  "allchblk.c"
-	  "misc.c"
-	  "mach_dep.c"
-	  "os_dep.c"
-	  "mark_rts.c"
-	  "headers.c"
-	  "mark.c"
-	  "obj_map.c"
-	  "blacklst.c"
-	  "finalize.c"
-	  "new_hblk.c"
-	  "dbg_mlc.c"
-	  "malloc.c"
-	  "stubborn.c"
-	  "checksums.c"
-	  "typd_mlc.c"
-	  "ptr_chck.c"
-	  "mallocx.c"
-	  "MacOS.c"))))
+   gc-files))
 
+(set! debug-only (append gc-files mz-files))
 
 (define wxb-include ((mk-src-path "wxmac" "include" "base")))
 (define wxm-include ((mk-src-path "wxmac" "include" "mac")))
@@ -415,6 +435,30 @@
 	  a-list-srcs
 	  jpeg-srcs))
 
+(define src-dirs
+  (list (mk-src-path "mzscheme" "src")
+	(mk-src-path "mzscheme" "src" "gmp")
+	(mk-src-path "mzscheme" "gc")
+	(mk-src-path "mred" "wxs")
+	(mk-src-path "mred" "wxme")
+	(mk-src-path "mred")
+	(mk-src-path "wxcommon")
+	(mk-src-path "wxcommon" "jpeg")
+	(mk-src-path "wxmac" "src" "base")
+	(mk-src-path "wxmac" "src" "mac")
+	(mk-src-path "wxmac" "utils" "image" "src")
+	(mk-src-path "wxmac" "contrib" "wxxpm" "libxpm.34b" "lib")
+	(mk-src-path "a-list" "a-list-1.1.9")))
+
+(define (with-spaces prefix f src-dirs)
+  (let loop ([src-dirs src-dirs])
+    (if (null? src-dirs)
+	""
+	(format "~a ~a ~a"
+		prefix
+		(f (car src-dirs))
+		(loop (cdr src-dirs))))))
+
 (with-output-to-file "Makefile"
   (lambda ()
     (printf "# Don't edit this file directly\r")
@@ -425,8 +469,17 @@
 	      all-srcs)
     
     (printf "\rall \304 {OBJS}\r")
-    (printf "\tPPCLink {OBJS} \"{SharedLibraries}CarbonLib\" \"{SharedLibraries}StdCLib\"  \"{PPCLibraries}MrCPlusLib.o\" \"{PPCLibraries}PPCCRuntime.o\" \"{PPCLibraries}StdCRuntime.o\" -o MrEd -c 'MrEd' -m __appstart\r") ;;  -sym big
+    (printf "\tPPCLink {OBJS} \"{SharedLibraries}CarbonLib\" \"{SharedLibraries}StdCLib\"  \"{PPCLibraries}MrCPlusLib.o\" \"{PPCLibraries}PPCCRuntime.o\" \"{PPCLibraries}StdCRuntime.o\" -o MrEd -c 'MrEd' -m __appstart~a\r"
+	    (when debug? " -sym big"))
     (printf "\tRez ::cw:MrEd.r -o MrEd -append\r")
+    (when debug?
+      (printf "\tMakeSym MrEd.xcoff -P -sym big -o MrEd.sym ~a~a\r"
+	      (if (null? debug-only)
+		  ""
+		  (format "-only ~a" (with-spaces "" 
+						  (lambda (x) (cadr (regexp-match "([^:]*)$" x)))
+						  debug-only)))
+	      (with-spaces " -i" (lambda (x) (x)) src-dirs)))
     
     (printf "\rcarbon.dump \304 carbon.c\r\tMrCpp carbon.c -rtti off -dump carbon.dump\r\r\r")
     

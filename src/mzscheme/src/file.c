@@ -393,7 +393,7 @@ int scheme_setcwd(char *expanded, int noexn)
   int err;
 
 #ifdef USE_MAC_FILE_TOOLBOX
-  if (find_mac_file(expanded, &spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
+  if (find_mac_file(expanded, &spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
     WDPBRec rec;
     
     rec.ioNamePtr = NULL;
@@ -438,7 +438,7 @@ char *scheme_make_complete_path(const char *filename)
 
 #ifdef USE_MAC_FILE_TOOLBOX
 static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int findfile,
-			 int *dealiased, int *wasdir, 
+			 int *dealiased, int *wasdir, int *exists,
 			 long *filedate, int *flags, 
 			 long *type, unsigned long *size,
 			 FInfo *finfo) 
@@ -448,7 +448,9 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
               1 => must find a file
              -1 => must find a link
              -2 => must find a file or link
-
+             -3 => don't care if file or link is found (but unset *wasdir)
+   wasdir and exists are always filled in, unless they're null; *exists
+    is set to 2 if a link is found
    filedate, flags, type, size, and finfo are only filled in
    when findfile >= 0 (and when they're non-null)
  */
@@ -463,6 +465,8 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
     *dealiased = 0;
   if (wasdir)
     *wasdir = 1;
+  if (exists)
+    *exists = 0;
   if (flags)
     *flags = 0;
   if (type)
@@ -544,10 +548,12 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
 	  return 0;	
 	find_dir_id = pbrec.dirInfo.ioDrParID;
 	if (!next) {
-	  if (findfile)
+	  if (findfile && (findfile != -3))
 	    return 0;
 	  if (wasdir)
 	    *wasdir = 1;
+	  if (exists)
+	    *exists = 1;
 	}
       } else {
 	spec->vRefNum = find_vref;
@@ -561,7 +567,7 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
 	pbrec.hFileInfo.ioDirID = spec->parID;
 	pbrec.hFileInfo.ioFDirIndex = 0;
 	if (PBGetCatInfo(&pbrec, 0)) {
-	  if (finddir || findfile || next)
+	  if (finddir || (findfile && (findfile != -3)) || next)
 	    return 0;
 	  if (wasdir)
 	    *wasdir = 0;
@@ -569,10 +575,26 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
 	} else {
 	  /* If it's a file, it could be an alias: */
 	  if (!(pbrec.hFileInfo.ioFlAttrib & 0x10)) {
+	    Str32 origname;
+	    memcpy(origname, spec->name, 32);
 	    ResolveAliasFile(spec, 1, &isFolder, &wasAlias);
 	    if (!next && (findfile < 0)) {
-	      if (findfile == -2)
-		return 1;
+	      if (wasAlias) {
+	        spec->vRefNum = find_vref;
+	        spec->parID = find_dir_id;
+	        memcpy((void *)spec->name, origname, 32);
+	      }
+		  if (findfile <= -2) {
+	        if (wasdir)
+	         *wasdir = 0;
+			if (exists)
+			 *exists = wasAlias ? 2 : 1;
+	        return 1;
+	      }
+	      if (wasdir)
+	        *wasdir = isFolder;
+	      if (wasAlias && exists)
+	        *exists = 2;
 	      return wasAlias ? 1 : 0;
 	    }
 	    if (wasAlias && dealiased)
@@ -587,10 +609,12 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
 	      pbrec.hFileInfo.ioDirID = spec->parID;
 	      pbrec.hFileInfo.ioFDirIndex = 0;
 	      if (PBGetCatInfo(&pbrec, 0)) {
-	        if (finddir || findfile || next)
+	        if (finddir || (findfile && (findfile != -3)) || next)
 	          return 0;
 	        if (wasdir)
 	          *wasdir = 0;
+	        if (exists)
+	          *exists = 0;
 	        break;
 	      }
 	    }
@@ -601,6 +625,8 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
 	      return 0; /* Not a directory */
 	    if (wasdir)
 	      *wasdir = 0;
+	    if (exists)
+	      *exists = 1;
 	    if (filedate)
 	      *filedate = pbrec.hFileInfo.ioFlMdDat;
 	    if (type)
@@ -613,12 +639,16 @@ static int find_mac_file(const char *filename, FSSpec *spec, int finddir, int fi
 	    if (finfo)
 	      memcpy(finfo, &pbrec.hFileInfo.ioFlFndrInfo, sizeof(FInfo));
 	  } else {
-	    if (findfile && !next)
+	    if (findfile && (findfile != -3) && !next)
 	      return 0;
 	    find_vref = spec->vRefNum;
 	    find_dir_id = pbrec.hFileInfo.ioDirID;
-	    if (!next && flags)
-	      *flags = pbrec.hFileInfo.ioFlAttrib;
+	    if (!next) {
+	      if (flags)
+	        *flags = pbrec.hFileInfo.ioFlAttrib;
+	      if (exists)
+	        *exists = 1;
+	     }
 	  }
         }  
       }
@@ -696,7 +726,7 @@ void scheme_file_create_hook(char *filename)
 {
   FSSpec spec;
     
-  if (find_mac_file(filename, &spec, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
+  if (find_mac_file(filename, &spec, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
     FInfo info;
 
     FSpGetFInfo(&spec, &info);
@@ -708,7 +738,7 @@ void scheme_file_create_hook(char *filename)
 
 int scheme_mac_path_to_spec(const char *filename, FSSpec *spec, long *type)
 {
-  return find_mac_file(filename, spec, 0, 1, NULL, NULL, NULL, NULL, type, NULL, NULL);
+  return find_mac_file(filename, spec, 0, 1, NULL, NULL, NULL, NULL, NULL, type, NULL, NULL);
 }
 #endif
 
@@ -950,7 +980,7 @@ static char *do_expand_filename(char* filename, int ilen, char *errorin,
     FSSpec spec;
     int dealiased, wasdir;
     
-    if (find_mac_file(filename, &spec, 0, 0, &dealiased, &wasdir, NULL, NULL, NULL, NULL, NULL))
+    if (find_mac_file(filename, &spec, 0, 0, &dealiased, &wasdir, NULL, NULL, NULL, NULL, NULL, NULL))
       if (dealiased) {
         char *s;
         s = scheme_build_mac_filename(&spec, wasdir);
@@ -976,7 +1006,7 @@ int scheme_file_exists(char *filename)
 #ifdef USE_MAC_FILE_TOOLBOX
   FSSpec spec;
   
-  if (!find_mac_file(filename, &spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+  if (!find_mac_file(filename, &spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
     return 0;
   return 1;
 
@@ -1030,7 +1060,7 @@ int scheme_directory_exists(char *dirname)
 #ifdef USE_MAC_FILE_TOOLBOX
   FSSpec spec;
   
-  if (!find_mac_file(dirname, &spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+  if (!find_mac_file(dirname, &spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
     return 0;
 
   return 1;
@@ -1140,7 +1170,7 @@ static Scheme_Object *link_exists(int argc, Scheme_Object **argv)
   {
     FSSpec spec;
   
-    if (!find_mac_file(filename, &spec, 0, -1, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+    if (!find_mac_file(filename, &spec, 0, -1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
       return scheme_false;
 
     return scheme_true;
@@ -1180,7 +1210,7 @@ static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
     if (has_null(file, SCHEME_STRTAG_VAL(argv[0])))
       raise_null_error("delete-file", argv[0], "");
     
-    if (!find_mac_file(file, &spec, 0, -2, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+    if (!find_mac_file(file, &spec, 0, -2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
       return scheme_false;
 
     if (FSpDelete(&spec))
@@ -1204,7 +1234,7 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
   char *src, *dest;
 #ifdef USE_MAC_FILE_TOOLBOX
   FSSpec srcspec, destspec;
-  int swas_dir, dwas_dir;
+  int swas_dir, sexists, dexists;
 #endif
 
   if (!SCHEME_STRINGP(argv[0]))
@@ -1231,14 +1261,15 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX
-  if (find_mac_file(src, &srcspec, 0, -2, NULL, &swas_dir, NULL, NULL, NULL, NULL, NULL)) {
-    if (find_mac_file(dest, &destspec, 0, 0, NULL, &dwas_dir, NULL, NULL, NULL, NULL, NULL)) {
+  if (find_mac_file(src, &srcspec, 0, -3, NULL, &swas_dir, &sexists, NULL, NULL, NULL, NULL, NULL)
+      && sexists) {
+    if (find_mac_file(dest, &destspec, 0, 0, NULL, NULL, &dexists, NULL, NULL, NULL, NULL, NULL)) {
       /* Directory already exists or different volumes => failure */
-      if (!dwas_dir && (srcspec.vRefNum == destspec.vRefNum)) {
+      if (!dexists && (srcspec.vRefNum == destspec.vRefNum)) {
         int rename;
         
         if (swas_dir) {
-          /* Get name of directory to be moved: */
+          /* Get parent of directory to be moved: */
           CInfoPBRec pb;
           
           pb.hFileInfo.ioNamePtr = srcspec.name;
@@ -1248,7 +1279,7 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
           if (PBGetCatInfo(&pb, 0))
             return scheme_false;
             
-          srcspec.parID = pb.hFileInfo.ioDirID;
+          srcspec.parID = pb.dirInfo.ioDrParID;
         }
         
         rename = ((destspec.name[0] != srcspec.name[0])
@@ -1278,6 +1309,9 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
   
   return scheme_false;
 #else
+  if (file_exists(dest) || directory_exists(dest))
+    return scheme_false;
+  
   if (!rename(src, dest))
     return scheme_true;
   else
@@ -1382,12 +1416,12 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
   { 
   	FInfo finfo;
     FSSpec srcspec, destspec;
-    int isdir;
+    int exists;
     static OSErr en;
    
-    if (find_mac_file(src, &srcspec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, &finfo)) {
-      if (find_mac_file(dest, &destspec, 0, 0, NULL, &isdir, NULL, NULL, NULL, NULL, NULL)
-      	  && !isdir) {
+    if (find_mac_file(src, &srcspec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &finfo)) {
+      if (find_mac_file(dest, &destspec, 0, 0, NULL, NULL, &exists, NULL, NULL, NULL, NULL, NULL)
+      	  && !exists) {
         CopyParam rec;
         
         /* Try CopyFile first: */
@@ -2282,7 +2316,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
 	  raise_null_error("directory-list", argv[0], "");
   } else
     filename = "";
-  if (!find_mac_file(filename, &dir, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
+  if (!find_mac_file(filename, &dir, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
     if (argc) {
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM_DIRECTORY,
 		       argv[0],
@@ -2546,7 +2580,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX	  
-  if (!find_mac_file(file, &spec, 0, 1, NULL, NULL, &mtime, NULL, NULL, NULL, NULL))
+  if (!find_mac_file(file, &spec, 0, 1, NULL, NULL, NULL, &mtime, NULL, NULL, NULL, NULL))
     return scheme_false;
 
   return scheme_make_integer_value_from_time(mtime);
@@ -2608,7 +2642,7 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
   char *filename;
 #ifdef USE_MAC_FILE_TOOLBOX
   FSSpec spec;
-  int flags, isdir;
+  int flags, isdir, exists;
   long type;
 #endif
 
@@ -2627,7 +2661,8 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX
-  if (!find_mac_file(filename, &spec, 0, 0, NULL, &isdir, NULL, &flags, &type, NULL, NULL))
+  if (!find_mac_file(filename, &spec, 0, 0, NULL, &isdir, &exists, NULL, &flags, &type, NULL, NULL)
+      || !exists)
     return scheme_null;
 
   l = scheme_make_pair(read_symbol, l);
@@ -2729,7 +2764,7 @@ static Scheme_Object *file_size(int argc, Scheme_Object *argv[])
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX
-  if (!find_mac_file(filename, &spec, 0, 1, NULL, NULL, NULL, NULL, NULL, &len, NULL))
+  if (!find_mac_file(filename, &spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, &len, NULL))
     return scheme_false;
 #endif
 #if defined(UNIX_FILE_SYSTEM) || defined(DOS_FILE_SYSTEM)
@@ -2970,7 +3005,7 @@ int scheme_mac_start_app(char *name, int find_path, Scheme_Object *o)
 			       NULL);
   }
 
-  if (find_mac_file(s, &spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
+  if (find_mac_file(s, &spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
     LaunchParamBlockRec rec;
 
     rec.launchBlockID = extendedBlock;

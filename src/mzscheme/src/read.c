@@ -1351,7 +1351,7 @@ read_number_or_symbol(Scheme_Object *port,
       memcpy(buf, oldbuf, oldsize);
     }
 
-    if (!case_sens)
+    if (!case_sens && !quoted && !running_quote)
       ch = tolower(ch);
 
     buf[i++] = ch;

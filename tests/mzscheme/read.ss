@@ -144,6 +144,14 @@
 (test-write-sym "a\\|b" "a|b" "a|b")
 (test-write-sym "|a\\b|" "a\\\\b" "a\\b")
 
+(test 'a 'quote '\a)
+(test '|\a| 'quote '\\a)
+(test 'a 'quote '||||a||)
+(test (string->symbol "aaa") 'quote 'aAa)
+(test (string->symbol "aAa") 'quote 'A\AA)
+(test (string->symbol "aAa") 'quote '|aAa|)
+(test (string->symbol "aAa") 'quote 'A|A|A)
+
 (load-relative "numstrs.ss")
 (let loop ([l number-table])
   (cond

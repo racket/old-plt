@@ -115,11 +115,11 @@ wxs_lbox.cxx : wxs_lbox.xc  range.xci $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND) $(
 	$(XCTOCXX) wxs_lbox.xc
 wxs_list.cxx : wxs_list.xc  $(XCDEPEND)
 	$(XCTOCXX) wxs_list.xc
-wxs_madm.cxx : wxs_madm.xc wxs_madm.xci wxs_fcs.xci wxs_win.xci $(XCDEPEND)
+wxs_madm.cxx : wxs_madm.xc wxs_madm.xci wxs_fcs.xci wxs_bkt.xci wxs_win.xci $(XCDEPEND)
 	$(XCTOCXX) wxs_madm.xc
 wxs_medi.cxx : wxs_medi.xc wxs_mbuf.xci wxs_fcs.xci $(XCDEPEND) $(LIST_DEPEND)
 	$(XCTOCXX) wxs_medi.xc
-wxs_mede.cxx : wxs_mede.xc wxs_mbuf.xci wxs_fcs.xci $(XCDEPEND) $(LIST_DEPEND)
+wxs_mede.cxx : wxs_mede.xc wxs_mbuf.xci wxs_fcs.xci wxs_bkt.xci $(XCDEPEND) $(LIST_DEPEND)
 	$(XCTOCXX) wxs_mede.xc
 wxs_menu.cxx : wxs_menu.xc  $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND)
 	$(XCTOCXX) wxs_menu.xc

@@ -17,104 +17,56 @@
 #include "wxscomon.h"
 
 
-static Scheme_Object *flags_wxSNIP_CAN_APPEND_sym = NULL;
-static Scheme_Object *flags_wxSNIP_NEWLINE_sym = NULL;
-static Scheme_Object *flags_wxSNIP_HARD_NEWLINE_sym = NULL;
-static Scheme_Object *flags_wxSNIP_IS_TEXT_sym = NULL;
-static Scheme_Object *flags_wxSNIP_INVISIBLE_sym = NULL;
-static Scheme_Object *flags_wxSNIP_HANDLES_EVENTS_sym = NULL;
-static Scheme_Object *flags_wxSNIP_WIDTH_DEPENDS_ON_X_sym = NULL;
-static Scheme_Object *flags_wxSNIP_HEIGHT_DEPENDS_ON_X_sym = NULL;
-static Scheme_Object *flags_wxSNIP_WIDTH_DEPENDS_ON_Y_sym = NULL;
-static Scheme_Object *flags_wxSNIP_HEIGHT_DEPENDS_ON_Y_sym = NULL;
-static Scheme_Object *flags_wxSNIP_ANCHORED_sym = NULL;
-static Scheme_Object *flags_wxSNIP_USES_BUFFER_PATH_sym = NULL;
-
-static void init_symset_flags(void) {
-  flags_wxSNIP_CAN_APPEND_sym = scheme_intern_symbol("snip-can-append");
-  flags_wxSNIP_NEWLINE_sym = scheme_intern_symbol("snip-newline");
-  flags_wxSNIP_HARD_NEWLINE_sym = scheme_intern_symbol("snip-hard-newline");
-  flags_wxSNIP_IS_TEXT_sym = scheme_intern_symbol("snip-is-text");
-  flags_wxSNIP_INVISIBLE_sym = scheme_intern_symbol("snip-invisible");
-  flags_wxSNIP_HANDLES_EVENTS_sym = scheme_intern_symbol("snip-handles-events");
-  flags_wxSNIP_WIDTH_DEPENDS_ON_X_sym = scheme_intern_symbol("snip-width-depends-on-x");
-  flags_wxSNIP_HEIGHT_DEPENDS_ON_X_sym = scheme_intern_symbol("snip-height-depends-on-x");
-  flags_wxSNIP_WIDTH_DEPENDS_ON_Y_sym = scheme_intern_symbol("snip-width-depends-on-y");
-  flags_wxSNIP_HEIGHT_DEPENDS_ON_Y_sym = scheme_intern_symbol("snip-height-depends-on-y");
-  flags_wxSNIP_ANCHORED_sym = scheme_intern_symbol("snip-anchored");
-  flags_wxSNIP_USES_BUFFER_PATH_sym = scheme_intern_symbol("snip-uses-buffer-path");
-}
-
 static int unbundle_symset_flags(Scheme_Object *v, const char *where) {
-  if (!flags_wxSNIP_USES_BUFFER_PATH_sym) init_symset_flags();
-  Scheme_Object *i, *l = v;
-  long result = 0;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == flags_wxSNIP_CAN_APPEND_sym) { result = result | wxSNIP_CAN_APPEND; }
-  else if (i == flags_wxSNIP_NEWLINE_sym) { result = result | wxSNIP_NEWLINE; }
-  else if (i == flags_wxSNIP_HARD_NEWLINE_sym) { result = result | wxSNIP_HARD_NEWLINE; }
-  else if (i == flags_wxSNIP_IS_TEXT_sym) { result = result | wxSNIP_IS_TEXT; }
-  else if (i == flags_wxSNIP_INVISIBLE_sym) { result = result | wxSNIP_INVISIBLE; }
-  else if (i == flags_wxSNIP_HANDLES_EVENTS_sym) { result = result | wxSNIP_HANDLES_EVENTS; }
-  else if (i == flags_wxSNIP_WIDTH_DEPENDS_ON_X_sym) { result = result | wxSNIP_WIDTH_DEPENDS_ON_X; }
-  else if (i == flags_wxSNIP_HEIGHT_DEPENDS_ON_X_sym) { result = result | wxSNIP_HEIGHT_DEPENDS_ON_X; }
-  else if (i == flags_wxSNIP_WIDTH_DEPENDS_ON_Y_sym) { result = result | wxSNIP_WIDTH_DEPENDS_ON_Y; }
-  else if (i == flags_wxSNIP_HEIGHT_DEPENDS_ON_Y_sym) { result = result | wxSNIP_HEIGHT_DEPENDS_ON_Y; }
-  else if (i == flags_wxSNIP_ANCHORED_sym) { result = result | wxSNIP_ANCHORED; }
-  else if (i == flags_wxSNIP_USES_BUFFER_PATH_sym) { result = result | wxSNIP_USES_BUFFER_PATH; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxSNIP_CAN_APPEND) == wxSNIP_CAN_APPEND) { vi -= wxSNIP_CAN_APPEND; }
+    if ((vi & wxSNIP_NEWLINE) == wxSNIP_NEWLINE) { vi -= wxSNIP_NEWLINE; }
+    if ((vi & wxSNIP_HARD_NEWLINE) == wxSNIP_HARD_NEWLINE) { vi -= wxSNIP_HARD_NEWLINE; }
+    if ((vi & wxSNIP_IS_TEXT) == wxSNIP_IS_TEXT) { vi -= wxSNIP_IS_TEXT; }
+    if ((vi & wxSNIP_INVISIBLE) == wxSNIP_INVISIBLE) { vi -= wxSNIP_INVISIBLE; }
+    if ((vi & wxSNIP_HANDLES_EVENTS) == wxSNIP_HANDLES_EVENTS) { vi -= wxSNIP_HANDLES_EVENTS; }
+    if ((vi & wxSNIP_WIDTH_DEPENDS_ON_X) == wxSNIP_WIDTH_DEPENDS_ON_X) { vi -= wxSNIP_WIDTH_DEPENDS_ON_X; }
+    if ((vi & wxSNIP_HEIGHT_DEPENDS_ON_X) == wxSNIP_HEIGHT_DEPENDS_ON_X) { vi -= wxSNIP_HEIGHT_DEPENDS_ON_X; }
+    if ((vi & wxSNIP_WIDTH_DEPENDS_ON_Y) == wxSNIP_WIDTH_DEPENDS_ON_Y) { vi -= wxSNIP_WIDTH_DEPENDS_ON_Y; }
+    if ((vi & wxSNIP_HEIGHT_DEPENDS_ON_Y) == wxSNIP_HEIGHT_DEPENDS_ON_Y) { vi -= wxSNIP_HEIGHT_DEPENDS_ON_Y; }
+    if ((vi & wxSNIP_ANCHORED) == wxSNIP_ANCHORED) { vi -= wxSNIP_ANCHORED; }
+    if ((vi & wxSNIP_USES_BUFFER_PATH) == wxSNIP_USES_BUFFER_PATH) { vi -= wxSNIP_USES_BUFFER_PATH; }
+    if (!vi) { return orig_vi; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "flags symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "flags integer", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_flags(Scheme_Object *v, const char *where) {
-  if (!flags_wxSNIP_USES_BUFFER_PATH_sym) init_symset_flags();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == flags_wxSNIP_CAN_APPEND_sym) { ; }
-  else if (i == flags_wxSNIP_NEWLINE_sym) { ; }
-  else if (i == flags_wxSNIP_HARD_NEWLINE_sym) { ; }
-  else if (i == flags_wxSNIP_IS_TEXT_sym) { ; }
-  else if (i == flags_wxSNIP_INVISIBLE_sym) { ; }
-  else if (i == flags_wxSNIP_HANDLES_EVENTS_sym) { ; }
-  else if (i == flags_wxSNIP_WIDTH_DEPENDS_ON_X_sym) { ; }
-  else if (i == flags_wxSNIP_HEIGHT_DEPENDS_ON_X_sym) { ; }
-  else if (i == flags_wxSNIP_WIDTH_DEPENDS_ON_Y_sym) { ; }
-  else if (i == flags_wxSNIP_HEIGHT_DEPENDS_ON_Y_sym) { ; }
-  else if (i == flags_wxSNIP_ANCHORED_sym) { ; }
-  else if (i == flags_wxSNIP_USES_BUFFER_PATH_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxSNIP_CAN_APPEND) == wxSNIP_CAN_APPEND) { vi -= wxSNIP_CAN_APPEND; }
+    if ((vi & wxSNIP_NEWLINE) == wxSNIP_NEWLINE) { vi -= wxSNIP_NEWLINE; }
+    if ((vi & wxSNIP_HARD_NEWLINE) == wxSNIP_HARD_NEWLINE) { vi -= wxSNIP_HARD_NEWLINE; }
+    if ((vi & wxSNIP_IS_TEXT) == wxSNIP_IS_TEXT) { vi -= wxSNIP_IS_TEXT; }
+    if ((vi & wxSNIP_INVISIBLE) == wxSNIP_INVISIBLE) { vi -= wxSNIP_INVISIBLE; }
+    if ((vi & wxSNIP_HANDLES_EVENTS) == wxSNIP_HANDLES_EVENTS) { vi -= wxSNIP_HANDLES_EVENTS; }
+    if ((vi & wxSNIP_WIDTH_DEPENDS_ON_X) == wxSNIP_WIDTH_DEPENDS_ON_X) { vi -= wxSNIP_WIDTH_DEPENDS_ON_X; }
+    if ((vi & wxSNIP_HEIGHT_DEPENDS_ON_X) == wxSNIP_HEIGHT_DEPENDS_ON_X) { vi -= wxSNIP_HEIGHT_DEPENDS_ON_X; }
+    if ((vi & wxSNIP_WIDTH_DEPENDS_ON_Y) == wxSNIP_WIDTH_DEPENDS_ON_Y) { vi -= wxSNIP_WIDTH_DEPENDS_ON_Y; }
+    if ((vi & wxSNIP_HEIGHT_DEPENDS_ON_Y) == wxSNIP_HEIGHT_DEPENDS_ON_Y) { vi -= wxSNIP_HEIGHT_DEPENDS_ON_Y; }
+    if ((vi & wxSNIP_ANCHORED) == wxSNIP_ANCHORED) { vi -= wxSNIP_ANCHORED; }
+    if ((vi & wxSNIP_USES_BUFFER_PATH) == wxSNIP_USES_BUFFER_PATH) { vi -= wxSNIP_USES_BUFFER_PATH; }
+    if (!vi) { return 1; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "flags symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "flags integer", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_flags(int v) {
-  if (!flags_wxSNIP_USES_BUFFER_PATH_sym) init_symset_flags();
-  Scheme_Object *l = scheme_null;
-  if (v & wxSNIP_CAN_APPEND) l = scheme_make_pair(flags_wxSNIP_CAN_APPEND_sym, l);
-  if (v & wxSNIP_NEWLINE) l = scheme_make_pair(flags_wxSNIP_NEWLINE_sym, l);
-  if (v & wxSNIP_HARD_NEWLINE) l = scheme_make_pair(flags_wxSNIP_HARD_NEWLINE_sym, l);
-  if (v & wxSNIP_IS_TEXT) l = scheme_make_pair(flags_wxSNIP_IS_TEXT_sym, l);
-  if (v & wxSNIP_INVISIBLE) l = scheme_make_pair(flags_wxSNIP_INVISIBLE_sym, l);
-  if (v & wxSNIP_HANDLES_EVENTS) l = scheme_make_pair(flags_wxSNIP_HANDLES_EVENTS_sym, l);
-  if (v & wxSNIP_WIDTH_DEPENDS_ON_X) l = scheme_make_pair(flags_wxSNIP_WIDTH_DEPENDS_ON_X_sym, l);
-  if (v & wxSNIP_HEIGHT_DEPENDS_ON_X) l = scheme_make_pair(flags_wxSNIP_HEIGHT_DEPENDS_ON_X_sym, l);
-  if (v & wxSNIP_WIDTH_DEPENDS_ON_Y) l = scheme_make_pair(flags_wxSNIP_WIDTH_DEPENDS_ON_Y_sym, l);
-  if (v & wxSNIP_HEIGHT_DEPENDS_ON_Y) l = scheme_make_pair(flags_wxSNIP_HEIGHT_DEPENDS_ON_Y_sym, l);
-  if (v & wxSNIP_ANCHORED) l = scheme_make_pair(flags_wxSNIP_ANCHORED_sym, l);
-  if (v & wxSNIP_USES_BUFFER_PATH) l = scheme_make_pair(flags_wxSNIP_USES_BUFFER_PATH_sym, l);
-  return l;
+  return scheme_make_integer(v);
 }
 
 
@@ -1467,7 +1419,7 @@ static Scheme_Object *os_wxSnipSetFlags(Scheme_Object *obj, int n,  Scheme_Objec
   int x0;
 
   
-  x0 = unbundle_symset_flags(p[0], "wx:snip%::set-flags");;
+  x0 = unbundle_symset_flags(p[0], "wx:snip%::set-flags");
 
   
   ((wxSnip *)((Scheme_Class_Object *)obj)->primdata)->SetFlags(x0);
@@ -1541,7 +1493,7 @@ static Scheme_Object *objscheme_wxSnip_Getflags(Scheme_Object *obj, int n,  Sche
   else
     v = ((wxSnip *)cobj->primdata)->flags;
 
-  return bundle_symset_flags(v);;
+  return bundle_symset_flags(v);
 }
 
 static Scheme_Object *objscheme_wxSnip_Getstyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -1618,6 +1570,30 @@ static Scheme_Object *objscheme_classname_os_wxSnip(Scheme_Object *obj, int n,  
 
 void objscheme_setup_wxSnip(void *env)
 {
+  if (!scheme_lookup_xc_global("wx:const-""snip-can-append", env))
+    scheme_install_xc_global("wx:const-""snip-can-append", scheme_make_integer(wxSNIP_CAN_APPEND), env);
+  if (!scheme_lookup_xc_global("wx:const-""snip-newline", env))
+    scheme_install_xc_global("wx:const-""snip-newline", scheme_make_integer(wxSNIP_NEWLINE), env);
+  if (!scheme_lookup_xc_global("wx:const-""snip-hard-newline", env))
+    scheme_install_xc_global("wx:const-""snip-hard-newline", scheme_make_integer(wxSNIP_HARD_NEWLINE), env);
+  if (!scheme_lookup_xc_global("wx:const-""snip-is-text", env))
+    scheme_install_xc_global("wx:const-""snip-is-text", scheme_make_integer(wxSNIP_IS_TEXT), env);
+  if (!scheme_lookup_xc_global("wx:const-""snip-invisible", env))
+    scheme_install_xc_global("wx:const-""snip-invisible", scheme_make_integer(wxSNIP_INVISIBLE), env);
+  if (!scheme_lookup_xc_global("wx:const-""snip-handles-events", env))
+    scheme_install_xc_global("wx:const-""snip-handles-events", scheme_make_integer(wxSNIP_HANDLES_EVENTS), env);
+  if (!scheme_lookup_xc_global("wx:const-""snip-width-depends-on-x", env))
+    scheme_install_xc_global("wx:const-""snip-width-depends-on-x", scheme_make_integer(wxSNIP_WIDTH_DEPENDS_ON_X), env);
+  if (!scheme_lookup_xc_global("wx:const-""snip-height-depends-on-x", env))
+    scheme_install_xc_global("wx:const-""snip-height-depends-on-x", scheme_make_integer(wxSNIP_HEIGHT_DEPENDS_ON_X), env);
+  if (!scheme_lookup_xc_global("wx:const-""snip-width-depends-on-y", env))
+    scheme_install_xc_global("wx:const-""snip-width-depends-on-y", scheme_make_integer(wxSNIP_WIDTH_DEPENDS_ON_Y), env);
+  if (!scheme_lookup_xc_global("wx:const-""snip-height-depends-on-y", env))
+    scheme_install_xc_global("wx:const-""snip-height-depends-on-y", scheme_make_integer(wxSNIP_HEIGHT_DEPENDS_ON_Y), env);
+  if (!scheme_lookup_xc_global("wx:const-""snip-anchored", env))
+    scheme_install_xc_global("wx:const-""snip-anchored", scheme_make_integer(wxSNIP_ANCHORED), env);
+  if (!scheme_lookup_xc_global("wx:const-""snip-uses-buffer-path", env))
+    scheme_install_xc_global("wx:const-""snip-uses-buffer-path", scheme_make_integer(wxSNIP_USES_BUFFER_PATH), env);
 if (os_wxSnip_class) {
     objscheme_add_global_class(os_wxSnip_class,  "wx:snip%", env);
 } else {
@@ -4498,64 +4474,40 @@ class wxTabSnip *objscheme_unbundle_wxTabSnip(Scheme_Object *obj, const char *wh
 #define wxBITMAP_TYPE_PICT_RESOURCE 100
 #endif
 
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_BMP_sym = NULL;
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym = NULL;
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_GIF_sym = NULL;
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_XBM_sym = NULL;
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_XPM_sym = NULL;
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_PICT_sym = NULL;
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym = NULL;
-
-static void init_symset_bitmapType(void) {
-  bitmapType_wxBITMAP_TYPE_BMP_sym = scheme_intern_symbol("bitmap-type-bmp");
-  bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym = scheme_intern_symbol("bitmap-type-bmp-resource");
-  bitmapType_wxBITMAP_TYPE_GIF_sym = scheme_intern_symbol("bitmap-type-gif");
-  bitmapType_wxBITMAP_TYPE_XBM_sym = scheme_intern_symbol("bitmap-type-xbm");
-  bitmapType_wxBITMAP_TYPE_XPM_sym = scheme_intern_symbol("bitmap-type-xpm");
-  bitmapType_wxBITMAP_TYPE_PICT_sym = scheme_intern_symbol("bitmap-type-pict");
-  bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym = scheme_intern_symbol("bitmap-type-pict-resource");
-}
-
 static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
-  if (!bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) init_symset_bitmapType();
-  if (0) { }
-  else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return wxBITMAP_TYPE_BMP; }
-  else if (v == bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym) { return wxBITMAP_TYPE_BMP_RESOURCE; }
-  else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return wxBITMAP_TYPE_GIF; }
-  else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { return wxBITMAP_TYPE_XBM; }
-  else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
-  else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
-  else if (v == bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) { return wxBITMAP_TYPE_PICT_RESOURCE; }
-  if (where) scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxBITMAP_TYPE_BMP) { return wxBITMAP_TYPE_BMP; }
+    if ((vi) == wxBITMAP_TYPE_BMP_RESOURCE) { return wxBITMAP_TYPE_BMP_RESOURCE; }
+    if ((vi) == wxBITMAP_TYPE_GIF) { return wxBITMAP_TYPE_GIF; }
+    if ((vi) == wxBITMAP_TYPE_XBM) { return wxBITMAP_TYPE_XBM; }
+    if ((vi) == wxBITMAP_TYPE_XPM) { return wxBITMAP_TYPE_XPM; }
+    if ((vi) == wxBITMAP_TYPE_PICT) { return wxBITMAP_TYPE_PICT; }
+    if ((vi) == wxBITMAP_TYPE_PICT_RESOURCE) { return wxBITMAP_TYPE_PICT_RESOURCE; }
+  }
+  if (where) scheme_wrong_type(where, "bitmapType integer", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_bitmapType(Scheme_Object *v, const char *where) {
-  if (!bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) init_symset_bitmapType();
-  if (0) { }
-  else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return 1; }
-  else if (v == bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym) { return 1; }
-  else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return 1; }
-  else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { return 1; }
-  else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return 1; }
-  else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return 1; }
-  else if (v == bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxBITMAP_TYPE_BMP) { return 1; }
+    if ((vi) == wxBITMAP_TYPE_BMP_RESOURCE) { return 1; }
+    if ((vi) == wxBITMAP_TYPE_GIF) { return 1; }
+    if ((vi) == wxBITMAP_TYPE_XBM) { return 1; }
+    if ((vi) == wxBITMAP_TYPE_XPM) { return 1; }
+    if ((vi) == wxBITMAP_TYPE_PICT) { return 1; }
+    if ((vi) == wxBITMAP_TYPE_PICT_RESOURCE) { return 1; }
+  }
+  if (where) scheme_wrong_type(where, "bitmapType integer", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_bitmapType(int v) {
-  if (!bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym) init_symset_bitmapType();
-  switch (v) {
-  case wxBITMAP_TYPE_BMP: return bitmapType_wxBITMAP_TYPE_BMP_sym;
-  case wxBITMAP_TYPE_BMP_RESOURCE: return bitmapType_wxBITMAP_TYPE_BMP_RESOURCE_sym;
-  case wxBITMAP_TYPE_GIF: return bitmapType_wxBITMAP_TYPE_GIF_sym;
-  case wxBITMAP_TYPE_XBM: return bitmapType_wxBITMAP_TYPE_XBM_sym;
-  case wxBITMAP_TYPE_XPM: return bitmapType_wxBITMAP_TYPE_XPM_sym;
-  case wxBITMAP_TYPE_PICT: return bitmapType_wxBITMAP_TYPE_PICT_sym;
-  case wxBITMAP_TYPE_PICT_RESOURCE: return bitmapType_wxBITMAP_TYPE_PICT_RESOURCE_sym;
-  default: return NULL;
-  }
+  return scheme_make_integer(v);
 }
 
 
@@ -5359,7 +5311,7 @@ static Scheme_Object *os_wxImageSnipLoadFile(Scheme_Object *obj, int n,  Scheme_
 
   
   x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "wx:image-snip%::load-file");
-  x1 = unbundle_symset_bitmapType(p[1], "wx:image-snip%::load-file");;
+  x1 = unbundle_symset_bitmapType(p[1], "wx:image-snip%::load-file");
   if (n > 2) {
     x2 = objscheme_unbundle_bool(p[2], "wx:image-snip%::load-file");
   } else
@@ -5941,7 +5893,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(Scheme_Object *obj, int n, 
   } else
     x0 = NULL;
   if (n > 1) {
-    x1 = unbundle_symset_bitmapType(p[1], "wx:image-snip%::initialization");;
+    x1 = unbundle_symset_bitmapType(p[1], "wx:image-snip%::initialization");
   } else
     x1 = 0;
   if (n > 2) {
@@ -5972,6 +5924,20 @@ static Scheme_Object *objscheme_classname_os_wxImageSnip(Scheme_Object *obj, int
 
 void objscheme_setup_wxImageSnip(void *env)
 {
+  if (!scheme_lookup_xc_global("wx:const-""bitmap-type-bmp", env))
+    scheme_install_xc_global("wx:const-""bitmap-type-bmp", scheme_make_integer(wxBITMAP_TYPE_BMP), env);
+  if (!scheme_lookup_xc_global("wx:const-""bitmap-type-bmp-resource", env))
+    scheme_install_xc_global("wx:const-""bitmap-type-bmp-resource", scheme_make_integer(wxBITMAP_TYPE_BMP_RESOURCE), env);
+  if (!scheme_lookup_xc_global("wx:const-""bitmap-type-gif", env))
+    scheme_install_xc_global("wx:const-""bitmap-type-gif", scheme_make_integer(wxBITMAP_TYPE_GIF), env);
+  if (!scheme_lookup_xc_global("wx:const-""bitmap-type-xbm", env))
+    scheme_install_xc_global("wx:const-""bitmap-type-xbm", scheme_make_integer(wxBITMAP_TYPE_XBM), env);
+  if (!scheme_lookup_xc_global("wx:const-""bitmap-type-xpm", env))
+    scheme_install_xc_global("wx:const-""bitmap-type-xpm", scheme_make_integer(wxBITMAP_TYPE_XPM), env);
+  if (!scheme_lookup_xc_global("wx:const-""bitmap-type-pict", env))
+    scheme_install_xc_global("wx:const-""bitmap-type-pict", scheme_make_integer(wxBITMAP_TYPE_PICT), env);
+  if (!scheme_lookup_xc_global("wx:const-""bitmap-type-pict-resource", env))
+    scheme_install_xc_global("wx:const-""bitmap-type-pict-resource", scheme_make_integer(wxBITMAP_TYPE_PICT_RESOURCE), env);
 if (os_wxImageSnip_class) {
     objscheme_add_global_class(os_wxImageSnip_class,  "wx:image-snip%", env);
 } else {
@@ -6063,6 +6029,7 @@ class wxImageSnip *objscheme_unbundle_wxImageSnip(Scheme_Object *obj, const char
 
 
 #define Get_This_Media GetThisMedia
+
 
 
 
@@ -7835,6 +7802,10 @@ if (os_wxMediaSnip_class) {
   objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxMediaSnip, wxTYPE_MEDIA_SNIP);
 
 }
+  scheme_install_xc_global("wx:const-msnipbox-xmargin", scheme_make_integer(wxMSNIPBOX_XMARGIN), env);
+  scheme_install_xc_global("wx:const-msnipbox-ymargin", scheme_make_integer(wxMSNIPBOX_YMARGIN), env);
+  scheme_install_xc_global("wx:const-msnipbox-xinset", scheme_make_integer(wxMSNIPBOX_XINSET), env);
+  scheme_install_xc_global("wx:const-msnipbox-yinset", scheme_make_integer(wxMSNIPBOX_YINSET), env);
 }
 
 int objscheme_istype_wxMediaSnip(Scheme_Object *obj, const char *stop, int nullOK)

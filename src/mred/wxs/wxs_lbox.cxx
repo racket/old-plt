@@ -17,110 +17,71 @@
 #include "wxscomon.h"
 
 
-static Scheme_Object *kind_wxSINGLE_sym = NULL;
-static Scheme_Object *kind_wxMULTIPLE_sym = NULL;
-static Scheme_Object *kind_wxEXTENDED_sym = NULL;
-
-static void init_symset_kind(void) {
-  kind_wxSINGLE_sym = scheme_intern_symbol("single");
-  kind_wxMULTIPLE_sym = scheme_intern_symbol("multiple");
-  kind_wxEXTENDED_sym = scheme_intern_symbol("extended");
-}
-
 static int unbundle_symset_kind(Scheme_Object *v, const char *where) {
-  if (!kind_wxEXTENDED_sym) init_symset_kind();
-  Scheme_Object *i, *l = v;
-  long result = 0;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == kind_wxSINGLE_sym) { result = result | wxSINGLE; }
-  else if (i == kind_wxMULTIPLE_sym) { result = result | wxMULTIPLE; }
-  else if (i == kind_wxEXTENDED_sym) { result = result | wxEXTENDED; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxSINGLE) == wxSINGLE) { vi -= wxSINGLE; }
+    if ((vi & wxMULTIPLE) == wxMULTIPLE) { vi -= wxMULTIPLE; }
+    if ((vi & wxEXTENDED) == wxEXTENDED) { vi -= wxEXTENDED; }
+    if (!vi) { return orig_vi; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "kind symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "kind integer", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_kind(Scheme_Object *v, const char *where) {
-  if (!kind_wxEXTENDED_sym) init_symset_kind();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == kind_wxSINGLE_sym) { ; }
-  else if (i == kind_wxMULTIPLE_sym) { ; }
-  else if (i == kind_wxEXTENDED_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxSINGLE) == wxSINGLE) { vi -= wxSINGLE; }
+    if ((vi & wxMULTIPLE) == wxMULTIPLE) { vi -= wxMULTIPLE; }
+    if ((vi & wxEXTENDED) == wxEXTENDED) { vi -= wxEXTENDED; }
+    if (!vi) { return 1; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "kind symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "kind integer", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_kind(int v) {
-  if (!kind_wxEXTENDED_sym) init_symset_kind();
-  Scheme_Object *l = scheme_null;
-  if (v & wxSINGLE) l = scheme_make_pair(kind_wxSINGLE_sym, l);
-  if (v & wxMULTIPLE) l = scheme_make_pair(kind_wxMULTIPLE_sym, l);
-  if (v & wxEXTENDED) l = scheme_make_pair(kind_wxEXTENDED_sym, l);
-  return l;
+  return scheme_make_integer(v);
 }
 
-
-static Scheme_Object *style_wxALWAYS_SB_sym = NULL;
-static Scheme_Object *style_wxHSCROLL_sym = NULL;
-
-static void init_symset_style(void) {
-  style_wxALWAYS_SB_sym = scheme_intern_symbol("always-sb");
-  style_wxHSCROLL_sym = scheme_intern_symbol("hscroll");
-}
 
 static int unbundle_symset_style(Scheme_Object *v, const char *where) {
-  if (!style_wxHSCROLL_sym) init_symset_style();
-  Scheme_Object *i, *l = v;
-  long result = 0;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == style_wxALWAYS_SB_sym) { result = result | wxALWAYS_SB; }
-  else if (i == style_wxHSCROLL_sym) { result = result | wxHSCROLL; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxALWAYS_SB) == wxALWAYS_SB) { vi -= wxALWAYS_SB; }
+    if ((vi & wxHSCROLL) == wxHSCROLL) { vi -= wxHSCROLL; }
+    if (!vi) { return orig_vi; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "style symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "style integer", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_style(Scheme_Object *v, const char *where) {
-  if (!style_wxHSCROLL_sym) init_symset_style();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == style_wxALWAYS_SB_sym) { ; }
-  else if (i == style_wxHSCROLL_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxALWAYS_SB) == wxALWAYS_SB) { vi -= wxALWAYS_SB; }
+    if ((vi & wxHSCROLL) == wxHSCROLL) { vi -= wxHSCROLL; }
+    if (!vi) { return 1; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "style symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "style integer", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_style(int v) {
-  if (!style_wxHSCROLL_sym) init_symset_style();
-  Scheme_Object *l = scheme_null;
-  if (v & wxALWAYS_SB) l = scheme_make_pair(style_wxALWAYS_SB_sym, l);
-  if (v & wxHSCROLL) l = scheme_make_pair(style_wxHSCROLL_sym, l);
-  return l;
+  return scheme_make_integer(v);
 }
 
 
@@ -1009,7 +970,7 @@ static Scheme_Object *os_wxListBox_ConstructScheme(Scheme_Object *obj, int n,  S
   x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2(p[1], CB_USER), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
   x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "wx:list-box%::initialization");
   if (n > 3) {
-    x3 = unbundle_symset_kind(p[3], "wx:list-box%::initialization");;
+    x3 = unbundle_symset_kind(p[3], "wx:list-box%::initialization");
   } else
     x3 = wxSINGLE;
   if (n > 4) {
@@ -1033,7 +994,7 @@ static Scheme_Object *os_wxListBox_ConstructScheme(Scheme_Object *obj, int n,  S
   } else
     x9 = NULL;
   if (n > 9) {
-    x10 = unbundle_symset_style(p[9], "wx:list-box%::initialization");;
+    x10 = unbundle_symset_style(p[9], "wx:list-box%::initialization");
   } else
     x10 = 0;
   if (n > 10) {
@@ -1060,6 +1021,16 @@ static Scheme_Object *objscheme_classname_os_wxListBox(Scheme_Object *obj, int n
 
 void objscheme_setup_wxListBox(void *env)
 {
+  if (!scheme_lookup_xc_global("wx:const-""single", env))
+    scheme_install_xc_global("wx:const-""single", scheme_make_integer(wxSINGLE), env);
+  if (!scheme_lookup_xc_global("wx:const-""multiple", env))
+    scheme_install_xc_global("wx:const-""multiple", scheme_make_integer(wxMULTIPLE), env);
+  if (!scheme_lookup_xc_global("wx:const-""extended", env))
+    scheme_install_xc_global("wx:const-""extended", scheme_make_integer(wxEXTENDED), env);
+  if (!scheme_lookup_xc_global("wx:const-""always-sb", env))
+    scheme_install_xc_global("wx:const-""always-sb", scheme_make_integer(wxALWAYS_SB), env);
+  if (!scheme_lookup_xc_global("wx:const-""hscroll", env))
+    scheme_install_xc_global("wx:const-""hscroll", scheme_make_integer(wxHSCROLL), env);
 if (os_wxListBox_class) {
     objscheme_add_global_class(os_wxListBox_class,  "wx:list-box%", env);
 } else {

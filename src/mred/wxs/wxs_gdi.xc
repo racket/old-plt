@@ -52,7 +52,8 @@
 @CLASSBASE wxFont "wx:font":"wx:object"
 
 @CREATOR (); <> no argument
-@CREATOR (nnint,SYM[family],SYM[style],SYM[weight],bool=0) <> font id
+// @CREATOR (nnint,SYM[family],SYM[style],SYM[weight],bool=0) <> family id
+@CREATOR (nnint,int,SYM[style],SYM[weight],bool=0) <> font id
 @CREATOR (nnint,cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name ## USE_FONT_NAME_DIRECTORY
 
 @ "get-family" : SYM[family] GetFamily();
@@ -69,7 +70,8 @@
 
 @CREATOR ();
 
-@ "find-or-create-font" : wxFont! FindOrCreateFont(nnint,SYM[family],SYM[style],SYM[weight],bool=0) <> font id
+// @ "find-or-create-font" : wxFont! FindOrCreateFont(nnint,SYM[family],SYM[style],SYM[weight],bool=0) <> family id
+@ "find-or-create-font" : wxFont! FindOrCreateFont(nnint,int,SYM[style],SYM[weight],bool=0) <> font id
 @ "find-or-create-font" : wxFont! FindOrCreateFont(nnint,cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name ## USE_FONT_NAME_DIRECTORY
 
 @CONSTANT "wx:the-font-list" : wxFontList! wxTheFontList
@@ -198,6 +200,7 @@
 @SYM "long-dash" : wxLONG_DASH
 @SYM "short-dash" : wxSHORT_DASH
 @SYM "dot-dash" : wxDOT_DASH
+@SYM "stipple" : wxSTIPPLE
 @ENDSYMBOLS
 
 @BEGINSYMBOLS join > ONE

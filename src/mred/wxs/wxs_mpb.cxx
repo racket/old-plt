@@ -18,177 +18,123 @@
 
 
 
-static Scheme_Object *bufferType_wxEDIT_BUFFER_sym = NULL;
-static Scheme_Object *bufferType_wxPASTEBOARD_BUFFER_sym = NULL;
-
-static void init_symset_bufferType(void) {
-  bufferType_wxEDIT_BUFFER_sym = scheme_intern_symbol("edit-buffer");
-  bufferType_wxPASTEBOARD_BUFFER_sym = scheme_intern_symbol("pasteboard-buffer");
-}
-
 static int unbundle_symset_bufferType(Scheme_Object *v, const char *where) {
-  if (!bufferType_wxPASTEBOARD_BUFFER_sym) init_symset_bufferType();
-  if (0) { }
-  else if (v == bufferType_wxEDIT_BUFFER_sym) { return wxEDIT_BUFFER; }
-  else if (v == bufferType_wxPASTEBOARD_BUFFER_sym) { return wxPASTEBOARD_BUFFER; }
-  if (where) scheme_wrong_type(where, "bufferType symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxEDIT_BUFFER) { return wxEDIT_BUFFER; }
+    if ((vi) == wxPASTEBOARD_BUFFER) { return wxPASTEBOARD_BUFFER; }
+  }
+  if (where) scheme_wrong_type(where, "bufferType integer", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_bufferType(Scheme_Object *v, const char *where) {
-  if (!bufferType_wxPASTEBOARD_BUFFER_sym) init_symset_bufferType();
-  if (0) { }
-  else if (v == bufferType_wxEDIT_BUFFER_sym) { return 1; }
-  else if (v == bufferType_wxPASTEBOARD_BUFFER_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "bufferType symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxEDIT_BUFFER) { return 1; }
+    if ((vi) == wxPASTEBOARD_BUFFER) { return 1; }
+  }
+  if (where) scheme_wrong_type(where, "bufferType integer", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_bufferType(int v) {
-  if (!bufferType_wxPASTEBOARD_BUFFER_sym) init_symset_bufferType();
-  switch (v) {
-  case wxEDIT_BUFFER: return bufferType_wxEDIT_BUFFER_sym;
-  case wxPASTEBOARD_BUFFER: return bufferType_wxPASTEBOARD_BUFFER_sym;
-  default: return NULL;
-  }
+  return scheme_make_integer(v);
 }
 
-
-static Scheme_Object *fileType_wxMEDIA_FF_GUESS_sym = NULL;
-static Scheme_Object *fileType_wxMEDIA_FF_STD_sym = NULL;
-static Scheme_Object *fileType_wxMEDIA_FF_TEXT_sym = NULL;
-static Scheme_Object *fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym = NULL;
-static Scheme_Object *fileType_wxMEDIA_FF_SAME_sym = NULL;
-static Scheme_Object *fileType_wxMEDIA_FF_COPY_sym = NULL;
-
-static void init_symset_fileType(void) {
-  fileType_wxMEDIA_FF_GUESS_sym = scheme_intern_symbol("media-ff-guess");
-  fileType_wxMEDIA_FF_STD_sym = scheme_intern_symbol("media-ff-std");
-  fileType_wxMEDIA_FF_TEXT_sym = scheme_intern_symbol("media-ff-text");
-  fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym = scheme_intern_symbol("media-ff-text-force-cr");
-  fileType_wxMEDIA_FF_SAME_sym = scheme_intern_symbol("media-ff-same");
-  fileType_wxMEDIA_FF_COPY_sym = scheme_intern_symbol("media-ff-copy");
-}
 
 static int unbundle_symset_fileType(Scheme_Object *v, const char *where) {
-  if (!fileType_wxMEDIA_FF_COPY_sym) init_symset_fileType();
-  if (0) { }
-  else if (v == fileType_wxMEDIA_FF_GUESS_sym) { return wxMEDIA_FF_GUESS; }
-  else if (v == fileType_wxMEDIA_FF_STD_sym) { return wxMEDIA_FF_STD; }
-  else if (v == fileType_wxMEDIA_FF_TEXT_sym) { return wxMEDIA_FF_TEXT; }
-  else if (v == fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym) { return wxMEDIA_FF_TEXT_FORCE_CR; }
-  else if (v == fileType_wxMEDIA_FF_SAME_sym) { return wxMEDIA_FF_SAME; }
-  else if (v == fileType_wxMEDIA_FF_COPY_sym) { return wxMEDIA_FF_COPY; }
-  if (where) scheme_wrong_type(where, "fileType symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxMEDIA_FF_GUESS) { return wxMEDIA_FF_GUESS; }
+    if ((vi) == wxMEDIA_FF_STD) { return wxMEDIA_FF_STD; }
+    if ((vi) == wxMEDIA_FF_TEXT) { return wxMEDIA_FF_TEXT; }
+    if ((vi) == wxMEDIA_FF_TEXT_FORCE_CR) { return wxMEDIA_FF_TEXT_FORCE_CR; }
+    if ((vi) == wxMEDIA_FF_SAME) { return wxMEDIA_FF_SAME; }
+    if ((vi) == wxMEDIA_FF_COPY) { return wxMEDIA_FF_COPY; }
+  }
+  if (where) scheme_wrong_type(where, "fileType integer", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_fileType(Scheme_Object *v, const char *where) {
-  if (!fileType_wxMEDIA_FF_COPY_sym) init_symset_fileType();
-  if (0) { }
-  else if (v == fileType_wxMEDIA_FF_GUESS_sym) { return 1; }
-  else if (v == fileType_wxMEDIA_FF_STD_sym) { return 1; }
-  else if (v == fileType_wxMEDIA_FF_TEXT_sym) { return 1; }
-  else if (v == fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym) { return 1; }
-  else if (v == fileType_wxMEDIA_FF_SAME_sym) { return 1; }
-  else if (v == fileType_wxMEDIA_FF_COPY_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "fileType symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxMEDIA_FF_GUESS) { return 1; }
+    if ((vi) == wxMEDIA_FF_STD) { return 1; }
+    if ((vi) == wxMEDIA_FF_TEXT) { return 1; }
+    if ((vi) == wxMEDIA_FF_TEXT_FORCE_CR) { return 1; }
+    if ((vi) == wxMEDIA_FF_SAME) { return 1; }
+    if ((vi) == wxMEDIA_FF_COPY) { return 1; }
+  }
+  if (where) scheme_wrong_type(where, "fileType integer", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_fileType(int v) {
-  if (!fileType_wxMEDIA_FF_COPY_sym) init_symset_fileType();
-  switch (v) {
-  case wxMEDIA_FF_GUESS: return fileType_wxMEDIA_FF_GUESS_sym;
-  case wxMEDIA_FF_STD: return fileType_wxMEDIA_FF_STD_sym;
-  case wxMEDIA_FF_TEXT: return fileType_wxMEDIA_FF_TEXT_sym;
-  case wxMEDIA_FF_TEXT_FORCE_CR: return fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym;
-  case wxMEDIA_FF_SAME: return fileType_wxMEDIA_FF_SAME_sym;
-  case wxMEDIA_FF_COPY: return fileType_wxMEDIA_FF_COPY_sym;
-  default: return NULL;
-  }
+  return scheme_make_integer(v);
 }
 
-
-static Scheme_Object *focus_wxFOCUS_IMMEDIATE_sym = NULL;
-static Scheme_Object *focus_wxFOCUS_DISPLAY_sym = NULL;
-static Scheme_Object *focus_wxFOCUS_GLOBAL_sym = NULL;
-
-static void init_symset_focus(void) {
-  focus_wxFOCUS_IMMEDIATE_sym = scheme_intern_symbol("focus-immediate");
-  focus_wxFOCUS_DISPLAY_sym = scheme_intern_symbol("focus-display");
-  focus_wxFOCUS_GLOBAL_sym = scheme_intern_symbol("focus-global");
-}
 
 static int unbundle_symset_focus(Scheme_Object *v, const char *where) {
-  if (!focus_wxFOCUS_GLOBAL_sym) init_symset_focus();
-  if (0) { }
-  else if (v == focus_wxFOCUS_IMMEDIATE_sym) { return wxFOCUS_IMMEDIATE; }
-  else if (v == focus_wxFOCUS_DISPLAY_sym) { return wxFOCUS_DISPLAY; }
-  else if (v == focus_wxFOCUS_GLOBAL_sym) { return wxFOCUS_GLOBAL; }
-  if (where) scheme_wrong_type(where, "focus symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxFOCUS_IMMEDIATE) { return wxFOCUS_IMMEDIATE; }
+    if ((vi) == wxFOCUS_DISPLAY) { return wxFOCUS_DISPLAY; }
+    if ((vi) == wxFOCUS_GLOBAL) { return wxFOCUS_GLOBAL; }
+  }
+  if (where) scheme_wrong_type(where, "focus integer", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_focus(Scheme_Object *v, const char *where) {
-  if (!focus_wxFOCUS_GLOBAL_sym) init_symset_focus();
-  if (0) { }
-  else if (v == focus_wxFOCUS_IMMEDIATE_sym) { return 1; }
-  else if (v == focus_wxFOCUS_DISPLAY_sym) { return 1; }
-  else if (v == focus_wxFOCUS_GLOBAL_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "focus symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxFOCUS_IMMEDIATE) { return 1; }
+    if ((vi) == wxFOCUS_DISPLAY) { return 1; }
+    if ((vi) == wxFOCUS_GLOBAL) { return 1; }
+  }
+  if (where) scheme_wrong_type(where, "focus integer", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_focus(int v) {
-  if (!focus_wxFOCUS_GLOBAL_sym) init_symset_focus();
-  switch (v) {
-  case wxFOCUS_IMMEDIATE: return focus_wxFOCUS_IMMEDIATE_sym;
-  case wxFOCUS_DISPLAY: return focus_wxFOCUS_DISPLAY_sym;
-  case wxFOCUS_GLOBAL: return focus_wxFOCUS_GLOBAL_sym;
-  default: return NULL;
-  }
+  return scheme_make_integer(v);
 }
 
-
-static Scheme_Object *caret_wxSNIP_DRAW_NO_CARET_sym = NULL;
-static Scheme_Object *caret_wxSNIP_DRAW_SHOW_CARET_sym = NULL;
-static Scheme_Object *caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym = NULL;
-
-static void init_symset_caret(void) {
-  caret_wxSNIP_DRAW_NO_CARET_sym = scheme_intern_symbol("snip-draw-no-caret");
-  caret_wxSNIP_DRAW_SHOW_CARET_sym = scheme_intern_symbol("snip-draw-show-caret");
-  caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym = scheme_intern_symbol("snip-draw-show-inactive-caret");
-}
 
 static int unbundle_symset_caret(Scheme_Object *v, const char *where) {
-  if (!caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) init_symset_caret();
-  if (0) { }
-  else if (v == caret_wxSNIP_DRAW_NO_CARET_sym) { return wxSNIP_DRAW_NO_CARET; }
-  else if (v == caret_wxSNIP_DRAW_SHOW_CARET_sym) { return wxSNIP_DRAW_SHOW_CARET; }
-  else if (v == caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) { return wxSNIP_DRAW_SHOW_INACTIVE_CARET; }
-  if (where) scheme_wrong_type(where, "caret symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxSNIP_DRAW_NO_CARET) { return wxSNIP_DRAW_NO_CARET; }
+    if ((vi) == wxSNIP_DRAW_SHOW_CARET) { return wxSNIP_DRAW_SHOW_CARET; }
+    if ((vi) == wxSNIP_DRAW_SHOW_INACTIVE_CARET) { return wxSNIP_DRAW_SHOW_INACTIVE_CARET; }
+  }
+  if (where) scheme_wrong_type(where, "caret integer", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_caret(Scheme_Object *v, const char *where) {
-  if (!caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) init_symset_caret();
-  if (0) { }
-  else if (v == caret_wxSNIP_DRAW_NO_CARET_sym) { return 1; }
-  else if (v == caret_wxSNIP_DRAW_SHOW_CARET_sym) { return 1; }
-  else if (v == caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "caret symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxSNIP_DRAW_NO_CARET) { return 1; }
+    if ((vi) == wxSNIP_DRAW_SHOW_CARET) { return 1; }
+    if ((vi) == wxSNIP_DRAW_SHOW_INACTIVE_CARET) { return 1; }
+  }
+  if (where) scheme_wrong_type(where, "caret integer", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_caret(int v) {
-  if (!caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) init_symset_caret();
-  switch (v) {
-  case wxSNIP_DRAW_NO_CARET: return caret_wxSNIP_DRAW_NO_CARET_sym;
-  case wxSNIP_DRAW_SHOW_CARET: return caret_wxSNIP_DRAW_SHOW_CARET_sym;
-  case wxSNIP_DRAW_SHOW_INACTIVE_CARET: return caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym;
-  default: return NULL;
-  }
+  return scheme_make_integer(v);
 }
 
 
@@ -1212,7 +1158,7 @@ return wxMediaPasteboard::OnLoadFile(x0, x1);
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
-  p[1] = bundle_symset_fileType(x1);;
+  p[1] = bundle_symset_fileType(x1);
   
 
   v = scheme_apply(method, 2, p);
@@ -1280,7 +1226,7 @@ return wxMediaPasteboard::OnSaveFile(x0, x1);
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
-  p[1] = bundle_symset_fileType(x1);;
+  p[1] = bundle_symset_fileType(x1);
   
 
   v = scheme_apply(method, 2, p);
@@ -1314,7 +1260,7 @@ class wxSnip* os_wxMediaPasteboard::OnNewBox(int x0)
 return wxMediaPasteboard::OnNewBox(x0);
   } else {
   
-  p[0] = bundle_symset_bufferType(x0);;
+  p[0] = bundle_symset_bufferType(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -1429,7 +1375,7 @@ wxMediaPasteboard::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   p[5] = scheme_make_double(x5);
   p[6] = scheme_make_double(x6);
   p[7] = scheme_make_double(x7);
-  p[8] = bundle_symset_caret(x8);;
+  p[8] = bundle_symset_caret(x8);
   
 
   v = scheme_apply(method, 9, p);
@@ -1841,7 +1787,7 @@ wxMediaPasteboard::SetCaretOwner(x0, x1);
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
-  p[1] = bundle_symset_focus(x1);;
+  p[1] = bundle_symset_focus(x1);
   
 
   v = scheme_apply(method, 2, p);
@@ -3688,7 +3634,7 @@ static Scheme_Object *os_wxMediaPasteboardOnLoadFile(Scheme_Object *obj, int n, 
 
   
   x0 = (string)objscheme_unbundle_string(p[0], "wx:media-pasteboard%::on-load-file");
-  x1 = unbundle_symset_fileType(p[1], "wx:media-pasteboard%::on-load-file");;
+  x1 = unbundle_symset_fileType(p[1], "wx:media-pasteboard%::on-load-file");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3733,7 +3679,7 @@ static Scheme_Object *os_wxMediaPasteboardOnSaveFile(Scheme_Object *obj, int n, 
 
   
   x0 = (string)objscheme_unbundle_string(p[0], "wx:media-pasteboard%::on-save-file");
-  x1 = unbundle_symset_fileType(p[1], "wx:media-pasteboard%::on-save-file");;
+  x1 = unbundle_symset_fileType(p[1], "wx:media-pasteboard%::on-save-file");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3755,7 +3701,7 @@ static Scheme_Object *os_wxMediaPasteboardOnNewBox(Scheme_Object *obj, int n,  S
   int x0;
 
   
-  x0 = unbundle_symset_bufferType(p[0], "wx:media-pasteboard%::on-new-box");;
+  x0 = unbundle_symset_bufferType(p[0], "wx:media-pasteboard%::on-new-box");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3859,7 +3805,7 @@ static Scheme_Object *os_wxMediaPasteboardOnPaint(Scheme_Object *obj, int n,  Sc
   x5 = objscheme_unbundle_float(p[5], "wx:media-pasteboard%::on-paint");
   x6 = objscheme_unbundle_float(p[6], "wx:media-pasteboard%::on-paint");
   x7 = objscheme_unbundle_float(p[7], "wx:media-pasteboard%::on-paint");
-  x8 = unbundle_symset_caret(p[8], "wx:media-pasteboard%::on-paint");;
+  x8 = unbundle_symset_caret(p[8], "wx:media-pasteboard%::on-paint");
 
   if (x1 && !x1->Ok()) scheme_signal_error("%s: bad bitmap", "wx:media-buffer%::on-paint");
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4184,7 +4130,7 @@ static Scheme_Object *os_wxMediaPasteboardSetCaretOwner(Scheme_Object *obj, int 
   
   x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::set-caret-owner", 1);
   if (n > 1) {
-    x1 = unbundle_symset_focus(p[1], "wx:media-pasteboard%::set-caret-owner");;
+    x1 = unbundle_symset_focus(p[1], "wx:media-pasteboard%::set-caret-owner");
   } else
     x1 = wxFOCUS_IMMEDIATE;
 
@@ -4651,6 +4597,34 @@ static Scheme_Object *objscheme_classname_os_wxMediaPasteboard(Scheme_Object *ob
 
 void objscheme_setup_wxMediaPasteboard(void *env)
 {
+  if (!scheme_lookup_xc_global("wx:const-""edit-buffer", env))
+    scheme_install_xc_global("wx:const-""edit-buffer", scheme_make_integer(wxEDIT_BUFFER), env);
+  if (!scheme_lookup_xc_global("wx:const-""pasteboard-buffer", env))
+    scheme_install_xc_global("wx:const-""pasteboard-buffer", scheme_make_integer(wxPASTEBOARD_BUFFER), env);
+  if (!scheme_lookup_xc_global("wx:const-""media-ff-guess", env))
+    scheme_install_xc_global("wx:const-""media-ff-guess", scheme_make_integer(wxMEDIA_FF_GUESS), env);
+  if (!scheme_lookup_xc_global("wx:const-""media-ff-std", env))
+    scheme_install_xc_global("wx:const-""media-ff-std", scheme_make_integer(wxMEDIA_FF_STD), env);
+  if (!scheme_lookup_xc_global("wx:const-""media-ff-text", env))
+    scheme_install_xc_global("wx:const-""media-ff-text", scheme_make_integer(wxMEDIA_FF_TEXT), env);
+  if (!scheme_lookup_xc_global("wx:const-""media-ff-text-force-cr", env))
+    scheme_install_xc_global("wx:const-""media-ff-text-force-cr", scheme_make_integer(wxMEDIA_FF_TEXT_FORCE_CR), env);
+  if (!scheme_lookup_xc_global("wx:const-""media-ff-same", env))
+    scheme_install_xc_global("wx:const-""media-ff-same", scheme_make_integer(wxMEDIA_FF_SAME), env);
+  if (!scheme_lookup_xc_global("wx:const-""media-ff-copy", env))
+    scheme_install_xc_global("wx:const-""media-ff-copy", scheme_make_integer(wxMEDIA_FF_COPY), env);
+  if (!scheme_lookup_xc_global("wx:const-""focus-immediate", env))
+    scheme_install_xc_global("wx:const-""focus-immediate", scheme_make_integer(wxFOCUS_IMMEDIATE), env);
+  if (!scheme_lookup_xc_global("wx:const-""focus-display", env))
+    scheme_install_xc_global("wx:const-""focus-display", scheme_make_integer(wxFOCUS_DISPLAY), env);
+  if (!scheme_lookup_xc_global("wx:const-""focus-global", env))
+    scheme_install_xc_global("wx:const-""focus-global", scheme_make_integer(wxFOCUS_GLOBAL), env);
+  if (!scheme_lookup_xc_global("wx:const-""snip-draw-no-caret", env))
+    scheme_install_xc_global("wx:const-""snip-draw-no-caret", scheme_make_integer(wxSNIP_DRAW_NO_CARET), env);
+  if (!scheme_lookup_xc_global("wx:const-""snip-draw-show-caret", env))
+    scheme_install_xc_global("wx:const-""snip-draw-show-caret", scheme_make_integer(wxSNIP_DRAW_SHOW_CARET), env);
+  if (!scheme_lookup_xc_global("wx:const-""snip-draw-show-inactive-caret", env))
+    scheme_install_xc_global("wx:const-""snip-draw-show-inactive-caret", scheme_make_integer(wxSNIP_DRAW_SHOW_INACTIVE_CARET), env);
 if (os_wxMediaPasteboard_class) {
     objscheme_add_global_class(os_wxMediaPasteboard_class,  "wx:media-pasteboard%", env);
 } else {

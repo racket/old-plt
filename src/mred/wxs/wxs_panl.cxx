@@ -26,86 +26,62 @@
 #define INTERACT_METHODS 0
 #endif
 
-static Scheme_Object *panelFlags_wxBORDER_sym = NULL;
-
-static void init_symset_panelFlags(void) {
-  panelFlags_wxBORDER_sym = scheme_intern_symbol("border");
-}
-
-static int unbundle_symset_panelFlags(Scheme_Object *v, const char *where) {
-  if (!panelFlags_wxBORDER_sym) init_symset_panelFlags();
-  Scheme_Object *i, *l = v;
-  long result = 0;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == panelFlags_wxBORDER_sym) { result = result | wxBORDER; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+static int unbundle_symset_panelStyle(Scheme_Object *v, const char *where) {
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxBORDER) == wxBORDER) { vi -= wxBORDER; }
+    if (!vi) { return orig_vi; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "panelFlags symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "panelStyle integer", -1, 0, &v);
   return 0;
 }
 
-static int istype_symset_panelFlags(Scheme_Object *v, const char *where) {
-  if (!panelFlags_wxBORDER_sym) init_symset_panelFlags();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == panelFlags_wxBORDER_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+static int istype_symset_panelStyle(Scheme_Object *v, const char *where) {
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxBORDER) == wxBORDER) { vi -= wxBORDER; }
+    if (!vi) { return 1; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "panelFlags symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "panelStyle integer", -1, 0, &v);
   return 0;
 }
 
-static Scheme_Object *bundle_symset_panelFlags(int v) {
-  if (!panelFlags_wxBORDER_sym) init_symset_panelFlags();
-  Scheme_Object *l = scheme_null;
-  if (v & wxBORDER) l = scheme_make_pair(panelFlags_wxBORDER_sym, l);
-  return l;
+static Scheme_Object *bundle_symset_panelStyle(int v) {
+  return scheme_make_integer(v);
 }
 
 
-
-static Scheme_Object *orientation_wxVERTICAL_sym = NULL;
-static Scheme_Object *orientation_wxHORIZONTAL_sym = NULL;
-
-static void init_symset_orientation(void) {
-  orientation_wxVERTICAL_sym = scheme_intern_symbol("vertical");
-  orientation_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
-}
 
 static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
-  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
-  if (0) { }
-  else if (v == orientation_wxVERTICAL_sym) { return wxVERTICAL; }
-  else if (v == orientation_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
-  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxVERTICAL) { return wxVERTICAL; }
+    if ((vi) == wxHORIZONTAL) { return wxHORIZONTAL; }
+  }
+  if (where) scheme_wrong_type(where, "orientation integer", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_orientation(Scheme_Object *v, const char *where) {
-  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
-  if (0) { }
-  else if (v == orientation_wxVERTICAL_sym) { return 1; }
-  else if (v == orientation_wxHORIZONTAL_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxVERTICAL) { return 1; }
+    if ((vi) == wxHORIZONTAL) { return 1; }
+  }
+  if (where) scheme_wrong_type(where, "orientation integer", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_orientation(int v) {
-  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
-  switch (v) {
-  case wxVERTICAL: return orientation_wxVERTICAL_sym;
-  case wxHORIZONTAL: return orientation_wxHORIZONTAL_sym;
-  default: return NULL;
-  }
+  return scheme_make_integer(v);
 }
 
 
@@ -828,7 +804,7 @@ static Scheme_Object *os_wxPanelGetLabelPosition(Scheme_Object *obj, int n,  Sch
 
   
   
-  return bundle_symset_orientation(r);;
+  return bundle_symset_orientation(r);
 }
 
 #pragma argsused
@@ -839,7 +815,7 @@ static Scheme_Object *os_wxPanelSetLabelPosition(Scheme_Object *obj, int n,  Sch
   int x0;
 
   
-  x0 = unbundle_symset_orientation(p[0], "wx:panel%::set-label-position");;
+  x0 = unbundle_symset_orientation(p[0], "wx:panel%::set-label-position");
 
   
   ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->SetLabelPosition(x0);
@@ -1159,7 +1135,7 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
     } else
       x4 = -1;
     if (n > 5) {
-      x5 = unbundle_symset_panelFlags(p[5], "wx:panel%::initialization (panel parent case)");;
+      x5 = unbundle_symset_panelStyle(p[5], "wx:panel%::initialization (panel parent case)");
     } else
       x5 = 0;
     if (n > 6) {
@@ -1201,7 +1177,7 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
     } else
       x4 = -1;
     if (n > 5) {
-      x5 = unbundle_symset_panelFlags(p[5], "wx:panel%::initialization (frame case)");;
+      x5 = unbundle_symset_panelStyle(p[5], "wx:panel%::initialization (frame case)");
     } else
       x5 = 0;
     if (n > 6) {
@@ -1230,6 +1206,12 @@ static Scheme_Object *objscheme_classname_os_wxPanel(Scheme_Object *obj, int n, 
 
 void objscheme_setup_wxPanel(void *env)
 {
+  if (!scheme_lookup_xc_global("wx:const-""border", env))
+    scheme_install_xc_global("wx:const-""border", scheme_make_integer(wxBORDER), env);
+  if (!scheme_lookup_xc_global("wx:const-""vertical", env))
+    scheme_install_xc_global("wx:const-""vertical", scheme_make_integer(wxVERTICAL), env);
+  if (!scheme_lookup_xc_global("wx:const-""horizontal", env))
+    scheme_install_xc_global("wx:const-""horizontal", scheme_make_integer(wxHORIZONTAL), env);
 if (os_wxPanel_class) {
     objscheme_add_global_class(os_wxPanel_class,  "wx:panel%", env);
 } else {
@@ -1329,64 +1311,40 @@ class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *obj, const char *where,
 
 
 
-static Scheme_Object *dialogFlags_wxCAPTION_sym = NULL;
-static Scheme_Object *dialogFlags_wxTHICK_FRAME_sym = NULL;
-static Scheme_Object *dialogFlags_wxSYSTEM_MENU_sym = NULL;
-static Scheme_Object *dialogFlags_wxRESIZE_BORDER_sym = NULL;
-
-static void init_symset_dialogFlags(void) {
-  dialogFlags_wxCAPTION_sym = scheme_intern_symbol("caption");
-  dialogFlags_wxTHICK_FRAME_sym = scheme_intern_symbol("thick-frame");
-  dialogFlags_wxSYSTEM_MENU_sym = scheme_intern_symbol("system-menu");
-  dialogFlags_wxRESIZE_BORDER_sym = scheme_intern_symbol("resize-border");
-}
-
-static int unbundle_symset_dialogFlags(Scheme_Object *v, const char *where) {
-  if (!dialogFlags_wxRESIZE_BORDER_sym) init_symset_dialogFlags();
-  Scheme_Object *i, *l = v;
-  long result = 0;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == dialogFlags_wxCAPTION_sym) { result = result | wxCAPTION; }
-  else if (i == dialogFlags_wxTHICK_FRAME_sym) { result = result | wxTHICK_FRAME; }
-  else if (i == dialogFlags_wxSYSTEM_MENU_sym) { result = result | wxSYSTEM_MENU; }
-  else if (i == dialogFlags_wxRESIZE_BORDER_sym) { result = result | wxRESIZE_BORDER; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+static int unbundle_symset_dialogStyle(Scheme_Object *v, const char *where) {
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxCAPTION) == wxCAPTION) { vi -= wxCAPTION; }
+    if ((vi & wxTHICK_FRAME) == wxTHICK_FRAME) { vi -= wxTHICK_FRAME; }
+    if ((vi & wxSYSTEM_MENU) == wxSYSTEM_MENU) { vi -= wxSYSTEM_MENU; }
+    if ((vi & wxRESIZE_BORDER) == wxRESIZE_BORDER) { vi -= wxRESIZE_BORDER; }
+    if (!vi) { return orig_vi; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "dialogFlags symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "dialogStyle integer", -1, 0, &v);
   return 0;
 }
 
-static int istype_symset_dialogFlags(Scheme_Object *v, const char *where) {
-  if (!dialogFlags_wxRESIZE_BORDER_sym) init_symset_dialogFlags();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == dialogFlags_wxCAPTION_sym) { ; }
-  else if (i == dialogFlags_wxTHICK_FRAME_sym) { ; }
-  else if (i == dialogFlags_wxSYSTEM_MENU_sym) { ; }
-  else if (i == dialogFlags_wxRESIZE_BORDER_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+static int istype_symset_dialogStyle(Scheme_Object *v, const char *where) {
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxCAPTION) == wxCAPTION) { vi -= wxCAPTION; }
+    if ((vi & wxTHICK_FRAME) == wxTHICK_FRAME) { vi -= wxTHICK_FRAME; }
+    if ((vi & wxSYSTEM_MENU) == wxSYSTEM_MENU) { vi -= wxSYSTEM_MENU; }
+    if ((vi & wxRESIZE_BORDER) == wxRESIZE_BORDER) { vi -= wxRESIZE_BORDER; }
+    if (!vi) { return 1; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "dialogFlags symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "dialogStyle integer", -1, 0, &v);
   return 0;
 }
 
-static Scheme_Object *bundle_symset_dialogFlags(int v) {
-  if (!dialogFlags_wxRESIZE_BORDER_sym) init_symset_dialogFlags();
-  Scheme_Object *l = scheme_null;
-  if (v & wxCAPTION) l = scheme_make_pair(dialogFlags_wxCAPTION_sym, l);
-  if (v & wxTHICK_FRAME) l = scheme_make_pair(dialogFlags_wxTHICK_FRAME_sym, l);
-  if (v & wxSYSTEM_MENU) l = scheme_make_pair(dialogFlags_wxSYSTEM_MENU_sym, l);
-  if (v & wxRESIZE_BORDER) l = scheme_make_pair(dialogFlags_wxRESIZE_BORDER_sym, l);
-  return l;
+static Scheme_Object *bundle_symset_dialogStyle(int v) {
+  return scheme_make_integer(v);
 }
 
 
@@ -1415,6 +1373,7 @@ static Scheme_Object *bundle_symset_dialogFlags(int v) {
 // @ p "on-item-size" : void OnItemSize(wxItem!,int,int); ## INTERACT_METHODS
 // @ p "on-left-click" : void OnLeftClick(int,int,int); ## INTERACT_METHODS
 // @ p "on-right-click" : void OnRightClick(int,int,int); ## INTERACT_METHODS
+
 
 class os_wxDialogBox : public wxDialogBox {
  public:
@@ -2086,7 +2045,7 @@ static Scheme_Object *os_wxDialogBox_ConstructScheme(Scheme_Object *obj, int n, 
   } else
     x6 = 500;
   if (n > 7) {
-    x7 = unbundle_symset_dialogFlags(p[7], "wx:dialog-box%::initialization");;
+    x7 = unbundle_symset_dialogStyle(p[7], "wx:dialog-box%::initialization");
   } else
     x7 = wxDEFAULT_DIALOG_STYLE;
   if (n > 8) {
@@ -2113,6 +2072,14 @@ static Scheme_Object *objscheme_classname_os_wxDialogBox(Scheme_Object *obj, int
 
 void objscheme_setup_wxDialogBox(void *env)
 {
+  if (!scheme_lookup_xc_global("wx:const-""caption", env))
+    scheme_install_xc_global("wx:const-""caption", scheme_make_integer(wxCAPTION), env);
+  if (!scheme_lookup_xc_global("wx:const-""thick-frame", env))
+    scheme_install_xc_global("wx:const-""thick-frame", scheme_make_integer(wxTHICK_FRAME), env);
+  if (!scheme_lookup_xc_global("wx:const-""system-menu", env))
+    scheme_install_xc_global("wx:const-""system-menu", scheme_make_integer(wxSYSTEM_MENU), env);
+  if (!scheme_lookup_xc_global("wx:const-""resize-border", env))
+    scheme_install_xc_global("wx:const-""resize-border", scheme_make_integer(wxRESIZE_BORDER), env);
 if (os_wxDialogBox_class) {
     objscheme_add_global_class(os_wxDialogBox_class,  "wx:dialog-box%", env);
 } else {
@@ -2139,6 +2106,7 @@ if (os_wxDialogBox_class) {
 
 }
   scheme_install_xc_global("default-dialog-style", scheme_make_integer(wxDEFAULT_DIALOG_STYLE), env);
+  scheme_install_xc_global("wx:const-default-dialog-style", bundle_symset_dialogStyle(wxDEFAULT_DIALOG_STYLE), env);
 }
 
 int objscheme_istype_wxDialogBox(Scheme_Object *obj, const char *stop, int nullOK)

@@ -28,7 +28,7 @@
 
 @MACRO CHECKHASMENU[log] = if (<log>GET_THE_MENU_BAR(((wxFrame *)((Scheme_Class_Object *)obj)->primdata))) return scheme_void;
 
-@BEGINSYMBOLS frameFlags
+@BEGINSYMBOLS frameStyle
 @SYM "caption" : wxCAPTION
 @SYM "iconize" : wxICONIZE
 @SYM "minimize" : wxMINIMIZE
@@ -54,7 +54,7 @@
 
 @CLASSID wxTYPE_FRAME
 
-@CREATOR (wxFrame^, string, int = -1, int = -1, int = -1, int = -1, SYM[frameFlags] = wxDEFAULT_FRAME, string = "frame") : : /NOZERO[4]|NOZERO[5]/
+@CREATOR (wxFrame^, string, int = -1, int = -1, int = -1, int = -1, SYM[frameStyle] = wxDEFAULT_FRAME, string = "frame") : : /NOZERO[4]|NOZERO[5]/
 
 @MACRO CHECKICONOK[p] = if (x<p> && !x<p>->Ok()) return scheme_void;
 
@@ -83,5 +83,7 @@
 
 @SETMARK w = d
 @INCLUDE wxs_win.xci
+
+@CONSTANT "wx:const-default-frame" : SYM[frameStyle] wxDEFAULT_FRAME
 
 @END

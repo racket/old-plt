@@ -62,95 +62,65 @@ static int wxSchemeWindowGetY(wxWindow *w)
   return y;
 }
 
-static Scheme_Object *sizeMode_wxSIZE_AUTO_sym = NULL;
-static Scheme_Object *sizeMode_wxSIZE_AUTO_WIDTH_sym = NULL;
-static Scheme_Object *sizeMode_wxSIZE_AUTO_HEIGHT_sym = NULL;
-static Scheme_Object *sizeMode_wxSIZE_USE_EXISTING_sym = NULL;
-static Scheme_Object *sizeMode_wxPOS_USE_MINUS_ONE_sym = NULL;
-
-static void init_symset_sizeMode(void) {
-  sizeMode_wxSIZE_AUTO_sym = scheme_intern_symbol("size-auto");
-  sizeMode_wxSIZE_AUTO_WIDTH_sym = scheme_intern_symbol("size-auto-width");
-  sizeMode_wxSIZE_AUTO_HEIGHT_sym = scheme_intern_symbol("size-auto-height");
-  sizeMode_wxSIZE_USE_EXISTING_sym = scheme_intern_symbol("size-use-exsiting");
-  sizeMode_wxPOS_USE_MINUS_ONE_sym = scheme_intern_symbol("pos-use-minus-one");
-}
-
 static int unbundle_symset_sizeMode(Scheme_Object *v, const char *where) {
-  if (!sizeMode_wxPOS_USE_MINUS_ONE_sym) init_symset_sizeMode();
-  if (0) { }
-  else if (v == sizeMode_wxSIZE_AUTO_sym) { return wxSIZE_AUTO; }
-  else if (v == sizeMode_wxSIZE_AUTO_WIDTH_sym) { return wxSIZE_AUTO_WIDTH; }
-  else if (v == sizeMode_wxSIZE_AUTO_HEIGHT_sym) { return wxSIZE_AUTO_HEIGHT; }
-  else if (v == sizeMode_wxSIZE_USE_EXISTING_sym) { return wxSIZE_USE_EXISTING; }
-  else if (v == sizeMode_wxPOS_USE_MINUS_ONE_sym) { return wxPOS_USE_MINUS_ONE; }
-  if (where) scheme_wrong_type(where, "sizeMode symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxSIZE_AUTO) { return wxSIZE_AUTO; }
+    if ((vi) == wxSIZE_AUTO_WIDTH) { return wxSIZE_AUTO_WIDTH; }
+    if ((vi) == wxSIZE_AUTO_HEIGHT) { return wxSIZE_AUTO_HEIGHT; }
+    if ((vi) == wxSIZE_USE_EXISTING) { return wxSIZE_USE_EXISTING; }
+    if ((vi) == wxPOS_USE_MINUS_ONE) { return wxPOS_USE_MINUS_ONE; }
+  }
+  if (where) scheme_wrong_type(where, "sizeMode integer", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_sizeMode(Scheme_Object *v, const char *where) {
-  if (!sizeMode_wxPOS_USE_MINUS_ONE_sym) init_symset_sizeMode();
-  if (0) { }
-  else if (v == sizeMode_wxSIZE_AUTO_sym) { return 1; }
-  else if (v == sizeMode_wxSIZE_AUTO_WIDTH_sym) { return 1; }
-  else if (v == sizeMode_wxSIZE_AUTO_HEIGHT_sym) { return 1; }
-  else if (v == sizeMode_wxSIZE_USE_EXISTING_sym) { return 1; }
-  else if (v == sizeMode_wxPOS_USE_MINUS_ONE_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "sizeMode symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxSIZE_AUTO) { return 1; }
+    if ((vi) == wxSIZE_AUTO_WIDTH) { return 1; }
+    if ((vi) == wxSIZE_AUTO_HEIGHT) { return 1; }
+    if ((vi) == wxSIZE_USE_EXISTING) { return 1; }
+    if ((vi) == wxPOS_USE_MINUS_ONE) { return 1; }
+  }
+  if (where) scheme_wrong_type(where, "sizeMode integer", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_sizeMode(int v) {
-  if (!sizeMode_wxPOS_USE_MINUS_ONE_sym) init_symset_sizeMode();
-  switch (v) {
-  case wxSIZE_AUTO: return sizeMode_wxSIZE_AUTO_sym;
-  case wxSIZE_AUTO_WIDTH: return sizeMode_wxSIZE_AUTO_WIDTH_sym;
-  case wxSIZE_AUTO_HEIGHT: return sizeMode_wxSIZE_AUTO_HEIGHT_sym;
-  case wxSIZE_USE_EXISTING: return sizeMode_wxSIZE_USE_EXISTING_sym;
-  case wxPOS_USE_MINUS_ONE: return sizeMode_wxPOS_USE_MINUS_ONE_sym;
-  default: return NULL;
-  }
+  return scheme_make_integer(v);
 }
 
-
-static Scheme_Object *direction_wxBOTH_sym = NULL;
-static Scheme_Object *direction_wxVERTICAL_sym = NULL;
-static Scheme_Object *direction_wxHORIZONTAL_sym = NULL;
-
-static void init_symset_direction(void) {
-  direction_wxBOTH_sym = scheme_intern_symbol("both");
-  direction_wxVERTICAL_sym = scheme_intern_symbol("vertical");
-  direction_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
-}
 
 static int unbundle_symset_direction(Scheme_Object *v, const char *where) {
-  if (!direction_wxHORIZONTAL_sym) init_symset_direction();
-  if (0) { }
-  else if (v == direction_wxBOTH_sym) { return wxBOTH; }
-  else if (v == direction_wxVERTICAL_sym) { return wxVERTICAL; }
-  else if (v == direction_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
-  if (where) scheme_wrong_type(where, "direction symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxBOTH) { return wxBOTH; }
+    if ((vi) == wxVERTICAL) { return wxVERTICAL; }
+    if ((vi) == wxHORIZONTAL) { return wxHORIZONTAL; }
+  }
+  if (where) scheme_wrong_type(where, "direction integer", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_direction(Scheme_Object *v, const char *where) {
-  if (!direction_wxHORIZONTAL_sym) init_symset_direction();
-  if (0) { }
-  else if (v == direction_wxBOTH_sym) { return 1; }
-  else if (v == direction_wxVERTICAL_sym) { return 1; }
-  else if (v == direction_wxHORIZONTAL_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "direction symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxBOTH) { return 1; }
+    if ((vi) == wxVERTICAL) { return 1; }
+    if ((vi) == wxHORIZONTAL) { return 1; }
+  }
+  if (where) scheme_wrong_type(where, "direction integer", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_direction(int v) {
-  if (!direction_wxHORIZONTAL_sym) init_symset_direction();
-  switch (v) {
-  case wxBOTH: return direction_wxBOTH_sym;
-  case wxVERTICAL: return direction_wxVERTICAL_sym;
-  case wxHORIZONTAL: return direction_wxHORIZONTAL_sym;
-  default: return NULL;
-  }
+  return scheme_make_integer(v);
 }
 
 
@@ -537,7 +507,7 @@ static Scheme_Object *os_wxWindowCenter(Scheme_Object *obj, int n,  Scheme_Objec
 
   
   if (n > 0) {
-    x0 = unbundle_symset_direction(p[0], "wx:window%::center");;
+    x0 = unbundle_symset_direction(p[0], "wx:window%::center");
   } else
     x0 = wxBOTH;
 
@@ -1018,7 +988,7 @@ static Scheme_Object *os_wxWindowSetSize(Scheme_Object *obj, int n,  Scheme_Obje
   x2 = objscheme_unbundle_integer(p[2], "wx:window%::set-size");
   x3 = objscheme_unbundle_integer(p[3], "wx:window%::set-size");
   if (n > 4) {
-    x4 = unbundle_symset_sizeMode(p[4], "wx:window%::set-size");;
+    x4 = unbundle_symset_sizeMode(p[4], "wx:window%::set-size");
   } else
     x4 = wxSIZE_AUTO;
 
@@ -1055,7 +1025,7 @@ static Scheme_Object *os_wxWindowCentre(Scheme_Object *obj, int n,  Scheme_Objec
 
   
   if (n > 0) {
-    x0 = unbundle_symset_direction(p[0], "wx:window%::centre");;
+    x0 = unbundle_symset_direction(p[0], "wx:window%::centre");
   } else
     x0 = wxBOTH;
 
@@ -1076,6 +1046,22 @@ static Scheme_Object *objscheme_classname_os_wxWindow(Scheme_Object *obj, int n,
 
 void objscheme_setup_wxWindow(void *env)
 {
+  if (!scheme_lookup_xc_global("wx:const-""size-auto", env))
+    scheme_install_xc_global("wx:const-""size-auto", scheme_make_integer(wxSIZE_AUTO), env);
+  if (!scheme_lookup_xc_global("wx:const-""size-auto-width", env))
+    scheme_install_xc_global("wx:const-""size-auto-width", scheme_make_integer(wxSIZE_AUTO_WIDTH), env);
+  if (!scheme_lookup_xc_global("wx:const-""size-auto-height", env))
+    scheme_install_xc_global("wx:const-""size-auto-height", scheme_make_integer(wxSIZE_AUTO_HEIGHT), env);
+  if (!scheme_lookup_xc_global("wx:const-""size-use-exsiting", env))
+    scheme_install_xc_global("wx:const-""size-use-exsiting", scheme_make_integer(wxSIZE_USE_EXISTING), env);
+  if (!scheme_lookup_xc_global("wx:const-""pos-use-minus-one", env))
+    scheme_install_xc_global("wx:const-""pos-use-minus-one", scheme_make_integer(wxPOS_USE_MINUS_ONE), env);
+  if (!scheme_lookup_xc_global("wx:const-""both", env))
+    scheme_install_xc_global("wx:const-""both", scheme_make_integer(wxBOTH), env);
+  if (!scheme_lookup_xc_global("wx:const-""vertical", env))
+    scheme_install_xc_global("wx:const-""vertical", scheme_make_integer(wxVERTICAL), env);
+  if (!scheme_lookup_xc_global("wx:const-""horizontal", env))
+    scheme_install_xc_global("wx:const-""horizontal", scheme_make_integer(wxHORIZONTAL), env);
 if (os_wxWindow_class) {
     objscheme_add_global_class(os_wxWindow_class,  "wx:window%", env);
 } else {

@@ -39,207 +39,172 @@
 #include "wxscomon.h"
 
 
-static Scheme_Object *messageFlags_wxOK_sym = NULL;
-static Scheme_Object *messageFlags_wxYES_NO_sym = NULL;
-static Scheme_Object *messageFlags_wxCANCEL_sym = NULL;
-static Scheme_Object *messageFlags_wxCENTRE_sym = NULL;
-static Scheme_Object *messageFlags_wxICON_EXCLAMATION_sym = NULL;
-static Scheme_Object *messageFlags_wxICON_HAND_sym = NULL;
-static Scheme_Object *messageFlags_wxICON_QUESTION_sym = NULL;
-static Scheme_Object *messageFlags_wxICON_INFORMATION_sym = NULL;
-
-static void init_symset_messageFlags(void) {
-  messageFlags_wxOK_sym = scheme_intern_symbol("ok");
-  messageFlags_wxYES_NO_sym = scheme_intern_symbol("yes-no");
-  messageFlags_wxCANCEL_sym = scheme_intern_symbol("cancel");
-  messageFlags_wxCENTRE_sym = scheme_intern_symbol("centre");
-  messageFlags_wxICON_EXCLAMATION_sym = scheme_intern_symbol("icon-exclamation");
-  messageFlags_wxICON_HAND_sym = scheme_intern_symbol("icon-hand");
-  messageFlags_wxICON_QUESTION_sym = scheme_intern_symbol("icon-question");
-  messageFlags_wxICON_INFORMATION_sym = scheme_intern_symbol("icon-information");
-}
-
-static int unbundle_symset_messageFlags(Scheme_Object *v, const char *where) {
-  if (!messageFlags_wxICON_INFORMATION_sym) init_symset_messageFlags();
-  Scheme_Object *i, *l = v;
-  long result = 0;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == messageFlags_wxOK_sym) { result = result | wxOK; }
-  else if (i == messageFlags_wxYES_NO_sym) { result = result | wxYES_NO; }
-  else if (i == messageFlags_wxCANCEL_sym) { result = result | wxCANCEL; }
-  else if (i == messageFlags_wxCENTRE_sym) { result = result | wxCENTRE; }
-  else if (i == messageFlags_wxICON_EXCLAMATION_sym) { result = result | wxICON_EXCLAMATION; }
-  else if (i == messageFlags_wxICON_HAND_sym) { result = result | wxICON_HAND; }
-  else if (i == messageFlags_wxICON_QUESTION_sym) { result = result | wxICON_QUESTION; }
-  else if (i == messageFlags_wxICON_INFORMATION_sym) { result = result | wxICON_INFORMATION; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+static int unbundle_symset_messageStyle(Scheme_Object *v, const char *where) {
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxOK) == wxOK) { vi -= wxOK; }
+    if ((vi & wxYES_NO) == wxYES_NO) { vi -= wxYES_NO; }
+    if ((vi & wxCANCEL) == wxCANCEL) { vi -= wxCANCEL; }
+    if ((vi & wxCENTRE) == wxCENTRE) { vi -= wxCENTRE; }
+    if ((vi & wxICON_EXCLAMATION) == wxICON_EXCLAMATION) { vi -= wxICON_EXCLAMATION; }
+    if ((vi & wxICON_HAND) == wxICON_HAND) { vi -= wxICON_HAND; }
+    if ((vi & wxICON_QUESTION) == wxICON_QUESTION) { vi -= wxICON_QUESTION; }
+    if ((vi & wxICON_INFORMATION) == wxICON_INFORMATION) { vi -= wxICON_INFORMATION; }
+    if (!vi) { return orig_vi; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "messageFlags symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "messageStyle integer", -1, 0, &v);
   return 0;
 }
 
-static int istype_symset_messageFlags(Scheme_Object *v, const char *where) {
-  if (!messageFlags_wxICON_INFORMATION_sym) init_symset_messageFlags();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == messageFlags_wxOK_sym) { ; }
-  else if (i == messageFlags_wxYES_NO_sym) { ; }
-  else if (i == messageFlags_wxCANCEL_sym) { ; }
-  else if (i == messageFlags_wxCENTRE_sym) { ; }
-  else if (i == messageFlags_wxICON_EXCLAMATION_sym) { ; }
-  else if (i == messageFlags_wxICON_HAND_sym) { ; }
-  else if (i == messageFlags_wxICON_QUESTION_sym) { ; }
-  else if (i == messageFlags_wxICON_INFORMATION_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+static int istype_symset_messageStyle(Scheme_Object *v, const char *where) {
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxOK) == wxOK) { vi -= wxOK; }
+    if ((vi & wxYES_NO) == wxYES_NO) { vi -= wxYES_NO; }
+    if ((vi & wxCANCEL) == wxCANCEL) { vi -= wxCANCEL; }
+    if ((vi & wxCENTRE) == wxCENTRE) { vi -= wxCENTRE; }
+    if ((vi & wxICON_EXCLAMATION) == wxICON_EXCLAMATION) { vi -= wxICON_EXCLAMATION; }
+    if ((vi & wxICON_HAND) == wxICON_HAND) { vi -= wxICON_HAND; }
+    if ((vi & wxICON_QUESTION) == wxICON_QUESTION) { vi -= wxICON_QUESTION; }
+    if ((vi & wxICON_INFORMATION) == wxICON_INFORMATION) { vi -= wxICON_INFORMATION; }
+    if (!vi) { return 1; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "messageFlags symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "messageStyle integer", -1, 0, &v);
   return 0;
 }
 
-static Scheme_Object *bundle_symset_messageFlags(int v) {
-  if (!messageFlags_wxICON_INFORMATION_sym) init_symset_messageFlags();
-  Scheme_Object *l = scheme_null;
-  if (v & wxOK) l = scheme_make_pair(messageFlags_wxOK_sym, l);
-  if (v & wxYES_NO) l = scheme_make_pair(messageFlags_wxYES_NO_sym, l);
-  if (v & wxCANCEL) l = scheme_make_pair(messageFlags_wxCANCEL_sym, l);
-  if (v & wxCENTRE) l = scheme_make_pair(messageFlags_wxCENTRE_sym, l);
-  if (v & wxICON_EXCLAMATION) l = scheme_make_pair(messageFlags_wxICON_EXCLAMATION_sym, l);
-  if (v & wxICON_HAND) l = scheme_make_pair(messageFlags_wxICON_HAND_sym, l);
-  if (v & wxICON_QUESTION) l = scheme_make_pair(messageFlags_wxICON_QUESTION_sym, l);
-  if (v & wxICON_INFORMATION) l = scheme_make_pair(messageFlags_wxICON_INFORMATION_sym, l);
-  return l;
+static Scheme_Object *bundle_symset_messageStyle(int v) {
+  return scheme_make_integer(v);
 }
 
 
-static Scheme_Object *psMode_PS_PREVIEW_sym = NULL;
-static Scheme_Object *psMode_PS_FILE_sym = NULL;
-static Scheme_Object *psMode_PS_PRINTER_sym = NULL;
-
-static void init_symset_psMode(void) {
-  psMode_PS_PREVIEW_sym = scheme_intern_symbol("ps-preview");
-  psMode_PS_FILE_sym = scheme_intern_symbol("ps-file");
-  psMode_PS_PRINTER_sym = scheme_intern_symbol("ps-printer");
+static int unbundle_symset_messageReply(Scheme_Object *v, const char *where) {
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxOK) == wxOK) { vi -= wxOK; }
+    if ((vi & wxNO) == wxNO) { vi -= wxNO; }
+    if ((vi & wxYES) == wxYES) { vi -= wxYES; }
+    if ((vi & wxCANCEL) == wxCANCEL) { vi -= wxCANCEL; }
+    if (!vi) { return orig_vi; }
+  }
+  if (where) scheme_wrong_type(where, "messageReply integer", -1, 0, &v);
+  return 0;
 }
+
+static int istype_symset_messageReply(Scheme_Object *v, const char *where) {
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxOK) == wxOK) { vi -= wxOK; }
+    if ((vi & wxNO) == wxNO) { vi -= wxNO; }
+    if ((vi & wxYES) == wxYES) { vi -= wxYES; }
+    if ((vi & wxCANCEL) == wxCANCEL) { vi -= wxCANCEL; }
+    if (!vi) { return 1; }
+  }
+  if (where) scheme_wrong_type(where, "messageReply integer", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_messageReply(int v) {
+  return scheme_make_integer(v);
+}
+
 
 static int unbundle_symset_psMode(Scheme_Object *v, const char *where) {
-  if (!psMode_PS_PRINTER_sym) init_symset_psMode();
-  if (0) { }
-  else if (v == psMode_PS_PREVIEW_sym) { return PS_PREVIEW; }
-  else if (v == psMode_PS_FILE_sym) { return PS_FILE; }
-  else if (v == psMode_PS_PRINTER_sym) { return PS_PRINTER; }
-  if (where) scheme_wrong_type(where, "psMode symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == PS_PREVIEW) { return PS_PREVIEW; }
+    if ((vi) == PS_FILE) { return PS_FILE; }
+    if ((vi) == PS_PRINTER) { return PS_PRINTER; }
+  }
+  if (where) scheme_wrong_type(where, "psMode integer", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_psMode(Scheme_Object *v, const char *where) {
-  if (!psMode_PS_PRINTER_sym) init_symset_psMode();
-  if (0) { }
-  else if (v == psMode_PS_PREVIEW_sym) { return 1; }
-  else if (v == psMode_PS_FILE_sym) { return 1; }
-  else if (v == psMode_PS_PRINTER_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "psMode symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == PS_PREVIEW) { return 1; }
+    if ((vi) == PS_FILE) { return 1; }
+    if ((vi) == PS_PRINTER) { return 1; }
+  }
+  if (where) scheme_wrong_type(where, "psMode integer", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_psMode(int v) {
-  if (!psMode_PS_PRINTER_sym) init_symset_psMode();
-  switch (v) {
-  case PS_PREVIEW: return psMode_PS_PREVIEW_sym;
-  case PS_FILE: return psMode_PS_FILE_sym;
-  case PS_PRINTER: return psMode_PS_PRINTER_sym;
-  default: return NULL;
-  }
+  return scheme_make_integer(v);
 }
 
-
-static Scheme_Object *psOrientation_PS_PORTRAIT_sym = NULL;
-static Scheme_Object *psOrientation_PS_LANDSCAPE_sym = NULL;
-
-static void init_symset_psOrientation(void) {
-  psOrientation_PS_PORTRAIT_sym = scheme_intern_symbol("ps-portrait");
-  psOrientation_PS_LANDSCAPE_sym = scheme_intern_symbol("ps-landscape");
-}
 
 static int unbundle_symset_psOrientation(Scheme_Object *v, const char *where) {
-  if (!psOrientation_PS_LANDSCAPE_sym) init_symset_psOrientation();
-  if (0) { }
-  else if (v == psOrientation_PS_PORTRAIT_sym) { return PS_PORTRAIT; }
-  else if (v == psOrientation_PS_LANDSCAPE_sym) { return PS_LANDSCAPE; }
-  if (where) scheme_wrong_type(where, "psOrientation symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == PS_PORTRAIT) { return PS_PORTRAIT; }
+    if ((vi) == PS_LANDSCAPE) { return PS_LANDSCAPE; }
+  }
+  if (where) scheme_wrong_type(where, "psOrientation integer", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_psOrientation(Scheme_Object *v, const char *where) {
-  if (!psOrientation_PS_LANDSCAPE_sym) init_symset_psOrientation();
-  if (0) { }
-  else if (v == psOrientation_PS_PORTRAIT_sym) { return 1; }
-  else if (v == psOrientation_PS_LANDSCAPE_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "psOrientation symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == PS_PORTRAIT) { return 1; }
+    if ((vi) == PS_LANDSCAPE) { return 1; }
+  }
+  if (where) scheme_wrong_type(where, "psOrientation integer", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_psOrientation(int v) {
-  if (!psOrientation_PS_LANDSCAPE_sym) init_symset_psOrientation();
-  switch (v) {
-  case PS_PORTRAIT: return psOrientation_PS_PORTRAIT_sym;
-  case PS_LANDSCAPE: return psOrientation_PS_LANDSCAPE_sym;
-  default: return NULL;
-  }
+  return scheme_make_integer(v);
 }
 
-
-static Scheme_Object *fileSelMode_wxOPEN_sym = NULL;
-static Scheme_Object *fileSelMode_wxSAVE_sym = NULL;
-static Scheme_Object *fileSelMode_wxOVERWRITE_PROMPT_sym = NULL;
-static Scheme_Object *fileSelMode_wxHIDE_READONLY_sym = NULL;
-
-static void init_symset_fileSelMode(void) {
-  fileSelMode_wxOPEN_sym = scheme_intern_symbol("open");
-  fileSelMode_wxSAVE_sym = scheme_intern_symbol("save");
-  fileSelMode_wxOVERWRITE_PROMPT_sym = scheme_intern_symbol("overwrite-prompt");
-  fileSelMode_wxHIDE_READONLY_sym = scheme_intern_symbol("hide-readonly");
-}
 
 static int unbundle_symset_fileSelMode(Scheme_Object *v, const char *where) {
-  if (!fileSelMode_wxHIDE_READONLY_sym) init_symset_fileSelMode();
-  if (0) { }
-  else if (v == fileSelMode_wxOPEN_sym) { return wxOPEN; }
-  else if (v == fileSelMode_wxSAVE_sym) { return wxSAVE; }
-  else if (v == fileSelMode_wxOVERWRITE_PROMPT_sym) { return wxOVERWRITE_PROMPT; }
-  else if (v == fileSelMode_wxHIDE_READONLY_sym) { return wxHIDE_READONLY; }
-  if (where) scheme_wrong_type(where, "fileSelMode symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxOPEN) { return wxOPEN; }
+    if ((vi) == wxSAVE) { return wxSAVE; }
+    if ((vi) == wxOVERWRITE_PROMPT) { return wxOVERWRITE_PROMPT; }
+    if ((vi) == wxHIDE_READONLY) { return wxHIDE_READONLY; }
+  }
+  if (where) scheme_wrong_type(where, "fileSelMode integer", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_fileSelMode(Scheme_Object *v, const char *where) {
-  if (!fileSelMode_wxHIDE_READONLY_sym) init_symset_fileSelMode();
-  if (0) { }
-  else if (v == fileSelMode_wxOPEN_sym) { return 1; }
-  else if (v == fileSelMode_wxSAVE_sym) { return 1; }
-  else if (v == fileSelMode_wxOVERWRITE_PROMPT_sym) { return 1; }
-  else if (v == fileSelMode_wxHIDE_READONLY_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "fileSelMode symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxOPEN) { return 1; }
+    if ((vi) == wxSAVE) { return 1; }
+    if ((vi) == wxOVERWRITE_PROMPT) { return 1; }
+    if ((vi) == wxHIDE_READONLY) { return 1; }
+  }
+  if (where) scheme_wrong_type(where, "fileSelMode integer", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_fileSelMode(int v) {
-  if (!fileSelMode_wxHIDE_READONLY_sym) init_symset_fileSelMode();
-  switch (v) {
-  case wxOPEN: return fileSelMode_wxOPEN_sym;
-  case wxSAVE: return fileSelMode_wxSAVE_sym;
-  case wxOVERWRITE_PROMPT: return fileSelMode_wxOVERWRITE_PROMPT_sym;
-  case wxHIDE_READONLY: return fileSelMode_wxHIDE_READONLY_sym;
-  default: return NULL;
-  }
+  return scheme_make_integer(v);
 }
 
 
@@ -942,7 +907,7 @@ static Scheme_Object *wxsGlobalwxSetPrinterOrientation(int n,  Scheme_Object *p[
   int x0;
 
   
-  x0 = unbundle_symset_psOrientation(p[0], "::wx:set-printer-orientation");;
+  x0 = unbundle_symset_psOrientation(p[0], "::wx:set-printer-orientation");
 
   
   wxSetPrinterOrientation(x0);
@@ -963,7 +928,7 @@ static Scheme_Object *wxsGlobalwxSetPrinterMode(int n,  Scheme_Object *p[])
   int x0;
 
   
-  x0 = unbundle_symset_psMode(p[0], "::wx:set-printer-mode");;
+  x0 = unbundle_symset_psMode(p[0], "::wx:set-printer-mode");
 
   
   wxSetPrinterMode(x0);
@@ -1214,7 +1179,7 @@ static Scheme_Object *wxsGlobalwxGetPrinterOrientation(int n,  Scheme_Object *p[
 #else
  scheme_signal_error("%s: provided arglist unsupported on this platform", "::wx:get-printer-orientation");
 #endif
-  return bundle_symset_psOrientation(r);;
+  return bundle_symset_psOrientation(r);
 }
 #endif
 
@@ -1236,7 +1201,7 @@ static Scheme_Object *wxsGlobalwxGetPrinterMode(int n,  Scheme_Object *p[])
 #else
  scheme_signal_error("%s: provided arglist unsupported on this platform", "::wx:get-printer-mode");
 #endif
-  return bundle_symset_psMode(r);;
+  return bundle_symset_psMode(r);
 }
 #endif
 
@@ -1668,7 +1633,7 @@ static Scheme_Object *wxsGlobalwxMessageBox(int n,  Scheme_Object *p[])
   } else
     x1 = "Message";
   if (n > 2) {
-    x2 = unbundle_symset_messageFlags(p[2], "::wx:message-box");;
+    x2 = unbundle_symset_messageStyle(p[2], "::wx:message-box");
   } else
     x2 = wxOK|wxCENTER;
   if (n > 3) {
@@ -1689,7 +1654,7 @@ static Scheme_Object *wxsGlobalwxMessageBox(int n,  Scheme_Object *p[])
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_messageReply(r);
 }
 
 #pragma argsused
@@ -1726,7 +1691,7 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
   } else
     x4 = FILE_SEL_DEF_PATTERN;
   if (n > 5) {
-    x5 = unbundle_symset_fileSelMode(p[5], "::wx:file-selector");;
+    x5 = unbundle_symset_fileSelMode(p[5], "::wx:file-selector");
   } else
     x5 = wxOPEN;
   if (n > 6) {
@@ -1850,6 +1815,48 @@ static Scheme_Object *wxsGlobalwxGetHostName_Scheme(int n,  Scheme_Object *p[])
 
 void objscheme_setup_wxsGlobal(void *env)
 {
+  if (!scheme_lookup_xc_global("wx:const-""ok", env))
+    scheme_install_xc_global("wx:const-""ok", scheme_make_integer(wxOK), env);
+  if (!scheme_lookup_xc_global("wx:const-""yes-no", env))
+    scheme_install_xc_global("wx:const-""yes-no", scheme_make_integer(wxYES_NO), env);
+  if (!scheme_lookup_xc_global("wx:const-""cancel", env))
+    scheme_install_xc_global("wx:const-""cancel", scheme_make_integer(wxCANCEL), env);
+  if (!scheme_lookup_xc_global("wx:const-""centre", env))
+    scheme_install_xc_global("wx:const-""centre", scheme_make_integer(wxCENTRE), env);
+  if (!scheme_lookup_xc_global("wx:const-""icon-exclamation", env))
+    scheme_install_xc_global("wx:const-""icon-exclamation", scheme_make_integer(wxICON_EXCLAMATION), env);
+  if (!scheme_lookup_xc_global("wx:const-""icon-hand", env))
+    scheme_install_xc_global("wx:const-""icon-hand", scheme_make_integer(wxICON_HAND), env);
+  if (!scheme_lookup_xc_global("wx:const-""icon-question", env))
+    scheme_install_xc_global("wx:const-""icon-question", scheme_make_integer(wxICON_QUESTION), env);
+  if (!scheme_lookup_xc_global("wx:const-""icon-information", env))
+    scheme_install_xc_global("wx:const-""icon-information", scheme_make_integer(wxICON_INFORMATION), env);
+  if (!scheme_lookup_xc_global("wx:const-""ok", env))
+    scheme_install_xc_global("wx:const-""ok", scheme_make_integer(wxOK), env);
+  if (!scheme_lookup_xc_global("wx:const-""no", env))
+    scheme_install_xc_global("wx:const-""no", scheme_make_integer(wxNO), env);
+  if (!scheme_lookup_xc_global("wx:const-""yes", env))
+    scheme_install_xc_global("wx:const-""yes", scheme_make_integer(wxYES), env);
+  if (!scheme_lookup_xc_global("wx:const-""cancel", env))
+    scheme_install_xc_global("wx:const-""cancel", scheme_make_integer(wxCANCEL), env);
+  if (!scheme_lookup_xc_global("wx:const-""ps-preview", env))
+    scheme_install_xc_global("wx:const-""ps-preview", scheme_make_integer(PS_PREVIEW), env);
+  if (!scheme_lookup_xc_global("wx:const-""ps-file", env))
+    scheme_install_xc_global("wx:const-""ps-file", scheme_make_integer(PS_FILE), env);
+  if (!scheme_lookup_xc_global("wx:const-""ps-printer", env))
+    scheme_install_xc_global("wx:const-""ps-printer", scheme_make_integer(PS_PRINTER), env);
+  if (!scheme_lookup_xc_global("wx:const-""ps-portrait", env))
+    scheme_install_xc_global("wx:const-""ps-portrait", scheme_make_integer(PS_PORTRAIT), env);
+  if (!scheme_lookup_xc_global("wx:const-""ps-landscape", env))
+    scheme_install_xc_global("wx:const-""ps-landscape", scheme_make_integer(PS_LANDSCAPE), env);
+  if (!scheme_lookup_xc_global("wx:const-""open", env))
+    scheme_install_xc_global("wx:const-""open", scheme_make_integer(wxOPEN), env);
+  if (!scheme_lookup_xc_global("wx:const-""save", env))
+    scheme_install_xc_global("wx:const-""save", scheme_make_integer(wxSAVE), env);
+  if (!scheme_lookup_xc_global("wx:const-""overwrite-prompt", env))
+    scheme_install_xc_global("wx:const-""overwrite-prompt", scheme_make_integer(wxOVERWRITE_PROMPT), env);
+  if (!scheme_lookup_xc_global("wx:const-""hide-readonly", env))
+    scheme_install_xc_global("wx:const-""hide-readonly", scheme_make_integer(wxHIDE_READONLY), env);
   scheme_install_xc_global("wx:flush-display", scheme_make_prim_w_arity(wxsGlobalwxFlushDisplay, "wx:flush-display", 0, 0), env);
   scheme_install_xc_global("wx:yield", scheme_make_prim_w_arity(wxsGlobalwxSchemeYield, "wx:yield", 0, 1), env);
   scheme_install_xc_global("wx:write-resource", scheme_make_prim(wxsGlobalwxWriteResource), env);

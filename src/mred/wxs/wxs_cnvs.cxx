@@ -30,209 +30,125 @@ static void FillZero(int *a, int *b) {
   *a = *b = 0;
 }
 
-static Scheme_Object *canvasFlags_wxBORDER_sym = NULL;
-static Scheme_Object *canvasFlags_wxVSCROLL_sym = NULL;
-static Scheme_Object *canvasFlags_wxHSCROLL_sym = NULL;
-
-static void init_symset_canvasFlags(void) {
-  canvasFlags_wxBORDER_sym = scheme_intern_symbol("border");
-  canvasFlags_wxVSCROLL_sym = scheme_intern_symbol("vscroll");
-  canvasFlags_wxHSCROLL_sym = scheme_intern_symbol("hscroll");
-}
-
-static int unbundle_symset_canvasFlags(Scheme_Object *v, const char *where) {
-  if (!canvasFlags_wxHSCROLL_sym) init_symset_canvasFlags();
-  Scheme_Object *i, *l = v;
-  long result = 0;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == canvasFlags_wxBORDER_sym) { result = result | wxBORDER; }
-  else if (i == canvasFlags_wxVSCROLL_sym) { result = result | wxVSCROLL; }
-  else if (i == canvasFlags_wxHSCROLL_sym) { result = result | wxHSCROLL; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+static int unbundle_symset_canvasStyle(Scheme_Object *v, const char *where) {
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxBORDER) == wxBORDER) { vi -= wxBORDER; }
+    if ((vi & wxVSCROLL) == wxVSCROLL) { vi -= wxVSCROLL; }
+    if ((vi & wxHSCROLL) == wxHSCROLL) { vi -= wxHSCROLL; }
+    if (!vi) { return orig_vi; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "canvasFlags symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "canvasStyle integer", -1, 0, &v);
   return 0;
 }
 
-static int istype_symset_canvasFlags(Scheme_Object *v, const char *where) {
-  if (!canvasFlags_wxHSCROLL_sym) init_symset_canvasFlags();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == canvasFlags_wxBORDER_sym) { ; }
-  else if (i == canvasFlags_wxVSCROLL_sym) { ; }
-  else if (i == canvasFlags_wxHSCROLL_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+static int istype_symset_canvasStyle(Scheme_Object *v, const char *where) {
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxBORDER) == wxBORDER) { vi -= wxBORDER; }
+    if ((vi & wxVSCROLL) == wxVSCROLL) { vi -= wxVSCROLL; }
+    if ((vi & wxHSCROLL) == wxHSCROLL) { vi -= wxHSCROLL; }
+    if (!vi) { return 1; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "canvasFlags symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "canvasStyle integer", -1, 0, &v);
   return 0;
 }
 
-static Scheme_Object *bundle_symset_canvasFlags(int v) {
-  if (!canvasFlags_wxHSCROLL_sym) init_symset_canvasFlags();
-  Scheme_Object *l = scheme_null;
-  if (v & wxBORDER) l = scheme_make_pair(canvasFlags_wxBORDER_sym, l);
-  if (v & wxVSCROLL) l = scheme_make_pair(canvasFlags_wxVSCROLL_sym, l);
-  if (v & wxHSCROLL) l = scheme_make_pair(canvasFlags_wxHSCROLL_sym, l);
-  return l;
+static Scheme_Object *bundle_symset_canvasStyle(int v) {
+  return scheme_make_integer(v);
 }
 
 
 /* Handle cases in Xt that are a problem because a wxPanel isn't really a wxCanvas */
 
 
-static Scheme_Object *logicalFunc_wxAND_sym = NULL;
-static Scheme_Object *logicalFunc_wxAND_INVERT_sym = NULL;
-static Scheme_Object *logicalFunc_wxAND_REVERSE_sym = NULL;
-static Scheme_Object *logicalFunc_wxCLEAR_sym = NULL;
-static Scheme_Object *logicalFunc_wxCOPY_sym = NULL;
-static Scheme_Object *logicalFunc_wxEQUIV_sym = NULL;
-static Scheme_Object *logicalFunc_wxINVERT_sym = NULL;
-static Scheme_Object *logicalFunc_wxNAND_sym = NULL;
-static Scheme_Object *logicalFunc_wxNOR_sym = NULL;
-static Scheme_Object *logicalFunc_wxNO_OP_sym = NULL;
-static Scheme_Object *logicalFunc_wxOR_sym = NULL;
-static Scheme_Object *logicalFunc_wxOR_INVERT_sym = NULL;
-static Scheme_Object *logicalFunc_wxOR_REVERSE_sym = NULL;
-static Scheme_Object *logicalFunc_wxSET_sym = NULL;
-static Scheme_Object *logicalFunc_wxSRC_INVERT_sym = NULL;
-static Scheme_Object *logicalFunc_wxXOR_sym = NULL;
-static Scheme_Object *logicalFunc_wxCOLOR_sym = NULL;
-
-static void init_symset_logicalFunc(void) {
-  logicalFunc_wxAND_sym = scheme_intern_symbol("and");
-  logicalFunc_wxAND_INVERT_sym = scheme_intern_symbol("and-invert");
-  logicalFunc_wxAND_REVERSE_sym = scheme_intern_symbol("and-reverse");
-  logicalFunc_wxCLEAR_sym = scheme_intern_symbol("clear");
-  logicalFunc_wxCOPY_sym = scheme_intern_symbol("copy");
-  logicalFunc_wxEQUIV_sym = scheme_intern_symbol("equiv");
-  logicalFunc_wxINVERT_sym = scheme_intern_symbol("invert");
-  logicalFunc_wxNAND_sym = scheme_intern_symbol("nand");
-  logicalFunc_wxNOR_sym = scheme_intern_symbol("nor");
-  logicalFunc_wxNO_OP_sym = scheme_intern_symbol("no-op");
-  logicalFunc_wxOR_sym = scheme_intern_symbol("or");
-  logicalFunc_wxOR_INVERT_sym = scheme_intern_symbol("or-invert");
-  logicalFunc_wxOR_REVERSE_sym = scheme_intern_symbol("or-reverse");
-  logicalFunc_wxSET_sym = scheme_intern_symbol("set");
-  logicalFunc_wxSRC_INVERT_sym = scheme_intern_symbol("src-invert");
-  logicalFunc_wxXOR_sym = scheme_intern_symbol("xor");
-  logicalFunc_wxCOLOR_sym = scheme_intern_symbol("colour");
-}
-
 static int unbundle_symset_logicalFunc(Scheme_Object *v, const char *where) {
-  if (!logicalFunc_wxCOLOR_sym) init_symset_logicalFunc();
-  if (0) { }
-  else if (v == logicalFunc_wxAND_sym) { return wxAND; }
-  else if (v == logicalFunc_wxAND_INVERT_sym) { return wxAND_INVERT; }
-  else if (v == logicalFunc_wxAND_REVERSE_sym) { return wxAND_REVERSE; }
-  else if (v == logicalFunc_wxCLEAR_sym) { return wxCLEAR; }
-  else if (v == logicalFunc_wxCOPY_sym) { return wxCOPY; }
-  else if (v == logicalFunc_wxEQUIV_sym) { return wxEQUIV; }
-  else if (v == logicalFunc_wxINVERT_sym) { return wxINVERT; }
-  else if (v == logicalFunc_wxNAND_sym) { return wxNAND; }
-  else if (v == logicalFunc_wxNOR_sym) { return wxNOR; }
-  else if (v == logicalFunc_wxNO_OP_sym) { return wxNO_OP; }
-  else if (v == logicalFunc_wxOR_sym) { return wxOR; }
-  else if (v == logicalFunc_wxOR_INVERT_sym) { return wxOR_INVERT; }
-  else if (v == logicalFunc_wxOR_REVERSE_sym) { return wxOR_REVERSE; }
-  else if (v == logicalFunc_wxSET_sym) { return wxSET; }
-  else if (v == logicalFunc_wxSRC_INVERT_sym) { return wxSRC_INVERT; }
-  else if (v == logicalFunc_wxXOR_sym) { return wxXOR; }
-  else if (v == logicalFunc_wxCOLOR_sym) { return wxCOLOR; }
-  if (where) scheme_wrong_type(where, "logicalFunc symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxAND) { return wxAND; }
+    if ((vi) == wxAND_INVERT) { return wxAND_INVERT; }
+    if ((vi) == wxAND_REVERSE) { return wxAND_REVERSE; }
+    if ((vi) == wxCLEAR) { return wxCLEAR; }
+    if ((vi) == wxCOPY) { return wxCOPY; }
+    if ((vi) == wxEQUIV) { return wxEQUIV; }
+    if ((vi) == wxINVERT) { return wxINVERT; }
+    if ((vi) == wxNAND) { return wxNAND; }
+    if ((vi) == wxNOR) { return wxNOR; }
+    if ((vi) == wxNO_OP) { return wxNO_OP; }
+    if ((vi) == wxOR) { return wxOR; }
+    if ((vi) == wxOR_INVERT) { return wxOR_INVERT; }
+    if ((vi) == wxOR_REVERSE) { return wxOR_REVERSE; }
+    if ((vi) == wxSET) { return wxSET; }
+    if ((vi) == wxSRC_INVERT) { return wxSRC_INVERT; }
+    if ((vi) == wxXOR) { return wxXOR; }
+    if ((vi) == wxCOLOR) { return wxCOLOR; }
+  }
+  if (where) scheme_wrong_type(where, "logicalFunc integer", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_logicalFunc(Scheme_Object *v, const char *where) {
-  if (!logicalFunc_wxCOLOR_sym) init_symset_logicalFunc();
-  if (0) { }
-  else if (v == logicalFunc_wxAND_sym) { return 1; }
-  else if (v == logicalFunc_wxAND_INVERT_sym) { return 1; }
-  else if (v == logicalFunc_wxAND_REVERSE_sym) { return 1; }
-  else if (v == logicalFunc_wxCLEAR_sym) { return 1; }
-  else if (v == logicalFunc_wxCOPY_sym) { return 1; }
-  else if (v == logicalFunc_wxEQUIV_sym) { return 1; }
-  else if (v == logicalFunc_wxINVERT_sym) { return 1; }
-  else if (v == logicalFunc_wxNAND_sym) { return 1; }
-  else if (v == logicalFunc_wxNOR_sym) { return 1; }
-  else if (v == logicalFunc_wxNO_OP_sym) { return 1; }
-  else if (v == logicalFunc_wxOR_sym) { return 1; }
-  else if (v == logicalFunc_wxOR_INVERT_sym) { return 1; }
-  else if (v == logicalFunc_wxOR_REVERSE_sym) { return 1; }
-  else if (v == logicalFunc_wxSET_sym) { return 1; }
-  else if (v == logicalFunc_wxSRC_INVERT_sym) { return 1; }
-  else if (v == logicalFunc_wxXOR_sym) { return 1; }
-  else if (v == logicalFunc_wxCOLOR_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "logicalFunc symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxAND) { return 1; }
+    if ((vi) == wxAND_INVERT) { return 1; }
+    if ((vi) == wxAND_REVERSE) { return 1; }
+    if ((vi) == wxCLEAR) { return 1; }
+    if ((vi) == wxCOPY) { return 1; }
+    if ((vi) == wxEQUIV) { return 1; }
+    if ((vi) == wxINVERT) { return 1; }
+    if ((vi) == wxNAND) { return 1; }
+    if ((vi) == wxNOR) { return 1; }
+    if ((vi) == wxNO_OP) { return 1; }
+    if ((vi) == wxOR) { return 1; }
+    if ((vi) == wxOR_INVERT) { return 1; }
+    if ((vi) == wxOR_REVERSE) { return 1; }
+    if ((vi) == wxSET) { return 1; }
+    if ((vi) == wxSRC_INVERT) { return 1; }
+    if ((vi) == wxXOR) { return 1; }
+    if ((vi) == wxCOLOR) { return 1; }
+  }
+  if (where) scheme_wrong_type(where, "logicalFunc integer", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_logicalFunc(int v) {
-  if (!logicalFunc_wxCOLOR_sym) init_symset_logicalFunc();
-  switch (v) {
-  case wxAND: return logicalFunc_wxAND_sym;
-  case wxAND_INVERT: return logicalFunc_wxAND_INVERT_sym;
-  case wxAND_REVERSE: return logicalFunc_wxAND_REVERSE_sym;
-  case wxCLEAR: return logicalFunc_wxCLEAR_sym;
-  case wxCOPY: return logicalFunc_wxCOPY_sym;
-  case wxEQUIV: return logicalFunc_wxEQUIV_sym;
-  case wxINVERT: return logicalFunc_wxINVERT_sym;
-  case wxNAND: return logicalFunc_wxNAND_sym;
-  case wxNOR: return logicalFunc_wxNOR_sym;
-  case wxNO_OP: return logicalFunc_wxNO_OP_sym;
-  case wxOR: return logicalFunc_wxOR_sym;
-  case wxOR_INVERT: return logicalFunc_wxOR_INVERT_sym;
-  case wxOR_REVERSE: return logicalFunc_wxOR_REVERSE_sym;
-  case wxSET: return logicalFunc_wxSET_sym;
-  case wxSRC_INVERT: return logicalFunc_wxSRC_INVERT_sym;
-  case wxXOR: return logicalFunc_wxXOR_sym;
-  case wxCOLOR: return logicalFunc_wxCOLOR_sym;
-  default: return NULL;
-  }
+  return scheme_make_integer(v);
 }
 
-
-static Scheme_Object *fillKind_wxODDEVEN_RULE_sym = NULL;
-static Scheme_Object *fillKind_wxWINDING_RULE_sym = NULL;
-
-static void init_symset_fillKind(void) {
-  fillKind_wxODDEVEN_RULE_sym = scheme_intern_symbol("oddeven-rule");
-  fillKind_wxWINDING_RULE_sym = scheme_intern_symbol("winding-rule");
-}
 
 static int unbundle_symset_fillKind(Scheme_Object *v, const char *where) {
-  if (!fillKind_wxWINDING_RULE_sym) init_symset_fillKind();
-  if (0) { }
-  else if (v == fillKind_wxODDEVEN_RULE_sym) { return wxODDEVEN_RULE; }
-  else if (v == fillKind_wxWINDING_RULE_sym) { return wxWINDING_RULE; }
-  if (where) scheme_wrong_type(where, "fillKind symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxODDEVEN_RULE) { return wxODDEVEN_RULE; }
+    if ((vi) == wxWINDING_RULE) { return wxWINDING_RULE; }
+  }
+  if (where) scheme_wrong_type(where, "fillKind integer", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_fillKind(Scheme_Object *v, const char *where) {
-  if (!fillKind_wxWINDING_RULE_sym) init_symset_fillKind();
-  if (0) { }
-  else if (v == fillKind_wxODDEVEN_RULE_sym) { return 1; }
-  else if (v == fillKind_wxWINDING_RULE_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "fillKind symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxODDEVEN_RULE) { return 1; }
+    if ((vi) == wxWINDING_RULE) { return 1; }
+  }
+  if (where) scheme_wrong_type(where, "fillKind integer", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_fillKind(int v) {
-  if (!fillKind_wxWINDING_RULE_sym) init_symset_fillKind();
-  switch (v) {
-  case wxODDEVEN_RULE: return fillKind_wxODDEVEN_RULE_sym;
-  case wxWINDING_RULE: return fillKind_wxWINDING_RULE_sym;
-  default: return NULL;
-  }
+  return scheme_make_integer(v);
 }
 
 
@@ -847,7 +763,7 @@ static Scheme_Object *os_wxCanvasSetLogicalFunction(Scheme_Object *obj, int n,  
   int x0;
 
   DO_OK_CHECK(scheme_void)
-  x0 = unbundle_symset_logicalFunc(p[0], "wx:canvas%::set-logical-function");;
+  x0 = unbundle_symset_logicalFunc(p[0], "wx:canvas%::set-logical-function");
 
   
   ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->SetLogicalFunction(x0);
@@ -1021,7 +937,7 @@ static Scheme_Object *os_wxCanvasDrawPolygon(Scheme_Object *obj, int n,  Scheme_
   } else
     x3 = 0;
   if (n > 3) {
-    x4 = unbundle_symset_fillKind(p[3], "wx:canvas%::draw-polygon");;
+    x4 = unbundle_symset_fillKind(p[3], "wx:canvas%::draw-polygon");
   } else
     x4 = wxODDEVEN_RULE;
 
@@ -1830,7 +1746,7 @@ static Scheme_Object *os_wxCanvas_ConstructScheme(Scheme_Object *obj, int n,  Sc
     } else
       x4 = -1;
     if (n > 5) {
-      x5 = unbundle_symset_canvasFlags(p[5], "wx:canvas%::initialization (panel case)");;
+      x5 = unbundle_symset_canvasStyle(p[5], "wx:canvas%::initialization (panel case)");
     } else
       x5 = 0;
     if (n > 6) {
@@ -1872,7 +1788,7 @@ static Scheme_Object *os_wxCanvas_ConstructScheme(Scheme_Object *obj, int n,  Sc
     } else
       x4 = -1;
     if (n > 5) {
-      x5 = unbundle_symset_canvasFlags(p[5], "wx:canvas%::initialization (frame case)");;
+      x5 = unbundle_symset_canvasStyle(p[5], "wx:canvas%::initialization (frame case)");
     } else
       x5 = 0;
     if (n > 6) {
@@ -1901,6 +1817,50 @@ static Scheme_Object *objscheme_classname_os_wxCanvas(Scheme_Object *obj, int n,
 
 void objscheme_setup_wxCanvas(void *env)
 {
+  if (!scheme_lookup_xc_global("wx:const-""border", env))
+    scheme_install_xc_global("wx:const-""border", scheme_make_integer(wxBORDER), env);
+  if (!scheme_lookup_xc_global("wx:const-""vscroll", env))
+    scheme_install_xc_global("wx:const-""vscroll", scheme_make_integer(wxVSCROLL), env);
+  if (!scheme_lookup_xc_global("wx:const-""hscroll", env))
+    scheme_install_xc_global("wx:const-""hscroll", scheme_make_integer(wxHSCROLL), env);
+  if (!scheme_lookup_xc_global("wx:const-""and", env))
+    scheme_install_xc_global("wx:const-""and", scheme_make_integer(wxAND), env);
+  if (!scheme_lookup_xc_global("wx:const-""and-invert", env))
+    scheme_install_xc_global("wx:const-""and-invert", scheme_make_integer(wxAND_INVERT), env);
+  if (!scheme_lookup_xc_global("wx:const-""and-reverse", env))
+    scheme_install_xc_global("wx:const-""and-reverse", scheme_make_integer(wxAND_REVERSE), env);
+  if (!scheme_lookup_xc_global("wx:const-""clear", env))
+    scheme_install_xc_global("wx:const-""clear", scheme_make_integer(wxCLEAR), env);
+  if (!scheme_lookup_xc_global("wx:const-""copy", env))
+    scheme_install_xc_global("wx:const-""copy", scheme_make_integer(wxCOPY), env);
+  if (!scheme_lookup_xc_global("wx:const-""equiv", env))
+    scheme_install_xc_global("wx:const-""equiv", scheme_make_integer(wxEQUIV), env);
+  if (!scheme_lookup_xc_global("wx:const-""invert", env))
+    scheme_install_xc_global("wx:const-""invert", scheme_make_integer(wxINVERT), env);
+  if (!scheme_lookup_xc_global("wx:const-""nand", env))
+    scheme_install_xc_global("wx:const-""nand", scheme_make_integer(wxNAND), env);
+  if (!scheme_lookup_xc_global("wx:const-""nor", env))
+    scheme_install_xc_global("wx:const-""nor", scheme_make_integer(wxNOR), env);
+  if (!scheme_lookup_xc_global("wx:const-""no-op", env))
+    scheme_install_xc_global("wx:const-""no-op", scheme_make_integer(wxNO_OP), env);
+  if (!scheme_lookup_xc_global("wx:const-""or", env))
+    scheme_install_xc_global("wx:const-""or", scheme_make_integer(wxOR), env);
+  if (!scheme_lookup_xc_global("wx:const-""or-invert", env))
+    scheme_install_xc_global("wx:const-""or-invert", scheme_make_integer(wxOR_INVERT), env);
+  if (!scheme_lookup_xc_global("wx:const-""or-reverse", env))
+    scheme_install_xc_global("wx:const-""or-reverse", scheme_make_integer(wxOR_REVERSE), env);
+  if (!scheme_lookup_xc_global("wx:const-""set", env))
+    scheme_install_xc_global("wx:const-""set", scheme_make_integer(wxSET), env);
+  if (!scheme_lookup_xc_global("wx:const-""src-invert", env))
+    scheme_install_xc_global("wx:const-""src-invert", scheme_make_integer(wxSRC_INVERT), env);
+  if (!scheme_lookup_xc_global("wx:const-""xor", env))
+    scheme_install_xc_global("wx:const-""xor", scheme_make_integer(wxXOR), env);
+  if (!scheme_lookup_xc_global("wx:const-""colour", env))
+    scheme_install_xc_global("wx:const-""colour", scheme_make_integer(wxCOLOR), env);
+  if (!scheme_lookup_xc_global("wx:const-""oddeven-rule", env))
+    scheme_install_xc_global("wx:const-""oddeven-rule", scheme_make_integer(wxODDEVEN_RULE), env);
+  if (!scheme_lookup_xc_global("wx:const-""winding-rule", env))
+    scheme_install_xc_global("wx:const-""winding-rule", scheme_make_integer(wxWINDING_RULE), env);
 if (os_wxCanvas_class) {
     objscheme_add_global_class(os_wxCanvas_class,  "wx:canvas%", env);
 } else {

@@ -1,5 +1,5 @@
 
-@BEGINSYMBOLS breakType > ONE
+@BEGINSYMBOLS breakType
 @SYM "break-for-caret" : wxBREAK_FOR_CARET
 @SYM "break-for-line" : wxBREAK_FOR_LINE
 @SYM "break-for-selection" : wxBREAK_FOR_SELECTION

@@ -18,14 +18,6 @@
 @IVAR "event-class" : SYM[eventClass] eventClass
 @IVAR "event-object" : wxObject! eventObject
 
-@SYM "event-type-scroll-top" : wxEVENT_TYPE_SCROLL_TOP
-@SYM "event-type-scroll-bottom" : wxEVENT_TYPE_SCROLL_BOTTOM
-@SYM "event-type-scroll-lineup" : wxEVENT_TYPE_SCROLL_LINEUP
-@SYM "event-type-scroll-linedown" : wxEVENT_TYPE_SCROLL_LINEDOWN
-@SYM "event-type-scroll-pageup" : wxEVENT_TYPE_SCROLL_PAGEUP
-@SYM "event-type-scroll-pagedown" : wxEVENT_TYPE_SCROLL_PAGEDOWN
-@SYM "event-type-scroll-thumbtrack" : wxEVENT_TYPE_SCROLL_THUMBTRACK
-
 @END
 
 @BEGINSYMBOLS commandType > ONE
@@ -43,6 +35,13 @@
 @SYM "event-type-kill-focus" : wxEVENT_TYPE_KILL_FOCUS
 @SYM "event-type-scrollbar-command" : wxEVENT_TYPE_SCROLLBAR_COMMAND  
 @SYM "event-type-virt-listbox-command" : wxEVENT_TYPE_VIRT_LISTBOX_COMMAND
+@SYM "event-type-scroll-top" : wxEVENT_TYPE_SCROLL_TOP
+@SYM "event-type-scroll-bottom" : wxEVENT_TYPE_SCROLL_BOTTOM
+@SYM "event-type-scroll-lineup" : wxEVENT_TYPE_SCROLL_LINEUP
+@SYM "event-type-scroll-linedown" : wxEVENT_TYPE_SCROLL_LINEDOWN
+@SYM "event-type-scroll-pageup" : wxEVENT_TYPE_SCROLL_PAGEUP
+@SYM "event-type-scroll-pagedown" : wxEVENT_TYPE_SCROLL_PAGEDOWN
+@SYM "event-type-scroll-thumbtrack" : wxEVENT_TYPE_SCROLL_THUMBTRACK
 @ENDSYMBOLS
 
 @CLASSBASE wxCommandEvent "wx:command-event":"wx:event"
@@ -139,7 +138,7 @@
 
 @CLASSBASE wxKeyEvent "wx:key-event":"wx:event"
 
-@CREATOR (int);
+@CREATOR (-int=wxEVENT_TYPE_CHAR);
 
 @ "key-code" : long KeyCode();
 

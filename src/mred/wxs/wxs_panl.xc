@@ -16,7 +16,7 @@
 #define INTERACT_METHODS 0
 #endif
 
-@BEGINSYMBOLS panelFlags
+@BEGINSYMBOLS panelStyle
 @SYM "border" : wxBORDER
 @ENDSYMBOLS
 
@@ -27,8 +27,8 @@
 
 @CLASSID wxTYPE_PANEL
 
-@CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[panelFlags]=0,string="panel") : : /NOZERO[3]|NOZERO[4] <> frame
-@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,SYM[panelFlags]=0,string="panel") : : /NOZERO[3]|NOZERO[4] <> panel parent
+@CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[panelStyle]=0,string="panel") : : /NOZERO[3]|NOZERO[4] <> frame
+@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,SYM[panelStyle]=0,string="panel") : : /NOZERO[3]|NOZERO[4] <> panel parent
 
 @ "fit" : void Fit();
 @ "get-default-item" : wxButton! GetDefaultItem()
@@ -62,7 +62,7 @@
 @END
 
 
-@BEGINSYMBOLS dialogFlags
+@BEGINSYMBOLS dialogStyle
 @SYM "caption" : wxCAPTION
 @SYM "thick-frame" : wxTHICK_FRAME
 @SYM "system-menu" : wxSYSTEM_MENU
@@ -75,7 +75,7 @@
 
 @INCLUDE wxs_dorf.xci
 
-@CREATOR (wxWindow^,nstring,bool=FALSE,int=300,int=300,int=500,int=500,SYM[dialogFlags]=wxDEFAULT_DIALOG_STYLE,string="dialogBox"); : : /DLGORFRAME[0."wx:dialog-box%::initialization"]|NOZERO[5]|NOZERO[6]
+@CREATOR (wxWindow^,nstring,bool=FALSE,int=300,int=300,int=500,int=500,SYM[dialogStyle]=wxDEFAULT_DIALOG_STYLE,string="dialogBox"); : : /DLGORFRAME[0."wx:dialog-box%::initialization"]|NOZERO[5]|NOZERO[6]
 
 @CONSTANT "default-dialog-style" : long wxDEFAULT_DIALOG_STYLE
 
@@ -84,5 +84,7 @@
 
 @SETMARK p = d
 @INCLUDE wxs_panl.xci
+
+@CONSTANT "wx:const-default-dialog-style" : SYM[dialogStyle] wxDEFAULT_DIALOG_STYLE
 
 @END

@@ -20,7 +20,7 @@ static void FillZero(int *a, int *b) {
   *a = *b = 0;
 }
 
-@BEGINSYMBOLS canvasFlags
+@BEGINSYMBOLS canvasStyle
 @SYM "border" : wxBORDER
 @SYM "vscroll" : wxVSCROLL
 @SYM "hscroll" : wxHSCROLL
@@ -33,8 +33,8 @@ static void FillZero(int *a, int *b) {
 
 @CLASSBASE wxCanvas "wx:canvas":"wx:window"
 
-@CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[canvasFlags]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> frame
-@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,SYM[canvasFlags]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> panel
+@CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[canvasStyle]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> frame
+@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,SYM[canvasStyle]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> panel
 
 @ "allow-double-click" : void AllowDoubleClick(bool);
 

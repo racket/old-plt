@@ -29,7 +29,7 @@
 
 @HEADER
 
-@BEGINSYMBOLS messageFlags
+@BEGINSYMBOLS messageStyle
 @SYM "ok" : wxOK
 @SYM "yes-no" : wxYES_NO
 @SYM "cancel" : wxCANCEL
@@ -38,6 +38,13 @@
 @SYM "icon-hand" : wxICON_HAND
 @SYM "icon-question" : wxICON_QUESTION
 @SYM "icon-information" : wxICON_INFORMATION
+@ENDSYMBOLS
+
+@BEGINSYMBOLS messageReply
+@SYM "ok" : wxOK
+@SYM "no" : wxNO
+@SYM "yes" : wxYES
+@SYM "cancel" : wxCANCEL
 @ENDSYMBOLS
 
 @BEGINSYMBOLS psMode > ONE
@@ -157,7 +164,7 @@ extern void wxBell(void);
 @ "wx:get-display-name" : nstring wxGetDisplayName();
 
 @ "wx:file-selector" : string wxFileSelector(string,nstring=NULL,nstring=NULL,nstring=NULL,string=FILE_SEL_DEF_PATTERN,SYM[fileSelMode]=wxOPEN,wxWindow^=NULL,int=-1,int=-1);
-@ "wx:message-box" : int wxMessageBox(string, string="Message",SYM[messageFlags]=wxOK|wxCENTER,wxWindow^=NULL,int=-1,int=-1);
+@ "wx:message-box" : SYM[messageReply] wxMessageBox(string, string="Message",SYM[messageStyle]=wxOK|wxCENTER,wxWindow^=NULL,int=-1,int=-1);
 @ "wx:get-text-from-user" : string wxGetTextFromUser(string,string="Input text",string="",wxWindow^=NULL,int=-1,int=-1,bool=TRUE);
 
 @SET TYPE = string

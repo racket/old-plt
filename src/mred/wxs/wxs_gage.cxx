@@ -51,39 +51,30 @@ class wxsGauge : public wxGauge
 
 
 
-static Scheme_Object *orientation_wxVERTICAL_sym = NULL;
-static Scheme_Object *orientation_wxHORIZONTAL_sym = NULL;
-
-static void init_symset_orientation(void) {
-  orientation_wxVERTICAL_sym = scheme_intern_symbol("vertical");
-  orientation_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
-}
-
 static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
-  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
-  if (0) { }
-  else if (v == orientation_wxVERTICAL_sym) { return wxVERTICAL; }
-  else if (v == orientation_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
-  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxVERTICAL) { return wxVERTICAL; }
+    if ((vi) == wxHORIZONTAL) { return wxHORIZONTAL; }
+  }
+  if (where) scheme_wrong_type(where, "orientation integer", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_orientation(Scheme_Object *v, const char *where) {
-  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
-  if (0) { }
-  else if (v == orientation_wxVERTICAL_sym) { return 1; }
-  else if (v == orientation_wxHORIZONTAL_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
+  long vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    if ((vi) == wxVERTICAL) { return 1; }
+    if ((vi) == wxHORIZONTAL) { return 1; }
+  }
+  if (where) scheme_wrong_type(where, "orientation integer", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_orientation(int v) {
-  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
-  switch (v) {
-  case wxVERTICAL: return orientation_wxVERTICAL_sym;
-  case wxHORIZONTAL: return orientation_wxHORIZONTAL_sym;
-  default: return NULL;
-  }
+  return scheme_make_integer(v);
 }
 
 
@@ -506,7 +497,7 @@ static Scheme_Object *os_wxsGauge_ConstructScheme(Scheme_Object *obj, int n,  Sc
   } else
     x6 = -1;
   if (n > 7) {
-    x7 = unbundle_symset_orientation(p[7], "wx:gauge%::initialization");;
+    x7 = unbundle_symset_orientation(p[7], "wx:gauge%::initialization");
   } else
     x7 = wxHORIZONTAL;
   if (n > 8) {
@@ -533,6 +524,10 @@ static Scheme_Object *objscheme_classname_os_wxsGauge(Scheme_Object *obj, int n,
 
 void objscheme_setup_wxsGauge(void *env)
 {
+  if (!scheme_lookup_xc_global("wx:const-""vertical", env))
+    scheme_install_xc_global("wx:const-""vertical", scheme_make_integer(wxVERTICAL), env);
+  if (!scheme_lookup_xc_global("wx:const-""horizontal", env))
+    scheme_install_xc_global("wx:const-""horizontal", scheme_make_integer(wxHORIZONTAL), env);
 if (os_wxsGauge_class) {
     objscheme_add_global_class(os_wxsGauge_class,  "wx:gauge%", env);
 } else {

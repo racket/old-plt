@@ -115,6 +115,11 @@
 @ "get-media" : wxMediaBuffer^ GetThisMedia();
 @ "set-media" : void SetMedia(wxMediaBuffer^);
 
+@CONSTANT "wx:const-msnipbox-xmargin" : int wxMSNIPBOX_XMARGIN
+@CONSTANT "wx:const-msnipbox-ymargin" : int wxMSNIPBOX_YMARGIN
+@CONSTANT "wx:const-msnipbox-xinset" : int wxMSNIPBOX_XINSET
+@CONSTANT "wx:const-msnipbox-yinset" : int wxMSNIPBOX_YINSET
+
 @SETMARK s = d
 @INCLUDE wxs_snip.xci
 

@@ -10,7 +10,7 @@
 
 @HEADER
 
-@BEGINSYMBOLS textFlags
+@BEGINSYMBOLS textStyle
 @SYM "process-enter" : wxPROCESS_ENTER
 @SYM "password" : wxPASSWORD
 @SYM "readonly" : wxREADONLY      
@@ -24,7 +24,7 @@
 @SET CALLBACK_CLASS_USER = "wx:text%::initialization"
 @INCLUDE cb_start.xci
 
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,string="",int=-1,int=-1,int=-1,int=-1,SYM[textFlags]=0,string="text"); : : ubCallbackSetup/NOZERO[6]|NOZERO[7]//ubCallbackCreatorFinish
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,string="",int=-1,int=-1,int=-1,int=-1,SYM[textStyle]=0,string="text"); : : ubCallbackSetup/NOZERO[6]|NOZERO[7]//ubCallbackCreatorFinish
 
 @INCLUDE wxs_item.xci
 
@@ -43,7 +43,7 @@
 
 @INCLUDE cb_end.xci
 
-@BEGINSYMBOLS multiTextFlags
+@BEGINSYMBOLS multiTextStyle
 @SYM "process-enter" : wxPROCESS_ENTER
 @SYM "password" : wxPASSWORD
 @SYM "readonly" : wxREADONLY
@@ -58,7 +58,7 @@
 @SET CALLBACK_CLASS_USER = "wx:multi-text%::initialization"
 @INCLUDE cb_start.xci
 
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,string="",int=-1,int=-1,int=-1,int=-1,SYM[multiTextFlags]=0,string="text"); : : ubCallbackSetup/NOZERO[6]|NOZERO[7]//ubCallbackCreatorFinish
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,string="",int=-1,int=-1,int=-1,int=-1,SYM[multiTextStyle]=0,string="text"); : : ubCallbackSetup/NOZERO[6]|NOZERO[7]//ubCallbackCreatorFinish
 
 @ "get-value" : string GetValue();
 
@@ -69,7 +69,7 @@
 
 @INCLUDE cb_end.xci
 
-@BEGINSYMBOLS textWinFlags
+@BEGINSYMBOLS textWinStyle
 @SYM "readonly" : wxREADONLY
 @ENDSYMBOLS
 
@@ -77,8 +77,8 @@
 
 @CLASSID wxTYPE_TEXT_WINDOW
 
-@CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[textWinFlags]=0,string="textWindow");: : /NOZERO[3]|NOZERO[4] <> frame
-@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,SYM[textWinFlags]=0,string="textWindow");: : /NOZERO[3]|NOZERO[4] <> panel
+@CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[textWinStyle]=0,string="textWindow");: : /NOZERO[3]|NOZERO[4] <> frame
+@CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,SYM[textWinStyle]=0,string="textWindow");: : /NOZERO[3]|NOZERO[4] <> panel
 
 @ "popup-menu" : bool PopupMenu(wxMenu!, float, float);
 

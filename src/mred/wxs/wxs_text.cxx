@@ -20,59 +20,38 @@
 #include "wxscomon.h"
 
 
-static Scheme_Object *textFlags_wxPROCESS_ENTER_sym = NULL;
-static Scheme_Object *textFlags_wxPASSWORD_sym = NULL;
-static Scheme_Object *textFlags_wxREADONLY_sym = NULL;
-
-static void init_symset_textFlags(void) {
-  textFlags_wxPROCESS_ENTER_sym = scheme_intern_symbol("process-enter");
-  textFlags_wxPASSWORD_sym = scheme_intern_symbol("password");
-  textFlags_wxREADONLY_sym = scheme_intern_symbol("readonly");
-}
-
-static int unbundle_symset_textFlags(Scheme_Object *v, const char *where) {
-  if (!textFlags_wxREADONLY_sym) init_symset_textFlags();
-  Scheme_Object *i, *l = v;
-  long result = 0;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == textFlags_wxPROCESS_ENTER_sym) { result = result | wxPROCESS_ENTER; }
-  else if (i == textFlags_wxPASSWORD_sym) { result = result | wxPASSWORD; }
-  else if (i == textFlags_wxREADONLY_sym) { result = result | wxREADONLY; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+static int unbundle_symset_textStyle(Scheme_Object *v, const char *where) {
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxPROCESS_ENTER) == wxPROCESS_ENTER) { vi -= wxPROCESS_ENTER; }
+    if ((vi & wxPASSWORD) == wxPASSWORD) { vi -= wxPASSWORD; }
+    if ((vi & wxREADONLY) == wxREADONLY) { vi -= wxREADONLY; }
+    if (!vi) { return orig_vi; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "textFlags symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "textStyle integer", -1, 0, &v);
   return 0;
 }
 
-static int istype_symset_textFlags(Scheme_Object *v, const char *where) {
-  if (!textFlags_wxREADONLY_sym) init_symset_textFlags();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == textFlags_wxPROCESS_ENTER_sym) { ; }
-  else if (i == textFlags_wxPASSWORD_sym) { ; }
-  else if (i == textFlags_wxREADONLY_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+static int istype_symset_textStyle(Scheme_Object *v, const char *where) {
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxPROCESS_ENTER) == wxPROCESS_ENTER) { vi -= wxPROCESS_ENTER; }
+    if ((vi & wxPASSWORD) == wxPASSWORD) { vi -= wxPASSWORD; }
+    if ((vi & wxREADONLY) == wxREADONLY) { vi -= wxREADONLY; }
+    if (!vi) { return 1; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "textFlags symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "textStyle integer", -1, 0, &v);
   return 0;
 }
 
-static Scheme_Object *bundle_symset_textFlags(int v) {
-  if (!textFlags_wxREADONLY_sym) init_symset_textFlags();
-  Scheme_Object *l = scheme_null;
-  if (v & wxPROCESS_ENTER) l = scheme_make_pair(textFlags_wxPROCESS_ENTER_sym, l);
-  if (v & wxPASSWORD) l = scheme_make_pair(textFlags_wxPASSWORD_sym, l);
-  if (v & wxREADONLY) l = scheme_make_pair(textFlags_wxREADONLY_sym, l);
-  return l;
+static Scheme_Object *bundle_symset_textStyle(int v) {
+  return scheme_make_integer(v);
 }
 
 
@@ -622,7 +601,7 @@ static Scheme_Object *os_wxText_ConstructScheme(Scheme_Object *obj, int n,  Sche
   } else
     x7 = -1;
   if (n > 8) {
-    x8 = unbundle_symset_textFlags(p[8], "wx:text%::initialization");;
+    x8 = unbundle_symset_textStyle(p[8], "wx:text%::initialization");
   } else
     x8 = 0;
   if (n > 9) {
@@ -649,6 +628,12 @@ static Scheme_Object *objscheme_classname_os_wxText(Scheme_Object *obj, int n,  
 
 void objscheme_setup_wxText(void *env)
 {
+  if (!scheme_lookup_xc_global("wx:const-""process-enter", env))
+    scheme_install_xc_global("wx:const-""process-enter", scheme_make_integer(wxPROCESS_ENTER), env);
+  if (!scheme_lookup_xc_global("wx:const-""password", env))
+    scheme_install_xc_global("wx:const-""password", scheme_make_integer(wxPASSWORD), env);
+  if (!scheme_lookup_xc_global("wx:const-""readonly", env))
+    scheme_install_xc_global("wx:const-""readonly", scheme_make_integer(wxREADONLY), env);
 if (os_wxText_class) {
     objscheme_add_global_class(os_wxText_class,  "wx:text%", env);
 } else {
@@ -754,64 +739,40 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent &event)
   COPY_JMPBUF(scheme_error_buf, savebuf);
 }
 
-static Scheme_Object *multiTextFlags_wxPROCESS_ENTER_sym = NULL;
-static Scheme_Object *multiTextFlags_wxPASSWORD_sym = NULL;
-static Scheme_Object *multiTextFlags_wxREADONLY_sym = NULL;
-static Scheme_Object *multiTextFlags_wxHSCROLL_sym = NULL;
-
-static void init_symset_multiTextFlags(void) {
-  multiTextFlags_wxPROCESS_ENTER_sym = scheme_intern_symbol("process-enter");
-  multiTextFlags_wxPASSWORD_sym = scheme_intern_symbol("password");
-  multiTextFlags_wxREADONLY_sym = scheme_intern_symbol("readonly");
-  multiTextFlags_wxHSCROLL_sym = scheme_intern_symbol("hscroll");
-}
-
-static int unbundle_symset_multiTextFlags(Scheme_Object *v, const char *where) {
-  if (!multiTextFlags_wxHSCROLL_sym) init_symset_multiTextFlags();
-  Scheme_Object *i, *l = v;
-  long result = 0;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == multiTextFlags_wxPROCESS_ENTER_sym) { result = result | wxPROCESS_ENTER; }
-  else if (i == multiTextFlags_wxPASSWORD_sym) { result = result | wxPASSWORD; }
-  else if (i == multiTextFlags_wxREADONLY_sym) { result = result | wxREADONLY; }
-  else if (i == multiTextFlags_wxHSCROLL_sym) { result = result | wxHSCROLL; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+static int unbundle_symset_multiTextStyle(Scheme_Object *v, const char *where) {
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxPROCESS_ENTER) == wxPROCESS_ENTER) { vi -= wxPROCESS_ENTER; }
+    if ((vi & wxPASSWORD) == wxPASSWORD) { vi -= wxPASSWORD; }
+    if ((vi & wxREADONLY) == wxREADONLY) { vi -= wxREADONLY; }
+    if ((vi & wxHSCROLL) == wxHSCROLL) { vi -= wxHSCROLL; }
+    if (!vi) { return orig_vi; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "multiTextFlags symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "multiTextStyle integer", -1, 0, &v);
   return 0;
 }
 
-static int istype_symset_multiTextFlags(Scheme_Object *v, const char *where) {
-  if (!multiTextFlags_wxHSCROLL_sym) init_symset_multiTextFlags();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == multiTextFlags_wxPROCESS_ENTER_sym) { ; }
-  else if (i == multiTextFlags_wxPASSWORD_sym) { ; }
-  else if (i == multiTextFlags_wxREADONLY_sym) { ; }
-  else if (i == multiTextFlags_wxHSCROLL_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+static int istype_symset_multiTextStyle(Scheme_Object *v, const char *where) {
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxPROCESS_ENTER) == wxPROCESS_ENTER) { vi -= wxPROCESS_ENTER; }
+    if ((vi & wxPASSWORD) == wxPASSWORD) { vi -= wxPASSWORD; }
+    if ((vi & wxREADONLY) == wxREADONLY) { vi -= wxREADONLY; }
+    if ((vi & wxHSCROLL) == wxHSCROLL) { vi -= wxHSCROLL; }
+    if (!vi) { return 1; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "multiTextFlags symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "multiTextStyle integer", -1, 0, &v);
   return 0;
 }
 
-static Scheme_Object *bundle_symset_multiTextFlags(int v) {
-  if (!multiTextFlags_wxHSCROLL_sym) init_symset_multiTextFlags();
-  Scheme_Object *l = scheme_null;
-  if (v & wxPROCESS_ENTER) l = scheme_make_pair(multiTextFlags_wxPROCESS_ENTER_sym, l);
-  if (v & wxPASSWORD) l = scheme_make_pair(multiTextFlags_wxPASSWORD_sym, l);
-  if (v & wxREADONLY) l = scheme_make_pair(multiTextFlags_wxREADONLY_sym, l);
-  if (v & wxHSCROLL) l = scheme_make_pair(multiTextFlags_wxHSCROLL_sym, l);
-  return l;
+static Scheme_Object *bundle_symset_multiTextStyle(int v) {
+  return scheme_make_integer(v);
 }
 
 
@@ -989,7 +950,7 @@ static Scheme_Object *os_wxMultiText_ConstructScheme(Scheme_Object *obj, int n, 
   } else
     x7 = -1;
   if (n > 8) {
-    x8 = unbundle_symset_multiTextFlags(p[8], "wx:multi-text%::initialization");;
+    x8 = unbundle_symset_multiTextStyle(p[8], "wx:multi-text%::initialization");
   } else
     x8 = 0;
   if (n > 9) {
@@ -1016,6 +977,14 @@ static Scheme_Object *objscheme_classname_os_wxMultiText(Scheme_Object *obj, int
 
 void objscheme_setup_wxMultiText(void *env)
 {
+  if (!scheme_lookup_xc_global("wx:const-""process-enter", env))
+    scheme_install_xc_global("wx:const-""process-enter", scheme_make_integer(wxPROCESS_ENTER), env);
+  if (!scheme_lookup_xc_global("wx:const-""password", env))
+    scheme_install_xc_global("wx:const-""password", scheme_make_integer(wxPASSWORD), env);
+  if (!scheme_lookup_xc_global("wx:const-""readonly", env))
+    scheme_install_xc_global("wx:const-""readonly", scheme_make_integer(wxREADONLY), env);
+  if (!scheme_lookup_xc_global("wx:const-""hscroll", env))
+    scheme_install_xc_global("wx:const-""hscroll", scheme_make_integer(wxHSCROLL), env);
 if (os_wxMultiText_class) {
     objscheme_add_global_class(os_wxMultiText_class,  "wx:multi-text%", env);
 } else {
@@ -1111,49 +1080,34 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent &event)
   COPY_JMPBUF(scheme_error_buf, savebuf);
 }
 
-static Scheme_Object *textWinFlags_wxREADONLY_sym = NULL;
-
-static void init_symset_textWinFlags(void) {
-  textWinFlags_wxREADONLY_sym = scheme_intern_symbol("readonly");
-}
-
-static int unbundle_symset_textWinFlags(Scheme_Object *v, const char *where) {
-  if (!textWinFlags_wxREADONLY_sym) init_symset_textWinFlags();
-  Scheme_Object *i, *l = v;
-  long result = 0;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == textWinFlags_wxREADONLY_sym) { result = result | wxREADONLY; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+static int unbundle_symset_textWinStyle(Scheme_Object *v, const char *where) {
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxREADONLY) == wxREADONLY) { vi -= wxREADONLY; }
+    if (!vi) { return orig_vi; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "textWinFlags symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "textWinStyle integer", -1, 0, &v);
   return 0;
 }
 
-static int istype_symset_textWinFlags(Scheme_Object *v, const char *where) {
-  if (!textWinFlags_wxREADONLY_sym) init_symset_textWinFlags();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == textWinFlags_wxREADONLY_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
+static int istype_symset_textWinStyle(Scheme_Object *v, const char *where) {
+  long vi;
+  long orig_vi;
+  if (SCHEME_INTP(v)) {
+    vi = SCHEME_INT_VAL(v);
+    orig_vi = vi;
+    if ((vi & wxREADONLY) == wxREADONLY) { vi -= wxREADONLY; }
+    if (!vi) { return 1; }
   }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "textWinFlags symbol list", -1, 0, &v);
+  if (where) scheme_wrong_type(where, "textWinStyle integer", -1, 0, &v);
   return 0;
 }
 
-static Scheme_Object *bundle_symset_textWinFlags(int v) {
-  if (!textWinFlags_wxREADONLY_sym) init_symset_textWinFlags();
-  Scheme_Object *l = scheme_null;
-  if (v & wxREADONLY) l = scheme_make_pair(textWinFlags_wxREADONLY_sym, l);
-  return l;
+static Scheme_Object *bundle_symset_textWinStyle(int v) {
+  return scheme_make_integer(v);
 }
 
 
@@ -2020,7 +1974,7 @@ static Scheme_Object *os_wxTextWindow_ConstructScheme(Scheme_Object *obj, int n,
     } else
       x4 = -1;
     if (n > 5) {
-      x5 = unbundle_symset_textWinFlags(p[5], "wx:text-window%::initialization (panel case)");;
+      x5 = unbundle_symset_textWinStyle(p[5], "wx:text-window%::initialization (panel case)");
     } else
       x5 = 0;
     if (n > 6) {
@@ -2062,7 +2016,7 @@ static Scheme_Object *os_wxTextWindow_ConstructScheme(Scheme_Object *obj, int n,
     } else
       x4 = -1;
     if (n > 5) {
-      x5 = unbundle_symset_textWinFlags(p[5], "wx:text-window%::initialization (frame case)");;
+      x5 = unbundle_symset_textWinStyle(p[5], "wx:text-window%::initialization (frame case)");
     } else
       x5 = 0;
     if (n > 6) {
@@ -2091,6 +2045,8 @@ static Scheme_Object *objscheme_classname_os_wxTextWindow(Scheme_Object *obj, in
 
 void objscheme_setup_wxTextWindow(void *env)
 {
+  if (!scheme_lookup_xc_global("wx:const-""readonly", env))
+    scheme_install_xc_global("wx:const-""readonly", scheme_make_integer(wxREADONLY), env);
 if (os_wxTextWindow_class) {
     objscheme_add_global_class(os_wxTextWindow_class,  "wx:text-window%", env);
 } else {

@@ -403,7 +403,8 @@ void wxCommonInit(void)
     // wxGREY = DEBUG_NEW wxColour (214, 214, 214); /* aka "gray 84" */
     wxGREY = DEBUG_NEW wxColour (220, 218, 213); /* GTK2 background */
     wxREGGLOB(wxBUTTON_COLOR);
-    wxBUTTON_COLOR = wxGREY /* DEBUG_NEW wxColour (224, 224, 224) */;
+    // wxBUTTON_COLOR = DEBUG_NEW wxColour (224, 224, 224);
+    wxBUTTON_COLOR = wxGREY;
     wxREGGLOB(wxRED);
     wxRED = DEBUG_NEW wxColour ("RED");
     wxREGGLOB(wxBLUE);
@@ -433,9 +434,9 @@ void wxCommonInit(void)
     {
       int r, g, b, i, c;
 
-      r = 0;
-      g = 0;
-      b = 160;
+      r = 75;
+      g = 105;
+      b = 131;
       if (wxGetPreference("hiliteColor", wxBuffer, 50)) {
 	wxBuffer[50]= 0;
 	if (strlen(wxBuffer) == 6) {

@@ -17,36 +17,15 @@ import "ocidl.idl";
 	interface ISink : IDispatch
 	{
 	
-        // standard events, per Denning
-
-		[id(0xFFFFFDA8), helpstring("method Click")] HRESULT Click();
-		[id(0xFFFFFDA7), helpstring("method DblClick")] HRESULT DblClick();
-		[id(0xFFFFFDA6), helpstring("method KeyDown")] HRESULT KeyDown(short *,short);
-		[id(0xFFFFFDA5), helpstring("method KeyPress")] HRESULT KeyPress(short *);
-		[id(0xFFFFFDA4), helpstring("method KeyUp")] HRESULT KeyUp(short *,short);
-		[id(0xFFFFFDA3), helpstring("method MouseDown")] HRESULT MouseDown(short,short,long,long);
-		[id(0xFFFFFDA2), helpstring("method MouseMove")] HRESULT MouseMove(short,short,long,long);
-		[id(0xFFFFFDA1), helpstring("method MouseUp")] HRESULT MouseUp(short,short,long,long);
-		[id(0xFFFFFDA0), helpstring("method Error")] HRESULT Error();
-		[id(0xFFFFFD9F), helpstring("method ReadyStateChange")] HRESULT ReadyStateChange(long);
-
-        // int argument is really pointer to scheme_apply 
-
 		[id(0xFFFFFD00), helpstring("method set_extension_table")] HRESULT set_extension_table(int);
+	        [id(0xFFFFFCFF), helpstring("method register_handler")] HRESULT register_handler(DISPID,int,int);
+	        [id(0xFFFFFCFE), helpstring("method set_make_cy")] HRESULT set_make_cy(int);
+	        [id(0xFFFFFCFD), helpstring("method set_make_date")] HRESULT set_make_date(int);
+	        [id(0xFFFFFCFC), helpstring("method set_make_bool")] HRESULT set_make_bool(int);
+	        [id(0xFFFFFCFB), helpstring("method set_make_scode")] HRESULT set_make_scode(int);
+	        [id(0xFFFFFCFA), helpstring("method set_make_idispatch")] HRESULT set_make_idispatch(int);
+	        [id(0xFFFFFCF9), helpstring("method set_make_iunknown")] HRESULT set_make_iunknown(int);
 
-        // stock event handler updaters
-		// the int argument is really a pointer to a Scheme_Object 
-
-		[id(0xFFFFFCFE), helpstring("method set_click_proc")] HRESULT set_click_proc(int);
-		[id(0xFFFFFCFD), helpstring("method set_dblclick_proc")] HRESULT set_dblclick_proc(int);
-		[id(0xFFFFFCFC), helpstring("method set_keydown_proc")] HRESULT set_keydown_proc(int);
-		[id(0xFFFFFCFB), helpstring("method set_keypress_proc")] HRESULT set_keypress_proc(int);
-		[id(0xFFFFFCFA), helpstring("method set_keyup_proc")] HRESULT set_keyup_proc(int);
-		[id(0xFFFFFCF9), helpstring("method set_mousedown_proc")] HRESULT set_mousedown_proc(int);
-		[id(0xFFFFFCF8), helpstring("method set_mousemove_proc")] HRESULT set_mousemove_proc(int);
-		[id(0xFFFFFCF7), helpstring("method set_mouseup_proc")] HRESULT set_mouseup_proc(int);
-		[id(0xFFFFFCF6), helpstring("method set_error_proc")] HRESULT set_error_proc(int);
-		[id(0xFFFFFCF5), helpstring("method set_readystatechange_proc")] HRESULT set_readystatechange_proc(int);
     }
 [
 	uuid(DA064DC0-0881-11D3-B5CA-0060089002FE),

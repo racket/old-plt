@@ -9,262 +9,338 @@
 /////////////////////////////////////////////////////////////////////////////
 // CSink
 
+// private methods
+
+int CSink::getHashValue(DISPID dispId) {
+
+  // casting dispId guarantees positive result
+
+  return (int)((ULONG)dispId % EVENT_HANDLER_TBL_SIZE);
+}
+
+EVENT_HANDLER_ENTRY *CSink::newEventHandlerEntry(DISPID dispId,Scheme_Object *handler,FUNCDESC *pFuncDesc) {
+  EVENT_HANDLER_ENTRY *p;
+  p = (EVENT_HANDLER_ENTRY *)scheme_malloc(sizeof(EVENT_HANDLER_ENTRY));
+  p->dispId = dispId;
+  p->handler = handler;
+  p->pFuncDesc = pFuncDesc;
+  p->next = NULL;
+
+  return p;
+}
+
+EVENT_HANDLER_ENTRY *CSink::lookupHandler(DISPID dispId) {
+  int hashVal;
+  EVENT_HANDLER_ENTRY *p;  				
+
+  hashVal = getHashValue(dispId);
+  
+  p = &eventHandlerTable[hashVal];
+  
+  while (p) {
+    if (p->dispId == dispId) {
+      return p;
+    }
+    p = p->next;
+  }
+
+  return NULL;
+}
+
 // import Scheme extension table
 
 STDMETHODIMP CSink::set_extension_table(int p)
 {
   scheme_extension_table = (Scheme_Extension_Table *)p;
-
-	return S_OK;
-}
-
-// stock events
-
-STDMETHODIMP CSink::Click(void)
-{
-  if (click_proc == NULL) {
-    return S_OK;  
-  }
-
-  scheme_apply(click_proc,0,NULL);
-
   return S_OK;
 }
 
-STDMETHODIMP CSink::DblClick(void)
+STDMETHODIMP CSink::set_make_cy(int p)
 {
-  if (dblclick_proc == NULL) {
-    return S_OK;  
-  }
-
-  scheme_apply(click_proc,0,NULL);
-
+  make_cy = (Scheme_Object *(*)(CY *))p;
   return S_OK;
 }
 
-STDMETHODIMP CSink::KeyDown(short *keyCode,short shift)
+STDMETHODIMP CSink::set_make_date(int p)
 {
-  Scheme_Object *argv[2],*boxedVal;
+  make_date = (Scheme_Object *(*)(DATE *))p;
+  return S_OK;
+}
 
-  if (keydown_proc == NULL) {
-    return S_OK;  
-  }
+STDMETHODIMP CSink::set_make_bool(int p)
+{
+  make_bool = (Scheme_Object *(*)(unsigned))p;
+  return S_OK;
+}
 
-  argv[0] = scheme_box(scheme_make_integer((long)*keyCode));
-  argv[1] = scheme_make_integer((long)shift);
+STDMETHODIMP CSink::set_make_scode(int p)
+{
+  make_scode = (Scheme_Object *(*)(SCODE))p;
+  return S_OK;
+}
 
-  scheme_apply(keydown_proc,2,argv);
+STDMETHODIMP CSink::set_make_idispatch(int p)
+{
+  make_idispatch = (Scheme_Object *(*)(IDispatch *))p;
+  return S_OK;
+}
 
-  // reflect any changes made by handler
+STDMETHODIMP CSink::set_make_iunknown(int p)
+{
+  make_iunknown = (Scheme_Object *(*)(IUnknown *))p;
+  return S_OK;
+}
+
+STDMETHODIMP CSink::register_handler(DISPID dispId,int handler,int pFuncDesc) {
+  unsigned short hashVal;
+  EVENT_HANDLER_ENTRY *p;
+
+  hashVal = getHashValue(dispId);
   
-  boxedVal = SCHEME_BOX_VAL(argv[0]);
+  p = &eventHandlerTable[hashVal];
   
-  if (isShortInt(boxedVal)) {
-    *keyCode = (short)SCHEME_INT_VAL(boxedVal);
+  if (p->dispId == (DISPID)0) {
+    p->dispId = dispId;
+    p->handler = (Scheme_Object *)handler;
+    p->pFuncDesc = (FUNCDESC *)pFuncDesc;
+    p->next = NULL;
+  }
+  else {
+
+    while (p->next != NULL) {
+
+      if (p->dispId == dispId) { // update existing entry
+	p->handler = (Scheme_Object *)handler;
+	p->pFuncDesc = (FUNCDESC *)pFuncDesc;
+
+	return S_OK;
+      }
+
+      p = p->next;
+    }
+
+    p->next = newEventHandlerEntry(dispId,(Scheme_Object *)handler,(FUNCDESC *)pFuncDesc);
   }
 
   return S_OK;
 }
 
-STDMETHODIMP CSink::KeyPress(short *ascii)
-{
-  Scheme_Object *argv[1],*boxedVal;
+// different than the same-named function in mysterx.cxx
+// *here* we're coercing VARIANT's to be arguments to
+// Scheme procedures; *there*, we're coercing a VARIANTARG
+// return value to be the value of a method call, and 
+// VARIANTARG's, unlike VARIANT's, cannot have VT_BYREF bit
 
-  if (keypress_proc == NULL) {
-    return S_OK;  
-  }
+Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
 
-  argv[0] = scheme_box(scheme_make_integer((long)*ascii));
+  switch(pVariantArg->vt) {
 
-  scheme_apply(keypress_proc,2,argv);
+  case VT_NULL :
 
-  // reflect any changes made by handler
+    return scheme_void;
+
+  case VT_UI1 :
+
+    return scheme_make_character((char)(pVariantArg->bVal));
+
+  case VT_UI1 | VT_BYREF :
+
+    return scheme_box(scheme_make_character((char)(*pVariantArg->pbVal)));
+
+  case VT_I2 :
+
+    return scheme_make_integer(pVariantArg->iVal);
+
+  case VT_I2 | VT_BYREF :
+
+    return scheme_box(scheme_make_integer(*pVariantArg->piVal));
+
+  case VT_I4 :
   
-  boxedVal = SCHEME_BOX_VAL(argv[0]);
+    return scheme_make_integer(pVariantArg->lVal);
+
+  case VT_I4 | VT_BYREF :
   
-  if (isShortInt(boxedVal)) {
-    *ascii = (short)SCHEME_INT_VAL(boxedVal);
+    return scheme_box(scheme_make_integer(pVariantArg->lVal));
+
+  case VT_R4 :
+
+#ifdef MZ_USE_SINGLE_FLOATS
+    return scheme_make_float(pVariantArg->fltVal);
+#else
+    return scheme_make_double((double)(pVariantArg->fltVal));
+#endif
+
+  case VT_R4 | VT_BYREF :
+
+#ifdef MZ_USE_SINGLE_FLOATS
+    return scheme_box(scheme_make_float(pVariantArg->fltVal));
+#else
+    return scheme_box(scheme_make_double((double)(pVariantArg->fltVal)));
+#endif
+
+  case VT_R8 :
+
+    return scheme_make_double(pVariantArg->dblVal);
+
+  case VT_R8 | VT_BYREF :
+
+    return scheme_box(scheme_make_double(pVariantArg->dblVal));
+
+  case VT_BSTR :
+
+    return BSTRToSchemeString(pVariantArg->bstrVal);
+
+  case VT_BSTR | VT_BYREF :
+
+    return scheme_box(BSTRToSchemeString(*pVariantArg->pbstrVal));
+
+  case VT_CY :
+
+    return make_cy(&pVariantArg->cyVal);
+
+  case VT_CY | VT_BYREF :
+
+    return scheme_box(make_cy(&pVariantArg->cyVal));
+
+  case VT_DATE :
+
+    return make_date(&pVariantArg->date);
+
+  case VT_DATE | VT_BYREF :
+
+    return scheme_box(make_date(&pVariantArg->date));
+
+  case VT_BOOL :
+
+    return make_bool(pVariantArg->boolVal);
+
+  case VT_BOOL | VT_BYREF :
+
+    return scheme_box(make_bool(pVariantArg->boolVal));
+
+  case VT_ERROR :
+    
+    return make_scode(pVariantArg->scode);
+
+  case VT_ERROR | VT_BYREF :
+    
+    return scheme_box(make_scode(pVariantArg->scode));
+
+  case VT_DISPATCH :
+
+    return make_idispatch(pVariantArg->pdispVal);
+    
+  case VT_DISPATCH | VT_BYREF :
+
+    return scheme_box(make_idispatch(pVariantArg->pdispVal));
+    
+  case VT_UNKNOWN :
+
+    return make_iunknown(pVariantArg->punkVal);
+
+  case VT_UNKNOWN | VT_BYREF:
+
+    return scheme_box(make_iunknown(pVariantArg->punkVal));
+
+  default :
+    
+    scheme_signal_error("Can't make Scheme value from VARIANT %X",
+			pVariantArg->vt);
+
   }
 
-  return S_OK;
+  return NULL;
 }
 
-STDMETHODIMP CSink::KeyUp(short *keyCode, short shift)
-{
-  Scheme_Object *argv[2],*boxedVal;
+// override default implementation of IDispatch::Invoke
 
-  if (keyup_proc == NULL) {
-    return S_OK;  
+HRESULT CSink::Invoke(DISPID dispId,REFIID refiid,LCID lcid,WORD flags,
+                      DISPPARAMS* pDispParams,VARIANT* pvarResult,
+		      EXCEPINFO* pexcepinfo,UINT* puArgErr) {
+
+  Scheme_Object *handler;
+  EVENT_HANDLER_ENTRY *p;  
+  FUNCDESC *pFuncDesc;
+  VARIANTARG *pCurrArg;
+  short numParams,actualParams;
+  Scheme_Object *argv[128];
+  mz_jmp_buf jmpSave;
+  int i;
+
+  p = lookupHandler(dispId);
+
+  if (p == NULL) { // nothing registered
+    return S_OK;
   }
 
-  argv[0] = scheme_box(scheme_make_integer((long)*keyCode));
-  argv[1] = scheme_make_integer((long)shift);
-
-  scheme_apply(keyup_proc,2,argv);
-
-  // reflect any changes made by handler
+  handler = p->handler;
+  pFuncDesc = p->pFuncDesc;
   
-  boxedVal = SCHEME_BOX_VAL(argv[0]);
-  
-  if (isShortInt(boxedVal)) {
-    *keyCode = (short)SCHEME_INT_VAL(boxedVal);
+  numParams = pDispParams->cArgs;
+
+  if (numParams > 128) {
+    return DISP_E_TYPEMISMATCH;
   }
 
-  return S_OK;
-}
+  // named arguments not supported
 
-STDMETHODIMP CSink::MouseDown(short button, short shift, long x, long y)
-{
-  Scheme_Object *argv[4];
-
-  if (mousedown_proc == NULL) {
-    return S_OK;  
+  if (pDispParams->cNamedArgs > 0) {
+    return DISP_E_NONAMEDARGS;
   }
 
-  argv[0] = scheme_make_integer((long)button);
-  argv[1] = scheme_make_integer((long)shift);
-  argv[2] = scheme_make_integer_value(x);
-  argv[3] = scheme_make_integer_value(y);
+  // trap any local errors
 
-  scheme_apply(mousedown_proc,4,argv);
+  memcpy(&jmpSave, &scheme_error_buf, sizeof(mz_jmp_buf));
 
-  return S_OK;
-}
-
-STDMETHODIMP CSink::MouseMove(short button, short shift, long x, long y)
-{
-  Scheme_Object *argv[4];
-
-  if (mousemove_proc == NULL) {
-    return S_OK;  
+  if (scheme_setjmp(scheme_error_buf)) {
+    scheme_clear_escape();
+    memcpy(&scheme_error_buf, &jmpSave, sizeof(mz_jmp_buf));
+    return S_OK;
   }
 
-  argv[0] = scheme_make_integer((long)button);
-  argv[1] = scheme_make_integer((long)shift);
-  argv[2] = scheme_make_integer_value(x);
-  argv[3] = scheme_make_integer_value(y);
+  /* memory layout of rgvargs:
 
-  scheme_apply(mousedown_proc,4,argv);
+      --------------------------------
+     | opt params | required params   |
+      --------------------------------
 
-  return S_OK;
-}
+     these are in reverse order from the order
+     given to Scheme
 
-STDMETHODIMP CSink::MouseUp(short button, short shift, long x, long y)
-{
-  Scheme_Object *argv[4];
+  */
 
-  if (mouseup_proc == NULL) {
-    return S_OK;  
+  actualParams = numParams;
+
+  i = 0;
+
+  while (i < numParams) {
+    pCurrArg = &pDispParams->rgvarg[i];
+    if (pCurrArg->vt == VT_ERROR &&
+	pCurrArg->scode == DISP_E_PARAMNOTFOUND) { 
+      actualParams--;
+    }
+    else { // as soon as first required arg found
+      break;
+    }
+    i++;
   }
 
-  argv[0] = scheme_make_integer((long)button);
-  argv[1] = scheme_make_integer((long)shift);
-  argv[2] = scheme_make_integer_value(x);
-  argv[3] = scheme_make_integer_value(y);
-
-  scheme_apply(mousedown_proc,4,argv);
-
-  return S_OK;
-}
-
-STDMETHODIMP CSink::Error(void)
-{  
-
-  if (error_proc == NULL) {
-    return S_OK;  
+  if (actualParams == 0) { 
+    scheme_apply(handler,0,NULL);
+    memcpy(&scheme_error_buf, &jmpSave, sizeof(mz_jmp_buf));
+    return S_OK;
   }
 
-  scheme_apply(error_proc,0,NULL);
-
-  return S_OK;
-}
-
-STDMETHODIMP CSink::ReadyStateChange(long readyState)
-{
-  Scheme_Object *argv[1];
-
-  if (readystatechange_proc == NULL) {
-    return S_OK;  
+  for (i = 0; i < actualParams; i++) {
+    pCurrArg = &pDispParams->rgvarg[numParams - 1 - i];
+    argv[i] = variantToSchemeObject(pCurrArg);
   }
 
-  argv[0] = scheme_make_integer_value(readyState);
+  scheme_apply(handler,actualParams,argv);
 
-  scheme_apply(mousedown_proc,1,argv);
-   
+  // updating of boxes needs to be reflected in BYREF parameters 
+
+  memcpy(&scheme_error_buf, &jmpSave, sizeof(mz_jmp_buf));
   return S_OK;
 }
-
-
-// stock event handler updaters
-
-STDMETHODIMP CSink::set_click_proc(int p)
-{
-  click_proc = (Scheme_Object *)p;
-
-	return S_OK;
-}
-
-STDMETHODIMP CSink::set_dblclick_proc(int p)
-{
-  dblclick_proc = (Scheme_Object *)p;
-
-	return S_OK;
-}
-
-STDMETHODIMP CSink::set_keydown_proc(int p)
-{
-  keydown_proc = (Scheme_Object *)p;
-
-	return S_OK;
-}
-
-STDMETHODIMP CSink::set_keypress_proc(int p)
-{
-  keypress_proc = (Scheme_Object *)p;
-
-	return S_OK;
-}
-
-STDMETHODIMP CSink::set_keyup_proc(int p)
-{
-  keyup_proc = (Scheme_Object *)p;
-
-	return S_OK;
-}
-
-STDMETHODIMP CSink::set_mousedown_proc(int p)
-{
-  mousedown_proc = (Scheme_Object *)p;
-
-	return S_OK;
-}
-
-STDMETHODIMP CSink::set_mousemove_proc(int p)
-{
-  mousemove_proc = (Scheme_Object *)p;
-
-	return S_OK;
-}
-
-STDMETHODIMP CSink::set_mouseup_proc(int p)
-{
-  mouseup_proc = (Scheme_Object *)p;
-
-	return S_OK;
-}
-
-STDMETHODIMP CSink::set_error_proc(int p)
-{
-  error_proc = (Scheme_Object *)p;
-
-	return S_OK;
-}
-
-STDMETHODIMP CSink::set_readystatechange_proc(int p)
-{
-  readystatechange_proc = (Scheme_Object *)p;
-
-	return S_OK;
-}
-
-

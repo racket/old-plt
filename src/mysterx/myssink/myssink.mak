@@ -1,7 +1,7 @@
 # myssink.mak
 
 CPP=cl.exe
-CPP_FLAGS=/I"../../mzscheme/include" /MT /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_ATL_STATIC_REGISTRY" /D "_ATL_MIN_CRT" /c
+CPP_FLAGS=/I"../../mzscheme/include" /I"../mysc" /MT /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_ATL_STATIC_REGISTRY" /D "_ATL_MIN_CRT" /c
 
 MTL=midl.exe
 MTL_SWITCHES=/tlb myssink.tlb /h myssink.h /iid myssink_i.c /Oicf 
@@ -10,7 +10,7 @@ RSC_PROJ=/l 0x409 /fo"myssink.res"
 REGSVR32=regsvr32	
 
 LINK32=link.exe
-LINK32_FLAGS=d:\plt\collects\mzscheme\lib\win32\i386\msvc\mzdyn.obj kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /incremental:no /machine:I386 /def:myssink.def /out:myssink.dll
+LINK32_FLAGS=d:\plt\collects\mzscheme\lib\win32\i386\msvc\mzdyn.obj kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ..\mysc\mysc.lib /nologo /subsystem:windows /dll /incremental:no /machine:I386 /def:myssink.def /out:myssink.dll
 DEF_FILE=myssink.def
 LINK32_OBJS= myssink.obj sink.obj comtypes.obj stdafx.obj myssink.res
 

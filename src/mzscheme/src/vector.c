@@ -260,8 +260,18 @@ scheme_vector_to_list (Scheme_Object *vec)
   int i;
   Scheme_Object *pair = scheme_null;
 
-  for (i = SCHEME_VEC_SIZE(vec); i--; ) {
-    pair = scheme_make_pair(SCHEME_VEC_ELS(vec)[i], pair);
+  i = SCHEME_VEC_SIZE(vec);
+
+  if (i < 0xFFF) {
+    for (; i--; ) {
+      pair = scheme_make_pair(SCHEME_VEC_ELS(vec)[i], pair);
+    }
+  } else {
+    for (; i--; ) {
+      if (!(i & 0xFFF))
+	SCHEME_USE_FUEL(0xFFF);
+      pair = scheme_make_pair(SCHEME_VEC_ELS(vec)[i], pair);
+    }
   }
 
   return pair;

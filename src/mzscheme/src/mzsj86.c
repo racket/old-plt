@@ -29,9 +29,9 @@
 int scheme_setjmp(mz_jmp_buf b)
 {
   __asm {
-	mov ECX, [EBP+4] ; return address
-	mov EAX, [EBP+8] ; b: jmpbuf
-	mov EDX, [EBP]   ; old EBP
+	mov ECX, [EBP+4]
+	mov EAX, [EBP+8]
+	mov EDX, [EBP]
 	mov [EAX], EDX
 	mov [EAX+4], EBX
 	mov [EAX+8], EDI
@@ -46,10 +46,10 @@ int scheme_setjmp(mz_jmp_buf b)
 void scheme_longjmp(mz_jmp_buf b, int v)
 {
   __asm {
-	mov EAX, [EBP+12] ; v: return value
-	mov ECX, [EBP+8]  ; b: jmp_buf
-	mov ESP, [ECX+16] ; restore old stack pointer
-	mov EBP, [ECX]    ; old EBP
+	mov EAX, [EBP+12]
+	mov ECX, [EBP+8]
+	mov ESP, [ECX+16]
+	mov EBP, [ECX]
 	mov [ESP+12], EBP
 	mov EBP, ESP
 	add EBP, 12
@@ -59,7 +59,7 @@ void scheme_longjmp(mz_jmp_buf b, int v)
 	mov [ESP], EDI
 	mov ESI, [ECX+12]
 	mov [ESP+4], ESI
-	mov ECX, [ECX+20] ; return address
+	mov ECX, [ECX+20]
 	mov [EBP+4], ECX
   }
 }

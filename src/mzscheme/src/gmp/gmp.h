@@ -154,7 +154,7 @@ typedef __gmp_const __mpq_struct *mpq_srcptr;
 typedef __mpq_struct *mpq_ptr;
 
 #ifndef _PROTO
-#if (__STDC__-0) || defined (__cplusplus)
+#if (__STDC__-0) || defined (__cplusplus) || defined(__BORLANDC__)
 #define _PROTO(x) x
 #else
 #define _PROTO(x) ()
@@ -163,7 +163,7 @@ typedef __mpq_struct *mpq_ptr;
 
 #ifndef __MPN
 /* Really use `defined (__STDC__)' here; we want it to be true for Sun C */
-#if defined (__STDC__) || defined (__cplusplus)
+#if defined (__STDC__) || defined (__cplusplus) || defined(__BORLANDC__)
 #define __MPN(x) scheme_gmpn_##x
 #else
 #define __MPN(x) scheme_gmpn_/**/x
@@ -365,7 +365,7 @@ void mpn_tdiv_qr _PROTO ((mp_ptr, mp_ptr, mp_size_t, mp_srcptr, mp_size_t, mp_sr
 
 #if (defined (__GNUC__) || defined (_FORCE_INLINES)) && !defined(PALMOS_STUFF)
 _EXTERN_INLINE mp_limb_t
-#if (__STDC__-0) || defined (__cplusplus)
+#if (__STDC__-0) || defined (__cplusplus) || defined(__BORLANDC__)
 mpn_add_1 (register mp_ptr res_ptr,
 	   register mp_srcptr s1_ptr,
 	   register mp_size_t s1_size,
@@ -407,7 +407,7 @@ mpn_add_1 (res_ptr, s1_ptr, s1_size, s2_limb)
 }
 
 _EXTERN_INLINE mp_limb_t
-#if (__STDC__-0) || defined (__cplusplus)
+#if (__STDC__-0) || defined (__cplusplus) || defined(__BORLANDC__)
 mpn_add (register mp_ptr res_ptr,
 	 register mp_srcptr s1_ptr,
 	 register mp_size_t s1_size,
@@ -436,7 +436,7 @@ mpn_add (res_ptr, s1_ptr, s1_size, s2_ptr, s2_size)
 }
 
 _EXTERN_INLINE mp_limb_t
-#if (__STDC__-0) || defined (__cplusplus)
+#if (__STDC__-0) || defined (__cplusplus) || defined(__BORLANDC__)
 mpn_sub_1 (register mp_ptr res_ptr,
 	   register mp_srcptr s1_ptr,
 	   register mp_size_t s1_size,
@@ -478,7 +478,7 @@ mpn_sub_1 (res_ptr, s1_ptr, s1_size, s2_limb)
 }
 
 _EXTERN_INLINE mp_limb_t
-#if (__STDC__-0) || defined (__cplusplus)
+#if (__STDC__-0) || defined (__cplusplus) || defined(__BORLANDC__)
 mpn_sub (register mp_ptr res_ptr,
 	 register mp_srcptr s1_ptr,
 	 register mp_size_t s1_size,

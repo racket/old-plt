@@ -30,9 +30,9 @@
 #endif
 
 #ifdef MACINTOSH_EVENTS
-  #ifdef OS_X
-    #include <CoreServices/CarbonCore/TextUtils.h>
-  #endif
+# ifdef OS_X
+#  include <CoreServices/CarbonCore/TextUtils.h>
+# endif
 #endif
 
 /* globals */
@@ -732,24 +732,27 @@ string_to_list (int argc, Scheme_Object *argv[])
 {
   int len, i;
   char *chars;
-  Scheme_Object *first, *last, *pair;
+  Scheme_Object *pair = scheme_null;
 
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("string->list", "string", 0, argc, argv);
 
   chars = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
-  first = last = scheme_null;
-  for ( i=0 ; i<len ; ++i ) {
-    pair = scheme_make_pair (scheme_make_char (chars[i]), scheme_null);
-    if (SCHEME_NULLP(first))
-      first = pair;
-    else
-      SCHEME_CDR (last) = pair;
-    last = pair;
+
+  if (len < 0xFFF) {
+    for (i = len ; i--; ) {
+      pair = scheme_make_pair(scheme_make_char(chars[i]), pair);
+    }
+  } else {
+    for (i = len ; i--; ) {
+      if (!(i & 0xFFF))
+	SCHEME_USE_FUEL(0xFFF);
+      pair = scheme_make_pair(scheme_make_char(chars[i]), pair);
+    }
   }
 
-  return first;
+  return pair;
 }
 
 static Scheme_Object *

@@ -425,9 +425,9 @@ scheme_init_port (Scheme_Env *env)
 
 #ifdef DETECT_WIN32_CONSOLE_STDIN
   if (scheme_binary_mode_stdio) {
-    _setmode(_fileno(stdin), _O_BINARY);
-    _setmode(_fileno(stdout), _O_BINARY);
-    _setmode(_fileno(stderr), _O_BINARY);
+    MSC_IZE(setmode)(_fileno(stdin), _O_BINARY);
+    MSC_IZE(setmode)(_fileno(stdout), _O_BINARY);
+    MSC_IZE(setmode)(_fileno(stderr), _O_BINARY);
   }
 #endif
 
@@ -3538,7 +3538,12 @@ static long read_for_tested_file(void *data)
     for (i = tip->trying; !tip->err_no && i--; ) {
     try_again:
 #ifdef WIN32_FD_HANDLES
-      if (!tip->fp->_cnt) {
+# if defined(__BORLANDC__)
+#  define TIP_FP_CNT level
+# else
+#  define TIP_FP_CNT _cnt
+# endif
+      if (!tip->fp->TIP_FP_CNT) {
 	HANDLE file;
 	file = (HANDLE)_get_osfhandle(_fileno(tip->fp));
 	if (tip->primtype == FILE_TYPE_CHAR) {
@@ -3687,12 +3692,17 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
 # ifdef NO_NEED_FOR_BEGINTHREAD
 #  define _beginthreadex CreateThread
 # endif
+# ifdef __BORLANDC__
+#  define MZ_LPTHREAD_START_ROUTINE (unsigned int (__stdcall*)(void*))
+# else
+#  define MZ_LPTHREAD_START_ROUTINE LPTHREAD_START_ROUTINE
+# endif
   {
     DWORD id;
     Scheme_Thread_Memory *tm;
     void *th;
     th = (void *)_beginthreadex(NULL, 5000, 
-				(LPTHREAD_START_ROUTINE)read_for_tested_file,
+				(MZ_LPTHREAD_START_ROUTINE)read_for_tested_file,
 				tip, 0, &id);
     tip->th = th;
     tm = scheme_remember_thread((void *)tip->th);
@@ -4029,7 +4039,7 @@ static Scheme_Object *make_tested_file_output_port(FILE *fp, int tested)
     DWORD id;
     Scheme_Thread_Memory *tm;
     top->th = (void *)_beginthreadex(NULL, 5000, 
-				     (LPTHREAD_START_ROUTINE)write_for_tested_file,
+				     (MZ_LPTHREAD_START_ROUTINE)write_for_tested_file,
 				     top, 0, &id);
     tm = scheme_remember_thread((void *)top->th);
     top->thread_memory = tm;
@@ -5373,9 +5383,9 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   out = (out ? out : make_fd_output_port(to_subprocess[1], 0));
   err = (err ? err : make_fd_input_port(err_subprocess[0], "subprocess-stderr", 0));
 #else
-  in = (in ? in : make_tested_file_input_port(MSC_IZE(fdopen)(from_subprocess[0], "r"), "subprocess-stdout", 1));
-  out = (out ? out : make_tested_file_output_port(MSC_IZE(fdopen)(to_subprocess[1], "w"), 1));
-  err = (err ? err : make_tested_file_input_port(MSC_IZE(fdopen)(err_subprocess[0], "r"), "subprocess-stderr", 1));
+  in = (in ? in : make_tested_file_input_port(MSC_IZE(BOR_IZE(fdopen))(from_subprocess[0], "r"), "subprocess-stdout", 1));
+  out = (out ? out : make_tested_file_output_port(MSC_IZE(BOR_IZE(fdopen))(to_subprocess[1], "w"), 1));
+  err = (err ? err : make_tested_file_input_port(MSC_IZE(BOR_IZE(fdopen))(err_subprocess[0], "r"), "subprocess-stderr", 1));
 #endif
 
   /*--------------------------------------*/

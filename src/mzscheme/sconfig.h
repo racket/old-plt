@@ -516,7 +516,7 @@
   /* assembly file. Nevertheless, the old flags and       */
   /* instructions have been preserved.                    */
 
-#if (defined(__CYGWIN32__) \
+#if (defined(__CYGWIN32__) || defined(__BORLANDC__) \
      || (defined(_MSC_VER) \
          && (defined(__WIN32__) || defined(WIN32) || defined(_WIN32))))
 
@@ -608,7 +608,9 @@
 #endif
 
 #if defined(__BORLANDC__)
+# define BOR_IZE(x) _ ## x
 # define DIR_INCLUDE
+# define IGNORE_BY_CONTROL_387
 #endif
 
 # define REGISTER_POOR_MACHINE

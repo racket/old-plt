@@ -345,7 +345,11 @@ static void TCP_INIT(char *name)
     WSADATA data;
     if (!WSAStartup(MAKEWORD(1, 1), &data)) {
       started = 1;
+#ifdef __BORLANDC__
+      atexit((void(*)())winsock_done);
+#else      
       _onexit(winsock_done);
+#endif
       return;
     }
   } else

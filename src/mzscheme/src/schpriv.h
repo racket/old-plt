@@ -496,6 +496,7 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
 
 Scheme_Object *scheme_new_mark();
 Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);
+Scheme_Object *scheme_stx_strip_odd_marks(Scheme_Object *stx);
 
 Scheme_Object *scheme_make_rename(Scheme_Object *newname, int c);
 void scheme_set_rename(Scheme_Object *rnm, int pos, Scheme_Object *oldname);

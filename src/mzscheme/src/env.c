@@ -69,6 +69,7 @@ static Scheme_Object *local_exp_time_value(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_exp_time_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_context(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_introduce(int argc, Scheme_Object *argv[]);
+static Scheme_Object *local_get_shadower(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_introducer(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_set_transformer(int argc, Scheme_Object *argv[]);
 static Scheme_Object *set_transformer_p(int argc, Scheme_Object *argv[]);
@@ -439,6 +440,11 @@ static void make_init_env(void)
 						      "syntax-local-context",
 						      0, 0),
 			     env);
+  scheme_add_global_constant("syntax-local-get-shadower", 
+			     scheme_make_prim_w_arity(local_get_shadower,
+						      "syntax-local-get-shadower",
+						      1, 2),
+			     env);
   scheme_add_global_constant("syntax-local-introduce", 
 			     scheme_make_prim_w_arity(local_introduce,
 						      "syntax-local-introduce",
@@ -447,7 +453,7 @@ static void make_init_env(void)
   scheme_add_global_constant("make-syntax-introducer", 
 			     scheme_make_prim_w_arity(make_introducer,
 						      "make-syntax-introducer",
-						      0, 0),
+						      0, 1),
 			     env);
 
   scheme_add_global_constant("make-set!-transformer", 
@@ -1426,6 +1432,8 @@ Scheme_Object *scheme_tl_id_sym(Scheme_Env *env, Scheme_Object *id, int is_def)
 	    best_match_skipped = ms;
 	    break;
 	  }
+	  if (ms == best_match_skipped)
+	    printf("conflict?\n");
 	}
       }
     }
@@ -2780,6 +2788,104 @@ local_introduce(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
+local_get_shadower(int argc, Scheme_Object *argv[])
+{
+  Scheme_Comp_Env *env, *frame;
+  Scheme_Object *sym, *esym, *sym_marks = NULL, *orig_sym, *uid = NULL, *env_marks;
+  int skip = 0;
+
+  env = scheme_current_thread->current_local_env;
+  if (!env)
+    scheme_raise_exn(MZEXN_MISC, 
+		     "syntax-local-get-shadower: not currently transforming");
+
+  sym = argv[0];
+  orig_sym = sym;
+
+  if (!(SCHEME_STXP(sym) && SCHEME_SYMBOLP(SCHEME_STX_VAL(sym))))
+    scheme_wrong_type("syntax-local-get-shadower", "syntax identifier", 0, argc, argv);
+  if (argc > 1) {
+    Scheme_Object *v;
+    v = argv[1];
+    if (SCHEME_INTP(v) && (SCHEME_INT_VAL(v) >= 0)) {
+      skip = SCHEME_INT_VAL(v);
+    } else if (SCHEME_BIGNUMP(v) && SCHEME_BIGPOS(v))
+      return sym;
+    else
+      scheme_wrong_type("syntax-local-get-shadower", "non-negative exact integer", 1, argc, argv);
+  }
+
+  sym_marks = scheme_stx_extract_marks(sym);
+
+  /* Walk backward through the frames, looking for a renaming binding
+     with the same marks as the given identifier, sym. When we find
+     it, rename the given identifier so that it matches frame */
+  for (frame = env; frame->next != NULL; frame = frame->next) {
+    int i;
+
+    for (i = frame->num_bindings; i--; ) {
+      if (frame->values[i]) {
+	if (SAME_OBJ(SCHEME_STX_VAL(sym), SCHEME_STX_VAL(frame->values[i])))  {
+	  esym = frame->values[i];
+	  env_marks = scheme_stx_extract_marks(esym);
+	  if (scheme_equal(env_marks, sym_marks)) {
+	    if (!skip) {
+	      sym = esym;
+	      if (frame->uids)
+		uid = frame->uids[i];
+	      else
+		uid = frame->uid;
+	      break;
+	    }
+	    skip--;
+	  }
+	}
+      }
+    }
+    if (uid)
+      break;
+
+    for (i = COMPILE_DATA(frame)->num_const; i--; ) {
+      if (!(frame->flags & SCHEME_CAPTURE_WITHOUT_RENAME)) {
+	if (SAME_OBJ(SCHEME_STX_VAL(sym), 
+		     SCHEME_STX_VAL(COMPILE_DATA(frame)->const_names[i]))) {
+	  esym = COMPILE_DATA(frame)->const_names[i];
+	  env_marks = scheme_stx_extract_marks(esym);
+	  if (scheme_equal(env_marks, sym_marks)) {
+	    if (!skip) {
+	      sym = esym;
+	      if (COMPILE_DATA(frame)->const_uids)
+		uid = COMPILE_DATA(frame)->const_uids[i];
+	      else
+		uid = frame->uid;
+	      break;
+	    }
+	    skip--;
+	  }
+	}
+      }
+    }
+    if (uid)
+      break;
+  }
+
+  if (!uid)
+    return sym;
+
+  {
+    Scheme_Object *rn, *result;
+
+    result = scheme_datum_to_syntax(SCHEME_STX_VAL(sym), orig_sym, sym, 0, 0);
+    ((Scheme_Stx *)result)->props = ((Scheme_Stx *)orig_sym)->props;
+    
+    rn = scheme_make_rename(uid, 1);
+    scheme_set_rename(rn, 0, result);
+
+    return scheme_add_rename(result, rn);
+  }
+}
+
+static Scheme_Object *
 introducer_proc(void *mark, int argc, Scheme_Object *argv[])
 {
   Scheme_Object *s;
@@ -2794,7 +2900,14 @@ introducer_proc(void *mark, int argc, Scheme_Object *argv[])
 static Scheme_Object *
 make_introducer(int argc, Scheme_Object *argv[])
 {
-  return scheme_make_closed_prim_w_arity(introducer_proc, scheme_new_mark(),
+  Scheme_Object *mark;
+
+  mark = scheme_new_mark();
+  if (argc || SCHEME_TRUEP(argv[0])) {
+    mark = scheme_sub1(1, &mark);
+  }
+
+  return scheme_make_closed_prim_w_arity(introducer_proc, mark,
 					 "syntax-introducer", 1, 1);
 }
 

@@ -576,7 +576,9 @@ define_execute(Scheme_Object *vars, Scheme_Object *vals, int defmacro,
     g = 1;
 
   /* Special handling of 0 values for define-syntaxes:
-     do nothing. */
+     do nothing. This makes (define-values (a b c) (values))
+     a kind of declaration form, which is useful is
+     a, b, or c is introduced by a macro. */
   if (defmacro && !g)
     return scheme_void;
   

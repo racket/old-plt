@@ -230,7 +230,9 @@
 		   ((or (internal-id? entry) (export-id? entry))
 		     'do-nothing)
 		   ((not entry)
-		     (static-error uid "Reference to undefined identifier"))
+		     (static-error uid
+		       "Reference to undefined identifier ~a"
+		       (z:read-object uid)))
 		   (else
 		     (internal-error entry
 		       "Invalid in check-unresolved-vars")))))

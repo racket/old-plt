@@ -197,8 +197,16 @@
 			  (set-url-query! relative (url-query base)))
 			relative)
 		      (else		; Step 6
-			(merge-and-normalize
-			  (url-path base) relative)))))))))))
+			(if (and (url-scheme base)
+			      (string=? (url-scheme base) "file"))
+			  (begin
+			    (set-url-path! relative
+			      (build-path
+				(url-path base)
+				(unixpath->path rel-path)))
+			    relative)
+			  (merge-and-normalize
+			    (url-path base) relative))))))))))))
 
     (define merge-and-normalize
       (lambda (base-path relative-url)
@@ -393,10 +401,10 @@
 		  (if (and scheme
 			(string=? scheme "file"))
 		    (make-url
-		      scheme		; scheme
+		      scheme
 		      #f		; host
 		      #f		; port
-		      (substring string path-start total-length) ; path
+		      (build-path (substring string path-start total-length))
 		      #f		; params
 		      #f		; query
 		      #f)		; fragment

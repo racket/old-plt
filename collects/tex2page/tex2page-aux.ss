@@ -13,11 +13,11 @@
     (hash-table-get ht k (let ((d (if (null? d) #f (car d)))) (lambda () d)))))
 
 ; ensure shell-magic above
-;Configured for Scheme dialect plt by scmxlate, v 1a9,
+;Configured for Scheme dialect plt by scmxlate, v 1a10,
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "4r11")
+(define *tex2page-version* "4r13")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -245,6 +245,8 @@
 
 (define *eval-file-count* 0)
 
+(define *eval-for-tex-only?* #f)
+
 (define *external-label-tables* #f)
 
 (define *footnote-list* '())
@@ -461,6 +463,8 @@
 (define *verb-port* #f)
 
 (define *verb-visible-space?* #f)
+
+(define *verb-written-files* '())
 
 (define *write-log-max* 55)
 
@@ -4826,13 +4830,13 @@
 
 (define do-epsfbox
   (lambda ()
-    (let* ((b (get-bracketed-text-if-any))
-           (f (get-filename-possibly-braced))
-           (img-file-stem (next-html-image-file-stem)))
-      (lazily-make-epsf-image-file f img-file-stem)
-      (source-scaled-image-file img-file-stem *epsf-ysize* *epsf-xsize*)
-      (set! *epsf-ysize* #f)
-      (set! *epsf-xsize* #f))))
+    (let* ((b (get-bracketed-text-if-any)) (f (get-filename-possibly-braced)))
+      (unless *eval-for-tex-only?*
+        (let ((img-file-stem (next-html-image-file-stem)))
+          (lazily-make-epsf-image-file f img-file-stem)
+          (source-scaled-image-file img-file-stem *epsf-ysize* *epsf-xsize*)
+          (set! *epsf-ysize* #f)
+          (set! *epsf-xsize* #f))))))
 
 (define do-convertmptopdf
   (lambda ()
@@ -6027,8 +6031,10 @@
     (let ((f (get-filename-possibly-braced)))
       (when *verb-port* (close-output-port *verb-port*))
       (ensure-file-deleted f)
+      (set! *verb-written-files* (cons f *verb-written-files*))
       (let ((e (file-extension f)))
-        (when (string-ci=? e ".mp") (set! *mp-files* (cons f *mp-files*))))
+        (when (and e (string-ci=? e ".mp"))
+          (set! *mp-files* (cons f *mp-files*))))
       (set! *verb-port* (open-output-file f)))))
 
 (define verb-ensure-output-port
@@ -6888,6 +6894,7 @@
            (char=? (string-ref f 0) #\.)
            (char=? (string-ref f 1) #\/))
       #f)
+     ((member f *verb-written-files*) #f)
      (else #t))))
 
 (define do-inputiffileexists
@@ -6931,6 +6938,8 @@
                     "eplain.tex"
                     "epsf"
                     "epsf.tex"
+                    "supp-pdf"
+                    "supp-pdf.tex"
                     "tex2page"
                     "tex2page.tex")))
             #f)
@@ -7025,6 +7034,16 @@
              (fluid-let
                ((*ignore-timestamp?* #t))
                (tex2page-file eval4tex-file)))))))))
+
+(define eval-for-tex-only
+  (lambda ()
+    (set! *eval-for-tex-only?* #t)
+    (do-end-page)
+    (ensure-file-deleted *html-page*)
+    (set! *main-tex-file* #f)
+    (set! *html-page* ".eval4texignore")
+    (ensure-file-deleted *html-page*)
+    (set! *html* (open-output-file *html-page*))))
 
 (define expand-ctl-seq-into-string
   (lambda (cs)
@@ -8869,6 +8888,7 @@
        (*esc-char-std* #\\)
        (*esc-char-verb* #\|)
        (*eval-file-count* 0)
+       (*eval-for-tex-only?* #f)
        (*external-label-tables* (make-table 'equ string=?))
        (*footnote-list* '())
        (*footnote-sym* 0)
@@ -8952,6 +8972,7 @@
        (*verb-display?* #f)
        (*verb-port* #f)
        (*verb-visible-space?* #f)
+       (*verb-written-files* '())
        (*write-log-index* 0)
        (*write-log-possible-break?* #f)
        (*zeroth-html-page* #f))

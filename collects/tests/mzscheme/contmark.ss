@@ -384,4 +384,22 @@
 (test #f continuation-mark-set? 5)
 (test #t continuation-mark-set? (current-continuation-marks))
 
+(let ([c #f]
+      [l null])
+  (thread-wait
+   (thread (lambda ()
+	     (dynamic-wind
+		 (lambda () (collect-garbage))
+		 (lambda ()
+		   (let-values ([(a b) (let/cc k 
+					 (set! c k)
+					 (values 1 2))])
+		     (set! l (append l (list a b)))))
+		 void))))
+  (thread-wait
+   (thread (lambda ()
+	     (c 4 5))))
+  (test '(1 2 4 5) values l))
+
+  
 (report-errs)

@@ -218,46 +218,7 @@
   
   (define (annotate text break)
     (local
-	
-        ; expr-source-offset : take a parsed expression and find its offset in the source
-	 ; (z:zodiac -> num)
-	 
-         #|
-	 (define (expr-source-offset expr)
-	   (z:location-offset (z:zodiac-start expr)))
-	 |#
-         
-	 ; comes-from-cond : determines whether an expression is expanded from a cond in the source
-	 
-         #|
-	 (define (comes-from-cond? expr)
-	   (let ([read (find-source-expr debug-key (expr-source-offset expr))])
-	     (and (z:sequence? read)
-		  (z:list? read)
-		  (let ([first (car (z:read-object read))])
-		    (and (z:scalar? first)
-			 (z:symbol? first)
-			 (eq? (z:symbol-orig-name first) 'cond))))))
-         |#
-	 
-	 ; locate-cond-clause: take a cond expression's start location
-	 ; and a test expression's start location and figure out 
-	 ; which clause of the cond the test comes from.
-	 
-         #|
-	 (define (find-cond-clause cond-expr test-expr)
-	   (let* ([target-offset (expr-source-offset test-expr)]
-		  [cond-source (find-source-expr debug-key (expr-source-offset cond-expr))]
-		  [cond-clauses (cdr (z:read-object cond-source))]
-		  [test-exprs (map car (z:read-object cond-clauses))])
-	     (let loop ([test-exprs test-exprs] [index 0])
-	       (if (null? test-exprs)
-		   (e:static-error test-location "test expression not found in cond expression")
-		   (if (= target-offset (z:location-offset (z:zodiac-start (car test-exprs))))
-		       index
-		       (loop (cdr test-exprs) (+ index 1)))))))
-         |#
-	 
+	(
 	 ; wrap creates the w-c-m expression.
 	 
 	 (define (wrap debug-info expr)
@@ -338,13 +299,16 @@
 		      [raw-fields (map read->raw (z:struct-form-fields expr))])
 		  (if super-expr
 		      (let+ ([val (values annotated-super-expr free-vars-super-expr) 
-				  (annotate/inner super-expr on-spine?)]
+				  (annotate/inner super-expr #f)]
 			     [val annotated
 				  `(#%struct 
 				    ,(list raw-type annotated-super-expr)
-				    ,raw-fields)])
-			    (values annotated free-vars-super-expr))
-		      (values `(#%struct ,raw-type ,raw-fields) null)))]
+				    ,raw-fields)]
+                             [val debug-info (make-debug-info free-vars-super-expr on-spine? expr null)])
+			    (values (wrap debug-info annotated) free-vars-super-expr))
+		      (values (wrap (make-debug-info null on-spine? expr null)
+                                    `(#%struct ,raw-type ,raw-fields)) 
+                              null)))]
 	       
 	       [(z:if-form? expr) 
 		(let+
@@ -421,7 +385,7 @@
 		(print-struct #t)
 		(e:internal-error
 		 expr
-		 (format "stepper:annotate/inner: unknown object to annotate, ~a~n" expr))]))))
+		 (format "stepper:annotate/inner: unknown object to annotate, ~a~n" expr))])))
       
       ; body of local
       
@@ -438,3 +402,7 @@
   
 	 
   )
+    
+  
+    
+    

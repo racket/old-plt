@@ -3,7 +3,7 @@
 ; Print a little more than MzScheme automatically does:
 (error-print-width 100)
 
-(define mred:debug? #t)
+(define mred:debug? #f)
 
 (unless (defined? 'mred:startup-print-status)
    (define mred:startup-print-status 

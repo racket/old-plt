@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.147 1998/03/14 22:57:50 shriram Exp $
+; $Id: scm-main.ss,v 1.148 1998/03/18 22:06:22 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1416,7 +1416,9 @@
 		 (static-error expr
 		   (string-append "Malformed " kwd-text))))))))
       (add-primitivized-macro-form 'let/cc scheme-vocabulary
-	(rewriter 'let/cc "let/cc"))))
+	(rewriter 'let/cc "let/cc"))
+      (add-primitivized-macro-form 'letcc scheme-vocabulary
+	(rewriter 'letcc "letcc"))))
 
   (when (language>=? 'side-effecting)
     (let

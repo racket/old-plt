@@ -41,6 +41,7 @@
 #define  Uses_BoardWidget
 #include "widgets.h"
 #include "../../contrib/xpm/lib/xpm.h"
+#include <X11/Xatom.h>
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -303,7 +304,7 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
 	if (WM_HINTS != None) {
 	  long GNOMEHints = 0;
 	  
-	  XChangeProperty(display, window, WM_HINTS, WM_HINTS, 32,
+	  XChangeProperty(display, window, WM_HINTS, XA_CARDINAL, 32,
 			  PropModeReplace, (unsigned char *)&GNOMEHints,
 			  sizeof(GNOMEHints)/4);
 	}

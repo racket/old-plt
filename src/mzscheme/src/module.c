@@ -139,7 +139,7 @@ static Scheme_Object *global_shift_cache;
 # define SHIFT_CACHE_NULLP(x) !(x)
 #endif
 
-typedef void (*Check_Func)(Scheme_Object *orig_name, Scheme_Object *name, Scheme_Object *nominal_modname, 
+typedef void (*Check_Func)(Scheme_Object *prnt_name, Scheme_Object *name, Scheme_Object *nominal_modname, 
 			   Scheme_Object *modname, Scheme_Object *srcname, 
 			   int isval, void *data, Scheme_Object *e, Scheme_Object *form);
 static Scheme_Object *parse_requires(Scheme_Object *form,
@@ -2555,9 +2555,9 @@ Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc iv
 /*                          #%module-begin                            */
 /**********************************************************************/
 
-static void check_require_name(Scheme_Object *orig_name, Scheme_Object *name, Scheme_Object *nominal_modidx,
-			      Scheme_Object *modidx, Scheme_Object *exname,
-			      int isval, void *tables, Scheme_Object *e, Scheme_Object *form)
+static void check_require_name(Scheme_Object *prnt_name, Scheme_Object *name, Scheme_Object *nominal_modidx,
+			       Scheme_Object *modidx, Scheme_Object *exname,
+			       int isval, void *tables, Scheme_Object *e, Scheme_Object *form)
 {
   Scheme_Bucket_Table *toplevel, *syntax;
   Scheme_Hash_Table *required;
@@ -2570,7 +2570,7 @@ static void check_require_name(Scheme_Object *orig_name, Scheme_Object *name, Sc
   /* Check that it's not yet defined: */
   if (toplevel) {
     if (scheme_lookup_in_table(toplevel, (const char *)name)) {
-      scheme_wrong_syntax("module", orig_name, form, "imported identifier already defined");
+      scheme_wrong_syntax("module", prnt_name, form, "imported identifier already defined");
     }
   }
 	    
@@ -2580,14 +2580,14 @@ static void check_require_name(Scheme_Object *orig_name, Scheme_Object *name, Sc
     if (same_modidx(SCHEME_VEC_ELS(vec)[1], modidx)
 	&& SAME_OBJ(SCHEME_VEC_ELS(vec)[2], exname))
       return; /* already required, same source */
-    scheme_wrong_syntax("module", orig_name, form, 
+    scheme_wrong_syntax("module", prnt_name, form, 
 			"identifier already imported (from a different source)");
   }
 	    
   /* Not syntax: */
   if (syntax) {
     if (scheme_lookup_in_table(syntax, (const char *)name)) {
-      scheme_wrong_syntax("module", orig_name, form, "imported identifier already defined");
+      scheme_wrong_syntax("module", prnt_name, form, "imported identifier already defined");
     }
   }
 
@@ -2597,7 +2597,7 @@ static void check_require_name(Scheme_Object *orig_name, Scheme_Object *name, Sc
   SCHEME_VEC_ELS(vec)[1] = modidx;
   SCHEME_VEC_ELS(vec)[2] = exname;
   SCHEME_VEC_ELS(vec)[3] = (isval ? scheme_true : scheme_false);
-  SCHEME_VEC_ELS(vec)[4] = orig_name;
+  SCHEME_VEC_ELS(vec)[4] = prnt_name;
   scheme_hash_set(required, name, vec);
 }
 
@@ -2613,7 +2613,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Object *fm, *first, *last, *p, *rn, *exp_body, *et_rn, *self_modidx;
   Scheme_Comp_Env *xenv, *cenv, *rhs_env;
   Scheme_Hash_Table *et_required; /* just to avoid duplicates */
-  Scheme_Hash_Table *required;    /* name -> (vector nominal-modidx modidx srcname var? origname) */
+  Scheme_Hash_Table *required;    /* name -> (vector nominal-modidx modidx srcname var? prntname) */
   Scheme_Hash_Table *provided;    /* exname -> locname-stx-or-sym */
   Scheme_Object *reprovided;      /* list of (list modidx syntax except-name ...) */
   Scheme_Object *all_defs_out;    /* list of (stx-list except-name ...) */
@@ -3093,7 +3093,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	      } else if (SAME_OBJ(struct_symbol, SCHEME_STX_VAL(fst))) {
 		/* (struct <id> (<id> ...)) */
 		int len, i;
-		Scheme_Object *orig_base, *base, *fields, *el, **names;
+		Scheme_Object *prnt_base, *base, *fields, *el, **names;
 		
 		len = scheme_stx_proper_list_length(rest);
 		if (len != 2) {
@@ -3125,7 +3125,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 		  scheme_wrong_syntax(NULL, fields, e,
 				      "bad syntax (" IMPROPER_LIST_FORM ")");
 		
-		orig_base = base;
+		prnt_base = base;
 		base = SCHEME_STX_VAL(base);
 		fields = scheme_syntax_to_datum(fields, 0, NULL);
 
@@ -3134,10 +3134,10 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 		for (i = 0; i < len; i++) {
 		  if (scheme_hash_get(provided, names[i]))
 		    scheme_wrong_syntax("module", names[i], e, "identifier already provided");
-		  /* Wrap local name with orig_base in case there are marks that 
+		  /* Wrap local name with prnt_base in case there are marks that 
 		     trigger "gensym"ing */
 		  scheme_hash_set(provided, names[i], 
-				  scheme_datum_to_syntax(names[i], scheme_false, orig_base, 0, 0));
+				  scheme_datum_to_syntax(names[i], scheme_false, prnt_base, 0, 0));
 		}
 	      }  else if (SAME_OBJ(all_defined_symbol, SCHEME_STX_VAL(fst))) {
 		/* (all-defined) */
@@ -3440,15 +3440,15 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     /* Do non-syntax first. */
     for (count = 0, i = provided->size; i--; ) {
       if (provided->vals[i]) {
-	Scheme_Object *name, *orig_name, *v;
+	Scheme_Object *name, *prnt_name, *v;
 	
 	name = provided->vals[i];
 
 	if (SCHEME_STXP(name)) {
-	  orig_name = SCHEME_STX_VAL(name);
+	  prnt_name = SCHEME_STX_VAL(name);
 	  name = scheme_tl_id_sym(env->genv, name, 0);
 	} else
-	  orig_name = name;
+	  prnt_name = name;
 
 	if (scheme_lookup_in_table(env->genv->toplevel, (const char *)name)) {
 	  /* Defined locally */
@@ -3475,7 +3475,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  }
 	} else {
 	  /* Not defined! */
-	  scheme_wrong_syntax("module", orig_name, form, "provided identifier not defined or imported");
+	  scheme_wrong_syntax("module", prnt_name, form, "provided identifier not defined or imported");
 	}
       }
     }
@@ -3800,7 +3800,7 @@ Scheme_Object *parse_requires(Scheme_Object *form,
   int j, var_count, is_kern, has_context;
   Scheme_Object **exs, **exsns, **exss;
   Scheme_Object *idxstx, *idx, *name, *i, *exns, *one_exn, *prefix, *iname, *ename, *aa;
-  Scheme_Object *imods, *nominal_modidx, *mark_src, *orig_iname;
+  Scheme_Object *imods, *nominal_modidx, *mark_src, *prnt_iname;
 
   imods = scheme_null;
 
@@ -4036,7 +4036,7 @@ Scheme_Object *parse_requires(Scheme_Object *form,
 	if (prefix)
  	  iname = scheme_symbol_append(prefix, iname);
 
-	orig_iname = iname;
+	prnt_iname = iname;
 	if (has_context) {
 	  /* The `require' expression has a set of marks in its
 	     context, which means that we need to generate a name. */
@@ -4045,7 +4045,7 @@ Scheme_Object *parse_requires(Scheme_Object *form,
 	}
 
 	if (ck)
-	  ck(orig_iname, iname, idx, modidx, exsns[j], (j < var_count), data, i, form);
+	  ck(prnt_iname, iname, nominal_modidx, modidx, exsns[j], (j < var_count), data, i, form);
 	
 	if (!is_kern) {
 	  if (copy_vars && start && (j < var_count) && !env->module && !env->phase) {
@@ -4093,7 +4093,7 @@ Scheme_Object *parse_requires(Scheme_Object *form,
   return imods;
 }
 
-static void check_dup_require(Scheme_Object *orig_name, Scheme_Object *name, Scheme_Object *nominal_modidx, 
+static void check_dup_require(Scheme_Object *prnt_name, Scheme_Object *name, Scheme_Object *nominal_modidx, 
 			      Scheme_Object *modidx, Scheme_Object *srcname, 
 			      int isval, void *ht, Scheme_Object *e, Scheme_Object *form)
 {
@@ -4105,7 +4105,7 @@ static void check_dup_require(Scheme_Object *orig_name, Scheme_Object *name, Sch
     if (i) {
       if (same_modidx(modidx, SCHEME_CAR(i)) && SAME_OBJ(srcname, SCHEME_CDR(i)))
 	return; /* same source */
-      scheme_wrong_syntax(NULL, orig_name, form, "duplicate import identifier");
+      scheme_wrong_syntax(NULL, prnt_name, form, "duplicate import identifier");
     } else
       scheme_hash_set((Scheme_Hash_Table *)ht, name, scheme_make_pair(modidx, srcname));
   }

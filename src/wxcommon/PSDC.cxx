@@ -577,6 +577,7 @@ void wxPostScriptDC::DrawArc (float x, float y, float w, float h, float start, f
     }
 
     pstream->Out("grestore\n");
+    resetFont |= RESET_COLOR;
   }
 }
 

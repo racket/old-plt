@@ -43,7 +43,7 @@ static wxMenuBar *GetTheMenuBar(wxFrame *f)
 @SYM "no-system-menu" : wxNO_SYSTEM_MENU
 @SYM "no-resize-border" : wxNO_RESIZE_BORDER
 @SYM "toolbar-button" : wxTOOLBAR_BUTTON
-@SYM "hide-menubar" : wxHIDE_MENUBAR
+@SYM "hide-menu-bar" : wxHIDE_MENUBAR
 @ENDSYMBOLS
 
 @BEGINSYMBOLS iconKind > ONE > PRED BUNDLE

@@ -85,7 +85,7 @@ static void init_symset_frameStyle(void) {
   wxREGGLOB(frameStyle_wxTOOLBAR_BUTTON_sym);
   frameStyle_wxTOOLBAR_BUTTON_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("toolbar-button"));
   wxREGGLOB(frameStyle_wxHIDE_MENUBAR_sym);
-  frameStyle_wxHIDE_MENUBAR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hide-menubar"));
+  frameStyle_wxHIDE_MENUBAR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hide-menu-bar"));
 }
 
 static int unbundle_symset_frameStyle(Scheme_Object *v, const char *where) {

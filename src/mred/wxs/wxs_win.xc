@@ -9,11 +9,7 @@
 @HEADER
 
 #ifdef wx_mac
-#define Move(x, y) SetSize(x, y, -1, -1)
-#endif
-
-#if defined(wx_xt)
-#define wxPOS_USE_MINUS_ONE 0x4
+#define Move(x, y) SetSize(x, y, -1, -1, wxPOS_USE_MINUS_ONE)
 #endif
 
 static int wxSchemeWindowGetWidth(wxWindow *w)

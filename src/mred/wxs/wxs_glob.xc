@@ -107,6 +107,7 @@ extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, con
 @ "end-busy-cursor" : void wxEndBusyCursor();
 @ "bell" : void wxBell();
 @ "display-size" : void wxDisplaySize(int*,int*,int);
+@ "display-origin" : void wxDisplaySize(int*,int*);
 
 @ "label->plain-label" : string wxStripMenuCodes_Scheme(string);
 

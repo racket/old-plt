@@ -4477,10 +4477,11 @@
                  ;[_ (printf "~a " (- (current-milliseconds) start))]
                  ;[start (current-milliseconds)]
                  [reconstructed-type (typeL label reachable-labels)]
+                 ;[_ (begin (print-struct #t)(printf "~a~n" reconstructed-type))]
                  ;[_ (printf " ~a~n" (- (current-milliseconds) start))]
                  ;[start (current-milliseconds)]
                  [handle (hc:hashcons-type (sba-state-hashcons-tbl sba-state) reconstructed-type)]
-                 ;[_ (printf " ~a~n" (- (current-milliseconds) start))]
+                 ;[_ (printf "HC-Time= ~a~n" (- (current-milliseconds) start))]
                  )
             (set-type-var-handle! (label-type-var label) handle)
             handle))))
@@ -4490,171 +4491,9 @@
   ; delta-flow is the flow variable environment, or a symbol if no flow environment
   ; was available at the time of the call.
   (define (pp-type sba-state type delta-flow)
-    (hc:handle->string (sba-state-hashcons-tbl sba-state) type))
-  
-  ;    (cond
-  ;      [(type-empty? type) "_"]
-  ;      [(type-cst? type)
-  ;       ; can be a complex sexp if (quote sexp) is in the input
-  ;       (string:expr->string (type-cst-type type))]
-  ;      ;      (let ([val (type-cst-type type)])
-  ;      ;        (cond
-  ;      ;          [(number? val) (number->string val)]
-  ;      ;          [(symbol? val) (symbol->string val)]
-  ;      ;          [(string? val) (string-append "\"" val "\"")]
-  ;      ;          [(void? val) "void"]
-  ;      ;          [else (error 'pp-type "unknown datum: ~a" val)]))]
-  ;      [(type-cons? type)
-  ;       (string-append "(cons "
-  ;                      (pp-type (type-cons-car type) delta-flow) " "
-  ;                      (pp-type (type-cons-cdr type) delta-flow) ")")]
-  ;      [(type-vector? type)
-  ;       (string-append "(vector " (pp-type (type-vector-element type) delta-flow) ")")]
-  ;      [(type-promise? type)
-  ;       (string-append "(promise "
-  ;                      ; skipping the thunk inside the promise (we know it's always a
-  ;                      ; thunk because delay is a macro...) Note that the promise might
-  ;                      ; be empty, for now, so we have to test that...
-  ;                      (let ([promise-value-type (type-promise-value type)])
-  ;                        (if (type-case-lambda? promise-value-type)
-  ;                            (pp-type (car (type-case-lambda-exps promise-value-type)) delta-flow)
-  ;                            (pp-type promise-value-type delta-flow)))
-  ;                      ")")]
-  ;      [(type-case-lambda? type)
-  ;       (string-append
-  ;        "(case-lambda "
-  ;        (list:foldr
-  ;         (lambda (rest-arg? formal-args-types body-exp-type str)
-  ;           (string-append
-  ;            "["
-  ;            (list:foldr
-  ;             (lambda (formal-arg-type str)
-  ;               (string-append
-  ;                (pp-type formal-arg-type delta-flow)
-  ;                " "
-  ;                str))
-  ;             ""
-  ;             formal-args-types)
-  ;            (if rest-arg?
-  ;                "*-> "
-  ;                "-> ")
-  ;            (pp-type body-exp-type delta-flow)
-  ;            "]"
-  ;            ;(if (string=? str "")
-  ;            ;  ""
-  ;            ;  " ")
-  ;            str))
-  ;         ""
-  ;         (type-case-lambda-rest-arg?s type)
-  ;         (type-case-lambda-argss type)
-  ;         (type-case-lambda-exps type))
-  ;        ")")]
-  ;      [(type-var? type)
-  ;       (symbol->string (type-var-name type))]
-  ;      [(type-flow-var? type)
-  ;       (error 'pp-type "flow var: ~a~n" (type-flow-var-name type))
-  ;       (pp-type (cdr (lookup-flow-var-in-env delta-flow type)) delta-flow)]
-  ;      [(type-union? type)
-  ;       (string-append
-  ;        "(union "
-  ;        (list:foldr
-  ;         (lambda (union-element str)
-  ;           (string-append
-  ;            (pp-type union-element delta-flow)
-  ;            (if (string=? str ")")
-  ;                ""
-  ;                " ")
-  ;            str))
-  ;         ")"
-  ;         (type-union-elements type)))]
-  ;      [(type-values? type)
-  ;       (let ([values-type (type-values-type type)])
-  ;         (cond
-  ;           [(type-empty? values-type)
-  ;            (pp-type values-type delta-flow)]
-  ;           [(and (type-cst? values-type) (eq? (type-cst-type values-type) 'top))
-  ;            (pp-type values-type delta-flow)]
-  ;           [else
-  ;            (let* ([values-types-list (type-list-map cst:id (type-values-type type))]
-  ;                   [values-types-list-length (length values-types-list)])
-  ;              (cond
-  ;                [(zero? values-types-list-length)
-  ;                 (pp-type (make-type-empty) delta-flow)]
-  ;                [(= values-types-list-length 1)
-  ;                 (pp-type (car values-types-list) delta-flow)]
-  ;                [else (string-append
-  ;                       "(values "
-  ;                       (list:foldr
-  ;                        (lambda (type str)
-  ;                          (string-append (pp-type type delta-flow)
-  ;                                         (if (string=? str ")")
-  ;                                             ""
-  ;                                             " ")
-  ;                                         str))
-  ;                        ")"
-  ;                        values-types-list))]))]))]
-  ;      [(type-rec? type)
-  ;       (string-append
-  ;        "(rec-type ("
-  ;        (list:foldr
-  ;         (lambda (var type str)
-  ;           (string-append
-  ;            "["
-  ;            (symbol->string (type-var-name var))
-  ;            " "
-  ;            ; poor man's type beautifier
-  ;            (if (and (type-union? type)
-  ;                     (= (length (type-union-elements type)) 2)
-  ;                     (or (and (type-cst? (car (type-union-elements type)))
-  ;                              (null? (type-cst-type (car (type-union-elements type))))
-  ;                              (type-cons? (cadr (type-union-elements type)))
-  ;                              (type-var? (type-cons-cdr (cadr (type-union-elements type))))
-  ;                              (eq? (type-var-name (type-cons-cdr (cadr (type-union-elements type))))
-  ;                                   (type-var-name var)))
-  ;                         (and (type-cst? (cadr (type-union-elements type)))
-  ;                              (null? (type-cst-type (cadr (type-union-elements type))))
-  ;                              (type-cons? (car (type-union-elements type)))
-  ;                              (type-var? (type-cons-cdr (car (type-union-elements type))))
-  ;                              (eq? (type-var-name (type-cons-cdr (car (type-union-elements type))))
-  ;                                   (type-var-name var)))))
-  ;                (string-append
-  ;                 "(listof "
-  ;                 (pp-type (if (type-cst? (car (type-union-elements type)))
-  ;                              (type-cons-car (cadr (type-union-elements type)))
-  ;                              (type-cons-car (car (type-union-elements type))))
-  ;                          delta-flow)
-  ;                 ")")
-  ;                (pp-type type delta-flow))
-  ;            (if (string=? str ") ")
-  ;                "]"
-  ;                "] ")
-  ;            str))
-  ;         ") "
-  ;         (type-rec-vars type)
-  ;         (type-rec-types type))
-  ;        (pp-type (type-rec-body type) delta-flow)
-  ;        ")")]
-  ;      [(type-struct-value? type)
-  ;       (string-append
-  ;        "#(struct:"
-  ;        (symbol->string (label-struct-type-name (type-struct-value-type-label type)))
-  ;        " "
-  ;        (list:foldr
-  ;         (lambda (elt-type str)
-  ;           (string-append
-  ;            (pp-type elt-type delta-flow)
-  ;            (if (string=? str ")")
-  ;                ""
-  ;                " ")
-  ;            str))
-  ;         ")"
-  ;         (type-struct-value-types type)))]
-  ;      [(type-struct-type? type)
-  ;       (string-append
-  ;        "#<struct-type:"
-  ;        (symbol->string (label-struct-type-name (type-struct-type-type-label type)))
-  ;        ">")]
-  ;      [else (error 'pp-type "unknown type: ~a" type)]))
+    (hc:handle->string (sba-state-hashcons-tbl sba-state) type
+                       (lambda (h1 h2)
+                         (subtype sba-state h1 h2 #f #f #f))))
   
   ; label (listof label) -> (listof label)
   ; returns list of labels from which labels in label's set went in

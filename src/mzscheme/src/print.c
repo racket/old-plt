@@ -1445,12 +1445,13 @@ print_string(Scheme_Object *string, int notdisplay, Scheme_Thread *p)
     print_this_string(p, "\"", 0, 1);
 
     for (a = i = 0; i < len; i++) {
+      /* Escape-sequence handling by Eli Barzilay. */
       switch (((unsigned char *)str)[i]) {
       case '\"': esc = "\\\""; break;
       case '\\': esc = "\\\\"; break;
       case '\a': esc = "\\a";  break;
       case '\b': esc = "\\b";  break;
-      case '\e': esc = "\\e";  break;
+      case 27: esc = "\\e";  break;
       case '\f': esc = "\\f";  break;
       case '\n': esc = "\\n";  break;
       case '\r': esc = "\\r";  break;

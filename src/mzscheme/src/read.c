@@ -1084,6 +1084,7 @@ read_string(Scheme_Object *port,
       scheme_read_err(port, startline, start, 1,
 		      "read: expected a '\"'; started");
     /* Note: errors will leave junk on the port, with an open \". */
+    /* Escape-sequence handling by Eli Barzilay. */
     if (ch == '\\') {
       ch = scheme_getc(port);
       switch ( ch ) {
@@ -1108,13 +1109,8 @@ read_string(Scheme_Object *port,
 	  }
 	  ch = n;
 	} else {
-#if 1
 	  scheme_read_err(port, startline, start, 1,
 			  "read: no hex digits following \\x in string");
-#else
-	  scheme_ungetc(ch, port);
-	  ch = 'x';
-#endif
 	}
 	break;
       default:
@@ -1122,13 +1118,8 @@ read_string(Scheme_Object *port,
 	  for (n = j = 0; j < 3; j++) {
 	    n1 = 8*n + ch - '0';
 	    if (n1 > 255) {
-#if 1
 	      scheme_read_err(port, startline, start, 1,
 			      "read: escape sequence \\%o out of range in string", n1);
-#else
-	      scheme_ungetc(ch, port);
-	      break;
-#endif
 	    }
 	    n = n1;
 	    if (j < 2) {

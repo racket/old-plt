@@ -85,6 +85,7 @@ wxChoice::wxChoice (wxPanel * panel, wxFunction func, char *Title,
   Create (panel, func, Title, x, y, width, height, N, Choices, style, name);
 }
 
+#define max(x, y) ((x > y) ? x : y)
 
 Bool wxChoice::
 Create (wxPanel * panel, wxFunction func, char *Title,
@@ -459,22 +460,13 @@ void wxChoice::OnEvent(wxMouseEvent& event) // mac platform only
 #endif
 				selection = newsel;
 				wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
-				commandEvent->eventObject = this;
-				commandEvent->commandInt = selection;
-				commandEvent->commandString = GetString(selection);
-		  		ProcessCommand(*commandEvent);
+				ProcessCommand(*commandEvent);
 			}
 		}
 		DrawChoice(TRUE);
 	}
 }
 
-
-void wxChoice::Command(wxCommandEvent& event) // mac platform only (also xview platform)
-{
-   SetSelection (event.commandInt);
-   ProcessCommand(event);
-}
 
 // ------------ Methods available to user ------------
 

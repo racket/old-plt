@@ -165,6 +165,8 @@ void wxCanvas::SetColourMap(wxColourMap* cmap)
 {
 }
 
+#define max(x, y) ((x > y) ? x : y)
+
 //-----------------------------------------------------------------------------
 void wxCanvas::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
@@ -321,10 +323,10 @@ void wxCanvas::SetScrollData
 (
 	wxScrollData*		scrollData,
 	wxWhatScrollData	whatScrollData,
-	wxWindow*			iniatorWindow
+	wxScrollEvent*		evnt
 )
 {
-	if (iniatorWindow == this) return;
+	// if (iniatorWindow == this) return;
 
 	if ((long)whatScrollData & wxWhatScrollData::wxSizeW)
 		units_x = scrollData->GetValue(wxWhatScrollData::wxSizeW);
@@ -351,10 +353,8 @@ void wxCanvas::SetScrollData
  	    theDC->device_origin_x = 0;
 	    theDC->device_origin_y = 0;
 	  }
- 	  if (iniatorWindow) {
- 	    // Scrollbars do not automatically change the canvas:
-	    wxCommandEvent *simulEvent = new wxCommandEvent(wxTYPE_EVENT);
- 	    OnScroll(*simulEvent);
+ 	  if (evnt) {
+ 	    OnScroll(*evnt);
  	  }
           return;
  	}

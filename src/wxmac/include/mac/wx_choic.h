@@ -74,7 +74,6 @@ class wxChoice: public wxbChoice
   
   // Mac only methods
 	void OnClientAreaDSize(int dW, int dH, int dX, int dY);
-	void Command(wxCommandEvent& event);
 
 	virtual void ChangeToGray(Bool gray);
 	virtual void Paint(void);

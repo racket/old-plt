@@ -35,10 +35,10 @@ enum {
  wxEVENT_TYPE_RESERVED1,
  wxEVENT_TYPE_CHOICE_COMMAND,
  wxEVENT_TYPE_LISTBOX_COMMAND,
- wxEVENT_TYPE_RESERVED2,
+ wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND,
  wxEVENT_TYPE_TEXT_COMMAND,
  wxEVENT_TYPE_MULTITEXT_COMMAND,
- wxEVENT_TYPE_MENU_COMMAND,
+ wxEVENT_TYPE_MENU_SELECT,
  wxEVENT_TYPE_SLIDER_COMMAND,
  wxEVENT_TYPE_RADIOBOX_COMMAND,
  wxEVENT_TYPE_TEXT_ENTER_COMMAND, /* +12 */
@@ -87,37 +87,23 @@ typedef       void    *wxKeyEvent;
 class wxCommandEvent: public wxEvent
 {
  public:
-  char *commandString; // String event argument
-  int commandInt;      // Integer event argument
-  long extraLong;      // Additional information (e.g. select/deselect)
-  char *labelString;   // The label of the item
-  char *clientData;    // Arbitrary client data
   wxCommandEvent(WXTYPE commandType);
   inline ~wxCommandEvent(void) {}
 
-  /*
-   * Accessors dependent on context
-   *
-   */
+};
 
-  // Get listbox/choice client data  
-  inline virtual char *GetClientData() { return clientData; }
+class wxPopupEvent : public wxCommandEvent
+{
+  public:
+    wxPopupEvent(void);
+    int menuId;
+};
 
-  // Get listbox selection if single-choice
-  inline virtual int GetSelection() { return commandInt; }
-
-  // Get listbox/choice selection string
-  inline virtual char *GetString() { return commandString; }
-
-  // Get checkbox value
-  inline virtual Bool Checked() { return (Bool)commandInt; }
-
-  // TRUE if the listbox event was a selection.
-  inline virtual Bool IsSelection() { return (Bool)extraLong; }
-#if 0
-  Bool ReadEvent(istream&);
-  Bool WriteEvent(ostream&);
-#endif
+class wxScrollEvent : public wxEvent
+{
+ public:
+   wxScrollEvent(void);
+   int direction, pos, moveType;
 };
 
 // Mouse event class
@@ -194,11 +180,6 @@ class wxMouseEvent: public wxEvent
 
   // Find the position of the event
   virtual void Position(float *x, float *y);
-
-#if 0
-  Bool ReadEvent(istream&);
-  Bool WriteEvent(ostream&);
-#endif
 };
 
 // Keyboard input event class
@@ -220,11 +201,6 @@ class wxKeyEvent: public wxEvent
   virtual long KeyCode(void);
 
   virtual void Position(float *x,float *y) ;
-
-#if 0
-  Bool ReadEvent(istream&);
-  Bool WriteEvent(ostream&);
-#endif
 };
 
 #endif // IN_CPROTO

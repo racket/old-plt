@@ -61,7 +61,7 @@ public:
 		int			y = -1,
 		int			width = -1,
 		int			height = -1,
-		long		style = wxSDI | wxDEFAULT_FRAME,
+		long		style = wxSDI,
 		char*		windowName = "frame",
 		WXTYPE		objectType = wxTYPE_FRAME
 	);

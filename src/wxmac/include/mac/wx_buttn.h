@@ -101,7 +101,6 @@ public:
 	void SetLabel(char*);
 	void SetLabel(wxBitmap* bitmap);
 	char* GetLabel(void);
-	void Command(wxCommandEvent& event);
 
 	void ChangeColour(void);
 

@@ -25,20 +25,12 @@
 typedef       void    *wxPrintDialog ;
 typedef       void    *wxPrinter ;
 typedef       void    *wxPrintout ;
-typedef       void    *wxPreviewCanvas ;
-typedef       void    *wxPreviewControlBar ;
-typedef       void    *wxPreviewFrame ;
-typedef       void    *wxPrintPreview ;
 #else
 
 class wxDC;
 class wxPrintout;
 class wxPrinter;
 class wxPrintDialog;
-class wxPrintPreview;
-class wxPreviewCanvas;
-class wxPreviewControlBar;
-class wxPreviewFrame;
 
 /*
  * wxPrintData
@@ -197,157 +189,6 @@ class wxPrintout: public wxObject
   inline virtual Bool IsPreview(void) { return isPreview; }
 
   inline virtual void SetIsPreview(Bool p) { isPreview = p; }
-};
-
-/*
- * wxPreviewCanvas
- * Canvas upon which a preview is drawn.
- */
- 
-class wxPreviewCanvas: public wxCanvas
-{
- private:
-  wxPrintPreview *printPreview;
-  static wxBrush *previewBackgroundBrush;
- public:
-  wxPreviewCanvas(wxPrintPreview *preview, wxWindow *parent, int x = -1, int y = -1, int w = -1, int h = -1,
-    long style = 0, char *name = "canvas");
-  ~wxPreviewCanvas(void);
-
-  void Paint(void);
-  void OnEvent(wxMouseEvent& event);
-  void OnChar(wxKeyEvent& event);
-};
-
-/*
- * wxPreviewFrame
- * Default frame for showing preview.
- */
-
-class wxPreviewFrame: public wxFrame
-{
- protected:
-  wxCanvas *previewCanvas;
-  wxPreviewControlBar *controlBar;
-  wxPrintPreview *printPreview;
- public:
-  wxPreviewFrame(wxPrintPreview *preview, wxFrame *parent, char *title = "Print Preview",
-    int x = -1, int y = -1, int w = -1, int h = -1,
-    long style = wxDEFAULT_FRAME|wxSDI, char *name = "frame");
-  ~wxPreviewFrame(void);
-
-  Bool OnClose(void);
-  virtual void Initialize(void);
-  virtual void CreateCanvas(void);
-  virtual void CreateControlBar(void);
-};
-
-/*
- * wxPreviewControlBar
- * A panel with buttons for controlling a print preview.
- * The programmer may wish to use other means for controlling
- * the print preview.
- */
-
-#define wxPREVIEW_PRINT        1
-#define wxPREVIEW_PREVIOUS     2
-#define wxPREVIEW_NEXT         4
-#define wxPREVIEW_ZOOM         8
-
-#define wxPREVIEW_DEFAULT      wxPREVIEW_PREVIOUS|wxPREVIEW_NEXT|wxPREVIEW_ZOOM
-
-class wxPreviewControlBar: public wxPanel
-{
- protected:
-  wxPrintPreview *printPreview;
-  wxButton *closeButton;
-  wxButton *nextPageButton;
-  wxButton *previousPageButton;
-  wxButton *printButton;
-  wxChoice *zoomControl;
-  static wxFont *buttonFont;
-  long buttonFlags;
- public:
-  wxPreviewControlBar(wxPrintPreview *preview, long buttons,
-    wxWindow *parent, int x = -1, int y = -1, int w = -1, int h = -1,
-    long style = 0, char *name = "panel");
-  ~wxPreviewControlBar(void);
-
-  virtual void CreateButtons(void);
-  virtual void SetZoomControl(int zoom);
-  virtual int GetZoomControl(void);
-  inline virtual wxPrintPreview *GetPrintPreview(void) { return printPreview; }
-  void Paint(void);
-};
-
-/*
- * wxPrintPreview
- * Programmer creates an object of this class to preview a wxPrintout.
- */
- 
-class wxPrintPreview: public wxObject
-{
- private:
-  wxPrintData printData;
-  wxCanvas *previewCanvas;
-  wxFrame *previewFrame;
-  wxBitmap *previewBitmap;
-  wxPrintout *previewPrintout;
-  wxPrintout *printPrintout;
-  int currentPage;
-  int currentZoom;
-  float previewScale;
-  int topMargin;
-  int leftMargin;
-  int pageWidth;
-  int pageHeight;
-  int minPage;
-  int maxPage;
- public:
-  wxPrintPreview(wxPrintout *printout, wxPrintout *printoutForPrinting = NULL, wxPrintData *data = NULL);
-  ~wxPrintPreview(void);
-
-  virtual Bool SetCurrentPage(int pageNum);
-  virtual inline int GetCurrentPage(void) { return currentPage; };
-
-  virtual void SetPrintout(wxPrintout *printout);
-  virtual inline wxPrintout *GetPrintout(void) { return previewPrintout; };
-  virtual inline wxPrintout *GetPrintoutForPrinting(void) { return printPrintout; };
-
-  virtual void SetFrame(wxFrame *frame);
-  virtual void SetCanvas(wxCanvas *canvas);
-
-  inline virtual wxFrame *GetFrame(void) { return previewFrame; }
-  inline virtual wxCanvas *GetCanvas(void) { return previewCanvas; }
-
-  // The preview canvas should call this from Paint
-  virtual Bool PaintPage(wxCanvas *canvas);
-
-  // This draws a blank page onto the preview canvas
-  virtual Bool DrawBlankPage(wxCanvas *canvas);
-
-  // This is called by wxPrintPreview to render a page into
-  // a wxMemoryDC.
-  virtual Bool RenderPage(int pageNum);
-
-  virtual wxPrintData &GetPrintData(void);
-  virtual void SetZoom(int percent);
-  virtual int GetZoom(void);
-
-  // If we own a wxPrintout that can be used for printing, this
-  // will invoke the actual printing procedure. Called
-  // by the wxPreviewControlBar.
-  virtual Bool Print(Bool interactive);
-
-  virtual int GetMaxPage(void) { return maxPage; }
-  virtual int GetMinPage(void) { return minPage; }
-
- protected:
- 
-  // Calculate scaling that needs to be done to get roughly
-  // the right scaling for the screen pretending to be
-  // the currently selected printer.
-  virtual void DetermineScaling(void);
 };
 
 #endif // IN_CPROTO

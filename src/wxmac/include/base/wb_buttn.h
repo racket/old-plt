@@ -41,9 +41,6 @@ class wxbButton: public wxItem
 #endif
   ~wxbButton(void);
 
-  void Command(wxCommandEvent& event);
-  void ProcessCommand(wxCommandEvent& event);
-
 #ifdef wx_mac
   virtual void SetDefault(Bool flag = TRUE) = 0;
 #else // wx_mac

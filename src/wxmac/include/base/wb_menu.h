@@ -62,9 +62,6 @@ class wxbMenu: public wxItem
   // Find wxMenuItem for item ID, and return item's
   // menu too if itemMenu is non-NULL.
   wxMenuItem *FindItemForId(int itemId, wxMenu **itemMenu = NULL);
-
-  void ProcessCommand(wxCommandEvent& event);
-
 };
 
 // Menu Bar (a la Windows)

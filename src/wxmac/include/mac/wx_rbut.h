@@ -101,8 +101,6 @@ public:
 
 	virtual void ShowAsActive(Bool flag);
 	virtual void OnEvent(wxMouseEvent& event); // mac platform only
-	virtual void Command(wxCommandEvent& event); // mac platform only (also xview platform)
-	virtual void ProcessCommand(wxCommandEvent& event);
 
 	virtual void Highlight(Bool flag);
 };

@@ -199,7 +199,7 @@ public:
 	(
 		wxScrollData*		scrollData,
 		wxWhatScrollData	whatScrollData,
-		wxWindow*			iniatorWindow
+		wxScrollEvent*		e
 	);
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

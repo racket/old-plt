@@ -366,8 +366,8 @@ void wxListBox::OnEvent(wxMouseEvent& event) // WCH : mac only ?
 			  && (cell.v == cLastClickCell.v)
 			  && (event.timeStamp - cLastClickTime < SCALE_TIMESTAMP(GetDblTime()))) {
 			// Double-click
-			wxPanel *panel = (wxPanel *)GetParent();
-			panel->OnDefaultAction(this);
+			wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND);
+			ProcessCommand(*commandEvent);
 			return;
 		  }
 		  cLastClickTime = event.timeStamp;
@@ -376,15 +376,8 @@ void wxListBox::OnEvent(wxMouseEvent& event) // WCH : mac only ?
 		}
 		
 		{
-			int which = ((cell.v < no_items) ? cell.v : -1);
-			if (multiple & (wxMULTIPLE | wxEXTENDED))
-			  which = -1;
 			wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
-			commandEvent->commandString = GetString(which);
-			commandEvent->commandInt = which;
-			commandEvent->eventObject = this;
-			commandEvent->extraLong = (which >= 0) ? 1 : 0;
-	  		ProcessCommand(*commandEvent);
+			ProcessCommand(*commandEvent);
 		}
 	}
 }
@@ -472,10 +465,7 @@ void wxListBox::OnChar(wxKeyEvent& event)
 
 		{
 		    wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
-			commandEvent->commandString = GetString(next.v);
-			commandEvent->commandInt = next.v;
-			commandEvent->eventObject = this;
-	  		ProcessCommand(*commandEvent);
+			ProcessCommand(*commandEvent);
 	  	}
 	}
 }

@@ -98,25 +98,25 @@ void wxScroll::SetScrollData
 (
 	wxScrollData*		newScrollData,
 	wxWhatScrollData	whatScrollData, // items to be changed
-	wxWindow*			iniatorWindow
+	wxScrollEvent*		e
 )
 {
 	wxScrollData* scrollData = GetScrollData();
 	scrollData->SetValue(newScrollData, whatScrollData);
-	RootScroll()->OnSetScrollData(scrollData, whatScrollData, iniatorWindow);
+	RootScroll()->OnSetScrollData(scrollData, whatScrollData, e);
 }
 
 //-----------------------------------------------------------------------------
 void wxScroll::SetScrollData
 (
-	int 				value,			// value for items to be changed
+	int 			value,			// value for items to be changed
 	wxWhatScrollData	whatScrollData, // items to be changed
-	wxWindow*			iniatorWindow
+	wxScrollEvent*		e
 )
 {
 	wxScrollData* scrollData = GetScrollData();
 	scrollData->SetValue(value, whatScrollData);
-	RootScroll()->OnSetScrollData(scrollData, whatScrollData, iniatorWindow);
+	RootScroll()->OnSetScrollData(scrollData, whatScrollData, e);
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -172,16 +172,16 @@ void wxScroll::OnSetScrollData
 (
 	wxScrollData*		scrollData,
 	wxWhatScrollData	whatScrollData, // items to be changed
-	wxWindow*			iniatorWindow
+	wxScrollEvent*		e
 )
 {
 	wxNode* childScrollNode = cScrolls.First();
 	while (childScrollNode)
 	{
 		wxScroll* childScroll = (wxScroll*)childScrollNode->Data();
-		childScroll->OnSetScrollData(scrollData, whatScrollData, iniatorWindow);
+		childScroll->OnSetScrollData(scrollData, whatScrollData, e);
 		childScrollNode = childScrollNode->Next();
 	}
 
-	cScrollWindow->SetScrollData(scrollData, whatScrollData, iniatorWindow);
+	cScrollWindow->SetScrollData(scrollData, whatScrollData, e);
 }

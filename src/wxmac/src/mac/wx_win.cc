@@ -986,7 +986,7 @@ void wxWindow::SetScrollData // Must override if window scrolls
 (
 	wxScrollData*		scrollData,
 	wxWhatScrollData	whatScrollData,
-	wxWindow*			iniatorWindow
+	wxScrollEvent*		e
 )
 {
 	// Must override if window scrolls
@@ -1092,7 +1092,6 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent& mouseEvent)
 					ClientToLogical(&clientHitX, &clientHitY); // mouseWindow logical c.s.
 					areaMouseEvent->x = clientHitX; // mouseWindow logical c.s.
 					areaMouseEvent->y = clientHitY; // mouseWindow logical c.s.
-					areaMouseEvent->eventObject = this;
 					if (!doCallPreMouseEvent(this, this, areaMouseEvent)) {
 						if (WantsFocus() && areaMouseEvent->ButtonDown()) {
 							wxFrame *fr = GetRootFrame();
@@ -1520,9 +1519,8 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
   wxMenuItem* theWxMenuItem = (wxMenuItem*) node->Data();
   if (!theWxMenuItem) wxFatalError("No wxMenuItem for wxNode.");
 
-  wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_MENU_COMMAND);
-  event->eventObject = theWxMenu;
-  event->commandInt = theWxMenuItem->itemId;
+  wxPopupEvent *event = new wxPopupEvent();
+  event->menuId = theWxMenuItem->itemId;
 
   menu->ProcessCommand(*event);
 

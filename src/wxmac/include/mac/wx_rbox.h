@@ -95,8 +95,6 @@ public:
 
   void ChangeColour(void);
   void ChangeToGray(Bool gray);
-
-  void Command(wxCommandEvent& event); // mac platform only
 };
 
 #endif // IN_CPROTO

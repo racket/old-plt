@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_mgstr.cc,v 1.4 1994/08/15 21:53:50 edz Exp edz $
+ * RCS_ID:      $Id: wb_mgstr.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -108,21 +108,8 @@ wxSetLanguage (wxlanguage_t language)
   switch (language)
     {
     case wxLANGUAGE_DEFAULT:
-#if defined(wx_msw) && USE_RESOURCES
-      char *lang;
-      if (wxGetResource ("intl", "sLanguage", &lang, "WIN.INI") == FALSE)
-	lang = copystring ("eng");
-      if (StringMatch (lang, "eng"))
-	wxSetLanguage (wxLANGUAGE_ENGLISH);
-      else if (StringMatch (lang, "ger"))
-	wxSetLanguage (wxLANGUAGE_GERMAN);
-      else
-	wxSetLanguage (wxLANGUAGE_ENGLISH);
-      delete[]lang;
-#else
       // Default is English
       wxSetLanguage (wxLANGUAGE_ENGLISH);
-#endif
       break;
     case wxLANGUAGE_GERMAN:
       wx_msg_str = (char **) &(msg_german[0]);

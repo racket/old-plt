@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_frame.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
+ * RCS_ID:      $Id: wb_frame.cc,v 1.2 1998/06/02 20:51:41 robby Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -233,14 +233,9 @@ void wxbFrame::Command(int id)
 
 void wxbFrame::ProcessCommand(int id)
 {
-  wxCommandEvent *_commandEvent = new wxCommandEvent(wxEVENT_TYPE_MENU_COMMAND);
+  wxCommandEvent *_commandEvent = new wxCommandEvent(wxEVENT_TYPE_MENU_SELECT);
   wxCommandEvent &commandEvent = *_commandEvent;
   
-  commandEvent.commandInt = id;
-
-  if (wxNotifyEvent(commandEvent, TRUE))
-    return;
-
   wxMenuBar *bar = GetMenuBar() ;
   if (!bar)
     return;
@@ -263,7 +258,5 @@ void wxbFrame::ProcessCommand(int id)
 
 #endif
   OnMenuCommand(id);
-
-  wxNotifyEvent(commandEvent, FALSE);
 }
 

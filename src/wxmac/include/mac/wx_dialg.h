@@ -39,7 +39,7 @@ public:
 		int			y = -1,
 		int			width = -1,
 		int			height = -1,
-		long		style = wxDEFAULT_DIALOG_STYLE,
+		long		style = 0,
 		char*		windowName = "Dialog",
 		WXTYPE		objectType = wxTYPE_DIALOG_BOX
 	);

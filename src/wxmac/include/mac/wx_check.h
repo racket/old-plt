@@ -104,7 +104,6 @@ public:
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	virtual void DoShow(Bool show);
 	void ChangeColour(void) ;
-	virtual void Command(wxCommandEvent& event); // mac platform only (also xview platform)
 
 	virtual void ChangeToGray(Bool gray);
 

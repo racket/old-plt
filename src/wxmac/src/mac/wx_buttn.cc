@@ -475,26 +475,12 @@ void wxButton::OnEvent(wxMouseEvent& event) // mac platform only
 		if (trackResult)
 		{
 			wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_BUTTON_COMMAND);
-			commandEvent->eventObject = this;
 	  		ProcessCommand(*commandEvent);
 		}
 	}
 }
 
 //-----------------------------------------------------------------------------
-void wxButton::Command(wxCommandEvent& event) // mac platform only (also xview platform)
-{
-	if (cEnable)
-	{
-		Highlight(TRUE); // highlight button
-		long delayTicks = 10; // one tick is 1/60th of a second
-		unsigned long finalTicks;
-		Delay(delayTicks, &finalTicks);
-		Highlight(FALSE); // unhighlight button
-	  	ProcessCommand(event);
-  	}
-}
-
 void wxButton::ChangeToGray(Bool gray)
 {
   SetCurrentDC();

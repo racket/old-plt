@@ -63,8 +63,8 @@ class wxbItem: public wxWindow
    virtual void SetLabel(char *label) = 0;
    virtual char *GetLabel(void) = 0;
 
-   inline virtual void Command(wxCommandEvent& event) {};        // Simulates an event
-   inline virtual void ProcessCommand(wxCommandEvent& event) {}; // Calls the callback and 
+   virtual void Command(wxCommandEvent& event);        // Simulates an event
+   virtual void ProcessCommand(wxCommandEvent& event); // Calls the callback and 
 
    // inline virtual void Show(Bool show) {};
 #ifndef wx_mac

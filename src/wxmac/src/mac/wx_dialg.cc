@@ -169,45 +169,6 @@ Bool wxDialogBox::OnClose(void)
 }
 
 //=============================================================================
-//
-// Message centring code
-//
-//=============================================================================
-
-//-----------------------------------------------------------------------------
-void wxSplitMessage(char* message, wxList* messageList, wxPanel* panel)
-{
-  char* copyMessage = copystring(message);
-  int i = 0;
-  int len = strlen(copyMessage);
-  char* currentMessage = copyMessage;
-  while (i < len)
-  {
-    while ((i < len) && (copyMessage[i] != '\n')) i ++;
-    if (i < len) copyMessage[i] = 0;
-    wxMessage* mess = new wxMessage(panel, currentMessage);
-    messageList->Append(mess);
-    panel->NewLine();
-
-    currentMessage = copyMessage + i + 1;
-  }
-  delete[] copyMessage;
-}
-
-//-----------------------------------------------------------------------------
-void wxCentreMessage(wxList* messageList)
-{
-  // Do the message centering
-  wxNode* node = messageList->First();
-  while (node)
-  {
-    wxMessage* mess = (wxMessage*)node->Data();
-    mess->Centre();
-    node = node->Next();
-  }
-}
-
-//=============================================================================
 // Public constructors
 //=============================================================================
 
@@ -227,7 +188,7 @@ wxDialogBox::wxDialogBox // Constructor (for dialog window)
 	) :
 		wxPanel (new wxFrame(NULL, windowTitle, 
 				  x, y,
-				  width, height, style, windowName, objectType),
+				  width, height, style | wxMDI_CHILD, windowName, objectType),
 	              0, 0, width, height),
 		cButtonPressed (0)
 {
@@ -258,148 +219,14 @@ wxDialogBox::~wxDialogBox()
 	}
 }
 
-static wxDialogBox* wxGetDialogFromButton(wxButton& button);
-static void wxOkButtonProc(wxButton& button, wxEvent& event);
-static void wxCancelButtonProc(wxButton& button, wxEvent& event);
-static void wxYesButtonProc(wxButton& button, wxEvent& event);
-static void wxNoButtonProc(wxButton& button, wxEvent& event);
-
 //-----------------------------------------------------------------------------
 // Pop up a message box
 //-----------------------------------------------------------------------------
 int wxMessageBox(char* message, char* caption, long style,
                  wxWindow* parent, int x, int y)
 {
-	wxDialogBox* dialog = new wxDialogBox((wxFrame*)NULL, caption, TRUE, x, y);
 
-//============================================
-	wxPanel* dialogPanel = dialog;
-	wxFont* theFont = new wxFont(12, wxSYSTEM, wxNORMAL, wxNORMAL);
-	dialogPanel->SetLabelFont(theFont);
-	dialogPanel->SetButtonFont(theFont);
-
-//============================================
-	wxPanel* messagePanel = new wxPanel(dialogPanel, -1, -1, -1, -1);
-	Bool centre = ((style & wxCENTRE) == wxCENTRE);
-
-	wxList messageList;
-	wxSplitMessage(message, &messageList, messagePanel);
-	messagePanel->Fit();
-	if (centre)
-	{
-		wxCentreMessage(&messageList);
-	}
-	//dialogPanel->AdvanceCursor(messagePanel); // WCH: kludge
-
-//============================================
-	dialogPanel->NewLine();
-	wxPanel* buttonPanel = new wxPanel(dialogPanel, -1, -1, -1, -1);
-
-	wxButton* ok = NULL;
-	wxButton* cancel = NULL;
-	wxButton* yes = NULL;
-	wxButton* no = NULL;
-
-	if (style & wxYES_NO)
-	{
-		yes = new wxButton(buttonPanel, (wxFunction)&wxYesButtonProc, "Yes");
-		no = new wxButton(buttonPanel, (wxFunction)&wxNoButtonProc, "No");
-	}
-
-	if (style & wxCANCEL)
-	{
-		cancel = new wxButton(buttonPanel, (wxFunction)&wxCancelButtonProc, "Cancel");
-	}
-
-	if (!(style & wxYES_NO) && (style & wxOK))
-	{
-		ok = new wxButton(buttonPanel, (wxFunction)&wxOkButtonProc, "OK");
-	}
-
-	if (ok)
-		ok->SetDefault();
-	else if (yes)
-		yes->SetDefault();
-	buttonPanel->Fit();
-	buttonPanel->SetFocus();
-	//dialogPanel->AdvanceCursor(messagePanel); // WCH: kludge
-
-//============================================
-	
-	dialogPanel->Fit();
-	dialog->Fit();
-
-	messagePanel->Centre(wxHORIZONTAL);
-	buttonPanel->Centre(wxHORIZONTAL);
-
-	dialogPanel->Centre(wxBOTH);
-
-//============================================
-	
-	dialog->Show(TRUE);
-	int result = dialog->GetButtonPressed();
-	delete dialog;
-
-//============================================
-
-	return result;
-}
-
-//=============================================================================
-//
-// Dialog button callback procedures
-//
-//=============================================================================
-
-static wxDialogBox* wxGetDialogFromButton(wxButton& button)
-{
-	wxFrame *fr = button.GetRootFrame();
-	wxDialogBox* dialog = fr->cDialogPanel;
-	if (dialog == NULL) {
-   		wxFatalError("No DialogBox found on RootFrame.");
-   	}
-   	return dialog;
-}
-
-
-//-----------------------------------------------------------------------------
-static void wxOkButtonProc(wxButton& button, wxEvent& event)
-{
-//	wxDialogBox* dialog = (wxDialogBox*) button.GetRootFrame();
-	wxDialogBox* dialog = wxGetDialogFromButton(button);
-
-	dialog->SetButtonPressed(wxOK);
-	dialog->Show(FALSE);
-}
-
-//-----------------------------------------------------------------------------
-static void wxCancelButtonProc(wxButton& button, wxEvent& event)
-{
-//	wxDialogBox* dialog = (wxDialogBox*) button.GetRootFrame();
-	wxDialogBox* dialog = wxGetDialogFromButton(button);
-
-	dialog->SetButtonPressed(wxCANCEL);
-	dialog->Show(FALSE);
-}
-
-//-----------------------------------------------------------------------------
-static void wxYesButtonProc(wxButton& button, wxEvent& event)
-{
-//	wxDialogBox* dialog = (wxDialogBox*) button.GetRootFrame();
-	wxDialogBox* dialog = wxGetDialogFromButton(button);
-
-	dialog->SetButtonPressed(wxYES);
-	dialog->Show(FALSE);
-}
-
-//-----------------------------------------------------------------------------
-static void wxNoButtonProc(wxButton& button, wxEvent& event)
-{
-//	wxDialogBox* dialog = (wxDialogBox*) button.GetRootFrame();
-	wxDialogBox* dialog = wxGetDialogFromButton(button);
-
-	dialog->SetButtonPressed(wxNO);
-	dialog->Show(FALSE);
+	return 0;
 }
 
 extern "C" {

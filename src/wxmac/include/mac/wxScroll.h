@@ -65,14 +65,14 @@ public:
 	(
 		wxScrollData*		newScrollData,
 		wxWhatScrollData	whatScrollData, // items to be changed
-		wxWindow*			iniatorWindow
+		wxScrollEvent*		e
 	);
 
 	void SetScrollData
 	(
 		int 				value,			// value for items to be changed
 		wxWhatScrollData	whatScrollData, // items to be changed
-		wxWindow*			iniatorWindow
+		wxScrollEvent*			e
 	);
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -93,7 +93,7 @@ public:
 	(
 		wxScrollData*		scrollData,
 		wxWhatScrollData	whatScrollData, // items to be changed
-		wxWindow*			iniatorWindow
+		wxScrollEvent*		e
 	);
 
 };

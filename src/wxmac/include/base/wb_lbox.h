@@ -70,10 +70,6 @@ class wxbListBox: public wxItem
   // or scroll to max range.
   virtual void SetFirstItem(int N)=0 ;
   virtual void SetFirstItem(char *s) = 0;
-
-  void Command(wxCommandEvent& event);
-  void ProcessCommand(wxCommandEvent& event);
-
 };
 
 #endif // IN_CPROTO

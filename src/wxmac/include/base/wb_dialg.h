@@ -37,12 +37,12 @@ class wxbDialogBox: public wxPanel
   wxbDialogBox(void);
   wxbDialogBox(wxWindow *parent, char *title, Bool modal = FALSE,
               int x = -1, int y = -1,
-              int width = -1, int height = -1, long style = wxDEFAULT_DIALOG_STYLE, char *name = "panel");
+              int width = -1, int height = -1, long style = 0, char *name = "panel");
   ~wxbDialogBox();
 
   Bool Create(wxWindow *window, char *title, Bool modal = FALSE,
               int x = -1, int y = -1,
-              int width = -1, int height = -1, long style = wxDEFAULT_DIALOG_STYLE, char *name = "panel");
+              int width = -1, int height = -1, long style = 0, char *name = "panel");
 
   virtual void Iconize(Bool iconize) = 0;
   virtual Bool Iconized(void) = 0;

@@ -306,7 +306,12 @@ void wxScrollBar::OnEvent(wxMouseEvent& event) // mac platform only
 					wxWhatScrollData positionScrollData =
 						(horizontal ? wxWhatScrollData::wxPositionH : wxWhatScrollData::wxPositionV);
 					int newPosition = GetValue();
-					cScroll->SetScrollData(newPosition, positionScrollData, this);
+					wxScrollEvent *e = new wxScrollEvent();
+					e->direction = (horizontal ? wxHORIZONTAL : wxVERTICAL);
+					e->pos = GetValue();
+					e->moveType = wxEVENT_TYPE_SCROLL_THUMBTRACK;
+		
+					cScroll->SetScrollData(newPosition, positionScrollData, e);
 				}
 			}
 			else
@@ -328,14 +333,15 @@ void wxScrollBar::TrackAction(short part) // mac platform only
 		int scrollsPerPage = scrollData->GetValue
 			(horizontal ? wxWhatScrollData::wxPageW : wxWhatScrollData::wxPageH);
 		int maxv = GetMaxValue();
+		int mtype = 0;
 	
 		int delta = 0;
 		switch (part)
 		{
-			case kControlUpButtonPart: delta = -1; break;
-			case kControlDownButtonPart: delta = 1; break;
-			case kControlPageUpPart: delta = -scrollsPerPage; break;
-			case kControlPageDownPart: delta = scrollsPerPage; break;
+			case kControlUpButtonPart: delta = -1; mtype = wxEVENT_TYPE_SCROLL_LINEUP; break;
+			case kControlDownButtonPart: delta = 1; mtype = wxEVENT_TYPE_SCROLL_LINEDOWN; break;
+			case kControlPageUpPart: delta = -scrollsPerPage; mtype = wxEVENT_TYPE_SCROLL_PAGEUP; break;
+			case kControlPageDownPart: delta = scrollsPerPage; mtype = wxEVENT_TYPE_SCROLL_PAGEDOWN; break;
 		}
 
 		int newPosition = GetValue() + delta;
@@ -345,7 +351,11 @@ void wxScrollBar::TrackAction(short part) // mac platform only
 		wxWhatScrollData positionScrollData =
 			(horizontal ? wxWhatScrollData::wxPositionH : wxWhatScrollData::wxPositionV);
 		SetValue(newPosition);
-		cScroll->SetScrollData(newPosition, positionScrollData, this);
+		wxScrollEvent *e = new wxScrollEvent();
+		e->direction = (horizontal ? wxHORIZONTAL : wxVERTICAL);
+		e->pos = GetValue();
+		e->moveType = mtype;
+		cScroll->SetScrollData(newPosition, positionScrollData, e);
 
 		SetCurrentDC(); // must reset cMacDC (kludge)
 	}
@@ -356,10 +366,10 @@ void wxScrollBar::SetScrollData // adjust scrollBar to match scroll data setting
 (
 	wxScrollData*		scrollData,
 	wxWhatScrollData	whatScrollData,
-	wxWindow*			iniatorWindow
+	wxScrollEvent*		e
 )
 {
-	if (this == iniatorWindow) return;
+	// if (this == iniatorWindow) return;
 
 	Bool horizontal = cStyle & wxHSCROLL;
 

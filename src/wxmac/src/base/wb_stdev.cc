@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_stdev.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
+ * RCS_ID:      $Id: wb_stdev.cc,v 1.2 1998/06/02 20:51:42 robby Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -40,16 +40,21 @@ wxCommandEvent::wxCommandEvent(WXTYPE commandType)
 {
   eventClass = wxTYPE_COMMAND_EVENT;
   eventType = commandType;
-  clientData = NULL;
-  extraLong = 0;
-  commandInt = 0;
-  commandString = NULL;
-  labelString = NULL;
 }
 
 static wxEvent *wxCommandEventConstructor(WXTYPE eventClass, WXTYPE eventType)
 {
   return new wxCommandEvent(eventType);
+}
+
+
+wxPopupEvent::wxPopupEvent(void) : wxCommandEvent(wxEVENT_TYPE_MENU_SELECT)
+{
+}
+
+wxScrollEvent::wxScrollEvent(void)
+{
+ 
 }
 
 /*
@@ -78,8 +83,6 @@ wxMouseEvent& wxMouseEvent::operator =(wxMouseEvent& src)
   altDown = src.altDown;
   metaDown = src.metaDown;
   
-  objectType = src.objectType;
-  eventObject = src.eventObject;
   timeStamp = src.timeStamp;
   eventHandle = src.eventHandle;
   
@@ -325,53 +328,4 @@ void wxKeyEvent::Position(float *xpos, float *ypos)
 {
   *xpos = x;
   *ypos = y;
-}
-
-/*
- * Standard primary event handler
- *
- */
-
-// (find-window) can use the title or widget label:
-// (bind ?ok (find-window (find-top-window) "OK"))
-// (send-event ButtonCommand ?ok)
-
-// Aaargh! another problem. What if a button kills a dialog containing
-// it, but a post event handler is called? The object pointer will be invalid!
-// If we used IDs in a hash table, then the handler could check if the ID
-// was still valid. This would need minimum coding if we put it in the
-// wxWindow constructor and destructor.
-
-static Bool wxStandardEventHandler(wxEvent *event, Bool external)
-{
-  switch (event->eventClass) {
-    case wxTYPE_COMMAND_EVENT:
-    {
-      ((wxItem *)event->eventObject)->ProcessCommand(*((wxCommandEvent *)event));
-      break;
-    }
-    default:
-      return FALSE;
-  }
-  return FALSE;
-}
-
-/*
- * Initialize all the standard event classes
- *
- */
- 
-void wxInitStandardEvents(void)
-{
-  wxRegisterEventClass(wxTYPE_COMMAND_EVENT, wxTYPE_EVENT,
-                       (wxEventConstructor) wxCommandEventConstructor,
-                       "command event");
-  wxRegisterEventClass(wxTYPE_MOUSE_EVENT, wxTYPE_EVENT,
-                       (wxEventConstructor) wxMouseEventConstructor,
-                       "mouse event");
-  wxRegisterEventClass(wxTYPE_KEY_EVENT, wxTYPE_EVENT,
-                       (wxEventConstructor) wxKeyEventConstructor,
-                       "keyboard event");
-  wxRegisterEventName(wxEVENT_TYPE_BUTTON_COMMAND, wxTYPE_COMMAND_EVENT, "ButtonCommand");
-  // AND THE REST!!
 }

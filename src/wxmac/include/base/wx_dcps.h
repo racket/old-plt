@@ -13,8 +13,6 @@
 #ifndef wx_dcpsh
 #define wx_dcpsh
 
-#include <fstream.h>
-
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -28,6 +26,7 @@ class wxFont;
 class wxIcon;
 class wxList;
 class wxPen;
+class ofstream;
 #else
 #include "wx_dc.h"
 #endif
@@ -50,6 +49,8 @@ typedef       void    *wxPostScriptDC ;
 # define DRAW_TEXT_CONST const
 #endif
 
+class PSStream;
+
 class wxPostScriptDC: public wxDC
 {
   DECLARE_DYNAMIC_CLASS(wxPostScriptDC)
@@ -60,9 +61,9 @@ class wxPostScriptDC: public wxDC
   Bool clipping;
 #endif
   int page_number;
-  ofstream *pstream;    // PostScript output stream
+  PSStream *pstream;    // PostScript output stream
   char *filename;
-  streampos boundingboxpos;
+  long boundingboxpos;
   unsigned char currentRed;
   unsigned char currentGreen;
   unsigned char currentBlue;
@@ -71,6 +72,7 @@ class wxPostScriptDC: public wxDC
 
   float paper_x, paper_y, paper_w, paper_h, paper_x_scale, paper_y_scale;
   Bool landscape, resetFont, level2ok;
+  char *afm_path;
 
   int mode;
   char *preview_cmd, *print_cmd, *print_opts;
@@ -180,9 +182,6 @@ class wxPostScriptDC: public wxDC
   virtual Bool Ok() { return ok; }
 };
 
-void wxSetLevel2Ok(Bool ok);
-Bool wxGetLevel2Ok(void);
-
 #ifndef wx_xt
 
 // Print Orientation (Should also add Left, Right)
@@ -198,127 +197,111 @@ enum {
   PS_PREVIEW
 };// ps_action = PS_PREVIEW;
 
-// PostScript printer settings
-void wxSetPrinterCommand(char *cmd);
-void wxSetPrintPreviewCommand(char *cmd);
-void wxSetPrinterOptions(char *flags);
-void wxSetPrinterOrientation(int orientation);
-void wxSetPrinterScaling(float x, float y);
-void wxSetPrinterTranslation(float x, float y);
-void wxSetPrinterMode(int mode);
-void wxSetPrinterFile(char *f);
-void wxSetAFMPath(char *f);
+#endif
 
-// Get current values
-char *wxGetPrinterCommand(void);
-char *wxGetPrintPreviewCommand(void);
-char *wxGetPrinterOptions(void);
-Bool wxGetPrinterOrientation(void);
-void wxGetPrinterScaling(float *x, float *y);
-void wxGetPrinterTranslation(float *x, float *y);
-int wxGetPrinterMode(void);
-char *wxGetPrinterFile(void);
-char *wxGetAFMPath(void);
-
-/*
- * PostScript print setup information
- */
-
-class wxPrintSetupData: public wxObject
-{
-  DECLARE_DYNAMIC_CLASS(wxPrintSetupData)
-
- public:
-  char *printerCommand;
-  char *previewCommand;
-  char *printerFlags;
-  char *printerFile;
-  int printerOrient;
-  float printerScaleX;
-  float printerScaleY;
-  float printerTranslateX;
-  float printerTranslateY;
-  // 1 = Preview, 2 = print to file, 3 = send to printer
-  int printerMode;
-  char *afmPath;
-  // A name in the paper database (see wx_print.h: the printing framework)
-  char *paperName;
-  Bool printColour;
- public:
-  wxPrintSetupData(void);
-  ~wxPrintSetupData(void);
-
-  void SetPrinterCommand(char *cmd);
-  void SetPaperName(char *paper);
-  void SetPrintPreviewCommand(char *cmd);
-  void SetPrinterOptions(char *flags);
-  void SetPrinterFile(char *f);
-  void SetPrinterOrientation(int orient);
-  void SetPrinterScaling(float x, float y);
-  void SetPrinterTranslation(float x, float y);
-  // 1 = Preview, 2 = print to file, 3 = send to printer
-  void SetPrinterMode(int mode);
-  void SetAFMPath(char *f);
-  void SetColour(Bool col);
-
-  // Get current values
-  char *GetPrinterCommand(void);
-  char *GetPrintPreviewCommand(void);
-  char *GetPrinterOptions(void);
-  char *GetPrinterFile(void);
-  char *GetPaperName(void);
-  int GetPrinterOrientation(void);
-  void GetPrinterScaling(float *x, float *y);
-  void GetPrinterTranslation(float *x, float *y);
-  int GetPrinterMode(void);
-  char *GetAFMPath(void);
-  Bool GetColour(void);
-
-  void operator=(wxPrintSetupData& data);
-};
-
-extern wxPrintSetupData *wxThePrintSetupData;
 extern void wxInitializePrintSetupData(Bool init = TRUE);
 
+class wxPrintSetupData : public wxObject {
+DECLARE_DYNAMIC_CLASS(wxPrintSetupData)
+public:
+    wxPrintSetupData(void);
+    ~wxPrintSetupData(void);
 
-/*
- * Again, this only really needed for non-Windows platforms
- * or if you want to test the PostScript printing under Windows.
- */
+    void operator = (wxPrintSetupData& data);
+    void copy (wxPrintSetupData& data);
 
-class wxPrintPaperType: public wxObject
-{
-  DECLARE_DYNAMIC_CLASS(wxPrintPaperType)
+    void  SetPrinterCommand(char *cmd);
+    void  SetPaperName(char *paper);
+    void  SetPrintPreviewCommand(char *cmd);
+    void  SetPrinterOptions(char *flags);
+    void  SetPrinterFile(char *f);
+    void  SetAFMPath(char *f);
+    void  SetPrinterMode(int mode);
+    void  SetPrinterOrientation(int orient)
+	{ printer_orient = orient; }
+    void  SetPrinterScaling(float x, float y)
+	{ printer_scale_x = x; printer_scale_y = y; }
+    void  SetPrinterTranslation(float x, float y)
+	{ printer_translate_x = x; printer_translate_y = y; }
+    void  SetColour(Bool col)
+	{ print_colour = col; }
+    void  SetLevel2(Bool l2)
+	{ print_level_2 = l2; }
 
- public:
-  int widthMM;
-  int heightMM;
-  int widthPixels;
-  int heightPixels;
-  char *pageName;
+    inline char *GetPrinterCommand(void)
+	{ return printer_command; }
+    inline char *GetPrintPreviewCommand(void)
+	{ return preview_command; }
+    inline char *GetPrinterOptions(void)
+	{ return printer_flags; }
+    inline char *GetPrinterFile(void)
+	{ return printer_file; }
+    inline char *GetPaperName(void)
+	{ return paper_name; }
+    inline int GetPrinterOrientation(void)
+	{  return printer_orient; }
+    inline void GetPrinterScaling(float *x, float *y)
+	{ *x=printer_scale_x; *y=printer_scale_y; }
+    inline void GetPrinterTranslation(float *x, float *y)
+	{ *x=printer_translate_x; *y=printer_translate_y; }
+    inline int GetPrinterMode(void)
+	{ return printer_mode; }
+    inline char *GetAFMPath(void)
+	{ return afm_path; }
+    inline Bool GetColour(void)
+	{ return print_colour; }
+    inline Bool GetLevel2()
+	{ return print_level_2; }
 
-  wxPrintPaperType(char *name = NULL, int wmm = 0, int hmm = 0, int wp = 0, int hp = 0);
-  ~wxPrintPaperType(void);
+private:
+    friend class wxPostScriptDC;
+
+    char   *printer_command;
+    char   *preview_command;
+    char   *printer_flags;
+    char   *printer_file;
+    int    printer_orient;
+    float  printer_scale_x;
+    float  printer_scale_y;
+    float  printer_translate_x;
+    float  printer_translate_y;
+    int    printer_mode;
+    char   *afm_path;
+    char   *paper_name;
+    Bool   print_colour;
+    Bool   print_level_2;
 };
 
-class wxPrintPaperDatabase: public wxList
-{
-  DECLARE_DYNAMIC_CLASS(wxPrintPaperDatabase)
+extern wxPrintSetupData *wxGetThePrintSetupData();
+extern void wxSetThePrintSetupData(wxPrintSetupData *);
 
- public:
-  wxPrintPaperDatabase(void);
-  ~wxPrintPaperDatabase(void);
+class wxPrintPaperType : public wxObject {
+DECLARE_DYNAMIC_CLASS(wxPrintPaperType)
+public:
+    wxPrintPaperType(char *name=NULL, int wmm=0, int hmm=0, int wp=0, int hp=0);
+    ~wxPrintPaperType(void);
+public:
+    int   widthMM;
+    int   heightMM;
+    int   widthPixels;
+    int   heightPixels;
+    char  *pageName;
+};
 
-  void CreateDatabase(void);
-  void ClearDatabase(void);
+class wxPrintPaperDatabase : public wxList {
+DECLARE_DYNAMIC_CLASS(wxPrintPaperDatabase)
+public:
+    wxPrintPaperDatabase(void);
+    ~wxPrintPaperDatabase(void);
 
-  void AddPaperType(char *name, int wmm, int hmm, int wp, int hp);
-  wxPrintPaperType *FindPaperType(char *name);
+    void CreateDatabase(void);
+    void ClearDatabase(void);
+
+    void AddPaperType(char *name, int wmm, int hmm, int wp, int hp);
+    wxPrintPaperType *FindPaperType(char *name);
 };
 
 extern wxPrintPaperDatabase *wxThePrintPaperDatabase;
-
-#endif
 
 #endif // IN_CPROTO
 #endif // USE_POSTSCRIPT

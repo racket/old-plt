@@ -67,10 +67,6 @@ class wxbRadioBox: public wxItem
   // Avoids compiler warning
   inline void Show(Bool show) { wxItem::Show(show) ; }
   virtual void Show(int item, Bool show) = 0; // show/unshow specific item
-
-  void Command(wxCommandEvent& event);
-  void ProcessCommand(wxCommandEvent& event);
-
 };
 
 #endif // IN_CPROTO

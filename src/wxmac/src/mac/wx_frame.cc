@@ -65,20 +65,12 @@ wxFrame::wxFrame // Constructor (for frame window)
 
 	int theProcID;
  	// GRW adds
- 	if (!(cStyle & wxMINIMIZE_BOX))		//XXX need wxCLOSE_BOX
+ 	if (cStyle & wxMDI_CHILD) // hack: MDI_CHILD means dialog box
  		theProcID = movableDBoxProc;
-  	else if (cStyle & wxMAXIMIZE_BOX)
- 	{
- 		if (cStyle & wxRESIZE_BORDER)
- 			theProcID = zoomDocProc;
- 		else
- 			theProcID = zoomNoGrow;
- 	}
- 	else if (cStyle & wxRESIZE_BORDER)
- 		theProcID = documentProc;
- 	else
+  	else if (cStyle & wxNO_RESIZE_BORDER)
  		theProcID = noGrowDocProc;
- 	// end of GRW replacement
+    else
+ 		theProcID = zoomDocProc;
 
 	const WindowPtr MoveToFront = WindowPtr(-1L);
 	const Bool HasGoAwayBox = TRUE;
@@ -188,6 +180,8 @@ wxArea* wxFrame::ControlArea(void) { return cControlArea; } // mac platform only
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Sizing methods
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+#define max(x, y) ((x > y) ? x : y)
 
 //-----------------------------------------------------------------------------
 // Note: Can't set width < width of borders + etc.
@@ -454,27 +448,8 @@ void wxFrame::Command(int id)
 //-----------------------------------------------------------------------------
 void wxFrame::ProcessCommand(int id)
 {
-	wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_MENU_COMMAND);
-	commandEvent->commandInt = id;
-	commandEvent->eventObject = this;
-
-	if (wxNotifyEvent(*commandEvent, TRUE))
-	{
-		HiliteMenu(0); // unhilite the hilited menu
-		return;
-	}
-
-	wxMenuBar* menuBar = GetMenuBar() ;
-	wxMenuItem* item = menuBar->FindItemForId(id) ;
-	if (item)
-	{
-		if (item->IsCheckable()) item->Check(!item->IsChecked());
-	}
-
 	OnMenuCommand(id);
 	HiliteMenu(0); // unhilite the hilited menu
-
-	wxNotifyEvent(*commandEvent, FALSE);
 }
 
 //-----------------------------------------------------------------------------
@@ -672,7 +647,7 @@ void wxFrame::MacUpdateWindow(void)
 			Paint();
 
  			// Draw the grow box
- 			if (cStyle & wxRESIZE_BORDER)
+ 			if (!(cStyle & wxNO_RESIZE_BORDER))
  				MacDrawGrowIcon();
 		}
 		::EndUpdate(theMacWindow);
@@ -823,7 +798,7 @@ void wxFrame::Paint(void)
 	RgnHandle rgn, subrgn, borderRgn = NULL;
 	if (rgn = NewRgn()) {
 		if (subrgn = NewRgn()) {
-		  if (!(cStyle & wxRESIZE_BORDER) || (borderRgn = NewRgn())) {
+		  if ((cStyle & wxNO_RESIZE_BORDER) || (borderRgn = NewRgn())) {
 		    if (borderRgn) {
               int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
 	          int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
@@ -875,7 +850,7 @@ void wxFrame::Paint(void)
 
 RgnHandle wxFrame::GetCoveredRegion(int x, int y, int w, int h)
 {
-   if (cStyle & wxRESIZE_BORDER) {
+   if (!(cStyle & wxNO_RESIZE_BORDER)) {
      int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
 	 int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
      if (((theMacWidth-15 >= x && theMacWidth-15 <= x + w)

@@ -233,6 +233,9 @@ static pascal void SCTrackActionProc(ControlHandle theControl, short thePart);
 static ControlActionUPP SCTrackActionProcUPP = NewControlActionProc(SCTrackActionProc);
 #endif
 
+#define max(x, y) ((x > y) ? x : y)
+#define min(x, y) ((x > y) ? y : x)
+
 void wxSlider::OnEvent(wxMouseEvent& event) // WCH: mac only ?
 {
 	if (event.leftDown) {
@@ -280,10 +283,7 @@ void wxSlider::OnEvent(wxMouseEvent& event) // WCH: mac only ?
 			// Creat a wxEvent
 			strcpy(wxBuffer,t);
 			wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_SLIDER_COMMAND);
-			commandEvent->commandString = wxBuffer;
-			commandEvent->commandInt = ::GetControlValue(cMacControl);
-			commandEvent->eventObject = this;
-	  		ProcessCommand(*commandEvent);
+			ProcessCommand(*commandEvent);
 		}
 	}
 }

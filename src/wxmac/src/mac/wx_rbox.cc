@@ -33,8 +33,6 @@ static const char sccsid[] = "%W% %G%";
 		radioBox->SetSelection(radioButtonIndex);
 
 		wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
-		commandEvent->commandInt = radioButtonIndex;
-		commandEvent->eventObject = radioBox;
 		radioBox->ProcessCommand(*commandEvent);
 	}
 
@@ -341,17 +339,6 @@ void wxRadioBox::Show(int item, Bool show)
 }
 
 //-----------------------------------------------------------------------------
-void wxRadioBox::Command(wxCommandEvent& event) // mac platform only
-{
-	int selection = event.commandInt;
-	int numberItems = cRadioButtons.Number();
-	if (0 <= selection && selection < numberItems)
-	{
-	  SetSelection(selection); // set radioButton
-  	}
-  	ProcessCommand(event);
-}
-
 void wxRadioBox::ChangeToGray(Bool gray)
 {
   ChildrenInternalGray(gray);

@@ -139,6 +139,7 @@
 			    [add-button (make-object mred:button% button-panel (add-callback string symbol box) "Add")]
 			    [delete-button (make-object mred:button% button-panel (delete-callback box) "Remove")]
 			    [_ (make-object mred:vertical-panel% button-panel)])
+		       (send button-panel stretchable-in-y #f)
 		       (send add-button user-min-width (send delete-button get-width))
 		       box))]
 		  [begin-list-box (make-column "Begin" 'begin begin-keywords)]

@@ -521,6 +521,9 @@
  (autosave-autosave-label "Autosave file")
  (autosave-original-label "Original file")
  (autosave-compare-files "Compare autosave files")
+ (autosave-show-autosave "Autosave file")
+ (autosave-explanation "DrScheme found autosave files, which may contain your unsaved work.")
+ (autosave-recovered! "Recovered!")
 
  ;;; file modified warning
  (file-has-been-modified

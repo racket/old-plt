@@ -46,7 +46,7 @@
 	    [menu : framework:menu^ (menu@ mred preferences)]
 	    [preferences : framework:preferences^
 			 (preferences@ mred exn exit panel)]
-	    [autosave : framework:autosave^ (autosave@ mred exit preferences frame)]
+	    [autosave : framework:autosave^ (autosave@ mred exit preferences frame scheme editor text finder)]
 	    [match-cache : framework:match-cache^ (match-cache@)]
 	    [paren : framework:paren^ (paren@)]
 	    [scheme-paren : framework:scheme-paren^ (scheme-paren@ paren)]

@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.49 1998/03/15 00:08:16 mflatt Exp $
+; $Id: sigs.ss,v 1.50 1998/04/21 02:59:57 robby Exp $
 
 (begin-elaboration-time
  (require-relative-library "namedarg.ss"))
@@ -65,7 +65,7 @@
     match-and-rewrite))
 
 (define-signature zodiac:interface^
-  (static-error dynamic-error internal-error))
+  (static-error internal-error))
 
 (define-signature zodiac:expander^
   (expand expand-program expand-expr

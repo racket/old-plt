@@ -2452,6 +2452,10 @@ unsigned char wxMediaEdit::GetCharacter(long start)
 
 /****************************************************************/
 
+wxClickback::wxClickback() : wxObject(WXGC_NO_CLEANUP)
+{
+}
+
 void wxMediaEdit::SetClickback(long start, long end, 
 			       wxClickbackFunc f, void *d,
 			       wxStyleDelta *delta,

@@ -12,6 +12,8 @@ enum {
 class wxClickback : public wxObject
 {
  public:
+  wxClickback();
+
   long start, end;
   wxClickbackFunc f;
   void *data;

@@ -1,7 +1,7 @@
 (unit/sig plt:init-namespace^
-  (import [basis : userspace:basis^]
-	  mzlib:function^
-	  (invalid-teachpack))
+  (import plt:basis-import^
+	  [init-params : plt:init-params^]
+	  mzlib:function^)
   
   (define (exploded->flattened exploded)
     (let ([sig exploded])
@@ -122,18 +122,24 @@
 			     (import plt:userspace^)
 
 			     (cond
-			      [(,basis:beginner-language? (,basis:current-setting))
+			      [(,init-params:beginner-language? (,init-params:current-setting))
 			       ,@(build-gdvs (signature->symbols plt:beginner-extras^))]
-			      [(,basis:intermediate-language? (,basis:current-setting))
+			      [(,init-params:intermediate-language? (,init-params:current-setting))
 			       ,@(build-gdvs (signature->symbols plt:intermediate-extras^))]
-			      [(,basis:advanced-language? (,basis:current-setting))
+			      [(,init-params:advanced-language? (,init-params:current-setting))
 			       ,@(build-gdvs (signature->symbols plt:advanced-extras^))]
-			      [(,basis:full-language? (,basis:current-setting)) (void)]))
+			      [(,init-params:full-language? (,init-params:current-setting)) (void)]))
 			    userspace)]
 
 			 link-clauses))
 		(export)))])
       (lambda ()
 	(invoke-unit/sig
-	 cu)))))
+	 cu))))
+
+  (define namespace-thunk void)
+  (define init-namespace (lambda () (namespace-thunk)))
+
+  (define (teachpack-changed v)
+    (set! namespace-thunk (build-namespace-thunk v))))
       

@@ -42,7 +42,7 @@
 	 (call-with-values (lambda () ,exp)
 			   (lambda bindings (apply values (cons ,parser bindings))))))))
 
-(define-signature userspace:basis^
+(define-signature plt:init-params^
   (initialize-parameters
    settings
    get-default-setting
@@ -113,9 +113,18 @@
 
    r4rs-style-printing?))
 
+(define-signature plt:init-namespace^
+  (init-namespace
+   teachpack-changed))
+
+(define-signature plt:basis^
+  ((open plt:init-params^)
+   (open plt:init-namespace^)))
+
 (define-signature drscheme:interface^ 
   ((open zodiac:interface^)
    set-zodiac-phase))
 
-(define-signature userspace:basis-import^
-  (in-mzscheme?))
+(define-signature plt:basis-import^
+  (invalid-teachpack
+   in-mzscheme?))

@@ -13,7 +13,7 @@
 	[mred@ mred@])
     (unit/sig drscheme-jr:settings^
       (import [prims : prims^]
-	      [basis : userspace:basis^]
+	      [basis : plt:basis^]
 	      [mzlib : mzlib:core^]
               [drscheme:teachpack : drscheme:teachpack^]
 	      mred^)
@@ -53,7 +53,7 @@
   (make-go
    (compound-unit/sig
      (import [prims : prims^]
-	     [basis : userspace:basis^]
+	     [basis : plt:basis^]
 	     [mzlib : mzlib:core^])
      (link [mred : mred^ (mred@)]
            [teachpack : drscheme:teachpack^ ((require-library "teachpackr.ss" "drscheme") mred)]

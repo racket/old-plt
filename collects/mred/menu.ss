@@ -237,4 +237,4 @@
 		     (if (send (car menus) dispatch op)
 			 #t
 			 (loop (cdr menus))))))]))))
-    (define menu-bar% (make-
+    (define menu-bar% (make-menu-bar% wx:menu-bar%))))

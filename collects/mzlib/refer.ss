@@ -1,8 +1,4 @@
 
-(define-macro begin-elaboration-time 
-  (lambda body 
-    (eval `(begin ,@body))))
-
 (define-macro begin-construction-time 
   (lambda body 
     (eval `(begin ,@body))))

@@ -25,15 +25,15 @@
    (define -reference (make-reference #f #f #f))
    (define -reference-library (make-reference #f #t #f))
    (define -reference-relative-library (make-reference #f #t #t))
-   (define -begin-elaboration-time
-     (lambda body
-       (let ([expr `(eval (eval (quote (begin ,@body))))])
-	 (if (local-expansion-top-level?)
-	     `(begin-expansion-time ,expr)
-	     expr))))
+   (define make--begin-elaboration-time
+     (lambda (do?)
+       (lambda body
+	 (when do?
+	       (eval `(begin ,@body)))
+	 `(#%eval (#%eval (#%quote (begin ,@body)))))))
 
    (define make-compile-namespace
-     (lambda (flags preserve-elab? preserve-constr?)
+     (lambda (flags preserve-elab? do-elab? preserve-constr? do-constr?)
        (let ([n (apply make-namespace (list* 'no-constants flags))]
 	     [gvs (make-global-value-list)])
 	 (parameterize ([current-namespace n])
@@ -42,11 +42,11 @@
 	      (unless (defined? (car gvp))
 		      (eval `(define ,(car gvp) (quote ,(cdr gvp))))))
 	    gvs)
-	   (setup-preserving-compile-namespace preserve-elab? preserve-constr?))
+	   (setup-preserving-compile-namespace preserve-elab? do-elab? preserve-constr? do-constr?))
 	  n)))
 
-   (define (setup-preserving-compile-namespace preserve-elab? preserve-constr?)
-     (when (or preserve-elab? preserve-constr?)
+   (define (setup-preserving-compile-namespace preserve-elab? do-elab? preserve-constr? do-constr?)
+     (when (or preserve-elab? do-elab? preserve-constr? do-constr?)
        (eval `(begin
 		(require-library "refer.ss")
 		(define-macro reference ,-reference)
@@ -59,13 +59,13 @@
 		(define-macro reference-relative-library-unit ,-reference-relative-library-unit)
 		(define-macro reference-relative-library ,-reference-relative-library)
 		,@(let ([e (if preserve-elab?
-			       `((define-macro begin-elaboration-time ,-begin-elaboration-time))
+			       `((define-macro begin-elaboration-time ,(make--begin-elaboration-time do-elab?)))
 			       null)]
 			[c (if preserve-constr?
-			       `((define-macro begin-construction-time ,-begin-elaboration-time))
+			       `((define-macro begin-construction-time ,(make--begin-elaboration-time do-constr?)))
 			       null)])
 		    (append e c))))))
-
+   
    (define compile-file
      (case-lambda 
       [(srcs dest) (compile-file srcs dest null identity)]
@@ -84,6 +84,7 @@
        (unless (and (list flags) 
 		    (andmap (lambda (s) 
 			      (member s '(ignore-macro-definitions
+					  strip-macro-definitions
 					  expand-load 
 					  use-current-namespace
 					  ignore-require-library
@@ -91,29 +92,40 @@
 					  no-warnings
 					  only-expand
 					  preserve-elaborations
-					  preserve-constructions)))
+					  also-preserve-elaborations
+					  preserve-constructions
+					  also-preserve-constructions)))
 			    flags))
 	       (raise-type-error 'compile-file "list of flag symbols" flags))
        (unless (and (procedure? preprocessor)
 		    (procedure-arity-includes? preprocessor 2))
 	       (raise-type-error 'compile-file "procedure (arity 2)" preprocessor))
        (let* ([do-macros? (not (member 'ignore-macro-definitions flags))]
+	      [keep-macros? (not (member 'strip-macro-definitions flags))]
 	      [expand-load? (member 'expand-load flags)]
 	      [expand-rl? (member 'expand-require-library flags)]
 	      [ignore-rl? (member 'ignore-require-library flags)]
 	      [expand-only? (member 'only-expand flags)]
+	      [also-keep-elab? (member 'also-preserve-elaborations flags)]
+	      [keep-elab? (or also-keep-elab? (member 'preserve-elaborations flags))]
+	      [also-keep-constr? (member 'also-preserve-constructions flags)]
+	      [keep-constr? (or also-keep-elab? (member 'preserve-constructions flags))]
 	      [namespace (if (member 'use-current-namespace flags)
 			     (begin
 			       (setup-preserving-compile-namespace
-				(member 'preserve-elaborations flags)
-				(member 'preserve-constructions flags))
+				keep-elab?
+				also-keep-elab?
+				keep-constr?
+				also-keep-constr?)
 			       (current-namespace))
 			     (make-compile-namespace
 			      (if (built-in-name 'wx:frame%) ; HACK!!!
 				  '(wx)
 				  null)
-			      (member 'preserve-elaborations flags)
-			      (member 'preserve-constructions flags)))]
+			      keep-elab?
+			      also-keep-elab?
+			      keep-constr?
+			      also-keep-constr?))]
 	      [required (make-hash-table)]
 	      [warning
 	       (lambda (s)
@@ -164,10 +176,7 @@
 		       (let loop ([in in])
 			 (let ([s (read in)])
 			   (if (not (eof-object? s))
-			       (let* ([s (let ([p (preprocessor s namespace)])
-					   (parameterize ([current-namespace namespace])
-							 (expand-defmacro p)))]
-				      [do-defmacro
+			       (let* ([do-defmacro
 				       (lambda (s)
 					 (let ([m (if (pair? (cdr s))
 						      (cadr s)
@@ -270,10 +279,15 @@
 						 "contains an expression for library/collection name"
 						 s))
 					       #f)))]
+				      [s (let ([p (preprocessor s namespace)])
+					   (parameterize ([current-namespace namespace])
+					      (expand-defmacro p)))]
 				      [v-c (if expand-only?
 					       s
-					       (parameterize ([current-namespace namespace])
-							     (compile s)))]
+					       (if (void? s)
+						   (compile '(#%void))
+						   (parameterize ([current-namespace namespace])
+						      (compile s))))]
 				      [v (if (pair? s)
 					     (let ([t (car s)])
 					       (case t
@@ -283,13 +297,7 @@
 						    #%define-macro
 						    #%define-id-macro 
 						    #%define-expansion-time)
-						  (and do-macros? (do-defmacro s))]
-						 [(begin-expansion-time
-						   #%begin-expansion-time)
-						  (when do-macros?
-							(parameterize ([current-namespace namespace])
-								      (eval s)))
-						  #f]
+						  (and do-macros? (or (do-defmacro s) (not keep-macros?)))]
 						 [(load #%load)
 						  (and expand-load? (do-load s #f #f))]
 						 [(load/cd #%load/cd)
@@ -300,9 +308,8 @@
 						  (and (not ignore-rl?) (do-rl s))]
 						 [else #f]))
 					     #f)])
-				 (if v
-				     (void)
-				     (write v-c out))
+				 (unless v
+				    (write v-c out))
 				 (newline out)
 				 (loop in))))))
 		     (lambda ()

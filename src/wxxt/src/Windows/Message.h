@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Message.h,v 1.1.1.1 1997/12/22 17:28:57 mflatt Exp $
+ * $Id: Message.h,v 1.2 1999/11/04 17:25:38 mflatt Exp $
  *
  * Purpose: message panel item
  *
@@ -42,6 +42,8 @@ public:
 	     long style=0, char *name="message");
     wxMessage(wxPanel *panel, wxBitmap *bitmap, int x=-1, int y=-1,
 	     long style=0, char *name = "message");
+    wxMessage(wxPanel *panel, int iconID, int x=-1, int y=-1,
+	     long style=0, char *name = "message");
     
     Bool Create(wxPanel *panel, char *label, int x=-1, int y=-1,
 		long style=0, char *name="message");
@@ -58,5 +60,9 @@ public:
 private:
   wxBitmap *bm_label;
 };
+
+#define wxMSGICON_APP 1
+#define wxMSGICON_WARNING 2
+#define wxMSGICON_ERROR 3
 
 #endif // Message_h

@@ -30,8 +30,8 @@
 
 @BEGINSYMBOLS iconID > ONE > BUNDLE
 @SYM "app" : wxMSGICON_APP
-@SYM "warning" : wxMSGICON_WARNING
-@SYM "error" : wxMSGICON_ERROR
+@SYM "caution" : wxMSGICON_WARNING
+@SYM "stop" : wxMSGICON_ERROR
 @ENDSYMBOLS
 
 @CLASSBASE wxMessage "message" : "item"

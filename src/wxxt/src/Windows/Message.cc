@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Message.cc,v 1.7 1999/11/22 20:29:35 mflatt Exp $
+ * $Id: Message.cc,v 1.8 2000/03/02 13:59:06 mflatt Exp $
  *
  * Purpose: message panel item
  *
@@ -55,6 +55,13 @@ wxMessage::wxMessage(wxPanel *panel, wxBitmap *bitmap,
 {
     __type = wxTYPE_MESSAGE;
     Create(panel, bitmap, x, y, style, name);
+}
+
+wxMessage::wxMessage(wxPanel *panel, int iconId,
+		   int x, int y, long style, char *name) : wxItem()
+{
+    __type = wxTYPE_MESSAGE;
+    Create(panel, "<no icon>", x, y, style, name);
 }
 
 static void do_nothing()

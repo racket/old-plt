@@ -227,9 +227,9 @@ static void init_symset_iconID(void) {
   wxREGGLOB(iconID_wxMSGICON_APP_sym);
   iconID_wxMSGICON_APP_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("app"));
   wxREGGLOB(iconID_wxMSGICON_WARNING_sym);
-  iconID_wxMSGICON_WARNING_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("warning"));
+  iconID_wxMSGICON_WARNING_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("caution"));
   wxREGGLOB(iconID_wxMSGICON_ERROR_sym);
-  iconID_wxMSGICON_ERROR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("error"));
+  iconID_wxMSGICON_ERROR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("stop"));
 }
 
 static int unbundle_symset_iconID(Scheme_Object *v, const char *where) {

@@ -148,14 +148,31 @@
 	  [default-handler (current-load/use-compiled)])
       (letrec ([compilation-manager-load-handler
 		(lambda (path mod-name)
-		  ((trace) (format "~aloading: ~a ~a" (indent) path mod-name))
 		  (cond
-		   ((not mod-name) (default-handler path mod-name))
-		   (else 
-		    (unless (or (eq? 'none (use-compiled-file-kinds))
-				(not (and (eq? orig-eval (current-eval))
-					  (eq? orig-load (current-load))
-					  (eq? orig-namespace (current-namespace)))))
-		      (compile-root path cache))
-		    (default-handler path mod-name))))])
+                    [(not mod-name)
+                     ((trace) (format "~askipping:  ~a mod-name ~s" (indent) path mod-name))
+                     (default-handler path mod-name)]
+                    [(eq? 'none (use-compiled-file-kinds))
+                     ((trace) (format "~askipping:  ~a file-kinds ~s" (indent) path (use-compiled-file-kinds)))
+                     (default-handler path mod-name)]
+                    [(not (eq? compilation-manager-load-handler (current-load/use-compiled)))
+                     ((trace) (format "~askipping:  ~a current-load/use-compiled changed ~s"
+                                      (indent) path (current-load/use-compiled)))
+                     (default-handler path mod-name)]
+                    [(not (eq? orig-eval (current-eval)))
+                     ((trace) (format "~askipping:  ~a orig-eval ~s current-eval ~s" 
+                                      (indent) path orig-eval (current-eval)))
+                     (default-handler path mod-name)]
+                    [(not (eq? orig-load (current-load)))
+                     ((trace) (format "~askipping:  ~a orig-load ~s current-load ~s" 
+                                      (indent) path orig-load (current-load)))
+                     (default-handler path mod-name)]
+                    [(not (eq? orig-namespace (current-namespace)))
+                     ((trace) (format "~askipping:  ~a orig-namespace ~s current-namespace ~s" 
+                                      (indent) path orig-namespace (current-namespace)))
+                     (default-handler path mod-name)]
+                    [else 
+                     ((trace) (format "~aprocessing: ~a" (indent) path))
+                     (compile-root path cache)
+                     (default-handler path mod-name)]))])
 	compilation-manager-load-handler))))

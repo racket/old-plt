@@ -330,31 +330,39 @@
        (let ([res (compute-doc-name doc-dir)])
          (hash-table-put! cached-doc-names doc-dir res)
          res))))
-  
+
+  ;; compute-doc-name : string[full-path] -> string[title of manual]
+  ;; gets the title either from the known docs list, by parsing the
+  ;; html, or if both those fail, by using the name of the directory
+  ;; Special-cases the help collection. It's not a known doc directory
+  ;; per se, so it won't appear in known-docs, but it's name is always
+  ;; the same.
   (define (compute-doc-name doc-dir)
-    (let ([unknown-title (let-values ([(base name dir?) (split-path doc-dir)]) name)])
-      (or (get-known-doc-name doc-dir)
-          (let ([main-file (get-index-file doc-dir)])
-            (if main-file
-                (with-input-from-file (build-path doc-dir main-file)
-                  (lambda ()
-                    (let loop ()
-                      (let ([r (read-line)])
-                        (cond
-                          [(eof-object? r) unknown-title]
-                          [(regexp-match re:title r) => cadr]
-                          [(regexp-match "<[tT][iI][tT][lL][eE]>(.*)$" r)
-                           ;; Append lines until we find it 
-                           (let aloop ([r r])
-                             (let ([a (read-line)])
-                               (cond
-                                 [(eof-object? a) (loop)] ; give up
-                                 [else (let ([r (string-append r a)])
-                                         (cond
-                                           [(regexp-match re:title r) => cadr]
-                                           [else (aloop r)]))])))]
-                          [else (loop)])))))
-                unknown-title)))))
+    (let-values ([(_1 doc-short-dir-name _2) (split-path doc-dir)])
+      (if (equal? "help" doc-short-dir-name)
+          "PLT Help Desk"
+          (or (get-known-doc-name doc-dir)
+              (let ([main-file (get-index-file doc-dir)])
+                (if main-file
+                    (with-input-from-file (build-path doc-dir main-file)
+                      (lambda ()
+                        (let loop ()
+                          (let ([r (read-line)])
+                            (cond
+                              [(eof-object? r) doc-short-dir-name]
+                              [(regexp-match re:title r) => cadr]
+                              [(regexp-match "<[tT][iI][tT][lL][eE]>(.*)$" r)
+                               ;; Append lines until we find it 
+                               (let aloop ([r r])
+                                 (let ([a (read-line)])
+                                   (cond
+                                     [(eof-object? a) (loop)] ; give up
+                                     [else (let ([r (string-append r a)])
+                                             (cond
+                                               [(regexp-match re:title r) => cadr]
+                                               [else (aloop r)]))])))]
+                              [else (loop)])))))
+                    doc-short-dir-name))))))
   
   ;; is-known-doc? : string[path] -> boolean
   (define (is-known-doc? doc-path)

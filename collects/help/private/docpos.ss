@@ -60,7 +60,6 @@
     '(("beginning" . "Beginning Student Language")
       ("beginning-abbr" . "Beginning Student with List Abbreviations Language")
       ("advanced" . "Advanced Student Language")
-      ("help" . "PLT Help Desk")
       ("insidemz" . "Inside PLT MzScheme")
       ("intermediate" . "Intermediate Student Language")
       ("intermediate-lambda" . "Intermediate Student with Lambda Language")

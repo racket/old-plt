@@ -8,7 +8,7 @@
            "get-extend.ss"
            "language.ss"
            "help-info.ss"
-           "help.ss")
+           "help-interface.ss")
 
   (provide export@)
   
@@ -24,15 +24,15 @@
             [load-handler : drscheme:load-handler^ (load-handler@ basis)]
             [rep : drscheme:rep^
                  (rep@ interface init snip language app frame unit
-                  basis text load-handler help-desk)]
+                  basis text load-handler help-interface)]
             [frame : drscheme:frame^
-                   (frame@ unit app help-desk)]
+                   (frame@ unit app help-interface)]
             [unit : drscheme:unit^
-                  (unit@ launcher basis help-desk app frame text rep language get/extend snip)]
+                  (unit@ launcher basis help-interface app frame text rep language get/extend snip)]
             [get/extend : drscheme:get/extend^ (get-extend@ frame rep)]
             [language : drscheme:language^ (language@ unit basis)]            
             [help-info : help:get-info^ (help-info@ basis language)]
-            [help-desk : help:drscheme-interface^ (help@ frame language basis)])
+            [help-interface : help:drscheme-interface^ (help-interface@ frame language basis)])
       (export (unit snip)
               (unit interface)
               (unit basis)
@@ -41,6 +41,6 @@
               (unit get/extend)
               (unit load-handler)
               (unit rep)
-              (unit help-desk)
+              (unit help-interface)
               (unit language)
               (unit help-info)))))

@@ -12,9 +12,9 @@
 //	Suggestions for improvement are welcome!
 
 // Standard #includes - add any others you need
-#include "colors.inc"
-#include "shapes.inc"
-#include "textures.inc"
+//#include "colors.inc"
+//#include "shapes.inc"
+//#include "textures.inc"
 
 #version 2.0                           // based on 2.0 spec
 

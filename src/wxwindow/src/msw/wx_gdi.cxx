@@ -665,16 +665,20 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
   destroyCursor = FALSE;
   ms_cursor = 0;
   ok = FALSE;
-  
+
+  /* Get the allowed size for cursors: */
   w = GetSystemMetrics(SM_CXCURSOR);
   h = GetSystemMetrics(SM_CYCURSOR);
 
   bw = bm->GetWidth();
   bh = bm->GetHeight();
 
+  /* If the given cursor doesn't fit, give up. (MrEd constrains the
+     bitmap to be 16x16, which surely will fit.) */
   if ((bw > w) || (bh > h))
     return;
 
+  /* Make read-only DCs for reading bits from the bitmaps: */
   if (!temp_mdc) {
     wxREGGLOB(temp_mdc);
     wxREGGLOB(temp_mask_mdc);
@@ -686,6 +690,8 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
   /* Might fail, so we double-check: */
   if (!temp_mdc->GetObject())
     return;
+  /* If bm and mask arethe same, use one DC (since re-selecting
+     will fail, anyway). */
   if (mask == bm) {
     mask_dc = temp_mdc;
   } else {
@@ -697,9 +703,11 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
     mask_dc = temp_mask_mdc;
   }
 
-  c = new wxColour();
+  c = new wxColour(); /* to recieve bit values */
 
-  s = (w * h) >> 3;
+  /* Windows wants cursor data in terms of an "and" bit array and
+     "xor" bit array. */
+  s = (w * h) >> 3; /* size of arrays in bytes */
   ands = new unsigned char[s];
   xors = new unsigned char[s];
 
@@ -709,6 +717,8 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
     xors[i] = 0;
   }
 
+  /* Read bits from mask and bm and set the corresponding bits in
+     `ands' and `xors' */
   bit = 128;
   delta = 0;
   for (j = 0; j < bh; j++) {
@@ -743,6 +753,7 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
 
   ms_cursor = CreateCursor(wxhInstance, hotSpotX, hotSpotY, w, h, ands, xors);
 
+  /* Clean up */
   temp_mdc->SelectObject(NULL);
   temp_mask_mdc->SelectObject(NULL);
 

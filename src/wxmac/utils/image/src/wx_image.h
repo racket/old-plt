@@ -225,6 +225,7 @@ class wxImage: public wxObject
   int  rd_int(char *);
   int  rd_str(char *);
   int  rd_flag(char *);
+  
 #endif
 };
 

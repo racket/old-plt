@@ -161,6 +161,9 @@ Bool wxLoadBMPIntoBitmap(char *, wxBitmap *, wxColourMap ** = NULL);
 
 Bool wxSaveXBMFromBitmap(char *, wxBitmap *, wxColourMap ** = NULL);
 
+/* taken from wxJPEG.cxx */
+int read_JPEG_file(char * filename, wxBitmap *bm);
+
 void *XpmMalloc(size_t size);
 void *XpmMallocA(size_t size);
 void *XpmRealloc(void *p, size_t size);

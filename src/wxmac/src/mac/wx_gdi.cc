@@ -855,13 +855,21 @@ Bool wxBitmap::LoadFile(char *name, long flags)
 	} else if (flags & wxBITMAP_TYPE_BMP) {
 		ok = wxLoadBMPIntoBitmap(name, this, &colourmap);
 		if (ok) SetDepth(wxDisplayDepth());
-	} else if (flags & wxBITMAP_TYPE_ANY) {
+      } else if (flags & wxBITMAP_TYPE_JPEG) {
+              ok = read_JPEG_file(name, this);
+              if (!ok) {
+                if (x_pixmap) {
+                  DisposeGWorld(x_pixmap);
+                  x_pixmap = NULL;
+                }
+                ok = FALSE;
+              } else {
+                SetDepth(wxDisplayDepth());
+              }	} else if (flags & wxBITMAP_TYPE_ANY) {
     	        ok = wxLoadIntoBitmap(name,this, &colourmap);
 	} else {
 		ok = FALSE;
 	}
-
-
 	return ok;
 }
 

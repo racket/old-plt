@@ -337,6 +337,20 @@ char *wxClipboard::GetClipboardString(long time)
   return str;
 }
 
+void wxClipboard::SetClipboardBitmap(wxBitmap *bm, long time)
+{
+  if (clipOwner) {
+    clipOwner->BeingReplaced();
+    clipOwner = NULL;
+  }
+  cbString = NULL;
+}
+
+wxBitmap *wxClipboard::GetClipboardBitmap(long time)
+{
+  return NULL;
+}
+
 char *wxClipboard::GetClipboardData(char *format, long *length, long time)
 {
   if (clipOwner)  {

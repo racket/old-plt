@@ -593,10 +593,13 @@ if test "${enable_mred}" = "yes" ; then
              mred/Makefile
                mred/wxs/Makefile mred/wxme/Makefile
                mred/gc2/Makefile
-               wxmac/wxs/Makefile
              wxxt/src/Makefile wxxt/src/x/Makefile
                wxxt/utils/image/src/Makefile
                wxxt/contrib/xpm/lib/Makefile"
+
+  if test "${enable_quartz}" = "yes" ; then
+    makefiles="$makefiles wxmac/wxs/Makefile"
+  fi
 
   subbuilds="$subbuilds wxcommon/jpeg"
 fi

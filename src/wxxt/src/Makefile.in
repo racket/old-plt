@@ -453,7 +453,7 @@ DeviceContexts/PSDC.o:\
 	$(srcdir)/DataStructures/PrintSetup.h $(srcdir)/GDI-Classes/Bitmap.h \
 	$(srcdir)/GDI-Classes/Colour.h $(srcdir)/GDI-Classes/Font.h \
 	$(srcdir)/GDI-Classes/FontDirectory.h $(srcdir)/../../wxcommon/FontDirectory.h \
-	$(srcdir)/GDI-Classes/Pen+Brush.h $(srcdir)/DeviceContexts/DC.h \
+	$(srcdir)/GDI-Classes/Pen+Brush.h $(srcdir)/DeviceContexts/DC.h $(srcdir)/Utilities/Net.h \
 	$(srcdir)/DeviceContexts/PSDC.h $(srcdir)/../../wxcommon/PSDC.h
 
 DeviceContexts/WindowDC.o:\

@@ -2500,7 +2500,7 @@ else
 #line 2500 "configure"
 #include "confdefs.h"
 #ifdef __cplusplus
-extern "C" void exit(int);
+extern "C" void exit(int) throw();
 #endif
   #include <stddef.h> 
    inline void *operator new(size_t size) { return (void *)0x1; }
@@ -2567,7 +2567,7 @@ else
 #line 2567 "configure"
 #include "confdefs.h"
 #ifdef __cplusplus
-extern "C" void exit(int);
+extern "C" void exit(int) throw();
 #endif
   #include <X11/Intrinsic.h>
   #include <X11/XKBlib.h>
@@ -2873,10 +2873,13 @@ if test "${enable_mred}" = "yes" ; then
              mred/Makefile
                mred/wxs/Makefile mred/wxme/Makefile
                mred/gc2/Makefile
-               wxmac/wxs/Makefile
              wxxt/src/Makefile wxxt/src/x/Makefile
                wxxt/utils/image/src/Makefile
                wxxt/contrib/xpm/lib/Makefile"
+
+  if test "${enable_quartz}" = "yes" ; then
+    makefiles="$makefiles wxmac/wxs/Makefile"
+  fi
 
   subbuilds="$subbuilds wxcommon/jpeg"
 fi

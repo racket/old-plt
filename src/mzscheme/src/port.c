@@ -4957,7 +4957,7 @@ static long mz_spawnv(char *command, const char *  const *argv, int *pid)
 /*********** All: The main system/process/execute function *************/
 
 static Scheme_Object *subprocess(int c, Scheme_Object *args[])
-     /* subprocess(out, in, err, exe, args...) */
+     /* subprocess(out, in, err, exe, arg ...) */
 {
   const char *name = "subprocess";
 #if defined(PROCESS_FUNCTION) && !defined(MAC_CLASSIC_PROCESS_CONTROL)

@@ -164,7 +164,7 @@ Scheme_Object *fib2(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *create_tclass(void *a, int argc, Scheme_Object **argv)
 {
-  return scheme_create_class((struct Scheme_Class_Assembly *)a, argv[0], argv + 1);
+  return scheme_create_class((struct Scheme_Class_Assembly *)a, NULL, argv[0], argv + 1);
 }
 
 static Scheme_Object *create_tinterface(void *a, int argc, Scheme_Object **argv)
@@ -187,7 +187,8 @@ static void init_tclass(Scheme_Object **init_boxes,
 			Scheme_Object *super_init,
 			int argc,
 			Scheme_Object **argv,
-			Scheme_Object *instance)
+			Scheme_Object *instance,
+			void *ignored_data)
 {
   SCHEME_ENVBOX_VAL(init_boxes[0]) = scheme_make_integer(5);
   SCHEME_ENVBOX_VAL(init_boxes[1]) = scheme_make_closed_prim_w_arity(unboxit,
@@ -307,9 +308,11 @@ Scheme_Object *scheme_initialize(Scheme_Env *global_env)
     inames[0] = scheme_intern_symbol("z1");
     inames[1] = scheme_intern_symbol("z2");
     
-    v = (void *)scheme_make_class_assembly(1, /* 1 interface */
+    v = (void *)scheme_make_class_assembly("tclass", /* name */
+					   1, /* 1 interface */
 					   6, pnames,
 					   2, inames,
+					   0, NULL, /* renameds */
 					   2, 2,
 					   init_tclass);
     
@@ -320,7 +323,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *global_env)
     pnames[0] = scheme_intern_symbol("get-x1");
     pnames[1] = scheme_intern_symbol("get-x2");
 
-    v = (void *)scheme_make_interface_assembly(1, 2, pnames);
+    v = (void *)scheme_make_interface_assembly("tinterface", 1, 2, pnames);
 
     scheme_add_global("mktinterface",
 		      scheme_make_closed_prim_w_arity(create_tinterface, v, "mktinterface", 1, 1),

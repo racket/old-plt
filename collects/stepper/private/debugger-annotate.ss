@@ -26,8 +26,10 @@
              (rebuild-stx (syntax->list new-stx) stx))])
       (kernel:kernel-syntax-case stx #f
         [(module identifier name (#%plain-module-begin . module-level-exprs))
-         (rebuild #`(module identifier name (#%plain-module-begin #,@(map module-level-expr-iterator
-                                                                          (syntax->list #'module-level-exprs)))))]
+         (rebuild #`(module identifier name 
+                      (#%plain-module-begin 
+                       #,@(map module-level-expr-iterator
+                               (syntax->list #'module-level-exprs)))))]
         [else-stx
          (general-top-level-expr-iterator stx)])))
 
@@ -48,7 +50,8 @@
         [(define-syntaxes (var ...) expr)
          stx]
         [(begin . top-level-exprs)
-         (rebuild #`(begin #,@(map top-level-expr-iterator (syntax->list #'top-level-exprs))))]
+         (rebuild #`(begin #,@(map top-level-expr-iterator 
+                                   (syntax->list #'top-level-exprs))))]
         [(require . require-specs)
          stx]
         [(require-for-syntax . require-specs)
@@ -57,11 +60,14 @@
          (annotate-expr stx)])))
     
   (define (expr-iterator fn stx)
-    (let* ([tr-fn (lambda (stx) (fn stx 'tail null))]      ; tail position
-           [nt-fn (lambda (stx) (fn stx 'non-tail null))]  ; non-tail position
-           [lb-fn (lambda (bindings) (lambda (stx) (fn stx 'lambda-body bindings)))] ; lambda body
-           [lt-fn (lambda (bindings) (lambda (stx) (fn stx 'tail bindings)))] ; body of a let
-           [rh-fn (lambda (bindings) (lambda (stx) (fn stx 'non-tail bindings)))] ; right-hand side of a let binding
+    (let* ([tr-fn (lambda (stx) (fn stx 'tail null))]        ; tail position
+           [nt-fn (lambda (stx) (fn stx 'non-tail null))]    ; non-tail position
+           [lb-fn (lambda (bindings) 
+                    (lambda (stx) (fn stx 'lambda-body bindings)))] ; lambda body
+           [lt-fn (lambda (bindings) 
+                    (lambda (stx) (fn stx 'tail bindings)))]     ; body of a let
+           [rh-fn (lambda (bindings)
+                    (lambda (stx) (fn stx 'non-tail bindings)))] ; let rhs
              [fn-map-begin/0 
               (lambda (stx begin0?)
                 (let* ([bodies (syntax->list stx)]
@@ -80,19 +86,30 @@
               (lambda (clause)
                 (kernel:kernel-syntax-case clause #f
                   [(arglist . bodies)
-                   `(,#'arglist ,@(map (lb-fn (arglist-bindings #'arglist)) (syntax->list #'bodies)))]
+                   `(,#'arglist ,@(map (lb-fn (arglist-bindings #'arglist)) 
+                                       (syntax->list #'bodies)))]
                    [else
-                    (error 'expr-syntax-object-iterator "unexpected (case-)lambda clause: ~a" (syntax-object->datum stx))]))]
+                    (error 'expr-syntax-object-iterator 
+                           "unexpected (case-)lambda clause: ~a" 
+                           (syntax-object->datum stx))]))]
              [let-values-abstraction
                (lambda (stx rec?)
                  (kernel:kernel-syntax-case stx #f
                    [(kwd (((variable ...) rhs) ...) . bodies)
-                    (let* ([new-bindings (varref-set-union (map syntax->list (syntax->list #'((variable ...) ...))))]
+                    (let* ([new-bindings 
+                            (varref-set-union 
+                             (map syntax->list 
+                                  (syntax->list #'((variable ...) ...))))]
                            [rhs-new-bindings (if rec? new-bindings null)])
-                      (with-syntax ([(rhs-a ...) (map (rh-fn rhs-new-bindings) (syntax->list #'(rhs ...)))])
-                        (rebuild #`(kwd (((variable ...) rhs-a) ...) #,@(map (lt-fn new-bindings) (syntax->list #'bodies))))))]
+                      (with-syntax ([(rhs-a ...) (map (rh-fn rhs-new-bindings) 
+                                                      (syntax->list #'(rhs ...)))])
+                        (rebuild #`(kwd (((variable ...) rhs-a) ...) 
+                                        #,@(map (lt-fn new-bindings)
+                                                (syntax->list #'bodies))))))]
                    [else
-                    (error 'expr-syntax-object-iterator "unexpected let(rec) expression: ~a" (syntax-object->datum stx))]))]) 
+                    (error 'expr-syntax-object-iterator 
+                           "unexpected let(rec) expression: ~a"
+                           (syntax-object->datum stx))]))]) 
          (kernel:kernel-syntax-case stx #f
            [var-stx
             (identifier? (syntax var-stx))
@@ -100,7 +117,8 @@
            [(lambda . clause)
             (rebuild #`(lambda #,@(lambda-clause-abstraction #'clause)))]
            [(case-lambda . clauses)
-            (rebuild #`(case-lambda #,@(map lambda-clause-abstraction (syntax->list #'clauses))))]
+            (rebuild #`(case-lambda #,@(map lambda-clause-abstraction
+                                            (syntax->list #'clauses))))]
            [(if test then)
             (rebuild #`(if #,(nt-fn #'test) #,(tr-fn #'then)))]
            [(if test then else)
@@ -120,7 +138,8 @@
            [(quote-syntax _)
             stx]
            [(with-continuation-mark key mark body)
-            (rebuild #`(with-continuation-mark #,(nt-fn #'key) #,(nt-fn #'mark) #,(tr-fn #'body)))]
+            (rebuild #`(with-continuation-mark #,(nt-fn #'key) #,(nt-fn #'mark) 
+					       #,(tr-fn #'body)))]
            [(#%app . exprs)
             (rebuild #`(#%app #,@(fn-map-begin0 #'exprs)))]
            [(#%datum . _)
@@ -128,14 +147,17 @@
            [(#%top . var)
             stx]
            [else
-            (error 'expr-syntax-object-iterator "unknown expr: ~a" (syntax-object->datum stx))])))
+            (error 'expr-syntax-object-iterator "unknown expr: ~a" 
+                   (syntax-object->datum stx))])))
   
   
   ;; ANNOTATION
   ;;  These functions encapsulate the domain knowledge needed by the annotater
   
   ; free-vars: (syntax? -> (listof syntax?))
-  ;  if this expression is a variable reference, return it in a list. otherwise return null.
+  ;  if this expression is a variable reference, return it in a list. 
+  ;  otherwise return null.
+  
   (define (free-vars stx)
     (kernel:kernel-syntax-case stx #f
       [(#%top . var)
@@ -148,6 +170,7 @@
   
   ; arglist-bindings : (syntax? -> (listof syntax?))
   ;  return a list of the names in the arglist
+  
   (define (arglist-bindings arglist-stx)
     (syntax-case arglist-stx ()
       [var
@@ -160,7 +183,8 @@
   
   ; tail-bound : (binding-set? (listof syntax?) symbol -> binding-set?)
   ;  prior: the variables that were tail-bound in the enclosing expression
-  ;  newly-bound: the variables whose bindings were created in the enclosing expression
+  ;  newly-bound: the variables whose bindings were created in the enclosing 
+  ;               expression
   ;  tailness: 'lambda-body if this expression is the body of a lambda,
   ;            'tail if this expression is tail wrt the enclosing expression, and
   ;            'non-tail otherwise
@@ -170,18 +194,22 @@
       ((lambda-body) 'all)
       ((tail) (binding-set-union (list prior newly-bound)))
       ((non-tail) newly-bound)
-      (else (error 'tail-bound "unexpected value ~s for tailness argument" tailness))))
+      (else (error 'tail-bound "unexpected value ~s for tailness argument" 
+                   tailness))))
   
   
   (define (f-maker prior-tail-bound prior-lexically-bound result-box)
     (lambda (stx we-are-tail? newly-bound-in-parent)
       (set-box! result-box (append (free-vars stx) (unbox result-box)))
       (let* ([new-result-box (box null)]
-             [my-tail-bound (tail-bound prior-tail-bound newly-bound-in-parent we-are-tail?)]
-             [my-lexically-bound (varref-set-union (list prior-lexically-bound newly-bound-in-parent))]
+             [my-tail-bound (tail-bound prior-tail-bound newly-bound-in-parent 
+                                        we-are-tail?)]
+             [my-lexically-bound (varref-set-union
+                                  (list prior-lexically-bound newly-bound-in-parent))]
              [new-f (f-maker my-tail-bound my-lexically-bound new-result-box)]
              [sub-annotated (expr-iterator new-f stx)] ; recursive call
-             [debug-info (make-debug-info stx my-tail-bound my-lexically-bound 'none #f)])
+             [debug-info (make-debug-info stx my-tail-bound my-lexically-bound 
+                                          'none #f)])
         #`(with-continuation-mark #,debug-key #,debug-info #,sub-annotated))))
   
   

@@ -4384,7 +4384,7 @@ static int subp_done(Scheme_Object *sci)
 #ifdef WINDOWS_PROCESSES
   DWORD w;
   if (sci) {
-    if (GetExitCodeThread((HANDLE)sci, &w))
+    if (GetExitCodeProcess((HANDLE)sci, &w))
       return w != STILL_ACTIVE;
     else
       return 1;
@@ -4435,7 +4435,7 @@ static Scheme_Object *get_process_status(void *sci, int argc, Scheme_Object **ar
     if (!sci)
       return scheme_intern_symbol("done-error");
     
-    if (GetExitCodeThread((HANDLE)sci, &w)) {
+    if (GetExitCodeProcess((HANDLE)sci, &w)) {
       if (w == STILL_ACTIVE)
 	return scheme_intern_symbol("running");
       else if (w)
@@ -4551,11 +4551,11 @@ static long mz_spawnv(int type, char *command, const char * const *argv, int *pi
   memset(&startup, 0, sizeof(startup));
   startup.cb = sizeof(startup);
   startup.dwFlags = STARTF_USESTDHANDLES;
-  startup.hStdInput = _get_osfhandle(0);
-  startup.hStdOutput = _get_osfhandle(1);
-  startup.hStdError = _get_osfhandle(2);
+  startup.hStdInput = (HANDLE)_get_osfhandle(0);
+  startup.hStdOutput = (HANDLE)_get_osfhandle(1);
+  startup.hStdError = (HANDLE)_get_osfhandle(2);
 
-  if (CreateProcess(command, cmdline, NULL, NULL, 0, 0, NULL, NULL, &startup, &info)) {
+  if (CreateProcess(command, cmdline, NULL, NULL, 1, 0, NULL, NULL, &startup, &info)) {
     *pid = info.dwProcessId;
     return (long)info.hProcess;
   } else

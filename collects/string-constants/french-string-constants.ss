@@ -161,6 +161,14 @@
  (and "et")
  (error-finding-docs
   "Documentation introuvable.\n\n~a")
+ (manual-installed-date "(~a installé)")
+ 
+ ;; refreshing manuals
+ (refreshing-manuals "Re-téléchargement des manuels")
+ (refresh-downloading... "Téléchargement de ~a...")
+ (refresh-deleting... "Effacement de l'ancienne version de ~a...")
+ (refresh-installing... "Installation de la nouvelle version de ~a...")
+ 
  ; help desk htty proxy
  (http-proxy "Proxy HTTP")
  (proxy-direct-connection "Connexion directe")
@@ -487,6 +495,8 @@
   "`tool-icons' et `tools' ne sont pas des listes de la même longueur, dans le fichier info.ss pour ~s. Trouvé ~e et ~e")
  (error-getting-info-tool
   "erreur durant le chargement du fichier info.ss pour ~s")
+ (tool-error-phase1 "Erreur durant la phase 1 pour l'outil ~s; ~s")
+ (tool-error-phase2 "Erreur durant la phase 2 oour l'outil ~s; ~s")
  
  ;;; define popup menu
  (end-of-buffer-define "<< fin du tampon >>")

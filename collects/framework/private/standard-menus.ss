@@ -281,7 +281,10 @@
    (define/public file-menu:close-on-demand (lambda (menu-item) (void)))
    (define/public file-menu:create-close? (lambda () #t))
    (define/public file-menu:between-close-and-quit (lambda (menu) (void)))
-   (define/public file-menu:quit-callback (lambda (item control) (exit:exit)))
+   (define/public
+     file-menu:quit-callback
+     (lambda (item control)
+       (when (exit:user-oks-exit) (printf "user ok'd exit\n") (exit:exit))))
    (define/public file-menu:get-quit-item (lambda () file-menu:quit-item))
    (define/public
      file-menu:quit-string

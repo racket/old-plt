@@ -34,6 +34,9 @@ static Scheme_Object *syntax_line(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_col(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_src(int argc, Scheme_Object **argv);
 
+static Scheme_Object *bound_eq(int argc, Scheme_Object **argv);
+static Scheme_Object *free_eq(int argc, Scheme_Object **argv);
+
 void scheme_init_stx(Scheme_Env *env)
 {
   scheme_add_global_constant("syntax?", 
@@ -83,6 +86,17 @@ void scheme_init_stx(Scheme_Env *env)
 			     scheme_make_folding_prim(syntax_src,
 						      "syntax-source",
 						      1, 1, 1),
+			     env);
+
+  scheme_add_global_constant("bound-identifier=?", 
+			     scheme_make_folding_prim(bound_eq,
+						      "bound-identifier=?",
+						      2, 2, 1),
+			     env);
+  scheme_add_global_constant("free-identifier=?", 
+			     scheme_make_folding_prim(free_eq,
+						      "free-identifier=?",
+						      2, 2, 1),
 			     env);
 }
 
@@ -285,6 +299,9 @@ static Scheme_Object *syntax_to_datum_k(void)
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
   Scheme_Hash_Table **ht = (Scheme_Hash_Table **)p->ku.k.p2;
 
+  p->ku.k.p1 = NULL;
+  p->ku.k.p2 = NULL;
+
   return syntax_to_datum_inner(o, ht, p->ku.k.i1);
 }
 #endif
@@ -414,6 +431,10 @@ static Scheme_Object *datum_to_syntax_k(void)
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
   Scheme_Stx *stx = (Scheme_Stx *)p->ku.k.p2;
   Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p->ku.k.p3;
+
+  p->ku.k.p1 = NULL;
+  p->ku.k.p2 = NULL;
+  p->ku.k.p3 = NULL;
 
   return datum_to_syntax_inner(o, stx, ht);
 }
@@ -550,6 +571,141 @@ Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx)
 }
 
 /*========================================================================*/
+/*                       syntax->syntax (quote)                           */
+/*========================================================================*/
+
+
+#ifdef DO_STACK_CHECK
+static Scheme_Object *syntax_to_syntax_inner(Scheme_Stx *stx, 
+					     Scheme_Hash_Table **ht,
+					     Scheme_Comp_Env *env);
+
+static Scheme_Object *syntax_to_syntax_k(void)
+{
+  Scheme_Process *p = scheme_current_process;
+  Scheme_Stx *stx = (Scheme_Stx *)p->ku.k.p1;
+  Scheme_Hash_Table **ht = (Scheme_Hash_Table **)p->ku.k.p2;
+  Scheme_Comp_Env *env = (Scheme_Comp_Env *)p->ku.k.p3;
+
+  p->ku.k.p1 = NULL;
+  p->ku.k.p2 = NULL;
+  p->ku.k.p3 = NULL;
+
+  return syntax_to_syntax_inner(stx, ht, env);
+}
+#endif
+
+static Scheme_Object *syntax_to_syntax_inner(Scheme_Stx *stx, 
+					     Scheme_Hash_Table **ht,
+					     Scheme_Comp_Env *env)
+{
+  Scheme_Object *result, *ph = NULL, *o;
+
+#ifdef DO_STACK_CHECK
+  {
+# include "mzstkchk.h"
+    {
+# ifndef MZ_REAL_THREADS
+      Scheme_Process *p = scheme_current_process;
+# endif
+      p->ku.k.p1 = (void *)stx;
+      p->ku.k.p2 = (void *)ht;
+      p->ku.k.p3 = (void *)env;
+      return scheme_handle_stack_overflow(syntax_to_syntax_k);
+    }
+  }
+#endif
+
+  SCHEME_USE_FUEL(1);
+
+  if (stx->hash_code & STX_GRAPH_FLAG) {
+    if (!*ht)
+      *ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+    
+    ph = (Scheme_Object *)scheme_lookup_in_table(*ht, (char *)stx);
+
+    if (ph)
+      return ph;
+    else {
+      ph = scheme_alloc_small_object();
+      ph->type = scheme_placeholder_type;
+      
+      scheme_add_to_table(*ht, (char *)stx, (void *)ph, 0);
+    }
+  } else 
+    ph = NULL;
+
+  o = stx->val;
+
+  if (SCHEME_PAIRP(o)) {
+    Scheme_Object *first = NULL, *last = NULL, *p;
+    
+    while (SCHEME_PAIRP(o)) {
+      Scheme_Object *a;
+      
+      a = syntax_to_syntax_inner((Scheme_Stx *)SCHEME_CAR(o), ht, env);
+      
+      p = scheme_make_pair(a, scheme_null);
+      
+      if (last)
+	SCHEME_CDR(last) = p;
+      else
+	first = p;
+      last = p;
+      o = SCHEME_CDR(o);
+    }
+    if (!SCHEME_NULLP(o)) {
+      o = syntax_to_syntax_inner((Scheme_Stx *)o, ht, env);
+      SCHEME_CDR(last) = o;
+    }
+
+    result = first;
+  } else if (SCHEME_BOXP(o)) {
+    o = syntax_to_syntax_inner((Scheme_Stx *)SCHEME_PTR_VAL(o), ht, env);
+    result = scheme_box(o);
+  } else if (SCHEME_VECTORP(o)) {
+    int size = SCHEME_VEC_SIZE(o), i;
+    Scheme_Object *a;
+
+    result = scheme_make_vector(size, NULL);
+    
+    for (i = 0; i < size; i++) {
+      a = syntax_to_syntax_inner((Scheme_Stx *)SCHEME_VEC_ELS(o)[i], ht, env);
+      SCHEME_VEC_ELS(result)[i] = a;
+    }
+  } else {
+    result = o;
+  }
+
+  result = scheme_make_stx(result, stx->line, stx->col, stx->src);
+
+  ((Scheme_Stx *)result)->marks = scheme_vector_to_list(scheme_list_to_vector(stx->marks));
+
+  if (SCHEME_SYMBOLP(stx->val))
+    scheme_add_remove_mark(result, scheme_static_distance(stx->val, env, SCHEME_GET_FRAME_ID));
+  
+  if (ph) {
+    ((Scheme_Stx *)result)->hash_code |= STX_GRAPH_FLAG;
+    SCHEME_PTR_VAL(ph) = result;
+  }
+
+  return result;
+}
+
+Scheme_Object *scheme_quote_syntax(Scheme_Object *o, Scheme_Comp_Env *env)
+{
+  Scheme_Hash_Table *ht = NULL;
+  Scheme_Object *v;
+
+  v = syntax_to_syntax_inner((Scheme_Stx *)o, &ht, env);
+
+  if (ht)
+    v = scheme_resolve_placeholders(v, 1);
+
+  return v;
+}
+
+/*========================================================================*/
 /*                    Scheme functions and helpers                        */
 /*========================================================================*/
 
@@ -630,4 +786,29 @@ static Scheme_Object *syntax_src(int argc, Scheme_Object **argv)
     scheme_wrong_type("syntax-src", "syntax", 0, argc, argv);
 
   return stx->src;
+}
+
+
+static Scheme_Object *bound_eq(int argc, Scheme_Object **argv)
+{
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("bound-identifier=?", "syntax", 0, argc, argv);
+  if (!SCHEME_STXP(argv[1]))
+    scheme_wrong_type("bound-identifier=?", "syntax", 1, argc, argv);
+
+  return (scheme_stx_bound_eq(argv[0], argv[1])
+	  ? scheme_true
+	  : scheme_false);
+}
+
+static Scheme_Object *free_eq(int argc, Scheme_Object **argv)
+{
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("free-identifier=?", "syntax", 0, argc, argv);
+  if (!SCHEME_STXP(argv[1]))
+    scheme_wrong_type("free-identifier=?", "syntax", 1, argc, argv);
+
+  return (scheme_stx_free_eq(argv[0], argv[1])
+	  ? scheme_true
+	  : scheme_false);
 }

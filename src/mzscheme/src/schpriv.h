@@ -383,6 +383,7 @@ Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
 
 Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx);
 Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks);
+Scheme_Object *scheme_quote_syntax(Scheme_Object *o, struct Scheme_Comp_Env *env);
 
 Scheme_Object *scheme_new_mark();
 void scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);

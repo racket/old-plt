@@ -205,7 +205,7 @@ scheme_init_syntax (Scheme_Env *env)
   case_lambda_symbol = scheme_intern_symbol("#%case-lambda");
   with_continuation_mark_symbol = scheme_intern_symbol("#%with-continuation-mark");
   
-  lexical_syntax_symbol = scheme_intern_symbol("#%lexical-syntax");
+  lexical_syntax_symbol = scheme_intern_symbol("#%quote-syntax");
   define_macro_symbol = scheme_intern_symbol("#%define-syntax");
   let_macro_symbol = scheme_intern_symbol("#%letrec-syntax");
 
@@ -316,7 +316,7 @@ scheme_init_syntax (Scheme_Env *env)
 							with_cont_mark_expand), 
 			    env);
 
-  scheme_add_global_keyword("lexical-syntax", 
+  scheme_add_global_keyword("quote-syntax", 
 			    scheme_make_compiled_syntax(lexical_syntax_syntax, 
 							lexical_syntax_expand), 
 			    env);
@@ -2196,7 +2196,7 @@ lexical_syntax_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
 {
   int len;
   char *who;
-  Scheme_Object *id;
+  Scheme_Object *stx;
 
   if (rec)
     scheme_compile_rec_done_local(rec, drec);
@@ -2207,21 +2207,13 @@ lexical_syntax_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
   if (len != 2)
     bad_form(form, who, len);
 
-
-  id = SCHEME_STX_CADR(form);
-  if (!SCHEME_STX_SYMBOLP(id))
-    scheme_wrong_syntax("lexical-syntax", id, form, "expected an identifier");
+  stx = SCHEME_STX_CADR(form);
   
-  if (rec) {
-    /* Clone id (in case it's shared), and mark with the current 
-       compile-time envrionment. */
-    Scheme_Stx *stx = (Scheme_Stx *)id;
-    id = scheme_make_stx(stx->val, stx->line, stx->col, stx->src);
-    scheme_add_remove_mark(id, scheme_static_distance(stx->val, env, SCHEME_GET_FRAME_ID));
-    return id;
-  } else
+  if (rec)
+    return scheme_quote_syntax(stx, env);
+  else
     return scheme_datum_to_syntax(cons(lexical_syntax_symbol,
-				       cons(id, scheme_null)),
+				       cons(stx, scheme_null)),
 				  form);
 }
 

@@ -1045,9 +1045,9 @@ void scheme_wrong_syntax(const char *where,
 			    dv, dvlen,
 			    v, vlen);
     else
-      blen = scheme_sprintf(buffer, blen, "%s: %t%t in: %t%t", 
+      blen = scheme_sprintf(buffer, blen, "%s: %t in%t: %t", 
 			    where, s, slen, 
-			    v, vlen, p, plen);
+			    p, plen, v, vlen);
   } else
     blen = scheme_sprintf(buffer, blen, "%s: %t", where, s, slen);
   

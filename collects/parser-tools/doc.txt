@@ -30,7 +30,7 @@ This gives you the following syntatic forms:
 
 > (define-lex-abbrevs [name re] ...) defines several lex-abbrevs
 
-> (lex (re action) ...) expands into a function that takes a lex-buf,
+> (lexer (re action) ...) expands into a function that takes a lex-buf,
    matches the re's against the buffer and returns the result of
    executing the corresponding action.  Each action is scheme code
    that has the same scope as its lexer defintion, except that the
@@ -77,6 +77,12 @@ create a .zo file in the 'compiled' subdirectory.
 
 See the combined lexer/parser example below.
 
+Hint: If there is no match in the input buffer the generated lexer
+will signal an error.  If ((- #\000 #\255) custom-error-behavior) is
+the last rule, then there will always be a match and
+custom-error-behavior will be executed to handle the error situation
+as desired.
+
 
 _yacc.ss_
 
@@ -88,13 +94,17 @@ This module provides the following syntactic forms:
   long as there are no duplicates and all non-optional arguments are
   present) and are:
 
-  > (debug filename) OPTIONAL causes the parser to write the LALR
-     table to the file named filename (unless the file exists).
+  > (debug filename) OPTIONAL causes the parser generator to write the
+     LALR table to the file named filename (unless the file exists).
      filename must be a string.
 
-  > (error expression) expression should evaluate to a thunk which
-     will be executed for its side-effect whenever the parser
-     encounters an error.
+  > (suppress) OPTIONAL causes the parser generator to not report
+     shift/reduce or reduce/reduce conflicts.
+
+  > (error expression) expression should evaluate to a function of one
+     argument which will be executed for its side-effect whenever the
+     parser encounters an error.  The function will be called with the
+     current token as its argument.
 
   > (tokens group-name ...) declares that all of the tokens defined in
      the groups can be handled by this parser.

@@ -659,7 +659,9 @@
 	     (semaphore-post in-evaluation-semaphore)
 	     (mred:bell)]
 	    [else
+	     (set! in-evaluation? #t)
 	     (semaphore-post in-evaluation-semaphore)
+	     (printf "do many buffer evals~n")
 	     (send (get-top-level-window) disable-evaluation)
 	     (reset-break-state)
 	     (cleanup-transparent-io)
@@ -759,19 +761,23 @@
 
 	[protect-user-evaluation
 	 (lambda (cleanup thunk)
-	   (semaphore-wait in-evaluation-semaphore)
-	   (set! in-evaluation? #t)
-	   (semaphore-post in-evaluation-semaphore)
+	   ;; in-evaluation? flag must be set to #t, before getting here.
+	   ;; for repl / execute evaluation, it must be set in the 
+	   ;; impl eventspace's thread
 
-	   (fluid-let ([killed-callback cleanup])
-
-	     (let/ec k
-	       (fluid-let ([error-escape-k 
-			    (lambda ()
-			      (k (void)))])
-		 (thunk))))
-	   
-	   (cleanup)
+	   (let/ec k
+	     (let ([saved-killed-callback killed-callback]
+		   [saved-error-escape-k error-escape-k])
+	       (dynamic-wind
+		(lambda ()
+		  (set! killed-callback cleanup)
+		  (set! error-escape-k (lambda () (k (void)))))
+		(lambda () (thunk))
+		(lambda () 
+		  (set! killed-callback saved-killed-callback)
+		  (set! error-escape-k saved-error-escape-k)
+		  (printf "running cleanup~n")
+		  (cleanup)))))
 
 	   (semaphore-wait in-evaluation-semaphore)
 	   (set! in-evaluation? #f)
@@ -830,10 +836,12 @@
 	   (lambda (thunk)
 	     (dynamic-wind
 	      (lambda ()
+		(printf "calling update-running.3~n")
 		(update-running #t))
 	      (lambda ()
 		(thunk))
 	      (lambda ()
+		(printf "calling update-running.4~n")
 		(update-running #f))))]
 
 	  [ok-to-break-semaphore (make-semaphore 1)]
@@ -846,58 +854,80 @@
 	  [event-started (make-semaphore 0)]
 	  [running-callback-start
 	   (lambda ()
+	     (printf "running-callback-start.1 posted event-started~n")
 	     (semaphore-post event-started))]
 	  [running-callback-stop
 	   (lambda ()
-	     (printf "r1~n")
+	     (printf "running-callback-stop.0~n")
 	     (semaphore-wait ok-to-break-semaphore)
+	     (printf "running-callback-stop.1 got ok-to-break-semaphore~n")
 	     (when ok-to-break
+	       (printf "running-callback-stop.2 breaking thread; resetting ok-to-break flag~n")
 	       (break-thread running-thread)
 	       (semaphore-post event-started)
 	       (set! ok-to-break #f))
-	     (printf "r2~n")
+	     (printf "running-callback-stop.3 conditonally turning running flag off~n")
 	     (conditionally-turn-running-off)
-	     (printf "r3~n")
-	     (semaphore-post ok-to-break-semaphore))]
+	     (semaphore-post ok-to-break-semaphore)
+	     (printf "running-callback-stop.4~n"))]
 	  [update-running
 	   (case-lambda
 	    [(flag) (update-running flag #f)]
 	    [(flag got-semaphore?)
+	     (printf "update-running.0 ~a~n" got-semaphore?)
 	     (unless got-semaphore?
-	       (semaphore-wait evaluation-running-semaphore))
+	       (printf "update-running.1.1~n")
+	       (semaphore-wait evaluation-running-semaphore)
+	       (printf "update-running.1.2 got evaluation-running-semaphore~n"))
 	     (when (eq? flag evaluation-running)
+	       (printf "update-running.2.1~n")
 	       (semaphore-post evaluation-running-semaphore)
+	       (printf "update-running.2.2 calling error~n")
 	       (error 'update-running "flags are already the same (~a)!" flag))
 	     (set! evaluation-running flag)
+	     (printf "update-running.3~n")
 	     (system
 	      (lambda ()
 		(if evaluation-running
 		    (mred:queue-callback (lambda () (send (get-top-level-window) running)))
 		    (mred:queue-callback (lambda () (send (get-top-level-window) not-running))))))
+	     (printf "update-running.4 ~a~n" got-semaphore?)
 	     (unless got-semaphore?
-	       (semaphore-post evaluation-running-semaphore))])]
+	       (semaphore-post evaluation-running-semaphore)
+	       (printf "update-running.5~n"))])]
 	  [conditionally-turn-running-off
 	   (lambda ()
 	     (semaphore-wait evaluation-running-semaphore)
 	     (when evaluation-running
+	       (printf "calling update-running.1~n")
 	       (update-running #f #t))
 	     (semaphore-post evaluation-running-semaphore))]
 	  [running-thread
 	   (thread
-	    (rec loop
-		 (lambda ()
-		   (semaphore-wait event-started)
-		   (with-handlers ([(lambda (x) #t)
-				    (lambda (x) #f)])
-		     (semaphore-wait ok-to-break-semaphore)
-		     (set! ok-to-break #t)
-		     (semaphore-post ok-to-break-semaphore)
-		     (sleep)
-		     (semaphore-wait ok-to-break-semaphore)
-		     (set! ok-to-break #f)
-		     (update-running #t)
-		     (semaphore-post ok-to-break-semaphore))
-		   (loop))))])
+	    (lambda ()
+	      (break-enabled #t)
+	      (let loop ()
+		(printf "running-thread.0~n")
+		(semaphore-wait event-started)
+		(with-handlers ([(lambda (x) #t)
+				 (lambda (x) 
+				   (printf "running-thread.6 broken~n")
+				   (void))])
+		  (printf "running-thread.1 waiting for ok-to-break-semaphore~n")
+		  (semaphore-wait ok-to-break-semaphore)
+		  (set! ok-to-break #t)
+		  (semaphore-post ok-to-break-semaphore)
+		  (printf "running-thread.2 sleeping~n")
+		  (sleep)
+		  (printf "running-thread.3 awoke~n")
+		  (semaphore-wait ok-to-break-semaphore)
+		  (printf "running-thread.4 got ok-to-break-semaphore~n")
+		  (set! ok-to-break #f)
+		  (printf "calling update-running.2~n")
+		  (update-running #t)
+		  (semaphore-post ok-to-break-semaphore)
+		  (printf "running-thread.5~n"))
+		(loop))))])
 
 
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1043,20 +1073,20 @@
 			    (cond
 			     [(and (= depth 1)
 				   (not in-evaluation?))
-			      (printf "1~n")
+			      (printf "event-dispatch-handler.1 in-evaluation? ~a~n" in-evaluation?)
 			      (reset-break-state)
-			      (printf "2~n")
+			      (printf "event-dispatch-handler.2 reset break~n")
 			      (running-callback-start)
 			      
-			      (printf "3~n")
+			      (printf "event-dispatch-handler.3 started running callback~n")
 			      (protect-user-evaluation
 			       (lambda ()
-				 (printf "5~n")
+				 (printf "event-dispatch-handler.5 finished handling event~n")
 				 (running-callback-stop)
-				 (printf "6~n")
+				 (printf "event-dispatch-handler.6 stopped running~n")
 				 (set! depth (- depth 1)))
 			       (lambda ()
-				 (printf "4~n")
+				 (printf "event-dispatch-handler.4 handling event~n")
 				 (mzlib:thread:dynamic-enable-break
 				  (lambda ()
 				    (primitive-dispatch-handler eventspace)))))]

@@ -1,3 +1,8 @@
+
+;; this writes values to strings and compares the strings
+;; to implements an equal? predicate that works for cyclic
+;; structures.
+
 (define (gs v)
   (let ([p (open-output-string)])
     (begin

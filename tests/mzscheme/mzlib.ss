@@ -6,6 +6,8 @@
 
 (load-relative "function.ss")
 
+(load-relative "filelib.ss")
+
 (load-relative "date.ss")
 
 (load-relative "compat.ss")

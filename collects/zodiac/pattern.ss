@@ -72,7 +72,7 @@
 		 (else
 		   `(lambda (e)
 		      (if (#%equal? ,p e) '() (esc #f))))))))
-	  (eval `(lambda (esc env)
+	  (#%eval `(lambda (esc env)
 		   ,(m&e p))))))
 
     (define match-against

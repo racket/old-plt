@@ -53,7 +53,6 @@
 #define OPT_COMPILE_VISIBLE 0
 
 /* globals */
-
 int scheme_allow_cond_auto_else = 1;
 
 Scheme_Object *scheme_eval_waiting;

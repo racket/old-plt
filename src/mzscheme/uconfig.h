@@ -10,6 +10,7 @@
 #define DIR_FUNCTION
 #define GETENV_FUNCTION
 
+#define USE_FD_PORTS
 #define HAS_STANDARD_IOB
 #define FILES_HAVE_FDS
 #define USE_UNIX_SOCKETS_TCP
@@ -28,4 +29,3 @@
 #define USE_FCHDIR
 
 #define USE_GETRUSAGE
-

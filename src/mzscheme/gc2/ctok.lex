@@ -182,7 +182,7 @@ void count()
 
 error()
 {
-  fprintf(stderr, "[%d, %d] Unknown character in input: %s\n", yylineno, column, yytext);
+  fprintf(stderr, "c-tokenize: [%d, %d] Unknown character in input: %s\n", yylineno, column, yytext);
   exit(-1);
 }
 

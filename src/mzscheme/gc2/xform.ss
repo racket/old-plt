@@ -20,20 +20,64 @@
 (require-library "function.ss")
 (require-library "errortrace.ss" "errortrace")
 
-(when cpp
-  (unless (system (format "~a -DMZ_PRECISE_GC ~a ~a | ctok > xtmp"
-			  cpp
-			  (if (null? (cdddr cmd-line))
-			      ""
-			      (cadddr cmd-line))
-			  file-in))
-    (error 'xform "cpp failed")))
+(define cpp-process
+  (process (format "~a -DMZ_PRECISE_GC ~a ~a"
+		   cpp
+		   (if (null? (cdddr cmd-line))
+		       ""
+		       (cadddr cmd-line))
+		   file-in)))
+(close-output-port (cadr cpp-process))
 
-(define e-raw (parameterize ([read-case-sensitive #t])
-		(with-input-from-file (if cpp
-					  "xtmp" 
-					  file-in)
-		  read)))
+(define ctok-process
+  (process "ctok"))
+
+(define (mk-error-thread proc)
+  (thread (lambda ()
+	    (let loop ()
+	      (let ([l (read-line (list-ref proc 3) 'any)])
+		(unless (eof-object? l)
+		  (fprintf (current-error-port) "~a~n" l)
+		  (loop)))))))
+
+(define cpp-error-thread (mk-error-thread cpp-process))
+(define ctok-error-thread (mk-error-thread ctok-process))
+
+;; cpp output to ctok input:
+(thread (lambda ()
+	  (let ([s (make-string 4096)])
+	    (let loop ()
+	      (let ([l (read-string! s (car cpp-process))])
+		(unless (eof-object? l)
+		  (display (if (< l 4096) (substring s 0 l) s)
+			   (cadr ctok-process))
+		  (loop))))
+	    (close-input-port (car cpp-process))
+	    (close-output-port (cadr ctok-process)))))
+
+(define e-raw #f)
+
+(define read-thread
+  (thread
+   (lambda ()
+     (with-handlers ([void (lambda (x)
+			     (set! e-raw x))])
+       (parameterize ([read-case-sensitive #t])
+	 (set! e-raw (read (car ctok-process))))))))
+
+((list-ref cpp-process 4) 'wait)
+(thread-wait cpp-error-thread)
+(when (eq? ((list-ref cpp-process 4) 'status) 'done-error)
+  (error 'xform "cpp failed"))
+
+((list-ref ctok-process 4) 'wait)
+(thread-wait ctok-error-thread)
+(when (eq? ((list-ref ctok-process 4) 'status) 'done-error)
+  (error 'xform "ctok failed"))
+
+(thread-wait read-thread)
+(when (exn? e-raw)
+  (raise e-raw))
 
 (current-output-port (if file-out
 			 (open-output-file file-out 'truncate)

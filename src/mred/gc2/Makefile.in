@@ -489,7 +489,8 @@ mredx.o: xsrc/mredx.cc
 xcglue.o: xsrc/xcglue.c
 	$(CC) -DGC2_JUST_MACROS $(GCPREINC) -c $(CFLAGS) -o xcglue.o xsrc/xcglue.c
 
-wxGC.o: $(srcdir)/../../wxcommon/wxGC.cxx $(srcdir)/../../mzscheme/gc2/gc2.h $(srcdir)/../../mzscheme/src/stypes.h
+wxGC.o: $(srcdir)/../../wxcommon/wxGC.cxx $(srcdir)/../../wxcommon/wxGC.h \
+            $(srcdir)/../../mzscheme/gc2/gc2.h $(srcdir)/../../mzscheme/src/stypes.h
 	$(CXX) -DMZ_PRECISE_GC -I$(srcdir)/../../mzscheme/gc2/ $(CPPFLAGS) -c -o wxGC.o $(srcdir)/../../wxcommon/wxGC.cxx
 
 XSRCS = xsrc/Window.cc \

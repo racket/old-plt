@@ -138,5 +138,6 @@ install:
 	cp mred $(srcdir)/../../.bin/$(INSTALLSYS)/mred
 
 2k:
+	$(MAKE) all
 	cd gc2; $(MAKE) 2k
 

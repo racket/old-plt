@@ -1602,7 +1602,7 @@ Scheme_Object *raise_valued_exn(Scheme_Object *val,char *f,
 
   exn = scheme_make_struct_instance(type,3,argv);
 
-  scheme_raise(exn);  
+  scheme_raise(exn);
 
   return scheme_void;
 }
@@ -6712,7 +6712,7 @@ void initTypes(void) {
   sql_paramlength_type = scheme_make_type("<sql-paramlength>");
 }
 
-void initExns(Scheme_Env *env) {
+void initExns(void) {
   Scheme_Object *exn_type;
   Scheme_Object *new_exn_name;
   Scheme_Object *new_exn_type;
@@ -6721,7 +6721,7 @@ void initExns(Scheme_Env *env) {
   int name_count;
   int i;
 
-  exn_type = scheme_lookup_global(scheme_intern_symbol("struct:exn"),env);
+  exn_type = scheme_builtin_value("struct:exn");
 
   exnNameCount = 0;
 
@@ -6810,15 +6810,6 @@ void initStructs(void) {
 				   sizeof(minuteToSecondIntervalStructFuns));
 }
 
-Scheme_Object *schemeObjectFromString(char *s,Scheme_Env *env) {
-  return scheme_lookup_global(scheme_intern_symbol(s),env);
-}
-
-void initGlobals(Scheme_Env *env) {
-  //  scheme_raise = schemeObjectFromString("raise",env);
-  //  scheme_register_extension_global(&scheme_raise,sizeof(scheme_raise));
-}
-
 void sortConsts(void) {
 
 #if (ODBCVER >= 0x0300)
@@ -6880,9 +6871,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   initStructs();
 
-  initExns(env);
-
-  initGlobals(env);
+  initExns();
 
   sortConsts();
 

@@ -115,6 +115,13 @@ If file-name is #f, msg is treated as a regular
 string. Clicking on the name message pops up a dialog saying
 that there is no file name until the file is saved.
       
+> (send a-name-message on-choose-directory dir)
+
+  dir : string
+
+This method is called when one of the popup menu items is
+chosen. The argument is a string representing the specified
+directory.
 
 ============================================================
 

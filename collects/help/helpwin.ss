@@ -310,7 +310,7 @@
 					     v))]
 	       [else (loop (cdr l))])))
 
-	  (define top (make-object vertical-pane% f))
+	  (define top (make-object vertical-pane% (send f get-area-container)))
 	  (define search-text (make-object text-field% "Find docs for:" top
 					   (lambda (t e)
 					     (send search enable (positive? (send (send t get-editor) last-position))))))

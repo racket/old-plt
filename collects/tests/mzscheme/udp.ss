@@ -90,6 +90,33 @@
 (test (void) udp-connect! udp2 #f #f)
 (test #f udp-connected? udp2)
 
+;; waitables
+(define udp1-s (udp->send-waitable udp1))
+(test #t object-waitable? udp1-s)
+(test udp1-s object-wait-multiple #f udp1-s)
+
+(define udp2-r (udp->receive-waitable udp2))
+(test #t object-waitable? udp2-r)
+(test #f object-wait-multiple 0.05 udp2-r)
+
+(test (void) udp-send-to udp1 "localhost" 40007 "here's more")
+(sleep 0.05)
+(test udp2-r object-wait-multiple #f udp2-r)
+(test udp2-r object-wait-multiple #f udp2-r)
+(test-values (list 10 "127.0.0.1" udp1-port) (lambda () (udp-receive!* udp2 us1)))
+(test #f object-wait-multiple 0.05 udp2-r)
+
+;; break behavior
+(let ([t (parameterize ([break-enabled #f])
+           (thread (lambda ()
+		     (udp-receive!/enable-break udp1 us1)
+		     (set! udp1 #f))))])
+  (sleep 0.05)
+  (break-thread t)
+  (thread-wait t)
+  (test #t udp? udp1))
+;; filling up an output queue is difficult; we don't even try here
+
 (err/rt-test (udp-bind! udp1 #f #f))
 (err/rt-test (udp-bind! udp1 "localhost" #f))
 (err/rt-test (udp-connect! udp1 "localhost" #f) exn:application:mismatch?)

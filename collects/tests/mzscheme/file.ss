@@ -1130,6 +1130,8 @@
 (err/rt-test (udp-receive! 5 (make-string 10)))
 (err/rt-test (udp-receive!* 5 (make-string 10)))
 (err/rt-test (udp-receive!/enable-break 5 (make-string 10)))
+(err/rt-test (udp->send-waitable 5))
+(err/rt-test (udp->receive-waitable 5))
 
 (arity-test udp-open-socket 0 0)
 (arity-test udp-close 1 1)
@@ -1147,6 +1149,8 @@
 (arity-test udp-receive! 2 4)
 (arity-test udp-receive!* 2 4)
 (arity-test udp-receive!/enable-break 2 4)
+(arity-test udp->send-waitable 1 1)
+(arity-test udp->receive-waitable 1 1)
 
 ;;----------------------------------------------------------------------
 ;; Security guards:

@@ -33,27 +33,29 @@
 				DebugInformationFormat="4"/>
 			<Tool
 				Name="VCCustomBuildTool"
-				Description="Copying $(TargetPath) to  ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(TargetFileName)"
-				CommandLine="copy /y $(OutDir)\$(TargetFileName) ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(TargetFileName) &amp; regsvr32 /s ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(TargetFileName)
-"
-				Outputs=" ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(TargetFileName)"/>
+                                Description="Copy $(InputName).dll to collects"
+				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386"
+				Outputs="..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\..\..\lib\msvc\mzdyn.obj"
-				OutputFile="$(OutDir)/myspage.dll"
+				OutputFile="$(OutDir)\$(InputName).dll"
 				LinkIncremental="2"
-				ModuleDefinitionFile="..\..\..\..\src\mysterx\myspage\$(InputName).def"
+				ModuleDefinitionFile="..\..\..\mysterx\myspage\$(InputName).def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)/myspage.pdb"
+				ProgramDatabaseFile="$(OutDir)\$(InputName).pdb"
 				SubSystem="2"
-				ImportLibrary="$(OutDir)/myspage.lib"
+				ImportLibrary="$(OutDir)\$(InputName).lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
-				AdditionalIncludeDirectories="&quot;C:\Documents and Settings\jrm\My Documents\Visual Studio Projects\plt\src\mzscheme\include&quot;"
-				GenerateStublessProxies="TRUE"/>
+				AdditionalIncludeDirectories="..\..\..\mzscheme\include"
+				GenerateStublessProxies="TRUE"
+				TypeLibraryName="$(InputDir)$(InputName).tlb"
+				HeaderFileName="$(InputName).h"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+                                Description="Register $(InputName).dll"
+				CommandLine="REGSVR32 /s ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -71,37 +73,54 @@
 			OutputDirectory="Release"
 			IntermediateDirectory="Release"
 			ConfigurationType="2"
+			UseOfATL="1"
+			ATLMinimizesCRunTimeLibraryUsage="TRUE"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				InlineFunctionExpansion="1"
-				OmitFramePointers="TRUE"
+				InlineFunctionExpansion="0"
+				OmitFramePointers="FALSE"
 				AdditionalIncludeDirectories="..\..\..\..\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MYSPAGE_EXPORTS"
-				StringPooling="TRUE"
+				StringPooling="FALSE"
 				RuntimeLibrary="0"
-				EnableFunctionLevelLinking="TRUE"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="FALSE"
 				UsePrecompiledHeader="0"
+				ObjectFile=""
+				ProgramDataBaseFileName=""
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"/>
+				SuppressStartupBanner="FALSE"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="0"
+				CompileAs="0"/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCCustomBuildTool"
+                                Description="Copy $(InputName).dll to collects"
+				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386"
+				Outputs="..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/myspage.dll"
+				OutputFile="$(OutDir)\$(InputName).dll"
 				LinkIncremental="1"
 				GenerateDebugInformation="TRUE"
+				ModuleDefinitionFile="..\..\..\mysterx\myspage\$(InputName).def"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)/myspage.lib"
+				ImportLibrary="$(OutDir)\$(InputName).lib"
 				TargetMachine="1"/>
 			<Tool
-				Name="VCMIDLTool"/>
+				Name="VCMIDLTool"
+				AdditionalIncludeDirectories="..\..\..\mzscheme\include"
+				GenerateStublessProxies="TRUE"
+				TypeLibraryName="$(InputDir)$(InputName).tlb"
+				HeaderFileName="$(InputName).h"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+                                Description="Register $(InputName).dll"
+				CommandLine="REGSVR32 /s ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool

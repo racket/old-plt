@@ -1152,6 +1152,12 @@ LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
 
   wx_trampolining = 0;
 
+  /* WM_NCHITTEST is extremely common, and we do nothing with it.
+     Make handling fast, just in case. */
+  if (message == WM_NCHITTEST) {
+    return ::DefWindowProc(hWnd, message, wParam, lParam);
+  }
+
   /* See mredmsw.cxx: */
   if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxWndProc))
     return res;

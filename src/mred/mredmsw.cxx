@@ -14,6 +14,11 @@
 
 #include "mred.h"
 
+#define wxLOG_EVENTS 0
+#if wxLOG_EVENTS
+static FILE *log;
+#endif
+
 void mred_log_msg(const char *msg, ...);
 
 #define OS_SEMAPHORE_TYPE HANDLE
@@ -204,11 +209,6 @@ static WPARAM need_trampoline_wparam;
 static LPARAM need_trampoline_lparam;
 static WNDPROC need_trampoline_proc;
 int wx_trampolining;
-
-#define wxLOG_EVENTS 0
-#if wxLOG_EVENTS
-FILE *log;
-#endif
 
 void MrEdDispatchEvent(MSG *msg)
 {

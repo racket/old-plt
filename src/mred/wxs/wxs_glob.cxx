@@ -84,9 +84,6 @@ extern void wxFlushDisplay(void);
 #define FILE_SEL_DEF_PATTERN "*.*"
 #endif
 
-#define BUF_SIZE 1000
-static char buffer[BUF_SIZE];
-
 static char *wxStripMenuCodes_Scheme(char *in)
 {
   static char *buffer = NULL;

@@ -384,7 +384,7 @@ static Scheme_Object *on_thread_swap(Scheme_Object *)
   Scheme_Object *o;
   wxGL *c;
 
-  o = scheme_get_param(scheme_config, gl_param);
+  o = scheme_get_param(scheme_current_config(), gl_param);
   if (SCHEME_TRUEP(o))
     c = objscheme_unbundle_wxGL(o, NULL, 0);
   else
@@ -402,7 +402,7 @@ static Scheme_Object *on_thread_swap(Scheme_Object *)
 static void init_gl_mgr(void)
 {
 #ifdef PROTECT_GLS
-  scheme_set_param(scheme_config, gl_param, scheme_false);
+  scheme_set_param(scheme_current_config(), gl_param, scheme_false);
   scheme_add_swap_callback(on_thread_swap, NULL);
 #endif
 }
@@ -419,8 +419,10 @@ static void swap_ctx(void *c)
 #ifdef PROTECT_GLS
   {
     Scheme_Object *o;
-    o = scheme_get_param(scheme_config, gl_param);
-    scheme_set_param(scheme_config, gl_param, n);
+    Scheme_Config *config;
+    config = scheme_current_config();
+    o = scheme_get_param(config, gl_param);
+    scheme_set_param(config, gl_param, n);
     ((Scheme_Object **)c)[1] = o;
   }
 #else
@@ -1949,7 +1951,7 @@ static Scheme_Object *wxSchemeEventDispatchHandler(int argc, Scheme_Object **arg
 
 static Scheme_Object *wxSchemeMakeEventspace(int, Scheme_Object **)
 {
-  return (Scheme_Object *)MrEdMakeEventspace((Scheme_Config *)NULL);
+  return (Scheme_Object *)MrEdMakeEventspace();
 }
 
 static Scheme_Object *wxEventspaceHandlerThread(int argc, Scheme_Object **argv)
@@ -3182,7 +3184,7 @@ static Scheme_Object *phantom_tool_hook(int c, Scheme_Object **argv)
 
   if (!checked) {
     checked = 1;
-    scheme_eval_string((char *)check_phantom_module, scheme_get_env(scheme_config));
+    scheme_eval_string((char *)check_phantom_module, scheme_get_env(NULL));
     a[0] = scheme_intern_symbol("#%check-phantom");
     a[1] = scheme_intern_symbol("use-phantom?");
     dr = scheme_builtin_value("dynamic-require");
@@ -3223,7 +3225,7 @@ static Scheme_Object *phantom_tool_hook(int c, Scheme_Object **argv)
   } else if (c == 3) {
     /* Mode 3 => wrap info content */
     v = argv[0];
-    scheme_eval_string((char *)wrapper_module, scheme_get_env(scheme_config));
+    scheme_eval_string((char *)wrapper_module, scheme_get_env(NULL));
     a[0] = scheme_intern_symbol("#%info-wrapper");
     a[1] = scheme_intern_symbol("addition");
     dr = scheme_builtin_value("dynamic-require");
@@ -3265,7 +3267,7 @@ static Scheme_Object *phantom_tool_hook(int c, Scheme_Object **argv)
 	      wxBitmap *big, *little;
 	      big = wx_get_alternate_icon(0);
 	      little = wx_get_alternate_icon(1);
-	      scheme_eval_string((char *)phantom_tool_module, scheme_get_env(scheme_config));
+	      scheme_eval_string((char *)phantom_tool_module, scheme_get_env(NULL));
 	      dr = scheme_builtin_value("dynamic-require");
 	      a[0] = scheme_intern_symbol("#%mk-tool");
 	      a[1] = scheme_intern_symbol("mk-tool@");

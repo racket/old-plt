@@ -59,6 +59,7 @@ typedef struct MrEdContext {
   MrEd_Saved_Modal *modal_stack;
 
   Scheme_Config *main_config;
+  Scheme_Thread_Cell_Table *main_cells;
 
   short ready_to_go;
 
@@ -142,6 +143,7 @@ public:
   int progress_is_resumed;
   int yielding;
   Scheme_Object *old_param;
+  Scheme_Config *config;
   void *progress_base_addr;
   mz_jmp_buf progress_base;
   Scheme_Jumpup_Buf_Holder *progress_cont;

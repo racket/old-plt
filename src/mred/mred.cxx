@@ -290,6 +290,7 @@ static int mark_eventspace_val(void *p)
   gcMARK_TYPED(MrEd_Saved_Modal *, c->modal_stack);
 
   gcMARK_TYPED(Scheme_Config *, c->main_config);
+  gcMARK_TYPED(Scheme_Thread_Cell_Table *, c->main_cells);
 
   gcMARK_TYPED(wxTimer *, c->timer);
 
@@ -321,6 +322,7 @@ static int fixup_eventspace_val(void *p)
   gcFIXUP_TYPED(MrEd_Saved_Modal *, c->modal_stack);
 
   gcFIXUP_TYPED(Scheme_Config *, c->main_config);
+  gcFIXUP_TYPED(Scheme_Thread_Cell_Table *, c->main_cells);
 
   gcFIXUP_TYPED(wxTimer *, c->timer);
 
@@ -411,7 +413,7 @@ MrEdContext *MrEdGetContext(wxObject *w)
   if (mred_only_context)
     return mred_only_context;
   else
-    return (MrEdContext *)scheme_get_param(scheme_config, mred_eventspace_param);
+    return (MrEdContext *)scheme_get_param(scheme_current_config(), mred_eventspace_param);
 }
 
 void *MrEdGetWindowContext(wxWindow *w)
@@ -567,7 +569,7 @@ wxPrintSetupData *wxGetThePrintSetupData()
 {
   if (ps_ready) {
     Scheme_Object *o;
-    o = scheme_get_param(scheme_config, mred_ps_setup_param);
+    o = scheme_get_param(scheme_current_config(), mred_ps_setup_param);
     if (o)
       return wxsUnbundlePSSetup(o);
   }
@@ -579,7 +581,7 @@ void wxSetThePrintSetupData(wxPrintSetupData *d)
   if (ps_ready) {
     Scheme_Object *o;
     o = wxsBundlePSSetup(d);
-    scheme_set_param(scheme_config, mred_ps_setup_param, o);
+    scheme_set_param(scheme_current_config(), mred_ps_setup_param, o);
   }
   orig_ps_setup = d;
 }
@@ -680,10 +682,12 @@ static void CollectingContext(void *cfx, void *)
   cf->frames = NULL;
 }
 
-static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
+static MrEdContext *MakeContext(MrEdContext *c)
 {
   MrEdContextFrames *frames;
   Context_Custodian_Hop *mr_hop;
+  Scheme_Config *config;
+  Scheme_Thread_Cell_Table *cells;
 
   scheme_custodian_check_available(NULL, "make-eventspace", "eventspace");
 
@@ -728,15 +732,17 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 
   c->modal_window = NULL;
 
-  if (!config) {
-    config = (Scheme_Config *)scheme_branch_config();
-    scheme_set_param(config, mred_eventspace_param, (Scheme_Object *)c);
-  }
+  config = scheme_extend_config(scheme_current_config(), 
+				mred_eventspace_param, 
+				(Scheme_Object *)c);
+
 #ifdef NEED_HET_PARAM
-  scheme_set_param(config, mred_het_param, NULL);
+  config = scheme_extend_config(config, mred_het_param, NULL);
 #endif
 
   c->main_config = config;
+  cells = scheme_inherit_cells(NULL);
+  c->main_cells = cells;
 
 #ifdef MZ_PRECISE_GC
   /* Override destructor-based finalizer: */
@@ -816,20 +822,15 @@ static void UnchainContextsList()
   }
 }
 
-Scheme_Object *MrEdMakeEventspace(Scheme_Config *config)
+Scheme_Object *MrEdMakeEventspace()
 {
   MrEdContext *c;
 
-  c = MakeContext(NULL, config);
+  c = MakeContext(NULL);
 
   MrEdInitNewContext(c);
 
   return (Scheme_Object *)c;
-}
-
-Scheme_Object *MrEdEventspaceConfig(Scheme_Object *e)
-{
-  return (Scheme_Object *)((MrEdContext *)e)->main_config;
 }
 
 Scheme_Object *MrEdEventspaceThread(Scheme_Object *e)
@@ -963,7 +964,7 @@ int mred_in_restricted_context()
 {
 #ifdef NEED_HET_PARAM
   /* see wxHiEventTrampoline for info on mred_het_param: */
-  if (scheme_get_param(scheme_config, mred_het_param))
+  if (scheme_get_param(scheme_current_thread->init_config, mred_het_param))
     return 1;
 #endif
   return 0;
@@ -1099,7 +1100,7 @@ static void DoTheEvent(MrEdContext *c)
 
   c->ready_to_go = 1;
 
-  p = scheme_get_param(scheme_config, mred_event_dispatch_param);
+  p = scheme_get_param(scheme_current_config(), mred_event_dispatch_param);
   if (p != def_dispatch) {
     Scheme_Object *a[1];
     mz_jmp_buf savebuf;
@@ -1138,7 +1139,7 @@ static Scheme_Object *MrEdDoNextEvent(MrEdContext *c, wxDispatch_Check_Fun alt, 
 
 #ifdef NEED_HET_PARAM
   /* see wxHiEventTrampoline for info on mred_het_param: */
-  if (scheme_get_param(scheme_config, mred_het_param))
+  if (scheme_get_param(scheme_current_thread->init_config, mred_het_param))
     restricted = 1;
 #endif
 
@@ -1245,7 +1246,7 @@ int MrEdEventReady(MrEdContext *c)
 
 #ifdef NEED_HET_PARAM
   /* see wxHiEventTrampoline for info on mred_het_param: */
-  if (scheme_get_param(scheme_config, mred_het_param))
+  if (scheme_get_param(scheme_current_thread->init_config, mred_het_param))
     restricted = 1;
 #endif
 
@@ -1391,12 +1392,11 @@ static void event_found(MrEdContext *c)
       scheme_weak_resume_thread(c->handler_running);
     }
   } else {
-    Scheme_Object *cp;
+    Scheme_Object *cp, *cust;
 
     cp = scheme_make_closed_prim(CAST_SCP handle_events, c);
-    scheme_thread_w_custodian(cp, c->main_config,
-			      (Scheme_Custodian *)scheme_get_param(c->main_config,
-								   MZCONFIG_CUSTODIAN));
+    cust = scheme_get_param(c->main_config, MZCONFIG_CUSTODIAN);
+    scheme_thread_w_details(cp, c->main_config, c->main_cells, (Scheme_Custodian *)cust, 0);
   }
 }
 
@@ -1517,10 +1517,12 @@ void wxDoEvents()
     MrEdContext *c;
 #if WINDOW_STDIO
     Scheme_Custodian *m, *oldm = NULL;
+    Scheme_Config *config = NULL;
     if (!wx_in_terminal) {
-      oldm = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
+      config = scheme_current_config();
+      oldm = (Scheme_Custodian *)scheme_get_param(config, MZCONFIG_CUSTODIAN);
       m = scheme_make_custodian(oldm);
-      scheme_set_param(scheme_config, MZCONFIG_CUSTODIAN, (Scheme_Object *)m);
+      scheme_set_param(config, MZCONFIG_CUSTODIAN, (Scheme_Object *)m);
       wxREGGLOB(main_custodian);
       main_custodian = m;
     }
@@ -1528,7 +1530,7 @@ void wxDoEvents()
 
     /* Create the user's main thread: */
 
-    c = (MrEdContext *)MrEdMakeEventspace(NULL);
+    c = (MrEdContext *)MrEdMakeEventspace();
 
     wxREGGLOB(user_main_context);
     user_main_context = c;
@@ -1537,14 +1539,17 @@ void wxDoEvents()
       Scheme_Object *cp;
       cp = scheme_make_closed_prim(CAST_SCP handle_events, c);
       wxREGGLOB(user_main_thread);
-      user_main_thread = (Scheme_Thread *)scheme_thread(cp, c->main_config);
+      user_main_thread = (Scheme_Thread *)scheme_thread_w_details(cp, 
+								  c->main_config,
+								  c->main_cells,
+								  NULL, 0);
       cp = scheme_intern_symbol("mred");
       user_main_thread->name = cp;
     }
 
 #if WINDOW_STDIO
     if (!wx_in_terminal)
-      scheme_set_param(scheme_config, MZCONFIG_CUSTODIAN, (Scheme_Object *)oldm);
+      scheme_set_param(config, MZCONFIG_CUSTODIAN, (Scheme_Object *)oldm);
 #endif
 
     /* Block until the user's main thread is initialized: */
@@ -2947,19 +2952,19 @@ static Scheme_Env *setup_basic_env()
 
   wxsScheme_setup(global_env);
 
-  scheme_set_param(scheme_config, mred_eventspace_param, (Scheme_Object *)mred_main_context);
+  scheme_set_param(scheme_current_config(), mred_eventspace_param, (Scheme_Object *)mred_main_context);
 
   wxREGGLOB(def_dispatch);
   def_dispatch = scheme_make_prim_w_arity(CAST_SP def_event_dispatch_handler,
 					  "default-event-dispatch-handler",
 					  1, 1);
-  scheme_set_param(scheme_config, mred_event_dispatch_param, def_dispatch);
+  scheme_set_param(scheme_current_config(), mred_event_dispatch_param, def_dispatch);
 
   /* Make sure ps-setup is installed in the parameterization */
   ps_ready = 1;
   /* wxSetThePrintSetupData(wxGetThePrintSetupData()); */
 
-  MakeContext(mred_main_context, NULL);
+  MakeContext(mred_main_context);
 
   mred_only_context = NULL;
 
@@ -3339,8 +3344,8 @@ static void pre_het(void *d)
 {
   HiEventTramp *het = (HiEventTramp *)d;
 
-  het->old_param = scheme_get_param(scheme_config, mred_het_param);
-  scheme_set_param(scheme_config, mred_het_param, (Scheme_Object *)het);
+  het->old_param = scheme_get_param(het->config, mred_het_param);
+  scheme_set_param(het->config, mred_het_param, (Scheme_Object *)het);
 }
 
 static Scheme_Object *act_het(void *d)
@@ -3357,7 +3362,7 @@ static void post_het(void *d)
 {
   HiEventTramp *het = (HiEventTramp *)d;
 
-  scheme_set_param(scheme_config, mred_het_param, het->old_param);
+  scheme_set_param(het->config, mred_het_param, het->old_param);
 }
 
 int wxHiEventTrampoline(int (*wha_f)(void *), void *wha_data)
@@ -3368,6 +3373,7 @@ int wxHiEventTrampoline(int (*wha_f)(void *), void *wha_data)
   het->wrap_het_around_f = wha_f;
   het->wha_data = wha_data;
   het->val = 0;
+  het->config = scheme_current_thread->init_config;
 
   het->progress_cont = scheme_new_jmpupbuf_holder();
 
@@ -3416,7 +3422,8 @@ static void suspend_het_progress(void)
 {
   HiEventTramp * volatile het;
 
-  het = (HiEventTramp *)scheme_get_param(scheme_config, mred_het_param);
+  het = (HiEventTramp *)scheme_get_param(scheme_current_thread->init_config, 
+					 mred_het_param);
 
   scheme_on_atomic_timeout = NULL;
 
@@ -3490,7 +3497,8 @@ int mred_het_run_some(HiEventTrampProc do_f, void *do_data)
   HiEventTramp * volatile het;
   int more = 0;
 
-  het = (HiEventTramp *)scheme_get_param(scheme_config, mred_het_param);
+  het = (HiEventTramp *)scheme_get_param(scheme_current_thread->init_config, 
+					 mred_het_param);
   if (het) {
     if (het->in_progress) {
       /* We have work in progress. */

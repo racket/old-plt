@@ -1259,11 +1259,11 @@ void wxWindowDC::DrawRoundedRectangle(float x, float y, float w, float h,
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
 	XFillRectangle(DPY, DRAWABLE, BRUSH_GC, xx+rr, yy, ww-dd, hh);
 	XFillRectangle(DPY, DRAWABLE, BRUSH_GC, xx, yy+rr, ww, hh-dd);
-	XFillArc(DPY, DRAWABLE, BRUSH_GC, xx, yy, dd, dd, 90*64, 90*64);
-	XFillArc(DPY, DRAWABLE, BRUSH_GC, xx+ww-dd, yy, dd, dd, 0, 90*64);
-	XFillArc(DPY, DRAWABLE, BRUSH_GC, xx+ww-dd, yy+hh-dd, dd, dd,
+	XFillArc(DPY, DRAWABLE, BRUSH_GC, xx, yy, dd - WX_GC_CF, dd - WX_GC_CF, 90*64, 90*64);
+	XFillArc(DPY, DRAWABLE, BRUSH_GC, xx+ww-dd, yy, dd - WX_GC_CF, dd - WX_GC_CF, 0, 90*64);
+	XFillArc(DPY, DRAWABLE, BRUSH_GC, xx+ww-dd, yy+hh-dd, dd - WX_GC_CF, dd - WX_GC_CF,
 		 270*64, 90*64);
-	XFillArc(DPY, DRAWABLE, BRUSH_GC, xx, yy+hh-dd, dd, dd, 180*64, 90*64);
+	XFillArc(DPY, DRAWABLE, BRUSH_GC, xx, yy+hh-dd, dd - WX_GC_CF, dd - WX_GC_CF, 180*64, 90*64);
     }
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT){
         ww -= WX_GC_CF;

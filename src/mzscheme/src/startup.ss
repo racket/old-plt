@@ -2541,13 +2541,6 @@
   (require #%small-scheme #%define #%paramz)
   (require-for-syntax #%kernel #%stx #%stxcase-scheme)
 
-  (define (check-parameter-procedure p)
-    (unless (and (procedure? p)
-		 (procedure-arity-includes? p 0)
-		 (procedure-arity-includes? p 1))
-      (raise-type-error 'parameterize "procedure (arity 0 and 1)" p))
-    p)
-
   ;; From Dybvig:
   (define-syntax case
     (lambda (x)

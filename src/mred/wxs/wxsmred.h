@@ -14,7 +14,7 @@ extern int MrEdCheckForBreak(void);
 extern Scheme_Object *MrEdEventspaceConfig(Scheme_Object *);
 extern Scheme_Object *MrEdEventspaceThread(Scheme_Object *e);
 
-extern Scheme_Object *MrEdMakeEventspace(Scheme_Config *c);
+extern Scheme_Object *MrEdMakeEventspace();
 extern int wxsIsContextShutdown(void *cx);
 
 extern Scheme_Object *wxsBundlePSSetup(wxPrintSetupData *d);

@@ -1,6 +1,6 @@
 
 The _browser.ss_ library in the "browser" collection provides the
-following procedures and classes for parsing and veiwing _HTML_ files.
+following procedures and classes for parsing and viewing _HTML_ files.
 The _htmltext.ss_ library provides a simplified interface for
 rendering to a subclass of the MrEd text% class.
 

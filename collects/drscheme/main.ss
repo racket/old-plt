@@ -40,7 +40,6 @@
       (send frame show #t)))
 
   (let ([files-to-open (reverse (vector->list I:argv))])
-    (printf "files-to-open: ~a~n" files-to-open)
     (if (null? files-to-open)
 	(make-basic)
 	(for-each (lambda (x)

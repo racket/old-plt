@@ -775,8 +775,9 @@
 			     transparent-edit
 			     s
 			     (lambda (start end)
-			       (send transparent-edit
-				     change-style output-delta start end))))])
+			       (when transparent-edit
+				 (send transparent-edit
+				       change-style output-delta start end)))))])
 		    (when old-saved-newline?
 		      (gw (string #\newline)))
 		    (gw s1)))

@@ -125,18 +125,6 @@
 
       (define (go)
 
-	(set! the-port 
-	      (with-handlers 
-	       ((void 
-		 (lambda _ 
-		   (show-error-ok
-		    (string-constant 'network-failure)
-		    (string-constant 'cannot-connect))
-		   (raise 'network-error))))
-	       (get-pure-port (string->url 
-			       (make-url-string
-				(cvi-triples))))))
-
 	(let* ([wait-dialog #f]
 	       [dialog-sem (make-semaphore 0)]
 	       [timer-proc
@@ -146,13 +134,14 @@
 			(begin
 			  (when wait-dialog
 				(hide-wait-dialog wait-dialog))
-			  (close-input-port the-port)
-			  (run-thunk
-			   (lambda () (show-ok (string-constant 'network-timeout)
-					       (string-constant 'cannot-connect)
-					       #f)))
 			  ; will force exception on pending read
-			  (close-input-port the-port))
+			  (when the-port
+				(close-input-port the-port))
+			  (run-thunk
+			   (lambda () 
+			     (show-ok (string-constant 'network-timeout)
+				      (string-constant 'cannot-connect)
+				      #f))))
 			(begin
 			  (sleep 1)
 			  (loop (add1 n))))))]
@@ -167,13 +156,29 @@
 		    (string-constant 'checking-version-server)
 		    (lambda ()
 		      (with-handlers 
-		       ([void void]) ; thread, port might already be dead
+		       ([void void]) ; thread might already be dead
 		       (kill-thread timeout-thread)
 		       (close-input-port the-port)))))
 	     (show-wait-dialog wait-dialog)
 	     (semaphore-post dialog-sem)))
 
 	  (semaphore-wait dialog-sem)
+
+	  (set! the-port 
+		(with-handlers 
+		 ((void 
+		   (lambda _ 
+		     (kill-thread timeout-thread)
+		     (hide-wait-dialog wait-dialog)
+		     (run-thunk
+		      (lambda ()
+			(show-error-ok
+			 (string-constant 'network-failure)
+			 (string-constant 'cannot-connect))))
+		     (raise 'network-error))))
+		 (get-pure-port (string->url 
+				 (make-url-string
+				  (cvi-triples))))))
 
 	  (let ([responses 
 		 (let loop ()

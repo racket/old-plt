@@ -86,9 +86,10 @@
   (define (set-tile-dimensions!)
     (set! *tile-scaling-factor*
 	 (case *current-tile-size*
-	   ((large) *large-tile-scaling-factor*)
-	   ((small) *small-tile-scaling-factor*)
-	   (else (error (format "Unknown tile size: ~a" *current-tile-size*)))))
+	   [(large) *large-tile-scaling-factor*]
+	   [(small) *small-tile-scaling-factor*]
+	   [else 
+	    (error (format "Unknown tile size: ~a" *current-tile-size*))]))
     (set! *tile-edge-length* (tile-scale *base-tile-edge-length*))
     (set! *half-edge-length* (/ *tile-edge-length* 2))
     (set! *tile-height*  (inexact->exact 
@@ -210,16 +211,13 @@
 	       #f))])
       (super-instantiate ())))
 
-  (define (calc-unsafe-count rs cs)
-    (inexact->exact (round (* (/ *current-density* 100.0) rs cs))))
-
   (define board%
     (class object%
-      (init-field (rows *current-rows*) (columns *current-cols*) 
-		  (unsafe-count (calc-unsafe-count rows columns)))
+      (init-field (rows *current-rows*) (columns *current-cols*)) 
       (field (board-vector #f)
 	     (pirates-left #f)
 	     (pirates-ratio #f)
+	     (unsafe-count #f)
 	     (num-concealed (* rows columns)))
       (private*
        [sum-location-unsafe
@@ -230,6 +228,11 @@
 		       (add1 accum)))
 		 0
 		 s))]
+       [set-unsafe-count!
+	(lambda ()
+	  (set! unsafe-count 
+		(inexact->exact (round (* (/ *current-density* 100.0) 
+					  rows columns)))))]
        [decrement-concealed!
 	(lambda ()
 	  (set! num-concealed (sub1 num-concealed))
@@ -243,7 +246,7 @@
 	(lambda ()
 	  (set! rows *current-rows*)
 	  (set! columns *current-cols*)
-	  (set! unsafe-count (calc-unsafe-count rows columns)))]
+	  (set-unsafe-count!))]
        [expose-row-col
 	(lambda (r c decl show-error?)
 	  (let* ([loc (get-location r c)]
@@ -252,6 +255,7 @@
 	    (unless neighbors
 		    (send loc set-neighbors! (get-neighbors r c)))
 	    (when (send loc expose decl show-error?)
+		  (send frame draw-tile r c) ; really should notify a controller
 		  (decrement-concealed!)
 		  (let ([safe? (send loc get-safe?)])
 		    (if (not safe?)
@@ -263,10 +267,11 @@
 				      (for-each
 				       (lambda (nloc)
 					 (when (send nloc get-concealed?)
-					       (expose-row-col (send nloc get-row)
-							       (send nloc get-column)
-							       #f
-							       #f)))
+					       (expose-row-col 
+						(send nloc get-row)
+						(send nloc get-column)
+						#f
+						#f)))
 				       ns)))))))))]
        [get-rows
 	(lambda () rows)]
@@ -431,6 +436,7 @@
 							(* rows columns)))))
 		     (set! pirates-left pirates-left-tally)
 		     (set! num-concealed concealed-tally)
+		     (set-unsafe-count!)
 		     (calc-pirates-ratio!)))))))]
        [save-to-file 
 	(lambda (filename)
@@ -448,13 +454,8 @@
 			 (send loc get-row) (send loc get-column) 
 			 (send loc get-safe?) (send loc get-concealed?))))
 	      (printf "))~n"))))])
-	; sanity check
-      (let ([board-locations (* rows columns)])
-	(when (> unsafe-count
-		 board-locations)
-	      (error 'unsafe-count "(~a) exceeds number of board locations (~a)"
-		     unsafe-count board-locations)))
       (super-instantiate ())
+      (set-unsafe-count!)
       (reset-pirate-counts!)))
 
   (define ww-frame%
@@ -553,7 +554,7 @@
 	       (send board set-size! rs cs))]
 	    [dump-board ; for debugging
 	     (lambda ()
-	       (printf "board dump!~n")
+	       (printf "** board dump **~n")
 	       (send board 
 		     board-for-each 
 		     (lambda (loc) 
@@ -561,12 +562,12 @@
 			     [col (send loc get-column)]
 			     [safe? (send loc get-safe?)]
 			     [concealed? (send loc get-concealed?)])
-			 (printf "row=~a col=~a safe?=~a concealed?=~a~n" row col safe? concealed?))))
-	       (printf "end of dump~n"))]
+			 (printf "row=~a col=~a safe?=~a concealed?=~a~n" 
+				 row col safe? concealed?))))
+	       (printf "** end of dump **~n"))]
 	    [expose-row-col
 	     (lambda (r c decl show-err?)
-	       (send board expose-row-col r c decl show-err?)
-	       (draw-board))]
+	       (send board expose-row-col r c decl show-err?))]
 	    [draw-tile
 	     (lambda (r c)
 	       (draw-location-tile (send board get-location r c)))]
@@ -584,7 +585,8 @@
 				   (style '(no-resize-border))
 				   (x (max 0 (get-x)))
 				   (y (max 0 (get-y))))])
-		 (send new-frame update-board-size! (send board get-rows) (send board get-columns))
+		 (send new-frame update-board-size! 
+		       (send board get-rows) (send board get-columns))
 		 (send new-frame update-status!)
 		 (send new-frame draw-board)
 		 (show #f)
@@ -663,6 +665,7 @@
 		      [density-canvas (make-canvas density-panel)]
 		      [tile-panel (make-hpanel)]
 		      [tile-msg (make-msg "           Tile size" tile-panel)]
+		      [tile-map '(large small)]  ; list position corresponds to radio button index
 		      [tile-radio (instantiate radio-box% () 
 					       (label #f) (parent tile-panel) 
 					       (choices '("Large" "Small"))
@@ -670,11 +673,21 @@
 					       (style '(horizontal)))]
 		      [auto-panel (make-hpanel)]
 		      [auto-msg (make-msg "Autoclick empty cells?" auto-panel)]
+		      [auto-map '(yes no)] ; list position corresponds to radio button index
 		      [auto-radio (instantiate radio-box% () 
 					       (label #f) (parent auto-panel) 
 					       (choices '("Yes" "No"))
 					       (callback (lambda (rb ev) #f))
 					       (style '(horizontal)))]
+		      [list-pos 
+		       (lambda (lst sym)
+			 (let loop ([i 0]
+				    [lst lst])
+			   (if (null? lst)
+			       #f
+			       (if (eq? sym (car lst))
+				   i
+				   (loop (add1 i) (cdr lst))))))]
 		      [get-canv-text
 		       (lambda (canv)
 			 (send (send canv get-editor)
@@ -744,6 +757,14 @@
 			       (send settings-frame show #f))]))))]
 		      [notice-panel (make-hpanel)]
 		      [notice-msg (make-msg "Some settings take effect on next game" notice-panel)]
+		      [init-text
+		       (lambda (canv v)
+			 (let* ([editor (send canv get-editor)]
+				[len (string-length (send editor get-text))])
+			 (send editor insert v 0 len)))]
+		      [init-num-text
+		       (lambda (canv v)
+			 (init-text canv (number->string v)))]
 		      [buttons-panel (make-hpanel)]
 		      [ok-button (instantiate button% ()
 					      (label "OK")
@@ -761,13 +782,23 @@
 						  (parent buttons-panel)
 						  (callback (lambda (b ev) 
 							      (send settings-frame show #f))))]
-		      [init-text
-		       (lambda (canv v)
-			 (send (send canv get-editor)
-			       insert v))]
-		      [init-num-text
-		       (lambda (canv v)
-			 (init-text canv (number->string v)))])
+		      [spacer2 
+		       (instantiate message% () 
+				    (min-width 20)
+				    (label "") (parent buttons-panel))]
+		      [defaults-button (instantiate button% ()
+						    (label "Defaults")
+						  (min-width 50)
+						  (parent buttons-panel)
+						  (callback 
+						   (lambda (b ev) 
+						     (send tile-radio set-selection
+							   (list-pos tile-map *default-tile-size*))
+						     (send auto-radio set-selection
+							   (list-pos auto-map *default-autoclick*))
+						     (init-num-text row-canvas *default-rows*)
+						     (init-num-text col-canvas *default-cols*)
+						     (init-num-text density-canvas *default-density*))))])
 		 
 		 (init-num-text row-canvas *current-rows*)
 		 (init-num-text col-canvas *current-cols*)
@@ -801,12 +832,12 @@
 		  [game-menu-items
 		   `(("&New"
 		      ,(lambda (m ev) (new-game)))
+		     ("&Open..."
+		      ,(lambda (m ev) (open-game)))
 		     ("&Save"
 		      ,(lambda (m ev) (save-game)))
 		     ("Save &as..."
 		      ,(lambda (m ev) (save-game-as)))
-		     ("&Open..."
-		      ,(lambda (m ev) (open-game)))
 		     ("S&ettings..."
 		      ,(lambda (m ev) (open-settings)))
 		     ("E&xit"

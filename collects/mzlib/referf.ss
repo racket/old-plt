@@ -1,10 +1,9 @@
 
-(#%invoke-unit
- (#%unit 
+ (unit
   (import)
-  (export)
+  (export make-reference-unit make-reference)
   
-  (values
+  (define make-reference-unit
    ; reference-unit, etc.
    (lambda (must-string? require? sig? sname)
      (lambda names
@@ -42,8 +41,9 @@
 				      sname names (if sig? "signed " ""))
 			     ((debug-info-handler))
 			     result)))
-		 result))))
- 
+		 result)))))
+
+  (define make-reference
    ; reference
    (lambda (must-string? require?)
      (lambda names
@@ -65,6 +65,6 @@
 				       "filename is not a string"
 				       (list* sname names)))
 	   `(,(if require? 'require-library '#%load/use-compiled) 
-	     ,@names))))))))
+	     ,@names))))))
 
-
+  (values make-reference-unit make-reference))

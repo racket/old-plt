@@ -8,7 +8,7 @@
     (eval `(begin ,@body))))
 
 (begin-elaboration-time
- (define-values (reference-unit reference) (require-library "referf.ss")))
+ (define-values (reference-unit reference) (invoke-unit (reference-library "referf.ss"))))
 
 (define-macro reference-library-unit/sig (reference-unit #t #t #t 'reference-library-unit/sig))
 (define-macro reference-library-unit (reference-unit #t #t #f 'reference-library-unit))

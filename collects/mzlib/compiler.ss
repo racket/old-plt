@@ -1,9 +1,17 @@
-  (unit/sig mzlib:compile^
-   (import)
+(compound-unit/sig
+ (import)
+ (link
+  [referf 
+   : (make-reference-unit make-reference)
+   ((unit->unit/sig (reference-library "referf.ss") 
+		    () 
+		    (make-reference-unit make-reference)))]
+  [compile 
+   : mzlib:compile^
+   ((unit/sig mzlib:compile^
+    (import (make-reference-unit make-reference))
 
    (define identity (lambda (x n) x))
-
-   (define-values (make-reference-unit make-reference) (require-library "referf.ss"))
 
    ; top-level begin-elaboration-time => begin-expansion-time
    ; nested begin-elaboration-time => begin
@@ -81,26 +89,26 @@
        (unless (and (procedure? preprocessor)
 		    (procedure-arity-includes? preprocessor 2))
 	       (raise-type-error 'compile-file "procedure (arity 2)" preprocessor))
-       (let ([do-macros? (not (member 'ignore-macro-definitions flags))]
-	     [expand-load? (member 'expand-load flags)]
-	     [expand-rl? (member 'expand-require-library flags)]
-	     [ignore-rl? (member 'ignore-require-library flags)]
-	     [expand-only? (member 'only-expand flags)]
-	     [namespace (if (member 'use-current-namespace flags)
-			    (current-namespace)
-			    (make-compile-namespace
-			     (if (built-in-name 'wx:frame%) ; HACK!!!
-				 '(wx)
-				 null)
-			     (member 'preserve-elaborations flags)
-			     (member 'preserve-constructions flags)))]
-	     [required (make-hash-table)]
-	     [warning
-	      (lambda (s)
-		(unless (member 'no-warnings flags)
-			(fprintf (current-error-port)
-				 "compile-file warning: ~a~n"
-				 s)))])
+       (let* ([do-macros? (not (member 'ignore-macro-definitions flags))]
+	      [expand-load? (member 'expand-load flags)]
+	      [expand-rl? (member 'expand-require-library flags)]
+	      [ignore-rl? (member 'ignore-require-library flags)]
+	      [expand-only? (member 'only-expand flags)]
+	      [namespace (if (member 'use-current-namespace flags)
+			     (current-namespace)
+			     (make-compile-namespace
+			      (if (built-in-name 'wx:frame%) ; HACK!!!
+				  '(wx)
+				  null)
+			      (member 'preserve-elaborations flags)
+			      (member 'preserve-constructions flags)))]
+	      [required (make-hash-table)]
+	      [warning
+	       (lambda (s)
+		 (unless (member 'no-warnings flags)
+			 (fprintf (current-error-port)
+				  "compile-file warning: ~a~n"
+				  s)))])
 	 (let ([out (if (output-port? dest)
 			dest
 			(open-output-file dest 'truncate))])
@@ -294,3 +302,5 @@
 	      (if (output-port? dest)
 		  (void)
 		  (close-output-port out))))))])))
+    referf)])
+ (export (open compile)))

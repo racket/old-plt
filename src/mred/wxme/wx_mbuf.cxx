@@ -199,7 +199,8 @@ wxMediaBuffer::~wxMediaBuffer()
 void wxMediaBuffer::OnLocalEvent(wxMouseEvent *event)
 {
   if (map) {
-    Scheme_Object *edit = objscheme_bundle_wxMediaBuffer(this);
+    Scheme_Object *edit;
+    edit = objscheme_bundle_wxMediaBuffer(this);
     if (map->HandleMouseEvent(edit, event))
       return;
     else if (!event->Moving())
@@ -212,7 +213,8 @@ void wxMediaBuffer::OnLocalEvent(wxMouseEvent *event)
 void wxMediaBuffer::OnLocalChar(wxKeyEvent *event)
 {
   if (map) {
-    Scheme_Object *edit = objscheme_bundle_wxMediaBuffer(this);
+    Scheme_Object *edit;
+    edit = objscheme_bundle_wxMediaBuffer(this);
     if (map->HandleKeyEvent(edit, event))
       return;
     else
@@ -322,10 +324,10 @@ Bool wxMediaBuffer::DoSetCaretOwner(wxSnip *snip, int dist)
   visCaret = ownCaret || ShowsGhostCaret();
 
   if (!snip || !(snip->flags & wxSNIP_HANDLES_EVENTS)) {
-    wxSnip *oldCaret = caretSnip;  
+    wxSnip *_oldCaret = caretSnip;  
     caretSnip = NULL;
-    if (oldCaret) {
-      oldCaret->OwnCaret(FALSE);
+    if (_oldCaret) {
+      _oldCaret->OwnCaret(FALSE);
       if (visCaret)
 	refresh = TRUE;
     }
@@ -371,20 +373,24 @@ static void ConvertCoords(wxMediaAdmin *admin, float *x, float *y, int toLocal)
 
   if (admin) {
     if (admin->__type == wxTYPE_MEDIA_SNIP_MEDIA_ADMIN) {
-      wxMediaSnip *snip = ((wxMediaSnipMediaAdmin *)admin)->GetSnip();
+      wxMediaSnip *snip;
+      wxSnipAdmin *sa;
 
-      wxSnipAdmin *sa = snip->GetAdmin();
+      snip = ((wxMediaSnipMediaAdmin *)admin)->GetSnip();
+      sa = snip->GetAdmin();
 
       if (sa) {
-	wxMediaBuffer *mbuf = sa->GetMedia();
+	wxMediaBuffer *mbuf;
+	mbuf = sa->GetMedia();
 	if (mbuf) {
 	  float bx = 0, by = 0;
+	  int l, t, r, b;
+	  
 	  mbuf->LocalToGlobal(&bx, &by);
 	  mbuf->GetSnipLocation(snip, &lx, &ly, 0);
 	  lx += bx;
 	  ly += by;
 
-	  int l, t, r, b;
 	  snip->GetMargin(&l, &t, &r, &b);
 	  lx += l;
 	  ly += t;
@@ -611,14 +617,15 @@ wxSnip *wxMediaBuffer::OnNewBox(int type)
 
 void wxMediaBuffer::InsertImage(char *filename, long type, Bool relative, Bool inlineImg)
 {
-  if (!filename)
+  wxImageSnip *snip;
+      
+  if (!filename) {
     filename = GetFile(NULL);
-
+  }
+  
   if (!filename)
     return;
 
-  wxImageSnip *snip;
-      
   snip = OnNewImageSnip(filename, type, relative, inlineImg);
   Insert(snip);
 }
@@ -646,6 +653,9 @@ void *wxMediaFileIOReady = NULL;
 
 Bool wxReadMediaGlobalHeader(wxMediaStreamIn *f)
 {
+  wxSnipClassList *scl;
+  wxBufferDataClassList *bdl;
+
   if (wxMediaFileIOReady) {
     wxmeError("File I/O already in progress for some stream.");
     return FALSE;
@@ -653,24 +663,29 @@ Bool wxReadMediaGlobalHeader(wxMediaStreamIn *f)
 
   wxMediaFileIOReady = (void *)f;
 
-  wxTheSnipClassList.ResetHeaderFlags();
-  if (!wxTheSnipClassList.Read(f))
+  scl = &wxTheSnipClassList;
+  scl->ResetHeaderFlags();
+  if (!scl->Read(f))
     return FALSE;
 
   wxmbSetupStyleReadsWrites();
 
-  return wxTheBufferDataClassList.Read(f);
+  bdl = &wxTheBufferDataClassList;
+  return bdl->Read(f);
 }
 
 Bool wxReadMediaGlobalFooter(wxMediaStreamIn *f)
 {
+  wxSnipClassList *scl;
+
   if (wxMediaFileIOReady != (void *)f) {
     wxmeError("File reading not in progress for this stream.");
     return FALSE;
   }
 
   wxmbDoneStyleReadsWrites();
-  wxTheSnipClassList.ResetHeaderFlags(wxRESET_DONE_READ);
+  scl = &wxTheSnipClassList;
+  scl->ResetHeaderFlags(wxRESET_DONE_READ);
 
   wxMediaFileIOReady = NULL;
 
@@ -679,6 +694,9 @@ Bool wxReadMediaGlobalFooter(wxMediaStreamIn *f)
 
 Bool wxWriteMediaGlobalHeader(wxMediaStreamOut *f)
 {
+  wxSnipClassList *scl;
+  wxBufferDataClassList *bdl;
+
   if (wxMediaFileIOReady) {
     wxmeError("File I/O already in progress for some stream.");
     return FALSE;
@@ -686,24 +704,29 @@ Bool wxWriteMediaGlobalHeader(wxMediaStreamOut *f)
 
   wxMediaFileIOReady = (void *)f;
 
-  wxTheSnipClassList.ResetHeaderFlags();
-  if (!wxTheSnipClassList.Write(f))
+  scl = &wxTheSnipClassList;
+  scl->ResetHeaderFlags();
+  if (!scl->Write(f))
     return FALSE;
 
   wxmbSetupStyleReadsWrites();
 
-  return wxTheBufferDataClassList.Write(f);
+  bdl = &wxTheBufferDataClassList;
+  return bdl->.Write(f);
 }
 
 Bool wxWriteMediaGlobalFooter(wxMediaStreamOut *f)
 {
+  wxSnipClassList *scl;
+
   if (wxMediaFileIOReady != (void *)f) {
     wxmeError("File writing not in progress for this stream.");
     return FALSE;
   }
 
   wxmbDoneStyleReadsWrites();
-  wxTheSnipClassList.ResetHeaderFlags(wxRESET_DONE_WRITE);
+  scl = &wxTheSnipClassList;
+  scl->ResetHeaderFlags(wxRESET_DONE_WRITE);
 
   wxMediaFileIOReady = NULL;
 
@@ -878,7 +901,9 @@ static wxBufferData *ReadBufferData(wxMediaStreamIn *f)
   do {
     f->Get(&extraDataIndex);
     if (extraDataIndex) {
-      dclass = wxTheBufferDataClassList.FindByMapPosition(extraDataIndex);
+      wxSnipClassList *scl;
+      scl = &wxTheSnipClassList;
+      dclass = scl->FindByMapPosition(extraDataIndex);
       
       if (!dclass || !dclass->required)
 	f->Get(&datalen);
@@ -886,7 +911,8 @@ static wxBufferData *ReadBufferData(wxMediaStreamIn *f)
 	datalen = -1;
       
       if (dclass) {
-	long start = f->Tell();
+	long start;
+	start = f->Tell();
 	if (datalen >= 0)
 	  f->SetBoundary(datalen);
 	if (!(newdata = dclass->Read(f)))
@@ -894,7 +920,8 @@ static wxBufferData *ReadBufferData(wxMediaStreamIn *f)
 	newdata->next = data;
 	data = newdata;
 	if (datalen >= 0) {
-	  long rcount = f->Tell() - start;
+	  long rcount;
+	  rcount = f->Tell() - start;
 	  if (rcount < datalen) {
 	    wxmeError("Warning: underread caused by file "
 		      "corruption or unknown internal error.");
@@ -948,9 +975,12 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
     if (!f->Ok())
       return FALSE;
     if (len) {
-      sclass = wxTheSnipClassList.FindByMapPosition(n);
+      wxSnipClassList *scl;
+      scl = &wxTheSnipClassList;
+      sclass = scl->FindByMapPosition(n);
       if (sclass) {
-	long start = f->Tell();
+	long start, rcount;
+	start = f->Tell();
 
 	f->SetBoundary(len);
 	if (!sclass->ReadHeader(f))
@@ -959,7 +989,7 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
 	  return FALSE;
 	sclass->headerFlag = 1;
 
-	long rcount = f->Tell() - start;
+	rcount = f->Tell() - start;
 	if (rcount < len) {
 	  wxmeError("Warning: underread caused by file "
 		    "corruption or unknown internal error.");
@@ -979,9 +1009,11 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
 
   for (i = 0; i < numSnips; i++) {
     f->Get(&n);
-    if (n >= 0)
-      sclass = wxTheSnipClassList.FindByMapPosition(n);
-    else
+    if (n >= 0) {
+      wxSnipClassList *scl;
+      scl = &wxTheSnipClassList;
+      sclass = scl->FindByMapPosition(n);
+    } else
       sclass = NULL; /* -1 => unknown */
     if (!sclass || !sclass->required)
       f->GetFixed(&len);
@@ -1376,7 +1408,9 @@ void wxMediaBuffer::AddUndo(wxChangeRecord *rec)
 
 void wxMediaBuffer::AddSchemeUndo(void *proc)
 {
-  AddUndo(new wxSchemeModifyRecord(proc));
+  wxSchemeModifyRecord *modrec;
+  modrec = new wxSchemeModifyRecord(proc);
+  AddUndo(modrec);
 }
 
 void wxMediaBuffer::AppendUndo(wxChangeRecord *rec, wxChangeRecord **changes, 
@@ -1440,25 +1474,27 @@ void wxMediaBuffer::ClearUndos()
 
 void wxMediaBuffer::SetMaxUndoHistory(int v)
 {
-  if (undomode || redomode || (v == maxUndos))
-    return;
-
   wxChangeRecord **naya;
   int i, j;
+
+  if (undomode || redomode || (v == maxUndos))
+    return;
 
   naya = new wxChangeRecordPtr[v];
   for (j = 0, i = changes_start; 
        (i != changes_end) && (j < v); 
-       j++, i = (i + 1) % maxUndos)
+       j++, i = (i + 1) % maxUndos) {
     naya[j] = changes[i];
+  }
   changes_start = 0;
   changes_end = v ? (j % v) : 0;
 
   naya = new wxChangeRecordPtr[v];
   for (j = 0, i = redochanges_start; 
        (i != redochanges_end) && (j < v); 
-       j++, i = (i + 1) % maxUndos)
+       j++, i = (i + 1) % maxUndos) {
     naya[j] = redochanges[i];
+  }
   redochanges_start = 0;
   redochanges_end = v ? (j % v) : v;
 
@@ -1503,6 +1539,10 @@ static void InitCutNPaste()
 
 void wxMediaBuffer::CopyRingNext(void)
 {
+  wxList *temp;
+  wxStyleList *stemp;
+  wxBufferData *dtemp;
+
   if (!copyRingMax)
     return;
 
@@ -1510,10 +1550,6 @@ void wxMediaBuffer::CopyRingNext(void)
   if (copyRingPos < 1)
     copyRingPos = copyRingMax - 1;
   
-  wxList *temp;
-  wxStyleList *stemp;
-  wxBufferData *dtemp;
-
   temp = wxmb_commonCopyBuffer;
   wxmb_commonCopyBuffer = copyRing[copyRingPos].buffer1;
   copyRing[copyRingPos].buffer1 = temp;
@@ -1628,17 +1664,21 @@ void wxMediaBuffer::DoBufferPaste(long time, Bool local)
   wxClipboardClient *owner;
   wxNode *node, *node2;
   wxSnip *snip;
-  
+  wxBufferData *bd;
+
   owner = wxTheClipboard->GetClipboardClient();
   if (local || (!pasteTextOnly && PTREQ(owner, &TheMediaClipboardClient))) {
     copyDepth++;
-    for (node = wxmb_commonCopyBuffer->First(),
-	 node2 = wxmb_commonCopyBuffer2->First(); 
+    for ((node = wxmb_commonCopyBuffer->First(),
+	  node2 = wxmb_commonCopyBuffer2->First()); 
 	 node; 
-	 node = node->Next(),
-	 node2 = node2->Next())
-      InsertPasteSnip(snip = ((wxSnip *)node->Data())->Copy(),
-		      (wxBufferData *)node2->Data());
+	 (node = node->Next(),
+	  node2 = node2->Next())) {
+      snip = (wxSnip *)node->Data();
+      bd = (wxBufferData *)node2->Data();
+      snip = snip->Copy();
+      InsertPasteSnip(snip, bd);
+    }
     --copyDepth;
     if (wxmb_commonCopyRegionData && bufferType == wxEDIT_BUFFER)
       ((wxMediaEdit *)this)->PasteRegionData(wxmb_commonCopyRegionData);
@@ -1647,12 +1687,11 @@ void wxMediaBuffer::DoBufferPaste(long time, Bool local)
     long len;
 
     if (!pasteTextOnly && (str = wxTheClipboard->GetClipboardData("WXME", &len, time))) {
+      wxMediaStreamInStringBase *b;
+      wxMediaStreamIn *mf;
 
       strcpy(wxme_current_read_format, MRED_FORMAT_STR);
       strcpy(wxme_current_read_version, MRED_VERSION_STR);
-
-      wxMediaStreamInStringBase *b;
-      wxMediaStreamIn *mf;
 
       b = new wxMediaStreamInStringBase(str, len);
       mf = new wxMediaStreamIn(b);
@@ -1683,20 +1722,32 @@ wxMediaClipboardClient::wxMediaClipboardClient()
 
 void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
 {
+  /* Copy all the snips: */
+  wxList *saveBuffer, *copySnips;
+  wxList *saveBuffer2, *copySnips2;
+  wxStyleList *saveStyles;
+  wxBufferData *saveData;
+  int save_cs;
+  Bool t;
+  char *f;
+  wxNode *node, *node2;
+
   /* Copy style list */
   m->styleList->Copy(styleList);
 
   /* Copy all the snips: */
-  wxList *saveBuffer = wxmb_commonCopyBuffer, *copySnips;
-  wxList *saveBuffer2 = wxmb_commonCopyBuffer2, *copySnips2;
-  wxStyleList *saveStyles = wxmb_copyStyleList;
-  wxBufferData *saveData = wxmb_commonCopyRegionData;
-  int save_cs = copyingSelf;
+  saveBuffer = wxmb_commonCopyBuffer;
+  saveBuffer2 = wxmb_commonCopyBuffer2;
+  saveStyles = wxmb_copyStyleList;
+  saveData = wxmb_commonCopyRegionData;
+  save_cs = copyingSelf;
 
   m->BeginEditSequence();
 
-  wxmb_commonCopyBuffer = copySnips = new wxList();
-  wxmb_commonCopyBuffer2 = copySnips2 = new wxList();
+  copySnips = new wxList();
+  wxmb_commonCopyBuffer = copySnips;
+  copySnips2 = new wxList();
+  wxmb_commonCopyBuffer2 = copySnips2;
   wxmb_copyStyleList = NULL;
   wxmb_commonCopyRegionData = NULL;
   copyingSelf = copyDepth + 1;
@@ -1704,21 +1755,23 @@ void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
     wxMediaEdit *e = (wxMediaEdit *)this;
     e->Copy(TRUE, 0, 0, e->LastPosition());
   } else {
-	wxMediaPasteboard *pb = (wxMediaPasteboard *)this;
-	wxSnip *s;
-	wxNode *n;
-	wxList *unselect = new wxList();
-
-	BeginEditSequence();
+    wxMediaPasteboard *pb = (wxMediaPasteboard *)this;
+    wxSnip *s;
+    wxNode *n;
+    wxList *unselect;
+    unselect = new wxList();
+    
+    BeginEditSequence();
     for (s = pb->FindFirstSnip(); s; s = s->Next()) {
       if (!pb->IsSelected(s)) {
         pb->AddSelected(s);
         unselect->Append(s);
-	  }
-	}
+      }
+    }
     pb->Copy(TRUE, 0);
-	for (n = unselect->First(); n; n = n->Next())
-	 pb->RemoveSelected((wxSnip *)n->Data());
+    for (n = unselect->First(); n; n = n->Next()) {
+      pb->RemoveSelected((wxSnip *)n->Data());
+    }
     EndEditSequence();
   }
   wxmb_commonCopyBuffer = saveBuffer;
@@ -1726,8 +1779,6 @@ void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
   wxmb_copyStyleList = saveStyles;
   wxmb_commonCopyRegionData = saveData;
   copyingSelf = save_cs;
-
-  wxNode *node, *node2;
 
   node = copySnips->First();
   node2 = copySnips2->First();
@@ -1753,8 +1804,6 @@ void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
   m->SetMinHeight(GetMinHeight());
   m->SetMaxHeight(GetMaxHeight());
  
-  Bool t;
-  char *f;
   f = GetFilename(&t);
   m->SetFilename(f, t);
 
@@ -2076,7 +2125,8 @@ Bool wxMediaBuffer::GetLoadOverwritesStyles()
 
 #define edf(name, action, kname) \
      static Bool ed_##name(void *vb, wxEvent *kname, void *) \
-     { wxMediaBuffer *b = objscheme_unbundle_wxMediaBuffer((Scheme_Object *)vb, NULL, 0); \
+     { wxMediaBuffer *b; \
+       b = objscheme_unbundle_wxMediaBuffer((Scheme_Object *)vb, NULL, 0); \
        if (!b) \
         return FALSE; \
        b->action; \

@@ -70,8 +70,13 @@ static void memmove(char *dest, char *src, long size)
 
 #define ALWAYSZERO(x) if (x) *x = 0;
 
-#define STRALLOC(n) (new WXGC_ATOMIC char[n])
-#define STRFREE(s) (delete[] s)
+#ifdef MZ_PRECISE_GC
+extern void *GC_malloc_atomic(long);
+# define STRALLOC(n) GC_malloc_atomic(n)
+#else
+# define STRALLOC(n) new WXGC_ATOMIC char[n]
+#endif
+#define STRFREE(s) /* empty */
 
 /***************************************************************/
 
@@ -141,7 +146,7 @@ void wxSnip::Init(void)
   next = prev = NULL;
   line = NULL;
 
-  admin_ptr = new /* WXGC_ATOMIC */ wxSnipAdmin*;
+  admin_ptr = new (wxSnipAdmin*);
   *admin_ptr = NULL;
 
   style = wxTheStyleList->BasicStyle();
@@ -346,6 +351,8 @@ void wxSnip::GetText(char *s, long offset, long num)
 char *wxSnip::GetText(long offset, long num, 
 		      Bool WXUNUSED(flattened), long *got)
 {
+  char *s;
+
   if (num <= 0)
     return "";
   if (offset < 0)
@@ -355,7 +362,7 @@ char *wxSnip::GetText(long offset, long num,
   if (num > count - offset)
     num = count - offset;
 
-  char *s = new WXGC_ATOMIC char[num + 1];
+  s = new WXGC_ATOMIC char[num + 1];
   memset(s, '.', num);
   s[num] = 0;
 
@@ -462,7 +469,9 @@ TextSnipClass::TextSnipClass(void)
 
 wxSnip *TextSnipClass::Read(wxMediaStreamIn *f)
 {
-  return Read(new wxTextSnip(0), f);
+  wxTextSnip *s;
+  s = new wxTextSnip(0);
+  return Read(s, f);
 }
 
 wxSnip *TextSnipClass::Read(wxTextSnip *snip, wxMediaStreamIn *f)
@@ -505,7 +514,8 @@ wxTextSnip::wxTextSnip(long allocsize)
     allocsize = 5000;
 
   allocated = (allocsize > 0) ? 2 * allocsize : 20;
-  text = buffer = STRALLOC(allocated + 1);
+  text = STRALLOC(allocated + 1);
+  buffer = text;
 
   snipclass = &TheTextSnipClass;
   
@@ -526,25 +536,26 @@ void wxTextSnip::SizeCacheInvalid(void)
 void wxTextSnip::GetTextExtent(wxDC *dc, int count, float *wo)
 {
   char save;
-  float w, h;
+  float _w, h;
+  wxFont *font;
+  int i;
 
   save = text[count];
   text[count] = 0;
 
-  int i;
   for (i = count; i--; ) {
     unsigned char c = ((unsigned char *)text)[i]; 
     if (!c || (c == NON_BREAKING_SPACE))
       break;
   }
   
-  wxFont *font = style->GetFont();
+  font = style->GetFont();
 #ifdef BROKEN_GET_TEXT_EXTENT 
   dc->SetFont(font);
 #endif
 
   if (i < 0) {
-    dc->GetTextExtent(text, &w, &h, NULL, NULL, font);
+    dc->GetTextExtent(text, &_w, &h, NULL, NULL, font);
   } else {
     /* text includes null chars */
     float ex_w;
@@ -555,8 +566,8 @@ void wxTextSnip::GetTextExtent(wxDC *dc, int count, float *wo)
 #endif
     dc->GetTextExtent(" ", &ex_w, &h, NULL, NULL, font);
     
-    w = 0;
-    for (i = 0; i <= count; i++)
+    _w = 0;
+    for (i = 0; i <= count; i++) {
       if (!text[i] || (((unsigned char *)text)[i] == NON_BREAKING_SPACE) || (i == count)) {
 	if (i > start) {
 	  float piece_w, h;
@@ -564,18 +575,19 @@ void wxTextSnip::GetTextExtent(wxDC *dc, int count, float *wo)
 	  text[i] = 0;
 	  dc->GetTextExtent(text + start, &piece_w, &h, NULL, NULL);
 	  text[i] = save;
-	  w += piece_w;
+	  _w += piece_w;
 	}
 	if (i < count) {
 	  start = i + 1;
-	  w += ex_w;
+	  _w += ex_w;
 	}
       }
+    }
   }
   
   text[count] = save;
 
-  *wo = w;
+  *wo = _w;
 }
 
 void wxTextSnip::GetExtent(wxDC *dc, 
@@ -611,17 +623,16 @@ void wxTextSnip::GetExtent(wxDC *dc,
     *rs = 0.0;
 }
 
-float wxTextSnip::PartialOffset(wxDC *dc, 
-				float, float, long offset)
+float wxTextSnip::PartialOffset(wxDC *dc, float, float, long offset)
 {
-  float w;
+  float _w;
   
   if (offset > count)
     offset = count;
 
-  GetTextExtent(dc, offset, &w);
+  GetTextExtent(dc, offset, &_w);
 
-  return w;
+  return _w;
 }
 
 void wxTextSnip::Draw(wxDC *dc, float x, float y, 
@@ -630,6 +641,7 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
 		      int)
 {
   char save;
+  int i;
 
   if (flags & wxSNIP_INVISIBLE)
     return;
@@ -637,7 +649,6 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
   save = text[count];
   text[count] = 0;
 
-  int i;
   for (i = count; i--; ) {
     unsigned char c = ((unsigned char *)text)[i]; 
     if (!c || (c == NON_BREAKING_SPACE))
@@ -654,7 +665,7 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
     dc->GetTextExtent(" ", &ex_w, &h, NULL, NULL);
     
     px = x;
-    for (i = 0; i <= count; i++)
+    for (i = 0; i <= count; i++) {
       if (!text[i] || (((unsigned char *)text)[i] == NON_BREAKING_SPACE) || (i == count)) {
 	if (i > start) {
 	  float piece_w, h;
@@ -678,6 +689,7 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
 	  px += ex_w;
 	}
       }
+    }
   }
 
 #ifdef wx_x
@@ -766,7 +778,7 @@ void wxTextSnip::Insert(char *str, long len, long pos)
 
     allocated = 2 * (count + len);
     buffer = STRALLOC(allocated + 1);
-
+    
     memcpy(buffer, text, count);
     STRFREE(oldbuffer);
 
@@ -812,6 +824,8 @@ char *wxTextSnip::GetText(long offset, long num, Bool flat, long *got)
     num = count - offset;
 
   if (flat && (flags & wxSNIP_HARD_NEWLINE)) {
+    char *s;
+
 #ifdef wx_msw
 #define NWL_RC 2
 #else
@@ -820,8 +834,8 @@ char *wxTextSnip::GetText(long offset, long num, Bool flat, long *got)
 
     if (got)
       *got = NWL_RC;
-
-    char *s = new WXGC_ATOMIC char[NWL_RC + 1];
+    
+    s = new WXGC_ATOMIC char[NWL_RC + 1];
 #ifdef wx_x
     s[0] = '\n';
 #else
@@ -836,7 +850,8 @@ char *wxTextSnip::GetText(long offset, long num, Bool flat, long *got)
     s[NWL_RC] = 0;
     return s;
   } else {
-    char *s = new WXGC_ATOMIC char[num + 1];
+    char *s;
+    s = new WXGC_ATOMIC char[num + 1];
     memcpy(s, text + offset, num);
     s[num] = 0;
     if (got)
@@ -847,10 +862,10 @@ char *wxTextSnip::GetText(long offset, long num, Bool flat, long *got)
 
 wxSnip *wxTextSnip::Copy()
 {
-  wxTextSnip *snip = new wxTextSnip(count);
+  wxTextSnip *snip;
 
+  snip = new wxTextSnip(count);
   Copy(snip);
-
   return snip;
 }
 
@@ -924,7 +939,9 @@ TabSnipClass::TabSnipClass(void)
 
 wxSnip *TabSnipClass::Read(wxMediaStreamIn *f)
 {
-  return TextSnipClass::Read(new wxTabSnip(), f);
+  wxTabSnip *ts;
+  ts = new wxTabSnip();
+  return TextSnipClass::Read(ts, f);
 }
 
 /***************************************************************/
@@ -976,11 +993,12 @@ void wxTabSnip::GetExtent(wxDC *dc,
       mult = 1;
     }
     
-    for (i = 0; i < n; i++)
+    for (i = 0; i < n; i++) {
       if (tabs[i] * mult > x) {
 	w = tabs[i] * mult - x;
 	break;
       }
+    }
 
     if (i >= n) {
       float base;
@@ -1001,14 +1019,14 @@ void wxTabSnip::GetExtent(wxDC *dc,
 
 float wxTabSnip::PartialOffset(wxDC *dc, float x, float y, long offset)
 {
-  float w;
+  float _w;
 
   if (!offset)
     return 0;
   else {
-    w = 0.0;
-    GetExtent(dc, x, y, &w);
-    return w;
+    _w = 0.0;
+    GetExtent(dc, x, y, &_w);
+    return _w;
   }
 }
 
@@ -1021,10 +1039,10 @@ void wxTabSnip::Draw(wxDC *, float, float,
 
 wxSnip *wxTabSnip::Copy()
 {
-  wxTabSnip *snip = new wxTabSnip();
+  wxTabSnip *snip;
 
+  snip = new wxTabSnip();
   wxTextSnip::Copy(snip);
-
   return snip;
 }
 
@@ -1056,7 +1074,11 @@ wxSnip *ImageSnipClass::Read(wxMediaStreamIn *f)
   long type;
   Bool relative, inlined = FALSE;
   float w, h, dx, dy;
-  Bool canInline = (wxTheSnipClassList.ReadingVersion(this) > 1);
+  wxSnipClassList *scl;
+  Bool canInline;
+
+  scl = wxGetTheSnipClassList();
+  canInline = (scl->ReadingVersion(this) > 1);
 
   filename = f->GetString(NULL);
   f->Get(&type);
@@ -1075,11 +1097,12 @@ wxSnip *ImageSnipClass::Read(wxMediaStreamIn *f)
     f->GetFixed(&len);
 
     if (len) {
-      char *fname = wxGetTempFileName("img", NULL);
-
+      char *fname;
       FILE *fi;
       char buffer[IMG_MOVE_BUF_SIZE + 1];
     
+      fname = wxGetTempFileName("img", NULL);
+
       fi = fopen(fname, "wb");
       if (fi) {
 	long c;
@@ -1260,16 +1283,19 @@ void wxImageSnip::Write(wxMediaStreamOut *f)
 
   /* inline the image */
   if (writeBm || writePm) {
-    long lenpos = f->Tell(), numlines = 0;
+    FILE *fi;
+    char buffer[IMG_MOVE_BUF_SIZE];
+    long lenpos, numlines = 0;
+    char *fname;
+    long end;
+
+    lenpos = f->Tell()
     f->PutFixed(0);
 
-    char *fname = wxGetTempFileName("img", NULL);
+    fname = wxGetTempFileName("img", NULL);
 
     bm->SaveFile(fname, writeBm ? wxBITMAP_TYPE_XBM : wxBITMAP_TYPE_XPM, NULL);
 
-    FILE *fi;
-    char buffer[IMG_MOVE_BUF_SIZE];
-    
     fi = fopen(fname, "rb");
     if (fi) {
       while (1) {
@@ -1287,7 +1313,7 @@ void wxImageSnip::Write(wxMediaStreamOut *f)
     wxRemoveFile(fname);
     delete[] fname;
 
-    long end = f->Tell();
+    end = f->Tell();
     f->JumpTo(lenpos);
     f->PutFixed(numlines);
     f->JumpTo(end);
@@ -1338,14 +1364,14 @@ void wxImageSnip::LoadFile(char *name, long type, Bool relative, Bool inlineImg)
     flags -= wxSNIP_USES_BUFFER_PATH;
 
   if (name) {
-    char *loadname;
+    char *loadname, *fn;
 
     loadname = name;
 
     if (!relativePath || (*admin_ptr)) {
       if (relativePath) {
 	wxMediaBuffer *b;
-	char *fn, *path;
+	char *path;
 	
 	b = (*admin_ptr) ? (*admin_ptr)->GetMedia() : (wxMediaBuffer *)NULL;
 	fn = b ? b->GetFilename() : (char *)NULL;
@@ -1370,7 +1396,8 @@ void wxImageSnip::LoadFile(char *name, long type, Bool relative, Bool inlineImg)
       
       wxBeginBusyCursor();
 
-      bm = new wxBitmap((char *)wxmeExpandFilename(loadname), type);
+      fn = (char *)wxmeExpandFilename(loadname);
+      bm = new wxBitmap(fn, type);
 
       wxEndBusyCursor();
       
@@ -1399,9 +1426,9 @@ void wxImageSnip::Copy(wxImageSnip *newSnip)
 {
   wxSnip::Copy(newSnip);
   
-  if (filename)
+  if (filename) {
     newSnip->filename = copystring(filename);
-  else
+  } else
     newSnip->filename = NULL;
   newSnip->filetype = filetype;
   newSnip->relativePath = relativePath;
@@ -1527,6 +1554,7 @@ wxSnip *MediaSnipClass::Read(wxMediaStreamIn *f)
   Bool border, tightFit = 0;
   int lm, tm, rm, bm, li, ti, ri, bi, type;
   float w, W, h, H;
+  wxSnipClassList *scl;
 
   f->Get(&type);
   f->Get(&border);
@@ -1543,7 +1571,8 @@ wxSnip *MediaSnipClass::Read(wxMediaStreamIn *f)
   f->Get(&h);
   f->Get(&H);
   
-  if (wxTheSnipClassList.ReadingVersion(this) > 1)
+  scl = wxGetTheSnipClassList();
+  if (scl->ReadingVersion(this) > 1)
     f->Get(&tightFit);
   
   if (!type)
@@ -1595,9 +1624,10 @@ short wxSnipClassList::FindPosition(wxSnipClass *sclass)
   wxNode *node;
   short i;
   
-  for (i = 0, node = First(); node; node = node->Next(), i++)
+  for (i = 0, node = First(); node; node = node->Next(), i++) {
     if (PTREQ(sclass, (wxSnipClass *)node->Data()))
       return i;
+  }
 
   return -1;
 }
@@ -1622,7 +1652,8 @@ int wxSnipClassList::Number(void)
 
 wxSnipClass *wxSnipClassList::Nth(int n)
 {
-  wxNode *node = wxList::Nth(n);
+  wxNode *node;
+  node = wxList::Nth(n);
 
   if (node)
     return (wxSnipClass *)node->Data();
@@ -1682,17 +1713,17 @@ Bool wxStandardSnipClassList::Write(wxMediaStreamOut *f)
 Bool wxStandardSnipClassList::Read(wxMediaStreamIn *f)
 {
   int count, i;
-  long n;
+  long _n;
   wxSnipClass *sclass;
   char buffer[256];
   int version;
   Bool required;
+  wxNode *node, *next;
 
   f->Get(&count);
 
   buffer[255] = 0;
 
-  wxNode *node, *next;
   for (node = unknowns->First(); node; node = next) {
     next = node->Next();
     delete[] (char *)node->Data();
@@ -1700,8 +1731,8 @@ Bool wxStandardSnipClassList::Read(wxMediaStreamIn *f)
   }
 
   for (i = 0; i < count; i++) {
-    n = 255;
-    f->Get((long *)&n, (char *)buffer);
+    _n = 255;
+    f->Get((long *)&_n, (char *)buffer);
     f->Get(&version);
     f->Get(&required);
     if (!f->Ok())
@@ -1709,7 +1740,8 @@ Bool wxStandardSnipClassList::Read(wxMediaStreamIn *f)
     sclass = Find(buffer);
     if (!sclass || (sclass->version < version)) {
       /* unknown class/version; remember name in case it's used */
-      char *copy = copystring(buffer);
+      char *copy;
+      copy = copystring(buffer);
       unknowns->Append(i, (wxObject *)copy);
     } else {
       sclass->mapPosition = i /* FindPosition(sclass) */;
@@ -1736,8 +1768,9 @@ wxSnipClass *wxStandardSnipClassList::FindByMapPosition(short n)
 
   if ((node = unknowns->Find(n))) {
     /* Show error and then remove it from the list so it isn't shown again. */
-    char buffer2[256];
-    sprintf(buffer2, "Unknown snip class or version: \"%.100s\".", (char *)node->Data());
+    char buffer2[256], *s;
+    s = (char *)node->Data();
+    sprintf(buffer2, "Unknown snip class or version: \"%.100s\".", s);
     wxmeError(buffer2);
 
     delete[] (char *)node->Data();
@@ -1850,9 +1883,10 @@ short wxBufferDataClassList::FindPosition(wxBufferDataClass *sclass)
   wxNode *node;
   short i;
   
-  for (i = 0, node = First(); node; node = node->Next(), i++)
+  for (i = 0, node = First(); node; node = node->Next(), i++) {
     if (PTREQ(sclass, (wxBufferDataClass *)node->Data()))
       return i + 1;
+  }
 
   return 0;
 }
@@ -1872,7 +1906,9 @@ int wxBufferDataClassList::Number(void)
 
 wxBufferDataClass *wxBufferDataClassList::Nth(int n)
 {
-  wxNode *o = wxList::Nth(n);
+  wxNode *o;
+
+  o = wxList::Nth(n);
 
   if (!o)
     return NULL;
@@ -1899,26 +1935,28 @@ Bool wxBufferDataClassList::Write(wxMediaStreamOut *f)
 
 Bool wxBufferDataClassList::Read(wxMediaStreamIn *f)
 {
-  int count, i;
-  long n;
+  int _count, i;
+  long _n;
   wxBufferDataClass *sclass;
   char buffer[256];
-
-  f->Get(&count);
+  
+  f->Get(&_count);
 
   buffer[255] = 0;
 
-  for (i = 0; i < count; i++) {
-    n = 255;
-    f->Get((long *)&n, (char *)buffer);
+  for (i = 0; i < _count; i++) {
+    _n = 255;
+    f->Get((long *)&_n, (char *)buffer);
     if (!f->Ok())
       return FALSE;
     sclass = Find(buffer);
     if (!sclass) {
-      char *copy = copystring(buffer);
+      char *copy;
+      copy = copystring(buffer);
       unknowns->Append(i, (wxObject *)copy);
-    } else
+    } else {
       sclass->mapPosition = FindPosition(sclass);
+    }
   }
 
   return TRUE;
@@ -1939,8 +1977,9 @@ wxBufferDataClass *wxBufferDataClassList::FindByMapPosition(short n)
   }
 
   if ((node = unknowns->Find(n))) {
-    char buffer2[256];
-    sprintf(buffer2, "Unknown snip data class or version: \"%.100s\".", (char *)node->Data());
+    char buffer2[256], *s;
+    s = node->Data();
+    sprintf(buffer2, "Unknown snip data class or version: \"%.100s\".", (char *)s);
     wxmeError(buffer2);
   }
 

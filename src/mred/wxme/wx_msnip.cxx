@@ -37,6 +37,7 @@ wxMediaSnip::wxMediaSnip(wxMediaBuffer *useme,
 			 float w, float W, float h, float H)
 {
   Bool istemp;
+  wxSnipClassList *scl;
 
 #if USE_OLD_TYPE_SYSTEM
   __type = wxTYPE_MEDIA_SNIP;
@@ -44,7 +45,8 @@ wxMediaSnip::wxMediaSnip(wxMediaBuffer *useme,
 
   flags |= wxSNIP_HANDLES_EVENTS;
 
-  snipclass = wxTheSnipClassList.Find("wxmedia");
+  scl = &wxTheSnipClassList;
+  snipclass = scl->Find("wxmedia");
 
   withBorder = border;
   leftMargin = lm;
@@ -148,11 +150,11 @@ wxMediaBuffer *wxMediaSnip::GetThisMedia(void)
 wxCursor *wxMediaSnip::AdjustCursor(wxDC *dc, float x, float y, 
 				    float, float, wxMouseEvent *event)
 {
-  if (!me) 
-    return NULL;
-
   wxMSMA_SnipDrawState save;
   wxCursor *c;
+
+  if (!me) 
+    return NULL;
 
   myAdmin->SaveState(&save, dc, x, y);
   c = me->AdjustCursor(event);
@@ -164,9 +166,9 @@ wxCursor *wxMediaSnip::AdjustCursor(wxDC *dc, float x, float y,
 void wxMediaSnip::OnEvent(wxDC *dc, float x, float y, 
 			  float, float, wxMouseEvent *event)
 {
-  if (!me) return;
-
   wxMSMA_SnipDrawState save;
+
+  if (!me) return;
 
   myAdmin->SaveState(&save, dc, x, y);
   me->OnEvent(event);
@@ -176,9 +178,9 @@ void wxMediaSnip::OnEvent(wxDC *dc, float x, float y,
 void wxMediaSnip::OnChar(wxDC *dc, float x, float y, 
 			  float, float, wxKeyEvent *event)
 {
-  if (!me) return;
-
   wxMSMA_SnipDrawState save;
+
+  if (!me) return;
 
   myAdmin->SaveState(&save, dc, x, y);
   me->OnChar(event);
@@ -233,7 +235,8 @@ char *wxMediaSnip::GetText(long offset, long num, Bool flat, long *got)
   }
 
   if (!flat) {
-    char *s = new char[2];
+    char *s;
+    s = new char[2];
     s[0] = '.';
     s[1] = 0;
     if (got) *got = 1;
@@ -297,7 +300,9 @@ void wxMediaSnip::GetExtent(wxDC *dc,
   }
 
   if (descent) {
-    *descent = (me ? me->GetDescent() : 0.0) + bottomMargin;
+    float d;
+    d = (me ? me->GetDescent() : 0.0) + bottomMargin;
+    *descent = d;
     if (me && (me->bufferType == wxEDIT_BUFFER)) {
       if (tightFit) {
 	*descent -= ((wxMediaEdit *)me)->GetLineSpacing();
@@ -306,8 +311,11 @@ void wxMediaSnip::GetExtent(wxDC *dc,
       }
     }
   }
-  if (space)
-    *space = (me ? me->GetSpace() : 0.0) + topMargin;
+  if (space) {
+    float s;
+    s = (me ? me->GetSpace() : 0.0) + topMargin;
+    *space = s;
+  }
   if (lspace)
     *lspace = leftMargin;
   if (rspace)
@@ -406,8 +414,10 @@ void wxMediaSnip::Draw(wxDC *dc, float x, float y,
 wxSnip *wxMediaSnip::Copy(void)
 {
   wxMediaSnip *ms;
+  wxMediaBuffer *mb;
 
-  ms = wxsMakeMediaSnip(me ? me->CopySelf() : (wxMediaBuffer *)NULL, 
+  mb = (me ? me->CopySelf() : (wxMediaBuffer *)NULL);
+  ms = wxsMakeMediaSnip(mb, 
 			withBorder,
 			leftMargin, topMargin,
 			rightMargin, bottomMargin,
@@ -817,7 +827,8 @@ extern wxMediaEdit *objscheme_unbundle_wxMediaEdit(Scheme_Object *, const char*,
 
 #define edf(name, action) \
      static Bool ed_##name(void *vb, wxEvent *, void *) \
-     { wxMediaEdit *b = GET_EDIT(vb); \
+     { wxMediaEdit *b; \
+       b = GET_EDIT(vb); \
        if (!b) return FALSE; \
        b->action; return TRUE; } \
 
@@ -856,10 +867,11 @@ edf(pastenext, PasteNext())
 
 static Bool ed_deletenext(void *vb, wxEvent *, void *)
 {
-  wxMediaEdit *edit = GET_EDIT(vb);
+  long s, e;
+  wxMediaEdit *edit;
+  edit = GET_EDIT(vb);
   if (!edit) return FALSE;
 
-  long s, e;
   edit->GetPosition(&s, &e);
   if (s != e)
     edit->Delete();
@@ -870,7 +882,8 @@ static Bool ed_deletenext(void *vb, wxEvent *, void *)
 
 static Bool ed_deletenextword(void *vb, wxEvent *event, void *)
 {
-  wxMediaEdit *edit = GET_EDIT(vb);
+  wxMediaEdit *edit;
+  edit = GET_EDIT(vb);
   if (!edit) return FALSE;
 
   edit->BeginEditSequence();
@@ -882,7 +895,8 @@ static Bool ed_deletenextword(void *vb, wxEvent *event, void *)
 
 static Bool ed_deleteprevword(void *vb, wxEvent *event, void *)
 {
-  wxMediaEdit *edit = GET_EDIT(vb);
+  wxMediaEdit *edit;
+  edit = GET_EDIT(vb);
   if (!edit) return FALSE;
 
   edit->BeginEditSequence();
@@ -894,7 +908,8 @@ static Bool ed_deleteprevword(void *vb, wxEvent *event, void *)
 
 static Bool ed_deleteline(void *vb, wxEvent *event, void *)
 {
-  wxMediaEdit *edit = GET_EDIT(vb);
+  wxMediaEdit *edit;
+  edit = GET_EDIT(vb);
   if (!edit) return FALSE;
 
   edit->BeginEditSequence();
@@ -907,7 +922,7 @@ static Bool ed_deleteline(void *vb, wxEvent *event, void *)
 
 void wxMediaEdit::AddEditorFunctions(wxKeymap *tab)
 {
-  ::wxAddMediaEditorFunctions(tab);
+  wxAddMediaEditorFunctions(tab);
 }
 
 void wxAddMediaEditorFunctions(wxKeymap *tab)

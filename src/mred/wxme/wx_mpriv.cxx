@@ -416,6 +416,7 @@ long wxMediaEdit::_FindPositionInLine(Bool internal, long i, float x,
   long p, sPos;
   wxMediaLine *line;
   Bool atsnipend;
+  Bool wl, fl;
 
   if (onit)
     *onit = FALSE;
@@ -457,7 +458,8 @@ long wxMediaEdit::_FindPositionInLine(Bool internal, long i, float x,
     
     X = 0;
 
-    Bool wl = writeLocked, fl = flowLocked;
+    wl = writeLocked;
+    fl = flowLocked;
     writeLocked = TRUE;
     flowLocked = TRUE;
 
@@ -531,10 +533,10 @@ long wxMediaEdit::FindFirstVisiblePosition(wxMediaLine *line, wxSnip *snip)
 void wxMediaEdit::FindLastVisiblePosition(wxMediaLine *line, long *p, 
 					  wxSnip **snipP)
 {
+  wxSnip *snip;
+  
   if (readLocked)
     return;
-
-  wxSnip *snip;
   
   snip = snipP ? *snipP : (wxSnip *)NULL;
 
@@ -600,8 +602,9 @@ long wxMediaEdit::_FindStringAll(char *str, int direction,
   if (!caseSens) {
     oldStr = str;
     str = new char[slen + 1];
-    for (i = 0; i < slen; i++)
+    for (i = 0; i < slen; i++) {
       str[i] = tolower(oldStr[i]);
+    }
     str[i] = 0;
   }
   
@@ -628,8 +631,9 @@ long wxMediaEdit::_FindStringAll(char *str, int direction,
   smap[sbase] = beyond;
   s = beyond;
   for (i = sbase + direction; i != sgoal; i += direction) {
-    while ((s != beyond) && (str[s + direction] != str[i]))
+    while ((s != beyond) && (str[s + direction] != str[i])) {
       s = smap[s];
+    }
     if (str[s + direction] == str[i])
       s += direction;
     smap[i] = s;
@@ -638,8 +642,10 @@ long wxMediaEdit::_FindStringAll(char *str, int direction,
   s = beyond;
 
   if (!justOne) {
+    long *naya;
     allocFound = 10;
-    *positions = new long[allocFound];
+    naya = new long[allocFound];
+    *positions = naya;
     foundCount = 0;
   } else
     allocFound = foundCount = 0;
@@ -657,6 +663,8 @@ long wxMediaEdit::_FindStringAll(char *str, int direction,
     totalCount -= need;
 
     do {
+      Bool wl, fl;
+
       thistime = need;
       if (thistime > 255)
 	thistime = 255;
@@ -664,7 +672,7 @@ long wxMediaEdit::_FindStringAll(char *str, int direction,
 
       thisoffset = offset + ((direction < 0) ? need : checked);
 
-      Bool wl = writeLocked, fl = flowLocked;
+      wl = writeLocked, fl = flowLocked;
       writeLocked = TRUE;
       flowLocked = TRUE;
       
@@ -682,8 +690,9 @@ long wxMediaEdit::_FindStringAll(char *str, int direction,
 	if (!caseSens)
 	  if (c >= 'A' && c <= 'Z')
 	    c += ('a' - 'A');
-	while ((s != beyond) && (str[s + direction] != c))
+	while ((s != beyond) && (str[s + direction] != c)) {
 	  s = smap[s];
+	}
 	if (str[s + direction] == c) {
 	  s += direction;
 	  if (s + direction == sgoal) {
@@ -699,11 +708,12 @@ long wxMediaEdit::_FindStringAll(char *str, int direction,
 	      goto search_done;
 	    else {
 	      if (foundCount == allocFound) {
-		long *old = *positions, oldCount = allocFound;
+		long *old = *positions, *naya, oldCount = allocFound;
 
 		allocFound *= 2;
-		*positions = new long[allocFound];
-
+		naya = new long[allocFound];
+		*positions = naya;
+		
 		memcpy(*positions, old, oldCount * sizeof(long));
 	      }
 	      (*positions)[foundCount++] = p;
@@ -739,6 +749,8 @@ long wxMediaEdit::_FindStringAll(char *str, int direction,
 
 void wxMediaEdit::MakeOnlySnip(void)
 {
+  wxMediaLine *line;
+
   snips = new wxTextSnip();
   snips->style = styleList->FindNamedStyle(STD_STYLE);
   if (!snips->style)
@@ -752,7 +764,8 @@ void wxMediaEdit::MakeOnlySnip(void)
   snips->prev = NULL;
   snips->next = NULL;
 
-  snips->line = lineRoot = firstLine = lastLine = new wxMediaLine;
+  line = new wxMediaLine;
+  snips->line = lineRoot = firstLine = lastLine = line;
   lineRoot->SetStartsParagraph(TRUE);
 
   lineRoot->snip = lineRoot->lastSnip = snips;
@@ -834,7 +847,8 @@ wxSnip *wxMediaEdit::SnipSetAdmin(wxSnip *snip, wxSnipAdmin *a)
       snip->wxSnip::SetAdmin(NULL);
     } else if (a) {
       /* Snip didn't accept membership into this buffer. Give up on it. */
-      wxSnip *naya = new wxSnip();
+      wxSnip *naya;
+      naya = new wxSnip();
       naya->count = orig_count;
       SpliceSnip(naya, snip->prev, snip->next);
       naya->line = line;
@@ -864,14 +878,16 @@ void wxMediaEdit::SnipSplit(wxSnip *snip, long pos, wxSnip **a_ptr, wxSnip **b_p
 {
   int c = snip->count;
   wxSnip *a, *b;
+  Bool wl, fl;
+  wxSnip *orig;
 
   snip->flags |= wxSNIP_CAN_SPLIT;
-  wxSnip *orig = snip;
+  orig = snip;
 
   DeleteSnip(snip);
   orig->flags -= wxSNIP_OWNED;
 
-  Bool wl = writeLocked, fl = flowLocked;
+  wl = writeLocked, fl = flowLocked;
   readLocked = writeLocked = flowLocked = TRUE;
   *a_ptr = NULL;
   *b_ptr = NULL;
@@ -1039,20 +1055,27 @@ wxTextSnip *wxMediaEdit::InsertTextSnip(long start, wxStyle *style)
   wxStyle *gstyle;
   wxMediaLine *line;
   Bool atStart, atEnd;
-
+  wxSnip *rsnip;
+ 
   snip = OnNewTextSnip();
   if (snip->IsOwned() || snip->count) {
     /* Uh-oh. Resort to wxTextSnip() */
     snip = new wxTextSnip();
   }
-  snip->style = (style ? style : styleList->FindNamedStyle(STD_STYLE));
+  {
+    wxStyle *styl;
+    styl = (style ? style : styleList->FindNamedStyle(STD_STYLE));
+    snip->style = styl;
+  }
   if (!snip->style)
     snip->style = styleList->BasicStyle();
-  wxSnip *rsnip = SnipSetAdmin(snip, snipAdmin);
+  rsnip = SnipSetAdmin(snip, snipAdmin);
   if (rsnip != snip) {
     /* Uh-oh. Resort to wxTextSnip() */
+    wxStyle *styl;
     snip = new wxTextSnip();
-    snip->style = (style ? style : styleList->FindNamedStyle(STD_STYLE));
+    styl = (style ? style : styleList->FindNamedStyle(STD_STYLE));
+    snip->style = styl;
     if (!snip->style)
       snip->style = styleList->BasicStyle();
     snip->SetAdmin(snipAdmin);
@@ -1152,6 +1175,7 @@ void wxMediaEdit::CheckMergeSnips(long start)
 	  CheckMergeSnips(start);
 	} else {
 	  wxSnip *naya;
+	  Bool wl, fl;
 
 	  c = snip1->count + snip2->count;
 	  prev = snip1->prev;
@@ -1161,7 +1185,7 @@ void wxMediaEdit::CheckMergeSnips(long start)
 	  atEnd = PTREQ(line->lastSnip, snip2);
 	  snip2->flags |= wxSNIP_CAN_SPLIT;
 
-	  Bool wl = writeLocked, fl = flowLocked;
+	  wl = writeLocked, fl = flowLocked;
 	  readLocked = writeLocked = flowLocked = TRUE;
 	  naya = snip2->MergeWith(snip1);
 	  readLocked = FALSE; writeLocked = wl; flowLocked = fl;
@@ -1239,8 +1263,9 @@ Bool wxMediaEdit::GetSnipPositionAndLocation(wxSnip *thesnip, long *pos,
   if (pos || x || y) {
     p = thesnip->line->GetPosition();
     
-    for (snip = thesnip->line->snip; PTRNE(snip, thesnip); snip = snip->next)
+    for (snip = thesnip->line->snip; PTRNE(snip, thesnip); snip = snip->next) {
       p += snip->count;
+    }
     
     if (pos)
       *pos = p;
@@ -1389,11 +1414,13 @@ void wxMediaEdit::SetClickbackHilited(wxClickback *click, Bool on)
       click->unhilite = intercepted;
       interceptmode = FALSE;
     } else {
+      wxNode *node;
+
       PerformUndoList(click->unhilite);
 
-      wxNode *node;
-      for (node = click->unhilite->First(); node; node = node->Next())
+      for (node = click->unhilite->First(); node; node = node->Next()) {
 	delete (wxChangeRecord *)node->Data();
+      }
   
       delete click->unhilite;
       FlashOff();
@@ -1416,10 +1443,10 @@ Bool wxMediaEdit::CheckRecalc(Bool need_graphic, Bool need_write, Bool no_displa
       return FALSE;
 
     if (graphicMaybeInvalid) {
+      wxDC *dc;
+
       if (flowLocked)
 	return FALSE;
-
-      wxDC *dc;
 
       dc = admin->GetDC();
       if (!dc) {
@@ -1440,14 +1467,14 @@ Bool wxMediaEdit::CheckFlow(float maxw, wxDC *dc, float Y,
   /* This method is called with writeLocked and flowLocked already TRUE */
 {
   long p, c, origc, b;
-  float totalWidth, w;
+  float _totalWidth, w;
   wxSnip *snip;
   Bool checkingUnderflow; // no overflow => check move up from next line
   Bool checkingUnderflowAtNext;
   Bool noChangeIfEndOfSnip, noChangeIfStartOfSnip;
   Bool theFirstSnip, firstUnderflow, hadNewline;
 
-  totalWidth = 0;
+  _totalWidth = 0;
   p = startp;
   checkingUnderflow = FALSE; // start by insuring no overflow
   checkingUnderflowAtNext = FALSE;
@@ -1478,12 +1505,12 @@ Bool wxMediaEdit::CheckFlow(float maxw, wxDC *dc, float Y,
     }
 
     w = 0.0;
-    snip->GetExtent(dc, totalWidth, Y, &w);
-    totalWidth += w;
-    if (totalWidth > maxw) {
-      totalWidth -= w;
+    snip->GetExtent(dc, _totalWidth, Y, &w);
+    _totalWidth += w;
+    if (_totalWidth > maxw) {
+      _totalWidth -= w;
       /* Get best breaking position: (0.1 is hopefully a positive value smaller than any character) */
-      origc = _FindPositionInSnip(dc, totalWidth, Y, snip, maxw - totalWidth - 0.1);
+      origc = _FindPositionInSnip(dc, _totalWidth, Y, snip, maxw - _totalWidth - 0.1);
 
       /* get legal breaking position before optimal: */
       b = p + origc + 1;
@@ -1591,12 +1618,12 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
   wxMediaLine *line;
   wxSnip *snip;
   float X, Y, descent, space;
-  Bool changed, resized;
+  Bool _changed, resized;
 
   if (!calcGraphics)
     return;
 
-  changed = FALSE;
+  _changed = FALSE;
 
 #if CHECK_CONSISTENCY
   long p, p2;
@@ -1663,12 +1690,14 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
 
     wxMediaLine *other;
     if (line->left != NIL) {
-      for (other=line->prev; other && other != line->left; other=other->prev);
+      for (other = line->prev; other && other != line->left; other=other->prev) {
+      }
       if (!other)
 	fprintf(stderr, "Left link inconsistency\n");
     }
     if (line->right != NIL) {
-      for (other=line->next; other && other!=line->right; other=other->next);
+      for (other=line->next; other && other!=line->right; other=other->next) {
+      }
       if (!other)
 	fprintf(stderr, "Right link inconsistency\n");
     }
@@ -1687,8 +1716,9 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
 #endif
 
   if (snipCacheInvalid)
-    for (snip = snips; snip; snip = snip->next)
+    for (snip = snips; snip; snip = snip->next) {
       snip->SizeCacheInvalid();
+    }
 
   float old_max_width = maxWidth;
 
@@ -1706,11 +1736,12 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
 
 #if LOOK_FOR_ZEROED
   if (len)
-    for (snip = snips, i = 0; snip; snip = snip->next)
+    for (snip = snips, i = 0; snip; snip = snip->next) {
       if (!snip->count)
 	fprintf(stderr, "zero snip found at %d\n", i);
       else
 	i += snip->count;
+    }
 #endif
 
   if (maxWidth > 0) {
@@ -1722,8 +1753,9 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
 
     float w;
     w = maxWidth - CURSOR_WIDTH;
-    while (lineRoot->UpdateFlow(&lineRoot, this, w, dc))
-      changed = TRUE;
+    while (lineRoot->UpdateFlow(&lineRoot, this, w, dc)) {
+      _changed = TRUE;
+    }
 
     flowLocked = fl;
     writeLocked = wl;    
@@ -1732,7 +1764,7 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
   if (old_max_width != maxWidth)
     maxWidth = old_max_width;
 
-  if (changed) {
+  if (_changed) {
     refreshAll = TRUE;
     firstLine = lineRoot->First();
     lastLine = lineRoot->Last();
@@ -1740,9 +1772,9 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
   }
 
   if (lineRoot->UpdateGraphics(this, dc))
-    changed = TRUE;
+    _changed = TRUE;
 
-  if (!changed && !graphicMaybeInvalidForce) {
+  if (!_changed && !graphicMaybeInvalidForce) {
     graphicMaybeInvalid = FALSE;
     return;
   }
@@ -1831,7 +1863,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
   float tleftx, tstarty, trightx, tendy;
   float h, w, descent, space, ycounter, prevwasfirst = 0.0;
   long p, pcounter;
-  long startpos, endpos;
+  long _startpos, _endpos;
   Bool posAtEol;
   Bool hilite, hiliteSome;
   int align;
@@ -1860,22 +1892,23 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 			      0,    0};
 #endif
   static wxBrush *clearBrush = NULL;
+  Bool wl;
 
   if (flowLocked)
     return;
 
-  Bool wl = writeLocked;
+  wl = writeLocked;
 
   flowLocked = TRUE;
   writeLocked = TRUE;
 
   if (flash) {
-    startpos = wxMediaEdit::flashstartpos;
-    endpos = wxMediaEdit::flashendpos;
+    _startpos = flashstartpos;
+    _endpos = flashendpos;
     posAtEol = flashposateol;
   } else {
-    startpos = wxMediaEdit::startpos;
-    endpos = wxMediaEdit::endpos;
+    _startpos = startpos;
+    _endpos = endpos;
     posAtEol = posateol;
   }
 
@@ -1986,41 +2019,41 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 	      || (!caretSnip
 		  && ((show_caret == wxSNIP_DRAW_SHOW_CARET)
 		      || ((show_caret >= inactiveCaretThreshold)
-			  && (startpos != endpos)))))) {
+			  && (_startpos != _endpos)))))) {
 	if (posAtEol)
-	  hilite = (startpos == p + snip->count);
+	  hilite = (_startpos == p + snip->count);
 	else
-	  hilite = (((startpos < p + snip->count) && (endpos >= p)
-		     && (startpos == endpos || endpos > p))
-		    || (p + snip->count == len && startpos == len));
+	  hilite = (((_startpos < p + snip->count) && (_endpos >= p)
+		     && (_startpos == _endpos || _endpos > p))
+		    || (p + snip->count == len && _startpos == len));
 	
 	if (hilite && (snip->flags & wxSNIP_NEWLINE))
 	  /* End of line: */
-	  hilite = ((startpos != p + snip->count)
-		    || (startpos == endpos && posAtEol)
-		    || (startpos != endpos && startpos < p + snip->count));
+	  hilite = ((_startpos != p + snip->count)
+		    || (_startpos == _endpos && posAtEol)
+		    || (_startpos != _endpos && _startpos < p + snip->count));
 	if (hilite && PTREQ(snip, first))
 	  /* Beginning of line: */
-	  hilite = ((endpos != p)
-		    || (startpos == endpos && !posAtEol)
-		    || (startpos != endpos && endpos > p));
+	  hilite = ((_endpos != p)
+		    || (_startpos == _endpos && !posAtEol)
+		    || (_startpos != _endpos && _endpos > p));
       } else
 	hilite = FALSE;
 
       if (hilite) {
 	bottom = down + h;
 
-	if (startpos <= p) {
-	  if (startpos < p)
+	if (_startpos <= p) {
+	  if (_startpos < p)
 	    hxs = 0;
 	  else
 	    hxs = x;
 	} else
-	  hxs = x + snip->PartialOffset(dc, x, ycounter, startpos - p);
+	  hxs = x + snip->PartialOffset(dc, x, ycounter, _startpos - p);
 	
-	if (endpos >= p + snip->count) {
+	if (_endpos >= p + snip->count) {
 	  if (snip->flags & wxSNIP_NEWLINE) {
-	    if (endpos == startpos)
+	    if (_endpos == _startpos)
 	      hxe = hxs;
 	    else {
 	      hxe = rightx;
@@ -2029,7 +2062,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 	  } else
 	    hxe = x + w;
 	} else
-	  hxe = x + snip->PartialOffset(dc, x, ycounter, endpos - p);
+	  hxe = x + snip->PartialOffset(dc, x, ycounter, _endpos - p);
 	
 	if (!hiliteSome) {
 	  hsxs = hxs;
@@ -2082,8 +2115,8 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 	  if (!show_xsel && (show_caret < wxSNIP_DRAW_SHOW_CARET)) {
 	    int lastHilite, firstHilite;
 	    
-	    firstHilite = (startpos >= pcounter);
-	    lastHilite = (endpos <= pcounter + line->len);
+	    firstHilite = (_startpos >= pcounter);
+	    lastHilite = (_endpos <= pcounter + line->len);
 	    
 	    dc->SetPen(caretPen);
 	    
@@ -2148,7 +2181,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 
   if ((show_caret == wxSNIP_DRAW_SHOW_CARET) && !caretSnip)
     if (!line && extraLine)
-      if (!posAtEol && startpos == len && endpos == startpos
+      if (!posAtEol && _startpos == len && _endpos == _startpos
 	  && hiliteOn) {
 	float y;
 	y = ycounter;
@@ -2409,20 +2442,22 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
     lastUsedOffscreen = this;
 #endif
   } else {
-	wxMediaEdit *savesb = skipBox;
-    if (ps)
-      skipBox = this;
-
+    wxMediaEdit *savesb = skipBox;
     wxPen *pen;
     wxBrush *brush;
     wxFont *font;
-    wxColour fg, bg;
+    wxColour fg, bg, *col;
+
+    if (ps)
+      skipBox = this;
 
     pen = dc->GetPen();
     brush = dc->GetBrush();
     font = dc->GetFont();
-    fg.CopyFrom(dc->GetTextForeground());
-    bg.CopyFrom(dc->GetTextBackground());
+    col = dc->GetTextForeground();
+    fg.CopyFrom(col);
+    col dc->GetTextBackground();
+    bg.CopyFrom(col);
 
 #ifndef NO_GET_CLIPPING_REGION
     wxRegion *rgn;
@@ -2554,10 +2589,13 @@ Bool wxMediaEdit::CaretOff(void)
   if (!caretPen)
     caretPen = wxThePenList->FindOrCreatePen("BLACK", 1, wxXOR);
 
-  wxPen *oldpen = dc->GetPen();
-  dc->SetPen(caretPen);
-  dc->DrawLine(X - dx, T - dy, X - dx, B - dy - 1 + GC_LINE_EXTEND);
-  dc->SetPen(oldpen);
+  {
+    wxPen *oldpen;
+    oldpen = dc->GetPen();
+    dc->SetPen(caretPen);
+    dc->DrawLine(X - dx, T - dy, X - dx, B - dy - 1 + GC_LINE_EXTEND);
+    dc->SetPen(oldpen);
+  }
 
   drawCachedInBitmap = FALSE;
 
@@ -2601,10 +2639,11 @@ void wxSetMediaPrintMargin(long hm, long vm)
   wxGetThePrintSetupData()->SetEditorMargin(hm, vm);
 }
 
-typedef struct {
+class SaveSizeInfo {
+public:
   float maxw;
   wxBitmap *bm;
-} SaveSizeInfo;
+};
 
 void *wxMediaEdit::BeginPrint(wxDC *dc, Bool fit)
 {
@@ -2618,7 +2657,9 @@ void *wxMediaEdit::BeginPrint(wxDC *dc, Bool fit)
   if (fit) {
     float w, h;
     long hm, vm;
-    SaveSizeInfo *savedInfo = new SaveSizeInfo;
+    SaveSizeInfo *savedInfo;
+
+    savedInfo = new SaveSizeInfo;
     
     savedInfo->maxw = GetMaxWidth();
     savedInfo->bm = SetAutowrapBitmap(NULL);
@@ -2652,13 +2693,13 @@ void wxMediaEdit::EndPrint(wxDC *, void *data)
 
 Bool wxMediaEdit::HasPrintPage(wxDC *dc, int page)
 {
-  if (flowLocked)
-    return FALSE;
-
   float H, W, h;
   long vm, hm;
   int i, this_page = 1;
   wxMediaLine *line;
+
+  if (flowLocked)
+    return FALSE;
 
   RecalcLines(dc, TRUE);
 
@@ -2690,13 +2731,13 @@ Bool wxMediaEdit::HasPrintPage(wxDC *dc, int page)
 
 void wxMediaEdit::PrintToDC(wxDC *dc, int page)
 {
-  if (flowLocked)
-    return;
-
   float H, W, FH, FW, y, h;
   long vm, hm;
   int i, this_page = 1;
   wxMediaLine *line;
+
+  if (flowLocked)
+    return;
 
   RecalcLines(dc, TRUE);
 
@@ -2734,6 +2775,8 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
     }
 
     if (page < 0 || (page == this_page)) {
+      wxMediaEdit *savesb;
+
       if (page < 0)
 	dc->StartPage();
       
@@ -2741,7 +2784,7 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
       dc->DrawLine(0, 0, 0, 0);
       dc->DrawLine(FW, FH, FW, FH);
       
-	  wxMediaEdit *savesb = skipBox;
+      savesb = skipBox;
       skipBox = this;
       Redraw(dc, y + (i ? 1 : 0), y + h, 0, W, -y + vm, hm, 
 	     wxSNIP_DRAW_NO_CARET, 0);
@@ -2813,6 +2856,9 @@ void wxMediaEdit::SetParagraghMargins(long i, float firstLeft, float left, float
 
 void wxMediaEdit::SetParagraghAlignment(long i, int align)
 {
+  wxMediaLine *l;
+  wxMediaParagraph *p;
+
   switch(align) {
   case 1:
     align = WXPARA_RIGHT;
@@ -2826,21 +2872,18 @@ void wxMediaEdit::SetParagraghAlignment(long i, int align)
     break;
   }
   
-  wxMediaLine *l;
-  wxMediaParagraph *p;
-
   if (i < 0)
     i = 0;
   
   l = lineRoot->FindParagraph(i);
   if (l) {
+    int start, end;
 
     p = l->paragraph->Clone();
     l->paragraph = p;
 
     p->alignment = align;
 
-    int start, end;
     start = ParagraphStartPosition(i);
     end = ParagraphEndPosition(i);
     NeedRefresh(start, end);

@@ -157,4 +157,8 @@ test:
 xform:
 	# $(XFORM) $(WXDIR)/src/Windows/Window.cc gc2/Window.cc
 	# $(XFORM) $(WXDIR)/src/DeviceContexts/WindowDC.cc gc2/WindowDC.cc
-	$(XFORM) wxme/wx_media.cxx gc2/wx_media.cc
+	# $(XFORM) wxme/wx_media.cxx gc2/wx_media.cc
+	# $(XFORM) wxme/wx_mpriv.cxx gc2/wx_mpriv.cc
+	# $(XFORM) wxme/wx_snip.cxx gc2/wx_snip.cc
+	# $(XFORM) wxme/wx_msnip.cxx gc2/wx_msnip.cc
+	$(XFORM) wxme/wx_mbuf.cxx gc2/wx_mbuf.cc

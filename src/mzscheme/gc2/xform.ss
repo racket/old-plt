@@ -584,14 +584,16 @@
 				  'pointer
 				  (tok-n (car inner))))
 			    pointers non-pointers)]
-		     [(or (braces? v) 
-			  (memq (tok-n v) '(int long char unsigned void ulong uint)))
+		     [(braces? v) 
 		      ;; No more variable declarations
 		      (values pointers non-pointers)]
 		     [else
 		      ;; End of function ptr
 		      ;; (and we don't care about func ptrs)
 		      (values pointers non-pointers)])]
+		   [(memq (tok-n v) '(int long char unsigned void ulong uint))
+		    ;; No more variable declarations
+		    (values pointers non-pointers)]
 		   [(memq (tok-n v) '(|,| * : 1))
 		    (loop (sub1 l) #f pointers non-pointers)]
 		   [else (let* ([name (tok-n v)]
@@ -863,7 +865,7 @@
 	  null
 	  (let ([v (car e)])
 	    (cond
-	     [(memq (tok-n v) '(|.| ->))
+	     [(memq (tok-n v) '(|.| -> ::))
 	      ;; Don't check next as class member
 	      (cons v (loop (cdr e) #f paren-arrows?))]
 	     [(and (eq? (tok-n v) 'new)
@@ -900,7 +902,9 @@
 	       (loop (cdr e) #t paren-arrows?))]
 	     [(and paren-arrows?
 		   (>= (length e) 3)
-		   (eq? '-> (tok-n (cadr e))))
+		   (eq? '-> (tok-n (cadr e)))
+		   (or (null? (cdddr e))
+		       (not (parens? (cdddr e)))))
 	      (loop (cons (make-parens
 			   "(" #f #f #f ")"
 			   (list (car e) (cadr e) (caddr e)))
@@ -1325,8 +1329,8 @@
 			     ;; Array access
 			     (let-values ([(func rest-) (loop (cdr e-))])
 			       (values (cons (car e-) func) rest-))]
-			    ;; Struct reference:
-			    [(memq (tok-n (cadr e-)) '(-> |.|))
+			    ;; Struct reference, class-specified:
+			    [(memq (tok-n (cadr e-)) '(-> |.| ::))
 			     (let-values ([(func rest-) (loop (cddr e-))])
 			       (values (list* (car e-) (cadr e-) func) rest-))]
 			    [else (values (list (car e-)) (cdr e-))]))])
@@ -1676,8 +1680,8 @@
 		(not (memq (tok-n (cadr e)) '(= += -=)))
 		;; Not a return, case, new, or delete
 		(not (memq (tok-n (car e)) '(return case new delete)))
-		;; Not a label, field lookup, pointer deref
-		(not (memq (tok-n (cadr e)) '(: |.| ->)))
+		;; Not a label, field lookup, pointer deref, class-specific
+		(not (memq (tok-n (cadr e)) '(: |.| -> ::)))
 		;; No parens/braces in first two parts, except __typeof
 		(not (seq? (car e)))
 		(or (not (seq? (cadr e)))

@@ -1297,6 +1297,8 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
       caretStyle = NULL;
       lineRoot->snip = lineRoot->lastSnip = snip;
     } else {
+      wxStyle *style;
+
       if (start)
 	gsnip = FindSnip(start, -1, &sPos);
       else
@@ -2691,7 +2693,7 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
   }
 
   {
-    char *fn;
+    const char *fn;
     fn = wxmeExpandFilename(file);
     f = fopen(fn, "rb");
   }
@@ -2741,7 +2743,7 @@ Bool wxMediaEdit::InsertFile(char *file, int format, Bool showErrors)
     return FALSE;
 
   {
-    char *fn;
+    const char *fn;
     fn = wxmeExpandFilename(file);
     f = fopen(fn, "rb");
   }
@@ -2920,7 +2922,7 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
   /* Always open in binary mode, because flattened text
      gets cr/lf as appropriate */
   {
-    char *fn;
+    const char *fn;
     fn = wxmeExpandFilename(file);
     f = fopen(fn, "wb");
   }
@@ -3408,7 +3410,7 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
 
 
   if (x) {
-    int xv;
+    float xv;
 
     if (start && !dc) {
       dc = admin->GetDC();

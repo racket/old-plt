@@ -958,7 +958,8 @@
               (do-many-text-evals this start end))))
         
         (define (cleanup)
-	  (update-running #f)
+          (set! in-evaluation? #f)
+	  (update-running)
 	  (unless (and user-thread (thread-running? user-thread))
 	    (lock #t)
 	    (unless shutting-down?
@@ -1098,12 +1099,8 @@
                (break-thread user-thread)
                (set! ask-about-kill? #t)])))
         
-	(define kill-evaluation
-	  (lambda () ; =Kernel=, =Handler=
-	    (shutdown)
-	    (if need-interaction-cleanup?
-		(cleanup-interaction)
-		(cleanup))))
+	(define (kill-evaluation) ; =Kernel=, =Handler=
+          (custodian-shutdown-all user-custodian))
 
         (define error-escape-k void)
         (define user-break-enabled #t)
@@ -1115,24 +1112,22 @@
         (define cleanup-sucessful 'not-yet-cleanup-sucessful)
         (define cleanup-semaphore 'not-yet-cleanup-semaphore)
         (define thread-grace 'not-yet-thread-grace)
-        (define thread-kill 'not-yet-thread-kill)
         
         (define thread-killed 'not-yet-thread-killed)
-        (define initialize-killed-thread ; =Kernel=
-          (lambda ()
-            (when (thread? thread-killed)
-              (kill-thread thread-killed))
-            (set! thread-killed
-                  (thread
-                   (lambda () ; =Other=
-                     (let ([ut user-thread])
-                       (thread-wait ut)
-                       (mred:queue-callback
-                        (lambda ()
-                          (when (eq? user-thread ut)
-                            (if need-interaction-cleanup?
-                                (cleanup-interaction)
-                                (cleanup)))))))))))
+        (define (initialize-killed-thread) ; =Kernel=
+          (when (thread? thread-killed)
+            (kill-thread thread-killed))
+          (set! thread-killed
+                (thread
+                 (lambda () ; =Other=
+                   (let ([ut user-thread])
+                     (thread-wait ut)
+                     (mred:queue-callback
+                      (lambda ()
+                        (when (eq? user-thread ut)
+                          (if need-interaction-cleanup?
+                              (cleanup-interaction)
+                              (cleanup))))))))))
         
         (define protect-user-evaluation ; =User=, =Handler=, =No-Breaks=
           (lambda (thunk cleanup)
@@ -1143,7 +1138,8 @@
             ;; `thunk' is responsible for ensureing that breaks are off when
             ;; it returns or jumps out.
             
-            (update-running #t)
+            (set! in-evaluation? #t)
+            (update-running)
             
             (let/ec k
               (let ([saved-error-escape-k error-escape-k]
@@ -1160,7 +1156,8 @@
                  (lambda () 
                    (set! error-escape-k saved-error-escape-k)
                    (when cleanup?
-                     (update-running #f)
+                     (set! in-evaluation? #f)
+                     (update-running)
                      (cleanup))))))))
         
         (define run-in-evaluation-thread ; =Kernel=
@@ -1199,7 +1196,8 @@
                      (error-escape-handler drscheme-error-escape-handler)
                      (basis:bottom-escape-handler drscheme-error-escape-handler))
                    
-                   (update-running #f)
+                   (set! in-evaluation? #f)
+                   (update-running)
                    
                    ;; let init-thread procedure return,
                    ;; now that parameters (and user-namespace) are set
@@ -1246,8 +1244,7 @@
             (shutdown-user-custodian)))
         
         (define update-running ; =User=, =Handler=, =No-Breaks=
-          (lambda (on?)
-            (set! in-evaluation? on?)
+          (lambda ()
             (queue-system-callback
              user-thread
              (lambda ()
@@ -1406,7 +1403,8 @@
             
             ;; in case the last evaluation thread was killed, clean up some state.
             (lock #f)
-            (update-running #f)
+            (set! in-evaluation? #f)
+            (update-running)
             
             (set! user-setting (get-user-setting))
             

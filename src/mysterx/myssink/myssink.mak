@@ -9,7 +9,8 @@ RSC=rc.exe
 RSC_PROJ=/l 0x409 /fo"myssink.res"
 
 LINK32=link.exe
-LINK32_FLAGS=..\..\..\lib\msvc\mzdyn.obj kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib \
+LINK32_FLAGS=..\..\..\lib\msvc\mzdyn.obj ..\..\..\lib\msvc\libmzgcxxxxxxx.lib ..\..\..\lib\msvc\libmzschxxxxxxx.lib \
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib \
 ..\mysc\mysc.lib \
 /nologo /subsystem:windows /dll /incremental:no /machine:I386 /def:myssink.def /out:myssink.dll
 DEF_FILE=myssink.def

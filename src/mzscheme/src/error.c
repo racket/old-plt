@@ -612,10 +612,11 @@ scheme_signal_error (char *msg, ...)
     len = strlen(s2);
   }
 
-  buffer[len++] = '\n';
   buffer[len] = 0;
 
   if (scheme_starting_up) {
+    buffer[len++] = '\n';
+    buffer[len] = 0;
     scheme_console_output(buffer, len);
     exit(0);
   }

@@ -1071,16 +1071,18 @@ void objscheme_check_valid(Scheme_Object *sclass, const char *name, int n, Schem
     }
   }
 
+  if (SCHEME_FALSEP((Scheme_Object *)obj->primflag)) {
+    scheme_signal_error("%s: object is not yet initialized: %V",
+			name,
+			obj);
+  }
   if (obj->primflag < 0) {
-    scheme_signal_error("attempt to use an %sobject%s: %v",
+    scheme_signal_error("%s: %sobject%s: %v",
+			name,
 			(obj->primflag == -2) ? "" : "invalidated ",
-			(obj->primflag == -2) ? " shutdown by custodian" : "",
+			(obj->primflag == -2) ? " (shutdown by a custodian)" : "",
 			obj);
     return;
-  }
-  if (!obj->primdata) {
-    scheme_signal_error("attempt to use an uninitialized object: %V",
-			obj);
   }
 }
 

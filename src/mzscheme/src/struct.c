@@ -1937,7 +1937,7 @@ static Scheme_Object *get_phase_ids(Scheme_Object *_v, int phase)
   Scheme_Object **v = (Scheme_Object **)_v;
   Scheme_Object *l, **names, *tp, *cns, *prd, *super_exptime, *w, *macro;
   Scheme_Hash_Table *ht;
-  int count, i;
+  int count, i, flags;
 
   ht = (Scheme_Hash_Table *)v[3];
 
@@ -1983,15 +1983,21 @@ static Scheme_Object *get_phase_ids(Scheme_Object *_v, int phase)
       gets = scheme_null;
       sets = scheme_null;
     }
+
+    flags = SCHEME_INT_VAL(v[5]);
     
     for (i = 3; i < count - 1; i++) {
-      n = names[i++];
+      n = names[i];
       n = scheme_datum_to_syntax(n, scheme_false, w, 0, 0);
       gets = scheme_make_immutable_pair(n, gets);
 
-      n = names[i];
-      n = scheme_datum_to_syntax(n, scheme_false, w, 0, 0);
-      sets = scheme_make_immutable_pair(n, sets);
+      if (!(flags & SCHEME_STRUCT_NO_SET)) {
+	i++;
+	n = names[i];
+	n = scheme_datum_to_syntax(n, scheme_false, w, 0, 0);
+	sets = scheme_make_immutable_pair(n, sets);
+      } else
+	sets = scheme_make_immutable_pair(scheme_false, sets);
     }
 
     l = scheme_make_pair(gets, scheme_make_immutable_pair(sets, l));
@@ -2030,12 +2036,13 @@ Scheme_Object *scheme_make_struct_exptime(Scheme_Object **names, int count,
     return NULL;
   }
 
-  v = MALLOC_N(Scheme_Object*, 5);
+  v = MALLOC_N(Scheme_Object*, 6);
   v[0] = (Scheme_Object *)names;
   v[1] = scheme_make_integer(count);
   v[2] = super_exptime;
   v[3] = NULL; /* hash table, filled in by get_phase_ids */
   v[4] = super_sym;
+  v[5] = scheme_make_integer(flags);
 
   macro = scheme_alloc_object();
   macro->type = scheme_lazy_macro_type;

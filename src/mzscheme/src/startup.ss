@@ -520,14 +520,14 @@
 
   ;; Check for a list containing all ids, except that last can be #f:
   (define-values (id/#f-list?)
-    (lambda (x)
+    (lambda (id? x)
       (if (null? x)
 	  #t
 	  (if (pair? x)
 	      (if (null? (cdr x))
 		  (identifier/#f? (car x))
-		  (and (identifier? (car x))
-		       (id/#f-list? (cdr x))))
+		  (and (id? (car x))
+		       (id/#f-list? id? (cdr x))))
 	      #f))))
 
   (define-values (struct-info?)
@@ -537,8 +537,8 @@
 	   (identifier/#f? (car x))
 	   (identifier/#f? (cadr x))
 	   (identifier/#f? (caddr x))
-	   (id/#f-list? (list-ref x 3))
-	   (id/#f-list? (list-ref x 4))
+	   (id/#f-list? identifier? (list-ref x 3))
+	   (id/#f-list? identifier/#f? (list-ref x 4))
 	   (or (identifier/#f? (list-ref x 5)) (eq? #t (list-ref x 5))))))
 
   (define-values (struct-info-type-id) car)
@@ -571,7 +571,7 @@
       ;; if `defined-names' is #f.
       ;; If `expr?' is #t, then generate an expression to build the info,
       ;; otherwise build the info directly.
-      (let ([qs (if gen-expr? (lambda (x) `((syntax-local-certifier) (quote-syntax ,x))) values)]
+      (let ([qs (if gen-expr? (lambda (x) (and x `((syntax-local-certifier) (quote-syntax ,x)))) values)]
 	    [every-other (lambda (l)
 			   (let loop ([l l][r null])
 			     (cond

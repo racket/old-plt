@@ -233,7 +233,7 @@ static Scheme_Object *unsyntax_symbol;
 static Scheme_Object *unsyntax_splicing_symbol;
 static Scheme_Object *quasisyntax_symbol;
 
-static Scheme_Object *honu_comma, *honu_semicolon;
+static Scheme_Object *honu_comma, *honu_semicolon, *honu_backquote;
 static Scheme_Object *honu_parens, *honu_braces, *honu_brackets;
 
 /* For recoginizing unresolved hash tables and commented-out graph introductions: */
@@ -281,12 +281,14 @@ void scheme_init_read(Scheme_Env *env)
 
   REGISTER_SO(honu_comma);
   REGISTER_SO(honu_semicolon);
+  REGISTER_SO(honu_backquote);
   REGISTER_SO(honu_parens);
   REGISTER_SO(honu_braces);
   REGISTER_SO(honu_brackets);
 
   honu_comma = scheme_intern_symbol(",");
   honu_semicolon = scheme_intern_symbol(";");
+  honu_backquote = scheme_intern_symbol("`");
   honu_parens = scheme_intern_symbol("#%parens");
   honu_braces = scheme_intern_symbol("#%braces");
   honu_brackets = scheme_intern_symbol("#%brackets");
@@ -711,9 +713,18 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
     case '"':
       return read_string(0, port, stxsrc, line, col, pos,indentation, params);
     case '\'':
-      return read_quote("quoting '", quote_symbol, 1, port, stxsrc, line, col, pos, ht, indentation, params);
+      if (params->honu_mode) {
+	return read_symbol(ch, port, stxsrc, line, col, pos, indentation, params);
+      } else {
+	return read_quote("quoting '", quote_symbol, 1, port, stxsrc, line, col, pos, ht, indentation, params);
+      }
     case '`':
-      if (!params->can_read_quasi || params->honu_mode) {
+      if (params->honu_mode) {
+	if (stxsrc)
+	  return scheme_make_stx_w_offset(honu_backquote, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
+	else
+	  return honu_backquote;
+      } else if (!params->can_read_quasi) {
 	scheme_read_err(port, stxsrc, line, col, pos, 1, 0, indentation, "read: illegal use of backquote");
 	return NULL;
       } else
@@ -796,41 +807,60 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	  }
 	  break;
 	case '%':
-	  scheme_ungetc('%', port);
-	  return read_symbol('#', port, stxsrc, line, col, pos, indentation, params);
+	  if (!params->honu_mode) {
+	    scheme_ungetc('%', port);
+	    return read_symbol('#', port, stxsrc, line, col, pos, indentation, params);
+	  }
+	  break;
 	case '(':
-	  return read_vector(port, stxsrc, line, col, pos, ')', -1, NULL, ht, indentation, params);
+	  if (!params->honu_mode) {
+	    return read_vector(port, stxsrc, line, col, pos, ')', -1, NULL, ht, indentation, params);
+	  }
+	  break;
 	case '[':
-	  if (!params->square_brackets_are_parens) {
-	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation, "read: bad syntax `#['");
-	    return NULL;
-	  } else
-	    return read_vector(port, stxsrc, line, col, pos, ']', -1, NULL, ht, indentation, params);
+	  if (!params->honu_mode) {
+	    if (!params->square_brackets_are_parens) {
+	      scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation, "read: bad syntax `#['");
+	      return NULL;
+	    } else
+	      return read_vector(port, stxsrc, line, col, pos, ']', -1, NULL, ht, indentation, params);
+	  }
+	  break;
 	case '{':
-	  if (!params->curly_braces_are_parens) {
-	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation, "read: bad syntax `#{'");
-	    return NULL;
-	  } else
-	    return read_vector(port, stxsrc, line, col, pos, '}', -1, NULL, ht, indentation, params);
+	  if (!params->honu_mode) {
+	    if (!params->curly_braces_are_parens) {
+	      scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation, "read: bad syntax `#{'");
+	      return NULL;
+	    } else
+	      return read_vector(port, stxsrc, line, col, pos, '}', -1, NULL, ht, indentation, params);
+	  }
+	  break;
 	case '\\':
-	  {
+	  if (!params->honu_mode) {
 	    Scheme_Object *chr;
 	    chr = read_character(port, stxsrc, line, col, pos, indentation, params);
 	    if (stxsrc)
 	      chr = scheme_make_stx_w_offset(chr, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
 	    return chr;
 	  }
+	  break;
 	case 'T':
-	case 't': return (stxsrc
-			  ? scheme_make_stx_w_offset(scheme_true, line, col, pos, 2, stxsrc, STX_SRCTAG)
-			  : scheme_true);
+	case 't': 
+	  if (!params->honu_mode) {
+	    return (stxsrc
+		    ? scheme_make_stx_w_offset(scheme_true, line, col, pos, 2, stxsrc, STX_SRCTAG)
+		    : scheme_true);
+	  }
 	case 'F':
-	case 'f': return (stxsrc
-			  ? scheme_make_stx_w_offset(scheme_false, line, col, pos, 2, stxsrc, STX_SRCTAG)
-			  : scheme_false);
+	case 'f': 
+	  if (!params->honu_mode) {
+	    return (stxsrc
+		    ? scheme_make_stx_w_offset(scheme_false, line, col, pos, 2, stxsrc, STX_SRCTAG)
+		    : scheme_false);
+	  }
 	case 'c':
 	case 'C':
-	  {
+	  if (!params->honu_mode) {
 	    Scheme_Object *v;
 	    int sens = 0;
 	    int save_sens;
@@ -868,6 +898,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 
 	    return v;
 	  }
+	  break;
 	case 's':
 	case 'S':
 	  ch = scheme_getc_special_ok(port);
@@ -895,70 +926,111 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	    return NULL;
 	  }
 	case 'X':
-	case 'x': return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 16, 1, indentation, params);
-	case 'B':
-	case 'b': return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 2, 1, indentation, params);
-	case 'O':
-	case 'o': return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 8, 1, indentation, params);
-	case 'D':
-	case 'd': return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 10, 1, indentation, params);
-	case 'E':
-	case 'e': return read_number(-1, port, stxsrc, line, col, pos, 0, 1, 10, 0, indentation, params);
-	case 'I':
-	case 'i': return read_number(-1, port, stxsrc, line, col, pos, 1, 0, 10, 0, indentation, params);
-	case '\'':
-	  return read_quote("quoting #'", syntax_symbol, 2, port, stxsrc, line, col, pos, ht, indentation, params);
-	case '`':
-	  return read_quote("quasiquoting #`", quasisyntax_symbol, 2, port, stxsrc, line, col, pos, ht, indentation, params);
-	case ',':
-	  if (scheme_peekc_special_ok(port) == '@') {
-	    ch = scheme_getc(port); /* must be '@' */
-	    return read_quote("unquoting #`@", unsyntax_splicing_symbol, 3, port, stxsrc, line, col, pos, ht, indentation, params);
-	  } else
-	    return read_quote("unquoting #`", unsyntax_symbol, 2, port, stxsrc, line, col, pos, ht, indentation, params);
-	case '~':
-	  if (params->can_read_compiled) {
-	    Scheme_Object *cpld;
-	    cpld = read_compiled(port, ht);
-	    if (stxsrc)
-	      cpld = scheme_make_stx_w_offset(cpld, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
-	    return cpld;
-	  } else {
-	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation,
-			    "read: #~ compiled expressions not currently enabled");
-	    return NULL;
+	case 'x': 
+	  if (!params->honu_mode) {
+	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 16, 1, indentation, params);
 	  }
+	  break;
+	case 'B':
+	case 'b': 
+	  if (!params->honu_mode) {
+	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 2, 1, indentation, params);
+	  }
+	  break;
+	case 'O':
+	case 'o': 
+	  if (!params->honu_mode) {
+	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 8, 1, indentation, params);
+	  }
+	  break;
+	case 'D':
+	case 'd': 
+	  if (!params->honu_mode) {
+	    return read_number(-1, port, stxsrc, line, col, pos, 0, 0, 10, 1, indentation, params);
+	  }
+	  break;
+	case 'E':
+	case 'e': 
+	  if (!params->honu_mode) {
+	    return read_number(-1, port, stxsrc, line, col, pos, 0, 1, 10, 0, indentation, params);
+	  }
+	  break;
+	case 'I':
+	case 'i': 
+	  if (!params->honu_mode) {
+	    return read_number(-1, port, stxsrc, line, col, pos, 1, 0, 10, 0, indentation, params);
+	  }
+	  break;
+	case '\'':
+	  if (!params->honu_mode) {
+	    return read_quote("quoting #'", syntax_symbol, 2, port, stxsrc, line, col, pos, ht, indentation, params);
+	  }
+	  break;
+	case '`':
+	  if (!params->honu_mode) {
+	    return read_quote("quasiquoting #`", quasisyntax_symbol, 2, port, stxsrc, line, col, pos, ht, indentation, params);
+	  }
+	  break;
+	case ',':
+	  if (!params->honu_mode) {
+	    if (scheme_peekc_special_ok(port) == '@') {
+	      ch = scheme_getc(port); /* must be '@' */
+	      return read_quote("unquoting #`@", unsyntax_splicing_symbol, 3, port, stxsrc, line, col, pos, ht, indentation, params);
+	    } else
+	      return read_quote("unquoting #`", unsyntax_symbol, 2, port, stxsrc, line, col, pos, ht, indentation, params);
+	  }
+	  break;
+	case '~':
+	  if (!params->honu_mode) {
+	    if (params->can_read_compiled) {
+	      Scheme_Object *cpld;
+	      cpld = read_compiled(port, ht);
+	      if (stxsrc)
+		cpld = scheme_make_stx_w_offset(cpld, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
+	      return cpld;
+	    } else {
+	      scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation,
+			      "read: #~ compiled expressions not currently enabled");
+	      return NULL;
+	    }
+	  }
+	  break;
 	case '|':
-	  /* FIXME: integer overflow possible */
-	  depth = 0;
-	  ch2 = 0;
-	  do {
-	    ch = scheme_getc_special_ok(port);
+	  if (!params->honu_mode) {
+	    /* FIXME: integer overflow possible */
+	    depth = 0;
+	    ch2 = 0;
+	    do {
+	      ch = scheme_getc_special_ok(port);
 
-	    if (ch == EOF)
-	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation,
-			      "read: end of file in #| comment");
-	    else if (ch == SCHEME_SPECIAL)
-	      scheme_get_ready_special(port, stxsrc, 0);
+	      if (ch == EOF)
+		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation,
+				"read: end of file in #| comment");
+	      else if (ch == SCHEME_SPECIAL)
+		scheme_get_ready_special(port, stxsrc, 0);
 
-	    if ((ch2 == '|') && (ch == '#')) {
-	      if (!(depth--))
-		goto start_over;
-	    } else if ((ch2 == '#') && (ch == '|'))
-	      depth++;
-	    ch2 = ch;
-	  } while (1);
+	      if ((ch2 == '|') && (ch == '#')) {
+		if (!(depth--))
+		  goto start_over;
+	      } else if ((ch2 == '#') && (ch == '|'))
+		depth++;
+	      ch2 = ch;
+	    } while (1);
+	  }
 	  break;
 	case '&':
-	  if (params->can_read_box)
-	    return read_box(port, stxsrc, line, col, pos, ht, indentation, params);
-	  else {
-	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation,
-			    "read: #& expressions not currently enabled");
-	    return NULL;
+	  if (!params->honu_mode) {
+	    if (params->can_read_box)
+	      return read_box(port, stxsrc, line, col, pos, ht, indentation, params);
+	    else {
+	      scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation,
+			      "read: #& expressions not currently enabled");
+	      return NULL;
+	    }
 	  }
+	  break;
 	case 'r':
-	  {
+	  if (!params->honu_mode) {
 	    int cnt = 0, is_byte = 0;
 
 	    ch = scheme_getc_special_ok(port);
@@ -1013,6 +1085,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	      return NULL;
 	    }
 	  }
+	  break;
 	case 'h':
 	  {
 	    int honu = 0;
@@ -1029,8 +1102,18 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	      honu = 1;
 	      break;
 	    default:
+	      if (!params->honu_mode) {
+		scheme_read_err(port, stxsrc, line, col, pos, 2, ch, indentation,
+				"read: expected `a', `u', or `o' after #h");
+		return NULL;
+	      }
+	      honu = 0;
+	      break;
+	    }
+
+	    if (params->honu_mode && (honu != 1)) {
 	      scheme_read_err(port, stxsrc, line, col, pos, 2, ch, indentation,
-			      "read: expected `a', `u', or `o' after #h");
+			      "read: expected `x' after #h");
 	      return NULL;
 	    }
 
@@ -1125,20 +1208,24 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	  }
 	  break;
 	case '"':
-	  return read_string(1, port, stxsrc, line, col, pos,indentation, params);
+	  if (!params->honu_mode) {
+	    return read_string(1, port, stxsrc, line, col, pos,indentation, params);
+	  }
 	  break;
 	case '<':
-	  if (scheme_peekc_special_ok(port) == '<') {
-	    /* Here-string */
-	    ch = scheme_getc_special_ok(port);
-	    return read_here_string(port, stxsrc, line, col, pos,indentation, params);
-	  } else {
-	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation, "read: bad syntax `#<'");
-	    return NULL;
+	  if (!params->honu_mode) {
+	    if (scheme_peekc_special_ok(port) == '<') {
+	      /* Here-string */
+	      ch = scheme_getc_special_ok(port);
+	      return read_here_string(port, stxsrc, line, col, pos,indentation, params);
+	    } else {
+	      scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation, "read: bad syntax `#<'");
+	      return NULL;
+	    }
 	  }
 	  break;
 	default:
-	  {
+	  if (!params->honu_mode) {
 	    int vector_length = -1;
 	    int i = 0, j = 0, overflow = 0, digits = 0;
 	    mzchar tagbuf[64], vecbuf[64]; /* just for errors */
@@ -1286,7 +1373,14 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	      return NULL;
 	    }
 	  }
+	  break;
 	}
+      /* We get here only in honu mode */
+      scheme_read_err(port, stxsrc, line, col, pos, 2, ch, indentation,
+		      "read: bad syntax `#%c'",
+		      ch);
+      return NULL;
+      break;
     case '/':
       if (params->honu_mode) {
 	int ch2;

@@ -51,7 +51,7 @@
 	INTERACTION FUNCTION PRETTY-PRINT FILE STRING)]
   [LOADEXPAND : mrspidey:loadexpand^
 	      ((require-relative-library-unit/sig "ldexpand.ss")
-	       CDL INTERACTION LANGUAGES MRED ZODIAC ZAUX 
+	       CDL INTERACTION LANGUAGES ZODIAC ZAUX 
 	       FUNCTION PRETTY-PRINT FILE STRING)]
   [HASH : mrspidey:hash^
 	((require-relative-library-unit/sig "hash.ss")

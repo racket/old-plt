@@ -2329,24 +2329,33 @@
  `num-elts' is a nonnegative exact integer indicating the number 
  of buffer elements.
 
+ It is the responsibility of the programmer to make sure that 
+ buffers bound to columns have the correct type and adequate 
+ size for the column.  If a column has the incorrect type or 
+ is too small, unpredictable effects may occur.
+
 > (read-buffer sql-buffer) 
 
  Returns the contents of an sql-buffer.  For a buffer of type
  'sql-c-char or 'sql-c-wchar, a string is returned.  For all other 
  types, a list of values of appropriate type is returned.  In the
- case of 'sql-c-wchar, each wide character is truncated to the
- the least significant 16 bits.  The truncation is done because 
- MzScheme does not support wide characters.
+ case of 'sql-c-wchar, an error occurs if the buffer contains
+ a character not representable as an ordinary character.  
+
+ SrPersist provides no guarantees that a buffer contains valid data.
 
 > (write-buffer sql-buffer vals) 
 
- Updates the contents of an sql-buffer.  The type of `vals' should 
- depend on the C type used to create the buffer.  Also, if
+ Updates the contents of an sql-buffer.  The type of `vals' 
+ depends on the C type used to create the buffer.  Also, if
  `vals' is a list, its length should depend on the size of 
- `sql-buffer'.  Using the wrong type or overflowing the buffer
- has unpredictable consequences.  For a type of 'sql-c-char or
- 'sql-c-wchar, `vals' should be a string.  For all other types, `vals' 
- should be a a list of values of appropriate Scheme type.
+ `sql-buffer'.  For a type of 'sql-c-char or 'sql-c-wchar, `vals' 
+ should be a string.  For all other types, `vals' should be a a list 
+ of values of appropriate Scheme type.  If the type of `vals' is
+ incorrect, an error occurs.  If `vals' is a string that is longer 
+ than the number of elements in `sql-buffer', or `vals' is a list
+ longer than the number of elements in `sql-buffer', an error 
+ occurs. 
 
 > (read-row-status an-sql-row-status)
 

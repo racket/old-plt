@@ -1135,7 +1135,6 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
   case SQL_C_LONG :
 
     checkIsPredList(argv[1],schemeExactIntegerP,numElts);
-
     writeLongBuffer((long *)buffer,argv[1]); 
 
     break;

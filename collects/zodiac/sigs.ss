@@ -19,7 +19,7 @@
   (static-error dynamic-error internal-error))
 
 (define-signature zodiac:expander^
-  (expand expand-expr
+  (expand expand-program expand-expr
     add-micro-form add-macro-form
     add-list-micro add-ilist-micro add-lit-micro add-sym-micro
     get-list-micro get-ilist-micro get-lit-micro get-sym-micro
@@ -36,16 +36,17 @@
     lexically-resolved? in-lexically-extended-env
     generate-name
     make-empty-back-box
-    scheme-expand
+    scheme-expand scheme-expand-program
     scheme-vocabulary
     (struct parsed (back))
     (struct varref (var))
-    (struct top-level-varref ())     create-top-level-varref
-    (struct bound-varref (binding))  create-bound-varref
-    (struct lexical-varref ())       create-lexical-varref
-    (struct app (fun args))          create-app
-    (struct binding (var orig-name)) create-binding+marks
-    (struct lexical-binding ())      create-lexical-binding+marks
+    (struct top-level-varref ())      create-top-level-varref
+    (struct top-level-varref/bind ()) create-top-level-varref/bind
+    (struct bound-varref (binding))   create-bound-varref
+    (struct lexical-varref ())        create-lexical-varref
+    (struct app (fun args))           create-app
+    (struct binding (var orig-name))  create-binding+marks
+    (struct lexical-binding ())       create-lexical-binding+marks
     (struct form ())
     valid-syntactic-id? valid-syntactic-id/s?
     distinct-valid-syntactic-id/s?

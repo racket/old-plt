@@ -602,8 +602,15 @@
 	    ((lexical-binding? r)
 	      (create-lexical-varref r expr))
 	    ((top-level-resolution? r)
-	      (let ((name (z:read-object expr)))
-		(create-top-level-varref name expr)))
+	      (let ((id (z:read-object expr)))
+		(let ((top-level-space (get-attribute attributes 'top-levels)))
+		  (if top-level-space
+		    (let ((entries (cons expr
+				     (hash-table-get top-level-space
+				       id (lambda () '())))))
+		      (hash-table-put! top-level-space id entries)
+		      (create-top-level-varref/bind id top-level-space expr))
+		    (create-top-level-varref id expr)))))
 	    (else
 	      (internal-error expr "Invalid resolution ~s" r))))))
 
@@ -635,12 +642,17 @@
 	    ((lexical-binding? r)
 	      (create-lexical-varref r expr))
 	    ((top-level-resolution? r)
-	      (let ((name (z:read-object expr)))
-		(if (built-in-name name)
-		  (create-top-level-varref name expr)
-		  (begin
-		    (update-unresolved-attribute attributes expr)
-		    (create-top-level-varref name expr)))))
+	      (let ((id (z:read-object expr)))
+		(unless (built-in-name id)
+		  (update-unresolved-attribute attributes expr))
+		(let ((top-level-space (get-attribute attributes 'top-levels)))
+		  (if top-level-space
+		    (let ((entries (cons expr
+				     (hash-table-get top-level-space
+				       id (lambda () '())))))
+		      (hash-table-put! top-level-space id entries)
+		      (create-top-level-varref/bind id top-level-space expr))
+		    (create-top-level-varref id expr)))))
 	    (else
 	      (internal-error expr "Invalid resolution ~s" r))))))
 

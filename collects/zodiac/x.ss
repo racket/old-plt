@@ -158,8 +158,15 @@
 	    (static-error expr "Invalid body")))))
 
     (define expand
-      (lambda (expr vocab)
-	(expand-expr expr (make-new-environment) (make-attributes) vocab)))
+      (lambda (expr attr vocab)
+	(expand-expr expr (make-new-environment) attr vocab)))
+
+    (define expand-program
+      (lambda (exprs attr vocab)
+	(put-attribute attr 'top-levels (make-hash-table))
+	(map (lambda (expr)
+	       (expand-expr expr (make-new-environment) attr vocab))
+	  exprs)))
 
     ; ----------------------------------------------------------------------
 

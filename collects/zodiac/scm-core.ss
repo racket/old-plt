@@ -9,6 +9,7 @@
     (define-struct (parsed struct:zodiac) (back))
      (define-struct (varref struct:parsed) (var))
       (define-struct (top-level-varref struct:varref) ())
+       (define-struct (top-level-varref/bind struct:top-level-varref) (slot))
       (define-struct (bound-varref struct:varref) (binding))
        (define-struct (lexical-varref struct:bound-varref) ())
      (define-struct (app struct:parsed) (fun args))
@@ -52,6 +53,12 @@
 	(make-top-level-varref (zodiac-origin s)
 	  (zodiac-start s) (zodiac-finish s)
 	  (make-empty-back-box) v)))
+
+    (define create-top-level-varref/bind
+      (lambda (v b s)
+	(make-top-level-varref/bind (zodiac-origin s)
+	  (zodiac-start s) (zodiac-finish s)
+	  (make-empty-back-box) v b)))
 
     (define create-bound-varref
       (lambda (constructor)
@@ -115,7 +122,15 @@
 	    ((lexical-binding? r)
 	      (create-lexical-varref r expr))
 	    ((top-level-resolution? r)
-	      (create-top-level-varref (z:read-object expr) expr))
+	      (let ((id (z:read-object expr)))
+		(let ((top-level-space (get-attribute attributes 'top-levels)))
+		  (if top-level-space
+		    (let ((entries (cons expr
+				     (hash-table-get top-level-space
+				       id (lambda () '())))))
+		      (hash-table-put! top-level-space id entries)
+		      (create-top-level-varref/bind id top-level-space expr))
+		    (create-top-level-varref id expr)))))
 	    (else
 	      (internal-error expr "Invalid resolution ~s" r))))))
 
@@ -155,7 +170,13 @@
 
     (define scheme-expand
       (lambda (expr)
-	(expand expr scheme-vocabulary)))
+	(let ((attr (make-attributes)))
+	  (expand expr attr scheme-vocabulary))))
+
+    (define scheme-expand-program
+      (lambda (exprs)
+	(let ((attr (make-attributes)))
+	  (expand-program exprs attr scheme-vocabulary))))
 
     ; ----------------------------------------------------------------------
 

@@ -474,9 +474,7 @@
 				(_ (map valid-syntactic-id? vars)))
 			  (handler expr env attributes vocab p-env vars))))
 		    (else (static-error expr "Malformed define-values")))))))
-	(add-micro-form
-	  'define-values
-	  scheme-vocabulary
+	(add-micro-form 'define-values scheme-vocabulary
 	  (define-values-helper
 	    (lambda (expr env attributes vocab p-env vars)
 	      (let* ((id-exprs (map (lambda (v)
@@ -486,15 +484,11 @@
 				   (pat:pexpand 'val p-env kwd)
 				   env attributes vocab)))
 		(create-define-values-form id-exprs expr-expr expr)))))
-    	(add-micro-form
-	  'define-values
-	  local-extract-vocab
+    	(add-micro-form 'define-values local-extract-vocab
 	  (define-values-helper
 	    (lambda (expr env attributes vocab p-env vars)
 	      (map z:read-object vars))))
-	(add-micro-form
-	  'define-values
-	  local-parse-vocab-delta
+	(add-micro-form 'define-values local-parse-vocab-delta
 	  (define-values-helper
 	    (lambda (expr env attributes vocab p-env vars)
 	      (let* ((local-info (get-attribute attributes 'local-info))

@@ -73,7 +73,7 @@
                                    #,calltrace-key
                                    'unimportant
                                    (begin (let ([call-depth (length (continuation-mark-set->list (current-continuation-marks) #,calltrace-key))])
-                                            (#,print-call-trace #,name-guess #,(make-stx-protector stx) (list #,@arglist-proper) #,improper? call-depth))
+                                            (#,print-call-trace #,name-guess (#,stx-protector-stx #,(make-stx-protector stx)) (list #,@arglist-proper) #,improper? call-depth))
                                           #,@(recur-on-sequence (syntax->list #'bodies))))))]
                     [else
                      (error 'expr-syntax-object-iterator 

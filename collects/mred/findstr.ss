@@ -14,8 +14,8 @@
 	  (inherit set-size show center make-modal panel)
 	  (public
 	    [HEIGHT 100]
-	    [canvas% mred:canvas:editor-canvas%]
-	    [edit% mred:edit:edit%])
+	    [get-canvas% (lambda () mred:canvas:editor-canvas%)]
+	    [get-edit% (lambda () mred:edit:edit%)])
 	  (private
 	    [edit (if (null? in-edit)
 		      (send canvas get-media)
@@ -73,7 +73,8 @@
 	    
 	    [show-replace-panel
 	     (lambda (on?)
-	       (send panel change-children 
+	       (send panel
+		     change-children 
 		     (lambda (l) (if on? 
 				     (list find-panel replace-panel bottom-panel)
 				     (list find-panel bottom-panel)))))]
@@ -280,57 +281,80 @@
     (define make-searchable-frame%
       (lambda (super%)
 	(class super% args
-	  (inherit panel active-edit active-canvas)
+	  (inherit active-edit active-canvas edit)
+	  (rename [super-make-root-panel make-root-panel])
 	  (private
-	    [searching-direction 1]
-	    [search-edit
-	     (make-object
-	      (class-asi mred:edit:edit%
-		(rename [super-after-insert after-insert]
-			[super-after-delete after-delete]
-			[super-on-focus on-focus])
-		(public
-		  [on-focus
-		   (lambda (on?)
-		     (when on?
-		       (set! anchor (send (active-edit) get-end-position)))
-		     (super-on-focus on?))]
-		  [after-insert
-		   (lambda args
-		     (apply super-after-insert args)
-		     (search #f))]
-		  [after-delete
-		   (lambda args
-		     (apply super-after-delete args)
-		     (search #f))])))])
-	  (sequence
-	    (apply super-init args))
-	  (private
-	    [search-panel (make-object (class-asi mred:container:horizontal-panel%
-					 (rename [super-on-set-focus on-set-focus]) 
-					 (public
-					   [on-set-focus
-					    (lambda ()
-					      (or (send media-canvas set-focus)
-						  (super-on-set-focus)))]))
-				       panel)])
+	   [super-root 'unitiaialized-super-root]
+	   [search-panel%
+	    (class-asi mred:container:horizontal-panel%
+	      (rename [super-on-set-focus on-set-focus]) 
+	      (public
+	       [on-set-focus
+		(lambda ()
+		  (or (send media-canvas set-focus)
+		      (super-on-set-focus)))]))])
 	  (public
-	    [hide-search
-	     (lambda ()
-	       (send panel delete-child search-panel)
-	       (send (active-canvas) set-focus)
-	       (set! hidden? #t))])
+	   [make-root-panel
+	    (lambda (% parent)
+	      (let* ([super-panel% ((ivar mred:frame:empty-frame%
+					  this get-panel%))]
+		     [s-root (super-make-root-panel super-panel%
+						    parent)]
+		     [root (make-object % s-root)])
+		(set! super-root s-root)
+		root))])
 	  (private
-	    [media-canvas (make-object mred:canvas:editor-canvas% search-panel
-				       -1 -1 -1 -1 "" 
-				       (bitwise-ior wx:const-mcanvas-hide-h-scroll
-						    wx:const-mcanvas-hide-v-scroll))]
-	    [search-button (make-object mred:container:button% search-panel 
-					(lambda args (search)) "Search")]
-	    [close-button (make-object mred:container:button% search-panel 
-				       (lambda args (hide-search)) "Close")]
-	    [hidden? #f]
-	    [anchor 0])
+	   [searching-direction 1]
+	   [search-edit
+	    (make-object
+		(class-asi mred:edit:edit%
+		  (rename [super-after-insert after-insert]
+			  [super-after-delete after-delete]
+			  [super-on-focus on-focus])
+		  (public
+		   [on-focus
+		    (lambda (on?)
+		      (when on?
+			(let ([e (active-edit)])
+			  (when e
+			    (set! anchor (send e get-end-position)))))
+		      (super-on-focus on?))]
+		   [after-insert
+		    (lambda args
+		      (apply super-after-insert args)
+		      (search #f))]
+		   [after-delete
+		    (lambda args
+		      (apply super-after-delete args)
+		      (search #f))])))])
+	  (sequence
+	    (mred:debug:printf 'super-init "before searchable-frame%")
+	    (apply super-init args)
+	    (mred:debug:printf 'super-init "after searchable-frame%"))
+	  (private
+	   [search-panel (make-object search-panel% super-root)])
+	  (public
+	   [hide-search
+	    (lambda ()
+	      (send super-root delete-child search-panel)
+	      (unless (active-canvas)
+		(send super-root set-focus))
+	      (set! hidden? #t))])
+	  (private
+	   [canvas%
+	    (class-asi mred:canvas:editor-canvas%
+	      (public
+	       [make-initial-edit
+		(lambda () search-edit)]))]
+	   [media-canvas (make-object canvas% search-panel -1 -1 -1 -1 "" 
+				      (bitwise-ior wx:const-mcanvas-hide-h-scroll
+						   wx:const-mcanvas-hide-v-scroll))]
+	   [search-button (make-object mred:container:button% search-panel 
+				       (lambda args (search)) "Search")]
+	   [close-button (make-object mred:container:button% search-panel 
+				      (lambda args (hide-search)) "Close")]
+	   [hidden? #f]
+	   [anchor 0])
 	  (sequence
 	    (send search-panel stretchable-in-y #f)
 	    (send search-panel border 1)
@@ -339,45 +363,44 @@
 	    (send media-canvas user-min-height 40)
 	    (hide-search))
 	  (public
-	    [set-search-direction (lambda (x) (set! searching-direction x))]
-	    [search
-	     (opt-lambda ([reset-anchor? #t])
-	       (if hidden?
-		   (begin (set! hidden? #f)
-			  (send panel add-child search-panel)
-			  (send search-panel set-focus))
-		   (let* ([edit (active-edit)]
-			  [string (send search-edit get-text)]
-			  [found
-			   (lambda (first-pos)
-			     (let ([last-pos (+ first-pos (* searching-direction 
-						(string-length string)))])
-			       (send edit set-position
-				     (min first-pos last-pos)
-				     (max first-pos last-pos))))])
-		     (when reset-anchor?
-		       (set! anchor 
-			     (if (= 1 searching-direction)
-				 (send edit get-end-position)
-				 (send edit get-start-position))))
-		     (let ([first-pos (send edit find-string 
-					    string 
-					    searching-direction
-					    anchor)])
-		       (cond
-			 [(= -1 first-pos)
-			  (let ([pos (send edit find-string
+	   [set-search-direction (lambda (x) (set! searching-direction x))]
+	   [search
+	    (opt-lambda ([reset-anchor? #t])
+	      (if hidden?
+		  (begin (set! hidden? #f)
+			 (send super-root add-child search-panel)
+			 (send search-panel set-focus))
+		  (let* ([string (send search-edit get-text)]
+			 [found
+			  (lambda (first-pos)
+			    (let ([last-pos (+ first-pos (* searching-direction 
+							    (string-length string)))])
+			      (send edit set-position
+				    (min first-pos last-pos)
+				    (max first-pos last-pos))))])
+		    (when reset-anchor?
+		      (set! anchor 
+			    (if (= 1 searching-direction)
+				(send edit get-end-position)
+				(send edit get-start-position))))
+		    (let ([first-pos (send edit find-string 
 					   string 
 					   searching-direction
-					   (if (= 1 searching-direction)
-					       0
-					       (send edit last-position)))])
-			    (if (= -1 pos)
-				(begin (send edit set-position anchor)
-				       (wx:bell))
-				(found pos)))]
-			 [else
-			  (found first-pos)])))))]))))
+					   anchor)])
+		      (cond
+		       [(= -1 first-pos)
+			(let ([pos (send edit find-string
+					 string 
+					 searching-direction
+					 (if (= 1 searching-direction)
+					     0
+					     (send edit last-position)))])
+			  (if (= -1 pos)
+			      (begin (send edit set-position anchor)
+				     (wx:bell))
+			      (found pos)))]
+		       [else
+			(found first-pos)])))))]))))
 
     (define find-string
       (lambda (canvas in-edit x y flags)

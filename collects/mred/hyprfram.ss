@@ -103,19 +103,29 @@
       (lambda (super%)
 	(class super% ([file-name #f] [group #f] [keep-locked? #t]
 		       [tag "top"] [relative? #f])
-	  (inherit active-canvas edit active-edit panel
-		   make-menu menu-bar% show
-		   on-size)
+	  (inherit canvas edit panel make-menu menu-bar% show on-size)
 	  (rename [super-open-file open-file])
 	  (public
-	    [edit% mred:hyper-edit:hyper-edit%]
-	    [canvas% hyper-canvas%]
+	    [get-edit% (lambda () mred:hyper-edit:hyper-edit%)]
+	    [get-canvas% (lambda () hyper-canvas%)]
+	    [get-panel%  
+	     (lambda ()
+	       (class-asi mred:container:vertical-panel%
+			  (public
+			    [default-spacing-width 0]
+			    [default-border-width 2])))]
+	    [file-menu:between-print-and-close
+	     (lambda (file-menu)
+	       (send file-menu append-separator))]
+	    [make-edit
+	     (lambda ()
+	       (printf "hyper making an edit~n")
+	       (make-object (get-edit%) #t))]
 	    [button% mred:container:button%])
 	  (private
 	    [do-backward
 	     (lambda (button event)
-	       (let* ([canvas (active-canvas)]
-		      [backs (ivar canvas history-stack)]
+	       (let* ([backs (ivar canvas history-stack)]
 		      [fors (ivar canvas forward-stack)])
 		 (when (not (or (null? backs)(null? (cdr backs))))
 		   (send canvas set-the-tag (cdadr backs))
@@ -125,8 +135,7 @@
 		 (send canvas set-focus)))]
 	    [do-forward
 	     (lambda (button event)
-	       (let* ([canvas (active-canvas)]
-		      [backs (ivar canvas history-stack)]
+	       (let* ([backs (ivar canvas history-stack)]
 		      [fors (ivar canvas forward-stack)])
 		 (when (not (null? fors))
 		   (send* canvas
@@ -137,8 +146,7 @@
 		 (send canvas set-focus)))]
 	    [do-home
 	     (lambda (button event)
-	       (let* ([canvas (active-canvas)]
-		      [backs (ivar canvas history-stack)]
+	       (let* ([backs (ivar canvas history-stack)]
 		      [home (ivar canvas home)])
 		 (when home
 		   (send* canvas
@@ -150,8 +158,9 @@
 	  (public
 	    [open-file 
 	     (opt-lambda (filename [tag #f])
-	       (send (active-canvas) set-the-tag tag)
-	       '(printf "super-open-file: ~a~n" filename)
+	       (printf "tag: ~a~n" tag)
+	       (send canvas set-the-tag tag)
+	       (printf "super-open-file: ~a~n" filename)
 	       (super-open-file filename))])
 	  (sequence
 	    (super-init file-name #f (if group group hyper-frame-group)))
@@ -170,10 +179,10 @@
 	  (sequence
 	    (send button-panel stretchable-in-y #f)
 	    (send panel change-children reverse)
-	    (send (active-canvas) set-focus)
-	    (send (active-canvas) set-home tag)
-	    (send (active-canvas) set-history ())
-	    (send (active-canvas) adjust-stacks-on-follow tag)
+	    (send* canvas (set-focus)
+		          (set-home tag)
+		          (set-history ())
+			  (adjust-stacks-on-follow tag))
 	    (show #t)))))
     (define hyper-basic-frame% (make-hyper-basic-frame% mred:editor-frame:editor-frame%))
 
@@ -191,7 +200,7 @@
     (define make-hyper-make-frame%
       (lambda (super%)
 	(class super% ([file-name #f] [group #f])
-	  (inherit active-edit active-canvas get-menu-bar make-menu edit%)
+	  (inherit active-edit active-canvas get-menu-bar make-menu get-edit%)
 	  (rename [super-make-menu-bar make-menu-bar])
 	  (private
 	    follow-item 
@@ -201,24 +210,27 @@
 	    [link-click-mode 'follow]
 	    [set-link-click
 	     (lambda (mode)
-	       (unless (eq? mode link-click-mode)
-		 (set! link-click-mode mode)
-		 (let ([edit (active-edit)]
-		       [menu-bar (get-menu-bar)])
-		   (if (eq? mode 'nothing)
-		       (send edit uninstall-clickbacks)
-		       (send edit install-clickbacks))
-		   (send edit set-follow-on-click 
-			 (case mode
-			   (follow #t)
-			   (view #f)
-			   (nothing ())))
-		   (send menu-bar check follow-item (eq? mode 'follow))
-		   (send menu-bar check view-item (eq? mode 'view))
-		   (send menu-bar check nothing-item (eq? mode 'nothing)))))]
+	       (when (active-edit)
+		 (unless (eq? mode link-click-mode)
+		   (set! link-click-mode mode)
+		   (let ([edit (active-edit)]
+			 [menu-bar (get-menu-bar)])
+		     (if (eq? mode 'nothing)
+			 (send edit uninstall-clickbacks)
+			 (send edit install-clickbacks))
+		     (printf "mode: ~a~n" mode)
+		     (send edit set-follow-on-click 
+			   (case mode
+			     (follow #t)
+			     (view #f)
+			     (nothing ())))
+		     (send menu-bar check follow-item (eq? mode 'follow))
+		     (send menu-bar check view-item (eq? mode 'view))
+		     (send menu-bar check nothing-item (eq? mode 'nothing))))))]
 	    [make-edit
 	     (lambda ()
-	       (make-object edit% #f))]
+	       (printf "hyper.2 making an edit~n")
+	       (make-object (get-edit%) #f))]
 	    [make-menu-bar
 	     (lambda ()
 	       (let ([menu-bar (super-make-menu-bar)]
@@ -226,19 +238,22 @@
 		 (send hyper-menu append-item "New Link..."
 		       (lambda ()
 			 (let ([edit (active-edit)])
-			   (send edit make-link
-				 (send edit get-start-position)
-				 (send edit get-end-position)))))
+			   (when edit
+			     (send edit make-link
+				   (send edit get-start-position)
+				   (send edit get-end-position))))))
 		 (send hyper-menu append-item "Change Link..."
 		       (lambda ()
 			 (let ([edit (active-edit)])
-			   (send edit change-link 
-				 (send edit get-start-position)))))
+			   (when edit
+			     (send edit change-link 
+				   (send edit get-start-position))))))
 		 (send hyper-menu append-item "Remove Link"
 		       (lambda ()
 			 (let ([edit (active-edit)])
-			   (send edit remove-link 
-				 (send edit get-start-position)))))
+			   (when edit
+			     (send edit remove-link 
+				   (send edit get-start-position))))))
 		 
 		 (send hyper-menu append-separator)
 		 (set! follow-item
@@ -257,38 +272,43 @@
 		 (send hyper-menu append-item "Make Tag"
 		       (lambda ()
 			 (let ([edit (active-edit)])
-			   (send edit make-tag 
-				 (send edit get-start-position)))))
+			   (when edit
+			     (send edit make-tag 
+				   (send edit get-start-position))))))
 		 (send hyper-menu append-item "Remove Tag"
 		       (lambda ()
-			 (let* ([edit (active-edit)]
-				[tag-name (send (make-object 
-						 mred:hyper-dialog:hyper-tag-dialog% 
-						 (reverse
-						  (map mred:hyper-edit:hypertag-name 
-						       (ivar edit 
-							     hypertags-list))))
-						get-answer)])
-			   (if tag-name (send edit remove-tag  tag-name)))))
+			 (let ([edit (active-edit)])
+			   (when edit
+			     (let ([tag-name (send (make-object 
+						       mred:hyper-dialog:hyper-tag-dialog% 
+						     (reverse
+						      (map mred:hyper-edit:hypertag-name 
+							   (ivar edit 
+								 hypertags-list))))
+						   get-answer)])
+			       (when tag-name
+				 (send edit remove-tag tag-name)))))))
 		 (send hyper-menu append-item "Go to Tag"
 		       (lambda ()
-			 (let* ([edit (active-edit)]
-				[tag-name (send (make-object 
+			 (let ([edit (active-edit)])
+			   (when edit
+			     (let ([tag-name (send (make-object 
 						 mred:hyper-dialog:hyper-tag-dialog% 
 						 (reverse
 						  (map mred:hyper-edit:hypertag-name 
 						       (ivar edit 
 							     hypertags-list))))
 						get-answer)])
-			   (if tag-name (send edit show-tag tag-name)))))
+			   (if tag-name (send edit show-tag tag-name)))))))
 		 (send menu-bar append hyper-menu "Hyper-Text")
 		 (send menu-bar check follow-item #t)
 		 menu-bar))])
 	  (sequence
 	    (super-init file-name group #f)
 	    ; (wx:yield)
-	    (send (active-canvas) set-focus)
-	    (send (active-canvas) set-locking #f)))))
+	    (when (active-canvas)
+	      (send (active-canvas) set-focus)
+	      (send (active-canvas) set-locking #f))))))
     (define hyper-make-frame% 
       (make-hyper-make-frame% hyper-basic-frame%))
 

@@ -1,7 +1,3 @@
-;;; Define the standard editing window class
-
-;; mini-panels must inheirit from wx:panel% and must provide a
-;; desired-height method that returns the desired height in pixels.
 
 (define mred:editor-frame@
   (unit/sig mred:editor-frame^
@@ -28,28 +24,55 @@
     (define make-editor-frame%
       (lambda (super%)
 	(class super% ([filename #f][show? #t][frameset mred:group:frames])
-	  (inherit active-edit active-canvas make-menu make-edit
-		   show add-canvas remove-canvas canvases panel)
+	  (inherit make-menu show save-as
+		   make-edit active-edit edit
+		   canvas canvases)
 	  (rename [super-on-close on-close]
 		  [super-make-menu-bar make-menu-bar]
 		  [super-on-menu-command on-menu-command]
 		  [super-next-menu-id next-menu-id])
-	  (public
-	    [allow-split? #t])
 	  (private 
 	    [other-offset 0]
 	    
 	    [frames frameset]
 	    [keep-buffers? (is-a? frameset mred:group:frame-group%)]
-	    [buffers (if keep-buffers? (ivar frames buffers))]
-	    
-	    [save-as
-	     (opt-lambda ([format wx:const-media-ff-same])
-	       (let ([file (mred:finder:put-file)])
-		 (when file
-		   (send (active-edit) save-file file format))))])
+	    [buffers (if keep-buffers? (ivar frames buffers))])
 	  
 	  (public
+	    [file-menu:new (lambda () 
+			     (if (is-a? frameset mred:group:frame-group%)
+				 (send frames new-frame #f)
+				 (mred:handler:edit-file #f))
+			     #t)]
+
+
+	    [file-menu:between-open-and-save
+	     (lambda (file-menu)
+	       (when keep-buffers?
+		 (send file-menu append-item "Switch to..."
+		       (lambda ()
+			 (if canvas
+			     (send buffers pick canvas)
+			     (wx:bell)))))
+	       (send file-menu append-separator))]
+	    [file-menu:between-save-and-print
+	     (lambda (file-menu)
+	       (send file-menu append-item "Save As Text..."
+		     (lambda () (save-as wx:const-media-ff-text)))
+	       (send file-menu append-item "Save As Text and Styles..."
+		     (lambda () (save-as wx:const-media-ff-std)))
+	       (send file-menu append-item "Set Mode..."
+		     (lambda ()
+		       (let* ([modes (map mred:handler:handler-name 
+					  mred:handler:mode-handlers)]
+			      [name (wx:get-single-choice
+				     "Select a Mode" "Mode"
+				     modes)])
+			 (unless (null? name)
+			   (let* ([handler (mred:handler:find-named-mode-handler name)]
+				  [mode (handler (active-edit))])
+			     (send (active-edit) set-mode mode))))))
+	       (send file-menu append-separator))]
 	    [auto-save? #t]
 	    [on-frame-active
 	     (lambda ()
@@ -77,14 +100,26 @@
 	    [next-menu-id
 	     (lambda ()
 	       other-offset)]
+	    [pick-mode
+	     (lambda (edit)
+	       (let* ([filename (send edit get-filename)]
+		      [mode-handler (if (null? filename)
+					#f
+					(mred:handler:find-mode-handler
+					 filename))])
+		 (when mode-handler
+		   (let ([mode (mode-handler edit)])
+		     (send edit set-mode mode)))))]
+
 	    [open-file
-	     (opt-lambda (orig-filename [canvas (active-canvas)]
+	     (opt-lambda (orig-filename [canvas canvas]
 					[check-save? (not keep-buffers?)])
 	       ; filename = () => ask user
 	       ; filename = #f => no file, make untitled
 	       ; filename = <buffer> => use buffer
 	       ; otherwise, filename = name string
-	       '(printf "check-save?: ~a canvas: ~a~n" check-save? canvas)
+	       (printf "open-file; test: ~a~n" (or (not check-save?)
+						   (check-saved canvas)))
 	       (if (or (not check-save?)
 		       (check-saved canvas))
 		   (let* ([filename
@@ -115,10 +150,8 @@
 			      #f)
 			     (else
 			      (send buffers find-buffer-by-name 'file filename)))])
-		     '(printf "final-filename: ~a edit: ~a exists: ~a dir: ~a~n"
-			     filename edit (file-exists? filename)
-			     (current-directory))
 		     ; If we didn't find a buffer, create one
+		     (printf "open-file; edit:~a~n" edit)
 		     (if (not edit)
 			 (let ([edit (make-edit)])
 			   ; Load in the file, if it exists
@@ -130,14 +163,7 @@
 				 (send edit set-filename filename 
 				       untitled?)))
 			   ; Pick the editing mode
-			   (let* ([filename (send edit get-filename)]
-				  [mode-handler (if (null? filename)
-						    #f
-						    (mred:handler:find-mode-handler
-						     filename))])
-			     (if mode-handler
-				 (let ([mode (mode-handler edit)])
-				   (send edit set-mode mode))))
+			   (pick-mode edit)
 			   ; We created this buffer; add to the global list
 			   (if keep-buffers?
 			       (send buffers add-buffer 'file #f edit))
@@ -202,126 +228,32 @@
 			       (let ([m (send canvas get-media)])
 				 (unless (null? m)
 				   (send m do-autosave))))
-			     canvases)))]
+			     canvases)))])
 
-	    [file-menu:new (lambda () 
-			     (if (is-a? frameset mred:group:frame-group%)
-				 (send frames new-frame #f)
-				 (mred:handler:edit-file #f))
-			     #t)]
-	    [file-menu:revert 
-	     (lambda () 
-	       (let* ([e (active-edit)]
-		      [b (box #f)]
-		      [filename (send e get-filename b)])
-		 (if (or (null? filename) (unbox b))
-		     (wx:bell)
-		     (send e load-file filename))
-		 #t))]
-	    [file-menu:save (lambda () 
-			      (send (active-edit) save-file)
-			      #t)]
-	    [file-menu:save-as (lambda () (save-as) #t)]
-	    [file-menu:close (lambda () 
-			       (when (on-close) (show #f))
-			       #t)]
-	    [file-menu:between-open-and-save
-	     (lambda (file-menu)
-	       (if keep-buffers?
-		   (send file-menu append-item "Switch to..."
-			 (lambda () (send buffers pick (active-canvas)))))
-	       (send file-menu append-separator))]
-	    [file-menu:print (lambda () (send (active-edit) print '()) #t)]
-	    [file-menu:between-save-and-print
-	     (lambda (file-menu)
-	       (send file-menu append-item "Save As Text..."
-		     (lambda () (save-as wx:const-media-ff-text)))
-	       (send file-menu append-item "Save As Text and Styles..."
-		     (lambda () (save-as wx:const-media-ff-std)))
-	       (when allow-split?
-		 (send file-menu append-separator)
-		 (send file-menu append-item "Split"
-		       (lambda () 	       
-			 (let ([new-canvas (add-canvas)])
-			   (send new-canvas set-media (active-edit)))))
-		 (send file-menu append-item "Collapse"
-		       (lambda ()
-			 (when (> (length canvases) 1)
-			   (let ([canvas (active-canvas)])
-			     (if (and canvas
-				      (or keep-buffers?
-					  (check-nonunique-or-saved canvas)))
-				 (remove-canvas canvas)))))))
-	       (send file-menu append-item "Set Mode..."
-		     (lambda ()
-		       (let* ([modes (map mred:handler:handler-name 
-					  mred:handler:mode-handlers)]
-			      [name (wx:get-single-choice
-				     "Select a Mode" "Mode"
-				     modes)])
-			 (unless (null? name)
-			   (let* ([handler (mred:handler:find-named-mode-handler name)]
-				  [mode (handler (active-edit))])
-			     (send (active-edit) set-mode mode))))))
-	       (send file-menu append-separator))])
-
-	  (private
-	    [edit-menu:do (lambda (const) (lambda () (send (active-edit) do-edit const) #t))])
 
 	  (public
-	    [edit-menu:undo (edit-menu:do wx:const-edit-undo)]
-	    [edit-menu:redo (edit-menu:do wx:const-edit-redo)]
-	    [edit-menu:cut (edit-menu:do wx:const-edit-cut)]
-	    [edit-menu:clear (edit-menu:do wx:const-edit-clear)]
-	    [edit-menu:copy (edit-menu:do wx:const-edit-copy)]
-	    [edit-menu:paste (edit-menu:do wx:const-edit-paste)]
-	    [edit-menu:select-all (edit-menu:do wx:const-edit-select-all)]
-	    [edit-menu:replace (lambda ()
-				 (mred:find-string:find-string
-				  (active-canvas)
-				  (active-edit)
-				  -1 -1 (list 'replace 'ignore-case)))]
-
-	    [edit-menu:between-replace-and-preferences
-	     (lambda (edit-menu)
-	       (send edit-menu append-separator)
-	       (send edit-menu append-item "Insert Text Box"
-		     (edit-menu:do wx:const-edit-insert-text-box))
-	       (send edit-menu append-item "Insert Graphic Box"
-		     (edit-menu:do wx:const-edit-insert-graphic-box))
-	       (send edit-menu append-item "Insert Image..."
-		     (edit-menu:do wx:const-edit-insert-image))
-	       (send edit-menu append-item "Toggle Wrap Text"
-		     (lambda ()
-		       (let ([edit (active-edit)])
-			 (send edit set-auto-set-wrap (not (ivar edit auto-set-wrap?)))
-			 (send (active-canvas) force-redraw))))
-	       (send edit-menu append-separator))]
-
 	    [allow-font-menu? #t]
-	  [make-menu-bar
-	   (lambda ()
-	     (let ([mb (super-make-menu-bar)])
-	       (when allow-font-menu?
-		 (let ([font-menu (make-menu)])
-		   (send mb append font-menu "Fon&t")
-		   (set! font-offset (send (make-object wx:media-edit%)
-					   append-font-items 
-					   font-menu 0))))
-	       mb))])
+	    [make-menu-bar
+	     (lambda ()
+	       (let ([mb (super-make-menu-bar)])
+		 (when allow-font-menu?
+		   (let ([font-menu (make-menu)])
+		     (send mb append font-menu "Fon&t")
+		     (set! font-offset (send (make-object wx:media-edit%)
+					     append-font-items 
+					     font-menu 0))))
+		 mb))])
+
 	  (sequence
 	    (mred:debug:printf 'super-init "before mred:editor-frame%")
-	    (begin0
-	      (super-init)
-	      (mred:debug:printf 'super-init "after mred:editor-frame%")))
+	    (super-init)
+	    (mred:debug:printf 'super-init "after mred:editor-frame%"))
 	  
 	  (public
 	    [exit-callback-tag
 	     (if (not keep-buffers?)
 		 (mred:exit:insert-exit-callback check-all-saved-for-quit))])
 	  
-	  (public
-	    [edit (active-edit)])
 	  (sequence
 	    
 	    (if keep-buffers?
@@ -331,10 +263,13 @@
 	    (let ([filename (if (string? filename)
 				(mzlib:file:normalize-path filename)
 				filename)])
-	      (open-file filename))
-	    (when show? 
+	      (when filename
+		(send edit load-file filename)
+		(pick-mode edit)
+		(open-file edit)))
+	    (when show?
 	      (show #t)
-	      (send (active-canvas) set-focus))))))
+	      (send canvas set-focus))))))
 
     (define editor-frame% (make-editor-frame%
 			   (mred:find-string:make-searchable-frame%
@@ -344,7 +279,7 @@
       (lambda (super%)
 	(class-asi super%
 		   (public
-		    [edit% mred:edit:pasteboard%]))))
+		    [get-edit% (lambda () mred:edit:pasteboard%)]))))
 
     (define pasteboard-frame% (make-pasteboard-frame% editor-frame%))
 

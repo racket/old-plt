@@ -1,6 +1,11 @@
 (define-signature mred:html^
   (html-convert))
 
+(define-signature mred:panel^
+  (make-edit-panel%
+   horizontal-edit-panel%
+   vertical-edit-panel%))
+
 (define-signature mred:url^
   ([struct url (method path search fragment)]
    unixpath->path

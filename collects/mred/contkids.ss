@@ -327,6 +327,8 @@
 			     "mred:dialog-box% instances; received ~s")
 			    this))]
 		[(is-a? parent panel%)
+		 (when (eq? wx:window-system 'motif)
+		   (send parent set-item-cursor 0 0))
 		 (send parent add-child this)]
 		[else (error 'init
 			     "Expected a mred:frame%, mred:dialog-box%, ~s ~s"

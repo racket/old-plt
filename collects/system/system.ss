@@ -5,32 +5,37 @@
 (define mred:debug:turned-on (box (list 'load 'startup 'invoke 'html)))
 
 (define mred:debug@
-  (let* ([debug-env (getenv "MREDDEBUG")])
+  (let* ([debug-env (getenv "MREDDEBUG")]
+	 [turned-on mred:debug:turned-on])
     (unit (import)
       (export (dprintf printf) exit? on? turn-on turn-off)
 
-      (define on? (and debug-env (string->symbol debug-env)))
+      (define on? (and debug-env (read (open-input-string debug-env))))
 
-      (define turn-on (lambda (s) (set-box! 
-				   (global-defined-value 'mred:debug:turned-on)
-				   (cons s (unbox (global-defined-value 'mred:debug:turned-on))))))
-      (when on? 
-	(turn-on on?)
+      (define turn-on (lambda (s)
+			(set-box! turned-on (cons s (unbox turned-on)))))
+      (when on?
+	(if (list? on?)
+	    (for-each turn-on on?)
+	    (turn-on on?))
 	(print-struct #t))
 	
-      (define turn-off (lambda (s) 
-			 (set-box! (global-defined-value 'mred:debug:turned-on)
-			       (let loop ([l (unbox (global-defined-value 'mred:debug:turned-on))])
-				 (cond
-				   [(null? l) null]
-				   [else (if (eq? (car l) s)
-					     (loop (cdr l))
-					     (cons (car l)
-						   (loop (cdr l))))])))))
+      (printf "turned on: ~a~n" (unbox turned-on))
+
+      (define turn-off
+	(lambda (s) 
+	  (set-box! turned-on
+		    (let loop ([l (unbox turned-on)])
+		      (cond
+		       [(null? l) null]
+		       [else (if (eq? (car l) s)
+				 (loop (cdr l))
+				 (cons (car l)
+				       (loop (cdr l))))])))))
 
       (define dprintf (if on? 
 			  (lambda (tag . args)
-			    (when (member tag (unbox (global-defined-value 'mred:debug:turned-on)))
+			    (when (member tag (unbox turned-on))
 			      (apply printf args)
 			      (newline)))
 			  (lambda args (void))))
@@ -185,7 +190,7 @@
 		"edit" "exit" "exn" "fileutil" "finder" "findstr" "frame"
 		"group" "guiutils" "handler"
 		"html" "hypredit" "hyprfram" "hyprdial"
-		"icon" "keys" "mcache" "menu" "mode"
+		"icon" "keys" "mcache" "menu" "mode" "panel"
 		"paren" "prefs" "project" "sparen" "ssmode" "url"
 
 		;; linking code

@@ -11,15 +11,15 @@
       (lambda (super%)
 	(class super% (parent [x -1] [y -1] [w -1] [h -1] 
 			      [name ""] [style 0] [spp 100] [m ()])
+	  (sequence (mred:debug:printf 'creation "creating a canvas"))
 	  (public
-	    [edit% mred:edit:edit%]
+	    [get-edit% (lambda () mred:edit:edit%)]
 	    [style-flags 0])
 	  (private
 	    [name-message #f]
 	    [save-button #f])
 	  (inherit get-media)
 	  (public
-	    [get-edit% (lambda () edit%)]
 	    [get-style-flags (lambda () style-flags)]
 	    [make-edit (lambda () (make-object (get-edit%)))]
 	    [make-initial-edit make-edit]
@@ -46,9 +46,11 @@
     (define make-simple-frame-canvas%
       (lambda (super%)
 	(class super% args
-	  (inherit get-media edit-modified edit-renamed get-parent)
+	  (inherit get-media edit-modified get-parent)
 	  (rename
 	    [super-on-size on-size]
+	    [super-set-size set-size]
+	    [super-edit-renamed edit-renamed]
 	    [super-force-redraw force-redraw]
 	    [super-set-media set-media]
 	    [super-on-set-focus on-set-focus])
@@ -71,17 +73,19 @@
 	    [frame #f]
 	    [set-frame (lambda (f) (set! frame f))]
 	    [make-initial-edit (lambda () '())]
+	    [edit-renamed
+	     (lambda (name)
+	       (set-frame-title)
+	       (super-edit-renamed name))]
 	    [on-set-focus
 	     (lambda ()
-	       (if frame
-		   (send frame set-last-focus-canvas this))
 	       (let ([m (get-media)])
 		 (unless (null? m)
 		   (send m set-active-canvas this)))
 	       (set-frame-title)
 	       (super-on-set-focus)
-	       (if frame
-		   (send frame on-frame-active)))])
+	       (when frame
+		 (send frame on-frame-active)))])
 	  (private
 	    [must-resize-edit #f])
 	  (public
@@ -102,16 +106,14 @@
 			       (ivar t shown)
 			       (loop (send t get-parent)))))
 		 (let ([edit (get-media)])
-		   (if (and (not (null? edit))
-			    (ivar edit auto-set-wrap?))
-		       (let ([admin (send edit get-admin)]
-			     [w-box (box 0)]
-			     [h-box (box 0)])
-			 (unless (null? admin)
-			   (set! must-resize-edit #f)
-			   (send admin get-view () () w-box h-box #f)
-			   (send edit set-max-width (unbox w-box))))))))]
+		   (unless (null? edit)
+		     (send edit rewrap)
+		     (set! must-resize-edit #f)))))]
 	       
+	    [set-size
+	     (lambda x
+	       '(printf "set-size: ~a~n" x)
+	       (apply super-set-size x))]
 	    [set-media
 	     (opt-lambda (m [redraw? #t])
 	       (let ([old-m (get-media)])

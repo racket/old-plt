@@ -56,12 +56,21 @@
 	    [super-on-size on-size]
 	    [super-set-size set-size])
 	  
-	  (private
+	  (public
 	    
 	    ; track whether or not we should update the position of
 	    ; our children.
 	    [perform-updates #f]
+	    [set-perform-updates (lambda (x)
+				   (set! perform-updates x)
+				   (when pending-redraws
+				     (mred:debug:printf
+				      'container-frame-show
+				      "Container-frame-show: forcing redraw")
+				     (force-redraw)
+				     (set! pending-redraws #f)))])
 	    
+	  (private
 	    ; have we had any redraw requests while the window has been
 	    ; hidden?
 	    [pending-redraws #f]
@@ -171,15 +180,8 @@
 		"container-frame-show: entering; arg ~s" now)
 	       (if now
 		   (unless perform-updates
-		     (set! perform-updates #t)
-		     (if pending-redraws
-			 (begin
-			   (mred:debug:printf
-			    'container-frame-show
-			    "Container-frame-show: forcing redraw")
-			   (force-redraw))
-			 (set! pending-redraws #f)))
-		   (set! perform-updates #f))
+		     (set-perform-updates #t))
+		   (set-perform-updates #f))
 	       (mred:debug:printf
 		'container-frame-show
 		"Container-frame-show: passing arg to super-show")

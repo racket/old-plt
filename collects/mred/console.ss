@@ -619,7 +619,7 @@
 	    edit-offset 
 	    other-offset)
 	  (public
-	    [edit% console-edit%])
+	    [get-edit% (lambda () console-edit%)])
 	  (public 
 	    [make-menu-bar
 	     (let ([reg (regexp "<TITLE>(.*)</TITLE>")])
@@ -681,7 +681,7 @@
 	       [close-item?
 		(lambda ()
 		  (when (on-close)
-		    (send (active-edit) release-output)
+		    (send edit release-output)
 		    (show #f)))]
 	       [mred:debug:on?
 		(lambda ()
@@ -696,46 +696,10 @@
 		       (let ((file (mred:finder:get-file)))
 			 (if file
 			     (load-file file)))))
-	       (send file-menu append-separator))]
-	    [file-menu:save (lambda ()
-			      (send (active-edit) save-file
-				    (send (active-edit) get-filename))
-			      #t)]
-	    [file-menu:save-as (lambda () (send (active-edit) save-file "") #t)]
-	    [file-menu:print (lambda () (send (active-edit) print '()) #t)])
+	       (send file-menu append-separator))])
 
-	  (private
-	    [edit-menu:do  (lambda (const) 
-			     (lambda () 
-			       (send (active-edit) do-edit const)
-			       #t))])
-	  (public
-	    [edit-menu:undo (edit-menu:do wx:const-edit-undo)]
-	    [edit-menu:redo (edit-menu:do wx:const-edit-redo)]
-	    [edit-menu:cut (edit-menu:do wx:const-edit-cut)]
-	    [edit-menu:copy (edit-menu:do wx:const-edit-copy)]
-	    [edit-menu:paste (edit-menu:do wx:const-edit-paste)]
-	    [edit-menu:clear (edit-menu:do wx:const-edit-clear)]
-	    [edit-menu:select-all (edit-menu:do wx:const-edit-select-all)]
 
-	    [edit-menu:replace (lambda ()
-				 (mred:find-string:find-string
-				  canvas edit -1 -1
-				  (list 'replace 'ignore-case))
-				 #t)]
-	    [edit-menu:between-replace-and-preferences
-	     (let ()
-	       (lambda (edit-menu)
-		 (send edit-menu append-separator)
-		 (send edit-menu append-item "Insert Text Box"
-		       (edit-menu:do wx:const-edit-insert-text-box))
-		 (send edit-menu append-item "Insert Graphic Box"
-		       (edit-menu:do wx:const-edit-insert-graphic-box))
-		 (send edit-menu append-item "Insert Image..."
-		       (edit-menu:do wx:const-edit-insert-image))
-		 (send edit-menu append-separator)))]
-
-	    [frame-title "MrEdConsole"])
+	  (public [frame-title "MrEdConsole"])
 	  
 	  (sequence
 	    (mred:debug:printf 'super-init "before console-frame%")

@@ -31,6 +31,7 @@
     ; panel can contain other panels.
     (define panel%
       (class (make-item% wx:panel% #t #t list) args
+	(sequence (mred:debug:printf 'creation "creating a panel"))
 	(inherit
 	  object-ID
 	  get-x
@@ -59,6 +60,11 @@
 	
 	(public
 	  
+
+	 [set-focus
+	  (lambda ()
+	    (unless (null? children)
+	      (send (car children) set-focus)))]
 	  [on-default-action
 	   (lambda (item)
 	     (send item on-default-action))]
@@ -100,9 +106,7 @@
 			new-child this))
 	       (change-children
 		(lambda (l)
-		  (append l (list new-child))))
-	       (when (eq? wx:window-system 'motif)
-		 (send this set-item-cursor 0 0))))]
+		  (append l (list new-child))))))]
 	  
 	  ; change-children: changes the list of children.
 	  ; input: f is a function which takes the current list of children

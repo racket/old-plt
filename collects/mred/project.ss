@@ -24,7 +24,8 @@
       (lambda (super%)
 	(class super% ([filename #f] [visible? #t])
 	  (inherit file-menu file-menu:open-id show
-		   get-client-size set-title make-menu panel)
+		   get-client-size set-title make-menu
+		   panel)
 	  (rename [super-get-panel% get-panel%]
 		  [super-on-size on-size]
 		  [super-on-close on-close])
@@ -297,7 +298,8 @@
 			   [deselect (lambda (n)
 				       (super-deselect n))]))]
 	    [project-item-list (make-object list-box%
-					    panel do-project-item-list-event
+					    panel
+					    do-project-item-list-event
 					    () wx:const-multiple)])
 	  
 	  (sequence

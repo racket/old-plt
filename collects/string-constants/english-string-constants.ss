@@ -69,7 +69,7 @@
  (collect-button-label "GC")
  (read-only "Read only")
  (read/write "Read/Write")
- (auto-extend-selection "Auto-extend Selection")
+ (auto-extend-selection "Auto-extend")
  (overwrite "Overwrite")
  (running "running")
  (not-running "not running")

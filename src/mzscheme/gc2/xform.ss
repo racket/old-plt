@@ -162,7 +162,7 @@
 (define END_XFORM_SKIP (string->symbol "END_XFORM_SKIP"))
 (define Scheme_Object (string->symbol "Scheme_Object"))
 (define sElF (string->symbol "sElF"))
-(define NULL_ (string->symbol "NULL"))
+(define NULL_ (string->symbol "0"))
 (define gcMark (string->symbol "gcMark"))
 (define gcMARK_TYPED (string->symbol "gcMARK_TYPED"))
 (define Mark_Proc (string->symbol "Mark_Proc"))
@@ -1051,13 +1051,18 @@
 		[(make-init-setups) (lambda ()
 				      (if init-mapping
 					  (let loop ([setups
-						      (map (lambda (arg init)
-							     (list
-							      (make-tok (car init) #f #f)
-							      (make-parens
-							       "(" #f #f ")"
-							       (seq (make-tok (car arg) #f #f)))))
-							   arg-vars init-mapping)])
+						      (quicksort
+						       (map (lambda (arg init)
+							      (list
+							       (make-tok (car init) #f #f)
+							       (make-parens
+								"(" #f #f ")"
+								(seq (make-tok (car arg) #f #f)))))
+							    arg-vars init-mapping)
+						       ;; Sort based on init var name (to match decl order):
+						       (lambda (a b)
+							 (string<? (symbol->string (tok-n (car a)))
+								   (symbol->string (tok-n (car b))))))])
 					    (cond
 					     [(null? setups) null]
 					     [(null? (cdr setups))
@@ -1205,7 +1210,7 @@
 	    (cons v (loop (cdr e) #f paren-arrows?))]
 	   [(eq? (tok-n v) 'delete)
 	    ;; Make `delete' expression look like a function call
-	    (let ([arr? (seq? (cadr e))])
+	    (let ([arr? (brackets? (cadr e))])
 	      (loop (list*
 		     (make-tok (if arr? DELETE_ARRAY DELETE)
 			       (tok-line v) (tok-file v))
@@ -1291,7 +1296,8 @@
 		 (>= (length e) 3)
 		 (eq? '-> (tok-n (cadr e)))
 		 (or (null? (cdddr e))
-		     (not (parens? (cadddr e)))))
+		     (not (or (parens? (cadddr e))
+			      (eq? ':: (tok-n (cadddr e)))))))
 	    (loop (cons (make-parens
 			 "(" #f #f ")"
 			 (seq (car e) (cadr e) (caddr e)))

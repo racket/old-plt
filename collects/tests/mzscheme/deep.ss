@@ -62,7 +62,8 @@
     (let* ([depth depth]
 	   [closing? #f]
 	   [count depth])
-      (make-custom-input-port
+      (make-input-port
+       'name
        (lambda (s)
 	 (bytes-set!
 	  s

@@ -969,6 +969,7 @@ typedef struct User_Input_Port {
   Scheme_Object *peek_proc;
   Scheme_Object *close_proc;
   Scheme_Object *reuse_str;
+  Scheme_Object *peeked;
 } User_Input_Port;
 
 #define MAX_USER_INPUT_REUSE_SIZE 1024
@@ -1099,6 +1100,21 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
   User_Input_Port *uip = (User_Input_Port *)port->port_data;
   long r;
   Scheme_Cont_Frame_Data cframe;
+
+  val = uip->peeked;
+  if (val) {
+    /* Leftover from a read-based peek used to implement `char-ready?'
+       This can't happen is peek is 1, because in that case we have a
+       peek_proc, so there's no need for read-based peeks. */
+    uip->peeked = NULL;
+    if (SCHEME_CHARP(val)) {
+      buffer[offset] = SCHEME_CHAR_VAL(val);
+      return 1;
+    } else if (SCHEME_VOIDP(val)) {
+      return SCHEME_SPECIAL;
+    } else
+      return EOF;
+  }
 
   if (peek)
     fun = uip->peek_proc;
@@ -1317,19 +1333,34 @@ user_peek_bytes(Scheme_Input_Port *port,
 static int
 user_byte_ready_sinfo(Scheme_Input_Port *port, Scheme_Schedule_Info *sinfo)
 {
-  int c;
+  int c, can_peek;
   char s[1];
+  User_Input_Port *uip = (User_Input_Port *)port->port_data;
 
   /* We implement char-ready? by a non-blocking peek for a single
-     character. */
+     character. If the port provides a precise waitable, it
+     effectively determines the result, because the peek function
+     checks the waitable. */
+
+  can_peek = (uip->peek_proc ? 1 : 0);
 
   c = user_get_or_peek_bytes(port, s, 0, 1, 
-			     1, 1, scheme_make_integer(0),
+			     1, can_peek, scheme_make_integer(0),
 			     sinfo);
 
-  if (c)
+  if (c == EOF) {
+    if (!can_peek)
+      uip->peeked = scheme_true;
     return 1;
-  else
+  } else if (c) {
+    if (!can_peek) {
+      if (c == SCHEME_SPECIAL)
+	uip->peeked = scheme_void;
+      else
+	uip->peeked = scheme_make_character(s[0]);
+    }
+    return 1;
+  } else
     return 0;
 }
 
@@ -1341,7 +1372,12 @@ user_byte_ready(Scheme_Input_Port *port)
 
 int scheme_user_port_byte_probably_ready(Scheme_Input_Port *ip, Scheme_Schedule_Info *sinfo)
 {
-  if (sinfo->false_positive_ok) {
+  User_Input_Port *uip = (User_Input_Port *)ip->port_data;
+
+  if (uip->peeked)
+    return 1;
+
+   if (sinfo->false_positive_ok) {
     /* Causes the thread to swap in: */
     sinfo->potentially_false_positive = 1;
     return 1;

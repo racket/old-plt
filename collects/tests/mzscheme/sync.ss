@@ -535,7 +535,8 @@
 
 (define (test-stuck-port ready-waitable make-waitable-unready make-waitable-ready)
   (let* ([go? #f]
-	 [bad-stuck-port (make-custom-input-port
+	 [bad-stuck-port (make-input-port
+			  'name
 			  (lambda (str)
 			    (if go?
 				(begin
@@ -787,7 +788,7 @@
 (let ([s #f]
       [p #f]
       [/dev/null-for-err
-       (make-custom-output-port #f (lambda (s start end ?) (- end start)) void void)]
+       (make-output-port #f always-evt (lambda (s start end ? ??) (- end start)) void void)]
       [did-pre1 #f]
       [did-pre2 #f]
       [did-act1 #f]

@@ -2605,6 +2605,7 @@ int mark_user_input_MARK(void *p) {
   gcMARK(uip->peek_proc);
   gcMARK(uip->close_proc);
   gcMARK(uip->reuse_str);
+  gcMARK(uip->peeked);
   return
   gcBYTES_TO_WORDS(sizeof(User_Input_Port));
 }
@@ -2618,6 +2619,7 @@ int mark_user_input_FIXUP(void *p) {
   gcFIXUP(uip->peek_proc);
   gcFIXUP(uip->close_proc);
   gcFIXUP(uip->reuse_str);
+  gcFIXUP(uip->peeked);
   return
   gcBYTES_TO_WORDS(sizeof(User_Input_Port));
 }

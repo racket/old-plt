@@ -316,6 +316,8 @@ static void exit_or_escape(Scheme_Thread *p);
 static int resume_suspend_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
 static int dead_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
 
+static int can_break_param(Scheme_Thread *p);
+
 static Scheme_Object *current_stats(int argc, Scheme_Object *args[]);
 
 static Scheme_Object **config_map;
@@ -2108,7 +2110,7 @@ void scheme_swap_thread(Scheme_Thread *new_thread)
     /* We're leaving... */
     if (scheme_current_thread->init_break_cell) {
       int cb;
-      cb = scheme_can_break(scheme_current_thread);
+      cb = can_break_param(scheme_current_thread);
       scheme_current_thread->can_break_at_swap = cb;
     }
     if (scheme_current_thread->cc_ok) {
@@ -3112,22 +3114,26 @@ Scheme_Object *scheme_current_break_cell()
   return scheme_extract_one_cc_mark(NULL, scheme_break_enabled_key);
 }
 
+static int can_break_param(Scheme_Thread *p)
+{
+  if (p == scheme_current_thread) {
+    Scheme_Object *v;
+    
+    v = scheme_extract_one_cc_mark(NULL, scheme_break_enabled_key);
+    
+    v = scheme_thread_cell_get(v, p->cell_values);
+    
+    return SCHEME_TRUEP(v);
+  } else
+    return p->can_break_at_swap;
+}
+
 int scheme_can_break(Scheme_Thread *p)
 {
   if (!p->suspend_break) {
-    if (p == scheme_current_thread) {
-      Scheme_Object *v;
-      
-      v = scheme_extract_one_cc_mark(NULL, scheme_break_enabled_key);
-      
-      v = scheme_thread_cell_get(v, p->cell_values);
-      
-      return SCHEME_TRUEP(v);
-    } else
-      return p->can_break_at_swap;
-  }
-
-  return 0;
+    return can_break_param(p);
+  } else
+    return 0;
 }
 
 void scheme_set_can_break(int on)
@@ -4983,7 +4989,7 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
 
   /* Special case: no timeout, only object is a semaphore */
   if (argc == (with_timeout + 1) && !start_time && SCHEME_SEMAP(argv[with_timeout])) {
-    scheme_wait_sema(argv[with_timeout], 0);
+    scheme_wait_sema(argv[with_timeout], with_break ? -1 : 0);
     return argv[with_timeout];
   }
 

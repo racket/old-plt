@@ -61,8 +61,8 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
 @ "append" : void Append(string, string//ubAnythingToString/cAnything); <> with data
 @ "clear" : void Clear();
 @ "delete" : void Delete(int); : : /RANGE[0]
-@ "deselect" : void Deselect(int); : : /RANGE[0]
-@ "set-selection" : void SetSelection(int,bool=TRUE); : : /RANGE[0]
+@ "select" : void SetSelection(int,bool=TRUE); : : /RANGE[0]
+@ "set-selection" : void SetOneSelection(int); : : /RANGE[0]
 @ "selected?" : bool Selected(int); : : /RANGERET[0.scheme_false]
 @ "get-string-selection" : nstring GetStringSelection();
 @ "get-data" : nstring/bAnythingFromString GetClientData(int); : : /RANGERET[0.XC_SCHEME_NULL]

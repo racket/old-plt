@@ -763,6 +763,24 @@ static Scheme_Object *os_wxListBoxSelected(Scheme_Object *obj, int n,  Scheme_Ob
 }
 
 #pragma argsused
+static Scheme_Object *os_wxListBoxSetOneSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  int x0;
+
+  
+  x0 = objscheme_unbundle_integer(p[0], "set-selection in list-box%");
+
+  if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
+  ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->SetOneSelection(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxListBoxSetSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -771,32 +789,14 @@ static Scheme_Object *os_wxListBoxSetSelection(Scheme_Object *obj, int n,  Schem
   Bool x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "set-selection in list-box%");
+  x0 = objscheme_unbundle_integer(p[0], "select in list-box%");
   if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "set-selection in list-box%");
+    x1 = objscheme_unbundle_bool(p[1], "select in list-box%");
   } else
     x1 = TRUE;
 
   if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
   ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->SetSelection(x0, x1);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxListBoxDeselect(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  int x0;
-
-  
-  x0 = objscheme_unbundle_integer(p[0], "deselect in list-box%");
-
-  if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
-  ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->Deselect(x0);
 
   
   
@@ -1093,8 +1093,8 @@ if (os_wxListBox_class) {
  scheme_add_method_w_arity(os_wxListBox_class, "get-data", os_wxListBoxGetClientData, 1, 1);
  scheme_add_method_w_arity(os_wxListBox_class, "get-string-selection", os_wxListBoxGetStringSelection, 0, 0);
  scheme_add_method_w_arity(os_wxListBox_class, "selected?", os_wxListBoxSelected, 1, 1);
- scheme_add_method_w_arity(os_wxListBox_class, "set-selection", os_wxListBoxSetSelection, 1, 2);
- scheme_add_method_w_arity(os_wxListBox_class, "deselect", os_wxListBoxDeselect, 1, 1);
+ scheme_add_method_w_arity(os_wxListBox_class, "set-selection", os_wxListBoxSetOneSelection, 1, 1);
+ scheme_add_method_w_arity(os_wxListBox_class, "select", os_wxListBoxSetSelection, 1, 2);
  scheme_add_method_w_arity(os_wxListBox_class, "delete", os_wxListBoxDelete, 1, 1);
  scheme_add_method_w_arity(os_wxListBox_class, "clear", os_wxListBoxClear, 0, 0);
  scheme_add_method_w_arity(os_wxListBox_class, "append", os_wxListBoxAppend, 1, 2);

@@ -1013,7 +1013,7 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 	needXCopy = TRUE;
 #endif	
       delayRefresh++;
-      Delete(start, end);
+      Delete(start, end, scrollOk);
       deleted = TRUE;
       --delayRefresh;
 #if ALLOW_X_STYLE_SELECTION

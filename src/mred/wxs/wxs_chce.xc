@@ -10,6 +10,7 @@
 @BEGINSYMBOLS choiceStyle
 @ENDSYMBOLS
 
+
 @CLASSBASE wxChoice "choice":"item"
 
 @SET CALLBACK_CLASS = wxChoice

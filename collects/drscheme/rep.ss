@@ -836,12 +836,12 @@
         [define report-unlocated-error ; =Kernel=
           (lambda (message exn)
             (send context ensure-rep-shown)
-            (let ([locked? (send interactions-text locked?)])
+            (let ([old-locked? locked?])
               (begin-edit-sequence)
               (lock #f)
               (this-err-write/exn (string-append message (string #\newline))
                                   exn)
-              (lock locked?)
+              (lock old-locked?)
               (end-edit-sequence)))]
         
         [define get-error-range
@@ -1531,6 +1531,11 @@
 
 	 (public set-resetting
 		 resetting?
+
+		 copy-prev-previous-expr
+		 copy-next-previous-expr
+		 copy-previous-expr
+		 clear-previous-expr-positions
 
 		 balance-required
 

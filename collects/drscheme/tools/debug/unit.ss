@@ -41,20 +41,30 @@
   (fw:preferences:set-default 'drscheme:test-suite:file-name "repl-tests.ss" string?)
   (fw:preferences:set-default 'drscheme:test-suite:run-interval 10 number?)
 
+  (fw:preferences:set-default 'drscheme:test-suite:frame-width #f (lambda (x) (or (not x) (number? x))))
+  (fw:preferences:set-default 'drscheme:test-suite:frame-height 300 (lambda (x) (or (not x) (number? x))))
+
   (define current-test-suite-frame #f)
 
   (define (ask-test-suite)
     (if current-test-suite-frame
 	(send current-test-suite-frame show #t)
-	(let* ([frame% (class mred:frame% (name)
+	(let* ([frame% (class mred:frame% ()
 			 (override
+			  [on-size
+			   (lambda (w h)
+			     (fw:preferences:set 'drscheme:test-suite:frame-width w)
+			     (fw:preferences:set 'drscheme:test-suite:frame-height h))]
 			  [on-close
 			   (lambda ()
 			     (set! current-test-suite-frame #f))])
 			 (sequence
-			   (super-init name)))]
+			   (super-init "Test Suites"
+				       #f
+				       (fw:preferences:get 'drscheme:test-suite:frame-width)
+				       (fw:preferences:get 'drscheme:test-suite:frame-height))))]
 	       [drscheme-test-dir (collection-path "tests" "drscheme")]
-	       [frame (make-object frame% "Test Suites")]
+	       [frame (make-object frame%)]
 	       [panel (make-object mred:vertical-panel% frame)]
 	       [top-panel (make-object mred:vertical-panel% panel)]
 	       [bottom-panel (make-object mred:horizontal-panel% panel)])

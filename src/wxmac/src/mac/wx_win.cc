@@ -1305,14 +1305,17 @@ float wxWindow::GetCharWidth(void)
 void wxWindow::GetTextExtent(const char* string, float* x, float* y, float* descent,
 			     float* externalLeading, wxFont* the_font, Bool use16)
 {
-  if (the_font)
-    {
-      the_font->GetTextExtent((char *)string, x, y, descent, externalLeading, use16);
-    }
-  else if (font)
-    {
-      font->GetTextExtent((char *)string, x, y, descent, externalLeading, use16);
-    }
+  // adding a check to prevent a crash (JBC, 2002-06-25)
+  if (string) {
+    if (the_font)
+      {
+	the_font->GetTextExtent((char *)string, x, y, descent, externalLeading, use16);
+      }
+    else if (font)
+      {
+	font->GetTextExtent((char *)string, x, y, descent, externalLeading, use16);
+      }
+  }
   else
     {
       *x = -1;

@@ -1774,8 +1774,6 @@ static Scheme_Object *handle_call_ec(void *ec)
     return NULL;
 }
 
-static int ec_marker;
-
 Scheme_Object *
 scheme_call_ec (int argc, Scheme_Object *argv[])
 {
@@ -1788,7 +1786,7 @@ scheme_call_ec (int argc, Scheme_Object *argv[])
   cont = MALLOC_ONE_TAGGED(Scheme_Escaping_Cont);
   cont->type = scheme_escaping_cont_type;
   cont->home = p;
-  cont->ok = /* p->ec_ok */ (long *)(ec_marker++);
+  cont->ok = p->ec_ok;
   cont->f = argv[0];
   cont->suspend_break = p->suspend_break;
   copy_cjs(&cont->cjs, &p->cjs);

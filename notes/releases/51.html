@@ -13,7 +13,7 @@ PLT Release Notes</h2>
 <p>
 
 <b>Current Release</b>:<tt> </tt> 51 <br>
-<b>Release Date</b>:<tt> </tt> March 17, 1998.
+<b>Release Date</b>:<tt> </tt> March 25, 1998.
 
 <p>
 The following is a summary of the major changes in this release of the
@@ -23,17 +23,62 @@ PLT software from the previous one.
 
 <ul>
 <li>
-DrScheme Jr is a new text-only version of DrScheme. It requires less
+<b>DrScheme Jr</b> is a new text-only version of DrScheme. It requires less
 resources, but provides only a read-eval-print loop. DrScheme Jr does
 not provide a built-in program editor or a graphical toolbox.
 
 <LI>
-<b><tt>mzc</tt></b> is a new compiler that transforms MzScheme
-programs to native code libraries. <b><tt>mzc</tt></b> is not yet an
+<b>mzc</b> is a new compiler that transforms MzScheme
+programs to native code libraries. <b>mzc</b> is not yet an
 optimizing compiler; the performance of its output is comparable
 running the Scheme source directly in MzScheme.
 
 </ul>
+
+<h2> MrSpidey </h2>
+
+MrSpidey is now distributed as a separate tool.  When
+installed, it may be invoked from DrScheme.
+
+<h2> Networking facilities </h2>
+
+The networking-related routines have now been incorporated into the
+distribution.  They are in the collection `net', and consist of
+the packages
+<ul>
+<li>
+<b>cgi</b> provides routines for writing CGI scripts 
+</li>
+
+<li>
+<b>nntp</b> communicates with a Usenet server</li>
+
+<li>
+<b>pop3</b> communicates with a POP-3 server
+</li>
+
+<li>
+<b>url</b> parses and establishes HTTP connections
+</li>
+
+<li><b>mail</b> 
+sends email (preliminary, currently only works under Unix)
+</li>
+</ul>
+
+Documentation is in a subdirectory `docs', of the net collection
+directory.  That subdirectory contains files named &LT;package&GT;.txt, 
+where &LT;package&GT; ranges over the above names.
+
+<h2> Miscellany </h2>
+
+Console I/O has been sped up, and is interruptible by using
+the Break button.
+
+<p>
+
+See the HISTORY files in notes/drscheme, notes/mzscheme, and
+notes/mred for descriptions of other bug fixes and minor changes.
 
 <h2> The Future </h2>
 

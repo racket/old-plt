@@ -1236,6 +1236,30 @@
   (test '(13 . 14) rv r13.14)
   (test '(13 . 14) rv2 r13.14)
 
+  (test 12 'dw/ec (test-call/cc
+		   (lambda (k0)
+		     (test-call/cc
+		      (lambda (k1)
+			(test-call/cc
+			 (lambda (k2)
+			   (dynamic-wind
+			    void
+			    (lambda () (k1 6))
+			    (lambda () (k2 12))))))))))
+
+  ;; !!! fixed in 53 (for call/ec)
+  (test 13 'dw/ec (test-call/cc
+		   (lambda (k0)
+		     (test-call/cc
+		      (lambda (k1)
+			(test-call/cc
+			 (lambda (k2)
+			   (dynamic-wind
+			    void
+			    (lambda () (k1 6))
+			    (lambda () (k2 12)))))
+			(k0 13))))))
+
   ))
 	      
 
@@ -1253,6 +1277,55 @@
 		[(1) (k)]))))
 	(f 0)
 	(f 1)))
+
+(test '(1 2 3 4 1 2 3 4) 'dyn-wind-pre/post-order
+      (let ([x null]
+	    [go-back #f])
+	(dynamic-wind
+	 (lambda () (set! x (cons 4 x)))
+	 (lambda () (dynamic-wind
+		     (lambda () (set! x (cons 3 x)))
+		     (lambda () (set! go-back (let/cc k k)))
+		     (lambda () (set! x (cons 2 x)))))
+	 (lambda () (set! x (cons 1 x))))
+	(if (procedure? go-back)
+	    (go-back 1)
+	    x)))
+
+(test '(5 . 5) 'suspended-cont-escape
+      (let ([retry #f])
+	(let ([v (let/ec exit
+		   (dynamic-wind
+		    void
+		    (lambda () (exit 5))
+		    (lambda ()
+		      (let/ec inner-escape
+			(set! retry (let/cc k k))
+			(inner-escape 12)
+			10))))])
+	  (if (procedure? retry)
+	      (retry 10)
+	      (cons v v)))))
+
+(test '(here) 'escape-interrupt-full-jump-up
+      (let ([b #f]
+	    [v null])
+	(define (f g)
+	  (dynamic-wind
+	   void
+	   g
+	   (lambda () 
+	     (set! v (cons 'here v))
+	     (b 10))))
+	
+	(let/ec big
+	  (set! b big)
+	  (let/cc ok
+	    (f (lambda ()
+		 (ok #f)))))
+	
+	v))
+
 
 (arity-test call/cc 1 1)
 (arity-test call/ec 1 1)

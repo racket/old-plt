@@ -3,6 +3,19 @@
 
 (SECTION 'PATH)
 
+(define (make-/tf p exn?)
+  (lambda args
+    (with-handlers ([exn? (lambda (x) #f)]
+		    [void (lambda (x) 'wrong-exn)])
+      (if (void? (apply p args))
+	  #t
+	  'not-void))))
+(define delete-file/tf (lambda (x) ((make-/tf delete-file exn:i/o:filesystem:file?) x)))
+(define delete-directory/tf (lambda (x) ((make-/tf delete-directory exn:i/o:filesystem:directory?) x)))
+(define rename-file-or-directory/tf (lambda (x y) ((make-/tf rename-file-or-directory exn:i/o:filesystem:rename?) x y)))
+(define make-directory/tf (lambda (x) ((make-/tf make-directory exn:i/o:filesystem:directory?) x)))
+(define copy-file/tf (lambda (x y) ((make-/tf copy-file exn:i/o:filesystem:rename?) x y)))
+
 (test #f relative-path? (current-directory))
 (test #t relative-path? "down")
 (test #t relative-path? (build-path 'up "down"))
@@ -35,14 +48,14 @@
 
 (test #t file-exists? existant)
 
-(test #t make-directory "down")
-(test #f make-directory "down")
+(test #t make-directory/tf "down")
+(test #f make-directory/tf "down")
 (test #t directory-exists? "down")
 (test #f file-exists? "down")
 
 (define deepdir (build-path "down" "deep"))
-(test #t make-directory deepdir)
-(test #f make-directory deepdir)
+(test #t make-directory/tf deepdir)
+(test #f make-directory/tf deepdir)
 (test #t directory-exists? deepdir)
 (test #f file-exists? deepdir)
 
@@ -66,14 +79,16 @@
 	    exn:i/o:filesystem:file?)
 
 (define start-time (current-seconds))
-(close-output-port (open-output-file "tmp5" 'replace))
+(let ([p (open-output-file "tmp5" 'replace)])
+  (display "123456789" p)
+  (close-output-port p))
 (close-output-port (open-output-file (build-path "down" "tmp8") 'replace))
 (close-output-port (open-output-file (build-path deepdir "tmp7") 'replace))
 (define end-time (current-seconds))
 
 (map
  (lambda (f)
-   (let ([time (seconds->date (file-modify-seconds f))]
+   (let ([time (seconds->date (file-or-directory-modify-seconds f))]
 	 [start (seconds->date start-time)]
 	 [end (seconds->date end-time)])
      (test #t = (date-year start) (date-year time) (date-year end))
@@ -89,47 +104,54 @@
        (build-path "down" "tmp8")
        (build-path deepdir "tmp7")))
 
-(test #f file-modify-seconds "non-existent-file")
+(test 'no-exists 'no-file-for-seconds (with-handlers ([void (lambda (x) 'no-exists)]) (file-or-directory-modify-seconds "non-existent-file")))
 (map
  (lambda (f)
-   (test #t number? (file-modify-seconds f)))
+   (test #t number? (file-or-directory-modify-seconds f)))
  (filesystem-root-list))
 
 (test #t file-exists? "tmp5")
 (test #t file-exists? (build-path "down" "tmp8"))
 (test #t file-exists? (build-path deepdir "tmp7"))
 
-(test #t rename-file "tmp5" "tmp5x")
-(test #f rename-file "tmp5" "tmp5x")
+(test #t copy-file/tf "tmp5" "tmp5y")
+(test #f copy-file/tf "tmp5" "tmp5y")
+(test #f copy-file/tf "tmp5" "down")
+(test #f copy-file/tf "tmp5" (build-path deepdir "moredeep" "tmp5y"))
+(test (file-size "tmp5") file-size "tmp5y")
+(delete-file "tmp5y")
+
+(test #t rename-file-or-directory/tf "tmp5" "tmp5x")
+(test #f rename-file-or-directory/tf "tmp5" "tmp5x")
 (close-output-port (open-output-file "tmp5"))
 (test #t file-exists? "tmp5")
 (test #t file-exists? "tmp5x")
-(test #f rename-file "tmp5" "tmp5x")
-(test #f rename-file "tmp5" "down")
+(test #f rename-file-or-directory/tf "tmp5" "tmp5x")
+(test #f rename-file-or-directory/tf "tmp5" "down")
 (delete-file "tmp5")
 (test #f file-exists? "tmp5")
-(test #t rename-file (build-path "down" "tmp8") (build-path "down" "tmp8x"))
-(test #f rename-file (build-path "down" "tmp8") (build-path "down" "tmp8x"))
-(test #t rename-file (build-path deepdir "tmp7") (build-path deepdir "tmp7x"))
-(test #f rename-file (build-path deepdir "tmp7") (build-path deepdir "tmp7x"))
+(test #t rename-file-or-directory/tf (build-path "down" "tmp8") (build-path "down" "tmp8x"))
+(test #f rename-file-or-directory/tf (build-path "down" "tmp8") (build-path "down" "tmp8x"))
+(test #t rename-file-or-directory/tf (build-path deepdir "tmp7") (build-path deepdir "tmp7x"))
+(test #f rename-file-or-directory/tf (build-path deepdir "tmp7") (build-path deepdir "tmp7x"))
 
-(test #t make-directory "downx")
-(test #f rename-file "down" "downx")
-(test #t delete-directory "downx")
+(test #t make-directory/tf "downx")
+(test #f rename-file-or-directory/tf "down" "downx")
+(test #t delete-directory/tf "downx")
 
-(test #t rename-file "down" "downx")
+(test #t rename-file-or-directory/tf "down" "downx")
 (test #t directory-exists? "downx")
 (test #f directory-exists? "down")
 (test #t file-exists? (build-path "downx" "tmp8x"))
 (test #f file-exists? (build-path "down" "tmp8x"))
-(test #f rename-file "down" "downx")
-(test #t rename-file "downx" "down")
+(test #f rename-file-or-directory/tf "down" "downx")
+(test #t rename-file-or-directory/tf "downx" "down")
 (test #t file-exists? (build-path "down" "tmp8x"))
 
-(test #t rename-file (build-path deepdir "tmp7x") "tmp7x")
-(test #f rename-file (build-path deepdir "tmp7x") "tmp7x")
-(test #t rename-file "tmp7x" (build-path deepdir "tmp7x"))
-(test #f rename-file "tmp7x" (build-path deepdir "tmp7x"))
+(test #t rename-file-or-directory/tf (build-path deepdir "tmp7x") "tmp7x")
+(test #f rename-file-or-directory/tf (build-path deepdir "tmp7x") "tmp7x")
+(test #t rename-file-or-directory/tf "tmp7x" (build-path deepdir "tmp7x"))
+(test #f rename-file-or-directory/tf "tmp7x" (build-path deepdir "tmp7x"))
 
 (test #f not (member "tmp5x" (directory-list)))
 (test #t 'directory-list 
@@ -138,21 +160,21 @@
 	    (equal? l '("tmp8x" "deep")))))
 (test '("tmp7x") directory-list deepdir)
 
-(test #f delete-directory deepdir)
-(test #f delete-directory "down")
+(test #f delete-directory/tf deepdir)
+(test #f delete-directory/tf "down")
 
-(test #t delete-file (build-path deepdir "tmp7x"))
-(test #f delete-file (build-path deepdir "tmp7x"))
-(test #t delete-file (build-path "down" "tmp8x"))
-(test #f delete-file (build-path "down" "tmp8x"))
-(test #t delete-file "tmp5x")
-(test #f delete-file "tmp5x")
+(test #t delete-file/tf (build-path deepdir "tmp7x"))
+(test #f delete-file/tf (build-path deepdir "tmp7x"))
+(test #t delete-file/tf (build-path "down" "tmp8x"))
+(test #f delete-file/tf (build-path "down" "tmp8x"))
+(test #t delete-file/tf "tmp5x")
+(test #f delete-file/tf "tmp5x")
 
-(test #f delete-directory "down")
-(test #t delete-directory deepdir)
-(test #f delete-directory deepdir)
-(test #t delete-directory "down")
-(test #f delete-directory "down")
+(test #f delete-directory/tf "down")
+(test #t delete-directory/tf deepdir)
+(test #f delete-directory/tf deepdir)
+(test #t delete-directory/tf "down")
+(test #f delete-directory/tf "down")
 
 ; Redefine these per-platform
 (define drives null)
@@ -352,14 +374,14 @@
    (error-test `(,f (string #\a #\nul #\b)) exn:i/o:filesystem:path?))
  '(build-path split-path file-exists? directory-exists?
 	      delete-file directory-list make-directory delete-directory
-	      file-modify-seconds file-or-directory-permissions 
+	      file-or-directory-modify-seconds file-or-directory-permissions 
 	      expand-path resolve-path simplify-path path->complete-path
 	      open-input-file open-output-file))
 (map 
  (lambda (f)
    (error-test `(,f (string #\a #\nul #\b) "a") exn:i/o:filesystem:path?)
    (error-test `(,f "a" (string #\a #\nul #\b)) exn:i/o:filesystem:path?))
- '(rename-file path->complete-path))
+ '(rename-file-or-directory path->complete-path))
 
 ; normal-case-path doesn't check for pathness:
 (test #t string? (normal-case-path (string #\a #\nul #\b)))

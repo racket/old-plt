@@ -8,9 +8,6 @@
 (unit/sig ()
   (import servlet^)
 
-  (define search-height
-    (get-pref/default 'plt:hd:search-height search-height-default))
-
   (define (make-results-url 
 	   search-string search-type match-type lucky?)
     (format  

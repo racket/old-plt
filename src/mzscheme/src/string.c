@@ -3718,7 +3718,7 @@ int scheme_utf8_encode(const unsigned int *us, int start, int end,
 	     well formed. */
 	  i++;
 	  wc = ((wc & 0x3FF) << 10) + ((((unsigned short *)us)[i]) & 0x3FF);
-	  wc += 0x100000;
+	  wc += 0x10000;
 	}
       } else {
 	wc = us[i];
@@ -3749,7 +3749,7 @@ int scheme_utf8_encode(const unsigned int *us, int start, int end,
 	     well formed. */
 	  i++;
 	  wc = ((wc & 0x3FF) << 10) + ((((unsigned short *)us)[i]) & 0x3FF);
-	  wc += 0x100000;
+	  wc += 0x10000;
 	}
       } else {
 	wc = us[i];
@@ -3871,7 +3871,7 @@ mzchar *scheme_utf16_to_ucs4(const unsigned short *text, int start, int end,
     if ((wc & 0xF800) == 0xD800) {
       i++;
       wc = ((wc & 0x3FF) << 10) + ((((unsigned short *)text)[i]) & 0x3FF);
-      wc += 0x100000;
+      wc += 0x10000;
     }
     buf[j++] = wc;
   }

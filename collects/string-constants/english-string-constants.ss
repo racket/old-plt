@@ -1197,7 +1197,8 @@ please adhere to these guidelines:
   (test-case-insert "Insert Test Case")
   (test-case-disable-all "Disable all Test Cases")
   (test-case-enable-all "Enable all Test Cases")
-  ;; NOTE: The following three string constants are labels of the test-case fields. The width
+  
+  ;; NOTE: The following string constants are labels of the test-case fields. The width
   ;;       of the field is determined by the length of the longest of the following three words.
   ;;       if the words are too long the test case will take up too much horizontal room and
   ;;       not look very good.
@@ -1207,5 +1208,31 @@ please adhere to these guidelines:
   (test-case-expected "Should be")
   ;; This string is the label of the actual result of the to test expression.
   (test-case-actual "Actual")
+  (test-case-predicate "Predicate")
+  (test-case-should-raise "Should Raise")
+  ;; The label of a field of the test-case that describes the expected error message of a test case
+  (test-case-error-message "Error Message")
+
+  (test-case-menu-title "Test Case")
+  (test-case-switch-to-error-box "Switch to Error Test Box")
+  (test-case-switch-to-nonerror-box "Switch to Nonerror Test box")
+  (test-case-collapse "Collapse Test Case")
+  (test-case-show-actual "Show Actual Value")
+  (test-case-enable "Enable Test Case")
+  (test-case-show-predicate "Show Predicate")
+  (test-case-show-error-message "Show Error Message")
+  (test-case-convert-to-text "Convert to text")
+  
+  ;; Profj Boxes
+  (profjBoxes-empty-error "Empty interaction")
+  (profjBoxes-too-many-expressions-error "Too many expressions in a box")
+  (profjBoxes-interactions-label "Interactions")
+  (profjBoxes-bad-java-id-error "Malformed Java ID")
+  (profjBoxes-examples-label "Examples")
+  (profjBoxes-add-new-example-button "Add new example")
+  (profjBoxes-type "Type")
+  ;; The Java identifier of an example of data
+  (profjBoxes-name "Name")
+  (profjBoxes-value "Value")
 
   )

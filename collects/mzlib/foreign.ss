@@ -1229,8 +1229,7 @@
                         [(types)      (list stype ...)]
                         [(offsets)    (compute-offsets types)]
                         [(offset ...) (apply values offsets)])
-            (define-values (super-pointer super-tags
-                            super-types super-offsets)
+            (define-values (super-pointer super-tags super-types super-offsets)
               (cstruct-info first-type (lambda () (values #f '() #f #f))))
             (define-cpointer-type _TYPE super-pointer)
             (define _TYPE* (_cpointer TYPE-tag (make-cstruct-type types)))
@@ -1240,39 +1239,39 @@
                 (values (append super-types   (cdr types))
                         (append super-offsets (cdr offsets)))
                 (values #f #f)))
+            (define (TYPE-SLOT x)
+              (unless (TYPE? x) (raise-type-error 'TYPE-SLOT struct-string x))
+              (ptr-ref x stype 'abs offset))
+            ...
+            (define (set-TYPE-SLOT! x slot)
+              (unless (TYPE? x)
+                (raise-type-error 'set-TYPE-SLOT! struct-string 0 x slot))
+              (ptr-set! x stype 'abs offset slot))
+            ...
+            (define make-TYPE
+              (if (and has-super? super-types super-offsets)
+                ;; init using all slots
+                (lambda values
+                  (if (= (length values) (length all-types))
+                    (let ([block (malloc _TYPE*)])
+                      (set-cpointer-tag! block all-tags)
+                      (for-each (lambda (type ofs value)
+                                  (ptr-set! block type 'abs ofs value))
+                                all-types all-offsets values)
+                      block)
+                    (error '_TYPE "expecting ~s values, got ~s: ~e"
+                           (length all-types) (length values) values)))
+                ;; normal initializer
+                (lambda (slot ...)
+                  (let ([block (malloc _TYPE*)])
+                    (set-cpointer-tag! block all-tags)
+                    (ptr-set! block stype 'abs offset slot)
+                    ...
+                    block))))
             (cstruct-info _TYPE* 'set!
               _TYPE all-tags (or all-types types) (or all-offsets offsets))
-            (values
-             _TYPE* _TYPE TYPE? TYPE-tag
-             (if (and has-super? super-types super-offsets)
-               ;; init using all slots
-               (lambda values
-                 (if (= (length values) (length all-types))
-                   (let ([block (malloc _TYPE*)])
-                     (set-cpointer-tag! block all-tags)
-                     (for-each (lambda (type ofs value)
-                                 (ptr-set! block type 'abs ofs value))
-                               all-types all-offsets values)
-                     block)
-                   (error '_TYPE "expecting ~s values, got ~s: ~e"
-                          (length all-types) (length values) values)))
-               ;; normal initializer
-               (lambda (slot ...)
-                 (let ([block (malloc _TYPE*)])
-                   (set-cpointer-tag! block all-tags)
-                   (ptr-set! block stype 'abs offset slot)
-                   ...
-                   block)))
-             (lambda (x)
-               (unless (TYPE? x)
-                 (raise-type-error 'TYPE-SLOT struct-string x))
-               (ptr-ref x stype 'abs offset))
-             ...
-             (lambda (x slot)
-               (unless (TYPE? x)
-                 (raise-type-error 'set-TYPE-SLOT! struct-string 0 x slot))
-               (ptr-set! x stype 'abs offset slot))
-             ...)))))
+            (values _TYPE* _TYPE TYPE? TYPE-tag make-TYPE
+                    TYPE-SLOT ... set-TYPE-SLOT! ...)))))
   (define (identifiers? stx)
     (andmap identifier? (syntax->list stx)))
   (define (_-identifier? stx)

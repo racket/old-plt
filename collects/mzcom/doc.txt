@@ -55,9 +55,9 @@ file mzcom.h is in plt\src\worksp\mzcom\. This C/C++ code
 is for illustration.  Of course, your actual code should 
 check return values.  
 
-Using PLT's MysterX 
+Using PLT's MysterX, available at 
 
-  http://www.cs.rice.edu/CS/PLT/packages/mysterx/
+  http://www.plt-scheme.org/software/mysterx/
 
 you can load MzCOM with either
 

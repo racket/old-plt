@@ -956,7 +956,7 @@
 "(#%let((rlname(#%if rel? 'require-relative-library 'require-library)))"
 "(#%raise-syntax-error "
 " rlname"
-" (#%format \"~s name is not a string\" kind)"
+" (#%format \"~a name is not a string\" kind)"
 "(#%list* rlname name collection-path)))))))"
 " (check name \"library\")"
 "(#%if(#%or rel?(#%null? collection-path))"

@@ -1383,6 +1383,8 @@
 	      (let ((macro-name (pat:pexpand 'macro-name p-env kwd))
 		     (macro-handler (pat:pexpand 'macro-handler p-env kwd)))
 		(valid-syntactic-id? macro-name)
+		(unless (get-top-level-status attributes)
+		  (static-error expr "Only supported at top-level"))
 		(let* ((top-level? (get-top-level-status
 				     attributes))
 			(_ (set-top-level-status attributes))

@@ -347,7 +347,7 @@ class wxMediaBuffer : public wxObject
   void *seq_lock;
 };
 
-Bool wxWriteMediaVersion(wxMediaStreamOut *f, wxMediaStreamOutBase *f);
+Bool wxWriteMediaVersion(wxMediaStreamOut *mf, wxMediaStreamOutBase *f);
 Bool wxReadMediaVersion(wxMediaStreamIn *f, wxMediaStreamInBase *b, Bool parseFormat, Bool showErrors = TRUE);
 
 Bool wxReadMediaGlobalHeader(wxMediaStreamIn *f);

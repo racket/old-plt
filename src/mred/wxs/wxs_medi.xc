@@ -203,6 +203,9 @@ static void NoInsertFile(wxMediaBuffer *)
 @ "get-editor-print-margin" : void wxGetMediaPrintMargin(nnlong?,nnlong?);
 @ "set-editor-print-margin" : void wxSetMediaPrintMargin(nnlong,nnlong);
 
+@ "write-editor-version" : bool wxWriteMediaVersion(wxMediaStreamOut!, wxMediaStreamOutBase!);
+@ "read-editor-version" : bool wxReadMediaVersion(wxMediaStreamIn!, wxMediaStreamInBase!, bool, bool=TRUE);
+
 @ "read-editor-global-header" : bool wxReadMediaGlobalHeader(wxMediaStreamIn!);
 @ "read-editor-global-footer" : bool wxReadMediaGlobalFooter(wxMediaStreamIn!);
 @ "write-editor-global-header" : bool wxWriteMediaGlobalHeader(wxMediaStreamOut!);

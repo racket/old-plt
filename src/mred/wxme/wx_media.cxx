@@ -2923,19 +2923,13 @@ Bool wxMediaEdit::InsertFile(const char *who, Scheme_Object *f, char *WXUNUSED(f
     } else {
       wxMediaStreamInFileBase *b;
       wxMediaStreamIn *mf;
-      char vbuf[MRED_FORMAT_STR_LEN + MRED_VERSION_STR_LEN+ 1];
 
       scheme_get_string(who, f, buffer, 0, MRED_START_STR_LEN, 0, 0, NULL);
       
       b = new wxMediaStreamInFileBase(f);
       mf = new wxMediaStreamIn(b);
-	
-      b->Read(vbuf, MRED_FORMAT_STR_LEN);
-      memcpy((char *)mf->read_format, vbuf, MRED_FORMAT_STR_LEN);
-      b->Read(vbuf, MRED_VERSION_STR_LEN);
-      memcpy((char *)mf->read_version, vbuf, MRED_VERSION_STR_LEN);
       
-      if (wxmeCheckFormatAndVersion(mf, b, showErrors)) {
+      if (wxReadMediaVersion(mf, b, FALSE, showErrors)) {
 	if (wxReadMediaGlobalHeader(mf)) {
 	  if (mf->Ok())
 	    fileerr = !ReadFromFile(mf, clearStyles);
@@ -3079,10 +3073,7 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
     b = new wxMediaStreamOutFileBase(f);
     mf = new wxMediaStreamOut(b);
 
-    b->Write(MRED_START_STR, MRED_START_STR_LEN);
-    b->Write(MRED_FORMAT_STR, MRED_FORMAT_STR_LEN);
-    b->Write(MRED_VERSION_STR, MRED_VERSION_STR_LEN);
-    b->Write(" ## ", 4);
+    wxWriteMediaVersion(mf, b);
 
     wxWriteMediaGlobalHeader(mf);
     if (mf->Ok())

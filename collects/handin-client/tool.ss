@@ -382,6 +382,7 @@
 		 [callback (lambda (button evt)
 			     (let ([content (let* ([base (make-object editor-stream-out-string-base%)]
 						   [stream (make-object editor-stream-out% base)])
+					      (write-editor-version stream base)
 					      (write-editor-global-header stream)
 					      (send (get-definitions-text) write-to-file stream)
 					      (send (get-interactions-text) write-to-file stream)

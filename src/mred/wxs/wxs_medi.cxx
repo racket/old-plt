@@ -5602,6 +5602,7 @@ class wxMediaBuffer *objscheme_unbundle_wxMediaBuffer(Scheme_Object *obj, const 
 
 
 
+
 static Scheme_Object *wxMediaGlobalwxGetTheBufferDataClassList(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5821,6 +5822,65 @@ static Scheme_Object *wxMediaGlobalwxReadMediaGlobalHeader(int n,  Scheme_Object
   return (r ? scheme_true : scheme_false);
 }
 
+static Scheme_Object *wxMediaGlobalwxReadMediaVersion(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  class wxMediaStreamIn* x0 INIT_NULLED_OUT;
+  class wxMediaStreamInBase* x1 INIT_NULLED_OUT;
+  Bool x2;
+  Bool x3;
+
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x1);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamIn(p[0+0], "read-editor-version in editor%", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamInBase(p[0+1], "read-editor-version in editor%", 0));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0+2], "read-editor-version in editor%"));
+  if (n > (0+3)) {
+    x3 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0+3], "read-editor-version in editor%"));
+  } else
+    x3 = TRUE;
+
+  
+  r = WITH_VAR_STACK(wxReadMediaVersion(x0, x1, x2, x3));
+
+  
+  
+  READY_TO_RETURN;
+  return (r ? scheme_true : scheme_false);
+}
+
+static Scheme_Object *wxMediaGlobalwxWriteMediaVersion(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  class wxMediaStreamOut* x0 INIT_NULLED_OUT;
+  class wxMediaStreamOutBase* x1 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x1);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamOut(p[0+0], "write-editor-version in editor%", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamOutBase(p[0+1], "write-editor-version in editor%", 0));
+
+  
+  r = WITH_VAR_STACK(wxWriteMediaVersion(x0, x1));
+
+  
+  
+  READY_TO_RETURN;
+  return (r ? scheme_true : scheme_false);
+}
+
 static Scheme_Object *wxMediaGlobalwxSetMediaPrintMargin(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5905,6 +5965,10 @@ void objscheme_setup_wxMediaGlobal(Scheme_Env *env)
   WITH_VAR_STACK(scheme_install_xc_global("read-editor-global-footer", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxMediaGlobalwxReadMediaGlobalHeader, "read-editor-global-header", 1, 1));
   WITH_VAR_STACK(scheme_install_xc_global("read-editor-global-header", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxMediaGlobalwxReadMediaVersion, "read-editor-version", 3, 4));
+  WITH_VAR_STACK(scheme_install_xc_global("read-editor-version", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxMediaGlobalwxWriteMediaVersion, "write-editor-version", 2, 2));
+  WITH_VAR_STACK(scheme_install_xc_global("write-editor-version", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxMediaGlobalwxSetMediaPrintMargin, "set-editor-print-margin", 2, 2));
   WITH_VAR_STACK(scheme_install_xc_global("set-editor-print-margin", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxMediaGlobalwxGetMediaPrintMargin, "get-editor-print-margin", 2, 2));

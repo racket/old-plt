@@ -9,6 +9,7 @@
 	   [stream (make-object editor-stream-in% base)]
 	   [definitions-text (make-object text%)]
 	   [interactions-text (make-object text%)])
+      (read-editor-version stream base #t)
       (read-editor-global-header stream)
       (send definitions-text read-from-file stream)
       (send interactions-text read-from-file stream)

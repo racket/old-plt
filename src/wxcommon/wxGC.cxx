@@ -174,6 +174,11 @@ int gc_cleanup::gcMark(Mark_Proc mark)
 
 #include "scheme.h"
 
+static void *park;
+static void *preallocated;
+static int use_pre;
+static int is_initialized;
+
 typedef struct AllocStackLink {
   Scheme_Type type;
   MZ_HASH_KEY_EX
@@ -202,7 +207,7 @@ void GC_restore_current_new_var_stack()
   GC_variable_stack = new_stack->var_stack;
 }
 
-static void GC_push_current_new(void *p)
+static void GC_push_current_new()
 {
   AllocStackLink *link;
   void **vs;
@@ -211,7 +216,7 @@ static void GC_push_current_new(void *p)
 
   link = (AllocStackLink *)GC_malloc_one_tagged(sizeof(AllocStackLink));
   link->type = scheme_rt_stack_object;
-  link->data = p;
+  link->data = gcPTR_TO_OBJ(park);
   link->var_stack = vs;
   link->next = new_stack;
 
@@ -230,9 +235,12 @@ static void set_new_stack(void *p)
 
 static int mark_cpp_object(void *p, Mark_Proc mark)
 {
+  short size = ((short *)p)[1];
   gc *obj = (gc *)gcPTR_TO_OBJ(p);
 
-  return obj->gcMark(mark) + 1;
+  obj->gcMark(mark);
+
+  return gcBYTES_TO_WORDS(size) + 1;
 }
 
 static int mark_cpp_array_object(void *p, Mark_Proc mark)
@@ -276,11 +284,6 @@ static int mark_preallocated_object(void *p, Mark_Proc /* mark */)
   
   return gcBYTES_TO_WORDS(size) + 1;
 }
-
-static void *park;
-static void *preallocated;
-static int use_pre;
-static int is_initialized;
 
 void GC_pre_allocate(size_t size)
 {
@@ -342,7 +345,7 @@ void *GC_cpp_malloc(size_t size)
   ((short *)p)[1] = (short)size;
   park = p;
 
-  GC_push_current_new(gcPTR_TO_OBJ(p));
+  GC_push_current_new();
 
   p = park;
   ((short *)p)[0] = scheme_rt_cpp_object;

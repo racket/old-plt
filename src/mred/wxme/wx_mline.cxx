@@ -649,6 +649,7 @@ void wxMediaLine::SetStartsParagraph(Bool starts)
     flags |= WXLINE_STARTS_PARA;
     if (!paragraph) {
       if (!plain_paragraph) {
+	wxREGGLOB(plain_paragraph);
 	paragraph = new wxMediaParagraph();
 	paragraph->leftMarginFirst = 0;
 	paragraph->leftMargin = 0;

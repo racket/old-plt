@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Panel.cc,v 1.6 1999/11/25 16:32:23 mflatt Exp $
  *
  * Purpose: base class for all panels
  *

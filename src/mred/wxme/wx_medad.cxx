@@ -636,8 +636,10 @@ void wxMediaCanvas::NoCustomCursor(void)
 {
   static wxCursor *arrow = NULL;
   
-  if (!arrow)
+  if (!arrow) {
+    wxREGGLOB(arrow);
     arrow = new wxCursor(wxCURSOR_ARROW);
+  }
 
   if (customCursorOn) {
     customCursorOn = FALSE;

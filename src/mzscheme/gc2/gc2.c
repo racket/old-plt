@@ -38,7 +38,7 @@ typedef short Type_Tag;
 #define SAFETY 1
 #define RECYCLE_HEAP 0
 
-#define GC_EVERY_ALLOC 0
+#define GC_EVERY_ALLOC 100
 #define ALLOC_GC_PHASE 5
 
 void (*GC_collect_start_callback)(void);

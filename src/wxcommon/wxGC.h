@@ -120,7 +120,8 @@ inline gc_cleanup::gc_cleanup(void)
   install_cleanup();
 }
 
-inline gc_cleanup::gc_cleanup(int cleanup) {
+inline gc_cleanup::gc_cleanup(int cleanup)
+{
   __gc_external = NULL;
   if (cleanup)
     install_cleanup();

@@ -1,6 +1,8 @@
 #include "xcglue.h"
 #include "gc.h"
 
+#ifdef SUPPORT_ARBITRARY_OBJECTS
+
 typedef struct {
   void *realobj;
   Scheme_Class_Object *obj;
@@ -8,6 +10,8 @@ typedef struct {
 
 static ObjectHash *hash;
 static long hashsize = 100, hashcount = 0;
+
+#endif
 
 typedef struct {
   long id;
@@ -43,11 +47,13 @@ void objscheme_init(Scheme_Env *env)
   set_car_symbol = scheme_intern_symbol("set-car!");
   set_car_prim = scheme_lookup_global(set_car_symbol, env);
   
+#ifdef SUPPORT_ARBITRARY_OBJECTS
   wxREGGLOB(hash);
   hash = (ObjectHash *)scheme_malloc_atomic(sizeof(ObjectHash) * hashsize);
   for (i = 0; i < hashsize; i++) {
     hash[i].realobj = NULL;
   }
+#endif
   
   wxREGGLOB(bhash);
   bhash = (BundlerHash *)scheme_malloc_atomic(sizeof(BundlerHash) 
@@ -561,6 +567,8 @@ void objscheme_note_creation(Scheme_Object *obj)
   num_objects_allocated++;
 }
 
+#ifdef SUPPORT_ARBITRARY_OBJECTS
+
 #define HASH(realobj) (((long)realobj >> 2) % hashsize)
 
 #define GONE ((void *)1)
@@ -622,6 +630,8 @@ Scheme_Class_Object *objscheme_find_object(void *realobj)
   return hash[i].obj;
 }
 
+#endif
+
 void objscheme_check_valid(Scheme_Object *o)
 {
   Scheme_Class_Object *obj = (Scheme_Class_Object *)o;
@@ -653,13 +663,16 @@ int objscheme_is_shutdown(Scheme_Object *o)
 
 void objscheme_destroy(void *realobj, Scheme_Object *obj_in)
 {
+#ifdef SUPPORT_ARBITRARY_OBJECTS
   int i;
+#endif
   Scheme_Class_Object *obj;
 
   --num_objects_allocated;
 
   obj = (Scheme_Class_Object *)obj_in;
 
+#ifdef SUPPORT_ARBITRARY_OBJECTS
   if (!obj) {
     i = HASH(realobj);
     if (i < 0)
@@ -679,6 +692,7 @@ void objscheme_destroy(void *realobj, Scheme_Object *obj_in)
       hash[i].realobj = GONE;
     }
   }
+#endif
 
   if (obj) {
     if (obj->primflag < 0)

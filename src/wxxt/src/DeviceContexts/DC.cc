@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.cc,v 1.11 1999/11/28 05:21:34 mflatt Exp $
+ * $Id: DC.cc,v 1.12 1999/11/28 17:12:50 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -39,6 +39,8 @@
 
 wxDC::wxDC(void)
 {
+    wxColour *c;
+
     __type = wxTYPE_DC;
 
     device = wxDEVICE_NONE;
@@ -55,17 +57,19 @@ wxDC::wxDC(void)
     max_x = max_y = -100000.0;
     min_x = min_y =  100000.0;
 
-    
-    current_background_color = new wxColour(wxWHITE);
+    c = new wxColour(wxWHITE);
+    current_background_color = c;
     current_brush = wxTRANSPARENT_BRUSH;
     current_cmap = wxAPP_COLOURMAP;
     current_font = wxSWISS_FONT;
     current_map_mode = MM_TEXT;
     current_pen = wxBLACK_PEN;
     current_text_alignment = wxALIGN_TOP_LEFT;
-    current_text_bg = new wxColour(wxWHITE);
+    c = new wxColour(wxWHITE);
+    current_text_bg = c;
     current_text_bgmode = wxTRANSPARENT;
-    current_text_fg = new wxColour(wxBLACK);
+    c = new wxColour(wxBLACK);
+    current_text_fg = c;
 }
 
 wxColour *wxDC::GetBackground(void){

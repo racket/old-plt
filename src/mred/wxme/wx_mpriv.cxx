@@ -1863,6 +1863,28 @@ wxBitmap *wxMediaEdit::SetAutowrapBitmap(wxBitmap *bm)
 
 static wxMediaEdit *skipBox = NULL;
 static wxPen *caretPen = NULL;
+static wxPen *outlinePen = NULL;
+static wxBrush *outlineBrush = NULL;
+#if ALLOW_X_STYLE_SELECTION
+static wxBrush *outlineNonownerBrush = NULL;
+static char xpattern[32] = {0x88, 0x88,
+			    0,    0,
+			    0x22, 0x22,
+			    0,    0,
+			    0x88, 0x88,
+			    0,    0,
+			    0x22, 0x22,
+			    0,    0,
+			    0x88, 0x88,
+			    0,    0,
+			    0x22, 0x22,
+			    0,    0,
+			    0x88, 0x88,
+			    0,    0,
+			    0x22, 0x22,
+			    0,    0};
+#endif
+static wxBrush *clearBrush = NULL;
 
 /* This does the actual drawing */
 void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy, 
@@ -1883,28 +1905,6 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
   wxStyle *oldStyle;
   wxPen *savePen;
   wxBrush *saveBrush;
-  static wxPen *outlinePen = NULL;
-  static wxBrush *outlineBrush = NULL;
-#if ALLOW_X_STYLE_SELECTION
-  static wxBrush *outlineNonownerBrush = NULL;
-  static char xpattern[32] = {0x88, 0x88,
-			      0,    0,
-			      0x22, 0x22,
-			      0,    0,
-			      0x88, 0x88,
-			      0,    0,
-			      0x22, 0x22,
-			      0,    0,
-			      0x88, 0x88,
-			      0,    0,
-			      0x22, 0x22,
-			      0,    0,
-			      0x88, 0x88,
-			      0,    0,
-			      0x22, 0x22,
-			      0,    0};
-#endif
-  static wxBrush *clearBrush = NULL;
   Bool wl;
 
   if (flowLocked)
@@ -1926,9 +1926,18 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
   }
 
   if (!outlinePen) {
+    wxREGGLOB(outlinePen);
+    wxREGGLOB(outlineBrush);
+#if ALLOW_X_STYLE_SELECTION
+    wxREGGLOB(outlineNonownerBrush);
+#endif
+    wxREGGLOB(clearBrush);
+
     outlinePen = wxThePenList->FindOrCreatePen("BLACK", 0, wxTRANSPARENT);
-    if (!caretPen)
+    if (!caretPen) {
+      wxREGGLOB(caretPen);
       caretPen = wxThePenList->FindOrCreatePen("BLACK", 1, wxXOR);
+    }
     outlineBrush = wxTheBrushList->FindOrCreateBrush("BLACK", wxXOR);
 #if ALLOW_X_STYLE_SELECTION
     outlineNonownerBrush = new wxBrush();
@@ -2422,6 +2431,11 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
       && (startpos != endpos))
     show_xsel = 1;
 #endif
+
+  /* We have to register skipBox sometime... */
+  if (!outlineBrush) {
+    wxREGGLOB(skipBox);
+  }
 
   if (!offscreenInUse && bitmap && bitmap->Ok() && offscreen->Ok() && !ps) {
     /* Need to make sure that difference between coordinates is

@@ -1303,6 +1303,10 @@ static wxList *readStyles = NULL;
 
 void wxmbSetupStyleReadsWrites(void)
 {
+  if (!readStyles) {
+    wxREGGLOB(readStyles);
+  }
+
   readStyles = new wxList(wxKEY_INTEGER);
 }
 
@@ -1320,7 +1324,10 @@ void wxmbDoneStyleReadsWrites(void)
   }
 
   DELETE_OBJ readStyles;
-  readStyles = NULL;
+
+  /* To indicate that the static var is already registered,
+     we "clear" it with 1 instead of 0: */
+  readStyles = (wxList *)1;
 }
 
 static int FamilyStandardToThis(int v)

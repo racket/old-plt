@@ -142,7 +142,8 @@
 		"compact.c"
 		"newgc.c"
 		"vm_win.c"
-		"sighand.c"))
+		"sighand.c"
+		"msgprint.c"))
 	 (string-append
 	  "/D GC2_AS_EXPORT /D NEWGC_BTC_ACCOUNT "
 	  mz-inc))

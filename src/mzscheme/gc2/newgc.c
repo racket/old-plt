@@ -12,6 +12,15 @@
 #include "gc2.h"
 #include "../src/schpriv.h"
 
+#ifdef _WIN32
+# include <windows.h>
+static int generations_available = 1;
+# define bzero(m, s) memset(m, 0, s)
+# define inline _inline
+#endif
+
+#include "msgprint.c"
+
 /*****************************************************************************/
 /* Collector selection. Change the definitions of these to set or unset the  */
 /* particular collector you want.                                            */
@@ -108,7 +117,7 @@ inline static void check_used_against_max(size_t len)
 	     the thunk and then die semi-gracefully */
 	  if(GC_out_of_memory)
 	    GC_out_of_memory();
-	  fprintf(stderr, "The system has run out of memory!\n"); abort();
+	  GCPRINT(GCOUTF, "The system has run out of memory!\n"); abort();
 	}
       }
     }
@@ -198,7 +207,7 @@ static Fixup_Proc fixup_table[NUMBER_OF_TAGS];
     while(size_left > 0) {                                            \
       page_map[ADDR_BITS(p)] = val;                                   \
       size_left -= PAGE_SIZE;                                         \
-      p += PAGE_SIZE;                                                 \
+      p = (char *)p + PAGE_SIZE;                                      \
     }                                                                 \
   }
 
@@ -349,16 +358,16 @@ static void dump_heap(void)
 # define INIT_DEBUG_FILE() init_debug_file()
 # define CLOSE_DEBUG_FILE() close_debug_file()
 # define DUMP_HEAP() dump_heap()
-# define GC_DEBUG(args...) { fprintf(dump, args); fflush(dump); }
+# define GC_DEBUG(args) { GCPRINT args; GCFLUSHOUT(); }
 #else
 # define INIT_DEBUG_FILE() /* */
 # define CLOSE_DEBUG_FILE() /* */
 # define DUMP_HEAP() /* */
-# define GC_DEBUG(args...) /* */
+# define GC_DEBUG(args) /* */
 #endif
 
-#define GCWARN(args...) { fprintf(stderr, args); fflush(stderr); }
-#define GCERR(args...) { fprintf(stderr, args); fflush(stderr); abort(); }
+#define GCWARN(args) { GCPRINT args; GCFLUSHOUT(); }
+#define GCERR(args) { GCPRINT args; GCFLUSHOUT(); abort(); }
 
 /*****************************************************************************/
 /* Routines dealing with various runtime execution stacks                    */
@@ -470,7 +479,7 @@ void GC_add_roots(void *start, void *end)
 
     roots_size = roots_size ? 2 * roots_size : 500;
     naya = (unsigned long*)malloc(sizeof(unsigned long) * (roots_size + 1));
-    if(!naya) GCERR("Couldn't allocate space for root pointers!\n");
+    if(!naya) GCERR((GCOUTF, "Couldn't allocate space for root pointers!\n"));
     memcpy((void*)naya, (void*)roots, sizeof(unsigned long) * roots_count);
     
     if(roots) free(roots);
@@ -519,7 +528,7 @@ static struct immobile_box *immobile_boxes = NULL;
 void **GC_malloc_immobile_box(void *p)
 {
   struct immobile_box *ib = malloc(sizeof(struct immobile_box));
-  if(!ib) GCERR("Couldn't allocate space for immobile box!\n");
+  if(!ib) GCERR((GCOUTF, "Couldn't allocate space for immobile box!\n"));
   ib->p = p; ib->next = immobile_boxes; ib->prev = NULL;
   if(ib->next) ib->next->prev = ib;
   immobile_boxes = ib;
@@ -538,7 +547,7 @@ void GC_free_immobile_box(void **b)
       free(ib);
       return;
     }
-  GCWARN("Attempted free of non-existent immobile box %p\n", b);
+  GCWARN((GCOUTF, "Attempted free of non-existent immobile box %p\n", b));
 }
 
 #define traverse_immobiles(muck) {       		              \
@@ -649,8 +658,8 @@ inline static void check_finalizers(int level)
     if((work->eager_level == level) && !marked(work->p)) {
       struct finalizer *next = work->next;
 
-      GC_DEBUG("CFNL: Level %i finalizer %p on %p queued for finalization.\n",
-	       work->eager_level, work, work->p);
+      GC_DEBUG((GCOUTF, "CFNL: Level %i finalizer %p on %p queued for finalization.\n",
+		work->eager_level, work, work->p));
       gcMARK(work->p);
       if(prev) prev->next = next;
       if(!prev) finalizers = next;
@@ -669,7 +678,7 @@ inline static void do_ordered_level3(void)
 
   for(temp = finalizers; temp; temp = temp->next)
     if(!marked(temp->p)) {
-      GC_DEBUG("LVL3: %p is not marked. Marking payload (%p)\n", temp, temp->p);
+      GC_DEBUG((GCOUTF, "LVL3: %p is not marked. Marking payload (%p)\n", temp, temp->p));
       if(temp->tagged) mark_table[*(unsigned short*)temp->p](temp->p);
       if(!temp->tagged) GC_mark_xtagged(temp->p);
     }
@@ -950,7 +959,7 @@ inline static int thread_get_owner(void *p)
   for(work = threads; work; work = work->next)
     if(work->thread == p)
       return work->owner;
-  GCERR("Bad thread value for thread_get_owner!\n");
+  GCERR((GCOUTF, "Bad thread value for thread_get_owner!\n"));
 }
 #endif
 
@@ -994,8 +1003,8 @@ static void push_2ptr(void *ptr1, void *ptr2)
       temp->end = (void**)((unsigned long)temp + STACKLET_SIZE);
       istack = temp;
     } else {
-      fprintf(stderr, "No room left on stack.\n");
-      fprintf(stderr, "Accounting/Debugging information will be incomplete.\n");
+      GCPRINT(GCOUTF, "No room left on stack.\n");
+      GCPRINT(GCOUTF, "Accounting/Debugging information will be incomplete.\n");
     }
   }
   *(istack->cur++) = ptr1;
@@ -1074,7 +1083,7 @@ inline static int current_owner(Scheme_Custodian *c)
     owner_table = malloc(10 * sizeof(struct ot_entry*));
     bzero(owner_table, 10 * sizeof(struct ot_entry*));
     if(create_blank_owner_set() != 1) {
-      printf("Something extremely weird (and bad) has happened.\n");
+      GCPRINT(GCOUTF, "Something extremely weird (and bad) has happened.\n");
       abort();
     }
   }
@@ -1179,7 +1188,7 @@ inline static void clear_old_owner_data(void)
 
 inline static void mark_for_accounting(struct mpage *page, void *ptr)
 {
-  GC_DEBUG("btc_account: %p/%p\n", page, ptr);
+  GC_DEBUG((GCOUTF, "btc_account: %p/%p\n", page, ptr));
   if(page->big_page) {
     struct objhead *info = (struct objhead *)((char*)page + HEADER_SIZEB);
     
@@ -1202,7 +1211,7 @@ inline static void mark_for_accounting(struct mpage *page, void *ptr)
 inline static void mark_normal_obj(struct mpage *page, void *ptr)
 {
   struct objhead *info = (struct objhead *)((char*)ptr - WORD_SIZE);
-  
+
   switch(page->page_type) {
     case PAGE_TAGGED: 
       if(*(unsigned short*)ptr == scheme_thread_type) {
@@ -1253,7 +1262,7 @@ static void btc_account(void)
   Scheme_Custodian *cur = owner_table[current_owner(NULL)]->originator;
   Scheme_Custodian_Reference *box = cur->global_next;
   int i;
-  
+
   doing_memory_accounting_pass = 1;
   
   /* clear the memory use numbers out */
@@ -1399,7 +1408,7 @@ void designate_modified(void *p)
   if(page) {
     protect_pages(page, page->size, 1);
     page->back_pointers = 1;
-  } else GCERR("Seg fault (internal error) at %p\n", p);
+  } else GCERR((GCOUTF, "Seg fault (internal error) at %p\n", p));
 }
 
 #include "sighand.c"
@@ -1448,9 +1457,9 @@ void GC_dump(void)
 
   for(page = pages[0][PAGE_BIG]; page; page = page->next)
     gen0_bigs++;
-  GCWARN("Generation 0: %li of %li bytes used (%li in %li bigpages)\n",
-	 gen0_bigpages_size + (NUM(gen0_alloc_current)-NUM(gen0_alloc_region)),
-	 gen0_bigpages_size + gen0_size, gen0_bigpages_size, gen0_bigs);
+  GCWARN((GCOUTF, "Generation 0: %li of %li bytes used (%li in %li bigpages)\n",
+	  gen0_bigpages_size + (NUM(gen0_alloc_current)-NUM(gen0_alloc_region)),
+	  gen0_bigpages_size + gen0_size, gen0_bigpages_size, gen0_bigs));
 
   for(i = 1; i < GENERATIONS; i++) {
     unsigned long num_pages = 0, size_pages = 0;
@@ -1464,13 +1473,13 @@ void GC_dump(void)
 	num_pages += 1; tnum_pages[j] += 1;
 	size_pages += page->size; tsize_pages[j] += page->size;
       }
-    GCWARN("Generation %i: %li bytes used in %li pages\n", 
-	   i, size_pages, num_pages);
+    GCWARN((GCOUTF, "Generation %i: %li bytes used in %li pages\n", 
+	    i, size_pages, num_pages));
     if(size_pages) 
       for(j = 0; j < PAGE_TYPES; j++) 
-	GCWARN("    ... %li %s pages (%li, %2.2f%%)\n",
-	       tnum_pages[j], type_name[j], tsize_pages[j],
-	       100.0 * ((float)tsize_pages[j] / (float)size_pages));
+	GCWARN((GCOUTF, "    ... %li %s pages (%li, %2.2f%%)\n",
+		tnum_pages[j], type_name[j], tsize_pages[j],
+		100.0 * ((float)tsize_pages[j] / (float)size_pages)));
   }
 }
 
@@ -1647,8 +1656,8 @@ inline static void mark_normal_object(struct mpage *page, void *p)
     while(size--) *(dest++) = *(src++);
    *(void**)p = PTR(NUM(newplace) + WORD_SIZE);
     ohead->mark = 1;
-    GC_DEBUG("Marked/copid %i bytes from obj %p to %p\n", ohead->size,
-	     p, PTR(NUM(newplace) + WORD_SIZE));
+    GC_DEBUG((GCOUTF, "Marked/copid %i bytes from obj %p to %p\n", ohead->size,
+	      p, PTR(NUM(newplace) + WORD_SIZE)));
   }
 }
 
@@ -1950,8 +1959,8 @@ static void garbage_collect(int force_full)
       f = run_queue; run_queue = run_queue->next;
       if(!run_queue) last_in_queue = NULL;
 
-      GC_DEBUG("Running finalizers %p for pointer %p (lvl %i)\n",
-	       f, f->p, f->eager_level);
+      GC_DEBUG((GCOUTF, "Running finalizers %p for pointer %p (lvl %i)\n",
+		f, f->p, f->eager_level));
       gcs = GC_variable_stack;
       f->f(f->p, f->data);
       GC_variable_stack = gcs;

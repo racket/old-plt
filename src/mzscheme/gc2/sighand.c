@@ -70,6 +70,7 @@ LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e)
     return EXCEPTION_CONTINUE_SEARCH;
 }
 # define NEED_SIGWIN
+typedef LONG (WINAPI*gcPVECTORED_EXCEPTION_HANDLER)(LPEXCEPTION_POINTERS e);
 #endif
 
 /* ========== Mac OS X signal handler ========== */
@@ -106,11 +107,11 @@ static void initialize_signal_handler()
 # ifdef NEED_SIGWIN
   {
     HMODULE hm;
-    PVOID (WINAPI*aveh)(ULONG, PVECTORED_EXCEPTION_HANDLER);
+    PVOID (WINAPI*aveh)(ULONG, gcPVECTORED_EXCEPTION_HANDLER);
 
     hm = LoadLibrary("kernel32.dll");
     if (hm)
-      aveh = (PVOID (WINAPI*)(ULONG, PVECTORED_EXCEPTION_HANDLER))GetProcAddress(hm, "AddVectoredExceptionHandler");
+      aveh = (PVOID (WINAPI*)(ULONG, gcPVECTORED_EXCEPTION_HANDLER))GetProcAddress(hm, "AddVectoredExceptionHandler");
     else
       aveh = NULL;
     if (aveh)

@@ -16,7 +16,7 @@
 	   [second-name 'cadr]
 	   [third caddr]
 	   [defn (expand-defmacro `(#%define-struct ,str ,fields))]
-	   [_ (unless (and (cons? defn)
+	   [_ (unless (and (pair? defn)
 			   (eq? (car defn) '#%define-values))
 		(error 'define-struct/parse "expand-defmacro didn't return expected value: ~s~n" defn))]
 	   [bindings (second defn)]

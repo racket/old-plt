@@ -128,6 +128,9 @@
 	     (opt-lambda (label menu [help ()])
 	       (let ([id (append -1 label menu help)])
 		 (set! submenus (cons (cons id menu) submenus))
+		 (if menu-bar
+		     (send menu set-menubar menu-bar)
+		     (error 'mred:menu% "must set the menubar before adding any submenus"))
 		 id))]
 	    [append-check-set
 	     (opt-lambda (name-tag-list callback [initial 0] [help ()])

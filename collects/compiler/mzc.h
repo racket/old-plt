@@ -277,7 +277,7 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
 #define MZC_MAX2(cp, av, bv) MZC_MAXMIN_OP(cp, av, bv, >)
 #define MZC_MIN2(cp, av, bv) MZC_MAXMIN_OP(cp, av, bv, <)
 
-static inline Scheme_Object *mzc_force_value(Scheme_Object *v)
+static MSC_IZE(inline) Scheme_Object *mzc_force_value(Scheme_Object *v)
 {
   return _scheme_force_value(v);
 }

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.112 1997/08/11 20:28:21 shriram Exp $
+; $Id: scm-main.ss,v 1.113 1997/08/11 21:39:56 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1155,10 +1155,6 @@
       "List cannot be a cond question-answer pair"
       "Improper-list cannot be a cond question-answer pair"))
 
-  ; Still missing:
-  ; Implicit begin's
-  ; (cond (x) y ...) => (or (x) (cond y ...))
-
   (add-list-micro cond-clause-vocab
     (let* ((kwd '(else =>))
 	    (in-pattern-1 (if (language<=? 'structured)
@@ -1168,18 +1164,18 @@
 			     'answer '(begin answer ...)))
 	    (in-pattern-2 '(question =>))
 	    (in-pattern-3 (if (language<=? 'structured)
-			    '(question answer)
-			    '(question answer ...)))
-	    (get-pattern-3 (if (language<=? 'structured)
-			     'answer '(begin answer ...)))
-	    (in-pattern-4 (if (language<=? 'structured)
 			    '(question => answer)
 			    '(question => answer ...)))
-	    (get-pattern-4 (if (language<=? 'structured)
+	    (get-pattern-3 (if (language<=? 'structured)
 			     'answer '(begin answer ...)))
 	    (in-pattern-5 (if (language<=? 'side-effecting)
-			    '()	; will not match
+			    '(question => answer) ; will not match
 			    '(question)))
+	    (in-pattern-4 (if (language<=? 'structured)
+			    '(question answer)
+			    '(question answer ...)))
+	    (get-pattern-4 (if (language<=? 'structured)
+			     'answer '(begin answer ...)))
 	    (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	    (m&e-2 (pat:make-match&env in-pattern-2 kwd))
 	    (m&e-3 (pat:make-match&env in-pattern-3 kwd))
@@ -1201,19 +1197,19 @@
 	    (lambda (p-env)
 	      (let ((question (pat:pexpand 'question p-env kwd))
 		     (answer (pat:pexpand get-pattern-3 p-env kwd)))
-		(make-cond-clause expr question answer #f #f #f))))
-	  ((pat:match-against m&e-4 expr env)
-	    =>
-	    (lambda (p-env)
-	      (let ((question (pat:pexpand 'question p-env kwd))
-		     (answer (pat:pexpand get-pattern-4 p-env kwd)))
 		(make-cond-clause expr question answer #f #t #f))))
 	  ((pat:match-against m&e-5 expr env)
 	    =>
 	    (lambda (p-env)
 	      (let ((question (pat:pexpand 'question p-env kwd)))
 		(make-cond-clause expr question #f #f #f #t))))
-	  (else (static-error expr "Clause not in question-answer format"))))))
+	  ((pat:match-against m&e-4 expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((question (pat:pexpand 'question p-env kwd))
+		     (answer (pat:pexpand get-pattern-4 p-env kwd)))
+		(make-cond-clause expr question answer #f #f #f))))
+	  (else (static-error expr "clause not in question-answer format"))))))
 
   (add-primitivized-micro-form 'cond scheme-vocabulary
     (let* ((kwd '())

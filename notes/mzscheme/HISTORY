@@ -1,6 +1,6 @@
 
 Version 205.7
-Macro templates can include consective ... for splicing
+Macro templates can include consecutive ... for splicing
  sequences
 Macro patterns can include sub-patterns after ...
 Improved reporting for with-syntax

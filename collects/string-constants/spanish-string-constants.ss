@@ -45,7 +45,6 @@
  (bug-report-field-human-language "Idioma")
  (bug-report-field-version "Versión")
  (bug-report-show-synthesized-info "Muestra información resumida")
- (bug-report-hide-synthesized-info "Esconde información resumida")
  (bug-report-submit "Enviar")
  (sending-bug-report "Enviando reporte de problemas")
  (error-sending-bug-report "Error al enviar el reporte de problemas")

@@ -47,8 +47,8 @@
  (bug-report-field-collections "Collections")
  (bug-report-field-human-language "Human Language")
  (bug-report-field-version "Version")
+ (bug-report-synthesized-information "Synthesized Information")  ;; dialog title
  (bug-report-show-synthesized-info "Show Synthesized Info")
- (bug-report-hide-synthesized-info "Hide Synthesized Info")
  (bug-report-submit "Submit")
  (sending-bug-report "Sending Bug Report")
  (error-sending-bug-report "Error Sending Bug Report")

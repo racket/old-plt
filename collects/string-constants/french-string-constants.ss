@@ -53,7 +53,6 @@
  (bug-report-field-human-language "Language humain")
  (bug-report-field-version "Version")
  (bug-report-show-synthesized-info "Montrer l'information synthétisée")
- (bug-report-hide-synthesized-info "Cacher l'information synthétisée")
  (bug-report-submit "Soumettre")
  (sending-bug-report "Soumission du formulaire de bogue en cours...")
  (error-sending-bug-report "Erreur durant la soumission du formulaire de bogue.")

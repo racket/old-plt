@@ -43,7 +43,6 @@
  (bug-report-field-human-language "Menschensprache")	;
  (bug-report-field-version "Version")
  (bug-report-show-synthesized-info "Synthesized Info anzeigen")	; (an)zeigen
- (bug-report-hide-synthesized-info "Synthesized Info verstecken")	; verstecken
  (bug-report-submit "Abschicken")	
  (sending-bug-report "Bug Report wird gesendet")
  (error-sending-bug-report "Absenden des Bug Reports fehlgeschlagen")

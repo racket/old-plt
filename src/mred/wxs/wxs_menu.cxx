@@ -89,11 +89,12 @@ static void CB_TOSCHEME(CB_REALCLASS *obj, wxCommandEvent *event);
 
 
 
+
 class os_wxMenu : public wxMenu {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxMenu CONSTRUCTOR_ARGS((nstring x0 = NULL, wxFunction x1 = NULL));
+  os_wxMenu CONSTRUCTOR_ARGS((nstring x0 = NULL, wxFunction x1 = NULL, class wxFont* x2 = NULL));
   ~os_wxMenu();
 #ifdef MZ_PRECISE_GC
   void gcMark();
@@ -114,8 +115,8 @@ void os_wxMenu::gcFixup() {
 
 static Scheme_Object *os_wxMenu_class;
 
-os_wxMenu::os_wxMenu CONSTRUCTOR_ARGS((nstring x0, wxFunction x1))
-CONSTRUCTOR_INIT(: wxMenu(x0, x1))
+os_wxMenu::os_wxMenu CONSTRUCTOR_ARGS((nstring x0, wxFunction x1, class wxFont* x2))
+CONSTRUCTOR_INIT(: wxMenu(x0, x1, x2))
 {
 }
 
@@ -142,6 +143,27 @@ static Scheme_Object *os_wxMenumenuSelect(int n,  Scheme_Object *p[])
   
   READY_TO_RETURN;
   return scheme_void;
+}
+
+static Scheme_Object *os_wxMenuGetFont(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxFont* r;
+  objscheme_check_valid(os_wxMenu_class, "get-font in menu%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata)->GetFont());
+
+  
+  
+  READY_TO_RETURN;
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxFont(r));
 }
 
 static Scheme_Object *os_wxMenuSetWidth(int n,  Scheme_Object *p[])
@@ -477,15 +499,17 @@ static Scheme_Object *os_wxMenu_ConstructScheme(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   nstring x0 INIT_NULLED_OUT;
   wxFunction x1;
+  class wxFont* x2 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(3);
+  SETUP_VAR_STACK_PRE_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, realobj);
   VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(3, x2);
 
   int cb_pos = 0;
-  if ((n > (POFFSET+2))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in menu%", POFFSET+POFFSET, POFFSET+2, n, p, 1));
+  if ((n > (POFFSET+3))) 
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in menu%", POFFSET+POFFSET, POFFSET+3, n, p, 1));
   if (n > (POFFSET+0)) {
     x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+0], "initialization in menu%"));
   } else
@@ -494,11 +518,15 @@ static Scheme_Object *os_wxMenu_ConstructScheme(int n,  Scheme_Object *p[])
     x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
   } else
     x1 = NULL;
+  if (n > (POFFSET+2)) {
+    x2 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+2], "initialization in menu%", 1));
+  } else
+    x2 = NULL;
 
   
-  realobj = WITH_VAR_STACK(new os_wxMenu CONSTRUCTOR_ARGS((x0, x1)));
+  realobj = WITH_VAR_STACK(new os_wxMenu CONSTRUCTOR_ARGS((x0, x1, x2)));
 #ifdef MZ_PRECISE_GC
-  WITH_VAR_STACK(realobj->gcInit_wxMenu(x0, x1));
+  WITH_VAR_STACK(realobj->gcInit_wxMenu(x0, x1, x2));
 #endif
   realobj->__gc_external = (void *)p[0];
   
@@ -517,9 +545,10 @@ void objscheme_setup_wxMenu(Scheme_Env *env)
 
   wxREGGLOB(os_wxMenu_class);
 
-  os_wxMenu_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "menu%", "object%", (Scheme_Method_Prim *)os_wxMenu_ConstructScheme, 13));
+  os_wxMenu_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "menu%", "object%", (Scheme_Method_Prim *)os_wxMenu_ConstructScheme, 14));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "select" " method", (Scheme_Method_Prim *)os_wxMenumenuSelect, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "get-font" " method", (Scheme_Method_Prim *)os_wxMenuGetFont, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "set-width" " method", (Scheme_Method_Prim *)os_wxMenuSetWidth, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "set-title" " method", (Scheme_Method_Prim *)os_wxMenuSetTitle, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "set-label" " method", (Scheme_Method_Prim *)os_wxMenuSetLabel, 2, 2));

@@ -528,7 +528,7 @@ void wxSetWinFont(wxFont *buttonFont, HANDLE ms_handle)
 void wxItem::SetFont(wxFont *f)
 {
   if (!f)
-    f = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxNORMAL, wxNORMAL, FALSE)
+    f = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxNORMAL, wxNORMAL, FALSE);
   font = f;
 }
 

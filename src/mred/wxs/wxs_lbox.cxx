@@ -286,11 +286,12 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
+
 class os_wxListBox : public wxListBox {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxListBox CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3 = wxSINGLE, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = -1, int x8 = 0, string* x9 = NULL, int x10 = 0, class wxFont* x11 = NULL, string x12 = "button"));
+  os_wxListBox CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3 = wxSINGLE, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = -1, int x8 = 0, string* x9 = NULL, int x10 = 0, class wxFont* x11 = NULL, class wxFont* x12 = NULL, string x13 = "button"));
   ~os_wxListBox();
   void OnDropFile(epathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -317,8 +318,8 @@ void os_wxListBox::gcFixup() {
 
 static Scheme_Object *os_wxListBox_class;
 
-os_wxListBox::os_wxListBox CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, int x8, string* x9, int x10, class wxFont* x11, string x12))
-CONSTRUCTOR_INIT(: wxListBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12))
+os_wxListBox::os_wxListBox CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, int x8, string* x9, int x10, class wxFont* x11, class wxFont* x12, string x13))
+CONSTRUCTOR_INIT(: wxListBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13))
 {
 }
 
@@ -551,6 +552,27 @@ void os_wxListBox::OnKillFocus()
   
      READY_TO_RETURN;
   }
+}
+
+static Scheme_Object *os_wxListBoxGetLabelFont(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxFont* r;
+  objscheme_check_valid(os_wxListBox_class, "get-label-font in list-box%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxListBox *)((Scheme_Class_Object *)p[0])->primdata)->GetLabelFont());
+
+  
+  
+  READY_TO_RETURN;
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxFont(r));
 }
 
 static Scheme_Object *os_wxListBoxSetString(int n,  Scheme_Object *p[])
@@ -1119,9 +1141,10 @@ static Scheme_Object *os_wxListBox_ConstructScheme(int n,  Scheme_Object *p[])
   string* x9 INIT_NULLED_OUT;
   int x10;
   class wxFont* x11 INIT_NULLED_OUT;
-  string x12 INIT_NULLED_OUT;
+  class wxFont* x12 INIT_NULLED_OUT;
+  string x13 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(7);
+  SETUP_VAR_STACK_PRE_REMEMBERED(8);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, realobj);
   VAR_STACK_PUSH(2, x0);
@@ -1129,10 +1152,11 @@ static Scheme_Object *os_wxListBox_ConstructScheme(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(4, x9);
   VAR_STACK_PUSH(5, x11);
   VAR_STACK_PUSH(6, x12);
+  VAR_STACK_PUSH(7, x13);
 
   int cb_pos = 0;
-  if ((n < (POFFSET+3)) || (n > (POFFSET+12))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in list-box%", POFFSET+3, POFFSET+12, n, p, 1));
+  if ((n < (POFFSET+3)) || (n > (POFFSET+13))) 
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in list-box%", POFFSET+3, POFFSET+13, n, p, 1));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in list-box%", 0));
   x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
   x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+2], "initialization in list-box%"));
@@ -1169,14 +1193,18 @@ static Scheme_Object *os_wxListBox_ConstructScheme(int n,  Scheme_Object *p[])
   } else
     x11 = NULL;
   if (n > (POFFSET+11)) {
-    x12 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+11], "initialization in list-box%"));
+    x12 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+11], "initialization in list-box%", 1));
   } else
-    x12 = "button";
+    x12 = NULL;
+  if (n > (POFFSET+12)) {
+    x13 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+12], "initialization in list-box%"));
+  } else
+    x13 = "button";
 
   if (!x6) x6 = -1;if (!x7) x7 = -1;x9 = WITH_VAR_STACK(__MakestringArray((8+POFFSET < n) ? p[POFFSET+8] : scheme_null, &x8, METHODNAME("list-box%","initialization")));
-  realobj = WITH_VAR_STACK(new os_wxListBox CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12)));
+  realobj = WITH_VAR_STACK(new os_wxListBox CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13)));
 #ifdef MZ_PRECISE_GC
-  WITH_VAR_STACK(realobj->gcInit_wxListBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12));
+  WITH_VAR_STACK(realobj->gcInit_wxListBox(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13));
 #endif
   realobj->__gc_external = (void *)p[0];
   delete[] x9;
@@ -1195,8 +1223,9 @@ void objscheme_setup_wxListBox(Scheme_Env *env)
 
   wxREGGLOB(os_wxListBox_class);
 
-  os_wxListBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "list-box%", "item%", (Scheme_Method_Prim *)os_wxListBox_ConstructScheme, 22));
+  os_wxListBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "list-box%", "item%", (Scheme_Method_Prim *)os_wxListBox_ConstructScheme, 23));
 
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-label-font" " method", (Scheme_Method_Prim *)os_wxListBoxGetLabelFont, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-string" " method", (Scheme_Method_Prim *)os_wxListBoxSetString, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-first-visible-item" " method", (Scheme_Method_Prim *)os_wxListBoxSetFirstItem, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set" " method", (Scheme_Method_Prim *)os_wxListBoxSet, 1, 1));

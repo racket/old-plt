@@ -115,7 +115,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 
   SubclassControl(wx_combo);
 
-  wxSetWinFont(panel->font, ms_handle);
+  wxSetWinFont(font, ms_handle);
 
   {
     int i;
@@ -445,7 +445,7 @@ wxCombo::wxCombo(wxWindow *for_canvas,
 		 int x, int y, int w, int h,
 		 int N, char **Choices,
 		 long style, char *name) :
-  wxChoice(panel, func, Title, x, y, w, h, N, Choices, style, name)
+  wxChoice(panel, func, Title, x, y, w, h, N, Choices, style, NULL, name)
 {
   WXGC_IGNORE(this, forCanvas);
   forCanvas = for_canvas;

@@ -36,7 +36,7 @@ static void menuSelect(wxMenu *XTMAC_UNUSED(m))
 @MACRO CHECKNEGNULL[pos] = $$CHECKNEG[<pos>.XC_SCHEME_NULL]
 @MACRO CHECKNEGFALSE[pos] = $$CHECKNEG[<pos>.scheme_false]
 
-@CREATOR (nstring=NULL,wxFunction=NULL/bCallback/ubCallback/cCallback//spCallback/nopush); : : ubCallbackSetup///ubCallbackCreatorFinish
+@CREATOR (nstring=NULL,wxFunction=NULL/bCallback/ubCallback/cCallback//spCallback/nopush,wxFont^=NULL); : : ubCallbackSetup///ubCallbackCreatorFinish
 
 @ "append" : void Append(ExactLong,string,wxMenu!,nstring=NULL); : : <> submenu
 @ "append" : void Append(ExactLong,string,nstring=NULL,bool=FALSE); : : <> string item
@@ -53,6 +53,8 @@ static void menuSelect(wxMenu *XTMAC_UNUSED(m))
 @ "set-title" : void SetTitle(string);
 
 @ "set-width" : void SetWidth(int);
+
+@ "get-font" : wxFont! GetFont();
 
 @ m "select" : void menuSelect();
 

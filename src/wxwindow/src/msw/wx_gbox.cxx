@@ -47,7 +47,7 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style, wxFont *_font):
 			      cparent->handle, (HMENU)nid,
 			      wxhInstance, NULL);
 
-  wxSetWinFont(labelFont, ms_handle);
+  wxSetWinFont(font, ms_handle);
 
   SubclassControl((HWND)ms_handle);
 
@@ -58,8 +58,8 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style, wxFont *_font):
     double label_height = 0;
     int char_width, ignored;
 
-    GetTextExtent(wxStripMenuCodes(the_label), &label_width, &label_height, NULL, NULL, labelFont);
-    wxGetCharSize((HWND)ms_handle, &char_width, &ignored, labelFont);
+    GetTextExtent(wxStripMenuCodes(the_label), &label_width, &label_height, NULL, NULL, font);
+    wxGetCharSize((HWND)ms_handle, &char_width, &ignored, font);
     label_width += 3 * char_width; /* space before & after label */
     width = label_width;
     height = label_height + 4;

@@ -63,10 +63,10 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
     int cx, cy;
     double current_width, cyf, total_width = 0;
 
-    wxGetCharSize(cparent->handle, &cx, &cy, buttonFont);
+    wxGetCharSize(cparent->handle, &cx, &cy, font);
     
     for (i = 0; i < n; i++) {
-      GetTextExtent(wxStripMenuCodes(choices[i]), &current_width, &cyf, NULL, NULL, buttonFont);
+      GetTextExtent(wxStripMenuCodes(choices[i]), &current_width, &cyf, NULL, NULL, font);
       if (current_width < 40)
 	current_width = 40;
       total_width += current_width + cy;
@@ -110,7 +110,7 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
 
   ms_handle = (HANDLE)hwndTab;
 
-  wxSetWinFont(buttonFont, ms_handle);
+  wxSetWinFont(font, ms_handle);
 
   prc.left = prc.top = prc.right = prc.bottom = 0;
   TabCtrl_AdjustRect(hwndTab, TRUE, &prc);

@@ -1,6 +1,8 @@
 #ifndef WXS_SETUP_ONLY
+extern Scheme_Object *objscheme_bundle_wxFont(class wxFont *);
 extern int objscheme_istype_wxMenu(Scheme_Object *, const char *, int);
 extern class wxMenu *objscheme_unbundle_wxMenu(Scheme_Object *, const char *, int);
+extern class wxFont *objscheme_unbundle_wxFont(Scheme_Object *, const char *, int);
 #endif
 void objscheme_setup_wxMenu(Scheme_Env *env);
 #ifndef WXS_SETUP_ONLY

@@ -24,8 +24,6 @@ wxbItem::wxbItem (wxPanel *panel)
     window_parent = panel;
     
     labelPosition = panel->label_position;
-    buttonFont = panel->buttonFont;
-    labelFont = panel->labelFont;
   }
 }
 

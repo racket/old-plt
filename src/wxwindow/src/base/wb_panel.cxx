@@ -72,16 +72,6 @@ int wxbPanel::GetLabelPosition(void)
   return label_position;
 }
 
-void wxbPanel::SetLabelFont(wxFont *fnt)
-{
-  labelFont = fnt;
-}
-
-void wxbPanel::SetButtonFont(wxFont *theFont)
-{
-  buttonFont = theFont;
-}
-
 void wxbPanel::OnEvent(wxMouseEvent *)
 {
 }

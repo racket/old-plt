@@ -1,6 +1,16 @@
 SrPersist 
 =========
 
+Version 103
+
+In srpinfo.tbl, moved entries for 
+ 'sql_integrity, 'sql_max_catalog_name_len, 
+ 'sql_max_schema_name_len, and 'sql_integrity 
+ to section conditionally-compiled for ODBC 3.0;
+ added entry for SQL_FILE_QUALIFIER, which, though not
+ in the ODBC 3.0 specification, was defined in earlier 
+ versions and still appears in the Microsoft header files.
+ 
 Version 102
 
 Registered global variables with garbage collector, 

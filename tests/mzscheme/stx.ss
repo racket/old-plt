@@ -19,6 +19,7 @@
 (test #f syntax-span (datum->syntax-object #f 10 '(aha 7 88 999 #f)))
 (test 22 syntax-span (datum->syntax-object #f 10 '(aha 7 88 999 22)))
 (test 0 syntax-span (datum->syntax-object #f 10 '(aha 1 1 1 0)))
+(test 0 syntax-column (datum->syntax-object #f 10 '(aha 1 0 1 0)))
 
 (err/rt-test (datum->syntax-object #f 10 10))
 (err/rt-test (datum->syntax-object #f 10 '(10)))
@@ -31,7 +32,7 @@
 (err/rt-test (datum->syntax-object #f 10 '(a 11 12 -13 14)))
 (err/rt-test (datum->syntax-object #f 10 '(a 11 12 13 -1)))
 (err/rt-test (datum->syntax-object #f 10 '(a 0 12 13 0)))
-(err/rt-test (datum->syntax-object #f 10 '(a 11 0 13 0)))
+(err/rt-test (datum->syntax-object #f 10 '(a 11 -1 13 0)))
 (err/rt-test (datum->syntax-object #f 10 '(a 11 12 0 0)))
 
 (syntax-test #'quote-syntax)

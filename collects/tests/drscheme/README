@@ -3,11 +3,15 @@
 This directory contains code for testing DrScheme.
 
 
+|# io-test.ss #|
+
+   This tests the drscheme's io implementation.
+   
 |# repl-test.ss #|
 
    This tests various interactions between parameters in the 
    implementation of drscheme.
-   
+
 |# language-test.ss #|   
 
 	This tests that all of the individual settings in the language dialog 

@@ -202,7 +202,7 @@
   ;; note: the boolean controls which variant of the union is passed to the 3rd arg.
   ;; expects to be called with user's parameterization active
   (define (process-file/zodiac filename f annotate?)
-    (let ([port (open-input-file filename)]
+    (let ([port (open-input-file filename 'text)]
 	  [setting (current-setting)])
       (dynamic-wind
        void

@@ -566,21 +566,30 @@
 			     [const-style (send style-list find-named-style "mzprizm:constant")]
 			     [rename-bindings
 			      (lambda (occurrances input-name)
-				(send definitions-edit begin-edit-sequence)
-				(let* ([new-name (format "~a" (string->symbol input-name))]
-				       [sorted (mzlib:function@:quicksort
-						occurrances
-						(lambda (x y)
-						  (<= (zodiac:location-offset (zodiac:zodiac-start y))
-						      (zodiac:location-offset (zodiac:zodiac-start x)))))]
-				       [rename-one
-					(lambda (z)
-					  (send definitions-edit insert new-name
-						(zodiac:location-offset (zodiac:zodiac-start z))
-						(add1 (zodiac:location-offset (zodiac:zodiac-finish z)))))])
-				  (for-each rename-one sorted))
-				(button-callback)
-				(send definitions-edit end-edit-sequence))]
+				(dynamic-wind
+				 (lambda ()
+				   (send definitions-edit begin-edit-sequence))
+				 (lambda ()
+				   (let* ([new-name (format "~a" (string->symbol input-name))]
+					  [_ (begin (print-struct #f) (printf "sorting ~a~n" occurrances))]
+					  [sorted (mzlib:function@:quicksort
+						   occurrances
+						   (lambda (x y)
+						     (<= (zodiac:location-offset (zodiac:zodiac-start y))
+							 (zodiac:location-offset (zodiac:zodiac-start x)))))]
+					  [_ (printf "sorted~n")]
+					  [rename-one
+					   (lambda (z)
+					     (printf "rename-one.1~n")
+					     (begin0
+					      (send definitions-edit insert new-name
+						    (zodiac:location-offset (zodiac:zodiac-start z))
+						    (add1 (zodiac:location-offset (zodiac:zodiac-finish z))))
+					      (printf "rename-one.2~n")))])
+				     (for-each rename-one sorted))
+				   (button-callback))
+				 (lambda ()
+				   (send definitions-edit end-edit-sequence))))]
 			     [color-loop
 			      (lambda (zodiac-ast)
 				(let* ([source-object?
@@ -797,16 +806,16 @@
 							     [start-pos-right (add1 (zodiac:location-offset (zodiac:zodiac-finish var)))]
 							     [rename (lambda (new-name)
 								       (when new-name
-									     (rename-bindings
-									      (mzlib:function@:foldl
-									       (lambda (test-var l)
-										 (if (eq? (zodiac:varref-var test-var)
-											  (zodiac:varref-var defn-var))
-										     (cons test-var l)
-										     l))
-									       defn-vars
-									       top-level-varrefs)
-									      new-name)))])
+									 (rename-bindings
+									  (mzlib:function@:foldl
+									   (lambda (test-var l)
+									     (if (eq? (zodiac:varref-var test-var)
+										      (zodiac:varref-var defn-var))
+										 (cons test-var l)
+										 l))
+									   defn-vars
+									   top-level-varrefs)
+									  new-name)))])
 							(add-arrow start-pos-left start-pos-right end-pos-left end-pos-right
 								   (zodiac:varref-var defn-var) rename)
 							bound-style))]

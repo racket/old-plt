@@ -619,7 +619,10 @@
 
     ; ----------------------------------------------------------------------
 
-    (define arglist-pattern 'args)
+    (define arglist-pattern
+      (if (language>=? 'side-effecting)
+	'(args)
+	'((args ...))))
 
     (define-struct arglist (vars))
     (define-struct (sym-arglist struct:arglist) ())

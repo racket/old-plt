@@ -2,7 +2,7 @@
 ;;
 ;; parser.ss
 ;; Richard Cobbe
-;; $Id: parser.ss,v 1.1 2004/07/27 22:41:36 cobbe Exp $
+;; $Id: parser.ss,v 1.2 2004/08/03 17:03:06 cobbe Exp $
 ;;
 ;; Implements the parser for the S-Expression based source syntax for
 ;; ClassicJava.
@@ -152,8 +152,8 @@
       [('ref obj (? field-name? fd)) (make-ref (parse-expr obj) fd)]
       [('set obj (? field-name? fd) rhs)
        (make-set (parse-expr obj) fd (parse-expr rhs))]
-      [('call obj (? method-name? md) args ...)
-       (make-call (parse-expr obj) md (map parse-expr args))]
+      [('send obj (? method-name? md) args ...)
+       (make-send (parse-expr obj) md (map parse-expr args))]
       [('super (? method-name? md) args ...)
        (make-super md (map parse-expr args))]
       [('cast (? class-name? cname) obj)

@@ -2,7 +2,7 @@
 ;;
 ;; parser-tests.ss
 ;; Richard Cobbe
-;; $Id: parser-tests.ss,v 1.2 2004/08/03 17:03:06 cobbe Exp $
+;; $Id: parser-tests.ss,v 1.3 2004/08/10 14:14:22 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -224,18 +224,18 @@
          (assert-parse-exn "bad expression" set
                            (parse-expr set))))
 
-     (make-test-case "call"
-       (assert-equal? (parse-expr '(call (ref x y) foo (ref z a) null))
-                      (make-call (make-ref (make-var-ref 'x) 'y)
+     (make-test-case "send"
+       (assert-equal? (parse-expr '(send (ref x y) foo (ref z a) null))
+                      (make-send (make-ref (make-var-ref 'x) 'y)
                                  'foo
                                  (list (make-ref (make-var-ref 'z)
                                                   'a)
                                        (make-nil)))))
 
-     (make-test-case "call: method name must be name"
-       (let ([call '(call (ref x y) (z q))])
-         (assert-parse-exn "bad expression" call
-                           (parse-expr call))))
+     (make-test-case "send: method name must be name"
+       (let ([send '(send (ref x y) (z q))])
+         (assert-parse-exn "bad expression" send
+                           (parse-expr send))))
 
      (make-test-case "super"
        (assert-equal? (parse-expr '(super foo x (ref a b)))
@@ -312,7 +312,7 @@
              (int zero () 0)
              (Object get-root () null)
              (int sum ((int x) (int y)) (+ x y)))
-           (call (new bar) zero)))
+           (send (new bar) zero)))
         (let* ([obj (make-class (make-class-type 'Object) #f null null)]
                [foo (make-class (make-class-type 'foo) obj null null)]
                [bar (make-class
@@ -340,7 +340,7 @@
                                          (make-var-ref 'y)))))])
           (make-program
            (hash-table ('Object obj) ('foo foo) ('bar bar))
-           (make-call (make-new (make-class-type 'bar))
+           (make-send (make-new (make-class-type 'bar))
                       'zero
                       null))
           ))))))

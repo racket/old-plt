@@ -1,7 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; ast.ss
-;; $Id: ast.ss,v 1.1 2004/07/27 22:41:36 cobbe Exp $
+;; $Id: ast.ss,v 1.2 2004/08/03 17:02:03 cobbe Exp $
 ;;
 ;; Defines the AST types used for the Acquired Java system.
 ;;
@@ -28,7 +28,7 @@
 
   (define BINARY-PRIMS '(+ - * == and or))
   (define UNARY-PRIMS '(zero? null? not))
-  (define RESERVED-WORDS '(class Object new ref set call super this cast let
+  (define RESERVED-WORDS '(class Object new ref set send super this cast let
                             int bool null true false addr))
   ;; addr doesn't show up in surface syntax, but it does show up as a keyword
   ;; in the reductions, so forbid it here.
@@ -97,7 +97,7 @@
    (define-struct (tagged-ref expr) (object type field))
    (define-struct (set expr) (object field rhs))
    (define-struct (tagged-set expr) (object type field rhs))
-   (define-struct (call expr) (object method args))
+   (define-struct (send expr) (object method args))
    (define-struct (super expr) (method args))
    (define-struct (tagged-super expr) (type method args))
    (define-struct (cast expr) (type object))
@@ -112,7 +112,7 @@
    ;;            | (make-nil)
    ;;            | (make-ref Src-Expr Field-Name)
    ;;            | (make-set Src-Expr Field-Name Src-Expr)
-   ;;            | (make-call Src-Expr Method-Name (Listof Src-Expr))
+   ;;            | (make-send Src-Expr Method-Name (Listof Src-Expr))
    ;;            | (make-super Method-Name (Listof Src-Expr))
    ;;            | (make-cast Type[Class] Src-Expr)
    ;;            | (make-cj-let ID Src-Expr Src-Expr)
@@ -129,7 +129,7 @@
    ;;               | (make-tagged-ref Src-Expr Type[Class] Field-Name)
    ;;               | (make-tagged-set Src-Expr Type[Class] Field-Name
    ;;                                  Src-Expr)
-   ;;               | (make-call Tagged-Expr Method-Name (Listof Tagged-Expr))
+   ;;               | (make-send Tagged-Expr Method-Name (Listof Tagged-Expr))
    ;;               | (make-tagged-super Type[Class] Method-Name
    ;;                                    (Listof Tagged-Expr))
    ;;               | (make-cast Type[Class] Tagged-Expr)
@@ -211,7 +211,7 @@
                                         [type class-type?]
                                         [field field-name?]
                                         [rhs expr?])]
-                    [struct call ([object expr?]
+                    [struct send ([object expr?]
                                   [method method-name?]
                                   [args (listof expr?)])]
                     [struct super ([method method-name?]

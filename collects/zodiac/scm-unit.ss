@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.50 1997/12/02 21:34:48 shriram Exp $
+; $Id: scm-unit.ss,v 1.51 1998/03/03 20:02:48 shriram Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -107,10 +107,20 @@
 	      (cons new-value (car current))
 	      (cdr current)))))))
 
-  (define remove-unresolved-attribute
-    (lambda (attributes)
-      (put-attribute attributes 'unresolved-unit-vars
-	(cdr (get-attribute attributes 'unresolved-unit-vars)))))
+  (define remove/update-unresolved-attribute
+    (lambda (attributes unresolveds)
+      (let ((left-unresolveds (cdr (get-attribute attributes
+				     'unresolved-unit-vars))))
+	(if (null? left-unresolveds)
+	  (begin
+	    (put-attribute attributes 'unresolved-unit-vars null)
+	    (unless (null? unresolveds)
+	      (static-error (car unresolveds)
+		"Unbound unit identifier ~a"
+		(z:read-object (car unresolveds)))))
+	  (put-attribute attributes 'unresolved-unit-vars
+	    (cons (append unresolveds (car left-unresolveds))
+	      (cdr left-unresolveds)))))))
 
   ; --------------------------------------------------------------------
 
@@ -221,24 +231,24 @@
 	      (internal-error entry
 		"Invalid in register-import/export")))))))
 
-  (define check-unresolved-vars
+  (define get-unresolved-vars
     (lambda (attributes)
       (let ((id-table (get-vars-attribute attributes))
 	     (unresolveds (get-unresolved-attribute attributes)))
-	(map (lambda (uid)
-	       (let ((entry (hash-table-get id-table
-			      (z:read-object uid) (lambda () #f))))
-		 (cond
-		   ((or (internal-id? entry) (export-id? entry))
-		     'do-nothing)
-		   ((not entry)
-		     (static-error uid
-		       "Reference to unbound unit identifier ~a"
-		       (z:read-object uid)))
-		   (else
-		     (internal-error entry
-		       "Invalid in check-unresolved-vars")))))
-	  unresolveds))))
+	(let loop ((remaining unresolveds)
+		    (unr null))
+	  (if (null? remaining) unr
+	    (let ((uid (car remaining)))
+	      (let ((entry (hash-table-get id-table
+			     (z:read-object uid) (lambda () #f))))
+		(cond
+		  ((or (internal-id? entry) (export-id? entry))
+		    (loop (cdr remaining) unr))
+		  ((not entry)
+		    (loop (cdr remaining) (cons uid unr)))
+		  (else
+		    (internal-error entry
+		      "Invalid in check-unresolved-vars"))))))))))
 
   ; ----------------------------------------------------------------------
 
@@ -336,10 +346,11 @@
 					       attributes
 					       unit-exports-vocab))
 					in:exports))
-			(_ (retract-env (map car proc:imports) env)))
-		      (check-unresolved-vars attributes)
+			(_ (retract-env (map car proc:imports) env))
+			(unresolveds (get-unresolved-vars attributes)))
 		      (remove-vars-attribute attributes)
-		      (remove-unresolved-attribute attributes)
+		      (remove/update-unresolved-attribute attributes
+			unresolveds)
 		      (when old-top-level
 			(put-attribute attributes 'top-levels old-top-level))
 		      (set-top-level-status attributes top-level?)

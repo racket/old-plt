@@ -161,15 +161,15 @@
 					      (if (null? omissions)
 						  (values names no-set? no-sel?)
 						  (let ([rest (cdr omissions)])
-						    (syntax-case (car omissions) (-selectors
-										  -setters
-										  -)
+						    (syntax-case (car omissions) ()
 						      [-selectors
+						       (literal? -selectors)
 						       (loop rest names #t no-sel?)]
 						      [-setters
+						       (literal? -setters)
 						       (loop rest names no-set? #t)]
 						      [(- name)
-						       (identifier? (syntax name))
+						       (and (literal? -) (identifier? (syntax name)))
 						       (loop rest (cons (syntax name) names)
 							     no-set? no-sel?)]
 						      [else

@@ -7,6 +7,7 @@ Registered bufferTable[] with garbage collector, made
  entries uncollectable
 Added version information procedures srp-version and 
  compiled-odbc-version
+Procedure execute becomes sql-execute
 
 Version 103
 

@@ -171,6 +171,8 @@ typedef struct {
   int c;
 } GlyphFindData;
 
+#include "wx_bitfield.inc"
+
 static int CALLBACK glyph_exists(ENUMLOGFONTW FAR* lpelf, 
 				 NEWTEXTMETRICW FAR* lpntm, 
 				 DWORD type, 
@@ -180,22 +182,35 @@ static int CALLBACK glyph_exists(ENUMLOGFONTW FAR* lpelf,
 
   if (((lpntm->tmFirstChar <= gfd->c)
        && (lpntm->tmLastChar >= gfd->c))) {
-    /* This font might work. Let's try it... */
-    HFONT old, cfont;
-    int ok;
+    /* This font might work...  */
+    int ok = 1;
+      
+    if (type == TRUETYPE_FONTTYPE) {
+      /* Use the unicode bitfield to avoid unnecessary font loading */
+      DWORD *usb;
+      int x;
+      usb = ((NEWTEXTMETRICEXW *)lpntm)->ntmFontSig.fsUsb;
+      x = get_bitfield(c); /* in wx_bitfield.inc */
+      if (!(usb[x >> 5] & (1 << (x & 0x31))))
+	ok = 0;
+    }
 
-    cfont = CreateFontIndirectW(&lpelf->elfLogFont);
-
-    old = (HFONT)::SelectObject(gfd->hdc, cfont);
-
-    ok = glyph_exists_in_selected_font(gfd->hdc, gfd->c);
-
-    ::SelectObject(gfd->hdc, old);
-
-    DeleteObject(cfont);
-
-    if (ok)
-      return 0;
+    if (ok) {
+      HFONT old, cfont;
+      
+      cfont = CreateFontIndirectW(&lpelf->elfLogFont);
+      
+      old = (HFONT)::SelectObject(gfd->hdc, cfont);
+      
+      ok = glyph_exists_in_selected_font(gfd->hdc, gfd->c);
+      
+      ::SelectObject(gfd->hdc, old);
+      
+      DeleteObject(cfont);
+      
+      if (ok)
+	return 0;
+    }
   }
   return 1;
 }

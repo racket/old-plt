@@ -111,16 +111,18 @@
           [(apos) "'"]
           [else #f]))
       
-      ;; lex : Input-port (-> Location) -> Token
+      ;; lex : Input-port (-> Location) -> (U Token special)
       (define (lex in pos)
-        (let ([c (peek-char in)])
+        (let ([c (peek-char-or-special in)])
           (cond
             [(eof-object? c) c]
             [(eq? c #\&) (lex-entity in pos)]
             [(eq? c #\<) (lex-tag-cdata-pi-comment in pos)]
+            [(eq? c 'special) (read-char-or-special in)]
             [else (lex-pcdata in pos)])))
       
-      ;; lex-entity : Input-port (-> Location) -> Entity
+      ; lex-entity : Input-port (-> Location) -> Entity
+      ; pre: the first char is a #\&
       (define (lex-entity in pos)
         (let ([start (pos)])
           (read-char in)
@@ -141,7 +143,8 @@
                              (lex-error in pos "expected ; at the end of an entity")))])])
             (make-entity start (pos) data))))
       
-      ;; lex-tag-cdata-pi-comment : Input-port (-> Location) -> Start-tag | Element | End-tag | Pcdata | Pi | Comment
+      ; lex-tag-cdata-pi-comment : Input-port (-> Location) -> Start-tag | Element | End-tag | Pcdata | Pi | Comment
+      ; pre: the first char is a #\<
       (define (lex-tag-cdata-pi-comment in pos)
         (let ([start (pos)])
           (read-char in)
@@ -236,8 +239,8 @@
       ;; deviation - should sometimes insist on at least one space
       (define (skip-space in)
         (let loop ()
-          (let ([c (peek-char in)])
-            (when (and (not (eof-object? c)) (char-whitespace? c))
+          (let ([c (peek-char-or-special in)])
+            (when (and (not (eof-object? c)) (not (eq? 'special c)) (char-whitespace? c))
               (read-char in)
               (loop)))))
       
@@ -246,9 +249,9 @@
       (define (lex-pcdata in pos)
         (let ([start (pos)]
               [data (let loop ()
-                      (let ([next (peek-char in)])
+                      (let ([next (peek-char-or-special in)])
                         (cond
-                          [(or (eof-object? next) (eq? next #\&) (eq? next #\<))
+                          [(or (eof-object? next) (eq? next 'special) (eq? next #\&) (eq? next #\<))
                            null]
                           [(and (char-whitespace? next) (collapse-whitespace))
                            (skip-space in)
@@ -357,27 +360,15 @@
       (define lex-cdata-contents (gen-read-until-string "]]>"))
       
       ;; positionify : Input-port -> Input-port (-> Location)
+      ; This function predates port-count-lines! and port-next-location.
+      ; Otherwise I would have used those directly at the call sites.
       (define (positionify in)
-        (let ([line 1]
-              [char 0]
-              [offset 0])
-          (values (make-custom-input-port
-		   in
-                   (lambda (s)
-                     (set! char (add1 char))
-                     (set! offset (add1 offset))
-                     (let ([c (read-char in)])
-                       (when (equal? c #\newline)
-                         (set! line (+ line 1))
-                         (set! char 0))
-		       (if (eof-object? c)
-			   c
-			   (begin
-			     (string-set! s 0 c)
-			     1))))
-		   #f
-		   void)
-                  (lambda () (make-location line char offset)))))
+        (port-count-lines! in)
+        (values
+         in
+         (lambda ()
+           (let-values ([(line column offset) (port-next-location in)])
+             (make-location line column offset)))))
       
       ;; lex-error : Input-port String (-> Location) TST* -> alpha
       (define (lex-error in pos str . rest)

@@ -788,7 +788,7 @@
 		(parameterization-branch-handler 
 		 (lambda () (make-parameterization user-parameterization)))))))))
       
-    (define console-edit% (make-console-edit% mred:edit:edit%))
+    (define console-edit% (make-console-edit% mred:edit:info-edit%))
 
     (define make-transparent-io-edit%
       (lambda (super%)
@@ -1033,4 +1033,4 @@
 
     (define console-frame% (make-console-frame%
 			    (mred:find-string:make-searchable-frame%
-			     mred:frame:simple-menu-frame%))))
+			     mred:frame:info-frame%))))

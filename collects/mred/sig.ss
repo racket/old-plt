@@ -3,6 +3,8 @@
      `(reference "wxs.ss")
      `(define-signature mred:wx^ ())))
 
+(reference-library "dates.ss")
+
 (define-signature mred:connections^
   (connections-frame%
    connections-dialog-box%
@@ -213,9 +215,11 @@
    make-pasteboard%
    make-return-edit%
    make-backup-autosave-buffer%
+   make-info-edit%
 
    edit%
    return-edit%
+   info-edit%
    backup-autosave-edit%
    pasteboard%
    backup-autosave-pasteboard%
@@ -246,11 +250,13 @@
    make-simple-frame%
    make-menu-frame%
    make-standard-menus-frame%
+   make-info-frame%
 
    empty-frame%
    menu-frame%
    standard-menus-frame%
-   simple-menu-frame%))
+   simple-menu-frame%
+   info-frame%))
 
 (define-signature mred:editor-frame^
   (make-editor-frame%

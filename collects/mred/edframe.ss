@@ -180,7 +180,7 @@
 
     (define editor-frame% (make-editor-frame%
 			   (mred:find-string:make-searchable-frame%
-			    mred:frame:simple-menu-frame%)))
+			    mred:frame:info-frame%)))
 
     (define make-pasteboard-frame%
       (lambda (super%)

@@ -6,6 +6,8 @@
 			   (if mred:explicit-wx? 
 			       `(reference-unit/sig "wxr.ss")
 			       `(unit/sig () (import)))))]
+	  [date : mzlib:date^ ((reference-library-unit/sig "dater.ss")
+			       (core function@))]
 	  [constants : mred:constants^ ((reference-unit/sig "constant.ss"))]
 	  [version : mred:version^ ((reference-unit/sig "version.ss")
 				    wx
@@ -90,7 +92,8 @@
 		  preferences edit container canvas icon
 		  menu group finder find-string handler exit autosave
 		  panel gui-utils application
-		  (core function@) (core file@))]
+		  (core function@) (core file@)
+		  date)]
 	  [find-string : mred:find-string^ 
 		       ((reference-unit/sig "findstr.ss") wx 
 			constants

@@ -1,7 +1,9 @@
 (module acks mzscheme
-  (provide general-acks translating-acks authors)
+  (provide get-general-acks
+           get-translating-acks
+           get-authors)
   
-  (define authors
+  (define (get-authors)
     (string-append
      "DrScheme was written by "
      "John Clements, "
@@ -13,9 +15,9 @@
      "and "
      "Paul Steckler."))
   
-  (define general-acks
+  (define (get-general-acks)
     (string-append
-     "Thanks to"
+     "Thanks to "
      "Ian Barland, "
      "Eli Barzilay, "
      "Gann Bierner, "
@@ -38,7 +40,7 @@
      "Adam Wick "
      "for contributions of prototypes, libraries, and criticism of PLT documentation."))
 
-  (define translating-acks
+  (define (get-translating-acks)
     (string-append
      "Thanks to "
      "Ian Barland, "

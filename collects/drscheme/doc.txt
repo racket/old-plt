@@ -1,3 +1,9 @@
+_acks.ss_
+
+The module in acks.ss exports: _get-general-acks_,
+_get-translating-acks_, and _get-authors_, each of which
+return strings listing various thank yous.
+
 _load-handler.ss_
 
   load-handler.ss provides a unit designed to be used with the launchers that drscheme creates.

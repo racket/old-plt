@@ -1,5 +1,5 @@
 ;;
-;; $Id: stprims.ss,v 1.9 1997/08/13 15:34:57 krentel Exp krentel $
+;; $Id: stprims.ss,v 1.10 1997/08/15 19:31:12 krentel Exp krentel $
 ;;
 ;; Primitives for faking user input.
 ;; Buttons, Keystrokes, Menus, Mice.
@@ -11,7 +11,6 @@
     [wx        : mred:wx^]
     [mred      : mred:testable-window^]
     [mred      : mred:keymap^]
-    [mred:test : mred:test:globals^]
     [mred:test : mred:test:run^])
 
   (define arg-error error)  ;; naive error handling (for now).
@@ -191,33 +190,55 @@
     
   
   ;;
-  ;; MENU ITEMS are selected with
-  ;; (send <wx:frame> command <menu-item-id>)
+  ;; MENU ITEMS 
+  ;;
+  ;; Select menu item with: 
+  ;;   (send <wx:frame> command <menu-item-id>)
   ;; menu, item: strings
+  ;;
   ;; DOESN'T HANDLE MENU CHECKBOXES YET.
   ;;
   
+  (define menu-tag 'mred:test:menu-select)
+  
   (define menu-select
-    (let ([tag  'mred:test:menu-select])
-      (lambda (menu item)
-	(cond
-	  [(not (string? menu))
-	   (arg-error tag "invalid menu")]
-	  [(not (string? item))
-	   (arg-error tag "invalid menu item")]
-	  [else
+    (lambda (menu item)
+      (cond
+	[(not (string? menu))
+	 (arg-error menu-tag "expects string, given: ~s" menu)]
+	[(not (string? item))
+	 (arg-error menu-tag "expects string, given: ~s" item)]
+	[else
+	 (let* ([frame    (mred:test:get-active-frame)]
+		[item-id  (menu-item-id frame menu item)])
 	   (mred:test:run-one
 	    (lambda ()
-	      (let*
-		  ([frame     (mred:test:top-frame)]
-		   [menu-bar  (mred:test:frame->menu-bar frame)]
-		   [item-id   (mred:test:menu-bar->item-id menu-bar menu item)])
-		(send frame command item-id)
-		(void))))]))))
+	      (send frame command item-id))))])))
+	     
+  ;; get-active-frame => #f for no active frame.
+  ;; get-menu-bar     => () for no menu bar.
+  ;; find-menu-item   => -1 for no such item.
+  ;; dialog boxes don't have menu-bars or get-menu-bar method.
+
+  (define menu-item-id
+    (lambda (frame menu item)
+      (cond
+	[(not frame)
+	 (arg-error menu-tag "no active frame")]
+	[(not (ivar-in-class? 'get-menu-bar (object-class frame)))
+	 (arg-error menu-tag "active frame does not have menu bar")]
+	[else
+	 (let ([menu-bar  (send frame get-menu-bar)])
+	   (if (null? menu-bar)
+	       (arg-error menu-tag "active frame does not have menu bar")
+	       (let ([item-id  (send menu-bar find-menu-item menu item)])
+		 (if (= item-id -1)
+		     (arg-error menu-tag "menu ~s does not contain item ~s" menu item)
+		     item-id))))])))
   
   
   ;;
-  ;; SIMPLE MOUSE EVENTS.
+  ;; SIMPLE MOUSE EVENTS
   ;;
   ;; Simple left-click mouse in current canvas.
   ;; Sends 3 wx:mouse-events to canvas: motion, down, up.
@@ -303,5 +324,14 @@
 		  (send-mouse-event new-window enter))
 		(send new-window set-focus)
 		(void))))]))))
+  
+  ;;
+  ;; Provide no op as a way to catch pending errors.
+  ;; void runs in the handler thread.
+  ;;
+  
+  (define noop
+    (lambda ()
+      (mred:test:run-one void)))
   
   )

@@ -255,10 +255,13 @@ An `override' declaration enables the corresponding (internal) method
 name to be used with the `super' form. The `super' form is legal only
 for expressions within a `class' (or `class*', etc.).
 
-For cases where `super' cannot be used --- either because now
+For cases where `super' cannot be used --- either because no
 overriding method is declared in a class that calls a super method, or
 because the super call is in a lexically nested class --- the
 `rename-super' form can be used just like the old `rename' form.
+
+The script plt/notes/mzscheme/rename-super-fixup.ss may be useful for
+converting code that uses `rename' to use `super'.
 
 Augment-Only Methods
 --------------------
@@ -366,21 +369,21 @@ Note that `pubment', `augment', or `overment' without an `inner' call
 is effectively the same as `public-final', `augment-final', or
 `override-final'. However, the `-final' variants report a class error
 if a subclass attempts to augment the method, whereas the non-`-final'
-variants allow subclasses to include a augmentation (that is always
+variants allow subclasses to include an augmentation (that is always
 ignored).
 
 In general:
 
-               Can use `inner'?    Can use `super'?
-    public          N                    N
-    pubment         Y                    N
-    override        N                    Y
-    augment         Y                    N
-    overment        Y                    Y
-    augride         N                    N
-    public-final    N                    N
-    override-final  N                    Y
-    augment-final   N                    N
+                  Can use `inner'?    Can use `super'?
+    public             N                    N
+    pubment            Y                    N
+    override           N                    Y
+    augment            Y                    N
+    overment           Y                    Y
+    augride            N                    N
+    public-final       N                    N
+    override-final     N                    Y
+    augment-final      N                    N
 
 
 The `rename-inner' form is similar to `rename-super'. Like

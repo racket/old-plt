@@ -3,7 +3,7 @@
 ;; elaboration.ss
 ;;
 ;; Richard Cobbe
-;; $Id: elaboration.ss,v 1.4 2005/02/02 15:06:47 cobbe Exp $
+;; $Id: elaboration.ss,v 1.5 2005/02/18 03:53:41 cobbe Exp $
 ;;
 ;; Code to type-check and elaborate the program.
 ;;
@@ -172,6 +172,7 @@
         [($ var-ref var)
          (values e
                  (lookup tenv var
+                         eq?
                          (lambda ()
                            (raise (make-exn:cj:elab
                                    "unbound identifier"
@@ -291,7 +292,13 @@
   ;; elab-super :: Program (Env Type) Method-Name (Listof Expr) -> Expr Type
   (define elab-super
     (lambda (p tenv md args)
-      (let* ([static-type (lookup tenv 'this (lambda () (error 'elab-super)))]
+      (let* ([static-type (lookup tenv 'this eq?
+                                  (lambda ()
+                                    (raise
+                                     (make-exn:cj:elab
+                                      "internal error: this unbound"
+                                      (current-continuation-marks)
+                                      (make-super md args)))))]
              [static-class (find-class p static-type)]
              [superclass (class-superclass static-class)]
              ;; superclass can only be null if static-type is Object, which

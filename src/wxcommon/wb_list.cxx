@@ -4,7 +4,7 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_list.cxx,v 1.5 1999/11/24 21:20:32 mflatt Exp $
+ * RCS_ID:	$Id: wb_list.cxx,v 1.6 1999/11/25 22:57:08 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -190,7 +190,7 @@ wxNode *wxList::Nth (int i)
 
 }
 
-wxNode *wxList::Find (long key)
+wxNode *wxList::Find(long key)
 {
   wxNode *current;
   current = First();
@@ -219,6 +219,19 @@ wxNode *wxList::Find (const char *key)
 
   return NULL;			// Not found!
 
+}
+
+wxNode *wxList::FindPtr(void *key)
+{
+  wxNode *current;
+  current = First();
+  while (current) {
+    if ((void *)current->string_key == key)
+      return current;
+    current = current->Next();
+  }
+  
+  return NULL;			// Not found!
 }
 
 wxNode *wxList::Member (wxObject * object)
@@ -484,7 +497,7 @@ wxObject* wxChildNode::Data()
   if (strong)
     return strong;
   else if (weak)
-    return *weak;
+    return cnGET_WEAK(weak);
   else
     return NULL;
 }
@@ -629,21 +642,30 @@ void wxChildList::Show(wxObject *object, int show)
 	node->strong = object;
 	node->weak = NULL;
       } else {
+#ifdef MZ_PRECISE_GC
+	void *weak;
+#else
 	wxObject **weak;
+#endif
+
 	if (node->weak)
 	  return;
+
 #ifdef MZ_PRECISE_GC
-	/* FIXME: needs to be a weak box */
-	weak = (wxObject **)GC_malloc(sizeof(wxObject *));
+	if (show < 0)
+	  weak = GC_malloc_weak_box(object, NULL);
+	else {
+	  weak = GC_malloc_atomic(sizeof(short) + sizeof(short) + sizeof(void *));
+	  *(void **)(weak + 2 * sizeof(short)) = object;
+	}
 #else
 	weak = new WXGC_ATOMIC wxObject*;
-#endif
-	node->weak = weak;
-	*node->weak = object;
-#ifndef MZ_PRECISE_GC
+	*weak = object;
 	if (show < 0)
-	  GC_general_register_disappearing_link((void **)node->weak, object);
+	  GC_general_register_disappearing_link((void **)weak, object);
 #endif
+
+	node->weak = weak;
 	node->strong = NULL;
       }
       return;

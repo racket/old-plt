@@ -36,7 +36,7 @@ class os_wxObject : public wxObject {
   ~os_wxObject();
 };
 
-Scheme_Object *os_wxObject_class;
+static Scheme_Object *os_wxObject_class;
 
 os_wxObject::os_wxObject(Scheme_Object *)
 : wxObject()
@@ -52,10 +52,11 @@ os_wxObject::~os_wxObject()
 static Scheme_Object *os_wxObject_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxObject *realobj;
+  REMEMBER_VAR_STACK();
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   if (n != 0) 
@@ -75,20 +76,18 @@ static Scheme_Object *os_wxObject_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
 void objscheme_setup_wxObject(void *env)
 {
-  if (os_wxObject_class) {
-    objscheme_add_global_class(os_wxObject_class, "object%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxObject_class = objscheme_def_prim_class(env, "object%", NULL, os_wxObject_ConstructScheme, 0);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("object%");
+  wxREGGLOB(os_wxObject_class);
 
+  os_wxObject_class = objscheme_def_prim_class(env, "object%", NULL, os_wxObject_ConstructScheme, 0);
 
 
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxObject_class));
+
+  WITH_VAR_STACK(scheme_made_class(os_wxObject_class));
 
 
-  }
 }
 
 int objscheme_istype_wxObject(Scheme_Object *obj, const char *stop, int nullOK)

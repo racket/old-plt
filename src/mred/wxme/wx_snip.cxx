@@ -70,12 +70,7 @@ static void memmove(char *dest, char *src, long size)
 
 #define ALWAYSZERO(x) if (x) *x = 0;
 
-#ifdef MZ_PRECISE_GC
-extern void *GC_malloc_atomic(long);
-# define STRALLOC(n) GC_malloc_atomic(n)
-#else
-# define STRALLOC(n) new WXGC_ATOMIC char[n]
-#endif
+#define STRALLOC(n) new WXGC_ATOMIC char[n]
 #define STRFREE(s) /* empty */
 
 /***************************************************************/
@@ -146,11 +141,7 @@ void wxSnip::Init(void)
   next = prev = NULL;
   line = NULL;
 
-#ifdef MZ_PRECISE_GC
-  admin_ptr = (wxSnipAdmin **)GC_malloc(sizeof(wxSnipAdmin*));
-#else
   admin_ptr = new wxSnipAdmin*;
-#endif
   *admin_ptr = NULL;
 
   style = wxTheStyleList->BasicStyle();

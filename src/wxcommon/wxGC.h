@@ -66,12 +66,25 @@ class gc_marking
 extern void *GC_get_current_new();
 extern void *GC_pop_current_new();
 
+extern void *GC_cpp_malloc(size_t);
+
 # define GC_register_finalizer_ignore_self GC_register_finalizer
+#endif
+
+
+#ifdef MZ_PRECISE_GC
+# define gcOBJ_TO_PTR(x) ((char *)x - 4)
+# define gcPTR_TO_OBJ(x) ((char *)x + 4)
+# define __GC_SUPERCLASS__ : public gc_marking
+#else
+# define gcOBJ_TO_PTR(x) x
+# define gcPTR_TO_OBJ(x) x
+# define __GC_SUPERCLASS__ /* none */
 #endif
 
 /********************* The `gc' class *************************/
 
-class gc 
+class gc __GC_SUPERCLASS__
 {
 public:
   void *__gc_external;
@@ -88,6 +101,10 @@ public:
   inline void *operator new[](size_t size);
   inline void *operator new[](size_t size, GCPlacement gcp);
   inline void operator delete[](void *obj);
+#endif
+
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mp);
 #endif
 };
 
@@ -109,14 +126,14 @@ inline gc::~gc(void)
 {
   if (__gc_external)
     gc_mark_external_invalid(__gc_external);
-  GC_register_finalizer_ignore_self(this, 0, 0, 0, 0);
+  GC_register_finalizer_ignore_self(gcOBJ_TO_PTR(this), 0, 0, 0, 0);
 }
 
 /***** Allocators: ******/
 
 inline void *gc::operator new(size_t size)
 {
-#ifdef USE_SENORA_GC
+#if defined(USE_SENORA_GC) || defined(MZ_PRECISE_GC)
   return GC_cpp_malloc(size);
 #else
   return GC_malloc(size);
@@ -127,8 +144,13 @@ inline void *gc::operator new(size_t size, GCPlacement gcp)
 {
   if (gcp == AtomicGC) 
     return GC_malloc_atomic(size);
-  else
+  else {
+#if defined(USE_SENORA_GC) || defined(MZ_PRECISE_GC)
+    return GC_cpp_malloc(size);
+#else
     return GC_malloc(size);
+#endif
+  }
 }
 
 inline void gc::operator delete(void * /*obj*/) 

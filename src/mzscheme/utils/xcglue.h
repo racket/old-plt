@@ -164,7 +164,7 @@ typedef float nnfloat;
                                          __gc_var_stack__[p+4] = (void *)n
 # define SET_VAR_STACK()                 GC_variable_stack = __gc_var_stack__
 # define WITH_VAR_STACK(x)               (SET_VAR_STACK(), x)
-# define REMEMBER_VAR_STACK()            void *__remembered_vs__ = GC_variable_stack
+# define REMEMBER_VAR_STACK()            void **__remembered_vs__ = GC_variable_stack
 # define WITH_REMEMBERED_STACK(x)        (GC_variable_stack = __remembered_vs__, x)
 #else
 # define NEW_OBJECT(t, args)  new t args

@@ -31,7 +31,7 @@
 @INCLUDE list.xci
 
 @MACRO cStringList = (SCHEME_LISTP({x}) && (XC_SCHEME_NULLP({x}) || SCHEME_STRINGP(SCHEME_CAR({x}))))
-@MACRO cBitmapList = (SCHEME_LISTP({x}) && (XC_SCHEME_NULLP({x}) || objscheme_istype_wxBitmap((SCHEME_CAR({x})), NULL, 0)))
+@MACRO cBitmapList = (SCHEME_LISTP({x}) && (XC_SCHEME_NULLP({x}) || WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap((SCHEME_CAR({x})), NULL, 0))))
 
 @MACRO spBitmapList = (listof wxBitmap-object)
 

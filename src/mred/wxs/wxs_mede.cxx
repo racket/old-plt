@@ -940,7 +940,7 @@ class os_wxMediaEdit : public wxMediaEdit {
   class wxMediaBuffer* CopySelf();
 };
 
-Scheme_Object *os_wxMediaEdit_class;
+static Scheme_Object *os_wxMediaEdit_class;
 
 os_wxMediaEdit::os_wxMediaEdit(Scheme_Object *, nnfloat x0, float* x1, int x2)
 : wxMediaEdit(x0, x1, x2)
@@ -2747,8 +2747,8 @@ static Scheme_Object *os_wxMediaEditRemoveClickback(Scheme_Object *obj, int n,  
   nnlong x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "remove-clickback in text%"));
@@ -2776,8 +2776,8 @@ static Scheme_Object *os_wxMediaEditSetClickback(Scheme_Object *obj, int n,  Sch
   Bool x5;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x3);
   VAR_STACK_PUSH(3, x4);
 
@@ -2813,8 +2813,8 @@ static Scheme_Object *os_wxMediaEditSetWordbreakFunc(Scheme_Object *obj, int n, 
   void* x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x1);
 
   
@@ -2839,8 +2839,8 @@ static Scheme_Object *os_wxMediaEditSetAutowrapBitmap(Scheme_Object *obj, int n,
   class wxBitmap* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -2851,7 +2851,7 @@ static Scheme_Object *os_wxMediaEditSetAutowrapBitmap(Scheme_Object *obj, int n,
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxBitmap(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxBitmap(r));
 }
 
 #pragma argsused
@@ -2863,8 +2863,8 @@ static Scheme_Object *os_wxMediaEditOnNewTabSnip(Scheme_Object *obj, int n,  Sch
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -2876,7 +2876,7 @@ static Scheme_Object *os_wxMediaEditOnNewTabSnip(Scheme_Object *obj, int n,  Sch
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxTabSnip(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxTabSnip(r));
 }
 
 #pragma argsused
@@ -2888,8 +2888,8 @@ static Scheme_Object *os_wxMediaEditOnNewTextSnip(Scheme_Object *obj, int n,  Sc
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -2901,7 +2901,7 @@ static Scheme_Object *os_wxMediaEditOnNewTextSnip(Scheme_Object *obj, int n,  Sc
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxTextSnip(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxTextSnip(r));
 }
 
 #pragma argsused
@@ -2913,8 +2913,8 @@ static Scheme_Object *os_wxMediaEditCaretHidden(Scheme_Object *obj, int n,  Sche
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -2935,8 +2935,8 @@ static Scheme_Object *os_wxMediaEditHideCaret(Scheme_Object *obj, int n,  Scheme
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "hide-caret in text%"));
@@ -2958,8 +2958,8 @@ static Scheme_Object *os_wxMediaEditGetWordbreakMap(Scheme_Object *obj, int n,  
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -2968,7 +2968,7 @@ static Scheme_Object *os_wxMediaEditGetWordbreakMap(Scheme_Object *obj, int n,  
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxMediaWordbreakMap(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaWordbreakMap(r));
 }
 
 #pragma argsused
@@ -2980,8 +2980,8 @@ static Scheme_Object *os_wxMediaEditSetWordbreakMap(Scheme_Object *obj, int n,  
   class wxMediaWordbreakMap* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -3008,8 +3008,8 @@ static Scheme_Object *os_wxMediaEditFindWordbreak(Scheme_Object *obj, int n,  Sc
   int x2;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   if (XC_SCHEME_NULLP(p[0]))
@@ -3045,8 +3045,8 @@ static Scheme_Object *os_wxMediaEditSetRegionData(Scheme_Object *obj, int n,  Sc
   class wxBufferData* x2;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x2);
 
   
@@ -3076,8 +3076,8 @@ static Scheme_Object *os_wxMediaEditGetRegionData(Scheme_Object *obj, int n,  Sc
   nnlong x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "get-region-data in text%"));
@@ -3091,7 +3091,7 @@ static Scheme_Object *os_wxMediaEditGetRegionData(Scheme_Object *obj, int n,  Sc
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxBufferData(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxBufferData(r));
 }
 
 #pragma argsused
@@ -3102,8 +3102,8 @@ static Scheme_Object *os_wxMediaEditAfterSetSizeConstraint(Scheme_Object *obj, i
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -3126,8 +3126,8 @@ static Scheme_Object *os_wxMediaEditOnSetSizeConstraint(Scheme_Object *obj, int 
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -3151,8 +3151,8 @@ static Scheme_Object *os_wxMediaEditCanSetSizeConstraint(Scheme_Object *obj, int
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -3175,8 +3175,8 @@ static Scheme_Object *os_wxMediaEditAfterSetPosition(Scheme_Object *obj, int n, 
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -3201,8 +3201,8 @@ static Scheme_Object *os_wxMediaEditAfterChangeStyle(Scheme_Object *obj, int n, 
   nnlong x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "after-change-style in text%"));
@@ -3229,8 +3229,8 @@ static Scheme_Object *os_wxMediaEditOnChangeStyle(Scheme_Object *obj, int n,  Sc
   nnlong x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "on-change-style in text%"));
@@ -3258,8 +3258,8 @@ static Scheme_Object *os_wxMediaEditCanChangeStyle(Scheme_Object *obj, int n,  S
   nnlong x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "can-change-style? in text%"));
@@ -3286,8 +3286,8 @@ static Scheme_Object *os_wxMediaEditAfterDelete(Scheme_Object *obj, int n,  Sche
   nnlong x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "after-delete in text%"));
@@ -3314,8 +3314,8 @@ static Scheme_Object *os_wxMediaEditOnDelete(Scheme_Object *obj, int n,  Scheme_
   nnlong x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "on-delete in text%"));
@@ -3343,8 +3343,8 @@ static Scheme_Object *os_wxMediaEditCanDelete(Scheme_Object *obj, int n,  Scheme
   nnlong x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "can-delete? in text%"));
@@ -3371,8 +3371,8 @@ static Scheme_Object *os_wxMediaEditAfterInsert(Scheme_Object *obj, int n,  Sche
   nnlong x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "after-insert in text%"));
@@ -3399,8 +3399,8 @@ static Scheme_Object *os_wxMediaEditOnInsert(Scheme_Object *obj, int n,  Scheme_
   nnlong x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "on-insert in text%"));
@@ -3428,8 +3428,8 @@ static Scheme_Object *os_wxMediaEditCanInsert(Scheme_Object *obj, int n,  Scheme
   nnlong x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "can-insert? in text%"));
@@ -3458,8 +3458,8 @@ static Scheme_Object *os_wxMediaEditSetTabs(Scheme_Object *obj, int n,  Scheme_O
   Bool x3;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -3496,8 +3496,8 @@ static Scheme_Object *os_wxMediaEditGetTabs(Scheme_Object *obj, int n,  Scheme_O
   Bool* x2 = &_x2;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   if (n > 0) {
@@ -3545,8 +3545,8 @@ static Scheme_Object *os_wxMediaEditSetOverwriteMode(Scheme_Object *obj, int n, 
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "set-overwrite-mode in text%"));
@@ -3568,8 +3568,8 @@ static Scheme_Object *os_wxMediaEditGetOverwriteMode(Scheme_Object *obj, int n, 
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -3590,8 +3590,8 @@ static Scheme_Object *os_wxMediaEditSetFileFormat(Scheme_Object *obj, int n,  Sc
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(unbundle_symset_fileType(p[0], "set-file-format in text%"));
@@ -3613,8 +3613,8 @@ static Scheme_Object *os_wxMediaEditGetFileFormat(Scheme_Object *obj, int n,  Sc
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -3623,7 +3623,7 @@ static Scheme_Object *os_wxMediaEditGetFileFormat(Scheme_Object *obj, int n,  Sc
 
   
   
-  return WITH_VAR_STACK(bundle_symset_fileType(r));
+  return WITH_REMEMBERED_STACK(bundle_symset_fileType(r));
 }
 
 #pragma argsused
@@ -3633,14 +3633,14 @@ static Scheme_Object *os_wxMediaEditWriteToFile(Scheme_Object *obj, int n,  Sche
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  if ((n >= 2) && objscheme_istype_wxMediaStreamOut(p[0], NULL, 0) && objscheme_istype_number(p[1], NULL)) {
+  if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_wxMediaStreamOut(p[0], NULL, 0)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[1], NULL))) {
     class wxMediaStreamOut* x0;
     nnlong x1;
     long x2;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -3662,8 +3662,8 @@ static Scheme_Object *os_wxMediaEditWriteToFile(Scheme_Object *obj, int n,  Sche
     class wxMediaStreamOut* x0;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -3688,14 +3688,14 @@ static Scheme_Object *os_wxMediaEditReadFromFile(Scheme_Object *obj, int n,  Sch
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  if ((n >= 2) && objscheme_istype_wxMediaStreamIn(p[0], NULL, 0) && objscheme_istype_nonnegative_symbol_integer(p[1], "start", NULL)) {
+  if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_wxMediaStreamIn(p[0], NULL, 0)) && WITH_REMEMBERED_STACK(objscheme_istype_nonnegative_symbol_integer(p[1], "start", NULL))) {
     class wxMediaStreamIn* x0;
     long x1;
     Bool x2;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -3718,8 +3718,8 @@ static Scheme_Object *os_wxMediaEditReadFromFile(Scheme_Object *obj, int n,  Sch
     Bool x1;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -3751,8 +3751,8 @@ static Scheme_Object *os_wxMediaEditGetCharacter(Scheme_Object *obj, int n,  Sch
   nnlong x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "get-character in text%"));
@@ -3780,8 +3780,8 @@ static Scheme_Object *os_wxMediaEditGetText(Scheme_Object *obj, int n,  Scheme_O
   long* x4 = &_x4;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   if (n > 0) {
@@ -3819,8 +3819,8 @@ static Scheme_Object *os_wxMediaEditGetSnipPosition(Scheme_Object *obj, int n,  
   class wxSnip* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -3850,8 +3850,8 @@ static Scheme_Object *os_wxMediaEditGetSnipPositionAndLocation(Scheme_Object *ob
   float* x3 = &_x3;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -3902,8 +3902,8 @@ static Scheme_Object *os_wxMediaEditFindSnip(Scheme_Object *obj, int n,  Scheme_
   nnlong* x2 = &_x2;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "find-snip in text%"));
@@ -3923,7 +3923,7 @@ static Scheme_Object *os_wxMediaEditFindSnip(Scheme_Object *obj, int n,  Scheme_
   if (n > 2 && !XC_SCHEME_NULLP(p[2]))
     WITH_VAR_STACK(objscheme_set_box(p[2], scheme_make_integer(_x2)));
   
-  return WITH_VAR_STACK(objscheme_bundle_wxSnip(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
 #pragma argsused
@@ -3943,8 +3943,8 @@ static Scheme_Object *os_wxMediaEditFindStringAll(Scheme_Object *obj, int n,  Sc
   Bool x6;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -3993,8 +3993,8 @@ static Scheme_Object *os_wxMediaEditFindString(Scheme_Object *obj, int n,  Schem
   Bool x5;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -4037,8 +4037,8 @@ static Scheme_Object *os_wxMediaEditSetStickyStyles(Scheme_Object *obj, int n,  
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "set-styles-sticky in text%"));
@@ -4060,8 +4060,8 @@ static Scheme_Object *os_wxMediaEditGetStickyStyles(Scheme_Object *obj, int n,  
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -4082,8 +4082,8 @@ static Scheme_Object *os_wxMediaEditSetLineSpacing(Scheme_Object *obj, int n,  S
   nnfloat x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[0], "set-line-spacing in text%"));
@@ -4105,8 +4105,8 @@ static Scheme_Object *os_wxMediaEditGetLineSpacing(Scheme_Object *obj, int n,  S
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -4115,7 +4115,7 @@ static Scheme_Object *os_wxMediaEditGetLineSpacing(Scheme_Object *obj, int n,  S
 
   
   
-  return WITH_VAR_STACK(scheme_make_double(r));
+  return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
 #pragma argsused
@@ -4128,8 +4128,8 @@ static Scheme_Object *os_wxMediaEditSetParagraghAlignment(Scheme_Object *obj, in
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "set-paragraph-alignment in text%"));
@@ -4155,8 +4155,8 @@ static Scheme_Object *os_wxMediaEditSetParagraghMargins(Scheme_Object *obj, int 
   nnfloat x3;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "set-paragraph-margins in text%"));
@@ -4181,8 +4181,8 @@ static Scheme_Object *os_wxMediaEditLastParagraph(Scheme_Object *obj, int n,  Sc
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -4204,8 +4204,8 @@ static Scheme_Object *os_wxMediaEditParagraphEndLine(Scheme_Object *obj, int n, 
   nnlong x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "paragraph-end-line in text%"));
@@ -4228,8 +4228,8 @@ static Scheme_Object *os_wxMediaEditParagraphStartLine(Scheme_Object *obj, int n
   nnlong x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "paragraph-start-line in text%"));
@@ -4252,8 +4252,8 @@ static Scheme_Object *os_wxMediaEditLineParagraph(Scheme_Object *obj, int n,  Sc
   nnlong x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "line-paragraph in text%"));
@@ -4277,8 +4277,8 @@ static Scheme_Object *os_wxMediaEditParagraphEndPosition(Scheme_Object *obj, int
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "paragraph-end-position in text%"));
@@ -4306,8 +4306,8 @@ static Scheme_Object *os_wxMediaEditParagraphStartPosition(Scheme_Object *obj, i
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "paragraph-start-position in text%"));
@@ -4335,8 +4335,8 @@ static Scheme_Object *os_wxMediaEditPositionParagraph(Scheme_Object *obj, int n,
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "position-paragraph in text%"));
@@ -4362,8 +4362,8 @@ static Scheme_Object *os_wxMediaEditLastLine(Scheme_Object *obj, int n,  Scheme_
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -4384,8 +4384,8 @@ static Scheme_Object *os_wxMediaEditLastPosition(Scheme_Object *obj, int n,  Sch
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -4407,8 +4407,8 @@ static Scheme_Object *os_wxMediaEditLineLength(Scheme_Object *obj, int n,  Schem
   nnlong x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "line-length in text%"));
@@ -4432,8 +4432,8 @@ static Scheme_Object *os_wxMediaEditLineEndPosition(Scheme_Object *obj, int n,  
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "line-end-position in text%"));
@@ -4461,8 +4461,8 @@ static Scheme_Object *os_wxMediaEditLineStartPosition(Scheme_Object *obj, int n,
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "line-start-position in text%"));
@@ -4490,8 +4490,8 @@ static Scheme_Object *os_wxMediaEditLineLocation(Scheme_Object *obj, int n,  Sch
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "line-location in text%"));
@@ -4505,7 +4505,7 @@ static Scheme_Object *os_wxMediaEditLineLocation(Scheme_Object *obj, int n,  Sch
 
   
   
-  return WITH_VAR_STACK(scheme_make_double(r));
+  return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
 #pragma argsused
@@ -4524,8 +4524,8 @@ static Scheme_Object *os_wxMediaEditPositionLocation(Scheme_Object *obj, int n, 
   Bool x5;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "position-location in text%"));
@@ -4579,8 +4579,8 @@ static Scheme_Object *os_wxMediaEditPositionLine(Scheme_Object *obj, int n,  Sch
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "position-line in text%"));
@@ -4606,8 +4606,8 @@ static Scheme_Object *os_wxMediaEditSetBetweenThreshold(Scheme_Object *obj, int 
   nnfloat x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[0], "set-between-threshold in text%"));
@@ -4629,8 +4629,8 @@ static Scheme_Object *os_wxMediaEditGetBetweenThreshold(Scheme_Object *obj, int 
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -4639,7 +4639,7 @@ static Scheme_Object *os_wxMediaEditGetBetweenThreshold(Scheme_Object *obj, int 
 
   
   
-  return WITH_VAR_STACK(scheme_make_double(r));
+  return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
 #pragma argsused
@@ -4659,8 +4659,8 @@ static Scheme_Object *os_wxMediaEditFindPositionInLine(Scheme_Object *obj, int n
   float* x4 = &_x4;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "find-position-in-line in text%"));
@@ -4713,8 +4713,8 @@ static Scheme_Object *os_wxMediaEditFindLine(Scheme_Object *obj, int n,  Scheme_
   Bool* x1 = &_x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[0], "find-line in text%"));
@@ -4753,8 +4753,8 @@ static Scheme_Object *os_wxMediaEditFindPosition(Scheme_Object *obj, int n,  Sch
   float* x4 = &_x4;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[0], "find-position in text%"));
@@ -4804,8 +4804,8 @@ static Scheme_Object *os_wxMediaEditSplitSnip(Scheme_Object *obj, int n,  Scheme
   nnlong x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "split-snip in text%"));
@@ -4824,14 +4824,14 @@ static Scheme_Object *os_wxMediaEditChangeStyle(Scheme_Object *obj, int n,  Sche
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  if ((n >= 2) && objscheme_istype_wxStyleDelta(p[0], NULL, 1) && objscheme_istype_nonnegative_symbol_integer(p[1], "start", NULL)) {
+  if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_wxStyleDelta(p[0], NULL, 1)) && WITH_REMEMBERED_STACK(objscheme_istype_nonnegative_symbol_integer(p[1], "start", NULL))) {
     class wxStyleDelta* x0;
     long x1;
     long x2;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -4849,12 +4849,12 @@ static Scheme_Object *os_wxMediaEditChangeStyle(Scheme_Object *obj, int n,  Sche
 
     
     
-  } else if ((n >= 1) && objscheme_istype_wxStyleDelta(p[0], NULL, 1)) {
+  } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxStyleDelta(p[0], NULL, 1))) {
     class wxStyleDelta* x0;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -4873,8 +4873,8 @@ static Scheme_Object *os_wxMediaEditChangeStyle(Scheme_Object *obj, int n,  Sche
     long x2;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -4910,8 +4910,8 @@ static Scheme_Object *os_wxMediaEditDoPaste(Scheme_Object *obj, int n,  Scheme_O
   ExactLong x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "do-paste in text%"));
@@ -4940,8 +4940,8 @@ static Scheme_Object *os_wxMediaEditDoCopy(Scheme_Object *obj, int n,  Scheme_Ob
   Bool x3;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "do-copy in text%"));
@@ -4966,14 +4966,14 @@ static Scheme_Object *os_wxMediaEditKill(Scheme_Object *obj, int n,  Scheme_Obje
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  if ((n >= 2) && objscheme_istype_ExactLong(p[0], NULL) && objscheme_istype_number(p[1], NULL)) {
+  if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_ExactLong(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[1], NULL))) {
     ExactLong x0;
     nnlong x1;
     nnlong x2;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if (n != 3) 
@@ -4991,8 +4991,8 @@ static Scheme_Object *os_wxMediaEditKill(Scheme_Object *obj, int n,  Scheme_Obje
     ExactLong x0;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if ((n > 1)) 
@@ -5020,8 +5020,8 @@ static Scheme_Object *os_wxMediaEditPasteNext(Scheme_Object *obj, int n,  Scheme
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -5039,14 +5039,14 @@ static Scheme_Object *os_wxMediaEditPaste(Scheme_Object *obj, int n,  Scheme_Obj
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  if ((n >= 2) && objscheme_istype_ExactLong(p[0], NULL) && objscheme_istype_nonnegative_symbol_integer(p[1], "end", NULL)) {
+  if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_ExactLong(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_nonnegative_symbol_integer(p[1], "end", NULL))) {
     ExactLong x0;
     long x1;
     long x2;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if ((n < 2) ||(n > 3)) 
@@ -5067,8 +5067,8 @@ static Scheme_Object *os_wxMediaEditPaste(Scheme_Object *obj, int n,  Scheme_Obj
     ExactLong x0;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if ((n > 1)) 
@@ -5094,15 +5094,15 @@ static Scheme_Object *os_wxMediaEditCopy(Scheme_Object *obj, int n,  Scheme_Obje
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  if ((n >= 3) && objscheme_istype_bool(p[0], NULL) && objscheme_istype_ExactLong(p[1], NULL) && objscheme_istype_nonnegative_symbol_integer(p[2], "start", NULL)) {
+  if ((n >= 3) && WITH_REMEMBERED_STACK(objscheme_istype_bool(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_ExactLong(p[1], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_nonnegative_symbol_integer(p[2], "start", NULL))) {
     Bool x0;
     ExactLong x1;
     long x2;
     long x3;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if ((n < 3) ||(n > 4)) 
@@ -5125,8 +5125,8 @@ static Scheme_Object *os_wxMediaEditCopy(Scheme_Object *obj, int n,  Scheme_Obje
     ExactLong x1;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if ((n > 2)) 
@@ -5156,15 +5156,15 @@ static Scheme_Object *os_wxMediaEditCut(Scheme_Object *obj, int n,  Scheme_Objec
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  if ((n >= 3) && objscheme_istype_bool(p[0], NULL) && objscheme_istype_ExactLong(p[1], NULL) && objscheme_istype_nonnegative_symbol_integer(p[2], "start", NULL)) {
+  if ((n >= 3) && WITH_REMEMBERED_STACK(objscheme_istype_bool(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_ExactLong(p[1], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_nonnegative_symbol_integer(p[2], "start", NULL))) {
     Bool x0;
     ExactLong x1;
     long x2;
     long x3;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if ((n < 3) ||(n > 4)) 
@@ -5187,8 +5187,8 @@ static Scheme_Object *os_wxMediaEditCut(Scheme_Object *obj, int n,  Scheme_Objec
     ExactLong x1;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if ((n > 2)) 
@@ -5220,8 +5220,8 @@ static Scheme_Object *os_wxMediaEditErase(Scheme_Object *obj, int n,  Scheme_Obj
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -5239,14 +5239,14 @@ static Scheme_Object *os_wxMediaEditDelete(Scheme_Object *obj, int n,  Scheme_Ob
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  if ((n >= 1) && objscheme_istype_nonnegative_symbol_integer(p[0], "start", NULL)) {
+  if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_nonnegative_symbol_integer(p[0], "start", NULL))) {
     long x0;
     long x1;
     Bool x2;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if ((n < 1) ||(n > 3)) 
@@ -5269,8 +5269,8 @@ static Scheme_Object *os_wxMediaEditDelete(Scheme_Object *obj, int n,  Scheme_Ob
   } else  {
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if (n != 0) 
@@ -5292,7 +5292,7 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  if ((n >= 2) && objscheme_istype_string(p[0], NULL) && objscheme_istype_number(p[1], NULL)) {
+  if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[1], NULL))) {
     long x0;
     string x1;
     nnlong x2;
@@ -5300,8 +5300,8 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
     Bool x4;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x1);
 
     
@@ -5323,13 +5323,13 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
 
     
     
-  } else if ((n >= 1) && objscheme_istype_string(p[0], NULL)) {
+  } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL))) {
     long x0;
     string x1;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x1);
 
     
@@ -5342,7 +5342,7 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
 
     
     
-  } else if ((n >= 3) && objscheme_istype_number(p[0], NULL) && objscheme_istype_string(p[1], NULL) && objscheme_istype_number(p[2], NULL)) {
+  } else if ((n >= 3) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[1], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[2], NULL))) {
     nnlong x0;
     string x1;
     nnlong x2;
@@ -5350,8 +5350,8 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
     Bool x4;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x1);
 
     
@@ -5374,13 +5374,13 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
 
     
     
-  } else if ((n >= 1) && objscheme_istype_number(p[0], NULL)) {
+  } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[0], NULL))) {
     nnlong x0;
     string x1;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x1);
 
     
@@ -5394,15 +5394,15 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
 
     
     
-  } else if ((n >= 2) && objscheme_istype_wxSnip(p[0], NULL, 0) && objscheme_istype_number(p[1], NULL)) {
+  } else if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[0], NULL, 0)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[1], NULL))) {
     class wxSnip* x0;
     nnlong x1;
     long x2;
     Bool x3;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -5424,12 +5424,12 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
 
     
     
-  } else if ((n >= 1) && objscheme_istype_wxSnip(p[0], NULL, 0)) {
+  } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[0], NULL, 0))) {
     class wxSnip* x0;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -5442,14 +5442,14 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
 
     
     
-  } else if ((n >= 2) && objscheme_istype_char(p[0], NULL) && objscheme_istype_number(p[1], NULL)) {
+  } else if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_char(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[1], NULL))) {
     unsigned char x0;
     nnlong x1;
     long x2;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if ((n < 2) ||(n > 3)) 
@@ -5470,8 +5470,8 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
     unsigned char x0;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if (n != 1) 
@@ -5496,8 +5496,8 @@ static Scheme_Object *os_wxMediaEditFlashOff(Scheme_Object *obj, int n,  Scheme_
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -5522,8 +5522,8 @@ static Scheme_Object *os_wxMediaEditFlashOn(Scheme_Object *obj, int n,  Scheme_O
   nnlong x4;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "flash-on in text%"));
@@ -5558,8 +5558,8 @@ static Scheme_Object *os_wxMediaEditGetAnchor(Scheme_Object *obj, int n,  Scheme
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -5580,8 +5580,8 @@ static Scheme_Object *os_wxMediaEditSetAnchor(Scheme_Object *obj, int n,  Scheme
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "set-anchor in text%"));
@@ -5609,8 +5609,8 @@ static Scheme_Object *os_wxMediaEditGetVisibleLineRange(Scheme_Object *obj, int 
   nnlong* x1 = &_x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   if (XC_SCHEME_NULLP(p[0]))
@@ -5646,8 +5646,8 @@ static Scheme_Object *os_wxMediaEditGetVisiblePositionRange(Scheme_Object *obj, 
   nnlong* x1 = &_x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   if (XC_SCHEME_NULLP(p[0]))
@@ -5684,8 +5684,8 @@ static Scheme_Object *os_wxMediaEditScrollToPosition(Scheme_Object *obj, int n, 
   int x3;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "scroll-to-position in text%"));
@@ -5721,8 +5721,8 @@ static Scheme_Object *os_wxMediaEditMovePosition(Scheme_Object *obj, int n,  Sch
   int x2;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(unbundle_symset_moveCode(p[0], "move-position in text%"));
@@ -5757,8 +5757,8 @@ static Scheme_Object *os_wxMediaEditSetPositionBiasScroll(Scheme_Object *obj, in
   int x5;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(unbundle_symset_Bias(p[0], "set-position-bias-scroll in text%"));
@@ -5801,8 +5801,8 @@ static Scheme_Object *os_wxMediaEditSetPosition(Scheme_Object *obj, int n,  Sche
   int x4;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "set-position in text%"));
@@ -5840,8 +5840,8 @@ static Scheme_Object *os_wxMediaEditGetEndPosition(Scheme_Object *obj, int n,  S
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -5862,8 +5862,8 @@ static Scheme_Object *os_wxMediaEditGetStartPosition(Scheme_Object *obj, int n, 
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -5887,8 +5887,8 @@ static Scheme_Object *os_wxMediaEditGetPosition(Scheme_Object *obj, int n,  Sche
   nnlong* x1 = &_x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   if (XC_SCHEME_NULLP(p[0]))
@@ -5926,8 +5926,8 @@ static Scheme_Object *os_wxMediaEditGetFlattenedText(Scheme_Object *obj, int n, 
   long* x0 = &_x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -5950,8 +5950,8 @@ static Scheme_Object *os_wxMediaEditPutFile(Scheme_Object *obj, int n,  Scheme_O
   nstring x1;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
 
@@ -5967,7 +5967,7 @@ static Scheme_Object *os_wxMediaEditPutFile(Scheme_Object *obj, int n,  Scheme_O
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
 #pragma argsused
@@ -5980,8 +5980,8 @@ static Scheme_Object *os_wxMediaEditGetFile(Scheme_Object *obj, int n,  Scheme_O
   nstring x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -5995,7 +5995,7 @@ static Scheme_Object *os_wxMediaEditGetFile(Scheme_Object *obj, int n,  Scheme_O
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
 #pragma argsused
@@ -6006,8 +6006,8 @@ static Scheme_Object *os_wxMediaEditAfterEditSequence(Scheme_Object *obj, int n,
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -6030,8 +6030,8 @@ static Scheme_Object *os_wxMediaEditOnEditSequence(Scheme_Object *obj, int n,  S
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -6055,8 +6055,8 @@ static Scheme_Object *os_wxMediaEditAfterLoadFile(Scheme_Object *obj, int n,  Sc
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "after-load-file in text%"));
@@ -6082,8 +6082,8 @@ static Scheme_Object *os_wxMediaEditOnLoadFile(Scheme_Object *obj, int n,  Schem
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6112,8 +6112,8 @@ static Scheme_Object *os_wxMediaEditCanLoadFile(Scheme_Object *obj, int n,  Sche
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6140,8 +6140,8 @@ static Scheme_Object *os_wxMediaEditAfterSaveFile(Scheme_Object *obj, int n,  Sc
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "after-save-file in text%"));
@@ -6167,8 +6167,8 @@ static Scheme_Object *os_wxMediaEditOnSaveFile(Scheme_Object *obj, int n,  Schem
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6197,8 +6197,8 @@ static Scheme_Object *os_wxMediaEditCanSaveFile(Scheme_Object *obj, int n,  Sche
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6226,8 +6226,8 @@ static Scheme_Object *os_wxMediaEditOnNewBox(Scheme_Object *obj, int n,  Scheme_
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(unbundle_symset_bufferType(p[0], "on-new-box in text%"));
@@ -6240,7 +6240,7 @@ static Scheme_Object *os_wxMediaEditOnNewBox(Scheme_Object *obj, int n,  Scheme_
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxSnip(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
 #pragma argsused
@@ -6256,8 +6256,8 @@ static Scheme_Object *os_wxMediaEditOnNewImageSnip(Scheme_Object *obj, int n,  S
   Bool x3;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6274,7 +6274,7 @@ static Scheme_Object *os_wxMediaEditOnNewImageSnip(Scheme_Object *obj, int n,  S
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxImageSnip(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxImageSnip(r));
 }
 
 #pragma argsused
@@ -6289,8 +6289,8 @@ static Scheme_Object *os_wxMediaEditInvalidateBitmapCache(Scheme_Object *obj, in
   float x3;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   if (n > 0) {
@@ -6338,8 +6338,8 @@ static Scheme_Object *os_wxMediaEditOnPaint(Scheme_Object *obj, int n,  Scheme_O
   int x8;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x1);
 
   
@@ -6374,8 +6374,8 @@ static Scheme_Object *os_wxMediaEditWriteFootersToFile(Scheme_Object *obj, int n
   class wxMediaStreamOut* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6402,8 +6402,8 @@ static Scheme_Object *os_wxMediaEditWriteHeadersToFile(Scheme_Object *obj, int n
   class wxMediaStreamOut* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6431,8 +6431,8 @@ static Scheme_Object *os_wxMediaEditReadFooterFromFile(Scheme_Object *obj, int n
   string x1;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
 
@@ -6462,8 +6462,8 @@ static Scheme_Object *os_wxMediaEditReadHeaderFromFile(Scheme_Object *obj, int n
   string x1;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
 
@@ -6492,8 +6492,8 @@ static Scheme_Object *os_wxMediaEditSetFilename(Scheme_Object *obj, int n,  Sche
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6524,8 +6524,8 @@ static Scheme_Object *os_wxMediaEditReleaseSnip(Scheme_Object *obj, int n,  Sche
   class wxSnip* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6551,8 +6551,8 @@ static Scheme_Object *os_wxMediaEditSetModified(Scheme_Object *obj, int n,  Sche
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "set-modified in text%"));
@@ -6578,8 +6578,8 @@ static Scheme_Object *os_wxMediaEditSetSnipData(Scheme_Object *obj, int n,  Sche
   class wxBufferData* x1;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
 
@@ -6608,8 +6608,8 @@ static Scheme_Object *os_wxMediaEditGetSnipData(Scheme_Object *obj, int n,  Sche
   class wxSnip* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6623,7 +6623,7 @@ static Scheme_Object *os_wxMediaEditGetSnipData(Scheme_Object *obj, int n,  Sche
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxBufferData(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxBufferData(r));
 }
 
 #pragma argsused
@@ -6639,8 +6639,8 @@ static Scheme_Object *os_wxMediaEditNeedsUpdate(Scheme_Object *obj, int n,  Sche
   nnfloat x4;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6671,8 +6671,8 @@ static Scheme_Object *os_wxMediaEditResized(Scheme_Object *obj, int n,  Scheme_O
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6700,8 +6700,8 @@ static Scheme_Object *os_wxMediaEditSetCaretOwner(Scheme_Object *obj, int n,  Sc
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6738,8 +6738,8 @@ static Scheme_Object *os_wxMediaEditScrollTo(Scheme_Object *obj, int n,  Scheme_
   int x6;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6773,8 +6773,8 @@ static Scheme_Object *os_wxMediaEditOnDisplaySize(Scheme_Object *obj, int n,  Sc
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -6797,8 +6797,8 @@ static Scheme_Object *os_wxMediaEditOnChange(Scheme_Object *obj, int n,  Scheme_
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -6822,8 +6822,8 @@ static Scheme_Object *os_wxMediaEditOnFocus(Scheme_Object *obj, int n,  Scheme_O
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "on-focus in text%"));
@@ -6848,8 +6848,8 @@ static Scheme_Object *os_wxMediaEditOnDefaultChar(Scheme_Object *obj, int n,  Sc
   class wxKeyEvent* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6875,8 +6875,8 @@ static Scheme_Object *os_wxMediaEditOnDefaultEvent(Scheme_Object *obj, int n,  S
   class wxMouseEvent* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6902,8 +6902,8 @@ static Scheme_Object *os_wxMediaEditOnLocalChar(Scheme_Object *obj, int n,  Sche
   class wxKeyEvent* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6929,8 +6929,8 @@ static Scheme_Object *os_wxMediaEditOnLocalEvent(Scheme_Object *obj, int n,  Sch
   class wxMouseEvent* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -6956,8 +6956,8 @@ static Scheme_Object *os_wxMediaEditFindFirstSnip(Scheme_Object *obj, int n,  Sc
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -6966,7 +6966,7 @@ static Scheme_Object *os_wxMediaEditFindFirstSnip(Scheme_Object *obj, int n,  Sc
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxSnip(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
 #pragma argsused
@@ -6977,8 +6977,8 @@ static Scheme_Object *os_wxMediaEditSizeCacheInvalid(Scheme_Object *obj, int n, 
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -7001,8 +7001,8 @@ static Scheme_Object *os_wxMediaEditBlinkCaret(Scheme_Object *obj, int n,  Schem
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -7026,8 +7026,8 @@ static Scheme_Object *os_wxMediaEditOwnCaret(Scheme_Object *obj, int n,  Scheme_
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "own-caret in text%"));
@@ -7056,8 +7056,8 @@ static Scheme_Object *os_wxMediaEditRefresh(Scheme_Object *obj, int n,  Scheme_O
   int x4;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[0], "refresh in text%"));
@@ -7087,8 +7087,8 @@ static Scheme_Object *os_wxMediaEditAdjustCursor(Scheme_Object *obj, int n,  Sch
   class wxMouseEvent* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -7102,7 +7102,7 @@ static Scheme_Object *os_wxMediaEditAdjustCursor(Scheme_Object *obj, int n,  Sch
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxCursor(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxCursor(r));
 }
 
 #pragma argsused
@@ -7114,8 +7114,8 @@ static Scheme_Object *os_wxMediaEditOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   class wxKeyEvent* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -7141,8 +7141,8 @@ static Scheme_Object *os_wxMediaEditOnEvent(Scheme_Object *obj, int n,  Scheme_O
   class wxMouseEvent* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -7168,8 +7168,8 @@ static Scheme_Object *os_wxMediaEditCopySelfTo(Scheme_Object *obj, int n,  Schem
   class wxMediaBuffer* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -7195,8 +7195,8 @@ static Scheme_Object *os_wxMediaEditCopySelf(Scheme_Object *obj, int n,  Scheme_
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -7208,20 +7208,21 @@ static Scheme_Object *os_wxMediaEditCopySelf(Scheme_Object *obj, int n,  Scheme_
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxMediaBuffer(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaBuffer(r));
 }
 
 #pragma argsused
 static Scheme_Object *os_wxMediaEdit_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxMediaEdit *realobj;
+  REMEMBER_VAR_STACK();
   nnfloat x0;
   float* x1;
   int x2;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x1);
 
   
@@ -7250,158 +7251,156 @@ static Scheme_Object *os_wxMediaEdit_ConstructScheme(Scheme_Object *obj, int n, 
 
 void objscheme_setup_wxMediaEdit(void *env)
 {
-  if (os_wxMediaEdit_class) {
-    objscheme_add_global_class(os_wxMediaEdit_class, "text%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxMediaEdit_class = objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 137);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("text%");
+  wxREGGLOB(os_wxMediaEdit_class);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "remove-clickback", os_wxMediaEditRemoveClickback, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-clickback", os_wxMediaEditSetClickback, 3, 5));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-wordbreak-func", os_wxMediaEditSetWordbreakFunc, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-autowrap-bitmap", os_wxMediaEditSetAutowrapBitmap, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-new-tab-snip", os_wxMediaEditOnNewTabSnip, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-new-string-snip", os_wxMediaEditOnNewTextSnip, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "caret-hidden?", os_wxMediaEditCaretHidden, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "hide-caret", os_wxMediaEditHideCaret, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-wordbreak-map", os_wxMediaEditGetWordbreakMap, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-wordbreak-map", os_wxMediaEditSetWordbreakMap, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-wordbreak", os_wxMediaEditFindWordbreak, 3, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-region-data", os_wxMediaEditSetRegionData, 3, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-region-data", os_wxMediaEditGetRegionData, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-set-size-constraint", os_wxMediaEditAfterSetSizeConstraint, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-set-size-constraint", os_wxMediaEditOnSetSizeConstraint, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "can-set-size-constraint?", os_wxMediaEditCanSetSizeConstraint, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-set-position", os_wxMediaEditAfterSetPosition, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-change-style", os_wxMediaEditAfterChangeStyle, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-change-style", os_wxMediaEditOnChangeStyle, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "can-change-style?", os_wxMediaEditCanChangeStyle, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-delete", os_wxMediaEditAfterDelete, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-delete", os_wxMediaEditOnDelete, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "can-delete?", os_wxMediaEditCanDelete, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-insert", os_wxMediaEditAfterInsert, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-insert", os_wxMediaEditOnInsert, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "can-insert?", os_wxMediaEditCanInsert, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-tabs", os_wxMediaEditSetTabs, 1, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-tabs", os_wxMediaEditGetTabs, 0, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-overwrite-mode", os_wxMediaEditSetOverwriteMode, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-overwrite-mode", os_wxMediaEditGetOverwriteMode, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-file-format", os_wxMediaEditSetFileFormat, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-file-format", os_wxMediaEditGetFileFormat, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "write-to-file", os_wxMediaEditWriteToFile, 1, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "read-from-file", os_wxMediaEditReadFromFile, 1, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-character", os_wxMediaEditGetCharacter, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-text", os_wxMediaEditGetText, 0, 4));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-snip-position", os_wxMediaEditGetSnipPosition, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-snip-position-and-location", os_wxMediaEditGetSnipPositionAndLocation, 2, 4));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-snip", os_wxMediaEditFindSnip, 2, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string-all", os_wxMediaEditFindStringAll, 1, 6));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string", os_wxMediaEditFindString, 1, 6));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-styles-sticky", os_wxMediaEditSetStickyStyles, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-styles-sticky", os_wxMediaEditGetStickyStyles, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-line-spacing", os_wxMediaEditSetLineSpacing, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-line-spacing", os_wxMediaEditGetLineSpacing, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-paragraph-alignment", os_wxMediaEditSetParagraghAlignment, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-paragraph-margins", os_wxMediaEditSetParagraghMargins, 4, 4));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "last-paragraph", os_wxMediaEditLastParagraph, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "paragraph-end-line", os_wxMediaEditParagraphEndLine, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "paragraph-start-line", os_wxMediaEditParagraphStartLine, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "line-paragraph", os_wxMediaEditLineParagraph, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "paragraph-end-position", os_wxMediaEditParagraphEndPosition, 1, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "paragraph-start-position", os_wxMediaEditParagraphStartPosition, 1, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "position-paragraph", os_wxMediaEditPositionParagraph, 1, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "last-line", os_wxMediaEditLastLine, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "last-position", os_wxMediaEditLastPosition, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "line-length", os_wxMediaEditLineLength, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "line-end-position", os_wxMediaEditLineEndPosition, 1, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "line-start-position", os_wxMediaEditLineStartPosition, 1, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "line-location", os_wxMediaEditLineLocation, 1, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "position-location", os_wxMediaEditPositionLocation, 1, 6));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "position-line", os_wxMediaEditPositionLine, 1, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-between-threshold", os_wxMediaEditSetBetweenThreshold, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-between-threshold", os_wxMediaEditGetBetweenThreshold, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-position-in-line", os_wxMediaEditFindPositionInLine, 2, 5));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-line", os_wxMediaEditFindLine, 1, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-position", os_wxMediaEditFindPosition, 2, 5));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "split-snip", os_wxMediaEditSplitSnip, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "change-style", os_wxMediaEditChangeStyle, 1, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "do-paste", os_wxMediaEditDoPaste, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "do-copy", os_wxMediaEditDoCopy, 4, 4));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "kill", os_wxMediaEditKill, 0, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "paste-next", os_wxMediaEditPasteNext, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "paste", os_wxMediaEditPaste, 0, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "copy", os_wxMediaEditCopy, 0, 4));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "cut", os_wxMediaEditCut, 0, 4));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "erase", os_wxMediaEditErase, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "delete", os_wxMediaEditDelete, 0, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "insert", os_wxMediaEditInsert, 1, 5));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "flash-off", os_wxMediaEditFlashOff, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "flash-on", os_wxMediaEditFlashOn, 2, 5));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-anchor", os_wxMediaEditGetAnchor, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-anchor", os_wxMediaEditSetAnchor, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-visible-line-range", os_wxMediaEditGetVisibleLineRange, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-visible-position-range", os_wxMediaEditGetVisiblePositionRange, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "scroll-to-position", os_wxMediaEditScrollToPosition, 1, 4));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "move-position", os_wxMediaEditMovePosition, 1, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-position-bias-scroll", os_wxMediaEditSetPositionBiasScroll, 2, 6));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-position", os_wxMediaEditSetPosition, 1, 5));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-end-position", os_wxMediaEditGetEndPosition, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-start-position", os_wxMediaEditGetStartPosition, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-position", os_wxMediaEditGetPosition, 1, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-flattened-text", os_wxMediaEditGetFlattenedText, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "put-file", os_wxMediaEditPutFile, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-file", os_wxMediaEditGetFile, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-edit-sequence", os_wxMediaEditAfterEditSequence, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-edit-sequence", os_wxMediaEditOnEditSequence, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-load-file", os_wxMediaEditAfterLoadFile, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-load-file", os_wxMediaEditOnLoadFile, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "can-load-file?", os_wxMediaEditCanLoadFile, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-save-file", os_wxMediaEditAfterSaveFile, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-save-file", os_wxMediaEditOnSaveFile, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "can-save-file?", os_wxMediaEditCanSaveFile, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-new-box", os_wxMediaEditOnNewBox, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-new-image-snip", os_wxMediaEditOnNewImageSnip, 4, 4));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "invalidate-bitmap-cache", os_wxMediaEditInvalidateBitmapCache, 0, 4));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-paint", os_wxMediaEditOnPaint, 9, 9));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "write-footers-to-file", os_wxMediaEditWriteFootersToFile, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "write-headers-to-file", os_wxMediaEditWriteHeadersToFile, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "read-footer-from-file", os_wxMediaEditReadFooterFromFile, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "read-header-from-file", os_wxMediaEditReadHeaderFromFile, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-filename", os_wxMediaEditSetFilename, 1, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "release-snip", os_wxMediaEditReleaseSnip, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-modified", os_wxMediaEditSetModified, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-snip-data", os_wxMediaEditSetSnipData, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-snip-data", os_wxMediaEditGetSnipData, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "needs-update", os_wxMediaEditNeedsUpdate, 5, 5));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "resized", os_wxMediaEditResized, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-caret-owner", os_wxMediaEditSetCaretOwner, 1, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "scroll-to", os_wxMediaEditScrollTo, 6, 7));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-display-size", os_wxMediaEditOnDisplaySize, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-change", os_wxMediaEditOnChange, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-focus", os_wxMediaEditOnFocus, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-default-char", os_wxMediaEditOnDefaultChar, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-default-event", os_wxMediaEditOnDefaultEvent, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-local-char", os_wxMediaEditOnLocalChar, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-local-event", os_wxMediaEditOnLocalEvent, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-first-snip", os_wxMediaEditFindFirstSnip, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "size-cache-invalid", os_wxMediaEditSizeCacheInvalid, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "blink-caret", os_wxMediaEditBlinkCaret, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "own-caret", os_wxMediaEditOwnCaret, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "refresh", os_wxMediaEditRefresh, 5, 5));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "adjust-cursor", os_wxMediaEditAdjustCursor, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-char", os_wxMediaEditOnChar, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-event", os_wxMediaEditOnEvent, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "copy-self-to", os_wxMediaEditCopySelfTo, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "copy-self", os_wxMediaEditCopySelf, 0, 0));
+  os_wxMediaEdit_class = objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 137);
+
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "remove-clickback", os_wxMediaEditRemoveClickback, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-clickback", os_wxMediaEditSetClickback, 3, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-wordbreak-func", os_wxMediaEditSetWordbreakFunc, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-autowrap-bitmap", os_wxMediaEditSetAutowrapBitmap, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-new-tab-snip", os_wxMediaEditOnNewTabSnip, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-new-string-snip", os_wxMediaEditOnNewTextSnip, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "caret-hidden?", os_wxMediaEditCaretHidden, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "hide-caret", os_wxMediaEditHideCaret, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-wordbreak-map", os_wxMediaEditGetWordbreakMap, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-wordbreak-map", os_wxMediaEditSetWordbreakMap, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-wordbreak", os_wxMediaEditFindWordbreak, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-region-data", os_wxMediaEditSetRegionData, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-region-data", os_wxMediaEditGetRegionData, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-set-size-constraint", os_wxMediaEditAfterSetSizeConstraint, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-set-size-constraint", os_wxMediaEditOnSetSizeConstraint, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "can-set-size-constraint?", os_wxMediaEditCanSetSizeConstraint, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-set-position", os_wxMediaEditAfterSetPosition, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-change-style", os_wxMediaEditAfterChangeStyle, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-change-style", os_wxMediaEditOnChangeStyle, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "can-change-style?", os_wxMediaEditCanChangeStyle, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-delete", os_wxMediaEditAfterDelete, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-delete", os_wxMediaEditOnDelete, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "can-delete?", os_wxMediaEditCanDelete, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-insert", os_wxMediaEditAfterInsert, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-insert", os_wxMediaEditOnInsert, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "can-insert?", os_wxMediaEditCanInsert, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-tabs", os_wxMediaEditSetTabs, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-tabs", os_wxMediaEditGetTabs, 0, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-overwrite-mode", os_wxMediaEditSetOverwriteMode, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-overwrite-mode", os_wxMediaEditGetOverwriteMode, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-file-format", os_wxMediaEditSetFileFormat, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-file-format", os_wxMediaEditGetFileFormat, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "write-to-file", os_wxMediaEditWriteToFile, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "read-from-file", os_wxMediaEditReadFromFile, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-character", os_wxMediaEditGetCharacter, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-text", os_wxMediaEditGetText, 0, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-snip-position", os_wxMediaEditGetSnipPosition, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-snip-position-and-location", os_wxMediaEditGetSnipPositionAndLocation, 2, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-snip", os_wxMediaEditFindSnip, 2, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string-all", os_wxMediaEditFindStringAll, 1, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string", os_wxMediaEditFindString, 1, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-styles-sticky", os_wxMediaEditSetStickyStyles, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-styles-sticky", os_wxMediaEditGetStickyStyles, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-line-spacing", os_wxMediaEditSetLineSpacing, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-line-spacing", os_wxMediaEditGetLineSpacing, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-paragraph-alignment", os_wxMediaEditSetParagraghAlignment, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-paragraph-margins", os_wxMediaEditSetParagraghMargins, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "last-paragraph", os_wxMediaEditLastParagraph, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "paragraph-end-line", os_wxMediaEditParagraphEndLine, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "paragraph-start-line", os_wxMediaEditParagraphStartLine, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "line-paragraph", os_wxMediaEditLineParagraph, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "paragraph-end-position", os_wxMediaEditParagraphEndPosition, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "paragraph-start-position", os_wxMediaEditParagraphStartPosition, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "position-paragraph", os_wxMediaEditPositionParagraph, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "last-line", os_wxMediaEditLastLine, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "last-position", os_wxMediaEditLastPosition, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "line-length", os_wxMediaEditLineLength, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "line-end-position", os_wxMediaEditLineEndPosition, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "line-start-position", os_wxMediaEditLineStartPosition, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "line-location", os_wxMediaEditLineLocation, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "position-location", os_wxMediaEditPositionLocation, 1, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "position-line", os_wxMediaEditPositionLine, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-between-threshold", os_wxMediaEditSetBetweenThreshold, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-between-threshold", os_wxMediaEditGetBetweenThreshold, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-position-in-line", os_wxMediaEditFindPositionInLine, 2, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-line", os_wxMediaEditFindLine, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-position", os_wxMediaEditFindPosition, 2, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "split-snip", os_wxMediaEditSplitSnip, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "change-style", os_wxMediaEditChangeStyle, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "do-paste", os_wxMediaEditDoPaste, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "do-copy", os_wxMediaEditDoCopy, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "kill", os_wxMediaEditKill, 0, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "paste-next", os_wxMediaEditPasteNext, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "paste", os_wxMediaEditPaste, 0, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "copy", os_wxMediaEditCopy, 0, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "cut", os_wxMediaEditCut, 0, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "erase", os_wxMediaEditErase, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "delete", os_wxMediaEditDelete, 0, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "insert", os_wxMediaEditInsert, 1, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "flash-off", os_wxMediaEditFlashOff, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "flash-on", os_wxMediaEditFlashOn, 2, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-anchor", os_wxMediaEditGetAnchor, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-anchor", os_wxMediaEditSetAnchor, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-visible-line-range", os_wxMediaEditGetVisibleLineRange, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-visible-position-range", os_wxMediaEditGetVisiblePositionRange, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "scroll-to-position", os_wxMediaEditScrollToPosition, 1, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "move-position", os_wxMediaEditMovePosition, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-position-bias-scroll", os_wxMediaEditSetPositionBiasScroll, 2, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-position", os_wxMediaEditSetPosition, 1, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-end-position", os_wxMediaEditGetEndPosition, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-start-position", os_wxMediaEditGetStartPosition, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-position", os_wxMediaEditGetPosition, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-flattened-text", os_wxMediaEditGetFlattenedText, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "put-file", os_wxMediaEditPutFile, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-file", os_wxMediaEditGetFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-edit-sequence", os_wxMediaEditAfterEditSequence, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-edit-sequence", os_wxMediaEditOnEditSequence, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-load-file", os_wxMediaEditAfterLoadFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-load-file", os_wxMediaEditOnLoadFile, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "can-load-file?", os_wxMediaEditCanLoadFile, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-save-file", os_wxMediaEditAfterSaveFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-save-file", os_wxMediaEditOnSaveFile, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "can-save-file?", os_wxMediaEditCanSaveFile, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-new-box", os_wxMediaEditOnNewBox, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-new-image-snip", os_wxMediaEditOnNewImageSnip, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "invalidate-bitmap-cache", os_wxMediaEditInvalidateBitmapCache, 0, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-paint", os_wxMediaEditOnPaint, 9, 9));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "write-footers-to-file", os_wxMediaEditWriteFootersToFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "write-headers-to-file", os_wxMediaEditWriteHeadersToFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "read-footer-from-file", os_wxMediaEditReadFooterFromFile, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "read-header-from-file", os_wxMediaEditReadHeaderFromFile, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-filename", os_wxMediaEditSetFilename, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "release-snip", os_wxMediaEditReleaseSnip, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-modified", os_wxMediaEditSetModified, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-snip-data", os_wxMediaEditSetSnipData, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-snip-data", os_wxMediaEditGetSnipData, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "needs-update", os_wxMediaEditNeedsUpdate, 5, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "resized", os_wxMediaEditResized, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-caret-owner", os_wxMediaEditSetCaretOwner, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "scroll-to", os_wxMediaEditScrollTo, 6, 7));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-display-size", os_wxMediaEditOnDisplaySize, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-change", os_wxMediaEditOnChange, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-focus", os_wxMediaEditOnFocus, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-default-char", os_wxMediaEditOnDefaultChar, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-default-event", os_wxMediaEditOnDefaultEvent, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-local-char", os_wxMediaEditOnLocalChar, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-local-event", os_wxMediaEditOnLocalEvent, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-first-snip", os_wxMediaEditFindFirstSnip, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "size-cache-invalid", os_wxMediaEditSizeCacheInvalid, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "blink-caret", os_wxMediaEditBlinkCaret, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "own-caret", os_wxMediaEditOwnCaret, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "refresh", os_wxMediaEditRefresh, 5, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "adjust-cursor", os_wxMediaEditAdjustCursor, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-char", os_wxMediaEditOnChar, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-event", os_wxMediaEditOnEvent, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "copy-self-to", os_wxMediaEditCopySelfTo, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "copy-self", os_wxMediaEditCopySelf, 0, 0));
 
 
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxMediaEdit_class));
+  WITH_VAR_STACK(scheme_made_class(os_wxMediaEdit_class));
 
-    WITH_REMEMBERED_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxMediaEdit, wxTYPE_MEDIA_EDIT));
+  WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxMediaEdit, wxTYPE_MEDIA_EDIT));
 
-  }
 }
 
 int objscheme_istype_wxMediaEdit(Scheme_Object *obj, const char *stop, int nullOK)

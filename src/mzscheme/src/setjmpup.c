@@ -39,6 +39,11 @@
 #undef memcpy
 #endif
 
+#ifdef MZ_PRECISE_GC
+void *(*scheme_get_external_stack_val)(void);
+void (*scheme_set_external_stack_val)(void *);
+#endif
+
 #ifndef MZ_PRECISE_GC
 
 /**********************************************************************/
@@ -252,6 +257,8 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *start)
 
 #ifdef MZ_PRECISE_GC
   b->gc_var_stack = GC_variable_stack;
+  if (scheme_get_external_stack_val)
+    b->external_stack = scheme_get_external_stack_val();
 #endif
   
   memcpy(get_copy(b->stack_copy),
@@ -291,6 +298,8 @@ static void uncopy_stack(int ok, Scheme_Jumpup_Buf *b, long *prev)
 
 #ifdef MZ_PRECISE_GC
   GC_variable_stack = b->gc_var_stack;
+  if (scheme_set_external_stack_val)
+    scheme_set_external_stack_val(b->external_stack);
 #endif
 
 #ifdef WIN32_SETJMP_HACK

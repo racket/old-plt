@@ -23,6 +23,7 @@ class MrEdFinalizedContext;
 
 typedef struct MrEdContext {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
 
   Scheme_Process *handler_running;
   int suspended;

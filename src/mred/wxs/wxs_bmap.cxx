@@ -137,7 +137,7 @@ class os_wxBitmap : public wxBitmap {
   ~os_wxBitmap();
 };
 
-Scheme_Object *os_wxBitmap_class;
+static Scheme_Object *os_wxBitmap_class;
 
 os_wxBitmap::os_wxBitmap(Scheme_Object *, string x0, int x1, int x2)
 : wxBitmap(x0, x1, x2)
@@ -170,8 +170,8 @@ static Scheme_Object *os_wxBitmapSaveFile(Scheme_Object *obj, int n,  Scheme_Obj
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -197,8 +197,8 @@ static Scheme_Object *os_wxBitmapLoadFile(Scheme_Object *obj, int n,  Scheme_Obj
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -225,8 +225,8 @@ static Scheme_Object *os_wxBitmapIsColor(Scheme_Object *obj, int n,  Scheme_Obje
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -247,8 +247,8 @@ static Scheme_Object *os_wxBitmapOk(Scheme_Object *obj, int n,  Scheme_Object *p
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -269,8 +269,8 @@ static Scheme_Object *os_wxBitmapGetWidth(Scheme_Object *obj, int n,  Scheme_Obj
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -291,8 +291,8 @@ static Scheme_Object *os_wxBitmapGetHeight(Scheme_Object *obj, int n,  Scheme_Ob
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -313,8 +313,8 @@ static Scheme_Object *os_wxBitmapGetDepth(Scheme_Object *obj, int n,  Scheme_Obj
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -330,14 +330,15 @@ static Scheme_Object *os_wxBitmapGetDepth(Scheme_Object *obj, int n,  Scheme_Obj
 static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxBitmap *realobj;
-  if ((n >= 1) && objscheme_istype_number(p[0], NULL)) {
+  REMEMBER_VAR_STACK();
+  if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[0], NULL))) {
     int x0;
     int x1;
     Bool x2;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if ((n < 2) ||(n > 3)) 
@@ -355,14 +356,14 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     objscheme_note_creation(obj);
     
     
-  } else if ((n >= 2) && objscheme_istype_string(p[0], NULL) && objscheme_istype_number(p[1], NULL)) {
+  } else if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[1], NULL))) {
     string x0;
     int x1;
     int x2;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -372,7 +373,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[1], 1, 10000, "initialization in bitmap% (datastring case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[2], 1, 10000, "initialization in bitmap% (datastring case)"));
 
-    if (SCHEME_STRTAG_VAL(p[0]) < (((x1 * x2) + 7) >> 3)) scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "string too short: ", p[0]);
+    if (SCHEME_STRTAG_VAL(p[0]) < (((x1 * x2) + 7) >> 3)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "string too short: ", p[0]));
     realobj = NEW_OBJECT(os_wxBitmap, (obj, x0, x1, x2));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
@@ -383,8 +384,8 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     int x1;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -412,27 +413,25 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
 void objscheme_setup_wxBitmap(void *env)
 {
-  if (os_wxBitmap_class) {
-    objscheme_add_global_class(os_wxBitmap_class, "bitmap%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxBitmap_class = objscheme_def_prim_class(env, "bitmap%", "object%", os_wxBitmap_ConstructScheme, 7);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("bitmap%");
+  wxREGGLOB(os_wxBitmap_class);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "save-file", os_wxBitmapSaveFile, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "load-file", os_wxBitmapLoadFile, 1, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "is-color?", os_wxBitmapIsColor, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "ok?", os_wxBitmapOk, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "get-width", os_wxBitmapGetWidth, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "get-height", os_wxBitmapGetHeight, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "get-depth", os_wxBitmapGetDepth, 0, 0));
+  os_wxBitmap_class = objscheme_def_prim_class(env, "bitmap%", "object%", os_wxBitmap_ConstructScheme, 7);
 
-
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxBitmap_class));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "save-file", os_wxBitmapSaveFile, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "load-file", os_wxBitmapLoadFile, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "is-color?", os_wxBitmapIsColor, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "ok?", os_wxBitmapOk, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "get-width", os_wxBitmapGetWidth, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "get-height", os_wxBitmapGetHeight, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "get-depth", os_wxBitmapGetDepth, 0, 0));
 
 
-  }
+  WITH_VAR_STACK(scheme_made_class(os_wxBitmap_class));
+
+
 }
 
 int objscheme_istype_wxBitmap(Scheme_Object *obj, const char *stop, int nullOK)

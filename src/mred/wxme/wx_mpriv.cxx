@@ -2412,12 +2412,8 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
   bottom = top + height;
   right = left + width;
 
-#if USE_OLD_TYPE_SYSTEM
-  ps = wxSubType(dc->__type, wxTYPE_DC_POSTSCRIPT)
-    || wxSubType(dc->__type, wxTYPE_DC_PRINTER);
-#else
-  ps = FALSE; /* FIXME! */
-#endif
+  ps = (wxSubType(dc->__type, wxTYPE_DC_POSTSCRIPT)
+	|| wxSubType(dc->__type, wxTYPE_DC_PRINTER));
 
 #if ALLOW_X_STYLE_SELECTION
   if (((show_caret != wxSNIP_DRAW_SHOW_CARET) || caretSnip)

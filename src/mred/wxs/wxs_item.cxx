@@ -44,7 +44,7 @@ class os_wxItem : public wxItem {
   ~os_wxItem();
 };
 
-Scheme_Object *os_wxItem_class;
+static Scheme_Object *os_wxItem_class;
 
 os_wxItem::~os_wxItem()
 {
@@ -60,8 +60,8 @@ static Scheme_Object *os_wxItemSetLabel(Scheme_Object *obj, int n,  Scheme_Objec
   string x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -84,8 +84,8 @@ static Scheme_Object *os_wxItemGetLabel(Scheme_Object *obj, int n,  Scheme_Objec
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -94,7 +94,7 @@ static Scheme_Object *os_wxItemGetLabel(Scheme_Object *obj, int n,  Scheme_Objec
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
 #pragma argsused
@@ -106,8 +106,8 @@ static Scheme_Object *os_wxItemCommand(Scheme_Object *obj, int n,  Scheme_Object
   class wxCommandEvent* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -123,24 +123,22 @@ static Scheme_Object *os_wxItemCommand(Scheme_Object *obj, int n,  Scheme_Object
 
 void objscheme_setup_wxItem(void *env)
 {
-  if (os_wxItem_class) {
-    objscheme_add_global_class(os_wxItem_class, "item%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxItem_class = objscheme_def_prim_class(env, "item%", "window%", NULL, 3);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("item%");
+  wxREGGLOB(os_wxItem_class);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxItem_class, "set-label", os_wxItemSetLabel, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxItem_class, "get-label", os_wxItemGetLabel, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxItem_class, "command", os_wxItemCommand, 1, 1));
+  os_wxItem_class = objscheme_def_prim_class(env, "item%", "window%", NULL, 3);
+
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxItem_class, "set-label", os_wxItemSetLabel, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxItem_class, "get-label", os_wxItemGetLabel, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxItem_class, "command", os_wxItemCommand, 1, 1));
 
 
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxItem_class));
+  WITH_VAR_STACK(scheme_made_class(os_wxItem_class));
 
-    WITH_REMEMBERED_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxItem, wxTYPE_ITEM));
+  WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxItem, wxTYPE_ITEM));
 
-  }
 }
 
 int objscheme_istype_wxItem(Scheme_Object *obj, const char *stop, int nullOK)
@@ -234,7 +232,7 @@ class os_wxMessage : public wxMessage {
   void OnKillFocus();
 };
 
-Scheme_Object *os_wxMessage_class;
+static Scheme_Object *os_wxMessage_class;
 
 os_wxMessage::os_wxMessage(Scheme_Object *, class wxPanel* x0, string x1, int x2, int x3, int x4, string x5)
 : wxMessage(x0, x1, x2, x3, x4, x5)
@@ -425,12 +423,12 @@ static Scheme_Object *os_wxMessageSetLabel(Scheme_Object *obj, int n,  Scheme_Ob
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  if ((n >= 1) && objscheme_istype_wxBitmap(p[0], NULL, 0)) {
+  if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[0], NULL, 0))) {
     class wxBitmap* x0;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -438,7 +436,7 @@ static Scheme_Object *os_wxMessageSetLabel(Scheme_Object *obj, int n,  Scheme_Ob
       WITH_VAR_STACK(scheme_wrong_count("set-label in message% (bitmap label case)", 1, 1, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[0], "set-label in message% (bitmap label case)", 0));
 
-    { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","set-label"), "bad bitmap: ", p[0]); if (x0 && BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("message%","set-label"), "bitmap is currently installed into a bitmap-dc%: ", p[0])); }
+    { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","set-label"), "bad bitmap: ", p[0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","set-label"), "bitmap is currently installed into a bitmap-dc%: ", p[0])); }
     WITH_VAR_STACK(((wxMessage *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0));
 
     
@@ -447,8 +445,8 @@ static Scheme_Object *os_wxMessageSetLabel(Scheme_Object *obj, int n,  Scheme_Ob
     string x0;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -475,8 +473,8 @@ static Scheme_Object *os_wxMessageOnDropFile(Scheme_Object *obj, int n,  Scheme_
   pathname x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -504,8 +502,8 @@ static Scheme_Object *os_wxMessagePreOnEvent(Scheme_Object *obj, int n,  Scheme_
   class wxMouseEvent* x1;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
 
@@ -535,8 +533,8 @@ static Scheme_Object *os_wxMessagePreOnChar(Scheme_Object *obj, int n,  Scheme_O
   class wxKeyEvent* x1;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
 
@@ -565,8 +563,8 @@ static Scheme_Object *os_wxMessageOnSize(Scheme_Object *obj, int n,  Scheme_Obje
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "on-size in message%"));
@@ -591,8 +589,8 @@ static Scheme_Object *os_wxMessageOnSetFocus(Scheme_Object *obj, int n,  Scheme_
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -615,8 +613,8 @@ static Scheme_Object *os_wxMessageOnKillFocus(Scheme_Object *obj, int n,  Scheme
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -635,7 +633,8 @@ static Scheme_Object *os_wxMessageOnKillFocus(Scheme_Object *obj, int n,  Scheme
 static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxMessage *realobj;
-  if ((n >= 2) && objscheme_istype_wxPanel(p[0], NULL, 0) && objscheme_istype_wxBitmap(p[1], NULL, 0)) {
+  REMEMBER_VAR_STACK();
+  if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_wxPanel(p[0], NULL, 0)) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[1], NULL, 0))) {
     class wxPanel* x0;
     class wxBitmap* x1;
     int x2;
@@ -644,8 +643,8 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
     string x5;
 
     SETUP_VAR_STACK_REMEMBERED(5);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
     VAR_STACK_PUSH(3, x1);
     VAR_STACK_PUSH(4, x5);
@@ -672,7 +671,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
     } else
       x5 = "message";
 
-    { if (x1 && !x1->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","initialization"), "bad bitmap: ", p[1]); if (x1 && BM_SELECTED(x1)) scheme_arg_mismatch(METHODNAME("message%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[1])); }
+    { if (x1 && !x1->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","initialization"), "bad bitmap: ", p[1])); if (x1 && BM_SELECTED(x1)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[1])); }
     realobj = NEW_OBJECT(os_wxMessage, (obj, x0, x1, x2, x3, x4, x5));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
@@ -687,8 +686,8 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
     string x5;
 
     SETUP_VAR_STACK_REMEMBERED(5);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
     VAR_STACK_PUSH(3, x1);
     VAR_STACK_PUSH(4, x5);
@@ -731,27 +730,25 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
 
 void objscheme_setup_wxMessage(void *env)
 {
-  if (os_wxMessage_class) {
-    objscheme_add_global_class(os_wxMessage_class, "message%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxMessage_class = objscheme_def_prim_class(env, "message%", "item%", os_wxMessage_ConstructScheme, 7);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("message%");
+  wxREGGLOB(os_wxMessage_class);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMessage_class, "set-label", os_wxMessageSetLabel, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-drop-file", os_wxMessageOnDropFile, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMessage_class, "pre-on-event", os_wxMessagePreOnEvent, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMessage_class, "pre-on-char", os_wxMessagePreOnChar, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-size", os_wxMessageOnSize, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-set-focus", os_wxMessageOnSetFocus, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-kill-focus", os_wxMessageOnKillFocus, 0, 0));
+  os_wxMessage_class = objscheme_def_prim_class(env, "message%", "item%", os_wxMessage_ConstructScheme, 7);
 
-
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxMessage_class));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "set-label", os_wxMessageSetLabel, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-drop-file", os_wxMessageOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "pre-on-event", os_wxMessagePreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "pre-on-char", os_wxMessagePreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-size", os_wxMessageOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-set-focus", os_wxMessageOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-kill-focus", os_wxMessageOnKillFocus, 0, 0));
 
 
-  }
+  WITH_VAR_STACK(scheme_made_class(os_wxMessage_class));
+
+
 }
 
 int objscheme_istype_wxMessage(Scheme_Object *obj, const char *stop, int nullOK)

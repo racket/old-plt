@@ -4,6 +4,8 @@
 
 #ifndef GC2_JUST_MACROS
 
+#include <stddef.h>
+
 # ifdef __cplusplus
 extern "C" {
 # endif
@@ -189,13 +191,23 @@ void *GC_malloc_weak_box(void *p, void **secondary);
    weak box, but when the content of `secondary' is zeroed, the
    `secondary' pointer itself should be dropped. */
 
+void *GC_weak_box_val(void *wb);
+void GC_set_weak_box_val(void *wb, void *v);
+/*
+   Gets/sets the `val' field in a structure matching the required
+   header of a weak box (see GC_malloc_weak_box). */
+
 /***************************************************************************/
 /* Finalization                                                            */
 /***************************************************************************/
 
-void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *data), 
-				 void *data, void (**oldf)(void *p, void *data), 
-				 void **olddata);
+typedef void (*GC_finalization_proc)(void *p, void *data);
+/*
+   Type of a finalization procedure. */
+
+void GC_register_eager_finalizer(void *p, int level, 
+				 GC_finalization_proc f, void *data, 
+				 GC_finalization_proc *oldf, void **olddata);
 /*
    Installs a finalizer to be queued for invocation when `p' would
    otherwise be collected. `p' isn't actually collected when a
@@ -217,9 +229,9 @@ void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *da
    closure. If `f' is NULL, any existing finalizer is removed and no
    new one is installed. */
 
-void GC_register_finalizer(void *p, void (*f)(void *p, void *data), 
-			   void *data, void (**oldf)(void *p, void *data), 
-			   void **olddata);
+void GC_register_finalizer(void *p, 
+			   GC_finalization_proc f, void *data, 
+			   GC_finalization_proc *oldf, void **olddata);
 /* 
    Eventally to be used for non-eager finalizers (which will be
    defined at that point). Currently, it's only used to clear

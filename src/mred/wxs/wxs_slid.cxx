@@ -118,7 +118,7 @@ class os_wxSlider : public wxSlider {
   void OnKillFocus();
 };
 
-Scheme_Object *os_wxSlider_class;
+static Scheme_Object *os_wxSlider_class;
 
 os_wxSlider::os_wxSlider(Scheme_Object *, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, int x8, int x9, string x10)
 : wxSlider(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)
@@ -307,8 +307,8 @@ static Scheme_Object *os_wxSliderSetValue(Scheme_Object *obj, int n,  Scheme_Obj
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "set-value in slider%"));
@@ -330,8 +330,8 @@ static Scheme_Object *os_wxSliderGetValue(Scheme_Object *obj, int n,  Scheme_Obj
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -352,8 +352,8 @@ static Scheme_Object *os_wxSliderOnDropFile(Scheme_Object *obj, int n,  Scheme_O
   pathname x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -381,8 +381,8 @@ static Scheme_Object *os_wxSliderPreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   class wxMouseEvent* x1;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
 
@@ -412,8 +412,8 @@ static Scheme_Object *os_wxSliderPreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   class wxKeyEvent* x1;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
 
@@ -442,8 +442,8 @@ static Scheme_Object *os_wxSliderOnSize(Scheme_Object *obj, int n,  Scheme_Objec
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "on-size in slider%"));
@@ -468,8 +468,8 @@ static Scheme_Object *os_wxSliderOnSetFocus(Scheme_Object *obj, int n,  Scheme_O
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -492,8 +492,8 @@ static Scheme_Object *os_wxSliderOnKillFocus(Scheme_Object *obj, int n,  Scheme_
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -512,6 +512,7 @@ static Scheme_Object *os_wxSliderOnKillFocus(Scheme_Object *obj, int n,  Scheme_
 static Scheme_Object *os_wxSlider_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxSlider *realobj;
+  REMEMBER_VAR_STACK();
   class wxPanel* x0;
   wxFunction x1;
   nstring x2;
@@ -525,8 +526,8 @@ static Scheme_Object *os_wxSlider_ConstructScheme(Scheme_Object *obj, int n,  Sc
   string x10;
 
   SETUP_VAR_STACK_REMEMBERED(5);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x2);
   VAR_STACK_PUSH(4, x10);
@@ -535,7 +536,7 @@ static Scheme_Object *os_wxSlider_ConstructScheme(Scheme_Object *obj, int n,  Sc
   if ((n < 7) ||(n > 11)) 
     WITH_VAR_STACK(scheme_wrong_count("initialization in slider%", 7, 11, n, p));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[0], "initialization in slider%", 0));
-  x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_VAR_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
+  x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
   x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[2], "initialization in slider%"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[3], "initialization in slider%"));
   x4 = WITH_VAR_STACK(objscheme_unbundle_integer(p[4], "initialization in slider%"));
@@ -572,28 +573,26 @@ static Scheme_Object *os_wxSlider_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
 void objscheme_setup_wxSlider(void *env)
 {
-  if (os_wxSlider_class) {
-    objscheme_add_global_class(os_wxSlider_class, "slider%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxSlider_class = objscheme_def_prim_class(env, "slider%", "item%", os_wxSlider_ConstructScheme, 8);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("slider%");
+  wxREGGLOB(os_wxSlider_class);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxSlider_class, "set-value", os_wxSliderSetValue, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxSlider_class, "get-value", os_wxSliderGetValue, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxSlider_class, "on-drop-file", os_wxSliderOnDropFile, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxSlider_class, "pre-on-event", os_wxSliderPreOnEvent, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxSlider_class, "pre-on-char", os_wxSliderPreOnChar, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxSlider_class, "on-size", os_wxSliderOnSize, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxSlider_class, "on-set-focus", os_wxSliderOnSetFocus, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxSlider_class, "on-kill-focus", os_wxSliderOnKillFocus, 0, 0));
+  os_wxSlider_class = objscheme_def_prim_class(env, "slider%", "item%", os_wxSlider_ConstructScheme, 8);
 
-
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxSlider_class));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "set-value", os_wxSliderSetValue, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "get-value", os_wxSliderGetValue, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "on-drop-file", os_wxSliderOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "pre-on-event", os_wxSliderPreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "pre-on-char", os_wxSliderPreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "on-size", os_wxSliderOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "on-set-focus", os_wxSliderOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "on-kill-focus", os_wxSliderOnKillFocus, 0, 0));
 
 
-  }
+  WITH_VAR_STACK(scheme_made_class(os_wxSlider_class));
+
+
 }
 
 int objscheme_istype_wxSlider(Scheme_Object *obj, const char *stop, int nullOK)

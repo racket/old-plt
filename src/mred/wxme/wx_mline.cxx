@@ -30,8 +30,8 @@
 #define CALC_MASK (WXLINE_CALC_HERE | WXLINE_CALC_LEFT | WXLINE_CALC_RIGHT)
 #define FLOW_MASK (WXLINE_FLOW_HERE | WXLINE_FLOW_LEFT | WXLINE_FLOW_RIGHT)
 
-#define SET_RED(n) ((n)->flags = (((n)->flags & ~COLOR_MASK) | WXLINE_RED))
-#define SET_BLACK(n) ((n)->flags = (((n)->flags & ~COLOR_MASK) | WXLINE_BLACK))
+#define SET_RED(n) n->flags = ((n->flags & ~COLOR_MASK) | WXLINE_RED)
+#define SET_BLACK(n) n->flags = ((n->flags & ~COLOR_MASK) | WXLINE_BLACK)
 
 #define REDP(node) (node->flags & WXLINE_RED)
 #define BLACKP(node) (node->flags & WXLINE_BLACK)
@@ -192,8 +192,9 @@ wxMediaLine *wxMediaLine::Insert(wxMediaLine **root, Bool before)
       node = this;
     } else {
       node = left;
-      while (PTRNE(node->right, NIL))
+      while (PTRNE(node->right, NIL)) {
 	node = node->right;
+      }
       node->right = newline;
     }
   } else {
@@ -202,8 +203,9 @@ wxMediaLine *wxMediaLine::Insert(wxMediaLine **root, Bool before)
       node = this;
     } else {
       node = right;
-      while (PTRNE(node->left, NIL))
+      while (PTRNE(node->left, NIL)) {
 	node = node->left;
+      }
       node->left = newline;
     }
   }
@@ -223,10 +225,10 @@ wxMediaLine *wxMediaLine::Insert(wxMediaLine **root, Bool before)
   node = newline;
   while (PTRNE(node, *root) && REDP(node->parent)) {
     if (PTREQ(node->parent, node->parent->parent->left)) {
-      wxMediaLine *y = node->parent->parent->right;
-      if (REDP(y)) {
+      wxMediaLine *v = node->parent->parent->right;
+      if (REDP(v)) {
 	SET_BLACK(node->parent);
-	SET_BLACK(y);
+	SET_BLACK(v);
 	node = node->parent->parent;
 	SET_RED(node);
       } else {
@@ -240,10 +242,10 @@ wxMediaLine *wxMediaLine::Insert(wxMediaLine **root, Bool before)
 	node->RotateRight(root);
       }
     } else {
-      wxMediaLine *y = node->parent->parent->left;
-      if (REDP(y)) {
+      wxMediaLine *v = node->parent->parent->left;
+      if (REDP(v)) {
 	SET_BLACK(node->parent);
-	SET_BLACK(y);
+	SET_BLACK(v);
 	node = node->parent->parent;
 	SET_RED(node);
       } else {
@@ -259,110 +261,110 @@ wxMediaLine *wxMediaLine::Insert(wxMediaLine **root, Bool before)
     }
   }
   
-  SET_BLACK(*root);
+  SET_BLACK((*root));
 
   return newline;
 }
 
 void wxMediaLine::Delete(wxMediaLine **root)
 {
-  wxMediaLine *y, *x;
+  wxMediaLine *v, *x;
   Bool wasBlack;
 
   /* Adjust ancestor offsets */
-  y = this;
-  while (PTRNE(y->parent, NIL)) {
-    if (PTREQ(y->parent->right, y))
-      y = y->parent;
+  v = this;
+  while (PTRNE(v->parent, NIL)) {
+    if (PTREQ(v->parent->right, v))
+      v = v->parent;
     else {
-      y = y->parent;
-      y->line -= 1;
-      y->pos -= len;
-      y->scroll -= numscrolls;
-      y->y -= h;
-      y->parno -= StartsParagraph();
+      v = v->parent;
+      v->line -= 1;
+      v->pos -= len;
+      v->scroll -= numscrolls;
+      v->y -= h;
+      v->parno -= StartsParagraph();
     }
   }
 
   if (PTREQ(left, NIL) || PTREQ(right, NIL)) {
-    y = this;
+    v = this;
   } else {
-    y = this->next;
-    x = y;
+    v = this->next;
+    x = v;
     while (PTRNE(x->parent, this)) {
       if (PTREQ(x->parent->right, x))
 	x = x->parent;
       else {
 	x = x->parent;
 	x->line -= 1;
-	x->pos -= y->len;
-	x->scroll -= y->numscrolls;
-	x->y -= y->h;
-	x->parno -= y->StartsParagraph();
+	x->pos -= v->len;
+	x->scroll -= v->numscrolls;
+	x->y -= v->h;
+	x->parno -= v->StartsParagraph();
       }
     }
   }
 
-  if (PTRNE(y->left, NIL))
-    x = y->left;
+  if (PTRNE(v->left, NIL))
+    x = v->left;
   else
-    x = y->right;
+    x = v->right;
 
-  x->parent = y->parent;
+  x->parent = v->parent;
 
-  if (PTREQ(y->parent, NIL))
+  if (PTREQ(v->parent, NIL))
     *root = x;
-  else if (PTREQ(y, y->parent->left))
-    y->parent->left = x;
+  else if (PTREQ(v, v->parent->left))
+    v->parent->left = x;
   else
-    y->parent->right = x;
+    v->parent->right = x;
 
-  wasBlack = BLACKP(y);
+  wasBlack = BLACKP(v);
 
-  if (PTRNE(y, this)) {
+  if (PTRNE(v, this)) {
     wxMediaLine *oldparent;
 
-    oldparent = y->parent;
+    oldparent = v->parent;
 
     if (BLACKP(this))
-      SET_BLACK(y);
+      SET_BLACK(v);
     else
-      SET_RED(y);
+      SET_RED(v);
 
-    y->left = left;
+    v->left = left;
     if (PTRNE(left, NIL))
-      left->parent = y;
-    y->right = right;
+      left->parent = v;
+    v->right = right;
     if (PTRNE(right, NIL))
-      right->parent = y;
-    y->parent = parent;
+      right->parent = v;
+    v->parent = parent;
     if (PTREQ(*root, this))
-      *root = y;
+      *root = v;
     else if (PTREQ(parent->right, this))
-      parent->right = y;
+      parent->right = v;
     else
-      parent->left = y;
+      parent->left = v;
 
-    y->prev = prev;
-    if (y->prev)
-      y->prev->next = y;
+    v->prev = prev;
+    if (v->prev)
+      v->prev->next = v;
     
-    y->line = line;
-    y->pos = pos;
-    y->scroll = scroll;
-    y->y = this->y;
-    y->parno = parno;
+    v->line = line;
+    v->pos = pos;
+    v->scroll = scroll;
+    v->y = this->y;
+    v->parno = parno;
 
     oldparent->AdjustMaxWidth(TRUE);
     oldparent->AdjustNeedCalc(TRUE);
     oldparent->AdjustNeedFlow(TRUE);
     
-    y->AdjustMaxWidth(TRUE);
-    y->AdjustNeedCalc(TRUE);
-    y->AdjustNeedFlow(TRUE);
+    v->AdjustMaxWidth(TRUE);
+    v->AdjustNeedCalc(TRUE);
+    v->AdjustNeedFlow(TRUE);
 
     if (PTREQ(x->parent, this))
-      x->parent = y;
+      x->parent = v;
   } else {
     if (prev)
       prev->next = next;
@@ -372,60 +374,60 @@ void wxMediaLine::Delete(wxMediaLine **root)
 
   if (wasBlack) {
     /* Fixup */
-    wxMediaLine *w;
+    wxMediaLine *z;
 
     while (PTRNE(x, *root) && BLACKP(x)) {
       if (PTREQ(x, x->parent->left)) {
-	w = x->parent->right;
-	if (REDP(w)) {
-	  SET_BLACK(w);
+	z = x->parent->right;
+	if (REDP(z)) {
+	  SET_BLACK(z);
 	  SET_RED(x->parent);
 	  x->parent->RotateLeft(root);
-	  w = x->parent->right;
+	  z = x->parent->right;
 	}
-	if (BLACKP(w->left) && BLACKP(w->right)) {
-	  SET_RED(w);
+	if (BLACKP(z->left) && BLACKP(z->right)) {
+	  SET_RED(z);
 	  x = x->parent;
 	} else {
-	  if (BLACKP(w->right)) {
-	    SET_BLACK(w->left);
-	    SET_RED(w);
-	    w->RotateRight(root);
-	    w = x->parent->right;
+	  if (BLACKP(z->right)) {
+	    SET_BLACK(z->left);
+	    SET_RED(z);
+	    z->RotateRight(root);
+	    z = x->parent->right;
 	  }
 	  if (REDP(x->parent))
-	    SET_RED(w);
+	    SET_RED(z);
 	  else
-	    SET_BLACK(w);
+	    SET_BLACK(z);
 	  SET_BLACK(x->parent);
-	  SET_BLACK(w->right);
+	  SET_BLACK(z->right);
 	  x->parent->RotateLeft(root);
 	  x = *root;
 	}
       } else {
-	w = x->parent->left;
-	if (REDP(w)) {
-	  SET_BLACK(w);
+	z = x->parent->left;
+	if (REDP(z)) {
+	  SET_BLACK(z);
 	  SET_RED(x->parent);
 	  x->parent->RotateRight(root);
-	  w = x->parent->left;
+	  z = x->parent->left;
 	}
-	if (BLACKP(w->right) && BLACKP(w->left)) {
-	  SET_RED(w);
+	if (BLACKP(z->right) && BLACKP(z->left)) {
+	  SET_RED(z);
 	  x = x->parent;
 	} else {
-	  if (BLACKP(w->left)) {
-	    SET_BLACK(w->right);
-	    SET_RED(w);
-	    w->RotateLeft(root);
-	    w = x->parent->left;
+	  if (BLACKP(z->left)) {
+	    SET_BLACK(z->right);
+	    SET_RED(z);
+	    z->RotateLeft(root);
+	    z = x->parent->left;
 	  }
 	  if (REDP(x->parent))
-	    SET_RED(w);
+	    SET_RED(z);
 	  else
-	    SET_BLACK(w);
+	    SET_BLACK(z);
 	  SET_BLACK(x->parent);
-	  SET_BLACK(w->left);
+	  SET_BLACK(z->left);
 	  x->parent->RotateRight(root);
 	  x = *root;
 	}
@@ -442,12 +444,12 @@ void wxMediaLine::Delete(wxMediaLine **root)
 /***************************************************************/
 
 #define SEARCH(what, size)                   \
-  wxMediaLine *node, *prev;                  \
+  wxMediaLine *node, *_prev;                 \
                                              \
   node = this;                               \
                                              \
   do {                                       \
-    prev = node;                             \
+    _prev = node;                            \
     if (what < node->what)                   \
       node = node->left;                     \
     else if (what >= node->what + size) {    \
@@ -457,7 +459,7 @@ void wxMediaLine::Delete(wxMediaLine **root)
       return node;                           \
   } while (PTRNE(node, NIL));                \
                                              \
-  return prev;                               \
+  return _prev;                              \
 
 wxMediaLine *wxMediaLine::FindLine(long line)
 {
@@ -481,12 +483,11 @@ wxMediaLine *wxMediaLine::FindLocation(float y)
 
 wxMediaLine *wxMediaLine::FindParagraph(long parno)
 {
-  wxMediaLine *node, *prev;
+  wxMediaLine *node;
 
   node = this;
 
   do {
-    prev = node;
     if (parno < node->parno)
       node = node->left;
     else if (parno > node->parno
@@ -503,51 +504,51 @@ wxMediaLine *wxMediaLine::FindParagraph(long parno)
 
 /***************************************************************/
 
-#define SUM(what, size, adjust)              \
+#define SUM(what, lwhat, size, adjust)       \
   wxMediaLine *node;                         \
                                              \
   node = this;                               \
                                              \
-  what = node->what;                         \
+  lwhat = node->what;                        \
   while (PTRNE(node->parent, NIL)) {         \
     if (PTREQ(node, node->parent->left))     \
       node = node->parent;                   \
     else {                                   \
       node = node->parent;                   \
-      what += node->what + size;             \
+      lwhat += node->what + size;            \
     }                                        \
   }                                          \
                                              \
-  return what + adjust;                      \
+  return lwhat + adjust;                     \
 
 long wxMediaLine::GetLine()
 {
-  long line;
-  SUM(line, 1, 0);
+  long _line;
+  SUM(line, _line, 1, 0);
 }
 
 long wxMediaLine::GetPosition()
 {
-  long pos;
-  SUM(pos, node->len, 0);
+  long _pos;
+  SUM(pos, _pos, node->len, 0);
 }
 
 long wxMediaLine::GetScroll()
 {
-  long scroll;
-  SUM(scroll, node->numscrolls, 0);
+  long _scroll;
+  SUM(scroll, _scroll, node->numscrolls, 0);
 }
 
 float wxMediaLine::GetLocation()
 {
-  float y;
-  SUM(y, node->h, 0);
+  float _y;
+  SUM(y, _y, node->h, 0);
 }
 
 long wxMediaLine::GetParagraph()
 {
-  long parno;
-  SUM(parno, node->StartsParagraph(), (StartsParagraph() ? 0 : -1));
+  long _parno;
+  SUM(parno, _parno, node->StartsParagraph(), (StartsParagraph() ? 0 : -1));
 }
 
 wxMediaParagraph *wxMediaLine::GetParagraphStyle(Bool *first)
@@ -817,8 +818,9 @@ wxMediaLine *wxMediaLine::GetRoot()
   wxMediaLine *node;
 
   node = this;
-  while (PTRNE(node->parent, NIL))
+  while (PTRNE(node->parent, NIL)) {
     node = node->parent;
+  }
 
   return node;
 }
@@ -835,11 +837,14 @@ Bool wxMediaLine::UpdateFlow(wxMediaLine **root,
   }
 
   if (flags & WXLINE_FLOW_HERE) {
+    Bool firstLine;
+    wxMediaParagraph *para;
+    float lineMaxWidth;
+
     flags -= WXLINE_FLOW_HERE;
 
-    Bool firstLine;
-    wxMediaParagraph *para = GetParagraphStyle(&firstLine);
-    float lineMaxWidth = para->GetLineMaxWidth(maxWidth, firstLine);
+    para = GetParagraphStyle(&firstLine);
+    lineMaxWidth = para->GetLineMaxWidth(maxWidth, firstLine);
 
     if (media->CheckFlow(lineMaxWidth, dc, GetLocation(), GetPosition(), snip)) {
       wxSnip *asnip;
@@ -870,8 +875,9 @@ Bool wxMediaLine::UpdateFlow(wxMediaLine **root,
 	    nextsnip = newline->lastSnip->next;
 	    
 	    for (asnip = newline->snip; PTRNE(asnip, nextsnip); 
-		 asnip = asnip->next)
+		 asnip = asnip->next) {
 	      asnip->line = newline;
+	    }
 	    
 	    newline->MarkCheckFlow();
 	    newline->MarkRecalculate();
@@ -885,8 +891,9 @@ Bool wxMediaLine::UpdateFlow(wxMediaLine **root,
 
 	    nextsnip = next->lastSnip->next;
 	    for (asnip = next->snip; PTRNE(asnip, nextsnip);
-		 asnip = asnip->next)
+		 asnip = asnip->next) {
 	      asnip->line = next;
+	    }
 
 	    next->MarkCheckFlow();
 	    next->MarkRecalculate();
@@ -920,8 +927,9 @@ Bool wxMediaLine::UpdateFlow(wxMediaLine **root,
 	lastSnip = asnip;
       } else {
 	lastSnip = media->lastSnip;
-	while (next)
+	while (next) {
 	  next->Delete(root);
+	}
       }
 
       lastSnip->line = this;
@@ -977,19 +985,22 @@ Bool wxMediaLine::UpdateFlow(wxMediaLine **root,
 Bool wxMediaLine::UpdateGraphics(wxMediaEdit *media, wxDC *dc)
 {
   Bool changed = FALSE;
+  Bool isfirst;
+  wxMediaParagraph *para;
 
   if (flags & WXLINE_CALC_LEFT)
     if (PTRNE(left, NIL) && left->UpdateGraphics(media, dc))
       changed = TRUE;
   
   if (flags & WXLINE_CALC_HERE) {
-    wxSnip *asnip, *next;
-    long maxscroll, scroll;
-    float y, bigwidth;
-    float h, w, descent, space, totalwidth;
+    wxSnip *asnip, *_next;
+    long maxscroll, _scroll;
+    float _y, bigwidth;
+    float _h, _w, descent, space, totalwidth;
     float maxh, maxbase, maxdescent, maxspace, maxantidescent, maxantispace;
-  
-    y = GetLocation();
+    int align;
+
+    _y = GetLocation();
 
     maxbase = maxdescent = maxspace = maxantidescent = maxantispace = 0;
     totalwidth = 0;
@@ -997,40 +1008,40 @@ Bool wxMediaLine::UpdateGraphics(wxMediaEdit *media, wxDC *dc)
     maxscroll = 1;
     scrollSnip = NULL;
 
-    next = lastSnip->next;
-    for (asnip = snip; PTRNE(asnip, next); asnip = asnip->next) {
-      w = h = descent = space = 0.0;
-      asnip->GetExtent(dc, totalwidth, y, &w, &h, &descent, &space);
+    _next = lastSnip->next;
+    for (asnip = snip; PTRNE(asnip, _next); asnip = asnip->next) {
+      _w = _h = descent = space = 0.0;
+      asnip->GetExtent(dc, totalwidth, _y, &_w, &_h, &descent, &space);
 
-      int align = asnip->style->GetAlignment();
+      align = asnip->style->GetAlignment();
 	  
-      scroll = asnip->GetNumScrollSteps();
+      _scroll = asnip->GetNumScrollSteps();
 
-      if (h - descent - space > maxbase)
-	maxbase = h - descent - space;
+      if (_h - descent - space > maxbase)
+	maxbase = _h - descent - space;
 	 
       if (align == wxALIGN_BOTTOM) {
 	if (descent > maxdescent)
 	  maxdescent = descent;
       } else {
-	if (h - space > maxantispace)
-	  maxantispace = h - space;
+	if (_h - space > maxantispace)
+	  maxantispace = _h - space;
       }
 
       if (align == wxALIGN_TOP) {
 	if (space > maxspace)
 	  maxspace = space;
       } else {
-	if (h - descent > maxantidescent)
-	  maxantidescent = h - descent;
+	if (_h - descent > maxantidescent)
+	  maxantidescent = _h - descent;
       }
 
-      if (scroll > maxscroll) {
+      if (_scroll > maxscroll) {
 	scrollSnip = asnip;
-	maxscroll = scroll;
+	maxscroll = _scroll;
       }
 	  
-      totalwidth += w;
+      totalwidth += _w;
     }
     
     if (maxantidescent - maxbase > maxspace)
@@ -1039,8 +1050,8 @@ Bool wxMediaLine::UpdateGraphics(wxMediaEdit *media, wxDC *dc)
     if (maxantispace - maxbase > maxdescent)
       maxdescent = maxantispace - maxbase;
 
-    lastH = h;
-    lastW = w;
+    lastH = _h;
+    lastW = _w;
     topbase = maxspace;
     bottombase = maxspace + maxbase;
 
@@ -1054,8 +1065,7 @@ Bool wxMediaLine::UpdateGraphics(wxMediaEdit *media, wxDC *dc)
       bigwidth = totalwidth;
     bigwidth += CURSOR_WIDTH;
     
-    Bool isfirst;
-    wxMediaParagraph *para = GetParagraphStyle(&isfirst);
+    para = GetParagraphStyle(&isfirst);
     if (isfirst)
       bigwidth += para->leftMarginFirst;
     else
@@ -1067,7 +1077,7 @@ Bool wxMediaLine::UpdateGraphics(wxMediaEdit *media, wxDC *dc)
       SetScrollLength(maxscroll);
 
     if (maxh == this->h)
-      media->RefreshBox(0, y, bigwidth, maxh);
+      media->RefreshBox(0, _y, bigwidth, maxh);
     else {
       float bigheight;
 
@@ -1079,7 +1089,7 @@ Bool wxMediaLine::UpdateGraphics(wxMediaEdit *media, wxDC *dc)
 
       bigheight = maxh + media->totalHeight;
       
-      media->RefreshBox(0, y, bigwidth, bigheight);      
+      media->RefreshBox(0, _y, bigwidth, bigheight);      
     }
 
     changed = TRUE;
@@ -1098,7 +1108,9 @@ Bool wxMediaLine::UpdateGraphics(wxMediaEdit *media, wxDC *dc)
 
 long wxMediaLine::Number()
 {
-  return Last()->GetLine() + 1;
+  wxMediaLine *last;
+  last = Last();
+  return last->GetLine() + 1;
 }
 
 wxMediaLine *wxMediaLine::First()
@@ -1106,8 +1118,9 @@ wxMediaLine *wxMediaLine::First()
   wxMediaLine *node;
   
   node = this;
-  while (PTRNE(node->left, NIL))
+  while (PTRNE(node->left, NIL)) {
     node = node->left;
+  }
 
   return node;
 }
@@ -1117,8 +1130,9 @@ wxMediaLine *wxMediaLine::Last()
   wxMediaLine *node;
   
   node = this;
-  while (PTRNE(node->right, NIL))
+  while (PTRNE(node->right, NIL)) {
     node = node->right;
+  }
 
   return node;  
 }
@@ -1127,15 +1141,15 @@ wxMediaLine *wxMediaLine::Last()
 
 float wxMediaLine::GetLeftLocation(float maxWidth)
 {
-  float left;
+  float _left;
   wxMediaParagraph *para;
 
   if (flags & WXLINE_STARTS_PARA) {
     para = paragraph;
-    left = para->leftMarginFirst;
+    _left = para->leftMarginFirst;
   } else {
     para = GetParagraphStyle();
-    left = para->leftMargin;
+    _left = para->leftMargin;
   }
 
   if (para->alignment != WXPARA_LEFT) {
@@ -1144,13 +1158,13 @@ float wxMediaLine::GetLeftLocation(float maxWidth)
       if (delta < 0)
 	delta = 0;
       if (para->alignment == WXPARA_RIGHT)
-	left += delta;
+	_left += delta;
       else
-	left += (delta / 2);
+	_left += (delta / 2);
     }
   }
 
-  return left;
+  return _left;
 }
 
 float wxMediaLine::GetRightLocation(float maxWidth)
@@ -1162,7 +1176,8 @@ float wxMediaLine::GetRightLocation(float maxWidth)
 
 wxMediaParagraph *wxMediaParagraph::Clone()
 {
-  wxMediaParagraph *paragraph = new wxMediaParagraph();
+  wxMediaParagraph *paragraph;
+  paragraph = new wxMediaParagraph();
 
   paragraph->leftMarginFirst = leftMarginFirst;
   paragraph->leftMargin = leftMargin;

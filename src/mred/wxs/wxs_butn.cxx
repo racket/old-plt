@@ -110,7 +110,7 @@ class os_wxButton : public wxButton {
   void OnKillFocus();
 };
 
-Scheme_Object *os_wxButton_class;
+static Scheme_Object *os_wxButton_class;
 
 os_wxButton::os_wxButton(Scheme_Object *, class wxPanel* x0, wxFunction x1, string x2, int x3, int x4, int x5, int x6, int x7, string x8)
 : wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8)
@@ -301,12 +301,12 @@ static Scheme_Object *os_wxButtonSetLabel(Scheme_Object *obj, int n,  Scheme_Obj
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  if ((n >= 1) && objscheme_istype_wxBitmap(p[0], NULL, 0)) {
+  if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[0], NULL, 0))) {
     class wxBitmap* x0;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -314,7 +314,7 @@ static Scheme_Object *os_wxButtonSetLabel(Scheme_Object *obj, int n,  Scheme_Obj
       WITH_VAR_STACK(scheme_wrong_count("set-label in button% (bitmap label case)", 1, 1, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[0], "set-label in button% (bitmap label case)", 0));
 
-    { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","set-label"), "bad bitmap: ", p[0]); if (x0 && BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("button%","set-label"), "bitmap is currently installed into a bitmap-dc%: ", p[0])); }
+    { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","set-label"), "bad bitmap: ", p[0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","set-label"), "bitmap is currently installed into a bitmap-dc%: ", p[0])); }
     WITH_VAR_STACK(((wxButton *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0));
 
     
@@ -323,8 +323,8 @@ static Scheme_Object *os_wxButtonSetLabel(Scheme_Object *obj, int n,  Scheme_Obj
     string x0;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -351,8 +351,8 @@ static Scheme_Object *os_wxButtonOnDropFile(Scheme_Object *obj, int n,  Scheme_O
   pathname x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -380,8 +380,8 @@ static Scheme_Object *os_wxButtonPreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   class wxMouseEvent* x1;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
 
@@ -411,8 +411,8 @@ static Scheme_Object *os_wxButtonPreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   class wxKeyEvent* x1;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
 
@@ -441,8 +441,8 @@ static Scheme_Object *os_wxButtonOnSize(Scheme_Object *obj, int n,  Scheme_Objec
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "on-size in button%"));
@@ -467,8 +467,8 @@ static Scheme_Object *os_wxButtonOnSetFocus(Scheme_Object *obj, int n,  Scheme_O
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -491,8 +491,8 @@ static Scheme_Object *os_wxButtonOnKillFocus(Scheme_Object *obj, int n,  Scheme_
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -511,7 +511,8 @@ static Scheme_Object *os_wxButtonOnKillFocus(Scheme_Object *obj, int n,  Scheme_
 static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxButton *realobj;
-  if ((n >= 3) && objscheme_istype_wxPanel(p[0], NULL, 0) && (SCHEME_NULLP(p[1]) || WITH_VAR_STACK(objscheme_istype_proc2(p[1], NULL))) && objscheme_istype_wxBitmap(p[2], NULL, 0)) {
+  REMEMBER_VAR_STACK();
+  if ((n >= 3) && WITH_REMEMBERED_STACK(objscheme_istype_wxPanel(p[0], NULL, 0)) && (SCHEME_NULLP(p[1]) || WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], NULL))) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[2], NULL, 0))) {
     class wxPanel* x0;
     wxFunction x1;
     class wxBitmap* x2;
@@ -523,8 +524,8 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
     string x8;
 
     SETUP_VAR_STACK_REMEMBERED(5);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
     VAR_STACK_PUSH(3, x2);
     VAR_STACK_PUSH(4, x8);
@@ -533,7 +534,7 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
     if ((n < 3) ||(n > 9)) 
       WITH_VAR_STACK(scheme_wrong_count("initialization in button% (bitmap label case)", 3, 9, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[0], "initialization in button% (bitmap label case)", 0));
-    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_VAR_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
+    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
     x2 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[2], "initialization in button% (bitmap label case)", 0));
     if (n > 3) {
       x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[3], "initialization in button% (bitmap label case)"));
@@ -560,7 +561,7 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
     } else
       x8 = "button";
 
-    { if (x2 && !x2->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","initialization"), "bad bitmap: ", p[2]); if (x2 && BM_SELECTED(x2)) scheme_arg_mismatch(METHODNAME("button%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[2])); }if (!x5) x5 = -1;if (!x6) x6 = -1;
+    { if (x2 && !x2->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","initialization"), "bad bitmap: ", p[2])); if (x2 && BM_SELECTED(x2)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[2])); }if (!x5) x5 = -1;if (!x6) x6 = -1;
     realobj = NEW_OBJECT(os_wxButton, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
@@ -578,8 +579,8 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
     string x8;
 
     SETUP_VAR_STACK_REMEMBERED(5);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
     VAR_STACK_PUSH(3, x2);
     VAR_STACK_PUSH(4, x8);
@@ -588,7 +589,7 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
     if ((n < 3) ||(n > 9)) 
       WITH_VAR_STACK(scheme_wrong_count("initialization in button% (string label case)", 3, 9, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[0], "initialization in button% (string label case)", 0));
-    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_VAR_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
+    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
     x2 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[2], "initialization in button% (string label case)"));
     if (n > 3) {
       x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[3], "initialization in button% (string label case)"));
@@ -631,28 +632,26 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
 void objscheme_setup_wxButton(void *env)
 {
-  if (os_wxButton_class) {
-    objscheme_add_global_class(os_wxButton_class, "button%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxButton_class = objscheme_def_prim_class(env, "button%", "item%", os_wxButton_ConstructScheme, 7);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("button%");
+  wxREGGLOB(os_wxButton_class);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxButton_class, "set-label", os_wxButtonSetLabel, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-drop-file", os_wxButtonOnDropFile, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxButton_class, "pre-on-event", os_wxButtonPreOnEvent, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxButton_class, "pre-on-char", os_wxButtonPreOnChar, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-size", os_wxButtonOnSize, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-set-focus", os_wxButtonOnSetFocus, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-kill-focus", os_wxButtonOnKillFocus, 0, 0));
+  os_wxButton_class = objscheme_def_prim_class(env, "button%", "item%", os_wxButton_ConstructScheme, 7);
+
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "set-label", os_wxButtonSetLabel, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-drop-file", os_wxButtonOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "pre-on-event", os_wxButtonPreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "pre-on-char", os_wxButtonPreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-size", os_wxButtonOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-set-focus", os_wxButtonOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-kill-focus", os_wxButtonOnKillFocus, 0, 0));
 
 
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxButton_class));
+  WITH_VAR_STACK(scheme_made_class(os_wxButton_class));
 
-    WITH_REMEMBERED_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxButton, wxTYPE_BUTTON));
+  WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxButton, wxTYPE_BUTTON));
 
-  }
 }
 
 int objscheme_istype_wxButton(Scheme_Object *obj, const char *stop, int nullOK)

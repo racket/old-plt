@@ -40,12 +40,18 @@ void gc::install_cleanup(void)
   GC_finalization_proc old_fn;
   void *old_data;
 
-# ifdef wx_xt
+
+# ifdef MZ_PRECISE_GC
 #  define ALLOW_NON_BASE 0
-#  define CHECK_BASE 1
-# else
-#  define ALLOW_NON_BASE 1
 #  define CHECK_BASE 0
+# else
+#  ifdef wx_xt
+#   define ALLOW_NON_BASE 0
+#   define CHECK_BASE 1
+#  else
+#   define ALLOW_NON_BASE 1
+#   define CHECK_BASE 0
+#  endif
 # endif
 
 # if CHECK_BASE || ALLOW_NON_BASE
@@ -59,7 +65,8 @@ void gc::install_cleanup(void)
   }
 # endif
 
-  GC_register_finalizer_ignore_self(this, GC_cleanup, NULL, 
+  GC_register_finalizer_ignore_self(gcOBJ_TO_PTR(this), 
+				    GC_cleanup, NULL, 
 				    &old_fn, &old_data);
 
 # if CHECK_BASE
@@ -73,7 +80,7 @@ void gc::install_cleanup(void)
 extern "C" {
   void GC_cleanup(void *obj, void *)
   {
-    gc *clean = (gc *)obj;
+    gc *clean = (gc *)gcPTR_TO_OBJ(obj);
     clean->~gc();
   }
 }
@@ -149,8 +156,82 @@ int GC_is_wx_object(void *v)
 
 #ifdef MZ_PRECISE_GC
 
-void gc_marking::gcMark(Mark_Proc mp)
+int gc_marking::gcMark(Mark_Proc /* mark */)
 {
+  return 0;
+}
+
+int gc::gcMark(Mark_Proc mark)
+{
+  if (mark) {
+    gcMARK(__gc_external);
+  }
+
+  return gcBYTES_TO_WORDS(sizeof(gc));
+}
+
+#include "scheme.h"
+
+Scheme_Object *new_stack;
+
+void *GC_get_current_new()
+{
+  return SCHEME_CAR(new_stack);
+}
+
+void *GC_pop_current_new()
+{
+  void *p;
+  p = SCHEME_CAR(new_stack);
+  new_stack = SCHEME_CDR(new_stack);
+  return p;
+}
+
+static void GC_push_current_new(void *p)
+{
+  new_stack = scheme_make_pair((Scheme_Object *)p, new_stack);
+}
+
+static void *get_new_stack()
+{
+  return new_stack;
+}
+
+static void set_new_stack(void *p)
+{
+  new_stack = (Scheme_Object *)p;
+}
+
+static int mark_cpp_object(void *p, Mark_Proc mark)
+{
+  gc_marking *obj = (gc_marking *)gcPTR_TO_OBJ(p);
+
+  return obj->gcMark(mark);
+}
+
+void *GC_cpp_malloc(size_t size)
+{
+  void *p;
+
+  if (!new_stack) {
+    /* Initialize: */
+    wxREGGLOB(new_stack);
+    new_stack = scheme_null;
+
+    scheme_get_external_stack_val = get_new_stack;
+    scheme_set_external_stack_val = set_new_stack;
+
+    GC_register_traverser(scheme_rt_cpp_object, mark_cpp_object);
+  }
+
+  p = GC_malloc_one_tagged(size + sizeof(long));
+  *(Scheme_Type *)p = scheme_rt_cpp_object;
+
+  p = gcPTR_TO_OBJ(p);
+
+  GC_push_current_new(p);
+
+  return p;
 }
 
 #endif

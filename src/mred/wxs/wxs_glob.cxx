@@ -97,7 +97,7 @@ static char *wxStripMenuCodes_Scheme(char *in)
   if (buflen <= len) {
     wxREGGLOB(buffer);
     buflen = 2 * len + 1;
-    buffer = WITH_VAR_STACK(GC_malloc_atomic(buflen));
+    buffer = (char *)WITH_VAR_STACK(GC_malloc_atomic(buflen));
   }
 
   WITH_VAR_STACK(wxStripMenuCodes(in, buffer));
@@ -136,11 +136,10 @@ static Scheme_Object *wxsGlobalwxsFillPrivateColor(int n,  Scheme_Object *p[])
   class wxDC* x0;
   class wxColour* x1;
 
-  SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x1);
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x1);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxDC(p[0], "fill-private-color", 0));
@@ -160,9 +159,8 @@ static Scheme_Object *wxsGlobalwxFlushDisplay(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
 
   
 
@@ -181,10 +179,9 @@ static Scheme_Object *wxsGlobalwxSchemeYield(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   void* x0;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
-  VAR_STACK_PUSH(2, x0);
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
 
   
   if (n > 0) {
@@ -206,19 +203,18 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  if ((n >= 3) && objscheme_istype_string(p[0], NULL) && objscheme_istype_string(p[1], NULL) && objscheme_istype_string(p[2], NULL)) {
+  if ((n >= 3) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[1], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[2], NULL))) {
     string x0;
     string x1;
     string x2;
     npathname x3;
 
-    SETUP_VAR_STACK_REMEMBERED(6);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
-    VAR_STACK_PUSH(2, x0);
-    VAR_STACK_PUSH(3, x1);
-    VAR_STACK_PUSH(4, x2);
-    VAR_STACK_PUSH(5, x3);
+    SETUP_VAR_STACK_REMEMBERED(5);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, x0);
+    VAR_STACK_PUSH(2, x1);
+    VAR_STACK_PUSH(3, x2);
+    VAR_STACK_PUSH(4, x3);
 
     
     if ((n < 3) ||(n > 4)) 
@@ -242,12 +238,11 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
     ExactLong x2;
     npathname x3;
 
-    SETUP_VAR_STACK_REMEMBERED(5);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
-    VAR_STACK_PUSH(2, x0);
-    VAR_STACK_PUSH(3, x1);
-    VAR_STACK_PUSH(4, x3);
+    SETUP_VAR_STACK_REMEMBERED(4);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, x0);
+    VAR_STACK_PUSH(2, x1);
+    VAR_STACK_PUSH(3, x3);
 
     
     if ((n < 3) ||(n > 4)) 
@@ -276,19 +271,18 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  if ((n >= 3) && objscheme_istype_string(p[0], NULL) && objscheme_istype_string(p[1], NULL) && (objscheme_istype_box(p[2], NULL) && objscheme_istype_string(objscheme_unbox(p[2], NULL), NULL))) {
+  if ((n >= 3) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[1], NULL)) && (WITH_REMEMBERED_STACK(objscheme_istype_box(p[2], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(objscheme_unbox(p[2], NULL), NULL)))) {
     string x0;
     string x1;
     string _x2;
     string* x2 = &_x2;
     npathname x3;
 
-    SETUP_VAR_STACK_REMEMBERED(5);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
-    VAR_STACK_PUSH(2, x0);
-    VAR_STACK_PUSH(3, x1);
-    VAR_STACK_PUSH(4, x3);
+    SETUP_VAR_STACK_REMEMBERED(4);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, x0);
+    VAR_STACK_PUSH(2, x1);
+    VAR_STACK_PUSH(3, x3);
 
     
     if ((n < 3) ||(n > 4)) 
@@ -315,12 +309,11 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
     long* x2 = &_x2;
     npathname x3;
 
-    SETUP_VAR_STACK_REMEMBERED(5);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
-    VAR_STACK_PUSH(2, x0);
-    VAR_STACK_PUSH(3, x1);
-    VAR_STACK_PUSH(4, x3);
+    SETUP_VAR_STACK_REMEMBERED(4);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, x0);
+    VAR_STACK_PUSH(2, x1);
+    VAR_STACK_PUSH(3, x3);
 
     
     if ((n < 3) ||(n > 4)) 
@@ -353,10 +346,9 @@ static Scheme_Object *wxsGlobalwxStripMenuCodes_Scheme(int n,  Scheme_Object *p[
   string r;
   string x0;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
-  VAR_STACK_PUSH(2, x0);
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "label->plain-label"));
@@ -366,7 +358,7 @@ static Scheme_Object *wxsGlobalwxStripMenuCodes_Scheme(int n,  Scheme_Object *p[
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
 #pragma argsused
@@ -379,9 +371,8 @@ static Scheme_Object *wxsGlobalwxDisplaySize(int n,  Scheme_Object *p[])
   int _x1;
   int* x1 = &_x1;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
 
   
       *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "display-size")), "display-size"", extracting boxed argument"));
@@ -405,9 +396,8 @@ static Scheme_Object *wxsGlobalwxBell(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
 
   
 
@@ -425,9 +415,8 @@ static Scheme_Object *wxsGlobalwxEndBusyCursor(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
 
   
 
@@ -446,9 +435,8 @@ static Scheme_Object *wxsGlobalwxIsBusy(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   Bool r;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
 
   
 
@@ -466,9 +454,8 @@ static Scheme_Object *wxsGlobalwxBeginBusyCursor(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
 
   
 
@@ -493,10 +480,9 @@ static Scheme_Object *wxsGlobalwxMakeMetaFilePlaceable(int n,  Scheme_Object *p[
   float x4;
   float x5;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
-  VAR_STACK_PUSH(2, x0);
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "make-meta-file-placeable"));
@@ -521,9 +507,8 @@ static Scheme_Object *wxsGlobalwxDisplayDepth(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   int r;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
 
   
 
@@ -542,9 +527,8 @@ static Scheme_Object *wxsGlobalwxColourDisplay(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   Bool r;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
 
   
 
@@ -572,15 +556,14 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
   int x7;
   int x8;
 
-  SETUP_VAR_STACK_REMEMBERED(8);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x1);
-  VAR_STACK_PUSH(4, x2);
-  VAR_STACK_PUSH(5, x3);
-  VAR_STACK_PUSH(6, x4);
-  VAR_STACK_PUSH(7, x6);
+  SETUP_VAR_STACK_REMEMBERED(7);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x1);
+  VAR_STACK_PUSH(3, x2);
+  VAR_STACK_PUSH(4, x3);
+  VAR_STACK_PUSH(5, x4);
+  VAR_STACK_PUSH(6, x6);
 
   
   x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[0], "file-selector"));
@@ -604,7 +587,7 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
     x5 = WITH_VAR_STACK(unbundle_symset_fileSelMode(p[5], "file-selector"));
   } else
     x5 = wxOPEN;
-  x6 = (((n <= 6) || XC_SCHEME_NULLP(p[6])) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[6], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[6], NULL, 0) : (objscheme_istype_wxDialogBox(p[6], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[6], NULL, 0) : (scheme_wrong_type("file-selector", "frame% or dialog%", -1, 0, &p[6]), (wxWindow *)NULL))));
+  x6 = (((n <= 6) || XC_SCHEME_NULLP(p[6])) ? (wxWindow *)NULL : (WITH_VAR_STACK(objscheme_istype_wxFrame(p[6], NULL, 1)) ? (wxWindow *)WITH_VAR_STACK(objscheme_unbundle_wxFrame(p[6], NULL, 0)) : (WITH_VAR_STACK(objscheme_istype_wxDialogBox(p[6], NULL, 1)) ? (wxWindow *)WITH_VAR_STACK(objscheme_unbundle_wxDialogBox(p[6], NULL, 0)) : (WITH_VAR_STACK(scheme_wrong_type("file-selector", "frame% or dialog%", -1, 0, &p[6])), (wxWindow *)NULL))));
   if (n > 7) {
     x7 = WITH_VAR_STACK(objscheme_unbundle_integer(p[7], "file-selector"));
   } else
@@ -619,25 +602,43 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
 void objscheme_setup_wxsGlobal(void *env)
 {
-  scheme_install_xc_global("fill-private-color", scheme_make_prim_w_arity(wxsGlobalwxsFillPrivateColor, "fill-private-color", 2, 2), env);
-  scheme_install_xc_global("flush-display", scheme_make_prim_w_arity(wxsGlobalwxFlushDisplay, "flush-display", 0, 0), env);
-  scheme_install_xc_global("yield", scheme_make_prim_w_arity(wxsGlobalwxSchemeYield, "yield", 0, 1), env);
-  scheme_install_xc_global("write-resource", scheme_make_prim_w_arity(wxsGlobalwxWriteResource, "write-resource", 3, 4), env);
-  scheme_install_xc_global("get-resource", scheme_make_prim_w_arity(wxsGlobalwxGetResource, "get-resource", 3, 4), env);
-  scheme_install_xc_global("label->plain-label", scheme_make_prim_w_arity(wxsGlobalwxStripMenuCodes_Scheme, "label->plain-label", 1, 1), env);
-  scheme_install_xc_global("display-size", scheme_make_prim_w_arity(wxsGlobalwxDisplaySize, "display-size", 2, 2), env);
-  scheme_install_xc_global("bell", scheme_make_prim_w_arity(wxsGlobalwxBell, "bell", 0, 0), env);
-  scheme_install_xc_global("end-busy-cursor", scheme_make_prim_w_arity(wxsGlobalwxEndBusyCursor, "end-busy-cursor", 0, 0), env);
-  scheme_install_xc_global("is-busy?", scheme_make_prim_w_arity(wxsGlobalwxIsBusy, "is-busy?", 0, 0), env);
-  scheme_install_xc_global("begin-busy-cursor", scheme_make_prim_w_arity(wxsGlobalwxBeginBusyCursor, "begin-busy-cursor", 0, 0), env);
-  scheme_install_xc_global("make-meta-file-placeable", scheme_make_prim_w_arity(wxsGlobalwxMakeMetaFilePlaceable, "make-meta-file-placeable", 6, 6), env);
-  scheme_install_xc_global("get-display-depth", scheme_make_prim_w_arity(wxsGlobalwxDisplayDepth, "get-display-depth", 0, 0), env);
-  scheme_install_xc_global("is-color-display?", scheme_make_prim_w_arity(wxsGlobalwxColourDisplay, "is-color-display?", 0, 0), env);
-  scheme_install_xc_global("file-selector", scheme_make_prim_w_arity(wxsGlobalwxFileSelector, "file-selector", 1, 9), env);
+  Scheme_Object *functmp;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsGlobalwxsFillPrivateColor, "fill-private-color", 2, 2));
+  WITH_VAR_STACK(scheme_install_xc_global("fill-private-color", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsGlobalwxFlushDisplay, "flush-display", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("flush-display", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsGlobalwxSchemeYield, "yield", 0, 1));
+  WITH_VAR_STACK(scheme_install_xc_global("yield", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsGlobalwxWriteResource, "write-resource", 3, 4));
+  WITH_VAR_STACK(scheme_install_xc_global("write-resource", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsGlobalwxGetResource, "get-resource", 3, 4));
+  WITH_VAR_STACK(scheme_install_xc_global("get-resource", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsGlobalwxStripMenuCodes_Scheme, "label->plain-label", 1, 1));
+  WITH_VAR_STACK(scheme_install_xc_global("label->plain-label", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsGlobalwxDisplaySize, "display-size", 2, 2));
+  WITH_VAR_STACK(scheme_install_xc_global("display-size", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsGlobalwxBell, "bell", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("bell", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsGlobalwxEndBusyCursor, "end-busy-cursor", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("end-busy-cursor", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsGlobalwxIsBusy, "is-busy?", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("is-busy?", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsGlobalwxBeginBusyCursor, "begin-busy-cursor", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("begin-busy-cursor", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsGlobalwxMakeMetaFilePlaceable, "make-meta-file-placeable", 6, 6));
+  WITH_VAR_STACK(scheme_install_xc_global("make-meta-file-placeable", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsGlobalwxDisplayDepth, "get-display-depth", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("get-display-depth", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsGlobalwxColourDisplay, "is-color-display?", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("is-color-display?", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsGlobalwxFileSelector, "file-selector", 1, 9));
+  WITH_VAR_STACK(scheme_install_xc_global("file-selector", functmp, env));
 }
 

@@ -139,7 +139,7 @@ extern void wxMediaIOCheckLSB(void);
 
 #include "mred.h"
 
-#ifndef USE_SENORA_GC
+#if 0
 /* Force initialization of the garbage collector (currently needed
    only when supporting Irix sprocs) */
 class GCInit {
@@ -212,6 +212,47 @@ static MrEdContext *check_q_callbacks(int hi, int (*test)(MrEdContext *, MrEdCon
 					 MrEdContext *tdata, int check_only);
 static void remove_q_callbacks(MrEdContext *c);
 
+#ifdef MZ_PRECISE_GC
+
+START_XFORM_SKIP;
+
+static int mark_eventspace_val(void *p, Mark_Proc mark)
+{
+  MrEdContext *c = (MrEdContext *)p;
+
+  if (mark) {
+    gcMARK_TYPED(Scheme_Process *, c->handler_running);
+    gcMARK_TYPED(MrEdFinalizedContext *, c->finalized);
+
+    gcMARK_TYPED(wxChildList *, c->topLevelWindowList);
+    gcMARK_TYPED(wxStandardSnipClassList *, c->snipClassList);
+    gcMARK_TYPED(wxBufferDataClassList *, c->bufferDataClassList);
+    gcMARK_TYPED(wxWindow *, c->modal_window);
+    gcMARK_TYPED(struct MrEd_Saved_Modal *, c->modal_stack);
+
+    gcMARK_TYPED(Scheme_Config *, c->main_config);
+
+    gcMARK_TYPED(wxTimer *, c->timer);
+
+    gcMARK_TYPED(void *, c->alt_data);
+
+    gcMARK_TYPED(MrEdContext *, c->next);
+
+#ifdef wx_msw
+    gcMARK_TYPED(struct LeaveEvent *, c->queued_leaves);
+#endif
+
+    gcMARK_TYPED(Context_Manager_Hop *, c->mr_hop);
+    gcMARK_TYPED(Scheme_Manager_Reference *, c->mref);
+  }
+
+  return sizeof(MrEdContext);
+}
+
+END_XFORM_SKIP;
+
+#endif
+
 MrEdContext *MrEdGetContext(wxObject *w)
 {
   if (w) {
@@ -248,7 +289,10 @@ void *wxGetContextForFrame()
 
 wxChildList *wxGetTopLevelWindowsList(wxObject *w)
 {
-  return MrEdGetContext(w)->topLevelWindowList;
+  MrEdContext *c;
+  c = MrEdGetContext(w);
+
+  return c->topLevelWindowList;
 }
 
 wxWindow *wxGetModalWindow(wxObject *w)
@@ -308,12 +352,18 @@ void wxPopModalWindow(wxObject *w, wxWindow *win)
 
 wxStandardSnipClassList *wxGetTheSnipClassList()
 {
-  return MrEdGetContext()->snipClassList;
+  MrEdContext *c;
+  c = MrEdGetContext();
+
+  return c->snipClassList;
 }
 
 wxBufferDataClassList *wxGetTheBufferDataClassList()
 {
-  return MrEdGetContext()->bufferDataClassList;
+  MrEdContext *c;
+  c = MrEdGetContext();
+
+  return c->bufferDataClassList;
 }
 
 int wxGetBusyState(void)
@@ -599,7 +649,9 @@ Scheme_Object *MrEdGetFrameList(void)
 	   a dialog, so extract its only child. */
 	if (((wxFrame *)o)->IsModal()) {
 	  wxChildNode *node2;
-	  node2 = ((wxFrame *)o)->GetChildren()->First();
+	  wxChildList *cl;
+	  cl = ((wxFrame *)o)->GetChildren();
+	  node2 = cl->First();
 	  if (node2)
 	    o = node2->Data();
 	}
@@ -2062,7 +2114,7 @@ static const char *CallSchemeExpand(const char *filename)
   return s ? s : filename;
 }
 
-#ifndef USE_SENORA_GC
+#if !defined(USE_SENORA_GC) && !defined(MZ_PRECISE_GC)
 static void MrEdIgnoreWarnings(char *, GC_word)
 {
 }
@@ -2180,6 +2232,9 @@ static Scheme_Env *setup_basic_env()
   wxsScheme_setup(global_env);
 
   mred_eventspace_type = scheme_make_type("<eventspace>");
+#ifdef MZ_PRECISE_GC
+  GC_register_traverser(mred_eventspace_type, mark_eventspace_val);
+#endif
 
   scheme_set_param(scheme_config, mred_eventspace_param, (Scheme_Object *)mred_main_context);
 
@@ -2225,7 +2280,7 @@ wxFrame *MrEdApp::OnInit(void)
   scheme_make_stderr = MrEdMakeStdErr;
 #endif
 
-#ifndef USE_SENORA_GC
+#if !defined(USE_SENORA_GC) && !defined(MZ_PRECISE_GC)
   GC_set_warn_proc(MrEdIgnoreWarnings);
 #endif
   GC_out_of_memory = MrEdOutOfMemory;
@@ -2249,8 +2304,7 @@ wxFrame *MrEdApp::OnInit(void)
   wxInitSnips(); /* and snip classes */
 
 #ifdef MZ_PRECISE_GC
-  /* FIXME: Need marker */
-  mmc = (MrEdContext *)GC_malloc_tagged(sizeof(MrEdContext));
+  mmc = (MrEdContext *)GC_malloc_one_tagged(sizeof(MrEdContext));
   mmc->type = mred_eventspace_type;
 #else
   mmc = new MrEdContext;

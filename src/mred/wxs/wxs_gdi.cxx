@@ -265,7 +265,7 @@ class os_wxFont : public wxFont {
   ~os_wxFont();
 };
 
-Scheme_Object *os_wxFont_class;
+static Scheme_Object *os_wxFont_class;
 
 os_wxFont::os_wxFont(Scheme_Object *)
 : wxFont()
@@ -296,8 +296,8 @@ static Scheme_Object *os_wxFontGetFontId(Scheme_Object *obj, int n,  Scheme_Obje
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -318,8 +318,8 @@ static Scheme_Object *os_wxFontGetUnderlined(Scheme_Object *obj, int n,  Scheme_
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -340,8 +340,8 @@ static Scheme_Object *os_wxFontGetWeight(Scheme_Object *obj, int n,  Scheme_Obje
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -350,7 +350,7 @@ static Scheme_Object *os_wxFontGetWeight(Scheme_Object *obj, int n,  Scheme_Obje
 
   
   
-  return WITH_VAR_STACK(bundle_symset_weight(r));
+  return WITH_REMEMBERED_STACK(bundle_symset_weight(r));
 }
 
 #pragma argsused
@@ -362,8 +362,8 @@ static Scheme_Object *os_wxFontGetPointSize(Scheme_Object *obj, int n,  Scheme_O
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -384,8 +384,8 @@ static Scheme_Object *os_wxFontGetStyle(Scheme_Object *obj, int n,  Scheme_Objec
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -394,7 +394,7 @@ static Scheme_Object *os_wxFontGetStyle(Scheme_Object *obj, int n,  Scheme_Objec
 
   
   
-  return WITH_VAR_STACK(bundle_symset_style(r));
+  return WITH_REMEMBERED_STACK(bundle_symset_style(r));
 }
 
 #pragma argsused
@@ -406,8 +406,8 @@ static Scheme_Object *os_wxFontGetFaceString(Scheme_Object *obj, int n,  Scheme_
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -416,7 +416,7 @@ static Scheme_Object *os_wxFontGetFaceString(Scheme_Object *obj, int n,  Scheme_
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
 #pragma argsused
@@ -428,8 +428,8 @@ static Scheme_Object *os_wxFontGetFamily(Scheme_Object *obj, int n,  Scheme_Obje
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -438,14 +438,15 @@ static Scheme_Object *os_wxFontGetFamily(Scheme_Object *obj, int n,  Scheme_Obje
 
   
   
-  return WITH_VAR_STACK(bundle_symset_family(r));
+  return WITH_REMEMBERED_STACK(bundle_symset_family(r));
 }
 
 #pragma argsused
 static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxFont *realobj;
-  if ((n >= 2) && objscheme_istype_number(p[0], NULL) && objscheme_istype_string(p[1], NULL)) {
+  REMEMBER_VAR_STACK();
+  if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[1], NULL))) {
     int x0;
     cstring x1;
     int x2;
@@ -454,8 +455,8 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
     Bool x5;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x1);
 
     
@@ -477,7 +478,7 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
     objscheme_note_creation(obj);
     
     
-  } else if ((n >= 1) && objscheme_istype_number(p[0], NULL)) {
+  } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[0], NULL))) {
     int x0;
     int x1;
     int x2;
@@ -485,8 +486,8 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
     Bool x4;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if ((n < 4) ||(n > 5)) 
@@ -509,8 +510,8 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
   } else  {
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if (n != 0) 
@@ -532,27 +533,25 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
 
 void objscheme_setup_wxFont(void *env)
 {
-  if (os_wxFont_class) {
-    objscheme_add_global_class(os_wxFont_class, "font%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxFont_class = objscheme_def_prim_class(env, "font%", "object%", os_wxFont_ConstructScheme, 7);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("font%");
+  wxREGGLOB(os_wxFont_class);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-font-id", os_wxFontGetFontId, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-underlined", os_wxFontGetUnderlined, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-weight", os_wxFontGetWeight, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-point-size", os_wxFontGetPointSize, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-style", os_wxFontGetStyle, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-face", os_wxFontGetFaceString, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-family", os_wxFontGetFamily, 0, 0));
+  os_wxFont_class = objscheme_def_prim_class(env, "font%", "object%", os_wxFont_ConstructScheme, 7);
 
-
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxFont_class));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-font-id", os_wxFontGetFontId, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-underlined", os_wxFontGetUnderlined, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-weight", os_wxFontGetWeight, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-point-size", os_wxFontGetPointSize, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-style", os_wxFontGetStyle, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-face", os_wxFontGetFaceString, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-family", os_wxFontGetFamily, 0, 0));
 
 
-  }
+  WITH_VAR_STACK(scheme_made_class(os_wxFont_class));
+
+
 }
 
 int objscheme_istype_wxFont(Scheme_Object *obj, const char *stop, int nullOK)
@@ -623,7 +622,7 @@ class os_wxFontList : public wxFontList {
   ~os_wxFontList();
 };
 
-Scheme_Object *os_wxFontList_class;
+static Scheme_Object *os_wxFontList_class;
 
 os_wxFontList::os_wxFontList(Scheme_Object *)
 : wxFontList()
@@ -642,7 +641,7 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
   REMEMBER_VAR_STACK();
   class wxFont* r;
   objscheme_check_valid(obj);
-  if ((n >= 2) && objscheme_istype_number(p[0], NULL) && istype_symset_family(p[1], NULL)) {
+  if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[0], NULL)) && WITH_REMEMBERED_STACK(istype_symset_family(p[1], NULL))) {
     int x0;
     int x1;
     int x2;
@@ -650,8 +649,8 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
     Bool x4;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if ((n < 4) ||(n > 5)) 
@@ -680,8 +679,8 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
     Bool x5;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x1);
 
     
@@ -707,17 +706,18 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
 #endif
   }
 
-  return WITH_VAR_STACK(objscheme_bundle_wxFont(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxFont(r));
 }
 
 #pragma argsused
 static Scheme_Object *os_wxFontList_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxFontList *realobj;
+  REMEMBER_VAR_STACK();
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   if (n != 0) 
@@ -737,24 +737,24 @@ static Scheme_Object *os_wxFontList_ConstructScheme(Scheme_Object *obj, int n,  
 
 void objscheme_setup_wxFontList(void *env)
 {
-  if (os_wxFontList_class) {
-    objscheme_add_global_class(os_wxFontList_class, "font-list%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxFontList_class = objscheme_def_prim_class(env, "font-list%", "object%", os_wxFontList_ConstructScheme, 1);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("font-list%");
+  wxREGGLOB(os_wxFontList_class);
+
+  os_wxFontList_class = objscheme_def_prim_class(env, "font-list%", "object%", os_wxFontList_ConstructScheme, 1);
 
 #if  USE_FONT_NAME_DIRECTORY
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFontList_class, "find-or-create-font", os_wxFontListFindOrCreateFont, 4, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontList_class, "find-or-create-font", os_wxFontListFindOrCreateFont, 4, 6));
 #endif
 
 
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxFontList_class));
+  WITH_VAR_STACK(scheme_made_class(os_wxFontList_class));
 
 
-  }
-  scheme_install_xc_global("the-font-list", WITH_VAR_STACK(objscheme_bundle_wxFontList(wxTheFontList)), env);
+  Scheme_Object *xcconsttmp;
+  xcconsttmp = WITH_VAR_STACK(objscheme_bundle_wxFontList(wxTheFontList));
+  WITH_VAR_STACK(scheme_install_xc_global("the-font-list", xcconsttmp, env));
 }
 
 int objscheme_istype_wxFontList(Scheme_Object *obj, const char *stop, int nullOK)
@@ -829,7 +829,7 @@ class os_wxColour : public wxColour {
   ~os_wxColour();
 };
 
-Scheme_Object *os_wxColour_class;
+static Scheme_Object *os_wxColour_class;
 
 os_wxColour::os_wxColour(Scheme_Object *)
 : wxColour()
@@ -860,8 +860,8 @@ static Scheme_Object *os_wxColourBlue(Scheme_Object *obj, int n,  Scheme_Object 
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -882,8 +882,8 @@ static Scheme_Object *os_wxColourGreen(Scheme_Object *obj, int n,  Scheme_Object
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -904,8 +904,8 @@ static Scheme_Object *os_wxColourRed(Scheme_Object *obj, int n,  Scheme_Object *
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -928,8 +928,8 @@ static Scheme_Object *os_wxColourSet(Scheme_Object *obj, int n,  Scheme_Object *
   ubyte x2;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[0], 0, 255, "set in color%"));
@@ -953,8 +953,8 @@ static Scheme_Object *os_wxColourOk(Scheme_Object *obj, int n,  Scheme_Object *p
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -976,8 +976,8 @@ static Scheme_Object *os_wxColourCopyFrom(Scheme_Object *obj, int n,  Scheme_Obj
   class wxColour* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -988,19 +988,20 @@ static Scheme_Object *os_wxColourCopyFrom(Scheme_Object *obj, int n,  Scheme_Obj
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxColour(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
 #pragma argsused
 static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxColour *realobj;
-  if ((n >= 1) && objscheme_istype_string(p[0], NULL)) {
+  REMEMBER_VAR_STACK();
+  if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL))) {
     string x0;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -1014,14 +1015,14 @@ static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Sc
     objscheme_note_creation(obj);
     
     
-  } else if ((n >= 1) && objscheme_istype_number(p[0], NULL)) {
+  } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[0], NULL))) {
     ubyte x0;
     ubyte x1;
     ubyte x2;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if (n != 3) 
@@ -1039,8 +1040,8 @@ static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Sc
   } else  {
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if (n != 0) 
@@ -1062,26 +1063,24 @@ static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
 void objscheme_setup_wxColour(void *env)
 {
-  if (os_wxColour_class) {
-    objscheme_add_global_class(os_wxColour_class, "color%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxColour_class = objscheme_def_prim_class(env, "color%", "object%", os_wxColour_ConstructScheme, 6);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("color%");
+  wxREGGLOB(os_wxColour_class);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxColour_class, "blue", os_wxColourBlue, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxColour_class, "green", os_wxColourGreen, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxColour_class, "red", os_wxColourRed, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxColour_class, "set", os_wxColourSet, 3, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxColour_class, "ok?", os_wxColourOk, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxColour_class, "copy-from", os_wxColourCopyFrom, 1, 1));
+  os_wxColour_class = objscheme_def_prim_class(env, "color%", "object%", os_wxColour_ConstructScheme, 6);
 
-
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxColour_class));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "blue", os_wxColourBlue, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "green", os_wxColourGreen, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "red", os_wxColourRed, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "set", os_wxColourSet, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "ok?", os_wxColourOk, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "copy-from", os_wxColourCopyFrom, 1, 1));
 
 
-  }
+  WITH_VAR_STACK(scheme_made_class(os_wxColour_class));
+
+
 }
 
 int objscheme_istype_wxColour(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1166,9 +1165,8 @@ class os_wxColourDatabase : public wxColourDatabase {
   ~os_wxColourDatabase();
 };
 
-Scheme_Object *os_wxColourDatabase_class;
-
-Scheme_Object *os_wxColourDatabase_interface;
+static Scheme_Object *os_wxColourDatabase_class;
+static Scheme_Object *os_wxColourDatabase_interface;
 
 os_wxColourDatabase::~os_wxColourDatabase()
 {
@@ -1185,8 +1183,8 @@ static Scheme_Object *os_wxColourDatabaseFindColour(Scheme_Object *obj, int n,  
   string x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -1197,31 +1195,31 @@ static Scheme_Object *os_wxColourDatabaseFindColour(Scheme_Object *obj, int n,  
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxColour(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
 void objscheme_setup_wxColourDatabase(void *env)
 {
-  if (os_wxColourDatabase_class) {
-    objscheme_add_global_class(os_wxColourDatabase_class, "color-database%", env);
-    objscheme_add_global_interface(os_wxColourDatabase_interface, "color-database" "<%>", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxColourDatabase_class = objscheme_def_prim_class(env, "color-database%", "object%", NULL, 1);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("color-database%");
+  wxREGGLOB(os_wxColourDatabase_class);
+  wxREGGLOB(os_wxColourDatabase_interface);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxColourDatabase_class, "find-color", os_wxColourDatabaseFindColour, 1, 1));
+  os_wxColourDatabase_class = objscheme_def_prim_class(env, "color-database%", "object%", NULL, 1);
+
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColourDatabase_class, "find-color", os_wxColourDatabaseFindColour, 1, 1));
 
 
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxColourDatabase_class));
+  WITH_VAR_STACK(scheme_made_class(os_wxColourDatabase_class));
 
-  os_wxColourDatabase_interface = scheme_class_to_interface(os_wxColourDatabase_class, "color-database" "<%>");
+  os_wxColourDatabase_interface = WITH_VAR_STACK(scheme_class_to_interface(os_wxColourDatabase_class, "color-database" "<%>"));
 
-  objscheme_add_global_interface(os_wxColourDatabase_interface, "color-database" "<%>", env);
+  WITH_VAR_STACK(objscheme_add_global_interface(os_wxColourDatabase_interface, "color-database" "<%>", env));
 
-  }
-  scheme_install_xc_global("the-color-database", WITH_VAR_STACK(objscheme_bundle_wxColourDatabase(wxTheColourDatabase)), env);
+  Scheme_Object *xcconsttmp;
+  xcconsttmp = WITH_VAR_STACK(objscheme_bundle_wxColourDatabase(wxTheColourDatabase));
+  WITH_VAR_STACK(scheme_install_xc_global("the-color-database", xcconsttmp, env));
 }
 
 int objscheme_istype_wxColourDatabase(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1293,7 +1291,7 @@ class os_wxPoint : public wxPoint {
   ~os_wxPoint();
 };
 
-Scheme_Object *os_wxPoint_class;
+static Scheme_Object *os_wxPoint_class;
 
 os_wxPoint::os_wxPoint(Scheme_Object *)
 : wxPoint()
@@ -1314,25 +1312,28 @@ static Scheme_Object *objscheme_wxPoint_Getx(Scheme_Object *obj, int n,  Scheme_
 {
   Scheme_Class_Object *cobj;
   float v;
+  REMEMBER_VAR_STACK();
 
   objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-x in point%", 0, 0, n, p);
+  if (n) WITH_REMEMBERED_STACK(scheme_wrong_count("get-x in point%", 0, 0, n, p));
   cobj = (Scheme_Class_Object *)obj;
   if (cobj->primflag)
     v = ((os_wxPoint *)cobj->primdata)->wxPoint::x;
   else
     v = ((wxPoint *)cobj->primdata)->x;
 
-  return WITH_VAR_STACK(scheme_make_double(v));
+  return WITH_REMEMBERED_STACK(scheme_make_double(v));
 }
 
 static Scheme_Object *objscheme_wxPoint_Setx(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  objscheme_check_valid(obj);
   Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
   float v;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, cobj);
 
-  if (n != 1) scheme_wrong_count("set-x in point%", 1, 1, n, p);
+  WITH_VAR_STACK(objscheme_check_valid(obj));
+  if (n != 1) WITH_VAR_STACK(scheme_wrong_count("set-x in point%", 1, 1, n, p));
 
   v = WITH_VAR_STACK(objscheme_unbundle_float(p[0], "set-x in point%"));
   ((wxPoint *)cobj->primdata)->x = v;
@@ -1344,25 +1345,28 @@ static Scheme_Object *objscheme_wxPoint_Gety(Scheme_Object *obj, int n,  Scheme_
 {
   Scheme_Class_Object *cobj;
   float v;
+  REMEMBER_VAR_STACK();
 
   objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-y in point%", 0, 0, n, p);
+  if (n) WITH_REMEMBERED_STACK(scheme_wrong_count("get-y in point%", 0, 0, n, p));
   cobj = (Scheme_Class_Object *)obj;
   if (cobj->primflag)
     v = ((os_wxPoint *)cobj->primdata)->wxPoint::y;
   else
     v = ((wxPoint *)cobj->primdata)->y;
 
-  return WITH_VAR_STACK(scheme_make_double(v));
+  return WITH_REMEMBERED_STACK(scheme_make_double(v));
 }
 
 static Scheme_Object *objscheme_wxPoint_Sety(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  objscheme_check_valid(obj);
   Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
   float v;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, cobj);
 
-  if (n != 1) scheme_wrong_count("set-y in point%", 1, 1, n, p);
+  WITH_VAR_STACK(objscheme_check_valid(obj));
+  if (n != 1) WITH_VAR_STACK(scheme_wrong_count("set-y in point%", 1, 1, n, p));
 
   v = WITH_VAR_STACK(objscheme_unbundle_float(p[0], "set-y in point%"));
   ((wxPoint *)cobj->primdata)->y = v;
@@ -1374,13 +1378,14 @@ static Scheme_Object *objscheme_wxPoint_Sety(Scheme_Object *obj, int n,  Scheme_
 static Scheme_Object *os_wxPoint_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxPoint *realobj;
-  if ((n >= 1) && objscheme_istype_number(p[0], NULL)) {
+  REMEMBER_VAR_STACK();
+  if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[0], NULL))) {
     float x0;
     float x1;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if (n != 2) 
@@ -1397,8 +1402,8 @@ static Scheme_Object *os_wxPoint_ConstructScheme(Scheme_Object *obj, int n,  Sch
   } else  {
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if (n != 0) 
@@ -1420,24 +1425,22 @@ static Scheme_Object *os_wxPoint_ConstructScheme(Scheme_Object *obj, int n,  Sch
 
 void objscheme_setup_wxPoint(void *env)
 {
-  if (os_wxPoint_class) {
-    objscheme_add_global_class(os_wxPoint_class, "point%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxPoint_class = objscheme_def_prim_class(env, "point%", "object%", os_wxPoint_ConstructScheme, 4);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("point%");
+  wxREGGLOB(os_wxPoint_class);
 
-
-  scheme_add_method_w_arity(os_wxPoint_class,"get-x", objscheme_wxPoint_Getx, 0, 0);
-  scheme_add_method_w_arity(os_wxPoint_class,"set-x", objscheme_wxPoint_Setx, 1, 1);
-  scheme_add_method_w_arity(os_wxPoint_class,"get-y", objscheme_wxPoint_Gety, 0, 0);
-  scheme_add_method_w_arity(os_wxPoint_class,"set-y", objscheme_wxPoint_Sety, 1, 1);
-
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxPoint_class));
+  os_wxPoint_class = objscheme_def_prim_class(env, "point%", "object%", os_wxPoint_ConstructScheme, 4);
 
 
-  }
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPoint_class,"get-x", objscheme_wxPoint_Getx, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPoint_class,"set-x", objscheme_wxPoint_Setx, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPoint_class,"get-y", objscheme_wxPoint_Gety, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPoint_class,"set-y", objscheme_wxPoint_Sety, 1, 1));
+
+  WITH_VAR_STACK(scheme_made_class(os_wxPoint_class));
+
+
 }
 
 int objscheme_istype_wxPoint(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1582,7 +1585,7 @@ class os_wxBrush : public wxBrush {
   ~os_wxBrush();
 };
 
-Scheme_Object *os_wxBrush_class;
+static Scheme_Object *os_wxBrush_class;
 
 os_wxBrush::os_wxBrush(Scheme_Object *)
 : wxBrush()
@@ -1613,8 +1616,8 @@ static Scheme_Object *os_wxBrushSetStyle(Scheme_Object *obj, int n,  Scheme_Obje
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(unbundle_symset_brushStyle(p[0], "set-style in brush%"));
@@ -1636,8 +1639,8 @@ static Scheme_Object *os_wxBrushGetStyle(Scheme_Object *obj, int n,  Scheme_Obje
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -1646,7 +1649,7 @@ static Scheme_Object *os_wxBrushGetStyle(Scheme_Object *obj, int n,  Scheme_Obje
 
   
   
-  return WITH_VAR_STACK(bundle_symset_brushStyle(r));
+  return WITH_REMEMBERED_STACK(bundle_symset_brushStyle(r));
 }
 
 #pragma argsused
@@ -1658,14 +1661,14 @@ static Scheme_Object *os_wxBrushSetStipple(Scheme_Object *obj, int n,  Scheme_Ob
   class wxBitmap* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[0], "set-stipple in brush%", 1));
 
-  { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("brush%","set-stipple"), "bad bitmap: ", p[0]); if (x0 && BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("brush%","set-stipple"), "bitmap is currently installed into a bitmap-dc%: ", p[0])); }if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("brush%","set-stipple"), "brush", "brush"));
+  { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("brush%","set-stipple"), "bad bitmap: ", p[0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("brush%","set-stipple"), "bitmap is currently installed into a bitmap-dc%: ", p[0])); }if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("brush%","set-stipple"), "brush", "brush"));
   WITH_VAR_STACK(((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->SetStipple(x0));
 
   
@@ -1682,8 +1685,8 @@ static Scheme_Object *os_wxBrushGetStipple(Scheme_Object *obj, int n,  Scheme_Ob
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -1692,7 +1695,7 @@ static Scheme_Object *os_wxBrushGetStipple(Scheme_Object *obj, int n,  Scheme_Ob
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxBitmap(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxBitmap(r));
 }
 
 #pragma argsused
@@ -1701,12 +1704,12 @@ static Scheme_Object *os_wxBrushSetColour(Scheme_Object *obj, int n,  Scheme_Obj
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  if ((n >= 1) && objscheme_istype_wxColour(p[0], NULL, 0)) {
+  if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxColour(p[0], NULL, 0))) {
     class wxColour* x0;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -1719,12 +1722,12 @@ static Scheme_Object *os_wxBrushSetColour(Scheme_Object *obj, int n,  Scheme_Obj
 
     
     
-  } else if ((n >= 1) && objscheme_istype_string(p[0], NULL)) {
+  } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL))) {
     string x0;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -1743,8 +1746,8 @@ static Scheme_Object *os_wxBrushSetColour(Scheme_Object *obj, int n,  Scheme_Obj
     ubyte x2;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if (n != 3) 
@@ -1772,8 +1775,8 @@ static Scheme_Object *os_wxBrushGetColour(Scheme_Object *obj, int n,  Scheme_Obj
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -1782,20 +1785,21 @@ static Scheme_Object *os_wxBrushGetColour(Scheme_Object *obj, int n,  Scheme_Obj
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxColour(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
 #pragma argsused
 static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxBrush *realobj;
-  if ((n >= 1) && objscheme_istype_string(p[0], NULL)) {
+  REMEMBER_VAR_STACK();
+  if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL))) {
     string x0;
     int x1;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -1810,13 +1814,13 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
     objscheme_note_creation(obj);
     
     
-  } else if ((n >= 1) && objscheme_istype_wxColour(p[0], NULL, 0)) {
+  } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxColour(p[0], NULL, 0))) {
     class wxColour* x0;
     int x1;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -1834,8 +1838,8 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
   } else  {
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if (n != 0) 
@@ -1857,26 +1861,24 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
 
 void objscheme_setup_wxBrush(void *env)
 {
-  if (os_wxBrush_class) {
-    objscheme_add_global_class(os_wxBrush_class, "brush%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxBrush_class = objscheme_def_prim_class(env, "brush%", "object%", os_wxBrush_ConstructScheme, 6);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("brush%");
+  wxREGGLOB(os_wxBrush_class);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxBrush_class, "set-style", os_wxBrushSetStyle, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxBrush_class, "get-style", os_wxBrushGetStyle, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxBrush_class, "set-stipple", os_wxBrushSetStipple, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxBrush_class, "get-stipple", os_wxBrushGetStipple, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxBrush_class, "set-color", os_wxBrushSetColour, 1, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxBrush_class, "get-color", os_wxBrushGetColour, 0, 0));
+  os_wxBrush_class = objscheme_def_prim_class(env, "brush%", "object%", os_wxBrush_ConstructScheme, 6);
 
-
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxBrush_class));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "set-style", os_wxBrushSetStyle, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "get-style", os_wxBrushGetStyle, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "set-stipple", os_wxBrushSetStipple, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "get-stipple", os_wxBrushGetStipple, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "set-color", os_wxBrushSetColour, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "get-color", os_wxBrushGetColour, 0, 0));
 
 
-  }
+  WITH_VAR_STACK(scheme_made_class(os_wxBrush_class));
+
+
 }
 
 int objscheme_istype_wxBrush(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1947,7 +1949,7 @@ class os_wxBrushList : public wxBrushList {
   ~os_wxBrushList();
 };
 
-Scheme_Object *os_wxBrushList_class;
+static Scheme_Object *os_wxBrushList_class;
 
 os_wxBrushList::os_wxBrushList(Scheme_Object *)
 : wxBrushList()
@@ -1966,13 +1968,13 @@ static Scheme_Object *os_wxBrushListFindOrCreateBrush(Scheme_Object *obj, int n,
   REMEMBER_VAR_STACK();
   class wxBrush* r;
   objscheme_check_valid(obj);
-  if ((n >= 1) && objscheme_istype_wxColour(p[0], NULL, 0)) {
+  if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxColour(p[0], NULL, 0))) {
     class wxColour* x0;
     int x1;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -1991,8 +1993,8 @@ static Scheme_Object *os_wxBrushListFindOrCreateBrush(Scheme_Object *obj, int n,
     int x1;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -2008,17 +2010,18 @@ static Scheme_Object *os_wxBrushListFindOrCreateBrush(Scheme_Object *obj, int n,
     
   }
 
-  return WITH_VAR_STACK(objscheme_bundle_wxBrush(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxBrush(r));
 }
 
 #pragma argsused
 static Scheme_Object *os_wxBrushList_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxBrushList *realobj;
+  REMEMBER_VAR_STACK();
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   if (n != 0) 
@@ -2038,22 +2041,22 @@ static Scheme_Object *os_wxBrushList_ConstructScheme(Scheme_Object *obj, int n, 
 
 void objscheme_setup_wxBrushList(void *env)
 {
-  if (os_wxBrushList_class) {
-    objscheme_add_global_class(os_wxBrushList_class, "brush-list%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxBrushList_class = objscheme_def_prim_class(env, "brush-list%", "object%", os_wxBrushList_ConstructScheme, 1);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("brush-list%");
+  wxREGGLOB(os_wxBrushList_class);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxBrushList_class, "find-or-create-brush", os_wxBrushListFindOrCreateBrush, 2, 2));
+  os_wxBrushList_class = objscheme_def_prim_class(env, "brush-list%", "object%", os_wxBrushList_ConstructScheme, 1);
 
-
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxBrushList_class));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrushList_class, "find-or-create-brush", os_wxBrushListFindOrCreateBrush, 2, 2));
 
 
-  }
-  scheme_install_xc_global("the-brush-list", WITH_VAR_STACK(objscheme_bundle_wxBrushList(wxTheBrushList)), env);
+  WITH_VAR_STACK(scheme_made_class(os_wxBrushList_class));
+
+
+  Scheme_Object *xcconsttmp;
+  xcconsttmp = WITH_VAR_STACK(objscheme_bundle_wxBrushList(wxTheBrushList));
+  WITH_VAR_STACK(scheme_install_xc_global("the-brush-list", xcconsttmp, env));
 }
 
 int objscheme_istype_wxBrushList(Scheme_Object *obj, const char *stop, int nullOK)
@@ -2277,7 +2280,7 @@ class os_wxPen : public wxPen {
   ~os_wxPen();
 };
 
-Scheme_Object *os_wxPen_class;
+static Scheme_Object *os_wxPen_class;
 
 os_wxPen::os_wxPen(Scheme_Object *)
 : wxPen()
@@ -2308,8 +2311,8 @@ static Scheme_Object *os_wxPenSetStyle(Scheme_Object *obj, int n,  Scheme_Object
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(unbundle_symset_penStyle(p[0], "set-style in pen%"));
@@ -2331,8 +2334,8 @@ static Scheme_Object *os_wxPenGetStyle(Scheme_Object *obj, int n,  Scheme_Object
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -2341,7 +2344,7 @@ static Scheme_Object *os_wxPenGetStyle(Scheme_Object *obj, int n,  Scheme_Object
 
   
   
-  return WITH_VAR_STACK(bundle_symset_penStyle(r));
+  return WITH_REMEMBERED_STACK(bundle_symset_penStyle(r));
 }
 
 #pragma argsused
@@ -2353,14 +2356,14 @@ static Scheme_Object *os_wxPenSetStipple(Scheme_Object *obj, int n,  Scheme_Obje
   class wxBitmap* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[0], "set-stipple in pen%", 1));
 
-  if (x0 && (x0->GetDepth() != 1)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bitmap is not monochrome: ", p[0]));if (x0 && ((x0->GetWidth() != 8) || (x0->GetHeight() != 8))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bitmap is not 8x8: ", p[0]));{ if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bad bitmap: ", p[0]); if (x0 && BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bitmap is currently installed into a bitmap-dc%: ", p[0])); }if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("pen%","set-stipple"), "pen", "pen"));
+  if (x0 && (x0->GetDepth() != 1)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bitmap is not monochrome: ", p[0]));if (x0 && ((x0->GetWidth() != 8) || (x0->GetHeight() != 8))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bitmap is not 8x8: ", p[0]));{ if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bad bitmap: ", p[0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bitmap is currently installed into a bitmap-dc%: ", p[0])); }if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("pen%","set-stipple"), "pen", "pen"));
   WITH_VAR_STACK(((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetStipple(x0));
 
   
@@ -2377,8 +2380,8 @@ static Scheme_Object *os_wxPenGetStipple(Scheme_Object *obj, int n,  Scheme_Obje
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -2387,7 +2390,7 @@ static Scheme_Object *os_wxPenGetStipple(Scheme_Object *obj, int n,  Scheme_Obje
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxBitmap(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxBitmap(r));
 }
 
 #pragma argsused
@@ -2396,12 +2399,12 @@ static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Objec
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  if ((n >= 1) && objscheme_istype_wxColour(p[0], NULL, 0)) {
+  if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxColour(p[0], NULL, 0))) {
     class wxColour* x0;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -2414,12 +2417,12 @@ static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Objec
 
     
     
-  } else if ((n >= 1) && objscheme_istype_string(p[0], NULL)) {
+  } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL))) {
     string x0;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -2438,8 +2441,8 @@ static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Objec
     ubyte x2;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if (n != 3) 
@@ -2467,8 +2470,8 @@ static Scheme_Object *os_wxPenGetColour(Scheme_Object *obj, int n,  Scheme_Objec
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -2477,7 +2480,7 @@ static Scheme_Object *os_wxPenGetColour(Scheme_Object *obj, int n,  Scheme_Objec
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxColour(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
 }
 
 #pragma argsused
@@ -2489,8 +2492,8 @@ static Scheme_Object *os_wxPenSetJoin(Scheme_Object *obj, int n,  Scheme_Object 
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(unbundle_symset_join(p[0], "set-join in pen%"));
@@ -2512,8 +2515,8 @@ static Scheme_Object *os_wxPenGetJoin(Scheme_Object *obj, int n,  Scheme_Object 
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -2522,7 +2525,7 @@ static Scheme_Object *os_wxPenGetJoin(Scheme_Object *obj, int n,  Scheme_Object 
 
   
   
-  return WITH_VAR_STACK(bundle_symset_join(r));
+  return WITH_REMEMBERED_STACK(bundle_symset_join(r));
 }
 
 #pragma argsused
@@ -2534,8 +2537,8 @@ static Scheme_Object *os_wxPenSetCap(Scheme_Object *obj, int n,  Scheme_Object *
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(unbundle_symset_cap(p[0], "set-cap in pen%"));
@@ -2557,8 +2560,8 @@ static Scheme_Object *os_wxPenGetCap(Scheme_Object *obj, int n,  Scheme_Object *
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -2567,7 +2570,7 @@ static Scheme_Object *os_wxPenGetCap(Scheme_Object *obj, int n,  Scheme_Object *
 
   
   
-  return WITH_VAR_STACK(bundle_symset_cap(r));
+  return WITH_REMEMBERED_STACK(bundle_symset_cap(r));
 }
 
 #pragma argsused
@@ -2579,8 +2582,8 @@ static Scheme_Object *os_wxPenSetWidth(Scheme_Object *obj, int n,  Scheme_Object
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[0], 0, 255, "set-width in pen%"));
@@ -2602,8 +2605,8 @@ static Scheme_Object *os_wxPenGetWidth(Scheme_Object *obj, int n,  Scheme_Object
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -2619,14 +2622,15 @@ static Scheme_Object *os_wxPenGetWidth(Scheme_Object *obj, int n,  Scheme_Object
 static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxPen *realobj;
-  if ((n >= 1) && objscheme_istype_string(p[0], NULL)) {
+  REMEMBER_VAR_STACK();
+  if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL))) {
     string x0;
     int x1;
     int x2;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -2642,14 +2646,14 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
     objscheme_note_creation(obj);
     
     
-  } else if ((n >= 1) && objscheme_istype_wxColour(p[0], NULL, 0)) {
+  } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxColour(p[0], NULL, 0))) {
     class wxColour* x0;
     int x1;
     int x2;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -2668,8 +2672,8 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
   } else  {
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if (n != 0) 
@@ -2691,32 +2695,30 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
 
 void objscheme_setup_wxPen(void *env)
 {
-  if (os_wxPen_class) {
-    objscheme_add_global_class(os_wxPen_class, "pen%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxPen_class = objscheme_def_prim_class(env, "pen%", "object%", os_wxPen_ConstructScheme, 12);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("pen%");
+  wxREGGLOB(os_wxPen_class);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-style", os_wxPenSetStyle, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-style", os_wxPenGetStyle, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-stipple", os_wxPenSetStipple, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-stipple", os_wxPenGetStipple, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-color", os_wxPenSetColour, 1, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-color", os_wxPenGetColour, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-join", os_wxPenSetJoin, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-join", os_wxPenGetJoin, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-cap", os_wxPenSetCap, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-cap", os_wxPenGetCap, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-width", os_wxPenSetWidth, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-width", os_wxPenGetWidth, 0, 0));
+  os_wxPen_class = objscheme_def_prim_class(env, "pen%", "object%", os_wxPen_ConstructScheme, 12);
 
-
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxPen_class));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-style", os_wxPenSetStyle, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-style", os_wxPenGetStyle, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-stipple", os_wxPenSetStipple, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-stipple", os_wxPenGetStipple, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-color", os_wxPenSetColour, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-color", os_wxPenGetColour, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-join", os_wxPenSetJoin, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-join", os_wxPenGetJoin, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-cap", os_wxPenSetCap, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-cap", os_wxPenGetCap, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-width", os_wxPenSetWidth, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-width", os_wxPenGetWidth, 0, 0));
 
 
-  }
+  WITH_VAR_STACK(scheme_made_class(os_wxPen_class));
+
+
 }
 
 int objscheme_istype_wxPen(Scheme_Object *obj, const char *stop, int nullOK)
@@ -2788,7 +2790,7 @@ class os_wxPenList : public wxPenList {
   ~os_wxPenList();
 };
 
-Scheme_Object *os_wxPenList_class;
+static Scheme_Object *os_wxPenList_class;
 
 os_wxPenList::os_wxPenList(Scheme_Object *)
 : wxPenList()
@@ -2807,14 +2809,14 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(Scheme_Object *obj, int n,  Sc
   REMEMBER_VAR_STACK();
   class wxPen* r;
   objscheme_check_valid(obj);
-  if ((n >= 1) && objscheme_istype_wxColour(p[0], NULL, 0)) {
+  if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxColour(p[0], NULL, 0))) {
     class wxColour* x0;
     int x1;
     int x2;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -2835,8 +2837,8 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(Scheme_Object *obj, int n,  Sc
     int x2;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -2853,17 +2855,18 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(Scheme_Object *obj, int n,  Sc
     
   }
 
-  return WITH_VAR_STACK(objscheme_bundle_wxPen(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxPen(r));
 }
 
 #pragma argsused
 static Scheme_Object *os_wxPenList_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxPenList *realobj;
+  REMEMBER_VAR_STACK();
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   if (n != 0) 
@@ -2883,22 +2886,22 @@ static Scheme_Object *os_wxPenList_ConstructScheme(Scheme_Object *obj, int n,  S
 
 void objscheme_setup_wxPenList(void *env)
 {
-  if (os_wxPenList_class) {
-    objscheme_add_global_class(os_wxPenList_class, "pen-list%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxPenList_class = objscheme_def_prim_class(env, "pen-list%", "object%", os_wxPenList_ConstructScheme, 1);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("pen-list%");
+  wxREGGLOB(os_wxPenList_class);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxPenList_class, "find-or-create-pen", os_wxPenListFindOrCreatePen, 3, 3));
+  os_wxPenList_class = objscheme_def_prim_class(env, "pen-list%", "object%", os_wxPenList_ConstructScheme, 1);
 
-
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxPenList_class));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPenList_class, "find-or-create-pen", os_wxPenListFindOrCreatePen, 3, 3));
 
 
-  }
-  scheme_install_xc_global("the-pen-list", WITH_VAR_STACK(objscheme_bundle_wxPenList(wxThePenList)), env);
+  WITH_VAR_STACK(scheme_made_class(os_wxPenList_class));
+
+
+  Scheme_Object *xcconsttmp;
+  xcconsttmp = WITH_VAR_STACK(objscheme_bundle_wxPenList(wxThePenList));
+  WITH_VAR_STACK(scheme_install_xc_global("the-pen-list", xcconsttmp, env));
 }
 
 int objscheme_istype_wxPenList(Scheme_Object *obj, const char *stop, int nullOK)
@@ -3039,7 +3042,7 @@ class os_wxCursor : public wxCursor {
   ~os_wxCursor();
 };
 
-Scheme_Object *os_wxCursor_class;
+static Scheme_Object *os_wxCursor_class;
 
 os_wxCursor::os_wxCursor(Scheme_Object *, string x0, int x1, int x2, int x3)
 : wxCursor(x0, x1, x2, x3)
@@ -3065,8 +3068,8 @@ static Scheme_Object *os_wxCursorOk(Scheme_Object *obj, int n,  Scheme_Object *p
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -3082,12 +3085,13 @@ static Scheme_Object *os_wxCursorOk(Scheme_Object *obj, int n,  Scheme_Object *p
 static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxCursor *realobj;
-  if ((n >= 1) && istype_symset_cursor(p[0], NULL)) {
+  REMEMBER_VAR_STACK();
+  if ((n >= 1) && WITH_REMEMBERED_STACK(istype_symset_cursor(p[0], NULL))) {
     int x0;
 
     SETUP_VAR_STACK_REMEMBERED(2);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
 
     
     if (n != 1) 
@@ -3107,8 +3111,8 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
     int x3;
 
     SETUP_VAR_STACK_REMEMBERED(3);
-    VAR_STACK_PUSH(0, obj);
-    VAR_STACK_PUSH(1, p);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, obj);
     VAR_STACK_PUSH(2, x0);
 
     
@@ -3144,21 +3148,19 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
 void objscheme_setup_wxCursor(void *env)
 {
-  if (os_wxCursor_class) {
-    objscheme_add_global_class(os_wxCursor_class, "cursor%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxCursor_class = objscheme_def_prim_class(env, "cursor%", "object%", os_wxCursor_ConstructScheme, 1);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("cursor%");
+  wxREGGLOB(os_wxCursor_class);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxCursor_class, "ok?", os_wxCursorOk, 0, 0));
+  os_wxCursor_class = objscheme_def_prim_class(env, "cursor%", "object%", os_wxCursor_ConstructScheme, 1);
 
-
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxCursor_class));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCursor_class, "ok?", os_wxCursorOk, 0, 0));
 
 
-  }
+  WITH_VAR_STACK(scheme_made_class(os_wxCursor_class));
+
+
 }
 
 int objscheme_istype_wxCursor(Scheme_Object *obj, const char *stop, int nullOK)
@@ -3364,7 +3366,7 @@ class os_wxRegion : public wxRegion {
   ~os_wxRegion();
 };
 
-Scheme_Object *os_wxRegion_class;
+static Scheme_Object *os_wxRegion_class;
 
 os_wxRegion::os_wxRegion(Scheme_Object *, class wxDC* x0)
 : wxRegion(x0)
@@ -3385,8 +3387,8 @@ static Scheme_Object *os_wxRegionEmpty(Scheme_Object *obj, int n,  Scheme_Object
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -3407,8 +3409,8 @@ static Scheme_Object *os_wxRegionRgnBoundingBox(Scheme_Object *obj, int n,  Sche
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -3429,8 +3431,8 @@ static Scheme_Object *os_wxRegionSubtract(Scheme_Object *obj, int n,  Scheme_Obj
   class wxRegion* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -3453,8 +3455,8 @@ static Scheme_Object *os_wxRegionIntersect(Scheme_Object *obj, int n,  Scheme_Ob
   class wxRegion* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -3477,8 +3479,8 @@ static Scheme_Object *os_wxRegionUnion(Scheme_Object *obj, int n,  Scheme_Object
   class wxRegion* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -3506,8 +3508,8 @@ static Scheme_Object *os_wxRegionSetArc(Scheme_Object *obj, int n,  Scheme_Objec
   float x5;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[0], "set-arc in region%"));
@@ -3538,8 +3540,8 @@ static Scheme_Object *os_wxRegionSetPolygon(Scheme_Object *obj, int n,  Scheme_O
   int x4;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x1);
 
   
@@ -3577,8 +3579,8 @@ static Scheme_Object *os_wxRegionSetEllipse(Scheme_Object *obj, int n,  Scheme_O
   nnfloat x3;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[0], "set-ellipse in region%"));
@@ -3607,8 +3609,8 @@ static Scheme_Object *os_wxRegionSetRoundedRectangle(Scheme_Object *obj, int n, 
   float x4;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[0], "set-rounded-rectangle in region%"));
@@ -3640,8 +3642,8 @@ static Scheme_Object *os_wxRegionSetRectangle(Scheme_Object *obj, int n,  Scheme
   nnfloat x3;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[0], "set-rectangle in region%"));
@@ -3666,8 +3668,8 @@ static Scheme_Object *os_wxRegionGetDC(Scheme_Object *obj, int n,  Scheme_Object
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -3676,18 +3678,19 @@ static Scheme_Object *os_wxRegionGetDC(Scheme_Object *obj, int n,  Scheme_Object
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxDC(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxDC(r));
 }
 
 #pragma argsused
 static Scheme_Object *os_wxRegion_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxRegion *realobj;
+  REMEMBER_VAR_STACK();
   class wxDC* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -3709,31 +3712,29 @@ static Scheme_Object *os_wxRegion_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
 void objscheme_setup_wxRegion(void *env)
 {
-  if (os_wxRegion_class) {
-    objscheme_add_global_class(os_wxRegion_class, "region%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxRegion_class = objscheme_def_prim_class(env, "region%", "object%", os_wxRegion_ConstructScheme, 11);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("region%");
+  wxREGGLOB(os_wxRegion_class);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxRegion_class, "is-empty?", os_wxRegionEmpty, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxRegion_class, "get-bounding-box", os_wxRegionRgnBoundingBox, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxRegion_class, "subtract", os_wxRegionSubtract, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxRegion_class, "intersect", os_wxRegionIntersect, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxRegion_class, "union", os_wxRegionUnion, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-arc", os_wxRegionSetArc, 6, 6));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-polygon", os_wxRegionSetPolygon, 1, 4));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-ellipse", os_wxRegionSetEllipse, 4, 4));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-rounded-rectangle", os_wxRegionSetRoundedRectangle, 4, 5));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-rectangle", os_wxRegionSetRectangle, 4, 4));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxRegion_class, "get-dc", os_wxRegionGetDC, 0, 0));
+  os_wxRegion_class = objscheme_def_prim_class(env, "region%", "object%", os_wxRegion_ConstructScheme, 11);
 
-
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxRegion_class));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "is-empty?", os_wxRegionEmpty, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "get-bounding-box", os_wxRegionRgnBoundingBox, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "subtract", os_wxRegionSubtract, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "intersect", os_wxRegionIntersect, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "union", os_wxRegionUnion, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-arc", os_wxRegionSetArc, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-polygon", os_wxRegionSetPolygon, 1, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-ellipse", os_wxRegionSetEllipse, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-rounded-rectangle", os_wxRegionSetRoundedRectangle, 4, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-rectangle", os_wxRegionSetRectangle, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "get-dc", os_wxRegionGetDC, 0, 0));
 
 
-  }
+  WITH_VAR_STACK(scheme_made_class(os_wxRegion_class));
+
+
 }
 
 int objscheme_istype_wxRegion(Scheme_Object *obj, const char *stop, int nullOK)
@@ -3814,9 +3815,8 @@ class os_wxFontNameDirectory : public wxFontNameDirectory {
   ~os_wxFontNameDirectory();
 };
 
-Scheme_Object *os_wxFontNameDirectory_class;
-
-Scheme_Object *os_wxFontNameDirectory_interface;
+static Scheme_Object *os_wxFontNameDirectory_class;
+static Scheme_Object *os_wxFontNameDirectory_interface;
 
 os_wxFontNameDirectory::~os_wxFontNameDirectory()
 {
@@ -3833,8 +3833,8 @@ static Scheme_Object *os_wxFontNameDirectoryIdentity(Scheme_Object *obj, int n, 
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(unbundle_symset_family(p[0], "find-family-default-font-id in font-name-directory<%>"));
@@ -3858,8 +3858,8 @@ static Scheme_Object *os_wxFontNameDirectoryFindOrCreateFontId(Scheme_Object *ob
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -3884,8 +3884,8 @@ static Scheme_Object *os_wxFontNameDirectoryGetFamily(Scheme_Object *obj, int n,
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "get-family in font-name-directory<%>"));
@@ -3895,7 +3895,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetFamily(Scheme_Object *obj, int n,
 
   
   
-  return WITH_VAR_STACK(bundle_symset_family(r));
+  return WITH_REMEMBERED_STACK(bundle_symset_family(r));
 }
 
 #pragma argsused
@@ -3908,8 +3908,8 @@ static Scheme_Object *os_wxFontNameDirectoryGetFontName(Scheme_Object *obj, int 
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "get-face-name in font-name-directory<%>"));
@@ -3919,7 +3919,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetFontName(Scheme_Object *obj, int 
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
 #pragma argsused
@@ -3932,8 +3932,8 @@ static Scheme_Object *os_wxFontNameDirectoryGetFontId(Scheme_Object *obj, int n,
   string x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -3958,8 +3958,8 @@ static Scheme_Object *os_wxFontNameDirectoryInitialize(Scheme_Object *obj, int n
   string x2;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x2);
 
   
@@ -3984,8 +3984,8 @@ static Scheme_Object *os_wxFontNameDirectoryGetNewFontId(Scheme_Object *obj, int
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -4009,8 +4009,8 @@ static Scheme_Object *os_wxFontNameDirectorySetAFMName(Scheme_Object *obj, int n
   string x3;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x3);
 
   
@@ -4039,8 +4039,8 @@ static Scheme_Object *os_wxFontNameDirectorySetPostScriptName(Scheme_Object *obj
   string x3;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x3);
 
   
@@ -4069,8 +4069,8 @@ static Scheme_Object *os_wxFontNameDirectorySetScreenName(Scheme_Object *obj, in
   string x3;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x3);
 
   
@@ -4099,8 +4099,8 @@ static Scheme_Object *os_wxFontNameDirectoryGetAFMName(Scheme_Object *obj, int n
   int x2;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "get-afm-name in font-name-directory<%>"));
@@ -4112,7 +4112,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetAFMName(Scheme_Object *obj, int n
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
 #pragma argsused
@@ -4127,8 +4127,8 @@ static Scheme_Object *os_wxFontNameDirectoryGetPostScriptName(Scheme_Object *obj
   int x2;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "get-post-script-name in font-name-directory<%>"));
@@ -4140,7 +4140,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetPostScriptName(Scheme_Object *obj
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
 #pragma argsused
@@ -4155,8 +4155,8 @@ static Scheme_Object *os_wxFontNameDirectoryGetScreenName(Scheme_Object *obj, in
   int x2;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "get-screen-name in font-name-directory<%>"));
@@ -4168,43 +4168,43 @@ static Scheme_Object *os_wxFontNameDirectoryGetScreenName(Scheme_Object *obj, in
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
 void objscheme_setup_wxFontNameDirectory(void *env)
 {
-  if (os_wxFontNameDirectory_class) {
-    objscheme_add_global_class(os_wxFontNameDirectory_class, "font-name-directory%", env);
-    objscheme_add_global_interface(os_wxFontNameDirectory_interface, "font-name-directory" "<%>", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxFontNameDirectory_class = objscheme_def_prim_class(env, "font-name-directory%", "object%", NULL, 13);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("font-name-directory%");
+  wxREGGLOB(os_wxFontNameDirectory_class);
+  wxREGGLOB(os_wxFontNameDirectory_interface);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "find-family-default-font-id", os_wxFontNameDirectoryIdentity, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "find-or-create-font-id", os_wxFontNameDirectoryFindOrCreateFontId, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-family", os_wxFontNameDirectoryGetFamily, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-face-name", os_wxFontNameDirectoryGetFontName, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-font-id", os_wxFontNameDirectoryGetFontId, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "initialize", os_wxFontNameDirectoryInitialize, 3, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-new-font-id", os_wxFontNameDirectoryGetNewFontId, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "set-afm-name", os_wxFontNameDirectorySetAFMName, 4, 4));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "set-post-script-name", os_wxFontNameDirectorySetPostScriptName, 4, 4));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "set-screen-name", os_wxFontNameDirectorySetScreenName, 4, 4));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-afm-name", os_wxFontNameDirectoryGetAFMName, 3, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-post-script-name", os_wxFontNameDirectoryGetPostScriptName, 3, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-screen-name", os_wxFontNameDirectoryGetScreenName, 3, 3));
+  os_wxFontNameDirectory_class = objscheme_def_prim_class(env, "font-name-directory%", "object%", NULL, 13);
+
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "find-family-default-font-id", os_wxFontNameDirectoryIdentity, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "find-or-create-font-id", os_wxFontNameDirectoryFindOrCreateFontId, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-family", os_wxFontNameDirectoryGetFamily, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-face-name", os_wxFontNameDirectoryGetFontName, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-font-id", os_wxFontNameDirectoryGetFontId, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "initialize", os_wxFontNameDirectoryInitialize, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-new-font-id", os_wxFontNameDirectoryGetNewFontId, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "set-afm-name", os_wxFontNameDirectorySetAFMName, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "set-post-script-name", os_wxFontNameDirectorySetPostScriptName, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "set-screen-name", os_wxFontNameDirectorySetScreenName, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-afm-name", os_wxFontNameDirectoryGetAFMName, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-post-script-name", os_wxFontNameDirectoryGetPostScriptName, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-screen-name", os_wxFontNameDirectoryGetScreenName, 3, 3));
 
 
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxFontNameDirectory_class));
+  WITH_VAR_STACK(scheme_made_class(os_wxFontNameDirectory_class));
 
-  os_wxFontNameDirectory_interface = scheme_class_to_interface(os_wxFontNameDirectory_class, "font-name-directory" "<%>");
+  os_wxFontNameDirectory_interface = WITH_VAR_STACK(scheme_class_to_interface(os_wxFontNameDirectory_class, "font-name-directory" "<%>"));
 
-  objscheme_add_global_interface(os_wxFontNameDirectory_interface, "font-name-directory" "<%>", env);
+  WITH_VAR_STACK(objscheme_add_global_interface(os_wxFontNameDirectory_interface, "font-name-directory" "<%>", env));
 
-  }
-  scheme_install_xc_global("the-font-name-directory", WITH_VAR_STACK(objscheme_bundle_wxFontNameDirectory(wxTheFontNameDirectory)), env);
+  Scheme_Object *xcconsttmp;
+  xcconsttmp = WITH_VAR_STACK(objscheme_bundle_wxFontNameDirectory(wxTheFontNameDirectory));
+  WITH_VAR_STACK(scheme_install_xc_global("the-font-name-directory", xcconsttmp, env));
 }
 
 int objscheme_istype_wxFontNameDirectory(Scheme_Object *obj, const char *stop, int nullOK)

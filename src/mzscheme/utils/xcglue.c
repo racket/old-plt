@@ -37,13 +37,15 @@ void objscheme_init(Scheme_Env *env)
   set_car_prim = scheme_lookup_global(set_car_symbol, env);
   
   hash = (ObjectHash *)scheme_malloc_atomic(sizeof(ObjectHash) * hashsize);
-  for (i = 0; i < hashsize; i++)
+  for (i = 0; i < hashsize; i++) {
     hash[i].realobj = NULL;
+  }
   
   bhash = (BundlerHash *)scheme_malloc_atomic(sizeof(BundlerHash) 
 					      * bhashsize);
-  for (i = 0; i < bhashsize; i++)
+  for (i = 0; i < bhashsize; i++) {
     bhash[i].id = 0;
+  }
 }
 
 Scheme_Object *objscheme_def_prim_class(void *global_env, 
@@ -91,7 +93,7 @@ Scheme_Object *objscheme_find_method(Scheme_Object *obj, Scheme_Object *sclass,
     s = scheme_intern_symbol(name);
     gdata = scheme_get_generic_data(sclass, s);
 #if defined(MZ_PRECISE_GC) || defined(USE_SENORA_GC)
-    scheme_regsiter_extension_global(cache, sizeof(void *));
+    scheme_register_extension_global(cache, sizeof(void *));
 #endif
     *cache = (void *)gdata;
   }
@@ -213,7 +215,8 @@ int objscheme_istype_box(Scheme_Object *obj, const char *stopifbad)
 int objscheme_istype_nonnegative_symbol_integer(Scheme_Object *obj, const char *sym, const char *where)
 {
   if (SCHEME_SYMBOLP(obj)) {
-    int l = strlen(sym);
+    int l;
+    l = strlen(sym);
     if (SCHEME_SYM_LEN(obj) == l) {
       if (!strcmp(sym, SCHEME_SYM_VAL(obj))) {
 	return 1;
@@ -222,13 +225,15 @@ int objscheme_istype_nonnegative_symbol_integer(Scheme_Object *obj, const char *
   }
 
   if (objscheme_istype_integer(obj, NULL)) {
-    long v = objscheme_unbundle_integer(obj, where);
+    long v;
+    v = objscheme_unbundle_integer(obj, where);
     if (v >= 0)
       return 1;
   }
 
   if (where) {
-    char *b = (char *)scheme_malloc_atomic(50);
+    char *b;
+    b = (char *)scheme_malloc_atomic(50);
     strcpy(b, "non-negative exact integer or '");
     strcat(b, sym);
     scheme_wrong_type(where, b, -1, 0, &obj);
@@ -240,7 +245,8 @@ int objscheme_istype_nonnegative_symbol_integer(Scheme_Object *obj, const char *
 int objscheme_istype_nonnegative_symbol_float(Scheme_Object *obj, const char *sym, const char *where)
 {
   if (SCHEME_SYMBOLP(obj)) {
-    int l = strlen(sym);
+    int l;
+    l = strlen(sym);
     if (SCHEME_SYM_LEN(obj) == l) {
       if (!strcmp(sym, SCHEME_SYM_VAL(obj))) {
 	return 1;
@@ -249,13 +255,15 @@ int objscheme_istype_nonnegative_symbol_float(Scheme_Object *obj, const char *sy
   }
 
   if (objscheme_istype_number(obj, NULL)) {
-    double v = objscheme_unbundle_float(obj, where);
+    double v;
+    v = objscheme_unbundle_float(obj, where);
     if (v >= 0)
       return 1;
   }
 
   if (where) {
-    char *b = (char *)scheme_malloc_atomic(50);
+    char *b;
+    b = (char *)scheme_malloc_atomic(50);
     strcpy(b, "non-negative number or '");
     strcat(b, sym);
     scheme_wrong_type(where, b, -1, 0, &obj);
@@ -326,7 +334,8 @@ long objscheme_unbundle_integer(Scheme_Object *obj, const char *where)
 long objscheme_unbundle_nonnegative_integer(Scheme_Object *obj, const char *where)
 {
   if (objscheme_istype_integer(obj, NULL)) {
-    long v = objscheme_unbundle_integer(obj, where);
+    long v;
+    v = objscheme_unbundle_integer(obj, where);
     if (v >= 0)
       return v;
   }
@@ -340,7 +349,8 @@ long objscheme_unbundle_nonnegative_integer(Scheme_Object *obj, const char *wher
 long objscheme_unbundle_integer_in(Scheme_Object *obj, long minv, long maxv, const char *stopifbad)
 {
   if (objscheme_istype_integer(obj, NULL)) {
-    long v = objscheme_unbundle_integer(obj, stopifbad);
+    long v;
+    v = objscheme_unbundle_integer(obj, stopifbad);
     if ((v >= minv) && (v <= maxv))
       return v;
   }
@@ -358,7 +368,8 @@ long objscheme_unbundle_integer_in(Scheme_Object *obj, long minv, long maxv, con
 long objscheme_unbundle_nonnegative_symbol_integer(Scheme_Object *obj, const char *sym, const char *where)
 {
   if (SCHEME_SYMBOLP(obj)) {
-    int l = strlen(sym);
+    int l;
+    l = strlen(sym);
     if (SCHEME_SYM_LEN(obj) == l) {
       if (!strcmp(sym, SCHEME_SYM_VAL(obj))) {
 	return -1;
@@ -367,7 +378,8 @@ long objscheme_unbundle_nonnegative_symbol_integer(Scheme_Object *obj, const cha
   }
 
   if (objscheme_istype_number(obj, NULL)) {
-    long v = objscheme_unbundle_integer(obj, where);
+    long v;
+    v = objscheme_unbundle_integer(obj, where);
     if (v >= 0)
       return v;
   }
@@ -406,7 +418,8 @@ double objscheme_unbundle_float(Scheme_Object *obj, const char *where)
 double objscheme_unbundle_nonnegative_symbol_float(Scheme_Object *obj, const char *sym, const char *where)
 {
   if (SCHEME_SYMBOLP(obj)) {
-    int l = strlen(sym);
+    int l;
+    l = strlen(sym);
     if (SCHEME_SYM_LEN(obj) == l) {
       if (!strcmp(sym, SCHEME_SYM_VAL(obj))) {
 	return -1;
@@ -415,7 +428,8 @@ double objscheme_unbundle_nonnegative_symbol_float(Scheme_Object *obj, const cha
   }
 
   if (objscheme_istype_number(obj, NULL)) {
-    double v = objscheme_unbundle_float(obj, where);
+    double v;
+    v = objscheme_unbundle_float(obj, where);
     if (v >= 0)
       return v;
   }
@@ -427,7 +441,8 @@ double objscheme_unbundle_nonnegative_symbol_float(Scheme_Object *obj, const cha
 double objscheme_unbundle_nonnegative_float(Scheme_Object *obj, const char *where)
 {
   if (objscheme_istype_number(obj, NULL)) {
-    double v = objscheme_unbundle_float(obj, where);
+    double v;
+    v = objscheme_unbundle_float(obj, where);
     if (v >= 0)
       return v;
   }
@@ -552,8 +567,9 @@ void objscheme_save_object(void *realobj, Scheme_Object *obj)
     hashsize *= 2;
     hash = (ObjectHash *)scheme_malloc_atomic(sizeof(ObjectHash) * hashsize);
 
-    for (i = 0; i < hashsize; i++)
+    for (i = 0; i < hashsize; i++) {
       hash[i].realobj = NULL;
+    }
 
     hashcount = 0;
     for (i = 0; i < oldsize; i++) {
@@ -603,7 +619,8 @@ void objscheme_check_valid(Scheme_Object *o)
 
   if (obj->primflag < 0) {
     int len;
-    const char *classname = scheme_get_class_name(obj->sclass, &len);
+    const char *classname;
+    classname = scheme_get_class_name(obj->sclass, &len);
     scheme_signal_error("attempt to use an %sobject%s (class %s)",
 			(obj->primflag == -2) ? "" : "invalidated ",
 			(obj->primflag == -2) ? " shutdown by custodian" : "",
@@ -611,7 +628,8 @@ void objscheme_check_valid(Scheme_Object *o)
   }
   if (!obj->inited) {
     int len;
-    const char *classname = scheme_get_class_name(obj->sclass, &len);
+    const char *classname;
+    classname = scheme_get_class_name(obj->sclass, &len);
     scheme_signal_error("attempt to use an uninitialized object (class %s)",
 			classname ? classname : "unknown");
   }
@@ -664,7 +682,11 @@ void objscheme_destroy(void *realobj, Scheme_Object *obj_in)
 
 void objscheme_register_primpointer(void *prim_ptr_address)
 {
+#ifdef MZ_PRECISE_GC
+  GC_finalization_weak_ptr((void **)prim_ptr_address);
+#else
   GC_general_register_disappearing_link((void **)prim_ptr_address, NULL);
+#endif
 }
 
 /***************************************************************/

@@ -192,7 +192,7 @@ class os_wxChoice : public wxChoice {
   void OnKillFocus();
 };
 
-Scheme_Object *os_wxChoice_class;
+static Scheme_Object *os_wxChoice_class;
 
 os_wxChoice::os_wxChoice(Scheme_Object *, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, string* x8, int x9, string x10)
 : wxChoice(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)
@@ -382,8 +382,8 @@ static Scheme_Object *os_wxChoiceGetString(Scheme_Object *obj, int n,  Scheme_Ob
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "get-string in choice%"));
@@ -393,7 +393,7 @@ static Scheme_Object *os_wxChoiceGetString(Scheme_Object *obj, int n,  Scheme_Ob
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
 #pragma argsused
@@ -406,8 +406,8 @@ static Scheme_Object *os_wxChoiceSetStringSelection(Scheme_Object *obj, int n,  
   string x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -430,8 +430,8 @@ static Scheme_Object *os_wxChoiceSetSelection(Scheme_Object *obj, int n,  Scheme
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "set-selection in choice%"));
@@ -453,8 +453,8 @@ static Scheme_Object *os_wxChoiceGetStringSelection(Scheme_Object *obj, int n,  
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -463,7 +463,7 @@ static Scheme_Object *os_wxChoiceGetStringSelection(Scheme_Object *obj, int n,  
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
 #pragma argsused
@@ -475,8 +475,8 @@ static Scheme_Object *os_wxChoiceGetSelection(Scheme_Object *obj, int n,  Scheme
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -498,8 +498,8 @@ static Scheme_Object *os_wxChoiceFindString(Scheme_Object *obj, int n,  Scheme_O
   string x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -522,8 +522,8 @@ static Scheme_Object *os_wxChoiceNumber(Scheme_Object *obj, int n,  Scheme_Objec
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -543,8 +543,8 @@ static Scheme_Object *os_wxChoiceClear(Scheme_Object *obj, int n,  Scheme_Object
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -565,8 +565,8 @@ static Scheme_Object *os_wxChoiceAppend(Scheme_Object *obj, int n,  Scheme_Objec
   string x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -589,8 +589,8 @@ static Scheme_Object *os_wxChoiceOnDropFile(Scheme_Object *obj, int n,  Scheme_O
   pathname x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -618,8 +618,8 @@ static Scheme_Object *os_wxChoicePreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   class wxMouseEvent* x1;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
 
@@ -649,8 +649,8 @@ static Scheme_Object *os_wxChoicePreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   class wxKeyEvent* x1;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
 
@@ -679,8 +679,8 @@ static Scheme_Object *os_wxChoiceOnSize(Scheme_Object *obj, int n,  Scheme_Objec
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "on-size in choice%"));
@@ -705,8 +705,8 @@ static Scheme_Object *os_wxChoiceOnSetFocus(Scheme_Object *obj, int n,  Scheme_O
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -729,8 +729,8 @@ static Scheme_Object *os_wxChoiceOnKillFocus(Scheme_Object *obj, int n,  Scheme_
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -749,6 +749,7 @@ static Scheme_Object *os_wxChoiceOnKillFocus(Scheme_Object *obj, int n,  Scheme_
 static Scheme_Object *os_wxChoice_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxChoice *realobj;
+  REMEMBER_VAR_STACK();
   class wxPanel* x0;
   wxFunction x1;
   nstring x2;
@@ -762,8 +763,8 @@ static Scheme_Object *os_wxChoice_ConstructScheme(Scheme_Object *obj, int n,  Sc
   string x10;
 
   SETUP_VAR_STACK_REMEMBERED(6);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x2);
   VAR_STACK_PUSH(4, x8);
@@ -773,7 +774,7 @@ static Scheme_Object *os_wxChoice_ConstructScheme(Scheme_Object *obj, int n,  Sc
   if ((n < 3) ||(n > 10)) 
     WITH_VAR_STACK(scheme_wrong_count("initialization in choice%", 3, 10, n, p));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[0], "initialization in choice%", 0));
-  x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_VAR_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
+  x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], CB_USER)), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
   x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[2], "initialization in choice%"));
   if (n > 3) {
     x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[3], "initialization in choice%"));
@@ -818,35 +819,33 @@ static Scheme_Object *os_wxChoice_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
 void objscheme_setup_wxChoice(void *env)
 {
-  if (os_wxChoice_class) {
-    objscheme_add_global_class(os_wxChoice_class, "choice%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxChoice_class = objscheme_def_prim_class(env, "choice%", "item%", os_wxChoice_ConstructScheme, 15);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("choice%");
+  wxREGGLOB(os_wxChoice_class);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxChoice_class, "get-string", os_wxChoiceGetString, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxChoice_class, "set-string-selection", os_wxChoiceSetStringSelection, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxChoice_class, "set-selection", os_wxChoiceSetSelection, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxChoice_class, "get-string-selection", os_wxChoiceGetStringSelection, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxChoice_class, "get-selection", os_wxChoiceGetSelection, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxChoice_class, "find-string", os_wxChoiceFindString, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxChoice_class, "number", os_wxChoiceNumber, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxChoice_class, "clear", os_wxChoiceClear, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxChoice_class, "append", os_wxChoiceAppend, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxChoice_class, "on-drop-file", os_wxChoiceOnDropFile, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxChoice_class, "pre-on-event", os_wxChoicePreOnEvent, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxChoice_class, "pre-on-char", os_wxChoicePreOnChar, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxChoice_class, "on-size", os_wxChoiceOnSize, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxChoice_class, "on-set-focus", os_wxChoiceOnSetFocus, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxChoice_class, "on-kill-focus", os_wxChoiceOnKillFocus, 0, 0));
+  os_wxChoice_class = objscheme_def_prim_class(env, "choice%", "item%", os_wxChoice_ConstructScheme, 15);
 
-
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxChoice_class));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "get-string", os_wxChoiceGetString, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "set-string-selection", os_wxChoiceSetStringSelection, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "set-selection", os_wxChoiceSetSelection, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "get-string-selection", os_wxChoiceGetStringSelection, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "get-selection", os_wxChoiceGetSelection, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "find-string", os_wxChoiceFindString, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "number", os_wxChoiceNumber, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "clear", os_wxChoiceClear, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "append", os_wxChoiceAppend, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "on-drop-file", os_wxChoiceOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "pre-on-event", os_wxChoicePreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "pre-on-char", os_wxChoicePreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "on-size", os_wxChoiceOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "on-set-focus", os_wxChoiceOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "on-kill-focus", os_wxChoiceOnKillFocus, 0, 0));
 
 
-  }
+  WITH_VAR_STACK(scheme_made_class(os_wxChoice_class));
+
+
 }
 
 int objscheme_istype_wxChoice(Scheme_Object *obj, const char *stop, int nullOK)

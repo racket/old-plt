@@ -20,6 +20,8 @@
 (define file-in (cadr cmd-line))
 (define file-out (filter-false (caddr cmd-line)))
 
+(define source-is-c++? (regexp-match "([.]cc$)|([.]cxx$)" file-in))
+
 (require-library "function.ss")
 (require-library "errortrace.ss" "errortrace")
 (error-print-width 100)
@@ -155,7 +157,7 @@
 
 (define c++-classes null)
 
-(define label? #t)
+(define show-info? #f)
 
 (define semi '|;|)
 (define START_XFORM_SKIP (string->symbol "START_XFORM_SKIP"))
@@ -180,7 +182,7 @@
 
 (define non-functions
   '(<= < > >= == != !
-       \| \|\| & && : ? % + - * / ^ >> << 
+       \| \|\| & && : ? % + - * / ^ >> << ~
        = >>= <<= ^= += *= /= -= %= \|= &= ++ --
        return sizeof if for while else switch case
        asm __asm __asm__ __volatile __volatile__ volatile __extension__
@@ -440,37 +442,37 @@
    
    [(prototype? e) 
     (let ([name (register-proto-information e)])
-      (when label? (printf "/* PROTO ~a */~n" name)))
+      (when show-info? (printf "/* PROTO ~a */~n" name)))
     e]
    [(typedef? e)
-    (when label? (printf "/* TYPEDEF */~n"))
+    (when show-info? (printf "/* TYPEDEF */~n"))
     (check-pointer-type e)
     e]
    [(struct-decl? e)
     (if (braces? (caddr e))
 	(begin
 	  (register-struct e)
-	  (when label? (printf "/* STRUCT ~a */~n" (tok-n (cadr e)))))
-	(when label? (printf "/* STRUCT DECL */~n")))
+	  (when show-info? (printf "/* STRUCT ~a */~n" (tok-n (cadr e)))))
+	(when show-info? (printf "/* STRUCT DECL */~n")))
     e]
    [(class-decl? e)
     (if (or (braces? (caddr e))
 	    (eq? ': (tok-n (caddr e))))
 	(begin
-	  (when label? (printf "/* CLASS ~a */~n" (tok-n (cadr e))))
+	  (when show-info? (printf "/* CLASS ~a */~n" (tok-n (cadr e))))
 	  (register-class e))
 	(begin
-	  (when label? (printf "/* CLASS DECL */~n"))
+	  (when show-info? (printf "/* CLASS DECL */~n"))
 	  e))]
    [(function? e)
     (let ([name (register-proto-information e)])
-      (when label? (printf "/* FUNCTION ~a */~n" name)))
+      (when show-info? (printf "/* FUNCTION ~a */~n" name)))
     (if (and where (regexp-match "[.]h$" where))
 	;; Still in headers; probably an inlined function
 	e
 	(convert-function e))]
    [(var-decl? e)
-    (when label? (printf "/* VAR */~n"))
+    (when show-info? (printf "/* VAR */~n"))
     (unless (eq? (tok-n (car e)) 'static)
       (let-values ([(pointers non-pointers) (get-vars e "TOPVAR" #f)])
 	(top-vars (append pointers non-pointers (top-vars)))))
@@ -691,7 +693,7 @@
 				    (not (memq name '(tcp_connect_dest_addr tcp_listen_addr
 						      tcp_accept_addr))))
 			       (begin
-				 (when label?
+				 (when show-info?
 				   (printf "/* ~a: ~a ~a*/~n" 
 					   comment name
 					   (cond
@@ -726,7 +728,7 @@
 					     pointers)
 				       non-pointers))
 			       (begin
-				 (when label?
+				 (when show-info?
 				   (printf "/* NP ~a: ~a */~n" 
 					   comment name))
 				 (loop (sub1 l) #f pointers (cons (cons name 
@@ -1134,7 +1136,11 @@
 					       null)
 					   ;; The main body:
 					   e))
-					(convert-class-vars body-e all-arg-vars #f))
+
+					;; Do any conversion?
+					(if source-is-c++?
+					    (convert-class-vars body-e all-arg-vars #f)
+					    body-e))
 				    arg-vars arg-vars
 				    c++-class
 				    (lambda ()
@@ -1440,7 +1446,7 @@
 			 (append
 			  decls
 			  (list (after-vars-thunk))
-			  (list (append (if label?
+			  (list (append (if show-info?
 					    (list (make-note 'note #f #f (format "/* PTRVARS: ~a */" (map car vars))))
 					    null)
 					(if setup-stack?
@@ -1968,11 +1974,11 @@
 					     (live-var-info-num-calls live-vars)))]
 		      [(e live-vars rest extra)
 		       (cond
-			[do?
+			[(and do? (not exit-with-error?))
 			 (let-values ([(e live-vars)
 				       (convert-brace-body (restore-new-vars live-vars))])
 			   (values e live-vars (cdr e-) #f))]
-			[while?
+			[(and while? (not exit-with-error?))
 			 ;; Run test part. We don't filter live-vars, but maybe we should:
 			 (let-values ([(v live-vars)
 				       (convert-seq-interior (cadr e-) #t vars 

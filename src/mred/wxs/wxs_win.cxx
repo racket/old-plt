@@ -151,7 +151,7 @@ class os_wxWindow : public wxWindow {
   void OnKillFocus();
 };
 
-Scheme_Object *os_wxWindow_class;
+static Scheme_Object *os_wxWindow_class;
 
 os_wxWindow::~os_wxWindow()
 {
@@ -335,8 +335,8 @@ static Scheme_Object *os_wxWindowOnDropFile(Scheme_Object *obj, int n,  Scheme_O
   pathname x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -364,8 +364,8 @@ static Scheme_Object *os_wxWindowPreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   class wxMouseEvent* x1;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
 
@@ -395,8 +395,8 @@ static Scheme_Object *os_wxWindowPreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   class wxKeyEvent* x1;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
 
@@ -425,8 +425,8 @@ static Scheme_Object *os_wxWindowOnSize(Scheme_Object *obj, int n,  Scheme_Objec
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "on-size in window%"));
@@ -451,8 +451,8 @@ static Scheme_Object *os_wxWindowOnSetFocus(Scheme_Object *obj, int n,  Scheme_O
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -475,8 +475,8 @@ static Scheme_Object *os_wxWindowOnKillFocus(Scheme_Object *obj, int n,  Scheme_
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -500,8 +500,8 @@ static Scheme_Object *os_wxWindowwxSchemeWindowGetY(Scheme_Object *obj, int n,  
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -522,8 +522,8 @@ static Scheme_Object *os_wxWindowwxSchemeWindowGetX(Scheme_Object *obj, int n,  
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -544,8 +544,8 @@ static Scheme_Object *os_wxWindowwxSchemeWindowGetWidth(Scheme_Object *obj, int 
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -566,8 +566,8 @@ static Scheme_Object *os_wxWindowwxSchemeWindowGetHeight(Scheme_Object *obj, int
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -588,8 +588,8 @@ static Scheme_Object *os_wxWindowCenter(Scheme_Object *obj, int n,  Scheme_Objec
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   if (n > 0) {
@@ -624,8 +624,8 @@ static Scheme_Object *os_wxWindowGetTextExtent(Scheme_Object *obj, int n,  Schem
   Bool x6;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x5);
 
@@ -681,8 +681,8 @@ static Scheme_Object *os_wxWindowGetParent(Scheme_Object *obj, int n,  Scheme_Ob
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -691,7 +691,7 @@ static Scheme_Object *os_wxWindowGetParent(Scheme_Object *obj, int n,  Scheme_Ob
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxWindow(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxWindow(r));
 }
 
 #pragma argsused
@@ -702,8 +702,8 @@ static Scheme_Object *os_wxWindowRefresh(Scheme_Object *obj, int n,  Scheme_Obje
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -727,8 +727,8 @@ static Scheme_Object *os_wxWindowScreenToClient(Scheme_Object *obj, int n,  Sche
   int* x1 = &_x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
       *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "screen-to-client in window%")), "screen-to-client in window%"", extracting boxed argument"));
@@ -758,8 +758,8 @@ static Scheme_Object *os_wxWindowClientToScreen(Scheme_Object *obj, int n,  Sche
   int* x1 = &_x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
       *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "client-to-screen in window%")), "client-to-screen in window%"", extracting boxed argument"));
@@ -786,8 +786,8 @@ static Scheme_Object *os_wxWindowDragAcceptFiles(Scheme_Object *obj, int n,  Sch
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "drag-accept-files in window%"));
@@ -809,8 +809,8 @@ static Scheme_Object *os_wxWindowEnable(Scheme_Object *obj, int n,  Scheme_Objec
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "enable in window%"));
@@ -835,8 +835,8 @@ static Scheme_Object *os_wxWindowGetPosition(Scheme_Object *obj, int n,  Scheme_
   int* x1 = &_x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
       *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "get-position in window%")), "get-position in window%"", extracting boxed argument"));
@@ -866,8 +866,8 @@ static Scheme_Object *os_wxWindowGetClientSize(Scheme_Object *obj, int n,  Schem
   int* x1 = &_x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
       *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "get-client-size in window%")), "get-client-size in window%"", extracting boxed argument"));
@@ -897,8 +897,8 @@ static Scheme_Object *os_wxWindowGetSize(Scheme_Object *obj, int n,  Scheme_Obje
   int* x1 = &_x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
       *x0 = WITH_VAR_STACK(objscheme_unbundle_integer(WITH_VAR_STACK(objscheme_unbox(p[0], "get-size in window%")), "get-size in window%"", extracting boxed argument"));
@@ -924,8 +924,8 @@ static Scheme_Object *os_wxWindowFit(Scheme_Object *obj, int n,  Scheme_Object *
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -946,8 +946,8 @@ static Scheme_Object *os_wxWindowIsShown(Scheme_Object *obj, int n,  Scheme_Obje
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -968,8 +968,8 @@ static Scheme_Object *os_wxWindowShow(Scheme_Object *obj, int n,  Scheme_Object 
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "show in window%"));
@@ -992,8 +992,8 @@ static Scheme_Object *os_wxWindowSetCursor(Scheme_Object *obj, int n,  Scheme_Ob
   class wxCursor* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -1004,7 +1004,7 @@ static Scheme_Object *os_wxWindowSetCursor(Scheme_Object *obj, int n,  Scheme_Ob
 
   
   
-  return WITH_VAR_STACK(objscheme_bundle_wxCursor(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxCursor(r));
 }
 
 #pragma argsused
@@ -1017,8 +1017,8 @@ static Scheme_Object *os_wxWindowMove(Scheme_Object *obj, int n,  Scheme_Object 
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "move in window%"));
@@ -1045,8 +1045,8 @@ static Scheme_Object *os_wxWindowSetSize(Scheme_Object *obj, int n,  Scheme_Obje
   int x4;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "set-size in window%"));
@@ -1074,8 +1074,8 @@ static Scheme_Object *os_wxWindowSetFocus(Scheme_Object *obj, int n,  Scheme_Obj
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -1096,8 +1096,8 @@ static Scheme_Object *os_wxWindowGetsFocus(Scheme_Object *obj, int n,  Scheme_Ob
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -1118,8 +1118,8 @@ static Scheme_Object *os_wxWindowCentre(Scheme_Object *obj, int n,  Scheme_Objec
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   if (n > 0) {
@@ -1137,50 +1137,48 @@ static Scheme_Object *os_wxWindowCentre(Scheme_Object *obj, int n,  Scheme_Objec
 
 void objscheme_setup_wxWindow(void *env)
 {
-  if (os_wxWindow_class) {
-    objscheme_add_global_class(os_wxWindow_class, "window%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxWindow_class = objscheme_def_prim_class(env, "window%", "object%", NULL, 30);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("window%");
+  wxREGGLOB(os_wxWindow_class);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "on-drop-file", os_wxWindowOnDropFile, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "pre-on-event", os_wxWindowPreOnEvent, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "pre-on-char", os_wxWindowPreOnChar, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "on-size", os_wxWindowOnSize, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "on-set-focus", os_wxWindowOnSetFocus, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "on-kill-focus", os_wxWindowOnKillFocus, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-y", os_wxWindowwxSchemeWindowGetY, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-x", os_wxWindowwxSchemeWindowGetX, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-width", os_wxWindowwxSchemeWindowGetWidth, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-height", os_wxWindowwxSchemeWindowGetHeight, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "center", os_wxWindowCenter, 0, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-text-extent", os_wxWindowGetTextExtent, 3, 7));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-parent", os_wxWindowGetParent, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "refresh", os_wxWindowRefresh, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "screen-to-client", os_wxWindowScreenToClient, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "client-to-screen", os_wxWindowClientToScreen, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "drag-accept-files", os_wxWindowDragAcceptFiles, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "enable", os_wxWindowEnable, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-position", os_wxWindowGetPosition, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-client-size", os_wxWindowGetClientSize, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-size", os_wxWindowGetSize, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "fit", os_wxWindowFit, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "is-shown?", os_wxWindowIsShown, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "show", os_wxWindowShow, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "set-cursor", os_wxWindowSetCursor, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "move", os_wxWindowMove, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "set-size", os_wxWindowSetSize, 4, 5));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "set-focus", os_wxWindowSetFocus, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "gets-focus?", os_wxWindowGetsFocus, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxWindow_class, "centre", os_wxWindowCentre, 0, 1));
+  os_wxWindow_class = objscheme_def_prim_class(env, "window%", "object%", NULL, 30);
 
-
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxWindow_class));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "on-drop-file", os_wxWindowOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "pre-on-event", os_wxWindowPreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "pre-on-char", os_wxWindowPreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "on-size", os_wxWindowOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "on-set-focus", os_wxWindowOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "on-kill-focus", os_wxWindowOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-y", os_wxWindowwxSchemeWindowGetY, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-x", os_wxWindowwxSchemeWindowGetX, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-width", os_wxWindowwxSchemeWindowGetWidth, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-height", os_wxWindowwxSchemeWindowGetHeight, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "center", os_wxWindowCenter, 0, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-text-extent", os_wxWindowGetTextExtent, 3, 7));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-parent", os_wxWindowGetParent, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "refresh", os_wxWindowRefresh, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "screen-to-client", os_wxWindowScreenToClient, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "client-to-screen", os_wxWindowClientToScreen, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "drag-accept-files", os_wxWindowDragAcceptFiles, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "enable", os_wxWindowEnable, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-position", os_wxWindowGetPosition, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-client-size", os_wxWindowGetClientSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-size", os_wxWindowGetSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "fit", os_wxWindowFit, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "is-shown?", os_wxWindowIsShown, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "show", os_wxWindowShow, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "set-cursor", os_wxWindowSetCursor, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "move", os_wxWindowMove, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "set-size", os_wxWindowSetSize, 4, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "set-focus", os_wxWindowSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "gets-focus?", os_wxWindowGetsFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "centre", os_wxWindowCentre, 0, 1));
 
 
-  }
+  WITH_VAR_STACK(scheme_made_class(os_wxWindow_class));
+
+
 }
 
 int objscheme_istype_wxWindow(Scheme_Object *obj, const char *stop, int nullOK)

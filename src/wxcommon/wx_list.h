@@ -65,7 +65,7 @@ class wxList: public wxObject
 
  public:
 #ifdef wx_mac
-  	enum DestroyDataCode {kNoDestroyData = 0, kDestroyData = 1};
+   enum DestroyDataCode {kNoDestroyData = 0, kDestroyData = 1};
 #endif
   int n;
   int destroy_data;
@@ -115,6 +115,7 @@ class wxList: public wxObject
   // Keyed search
   wxNode *Find(long key);
   wxNode *Find(const char *key);
+  wxNode *FindPtr(void *key);
 
   wxNode *Member(wxObject *object);
 
@@ -149,7 +150,13 @@ class wxChildNode
 public:
   wxChildList *owner;
   wxObject *strong;
+#ifdef MZ_PRECISE_GC
+  void *weak;
+# define cnGET_WEAK(weak) ((wxObject *)GC_weak_box_val(weak))
+#else
   wxObject **weak; /* atomic-allocated disappearing ptr */
+# define cnGET_WEAK(weak) (*weak)
+#endif
 
   wxChildNode *Next();
   wxObject *Data();

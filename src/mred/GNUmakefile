@@ -8,6 +8,7 @@ include $(WXDIR)/src/xtmake.env
 INSTALLSYS = `../../bin/archsys`
 
 OBJDIR=objects/sys$(MZPLATFORMSUFFIX)$(GUISUFFIX)
+MZOBJDIR=objects/sys$(MZPLATFORMSUFFIX)
 LIBDIR=lib/sys$(MZPLATFORMSUFFIX)
 MZLIBDIR=$(LIBDIR)$(MZTHREADSUFFIX)
 
@@ -309,8 +310,14 @@ gc2/wx_medio.cc: wxme/wx_medio.cxx
 gc2/wx_style.cc: wxme/wx_style.cxx
 	$(XFORM) $< $@
 
+gc2/wx_mline.cc: wxme/wx_mline.cxx
+	$(XFORM) $< $@
+
 
 gc2/wxscheme.cc: wxs/wxscheme.cxx
+	$(XFORM) $< $@
+
+gc2/xcglue.c: ../mzscheme/utils/xcglue.c
 	$(XFORM) $< $@
 
 
@@ -323,6 +330,15 @@ gc2/mredx.cc: mredx.cxx
 
 gc2/$(OBJDIR)/%.o: gc2/%.cc
 	$(CXX) -DGC2_JUST_MACROS -include ../mzscheme/gc2/gc2.h -c $(CXXFLAGS) -o $@ $<
+
+gc2/$(OBJDIR)/%.o: gc2/%.c
+	$(CC) -DGC2_JUST_MACROS -include ../mzscheme/gc2/gc2.h -c $(CFLAGS) -o $@ $<
+
+gc2/$(OBJDIR)/wxs_%.o: wxs/wxs_%.cxx
+	$(CXX) -DMZ_PRECISE_GC -I../mzscheme/gc2/ $(CPPFLAGS) $(LOCALFLAGS) -c -o $@ $<
+
+gc2/$(OBJDIR)/wxGC.o: ../wxcommon/wxGC.cxx
+	$(CXX) -DMZ_PRECISE_GC -I../mzscheme/gc2/ $(CPPFLAGS) $(LOCALFLAGS) -c -o $@ $<
 
 XSRCS = gc2/Window.cc \
   gc2/Button.cc \
@@ -401,14 +417,103 @@ XSRCS = gc2/Window.cc \
   gc2/wx_keym.cc \
   gc2/wx_medio.cc \
   gc2/wx_style.cc \
+  gc2/wx_mline.cc \
 \
   gc2/wxscheme.cc \
+  gc2/xcglue.c \
 \
   gc2/mred.cc \
   gc2/mredx.cc
 
-XOBJS = ${XSRCS:gc2/%.cc=gc2/$(OBJDIR)/%.o}
+XOBJS = ${XSRCS:gc2/%.cc=gc2/$(OBJDIR)/%.o} \
+  gc2/$(OBJDIR)/xcglue.o \
+  gc2/$(OBJDIR)/wxGC.o \
+  gc2/$(OBJDIR)/wxs_bmap.o \
+  gc2/$(OBJDIR)/wxs_butn.o \
+  gc2/$(OBJDIR)/wxs_chce.o \
+  gc2/$(OBJDIR)/wxs_ckbx.o \
+  gc2/$(OBJDIR)/wxs_cnvs.o \
+  gc2/$(OBJDIR)/wxs_dc.o \
+  gc2/$(OBJDIR)/wxs_evnt.o \
+  gc2/$(OBJDIR)/wxs_fram.o \
+  gc2/$(OBJDIR)/wxs_gage.o \
+  gc2/$(OBJDIR)/wxs_gdi.o \
+  gc2/$(OBJDIR)/wxs_glob.o \
+  gc2/$(OBJDIR)/wxs_item.o \
+  gc2/$(OBJDIR)/wxs_lbox.o \
+  gc2/$(OBJDIR)/wxs_madm.o \
+  gc2/$(OBJDIR)/wxs_mede.o \
+  gc2/$(OBJDIR)/wxs_medi.o \
+  gc2/$(OBJDIR)/wxs_menu.o \
+  gc2/$(OBJDIR)/wxs_mio.o \
+  gc2/$(OBJDIR)/wxs_misc.o \
+  gc2/$(OBJDIR)/wxs_mpb.o \
+  gc2/$(OBJDIR)/wxs_obj.o \
+  gc2/$(OBJDIR)/wxs_panl.o \
+  gc2/$(OBJDIR)/wxs_rado.o \
+  gc2/$(OBJDIR)/wxs_slid.o \
+  gc2/$(OBJDIR)/wxs_snip.o \
+  gc2/$(OBJDIR)/wxs_styl.o \
+  gc2/$(OBJDIR)/wxs_win.o
+
+MZOBJS = ../mzscheme/gc2/$(MZOBJDIR)/salloc.o \
+	../mzscheme/gc2/$(MZOBJDIR)/bignum.o \
+	../mzscheme/gc2/$(MZOBJDIR)/bool.o \
+	../mzscheme/gc2/$(MZOBJDIR)/char.o \
+	../mzscheme/gc2/$(MZOBJDIR)/complex.o \
+	../mzscheme/gc2/$(MZOBJDIR)/dynext.o \
+	../mzscheme/gc2/$(MZOBJDIR)/env.o \
+	../mzscheme/gc2/$(MZOBJDIR)/error.o \
+	../mzscheme/gc2/$(MZOBJDIR)/eval.o \
+	../mzscheme/gc2/$(MZOBJDIR)/file.o \
+	../mzscheme/gc2/$(MZOBJDIR)/fun.o \
+	../mzscheme/gc2/$(MZOBJDIR)/hash.o \
+	../mzscheme/gc2/$(MZOBJDIR)/image.o \
+	../mzscheme/gc2/$(MZOBJDIR)/list.o \
+	../mzscheme/gc2/$(MZOBJDIR)/number.o \
+        ../mzscheme/gc2/$(MZOBJDIR)/object.o \
+	../mzscheme/gc2/$(MZOBJDIR)/port.o \
+	../mzscheme/gc2/$(MZOBJDIR)/print.o \
+	../mzscheme/gc2/$(MZOBJDIR)/process.o \
+	../mzscheme/gc2/$(MZOBJDIR)/promise.o \
+        ../mzscheme/gc2/$(MZOBJDIR)/rational.o \
+	../mzscheme/gc2/$(MZOBJDIR)/read.o \
+	../mzscheme/gc2/$(MZOBJDIR)/regexp.o \
+	../mzscheme/gc2/$(MZOBJDIR)/sema.o \
+	../mzscheme/gc2/$(MZOBJDIR)/setjmpup.o \
+	../mzscheme/gc2/$(MZOBJDIR)/string.o \
+	../mzscheme/gc2/$(MZOBJDIR)/struct.o \
+	../mzscheme/gc2/$(MZOBJDIR)/symbol.o \
+	../mzscheme/gc2/$(MZOBJDIR)/syntax.o \
+	../mzscheme/gc2/$(MZOBJDIR)/type.o \
+        ../mzscheme/gc2/$(MZOBJDIR)/unit.o \
+	../mzscheme/gc2/$(MZOBJDIR)/vector.o \
+	../mzscheme/gc2/$(MZOBJDIR)/gc2.o
+
+XWOBJS = ../wxxt/src/XWidgets/$(MZOBJDIR)/xwArrow.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwCommon.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwHScrollb.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwRowCol.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwSlider2.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwVScrollb.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwBoard.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwEnforcer.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwLabel.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwScrollText.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwTabString.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwscroll.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwButton.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwFrame.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwMenu.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwScrollWin.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwToggle.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwCanvas.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwGroup.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwMultiList.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwScrollbar.o \
+    ../wxxt/src/XWidgets/$(MZOBJDIR)/xwTools3d.o
 
 xform: $(XSRCS)
 
 mred2k: $(XOBJS)
+	$(LINKER) $(MREDLDFLAGS) -o $(MRBUILDDIR)mred2k $(LDSTARTERS) $(XOBJS) $(MZOBJS) $(XWOBJS) -lXpm $(LDLIBS) $(LDENDERS)

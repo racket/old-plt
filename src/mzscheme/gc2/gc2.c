@@ -255,7 +255,7 @@ typedef struct GC_Weak_Box {
   /* The first three fields are mandated by the GC spec: */
   Type_Tag type;
   short keyex;
-  struct Scheme_Object *val;
+  void *val;
   /* The rest is up to us: */
   void **secondary_erase;
   struct GC_Weak_Box *next;
@@ -298,6 +298,16 @@ void *GC_malloc_weak_box(void *p, void **secondary)
   w->secondary_erase = secondary;
 
   return w;
+}
+
+void *GC_weak_box_val(void *wb)
+{
+  return ((GC_Weak_Box *)wb)->val;
+}
+
+void GC_set_weak_box_val(void *wb, void *v)
+{
+  ((GC_Weak_Box *)wb)->val = v;
 }
 
 /******************************************************************************/

@@ -159,7 +159,7 @@ class os_wxFrame : public wxFrame {
   void OnActivate(Bool x0);
 };
 
-Scheme_Object *os_wxFrame_class;
+static Scheme_Object *os_wxFrame_class;
 
 os_wxFrame::os_wxFrame(Scheme_Object *, class wxFrame* x0, string x1, int x2, int x3, int x4, int x5, int x6, string x7)
 : wxFrame(x0, x1, x2, x3, x4, x5, x6, x7)
@@ -428,8 +428,8 @@ static Scheme_Object *os_wxFrameOnDropFile(Scheme_Object *obj, int n,  Scheme_Ob
   pathname x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -457,8 +457,8 @@ static Scheme_Object *os_wxFramePreOnEvent(Scheme_Object *obj, int n,  Scheme_Ob
   class wxMouseEvent* x1;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
 
@@ -488,8 +488,8 @@ static Scheme_Object *os_wxFramePreOnChar(Scheme_Object *obj, int n,  Scheme_Obj
   class wxKeyEvent* x1;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
 
@@ -518,8 +518,8 @@ static Scheme_Object *os_wxFrameOnSize(Scheme_Object *obj, int n,  Scheme_Object
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "on-size in frame%"));
@@ -544,8 +544,8 @@ static Scheme_Object *os_wxFrameOnSetFocus(Scheme_Object *obj, int n,  Scheme_Ob
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -568,8 +568,8 @@ static Scheme_Object *os_wxFrameOnKillFocus(Scheme_Object *obj, int n,  Scheme_O
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -593,8 +593,8 @@ static Scheme_Object *os_wxFrameOnMenuCommand(Scheme_Object *obj, int n,  Scheme
   ExactLong x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[0], "on-menu-command in frame%"));
@@ -619,8 +619,8 @@ static Scheme_Object *os_wxFrameOnClose(Scheme_Object *obj, int n,  Scheme_Objec
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -644,8 +644,8 @@ static Scheme_Object *os_wxFrameOnActivate(Scheme_Object *obj, int n,  Scheme_Ob
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "on-activate in frame%"));
@@ -669,8 +669,8 @@ static Scheme_Object *os_wxFrameframeMenu(Scheme_Object *obj, int n,  Scheme_Obj
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -692,8 +692,8 @@ static Scheme_Object *os_wxFrameCreateStatusLine(Scheme_Object *obj, int n,  Sch
   string x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x1);
 
   
@@ -723,8 +723,8 @@ static Scheme_Object *os_wxFrameMaximize(Scheme_Object *obj, int n,  Scheme_Obje
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "maximize in frame%"));
@@ -746,8 +746,8 @@ static Scheme_Object *os_wxFrameStatusLineExists(Scheme_Object *obj, int n,  Sch
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -768,8 +768,8 @@ static Scheme_Object *os_wxFrameIconized(Scheme_Object *obj, int n,  Scheme_Obje
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -790,8 +790,8 @@ static Scheme_Object *os_wxFrameSetStatusText(Scheme_Object *obj, int n,  Scheme
   string x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -816,8 +816,8 @@ static Scheme_Object *os_wxFrameGetMenuBar(Scheme_Object *obj, int n,  Scheme_Ob
 #if  HAS_GET_MENU_BAR
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -829,7 +829,7 @@ static Scheme_Object *os_wxFrameGetMenuBar(Scheme_Object *obj, int n,  Scheme_Ob
 #else
  scheme_signal_error("%s: provided arglist unsupported on this platform", "get-menu-bar in frame%");
 #endif
-  return WITH_VAR_STACK(objscheme_bundle_wxMenuBar(r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxMenuBar(r));
 }
 #endif
 
@@ -842,8 +842,8 @@ static Scheme_Object *os_wxFrameSetMenuBar(Scheme_Object *obj, int n,  Scheme_Ob
   class wxMenuBar* x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -868,8 +868,8 @@ static Scheme_Object *os_wxFrameSetIcon(Scheme_Object *obj, int n,  Scheme_Objec
   int x2;
 
   SETUP_VAR_STACK_REMEMBERED(4);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
 
@@ -901,8 +901,8 @@ static Scheme_Object *os_wxFrameIconize(Scheme_Object *obj, int n,  Scheme_Objec
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "iconize in frame%"));
@@ -924,8 +924,8 @@ static Scheme_Object *os_wxFrameSetTitle(Scheme_Object *obj, int n,  Scheme_Obje
   string x0;
 
   SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
 
   
@@ -944,16 +944,17 @@ static Scheme_Object *objscheme_wxFrame_Getwx_menu_bar(Scheme_Object *obj, int n
 {
   Scheme_Class_Object *cobj;
   class wxMenuBar* v;
+  REMEMBER_VAR_STACK();
 
   objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-menu-bar in frame%", 0, 0, n, p);
+  if (n) WITH_REMEMBERED_STACK(scheme_wrong_count("get-menu-bar in frame%", 0, 0, n, p));
   cobj = (Scheme_Class_Object *)obj;
   if (cobj->primflag)
     v = ((os_wxFrame *)cobj->primdata)->wxFrame::wx_menu_bar;
   else
     v = ((wxFrame *)cobj->primdata)->wx_menu_bar;
 
-  return WITH_VAR_STACK(objscheme_bundle_wxMenuBar(v));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxMenuBar(v));
 }
 #endif
 
@@ -961,6 +962,7 @@ static Scheme_Object *objscheme_wxFrame_Getwx_menu_bar(Scheme_Object *obj, int n
 static Scheme_Object *os_wxFrame_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxFrame *realobj;
+  REMEMBER_VAR_STACK();
   class wxFrame* x0;
   string x1;
   int x2;
@@ -971,8 +973,8 @@ static Scheme_Object *os_wxFrame_ConstructScheme(Scheme_Object *obj, int n,  Sch
   string x7;
 
   SETUP_VAR_STACK_REMEMBERED(5);
-  VAR_STACK_PUSH(0, obj);
-  VAR_STACK_PUSH(1, p);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
   VAR_STACK_PUSH(4, x7);
@@ -1021,46 +1023,44 @@ static Scheme_Object *os_wxFrame_ConstructScheme(Scheme_Object *obj, int n,  Sch
 
 void objscheme_setup_wxFrame(void *env)
 {
-  if (os_wxFrame_class) {
-    objscheme_add_global_class(os_wxFrame_class, "frame%", env);
-  } else {
-    REMEMBER_VAR_STACK();
-    os_wxFrame_class = objscheme_def_prim_class(env, "frame%", "window%", os_wxFrame_ConstructScheme, 21);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, env);
 
-    wxREGGLOB("frame%");
+  wxREGGLOB(os_wxFrame_class);
 
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-drop-file", os_wxFrameOnDropFile, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "pre-on-event", os_wxFramePreOnEvent, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "pre-on-char", os_wxFramePreOnChar, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-size", os_wxFrameOnSize, 2, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-set-focus", os_wxFrameOnSetFocus, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-kill-focus", os_wxFrameOnKillFocus, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-menu-command", os_wxFrameOnMenuCommand, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-close", os_wxFrameOnClose, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-activate", os_wxFrameOnActivate, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "system-menu", os_wxFrameframeMenu, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "create-status-line", os_wxFrameCreateStatusLine, 0, 2));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "maximize", os_wxFrameMaximize, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "status-line-exists?", os_wxFrameStatusLineExists, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "iconized?", os_wxFrameIconized, 0, 0));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-status-text", os_wxFrameSetStatusText, 1, 1));
+  os_wxFrame_class = objscheme_def_prim_class(env, "frame%", "window%", os_wxFrame_ConstructScheme, 21);
+
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-drop-file", os_wxFrameOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "pre-on-event", os_wxFramePreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "pre-on-char", os_wxFramePreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-size", os_wxFrameOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-set-focus", os_wxFrameOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-kill-focus", os_wxFrameOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-menu-command", os_wxFrameOnMenuCommand, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-close", os_wxFrameOnClose, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-activate", os_wxFrameOnActivate, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "system-menu", os_wxFrameframeMenu, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "create-status-line", os_wxFrameCreateStatusLine, 0, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "maximize", os_wxFrameMaximize, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "status-line-exists?", os_wxFrameStatusLineExists, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "iconized?", os_wxFrameIconized, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-status-text", os_wxFrameSetStatusText, 1, 1));
 #if  HAS_GET_MENU_BAR
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "get-menu-bar", os_wxFrameGetMenuBar, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "get-menu-bar", os_wxFrameGetMenuBar, 0, 0));
 #endif
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-menu-bar", os_wxFrameSetMenuBar, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-icon", os_wxFrameSetIcon, 1, 3));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "iconize", os_wxFrameIconize, 1, 1));
-    WITH_REMEMBERED_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-title", os_wxFrameSetTitle, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-menu-bar", os_wxFrameSetMenuBar, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-icon", os_wxFrameSetIcon, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "iconize", os_wxFrameIconize, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-title", os_wxFrameSetTitle, 1, 1));
 
 #if  NO_GET_MENU_BAR
-  scheme_add_method_w_arity(os_wxFrame_class,"get-menu-bar", objscheme_wxFrame_Getwx_menu_bar, 0, 0);
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class,"get-menu-bar", objscheme_wxFrame_Getwx_menu_bar, 0, 0));
 #endif
 
-    WITH_REMEMBERED_STACK(scheme_made_class(os_wxFrame_class));
+  WITH_VAR_STACK(scheme_made_class(os_wxFrame_class));
 
-    WITH_REMEMBERED_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxFrame, wxTYPE_FRAME));
+  WITH_VAR_STACK(objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxFrame, wxTYPE_FRAME));
 
-  }
 }
 
 int objscheme_istype_wxFrame(Scheme_Object *obj, const char *stop, int nullOK)

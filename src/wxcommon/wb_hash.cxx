@@ -4,7 +4,7 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_hash.cxx,v 1.4 1999/11/24 21:20:32 mflatt Exp $
+ * RCS_ID:	$Id: wb_hash.cxx,v 1.5 1999/11/25 22:57:08 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -377,8 +377,8 @@ void wxHashTable::Clear (void)
 
 
 /* This is a hash table implementation which does not lock the objects
-   from garbage collection.
- */
+   from garbage collection. */
+/* FIXME: doesn't work for precise GC */
 
 typedef struct Bucket {
   long widget;

@@ -756,6 +756,9 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   Scheme_Comp_Env *save_current_local_env;
   Scheme_Process *p = scheme_current_process;
   int set_overflow;
+#ifdef MZ_PRECISE_GC
+  void *external_stack;
+#endif
 
 #ifndef MZ_REAL_THREADS
   if (scheme_active_but_sleeping)
@@ -782,6 +785,13 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
     *p->ec_ok = 1;
   }
 
+#ifdef MZ_PRECISE_GC
+  if (scheme_get_external_stack_val)
+    external_stack = scheme_get_external_stack_val();
+  else
+    external_stack = NULL;
+#endif
+  
   scheme_save_env_stack_w_process(envss, p);
 
   save_current_local_env = p->current_local_env;
@@ -866,6 +876,10 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 
   if (scheme_setjmp(p->error_buf)) {
     scheme_restore_env_stack_w_process(envss, p);
+#ifdef MZ_PRECISE_GC
+    if (scheme_set_external_stack_val)
+      scheme_set_external_stack_val(external_stack);
+#endif
     *cc_ok = 0;
     if (old_cc_ok)
       *old_cc_ok = 1;

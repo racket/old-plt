@@ -46,7 +46,7 @@ static wxSnipLocation *DoXSnipLoc(wxList *snipLocationList, wxSnip *s)
 {
   /* FIXME: key should be address instead of long */
   wxNode *n;
-  n = snipLocationList->Find((long)s);
+  n = snipLocationList->FindPtr(s);
   if (n)
     return (wxSnipLocation *)n->Data();
   else
@@ -57,7 +57,7 @@ static wxSnipLocation *DoXSnipLoc(wxList *snipLocationList, wxSnip *s)
 #ifdef MZ_PRECISE_GC
 # define SnipLoc(snip) XSnipLoc(snip)
 # else
-# define SnipLoc(snip) ((wxSnipLocation *)snipLocationList->Find((long)snip)->Data())
+# define SnipLoc(snip) ((wxSnipLocation *)snipLocationList->FindPtr(snip)->Data())
 #endif
 
 inline Bool Inbox(float lx, float x)
@@ -919,7 +919,7 @@ void wxMediaPasteboard::_Delete(wxSnip *del_snip,
       else
 	snip->next->prev = snip->prev;
 
-      node = snipLocationList->Find((long)snip);
+      node = snipLocationList->FindPtr(snip);
       snipLocationList->DeleteNode(node);
       loc = (wxSnipLocation *)node->Data();
       if (del)
@@ -984,7 +984,7 @@ void wxMediaPasteboard::MoveTo(wxSnip *snip, float x, float y)
   if (userLocked || writeLocked)
     return;
 
-  if ((node = snipLocationList->Find((long)snip))) {
+  if ((node = snipLocationList->FindPtr(snip))) {
     loc = (wxSnipLocation *)node->Data();
 
     if ((loc->x == x) && (loc->y == y))
@@ -1043,7 +1043,7 @@ void wxMediaPasteboard::Move(wxSnip *snip, float dx, float dy)
   if (userLocked || writeLocked)
     return;
 
-  if ((node = snipLocationList->Find((long)snip))) {
+  if ((node = snipLocationList->FindPtr(snip))) {
     loc = (wxSnipLocation *)node->Data();
     MoveTo(snip, loc->x + dx, loc->y + dy);
   }
@@ -1078,7 +1078,7 @@ Bool wxMediaPasteboard::Resize(wxSnip *snip, float w, float h)
   if (!admin)
     return FALSE;
 
-  if (!(node = snipLocationList->Find((long)snip)))
+  if (!(node = snipLocationList->FindPtr(snip)))
     return FALSE;
 
   loc = (wxSnipLocation *)node->Data();
@@ -1215,7 +1215,7 @@ void wxMediaPasteboard::Raise(wxSnip *snip)
   if (userLocked || writeLocked)
     return;
 
-  if (!snipLocationList->Find((long)snip))
+  if (!snipLocationList->FindPtr(snip))
     return;
 
   prev = snip->prev;
@@ -1247,7 +1247,7 @@ void wxMediaPasteboard::Lower(wxSnip *snip)
   if (userLocked || writeLocked)
     return;
 
-  if (!snipLocationList->Find((long)snip))
+  if (!snipLocationList->FindPtr(snip))
     return;
   
   next = snip->next;
@@ -1280,8 +1280,8 @@ void wxMediaPasteboard::SetBefore(wxSnip *snip, wxSnip *before)
   if (!before)
     before = snips;
 
-  if (!snipLocationList->Find((long)snip)
-      || !snipLocationList->Find((long)before))
+  if (!snipLocationList->FindPtr(snip)
+      || !snipLocationList->FindPtr(before))
     return;
 
   if (snip == before)
@@ -1321,8 +1321,8 @@ void wxMediaPasteboard::SetAfter(wxSnip *snip, wxSnip *after)
   if (!after)
     after = lastSnip;
 
-  if (!snipLocationList->Find((long)snip)
-      || !snipLocationList->Find((long)after))
+  if (!snipLocationList->FindPtr(snip)
+      || !snipLocationList->FindPtr(after))
     return;
 
   if (snip == after)
@@ -1879,7 +1879,7 @@ void wxMediaPasteboard::UpdateSnip(wxSnip *snip)
   wxNode *node;
   wxSnipLocation *loc;
 
-  if ((node = snipLocationList->Find((long)snip))) {
+  if ((node = snipLocationList->FindPtr(snip))) {
     loc = (wxSnipLocation *)node->Data();
     UpdateLocation(loc);
   }
@@ -1981,7 +1981,7 @@ void wxMediaPasteboard::Resized(wxSnip *snip, Bool redraw_now)
   wxNode *node;
   wxSnipLocation *loc;
 
-  if (!(node = snipLocationList->Find((long)snip)))
+  if (!(node = snipLocationList->FindPtr(snip)))
     return;
   loc = (wxSnipLocation *)node->Data();  
 
@@ -2382,7 +2382,7 @@ Bool wxMediaPasteboard::GetSnipLocation(wxSnip *thesnip, float *x, float *y,
   if (bottomRight)
     CheckRecalc();
 
-  node = snipLocationList->Find((long)thesnip);
+  node = snipLocationList->FindPtr(thesnip);
   if (!node)
     return FALSE;
   
@@ -2409,7 +2409,7 @@ wxBufferData *wxMediaPasteboard::GetSnipData(wxSnip *snip)
   wxSnipLocation *loc;
   wxLocationBufferData *data;
 
-  if (!(node = snipLocationList->Find((long)snip)))
+  if (!(node = snipLocationList->FindPtr(snip)))
     return wxMediaBuffer::GetSnipData(snip);
 
   loc = (wxSnipLocation *)node->Data();  

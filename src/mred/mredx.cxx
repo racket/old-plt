@@ -62,8 +62,11 @@ Widget wxGetAppToplevel()
 {
   if (save_top_level)
     return save_top_level;
-  else
-    return MrEdGetContext()->finalized->toplevel;
+  else {
+    MrEdContext *c;
+    c = MrEdGetContext();
+    return c->finalized->toplevel;
+  }
 }
 
 void wxPutAppToplevel(Widget w)
@@ -337,7 +340,9 @@ void MrEdDispatchEvent(XEvent *event)
       c = MrEdGetContext();
       ew = c->modal_window;
       if (ew) {
-	exempt = ew->GetHandle()->frame;
+	wxWindow_Xintern *ph;
+	ph = ew->GetHandle();
+	exempt = ph->frame;
       }
 
       while (widget) {

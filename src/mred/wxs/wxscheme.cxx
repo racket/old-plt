@@ -52,12 +52,23 @@
 
 class GCBitmap {
 public:
+#ifdef MZ_PRECISE_GC
+  Scheme_Object *canvasptr;
+#else
   wxCanvas **canvasptr; /* weak reference */
+#endif
   float x, y, w, h;
   float onx, ony, offx, offy;
   wxBitmap *on, *off;
   struct GCBitmap *next;
 };
+
+#ifdef MZ_PRECISE_GC
+# define GET_CANVAS(gcbm) ((wxCanvas *)SCHEME_BOX_VAL(gcbm->canvasptr))
+#else
+# define GET_CANVAS(gcbm) (*gcbm->canvasptr)
+#endif
+
 
 static GCBitmap *gc_bitmaps = NULL;
 extern "C" void (*GC_collect_start_callback)(void);
@@ -217,9 +228,10 @@ static void draw_gc_bm(int on)
 {
   GCBitmap *gcbm = gc_bitmaps;
   while (gcbm) {
-    if (*gcbm->canvasptr) {
+    wxCanvas *cnvs = GET_CANVAS(gcbm);
+    if (cnvs) {
       wxCanvasDC *dc;
-      dc = (wxCanvasDC *)(*gcbm->canvasptr)->GetDC();
+      dc = (wxCanvasDC *)cnvs->GetDC();
       dc->GCBlit(gcbm->x, gcbm->y,
 		 gcbm->w, gcbm->h,
 		 on ? gcbm->on : gcbm->off,
@@ -261,7 +273,7 @@ static Scheme_Object *wxSchemeUnregisterCollectingBitmap(int, Scheme_Object **a)
   
   gcbm = gc_bitmaps;
   while (gcbm) {
-    if (!gcbm->canvasptr || (*gcbm->canvasptr == c)) {
+    if (!gcbm->canvasptr || (GET_CANVAS(gcbm) == c)) {
       if (prev)
 	prev->next = gcbm->next;
       else
@@ -279,15 +291,23 @@ static Scheme_Object *wxSchemeUnregisterCollectingBitmap(int, Scheme_Object **a)
 static Scheme_Object *wxSchemeRegisterCollectingBitmap(int n, Scheme_Object **a)
 {
   GCBitmap *gcbm;
-  wxCanvas **cp, *cvs;
+  wxCanvas *cvs;
 
   gcbm = new GCBitmap;
 
-  cp = (wxCanvas **)scheme_malloc_atomic(sizeof(wxCanvas*));
-  gcbm->canvasptr = cp;
-
   cvs = objscheme_unbundle_wxCanvas(a[0], "register-collecting-blit", 0);
+
+#ifdef MZ_PRECISE_GC
+  {
+    void *cp;
+    cp = GC_malloc_weak_box(cvs, NULL);
+    gcbm->canvasptr = (Scheme_Object *)cp;
+  }
+#else
+  gcbm->canvasptr = (wxCanvas **)scheme_malloc_atomic(sizeof(wxCanvas*));
   *gcbm->canvasptr = cvs;
+#endif
+
   gcbm->x = objscheme_unbundle_float(a[1], "register-collecting-blit");
   gcbm->y = objscheme_unbundle_float(a[2], "register-collecting-blit");
   gcbm->w = objscheme_unbundle_nonnegative_float(a[3], "register-collecting-blit");
@@ -311,9 +331,10 @@ static Scheme_Object *wxSchemeRegisterCollectingBitmap(int n, Scheme_Object **a)
   gcbm->next = gc_bitmaps;
   gc_bitmaps = gcbm;
 
-  /* FIXME: needs to be a weak box */
+#ifndef MZ_PRECISE_GC
   GC_general_register_disappearing_link((void **)gcbm->canvasptr, 
 					*gcbm->canvasptr);
+#endif
 
   wxSchemeUnregisterCollectingBitmap(0, NULL);
 

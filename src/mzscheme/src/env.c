@@ -513,7 +513,9 @@ undefine(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 current_loaded_library_table(int argc, Scheme_Object *argv[])
 {
-  return (Scheme_Object *)scheme_get_env(scheme_config)->loaded_libraries;
+  Scheme_Env *env;
+  env = scheme_get_env(scheme_config);
+  return (Scheme_Object *)env->loaded_libraries;
 }
 
 static Scheme_Env *make_env (void)

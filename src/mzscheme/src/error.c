@@ -1295,6 +1295,8 @@ void scheme_wrong_syntax(const char *where,
       if (((Scheme_Stx *)detail_form)->srcloc->line >= 0)
 	p = make_srcloc_string(((Scheme_Stx *)detail_form)->srcloc, &plen);
       pform = scheme_syntax_to_datum(detail_form, 0, NULL);
+      /* To go in exn record: */
+      form = detail_form;
     } else {
       pform = detail_form;
       /* To go in exn record: */

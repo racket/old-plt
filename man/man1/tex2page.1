@@ -1,18 +1,19 @@
-.de SE 
-.SH \\$1 \\$2 
+.rn SH SE
+.de SH 
+.SE \\$1 \\$2 
 .nf
 ..
 .TH TEX2PAGE 1 "2003-08-16" 
 
-.SE NAME
+.SH NAME
 
 TeX2page - converts TeX documents to Web pages 
 
-.SE SYNOPSIS
+.SH SYNOPSIS
 
 tex2page { --help | --version | <pathname> }
 
-.SE DESCRIPTION
+.SH DESCRIPTION
 
 tex2page makes Web pages from LaTeX and plain-TeX
 documents.  
@@ -48,7 +49,7 @@ the Web at
 
   http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html
 
-.SE OPTIONS
+.SH OPTIONS
 
 tex2page can be called with the following options
 instead of an argument filename.
@@ -59,7 +60,7 @@ instead of an argument filename.
 --version
     Print version information and exit.
 
-.SE DIAGNOSTICS
+.SH DIAGNOSTICS
 
 If tex2page encounters a fatal error in the document, 
 it displays the prompt
@@ -77,7 +78,7 @@ TEXEDIT or EDITOR (see the ENVIRONMENT section).
 If you type x, the editor is not called, and tex2page
 immediately exits.
 
-.SE ENVIRONMENT
+.SH ENVIRONMENT
 
 TEXINPUTS
     tex2page uses the same search path as TeX to search
@@ -122,7 +123,7 @@ EDITOR
     you use an editor that requires a different
     argument style, use TEXEDIT.
 
-.SE FILES
+.SH FILES
 
 <jobname>.hdir, .tex2page.hdir, ~/.tex2page.hdir
     By default, tex2page generates its output HTML
@@ -169,7 +170,7 @@ tex2page.tex, tex2page.sty
 
         \eusepackage{tex2page}
 
-.SE SYSTEM REQUIREMENTS
+.SH SYSTEM REQUIREMENTS
 
 tex2page runs on Scheme or Common Lisp.  It may also
 make use of the following programs: BibTeX,
@@ -181,16 +182,16 @@ the distribution includes configuration information
 to allow tex2page to run on a variety of Scheme 
 and Common Lisp implementations.  See file INSTALL.
 
-.SE BUGS
+.SH BUGS
 
 Email to dorai @ ccs.neu.edu.
 
-.SE SEE ALSO
+.SH SEE ALSO
 
 tex(1), latex(1), mzscheme(1), bibtex(1),
 makeindex(1L), mpost(1).
 
-.SE COPYRIGHT
+.SH COPYRIGHT
 
 Copyright 1997-2003 by Dorai Sitaram.
 

@@ -40,7 +40,7 @@ void designate_modified(void *p);
 #endif
 
 /* Forward declaration: */
-static void *find_cached_pages(size_t len, size_t alignment);
+inline static void *find_cached_pages(size_t len, size_t alignment);
 
 /* the structure of an exception msg and its reply */
 typedef struct rep_msg {

@@ -228,8 +228,7 @@ void wxChoice::DrawChoice(Bool active)
     for (; w >= TitleRect.right; i--)	// backup
       w -= ::CharWidth(sTitle[i]);
     
-    ::DrawText(sTitle, 1, i-1);
-    //::DrawString(sTitle);
+    DrawLatin1Text((char *)sTitle, 1, i-1);
   }
   
   ::Draw1Control(cMacControl);

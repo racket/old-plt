@@ -249,7 +249,7 @@ void wxRadioButton::Paint(void)
       GetTextExtent(labelString, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
       int stop = (int)((cWindowHeight + fHeight) / 2);
       ::MoveTo(IR_CIRCLE_SIZE + IR_X_SPACE + SetOriginX, (short)(stop - fDescent - fLeading) + SetOriginY);
-      ::DrawText(labelString, 0, strlen(labelString));
+      DrawLatin1Text(labelString, 0);
     }
     int top = (cWindowHeight - IR_CIRCLE_SIZE) / 2;
     Rect r = { top, 0, top + IR_CIRCLE_SIZE, IR_CIRCLE_SIZE };

@@ -230,7 +230,7 @@ void wxMessage::Paint(void)
       FontInfo info;
       ::GetFontInfo(&info);
       MoveTo(SetOriginX, SetOriginY + clientHeight - info.descent);
-      ::DrawText(cMessage, 0, strlen(cMessage));
+      DrawLatin1Text(cMessage, 0);
     }
   }
 }

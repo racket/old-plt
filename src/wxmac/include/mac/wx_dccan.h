@@ -135,6 +135,8 @@ class wxCanvasDC: public wxbCanvasDC
   void PaintStipple(wxRegion *);
 };
 
+void DrawLatin1Text(const char *text, int d, int len = -1, int bit16 = FALSE);
+
 extern Pattern wx_white_pat, wx_black_pat, wx_light_gray_pat, wx_dark_gray_pat;
 #define GetWhitePattern() &wx_white_pat
 #define GetBlackPattern() &wx_black_pat

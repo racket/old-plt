@@ -1088,8 +1088,8 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
   SQLSMALLINT CDataType;
   void *buffer;
   long numElts;
-  Scheme_Object *accessors[5];
 #if (ODBCVER >= 0x0300)
+  Scheme_Object *accessors[5];
   INTERVAL_FIELD_ACCESSOR fields[5];
 #endif  
 

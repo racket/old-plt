@@ -9,7 +9,7 @@
 #else
 #define FALSE (0)
 #define TRUE  (1)
-typedef bool BOOL;
+typedef int BOOL;
 typedef unsigned char BYTE;
 typedef unsigned short WORD;
 typedef unsigned long DWORD;

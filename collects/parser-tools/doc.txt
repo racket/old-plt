@@ -78,7 +78,7 @@ create a .zo file in the 'compiled' subdirectory.
 See the combined lexer/parser example below.
 
 Hint: If there is no match in the input buffer the generated lexer
-will signal an error.  If ((- #\000 #\255) custom-error-behavior) is
+will signal an error.  If ((- #\000 #\377) custom-error-behavior) is
 the last rule, then there will always be a match and
 custom-error-behavior will be executed to handle the error situation
 as desired.

@@ -281,7 +281,25 @@
 
     (define make-searchable-frame%
       (let* ([anchor 0]
+	     [anchor-edit (let ([e (make-object mred:edit:edit%)])
+			    (send e insert "0")
+			    e)]
 	     [searching-direction 1]
+	     [reset-anchor
+	      (let ([old void]
+		    [color (make-object wx:colour% "BLUE")])
+		(lambda (edit)
+		  (old)
+		  (let ([position 
+			 (if (= 1 searching-direction)
+			     (send edit get-end-position)
+			     (send edit get-start-position))])
+		    (set! anchor position)
+		    (set! old (send edit highlight-range position
+				    (add1 position)
+				    color)))
+		  (send anchor-edit erase)
+		  (send anchor-edit insert (format "~a" anchor))))]
 	     [replace-edit (make-object mred:edit:edit%)]
 	     [find-edit
 	      (make-object
@@ -321,10 +339,7 @@
 					  (max first-pos last-pos)))
 				    #t))])
 			  (when reset-anchor?
-			    (set! anchor 
-				  (if (= 1 searching-direction)
-				      (send searching-edit get-end-position)
-				      (send searching-edit get-start-position))))
+			    (reset-anchor searching-edit))
 			  (let-values ([(found-edit first-pos)
 					(send searching-edit
 					      find-string-embedded
@@ -401,6 +416,7 @@
 	       (lambda ()
 		 (set! hidden? #f)
 		 (send super-root add-child search-panel)
+		 (reset-anchor (get-edit-to-search))
 		 (send search-panel set-focus))])
 	    (private
 	      [search-panel (make-object mred:container:horizontal-panel% super-root)]
@@ -428,6 +444,9 @@
 	      [spacing3 (make-object mred:container:horizontal-panel% middle-left-panel)]
 	      [spacing4 (make-object mred:container:horizontal-panel% middle-middle-panel)]
 
+	      [anchor-canvas (let ([c (make-object mred:canvas:one-line-canvas% middle-right-panel)])
+			       (send c set-media anchor-edit)
+			       c)]
 	      [dir-radio (make-object mred:container:radio-box% middle-right-panel
 				      (lambda (dir-radio evt)
 					(let ([forward (if (= 0 (send evt get-command-int))

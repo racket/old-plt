@@ -1,4 +1,4 @@
-
+ 
 ; Expects parameters to be set before invocation.
 ; Calls `exit' when done.
 
@@ -10,7 +10,7 @@
 	   (lib "cm.ss")
 	   (lib "port.ss")
            (lib "match.ss")
-           (lib "util.ss" "planet")
+           (lib "planet-archives.ss" "planet")
            
 	   "option-sig.ss"
 	   (lib "sig.ss" "compiler")
@@ -139,6 +139,8 @@
               (list (cons 'lib (map path->string collection-p)) 1 0))))))
       
       (define (planet->cc path owner pkg-file extra-path maj min)
+        (unless (path? path)
+          (error 'path->cc "non-path when building package ~a" pkg-file))
         (let* ([info (with-handlers ([exn:fail? (warning-handler #f)])
                        (get-info/full path))]
                [name (call-info info 'name (lambda () #f)
@@ -442,7 +444,7 @@
           ;; Unless specific collections were named, also
           ;;  delete .zos for referenced modules and delete
           ;;  info-domain cache
-          (when (null? x-specific-collections)
+          (when (and (null? x-specific-collections) (null? x-specific-planet-dirs))
             (setup-printf "Checking dependencies")
             (let loop ([old-dependencies dependencies])
               (let ([dependencies (make-hash-table 'equal)]
@@ -527,7 +529,7 @@
                      cc
                      (format "Compiling ~a" desc)
                      (lambda ()
-                       (unless (control-io-apply 
+                       (unless (control-io-apply
                                 (case-lambda 
                                   [(p) 
                                    ;; Main "doing something" message

@@ -263,13 +263,12 @@
       (or f
 	  (let ([f (let ([v (with-handlers ([not-break-exn? (lambda (x) null)])
 			      (let ([pref-file (let ([f (find-system-path 'pref-file)])
-						 ;; BUG: f might not exist because it's being
-						 ;; updated --- unlikely, but possible. Also, there's
-						 ;; a race condition between this test and the read
-						 ;; below.
 						 (if (file-exists? f)
+						     ;; Using `file-exists?' means there's technically
+						     ;; a race condition, but something
+						     ;; has gone really wrong if the file disappears.
 						     f
-						     ;; Error bails out through above `with-handlers'
+						     ;; Error here bails out through above `with-handlers'
 						     (build-path (collection-path "defaults")
 								 "plt-prefs.ss")))])
 				(with-input-from-file pref-file
@@ -304,8 +303,8 @@
 	  (if m
 	      (cadr m)
 	      (fail-thunk))))]
-     [(name fail-thunk) (get-preference name fail-thunk #f)]
-     [(name) (get-preference name (lambda () #f) #f)]))
+     [(name fail-thunk) (get-preference name fail-thunk #t)]
+     [(name) (get-preference name (lambda () #f) #t)]))
 
   (define put-preferences
     (case-lambda
@@ -360,7 +359,7 @@
 			  (printf ")~n")))
 		      'truncate/replace)
 		    (delete-file pref-file)
-		    (rename-file-or-directory tmp-file pref-file))))
+		    (rename-file-or-directory tmp-file pref-file #t))))
 	      (lambda ()
 		;; Release lock:
 		(delete-file lock-file)))))]

@@ -172,7 +172,7 @@
 ;; Check that syntax, expansion, etc. preserve vector sharing
 (test #t (lambda (x) (and (vector? x) (eq? (vector-ref x 0) (vector-ref x 1)))) #2((1 2)))
 
-(define (graph-error-test readstr)
+(define (graph-error-tests readstr)
   (err/rt-test (readstr "#0#") exn:read?)
   (err/rt-test (readstr "#0=#0#") exn:read?)
   (err/rt-test (readstr "#0=#0#") exn:read?)
@@ -189,7 +189,7 @@
     (err/rt-test (readstr "#1#") exn:read?)))
 (graph-error-tests readstr)
 (graph-error-tests (lambda (s)
-		     (read-syntax (open-input-string s) "string")))
+		     (read-syntax "string" (open-input-string s))))
 
 ;; Long symbol:
 (test 'abcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefgabcdefg

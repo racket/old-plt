@@ -117,6 +117,7 @@
 # include "uconfig.h"
 
 # define STACK_GROWS_DOWN
+# define SCHEME_BIG_ENDIAN
 
 # define USE_EXPLICT_FP_FORM_CHECK
 # define POW_HANDLES_INF_CORRECTLY
@@ -159,6 +160,7 @@
 # undef USE_FCHDIR
 
 # define STACK_GROWS_DOWN
+# define SCHEME_BIG_ENDIAN
 # define UNIX_LIMIT_STACK 33554944
 
 # define SELECT_INCLUDE
@@ -183,9 +185,11 @@
 # endif
 # if defined(powerpc)
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-linux"
+#  define SCHEME_BIG_ENDIAN
 # endif
 # if defined(__mc68000__)
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "m68k-linux"
+#  define SCHEME_BIG_ENDIAN
 # endif
 # if defined(__alpha__)
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "alpha-linux"
@@ -327,6 +331,7 @@
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "i586-beos"
 # else
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-beos"
+#  define SCHEME_BIG_ENDIAN
 #endif
 
 # include "uconfig.h"
@@ -384,6 +389,7 @@
 # include "uconfig.h"
 
 # define STACK_GROWS_DOWN
+# define SCHEME_BIG_ENDIAN
 
 # define DIRENT_NO_NAMLEN
 
@@ -414,6 +420,7 @@
 # define DIRENT_NO_NAMLEN
 
 # define STACK_GROWS_DOWN
+# define SCHEME_BIG_ENDIAN
 
 # define NO_USLEEP
 # define USE_FCNTL_O_NONBLOCK
@@ -452,6 +459,7 @@
 # define SHL_DYNAMIC_LOAD
 
 # define STACK_GROWS_UP
+# define SCHEME_BIG_ENDIAN
 
 # define SOME_FDS_ARE_NOT_SELECTABLE
 # define USE_FCNTL_O_NONBLOCK
@@ -627,6 +635,7 @@
 # define SYSTEM_TYPE_NAME "macosx"
 
 # define STACK_GROWS_DOWN
+# define SCHEME_BIG_ENDIAN
 # define USE_MAP_ANON
 
 /* haven't implemented dylib support */
@@ -693,6 +702,7 @@
 # endif
 
 # define STACK_GROWS_DOWN
+# define SCHEME_BIG_ENDIAN
 
 # define DO_STACK_CHECK
 # define MACOS_FIND_STACK_BOUNDS
@@ -782,6 +792,7 @@
 # define NO_USLEEP
 
 # define STACK_GROWS_DOWN
+# define SCHEME_BIG_ENDIAN
 
 # define DO_STACK_CHECK
 # define PALM_FIND_STACK_BOUNDS
@@ -1112,6 +1123,12 @@
 
  /* LOG_ZERO_ISNT_NEG_INF defines a version of log that checks for an
     inexact zero argument and return negative infinity. */
+
+  /**************/
+ /* Byte Order */
+/**************/
+
+ /* SCHEME_BIG_ENDIAN indicates that the process is big-endian */
 
   /***********************/
  /* Stack Maniuplations */

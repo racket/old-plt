@@ -115,6 +115,7 @@ static Scheme_Object *top_next_mark;
 static Scheme_Object *top_next_name;
 
 static Scheme_Object *is_method_symbol;
+static Scheme_Object *inferred_name_symbol;
 
 typedef void (*DW_PrePost_Proc)(void *);
 
@@ -338,7 +339,9 @@ scheme_init_fun (Scheme_Env *env)
 			     read_compiled_closure);
 
   REGISTER_SO(is_method_symbol);
+  REGISTER_SO(inferred_name_symbol);
   is_method_symbol = scheme_intern_symbol("method-arity-error");
+  inferred_name_symbol = scheme_intern_symbol("inferred-name");
 }
 
 /*========================================================================*/
@@ -691,7 +694,7 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
 				Scheme_Compile_Info *rec, int drec)
      /* Compiles a `lambda' expression */
 {
-  Scheme_Object *allparams, *params, *forms, *param;
+  Scheme_Object *allparams, *params, *forms, *param, *name;
   Scheme_Closure_Compilation_Data *data;
   Scheme_Compile_Info lam;
   Scheme_Comp_Env *frame;
@@ -739,12 +742,17 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
 
   forms = scheme_datum_to_syntax(forms, code, code, 0, 0);
   forms = scheme_add_env_renames(forms, frame, env);
-
-  data->name = rec[drec].value_name;
-  if (!data->name) {
-    Scheme_Object *name;
-    name = scheme_source_to_name(code);
-    data->name= name;
+  
+  name = scheme_stx_property(code, inferred_name_symbol, NULL);
+  if (name && SCHEME_SYMBOLP(name)) {
+    data->name = name;
+  } else {
+    data->name = rec[drec].value_name;
+    if (!data->name) {
+      Scheme_Object *name;
+      name = scheme_source_to_name(code);
+      data->name= name;
+    }
   }
 
   scheme_compile_rec_done_local(rec, drec);

@@ -69,16 +69,16 @@
 (test 'f object-name f)
 
 ; Test class stuff ok when no name
-(test 'class object-name (class object% () (super-make-object)))
-(test 'interface object-name (interface ()))
+(test #t src-name? (object-name (class object% () (super-make-object))))
+(test #t src-name? (object-name (interface ())))
 
 ; Test class stuff ok when name
 (test 'class:c1 object-name (let ([c1 (class object% () (super-make-object))]) c1))
 (test 'interface:i1 object-name (let ([i1 (interface ())]) i1))
 
 ; Test unit stuff ok when no name
-(test 'unit object-name (unit (import) (export)))
-(test 'unit object-name (compound-unit (import) (link) (export)))
+(test #t src-name? (object-name (unit (import) (export))))
+(test #t src-name? (object-name (compound-unit (import) (link) (export))))
 
 ; Test unit stuff ok when name
 (test 'unit:u1 object-name (let ([u1 (unit (import) (export))]) u1))

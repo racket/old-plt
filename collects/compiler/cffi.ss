@@ -8,6 +8,7 @@
 
 (module cffi mzscheme
   (require (lib "stx.ss" "syntax"))
+  (require-for-syntax (lib "name.ss" "syntax"))
 
   (define-syntax c-lambda
     (let ([re:fname (regexp "^[a-zA-Z_0-9]+$")]
@@ -190,7 +191,7 @@
 			     (syntax->list (syntax (arg-type ...))))]
 		 [result-type (parse-type (syntax result-type) stx #t)]
 		 [code (syntax code)]
-		 [proc-name (or (let ([s (syntax-infer-local-name stx)])
+		 [proc-name (or (let ([s (syntax-local-infer-name stx)])
 				  (if (syntax? s)
 				      (syntax-e s)
 				      s))

@@ -253,7 +253,7 @@ void scheme_init_file(Scheme_Env *env)
   scheme_add_global_constant("rename-file-or-directory", 
 			     scheme_make_prim_w_arity(rename_file, 
 						      "rename-file-or-directory", 
-						      2, 2), 
+						      2, 3), 
 			     env);
   scheme_add_global_constant("copy-file", 
 			     scheme_make_prim_w_arity(copy_file, 
@@ -2408,6 +2408,7 @@ static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
 
 static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
 {
+  int exists_ok = 0;
   char *src, *dest;
 #ifdef USE_MAC_FILE_TOOLBOX
   FSSpec srcspec, destspec;
@@ -2418,6 +2419,8 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
     scheme_wrong_type("rename-file-or-directory", "string", 0, argc, argv);
   if (!SCHEME_STRINGP(argv[1]))
     scheme_wrong_type("rename-file-or-directory", "string", 1, argc, argv);
+  if (argc > 2)
+    exists_ok = SCHEME_TRUEP(argv[2]);
 
 #ifdef USE_MAC_FILE_TOOLBOX
   src = SCHEME_STR_VAL(argv[0]);
@@ -2440,9 +2443,9 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
 #ifdef USE_MAC_FILE_TOOLBOX
   if (find_mac_file(src, 0, &srcspec, 0, -3, NULL, &swas_dir, &sexists, NULL, NULL, NULL, NULL, NULL)
       && sexists) {
-    if (find_mac_file(dest, 0, &destspec, 0, 0, NULL, NULL, &dexists, NULL, NULL, NULL, NULL, NULL)) {
-      /* Directory already exists or different volumes => failure */
-      if (!dexists && (srcspec.vRefNum == destspec.vRefNum)) {
+    if (exists_ok || find_mac_file(dest, 0, &destspec, 0, 0, NULL, NULL, &dexists, NULL, NULL, NULL, NULL, NULL)) {
+      /* Already exists or different volumes => failure */
+      if ((exists_ok || !dexists) && (srcspec.vRefNum == destspec.vRefNum)) {
         int rename;
         
         if (swas_dir) {
@@ -2453,8 +2456,10 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
           pb.hFileInfo.ioVRefNum = srcspec.vRefNum;
           pb.hFileInfo.ioFDirIndex = -1;
           pb.hFileInfo.ioDirID = srcspec.parID;
-          if (PBGetCatInfo(&pb, 0))
+          if (PBGetCatInfo(&pb, 0)) {
+	    errno = -1;
             goto failed;
+	  }
             
           srcspec.parID = pb.dirInfo.ioDrParID;
         }
@@ -2469,23 +2474,32 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
           mv.ioDirID = srcspec.parID;
           mv.ioNewName = NULL;
           mv.ioNewDirID = destspec.parID;
-          if (PBCatMove(&mv, 0))
+          if (PBCatMove(&mv, 0)) {
+	    errno = -1;
             goto failed;
+	  }
         }
         
         if (rename) {
           srcspec.parID = destspec.parID;
-          if (FSpRename(&srcspec, destspec.name))
+          if (FSpRename(&srcspec, destspec.name)) {
+	    errno = -1;
 	    goto failed;
+	  }
       	}
       	
         return scheme_void;
-      }
+      } else if (!exists_ok && dexists)
+	exists_ok = -1;
     }
+    errno = -1;
   }
 #else
-  if (scheme_file_exists(dest) || scheme_directory_exists(dest))
+  if (!exists_ok && (scheme_file_exists(dest) || scheme_directory_exists(dest))) {
+    exists_ok = -1;
+    errno = EEXIST;
     goto failed;
+  }
   
   while (1) {
     if (!rename(src, dest))
@@ -2498,10 +2512,11 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
 failed:
   scheme_raise_exn(MZEXN_I_O_FILESYSTEM, 
 		   argv[0],
-		   fail_err_symbol,
-		   "rename-file-or-directory: cannot rename file or directory: %q to: %q",
+		   (exists_ok < 0) ? exists_err_symbol : fail_err_symbol,
+		   "rename-file-or-directory: cannot rename file or directory: %q to: %q (%e)",
 		   filename_for_error(argv[0]),
-		   filename_for_error(argv[1]));
+		   filename_for_error(argv[1]),
+		   errno);
   
   return NULL;
 }
@@ -3961,7 +3976,7 @@ find_system_path(int argc, Scheme_Object **argv)
     if (which == id_init_file)
       return scheme_append_string(home, scheme_make_string(":mzschemerc.ss" + ends_in_colon));
     if (which == id_pref_file)
-      return scheme_append_string(home, scheme_make_string(":pltprefs.ss" + ends_in_colon));
+      return scheme_append_string(home, scheme_make_string(":plt-prefs.ss" + ends_in_colon));
   }
 #endif
 

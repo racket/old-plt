@@ -113,7 +113,7 @@ _struct.ss_: generating the same names as `define-struct'
 _name.ss_: extracting inferred names
 ======================================================================
 
-> (syntax-inferred-local-name stx) - similar to
+> (syntax-local-infer-name stx) - similar to
 >   syntax-local-name
   except that `stx' is checked for an
 >   'inferred-name

@@ -343,7 +343,7 @@
 (test '(#%kernel #%module-begin mzscheme #%plain-module-begin)  identifier-binding #'#%pmb)
 
 (let ([b (identifier-binding (syntax-case (expand #'(module m mzscheme
-						      (require (rename (lib "beginner.ss" "lang") bcons cons))
+						      (require (rename (lib "htdp-beginner.ss" "lang") bcons cons))
 						      bcons)) ()
 			       [(mod m mz (#%mod-beg for-syntax req cons))
 				(let ([s (syntax cons)])
@@ -353,10 +353,10 @@
 	       [(nominal nominal-base) (module-path-index-split (caddr b))])
     (test '"private/teachprims.ss" values real)
     (test 'beginner-cons cadr b)
-    (test '(lib "beginner.ss" "lang") values nominal)
+    (test '(lib "htdp-beginner.ss" "lang") values nominal)
     (test 'cons cadddr b)))
 
-(let ([b (identifier-binding (syntax-case (expand #'(module m (lib "beginner.ss" "lang")
+(let ([b (identifier-binding (syntax-case (expand #'(module m (lib "htdp-beginner.ss" "lang")
 						      cons)) ()
 			       [(mod m beg (#%mod-beg cons))
 				(let ([s (syntax cons)])
@@ -366,7 +366,7 @@
 	       [(nominal nominal-base) (module-path-index-split (caddr b))])
     (test '"private/teachprims.ss" values real)
     (test 'beginner-cons cadr b)
-    (test '(lib "beginner.ss" "lang") values nominal)
+    (test '(lib "htdp-beginner.ss" "lang") values nominal)
     (test 'cons cadddr b)))
 
 (report-errs)

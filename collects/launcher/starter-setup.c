@@ -68,7 +68,7 @@ Scheme_Object *result_proc;
 
 Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
-  result_proc = scheme_make_prim_w_arity(setup_wrapper,"setup-mac-starter-aliases",4,4);
+  result_proc = scheme_make_prim_w_arity(setup_wrapper,"setup-mac-starter-aliases",2,4);
   
   return result_proc;
 }

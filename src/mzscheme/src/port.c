@@ -399,9 +399,6 @@ OS_SEMAPHORE_TYPE scheme_break_semaphore;
 #ifdef USE_FD_PORTS
 static Scheme_Object *make_fd_input_port(int fd, const char *filename);
 static Scheme_Object *make_fd_output_port(int fd);
-# ifdef NEED_RESET_STDOUT_BLOCKING
-static void reset_stdout_blocking_mode(void);
-# endif
 #endif
 #ifdef USE_OSKIT_CONSOLE
 static Scheme_Object *make_oskit_console_input_port();
@@ -585,12 +582,6 @@ scheme_init_port (Scheme_Env *env)
 			       );
     scheme_set_param(config, MZCONFIG_ERROR_PORT,
 		     scheme_orig_stdout_port);
-
-#ifdef USE_FD_PORTS
-# ifdef NEED_RESET_STDOUT_BLOCKING
-    atexit(reset_stdout_blocking_mode);
-# endif
-#endif
 
     {
       Scheme_Object *dlh;
@@ -1842,10 +1833,16 @@ static void flush_fd(Scheme_Output_Port *op, char *bufstr, int buflen)
   if (buflen) {
     while (1) {
       long len;
+      int flags, errsaved;
+      
+      flags = fcntl(fop->fd, F_GETFL, 0);
+      fcntl(fop->fd, F_SETFL, flags | MZ_NONBLOCKING);
       len = write(fop->fd, bufstr + offset, buflen - offset);
+      errsaved = errno;
+      fcntl(fop->fd, F_SETFL, flags);
 
       if (len < 0) {
-	if (errno == EAGAIN) {
+	if (errsaved == EAGAIN) {
 	  scheme_block_until(fd_write_ready, fd_write_need_wakeup, (Scheme_Object *)op, 0.0);
 	} else {
 	  scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
@@ -1887,20 +1884,6 @@ static void flush_orig_outputs()
 #endif
     if (SAME_OBJ(op->sub_type, file_output_port_type))
       fflush(((Scheme_Output_File *)op->port_data)->f);
-}
-
-void scheme_blocking_output(int block)
-{
-#ifdef USE_FD_PORTS
-  if (block) {
-    flush_orig_outputs();
-    fcntl(1, F_SETFL, 0);
-    fcntl(2, F_SETFL, 0);
-  } else {
-    fcntl(1, F_SETFL, MZ_NONBLOCKING);
-    fcntl(2, F_SETFL, MZ_NONBLOCKING);
-  }
-#endif
 }
 
 #ifdef SOME_FDS_ARE_NOT_SELECTABLE
@@ -3248,9 +3231,6 @@ make_fd_output_port(int fd)
   fop->fd = fd;
   fop->bufcount = 0;
 
-  /* Make output non-blocking: */
-  fcntl(fd, F_SETFL, MZ_NONBLOCKING);
-
   return (Scheme_Object *)scheme_make_output_port(fd_output_port_type,
 						  fop,
 						  fd_write_string,
@@ -3258,12 +3238,6 @@ make_fd_output_port(int fd)
 						  1);
 }
 
-# ifdef NEED_RESET_STDOUT_BLOCKING
-void reset_stdout_blocking_mode(void)
-{
-  scheme_blocking_output(1);
-}
-# endif
 #endif
 
 /* user output ports */
@@ -5678,14 +5652,8 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
 	if (as_child || !def_exit_on || !v)
 	  _exit(v);
-	else {
-#ifdef USE_FD_PORTS
-	  /* stdut and stderr back to non-blocking: */
-	  fcntl(1, F_SETFL, MZ_NONBLOCKING);
-	  fcntl(2, F_SETFL, MZ_NONBLOCKING);
-#endif
+	else
 	  return scheme_void;
-	}
       } else {
 	int err;
 
@@ -5695,14 +5663,8 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
 	if (as_child || !def_exit_on)
 	  _exit(err ? err : -1);
-	else {
-#ifdef USE_FD_PORTS
-	  /* stdut and stderr back to non-blocking: */
-	  fcntl(1, F_SETFL, MZ_NONBLOCKING);
-	  fcntl(2, F_SETFL, MZ_NONBLOCKING);
-#endif
+	else
 	  return scheme_void;
-	}
       }
 
     default: /* parent */

@@ -355,4 +355,3 @@
   scheme_extension_table->scheme_make_args_string = scheme_make_args_string;
   scheme_extension_table->scheme_no_dumps = scheme_no_dumps;
   scheme_extension_table->scheme_system_library_subpath = scheme_system_library_subpath;
-  scheme_extension_table->scheme_blocking_output = scheme_blocking_output;

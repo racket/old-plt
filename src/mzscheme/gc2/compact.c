@@ -4360,7 +4360,7 @@ static long dump_info_array[BIGBLOCK_MIN_SIZE];
 
 #if KEEP_BACKPOINTERS
 # define MAX_FOUND_OBJECTS 50
-int GC_trace_for_tag = 47;
+int GC_trace_for_tag = 57;
 static int found_object_count;
 static void *found_objects[MAX_FOUND_OBJECTS];
 #endif
@@ -4736,6 +4736,6 @@ void GC_dump(void)
     }
   }
   GCPRINT(GCOUTF, "End Trace\n");
-  GC_trace_for_tag = 47;
+  GC_trace_for_tag = 57;
 #endif
 }

@@ -18,11 +18,17 @@
 ;; ----------------------------------------------------------------------
 
 (define-signature mzlib:unprefixed-core^
-  ( (open mzlib:pretty-print^)
-    (open mzlib:file^)
-    (open mzlib:function^)
-    (open mzlib:compat^) 
-    (open mzlib:string^)))
+  ; Not really much of mzlib:function^, just the part we need to avoid conflicts:
+  (foldl
+   foldr
+   remq
+   remv
+   quicksort
+
+   (open mzlib:pretty-print^)
+   (open mzlib:file^) 
+   (open mzlib:compat^) 
+   (open mzlib:string^)))
 
 (define-signature mrspidey:library-paras^ 
   (make-parameter-boolean

@@ -91,7 +91,7 @@
 		 `(#%let* ([param ,param]
                            [,pz (if (parameter? param)
                                     (#%in-parameterization 
-                                     (#%current-parameterization) ,param #t)
+                                     (#%current-parameterization) ,param)
                                     param)]
 			   [,orig (,pz)])
 		     (#%dynamic-wind

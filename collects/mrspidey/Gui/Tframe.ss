@@ -42,7 +42,7 @@
       
     (public
 
-      [get-edit (lambda () program-edit)]
+      ; [get-edit (lambda () program-edit)] ; MATTHEW asks: why was this here?
       [auto-set-wrap #f]
       [edit% flow-arrow:media-edit%]    
       [get-canvas% (lambda () mred:wrapping-canvas%)]
@@ -218,7 +218,7 @@
       [main arg-main]                   ; parent containing the global state
       program-canvas
       program-edit
-      summary-canvas                    ; or #f if no summary
+      summary-canvas                   ; or #f if no summary
       [filename arg-filename]
 
       [canvas-show-mode 'none]          ; 'program, 'summary, or 'both

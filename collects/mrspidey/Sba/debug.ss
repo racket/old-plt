@@ -10,7 +10,7 @@
 (define debugging-atype #f)
 (define debugging-sdl #f)
 (define debugging-sdl2 #f)
-(define debugging-gui #t)
+(define debugging-gui #f)
 
 (define debugging-min #f)
 (define debugging-min2 #f)

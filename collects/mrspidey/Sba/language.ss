@@ -955,7 +955,6 @@
        (in-parameterization   (forall (param)
                                 (parameterization
                                   param
-                                  optional _
                                   -> param)))
        (with-parameterization (parameterization (-> result) -> result))
        (with-new-parameterization ((-> result) -> result))

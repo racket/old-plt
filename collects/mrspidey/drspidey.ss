@@ -27,14 +27,6 @@
   (unless (getenv "MREDCOMPILE") 
     (match:set-error-control 'match)))
 
-
-#| MATTHEW: use require-library instead
-(load/use-compiled
-  (let ([p (build-path (current-load-relative-directory) "Zodiac" "load.ss")])
-    (if (file-exists? p)
-      p
-      (build-path (current-load-relative-directory) 'up "zodiac" "load.ss"))))
-|#
 (require-library "load.ss" "zodiac")
 
 (load/use-compiled (build-path "Sba" "loadu.ss"))
@@ -102,10 +94,10 @@
 ;; ----------------------------------------------------------------------
 
 (define tool@
-  (let ( [mrspidey:sba@ mrspidey:sba@]
-         [mrspidey:interaction@ mrspidey:interaction@]
-         [mrspidey-gui@ mrspidey-gui@]
-         [mrspidey-tool@ mrspidey-tool@])
+  (let ([mrspidey:sba@ mrspidey:sba@]
+        [mrspidey:interaction@ mrspidey:interaction@]
+        [mrspidey-gui@ mrspidey-gui@]
+        [mrspidey-tool@ mrspidey-tool@])
     (unit/sig ()
       (import 
         [WX : wx^]
@@ -113,7 +105,7 @@
         [MZLIB : mzlib:core^]
         [PCONVERT : mzlib:print-convert^]
         [DRSCHEME : drscheme:export^]
-        [ZODiac : zodiac:system^])
+        [ZODIAC : zodiac:system^])
 
       (invoke-unit/sig
         (unit->unit/sig

@@ -184,7 +184,9 @@
 					      (file (format s "xxxxxxx")))))
 				      (f))))])
 	  (cond
-	   [win-gcc? (list (filethunk (wrap-3m "mzdyn~a.exp"))
+	   [win-gcc? (list (wrap-xxxxxxx (wrap-3m "libmzsch~a~~a.lib"))
+			   (wrap-xxxxxxx (drop-3m "libmzgc~a.lib"))
+			   (filethunk (wrap-3m "mzdyn~a.exp"))
 			   (filethunk (wrap-3m "mzdyn~a.o"))
 			   (file "init.o")
 			   (file "fixup.o"))]

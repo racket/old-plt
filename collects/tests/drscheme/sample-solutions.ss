@@ -60,7 +60,6 @@
 	      (wait-for-button (ivar drs-frame execute-button)))])
 
       (when frame-to-close (send frame-to-close close))
-      (collect-garbage)(collect-garbage)(collect-garbage)(collect-garbage)(collect-garbage) ;; runs out of memory otherwise
       (set! frame-to-close drs-frame)
 
       (set-language-level! language)

@@ -1313,12 +1313,12 @@
    '(let ()
       (eval '(module contract-test-suite8 mzscheme
                (require (lib "contract.ss"))
-               (define-struct integer-set (contents))
-               (define (well-formed-set? x) #t)
+               (define-struct i-s (contents))
+               (define (w-f-s? x) #t)
                (provide/contract 
-                (struct integer-set ((contents (flat-named-contract "integer-set-list" well-formed-set?)))))))
+                (struct i-s ((contents (flat-named-contract "integer-set-list" w-f-s?)))))))
       (eval '(require contract-test-suite8))
-      (eval '(integer-set-contents (make-integer-set 1)))))
+      (eval '(i-s-contents (make-i-s 1)))))
    
   (test/spec-passed
    'provide/contract8

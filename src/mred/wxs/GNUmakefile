@@ -157,7 +157,7 @@ $(OBJDIR)/wxs_glob.o : wxs_glob.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) wxs_glob.cxx -o $(OBJDIR)/wxs_glob.o
 $(OBJDIR)/wxs_item.o : wxs_item.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) wxs_item.cxx -o $(OBJDIR)/wxs_item.o
-$(OBJDIR)/wxs_lbox.o : wxs_lbox.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
+$(OBJDIR)/wxs_lbox.o : wxs_lbox.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)  ../../wxxt/src/Windows/ListBox.h
 	$(WXSCC) wxs_lbox.cxx -o $(OBJDIR)/wxs_lbox.o
 $(OBJDIR)/wxs_madm.o : wxs_madm.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) wxs_madm.cxx -o $(OBJDIR)/wxs_madm.o

@@ -311,7 +311,7 @@ void wxListBox::Set(int n, char *_choices[])
 
 void wxListBox::SetInternalData(void)
 {
-    int ww, hh;
+    int ww, hh, p;
 
     GetSize(&ww, &hh);
     XfwfMultiListSetNewData(
@@ -319,6 +319,9 @@ void wxListBox::SetInternalData(void)
 	ww, TRUE, (Boolean*)NULL);
 
     OnListSize(0, 0);
+
+    p = GetScrollPos(wxVERTICAL);
+    XtVaSetValues(X->handle, XtNoffset, p, NULL);
 }
 
 void wxListBox::OnScroll(wxScrollEvent* event)

@@ -574,7 +574,7 @@ static void highlight_border(self)Widget self;
 
     rect[0].x = x+1;
     rect[0].y = y;
-    rect[0].width = w-1;
+    rect[0].width = w-2;
     rect[0].height = t;
 
     rect[1].x = x;

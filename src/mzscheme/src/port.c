@@ -100,10 +100,13 @@ typedef struct Win_FD_Input_Thread {
 typedef struct Win_FD_Output_Thread {
   /* This is malloced for use in a Win32 thread */
   HANDLE fd;
-  volatile int done, err_no, buflen, bufstart, bufend;
-  unsigned char *buffer;
+  int nonblocking;
+  volatile flushed; /* used for non-blocking */
+  volatile int done, err_no, buflen, bufstart, bufend; /* used for blocking */
+  unsigned char *buffer; /* used for blocking */
   HANDLE lock_sema, work_sema, ready_sema, you_clean_up_sema;
 } Win_FD_Output_Thread;
+static int stupid_windows_machine;
 #endif
 
 typedef struct {
@@ -393,13 +396,16 @@ scheme_init_port (Scheme_Env *env)
 
 #ifdef WIN32_FD_HANDLES
   scheme_break_semaphore = CreateSemaphore(NULL, 0, 1, NULL);
-#endif
 
-#ifdef DETECT_WIN32_CONSOLE_STDIN
-  if (scheme_binary_mode_stdio) {
-    MSC_IZE(setmode)(_fileno(stdin), _O_BINARY);
-    MSC_IZE(setmode)(_fileno(stdout), _O_BINARY);
-    MSC_IZE(setmode)(_fileno(stderr), _O_BINARY);
+  /* We'll need to know whether this is Win95 or WinNT: */
+  {
+    OSVERSIONINFO info;
+    info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    GetVersionEx(&info);
+    if (info.dwPlatformId == VER_PLATFORM_WIN32_NT)
+      stupid_windows_machine = -1; /* not as stupid */
+    else
+      stupid_windows_machine = 1;
   }
 #endif
 
@@ -2183,6 +2189,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 # ifdef WINDOWS_FILE_HANDLES
   HANDLE fd;
   int hmode, regfile;
+  BY_HANDLE_FILE_INFORMATION info;
 # else
   FILE *fp;
 # endif
@@ -2343,12 +2350,9 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 # ifdef WINDOWS_FILE_HANDLES
   if (!existsok)
     hmode = CREATE_NEW;
-  else if (existsok < 0) {
-    if (mode[0] == 'a')
-      hmode = OPEN_ALWAYS;
-    else
-      hmode = TRUNCATE_EXISTING;
-  } else if (existsok  == 1)
+  else if (existsok < 0)
+    hmode = OPEN_ALWAYS;
+  else if (existsok  == 1)
     hmode = CREATE_ALWAYS;
   else if (existsok  == 2)
     hmode = OPEN_ALWAYS;
@@ -2358,7 +2362,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 		  FILE_SHARE_READ | FILE_SHARE_WRITE,
 		  NULL,
 		  hmode,
-		  0,
+		  FILE_FLAG_BACKUP_SEMANTICS, /* lets us detect directories in NT */
 		  NULL);
 
   if (fd == INVALID_HANDLE_VALUE) {
@@ -2376,18 +2380,48 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 			NULL);
 	if (fd == INVALID_HANDLE_VALUE)
 	  err = GetLastError();
+      } else {
+	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+			 argv[0],
+			 fail_err_symbol,
+			 "%s: error deleting \"%q\" (%E)", 
+			 name, filename, GetLastError());
+	return NULL;
       }
+    } else if (err == ERROR_FILE_EXISTS) {
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+		       argv[0],
+		       scheme_intern_symbol("already-exists"),
+		       "%s: file \"%q\" exists", name, filename);
+      return NULL;
     }
 
     if (fd == INVALID_HANDLE_VALUE) {
       filename_exn(name, "cannot open output file", filename, err);
       return NULL;
     }
-  } else
-    regfile = (GetFileType(fd) == FILE_TYPE_DISK);
+  }
 
-  if (regfile && (mode[0] == 'a'))
-    SetFilePointer(fd, 0, NULL, FILE_END);
+  if (GetFileInformationByHandle(fd, &info)) {
+    if (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+      CloseHandle(fd);
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+		       argv[0],
+		       scheme_intern_symbol("already-exists"),
+		       "%s: \"%q\" exists as a directory", 
+		       name, filename);
+      return NULL;
+    }
+  }
+
+  regfile = (GetFileType(fd) == FILE_TYPE_DISK);
+
+  if (regfile && (existsok == -1)) {
+    if (mode[0] == 'a')
+      SetFilePointer(fd, 0, NULL, FILE_END);
+    else
+      SetEndOfFile(fd);
+  }
 
   return make_fd_output_port((int)fd, regfile);
 # else
@@ -3142,7 +3176,7 @@ static int fd_getc(Scheme_Input_Port *port)
       DWORD rgot;
 
       rgot = MZPORT_FD_BUFFSIZE;
-      
+
       if (ReadFile((HANDLE)fip->fd, fip->buffer, rgot, &rgot, NULL)) {
 	bc = rgot;
       } else {
@@ -3286,7 +3320,7 @@ make_fd_input_port(int fd, const char *filename, int regfile)
   }
 
 #ifdef WINDOWS_FILE_HANDLES
-  if (GetFileType((HANDLE)fd) != FILE_TYPE_DISK) {
+  if (!regfile) {
     Win_FD_Input_Thread *th;
     DWORD id;
     HANDLE h;
@@ -3345,6 +3379,8 @@ static long WindowsFDReader(Win_FD_Input_Thread *th)
   if (WaitForSingleObject(th->you_clean_up_sema, 0) != WAIT_OBJECT_0) {
     WindowsFDICleanup(th);
   } /* otherwise, main thread is responsible for clean-up */
+
+  return 0;
 }
 
 static void WindowsFDICleanup(Win_FD_Input_Thread *th)
@@ -3632,7 +3668,6 @@ scheme_make_file_output_port(FILE *fp)
 #ifdef MZ_FDS
 
 #ifdef WINDOWS_FILE_HANDLES
-static int stupid_windows_machine;
 static long WindowsFDWriter(Win_FD_Output_Thread *oth);
 static void WindowsFDOCleanup(Win_FD_Output_Thread *oth);
 #endif
@@ -3659,7 +3694,10 @@ static int win_fd_flush_done(Scheme_Object *_oth)
   int done;
   
   WaitForSingleObject(oth->lock_sema, INFINITE);
-  done = (oth->err_no || !oth->buflen);
+  if (oth->nonblocking)
+    done = oth->flushed;
+  else
+    done = (oth->err_no || !oth->buflen);
   ReleaseSemaphore(oth->lock_sema, 1, NULL);
 
   return done;
@@ -3692,7 +3730,10 @@ fd_write_ready (Scheme_Object *port)
     int retval;
 
     WaitForSingleObject(fop->oth->lock_sema, INFINITE);
-    retval = (fop->oth->err_no || (fop->oth->buflen < MZPORT_FD_BUFFSIZE));
+    if (fop->oth->nonblocking)
+      retval = fop->oth->flushed;
+    else
+      retval = (fop->oth->err_no || (fop->oth->buflen < MZPORT_FD_BUFFSIZE));
     if (!retval)
       WaitForSingleObject(fop->oth->ready_sema, 0); /* clear any leftover state */
     ReleaseSemaphore(fop->oth->lock_sema, 1, NULL);
@@ -3791,125 +3832,174 @@ static int flush_fd(Scheme_Output_Port *op,
 #ifdef WINDOWS_FILE_HANDLES
       DWORD wrote;
 
-      full_write_buffer = 0;
-      errsaved = 0;
-      len = -1;
-
-      if (!fop->oth) {
-	int ft;
-
-	ft = GetFileType((HANDLE)fop->fd);
-
-	if (!stupid_windows_machine && (ft == FILE_TYPE_PIPE)) {
-	  DWORD old, nonblock = PIPE_NOWAIT;
-	  int ok;
-
-	  /* Put the pipe in non-blocking mode: */
-	  GetNamedPipeHandleState((HANDLE)fop->fd, &old, NULL, NULL, NULL, NULL, 0);
-	  SetNamedPipeHandleState((HANDLE)fop->fd, &nonblock, NULL, NULL);
-	  ok = WriteFile((HANDLE)fop->fd, bufstr + offset, buflen - offset, &wrote, NULL);
-	  SetNamedPipeHandleState((HANDLE)fop->fd, &old, NULL, NULL);
-
-	  if (ok) {
-	    if (!wrote) {
-	      full_write_buffer = 1;
-	    } else {
-	      len = wrote;
-	    }
-	  } else {
-	    errsaved = GetLastError();
-	  }
-	} else
-	  full_write_buffer = 1; /* creates the writer thread... */
-
-	/* No thread because we haven't needed it, yet? */
-	if (full_write_buffer) {
-	  /* Note: we create a thread even for pipes that can be put in
-	     non-blocking mode because that seems to be the only way to
-	     get waitable behavior. */
-	  Win_FD_Output_Thread *oth;
-	  HANDLE h;
-	  DWORD id;
-	  unsigned char *bfr;
-
-	  oth = malloc(sizeof(Win_FD_Output_Thread));
-	  fop->oth = oth;
-
-	  bfr = (unsigned char *)malloc(MZPORT_FD_BUFFSIZE);
-	  oth->buffer = bfr;
-	  oth->buflen = 0;
-	  oth->bufstart = 0;
-	  oth->bufend = 0;
-
-	  oth->fd = (HANDLE)fop->fd;
-	  oth->err_no = 0;
-	  oth->done = 0;
-	  oth->lock_sema = CreateSemaphore(NULL, 1, 1, NULL);
-	  oth->work_sema = CreateSemaphore(NULL, 0, 1, NULL);
-	  oth->ready_sema = CreateSemaphore(NULL, 1, 1, NULL);
-	  oth->you_clean_up_sema = CreateSemaphore(NULL, 1, 1, NULL);
-
-	  h = CreateThread(NULL, 4096, (LPTHREAD_START_ROUTINE)WindowsFDWriter, oth, 0, &id);
-	  
-	  scheme_remember_thread(h, 1);
-	}
-      }
-
-      if (fop->oth) {
-	Win_FD_Output_Thread *oth = fop->oth;
-
-	WaitForSingleObject(oth->lock_sema, INFINITE);
-	if (oth->err_no)
-	  errsaved = oth->err_no;
-	else if (oth->buflen == MZPORT_FD_BUFFSIZE) {
-	  full_write_buffer = 1;
-	  WaitForSingleObject(oth->ready_sema, 0); /* clear any leftover state */
+      if (fop->regfile) {
+	if (WriteFile((HANDLE)fop->fd, bufstr + offset, buflen - offset, &wrote, NULL)) {
+	  len = wrote;
+	  full_write_buffer = 0;
 	} else {
-	  long topp;
-	  int was_pre;
+	  errsaved = GetLastError();
+	  len = -1;
+	}
+      } else {
+	full_write_buffer = 0;
+	errsaved = 0;
+	len = -1;
 
-	  if (!oth->buflen) {
-	    /* Avoid fragmenting: */
+	if (!fop->oth || fop->oth->nonblocking) {
+	  int ft, nonblocking;
+
+	  if (!fop->oth) {
+	    /* The FILE_TYPE_PIPE test is currently redundant, I think,
+	       but better safe than sorry. */
+	    nonblocking = ((stupid_windows_machine < 0) 
+			   && (GetFileType((HANDLE)fop->fd) == FILE_TYPE_PIPE));
+	  } else
+	    nonblocking = 1;
+
+	  if (nonblocking) {
+	    DWORD old, nonblock = PIPE_NOWAIT;
+	    int ok, flushed;
+
+	    if (fop->oth) {
+	      WaitForSingleObject(fop->oth->lock_sema, INFINITE);
+	      flushed = fop->oth->flushed;
+	      ReleaseSemaphore(fop->oth->lock_sema, 1, NULL);
+	    } else
+	      flushed = 1; /* haven't written anything before */
+
+	    if (flushed) {
+	      /* Put the pipe in non-blocking mode: */
+	      GetNamedPipeHandleState((HANDLE)fop->fd, &old, NULL, NULL, NULL, NULL, 0);
+	      SetNamedPipeHandleState((HANDLE)fop->fd, &nonblock, NULL, NULL);
+	      ok = WriteFile((HANDLE)fop->fd, bufstr + offset, buflen - offset, &wrote, NULL);
+	      SetNamedPipeHandleState((HANDLE)fop->fd, &old, NULL, NULL);
+	    } else {
+	      /* Don't try to write while flushing. */
+	      ok = 1;
+	      wrote = 0;
+	    }
+
+	    if (ok) {
+	      if (!wrote) {
+		full_write_buffer = 1;
+	      } else {
+		len = wrote;
+	      }
+	    } else {
+	      errsaved = GetLastError();
+	    }
+	  } else
+	    full_write_buffer = 1; /* creates the writer thread... */
+
+	  /* No thread because we haven't needed it, yet? */
+	  if (!fop->oth) {
+	    /* Note: we create a thread even for pipes that can be put in
+	       non-blocking mode, because that seems to be the only way to
+	       get waitable behavior. */
+	    Win_FD_Output_Thread *oth;
+	    HANDLE h;
+	    DWORD id;
+	    unsigned char *bfr;
+
+	    oth = malloc(sizeof(Win_FD_Output_Thread));
+	    fop->oth = oth;
+	    
+	    oth->nonblocking = nonblocking;
+	    
+	    if (!nonblocking) {
+	      bfr = (unsigned char *)malloc(MZPORT_FD_BUFFSIZE);
+	      oth->buffer = bfr;
+	    } else
+	      oth->buffer = NULL;
+
+	    oth->buflen = 0;
 	    oth->bufstart = 0;
 	    oth->bufend = 0;
-	  }
 
-	  if (oth->bufstart <= oth->bufend) {
-	    was_pre = 1;
-	    topp = MZPORT_FD_BUFFSIZE;
+	    oth->flushed = 0;
+
+	    oth->fd = (HANDLE)fop->fd;
+	    oth->err_no = 0;
+	    oth->done = 0;
+	    oth->lock_sema = CreateSemaphore(NULL, 1, 1, NULL);
+	    oth->work_sema = CreateSemaphore(NULL, 0, 1, NULL);
+	    oth->ready_sema = CreateSemaphore(NULL, 1, 1, NULL);
+	    oth->you_clean_up_sema = CreateSemaphore(NULL, 1, 1, NULL);
+
+	    h = CreateThread(NULL, 4096, (LPTHREAD_START_ROUTINE)WindowsFDWriter, oth, 0, &id);
+	  
+	    scheme_remember_thread(h, 1);
+	  }
+	}
+
+	/* We have a thread, if only to watch when the flush is
+	   done... */
+	
+	if (!fop->oth->nonblocking) {
+	  /* We haven't written anything yet! */
+	  Win_FD_Output_Thread *oth = fop->oth;
+
+	  WaitForSingleObject(oth->lock_sema, INFINITE);
+	  if (oth->err_no)
+	    errsaved = oth->err_no;
+	  else if (oth->buflen == MZPORT_FD_BUFFSIZE) {
+	    full_write_buffer = 1;
+	    WaitForSingleObject(oth->ready_sema, 0); /* clear any leftover state */
 	  } else {
-	    was_pre = 0;
-	    topp = oth->bufstart;
-	  }
+	    long topp;
+	    int was_pre;
 
-	  wrote = topp - oth->bufend;
-	  if (wrote > buflen - offset)
-	    wrote = buflen - offset;
-
-	  memcpy(oth->buffer + oth->bufend, bufstr + offset, wrote);
-	  oth->buflen += wrote;
-	  len = wrote;
-
-	  oth->bufend += wrote;
-	  if (oth->bufend == MZPORT_FD_BUFFSIZE)
-	    oth->bufend = 0;
-	    
-	  if (was_pre) {
-	    if (wrote < buflen - offset) {
-	      /* Try continuing with a wrap-around: */
-	      wrote = oth->bufstart - oth->bufend;
-	      if (wrote > buflen - offset - len)
-		wrote = buflen - offset - len;
-		
-	      memcpy(oth->buffer + oth->bufend, bufstr + offset + len, wrote);
-	      oth->buflen += wrote;
-	      oth->bufend += wrote;
-	      len += wrote;
+	    if (!oth->buflen) {
+	      /* Avoid fragmenting: */
+	      oth->bufstart = 0;
+	      oth->bufend = 0;
 	    }
+
+	    if (oth->bufstart <= oth->bufend) {
+	      was_pre = 1;
+	      topp = MZPORT_FD_BUFFSIZE;
+	    } else {
+	      was_pre = 0;
+	      topp = oth->bufstart;
+	    }
+
+	    wrote = topp - oth->bufend;
+	    if (wrote > buflen - offset)
+	      wrote = buflen - offset;
+
+	    memcpy(oth->buffer + oth->bufend, bufstr + offset, wrote);
+	    oth->buflen += wrote;
+	    len = wrote;
+
+	    oth->bufend += wrote;
+	    if (oth->bufend == MZPORT_FD_BUFFSIZE)
+	      oth->bufend = 0;
+	    
+	    if (was_pre) {
+	      if (wrote < buflen - offset) {
+		/* Try continuing with a wrap-around: */
+		wrote = oth->bufstart - oth->bufend;
+		if (wrote > buflen - offset - len)
+		  wrote = buflen - offset - len;
+		
+		memcpy(oth->buffer + oth->bufend, bufstr + offset + len, wrote);
+		oth->buflen += wrote;
+		oth->bufend += wrote;
+		len += wrote;
+	      }
+	    }
+	    ReleaseSemaphore(oth->work_sema, 1, NULL);
+	    Sleep(0); /* to decrease the chance of re-ordering flushes */
 	  }
+	  ReleaseSemaphore(oth->lock_sema, 1, NULL);
+	} else {
+	  /* We've already written. Set up a flush request: */
+	  Win_FD_Output_Thread *oth = fop->oth;
+	  WaitForSingleObject(oth->lock_sema, INFINITE);
+	  oth->flushed = 0;
+	  ReleaseSemaphore(oth->lock_sema, 1, NULL);
 	  ReleaseSemaphore(oth->work_sema, 1, NULL);
 	}
-	ReleaseSemaphore(oth->lock_sema, 1, NULL);
       }
 #else
       int flags;
@@ -4051,19 +4141,6 @@ make_fd_output_port(int fd, int regfile)
   Scheme_FD *fop;
   unsigned char *bfr;
 
-#ifdef WINDOWS_FILE_HANDLES
-  /* We'll need to know whether this is Win95 or WinNT: */
-  if (!stupid_windows_machine) {
-    OSVERSIONINFO info;
-    info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    GetVersionEx(&info);
-    if (info.dwPlatformId == VER_PLATFORM_WIN32_NT)
-      stupid_windows_machine = -1; /* not as stupid */
-    else
-      stupid_windows_machine = 1;
-  }
-#endif
-
   fop = MALLOC_ONE_RT(Scheme_FD);
 #ifdef MZTAG_REQUIRED
   fop->type = scheme_rt_input_fd;
@@ -4074,6 +4151,12 @@ make_fd_output_port(int fd, int regfile)
 
   fop->fd = fd;
   fop->bufcount = 0;
+
+#ifdef WINDOWS_FILE_HANDLES
+  /* Character devices can't block output, right? */
+  if (GetFileType((HANDLE)fop->fd) == FILE_TYPE_CHAR)
+    regfile = 1;
+#endif
   
   fop->regfile = regfile;
 
@@ -4106,44 +4189,60 @@ static long WindowsFDWriter(Win_FD_Output_Thread *oth)
   DWORD towrite, wrote, start;
   int ok, more_work = 0, err_no;
 
-  while (!oth->err_no) {
-    if (!more_work)
+  if (oth->nonblocking) {
+    /* Non-blocking mode. Just flush. */
+    while (!oth->done) {
       WaitForSingleObject(oth->work_sema, INFINITE);
-
-    if (oth->done)
-      break;
-    
-    WaitForSingleObject(oth->lock_sema, INFINITE);
-    towrite = oth->buflen;
-    if (towrite > (MZPORT_FD_BUFFSIZE - oth->bufstart))
-      towrite = MZPORT_FD_BUFFSIZE - oth->bufstart;
-    start = oth->bufstart;
-    ReleaseSemaphore(oth->lock_sema, 1, NULL);
-
-    ok = WriteFile(oth->fd, oth->buffer + start, towrite, &wrote, NULL);
-    if (!ok)
-      err_no = GetLastError();
-    else
-      err_no = 0;
-
-    WaitForSingleObject(oth->lock_sema, INFINITE);
-    if (!ok)
-      oth->err_no = err_no;
-    else {
-      oth->bufstart += wrote;
-      oth->buflen -= wrote;
-      if (oth->bufstart == MZPORT_FD_BUFFSIZE)
-	oth->bufstart = 0;
-      more_work = oth->buflen > 0;
-    }
-    if ((oth->buflen < MZPORT_FD_BUFFSIZE) || oth->err_no)
+      
+      FlushFileBuffers(oth->fd);
+      
+      WaitForSingleObject(oth->lock_sema, INFINITE);
+      oth->flushed = 1;
       ReleaseSemaphore(oth->ready_sema, 1, NULL);
-    ReleaseSemaphore(oth->lock_sema, 1, NULL);
-  }
+      ReleaseSemaphore(oth->lock_sema, 1, NULL);
+    }
+  } else {
+    /* Blocking mode. We do the writing work. */
+    while (!oth->err_no) {
+      if (!more_work)
+	WaitForSingleObject(oth->work_sema, INFINITE);
 
+      if (oth->done)
+	break;
+    
+      WaitForSingleObject(oth->lock_sema, INFINITE);
+      towrite = oth->buflen;
+      if (towrite > (MZPORT_FD_BUFFSIZE - oth->bufstart))
+	towrite = MZPORT_FD_BUFFSIZE - oth->bufstart;
+      start = oth->bufstart;
+      ReleaseSemaphore(oth->lock_sema, 1, NULL);
+
+      ok = WriteFile(oth->fd, oth->buffer + start, towrite, &wrote, NULL);
+      if (!ok)
+	err_no = GetLastError();
+      else
+	err_no = 0;
+      
+      WaitForSingleObject(oth->lock_sema, INFINITE);
+      if (!ok)
+	oth->err_no = err_no;
+      else {
+	oth->bufstart += wrote;
+	oth->buflen -= wrote;
+	if (oth->bufstart == MZPORT_FD_BUFFSIZE)
+	  oth->bufstart = 0;
+	more_work = oth->buflen > 0;
+      }
+      if ((oth->buflen < MZPORT_FD_BUFFSIZE) || oth->err_no)
+	ReleaseSemaphore(oth->ready_sema, 1, NULL);
+      ReleaseSemaphore(oth->lock_sema, 1, NULL);
+    }
+  }
   if (WaitForSingleObject(oth->you_clean_up_sema, 0) != WAIT_OBJECT_0) {
     WindowsFDOCleanup(oth);
   } /* otherwise, main thread is responsible for clean-up */
+
+  return 0;
 }
 
 static void WindowsFDOCleanup(Win_FD_Output_Thread *oth)
@@ -4151,7 +4250,8 @@ static void WindowsFDOCleanup(Win_FD_Output_Thread *oth)
   CloseHandle(oth->lock_sema);
   CloseHandle(oth->work_sema);
   CloseHandle(oth->you_clean_up_sema);
-  free(oth->buffer);
+  if (oth->buffer)
+    free(oth->buffer);
   free(oth);
 }
 

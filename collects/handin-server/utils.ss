@@ -147,11 +147,10 @@
   (define (reraise-exn-as-submission-problem thunk)
     (with-handlers ([void (lambda (exn)
 			    (error
-			     'handin
-			     "submission failed due to evaluation error: ~a"
-			     (if (exn? exn)
-				 (exn-message exn)
-				 exn)))])
+			     (format "ERROR: ~a"
+				     (if (exn? exn)
+					 (exn-message exn)
+					 (format "~s" exn)))))])
       (thunk)))
   
   )

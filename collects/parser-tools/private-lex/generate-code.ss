@@ -7,7 +7,32 @@
 	   "sexp-to-re.ss"
 	   (lib "list.ss"))
   
-  (provide generate-table)
+  (provide generate-table get-special-action filter-out-specials)
+  
+  ;; get-special-action: (syntax-object list) symbol syntax-object -> syntax-object
+  ;; Returns the first action from a rule of the form ((which-special) action)
+  (define (get-special-action rules which-special stx)
+    (cond
+      ((null? rules) (datum->syntax-object stx '(void)))
+      (else
+       (syntax-case (car rules) ()
+         (((special) act)
+          (eq? (syntax-e (syntax special)) which-special)
+          (syntax act))
+         (_ (get-special-action (cdr rules) which-special stx))))))
+  
+  ;; filter-out-specials: (syntax-object list) (symbol list) -> (syntax-object list)
+  ;; Returns a list missing all the rules of the form ((special) action)
+  ;; where special is a symbol in which specials.
+  (define (filter-out-specials rules which-specials)
+    (cond
+      ((null? rules) null)
+      (else
+       (syntax-case (car rules) ()
+         (((special) act)
+          (memq (syntax-e (syntax special)) which-specials)
+          (filter-out-specials (cdr rules) which-specials))
+         (_ (cons (car rules) (filter-out-specials (cdr rules) which-specials)))))))
   
   ;; generate-table : (syntax-object list) syntax-object -> lexer-table
   ;; Creates the lexer's tables from a list of sexp-regex, action pairs.

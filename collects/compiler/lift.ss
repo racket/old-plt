@@ -330,21 +330,28 @@
 			  (zodiac:case-lambda-form-bodies ast)
 			  (procedure-code-case-codes code)))
 		 
-		    ;; If it was lifted, return the new static varref
+		    ;; If it being lifted ON THIS PASS, the value of `lifted' will be a list;
+		    ;;  in that case, return the new static varref
 		    (let ([lifted (procedure-code-liftable code)])
-		      (cond
-		       [(not lifted) 
-			(set! globals (set-union save-globals (code-global-vars code)))
-			ast]
-		       [(top-level-varref/bind-from-lift-pls? lifted)
-			(set! globals (set-union-singleton 
-				       save-globals
-				       const:the-per-load-statics-table))
-			lifted]
-		       [else
-			(set! globals save-globals)
-			lifted])))]
-		 
+		      (if (or (not lifted) (top-level-varref/bind-from-lift? lifted))
+			  
+			  ;; Not lifted (or not on this pass)
+			  (begin
+			    (set! globals (set-union save-globals (code-global-vars code)))
+			    ast)
+			  
+			  ;; Lifting on this pass
+			  (let ([lifted (car lifted)])
+			    (set-procedure-code-liftable! code lifted)
+			    
+			    (if (top-level-varref/bind-from-lift-pls? lifted)
+				(set! globals (set-union-singleton 
+					       save-globals
+					       const:the-per-load-statics-table))
+				(set! globals save-globals))
+			    
+			    lifted))))]
+
 		 ;;--------------------------------------------------------------
 		 ;; LET EXPRESSIONS
 		 ;;    Several values may be bound at once.  In this case, 'known'

@@ -112,7 +112,7 @@
                        beginner-lang%))))                 
       
       ;(make-profj-settings symbol boolean (list string))
-      (define-struct profj-settings (print-style print-full? classpath))
+      (define-struct profj-settings (print-style print-full? classpath) (make-inspector))
       
       (define (java-lang-mixin level name position numbers one-line)
         (class* object% (drscheme:language:language<%>)
@@ -308,7 +308,7 @@
                                         [(2) 'graphical])
                                       (if (memq level '(advanced full))
                                           (send print-full get-value)
-                                          #t)
+                                          #f)
                                       (get-classpath))]
                 [(settings)
                  (send print-style set-selection

@@ -99,6 +99,14 @@ int stricmp(char *s1,char *s2) {
 }  
 #endif
 
+char *intToHexString(int n) {
+  static char buff[20];
+
+  sprintf(buff,"0x%X",n);
+
+  return buff;
+}
+
 int keyConstCmp(char *s,SRP_NAMED_CONSTANT *p) {
   return stricmp(s,p->scheme_name);
 }
@@ -236,10 +244,8 @@ int sizeofCDataType(SQLSMALLINT type) {
   switch (type) {
   case SQL_C_CHAR :
     return sizeof(unsigned char);
-#if ODBCVER >= 0x0350
   case SQL_C_WCHAR :
-    return sizeof(wchar_t);
-#endif
+	   return sizeof(wchar_t);
   case SQL_C_SHORT :
   case SQL_C_SSHORT :
     return sizeof(short int);
@@ -309,7 +315,7 @@ int sizeofCDataType(SQLSMALLINT type) {
 #endif
   }
   
-  scheme_signal_error("Unknown C data type constant: %d",(int)type);
+  scheme_signal_error("Unknown C data type constant: %s",intToHexString((int)type));
 
   return 0;  /* unreachable */
 }
@@ -442,8 +448,8 @@ Scheme_Object *srp_read_op_parms(int argc,Scheme_Object **argv) {
       symbol = scheme_intern_symbol("sql-param-ignore");
       break;
     default :
-      scheme_signal_error("read-op-parms: unknown operation parameter: %X",
-			  (unsigned int)(values[i]));
+      scheme_signal_error("read-op-parms: unknown operation parameter: %s",
+			  intToHexString((unsigned int)(values[i])));
     }
     retval = scheme_make_pair(symbol,retval);
   }
@@ -603,7 +609,7 @@ char *APDArrayStatusToString(SQLUSMALLINT status) {
   case SQL_PARAM_IGNORE :
     return "sql-param-ignore";
   default :
-    scheme_signal_error("Unknown array status (%X) for APD descriptor",status);
+    scheme_signal_error("Unknown array status (%s) for APD descriptor",intToHexString(status));
   }
   return NULL;
 }
@@ -623,7 +629,7 @@ char *IPDArrayStatusToString(SQLUSMALLINT status) {
   case SQL_PARAM_DIAG_UNAVAILABLE :
     return "sql-param-unavailable";
   default :
-    scheme_signal_error("Unknown IPD array status (%X)",status);
+    scheme_signal_error("Unknown IPD array status (%s)",intToHexString(status));
   }
   return NULL;
 }
@@ -637,7 +643,7 @@ char *ARDArrayStatusToString(SQLUSMALLINT status) {
   case SQL_ROW_IGNORE :
     return "sql-row-ignore";
   default :
-    scheme_signal_error("Unknown ARD array status (%X)",status);
+    scheme_signal_error("Unknown ARD array status (%s)",intToHexString(status));
   }
   return NULL;
 }
@@ -661,7 +667,7 @@ char *IRDArrayStatusToString(SQLUSMALLINT status) {
   case SQL_ROW_NOROW :
     return "sql-row-norow";
   default :
-    scheme_signal_error("Unknown IRD array status (%X)",status);
+    scheme_signal_error("Unknown IRD array status (%s)",intToHexString(status));
   }
   return NULL;
 }
@@ -938,7 +944,7 @@ Scheme_Object *srp_read_buffer(int argc,Scheme_Object **argv) {
 #endif
   }
 
-  scheme_signal_error("Unknown buffer C data type: %X",CDataType);
+  scheme_signal_error("Unknown buffer C data type: %s",intToHexString(CDataType));
 
   return scheme_void; /* unreachable */
 
@@ -1696,7 +1702,7 @@ RETURN_CODE checkSQLReturn(SQLRETURN sr,char *f) {
 
   default :
 
-    scheme_signal_error("Unknown ODBC status code: %X",sr);
+    scheme_signal_error("Unknown ODBC status code: %s",intToHexString(sr));
 
   }
 
@@ -3209,7 +3215,7 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     sql_return((Scheme_Object *)pOctetLength,retcode,"get-desc-field");
 
   default :
-    scheme_signal_error("sql-get-desc-field: unknown field type %X",fieldType);
+    scheme_signal_error("sql-get-desc-field: unknown field type %s",intToHexString(fieldType));
   }
 
   return scheme_void;
@@ -3392,7 +3398,7 @@ Scheme_Object *srp_SQLGetDiagField(int argc,Scheme_Object **argv) {
 
   default :
 
-    scheme_signal_error("Unknown diagnostic type: %X",(int)p->type);
+    scheme_signal_error("Unknown diagnostic type: %s",intToHexString((int)p->type));
   }
 
   return scheme_void;
@@ -3512,8 +3518,8 @@ Scheme_Object *srp_SQLGetEnvAttr(int argc,Scheme_Object **argv) {
 
   default :
 
-    scheme_signal_error("Unknown environment attribute type: %X",
-			(int)attributeType);
+    scheme_signal_error("Unknown environment attribute type: %s",
+			intToHexString((int)attributeType));
   }
 
   return scheme_void; /* unreachable */
@@ -3829,7 +3835,7 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
 
   default :
 
-    scheme_signal_error("get-info-type: invalid info type: %X",infoType);
+    scheme_signal_error("get-info-type: invalid info type: %s",intToHexString(infoType));
 
   }
 
@@ -4006,8 +4012,8 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
 
   default :
 
-    scheme_signal_error("sql-get-stmt-attr: invalid attribute type: %X",
-			attributeType);
+    scheme_signal_error("sql-get-stmt-attr: invalid attribute type: %s",
+			intToHexString(attributeType));
 
   }
 
@@ -4091,8 +4097,8 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
 
   default :
 
-    scheme_signal_error("get-stmt-option: invalid option type: %X",
-			optionType);
+    scheme_signal_error("get-stmt-option: invalid option type: %s",
+			intToHexString(optionType));
 
   }
 
@@ -4358,8 +4364,8 @@ Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
   default :
 
     sr = 0; 
-    scheme_signal_error("sql-set-connect-attr: unknown attribute type: %X",
-			attributeType);
+    scheme_signal_error("sql-set-connect-attr: unknown attribute type: %s",
+			intToHexString(attributeType));
 
   }
 
@@ -4458,8 +4464,8 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
   default :
 
     sr = 0;
-    scheme_signal_error("sql-set-connect-option: unknown option type: %X",
-			optionType);
+    scheme_signal_error("sql-set-connect-option: unknown option type: %s",
+			intToHexString(optionType));
 
   }
 
@@ -4683,7 +4689,7 @@ Scheme_Object *srp_SQLSetDescField(int argc,Scheme_Object **argv) {
   default :
 
     sr = 0;
-    scheme_signal_error("sql-set-desc-field: unknown field type %X",fieldType);
+    scheme_signal_error("sql-set-desc-field: unknown field type %s",intToHexString(fieldType));
   }
 
   retcode = checkSQLReturn(sr,"set-desc-field");
@@ -4865,8 +4871,8 @@ Scheme_Object *srp_SQLSetEnvAttr(int argc,Scheme_Object **argv) {
   default :
 
     sr = 0;
-    scheme_signal_error("sql-set-env-attr: unknown attribute type: %X",
-		      attributeType);
+    scheme_signal_error("sql-set-env-attr: unknown attribute type: %s",
+		      intToHexString(attributeType));
 
   }
 
@@ -5133,8 +5139,8 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
   default :
 
     sr = 0;
-    scheme_signal_error("sql-set-stmt-attr: invalid attribute type: %X",
-			attributeType);
+    scheme_signal_error("sql-set-stmt-attr: invalid attribute type: %s",
+			intToHexString(attributeType));
   }
 
   retcode = checkSQLReturn(sr,"set-stmt-attr");
@@ -5244,8 +5250,8 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
   default :
 
     sr = 0;
-    scheme_signal_error("sql-set-stmt-option: invalid option type: %X",
-			optionType);
+    scheme_signal_error("sql-set-stmt-option: invalid option type: %s",
+			intToHexString(optionType));
 
   }
 

@@ -55,7 +55,7 @@ Scheme_Object *readWideCharBuffer(wchar_t *buffer,long numElts) {
   for (i = 0; i < numElts; i++) {
     if (s[i] & 0xFF00) {
       scheme_signal_error("SQL_C_WCHAR buffer contains wide character, "
-			  "value %X",s[i]);
+			  "value %s",intToHexString(s[i]));
     }
     s[i] = (char)(buffer[i] & 0xFF);
   }

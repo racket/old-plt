@@ -136,6 +136,10 @@ typedef struct named_bits_dict_ {
   size_t numBits;
 } SRP_NAMED_BITS_DICT;
 
+/* misc */
+
+char *intToHexString(int);
+
 /* type-and-value predicates */
 
 BOOL isSmallInt(Scheme_Object *);

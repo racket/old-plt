@@ -145,9 +145,47 @@
             ((letrec (($$vertical-panel<%>
                         (interface
                           ()
+                          min-width
+                          min-height
+                          vert-margin
+                          spacing
+                          on-move
+                          has-focus?
+                          get-cursor
+                          add-child
+                          focus
+                          is-enabled?
+                          border
+                          get-alignment
+                          get-top-level-window
+                          get-graphical-min-size
+                          get-plain-label
+                          accept-drop-files
+                          stretchable-width
+                          stretchable-height
+                          set-alignment
+                          horiz-margin
+                          reflow-container
+                          get-children
+                          change-children
+                          container-size
+                          place-children
+                          delete-child
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
+                          get-client-size
                           on-drop-file
+                          on-focus
                           get-label
                           set-label
+                          set-label-position
+                          get-label-position
+                          set-control-font
+                          get-control-font
+                          set-label-font
+                          get-label-font
                           set-cursor
                           show
                           is-shown?
@@ -159,34 +197,22 @@
                           get-width
                           get-x
                           get-y
-                          on-size
-                          focus
-                          is-enabled?
-                          border
-                          get-alignment
-                          get-client-size
-                          on-focus
-                          set-label-position
-                          get-label-position
-                          set-control-font
-                          get-control-font
-                          set-label-font
-                          get-label-font
-                          get-top-level-window
-                          on-subwindow-char
-                          get-plain-label
-                          accept-drop-files
-                          stretchable-width
-                          stretchable-height
-                          set-alignment
+                          on-size))
+                      ($$vertical-pane<%>
+                        (interface
+                          ()
                           min-width
                           min-height
                           vert-margin
                           spacing
-                          on-move
-                          has-focus?
-                          get-cursor
                           add-child
+                          border
+                          get-alignment
+                          get-top-level-window
+                          get-graphical-min-size
+                          stretchable-width
+                          stretchable-height
+                          set-alignment
                           horiz-margin
                           reflow-container
                           get-children
@@ -194,36 +220,34 @@
                           container-size
                           place-children
                           delete-child
-                          on-subwindow-event
-                          client->screen
-                          screen->client))
-                      ($$vertical-pane<%>
-                        (interface
-                          ()
-                          get-parent
-                          border
-                          get-alignment
-                          get-top-level-window
-                          stretchable-width
-                          stretchable-height
-                          set-alignment
-                          min-width
-                          min-height
-                          vert-margin
-                          spacing
-                          add-child
-                          horiz-margin
-                          reflow-container
-                          get-children
-                          change-children
-                          container-size
-                          place-children
-                          delete-child))
+                          get-parent))
                       ($$timer<%> (interface () interval notify start stop))
                       ($$text-field<%>
                         (interface
                           ()
+                          min-width
+                          min-height
+                          vert-margin
+                          on-move
+                          has-focus?
+                          get-cursor
+                          focus
+                          is-enabled?
+                          get-top-level-window
+                          get-graphical-min-size
+                          get-plain-label
+                          accept-drop-files
+                          stretchable-width
+                          stretchable-height
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
+                          get-client-size
                           on-drop-file
+                          on-focus
+                          get-editor
                           get-value
                           set-value
                           command
@@ -240,54 +264,86 @@
                           get-width
                           get-x
                           get-y
-                          on-size
-                          focus
-                          is-enabled?
-                          get-client-size
-                          on-focus
-                          get-editor
-                          get-top-level-window
-                          on-subwindow-char
-                          get-plain-label
-                          accept-drop-files
-                          stretchable-width
-                          stretchable-height
-                          min-width
-                          min-height
-                          vert-margin
-                          on-move
-                          has-focus?
-                          get-cursor
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client))
+                          on-size))
                       ($$text<%>
                         (interface
                           ()
-                          cut
-                          print
-                          get-view-size
-                          find-string
-                          get-dc
-                          load-file
-                          save-file
-                          set-cursor
-                          refresh
+                          get-canvas
+                          add-canvas
+                          auto-wrap
+                          get-canvases
+                          get-active-canvas
+                          set-active-canvas
+                          remove-canvas
+                          get-max-view-size
+                          set-anchor
+                          get-anchor
+                          flash-on
+                          flash-off
+                          erase
+                          paste-next
+                          do-copy
+                          do-paste
+                          split-snip
+                          get-snip-position-and-location
+                          begin-write-header-footer-to-file
+                          end-write-header-footer-to-file
+                          get-inactive-caret-threshold
+                          set-inactive-caret-threshold
+                          editor-location-to-dc-location
+                          dc-location-to-editor-location
+                          get-position
+                          set-tabs
+                          can-insert?
+                          on-insert
+                          can-delete?
+                          on-delete
+                          hide-caret
+                          insert
+                          copy
+                          paste
+                          kill
+                          copy-self
+                          own-caret
+                          blink-caret
+                          on-focus
+                          on-change
+                          scroll-to
+                          resized
+                          on-new-box
+                          get-file
+                          put-file
+                          insert-file
+                          get-extent
+                          get-descent
                           get-space
                           print-to-dc
                           get-admin
                           set-admin
-                          scroll-to-position
-                          find-position
-                          position-line
-                          position-location
-                          line-location
-                          line-start-position
-                          line-end-position
-                          last-position
-                          position-paragraph
-                          line-paragraph
+                          select-all
+                          undo
+                          redo
+                          clear-undos
+                          set-keymap
+                          get-keymap
+                          lock
+                          is-locked?
+                          insert-box
+                          on-paint
+                          on-event
+                          on-char
+                          clear
+                          delete
+                          find-string
+                          get-dc
+                          load-file
+                          save-file
+                          scroll-line-location
+                          set-max-undo-history
+                          get-max-undo-history
+                          set-load-overwrites-styles
+                          get-load-overwrites-styles
+                          set-position
                           paragraph-end-line
                           last-paragraph
                           find-string-all
@@ -361,6 +417,14 @@
                           find-scroll-line
                           global-to-local
                           local-to-global
+                          get-view-size
+                          do-edit-operation
+                          get-style-list
+                          set-style-list
+                          is-modified?
+                          get-filename
+                          insert-image
+                          get-focus-snip
                           set-position-bias-scroll
                           get-visible-position-range
                           get-visible-line-range
@@ -378,113 +442,37 @@
                           write-headers-to-file
                           write-footers-to-file
                           invalidate-bitmap-cache
-                          auto-wrap
                           get-start-position
                           get-end-position
                           move-position
-                          get-snip-position-and-location
-                          begin-write-header-footer-to-file
-                          end-write-header-footer-to-file
-                          get-inactive-caret-threshold
-                          set-inactive-caret-threshold
-                          editor-location-to-dc-location
-                          dc-location-to-editor-location
-                          get-position
-                          scroll-line-location
-                          set-max-undo-history
-                          get-max-undo-history
-                          set-load-overwrites-styles
-                          get-load-overwrites-styles
-                          set-anchor
-                          get-anchor
-                          flash-on
-                          flash-off
-                          erase
-                          paste-next
-                          do-copy
-                          do-paste
-                          split-snip
-                          find-line
-                          line-length
+                          scroll-to-position
+                          find-position
+                          position-line
+                          position-location
+                          line-location
+                          line-start-position
+                          line-end-position
+                          last-position
+                          position-paragraph
+                          line-paragraph
+                          set-cursor
+                          refresh
                           last-line
                           find-snip
                           get-text
                           get-tabs
-                          set-tabs
-                          can-insert?
-                          on-insert
-                          can-delete?
-                          on-delete
-                          hide-caret
-                          insert
-                          copy
-                          paste
-                          kill
-                          copy-self
-                          own-caret
-                          blink-caret
-                          on-focus
-                          on-change
-                          scroll-to
-                          resized
-                          on-new-box
-                          get-file
-                          put-file
-                          insert-file
-                          get-extent
-                          get-descent
-                          select-all
-                          undo
-                          redo
-                          clear-undos
-                          set-keymap
-                          get-keymap
-                          lock
-                          is-locked?
-                          insert-box
-                          on-paint
-                          on-event
-                          on-char
-                          clear
-                          delete
-                          do-edit-operation
-                          get-style-list
-                          set-style-list
-                          is-modified?
-                          get-filename
-                          insert-image
-                          get-focus-snip
-                          set-position
-                          get-canvas
-                          add-canvas
-                          get-canvases
-                          get-active-canvas
-                          set-active-canvas
-                          remove-canvas
-                          get-max-view-size))
+                          print
+                          cut
+                          find-line
+                          line-length))
                       ($$tab-snip<%>
                         (interface
                           ()
-                          write
-                          read
-                          get-style
-                          set-style
-                          get-admin
-                          set-admin
-                          adjust-cursor
-                          size-cache-invalid
                           get-flags
                           get-count
                           set-count
                           set-flags
                           is-owned?
-                          get-num-scroll-steps
-                          get-scroll-step-offset
-                          set-snipclass
-                          get-snipclass
-                          release-from-owner
-                          partial-offset
-                          find-scroll-step
                           draw
                           split
                           merge-with
@@ -492,21 +480,35 @@
                           next
                           previous
                           resize
-                          get-text
+                          get-num-scroll-steps
+                          get-scroll-step-offset
                           insert
                           copy
                           own-caret
                           blink-caret
                           get-extent
+                          get-admin
+                          set-admin
                           on-event
                           on-char
-                          do-edit-operation))
+                          adjust-cursor
+                          size-cache-invalid
+                          do-edit-operation
+                          set-snipclass
+                          get-snipclass
+                          release-from-owner
+                          partial-offset
+                          find-scroll-step
+                          get-style
+                          set-style
+                          get-text
+                          write
+                          read))
                       ($$style-list<%>
                         (interface
                           ()
-                          number
-                          basic-style
-                          convert
+                          find-or-create-style
+                          find-or-create-join-style
                           find-named-style
                           new-named-style
                           replace-named-style
@@ -514,24 +516,14 @@
                           style-to-index
                           notify-on-change
                           forget-notification
+                          basic-style
+                          convert
                           copy
                           clear
-                          find-or-create-style
-                          find-or-create-join-style))
+                          number))
                       ($$style-delta<%>
                         (interface
                           ()
-                          equal?
-                          get-family
-                          get-face
-                          set-face
-                          set-family
-                          set-delta
-                          collapse
-                          set-delta-background
-                          set-delta-foreground
-                          set-transparent-text-backing-on
-                          get-transparent-text-backing-on
                           set-alignment-off
                           get-alignment-off
                           set-alignment-on
@@ -557,32 +549,28 @@
                           set-size-mult
                           get-size-mult
                           set-delta-face
-                          copy
                           set-transparent-text-backing-off
-                          get-transparent-text-backing-off))
+                          get-transparent-text-backing-off
+                          set-face
+                          set-family
+                          set-delta
+                          collapse
+                          get-transparent-text-backing-on
+                          set-delta-background
+                          set-delta-foreground
+                          copy
+                          get-family
+                          get-face
+                          equal?
+                          set-transparent-text-backing-on))
                       ($$string-snip<%>
                         (interface
                           ()
-                          write
-                          read
-                          get-style
-                          set-style
-                          get-admin
-                          set-admin
-                          adjust-cursor
-                          size-cache-invalid
                           get-flags
                           get-count
                           set-count
                           set-flags
                           is-owned?
-                          get-num-scroll-steps
-                          get-scroll-step-offset
-                          set-snipclass
-                          get-snipclass
-                          release-from-owner
-                          partial-offset
-                          find-scroll-step
                           draw
                           split
                           merge-with
@@ -590,63 +578,64 @@
                           next
                           previous
                           resize
-                          get-text
+                          get-num-scroll-steps
+                          get-scroll-step-offset
                           insert
                           copy
                           own-caret
                           blink-caret
                           get-extent
-                          on-event
-                          on-char
-                          do-edit-operation))
-                      ($$snip-class<%>
-                        (interface
-                          ()
-                          read
-                          set-classname
-                          get-classname
-                          write-header
-                          set-version
-                          get-version
-                          read-header
-                          read-done
-                          write-done))
-                      ($$snip-admin<%>
-                        (interface
-                          ()
-                          get-view-size
-                          get-dc
-                          set-caret-owner
-                          needs-update
-                          release-snip
-                          get-view
-                          recounted
-                          update-cursor
-                          scroll-to
-                          resized
-                          get-editor))
-                      ($$snip<%>
-                        (interface
-                          ()
-                          write
-                          get-style
-                          set-style
                           get-admin
                           set-admin
+                          on-event
+                          on-char
                           adjust-cursor
                           size-cache-invalid
-                          get-flags
-                          get-count
-                          set-count
-                          set-flags
-                          is-owned?
-                          get-num-scroll-steps
-                          get-scroll-step-offset
+                          do-edit-operation
                           set-snipclass
                           get-snipclass
                           release-from-owner
                           partial-offset
                           find-scroll-step
+                          get-style
+                          set-style
+                          get-text
+                          write
+                          read))
+                      ($$snip-class<%>
+                        (interface
+                          ()
+                          set-version
+                          get-version
+                          read-header
+                          read-done
+                          write-done
+                          set-classname
+                          get-classname
+                          write-header
+                          read))
+                      ($$snip-admin<%>
+                        (interface
+                          ()
+                          update-cursor
+                          get-view
+                          recounted
+                          scroll-to
+                          resized
+                          get-editor
+                          get-dc
+                          set-caret-owner
+                          needs-update
+                          release-snip
+                          get-view-size))
+                      ($$snip<%>
+                        (interface
+                          ()
+                          get-flags
+                          get-count
+                          set-count
+                          set-flags
+                          is-owned?
                           draw
                           split
                           merge-with
@@ -654,18 +643,53 @@
                           next
                           previous
                           resize
-                          get-text
+                          get-num-scroll-steps
+                          get-scroll-step-offset
                           copy
                           own-caret
                           blink-caret
                           get-extent
+                          get-admin
+                          set-admin
                           on-event
                           on-char
-                          do-edit-operation))
+                          adjust-cursor
+                          size-cache-invalid
+                          do-edit-operation
+                          set-snipclass
+                          get-snipclass
+                          release-from-owner
+                          partial-offset
+                          find-scroll-step
+                          get-style
+                          set-style
+                          get-text
+                          write))
                       ($$slider<%>
                         (interface
                           ()
+                          min-width
+                          min-height
+                          vert-margin
+                          on-move
+                          has-focus?
+                          get-cursor
+                          focus
+                          is-enabled?
+                          get-top-level-window
+                          get-graphical-min-size
+                          get-plain-label
+                          accept-drop-files
+                          stretchable-width
+                          stretchable-height
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
+                          get-client-size
                           on-drop-file
+                          on-focus
                           get-value
                           set-value
                           command
@@ -682,29 +706,9 @@
                           get-width
                           get-x
                           get-y
-                          on-size
-                          focus
-                          is-enabled?
-                          get-client-size
-                          on-focus
-                          get-top-level-window
-                          on-subwindow-char
-                          get-plain-label
-                          accept-drop-files
-                          stretchable-width
-                          stretchable-height
-                          min-width
-                          min-height
-                          vert-margin
-                          on-move
-                          has-focus?
-                          get-cursor
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client))
+                          on-size))
                       ($$separator-menu-item<%>
-                        (interface () get-parent delete restore is-deleted?))
+                        (interface () restore is-deleted? delete get-parent))
                       ($$scroll-event<%>
                         (interface
                           ()
@@ -719,6 +723,8 @@
                       ($$region<%>
                         (interface
                           ()
+                          set-rectangle
+                          get-bounding-box
                           get-dc
                           set-ellipse
                           set-polygon
@@ -727,13 +733,37 @@
                           intersect
                           subtract
                           is-empty?
-                          set-rectangle
-                          get-bounding-box
                           set-rounded-rectangle))
                       ($$radio-box<%>
                         (interface
                           ()
+                          min-width
+                          min-height
+                          vert-margin
+                          on-move
+                          has-focus?
+                          get-cursor
+                          focus
+                          get-number
+                          is-enabled?
+                          get-top-level-window
+                          get-graphical-min-size
+                          get-item-plain-label
+                          get-plain-label
+                          accept-drop-files
+                          stretchable-width
+                          stretchable-height
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
+                          get-item-label
+                          get-selection
+                          set-selection
+                          get-client-size
                           on-drop-file
+                          on-focus
                           command
                           get-label
                           set-label
@@ -748,36 +778,20 @@
                           get-width
                           get-x
                           get-y
-                          on-size
-                          focus
-                          get-number
-                          is-enabled?
-                          get-selection
-                          set-selection
-                          get-client-size
-                          on-focus
-                          get-top-level-window
-                          get-item-plain-label
-                          on-subwindow-char
-                          get-item-label
-                          get-plain-label
-                          accept-drop-files
-                          stretchable-width
-                          stretchable-height
-                          min-width
-                          min-height
-                          vert-margin
-                          on-move
-                          has-focus?
-                          get-cursor
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client))
+                          on-size))
                       ($$ps-setup<%>
                         (interface
                           ()
-                          copy-from
+                          get-preview-command
+                          get-orientation
+                          get-translation
+                          get-paper-name
+                          get-afm-path
+                          set-preview-command
+                          set-orientation
+                          set-translation
+                          set-paper-name
+                          set-afm-path
                           get-command
                           get-mode
                           get-options
@@ -790,23 +804,11 @@
                           set-scaling
                           set-level-2
                           get-file
-                          get-preview-command
-                          get-orientation
-                          get-translation
-                          get-paper-name
-                          get-afm-path
-                          set-preview-command
-                          set-orientation
-                          set-translation
-                          set-paper-name
-                          set-afm-path))
+                          copy-from))
                       ($$printer-dc<%>
                         (interface
                           ()
-                          ok?
                           get-text-extent
-                          get-size
-                          draw-rounded-rectangle
                           draw-line
                           draw-point
                           draw-spline
@@ -828,6 +830,7 @@
                           end-doc
                           end-page
                           clear
+                          draw-rounded-rectangle
                           draw-rectangle
                           draw-ellipse
                           draw-polygon
@@ -844,14 +847,13 @@
                           get-background
                           get-background-mode
                           get-text-background
-                          get-text-foreground))
+                          get-text-foreground
+                          get-size
+                          ok?))
                       ($$post-script-dc<%>
                         (interface
                           ()
-                          ok?
                           get-text-extent
-                          get-size
-                          draw-rounded-rectangle
                           draw-line
                           draw-point
                           draw-spline
@@ -873,6 +875,7 @@
                           end-doc
                           end-page
                           clear
+                          draw-rounded-rectangle
                           draw-rectangle
                           draw-ellipse
                           draw-polygon
@@ -889,7 +892,9 @@
                           get-background
                           get-background-mode
                           get-text-background
-                          get-text-foreground))
+                          get-text-foreground
+                          get-size
+                          ok?))
                       ($$popup-menu<%> (interface () get-items))
                       ($$point<%> (interface () set-y set-x get-x get-y))
                       ($$pen-list<%> (interface () find-or-create-pen))
@@ -911,20 +916,83 @@
                       ($$pasteboard<%>
                         (interface
                           ()
-                          cut
-                          raise
-                          print
-                          get-view-size
-                          get-dc
-                          load-file
-                          save-file
-                          move
-                          set-cursor
-                          refresh
+                          get-canvas
+                          add-canvas
+                          auto-wrap
+                          get-canvases
+                          get-active-canvas
+                          set-active-canvas
+                          remove-canvas
+                          get-max-view-size
+                          remove
+                          move-to
+                          resize
+                          lower
+                          set-before
+                          set-after
+                          no-selected
+                          get-center
+                          on-move-to
+                          can-resize?
+                          on-resize
+                          can-select?
+                          on-select
+                          erase
+                          do-copy
+                          do-paste
+                          begin-write-header-footer-to-file
+                          end-write-header-footer-to-file
+                          get-inactive-caret-threshold
+                          set-inactive-caret-threshold
+                          editor-location-to-dc-location
+                          dc-location-to-editor-location
+                          can-insert?
+                          on-insert
+                          can-delete?
+                          on-delete
+                          insert
+                          copy
+                          paste
+                          kill
+                          copy-self
+                          own-caret
+                          blink-caret
+                          on-focus
+                          on-change
+                          scroll-to
+                          resized
+                          on-new-box
+                          get-file
+                          put-file
+                          insert-file
+                          get-extent
+                          get-descent
                           get-space
                           print-to-dc
                           get-admin
                           set-admin
+                          select-all
+                          undo
+                          redo
+                          clear-undos
+                          set-keymap
+                          get-keymap
+                          lock
+                          is-locked?
+                          insert-box
+                          on-paint
+                          on-event
+                          on-char
+                          clear
+                          delete
+                          get-dc
+                          load-file
+                          save-file
+                          scroll-line-location
+                          set-max-undo-history
+                          get-max-undo-history
+                          set-load-overwrites-styles
+                          get-load-overwrites-styles
                           after-insert
                           after-delete
                           change-style
@@ -973,6 +1041,14 @@
                           find-scroll-line
                           global-to-local
                           local-to-global
+                          get-view-size
+                          do-edit-operation
+                          get-style-list
+                          set-style-list
+                          is-modified?
+                          get-filename
+                          insert-image
+                          get-focus-snip
                           find-next-selected-snip
                           interactive-adjust-mouse
                           interactive-adjust-move
@@ -989,7 +1065,6 @@
                           write-headers-to-file
                           write-footers-to-file
                           invalidate-bitmap-cache
-                          auto-wrap
                           set-selected
                           add-selected
                           remove-selected
@@ -1004,89 +1079,57 @@
                           set-dragable
                           get-scroll-step
                           set-scroll-step
-                          begin-write-header-footer-to-file
-                          end-write-header-footer-to-file
-                          get-inactive-caret-threshold
-                          set-inactive-caret-threshold
-                          editor-location-to-dc-location
-                          dc-location-to-editor-location
-                          scroll-line-location
-                          set-max-undo-history
-                          get-max-undo-history
-                          set-load-overwrites-styles
-                          get-load-overwrites-styles
-                          remove
-                          move-to
-                          resize
-                          lower
-                          set-before
-                          set-after
-                          no-selected
-                          get-center
-                          on-move-to
-                          can-resize?
-                          on-resize
-                          can-select?
-                          on-select
-                          erase
-                          do-copy
-                          do-paste
+                          move
+                          set-cursor
+                          refresh
                           find-snip
-                          can-insert?
-                          on-insert
-                          can-delete?
-                          on-delete
-                          insert
-                          copy
-                          paste
-                          kill
-                          copy-self
-                          own-caret
-                          blink-caret
-                          on-focus
-                          on-change
-                          scroll-to
-                          resized
-                          on-new-box
-                          get-file
-                          put-file
-                          insert-file
-                          get-extent
-                          get-descent
-                          select-all
-                          undo
-                          redo
-                          clear-undos
-                          set-keymap
-                          get-keymap
-                          lock
-                          is-locked?
-                          insert-box
-                          on-paint
-                          on-event
-                          on-char
-                          clear
-                          delete
-                          do-edit-operation
-                          get-style-list
-                          set-style-list
-                          is-modified?
-                          get-filename
-                          insert-image
-                          get-focus-snip
-                          get-canvas
-                          add-canvas
-                          get-canvases
-                          get-active-canvas
-                          set-active-canvas
-                          remove-canvas
-                          get-max-view-size))
+                          raise
+                          print
+                          cut))
                       ($$panel<%>
                         (interface
                           ()
+                          min-width
+                          min-height
+                          vert-margin
+                          spacing
+                          on-move
+                          has-focus?
+                          get-cursor
+                          add-child
+                          focus
+                          is-enabled?
+                          border
+                          get-alignment
+                          get-top-level-window
+                          get-graphical-min-size
+                          get-plain-label
+                          accept-drop-files
+                          stretchable-width
+                          stretchable-height
+                          set-alignment
+                          horiz-margin
+                          reflow-container
+                          get-children
+                          change-children
+                          container-size
+                          place-children
+                          delete-child
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
+                          get-client-size
                           on-drop-file
+                          on-focus
                           get-label
                           set-label
+                          set-label-position
+                          get-label-position
+                          set-control-font
+                          get-control-font
+                          set-label-font
+                          get-label-font
                           set-cursor
                           show
                           is-shown?
@@ -1098,34 +1141,22 @@
                           get-width
                           get-x
                           get-y
-                          on-size
-                          focus
-                          is-enabled?
-                          border
-                          get-alignment
-                          get-client-size
-                          on-focus
-                          set-label-position
-                          get-label-position
-                          set-control-font
-                          get-control-font
-                          set-label-font
-                          get-label-font
-                          get-top-level-window
-                          on-subwindow-char
-                          get-plain-label
-                          accept-drop-files
-                          stretchable-width
-                          stretchable-height
-                          set-alignment
+                          on-size))
+                      ($$pane<%>
+                        (interface
+                          ()
                           min-width
                           min-height
                           vert-margin
                           spacing
-                          on-move
-                          has-focus?
-                          get-cursor
                           add-child
+                          border
+                          get-alignment
+                          get-top-level-window
+                          get-graphical-min-size
+                          stretchable-width
+                          stretchable-height
+                          set-alignment
                           horiz-margin
                           reflow-container
                           get-children
@@ -1133,38 +1164,10 @@
                           container-size
                           place-children
                           delete-child
-                          on-subwindow-event
-                          client->screen
-                          screen->client))
-                      ($$pane<%>
-                        (interface
-                          ()
-                          get-parent
-                          border
-                          get-alignment
-                          get-top-level-window
-                          stretchable-width
-                          stretchable-height
-                          set-alignment
-                          min-width
-                          min-height
-                          vert-margin
-                          spacing
-                          add-child
-                          horiz-margin
-                          reflow-container
-                          get-children
-                          change-children
-                          container-size
-                          place-children
-                          delete-child))
+                          get-parent))
                       ($$mouse-event<%>
                         (interface
                           ()
-                          set-y
-                          set-x
-                          get-x
-                          get-y
                           button-up?
                           dragging?
                           entering?
@@ -1189,11 +1192,36 @@
                           set-event-type
                           get-event-type
                           set-time-stamp
-                          get-time-stamp))
+                          get-time-stamp
+                          set-y
+                          set-x
+                          get-x
+                          get-y))
                       ($$message<%>
                         (interface
                           ()
+                          min-width
+                          min-height
+                          vert-margin
+                          on-move
+                          has-focus?
+                          get-cursor
+                          focus
+                          is-enabled?
+                          get-top-level-window
+                          get-graphical-min-size
+                          get-plain-label
+                          accept-drop-files
+                          stretchable-width
+                          stretchable-height
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
+                          get-client-size
                           on-drop-file
+                          on-focus
                           command
                           get-label
                           set-label
@@ -1208,36 +1236,42 @@
                           get-width
                           get-x
                           get-y
-                          on-size
-                          focus
-                          is-enabled?
-                          get-client-size
-                          on-focus
-                          get-top-level-window
-                          on-subwindow-char
-                          get-plain-label
-                          accept-drop-files
-                          stretchable-width
-                          stretchable-height
+                          on-size))
+                      ($$menu-bar<%>
+                        (interface () get-items is-enabled? get-frame enable))
+                      ($$menu<%> (interface () get-items get-item))
+                      ($$list-box<%>
+                        (interface
+                          ()
                           min-width
                           min-height
                           vert-margin
                           on-move
                           has-focus?
                           get-cursor
+                          focus
+                          get-number
+                          is-enabled?
+                          get-top-level-window
+                          get-graphical-min-size
+                          get-first-visible-item
+                          get-plain-label
+                          accept-drop-files
+                          stretchable-width
+                          stretchable-height
                           horiz-margin
                           on-subwindow-event
                           client->screen
-                          screen->client))
-                      ($$menu-bar<%>
-                        (interface () enable is-enabled? get-frame get-items))
-                      ($$menu<%> (interface () get-item get-items))
-                      ($$list-box<%>
-                        (interface
-                          ()
-                          set
-                          append
+                          screen->client
+                          on-subwindow-char
+                          get-selections
+                          get-selection
+                          set-selection
+                          get-client-size
                           on-drop-file
+                          on-focus
+                          clear
+                          delete
                           select
                           get-data
                           set-data
@@ -1247,6 +1281,11 @@
                           command
                           get-label
                           set-label
+                          number-of-visible-items
+                          set-first-visible-item
+                          get-string-selection
+                          set-string-selection
+                          is-selected?
                           set-cursor
                           show
                           is-shown?
@@ -1259,49 +1298,11 @@
                           get-x
                           get-y
                           on-size
-                          focus
-                          get-number
-                          is-enabled?
-                          is-selected?
-                          get-selections
-                          get-selection
-                          set-selection
-                          get-client-size
-                          number-of-visible-items
-                          set-first-visible-item
-                          get-string-selection
-                          set-string-selection
-                          on-focus
-                          clear
-                          delete
-                          get-top-level-window
-                          get-first-visible-item
-                          on-subwindow-char
-                          get-plain-label
-                          accept-drop-files
-                          stretchable-width
-                          stretchable-height
-                          min-width
-                          min-height
-                          vert-margin
-                          on-move
-                          has-focus?
-                          get-cursor
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client))
+                          set
+                          append))
                       ($$keymap<%>
                         (interface
                           ()
-                          get-double-click-interval
-                          set-double-click-interval
-                          set-grab-key-function
-                          remove-grab-key-function
-                          set-grab-mouse-function
-                          remove-grab-mouse-function
-                          set-break-sequence-callback
-                          remove-chained-keymap
                           handle-key-event
                           handle-mouse-event
                           break-sequence
@@ -1311,14 +1312,18 @@
                           add-mouse-function
                           call-function
                           set-error-callback
-                          chain-to-keymap))
+                          chain-to-keymap
+                          get-double-click-interval
+                          set-double-click-interval
+                          set-grab-key-function
+                          remove-grab-key-function
+                          set-grab-mouse-function
+                          remove-grab-mouse-function
+                          set-break-sequence-callback
+                          remove-chained-keymap))
                       ($$key-event<%>
                         (interface
                           ()
-                          set-y
-                          set-x
-                          get-x
-                          get-y
                           set-alt-down
                           get-alt-down
                           set-meta-down
@@ -1330,32 +1335,21 @@
                           set-key-code
                           get-key-code
                           set-time-stamp
-                          get-time-stamp))
+                          get-time-stamp
+                          set-y
+                          set-x
+                          get-x
+                          get-y))
                       ($$image-snip<%>
                         (interface
                           ()
-                          write
-                          load-file
-                          get-style
-                          set-style
-                          get-admin
-                          set-admin
-                          adjust-cursor
-                          size-cache-invalid
+                          get-filetype
                           set-offset
                           get-flags
                           get-count
                           set-count
                           set-flags
                           is-owned?
-                          get-num-scroll-steps
-                          get-scroll-step-offset
-                          get-filetype
-                          set-snipclass
-                          get-snipclass
-                          release-from-owner
-                          partial-offset
-                          find-scroll-step
                           draw
                           split
                           merge-with
@@ -1363,22 +1357,75 @@
                           next
                           previous
                           resize
-                          get-text
+                          get-num-scroll-steps
+                          get-scroll-step-offset
                           copy
                           own-caret
                           blink-caret
                           get-extent
+                          get-admin
+                          set-admin
                           on-event
                           on-char
                           set-bitmap
+                          load-file
+                          adjust-cursor
+                          size-cache-invalid
                           do-edit-operation
-                          get-filename))
+                          get-filename
+                          set-snipclass
+                          get-snipclass
+                          release-from-owner
+                          partial-offset
+                          find-scroll-step
+                          get-style
+                          set-style
+                          get-text
+                          write))
                       ($$horizontal-panel<%>
                         (interface
                           ()
+                          min-width
+                          min-height
+                          vert-margin
+                          spacing
+                          on-move
+                          has-focus?
+                          get-cursor
+                          add-child
+                          focus
+                          is-enabled?
+                          border
+                          get-alignment
+                          get-top-level-window
+                          get-graphical-min-size
+                          get-plain-label
+                          accept-drop-files
+                          stretchable-width
+                          stretchable-height
+                          set-alignment
+                          horiz-margin
+                          reflow-container
+                          get-children
+                          change-children
+                          container-size
+                          place-children
+                          delete-child
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
+                          get-client-size
                           on-drop-file
+                          on-focus
                           get-label
                           set-label
+                          set-label-position
+                          get-label-position
+                          set-control-font
+                          get-control-font
+                          set-label-font
+                          get-label-font
                           set-cursor
                           show
                           is-shown?
@@ -1390,34 +1437,22 @@
                           get-width
                           get-x
                           get-y
-                          on-size
-                          focus
-                          is-enabled?
-                          border
-                          get-alignment
-                          get-client-size
-                          on-focus
-                          set-label-position
-                          get-label-position
-                          set-control-font
-                          get-control-font
-                          set-label-font
-                          get-label-font
-                          get-top-level-window
-                          on-subwindow-char
-                          get-plain-label
-                          accept-drop-files
-                          stretchable-width
-                          stretchable-height
-                          set-alignment
+                          on-size))
+                      ($$horizontal-pane<%>
+                        (interface
+                          ()
                           min-width
                           min-height
                           vert-margin
                           spacing
-                          on-move
-                          has-focus?
-                          get-cursor
                           add-child
+                          border
+                          get-alignment
+                          get-top-level-window
+                          get-graphical-min-size
+                          stretchable-width
+                          stretchable-height
+                          set-alignment
                           horiz-margin
                           reflow-container
                           get-children
@@ -1425,35 +1460,34 @@
                           container-size
                           place-children
                           delete-child
-                          on-subwindow-event
-                          client->screen
-                          screen->client))
-                      ($$horizontal-pane<%>
-                        (interface
-                          ()
-                          get-parent
-                          border
-                          get-alignment
-                          get-top-level-window
-                          stretchable-width
-                          stretchable-height
-                          set-alignment
-                          min-width
-                          min-height
-                          vert-margin
-                          spacing
-                          add-child
-                          horiz-margin
-                          reflow-container
-                          get-children
-                          change-children
-                          container-size
-                          place-children
-                          delete-child))
+                          get-parent))
                       ($$gauge<%>
                         (interface
                           ()
+                          min-width
+                          min-height
+                          vert-margin
+                          on-move
+                          has-focus?
+                          get-cursor
+                          focus
+                          is-enabled?
+                          get-top-level-window
+                          get-graphical-min-size
+                          get-plain-label
+                          accept-drop-files
+                          stretchable-width
+                          stretchable-height
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
+                          get-client-size
                           on-drop-file
+                          on-focus
+                          set-range
+                          get-range
                           get-value
                           set-value
                           command
@@ -1470,35 +1504,65 @@
                           get-width
                           get-x
                           get-y
-                          on-size
+                          on-size))
+                      ($$frame<%>
+                        (interface
+                          ()
+                          min-width
+                          min-height
+                          spacing
+                          on-move
+                          has-focus?
+                          get-cursor
+                          can-close?
+                          can-exit?
+                          on-exit
+                          add-child
                           focus
                           is-enabled?
-                          get-client-size
-                          on-focus
-                          set-range
-                          get-range
+                          border
+                          get-alignment
                           get-top-level-window
-                          on-subwindow-char
+                          get-graphical-min-size
+                          get-edit-target-window
+                          get-edit-target-object
                           get-plain-label
                           accept-drop-files
                           stretchable-width
                           stretchable-height
-                          min-width
-                          min-height
-                          vert-margin
-                          on-move
-                          has-focus?
-                          get-cursor
-                          horiz-margin
+                          set-alignment
+                          reflow-container
+                          get-children
+                          change-children
+                          container-size
+                          place-children
+                          delete-child
                           on-subwindow-event
                           client->screen
-                          screen->client))
-                      ($$frame<%>
-                        (interface
-                          ()
+                          screen->client
+                          get-eventspace
+                          get-focus-window
+                          get-focus-object
+                          on-menu-char
+                          has-status-line?
+                          is-iconized?
+                          on-traverse-char
+                          on-subwindow-char
+                          resize
+                          get-menu-bar
+                          set-status-text
+                          create-status-line
+                          get-client-size
                           on-drop-file
+                          on-focus
                           get-label
                           set-label
+                          set-label-position
+                          get-label-position
+                          set-control-font
+                          get-control-font
+                          set-label-font
+                          get-label-font
                           iconize
                           set-icon
                           maximize
@@ -1517,35 +1581,182 @@
                           get-width
                           get-x
                           get-y
-                          on-size
+                          on-size))
+                      ($$font-list<%> (interface () find-or-create-font))
+                      ($$font<%>
+                        (interface
+                          ()
+                          get-point-size
+                          get-underlined
+                          get-family
+                          get-face
+                          get-weight
+                          get-font-id
+                          get-style))
+                      ($$event<%> (interface () set-time-stamp get-time-stamp))
+                      ($$editor-wordbreak-map<%>
+                        (interface () set-map get-map))
+                      ($$editor-stream-out-string-base<%>
+                        (interface () tell seek bad? get-string write))
+                      ($$editor-stream-out-base<%>
+                        (interface () tell seek bad? write))
+                      ($$editor-stream-out<%>
+                        (interface () put-fixed jump-to tell put << ok?))
+                      ($$editor-stream-in-string-base<%>
+                        (interface () tell seek skip bad? read))
+                      ($$editor-stream-in-base<%>
+                        (interface () tell seek skip bad? read))
+                      ($$editor-stream-in<%>
+                        (interface
+                          ()
+                          set-boundary
+                          remove-boundary
+                          get-fixed
+                          get-exact
+                          get-inexact
+                          jump-to
+                          tell
+                          skip
+                          get-string
+                          get
+                          >>
+                          ok?))
+                      ($$editor-snip<%>
+                        (interface
+                          ()
+                          border-visible?
+                          show-border
+                          set-margin
+                          get-margin
+                          set-inset
+                          get-inset
+                          get-flags
+                          get-count
+                          set-count
+                          set-flags
+                          is-owned?
+                          draw
+                          split
+                          merge-with
+                          match?
+                          next
+                          previous
+                          resize
+                          get-num-scroll-steps
+                          get-scroll-step-offset
+                          copy
+                          own-caret
+                          blink-caret
+                          get-extent
+                          get-admin
+                          set-admin
+                          set-editor
+                          get-editor
+                          on-event
+                          on-char
+                          adjust-cursor
+                          size-cache-invalid
+                          get-max-width
+                          get-min-width
+                          set-max-width
+                          set-min-width
+                          get-max-height
+                          get-min-height
+                          set-max-height
+                          set-min-height
+                          do-edit-operation
+                          set-snipclass
+                          get-snipclass
+                          release-from-owner
+                          partial-offset
+                          find-scroll-step
+                          get-style
+                          set-style
+                          get-text
+                          write))
+                      ($$editor-data-class-list<%>
+                        (interface () find number find-position add nth))
+                      ($$editor-data-class<%>
+                        (interface () set-classname get-classname read))
+                      ($$editor-data<%>
+                        (interface
+                          ()
+                          set-dataclass
+                          get-dataclass
+                          get-next
+                          set-next
+                          write))
+                      ($$editor-canvas<%>
+                        (interface
+                          ()
+                          min-width
+                          min-height
+                          vert-margin
+                          on-move
+                          has-focus?
+                          get-cursor
                           focus
                           is-enabled?
-                          border
-                          get-alignment
-                          get-menu-bar
-                          set-status-text
-                          create-status-line
-                          get-client-size
-                          resize
-                          on-focus
-                          set-label-position
-                          get-label-position
-                          set-control-font
-                          get-control-font
-                          set-label-font
-                          get-label-font
                           get-top-level-window
-                          get-edit-target-window
-                          get-edit-target-object
-                          has-status-line?
-                          is-iconized?
-                          on-traverse-char
-                          on-subwindow-char
+                          get-graphical-min-size
+                          lazy-refresh
+                          set-line-count
                           get-plain-label
                           accept-drop-files
                           stretchable-width
                           stretchable-height
-                          set-alignment
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
+                          min-client-width
+                          min-client-height
+                          get-client-size
+                          on-drop-file
+                          on-focus
+                          set-editor
+                          get-editor
+                          on-paint
+                          on-event
+                          on-char
+                          popup-menu
+                          on-scroll
+                          get-label
+                          set-label
+                          get-dc
+                          allow-scroll-to-last
+                          scroll-with-bottom-base
+                          call-as-primary-owner
+                          warp-pointer
+                          force-display-focus
+                          set-cursor
+                          show
+                          is-shown?
+                          get-size
+                          enable
+                          refresh
+                          get-parent
+                          get-height
+                          get-width
+                          get-x
+                          get-y
+                          on-size))
+                      ($$editor-admin<%>
+                        (interface
+                          ()
+                          get-max-view
+                          update-cursor
+                          grab-caret
+                          get-view
+                          scroll-to
+                          resized
+                          get-dc
+                          needs-update
+                          refresh-delayed?))
+                      ($$dialog<%>
+                        (interface
+                          ()
                           min-width
                           min-height
                           spacing
@@ -1556,6 +1767,19 @@
                           can-exit?
                           on-exit
                           add-child
+                          focus
+                          is-enabled?
+                          border
+                          get-alignment
+                          get-top-level-window
+                          get-graphical-min-size
+                          get-edit-target-window
+                          get-edit-target-object
+                          get-plain-label
+                          accept-drop-files
+                          stretchable-width
+                          stretchable-height
+                          set-alignment
                           reflow-container
                           get-children
                           change-children
@@ -1568,184 +1792,20 @@
                           get-eventspace
                           get-focus-window
                           get-focus-object
-                          on-menu-char))
-                      ($$font-list<%> (interface () find-or-create-font))
-                      ($$font<%>
-                        (interface
-                          ()
-                          get-family
-                          get-face
-                          get-weight
-                          get-font-id
-                          get-style
-                          get-point-size
-                          get-underlined))
-                      ($$event<%> (interface () set-time-stamp get-time-stamp))
-                      ($$editor-wordbreak-map<%>
-                        (interface () set-map get-map))
-                      ($$editor-stream-out-string-base<%>
-                        (interface () write get-string tell seek bad?))
-                      ($$editor-stream-out-base<%>
-                        (interface () write tell seek bad?))
-                      ($$editor-stream-out<%>
-                        (interface () put << ok? put-fixed jump-to tell))
-                      ($$editor-stream-in-string-base<%>
-                        (interface () read tell seek skip bad?))
-                      ($$editor-stream-in-base<%>
-                        (interface () read tell seek skip bad?))
-                      ($$editor-stream-in<%>
-                        (interface
-                          ()
-                          get
-                          >>
-                          ok?
-                          get-string
-                          get-fixed
-                          get-exact
-                          get-inexact
-                          jump-to
-                          tell
-                          skip
-                          set-boundary
-                          remove-boundary))
-                      ($$editor-snip<%>
-                        (interface
-                          ()
-                          write
-                          get-style
-                          set-style
-                          get-admin
-                          set-admin
-                          adjust-cursor
-                          size-cache-invalid
-                          get-max-width
-                          get-min-width
-                          set-max-width
-                          set-min-width
-                          get-max-height
-                          get-min-height
-                          set-max-height
-                          set-min-height
-                          show-border
-                          set-margin
-                          get-margin
-                          set-inset
-                          get-inset
-                          get-flags
-                          get-count
-                          set-count
-                          set-flags
-                          is-owned?
-                          get-num-scroll-steps
-                          get-scroll-step-offset
-                          set-snipclass
-                          get-snipclass
-                          release-from-owner
-                          partial-offset
-                          find-scroll-step
-                          border-visible?
-                          draw
-                          split
-                          merge-with
-                          match?
-                          next
-                          previous
-                          resize
-                          get-text
-                          copy
-                          own-caret
-                          blink-caret
-                          get-extent
-                          set-editor
-                          get-editor
-                          on-event
-                          on-char
-                          do-edit-operation))
-                      ($$editor-data-class-list<%>
-                        (interface () add nth number find-position find))
-                      ($$editor-data-class<%>
-                        (interface () read set-classname get-classname))
-                      ($$editor-data<%>
-                        (interface
-                          ()
-                          write
-                          get-next
-                          set-next
-                          set-dataclass
-                          get-dataclass))
-                      ($$editor-canvas<%>
-                        (interface
-                          ()
-                          on-drop-file
-                          get-label
-                          set-label
-                          get-dc
-                          set-cursor
-                          show
-                          is-shown?
-                          get-size
-                          enable
-                          refresh
-                          get-parent
-                          get-height
-                          get-width
-                          get-x
-                          get-y
-                          on-size
-                          focus
-                          is-enabled?
-                          get-client-size
-                          allow-scroll-to-last
-                          scroll-with-bottom-base
-                          call-as-primary-owner
-                          on-focus
-                          set-editor
-                          get-editor
-                          on-paint
-                          on-event
-                          on-char
-                          popup-menu
-                          on-scroll
-                          force-display-focus
-                          warp-pointer
-                          get-top-level-window
+                          on-traverse-char
                           on-subwindow-char
-                          min-client-width
-                          min-client-height
-                          lazy-refresh
-                          set-line-count
-                          get-plain-label
-                          accept-drop-files
-                          stretchable-width
-                          stretchable-height
-                          min-width
-                          min-height
-                          vert-margin
-                          on-move
-                          has-focus?
-                          get-cursor
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client))
-                      ($$editor-admin<%>
-                        (interface
-                          ()
-                          get-dc
-                          needs-update
-                          refresh-delayed?
-                          grab-caret
-                          get-view
-                          get-max-view
-                          update-cursor
-                          scroll-to
-                          resized))
-                      ($$dialog<%>
-                        (interface
-                          ()
+                          resize
+                          get-client-size
                           on-drop-file
+                          on-focus
                           get-label
                           set-label
+                          set-label-position
+                          get-label-position
+                          set-control-font
+                          get-control-font
+                          set-label-font
+                          get-label-font
                           on-activate
                           on-close
                           move
@@ -1761,52 +1821,7 @@
                           get-width
                           get-x
                           get-y
-                          on-size
-                          focus
-                          is-enabled?
-                          border
-                          get-alignment
-                          get-client-size
-                          resize
-                          on-focus
-                          set-label-position
-                          get-label-position
-                          set-control-font
-                          get-control-font
-                          set-label-font
-                          get-label-font
-                          get-top-level-window
-                          get-edit-target-window
-                          get-edit-target-object
-                          on-traverse-char
-                          on-subwindow-char
-                          get-plain-label
-                          accept-drop-files
-                          stretchable-width
-                          stretchable-height
-                          set-alignment
-                          min-width
-                          min-height
-                          spacing
-                          on-move
-                          has-focus?
-                          get-cursor
-                          can-close?
-                          can-exit?
-                          on-exit
-                          add-child
-                          reflow-container
-                          get-children
-                          change-children
-                          container-size
-                          place-children
-                          delete-child
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          get-eventspace
-                          get-focus-window
-                          get-focus-object))
+                          on-size))
                       ($$cursor<%> (interface () ok?))
                       ($$control-event<%>
                         (interface
@@ -1816,24 +1831,50 @@
                           set-time-stamp
                           get-time-stamp))
                       ($$color<%>
-                        (interface () ok? set red copy-from green blue))
+                        (interface () copy-from green blue ok? set red))
                       ($$clipboard-client<%>
                         (interface
                           ()
-                          get-data
+                          being-replaced
                           add-type
                           get-types
-                          being-replaced))
+                          get-data))
                       ($$choice<%>
                         (interface
                           ()
-                          append
+                          min-width
+                          min-height
+                          vert-margin
+                          on-move
+                          has-focus?
+                          get-cursor
+                          focus
+                          get-number
+                          is-enabled?
+                          get-top-level-window
+                          get-graphical-min-size
+                          get-plain-label
+                          accept-drop-files
+                          stretchable-width
+                          stretchable-height
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
+                          get-selection
+                          set-selection
+                          get-client-size
                           on-drop-file
+                          on-focus
+                          clear
                           find-string
                           get-string
                           command
                           get-label
                           set-label
+                          get-string-selection
+                          set-string-selection
                           set-cursor
                           show
                           is-shown?
@@ -1846,57 +1887,53 @@
                           get-x
                           get-y
                           on-size
-                          focus
-                          get-number
-                          is-enabled?
-                          get-selection
-                          set-selection
-                          get-client-size
-                          get-string-selection
-                          set-string-selection
-                          on-focus
-                          clear
-                          get-top-level-window
-                          on-subwindow-char
-                          get-plain-label
-                          accept-drop-files
-                          stretchable-width
-                          stretchable-height
-                          min-width
-                          min-height
-                          vert-margin
-                          on-move
-                          has-focus?
-                          get-cursor
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client))
+                          append))
                       ($$checkable-menu-item<%>
                         (interface
                           ()
-                          command
-                          get-label
-                          set-label
-                          enable
-                          get-parent
-                          check
+                          restore
+                          is-deleted?
+                          is-checked?
                           is-enabled?
-                          delete
-                          set-help-string
                           get-x-shortcut-prefix
                           set-x-shortcut-prefix
                           get-plain-label
                           get-help-string
                           set-shortcut
                           get-shortcut
-                          restore
-                          is-deleted?
-                          is-checked?))
+                          delete
+                          command
+                          get-label
+                          set-label
+                          set-help-string
+                          enable
+                          get-parent
+                          check))
                       ($$check-box<%>
                         (interface
                           ()
+                          min-width
+                          min-height
+                          vert-margin
+                          on-move
+                          has-focus?
+                          get-cursor
+                          focus
+                          is-enabled?
+                          get-top-level-window
+                          get-graphical-min-size
+                          get-plain-label
+                          accept-drop-files
+                          stretchable-width
+                          stretchable-height
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
+                          get-client-size
                           on-drop-file
+                          on-focus
                           get-value
                           set-value
                           command
@@ -1913,31 +1950,32 @@
                           get-width
                           get-x
                           get-y
-                          on-size
-                          focus
-                          is-enabled?
-                          get-client-size
-                          on-focus
-                          get-top-level-window
-                          on-subwindow-char
-                          get-plain-label
-                          accept-drop-files
-                          stretchable-width
-                          stretchable-height
+                          on-size))
+                      ($$button<%>
+                        (interface
+                          ()
                           min-width
                           min-height
                           vert-margin
                           on-move
                           has-focus?
                           get-cursor
+                          focus
+                          is-enabled?
+                          get-top-level-window
+                          get-graphical-min-size
+                          get-plain-label
+                          accept-drop-files
+                          stretchable-width
+                          stretchable-height
                           horiz-margin
                           on-subwindow-event
                           client->screen
-                          screen->client))
-                      ($$button<%>
-                        (interface
-                          ()
+                          screen->client
+                          on-subwindow-char
+                          get-client-size
                           on-drop-file
+                          on-focus
                           command
                           get-label
                           set-label
@@ -1952,27 +1990,7 @@
                           get-width
                           get-x
                           get-y
-                          on-size
-                          focus
-                          is-enabled?
-                          get-client-size
-                          on-focus
-                          get-top-level-window
-                          on-subwindow-char
-                          get-plain-label
-                          accept-drop-files
-                          stretchable-width
-                          stretchable-height
-                          min-width
-                          min-height
-                          vert-margin
-                          on-move
-                          has-focus?
-                          get-cursor
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client))
+                          on-size))
                       ($$brush-list<%> (interface () find-or-create-brush))
                       ($$brush<%>
                         (interface
@@ -1986,10 +2004,7 @@
                       ($$bitmap-dc<%>
                         (interface
                           ()
-                          ok?
                           get-text-extent
-                          get-size
-                          draw-rounded-rectangle
                           get-pixel
                           set-pixel
                           set-bitmap
@@ -2015,6 +2030,7 @@
                           end-doc
                           end-page
                           clear
+                          draw-rounded-rectangle
                           draw-rectangle
                           draw-ellipse
                           draw-polygon
@@ -2031,17 +2047,19 @@
                           get-background
                           get-background-mode
                           get-text-background
-                          get-text-foreground))
+                          get-text-foreground
+                          get-size
+                          ok?))
                       ($$bitmap<%>
                         (interface
                           ()
-                          ok?
                           get-depth
                           is-color?
                           load-file
                           save-file
                           get-height
-                          get-width))
+                          get-width
+                          ok?))
                       ($$vertical-panel%
                         (class*
                           vertical-panel%
@@ -2790,7 +2808,7 @@
                           get-display-size
                           get-display-depth
                           get-color-from-user
-                          get-choice-from-user
+                          get-choices-from-user
                           font-name-directory<%>
                           flush-display
                           find-graphical-system-path

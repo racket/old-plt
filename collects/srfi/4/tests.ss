@@ -1,21 +1,7 @@
 (module tests mzscheme
   (provide homo-vec-test)
 
-  (load (build-path (collection-path "mzlib") 'up 'up "tests" "mzscheme" "testing.ss"))
-  
-  (define test (namespace-variable-value 'test))
-  (define arity-test (namespace-variable-value 'arity-test))
-  (define thunk-error-test (namespace-variable-value 'thunk-error-test))
-  
-  (define-syntax err/rt-test
-    (lambda (stx)
-      (syntax-case stx ()
-        [(_ e exn?)
-         (syntax
-          (thunk-error-test (lambda () e) (quote-syntax e) exn?))]
-        [(_ e)
-         (syntax
-          (err/rt-test e exn:application:type?))])))
+  (require (lib "mz-testing.ss" "tests" "utils"))
   
   (define (homo-vec-test vec->homo   
                          maker

@@ -1,23 +1,6 @@
 (module run-tests mzscheme
-  (require "homo-vectors.ss")
-  
-  (load (build-path (collection-path "mzlib") 'up 'up "tests" "mzscheme" "testing.ss"))
-  
-  (define SECTION (namespace-variable-value 'SECTION))
-  (define test (namespace-variable-value 'test))
-  (define arity-test (namespace-variable-value 'arity-test))
-  (define thunk-error-test (namespace-variable-value 'thunk-error-test))
-  (define report-errs (namespace-variable-value 'report-errs))
-  
-  (define-syntax err/rt-test
-    (lambda (stx)
-      (syntax-case stx ()
-        [(_ e exn?)
-         (syntax
-          (thunk-error-test (lambda () e) (quote-syntax e) exn?))]
-        [(_ e)
-         (syntax
-          (err/rt-test e exn:application:type?))])))
+  (require "homo-vectors.ss"
+           (lib "mz-testing.ss" "tests" "utils"))
   
   
   (SECTION 'HOMOGENEOUS-VECTORS)

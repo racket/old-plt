@@ -40,7 +40,7 @@
                   new-ubs))))))
 
 (define (remove-duplicates-eq l)
-  (printf "list: ~a~n" l)
+  ;;(printf "list: ~a~n" l)
   (if (null? l)
       '()
       (let ([l-car (car l)]
@@ -72,7 +72,7 @@
                 (make-Type-Union
                  (let ([arities (apply append (map lookup-ars-from-label labels))]
                        [deltas (set-var-upper-bounds alpha '())])
-                   (printf "alpha: ~a~nlabels: ~a~ndeltas: ~a~n" alpha labels deltas)
+                   ;;(printf "alpha: ~a~nlabels: ~a~ndeltas: ~a~n" alpha labels deltas)
                    (map
                     (lambda (arity)
                       (let* ([int (Arity-req arity)]
@@ -94,7 +94,7 @@
                                                    deltas)))
                                                 (loop (add1 j)))))]
                              [omega-rng (lookup-filtered-set-exp Set-var? (make-Rng-arity arity alpha))])
-                        (printf "max-j: ~a~nomega-doms: ~a~n" max-j omega-doms)
+                        ;;(printf "max-j: ~a~nomega-doms: ~a~n" max-j omega-doms)
                         (make-Type-Arrow omega-doms omega-rng)))
                     arities)))))])
     (make-Type-Union (list omega-c omega-cons omega-arrow))))
@@ -141,7 +141,7 @@
                         answer)))))
 
 (define (extract-set-vars type)
-  (printf "type: ~a~n" type)
+  ;;(printf "type: ~a~n" type)
   (let ([map-and-flatten (lambda (lst)
                            (apply append
                                   (map extract-set-vars lst)))])
@@ -169,7 +169,7 @@
 
 
 (define (type-reduce type)
-  (printf "type-reduce: ~a~n" type)
+  ;;(printf "type-reduce: ~a~n" type)
   (cond
     [(Set-var? type) type]
     [(Type-Rec? type)
@@ -193,7 +193,7 @@
                                            (type-subst (Type-Binding-type binding) alpha omega)))
                                         rest-rec-bindings)
                                    (type-subst body-type alpha omega)))
-                     (type-reduce bydy-type))))])]
+                     (type-reduce body-type))))])]
     [(Type-Union? type)
      (let* ([types (Type-Union-types type)]
             ;; union
@@ -238,7 +238,7 @@
     [(Type-Rec? type)
      (make-Type-Rec (map (lambda (binding)
                            (let ([set-var (Type-Binding-set-var binding)]
-                                 [type (Type-b`Binding-type binding)])
+                                 [type (Type-Binding-type binding)])
                              (make-Type-Binding set-var (type-subst type alpha omega))))
                          (Type-Rec-bindings type))
                     (type-subst (Type-Rec-type type) alpha omega))]

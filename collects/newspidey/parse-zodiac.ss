@@ -1,4 +1,4 @@
-(require-library "core.ss")
+(require-library "core.ss");;XXX
 (require-library "cores.ss")                      ;; for mzlib:core^
 (require-library "invoke.ss" "zodiac")              ;; for zodiac:interface^ and z
 
@@ -7,13 +7,8 @@
   (set! counter (add1 counter))
   (string->symbol (string-append "g" (number->string counter))))
   
-(define (parse-zodiac filename)
-  (let ([port (open-input-file filename)])
-    (letrec ([defs-thunk
-              (zodiac:read ;; definitions text stream thunk
-               port
-               (zodiac:make-location 1 1 0 filename))]
-             [read-from-thunk
+(define (parse-zodiac defs-thunk)
+    (letrec ([read-from-thunk
               (lambda (thunk)
                 (let ([sexp (thunk)])
                   (if (zodiac:eof? sexp)
@@ -26,13 +21,13 @@
                       (read-from-thunk defs-thunk)
                       (zodiac:make-attributes)
                       zodiac:scheme-vocabulary)])
-          (printf "terms: ~a~n" terms)
+          ;;(printf "terms: ~a~n" terms)
           (map (lambda (term) (derive-top-term-constraints '() term))
                terms)
           (propagate-constraints)
           (init-set-var-to-type)
           (type-reduce-rec-bindings)
-          )))))
+          ))))
 
 
 (define-struct Const (val))
@@ -137,15 +132,29 @@
 (define *lambda-to-label-table* (make-hash-table))
 (define *label-to-ars-table* (make-hash-table))
 
+(define *location-list* '())
+
+(define (add-to-location-list sym offset)
+  (letrec ([sort-loc (lambda (sym offset l)
+                       (if (null? l)
+                           (list (list offset sym))
+                           (if (< offset (caar l))
+                               (cons (list offset sym)
+                                     l)
+                               (cons (car l)
+                                     (sort-loc sym offset (cdr l))))))])
+    (set! *location-list* (sort-loc sym offset *location-list*))))
+
 (define (associate-set-var-and-term alpha term)
   (hash-table-put! *set-var-to-term-table* alpha term)
+  (add-to-location-list alpha (zodiac:location-offset (zodiac:zodiac-start term)))
   (hash-table-put! *term-to-set-var-table* term alpha))
 
 (define (lookup-term-from-set-var set-var)
   (hash-table-get *set-var-to-term-table* set-var (lambda () #f)))
 
 (define (lookup-set-var-from-term term)
-  (hash-table-get *term-to-set-var-table* set-var (lambda () #f)))
+  (hash-table-get *term-to-set-var-table* term (lambda () #f)))
 
 ;(define (get-all-set-vars)
 ;  (hash-table-map *set-var-to-term-table* (lambda (set-var term) set-var)))
@@ -158,7 +167,7 @@
   (hash-table-get *label-to-lambda-table* label (lambda () #f)))
 
 (define (lookup-label-from-lambda ar)
-  (hahs-table-get *lambda-to-label-table* ar (lambda () '())))
+  (hash-table-get *lambda-to-label-table* ar (lambda () '())))
 
 (define (associate-label-with-ars label ar)
   (let ([ars (hash-table-get *lambda-to-label-table* ar (lambda () '()))])
@@ -289,7 +298,7 @@
                    (list los his)))
 
 (define (add-new-bound! set-exp lo-fun hi-fun)
-  (printf "set exp: ~a~n" set-exp)
+  ;;(printf "set exp: ~a~n" set-exp)
   (let* ([coded-set-exp (string->symbol (set-exp->string set-exp))]
          [all-bounds 
           (lookup-coded-in-constraint-table coded-set-exp)]
@@ -331,7 +340,7 @@
           #t))))
     
 (define (add-constraint-and-update-tables lo hi)
-  (printf "lo: ~a~nhi: ~a~n" lo hi)
+  ;;(printf "lo: ~a~nhi: ~a~n" lo hi)
   (let ([result (add-constraint (make-constraint lo hi))])
     (when result
       (cond
@@ -372,8 +381,8 @@
 (define (create-label)
   (make-Label (gensym)))
 
-(define (extend-env Gamma xs alphas)
-  (printf "xs: ~a~nGamma: ~a~nalphs: ~a~n" xs Gamma alphas)
+(define (spidey-extend-env Gamma xs alphas)
+  ;;(printf "xs: ~a~nGamma: ~a~nalphs: ~a~n" xs Gamma alphas)
   (append (map list xs alphas)
           Gamma))
 
@@ -423,7 +432,7 @@
                          [(and (Type-Scheme? prim-type) (Type-Arrow? (Type-Scheme-type prim-type)))
                           (Type-Arrow-doms (Type-Scheme-type prim-type))]
                          [(Type-Arrow? prim-type)
-                          (Type-Arrow--doms prim-type)]
+                          (Type-Arrow-doms prim-type)]
                          [else #f])])
          (when arg-list
            (let ([len (length arg-list)])
@@ -476,7 +485,7 @@
 
 (define (add-constraints-from-type ty alpha flag type-var->set-var)
   ;;(associate-set-var-and-term alpha 'dummy)
-  (printf "type set var: ~a~ntype: ~a~n" alpha ty)
+  ;;(printf "type set var: ~a~ntype: ~a~n" alpha ty)
   (cond
     [(Type-Var? ty)
      (add-constraint-with-bounds (hash-table-get type-var->set-var ty) alpha flag)]
@@ -532,14 +541,14 @@
 
 (define (derive-top-term-constraints Gamma term)
   (let ([alpha (gen-set-var)])
-    (associate-set-var-and-term alpha term)
+    (associate-set-var-and-term (Set-var-name alpha) term)
     (cond
       [(zodiac:quote-form? term)
        (add-constraint-with-bounds (make-Const (zodiac:read-object (zodiac:quote-form-expr term))) alpha #t)]
       [(zodiac:lambda-varref? term)
        (let* ([name (zodiac:binding-orig-name (zodiac:bound-varref-binding term))]
               [set-var (lookup-in-env Gamma name)])
-         (printf "set-var: ~a~nGamma: ~a~nterm: ~a~n" set-var Gamma (zodiac:binding-orig-name (zodiac:bound-varref-binding term)))
+         ;;(printf "set-var: ~a~nGamma: ~a~nterm: ~a~n" set-var Gamma (zodiac:binding-orig-name (zodiac:bound-varref-binding term)))
          (add-constraint-with-bounds set-var alpha #t))]
       [(zodiac:top-level-varref/bind/unit? term)
        (let* ([name (zodiac:varref-var term)]
@@ -557,7 +566,7 @@
               [body-l (zodiac:case-lambda-form-bodies term)]
               [label (create-label)]
               [indices (map length xs-l-sym)]
-              [bar (printf "indices: ~a~n" indices)]
+              ;;[bar (printf "indices: ~a~n" indices)]
               [intervals (map (lambda (arg-list len)
                                 (cond
                                  [(zodiac:sym-arglist? arg-list) *whole-interval*]
@@ -575,12 +584,17 @@
                                      (cdr loc-int)
                                      (cons cur-int previous)))))]
               [alphas-l (map (lambda (index) (build-list index (lambda (_) (gen-set-var)))) indices)]
-              [foo (printf "indices: ~a~n" indices)]
+              ;;[foo (printf "indices: ~a~n" indices)]
               [betas (map (lambda (xs body alphas)
-                            (map associate-set-var-and-term alphas xs)
-                            (derive-top-term-constraints (extend-env Gamma xs alphas) body))
+;                            (map (lambda (alpha term) (associate-set-var-and-term (Set-var-name alpha) term))
+;                                 alphas xs)
+                            (derive-top-term-constraints (spidey-extend-env Gamma xs alphas) body))
                           xs-l-sym body-l alphas-l)])
-         (printf "betas: ~a~n" betas)
+         (for-each (lambda (xs alphas)
+                     (map (lambda (alpha term) (associate-set-var-and-term (Set-var-name alpha) term))
+                          alphas (zodiac:arglist-vars xs)))
+                   xs-l alphas-l)
+         ;;(printf "betas: ~a~n" betas)
          (associate-label-and-lambda label term)
          (add-constraint-with-bounds label alpha #t)
          (for-each (lambda (alphas arity index beta)
@@ -661,7 +675,7 @@
         [m (Interval-hi int1)]
         [p (Interval-lo int2)]
         [q (Interval-hi int2)])
-    (printf "n: ~a m: ~a p: ~a q: ~a~n" n m p q)
+    ;;(printf "n: ~a m: ~a p: ~a q: ~a~n" n m p q)
     (or (and (andmap number? (list n m p q))
              (= n m p q))
         (and (= n p)
@@ -682,7 +696,7 @@
   (filter pred (car (lookup-in-constraint-table set-exp))))
 
 (define (fire-covariant-selector-rule lo his make-selector)
-  (printf "covariant: ~a ~a~n" lo his)
+  ;;(printf "covariant: ~a ~a~n" lo his)
   (for-each
    (lambda (hi)
      (add-one-constraint-and-propagate lo (make-selector hi)))
@@ -697,9 +711,10 @@
 (define (add-one-constraint-and-propagate lo hi)
   (if (add-constraint-with-bounds lo hi #t)
       (begin
-        (printf "add-constraint~n")
+        ;;(printf "add-constraint~n")
         (propagate-one-constraint (make-constraint lo hi)))
-      (printf "not add-constraint~n")))
+      ;;(printf "not add-constraint~n")
+      ))
 
 (define (propagate-constraints)
   (for-each propagate-one-constraint *the-constraints*))
@@ -707,7 +722,7 @@
 (define (propagate-one-constraint constraint)
   (let ([lo (constraint-lo constraint)]
         [hi (constraint-hi constraint)])
-    (printf "constraint: ~a~n" constraint)
+    ;;(printf "constraint: ~a~n" constraint)
     ;; trans-cons
     (when (and (constant-set-exp? lo)
                (Set-var? hi))
@@ -740,14 +755,14 @@
     ;;trans-rng
     (when (and (Rng-arity? hi)
                (Set-var? lo))
-      (printf "trans-rng 1~n")
+      ;;(printf "trans-rng 1~n")
       (let* ([arity (Rng-arity-arity hi)]
              [rng-intervals (lookup-rng-ar (encode-rng (Rng-arity-set-var hi)))]
              [good-rng-ints
               (filter (lambda (rng-int) (satisfies (Rng-interval-interval rng-int) arity)) rng-intervals)]
              [his-other
               (apply append (map (lambda (rng-int) (lookup-lo-and-filter Set-var? rng-int)) good-rng-ints))])
-        (printf "arity: ~a~nrng-intervals: ~a~ngood-rng-ints: ~a~nhis-other: ~a~n" arity rng-intervals good-rng-ints his-other)
+        ;;(printf "arity: ~a~nrng-intervals: ~a~ngood-rng-ints: ~a~nhis-other: ~a~n" arity rng-intervals good-rng-ints his-other)
         (for-each
          (lambda (hi-other)
            (add-one-constraint-and-propagate lo hi-other))
@@ -827,8 +842,8 @@
       (let* ([dom-arities (lookup-dom-ars-from-set-var (Set-var-name lo))])
         (for-each
          (lambda (dom-ar)
-           (let* ([arity (Rng-arity-arity dom-ar)]
-                  [n (Rng-arity-pos dom-ar)]
+           (let* ([arity (Dom-arity-arity dom-ar)]
+                  [n (Dom-arity-pos dom-ar)]
                   [dom-arity-gamma (make-Dom-arity arity n hi)]
                   [his-other (lookup-lo-and-filter Set-var? dom-ar)])
              (for-each
@@ -874,7 +889,7 @@
     ;; trans-rng
     (when (and (Rng-interval? lo)
                (Set-var? hi))
-      (printf "trans-rng 2~n")
+      ;;(printf "trans-rng 2~n")
       (let* ([interval (Rng-interval-interval lo)]
              [rng-arities (lookup-rng-int (encode-rng (Rng-interval-set-var lo)))]
              [good-rng-ars
@@ -907,4 +922,103 @@
 ;         los-other)))
     ))
 
-(load-relative "type-reconstruct.ss")
+(load-relative "type-reconstruct.ss");;XXX
+
+(define (get-prims) '())
+
+(define (get-loc sym)
+  (let ([term (lookup-term-from-set-var sym)])
+    (if term
+        (zodiac:zodiac-start term)
+        (zodiac:make-location 1 1 0 "term not found"))))
+  
+(define (get-var offset)
+  (letrec ([find-loc (lambda (offset l)
+                       (if (null? l)
+                           '()
+                           (if (= offset (caar l))
+                               (cons (cadar l)
+                                     (find-loc offset (cdr l)))
+                               (find-loc offset (cdr l)))))])
+    (let ([set-vars (find-loc offset *location-list*)])
+      (if (null? set-vars)
+          #f
+          set-vars))))
+
+(define (get-type sym)
+  (type-reduce (mk-type (make-Set-var sym))))
+
+(define (pp-type type)
+  (cond
+    [(Type-Arrow? type)
+     (apply string-append
+            "(("
+            (map pp-type (Type-Arrow-doms type))
+            ") -> "
+            (pp-type (Type-Arrow-rng type))
+            ")")]
+    [(Type-Cons? type)
+     (string-append "(cons "
+                    (pp-type (Type-Cons-car type))
+                    " "
+                    (pp-type (Type-Cons-cdr type))
+                    ")")]
+    [(Type-Scheme? type)
+     (apply string-append
+            "(for all"
+            (map (lambda (sym) (string-append " " (symbol->string sym)))
+                 (Type-Scheme-vars type))
+            ": "
+            (pp-type (Type-Scheme-type type))
+            ")")]
+    [(Set-var? type)
+     (symbol->string (Set-var-name type))]
+    [(Type-Rec? type)
+     (apply string-append
+            "(rec ("
+            (map (lambda (binding)
+                   (string-append "["
+                                  (symbol->string (Set-var-name (Type-Binding-set-var binding)))
+                                  " "
+                                  (pp-type (Type-Binding-type binding))
+                                  "]"))
+                 (Type-Rec-bindings type))
+            ") "
+            (pp-type (Type-Rec-type type))
+            ")")]
+    [(Type-Union? type)
+     (apply string-append
+            "(union "
+            (map pp-type (Type-Union-types type))
+            ")")]
+    [(Const? type)
+     (if (number? (Const-val type))
+         (number->string (Const-val type))
+         "empty")]
+    [(Type-Empty? type)
+     "empty"]))
+     
+(define (parents sym)
+  (let ([par-set-vars (lookup-lo-and-filter Set-var? (make-Set-var sym))])
+    (map Set-var-name par-set-vars)))
+  
+(define (children sym)
+  (let ([chi-set-vars (lookup-hi-and-filter Set-var? (make-Set-var sym))])
+    (map Set-var-name chi-set-vars)))
+  
+(define (has-member? type sym)
+  (if (Type-Union? type)
+      (ormap (lambda (sub-type) (has-member? sub-type sym)) (Type-Union-types type))
+      (cond
+        [(symbol=? sym 'number)
+         (and (Const? type)
+              (number? (Const-val type)))]
+        [(symbol=? sym 'null)
+         (and (Const? type)
+              (null? (Const-val type)))]
+        [(symbol=? sym 'pair)
+         (Type-Cons? type)]
+        [(symbol=? sym 'procedure)
+         (Type-Arrow? type)])))
+
+;;(parse-zodiac thnk)XXX

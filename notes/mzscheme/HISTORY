@@ -1,12 +1,22 @@
 103.1:
 
+ * Fixed `lambda' and `case-lambda' to signal an error when a keyword
+   is used as an argument name.
+
  * Fixed leaks that could happen with thread kills. For example,
    killing a thread blocked on a TCP connect could leak file
    descriptors.
 
+ * Fixed weak hash table growth in the precence of infrequent garbage
+   collections (by forcing a collection before rehashing). (PR 934)
+
+ * Fixed/improved some unit/sig error messages. (PRs 304, 830)
+
 ------------------------------------------------------------------------
 
 Version 104, ???
+Fixed `lambda' and `case-lambda' to signal an error when a keyword
+ is used as an argument name
 Fixed leaks (file descriptors, etc.) that could happend with
  thread kills
 

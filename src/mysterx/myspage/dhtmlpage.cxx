@@ -231,11 +231,6 @@ LRESULT CDHTMLPage::OnCreate(UINT,WPARAM,LPARAM,BOOL&) {
   return 0;
 }
 
-LRESULT CDHTMLPage::OnDestroy(UINT,WPARAM,LPARAM,BOOL&) {
-  pIEventQueue->Release();
-  return 0;
-}
-
 STDMETHODIMP CDHTMLPage::marshalWebBrowserToStream(IStream **ppIStream) {
   HRESULT hr;
 

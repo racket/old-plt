@@ -49,7 +49,7 @@ event.obj : event.cxx event.h stdafx.h
 
 eventqueue.obj : eventqueue.cxx eventqueue.h stdafx.h
 
-myspage.obj : myspage.cxx myspage.h stdafx.h
+myspage.obj : myspage.cxx myspage.h dhtmlpage.h event.h eventqueue.h stdafx.h
 
 stdafx.obj : stdafx.cxx stdafx.h
 

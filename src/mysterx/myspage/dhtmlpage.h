@@ -81,7 +81,6 @@ END_PROP_MAP()
 
 BEGIN_MSG_MAP(CDHTMLPage)
 	MESSAGE_HANDLER(WM_CREATE, OnCreate)
-	MESSAGE_HANDLER(WM_DESTROY, OnDestroy)
 	CHAIN_MSG_MAP(CComControl<CDHTMLPage>)
 END_MSG_MAP()
 // Handler prototypes:
@@ -103,7 +102,6 @@ public:
  CComPtr<IWebBrowser2> m_spBrowser;
  IEventQueue *pIEventQueue;
  LRESULT OnCreate(UINT,WPARAM,LPARAM,BOOL&);
- LRESULT OnDestroy(UINT,WPARAM,LPARAM,BOOL&);
  STDMETHOD(AtAnyEvent)(void);
 };
 

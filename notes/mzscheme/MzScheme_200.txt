@@ -5,35 +5,99 @@ in several important ways:
  * There is a new module system that supports only top-level,
    first-order modules. The library-collection system now works with
    the module system. In particular, `require-library' has been
-   replaced by `require'.
+   replaced by a `require' form.
 
  * There is no built-in object or unit system. These have been moved
-   to MzLib-defined syntax modules: "class.ss", "unit.ss", and
-   "unitsig.ss" in the "mzlib" collection. For example, to get the old
-   class system, use `(require (lib "class.ss"))'.
+   to MzLib-defined syntax modules: "class.ss" (or "class-old.ss"),
+   "unit.ss", and "unitsig.ss" in the "mzlib" collection. For example,
+   to get the old class system, use
+    
+       (require (lib "class-old.ss"))
 
- * The core syntax system is "hygienic"; `define-macro' has been
+ * The core syntax system is hygienic; `define-macro' has been
    replaced by `define-syntax'.
 
    In general, there is no easy way to convert a `define-macro' macro
    to `define-syntax'; re-writing an old-style macro with
    `define-syntax' and `syntax-case' is usually quite easy. The
-   following works somethimes, though:
+   following works sometimes, though:
 
-    (define-syntax define-macro
-      (lambda (stx)
-	(syntax-case stx ()
-	  [(_ name proc)
-	   (syntax
-	    (define-syntax name
-	      (lambda (stx)
-		(datum->syntax (apply proc (cdr (syntax->datum stx)))
-			       #f (quote-syntax here)))))])))
+      (define-syntax define-macro
+        (lambda (stx)
+	  (syntax-case stx ()
+	    [(_ name proc)
+	     (syntax
+	      (define-syntax name
+	        (lambda (stx)
+		  (datum->syntax-object 
+                   (quote-syntax here)
+                   (apply proc 
+		          (cdr (syntax-object->datum stx)))))))])))
+
+ * Although MzScheme has no class system, there is still a "standard"
+   one (i.e., the one that works with MrEd), and it is different from
+   the previous built-in class system. The principal difference is
+   that classes have fields and methods, and the form of a method
+   definition is syntactically restricted (so that it can be
+   implemented with a per-class procedure instead of a per-object
+   procedure).
+
+   Syntactically, the new `class' form is substantially different from
+   the old `class' form. The new form is more consistent with the
+   `unit' and `module' syntax, using `define' for method and private
+   field declarations.
+
+   The "class100.ss" library in MzLib supplies a `class100' form whose
+   syntax is similar to the old `class' form and whose semantics
+   matches the new `class' form. 
+
+   To make old code work with the new class system:
+
+      0. Require the "class.ss" and "class100.ss" libraries.
+
+      1. Replace "class" with "class100" (and "class*" with
+         "class100*", etc.).
+
+      2. Replace "private" with "private-field".
+
+      3. Loop until there are no more syntax errors:
+         - Try to load the code
+         - Read the error message (with source location info)
+         - Fix the problem
+   
+   The `send' form works as before, but there is no `ivar' form.
+   Field values are accessed through procedures constructed with
+   `make-class-field-accessor'. See the MzLib documentation for
+   details.
+
+   The "class-old.ss" library in MzLib implements precisely the old
+   MzScheme class syntax, but it cannot be used with MrEd classes.
+
+ * The `struct' form is gone, replaced by a more flexible
+   `make-struct-type' form. 
+
+   The `define-struct' form works as before, but also supports an
+   optional inspector expression after the field list.
+
+   Inspectors provide debugging access, with a custodian-like
+   hierarchy for opacity. The form
+
+    (define-struct s (f ...))
+
+   now creates a type for structs that are effectively opaque. Use
+
+    (define-struct s (f ...) (make-inspector))
+
+   for transparent structs.
+
+   Struct type properties let a programmer attach static information
+   to a structure type. (For example, using properties,
+   structure-based classes can be implemented more efficiently.)
 
  * All #% names are gone, since they are unnecessary with the new
    syntax system.
 
- * `global-define-value' has been renamed `namespace-variable-binding'
+ * `global-defined-value' has been renamed `namespace-variable-binding'
    (for consistency with other names). `defined?' is gone, but it can
    be implemented with `namespace-variable-binding'.
 
@@ -50,14 +114,3 @@ MzLib changes:
 
  * "defstru.ss" was roughly re-implemented in "compat.ss" (and the
     re-implementation matches the Chez form)
-
-Relatively minor changes:
-
- - a set of internal definitions can start anywhere in a sequence of
-   expressions (like Chez and MzScheme 53)
-
- - `(cond)' alays returns void; the cond-allow-fallthough parameter and
-   exn:cond exception have been removed.
-
- - added struct inspectors <--- NEEDS DOCUMENTATION (waiting for
-   further struct changes)

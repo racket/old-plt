@@ -322,29 +322,36 @@
 
 (define u@
   (unit (import x) (export)  
-	(class* object% () () 
-		(public (y x))
-		(sequence (super-init)))))
+	(class* object% ()
+		(public y)
+		(define y (lambda () x))
+		(super-make-object))))
 (define v (invoke-unit u@ car))
 (test #t class? v)
 (define w (make-object v))
-(test car 'ivar (ivar w y))
+(test car 'ivar (send w y))
 
 (define c%
-  (class* object% () (x)        
-	  (public (z (unit (import) (export) x)))
-	  (sequence (super-init))))
-(define u (ivar (make-object c% car) z))
+  (class* object% ()
+    (init x)
+    (define -x x)
+    (public z)
+    (define (z) (unit (import) (export) -x))
+    (super-make-object)))
+(define u (send (make-object c% car) z))
 (test #t unit? u)
 (test car 'invoke (invoke-unit u))
 
-
 (define c%
-  (class* object% () (x) (public (y x))
-	  (public (z (unit (import) (export) y)))
-	  (sequence (super-init))))
+  (class* object% () 
+	  (init x) 
+	  (define -x x)
+	  (public y z)
+	  (define (y) -x)
+	  (define (z) (unit (import) (export) (y)))
+	  (super-make-object)))
 (define u (make-object c% 3))
-(define u2 (ivar u z))
+(define u2 (send u z))
 (test #t unit? u2)
 (test 3 'invoke (invoke-unit u2))
 
@@ -404,10 +411,9 @@
 		 (import x)
 		 (export)
 		 (class object% ()
-		   (public
+		   (field
 		     [x 10])
-		   (sequence
-		     (set! x 5)))))
+		   (set! x 5))))
 (syntax-test #'(let ([x 10])
 		(unit 
 		  (import x)
@@ -478,28 +484,29 @@
 	      b)
 	    (send
 	     (make-object
-	      (class object% ()
-		(public
-		  [a 10]
-		  [tester
-		   (lambda () (list a b c))])
-		(sequence (super-init))))
+	      (class object%
+		(field [a 10])
+		(public tester)
+		(define tester
+		  (lambda () (list a b c)))
+		(super-make-object)))
 	     tester)
 	    (send
 	     (make-object
-	      (class object% ()
-		(public
-		  [a 10]
-		  [b 12]
-		  [tester
+	      (class object%
+		(field
+		 [a 10]
+		 [b 12])
+		(public tester)
+		(define tester
 		   (lambda () 
 		     (invoke-unit
 		      (unit 
 			(import)
 			(export)
 			(define a 'cl-unit-a)
-			(list a b c))))])
-		(sequence (super-init))))
+			(list a b c)))))
+		(super-make-object)))
 	     tester))))))
 
 ; Not ok if defining an imported name, but error should be about

@@ -47,7 +47,7 @@ toplevel_obj {
   gcBYTES_TO_WORDS(sizeof(Scheme_Toplevel));
 }
 
-c_pointer_obj {
+cpointer_obj {
  mark:
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));

@@ -3,11 +3,18 @@ SrPersist
 
 Version 200
 
-Registered bufferTable[] with garbage collector, made
- entries uncollectable
+Registered bufferTable[] with garbage collector
 Added version information procedures srp-version and 
  compiled-odbc-version
 Procedure execute becomes sql-execute
+Added procedures free-buffer, free-indicator,
+ free-length, free-row-status
+Removed invoke-n.m.ss mechanism, use srpersist.ss
+ instead
+All ODBC procedures available, regardless of 
+ ODBC version used when compiling
+Procedures not implemented for a particular 
+ version of ODBC raise not-implemented exception 
 
 Version 103
 

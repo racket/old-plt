@@ -98,7 +98,7 @@ DWORD WINAPI evalLoop(LPVOID args) {
   BSTR *pOutput;
   HRESULT *pHr;
   char *wrapper;
-  char dllBuff[260];
+  char exeBuff[260];
 
   // make sure all MzScheme calls in this thread
 
@@ -137,9 +137,9 @@ DWORD WINAPI evalLoop(LPVOID args) {
 
   // set up collection paths, based on MzScheme startup
 
-  GetModuleFileName(GetModuleHandle("mzcom.dll"),dllBuff,sizeof(dllBuff));
+  GetModuleFileName(GetModuleHandle("mzcom.exe"),exeBuff,sizeof(exeBuff));
 
-  scheme_add_global("mzcom-dll",scheme_make_string(dllBuff),env);
+  scheme_add_global("mzcom-exe",scheme_make_string(exeBuff),env);
 
   scheme_eval_string("(#%current-library-collection-paths "
 		     "(#%path-list-string->path-list "
@@ -151,8 +151,8 @@ DWORD WINAPI evalLoop(LPVOID args) {
 		     "(#%list"
 		     "(#%lambda () (#%let ((v (#%getenv \"PLTHOME\"))) "
 		     "(#%and v (#%build-path v \"collects\")))) "
-		     "(#%lambda () (#%find-executable-path mzcom-dll \"..\")) "
-		     "(#%lambda () \"c:\\PLT\\collects\") "
+		     "(#%lambda () (#%find-executable-path mzcom-exe \"..\")) "
+		     "(#%lambda () \"c:\\plt\\collects\") "
 		     ")) #%null)))",
 		     env);
 
@@ -197,8 +197,21 @@ DWORD WINAPI evalLoop(LPVOID args) {
   return 0;
 }
 
-CMzObj::CMzObj(void) {
+void CMzObj::startMzThread(void) {
   static THREAD_GLOBALS tg;
+
+  tg.pHr = &hr;
+  tg.ppInput = &globInput;
+  tg.pOutput = &globOutput;
+  tg.readSem = readSem;
+  tg.writeSem = writeSem;
+  tg.pErrorState = &errorState;
+
+  threadHandle = CreateThread(NULL,0,evalLoop,(LPVOID)&tg,0,&threadId);
+}
+
+
+CMzObj::CMzObj(void) {
 
   inputMutex = NULL;
   readSem = NULL;
@@ -207,7 +220,7 @@ CMzObj::CMzObj(void) {
 
   inputMutex = CreateSemaphore(NULL,1,1,NULL);
   if (inputMutex == NULL) {
-    MessageBox(NULL,"Can't create mutex","MzCOM",MB_OK);
+    MessageBox(NULL,"Can't create input mutex","MzCOM",MB_OK);
     return;
   }
 
@@ -235,17 +248,10 @@ CMzObj::CMzObj(void) {
   evalSems[0] = writeSem;
   evalSems[1] = exitSem;
 
-  tg.pHr = &hr;
-  tg.ppInput = &globInput;
-  tg.pOutput = &globOutput;
-  tg.readSem = readSem;
-  tg.writeSem = writeSem;
-  tg.pErrorState = &errorState;
-
-  threadHandle = CreateThread(NULL,0,evalLoop,(LPVOID)&tg,0,&threadId);
+  startMzThread();
 }
 
-CMzObj::~CMzObj(void) {
+void CMzObj::killMzThread(void) {
   if (threadHandle) {
     DWORD threadStatus;
 
@@ -256,7 +262,14 @@ CMzObj::~CMzObj(void) {
     }
 
     CloseHandle(threadHandle);
+
+    threadHandle = NULL;
   }
+}
+
+CMzObj::~CMzObj(void) {
+
+  killMzThread();
 
   if (readSem) {
     CloseHandle(readSem);
@@ -353,3 +366,4 @@ STDMETHODIMP CMzObj::About() {
   DialogBox(globHinst,MAKEINTRESOURCE(ABOUTBOX),NULL,dlgProc);
   return S_OK;
 }
+

@@ -8,10 +8,10 @@
 #include "stdafx.h"
 #include "resource.h"
 #include <initguid.h>
-#include "MzCOM.h"
+#include "mzcom.h"
 
 #include "MzCOM_i.c"
-#include "MzObj.h"
+#include "mzobj.h"
 
 
 const DWORD dwTimeOut = 5000; // time for EXE to be idle before shutting down
@@ -123,14 +123,14 @@ extern "C" int WINAPI _tWinMain(HINSTANCE hInstance,
     {
       if (lstrcmpi(lpszToken, _T("UnregServer"))==0)
         {
-	  _Module.UpdateRegistryFromResource(IDR_MzCOM, FALSE);
-	  nRet = _Module.UnregisterServer(TRUE);
+	  _Module.UpdateRegistryFromResource(IDR_MZCOM, FALSE);
+    nRet = _Module.UnregisterServer(TRUE);
 	  bRun = FALSE;
 	  break;
         }
       if (lstrcmpi(lpszToken, _T("RegServer"))==0)
         {
-	  _Module.UpdateRegistryFromResource(IDR_MzCOM, TRUE);
+	  _Module.UpdateRegistryFromResource(IDR_MZCOM, TRUE);
 	  nRet = _Module.RegisterServer(TRUE);
 	  bRun = FALSE;
 	  break;

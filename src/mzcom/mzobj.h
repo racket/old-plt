@@ -45,6 +45,8 @@ class ATL_NO_VTABLE CMzObj :
     
     void RaiseError(const OLECHAR *);
     BOOL testThread(void);
+    void startMzThread(void);
+    void killMzThread(void);
 
   public:
 

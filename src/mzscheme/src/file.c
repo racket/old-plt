@@ -2979,7 +2979,7 @@ static long check_four(char *name, int which, int argc, Scheme_Object **argv)
   if (SCHEME_STRTAG_VAL(o) != 4)
     scheme_raise_exn(MZEXN_APPLICATION_MACOS_TYPESTRING,
 		     o,
-		     "%s: string is not a 4-character type or creator signature: %s%s"
+		     "%s: string is not a 4-character type or creator signature: %s%s",
 		     name,
 		     scheme_make_provided_string(o, 1, NULL),
 		     scheme_make_args_string("other ", which, argc, argv));
@@ -3054,38 +3054,9 @@ int scheme_mac_start_app(char *name, int find_path, Scheme_Object *o)
 # define TRUE 1
 #endif
 
-int scheme_mac_send_ae(char *name, int argc, Scheme_Object **argv, 
-		       Scheme_Object **result, OSErr *err)
+static int ae_marshall(AEDescList *ae, AEDescList *list_in, Scheme_Object *v, 
+                        char *name, OSErr *err, char **stage)
 {
-  AEEventClass classid;
-  AEEventID eventid;
-  AppleEvent ae, reply;
-  AEAddressDesc target;
-  AEDescList list;
-  DescType rtype;
-  int i;
-  long ret, sz, dst;
-
-  if (!SCHEME_STRINGP(o))
-    scheme_wrong_type(name, "string", 0, 1, &o);
-  
-  dst = check_four(name, 0, argc, argv);
-  classid = check_four(name, 1, argc, argv);
-  eventid = check_four(name, 2, argc, argv);
-
-  *err = AECreateDesc(typeApplSignature, &dst, sizeof(long), &target);
-  if (*err)
-    return 0;
-    
-  *err = AECreateAppleEvent(classid, eventid, &target, kAutoGenerateReturnID, 0, &ae);
-  if (*err)
-    return 0;
-  
-  *err = AECreateList(NULL, 0, FALSE, &list);
-  if (*err)
-    return 0;
-  
-  for (i = 3; i < argc; i++) {
     DescType type;
     Ptr data;
     Size size;
@@ -3093,61 +3064,110 @@ int scheme_mac_send_ae(char *name, int argc, Scheme_Object **argv,
     long x_i;
     double x_d;
     
-    switch (SCHEME_TYPE(argv[i])) {
+    switch (SCHEME_TYPE(v)) {
     case scheme_true_type:
     case scheme_false_type:
-      x_b = SCHEME_TRUEP(argv[i]) ? TRUE : FALSE;
+      x_b = SCHEME_TRUEP(v) ? TRUE : FALSE;
       type = typeBoolean;
       data = (char *)&x_b;
       size = sizeof(Boolean);
       break;
     case scheme_integer_type:
-      x_i = SCHEME_INT_VAL(argv[i]);
+      x_i = SCHEME_INT_VAL(v);
       type = typeLongInteger;
       data = (char *)&x_i;
       size = sizeof(long);
       break;
     case scheme_string_type:
       type = typeChar;
-      data = SCHEME_STR_VAL(argv[i]);
-      size = SCHEME_STRTAG_VAL(argv[i]);
+      data = SCHEME_STR_VAL(v);
+      size = SCHEME_STRTAG_VAL(v);
       break;
     case scheme_float_type:
     case scheme_double_type:
-      x_d = SCHEME_FLOAT_VAL(argv[i]);
+      x_d = SCHEME_FLOAT_VAL(v);
       type = typeFloat;
       data = (char *)&x_d;
       size = sizeof(double);
       break;
+    case scheme_pair_type:
+    case scheme_null_type:
+      {
+        int l = scheme_proper_list_length(v);
+        if (l >= 0) {
+          AEDescList *list;
+          list = MALLOC_ONE_ATOMIC(AEDescList);
+          
+          *err = AECreateList(NULL, 0, FALSE, list);
+		  if (*err) {
+		    *stage = "cannot create list: ";
+		    return 0;
+		  }
+		  
+		  while (!SCHEME_NULLP(v)) {
+		    if (!ae_marshall(NULL, list, SCHEME_CAR(v), name, err, stage))
+		      return 0;
+		    v = SCHEME_CDR(v);
+		  }
+		  
+		  if (list_in) {
+		    *err = AEPutDesc(list_in, 0, list);
+		    if (*err) {
+		      *stage = "cannot add list item: ";
+		      return 0;
+		    }
+		  } else {
+		    *err = AEPutParamDesc(ae, keyDirectObject, list);
+		    if (*err) {
+		      *stage = "cannot install argument: ";
+              return 0;
+            }
+		  }
+		  
+		  return 1;
+        }
+      }
     default:
       /* Don't know how to marshall */
       scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		       "%s: cannot marshall value for sending: %s",
 		       name,
-		       scheme_make_provided_string(argv[i], 1, NULL));
+		       scheme_make_provided_string(v, 1, NULL));
       return 0;
     }
     
-    *err = AEPutPtr(&list, 0, type, data, size);
-    if (*err)
-      return 0;
-  }
-  
-  *err = AEPutParamPtr(&ae, keyDirectObject, typeAEList, &list, sizeof(AEDescList));
-  if (*err)
-    return 0;
-  
-  *err = AESend(&ae, &reply, kAEWaitReply, kAENormalPriority, kNoTimeOut, NULL, NULL);
-  if (*err)
-    return 0;
-  
-  if (!AEGetParamPtr(&reply, keyErrorNumber, typeLongInteger, &rtype, &ret, sizeof(long), &sz)
-      && ret)
-    return 0;
-  
-  if (AEGetParamPtr(&reply, keyDirectObject, typeWildCard, &rtype, NULL, 0, &sz)) {
-    *result = scheme_void;
-    return 1;
+    if (list_in) {
+	    *err = AEPutPtr(list_in, 0, type, data, size);
+	    if (*err) {
+	      *stage = "cannot add list item: ";
+	      return 0;
+	    }
+	} else {
+	  *err = AEPutParamPtr(ae, keyDirectObject, type, data, size);
+      if (*err) {
+        *stage = "cannot install argument: ";
+        return 0;
+      }
+	}
+	
+   return 1;
+}
+
+static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int pos,
+                                    OSErr *err, char **stage)
+{
+
+  DescType rtype;
+  long ret, sz;
+  AEKeyword kw;
+  Scheme_Object *result;
+
+  if (list_in) {
+      if (AEGetNthPtr(list_in, pos, typeWildCard, &kw, &rtype, NULL, 0, &sz))
+        return scheme_void;
+  } else {
+	  if (AEGetParamPtr(reply, keyDirectObject, typeWildCard, &rtype, NULL, 0, &sz))
+	    return scheme_void;
   }
   
   {
@@ -3165,43 +3185,157 @@ int scheme_mac_send_ae(char *name, int argc, Scheme_Object **argv,
     case typeShortInteger:
       rtype = typeLongInteger;
       data = (char *)&x_i;
+      sz = sizeof(long);
       break;
     case typeLongFloat:
     case typeShortFloat:
     case typeExtended:
       rtype = typeFloat;
       data = (char *)&x_d;
+      sz = sizeof(double);
       break;
     case typeChar:
       data = x_s = scheme_malloc_atomic(sz + 1);
       x_s[0] = 0;
       break;
+    case typeAEList:
+      {
+         AEDescList *list;
+         Scheme_Object *first = scheme_null, *last = NULL, *v;
+         int i;
+         
+         list = MALLOC_ONE_ATOMIC(AEDescList);
+          
+         if (list_in) {
+           if (AEGetNthDesc(list_in, pos, typeAEList, &kw, list))
+             return NULL;
+         } else {
+	       if (AEGetParamDesc(reply, keyDirectObject, typeAEList, list))
+	        return NULL;
+         }
+         
+         for (i = 1; v = ae_unmarshall(NULL, list, i, err, stage); i++) {
+           if (v == scheme_void)
+             break;
+           else if (!v)
+             return NULL;
+           else {
+	           Scheme_Object *pr = scheme_make_pair(v, scheme_null);
+	           if (last)
+	             SCHEME_CDR(last) = pr;
+	           else
+	             first = pr;
+	           last = pr;
+	       }
+         }
+         
+         return first;
+      }
     default:
       /* Don't know how to un-marshall */
-      if (err)
-	*err = -1;
-      return 0;
+	  *err = -1;
+	  *stage = "error translating the reply to a Scheme value: ";
+      return NULL;
     }
     
-    *err = AEGetParamPtr(&reply, keyDirectObject, rtype, &rtype, data, sz, &sz);
-    if (*err)
-      return 0;
+     if (list_in) {
+      *err = AEGetNthPtr(list_in, pos, rtype, &kw, &rtype, data, sz, &sz);
+      if (*err) {
+        *stage = "lost a list value: ";
+        return NULL;
+      }
+     } else {
+	  *err = AEGetParamPtr(reply, keyDirectObject, rtype, &rtype, data, sz, &sz);
+      if (*err) {
+        *stage = "lost the return value: ";
+        return NULL;
+      }
+    }
     
     switch (rtype) {
     case typeBoolean:
-      *result = (x_b ? scheme_true : scheme_false);
+      result = (x_b ? scheme_true : scheme_false);
       break;
     case typeLongInteger:
-      *result = scheme_make_integer(x_i);
+      result = scheme_make_integer(x_i);
       break;
     case typeFloat:
-      *result = scheme_make_double(x_d);
+      result = scheme_make_double(x_d);
       break;
     case typeChar:
-      *result = scheme_make_sized_string(x_s, sz, FALSE);
+      result = scheme_make_sized_string(x_s, sz, FALSE);
       break;
     }
   }
+  
+  return result;
+ }
+
+int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv, 
+		       Scheme_Object **result, OSErr *err, char **stage)
+{
+  AEEventClass classid;
+  AEEventID eventid;
+  AppleEvent *ae, *reply;
+  AEAddressDesc *target;
+  DescType rtype;
+  int i;
+  long ret, sz, dst;
+
+  ae = MALLOC_ONE_ATOMIC(AppleEvent);
+  reply = MALLOC_ONE_ATOMIC(AppleEvent);
+  target = MALLOC_ONE_ATOMIC(AEAddressDesc);
+
+  dst = check_four(name, 0, argc, argv);
+  classid = check_four(name, 1, argc, argv);
+  eventid = check_four(name, 2, argc, argv);
+
+  *err = AECreateDesc(typeApplSignature, &dst, sizeof(long), target);
+  if (*err) {
+    *stage = "application not found: ";
+    return 0;
+  }
+    
+  *err = AECreateAppleEvent(classid, eventid, target, kAutoGenerateReturnID, 
+                            kAnyTransactionID, ae);
+  if (*err) {
+    *stage = "cannot create event: ";
+    return 0;
+  }
+  
+  if (argc > 3) {
+    if (!ae_marshall(ae, NULL, argv[3], name, err, stage))
+      return 0;
+  }
+  
+  *err = AESend(ae, reply, kAEWaitReply | kAECanInteract, 
+                kAENormalPriority, kNoTimeOut, NULL, NULL);
+  if (*err) {
+    *stage = "send failed: ";
+    return 0;
+  }
+  
+  if (!AEGetParamPtr(reply, keyErrorString, typeChar, &rtype, NULL, 0, &sz) && sz) {
+    *err = -1;
+    if (sz > 256) sz = 256;
+    *stage = scheme_malloc_atomic(sz + 1);
+    *stage[sz] = 0;
+    AEGetParamPtr(reply, keyErrorString, typeChar, &rtype, *stage, sz, &sz);
+    return 0;
+  }
+  if (!AEGetParamPtr(reply, keyErrorNumber, typeLongInteger, &rtype, &ret, sizeof(long), &sz)
+      && ret) {
+    *err = ret;
+    
+    *stage = "application replied with error: ";
+    return 0;
+  }
+  
+  *result = ae_unmarshall(reply, NULL, 0, err, stage);
+  
+  /* Make sure these last long enough: */
+  *(char *)ae = 0;
+  *(char *)reply = 0;
   
   return 1;
 }

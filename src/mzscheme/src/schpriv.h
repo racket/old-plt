@@ -1024,7 +1024,7 @@ int scheme_string_has_null(Scheme_Object *o);
 
 #ifdef MACINTOSH_EVENTS
 int scheme_mac_start_app(char *name, int find_path, Scheme_Object *s);
-int scheme_mac_send_ae(char *name, int argc, Scheme_Object **argv, Scheme_Object **result, OSErr *err);
+int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv, Scheme_Object **result, OSErr *err, char **stage);
 #endif
 
 #endif /* __mzscheme_private__ */

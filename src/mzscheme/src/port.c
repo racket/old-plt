@@ -747,7 +747,7 @@ scheme_init_port (Scheme_Env *env)
   scheme_add_global_constant("send-event", 
 			     scheme_make_prim_w_arity(sch_send_event,
 						      "send-event", 
-						      3, -1), 
+						      3, 4), 
 			     env);
 
   scheme_add_global_constant("tcp-connect", 
@@ -4201,11 +4201,12 @@ static Scheme_Object *sch_send_event(int c, Scheme_Object *args[])
 {
 #ifdef MACINTOSH_EVENTS
   OSErr err;
+  char *stage = "";
   Scheme_Object *result;
-  if (scheme_mac_send_event("send-event", c, args, &result, &err))
+  if (scheme_mac_send_event("send-event", c, args, &result, &err, &stage))
     return result;
   else
-    scheme_raise_exn(MZEXN_MISC, "send-event: failed (%d)", (int)err);
+    scheme_raise_exn(MZEXN_MISC, "send-event: failed (%s%d)", stage, (int)err);
 #else
   scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "send-event: not supported on this platform");

@@ -1,9 +1,10 @@
 (module annotate mzscheme
   (require (prefix utils: "utils.ss")
            "marks.ss"
-           (prefix s: "model.ss")
+           ;(prefix s: "model.ss")
            "shared.ss"
 	   (lib "list.ss")
+           (lib "etc.ss")
            "my-macros.ss")
 
   (provide
@@ -53,7 +54,7 @@
     (if (null? (car lsts))
         (2vals null null)
         (let*-2vals ([(a b) (apply f (map car lsts))]
-                     [(a-rest b-rest) (apply dual-map f (map cdr lsts))])
+                     [(a-rest b-rest) (apply 2vals-map f (map cdr lsts))])
           (2vals (cons a a-rest) (cons b b-rest)))))
   
   ; triple-map (('a -> (values 'b 'c 'd)) ('a list)) -> (values ('b list) ('c list) ('d list))
@@ -109,7 +110,7 @@
   ; return the subset of bindings that appear in the varrefs
   
   (define (binding-set-varref-set-intersect bindings varrefs)
-    (cond [(eq? a-set 'all) b-set]
+    (cond [(eq? bindings 'all) varrefs]
           [else (filter (lambda (binding)
                           (ormap (lambda (varref)
                                    (bound-identifier=? binding varref))
@@ -124,12 +125,15 @@
            (error 'varref-set-remove-bindings "binding-set 'all passed as second argument, first argument was: ~s" varrefs)]
           [else (remove* bindings varrefs bound-identifier=?)]))
       
+  (define (get-arg-var n)
+    (string->symbol (format "arg-temp-~a" n)))
+  
   ; WARNING: because of how syntax-property works, these properties will have a default value of #f.
   ; that's what we want, in this case.
   
   (define (never-undefined? stx)
     (syntax-property stx 'never-undefined))
-  (define (mark-never-undefined parsed) 
+  (define (mark-never-undefined stx) 
     (syntax-property stx 'never-undefined #t))
 
   (define (lambda-bound-var? stx)
@@ -165,7 +169,7 @@
                              kept-bindings)]
            [let-bindings (filter (lambda (x) (not (lambda-bound-var? x))) 
                                  (append advance-warning kept-bindings))]
-           [lifter-syms (map get-lifted-sym let-bindings)]
+           [lifter-syms (map get-lifted-var let-bindings)]
            [quoted-lifter-syms (map (lambda (b) 
                                       (d->so #f `(syntax-quote ,b))) 
                                     lifter-syms)]
@@ -186,23 +190,22 @@
   
   ; wrap-struct-form 
   
-  (define (wrap-struct-form names annotated)
-    (let* ([arg-temps (build-list (length names) get-arg-binding)]
-           [arg-temp-syms (map z:binding-var arg-temps)]
-           [struct-proc-names (cdr names)]
-           [closure-records (map (lambda (proc-name) (make-closure-record
-                                                      proc-name 
-                                                      (lambda () #f)
-                                                      (eq? proc-name (car struct-proc-names))
-                                                      #f))
-                                 struct-proc-names)]
-           [proc-arg-temp-syms (cdr arg-temp-syms)]
-           [setters (map (lambda (arg-temp-sym closure-record)
-                           `(,closure-table-put! ,arg-temp-sym ,closure-record))
-                         proc-arg-temp-syms
-                         closure-records)]
-           [full-body (append setters (list `(values ,@arg-temp-syms)))])
-      `(#%let-values ((,arg-temp-syms ,annotated)) ,@full-body)))
+;  (define (wrap-struct-form names annotated)
+;    (let* ([arg-temps (build-list (length names) get-arg-var)]
+;           [struct-proc-names (cdr names)]
+;           [closure-records (map (lambda (proc-name) (make-closure-record
+;                                                      proc-name 
+;                                                      (lambda () #f)
+;                                                      (eq? proc-name (car struct-proc-names))
+;                                                      #f))
+;                                 struct-proc-names)]
+;           [proc-arg-temp-syms (cdr arg-temp-syms)]
+;           [setters (map (lambda (arg-temp-sym closure-record)
+;                           `(,closure-table-put! ,arg-temp-sym ,closure-record))
+;                         proc-arg-temp-syms
+;                         closure-records)]
+;           [full-body (append setters (list `(values ,@arg-temp-syms)))])
+;      `(#%let-values ((,arg-temp-syms ,annotated)) ,@full-body)))
   
   (define initial-env-package null)
   
@@ -403,11 +406,11 @@
 ;         (define struct-proc-names (apply append input-struct-proc-names
 ;                                          (map struct-procs-defined parsed-exprs)))
          
-;         (define (non-annotated-proc? varref)
-;           (let ([name (z:varref-var varref)])
-;             (or (and (s:check-pre-defined-var name)
-;                      (not (eq? name 'apply)))
-;                 (memq name struct-proc-names))))
+         (define (non-annotated-proc? varref)
+           (let ([name (syntax-e varref)])
+             (or (and (s:check-pre-defined-var name)
+                      (not (eq? name 'apply)))
+                 (memq name struct-proc-names))))
          
          (define (top-level-annotate/inner expr)
            (annotate/inner expr 'all #f #t #f))
@@ -769,14 +772,18 @@
                
                
                [(quote _)
-                (if (or cheap-wrap? ankle-wrap?)
-                    expr
-                    (wcm-wrap (make-debug-info-normal null) expr))]
+                (2vals
+                 (if (or cheap-wrap? ankle-wrap?)
+                     expr
+                     (wcm-wrap (make-debug-info-normal null) expr))
+                 null)]
                
                [(quote-syntax _)
-                (if (or cheap-wrap? ankle-wrap?)
-                    expr
-                    (wcm-wrap (make-debug-info-normal null) expr))]
+                (2vals
+                 (if (or cheap-wrap? ankle-wrap?)
+                     expr
+                     (wcm-wrap (make-debug-info-normal null) expr))
+                 null)]
                
                [(with-continuation-mark key mark body)
                 (let*-2vals ([(annotated-key free-varrefs-key)
@@ -858,7 +865,7 @@
                                (let ([debug-info (make-debug-info-app tail-bound free-varrefs 'called)])
                                  (wcm-break-wrap debug-info annotated-terms))
                                
-                               (let* ([arg-temps (build-list (length sub-exprs) get-arg-binding)] 
+                               (let* ([arg-temps (build-list (length sub-exprs) get-arg-var)] 
                                       [let-clauses (d->so #f `((,arg-temp-syms 
                                                                 (values ,@(map (lambda (_) *unevaluated*) arg-temps)))))]
                                       [set!-list (map (lambda (arg-symbol annotated-sub-expr)
@@ -882,9 +889,23 @@
                    free-varrefs))]   
                
                [(#%datum . _)
-                (if (or cheap-wrap? ankle-wrap?)
-                    expr
-                    (wcm-wrap (make-debug-info-normal null) expr))]
+                (2vals
+                 (if (or cheap-wrap? ankle-wrap?)
+                     expr
+                     (wcm-wrap (make-debug-info-normal null) expr))
+                 null)]
+
+               [(define-values vars-stx body)
+		(let*-2vals
+                    ([vars (syntax->list (syntax vars-stx))]
+                     [(annotated-val free-varrefs-val)
+                      (define-values-recur body (if (not (null? vars))
+                                                   (syntax-e (car vars))
+                                                   #f))])
+                  (2vals
+                   (d->so expr `(define-values (syntax vars-stx) ,annotated-val))
+                   free-varrefs-val))]
+               
                
                [(#%top . var)
                 (let*-2vals ([annotated (syntax var)]
@@ -912,22 +933,7 @@
                    free-varrefs))]
                 
 
-;	       [(z:define-values-form? expr)  
-;		(let*-values
-;                    ([(vars) (z:define-values-form-vars expr)]
-;                     [(_1) (map utils:check-for-keyword vars)]
-;                     [(binding-names) (map z:varref-var vars)]
-;                     [(val) (z:define-values-form-val expr)]
-;                     [(annotated-val free-bindings-val)
-;                      (define-values-recur val (if (not (null? binding-names))
-;                                                   (car binding-names)
-;                                                   #f))])
-;                  (values
-;                   (if  (and foot-wrap? (z:struct-form? val))
-;                        `(#%define-values ,binding-names
-;                          ,(wrap-struct-form binding-names annotated-val)) 
-;                         `(#%define-values ,binding-names ,annotated-val))
-;                   free-bindings-val))]
+
 ;	       
 ;	       
 ;                

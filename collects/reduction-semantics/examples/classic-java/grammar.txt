@@ -34,4 +34,4 @@ mdname      ::= id
 argname     ::= id
 
 id          ::= any symbol except reserved words (those which appear in
-                captials above)
+                capitals above, plus ADDR)

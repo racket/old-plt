@@ -2,7 +2,7 @@
 ;;
 ;; parser.ss
 ;; Richard Cobbe
-;; $Id: parser.ss,v 1.6 2004/08/17 21:12:29 cobbe Exp $
+;; $Id: parser.ss,v 1.7 2004/08/18 19:55:46 cobbe Exp $
 ;;
 ;; Implements the parser for the S-Expression based source syntax for
 ;; ClassicJava.
@@ -27,6 +27,8 @@
    (define-struct temp-class (name superclass fields methods)))
 
   #;
+  ;; Wraps temp-class ctor with assertions on arguments.  Can't use contracts
+  ;; here, since temp-class not exported from this module.
   (set! make-temp-class
         (let ([old-ctor make-temp-class])
           (lambda (n s f m)

@@ -4,7 +4,7 @@
 ;; Richard Cobbe
 ;; July 2004
 ;;
-;; $Id: utils.ss,v 1.4 2004/08/17 21:11:03 cobbe Exp $
+;; $Id: utils.ss,v 1.5 2004/08/24 20:34:59 cobbe Exp $
 ;;
 ;; General utilities used in the implementation of ClassicJava.
 ;;
@@ -37,9 +37,9 @@
 
   (provide with-public-inspector)
 
-  (provide/contract [small-step (-> (listof red?) any? any)]
-                    [big-step (-> (listof red?) any? any)]
-                    [small-step-sequence (-> (listof red?) any? list?)])
+  (provide/contract [small-step             (-> (listof red?) any? any)]
+                    [big-step               (-> (listof red?) any? any)]
+                    [small-step-sequence    (-> (listof red?) any? list?)])
 
   ;; small-step :: (Listof Reduction) Term -> (Union #f Term)
   ;; reduces term a single step; returns #f if no reduction possible.

@@ -1,7 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; ast.ss
-;; $Id: ast.ss,v 1.6 2004/08/24 13:49:15 cobbe Exp $
+;; $Id: ast.ss,v 1.7 2004/08/24 20:34:21 cobbe Exp $
 ;;
 ;; Defines the AST types used for the ClassicJava system.
 ;;
@@ -32,6 +32,8 @@
                             int bool null true false addr))
   ;; addr doesn't show up in surface syntax, but it does show up as a keyword
   ;; in the reductions, so forbid it here.
+  ;; FIXME: addr currently doesn't show up in reductions, though we may need to
+  ;; add it later to prevent ambiguous parses.  We'll have to see.
 
   ;; reserved? :: x -> Boolean
   ;; recognizes ClassicJava reserved words
@@ -42,7 +44,7 @@
           (unary-prim-name? x))))
 
   ;; binary-prim-name? unary-prim-name? :: x -> Boolean
-  ;; recognizes ClassicJava binary and unary primitives
+  ;; recognize ClassicJava binary and unary primitives
   (define binary-prim-name? (lambda (x) (and (memq x BINARY-PRIMS) #t)))
   (define unary-prim-name? (lambda (x) (and (memq x UNARY-PRIMS) #t)))
 
@@ -59,7 +61,7 @@
           (class-name? x))))
 
   ;; field-name? method-name? :: x -> Boolean
-  ;; recognizes legal ClassicJava field names, method names
+  ;; recognize legal ClassicJava field names, method names
   (define field-name? id?)
   (define method-name? id?)
 
@@ -180,80 +182,81 @@
       [(class-type? type) (class-type-name type)]
       [(any-type? type) '_!_]))
 
-  (provide/contract [struct program ([classes hash-table?]
-                                     [main expr?])]
-                    [struct class ([name class-type?]
-                                   [superclass (union false? class?)]
-                                   [fields (listof field?)]
-                                   [methods (listof method?)])]
+  (provide/contract
+   [struct program         ([classes hash-table?]
+                            [main expr?])]
+   [struct class           ([name class-type?]
+                            [superclass (union false? class?)]
+                            [fields (listof field?)]
+                            [methods (listof method?)])]
 
-                    [struct field ([type type?]
-                                   [class class-type?]
-                                   [name field-name?])]
-                    [struct method ([type type?]
-                                    [name method-name?]
-                                    [arg-names (listof arg-name?)]
-                                    [arg-types (listof type?)]
-                                    [body expr?])]
+   [struct field           ([type type?]
+                            [class class-type?]
+                            [name field-name?])]
+   [struct method          ([type type?]
+                            [name method-name?]
+                            [arg-names (listof arg-name?)]
+                            [arg-types (listof type?)]
+                            [body expr?])]
 
-                    [type? predicate?]
-                    [struct ground-type ([name (symbols 'int 'bool)])]
-                    [struct class-type ([name class-name?])]
-                    [struct any-type ()]
+   [type?                  predicate?]
+   [struct ground-type     ([name (symbols 'int 'bool)])]
+   [struct class-type      ([name class-name?])]
+   [struct any-type        ()]
 
-                    [expr? predicate?]
-                    [struct new ([type class-type?])]
-                    [struct var-ref ([var (union id? (symbols 'this))])]
-                    [struct nil ()]
-                    [struct ref ([object expr?]
-                                 [field field-name?])]
-                    [struct tagged-ref ([object expr?]
-                                        [class class-type?]
-                                        [field field-name?])]
-                    [struct set ([object expr?]
-                                 [field field-name?]
-                                 [rhs expr?])]
-                    [struct tagged-set ([object expr?]
-                                        [class class-type?]
-                                        [field field-name?]
-                                        [rhs expr?])]
-                    [struct send ([object expr?]
-                                  [method method-name?]
-                                  [args (listof expr?)])]
-                    [struct super ([method method-name?]
-                                   [args (listof expr?)])]
-                    [struct tagged-super ([type class-type?]
-                                          [method method-name?]
-                                          [args (listof expr?)])]
-                    [struct cast ([type class-type?]
-                                  [object expr?])]
-                    [struct cj-let ([lhs id?]
-                                    [rhs expr?]
-                                    [body expr?])]
-                    [struct num-lit ([val integer?])]
-                    [struct bool-lit ([val boolean?])]
-                    [struct unary-prim ([rator unary-prim-name?]
-                                        [rand expr?])]
-                    [struct binary-prim ([rator binary-prim-name?]
-                                         [rand1 expr?]
-                                         [rand2 expr?])]
-                    [struct if-expr ([test expr?]
-                                     [then expr?]
-                                     [else expr?])]
+   [expr?                  predicate?]
+   [struct new             ([type class-type?])]
+   [struct var-ref         ([var (union id? (symbols 'this))])]
+   [struct nil             ()]
+   [struct ref             ([object expr?]
+                            [field field-name?])]
+   [struct tagged-ref      ([object expr?]
+                            [class class-type?]
+                            [field field-name?])]
+   [struct set             ([object expr?]
+                            [field field-name?]
+                            [rhs expr?])]
+   [struct tagged-set      ([object expr?]
+                            [class class-type?]
+                            [field field-name?]
+                            [rhs expr?])]
+   [struct send            ([object expr?]
+                            [method method-name?]
+                            [args (listof expr?)])]
+   [struct super           ([method method-name?]
+                            [args (listof expr?)])]
+   [struct tagged-super    ([type class-type?]
+                            [method method-name?]
+                            [args (listof expr?)])]
+   [struct cast            ([type class-type?]
+                            [object expr?])]
+   [struct cj-let          ([lhs id?]
+                            [rhs expr?]
+                            [body expr?])]
+   [struct num-lit         ([val integer?])]
+   [struct bool-lit        ([val boolean?])]
+   [struct unary-prim      ([rator unary-prim-name?]
+                            [rand expr?])]
+   [struct binary-prim     ([rator binary-prim-name?]
+                            [rand1 expr?]
+                            [rand2 expr?])]
+   [struct if-expr         ([test expr?]
+                            [then expr?]
+                            [else expr?])]
 
-                    [type=? (-> type? type? boolean?)]
+   [type=?                 (-> type? type? boolean?)]
 
-                    [src-expr? predicate?]
-                    [tagged-expr? predicate?]
+   [src-expr?              predicate?]
+   [tagged-expr?           predicate?]
 
-                    [type->sexpr (-> type? sexp?)]
+   [type->sexpr            (-> type? sexp?)]
 
-                    [class-name? predicate?]
-                    [defn-name? predicate?]
-                    [type-name? predicate?]
-                    [field-name? predicate?]
-                    [method-name? predicate?]
-                    [arg-name? predicate?]
-                    [binary-prim-name? predicate?]
-                    [unary-prim-name? predicate?]
-                    [id? predicate?]))
+   [class-name?            predicate?]
+   [defn-name?             predicate?]
+   [type-name?             predicate?]
+   [field-name?            predicate?]
+   [method-name?           predicate?]
+   [arg-name?              predicate?]
+   [binary-prim-name?      predicate?]
+   [unary-prim-name?       predicate?]
+   [id?                    predicate?]))

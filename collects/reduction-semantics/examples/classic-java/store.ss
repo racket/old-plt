@@ -4,7 +4,7 @@
 ;; Richard Cobbe
 ;; July 2004
 ;;
-;; $Id$
+;; $Id: store.ss,v 1.1 2004/07/27 22:41:35 cobbe Exp $
 ;;
 ;; Implementation of a functional store.  This store is an alist, but note that
 ;; store-update does not produce a longer alist; this is helpful for debugging
@@ -79,12 +79,13 @@
       [(_ (addr value) ...)
        (create-store (list addr value) ...)]))
 
-  (provide/contract (store-alloc (-> store? any? (values number? store?)))
-                    (store-ref (opt->* (store? number?)
-                                       ((-> any))
-                                       any))
-                    (store-update (-> store? number? any? store?))
-                    (empty-store store?)
-                    (store? (-> any? boolean?)))
+  (provide/contract
+   [store-alloc     (-> store? any? (values number? store?))]
+   [store-ref       (opt->* (store? number?)
+                            ((-> any))
+                            any)]
+   [store-update    (-> store? number? any? store?)]
+   [empty-store     store?]
+   [store?          (-> any? boolean?)])
 
-  (provide (rename build-store store)))
+  (provide [rename build-store store)))

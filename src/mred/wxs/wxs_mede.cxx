@@ -929,7 +929,7 @@ class os_wxMediaEdit : public wxMediaEdit {
  public:
   Scheme_Object *scroll_closure;
 
-  os_wxMediaEdit(Scheme_Object * obj, nnfloat x0 = 1.0, float* x1 = NULL, int x2 = 0);
+  os_wxMediaEdit(Scheme_Object * obj, float x0 = 1.0, float* x1 = NULL, int x2 = 0);
   ~os_wxMediaEdit();
   class wxTabSnip* OnNewTabSnip();
   class wxTextSnip* OnNewTextSnip();
@@ -974,10 +974,10 @@ class os_wxMediaEdit : public wxMediaEdit {
   void SetModified(Bool x0);
   void SetSnipData(class wxSnip* x0, class wxBufferData* x1);
   class wxBufferData* GetSnipData(class wxSnip* x0);
-  void NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4);
+  void NeedsUpdate(class wxSnip* x0, float x1, float x2, float x3, float x4);
   void Resized(class wxSnip* x0, Bool x1);
   void SetCaretOwner(class wxSnip* x0, int x1 = wxFOCUS_IMMEDIATE);
-  Bool ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4, Bool x5, int x6 = 0);
+  Bool ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5, int x6 = 0);
   void OnDisplaySize();
   void OnChange();
   void OnFocus(Bool x0);
@@ -988,7 +988,7 @@ class os_wxMediaEdit : public wxMediaEdit {
   void SizeCacheInvalid();
   void BlinkCaret();
   void OwnCaret(Bool x0);
-  void Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4);
+  void Refresh(float x0, float x1, float x2, float x3, int x4);
   class wxCursor* AdjustCursor(class wxMouseEvent& x0);
   void OnChar(class wxKeyEvent& x0);
   void OnEvent(class wxMouseEvent& x0);
@@ -998,7 +998,7 @@ class os_wxMediaEdit : public wxMediaEdit {
 
 Scheme_Object *os_wxMediaEdit_class;
 
-os_wxMediaEdit::os_wxMediaEdit(Scheme_Object * o, nnfloat x0, float* x1, int x2)
+os_wxMediaEdit::os_wxMediaEdit(Scheme_Object * o, float x0, float* x1, int x2)
 : wxMediaEdit(x0, x1, x2)
 {
   __gc_external = (void *)o;
@@ -2480,7 +2480,7 @@ return wxMediaEdit::GetSnipData(x0);
   }
 }
 
-void os_wxMediaEdit::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4)
+void os_wxMediaEdit::NeedsUpdate(class wxSnip* x0, float x1, float x2, float x3, float x4)
 {
   Scheme_Object *p[5];
   Scheme_Object *v;
@@ -2585,7 +2585,7 @@ wxMediaEdit::SetCaretOwner(x0, x1);
   }
 }
 
-Bool os_wxMediaEdit::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4, Bool x5, int x6)
+Bool os_wxMediaEdit::ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5, int x6)
 {
   Scheme_Object *p[7];
   Scheme_Object *v;
@@ -2951,7 +2951,7 @@ wxMediaEdit::OwnCaret(x0);
   }
 }
 
-void os_wxMediaEdit::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4)
+void os_wxMediaEdit::Refresh(float x0, float x1, float x2, float x3, int x4)
 {
   Scheme_Object *p[5];
   Scheme_Object *v;
@@ -4572,10 +4572,10 @@ static Scheme_Object *os_wxMediaEditSetBetweenThreshold(Scheme_Object *obj, int 
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  nnfloat x0;
+  float x0;
 
   
-  x0 = objscheme_unbundle_nonnegative_float(p[0], "set-between-threshold in text%");
+  x0 = objscheme_unbundle_float(p[0], "set-between-threshold in text%");
 
   
   ((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->SetBetweenThreshold(x0);
@@ -6249,15 +6249,15 @@ static Scheme_Object *os_wxMediaEditNeedsUpdate(Scheme_Object *obj, int n,  Sche
   class wxSnip* x0;
   float x1;
   float x2;
-  nnfloat x3;
-  nnfloat x4;
+  float x3;
+  float x4;
 
   
   x0 = objscheme_unbundle_wxSnip(p[0], "needs-update in text%", 0);
   x1 = objscheme_unbundle_float(p[1], "needs-update in text%");
   x2 = objscheme_unbundle_float(p[2], "needs-update in text%");
-  x3 = objscheme_unbundle_nonnegative_float(p[3], "needs-update in text%");
-  x4 = objscheme_unbundle_nonnegative_float(p[4], "needs-update in text%");
+  x3 = objscheme_unbundle_float(p[3], "needs-update in text%");
+  x4 = objscheme_unbundle_float(p[4], "needs-update in text%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -6328,8 +6328,8 @@ static Scheme_Object *os_wxMediaEditScrollTo(Scheme_Object *obj, int n,  Scheme_
   class wxSnip* x0;
   float x1;
   float x2;
-  nnfloat x3;
-  nnfloat x4;
+  float x3;
+  float x4;
   Bool x5;
   int x6;
 
@@ -6337,8 +6337,8 @@ static Scheme_Object *os_wxMediaEditScrollTo(Scheme_Object *obj, int n,  Scheme_
   x0 = objscheme_unbundle_wxSnip(p[0], "scroll-to in text%", 0);
   x1 = objscheme_unbundle_float(p[1], "scroll-to in text%");
   x2 = objscheme_unbundle_float(p[2], "scroll-to in text%");
-  x3 = objscheme_unbundle_nonnegative_float(p[3], "scroll-to in text%");
-  x4 = objscheme_unbundle_nonnegative_float(p[4], "scroll-to in text%");
+  x3 = objscheme_unbundle_float(p[3], "scroll-to in text%");
+  x4 = objscheme_unbundle_float(p[4], "scroll-to in text%");
   x5 = objscheme_unbundle_bool(p[5], "scroll-to in text%");
   if (n > 6) {
     x6 = unbundle_symset_bias(p[6], "scroll-to in text%");
@@ -6582,15 +6582,15 @@ static Scheme_Object *os_wxMediaEditRefresh(Scheme_Object *obj, int n,  Scheme_O
   objscheme_check_valid(obj);
   float x0;
   float x1;
-  nnfloat x2;
-  nnfloat x3;
+  float x2;
+  float x3;
   int x4;
 
   
   x0 = objscheme_unbundle_float(p[0], "refresh in text%");
   x1 = objscheme_unbundle_float(p[1], "refresh in text%");
-  x2 = objscheme_unbundle_nonnegative_float(p[2], "refresh in text%");
-  x3 = objscheme_unbundle_nonnegative_float(p[3], "refresh in text%");
+  x2 = objscheme_unbundle_float(p[2], "refresh in text%");
+  x3 = objscheme_unbundle_float(p[3], "refresh in text%");
   x4 = unbundle_symset_caret(p[4], "refresh in text%");
 
   
@@ -6713,7 +6713,7 @@ static Scheme_Object *os_wxMediaEditCopySelf(Scheme_Object *obj, int n,  Scheme_
 static Scheme_Object *os_wxMediaEdit_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxMediaEdit *realobj;
-  nnfloat x0;
+  float x0;
   float* x1;
   int x2;
 
@@ -6721,7 +6721,7 @@ static Scheme_Object *os_wxMediaEdit_ConstructScheme(Scheme_Object *obj, int n, 
   if ((n > 2)) 
     scheme_wrong_count("initialization in text%", 0, 2, n, p);
   if (n > 0) {
-    x0 = objscheme_unbundle_nonnegative_float(p[0], "initialization in text%");
+    x0 = objscheme_unbundle_float(p[0], "initialization in text%");
   } else
     x0 = 1.0;
   if (n > 1) {

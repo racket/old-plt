@@ -24,16 +24,16 @@
     (opt-lambda (name (root #f)
 		  (symbol-error (if root
 				  (vocabulary-record-symbol-error root)
-				  "Invalid symbol syntax"))
+				  "Symbol invalid in this position"))
 		  (literal-error (if root
 				   (vocabulary-record-literal-error root)
-				   "Invalid literal syntax"))
+				   "Literal invalid in this position"))
 		  (list-error (if root
 				(vocabulary-record-list-error root)
-				"Invalid list syntax"))
+				"List invalid in this position"))
 		  (ilist-error (if root
 				 (vocabulary-record-ilist-error root)
-				 "Invalid improper-list syntax")))
+				 "Improper-list invalid in this position")))
       (let ((h (make-hash-table)))
 	(make-vocabulary-record name h root
 	  symbol-error literal-error list-error ilist-error))))

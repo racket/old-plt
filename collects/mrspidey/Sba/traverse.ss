@@ -50,14 +50,15 @@
   (define (remove-duplicate-bindings lst) ; only one top-level define for a variable
     (cond [(null? lst) '()]
 	  [else
-	   (let ([the-car (car lst)])
+	   (let* ([the-car (car lst)]
+		  [the-car-binding (zodiac:get-top-level-varref-binding the-car)])
 	     (cons 
 	      the-car
 	      (filter
 	       (lambda (elt) 	   
 		 (not 
 		  (eq? (zodiac:get-top-level-varref-binding elt) 
-		       (zodiac:get-top-level-varref-binding the-car))))
+		       the-car-binding)))
 	       (remove-duplicate-bindings (cdr lst)))))]))
 
   (define (top-level-traverse-defs defs env)

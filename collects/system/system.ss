@@ -238,7 +238,7 @@
 	      [core@ : mzlib:core^])
       (define console (make-object mred@:console-frame%))
       (define eval-string (lambda (s)
-			    (let ([ce (ivar console edit)])
+			    (let ([ce (send console get-edit)])
 			      (send ce eval-and-display s)
 			      (send ce insert-prompt)
 			      #t))))))

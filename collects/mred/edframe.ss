@@ -25,8 +25,8 @@
       (lambda (super%)
 	(class super% ([filename #f][show? #t][frameset mred:group:frames])
 	  (inherit make-menu show save-as
-		   make-edit active-edit edit
-		   canvas)
+		   make-edit active-edit
+		   get-edit get-canvas)
 	  (rename [super-on-close on-close]
 		  [super-make-menu-bar make-menu-bar]
 		  [super-on-menu-command on-menu-command]
@@ -51,8 +51,8 @@
 	       (when keep-buffers?
 		 (send file-menu append-item "Switch to..."
 		       (lambda ()
-			 (if canvas
-			     (send buffers pick canvas)
+			 (if (get-canvas)
+			     (send buffers pick (get-canvas))
 			     (wx:bell)))))
 	       (send file-menu append-separator))]
 	    [file-menu:between-save-and-print
@@ -111,7 +111,7 @@
 		     (send edit set-mode mode)))))]
 
 	    [open-file
-	     (opt-lambda (orig-filename [canvas canvas]
+	     (opt-lambda (orig-filename [canvas (get-canvas)]
 					[check-save? (not keep-buffers?)])
 	       ; filename = () => ask user
 	       ; filename = #f => no file, make untitled
@@ -187,7 +187,7 @@
 	       (check-all-saved "Quit"))]
 	    [check-all-saved
 	     (opt-lambda ([reason "Close"])
-	       (check-saved edit reason))]
+	       (check-saved (get-edit) reason))]
 	    
 	    [on-close
 	     (lambda ()
@@ -196,7 +196,7 @@
 			    (send frames remove-frame this)))
 		   (if keep-buffers?
 		       (begin
-			 (send canvas set-media '())
+			 (send (get-canvas) set-media '())
 			 #t)
 		       (if (check-all-saved)
 			   (begin
@@ -209,7 +209,7 @@
 	    [do-autosave
 	     (lambda ()
 	       (when auto-save?
-		 (let ([m (send canvas get-media)])
+		 (let ([m (get-edit)])
 		   (unless (null? m)
 		     (send m do-autosave)))))])
 
@@ -247,12 +247,12 @@
 				(mzlib:file:normalize-path filename)
 				filename)])
 	      (when filename
-		(send edit load-file filename)
-		(pick-mode edit)
-		(open-file edit)))
+		(send (get-edit) load-file filename)
+		(pick-mode (get-edit))
+		(open-file (get-edit))))
 	    (when show?
 	      (show #t)
-	      (send canvas set-focus))))))
+	      (send (get-canvas) set-focus))))))
 
     (define editor-frame% (make-editor-frame%
 			   (mred:find-string:make-searchable-frame%

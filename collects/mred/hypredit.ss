@@ -310,7 +310,8 @@
 		 (send e load-file url-string)
 		 (let ([c (get-canvas)])
 		   (send e add-canvas c)
-		   (send c set-media e))))]
+		   (send c set-media e))
+		 (send e set-auto-set-wrap #t)))]
 	    [make-clickback-funct
 	     (lambda (url-string)
 	       (lambda (edit start end)
@@ -590,7 +591,6 @@
 		      [url-string (mred:url:url->string url)]
 		      [p (mred:url:get-pure-port url)])
 		 (mred:dv url url-string)
-		 (printf "(get-filename) = ~a~n" (get-filename))
 		 (set-filename url-string)
 		 (dynamic-wind (lambda ()
 				 (wx:begin-busy-cursor)

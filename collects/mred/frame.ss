@@ -313,16 +313,16 @@
 	       (opt-lambda ([format wx:const-media-ff-same])
 		 (let ([file (mred:finder:put-file)])
 		   (when file
-		     (send edit save-file file format))))]
+		     (send (get-edit) save-file file format))))]
 	      [file-menu:revert 
 	       (lambda () 
 		 (let* ([b (box #f)]
-			[filename (send edit get-filename b)])
+			[filename (send (get-edit) get-filename b)])
 		   (if (or (null? filename) (unbox b))
 		       (wx:bell)
-		       (send edit load-file filename))
+		       (send (get-edit) load-file filename))
 		   #t))]
-	      [file-menu:save (lambda () (send edit save-file)
+	      [file-menu:save (lambda () (send (get-edit) save-file)
 				#t)]
 	      [file-menu:save-as (lambda () (save-as) #t)]
 	      [file-menu:between-print-and-close
@@ -344,7 +344,7 @@
 			   (when (active-canvas)
 			     (send panel collapse (active-canvas))))))
 		 (send file-menu append-separator))]
-	      [file-menu:print (lambda () (send edit print '()) #t)])
+	      [file-menu:print (lambda () (send (get-edit) print '()) #t)])
 	    
 	    
 	    (private
@@ -395,10 +395,12 @@
 	      (mred:debug:printf 'super-init "after simple-frame%"))
 	    
 	    (public
-	      [canvas (make-object (get-canvas%) panel)]
-	      [edit (make-edit)])
+	      [get-canvas (let ([c (make-object (get-canvas%) panel)])
+			    (lambda () c))]
+	      [get-edit (let ([e (make-edit)]) 
+			  (send (get-canvas) set-media e)
+			  (lambda () e))])
 	    (sequence
-	      (send canvas set-media edit)
 	      (when (send mred:icon:icon ok?)
 		(set-icon mred:icon:icon))
 	      (do-title))))))

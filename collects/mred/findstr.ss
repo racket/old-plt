@@ -356,7 +356,7 @@
 		     (super-on-set-focus))]))])
 	(lambda (super%)
 	  (class super% args
-	    (inherit active-edit active-canvas edit)
+	    (inherit active-edit active-canvas get-edit)
 	    (rename [super-make-root-panel make-root-panel]
 		    [super-on-close on-close])
 	    (private
@@ -379,7 +379,7 @@
 	    (public
 	      [get-edit-to-search
 	       (lambda () 
-		 edit)]
+		 (get-edit))]
 	      [hide-search
 	       (lambda ()
 		 (send super-root delete-child search-panel)

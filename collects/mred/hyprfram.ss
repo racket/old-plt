@@ -108,8 +108,9 @@
       (lambda (super%)
 	(class super% ([file-name #f] [group #f] [keep-locked? #t]
 		       [tag "top"] [relative? #f])
-	  (inherit canvas panel make-menu menu-bar% show on-size)
+	  (inherit get-canvas panel make-menu menu-bar% show on-size)
 	  (public
+	    [get-edit (lambda () (send (get-canvas) get-media))]
 	    [get-edit% (lambda () mred:hyper-edit:hyper-edit%)]
 	    [get-canvas% (lambda () hyper-canvas%)]
 	    [file-menu:between-print-and-close
@@ -121,7 +122,8 @@
 	  (private
 	    [do-backward
 	     (lambda (button event)
-	       (let* ([backs (ivar canvas history-stack)]
+	       (let* ([canvas (get-canvas)]
+		      [backs (ivar canvas history-stack)]
 		      [fors (ivar canvas forward-stack)])
 		 (unless (or (null? backs)
 			     (null? (cdr backs)))
@@ -132,7 +134,8 @@
 		 (send canvas set-focus)))]
 	    [do-forward
 	     (lambda (button event)
-	       (let* ([backs (ivar canvas history-stack)]
+	       (let* ([canvas (get-canvas)]
+		      [backs (ivar canvas history-stack)]
 		      [fors (ivar canvas forward-stack)])
 		 (when (not (null? fors))
 		   (send* canvas
@@ -143,7 +146,8 @@
 		 (send canvas set-focus)))]
 	    [do-home
 	     (lambda (button event)
-	       (let* ([backs (ivar canvas history-stack)]
+	       (let* ([canvas (get-canvas)]
+		      [backs (ivar canvas history-stack)]
 		      [home (ivar canvas home)])
 		 (when home
 		   (send* canvas
@@ -158,7 +162,7 @@
 	     (lambda ()
 	       (mred:preferences:set-preference
 		'mred:bookmarks
-		(cons (send (send canvas get-media) get-filename)
+		(cons (send (get-edit) get-filename)
 		      (mred:preferences:get-preference 'mred:bookmarks))))]
 	    [bookmark-string "Bookmark this URL"]
 	    [bookmark-ids null]
@@ -175,8 +179,7 @@
 			  (send bookmark-menu append-item
 				bookmark
 				(lambda ()
-				  (send (send canvas get-media)
-					goto-url bookmark))))
+				  (send (get-edit) goto-url bookmark))))
 			new-entries))))])
 		    
 	  (rename [super-make-menu-bar make-menu-bar])
@@ -198,7 +201,7 @@
 	  (sequence
 	    (mred:debug:printf 'super-init "hyper-basic-frame; file-name: ~a" file-name)
 	    (super-init file-name)
-	    (send (send canvas get-media) load-file file-name))
+	    (send (get-edit) load-file file-name))
 	  
 	  (private
 	    [button-panel (make-object mred:container:horizontal-panel% panel)]
@@ -214,10 +217,11 @@
 	  (sequence
 	    (send button-panel stretchable-in-y #f)
 	    (send panel change-children reverse)
-	    (send* canvas (set-focus)
-		          (set-home tag)
-		          (set-history ())
-			  (adjust-stacks-on-follow tag))
+	    (send* (get-canvas)
+	      (set-focus)
+	      (set-home tag)
+	      (set-history ())
+	      (adjust-stacks-on-follow tag))
 	    (show #t)))))
 
     (define hyper-basic-frame% (make-hyper-basic-frame% 
@@ -231,7 +235,7 @@
     (define make-hyper-make-frame%
       (lambda (super%)
 	(class super% ([file-name #f] [group #f])
-	  (inherit active-edit active-canvas get-menu-bar make-menu get-edit% edit)
+	  (inherit active-edit active-canvas get-menu-bar make-menu get-edit%)
 	  (rename [super-make-menu-bar make-menu-bar])
 	  (private
 	    follow-item 

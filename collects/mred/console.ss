@@ -80,26 +80,6 @@
     (define scheme-mode-edit% (make-scheme-mode-edit% mred:edit:edit%))
 
     (define console-max-save-previous-exprs 30)
-
-    (define dynamic-break-later
-      (let ([p (current-output-port)])
-	(lambda (t)
-	  (let* ([break? #f]
-		 [old-handler (user-break-poll-handler)]
-		 [new-handler
-		  (lambda ()
-		    (unless break?
-		      '(begin (fprintf p ".") (flush-output p))
-		      (when (old-handler)
-			'(fprintf p "~nsetting break to #t~n")
-			(set! break? #t)))
-		    #f)])
-	    (begin0
-	      (parameterize ([user-break-poll-handler new-handler])
-			    (t))
-	      '(fprintf p "~nwill break: ~a~n" break?)
-	      (when break?
-		(break-thread (current-thread))))))))
 		    
     (define make-console-edit%
       (lambda (super%)
@@ -739,7 +719,7 @@
 	(class super% ([close-item? #f]
 		       [mssg welcome-message]
 		       [show? #t])
-	  (inherit active-edit edit canvas show make-menu)
+	  (inherit active-edit get-edit get-canvas show make-menu)
 	  (rename [super-on-close on-close]
 		  [super-make-menu-bar make-menu-bar])
 	  (private 
@@ -816,48 +796,49 @@
 	    (mred:debug:printf 'super-init "before console-frame%")
 	    (super-init "MrEdConsole")
 	    (mred:debug:printf 'super-init "after console-frame%")
-	    (send edit set-file-format wx:const-media-ff-std)
-	    
-	    ; setup snips for the pretty printer
-	    (mzlib:pretty-print:pretty-print-size-hook
-	     (lambda (x _) (and (is-a? x wx:snip%) 1)))
-	    (mzlib:pretty-print:pretty-print-print-hook
-	     (lambda (x _) 
-	       (let ([edit (active-edit)])
-		 (send edit insert
-		       (send x copy)
-		       (send edit last-position)))))
-
-	    ; Welcome message and initial prompt:
-	    (when mssg
-	      (send edit insert mssg)
-	      (send edit set-last-header-position (send edit get-end-position))
+	    (let ([edit (get-edit)])
+	      (send edit set-file-format wx:const-media-ff-std)
 	      
-	      (mred:gui-utils:local-busy-cursor 
-	       canvas
-	       (lambda ()
-		 (let ([last (send edit last-position)]
-		       [delta (make-object wx:style-delta%
-					   wx:const-change-family
-					   wx:const-decorative)])
-		   (send delta set-delta wx:const-change-size 10)
-		   (send edit insert #\newline)
-		   (send edit change-style delta 0 last)
-		   
-		   (let ([dd (ivar edit output-delta)])
-		     (dynamic-wind
-		      (lambda ()
-			(send edit set-output-delta delta))
-		      (lambda ()
-			(send edit initialize-console))
-		      (lambda ()
-			(send edit set-output-delta dd)))))))
+	      ; setup snips for the pretty printer
+	      (mzlib:pretty-print:pretty-print-size-hook
+	       (lambda (x _) (and (is-a? x wx:snip%) 1)))
+	      (mzlib:pretty-print:pretty-print-print-hook
+	       (lambda (x _) 
+		 (let ([edit (get-edit)])
+		   (send edit insert
+			 (send x copy)
+			 (send edit last-position)))))
 	      
-	      (send edit enable-autoprompt)
-	      (send edit insert-prompt)
-	      (send edit clear-undos)
-	      (when show?
-		(show #t)))))))
+	      ; Welcome message and initial prompt:
+	      (when mssg
+		(send edit insert mssg)
+		(send edit set-last-header-position (send edit get-end-position))
+		
+		(mred:gui-utils:local-busy-cursor 
+		 (get-canvas)
+		 (lambda ()
+		   (let ([last (send edit last-position)]
+			 [delta (make-object wx:style-delta%
+					     wx:const-change-family
+					     wx:const-decorative)])
+		     (send delta set-delta wx:const-change-size 10)
+		     (send edit insert #\newline)
+		     (send edit change-style delta 0 last)
+		     
+		     (let ([dd (ivar edit output-delta)])
+		       (dynamic-wind
+			(lambda ()
+			  (send edit set-output-delta delta))
+			(lambda ()
+			  (send edit initialize-console))
+			(lambda ()
+			  (send edit set-output-delta dd)))))))
+		
+		(send edit enable-autoprompt)
+		(send edit insert-prompt)
+		(send edit clear-undos)
+		(when show?
+		  (show #t))))))))
 
     (define console-frame% (make-console-frame%
 			    (mred:find-string:make-searchable-frame%

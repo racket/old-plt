@@ -568,8 +568,8 @@ typedef long mz_pre_jmp_buf[8];
 #ifdef MZ_PRECISE_GC
 typedef struct {
   mz_pre_jmp_buf jb;
-  void **gcvs;
-  void *gcvs_cnt;
+  long gcvs; /* declared as `long' so it isn't pushed when on the stack! */
+  long gcvs_cnt;
 } mz_jmp_buf;
 #else
 # define mz_jmp_buf mz_pre_jmp_buf
@@ -1075,10 +1075,10 @@ MZ_EXTERN Scheme_Object *scheme_eval_waiting;
 #ifdef MZ_PRECISE_GC
 /* Need to make sure that a __gc_var_stack__ is always available where
    setjmp & longjmp are used. */
-# define scheme_longjmp(b, v) ((b).gcvs[1] = (b).gcvs_cnt, \
+# define scheme_longjmp(b, v) (((long *)((b).gcvs))[1] = (b).gcvs_cnt, \
                                scheme_mz_longjmp((b).jb, v))
-# define scheme_setjmp(b)     ((b).gcvs = __gc_var_stack__, \
-                               (b).gcvs_cnt = __gc_var_stack__[1], \
+# define scheme_setjmp(b)     ((b).gcvs = (long)__gc_var_stack__, \
+                               (b).gcvs_cnt = (long)(__gc_var_stack__[1]), \
                                scheme_mz_setjmp((b).jb))
 #else
 # define scheme_longjmp(b, v) scheme_mz_longjmp(b, v)

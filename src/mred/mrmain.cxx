@@ -186,6 +186,10 @@ static void do_graph_repl(Scheme_Env *env)
   if (!scheme_setjmp(scheme_error_buf)) {
     scheme_eval_string("(graphical-read-eval-print-loop)", env);
   }
+
+#ifdef MZ_PRECISE_GC
+  env = NULL; /* makes xform think that env is live, so we get a __gc_var_stack__ */
+#endif
 }
 
 static FinishArgs *xfa;

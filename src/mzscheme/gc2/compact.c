@@ -2050,6 +2050,9 @@ static void do_bigblock(void **p, MPage *page, int fixup)
   }
 }
 
+static int old_tag;
+static void *old_p;
+
 static void propagate_all_mpages()
 {
   MPage *page;
@@ -2087,7 +2090,9 @@ static void propagate_all_mpages()
 	    mark_src = p;
 	    mark_type = MTYPE_TAGGED;
 #endif
-	  
+
+	    old_tag = tag;
+	    old_p = p;
 	    mark_table[tag](p);
 	  
 #if ALIGN_DOUBLES
@@ -4101,6 +4106,11 @@ static void * malloc_bigblock(long size_in_bytes, mtype_t mtype)
   void *p, *mp;
   MPage *map;
   long s;
+
+#if SEARCH
+  if (size_in_bytes == search_size)
+    stop();
+#endif
 
   if (memory_in_use > gc_threshold) {
     gcollect(0);

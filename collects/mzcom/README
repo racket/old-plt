@@ -1,3 +1,6 @@
+MzCOM
+=====
+
 This directory contains the files for MzCOM, a COM 
 class wrapper for MzScheme.
 
@@ -14,15 +17,17 @@ Under Windows 95/98, REGSVR32 is in the Windows
 System directory.  Under Windows NT/2000, REGSVR32
 is in the directory WINNT\System32.
 
-Using MzCOM
------------
+Loading MzCOM
+-------------
 
 To load a COM object, COM hosts require a COM class 
 name or a ProgID.  MzCOM has the class name 
 "MzObj Class" and the ProgID "MzCOM.MzObj.<version>",
 where <version> is the version number, such as 102.
 
-From Visual BASIC, you declare a variable, then assign to it:
+In the Visual BASIC environment, from the menu 
+Project|References, check "MzCOM Type Library".  
+In your code, declare a variable, then assign to it:
 
   DIM schemeObject as MzObj
   SET schemeObject as NEW MzObj
@@ -80,3 +85,8 @@ primary MzScheme thread, as in
 then the evaluator Win32 thread is also killed.  
 When that happens, subsequent calls to Eval() will fail.
 
+Contact us
+----------
+
+If you need more information on using MzCOM, please 
+contact us at scheme@cs.rice.edu.

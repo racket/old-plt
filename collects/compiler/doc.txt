@@ -13,14 +13,9 @@ next section.
 
 >  ((compile-extensions expr) scheme-file-list dest-dir)
 
-      `(compile-extension expr)' returns a compiler that is initialized with
-      the elaboration-time expression `expr'.
-
-      If `expr' is #f, then no compilation namespace is created, and
-      expressions in the files are assumed to compile
-      independently. Otherwise, a namespace is created for evaluating
-      the expression and compiling files, and the expanstion-time part
-      of each expression is evaluated before it is compiled.
+      `(compile-extension expr)' returns a compiler that is
+      initialized with the elaboration-time expression `expr', as
+      described below.
 
       The compiler takes a list of Scheme files and compiles each of
       them to an extension, placing the resulting extensions in the
@@ -31,6 +26,25 @@ next section.
       file, where <PLATFORM> is the result of
       `system-library-subpath'. (The directory is created if
       necessary.)
+
+      `expr' effect:
+
+       If `expr' is anything other than #f, then a namespace is
+       created for compiling the files that are supplied later; `expr'
+       is evaluated to initialize the created namespace. For example,
+       `expr' might load a set of macros. In addition, the
+       expansion-time part of each expression later compiled is
+       evaluated in the namespace before being compiled, so that the
+       effects are visible when compiling later expressions.
+
+       If `expr' is #f, then no compilation namespace is created, and
+       expressions in the files are assumed to compile independently
+       (so there's no need to evaluate the expansion-time part of an
+       expression to compile).
+
+       Typically, `expr' is #f for compiling `module' files and
+       `(void)' for compiling files with top-level definitions and
+       expressions.
 
 >  ((compile-extensions-to-c expr) scheme-file-list dest-dir)
 

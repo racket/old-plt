@@ -1241,12 +1241,12 @@ Scheme_Object *srp_read_buffer(int argc,Scheme_Object **argv) {
   case SQL_C_BIT :
     return readBitBuffer((unsigned char *)buffer,arrayLength,ndx);
 
-#ifdef WIN32
+#if HASINT64
 #if (ODBCVER >= 0x0300)
   case SQL_C_SBIGINT :
-    return readBigIntBuffer((__int64 *)buffer,arrayLength,ndx);
+    return readBigIntBuffer((SRPINT64 *)buffer,arrayLength,ndx);
   case SQL_C_UBIGINT :
-    return readUBigIntBuffer((unsigned __int64 *)buffer,arrayLength,ndx);
+    return readUBigIntBuffer((SRPUINT64 *)buffer,arrayLength,ndx);
 #endif
 #endif
 
@@ -1472,7 +1472,7 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
     writeUTinyBuffer((unsigned char *)buffer,argv[1],ndx); 
 
-#ifdef WIN32
+#if HASINT64
 #if (ODBCVER >= 0x0300)
   case SQL_C_SBIGINT :
 
@@ -1480,7 +1480,7 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
       scheme_wrong_type("write-buffer","integer",1,argc,argv);
     }
 
-    writeBigIntBuffer((__int64 *)buffer,argv[1],ndx); 
+    writeBigIntBuffer((SRPINT64 *)buffer,argv[1],ndx); 
 
   case SQL_C_UBIGINT :
 

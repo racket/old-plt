@@ -219,11 +219,23 @@ void writeTinyBuffer(char *buffer,Scheme_Object *,long);
 Scheme_Object *readUTinyBuffer(unsigned char *buffer,long,long);
 void writeUTinyBuffer(unsigned char *buffer,Scheme_Object *,long);
 
-#ifdef WIN32
-Scheme_Object *readBigIntBuffer(__int64 *buffer,long,long);
-void writeBigIntBuffer(__int64 *buffer,Scheme_Object *,long);
-Scheme_Object *readUBigIntBuffer(unsigned __int64 *buffer,long,long);
-void writeUBigIntBuffer(unsigned __int64 *buffer,Scheme_Object *,long);
+#ifndef HASINT64
+#define HASINT64 (WIN32 || __GNUC__)
+#endif
+
+#if WIN32
+typedef __int64 SRPINT64;
+typedef unsigned __int64 SRPUINT64;
+#elif __GNUC__ 
+typedef long long int SRPINT64;
+typedef long long unsigned int SRPUINT64;
+#endif
+
+#if HASINT64
+Scheme_Object *readBigIntBuffer(SRPINT64 *buffer,long,long);
+void writeBigIntBuffer(SRPINT64 *buffer,Scheme_Object *,long);
+Scheme_Object *readUBigIntBuffer(SRPUINT64 *buffer,long,long);
+void writeUBigIntBuffer(SRPUINT64 *buffer,Scheme_Object *,long);
 #endif
 
 /* version info */

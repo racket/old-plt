@@ -6,7 +6,7 @@
 	  [drscheme:app : drscheme:app^]
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:get/extend : drscheme:get/extend^]
-	  [basis : userspace:basis^]
+	  [basis : plt:basis^]
 	  mzlib:function^)
 
 

@@ -1,7 +1,7 @@
 (unit/sig drscheme:prefs^
   (import mred^
 	  [framework : framework^]
-	  [basis : userspace:basis^])
+	  [basis : plt:basis^])
 
   (define (valid-setting? setting)
     (ormap (lambda (x) (equal? (basis:setting-name setting)

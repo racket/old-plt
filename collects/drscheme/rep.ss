@@ -19,9 +19,8 @@
 	  [drscheme:app : drscheme:app^]
 	  [drscheme:frame : drscheme:frame^]
 	  [drscheme:unit : drscheme:unit^]
-	  [basis : userspace:basis^]
+	  [basis : plt:basis^]
 	  [drscheme:text : drscheme:text^]
-          [init-namespace : plt:init-namespace^]
 	  [drscheme:load-handler : drscheme:load-handler^]
           [help : help:drscheme-interface^])
   
@@ -67,8 +66,6 @@
     (set-delta-foreground "BLACK")
     (set-delta-background "YELLOW"))
   
-  (define init-namespace void)
-  
   (fw:preferences:set-default 'drscheme:teachpack-file
                               null
                               (lambda (x) 
@@ -79,7 +76,7 @@
   (fw:preferences:add-callback
    'drscheme:teachpack-file
    (lambda (p v)
-     (set! init-namespace (init-namespace:build-namespace-thunk v))))
+     (basis:teachpack-changed v)))
   
   (define current-rep-text (make-parameter #f))
   
@@ -1299,8 +1296,6 @@
 	    
 	    (exit-handler (lambda (arg) ; =User=
 			    (custodian-shutdown-all user-custodian)))
-	    
-	    (init-namespace)
 	    
 	    ;; set all parameters before constructing eventspace
 	    ;; so that the parameters are set in the eventspace's

@@ -21,11 +21,14 @@
 					       (mred : mred^)
 					       framework
 					       frame)]
-	[basis-import : userspace:basis-import^ ((unit/sig userspace:basis-import^
-						   (import)
-						   (define in-mzscheme? #f)))]
+	[basis-import : plt:basis-import^ ((unit/sig plt:basis-import^
+					     (import mred^)
+					     (define (invalid-teachpack s)
+					       (message-box "Invalid Teachpack" s))
+					     (define in-mzscheme? #f))
+					   mred)]
 	[params : plt:userspace:params^ ((require-library "paramr.ss" "userspce"))]
-	[basis : userspace:basis^
+	[basis : plt:basis^
 	       ((require-library "basis.ss" "userspce")
 		basis-import
 		params
@@ -36,17 +39,6 @@
 		(mzlib pretty-print)
 		(mzlib function))]
 
-	[invalid-teachpack : (invalid-teachpack) ((unit/sig (invalid-teachpack)
-						    (import mred^)
-						    (define (invalid-teachpack s)
-						      (message-box "Invalid Teachpack" s)))
-						  mred)]
-	[init-namespace : plt:init-teachpack^
-			((require-library "init-teachpackr.ss" "userspce")
-			 basis
-			 (mzlib function)
-			 invalid-teachpack)]
-
         [load-handler : drscheme:load-handler^
                       ((require-library "load-handler.ss" "drscheme")
 		       mred zodiac basis 
@@ -56,7 +48,7 @@
 	     ((require-relative-library "rep.ss")
 	      mred mzlib framework print-convert zodiac
 	      interface init snip language app frame unit
-	      basis text init-namespace load-handler
+	      basis text load-handler
               help-desk)]
 	[frame : drscheme:frame^
 	       ((require-relative-library "frame.ss")

@@ -1,4 +1,4 @@
-(require-library "errortrace.ss" "errortrace") (error-print-width 200)
+;(require-library "errortrace.ss" "errortrace") (error-print-width 200)
 ;(current-load (let ([ol (current-load)]) (lambda (x) (printf "~a~n" x) (ol x))))
 
 ;(define argv (vector "Cupertino:Desktop Folder:tmp.ss"))
@@ -8,8 +8,6 @@
    (build-path (collection-path "icons") "plt.gif")
    "DrScheme"
    81))
-
-;(require-library "refer.ss")
 
 (require-relative-library "drsig.ss")
 

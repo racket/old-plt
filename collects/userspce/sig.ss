@@ -1,18 +1,13 @@
-;;;
-(begin-elaboration-time
- (with-handlers ([void void])
-   ;; Might not be there if this is MrEd-less DrJr distribution
-   (require-relative-library "userspcs.ss")))
 (require-relative-library "ricedefs.ss")
 (require-library "sig.ss" "stepper")
 (require-library "cores.ss")
 (require-library "pconvers.ss")
 (require-library "zsigs.ss" "zodiac")
 (require-library "sigs.ss" "zodiac")
-
 (require-library "coreflats.ss")
 (require-relative-library "ricedefs.ss")
 (require-library "sig.ss" "mred")
+(require-library "turtles.ss" "graphics")
 
 (define-signature plt:beginner-extras^
   ((struct posn (x y) -setters)

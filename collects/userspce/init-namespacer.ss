@@ -142,4 +142,3 @@
 
   (define (teachpack-changed v)
     (set! namespace-thunk (build-namespace-thunk v))))
-      

@@ -1,7 +1,7 @@
 (unit/sig drscheme:load-handler^
   (import [mred : mred^]
           [zodiac : zodiac:system^]
-          [basis : userspace:basis^]
+          [basis : plt:basis^]
           [gui-utils : framework:gui-utils^])
   
   (define (process-text/zodiac text f start end annotate? text-is-file?)

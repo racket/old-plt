@@ -4,7 +4,7 @@
 	  [fw : framework^]
 	  [drscheme:unit : drscheme:unit^]
 	  [zodiac : zodiac:system^]
-	  [basis : userspace:basis^]
+	  [basis : plt:basis^]
 	  mzlib:function^
 	  mzlib:file^
 	  mzlib:print-convert^)

@@ -48,7 +48,7 @@ the function, all tests will be run.
 ----------  OLD TESTS  -----------
 ----------------------------------
 
-|# menu-test.ss #|
+   menu-test.ss
 
 PR-based tests:
   

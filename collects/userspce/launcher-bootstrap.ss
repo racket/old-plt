@@ -3,7 +3,6 @@
 ;; files still load properly.
 
 (require-library "errortrace.ss" "errortrace")
-(require-library "teachpacks.ss" "drscheme")
 (require-library "core.ss" "drscheme-jr")
 
 (define main-unit
@@ -15,16 +14,10 @@
       (import [prims : prims^]
 	      [basis : plt:basis^]
 	      [mzlib : mzlib:core^]
-              [drscheme:teachpack : drscheme:teachpack^]
 	      mred^)
       
-      ;; teachpacks
-      (define thnk/langs
-        (mzlib:function:filter 
-         (lambda (x) x)
-         (map drscheme:teachpack:build-teachpack-thunk teachpacks)))
-      (define thnks (map cadr thnk/langs))
-      
+      (basis:teachpack-changed teachpacks)
+
       (define show-banner? #f)
       (define repl? #f)
       (define (run-in-new-user-thread thunk)
@@ -40,9 +33,6 @@
 	    thread)))
       (define (initialize-userspace)
 
-        ;; invoke the teachpacks
-	(for-each (lambda (thnk) (thnk)) thnks)
-
         ;; add mred to the namespace
 	(global-define-values/invoke-unit/sig mred^ mred@))
 
@@ -56,8 +46,7 @@
 	     [basis : plt:basis^]
 	     [mzlib : mzlib:core^])
      (link [mred : mred^ (mred@)]
-           [teachpack : drscheme:teachpack^ ((require-library "teachpackr.ss" "drscheme") mred)]
-	   [main : drscheme-jr:settings^ (main-unit prims basis mzlib teachpack mred)])
+	   [main : drscheme-jr:settings^ (main-unit prims basis mzlib mred)])
      (export (open main)))))
 
 (go)

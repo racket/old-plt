@@ -111,7 +111,6 @@
 	       ready-non-prompt autoprompting?
 	       set-prompt-mode
 	       delete lock locked?
-	       get-text
 	       line-start-position
 	       reset-console-start-position
 	       last-position

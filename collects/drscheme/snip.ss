@@ -1,239 +1,193 @@
+(unit/sig drscheme:snip^
+  (import [wx : wx^]
+	  [mred : mred^])
 
-  (unit/sig drscheme:snip^
-    (import [wx : wx^]
-	    [mred : mred^])
+  (mred:debug:printf 'invoke "drscheme:snip@")
 
-    (mred:debug:printf 'invoke "drscheme:snip@")
-
-    (define separator-snipclass
-      (make-object
-       (class-asi wx:snip-class%
-	 (public
-	   [read (lambda (s) 
-		   (let ([size-box (box 0)])
-		     (send s get size-box)
-		     (make-object separator-snip%)))]))))
-    (send* separator-snipclass
-      (set-version 1)
-      (set-classname "drscheme:sepatator-snip%"))
-    (send (wx:get-the-snip-class-list) add separator-snipclass)
+  (define separator-snipclass
+    (make-object
+	(class-asi wx:snip-class%
+	  (public
+	    [read (lambda (s) 
+		    (let ([size-box (box 0)])
+		      (send s get size-box)
+		      (make-object separator-snip%)))]))))
+  (send* separator-snipclass
+	 (set-version 1)
+	 (set-classname "drscheme:sepatator-snip%"))
+  (send (wx:get-the-snip-class-list) add separator-snipclass)
 
 
-    ;; the two numbers 1 and 2 which appear here are to line up this snip
-    ;; with the embedded snips around it in the drscheme rep.
-    ;; I have no idea where the extra pixels are going.
-    (define separator-snip%
-      (class wx:snip% ()
-	(inherit get-style set-snipclass set-flags get-flags get-admin)
-	(private [width 500]
-		 [height 1]
-		 [white-around 2])
+  ;; the two numbers 1 and 2 which appear here are to line up this snip
+  ;; with the embedded snips around it in the drscheme rep.
+  ;; I have no idea where the extra pixels are going.
+  (define separator-snip%
+    (class wx:snip% ()
+      (inherit get-style set-snipclass set-flags get-flags get-admin)
+      (private [width 500]
+	       [height 1]
+	       [white-around 2])
+      (public
+	[write (lambda (s) 
+		 (send s put (char->integer #\r)))]
+	[copy (lambda () 
+		(let ([s (make-object (object-class this))])
+		  (send s set-style (get-style))
+		  s))]
+	[get-extent
+	 (lambda (dc x y w-box h-box descent-box space-box lspace-box rspace-box)
+	   (for-each (lambda (box) (unless (null? box) (set-box! box 0)))
+		     (list descent-box space-box lspace-box rspace-box))
+	   (let* ([admin (get-admin)]
+		  [reporting-media (send admin get-media)]
+		  [reporting-admin (send reporting-media get-admin)]
+		  [widthb (box 0)]
+		  [space 2])
+	     (send reporting-admin get-view null null widthb null)
+	     (set! width (- (unbox widthb) 
+			    space
+			    2)))
+	   (set! height 1)
+	   (unless (null? w-box)
+	     (set-box! w-box width))
+	   (unless (null? h-box)
+	     (set-box! h-box (+ (* 2 white-around) height))))]
+	[draw
+	 (let* ([body-pen (send wx:the-pen-list find-or-create-pen
+				"BLACK" 0 wx:const-solid)]
+		[body-brush (send wx:the-brush-list find-or-create-brush
+				  "BLACK" wx:const-solid)])
+	   (lambda (dc x y left top right bottom dx dy drawCaret)
+	     (let ([orig-pen (send dc get-pen)]
+		   [orig-brush (send dc get-brush)])
+	       (send dc set-pen body-pen)
+	       (send dc set-brush body-brush)
+	       
+	       (send dc draw-rectangle (+ x 1)
+		     (+ white-around y) width height)
+	       
+	       (send dc set-pen orig-pen)
+	       (send dc set-brush orig-brush))))])
+      (sequence
+	(super-init)
+	(set-flags (bitwise-ior (get-flags) wx:const-snip-hard-newline))
+	(set-snipclass separator-snipclass))))
+
+  (define make-snip-class
+    (lambda (name get-%)
+      (let ([ans (make-object
+		     (class-asi wx:snip-class%
+		       (public
+			 [read (lambda (s) 
+				 (let ([size-box (box 0)])
+				   (send s get size-box)
+				   (make-object (get-%) (unbox size-box))))])))])   
+	(send* ans 
+	       (set-version 1)
+	       (set-classname name))
+	(send (wx:get-the-snip-class-list) add ans)
+	ans)))
+  
+  (define prompt-snip-class
+    (make-snip-class "drscheme:prompt-snip%" 
+		     (lambda () prompt-snip%)))
+  
+  (define equal-snip-class
+    (make-snip-class "drscheme:equal-snip%" 
+		     (lambda () equal-snip%)))
+  
+  (define make-snip%
+    (lambda (snip-class draw-snip)
+      (class wx:snip% ([initial-size 12])
+	(inherit get-style set-snipclass set-style)
+	(private [allowed-size initial-size])
 	(public
 	  [write (lambda (s) 
-		   (send s put (char->integer #\r)))]
+		   (send s put allowed-size))]
 	  [copy (lambda () 
-		  (let ([s (make-object (object-class this))])
+		  (let ([s (make-object (object-class this) allowed-size)])
 		    (send s set-style (get-style))
 		    s))]
 	  [get-extent
 	   (lambda (dc x y w-box h-box descent-box space-box lspace-box rspace-box)
-	     (for-each (lambda (box) (unless (null? box) (set-box! box 0)))
+	     (for-each (lambda (box) (unless (null? box) (set-box! box 2)))
 		       (list descent-box space-box lspace-box rspace-box))
-	     (let* ([admin (get-admin)]
-		    [reporting-media (send admin get-media)]
-		    [reporting-admin (send reporting-media get-admin)]
-		    [widthb (box 0)]
-		    [space 2])
-	       (send reporting-admin get-view null null widthb null)
-	       (set! width (- (unbox widthb) 
-			      space
-			      2)))
-	     (set! height 1)
+	     (set! allowed-size (send (get-style) get-size))
 	     (unless (null? w-box)
-	       (set-box! w-box width))
+	       (set-box! w-box allowed-size))
 	     (unless (null? h-box)
-	       (set-box! h-box (+ (* 2 white-around) height))))]
+	       (set-box! h-box allowed-size)))]
 	  [draw
-	   (let* ([body-pen (send wx:the-pen-list find-or-create-pen
+	   (let*-values
+	       ([(bw?) (< (wx:display-depth) 3)]
+		[(body-pen) (send wx:the-pen-list find-or-create-pen
 				  "BLACK" 0 wx:const-solid)]
-		  [body-brush (send wx:the-brush-list find-or-create-brush
-				    "BLACK" wx:const-solid)])
+		[(body-brush) (send wx:the-brush-list find-or-create-brush
+				    "BLACK" wx:const-solid)]
+		[(shadow-pen shadow-brush)
+		 (if bw?
+		     (let* ([pen (make-object wx:pen% "BLACK" 0
+					      wx:const-solid)]
+			    [brush (make-object wx:brush%)]
+			    [a (integer->char #b01010101)]
+			    [b (integer->char #b10101010)]
+			    [bitmap (make-object wx:bitmap%
+				      (list a b a b a b a b)
+				      8 8 1)])
+		       (send* pen
+			      (set-colour "BLACK")
+			      (set-style wx:const-stipple)
+			      (set-stipple bitmap))
+		       (send* brush
+			      (set-colour "BLACK")
+			      (set-style wx:const-stipple)
+			      (set-stipple bitmap))
+		       (values pen brush))
+		     (values
+		      (send wx:the-pen-list find-or-create-pen
+			    "GRAY" 0 wx:const-solid)
+		      (send wx:the-brush-list find-or-create-brush
+			    "GRAY" wx:const-solid)))])
 	     (lambda (dc x y left top right bottom dx dy drawCaret)
-	       (let ([orig-pen (send dc get-pen)]
-		     [orig-brush (send dc get-brush)])
+	       (let* ([shadow-size (max 1 (floor (/ allowed-size 10)))]
+		      [size (-  allowed-size shadow-size)]
+		      [line-width (/ size 3)]
+		      [orig-brush (send dc get-brush)]
+		      [orig-pen (send dc get-pen)])
+		 
+		 (send dc set-pen shadow-pen)
+		 (send dc set-brush shadow-brush)
+		 
+		 (draw-snip dc (+ x shadow-size) (+ y shadow-size)
+			    size line-width)
+		 
 		 (send dc set-pen body-pen)
 		 (send dc set-brush body-brush)
 		 
-		 (send dc draw-rectangle (+ x 1)
-		       (+ white-around y) width height)
+		 (draw-snip dc x y size line-width)
 		 
 		 (send dc set-pen orig-pen)
 		 (send dc set-brush orig-brush))))])
-	  (sequence
-	    (super-init)
-	    (set-flags (bitwise-ior (get-flags) wx:const-snip-hard-newline))
-	    (set-snipclass separator-snipclass))))
-
-    (define make-snip-class
-      (lambda (name get-%)
-	(let ([ans (make-object
-		    (class-asi wx:snip-class%
-		      (public
-			[read (lambda (s) 
-				(let ([size-box (box 0)])
-				  (send s get size-box)
-				  (make-object (get-%) (unbox size-box))))])))])   
-	  (send* ans 
-	    (set-version 1)
-	    (set-classname name))
-	  (send (wx:get-the-snip-class-list) add ans)
-	  ans)))
-    
-    (define prompt-snip-class
-      (make-snip-class "drscheme:prompt-snip%" 
-		       (lambda () prompt-snip%)))
-    
-    (define equal-snip-class
-      (make-snip-class "drscheme:equal-snip%" 
-		       (lambda () equal-snip%)))
-    
-    (define make-snip%
-      (lambda (snip-class draw-snip)
-	(class wx:snip% ([initial-size 12])
-	  (inherit get-style set-snipclass set-style)
-	  (private [allowed-size initial-size])
-	  (public
-	    [write (lambda (s) 
-		     (send s put allowed-size))]
-	    [copy (lambda () 
-		    (let ([s (make-object (object-class this) allowed-size)])
-		      (send s set-style (get-style))
-		      s))]
-	    [get-extent
-	     (lambda (dc x y w-box h-box descent-box space-box lspace-box rspace-box)
-	       (for-each (lambda (box) (unless (null? box) (set-box! box 2)))
-			 (list descent-box space-box lspace-box rspace-box))
-	       (set! allowed-size (send (get-style) get-size))
-	       (unless (null? w-box)
-		 (set-box! w-box allowed-size))
-	       (unless (null? h-box)
-		 (set-box! h-box allowed-size)))]
-	    [draw
-	     (let*-values
-		 ([(bw?) (< (wx:display-depth) 3)]
-		  [(body-pen) (send wx:the-pen-list find-or-create-pen
-				    "BLACK" 0 wx:const-solid)]
-		  [(body-brush) (send wx:the-brush-list find-or-create-brush
-				      "BLACK" wx:const-solid)]
-		  [(shadow-pen shadow-brush)
-		   (if bw?
-		       (let* ([pen (make-object wx:pen% "BLACK" 0
-						wx:const-solid)]
-			      [brush (make-object wx:brush%)]
-			      [a (integer->char #b01010101)]
-			      [b (integer->char #b10101010)]
-			      [bitmap (make-object wx:bitmap%
-						   (list a b a b a b a b)
-						   8 8 1)])
-			 (send* pen
-			   (set-colour "BLACK")
-			   (set-style wx:const-stipple)
-			   (set-stipple bitmap))
-			 (send* brush
-			   (set-colour "BLACK")
-			   (set-style wx:const-stipple)
-			   (set-stipple bitmap))
-			 (values pen brush))
-		       (values
-			(send wx:the-pen-list find-or-create-pen
-			      "GRAY" 0 wx:const-solid)
-			(send wx:the-brush-list find-or-create-brush
-			      "GRAY" wx:const-solid)))])
-	       (lambda (dc x y left top right bottom dx dy drawCaret)
-		 (let* ([shadow-size (max 1 (floor (/ allowed-size 10)))]
-			[size (-  allowed-size shadow-size)]
-			[line-width (/ size 3)]
-			[orig-brush (send dc get-brush)]
-			[orig-pen (send dc get-pen)])
-		   
-		   (send dc set-pen shadow-pen)
-		   (send dc set-brush shadow-brush)
-		   
-		   (draw-snip dc (+ x shadow-size) (+ y shadow-size)
-			      size line-width)
-		   
-		   (send dc set-pen body-pen)
-		   (send dc set-brush body-brush)
-		   
-		   (draw-snip dc x y size line-width)
-		   
-		   (send dc set-pen orig-pen)
-		   (send dc set-brush orig-brush))))])
-	  (sequence
-	    (super-init)
-	    (set-snipclass snip-class)))))
-    
-    (define equal-snip%
-      (make-snip%
-       equal-snip-class
-       (lambda (dc x y size line-width)
-	 (let ([top (- (+ y (/ size 2)) (* 5/4 line-width))])
-	   (send dc draw-rectangle x (+ top (* 3/2 line-width)) size line-width)
-	   (send dc draw-rectangle x top size line-width)))))
-    
-    (define prompt-snip%
-      (make-snip%
-       prompt-snip-class
-       (lambda (dc x y size line-width)
-	 (send dc draw-rectangle x y line-width size)
-	 (let ([top-pos (- (+ y (/ size 2)) (/ line-width 2))])
-	   (send dc draw-rectangle 
-		 x
-		 top-pos
-		 size
-		 line-width)))))
-    
-    (define unattached-nonsnip%
-      (class null ()
-	(public
-	  [draw
-	   (lambda (dc x y left top right bottom dx dy draw-caret)
-	     (void))]
-	  [get-extent
-	   (lambda (dc x y w h descent space lspace rspace)
-	     (let ([size (lambda (size)
-			   (lambda (b)
-			     (when (box? b)
-			       (set-box! b size))))])
-	       (for-each (size 20) (list w h))
-	       (for-each (size 2) (list descent space lspace rspace))))]
-	  [resize
-	   (lambda (w h)
-	     #f)]
-	  [size-cache-invalid void]
-	  [get-text (lambda () "unattached-nonsnip")])))
-	   
-    
-    (define forward-snip%
-      (class wx:snip% (unattached)
-	(public
-	  [copy
-	   (lambda ()
-	     (make-object forward-snip% unattached))]
-	  [get-extent
-	   (lambda (dc x y w h descent space lspace rspace)
-	     (send unattached get-extent dc x y w h descent space lspace rspace))]
-	  [draw
-	   (lambda (dc x y left top right bottom dx dy draw-caret)
-	     (send unattached dc x y left top right bottom dx dy draw-caret))]
-	  [resize
-	   (lambda (w h)
-	     (send unattached resize w h))]
-	  [size-cache-invalid 
-	   (lambda ()
-	     (send unattached size-cache-invalide))]
-	  [get-text
-	   (lambda ()
-	     (send unattached get-text))])))
-    
-    )
+	(sequence
+	  (super-init)
+	  (set-snipclass snip-class)))))
+  
+  (define equal-snip%
+    (make-snip%
+     equal-snip-class
+     (lambda (dc x y size line-width)
+       (let ([top (- (+ y (/ size 2)) (* 5/4 line-width))])
+	 (send dc draw-rectangle x (+ top (* 3/2 line-width)) size line-width)
+	 (send dc draw-rectangle x top size line-width)))))
+  
+  (define prompt-snip%
+    (make-snip%
+     prompt-snip-class
+     (lambda (dc x y size line-width)
+       (send dc draw-rectangle x y line-width size)
+       (let ([top-pos (- (+ y (/ size 2)) (/ line-width 2))])
+	 (send dc draw-rectangle 
+	       x
+	       top-pos
+	       size
+	       line-width))))))

@@ -38,7 +38,6 @@
 	   (lambda ()
 	     (let ([super (super-on-close)]
 		   [grp (send group remove-frame this)])
-	       (printf "on-close: super: ~a grp: ~a~n" super grp)
 	       (and super grp)))])
 	(public
 	  [root-panel #f]

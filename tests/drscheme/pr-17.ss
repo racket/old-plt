@@ -37,7 +37,7 @@
 
   ; open new unit window
 
-  (mred:test:menu-select "File" "New Unit")
+  (mred:test:menu-select "File" "New")
 
   ; get data structures for new window
 

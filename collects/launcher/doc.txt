@@ -24,31 +24,36 @@ executables:
    currently supported extensions are as follows:
 
       _.icns_ (Mac OS X) - an icons for the executable
+ 
+      _.lsr_  (Windows) - creates a "self-replacable launcher"
+               where the launcher executable can be deleted while
+               the launched code is running; the file context is
+               ignored
 
-   For X Windows, the script created by `make-mred-launcher' detects
-   and handles X Windows flags specially when they appear as the
-   initial arguments to the script. Instead of appending these
-   arguments to the end of `args', they are spliced in after any X
-   Windows flags already listed listed in `args'. The remaining
-   arguments (i.e., all script flags and arguments after the last X
-   Windows flag or argument) are then appended after the spliced
-   `args'.
+   For Unix/X, the script created by `make-mred-launcher' detects and
+   handles X flags specially when they appear as the initial arguments
+   to the script. Instead of appending these arguments to the end of
+   `args', they are spliced in after any X Windows flags already
+   listed listed in `args'. The remaining arguments (i.e., all script
+   flags and arguments after the last X Windows flag or argument) are
+   then appended after the spliced `args'.
 
-   For the Macintosh, the creation of launchers requires the (one-time)
-   use of an extension, starter-setup.so.  This extension is distributed
-   with DrScheme bundles, and can also be built automatically from the 
-   source if necessary (and if the user has a copy of Codewarrior 5).
-   The creation of launchers on 68k platforms is significantly more
-   fragile than on PPC platforms.  In particular, any launcher created
-   on a 68k platform (or using a 68k binary) must be invoked at least
-   once while that launcher is in the same folder as the MrEd copy it
-   is to be linked to. Note also that once created, these launchers
-   are bound in a truly tenacious way to MrEd; short of deleting MrEd
-   entirely, it's nearly impossible to disconnect them.
+   For Mac OS Classic, the creation of launchers requires the
+   (one-time) use of an extension, starter-setup.so.  This extension
+   is distributed with DrScheme bundles, and can also be built
+   automatically from the source if necessary (and if the user has a
+   copy of Codewarrior 5).  The creation of launchers on 68k platforms
+   is significantly more fragile than on PPC platforms.  In
+   particular, any launcher created on a 68k platform (or using a 68k
+   binary) must be invoked at least once while that launcher is in the
+   same folder as the MrEd copy it is to be linked to. Note also that
+   once created, these launchers are bound in a truly tenacious way to
+   MrEd; short of deleting MrEd entirely, it's nearly impossible to
+   disconnect them.
    
 > (make-mzscheme-launcher args dest [aux]) - Same as
-   `make-mred-launcher', but for starting MzScheme. (No special X
-   windows handling.)
+   `make-mred-launcher', but for starting MzScheme. (No special Unix/X
+   handling.)
 
 
 > (make-mred-program-launcher file collection dest) - Calls
@@ -66,13 +71,14 @@ executables:
 
 > (mred-program-launcher-path name) returns a pathname for an executable
    in the current PLT home directory called `name'.  For Windows, the
-   ".exe" suffix is automatically appended to `name'. For Unix and
-   BeOS, `name' is changed to lowercase, whitespace is changed to `-',
-   and the path includes the bin subdirectory of the PLT home
-   directory.
+   ".exe" suffix is automatically appended to `name'. For Unix, `name'
+   is changed to lowercase, whitespace is changed to `-', and the path
+   includes the bin subdirectory of the PLT home directory. For Mac OS
+   X, the ".app" suffix is appened to `name'.
 
 > (mzscheme-program-launcher-path name) returns the same pathname as
-   (mred-program-launcher-path name).
+   (mred-program-launcher-path name) for Unix, Windows, and Mac OS Classic.
+   For Mac OS X, the result is the same as for Unix.
 
 
 > (install-mred-program-launcher file collection name) - Calls

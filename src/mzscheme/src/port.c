@@ -2656,7 +2656,10 @@ scheme_file_position(int argc, Scheme_Object *argv[])
 
       if (SCHEME_INPORTP(argv[0])) {
 	/* Get rid of buffered data: */
-	((Scheme_FD *)((Scheme_Input_Port *)argv[0])->port_data)->bufcount = 0;
+	Scheme_FD *sfd;
+	sfd = (Scheme_FD *)((Scheme_Input_Port *)argv[0])->port_data;
+	sfd->bufcount = 0;
+	sfd->buffpos = 0;
       }
 #endif
     } else {
@@ -2694,8 +2697,10 @@ scheme_file_position(int argc, Scheme_Object *argv[])
       Scheme_Input_Port *ip;
       ip = (Scheme_Input_Port *)argv[0];
       ip->ungotten_count = 0;
-      if (pipe_char_count(ip->peeked_read))
+      if (pipe_char_count(ip->peeked_read)) {
 	ip->peeked_read = NULL;
+	ip->peeked_write = NULL;
+      }
     }
 
     return scheme_void;

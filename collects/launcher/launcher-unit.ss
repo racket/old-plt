@@ -2,6 +2,7 @@
 (module launcher-unit mzscheme
   (require (lib "unitsig.ss")
 	   (lib "file.ss")
+	   (lib "string.ss")
 	   (lib "etc.ss")
 
 	   (lib "compile-sig.ss" "dynext")
@@ -261,9 +262,64 @@
 	    (close-output-port p))))
       
       (define (make-windows-launcher kind variant flags dest aux-root)
-	(make-embedding-executable dest (eq? kind 'mred) #f
-				   null null null
-				   flags))
+	(if (not (and aux-root
+		      (file-exists? (string-append aux-root ".lsr"))))
+	    ;; Normal launcher: 
+	    (make-embedding-executable dest (eq? kind 'mred) #f
+				       null null null
+				       flags)
+	    ;; Self-replacable launcher (needed for Setup PLT):
+	    (begin
+	      (install-template dest kind "mzstart.exe" "mrstart.exe")
+	      (let ([str (str-list->dos-str flags)]
+		    [p (open-input-file dest)]
+		    [m "<Command Line: Replace This[^>]*>"]
+		    [x "<Executable Directory: Replace This[^>]*>"])
+		(let* ([exedir (string-append 
+				plthome
+				;; null character marks end of executable directory
+				(string (latin-1-integer->char 0)))]
+		       [find-it ; Find the magic start
+			(lambda (magic s)
+			  (file-position p 0)
+			  (let ([m (regexp-match-positions magic p)])
+			    (if m
+				(car m)
+				(begin
+				  (close-input-port p)
+				  (when (file-exists? dest)
+					(delete-file dest))
+				  (error 
+				   'make-windows-launcher 
+				   (format
+				    "Couldn't find ~a position in template" s))))))]
+		       [exedir-poslen (find-it x "executable path")]
+		       [command-poslen (find-it m "command-line")]
+		       [pos-exedir (car exedir-poslen)]
+		       [len-exedir (- (cdr exedir-poslen) (car exedir-poslen))]
+		       [pos-command (car command-poslen)]
+		       [len-command (- (cdr command-poslen) (car command-poslen))]
+		       [write-magic
+			(lambda (p s pos len)
+			  (file-position p pos)
+			  (display s p)
+			  (display (make-string (- len (string-length s)) #\space) p))]
+		       [check-len
+			(lambda (len s es)
+			  (when (> (string-length s) len)
+				(when (file-exists? dest)
+				      (delete-file dest))
+				(error 
+				 (format	
+				  "~a exceeds limit of ~a characters with ~a characters: ~a"
+				  es len (string-length s) s))))])
+		  (close-input-port p)
+		  (check-len len-exedir exedir "executable home directory")
+		  (check-len len-command str "collection/file name")
+		  (let ([p (open-output-file dest 'update)])
+		    (write-magic p exedir pos-exedir len-exedir)   
+		    (write-magic p str pos-command len-command)   
+		    (close-output-port p)))))))
       
       ;; OS X launcher code:
      

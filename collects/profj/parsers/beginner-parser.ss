@@ -46,8 +46,8 @@
                                                      (position-col $1-start-pos)
                                                      (+ (position-offset $1-start-pos) (interactions-offset))
                                                      (- (position-offset (cadr $1)) (position-offset $1-start-pos)))
-                                   (car $1))]
-       [(NULL_LIT) (make-literal 'null (build-src 1) #f)])
+                                   (car $1))])
+;       [(NULL_LIT) (make-literal 'null (build-src 1) #f)])
       
       ;; 19.4
       (Type

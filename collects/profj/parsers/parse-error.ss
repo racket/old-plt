@@ -1299,7 +1299,11 @@
             (if (eq? (level) 'intermediate)
                 (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter) 'op-or-end getter)
                 (parse-error "Expected an expression, + cannot begin an expression" start end)))
-           ((NULL_LIT TRUE_LIT FALSE_LIT STRING_LIT CHAR_LIT INTEGER_LIT 
+           ((NULL_LIT) 
+            (if (eq? (level) 'intermediate)
+                (parse-expression cur-tok (getter) 'dot-op-or-end getter)
+                (parse-error "Expected an expression. null may not be used here" start end)))
+           ((TRUE_LIT FALSE_LIT STRING_LIT CHAR_LIT INTEGER_LIT 
                       LONG_LIT FLOAT_LIT DOUBLE_LIT this)
             (parse-expression cur-tok (getter) 'dot-op-or-end getter))
            ((O_PAREN)
@@ -1358,9 +1362,13 @@
             (let* ((next (getter))
                    (next-tok (get-tok next)))              
               (case (get-token-name next-tok)
-                ((~ ! - + NULL_LIT TRUE_LIT FALSE_LIT STRING_LIT CHAR_LIT INTEGER_LIT 
+                ((~ ! - + TRUE_LIT FALSE_LIT STRING_LIT CHAR_LIT INTEGER_LIT 
                       LONG_LIT FLOAT_LIT DOUBLE_LIT this O_PAREN new IDENTIFIER)
                  (parse-expression cur-tok next 'start getter))
+                ((NULL_LIT)
+                 (if (eq? (level) 'intermediate) 
+                     (parse-expression cur-tok next 'start getter)
+                     (parse-expression cur-tok next 'dot-op-or-end getter)))
                 (else (parse-expression cur-tok next 'dot-op-or-end getter)))))
            (else (parse-error (format "Expected a ')', found ~a" out) ps end))))              
         ((c-paren)

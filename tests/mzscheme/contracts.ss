@@ -17,7 +17,7 @@
   (define (test/spec-failed name expression blame)
     (define (failed-contract x)
       (and (string? x)
-	   (let ([m (regexp-match ": (.*) failed contract:" x)])
+	   (let ([m (regexp-match ": ([^ ]*) broke" x)])
 	     (and m (cadr m)))))
     (test blame
           failed-contract

@@ -1788,7 +1788,7 @@ Scheme_Object *scheme_split_pathname(const char *path, int len, Scheme_Object **
 #endif  
 }
 
-Scheme_Object *split_pathname(int argc, Scheme_Object **argv)
+static Scheme_Object *split_pathname(int argc, Scheme_Object **argv)
 {
   char *s;
   int is_dir, len;

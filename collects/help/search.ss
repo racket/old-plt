@@ -328,7 +328,6 @@
 			  [else null])])
 	     (for-each
 	      (lambda (f)
-                (printf "checking ~s~n" f)
 		(with-handlers ([not-break? (lambda (x)
 					      ; (printf "~a~n" (exn-message x))
 					      #f)])

@@ -144,11 +144,7 @@ static void flush_freed_pages(void)
   for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
     if (blockfree[i].start) {
       if (blockfree[i].age == BLOCKFREE_UNMAP_AGE) {
-	if (munmap(blockfree[i].start, blockfree[i].len)) {
-	  GCPRINT(GCOUTF, "Unmap warning: %lx, %ld, %d\n", 
-		  (long)blockfree[i].start, blockfree[i].len,
-		  errno);
-	}
+	system_free_pages(blockfree[i].start, blockfree[i].len);
 	page_reservations -= blockfree[i].len;
 	blockfree[i].start = NULL;
 	blockfree[i].len = 0;

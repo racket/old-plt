@@ -63,6 +63,10 @@ static void *malloc_pages(size_t len, size_t alignment)
   if(len & (page_size - 1))
     len += page_size - (len & (page_size - 1));
 
+  r = find_cached_pages(len, alignment);
+  if (r)
+    return r;
+
   extra = alignment;
 
   retval = vm_allocate(task_self, (vm_address_t*)&r, len + extra, TRUE);

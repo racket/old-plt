@@ -1,7 +1,7 @@
 R4RS+ level tests of DrScheme Jr
-Date: Wed May 20 17:41:05 CDT 1998
+Date: Tue May 26 11:46:20 CDT 1998
 DrScheme Jr is loading. Please wait...
-Welcome to DrScheme Jr version 52/3, Copyright (c) 1995-98 PLT
+Welcome to DrScheme Jr version 52, Copyright (c) 1995-98 PLT
 Language: R4RS+
 > > > > > > > > > define
 > ("Beginner" "Intermediate" "Advanced" "R4RS+")
@@ -9,6 +9,9 @@ Language: R4RS+
 > lambda
 > ("Beginner" "Intermediate" "Advanced" "R4RS+")
 > #<procedure>
+> inexact
+> ("Beginner" "Intermediate" "Advanced" "R4RS+")
+> 3.14
 > app
 > ("Beginner" "Intermediate" "Advanced" "R4RS+")
 > > 5
@@ -53,7 +56,7 @@ Language: R4RS+
 > 5
 > let-2
 > ()
-> stdin: 120.22-120.23: reference to undefined identifier: x
+> stdin: 124.22-124.23: reference to undefined identifier: x
 > let-3
 > ("Intermediate" "Advanced" "R4RS+")
 > 5

@@ -1,7 +1,7 @@
 Advanced level tests of DrScheme Jr
-Date: Wed May 20 17:41:00 CDT 1998
+Date: Tue May 26 11:46:07 CDT 1998
 DrScheme Jr is loading. Please wait...
-Welcome to DrScheme Jr version 52/3, Copyright (c) 1995-98 PLT
+Welcome to DrScheme Jr version 52, Copyright (c) 1995-98 PLT
 Language: Advanced
 > > > > > > > > > 'define
 > (list "Beginner" "Intermediate" "Advanced" "R4RS+")
@@ -9,6 +9,9 @@ Language: Advanced
 > 'lambda
 > (list "Beginner" "Intermediate" "Advanced" "R4RS+")
 > (lambda (a1) ...)
+> 'inexact
+> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> 3.14
 > 'app
 > (list "Beginner" "Intermediate" "Advanced" "R4RS+")
 > > 5
@@ -53,7 +56,7 @@ Language: Advanced
 > 5
 > 'let-2
 > empty
-> stdin: 120.22-120.23: reference to undefined identifier: x
+> stdin: 124.22-124.23: reference to undefined identifier: x
 > 'let-3
 > (list "Intermediate" "Advanced" "R4RS+")
 > 5

@@ -1,7 +1,7 @@
 Advanced level tests of DrScheme Jr
-Date: Fri May 15 10:44:09 CDT 1998
+Date: Tue May 26 11:47:49 CDT 1998
 DrScheme Jr is loading. Please wait...
-Welcome to DrScheme Jr version 52/3, Copyright (c) 1995-98 PLT
+Welcome to DrScheme Jr version 52, Copyright (c) 1995-98 PLT
 Language: Advanced
 > > > > > > > > > 'define
 > (list "Beginner" "Intermediate" "Advanced" "R4RS+")
@@ -9,6 +9,9 @@ Language: Advanced
 > 'lambda
 > (list "Beginner" "Intermediate" "Advanced" "R4RS+")
 > (lambda (a1) ...)
+> 'inexact
+> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> 3.14
 > 'app
 > (list "Beginner" "Intermediate" "Advanced" "R4RS+")
 > > 5
@@ -52,14 +55,14 @@ Language: Advanced
 > (list "Intermediate" "Advanced" "R4RS+")
 > 5
 > 'let-2
-> null
-> stdin: 120.22-120.22: reference to undefined identifier: x
+> empty
+> stdin: 124.22-124.23: reference to undefined identifier: x
 > 'let-3
 > (list "Intermediate" "Advanced" "R4RS+")
 > 5
 > 'let-4
-> null
-> stdin: 12.23-12.23: reference to undefined identifier: x
+> empty
+> stdin: 12.23-12.24: reference to undefined identifier: x
 > 'letrec-1
 > (list "Intermediate" "Advanced" "R4RS+")
 > #t
@@ -147,101 +150,101 @@ Language: Advanced
 > (list "Advanced" "R4RS+")
 > 5
 > 'keyword-interface
-> null
-> stdin: 174.1-174.11: unknown-phase: Invalid use of keyword #%interface
+> empty
+> stdin: 174.1-174.12: Invalid use of keyword #%interface
 > 'keyword-unit
-> null
-> stdin: 4.1-4.6: unknown-phase: Invalid use of keyword #%unit
+> empty
+> stdin: 4.1-4.7: Invalid use of keyword #%unit
 > 'keyword-struct
-> null
-> stdin: 4.1-4.8: Invalid use of keyword #%struct
+> empty
+> stdin: 4.1-4.9: Invalid use of keyword #%struct
 > 'keyword-unquote
-> null
-> stdin: 4.1-4.9: Invalid use of keyword #%unquote
+> empty
+> stdin: 4.1-4.10: Invalid use of keyword #%unquote
 > 'keyword-let-macro
-> null
-> stdin: 4.1-4.11: Invalid use of keyword #%let-macro
+> empty
+> stdin: 4.1-4.12: Invalid use of keyword #%let-macro
 > 'keyword-set!
-> null
-> stdin: 4.1-4.6: Invalid use of keyword #%set!
+> empty
+> stdin: 4.1-4.7: Invalid use of keyword #%set!
 > 'keyword-if
-> null
-> stdin: 4.1-4.4: Invalid use of keyword #%if
+> empty
+> stdin: 4.1-4.5: Invalid use of keyword #%if
 > 'keyword-quote
-> null
-> stdin: 4.1-4.7: Invalid use of keyword #%quote
+> empty
+> stdin: 4.1-4.8: Invalid use of keyword #%quote
 > 'keyword-begin0
-> null
-> stdin: 4.1-4.8: Invalid use of keyword #%begin0
+> empty
+> stdin: 4.1-4.9: Invalid use of keyword #%begin0
 > 'keyword-begin
-> null
-> stdin: 4.1-4.7: Invalid use of keyword #%begin
+> empty
+> stdin: 4.1-4.8: Invalid use of keyword #%begin
 > 'keyword-let
-> null
-> stdin: 4.1-4.5: Invalid use of keyword #%let
+> empty
+> stdin: 4.1-4.6: Invalid use of keyword #%let
 > 'keyword-let*
-> null
-> stdin: 4.1-4.6: Invalid use of keyword #%let*
+> empty
+> stdin: 4.1-4.7: Invalid use of keyword #%let*
 > 'keyword-letrec*
-> null
-> stdin: 4.1-4.9: Invalid use of keyword #%letrec*
+> empty
+> stdin: 4.1-4.10: Invalid use of keyword #%letrec*
 > 'keyword-letrec
-> null
-> stdin: 4.1-4.8: Invalid use of keyword #%letrec
+> empty
+> stdin: 4.1-4.9: Invalid use of keyword #%letrec
 > 'keyword-lambda
-> null
-> stdin: 4.1-4.8: Invalid use of keyword #%lambda
+> empty
+> stdin: 4.1-4.9: Invalid use of keyword #%lambda
 > 'keyword-let-expansion-time
-> null
-> stdin: 4.1-4.20: unknown-phase: Invalid use of keyword #%let-expansion-time
+> empty
+> stdin: 4.1-4.21: Invalid use of keyword #%let-expansion-time
 > 'keyword-define-expansion-time
-> null
-> stdin: 4.1-4.23: unknown-phase: Invalid use of keyword #%define-expansion-time
+> empty
+> stdin: 4.1-4.24: Invalid use of keyword #%define-expansion-time
 > 'keyword-invoke-open-unit
-> null
-> stdin: 4.1-4.18: unknown-phase: Invalid use of keyword #%invoke-open-unit
+> empty
+> stdin: 4.1-4.19: Invalid use of keyword #%invoke-open-unit
 > 'keyword-invoke-unit
-> null
-> stdin: 4.1-4.13: unknown-phase: Invalid use of keyword #%invoke-unit
+> empty
+> stdin: 4.1-4.14: Invalid use of keyword #%invoke-unit
 > 'keyword-compound-unit
-> null
-> stdin: 4.1-4.15: unknown-phase: Invalid use of keyword #%compound-unit
+> empty
+> stdin: 4.1-4.16: Invalid use of keyword #%compound-unit
 > 'keyword-unquote-splicing
-> null
-> stdin: 4.1-4.18: Invalid use of keyword #%unquote-splicing
+> empty
+> stdin: 4.1-4.19: Invalid use of keyword #%unquote-splicing
 > 'keyword-let-id-macro
-> null
-> stdin: 4.1-4.14: unknown-phase: Invalid use of keyword #%let-id-macro
+> empty
+> stdin: 4.1-4.15: Invalid use of keyword #%let-id-macro
 > 'keyword-define-id-macro
-> null
-> stdin: 4.1-4.17: unknown-phase: Invalid use of keyword #%define-id-macro
+> empty
+> stdin: 4.1-4.18: Invalid use of keyword #%define-id-macro
 > 'keyword-define-macro
-> null
-> stdin: 4.1-4.14: Invalid use of keyword #%define-macro
+> empty
+> stdin: 4.1-4.15: Invalid use of keyword #%define-macro
 > 'keyword-case-lambda
-> null
-> stdin: 4.1-4.13: Invalid use of keyword #%case-lambda
+> empty
+> stdin: 4.1-4.14: Invalid use of keyword #%case-lambda
 > 'keyword-let-values
-> null
-> stdin: 4.1-4.12: Invalid use of keyword #%let-values
+> empty
+> stdin: 4.1-4.13: Invalid use of keyword #%let-values
 > 'keyword-let*-values
-> null
-> stdin: 4.1-4.13: Invalid use of keyword #%let*-values
+> empty
+> stdin: 4.1-4.14: Invalid use of keyword #%let*-values
 > 'keyword-letrec*-values
-> null
-> stdin: 4.1-4.16: Invalid use of keyword #%letrec*-values
+> empty
+> stdin: 4.1-4.17: Invalid use of keyword #%letrec*-values
 > 'keyword-letrec-values
-> null
-> stdin: 4.1-4.15: Invalid use of keyword #%letrec-values
+> empty
+> stdin: 4.1-4.16: Invalid use of keyword #%letrec-values
 > 'keyword-define-values
-> null
-> stdin: 4.1-4.15: Invalid use of keyword #%define-values
+> empty
+> stdin: 4.1-4.16: Invalid use of keyword #%define-values
 > 'keyword-cond
-> null
-> stdin: 4.1-4.6: Invalid use of keyword #%cond
+> empty
+> stdin: 4.1-4.7: Invalid use of keyword #%cond
 > 'keyword-class*/names
-> null
-> stdin: 4.1-4.14: unknown-phase: Invalid use of keyword #%class*/names
+> empty
+> stdin: 4.1-4.15: Invalid use of keyword #%class*/names
 > 'struct-1
 > (list "Intermediate" "Advanced" "R4RS+")
 > > (list make-a a? a-b a-c set-a-b! set-a-c!)
@@ -274,10 +277,10 @@ Language: Advanced
 > (list 'a 'a 'a)
 > 'empty-list-1
 > (list "Advanced" "R4RS+")
-> null
+> empty
 > 'empty-list-2
 > (list "Advanced" "R4RS+")
-> null
+> empty
 > 'back-quote-1
 > (list "Advanced" "R4RS+")
 > (list 'a 'a 'a)
@@ -300,16 +303,16 @@ Language: Advanced
 > (list "Advanced" "R4RS+")
 > (list 'a 'a 'a)
 > 'set!-id
-> null
-> stdin: 96.1-96.34: set!: cannot set undefined identifier: some-undefined-identifier
-> stdin: 1.1-1.25: reference to undefined identifier: some-undefined-identifier
+> empty
+> stdin: 96.1-96.35: set!: cannot set undefined identifier: some-undefined-identifier
+> stdin: 1.1-1.26: reference to undefined identifier: some-undefined-identifier
 > 'non-list
 > "R4RS+"
-> stdin: 4.1-4.10: cons: second argument must be of type <list>, given 3 and 4
+> stdin: 4.1-4.11: cons: second argument must be of type <list>, given 3 and 4
 > 'fallthrough-cond-1
-> null
-> stdin: 4.8-4.21: no matching cond clause
+> empty
+> stdin: 4.8-4.22: no matching cond clause
 > 'fallthrough-cond-2
-> null
-> stdin: 4.8-4.27: no matching else clause
+> empty
+> stdin: 4.8-4.28: no matching else clause
 > 

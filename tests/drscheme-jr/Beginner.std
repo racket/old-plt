@@ -1,7 +1,7 @@
 Beginner level tests of DrScheme Jr
-Date: Wed May 20 17:40:49 CDT 1998
+Date: Tue May 26 11:45:40 CDT 1998
 DrScheme Jr is loading. Please wait...
-Welcome to DrScheme Jr version 52/3, Copyright (c) 1995-98 PLT
+Welcome to DrScheme Jr version 52, Copyright (c) 1995-98 PLT
 Language: Beginner
 > > > > > > > > > 'define
 > (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "R4RS+" empty))))
@@ -9,6 +9,9 @@ Language: Beginner
 > 'lambda
 > (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "R4RS+" empty))))
 > (lambda (a1) ...)
+> 'inexact
+> (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "R4RS+" empty))))
+> #i3.14
 > 'app
 > (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "R4RS+" empty))))
 > > 5
@@ -38,7 +41,7 @@ Language: Beginner
 > 'a
 > 'local-1
 > (cons "Intermediate" (cons "Advanced" (cons "R4RS+" empty)))
-> stdin: 70.8-70.10: Empty combination is a syntax error
+> stdin: 74.8-74.10: Empty combination is a syntax error
 > 'local-2
 > (cons "Intermediate" (cons "Advanced" (cons "R4RS+" empty)))
 > stdin: 4.9-4.21: Invalid definition: must be at the top level

@@ -44,9 +44,7 @@
         (set! tokens #f)
         (set! invalid-tokens #f)
         (set! invalid-tokens-start #f)
-        (set! colors null)
-        (set! start-pos 0)
-        (set! end-pos 'end))
+        (set! colors null))
       
       (define (color)
         (unless (null? colors)
@@ -59,28 +57,26 @@
               (super-initialize-console initialize-console)
               (super-reset-console reset-console))
       (define/override (do-eval start end)
-        (printf "de: ~a~n" end)
         (set! end-pos end)
         (super-do-eval start end))
 
       (define/override (insert-prompt)
-        (printf "ip: ~a~n" (get-prompt-position))
+        (super-insert-prompt)
         (reset)
-        (set! start-pos (get-prompt-position))
-        (super-insert-prompt))
+        (set! end-pos 'end)
+        (set! start-pos (get-prompt-position)))
       
       (define/override (initialize-console)
-        (printf "ic: ~n")
         (reset)
+        (set! start-pos 0)
         (set! end-pos 0)
         (super-initialize-console))
      
       (define/override (reset-console)
-        (printf "rc: ~n")
         (reset)
+        (set! start-pos 0)
         (set! end-pos 0)
         (super-reset-console))
-      
       
       (define (sync-invalid current-pos)
         (when (and invalid-tokens (< invalid-tokens-start current-pos))
@@ -116,24 +112,23 @@
     
       (define/public (do-insert/delete prefix get-token port-wrapper edit-start-pos change-length)
         (when should-color?
-          (let ((buffer-start start-pos))
-            (when (> edit-start-pos buffer-start)
-              (set! edit-start-pos (sub1 edit-start-pos)))
-            (channel-put
-             sync
-             (lambda ()
-               (let-values (((orig-token-start orig-token-end valid-tree invalid-tree)
-                             (split tokens (- edit-start-pos buffer-start))))
-                 (let ((in (port-wrapper (open-input-text-editor 
-                                          this
-                                          (+ buffer-start orig-token-start)
-                                          end-pos))))
-                   (set! invalid-tokens invalid-tree)
-                   (set! tokens valid-tree)
-                   (set! invalid-tokens-start (+ orig-token-end change-length))
-                   (re-tokenize prefix get-token in
-                                (+ buffer-start orig-token-start)
-                                (+ buffer-start orig-token-start)))))))
+          (when (> edit-start-pos start-pos)
+            (set! edit-start-pos (sub1 edit-start-pos)))
+          (channel-put
+           sync
+           (lambda ()
+             (let-values (((orig-token-start orig-token-end valid-tree invalid-tree)
+                           (split tokens (- edit-start-pos start-pos))))
+               (let ((in (port-wrapper (open-input-text-editor 
+                                        this
+                                        (+ start-pos orig-token-start)
+                                        end-pos))))
+                 (set! invalid-tokens invalid-tree)
+                 (set! tokens valid-tree)
+                 (set! invalid-tokens-start (+ orig-token-end change-length))
+                 (re-tokenize prefix get-token in
+                              (+ start-pos orig-token-start)
+                              (+ start-pos orig-token-start))))))
           (channel-get sync)
           (begin-edit-sequence #f)
           (color)
@@ -148,30 +143,18 @@
                  (lambda (_ on?)
                    (set! should-color? on?)
                    (set-surrogate (get-surrogate))))))
-        (when should-color?
-          (unless background-thread
-            (set! background-thread (thread background-colorer)))
-          (channel-put sync
-                       (lambda ()
-                         (re-tokenize prefix
-                                      get-token
-                                      (open-input-text-editor this
-                                                              start-pos
-                                                              end-pos)
-                                      start-pos
-                                      start-pos)))
-          (channel-get sync)
-          (begin-edit-sequence #f)
-          (color)
-          (end-edit-sequence)))
-      
+        (unless background-thread
+          (set! background-thread (thread background-colorer)))
+        (do-insert/delete prefix get-token port-wrapper start-pos 0))
+        
+        
       (define/public (stop prefix get-token port-wrapper)
-        (reset)
         (when remove-prefs-callback-thunk
           (remove-prefs-callback-thunk)
           (set! remove-prefs-callback-thunk #f))
         (change-style (send (get-style-list) find-named-style "Standard")
-                      start-pos end-pos #f))
+                      start-pos end-pos #f)
+        (reset))
   
       (define (background-colorer)
         ((channel-get sync))

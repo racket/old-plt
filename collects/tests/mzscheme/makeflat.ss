@@ -1,8 +1,8 @@
 
 (unless (defined? 'flat-load)
-   (define flat-load "all.ss"))
+   (global-defined-value 'flat-load "all.ss"))
 (unless (defined? 'lines-per-file)
-   (define lines-per-file +inf.0))
+   (global-defined-value 'lines-per-file +inf.0))
 
 (require-library "pretty.ss")
 

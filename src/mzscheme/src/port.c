@@ -1893,13 +1893,24 @@ long scheme_get_char_string(const char *who,
 	  glen = scheme_utf8_decode_as_prefix(s, 0, got + leftover,
 					      buffer, offset, offset + size,
 					      &ulen, 0, '?');
-	  if (glen) {
-	    /* This means that we don't want to read the character
-	       after all (if we weren't peeking in general). */
+	  if (glen && (ulen < got + leftover)) {
+	    /* So we don't want to read that extra byte after all 
+	       (if we weren't peeking in general). */
 	    total_got++;
 	    return total_got;
 	  } else {
 	    /* Either we got one character, or we're still continuing. */
+	    if (!glen) {
+	      /* Continuing */
+	      leftover++;
+	    } else {
+	      /* Got one */
+	      leftover = 0;
+	      offset++;
+	      --size;
+	      total_got++;
+	    }
+	    
 	    if (!peek) {
 	      /* In either case, read the character (and discard it) */
 	      scheme_get_byte_string_unless(who, port,
@@ -1910,9 +1921,8 @@ long scheme_get_char_string(const char *who,
 	      /* Or, in either case, increment the peek skip */
 	      peek_skip = scheme_bin_plus(peek_skip, scheme_make_integer(got));
 	    }
-	    leftover++;
 	    /* Continue with the normal decoing process (but get 0
-	       more characters this time around */
+	       more characters this time around) */
 	  }
 	} else {
 	  /* Either EOF or SPECIAL -- either one ends the leftover
@@ -2009,9 +2019,9 @@ scheme_getc(Scheme_Object *port)
       }
       else if (v == -2) {
 	/* -2 => decoding error */
-	/* If the sequence starts with a high bit set, then return '?',
+	/* If the sequence starts with high bits set, then return '?',
 	   otherwise the bytes get dropped. */
-	if (s[0] & 0x80) {
+	if ((s[0] & 0xC0) == 0xC0) {
 	  /* If we peeked, it's right to leave the peeked byte */
 	  return '?';
 	} else {
@@ -2174,10 +2184,10 @@ static int do_peekc_skip(Scheme_Object *port, Scheme_Object *skip,
 	return r[0];
       else if (v == -2) {
 	/* -2 => decoding error */
-	/* If the sequence starts with a high bit set, then return '?',
+	/* If the sequence starts with high bits set, then return '?',
 	   otherwise the bytes will get dropped, so just increment 
 	   in_delta and reset delta to 0 */
-	if (s[0] & 0x80)
+	if ((s[0] & 0xC0) == 0xC0)
 	  return '?';
 	else {
 	  in_delta++;

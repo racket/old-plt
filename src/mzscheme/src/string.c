@@ -3600,6 +3600,7 @@ int scheme_utf8_decode(const unsigned char *s, int start, int end,
 int scheme_utf8_decode_as_prefix(const unsigned char *s, int start, int end, 
 				 unsigned int *us, int dstart, int dend,
 				 long *ipos, char utf16, int permissive)
+     /* Always returns number of read characters, not error codes. */
 {
   long opos;
   utf8_decode_x(s, start, end, us, dstart, dend, 

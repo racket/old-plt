@@ -55,7 +55,6 @@
 			     (list
 			      "-qr"
 			      (build-path 'up 'up "src" "mzscheme" "gc2" "xform.ss")
-			      (build-path 'up 'up "src" "mzscheme" "gc2" "ctok.ss")
 			      (format "gcc -E -DOS_X -I~s -I~s" 
 				      (build-path 'up 'up "include")
 				      (build-path 'up 'up "src" "mzscheme" "gc2"))

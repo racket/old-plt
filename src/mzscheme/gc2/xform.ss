@@ -2594,9 +2594,7 @@
 				     (let null-var ([full-name (car var)][vtype (cdr var)])
 				       (cond
 					[(or (union-type? vtype)
-					     (non-pointer-type? vtype)
-					     (and (pointer-type? vtype)
-						  (zero? (pointer-type-stars vtype))))
+					     (non-pointer-type? vtype))
 					 null]
 					[(array-type? vtype)
 					 (let ([c (array-type-count vtype)])

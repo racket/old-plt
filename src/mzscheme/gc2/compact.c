@@ -65,7 +65,7 @@ typedef short Type_Tag;
 /* Debugging and performance tools: */
 #define TIME 0
 #define SEARCH 0
-#define CHECKS 1
+#define CHECKS 0
 #define CHECK_STACK_PTRS 0
 #define NOISY 0
 #define MARK_STATS 0
@@ -3359,7 +3359,8 @@ static void check_variable_stack()
 
   var_stack = GC_variable_stack;
 
-  while (var_stack) {    if (var_stack == limit)
+  while (var_stack) {
+    if (var_stack == limit)
       return;
 
     if (*var_stack && ((unsigned long)*var_stack <= (unsigned long)var_stack))

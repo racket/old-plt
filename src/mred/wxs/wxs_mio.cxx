@@ -154,8 +154,8 @@ class os_wxMediaStreamInBase : public wxMediaStreamInBase {
   ~os_wxMediaStreamInBase();
   long Read(char* x0, long x1);
   Bool Bad();
-  void Skip(long x0);
-  void Seek(long x0);
+  void Skip(nnlong x0);
+  void Seek(nnlong x0);
   long Tell();
 };
 
@@ -241,7 +241,7 @@ return 0;
   }
 }
 
-void os_wxMediaStreamInBase::Skip(long x0)
+void os_wxMediaStreamInBase::Skip(nnlong x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -274,7 +274,7 @@ return;
   }
 }
 
-void os_wxMediaStreamInBase::Seek(long x0)
+void os_wxMediaStreamInBase::Seek(nnlong x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -388,10 +388,10 @@ static Scheme_Object *os_wxMediaStreamInBaseSkip(Scheme_Object *obj, int n,  Sch
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  long x0;
+  nnlong x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "skip in editor-stream-in-base%");
+  x0 = objscheme_unbundle_nonnegative_integer(p[0], "skip in editor-stream-in-base%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -409,10 +409,10 @@ static Scheme_Object *os_wxMediaStreamInBaseSeek(Scheme_Object *obj, int n,  Sch
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  long x0;
+  nnlong x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "seek in editor-stream-in-base%");
+  x0 = objscheme_unbundle_nonnegative_integer(p[0], "seek in editor-stream-in-base%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -544,7 +544,7 @@ class os_wxMediaStreamOutBase : public wxMediaStreamOutBase {
   ~os_wxMediaStreamOutBase();
   void Write(char* x0, long x1);
   Bool Bad();
-  void Seek(long x0);
+  void Seek(nnlong x0);
   long Tell();
 };
 
@@ -629,7 +629,7 @@ return 0;
   }
 }
 
-void os_wxMediaStreamOutBase::Seek(long x0)
+void os_wxMediaStreamOutBase::Seek(nnlong x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -742,10 +742,10 @@ static Scheme_Object *os_wxMediaStreamOutBaseSeek(Scheme_Object *obj, int n,  Sc
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  long x0;
+  nnlong x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "seek in editor-stream-out-base%");
+  x0 = objscheme_unbundle_nonnegative_integer(p[0], "seek in editor-stream-out-base%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1176,10 +1176,10 @@ static Scheme_Object *os_wxMediaStreamInJumpTo(Scheme_Object *obj, int n,  Schem
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  long x0;
+  nnlong x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "jump-to in editor-stream-in%");
+  x0 = objscheme_unbundle_nonnegative_integer(p[0], "jump-to in editor-stream-in%");
 
   
   ((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->JumpTo(x0);
@@ -1245,10 +1245,10 @@ static Scheme_Object *os_wxMediaStreamInSetBoundary(Scheme_Object *obj, int n,  
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  long x0;
+  nnlong x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "set-boundary in editor-stream-in%");
+  x0 = objscheme_unbundle_nonnegative_integer(p[0], "set-boundary in editor-stream-in%");
 
   
   ((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->SetBoundary(x0);
@@ -1578,10 +1578,10 @@ static Scheme_Object *os_wxMediaStreamOutJumpTo(Scheme_Object *obj, int n,  Sche
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  long x0;
+  nnlong x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "jump-to in editor-stream-out%");
+  x0 = objscheme_unbundle_nonnegative_integer(p[0], "jump-to in editor-stream-out%");
 
   
   ((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->JumpTo(x0);

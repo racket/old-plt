@@ -1139,14 +1139,14 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterScaling(Scheme_Object *obj, i
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  float _x0;
-  float* x0 = &_x0;
-  float _x1;
-  float* x1 = &_x1;
+  nnfloat _x0;
+  nnfloat* x0 = &_x0;
+  nnfloat _x1;
+  nnfloat* x1 = &_x1;
 
   
-      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-scaling in ps-setup%"), "get-scaling in ps-setup%"", extracting boxed argument");
-      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-scaling in ps-setup%"), "get-scaling in ps-setup%"", extracting boxed argument");
+      *x0 = objscheme_unbundle_nonnegative_float(objscheme_unbox(p[0], "get-scaling in ps-setup%"), "get-scaling in ps-setup%"", extracting boxed argument");
+      *x1 = objscheme_unbundle_nonnegative_float(objscheme_unbox(p[1], "get-scaling in ps-setup%"), "get-scaling in ps-setup%"", extracting boxed argument");
 
   
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetPrinterScaling(x0, x1);

@@ -23,12 +23,12 @@
 @CLASSBASE wxAddColour "add-color" : "object"
 @INTERFACE "add-color"
 
-@IVAR "r" : rint[0|255] r
-@IVAR "g" : rint[0|255] g
-@IVAR "b" : rint[0|255] b
+@IVAR "r" : rint[-1000|1000] r
+@IVAR "g" : rint[-1000|1000] g
+@IVAR "b" : rint[-1000|1000] b
 
 @ "get" : void Get(short*,short*,short*);
-@ "set" : void Set(rint[0|255],rint[0|255],rint[0|255]);
+@ "set" : void Set(rint[-1000|1000],rint[-1000|1000],rint[-1000|1000]);
 
 @END
 

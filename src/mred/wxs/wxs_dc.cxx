@@ -674,8 +674,8 @@ static Scheme_Object *os_wxDCDrawBitmapRegion(Scheme_Object *obj, int n,  Scheme
   float x2;
   float x3;
   float x4;
-  float x5;
-  float x6;
+  nnfloat x5;
+  nnfloat x6;
   int x7;
   class wxColour* x8;
 
@@ -685,8 +685,8 @@ static Scheme_Object *os_wxDCDrawBitmapRegion(Scheme_Object *obj, int n,  Scheme
   x2 = objscheme_unbundle_float(p[2], "draw-bitmap-section in dc<%>");
   x3 = objscheme_unbundle_float(p[3], "draw-bitmap-section in dc<%>");
   x4 = objscheme_unbundle_float(p[4], "draw-bitmap-section in dc<%>");
-  x5 = objscheme_unbundle_float(p[5], "draw-bitmap-section in dc<%>");
-  x6 = objscheme_unbundle_float(p[6], "draw-bitmap-section in dc<%>");
+  x5 = objscheme_unbundle_nonnegative_float(p[5], "draw-bitmap-section in dc<%>");
+  x6 = objscheme_unbundle_nonnegative_float(p[6], "draw-bitmap-section in dc<%>");
   if (n > 7) {
     x7 = unbundle_symset_bitmapDrawStyle(p[7], "draw-bitmap-section in dc<%>");
   } else

@@ -283,9 +283,9 @@ static Scheme_Object *os_wxAddColourSet(Scheme_Object *obj, int n,  Scheme_Objec
   int x2;
 
   
-  x0 = objscheme_unbundle_integer_in(p[0], 0, 255, "set in add-color<%>");
-  x1 = objscheme_unbundle_integer_in(p[1], 0, 255, "set in add-color<%>");
-  x2 = objscheme_unbundle_integer_in(p[2], 0, 255, "set in add-color<%>");
+  x0 = objscheme_unbundle_integer_in(p[0], -1000, 1000, "set in add-color<%>");
+  x1 = objscheme_unbundle_integer_in(p[1], -1000, 1000, "set in add-color<%>");
+  x2 = objscheme_unbundle_integer_in(p[2], -1000, 1000, "set in add-color<%>");
 
   
   ((wxAddColour *)((Scheme_Class_Object *)obj)->primdata)->Set(x0, x1, x2);
@@ -350,7 +350,7 @@ static Scheme_Object *objscheme_wxAddColour_Setr(Scheme_Object *obj, int n,  Sch
 
   if (n != 1) scheme_wrong_count("set-r in add-color%", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer_in(p[0], 0, 255, "set-r in add-color%");
+  v = objscheme_unbundle_integer_in(p[0], -1000, 1000, "set-r in add-color%");
   ((wxAddColour *)cobj->primdata)->r = v;
 
   return scheme_void;
@@ -380,7 +380,7 @@ static Scheme_Object *objscheme_wxAddColour_Setg(Scheme_Object *obj, int n,  Sch
 
   if (n != 1) scheme_wrong_count("set-g in add-color%", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer_in(p[0], 0, 255, "set-g in add-color%");
+  v = objscheme_unbundle_integer_in(p[0], -1000, 1000, "set-g in add-color%");
   ((wxAddColour *)cobj->primdata)->g = v;
 
   return scheme_void;
@@ -410,7 +410,7 @@ static Scheme_Object *objscheme_wxAddColour_Setb(Scheme_Object *obj, int n,  Sch
 
   if (n != 1) scheme_wrong_count("set-b in add-color%", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer_in(p[0], 0, 255, "set-b in add-color%");
+  v = objscheme_unbundle_integer_in(p[0], -1000, 1000, "set-b in add-color%");
   ((wxAddColour *)cobj->primdata)->b = v;
 
   return scheme_void;
@@ -2502,6 +2502,7 @@ class wxStyle *objscheme_unbundle_wxStyle(Scheme_Object *obj, const char *where,
 
 
 
+
 static void NotifyCallbackToScheme(wxStyle *, Scheme_Object *f);
 
 
@@ -2584,7 +2585,7 @@ static Scheme_Object *os_wxStyleListStyleToIndex(Scheme_Object *obj, int n,  Sch
 
   
   
-  return scheme_make_integer(r);
+  return ((r < 0) ? scheme_false : scheme_make_integer(r));
 }
 
 #pragma argsused
@@ -2593,10 +2594,10 @@ static Scheme_Object *os_wxStyleListIndexToStyle(Scheme_Object *obj, int n,  Sch
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   class wxStyle* r;
   objscheme_check_valid(obj);
-  int x0;
+  nnint x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "index-to-style in style-list%");
+  x0 = objscheme_unbundle_nonnegative_integer(p[0], "index-to-style in style-list%");
 
   
   r = ((wxStyleList *)((Scheme_Class_Object *)obj)->primdata)->IndexToStyle(x0);

@@ -551,10 +551,10 @@ class os_wxMediaBuffer : public wxMediaBuffer {
   void SetModified(Bool x0);
   void SetSnipData(class wxSnip* x0, class wxBufferData* x1);
   class wxBufferData* GetSnipData(class wxSnip* x0);
-  void NeedsUpdate(class wxSnip* x0, float x1, float x2, float x3, float x4);
+  void NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4);
   void Resized(class wxSnip* x0, Bool x1);
   void SetCaretOwner(class wxSnip* x0, int x1 = wxFOCUS_IMMEDIATE);
-  Bool ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5, int x6 = 0);
+  Bool ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4, Bool x5, int x6 = 0);
   void OnDisplaySize();
   void OnChange();
   void OnFocus(Bool x0);
@@ -565,7 +565,7 @@ class os_wxMediaBuffer : public wxMediaBuffer {
   void SizeCacheInvalid();
   void BlinkCaret();
   void OwnCaret(Bool x0);
-  void Refresh(float x0, float x1, float x2, float x3, int x4);
+  void Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4);
   class wxCursor* AdjustCursor(class wxMouseEvent& x0);
   void OnChar(class wxKeyEvent& x0);
   void OnEvent(class wxMouseEvent& x0);
@@ -1443,7 +1443,7 @@ return 0;
   }
 }
 
-void os_wxMediaBuffer::NeedsUpdate(class wxSnip* x0, float x1, float x2, float x3, float x4)
+void os_wxMediaBuffer::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4)
 {
   Scheme_Object *p[5];
   Scheme_Object *v;
@@ -1548,7 +1548,7 @@ return;
   }
 }
 
-Bool os_wxMediaBuffer::ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5, int x6)
+Bool os_wxMediaBuffer::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4, Bool x5, int x6)
 {
   Scheme_Object *p[7];
   Scheme_Object *v;
@@ -1914,7 +1914,7 @@ return;
   }
 }
 
-void os_wxMediaBuffer::Refresh(float x0, float x1, float x2, float x3, int x4)
+void os_wxMediaBuffer::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4)
 {
   Scheme_Object *p[5];
   Scheme_Object *v;
@@ -2564,7 +2564,7 @@ static Scheme_Object *os_wxMediaBufferDoEdit(Scheme_Object *obj, int n,  Scheme_
   objscheme_check_valid(obj);
   int x0;
   Bool x1;
-  long x2;
+  ExactLong x2;
 
   
   x0 = unbundle_symset_editOp(p[0], "do-edit-operation in editor<%>");
@@ -2573,7 +2573,7 @@ static Scheme_Object *os_wxMediaBufferDoEdit(Scheme_Object *obj, int n,  Scheme_
   } else
     x1 = TRUE;
   if (n > 2) {
-    x2 = objscheme_unbundle_integer(p[2], "do-edit-operation in editor<%>");
+    x2 = objscheme_unbundle_ExactLong(p[2], "do-edit-operation in editor<%>");
   } else
     x2 = 0;
 
@@ -2610,7 +2610,7 @@ static Scheme_Object *os_wxMediaBufferSetMaxUndoHistory(Scheme_Object *obj, int 
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "set-max-undo-history in editor<%>");
+  x0 = objscheme_unbundle_integer_in(p[0], 0, 100000, "set-max-undo-history in editor<%>");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->SetMaxUndoHistory(x0);
@@ -3966,15 +3966,15 @@ static Scheme_Object *os_wxMediaBufferNeedsUpdate(Scheme_Object *obj, int n,  Sc
   class wxSnip* x0;
   float x1;
   float x2;
-  float x3;
-  float x4;
+  nnfloat x3;
+  nnfloat x4;
 
   
   x0 = objscheme_unbundle_wxSnip(p[0], "needs-update in editor<%>", 0);
   x1 = objscheme_unbundle_float(p[1], "needs-update in editor<%>");
   x2 = objscheme_unbundle_float(p[2], "needs-update in editor<%>");
-  x3 = objscheme_unbundle_float(p[3], "needs-update in editor<%>");
-  x4 = objscheme_unbundle_float(p[4], "needs-update in editor<%>");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "needs-update in editor<%>");
+  x4 = objscheme_unbundle_nonnegative_float(p[4], "needs-update in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4045,8 +4045,8 @@ static Scheme_Object *os_wxMediaBufferScrollTo(Scheme_Object *obj, int n,  Schem
   class wxSnip* x0;
   float x1;
   float x2;
-  float x3;
-  float x4;
+  nnfloat x3;
+  nnfloat x4;
   Bool x5;
   int x6;
 
@@ -4054,8 +4054,8 @@ static Scheme_Object *os_wxMediaBufferScrollTo(Scheme_Object *obj, int n,  Schem
   x0 = objscheme_unbundle_wxSnip(p[0], "scroll-to in editor<%>", 0);
   x1 = objscheme_unbundle_float(p[1], "scroll-to in editor<%>");
   x2 = objscheme_unbundle_float(p[2], "scroll-to in editor<%>");
-  x3 = objscheme_unbundle_float(p[3], "scroll-to in editor<%>");
-  x4 = objscheme_unbundle_float(p[4], "scroll-to in editor<%>");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "scroll-to in editor<%>");
+  x4 = objscheme_unbundle_nonnegative_float(p[4], "scroll-to in editor<%>");
   x5 = objscheme_unbundle_bool(p[5], "scroll-to in editor<%>");
   if (n > 6) {
     x6 = unbundle_symset_bias(p[6], "scroll-to in editor<%>");
@@ -4299,15 +4299,15 @@ static Scheme_Object *os_wxMediaBufferRefresh(Scheme_Object *obj, int n,  Scheme
   objscheme_check_valid(obj);
   float x0;
   float x1;
-  float x2;
-  float x3;
+  nnfloat x2;
+  nnfloat x3;
   int x4;
 
   
   x0 = objscheme_unbundle_float(p[0], "refresh in editor<%>");
   x1 = objscheme_unbundle_float(p[1], "refresh in editor<%>");
-  x2 = objscheme_unbundle_float(p[2], "refresh in editor<%>");
-  x3 = objscheme_unbundle_float(p[3], "refresh in editor<%>");
+  x2 = objscheme_unbundle_nonnegative_float(p[2], "refresh in editor<%>");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "refresh in editor<%>");
   x4 = unbundle_symset_caret(p[4], "refresh in editor<%>");
 
   
@@ -4431,11 +4431,11 @@ static Scheme_Object *os_wxMediaBufferKill(Scheme_Object *obj, int n,  Scheme_Ob
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  long x0;
+  ExactLong x0;
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "kill in editor<%>");
+    x0 = objscheme_unbundle_ExactLong(p[0], "kill in editor<%>");
   } else
     x0 = 0;
 
@@ -4452,11 +4452,11 @@ static Scheme_Object *os_wxMediaBufferPaste(Scheme_Object *obj, int n,  Scheme_O
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  long x0;
+  ExactLong x0;
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "paste in editor<%>");
+    x0 = objscheme_unbundle_ExactLong(p[0], "paste in editor<%>");
   } else
     x0 = 0;
 
@@ -4474,7 +4474,7 @@ static Scheme_Object *os_wxMediaBufferCopy(Scheme_Object *obj, int n,  Scheme_Ob
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
   Bool x0;
-  long x1;
+  ExactLong x1;
 
   
   if (n > 0) {
@@ -4482,7 +4482,7 @@ static Scheme_Object *os_wxMediaBufferCopy(Scheme_Object *obj, int n,  Scheme_Ob
   } else
     x0 = FALSE;
   if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "copy in editor<%>");
+    x1 = objscheme_unbundle_ExactLong(p[1], "copy in editor<%>");
   } else
     x1 = 0;
 
@@ -4500,7 +4500,7 @@ static Scheme_Object *os_wxMediaBufferCut(Scheme_Object *obj, int n,  Scheme_Obj
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
   Bool x0;
-  long x1;
+  ExactLong x1;
 
   
   if (n > 0) {
@@ -4508,7 +4508,7 @@ static Scheme_Object *os_wxMediaBufferCut(Scheme_Object *obj, int n,  Scheme_Obj
   } else
     x0 = FALSE;
   if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "cut in editor<%>");
+    x1 = objscheme_unbundle_ExactLong(p[1], "cut in editor<%>");
   } else
     x1 = 0;
 
@@ -4919,12 +4919,12 @@ static Scheme_Object *wxMediaGlobalwxReadMediaGlobalHeader(int n,  Scheme_Object
 static Scheme_Object *wxMediaGlobalwxSetMediaPrintMargin(int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  long x0;
-  long x1;
+  nnlong x0;
+  nnlong x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "set-editor-print-margin in editor%");
-  x1 = objscheme_unbundle_integer(p[1], "set-editor-print-margin in editor%");
+  x0 = objscheme_unbundle_nonnegative_integer(p[0], "set-editor-print-margin in editor%");
+  x1 = objscheme_unbundle_nonnegative_integer(p[1], "set-editor-print-margin in editor%");
 
   
   wxSetMediaPrintMargin(x0, x1);
@@ -4938,20 +4938,20 @@ static Scheme_Object *wxMediaGlobalwxSetMediaPrintMargin(int n,  Scheme_Object *
 static Scheme_Object *wxMediaGlobalwxGetMediaPrintMargin(int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  long _x0;
-  long* x0 = &_x0;
-  long _x1;
-  long* x1 = &_x1;
+  nnlong _x0;
+  nnlong* x0 = &_x0;
+  nnlong _x1;
+  nnlong* x1 = &_x1;
 
   
   if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = objscheme_unbundle_integer(objscheme_nullable_unbox(p[0], "get-editor-print-margin in editor%"), "get-editor-print-margin in editor%"", extracting boxed argument");
+    *x0 = objscheme_unbundle_nonnegative_integer(objscheme_nullable_unbox(p[0], "get-editor-print-margin in editor%"), "get-editor-print-margin in editor%"", extracting boxed argument");
   if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = objscheme_unbundle_integer(objscheme_nullable_unbox(p[1], "get-editor-print-margin in editor%"), "get-editor-print-margin in editor%"", extracting boxed argument");
+    *x1 = objscheme_unbundle_nonnegative_integer(objscheme_nullable_unbox(p[1], "get-editor-print-margin in editor%"), "get-editor-print-margin in editor%"", extracting boxed argument");
 
   
   wxGetMediaPrintMargin(x0, x1);

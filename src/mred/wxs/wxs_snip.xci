@@ -1,7 +1,7 @@
 
 @MACRO makeNoCopyString[len] = scheme_make_sized_string(r, <len>, 0)
 
-@ s "get-extent" : void GetExtent(wxDC!,float,float,float?=NULL,float?=NULL,float?=NULL,float?=NULL,float?=NULL,float?=NULL); : : /CHECKDCOK[0.METHODNAME("snip%","get-extent")]
+@ s "get-extent" : void GetExtent(wxDC!,float,float,nnfloat?=NULL,nnfloat?=NULL,nnfloat?=NULL,nnfloat?=NULL,nnfloat?=NULL,nnfloat?=NULL); : : /CHECKDCOK[0.METHODNAME("snip%","get-extent")]
 @ s "partial-offset" : float PartialOffset(wxDC!,float,float,nnlong); : : /CHECKDCOK[0.METHODNAME("snip%","partial-offset")]
 @ s "draw" : void Draw(wxDC!,float,float,float,float,float,float,float,float,SYM[caret]); : : /CHECKDCOK[0.METHODNAME("snip%","draw")]
 @ s "split" : void Split(nnlong,wxSnip!*,wxSnip!*);
@@ -21,10 +21,10 @@
 
 @ s "write" : void Write(wxMediaStreamOut%);
 
-@ s "resize" : bool Resize(float, float);
+@ s "resize" : bool Resize(nnfloat, nnfloat);
 
 @ s "set-admin" : void SetAdmin(wxSnipAdmin^);
 
 @ s "get-num-scroll-steps" : nnlong GetNumScrollSteps()
 @ s "find-scroll-step" :  nnlong FindScrollStep(float)
-@ s "get-scroll-step-offset" : float GetScrollStepOffset(nnlong)
+@ s "get-scroll-step-offset" : nnfloat GetScrollStepOffset(nnlong)

@@ -104,37 +104,30 @@ int objscheme_istype_bool(Scheme_Object *obj, const char *where)
   return 1; /* Anything can be a boolean */
 }
 
-int objscheme_istype_number(Scheme_Object *obj, const char *stopifbad)
-{
-  if (SCHEME_INTP(obj) || SCHEME_DBLP(obj) || SCHEME_BIGNUMP(obj)
-      || SCHEME_RATIONALP(obj))
-    return 1;
-  else if (stopifbad) {
-    scheme_wrong_type(stopifbad, "number", -1, 0, &obj);
-  }
-  return 0;
-}
-
 int objscheme_istype_integer(Scheme_Object *obj, const char *stopifbad)
 {
-  if (SCHEME_INTP(obj))
+  if (SCHEME_INTP(obj) || SCHEME_BIGNUMP(obj))
     return 1;
   else if (stopifbad) {
-    scheme_wrong_type(stopifbad, "fixnum", -1, 0, &obj);
+    scheme_wrong_type(stopifbad, "exact integer", -1, 0, &obj);
   }
   return 0;
 }
 
 int objscheme_istype_ExactLong(Scheme_Object *obj, const char *stopifbad)
 {
-  long v;
-  if (!scheme_get_int_val(obj, &v)) {
-    if (stopifbad) {
-      scheme_wrong_type(stopifbad, "long fixnum", -1, 0, &obj);
-    }
-    return 0;
-  } else
+  return objscheme_istype_integer(obj, stopifbad);
+}
+
+int objscheme_istype_number(Scheme_Object *obj, const char *stopifbad)
+{
+  if (SCHEME_INTP(obj) || SCHEME_DBLP(obj) || SCHEME_BIGNUMP(obj)
+      || SCHEME_RATIONALP(obj))
     return 1;
+  else if (stopifbad) {
+    scheme_wrong_type(stopifbad, "real number", -1, 0, &obj);
+  }
+  return 0;
 }
 
 int objscheme_istype_float(Scheme_Object *obj, const char *stopifbad)
@@ -142,7 +135,7 @@ int objscheme_istype_float(Scheme_Object *obj, const char *stopifbad)
   if (SCHEME_DBLP(obj))
     return 1;
   else if (stopifbad)
-    scheme_wrong_type(stopifbad, "flonum", -1, 0, &obj);
+    scheme_wrong_type(stopifbad, "inexact real number", -1, 0, &obj);
   return 0;
 }
 
@@ -225,7 +218,7 @@ int objscheme_istype_nonnegative_symbol_integer(Scheme_Object *obj, const char *
     }
   }
 
-  if (objscheme_istype_number(obj, NULL)) {
+  if (objscheme_istype_integer(obj, NULL)) {
     long v = objscheme_unbundle_integer(obj, where);
     if (v >= 0)
       return 1;
@@ -233,7 +226,7 @@ int objscheme_istype_nonnegative_symbol_integer(Scheme_Object *obj, const char *
 
   if (where) {
     char *b = (char *)scheme_malloc_atomic(50);
-    strcpy(b, "non-negative integer or '");
+    strcpy(b, "non-negative exact integer or '");
     strcat(b, sym);
     scheme_wrong_type(where, b, -1, 0, &obj);
   }
@@ -317,27 +310,47 @@ void *objscheme_unbundle_generic(Scheme_Object *obj, const char *where)
 
 long objscheme_unbundle_integer(Scheme_Object *obj, const char *where)
 {
-  (void)objscheme_istype_number(obj, where);
-  if (SCHEME_DBLP(obj)) {
-    return (long)SCHEME_DBL_VAL(obj);
-  } else if (SCHEME_RATIONALP(obj)) {
-    return (long)scheme_rational_to_float(obj);
-  } else if (SCHEME_BIGNUMP(obj)) {
+  (void)objscheme_istype_integer(obj, where);
+  if (SCHEME_BIGNUMP(obj)) {
     if (SCHEME_PINT_VAL(obj) < 0)
-      return -1;
+      return -0xfffFFFF;
     else
-      return 1;
+      return 0xfffFFFF;
   } else
     return SCHEME_INT_VAL(obj);
 }
 
 long objscheme_unbundle_nonnegative_integer(Scheme_Object *obj, const char *where)
 {
-  long v = objscheme_unbundle_integer(obj, where);
-  if ((v < 0) && where)
-    scheme_wrong_type(where, "non-negative integer", -1, 0, &obj);
-  return v;
+  if (objscheme_istype_integer(obj, NULL)) {
+    long v = objscheme_unbundle_integer(obj, where);
+    if (v >= 0)
+      return v;
+  }
+
+  if (where)
+    scheme_wrong_type(where, "non-negative exact integer", -1, 0, &obj);
+
+  return -1;
 }
+
+long objscheme_unbundle_integer_in(Scheme_Object *obj, long minv, long maxv, const char *stopifbad)
+{
+  if (objscheme_istype_integer(obj, NULL)) {
+    long v = objscheme_unbundle_integer(obj, stopifbad);
+    if ((v >= minv) && (v <= maxv))
+      return v;
+  }
+
+  if (stopifbad) {
+    char buffer[100];
+    sprintf(buffer, "exact integer in [%ld, %ld]", minv, maxv);
+    scheme_wrong_type(stopifbad, buffer, -1, 0, &obj);
+  }
+
+  return 0;
+}
+
 
 long objscheme_unbundle_nonnegative_symbol_integer(Scheme_Object *obj, const char *sym, const char *where)
 {
@@ -364,8 +377,11 @@ ExactLong objscheme_unbundle_ExactLong(Scheme_Object *obj, const char *where)
 {
   long v;
 
-  if (!scheme_get_int_val(obj, &v))
-    (void)objscheme_istype_ExactLong(obj, where);
+  (void)objscheme_istype_integer(obj, where);
+  if (!scheme_get_int_val(obj, &v)) {
+    if (where)
+      scheme_arg_mismatch(where, "argument integer is out of platform-specific bounds", obj);
+  }
 
   return v;
 }
@@ -407,10 +423,16 @@ double objscheme_unbundle_nonnegative_symbol_float(Scheme_Object *obj, const cha
 
 double objscheme_unbundle_nonnegative_float(Scheme_Object *obj, const char *where)
 {
-  double v = objscheme_unbundle_float(obj, where);
-  if ((v < 0) && where)
+  if (objscheme_istype_number(obj, NULL)) {
+    double v = objscheme_unbundle_float(obj, where);
+    if (v >= 0)
+      return v;
+  }
+
+  if (where)
     scheme_wrong_type(where, "non-negative number", -1, 0, &obj);
-  return v;
+
+  return -1.0;
 }
 
 int objscheme_unbundle_bool(Scheme_Object *obj, const char *where)

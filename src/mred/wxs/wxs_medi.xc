@@ -181,7 +181,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 
 @GLOBAL wxMediaGlobal
 
-@ "get-editor-print-margin" : void wxGetMediaPrintMargin(long?,long?);
+@ "get-editor-print-margin" : void wxGetMediaPrintMargin(nnlong?,nnlong?);
 @ "set-editor-print-margin" : void wxSetMediaPrintMargin(nnlong,nnlong);
 
 @ "read-editor-global-header" : bool wxReadMediaGlobalHeader(wxMediaStreamIn%);

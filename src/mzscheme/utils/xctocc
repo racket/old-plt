@@ -1383,7 +1383,8 @@ sub PrintBundleVar
 	print "scheme_make_char((char)$var)";
     } elsif ($paramtype eq 'int' 
 	     || $paramtype eq 'nnint' 
-	     || $paramtype eq 'unsigned') {
+	     || $paramtype eq 'unsigned'
+	     || (substr($paramtype,0,4) eq 'rint')) {
 	print "scheme_make_integer($var)";
     } elsif ($paramtype eq 'short') {
 	print "scheme_make_integer($var)";
@@ -1396,7 +1397,9 @@ sub PrintBundleVar
 	print "scheme_make_integer($var)";
     } elsif ($paramtype eq 'ExactLong') {
 	print "scheme_make_integer_value($var)";
-    } elsif (($paramtype eq 'float') || ($paramtype eq 'double')
+    } elsif (($paramtype eq 'float') 
+	     || ($paramtype eq 'nnfloat')
+	     || ($paramtype eq 'double')
 	     || ($paramtype eq 'Double')) {
 	print "scheme_make_double($var)";
     } elsif (substr($paramtype,0,4) eq 'nnfs') {
@@ -1492,11 +1495,14 @@ sub PrintUnbundleVar
     } elsif ($paramtype eq 'uchar') {
 	print "((unsigned char)objscheme_unbundle_char(${var}, $stop))";
     } elsif (($paramtype eq 'int') || ($paramtype eq 'unsigned') 
-	     || ($paramtype eq 'byte')
-	     || ($paramtype eq 'ubyte')
 	     || ($paramtype eq 'short') || ($paramtype eq 'long')
 	     || ($paramtype eq 'Long')) {
 	print "objscheme_unbundle_integer($var, $stop)";
+    } elsif ($paramtype eq 'ubyte') {
+	print "objscheme_unbundle_integer_in($var, 0, 255, $stop)";
+    } elsif (substr($paramtype,0,4) eq 'rint') {
+	$paramtype =~ /rint\[([^|]*)\|(.*)\]/;
+	print "objscheme_unbundle_integer_in($var, $1, $2, $stop)";
     } elsif ($paramtype eq 'ExactLong') {
 	print "objscheme_unbundle_ExactLong($var, $stop)";
     } elsif (($paramtype eq 'nnint') || ($paramtype eq 'nnlong')) {
@@ -1579,6 +1585,8 @@ sub NormalType {
 	$paramtype = &NormalType($paramtype) . '*';
     } elsif ($paramtype eq 'uchar') {
 	$paramtype = 'unsigned char';
+    } elsif (substr($paramtype,0,4) eq 'rint') {
+	$paramtype = 'int';
     } elsif ($paramtype eq 'bool') {
 	$paramtype = $bool;
     } elsif ($paramtype eq 'Long') {
@@ -1806,9 +1814,10 @@ sub PrintTypecheck
     } elsif (($paramtype eq 'int') || ($paramtype eq 'unsigned') 
 	     || ($paramtype eq 'nnint') || ($paramtype eq 'nnlong') 
 	     || ($paramtype eq 'byte') || ($paramtype eq 'ubyte')
-	     || ($paramtype eq 'short') || ($paramtype eq 'long') 
+	     || ($paramtype eq 'short') || ($paramtype eq 'long')
 	     || ($paramtype eq 'float') || ($paramtype eq 'nnfloat') 
-	     || ($paramtype eq 'double')) {
+	     || ($paramtype eq 'double')
+	     || (substr($paramtype,0,4) eq 'rint')) {
 	print "objscheme_istype_number($var, $stop)";
     } elsif (substr($paramtype,0,4) eq 'nnls') {
 	$paramtype =~ /nnls\[(.*)\]/;

@@ -121,13 +121,13 @@ typedef void *(*CAPOFunc)(void*);
 
 @ V "get-editor" : wxMediaBuffer^ GetMedia(); : : : rNULL
 @ V "get-dc" : wxDC^ GetDC(); : : : rNULL
-@ V "get-view-size" : void GetViewSize(float?, float?);
-@ V "get-view" : void GetView(float?, float?, float?, float?, wxSnip^=NULL);
-@ V "scroll-to" : bool ScrollTo(wxSnip!, float,float,float,float, bool,SYM[bias]=0); : : : rFALSE
+@ V "get-view-size" : void GetViewSize(nnfloat?, nnfloat?);
+@ V "get-view" : void GetView(float?, float?, nnfloat?, nnfloat?, wxSnip^=NULL);
+@ V "scroll-to" : bool ScrollTo(wxSnip!, float,float,nnfloat,nnfloat, bool,SYM[bias]=0); : : : rFALSE
 @ V "set-caret-owner" : void SetCaretOwner(wxSnip!,SYM[focus]);
 @ V "resized" : void Resized(wxSnip!, bool);
 @ V "recounted" : bool Recounted(wxSnip!, bool); : : : rFALSE
-@ V "needs-update" : void NeedsUpdate(wxSnip!, float,float,float,float);
+@ V "needs-update" : void NeedsUpdate(wxSnip!, float,float,nnfloat,nnfloat);
 @ V "release-snip" : bool ReleaseSnip(wxSnip!); : : : rFALSE
 @ V "update-cursor" : void UpdateCursor();
 

@@ -57,8 +57,8 @@ Scheme_Object *objscheme_box(Scheme_Object *);
 void objscheme_set_box(Scheme_Object *, Scheme_Object *);
 
 int objscheme_istype_bool(Scheme_Object *, const char *stopifbad);
-int objscheme_istype_number(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_integer(Scheme_Object *, const char *stopifbad);
+int objscheme_istype_number(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_ExactLong(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_float(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_pair(Scheme_Object *, const char *stopifbad);
@@ -80,6 +80,7 @@ Scheme_Object *objscheme_bundle_nonnegative_symbol_float(double d, const char *s
 
 void *objscheme_unbundle_generic(Scheme_Object *, const char *);
 long objscheme_unbundle_integer(Scheme_Object *, const char *);
+long objscheme_unbundle_integer_in(Scheme_Object *, long, long, const char *);
 long objscheme_unbundle_nonnegative_integer(Scheme_Object *, const char *);
 long objscheme_unbundle_nonnegative_symbol_integer(Scheme_Object *, const char *symname, const char *);
 ExactLong objscheme_unbundle_ExactLong(Scheme_Object *, const char *);

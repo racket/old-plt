@@ -623,7 +623,7 @@
 	  [TIME-FACTOR 10]
 	  
 	  [kill-protect
-	   (lambda (who can-break? f)
+	   (lambda (can-break? f)
 	     (dynamic-disable-break
 	      (lambda ()
 		(if (and (not want-kill?)
@@ -752,7 +752,6 @@
 	  [this-out-write
 	   (lambda (s)
 	     (kill-protect
-	      'curout
 	      #f
 	      (lambda ()
 		(parameterize ([current-output-port orig-stdout]
@@ -782,7 +781,6 @@
 	  [this-err-write
 	   (lambda (s)
 	     (kill-protect
-	      'curerr
 	      #f
 	      (lambda ()
 		(parameterize ([current-output-port orig-stdout]
@@ -870,7 +868,6 @@
 		       (send transparent-edit fetch-char))])
 	     (lambda ()
 	       (kill-protect
-		'read-char
 		#t
 		(lambda ()
 		  (single-threader g)))))]
@@ -880,7 +877,6 @@
 		       (send transparent-edit fetch-sexp))])
 	     (lambda ()
 	       (kill-protect
-		'read
 		#t
 		(lambda ()
 		  (single-threader g)))))])
@@ -1001,7 +997,6 @@
 	  [this-result-write 
 	   (lambda (s)
 	     (kill-protect
-	      'result
 	      #f
 	      (lambda ()
 		(generic-write this

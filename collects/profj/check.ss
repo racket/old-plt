@@ -701,7 +701,7 @@
                    ((no-reachable) (format "method ~a does not have a reachable return" method))
                    ((abstract)
                     (let ((line1 
-                           (format "abstract method ~a has an implementation, abstract methods maynot have implementations"
+                           (format "abstract method ~a has an implementation, abstract methods may not have implementations"
                                    method))
                           (line2 "Either a ';'should come after the header, or the method should not be abstract"))
                       (format "~a~n~a" line1 line2)))
@@ -2478,7 +2478,7 @@
                                     n n))
                      ((pac) (format "This constructor for ~a may~a"
                                     n (if (memq level '(beginner intermediate))
-                                          "not be used" (format " only be used by ~a and package members" n)))))
+                                          " not be used" (format " only be used by ~a and package members" n)))))
                  n src)))
 
   ;ctor-throws-error: string type src -> void

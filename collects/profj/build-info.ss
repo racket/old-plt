@@ -62,7 +62,6 @@
            (current-loc (unless (null? defs) (def-file (car defs)))))
       (set-package-defs! prog defs)
       
-      
       ;Add lang to local environment
       (for-each (lambda (class) (send type-recs add-to-env class lang-pack current-loc)) lang)
       (for-each (lambda (class) (send type-recs add-class-req (cons class lang-pack) #f current-loc)) lang)
@@ -130,7 +129,6 @@
               (build-require-syntax (car native-name) pname dir #f))
         (send type-recs add-to-records defname
               (lambda () (process-class/iface def pname type-recs look-in-table level)))
-      
         ;;get info for Inner member classes
         (let ([prefix (format "~a." name)])
           (for-each (lambda (member)
@@ -256,23 +254,24 @@
   
   ;find-directory: (list string) ( -> void) -> (list string)
   (define (find-directory path fail)
-    (let ((class-path (get-classpath)))
-      (cond
-        ((null? path) (list (build-path 'same)))
-        ((and (scheme-ok?) (equal? (car path) "scheme"))
-         (cond
-           ((not (equal? (cadr path) "lib")) (cons "scheme" (find-directory (cdr path) fail)))
-           ((and (equal? (cadr path) "lib") (not (null? (cddr path))))
-            (list "scheme" (apply collection-path (cddr path))))
-           (else (list "mzlib"))));(error 'temp-error ""))))
-        (else
-         (let loop ((paths class-path))
+    (if (null? path)
+        (list (build-path 'same))
+        (cond
+          ((and (scheme-ok?) (equal? (car path) "scheme"))
            (cond
-             ((null? paths) (fail))
-             ((and (directory-exists? (build-path (car paths) 
-                                                  (apply build-path path))))
-              (cons (car paths) path))
-             (else (loop (cdr paths)))))))))
+             ((not (equal? (cadr path) "lib")) (cons "scheme" (find-directory (cdr path) fail)))
+             ((and (equal? (cadr path) "lib") (not (null? (cddr path))))
+              (list "scheme" (apply collection-path (cddr path))))
+             (else (list "mzlib"))))
+          (else
+           (when (null? (classpath)) (classpath (get-classpath)))
+           (let loop ((paths (classpath)))
+             (cond
+               ((null? paths) (fail))
+               ((and (directory-exists? (build-path (car paths) 
+                                                    (apply build-path path))))
+                (cons (car paths) path))
+               (else (loop (cdr paths)))))))))
 
   ;get-class-list: (list string) -> (list string)
   (define (get-class-list dir)

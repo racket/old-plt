@@ -1,6 +1,9 @@
 (module parameters mzscheme
   (provide (all-defined))
   
+  ;Stores the classpath for the current run
+  (define classpath (make-parameter null))
+  
   ;Stores syntax-oddness for datum->syntax-object
   (define syntax-location (make-parameter #f))
   

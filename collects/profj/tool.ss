@@ -652,7 +652,7 @@
           
           (super-instantiate ())
           (inherit set-snipclass get-editor)
-          (set-snipclass snipclass-comment)))          
+          (set-snipclass snipclass-comment)))
           
       (define (java-comment-box-mixin %)
         (class %

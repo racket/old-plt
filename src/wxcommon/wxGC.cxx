@@ -280,20 +280,21 @@ static long total, accum = 1024 * 1024 * 5;
 void *GC_malloc_accounting_shadow(long a)
 {
   long *p;
-  if (a < sizeof(long))
+  if (a < (long)sizeof(long))
     a = sizeof(long);
-  p = (long *)GC_malloc_atomic(a);
-  *p = a;
   total += a;
   accum -= a;
   if (accum <= 0) {
     GC_gcollect();
     accum = total >> 2;
   }
+  p = (long *)GC_malloc_atomic(a);
+  *p = a;
   return (void *)p;
 }
 
 void GC_free_accounting_shadow(void *p)
 {
-  total -= *(long *)p;
+  if (p)
+    total -= *(long *)p;
 }

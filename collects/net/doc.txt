@@ -215,6 +215,12 @@ The _sendurl.ss_ module defines one procedure:
   sending a message to the local browser to display the url named
   by `str'.
 
+  Under macos, uses the url apple event library
+  Under unix, uses opera if it can be found in the
+    path. If not, tries netscape. If not that, just
+    fails.
+  Under windows, always fails.
+
 ==========================================================================
 _CGI_ backends, _WWW_
 ==========================================================================

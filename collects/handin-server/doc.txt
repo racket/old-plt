@@ -239,11 +239,11 @@ sub-directories:
     name. Within each student sub-directory are "handin.scm" (or some
     other name if `default-file-name' is set), "BACKUP-0", "BACKUP-1",
     etc., for each student who submits an assignment. (The most recent
-    handin is in this directory, and "BACKUP-N" directories hold older
+    handin is in this directory, and "BACKUP-?" directories hold older
     submission for the same assignment.) A `checker' procedure can
     replace the name "handin.scm" with something else (possibly
-    sensitive to the content of the submission); see below for more
-    details.
+    sensitive to the content of the submission), and create additional
+    files; see below for more details.
 
     For submissions from a normal DrScheme frame, a "handin.scm" file
     contains a copy of the student's definitions and interactions
@@ -268,7 +268,10 @@ sub-directories:
     relayed back to the student. The `checker' function is called when
     the current directory is active/<assignment>/<user>, and it can
     create additional files in this directory -- such files will get
-    moved when a backup is done.
+    moved when a backup is done.  If you want to hide some of these
+    files from the web interface, but them in a subdirectory -- it
+    will be properly backed up, and directories are all hidden from
+    the web interface.
 
     The checker should return a string, such as "handin.scm", to use in
     naming the submission. For submissions that require both programs

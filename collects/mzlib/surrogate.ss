@@ -41,13 +41,29 @@
                    "super-"
                    (symbol->string
                     (syntax-object->datum
+                     (syntax name))))))]
+               [super-call-name
+                (datum->syntax-object 
+                 (syntax name)
+                 (string->symbol
+                  (string-append
+                   "super-proc-"
+                   (symbol->string
+                    (syntax-object->datum
                      (syntax name))))))])
-           (with-syntax ([(cases ...) (map (make-lambda-case (syntax name) super-name)
-                                           (syntax->list (syntax (argspec ...))))]
-                         [super-name super-name])
+           (with-syntax ([(cases ...) 
+                          (map (make-lambda-case (syntax name) super-call-name)
+                               (syntax->list (syntax (argspec ...))))]
+                         [(super-proc-cases ...)
+                          (map (make-super-proc-case super-name)
+                               (syntax->list (syntax (argspec ...))))]
+                         [super-name super-name]
+                         [super-call-name super-call-name])
              (syntax
               (begin
                 (rename [super-name name])
+                (define/private super-call-name
+                  (case-lambda super-proc-cases ...))
                 (define/override name
                   (case-lambda cases ...))))))]))
     
@@ -55,6 +71,35 @@
       (syntax-case method-spec ()
         [(name argspec ...) 
          (syntax name)]))
+    
+    (define (make-super-proc-case super-name)
+      (lambda (spec)
+        (with-syntax ([super-name super-name])
+          (syntax-case spec ()
+            [(id ...) (syntax [(id ...)
+                               (super-name id ...)])]
+            [id 
+             (identifier? (syntax id))
+             (syntax [id (super-name . id)])]))))
+    
+    (define (make-lambda-case name super-name super-call)
+      (with-syntax ([super-name super-name]
+                    [name name]
+                    [super-call super-call])
+        (lambda (spec)
+          (syntax-case spec ()
+            [(id ...) (syntax [(id ...)
+                               (printf "calling.1 ~s\n" 'name)
+                               (if surrogate
+                                   (send surrogate name this super-call id ...)
+                                   (super-call id ...))])]
+            [id
+             (identifier? (syntax id))
+             (syntax [name 
+                      (printf "calling.2 ~s\n" 'name)
+                      (if surrogate
+                          (send surrogate name this super-call . id)
+                          (apply super-call id))])]))))
     
     (define (make-lambda-case name super-name)
       (with-syntax ([super-name super-name]

@@ -3445,64 +3445,15 @@ static Scheme_Object *read_syntax(Scheme_Object *obj)
 
 START_XFORM_SKIP;
 
-static int mark_comp_info(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Compile_Info *i = (Scheme_Compile_Info *)p;
-
-    gcMARK(i->value_name);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Compile_Info));
-}
-
-static int mark_cont_mark(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Cont_Mark *cm = (Scheme_Cont_Mark *)p;
-
-    gcMARK(cm->key);
-    gcMARK(cm->val);
-    gcMARK(cm->cached_chain);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Cont_Mark));
-}
-
-static int mark_saved_stack(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Saved_Stack *saved = (Scheme_Saved_Stack *) p;
-    Scheme_Object **old = saved->runstack_start;
-
-    gcMARK(saved->prev);
-    gcMARK(saved->runstack_start);
-    saved->runstack = saved->runstack_start + (saved->runstack - old);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Saved_Stack));
-}
-
-static int mark_eval_in_env(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Eval_In_Env *ee = (Eval_In_Env *)p;
-
-    gcMARK(ee->e);
-    gcMARK(ee->config);
-    gcMARK(ee->namespace);
-    gcMARK(ee->old);
-  }
-  
-  return gcBYTES_TO_WORDS(sizeof(Eval_In_Env));
-}
+#define MARKS_FOR_EVAL_C
+#include "mzmark.c"
 
 static void register_traversers(void)
 {
-  GC_register_traverser(scheme_rt_compile_info, mark_comp_info);
-  GC_register_traverser(scheme_rt_cont_mark, mark_cont_mark);
-  GC_register_traverser(scheme_rt_saved_stack, mark_saved_stack);
-  GC_register_traverser(scheme_rt_eval_in_env, mark_eval_in_env);
+  GC_REG_TRAV(scheme_rt_compile_info, mark_comp_info);
+  GC_REG_TRAV(scheme_rt_cont_mark, mark_cont_mark);
+  GC_REG_TRAV(scheme_rt_saved_stack, mark_saved_stack);
+  GC_REG_TRAV(scheme_rt_eval_in_env, mark_eval_in_env);
 }
 
 END_XFORM_SKIP;

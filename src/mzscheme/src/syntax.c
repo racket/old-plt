@@ -2775,20 +2775,12 @@ static Scheme_Object *read_case_lambda(Scheme_Object *obj)
 
 START_XFORM_SKIP;
 
-static int mark_linker_name(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Linker_Name *n = (Linker_Name *)p;
-    
-    gcMARK(n->sym);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Linker_Name));
-}
+#define MARKS_FOR_SYNTAX_C
+#include "mzmark.c"
 
 static void register_traversers(void)
 {
-  GC_register_traverser(scheme_rt_linker_name, mark_linker_name);
+  GC_REG_TRAV(scheme_rt_linker_name, mark_linker_name);
 }
 
 END_XFORM_SKIP;

@@ -2723,62 +2723,15 @@ static Scheme_Object *read_compiled_closure(Scheme_Object *obj)
 
 START_XFORM_SKIP;
 
-static int mark_closure_info(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Closure_Info *i = (Closure_Info *)p;
-
-    gcMARK(i->local_flags);
-    gcMARK(i->real_closure_map);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Closure_Info));
-}
-
-static int mark_dyn_wind_cell(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Dynamic_Wind_List *l = (Scheme_Dynamic_Wind_List *)p;
-
-    gcMARK(l->dw);
-    gcMARK(l->next);
-  }
-  
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Dynamic_Wind_List));
-}
-
-static int mark_dyn_wind_info(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Dyn_Wind *d = (Dyn_Wind *)p;
-
-    gcMARK(d->pre);
-    gcMARK(d->act);
-    gcMARK(d->post);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Dyn_Wind));
-}
-
-static int mark_cont_mark_chain(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Cont_Mark_Chain *c = (Scheme_Cont_Mark_Chain *)p;
-
-    gcMARK(c->key);
-    gcMARK(c->val);
-    gcMARK(c->next);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Cont_Mark_Chain));
-}
+#define MARKS_FOR_FUN_C
+#include "mzmark.c"
 
 static void register_traversers(void)
 {
-  GC_register_traverser(scheme_rt_closure_info, mark_closure_info);
-  GC_register_traverser(scheme_rt_dyn_wind_cell, mark_dyn_wind_cell);
-  GC_register_traverser(scheme_rt_dyn_wind_info, mark_dyn_wind_info);
-  GC_register_traverser(scheme_rt_cont_mark_chain, mark_cont_mark_chain);
+  GC_REG_TRAV(scheme_rt_closure_info, mark_closure_info);
+  GC_REG_TRAV(scheme_rt_dyn_wind_cell, mark_dyn_wind_cell);
+  GC_REG_TRAV(scheme_rt_dyn_wind_info, mark_dyn_wind_info);
+  GC_REG_TRAV(scheme_rt_cont_mark_chain, mark_cont_mark_chain);
 }
 
 END_XFORM_SKIP;

@@ -413,36 +413,13 @@ static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p)
 
 START_XFORM_SKIP;
 
-static int mark_breakable_wait(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    BreakableWait *w = (BreakableWait *)p;
-    
-    gcMARK(w->config);
-    gcMARK(w->orig_param_val);
-    gcMARK(w->sema);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(BreakableWait));
-}
-
-static int mark_sema_waiter(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Sema_Waiter *w = (Scheme_Sema_Waiter *)p;
-
-    gcMARK(w->p);
-    gcMARK(w->prev);
-    gcMARK(w->next);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Sema_Waiter));
-}
+#define MARKS_FOR_SEMA_C
+#include "mzmark.c"
 
 static void register_traversers(void)
 {
-  GC_register_traverser(scheme_rt_breakable_wait, mark_breakable_wait);
-  GC_register_traverser(scheme_rt_sema_waiter, mark_sema_waiter);
+  GC_REG_TRAV(scheme_rt_breakable_wait, mark_breakable_wait);
+  GC_REG_TRAV(scheme_rt_sema_waiter, mark_sema_waiter);
 }
 
 END_XFORM_SKIP;

@@ -1665,56 +1665,14 @@ static Scheme_Object *read_local_unbox(Scheme_Object *obj)
 
 START_XFORM_SKIP;
 
-static int mark_comp_env(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Full_Comp_Env *e = (Scheme_Full_Comp_Env *)p;
-
-    gcMARK(e->base.genv);
-    gcMARK(e->base.next);
-    gcMARK(e->base.values);
-
-    gcMARK(e->data.stat_dists);
-    gcMARK(e->data.sd_depths);
-    gcMARK(e->data.constants);
-    gcMARK(e->data.use);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Full_Comp_Env));
-}
-
-static int mark_const_binding(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Constant_Binding *b = (Constant_Binding *)p;
-    
-    gcMARK(b->name);
-    gcMARK(b->val);
-    gcMARK(b->next);
-  } 
-  
-  return gcBYTES_TO_WORDS(sizeof(Constant_Binding));
-}
-
-static int mark_link_info(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Link_Info *i = (Link_Info *)p;
-
-    gcMARK(i->old_pos);
-    gcMARK(i->new_pos);
-    gcMARK(i->flags);
-    gcMARK(i->next);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Link_Info));
-}
+#define MARKS_FOR_ENV_C
+#include "mzmark.c"
 
 static void register_traversers(void)
 {
-  GC_register_traverser(scheme_rt_comp_env, mark_comp_env);
-  GC_register_traverser(scheme_rt_constant_binding, mark_const_binding);
-  GC_register_traverser(scheme_rt_link_info, mark_link_info);
+  GC_REG_TRAV(scheme_rt_comp_env, mark_comp_env);
+  GC_REG_TRAV(scheme_rt_constant_binding, mark_const_binding);
+  GC_REG_TRAV(scheme_rt_link_info, mark_link_info);
 }
 
 END_XFORM_SKIP;

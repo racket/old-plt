@@ -349,33 +349,8 @@ typedef struct {
 
 START_XFORM_SKIP;
 
-static int mark_finalization(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Finalization *f = (Finalization *)p;
-
-    gcMARK(f->data);
-    gcMARK(f->next);
-    gcMARK(f->prev);
-  }
-
-  return sizeof(Finalization);
-}
-
-static int mark_finalizations(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Finalizations *f = (Finalizations *)p;
-
-    gcMARK(f->scheme_first);
-    gcMARK(f->scheme_last);
-    gcMARK(f->prim_first);
-    gcMARK(f->prim_last);
-    gcMARK(f->ext_data);
-  }
-
-  return sizeof(Finalizations);
-}
+#define MARKS_FOR_SALLOC_C
+#include "mzmark.c"
 
 END_XFORM_SKIP;
 
@@ -433,8 +408,8 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
 
 #ifdef MZ_PRECISE_GC
   if (!traversers_registered) {
-    GC_register_traverser(scheme_rt_finalization, mark_finalization);
-    GC_register_traverser(scheme_rt_finalizations, mark_finalizations);
+    GC_REG_TRAV(scheme_rt_finalization, mark_finalization);
+    GC_REG_TRAV(scheme_rt_finalizations, mark_finalizations);
     traversers_registered = 1;
   }
 #endif

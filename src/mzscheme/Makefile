@@ -232,6 +232,7 @@ CMACRODEST = cmacro.inc
 cmacro:
 	$(XMAKE) src/$(CMACRODEST)
 	$(XMAKE) src/cunitsig.inc
+	$(XMAKE) src/mzmark.c
 
 headers:
 	$(XMAKE) ../../collects/mzscheme/include/scheme.h
@@ -262,6 +263,9 @@ src/$(CMACRODEST): src/macro.ss src/schvers.h
 
 src/cunitsig.inc: src/unitsig.ss src/schvers.h
 	cd src; ../$(MZSCHEME) -gqrna sstoinc.ss < unitsig.ss > cunitsig.inc
+
+src/mzmark.c: src/mzmarksrc.c src/mkmark.ss
+	cd src; ../$(MZSCHEME) -qr mkmark.ss < mzmarksrc.c > mzmark.c
 
 cmacro.zo:
 	$(XMAKE) cmacro CMACROEXTRA='zo' CMACRODEST="../cmacro.zo"

@@ -1065,74 +1065,16 @@ void scheme_count_struct_info(Scheme_Object *o, long *s, long *e,
 
 START_XFORM_SKIP;
 
-static int mark_struct_val(void *p, Mark_Proc mark)
-{
-  Scheme_Structure *s = (Scheme_Structure *)p;
-  Scheme_Struct_Type *stype = (Scheme_Struct_Type *)GC_resolve(s->stype);
-
-  if (mark) {
-    int i;
-
-    gcMARK(s->stype);
-    stype = s->stype; /* In case we just moved it */
-
-    for(i = stype->num_slots; i--; )
-      gcMARK(s->slots[i]);
-  } 
-
-  return gcBYTES_TO_WORDS((sizeof(Scheme_Structure) 
-			   + ((stype->num_slots - 1) * sizeof(Scheme_Object *))));
-}
-
-static int mark_struct_type_val(void *p, Mark_Proc mark)
-{
-  Scheme_Struct_Type *t = (Scheme_Struct_Type *)p;
-
-  if (mark) {
-    int i;
-    for (i = t->name_pos + 1; i--; ) {
-      gcMARK(t->parent_types[i]);
-    }
-    gcMARK(t->type_name);
-  }
-
-  return gcBYTES_TO_WORDS((sizeof(Scheme_Struct_Type)
-	  + (t->name_pos * sizeof(Scheme_Struct_Type *))));
-}
-
-static int mark_struct_info_val(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Struct_Info *i = (Struct_Info *)p;
-
-    gcMARK(i->name);
-    gcMARK(i->fields);
-    gcMARK(i->parent_type_expr);
-    gcMARK(i->memo_names);
-  } 
-
-  return gcBYTES_TO_WORDS(sizeof(Struct_Info));
-}
-
-static int mark_struct_proc_info(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Struct_Proc_Info *i = (Struct_Proc_Info *)p;
-
-    gcMARK(i->struct_type);
-    gcMARK(i->func_name);
-  } 
-
-  return gcBYTES_TO_WORDS(sizeof(Struct_Proc_Info));
-}
+#define MARKS_FOR_STRUCT_C
+#include "mzmark.c"
 
 static void register_traversers(void)
 {
-  GC_register_traverser(scheme_structure_type, mark_struct_val);
-  GC_register_traverser(scheme_struct_type_type, mark_struct_type_val);
-  GC_register_traverser(scheme_struct_info_type, mark_struct_info_val);
+  GC_REG_TRAV(scheme_structure_type, mark_struct_val);
+  GC_REG_TRAV(scheme_struct_type_type, mark_struct_type_val);
+  GC_REG_TRAV(scheme_struct_info_type, mark_struct_info_val);
 
-  GC_register_traverser(scheme_rt_struct_proc_info, mark_struct_proc_info);
+  GC_REG_TRAV(scheme_rt_struct_proc_info, mark_struct_proc_info);
 }
 
 END_XFORM_SKIP;

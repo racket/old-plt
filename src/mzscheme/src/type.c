@@ -278,264 +278,37 @@ int scheme_num_types(void)
 
 START_XFORM_SKIP;
 
-static int bad_trav(void *p, Mark_Proc mark)
+static int bad_trav_SIZE(void *p)
 {
   printf("Shouldn't get here.\n");
   exit(-1);
 }
 
-static int variable_obj(void *p, Mark_Proc mark)
+static int bad_trav_MARK(void *p)
 {
-  if (mark) {
-    Scheme_Bucket *b = (Scheme_Bucket *)p;
-
-    gcMARK(b->key);
-    gcMARK(b->val);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id));
+  printf("Shouldn't get here.\n");
+  exit(-1);
 }
 
-static int local_obj(void *p, Mark_Proc mark)
+static int bad_trav_FIXUP(void *p)
 {
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Local));
+  printf("Shouldn't get here.\n");
+  exit(-1);
 }
 
-static int second_of_cons(void *p, Mark_Proc mark)
-{
-  if (mark)
-    gcMARK(SCHEME_PTR2_VAL((Scheme_Object *)p));
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Object));
-}
-
-static int small_object(void *p, Mark_Proc mark)
-{
-  if (mark)
-    gcMARK(((Scheme_Small_Object *)p)->u.ptr_value);
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Small_Object));
-}
-
-static int app_rec(void *p, Mark_Proc mark)
-{
-  Scheme_App_Rec *r = (Scheme_App_Rec *)p;
-
-  if (mark) {
-    int i = r->num_args + 1;
-    while (i--) 
-      gcMARK(r->args[i]);
-  }
-
-  return gcBYTES_TO_WORDS((sizeof(Scheme_App_Rec) 
-			   + (r->num_args * sizeof(Scheme_Object *))
-			   + ((r->num_args + 1) * sizeof(char))));
-}
-
-static int seq_rec(void *p, Mark_Proc mark)
-{
-  Scheme_Sequence *s = (Scheme_Sequence *)p;
-
-  if (mark) {
-    int i = s->count;
-    while (i--)
-      gcMARK(s->array[i]);
-  }
-
-  return gcBYTES_TO_WORDS((sizeof(Scheme_Sequence)
-			   + ((s->count - 1) * sizeof(Scheme_Object *))));
-}
-
-static int branch_rec(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Branch_Rec *b = (Scheme_Branch_Rec *)p;
-    
-    gcMARK(b->test);
-    gcMARK(b->tbranch);
-    gcMARK(b->fbranch);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Branch_Rec));
-}
-
-static int unclosed_proc(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Closure_Compilation_Data *d = (Scheme_Closure_Compilation_Data *)p;
-
-    if (d->name)
-      gcMARK(d->name);
-    gcMARK(d->code);
-    gcMARK(d->closure_map);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Compilation_Data));
-}
-
-static int let_value(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Let_Value *l = (Scheme_Let_Value *)p;
-
-    gcMARK(l->value);
-    gcMARK(l->body);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Let_Value));
-}
-
-static int let_void(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Let_Void *l = (Scheme_Let_Void *)p;
-
-    gcMARK(l->body);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Let_Void));
-}
-
-static int letrec(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Letrec *l = (Scheme_Letrec *)p;
-
-    gcMARK(l->procs);
-    gcMARK(l->body);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Letrec));
-}
-
-static int let_one(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Let_One *l = (Scheme_Let_One *)p;
-
-    gcMARK(l->value);
-    gcMARK(l->body);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Let_One));
-}
-
-static int with_cont_mark(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_With_Continuation_Mark *w = (Scheme_With_Continuation_Mark *)p;
-
-    gcMARK(w->key);
-    gcMARK(w->val);
-    gcMARK(w->body);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_With_Continuation_Mark));
-}
-
-static int comp_unclosed_proc(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Closure_Compilation_Data *c = (Scheme_Closure_Compilation_Data *)p;
-
-    gcMARK(c->closure_map);
-    gcMARK(c->code);
-    gcMARK(c->name);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Closure_Compilation_Data));
-}
-
-static int comp_let_value(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Compiled_Let_Value *c = (Scheme_Compiled_Let_Value *)p;
-
-    gcMARK(c->flags);
-    gcMARK(c->value);
-    gcMARK(c->body);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Compiled_Let_Value));
-}
-
-static int let_header(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Let_Header *h = (Scheme_Let_Header *)p;
-
-    gcMARK(h->body);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Let_Header));
-}
-
-static int prim_proc(void *p, Mark_Proc mark)
-{
-  Scheme_Primitive_Proc *prim = (Scheme_Primitive_Proc *)p;
-
-  if (mark) {
-    gcMARK(prim->name);
-  }
-
-  if (prim->flags & SCHEME_PRIM_IS_MULTI_RESULT)
-    return gcBYTES_TO_WORDS(sizeof(Scheme_Prim_W_Result_Arity));
-  else
-    return gcBYTES_TO_WORDS(sizeof(Scheme_Primitive_Proc));
-}
-
-static int closed_prim_proc(void *p, Mark_Proc mark)
-{
-  Scheme_Closed_Primitive_Proc *c = (Scheme_Closed_Primitive_Proc *)p;
-
-  if (mark) {
-    gcMARK(c->name);
-    gcMARK(SCHEME_CLSD_PRIM_DATA(c));
-  }
-
-  if (c->flags & SCHEME_PRIM_IS_MULTI_RESULT)
-    return gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Prim_W_Result_Arity));
-  else
-    return gcBYTES_TO_WORDS(sizeof(Scheme_Closed_Primitive_Proc));
-}
-
-static int linked_closure(void *p, Mark_Proc mark)
-{
-  Scheme_Closed_Compiled_Procedure *c = (Scheme_Closed_Compiled_Procedure *)p;
-
-  if (mark) {
-    int i = c->closure_size;
-    while (i--)
-      gcMARK(c->vals[i]);
-    gcMARK(c->code);
-  }
-  
-  return gcBYTES_TO_WORDS((sizeof(Scheme_Closed_Compiled_Procedure)
-			   + (c->closure_size - 1) * sizeof(Scheme_Object *)));
-}
-
-static int case_closure(void *p, Mark_Proc mark)
-{
-  Scheme_Case_Lambda *c = (Scheme_Case_Lambda *)p;
-
-  if (mark) {
-    int i;
-
-    for (i = c->count; i--; )
-      gcMARK(c->array[i]);
-    gcMARK(c->name);
-  }
-
-  return gcBYTES_TO_WORDS((sizeof(Scheme_Case_Lambda)
-			   + ((c->count - 1) * sizeof(Scheme_Object *))));
-}
-
-static void mark_cjs(Scheme_Continuation_Jump_State *cjs, Mark_Proc mark)
+static void MARK_cjs(Scheme_Continuation_Jump_State *cjs)
 {
   gcMARK(cjs->jumping_to_continuation);
   gcMARK(cjs->u.vals);
 }
 
-static void mark_stack_state(Scheme_Stack_State *ss, Mark_Proc mark)
+static void FIXUP_cjs(Scheme_Continuation_Jump_State *cjs)
+{
+  gcFIXUP(cjs->jumping_to_continuation);
+  gcFIXUP(cjs->u.vals);
+}
+
+static void MARK_stack_state(Scheme_Stack_State *ss)
 {
 
   Scheme_Object **old = ss->runstack_start;
@@ -545,7 +318,17 @@ static void mark_stack_state(Scheme_Stack_State *ss, Mark_Proc mark)
   ss->runstack = ss->runstack_start + (ss->runstack - old);
 }
 
-static void mark_jmpup(Scheme_Jumpup_Buf *buf, Mark_Proc mark)
+static void FIXUP_stack_state(Scheme_Stack_State *ss)
+{
+
+  Scheme_Object **old = ss->runstack_start;
+
+  gcFIXUP(ss->runstack_saved);
+  gcFIXUP(ss->runstack_start);
+  ss->runstack = ss->runstack_start + (ss->runstack - old);
+}
+
+static void MARK_jmpup(Scheme_Jumpup_Buf *buf)
 {
   gcMARK(buf->stack_copy);
   gcMARK(buf->cont);
@@ -555,469 +338,112 @@ static void mark_jmpup(Scheme_Jumpup_Buf *buf, Mark_Proc mark)
     GC_mark_variable_stack(buf->gc_var_stack,
 			   (long)buf->stack_copy - (long)buf->stack_from,
 			   /* FIXME: stack direction */
-			   buf->stack_copy + buf->stack_size,
-			   mark);
+			   buf->stack_copy + buf->stack_size);
 }
 
-
-static int cont_proc(void *p, Mark_Proc mark)
+static void FIXUP_jmpup(Scheme_Jumpup_Buf *buf)
 {
-  if (mark) {
-    Scheme_Cont *c = (Scheme_Cont *)p;
+  gcFIXUP(buf->stack_copy);
+  gcFIXUP(buf->cont);
+  gcFIXUP(buf->external_stack);
 
-    gcMARK(c->dw);
-    gcMARK(c->common);
-    gcMARK(c->ok);
-    gcMARK(c->home);
-    gcMARK(c->current_local_env);
-    gcMARK(c->save_overflow);
-    gcMARK(c->runstack_copied);
-    gcMARK(c->cont_mark_stack_copied);
-    
-    mark_jmpup(&c->buf, mark);
-    mark_cjs(&c->cjs, mark);
-    mark_stack_state(&c->ss, mark);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Cont));
+  if (buf->stack_copy)
+    GC_fixup_variable_stack(buf->gc_var_stack,
+			    (long)buf->stack_copy - (long)buf->stack_from,
+			    /* FIXME: stack direction */
+			    buf->stack_copy + buf->stack_size);
 }
 
-static int mark_dyn_wind(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Dynamic_Wind *dw = (Scheme_Dynamic_Wind *)p;
-
-    gcMARK(dw->data);
-    gcMARK(dw->current_local_env);
-    gcMARK(dw->cont);
-    gcMARK(dw->prev);
-    
-    mark_stack_state(&dw->envss, mark);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Dynamic_Wind));
-}
-
-static int mark_overflow(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Overflow *o = (Scheme_Overflow *)p;
-
-    gcMARK(o->prev);
-    mark_jmpup(&o->cont, mark);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Overflow));
-}
-
-static int escaping_cont_proc(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Escaping_Cont *c = (Scheme_Escaping_Cont *)p;
-
-    gcMARK(c->home);
-    gcMARK(c->ok);
-    gcMARK(c->f);
-
-    mark_cjs(&c->cjs, mark);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Escaping_Cont));
-}
-
-static int char_obj(void *p, Mark_Proc mark)
-{
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Small_Object));
-}
-
-static int bignum_obj(void *p, Mark_Proc mark)
-{
-  Scheme_Bignum *b = (Scheme_Bignum *)p;
-
-  if (mark) {
-    if (!b->allocated_inline) {
-      gcMARK(b->digits);
-    } else
-      b->digits = ((Small_Bignum *)b)->v;
-  }
-
-  if (!b->allocated_inline)
-    return gcBYTES_TO_WORDS(sizeof(Scheme_Bignum));
-  else {
-    if (b->allocated_inline > 1)
-      return gcBYTES_TO_WORDS(sizeof(Small_Bignum) + sizeof(bigdig));
-    else
-      return gcBYTES_TO_WORDS(sizeof(Small_Bignum));
-  }
-}
-
-static int rational_obj(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Rational *r = (Scheme_Rational *)p;
-
-    gcMARK(r->num);
-    gcMARK(r->denom);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Rational));
-}
-
-static int float_obj(void *p, Mark_Proc mark)
-{
-#ifdef MZ_USE_SINGLE_FLOATS
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Float));
-#else
-  return bad_trav(p, mark);
-#endif
-}
-
-static int double_obj(void *p, Mark_Proc mark)
-{
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Double));
-}
-
-static int complex_obj(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Complex *c = (Scheme_Complex *)p;
-
-    gcMARK(c->r);
-    gcMARK(c->i);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Complex));
-}
-
-static int string_obj(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Object *o = (Scheme_Object *)p;
-    gcMARK(SCHEME_STR_VAL(o));
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Object));
-}
-
-static int symbol_obj(void *p, Mark_Proc mark)
-{
-  Scheme_Symbol *s = (Scheme_Symbol *)p;
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Symbol) + s->len);
-}
-
-static int cons_cell(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Object *o = (Scheme_Object *)p;
-
-    gcMARK(SCHEME_CAR(o));
-    gcMARK(SCHEME_CDR(o));
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Object));
-}
-
-static int vector_obj(void *p, Mark_Proc mark)
-{
-  Scheme_Vector *vec = (Scheme_Vector *)p;
-
-  if (mark) {
-    int i;
-    for (i = vec->size; i--; )
-      gcMARK(vec->els[i]);
-  }
-
-  return gcBYTES_TO_WORDS((sizeof(Scheme_Vector) 
-	  + ((vec->size - 1) * sizeof(Scheme_Object *))));
-}
-
-static int input_port(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Input_Port *ip = (Scheme_Input_Port *)p;
-
-    gcMARK(ip->sub_type);
-    gcMARK(ip->port_data);
-    gcMARK(ip->name);
-    gcMARK(ip->ungotten);
-    gcMARK(ip->read_handler);
-    gcMARK(ip->mref);
-#ifdef MZ_REAL_THREADS
-    gcMARK(ip->sema);
-#endif
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Input_Port));
-}
-
-static int output_port(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Output_Port *op = (Scheme_Output_Port *)p;
-
-    gcMARK(op->sub_type);
-    gcMARK(op->port_data);
-    gcMARK(op->display_handler);
-    gcMARK(op->write_handler);
-    gcMARK(op->print_handler);
-    gcMARK(op->mref);
-#ifdef MZ_REAL_THREADS
-    gcMARK(op->sema);
-#endif
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Output_Port));
-}
-
-
-static int syntax_compiler(void *p, Mark_Proc mark)
-{
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Object));
-}
-
-static int promise_val(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Promise *pr = (Scheme_Promise *)p;
-
-    gcMARK(pr->val);
-    gcMARK(pr->multi_array);
-#ifdef MZ_REAL_THREADS
-    gcMARK(pr->sema);
-#endif
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Promise));
-}
-
-static int process_val(void *_p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Process *p = (Scheme_Process *)_p;
-
-    gcMARK(p->next);
-    gcMARK(p->prev);
-
-    mark_cjs(&p->cjs, mark);
-
-    gcMARK(p->config);
-
-    {
-      Scheme_Object **rs = p->runstack_start;
-      gcMARK(p->runstack_start);
-      p->runstack = p->runstack_start + (p->runstack - rs);
-      gcMARK(p->runstack_saved);
-    }
-
-    gcMARK(p->cont_mark_stack_segments);
-
-    mark_jmpup(&p->jmpup_buf, mark);
-    
-    gcMARK(p->cc_ok);
-    gcMARK(p->ec_ok);
-    gcMARK(p->dw);
-    
-    gcMARK(p->nester);
-    gcMARK(p->nestee);
-    
-    gcMARK(p->blocker);
-    gcMARK(p->overflow);
-    
-    gcMARK(p->current_local_env);
-    
-    gcMARK(p->print_buffer);
-    gcMARK(p->print_port);
-    
-    gcMARK(p->overflow_reply);
-    
-    gcMARK(p->tail_buffer);
-    
-    gcMARK(p->ku.k.p1);
-    gcMARK(p->ku.k.p2);
-    gcMARK(p->ku.k.p3);
-    gcMARK(p->ku.k.p4);
-    
-#ifdef MZ_REAL_THREADS
-    gcMARK(p->done_sema);
-#endif
-    
-    gcMARK(p->list_stack);
-    
-    gcMARK(p->vector_memory);
-    
-    gcMARK(p->kill_data);
-    
-    gcMARK(p->user_tls);
-    
-    gcMARK(p->mr_hop);
-    gcMARK(p->mref);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Process));
-}
-
-static int cont_mark_set_val(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Cont_Mark_Set *s = (Scheme_Cont_Mark_Set *)p;
-    gcMARK(s->chain);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Cont_Mark_Set));
-}
-
-static int sema_val(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Sema *s = (Scheme_Sema *)p;
-
-#if SEMAPHORE_WAITING_IS_COLLECTABLE
-    gcMARK(s->first);
-    gcMARK(s->last);
-#endif
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Sema));
-}
-
-static int hash_table_val(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p;
-
-    gcMARK(ht->buckets);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Hash_Table));
-}
-
-static int namespace_val(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Env *e = (Scheme_Env *)p;
-
-    gcMARK(e->globals);
-    gcMARK(e->loaded_libraries);
-    gcMARK(e->init);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Env));
-}
-
-static int random_state_val(void *p, Mark_Proc mark)
-{
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Random_State));
-}
-
-static int compilation_top_val(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Compilation_Top *t = (Scheme_Compilation_Top *)p;
-    gcMARK(t->code);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Compilation_Top));
-}
-
-static int svector_val(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Object *o = (Scheme_Object *)p;
-
-    gcMARK(SCHEME_SVEC_VEC(o));
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Object));
-}
+#define MARKS_FOR_TYPE_C
+#include "mzmark.c"
 
 void scheme_register_traversers(void)
 {
-  GC_register_traverser(scheme_variable_type, variable_obj);
-  GC_register_traverser(scheme_local_type, local_obj);
-  GC_register_traverser(scheme_local_unbox_type, local_obj);
-  GC_register_traverser(scheme_syntax_type, second_of_cons);
-  GC_register_traverser(scheme_application_type, app_rec);
-  GC_register_traverser(scheme_sequence_type, seq_rec);
-  GC_register_traverser(scheme_branch_type, branch_rec);
-  GC_register_traverser(scheme_unclosed_procedure_type, unclosed_proc);
-  GC_register_traverser(scheme_let_value_type, let_value);
-  GC_register_traverser(scheme_let_void_type, let_void);
-  GC_register_traverser(scheme_letrec_type, letrec);
-  GC_register_traverser(scheme_let_one_type, let_one);
-  GC_register_traverser(scheme_with_cont_mark_type, with_cont_mark);
+  GC_REG_TRAV(scheme_variable_type, variable_obj);
+  GC_REG_TRAV(scheme_local_type, local_obj);
+  GC_REG_TRAV(scheme_local_unbox_type, local_obj);
+  GC_REG_TRAV(scheme_syntax_type, second_of_cons);
+  GC_REG_TRAV(scheme_application_type, app_rec);
+  GC_REG_TRAV(scheme_sequence_type, seq_rec);
+  GC_REG_TRAV(scheme_branch_type, branch_rec);
+  GC_REG_TRAV(scheme_unclosed_procedure_type, unclosed_proc);
+  GC_REG_TRAV(scheme_let_value_type, let_value);
+  GC_REG_TRAV(scheme_let_void_type, let_void);
+  GC_REG_TRAV(scheme_letrec_type, letrec);
+  GC_REG_TRAV(scheme_let_one_type, let_one);
+  GC_REG_TRAV(scheme_with_cont_mark_type, with_cont_mark);
 
-  GC_register_traverser(_scheme_values_types_, bad_trav);
+  GC_REG_TRAV(_scheme_values_types_, bad_trav);
   
-  GC_register_traverser(scheme_compiled_unclosed_procedure_type, comp_unclosed_proc);
-  GC_register_traverser(scheme_compiled_let_value_type, comp_let_value);
-  GC_register_traverser(scheme_compiled_let_void_type, let_header);
-  GC_register_traverser(scheme_compiled_syntax_type, second_of_cons);
+  GC_REG_TRAV(scheme_compiled_unclosed_procedure_type, comp_unclosed_proc);
+  GC_REG_TRAV(scheme_compiled_let_value_type, comp_let_value);
+  GC_REG_TRAV(scheme_compiled_let_void_type, let_header);
+  GC_REG_TRAV(scheme_compiled_syntax_type, second_of_cons);
 
-  GC_register_traverser(scheme_quote_compilation_type, small_object);
+  GC_REG_TRAV(scheme_quote_compilation_type, small_object);
 
-  GC_register_traverser(_scheme_compiled_values_types_, bad_trav);
+  GC_REG_TRAV(_scheme_compiled_values_types_, bad_trav);
 
-  GC_register_traverser(scheme_prim_type, prim_proc);
-  GC_register_traverser(scheme_closed_prim_type, closed_prim_proc);
-  GC_register_traverser(scheme_linked_closure_type, linked_closure);
-  GC_register_traverser(scheme_case_closure_type, case_closure);
-  GC_register_traverser(scheme_cont_type, cont_proc);
-  GC_register_traverser(scheme_rt_dyn_wind, mark_dyn_wind);
-  GC_register_traverser(scheme_rt_overflow, mark_overflow);
-  GC_register_traverser(scheme_escaping_cont_type, escaping_cont_proc);
+  GC_REG_TRAV(scheme_prim_type, prim_proc);
+  GC_REG_TRAV(scheme_closed_prim_type, closed_prim_proc);
+  GC_REG_TRAV(scheme_linked_closure_type, linked_closure);
+  GC_REG_TRAV(scheme_case_closure_type, case_closure);
+  GC_REG_TRAV(scheme_cont_type, cont_proc);
+  GC_REG_TRAV(scheme_rt_dyn_wind, mark_dyn_wind);
+  GC_REG_TRAV(scheme_rt_overflow, mark_overflow);
+  GC_REG_TRAV(scheme_escaping_cont_type, escaping_cont_proc);
 
-  GC_register_traverser(scheme_char_type, char_obj);
-  GC_register_traverser(scheme_integer_type, bad_trav);
-  GC_register_traverser(scheme_bignum_type, bignum_obj);
-  GC_register_traverser(scheme_rational_type, rational_obj);
-  GC_register_traverser(scheme_float_type,  float_obj);
-  GC_register_traverser(scheme_double_type, double_obj);
-  GC_register_traverser(scheme_complex_izi_type, complex_obj);
-  GC_register_traverser(scheme_complex_type, complex_obj);
-  GC_register_traverser(scheme_string_type, string_obj);
-  GC_register_traverser(scheme_symbol_type, symbol_obj);
-  GC_register_traverser(scheme_null_type, char_obj); /* small */
-  GC_register_traverser(scheme_pair_type, cons_cell);
-  GC_register_traverser(scheme_vector_type, vector_obj);
-  GC_register_traverser(scheme_closure_type, bad_trav); /* not used anymore */
+  GC_REG_TRAV(scheme_char_type, char_obj);
+  GC_REG_TRAV(scheme_integer_type, bad_trav);
+  GC_REG_TRAV(scheme_bignum_type, bignum_obj);
+  GC_REG_TRAV(scheme_rational_type, rational_obj);
+  GC_REG_TRAV(scheme_float_type,  float_obj);
+  GC_REG_TRAV(scheme_double_type, double_obj);
+  GC_REG_TRAV(scheme_complex_izi_type, complex_obj);
+  GC_REG_TRAV(scheme_complex_type, complex_obj);
+  GC_REG_TRAV(scheme_string_type, string_obj);
+  GC_REG_TRAV(scheme_symbol_type, symbol_obj);
+  GC_REG_TRAV(scheme_null_type, char_obj); /* small */
+  GC_REG_TRAV(scheme_pair_type, cons_cell);
+  GC_REG_TRAV(scheme_vector_type, vector_obj);
+  GC_REG_TRAV(scheme_closure_type, bad_trav); /* not used anymore */
 
-  GC_register_traverser(scheme_input_port_type, input_port);
-  GC_register_traverser(scheme_output_port_type, output_port);
-  GC_register_traverser(scheme_eof_type, char_obj); /* small */
-  GC_register_traverser(scheme_true_type, char_obj); /* small */
-  GC_register_traverser(scheme_false_type, char_obj); /* small */
-  GC_register_traverser(scheme_void_type, char_obj);  /* small */
-  GC_register_traverser(scheme_syntax_compiler_type, syntax_compiler);
-  GC_register_traverser(scheme_macro_type, small_object);
-  GC_register_traverser(scheme_promise_type, promise_val);
-  GC_register_traverser(scheme_box_type, small_object);
-  GC_register_traverser(scheme_process_type, process_val);
-  GC_register_traverser(scheme_generic_type, bad_trav); /* generic = proc */
-  GC_register_traverser(scheme_cont_mark_set_type, cont_mark_set_val);
-  GC_register_traverser(scheme_sema_type, sema_val);
-  GC_register_traverser(scheme_hash_table_type, hash_table_val);
-  GC_register_traverser(scheme_id_macro_type, small_object);
-  GC_register_traverser(scheme_exp_time_type, small_object);
-  GC_register_traverser(scheme_namespace_type, namespace_val);
-  GC_register_traverser(scheme_random_state_type, random_state_val);
+  GC_REG_TRAV(scheme_input_port_type, input_port);
+  GC_REG_TRAV(scheme_output_port_type, output_port);
+  GC_REG_TRAV(scheme_eof_type, char_obj); /* small */
+  GC_REG_TRAV(scheme_true_type, char_obj); /* small */
+  GC_REG_TRAV(scheme_false_type, char_obj); /* small */
+  GC_REG_TRAV(scheme_void_type, char_obj);  /* small */
+  GC_REG_TRAV(scheme_syntax_compiler_type, syntax_compiler);
+  GC_REG_TRAV(scheme_macro_type, small_object);
+  GC_REG_TRAV(scheme_promise_type, promise_val);
+  GC_REG_TRAV(scheme_box_type, small_object);
+  GC_REG_TRAV(scheme_process_type, process_val);
+  GC_REG_TRAV(scheme_generic_type, bad_trav); /* generic = proc */
+  GC_REG_TRAV(scheme_cont_mark_set_type, cont_mark_set_val);
+  GC_REG_TRAV(scheme_sema_type, sema_val);
+  GC_REG_TRAV(scheme_hash_table_type, hash_table_val);
+  GC_REG_TRAV(scheme_id_macro_type, small_object);
+  GC_REG_TRAV(scheme_exp_time_type, small_object);
+  GC_REG_TRAV(scheme_namespace_type, namespace_val);
+  GC_REG_TRAV(scheme_random_state_type, random_state_val);
   
-  GC_register_traverser(scheme_compilation_top_type, compilation_top_val);
+  GC_REG_TRAV(scheme_compilation_top_type, compilation_top_val);
 
-  GC_register_traverser(scheme_envunbox_type, small_object);
-  GC_register_traverser(scheme_eval_waiting_type, bad_trav);
-  GC_register_traverser(scheme_tail_call_waiting_type, bad_trav);
-  GC_register_traverser(scheme_undefined_type, char_obj); /* small */
-  GC_register_traverser(scheme_multiple_values_type, bad_trav);
-  GC_register_traverser(scheme_placeholder_type, small_object);
-  GC_register_traverser(scheme_case_lambda_sequence_type, case_closure);
-  GC_register_traverser(scheme_begin0_sequence_type, seq_rec);
+  GC_REG_TRAV(scheme_envunbox_type, small_object);
+  GC_REG_TRAV(scheme_eval_waiting_type, bad_trav);
+  GC_REG_TRAV(scheme_tail_call_waiting_type, bad_trav);
+  GC_REG_TRAV(scheme_undefined_type, char_obj); /* small */
+  GC_REG_TRAV(scheme_multiple_values_type, bad_trav);
+  GC_REG_TRAV(scheme_placeholder_type, small_object);
+  GC_REG_TRAV(scheme_case_lambda_sequence_type, case_closure);
+  GC_REG_TRAV(scheme_begin0_sequence_type, seq_rec);
 
-  GC_register_traverser(scheme_svector_type, svector_val);
+  GC_REG_TRAV(scheme_svector_type, svector_val);
 
-  GC_register_traverser(scheme_reserved_1_type, bad_trav);
-  GC_register_traverser(scheme_reserved_3_type, bad_trav);
-  GC_register_traverser(scheme_reserved_5_type, bad_trav);
+  GC_REG_TRAV(scheme_reserved_1_type, bad_trav);
+  GC_REG_TRAV(scheme_reserved_3_type, bad_trav);
+  GC_REG_TRAV(scheme_reserved_5_type, bad_trav);
 }
 
 END_XFORM_SKIP;

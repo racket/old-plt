@@ -4119,125 +4119,20 @@ int scheme_sproc_mutex_try_down(void *s)
 
 START_XFORM_SKIP;
 
-static int mark_config_val(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Config *c = (Scheme_Config *)p;
-    int i;
-    
-    for (i = max_configs; i--; ) {
-      gcMARK(c->configs[i]);
-    }
-    gcMARK(c->extensions);
-  }
-
-  return gcBYTES_TO_WORDS((sizeof(Scheme_Config)
-			   + ((max_configs - 1) * sizeof(Scheme_Object*))));
-}
-
-static int mark_will_executor_val(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    WillExecutor *e = (WillExecutor *)p;
-
-    gcMARK(e->sema);
-    gcMARK(e->first);
-    gcMARK(e->last);
-  } 
-
-  return gcBYTES_TO_WORDS(sizeof(WillExecutor));
-}
-
-static int mark_manager_val(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Manager *m = (Scheme_Manager *)p;
-
-    gcMARK(m->boxes);
-    gcMARK(m->mrefs);
-    gcMARK(m->closers);
-    gcMARK(m->data);
-
-    gcMARK(m->parent);
-    gcMARK(m->sibling);
-    gcMARK(m->children);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Manager));
-}
-
-static int mark_process_hop(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Process_Manager_Hop *hop = (Scheme_Process_Manager_Hop *)p;
-
-    gcMARK(hop->p);
-  } 
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Process_Manager_Hop));
-}
-
-static int mark_namespace_option(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_NSO *o = (Scheme_NSO *)p;
-
-    gcMARK(o->key);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_NSO));
-}
-
-static int mark_param_data(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    ParamData *d = (ParamData *)p;
-
-    gcMARK(d->key);
-    gcMARK(d->guard);
-    gcMARK(d->defval);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(ParamData));
-}
-
-static int mark_will(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    ActiveWill *w = (ActiveWill *)p;
-
-    gcMARK(w->o);
-    gcMARK(w->proc);
-    gcMARK(w->w);
-    gcMARK(w->next);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(ActiveWill));
-}
-
-static int mark_will_registration(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    WillRegistration *r = (WillRegistration *)p;
- 
-    gcMARK(r->proc);
-    gcMARK(r->w);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(WillRegistration));
-}
+#define MARKS_FOR_PROCESS_C
+#include "mzmark.c"
 
 static void register_traversers(void)
 {
-  GC_register_traverser(scheme_config_type, mark_config_val);
-  GC_register_traverser(scheme_will_executor_type, mark_will_executor_val);
-  GC_register_traverser(scheme_manager_type, mark_manager_val);
-  GC_register_traverser(scheme_process_hop_type, mark_process_hop);
+  GC_REG_TRAV(scheme_config_type, mark_config_val);
+  GC_REG_TRAV(scheme_will_executor_type, mark_will_executor_val);
+  GC_REG_TRAV(scheme_manager_type, mark_manager_val);
+  GC_REG_TRAV(scheme_process_hop_type, mark_process_hop);
 
-  GC_register_traverser(scheme_rt_namespace_option, mark_namespace_option);
-  GC_register_traverser(scheme_rt_param_data, mark_param_data);
-  GC_register_traverser(scheme_rt_will, mark_will);
-  GC_register_traverser(scheme_rt_will_registration, mark_will_registration);
+  GC_REG_TRAV(scheme_rt_namespace_option, mark_namespace_option);
+  GC_REG_TRAV(scheme_rt_param_data, mark_param_data);
+  GC_REG_TRAV(scheme_rt_will, mark_will);
+  GC_REG_TRAV(scheme_rt_will_registration, mark_will_registration);
 }
 
 END_XFORM_SKIP;

@@ -265,8 +265,11 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *start GC_VAR_STACK_ARG_DECL)
 
 #ifdef MZ_PRECISE_GC
   b->gc_var_stack = gc_var_stack_in;
-  if (scheme_get_external_stack_val)
-    b->external_stack = scheme_get_external_stack_val();
+  if (scheme_get_external_stack_val) {
+    void *es;
+    es = scheme_get_external_stack_val();
+    b->external_stack = es;
+  }
 #endif
   
   memcpy(get_copy(b->stack_copy),

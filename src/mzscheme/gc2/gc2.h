@@ -19,13 +19,12 @@ extern "C" {
    is responsible for setting the tag before a collection occurs. The
    tag is always a `short' value at the beginning of the
 
-   MzScheme supplies a traversal procedure for every tag value. The
-   traversal takes two arguments, an allocated object and a procedure
-   pointer, and returns the size of the object in words (not bytes!),
-   which is not necessarily fixed for a particular tag. If the
-   procedure pointer supplied to the traverser is not NULL, it must
-   also call the given procedure on every pointer stored in the
-   object, via the gcMARK_HERE macro described below.
+   MzScheme supplies three traversal procedures for every tag value:
+   one for obtaining the value's size in words (not bytes!), one for
+   marking pointers within the value, and one for fixing up pointers
+   in the value. The mark and fixup procedures should use gcMARK and
+   gcFIXUP. The fixup procedure must also return the size, like the
+   size procedure.
 
    The value of a pointer can refer to a GCable object, to the middle
    of a GCable object, or to some other point in memory. It might also
@@ -86,7 +85,7 @@ void GC_init_type_tags(int count, int weakbox);
    Called by MzScheme to indicate the number of different type tags it
    uses, starting from 0. `count' is always less than 256. The weakbox
    argument is the value to be used for tagging weak box. (The GC has
-   some freedom in the layout of a weak box, so it performs weak bo
+   some freedom in the layout of a weak box, so it performs weak box
    traversals itself, but MzScheme gets to choose the tag.) */
 
 extern void (*GC_collect_start_callback)(void);
@@ -272,39 +271,28 @@ extern void **GC_variable_stack;
 /*
    See the general overview at the top of the file: */
 
-typedef void *(*Mark_Proc)(void *);
-/*
-   Type of a marking procedure (supplied by GC) provided to a
-   traversal proc; use gcMARK_HERE instead of calling it directly. */
-
-typedef int (*Traverse_Proc)(void *obj, Mark_Proc);
+typedef int (*Size_Proc)(void *obj);
+typedef int (*Mark_Proc)(void *obj);
+typedef int (*Fixup_Proc)(void *obj);
 /* 
-   Type of a traversal proc (supplied by MzScheme); see overview above
-   for information about traversals. The return value is the same of
+   Types of the traversal procs (supplied by MzScheme); see overview above
+   for information about traversals. The return value is the size of
    the object in words. */
 
-void GC_register_traverser(short tag, Traverse_Proc proc);
+void GC_register_traversers(short tag, Size_Proc size, Mark_Proc mark, Fixup_Proc fixup);
 /*
    Registers a traversal procedure for a tag. Obviously, a traversal
    procedure must be installed for each tag before a collection
    happens where an instance of the tag as been allocated. */
 
-/* #define gcMARK_HERE(mark, t, x) ... see below ... */
-/* A macro that, given the mark procedure supplied to a traverser, a
-   type, and an l-value containing a pointer, marks the referenced
-   memory as live and updates the pointer as necessary (i.e., if it's
-   GCable memory that is moving). The `x' argument can appear in the
-   macro's output multiple times, and it can be a statement rather
-   than a expression. */
-
-/* #define gcMARK_TYPED(t, x) gcMARK_HERE(mark, t, x) */
-/*
-   Handy macro that assumes the marking procedure is bound to the
-   local variable `mark'. */
-
-/* #define gcMARK(x) gcMARK_TYPED(void*, x) */
-/*
-   Handy macro that assumes that `void*' is a good type. */
+/* #define gcMARK(x) ... see below ... */
+/* #define gcFIXUP(x) ... see below ... */
+/* #define gcFIXUP_TYPED(t, x) ... see below ... */
+/* Macros that, given an l-value and optional type, marks the
+   referenced memory as live and updates the pointer as necessary
+   (i.e., if it's GCable memory that is moving). The `x' argument can
+   appear in the macro's output multiple times, and the output can be
+   a statement rather than a expression. */
 
 /* #define gcBYTES_TO_WORDS(x) ((x + 3) >> 2) */
 /*
@@ -320,15 +308,21 @@ void *GC_resolve(void *p);
    class instance usually depends on a field count that is stored in
    the class. */
 
+void GC_mark(void *p);
+void *GC_fixup(void *p);
+/*
+   Used in the expansion of gcMARK and gcFIXUP. */
+
 void GC_mark_variable_stack(void **var_stack,
 			    long delta,
-			    void *limit,
-			    Mark_Proc mark);
+			    void *limit);
+void GC_fixup_variable_stack(void **var_stack,
+			     long delta,
+			     void *limit);
 /*
-   Can be called by a traversal proc to traverse and update a chunk of
-   (atomically-allocated) memory containing an image of the stack. It
-   should only be called when the traversal proc is called with a
-   non-NULL mark procedure.
+   Can be called by a mark or fixup traversal proc to traverse and
+   update a chunk of (atomically-allocated) memory containing an image
+   of the stack.
 
    The `var_stack' argument corresponds to the value of GC_var_stack
    for the copied stack (see the overview at the top of this
@@ -352,12 +346,15 @@ extern void *GC_alloc_space, *GC_alloc_top;
 #endif
 
 /* Macros: */
-#define gcMARK_HERE(mark, t, x) if (!((long)(x) & 0x1) \
-                                   && ((unsigned long)(x) >= (unsigned long)GC_alloc_space) \
-                                   && ((unsigned long)(x) <= (unsigned long)GC_alloc_top)) \
-                                 x = (t)mark(x)
-#define gcMARK_TYPED(t, x) gcMARK_HERE(mark, t, x)
-#define gcMARK(x) gcMARK_TYPED(void*, x)
+#define gcMARK(x) if (!((long)(x) & 0x1) \
+                      && ((unsigned long)(x) >= (unsigned long)GC_alloc_space) \
+                      && ((unsigned long)(x) <= (unsigned long)GC_alloc_top)) \
+                    GC_mark(x)
+#define gcFIXUP_TYPED(t, x) if (!((long)(x) & 0x1) \
+                               && ((unsigned long)(x) >= (unsigned long)GC_alloc_space) \
+                               && ((unsigned long)(x) <= (unsigned long)GC_alloc_top)) \
+                             x = (t)GC_fixup(x)
+#define gcFIXUP(x) gcFIXUP_TYPED(void*, x)
 #define gcBYTES_TO_WORDS(x) ((x + 3) >> 2)
 #define gcWORDS_TO_BYTES(x) (x << 2)
 

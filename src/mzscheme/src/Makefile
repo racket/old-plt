@@ -202,7 +202,7 @@ SCONFIG =   ../sconfig.h ../uconfig.h
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 $(OBJDIR)/salloc.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
-            ../gc/gc.h
+            ../gc/gc.h mzmark.c
 $(OBJDIR)/bignum.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
           ../src/stypes.h    
 $(OBJDIR)/bool.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
@@ -215,16 +215,16 @@ $(OBJDIR)/dynext.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h  \
          ../src/stypes.h ../src/schemex.h \
          schvers.h ../gc/gc.h schemex.h
 $(OBJDIR)/env.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h  \
-        ../src/stypes.h  schminc.h macro.inc cmacro.inc
+        ../src/stypes.h  schminc.h macro.inc cmacro.inc mzmark.c
 $(OBJDIR)/error.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
         ../src/stypes.h  
 $(OBJDIR)/eval.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
-        ../src/stypes.h   \
+        ../src/stypes.h mzmark.c \
           schmach.h mzstkchk.h schrunst.h
 $(OBJDIR)/file.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
-        ../src/stypes.h  
+        ../src/stypes.h mzmark.c 
 $(OBJDIR)/fun.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
-        ../src/stypes.h   
+        ../src/stypes.h mzmark.c  
 $(OBJDIR)/hash.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
         ../src/stypes.h  
 $(OBJDIR)/image.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
@@ -235,16 +235,16 @@ $(OBJDIR)/number.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
          ../src/stypes.h nummacs.h random.inc
 $(OBJDIR)/object.o: ../include/scheme.h  ../src/stypes.h \
           schpriv.h schexn.h $(SCONFIG) \
-        ../gc/gc.h  schrunst.h
+        ../gc/gc.h  schrunst.h mzmark.c
 $(OBJDIR)/unit.o: ../include/scheme.h  ../src/stypes.h  \
          schpriv.h schexn.h $(SCONFIG) schrunst.h schminc.h \
-         unitsig.inc cunitsig.inc
+         unitsig.inc cunitsig.inc mzmark.c
 $(OBJDIR)/port.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
-        ../src/stypes.h  schfd.h
+        ../src/stypes.h  schfd.h mzmark.c
 $(OBJDIR)/print.o: ../include/scheme.h ../src/stypes.h ../src/schcpt.h \
           schpriv.h schexn.h $(SCONFIG)
 $(OBJDIR)/process.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
-         ../src/stypes.h  schfd.h
+         ../src/stypes.h  schfd.h mzmark.c
 $(OBJDIR)/promise.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
          ../src/stypes.h  
 $(OBJDIR)/rational.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
@@ -252,20 +252,20 @@ $(OBJDIR)/rational.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
 $(OBJDIR)/read.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h ../src/schcpt.h \
         ../src/stypes.h  
 $(OBJDIR)/regexp.o:  schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
-        ../src/stypes.h  
+        ../src/stypes.h mzmark.c
 $(OBJDIR)/setjmpup.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
          ../src/stypes.h   schmach.h
 $(OBJDIR)/string.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
          ../src/stypes.h    schvers.h
 $(OBJDIR)/struct.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
-         ../src/stypes.h  
+         ../src/stypes.h mzmark.c
 $(OBJDIR)/symbol.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
          ../src/stypes.h   
 $(OBJDIR)/syntax.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
-         ../src/stypes.h  
+         ../src/stypes.h mzmark.c
 $(OBJDIR)/sema.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
-         ../src/stypes.h  
+         ../src/stypes.h mzmark.c
 $(OBJDIR)/type.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
-        ../src/stypes.h  
+        ../src/stypes.h mzmark.c
 $(OBJDIR)/vector.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
-         ../src/stypes.h  
+         ../src/stypes.h

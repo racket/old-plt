@@ -4323,229 +4323,24 @@ void scheme_count_class_data(Scheme_Object *o, long *s, long *e, Scheme_Hash_Tab
 
 START_XFORM_SKIP;
 
-static int mark_object_val(void *p, Mark_Proc mark)
-{
-  Internal_Object *obj = (Internal_Object *)p;
-  Scheme_Class *sclass = (Scheme_Class *)GC_resolve(obj->o.sclass);
-  
-  if (mark) {
-    int i;
-
-    gcMARK(obj->o.sclass);
-    sclass = (Scheme_Class *)obj->o.sclass; /* In case we just moved it */
-
-    for (i = sclass->num_slots; i--; ) {
-      gcMARK(obj->slots[i]);
-    }
-  }
-
-  return gcBYTES_TO_WORDS((sizeof(Internal_Object) 
-			   + (sizeof(Scheme_Object *) * (sclass->num_slots - 1))));
-}
-
-static int mark_class_val(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Class *c = (Scheme_Class *)p;
-
-    
-    gcMARK(c->ivars);
-    gcMARK(c->piu.insti.data);
-
-    gcMARK(c->heritage);
-    gcMARK(c->superclass);
-    gcMARK(c->super_init_name);
-    gcMARK(c->equiv_intf);
-
-    gcMARK(c->public_names);
-    gcMARK(c->public_map);
-    gcMARK(c->vslot_map);
-    gcMARK(c->vslot_kind);
-
-    gcMARK(c->ivar_map);
-    gcMARK(c->ref_map);
-
-    gcMARK(c->cmethods);
-    gcMARK(c->cmethod_ready_level);
-    gcMARK(c->cmethod_source_map);
-    gcMARK(c->closure_saved);
-
-    gcMARK(c->defname);
-
-    gcMARK(c->interfaces);
-    gcMARK(c->interface_maps);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Class));
-}
-
-static int mark_generic_data_val(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Generic_Data *g = (Generic_Data *)p;
-    
-    gcMARK(g->clori);
-    gcMARK(g->ivar_name);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Generic_Data));
-}
-
-static int mark_interface_val(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Scheme_Interface *i = (Scheme_Interface *)p;
-
-    gcMARK(i->names);
-    gcMARK(i->name_map);
-    gcMARK(i->supers);
-    gcMARK(i->supclass);
-    gcMARK(i->super_offsets);
-    gcMARK(i->defname);
-  }
-  
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Interface));
-}
-
-static int mark_class_data_val(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Class_Data *d = (Class_Data *)p;
-
-    gcMARK(d->ivars);
-    gcMARK(d->ivar_names);
-    gcMARK(d->cmethod_names);
-    gcMARK(d->cmethods);
-
-    gcMARK(d->closure_map);
-
-    gcMARK(d->super_init_name);
-    gcMARK(d->super_expr);
-
-    gcMARK(d->interface_exprs);
-
-    gcMARK(d->defname);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(Class_Data));
-}
-
-static int mark_interface_data_val(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    Interface_Data *d = (Interface_Data *)p;
-
-    gcMARK(d->names);
-    gcMARK(d->super_exprs);
-    gcMARK(d->defname);
-  }
-  
-  return gcBYTES_TO_WORDS(sizeof(Interface_Data));
-}
-
-static int mark_dup_check(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    DupCheckRecord *r = (DupCheckRecord *)p;
-
-    gcMARK(r->scheck_hash);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(DupCheckRecord));
-}
-
-static int mark_class_var(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    ClassVariable *cvar = (ClassVariable *)p;
-
-    gcMARK(cvar->name);
-    gcMARK(cvar->next);
-
-    switch(cvar->vartype) {
-    case varPUBLIC:
-    case varOVERRIDE:
-    case varPRIVATE:
-    case varNOTHING:
-    case varINPUT:
-      gcMARK(cvar->u.value);
-      break;
-    case varINHERIT:
-    case varRENAME:
-      gcMARK(cvar->u.source.name);
-      break;
-    default:
-      break;
-    }
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(ClassVariable));
-}
-
-static int mark_class_method(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    CMethod *m = (CMethod *)p;
-
-    gcMARK(m->closed_name);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(CMethod));
-}
-
-static int mark_class_assembly(void *p, Mark_Proc mark)
-{
-  if (mark)
-    mark_class_data_val(p, mark);
-
-  return gcBYTES_TO_WORDS(sizeof(Scheme_Class_Assembly));
-}
-
-static int mark_init_object_rec(void *p, Mark_Proc mark)
-{
-  Init_Object_Rec *r = (Init_Object_Rec *)p;
-
-  if (mark) {
-    int i;
-
-    for (i = r->count; i--; ) {
-      gcMARK(r->frames[i].cmethods);
-      gcMARK(r->frames[i].refs);
-      gcMARK(r->frames[i].ivars);
-    }
-  }
-
-  return gcBYTES_TO_WORDS((sizeof(Init_Object_Rec)
-			   + ((r->count - 1) * sizeof(Init_Frame))));
-}
-
-static int mark_super_init_data(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    SuperInitData *d = (SuperInitData *)p;
-
-    gcMARK(d->o);
-    gcMARK(d->irec);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(SuperInitData));
-}
+#define MARKS_FOR_OBJECT_C
+#include "mzmark.c"
 
 static void register_traversers(void)
 {
-  GC_register_traverser(scheme_object_type, mark_object_val);
-  GC_register_traverser(scheme_class_type, mark_class_val);
-  GC_register_traverser(scheme_generic_data_type, mark_generic_data_val);
-  GC_register_traverser(scheme_interface_type, mark_interface_val);
-  GC_register_traverser(scheme_class_data_type, mark_class_data_val);
-  GC_register_traverser(scheme_interface_data_type, mark_interface_data_val);
+  GC_REG_TRAV(scheme_object_type, mark_object_val);
+  GC_REG_TRAV(scheme_class_type, mark_class_val);
+  GC_REG_TRAV(scheme_generic_data_type, mark_generic_data_val);
+  GC_REG_TRAV(scheme_interface_type, mark_interface_val);
+  GC_REG_TRAV(scheme_class_data_type, mark_class_data_val);
+  GC_REG_TRAV(scheme_interface_data_type, mark_interface_data_val);
 
-  GC_register_traverser(scheme_rt_dup_check, mark_dup_check);
-  GC_register_traverser(scheme_rt_class_var, mark_class_var);
-  GC_register_traverser(scheme_rt_class_method, mark_class_method);
-  GC_register_traverser(scheme_rt_class_assembly, mark_class_assembly);
-  GC_register_traverser(scheme_rt_init_obj_rec, mark_init_object_rec);
-  GC_register_traverser(scheme_rt_super_init_data, mark_super_init_data);
+  GC_REG_TRAV(scheme_rt_dup_check, mark_dup_check);
+  GC_REG_TRAV(scheme_rt_class_var, mark_class_var);
+  GC_REG_TRAV(scheme_rt_class_method, mark_class_method);
+  GC_REG_TRAV(scheme_rt_class_assembly, mark_class_assembly);
+  GC_REG_TRAV(scheme_rt_init_obj_rec, mark_init_object_rec);
+  GC_REG_TRAV(scheme_rt_super_init_data, mark_super_init_data);
 }
 
 END_XFORM_SKIP;

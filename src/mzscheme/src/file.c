@@ -1824,17 +1824,24 @@ Scheme_Object *scheme_split_pathname(const char *path, int len, Scheme_Object **
     }
 
   /* Check directory */
-  if (p > 0)
-    return MAKE_SPLIT(scheme_make_sized_string(s, p + 1, 1), 
+  if (p > 0) {
+    Scheme_Object *ss;
+    ss = scheme_make_sized_string(s, p + 1, 1);
+    return MAKE_SPLIT(ss, 
 		      file, 
 		      is_dir);
+  }
 	
   /* p = 0; for Unix & Dos, this means root dir. For Mac, this means
      it was relative. */
 #ifdef MAC_FILE_SYSTEM
   return MAKE_SPLIT(relative_symbol, file, is_dir);
 #else
-  return MAKE_SPLIT(scheme_make_sized_string(s, 1, 1), file, is_dir);
+  {
+    Scheme_Object *ss;
+    ss = scheme_make_sized_string(s, 1, 1);
+    return MAKE_SPLIT(ss, file, is_dir);
+  }
 #endif  
 }
 
@@ -3919,16 +3926,8 @@ static ReplyItem *reply_queue;
 
 #ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
-static int mark_reply_item(void *p, Mark_Proc mark)
-{
-  if (mark) {
-    ReplyItem *r = (ReplyItem *)p;
-
-    gcMARK(r->next);
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(ReplyItem));
-}
+#define MARKS_FOR_FILE_C
+#include "mzmark.c"
 END_XFORM_SKIP;
 #endif
 
@@ -3985,7 +3984,7 @@ static void wait_for_reply(AppleEvent *ae, AppleEvent *reply)
     AEInstallEventHandler(kCoreEventClass, kAEAnswer, NewAEEventHandlerProc(HandleAnswer), 0, 0);
     REGISTER_SO(reply_queue);
 #ifdef MZ_PRECISE_GC
-    GC_register_traverser(scheme_rt_reply_item, mark_reply_item);
+    GC_REG_TRAV(scheme_rt_reply_item, mark_reply_item);
 #endif
   }
   

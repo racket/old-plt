@@ -1508,15 +1508,8 @@ static Scheme_Object *regexp_p(int argc, Scheme_Object *argv[])
 
 #ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
-static int mark_regexp(void *p, Mark_Proc mark)
-{
-  regexp *r = (regexp *)p;
-
-  if (mark) {
-  }
-
-  return gcBYTES_TO_WORDS((sizeof(regexp) + r->regsize));
-}
+#define MARKS_FOR_REGEXP_C
+#include "mzmark.c"
 END_XFORM_SKIP;
 #endif
 
@@ -1524,7 +1517,7 @@ void scheme_regexp_initialize(Scheme_Env *env)
 {
 #ifdef MZ_PRECISE_GC
   if (scheme_starting_up) {
-    GC_register_traverser(scheme_regexp_type, mark_regexp);
+    GC_REG_TRAV(scheme_regexp_type, mark_regexp);
   }
 #endif
 

@@ -1,3 +1,11 @@
+(module gui-utils-unit mzscheme
+  (require (lib "unitsig.ss")
+	   (lib "sig.ss" "mred")
+	   "gui-utils-sig.ss")
+
+  (provide gui-utils@)
+
+  (define gui-utils@
 (unit/sig framework:gui-utils^
   (import mred^)
 
@@ -252,4 +260,4 @@
 	 (lambda ()
 	   #t)
 	 (lambda ()
-	   (void)))))))
+	   (void)))))))))

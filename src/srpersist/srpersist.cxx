@@ -6865,11 +6865,13 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
       srp_unit->exports[k] = scheme_intern_symbol(srp_exns[i].names[j]);
     }
   }
-
+  
+#ifndef __MAC_OS__
   if (isatty(fileno(stdin))) {
     fputs("SisterPersist extension for MzScheme, "
 	  "Copyright (c) 1999 Rice PLT (Paul Steckler)\n",stderr);
   }
+#endif
 
   return (Scheme_Object *)srp_unit;
 }

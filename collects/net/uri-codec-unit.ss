@@ -2,7 +2,7 @@
 ;;; <uri-codec-unit.ss> ---- En/Decode URLs and form-urlencoded data
 ;;; Time-stamp: <03/04/25 10:31:31 noel>
 ;;;
-;;; Copyright (C) 2002 by Noel Welsh. 
+;;; Copyright (C) 2002 by Noel Welsh.
 ;;;
 ;;; This file is part of Net.
 
@@ -70,29 +70,29 @@
 ;; sample provided by Eli Barzilay
 
 (module uri-codec-unit mzscheme
-  
+
   (require (lib "unitsig.ss")
            (lib "match.ss")
            "uri-codec-sig.ss")
-  
+
   (provide uri-codec@)
 
   ;; Macro to loop over integers from n (inclusive) to m (exclusive)
   ;; Extracted from iteration.ss in macro package at Schematics
   (define-syntax for
-	(syntax-rules ()
-	  ((for (i n m) forms ...)
-	   (let ((fixed-m m))
-		 (let loop ((i n))
-		   (if (< i fixed-m)
-			   (begin
-				 forms ...
-				 (loop (+ i 1)))))))))
+        (syntax-rules ()
+          ((for (i n m) forms ...)
+           (let ((fixed-m m))
+                 (let loop ((i n))
+                   (if (< i fixed-m)
+                           (begin
+                                 forms ...
+                                 (loop (+ i 1)))))))))
 
   (define uri-codec@
     (unit/sig net:uri-codec^
       (import)
-  
+
       ;; The characters that always map to themselves
       (define alphanumeric-mapping
         (map (lambda (char)
@@ -104,16 +104,16 @@
                #\e #\f #\g #\h #\i #\j #\k #\l #\m #\n
                #\o #\p #\q #\r #\s #\t #\u #\v #\w #\x
                #\y #\z)))
-  
+
       ;; Characters that sometimes map to themselves
       (define safe-mapping
-	(map (lambda (char)
+        (map (lambda (char)
                (cons char char))
              '(#\- #\_ #\. #\! #\~ #\* #\' #\( #\))))
 
       ;; The strict URI mapping
       (define uri-mapping
-	(append alphanumeric-mapping safe-mapping))
+        (append alphanumeric-mapping safe-mapping))
 
       ;; The form-urlencoded mapping
       (define form-urlencoded-mapping
@@ -123,17 +123,17 @@
                   (#\_ . #\_)
                   (#\space . #\+))
                 alphanumeric-mapping))
-  
+
       (define (number->hex-string number)
         (let ((hex (number->string number 16)))
           (string-append "%"
                          (if (= (string-length hex) 1)
                              (string-append "0" hex)
                              hex))))
-  
+
       (define (hex-string->number hex-string)
         (string->number (substring hex-string 1 3) 16))
-  
+
       ;; (listof (cons char char)) -> (values (vectorof string) (vectorof string))
       (define (make-codec-tables alist)
         (let ((encoding-table (make-vector 256 ""))
@@ -151,17 +151,17 @@
                                    (string orig))])
                     alist)
           (values encoding-table decoding-table)))
-  
+
       (define-values (uri-encoding-vector uri-decoding-vector)
         (make-codec-tables uri-mapping))
-  
+
       (define-values (form-urlencoded-encoding-vector
                       form-urlencoded-decoding-vector)
         (make-codec-tables form-urlencoded-mapping))
 
       ;; vector string -> string
       (define (encode table str)
-	(apply string-append
+        (apply string-append
                (map (lambda (char)
                       (vector-ref table (char->integer char)))
                     (string->list str))))
@@ -172,7 +172,7 @@
           (match-lambda
            [() (list)]
            [(#\% char1 char2 . rest)
-            (cons 
+            (cons
              (vector-ref table
                          (string->number (string char1 char2) 16))
              (internal-decode rest))]
@@ -187,14 +187,14 @@
       (define (uri-encode str)
         (encode uri-encoding-vector str))
 
-      ;; string -> string  
+      ;; string -> string
       (define (uri-decode str)
         (decode uri-decoding-vector str))
-  
+
       ;; string -> string
       (define (form-urlencoded-encode str)
         (encode form-urlencoded-encoding-vector str))
-  
+
       ;; string -> string
       (define (form-urlencoded-decode str)
         (decode form-urlencoded-decoding-vector str))
@@ -214,7 +214,7 @@
                          "&"
                          (alist->form-urlencoded rest))]))
 
-      ;; string -> listof (cons string string)  
+      ;; string -> listof (cons string string)
       (define (form-urlencoded->alist str)
         (define key-regexp (regexp "[^=]*"))
         (define value-regexp (regexp "[^&]*"))
@@ -243,17 +243,17 @@
                          [#f
                           (vector (cons key "") (string-length str))])]
                  [#f #f]))
-        (let loop ((start 0)
-                   (end (string-length str))
-                   (alist '()))
+        (let loop ([start 0]
+                   [end (string-length str)]
+                   [make-alist (lambda (x) x)])
           (cond
-           [(>= start end) alist]
+           [(>= start end) (make-alist '())]
            [else
             (match (next-pair str start)
                    [#(pair next-start)
-                    (loop next-start end (cons pair alist))]
-                   [#f alist])])))
-  
+                    (loop next-start end (lambda (x) (make-alist (cons pair x))))]
+                   [#f (make-alist '())])])))
+
       ))
   )
 

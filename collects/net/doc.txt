@@ -35,7 +35,7 @@ TYPES ----------------------------------------------------------------
   host : string or #f
   port : number or #f
   path : (listof (union string path/param))
-  query : string or #f
+  query : (listof (cons string string))
   fragment : string or #f
 
   The basic structure for all URLs.
@@ -43,7 +43,7 @@ TYPES ----------------------------------------------------------------
   http://sk@www.cs.brown.edu:80/cgi-bin/finger;xyz?name=shriram&host=nw#top
     1     2      3           4    5            6       7                8
 
-  1 = scheme, 2 = user, 3 = host, 4 = port, 
+  1 = scheme, 2 = user, 3 = host, 4 = port,
   5 = path,  6 = param, 7 = query, 8 = fragment
 
   If the scheme is "file", then the path is a platform-dependent
@@ -64,7 +64,7 @@ TYPES ----------------------------------------------------------------
 
   An empty string at the end of the list of paths
   corresponds to a url that ends in a slash. For example,
-  this url: http://www.drscheme.org/a/ has a path field 
+  this url: http://www.drscheme.org/a/ has a path field
   '("a" "") and this url: http://www.drscheme.org/a
   has a path field '("a").
 
@@ -94,7 +94,8 @@ PROCEDURES -----------------------------------------------------------
 
 > (string->url string) -> url
 
-  Parses the url specified by the string into a url struct. 
+  Parses the url specified by the string into a url struct.
+  string->url uses form-urlencoded->alist when parsing the query.
 
 > (combine-url/relative url string) -> url
 
@@ -105,7 +106,7 @@ PROCEDURES -----------------------------------------------------------
   - If either argument is an empty URL, the result is the other
     argument.
   - If relative sports a scheme, then the result is relative.
-  - If the base has scheme "file", the procedure uses the special rule 
+  - If the base has scheme "file", the procedure uses the special rule
     specified below.
   - If relative specifies a host, then the result is relative.
   Failing the above, relative inherit's base's host and port.  Then:
@@ -148,6 +149,7 @@ PROCEDURES -----------------------------------------------------------
 > (url->string url) -> string
 
   Generates a string corresponding to the contents of the url struct.
+  url->string uses alist->form-urlencoded when formatting the query.
 
 > (decode-some-url-parts url) -> url
 
@@ -252,7 +254,7 @@ The _url-sig.ss_ module exports the _net:url^_ signature which
 contains the names documented above. the _url-unit.ss_ module exports
 _url@_, a unit that imports net:tcp^ (see "tcp-sig.ss", below) and
 exports the names in net:url^.
- 
+
 ==========================================================================
 _URL viewing_
 ==========================================================================
@@ -268,11 +270,11 @@ but does not depend on MrEd's graphical toolbox.
 
 These modules define one main function:
 
-> (send-url str [separate-window? #t]) - 
+> (send-url str [separate-window? #t]) -
   opens the url in a platform-specific manner,
   sending a message to the local browser to display the url named
   by `str'. The separate-window? parameter determines
-  if the browser creates a new window to display the url 
+  if the browser creates a new window to display the url
   or not.
 
   Under Windows, `send-url' uses the registry to get a
@@ -350,7 +352,7 @@ EXCEPTIONS -----------------------------------------------------------
 > incomplete-%-suffix
   struct (incomplete-%-suffix cgi-error) (chars)
   chars : list of chars
-  
+
   Used when a % in a query is followed by an incomplete suffix.  The
   characters of the suffix -- excluding the "%" -- are provided by the
   exception.
@@ -380,7 +382,7 @@ PROCEDURES -----------------------------------------------------------
   associations for a given key.
 
 > (extract-binding/single symbol-or-string bindings) -> string
-  
+
   Given a key and a set of bindings, extract-binding/single ensures
   that the key has exactly one association, and returns it.
 
@@ -561,7 +563,7 @@ TYPES ----------------------------------------------------------------
   receiver : iport
   server : string
   port : number
-  
+
   Once a connection to a Usenet server has been established, its state
   is stored in a communicator, and other procedures take communicators
   as an argument.
@@ -897,7 +899,7 @@ EXCEPTIONS -----------------------------------------------------------
 
 PROCEDURES -----------------------------------------------------------
 
-> (imap-connect server-string username-str/bytes password-str/bytes mailbox-str/bytes) 
+> (imap-connect server-string username-str/bytes password-str/bytes mailbox-str/bytes)
    -> three values: imap, message count, recent message count
 
   Establishes an IMAP connection to the given server using the given
@@ -911,7 +913,7 @@ PROCEDURES -----------------------------------------------------------
   A user's primary mailbox is always called "INBOX". (Capitalization
   doesn't matther for that keyword.)
 
-> (imap-connect* in-port out-port username-str/bytes password-str/bytes mailbox-str/bytes) 
+> (imap-connect* in-port out-port username-str/bytes password-str/bytes mailbox-str/bytes)
    -> three values: imap, message count, recent message count
 
   Like `imap-connect', but given input and output ports instead of a
@@ -976,7 +978,7 @@ PROCEDURES -----------------------------------------------------------
     * 'header - value is a header (string; see the head package)
     * 'body - value is a byte string (with CRLF-separated lines)
     * 'flags - value is a list of imap flags
-    
+
   The return value is a list of entry items in parallel to
   `msg-num-list'. Each entry is itself a list containing value items
   in parallel to `field-list'.
@@ -1006,7 +1008,7 @@ PROCEDURES -----------------------------------------------------------
      'recent       '|\Recent|          /
 
      'noinferiors   '|\Noinferiors|    \
-     'noselect      '|\Noselect|       | 
+     'noselect      '|\Noselect|       |
      'marked        '|\Marked|         > mailbox flags
      'unmarked      '|\Unmarked|       |
      'hasnochildren '|\HasNoChildren|  |
@@ -1078,9 +1080,9 @@ PROCEDURES -----------------------------------------------------------
 
 > (imap-mailbox-flags imap mailbox-str/bytes)
   -> list of imap flags
-  
+
   Returns a list of imap flags for the given mailbox.
-  
+
 > (imap-port-number [k])
 
   A parameter that determines the server port number. The initial
@@ -1208,7 +1210,7 @@ PROCEDURES -----------------------------------------------------------
   Example:
     (extract-addresses " \"Doe, John\" <doe@localhost>, john" 'address)
     ; => ("doe@localhost" "john")
-           
+
 > (assemble-address-field list-of-address-strings) -> string
 
   Creates a header field value from a list of addresses. The addresses
@@ -1296,7 +1298,7 @@ EXCEPTIONS -----------------------------------------------------------
    missing-multipart-boundary-parameter
 
    A multipart type is signalled, but no `boundary' parameter is
-   given, also an error on the producer end of the message.  
+   given, also an error on the producer end of the message.
 
    malformed-multipart-entity
 
@@ -1324,7 +1326,7 @@ EXCEPTIONS -----------------------------------------------------------
 
    mime-error
 
-   A catch-all exception.   
+   A catch-all exception.
 
 PROCEDURES -----------------------------------------------------------
 
@@ -1356,7 +1358,7 @@ PROCEDURES -----------------------------------------------------------
    a list of all non-MIME headers in message.  If message is an
    rfc822, for instance, this list could contain 'From', 'Subject',
    etc.
-   
+
 struct entity
 -------------
 
@@ -1374,16 +1376,16 @@ struct entity
    type := discrete-type | composite-type
 
    discrete-type := "text" / "image" / "audio" / "video" /
-  			"application" / extension-token
+                        "application" / extension-token
 
    composite-type := "message" / "multipart" / extension-token
 
    extension-token := ietf-token / x-token
 
-   ietf-token := <An extension token defined by a standards-track 
+   ietf-token := <An extension token defined by a standards-track
                   RFC and registered with IANA.>
 
-   x-token := <The two characters "X-" or "x-" followed, with no 
+   x-token := <The two characters "X-" or "x-" followed, with no
                intervening white space, by any token>
 
    In English, it returns one of the symbols: text, image, audio,
@@ -1401,48 +1403,48 @@ struct entity
  text            plain                                   [RFC1521,NSB]
                  richtext                                [RFC1521,NSB]
                  tab-separated-values                   [Paul Lindner]
- 
+
  multipart       mixed                                   [RFC1521,NSB]
                  alternative                             [RFC1521,NSB]
                  digest                                  [RFC1521,NSB]
                  parallel                                [RFC1521,NSB]
                  appledouble                [MacMime,Patrik Faltstrom]
                  header-set                             [Dave Crocker]
- 
+
  message         rfc822                                  [RFC1521,NSB]
                  partial                                 [RFC1521,NSB]
                  external-body                           [RFC1521,NSB]
                  news                        [RFC 1036, Henry Spencer]
- 
+
  application     octet-stream                            [RFC1521,NSB]
-     		 postscript                              [RFC1521,NSB]
-     		 oda                                     [RFC1521,NSB]
-     		 atomicmail                           [atomicmail,NSB]
-     		 andrew-inset                       [andrew-inset,NSB]
-     		 slate                           [slate,terry crowley]
-     		 wita              [Wang Info Transfer,Larry Campbell]
-     		 dec-dx            [Digital Doc Trans, Larry Campbell]
-     		 dca-rft        [IBM Doc Content Arch, Larry Campbell]
-     		 activemessage                          [Ehud Shapiro]
-     		 rtf                                    [Paul Lindner]
-     		 applefile                  [MacMime,Patrik Faltstrom]
-     		 mac-binhex40               [MacMime,Patrik Faltstrom]
-     		 news-message-id              [RFC1036, Henry Spencer]
-     		 news-transmission            [RFC1036, Henry Spencer]
-     		 wordperfect5.1                         [Paul Lindner]
-     		 pdf                                    [Paul Lindner]
-     		 zip                                    [Paul Lindner]
-     		 macwriteii                             [Paul Lindner]
-     		 msword                                 [Paul Lindner]
-     		 remote-printing                         [RFC1486,MTR]
- 
+                 postscript                              [RFC1521,NSB]
+                 oda                                     [RFC1521,NSB]
+                 atomicmail                           [atomicmail,NSB]
+                 andrew-inset                       [andrew-inset,NSB]
+                 slate                           [slate,terry crowley]
+                 wita              [Wang Info Transfer,Larry Campbell]
+                 dec-dx            [Digital Doc Trans, Larry Campbell]
+                 dca-rft        [IBM Doc Content Arch, Larry Campbell]
+                 activemessage                          [Ehud Shapiro]
+                 rtf                                    [Paul Lindner]
+                 applefile                  [MacMime,Patrik Faltstrom]
+                 mac-binhex40               [MacMime,Patrik Faltstrom]
+                 news-message-id              [RFC1036, Henry Spencer]
+                 news-transmission            [RFC1036, Henry Spencer]
+                 wordperfect5.1                         [Paul Lindner]
+                 pdf                                    [Paul Lindner]
+                 zip                                    [Paul Lindner]
+                 macwriteii                             [Paul Lindner]
+                 msword                                 [Paul Lindner]
+                 remote-printing                         [RFC1486,MTR]
+
  image           jpeg                                    [RFC1521,NSB]
                  gif                                     [RFC1521,NSB]
                  ief             Image Exchange Format       [RFC1314]
                  tiff            Tag Image File Format           [MTR]
- 
+
  audio           basic                                   [RFC1521,NSB]
- 
+
  video           mpeg                                    [RFC1521,NSB]
                  quicktime                              [Paul Lindner]
 
@@ -1466,8 +1468,8 @@ struct entity
    Content-Disposition header, as defined in rfc2183:
 
   disposition := "Content-Disposition" ":"
-  		  disposition-type
-  		  *(";" disposition-parm)
+                  disposition-type
+                  *(";" disposition-parm)
 
    disposition structs have the following fields: type, filename,
    creation, modification, read, size, and params.  Only type is
@@ -1488,33 +1490,33 @@ struct entity
    follow this BNF grammar:
 
  date-time   =  [ day "," ] date time        ; dd mm yy
- 				   ;  hh:mm:ss zzz
- 
+                                   ;  hh:mm:ss zzz
+
  day         =  "Mon"  / "Tue" /  "Wed"  / "Thu"
- 	    /  "Fri"  / "Sat" /  "Sun"
- 
+            /  "Fri"  / "Sat" /  "Sun"
+
  date        =  1*2DIGIT month 2DIGIT        ; day month year
- 				   ;  e.g. 20 Jun 82
- 
+                                   ;  e.g. 20 Jun 82
+
  month       =  "Jan"  /  "Feb" /  "Mar"  /  "Apr"
- 	    /  "May"  /  "Jun" /  "Jul"  /  "Aug"
- 	    /  "Sep"  /  "Oct" /  "Nov"  /  "Dec"
- 
+            /  "May"  /  "Jun" /  "Jul"  /  "Aug"
+            /  "Sep"  /  "Oct" /  "Nov"  /  "Dec"
+
  time        =  hour zone                    ; ANSI and Military
- 
+
  hour        =  2DIGIT ":" 2DIGIT [":" 2DIGIT]
- 				   ; 00:00:00 - 23:59:59
- 
+                                   ; 00:00:00 - 23:59:59
+
  zone        =  "UT"  / "GMT"                ; Universal Time
- 				   ; North American : UT
- 	    /  "EST" / "EDT"                ;  Eastern:  - 5/ - 4
- 	    /  "CST" / "CDT"                ;  Central:  - 6/ - 5
- 	    /  "MST" / "MDT"                ;  Mountain: - 7/ - 6
- 	    /  "PST" / "PDT"                ;  Pacific:  - 8/ - 7
- 	    /  1ALPHA                       ; Military: Z = UT;
- 				   ;  A:-1; (J not used)
- 				   ;  M:-12; N:+1; Y:+12
- 	    / ( ("+" / "-") 4DIGIT )        ; Local differential
+                                   ; North American : UT
+            /  "EST" / "EDT"                ;  Eastern:  - 5/ - 4
+            /  "CST" / "CDT"                ;  Central:  - 6/ - 5
+            /  "MST" / "MDT"                ;  Mountain: - 7/ - 6
+            /  "PST" / "PDT"                ;  Pacific:  - 8/ - 7
+            /  1ALPHA                       ; Military: Z = UT;
+                                   ;  A:-1; (J not used)
+                                   ;  M:-12; N:+1; Y:+12
+            / ( ("+" / "-") 4DIGIT )        ; Local differential
 
    > (disposition-modification disposition-struct)
 
@@ -1527,7 +1529,7 @@ struct entity
    syntax as `disposition-creation'.
 
    > (disposition-size disposition-struct)
-  
+
    Number representing the `size' parameter (the size of the file).
 
    > (disposition-params disposition-struct)
@@ -1627,7 +1629,7 @@ ABSTRACT -------------------------------------------------------------
 
 Author: Francisco Solsona <solsona@acm.org>
 
-Implements Quoted Printable (mime-standard) encoder and decoder. As 
+Implements Quoted Printable (mime-standard) encoder and decoder. As
 proposed by the rfc2045 section 6.7.
 
 EXCEPTIONS -----------------------------------------------------------
@@ -1651,7 +1653,7 @@ PROCEDURES -----------------------------------------------------------
 
 
 > (qp-encode string) -> string
-  
+
   Consumes a string and returns its quoted printable representation as
   a new string. The encoded string uses "\r\n" where necessary to
   create shorter lines.
@@ -1665,7 +1667,7 @@ PROCEDURES -----------------------------------------------------------
 > (qp-encode-stream input output [newline-string]) -> void
 
   Reads characters from `input' and writes the quoted printable
-  encoded result to `output'. 
+  encoded result to `output'.
 
   The `newline-string' argument is used for soft line-breaks (after
   "="). The default `newline-string' is #"\n", though it should
@@ -1718,7 +1720,7 @@ PROCEDURES -----------------------------------------------------------
 
    Returns a list of files and directories in the current directory of
    the server, assuming that the server provides directory information
-   in the quasi-standard Unix format. 
+   in the quasi-standard Unix format.
 
    Each file or directory is represented by a list of three
    strings. The first string is either "-", "d", or "l", depending on
@@ -1789,15 +1791,15 @@ a unit that implements net:tcp^ from "tcp-sig.ss"
 
 PROCEDURES -----------------------------------------------------------
 
-> (make-ssl-tcp@ 
-   server-cert-file server-key-file server-root-cert-files 
+> (make-ssl-tcp@
+   server-cert-file server-key-file server-root-cert-files
    server-suggest-auth-file
    client-cert-file client-key-file client-root-cert-files)
 
   Returns a unit that implements net:tcp^ using the SSL functions from
   (lib "mzssl.ss" "openssl"). The arguments to `make-ssl-tcp@' control
   the certificates and keys uses by server and client connections:
- 
+
     `server-cert-file' - a PEM file for a server's certyificate; #f means
      no certificate (which is unlikely to work with any SSL client)
     `server-key-file' - a private key PEM to go with `server-cert-file';
@@ -1915,7 +1917,7 @@ EXAMPLES -------------------------------------------------------------
           (cookie:add-path
            (set-cookie "foo" "bar")
            "/servlets")
-	  3600)))
+          3600)))
   (print-cookie c))
 =>
 "foo=bar; Max-Age=3600; Path=/servlets; Version=1"
@@ -1927,8 +1929,8 @@ would use:
 
 and to use with the PLT Web Server, you would use:
 
-  (make-response/full code message (current-seconds) mime 
-                      `((Set-Cookie . ,(print-cookie c))) 
+  (make-response/full code message (current-seconds) mime
+                      `((Set-Cookie . ,(print-cookie c)))
                       body)
 
 > Parsing a cookie
@@ -2011,7 +2013,7 @@ TYPES ----------------------------------------------------------------
 
 > alist
 
-  (list-of (cons String String))  Represents decoded name/value pairs 
+  (list-of (cons String String))  Represents decoded name/value pairs
 
 PROCEDURES -----------------------------------------------------------
 

@@ -19,7 +19,7 @@
            (lib "configuration-structures.ss" "web-server")
            (lib "servlet-sig.ss" "web-server"))
   
-  (provide/contract 
+  '(provide/contract 
    (serve (opt->*
 	   ()
            ((and/f number? integer? exact? positive?)
@@ -35,7 +35,7 @@
   ;; to serve web connections on a port without TCP/IP.
   ;; rebinds the tcp primitives via the tcp-redirect unit to functions
   ;; that simulate their behavior without using the network.
-  (define serve
+  '(define serve
     (opt-lambda ([port (configuration-port configuration)]
                  [only-from-host #f]
                  [hyper-frame-extension (lambda (x) x)])

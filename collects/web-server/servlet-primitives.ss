@@ -2,7 +2,7 @@
   (require "channel.ss"
            "configuration.ss"
            "configuration-structures.ss"
-           "web-server.ss"
+           "web-server-unit.ss"
            "servlet-sig.ss"
            "servlet.ss"
 	   "servlet-tables.ss"
@@ -18,6 +18,10 @@
   (provide servlet@)
   
   ; the unit doesn't contain much since it's better to start as few servers as possible
+  ; this is unitized so the servlet2.ss teachpack can work with either
+  ; the development environment or with the actual server.
+  ; more here - maybe this is not needed anymore with the parameter that
+  ; affects send/suspend.
   (define servlet@
     (unit/sig servlet^
       (import)
@@ -122,10 +126,11 @@
   (add-new-instance invoke-id instances)
   
   ; override some configuration options
-  (define the-configuration
+  (define the-configuration@
     (load-developer-configuration default-configuration-table-path))
   
   (define big-timeout (* 24 60 60))
+
   (define the-config
     (make-config (configuration-virtual-hosts the-configuration)
                  (make-hash-table)

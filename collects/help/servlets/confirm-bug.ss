@@ -6,6 +6,7 @@
 
 (require "private/headelts.ss")
 (require "private/external.ss")
+(require "private/util.ss")
 
 (unit/sig ()
   (import servlet^)

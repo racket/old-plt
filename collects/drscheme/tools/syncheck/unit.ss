@@ -798,17 +798,23 @@
 			(let ([semaphore (make-semaphore 0)]
 			      [output-port (current-output-port)]
 			      [error-raised? #f]
-			      [error #f])
+			      [error #f]
+			      [debug #f]
+			      [msg #f])
 			  (send interactions-edit
 				run-in-evaluation-thread
 				(rec check-syntax-in-evaluation-thread
 				     (lambda ()
-				       (parameterize ([current-output-port output-port])
-					 (with-handlers ([(lambda (x) #t)
-							  (lambda (x)
-							    (set! error x)
-							    (set! error-raised? #t)
-							    (semaphore-post semaphore))])
+				       (let/ec k
+					 (parameterize ([current-output-port output-port]
+							[drscheme:basis:error-display/debug-handler
+							 (lambda (m d x)
+							   (set! msg m)
+							   (set! debug d)
+							   (set! error x)
+							   (set! error-raised? #t)
+							   (semaphore-post semaphore))]
+							[error-escape-handler k])
 					   (drscheme:rep:process-edit/zodiac
 					    definitions-edit
 					    (lambda (expr recur)
@@ -827,21 +833,36 @@
 					    #f))))))
 			  (semaphore-wait semaphore)
 			  (when error-raised?
-			    (mred:message-box
-			     "exception during syntax checking"
-			     (let ([string-port (open-output-string)])
-			       (when (and (defined? 'print-error-trace)
-					  (exn? error))
-				 (newline string-port)
-				 ((global-defined-value 'print-error-trace)
-				  string-port
-				  error))
-			       (string-append 
-				(if (exn? error)
+			    (let ([hilite-canvas
+				   (and debug
+					(let* ([start-location (zodiac:zodiac-start debug)]
+					       [end-location (zodiac:zodiac-finish debug)]
+					       [start (zodiac:location-offset start-location)]
+					       [end (add1 (zodiac:location-offset end-location))])
+					  (send definitions-edit set-position start end #f #t 'local)
+					  (send definitions-edit get-canvas)))])
+			      (when hilite-canvas
+				(send definitions-edit end-edit-sequence)
+				(send hilite-canvas focus)
+				(send hilite-canvas force-display-focus #t))
+			      (mred:message-box
+			       "exception during syntax checking"
+			       (let ([string-port (open-output-string)])
+				 (when (and (defined? 'print-error-trace)
+					    (exn? error))
+				   (newline string-port)
+				   ((global-defined-value 'print-error-trace)
+				    string-port
+				    error))
+				 (string-append 
+				  (if (exn? error)
 				    (exn-message error)
 				    (format "~s" error))
-				(get-output-string string-port))))))
-
+				  (get-output-string string-port))))
+			      (when hilite-canvas
+				(send definitions-edit begin-edit-sequence #f)
+				(send hilite-canvas force-display-focus #f)))))
+			
 			; color the top-level varrefs
 			(let ([built-in?
 			       (lambda (s)

@@ -46,6 +46,7 @@
 (define simple-args
   (list
    (list '--print-convert (lambda () (set! use-print-convert? #t)))
+   (list '--no-print-convert (lambda () (set! use-print-convert? #f)))
    (list '--case-sens read-case-sensitive #t)
    (list '--case-insens read-case-sensitive #f)
    (list '--set-undef compile-allow-set!-undefined #t)
@@ -60,10 +61,10 @@
   (exit -1))
 
 (define language-levels
-  '(("Beginner" core)
-    ("Intermediate" structured)
-    ("Advanced" side-effecting)
-    ("R4RS+" advanced)))
+  '(("Beginner" core #t)
+    ("Intermediate" structured #t)
+    ("Advanced" side-effecting #t)
+    ("R4RS+" advanced #f)))
 
 (define (choose-mode)
   (printf "Choose a language level:~n")
@@ -102,14 +103,26 @@
 			 (bad-arguments "--level flag expects level name")
 			 (let ([level (cadr l)])
 			   (let ([p (assoc level (map (lambda (p)
-							(list (string->symbol (car p)) (cadr p)))
+							(list (string->symbol (car p)) (cadr p) (caddr p)))
 						      language-levels))])
 			     (if p
 				 (begin
 				   (set! syntax-level (cadr p))
+				   (when (caddr p)
+					 (set! use-print-convert? #t))
 				   (loop (cddr l)))
 				 (bad-arguments "bad level name: ~s" level)))))]
-	  [(--help) (printf "MzRice flags:~n  --help~n  --level <level>, where <level> is in: ~a~n~a  --choose~n  --~n"
+	  [(--help) (printf (string-append
+			     "MzRice flags:~n  --help~n"
+			     "  --level <level>, where <level> is in: ~a~n"
+			     (apply string-append
+				    (map (lambda (l)
+					   (if (caddr l)
+					       (format "      ~a imples --print-convert~n"
+						       (car l))
+					       ""))
+					 language-levels))
+			     "~a  --choose~n  --~n")
 			    (map car language-levels)
 			    (let loop ([l simple-args])
 			      (if (null? l)
@@ -269,7 +282,7 @@
 
 (print-struct #t)
 (error-print-width 200)
-(aries:signal-undefined? signal-undef)
+(aries:signal-undefined signal-undef)
 
 (define exception-handler
   (lambda (exn)
@@ -289,6 +302,10 @@
 (define mzrice-print (if use-print-convert?
 			 (compose pretty-print-handler print-convert)
 			 pretty-print-handler))
+
+(show-sharing #t)
+(constructor-style-printing #t)
+(quasi-read-style-printing #t)
 
 (define mzrice-user-vocabulary
   (zodiac:create-vocabulary 'scheme-w/-user-defined-macros-vocab

@@ -615,6 +615,7 @@ void connectComObjectToEventSink(MX_COM_Object *obj) {
   hr = pIConnectionPointContainer->FindConnectionPoint(pTypeAttr->guid,&pIConnectionPoint);
 
   pITypeInfo->ReleaseTypeAttr(pTypeAttr);
+  pIConnectionPointContainer->Release();
 
   if (hr != S_OK || pIConnectionPoint == NULL) {
     signalCodedEventSinkError("Unable to find COM object connection point",hr);
@@ -638,6 +639,8 @@ void connectComObjectToEventSink(MX_COM_Object *obj) {
   pISink->set_myssink_table((int)&myssink_table);
 
   hr = pIConnectionPoint->Advise(pIUnknown,&cookie);
+
+  pIConnectionPoint->Release();
 
   if (hr != S_OK) {
     signalCodedEventSinkError("Unable to connect sink to connection point",hr);
@@ -2228,7 +2231,6 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
     VariantInit(&methodArguments->rgvarg[j]);
     methodArguments->rgvarg[j].vt = 
       getVarTypeFromElemDesc(&pFuncDesc->lprgelemdescParam[i]);
-
     marshallSchemeValue(argv[k],&methodArguments->rgvarg[j]);
   }
 
@@ -2988,6 +2990,8 @@ void docHwndMsgLoop(LPVOID p) {
         ReleaseSemaphore(createHwndSem,1,NULL);
       }
     }
+
+    MsgWaitForMultipleObjects(0,NULL,FALSE,INFINITE,QS_ALLINPUT);
 
     while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
       TranslateMessage(&msg);

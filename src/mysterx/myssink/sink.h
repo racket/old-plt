@@ -47,8 +47,8 @@ DECLARE_REGISTRY_RESOURCEID(IDR_SINK)
 DECLARE_PROTECT_FINAL_CONSTRUCT()
 
 BEGIN_COM_MAP(CSink)
-	COM_INTERFACE_ENTRY(ISink)
-	COM_INTERFACE_ENTRY(IDispatch)
+  COM_INTERFACE_ENTRY(ISink)
+  COM_INTERFACE_ENTRY(IDispatch)
 END_COM_MAP()
 
 // ISink
@@ -62,9 +62,8 @@ public:
  STDMETHOD(Invoke)(DISPID,REFIID,LCID,WORD,
 		   DISPPARAMS*,VARIANT*,EXCEPINFO*,UINT*);
 
- // automagically declared, so we put this here as a reminder 
- // STDMETHOD(QueryInterface)(REFIID,void **); 
-
+ STDMETHOD(InternalQueryInterface)(void *, const _ATL_INTMAP_ENTRY* pEntries,REFIID,void **);
 };
 
 #endif //__SINK_H_
+

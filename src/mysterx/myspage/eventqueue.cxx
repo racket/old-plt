@@ -60,6 +60,8 @@ STDMETHODIMP CEventQueue::QueueEvent(IEvent *pEvent) {
 STDMETHODIMP CEventQueue::PumpMsgs(void) {
   MSG msg;
 
+  MsgWaitForMultipleObjects(0,NULL,FALSE,10,QS_ALLINPUT);
+
   while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
     TranslateMessage(&msg);
     DispatchMessage(&msg);

@@ -47,8 +47,8 @@ Scheme_Object *mx_block_until_event(int argc,Scheme_Object **argv) {
   }
 
   scheme_block_until((int (*)(Scheme_Object *))html_event_available,
-		     (void (*)(Scheme_Object *,void *))html_event_sem_fun,
-		     argv[0],0.0F);
+  		     (void (*)(Scheme_Object *,void *))html_event_sem_fun,
+  		     argv[0],0.0F);
 
   return scheme_void;
 }

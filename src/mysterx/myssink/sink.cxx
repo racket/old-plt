@@ -374,20 +374,37 @@ void CSink::unmarshallSchemeObject(Scheme_Object *obj,VARIANTARG *pVariantArg) {
   } 
 }
 
-// override default implementation of IDispatch::QueryInterface
+// effectively, override default implementation of IDispatch::QueryInterface
 
-HRESULT CSink::QueryInterface(REFIID,void **ppVoid) {
+HRESULT CSink::InternalQueryInterface(void *pThis, 
+				      const _ATL_INTMAP_ENTRY* pEntries,
+				      REFIID riid,
+				      void **ppVoid) {
 
-  // always return 'this' for *any* interface request
+  // marshalling IID's end in 0000-0000-C0000-000000000046
+  // these seem to be requested by VB and VC++/ATL event sources
+  // the sink doesn't implement those, and doesn't need to
 
-  // this works as long as the connection point actually uses
-  // the IDispatch interface
+  if (riid != IID_IUnknown && riid != IID_ISink) {
+    LPOLESTR str;
+    BOOL isSystemIID;
 
-  this->AddRef();
+    StringFromIID(riid,&str);
 
-  *(ISink **)ppVoid = this;
+    str[37] = L'\0';
 
-  return S_OK;
+    isSystemIID = (_wcsicmp(str + 10,L"0000-0000-C000-000000000046") == 0);
+
+    CoTaskMemFree(str);
+
+    if (isSystemIID) {
+      return E_NOINTERFACE;
+    }
+  }
+
+  // Use IUnknown pointer for IUnknown, ISink, and the outbound interface
+
+  return CComObjectRootEx<CComSingleThreadModel>::InternalQueryInterface(pThis,pEntries,IID_IUnknown,ppVoid);
 
 }
 

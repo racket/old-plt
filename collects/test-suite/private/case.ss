@@ -27,14 +27,13 @@
         (class* aligned-editor-snip% (test-suite:item<%>)
           (inherit next)
           
-          (init-field
-           [call (instantiate call-text% ())]
-           [expected (instantiate expected-text% ())]
-           [test (instantiate test-text% ())]
-           [test-showing? false])
+          (init-field [test-showing? false])
           
           (field
-           [actual (instantiate actual-text% ())]
+           [call (instantiate call-text% () (case this))]
+           [expected (instantiate expected-text% () (case this))]
+           [test (instantiate test-text% () (case this))]
+           [actual (instantiate actual-text% () (case this))]
            [pass (make-object image-snip% *unknown*)])
           
           (send pass load-file *unknown*)
@@ -117,26 +116,27 @@
             (send expected write-to-file f)
             (send test write-to-file f)
             (send f put (format "~s" test-showing?)))
+          
+          ;; read-from-file ((is-a?/c editor-stream-in%) . -> . void?)
+          ;; read saved information form a file
+          (define/public (read-from-file f)
+            (send call read-from-file f)
+            (send expected read-from-file f)
+            (send test read-from-file f)
+            (set! test-showing? (string=? "#t" (send f get-string))))
+          
           (super-instantiate ())
           (set-snipclass csc)
           ))
           
       (define case-snip-class%
         (class snip-class%
-          ;; read ((is-a?/c editor-stream-in%) . -> . void?)
+          ;; read ((is-a?/c editor-stream-in%) . -> . snip%)
           ;; read a snip from the stream
           (define/override (read f)
-            (let ([call-text (instantiate call-text% ())]
-                  [expected-text (instantiate expected-text% ())]
-                  [test-text (instantiate test-text% ())])
-              (send call-text read-from-file f)
-              (send expected-text read-from-file f)
-              (send test-text read-from-file f)
-              (instantiate case% ()
-                (call call-text)
-                (expected expected-text)
-                (test test-text)
-                (test-showing? (string=? "#t" (send f get-string))))))
+            (let ([case (instantiate case% ())])
+              (send case read-from-file f)
+              case))
           (super-instantiate ())
           ))
   

@@ -40,10 +40,14 @@
           
           (field
            [bottom-pb (instantiate horizontal-pasteboard% ())]
-           [call-snip (label-box "Call" call)]
-           [expected-snip (label-box "Expected" expected)]
-           [actual-snip (label-box "Actual" actual)]
-           [test-snip (label-box "Equality Test" test)])
+           [call-snip (label-box "Call" (instantiate base-snip% ()
+                                          (editor call)))]
+           [expected-snip (label-box "Expected" (instantiate base-snip% ()
+                                                  (editor expected)))]
+           [actual-snip (label-box "Actual" (instantiate actual-snip% ()
+                                              (editor actual)))]
+           [test-snip (label-box "Equality Test" (instantiate base-snip% ()
+                                                   (editor test)))])
           
           (send* bottom-pb
             (begin-edit-sequence)
@@ -70,9 +74,9 @@
           ))
       ))
   
-  ;; label-box (string? (is-a?/c editor<%>) . -> . (is-a?/c aligned-editor-snip%))
+  ;; label-box (string? (is-a?/c snip%) . -> . (is-a?/c aligned-editor-snip%))
   ;; a snip with a box to type in and a label
-  (define (label-box label text)
+  (define (label-box label snip)
     (let ([sd (make-object style-delta% 'change-normal-color)]
           [pb (instantiate vertical-pasteboard% ())]
           [label-snip (make-object string-snip% label)])
@@ -82,11 +86,7 @@
         (begin-edit-sequence)
         (insert label-snip false)
         (change-style sd label-snip)
-        (insert (instantiate test:editor-snip% ()
-                  (editor text)
-                  (stretchable-width true)
-                  (stretchable-height false))
-                false)
+        (insert snip false)
         (end-edit-sequence))
       (instantiate aligned-editor-snip% ()
         (with-border? false)

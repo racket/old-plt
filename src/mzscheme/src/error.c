@@ -132,16 +132,16 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 {
   long i, j;
   char buf[100];
-#ifdef MZ_PRECISE_GC
-  /* Since we might malloc, move all pointers into a local array. */
 
-  va_list args2;
-  int pp = 0;
-  void *ptrs[100];
+  /* Since we might malloc, move all pointers into a local array for
+     the sake of precise GC. We have to do numbers, too, for
+     consistency. */
 
-  memcpy(&args2, &args, sizeof(args2));
+  int pp = 0, ip = 0, dp = 0;
+  void *ptrs[25];
+  long ints[25];
+  double dbls[25];
 
-  memset(ptrs, 0, 100 * sizeof(void *));
   for (j = 0; msg[j]; j++) {
     if (msg[j] == '%') {
       int type;
@@ -151,47 +151,43 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 
       switch (type) {
       case 'c':	  
-	(void)va_arg(args2, int);
+	ints[ip++] = va_arg(args, int);
 	break;
       case 'd':	  
-	(void)va_arg(args2, int);
+	ints[ip++] = va_arg(args, int);
 	break;
       case 'l':
-	(void)va_arg(args2, long);
+	ints[ip++] = va_arg(args, long);
 	break;
       case 'f':
-	(void)va_arg(args2, double);
+	dbls[dp++] = va_arg(args, double);
 	break;
       case 'L':	  
-	(void)va_arg(args2, long);
+	ints[ip++] = va_arg(args, long);
 	break;
       case 'e':	  
       case 'E':
-	(void)va_arg(args2, int);
+	ints[ip++] = va_arg(args, int);
 	break;
       case 'S':
       case 'V':
       case 'T':
       case 'Q':
-	ptrs[pp++] = va_arg(args2, Scheme_Object*);
+	ptrs[pp++] = va_arg(args, Scheme_Object*);
 	break;
       default:
-	ptrs[pp++] = va_arg(args2, char*);
+	ptrs[pp++] = va_arg(args, char*);
 	if (type == 't') {
-	  (void)va_arg(args2, long);
+	  ints[ip++] = va_arg(args, long);
 	}
       }
     }
   }
   pp = 0;
-# define va_PTR_arg(args, t) ((void)va_arg(args, t), (t)ptrs[pp++])
-#else
-# define va_PTR_arg(args, t) va_arg(args, t)
-#endif
+  ip = 0;
+  dp = 0;
 
   --maxlen;
-
-  scheme_malloc_atomic(4);
 
   i = j = 0;
   while ((i < maxlen) && msg[j]) {
@@ -212,7 +208,7 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	case 'c':	  
 	  {
 	    int c;
-	    c = va_arg(args, int);
+	    c = ints[ip++];
 	    buf[0] = c;
 	    t = buf;
 	    tlen = 1;
@@ -221,7 +217,7 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	case 'd':	  
 	  {
 	    int d;
-	    d = va_arg(args, int);
+	    d = ints[ip++];
 	    sprintf(buf, "%d", d);
 	    t = buf;
 	    tlen = strlen(t);
@@ -231,7 +227,7 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	  {
 	    long d;
 	    j++;
-	    d = va_arg(args, long);
+	    d = ints[ip++];
 	    sprintf(buf, "%ld", d);
 	    t = buf;
 	    tlen = strlen(t);
@@ -241,7 +237,7 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	  {
 	    double f;
 	    j++;
-	    f = va_arg(args, double);
+	    f = dbls[dp++];
 	    sprintf(buf, "%f", f);
 	    t = buf;
 	    tlen = strlen(t);
@@ -250,7 +246,7 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	case 'L':	  
 	  {
 	    long d;
-	    d = va_arg(args, long);
+	    d = ints[ip++];
 	    if (d >= 0) {
 	      sprintf(buf, "%ld.", d);
 	      t = buf;
@@ -265,7 +261,7 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	case 'E':
 	  {
 	    int en;
-	    en = va_arg(args, int);
+	    en = ints[ip++];
 	    if (en) {
 	      char *es;
 #ifdef NO_STRERROR_AVAILABLE
@@ -308,14 +304,14 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	case 'S':
 	  {
 	    Scheme_Object *sym;
-	    sym = va_PTR_arg(args, Scheme_Object*);
+	    sym = (Scheme_Object *)ptrs[pp++];
 	    t = scheme_symbol_name_and_size(sym, &tlen, 0);
 	  }
 	  break;
 	case 'V':
 	  {
 	    Scheme_Object *o;
-	    o = va_PTR_arg(args, Scheme_Object*);
+	    o = (Scheme_Object *)ptrs[pp++];
 	    t = scheme_make_provided_string(o, 1, &tlen);
 	  }
 	  break;
@@ -323,16 +319,16 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	case 'Q':
 	  {
 	    Scheme_Object *str;
-	    str = va_PTR_arg(args, Scheme_Object*);
+	    str = (Scheme_Object *)ptrs[pp++];
 	    t = SCHEME_STR_VAL(str);
 	    tlen = SCHEME_STRLEN_VAL(str);
 	  }
 	  break;
 	default:
 	  {
-	    t = va_PTR_arg(args, char*);
+	    t = (char *)ptrs[pp++];
 	    if (type == 't') {
-	      tlen = va_arg(args, long);
+	      tlen = ints[ip++];
 	      if (tlen < 0)
 		tlen = strlen(t);
 	    } else

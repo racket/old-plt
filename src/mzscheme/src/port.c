@@ -5198,9 +5198,11 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 	  if (tries) {
 	    /* Stubborn OS (e.g.,MacOS X) that doesn't deliver the signal during sleep(0) */
 	    struct timeval time;
-	    
+	    int select_result = 0;
+
 	    time.tv_sec = (long)0;
 	    time.tv_usec = (long)1000;
+	    
 	    select(0, NULL, NULL, NULL, &time);
 	  } else
 	    sleep(0);

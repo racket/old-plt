@@ -266,8 +266,10 @@
 		      ((pat:match-against m&e expr env)
 			=>
 			(lambda (p-env)
-			  (let ((old-top-level
-				  (get-attribute attributes 'top-levels)))
+			  (let ((top-level? (get-top-level-status attributes))
+				 (old-top-level
+				   (get-attribute attributes 'top-levels)))
+			    (set-top-level-status attributes #t)
 			    (when old-top-level
 			      (put-attribute attributes 'top-levels (make-hash-table)))
 			    (let ((in:imports (pat:pexpand '(imports ...) p-env kwd))
@@ -299,6 +301,7 @@
 				(remove-unresolved-attribute attributes)
 				(when old-top-level
 				  (put-attribute attributes 'top-levels old-top-level))
+				(set-top-level-status attributes top-level?)
 				(create-unit-form
 				  (map car proc:imports)
 				  proc:exports
@@ -427,10 +430,12 @@
 			    (distinct-valid-syntactic-id/s? in:link-tags)
 			    (make-vars-attribute attributes)
 			    (let*
-			      ((proc:imports (map (lambda (e)
-						    (expand-expr e env
-						      attributes c/imports-vocab))
-					       in:imports))
+			      ((top-level? (get-top-level-status attributes))
+				(_ (set-top-level-status attributes))
+				(proc:imports (map (lambda (e)
+						     (expand-expr e env
+						       attributes c/imports-vocab))
+						in:imports))
 				(_ (extend-env proc:imports env))
 				(_ (register-links in:link-tags attributes))
 				(raw-link-clauses (map z:read-object in:link-tags))
@@ -472,6 +477,7 @@
 					     attributes c-unit-export-clause-vocab))
 				      in:export-clauses)))
 				(_ (retract-env (map car proc:imports) env)))
+			      (set-top-level-status attributes top-level?)
 			      (remove-vars-attribute attributes)
 			      (create-compound-unit-form
 				(map car proc:imports)
@@ -499,12 +505,21 @@
 			  (let ((unit (pat:pexpand 'unit p-env kwd))
 				 (vars (pat:pexpand '(vars ...) p-env kwd)))
 			    (valid-syntactic-id/s? vars)
-			    (create-invoke-unit-form
-			      (expand-expr unit env attributes vocab)
-			      (map (lambda (e)
-				     (expand-expr e env attributes vocab))
-				vars)
-			      expr))))
+			    (let* ((top-level? (get-top-level-status
+						 attributes))
+				    (_ (set-top-level-status attributes))
+				    (expr-expr
+				      (expand-expr unit env attributes vocab))
+				    (var-exprs
+				      (map (lambda (e)
+					     (expand-expr e env
+					       attributes vocab))
+					vars)))
+			      (set-top-level-status attributes top-level?)
+			      (create-invoke-unit-form
+				expr-expr
+				var-exprs
+				expr)))))
 		      (else
 			(static-error expr "Malformed invoke-unit")))))))))
       (invoke-unit-helper 'invoke-unit)
@@ -535,17 +550,29 @@
 				 (name-spec (pat:pexpand 'name-spec p-env kwd))
 				 (vars (pat:pexpand '(vars ...) p-env kwd)))
 			    (valid-syntactic-id/s? vars)
-			    (create-invoke-open-unit-form
-			      (expand-expr unit env attributes vocab)
-			      (if (or (z:symbol? name-spec)
-				    (and (z:boolean? name-spec)
-				      (not (z:read-object name-spec))))
-				(z:read-object name-spec)
-				(static-error name-spec "Invalid name specifier"))
-			      (map (lambda (v)
-				     (expand-expr v env attributes vocab))
-				vars)
-			      expr))))
+			    (let* ((top-level? (get-top-level-status
+						 attributes))
+				    (_ (set-top-level-status attributes))
+				    (expr-expr
+				      (expand-expr unit env attributes vocab))
+				    (expanded-spec
+				      (if (or (z:symbol? name-spec)
+					    (and (z:boolean? name-spec)
+					      (not (z:read-object name-spec))))
+					(z:read-object name-spec)
+					(static-error name-spec
+					  "Invalid name specifier")))
+				    (vars-expr
+				      (map (lambda (v)
+					     (expand-expr v env
+					       attributes vocab))
+					vars)))
+			      (set-top-level-status attributes top-level?)
+			      (create-invoke-open-unit-form
+				expr-expr
+				expanded-spec
+				vars-expr
+				expr)))))
 		      (else
 			(static-error expr "Malformed invoke-open-unit")))))))))
       (invoke-open-unit-helper 'invoke-open-unit)
@@ -613,13 +640,24 @@
 		(let ((define-values-helper
 			(lambda (handler)
 			  (lambda (expr env attributes vocab)
+			    (unless (at-top-level? attributes)
+			      (static-error expr "Not at top-level"))
 			    (cond
 			      ((pat:match-against m&e-1 expr env)
 				=>
 				(lambda (p-env)
-				  (let* ((vars (pat:pexpand '(var ...) p-env kwd))
-					  (_ (map valid-syntactic-id? vars)))
-				    (handler expr env attributes vocab p-env vars))))
+				  (let* ((top-level? (get-top-level-status
+						       attributes))
+					  (_ (set-top-level-status
+					       attributes))
+					  (vars (pat:pexpand '(var ...)
+						  p-env kwd))
+					  (_ (map valid-syntactic-id? vars))
+					  (out (handler expr env attributes
+						 vocab p-env vars)))
+				    (set-top-level-status attributes
+				      top-level?)
+				    out)))
 			      (else (static-error expr "Malformed define-values")))))))
 		  (add-micro-form d-kwd unit-clauses-vocab-delta
 		    (define-values-helper
@@ -672,7 +710,9 @@
 		  (lambda (expr env attributes vocab)
 		    (let ((p-env (pat:match-against m&e expr env)))
 		      (if p-env
-			(let* ((var-p (pat:pexpand 'var p-env kwd))
+			(let* ((top-level? (get-top-level-status attributes))
+				(_ (set-top-level-status attributes))
+				(var-p (pat:pexpand 'var p-env kwd))
 				(_ (valid-syntactic-id? var-p))
 				(id-expr (expand-expr var-p env attributes vocab))
 				(expr-expr (expand-expr
@@ -680,6 +720,7 @@
 					     env attributes vocab)))
 			  (when (check-import var-p attributes)
 			    (static-error var-p "Mutating imported identifier"))
+			  (set-top-level-status attributes top-level?)
 			  (create-set!-form id-expr expr-expr expr))
 			(static-error expr "Malformed set!")))))))))
       (set!-helper 'set!)

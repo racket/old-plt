@@ -191,22 +191,25 @@
 			  (let ((args (pat:pexpand `(,arglist-pattern ...) p-env kwd))
 				 (bodies (pat:pexpand `((,@expr-pattern) ...) p-env kwd)))
 			    (let*
-			      ((arglists+exprs
-				 (map
-				   (lambda (arg body)
-				     (distinct-valid-syntactic-id/s? arg)
-				     (let* ((arglist
-					      (expand-expr arg env attributes
-						arglist-decls-vocab))
-					     (arg-vars+marks
-					       (arglist-vars arglist)))
-				       (extend-env arg-vars+marks env)
-				       (begin0
-					 (cons
-					   (make-argument-list arglist)
-					   (parse-expr body env attributes vocab expr))
-					 (retract-env (map car arg-vars+marks) env))))
-				   args bodies)))
+			      ((top-level? (get-top-level-status attributes))
+				(_ (set-top-level-status attributes))
+				(arglists+exprs
+				  (map
+				    (lambda (arg body)
+				      (distinct-valid-syntactic-id/s? arg)
+				      (let* ((arglist
+					       (expand-expr arg env attributes
+						 arglist-decls-vocab))
+					      (arg-vars+marks
+						(arglist-vars arglist)))
+					(extend-env arg-vars+marks env)
+					(begin0
+					  (cons
+					    (make-argument-list arglist)
+					    (parse-expr body env attributes vocab expr))
+					  (retract-env (map car arg-vars+marks) env))))
+				    args bodies)))
+			      (set-top-level-status attributes top-level?)
 			      (create-case-lambda-form
 				(map car arglists+exprs)
 				(map cdr arglists+exprs)
@@ -307,9 +310,13 @@
 		      ((pat:match-against m&e-2 expr env)
 			=>
 			(lambda (p-env)
-			  (let* ((test-exp (expand-expr
-					     (pat:pexpand 'test p-env kwd)
-					     env attributes vocab))
+			  (let* ((top-level? (get-top-level-status attributes))
+				  (_ (set-top-level-status attributes))
+				  (test-exp (expand-expr
+					      (pat:pexpand 'test p-env kwd)
+					      env attributes vocab))
+				  (_ (set-top-level-status attributes
+				       top-level?))
 				  (then-exp (expand-expr
 					      (pat:pexpand 'then p-env kwd)
 					      env attributes vocab))
@@ -353,12 +360,16 @@
 		    (lambda (expr env attributes vocab)
 		      (let ((p-env (pat:match-against m&e expr env)))
 			(if p-env
-			  (let* ((var-p (pat:pexpand 'var p-env kwd))
+			  (let* ((top-level? (get-top-level-status attributes))
+				  (_ (set-top-level-status attributes))
+				  (var-p (pat:pexpand 'var p-env kwd))
 				  (_ (valid-syntactic-id? var-p))
-				  (id-expr (expand-expr var-p env attributes vocab))
+				  (id-expr (expand-expr var-p env attributes
+					     vocab))
 				  (expr-expr (expand-expr
 					       (pat:pexpand 'val p-env kwd)
 					       env attributes vocab)))
+			    (set-top-level-status attributes top-level?)
 			    (create-set!-form id-expr expr-expr expr))
 			  (static-error expr "Malformed set!")))))))))
 	(set!-handler 'set!)
@@ -410,16 +421,20 @@
 				(expand-expr e env
 				  attributes local-extract-vocab)))
 			  out))
-		      defs)))
-		(expand-expr
-		  (structurize-syntax
-		    `(letrec*-values
-		       ,(map (lambda (vars+expr)
-			       `(,(car vars+expr) ,(cdr vars+expr)))
-			  vars+exprs)
-		       ,@(pat:pexpand expr-pattern p-env kwd))
-		    expr)
-		  env attributes vocab))
+		      defs))
+		  (top-level? (get-top-level-status attributes)))
+		(set-top-level-status attributes)
+		(begin0
+		  (expand-expr
+		    (structurize-syntax
+		      `(letrec*-values
+			 ,(map (lambda (vars+expr)
+				 `(,(car vars+expr) ,(cdr vars+expr)))
+			    vars+exprs)
+			 ,@(pat:pexpand expr-pattern p-env kwd))
+		      expr)
+		    env attributes vocab)
+		  (set-top-level-status attributes top-level?)))
 	      (static-error expr "Malformed local"))))))
 
     ; (define var val)                                          [core]
@@ -465,14 +480,25 @@
 		(let ((define-values-helper
 			(lambda (handler)
 			  (lambda (expr env attributes vocab)
+			    (unless (at-top-level? attributes)
+			      (static-error expr "Not at top-level"))
 			    (cond
 			      ((pat:match-against m&e-1 expr env)
 				=>
 				(lambda (p-env)
-				  (let* ((vars (pat:pexpand '(var ...) p-env kwd))
+				  (let* ((top-level? (get-top-level-status
+						       attributes))
+					  (_ (set-top-level-status
+					       attributes))
+					  (vars (pat:pexpand '(var ...)
+						  p-env kwd))
 					  (_ (map valid-syntactic-id? vars))
-					  (val (pat:pexpand 'val p-env kwd)))
-				    (handler expr env attributes vocab vars val))))
+					  (val (pat:pexpand 'val p-env kwd))
+					  (out (handler expr env
+						 attributes vocab vars val)))
+				    (set-top-level-status attributes
+				      top-level?)
+				    out)))
 			      (else (static-error expr "Malformed define-values")))))))
 		  (add-micro-form d-kwd scheme-vocabulary
 		    (define-values-helper
@@ -756,7 +782,9 @@
 				 (body (pat:pexpand `(,@expr-pattern)
 					 p-env kwd)))
 			    (let*
-			      ((all-vars (apply append vars))
+			      ((top-level? (get-top-level-status attributes))
+				(_ (set-top-level-status attributes))
+				(all-vars (apply append vars))
 				(_ (distinct-valid-syntactic-id/s? all-vars))
 				(expanded-vals
 				  (map (lambda (e)
@@ -784,6 +812,7 @@
 				      attributes vocab expr)
 				    expr))
 				(_ (retract-env new-vars env)))
+			      (set-top-level-status attributes top-level?)
 			      result))))
 		      (else
 			(static-error expr "Malformed let-values")))))))))
@@ -824,6 +853,8 @@
 					 p-env kwd)))
 			    (let*
 			      ((all-vars (apply append vars))
+				(top-level? (get-top-level-status attributes))
+				(_ (set-top-level-status attributes))
 				(_ (distinct-valid-syntactic-id/s? all-vars))
 				(new-vars+marks
 				  (map create-lexical-binding+marks all-vars))
@@ -851,6 +882,7 @@
 				      attributes vocab expr)
 				    expr))
 				(_ (retract-env new-vars env)))
+			      (set-top-level-status attributes top-level?)
 			      result))))
 		      (else
 			(static-error expr "Malformed letrec*-values")))))))))
@@ -983,7 +1015,7 @@
 	      (in-pattern-2 (if (language<=? 'structured)
 			      '(cond (else b) rest ...)
 			      '(cond (else b ...) rest ...)))
-	      (out-pattern-2 'dummy)
+	      (out-pattern-2 'this-is-an-error-case)
 	      (in-pattern-3 '(cond))
 	      (out-pattern-3 (if (language<=? 'structured)
 			       '(#%raise (#%make-exn:else
@@ -998,7 +1030,7 @@
 	      (out-pattern-5 '(let ((t test))
 				(if t (receiver t) (cond rest ...))))
 	      (in-pattern-6 '(cond (test =>) rest ...))
-	      (out-pattern-6 'dummy)
+	      (out-pattern-6 'this-is-an-error-case)
 	      (in-pattern-7 (if (language<=? 'structured)
 			      '(cond (test b) rest ...)
 			      '(cond (test b0 b1 ...) rest ...)))
@@ -1230,7 +1262,7 @@
 			 (vals (pat:pexpand '(val ...) p-env kwd))
 			 (body (pat:pexpand '(body ...) p-env kwd)))
 		    (distinct-valid-syntactic-id/s? vars)
-		    (let ((new-vars (map generate-name vars)))
+		    (let* ((new-vars (map generate-name vars)))
 		      (expand-expr
 			(structurize-syntax
 			  `(let ,(map list new-vars vars)

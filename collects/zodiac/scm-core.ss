@@ -172,18 +172,33 @@
 
     ; ----------------------------------------------------------------------
 
+    (define set-top-level-status
+      (opt-lambda (attributes (value #f))
+	(put-attribute attributes 'at-scheme-top-level? value)))
+
+    (define get-top-level-status
+      (lambda (attributes)
+	(get-attribute attributes 'at-scheme-top-level?
+	  (lambda () #t))))
+
+    (define at-top-level? get-top-level-status)
+
+    ; --------------------------------------------------------------------
+
     (define previous-attribute (make-attributes))
 
     (define scheme-expand
       (opt-lambda (expr (params (current-parameterization))
 		    (attr previous-attribute))
 	(let ((attr (or attr (make-attributes))))
+	  (set-top-level-status attr #t)
 	  (expand expr attr scheme-vocabulary params))))
 
     (define scheme-expand-program
       (opt-lambda (exprs (params (current-parameterization))
 		    (attr previous-attribute))
 	(let ((attr (or attr (make-attributes))))
+	  (set-top-level-status attr #t)
 	  (expand-program exprs attr scheme-vocabulary params))))
 
     ; ----------------------------------------------------------------------

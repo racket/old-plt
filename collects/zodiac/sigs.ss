@@ -37,6 +37,7 @@
     lexically-resolved? in-lexically-extended-env
     generate-name
     scheme-expand scheme-expand-program
+    set-top-level-status get-top-level-status at-top-level?
     scheme-vocabulary
     (struct parsed (back))
     (struct varref (var))

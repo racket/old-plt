@@ -12,7 +12,7 @@
 
     (define structurize-syntax
       (opt-lambda (expr source (marks '()) (table #f))
-	(let ((origin (zodiac-origin source))
+	(let ((origin (make-origin 'non-source (zodiac-origin source)))
 	       (start (zodiac-start source))
 	       (finish (zodiac-finish source)))
 	  (letrec

@@ -429,8 +429,11 @@
 				 (in:ivars (pat:pexpand '(inst-vars ...) p-env kwd)))
 			    (valid-syntactic-id? in:this)
 			    (distinct-valid-syntactic-id/s? in:supervars)
-			    (let* ((proc:supervars (map create-supervar-binding+marks
-						     in:supervars))
+			    (let* ((top-level? (get-top-level-status
+						 attributes))
+				    (_ (set-top-level-status attributes))
+				    (proc:supervars (map create-supervar-binding+marks
+						      in:supervars))
 				    (proc:superinits (map
 						       (lambda (var+marks)
 							 (introduce-bound-id
@@ -551,6 +554,8 @@
 						     (map car proc:initvars)
 						     new-names)
 					env)
+				      (set-top-level-status attributes
+					top-level?)
 				      result))))))))
 		      (else
 			(static-error expr "Malformed class*")))))))))
@@ -665,7 +670,9 @@
 		    (lambda (expr env attributes vocab)
 		      (let ((p-env (pat:match-against m&e expr env)))
 			(if p-env
-			  (let* ((var-p (pat:pexpand 'var p-env kwd))
+			  (let* ((top-level? (get-top-level-status attributes))
+				  (_ (set-top-level-status attributes))
+				  (var-p (pat:pexpand 'var p-env kwd))
 				  (_ (valid-syntactic-id? var-p))
 				  (id-expr (expand-expr var-p env attributes vocab))
 				  (expr-expr (expand-expr
@@ -675,6 +682,7 @@
 				    (rename-varref? id-expr))
 			      (static-error var-p
 				"Cannot mutate inherit's and rename's"))
+			    (set-top-level-status attributes top-level?)
 			    (create-set!-form id-expr expr-expr expr))
 			  (static-error expr "Malformed set!")))))))))
 	(set!-handler 'set!)

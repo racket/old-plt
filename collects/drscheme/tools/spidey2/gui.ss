@@ -256,11 +256,13 @@
                               menu
                               (lambda (item evt)
                                 (for-each (lambda (var)
-                                            (let ([parent/child
-                                                   (var-pos->edit-pos
-                                                    (zodiac:location-offset
-                                                     (get-loc var)))])
-                                              (set! arrows (cons (pair pos parent/child) arrows))))
+                                            (let ([loc (get-loc var)])
+                                              (when loc
+                                                (let ([parent/child
+                                                       (var-pos->edit-pos
+                                                        (zodiac:location-offset
+                                                         loc))])
+                                                  (set! arrows (cons (pair pos parent/child) arrows))))))
                                           (children/parents set-var))
                                 (invalidate-bitmap-cache))))])
                      (make-children/parents-item "Parents" parents cons)

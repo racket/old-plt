@@ -209,7 +209,7 @@
   (define main-edit%
     (class (make-hidden-edit% mred:media-edit%) args
       (inherit begin-edit-sequence end-edit-sequence
-	       insert get-admin delete
+	       insert get-admin delete get-canvas
 	       last-position lock hide-caret
 	       get-start-position)
       (private
@@ -246,11 +246,6 @@
 		      seconds))]
 		 [admin (get-admin)])
 	     (lock #f)
-	     '(for-each (lambda (outer)
-			 (let ([admin (send outer get-admin)])
-			   (unless (null? admin)
-			     (send admin release-snip outer))))
-		       lines)
 	     (delete 0 (last-position) #f)
 	     (let ([current (current-seconds)])
 	       (let loop ([lines (quicksort lines
@@ -310,7 +305,8 @@
 		 (insert (string #\newline) (send main get-start-position) -1 #f)
 		 (insert display (send main get-start-position) -1 #f))
 	       (for-each (lambda (e) (send e lock #t))
-			 (list date-edit label-edit main)))
+			 (list date-edit label-edit main))
+	       (send (get-canvas) add-wide-snip outer))
 	     (lock #t)))]
 	[sync
 	 (lambda ()

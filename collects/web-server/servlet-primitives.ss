@@ -1,6 +1,7 @@
 (module servlet-primitives mzscheme
   (require "channel.ss"
-           (prefix config: "configuration.ss")
+           "configuration.ss"
+           "configuration-structures.ss"
            "web-server.ss"
            "servlet-sig.ss"
            (lib "etc.ss")
@@ -10,27 +11,40 @@
            send/finish
            initial-request) 
   
-  ; send/finish : x-expression -> doesn't
+  ; send/finish : response -> doesn't
   (define (send/finish page)
     (output-page page)
     ; don't kill the server since it's still outputing the page
     ;(kill-thread (current-thread))
     (set! *page-channel* #f))
   
-;  (define void-output (make-output-port void void))
+  ;  (define void-output (make-output-port void void))
+  ; more here - make this and open-in-browser platform independent
   (define void-output (open-output-file "/dev/null" 'append))
   
   ; open-in-browser : str -> void
-  (define (open-in-browser url)
-    (printf "Trying to open url: ~s~n" url)
-    (or (system* netscape-path "-remote" (format "openURL(~a)" url))
-        (begin (printf "Trying to start a new browser")
-               '(let-values ([(p out in err) (subprocess #f #f #f netscape-path url)])
-                 (close-input-port out)
-                 (close-input-port err)
-                 (close-output-port in))
-               (let-values ([(p out in err) (subprocess void-output #f void-output netscape-path url)])
-                 (close-output-port in)))))
+  ; note - This function is platform dependent.
+  ;      - It doesn't work if netscape is a shell/perl script that
+  ;        throws away ; characters in URLs, which it shouldn't
+  (define open-in-browser
+    (case (system-type)
+      [(macos)
+       (lambda (url)
+         (send-event "MACS" "GURL" "GURL" url))]
+      [else
+       (let ([netscape-path
+              (or (find-executable-path "netscape" #f)
+                  (error 'netscape-path "Couldn't find Netscape."))])
+         (lambda (url)
+           (printf "Trying to open url: ~s~n" url)
+           (or (system* netscape-path "-remote" (format "openURL(~a)" url))
+               (begin (printf "Trying to start a new browser")
+                      '(let-values ([(p out in err) (subprocess #f #f #f netscape-path url)])
+                         (close-input-port out)
+                         (close-input-port err)
+                         (close-output-port in))
+                      (let-values ([(p out in err) (subprocess void-output #f void-output netscape-path url)])
+                        (close-output-port in))))))]))
   
   ; *page-channel* : #f | channel
   (define *page-channel* #f)
@@ -86,16 +100,21 @@
   (send-event "MACS" "GURL" "GURL" "http://www.brinckerhoff.org/")
   ; this asks the finder to open the selected browser and doesn't race.
   |#
-  (define netscape-path (find-executable-path "netscape" #f))
-  ;(define netscape-path "/usr/site/netscape-4.7.6/bin/netscape")
-  
-  (unless netscape-path
-    (error 'netscape-path "Couldn't find Netscape."))
   
   (add-new-instance invoke-id instances)
+  
+  ; override some configuration options
+  (define the-configuration
+    (load-configuration default-configuration-table-path))
+  
+  (define big-timeout (* 24 60 60))
+  (define the-config
+    (make-config (configuration-virtual-hosts the-configuration)
+                 (make-hash-table)
+                 instances (make-hash-table)))
   
   (thread (lambda ()
             (server-loop (current-custodian)
                          listener
-                         (make-config config:virtual-hosts (make-hash-table)
-                                      instances (make-hash-table))))))
+                         the-config
+                         big-timeout))))

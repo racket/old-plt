@@ -1774,9 +1774,15 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
   /* Resolve body: */
   body = scheme_resolve_expr(body, linfo);
 
-  /* Check for collasping let_void: */
   extra_alloc = 0;
   val_linfo = linfo;
+
+  /* We used to try to collapse let_void, here.  But collapsing
+     potentially changes the maxiumum stack depth of the expression,
+     since variabls from the body get allocated before the RHSes are
+     executed. Also, this optimization was arbitrary in that it didn't
+     recursively collapse. For both of these reasons, it's now disabled. */
+#if 0
   if (!num_rec_procs) {
     if (SAME_TYPE(SCHEME_TYPE(body), scheme_let_void_type)) {
       Scheme_Let_Void *lvd = (Scheme_Let_Void *)body;
@@ -1789,6 +1795,7 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
       }
     }
   }
+#endif
 
   if (num_rec_procs) {
     Scheme_Object **sa;

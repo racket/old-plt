@@ -1012,11 +1012,8 @@ void scheme_print_tagged_value(const char *prefix,
   if (diff)
     sprintf(diffstr, "%lx", diff);
   
-  object_console_printf(
-#ifdef MZ_PRECISE_GC
-			stderr,
-#endif
-			"%s%lx%s%s%s%s%s", 
+  object_console_printf(stderr,
+			"%s%p%s%s%s%s%s", 
 			prefix,
 			v, 
 			sep,
@@ -1546,8 +1543,12 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
     break;
   case scheme_float_type:
     break;
-  case scheme_string_type:
-    s += (SCHEME_STRTAG_VAL(root) + 1);
+  case scheme_char_string_type:
+    s += (SCHEME_CHAR_STRTAG_VAL(root) + 1) * sizeof(mzchar);
+    need_align = 1;
+    break;
+  case scheme_byte_string_type:
+    s += SCHEME_BYTE_STRTAG_VAL(root) + 1;
     need_align = 1;
     break;
   case scheme_symbol_type:
@@ -1676,7 +1677,7 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 	+ ((p->runstack_size + p->tail_buffer_size) * sizeof(Scheme_Object *));
 
 #if FORCE_KNOWN_SUBPARTS
-      e = COUNT(p->config);
+      e = COUNT(p->init_config);
 #endif
 
       /* Check stack: */

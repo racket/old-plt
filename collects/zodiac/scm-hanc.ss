@@ -215,7 +215,8 @@
 	  (lambda (p-env)
 	    (let ((sig (pat:pexpand 'sig p-env kwd)))
 	      (valid-syntactic-id? sig)
-	      (expand-expr sig env attributes sig-vocab))))
+	      (signature-elements
+		(expand-expr sig env attributes sig-vocab)))))
 	(else
 	  (static-error expr "Malformed open clause"))))))
 

@@ -1,0 +1,661 @@
+% tex2html.tex
+% Dorai Sitaram, Apr 1997
+
+% Plain TeX files loading and using these macros
+% can be converted by the program
+% ``tex2html'' into HTML
+
+\let\texonly\relax
+\let\endtexonly\relax
+
+\texonly
+
+\message{[ver. 2s]} % version
+
+\let\gifdef\def
+
+% verbatim environment
+% Usage: \verbatim{...lines...} or \verbatim|...lines...|
+% In the former case, | can be used as escape char within
+% the verbatim text
+
+\let\verbatimhook\relax
+
+\def\verbatimfont{\tt}
+%\hyphenchar\tentt-1
+
+\def\defcsactive#1{\defnumactive{`#1}}
+
+\def\defnumactive#1#2{\catcode#1\active
+  \begingroup\lccode`\~#1%
+    \lowercase{\endgroup\def~{#2}}}
+
+\def\setupverbatim{%\frenchspacing
+  \def\do##1{\catcode`##1=12 }\dospecials
+  \catcode`\|=12
+  \verbatimfont}
+
+% The current font is cmtt iff fontdimen3 = 0 _and_
+% fontdimen7 != 0
+
+\def\checkifusingcmtt{\let\usingcmtt n%
+  \ifdim\the\fontdimen3\the\font=0.0pt
+    \ifdim\the\fontdimen7\the\font=0.0pt
+    \else\let\usingcmtt y\fi\fi}
+
+% In a nonmonospaced font, - followed by a letter
+% is a hyphen.  Followed by anything else, it is a
+% minus.
+
+\def\variablelengthhyphen{\futurelet\variablelengthhyphenI
+  \variablelengthhyphenII}
+
+\def\variablelengthhyphenII{\ifcat\noexpand\variablelengthhyphenI
+ a-\else{\tt\char`\-}\fi}
+
+\def\avoidligs{% avoid ligatures
+  \defcsactive\`{\relax\lq}%
+  \defcsactive\ {\leavevmode\ }%
+  \defcsactive\^^I{\leavevmode\ \ \ \ \ \ \ \ }%
+  \checkifusingcmtt
+  \ifx\usingcmtt n%
+  \defcsactive\<{\relax\char`\<}%
+  \defcsactive\>{\relax\char`\>}%
+  \defcsactive\-{\variablelengthhyphen}%
+  \fi
+  \let\firstpar y%
+  \defcsactive\^^M{\ifx\firstpar y%
+    \let\firstpar n%
+    \verbatimdisplayskip
+    \aftergroup\verbatimdisplayskip
+    \else\leavevmode\fi\endgraf}%
+  \verbatimhook
+}
+
+\def\verbatim{\begingroup
+  \setupverbatim\verbatimI}
+
+\newcount\verbbalance
+
+\def\verblbrace{\char`\{}
+\def\verbrbrace{\char`\}}
+
+\def\setverbatimescapechar#1{%
+  \def\escapifyverbatimescapechar{\catcode`#1=0 }}
+
+\setverbatimescapechar\|
+
+{\catcode`\[1 \catcode`\]2
+\catcode`\{12 \catcode`\}12
+\gdef\verbatimI#1[\avoidligs
+  \if#1{\escapifyverbatimescapechar
+    %\catcode`\|0
+    \def\{[\char`\{]%
+    \def\}[\char`\}]%
+    \def\|[\char`\|]%
+    \verbbalance0
+    \defcsactive\{[\advance\verbbalance by 1
+      \verblbrace]%
+    \defcsactive\}[\ifnum\verbbalance=0
+      \let\verbrbracenext\endgroup\else\advance\verbbalance by -1
+      \let\verbrbracenext\verbrbrace\fi
+      \verbrbracenext]\else
+  \defcsactive#1[\null\endgroup]\fi
+  \verbatimII
+]]
+
+\def\verbatimII{\futurelet\verbatimIInext\verbatimIII}
+
+{\catcode`\^^M\active%
+\gdef\verbatimIII{\ifx\verbatimIInext^^M\else%
+  \defcsactive\^^M{\leavevmode\ }\fi}}
+
+\let\verbatimdisplayskip\medbreak
+
+% use \p{code} or \p|code| for in-text code
+
+\let\p\verbatim
+
+% for URLs and such
+
+\def\path{\begingroup\setupverbatim
+\defcsactive\.{\discretionary{\char`\.}{}{\char`\.}}%
+\defcsactive\/{\discretionary{\char`\/}{}{\char`\/}}%
+\verbatimI}
+
+% \verbatimfile filename
+% inputs a file verbatim
+
+\def\verbatimfile#1 {{\setupverbatim\avoidligs
+\input #1 }}
+
+%
+
+\let\htmlonly\iffalse
+\let\endhtmlonly\fi
+
+\def\gobblegroup{\bgroup\def\do##1{\catcode`##1=12 }%
+\dospecials\catcode`\{1 \catcode`\}2
+\gobblegroupii}
+
+\def\gobblegroupii#1{\egroup}
+
+\let\rawhtml\gobblegroup
+
+% color
+
+\let\rgb\gobblegroup
+\let\color\gobblegroup
+
+% scheme
+
+\let\scmp\verbatim
+\let\scmverbatim\verbatim
+\let\scmverbatimfile\verbatimfile
+
+\let\scmkeyword\gobblegroup
+\let\setkeyword\gobblegroup % SLaTeX compat
+
+\ifx\slatexversion\UNDEFINED
+\def\schemedisplay{\begingroup
+  \setupverbatim\avoidligs
+  \schemedisplayverbatim}
+\fi
+
+{\catcode`\|0 |catcode`|\12
+|long|gdef|schemedisplayverbatim#1\endschemedisplay{%
+#1|endgroup}}
+
+% cross-references
+
+% \openxrefout loads all the TAG-VALUE associations in
+% \jobname.xrf and then opens \jobname.xrf as an
+% output channel that \tag can use
+
+\def\openxrefout{\openin0=\jobname.xrf
+  \ifeof0 \closein0 \else
+  {\catcode`\\0 \input \jobname.xrf }\fi
+  \csname newwrite\endcsname\xrefout
+  \openout\xrefout=\jobname.xrf }
+
+% \tag{TAG}{VALUE} associates TAG with VALUE.
+% Hereafter, \ref{TAG} will output VALUE
+% \tag stores its associations in \xrefout.
+% \tag calls \openxrefout if \jobname.xrf hasn't
+% already been opened
+
+\def\tag#1#2{\ifx\xrefout\UNDEFINED\openxrefout\fi
+  {\let\folio0%
+    \edef\temp{%
+      \write\xrefout{\string\expandafter\string\gdef
+        \string\csname\space XREF#1\string\endcsname
+        {#2}\string\relax}}%
+    \temp}}
+
+% \ref{TAG} outputs VALUE, assuming \tag put such
+% an association into \xrefout.  \ref calls
+% \openxrefout if \jobname.xrf hasn't already
+% been opened
+
+\def\ref#1{\ifx\xrefout\UNDEFINED\openxrefout\fi
+  \expandafter\ifx\csname XREF#1\endcsname\relax
+  \write16{*** Unresolved xref #1 -- run TeX again.}?\else
+  \csname XREF#1\endcsname\fi}
+
+% \label, as in LaTeX
+
+\let\recentlabel\relax
+
+% The sectioning commands
+% define \recentlabel so a subsequent call to \label will pick up the
+% right label.
+
+\def\label#1{\tag{#1}{\recentlabel}%
+  \tag{PAGE#1}{\folio}}
+
+% \pageref, as in LaTeX
+
+\def\pageref#1{\ref{PAGE#1}}
+
+% \url{URL} becomes
+% <a href="URL">URL</a> in HTML, and
+% \path{URL} in DVI
+
+\def\url{\bgroup\it
+\defcsactive\~{\~{}}%
+\defcsactive\_{\_}%
+\aftergroup\/
+\let\dummy=}
+
+\let\url\path
+
+% \urlh{URL}{text} becomes
+% <a href="URL">text</a> in HTML, and
+% text in DVI
+
+\def\urlh{\edef\restoresharptildecatcodes{%
+  \noexpand\catcode`\noexpand\#=\the\catcode`\#%
+  \noexpand\catcode`\noexpand\~=\the\catcode`\~}%
+  \catcode`\#=12 \catcode`\~=12
+\urlhI}
+
+\def\urlhI#1{\restoresharptildecatcodes}
+
+% \urlhd{URL}{HTML text}{DVI text} becomes
+% <a href="URL">HTML text</a> in HTML, and
+% {DVI text} in DVI
+
+\def\urlhd{\edef\restoresharptildecatcodes{%
+  \noexpand\catcode`\noexpand\#=\the\catcode`\#%
+  \noexpand\catcode`\noexpand\~=\the\catcode`\~}%
+  \catcode`\#=12 \catcode`\~=12
+  \urlhdI}
+
+\def\urlhdI#1#2{\restoresharptildecatcodes}
+
+% gif
+
+\def\gifpreamble{\let\magnificationoutsidegifpreamble\magnification
+\def\magnification{\count255=}}
+\def\endgifpreamble{\let\magnification\magnificationoutsidegifpreamble}
+
+\let\htmlgif\relax
+\let\endhtmlgif\relax
+
+% Cheap count registers: doesn't use up TeX's limited
+% number of real count registers.
+
+% A cheap count register is simply a macro that expands to the
+% contents of the count register.  Thus \def\kount{0} defines a
+% count register \kount that currently contains 0.
+
+% \advancecheapcount\kount num increments \kount by n.
+% \globaladvancecheapcount increments the global \kount.
+% If \kount is not defined, the \[global]advancecheapcount
+% macros define it to be 0 before proceeding with the
+% incrementation.
+
+\def\newcheapcount#1{\edef#1{0}}
+
+\def\advancecheapcounthelper#1#2#3{%
+  \ifx#2\UNDEFINED
+    #1\edef#2{0}\fi
+  \edef\setcountCCLV{\count255=#2 }%
+  \setcountCCLV
+  \advance\count255 by #3
+  #1\edef#2{\the\count255 }}
+
+\def\advancecheapcount{\advancecheapcounthelper\relax}
+\def\globaladvancecheapcount{\advancecheapcounthelper\global}
+
+% title
+
+\def\title#1{}
+
+\def\subject#1{\centerline{\bf#1}\medskip}
+
+% plain's \beginsection splits pages too easily
+
+%\def\beginsection#1\par{\sectionwithnumber{1}{}{#1}}
+
+\def\beginsection{\vskip-\lastskip
+  \bigbreak\noindent
+  \bgroup\bf
+    \let\par\sectionafterskip}
+
+\def\beginsectionstar*{\beginsection}
+
+%
+
+\let\strike\fiverm % can be much better!
+
+%
+
+\let\htmlpagebreak\relax
+
+% Abbrevs
+
+\let\n\noindent
+\let\pp\verbatim
+\let\q\scmp
+\let\qq\scmverbatim
+
+% Miscellaneous stuff
+
+\def\hr{$$\hbox{---}$$}
+\def\hr{\medbreak\centerline{---}\medbreak}
+%\def\hr{\par\centerline{$*$}\par}
+%\def\hr{\smallskip\line{\leaders\hbox{~.~}\hfill}\smallskip}
+
+%Commonplace math that doesn't require GIF.  (Avoiding $
+%here because $ triggers GIF generation.)
+
+\def\mathg{$\bgroup\aftergroup\closemathg\let\dummy=}
+\def\closemathg{$}
+
+% bkwd compat stuf
+
+\let\href\urlhd
+
+% Don't load the following for LaTeX
+
+\ifx\newenvironment\UNDEFINED\else\endinput\fi
+
+%  sections
+
+\def\tracksectionchangeatlevel#1{%
+  \expandafter\let\expandafter\thiscount\csname
+    sectionnumber#1\endcsname
+  \ifx\thiscount\relax
+    \expandafter\edef\csname sectionnumber#1\endcsname{0}%
+  \fi
+  \expandafter\advancecheapcount
+    \csname sectionnumber#1\endcsname 1%
+  \ifx\doingappendix0%
+    \edef\recentlabel{\csname sectionnumber1\endcsname}%
+  \else
+    %\count255=\expandafter\csname sectionnumber1\endcsname
+    \edef\recentlabel{\char\csname sectionnumber1\endcsname}%
+  \fi
+  \count255=0
+  \loop
+    \advance\count255 by 1
+    \ifnum\count255=1
+    \else\edef\recentlabel{\recentlabel.\csname
+      sectionnumber\the\count255\endcsname}\fi
+  \ifnum\count255<#1
+  \repeat
+  \loop
+    \advance\count255 by 1
+    \expandafter\let\expandafter\nextcount\csname
+      sectionnumber\the\count255\endcsname
+    \ifx\nextcount\relax
+      \let\continue0
+    \else
+      \expandafter\edef\csname
+        sectionnumber\the\count255\endcsname{0}%
+      \let\continue1\fi
+  \ifx\continue1
+  \repeat}
+
+% vanilla section-header look -- change this macro for new look
+
+\let\generatetoc=0
+
+\def\opentocoutifsafe{%
+  \ifx\generatetoc0%
+    \openin0=\jobname.toc
+    \ifeof0 \closein0
+      \csname newwrite\endcsname\tocout
+      \openout\tocout=\jobname.toc
+      \let\generatetoc=1%
+    \fi
+  \fi}
+
+%\def\ensuretocout{\ifx\tocout\UNDEFINED
+%  \csname newwrite\endcsname\tocout
+%  \openout\tocout=\jobname.toc
+%  \fi}
+
+\def\sectionstar#1*#2{\vskip-\lastskip
+  % #1=depth #2=heading-text
+  \opentocoutifsafe
+  \ifx\generatetoc1%
+  \edef\temp{\write\tocout{\noindent\string\hskip#1\space em\string\relax%
+    \string\vtop{\string\hsize=.7\string\hsize\string\raggedright
+    \string\noindent\space #2\string\strut}\string\par}}\temp\fi
+  \goodbreak
+  \vksip1.5\bigskipamount
+  \noindent
+  \hbox{\bf\vtop{\hsize=.7\hsize
+    \pretolerance 10000
+    \noindent\raggedright#2}}%
+  \bgroup\let\par\sectionafterskip}
+
+\def\sectionwithnumber#1#2#3{\vskip-\lastskip
+  % #1=depth #2=dotted-number #3=heading-text
+  \opentocoutifsafe
+  \ifx\generatetoc1%
+  \edef\temp{\write\tocout{\noindent\string\hskip#1\space em\string\relax\space #2%
+    \string\vtop{\string\hsize=.7\string\hsize\string\raggedright
+    \string\noindent\space #3\string\strut}\string\par}}\temp\fi
+  \goodbreak
+  \vskip1.5\bigskipamount
+  \noindent
+  \hbox{\bf#2\vtop{\hsize=.7\hsize
+    \pretolerance 10000
+    \noindent\raggedright#3}}%
+  \bgroup\let\par\sectionafterskip}
+
+% \edef\temp{\write\tocout{\string\hskip#1\space em\string\relax\space #2%
+%    \string\vtop{\string\hsize=.7\string\hsize
+%    \string\noindent\string\raggedright\space #3}\string\par}}\temp
+
+\def\sectionafterskip{\egroup\nobreak\medskip\noindent}
+
+\def\sectiond#1{\def\sectiondlvl{#1}%
+\futurelet\sectionnextchar\sectiondispatch}
+
+\def\sectiondispatch{\ifx\sectionnextchar*%
+  \def\sectioncontinue{\sectionstar{\sectiondlvl}}\else
+  \tracksectionchangeatlevel{\sectiondlvl}
+  \def\sectioncontinue{\sectionwithnumber{\sectiondlvl}%
+    {\recentlabel.\enspace}}\fi
+  \sectioncontinue}
+
+%\def\sectiond#1{\tracksectionchangeatlevel{#1}%
+%  \sectionwithnumber{#1}{\recentlabel.\enspace}}
+
+\def\section{\sectiond1}
+\def\subsection{\sectiond2}
+\def\subsubsection{\sectiond3}
+\def\subsubsubsection{\sectiond4}
+\def\subsubsubsubsection{\sectiond5}
+
+\def\chapter{\futurelet\chapternextchar\chapterdispatch}
+
+\def\chapterdispatch{\ifx\chapternextchar*%
+  \let\chaptercontinue\chapterstar\else
+  \tracksectionchangeatlevel{1}%
+  \def\chaptercontinue{\chapterhelp{\recentlabel}}\fi
+  \chaptercontinue}
+
+%\def\chapter{\tracksectionchangeatlevel{1}%
+%  \chapterhelp{\recentlabel.\enspace}}
+
+\def\chapterstar*#1{%
+  % #1=heading-text
+  \opentocoutifsafe
+  \ifx\generatetoc1%
+  \edef\temp{\write\tocout{\noindent\string\hskip1em\string\relax%
+    \string\vtop{\string\hsize=.7\string\hsize\string\raggedright
+    \string\noindent\space #1\string\strut}\string\par}}\temp\fi
+  \vfill\eject
+  \null\vskip3em
+  \noindent
+  \hbox{\bf\vtop{\hsize=.7\hsize
+    \pretolerance 10000
+    \noindent\raggedright#1}}%
+  \bgroup\let\par\chapterafterskip}
+
+\def\chapterhelp#1#2{%
+  % #1=number #2=heading-text
+  \opentocoutifsafe
+  \ifx\generatetoc1%
+  \edef\temp{\write\tocout{\noindent\string\hskip1em\string\relax\space #1.\enspace%
+    \string\vtop{\string\hsize=.7\string\hsize\string\raggedright
+    \string\noindent\space #2\string\strut}\string\par}}\temp\fi
+  \vfill\eject
+  \null\vskip3em
+  \noindent
+  \ifx\doingappendix0%
+    \hbox{\bf Chapter #1}\else
+    \hbox{\bf Appendix #1}\fi
+  \vskip 1em
+  \noindent
+  \hbox{\bf\vtop{\hsize=.7\hsize
+    \pretolerance 10000
+    \noindent\raggedright#2}}%
+  \bgroup\let\par\chapterafterskip}
+
+\def\chapterafterskip{\egroup\nobreak\vskip3em \noindent}
+
+\let\doingappendix=0
+\def\appendix{\let\doingappendix=1%
+  \count255=`\A%
+  \advance\count255 by -1
+  \expandafter\edef\csname
+    sectionnumber1\endcsname{\the\count255 }}
+
+\def\tableofcontents{%
+  \openin0=\jobname.toc
+  \ifeof0 \closein0 \else
+  \message{Delete \jobname.toc to regenerate Table of
+    Contents. }%
+  \input \jobname.toc
+  \fi
+  %\csname newwrite\endcsname\tocout
+  %\openout\tocout=\jobname.toc
+}
+
+% numbered footnotes
+
+\newcheapcount\footnotenumber
+
+\ifx\plainfootnote\UNDEFINED
+\let\plainfootnote\footnote
+\fi
+
+\def\numfootnote{\globaladvancecheapcount\footnotenumber 1%
+\bgroup\csname footnotehook\endcsname
+\plainfootnote{$^{\footnotenumber}$}\bgroup
+\edef\recentlabel{\footnotenumber}%
+\aftergroup\egroup
+\let\dummy=}
+
+%
+
+\newcheapcount\bibitemnumber
+
+\def\bibitem{\par\globaladvancecheapcount\bibitemnumber 1%
+\edef\recentlabel{\bibitemnumber}%
+[\bibitemnumber]\label}
+
+% Index generation.
+%
+% Your TeX source contains \index{name} to
+% signal that name should be included in the index.
+% Check the makeindex documentation to see the various
+% ways `name' can be specified, e.g., for subitems, for
+% explicitly specifying the alphabetization for a name
+% involving TeX control sequences, &c.
+%
+% The first run of TeX will create \jobname.idx.
+% makeindex on \jobname[.idx] will create the sorted
+% index \jobname.ind.
+%
+% Use \inputindex (without arguments) to include this
+% sorted index, typically somewhere to the end of your
+% document.  This will produce the items and subitems.
+% It won't produce a section heading however -- you
+% will have to typeset one yourself.
+%
+% Use \printindex instead of \inputindex if you want
+% the section heading ``Index'' automatically generated.
+
+\def\sanitizeidxletters{\def\do##1{\catcode`##1=11 }%
+\do\\\do\$\do\&\do\#\do\^\do\_\do\%\do\~%
+\do\@\do\"\do\!\do\|\do\-\do\ \do\'}
+
+\def\index{%\unskip
+\ifx\indexout\UNDEFINED
+\csname newwrite\endcsname\indexout
+\openout\indexout \jobname.idx\fi
+\begingroup
+\sanitizeidxletters
+\indexI}
+
+\def\indexI#1{\endgroup
+\write\indexout{\string\indexentry{#1}{\folio}}%
+\ignorespaces
+}
+
+% The following index style indents subitems on a
+% separate lines
+
+\def\theindex{\begingroup
+\parskip0pt \parindent0pt
+\def\indexitem##1{\par\hangindent30pt \hangafter1
+\hskip ##1 }%
+\def\item{\indexitem{0em}}%
+\def\subitem{\indexitem{2em}}%
+\def\subsubitem{\indexitem{4em}}%
+\let\indexspace\medskip}
+
+\def\endtheindex{\endgroup}
+
+% \packindex declares that subitems be bundled into one
+% semicolon-separated paragraph
+
+\def\packindex{%
+%
+\def\theindex{\begingroup
+\parskip0pt \parindent0pt
+\def\item{\par\hangindent20pt \hangafter1 }%
+\def\subitem{\unskip; }%
+\def\subsubitem{\unskip; }%
+\let\indexspace\medskip}%
+%
+}
+
+\def\inputindex{%
+\openin0 \jobname.ind
+\ifeof0 \closein0
+\write16{*** Use makeindex to generate index file.}%
+\else\closein0
+\begingroup
+\def\begin##1{\csname##1\endcsname}%
+\def\end##1{\csname end##1\endcsname}%
+\input\jobname.ind
+\endgroup
+\fi}
+
+\def\printindex{\csname beginsection\endcsname Index\par
+\inputindex}
+
+%
+
+\def\italiccorrection{\futurelet\italiccorrectionII
+  \italiccorrectionIII}
+
+\def\italiccorrectionIII{%
+  \if\noexpand\italiccorrectionII,\else
+  \if\noexpand\italiccorrectionII.\else
+  \/\fi\fi}
+
+\def\em{\it\ifmmode\else\aftergroup\italiccorrection\fi}
+
+%\def\emph{\bgroup\it
+%  \ifmmode\else\aftergroup\italiccorrection\fi
+%  \let\dummy=}
+
+\def\itemize{\par\begingroup
+  \advance\leftskip 1.5em
+  \smallbreak
+  \def\item{\smallbreak$\bullet$\enspace\ignorespaces}}
+
+\def\enditemize{\smallbreak\smallbreak\endgroup\par}
+
+\def\enumerate{\par\begingroup
+  \newcheapcount\enumeratenumber
+  \advance\leftskip 1.5em
+  \smallbreak
+  \def\item{\smallbreak
+    \advancecheapcount\enumeratenumber1%
+    {\bf \enumeratenumber.}\enspace\ignorespaces}}
+
+\def\endenumerate{\smallbreak\smallbreak\endgroup\par}
+
+\endtexonly
+
+%eof

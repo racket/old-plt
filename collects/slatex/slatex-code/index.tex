@@ -1,0 +1,110 @@
+% Webpage introduction to SLaTeX
+
+\input tex2html
+
+\gifpreamble
+\magnification\magstep1
+\endgifpreamble
+
+\title{SLaTeX}
+
+\subject{SLaTeX}
+
+\centerline{\urlh{slatex.tar.gz}{[Download version \input version ]}}
+
+\smallskip
+
+\centerline{Dorai Sitaram}
+\centerline{\urlh{mailto:ds26@gte.com}{ds26@gte.com}}
+
+\bigskip
+
+SLaTeX is a Scheme program that allows you to write program
+code (or code fragments) ``as is'' in your LaTeX or plain
+TeX source.  SLaTeX will typeset the code with appropriate
+fonts for the various token categories --- e.g., boldface
+for keywords and italics for variables ---, at the same time
+retaining the proper indentations and vertical alignments in
+TeX's non-monospace fonts.
+
+For example, consider a LaTeX file \p{example.tex}
+with the following contents:
+
+\verbatim+
+\documentclass{article}
+\usepackage{slatex}
+\begin{document}
+
+In Scheme, the assignment expression \scheme|(set! answer 42)|
+returns an unspecified value, rather than \scheme'42'.  We
+could define a more Common-Lisp-like assignment operator as
+follows:
+
+\begin{schemedisplay}
+(define-syntax setq
+  (syntax-rules ()
+    [(setq var val)
+     (begin (set! var val)
+            var)]))
+\end{schemedisplay}
+
+\end{document}
++
+
+When run through SLaTeX, the resulting \p{example.dvi} file
+looks as follows:
+
+\hr
+
+\htmlonly
+\rawhtml{
+In Scheme, the assignment expression
+<code>(<strong>set!</strong> <em>answer</em> 42)</code>
+returns an unspecified value, rather than <code>42</code>.
+We could define a more Common-Lisp-like assignment operator
+as follows:<p>
+
+<pre>
+(<strong>define-syntax setq</strong>
+  (<strong>syntax-rules</strong> ()
+    [(<strong>setq</strong> <em>var val</em>)
+     (<strong>begin</strong> (<strong>set!</strong> <em>var val</em>)
+            <em>var</em>)]))
+</pre>
+}\endhtmlonly
+
+\hr
+
+As the example shows, {\it in-text\/} code is introduced by
+the control sequence \p{\scheme} and is flanked by either
+identical characters or by matching braces.  Code meant for
+{\it display\/} is presented between
+\p{\begin{schemedisplay}} and
+\p{\end{schemedisplay}}.  Note that you write the code
+as you would when writing a program  --- no special
+annotation is needed to get the typeset version.
+
+SLaTeX recognizes the usual tokens of Scheme (or Common
+Lisp, using an alternate suite that is provided in the
+distribution).  It can also automatically learn about new
+keywords as it comes across code containing macro
+definitions (as for \p{setq} above).
+
+Easy user commands are available for making SLaTeX recognize
+a different default suite of tokens, or to employ different
+font assignments.  In addition, the user can have SLaTeX
+typeset certain identifiers as arbitrary TeX expressions
+(e.g., \p{lambda} as the Greek letter $\lambda$).  More
+comprehensive documentation of all that is possible with
+SLaTeX is provided in the distribution.
+
+Although SLaTeX is written in Scheme, a configuration
+option is provided to make it run on Common Lisp.
+SLaTeX has tested successfully on many different Scheme
+and Common Lisp dialects, viz., Allegro Common Lisp,
+Austin Kyoto Common Lisp, Bigloo, Chez Scheme, CLISP,
+Elk, Gambit, Gnu Common Lisp, Guile, Ibuki Common Lisp,
+Macintosh Common Lisp, MIT Scheme, MzScheme,
+Scheme{\tt->}C, SCM, UMB Scheme, and VSCM.
+
+\bye

@@ -1,0 +1,1 @@
+(require-library "slatexsrc.scm" "slatex" "slatex-code")

@@ -1,0 +1,12 @@
+;mzschemeunix.cfg
+;sample config.dat for MzScheme on Unix
+
+mzscheme
+mac-os
+#f
+#f
+#f
+#f
+#f
+#f
+#f

@@ -172,7 +172,7 @@
                                                 child-name-length)
                                      child-mailbox-name)])
                            (if flat-mailbox?
-                               (make-flat-folder child-mailbox-name short-name)
+                               (make-flat-folder child-mailbox-name short-name #t)
                                (make-deep-folder 
                                 child-mailbox-name
                                 short-name

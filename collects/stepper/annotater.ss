@@ -22,18 +22,6 @@
   
   (define closure-temp (gensym "closure-temp-"))
   
-  ; list-partition takes a list and a number, and returns two lists; the first one contains the
-  ; first n elements of the list, and the second contains the remainder.  If n is greater than
-  ; the length of the list, the exn:application:mismatch exception is raised.
-  
-  (define (list-partition lst n)
-    (if (= n 0)
-        (values null lst)
-        (if (null? lst)
-            (list-ref lst 0) ; cheap way to generate exception
-            (let-values ([(first rest) (list-partition (cdr lst) (- n 1))])
-              (values (cons (car lst) first) rest)))))
-  
   ; dual-map : (('a -> (values 'b 'c)) ('a list)) -> (values ('b list) ('c list))
   
   (define (dual-map f . lsts)

@@ -5,7 +5,7 @@
            (lib "list.ss"))
   
   (provide make-world
-           test-layout)
+           demo-world)
 
   (define cell-size 32)
   
@@ -150,7 +150,7 @@
       
   (define world-unit
     (unit
-      (import layout)
+      (import world-width world-height start-x start-y layout)
       (export)
       
       (define y-speed 0)
@@ -336,8 +336,8 @@
           [style '(hide-hscroll hide-vscroll)]))
       
       ;; Kindof a hack: we know that the canvas adds a 5-pixel border:
-      (send c min-client-width (+ 10 (* 15 cell-size)))
-      (send c min-client-height (+ 10 (* 12 cell-size)))
+      (send c min-client-width (+ 10 (* world-width cell-size)))
+      (send c min-client-height (+ 10 (* world-height cell-size)))
       
       (define (add obj x y)    
         (send pb insert obj (* x cell-size) (* y cell-size)))
@@ -349,16 +349,14 @@
                      [(ground) (mk-ground)])
                    (cadr i)
                    (caddr i)))
-                (cddr layout))
+                layout)
       
-      (add (mk-person) (car layout) (cadr layout))
+      (add (mk-person) start-x start-y)
       
       (send f show #t)))
   
-  (define test-layout
-    `(3 ;; person location 
-      7
-      (rock 0 10)
+  (define demo-layout
+    `((rock 0 10)
       (rock 0 9)
       (rock 0 8)
       (rock 19 10)
@@ -376,7 +374,10 @@
                null
                (loop (add1 i)))))))
     
-  (define (make-world layout)
-    (invoke-unit world-unit layout))
+  (define (make-world world-width world-height layout start-x start-y)
+    (invoke-unit world-unit world-width world-height start-x start-y layout))
   
-  '(make-world test-layout))
+  (define (demo-world)
+    (make-world 15 12 demo-layout 3 7))
+  
+  '(demo-world))

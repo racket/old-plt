@@ -1,4 +1,3 @@
-(require (lib "plot.ss" "plplot"))
+(require (lib "plot.ss" "plot"))
 
-(plot '() 
-      (line (lambda (x) (sin x))))
+(plot (line (lambda (x) (sin x))))

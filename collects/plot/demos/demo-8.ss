@@ -1,6 +1,8 @@
-(require (lib "plot.ss" "plplot"))
+(require (lib "plot.ss" "plot"))
 
 (define (trig x y) (* (sin x) (sin y)))
+
+
 (plot (mix*
        (shade trig)
        (contour trig)

@@ -1,4 +1,4 @@
-(require (lib "plot.ss" "plplot"))
+(require (lib "plot.ss" "plot"))
 
-(plot '() 
-      (line (lambda (x) x) '((color red))))
+(plot 
+ (line identity '((color red))))

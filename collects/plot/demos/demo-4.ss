@@ -1,4 +1,5 @@
-(require (lib "plot.ss" "plplot"))
+(require (lib "plot.ss" "plot"))
 
-(plot '((title "gradient field of F(x,y) = sin(x) * sin(y)"))
-      (field (gradient (lambda (x y) (* (sin x) (cos y)))) '((samples 25))))
+(plot 
+ (field (gradient (lambda (x y) (* (sin x) (cos y)))) '((samples 25)))
+ (title "gradient field of F(x,y) = sin(x) * sin(y)"))

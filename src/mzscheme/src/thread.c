@@ -570,7 +570,10 @@ static Scheme_Object *custodian_require_mem(int argc, Scheme_Object *args[])
     return NULL;
   }
 
-  scheme_check_proc_arity("custodian-require-memory", 0, 1, argc, args);
+  if(NOT_SAME_TYPE(SCHEME_TYPE(args[1]), scheme_custodian_type)) {
+    scheme_wrong_type("custodian-require-memory", "custodian", 1, argc, args);
+    return NULL;
+  }
 
 #ifdef MZ_PRECISE_GC
   if (GC_set_account_hook(MZACCT_REQUIRE, NULL, lim, args[1]))
@@ -599,7 +602,10 @@ static Scheme_Object *custodian_limit_mem(int argc, Scheme_Object *args[])
     scheme_wrong_type("custodian-limit-memory", "positive exact integer", 1, argc, args);
   }
 
-  scheme_check_proc_arity("custodian-limit-memory", 0, 2, argc, args);
+  if(NOT_SAME_TYPE(SCHEME_TYPE(args[2]), scheme_custodian_type)) {
+    scheme_wrong_type("custodian-require-memory", "custodian", 2, argc, args);
+    return NULL;
+  }
 
 #ifdef MZ_PRECISE_GC
   if (GC_set_account_hook(MZACCT_LIMIT, args[0], SCHEME_INT_VAL(args[1]), args[2]))

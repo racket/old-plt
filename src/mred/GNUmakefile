@@ -148,11 +148,13 @@ install:
 # Sanity checks for Precise GC #
 ################################
 
-XFORM = ../mzscheme/$(MZBUILDDIR)mzscheme -rq ../mzscheme/gc2/xform.ss "gcc -E $(INC) -I$(WXDIR)/src/XWidgets $(XINCLUDE)"
+XFORM = ../mzscheme/$(MZBUILDDIR)mzscheme -rq ../mzscheme/gc2/xform.ss "gcc -E $(INC) -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src $(XINCLUDE)"
 
 test:
 	$(MAKE)
 	$(MAKE) xform
 
 xform:
-	$(XFORM) $(WXDIR)/src/Windows/Window.cc gc2/Window.cc
+	# $(XFORM) $(WXDIR)/src/Windows/Window.cc gc2/Window.cc
+	# $(XFORM) $(WXDIR)/src/DeviceContexts/WindowDC.cc gc2/WindowDC.cc
+	$(XFORM) wxme/wx_media.cxx gc2/wx_media.cc

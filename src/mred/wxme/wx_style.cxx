@@ -51,6 +51,10 @@ wxStyleList *wxTheStyleList;
 
 static wxColour *whiteColour, *blackColour;
 
+#ifndef wx_x
+# define wxAPP_CLASS wxTheApp->wx_class
+#endif
+
 void wxInitStyles(void)
 {
   if (wxTheStyleList)
@@ -59,9 +63,7 @@ void wxInitStyles(void)
   whiteColour = wxTheColourDatabase->FindColour("WHITE");
   blackColour = wxTheColourDatabase->FindColour("BLACK");
 
-#if USE_RESOURCES
-  wxGetResource(wxTheApp->wx_class, "defaultFontSize", &defaultSize);
-#endif
+  wxGetResource(wxAPP_CLASS, "defaultFontSize", &defaultSize);
 
   wxTheStyleList = new wxStyleList;
 }

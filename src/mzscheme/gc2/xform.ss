@@ -382,6 +382,8 @@
     e]
    [(access-modifier? e)
     (list* (car e) (cadr e) (top-level (cddr e) where))]
+   [(friend? e)
+    e]
    [(prototype? e) 
     (let ([name (register-proto-information e)])
       (when label? (printf "/* PROTO ~a */~n" name)))
@@ -450,6 +452,9 @@
 (define (access-modifier? e)
   (and (memq (tok-n (car e)) '(public private protected))
        (eq? (tok-n (cadr e)) ':)))
+
+(define (friend? e)
+  (memq (tok-n (car e)) '(friend)))
 
 (define (prototype? e)
   (let ([l (length e)])

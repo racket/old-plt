@@ -219,15 +219,7 @@ wxMediaEdit::~wxMediaEdit()
     delete snip;
   }
 
-  delete lineRoot;
-
   clickbacks->DeleteContents(TRUE);
-  delete clickbacks;
-
-  if (tabs)
-    delete[] tabs;
-
-  delete snipAdmin;
 }
 
 wxMediaBuffer *wxMediaEdit::CopySelf(void)
@@ -262,11 +254,15 @@ void wxMediaEdit::CopySelfTo(wxMediaBuffer *b)
   wxMediaBuffer::CopySelfTo(m);
 
   if (!m->LastPosition()) {
+    wxStyle *bs;
     /* Make sure only snip in m has a good style (since we called
        m->styleList->Copy() in wxMediaBuffer::CopySelfTo). */
-    m->snips->style = m->styleList->FindNamedStyle(STD_STYLE);
-    if (!m->snips->style)
-      m->snips->style = m->styleList->BasicStyle();
+    bs = m->styleList->FindNamedStyle(STD_STYLE);
+    m->snips->style = bs;
+    if (!m->snips->style) {
+      bs = m->styleList->BasicStyle();
+      m->snips->style = bs;
+    }
   }
 
   m->SetFileFormat(GetFileFormat());
@@ -548,7 +544,11 @@ void wxMediaEdit::OnDefaultChar(wxKeyEvent *event)
   case WXK_END:
   case WXK_PRIOR:
   case WXK_NEXT:
-    MovePosition(code, event->ShiftDown());
+    {
+      int isshift;
+      isshift = event->ShiftDown();
+      MovePosition(code, isshift);
+    }
     break;
   case WXK_RETURN:
   case WXK_TAB:
@@ -815,10 +815,16 @@ void wxMediaEdit::GetVisiblePositionRange(long *start, long *end)
     return;
 
   admin->GetMaxView(&x, &y, &w, &h);
-  if (start)
-    *start = FindPosition(x, y);
-  if (end)
-    *end = FindPosition(x + w, y + h);
+  if (start) {
+    long s;
+    s = FindPosition(x, y);
+    *start = s;
+  }
+  if (end) {
+    long e;
+    e = FindPosition(x + w, y + h);
+    *end = e;
+  }
 }
 
 void wxMediaEdit::GetVisibleLineRange(long *start, long *end)
@@ -829,10 +835,16 @@ void wxMediaEdit::GetVisibleLineRange(long *start, long *end)
     return;
 
   admin->GetMaxView(&x, &y, &w, &h);
-  if (start)
-    *start = FindLine(y);
-  if (end)
-    *end = FindLine(y + h);
+  if (start) {
+    long s;
+    s = FindLine(y);
+    *start = s;
+  }
+  if (end) {
+    long e;
+    e = FindLine(y + h);
+    *end = e;
+  }
 }
 
 void wxMediaEdit::MovePosition(long code, Bool extendSelection,
@@ -1195,7 +1207,8 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
     if (!len) {
       /* Special case: ignore the empty snip */
       snips = lastSnip = isnip;
-      isnip->line = lineRoot = new wxMediaLine;
+      lineRoot = new wxMediaLine;
+      isnip->line = lineRoot;
       lineRoot->snip = lineRoot->lastSnip = isnip;
       if (maxWidth > 0)
 	lineRoot->MarkCheckFlow();
@@ -1257,7 +1270,8 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
       }
     }
 
-    isnip->style = styleList->Convert(isnip->style);  
+
+    isnip->style = styleList->Convert(isnip->style);
     isnip->SizeCacheInvalid();
 
     isnip->line->CalcLineLength();
@@ -1274,9 +1288,11 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
     flowLocked = TRUE;
 
     if (!len) {
-      snip = InsertTextSnip(start, (stickyStyles 
-				    ? snips->style 
-				    : styleList->FindNamedStyle(STD_STYLE)));
+      wxStyle *style;
+      style = (stickyStyles 
+	       ? snips->style 
+	       : styleList->FindNamedStyle(STD_STYLE));
+      snip = InsertTextSnip(start, style);
       sPos = 0;
       caretStyle = NULL;
       lineRoot->snip = lineRoot->lastSnip = snip;
@@ -1291,22 +1307,23 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 	  || (gsnip->count + addlen > MAX_COUNT_FOR_SNIP)
 	  || (!stickyStyles
 	      && (gsnip->style != styleList->FindNamedStyle(STD_STYLE)))) {
-	snip = InsertTextSnip(start,
-			      caretStyle
-			      ? caretStyle
-			      : (stickyStyles
-				 ? (gsnip
-				    ? gsnip->style
-				    : snips->style) // No style: use forward
-				 : styleList->FindNamedStyle(STD_STYLE)));
+	style = (caretStyle
+		 ? caretStyle
+		 : (stickyStyles
+		    ? (gsnip
+		       ? gsnip->style
+		       : snips->style) // No style: use forward
+		    : styleList->FindNamedStyle(STD_STYLE)));
+	snip = InsertTextSnip(start, style);
 	caretStyle = NULL;
 	sPos = start;
       } else {
 	snip = (wxTextSnip *)gsnip;
 	if (!(snip->flags & wxSNIP_CAN_APPEND)) {
-	  snip = InsertTextSnip(start, (stickyStyles
-					? snip->style
-					: styleList->FindNamedStyle(STD_STYLE)));
+	  style = (stickyStyles
+		   ? snip->style
+		   : styleList->FindNamedStyle(STD_STYLE));
+	  snip = InsertTextSnip(start, style);
 	  sPos = start;
 	}
       }
@@ -1406,13 +1423,14 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 		snip->line->next->SetStartsParagraph(TRUE);
 	  }
 	} else {
+	  wxSnip *rsnip;
 	  tabsnip = OnNewTabSnip();
 	  if (tabsnip->IsOwned() || tabsnip->count) {
 	    /* Uh-oh. */
 	    tabsnip = new wxTabSnip();
 	  }
 	  tabsnip->style = snip->style;
-	  wxSnip *rsnip = SnipSetAdmin(tabsnip, snipAdmin);
+	  rsnip = SnipSetAdmin(tabsnip, snipAdmin);
 	  if (rsnip!= tabsnip) {
 	    /* Uh-oh. */
 	    tabsnip = new wxTabSnip();
@@ -1460,10 +1478,12 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
   if (!modified)
     AddUndo(new wxUnmodifyRecord);
   if (!noundomode) {
-    AddUndo(new wxInsertRecord(start, addlen, 
-			       deleted || typingStreak || delayedStreak
-			       || insertForceStreak
-			       || !modified));
+    wxInsertRecord *ir;
+    ir = new wxInsertRecord(start, addlen, 
+			    deleted || typingStreak || delayedStreak
+			    || insertForceStreak
+			    || !modified);
+    AddUndo(ir);
   }
 
   if (delayRefresh)
@@ -1950,7 +1970,8 @@ void wxMediaEdit::InsertPasteSnip(wxSnip *snip, wxBufferData *data)
 
   Insert(snip, readInsert);
   if (data) {
-    wxSnip *fsnip = FindSnip(readInsert, +1);
+    wxSnip *fsnip;
+    fsnip = FindSnip(readInsert, +1);
     SetSnipData(fsnip, data);
   }
   readInsert += addpos;
@@ -1966,13 +1987,14 @@ void wxMediaEdit::InsertPasteString(char *str)
 #ifdef wx_msw
   /* Change cr/lf to just lf: */
   int i, offset = 0;
-  for (i = 0; str[i]; i++)
+  for (i = 0; str[i]; i++) {
     if (str[i] == '\r' && str[i + 1] == '\n') {
       str[i + offset] = '\n';
       i++;
       --offset;
     } else if (offset)
       str[i + offset] = str[i];
+  }
   str[i + offset] = 0;
 #endif
 
@@ -2027,7 +2049,8 @@ void wxMediaEdit::Kill(long time, long start, long end)
 
   BeginEditSequence();
   if (start < 0) {
-    int newend = ParagraphEndPosition(PositionParagraph(endpos, posateol));
+    int newend;
+    newend = ParagraphEndPosition(PositionParagraph(endpos, posateol));
 
     if (startpos == newend)
       SetPosition(startpos, startpos + 1);
@@ -2630,6 +2653,7 @@ float wxMediaEdit::GetMaxHeight()
 Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
 {
   FILE *f;
+  Bool fileerr;
 
   if (writeLocked)
     return FALSE;
@@ -2666,7 +2690,11 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
     return FALSE;
   }
 
-  f = fopen(wxmeExpandFilename(file), "rb");
+  {
+    char *fn;
+    fn = wxmeExpandFilename(file);
+    f = fopen(fn, "rb");
+  }
   
   if (!f) {
     if (showErrors)
@@ -2686,7 +2714,7 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
   if (format == wxMEDIA_FF_SAME)
     format = fileFormat;
 
-  Bool fileerr = !InsertFile(f, file, &format, loadoverwritesstyles, showErrors);
+  fileerr = !InsertFile(f, file, &format, loadoverwritesstyles, showErrors);
 
   fileFormat = format;
 
@@ -2712,7 +2740,11 @@ Bool wxMediaEdit::InsertFile(char *file, int format, Bool showErrors)
   if (writeLocked)
     return FALSE;
 
-  f = fopen(wxmeExpandFilename(file), "rb");
+  {
+    char *fn;
+    fn = wxmeExpandFilename(file);
+    f = fopen(fn, "rb");
+  }
   
   if (!f)
     return FALSE;
@@ -2838,6 +2870,7 @@ Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int *format, Bool cl
 Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
 {
   Bool no_set_filename, fileerr;
+  FILE *f;
 
   if (readLocked)
     return FALSE;
@@ -2886,8 +2919,12 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
 
   /* Always open in binary mode, because flattened text
      gets cr/lf as appropriate */
-  FILE *f = fopen(wxmeExpandFilename(file), "wb");
-
+  {
+    char *fn;
+    fn = wxmeExpandFilename(file);
+    f = fopen(fn, "wb");
+  }
+  
   if (!f) {
     if (showErrors)
       wxmeError("Couldn't write the file.");
@@ -2904,7 +2941,8 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
   fileerr = FALSE;
 
   if (format == wxMEDIA_FF_TEXT || format == wxMEDIA_FF_TEXT_FORCE_CR) {
-    char *s = GetText(-1, -1, TRUE, format == wxMEDIA_FF_TEXT_FORCE_CR);
+    char *s;
+    s = GetText(-1, -1, TRUE, format == wxMEDIA_FF_TEXT_FORCE_CR);
     fwrite(s, 1, strlen(s), f);
     fileerr = ferror(f);
     if (fclose(f)) {
@@ -2912,14 +2950,13 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
 	wxmeError("There was an error closing the file.");
       fileerr = TRUE;
     }
-    delete[] s;
   } else {
+    wxMediaStreamOutFileBase *b;
+    wxMediaStreamOut *mf;
+
     fwrite(MRED_START_STR, 1, MRED_START_STR_LEN, f);
     fwrite(MRED_FORMAT_STR, 1, MRED_FORMAT_STR_LEN, f);
     fwrite(MRED_VERSION_STR, 1, MRED_VERSION_STR_LEN, f);    
-
-    wxMediaStreamOutFileBase *b;
-    wxMediaStreamOut *mf;
 
     b = new wxMediaStreamOutFileBase(f);
     mf = new wxMediaStreamOut(b);
@@ -2957,6 +2994,8 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
 
 Bool wxMediaEdit::ReadFromFile(wxMediaStreamIn *f, long start, Bool overwritestyle)
 {
+  Bool result;
+
   if (writeLocked)
     return FALSE;
 
@@ -2970,7 +3009,7 @@ Bool wxMediaEdit::ReadFromFile(wxMediaStreamIn *f, long start, Bool overwritesty
 
   readInsert = start;
 
-  Bool result = ReadSnipsFromFile(f, overwritestyle);
+  result = ReadSnipsFromFile(f, overwritestyle);
 
   if (!LastPosition()) {
     /* We probably destructively changed the style list. Reset the dummy snip. */
@@ -3055,10 +3094,10 @@ void wxMediaEdit::SetFilename(char *name, Bool temp)
 {
   wxSnip *snip;
   Bool wl, fl;
+  char *fn;
 
-  if (filename)
-    delete[] filename;
-  filename = name ? copystring(name) : (char *)NULL;
+  fn = (name ? copystring(name) : (char *)NULL);
+  filename = fn;
   tempFilename = temp;
 
   wl = writeLocked;
@@ -3369,6 +3408,8 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
 
 
   if (x) {
+    int xv;
+
     if (start && !dc) {
       dc = admin->GetDC();
       if (!dc) {
@@ -3378,7 +3419,8 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
       }
     }
       
-    *x = horiz + (start ? snip->PartialOffset(dc, horiz, topy, start) : 0);
+    xv = horiz + (start ? snip->PartialOffset(dc, horiz, topy, start) : 0);
+    *x = xv;
   }
 
   if (!wholeLine && y) {
@@ -3448,10 +3490,15 @@ long wxMediaEdit::LineStartPosition(long i, Bool visibleOnly)
     i = numValidLines - 1;
   }
 
-  if (visibleOnly)
-    return FindFirstVisiblePosition(lineRoot->FindLine(i));
-  else
-    return lineRoot->FindLine(i)->GetPosition();
+  if (visibleOnly) {
+    wxMediaLine *line;
+    line = lineRoot->FindLine(i);
+    return FindFirstVisiblePosition(line);
+  } else {
+    wxMediaLine *line;
+    line = lineRoot->FindLine(i);
+    return line->GetPosition();
+  }
 }
 
 long wxMediaEdit::LineEndPosition(long i, Bool visibleOnly)
@@ -3752,15 +3799,17 @@ long wxMediaEdit::FindString(char *str, int direction, long start, long end,
 long *wxMediaEdit::FindStringAll(char *str, long *cnt, int direction,
 				long start, long end, Bool bos, Bool caseSens)
 {
-  long *positions;
+  long *positions, cntv;
 
   if (!CheckRecalc(FALSE, FALSE)) {
     *cnt = 0;
     return NULL;
   }
 
-  *cnt = _FindStringAll(str, direction, start, end, &positions, FALSE,
+  cntv = _FindStringAll(str, direction, start, end, &positions, FALSE,
 			bos, caseSens);
+  *cnt = cntv;
+
   if (*cnt < 0) {
     *cnt = 0;
     positions = NULL;
@@ -3816,7 +3865,7 @@ void wxMediaEdit::SetStyleList(wxStyleList *newList)
   wxSnip *snip;
   wxStyle *style, *baseStyle, *newStyle = NULL;
   int count, index, baseIndex;
-  wxStyle **map;
+  wxStyle **smap;
   wxStyleDelta delta;
   char *name;
 
@@ -3825,8 +3874,8 @@ void wxMediaEdit::SetStyleList(wxStyleList *newList)
 
   count = styleList->Number();
   if (count) {
-    map = new wxStyle*[count];
-    map[0] = newList->IndexToStyle(0); /* base style maps to base style */
+    smap = new (wxStyle*)[count];
+    smap[0] = newList->IndexToStyle(0); /* base style maps to base style */
     for (index = 1; index < count; index++) {
       style = styleList->IndexToStyle(index);
       name = style->GetName();
@@ -3836,19 +3885,20 @@ void wxMediaEdit::SetStyleList(wxStyleList *newList)
 	baseIndex = styleList->StyleToIndex(baseStyle);
 	
 	if (style->IsJoin()) {
-	  int shiftIndex = styleList->StyleToIndex(style->GetShiftStyle());
+	  int shiftIndex;
+	  shiftIndex = styleList->StyleToIndex(style->GetShiftStyle());
 	  
-	  newStyle = newList->FindOrCreateJoinStyle(map[baseIndex], map[shiftIndex]);
+	  newStyle = newList->FindOrCreateJoinStyle(smap[baseIndex], smap[shiftIndex]);
 	} else {
 	  style->GetDelta(&delta);
 	  
-	  newStyle = newList->FindOrCreateStyle(map[baseIndex], &delta);
+	  newStyle = newList->FindOrCreateStyle(smap[baseIndex], &delta);
 	}
 	if (name)
 	  newStyle = newList->NewNamedStyle(name, newStyle);
       }
       
-      map[index] = newStyle;
+      smap[index] = newStyle;
     }
     
     for (snip = snips; snip; snip = snip->next) {
@@ -3856,9 +3906,9 @@ void wxMediaEdit::SetStyleList(wxStyleList *newList)
       index = styleList->StyleToIndex(style);
       if (index < 0) {
 	/* Bad! Snip had style not from this buffer's style list */
-	snip->style = map[0];
+	snip->style = smap[0];
       } else
-	snip->style = map[index];
+	snip->style = smap[index];
     }
   }
 

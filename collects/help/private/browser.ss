@@ -8,7 +8,7 @@
   (define (help-desk-navigate url)
     (if (eq? (system-type) 'windows)
 	(shell-execute #f url "" (current-directory) 'SW_SHOWNORMAL)
-	(send-url url #f)))
+	(send-url url #t)))
 
   (define (help-desk-browser hd-cookie)
     (help-desk-navigate 

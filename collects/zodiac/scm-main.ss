@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.171 1999/02/03 23:07:10 mflatt Exp $
+; $Id: scm-main.ss,v 1.172 1999/02/04 14:32:54 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -176,7 +176,9 @@
 
   (define (get-expr-pattern begin?)
     (if begin?
-	'(expr ...)
+	(if (eq? begin? 'optional)
+	    '(expr ...)
+	    '(expr0 expr ...))
 	'(expr)))
 
   (define parse-expr
@@ -1356,8 +1358,8 @@
 
   (define (make-cond-micro cond-clause-vocab allow-empty?)
     (let* ((kwd '())
-	    (in-pattern '(_ bodies ...))
-	    (m&e (pat:make-match&env in-pattern kwd)))
+	   (in-pattern '(_ bodies ...))
+	   (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env attributes vocab)
 	(cond
 	  ((pat:match-against m&e expr env)
@@ -1416,24 +1418,24 @@
 
   (define case-macro
       (let* ((kwd-1 '(else))
-	      (in-pattern-1 '(_ val (else b0 b ...)))
-	      (out-pattern-1 '(begin val b0 b ...))
-	      (kwd-2 '())
-	      (in-pattern-2 '(_ val))
-	      (out-pattern-2-signal-error
-		`(#%raise (#%make-exn:else
-			    "no matching else clause"
-			    ,debug-info-handler-expression)))
-	      (out-pattern-2-no-error
-		'(begin val (#%void)))
-	      (in-pattern-3 '(_ val ((keys ...) b0 b ...) rest ...))
-	      (out-pattern-3 '(let ((tmp val))
-				(if (#%memv tmp (quote (keys ...)))
-				  (begin b0 b ...)
-				  (case tmp rest ...))))
-	      (m&e-1 (pat:make-match&env in-pattern-1 kwd-1))
-	      (m&e-2 (pat:make-match&env in-pattern-2 kwd-2))
-	      (m&e-3 (pat:make-match&env in-pattern-3 kwd-2)))
+	     (in-pattern-1 `(_ val (else ,@(get-expr-pattern #t))))
+	     (out-pattern-1 `(begin val ,@(get-expr-pattern #t)))
+	     (kwd-2 '())
+	     (in-pattern-2 '(_ val))
+	     (out-pattern-2-signal-error
+	      `(#%raise (#%make-exn:else
+			 "no matching else clause"
+			 ,debug-info-handler-expression)))
+	     (out-pattern-2-no-error
+	      '(begin val (#%void)))
+	     (in-pattern-3 `(_ val ((keys ...) ,@(get-expr-pattern #t)) rest ...))
+	     (out-pattern-3 `(let ((tmp val))
+			       (if (#%memv tmp (quote (keys ...)))
+				   (begin ,@(get-expr-pattern #t))
+				   (case tmp rest ...))))
+	     (m&e-1 (pat:make-match&env in-pattern-1 kwd-1))
+	     (m&e-2 (pat:make-match&env in-pattern-2 kwd-2))
+	     (m&e-3 (pat:make-match&env in-pattern-3 kwd-2)))
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd-1 env)
 	    (if (compile-allow-cond-fallthrough)
@@ -1449,40 +1451,40 @@
 
   (define evcase-macro
       (let* ((kwd-1 '(else))
-	      (in-pattern-1 '(_ val (else b ...)))
-	      (out-pattern-1 '(begin val b ...))
-	      (kwd-2 '())
-	      (in-pattern-2 '(_ val))
-	      (out-pattern-2-signal-error
-		`(#%raise (#%make-exn:else
-			    "no matching else clause"
-			    ,debug-info-handler-expression)))
-	      (out-pattern-2-no-error
-		'(begin val (#%void)))
-	      (kwd-3 '(else))
-	      (in-pattern-3 '(_ val (else b ...) rest))
-	      (kwd-4 '())
-	      (in-pattern-4 '(_ val (test-expr b ...) rest ...))
-	      (out-pattern-4 '(let ((tmp val))
-				(if (#%eqv? tmp test-expr)
-				  (begin b ...)
-				  (evcase tmp rest ...))))
-	      (m&e-1 (pat:make-match&env in-pattern-1 kwd-1))
-	      (m&e-2 (pat:make-match&env in-pattern-2 kwd-2))
-	      (m&e-3 (pat:make-match&env in-pattern-3 kwd-3))
-	      (m&e-4 (pat:make-match&env in-pattern-4 kwd-4)))
+	     (in-pattern-1 `(_ val (else ,@(get-expr-pattern #t))))
+	     (out-pattern-1 `(begin val ,@(get-expr-pattern #t)))
+	     (kwd-2 '())
+	     (in-pattern-2 '(_ val))
+	     (out-pattern-2-signal-error
+	      `(#%raise (#%make-exn:else
+			 "no matching else clause"
+			 ,debug-info-handler-expression)))
+	     (out-pattern-2-no-error
+	      '(begin val (#%void)))
+	     (kwd-3 '(else))
+	     (in-pattern-3 `(_ val (else ,@(get-expr-pattern #t)) rest))
+	     (kwd-4 '())
+	     (in-pattern-4 `(_ val (test-expr ,@(get-expr-pattern #t)) rest ...))
+	     (out-pattern-4 `(let ((tmp val))
+			       (if (#%eqv? tmp test-expr)
+				   (begin ,@(get-expr-pattern #t))
+				   (evcase tmp rest ...))))
+	     (m&e-1 (pat:make-match&env in-pattern-1 kwd-1))
+	     (m&e-2 (pat:make-match&env in-pattern-2 kwd-2))
+	     (m&e-3 (pat:make-match&env in-pattern-3 kwd-3))
+	     (m&e-4 (pat:make-match&env in-pattern-4 kwd-4)))
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd-1 env)
-	    (if (compile-allow-cond-fallthrough)
-	      (pat:match-and-rewrite expr m&e-2
-		out-pattern-2-no-error kwd-2 env)
-	      (pat:match-and-rewrite expr m&e-2
-		out-pattern-2-signal-error kwd-2 env))
-	    (let ((penv (pat:match-against m&e-3 expr env)))
-	      (if penv
-		(static-error expr "else used before last evcase branch")
-		(or (pat:match-and-rewrite expr m&e-4 out-pattern-4 kwd-4 env)
-		  (static-error expr "Malformed evcase"))))))))
+	      (if (compile-allow-cond-fallthrough)
+		  (pat:match-and-rewrite expr m&e-2
+					 out-pattern-2-no-error kwd-2 env)
+		  (pat:match-and-rewrite expr m&e-2
+					 out-pattern-2-signal-error kwd-2 env))
+	      (let ((penv (pat:match-against m&e-3 expr env)))
+		(if penv
+		    (static-error expr "else used before last evcase branch")
+		    (or (pat:match-and-rewrite expr m&e-4 out-pattern-4 kwd-4 env)
+			(static-error expr "Malformed evcase"))))))))
 
   (add-primitivized-macro-form 'evcase advanced-vocabulary evcase-macro)
   (add-on-demand-form 'macro 'evcase common-vocabulary evcase-macro)
@@ -1534,12 +1536,12 @@
       (let* ((in-kwd '())
 	      (in-pattern `(_ (var-init-step ...)
 			     (test seq ...)
-			     ,@(get-expr-pattern #t)))
+			     ,@(get-expr-pattern 'optional)))
 	      (out-pattern `(letrec ((loop
 				       (lambda (var ...)
 					 (if test
 					   (begin (#%void) seq ...)
-					   (begin ,@(get-expr-pattern #t)
+					   (begin ,@(get-expr-pattern 'optional)
 					     (loop step ...))))))
 			      (loop init ...)))
 	      (in-m&e (pat:make-match&env in-pattern in-kwd))
@@ -1557,7 +1559,7 @@
 					p-env in-kwd))
 		       (test (pat:pexpand 'test p-env in-kwd))
 		       (seqs (pat:pexpand '(seq ...) p-env in-kwd))
-		       (body (pat:pexpand `(,@(get-expr-pattern #t))
+		       (body (pat:pexpand `(,@(get-expr-pattern 'optional))
 			       p-env in-kwd)))
 		  (let
 		    ((normalized-var-init-steps
@@ -1600,16 +1602,16 @@
 
   (define fluid-let-macro
       (let* ((kwd '())
-	      (in-pattern `(_ ((var val) ...) body ...))
-	      (m&e (pat:make-match&env in-pattern kwd)))
+	     (in-pattern `(_ ((var val) ...) ,@(get-expr-pattern #t)))
+	     (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env attributes vocab)
 	  (cond
 	    ((pat:match-against m&e expr env)
 	      =>
 	      (lambda (p-env)
 		(let ((vars (pat:pexpand '(var ...) p-env kwd))
-		       (vals (pat:pexpand '(val ...) p-env kwd))
-		       (body (pat:pexpand '(body ...) p-env kwd)))
+		      (vals (pat:pexpand '(val ...) p-env kwd))
+		      (body (pat:pexpand (get-expr-pattern #t) p-env kwd)))
 		  (distinct-valid-syntactic-id/s? vars)
 		  (let* ((new-vars (map generate-name vars)))
 		    (expand-expr
@@ -1638,17 +1640,17 @@
 
   (define parameterize-macro
     (let* ((kwd '())
-	   (in-pattern-1 '(_ () body ...))
-	   (out-pattern-1 '(let-values () body ...))
-	   (in-pattern-2 '(_ ((param value) rest ...) body ...))
-	   (out-pattern-2 '(let* ((pz (#%in-parameterization
+	   (in-pattern-1 `(_ () ,@(get-expr-pattern #t)))
+	   (out-pattern-1 `(let-values () ,@(get-expr-pattern #t)))
+	   (in-pattern-2 `(_ ((param value) rest ...) ,@(get-expr-pattern #t)))
+	   (out-pattern-2 `(let* ((pz (#%in-parameterization
 				       (#%current-parameterization)
 				       param))
 				  (orig (pz)))
 			     (dynamic-wind
 			      (lambda () (pz value))
 			      (lambda () (parameterize (rest ...)
-					   body ...))
+					   ,@(get-expr-pattern #t)))
 			      (lambda () (pz orig)))))
 	   (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	   (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
@@ -1662,36 +1664,34 @@
 
   (define (make-with-handlers-macro begin?)
       (let* ((kwd '())
-	      (in-pattern-1 (if (not begin?)
-			      '(_ () b) 
-			      '(_ () b ...)))
-	      (out-pattern-1 (if (not begin?)
-			       'b 
-			       '(let-values () b ...)))
-	      (in-pattern-2 '(_ ((pred handler) ...) body ...))
-	      (out-pattern-2
-		'((#%call/ec
-		    (lambda (k)
-		      (let ((handlers (#%list
-					(#%cons pred handler)
-					...)))
-			(parameterize
-			  ((#%current-exception-handler
-			     (lambda (e)
-			       (k
-				 (lambda ()
-				   (let loop ((handlers handlers))
-				     (cond
-				       ((#%null? handlers)
-					 (#%raise e))
-				       (((#%caar handlers) e)
-					 ((#%cdar handlers) e))
-				       (else
-					 (loop (#%cdr handlers))))))))))
-			  (#%call-with-values
-			    (lambda () body ...)
-			    (lambda args
-			      (lambda () (#%apply #%values args))))))))))
+	     (in-pattern-1 `(_ () ,@(get-expr-pattern begin?)))
+	     (out-pattern-1 (if (not begin?)
+				'b 
+				`(let-values () ,@(get-expr-pattern begin?))))
+	     (in-pattern-2 `(_ ((pred handler) ...) ,@(get-expr-pattern begin?)))
+	     (out-pattern-2
+	      `((#%call/ec
+		 (lambda (k)
+		   (let ((handlers (#%list
+				    (#%cons pred handler)
+				    ...)))
+		     (parameterize
+			 ((#%current-exception-handler
+			   (lambda (e)
+			     (k
+			      (lambda ()
+				(let loop ((handlers handlers))
+				  (cond
+				   ((#%null? handlers)
+				    (#%raise e))
+				   (((#%caar handlers) e)
+				    ((#%cdar handlers) e))
+				   (else
+				    (loop (#%cdr handlers))))))))))
+		       (#%call-with-values
+			(lambda () ,@(get-expr-pattern begin?))
+			(lambda args
+			  (lambda () (#%apply #%values args))))))))))
 	      (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	      (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
 	(lambda (expr env)

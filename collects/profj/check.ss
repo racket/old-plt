@@ -5,7 +5,7 @@
            "types.ss"
            "parameters.ss"
            "error-messaging.ss"
-           (lib "file.ss")
+           "profj-pref.ss"
            (lib "class.ss")
            (lib "list.ss"))
   (provide check-defs check-interactions-types)
@@ -1222,16 +1222,6 @@
              (build-path (car paths) (apply build-path path)))
             (else (loop (cdr paths)))))))
   
-  ;get-classpath: -> (list string)
-  (define (get-classpath)
-    (cons (build-path 'same)
-          (get-preference 'classpath
-                          (lambda ()
-                            (let ((libs (map (lambda (p) (build-path "profj" "libs"))
-                                             (current-library-collection-paths))))
-                              (put-preferences `(classpath) (list libs))
-                              libs)))))
-
   ;class-exists?: string string -> bool
   (define (class-exists? path class)
     (or (file-exists? (string-append (build-path path class) ".java"))

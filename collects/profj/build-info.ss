@@ -1,7 +1,7 @@
 (module build-info mzscheme
   
   (require (lib "class.ss") (lib "file.ss") (lib "list.ss")
-           "ast.ss" "types.ss" "error-messaging.ss" "parameters.ss" "parser.ss")
+           "ast.ss" "types.ss" "error-messaging.ss" "parameters.ss" "parser.ss" "profj-pref.ss")
 
   (provide build-info build-interactions-info find-implicit-import load-lang)
   
@@ -183,13 +183,7 @@
   (define (find-directory path fail)
     (if (null? path) 
         (list (build-path 'same))
-        (let ((class-path (cons (build-path 'same)
-                                (get-preference 'classpath
-                                                (lambda () 
-                                                  (let ((libs (map (lambda (p) (build-path p "profj" "libs"))
-                                                                   (current-library-collection-paths))))
-                                                    (put-preferences `(classpath) (list libs))
-                                                    libs))))))
+        (let ((class-path (get-classpath)))
           (let loop ((paths class-path))
             (cond
               ((null? paths) (fail))

@@ -39,6 +39,7 @@ static void InitFormats()
 {
 	ClipboardFormat *cf;
 
+    wxREGGLOB(ClipboardFormats);
     ClipboardFormats = new wxList;
 
  	cf = new ClipboardFormat;
@@ -270,6 +271,7 @@ wxClipboard *wxTheClipboard;
 void wxInitClipboard(void)
 {
   if (!wxTheClipboard)
+    wxREGGLOB(wxTheClipboard);
     wxTheClipboard = new wxClipboard;
 }
 

@@ -248,6 +248,7 @@ void wxInitResources(char *s)
      rmain = NULL;
    else {
     // find the section or create it
+    wxREGGLOB(rmain);
     rmain = GetStringList(fd);
 
     fclose(fd);

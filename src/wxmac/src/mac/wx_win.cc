@@ -34,7 +34,6 @@ int SetOriginY = 0;
 
 wxWindow* wxWindow::gMouseWindow = NULL; 
 
-extern wxScreen* theScreen;
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Geometry methods
@@ -265,7 +264,14 @@ wxWindow::wxWindow // Constructor (given objectType; i.e., menu or menuBar)
 // Public destructor
 //=============================================================================
 
-static wxWindow *entered;
+static wxWindow *entered = NULL;
+
+void wxRegisterEntered();
+
+void wxRegisterEntered()
+{
+  wxREGGLOB(entered);
+}
 
 //-----------------------------------------------------------------------------
 wxWindow::~wxWindow(void) // Destructor
@@ -329,7 +335,7 @@ void wxWindow::InitDefaults(void)
 	cColour = TRUE; // WCH: must redo this
 
 	cHidden = cUserHidden = FALSE;
-
+	
 	WXGC_IGNORE(this, window_parent);
 	WXGC_IGNORE(this, cParentArea);
 	WXGC_IGNORE(this, cMacDC);

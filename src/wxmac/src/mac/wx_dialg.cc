@@ -286,6 +286,8 @@ static pascal void EventFilter(NavEventCallbackMessage callBackSelector,
 
 #endif
 
+int log_base_10(int i);
+
 int log_base_10(int i)
 {
   if (i < 10) { 

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_types.cc,v 1.2 1998/08/14 15:16:57 robby Exp $
+ * RCS_ID:      $Id: wb_types.cc,v 1.3 1999/11/22 17:29:58 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -32,6 +32,7 @@ wxTypeTree *wxAllTypes;
 
 void wxInitStandardTypes(void)
 {
+  wxREGGLOB(wxAllTypes);
   wxAllTypes = new wxTypeTree;
 
   // Define explicit type hierarchy

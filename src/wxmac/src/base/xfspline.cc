@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: xfspline.cc,v 1.5 2000/04/17 22:14:09 mflatt Exp $
+ * RCS_ID:      $Id: xfspline.cc,v 1.6 2001/07/12 10:46:44 clements Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -43,6 +43,13 @@ static Bool wx_spline_add_point(float x, float y);
 static void wx_spline_draw_point_array(wxbDC *dc);
 
 static wxList wx_spline_point_list;
+
+void wxRegisterSplinePointList();
+
+void wxRegisterSplinePointList()
+{
+	wxREGGLOB(wx_spline_point_list);
+}
 
 void wxbDC::DrawSpline(wxList *pts)
 {

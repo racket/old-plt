@@ -51,14 +51,11 @@ extern int wxNumHelpItems;
 
 extern Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *win, wxMouseEvent *evt);
 
-wxScreen *theScreen;
-#if 0
-extern wxList gTimerList;
-#endif
 extern wxApp *wxTheApp;
 //-----------------------------------------------------------------------------
 wxApp::wxApp(wxlanguage_t language):wxbApp(language)
 {
+	wxREGGLOB(wxTheApp);
 	wxTheApp = this;
 
 	OSErr myErr;
@@ -101,6 +98,7 @@ wxApp::wxApp(wxlanguage_t language):wxbApp(language)
 
 	cMacCursorRgn = ::NewRgn(); // forces cursor-move event right away
 	CheckMemOK(cMacCursorRgn);
+	wxREGGLOB(wxScreen::gScreenWindow);
 	wxScreen::gScreenWindow = new wxScreen;
 	wxArea* menuArea = (wxScreen::gScreenWindow)->MenuArea();
 	int menuBarHeight = GetMBarHeight();
@@ -171,10 +169,18 @@ void wxApp::Dispatch(void)
   wxDoNextEvent();
 }
 
+static wxFrame *oldFrontWindow = NULL;
+
+void wxRegisterOldFrontWindow();
+
+void wxRegisterOldFrontWindow()
+{
+  wxREGGLOB(oldFrontWindow);
+}
+
 void wxApp::doMacPreEvent()
 {
     static Bool noWinMode = FALSE;
-    static wxFrame *oldFrontWindow = NULL;
 	WindowPtr w = ::FrontWindow();
 
     wxCheckFinishedSounds();

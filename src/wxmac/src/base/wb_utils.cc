@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_utils.cc,v 1.3 1998/06/02 20:51:43 robby Exp $
+ * RCS_ID:      $Id: wb_utils.cc,v 1.4 1998/08/14 13:56:03 robby Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -152,7 +152,10 @@ wxPathOnly (char *path)
     {
       static char *buf = NULL;
 
-	  if (!buf) buf = new char[_MAXPATHLEN];
+	  if (!buf) {
+	    wxREGGLOB(buf);
+	    buf = new char[_MAXPATHLEN];
+	  }
 
       // Local copy
       strcpy (buf, path);

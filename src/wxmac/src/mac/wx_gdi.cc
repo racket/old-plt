@@ -28,10 +28,6 @@ static const char sccsid[] = "%W% %G%";
 
 CGrafPtr gMacFontGrafPort = NULL; // mac platform only
 
-wxGDIList   *wxTheIconList = NULL;
-wxGDIList   *wxTheCursorList = NULL;
-wxGDIList   *wxTheColourList = NULL;
-
 void *XpmMalloc(size_t size)
 {
   return new char[size];
@@ -647,10 +643,18 @@ Bool wxCursor::Ok(void)
 //-----------------------------------------------------------------------------
 // Global cursor setting
 //-----------------------------------------------------------------------------
+
+static wxCursor *curCursor = NULL;
+
+void wxRegisterCurCursor();
+
+void wxRegisterCurCursor()
+{
+	wxREGGLOB(curCursor);
+}
+
 void wxSetCursor(wxCursor *cursor)
 {
-  static wxCursor *curCursor;
-  
   if (cursor != curCursor) {
       /* 0x1 is the arrow cursor */
       if (cursor) {

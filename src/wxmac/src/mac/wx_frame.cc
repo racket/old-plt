@@ -30,7 +30,6 @@ static const char sccsid[] = "%W% %G%";
   #include <Windows.h>
 #endif
 
-extern wxScreen *theScreen;
 static wxMenuBar *empty_menu_bar, *close_menu_bar;
 
 //=============================================================================
@@ -66,7 +65,7 @@ wxFrame::wxFrame // Constructor (for frame window)
 	Rect theBoundsRect;
 	::SetRect(&theBoundsRect, X, Y, X + cWindowWidth, Y + cWindowHeight);
 	Str255 theWindowTitle = "\p";
-	if (windowTitle) wxMacCtoPString(windowTitle, theWindowTitle);
+	if (windowTitle) CopyCStringToPascal(windowTitle, theWindowTitle);
 	const Bool WindowIsVisible = TRUE;
 
 	cUserHidden = TRUE;
@@ -562,6 +561,7 @@ void wxFrame::NowFront(Bool flag) // mac platform only
 		else {
 			if (0 && cIsModal) {
 				if (!empty_menu_bar)
+					wxREGGLOB(empty_menu_bar);
 					empty_menu_bar = new wxMenuBar;
 				empty_menu_bar->Install();
 			} else {
@@ -571,6 +571,7 @@ void wxFrame::NowFront(Bool flag) // mac platform only
 					 assumes that any menulelection is the close item. */
 					wxMenu *file = new wxMenu();
 					file->Append(1, "Close\tCmd+W");
+					wxREGGLOB(close_menu_bar);
 					close_menu_bar->Append(file, "File");
 				}
 				close_menu_bar->Install();
@@ -807,7 +808,7 @@ char* wxFrame::GetTitle(void) // WCH: return type should be "const char*"
 
 	WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
 	::GetWTitle(theMacWindow, theTitle);
-	wxMacPtoCString(theTitle, cWindowTitle);
+	CopyPascalStringToC(theTitle, cWindowTitle);
 	return cWindowTitle;
 }
 

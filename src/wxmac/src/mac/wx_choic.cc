@@ -626,7 +626,7 @@ char *wxChoice::GetString (int n)
 	if (n < 0 || n >= no_strings)
 		return NULL; // dummy
 	::GetMenuItemText(hDynMenu, n+1, s);
-	CopypascalStringToC(s, wxBuffer);
+	CopyPascalStringToC(s, wxBuffer);
 	return copystring(wxBuffer);
 }
 
@@ -660,7 +660,7 @@ void wxChoice::SetLabel(char *label)
 		delete[] (char *)sTitle;
 	}
 	label = wxItemStripLabel(label);
-	sTitle = (StringPtr)new char[n+1];
+	sTitle = (StringPtr)new char[strlen(label) + 1];
 	CopyCStringToPascal(label, sTitle);
 	
 	SetCurrentDC();

@@ -38,8 +38,6 @@ class wxMacString1: public wxMacString
 	wxMacString1& operator=(char* cString);	// assignment of cString
 };
 
-void wxMacCtoPString(char* theCString, Str255 thePString);
-void wxMacPtoCString(Str255 thePString, char* theCString);
 char* macCopyString(char* s);
 char* macCopyString0(char* s);
 char* macCopyString1(char* s);

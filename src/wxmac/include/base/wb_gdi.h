@@ -341,10 +341,6 @@ class wxGDIList: public wxList
 extern wxPenList   *wxThePenList;
 extern wxBrushList *wxTheBrushList;
 extern wxFontList   *wxTheFontList;
-extern wxGDIList   *wxTheBitmapList;
-#ifdef wx_mac
-extern wxGDIList   *wxTheCursorList;
-#endif
 
 // Stock objects
 extern wxFont *wxNORMAL_FONT;

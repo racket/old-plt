@@ -116,7 +116,6 @@ void scheme_init_error_escape_proc(Scheme_Thread *p)
   %d = int
   %ld = long int
   %o = int, octal
-  %x = int, hex
   %f = double
   %% = percent
 
@@ -162,7 +161,6 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	break;
       case 'd':	  
       case 'o':
-      case 'x':
 	ints[ip++] = mzVA_ARG(args, int);
 	break;
       case 'l':
@@ -241,15 +239,6 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	    int d;
 	    d = ints[ip++];
 	    sprintf(buf, "%o", d);
-	    t = buf;
-	    tlen = strlen(t);
-	  }
-	  break;
-	case 'x':
-	  {
-	    int d;
-	    d = ints[ip++];
-	    sprintf(buf, "%x", d);
 	    t = buf;
 	    tlen = strlen(t);
 	  }
@@ -1137,7 +1126,7 @@ static char *make_srcloc_string(Scheme_Stx_Srcloc *srcloc, long *len)
     
   if (col >= 0) {
     rlen = scheme_sprintf(result, srclen + 15, "%t:%L%ld: ", 
-			  srcstr, srclen, line, col - 1);
+			  srcstr, srclen, line, col-1);
   } else {
     rlen = scheme_sprintf(result, srclen + 15, "%t::: ", 
 			  srcstr, srclen);

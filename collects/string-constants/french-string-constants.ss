@@ -1094,6 +1094,10 @@
   (module-browser-refresh "Rafraîchir") ;; button label in show module browser pane in drscheme window.
   (module-browser-only-in-plt-and-module-langs
    "Le navigateur de modules n'est disponible que pour les programmes écrits dans l'un des langages PLT ou dans le langage \"module\", et seulement pour les programmes qui contiennent des modules.")
+  (module-browser-name-length "Noms")
+  (module-browser-name-short "courts")
+  (module-browser-name-medium "moyens")
+  (module-browser-name-long "longs")
   
   (happy-birthday-matthias "Joyeux anniversaire, Matthias !")
   (happy-birthday-matthew "Joyeux anniversaire, Matthew !")

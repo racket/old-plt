@@ -62,6 +62,7 @@
 
 
   (define-lex-abbrevs
+   [any-string (&)]
     ;; 3.4
     (CR #\015)
     (LF #\012)
@@ -95,7 +96,7 @@
                         "/"))
     (NotStar (: (^ "*")))
     (NotStarNotSlash (: (^ "*" "/")))
-                     
+     
     (SyntaxComment (: TraditionalCommentEOF
                       EndOfLineComment))
     (TraditionalCommentEOF (@ "/*" CommentTailEOF))
@@ -168,6 +169,36 @@
 		 "=="	"<="	">="	"!="	"&&" "||"	"++"	"--"
 		 "+"	"-"	"*"	"/"	"&" "|"	"^"	"%"	"<<" ">>" ">>>"
 		 "+="	"-="	"*="	"/="	"&="	"|="	"^="	"%="	"<<="	">>="	">>>=")))
+ 
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;Comment lexers
+  
+  (define read-line-comment
+    (lexer
+     [(^ #\newline) (read-line-comment input-port)]
+     [#\newline end-pos]
+     [(eof) end-pos]
+     [(special) (read-line-comment input-port)]
+     [(special-comment) (read-line-comment input-port)]
+     [(special-error) (read-line-comment input-port)]))
+    
+  (define read-block-comment
+    (lexer
+     ["*/" end-pos]
+     [(eof) end-pos]
+     [(: "*" "/" (~ (@ any-string (: "*" "/") any-string))) (read-block-comment input-port)]
+     [(special) (read-block-comment input-port)]
+     [(special-comment) (read-block-comment input-port)]
+     [(special-error) (read-block-comment input-port)]))
+    
+  #;(define read-document-comment
+    (lexer
+     ["**/" end-pos]
+     [(eof) end-pos]
+     [(: "*" "/" (~ (any-string))) (read-document-comment input-port)]
+     [(special) (read-document-comment input-port)]
+     [(special-comment) (read-document-comment input-port)]
+     [(special-error) (read-document-comment input-port)]))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;String lexer
@@ -290,8 +321,12 @@
      (Identifier (token-IDENTIFIER lexeme))
 
      ;; 3.7
-     (Comment (return-without-pos (get-token input-port)))
+     ;(Comment (return-without-pos (get-token input-port)))
 
+     ("//" (begin (read-line-comment input-port) (return-without-pos (get-token input-port))))
+     ("/*" (begin (read-block-comment input-port) (return-without-pos (get-token input-port))))
+     #;("/**" (begin (read-document-comment input-port) (return-without-pos (get-token input-port))))
+       
      ((special)
       (cond
         ((class-case? special) (token-CLASS_BOX special))
@@ -375,8 +410,12 @@
      (Identifier (syn-val lexeme 'identifier #f start-pos end-pos))
 
      ;; 3.7
-     (SyntaxComment (syn-val lexeme 'comment #f start-pos end-pos))
+     ;(SyntaxComment (syn-val lexeme 'comment #f start-pos end-pos))
 
+     ("//" (syn-val lexeme 'comment #f start-pos (read-line-comment input-port)))
+     ("/*" (syn-val lexeme 'comment #f start-pos (read-block-comment input-port)))
+     #;("/**" (syn-val lexeme 'comment #f start-pos (read-document-comment input-port)))
+     
      ;; 3.6
      ((+ WhiteSpace) (syn-val lexeme 'white-space #f start-pos end-pos))
 

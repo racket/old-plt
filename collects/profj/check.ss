@@ -2088,7 +2088,7 @@
     (let ((rt (type->ext-name right))
           (lt (type->ext-name left)))
       (raise-error op
-                   (format "~a only compares integer or boolean values. ~a to ~a is not allowed"
+                   (format "~a only compares integer, character, or boolean values. ~a to ~a is not allowed"
                            op rt lt)
                    op src)))
   

@@ -353,6 +353,8 @@ void wxCanvas::SetScrollData
   }
 
   if (theDC) {
+    int need_paint = 0;
+
     int dH = 0;
     {
       int newH = scrollData->GetValue(wxWhatScrollData::wxPositionH) *
@@ -368,22 +370,24 @@ void wxCanvas::SetScrollData
     }
     
     if (dH != 0 || dV != 0) {
-      wxArea* clientArea = ClientArea();
-      RgnHandle theUpdateRgn = ::NewRgn();
-      CheckMemOK(theUpdateRgn);
-      SetCurrentDC();
       if (!IsHidden()) {
+	wxArea* clientArea = ClientArea();
+	RgnHandle theUpdateRgn = ::NewRgn();
+	CheckMemOK(theUpdateRgn);
+	SetCurrentDC();
 	Rect scrollRect = {0, 0, clientArea->Height(), clientArea->Width()};
 	OffsetRect(&scrollRect,SetOriginX,SetOriginY);
 	::ScrollRect(&scrollRect, -dH, -dV, theUpdateRgn);
-	::InvalWindowRgn(GetWindowFromPort(cMacDC->macGrafPort()),theUpdateRgn);
+	if (!EmptyRgn(theUpdateRgn))
+	  need_paint = 1;
+	::DisposeRgn(theUpdateRgn);
       }
       theDC->device_origin_x += -dH;
       theDC->device_origin_y += -dV;
-      ::DisposeRgn(theUpdateRgn);
     }
 
-    Refresh();
+    if (need_paint)
+      Paint();
   }
 }
 

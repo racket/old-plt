@@ -111,9 +111,15 @@ void wxScrollBar::CreateWxScrollBar // common constructor initialization
   const short minValue = 0;
   const short maxValue = 0;
   long refCon = (long)this;
-  cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, NULL,
-			     drawNow, offValue, minValue, maxValue, scrollBarProc, refCon);
+
+  if (CreateScrollBarControl(GetWindowFromPort(theMacGrafPort), &boundsRect, 
+			     offValue, minValue, maxValue, 1,
+			     TRUE, TrackActionProcUPP, &cMacControl))
+    cMacControl = NULL;
+      
   CheckMemOK(cMacControl);
+
+  SetControlReference(cMacControl, (long)this); /* for TrackControl */
   
   ::EmbedControl(cMacControl, GetRootControl());
 
@@ -268,7 +274,7 @@ void wxScrollBar::OnEvent(wxMouseEvent *event) // mac platform only
     int thePart = ::TestControl(cMacControl, startPt);
     if (thePart) {
       if (thePart == kControlIndicatorPart) {
-	if (!StillDown() || TrackControl(cMacControl, startPt, NULL)) {
+	if (!StillDown() || TrackControl(cMacControl, startPt, TrackActionProcUPP)) {
 	  Bool horizontal = cStyle & wxHSCROLL;
 	  wxWhatScrollData positionScrollData =
 	    (horizontal ? wxWhatScrollData::wxPositionH : wxWhatScrollData::wxPositionV);
@@ -281,7 +287,8 @@ void wxScrollBar::OnEvent(wxMouseEvent *event) // mac platform only
 	  cScroll->SetScrollData(newPosition, positionScrollData, e);
 	}
       } else {
-	::TrackControl(cMacControl, startPt, TrackActionProcUPP);
+	if (StillDown())
+	  ::TrackControl(cMacControl, startPt, TrackActionProcUPP);
       }
     }
   }

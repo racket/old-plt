@@ -117,7 +117,7 @@ void wxItem::ChangeToGray(Bool gray)
 #endif
     }
   } else {
-    Refresh(); /* to paint custom control */
+    Paint(); /* to paint custom control */
   }
   
   wxWindow::ChangeToGray(gray);

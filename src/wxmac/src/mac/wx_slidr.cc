@@ -31,7 +31,7 @@
 # define KSCROLLH   27 // _includes_ PAD_TOP & PAD_BOTTOM
 # define PAD_X 2 // these are all assuming a horizontal configuration.
 # define PAD_TOP 3
-# define PAD_BOTTOM 9
+# define PAD_BOTTOM 5
 #else
 # define KSCROLLH   16	// height of a mac scrollbar control
 # define PAD_X 0
@@ -43,6 +43,9 @@
 // Because I never get this right and t,l,b,r makes sense to me - CJC
 //
 #define SetBounds(rect, top, left, bottom, right) ::SetRect(rect, left, top, right, bottom)
+
+static pascal void SCTrackActionProc(ControlHandle theControl, short thePart);
+static ControlActionUPP SCTrackActionProcUPP = NewControlActionUPP(SCTrackActionProc);
 
 void wxSlider::InsetSliderRect(Rect *r) 
 {
@@ -165,10 +168,19 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 #ifdef WX_CARBON    
   InsetSliderRect(&r);
 #endif    
-  cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &r, NULL,
-			     TRUE, value, min_value, max_value, kControlSliderProc, (long)this);
+  if (CreateSliderControl (GetWindowFromPort(theMacGrafPort), &r,
+			   value, min_value, max_value, 
+			   kControlSliderPointsDownOrRight,
+			   0,
+			   TRUE,
+			   NULL,
+			   &cMacControl))
+    cMacControl = NULL;
+      
   CheckMemOK(cMacControl);
-	
+
+  SetControlReference(cMacControl, (long)this);
+
   if (label) {
     if (labelPosition == wxVERTICAL) {
       if (cWindowWidth < lblw)
@@ -179,7 +191,6 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
     }
   }
 
-  ::SetControlReference(cMacControl, (long)this);
   if (label)
     {
       cTitle = new wxLabelArea(this, label, labelFont,
@@ -215,16 +226,16 @@ void wxSlider::Paint(void)
   ::Draw1Control(cMacControl);
 
   if (!(windowStyle & (wxHORIZONTAL << 2))) {
-    SetFont(valueFont);
-    SetTextInfo();
-		
     Rect r = valueRect;
     OffsetRect(&r,SetOriginX,SetOriginY);
-    ::MoveTo(r.left, r.bottom - valuebase);
     ::EraseRect(&r);
     char t[8];
     sprintf(t,"%d",::GetControlValue(cMacControl));
-    ::DrawText(t,0,strlen(t));
+
+    CFStringRef str = CFStringCreateWithCString(NULL, t, kCFStringEncodingISOLatin1);
+    DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
+		     0, &r, teJustCenter, NULL);
+    CFRelease(str);
   }
 	
   wxWindow::Paint();
@@ -291,9 +302,6 @@ void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
     }
 }
 
-static pascal void SCTrackActionProc(ControlHandle theControl, short thePart);
-static ControlActionUPP SCTrackActionProcUPP = NewControlActionUPP(SCTrackActionProc);
-
 #define max(x, y) ((x > y) ? x : y)
 #define min(x, y) ((x > y) ? y : x)
 
@@ -306,12 +314,14 @@ void wxSlider::OnEvent(wxMouseEvent *event) // WCH: mac only ?
     Point pt = {startV + SetOriginY, startH + SetOriginX};
     int part;
     part = ::TestControl(cMacControl, pt);
-    if (part) {
-      if (part == kControlIndicatorPart) {
-	if (::TrackControl(cMacControl, pt, NULL))
-	  TrackPart(part);
-      } else 
-	::TrackControl(cMacControl, pt, SCTrackActionProcUPP);
+    if (StillDown()) {
+      if (part) {
+	if (part == kControlIndicatorPart) {
+	  if (::TrackControl(cMacControl, pt, SCTrackActionProcUPP))
+	    TrackPart(part);
+	} else 
+	  ::TrackControl(cMacControl, pt, SCTrackActionProcUPP);
+      }
     }
   }
 }
@@ -338,14 +348,7 @@ void wxSlider::TrackPart(int part)
   } // end switch
 	
   if (!(windowStyle & (wxHORIZONTAL << 2))) {
-    // Draw the new value
-    Rect r = valueRect;
-    OffsetRect(&r,SetOriginX,SetOriginY);
-    ::MoveTo(r.left+HSP, r.bottom - valuebase);
-    ::EraseRect(&r);
-    char t[8];
-    sprintf(t,"%d",::GetControlValue(cMacControl));
-    ::DrawText(t,0,strlen(t));
+    Paint();
   }
   wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_SLIDER_COMMAND);
   ProcessCommand(commandEvent);
@@ -355,11 +358,12 @@ void wxSlider::TrackPart(int part)
 }
 
 // Update the Value rect as the thumb is dragged around
-static pascal void SCTrackActionProc(ControlHandle theControl, short thePart)
+pascal void SCTrackActionProc(ControlHandle theControl, short thePart)
 {
   wxSlider*	slider;
-  slider = (wxSlider*) GetControlReference(theControl);
-  slider->TrackPart(thePart);
+  slider = (wxSlider*)GetControlReference(theControl);
+  if (slider) 
+    slider->TrackPart(thePart);
 }
 
 // --------------------- Client API ---------------------
@@ -373,13 +377,7 @@ void wxSlider::SetValue(int value)
   SetCurrentDC();
   ::SetControlValue(cMacControl, value);
   if (!(windowStyle & (wxHORIZONTAL << 2))) {
-    Rect r = valueRect;
-    OffsetRect(&r,SetOriginX,SetOriginY);
-    ::MoveTo(r.left+HSP, r.bottom - valuebase);
-    ::EraseRect(&r);
-    char t[8];
-    sprintf(t,"%d",::GetControlValue(cMacControl));
-    ::DrawText(t,0,strlen(t));
+    Paint();
   }
 }
 

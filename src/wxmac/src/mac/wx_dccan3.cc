@@ -100,7 +100,7 @@ void wxCanvasDC::GetTextExtent(const char* string, float* x, float* y, float* de
 
   *x = XDEV2LOGREL(x2);
   *y = YDEV2LOGREL(y2);
-  if (descent) *descent = descent2;
+  if (descent) *descent = YDEV2LOGREL(descent2);
   if (internalLeading) *internalLeading = 0.0;
 }
 

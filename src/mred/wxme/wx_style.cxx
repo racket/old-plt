@@ -120,6 +120,8 @@ wxStyleDelta *wxStyleDelta::SetDelta(int changeCommand, int param)
     weightOff = wxBASE;
     styleOn = wxBASE;
     styleOff = wxBASE;
+    smoothingOn = wxBASE;
+    smoothingOff = wxBASE;
     underlinedOn = underlinedOff = FALSE;
     transparentTextBackingOn = transparentTextBackingOff = FALSE;
     foregroundMult = new wxMultColour;
@@ -140,6 +142,10 @@ wxStyleDelta *wxStyleDelta::SetDelta(int changeCommand, int param)
   case wxCHANGE_WEIGHT:
     weightOn = param;
     weightOff = wxBASE;
+    break;
+  case wxCHANGE_SMOOTHING:
+    smoothingOn = param;
+    smoothingOff = wxBASE;
     break;
   case wxCHANGE_UNDERLINE:
     underlinedOn = param;
@@ -173,6 +179,10 @@ wxStyleDelta *wxStyleDelta::SetDelta(int changeCommand, int param)
     weightOn = param;
     weightOff = param;
     break;
+  case wxCHANGE_TOGGLE_SMOOTHING:
+    smoothingOn = param;
+    smoothingOff = param;
+    break;
   case wxCHANGE_TOGGLE_UNDERLINE:
     underlinedOn = TRUE;
     underlinedOff = TRUE;
@@ -194,6 +204,8 @@ wxStyleDelta *wxStyleDelta::SetDelta(int changeCommand, int param)
     weightOff = wxBASE;
     styleOn = wxNORMAL;
     styleOff = wxBASE;
+    smoothingOn = wxSMOOTHING_DEFAULT;
+    smoothingOff = wxBASE;
     underlinedOn = FALSE;
     underlinedOff = TRUE;
     alignmentOn = wxALIGN_BOTTOM;
@@ -305,6 +317,11 @@ Bool wxStyleDelta::Collapse(wxStyleDelta *deltaIn)
 	|| (weightOn == wxBASE && weightOff != wxBASE)
 	|| (weightOff == wxBASE && weightOn != wxBASE)))
     return FALSE;
+  if (!((smoothingOn == deltaIn->smoothingOn && smoothingOff == deltaIn->smoothingOff)
+	|| (smoothingOn == wxBASE && smoothingOff == wxBASE)
+	|| (smoothingOn == wxBASE && smoothingOff != wxBASE)
+	|| (smoothingOff == wxBASE && smoothingOn != wxBASE)))
+    return FALSE;
   if (!((alignmentOn == deltaIn->alignmentOn 
 	 && alignmentOff == deltaIn->alignmentOff)
 	|| (alignmentOn == wxBASE && alignmentOff == wxBASE)
@@ -370,6 +387,14 @@ Bool wxStyleDelta::Collapse(wxStyleDelta *deltaIn)
 	&& weightOn == weightOff)
       weightOn = weightOff = wxBASE; // Double toggle
   }
+  if (smoothingOn == wxBASE && smoothingOff == wxBASE) {
+    smoothingOff = deltaIn->smoothingOff;
+    smoothingOn = deltaIn->smoothingOn;
+  } else if (smoothingOn != wxBASE && smoothingOff != wxBASE) {
+    if (deltaIn->smoothingOn != wxBASE || deltaIn->smoothingOff != wxBASE
+	&& smoothingOn == smoothingOff)
+      smoothingOn = smoothingOff = wxBASE; // Double toggle
+  }
   if (alignmentOn == wxBASE && alignmentOff == wxBASE) {
     alignmentOff = deltaIn->alignmentOff;
     alignmentOn = deltaIn->alignmentOn;
@@ -419,6 +444,8 @@ Bool wxStyleDelta::Equal(wxStyleDelta *deltaIn)
 	  && sizeAdd == deltaIn->sizeAdd
 	  && weightOn == deltaIn->weightOn
 	  && weightOff == deltaIn->weightOff
+	  && smoothingOn == deltaIn->smoothingOn
+	  && smoothingOff == deltaIn->smoothingOff
 	  && styleOn == deltaIn->styleOn
 	  && styleOff == deltaIn->styleOff
 	  && underlinedOn == deltaIn->underlinedOn
@@ -442,6 +469,8 @@ void wxStyleDelta::Copy(wxStyleDelta *in)
   DCOPY(sizeAdd);
   DCOPY(weightOn);
   DCOPY(weightOff);
+  DCOPY(smoothingOn);
+  DCOPY(smoothingOff);
   DCOPY(styleOn);
   DCOPY(styleOff);
   DCOPY(underlinedOn);
@@ -505,7 +534,7 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
 {
   int size;
   int fontid;
-  int style, weight;
+  int style, weight, smoothing;
   unsigned char r, g, b;
   float rm, gm, bm;
   short rp, gp, bp; 
@@ -585,6 +614,14 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
     if (nonjoin_delta->weightOn != wxBASE)
       weight = nonjoin_delta->weightOn;
 
+  smoothing = base->font->GetSmoothing();
+  match = (smoothing == nonjoin_delta->smoothingOff);
+  if (match)
+    smoothing = wxNORMAL;
+  if (!match || (match && nonjoin_delta->smoothingOn != nonjoin_delta->smoothingOff))
+    if (nonjoin_delta->smoothingOn != wxBASE)
+      smoothing = nonjoin_delta->smoothingOn;
+
   target->alignment = base->alignment;
   match = (target->alignment == nonjoin_delta->alignmentOff);
   if (match)
@@ -603,7 +640,8 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
     underlined = base->font->GetUnderlined();
   
   target->font = wxTheFontList->FindOrCreateFont(size, fontid,
-						 style, weight, underlined);
+						 style, weight, 
+						 underlined, smoothing);
 
   target->textMetricDC = NULL;
 
@@ -682,6 +720,11 @@ int wxStyle::GetWeight()
 int wxStyle::GetStyle()
 {
   return font->GetStyle();
+}
+
+int wxStyle::GetSmoothing()
+{
+  return font->GetSmoothing();
 }
 
 Bool wxStyle::GetUnderlined()
@@ -1343,6 +1386,8 @@ void wxmbDoneStyleReadsWrites(wxMediaStream *s)
 static int FamilyStandardToThis(int v)
 {
   switch (v) {
+  case wxBASE:
+    return wxBASE;
   case 71:
     return wxDECORATIVE;
   case 72:
@@ -1368,6 +1413,8 @@ static int FamilyStandardToThis(int v)
 static int FamilyThisToStandard(int v)
 {
   switch (v) {
+  case wxBASE:
+    return wxBASE;
   case wxDECORATIVE:
     return 71;
   case wxROMAN:
@@ -1393,6 +1440,8 @@ static int FamilyThisToStandard(int v)
 static int WeightStandardToThis(int v)
 {
   switch (v) {
+  case wxBASE:
+    return wxBASE;
   case 91:
     return wxLIGHT;
   case 92:
@@ -1406,6 +1455,8 @@ static int WeightStandardToThis(int v)
 static int WeightThisToStandard(int v)
 {
   switch (v) {
+  case wxBASE:
+    return wxBASE;
   case wxLIGHT:
     return 91;
   case wxBOLD:
@@ -1419,6 +1470,8 @@ static int WeightThisToStandard(int v)
 static int StyleStandardToThis(int v)
 {
   switch (v) {
+  case wxBASE:
+    return wxBASE;
   case 93:
     return wxITALIC;
   case 94:
@@ -1432,6 +1485,8 @@ static int StyleStandardToThis(int v)
 static int StyleThisToStandard(int v)
 {
   switch (v) {
+  case wxBASE:
+    return wxBASE;
   case wxITALIC:
     return 93;
   case wxSLANT:
@@ -1442,9 +1497,46 @@ static int StyleThisToStandard(int v)
   }
 }
 
+static int SmoothingStandardToThis(int v)
+{
+  switch (v) {
+  case wxBASE:
+    return wxBASE;
+  case 0:
+    return wxSMOOTHING_SYS_DEFAULT;
+  case 1:
+    return wxSMOOTHING_ON;
+  case 2:
+    return wxSMOOTHING_OFF;
+  case 3:
+  default:
+    return wxSMOOTHING_DEFAULT;
+  }
+}
+
+static int SmoothingThisToStandard(int v)
+{
+  switch (v) {
+  case wxBASE:
+    return wxBASE;
+  case wxSMOOTHING_SYS_DEFAULT:
+    return 0;
+  case wxSMOOTHING_ON:
+    return 1;
+  case wxSMOOTHING_OFF:
+    return 2;
+  case wxNORMAL:
+  default:
+    return 3;
+  }
+}
+
+
 static int AlignStandardToThis(int v)
 {
   switch (v) {
+  case wxBASE:
+    return wxBASE;
   case 0:
     return wxALIGN_TOP;
   case 2:
@@ -1458,6 +1550,8 @@ static int AlignStandardToThis(int v)
 static int AlignThisToStandard(int v)
 {
   switch (v) {
+  case wxBASE:
+    return wxBASE;
   case wxALIGN_TOP:
     return 0;
   case wxALIGN_CENTER:
@@ -1558,6 +1652,16 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
       delta->styleOn = StyleStandardToThis(num);
       f->Get(&num);
       delta->styleOff = StyleStandardToThis(num);
+      if (WXME_VERSION_ONE(f) || WXME_VERSION_TWO(f)
+	  || WXME_VERSION_THREE(f) || WXME_VERSION_FOUR(f)) {
+	delta->smoothingOn = wxSMOOTHING_DEFAULT;
+	delta->smoothingOff = wxSMOOTHING_DEFAULT;
+      } else {
+	f->Get(&num);
+	delta->smoothingOn = SmoothingStandardToThis(num);
+	f->Get(&num);
+	delta->smoothingOff = SmoothingStandardToThis(num);
+      }
       f->Get(&num); delta->underlinedOn = num;
       f->Get(&num); delta->underlinedOff = num;
       if (WXME_VERSION_ONE(f) || WXME_VERSION_TWO(f)) {
@@ -1687,6 +1791,8 @@ Bool wxmbWriteStylesToFile(wxStyleList *styleList, wxMediaStreamOut *f)
       f->Put(WeightThisToStandard(delta->weightOff));
       f->Put(StyleThisToStandard(delta->styleOn));
       f->Put(StyleThisToStandard(delta->styleOff));
+      f->Put(SmoothingThisToStandard(delta->smoothingOn));
+      f->Put(SmoothingThisToStandard(delta->smoothingOff));
       f->Put(delta->underlinedOn);
       f->Put(delta->underlinedOff);
       f->Put(delta->transparentTextBackingOn);

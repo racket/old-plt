@@ -747,6 +747,54 @@ static Scheme_Object *bundle_symset_style(int v) {
 }
 
 
+static Scheme_Object *smoothing_wxBASE_sym = NULL;
+static Scheme_Object *smoothing_wxSMOOTHING_DEFAULT_sym = NULL;
+static Scheme_Object *smoothing_wxSMOOTHING_SYS_DEFAULT_sym = NULL;
+static Scheme_Object *smoothing_wxSMOOTHING_ON_sym = NULL;
+static Scheme_Object *smoothing_wxSMOOTHING_OFF_sym = NULL;
+
+static void init_symset_smoothing(void) {
+  REMEMBER_VAR_STACK();
+  wxREGGLOB(smoothing_wxBASE_sym);
+  smoothing_wxBASE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("base"));
+  wxREGGLOB(smoothing_wxSMOOTHING_DEFAULT_sym);
+  smoothing_wxSMOOTHING_DEFAULT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("family+size-default"));
+  wxREGGLOB(smoothing_wxSMOOTHING_SYS_DEFAULT_sym);
+  smoothing_wxSMOOTHING_SYS_DEFAULT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("system-default"));
+  wxREGGLOB(smoothing_wxSMOOTHING_ON_sym);
+  smoothing_wxSMOOTHING_ON_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("smoothed"));
+  wxREGGLOB(smoothing_wxSMOOTHING_OFF_sym);
+  smoothing_wxSMOOTHING_OFF_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("unsmoothed"));
+}
+
+static int unbundle_symset_smoothing(Scheme_Object *v, const char *where) {
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!smoothing_wxSMOOTHING_OFF_sym) WITH_VAR_STACK(init_symset_smoothing());
+  if (0) { }
+  else if (v == smoothing_wxBASE_sym) { READY_TO_RETURN; return wxBASE; }
+  else if (v == smoothing_wxSMOOTHING_DEFAULT_sym) { READY_TO_RETURN; return wxSMOOTHING_DEFAULT; }
+  else if (v == smoothing_wxSMOOTHING_SYS_DEFAULT_sym) { READY_TO_RETURN; return wxSMOOTHING_SYS_DEFAULT; }
+  else if (v == smoothing_wxSMOOTHING_ON_sym) { READY_TO_RETURN; return wxSMOOTHING_ON; }
+  else if (v == smoothing_wxSMOOTHING_OFF_sym) { READY_TO_RETURN; return wxSMOOTHING_OFF; }
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "smoothing symbol", -1, 0, &v));
+  READY_TO_RETURN;
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_smoothing(int v) {
+  if (!smoothing_wxSMOOTHING_OFF_sym) init_symset_smoothing();
+  switch (v) {
+  case wxBASE: return smoothing_wxBASE_sym;
+  case wxSMOOTHING_DEFAULT: return smoothing_wxSMOOTHING_DEFAULT_sym;
+  case wxSMOOTHING_SYS_DEFAULT: return smoothing_wxSMOOTHING_SYS_DEFAULT_sym;
+  case wxSMOOTHING_ON: return smoothing_wxSMOOTHING_ON_sym;
+  case wxSMOOTHING_OFF: return smoothing_wxSMOOTHING_OFF_sym;
+  default: return NULL;
+  }
+}
+
+
 static Scheme_Object *align_wxBASE_sym = NULL;
 static Scheme_Object *align_wxALIGN_TOP_sym = NULL;
 static Scheme_Object *align_wxALIGN_BOTTOM_sym = NULL;
@@ -925,6 +973,41 @@ static int istype_symset_changeWeight(Scheme_Object *v, const char *where) {
   else if (v == changeWeight_wxCHANGE_WEIGHT_sym) { READY_TO_RETURN; return 1; }
   else if (v == changeWeight_wxCHANGE_TOGGLE_WEIGHT_sym) { READY_TO_RETURN; return 1; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeWeight symbol", -1, 0, &v));
+  READY_TO_RETURN;
+  return 0;
+}
+
+static Scheme_Object *changeSmoothing_wxCHANGE_SMOOTHING_sym = NULL;
+static Scheme_Object *changeSmoothing_wxCHANGE_TOGGLE_SMOOTHING_sym = NULL;
+
+static void init_symset_changeSmoothing(void) {
+  REMEMBER_VAR_STACK();
+  wxREGGLOB(changeSmoothing_wxCHANGE_SMOOTHING_sym);
+  changeSmoothing_wxCHANGE_SMOOTHING_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("change-smoothing"));
+  wxREGGLOB(changeSmoothing_wxCHANGE_TOGGLE_SMOOTHING_sym);
+  changeSmoothing_wxCHANGE_TOGGLE_SMOOTHING_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("change-toggle-smoothing"));
+}
+
+static int unbundle_symset_changeSmoothing(Scheme_Object *v, const char *where) {
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!changeSmoothing_wxCHANGE_TOGGLE_SMOOTHING_sym) WITH_VAR_STACK(init_symset_changeSmoothing());
+  if (0) { }
+  else if (v == changeSmoothing_wxCHANGE_SMOOTHING_sym) { READY_TO_RETURN; return wxCHANGE_SMOOTHING; }
+  else if (v == changeSmoothing_wxCHANGE_TOGGLE_SMOOTHING_sym) { READY_TO_RETURN; return wxCHANGE_TOGGLE_SMOOTHING; }
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeSmoothing symbol", -1, 0, &v));
+  READY_TO_RETURN;
+  return 0;
+}
+
+static int istype_symset_changeSmoothing(Scheme_Object *v, const char *where) {
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!changeSmoothing_wxCHANGE_TOGGLE_SMOOTHING_sym) WITH_VAR_STACK(init_symset_changeSmoothing());
+  if (0) { }
+  else if (v == changeSmoothing_wxCHANGE_SMOOTHING_sym) { READY_TO_RETURN; return 1; }
+  else if (v == changeSmoothing_wxCHANGE_TOGGLE_SMOOTHING_sym) { READY_TO_RETURN; return 1; }
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "changeSmoothing symbol", -1, 0, &v));
   READY_TO_RETURN;
   return 0;
 }
@@ -1340,6 +1423,26 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(int n,  Scheme_Object *p[])
     
     
     READY_TO_PRE_RETURN;
+  } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeSmoothing(p[POFFSET+0], NULL))) {
+    int x0;
+    int x1;
+
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, r);
+
+    
+    if (n != (POFFSET+2)) 
+      WITH_VAR_STACK(scheme_wrong_count_m("set-delta in style-delta% (smoothing case)", POFFSET+2, POFFSET+2, n, p, 1));
+    x0 = WITH_VAR_STACK(unbundle_symset_changeSmoothing(p[POFFSET+0], "set-delta in style-delta% (smoothing case)"));
+    x1 = WITH_VAR_STACK(unbundle_symset_smoothing(p[POFFSET+1], "set-delta in style-delta% (smoothing case)"));
+
+    
+    r = WITH_VAR_STACK(((wxStyleDelta *)((Scheme_Class_Object *)p[0])->primdata)->SetDelta(x0, x1));
+
+    
+    
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeUnderline(p[POFFSET+0], NULL))) {
     int x0;
     Bool x1;
@@ -1626,6 +1729,74 @@ static Scheme_Object *objscheme_wxStyleDelta_SetweightOff(int n,  Scheme_Object 
 
   v = WITH_VAR_STACK(unbundle_symset_weight(p[POFFSET], "set-weight-off in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->weightOff = v;
+
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *objscheme_wxStyleDelta_GetsmoothingOn(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
+  int v;
+  REMEMBER_VAR_STACK();
+
+  objscheme_check_valid(os_wxStyleDelta_class, "get-smoothing-on in style-delta%", n, p);
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-smoothing-on in style-delta%", POFFSET, POFFSET, n, p, 1));
+  cobj = (Scheme_Class_Object *)p[0];
+  if (cobj->primflag)
+    v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::smoothingOn;
+  else
+    v = ((wxStyleDelta *)cobj->primdata)->smoothingOn;
+
+  return WITH_REMEMBERED_STACK(bundle_symset_smoothing(v));
+}
+
+static Scheme_Object *objscheme_wxStyleDelta_SetsmoothingOn(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
+  int v;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, cobj);
+
+  WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-smoothing-on in style-delta%", n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-smoothing-on in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
+
+  v = WITH_VAR_STACK(unbundle_symset_smoothing(p[POFFSET], "set-smoothing-on in style-delta%"));
+  ((wxStyleDelta *)cobj->primdata)->smoothingOn = v;
+
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *objscheme_wxStyleDelta_GetsmoothingOff(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
+  int v;
+  REMEMBER_VAR_STACK();
+
+  objscheme_check_valid(os_wxStyleDelta_class, "get-smoothing-off in style-delta%", n, p);
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-smoothing-off in style-delta%", POFFSET, POFFSET, n, p, 1));
+  cobj = (Scheme_Class_Object *)p[0];
+  if (cobj->primflag)
+    v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::smoothingOff;
+  else
+    v = ((wxStyleDelta *)cobj->primdata)->smoothingOff;
+
+  return WITH_REMEMBERED_STACK(bundle_symset_smoothing(v));
+}
+
+static Scheme_Object *objscheme_wxStyleDelta_SetsmoothingOff(int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
+  int v;
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, cobj);
+
+  WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-smoothing-off in style-delta%", n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-smoothing-off in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
+
+  v = WITH_VAR_STACK(unbundle_symset_smoothing(p[POFFSET], "set-smoothing-off in style-delta%"));
+  ((wxStyleDelta *)cobj->primdata)->smoothingOff = v;
 
   READY_TO_RETURN;
   return scheme_void;
@@ -2046,6 +2217,29 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[]
     
     
     READY_TO_PRE_RETURN;
+  } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeSmoothing(p[POFFSET+0], NULL))) {
+    int x0;
+    int x1;
+
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, realobj);
+
+    
+    if (n != (POFFSET+2)) 
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in style-delta% (smoothing case)", POFFSET+2, POFFSET+2, n, p, 1));
+    x0 = WITH_VAR_STACK(unbundle_symset_changeSmoothing(p[POFFSET+0], "initialization in style-delta% (smoothing case)"));
+    x1 = WITH_VAR_STACK(unbundle_symset_smoothing(p[POFFSET+1], "initialization in style-delta% (smoothing case)"));
+
+    
+    realobj = WITH_VAR_STACK(new os_wxStyleDelta CONSTRUCTOR_ARGS((x0, x1)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxStyleDelta(x0, x1));
+#endif
+    realobj->__gc_external = (void *)p[0];
+    
+    
+    READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeWeight(p[POFFSET+0], NULL))) {
     int x0;
     int x1;
@@ -2154,7 +2348,7 @@ void objscheme_setup_wxStyleDelta(Scheme_Env *env)
 
   wxREGGLOB(os_wxStyleDelta_class);
 
-  os_wxStyleDelta_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style-delta%", "object%", (Scheme_Method_Prim *)os_wxStyleDelta_ConstructScheme, 39));
+  os_wxStyleDelta_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style-delta%", "object%", (Scheme_Method_Prim *)os_wxStyleDelta_ConstructScheme, 43));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "copy" " method", (Scheme_Method_Prim *)os_wxStyleDeltaCopy, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "collapse" " method", (Scheme_Method_Prim *)os_wxStyleDeltaCollapse, 1, 1));
@@ -2176,6 +2370,10 @@ void objscheme_setup_wxStyleDelta(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"set-weight-on" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_SetweightOn, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"get-weight-off" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_GetweightOff, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"set-weight-off" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_SetweightOff, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"get-smoothing-on" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_GetsmoothingOn, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"set-smoothing-on" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_SetsmoothingOn, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"get-smoothing-off" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_GetsmoothingOff, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"set-smoothing-off" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_SetsmoothingOff, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"get-style-on" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_GetstyleOn, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"set-style-on" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_SetstyleOn, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"get-style-off" " method", (Scheme_Method_Prim *)objscheme_wxStyleDelta_GetstyleOff, 0, 0));
@@ -2700,6 +2898,27 @@ static Scheme_Object *os_wxStyleGetUnderlined(int n,  Scheme_Object *p[])
   return (r ? scheme_true : scheme_false);
 }
 
+static Scheme_Object *os_wxStyleGetSmoothing(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+  objscheme_check_valid(os_wxStyle_class, "get-smoothing in style<%>", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxStyle *)((Scheme_Class_Object *)p[0])->primdata)->GetSmoothing());
+
+  
+  
+  READY_TO_RETURN;
+  return WITH_REMEMBERED_STACK(bundle_symset_style(r));
+}
+
 static Scheme_Object *os_wxStyleGetStyle(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2834,7 +3053,7 @@ void objscheme_setup_wxStyle(Scheme_Env *env)
   wxREGGLOB(os_wxStyle_class);
   wxREGGLOB(os_wxStyle_interface);
 
-  os_wxStyle_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style%", "object%", NULL, 24));
+  os_wxStyle_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style%", "object%", NULL, 25));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "switch-to" " method", (Scheme_Method_Prim *)os_wxStyleSwitchTo, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "set-shift-style" " method", (Scheme_Method_Prim *)os_wxStyleSetShiftStyle, 1, 1));
@@ -2854,6 +3073,7 @@ void objscheme_setup_wxStyle(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-foreground" " method", (Scheme_Method_Prim *)os_wxStyleGetForeground, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-font" " method", (Scheme_Method_Prim *)os_wxStyleGetFont, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-underlined" " method", (Scheme_Method_Prim *)os_wxStyleGetUnderlined, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-smoothing" " method", (Scheme_Method_Prim *)os_wxStyleGetSmoothing, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-style" " method", (Scheme_Method_Prim *)os_wxStyleGetStyle, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-weight" " method", (Scheme_Method_Prim *)os_wxStyleGetWeight, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-size" " method", (Scheme_Method_Prim *)os_wxStyleGetSize, 0, 0));

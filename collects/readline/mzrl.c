@@ -65,21 +65,24 @@ static int block(void)
 
 Scheme_Object *scheme_reload(Scheme_Env *env)
 {
-  Scheme_Object *v;
-  MZ_DECL_VAR_REG(1);
-  MZ_VAR_REG(1, env);
+  Scheme_Object *v; /* Never holds a value that is live across calls! */
+  MZ_GC_DECL_REG(1);
+  MZ_GC_VAR_IN_REG(0, env);
+  MZ_GC_REG();
 
-  v = MZ_CWVR(scheme_intern_symbol("mzrl"));
+  v = scheme_intern_symbol("mzrl");
   
-  env = MZ_CWVR(scheme_primitive_module(v, env));
+  env = scheme_primitive_module(v, env);
 
-  v = MZ_CWVR(scheme_make_prim_w_arity(do_readline, "readline", 1, 1));
-  MZ_CWVR(scheme_add_global("readline", v, env));
+  v = scheme_make_prim_w_arity(do_readline, "readline", 1, 1);
+  scheme_add_global("readline", v, env);
 
-  v = MZ_CWVR(scheme_make_prim_w_arity(do_add_history, "add-history", 1, 1));
-  MZ_CWVR(scheme_add_global("add-history", v, env));
+  v = scheme_make_prim_w_arity(do_add_history, "add-history", 1, 1);
+  scheme_add_global("add-history", v, env);
   
-  MZ_CWVR(scheme_finish_primitive_module(env));
+  scheme_finish_primitive_module(env);
+
+  MZ_GC_UNREG();
 
   return scheme_void;
 }

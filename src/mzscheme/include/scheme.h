@@ -1208,19 +1208,20 @@ extern void *scheme_malloc_envunbox(size_t);
 
 
 #ifdef MZ_PRECISE_GC
-# define MZ_CWVR(x) (GC_variable_stack = __gc_var_stack__, x)
-# define MZ_DECL_VAR_REG(size) void *__gc_var_stack__[size+2]; \
-                               __gc_var_stack__[0] = GC_variable_stack; \
-                               __gc_var_stack__[1] = (void *)size;
-# define MZ_VAR_REG(x, v) (__gc_var_stack__[x+2] = (void *)&(v))
-# define MZ_ARRAY_VAR_REG(x, v, l) (__gc_var_stack__[x+2] = (void *)0, \
-                                    __gc_var_stack__[x+3] = (void *)&(v), \
-                                    __gc_var_stack__[x+4] = (void *)l)
+# define MZ_GC_DECL_REG(size) void *__gc_var_stack__[size+2] = { 0, size };
+# define MZ_GC_VAR_IN_REG(x, v) (__gc_var_stack__[x+2] = (void *)&(v))
+# define MZ_GC_ARRAY_VAR_IN_REG(x, v, l) (__gc_var_stack__[x+2] = (void *)0, \
+                                          __gc_var_stack__[x+3] = (void *)&(v), \
+                                          __gc_var_stack__[x+4] = (void *)l)
+# define MZ_GC_REG()  (__gc_var_stack__[0] = GC_variable_stack, \
+                       GC_variable_stack = __gc_var_stack__)
+# define MZ_GC_UNREG() (GC_variable_stack = __gc_var_stack__[0])
 #else
-# define MZ_CWVR(x)                x
-# define MZ_DECL_VAR_REG(size)     /* empty */
-# define MZ_VAR_REG(x, v)          /* empty */
-# define MZ_ARRAY_VAR_REG(x, v, l) /* empty */
+# define MZ_GC_DECL_REG(size)            /* empty */
+# define MZ_GC_VAR_IN_REG(x, v)          /* empty */
+# define MZ_GC_ARRAY_VAR_IN_REG(x, v, l) /* empty */
+# define MZ_GC_REG()                     /* empty */
+# define MZ_GC_UNREG()                   /* empty */
 #endif
 
 /*========================================================================*/

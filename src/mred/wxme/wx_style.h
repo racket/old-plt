@@ -37,8 +37,11 @@ enum {
   wxCHANGE_BOLD,
   wxCHANGE_ITALIC,
 
+  wxCHANGE_SMOOTHING,
+
   wxCHANGE_TOGGLE_STYLE,
   wxCHANGE_TOGGLE_WEIGHT,
+  wxCHANGE_TOGGLE_SMOOTHING,
   wxCHANGE_TOGGLE_UNDERLINE,
 
   wxCHANGE_BIGGER,
@@ -88,6 +91,8 @@ class wxStyleDelta : public wxObject
   int weightOff; /* On & Off, but On != Off => Converting toggle */
   int styleOn;
   int styleOff;
+  int smoothingOn;
+  int smoothingOff;
   Bool underlinedOn;
   Bool underlinedOff;
   Bool transparentTextBackingOn;
@@ -158,6 +163,7 @@ class wxStyle : public wxObject
   int GetSize();
   int GetWeight();
   int GetStyle();
+  int GetSmoothing();
   Bool GetUnderlined();
   wxFont *GetFont();
   wxColour *GetForeground();

@@ -59,6 +59,14 @@
 @SYM "slant" : wxSLANT
 @ENDSYMBOLS
 
+@BEGINSYMBOLS smoothing > ONE > PRED
+@SYM "base" : wxBASE
+@SYM "family+size-default" : wxSMOOTHING_DEFAULT
+@SYM "system-default" : wxSMOOTHING_SYS_DEFAULT
+@SYM "smoothed" : wxSMOOTHING_ON
+@SYM "unsmoothed" : wxSMOOTHING_OFF
+@ENDSYMBOLS
+
 @BEGINSYMBOLS align > ONE > PRED
 @SYM "base" : wxBASE
 @SYM "top" :  wxALIGN_TOP
@@ -85,6 +93,10 @@
 @SYM "change-weight" : wxCHANGE_WEIGHT
 @SYM "change-toggle-weight" : wxCHANGE_TOGGLE_WEIGHT
 @ENDSYMBOLS
+@BEGINSYMBOLS changeSmoothing > ONE > BUNDLE
+@SYM "change-smoothing" : wxCHANGE_SMOOTHING
+@SYM "change-toggle-smoothing" : wxCHANGE_TOGGLE_SMOOTHING
+@ENDSYMBOLS
 @BEGINSYMBOLS changeUnderline > ONE > BUNDLE
 @SYM "change-underline" : wxCHANGE_UNDERLINE
 @ENDSYMBOLS
@@ -105,6 +117,8 @@
 @IVAR "size-add" : rint[0|255] sizeAdd
 @IVAR "weight-on" : SYM[weight] weightOn
 @IVAR "weight-off" : SYM[weight] weightOff
+@IVAR "smoothing-on" : SYM[smoothing] smoothingOn
+@IVAR "smoothing-off" : SYM[smoothing] smoothingOff
 @IVAR "style-on" : SYM[style] styleOn
 @IVAR "style-off" : SYM[style] styleOff
 @IVAR "underlined-on" : bool underlinedOn
@@ -122,6 +136,7 @@
 @CREATORX (SYM[changeFam],SYM[family]); <> family
 @CREATORX (SYM[changeStyle],SYM[style]); <> style
 @CREATORX (SYM[changeWeight],SYM[weight]); <> weight
+@CREATORX (SYM[changeSmoothing],SYM[smoothing]); <> smoothing
 @CREATORX (SYM[changeUnderline],bool); <> underline
 @CREATORX (SYM[changeSize],rint[0|255]); <> size
 @CREATORX (SYM[changeAlign],SYM[align]); <> size
@@ -134,6 +149,7 @@
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeFam],SYM[family]); <> family
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeStyle],SYM[style]); <> style
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeWeight],SYM[weight]); <> weight
+@ "set-delta" : wxStyleDelta! SetDelta(SYM[changeSmoothing],SYM[smoothing]); <> smoothing
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeUnderline],bool); <> underline
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeSize],rint[0|255]); <> size
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeAlign],SYM[align]); <> size
@@ -162,6 +178,7 @@
 @ "get-size" : int GetSize();
 @ "get-weight" : SYM[weight] GetWeight();
 @ "get-style" : SYM[style] GetStyle();
+@ "get-smoothing" : SYM[style] GetSmoothing();
 @ "get-underlined" : bool GetUnderlined();
 @ "get-font" : wxFont! GetFont();
 @ "get-foreground" : wxColour! GetForeground();

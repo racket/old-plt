@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Font.h,v 1.3 1999/10/05 13:32:17 mflatt Exp $
  *
  * Purpose: wxWindows font handling
  *
@@ -35,35 +34,32 @@ extern char *wx_font_spec[];
 class wxFont : public wxObject {
 public:
     wxFont(void);
-    /* MATTHEW */
     wxFont(int PointSize, int FontIdOrFamily, int Style, int Weight,
-	   Bool underlined = FALSE);
-    /* MATTHEW */
+	   Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT);
     wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, 
-	   Bool underlined = FALSE);
+	   Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT);
     ~wxFont(void);
 
     int   GetPointSize(void)     { return point_size; }
     int   GetFamily(void)        { return family; }
     char  *GetFamilyString(void) { return wx_font_spec[family]; }
-    /* MATTHEW: */
     int   GetFontId(void)        { return font_id; }
-    /* MATTHEW: */
     char  *GetFaceString(void);
     int   GetStyle(void)         { return style; }
     char  *GetStyleString(void)  { return wx_font_spec[style]; }
     int   GetWeight(void)	 { return weight==wxNORMAL_WEIGHT ? wxNORMAL : weight; }
     char  *GetWeightString(void) { return wx_font_spec[weight]; }
     Bool  GetUnderlined(void)    { return underlined; }
+    int   GetSmoothing(void)     { return smoothing; }
 
     void  *GetInternalFont(float scale = 1.0); // return type XFontStruct*
-//    void  GetPSFont(char **name, char **style, int *point_size, float scale = 1.0);
 private:
     wxList *scaled_xfonts;
     short  point_size;
     short  family, style, weight;
     Bool   underlined;
-    int    font_id; /* MATTHEW */
+    int    font_id;
+    int    smoothing;
 };
 
 class wxFontList : public wxObject {
@@ -75,11 +71,12 @@ public:
     void AddFont(wxFont *font);
 
     wxFont *FindOrCreateFont(int PointSize, int FontIdOrFamily, int Style, 
-			     int Weight, Bool underline = FALSE);
-    /* MATTTHEW */
+			     int Weight, Bool underline = FALSE,
+			     int smoothing = wxSMOOTHING_DEFAULT);
     wxFont *FindOrCreateFont(int PointSize, const char *Face, int Family, 
 			     int Style, int Weight,
-			     Bool underline = FALSE);
+			     Bool underline = FALSE,
+			     int smoothing = wxSMOOTHING_DEFAULT);
 };
 
 #endif // Font_h

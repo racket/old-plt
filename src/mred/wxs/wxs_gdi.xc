@@ -36,6 +36,13 @@
 @SYM "slant" : wxSLANT
 @ENDSYMBOLS
 
+@BEGINSYMBOLS smoothing > ONE > PRED
+@SYM "family+size-default" : wxSMOOTHING_DEFAULT
+@SYM "system-default" : wxSMOOTHING_SYS_DEFAULT
+@SYM "smoothed" : wxSMOOTHING_ON
+@SYM "unsmoothed" : wxSMOOTHING_OFF
+@ENDSYMBOLS
+
 /* Not used, anyway: */
 #if defined(wx_mac) || defined(wx_xt)
 # define COLORMAP_CREATE 0
@@ -48,14 +55,15 @@
 @CLASSBASE wxFont "font":"object"
 
 @CREATOR (); <> no argument
-@CREATOR (rint[1|255],SYM[family],SYM[style],SYM[weight],bool=0) <> family
-@CREATOR (rint[1|255],cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name
+@CREATOR (rint[1|255],SYM[family],SYM[style],SYM[weight],bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT) <> family
+@CREATOR (rint[1|255],cstring,SYM[family],SYM[style],SYM[weight],bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT) <> font name
 
 @ "get-family" : SYM[family] GetFamily();
 @ "get-face" : nstring GetFaceString();
 @ "get-style" : SYM[style] GetStyle();
 @ "get-point-size" : int GetPointSize();
 @ "get-weight" : SYM[weight] GetWeight();
+@ "get-smoothing" : SYM[smoothing] GetSmoothing();
 @ "get-underlined" : bool GetUnderlined();
 
 @ "get-font-id" : int GetFontId();
@@ -66,8 +74,8 @@
 
 @CREATOR ();
 
-@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[1|255],SYM[family],SYM[style],SYM[weight],bool=0) <> family id
-@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[1|255],cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name
+@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[1|255],SYM[family],SYM[style],SYM[weight],bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT) <> family id
+@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[1|255],cstring,SYM[family],SYM[style],SYM[weight],bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT) <> font name
 
 @END
 

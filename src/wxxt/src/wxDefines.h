@@ -370,6 +370,11 @@ enum {
 #define wxNORMAL_WEIGHT 10
 #define wxBOLD          11
 #define wxLIGHT         12
+//--- smoothing
+#define wxSMOOTHING_DEFAULT     13
+#define wxSMOOTHING_SYS_DEFAULT 14
+#define wxSMOOTHING_OFF         15
+#define wxSMOOTHING_ON          16
 
 // defines for wxFrame, wxDialogBox, and wxEnhDialogBox
 #define wxBORDER		0x00000001

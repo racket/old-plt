@@ -134,7 +134,7 @@
              (f frame)
              (send frame show #t))))
       
-      (define simple-scheme-text% (fw:scheme:text-mixin fw:text:basic%))
+      (define simple-scheme-text% (fw:scheme:text-mixin (fw:editor:keymap-mixin fw:text:basic%)))
       
       (fw:preferences:add-panel
        "Check Syntax"
@@ -483,6 +483,12 @@
       
       (define (make-new-unit-frame% super%)
         (class super%
+          (rename [super-clear-annotations clear-annotations])
+          (override clear-annotations)
+          (define (clear-annotations)
+            (super-clear-annotations)
+            (syncheck:clear-highlighting))
+          
           (inherit get-button-panel 
                    get-definitions-canvas 
                    get-definitions-text 
@@ -626,20 +632,8 @@
                 (lambda (l)
                   (cons check-syntax-button
                         (remove check-syntax-button l))))))
-      
-      (define (make-syncheck-definitions-text% super%)
-        (class super%
-          (rename [super-clear-annotations clear-annotations])
-          (inherit get-top-level-window)
-          (override clear-annotations)
-          (define (clear-annotations)
-            (super-clear-annotations)
-            (when (get-top-level-window)
-              (send (get-top-level-window) syncheck:clear-highlighting)))
-          (super-instantiate ())))
-      
+
       (define (check-syntax) (void))
       
       (drscheme:get/extend:extend-definitions-text make-graphics-text%)
-      (drscheme:get/extend:extend-unit-frame make-new-unit-frame% #f)
-      (drscheme:get/extend:extend-definitions-text make-syncheck-definitions-text%))))
+      (drscheme:get/extend:extend-unit-frame make-new-unit-frame% #f))))

@@ -32,7 +32,10 @@
 		         ;; syntax system stuff for super-instantiate, super-make-object, and this
                          [this (datum->syntax-object (stx-car stx) 'this stx)]
                          [super-instantiate (datum->syntax-object (stx-car stx) 'super-instantiate stx)]
-                         [super-make-object (datum->syntax-object (stx-car stx) 'super-make-object stx)])
+                         [super-make-object (datum->syntax-object (stx-car stx) 'super-make-object stx)]
+                         [mixin-name (or (with-syntax ([tmp (syntax-local-name)])
+                                           (syntax (quote tmp)))
+                                         (syntax (quote mixin)))])
              (syntax
               (let ([from-ids from] ...)
                 (let ([to-ids to] ...)
@@ -64,11 +67,11 @@
                   
                   (lambda (super%)
                     (unless (class? super%)
-                      (error 'mixin "argument ~a not a class" super%))
+                      (error mixin-name "argument ~a not a class" super%))
                     (begin
                       (void)
                       (unless (implementation? super% from-ids)
-                        (error 'mixin "argument ~s does not implement ~s" super% from-ids))
+                        (error mixin-name "argument ~s does not implement ~s" super% from-ids))
                       ...)
                     
                     (class*/names (this super-instantiate super-make-object) super% (to-ids ...)

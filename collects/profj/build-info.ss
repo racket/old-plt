@@ -87,8 +87,9 @@
       ;Add these to the list for type checking
       (add-to-queue (package-defs prog))))
 
-  ;build-interactions-info: ast type-records -> void
-  (define (build-interactions-info prog level type-recs)
+  ;build-interactions-info: ast location type-records -> void
+  (define (build-interactions-info prog level loc type-recs)
+    (build-info-location loc)
     (when (field? prog)
       (send type-recs add-interaction-field 
             (process-field prog '("scheme-interactions") type-recs level))))

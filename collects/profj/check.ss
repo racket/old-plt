@@ -14,6 +14,10 @@
     (let ((str (symbol->string s)))
       (string->symbol (substring str 0 (sub1 (string-length str))))))
 
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;Environment functions
+  
+  ;First list is type-bounds for gj, will never be used but exists for extensibility
   ;Constant empty environment
   (define empty-env (list null null))
 
@@ -21,7 +25,7 @@
   ;; var-type => (make-var-type string type boolean boolean)
   (define-struct var-type (var type local? static?))
   ;; type-bound => (make-type-bound symbol type)
-  (define-struct type-bound (var bound) (make-inspector))
+  (define-struct type-bound (var bound))
   
   ;; add-var-to-env: string type boolean boolean env -> env
   (define add-var-to-env
@@ -59,12 +63,14 @@
                         (lookup (cdr env)))))))
       (lookup (car env))))
 
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;Error code
   
-  ;; Unimplemented functions
-  (define-values (...) (values null))
-  
-  (define (raise-error)
+  (define (raise-error wrong-code type)
     (error 'type-error "This file has a type error in the statements but more likely expressions"))
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;Generic helper functions
   
   ;; set-expr-type: expr type -> type
   (define (set-expr-type exp t)
@@ -93,6 +99,44 @@
                  (type-var? (type-spec-name ts))))
         (set-type-spec-name! ts (fixup-java-name (type-spec-name ts) env))))
 
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;Checking functions
+
+  ;check-def: ast symbol type-records -> void
+  (define (check-defs def level type-recs)
+    (when (not (null? (check-list)))
+      (check-list (cdr (check-list))))
+    (send type-recs set-location! (def-file def))
+    (let ((package-name (send type-recs lookup-path 
+                              (id-string (def-name def)) 
+                              (lambda () (error 'check-defs "Internal error: Current def does not have a record entry")))))
+      (if (interface-def? def)
+          (check-interface def package-name type-recs)
+          (check-class def package-name type-recs)))
+    (packages (cons def (packages)))
+    (when (not (null? (check-list)))
+      (check-defs (car (check-list)) level type-recs)))
+  
+  ;check-interactions-types: ast symbol type-records -> void
+  (define (check-interactions-types prog level type-recs)
+    (let ((env (add-var-to-env "this" (make-ref-type "scheme-interactions" null) #t #f
+                               (create-field-env (send type-recs get-interactions-fields) empty-env)))
+          (current-class (list "scheme-interactions")))
+      (cond
+        ((pair? prog)
+         (for-each (lambda (p)
+                     (check-interactions-type p level type-recs)) prog))
+        ((var-init? prog) 
+         (check-var-init (var-init-init prog) env type-recs current-class))
+        ((var-decl? prog) (void))
+        ((statement? prog)
+         (check-statement prog null env type-recs current-class))
+        ((expr? prog)
+         (check-expr prog env type-recs current-class))
+        (else
+         (error 'check-interactions "Internal error: check-interactions-types got ~a" prog)))))
+
+  
   ;;Checks
   
   ;; 5.6.1
@@ -120,7 +164,7 @@
       ((* / %)
        (if (and (prim-numeric-type? l) (prim-numeric-type? r))
            (binary-promotion l r)
-           (raise-error)))
+           (raise-error #f #f)))
       
       ;; 15.18
       ((+ -)
@@ -129,19 +173,19 @@
          ((and (prim-numeric-type? l) (prim-numeric-type? r))
           (binary-promotion l r))
          (else
-          (raise-error))))
+          (raise-error #f #f))))
       
       ;; 15.19
       ((<< >> >>>)
        (if (and (prim-integral-type? l) (prim-integral-type? r))
            (unary-promotion l)
-           (raise-error)))
+           (raise-error #f #f)))
 
       ;; 15.20
       ((< > <= >=)
        (if (and (prim-numeric-type? l) (prim-numeric-type? r))
            'boolean
-           (raise-error)))
+           (raise-error #f #f)))
 
       ;; 15.21
       ((== !=)
@@ -149,7 +193,7 @@
                (and (eq? 'boolean l) (eq? 'boolean r))
                (and (reference-type? l) (reference-type? r)))
            'boolean
-           (raise-error)))
+           (raise-error #f #f)))
       
       ;; 15.22
       ((& ^ or)
@@ -157,13 +201,13 @@
          ((and (prim-numeric-type? l) (prim-numeric-type? r))
           (binary-promotion l r))
          ((and (symbol=? 'boolean l) (symbol=? 'boolean r)) 'boolean)
-         (else (raise-error))))
+         (else (raise-error #f #f))))
       
       ;; 15.23, 15.24
       ((&& oror)
        (if (and (symbol=? 'boolean l) (symbol=? 'boolean r))
            'boolean
-           (raise-error)))))
+           (raise-error #f #f)))))
            
   ;; field-lookup: string type type-records -> type
   (define (field-lookup fname obj-type type-recs)
@@ -175,12 +219,12 @@
                            (send type-recs get-class-record obj-type 
                                                             ((get-importer type-recs) obj-type type-recs 'full))
                            type-recs)
-                          (lambda () (raise-error)))))
+                          (lambda () (raise-error #f #f)))))
       ((array-type? obj-type)
        (if (equal? fname "length")
            'int
-           (raise-error)))
-      (else (raise-error))))
+           (raise-error #f #f)))
+      (else (raise-error #f #f))))
 
   ;; build-field-accesses: access (list id) -> field-access
   (define (build-field-accesses start accesses)
@@ -201,7 +245,7 @@
                          (record (get-record (send type-recs get-class-record name ((get-importer type-recs) name type-recs 'full))
                                              type-recs)))
                     (if field? 
-                        (get-field-record (id-string (cadr accs)) record (lambda () (raise-error)))
+                        (get-field-record (id-string (cadr accs)) record (lambda () (raise-error #f #f)))
                         (get-method-records (id-string (cadr accs)) record)))
                   (cdr accs))
             (letrec ((assemble-path
@@ -214,7 +258,7 @@
                                                 (lambda () #f))))
                               (if record
                                   (list (if field?
-                                            (get-field-record (id-string (cadr r)) record (lambda () (raise-error)))
+                                            (get-field-record (id-string (cadr r)) record (lambda () (raise-error #f #f)))
                                             (get-method-records (id-string (cadr r)) record))
                                         (cdr r))
                                   (assemble-path (append f (list (car r))) (cdr r))))))))
@@ -244,7 +288,7 @@
                                     (id-string (field-access-field acc))
                                     (get-record (send type-recs get-class-record expr-type ((get-importer type-recs) expr-type type-recs 'full))
                                                 type-recs)
-                                    (lambda () (raise-error))))))
+                                    (lambda () (raise-error #f #f))))))
                   (unless (equal? (car current-class) (car (field-record-class record)))
                     (send type-recs add-req (make-req (car (field-record-class record)) (cdr (field-record-class record)))))
                   (set-field-access-access! 
@@ -258,7 +302,7 @@
                                                   (get-record (send type-recs get-class-record name
                                                                     ((get-importer type-recs) name type-recs 'full))
                                                               type-recs))
-                                                (lambda () (raise-error)))))
+                                                (lambda () (raise-error #f #f)))))
                   (unless (equal? (car current-class) (car (field-record-class record)))
                     (send type-recs add-req (make-req (car (field-record-class record)) (cdr (field-record-class record)))))
                   (set-expr-type exp (field-record-type record)))))
@@ -274,7 +318,7 @@
                       ((and (not first-binding) (> (length acc) 1))
                        (let ((static-class (find-static-class acc type-recs #t)))
                          (if (not static-class)
-                             (raise-error)
+                             (raise-error #f #f)
                              (let ((accs (cadr static-class)))
                                (build-field-accesses 
                                 (make-access #f 
@@ -303,7 +347,7 @@
                                                                     (car acc)
                                                                     #f))
                             (cdr acc))))
-                      (else (raise-error)))))
+                      (else (raise-error #f #f)))))
               (set-access-name! exp new-acc)
               (check-expr exp env type-recs current-class))))))
 
@@ -312,8 +356,8 @@
            (let ((type-this (lookup-var-in-env "this" env)))
              (if type-this
                  (set-expr-type exp (var-type-type type-this))
-                 (raise-error)))
-           (raise-error)))
+                 (raise-error #f #f)))
+           (raise-error #f #f)))
       
       ;; 15.12
       ;; SKIP - worrying about modifiers
@@ -326,15 +370,15 @@
                        (string=? (special-name-name (call-method-name exp)) "super"))
                   (let* ((parent (car (class-record-parents (send type-recs get-class-record 
                                                                   (var-type-type (lookup-var-in-env "this" env)) 
-                                                                  (lambda () (raise-error))))))
+                                                                  (lambda () (raise-error #f #f))))))
                          (parent-name (car parent)))
                     (get-method-records parent-name 
-                                        (send type-recs get-class-record parent (lambda () (raise-error))))))
+                                        (send type-recs get-class-record parent (lambda () (raise-error #f #f))))))
                  ((and (special-name? (call-method-name exp))
                        (string=? (special-name-name (call-method-name exp)) "this"))
                   (let ((crecord (send type-recs get-class-record 
                                        (var-type-type (lookup-var-in-env "this" env))
-                                       (lambda () (raise-error)))))
+                                       (lambda () (raise-error #f #f)))))
                     (get-method-records (car (class-record-name crecord)) crecord)))
                  (else
                   (cond
@@ -343,8 +387,8 @@
                                          (send type-recs get-class-record (let ((var-t (lookup-var-in-env "this" env)))
                                                                             (if var-t
                                                                                 (var-type-type var-t)
-                                                                                (raise-error)))
-                                               (lambda () (raise-error)))))
+                                                                                (raise-error #f #f)))
+                                               (lambda () (raise-error #f #f)))))
                     ((call-expr exp)
                      (let ((call-exp (with-handlers ((void (lambda (exn)
                                                              (let ((members (car (find-static-class (append (access-name (call-expr exp))
@@ -362,7 +406,7 @@
                          ((list? call-exp) call-exp)
                          ((array-type? call-exp) 
                           (get-method-records (id-string (call-method-name exp))
-                                              (send type-recs get-class-record object-type (lambda () (raise-error)))))
+                                              (send type-recs get-class-record object-type (lambda () (raise-error #f #f)))))
                          (else (get-method-records (id-string (call-method-name exp))
                                                    (get-record 
                                                     (send type-recs get-class-record call-exp ((get-importer type-recs) call-exp type-recs 'full))
@@ -374,9 +418,9 @@
                                                  (if var-t 
                                                      (var-type-type var-t)
                                                      (cons (car current-class)
-                                                           (send type-recs lookup-path (car current-class) (lambda () (raise-error))))))
+                                                           (send type-recs lookup-path (car current-class) (lambda () (raise-error #f #f))))))
                                                (lambda () raise-error))))))))
-              (method-record (resolve-overloading methods arg-types (lambda () (raise-error)) type-recs)))
+              (method-record (resolve-overloading methods arg-types (lambda () (raise-error #f #f)) type-recs)))
          (set-call-method-record! exp method-record)
          (set-expr-type 
           exp
@@ -401,7 +445,7 @@
             (let ((t (check-expr e env type-recs current-class)))
               (if (or (not (prim-integral-type? t))
                       (not (symbol=? (unary-promotion t) 'int)))
-                  (raise-error))))
+                  (raise-error #f #f))))
           (array-alloc-size exp))
          (make-array-type element-type (+ (length (array-alloc-size exp))
                                           (array-alloc-dim exp)))))
@@ -413,7 +457,7 @@
              (else-type (check-expr (cond-expression-else exp) env type-recs current-class)))
          (cond
            ((not (eq? 'boolean test-type))
-            (raise-error))
+            (raise-error #f #f))
            ((and (eq? 'boolean then-type) (eq? 'boolean else-type))
             (set-expr-type exp 'boolean))
            ((and (prim-numeric-type? then-type) (prim-numeric-type? else-type))
@@ -428,17 +472,17 @@
                 (set-expr-type exp then-type)
                 (if (assignment-conversion else-type then-type type-recs)
                     (set-expr-type exp else-type))))
-           (else (raise-error)))))
+           (else (raise-error #f #f)))))
             
       ;; 15.13
       ((array-access? exp)
        (let ((ref-type (check-expr (array-access-name exp) env type-recs current-class))
              (idx-type (check-expr (array-access-index exp) env type-recs current-class)))
          (if (not (array-type? ref-type))
-             (raise-error))
+             (raise-error #f #f))
          (if (or (not (prim-integral-type? idx-type))
                  (not (symbol=? 'int (unary-promotion idx-type))))
-             (raise-error))
+             (raise-error #f #f))
          (set-expr-type exp (if (= 1 (array-type-dim ref-type))
                                 ;I think this is correct: Could be a PROBLEM
                                 (array-type-type ref-type)
@@ -451,7 +495,7 @@
        (let ((type (check-expr (post-expr-expr exp) env type-recs current-class)))
          (if (prim-numeric-type? type)
              (set-expr-type exp type)
-             (raise-error))))
+             (raise-error #f #f))))
       
       ;; 15.15
       ;;Skips checking of whether expr is variable or value
@@ -459,7 +503,7 @@
        (let ((type (check-expr (pre-expr-expr exp) env type-recs current-class)))
          (if (prim-numeric-type? type)
              (set-expr-type exp type)
-             (raise-error))))
+             (raise-error #f #f))))
       
       ;; 15.15
       ((unary? exp)
@@ -468,15 +512,15 @@
            ((+ -)
             (if (prim-numeric-type? t)
                 (set-expr-type exp (unary-promotion t))
-                (raise-error)))
+                (raise-error #f #f)))
            ((~)
             (if (prim-integral-type? t)
                 (set-expr-type exp (unary-promotion t))
-                (raise-error)))
+                (raise-error #f #f)))
            ((!)
             (if (symbol=? 'boolean t)
                 'boolean
-                (raise-error))))))
+                (raise-error #f #f))))))
       
       ;; 15.16
       ;; SKIP - doing the checking
@@ -507,7 +551,7 @@
            ((=)
             (if (assignment-conversion ltype rtype type-recs)
                 (set-expr-type exp ltype)
-                (raise-error)))
+                (raise-error #f #f)))
            ((+= *= /= %= -= <<= >>= >>>= &= ^= or=)
             (let* ((t (check-bin-op (symbol-remove-last (assignment-op exp))
                                     ltype
@@ -530,7 +574,7 @@
          (check-expr (throw-expr statement) env type-recs current-class))
         ((return? statement)
          (when (not (assignment-conversion return (check-expr (return-expr statement) env type-recs current-class) type-recs))
-           (display return) (display (check-expr (return-expr statement) env type-recs current-class)) (raise-error)))
+           (display return) (display (check-expr (return-expr statement) env type-recs current-class)) (raise-error #f #f)))
         ((while? statement)
          (check-expr (while-cond statement) env type-recs current-class)
          (check-statement (while-loop statement) return env type-recs current-class))
@@ -548,11 +592,9 @@
            (map (lambda (e) (check-expr e newEnv type-recs current-class)) (for-incr statement))
            (check-statement (for-loop statement) return newEnv type-recs current-class)))
         ((try? statement)
-         (check-statement (try-body statement) return env type-recs current-class)
-         ...)
+         (check-statement (try-body statement) return env type-recs current-class))
         ((switch? statement)
-         (check-expr (switch-expr statement) return env type-recs current-class)
-         ...)
+         (check-expr (switch-expr statement) return env type-recs current-class))
         ((block? statement)
          (check-block (block-stmts statement)
                       (block-src statement)
@@ -659,7 +701,7 @@
                              (build-method-env (method-parms method) field-env type-recs)
                              type-recs
                              current-class)
-            (raise-error)))))
+            (raise-error #f #f)))))
   
   ;create-field-env: (list field) env -> env
   (define create-field-env
@@ -683,7 +725,7 @@
     (lambda (members)
       (let* ((fields (class-record-fields (send type-recs get-class-record 
                                                 (var-type-type (lookup-var-in-env "this" env)) 
-                                                (lambda () (raise-error)))))
+                                                (lambda () (raise-error #f #f)))))
              (field-env (create-field-env fields env)))
         (for-each (lambda (member)
                     (cond
@@ -729,34 +771,5 @@
            (class-def-members class))))
       (set-class-def-uses! class (send type-recs get-class-reqs))))
 
-  ;check-def: ast type-records -> void
-  (define (check-defs def type-recs)
-    (when (not (null? (check-list)))
-      (check-list (cdr (check-list))))
-    (send type-recs set-location! (def-file def))
-    (let ((package-name (send type-recs lookup-path 
-                              (id-string (def-name def)) 
-                              (lambda () (raise-error)))))
-      (if (interface-def? def)
-          (check-interface def package-name type-recs)
-          (check-class def package-name type-recs)))
-    (packages (cons def (packages)))
-    (when (not (null? (check-list)))
-      (check-defs (car (check-list)) type-recs)))
-  
-  (define (check-interactions-types prog type-recs)
-    (let ((env (add-var-to-env "this" (make-ref-type "scheme-interactions" null) #t #f
-                               (create-field-env (send type-recs get-interactions-fields) empty-env)))
-          (current-class (list "scheme-interactions")))
-      (cond
-        ((var-init? prog) 
-         (check-var-init (var-init-init prog) env type-recs current-class))
-        ((var-decl? prog) (void))
-        ((statement? prog)
-         (check-statement prog null env type-recs current-class))
-        ((expr? prog)
-         (check-expr prog env type-recs current-class))
-        (else
-         (error 'check-interactions "Internal error: check-interactions-types got ~a" prog)))))
     
     )

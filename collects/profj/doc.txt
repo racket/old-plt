@@ -6,6 +6,12 @@ language levels, and known bugs. If a bug is listed in known bugs,
 please do not report it, it will be fixed at some point. Otherwise,
 please for now, report bugs directly to me at kathyg@cs.utah.eud
 
+Changed:
+Statements now work in the interactions window
+
+Some type checking is completed. Class inheritance and method headers,
+as well as some field naming is now checked.
+
 General Information:
 
 The interactions window can evaluate the statements and expressions
@@ -32,8 +38,7 @@ default.
 
 Recursive functions are very slow.
 
-Using statements or variable declarations in the interactions window
-causes errors.
+Using variable declarations in the interactions window causes errors.
 
 Fully qualified names will not be understood in interactions (anything
 that would require an implicit import).

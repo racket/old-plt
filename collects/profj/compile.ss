@@ -118,7 +118,7 @@
       (load-lang type-recs)
       (set-importer! type-recs find-implicit-import)
       (build-info ast level type-recs #f)
-      (check-defs (car (check-list)) type-recs)
+      (check-defs (car (check-list)) level type-recs)
       (remove-from-packages ast type-recs)
       (order-compilation-units (translate-program ast type-recs) type-recs)))
   
@@ -127,7 +127,7 @@
     (to-file #f)
     (let ((ast (parse-interactions port location level)))
       (build-interactions-info ast level location type-recs)
-      (check-interactions-types ast type-recs)
+      (check-interactions-types ast level type-recs)
       (translate-interactions ast type-recs)))
       
   (define-struct elt (prev val next))

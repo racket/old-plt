@@ -309,7 +309,7 @@ void *GC_resolve(void *p);
    the class. */
 
 /* INTERNAL: */
-void GC_mark(void *p);
+void GC_mark(const void *p);
 void GC_fixup(void *p);
 /*
    Used in the expansion of gcMARK and gcFIXUP. */
@@ -347,7 +347,7 @@ extern void *GC_alloc_space, *GC_alloc_top;
 #endif
 
 /* Macros: */
-#define gcMARK(x) GC_mark((void *)x)
+#define gcMARK(x) GC_mark(x)
 #define gcMARK_TYPED(t, x) gcMARK(x)
 #define gcFIXUP_TYPED(t, x) GC_fixup(&(x))
 #define gcFIXUP(x) gcFIXUP_TYPED(void*, x)

@@ -1088,7 +1088,7 @@ static void init_all_mpages(int young)
 long mark_calls, mark_hits, mark_recalls, mark_colors, mark_one, mark_many, mark_slow;
 #endif
 
-void GC_mark(void *p)
+void GC_mark(const void *p)
 {
   unsigned long g = ((unsigned long)p >> MAPS_SHIFT);
   MPage *map;

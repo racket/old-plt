@@ -87,6 +87,31 @@ class wxUpdateCursorTimer : public wxTimer
   }
 };
 
+#define AUTO_DRAG_DELAY 100
+
+class wxAutoDragTimer : public wxTimer 
+{
+  wxMediaCanvas *canvas;
+  wxMouseEvent event;
+ public:
+  wxAutoDragTimer(wxMediaCanvas *c, wxMouseEvent *e) {
+    canvas = c;
+    memcpy(&event, e, sizeof(wxMouseEvent));
+    Start(AUTO_DRAG_DELAY, TRUE);
+  }
+  void Notify(void) {
+    wxYield(); /* In case we get too much time */
+    if (canvas) {
+      event.timeStamp += AUTO_DRAG_DELAY;
+      canvas->OnEvent(event);
+    }
+  }
+  void Kill(void) {
+    canvas = NULL;
+    Stop();
+  }
+};
+
 /************************************************************************/
 
 #ifndef wxOVERRIDE_KEY_TRANSLATIONS
@@ -172,6 +197,8 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 
   lazy_refresh = need_refresh = FALSE;
 
+  autoDragger = NULL;
+
   if (m)
     SetMedia(m);
 
@@ -182,6 +209,11 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 
 wxMediaCanvas::~wxMediaCanvas()
 {
+  if (autoDragger) {
+    autoDragger->Kill();
+    autoDragger = NULL;
+  }
+
   if (media) {
     if (admin->nextadmin || admin->prevadmin)
       SetMedia(NULL);
@@ -301,6 +333,12 @@ void wxMediaCanvas::ForceDisplayFocus(Bool on)
 
 void wxMediaCanvas::OnEvent(wxMouseEvent &event)
 {
+  /* Turn of auto-dragger if there is one. */
+  if (autoDragger) {
+    autoDragger->Kill();
+    autoDragger = NULL;
+  }
+
   last_x = event.x;
   last_y = event.y;
 
@@ -360,6 +398,20 @@ void wxMediaCanvas::OnEvent(wxMouseEvent &event)
     
     if (PTRNE(oldadmin, admin)) {
       media->SetAdmin(oldadmin);
+    }
+
+    if (event.Dragging()) {
+      int ch, cw;
+      GetClientSize(&cw, &ch);
+      if (event.x < 0 || event.y < 0 || event.x > cw || event.y > ch) {
+	/* Dragging outside the canvas: auto-generate more events because the buffer
+	   is probably scrolling. But make sure we're shown. */
+	wxWindow *w = this;
+	while (w && w->IsShown())
+	  w = w->GetParent();
+	if (!w)
+	  autoDragger = new wxAutoDragTimer(this, &event);
+      }
     }
   }
 }

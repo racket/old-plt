@@ -341,6 +341,8 @@ class wxMediaCanvas : public wxCanvas
   Bool focuson, focusforcedon;
   Bool lazy_refresh, need_refresh;
 
+  class wxAutoDragTimer *autoDragger;
+
   wxCursor *customCursor;
   Bool customCursorOn;
 

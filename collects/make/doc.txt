@@ -1,4 +1,7 @@
 
+make.ss
+-------
+
 make.ss provides a `make' macro and a `make*' procedure.
  (make
    ((target (depend ...) command ...) ...)
@@ -24,3 +27,41 @@ dependencies, the corresponding COMMAND-THUNK is invoked.
 
 `make*' does not specially capture any exception, so an exception
 raised by a COMMAND-THUNK will terminate the make.
+
+The maker.ss library is a signed unit that requires no imports
+and provdes `make*'.
+
+collection.ss
+-------------
+
+collection.ss provides a `make-collection' procedure.
+
+(make-collection collection-name et-expr collection-files argv)
+constructs and performs a make to compile a collection of Scheme files
+into a multi-file extension. `collection-name' is used as a name that
+is embedded into publicly visible names in the extension (choosing a
+unique `collection-name' for each extension helps avoid conflicts
+among different extensions for certain operating systems). The
+`et-expr' expression is used as an ealboration-time initialization
+expression for the compiler. `collection-files' is a list
+of Scheme source files to be compiled. `argv' is passed on
+to `make'.
+
+The resulting extension "_loader" is compiled to the current
+directory's "compiled/native/PLATFORM" subdirectory, where `PLATFORM'
+is replaced by the system name of the current platform. Intermediate
+.c amd .kp files are placed into "compiled/native", and intermediate
+object files are also placed into "compiled/native/PLATFORM".  The .c
+and .kp files are preserved so that thay can be generated once for
+compiling across multiple platforms with the same filesystem.
+
+Make rules are also generated for compiling .zo files, placed in the
+"compiled" directory. The make target "zo" makes all of the .zo
+files. (In other words, pass #("zo") as `argv' to compile .zo files.)
+
+The "compiled", "compiled/native", etc. directories are automatically
+created if they do not already exist. Currently, `make-collection'
+does not try to infer sophisticated file dependencies. Each .c/.kp/.zo
+is dependent just on the .ss source file, each object file is depend
+only on its .c file, and the extension is dependent only on the
+object files.

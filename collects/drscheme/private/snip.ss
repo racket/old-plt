@@ -47,15 +47,24 @@ carry over the computation of the original
       (define number-snip-class%
         (class snip-class%
           (define/override (read f)
-            (instantiate number-snip% ()
-              [number (string->number (send f get-string))]
-              [decimal-prefix (send f get-string)]))
+            (let* ([number (string->number (send f get-string))]
+                   [decimal-prefix (send f get-string)]
+                   [fraction-view? (string=? "#t" (send f get-string))]
+                   [expansions (string->number (send f get-string))]
+                   [snip
+                    (instantiate number-snip% ()
+                      [number number]
+                      [decimal-prefix decimal-prefix])])
+              (send snip iterate (max 0 (- expansions 1))) ;; one iteration is automatic
+              (send snip set-fraction-view fraction-view?)
+              snip))
           (super-instantiate ())))
       
       (define number-snipclass (make-object number-snip-class%))
-      (send number-snipclass set-version 2)
+      (send number-snipclass set-version 3)
       (send number-snipclass set-classname "drscheme:number")
-      
+      (send (get-the-snip-class-list) add number-snipclass)
+
       (define arrow-cursor (make-object cursor% 'arrow))
 
       ;; cut-off : number
@@ -299,13 +308,15 @@ carry over the computation of the original
           
           (define/override (write f)
             (send f put (number->string number))
-            (send f put decimal-prefix))
+            (send f put decimal-prefix)
+            (send f put (format "~a" fraction-view?))
+            (send f put (number->string expansions)))
           
           (define/override (copy)
             (let ([snip (instantiate number-snip% ()
                           [number number]
                           [decimal-prefix decimal-prefix])])
-              (send snip iterate expansions)
+              (send snip iterate (max 0 (- expansions 1))) ;; one iteration is automatic
               (send snip set-fraction-view fraction-view?)
               snip))
           

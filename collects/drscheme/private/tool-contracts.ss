@@ -1,5 +1,5 @@
 
-(module tool-contracts "tool-contract-language.ss"                       
+(module tool-contracts "tool-contract-language.ss"
                        
                      ; 
                      ; 
@@ -1427,4 +1427,10 @@
  "See also"
  "@flink drscheme:teachpack:install-teachpacks %"
  ".")
-)
+
+  
+    
+  (def language-object
+    (object-contract))
+
+  )

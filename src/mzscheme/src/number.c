@@ -4171,7 +4171,7 @@ random_seed(int argc, Scheme_Object *argv[])
 
   sch_srand(i, (Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_RANDOM_STATE));
 
-  ESCAPED_BEFORE_HERE;
+  return scheme_void;
 }
 
 static Scheme_Object *

@@ -298,9 +298,7 @@
 
   (define (file-time file)
     (or (lookup-or-#f file-time-cache file)
-	(let* ([n (file-modify-seconds file)])
-	  (unless (number? n) 
-	    (error 'file-time "file-modify-seconds failed on ~a" file))
+	(let* ([n (or (file-modify-seconds file) (current-seconds))])
 	  (extend-file-time-cache! file n)
 	  n)))
 

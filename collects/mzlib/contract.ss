@@ -704,8 +704,6 @@ add struct contracts for immutable structs?
 ;                                                                                   
 
   
-  (define (print-me x) (printf "pm: ~s\n" x))
-  
   (define-syntax-set (-> ->* ->d ->d* ->r case-> object-contract opt-> opt->*)
     
     (define (->/proc stx) (make-/proc #f ->/h stx))

@@ -1094,6 +1094,10 @@ please adhere to these guidelines:
  (module-browser-refresh "Refresh") ;; button label in show module browser pane in drscheme window.
  (module-browser-only-in-plt-and-module-langs
   "The module browser is only available for programs in the PLT languages and in the module language (and only for programs that have modules in them).")
+ (module-browser-name-length "Name length")
+ (module-browser-name-short "Short")
+ (module-browser-name-medium "Medium")
+ (module-browser-name-long "Long")
 
  (happy-birthday-matthias "Happy Birthday, Matthias!")
  (happy-birthday-matthew "Happy Birthday, Matthew!")

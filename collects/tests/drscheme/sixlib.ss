@@ -1,12 +1,7 @@
-;; make sure these load
-(parameterize ([current-namespace (make-namespace 'mred)])
-  (require-library "graphicss.ss" "graphics")
-  (require-library "graphicr.ss" "graphics")
-  (require-library "graphicspr.ss" "graphics"))
-
 ;; load the graphics
-(require-library "graphics.ss" "graphics")
-(require-library "macro.ss")
+(require (lib "graphics.ss" "graphics")
+         (lib "etc.ss")
+         (lib "file.ss"))
 (open-graphics)
 
 (define (struct-test)
@@ -194,6 +189,16 @@
     (line)
     ((draw-pixmap view-port) pixmap-filename (make-posn 0 0))
     (next "pixmap-functions: draw line then draw-pixmap")
+    
+    (line)
+    ((draw-pixmap view-port) pixmap-filename (make-posn 0 0))
+    (let ([fn (make-temporary-file)])
+      ((save-pixmap view-port) fn)
+      ((clear-viewport view-port))
+      (next (format "same image; saved to ~a and cleared..." fn))
+      ((draw-pixmap view-port) fn (make-posn 0 0))
+      (delete-file fn)
+      (next "re-loaded"))
     
     (close-viewport view-port)))
 

@@ -172,13 +172,37 @@
     (define sk-bitmap #f)
     
     (define hd-editor-mixin
+      (let ([sk-bday? (lambda () #t)])
       (mixin (editor<%>) ()
-        (rename [super-on-paint on-paint])
+        (define show-sk? #t)
+
+        (inherit invalidate-bitmap-cache)
+        (rename [super-on-event on-event])
+        (define/override (on-event evt)
+          (cond
+            [(and show-sk? 
+                  (sk-bday?)
+                  (send evt button-down? 'right))
+             (let ([menu (new popup-menu%)])
+               (new menu-item% 
+                    (parent menu)
+                    (label (string-constant happy-birthday-shriram))
+                    (callback (lambda (x y)
+                                (set! show-sk? #f)
+                                (invalidate-bitmap-cache))))
+               (let ([admin (get-admin)])
+                 (send admin popup-menu menu
+                       (send evt get-x)
+                       (send evt get-y))))]
+            [else (super-on-event evt)]))
+             
+        
         (inherit dc-location-to-editor-location get-admin)
+        (rename [super-on-paint on-paint])
         (define/override (on-paint before? dc left top right bottom dx dy draw-caret)
           (super-on-paint before? dc left top right bottom dx dy draw-caret)
           (when before?
-            (when (sk-bday?)
+            (when (and show-sk? (sk-bday?))
               (unless sk-bitmap
                 (set! sk-bitmap (make-object bitmap% (build-path (collection-path "icons") "sk.jpg"))))
               
@@ -211,7 +235,7 @@
         (define/override (close-browser-status-line top-level-window) 
           (send  top-level-window change-status-to-search))
         
-        (super-instantiate ())))
+        (super-instantiate ()))))
     
     (lambda (%)
       (class %

@@ -36,7 +36,7 @@
 
 (printf "Running DrScheme tests...~n") 
 
-;(for-each run-it test-files)
+(for-each run-it test-files)
 
 (printf "Done with DrScheme tests.~n") 
 

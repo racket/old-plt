@@ -221,8 +221,6 @@ void wxSlider::Paint(void)
   if (cHidden) return;
 
   SetCurrentDC();
-  Rect r = controlRect;
-  ::PaintRect(&controlRect);
   ::Draw1Control(cMacControl);
 
   if (!(windowStyle & (wxHORIZONTAL << 2))) {

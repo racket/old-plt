@@ -236,15 +236,15 @@
          (read-char in)
          (skip-space in)
          (let* ([delimiter (read-char in)]
-                [value (case delimiter
-                         [(#\' #\")
-                          (list->string
+                [value (list->string
+                        (case delimiter
+                          [(#\' #\")
                            (let read-more ()
                              (let ([c (non-eof peek-char in)])
                                (cond
                                  [(eq? c delimiter) (read-char in) null]
-                                 [else (read-char in) (cons c (read-more))]))))]
-                         [else (read-up-to (lambda (c) (or (char-whitespace? c) (eq? c #\>))) in)])])
+                                 [else (read-char in) (cons c (read-more))])))]
+                          [else (cons delimiter (read-up-to (lambda (c) (or (char-whitespace? c) (eq? c #\>))) in))]))])
            (make-attribute start (file-position in) name value))]
         [else (make-attribute start (file-position in) name (symbol->string name))])))
   
@@ -317,15 +317,14 @@
         (eq? ch #\.)
         (eq? ch #\-)))
   
-  ;; read-up-to : (Char -> Bool) Input-port
+  ;; read-up-to : (Char -> Bool) Input-port -> (listof Char)
   ;; abstract this with read-until
   (define (read-up-to p? in)
-    (list->string
-     (let loop ()
-       (let ([c (peek-char in)])
-         (cond
-           [(or (eof-object? c) (p? c)) null]
-           [else (cons (read-char in) (loop))])))))
+    (let loop ()
+      (let ([c (peek-char in)])
+        (cond
+          [(or (eof-object? c) (p? c)) null]
+          [else (cons (read-char in) (loop))]))))
   
   ;; read-until : Char Input-port -> String
   ;; discards the stop character, too

@@ -14,5 +14,10 @@
         (javac "Color.java")
         (javac "ICanvas.java")
         (javac "Canvas.java")
-        (javac "Red.java")))))
+        (javac "Red.java")
+        (javac "White.java")
+        (javac "Blue.java")
+        (javac "Black.java")
+        (javac "Green.java")
+        (javac "Yellow.java")))))
            

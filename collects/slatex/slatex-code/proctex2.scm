@@ -69,6 +69,9 @@
                                          ((member cs *box-triggerers*)
                                           (trigger-scheme2tex 'envbox
                                                               in cs))
+                                         ((member cs *top-box-triggerers*)
+                                          (trigger-scheme2tex 'envtopbox
+                                                              in cs))
                                          ((member cs *region-triggerers*)
                                           (slatex::trigger-region
                                            'envregion in cs))))))
@@ -217,7 +220,8 @@
                                  ((string=? cs "unsetspecialsymbol")
                                   (add-to-slatex-db in 'unsetspecialsymbol))
                                  )))))
-			  (loop)))))))))
+			  (loop))))))
+	      'text)))
       (if debug?
 	  (begin (display "end ")
 		 (display raw-filename)
@@ -243,7 +247,9 @@
 		    (lambda (out)
 		      (fluid-let ((*intext?* #f)
 				  (*code-env-spec* "ZZZZschemedisplay"))
-			(scheme2tex in out))))))
+			(scheme2tex in out)))
+		    'text))
+		'text)
 	      (if *slatex-in-protected-region?*
 		  (set! *protected-files* (cons aux.tex *protected-files*)))
 	      (process-tex-file filename))))))
@@ -260,13 +266,14 @@
 	(call-with-output-file aux.scm
 	  (lambda (out)
 	    (cond ((memq typ '(intext resultintext)) (dump-intext in out))
-		  ((memq typ '(envdisplay envresponse envrespbox envbox))
+		  ((memq typ '(envdisplay envresponse envrespbox envbox envtopbox))
 		   (dump-display in out (string-append "\\end{" env "}")))
 		  ((memq typ '(plaindisplay plainresponse
 					    plainrespbox plainbox))
 		   (dump-display in out (string-append "\\end" env)))
 		  (else (error "trigger-scheme2tex: ~
-Unknown triggerer ~s." typ)))))
+Unknown triggerer ~s." typ))))
+	  'text)
 	(call-with-input-file aux.scm
 	  (lambda (in)
 	    (call-with-output-file aux.tex
@@ -285,12 +292,16 @@ Unknown triggerer ~s." typ)))))
 			     "ZZZZschemeresponsebox")
 			    ((memq typ '(envbox plainbox))
 			     "ZZZZschemebox")
+                            ((memq typ '(envtopbox))
+                             "ZZZZschemetopbox")
 			    (else (error "trigger-scheme2tex: ~
 Unknown triggerer ~s." typ)))))
-		  (scheme2tex in out))))))
+		  (scheme2tex in out)))
+	      'text))
+	  'text)
 	(if *slatex-in-protected-region?*
 	    (set! *protected-files* (cons aux.tex *protected-files*)))
-	(if (memq typ '(envdisplay plaindisplay envbox plainbox))
+	(if (memq typ '(envdisplay plaindisplay envbox plainbox envtopbox))
 	    (process-tex-file aux.tex))
 	(delete-file aux.scm)
 	)))
@@ -313,14 +324,17 @@ Unknown triggerer ~s." typ)))))
 		    ((eq? typ 'plainregion)
 		     (dump-display in out (string-append "\\end" env)))
 		    (else (error "trigger-region: ~
-Unknown triggerer ~s." typ)))))
+Unknown triggerer ~s." typ))))
+	    'text)
 	  (process-tex-file aux2.tex)
 	  (set! *protected-files* (reverse! *protected-files*))
 	  (call-with-input-file aux2.tex
 	    (lambda (in)
 	      (call-with-output-file aux.tex
 		(lambda (out)
-		  (slatex::inline-protected-files in out)))))
+		  (slatex::inline-protected-files in out))
+		'text))
+	    'text)
 	  (delete-file aux2.tex)
 	  ))))
 
@@ -358,6 +372,8 @@ Unknown triggerer ~s." typ)))))
                                        'envrespbox in out cs))
                                      ((member cs *box-triggerers*)
                                       (inline-protected 'envbox in out cs))
+                                     ((member cs *top-box-triggerers*)
+                                      (inline-protected 'envtopbox in out cs))
                                      ((member cs *region-triggerers*)
                                       (inline-protected
                                        'envregion in out cs))
@@ -407,13 +423,14 @@ Unknown triggerer ~s." typ)))))
 		    (set! *protected-files* (cdr *protected-files*))
 		    (call-with-input-file f
 		      (lambda (in)
-			(inline-protected-files in out)))
+			(inline-protected-files in out))
+		      'text)
 		    (delete-file f)
 		    )
 		  (cond ((memq typ '(intext resultintext))
 			 (display "{}" out)
 			 (dump-intext in #f))
-			((memq typ '(envrespbox envbox))
+			((memq typ '(envrespbox envbox envtopbox))
 			 (if (not *latex?*)
 			     (display "{}" out))
 			 (dump-display in #f

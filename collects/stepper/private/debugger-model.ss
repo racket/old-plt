@@ -11,7 +11,8 @@
            "debugger-annotate.ss"
            "shared.ss"
            "marks.ss"
-           "debugger-vc.ss")
+           "debugger-vc.ss"
+           "debugger-bindings.ss")
  
   
   (define program-expander-contract
@@ -77,7 +78,7 @@
           (parameterize ([current-custodian user-custodian])
             (program-expander
              (lambda ()
-               (namespace-attach-module ns break-module-name)
+               (namespace-set-variable-value! 'break break #t)
                (error-display-handler err-display-handler)
                (current-breakpoint-handler break)) ; init
              (lambda (expanded continue-thunk) ; iter

@@ -330,6 +330,21 @@
       (lambda (c)
 	(vector-ref marker-locations (char->integer c))))
 
+    ; netscape/string->url : str -> url
+    (define netscape/string->url
+      (lambda (string)
+	(let ((url (string->url string)))
+	  (if (url-scheme url)
+	    url
+	    (if (string=? string "")
+	      (error 'netscape/string->url "Given empty string")
+	      (begin
+		(set-url-scheme! url
+		  (if (char=? (string-ref string 0) #\/)
+		    "file"
+		    "http"))
+		url))))))
+
     ; string->url : str -> url
     (define string->url
       (lambda (string)

@@ -38,6 +38,40 @@
     (scheme-init-wordbreak-map scheme-media-wordbreak-map)
 
     (mred:preferences:set-preference-default 'mred:highlight-parens #f)
+    (mred:preferences:set-preference-default 'mred:paren-match/fixup-parens #t)
+    (let ([hash-table (make-hash-table)])
+	      (for-each (lambda (x) (hash-table-put! hash-table x 'define))
+			'(define defmacro define-macro
+			   define-signature define-syntax define-schema))
+	      (for-each (lambda (x) (hash-table-put! hash-table x 'begin))
+			'(cond begin begin0 delay
+			       public private
+			       inherit inherit-from
+			       rename rename-from
+			       share share-from
+			       sequence))
+	      (for-each (lambda (x) (hash-table-put! hash-table x 'lambda))
+			'(lambda let let* letrec letrec* recur let-values
+			   let/cc let/ec letcc catch
+			   let-syntax letrec-syntax syntax-case
+			   let-struct let-macro
+			   case when unless match
+			   let-enumerate
+			   class class* class-asi class-asi*
+			   define-some do opt-lambda send*
+			   local catch
+			   unit unit/sig compound-unit/sig 
+			   with-handlers
+			   call-with-input-file with-input-from-file
+			   with-input-from-port call-with-output-file
+			   with-output-to-file with-output-to-port))
+	      (mred:preferences:set-preference-un/marshall
+		'mred:tabify 
+	       (lambda (t) (hash-table-map t list))
+	       (lambda (l) (let ([h (make-hash-table)])
+			     (for-each (lambda (x) (apply hash-table-put! h x)) l)
+			     h)))
+	      (mred:preferences:set-preference-default 'mred:tabify hash-table))
 
     (mred:preferences:add-preference-panel
      "Indenting"
@@ -103,40 +137,6 @@
 	 (make-column "Lambda" 'lambda lambda-keywords)
 	 main-panel)))
 
-    (let ([hash-table (make-hash-table)])
-	      (for-each (lambda (x) (hash-table-put! hash-table x 'define))
-			'(define defmacro define-macro
-			   define-signature define-syntax define-schema))
-	      (for-each (lambda (x) (hash-table-put! hash-table x 'begin))
-			'(cond begin begin0 delay
-			       public private
-			       inherit inherit-from
-			       rename rename-from
-			       share share-from
-			       sequence))
-	      (for-each (lambda (x) (hash-table-put! hash-table x 'lambda))
-			'(lambda let let* letrec letrec* recur let-values
-			   let/cc let/ec letcc catch
-			   let-syntax letrec-syntax syntax-case
-			   let-struct let-macro
-			   case when unless match
-			   let-enumerate
-			   class class* class-asi class-asi*
-			   define-some do opt-lambda send*
-			   local catch
-			   unit unit/sig compound-unit/sig 
-			   with-handlers
-			   call-with-input-file with-input-from-file
-			   with-input-from-port call-with-output-file
-			   with-output-to-file with-output-to-port))
-	      (mred:preferences:set-preference-un/marshall
-		'mred:tabify 
-	       (lambda (t) (hash-table-map t list))
-	       (lambda (l) (let ([h (make-hash-table)])
-			     (for-each (lambda (x) (apply hash-table-put! h x)) l)
-			     h)))
-	      (mred:preferences:set-preference-default 'mred:tabify hash-table))
-
     (define make-scheme-mode% 
       (lambda (super%)
 	(class-asi super%
@@ -175,7 +175,8 @@
 	    [after-change-style
 	     (lambda (edit start len)
 	       (send edit end-edit-sequence)
-	       (highlight-parens edit))]
+	       (unless (ivar edit styles-fixed?)
+		 (highlight-parens edit)))]
 	    [on-edit-sequence
 	     (lambda (edit)
 	       (set! suspend-highlight? #t))]
@@ -227,8 +228,8 @@
 				      (set! highlight-parens? value)))])
 	  (public
 	    [highlight-parens
-	     (let ([clear-old-location (lambda () (void))]
-		   [color (make-object wx:colour% 191 191 191)])
+	     (let* ([clear-old-location (lambda () (void))]
+		    [color (make-object wx:colour% 191 191 191)])
 	       (opt-lambda (edit [just-clear? #f])
 		 (if (or (not highlight-parens?)
 			 suspend-highlight?)
@@ -252,69 +253,158 @@
 				   [is-right-paren? (is-paren? cdr)])
 			      (when (= here there)
 				(let/ec k
-				  (let-values ([(left right)
-						(cond
-						  [(is-right-paren? (send edit get-character (sub1 here))) 
-						   (let ([end-pos (mred:scheme-paren:scheme-backward-match
-								   edit here (get-limit edit here)
-								   backward-cache)])
-						     (if end-pos
-							 (values end-pos here)
-							 (k (void))))]
-						  [(is-left-paren? (send edit get-character here))
-						   (let ([end-pos (mred:scheme-paren:scheme-forward-match
-								   edit here (send edit last-position)
-								   forward-cache)])
-						     (if end-pos
-							 (values here end-pos)
-							 (k (void))))]
-						  [else (k (void))])])
+				  (let-values
+				      ([(left right)
+					(cond
+					 [(is-right-paren? (send edit get-character (sub1 here))) 
+					  (let ([end-pos (mred:scheme-paren:scheme-backward-match
+							  edit here (get-limit edit here)
+							  backward-cache)])
+					    (if end-pos
+						(values end-pos here)
+						(k (void))))]
+					 [(is-left-paren? (send edit get-character here))
+					  (let ([end-pos (mred:scheme-paren:scheme-forward-match
+							  edit here (send edit last-position)
+							  forward-cache)])
+					    (if end-pos
+						(values here end-pos)
+						(k (void))))]
+					 [else (k (void))])])
 				    (clear-old-location)
 				    (set! clear-old-location
-					    (send edit highlight-range left right 
-						  color
-						  mred:icon:paren-highlight-bitmap))))))))
+					  (send edit highlight-range left right
+						color
+						mred:icon:paren-highlight-bitmap))))))))
 			(lambda () (send edit end-edit-sequence)))))))]
 	    
 	    [get-limit
 	     (lambda (edit pos)
 	       0)]
 	    
+	    [dummy
+	     '(begin
+	      (send edit insert (integer->char code))
+	      (let ([pos (mred:scheme-paren:scheme-backward-match edit (add1 here) limit backward-cache)])
+		(if (and pos
+			 (or (not (= quote-code code))
+			     (> 5 
+				(abs (- (send edit position-paragraph 
+					      here)
+					(send edit position-paragraph 
+					      pos))))))
+		    (unless (= (add1 here) pos)
+		      (send edit flash-on pos (add1 pos)))
+		    (when (and (= paren-code code) (match-round-to-square?))
+		      (send* edit 
+			     (begin-edit-sequence)
+			     (insert #\] here (add1 here)));ensure right selection
+		      (let ([round-pos (mred:scheme-paren:scheme-backward-match
+					edit (add1 here)
+					limit backward-cache)])
+			(if round-pos
+			    (send* edit (end-edit-sequence)
+				   (flash-on round-pos
+					     (add1 round-pos)))
+			    (begin
+			      (send* edit
+				     (insert #\) here (add1 here)) 
+				     (end-edit-sequence))
+			      (wx:bell))))))))]
+
+
 	    [balance-parens
 	     ;paren balancing keymap callback
-	     (lambda (edit key)
-	       (let* ([code (send key get-key-code)]
-		      [here (send edit get-start-position)]
-		      [limit (get-limit edit here)])
-		 (send edit insert (integer->char code))
-		 (let ([pos (mred:scheme-paren:scheme-backward-match 
-			     edit (add1 here) limit backward-cache)])
-		   (if (and pos
-			    (or (not (= 34 code))
-				(> 5 
-				   (abs (- (send edit position-paragraph 
-						 here)
-					   (send edit position-paragraph 
-						 pos))))))
-		       (unless (= (add1 here) pos)
-			 (send edit flash-on pos (add1 pos)))
-		       (when (and (= 41 code) (match-round-to-square?))
-			 (send* edit 
-				(begin-edit-sequence)
-				(insert #\] here (add1 here)));ensure right selection
-			 (let ([round-pos (mred:scheme-paren:scheme-backward-match
-					   edit (add1 here)
-					   limit backward-cache)])
-			   (if round-pos
-			       (send* edit (end-edit-sequence)
-				      (flash-on round-pos
-						(add1 round-pos)))
-			       (begin
-				 (send* edit
-					(insert #\) here (add1 here)) 
-					(end-edit-sequence))
-				 (wx:bell))))))))
-	       #t)]
+	     (let-struct string/pos (string pos)
+	       (lambda (edit key)
+		 (let* ([code (send key get-key-code)]
+			[here (send edit get-start-position)]
+			[get-character (ivar edit get-character)] 
+			[limit (get-limit edit here)]
+			[paren-pairs
+			 (append mred:scheme-paren:scheme-paren-pairs
+				 mred:scheme-paren:scheme-quote-pairs)]
+			[match-left-paren?-return-right-paren
+			 (lambda (left-match-string)
+			   (ormap (lambda (x) (if (string=? left-match-string (car x))
+						  (cdr x)
+						  #f))
+				  paren-pairs))]
+			[match-string
+			 (lambda (position string)
+			   (let loop ([s 0])
+			     (cond
+			       [(<= (string-length string) s) string]
+			       [(char=? (get-character (+ position s))
+					(string-ref string s))
+				(loop (add1 s))]
+			       [else #f])))]
+			[match-delimiters
+			 (lambda (position delim)
+			   (ormap (lambda (d) (or (match-string position (car d))
+						  (match-string position (cdr d))))
+				  delim))]
+			[find-back
+			 (lambda (position p?)
+			   (let loop ([p position])
+			     (cond
+			       [(< p limit) #f]
+			       [(p? p) => (lambda (x) (make-string/pos x p))]
+			       [else (loop (sub1 p))])))])
+		   (if (mred:preferences:get-preference 'mred:paren-match/fixup-parens)
+		       (let* ([back-string-predicate
+			       (lambda (p)
+				 (ormap (lambda (d) (or (match-string p (car d))
+							(match-string p (cdr d))))
+					paren-pairs))]
+			      
+			      ;; first, find the paren that is to the right
+			      ;; it could be either a left or right paren
+			      [back-string/pos (find-back here back-string-predicate)] ;; could be #f
+			      [back-pos (string/pos-pos back-string/pos)]
+			      [back-string (string/pos-string back-string/pos)])
+			 (print-struct #t)
+			 (printf "found: ~a~n" back-string/pos)
+			 (cond
+			   
+			   ;; if it's a left paren, then just
+			   ;; insert the corresponding right paren
+			   [(match-left-paren?-return-right-paren back-string)
+			    =>
+			    (lambda (x) (send* edit 
+					  (flash-on back-pos (+ back-pos (string-length back-string)))
+					  (insert x)))]
+			   
+			   ;; if we found a right paren then
+			   ;; - jump back one sexp and search for a right paren
+			   [back-string
+			    (let ([contain-match (mred:paren:backward-match
+						edit back-pos limit 
+						mred:scheme-paren:scheme-paren-pairs
+						mred:scheme-paren:scheme-quote-pairs
+						mred:scheme-paren:scheme-comments
+						#t
+						backward-cache)])
+			      (printf "after-match: ~a~n" after-match)
+			      (if after-match
+				  (let* ([2back-predicate
+					  (lambda (p) 
+					    (ormap (lambda (d) (match-string p (car d))) paren-pairs))]
+					 [2back-string/pos (find-back after-match 2back-predicate)]
+					 [2back-pos (string/pos-pos 2back-string/pos)]
+					 [2back-string (string/pos-string 2back-string/pos)]
+					 [2left-string (match-left-paren?-return-right-paren 2back-string)])
+				    (if 2left-string
+					(send* edit 
+					  (insert 2left-string)
+					  (flash-on 2back-pos (+ 2back-pos (string-length 2back-string))))
+					(wx:bell)))
+				  (send edit insert (integer->char code))))]
+			   
+			   ;; otherwise there was no match so we just insert the character
+			   [else (send edit insert (integer->char code))]))
+		       (send edit insert (integer->char code)))
+		   #t)))]
 	    [tabify-on-return?
 	     (lambda ()
 	       scheme-mode-tabify-on-return?)]
@@ -670,6 +760,7 @@
 	       (send edit set-wordbreak-map scheme-media-wordbreak-map)
 	       (send edit set-tabs '() 8 #f)
 	       (set! tab-size 8)
+	       (send edit set-styles-fixed #t)
 	       (super-install edit))]
 	    [evaluate-region
 	     (lambda (edit start end)
@@ -832,6 +923,7 @@
 	  (send keymap map-function "]" "balance-parens")
 	  (send keymap map-function "}" "balance-parens")
 	  (send keymap map-function "\"" "balance-parens")
+	  (send keymap map-function "|" "balance-parens")
 
 	  (send keymap map-function "c:up" "up-sexp")
 	  (send keymap map-function "s:c:up" "select-up-sexp")

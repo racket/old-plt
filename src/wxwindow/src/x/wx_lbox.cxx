@@ -26,12 +26,12 @@
 #include <Xm/Form.h>
 
 void 
-wxListBoxCallback (Widget, XtPointer clientData, XmListCallbackStruct *cbs)
+wxListBoxCallback (Widget, XtPointer clientData, XmListCallbackStruct *)
 {
   wxListBox *item = (wxListBox *) clientData;
 
   wxCommandEvent *event  = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
-  item->ProcessCommand (event);
+  item->ProcessCommand (*event);
 }
 
 /* Respond by getting the
@@ -39,10 +39,12 @@ wxListBoxCallback (Widget, XtPointer clientData, XmListCallbackStruct *cbs)
  * as if the user had selected it.
  */
 void 
-wxListBoxDefaultActionProc (Widget, XtPointer client_data, XmListCallbackStruct *)
+wxListBoxDefaultActionProc (Widget, XtPointer clientData, XmListCallbackStruct *)
 {
+  wxListBox *item = (wxListBox *) clientData;
+
   wxCommandEvent *event  = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND);
-  item->ProcessCommand (event);
+  item->ProcessCommand (*event);
 }
 
 // Listbox item

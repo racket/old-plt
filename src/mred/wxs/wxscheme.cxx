@@ -12,8 +12,8 @@
 #include "wx_pdf.h"
 #include "wx_main.h"
 #endif
-#include "wxsmred.h"
 #include "wx_dcps.h"
+#include "wxsmred.h"
 
 #define WXS_SETUP_ONLY 1
 #include "wxs_obj.h"

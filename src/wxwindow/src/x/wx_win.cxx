@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_win.cxx,v 1.6 1998/07/15 16:48:55 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.7 1998/08/10 18:02:55 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -541,63 +541,9 @@ Bool wxWindow:: PopupMenu (wxMenu * menu, float x, float y)
   return TRUE;
 }
 
-// Sometimes in Motif there are problems popping up a menu
-// (for unknown reasons); use this instead when this happens.
-// Works for one-level popups only (ignores submenus).
-Bool wxWindow::FakePopupMenu(wxMenu *menu, float x, float y)
+Bool wxWindow::FakePopupMenu(wxMenu *, float, float)
 {
-  // Find true dialog box parent
-  wxWindow *trueParent = NULL;
-  if (wxSubType(__type, wxTYPE_CANVAS) ||
-      wxSubType(__type, wxTYPE_PANEL) ||
-      wxSubType(__type, wxTYPE_TEXT_WINDOW))
-    trueParent = GetParent();
-  else
-    trueParent = this;
-
-  // Find true screen x and y position
-  int trueX = (int)x;
-  int trueY = (int)y;
-
-  ClientToScreen(&trueX, &trueY);
-
-  // Create array of strings to pass to choose dialog
-  int noStrings = menu->menuItems.Number();
-  char **theStrings = new char *[noStrings];
-  // Have an array of menu ids so can map position in
-  // chooser list to menu id
-  int *menuIds = new int[noStrings];
-
-  int i = 0;
-  
-  for (wxNode * node = menu->menuItems.First (); node; node = node->Next ())
-    {
-      wxMenuItem *item = (wxMenuItem *) node->Data ();
-      if ((item->itemId != -2) && (item->itemName && !item->subMenu) &&
-          (item->isEnabled))
-      {
-        theStrings[i] = item->itemName;
-        menuIds[i] = item->itemId;
-        i ++;
-      }
-    }
-  int stringIndex = wxGetSingleChoiceIndex("Please choose an option",
-   "Menu", i, theStrings, trueParent, trueX, trueY);
-
-  int menuId = 0;
-  if (stringIndex > -1)
-    menuId = menuIds[stringIndex];
-
-  delete[] theStrings;
-  delete[] menuIds;
-  if (stringIndex > -1)
-  {
-    wxCommandEvent *event  = new wxCommandEvent(wxEVENT_TYPE_MENU_COMMAND);
-    event->eventObject = menu;
-    event->commandInt = menuId;
-    menu->ProcessCommand (*event);
-  }
-  return TRUE;
+  return FALSE;
 }
 
 int CharCodeXToWX(KeySym keySym)
@@ -939,8 +885,6 @@ Bool wxTranslateMouseEvent(wxMouseEvent& wxevent, wxWindow *win, XEvent *xevent)
 	wxevent.shiftDown = xevent->xbutton.state & ShiftMask;
 	wxevent.controlDown = xevent->xbutton.state & ControlMask;
 
-	wxevent.eventObject = win;
-
         return TRUE;
     }
   }
@@ -1004,7 +948,6 @@ void wxWindow::WindowEventHandler(Widget WXUNUSED(w),
 	  e->controlDown = TRUE;
 	if (xev->xkey.state & Mod1Mask)
 	  e->metaDown = TRUE;
-	e->eventObject = win;
 	e->keyCode = id;
 	e->SetTimestamp(xev->xkey.time);
 	

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_panel.cxx,v 1.3 1998/08/09 20:55:26 mflatt Exp $
+ * RCS_ID:      $Id: wx_panel.cxx,v 1.4 1998/08/10 18:02:54 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -118,20 +118,20 @@ Create (wxWindow *parent, int x, int y, int width, int height,
   current_hspacing = hSpacing;
   current_vspacing = vSpacing;
 
-  labelFont = NULL;
-  buttonFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-  if (wxSubType(parent->__type, wxTYPE_PANEL))
-  {
+  if (wxSubType(parent->__type, wxTYPE_PANEL)) {
     wxPanel *parentPanel = (wxPanel *)parent;
-    parentPanel->GetValidPosition(&x,&y) ;
-    labelFont = parentPanel->labelFont ;
-    buttonFont = parentPanel->buttonFont ;
-    backColour = parentPanel->backColour ;
-    labelColour = parentPanel->labelColour ;
-    buttonColour = parentPanel->buttonColour ;
+    parentPanel->GetValidPosition(&x,&y);
+    labelFont = parentPanel->labelFont;
+    buttonFont = parentPanel->buttonFont;
+    backColour = parentPanel->backColour;
+    labelColour = parentPanel->labelColour;
+    buttonColour = parentPanel->buttonColour;
+  } else {
+    labelFont = wxNORMAL_FONT;
+    buttonFont = wxNORMAL_FONT;
+    backColour = NULL;
+    labelColour = NULL;
+    buttonColour = NULL;    
   }
 
   // Focus processing
@@ -380,7 +380,7 @@ void wxPanel:: RealAdvanceCursor (void)
 /*
    fprintf(stderr,"maxwidth %d maxheight %d maklineheight %d\n",
    max_width,max_height,max_line_height);
-   fprintf(stderr,"Newline %d\n",new_line) ;
+   fprintf(stderr,"Newline %d\n",new_line);
  */
       cursor_x = x + width + current_hspacing;
       cursor_y = y;
@@ -434,11 +434,11 @@ AttachWidget (wxPanel * panel, Widget formWidget,
 	      int x, int y, int width, int height)
 {
 
-//fprintf(stderr,"Subpanel %x Panel %x\n",this,panel) ;
+//fprintf(stderr,"Subpanel %x Panel %x\n",this,panel);
   //fprintf(stderr,"Panel: ih %d iv %d ch %d cv %d hs %d vs %d\n",
   //      panel->initial_hspacing,panel->initial_vspacing,
   //      panel->current_hspacing,panel->current_vspacing,
-  //      panel->hSpacing,panel->vSpacing) ;
+  //      panel->hSpacing,panel->vSpacing);
 
   if ((x > -1) || (y > -1))
     panel->allRelative = FALSE;
@@ -497,9 +497,9 @@ void wxPanel:: AddChild (wxObject * child)
    XtVaSetValues(borderWidget,
    XmNmarginHeight,initial_vspacing,
    XmNmarginWidth,initial_hspacing,
-   NULL) ;
-   initial_hspacing = 0 ;
-   initial_vspacing = 0 ;
+   NULL);
+   initial_hspacing = 0;
+   initial_vspacing = 0;
    }
  */
     }

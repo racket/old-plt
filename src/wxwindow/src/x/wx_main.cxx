@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_main.cxx,v 1.3 1998/03/07 00:37:49 mflatt Exp $
+ * RCS_ID:      $Id: wx_main.cxx,v 1.4 1998/08/10 18:02:54 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -64,32 +64,7 @@ wxNonlockingHashTable *wxWidgetHashTable = NULL;
 wxHashTable *wxWidgetHashTable = NULL;
 #endif
 
-
-void wxCleanUp(void);
-
-//
-//   wxWindows Entry Point 
-//   --- changed from main() to _wxEntry to allow
-//   for better flexibility. (950215 edz)
-//   [motivated by the needs of wxPython]
-// for some VERY UNKNOWN reason, the VMS linker produces
-// bad code (we get a '%NONAME-W-NOMSG, Message number 00000000'),
-// if the 'main.c' file is compiled separately and linked into
-// wx.olb. Therefore we do a source-include here, and all works fine.
-// Also the 'extern "C"' statement results in the above error
-#ifdef VMS
-#include "main.c"
-#else
-
-// Compiling with the Sun compiler under Solaris is a bit weird.
-// If you get a wxEntry link error, change wxEntry to extern "C"
-// or comment it out. I'd like to know what's going on here...
-#ifndef SYSVR4
-extern "C"
-#endif
-
- int wxEntry(int argc, char *argv[]);
-#endif
+int wxEntry(int argc, char *argv[]);
 
 typedef struct {
   char *flag;
@@ -143,9 +118,6 @@ int filter_x_readable(char **argv, int argc)
   return pos;
 }
 
-// If you get a link error for wxEntry, change this 'wxEntry' to 'main'.
-// Some compilers don't like to link from main.c to wx_main.cc :-(
-// See also above method which is probably better.
 int wxEntry(int argc, char *argv[])
 {
   if (!wxTheApp) {
@@ -246,21 +218,9 @@ int wxEntry(int argc, char *argv[])
   wxTheApp->argc = argc;
   wxTheApp->argv = argv;
 
-  wxTheApp->wx_frame = wxTheApp->OnInit();
+  wxTheApp->OnInit();
 
-  // In XView, must ALWAYS have a main window.
-  if (wxTheApp->wx_frame)
-    wxTheApp->MainLoop();
-
-  int retValue = wxTheApp->OnExit();
-  wxCleanUp();
-  return retValue;
-}
-
-// Cleans up any wxWindows internal structures left lying around
-void wxCleanUp(void)
-{
-  wxCommonCleanUp();
+  return 0;
 }
 
 IMPLEMENT_DYNAMIC_CLASS(wxApp, wxObject)
@@ -343,12 +303,7 @@ void wxApp::Dispatch(void)
 
 void wxExit(void)
 {
-  int retValue = 0;
-  if (wxTheApp)
-    retValue = wxTheApp->OnExit();
-  wxCleanUp();
-
-  exit(retValue);
+  exit(-1);
 }
 
 // Yield to incoming messages

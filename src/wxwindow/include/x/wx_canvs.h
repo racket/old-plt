@@ -124,7 +124,7 @@ class wxCanvas: public wxbCanvas
   int GetScrollRange(int orient);
   int GetScrollPage(int orient);
 
-  void DoScroll(wxCommandEvent &event);
+  void DoScroll(wxScrollEvent &event);
 
 #ifdef wx_xview
   virtual void DragAcceptFiles(Bool accept = TRUE);

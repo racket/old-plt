@@ -70,8 +70,8 @@ class wxEvtHandler: public wxObject
   void SetNextHandler(wxEvtHandler *handler);
   void SetPreviousHandler(wxEvtHandler *handler);
 
-  virtual void OnMenuCommand(int WXUNUSED(cmd)) {};
-  virtual void OnMenuSelect(int WXUNUSED(cmd)) {};
+  virtual void OnMenuCommand(long WXUNUSED(cmd)) {};
+  virtual void OnMenuSelect(long WXUNUSED(cmd)) {};
   inline virtual void OnCommand(wxWindow& WXUNUSED(win), wxCommandEvent& WXUNUSED(event)) {};
                                                  // Called if child control has no
                                                  // callback function
@@ -222,7 +222,7 @@ class wxbWindow: public wxEvtHandler
 
   // Event handlers that do something by default
   virtual void OnSize(int width, int height);
-  virtual void OnMenuSelect(int WXUNUSED(cmd)) {};
+  virtual void OnMenuSelect(long WXUNUSED(cmd)) {};
   virtual void OnCommand(wxWindow& win, wxCommandEvent& event);
 
   // Caret

@@ -183,7 +183,11 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 
   noloop = FALSE;
 
+#ifdef wx_xt
   SetBackgroundColour(new wxColour("white"));
+#else
+  SetBackground(wxTheBrushList->FindOrCreateBrush("white", wxSOLID));
+#endif
 
   admin = new wxCanvasMediaAdmin(this);
   admin->standard = 1;

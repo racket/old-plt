@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.8 1998/08/09 20:55:25 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.9 1998/08/10 18:02:52 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1057,13 +1057,6 @@ wxFrame::~wxFrame (void)
   wxUnregisterFrameWidget(frameShell);
 
   handle = NULL;
-
-  if (this == wxTheApp->wx_frame)
-    {
-      int retValue = wxTheApp->OnExit ();
-      wxCleanUp ();
-      exit (retValue);
-    }
 }
 
 void wxFrame::CaptureMouse(void)

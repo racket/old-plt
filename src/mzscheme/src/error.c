@@ -751,6 +751,9 @@ static char *error_write_to_string_w_max(Scheme_Object *v, int len, int *lenout)
     config = scheme_extend_config(scheme_current_config(),
 				  MZCONFIG_ERROR_PRINT_VALUE_HANDLER,
 				  def_err_val_proc);
+    config = scheme_extend_config(config,
+				  MZCONFIG_PRINT_UNREADABLE,
+				  scheme_true);
 
     scheme_push_continuation_frame(&cframe);
     scheme_install_config(config);

@@ -41,13 +41,12 @@
 typedef struct PrintParams {
   MZTAG_IF_REQUIRED
   
-  char print_to_nowhere;
-
   char print_struct;
   char print_graph;
   char print_box;
   char print_vec_shorthand;
   char print_hash_table;
+  char print_unreadable;
   char can_read_pipe_quote;
   char case_sens;
   Scheme_Object *inspector;
@@ -656,6 +655,12 @@ print_to_string(Scheme_Object *obj,
   params.print_vec_shorthand = SCHEME_TRUEP(v);
   v = scheme_get_param(config, MZCONFIG_PRINT_HASH_TABLE);
   params.print_hash_table = SCHEME_TRUEP(v);
+  if (write && (maxl > 0))
+    params.print_unreadable = 1;
+  else {
+    v = scheme_get_param(config, MZCONFIG_PRINT_UNREADABLE);
+    params.print_unreadable = SCHEME_TRUEP(v);
+  }
   v = scheme_get_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE);
   params.can_read_pipe_quote = SCHEME_TRUEP(v);
   v = scheme_get_param(config, MZCONFIG_CASE_SENS);
@@ -917,10 +922,13 @@ static void print_escaped(PrintParams *pp, int notdisplay,
 }
 
 static void cannot_print(PrintParams *pp, int notdisplay, 
-			 Scheme_Object *obj, Scheme_Hash_Table *ht)
+			 Scheme_Object *obj, Scheme_Hash_Table *ht,
+			 int compact)
 {
   scheme_raise_exn(MZEXN_FAIL,
-		   "%s: cannot marshal constant that is embedded in compiled code: %V",
+		   (compact
+		    ? "%s: cannot marshal constant that is embedded in compiled code: %V"
+		    : "%s: printing disabled for unreadable value: %V"),
 		   notdisplay ? "write" : "display",
 		   obj);
 }
@@ -1277,8 +1285,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   else if (SCHEME_STRUCTP(obj))
     {
-      if (compact)
-	cannot_print(pp, notdisplay, obj, ht);
+      if (compact || !pp->print_unreadable)
+	cannot_print(pp, notdisplay, obj, ht, compact);
       else {
 	int pb;
 
@@ -1323,8 +1331,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   else if (SCHEME_PATHP(obj))
     {
-      if (compact) {
-	cannot_print(pp, notdisplay, obj, ht);
+      if (compact || !pp->print_unreadable) {
+	cannot_print(pp, notdisplay, obj, ht, compact);
       } else {
 	print_this_string(pp, "#<", 0, 2);
 	print_string_in_angle(pp, SCHEME_PATH_VAL(obj), "path:", -1);
@@ -1334,8 +1342,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   else if (SCHEME_PRIMP(obj) && ((Scheme_Primitive_Proc *)obj)->name)
     {
-      if (compact) {
-	cannot_print(pp, notdisplay, obj, ht);
+      if (compact || !pp->print_unreadable) {
+	cannot_print(pp, notdisplay, obj, ht, compact);
       } else {
 	print_this_string(pp, "#<", 0, 2);
 	print_string_in_angle(pp, ((Scheme_Primitive_Proc *)obj)->name, "primitive:", -1);
@@ -1346,8 +1354,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   else if (SCHEME_CLSD_PRIMP(obj) && ((Scheme_Closed_Primitive_Proc *)obj)->name)
     {
-      if (compact)
-	cannot_print(pp, notdisplay, obj, ht);
+      if (compact || !pp->print_unreadable)
+	cannot_print(pp, notdisplay, obj, ht, compact);
       else {
 	if (SCHEME_STRUCT_PROCP(obj)) {
 	  print_named(obj, "struct-procedure", 
@@ -1366,13 +1374,13 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   else if (SCHEME_CLOSUREP(obj)) 
     {
-      if (compact) {
+      if (compact || !pp->print_unreadable) {
 	Scheme_Closure *closure = (Scheme_Closure *)obj;
-	if (ZERO_SIZED(closure)) {
+	if (compact && ZERO_SIZED(closure)) {
 	  /* Print original code: */
 	  compact = print((Scheme_Object *)SCHEME_COMPILED_CLOS_CODE(closure), notdisplay, compact, ht, symtab, rnht, pp);
 	} else
-	  cannot_print(pp, notdisplay, obj, ht);
+	  cannot_print(pp, notdisplay, obj, ht, compact);
       } else {
 	int len;
 	const char *s;
@@ -1384,8 +1392,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   else if (SAME_TYPE(SCHEME_TYPE(obj), scheme_struct_type_type))
     {
-      if (compact) {
-	cannot_print(pp, notdisplay, obj, ht);
+      if (compact || !pp->print_unreadable) {
+	cannot_print(pp, notdisplay, obj, ht, compact);
       } else {
 	print_this_string(pp, "#<", 0, 2);
 	print_string_in_angle(pp, scheme_symbol_val(((Scheme_Struct_Type *)obj)->name),
@@ -1397,8 +1405,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   else if (SAME_TYPE(SCHEME_TYPE(obj), scheme_struct_property_type))
     {
-      if (compact) {
-	cannot_print(pp, notdisplay, obj, ht);
+      if (compact || !pp->print_unreadable) {
+	cannot_print(pp, notdisplay, obj, ht, compact);
       } else {
 	print_this_string(pp, "#<", 0, 2);
 	print_string_in_angle(pp, scheme_symbol_val(((Scheme_Struct_Property *)obj)->name),
@@ -1410,15 +1418,19 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   else if (SCHEME_THREADP(obj) && (((Scheme_Thread *)obj)->name))
     {
-      Scheme_Thread *t = (Scheme_Thread *)obj;
-      print_this_string(pp, "#<thread:", 0, 9);
-      print_this_string(pp, scheme_symbol_val(t->name), 0, SCHEME_SYM_LEN(t->name));
-      print_this_string(pp, ">", 0, 1);
+      if (compact || !pp->print_unreadable) {
+	cannot_print(pp, notdisplay, obj, ht, compact);
+      } else {
+	Scheme_Thread *t = (Scheme_Thread *)obj;
+	print_this_string(pp, "#<thread:", 0, 9);
+	print_this_string(pp, scheme_symbol_val(t->name), 0, SCHEME_SYM_LEN(t->name));
+	print_this_string(pp, ">", 0, 1);
+      }
     }
   else if (SCHEME_INPORTP(obj))
     {
-      if (compact) {
-	cannot_print(pp, notdisplay, obj, ht);
+      if (compact || !pp->print_unreadable) {
+	cannot_print(pp, notdisplay, obj, ht, compact);
       } else {
 	Scheme_Input_Port *ip;
 	ip = (Scheme_Input_Port *)obj;
@@ -1436,8 +1448,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	 if (src) {
 	   print_this_string(pp, "#rx", 0, 3);
 	   print(src, 1, 0, ht,symtab, rnht, pp);
-	 } else if (compact)
-	   cannot_print(pp, notdisplay, obj, ht);
+	 } else if (compact || !pp->print_unreadable)
+	   cannot_print(pp, notdisplay, obj, ht, compact);
 	 else
 	   print_this_string(pp, "#<regexp>", 0, 9);
 	 closed = 1;
@@ -1445,8 +1457,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   else if (SCHEME_OUTPORTP(obj))
     {
-      if (compact) {
-	cannot_print(pp, notdisplay, obj, ht);
+      if (compact || !pp->print_unreadable) {
+	cannot_print(pp, notdisplay, obj, ht, compact);
       } else {
 	Scheme_Output_Port *op;
 	op = (Scheme_Output_Port *)obj;
@@ -1456,8 +1468,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   else if (SCHEME_CPTRP(obj))
     {
-      if (compact) {
-	cannot_print(pp, notdisplay, obj, ht);
+      if (compact || !pp->print_unreadable) {
+	cannot_print(pp, notdisplay, obj, ht, compact);
       } else {
 	print_this_string(pp, "#<c-pointer:", 0, 12);
 	print_this_string(pp, SCHEME_CPTR_TYPE(obj), 0, -1);
@@ -1475,7 +1487,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	/* "2" in scheme_syntax_to_datum() call preserves wraps. */
 	closed = print(scheme_syntax_to_datum(obj, 2, rnht), 
 		       notdisplay, 1, ht, symtab, rnht, pp);
-      } else {
+      } else if (pp->print_unreadable) {
 	Scheme_Stx *stx = (Scheme_Stx *)obj;
 	if ((stx->srcloc->line >= 0) || (stx->srcloc->pos >= 0)) {
 	  print_this_string(pp, "#<syntax:", 0, 9);
@@ -1491,6 +1503,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	  print_this_string(pp, ">", 0, 1);
 	} else
 	  print_this_string(pp, "#<syntax>", 0, 9);
+      } else {
+	cannot_print(pp, notdisplay, obj, ht, compact);
       }
     }
   else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_module_index_type)) 
@@ -1780,8 +1794,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     } 
   else 
     {
-      if (compact)
-	cannot_print(pp, notdisplay, obj, ht);
+      if (compact || !pp->print_unreadable)
+	cannot_print(pp, notdisplay, obj, ht, compact);
       else {
 	char *s;
 	long len = -1;

@@ -184,8 +184,9 @@
   ;    styles: 'cheap-wrap, 'ankle-wrap, and 'foot-wrap.
   ; f) optionally, a list of symbols which modifies the annotation.  Currently, valid 
   ;    choices include: 'no-closure-capturing, which eliminates closure shadowing, and
-  ;    'all-var-app-optimization, which prevents rewriting of applications which consist
-  ;    only of symbols.  This one might go away later, or be toggled into a "no-opt" flag.
+  ;    'no-temps-for-varrefs, which prevents rewriting (to capture intermediate values)
+  ;    of applications and ifs which consist
+  ;    only of varrefs.  This one might go away later, or be toggled into a "no-opt" flag.
   ;
   ; actually, I'm not sure that annotate works for more than one expression, even though
   ; it's supposed to take a whole list.  I wouldn't count on it. Also, both the red-exprs
@@ -256,9 +257,9 @@
 ;              (#%apply #%values result-values))))
 
          (define (find-read-expr expr)
-           (let ([_ (when (not (z:zodiac? expr))
-                      (printf "uh oh, about to fail in find-read-expr.~n"))]
-                 [offset (z:location-offset (z:zodiac-start expr))])
+           (when (not (z:zodiac? expr))
+             (error 'find-read-expr "argument to find-read-expr is not a zodiac expr: ~a" expr))
+           (let ([offset (z:location-offset (z:zodiac-start expr))])
              (let search-exprs ([exprs red-exprs])
                (let* ([later-exprs (filter 
                                     (lambda (expr) 
@@ -307,9 +308,6 @@
          ;    (and therefore should be broken before)
          ; e) a boolean indicating whether this expression is top-level (and therefore should
          ;    not be wrapped, if a begin).
-         ; f) a boolean used with ankle-wrap indicating whether this expression must be
-         ;    wrapped (in ankle-wrap, the needs-a-break property is widely determined
-         ;    by the enclosing context)
          ; g) information about the binding name of the given expression.  This is used 
          ;    to associate a name with a closure mark (though this may now be redundant)
          ;    and to set up a (let ([x y]) x) so that mzscheme gets the right inferred-name
@@ -322,31 +320,29 @@
 	 ;(z:parsed (union (list-of z:varref) 'all) (list-of z:varref) bool bool (union #f symbol (list binding symbol)) -> 
          ;          sexp (list-of z:varref))
 	 
-	 (define (annotate/inner expr tail-bound pre-break? top-level? must-mark? procedure-name-info)
+	 (define (annotate/inner expr tail-bound pre-break? top-level? procedure-name-info)
 	   
-	   (let* ([tail-recur (lambda (expr) (annotate/inner expr tail-bound #t #f #f procedure-name-info))]
+	   (let* ([tail-recur (lambda (expr) (annotate/inner expr tail-bound #t #f procedure-name-info))]
                   [define-values-recur (lambda (expr name) 
-                                         (annotate/inner expr tail-bound #f #f must-mark? name))]
-                  [non-tail-recur (lambda (expr) (annotate/inner expr null #f #f #f #f))]
-                  [result-recur (lambda (expr) (annotate/inner expr null #f #f #f procedure-name-info))]
-                  [set!-rhs-recur (lambda (expr name) (annotate/inner expr null #f #f #f name))]
+                                         (annotate/inner expr tail-bound #f #f name))]
+                  [non-tail-recur (lambda (expr) (annotate/inner expr null #f #f #f))]
+                  [result-recur (lambda (expr) (annotate/inner expr null #f #f procedure-name-info))]
+                  [set!-rhs-recur (lambda (expr name) (annotate/inner expr null #f #f name))]
                   [let-rhs-recur (lambda (tail-bound)
                                    (lambda (expr bindings dyn-index-syms)
                                      (let* ([proc-name-info 
                                              (if (not (null? bindings))
                                                  (list (car bindings) (car dyn-index-syms))
-                                                 #f)]
-                                            [must-mark? (not (null? tail-bound))])
-                                       (annotate/inner expr tail-bound #f #f must-mark? proc-name-info))))]
-                  [lambda-body-recur (lambda (expr) (annotate/inner expr 'all #t #f #t #f))]
+                                                 #f)])
+                                       (annotate/inner expr tail-bound #f #f proc-name-info))))]
+                  [lambda-body-recur (lambda (expr) (annotate/inner expr 'all #t #f #f))]
                   ; note: no pre-break for the body of a let; it's handled by the break for the
                   ; let itself.
                   [let-body-recur (lambda (expr bindings) 
-                                    (annotate/inner expr (binding-set-union tail-bound bindings) #f #f #t 
-                                                    procedure-name-info))]
+                                    (annotate/inner expr (binding-set-union tail-bound bindings) #f #f procedure-name-info))]
                   [cheap-wrap-recur (lambda (expr) (let-values ([(ann _) (tail-recur expr)]) ann))]
-                  [no-enclosing-recur (lambda (expr) (annotate/inner expr 'all #f #f #t #f))]
-                  [class-rhs-recur (lambda (expr read-name) (annotate/inner expr 'all #f #f #t (utils:read->raw read-name)))]
+                  [no-enclosing-recur (lambda (expr) (annotate/inner expr 'all #f #f #f))]
+                  [class-rhs-recur (lambda (expr read-name) (annotate/inner expr 'all #f #f (utils:read->raw read-name)))]
                   [make-debug-info-normal (lambda (free-bindings)
                                             (make-debug-info expr tail-bound free-bindings null 'none foot-wrap?))]
                   [make-debug-info-app (lambda (tail-bound free-bindings label)
@@ -357,21 +353,19 @@
                   [wcm-break-wrap (lambda (debug-info expr)
                                     (wcm-wrap debug-info (break-wrap expr)))]
                   [expr-cheap-wrap (lambda (annotated) (cheap-wrap expr annotated))]
-                  [ankle-wcm-wrap (lambda (expr free-bindings) 
-                                    (if must-mark?
-                                        (simple-wcm-wrap (make-debug-info-normal free-bindings) expr)
-                                        expr))]
+                  [ankle-wcm-wrap (lambda (expr free-bindings)
+                                    (simple-wcm-wrap (make-debug-info-normal free-bindings) expr))]
                   [appropriate-wrap (lambda (annotated free-bindings)
                                       (ccond [cheap-wrap? (cheap-wrap expr annotated)]
                                              [ankle-wrap? (ankle-wcm-wrap annotated free-bindings)]))]
                   [inferred-name-patch (lambda (annotated)
-                                         (if (not procedure-name-info)
-                                             annotated
+                                         (if (and procedure-name-info (not (memq 'no-closure-capturing wrap-opts)))
                                              (let ([name (ccond [(symbol? procedure-name-info) procedure-name-info]
                                                                 [(and (list? procedure-name-info)
                                                                       (= (length procedure-name-info) 2))
                                                                  (z:binding-orig-name (car procedure-name-info))])])
-                                               `(#%let ([,name ,annotated]) ,name))))])
+                                               `(#%let ([,name ,annotated]) ,name))
+                                             annotated))])
 	     
              ; find the source expression and associate it with the parsed expression
              
@@ -400,7 +394,6 @@
                                              (list (z:top-level-varref/bind-slot expr))]
                                             [else
                                              null])]
-                       [debug-info (make-debug-info-normal free-bindings)]
                        [annotated (if (and maybe-undef? (utils:signal-undefined))
                                       `(#%if (#%eq? ,v ,utils:the-undefined-value)
                                         (#%raise (,utils:make-undefined
@@ -408,15 +401,14 @@
                                                   (#%current-continuation-marks)
                                                   (#%quote ,v)))
                                         ,v)
-                                      v)])
-                  (values (ccond [cheap-wrap?
-                                  (if (or (and maybe-undef? (utils:signal-undefined)) truly-top-level?)
-                                      (expr-cheap-wrap annotated)
-                                      annotated)]
-                                 [ankle-wrap?
-                                  (ankle-wcm-wrap annotated free-bindings)]
+                                      v)]
+                       [might-raise-exn? (or (and maybe-undef? (utils:signal-undefined)) truly-top-level?)])
+                  (values (ccond [(or cheap-wrap? ankle-wrap?)
+                                  (if might-raise-exn?
+                                      (appropriate-wrap annotated free-bindings)
+                                      annotated)
                                  [foot-wrap?
-                                  (wcm-break-wrap debug-info (return-value-wrap annotated))]) 
+                                  (wcm-break-wrap (make-debug-info-normal free-bindings) (return-value-wrap annotated))]) 
                           free-bindings))]
                
                [(z:app? expr)
@@ -426,38 +418,40 @@
                       (dual-map non-tail-recur sub-exprs)]
                      [(free-bindings) (apply binding-set-union free-bindings-sub-exprs)])
                   (values 
-                   (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated-sub-exprs free-bindings)]
-                          [foot-wrap?
-                           (let ([annotate-app? (let ([fun-exp (z:app-fun expr)])
-                                                  (and (z:top-level-varref? fun-exp)
-                                                       (non-annotated-proc? fun-exp)))])
-                             (if (and (andmap z:varref? sub-exprs)
-                                      (memq 'all-var-app-optimization wrap-opts))
-                                 
-                                 ; this is the all-vars optimization:
-                                 ; (won't work for stepper unless no reductions happen on the vars in the app
-                                 
-                                 (let ([debug-info (make-debug-info-app tail-bound free-bindings 'called)])
-                                   (wcm-break-wrap debug-info annotated-sub-exprs))
-                                   
-                                 (let* ([arg-temps (build-list (length sub-exprs) get-arg-binding)]
-                                        [arg-temp-syms (map z:binding-var arg-temps)] 
-                                        [let-clauses `((,arg-temp-syms 
-                                                        (#%values ,@(map (lambda (x) `(#%quote ,*unevaluated*)) arg-temps))))]
-                                        [set!-list (map (lambda (arg-symbol annotated-sub-expr)
-                                                          `(#%set! ,arg-symbol ,annotated-sub-expr))
-                                                        arg-temp-syms annotated-sub-exprs)]
-                                        [new-tail-bound (binding-set-union tail-bound arg-temps)]
-                                        [app-debug-info (make-debug-info-app new-tail-bound arg-temps 'called)]
-                                        [final-app (break-wrap (simple-wcm-wrap app-debug-info 
-                                                                                (if annotate-app?
-                                                                                    (return-value-wrap arg-temp-syms)
-                                                                                    arg-temp-syms)))]
-                                        [debug-info (make-debug-info-app new-tail-bound
-                                                                         (binding-set-union free-bindings arg-temps)
-                                                                         'not-yet-called)]
-                                        [let-body (wcm-wrap debug-info `(#%begin ,@set!-list ,final-app))])
-                                   `(#%let-values ,let-clauses ,let-body))))])
+                   (ccond [cheap-wrap? (appropriate-wrap annotated-sub-exprs free-bindings)]
+                          [(or ankle-wrap? foot-wrap?)
+                           (if (and ankle-wrap?
+                                    (andmap z:varref? sub-exprs)
+                                    (memq 'no-temps-for-varrefs wrap-opts))
+                               
+                               ; this is the no-temps optimization:
+                               ; (won't work for stepper unless no reductions happen on the vars in the app
+                               
+                               (let ([debug-info (make-debug-info-app tail-bound free-bindings 'called)])
+                                 (wcm-break-wrap debug-info annotated-sub-exprs))
+                               
+                               (let* ([arg-temps (build-list (length sub-exprs) get-arg-binding)]
+                                      [arg-temp-syms (map z:binding-var arg-temps)] 
+                                      [let-clauses `((,arg-temp-syms 
+                                                      (#%values ,@(map (lambda (x) `(#%quote ,*unevaluated*)) arg-temps))))]
+                                      [set!-list (map (lambda (arg-symbol annotated-sub-expr)
+                                                        `(#%set! ,arg-symbol ,annotated-sub-expr))
+                                                      arg-temp-syms annotated-sub-exprs)]
+                                      [new-tail-bound (binding-set-union tail-bound arg-temps)]
+                                      [app-debug-info (make-debug-info-app new-tail-bound arg-temps 'called)]
+                                      [final-app (if ankle-wrap?
+                                                     (break-wrap (simple-wcm-wrap app-debug-info 
+                                                                              (if (let ([fun-exp (z:app-fun expr)])
+                                                                                    (and ankle-wrap?
+                                                                                         (z:top-level-varref? fun-exp)
+                                                                                         (non-annotated-proc? fun-exp)))
+                                                                                  (return-value-wrap arg-temp-syms)
+                                                                                  arg-temp-syms)))]
+                                      [debug-info (make-debug-info-app new-tail-bound
+                                                                       (binding-set-union free-bindings arg-temps)
+                                                                       'not-yet-called)]
+                                      [let-body (wcm-wrap debug-info `(#%begin ,@set!-list ,final-app))])
+                                 `(#%let-values ,let-clauses ,let-body)))])
                    free-bindings))]
 	       
 	       [(z:struct-form? expr)
@@ -477,10 +471,8 @@
                                        [foot-wrap? (wcm-wrap debug-info annotated)]) 
                                 free-bindings-super-expr))
                       (let ([annotated `(#%struct ,raw-type ,raw-fields)])
-                        (values (ccond [cheap-wrap?
-                                        (expr-cheap-wrap annotated)]
-                                       [ankle-wrap?
-                                        annotated]
+                        (values (ccond [(or cheap-wrap? ankle-wrap)
+                                        (appropriate-wrap annotated null)]
                                        [foot-wrap?
                                         (wcm-wrap (make-debug-info-normal null) annotated)]) 
                                 null))))]
@@ -508,8 +500,11 @@
                                                      ,if-temp-sym)
                                                     (#%current-continuation-marks)
                                                     ,if-temp-sym)))
-                                        inner-annotated)])
-                  (if (or cheap-wrap? ankle-wrap?)
+                                        inner-annotated)]
+                     [(test-is-varref?) (z:varref? (z:if-form-test expr))])
+                  (if (or cheap-wrap? (and ankle-wrap?
+                                           test-is-varref?
+                                           (memq 'no-temps-for-varrefs wrap-opts)))
                       (let ([annotated (if (utils:signal-not-boolean)
                                            `(#%let ((,if-temp-sym ,annotated-test)) ,annotated-2)
                                            `(#%if ,annotated-test ,annotated-then ,annotated-else))])
@@ -522,7 +517,7 @@
                                                               'none)]
                              [wcm-wrapped (wcm-wrap debug-info annotated)]
                              [outer-annotated `(#%let ((,if-temp-sym (#%quote ,*unevaluated*))) ,wcm-wrapped)])
-                        (values outer-annotated free-bindings))))]
+                        (values outer-annotated free-bindings))))] ; I AM HERE
 	       
 	       [(z:quote-form? expr)
                 (let ([annotated `(#%quote ,(utils:read->raw (z:quote-form-expr expr)))])

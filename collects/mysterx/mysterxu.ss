@@ -689,12 +689,6 @@
 	    [handler-thread #f]
 	    [block-until-event 
 	     (lambda () (mxprims:block-until-event doc))]
-	    [process-win-events
-	     (lambda () 
-		(let loop ()
-		  (mxprims:process-win-events doc)
-		  (sleep)
-		  (loop)))]
 	    [make-event-key 
 	     (lambda (tag id) ; string x string -> symbol
 	       (let ([new-tag (string-copy tag)]
@@ -805,8 +799,21 @@
 		thread-post))])
 
 	   (sequence 
-	     (super-init)
-	     (thread process-win-events)))))
+	     (super-init))))
 
+  (let ([old-exit-handler (exit-handler)])
+    (exit-handler 
+     (lambda (arg)
+       (for-each 
+	(lambda (obj) (when (com-object? (cdr obj))
+			    (undefine (car obj))))
+	(make-global-value-list))
+       (collect-garbage)
+       (old-exit-handler arg))))
 
-
+  (thread
+   (lambda () 
+     (let loop ()
+       (mxprims:process-win-events)
+       (sleep)
+       (loop)))))

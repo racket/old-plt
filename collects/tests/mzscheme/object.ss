@@ -5,16 +5,24 @@
 
 (require (lib "class.ss"))
 
-(SECTION 'OBJECT2)
+(SECTION 'OBJECT)
 
 (define eater<%> (interface () eat))
 
 (define fish%
   (class* object% (eater<%>)
     (public get-size grow eat)
+    (private increase-size eat-sized-fish)
 
     (init-field [size 1])
 
+    ;; Private methods
+    (define (increase-size s)
+      (set! size (+ s size)))
+    (define (eat-sized-fish s)
+      (grow s))
+
+    ;; Public methods
     (define (get-size) size)
     (define (grow s)
       (set! size (+ s size))

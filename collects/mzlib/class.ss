@@ -1410,10 +1410,10 @@
 	      (syntax name)))
 	   (if (stx-list? (syntax args))
 	       (syntax (let ([this obj])
-			 ((find-method obj 'name) obj . args)))
+			 ((find-method this 'name) this . args)))
 	       (with-syntax ([args (flatten-args (syntax args))])
 		 (syntax (let ([this obj])
-			   (apply (find-method obj 'name) obj . args))))))])))
+			   (apply (find-method this 'name) this . args))))))])))
 
   (define-syntax send*
     (lambda (stx)

@@ -5,14 +5,14 @@
 
 (require (lib "class.ss"))
 
-(SECTION 'OBJECT)
+(SECTION 'OBJECT2)
 
 (define eater<%> (interface () eat))
 
 (define fish%
   (class* object% (eater<%>)
     (public get-size grow eat)
-    (private increase-size eat-sized-fish)
+    (private increase-size)
 
     (init-field [size 1])
 
@@ -25,10 +25,10 @@
     ;; Public methods
     (define (get-size) size)
     (define (grow s)
-      (set! size (+ s size))
+      (increase-size s)
       size)
     (define (eat f)
-      (grow (send f get-size)))
+      (eat-sized-fish (send f get-size)))
 
     (super-instantiate ())))
 
@@ -49,16 +49,11 @@
 
 (define color-fish%
   (class fish%
-    (public-final die)
-    (inherit get-size)
-    (inherit-field size)
+    (public die)
 
     (init-field [color 'red])
 
-    (define (die)
-      (unless (= size (get-size))
-	(error 'bad))
-      (set! color 'black))
+    (define (die) (set! color 'black))
 
     (super-instantiate ())))
 
@@ -133,16 +128,13 @@
 (err/rt-test (color-fish-color picky))
 (err/rt-test (color-fish-color 6))
 
-(err/rt-test (class color-fish% (override die) (define die (lambda () 'x))) exn:object?)
-
 (define old-style-fish%
   (class fish%
     (public greeting)
 
-    (begin ; should get flattened
-      (init -first-name)
-      (init-field last-name)
-      (init-rest -nicknames))
+    (init -first-name)
+    (init-field last-name)
+    (init-rest -nicknames)
 
     (define first-name -first-name) 
     (define nicknames -nicknames) 

@@ -1,15 +1,14 @@
+(let ([turtles:window #f]
+      [turtles:shown? #f])
 (unit/sig turtle^
   (import mzlib:function^)
-  
-  (define turtles:window #f)
-  (define turtles:shown? #f)
   
   (define plot-window%
     (class wx:frame% (name width height)
       (inherit show set-menu-bar)
-      
+      (public 
+	[bitmap (make-object wx:bitmap% width height)])
       (private
-	[bitmap (make-object wx:bitmap% width height)]
 	[w-pen (make-object wx:pen% "white" 1 wx:const-solid)]
 	[w-brush (make-object wx:brush% "white" wx:const-solid)]
 	[b-pen (make-object wx:pen% "black" 1 wx:const-solid)]
@@ -111,7 +110,12 @@
   (define clear-window (if turtles:window
 			   (ivar turtles:window clear)
 			   init-error))
-  
+  (define save-turtle-bitmap
+    (lambda (filename type)
+      (if turtles:window
+	  (send (ivar turtles:window bitmap) save-file filename type)
+	  (init-error))))
+
   ; clear the turtles window on each execution
   (when turtles:window
     (send turtles:window clear))
@@ -166,7 +170,7 @@
 	[(c-turn? entry)
 	 (make-turtle (turtle-x Cache)
 		      (turtle-y Cache)
-		      (+ (turtle-angle Cache)
+		      (- (turtle-angle Cache)
 			 (c-turn-angle entry)))]
 	[else
 	 (error 'turtle-cache "illegal entry in cache: ~a" entry)])))
@@ -240,6 +244,10 @@
     (lambda (d)
       (set! Cache (combine (make-c-turn d) Cache))))
   
+  (define turn-by
+    (lambda (c)
+      (turn (* (/ c 360) 2 pi))))
+  
   (define move-offset
     (lambda (x y)
       (set! Cache (combine (make-c-offset x y) Cache))))
@@ -299,7 +307,7 @@
 		      (splitfn (lambda () 
 				 (turn (/ pi 2)))))))
     (draw 10)
-    (clear)))
+    (clear))))
 
 
 

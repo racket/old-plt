@@ -772,6 +772,7 @@
  (xml-tool-menu "XML")
  (xml-tool-xml-box "Insert XML Box")
  (xml-tool-scheme-box "Insert Scheme Box")
+ (xml-tool-scheme-splice-box "Insert Scheme Splice Box")
  
  (show-recent-items-window-menu-item "Show Recently Opened Files in Separate Window")
  (show-recent-items-window-label "Recently Opened Files")

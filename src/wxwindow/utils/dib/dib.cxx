@@ -324,11 +324,7 @@ HANDLE DibFromBitmap(HBITMAP hbm, DWORD biStyle, WORD biBits, HPALETTE hpal)
 DWORD PASCAL lread(int fh, VOID far *pv, DWORD ul)
 {
 	DWORD     ulT = ul;
-#if defined(__win32s__) || defined(WINNT)
 	BYTE *hp = (BYTE *) pv;
-#else
-	BYTE huge *hp = (BYTE huge *) pv;
-#endif
 	while (ul > (DWORD) MAXREAD) {
 		if (_lread(fh, (LPSTR) hp, (WORD) MAXREAD) != MAXREAD)
 			return 0;
@@ -354,11 +350,7 @@ DWORD PASCAL lread(int fh, VOID far *pv, DWORD ul)
 DWORD PASCAL lwrite(int fh, VOID FAR *pv, DWORD ul)
 {
 	DWORD     ulT = ul;
-#if defined(__win32s__) || defined(WINNT)
 	BYTE *hp = (BYTE *) pv;
-#else
-	BYTE huge *hp = (BYTE huge *) pv;
-#endif
 	while (ul > MAXREAD) {
 		if (_lwrite(fh, (LPSTR) hp, (WORD) MAXREAD) != MAXREAD)
 			return 0;

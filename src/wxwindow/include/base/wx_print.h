@@ -24,8 +24,6 @@
 #include "wx_choic.h"
 #include "wx_rbox.h"
 #include "wx_check.h"
-#include "wx_txt.h"
-#include "wx_lay.h"
 #include "wx_dcmem.h"
 #include "wx_dcps.h"
 

@@ -40,6 +40,9 @@
 #ifndef XPM_h
 #define XPM_h
 
+/* MATTHEW: hard-wired for MSW */
+#define FOR_MSW 1
+
 /*
  * first some identification numbers:
  * the following revision numbers is determined with the following rule:

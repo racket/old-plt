@@ -33,8 +33,6 @@
 * Developed by HeDu 3/94 (hedu@cul-ipn.uni-kiel.de)                           *
 \*****************************************************************************/
 
-#ifdef FOR_MSW
-
 #include "xpm34.h"
 #include "xpm34p.h"			/* for XpmMalloc */
 
@@ -279,5 +277,3 @@ XDestroyImage(XImage *img)
 	XImageFree(img);
     }
 }
-
-#endif

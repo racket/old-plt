@@ -12,6 +12,8 @@
 #ifndef wxb_commonh
 #define wxb_commonh
 
+#define wx_msw
+
 #include <stddef.h>
 #include <string.h>
 #include "wx_setup.h"
@@ -22,46 +24,10 @@
 #define __need_wchar_t
 #endif
 
-//////////////////////////////////////////////////////////////////////////////////
-// Currently Only MS-Windows/NT, XView and Motif are supported
-//
-#if defined(wx_hp) && !defined(wx_motif) && !defined(wx_xview)
-# define wx_motif
-#endif
-#if defined(wx_xview) || defined(wx_motif)
-# define wx_x
-#elif defined(__WINDOWS__) || defined(__WINDOWS_386__) || defined(__NT__) || defined(__MSDOS__) 
-# ifndef wx_msw
-#  define wx_msw
-# endif
-#endif
-// Make sure the environment is set correctly
-#if defined(wx_msw) && defined(wx_x)
-# error "Target can't be both X and Windows"
-#elif defined(wx_xview) && defined(wx_motif)
-# error "Target can't be both XView and Motif!"
-#elif !defined(wx_xview) && !defined(wx_motif) && !defined(wx_msw)
-#error "No Target! Use -D[wx_motif|wx_xview|wx_msw]"
-#endif
-
-#ifdef wx_motif
+#include <windows.h>
+#ifndef Bool
   typedef int Bool;
-# define TRUE  1
-# define FALSE 0
 # define Bool_DEFINED
-#elif defined(wx_xview)
-# define Bool int
-# define True  1
-# define False 0
-# define TRUE  1
-# define FALSE 0
-# define Bool_DEFINED
-#elif defined(wx_msw)
-# include <windows.h>
-# ifndef Bool
-   typedef int Bool;
-#  define Bool_DEFINED
-# endif
 #endif
 
 #ifndef TRUE
@@ -72,16 +38,6 @@
 // wxWindows checks for WIN32, not __WIN32__
 #if (defined(__WIN32__) && !defined(WIN32))
 #define WIN32
-#endif
-
-// Watcom seems not to define the usual macros
-#if defined(__NT__) && defined(__WATCOMC__)
-#ifndef WIN32
-#define WIN32
-#endif
-#ifndef __win32s__
-#define __win32s__
-#endif
 #endif
 
 typedef short int WXTYPE;
@@ -174,7 +130,6 @@ typedef short int WXTYPE;
 # define wxMOTIF_RESIZE    0x01000000
 #endif
 
-/* MATTHEW: for canvases: */
 #define wxOVERRIDE_KEY_TRANSLATIONS 0x00000200
 
 // Effect of this flags: when creating wxItem with labels and/or value,
@@ -211,15 +166,6 @@ typedef short int WXTYPE;
 #define wxMASK_CANCEL           0x00300000
 
 
-#ifdef wx_motif
-#define       wxENH_DEFAULT   (wxCAPTION|wxMOTIF_RESIZE|wxBOTTOM_COMMANDS|wxSTATUS_FOOTER|wxNO_CANCEL_BUTTON)
-#elif defined(wx_xview)
-# define wxENH_DEFAULT   (wxBOTTOM_COMMANDS|wxSTATUS_FOOTER|wxNO_CANCEL_BUTTON)
-#elif defined(wx_msw)
-# define wxENH_DEFAULT   (wxRIGHT_COMMANDS|wxSTATUS_FOOTER|wxCANCEL_BUTTON_SECOND)
-#else
-#error "Only Motif, XView and MS-Windows/Windows-NT platforms are currently supported"
-#endif
 #define wxCOLOURED             0x00400000
 
 
@@ -375,8 +321,6 @@ const wxICON_INFORMATION =  0x0100;
 // For readability only: test for wxSIZE_AUTO_WIDTH/HEIGHT in code.
 #define wxSIZE_USE_EXISTING     0
 
-/* MATTHEW: [8] New flag for SetSize(); esp. need for Mac */
-/* If this flag is set, -1 for x/y means -1, not use the current */
 #define wxPOS_USE_MINUS_ONE 4
 
 // Clipboard formats

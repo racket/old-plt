@@ -228,7 +228,17 @@
 	     ;; Otherwise should do bound? check, but don't
 	     (void))
 	 #f]
-	[($ zodiac::-form)
+	[($ zodiac:class*/names-form _ open _ _ _ _ super _ _ _)
+	 (let ([ftype (zodiac:parsed-ftype super)])
+	   (unless 
+	    (or (and (zodiac:varref? super)
+		     (eq? 'object% (zodiac:varref-var super)))
+		(and (FlowType? ftype)
+		     (eq? 'class (FlowType->SDL ftype))))
+	    (mrspidey:add-summary "Class check" open 0)
+	    (add-check! open "class") ; this turns "class" red
+	    (zodiac:set-parsed-check! M #t)))]
+    	[($ zodiac::-form)
 	 (check-type-assertion M)
 	 #f]
 	[_ #f])))

@@ -75,13 +75,15 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction function, char *label,
     ph = parent->GetHandle();
 
     // create frame
-    wgt = XtVaCreateManagedWidget
+    wgt = XtVaCreateWidget
 	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNshrinkToFit, (width < 0 || height < 0),
 	 NULL);
+    if (!(style & wxINVISIBLE))
+      XtManageChild(wgt);
     X->frame = wgt;
     // create widget
     wgt = XtVaCreateManagedWidget
@@ -106,6 +108,9 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction function, char *label,
     panel->PositionItem(this, x, y, width, height);
     AddEventHandlers();
 
+    if (style & wxINVISIBLE)
+      SetShown(FALSE);
+
     return TRUE;
 }
 
@@ -128,13 +133,15 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
     ph = parent->GetHandle();
 
     // create frame
-    wgt = XtVaCreateManagedWidget
+    wgt = XtVaCreateWidget
 	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNshrinkToFit, (width < 0 || height < 0),
 	 NULL);
+    if (!(style & wxINVISIBLE))
+      XtManageChild(wgt);
     X->frame = wgt;
     // create widget
     pm = GETPIXMAP(bitmap);
@@ -159,6 +166,9 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
 
     panel->PositionItem(this, x, y, width, height);
     AddEventHandlers();
+
+    if (style & wxINVISIBLE)
+      SetShown(FALSE);
 
     return TRUE;
 }

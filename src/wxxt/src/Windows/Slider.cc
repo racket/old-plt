@@ -77,7 +77,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label,
     ph = parent->GetHandle();
 
     // create frame
-    wgt = XtVaCreateManagedWidget
+    wgt = XtVaCreateWidget
 	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
 	 XtNlabel,       label,
 	 XtNalignment,   vert ? XfwfTop : XfwfLeft,
@@ -88,6 +88,8 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label,
 	 XtNframeWidth,  2,
 	 XtNshrinkToFit, TRUE,
 	 NULL);
+    if (!(style & wxINVISIBLE))
+      XtManageChild(wgt);
     X->frame = wgt;
     // compute sizes of the slider widget
     if (style & (wxHORIZONTAL << 2)) {
@@ -129,6 +131,9 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label,
     // panel positioning
     panel->PositionItem(this, x, y, -1, -1);
     AddEventHandlers();
+
+    if (style & wxINVISIBLE)
+      SetShown(FALSE);
 
     return TRUE;
 }

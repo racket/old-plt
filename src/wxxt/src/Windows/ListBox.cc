@@ -97,7 +97,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
     ph = parent->GetHandle();
 
     // create frame
-    wgt = XtVaCreateManagedWidget
+    wgt = XtVaCreateWidget
 	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
 	 XtNlabel,       title,
 	 XtNalignment,   vert ? XfwfTop : XfwfTopLeft,
@@ -105,6 +105,8 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 NULL);
+    if (!(style & wxINVISIBLE))
+      XtManageChild(wgt);
     X->frame = wgt;
     // create viewport
     wgt = XtVaCreateManagedWidget
@@ -155,6 +157,9 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 			(width  > -1 ? width  : (wxLIST_BOX_WIDTH + labelw)),
 			(height > -1 ? height : (wxLIST_BOX_HEIGHT + labelh)));
     AddEventHandlers();
+
+    if (style & wxINVISIBLE)
+      SetShown(FALSE);
 
     return TRUE;
 }

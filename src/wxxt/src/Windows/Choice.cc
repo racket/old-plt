@@ -74,7 +74,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
     ph = parent->GetHandle();
 
     // create frame
-    wgt = XtVaCreateManagedWidget
+    wgt = XtVaCreateWidget
 	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
 	 XtNlabel,       label,
 	 XtNalignment,   vert ? XfwfTop : XfwfLeft,
@@ -83,6 +83,8 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNshrinkToFit, TRUE,
 	 NULL);
+    if (!(style & wxINVISIBLE))
+      XtManageChild(wgt);
     X->frame = wgt;
     // create widget
     wgt = XtVaCreateManagedWidget
@@ -156,6 +158,9 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 			 (XtEventHandler)wxWindow::WindowEventHandler,
 			 (XtPointer)saferef,
 			 XtListHead);
+
+    if (style & wxINVISIBLE)
+      SetShown(FALSE);
 
     return TRUE;
 }

@@ -70,7 +70,7 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
     ph = parent->GetHandle();
 
     // create frame
-    wgt = XtVaCreateManagedWidget
+    wgt = XtVaCreateWidget
 	(name, xfwfEnforcerWidgetClass, ph->handle,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
@@ -79,6 +79,8 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 	 XtNhighlightThickness, 0,
 	 XtNframeWidth, 0,
 	 NULL);
+    if (!(style & wxINVISIBLE))
+      XtManageChild(wgt);
     X->frame = wgt;
     // create scrolled area
     wgt = XtVaCreateManagedWidget
@@ -122,6 +124,12 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
       wx_temp_visual_info = NULL;
     }
 #endif
+    // In case this window or the parent is hidden; we
+    // need windows to create DCs
+    XtRealizeWidget(X->frame);
+    XtRealizeWidget(X->scroll);
+    XtRealizeWidget(X->handle);
+
     // Initialize CanvasDC
     CreateDC();
     dc->SetBackground(wxWHITE); // white brush as default for canvas background
@@ -149,7 +157,9 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
     // propagate key events from frame to canvas widget
     XtVaSetValues(X->frame, XtNpropagateTarget, X->handle, NULL);
 
-    
+    if (style & wxINVISIBLE)
+      SetShown(FALSE);
+
     // ready
     return TRUE;
 }

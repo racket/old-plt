@@ -114,16 +114,18 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     ph = parent->GetHandle();
     
     // create frame
-    wgt = XtVaCreateManagedWidget(name, xfwfEnforcerWidgetClass, ph->handle,
-				  XtNlabel,       label,
-				  XtNalignment,   vert ? XfwfTop : XfwfLeft,
-				  XtNbackground,  wxGREY_PIXEL,
-				  XtNforeground,  wxBLACK_PIXEL,
-				  XtNfont,        label_font->GetInternalFont(),
-				  XtNframeType,   (style & wxFLAT) ? XfwfChiseled : XfwfSunken,
-				  XtNframeWidth,  0,
-				  XtNshrinkToFit, (width < 0 || height < 0),
-				  NULL);
+    wgt = XtVaCreateWidget(name, xfwfEnforcerWidgetClass, ph->handle,
+			   XtNlabel,       label,
+			   XtNalignment,   vert ? XfwfTop : XfwfLeft,
+			   XtNbackground,  wxGREY_PIXEL,
+			   XtNforeground,  wxBLACK_PIXEL,
+			   XtNfont,        label_font->GetInternalFont(),
+			   XtNframeType,   (style & wxFLAT) ? XfwfChiseled : XfwfSunken,
+			   XtNframeWidth,  0,
+			   XtNshrinkToFit, (width < 0 || height < 0),
+			   NULL);
+    if (!(style & wxINVISIBLE))
+      XtManageChild(wgt);
     X->frame = wgt;
     // create group widget, which holds the the toggles
     wgt = XtVaCreateManagedWidget("radiobox", xfwfGroupWidgetClass, X->frame,
@@ -186,6 +188,9 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 			   XtListHead);
     }
 
+    if (style & wxINVISIBLE)
+      SetShown(FALSE);
+
     return TRUE;
 }
 
@@ -225,16 +230,18 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     ph = parent->GetHandle();
 
     // create frame
-    wgt = XtVaCreateManagedWidget(name, xfwfEnforcerWidgetClass, ph->handle,
-				  XtNlabel,       label,
-				  XtNalignment,   vert ? XfwfTop : XfwfLeft,
-				  XtNbackground,  wxGREY_PIXEL,
-				  XtNforeground,  wxBLACK_PIXEL,
-				  XtNfont,        label_font->GetInternalFont(),
-				  XtNframeType,   (style & wxFLAT) ? XfwfChiseled : XfwfSunken,
-				  XtNframeWidth,  0, /* MATTHEW: no frame */
-				  XtNshrinkToFit, TRUE,
-				  NULL);
+    wgt = XtVaCreateWidget(name, xfwfEnforcerWidgetClass, ph->handle,
+			   XtNlabel,       label,
+			   XtNalignment,   vert ? XfwfTop : XfwfLeft,
+			   XtNbackground,  wxGREY_PIXEL,
+			   XtNforeground,  wxBLACK_PIXEL,
+			   XtNfont,        label_font->GetInternalFont(),
+			   XtNframeType,   (style & wxFLAT) ? XfwfChiseled : XfwfSunken,
+			   XtNframeWidth,  0, /* MATTHEW: no frame */
+			   XtNshrinkToFit, TRUE,
+			   NULL);
+    if (!(style & wxINVISIBLE))
+      XtManageChild(wgt);
     X->frame = wgt;
 
     // create group widget, which holds the the toggles
@@ -323,6 +330,9 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 			   (XtPointer)saferef,
 			   XtListHead);
     }
+
+    if (style & wxINVISIBLE)
+      SetShown(FALSE);
 
     return TRUE;
 }

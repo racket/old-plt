@@ -34,7 +34,7 @@
 class wxTabChoice : public wxItem {
 public:
     wxTabChoice(wxPanel *panel, wxFunction func, char *label,
-  	        int n, char **choices);
+  	        int n, char **choices, int style);
 
     int   GetSelection(void);
     int   Number(void);
@@ -45,7 +45,7 @@ public:
 };
 
 wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
-			 int n, char **choices)
+			 int n, char **choices, int style)
 {
 }
 

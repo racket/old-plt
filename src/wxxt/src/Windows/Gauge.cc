@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Gauge.cc,v 1.8 1999/11/22 20:29:35 mflatt Exp $
  *
  * Purpose: gauge panel item
  *
@@ -76,7 +75,7 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
     ph = parent->GetHandle();
 
     // create frame
-    wgt = XtVaCreateManagedWidget
+    wgt = XtVaCreateWidget
 	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
 	 XtNlabel,       label,
 	 XtNalignment,   vert ? XfwfTop : XfwfLeft,
@@ -87,6 +86,8 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
 	 XtNframeType,   XfwfSunken,
 	 XtNframeWidth,  2,
 	 NULL);
+    if (!(style & wxINVISIBLE))
+      XtManageChild(wgt);
     X->frame = wgt;
     // create the slider widget
     wgt = XtVaCreateManagedWidget
@@ -129,6 +130,9 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
 			    ? (int)lvh + wxDEFAULT_GAUGE_WIDTH
 			    : (int)lvh + wxDEFAULT_GAUGE_HEIGHT)));
     AddEventHandlers();
+
+    if (style & wxINVISIBLE)
+      SetShown(FALSE);
 
     SetValue(0);
 

@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Message.cc,v 1.10 2002/09/04 13:24:11 mflatt Exp $
  *
  * Purpose: message panel item
  *
@@ -292,7 +291,8 @@ Bool wxMessage::Create(wxPanel *panel,
 	 NULL);
     X->frame = wgt;
 
-    XtManageChild(X->frame);
+    if (!(style & wxINVISIBLE))
+      XtManageChild(X->frame);
     // create widget
     if (bitmap) {
       lblT = XtNpixmap;
@@ -328,6 +328,9 @@ Bool wxMessage::Create(wxPanel *panel,
     XtAddEventHandler(X->handle, KeyPressMask, FALSE, (XtEventHandler)do_nothing, NULL);
     
     AllowResize(FALSE);
+
+    if (style & wxINVISIBLE)
+      SetShown(FALSE);
 
     return TRUE;
 }

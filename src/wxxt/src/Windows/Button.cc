@@ -70,7 +70,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, char *label,
     ph = parent->GetHandle();
 
     // create frame
-    wgt = XtVaCreateManagedWidget
+    wgt = XtVaCreateWidget
 	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
@@ -79,6 +79,8 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, char *label,
 	 XtNframeWidth,  style ? 2 : 0,
 	 XtNframeType,   XfwfSunken,
 	 NULL);
+    if (!(style & wxINVISIBLE))
+      XtManageChild(wgt);
     X->frame = wgt;
     // create widget
     wgt = XtVaCreateManagedWidget
@@ -102,6 +104,9 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, char *label,
     AddEventHandlers();
     AllowResize(FALSE);
 
+    if (style & wxINVISIBLE)
+      SetShown(FALSE);
+
     return TRUE;
 }
 
@@ -124,13 +129,15 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
     ph = parent->GetHandle();
 
     // create frame
-    wgt = XtVaCreateManagedWidget
+    wgt = XtVaCreateWidget
 	(name, xfwfTraversingEnforcerWidgetClass, ph->handle,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNshrinkToFit, (width < 0 || height < 0),
 	 NULL);
+    if (!(style & wxINVISIBLE))
+      XtManageChild(wgt);
     X->frame = wgt;
     // create widget
     pm = GETPIXMAP(bitmap);
@@ -153,6 +160,9 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
     panel->PositionItem(this, x, y, width, height);
     AddEventHandlers();
     AllowResize(FALSE);
+
+    if (style & wxINVISIBLE)
+      SetShown(FALSE);
 
     return TRUE;
 }

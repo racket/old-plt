@@ -392,6 +392,7 @@ enum {
 #define wxUSER_COLOURS		0x00010000
 #define wxVSCROLL		0x00020000
 #define wxNO_DC			0x00040000
+#define wxINVISIBLE             0x00080000
 // Enhanced Dialog styles
 #define wxBOTTOM_COMMANDS       wxDEFAULT
 #define wxCANCEL_BUTTON_FIRST   0x01000000

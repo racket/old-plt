@@ -90,13 +90,15 @@ Bool wxPanel::Create(wxPanel *panel, int x, int y, int width, int height,
     ph = parent->GetHandle();
 
     // create frame
-    wgt = XtVaCreateManagedWidget
+    wgt = XtVaCreateWidget
 	(name, xfwfEnforcerWidgetClass, ph->handle,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        font->GetInternalFont(),
 	 XtNhighlightThickness, 0,
 	 NULL);
+    if (!(style & wxINVISIBLE))
+      XtManageChild(wgt);
     X->frame = wgt;
     // internal representation
     if (style & wxBORDER) {
@@ -115,10 +117,20 @@ Bool wxPanel::Create(wxPanel *panel, int x, int y, int width, int height,
       X->handle = wgt;
     }
 
+    // In case this window or the parent is hidden; we
+    // need windows to create DCs
+    XtRealizeWidget(X->frame);
+    XtRealizeWidget(X->handle);
+
+
     // position in panel/frame
     panel->PositionItem(this, x, y, width, height);
     // add event handlers
     AddEventHandlers();
+
+    if (style & wxINVISIBLE)
+      SetShown(FALSE);
+
     // ready
     return TRUE;
 }

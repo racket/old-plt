@@ -1,6 +1,9 @@
 SYSTEM HISTORY
 --------------
 Version 49:
+- the search paths for the mzlib collection have changed. The PLTHOME
+  environment variable is now given preference.
+
 - mred:editor-frames are shown by default (the documentation was wrong)
 
 - mred:pasteboard-frames initialization arguments have changed and

@@ -9,7 +9,79 @@
 /////////////////////////////////////////////////////////////////////////////
 // CMzObj
 
-HANDLE exitSem;
+static Scheme_Env *env;
+
+static BOOL *pErrorState;
+static OLECHAR *wideError;
+
+static HANDLE exitSem;
+
+static Scheme_Object *exn_catching_apply;
+static Scheme_Object *exn_p;
+static Scheme_Object *exn_message;
+
+static Scheme_Object *_apply_thunk_catch_exceptions(Scheme_Object *f,
+						    Scheme_Object **exn) {
+  Scheme_Object *v;
+
+  v = _scheme_apply(exn_catching_apply,1,&f);
+
+  /* v is a pair: (cons #t value) or (cons #f exn) */
+
+  if (SCHEME_TRUEP(SCHEME_CAR(v))) {
+    return SCHEME_CDR(v);
+  }
+  else {
+    *exn = SCHEME_CDR(v);
+    return NULL;
+  }
+}
+
+static Scheme_Object *extract_exn_message(Scheme_Object *v) {
+  if (SCHEME_TRUEP(_scheme_apply(exn_p,1,&v)))
+    return _scheme_apply(exn_message,1,&v);
+  else
+    return NULL; /* Not an exn structure */
+}
+
+static Scheme_Object *do_eval(void *s,int,Scheme_Object **) {
+  return scheme_eval_string_all((char *)s,env,TRUE);
+}
+
+static Scheme_Object *eval_string_or_get_exn_message(char *s) {
+  Scheme_Object *v;
+  Scheme_Object *exn;
+
+  v = _apply_thunk_catch_exceptions(scheme_make_closed_prim(do_eval,s),&exn);
+  /* value */
+  if (v) {
+    *pErrorState = FALSE;
+    return v;
+  }
+
+  v = extract_exn_message(exn);
+  /* exn */
+  if (v) {
+    *pErrorState = TRUE;
+    return v;
+  }
+
+  /* `raise' was called on some arbitrary value */
+  return exn;
+}
+
+OLECHAR *wideStringFromSchemeObj(Scheme_Object *obj,char *fmt,int fmtlen) {
+  char *s;
+  OLECHAR *wideString;
+  int len;
+
+  s = scheme_format(fmt,fmtlen,1,&obj,NULL);
+  len = strlen(s);
+  wideString = (OLECHAR *)scheme_malloc((len + 1) * sizeof(OLECHAR));
+  MultiByteToWideChar(CP_ACP,(DWORD)0,s,len,wideString,len + 1);
+  wideString[len] = '\0';
+  return wideString;
+}
 
 void exitHandler(int) {
   ReleaseSemaphore(exitSem,1,NULL);
@@ -18,9 +90,8 @@ void exitHandler(int) {
 
 DWORD WINAPI evalLoop(LPVOID args) {
   UINT len;
-  char *narrowInput,*narrowOutput;
+  char *narrowInput;
   Scheme_Object *outputObj;
-  Scheme_Env *env;
   OLECHAR *outputBuffer;
   mz_jmp_buf saveBuff;
   THREAD_GLOBALS *pTg;
@@ -29,7 +100,7 @@ DWORD WINAPI evalLoop(LPVOID args) {
   BSTR **ppInput;
   BSTR *pOutput;
   HRESULT *pHr;
-  BOOL *pErrorState;
+  char *wrapper;
 
   // make sure all MzScheme calls in this thread
 
@@ -53,6 +124,15 @@ DWORD WINAPI evalLoop(LPVOID args) {
 
   scheme_dont_gc_ptr(env); 
 
+  wrapper = 
+    "(#%lambda (thunk)"
+    "  (#%with-handlers ([#%void (#%lambda (exn) (#%cons #f exn))])"
+    "    (#%cons #t (thunk))))";
+  
+  exn_catching_apply = scheme_eval_string(wrapper,env);
+  exn_p = scheme_lookup_global(scheme_intern_symbol("exn?"),env);
+  exn_message = scheme_lookup_global(scheme_intern_symbol("exn-message"),env);
+
   while (1) {
 
     WaitForSingleObject(readSem,INFINITE);
@@ -61,6 +141,8 @@ DWORD WINAPI evalLoop(LPVOID args) {
 
     narrowInput = (char *)scheme_malloc(len + 1);
 
+    scheme_dont_gc_ptr(narrowInput); 
+
     WideCharToMultiByte(CP_ACP,(DWORD)0,
 			**ppInput,len,
 			narrowInput,len + 1,
@@ -68,38 +150,21 @@ DWORD WINAPI evalLoop(LPVOID args) {
 
     narrowInput[len] = '\0';
 
-    memcpy(&saveBuff,&scheme_error_buf,sizeof(mz_jmp_buf));
-    if (scheme_setjmp(scheme_error_buf)) {
-      if (scheme_jumping_to_continuation) {
-	scheme_clear_escape();
-      } 
+    outputObj = eval_string_or_get_exn_message(narrowInput);
+
+    scheme_gc_ptr_ok(narrowInput); 
+
+    if (*pErrorState) {
+      wideError = wideStringFromSchemeObj(outputObj,"MzScheme error: ~a",18);
       *pOutput = SysAllocString(L"");
-      *pErrorState = TRUE;
       *pHr = E_FAIL;
     }
     else {
-
-      outputObj = scheme_eval_string_all(narrowInput,env,TRUE);
-
-      narrowOutput = scheme_format("~s",2,1,&outputObj,NULL);
-  
-      len = strlen(narrowOutput);
-
-      outputBuffer = (OLECHAR *)scheme_malloc((len + 1) * sizeof(OLECHAR));
-
-      MultiByteToWideChar(CP_ACP,(DWORD)0,
-			  narrowOutput,len,
-			  outputBuffer,len + 1);
-
-      outputBuffer[len] = '\0';
-
+      outputBuffer = wideStringFromSchemeObj(outputObj,"~s",2);
       *pOutput = SysAllocString(outputBuffer);
-
-      *pErrorState = FALSE;
-
       *pHr = S_OK;
     }
-  
+
     memcpy(&scheme_error_buf,&saveBuff,sizeof(mz_jmp_buf));
 
     ReleaseSemaphore(writeSem,1,NULL);
@@ -231,7 +296,7 @@ STDMETHODIMP CMzObj::Eval(BSTR input, LPBSTR output) {
   ReleaseSemaphore(inputMutex,1,NULL);
 
   if (errorState) {
-    RaiseError(L"Scheme evaluation error");
+    RaiseError(wideError);
   }
 
   return hr;
@@ -259,3 +324,4 @@ STDMETHODIMP CMzObj::About(void) {
 	    NULL,dlgProc);
   return S_OK;
 }
+

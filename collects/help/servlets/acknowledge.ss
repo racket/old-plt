@@ -1,5 +1,4 @@
 (module acknowledge mzscheme
-  (require (lib "servlet-helpers.ss" "web-server"))
   (require (lib "acks.ss" "drscheme")
            (lib "servlet.ss" "web-server")
            "private/util.ss")

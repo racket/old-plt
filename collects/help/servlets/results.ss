@@ -1,5 +1,4 @@
 (module results mzscheme
-  (require (lib "servlet-helpers.ss" "web-server"))
   (require (lib "file.ss")
            (lib "list.ss")
            (lib "string.ss")

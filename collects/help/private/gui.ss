@@ -62,8 +62,9 @@
           
           (define/override (on-subwindow-char w e)
             (or (let ([txt (send (send (get-hyper-panel) get-canvas) get-editor)])
-                  (let ([km (send txt get-hyper-keymap)])
-                    (send km handle-key-event txt e)))
+                  (and txt
+                       (let ([km (send txt get-hyper-keymap)])
+                         (send km handle-key-event txt e))))
                 (super on-subwindow-char w e)))
           
           (super-new)))
@@ -344,7 +345,7 @@
           (frame:reorder-menus this)))
       
       (define make-search-button-mixin
-        (mixin (frame:basic<%>) (help-desk-frame<%>)
+        (mixin (frame:basic<%> hyper-frame<%>) (help-desk-frame<%>)
           (field [search-panel #f])
           
           ;; order-manuals : as in drscheme:language:language<%>
@@ -387,7 +388,7 @@
             (send hp set-init-page home-page-url)
             (send (send hp get-canvas) allow-tab-exit #t))
           
-          (inherit get-menu-bar)
+          (inherit get-menu-bar get-hyper-panel)
           (let ()
             (define search-menu (instantiate menu% ()
                                   (label (string-constant plt:hd:search))
@@ -480,11 +481,7 @@
                             manuals
                             doc.txt?
                             (get-language-name))])
-                  ;; have to use `send this' since I don't know yet
-                  ;; *which* (unit) instantiation of the hyper panel I might
-                  ;; be overriding and so I don't know the particular
-                  ;; interface. I do however, know the name of the method.....
-                  (send (send (send this get-hyper-panel) get-canvas) goto-url url #f))))
+                  (send (send (get-hyper-panel) get-canvas) goto-url url #f))))
             
             (send search-button enable #f)
             (send search-menu enable #f)
@@ -502,8 +499,9 @@
       
       (define new-help-desk
         (opt-lambda ([link home-page-url])
-          (new ((make-help-desk-frame-mixin) hyper-frame%)
-               (start-url link))))
+          (let ([f (new ((make-help-desk-frame-mixin) hyper-no-show-frame%))])
+            (send f show #t)
+            (goto-url link f))))
       
       (define (goto-hd-location sym) (goto-url (get-hd-location sym)))
       
@@ -511,19 +509,18 @@
         (let ([fr (or (find-help-desk-frame)
                       (new-help-desk))])
           (send fr show #t)
-	  (let-values ([(manuals doc.txt?) (send fr order-manuals docs)])
-            (send (send (send fr get-hyper-panel) get-canvas) goto-url 
-                  (make-results-url search-string
-                                    search-type 
-                                    match-type
-                                    lucky?
-                                    manuals
-                                    doc.txt?
-                                    (send fr get-language-name))
-                  #f))))
+          (let-values ([(manuals doc.txt?) (send fr order-manuals docs)])
+            (goto-url (make-results-url search-string
+                                        search-type 
+                                        match-type
+                                        lucky?
+                                        manuals
+                                        doc.txt?
+                                        (send fr get-language-name))
+                      fr))))
       
-      (define (goto-url link)
-        (let ([fr (find-help-desk-frame)])
+      (define goto-url
+        (opt-lambda (link [fr (find-help-desk-frame)])
           (if fr
               (send (send (send fr get-hyper-panel) get-canvas) goto-url link #f)
               (new-help-desk link))))

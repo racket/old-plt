@@ -1,5 +1,4 @@
 (module missing-manual mzscheme
-  (require (lib "servlet-helpers.ss" "web-server"))
   (require (lib "servlet.ss" "web-server"))
   
   (require "private/headelts.ss")

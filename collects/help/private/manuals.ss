@@ -17,7 +17,7 @@
 	   findreldoc
 	   finddoc-page-anchor)
   
-  (provide/contract [manual-entry (string? string? string? . -> . xexpr?)]
+  (provide/contract [manual-entry (string? string? xexpr? . -> . xexpr?)]
                     [finddoc-page (string? string? . -> . string?)]
                     [get-doc-name (path? . -> . string?)]
                     [find-doc-directories (-> (listof path?))]
@@ -203,13 +203,13 @@
 
   (define (find-manuals)
     (let* ([sys-type (system-type)]
-	   [docs (let loop ([l (find-doc-directories)])
+           [docs (let loop ([l (find-doc-directories)])
                    (cond
                      [(null? l) null]
                      [(get-index-file (car l))
                       (cons (car l) (loop (cdr l)))]
                      [else (loop (cdr l))]))]
-	   [compare-docs (lambda (a b)
+           [compare-docs (lambda (a b)
                            (let-values ([(_1 a-short _2) (split-path a)]
                                         [(_3 b-short _4) (split-path b)])
                              (let ([ap (standard-html-doc-position a-short)]
@@ -219,72 +219,77 @@
                                  [else (< ap bp)]))))]
            [docs (quicksort docs compare-docs)]
            [names (map get-doc-name docs)]
-	   [names+paths (map cons names docs)])
+           [names+paths (map cons names docs)])
       (let-values ([(collections-doc-files collection-names) (colldocs)])
         (apply
-	 string-append
-	 "<html>"
+         string-append
+         "<html>"
          (xexpr->string 
-	  `(HEAD
-	    ,hd-css
-	    ,@hd-links
-	    (TITLE "PLT Manuals")))
-	 "<body>"
-	 (append 
-	  
-	  (list "<H1>Installed Manuals</H1>")
-	   
-	  (if (cvs-or-nightly-build?)
-	      (list "<b>CVS:</b> <a mzscheme=\"((dynamic-require '(lib |refresh-manuals.ss| |help|) 'refresh-manuals))\">"
-		    (string-constant plt:hd:refresh-all-manuals)
-		    "</a>")
-	      '())
-	  
+          `(HEAD
+            ,hd-css
+            ,@hd-links
+            (TITLE "PLT Manuals")))
+         "<body>"
+         (append 
           
+          (list "<H1>Installed Manuals</H1>")
+          (if (cvs-or-nightly-build?)
+              (list 
+               "<b>CVS:</b> <a mzscheme=\""
+               (to-string/escape-quotes 
+                `((dynamic-require '(lib "refresh-manuals.ss" "help") 'refresh-manuals)))
+               "\">"
+               (string-constant plt:hd:refresh-all-manuals)
+               "</a>")
+              '())
+
           (build-known-manuals names+paths)
           
-          
           (list "<h3>Doc.txt</h3><ul>")
-	  (map
-	   (lambda (collection-doc-file name)
-	     (format "<LI> <A HREF=\"/servlets/doc-anchor.ss?file=~a&name=~a&caption=Documentation for the ~a collection\">~a collection</A>"
-					; escape colons and other junk
-		     (hexify-string
+          (map
+           (lambda (collection-doc-file name)
+             (format "<LI> <A HREF=\"/servlets/doc-anchor.ss?file=~a&name=~a&caption=Documentation for the ~a collection\">~a collection</A>"
+                     ; escape colons and other junk
+                     (hexify-string
                       (path->string
                        (build-path (car collection-doc-file) 
                                    (cadr collection-doc-file))))
-	             name
-		     name
-		     name))
-	   collections-doc-files
-	   collection-names)
-	  (list "</UL>")
-	  (let ([uninstalled (get-uninstalled docs)])
-	    (cond
-	     [(null? uninstalled)
-	      (list "")]
-	     [else
-	      (list*
-	       "<H3>Uninstalled Manuals</H3>"
-	       "<UL>"
-	       (append
-		(map
-		 (lambda (doc-pair)
-		   (let* ([manual (car doc-pair)]
-                          [name (cdr doc-pair)]
-                          [manual-path (find-doc-directory manual)])
-                     (format "<LI> Download and install <A mzscheme=\"((dynamic-require '(lib |refresh-manuals.ss| |help|) 'refresh-manuals) (list (cons |~a| |~a|)))\">~a</A>~a"
-                             manual
-                             name
-                             name
-                             (if (and manual-path
-                                      (or (file-exists? (build-path manual-path "hdindex"))
-                                          (file-exists? (build-path manual-path "keywords"))))
-                                 " (index installed)"
-                                 ""))))
-		 uninstalled)
-		(list "</UL>")))]))
-	  (list "</body></html>"))))))
+                     name
+                     name
+                     name))
+           collections-doc-files
+           collection-names)
+          (list "</UL>")
+          (let ([uninstalled (get-uninstalled docs)])
+            (cond
+              [(null? uninstalled)
+               (list "")]
+              [else
+               (list*
+                "<H3>Uninstalled Manuals</H3>"
+                "<UL>"
+                (append
+                 (map
+                  (lambda (doc-pair)
+                    (let* ([manual (car doc-pair)]
+                           [name (cdr doc-pair)]
+                           [manual-path (find-doc-directory manual)])
+                      (string-append
+                       "<LI> Download and install <A mzscheme=\""
+                       (to-string/escape-quotes 
+                        `((dynamic-require '(lib "refresh-manuals.ss" "help") 'refresh-manuals)
+                          (list (cons (bytes->path ,(path->bytes manual))
+                                      ,name))))
+                       (format "\">~a</A>~a"
+                               name
+                               (if (and manual-path
+                                        (or (file-exists? (build-path manual-path "hdindex"))
+                                            (file-exists? (build-path manual-path "keywords"))))
+                                   " (index installed)"
+                                   "")))))
+                  uninstalled)
+                 (list "</UL>")))]))
+          (list "</body></html>"))))))
   
   ;; break-between : regexp
   ;;                (listof (union string (cons string string))) 
@@ -363,10 +368,12 @@
                    "<FONT SIZE=\"-1\">"
                    (if (is-known-doc? doc-path)
                        (string-append
-                        (format 
-                         "[<A mzscheme=\"((dynamic-require '(lib |refresh-manuals.ss| |help|) 'refresh-manuals) (list (cons |~a| |~a|)))\">~a</A>]"
-                         manual-name
-                         name
+                        (format
+                         "[<A mzscheme=\"~a\">~a</a>]"
+                         (to-string/escape-quotes 
+                          `((dynamic-require '(lib "refresh-manuals.ss" "help") 'refresh-manuals)
+                            (list (cons (bytes->path ,(path->bytes manual-name))
+                                        ,name))))
                          (string-constant plt:hd:refresh))
                         "&nbsp;")
                        "")
@@ -377,6 +384,11 @@
                               (build-path doc-path index-file)))))
                    "</FONT>")
                   ""))))
+  
+  (define (to-string/escape-quotes exp)
+    (regexp-replace* #rx"\""
+                     (format "~s" exp)
+                     "|"))
   
   ;; get-doc-name : path -> string
   (define cached-doc-names (make-hash-table 'equal))

@@ -22,41 +22,40 @@
   (define (run-single-installer file get-target-dir)
     (let ([cust (make-custodian)])
       (parameterize ([current-custodian cust]
-		     [current-namespace (make-namespace)]
-		     [exit-handler (lambda (v) (custodian-shutdown-all cust))])
-	(let ([thd
-	       (thread
-		(lambda ()
-		  (invoke-unit/sig
-		   (compound-unit/sig
-		    (import)
-		    (link [launcher : launcher^ (launcher@ dcompile dlink)]
-			  [dcompile : dynext:compile^ (dynext:compile@)]
-			  [dlink : dynext:link^ (dynext:link@)]
-			  [dfile : dynext:file^ (dynext:file@)]
-			  [option : compiler:option^ (compiler:option@)]
-			  [compiler : compiler^ (compiler@
-						 option
-						 dcompile
-						 dlink
-						 dfile)]
-			  [soption : setup-option^ (setup:option@)]
-			  [set-options : () ((unit/sig ()
-					       (import setup-option^ compiler^)
-					       ;; >>>>>>>>>>>>>> <<<<<<<<<<<<<<<
-					       ;; Here's where we tell setup the archive file!
-					       (archives (list file))
-					       ;; Here's where we make get a directory:
-					       (current-target-directory-getter
-						get-target-dir))
-					     soption
-					     compiler)]
-			  [setup : () (setup@
-				       soption
-				       compiler
-				       option
-				       launcher)])
-		    (export)))))])
-	  (thread-wait thd)
-	  (custodian-shutdown-all cust))))))
-
+                     [current-namespace (make-namespace)]
+                     [exit-handler (lambda (v) (custodian-shutdown-all cust))])
+        (let ([thd
+               (thread
+                (lambda ()
+                  (invoke-unit/sig
+                   (compound-unit/sig
+                     (import)
+                     (link [launcher : launcher^ (launcher@ dcompile dlink)]
+                           [dcompile : dynext:compile^ (dynext:compile@)]
+                           [dlink : dynext:link^ (dynext:link@)]
+                           [dfile : dynext:file^ (dynext:file@)]
+                           [option : compiler:option^ (compiler:option@)]
+                           [compiler : compiler^ (compiler@
+                                                  option
+                                                  dcompile
+                                                  dlink
+                                                  dfile)]
+                           [soption : setup-option^ (setup:option@)]
+                           [set-options : () ((unit/sig ()
+                                                (import setup-option^ compiler^)
+                                                ;; >>>>>>>>>>>>>> <<<<<<<<<<<<<<<
+                                                ;; Here's where we tell setup the archive file!
+                                                (archives (list file))
+                                                ;; Here's where we make get a directory:
+                                                (current-target-directory-getter
+                                                 get-target-dir))
+                                              soption
+                                              compiler)]
+                           [setup : () (setup@
+                                        soption
+                                        compiler
+                                        option
+                                        launcher)])
+                     (export)))))])
+          (thread-wait thd)
+          (custodian-shutdown-all cust))))))

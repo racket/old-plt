@@ -1,7 +1,11 @@
 (module license mzscheme
-  (require (lib "servlet-helpers.ss" "web-server"))
   (require "../private/util.ss")
   (require "../private/headelts.ss")
+  
+  (require (lib "servlet.ss" "web-server"))
+  (provide interface-version timeout start)
+  (define interface-version 'v1)
+  (define timeout +inf.0)
   
   (define (make-item ss)
     `(UL
@@ -11,11 +15,6 @@
               ss))))
   
   (define copyright-year 2004)
-  
-  (require (lib "servlet.ss" "web-server"))
-  (provide interface-version timeout start)
-  (define interface-version 'v1)
-  (define timeout +inf.0)
   
   (define (start initial-request)
     (report-errors-to-browser send/finish)

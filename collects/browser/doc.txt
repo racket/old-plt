@@ -178,6 +178,9 @@ The html-eval-ok parameter controls the evaluation of
    original url. If this method returns #f, the page doesn't
    go anywhere.
 
+   This method may be killed (if the user clicks the
+   ``stop'' button)
+
 ----------------------------------------
 
 > hyper-text% = (hyper-text-mixin text:keymap%)
@@ -197,19 +200,19 @@ The html-eval-ok parameter controls the evaluation of
   The canvas's parent should be an instance of a class derived with
   `hyper-panel-mixin' (described below).
 
-  The mixin adds the following instance variables:
+  The mixin adds the following methods:
 
->   make-editor :: (send o make-editor url progress post-data)
-     Creates an hypertext editor for the canvas, called to navigate
-     among hypertext pages. Changing the page changes the editor in
-     the canvas, and the page history is maintained by keeping the old
-     editors.
- 
 >   get-editor% :: (send o get-editor%)
      Returns the class used to implement the editor in the browser
      window. It should be derived from hyper-text% and should pass on the
      initialization arguments to hyper-text%
 
+     The dynamic extent of the initialization of this
+     editor is called on a thread that may be killed (via a
+     custodian shutdown)
+
+     In that case, the editor in the browser's
+     editor-canvas may not be an instance of this class.
 
 >   current-page :: (send o current-page)
      Returns a reprsentation of the currently displayed page, which

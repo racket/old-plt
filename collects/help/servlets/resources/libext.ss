@@ -1,5 +1,4 @@
 (module libext mzscheme
-  (require (lib "servlet-helpers.ss" "web-server"))
   (require "../private/headelts.ss"
            "../private/util.ss")
   
@@ -9,7 +8,6 @@
   (define timeout +inf.0)
   
   (define (start initial-request)
-    
     (report-errors-to-browser send/finish)
     
     `(HTML 

@@ -11,8 +11,6 @@
            (lib "port.ss")
            (lib "thread.ss"))
   
-  (define doc-prs (listof (cons/p string? string?)))
-  
   (provide refresh-manuals)
   
   (define sc-refreshing-manuals (string-constant plt:hd:refreshing-manuals))
@@ -26,6 +24,12 @@
     (case-lambda
       [() (refresh-manuals known-docs)]
       [(docs-to-install)
+       (unless (and (list? docs-to-install)
+                    (andmap (lambda (x) (and (pair? x)
+                                             (path? (car x))
+                                             (string? (cdr x))))
+                            docs-to-install))
+         (error 'refresh-manuals "expected (listof (cons path string)) as argument, got ~e" docs-to-install))
        (let ([tmp-directory (find/create-temporary-docs-dir)]
              [success? #f]
              [thd #f])
@@ -87,25 +91,22 @@
                                                         
 
   ;; downloads the docs to the tmp-dir
-  (define/contract download-docs
-    (doc-prs string? . -> . any)
+  (define download-docs
     (lambda (docs-to-install tmp-dir)
       (for-each (lambda (known-doc) (download-doc tmp-dir (car known-doc) (cdr known-doc)))
                 docs-to-install)))
       
   ;; stub is the `drscheme' portion of `drscheme-doc.plt'.
-  (define/contract download-doc
-    (string? string? string? . -> . any)
+  (define download-doc
     (lambda (tmp-dir stub full-name)
-      (let ([url (make-docs-plt-url stub)]
+      (let ([url (make-docs-plt-url (path->string stub))]
             [doc-name (make-local-doc-filename tmp-dir stub)])
         (display (format sc-refresh-downloading... full-name))
         (newline)
         (call-with-output-file doc-name
           (lambda (out-port)
             (call/input-url (string->url url) get-pure-port 
-                            (lambda (in-port)
-			      (copy-port in-port out-port)))))
+                            (lambda (in-port) (copy-port in-port out-port)))))
         (void))))
       
       
@@ -122,14 +123,12 @@
                                           
                                           
                                       
-  (define/contract delete-docs
-    (doc-prs . -> . any)
+  (define delete-docs
     (lambda (docs)
       (for-each (lambda (known-doc) (delete-known-doc (car known-doc) (cdr known-doc)))
                 docs)))
       
-  (define/contract delete-known-doc
-    (string? string? . -> . any)
+  (define delete-known-doc
     (lambda (doc full-name)
       (let ([doc-dir (find-doc-directory doc)])
         (when doc-dir
@@ -137,15 +136,13 @@
           (newline)
           (delete-directory/r doc-dir)))))
       
-  (define/contract delete-local-plt-files
-    (string? . -> . any)
+  (define delete-local-plt-files
     (lambda (tmp-dir)
       (delete-directory/r tmp-dir)))
       
   ;; deletes the entire subtree underneath this directory
   ;; (including the dir itself)
-  (define/contract delete-directory/r 
-    (string? . -> . any)
+  (define delete-directory/r 
     (lambda (dir)
       (when (directory-exists? dir)
         (let loop ([dir dir])
@@ -172,8 +169,7 @@
                                                  
                                                  
     
-  (define/contract install-docs
-    (doc-prs string? (is-a?/c top-level-window<%>) . -> . any)
+  (define install-docs
     (lambda (docs-to-install tmp-dir parent)
       (for-each (lambda (pr) 
                   (display (format sc-refresh-installing... (cdr pr)))

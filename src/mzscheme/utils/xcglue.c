@@ -157,7 +157,7 @@ static Scheme_Object *init_prim_obj(int argc, Scheme_Object **argv)
 
 static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
 {
-  Scheme_Object *name, *base_stype, *stype, *derive_stype;
+  Scheme_Object *name, *base_stype, *stype;
   Scheme_Object **names, **vals, *a[3], *props;
   Scheme_Class *c;
   int flags, count;
@@ -216,20 +216,11 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
   
   c->struct_type = stype;
   
-  /* Type to derive from Scheme: */
+  /* Type to derive/instantiate from Scheme: */
 
   props = scheme_make_pair(scheme_make_pair(preparer_property, argv[3]),
 			   scheme_make_pair(scheme_make_pair(dispatcher_property, argv[4]),
 					    props));
-  
-  derive_stype = scheme_make_struct_type(name,
-					 base_stype, 
-					 NULL,
-					 0, 0, NULL,
-					 props,
-					 NULL);
-  
-  /* Type to instantiate from Scheme: */
   
   stype = scheme_make_struct_type(name,
 				  base_stype, 
@@ -256,8 +247,8 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
   vals = scheme_make_struct_values(base_stype, names, count, flags);
   a[1] = vals[0];
 
-  /* Need derive type: */
-  a[2] = derive_stype;
+  /* Derive type == instantiate type: */
+  a[2] = stype;
 
   return scheme_values(3, a);
 }

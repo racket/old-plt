@@ -3137,11 +3137,18 @@ certifier(void *_data, int argc, Scheme_Object **argv)
     }
   }
 
-  if (cert_data[0] || cert_data[1]) {
+  if (cert_data[0] || cert_data[1] || cert_data[2]) {
     s = scheme_stx_cert(s, mark, 
-			(Scheme_Env *)cert_data[1],
+			(Scheme_Env *)(cert_data[1] ? cert_data[1] : cert_data[2]),
 			cert_data[0],
 			(argc > 1) ? argv[1] : NULL);
+    if (cert_data[1] && cert_data[2] && !SAME_OBJ(cert_data[1], cert_data[2])) {
+      /* Have module we're expanding, in addition to module that bound
+	 the expander. */
+      s = scheme_stx_cert(s, mark, (Scheme_Env *)cert_data[2],
+			  NULL,
+			  (argc > 1) ? argv[1] : NULL);
+    }
   }
 
   return s;
@@ -3158,10 +3165,14 @@ local_certify(int argc, Scheme_Object *argv[])
 		     "syntax-local-certifier: not currently transforming");
   menv = scheme_current_thread->current_local_menv;
 
-  cert_data = MALLOC_N(Scheme_Object*, 2);
+  cert_data = MALLOC_N(Scheme_Object*, 3);
   cert_data[0] = scheme_current_thread->current_local_certs;
+  /* Module that bound the macro we're now running: */
   cert_data[1] = (Scheme_Object *)((menv && menv->module) ? menv : NULL);
-  
+  /* Module that we're currently expanding: */
+  menv = scheme_current_thread->current_local_env->genv;
+  cert_data[2] = (Scheme_Object *)((menv && menv->module) ? menv : NULL);
+
   return scheme_make_closed_prim_w_arity(certifier,
 					 cert_data,
 					 "certifier",

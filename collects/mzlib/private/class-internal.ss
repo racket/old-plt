@@ -1539,39 +1539,25 @@
 	      (vector-set! (class-supers c) (add1 (class-pos super)) c)
 
 	      ;; --- Make the new object struct ---
-	      (let*-values ([(prim-tagged-object-make prim-object? struct:prim-object)
+	      (let*-values ([(prim-object-make prim-object? struct:prim-object)
 			     (if make-struct:prim
 				 (make-struct:prim c prop:object preparer dispatcher)
 				 (values #f #f #f))]
 			    [(struct:object object-make object? object-field-ref object-field-set!)
 			     (if make-struct:prim
 				 ;; Use prim struct:
-				 (values struct:prim-object #f prim-object? #f #f)
+				 (values struct:prim-object prim-object-make prim-object? #f #f)
 				 ;; Normal struct creation:
 				 (make-struct-type obj-name
 						   (class-struct:object super)
 						   0 ;; No init fields
 						   ;; Fields for new slots:
 						   num-fields undefined
-						   null
-						   insp))]
-			    ;; The second structure associates prop:object with the class.
-			    ;; Other classes extend struct:object, so we can't put the
-			    ;; property there.
-			    [(struct:tagged-object tagged-object-make tagged-object? -ref -set!)
-			     (if make-struct:prim
-				 ;; Use prim struct:
-				 (values #f prim-tagged-object-make #f #f #f)
-				 ;; Normal second-struct creation:
-				 (make-struct-type obj-name
-						   struct:object
-						   0 0 #f
 						   ;; Map object property to class:
-						   (list (cons prop:object c))
-						   insp))])
+						   (list (cons prop:object c))))])
 		(set-class-struct:object! c struct:object)
 		(set-class-object?! c object?)
-		(set-class-make-object! c tagged-object-make)
+		(set-class-make-object! c object-make)
 		(unless (zero? num-fields)
 		  ;; We need these only if there are fields, used for for public-field
 		  ;; access or for inspection:
@@ -1886,11 +1872,9 @@
 
   (vector-set! (class-supers object%) 0 object%)
   (let*-values ([(struct:obj make-obj obj? -get -set!)
-                 (make-struct-type 'object #f 0 0 #f null insp)]
-                [(struct:tagged-obj make-tagged-obj tagged-obj? tagged-get tagged-set!)
-                 (make-struct-type 'object struct:obj 0 0 #f (list (cons prop:object object%)) insp)])
+                 (make-struct-type 'object #f 0 0 #f (list (cons prop:object object%)) (make-inspector))])
     (set-class-struct:object! object% struct:obj)
-    (set-class-make-object! object% make-tagged-obj))
+    (set-class-make-object! object% make-obj))
   (set-class-object?! object% object?) ; don't use struct pred; it wouldn't work with prim classes
 
   (set-interface-class! object<%> object%)

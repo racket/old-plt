@@ -2219,7 +2219,10 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
 
   if (props) {
     int num_props, i;
+    Scheme_Hash_Table *can_override;
     Scheme_Object *l, *a, *prop, *propv;
+
+    can_override = scheme_make_hash_table(SCHEME_hash_ptr);
 
     num_props = scheme_list_length(props);
     if ((struct_type->num_props < 0) || (struct_type->num_props + num_props > PROP_USE_HT_COUNT)) {
@@ -2229,16 +2232,18 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
     
       if (struct_type->num_props >= 0) {
 	for (i = 0; i < struct_type->num_props; i++) {
-	  scheme_hash_set(ht, 
-			  SCHEME_CAR(struct_type->props[i]), 
-			  SCHEME_CDR(struct_type->props[i]));
+	  prop = SCHEME_CAR(struct_type->props[i]);
+	  scheme_hash_set(ht, prop, SCHEME_CDR(struct_type->props[i]));
+	  scheme_hash_set(can_override, prop, scheme_true);
 	}
       } else {
 	/* Duplicate the hash table: */
 	Scheme_Hash_Table *oht = (Scheme_Hash_Table *)struct_type->props;
 	for (i =  oht->count; i--; ) {
 	  if (oht->vals[i]) {
-	    scheme_hash_set(ht, oht->keys[i], oht->vals[i]);
+	    prop = oht->keys[i];
+	    scheme_hash_set(ht, prop, oht->vals[i]);
+	    scheme_hash_set(can_override, prop, scheme_true);
 	  }
 	}
       }
@@ -2249,7 +2254,10 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
 	prop = SCHEME_CAR(a);
 	if (scheme_hash_get(ht, prop)) {
 	  /* Property is already in the superstruct_type */
-	  break;
+	  if (!scheme_hash_get(can_override, prop))
+	    break;
+	  /* otherwise we override */
+	  scheme_hash_set(can_override, prop, NULL);
 	}
 	
 	propv = guard_property(prop, SCHEME_CDR(a), struct_type);
@@ -2263,32 +2271,45 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
       /* Make props array: */
       Scheme_Object **pa;
       int j;
-
-      i = struct_type->num_props;
+      
+      /* Remember origs, so we can override */
+      for (i = 0; i < struct_type->num_props; i++) {
+	prop = SCHEME_CAR(struct_type->props[i]);
+	scheme_hash_set(can_override, prop, scheme_true);
+      }
       
       pa = MALLOC_N(Scheme_Object *, i + num_props);
       memcpy(pa, struct_type->props, sizeof(Scheme_Object *) * i);
 
-      for (l = props; SCHEME_PAIRP(l); l = SCHEME_CDR(l), i++) {
+      num_props = i;
+
+      for (l = props; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
 	a = SCHEME_CAR(l);
 
 	prop = SCHEME_CAR(a);
 
 	/* Check whether already in table: */
-	for (j = 0; j < i; j++) {
+	for (j = 0; j < num_props; j++) {
 	  if (SAME_OBJ(SCHEME_CAR(pa[j]), prop))
 	    break;
 	}
-	if (j < i)
-	  break; /* already there */
+	if (j < i) {
+	  /* already there */
+	  if (!scheme_hash_get(can_override, prop))
+	    break; 
+	  /* overriding it: */
+	  scheme_hash_set(can_override, prop, NULL);
+	} else {
+	  num_props++;
+	}
 
 	propv = guard_property(prop, SCHEME_CDR(a), struct_type);
 
 	a = scheme_make_pair(prop, propv);
-	pa[i] = a;
+	pa[j] = a;
       }
       
-      struct_type->num_props += num_props;
+      struct_type->num_props = num_props;
       struct_type->props = pa;
     }
 

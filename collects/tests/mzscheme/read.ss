@@ -191,6 +191,8 @@
 (test 5 readstr "#| hi |# 5")
 (test 5 readstr "#| #| #| #| hi |# |# |# |# 5")
 (test '(5) readstr "(#| #| #| #| hi |# |# |# |# 5)")
+(test '(10 1) readstr "(10 #|z#|#f|#z|# 1)")
+(test 17 readstr "#|z#|#f|#z|# 17")
 
 (err/rt-test (readstr "#\\silly") exn:fail:read?)
 (err/rt-test (readstr "#\\nully") exn:fail:read?)

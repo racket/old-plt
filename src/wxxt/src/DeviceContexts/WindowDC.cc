@@ -2396,8 +2396,10 @@ wxGL::wxGL()
 {
   if (!gl_registered) {
     Visual *vis;      
-    GC_CAN_IGNORE XVisualInfo *visi, tmpl;
+    GC_CAN_IGNORE XVisualInfo *visi, tmpl, *suggested_vi, *suggested_sb_vi;
     int n, i;
+    GC_CAN_IGNORE int gl_attribs[] = { GLX_DOUBLEBUFFER, GLX_RGBA, None };
+    GC_CAN_IGNORE int gl_sb_attribs[] = { GLX_RGBA, None };
 
     wxREGGLOB(current_gl_context); 
     gl_registered = 1;
@@ -2407,6 +2409,9 @@ wxGL::wxGL()
        will have the same colormap. Get the default visual, then
        get a list of attribute-equivalent visuals, then find the'
        ones with the right GL properties... */
+
+    suggested_vi = glXChooseVisual(wxAPP_DISPLAY, XScreenNumberOfScreen(wxAPP_SCREEN), gl_attribs);
+    suggested_sb_vi = glXChooseVisual(wxAPP_DISPLAY, XScreenNumberOfScreen(wxAPP_SCREEN), gl_sb_attribs);
 
     vis = XcmsVisualOfCCC(XcmsCCCOfColormap(wxAPP_DISPLAY,
 					    DefaultColormapOfScreen(wxAPP_SCREEN)));
@@ -2433,28 +2438,46 @@ wxGL::wxGL()
       int want_db;
       
       for (want_db = 0; want_db < 2; want_db++) {
-	int min_aux_match = 1000;
-	int min_sten_match = 1000;
-	
 	for (i = 0; i < n; i++) {
-	  int v, v2;
-	  glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_USE_GL, &v);
-	  if (v) {
-	    glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_LEVEL, &v);
-	    if (!v)  {
-	      glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_STEREO, &v);
+	  if (want_db) {
+	    if (visi[i].visualid == suggested_vi->visualid) {
+	      vi = suggested_vi;
+	      break;
+	    }
+	  } else {
+	    if (visi[i].visualid == suggested_sb_vi->visualid) {
+	      sb_vi = suggested_sb_vi;
+	      break;
+	    }
+	  }
+	}
+
+	/* The vi returned by XGetVisualInfo doesn't match our colormap.
+	   Manually search. */
+	if (i >= n) {
+	  int min_aux_match = 1000;
+	  int min_sten_match = 1000;
+	  
+	  for (i = 0; i < n; i++) {
+	    int v, v2;
+	    glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_USE_GL, &v);
+	    if (v) {
+	      glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_LEVEL, &v);
 	      if (!v)  {
-		glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_DOUBLEBUFFER, &v);
-		if (v == want_db) {
-		  glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_AUX_BUFFERS, &v);
-		  glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_STENCIL_SIZE, &v2);
-		  if ((v <= min_aux_match) && (v2 <= min_sten_match)) {
-		    min_aux_match = v;
-		    min_sten_match = v2;
-		    if (want_db)
-		      vi = visi + i;
-		    else
-		      sb_vi = visi + i;
+		glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_STEREO, &v);
+		if (!v)  {
+		  glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_DOUBLEBUFFER, &v);
+		  if (v == want_db) {
+		    glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_AUX_BUFFERS, &v);
+		    glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_STENCIL_SIZE, &v2);
+		    if ((v <= min_aux_match) && (v2 <= min_sten_match)) {
+		      min_aux_match = v;
+		      min_sten_match = v2;
+		      if (want_db)
+			vi = visi + i;
+		      else
+			sb_vi = visi + i;
+		    }
 		  }
 		}
 	      }

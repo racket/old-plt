@@ -498,8 +498,9 @@ int eager_level; /* MATTHEW */
 			            GC_finalization_proc fn, void * cd,
 			            GC_finalization_proc *ofn, void ** ocd)
 # else
-    void GC_register_eager_finalizer(obj, fn, cd, ofn, ocd)
+    void GC_register_eager_finalizer(obj, eager_level, fn, cd, ofn, ocd)
     GC_PTR obj;
+    int eager_level;
     GC_finalization_proc fn;
     GC_PTR cd;
     GC_finalization_proc * ofn;

@@ -707,7 +707,7 @@ Rect wxFrame::wxMacGetStrucRect(void)
 	}
 	else
 	{
-		const kOffScreenLocation = 0x4000;
+		const int kOffScreenLocation = 0x4000;
 	
 		Rect theClientRect = theMacWindow->portRect; // client c.s.
 		Point thePosition = {theClientRect.top, theClientRect.left}; // client c.s.

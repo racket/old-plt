@@ -2642,7 +2642,7 @@
 				      (if m (car m) #t))])
 			(when got
 			  ;; Check the suffix, which gets lost when creating a key:
-			  (unless (equal? suffix got)
+			  (unless (or (symbol? got) (equal? suffix got))
 			    (error
 			     'standard-module-name-resolver
 			     "module previously loaded with suffix ~s, cannot load with suffix ~s: ~e"
@@ -2680,7 +2680,7 @@
 					  (current-namespace)
 					  ht)
 			 ht)))])
-	    (hash-table-put! ht relto #t)))))
+	    (hash-table-put! ht relto 'attach)))))
     
   (define (find-library-collection-paths)
     (path-list-string->path-list

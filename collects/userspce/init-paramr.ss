@@ -605,19 +605,27 @@
 			(recur)])))])
            (apply values (process-file/zodiac filename process-sexps #t)))]
         [else
-	 (call-with-input-file filename
-	   (lambda (port)
-	     (let loop ([last-vals (list (void))])
-	       (let ([r ((raw-reader) port)])
-		 (if (eof-object? r)
-		     (apply values last-vals)
-		     (call-with-values
-		      (lambda ()
-			(parameterize ([intermediate-values-during-load void])
-			  (eval r)))
-		      (lambda x
-			(apply (intermediate-values-during-load) x)
-			(loop x))))))))])))
+         (let ([has-hash-bang?
+                (call-with-input-file filename
+                  (lambda (port)
+                    (equal? (list (read-char port)
+                                  (read-char port))
+                            (list #\# #\!))))])
+           (call-with-input-file filename
+             (lambda (port)
+               (when has-hash-bang?
+                 (read-line port 'any))
+               (let loop ([last-vals (list (void))])
+                 (let ([r ((raw-reader) port)])
+                   (if (eof-object? r)
+                       (apply values last-vals)
+                       (call-with-values
+                        (lambda ()
+                          (parameterize ([intermediate-values-during-load void])
+                            (eval r)))
+                        (lambda x
+                          (apply (intermediate-values-during-load) x)
+                          (loop x)))))))))])))
   
   ;; drscheme-eval : sexp ->* TST
   (define (drscheme-eval-handler sexp)

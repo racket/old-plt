@@ -83,26 +83,38 @@
 					   (if-stream-in cin)
 					   (if-stream-out cerr)
 					   exe args)])      
-      (list (streamify-out cout out #f)
-	    (streamify-in cin in #f void)
-	    (subprocess-pid subp)
-	    (streamify-out cerr err #f)
-	    (letrec ((control
-		      (lambda (m)
-			(case m
-			  ((status) (let ((s (subprocess-status subp)))
-				      (cond ((not (integer? s)) s)
-					    ((zero? s) 'done-ok)
-					    (else 'done-error))))
-			  ((exit-code) (let ((s (subprocess-status subp)))
-                                         (and (integer? s) s)))
-			  ((wait) (subprocess-wait subp))
-			  ((interrupt) (subprocess-kill subp #f))
-			  ((kill) (subprocess-kill subp #t))
-			  (else
-			   (raise-type-error 'control-process
-                                             "'status, 'exit-code, 'wait, 'interrupt, or 'kill" m))))))
-	      control))))
+      (let ([so (streamify-out cout out #t)]
+	    [si (streamify-in cin in #t void)]
+	    [se (streamify-out cerr err #f)]
+	    [aport (lambda (x)
+		     (and (port? x) x))])
+	(list (aport so)
+	      (aport si)
+	      (subprocess-pid subp)
+	      (aport se)
+	      (letrec ((control
+			(lambda (m)
+			  (case m
+			    ((status) (let ((s (subprocess-status subp)))
+					(cond ((not (integer? s)) s)
+					      ((zero? s) 'done-ok)
+					      (else 'done-error))))
+			    ((exit-code) (let ((s (subprocess-status subp)))
+					   (and (integer? s) s)))
+			    ((wait) 
+			     (subprocess-wait subp)
+			     (let ([twait (lambda (t)
+					    (when (thread? t)
+					      (thread-wait t)))])
+			       (twait so)
+			       (twait si)
+			       (twait se)))
+			    ((interrupt) (subprocess-kill subp #f))
+			    ((kill) (subprocess-kill subp #t))
+			    (else
+			     (raise-type-error 'control-process
+					       "'status, 'exit-code, 'wait, 'interrupt, or 'kill" m))))))
+		control)))))
 
   (define (process/ports out in err str)
     (apply process*/ports out in err (shell-path/args "process/ports" str)))

@@ -184,17 +184,24 @@
         (begin-edit-sequence #f)
         (color)
         (end-edit-sequence)
-        (queue-callback colorer-callback))
+        (queue-callback colorer-callback #f))
                 
       (define (background-colorer)
-        (channel-get sync)
-        (parameterize ((current-exception-handler
-                        (lambda (exn)
-                          (channel-get sync)
-                          ((exn:break-continuation exn)))))
-          (with-handlers ((not-break-exn? void))
-            (re-tokenize)))
-        (background-colorer))
+	(break-enabled #f)
+	(let/ec restart
+	  (parameterize ((current-exception-handler
+			  (lambda (exn)
+			    (channel-get sync)
+			    (cond
+			     (in ((exn:break-continuation exn)))
+			     (else
+			      (break-enabled #f)
+			      (restart))))))
+	    (channel-get sync)
+	    (break-enabled #t)
+	    (with-handlers ((not-break-exn? void))
+	      (re-tokenize))))
+	(background-colorer))
       
       
 ;      (define (colorer-callback)

@@ -3,7 +3,7 @@
 improve method arity mismatch contract violation error messages?
   (abstract out -> and friends even more?)
 
-add structu contracts for immutable structs?
+add struct contracts for immutable structs?
 
 |#
 
@@ -698,12 +698,33 @@ add structu contracts for immutable structs?
                            proj-code))))))))))]))
     
     (define (make-opt->/proc method-proc? stx)
-      (syntax-case stx ()
+      (syntax-case stx (any)
         [(_ (reqs ...) (opts ...) res)
          (make-opt->*/proc method-proc? (syntax (opt->* (reqs ...) (opts ...) (res))))]))
   
     (define (make-opt->*/proc method-proc? stx)
-      (syntax-case stx ()
+      (syntax-case stx (any)
+        [(_ (reqs ...) (opts ...) any)
+         (let* ([req-vs (generate-temporaries (syntax->list (syntax (reqs ...))))]
+                [opt-vs (generate-temporaries (syntax->list (syntax (opts ...))))]
+                [cses
+                 (reverse
+                  (let loop ([opt-vs (reverse opt-vs)])
+                    (cond
+                      [(null? opt-vs) (list req-vs)]
+                      [else (cons (append req-vs (reverse opt-vs))
+                                  (loop (cdr opt-vs)))])))])
+           (with-syntax ([(req-vs ...) req-vs]
+                         [(opt-vs ...) opt-vs]
+                         [((case-doms ...) ...) cses])
+             (with-syntax ([expanded-case->
+                            (make-case->/proc
+                             method-proc?
+                             (syntax (case-> (-> case-doms ... any) ...)))])
+               (syntax/loc stx
+                 (let ([req-vs reqs] ...
+                       [opt-vs opts] ...)
+                   expanded-case->)))))]
         [(_ (reqs ...) (opts ...) (ress ...))
          (let* ([res-vs (generate-temporaries (syntax->list (syntax (ress ...))))]
                 [req-vs (generate-temporaries (syntax->list (syntax (reqs ...))))]
@@ -898,6 +919,11 @@ add structu contracts for immutable structs?
           [(opt->* (req-contracts ...) (opt-contracts ...) (res-contracts ...))
            (values
             (obj-opt->*/proc (syntax (opt->* (any? req-contracts ...) (opt-contracts ...) (res-contracts ...))))
+            (generate-opt->vars (syntax (req-contracts ...))
+                                (syntax (opt-contracts ...))))]
+          [(opt->* (req-contracts ...) (opt-contracts ...) any)
+           (values
+            (obj-opt->*/proc (syntax (opt->* (any? req-contracts ...) (opt-contracts ...) any)))
             (generate-opt->vars (syntax (req-contracts ...))
                                 (syntax (opt-contracts ...))))]
           [(opt-> (req-contracts ...) (opt-contracts ...) res-contract) 
@@ -2440,7 +2466,7 @@ add structu contracts for immutable structs?
 
   (define vector-immutableof
     (*-immutableof (lambda (x) (and (vector? x) (immutable? x)))
-                   (lambda (f v) (vector->immutable-vector (list->vector (map f (vector->list v)))))
+                   (lambda (f v) (apply vector-immutable (map f (vector->list v))))
                    immutable-vector
                    vector-immutableof))
   

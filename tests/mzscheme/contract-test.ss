@@ -121,6 +121,8 @@
   (test/no-error '(opt-> ((flat-contract integer?)) ((flat-contract integer?)) (flat-contract integer?)))
   (test/no-error '(opt->* (integer?) (integer?) (integer?)))
   (test/no-error '(opt->* ((flat-contract integer?)) ((flat-contract integer?)) ((flat-contract integer?))))
+  (test/no-error '(opt->* (integer?) (integer?) any))
+  (test/no-error '(opt->* ((flat-contract integer?)) ((flat-contract integer?)) any))
   
   (test/no-error '(listof any?))
   (test/no-error '(listof (lambda (x) #t)))
@@ -1219,7 +1221,6 @@
           'z
           #f))
 
-  
   (test/pos-blame
    'object-contract->*1
    '(contract (object-contract (m (->* (integer?) (boolean?))))
@@ -2083,6 +2084,18 @@
                                  (-> integer? boolean? symbol?) ~
                                  (-> integer? boolean? number? symbol?))))")
    (object-contract (m (opt->* (integer?) (boolean? number?) (symbol?)))))
+  (test-name
+   (format
+    "(object-contract (m (case-> (-> integer? symbol?) ~
+                                 (-> integer? boolean? symbol?) ~
+                                 (-> integer? boolean? number? symbol?))))")
+   (object-contract (m (opt-> (integer?) (boolean? number?) symbol?))))
+  (test-name
+   (format
+    "(object-contract (m (case-> (-> integer? any) ~
+                                 (-> integer? boolean? any) ~
+                                 (-> integer? boolean? number? any))))")
+   (object-contract (m (opt->* (integer?) (boolean? number?) any))))
   (test-name
    (format
     "(object-contract (m (case-> (-> integer? (values symbol? boolean?)) ~

@@ -42,15 +42,27 @@
 			  v)))
 
       (define (available-variants kind)
-	(if (eq? 'unix (system-type))
-	    (append
-	     (if (and plthome
-		      (file-exists? (build-path plthome "bin" (format "~a3m" kind))))
-		 '(3m)
-		 null)
-	     '(normal))
-	    ;; 3m launchers not yet supported for other platforms:
-	    '(normal)))
+	(let ([3m (if (eq? 'unix (system-type))
+		      (if (and plthome
+			       (file-exists? (build-path plthome "bin" (format "~a3m" kind))))
+			  '(3m)
+			  null)
+		      ;; 3m launchers not yet supported for other platforms:
+		      null)]
+	      [normal (if (eq? kind 'mzscheme)
+			  '(normal) ; MzScheme is always available
+			  (if (and plthome
+				   (cond
+				    [(eq? 'unix (system-type))
+				     (file-exists? (build-path plthome "bin" (format "~a" kind)))]
+				    [(eq? 'macosx (system-type))
+				     (directory-exists? (build-path plthome "MrEd.app"))]
+				    [(eq? 'windows (system-type))
+				     (file-exists? (build-path plthome (format "~a.exe" kind)))]
+				    [else #t]))
+			      '(normal)
+			      null))])
+	  (append 3m normal)))
 
       (define (available-mred-variants)
 	(available-variants 'mred))

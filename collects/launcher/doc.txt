@@ -143,7 +143,7 @@ executables.
 > (current-launcher-variant [symbol]) - Gets or sets a symbol
    parameter that indicates a variant of MzScheme or MrEd to use for
    launcher creation and for generating launcher names. The 'normal
-   variant is always available. The only other possibility is '3m for
+   variant is usually available. The only other possibility is '3m for
    Unix platforms.
 
 > (available-mred-variants kind) - Returns a list of symbols

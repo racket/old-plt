@@ -1,0 +1,990 @@
+This is lightning.info, produced by makeinfo version 4.5 from
+lightning.texi.
+
+INFO-DIR-SECTION GNU lightning, a library for dynamic code generation
+START-INFO-DIR-ENTRY
+* Using and porting GNU lightning: (lightning).
+END-INFO-DIR-ENTRY
+
+   This file documents GNU lightning, Version 1.2a.  It was last
+updated on 15 March 2004.
+
+   Copyright (C) 2000 Free Software Foundation, Inc.  Authored by Paolo
+Bonzini.
+
+   This document is released under the terms of the GNU Free
+Documentation License as published by the Free Software Foundation;
+either version 1.1, or (at your option) any later version.
+
+   You should have received a copy of the GNU Free Documentation
+License along with GNU lightning; see the file `COPYING.DOC'.  If not,
+write to the Free Software Foundation, 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.
+
+   There are no Secondary Sections, no Cover Texts and no Invariant
+Sections (as defined in the license); this text, along with its
+equivalent in the printed manual, constitutes the Title Page.
+
+
+File: lightning.info,  Node: Fibonacci,  Prev: RPN calculator,  Up: GNU lightning macros
+
+Fibonacci numbers
+-----------------
+
+   The code in this section calculates a variant of the Fibonacci
+sequence.  While the traditional Fibonacci sequence is modeled by the
+recurrence relation:
+          f(0) = f(1) = 1
+          f(n) = f(n-1) + f(n-2)
+
+the functions in this section calculates the following sequence, which
+is more interesting as a benchmark(1):
+          nfibs(0) = nfibs(1) = 1
+          nfibs(n) = nfibs(n-1) + nfibs(n-2) + 1
+
+   The purpose of this example is to introduce branches.  There are two
+kind of branches: backward branches and forward branches.  We'll
+present the calculation in a recursive and iterative form; the former
+only uses forward branches, while the latter uses both.
+
+     #include <stdio.h>
+     #include "lightning.h"
+     
+     static jit_insn codeBuffer[1024];
+     
+     typedef int (*pifi)(int);       /* Pointer to Int Function of Int */
+     
+     int main()
+     {
+       pifi      nfibs = (pifi) (jit_set_ip(codeBuffer).iptr);
+       int       in;                 /* offset of the argument */
+       jit_insn  *ref;               /* to patch the forward reference */
+     
+             jit_prolog   (1);
+       in =  jit_arg_ui   ();
+             jit_getarg_ui(JIT_V0, in);              /* V0 = n */
+       ref = jit_blti_ui  (jit_forward(), JIT_V0, 2);
+             jit_subi_ui  (JIT_V1, JIT_V0, 1);       /* V1 = n-1 */
+             jit_subi_ui  (JIT_V2, JIT_V0, 2);       /* V2 = n-2 */
+             jit_prepare(1);
+               jit_pusharg_ui(JIT_V1);
+             jit_finish(nfibs);
+             jit_retval(JIT_V1);                     /* V1 = nfibs(n-1) */
+             jit_prepare(1);
+               jit_pusharg_ui(JIT_V2);
+             jit_finish(nfibs);
+             jit_retval(JIT_V2);                     /* V2 = nfibs(n-2) */
+             jit_addi_ui(JIT_V1,  JIT_V1,  1);
+             jit_addr_ui(JIT_RET, JIT_V1, JIT_V2);   /* RET = V1 + V2 + 1 */
+             jit_ret();
+     
+       jit_patch(ref);                               /* patch jump */
+             jit_movi_i(JIT_RET, 1);                 /* RET = 1 */
+             jit_ret();
+     
+       /* call the generated code, passing 32 as an argument */
+       jit_flush_code(codeBuffer, jit_get_ip().ptr);
+       printf("nfibs(%d) = %d", 32, nfibs(32));
+       return 0;
+     }
+
+   As said above, this is the first example of dynamically compiling
+branches.  Branch instructions have three operands: two contains the
+values to be compared, while the first is a "label"; GNU lightning
+label's are represented as `jit_insn *' values.  Unlike other
+instructions (apart from `arg', which is actually a directive rather
+than an instruction), branch instructions also return a value which, as
+we see in the example above, can be used to compile forward references.
+
+   Compiling a forward reference is a two-step operation.  First, a
+branch is compiled with a dummy label, since the actual destination of
+the jump is not yet known; the dummy label is returned by the
+`jit_forward()' macro.  The value returned by the branch instruction is
+saved to be used later.
+
+   Then, when the destination of the jump is reached, another macro is
+used, `jit_patch()'. This macro must be called once for *every* point
+in which the code had a forward branch to the instruction following
+`jit_patch' (in this case a `movi_i' instruction).
+
+   Now, here is the iterative version:
+
+     #include <stdio.h>
+     #include "lightning.h"
+     
+     static jit_insn codeBuffer[1024];
+     
+     typedef int (*pifi)(int);       /* Pointer to Int Function of Int */
+     
+     int main()
+     {
+       pifi     nfibs = (pifi) (jit_set_ip(codeBuffer).iptr);
+       int      in;                  /* offset of the argument */
+       jit_insn *ref;                /* to patch the forward reference */
+       jit_insn *loop;               /* start of the loop */
+     
+             jit_leaf     (1);
+       in =  jit_arg_ui   ();
+             jit_getarg_ui(JIT_R2, in);              /* R2 = n */
+             jit_movi_ui  (JIT_R1, 1);
+       ref = jit_blti_ui  (jit_forward(), JIT_R2, 2);
+             jit_subi_ui  (JIT_R2, JIT_R2, 1);
+             jit_movi_ui  (JIT_R0, 1);
+     
+       loop= jit_get_label();
+             jit_subi_ui  (JIT_R2, JIT_R2, 1);       /* decr. counter */
+             jit_addr_ui  (JIT_V0, JIT_R0, JIT_R1);  /* V0 = R0 + R1 */
+             jit_movr_ui  (JIT_R0, JIT_R1);          /* R0 = R1 */
+             jit_addi_ui  (JIT_R1, JIT_V0, 1);       /* R1 = V0 + 1 */
+             jit_bnei_ui  (loop, JIT_R2, 0);         /* if (R2) goto loop; */
+     
+       jit_patch(ref);                               /* patch forward jump */
+             jit_movr_ui  (JIT_RET, JIT_R1);         /* RET = R1 */
+             jit_ret      ();
+     
+       /* call the generated code, passing 36 as an argument */
+       jit_flush_code(codeBuffer, jit_get_ip().ptr);
+       printf("nfibs(%d) = %d", 36, nfibs(36));
+       return 0;
+     }
+
+   This code calculates the recurrence relation using iteration (a
+`for' loop in high-level languages).  There is still a forward
+reference (indicated by the `jit_forward'/`jit_patch' pair); there are
+no function calls anymore: instead, there is a backward jump (the
+`bnei' at the end of the loop).
+
+   In this case, the destination address should be known, because the
+jumps lands on an instruction that has already been compiled.  However
+the program must make a provision and remember the address where the
+jump will land.  This is achieved with `jit_get_label', yet another
+macro that is much similar to `jit_get_ip' but, instead of a `jit_code'
+union, it answers an `jit_insn *' that the branch macros accept.
+
+   Now, let's make one more change: let's rewrite the loop like this:
+
+       ...
+     
+       jit_delay(
+             jit_movi_ui  (JIT_R1, 1),
+       ref = jit_blti_ui  (jit_forward(), JIT_R2, 2));
+             jit_subi_ui  (JIT_R2, JIT_R2, 1);
+     
+       loop= jit_get_label();
+             jit_subi_ui  (JIT_R2, JIT_R2, 1);       /* decr. counter */
+             jit_addr_ui  (JIT_V0, JIT_R0, JIT_R1);  /* V0 = R0 + R1 */
+             jit_movr_ui  (JIT_R0, JIT_R1);          /* R0 = R1 */
+       jit_delay(
+             jit_addi_ui  (JIT_R1, JIT_V0, 1),       /* R1 = V0 + 1 */
+             jit_bnei_ui  (loop, JIT_R2, 0));        /* if (R2) goto loop; */
+     
+       ...
+
+   The `jit_delay' macro is used to schedule delay slots in jumps and
+branches.  This is optional, but might lead to performance improvements
+in tight inner loops (of course not in a loop that is executed 35
+times, but this is just an example).
+
+   `jit_delay' takes two GNU lightning instructions, a "delay
+instruction" and a "branch instruction".  Note that the two
+instructions must be written in execution order (first the delay
+instruction, then the branch instruction), *not* with the branch first.
+If the current machine has a delay slot, the delay instruction (or
+part of it) is placed in the delay slot after the branch instruction;
+otherwise, it emits the delay instruction before the branch
+instruction.  The delay instruction must not depend on being executed
+before or after the branch.
+
+   Instead of `jit_patch', you can use `jit_patch_at', which takes two
+arguments: the first is the same as for `jit_patch', and the second is
+the valued to be patched in.  In other words, these two invocations
+have the same effect:
+
+       jit_patch (jump_pc);
+       jit_patch_at (jump_pc, jit_get_ip ());
+
+   Dual to branches and `jit_patch_at' are `jit_movi_p' and
+`jit_patch_movi', which can also be used to implement forward
+references.  `jit_movi_p' is carefully implemented to use an encoding
+that is as long as possible, so that it can always be patched; in
+addition, like branches, it will return an address which is then passed
+to `jit_patch_movi'.  The usage of `jit_patch_movi' is similar to
+`jit_patch_at'.
+
+   ---------- Footnotes ----------
+
+   (1) That's because, as is easily seen, the sequence represents the
+number of activations of the `nfibs' procedure that are needed to
+compute its value through recursion.
+
+
+File: lightning.info,  Node: Reentrancy,  Next: Autoconf support,  Prev: GNU lightning macros,  Up: Using GNU lightning
+
+Re-entrant usage of GNU lightning
+=================================
+
+   By default, GNU lightning is able to compile different functions at
+the same time as long as it happens in different object files, and on
+the other hand constrains code generation tasks to reside in a single
+object file.
+
+   The reason for this is not apparent, but is easily explained: the
+`lightning.h' header file defines its state as a `static' variable, so
+calls to `jit_set_ip' and `jit_get_ip' residing in different files
+access different instruction pointers.  This was not done without
+reason: it makes the usage of GNU lightning much simpler, as it limits
+the initialization tasks to the bare minimum and removes the need to
+link the program with a separate library.
+
+   On the other hand, multi-threaded or otherwise concurrent programs
+require reentrancy in the code generator, so this approach cannot be
+the only one.  In fact, it is possible to define your own copy of GNU
+lightning's instruction state by defining a variable of type
+`jit_state' and `#define'-ing `_jit' to it:
+
+         struct jit_state lightning;
+         #define _jit lightning
+
+   You are free to define the `jit_state' variable as you like:
+`extern', `static' to a function, `auto', or global.
+
+   This feature takes advantage of an aspect of macros ("cascaded
+macros"), which is documented thus in CPP's reference manual:
+
+     A cascade of macros is when one macro's body contains a reference
+     to another macro.  This is very common practice.  For example,
+          #define BUFSIZE 1020
+          #define TABLESIZE BUFSIZE
+     This is not at all the same as defining `TABLESIZE' to be `1020'.
+     The `#define' for `TABLESIZE' uses exactly the body you
+     specify--in this case, `BUFSIZE'--and does not check to see
+     whether it too is the name of a macro; it's only when you use
+     `TABLESIZE' that the result of its expansion is checked for more
+     macro names.
+
+     This makes a difference if you change the definition of `BUFSIZE'
+     at some point in the source file. `TABLESIZE', defined as shown,
+     will always expand using the definition of `BUFSIZE' that is
+     currently in effect: #define BUFSIZE 1020 #define TABLESIZE BUFSIZE
+     #undef BUFSIZE #define BUFSIZE 37
+
+     Now `TABLESIZE' expands (in two stages) to `37'. (The `#undef' is
+     to prevent any warning about the nontrivial redefinition of
+     `BUFSIZE'.)
+
+In the same way, `jit_get_label' will adopt whatever definition of
+`_jit' is in effect:
+     #define	jit_get_label()			(_jit.pc)
+
+   Special care must be taken when functions residing in separate files
+must access the same state.  This could be the case, for example, if a
+special library contained function for strength reduction of
+multiplications to adds & shifts, or maybe of divisions to
+multiplications and shifts.  The function would be compiled using a
+single definition of `_jit' and that definition would be used whenever
+the function would be called.
+
+   Since GNU lightning uses a feature of the preprocessor to obtain
+re-entrancy, it makes sense to rely on the preprocessor in this case
+too.
+
+   The idea is to pass the current `struct jit_state' to the function:
+
+     static void
+     _opt_muli_i(jit, dest, source, n)
+          register struct jit_state *jit;
+          register int		dest, source, n;
+     {
+     #define _jit          jit
+     ...
+     #undef _jit
+     }
+
+doing this unbeknownst to the client, using a macro in the header file:
+
+     extern void _opt_muli_i(struct jit_state *, int, int, int);
+     
+     #define opt_muli_i(rd, rs, n)	_opt_muli_i(&_jit, (rd), (rs), (n))
+
+Registers
+---------
+
+Accessing the whole register file
+=================================
+
+   As mentioned earlier in this chapter, all GNU lightning back-ends
+are guaranteed to have at least six integer registers and six
+floating-point registers, but many back-ends will have more.
+
+   To access the entire register files, you can use the `JIT_R',
+`JIT_V' and `JIT_FPR' macros.  They accept a parameter that identifies
+the register number, which must be strictly less than `JIT_R_NUM',
+`JIT_V_NUM' and `JIT_FPR_NUM' respectively; the number need not be
+constant.  Of course, expressions like `JIT_R0' and `JIT_R(0)' denote
+the same register, and likewise for integer callee-saved, or
+floating-point, registers.
+
+
+File: lightning.info,  Node: Autoconf support,  Prev: Reentrancy,  Up: Using GNU lightning
+
+Using `autoconf' with GNU lightning
+===================================
+
+   It is very easy to include GNU lightning's source code (without the
+documentation and examples) into your program's distribution so that
+people don't need to have it installed in order to use it.
+
+   Here is a step by step explanation of what to do:
+
+  1. Run `lightningize' from your package's main distribution directory.
+               lightningize
+
+     If you're using Automake, you might be pleased to know that
+     `Makefile.am' files will be already there.
+
+  2. If you're not using Automake and `aclocal', instead, you should
+     delete the `Makefile.am' files (they are of no use to you) and
+     copy the contents of the `lightning.m4' file, found in `aclocal''s
+     macro repository (usually `/usr/share/aclocal', to your
+     `configure.in' or `acinclude.m4' or `aclocal.m4' file.
+
+  3. Include a call to the `LIGHTNING_CONFIGURE_IF_NOT_FOUND' macro in
+     your `configure.in' file.
+
+   `LIGHTNING_CONFIGURE_IF_NOT_FOUND' will first look for a
+pre-installed copy of GNU lightning and, if it can be found, it will
+use it; otherwise, it will do exactly the same things that GNU
+lightning's own configure script does.  If GNU lightning is already
+installed, or if the configuration process succeeds, it will define the
+`HAVE_LIGHTNING' symbol.
+
+   In addtion, an Automake conditional named `HAVE_INSTALLED_LIGHTNING'
+will be set if GNU lightning is already installed, which can be used to
+set up include paths appropriately.
+
+   Finally, `LIGHTNING_CONFIGURE_IF_NOT_FOUND' accepts two optional
+parameters: respectively, an action to be taken if GNU lightning is
+available, and an action to be taken if it is not.
+
+
+File: lightning.info,  Node: Porting GNU lightning,  Next: Future,  Prev: Using GNU lightning,  Up: Top
+
+Porting GNU lightning
+*********************
+
+   This chapter describes the process of porting GNU lightning.  It
+assumes that you are pretty comfortable with the usage of GNU lightning
+for dynamic code generation, as described in *Note Using GNU
+lightning::.
+
+* Menu:
+
+
+* Structure of a port::   An overview of the porting process
+* Adjusting configure::   Automatically recognizing the new platform
+* Run-time assemblers::   An internal layer to simplify porting
+* Standard macros::       The platform-independent layer used by clients.
+* Standard functions::    Doing more complex tasks.
+* Floating-point macros:: Implementing macros for floating point.
+
+
+File: lightning.info,  Node: Structure of a port,  Next: Adjusting configure,  Up: Porting GNU lightning
+
+An overview of the porting process
+==================================
+
+   A particular port of GNU lightning is composed of four files. These
+have a common suffix which identifies the port (for example, `i386' or
+`ppc'), and a prefix that identifies their function; they are:
+
+   * `asm-SUFFIX.h', which contains the description of the target
+     machine's instruction format.  The creation of this file is
+     discussed in *Note Creating the run-time assembler: Run-time
+     assemblers.
+
+   * `core-SUFFIX.h', which contains the mappings from GNU lightning's
+     instruction set to the target machine's assembly language format.
+     The creation of this file is discussed in *Note Creating the
+     platform-independent layer: Standard macros.
+
+   * `funcs-SUFFIX.h', for now, only contains the definition of
+     `jit_flush_code'. The creation of this file is briefly discussed
+     in *Note More complex tasks in the platform-independent layer:
+     Standard functions.
+
+   * `fp-SUFFIX.h', which contains the description of the target
+     machine's instruction format and the internal macros for doing
+     floating point computation. The creation of this file is discussed
+     in *Note Implementing macros for floating point: Floating-point
+     macros.
+
+   Before doing anything, you have to add the ability to recognize the
+new port during the configuration process.  This is explained in *Note
+Automatically recognizing the new platform: Adjusting configure.
+
+
+File: lightning.info,  Node: Adjusting configure,  Next: Run-time assemblers,  Prev: Structure of a port,  Up: Porting GNU lightning
+
+Automatically recognizing the new platform
+==========================================
+
+   Before starting your port, you have to add the ability to recognize
+the new port during the configure process.  You only have to run
+`config.guess', which you'll find in the main distribution directory,
+and note down the first part of the output (up to the first dash).
+
+   Then, in the two files `configure.in' and `lightning.m4', lookup the
+line
+         case "$host_cpu" in
+
+and, right after it, add the line:
+         CPU-NAME)  cpu=FILE-SUFFIX           ;;
+
+where CPU-NAME is the cpu as output by `config.guess', and FILE-SUFFIX
+is the suffix that you are going to use for your files (*note An
+overview of the porting process: Structure of a port.).
+
+   Now create empty files for your new port:
+         touch lightning/asm-xxx.h
+         touch lightning/fp-xxx.h
+         touch lightning/core-xxx.h
+         touch lightning/funcs-xxx.h
+
+and run `configure', which should create the symlinks that are needed
+by `lightning.h'.  This is important because it will allow you to use
+GNU lightning (albeit in a limited way) for testing even before the
+port is completed.
+
+
+File: lightning.info,  Node: Run-time assemblers,  Next: Standard macros,  Prev: Adjusting configure,  Up: Porting GNU lightning
+
+Creating the run-time assembler
+===============================
+
+   The run-time assembler is a set of macros whose purpose is to
+assemble instructions for the target machine's assembly language,
+translating mnemonics to machine language together with their operands.
+While a run-time assembler is not, strictly speaking, part of GNU
+lightning (it is a private layer to be used while implementing the
+standard macros that are ultimately used by clients), designing a
+run-time assembler first allows you to think in terms of assembly
+language rather than binary code (ouch!...), making it considerably
+easier to write the standard macros.
+
+   Creating a run-time assembler is a tedious process rather than a
+difficult one, because most of the time will be spent collecting and
+copying information from the architecture's manual.
+
+   Macros defined by a run-time assembler are conventionally named after
+the mnemonic and the type of its operands.  Examples took from the
+SPARC's run-time assembler are `ADDrrr', a macro that assembles an
+`ADD' instruction with three register operands, and `SUBCCrir', which
+assembles a `SUBCC' instruction whose second operand is an immediate
+and the remaining two are registers.
+
+   The first step in creating the assembler is to pick a convention for
+operand specifiers (`r' and `i' in the example above) and for register
+names.  On the SPARC, this convention is as follows
+
+`r'
+     A register name.  For every `r' in the macro name, a numeric
+     parameter `RR' is passed to the macro, and the operand is assembled
+     as `%rRR'.
+
+`i'
+     An immediate, usually a 13-bit signed integer (with exception for
+     instructions such as `SETHI' and branches).  The macros check the
+     size of the passed parameter if GNU lightning is configured with
+     `--enable-assertions'.
+
+`x'
+     A combination of two `r' parameters, which are summed to determine
+     the effective address in a memory load/store operation.
+
+`m'
+     A combination of an `r' and `i' parameter, which are summed to
+     determine the effective address in a memory load/store operation.
+
+   Additional macros can be defined that provide easier access to
+register names.  For example, on the SPARC, `_Ro(3)' and `_Rg(5)' map
+respectively to `%o3' and `%g5'; on the x86, instead, symbolic
+representations of the register names are provided (for example, `_EAX'
+and `_EBX').
+
+   CISC architectures sometimes have registers of different sizes-this
+is the case on the x86 where `%ax' is a 16-bit register while `%esp' is
+a 32-bit one.  In this case, it can be useful to embed information on
+the size in the definition of register names.  The x86 machine
+language, for example, represents all three of `%bh', `%di' and `%edi'
+as 7; but the x86 run-time assemblers defines them with different
+numbers, putting the register's size in the upper nybble (for example,
+`17h' for `%bh' and `27h' for `%di') so that consistency checks can be
+made on the operands' sizes when `--enable-assertions' is used.
+
+   The next important part defines the native architecture's instruction
+formats.  These can be as few as ten on RISC architectures, and as many
+as fifty on CISC architectures.  In the latter case it can be useful to
+define more macros for sub-formats (such as macros for different
+addressing modes) or even for sub-fields in an instruction.  Let's see
+an example of these macros.
+
+     #define _2i( OP, RD, OP2, IMM)
+             _I((_u2 (OP )<<30)  |  (_u5(RD)<<25)  |  (_u3(OP2)<<22)  |
+                 _u22(IMM)                                            )
+
+   The name of the macro, `_2i', indicates a two-operand instruction
+comprising an immediate operand.  The instruction format is:
+
+      .------.---------.------.-------------------------------------------.
+      |  OP  |   RD    | OP2  |               IMM                         |
+      |------+---------+------+-------------------------------------------|
+      |2 bits|  5 bits |3 bits|             22 bits                       |
+      |31-30 |  29-25  | 22-24|              0-21                         |
+      '------'---------'------'-------------------------------------------'
+
+   GNU lightning provides macros named `_sXX(OP)' and `_uXX(OP)', where
+XX is a number between 1 and 31, which test(1) whether `OP' can be
+represented as (respectively) a signed or unsigned integer of the given
+size.  What the macro above does, then, is to shift and OR together the
+different fields, ensuring that each of them fits the field.
+
+   Here is another definition, this time for the PowerPC architecture.
+
+     #define _X(OP,RD,RA,RB,XO,RC)
+             _I((_u6 (OP)<<26)  |  (_u5(RD)<<21)  |  (_u5(RA)<<16)  |
+                ( _u5(RB)<<11)  |  (_u10(XO)<<1)  |   _u1(RC)       )
+
+   Here is the bit layout corresponding to this instruction format:
+
+      .--------.--------.--------.--------.---------------------.-------.
+      |    OP  |   RD   |   RA   |   RB   |           X0        |   RC  |
+      |--------+--------+--------+--------+-----------------------------|
+      | 6 bits | 5 bits | 5 bits | 5 bits |         10 bits     | 1 bit |
+      | 31-26  | 25-21  | 16-20  | 11-15  |         1-10        |   0   |
+      '--------'---------'-------'--------'-----------------------------'
+
+   How do these macros actually generate code? The secret lies in the
+`_I' macro, which is one of four predefined macros which actually store
+machine language instructions in memory.  They are `_B', `_W', `_I' and
+`_L', respectively for 8-bit, 16-bit, 32-bit, and `long' (either 32-bit
+or 64-bit, depending on the architecture) values.
+
+   Next comes another set of macros (usually the biggest) which
+represents the actual mnemonics--macros such as `ADDrrr' and `SUBCCrir',
+which were cited earlier in this chapter, belong to this set.  Most of
+the times, all these macros will do is to use the "instruction format"
+macros, specifying the values of the fields in the different instruction
+formats.  Let's see a few of these definitions, again taken from the
+SPARC assembler:
+
+     #define BAi(DISP)                       _2   (0, 0,  8, 2, DISP)
+     #define BA_Ai(DISP)                     _2   (0, 1,  8, 2, DISP)
+     
+     #define SETHIir(IMM, RD)                _2i  (0, RD, 4, IMM)
+     
+     #define ADDrrr(RS1, RS2, RD)            _3   (2, RD,  0, RS1, 0, 0, RS2)
+     #define ADDrir(RS1, IMM, RD)            _3i  (2, RD,  0, RS1, 1,    IMM)
+     #define ADDCCrrr(RS1, RS2, RD)          _3   (2, RD, 16, RS1, 0, 0, RS2)
+     #define ADDCCrir(RS1, IMM, RD)          _3i  (2, RD, 16, RS1, 1,    IMM)
+     #define ANDrrr(RS1, RS2, RD)            _3   (2, RD,  1, RS1, 0, 0, RS2)
+     #define ANDrir(RS1, IMM, RD)            _3i  (2, RD,  1, RS1, 1,    IMM)
+     #define ANDCCrrr(RS1, RS2, RD)          _3   (2, RD, 17, RS1, 0, 0, RS2)
+     #define ANDCCrir(RS1, IMM, RD)          _3i  (2, RD, 17, RS1, 1,    IMM)
+
+   A few things have to be noted.  For example:
+   * The SPARC assembly language sometimes uses a comma inside a
+     mnemonic (for example, `ba,a').  This symbol is not allowed inside
+     a CPP macro name, so it is replaced with an underscore; the same
+     is done with the dots found in the PowerPC assembly language (for
+     example, `andi.' is defined as `ANDI_rri').
+
+   * It can be useful to group together instructions with the same
+     instruction format, as doing this tends to make the source code
+     more readable (numbers are put in the same columns).
+
+   * Using an editor without automatic wrap at end of line can be
+     useful, since run-time assemblers tend to have very long lines.
+
+   A final touch is to define the synthetic instructions, which are
+usually found on RISC machines.  For example, on the SPARC, the `LD'
+instruction has two synonyms (`LDUW' and `LDSW') which are defined thus:
+
+     #define LDUWxr(RS1, RS2, RD)            LDxr(RS1, RS2, RD)
+     #define LDUWmr(RS1, IMM, RD)            LDmr(RS1, IMM, RD)
+     #define LDSWxr(RS1, RS2, RD)            LDxr(RS1, RS2, RD)
+     #define LDSWmr(RS1, IMM, RD)            LDmr(RS1, IMM, RD)
+
+   Other common case are instructions which take advantage of registers
+whose value is hard-wired to zero, and short-cut instructions which
+hard-code some or all of the operands:
+
+     /* Destination is %g0, which the processor never overwrites. */
+     #define CMPrr(R1, R2)   SUBCCrrr(R1, R2, 0) /* subcc %r1, %r2, %g0 */
+     
+     /* One of the source registers is hard-coded to be %g0. */
+     #define NEGrr(R,S)      SUBrrr(0, R, S)     /* sub %g0, %rR, %rS */
+     
+     /* All of the operands are hard-coded. */
+     #define RET()           JMPLmr(31,8 ,0)     /* jmpl [%r31+8], %g0  */
+     
+     /* One of the operands acts as both source and destination */
+     #define BSETrr(R,S)     ORrrr(R, S, S)      /* or %rR, %rS, %rS */
+
+   Specific to RISC computers, finally, is the instruction to load an
+arbitrarily sized immediate into a register.  This instruction is
+usually implemented as one or two basic instructions:
+
+  1. If the number is small enough, an instruction is sufficient (`LI'
+     or `ORI' on the PowerPC, `MOV' on the SPARC).
+
+  2. If the lowest bits are all zeroed, an instruction is sufficient
+     (`LIS' on the PowerPC, `SETHI' on the SPARC).
+
+  3. Otherwise, the high bits are set first (with `LIS' or `SETHI'),
+     and the result is then ORed with the low bits
+
+   Here is the definition of such an instruction for the PowerPC:
+
+     #define MOVEIri(R,I)      (_siP(16,I) ? LIri(R,I) :     \ /* case 1    */
+                               (_uiP(16,I) ? ORIrri(R,0,I) : \ /* case 1    */
+                               _MOVEIri(R, _HI(I), _LO(I)) ))  /* case 2/3  */
+     
+     #define _MOVEIri(H,L,R)  (LISri(R,H), (L ? ORIrri(R,R,L) : 0))
+
+and for the SPARC:
+
+     #define SETir(I,R)      (_siP(13,I) ? MOVir(I,R) : \
+     			 _SETir(_HI(I), _LO(I), R))
+     
+     #define _SETir(H,L,R)   (SETHIir(H,R), (L ? ORrir(R,L,R) : 0))
+
+   In both cases, `_HI' and `_LO' are macros for internal use that
+extract different parts of the immediate operand.
+
+   You should take a look at the run-time assemblers distributed with
+GNU lightning before trying to craft your own.  In particular, make
+sure you understand the RISC run-time assemblers (the SPARC's is the
+simplest) before trying to decypher the x86 run-time assembler, which
+is significantly more complex.
+
+   ---------- Footnotes ----------
+
+   (1) Only when `--enable-assertions' is used.
+
+
+File: lightning.info,  Node: Standard macros,  Next: Standard functions,  Prev: Run-time assemblers,  Up: Porting GNU lightning
+
+Creating the platform-independent layer
+=======================================
+
+   The platform-independent layer is the one that is ultimately used by
+GNU lightning clients.  Creating this layer is a matter of creating a
+hundred or so macros that comprise part of the interface used by the
+clients, as described in *Note GNU lightning's instruction set: The
+instruction set.
+
+   Fortunately, a number of these definitions are common to the
+different platforms and are defined just once in one of the header
+files that make up GNU lightning, that is, `core-common.h'.
+
+   Most of the macros are relatively straight-forward to implement (with
+a few caveats for architectures whose assembly language only offers
+two-operand arithmetic instructions).  This section will cover the
+tricky points, before presenting the complete listing of the macros
+that make up the platform-independent interface provided by GNU
+lightning.
+
+* Menu:
+
+* Forward references::    Implementing forward references
+* Common features::       Common features supported by `core-common.h'
+* Delay slots::           Supporting scheduling of delay slots
+* Immediate values::      Supporting arbitrarily sized immediate values
+* Implementing the ABI::  Function prologs and epilogs, and argument passing
+* Macro list::            Macros composing the platform-independent layer
+
+
+File: lightning.info,  Node: Forward references,  Next: Common features,  Up: Standard macros
+
+Implementing forward references
+-------------------------------
+
+   Implementation of forward references takes place in:
+
+   * The branch macros
+
+   * The `jit_patch_at' macros
+
+   Roughly speaking, the branch macros, as seen in *Note Generating
+code at run-time: GNU lightning macros, return a value that later calls
+to `jit_patch' or `jit_patch_at' use to complete the assembly of the
+forward reference.  This value is usually the contents of the program
+counter after the branch instruction is compiled (which is accessible
+in the `_jit.pc' variable).  Let's see an example from the x86 back-end:
+
+     #define jit_bmsr_i(label, s1, s2)                            \
+        (TESTLrr((s1), (s2)), JNZm(label,0,0,0), _jit.pc)
+
+   The `bms' ("branch if mask set") instruction is assembled as the
+combination of a `TEST' instruction (bit-wise AND between the two
+operands) and a `JNZ' instruction (jump if non-zero).  The macro then
+returns the final value of the program counter.
+
+   `jit_patch_at' is one of the few macros that need to possess a
+knowledge of the machine's instruction formats.  Its purpose is to
+patch a branch instruction (identified by the value returned at the
+moment the branch was compiled) to jump to the current position (that
+is, to the address identified by `_jit.pc').
+
+   On the x86, the displacement between the jump and the landing point
+is expressed as a 32-bit signed integer lying in the last four bytes of
+the jump instruction.  The definition of `_jit_patch_at' is:
+
+     #define jit_patch(jump_pc, pv)    (*_PSL((jump_pc) - 4) = \
+     				   (pv) - (jump_pc))
+
+   The `_PSL' macro is nothing more than a cast to `long *', and is
+used here to shorten the definition and avoid cluttering it with
+excessive parentheses.  These type-cast macros are:
+
+   * `_PUC(X)' to cast to a `unsigned char *'.
+
+   * `_PUS(X)' to cast to a `unsigned short *'.
+
+   * `_PUI(X)' to cast to a `unsigned int *'.
+
+   * `_PSL(X)' to cast to a `long *'.
+
+   * `_PUL(X)' to cast to a `unsigned long *'.
+
+   On other platforms, notably RISC ones, the displacement is embedded
+into the instruction itself.  In this case, `jit_patch_at' must first
+zero out the field, and then OR in the correct displacement.  The SPARC,
+for example, encodes the displacement in the bottom 22 bits; in addition
+the right-most two bits are suppressed, which are always zero because
+instruction have to be word-aligned.
+
+     #define jit_patch_at(delay_pc, pv)   jit_patch_ (((delay_pc) - 1), (pv))
+     
+     /* branch instructions return the address of the _delay_
+      * instruction--this is just a helper macro that makes the code more
+      * readable.
+      */
+     #define jit_patch_(jump_pc, pv)   (*jump_pc =		    \
+     	 (*jump_pc & ~_MASK(22)) |			    \
+              ((_UL(pv) - _UL(jump_pc)) >> 2) & _MASK(22))
+
+   This introduces more predefined shortcut macros:
+   * `_UC(X)' to cast to a `unsigned char'.
+
+   * `_US(X)' to cast to a `unsigned short'.
+
+   * `_UI(X)' to cast to a `unsigned int'.
+
+   * `_SL(X)' to cast to a `long'.
+
+   * `_UL(X)' to cast to a `unsigned long'.
+
+   * `_MASK(N)' gives a binary number made of N ones.
+
+   Dual to branches and `jit_patch_at' are `jit_movi_p' and
+`jit_patch_movi', since they can also be used to implement forward
+references.  `jit_movi_p' should be carefully implemented to use an
+encoding that is as long as possible, and it should return an address
+which is then passed to `jit_patch_movi'.  The implementation of
+`jit_patch_movi' is similar to `jit_patch_at'.
+
+
+File: lightning.info,  Node: Common features,  Next: Delay slots,  Prev: Forward references,  Up: Standard macros
+
+Common features supported by `core-common.h'
+--------------------------------------------
+
+   The `core-common.h' file contains hundreds of macro definitions
+which will spare you defining a lot of things in the files the are
+specific to your port.  Here is a list of the features that
+`core-common.h' provides.
+
+Support for common synthetic instructions
+     These are instructions that can be represented as a simple
+     operation, for example a bit-wise AND or a subtraction.
+     `core-common.h' recognizes when the port-specific header file
+     defines these macros and avoids compiler warnings about redefined
+     macros, but there should be no need to define them.  They are:
+          #define jit_extr_c_ui(d, rs)
+          #define jit_extr_s_ui(d, rs)
+          #define jit_extr_c_ul(d, rs)
+          #define jit_extr_s_ul(d, rs)
+          #define jit_extr_i_ul(d, rs)
+          #define jit_negr_i(d, rs)
+          #define jit_negr_l(d, rs)
+
+Support for the ABI
+     All of `jit_prolog', `jit_leaf' and `jit_finish' are not
+     mandatory.  If not defined, they will be defined respectively as an
+     empty macro, as a synonym for `jit_prolog', and as a synonym for
+     `jit_calli'.  Whether to define them or not in the port-specific
+     header file, it depends on the underlying architecture's ABI--in
+     general, however, you'll need to define at least `jit_prolog'.
+
+Support for uncommon instructions
+     These are instructions that many widespread architectures lack.
+     `core-common.h' is able to provide default definitions, but they
+     are usually inefficient if the hardware provides a way to do these
+     operations with a single instruction.  They are extension with sign
+     and "reverse subtraction" (that is, REG2=IMM-REG1):
+          #define jit_extr_c_i(d, rs)
+          #define jit_extr_s_i(d, rs)
+          #define jit_extr_c_l(d, rs)
+          #define jit_extr_s_l(d, rs)
+          #define jit_extr_i_l(d, rs)
+          #define jit_rsbi_i(d, rs, is)
+          #define jit_rsbi_l(d, rs, is)
+          #define jit_rsbi_p(d, rs, is)
+
+Conversion between network and host byte ordering
+     These macros are no-ops on big endian systems.  Don't define them
+     on such systems; on the other hand, they are mandatory on little
+     endian systems.  They are:
+          #define jit_ntoh_ui(d, rs)
+          #define jit_ntoh_us(d, rs)
+
+Support for a "zero" register
+     Many RISC architectures provide a read-only register whose value is
+     hard-coded to be zero; this register is then used implicitly when
+     referring to a memory location using a single register.  For
+     example, on the SPARC, an operand like `[%l6]' is actually
+     assembled as `[%l6+%g0]'.  If this is the case, you should define
+     `JIT_RZERO' to be the number of this register; `core-common.h'
+     will use it to implement all variations of the `ld' and `st'
+     instructions.  For example:
+          #define jit_ldi_c(d, is)         jit_ldxi_c(d, JIT_RZERO, is)
+          #define jit_ldr_i(d, rs)         jit_ldxr_c(d, JIT_RZERO, rs)
+
+     If available, JIT_RZERO is also used to provide more efficient
+     definitions of the `neg' instruction (see "Support for common
+     synthetic instructions", above).
+
+Synonyms
+     `core-common.h' provides a lot of trivial definitions which make
+     the instruction set as orthogonal as possible.  For example,
+     adding two unsigned integers is exactly the same as adding two
+     signed integers (assuming a two's complement representation of
+     negative numbers); yet, GNU lightning provides both `jit_addr_i'
+     and `jit_addr_ui' macros.  Similarly, pointers and unsigned long
+     integers behave in the same way, but GNU lightning has separate
+     instruction for the two data types--those that operate on pointers
+     usually include a typecast that makes programs clearer.
+
+Shortcuts
+     These define "synthetic" instructions whose definition is not as
+     trivial as in the case of synonyms, but is anyway standard.  This
+     is the case for bitwise NOT (which is implemented by XORing a
+     string of ones), "reverse subtraction" between registers (which is
+     converted to a normal subtraction with the two source operands
+     inverted), and subtraction of an immediate from a register (which
+     is converted to an addition).  Unlike `neg' and `ext' (see
+     "Support for common synthetic instructions", above), which are
+     simply non-mandatory, you must not define these functions.
+
+Support for `long's
+     On most systems, `long's and `unsigned long's are the same as,
+     respectively, `int's and `unsigned int's.  In this case,
+     `core-common.h' defines operations on these types to be synonyms.
+
+`jit_state'
+     Last but not least, `core-common.h' defines the `jit_state' type.
+     Part of this `struct' is machine-dependent and includes all kinds
+     of state needed by the back-end; this part is always accessible in
+     a re-entrant way as `_jitl'.  `_jitl' will be of type `struct
+     jit_local_state'; this struct must be defined even if no state is
+     required.
+
+
+
+File: lightning.info,  Node: Delay slots,  Next: Immediate values,  Prev: Common features,  Up: Standard macros
+
+Supporting scheduling of delay slots
+------------------------------------
+
+   Delay slot scheduling is obtained by clients through the `jit_delay'
+macro.  However this macro is not to be defined in the
+platform-independent layer, because GNU lightning provides a common
+definition in `core-common.h'.
+
+   Instead, the platform-independent layer must define another macro,
+called `jit_fill_delay_after', which has to exchange the instruction to
+be scheduled in the delay slot with the branch instruction.  The only
+parameter accepted by the macro is a call to a branch macro, which must
+be expanded *exactly once* by `jit_fill_delay_after'.  The client must
+be able to pass the return value of `jit_fill_delay_after' to
+`jit_patch_at'.
+
+   There are two possible approaches that can be used in
+`jit_fill_delay_after'.  They are summarized in the following pictures:
+
+   * The branch instructions assemble a NOP instruction which is then
+     removed by `jit_fill_delay_after'.
+
+               before                         |   after
+             ---------------------------------+-----------------------------
+               ...                            |
+               <would-be delay instruction>   |    <branch instruction>
+               <branch instruction>           |    <delay instruction>
+               NOP                            |           <--- _jit.pc
+                        <--- _jit.pc          |
+
+   * The branch instruction assembles the branch so that the delay slot
+     is annulled, `jit_fill_delay_after' toggles the bit:
+
+               before                         |   after
+             ---------------------------------+-----------------------------
+               ...                            |
+               <would-be delay instruction>   |    <branch instruction>
+               <branch with annulled delay>   |    <delay instruction>
+                        <--- _jit.pc          |           <--- _jit.pc
+
+   Don't forget that you can take advantage of delay slots in the
+implementation of boolean instructions such as `le' or `gt'.
+
+
+File: lightning.info,  Node: Immediate values,  Next: Implementing the ABI,  Prev: Delay slots,  Up: Standard macros
+
+Supporting arbitrarily sized immediate values
+---------------------------------------------
+
+   This is a problem that is endemic to RISC machines.  The basic idea
+is to reserve one or two register to represent large immediate values.
+Let's see an example from the SPARC:
+
+        addi_i R0, V2, 45         |  addi_i R0, V2, 10000
+       ---------------------------+---------------------------
+        add    %l5, 45, %l0       |  set    10000, %l6
+                                  |  add    %l5, %l6, %l0
+
+   In this case, `%l6' is reserved to be used for large immediates.  An
+elegant solution is to use an internal macro which automatically
+decides which version is to be compiled.
+
+   Beware of register conflicts on machines with delay slots.  This is
+the case for the SPARC, where `%l7' is used instead for large
+immediates in compare-and-branch instructions.  So the sequence
+
+        jit_delay(
+           jit_addi_i(JIT_R0, JIT_V2, 10000),
+           jit_blei_i(label, JIT_R1, 20000)
+        );
+
+is assembled this way:
+
+        set 10000, %l6       ! prepare immediate for add
+        set 20000, %l7       ! prepare immediate for cmp
+        cmp %l1, %l7
+        ble label
+        add %l5, %l6, %l0    ! delay slot
+     	
+
+   Note that using `%l6' in the branch instruction would have given an
+incorrect result--`R0' would have been filled with the value of
+`V2+20000' rather than `V2+10000'.
+

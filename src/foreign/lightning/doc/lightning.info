@@ -1,0 +1,72 @@
+This is lightning.info, produced by makeinfo version 4.5 from
+lightning.texi.
+
+INFO-DIR-SECTION GNU lightning, a library for dynamic code generation
+START-INFO-DIR-ENTRY
+* Using and porting GNU lightning: (lightning).
+END-INFO-DIR-ENTRY
+
+   This file documents GNU lightning, Version 1.2a.  It was last
+updated on 15 March 2004.
+
+   Copyright (C) 2000 Free Software Foundation, Inc.  Authored by Paolo
+Bonzini.
+
+   This document is released under the terms of the GNU Free
+Documentation License as published by the Free Software Foundation;
+either version 1.1, or (at your option) any later version.
+
+   You should have received a copy of the GNU Free Documentation
+License along with GNU lightning; see the file `COPYING.DOC'.  If not,
+write to the Free Software Foundation, 59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.
+
+   There are no Secondary Sections, no Cover Texts and no Invariant
+Sections (as defined in the license); this text, along with its
+equivalent in the printed manual, constitutes the Title Page.
+
+
+Indirect:
+lightning.info-1: 1029
+lightning.info-2: 44275
+lightning.info-3: 86906
+
+Tag Table:
+(Indirect)
+Node: Top1029
+Node: Overview2909
+Node: Using GNU lightning9061
+Node: Installation9595
+Node: The instruction set11129
+Ref: The instruction set-Footnote-129183
+Ref: The instruction set-Footnote-229236
+Ref: The instruction set-Footnote-329289
+Ref: The instruction set-Footnote-429408
+Node: GNU lightning macros29503
+Node: incr30521
+Node: printf37541
+Node: RPN calculator40124
+Node: Fibonacci44275
+Ref: Fibonacci-Footnote-152262
+Node: Reentrancy52436
+Node: Autoconf support56891
+Node: Porting GNU lightning58689
+Node: Structure of a port59453
+Node: Adjusting configure61036
+Node: Run-time assemblers62334
+Ref: Run-time assemblers-Footnote-172847
+Node: Standard macros72896
+Node: Forward references74374
+Node: Common features77989
+Node: Delay slots83191
+Node: Immediate values85382
+Node: Implementing the ABI86906
+Ref: Implementing the ABI-Footnote-194346
+Node: Macro list94500
+Node: Standard functions118549
+Node: Floating-point macros122238
+Node: Future122426
+Ref: Future-Footnote-1123903
+Node: Acknowledgements124005
+
+End Tag Table

@@ -37,14 +37,6 @@
   (define html-wait (lambda () (semaphore-wait html-sem)))
   (define html-post (lambda () (semaphore-post html-sem)))
 
-  (define (xexp->string xexp)
-	  (lambda (xexp)
-	    (parameterize ([xml:empty-tag-shorthand #f])
-	      (let* ([port (open-output-string)]
-        	     [xml (xml:xexpr->xml xexp)])
-	        (xml:write-xml/content xml port)
-        	(get-output-string port)))))
-
   (define mx-element%
     (class object% (document dhtml-element)
 	   

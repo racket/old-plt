@@ -953,7 +953,7 @@
 
 (drscheme:language:put-executable
  ((is-a?/c top-level-window<%>) string? boolean? boolean? string? . -> . (union false? string?))
- (parent program-filename mred? launcher?)
+ (parent program-filename mred? launcher? title)
  "Calls the MrEd primitive"
  "@flink put-file"
  "with arguments appropriate for creating an executable"
@@ -962,7 +962,13 @@
  "The arguments \\var{mred?} and \\var{launcher?} indicate"
  "what type of executable this should be (and the dialog"
  "may be slightly different on some platforms, depending"
- "on these arguments).")
+ "on these arguments)."
+ ""
+ "The \\var{title} argument is used as the title to the primitive"
+ "@flink put-file"
+ "or"
+ "@flink get-directory"
+ "primitive.")
 
 (drscheme:language:create-executable-gui
  ((union false? (is-a?/c top-level-window<%>))

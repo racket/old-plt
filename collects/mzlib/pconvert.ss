@@ -237,7 +237,9 @@
 			    (and (symbol? expr)
 				 (not (eq? expr 'quasiquote))
 				 (not (eq? expr 'quote))
-				 (not (eq? expr 'unquote)))
+				 (not (eq? expr 'unquote))
+                                 (not (eq? expr 'quote-syntax))
+                                 (not (eq? expr 'syntax)))
 			    (char? expr)
 			    (string? expr)
 			    (not expr)
@@ -313,6 +315,7 @@
 					`(case-lambda . ,(make-lambda-helper arity))
 					`(lambda ,(make-lambda-helper arity) ...)))))]
 			      [(regexp? expr) `(regexp ...)]
+                              [(syntax? expr) `(syntax ,(syntax-object->datum expr))]
 			      [(interface? expr) `(interface ...)]
 			      [(class? expr) 
 			       (build-named 

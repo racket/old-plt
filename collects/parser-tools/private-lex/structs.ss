@@ -34,8 +34,8 @@
 (define-struct/export transition (from to))
 
 ;; lexer-table = 
-;;   (make-table (int vector) (int vector) int (int vector))
-(define-struct/export table (trans eof start actions))
+;;   (make-table (int vector) (int vector) int (int vector) (boolean vector))
+(define-struct/export table (trans eof start actions no-lookahead))
 
 
 ;; re-ast->chars : re-ast -> (char | eof | nat) vector

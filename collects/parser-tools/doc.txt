@@ -231,7 +231,6 @@ Potential future additions:
 lexer:
 POSIX style regular expressions
 DFA minimization
-Implement interactive behavior
 
 parser:
 Increase speed of parser generator

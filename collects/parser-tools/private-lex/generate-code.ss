@@ -73,11 +73,15 @@
                                (bitwise-ior (char->integer char)
                                             (arithmetic-shift state 8)))))))
                       (cond
-                        ((not next-state) (match lb
-                                            first-pos
-                                            longest-match-length
-                                            longest-match-action
-                                            length))
+                        ((not next-state)
+                         (match lb first-pos longest-match-length longest-match-action length))
+                        ((vector-ref no-lookahead next-state)
+                         (let ((act (vector-ref actions next-state)))
+                           (match lb 
+                                  first-pos 
+                                  (if act length longest-match-length)
+                                  (if act act longest-match-action)
+                                  length)))
                         (else
                          (let ((act (vector-ref actions next-state)))
                            (lexer-loop next-state 
@@ -108,6 +112,7 @@
                      `(let ((start-state ,(table-start table))
                             (trans-table ,(table-trans table))
                             (eof-table ,(table-eof table))
+                            (no-lookahead ,(table-no-lookahead table))
                             (actions (vector ,@(vector->list (table-actions table)))))
                         ,code)))
                (datum->syntax-object runtime code #f))))))))
@@ -159,10 +164,14 @@
            ;; that the state is not final)
            (finals (make-vector (length (dfa-states dfa)) #f))
            
+           ;; For each state whether the can ignore the next input
+           ;; It can do this only if there are no transitions out of the
+           ;; current state.
+           (no-look (make-vector (length (dfa-states dfa)) #t))
+           
            ;; The lexer table for transitions on eof
            (eof-table (make-vector (length (dfa-states dfa)) #f))
-           
-           
+
            ;; The lexer table, one entry per state per char.
            ;; Each entry specifies a state to transition to.
            ;; #f indicates no transition
@@ -181,29 +190,28 @@
       ;; Fill the char-table vector and eof-table vector
       (for-each 
        (lambda (trans)
-         (for-each (lambda (to)
-                     (cond
-                       ((char? (car to))
-                        (vector-set! char-table
-                                     (bitwise-ior 
-                                      (char->integer (car to))
-                                      (arithmetic-shift 
+         (let ((from-number (hash-table-get 
+                             state-numbering
+                             (transition-from trans))))
+           (if (not (null? (transition-to trans)))
+               (vector-set! no-look from-number #f))
+           (for-each (lambda (to)
+                       (cond
+                         ((char? (car to))
+                          (vector-set! char-table
+                                       (bitwise-ior 
+                                        (char->integer (car to))
+                                        (arithmetic-shift from-number 8))
                                        (hash-table-get 
                                         state-numbering
-                                        (transition-from trans))
-                                       8))
-                                     (hash-table-get 
-                                      state-numbering
-                                      (cadr to))))
-                       (else
-                        (vector-set! eof-table
-                                     (hash-table-get 
-                                      state-numbering
-                                      (transition-from trans))
-                                     (hash-table-get 
-                                      state-numbering
-                                      (cadr to))))))
-                   (transition-to trans)))
+                                        (cadr to))))
+                         (else
+                          (vector-set! eof-table
+                                       from-number
+                                       (hash-table-get 
+                                        state-numbering
+                                        (cadr to))))))
+                     (transition-to trans))))
        (dfa-trans dfa))
       
       ;; Fill the finals vector
@@ -232,7 +240,8 @@
         (make-table char-table
                     eof-table
                     start-state
-                    finals))))
+                    finals
+                    no-look))))
   
   
   )

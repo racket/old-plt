@@ -296,7 +296,8 @@
 	       ;; success-k:
 	       (lambda (expr string start end match-start match-end)
 		 (cons (cons match-start match-end)
-		       (if (string? string)
+		       (if (or (string? string)
+			       (bytes? string))
 			   (regexp-match-positions* expr string match-end end)
 			   ;; Need to shift index of rest as reading:
 			   (map (lambda (p)
@@ -338,9 +339,14 @@
     (regexp-fn 'regexp-split
 	       ;; success-k
 	       (lambda (expr string start end match-start match-end)
-		 (cons
-		  (subbstring string start match-start)
-		  (regexp-split expr string match-end end)))
+		 (let ([string (if (and (string? string)
+					(or (bytes? expr)
+					    (byte-regexp? expr)))
+				   (string->bytes/utf-8 string (char->integer #\?))
+				   string)])
+		   (cons
+		    (subbstring string start match-start)
+		    (regexp-split expr string match-end end))))
 	       ;; port-success-k:
 	       (lambda (expr string match-string new-end leftovers)
 		 (cons 
@@ -362,9 +368,14 @@
     (regexp-fn 'regexp-match*
 	       ;; success-k:
 	       (lambda (expr string start end match-start match-end)
-		 (cons
-		  (subbstring string match-start match-end)
-		  (regexp-match* expr string match-end end)))
+		 (let ([string (if (and (string? string)
+					(or (bytes? expr)
+					    (byte-regexp? expr)))
+				   (string->bytes/utf-8 string (char->integer #\?))
+				   string)])
+		   (cons
+		    (subbstring string match-start match-end)
+		    (regexp-match* expr string match-end end))))
 	       ;; port-success-k:
 	       (lambda (expr string match-string new-end leftovers)
 		 (cons

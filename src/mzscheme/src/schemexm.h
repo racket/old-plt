@@ -94,7 +94,6 @@
 #define _scheme_apply_known_closed_prim_multi (scheme_extension_table->_scheme_apply_known_closed_prim_multi)
 #define _scheme_apply_closed_prim (scheme_extension_table->_scheme_apply_closed_prim)
 #define _scheme_apply_closed_prim_multi (scheme_extension_table->_scheme_apply_closed_prim_multi)
-#define scheme_wcm_apply (scheme_extension_table->scheme_wcm_apply)
 #define scheme_values (scheme_extension_table->scheme_values)
 #define scheme_check_one_value (scheme_extension_table->scheme_check_one_value)
 #define scheme_tail_apply (scheme_extension_table->scheme_tail_apply)
@@ -103,6 +102,11 @@
 #define scheme_tail_eval_expr (scheme_extension_table->scheme_tail_eval_expr)
 #define scheme_set_tail_buffer_size (scheme_extension_table->scheme_set_tail_buffer_size)
 #define scheme_force_value (scheme_extension_table->scheme_force_value)
+#define scheme_set_cont_mark (scheme_extension_table->scheme_set_cont_mark)
+#define scheme_push_continuation_frame (scheme_extension_table->scheme_push_continuation_frame)
+#define scheme_pop_continuation_frame (scheme_extension_table->scheme_pop_continuation_frame)
+#define scheme_temp_dec_mark_depth (scheme_extension_table->scheme_temp_dec_mark_depth)
+#define scheme_temp_inc_mark_depth (scheme_extension_table->scheme_temp_inc_mark_depth)
 #ifndef MZ_REAL_THREADS
 #define scheme_do_eval (scheme_extension_table->scheme_do_eval)
 #else

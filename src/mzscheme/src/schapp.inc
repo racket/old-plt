@@ -1,5 +1,5 @@
 
-
+  MZ_MARK_STACK_TYPE old_cont_mark_stack;
   Scheme_Object *v;
   Scheme_Closed_Primitive_Proc *prim;
   Scheme_Process *p = scheme_current_process;
@@ -34,6 +34,9 @@
   }
 #endif
 
+  MZ_CONT_MARK_POS++;
+  old_cont_mark_stack = MZ_CONT_MARK_STACK;
+
   v = prim->prim_val(prim->data, argc, argv);
 #if !PRIM_NO_CHECK_VALUE
   v = _scheme_force_value(v);
@@ -45,6 +48,9 @@
     return NULL; /* Shouldn't get here */
   }
 #endif
+
+  --MZ_CONT_MARK_POS;
+  MZ_CONT_MARK_STACK = old_cont_mark_stack;
 
   DEBUG_CHECK_TYPE(v);
 

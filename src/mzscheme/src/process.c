@@ -93,6 +93,8 @@ extern HANDLE scheme_break_semaphore;
 
 #include "schfd.h"
 
+#define INIT_SCHEME_STACK_SIZE SCHEME_STACK_SIZE
+
 #ifdef SGC_STD_DEBUGGING
 # define SENORA_GC_NO_FREE
 #endif
@@ -132,7 +134,7 @@ int *scheme_fuel_counter_ptr;
 #ifdef RUNSTACK_IS_GLOBAL
 Scheme_Object **scheme_current_runstack_start;
 Scheme_Object **scheme_current_runstack;
-Scheme_Cont_Mark *scheme_current_cont_mark_stack;
+MZ_MARK_STACK_TYPE scheme_current_cont_mark_stack;
 MZ_MARK_POS_TYPE scheme_current_cont_mark_pos;
 #endif
 
@@ -256,9 +258,6 @@ typedef struct {
 } Scheme_NSO;
 static int num_nsos = 0;
 static Scheme_NSO *namespace_options = NULL;
-
-#define INIT_SCHEME_STACK_SIZE SCHEME_STACK_SIZE
-#define INIT_SCHEME_CONT_MARK_STACK_SIZE 100
 
 #if defined(MZ_REAL_THREADS)
 # define SETJMP(p) 1
@@ -654,9 +653,9 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
   process->runstack_saved = NULL;
 
   process->cont_mark_pos = (MZ_MARK_POS_TYPE)1;
-  process->cont_mark_stack_size = INIT_SCHEME_CONT_MARK_STACK_SIZE;
-  process->cont_mark_stack_start = MALLOC_N(Scheme_Cont_Mark, process->cont_mark_stack_size);
-  process->cont_mark_stack = process->cont_mark_stack_start + process->cont_mark_stack_size;
+  process->cont_mark_stack = 0;
+  process->cont_mark_stack_segments = NULL;
+  process->cont_mark_seg_count = 0;
 
 #ifdef RUNSTACK_IS_GLOBAL
   if (!prefix) {
@@ -1590,6 +1589,29 @@ static void get_ready_for_GC()
 	  p->tail_buffer[i] = NULL;
       }
 # endif
+
+      /* release unused cont mark stack segments */
+      {
+	int segcount = ((long)p->cont_mark_stack >> SCHEME_LOG_MARK_SEGMENT_SIZE), i;
+	for (i = segcount + 1; i < p->cont_mark_seg_count; i++)
+	  p->cont_mark_stack_segments[i] = NULL;
+	if (segcount < p->cont_mark_seg_count)
+	  p->cont_mark_seg_count = segcount;
+      }
+      
+      /* zero unused part of last mark stack segment */
+      {
+	int segpos = ((long)p->cont_mark_stack >> SCHEME_LOG_MARK_SEGMENT_SIZE);
+	
+	if (segpos < p->cont_mark_seg_count) {
+	  Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[segpos];
+	  int stackpos = ((long)p->cont_mark_stack & SCHEME_MARK_SEGMENT_MASK), i;
+	  for (i = stackpos; i < SCHEME_MARK_SEGMENT_SIZE; i++) {
+	    seg[i].key = NULL;
+	    seg[i].val = NULL;
+	  }
+	}
+      }
     }
   }
 #endif

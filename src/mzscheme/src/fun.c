@@ -1688,8 +1688,7 @@ call_cc (int argc, Scheme_Object *argv[])
   Scheme_Dynamic_Wind *dw;
   Scheme_Process *p = scheme_current_process;
   Scheme_Saved_Stack *saved, *isaved, *csaved;
-  Scheme_Saved_Cont_Mark_Stack *cm_saved, *cm_isaved, *cm_csaved;
-  long size;
+  long size, cmcount;
   
   scheme_check_proc_arity("call-with-current-continuation", 1, 
 			  0, argc, argv);
@@ -1728,22 +1727,16 @@ call_cc (int argc, Scheme_Object *argv[])
   }
   isaved->prev = NULL;
 
-  /* Copy out cont mark stack: */
-  cont->cont_mark_stack_copied = cm_saved = MALLOC_ONE(Scheme_Saved_Cont_Mark_Stack);
-  size = p->cont_mark_stack_size - (MZ_CONT_MARK_STACK - p->cont_mark_stack_start);
-  cm_saved->cont_mark_stack_size = size;
-  cm_saved->cont_mark_stack_start = MALLOC_N(Scheme_Cont_Mark, size);
-  memcpy(cm_saved->cont_mark_stack_start, MZ_CONT_MARK_STACK, size * sizeof(Scheme_Cont_Mark));
-  cm_isaved = cm_saved;
-  for (cm_csaved = p->cont_mark_stack_saved; cm_csaved; cm_csaved = cm_csaved->prev) {
-    cm_isaved->prev = MALLOC_ONE(Scheme_Saved_Cont_Mark_Stack);
-    cm_isaved = cm_isaved->prev;
-    size = cm_csaved->cont_mark_stack_size - (cm_csaved->cont_mark_stack - cm_csaved->cont_mark_stack_start);
-    cm_isaved->cont_mark_stack_size = size;
-    cm_isaved->cont_mark_stack_start = MALLOC_N(Scheme_Cont_Mark, size);
-    memcpy(cm_isaved->cont_mark_stack_start, cm_csaved->cont_mark_stack, size * sizeof(Scheme_Cont_Mark));
+  /* Copy cont mark stack: */
+  cmcount = (long)MZ_CONT_MARK_STACK;
+  cont->cont_mark_stack_copied = MALLOC_N(Scheme_Cont_Mark, cmcount);
+  while (cmcount--) {
+    Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[cmcount >> SCHEME_LOG_MARK_SEGMENT_SIZE];
+    long pos = cmcount & SCHEME_MARK_SEGMENT_MASK;
+    Scheme_Cont_Mark *cm = seg + pos;
+
+    memcpy(cont->cont_mark_stack_copied + cmcount, cm, sizeof(Scheme_Cont_Mark));
   }
-  cm_isaved->prev = NULL;  
 
   memcpy(&cont->savebuf, &p->error_buf, sizeof(mz_jmp_buf));
 
@@ -1801,19 +1794,40 @@ call_cc (int argc, Scheme_Object *argv[])
       memcpy(csaved->runstack, isaved->runstack_start, size * sizeof(Scheme_Object *));
     }
 
-    /* Copy cont mark stack back in: (p->cont_mark_stack and 
-       p->const_mark_stack_saved arrays are already restored, 
-       so the shape is certainly the same as 
-       when cont->cont_mark_stack_copied was made) */
-    cm_isaved = cont->cont_mark_stack_copied;
-    size = cm_isaved->cont_mark_stack_size;
-    MZ_CONT_MARK_STACK = p->cont_mark_stack_start + (p->cont_mark_stack_size - size);
-    memcpy(MZ_CONT_MARK_STACK, cm_isaved->cont_mark_stack_start, size * sizeof(Scheme_Cont_Mark));
-    for (cm_csaved = p->cont_mark_stack_saved; cm_csaved; cm_csaved = cm_csaved->prev) {
-      cm_isaved = cm_isaved->prev;
-      size = cm_isaved->cont_mark_stack_size;
-      cm_csaved->cont_mark_stack = cm_csaved->cont_mark_stack_start + (cm_csaved->cont_mark_stack_size - size);
-      memcpy(cm_csaved->cont_mark_stack, cm_isaved->cont_mark_stack_start, size * sizeof(Scheme_Cont_Mark));
+    /* Copy cont mark stack back in. */
+    cmcount = (long)MZ_CONT_MARK_STACK;
+    { 
+      /* First, make sure we have enough segments */
+      long needed = ((cmcount - 1) >> SCHEME_LOG_MARK_SEGMENT_SIZE) + 1;
+      
+      if (needed > p->cont_mark_seg_count) {
+	Scheme_Cont_Mark **segs, **old_segs = p->cont_mark_stack_segments;
+	int newcount = needed, oldcount = p->cont_mark_seg_count;
+
+	/* Note: we perform allocations before changing p to avoid GC trouble,
+	   since MzScheme adjusts a thread's cont_mark_stack_segments on GC. */
+	segs = MALLOC_N(Scheme_Cont_Mark *, needed);
+	
+	while (needed--) {
+	  if (needed < oldcount)
+	    segs[needed] = old_segs[needed]; /* might be NULL due to GC! */
+	  else
+	    segs[needed] = NULL;
+
+	  if (!segs[needed])
+	    segs[needed] = MALLOC_N(Scheme_Cont_Mark, SCHEME_MARK_SEGMENT_SIZE);
+	}
+
+	p->cont_mark_seg_count = newcount;
+	p->cont_mark_stack_segments = segs;
+      }
+    }
+    while (cmcount--) {
+      Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[cmcount >> SCHEME_LOG_MARK_SEGMENT_SIZE];
+      long pos = cmcount & SCHEME_MARK_SEGMENT_MASK;
+      Scheme_Cont_Mark *cm = seg + pos;
+      
+      memcpy(cm, cont->cont_mark_stack_copied + cmcount, sizeof(Scheme_Cont_Mark));
     }
 
     return result;
@@ -1836,39 +1850,25 @@ cc_marks(int argc, Scheme_Object *argv[])
 {
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *first = scheme_null, *last = NULL, *key;
-  Scheme_Cont_Mark *find;
+  long findpos;
 
   key = argv[0];
 
-  /* Find existing mark record for this key: */
-  find = MZ_CONT_MARK_STACK;
-  {
-    Scheme_Cont_Mark *limit = p->cont_mark_stack_start + p->cont_mark_stack_size;
-    Scheme_Saved_Cont_Mark_Stack *saved = NULL;
-    
-  retry:
-    while (find < limit) {
-      if (find->key == key) {
-	Scheme_Object *pr = scheme_make_pair(find->val, scheme_null);
+  findpos = (long)MZ_CONT_MARK_STACK;
 
-	if (last)
-	  SCHEME_CDR(last) = pr;
-	else
-	  first = pr;
-	last = pr;
-      }
-      find++;
-    }
+  while (findpos--) {
+    Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[findpos >> SCHEME_LOG_MARK_SEGMENT_SIZE];
+    long pos = findpos & SCHEME_MARK_SEGMENT_MASK;
+    Scheme_Cont_Mark *find = seg + pos;
     
-    if (saved)
-      saved = saved->prev;
-    else
-      saved = p->cont_mark_stack_saved;
-    
-    if (saved) {
-      limit = saved->cont_mark_stack_start + saved->cont_mark_stack_size;
-      find = saved->cont_mark_stack;
-      goto retry;
+    if (find->key == key) {
+      Scheme_Object *pr = scheme_make_pair(find->val, scheme_null);
+      
+      if (last)
+	SCHEME_CDR(last) = pr;
+      else
+	first = pr;
+      last = pr;
     }
   }
 

@@ -94,7 +94,6 @@
   scheme_extension_table->_scheme_apply_known_closed_prim_multi = _scheme_apply_known_closed_prim_multi;
   scheme_extension_table->_scheme_apply_closed_prim = _scheme_apply_closed_prim;
   scheme_extension_table->_scheme_apply_closed_prim_multi = _scheme_apply_closed_prim_multi;
-  scheme_extension_table->scheme_wcm_apply = scheme_wcm_apply;
   scheme_extension_table->scheme_values = scheme_values;
   scheme_extension_table->scheme_check_one_value = scheme_check_one_value;
   scheme_extension_table->scheme_tail_apply = scheme_tail_apply;
@@ -103,6 +102,11 @@
   scheme_extension_table->scheme_tail_eval_expr = scheme_tail_eval_expr;
   scheme_extension_table->scheme_set_tail_buffer_size = scheme_set_tail_buffer_size;
   scheme_extension_table->scheme_force_value = scheme_force_value;
+  scheme_extension_table->scheme_set_cont_mark = scheme_set_cont_mark;
+  scheme_extension_table->scheme_push_continuation_frame = scheme_push_continuation_frame;
+  scheme_extension_table->scheme_pop_continuation_frame = scheme_pop_continuation_frame;
+  scheme_extension_table->scheme_temp_dec_mark_depth = scheme_temp_dec_mark_depth;
+  scheme_extension_table->scheme_temp_inc_mark_depth = scheme_temp_inc_mark_depth;
 #ifndef MZ_REAL_THREADS
   scheme_extension_table->scheme_do_eval = scheme_do_eval;
 #else

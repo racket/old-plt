@@ -195,8 +195,6 @@ Scheme_Object *_scheme_apply_closed_prim(Scheme_Object *rator, int argc,
 Scheme_Object *_scheme_apply_closed_prim_multi(Scheme_Object *rator, int argc,
 					       Scheme_Object **argv);
 
-Scheme_Object *scheme_wcm_apply(Scheme_Object *key, Scheme_Object *val, Scheme_Object *f, int tail);
-
 Scheme_Object *scheme_values(int c, Scheme_Object **v);
 
 Scheme_Object *scheme_check_one_value(Scheme_Object *v);
@@ -210,6 +208,12 @@ Scheme_Object *scheme_tail_eval_expr(Scheme_Object *obj);
 
 void scheme_set_tail_buffer_size(int s);
 Scheme_Object *scheme_force_value(Scheme_Object *);
+
+void scheme_set_cont_mark(Scheme_Object *key, Scheme_Object *val);
+void scheme_push_continuation_frame(Scheme_Cont_Frame_Data *);
+void scheme_pop_continuation_frame(Scheme_Cont_Frame_Data *);
+void scheme_temp_dec_mark_depth();
+void scheme_temp_inc_mark_depth();
 
 /* Internal */
 #ifndef MZ_REAL_THREADS

@@ -441,6 +441,7 @@ typedef struct Scheme_Continuation_Jump_State {
 /* Although it's really an integer, it seems beneficial to declare the
    mark position counter as a poiner, perhaps due to locality effects. */
 #define MZ_MARK_POS_TYPE char*
+#define MZ_MARK_STACK_TYPE char*
 
 typedef struct Scheme_Process {
   Scheme_Type type;
@@ -459,11 +460,10 @@ typedef struct Scheme_Process {
   struct Scheme_Saved_Stack *runstack_saved;
   Scheme_Object **runstack_tmp_keep;
 
-  MZ_MARK_POS_TYPE cont_mark_pos;
-  struct Scheme_Cont_Mark *cont_mark_stack;
-  struct Scheme_Cont_Mark *cont_mark_stack_start;
-  long cont_mark_stack_size;
-  struct Scheme_Saved_Cont_Mark_Stack *cont_mark_stack_saved;
+  MZ_MARK_POS_TYPE cont_mark_pos;     /* depth of the continuation chain */
+  MZ_MARK_STACK_TYPE cont_mark_stack; /* current mark stack position */
+  struct Scheme_Cont_Mark **cont_mark_stack_segments;
+  int cont_mark_seg_count;
 
   long engine_weight;
 
@@ -572,6 +572,11 @@ typedef struct Scheme_Process {
   struct Scheme_Process_Manager_Hop *mr_hop;
   Scheme_Manager_Reference *mref;
 } Scheme_Process;
+
+typedef struct Scheme_Cont_Frame_Data {
+  MZ_MARK_POS_TYPE cont_mark_pos;
+  MZ_MARK_STACK_TYPE cont_mark_stack;
+} Scheme_Cont_Frame_Data;
 
 /* Type readers & writers for compiled code data */
 typedef Scheme_Object *(*Scheme_Type_Reader)(Scheme_Object *list);

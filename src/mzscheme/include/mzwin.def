@@ -71,7 +71,6 @@ EXPORTS
  _scheme_apply_known_closed_prim_multi
  _scheme_apply_closed_prim
  _scheme_apply_closed_prim_multi
- scheme_wcm_apply
  scheme_values
  scheme_check_one_value
  scheme_tail_apply
@@ -80,6 +79,11 @@ EXPORTS
  scheme_tail_eval_expr
  scheme_set_tail_buffer_size
  scheme_force_value
+ scheme_set_cont_mark
+ scheme_push_continuation_frame
+ scheme_pop_continuation_frame
+ scheme_temp_dec_mark_depth
+ scheme_temp_inc_mark_depth
  scheme_do_eval
  GC_malloc
  GC_malloc_atomic

@@ -2084,7 +2084,8 @@ add struct contracts for immutable structs?
                                ...
                                [rng-id ((coerce/select-contract stx-name rng) pos-blame neg-blame src-info orig-str)])
                            (let ([res-id (rng-id (val (dom-id x) ...))])
-                             (check-post-expr->pp/h post-expr src-info pos-blame neg-blame orig-str))))))]
+                             (check-post-expr->pp/h post-expr src-info pos-blame neg-blame orig-str)
+                             res-id)))))]
                     [_ 
                      (raise-syntax-error name "unknown result specification" stx (syntax result-stuff))]))))))]
         [(_ ([x dom] ...) pre-expr . result-stuff)

@@ -2,11 +2,13 @@ Version 100, ??, 1998
 Changed class syntax, splitting public clause use into:
   `public' : defines ivars not in superclass
   `override' : defines ivars already in superclass
+Added ivar-in-interface?
 Removed letrec*; letrec has the same semantics
 Removed constant-name and constant-name-all-globals
 Removed secure-primitive-exception-types
 Removed readable type symbols (e.g., #<procedure>)
 MzLib cleanup:
+ Removed `@' suffix for embedded units in mzlib:core@ and mzlib@
  Removed all c.ss libraries, plus constan[t].ss
  Removed catch-errors and let-enumerate from macro.ss
  Removed make-class and make-class* from compat.ss

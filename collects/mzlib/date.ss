@@ -115,7 +115,7 @@
 		[(chinese)
 		 (values
 		  (list year "/" num-month "/" day
-			" \u793C\u62DC" (case (date-week-day date)
+			" \u661F\u671F" (case (date-week-day date)
 				   [(0) "\u5929"]
 				   [(1) "\u4E00"]
 				   [(2) "\u4E8C"]

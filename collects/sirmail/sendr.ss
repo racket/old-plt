@@ -269,17 +269,18 @@
 		     (inherit get-menu-bar set-icon)
                      [define/public (send-message)
                        (send-msg)]
-                     (define/override (can-close?)
+                     (define/augment (can-close?)
                        (and (send (get-menu-bar) is-enabled?)
                             (or (not (send message-editor is-modified?))
                                 (eq? 'yes
                                      (confirm-box
                                       "Warning"
                                       "The message is not saved or sent. Close anyway?"
-                                      this)))))
-                     (define/override (on-close)
+                                      this)))
+			    (inner #t can-close?)))
+                     (define/augment (on-close)
                        (send message-editor on-close)
-		       (super on-close)
+		       (inner (void) on-close)
                        (exit-sirmail))
                      (super-instantiate ())
                      (when send-icon

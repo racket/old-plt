@@ -170,9 +170,9 @@
            (when (is-a? menu menu-item-container<%>)
              (for-each loop (send menu get-items)))))))
    (inherit get-menu-bar show can-close? get-edit-target-object)
-   (define/override
+   (define/augment
      on-close
-     (lambda () (remove-prefs-callback) (super on-close)))
+     (lambda () (remove-prefs-callback) (inner (void) on-close)))
    (define/public get-menu% (lambda () menu:can-restore-underscore-menu%))
    (define/public get-menu-item% (lambda () menu:can-restore-menu-item%))
    (define/public

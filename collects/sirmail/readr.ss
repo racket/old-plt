@@ -1098,10 +1098,12 @@
               (put-pref 'sirmail:frame-height h)
               (update-frame-width)
               (super on-size w h))]
-          [define/override can-close? (lambda () (send (get-menu-bar) is-enabled?))]
-          [define/override on-close (lambda () 
-				      (super on-close)
-				      (logout))]
+          [define/augment can-close? (lambda () 
+				       (and (send (get-menu-bar) is-enabled?)
+					    (inner #t can-close?)))]
+          [define/augment on-close (lambda () 
+				     (logout)
+				     (inner (void) on-close))]
           [define/override on-subwindow-char
             (lambda (w e)
               (or (and

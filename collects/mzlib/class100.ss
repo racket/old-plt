@@ -73,13 +73,23 @@
 			       append
 			       (map
 				(lambda (clause)
-				  (syntax-case clause (public override augment private private-field rename inherit sequence)
+				  (syntax-case clause (public pubment 
+							      override augment 
+							      augride overment
+							      private private-field 
+							      rename inherit sequence)
 				    [(public decl ...)
 				     (extract-ivars 'public #t (syntax (decl ...)))]
+				    [(pubment decl ...)
+				     (extract-ivars 'pubment #t (syntax (decl ...)))]
 				    [(override decl ...)
 				     (extract-ivars 'override #t (syntax (decl ...)))]
 				    [(augment decl ...)
 				     (extract-ivars 'augment #t (syntax (decl ...)))]
+				    [(overment decl ...)
+				     (extract-ivars 'overment #t (syntax (decl ...)))]
+				    [(augride decl ...)
+				     (extract-ivars 'augride #t (syntax (decl ...)))]
 				    [(private decl ...)
 				     (extract-ivars 'private #f (syntax (decl ...)))]
 				    [(private-field decl ...)
@@ -130,13 +140,19 @@
 						       (cadr x)))])
 			;; Extract internal and external ids, and create xformed body:
 			(with-syntax ([public-ipds (get-info '(public) make-idp)]
+				      [pubment-ipds (get-info '(pubment) make-idp)]
 				      [override-ipds (get-info '(override) make-idp)]
 				      [augment-ipds (get-info '(augment) make-idp)]
+				      [overment-ipds (get-info '(overment) make-idp)]
+				      [augride-ipds (get-info '(augride) make-idp)]
 				      [rename-ipds (get-info '(rename) make-idp)]
 				      [inherit-ipds (get-info '(inherit) make-idp)]
 				      [private-ids (get-info '(private) (lambda (x) (cadr x)))]
 				      
-				      [(method-decl ...) (get-info '(public override augment private) make-decl)]
+				      [(method-decl ...) (get-info '(public override augment 
+									    pubment overment augride 
+									    private) 
+								   make-decl)]
 				      [(expr ...) (get-info '(private-field sequence) make-seq)]
 				      [(init-expr ...) (let loop ([init-ids init-ids]
 								  [init-defs init-defs])
@@ -166,8 +182,11 @@
 			     init-expr ...
 			     (private . private-ids)
 			     (public . public-ipds)
+			     (pubment . pubment-ipds)
 			     (override . override-ipds)
 			     (augment . augment-ipds)
+			     (overment . overment-ipds)
+			     (augride . augride-ipds)
 			     (rename-super . rename-ipds)
 			     (inherit . inherit-ipds)
 			     method-decl ...

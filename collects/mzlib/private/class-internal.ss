@@ -807,7 +807,7 @@
 			  (lambda (id-stx)
 			    (datum->syntax-object (quote-syntax here)
 						  (gensym (syntax-e id-stx))))]
-			 [rename-super-extras (append overments overrides inherits)]
+			 [rename-super-extras (append overments overrides)]
 			 [rename-inner-extras (append pubments overments augments)]
 			 [all-rename-inners (append (map car rename-inners)
 						    (generate-temporaries (map car pubments))
@@ -1067,8 +1067,8 @@
 							(raise-syntax-error
 							 #f
 							 (string-append
-							  "identifier for super call does not have an override, overment, "
-							  "or inherit declaration")
+							  "identifier for super call does not have an override or "
+							  "overment declaration")
 							 stx
 							 #'id)]
 						       [_else

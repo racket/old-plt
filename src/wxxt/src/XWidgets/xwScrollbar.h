@@ -105,6 +105,16 @@ Widget,double *,double *
 #define XtRDimension "Dimension"
 #endif
 
+#ifndef XtNdrawgrayScrollbar
+#define XtNdrawgrayScrollbar "drawgrayScrollbar"
+#endif
+#ifndef XtCDrawgrayScrollbar
+#define XtCDrawgrayScrollbar "DrawgrayScrollbar"
+#endif
+#ifndef XtRBoolean
+#define XtRBoolean "Boolean"
+#endif
+
 typedef struct _XfwfScrollbarClassRec *XfwfScrollbarWidgetClass;
 typedef struct _XfwfScrollbarRec *XfwfScrollbarWidget;
 externalref WidgetClass xfwfScrollbarWidgetClass;

@@ -785,6 +785,7 @@ module_val {
   gcMARK(m->self_modidx);
 
   gcMARK(m->accessible);
+  gcMARK(m->home_registry);
 
   gcMARK(m->hints);
 

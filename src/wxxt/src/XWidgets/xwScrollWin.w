@@ -81,6 +81,8 @@ or negative.
 
 	@var Position initialY = 0
 
+        @var Boolean drawgrayScrollWin = FALSE
+
 @ The callback is passed a pointer to an |XfwfScrollInfo| structure,
 which is defined as |struct { XfwfSReason reason; XfwfSFlags flags;
 float vpos, vsize, hpos, hsize; }| The |reason| can be:
@@ -245,6 +247,10 @@ The |scrollResponse| resource may not be changed.
     if ($scrollResponse != $old$scrollResponse) {
 	$scrollResponse = $old$scrollResponse;
 	XtWarning("scrollResponse resource may only be queried, not set");
+    }
+    if ($old$drawgrayScrollWin != $drawgrayScrollWin) {
+      XtVaSetValues($vscroll, XtNdrawgrayScrollbar, $drawgrayScrollWin, NULL);
+      XtVaSetValues($hscroll, XtNdrawgrayScrollbar, $drawgrayScrollWin, NULL);
     }
 
     return False;

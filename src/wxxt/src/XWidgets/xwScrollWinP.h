@@ -41,6 +41,7 @@ int  vScrollAmount;
 int  hScrollAmount;
 Position  initialX;
 Position  initialY;
+Boolean  drawgrayScrollWin;
 Boolean  doScroll;
 XtCallbackList  scrollCallback;
 XtCallbackProc  scrollResponse;

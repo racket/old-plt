@@ -75,6 +75,16 @@ _XFUNCPROTOBEGIN
 #define XtRCallback "Callback"
 #endif
 
+#ifndef XtNdrawgrayArrow
+#define XtNdrawgrayArrow "drawgrayArrow"
+#endif
+#ifndef XtCDrawgrayArrow
+#define XtCDrawgrayArrow "DrawgrayArrow"
+#endif
+#ifndef XtRBoolean
+#define XtRBoolean "Boolean"
+#endif
+
 typedef struct _XfwfArrowClassRec *XfwfArrowWidgetClass;
 typedef struct _XfwfArrowRec *XfwfArrowWidget;
 externalref WidgetClass xfwfArrowWidgetClass;

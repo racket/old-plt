@@ -218,6 +218,7 @@ static XtResource resources[] = {
 {XtNinitialDelay,XtCInitialDelay,XtRCardinal,sizeof(((XfwfArrowRec*)NULL)->xfwfArrow.initialDelay),XtOffsetOf(XfwfArrowRec,xfwfArrow.initialDelay),XtRImmediate,(XtPointer)500 },
 {XtNrepeatDelay,XtCRepeatDelay,XtRCardinal,sizeof(((XfwfArrowRec*)NULL)->xfwfArrow.repeatDelay),XtOffsetOf(XfwfArrowRec,xfwfArrow.repeatDelay),XtRImmediate,(XtPointer)200 },
 {XtNcallback,XtCCallback,XtRCallback,sizeof(((XfwfArrowRec*)NULL)->xfwfArrow.callback),XtOffsetOf(XfwfArrowRec,xfwfArrow.callback),XtRImmediate,(XtPointer)NULL },
+{XtNdrawgrayArrow,XtCDrawgrayArrow,XtRBoolean,sizeof(((XfwfArrowRec*)NULL)->xfwfArrow.drawgrayArrow),XtOffsetOf(XfwfArrowRec,xfwfArrow.drawgrayArrow),XtRImmediate,(XtPointer)FALSE },
 };
 
 XfwfArrowClassRec xfwfArrowClassRec = {
@@ -234,7 +235,7 @@ XfwfArrowClassRec xfwfArrowClassRec = {
 /* actions      	*/  actionsList,
 /* num_actions  	*/  4,
 /* resources    	*/  resources,
-/* num_resources 	*/  7,
+/* num_resources 	*/  8,
 /* xrm_class    	*/  NULLQUARK,
 /* compres_motion 	*/  True ,
 /* compress_exposure 	*/  XtExposeCompressMultiple ,
@@ -425,6 +426,9 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
 	    need_redisplay = True;
 	}
     }
+    if (((XfwfArrowWidget)old)->xfwfArrow.drawgrayArrow != ((XfwfArrowWidget)self)->xfwfArrow.drawgrayArrow) {
+      need_redisplay = TRUE;
+    }
     return need_redisplay;
 }
 /*ARGSUSED*/
@@ -463,7 +467,7 @@ static void  draw_arrow(self,on)Widget self;int  on;
 #endif
 {
     Position x, y;
-    int  width, height, dir;
+    int  width, height, dir, grayed;
 
     ((XfwfArrowWidgetClass)self->core.widget_class)->xfwfCommon_class.compute_inside(self, &x, &y, &width, &height);
 
@@ -511,9 +515,11 @@ static void  draw_arrow(self,on)Widget self;int  on;
     width = max(1, width);
     height = max(1, height);
 
+    grayed = ((!((XfwfArrowWidget)self)->core.sensitive || ((XfwfArrowWidget)self)->xfwfArrow.drawgrayArrow) && wx_enough_colors(XtScreen(self)));
+
     Xaw3dDrawArrow(XtDisplay(self), XtWindow(self),
 		   ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc, ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc,
-		   ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.arrowgc,
+		   (grayed ? ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc : ((XfwfArrowWidget)self)->xfwfArrow.arrowgc), (grayed ? ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc : ((XfwfArrowWidget)self)->xfwfArrow.arrowgc),
 		   x, y, width, height,
 		   0, dir, on);
 }

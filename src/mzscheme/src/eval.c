@@ -1264,8 +1264,15 @@ static Scheme_Object *link_module_variable(Scheme_Object *modidx,
       return NULL;
     }
 
-    if (!SAME_OBJ(menv, env))
-      varname = scheme_check_accessible_in_module(menv, varname, NULL, pos, 0);
+    if (!SAME_OBJ(menv, env)) {
+      Scheme_Object *regkey;
+      if (env->module && env->module->home_registry)
+	regkey = env->module->home_registry;
+      else
+	regkey = scheme_hash_get(env->module_registry, scheme_void);
+	
+      varname = scheme_check_accessible_in_module(menv, regkey, varname, NULL, pos, 0);
+    }
   }
 
   return (Scheme_Object *)scheme_global_bucket(varname, menv);

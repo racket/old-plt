@@ -50,8 +50,8 @@ static int struct_equal (Scheme_Object *s1, Scheme_Object *s2);
 void scheme_init_true_false(void)
 {
   scheme_true->type = scheme_true_type;
-
   scheme_false->type = scheme_false_type;
+  scheme_void->type = scheme_void_type;
 }
 
 void scheme_init_bool (Scheme_Env *env)

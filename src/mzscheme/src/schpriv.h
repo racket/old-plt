@@ -1758,6 +1758,9 @@ struct Scheme_Env {
    The symbol is the resolved module name, or #f if it's not
    yet resolved. */
 
+/* A Scheme_Module corresponds to a module declaration. A module
+   instantiation is reprsented by a Scheme_Env */
+
 typedef struct Scheme_Module
 {
   Scheme_Object so; /* scheme_module_type */
@@ -1793,6 +1796,7 @@ typedef struct Scheme_Module
   Scheme_Object *self_modidx;
 
   Scheme_Hash_Table *accessible;
+  Scheme_Object *home_registry; /* NULL, key, or hash-table of weakly helds keys */
 
   Scheme_Object *hints; /* set by expansion; moved to properties */
   Comp_Prefix *comp_prefix; /* set by body compile, temporary */
@@ -1843,7 +1847,8 @@ void scheme_module_force_lazy(Scheme_Env *env, int previous);
 
 int scheme_module_export_position(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *varname);
 
-Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, Scheme_Object *stx,
+Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *wrt_registry,
+						 Scheme_Object *symbol, Scheme_Object *stx,
 						 int position, int want_pos);
 Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name);
 

@@ -39,6 +39,7 @@ float  increment;
 Pixel  scrollbarForeground;
 Dimension  shadow;
 Dimension  minsize;
+Boolean  drawgrayScrollbar;
 /* private state */
 Widget  arrow1;
 Widget  arrow2;

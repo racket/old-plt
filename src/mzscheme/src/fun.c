@@ -164,8 +164,6 @@ scheme_init_fun (Scheme_Env *env)
   register_traversers();
 #endif
 
-  scheme_void->type = scheme_void_type;
-
 #ifdef MZ_APPLY_WAITING_CONSTANT
   scheme_tail_call_waiting = MZ_APPLY_WAITING_CONSTANT;
 #else

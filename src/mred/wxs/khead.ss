@@ -29,7 +29,7 @@
 	   (syntax
 	    (begin
 	      (define kernel:name (dynamic-require '#%mred-kernel 'name))
-	      (provide (rename kernel:name name)))))])))
+	      (provide (protect (rename kernel:name name))))))])))
 
   (define-syntax define-function
     (lambda (stx)
@@ -99,7 +99,7 @@
 	 (syntax
 	  (begin 
 	    (define-a-class name name super args id ...)
-	    (provide name)))])))
+	    (provide (protect name))))])))
 
   (define-syntax define-private-class
     (lambda (stx)
@@ -109,4 +109,4 @@
 	  (begin 
 	    (define-a-class name intf super args id ...)
 	    (define intf (class->interface name))
-	    (provide intf)))])))
+	    (provide (protect intf))))])))

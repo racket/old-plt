@@ -440,6 +440,7 @@
 #define scheme_save_initial_module_set (scheme_extension_table->scheme_save_initial_module_set)
 #define scheme_primitive_module (scheme_extension_table->scheme_primitive_module)
 #define scheme_finish_primitive_module (scheme_extension_table->scheme_finish_primitive_module)
+#define scheme_protect_primitive_provide (scheme_extension_table->scheme_protect_primitive_provide)
 #define scheme_make_modidx (scheme_extension_table->scheme_make_modidx)
 #define scheme_declare_module (scheme_extension_table->scheme_declare_module)
 #define scheme_intern_symbol (scheme_extension_table->scheme_intern_symbol)

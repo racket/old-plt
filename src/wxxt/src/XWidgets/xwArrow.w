@@ -50,6 +50,8 @@ released again.
 
 @var <Callback> XtCallbackList callback = NULL
 
+@var Boolean drawgrayArrow = FALSE
+
 @PRIVATE
 
 @ The three GC's are used for drawing the arrow and its shadows.
@@ -151,6 +153,9 @@ GC's need to be created.
 	    need_redisplay = True;
 	}
     }
+    if ($old$drawgrayArrow != $drawgrayArrow) {
+      need_redisplay = TRUE;
+    }
     return need_redisplay;
 }
 
@@ -230,7 +235,7 @@ a timeout routine.
 @proc void draw_arrow($, int on)
 {
     Position x, y;
-    int  width, height, dir;
+    int  width, height, dir, grayed;
 
     $compute_inside($, &x, &y, &width, &height);
 
@@ -278,9 +283,11 @@ a timeout routine.
     width = max(1, width);
     height = max(1, height);
 
+    grayed = ((!$sensitive || $drawgrayArrow) && wx_enough_colors(XtScreen($)));
+
     Xaw3dDrawArrow(XtDisplay($), XtWindow($),
 		   $arrowlightgc, $arrowdarkgc,
-		   $arrowgc, $arrowgc,
+		   (grayed ? $arrowdarkgc : $arrowgc), (grayed ? $arrowdarkgc : $arrowgc),
 		   x, y, width, height,
 		   0, dir, on);
 }

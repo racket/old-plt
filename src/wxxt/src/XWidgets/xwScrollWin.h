@@ -135,6 +135,16 @@ Widget,int *
 #define XtRPosition "Position"
 #endif
 
+#ifndef XtNdrawgrayScrollWin
+#define XtNdrawgrayScrollWin "drawgrayScrollWin"
+#endif
+#ifndef XtCDrawgrayScrollWin
+#define XtCDrawgrayScrollWin "DrawgrayScrollWin"
+#endif
+#ifndef XtRBoolean
+#define XtRBoolean "Boolean"
+#endif
+
 #ifndef XtNdoScroll
 #define XtNdoScroll "doScroll"
 #endif

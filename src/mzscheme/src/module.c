@@ -41,6 +41,7 @@ static Scheme_Object *namespace_trans_require(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_require_copy(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_require_etonly(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[]);
+static Scheme_Object *namespace_unprotect_module(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_compiled_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_compiled_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_compiled_imports(int argc, Scheme_Object *argv[]);
@@ -272,7 +273,12 @@ void scheme_init_module(Scheme_Env *env)
   scheme_add_global_constant("namespace-attach-module",
 			     scheme_make_prim_w_arity(namespace_attach_module,
 						      "namespace-attach-module",
-						      2, 2),
+						      2, 3),
+			     env);
+  scheme_add_global_constant("namespace-unprotect-module",
+			     scheme_make_prim_w_arity(namespace_unprotect_module,
+						      "namespace-unprotect-module",
+						      2, 3),
 			     env);
   scheme_add_global_constant("namespace-require/copy",
 			     scheme_make_prim_w_arity(namespace_require_copy,
@@ -542,7 +548,7 @@ void scheme_save_initial_module_set(Scheme_Env *env)
 
   count = 0;
   for (i = 0; i < c; i++) {
-    if (ht->vals[i])
+    if (ht->vals[i] && SCHEME_SYMBOLP(ht->keys[i]))
       count++;
   }
 
@@ -555,7 +561,7 @@ void scheme_save_initial_module_set(Scheme_Env *env)
 
   count = 0;
   for (i = 0; i < c; i++) {
-    if (ht->vals[i]) {
+    if (ht->vals[i] && SCHEME_SYMBOLP(ht->keys[i])) {
       initial_modules[count++] = ht->keys[i];
     }
   }
@@ -652,6 +658,17 @@ current_module_name_prefix(int argc, Scheme_Object *argv[])
 /**********************************************************************/
 /*                            procedures                              */
 /**********************************************************************/
+
+static int protected_wrt(Scheme_Object *home_registry, Scheme_Object *regkey)
+{
+  if (!home_registry)
+    return 1;
+  if (SAME_OBJ(home_registry, regkey))
+    return 0;
+  if (SCHEME_BUCKTP(home_registry))
+    return !scheme_lookup_in_table((Scheme_Bucket_Table *)home_registry, (const char *)regkey);
+  return 1;
+}
 
 static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 				       Scheme_Env *env,
@@ -815,11 +832,15 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 
     menv = scheme_module_access(srcmname, lookup_env ? lookup_env : env, mod_phase);
 
-    if (protected && menv->attached)
-      scheme_raise_exn(MZEXN_FAIL_CONTRACT,
-		       "%s: name is protected: %V from module: %V",
-		       errname,
-		       name, srcm->modname);
+    if (protected) {
+      Scheme_Object *regkey;
+      regkey = scheme_hash_get(env->module_registry, scheme_void);
+      if (protected_wrt(menv->module->home_registry, regkey))
+	scheme_raise_exn(MZEXN_FAIL_CONTRACT,
+			 "%s: name is protected: %V from module: %V",
+			 errname,
+			 name, srcm->modname);
+    }
     
     b = scheme_bucket_from_table(menv->toplevel, (const char *)srcname);
 
@@ -1169,6 +1190,52 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
       name = scheme_apply(resolver, 3, a);
       
       notifies = SCHEME_CDR(notifies);
+    }
+  }
+
+  return scheme_void;
+}
+
+static Scheme_Object *namespace_unprotect_module(int argc, Scheme_Object *argv[])
+{
+  Scheme_Env *from_env, *to_env, *menv2;
+  Scheme_Object *name, *to_modchain, *regkey;
+
+  if (!SCHEME_NAMESPACEP(argv[0]))
+    scheme_wrong_type("namespace-unprotect-module", "namespace", 0, argc, argv);
+  if (!SCHEME_SYMBOLP(argv[1]))
+    scheme_wrong_type("namespace-unprotect-module", "symbol", 1, argc, argv);
+
+  from_env = (Scheme_Env *)argv[0];
+  if (argc > 2)
+    to_env = (Scheme_Env *)argv[2];
+  else
+    to_env = scheme_get_env(NULL);
+
+  name = argv[1];
+
+  to_modchain = to_env->modchain;
+  regkey = scheme_hash_get(from_env->module_registry, scheme_void);
+
+  if (!SAME_OBJ(name, kernel_symbol)) {
+    menv2 = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(to_modchain), name);
+
+    if (!menv2) {
+      scheme_arg_mismatch("namespace-unprotect-module",
+			  "module not instantiated (in the target namespace): ",
+			  name);
+    }
+
+    if (!protected_wrt(menv2->module->home_registry, regkey)) {
+      if (!SCHEME_BUCKTP(menv2->module->home_registry)) {
+	Scheme_Bucket_Table *bt;
+	bt = scheme_make_bucket_table(1, SCHEME_hash_weak_ptr);
+	scheme_add_to_table(bt, (const char *)menv2->module->home_registry, scheme_true, 0);
+	menv2->module->home_registry = (Scheme_Object *)bt;
+      }
+      regkey = scheme_hash_get(to_env->module_registry, scheme_void);
+      scheme_add_to_table((Scheme_Bucket_Table *)menv2->module->home_registry, 
+			  (const char *)regkey, scheme_true, 0);
     }
   }
 
@@ -1643,6 +1710,14 @@ static void setup_accessible_table(Scheme_Module *m)
       scheme_hash_set(ht, m->indirect_provides[i], scheme_make_integer(i + nvp));
     }
     m->accessible = ht;
+    
+    /* Add syntax as negative ids: */
+    count = m->num_provides;
+    for (i = nvp; i < count; i++) {
+      if (SCHEME_FALSEP(m->provide_srcs[i])) {
+	scheme_hash_set(ht, m->provide_src_names[i], scheme_make_integer(-(i+1)));
+      }
+    }
   }
 }
 
@@ -1670,11 +1745,12 @@ Scheme_Env *scheme_module_access(Scheme_Object *name, Scheme_Env *env, int rev_m
   }
 }
 
-Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, 
-						 Scheme_Object *stx, 
+Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *wrt_registry,
+						 Scheme_Object *symbol, Scheme_Object *stx, 
 						 int position, int want_pos)
-/* Returns the actual name when !want_pos, needed in case of uninterned
-   names.  Otherwise, returns a position value on success.  */
+/* Returns the actual name when !want_pos, needed in case of
+   uninterned names.  Otherwise, returns a position value on success.
+   If position < -1, then merely checks for protected syntax. */
 {
   symbol = scheme_tl_id_sym(env, symbol, 0);
 
@@ -1700,9 +1776,9 @@ Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object 
       else
 	isym = NULL;
     } else {
-      position -= env->module->num_var_provides;
-      if (position < env->module->num_indirect_provides) {
-	isym = env->module->indirect_provides[position];
+      int ipos = position - env->module->num_var_provides;
+      if (ipos < env->module->num_indirect_provides) {
+	isym = env->module->indirect_provides[ipos];
       } else
 	isym = NULL;
     }
@@ -1712,7 +1788,8 @@ Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object 
 	  || (SCHEME_SYM_LEN(isym) == SCHEME_SYM_LEN(symbol)
 	      && !memcmp(SCHEME_SYM_VAL(isym), SCHEME_SYM_VAL(symbol), SCHEME_SYM_LEN(isym)))) {
 	
-	if (env->attached
+	if ((position < env->module->num_var_provides)
+	    && protected_wrt(env->module->home_registry, wrt_registry)
 	    && env->module->provide_protects
 	    && env->module->provide_protects[position]) {
 	  scheme_wrong_syntax("compile", stx, symbol, 
@@ -1734,11 +1811,25 @@ Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object 
     pos = scheme_hash_get(env->module->accessible, symbol);
 
     if (pos) {
-      if (env->attached
+      if (position < -1) {
+	if (SCHEME_INT_VAL(pos) < 0)
+	  pos = scheme_make_integer(-SCHEME_INT_VAL(pos) - 1);
+	else
+	  pos = NULL;
+      } else {
+	if (SCHEME_INT_VAL(pos) < 0)
+	  pos = NULL;
+      }
+    }
+
+    if (pos) {
+      if ((SCHEME_INT_VAL(pos) < env->module->num_var_provides)
+	  && protected_wrt(env->module->home_registry, wrt_registry)
 	  && env->module->provide_protects
 	  && env->module->provide_protects[SCHEME_INT_VAL(pos)]) {
 	scheme_wrong_syntax("compile", stx, symbol, 
-			    "protected variable is inaccessible from module: %S",
+			    "protected %s is inaccessible from module: %S",
+			    (position < -1) ? "syntax" : "variable",
 			    env->module->modname);
 	return NULL;
       }
@@ -1748,6 +1839,9 @@ Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object 
       else
 	return symbol;
     }
+
+    if (position < -1)
+      return NULL; /* unexported syntax -- treat as unprotected */
   }
 
   /* For error, if stx is no more specific than symbol, drop symbol. */
@@ -1778,7 +1872,7 @@ int scheme_module_export_position(Scheme_Object *modname, Scheme_Env *env, Schem
 
   pos = scheme_hash_get(m->accessible, varname);
   
-  if (pos)
+  if (pos && (SCHEME_INT_VAL(pos) >= 0))
     return SCHEME_INT_VAL(pos);
   else
     return -1;
@@ -2239,6 +2333,11 @@ Scheme_Env *scheme_primitive_module(Scheme_Object *name, Scheme_Env *for_env)
   m->et_requires = scheme_null;
   m->tt_requires = scheme_null;
   m->primitive = env;
+  {
+    Scheme_Object *regkey;
+    regkey = scheme_hash_get(for_env->module_registry, scheme_void);
+    m->home_registry = regkey;
+  }
 
   scheme_hash_set(for_env->module_registry, m->modname, (Scheme_Object *)m);
 
@@ -2571,6 +2670,11 @@ module_execute(Scheme_Object *data)
     return NULL;
   }
 
+  {
+    Scheme_Object *regkey;
+    regkey = scheme_hash_get(env->module_registry, scheme_void);
+    m->home_registry = regkey;
+  }
   scheme_hash_set(env->module_registry, m->modname, (Scheme_Object *)m);
 
   /* We might compute whether the module is obviously functional (as
@@ -2685,7 +2789,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   }
 
   menv = scheme_new_module_env(env->genv, m, 1);
-
+  
   self_modidx = scheme_make_modidx(scheme_false, scheme_false, m->modname);
   m->self_modidx = self_modidx;
   m->src_modidx = self_modidx;
@@ -3021,6 +3125,11 @@ Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc iv
   m->self_modidx = self_modidx;
   m->src_modidx = self_modidx;
 
+  {
+    Scheme_Object *regkey;
+    regkey = scheme_hash_get(env->module_registry, scheme_void);
+    m->home_registry = regkey;
+  }
   scheme_hash_set(env->module_registry, m->modname, (Scheme_Object *)m);
 
   return scheme_void;
@@ -3554,7 +3663,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 		  scheme_wrong_syntax(NULL, a, e, "bad syntax (nested protect)");
 		a = SCHEME_STX_CDR(a);
 		a = scheme_flatten_syntax_list(a, NULL);
-		l = scheme_append(a, SCHEME_STX_CDR(l));
+		l = SCHEME_STX_CDR(l);
+		l = scheme_append(a, l);
 		protect_cnt = scheme_list_length(a);
 
 		/* In case a provide ends with an empty protect: */
@@ -3915,8 +4025,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
       int protected;
 	    
       ree = SCHEME_CAR(all_defs_out);
-      protected = SCHEME_TRUEP(SCHEME_CAR(ree));
-      ree = SCHEME_CDR(ree);
+      protected = SCHEME_TRUEP(SCHEME_CDR(ree));
+      ree = SCHEME_CAR(ree);
       exl = SCHEME_CDR(ree);
       ree_kw = SCHEME_CAR(ree);
 	    
@@ -4953,6 +5063,21 @@ static Scheme_Object *write_module(Scheme_Object *obj)
     SCHEME_VEC_ELS(v)[i] = m->provide_src_names[i];
   }
   l = cons(v, l);
+
+  if (m->provide_protects) {
+    for (i = 0; i < count; i++) {
+      if (m->provide_protects[i])
+	break;
+    }
+    if (i < count) {
+      v = scheme_make_vector(count, NULL);
+      for (i = 0; i < count; i++) {
+	SCHEME_VEC_ELS(v)[i] = (m->provide_protects[i] ? scheme_true : scheme_false);
+      }
+    } else
+      v = scheme_false;
+    l = cons(v, l);
+  }
   
   l = cons(scheme_make_integer(m->num_indirect_provides), l);
 
@@ -4986,7 +5111,8 @@ static Scheme_Object *read_module(Scheme_Object *obj)
 {
   Scheme_Module *m;
   Scheme_Object *ie, *nie;
-  Scheme_Object *esn, *es, *e, *nve, *ne, **v;
+  Scheme_Object *esp, *esn, *es, *e, *nve, *ne, **v;
+  char *ps;
   int i, count;
 
   m = MALLOC_ONE_TAGGED(Scheme_Module);
@@ -5058,6 +5184,10 @@ static Scheme_Object *read_module(Scheme_Object *obj)
   m->num_indirect_provides = count;
 
   if (!SCHEME_PAIRP(obj)) return NULL;
+  esp = SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
+
+  if (!SCHEME_PAIRP(obj)) return NULL;
   esn = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
 
@@ -5101,6 +5231,17 @@ static Scheme_Object *read_module(Scheme_Object *obj)
     v[i] = SCHEME_VEC_ELS(esn)[i];
   }
   m->provide_src_names = v;
+
+  if (SCHEME_FALSEP(esp)) {
+    m->provide_protects = NULL;
+  } else {
+    if (!SCHEME_VECTORP(esp) || (SCHEME_VEC_SIZE(esp) != count)) return NULL;
+    ps = MALLOC_N_ATOMIC(char, count);
+    for (i = 0; i < count; i++) {
+      ps[i] = SCHEME_TRUEP(SCHEME_VEC_ELS(esp)[i]);
+    }
+    m->provide_protects = ps;
+  }
 
   if (!SCHEME_PAIRP(obj)) return NULL;
   if (scheme_proper_list_length(SCHEME_CAR(obj)) < 0) return NULL;

@@ -137,6 +137,7 @@ changed from 0 to 2.
 
 	@var frameType = XfwfSunken
 
+        @var Boolean drawgrayScrollbar = FALSE
 
 @PRIVATE
 
@@ -345,6 +346,10 @@ children.
     }
     if ($old$minsize != $minsize) {
 	XtVaSetValues($slider, XtNminsize, $minsize, NULL);
+    }
+    if ($old$drawgrayScrollbar != $drawgrayScrollbar) {
+      XtVaSetValues($arrow1, XtNdrawgrayArrow, $drawgrayScrollbar, NULL);
+      XtVaSetValues($arrow2, XtNdrawgrayArrow, $drawgrayScrollbar, NULL);
     }
     return False;
 }

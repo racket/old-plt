@@ -1996,6 +1996,7 @@ int module_val_MARK(void *p) {
   gcMARK(m->provides);
   gcMARK(m->provide_srcs);
   gcMARK(m->provide_src_names);
+  gcMARK(m->provide_protects);
 
   gcMARK(m->kernel_exclusion);
 
@@ -2004,6 +2005,7 @@ int module_val_MARK(void *p) {
   gcMARK(m->self_modidx);
 
   gcMARK(m->accessible);
+  gcMARK(m->home_registry);
 
   gcMARK(m->hints);
 
@@ -2034,6 +2036,7 @@ int module_val_FIXUP(void *p) {
   gcFIXUP(m->provides);
   gcFIXUP(m->provide_srcs);
   gcFIXUP(m->provide_src_names);
+  gcFIXUP(m->provide_protects);
 
   gcFIXUP(m->kernel_exclusion);
 
@@ -2042,6 +2045,7 @@ int module_val_FIXUP(void *p) {
   gcFIXUP(m->self_modidx);
 
   gcFIXUP(m->accessible);
+  gcFIXUP(m->home_registry);
 
   gcFIXUP(m->hints);
 

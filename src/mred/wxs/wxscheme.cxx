@@ -148,6 +148,7 @@ void wxsScheme_setup(Scheme_Env *env)
   wxScheme_Install(env);
 
   scheme_finish_primitive_module(env);
+  scheme_protect_primitive_provide(env, NULL);
   
   get_file = scheme_false;
   put_file = scheme_false;

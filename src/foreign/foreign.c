@@ -747,7 +747,7 @@ static Scheme_Object *foreign_ctype_basetype(int argc, Scheme_Object *argv[])
 
 #undef MYNAME
 #define MYNAME "ctype-scheme->c"
-static Scheme_Object *foreign_ctype_schemetoc(int argc, Scheme_Object *argv[])
+static Scheme_Object *foreign_ctype_scheme_to_c(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_CTYPEP(argv[0]))
     scheme_wrong_type(MYNAME, "ctype", 0, argc, argv);
@@ -757,7 +757,7 @@ static Scheme_Object *foreign_ctype_schemetoc(int argc, Scheme_Object *argv[])
 
 #undef MYNAME
 #define MYNAME "ctype-c->scheme"
-static Scheme_Object *foreign_ctype_ctoscheme(int argc, Scheme_Object *argv[])
+static Scheme_Object *foreign_ctype_c_to_scheme(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_CTYPEP(argv[0]))
     scheme_wrong_type(MYNAME, "ctype", 0, argc, argv);
@@ -1965,9 +1965,9 @@ void scheme_init_foreign(Scheme_Env *env)
   scheme_add_global("ctype-basetype",
     scheme_make_prim_w_arity(foreign_ctype_basetype, "ctype-basetype", 1, 1), menv);
   scheme_add_global("ctype-scheme->c",
-    scheme_make_prim_w_arity(foreign_ctype_schemetoc, "ctype-scheme->c", 1, 1), menv);
+    scheme_make_prim_w_arity(foreign_ctype_scheme_to_c, "ctype-scheme->c", 1, 1), menv);
   scheme_add_global("ctype-c->scheme",
-    scheme_make_prim_w_arity(foreign_ctype_ctoscheme, "ctype-c->scheme", 1, 1), menv);
+    scheme_make_prim_w_arity(foreign_ctype_c_to_scheme, "ctype-c->scheme", 1, 1), menv);
   scheme_add_global("make-ctype",
     scheme_make_prim_w_arity(foreign_make_ctype, "make-ctype", 3, 3), menv);
   scheme_add_global("make-cstruct-type",
@@ -2165,6 +2165,7 @@ void scheme_init_foreign(Scheme_Env *env)
   t->c_to_scheme = ((Scheme_Object*)FOREIGN_fmark);
   scheme_add_global("_fmark", (Scheme_Object*)t, menv);
   scheme_finish_primitive_module(menv);
+  scheme_protect_primitive_provide(menv, NULL);
 }
 
 /*****************************************************************************/

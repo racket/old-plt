@@ -594,6 +594,9 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi, int toplevel_size)
 
 	module_registry = scheme_make_hash_table(SCHEME_hash_ptr);
 	module_registry->iso.so.type = scheme_module_registry_type;
+	/* Generate a key, and attach it to the registry by mapping `void'
+	   to the key. (Yes, a bit of a hack.) */
+	scheme_hash_set(module_registry, scheme_void, scheme_make_pair(scheme_void, scheme_void));
       }
     }
   }
@@ -2020,9 +2023,12 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags)
     find_global_id = find_id;
 
   /* Try syntax table: */
-  if (modname)
+  if (modname) {
     val = scheme_module_syntax(modname, env->genv, find_id);
-  else {
+    if (val)
+      scheme_check_accessible_in_module(genv, scheme_hash_get(env->genv->module_registry, scheme_void),
+					find_id, src_find_id, -2, 0);
+  } else {
     /* Only try syntax table if there's not an explicit (later)
        variable mapping: */
     if (genv->shadowed_syntax 
@@ -2040,7 +2046,8 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags)
 
   if (modname) {
     Scheme_Object *pos;
-    pos = scheme_check_accessible_in_module(genv, find_id, src_find_id, -1, 1);
+    pos = scheme_check_accessible_in_module(genv, scheme_hash_get(env->genv->module_registry, scheme_void),
+					    find_id, src_find_id, -1, 1);
     modpos = SCHEME_INT_VAL(pos);
   } else
     modpos = -1;

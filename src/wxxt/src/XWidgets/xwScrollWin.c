@@ -283,6 +283,7 @@ static XtResource resources[] = {
 {XtNhScrollAmount,XtCHScrollAmount,XtRInt,sizeof(((XfwfScrolledWindowRec*)NULL)->xfwfScrolledWindow.hScrollAmount),XtOffsetOf(XfwfScrolledWindowRec,xfwfScrolledWindow.hScrollAmount),XtRCallProc,(XtPointer)copy_vScrollAmount },
 {XtNinitialX,XtCInitialX,XtRPosition,sizeof(((XfwfScrolledWindowRec*)NULL)->xfwfScrolledWindow.initialX),XtOffsetOf(XfwfScrolledWindowRec,xfwfScrolledWindow.initialX),XtRImmediate,(XtPointer)0 },
 {XtNinitialY,XtCInitialY,XtRPosition,sizeof(((XfwfScrolledWindowRec*)NULL)->xfwfScrolledWindow.initialY),XtOffsetOf(XfwfScrolledWindowRec,xfwfScrolledWindow.initialY),XtRImmediate,(XtPointer)0 },
+{XtNdrawgrayScrollWin,XtCDrawgrayScrollWin,XtRBoolean,sizeof(((XfwfScrolledWindowRec*)NULL)->xfwfScrolledWindow.drawgrayScrollWin),XtOffsetOf(XfwfScrolledWindowRec,xfwfScrolledWindow.drawgrayScrollWin),XtRImmediate,(XtPointer)FALSE },
 {XtNdoScroll,XtCDoScroll,XtRBoolean,sizeof(((XfwfScrolledWindowRec*)NULL)->xfwfScrolledWindow.doScroll),XtOffsetOf(XfwfScrolledWindowRec,xfwfScrolledWindow.doScroll),XtRImmediate,(XtPointer)TRUE },
 {XtNscrollCallback,XtCScrollCallback,XtRCallback,sizeof(((XfwfScrolledWindowRec*)NULL)->xfwfScrolledWindow.scrollCallback),XtOffsetOf(XfwfScrolledWindowRec,xfwfScrolledWindow.scrollCallback),XtRImmediate,(XtPointer)NULL },
 {XtNscrollResponse,XtCScrollResponse,XtRXTCallbackProc,sizeof(((XfwfScrolledWindowRec*)NULL)->xfwfScrolledWindow.scrollResponse),XtOffsetOf(XfwfScrolledWindowRec,xfwfScrolledWindow.scrollResponse),XtRImmediate,(XtPointer)scroll_response },
@@ -302,7 +303,7 @@ XfwfScrolledWindowClassRec xfwfScrolledWindowClassRec = {
 /* actions      	*/  NULL,
 /* num_actions  	*/  0,
 /* resources    	*/  resources,
-/* num_resources 	*/  15,
+/* num_resources 	*/  16,
 /* xrm_class    	*/  NULLQUARK,
 /* compres_motion 	*/  True ,
 /* compress_exposure 	*/  XtExposeCompressMultiple ,
@@ -459,6 +460,10 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
     if (((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollResponse != ((XfwfScrolledWindowWidget)old)->xfwfScrolledWindow.scrollResponse) {
 	((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollResponse = ((XfwfScrolledWindowWidget)old)->xfwfScrolledWindow.scrollResponse;
 	XtWarning("scrollResponse resource may only be queried, not set");
+    }
+    if (((XfwfScrolledWindowWidget)old)->xfwfScrolledWindow.drawgrayScrollWin != ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.drawgrayScrollWin) {
+      XtVaSetValues(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.vscroll, XtNdrawgrayScrollbar, ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.drawgrayScrollWin, NULL);
+      XtVaSetValues(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hscroll, XtNdrawgrayScrollbar, ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.drawgrayScrollWin, NULL);
     }
 
     return False;

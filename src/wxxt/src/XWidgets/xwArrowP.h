@@ -37,6 +37,7 @@ Boolean  repeat;
 Cardinal  initialDelay;
 Cardinal  repeatDelay;
 XtCallbackList  callback;
+Boolean  drawgrayArrow;
 /* private state */
 GC  arrowgc;
 GC  arrowlightgc;

@@ -1631,6 +1631,7 @@ void scheme_init_foreign(Scheme_Env *env)
                (~ "scheme_add_global(\"_"stype"\", (Scheme_Object*)t, "
                   "menv);")))):}
   scheme_finish_primitive_module(menv);
+  scheme_protect_primitive_provide(menv, NULL);
 }
 
 /*****************************************************************************/

@@ -741,6 +741,9 @@ void wxWindow::ChangeToGray(Bool gray)
       || XtIsSubclass(X->handle, xfwfMultiListWidgetClass))
     XtVaSetValues(X->handle, XtNdrawgray, (Boolean)gray, NULL);
 
+  if (X->scroll)
+    XtVaSetValues(X->scroll, XtNdrawgrayScrollWin, (Boolean)gray, NULL);
+
   if (XtIsSubclass(X->frame, xfwfEnforcerWidgetClass))
     XtVaSetValues(X->frame, XtNdrawgray, (Boolean)gray, NULL);
 

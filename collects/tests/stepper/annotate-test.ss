@@ -481,9 +481,40 @@
                         (set! var-3 rhs-3)
                         (begin
                           break-0
-                          (with-continuation-mark key-3 mark-3 body)))))
-                   #t])))
-                     
+                          (with-continuation-mark 
+                           key-3
+                           mark-3
+                           (let ([result-var-0 (var-4 var-5 var-6)])
+                             (break-1 result-var-1)
+                             result-var-2))))))
+                   (begin
+                     (test 'result syntax-e (syntax result-var-0))
+                     (test 'result syntax-e (syntax result-var-1))
+                     (test 'result syntax-e (syntax result-var-2))
+                     (test 'arg-temp-0 syntax-e (syntax var-4))
+                     (test 'arg-temp-1 syntax-e (syntax var-5))
+                     (test 'arg-temp-2 syntax-e (syntax var-6)))])))
+        
+         ; application with non-var in fun pos
+        (list #'(4 3 4) 'mzscheme cadr
+              (lambda (stx)
+                (syntax-case stx (let-values with-continuation-mark begin set!)
+                  [(let-values arg-temps
+                     (with-continuation-mark
+                      key-0
+                      mark-0
+                      (begin
+                        (set! var-1 rhs-1)
+                        (set! var-2 rhs-2)
+                        (set! var-3 rhs-3)
+                        (begin
+                          break-0
+                          (with-continuation-mark key-3 mark-3 (var-4 var-5 var-6))))))
+                   (begin 
+                     (test 'arg-temp-0 syntax-e (syntax var-4))
+                     (test 'arg-temp-1 syntax-e (syntax var-5))
+                     (test 'arg-temp-2 syntax-e (syntax var-6)))])))
+                    
         ; datum
         (list #'3 'mzscheme cadr
               (lambda (stx)
@@ -521,7 +552,6 @@
                         . rest)))
                    (begin
                      (test (void) check-mark (syntax mark-0) '(a) 'all)
-                     (printf "sym-0: ~a~n" (syntax-object->datum (syntax sym-0)))
                      (test 'a syntax-e (syntax sym-0)))])))
         
         ; lexical vars

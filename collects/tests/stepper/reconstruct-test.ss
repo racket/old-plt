@@ -44,8 +44,15 @@
 (test `((,highlight-placeholder) (+)) test-expr #'+ 'mzscheme 0 cadr)
 (test `(((,highlight-placeholder 3 4)) (+)) test-expr #'(+ 3 4) 'mzscheme 0 cadr)
 (test `((,highlight-placeholder) ((+ 3 4))) test-expr #'(+ 3 4) 'mzscheme 1 cadr)
+(test `((,highlight-placeholder) (7)) test-expr #'(+ 3 4) 'mzscheme 2 cadr)
+(define test2 
+  #'((lambda (x) (+ x 3)) 4))
+(test `((,highlight-placeholder) (((lambda (x) (+ x 3)) 4))) test-expr test2 'mzscheme  0 cadr)
+(test `((,highlight-placeholder) ((+ 4 3))) test-expr test2 'mzscheme 1 cadr)
+(test `((,highlight-placeholder) ((+ 4 3))) test-expr test2 'mzscheme 2 cadr)
+(test `((,highlight-placeholder) (7)) test-expr test2 'mzscheme 3 cadr)
 
-(syntax-object->datum (cadr (annotate-expr #'(+ 3 4) 'mzscheme 0 (lambda (x) x))))
+(syntax-object->datum (cadr (annotate-expr test2 'mzscheme 0 (lambda (x) x))))
 
 
 

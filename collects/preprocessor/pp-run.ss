@@ -16,9 +16,10 @@
 (define (run preprocess run-cmd output files)
   (let ([files (map (lambda (f) (if (equal? f "-") (current-input-port) f))
                     (if (null? files) '("-") files))]
-        [error? #f])
+        [exit-code 0])
     (define (do-run-subst f)
-      (set! error? (system (regexp-replace #rx"\\*" run-cmd (format "~s" f)))))
+      (set! exit-code (system/exit-code (regexp-replace
+                                         #rx"\\*" run-cmd (format "~s" f)))))
     (cond
      [(and run-cmd (not (regexp-match #rx"\\*" run-cmd)))
       (when output
@@ -30,7 +31,7 @@
           (apply preprocess files))
         (close-output-port (list-ref p 1))
         ((list-ref p 4) 'wait)
-        (set! error? (eq? 'done-ok ((list-ref p 4) 'status))))]
+        (set! exit-code ((list-ref p 4) 'exit-code)))]
      [(and run-cmd (not (or (= 1 (length files)) output)))
       (error 'mzpp "cannot run a command that expects a filename with ~a"
              "multiple input files and no output name")]
@@ -51,6 +52,6 @@
       (with-output-to-file output (lambda () (apply preprocess files)) 'replace)
       (when run-cmd (do-run-subst output))]
      [else (apply preprocess files)])
-    (when error? (exit 1))))
+    (exit exit-code)))
 
 )

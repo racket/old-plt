@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dialg.cxx,v 1.1.1.1 1997/12/22 16:11:58 mflatt Exp $
+ * RCS_ID:      $Id: wx_dialg.cxx,v 1.2 1998/04/11 21:59:24 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -370,15 +370,7 @@ Bool wxDialogBox::Show(Bool show)
       wxModelessWindows.DeleteObject(this);
   }
   if (!window_parent) {
-# if 0
-    if (show) {
-      if (!wxTopLevelWindows(this)->Member(this))
-	wxTopLevelWindows(this)->Append(this);
-    } else
-      wxTopLevelWindows(this)->DeleteObject(this);
-# else
     wxTopLevelWindows(this)->Show(this, show);
-# endif
   } else
     window_parent->GetChildren()->Show(this, show);
 #endif
@@ -399,21 +391,20 @@ Bool wxDialogBox::Show(Bool show)
 
       wxwmBringWindowToTop(dialog->handle);
 
-
-
-#if 1
       wxWindow *saveModal;
       saveModal = wxGetModalWindow(this);
       wxPutModalWindow(this, this);
       
-      wxList disabled_windows;
+      wxList *disabled_windows;
       wxChildNode *cnode;
       wxNode *node;
+
+      disabled_windows = new wxList();
       
       for (cnode = wxTopLevelWindows(this)->First(); cnode; cnode = cnode->Next()) {
 	wxWindow *w = (wxWindow *)cnode->Data();
 	if (w && cnode->IsShown() && w != this) {
-	  disabled_windows.Append(w);
+	  disabled_windows->Append(w);
 	  w->InternalEnable(FALSE);
 	}
       }
@@ -422,90 +413,15 @@ Bool wxDialogBox::Show(Bool show)
       
       wxPutModalWindow(this, saveModal);
       
-      for (node = disabled_windows.First(); node; node = node->Next()) {
+      for (node = disabled_windows->First(); node; node = node->Next()) {
 	wxWindow *w = (wxWindow *)node->Data();
 	w->InternalEnable(TRUE);
       } 
 
-
-
       ShowWindow(dialog->handle, SW_HIDE);
-#else
-      wxNode *node = wxModalDialogs.First();
-      while (node)
-      {
-        wxDialogBox *box = (wxDialogBox *)node->Data();
-        wxWnd *the_dialog = (wxWnd *)box->handle;
-        if (box != this)
-          EnableWindow(the_dialog->handle, FALSE);
-        node = node->Next();
-      }
-      node = wxModelessWindows.First();
-      while (node)
-      {
-        wxWindow *win = (wxWindow *)node->Data();
-        wxWnd *wnd = (wxWnd *)win->handle;
-        EnableWindow(wnd->handle, FALSE);
-        node = node->Next();
-      }
-
-      ShowWindow(dialog->handle, SW_SHOW);
-      EnableWindow(dialog->handle, TRUE);
-      wxwmBringWindowToTop(dialog->handle);
-
-      if (!wxModalDialogs.Member(this))
-        wxModalDialogs.Append(this);
-      
-      MSG msg;
-      while (modal_showing && wxwmGetMessage(&msg)) {
-	
-	if (!IsDialogMessage(dialog->handle, &msg)) {
-	  wxwmTranslateMessage(&msg);
-	  wxwmDispatchMessage(&msg);
-	}
-      }
-#endif    
     }
     else
     {
-#if 0
-      wxModalDialogs.DeleteObject(this);
-
-      wxNode *first = wxModalDialogs.First();
-
-      // If there's still a modal dialog active, we
-      // enable it, else we enable all modeless windows
-      if (first)
-      {
-        wxDialogBox *box = (wxDialogBox *)first->Data();
-        HWND hwnd = box->GetHWND();
-        if (box->winEnabled)
-          EnableWindow(hwnd, TRUE);
-		  wxwmBringWindowToTop(dialog->handle);
-      }
-      else
-      {
-        wxNode *node = wxModelessWindows.First();
-        while (node)
-        {
-          wxWindow *win = (wxWindow *)node->Data();
-          HWND hwnd = win->GetHWND();
-          // Only enable again if not user-disabled.
-          if (win->winEnabled)
-            EnableWindow(hwnd, TRUE);
-          node = node->Next();
-        }
-      }
-      // Try to highlight the correct window (the parent)
-      HWND hWndParent = 0;
-      if (GetParent())
-      {
-        hWndParent = GetParent()->GetHWND();
-        if (hWndParent)
-	  wxwmBringWindowToTop(hWndParent);
-      }
-      ShowWindow(dialog->handle, SW_HIDE);
-#endif
       modal_showing = FALSE;
     }
   }

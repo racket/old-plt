@@ -74,10 +74,15 @@
   (lambda ()
     (when mred:load-user-setup?
       (set! mred:load-user-setup? #f)
-      (let* ([init-file (build-path (wx:find-directory 'init)
-				    (if (eq? wx:platform 'unix)
-					".mredrc"
-					"mredrc.ss"))])
+      (let* ([init-file 
+	      (wx:find-path 'init-file)
+	   #|
+	      (build-path (wx:find-directory 'init)
+			  (if (eq? wx:platform 'unix)
+			      ".mredrc"
+			      "mredrc.ss"))
+	   |#
+	      ])
 	(when (file-exists? init-file)
 	  (let ([orig-escape (error-escape-handler)])
 	    (catch-errors (lambda (s) (wx:message-box s "Error"))

@@ -656,7 +656,37 @@
   (define (end-query target)
     (glEndQuery (query-table target 'end-query)))
                       
-  ;; 4.1.8, 4.1.10, 4.2.1 not implemented
+
+  ;; 4.1.8
+  (_provide blend-equation blend-func blend-func-separate 
+            (rename glBlendColor blend-color))
+
+  (make-enum-table blend-equation-table
+                   GL_FUNC_ADD GL_FUNC_SUBTRACT GL_FUNC_REVERSE_SUBTRACT
+                   GL_MIN GL_MAX)
+  (define (blend-equation func)
+    (glBlendEquation (blend-equation-table func 'blend-equation)))
+  
+  (make-enum-table blend-func-table
+		   GL_ZERO GL_ONE
+                   GL_SRC_COLOR GL_ONE_MINUS_SRC_COLOR
+		   GL_DST_COLOR GL_ONE_MINUS_DST_COLOR
+                   GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+                   GL_DST_ALPHA GL_ONE_MINUS_DST_ALPHA
+                   GL_CONSTANT_COLOR GL_ONE_MINUS_CONSTANT_COLOR
+                   GL_CONSTANT_ALPHA GL_ONE_MINUS_CONSTANT_ALPHA
+                   GL_SRC_ALPHA_SATURATE)
+  (define (blend-func src dest)
+    (glBlendFunc (blend-func-table src 'blend-func)
+		 (blend-func-table dest 'blend-func)))
+
+  (define (blend-func-separate src dest src-alpha dst-alpha)
+    (glBlendFuncSeparate (blend-func-table src 'blend-func)
+                         (blend-func-table dest 'blend-func)
+                         (blend-func-table src-alpha 'blend-func)
+                         (blend-func-table dst-alpha 'blend-func)))
+
+  ;; 4.1.10, 4.2.1 not implemented
 
   ;; 4.2.2
   (_provide (rename glIndexMask index-mask)
@@ -867,38 +897,7 @@
     (check-length 'un-project4 e 16)
     (check-length 'un-project4 f 16)
     (check-length 'un-project4 g 4)
-    (gluUnProject4 a b c d e f g h i))
-
-
-  ;; 4.1.8
-  (_provide blend-equation blend-func blend-func-separate 
-            (rename glBlendColor blend-color))
-
-  (make-enum-table blend-equation-table
-                   GL_FUNC_ADD GL_FUNC_SUBTRACT GL_FUNC_REVERSE_SUBTRACT
-                   GL_MIN GL_MAX)
-  (define (blend-equation func)
-    (glBlendEquation (blend-equation-table func 'blend-equation)))
-  
-  (make-enum-table blend-func-table
-		   GL_ZERO GL_ONE
-                   GL_SRC_COLOR GL_ONE_MINUS_SRC_COLOR
-		   GL_DST_COLOR GL_ONE_MINUS_DST_COLOR
-                   GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
-                   GL_DST_ALPHA GL_ONE_MINUS_DST_ALPHA
-                   GL_CONSTANT_COLOR GL_ONE_MINUS_CONSTANT_COLOR
-                   GL_CONSTANT_ALPHA GL_ONE_MINUS_CONSTANT_ALPHA
-                   GL_SRC_ALPHA_SATURATE)
-  (define (blend-func src dest)
-    (glBlendFunc (blend-func-table src 'blend-func)
-		 (blend-func-table dest 'blend-func)))
-
-  (define (blend-func-separate src dest src-alpha dst-alpha)
-    (glBlendFuncSeparate (blend-func-table src 'blend-func)
-                         (blend-func-table dest 'blend-func)
-                         (blend-func-table src-alpha 'blend-func)
-                         (blend-func-table dst-alpha 'blend-func)))
-                         
+    (gluUnProject4 a b c d e f g h i))                        
   
   ;; 5 not implemented
   

@@ -52,6 +52,7 @@
 	    get-client-size)
 
 	  (rename
+	    [super-on-size on-size]
 	    [super-set-size set-size])
 	  
 	  (private
@@ -162,19 +163,24 @@
 			    XT-BORDER-SIZE XT-BORDER-SIZE
 			    (- f-client-w (* 2 XT-BORDER-SIZE))
 			    (- f-client-h (* 2 XT-BORDER-SIZE)))
-			  (send panel set-size XT-BORDER-SIZE
-			    XT-BORDER-SIZE
+			  (send panel set-size
+			    XT-BORDER-SIZE XT-BORDER-SIZE
 			    (- f-client-w (* 2 XT-BORDER-SIZE))
 			    (- f-client-h (* 2 XT-BORDER-SIZE)))))
 		      (let-values ([(panel-client-w panel-client-h)
 				    (get-two-int-values
 				      (ivar panel get-client-size))])
 			(let* ([panel-info (send panel get-info)]
+			       ; note that this contains the minimum size
+			       ; for the ENTIRE panel, not just its
+			       ; client. 
 			       
 			       ; difference between frame's full size
-			       ; and panel's client size
-			       [delta-w (- (get-width) panel-client-w)]
-			       [delta-h (- (get-height) panel-client-h)]
+			       ; and panel's full size
+			       [delta-w (- (get-width)
+					   (send panel get-width))]
+			       [delta-h (- (get-height)
+					   (send panel get-height))]
 			       
 			       ; minimum frame size:
 			       [min-w (+ delta-w (child-info-x-min
@@ -217,18 +223,21 @@
 		   "container-frame-on-size: "
 		   "Entered frame's on-size; args ~s ~s")
 		  new-width new-height)
-		(let-values ([(correct-w correct-h)
-			      (correct-size new-width new-height)])
-		  (mred:debug:printf 'container-frame-on-size
-		    "container-frame-on-size: Correct size ~s ~s"
-		    correct-w correct-h)
-		  (unless (and (= new-width correct-w)
-			       (= new-height correct-h))
+		(super-on-size new-width new-height)
+		(let ([new-width (get-width)]
+		      [new-height (get-height)])
+		  (let-values ([(correct-w correct-h)
+				(correct-size new-width new-height)])
 		    (mred:debug:printf 'container-frame-on-size
-		      "container-frame-on-size: resizing frame to correct size")
-		    (set-size -1 -1 correct-w correct-h))
-		  (mred:debug:printf 'container-frame-on-size
-		    "container-frame-on-size: Leaving onsize at the end.")))])
+		      "container-frame-on-size: Correct size ~s ~s"
+		      correct-w correct-h)
+		    (unless (and (= new-width correct-w)
+			      (= new-height correct-h))
+		      (mred:debug:printf 'container-frame-on-size
+			"container-frame-on-size: resizing frame to correct size")
+		      (set-size -1 -1 correct-w correct-h))
+		    (mred:debug:printf 'container-frame-on-size
+		      "container-frame-on-size: Leaving onsize at the end."))))])
 	  (sequence
 	    (apply super-init args)
 	    (set! object-ID counter)

@@ -419,7 +419,9 @@
 			(first-slash #f))
 	      (cond
 		((>= index end-point)
-		  (values #f #f (substring path begin-point end-point)))
+		  (values (substring path begin-point end-point)
+		    #f
+		    ""))
 		((char=? #\: (string-ref path index))
 		  (loop (add1 index) (or first-colon index) first-slash))
 		((char=? #\/ (string-ref path index))

@@ -1,69 +1,107 @@
-(module turex mzscheme
-  (require (lib "math.ss")
-	   (lib "etc.ss")
-	   (lib "turtle.ss" "graphics"))
-  (provide regular-poly regular-polys radial-turtles spaced-turtles
-	   spokes spyro-gyra neato graphics-bexam serp-size serp serp-nosplit
-	   koch-size koch-split koch-draw lorenz lorenz1 peano-size
-	   peano-position-turtle peano fern-size fern1 fern2 gapped-lines)
+(require "value-turtles.ss"
+         (lib "etc.ss")
+         (lib "math.ss"))
 
-(define (regular-poly sides radius)
+;; BEGIN EXCERPT
+
+(define (regular-poly sides radius tv)
   (local [(define theta (/ (* 2 pi) sides))
 	  (define side-len (* 2 radius (sin (/ theta 2))))
-	  (define (draw-sides n)
+	  (define (draw-sides n tv)
 	    (cond
-	     [(zero? n) (void)]
+	     [(zero? n) tv]
 	     [else
-	      (draw side-len)
-	      (turn/radians theta)
-	      (draw-sides (sub1 n))]))]
-    (tprompt (move radius)
-	     (turn/radians (/ (+ pi theta) 2))
-	     (draw-sides sides))))
+	      (draw-sides
+	       (sub1 n)
+	       (turn/radians
+		theta
+		(draw side-len tv)))]))]
+    (merge
+     (clean
+      (draw-sides
+       sides
+       (turn/radians
+	(/ (+ pi theta) 2)
+	(move
+	 radius
+	 tv))))
+     tv)))
 
-(define (regular-polys sides s)
-  (local [(define (make-polys n)
+(define (regular-polys sides s tv)
+  (local [(define (make-polys n tv)
 	    (cond
-	     [(zero? n) (void)]
+	     [(zero? n) tv]
 	     [else
-	      (regular-poly sides (* n 5))
-	      (make-polys (sub1 n))]))]
-    (make-polys sides)))
+              (make-polys 
+               (sub1 n)
+               (regular-poly 
+                sides 
+                (* n 5)
+                tv))]))]
+    (make-polys sides tv)))
 
-(define (radial-turtles n)
+(define (radial-turtles n tv)
   (cond
-   [(zero? n) (void)]
+   [(zero? n) tv]
    [else
-    (split (turn/radians (/ pi (expt 2 (sub1 n)))))
-    (radial-turtles (sub1 n))]))
+    (radial-turtles
+     (sub1 n)
+     (merge 
+      tv
+      (turn/radians 
+       (/ pi (expt 2 (sub1 n)))
+       tv)))]))
 
-(define (spaced-turtles n)
+(define (spaced-turtles n tv)
   (cond
-   [(zero? n) (void)]
+   [(zero? n) tv]
    [else
-    (split (move (expt 2 (+ n 1))))
-    (spaced-turtles (sub1 n))]))
+    (spaced-turtles 
+     (sub1 n)
+     (merge
+      tv
+      (move 
+       (expt 2 (+ n 1))
+       tv)))]))
 
 (define (spokes)
-  (radial-turtles 4)
-  (spaced-turtles 5)
-  (turn/radians (/ pi 2))
-  (draw 10))
+  (draw 
+   10
+   (turn/radians 
+    (/ pi 2)
+    (spaced-turtles
+     5
+     (radial-turtles 
+      4
+      (turtles 200 200))))))
 
 (define (spyro-gyra)
-  (radial-turtles 4)
-  (regular-poly 3 100))
+  (regular-poly 
+   3
+   100
+   (radial-turtles 
+    4
+    (turtles 200 200))))
 
 (define (neato)
-  (local [(define (spiral d t)
+  (local [(define (spiral d t turtles)
 	    (cond
-	     [(<= 1 d)
-	      (draw d)
-	      (turn/radians t)
-	      (spiral (- d 1) t)]
-	     [else (void)]))]
-    (radial-turtles 4)
-    (spiral 30 (/ pi 12))))
+              [(<= 1 d)
+               (spiral 
+                (- d 1)
+                t               
+                (turn/radians 
+                 t
+                 (draw 
+                  d
+                  turtles)))]
+              [else turtles]))]
+    (spiral 
+     30 
+     (/ pi 12)
+     (radial-turtles
+      4
+      (turtles 400 400)))))
 
 (define (graphics-bexam)
   (local [(define (gb d)
@@ -308,4 +346,36 @@
      (spaced-turtles gaps)
      (turn/radians (/ pi 2))
      (erase (* 4 (expt 2 lines))))))
-)
+
+;; END EXCERPT
+
+(define-syntax (test stx)
+  (syntax-case stx ()
+    [(_ body)
+     (with-syntax ([body-string (format "~s" (syntax-object->datum (syntax body)))])
+       (syntax
+        (let* ([f (make-object frame% "frame" #f 600 600)]
+               [t (make-object text%)]
+               [mb (make-object menu-bar% f)]
+               [fm (make-object menu% "File" mb)])
+          (send t insert body-string)
+          (send t change-style (make-object style-delta% 'change-family 'modern)
+                0 (send t last-position))
+          (send t insert #\newline)
+          (make-object menu-item% "Copy" fm (lambda x (send t copy)) #\c)
+          (make-object editor-canvas% f t)
+          (send f show #t)
+          (with-handlers ([not-break-exn?
+                           (lambda (x)
+                             (send t insert (exn-message x))
+                             (send t insert #\newline))])
+            (send t insert body)
+            (send t insert #\newline)))))]))
+
+(test (regular-poly 5 30 (turtles 150 150)))
+(test (regular-polys 5 30 (turtles 150 150)))
+(test (draw 20 (radial-turtles 5 (turtles 150 150))))
+(test (draw 20 (turn 90 (spaced-turtles 5 (turtles 150 150 10 75 0)))))
+(test (spokes))
+(test (spyro-gyra))
+(test (neato))

@@ -570,6 +570,7 @@
 	      (send message-editor insert #\newline)
 	      (send message-editor insert SEPARATOR)
 	      (send message-editor insert #\newline)
+              (send message-editor reset-region (send message-editor last-position) 'end)
 	      (let ([message-start (send message-editor last-position)])
 		(send message-editor insert (crlf->lf body))
 		(if (string=? to "")

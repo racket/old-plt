@@ -114,7 +114,9 @@ Table methods: [in addition to standard frame% methods]
 > move-cards-to-region :: (send t move-cards-to-region cards r)
         These are like the `add-card' methods, except that they move
         cards already on the table. The movement of the cards is
-        animated. All of the cards are moved at once.
+        animated. All of the cards are moved at once. If the cards are
+        in snap-back-after-move mode and a drag is active, snapping
+        back will use the new location.
 
 
 > flip-card :: (send t flip-card card) - flips `card' over with
@@ -300,6 +302,10 @@ Card methods:
        *interactive* callback can disable snap-back for a card so that
        the card can be delivered to the region. (A region's normal
        callback cannot release the card, because it's too late.)
+
+> dim :: (send c dim dim?)
+> dim :: (send c dim)
+       "Highlights" the card by drawing it dimmer than normal.
 
 > copy :: (send c copy) - makes a new card with the same suit and
        value.

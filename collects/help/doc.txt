@@ -25,7 +25,7 @@ Side effect: the `search-type' and `match-type' values are stored as
 preferences, reflected in the Help Desk search pane as the values  
 of options shown in drop-down lists.
 
-> goto-manual-link hd-cookie manual index-key -> void
+> goto-manual-link : hd-cookie manual index-key -> void
 
 The `hd-cookie' argument is returned by `start-help-server', below.
 The `manual' and `index-key' entries are strings.  The `manual' 
@@ -35,11 +35,15 @@ this procedure starts a Help Desk browser with the appropriate
 manual page shown in the lower frame, if the requested entry 
 exists.  Otherwise, an error occurs.
 
-> goto-hd-location hd-cookie sym -> void
+> goto-hd-location : hd-cookie sym -> void
 
-The `hd-cookie' argument is returned by `start-help-server', below.
-The argument `sym' is a symbol in '(hd-tour release-notes plt-license).
-Starts a Help Desk browser on the page suggested by `sym'.
+The `hd-cookie' argument is returned by `start-help-server',
+below.  The argument `sym' is a symbol in
+
+   '(hd-tour release-notes plt-license front-page)
+
+Sends a Help Desk browser on the page suggested by `sym',
+creating one if necessary.
 
 > help-desk-browser : hd-cookie -> void
 
@@ -72,19 +76,35 @@ to some other Help Desk functions described here.  If the
 specified port is unavailable, or the server cannot find an
 unused port, an error occurs.
 
-> hd-cookie->port : hd-cookie -> number
+> hd-cookie-port : hd-cookie -> number
 
 Given a Help Desk server cookie, returns the port number
 used by the server.
 
-> hd-cookie->exit-proc : hd-cookie -> (-> void)
+> hd-cookie-shutdown-server : hd-cookie -> (-> void)
 
 Given a Help Desk server cookie, returns a thunk that 
 shuts down the server when called.
 
+> hd-cookie-find-browser : (hd-cookie?
+                            . -> . 
+                            (-> (union false? (is-a?/c frame%))))
+
+ Returns a procedure that finds a help desk browser
+ window. If none is available, returns #f.
+
+> hd-cookie-new-browser : (hd-cookie? . -> . (-> (is-a?/c frame%)))
+
+ Returns a procedure that creates a new help desk browser.
+
 > hd-cookie? : obj -> boolean
 
 Returns #t if `obj' is a Help Desk cookie, #f otherwise. 
+
+> visit-url-in-browser : (hd-cookie? string? . -> . void?)
+
+ Visits the second argument in a browser, creating a
+ browser window if necessary.
 
 _Manual ordering_
 -----------------

@@ -1,19 +1,22 @@
 (module internal-server mzscheme
-  (require (lib "tcp-redirect.ss" "net")
-           (lib "tcp-sig.ss" "net")
-           (lib "unitsig.ss")
-           (lib "sendurl.ss" "net")
+  (require (lib "unitsig.ss")
            (lib "class.ss")
+           (lib "etc.ss")
+           (lib "contract.ss")
+           (lib "list.ss")
+           (lib "tcp-redirect.ss" "net")
+           (lib "tcp-sig.ss" "net")
+           (lib "url-sig.ss" "net")
+           (lib "url-unit.ss" "net")
+           (lib "sendurl.ss" "net")
            (lib "mred.ss" "mred")
            (lib "mred-sig.ss" "mred")
-           (lib "etc.ss")
            (lib "plt-installer-sig.ss" "setup")
            (lib "plt-installer.ss" "setup")
            (lib "browser-sig.ss" "browser")
            (lib "browser-unit.ss" "browser")
            (lib "web-server-unit.ss" "web-server")
            (lib "configuration-structures.ss" "web-server")
-           (lib "contract.ss")
            (lib "servlet-sig.ss" "web-server"))
   
   (provide/contract 
@@ -23,7 +26,10 @@
             (union string? false?)
             (make-mixin-contract frame%))
            ((-> void?)
-            (string? . -> . (is-a?/c frame%))))))
+            (any? . -> . (union false? string?))  ;; any? should be url? but that comes into unit
+            (any? . -> . (union false? string?))  ;; any? should be url? but that comes into unit
+            (-> (union false? (is-a?/c frame%)))
+            (-> (is-a?/c frame%))))))
   
   ;; to serve web connections on a port without TCP/IP.
   ;; rebinds the tcp primitives via the tcp-redirect unit to functions
@@ -39,39 +45,81 @@
           (plt-installer : setup:plt-installer^)
           (mred : mred^))
          (link
-          [TCP : net:tcp^ ((tcp-redirect (list port)))]
-          [BROWSER : browser^ (browser@ plt-installer mred TCP)]
-          [WEB-SERVER : web-server^ (web-server@ TCP)]
-          [MAIN : () ((unit/sig ()
+          [tcp : net:tcp^ ((tcp-redirect (list port)))]
+          [url : net:url^ (url@ tcp)]
+          [browser : browser^ (browser@ plt-installer mred tcp url)]
+          [web-server : web-server^ (web-server@ tcp)]
+          [main : () ((unit/sig ()
                         (import net:tcp^
                                 browser^
-                                web-server^)
+                                web-server^
+                                net:url^)
                         
                         (define browser-and-server-cust (make-custodian))
                         
-			(define browser-frame #f)
+                        ;; (listof frame%)
+			(define browser-frames null)
                         
+                        (define (shutdown-server)
+                          (let ([bfs browser-frames])
+                            (set! browser-frames null)
+                            (for-each (lambda (browser-frame)
+                                        (when (send browser-frame can-close?)
+                                          (send browser-frame on-close)
+                                          (send browser-frame show #f)))
+                                      bfs)
+                            (custodian-shutdown-all browser-and-server-cust)))
+                        
+                        (define (url-on-server-test url)
+                          (cond
+                            [(url? url)
+                             (cond
+                               [(and (url-host url)
+                                     (string=? (url-host url) "127.0.0.1"))
+                                #f]
+                               [(and (url? url)
+                                     (url-scheme url)
+                                     (string=? (url-scheme url) "file"))
+                                #f]
+                               [else (url->string url)])]
+                            [else #f]))
+                        
+                        (define (extract-url-path url)
+                          (cond
+                            [(url? url) (url-path url)]
+                            [else #f]))
+                        
+                        (define (remove-from-list-mixin %)
+                          (class %
+                            (rename [super-on-close on-close])
+                            (define/override (on-close)
+                              (set! browser-frames (remq this browser-frames))
+                              (super-on-close))
+                            (super-instantiate ())
+                            (set! browser-frames (cons this browser-frames))))
+                        
+                        (define browser-frame% 
+                          (remove-from-list-mixin
+                           (hyper-frame-extension 
+                            hyper-no-show-frame%)))
+                        
+                        (define (new-browser) (make-object browser-frame%))
+                        
+                        (define (find-browser)
+                          (if (null? browser-frames)
+                              #f
+                              (car browser-frames)))
+                          
                         (parameterize ([current-custodian browser-and-server-cust])
                           (serve configuration port))
+                        
                         (values
-			 (lambda () 
-			   (when browser-frame
-			     (send browser-frame show #f)
-			     (set! browser-frame #f))
-			   (custodian-shutdown-all browser-and-server-cust))
-			 (lambda (url-str)
-                           (if browser-frame
-			       (begin (send browser-frame show #t)
-				      (send (send (send browser-frame get-hyper-panel) get-canvas) goto-url url-str #f))
-			       (begin
-                                 (set! browser-frame (make-object (hyper-frame-extension 
-                                                                   hyper-no-show-frame%)))
-                                 (send browser-frame show #t)
-                                 (let* ([hp (send browser-frame get-hyper-panel)]
-                                        [hc (send hp get-canvas)])
-                                   (send hc goto-url url-str #f))))
-			   browser-frame)))
-                      TCP BROWSER WEB-SERVER)])
+			 shutdown-server
+			 url-on-server-test
+                         extract-url-path
+                         find-browser
+                         new-browser))
+                      tcp browser web-server url)])
          (export))
        setup:plt-installer^
        mred^))))

@@ -182,7 +182,7 @@
 		 (lambda (doc-pair)
 		   (let ([manual (car doc-pair)]
 			 [name (cdr doc-pair)])
-		     (format "<LI> <A mzscheme=\"((dynamic-require '(lib |refresh-manuals.ss| |help|) 'refresh-manuals) (list (cons |~a| |~a|)))\">~a</A>~a"
+		     (format "<LI> Download and install <A mzscheme=\"((dynamic-require '(lib |refresh-manuals.ss| |help|) 'refresh-manuals) (list (cons |~a| |~a|)))\">~a</A>~a"
 			     manual
 			     name
 			     name

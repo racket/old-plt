@@ -13,7 +13,6 @@
     `(html
       (head (title "PLT Help Desk"))
       (BODY
-       (HR)
        (TABLE ((CELLSPACING "0")
                (CELLPADDING "0"))
               (TR 

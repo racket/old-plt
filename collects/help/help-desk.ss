@@ -1,7 +1,5 @@
 (module help-desk mzscheme
-  (require "private/browser.ss"
-  	   "private/external-search.ss"
-           "private/server-config.ss"
+  (require "private/standard-urls.ss"
            "private/docpos.ss"
 	   "private/finddoc.ss"
 	   "private/search.ss"
@@ -9,16 +7,20 @@
 	   "private/installed-components.ss"
            "private/server.ss"
            "private/buginfo.ss"
-           (lib "contract.ss"))
+           "private/cookie.ss"
+           (lib "contract.ss")
+           (lib "mred.ss" "mred"))
 
   
-  (provide/contract (start-help-server (mixin-contract . -> . hd-cookie?)))
+  (provide/contract 
+   (start-help-server (mixin-contract . -> . hd-cookie?))
+   (hd-cookie? (any? . -> . boolean?))
+   (hd-cookie-shutdown-server (hd-cookie? . -> . (-> any)))
+   (hd-cookie-find-browser (hd-cookie? . -> . (-> (union false? (is-a?/c frame%)))))
+   (hd-cookie-new-browser (hd-cookie? . -> . (-> (is-a?/c frame%))))
+   (visit-url-in-browser (hd-cookie? string? . -> . void?)))
   
   (provide 
-   ;; server functions
-   hd-cookie->port
-   hd-cookie->exit-proc
-   hd-cookie?
    ;; manual ordering
    standard-html-doc-position
    user-defined-doc-position
@@ -39,7 +41,6 @@
    set-bug-report-info!
    help-desk:installed-components
 
-   help-desk-browser
    search-for-docs
    goto-manual-link
    goto-hd-location))

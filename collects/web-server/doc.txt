@@ -59,13 +59,33 @@ The library _internal-server.ss_ also provides a single
 function named serve that behaves almost the same as the
 above function with the same name.  Instead of accepting
 HTTP requests from network connections, this version of the
-serve function returns another function of type:
+serve function constructs a virtual network via channels
+(see tcp-redirect.ss in the net collection) and uses a
+browser from the browser collection to show the urls. No
+network connections from the underlying OS are used.
 
-   (string -> (is-a?/c frame%)) 
+It returns four functions. The first one shutsdown the web
+server, as above.
 
-This extra function directs the built-in web browser to the
-url specified by the argument string.  It does not use any
-network support from the underlying OS.
+The second is a function that takes in a url value (any
+value, really -- whatever the browser collection uses as
+urls should be okay here) and determines if it represents a
+url that would be used internally or is a file: url. This
+function returns #f if the url would be handled internally
+and returns a string representing the url if it would be
+handled externally.
+
+The third result takes a url value (any value, really --
+whatever the browser collection uses as urls should be okay
+here) and returns that path portion of the url, or #f if
+none.
+
+The fourth result from this serve is a function that returns
+an already opened browser window, if one is available or #f
+if none are available.
+
+The final result creates a new browser frame. The new frame
+is not visible.
 
 In addition, this serve accepts another optional
 argument. This argument is mixed into the frame class
@@ -78,7 +98,10 @@ instantiated with one argument: the url to visit.
             (union string? false?)
             (make-mixin-contract frame%))
            ((-> void?)
-            (string . -> . (is-a?/c frame%))))
+            (any? any? . -> . (union false? string?))
+            (any? any? . -> . (union false? string?))
+            (-> (union false? (is-a?/c frame%)))
+            (-> (is-a?/c frame%))))
 
 Constructing configurations requires another library.
   (require (lib "configuration.ss" "web-server"))
@@ -461,3 +484,4 @@ The library
   (require (lib "channel.ss" "web-server"))
 is now only a thin wrapper around mzscheme's built in channels.
 Use mzscheme's instead.
+

@@ -3,6 +3,13 @@
 		    "smtps.ss" "heads.ss" "imaps.ss" "dnss.ss" "base64s.ss")])
     (case sym
       [(name) "Net"]
+      [(blurb)
+       (list
+	"The net collection provides a suite of libraries to handle standard "
+	"internet-based protocols. See the net collection's "
+	`(a ((href ,(format "file:~a" (build-path (collection-path "net") "doc.txt"))))
+	    "doc.txt")
+	" file for more information.")]
       [(compile-prefix) `(begin ,@(map (lambda (x) `(require-library ,x "net")) elab))]
       [(compile-omit-files) elab]
       [(compile-elaboration-zos) elab]

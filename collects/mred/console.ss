@@ -543,8 +543,7 @@
 		    (generic-write s
 				   (lambda (start end)
 				     (change-style error-delta 
-						   start end)))
-		    (flush-console-output)))))])
+						   start end)))))))])
 	  
 	  (public
 	    [transparent-edit #f]

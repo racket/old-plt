@@ -1,11 +1,17 @@
 (module docpos mzscheme
-  (provide standard-html-doc-position known-docs)
+  (require (lib "list.ss"))
+
+  (provide standard-html-doc-position 
+           user-defined-doc-position
+           set-doc-position!
+	   reset-doc-positions!
+	   known-docs)
   
   ;; Define an order on the standard docs.
   (define (standard-html-doc-position d)
     (case (string->symbol d)
   
-    [(beginning) -20]
+      [(beginning) -20]
       [(beginning-abbr) -19]
       [(intermediate) -17]
       [(intermediate-lambda) -16]
@@ -24,8 +30,30 @@
       [(mzc) 10]
       [(tools) 30]
       [(insidemz) 50]
+      [(tour) 90]
 
       [else 100]))
+
+  (define user-doc-positions '())
+
+  (define (set-doc-position! manual weight)
+    (let ([man-sym (string->symbol manual)])
+      (unless (assoc manual known-docs)
+	      (error 
+	       'set-doc-position! 
+	       "Unknown manual \"~a\"" manual))
+      (set! user-doc-positions
+	    (cons (list man-sym weight)
+		  (filter (lambda (x)
+			    (not (eq? (car x)) man-sym))
+			  user-doc-positions)))))
+
+  (define (reset-doc-positions!)
+    (set! user-doc-positions '()))
+
+  (define (user-defined-doc-position manual)
+    (let ([result (assoc (string->symbol manual) user-doc-positions)])
+      (and result (cadr result))))
   
   ; Known manuals:
   (define known-docs
@@ -44,5 +72,6 @@
       ("mzc" . "PLT mzc: MzScheme Compiler Manual")
       ("insidemz" . "Inside PLT MzScheme")
       ("tools" . "PLT Tools: DrScheme Extension Manual")
+      ("tour" . "A Brief Tour of DrScheme")
       ("t-y-scheme" . "Teach Yourself Scheme in Fixnum Days")
       ("tex2page" . "TeX2page"))))

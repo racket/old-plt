@@ -1,16 +1,24 @@
 (module manuals mzscheme
   (require (lib "list.ss")
+           (lib "file.ss")
            (lib "date.ss")
            (lib "string-constant.ss" "string-constants")
+	   (lib "pregexp.ss")
            "colldocs.ss"
-           "docpos.ss")
+           "docpos.ss"
+	   (lib "util.ss" "doc" "help" "servlets" "private"))
+
+  ; to get CSS style spec
+  (require (lib "xml.ss" "xml"))
+  (require (lib "hd-css.ss" "doc" "help" "servlets" "private"))  
 
   (provide find-manuals)
  
   (define re:title (regexp "<[tT][iI][tT][lL][eE]>(.*)</[tT][iI][tT][lL][eE]>"))
 
   (define (find-manuals)
-    (let* ([cvs-user? (directory-exists? (build-path (collection-path "help") "CVS"))]
+    (let* ([sys-type (system-type)]
+	   [cvs-user? (directory-exists? (build-path (collection-path "help") "CVS"))]
            [doc-collection-path (with-handlers ([void (lambda (x) #f)])
                                   (collection-path "doc"))]
            [docs (let loop ([l (if doc-collection-path
@@ -28,7 +36,7 @@
 			      [(= ap bp) (string<? a b)]
 			      [else (< ap bp)])))]
            [docs (quicksort docs compare-docs)]
-           [doc-paths (map (lambda (doc) (build-path doc-collection-path doc)) docs)]
+           [doc-paths (map (lambda (doc) (string-append "/doc/" doc "/")) docs)]
            [get-name
 	    (lambda (d)
 	      (let-values ([(_1 short-path _2) (split-path d)])
@@ -65,9 +73,12 @@
 	   [tool-names (map car tool-names+paths)]
 	   [tool-doc-paths (map cdr tool-names+paths)]
 	   [mk-link (lambda (doc name)
-                      (let ([index-file (build-path doc "index.htm")])
-                        (format "<LI> <A HREF=\"file:~a\">~a</A>~a"
-                                index-file
+                      (let ([index-file (build-path 
+					 (collection-path "doc")
+					 (car (last-pair (explode-path doc)))
+					 "index.htm")])
+                        (format "<LI> <A HREF=\"~a\">~a</A>~a"
+			        doc
                                 name
                                 (if (and cvs-user?
                                          (file-exists? index-file))
@@ -79,7 +90,6 @@
                                                (file-or-directory-modify-seconds
                                                 index-file)))))
                                     ""))))]
-                                       
 	   [break-between (lambda (re l)
 			    (if (null? l)
 				l
@@ -93,20 +103,21 @@
 				    l)))])
       (let-values ([(collections-doc-files collection-names) (colldocs)])
         (apply
-         string-append
-         "<html><head>"
-         "<TITLE>Installed Manuals</TITLE>"
-         "</head>"
-         "<body>"
-         (append 
+	 string-append
+	 "<html><head>"
+	 "<TITLE>Installed Manuals</TITLE>"
+	(xexpr->string hd-css)
+	 "</head>"
+	 "<body>"
+	 (append 
 	  
-          (list "<H1>Installed Manuals</H1>")
-          
-          (if cvs-user?
-              (list "<b>CVS:</b> <a mzscheme=\"((dynamic-require '(lib |refresh-manuals.ss| |help|) 'refresh-manuals))\">refresh all manuals</a>")
-              (list))
-          
-          (list "<H3>Languages</H3>"
+	  (list "<H1>Installed Manuals</H1>")
+	  
+	  (if cvs-user?
+	      (list "<b>CVS:</b> <a href=\"/servlets/refresh-manuals.ss\" target=\"outer\">refresh all manuals</a>")
+	      '())
+	  
+	  (list "<H3>Languages</H3>"
 		"<UL>")
 	  (break-between "Student" (map mk-link lang-doc-paths lang-names))
 	  (list "</UL>"
@@ -114,41 +125,47 @@
 		"<UL>")
 	  (break-between "DrScheme" (map mk-link tool-doc-paths tool-names))
 	  (list "</UL><P><UL>")
-          (map
-           (lambda (collection-doc-file name)
-             (format "<LI> <A HREF=\"file:~a\">~a collection</A>"
-                     (apply build-path collection-doc-file)
-                     name))
-           collections-doc-files
-           collection-names)
-          (list "</UL>")
-          (let ([uninstalled (let loop ([l known-docs])
-                               (cond
-                                 [(null? l) null]
-                                 [(member (caar l) docs) (loop (cdr l))]
-                                 [else (cons (car l) (loop (cdr l)))]))])
-            (cond
-              [(null? uninstalled)
-               (list "")]
-              [(not doc-collection-path)
-               (list "<font color=\"red\">"
-                     "Please create a doc collection."
-                     "You will not be able to install any manuals until you do."
-		     "Installing help-doc.plt will create doc collection automaically."
-                     "</font>")]
-              [else
-               (list*
-                "<H3>Uninstalled Manuals</H3>"
-                "<UL>"
-                (append
-                 (map
-                  (lambda (doc-pair)
-                    (format "<LI> <A HREF=\"file:~a\">~a</A>~a"
-                            (build-path doc-collection-path (car doc-pair) "index.htm")
-                            (cdr doc-pair)
-                            (if (file-exists? (build-path doc-collection-path (car doc-pair) "hdindex"))
-                                " (index installed)"
-                                "")))
-                  uninstalled)
-                 (list "</UL>")))]))
-          (list "</body></html>")))))))
+	  (map
+	   (lambda (collection-doc-file name)
+	     (format "<LI> <A HREF=\"/servlets/doc-anchor.ss?file=~a&name=~a&caption=Documentation for the ~a collection\">~a collection</A>"
+					; escape colons and other junk
+		     (hexify-string
+		      (build-path (car collection-doc-file) 
+				  (cadr collection-doc-file)))
+	             name
+		     name
+		     name))
+	   collections-doc-files
+	   collection-names)
+	  (list "</UL>")
+	  (let ([uninstalled (let loop ([l known-docs])
+			       (cond
+				[(null? l) null]
+				[(member (caar l) docs) (loop (cdr l))]
+				[else (cons (car l) (loop (cdr l)))]))])
+	    (cond
+	     [(null? uninstalled)
+	      (list "")]
+	     [(not doc-collection-path)
+	      (list "<font color=\"red\">"
+		    "Please create a doc collection."
+		    "You will not be able to install any manuals until you do."
+		    "Installing help-doc.plt will create doc collection automaically."
+		    "</font>")]
+	     [else
+	      (list*
+	       "<H3>Uninstalled Manuals</H3>"
+	       "<UL>"
+	       (append
+		(map
+		 (lambda (doc-pair)
+		   (format "<LI> <A HREF=\"/servlets/missing-manual.ss?manual=~a&name=~a\">~a</A>~a"
+			   (car doc-pair)
+			   (hexify-string (cdr doc-pair))
+			   (cdr doc-pair)
+			   (if (file-exists? (build-path doc-collection-path (car doc-pair) "hdindex"))
+			       " (index installed)"
+			       "")))
+		 uninstalled)
+		(list "</UL>")))]))
+	  (list "</body></html>")))))))

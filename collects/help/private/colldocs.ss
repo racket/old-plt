@@ -15,26 +15,7 @@
       (cond
 	[(null? collection-paths)
 	 (let* ([collections-docs (map cons docs names)]
-		[general-docs
-		 (let ([dir (collection-path "help" "txt")])
-		   (map (lambda (file)
-			  (cons (list dir file)
-				(substring file 0 (- (string-length file) 4))))
-			(let ([pred
-			       (lambda (x)
-				 (and (> (string-length x) 4)
-				      (string=?
-				       ".txt"
-				       (substring x (- (string-length x) 4)
-						  (string-length x)))))])
-                          (let loop ([files (directory-list dir)])
-                            (cond
-                              [(null? files) null]
-                              [else (if (pred (car files))
-                                        (cons (car files) (loop (cdr files)))
-                                        (loop (cdr files)))])))))]
-                
-		[l (quicksort (append collections-docs general-docs)
+		[l (quicksort collections-docs
 			      (lambda (a b) (string<=? (cdr a) (cdr b))))])
 	   (values (map car l) (map cdr l)))]
 	[else (let ([path (car collection-paths)])

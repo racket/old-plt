@@ -32,7 +32,7 @@
 	 [f (make-object dialog% "Language")]
 	 [main (make-object mred:vertical-pane% f)]
 	 [language-panel (make-object mred:horizontal-panel% main '(border))]
-	 [customization-panel (make-object mred:horizontal-pane% main)]
+	 [customization-panel (make-object mred:horizontal-panel% main)]
 	 [customization-left-panel (make-object mred:vertical-pane% customization-panel)]
 	 [customization-right-panel (make-object mred:vertical-pane% customization-panel)]
 	 [when-message (make-object mred:message% "Language changes effective after next execution" main)]
@@ -45,7 +45,6 @@
 	 [dynamic-panel (make-sub-panel "Safety Properties" customization-left-panel)]
 	 [output-syntax-panel (make-sub-panel "Output Syntax" customization-right-panel)]
 	 
-	 [_1 (make-object mred:horizontal-pane% language-panel)]
 	 [specifics-shown? #f]
 	 [show-specifics
 	  (lambda (bool)
@@ -75,7 +74,6 @@
 				 (basis:number->level
 				  (send choice get-selection)))))))]
 	 [custom-message (make-object mred:message% "Custom" language-panel)]
-	 [_2 (make-object mred:horizontal-pane% language-panel)]
 	 [right-align
 	  (opt-lambda (mo panel)
 	    (let* ([hp (make-object mred:horizontal-pane% panel)])

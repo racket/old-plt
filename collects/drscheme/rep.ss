@@ -657,6 +657,9 @@
 	   (cond
 	    [in-evaluation?
 	     (semaphore-post in-evaluation-semaphore)
+	     (mred:bell)]
+	    [else
+	     (semaphore-post in-evaluation-semaphore)
 	     (send (get-top-level-window) disable-evaluation)
 	     (reset-break-state)
 	     (cleanup-transparent-io)
@@ -691,10 +694,7 @@
 					  (recur))]))
 				    start
 				    end
-				    #t)))))))]
-	    [else
-	     (semaphore-post in-evaluation-semaphore)
-	     (mred:bell)]))])
+				    #t)))))))]))])
       (private
 	[shutdown-user-custodian
 	 (lambda ()
@@ -849,12 +849,15 @@
 	     (semaphore-post event-started))]
 	  [running-callback-stop
 	   (lambda ()
+	     (printf "r1~n")
 	     (semaphore-wait ok-to-break-semaphore)
 	     (when ok-to-break
 	       (break-thread running-thread)
 	       (semaphore-post event-started)
 	       (set! ok-to-break #f))
+	     (printf "r2~n")
 	     (conditionally-turn-running-off)
+	     (printf "r3~n")
 	     (semaphore-post ok-to-break-semaphore))]
 	  [update-running
 	   (case-lambda
@@ -889,7 +892,7 @@
 		     (semaphore-wait ok-to-break-semaphore)
 		     (set! ok-to-break #t)
 		     (semaphore-post ok-to-break-semaphore)
-		     (sleep 1/2)
+		     (sleep)
 		     (semaphore-wait ok-to-break-semaphore)
 		     (set! ok-to-break #f)
 		     (update-running #t)
@@ -1040,14 +1043,20 @@
 			    (cond
 			     [(and (= depth 1)
 				   (not in-evaluation?))
+			      (printf "1~n")
 			      (reset-break-state)
+			      (printf "2~n")
 			      (running-callback-start)
 			      
+			      (printf "3~n")
 			      (protect-user-evaluation
 			       (lambda ()
+				 (printf "5~n")
 				 (running-callback-stop)
+				 (printf "6~n")
 				 (set! depth (- depth 1)))
 			       (lambda ()
+				 (printf "4~n")
 				 (mzlib:thread:dynamic-enable-break
 				  (lambda ()
 				    (primitive-dispatch-handler eventspace)))))]

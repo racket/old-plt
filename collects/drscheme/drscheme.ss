@@ -8,6 +8,12 @@
 
 (require-library "refer.ss")
 
+(define original-output-port (current-output-port))
+(define (orig-output t)
+  (parameterize ([current-output-port original-output-port])
+    (t)))
+
+
 (define graphical-debug? #t)
 (define textual-debug? #f)
 

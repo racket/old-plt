@@ -195,8 +195,22 @@ wxIsBusy (void)
   return wxGetBusyState() > 0;
 }
 
+static int hidden = 0;
+
 void wxHideCursor(void)
 {
+  if (!hidden) {
+    hidden = 1;
+    HideCursor();
+  }
+}
+
+void wxUnhideCursor(void)
+{
+  if (hidden) {
+    hidden = 0;
+    ShowCursor();
+  }
 }
 
 Bool wxWriteResource(const char *section, const char *entry, char *value, const char *file)

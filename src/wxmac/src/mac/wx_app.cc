@@ -248,8 +248,10 @@ void wxApp::doMacDispatch(EventRecord *e)
     {
     case mouseMenuDown:
     case mouseDown:
+      wxUnhideCursor();
       doMacMouseDown(); break;
     case mouseUp:
+      wxUnhideCursor();
       doMacMouseUp(); break;
     case keyDown:
     case wheelEvt:
@@ -271,8 +273,10 @@ void wxApp::doMacDispatch(EventRecord *e)
     case leaveEvt:
       doMacMouseLeave(); break;
     case nullEvent:
-      if (e->message)
+      if (e->message) {
+	wxUnhideCursor();
 	doMacMouseMotion();
+      }
       break;
     default:
       break;
@@ -913,6 +917,7 @@ void wxApp::doMacOsEvt(void)
 	}
       break;
     case mouseMovedMessage:
+      wxUnhideCursor();
       doMacMouseMovedMessage();
       break;
     }
@@ -1248,8 +1253,9 @@ void wxApp::doMacInZoom(WindowPtr window, short windowPart)
     theMacWxFrame = findMacWxFrame(window);
     if (theMacWxFrame && theMacWxFrame->CanAcceptEvent()) {
       wxTracking();
-      if (TrackBox(window, cCurrentEvent.where, windowPart))
-	theMacWxFrame->Maximize(windowPart == inZoomOut);
+      if (TrackBox(window, cCurrentEvent.where, windowPart)) {
+	theMacWxFrame->Maximize(2);
+      }
     }
   }
 }

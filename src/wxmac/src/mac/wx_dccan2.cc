@@ -132,7 +132,6 @@ Bool wxCanvasDC::BeginSetPixelFast(int x, int y, int w, int h)
   if ((x >= 0) && (y >= 0)
       && ((x + w) <= pixmapWidth)
       && ((y + h) <= pixmapHeight)) {
-    SetCurrentDC();  
     return TRUE;
   } else
     return FALSE;
@@ -140,12 +139,13 @@ Bool wxCanvasDC::BeginSetPixelFast(int x, int y, int w, int h)
 
 void wxCanvasDC::EndSetPixelFast()
 {
-  ReleaseCurrentDC();
 }
 
 void wxCanvasDC::SetPixelFast(int i, int j, int r, int g, int b)
 {
   RGBColor rgb;
+
+  SetCurrentDC();  
 
   if (Colour) {
     rgb.red = r;
@@ -176,6 +176,8 @@ void wxCanvasDC::SetPixelFast(int i, int j, int r, int g, int b)
 	ForeColor(blackColor);
     }
   }
+
+  ReleaseCurrentDC();
 }
 
 Bool wxCanvasDC::BeginGetPixelFast(int x, int y, int w, int h)
@@ -192,10 +194,12 @@ void wxCanvasDC::GetPixelFast(int x, int y, int *r, int *g, int *b)
 {
   RGBColor rgb;
 
+  SetCurrentDC();  
   GetCPixel(x, y, &rgb);
   *r = (rgb.red >> 8);
   *g = (rgb.green >> 8);
   *b = (rgb.blue >> 8);
+  ReleaseCurrentDC();  
 }
 
 //-----------------------------------------------------------------------------

@@ -453,6 +453,10 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
 //-----------------------------------------------------------------------------
 void wxFrame::Maximize(Bool maximize)
 {
+  if (maximize == 2) {
+    maximize = !cMaximized;
+  }
+
   if (cMaximized != maximize)
     {
       int oldWindowX = cWindowX;
@@ -461,10 +465,19 @@ void wxFrame::Maximize(Bool maximize)
       int oldWindowHeight = cWindowHeight;
       CGrafPtr theMacGrafPort;
       WindowPtr theMacWindow;
-
+      Point size;
+  
       theMacGrafPort = cMacDC->macGrafPort();
       theMacWindow = GetWindowFromPort(theMacGrafPort);
-      ::ZoomWindow(theMacWindow, maximize ? inZoomOut : inZoomIn, TRUE);
+
+      if (maximize) {
+	Rect rect;
+	IsWindowInStandardState(theMacWindow, NULL, &rect);
+	size.h = (rect.right - rect.left);
+	size.v = (rect.bottom - rect.top);
+      }
+
+      ::ZoomWindowIdeal(theMacWindow, maximize ? inZoomOut : inZoomIn, &size);
 
       wxMacRecalcNewSize();
       

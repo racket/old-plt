@@ -98,8 +98,9 @@
 	   (send-url url #t))
 	  (begin
             ; should be no-op, except in Unix
-	    (unless (get-preference 'external-browser 
-				    (lambda () #f))
+	    (unless (or (eq? (help-browser-preference) 'plt)
+			(get-preference 'external-browser 
+					(lambda () #f)))
 		    (update-browser-preference url))
 	    (letrec
 		([monitor-thread

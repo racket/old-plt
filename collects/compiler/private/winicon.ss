@@ -164,9 +164,12 @@
           (arithmetic-shift 1 (list-ref l 5))
           n)))
   
-  (define (install-icon exe-file ico-file)
-    (let ([ico-icons (get-icons-in-ico ico-file)]
-	  [exe-icons (get-icons-in-exe exe-file)])
+  (define (install-icon exe-file ico-file . extra-icons)
+    (let ([ico-icons (append (if ico-file 
+                                 (extract-icons ico-file)
+                                 null)
+                             extra-icons)]
+	  [exe-icons (extract-icons exe-file)])
       (let ([p (open-output-file exe-file 'update)])
 	(dynamic-wind
 	 void
@@ -335,7 +338,7 @@
 	    (dword->integer p)    ; used == 0
 	    (dword->integer p)))) ; important == 0
 
-  ;; Assumes that bits-per-pixel is 1, 2, 4, 8, or 32.
+  ;; Assumes that bits-per-pixel is 1, 2, 4, 8, 24, or 32.
   ;; Also assumes that (bits-per-pixel * width) is a multiple of 8.
   (define (parse-dib icon)
     (let* ([bi (bitmapinfo icon)]
@@ -604,15 +607,31 @@
 	   (get-icons p #t)))
        (lambda () (close-input-port p)))))
 
-  (require (lib "mred.ss" "mred")
-           (lib "class.ss"))
-  (define (bitmap%->icon bm)
-    (let ([w (send bm get-width)]
-          [h (send bm get-height)]
-          [o (open-output-string)])
+  #;
+  (begin
+    (require (lib "mred.ss" "mred")
+             (lib "class.ss"))
+    (define (bitmap%->icon bm)
+      (let* ([w (send bm get-width)]
+             [h (send bm get-height)]
+             [argb (make-string (* w h 4))]
+             [mdc (make-object bitmap-dc% bm)])
+        (send mdc get-argb-pixels 0 0 w h argb)
+        (send mdc set-bitmap #f)
+        ;; Get mask (inverse alpha), if any:
+        (let ([mask-argb (make-string (* w h 4) #\377)]
+              [mbm (send bm get-loaded-mask)])
+          (when mbm
+            (send mdc set-bitmap mbm)
+            (send mdc get-argb-pixels 0 0 w h mask-argb)
+            (send mdc set-bitmap #f))
+          (bitmap->icon w h argb mask-argb)))))
+
+  (define (bitmap->icon w h argb mask-argb)
+    (let ([o (open-output-string)])
       (integer->dword 40 o) ; size
       (integer->dword w o)  ; width
-      (integer->dword h o)  ; height
+      (integer->dword (* 2 h) o)  ; height
       (integer->word 1 o)   ; planes
       (integer->word 32 o)  ; bitcount
       (integer->dword 0 o)  ; compression
@@ -621,20 +640,44 @@
       (integer->dword 0 o)  ; y pixels per meter
       (integer->dword 0 o)  ; used
       (integer->dword 0 o)  ; important
-      (let ([s (make-string (* w h 4))]
-            [mdc (make-object bitmap-dc% bm)])
-        (send mdc get-argb-pixels 0 0 w h s)
-        (send mdc set-bitmap #f)
-        ;; Got ARGB, need RGBA, alphas are all 255
-        (let ([rgba (string-append (substring s 1) "\377")])
-          ;; Get mask (inverse alpha), if any:
-          (let ([ms (make-string (* w h 4) #\0)]
-                [mbm (send bm get-loaded-mask)])
-            (when mbm
-              (send mdc set-bitmap mbm)
-              (send mdc get-argb-pixels 0 0 w h ms)
-              (send mdc set-bitmap #f))
-            
+      ;; Got ARGB, need RGBA; alphas are all 255
+      (let* ([rgba (string-append (substring argb 1) "\377")]
+             [mask-rgba (string-append (substring mask-argb 1) "\377")]
+             [row-size (if (zero? (modulo w 32))
+                           w
+                           (+ w (- 32 (remainder w 32))))]
+             [mask (make-string (* h row-size 1/8) #\000)])
+        (let loop ([i (* w h 4)])
+          (unless (zero? i)
+            (let ([mr (string-ref mask-rgba (- i 4))]
+                  [mg (string-ref mask-rgba (- i 3))]
+                  [mb (string-ref mask-rgba (- i 2))]
+                  [a (- i 1)])
+              (let ([alpha (- 255
+                              (floor (/ (+ (char->integer mr)
+                                           (char->integer mg)
+                                           (char->integer mb))
+                                        3)))])
+                (if (< alpha 10)
+                    ;; white mask -> zero alpha; add white pixel to mask
+                    (begin
+                      (string-set! rgba a #\000)
+                      (let ([pos (+ (* (quotient (sub1 (/ i 4)) w) row-size)
+                                    (remainder (sub1 (/ i 4)) w))])
+                        (string-set! mask 
+                                     (quotient pos 8)
+                                     (integer->char
+                                      (bitwise-ior
+                                       (arithmetic-shift 1 (- 7 (remainder pos 8)))
+                                       (char->integer
+                                        (string-ref mask (quotient pos 8))))))))
+                    ;; non-white mask -> non-zero alpha
+                    (string-set! rgba a (integer->char alpha)))))
+            (loop (- i 4))))
+        (display rgba o)
+        (display mask o)
+        (make-icon (list w h 0 0 1 32)
+                   (cons 0 (get-output-string o))))))
             
   ;; ------------------------------
   ;;  Image conversion

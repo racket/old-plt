@@ -2,6 +2,8 @@
 
 #include "stdafx.h"
 #include <stdio.h>
+#include <process.h>
+
 #include "myssink.h"
 #include "sink.h"
 #include "comtypes.h"
@@ -370,6 +372,23 @@ void CSink::unmarshallSchemeObject(Scheme_Object *obj,VARIANTARG *pVariantArg) {
     ; // no update needed
 
   } 
+}
+
+// override default implementation of IDispatch::QueryInterface
+
+HRESULT CSink::QueryInterface(REFIID,void **ppVoid) {
+
+  // always return 'this' for *any* interface request
+
+  // this works as long as the connection point actually uses
+  // the IDispatch interface
+
+  this->AddRef();
+
+  *(ISink **)ppVoid = this;
+
+  return S_OK;
+
 }
 
 // override default implementation of IDispatch::Invoke

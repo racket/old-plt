@@ -2,7 +2,7 @@
 
 
 /* File created by MIDL compiler version 5.01.0164 */
-/* at Wed Feb 24 11:57:30 1999
+/* at Fri May 28 17:02:10 1999
  */
 /* Compiler settings for myspage.idl:
     Oicf (OptLev=i2), W1, Zp8, env=Win32, ms_ext, c_ext
@@ -1165,6 +1165,8 @@ EXTERN_C const IID IID_IEventQueue;
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE QueueEvent( 
             IEvent __RPC_FAR *__MIDL_0020) = 0;
         
+        virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE PumpMsgs( void) = 0;
+        
         virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_EventAvailable( 
             /* [retval][out] */ VARIANT_BOOL __RPC_FAR *pVal) = 0;
         
@@ -1224,6 +1226,9 @@ EXTERN_C const IID IID_IEventQueue;
             IEventQueue __RPC_FAR * This,
             IEvent __RPC_FAR *__MIDL_0020);
         
+        /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *PumpMsgs )( 
+            IEventQueue __RPC_FAR * This);
+        
         /* [helpstring][id][propget] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *get_EventAvailable )( 
             IEventQueue __RPC_FAR * This,
             /* [retval][out] */ VARIANT_BOOL __RPC_FAR *pVal);
@@ -1270,6 +1275,9 @@ EXTERN_C const IID IID_IEventQueue;
 #define IEventQueue_QueueEvent(This,__MIDL_0020)	\
     (This)->lpVtbl -> QueueEvent(This,__MIDL_0020)
 
+#define IEventQueue_PumpMsgs(This)	\
+    (This)->lpVtbl -> PumpMsgs(This)
+
 #define IEventQueue_get_EventAvailable(This,pVal)	\
     (This)->lpVtbl -> get_EventAvailable(This,pVal)
 
@@ -1298,6 +1306,17 @@ void __RPC_STUB IEventQueue_GetEvent_Stub(
 
 
 void __RPC_STUB IEventQueue_QueueEvent_Stub(
+    IRpcStubBuffer *This,
+    IRpcChannelBuffer *_pRpcChannelBuffer,
+    PRPC_MESSAGE _pRpcMessage,
+    DWORD *_pdwStubPhase);
+
+
+/* [helpstring][id] */ HRESULT STDMETHODCALLTYPE IEventQueue_PumpMsgs_Proxy( 
+    IEventQueue __RPC_FAR * This);
+
+
+void __RPC_STUB IEventQueue_PumpMsgs_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,

@@ -21,8 +21,9 @@ LINK32_OBJS= dhtmlpage.obj event.obj eventqueue.obj myspage.obj stdafx.obj \
 all : myspage.tlb myspage.dll myspage.h myspage_i.c 
 
 myspage.dll : $(DEF_FILE) $(LINK32_OBJS) 
-    $(LINK32) $(LINK32_FLAGS) $(LINK32_OBJS) 
-    $(REGSVR32) /s myspage.dll	
+	$(LINK32) $(LINK32_FLAGS) $(LINK32_OBJS) 
+	copy myspage.dll ..\..\..\collects\mysterx\compiled\native
+	$(REGSVR32) /s ..\..\..\collects\mysterx\compiled\native\myspage.dll
 
 clean :
 	-@erase DHTMLPage.obj

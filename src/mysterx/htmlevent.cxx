@@ -274,7 +274,7 @@ Scheme_Object *mx_get_event(int argc,Scheme_Object **argv) {
   hr = pEventQueue->GetEvent(&pEvent);  // blocking call
 
   if (hr != S_OK || pEvent == NULL) {
-    scheme_signal_error("Error retrieving event: %X",hr);
+    codedComError("Error retrieving event",hr);
   }
 
   event_object = (MX_Event *)scheme_malloc(sizeof(MX_Event));

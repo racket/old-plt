@@ -55,6 +55,16 @@ STDMETHODIMP CEventQueue::QueueEvent(IEvent *pEvent) {
 
 }
 
+STDMETHODIMP CEventQueue::PumpMsgs(void) {
+  MSG msg;
+
+  while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
+    TranslateMessage(&msg);
+    DispatchMessage(&msg);
+  } 
+
+  return S_OK;
+}
 
 STDMETHODIMP CEventQueue::GetEvent(IEvent **ppEvent) {
   DWORD whyWait;
@@ -69,9 +79,9 @@ STDMETHODIMP CEventQueue::GetEvent(IEvent **ppEvent) {
     }
 
     while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
+      TranslateMessage(&msg);
+      DispatchMessage(&msg);
+    } 
   }
     
   WaitForSingleObject(mutex,INFINITE);
@@ -83,10 +93,9 @@ STDMETHODIMP CEventQueue::GetEvent(IEvent **ppEvent) {
 
   ReleaseSemaphore(mutex,1,NULL);
 
-	return S_OK;
+  return S_OK;
 }
  
-
 STDMETHODIMP CEventQueue::get_EventAvailable(VARIANT_BOOL *pVal) {
 
   WaitForSingleObject(mutex,INFINITE);
@@ -95,5 +104,6 @@ STDMETHODIMP CEventQueue::get_EventAvailable(VARIANT_BOOL *pVal) {
 
   ReleaseSemaphore(mutex,1,NULL);
 
-	return S_OK;
+  return S_OK;
 }
+

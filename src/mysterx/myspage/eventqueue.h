@@ -41,6 +41,7 @@ public:
 	  STDMETHOD(get_EventAvailable)(VARIANT_BOOL *pVal);
 	  STDMETHOD(QueueEvent)(IEvent *pEvent);
 	  STDMETHOD(GetEvent)(IEvent **ppEvent);
+	  STDMETHOD(PumpMsgs)(void);
 };
 
 #endif //__EVENTQUEUE_H_

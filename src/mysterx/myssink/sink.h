@@ -57,10 +57,14 @@ public:
  STDMETHOD(set_myssink_table)(int);
  STDMETHOD(register_handler)(DISPID,int); 
 
-//override IDispatch::Invoke()
+ //override ATL implementations
 
  STDMETHOD(Invoke)(DISPID,REFIID,LCID,WORD,
 		   DISPPARAMS*,VARIANT*,EXCEPINFO*,UINT*);
+
+ // automagically declared, so we put this here as a reminder 
+ // STDMETHOD(QueryInterface)(REFIID,void **); 
+
 };
 
 #endif //__SINK_H_

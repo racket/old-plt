@@ -99,6 +99,7 @@ static MX_PRIM mxPrims[] = {
   { mx_find_element,"document-find-element",3,3 },
   { mx_document_objects,"document-objects",1,1 },
   { mx_document_show,"document-show",2,2},
+  { mx_document_pump_msgs,"document-pump-msgs",1,1 },
 
   // elements
 
@@ -448,6 +449,13 @@ Scheme_Object *mx_unit_init(Scheme_Object **boxes,Scheme_Object **anchors,
   return scheme_void;
 }
 
+void codedComError(char *s,HRESULT hr) {
+  char buff[256];
+
+  sprintf(buff,"%s, code = %%X",s);
+  scheme_signal_error(buff,hr);
+}
+
 Scheme_Object *mx_cocreate_instance(int argc,Scheme_Object **argv) {
   HRESULT hr;
   char *coclass;
@@ -466,8 +474,7 @@ Scheme_Object *mx_cocreate_instance(int argc,Scheme_Object **argv) {
 			IID_IDispatch,(void **)&pIDispatch);
 
   if (hr != ERROR_SUCCESS) {
-    scheme_signal_error("Unable to create instance of %s, code: %X",
-			coclass,hr);
+    codedComError("Unable to create instance",hr);
   }
 		   
   com_object = (MX_COM_Object *)scheme_malloc(sizeof(MX_COM_Object));
@@ -511,14 +518,17 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
   hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pITypeInfo);
 
   if (hr != S_OK) {
-    scheme_signal_error("Error getting COM type information");
+    codedComError("Error getting COM type information",hr);
   }
 
   hr = pITypeInfo->GetDocumentation(MEMBERID_NIL,NULL,NULL,NULL,
 				  &helpFileName);
 			     
-  if (hr != S_OK || wcscmp(helpFileName,L"") == 0) {
-    scheme_signal_error("Can't get help, code: %X",hr); 
+  if (hr != S_OK) {
+    codedComError("Can't get help",hr); 
+  }
+  else if (helpFileName == NULL || wcscmp(helpFileName,L"") == 0) {
+    scheme_signal_error("No help available"); 
   }
 
   WideCharToMultiByte(CP_ACP,(DWORD)0,helpFileName,SysStringLen(helpFileName) + 1,
@@ -559,6 +569,11 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
   return scheme_void;
 }
 
+void signalCodedEventSinkError(char *s,HRESULT hr) {
+  ReleaseSemaphore(eventSinkMutex,1,NULL);
+  codedComError(s,hr);
+}
+
 void connectComObjectToEventSink(MX_COM_Object *obj) {
   HRESULT hr;
   IUnknown *pIUnknown;
@@ -581,19 +596,20 @@ void connectComObjectToEventSink(MX_COM_Object *obj) {
   hr = pIDispatch->QueryInterface(IID_IConnectionPointContainer,(void **)&pIConnectionPointContainer); 
 
   if (hr != S_OK || pIConnectionPointContainer == NULL) {
-    scheme_signal_error("Unable to get COM object connection point container, code = %X",hr);
+    signalCodedEventSinkError("Unable to get COM object connection point container",hr);
   }
 
   pITypeInfo = eventTypeInfoFromComObject(obj);
 
   if (pITypeInfo == NULL) {
+    ReleaseSemaphore(eventSinkMutex,1,NULL);
     scheme_signal_error("Unable to get type information for events");
   }
 
   hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
 
   if (hr != S_OK || pTypeAttr == NULL) {
-    scheme_signal_error("Unable to get type attributes for events, code = %X",hr);
+    signalCodedEventSinkError("Unable to get type attributes for events",hr);
   }
 
   hr = pIConnectionPointContainer->FindConnectionPoint(pTypeAttr->guid,&pIConnectionPoint);
@@ -601,20 +617,20 @@ void connectComObjectToEventSink(MX_COM_Object *obj) {
   pITypeInfo->ReleaseTypeAttr(pTypeAttr);
 
   if (hr != S_OK || pIConnectionPoint == NULL) {
-    scheme_signal_error("Unable to find COM object connection point, code = %X",hr);
+    signalCodedEventSinkError("Unable to find COM object connection point",hr);
   }
 
   hr = CoCreateInstance(CLSID_Sink,NULL,CLSCTX_LOCAL_SERVER | CLSCTX_INPROC_SERVER,
 			IID_IUnknown,(void **)&pIUnknown);
 
   if (hr != S_OK || pIUnknown == NULL) {
-    scheme_signal_error("Unable to create sink object, code = %X",hr);
+    signalCodedEventSinkError("Unable to create sink object",hr);
   }
 
   hr = pIUnknown->QueryInterface(IID_ISink,(void **)&pISink);
 
   if (hr != S_OK || pISink == NULL) {
-    scheme_signal_error("Unable to find sink interface, code = %X",hr);
+    signalCodedEventSinkError("Unable to find sink interface",hr);
   }
 
   pISink->set_extension_table((int)scheme_extension_table); // COM won't take a function ptr
@@ -624,7 +640,7 @@ void connectComObjectToEventSink(MX_COM_Object *obj) {
   hr = pIConnectionPoint->Advise(pIUnknown,&cookie);
 
   if (hr != S_OK) {
-    scheme_signal_error("Unable to connect sink to connection point, code = %X",hr);
+    signalCodedEventSinkError("Unable to connect sink to connection point",hr);
   }
 
   obj->pEventTypeInfo = pITypeInfo;
@@ -673,7 +689,7 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
   hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
 
   if (hr != S_OK || pTypeAttr == NULL) {
-    scheme_signal_error("Unable to get type attributes for events, code = %X",hr);
+    codedComError("Unable to get type attributes for events",hr);
   }
 
   numFuncDescs = pTypeAttr->cFuncs;
@@ -689,7 +705,7 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
     hr = pITypeInfo->GetFuncDesc(i,&pFuncDesc);		
 		
     if (hr != S_OK) {
-      scheme_signal_error("Error getting event method type description");
+      codedComError("Error getting event method type description",hr);
     }
 
     // rely on name of event
@@ -697,7 +713,7 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
     hr = pITypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&bstrCount);
 
     if (hr != S_OK) {
-      scheme_signal_error("Error getting event method name");
+      codedComError("Error getting event method name",hr);
     }
 
     if (wcscmp(unicodeName,bstr) == 0) {
@@ -768,7 +784,7 @@ MX_TYPEDESC *getMethodType(MX_COM_Object *obj,char *name,INVOKEKIND invKind) {
     hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pITypeInfo);
 
     if (hr != S_OK) {
-      scheme_signal_error("Error getting COM type information");
+      codedComError("Error getting COM type information",hr);
     }
 
   }
@@ -778,7 +794,7 @@ MX_TYPEDESC *getMethodType(MX_COM_Object *obj,char *name,INVOKEKIND invKind) {
   hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
 
   if (hr != S_OK) {
-    scheme_signal_error("Error getting type attributes for function \"%s\"",name);
+    codedComError("Error getting type attributes for function",hr);
   }
 
   foundDesc = FALSE;
@@ -788,7 +804,7 @@ MX_TYPEDESC *getMethodType(MX_COM_Object *obj,char *name,INVOKEKIND invKind) {
     hr = pITypeInfo->GetFuncDesc(i,&pFuncDesc);		
 		
     if (hr != S_OK) {
-      scheme_signal_error("Error getting type description");
+      codedComError("Error getting type description",hr);
     }
 
     pITypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&nameCount);
@@ -820,7 +836,7 @@ MX_TYPEDESC *getMethodType(MX_COM_Object *obj,char *name,INVOKEKIND invKind) {
     for (i = 0; i < pTypeAttr->cVars; i++) {
       hr = pITypeInfo->GetVarDesc(i,&pVarDesc);		
       if (hr != S_OK) {
-	scheme_signal_error("Error getting type description");
+	codedComError("Error getting type description",hr);
       }
 
       // see if this VARDESC is the one we want
@@ -899,13 +915,13 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
   hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pITypeInfo);
 
   if (hr != S_OK || pITypeInfo == NULL) {
-    scheme_signal_error("Error getting COM type information");
+    codedComError("Error getting COM type information",hr);
   }
 
   hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
 
   if (hr != S_OK || pTypeAttr == NULL) {
-    scheme_signal_error("Error getting type attributes");
+    codedComError("Error getting type attributes",hr);
   }
 
   retval = scheme_null;
@@ -977,13 +993,13 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
   hr = pIDispatch->QueryInterface(IID_IProvideClassInfo,(void **)&pIProvideClassInfo);
 
   if (hr != S_OK || pIProvideClassInfo == NULL) {
-    scheme_signal_error("Error getting COM event type information");
+    codedComError("Error getting COM event type information",hr);
   }
 
   hr = pIProvideClassInfo->GetClassInfo(&pITypeInfo);
 
   if (hr != S_OK || pITypeInfo == NULL) {
-    scheme_signal_error("Error getting event type information");
+    codedComError("Error getting event type information",hr);
   }
 
   // have type info for coclass
@@ -992,7 +1008,7 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
   hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
 
   if (hr != S_OK || pTypeAttr == NULL) {
-    scheme_signal_error("Error getting type attributes");
+    codedComError("Error getting type attributes",hr);
   }
 
   typeCount = pTypeAttr->cImplTypes; 
@@ -1006,7 +1022,7 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
     hr = pITypeInfo->GetImplTypeFlags(i,&typeFlags);
 
     if (hr != S_OK) {
-      scheme_signal_error("Error retrieving type flags");
+      codedComError("Error retrieving type flags",hr);
     }
 
     // look for [source, default]
@@ -1025,13 +1041,13 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
   hr = pITypeInfo->GetRefTypeOfImplType(eventTypeInfoNdx,&hRefType);
 
   if (hr != S_OK) {
-    scheme_signal_error("Error retrieving type info handle");
+    codedComError("Error retrieving type info handle",hr);
   }
 
   hr = pITypeInfo->GetRefTypeInfo(hRefType,&pEventTypeInfo);
 
   if (hr != S_OK || pEventTypeInfo == NULL) {
-    scheme_signal_error("Error retrieving event type info, code = %X",hr);
+    codedComError("Error retrieving event type info",hr);
   }
 
   obj->pEventTypeInfo = pEventTypeInfo;
@@ -1069,7 +1085,7 @@ Scheme_Object *mx_com_events(int argc,Scheme_Object **argv) {
   hr = pEventTypeInfo->GetTypeAttr(&pEventTypeAttr);
 
   if (hr != S_OK || pEventTypeAttr == NULL) {
-    scheme_signal_error("Error retrieving event type attributes, code = %X",hr);
+    codedComError("Error retrieving event type attributes",hr);
   }
 
   retval = scheme_null;
@@ -1281,6 +1297,11 @@ Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL is
 
     s = "mx-any";
     isBox = TRUE;
+    break;
+
+  case VT_USERDEFINED :
+
+    s = "symbol";
     break;
 
   default :
@@ -1551,6 +1572,10 @@ BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
 
     return TRUE;
 
+  case VT_USERDEFINED : 
+
+    return SCHEME_SYMBOLP(val);
+
   default :
 
     return FALSE;
@@ -1693,9 +1718,9 @@ void marshallSchemeValueToVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
     return;
   }
 
-  if (SCHEME_INTP(val)) {
+  if (SCHEME_EXACT_INTEGERP(val)) {
     pVariantArg->vt = VT_I4;
-    pVariantArg->lVal = SCHEME_INT_VAL(val);
+    scheme_get_int_val(val,&pVariantArg->lVal);
     return;
   }
 
@@ -1716,6 +1741,13 @@ void marshallSchemeValueToVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
   if (SCHEME_STRINGP(val)) {
     pVariantArg->vt = VT_BSTR;
     pVariantArg->bstrVal = schemeStringToBSTR(val);
+    return;
+  }
+
+  if (SCHEME_SYMBOLP(val)) {
+    char *s = SCHEME_SYM_VAL(val);
+    pVariantArg->vt = VT_BSTR;
+    pVariantArg->bstrVal = stringToBSTR(s,strlen(s));
     return;
   }
 
@@ -2128,7 +2160,8 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
       scheme_wrong_count(errBuff,numParamsPassed+1,-1,argc,argv);
     }
   }
-  else if (argc < numParamsPassed - numOptParams + 2) {
+  else if (argc < numParamsPassed - numOptParams + 2 ||  // too few
+	   argc > numParamsPassed + 2) {  // too many
     sprintf(errBuff,"%s (%s \"%s\")",
 	    mx_fun_string(invKind),
 	    inv_kind_string(invKind),
@@ -2312,7 +2345,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
     scheme_wrong_type(mx_fun_string(invKind),"string",1,argc,argv);
   }
- 
+
   pIDispatch = MX_COM_OBJ_VAL(argv[0]);
 
   if (pIDispatch == NULL) {
@@ -2329,7 +2362,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 					 invKind,
 					 argc,argv,
 					 &methodArguments);
- 
+
   if (invKind != INVOKE_PROPERTYPUT) {
     VariantInit(&methodResult);
   }
@@ -2947,10 +2980,9 @@ void docHwndMsgLoop(LPVOID p) {
 						   pDocWindowInit->ppIStream);
 
         if (hr != S_OK) {
-          ::MessageBox(NULL,"Can't marshal document interface","MysterX",MB_OK);
           DestroyWindow(hwnd);
           ReleaseSemaphore(createHwndSem,1,NULL);
-          return; // 0;
+	  codedComError("Can't marshal document interface",hr);
         }
 
         ReleaseSemaphore(createHwndSem,1,NULL);
@@ -3077,7 +3109,7 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
 
   if (hr != S_OK || pIUnknown == NULL) {
     DestroyWindow(documentHwnd);
-    scheme_signal_error("Can't get document unknown interface, code: %X",hr);
+    codedComError("Can't get document unknown interface",hr);
   }
 
   pIUnknown->QueryInterface(IID_IDHTMLPage,(void **)&pIDHTMLPage);
@@ -3098,7 +3130,7 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   hr = CoGetInterfaceAndReleaseStream(pIStream,IID_IWebBrowser2,(void **)&pIWebBrowser2);
 
   if (hr != S_OK || pIWebBrowser2 == NULL) {
-    scheme_signal_error("Can't get web browser interface, code %X",hr);
+    codedComError("Can't get web browser interface",hr);
   }
 
   pIStream = NULL;
@@ -3111,7 +3143,7 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   hr = CoGetInterfaceAndReleaseStream(pIStream,IID_IEventQueue,(void **)&pIEventQueue);
 
   if (hr != S_OK || pIEventQueue == NULL) {
-    scheme_signal_error("Can't get event queue interface, code %X",hr);
+    codedComError("Can't get event queue interface",hr);
   }
 
   // may have to wait for document to be created
@@ -3135,6 +3167,10 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
 
   hr = pIDispatch->QueryInterface(IID_IHTMLDocument2,(void **)&pIHTMLDocument2);
 
+  if (hr != S_OK || pIHTMLDocument2 == NULL) {
+    codedComError("Error retrieving DHTML document2 interface",hr);
+  }
+
   pIDispatch->Release();
 
   if (pIHTMLDocument2 == NULL) {
@@ -3145,6 +3181,20 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   doc->pIEventQueue = pIEventQueue;
 
   return (Scheme_Object *)doc;
+}
+
+Scheme_Object *mx_document_pump_msgs(int argc,Scheme_Object **argv) {
+  MX_Document_Object *pDoc;
+  IEventQueue *pIEventQueue;
+
+  if (MX_DOCUMENTP(argv[0]) == FALSE) {
+    scheme_wrong_type("show-document","mx-document",0,argc,argv);
+  }
+
+  pDoc = (MX_Document_Object *)argv[0];
+  pDoc->pIEventQueue->PumpMsgs(); 
+
+  return scheme_void;
 }
 
 Scheme_Object *mx_document_show(int argc,Scheme_Object **argv) {

@@ -237,5 +237,5 @@ STDMETHODIMP CDHTMLPage::marshalEventQueueToStream(IStream **ppIStream)
     return hr;
   }
   
-	return S_OK;
+  return S_OK;
 }

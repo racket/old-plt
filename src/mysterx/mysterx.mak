@@ -26,7 +26,7 @@ LINK32_LIBS= \
 	kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib \
 	advapi32.lib $(SHELL32)\LIB\shell32.lib ole32.lib oleaut32.lib \
 	uuid.lib odbc32.lib \
-        odbccp32.lib mapi32.lib "$(HTMLHELP)\lib/htmlhelp.lib" \
+        odbccp32.lib mapi32.lib "$(HTMLHELP)\lib\htmlhelp.lib" \
 	mysc\mysc.lib 
 
 LINK32_OBJS= \
@@ -34,7 +34,8 @@ LINK32_OBJS= \
 
 mysterx.dll : $(DEF_FILE) $(LINK32_OBJS)
 	$(LINK32) --ld mysterx.dll $(LINK32_OBJS) $(LINK32_LIBS)
-
+	copy mysterx.dll ..\..\collects\mysterx\compiled\native
+	
 comtypes.obj : comtypes.cxx mysterx.h
 
 htmlevent.obj : htmlevent.cxx mysterx.h

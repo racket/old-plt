@@ -1,6 +1,7 @@
 (require (prefix annotate: (lib "annotate.ss" "stepper" "private")))
 (require (prefix kernel: (lib "kerncase.ss" "syntax")))
 (require (lib "syncheck-debug.ss" "drscheme" "private"))
+(require (lib "marks.ss" "stepper" "private"))
 
 (load "/Users/clements/plt/tests/mzscheme/testing.ss")
 
@@ -33,17 +34,16 @@
                               [(null? (cdr binding-list)) 
                                (error 'check-mark "odd number of elements in binding list: ~a" (syntax-object->datum (syntax bindings)))]
                               [else
-                               (when (not (module-identifier=?
-                                           (car binding-list)
-                                           (syntax-case (cadr binding-list) (quote-syntax)
-                                             [(quote-syntax stx)
-                                              (syntax stx)])))
-                                 (error 'check-mark "binding pair does not match: ~a, ~a" (syntax-object->datum (car binding-list))
-                                        (syntax-object->datum (cadr binding-list))))
-                               (when (not (identifier? (car binding-list)))
-                                 (error 'check-mark "syntax object is not an identifier: ~a" (syntax-object->datum (car bindings-list))))
-                               (cons (syntax-e (car binding-list))
-                                     (loop (cddr binding-list)))]))])])
+                               (let* ([quoted-stx (stx-protector-stx (syntax-e (cadr binding-list)))])
+                                 (when (not (module-identifier=?
+                                             (car binding-list)
+                                             quoted-stx))
+                                   (error 'check-mark "binding pair does not match: ~a, ~a" (syntax-object->datum (car binding-list))
+                                          (syntax-object->datum (cadr binding-list))))
+                                 (when (not (identifier? (car binding-list)))
+                                   (error 'check-mark "syntax object is not an identifier: ~a" (syntax-object->datum (car bindings-list))))
+                                 (cons (syntax-e (car binding-list))
+                                     (loop (cddr binding-list))))]))])])
     (let loop ([remaining bindings])
       (unless (null? remaining)
         (when (memq (car remaining) (cdr remaining))
@@ -72,19 +72,15 @@
 (syntax-case (expand #'(let ([a 1] [b 2]) (begin a b))) (let-values begin)
   [(let-values bindings a b)
    (begin
-     (err/rt-test (check-mark (syntax (lambda ())) '() '()) exn:syntax?) ; badly formed mark
-     (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b))) '() '()) exn:user?) ; mismatched bindings
-     (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label (quote-syntax a) a))) '() '()) exn:syntax?) ; mismatched bindings
-     (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) a (quote-syntax a)))) '() '()) exn:user?) ; binding appears twice
-     (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax b)))) '() '()) exn:user?) ; mismatched bindings
-     (test (void) check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b (quote-syntax b)))) '(a b) 'all)
-     (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b (quote-syntax b)))) '(a b c) 'all) exn:user?) ; c isn't there
-     (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b (quote-syntax b)))) '(a) 'all) exn:user?) ; bad 'all
-     (test (void) check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b (quote-syntax b)))) '(a) '(c))
-     (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b (quote-syntax b)))) '(a) '(b c)) exn:user?) ; b is there
-     (test (void) check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b (quote-syntax b)))) '(a) '())
-     (test (void) check-mark (syntax (lambda () ('mark-maker 'source 'label arg0-436 (quote-syntax arg0-436) c (quote-syntax c)))) '("arg0" c) '())
-     (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label arg0-436 (quote-syntax arg0-436) c (quote-syntax c)))) '("djs") '()) exn:user?))])
+     (err/rt-test (check-mark (let* ([a-var #'a]) (make-full-mark #'3 'a (list a-var a-var))) '() '()) exn:user?) ; binding appears twice
+     (test (void) check-mark (make-full-mark #'3 'a (list #'a #'b)) '(a b) 'all)
+     (err/rt-test (check-mark (make-full-mark #'3 'a (list #'a #'b)) '(a b c) 'all) exn:user?) ; c isn't there
+     (err/rt-test (check-mark (make-full-mark #'3 'a (list #'a #'b)) '(a) 'all) exn:user?) ; bad 'all
+     (test (void) check-mark (make-full-mark #'3 'a (list #'a #'b)) '(a) '(c))
+     (err/rt-test (check-mark (make-full-mark #'3 'a (list #'a #'b)) '(a) '(b c)) exn:user?) ; b is there
+     (test (void) check-mark (make-full-mark #'3 'a (list #'a #'b)) '(a) '())
+     (test (void) check-mark (make-full-mark #'3 'a (list #'arg0-436 #'c)) '("arg0" c) '())
+     (err/rt-test (check-mark (make-full-mark #'3 'a (list #'arg0-436 #'c)) '("djs") '()) exn:user?))])
 
 ; syntax-symbol=? : compares a list of symbols to a given symbol (or to each other if sym = #f)
 ; (union symbol #f) (listof syntax-object) -> boolean

@@ -4,18 +4,41 @@
 (require (lib "shared.ss" "stepper" "private"))
 (require (lib "highlight-placeholder.ss" "stepper" "private"))
 (require (lib "my-macros.ss" "stepper" "private"))
+(require (lib "model-settings.ss" "stepper" "private"))
+(require (lib "class.ss"))
 (require (lib "etc.ss"))
 
 (load "/Users/clements/plt/tests/mzscheme/testing.ss")
 
 (SECTION 'stepper-reconstruct)
 
-(define collector%
-  (class 
-      
-      
-      
-; collect-in-pairs-maker : ((vector 'a 'a) -> 'b) -> (boolean 'a -> (union 'b void)) 
+; this following code is probably a good idea, but not right now. For now, I just want
+; to get the stepper working.
+
+;; a step-queue object collects steps that come from
+;; breakpoints, and sends them to the view in nice
+;; tidy little bundles
+;(define step-queue%
+;  (class object% ()
+;    
+;    (field (queue #f)) ; : (listof (list syntax symbol mark-list (listof TST)))
+;    
+;    ; : (syntax symbol mark-list (listof TST)) -> (void)
+;    ; effects: queue
+;    (define (add-step . args)
+;      (set! queue (append queue (list args)))
+;      (try-match))
+;
+;    ; ( -> (void))
+;    ; effects: queue
+;    ; take action based on the head of the queue
+;    (define (try-match)
+;      (unless (null? queue)
+;        (case (cadr (car queue))
+;          ((
+;      
+
+; collect-in-pairs-maker : ((list 'a 'a) -> 'b) -> (boolean 'a -> (union 'b void)) 
 (define (collect-in-pairs-maker action)
   (let ([stored-first #f]
         [have-first? #f])
@@ -29,32 +52,30 @@
             (set! stored-first #f)
             (set! have-first? #f)
             (if temp-have?
-                (action (vector temp-stored value))
+                (action (list temp-stored value))
                 (void)))))))
 
 (define t (collect-in-pairs-maker (lx _)))
 (test (void) t #f 'ahe)
 (test (void) t #t 13)
 (test (void) t #t 'apple)
-(test (vector 'apple 'banana) t #f 'banana)
+(test (list 'apple 'banana) t #f 'banana)
 (test (void) t #f 'oetu)
 
-(define (make-break num-steps expr action)
-  (let* ([counter num-steps]
-         [recon-call (lx (apply reconstruct:reconstruct-current _))]
+(define (make-break expr action)
+  (let* ([recon-call (lx (apply reconstruct:reconstruct-current _))]
          [pair-action (lambda (2-list)
-                        (if (> counter 0)
-                            (set! counter (- counter 1))
-                            (action (map recon-call 2-list))))]
+                        (apply action (map recon-call 2-list)))]
          [collector (collect-in-pairs-maker pair-action)])
     (lambda (mark-set key break-kind returned-value-list)
       (let ([mark-list (continuation-mark-set->list mark-set key)])
         (unless (reconstruct:skip-step? break-kind mark-list)
-          (let 
-          (collector 
-          (if (> counter 0)
-              (set! counter (- counter 1))
-              (action (reconstruct:reconstruct-current expr mark-list break-kind returned-value-list))))))))
+          (case break-kind
+            ((normal-break)
+             (collector #t (list expr mark-list break-kind returned-value-list)))
+            ((result-exp-break result-value-break)
+             (collector #f (list expr mark-list break-kind returned-value-list)))
+            (else (error 'break "unexpected break-kind: ~a" break-kind))))))))
 
 (define (string->stx-list stx)
   (let ([port (open-input-string stx)])
@@ -65,26 +86,26 @@
   
   
   
-(define (annotate-exprs stx num-steps action)
+(define (annotate-exprs stx action)
     (let loop ([env annotate:initial-env-package] [stx-list (string->stx-list stx)])
       (if (null? stx-list)
           null
-          (let*-values ([(break) (make-break num-steps (car stx-list) action)]
+          (let*-values ([(break) (make-break (car stx-list) action)]
                         [(annotated new-env)
                          (annotate:annotate (expand (car stx-list))
                                             env break 'foot-wrap)])
           (cons annotated (loop new-env (cdr stx-list)))))))
 
-(define (test-expr stx num-steps namespace)
+(define (test-sequence stx expected-queue namespace)
   (let/ec k
-    (parameterize ([current-namespace namespace])
-      (map eval (annotate-exprs stx num-steps k)))))
-
-(define (test-sequence source-list result-list namespace)
-  (for-each (lambda (result step-num)
-              (test result test-expr source-list step-num namespace))
-            result-list
-            (build-list (length result-list) (lambda (x) x))))
+    (let* ([action (lambda (before after)
+                     (test (car expected-queue) (lambda () before))
+                     (test (cadr expected-queue) (lambda () after))
+                     (set! expected-queue (cddr expected-queue))
+                     (when (null? expected-queue)
+                       (k (void))))])
+      (parameterize ([current-namespace namespace])
+        (map eval (annotate-exprs stx action))))))
 
 (define (namespace-rewrite-expr stx namespace)
   (parameterize ([current-namespace namespace])
@@ -99,22 +120,17 @@
   (namespace-attach-module mz-namespace 'mzscheme)
   (namespace-require '(lib "htdp-beginner.ss" "lang")))
 (define (test-beginner-sequence source-list result-list)
-  (test-sequence source-list result-list beginner-namespace))
-
-
-(test `((,highlight-placeholder) (+)) test-expr "+" 0 mz-namespace)
+  (set-fake-beginner-mode #t)
+  (test-sequence source-list result-list beginner-namespace)
+  (set-fake-beginner-mode #f))
 
 (test-mz-sequence "(+ 3 4)"
-                  `((((,highlight-placeholder 3 4)) (+))            
-                    (((,highlight-placeholder 3 4)) (+))
-                    ((,highlight-placeholder) ((+ 3 4)))
+                  `(((,highlight-placeholder) ((+ 3 4)))
                     ((,highlight-placeholder) (7))))
 
 (test-mz-sequence "((lambda (x) (+ x 3)) 4)"
                   `(((,highlight-placeholder) (((lambda (x) (+ x 3)) 4)))
                     ((,highlight-placeholder) ((+ 4 3)))
-                    (((,highlight-placeholder 4 3)) (+))
-                    (((,highlight-placeholder 4 3)) (+))
                     ((,highlight-placeholder) ((+ 4 3)))
                     ((,highlight-placeholder) (7))))
 
@@ -128,14 +144,10 @@
 
 ; 'begin' not yet supported by reconstruct
 ;(test-mz-sequence "((lambda (x) x) (begin (+ 3 4) (+ 4 5)"))
-;                  `((((begin (,highlight-placeholder 3 4) (+ 4 5))) (+))
-;                    (((begin (,highlight-placeholder 3 4) (+ 4 5))) (+))
-;                    (((begin ,highlight-placeholder (+ 4 5))) ((+ 3 4)))
+;                  `((((begin ,highlight-placeholder (+ 4 5))) ((+ 3 4)))
 ;                    (((begin ,highlight-placeholder (+ 4 5))) (7))
 ;                    ((,highlight-placeholder) ((begin 7 (+ 4 5))))
 ;                    ((,highlight-placeholder) ((+ 4 5)))
-;                    (((,highlight-placeholder 4 5)) (+))
-;                    (((,highlight-placeholder 4 5)) (+))
 ;                    ((,highlight-placeholder) ((+ 4 5)))
 ;                    ((,highlight-placeholder) (9))))
 
@@ -146,8 +158,6 @@
 (test-mz-sequence "((case-lambda ((a) 3) ((b c) (+ b c))) 5 6)"
                   `(((,highlight-placeholder) (((case-lambda ((a) 3) ((b c) (+ b c))) 5 6)))
                     ((,highlight-placeholder) ((+ 5 6)))
-                    (((,highlight-placeholder 5 6)) (+))
-                    (((,highlight-placeholder 5 6)) (+))
                     ((,highlight-placeholder) ((+ 5 6)))
                     ((,highlight-placeholder) (11))))
 
@@ -166,17 +176,11 @@
 ;                  `(((,highlight-placeholder) ((let-values ([(a) (+ 4 5)] [(b) (+ 9 20)]) (+ a b))) 
 ;                     (,highlight-placeholder ,highlight-placeholder ,highlight-placeholder) 
 ;                     ((define-values (a_0) (+ 4 5)) (define-values (b_1) (+ 9 20)) (begin (+ a_0 b_1))))
-;                    (((define-values (a_0) (,highlight-placeholder 4 5)) (define-values (b_1) (+ 9 20)) (begin (+ a_0 b_1))) (+))
-;                    (((define-values (a_0) (,highlight-placeholder 4 5)) (define-values (b_1) (+ 9 20)) (begin (+ a_0 b_1))) (+))
 ;                    (((define-values (a_0) ,highlight-placeholder) (define-values (b_1) (+ 9 20)) (begin (+ a_0 b_1))) ((+ 4 5)))
 ;                    (((define-values (a_0) ,highlight-placeholder) (define-values (b_1) (+ 9 20)) (begin (+ a_0 b_1))) (9))
-;                    (((define a_0 9) (define-values (b_1) (,highlight-placeholder 9 20)) (begin (+ a_0 b_1))) (+))
-;                    (((define a_0 9) (define-values (b_1) (,highlight-placeholder 9 20)) (begin (+ a_0 b_1))) (+))
 ;                    (((define a_0 9) (define-values (b_1) ,highlight-placeholder) (begin (+ a_0 b_1))) ((+ 9 20)))
 ;                    (((define a_0 9) (define-values (b_1) ,highlight-placeholder) (begin (+ a_0 b_1))) (29))
 ;                    (((define a_0 9) (define b_1 29)))
-;                    (((,highlight-placeholder a_0 b_1)) (+))
-;                    (((,highlight-placeholder a_0 b_1)) (+))
 ;                    (((+ ,highlight-placeholder b_1)) (a_0))
 ;                    (((+ ,highlight-placeholder b_1)) (9))
 ;                    (((+ 9 ,highlight-placeholder)) (b_1))
@@ -185,19 +189,10 @@
 ;                    ((,highlight-placeholder) (38))))
 
 (test-mz-sequence "((call/cc call/cc) (call/cc call/cc))"
-                  `(((((,highlight-placeholder call/cc) (call/cc call/cc))) (call/cc))
-                    ((((,highlight-placeholder call/cc) (call/cc call/cc))) (call-with-current-continuation))
-                    ((((call-with-current-continuation ,highlight-placeholder) (call/cc call/cc))) (call/cc))
-                    ((((call-with-current-continuation ,highlight-placeholder) (call/cc call/cc))) (call-with-current-continuation))
-                    (((,highlight-placeholder (call/cc call/cc))) ((call-with-current-continuation call-with-current-continuation)))
+                  `((((,highlight-placeholder (call/cc call/cc))) ((call-with-current-continuation call-with-current-continuation)))
                     (((,highlight-placeholder (call/cc call/cc))) ((lambda args ...)))
-                    ((((lambda args ...) (,highlight-placeholder call/cc))) (call/cc))
-                    ((((lambda args ...) (,highlight-placeholder call/cc))) (call-with-current-continuation))
-                    ((((lambda args ...) (call-with-current-continuation ,highlight-placeholder))) (call/cc))
-                    ((((lambda args ...) (call-with-current-continuation ,highlight-placeholder))) (call-with-current-continuation))
                     ((((lambda args ...) ,highlight-placeholder)) ((call-with-current-continuation call-with-current-continuation)))
-                    ((((lambda args ...) ,highlight-placeholder)) ((lambda args ...)))
-                    ((,highlight-placeholder) (((lambda args ...) (lambda args ...))))))
+                    ((((lambda args ...) ,highlight-placeholder)) ((lambda args ...)))))
 
 ;(test-mz-sequence '(begin (define g 3) g)
 ;                  `(((,highlight-placeholder) (g))
@@ -206,29 +201,19 @@
 ;(syntax-object->datum (cadr (annotate-expr test2 'mzscheme 0 (lambda (x) x))))
 
 (test-beginner-sequence "(if true 3 4)"
-                        `((((if ,highlight-placeholder 3 4)) (true))
-                          (((if ,highlight-placeholder 3 4)) (true))
-                          ((,highlight-placeholder) ((if true 3 4)))
+                        `(((,highlight-placeholder) ((if true 3 4)))
                           ((,highlight-placeholder) (3))))
 
 (test-beginner-sequence "(cond [false 4] [false 5] [true 3])"
-               `((((cond (,highlight-placeholder 4) (false 5) (true 3))) (false))
-                 (((cond (,highlight-placeholder 4) (false 5) (true 3))) (false))
-                 ((,highlight-placeholder) ((cond (false 4) (false 5) (true 3))))
+               `(((,highlight-placeholder) ((cond (false 4) (false 5) (true 3))))
                  ((,highlight-placeholder) ((cond (false 5) (true 3))))
-                 (((cond (,highlight-placeholder 5) (true 3))) (false))
-                 (((cond (,highlight-placeholder 5) (true 3))) (false))
                  ((,highlight-placeholder) ((cond (false 5) (true 3))))
                  ((,highlight-placeholder) ((cond (true 3))))
-                 (((cond (,highlight-placeholder 3))) (true))
-                 (((cond (,highlight-placeholder 3))) (true))
                  ((,highlight-placeholder) ((cond (true 3))))
                  ((,highlight-placeholder) (3))))
 
 (test-beginner-sequence "(cond [false 4] [else 9])"
-               `((((cond [,highlight-placeholder 4] [else 9])) (false))
-                 (((cond [,highlight-placeholder 4] [else 9])) (false))
-                 ((,highlight-placeholder) ((cond [false 4] [else 9])))
+               `(((,highlight-placeholder) ((cond [false 4] [else 9])))
                  ((,highlight-placeholder) (9))))
 
 (syntax-case (car (namespace-rewrite-expr "(or true false true)" beginner-namespace)) (let-values if)
@@ -239,24 +224,22 @@
      (test 'or-part syntax-e (syntax or-part-1))
      (test 'let-bound syntax-property (syntax or-part-1) 'stepper-binding-type))])
 
+(parameterize ([current-namespace beginner-namespace])
+  (syntax-object->datum (expand `(or false true false))))
+
 (test-beginner-sequence "(or false true false)"
-                        `((((or ,highlight-placeholder true false)) (false))
-                          (((or ,highlight-placeholder true false)) (false))
-                          ((,highlight-placeholder) ((or false true false)))
+                        `(((,highlight-placeholder) ((or false true false)))
                           ((,highlight-placeholder) ((or true false)))
-                          (((or ,highlight-placeholder false)) (true))
-                          (((or ,highlight-placeholder false)) (true))
                           ((,highlight-placeholder) ((or true false)))
                           ((,highlight-placeholder) (true))))
 
 (test-beginner-sequence "(and true false true)"
-                        `((((and ,highlight-placeholder false true)) (true))
-                          (((and ,highlight-placeholder false true)) (true))
-                          ((,highlight-placeholder) ((and true false true)))
+                        `(((,highlight-placeholder) ((and true false true)))
                           ((,highlight-placeholder) ((and false true)))
-                          (((and ,highlight-placeholder true)) (false))
-                          (((and ,highlight-placeholder true)) (false))
                           ((,highlight-placeholder) ((and false true)))
                           ((,highlight-placeholder) (false))))
 
+(test-beginner-sequence "(define a +) a"
+                        `(((,highlight-placeholder) (a))
+                          ((,highlight-placeholder) (+))))
 (report-errs)

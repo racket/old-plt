@@ -208,6 +208,7 @@
 	       (export (open ricedefs))))])
     (lambda ()
       (current-namespace namespace)
+      (eval `(#%define argv ,argv))
       (invoke-open-unit u@)
       (read-case-sensitive params:case-sensitive?)
       (current-prompt-read prompt-read)

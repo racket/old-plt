@@ -513,7 +513,8 @@ long wxMediaEdit::FindFirstVisiblePosition(wxMediaLine *line, wxSnip *snip)
   if (!snip)
     snip = line->snip;
 
-  p = startp = line->GetPosition();
+  startp = line->GetPosition();
+  p = startp;
   nextSnip = line->lastSnip->next;
 
   while (PTRNE(snip, nextSnip)) {
@@ -754,8 +755,9 @@ void wxMediaEdit::MakeOnlySnip(void)
 
   snips = new wxTextSnip();
   snips->style = styleList->FindNamedStyle(STD_STYLE);
-  if (!snips->style)
+  if (!snips->style) {
     snips->style = styleList->BasicStyle();
+  }
 #if CHECK_CONSISTENCY
   if (!snips->style)
     fprintf(stderr, "NULL style for STD_STYLE!\n");
@@ -832,11 +834,13 @@ void wxMediaEdit::DeleteSnip(wxSnip *snip)
 
 wxSnip *wxMediaEdit::SnipSetAdmin(wxSnip *snip, wxSnipAdmin *a)
 {
-  wxSnipAdmin *orig_admin = snip->GetAdmin();
+  wxSnipAdmin *orig_admin;
   long orig_count = snip->count;
   wxMediaLine *line = snip->line;
-
   Bool wl = writeLocked, fl = flowLocked;
+
+  orig_admin = snip->GetAdmin();
+
   readLocked = writeLocked = flowLocked = TRUE;
   snip->SetAdmin(a);
   readLocked = FALSE; writeLocked = wl; flowLocked = fl;
@@ -1068,8 +1072,9 @@ wxTextSnip *wxMediaEdit::InsertTextSnip(long start, wxStyle *style)
     styl = (style ? style : styleList->FindNamedStyle(STD_STYLE));
     snip->style = styl;
   }
-  if (!snip->style)
+  if (!snip->style) {
     snip->style = styleList->BasicStyle();
+  }
   rsnip = SnipSetAdmin(snip, snipAdmin);
   if (rsnip != snip) {
     /* Uh-oh. Resort to wxTextSnip() */
@@ -1077,8 +1082,9 @@ wxTextSnip *wxMediaEdit::InsertTextSnip(long start, wxStyle *style)
     snip = new wxTextSnip();
     styl = (style ? style : styleList->FindNamedStyle(STD_STYLE));
     snip->style = styl;
-    if (!snip->style)
+    if (!snip->style) {
       snip->style = styleList->BasicStyle();
+    }
     snip->SetAdmin(snipAdmin);
   }
   snip->count = 0;
@@ -1291,13 +1297,15 @@ Bool wxMediaEdit::GetSnipLocation(wxSnip *thesnip, float *x, float *y, Bool bott
 
   if (GetSnipPositionAndLocation(thesnip, NULL, x, y)) {
     if (bottomRight) {
-      wxDC *dc = admin->GetDC();
+      wxDC *dc;
       float w, h;
       
       Bool wl = writeLocked, fl = flowLocked;
       writeLocked = TRUE;
       flowLocked = TRUE;
       
+      dc = admin->GetDC();
+
       w = h = 0.0;
       thesnip->GetExtent(dc, *x, *y, &w, &h);
 
@@ -1838,9 +1846,11 @@ wxBitmap *wxMediaEdit::SetAutowrapBitmap(wxBitmap *bm)
 
   autoWrapBitmap = bm;
   oldWidth = wrapBitmapWidth;
-  if (autoWrapBitmap)
-    wrapBitmapWidth = autoWrapBitmap->GetWidth();
-  else
+  if (autoWrapBitmap) {
+    int bw;
+    bw = autoWrapBitmap->GetWidth();
+    wrapBitmapWidth = bw;
+  } else
     wrapBitmapWidth = 0;
 
   if (maxWidth > 0)
@@ -1921,7 +1931,11 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 #if ALLOW_X_STYLE_SELECTION
     outlineNonownerBrush = new wxBrush();
     outlineNonownerBrush->SetColour("BLACK");
-    outlineNonownerBrush->SetStipple(new wxBitmap(xpattern, 16, 16));
+    {
+      wxBitmap *bm;
+      bm = new wxBitmap(xpattern, 16, 16);
+      outlineNonownerBrush->SetStipple(bm);
+    }
     outlineNonownerBrush->SetStyle(wxXOR);
 #endif
     clearBrush = wxTheBrushList->FindOrCreateBrush("WHITE", wxSOLID);
@@ -1932,8 +1946,11 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
   line = lineRoot->FindLocation(starty);
 
   if (skipBox != this) {
-    wxPen *lsavePen = dc->GetPen();
-    wxBrush *lsaveBrush = dc->GetBrush();
+    wxPen *lsavePen;
+    wxBrush *lsaveBrush;
+
+    lsavePen = dc->GetPen();
+    lsaveBrush = dc->GetBrush();
 
     dc->SetBrush(clearBrush);
     dc->SetPen(outlinePen);
@@ -2092,14 +2109,17 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
       int h;
 
       if (autoWrapBitmap->Ok()) {
+	wxColour *osfg;
+
 	h = (int)autoWrapBitmap->GetHeight();
 	if (h > line->bottombase)
 	  h = (int)line->bottombase;
 
+	osfg = oldStyle->GetForeground();
 	dc->Blit(maxWidth + dx - 1, bottombase - h + dy, 
 		 wrapBitmapWidth, h,
 		 autoWrapBitmap, 0, 0,
-		 wxSOLID, oldStyle->GetForeground());
+		 wxSOLID, osfg);
       }
     }
 
@@ -2437,7 +2457,12 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
       lastDrawXSel = show_xsel;
       drawCachedInBitmap = TRUE;
     }
-    dc->Blit(left - x, top - y, width, height, offscreen->GetObject(), 0, 0, wxCOPY);
+
+    {
+      wxBitmap *bm;
+      bm = offscreen->GetObject();
+      dc->Blit(left - x, top - y, width, height, bm, 0, 0, wxCOPY);
+    }
 #ifndef EACH_BUFFER_OWN_OFFSCREEN
     offscreenInUse = FALSE;
     lastUsedOffscreen = this;

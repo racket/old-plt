@@ -679,7 +679,8 @@ void wxMediaSnipMediaAdmin::RestoreState(wxMSMA_SnipDrawState *saved)
 void wxMediaSnipMediaAdmin::GetView(float *x, float *y, float *w, float *h, 
 				    Bool full)
 {
-  wxSnipAdmin *sadmin = snip->GetAdmin();
+  wxSnipAdmin *sadmin;
+  sadmin = snip->GetAdmin();
 
   if (!sadmin) {
     if (x) *x = 0;
@@ -816,7 +817,8 @@ Bool wxMediaSnipMediaAdmin::DelayRefresh()
     return 1;
 
   if (sadmin->__type == wxTYPE_MEDIA_SNIP_ADMIN) {
-    wxMediaBuffer *b = ((wxStandardSnipAdmin *)sadmin)->GetMedia();
+    wxMediaBuffer *b;
+    b = ((wxStandardSnipAdmin *)sadmin)->GetMedia();
 
     return b->RefreshDelayed();
   } else

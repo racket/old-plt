@@ -226,7 +226,7 @@ static int run_from_cmd_line(int argc, char *argv[],
     if (!argv[0][1] || (argv[0][1] == '-' && argv[0][2])) {
       goto bad_switch;
     } else {
-      char *str;
+      char *str, *se;
       for (str = argv[0] + 1; *str; str++) {
 	switch (*str) {
 	case 'h':
@@ -289,7 +289,8 @@ static int run_from_cmd_line(int argc, char *argv[],
 	  }
 	  argv++;
 	  --argc;
-	  evals_and_loads[num_enl] = make_load_cd(argv[0]);
+	  se = make_load_cd(argv[0]);
+	  evals_and_loads[num_enl] = se;
 	  is_load[num_enl++] = 0;
 	  break;
 	case 'F':
@@ -304,7 +305,8 @@ static int run_from_cmd_line(int argc, char *argv[],
 	  while (argc > 1) {
 	    argv++;
 	    --argc;
-	    evals_and_loads[num_enl] = make_load_cd(argv[0]);
+	    se = make_load_cd(argv[0]);
+	    evals_and_loads[num_enl] = se;
 	    is_load[num_enl++] = 0;
 	  }
 	  break;
@@ -316,7 +318,8 @@ static int run_from_cmd_line(int argc, char *argv[],
 	  }
 	  argv++;
 	  --argc;
-	  evals_and_loads[num_enl] = make_require_lib(argv[0], "mzlib");
+	  se = make_require_lib(argv[0], "mzlib");
+	  evals_and_loads[num_enl] = se;
 	  is_load[num_enl++] = 0;
 	  break;
 	case 'L':
@@ -329,13 +332,15 @@ static int run_from_cmd_line(int argc, char *argv[],
 	  }
 	  argv++;
 	  --argc;
-	  evals_and_loads[num_enl] = make_require_lib(argv[0], argv[1]);
+	  se = make_require_lib(argv[0], argv[1]);
+	  evals_and_loads[num_enl] = se;
 	  argv++;
 	  --argc;
 	  is_load[num_enl++] = 0;
 	  break;
 	case 'w':
-	  evals_and_loads[num_enl] = make_require_lib("awk.ss", "mzlib");
+	  se = make_require_lib("awk.ss", "mzlib");
+	  evals_and_loads[num_enl] = se;
 	  is_load[num_enl++] = 0;
 	  break;
 	case 'q':
@@ -408,7 +413,9 @@ static int run_from_cmd_line(int argc, char *argv[],
 
   sch_argv = scheme_make_vector(argc, scheme_null);
   for (i = 0; i < argc; i++) {
-    SCHEME_VEC_ELS(sch_argv)[i] = scheme_make_string(argv[i]);
+    Scheme_Object *so;
+    so = scheme_make_string(argv[i]);
+    SCHEME_VEC_ELS(sch_argv)[i] = so;
   }
 
   scheme_add_global("argv", sch_argv, global_env);

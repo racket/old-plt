@@ -637,7 +637,9 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
 
   if (propogate)
     for (node = children.First(); node; node = node->Next()) {
-      ((wxStyle *)node->Data())->Update(NULL, NULL, TRUE, FALSE);
+      wxStyle *stl;
+      stl = (wxStyle *)node->Data(); 
+      stl->Update(NULL, NULL, TRUE, FALSE);
     }
 
   if (styleList) {
@@ -921,7 +923,8 @@ void wxStyleList::Copy(wxStyleList *other)
   Clear();
 
   for (node = other->First(); node; node = node->Next()) {
-    wxStyle *s = (wxStyle *)node->Data();
+    wxStyle *s;
+    s = (wxStyle *)node->Data();
     Convert(s);
   }
 }

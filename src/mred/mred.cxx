@@ -2247,13 +2247,34 @@ wxFrame *MrEdApp::OnInit(void)
 
   wxInitSnips(); /* and snip classes */
 
+#ifdef MZ_PRECISE_GC
+  /* FIXME: Need marker */
+  mmc = (MrEdContext *)GC_malloc_tagged(sizeof(MrEdContext));
+  mmc->type = mred_eventspace_type;
+#else
   mmc = new MrEdContext;
+#endif
   mred_main_context = mmc;
-  mmc->topLevelWindowList = new wxChildList();
-  mmc->snipClassList = wxMakeTheSnipClassList();
-  mmc->bufferDataClassList = wxMakeTheBufferDataClassList();
-
-  mmc->finalized = new MrEdFinalizedContext;
+  {
+    wxChildList *cl;
+    cl = new wxChildList();
+    mmc->topLevelWindowList = cl;
+  }
+  {
+    wxSnipClassList *scl;
+    scl = wxMakeTheSnipClassList();
+    mmc->snipClassList = scl;
+  }
+  {
+    wxBufferDataClassList *dcl;
+    dcl = wxMakeTheBufferDataClassList();
+    mmc->bufferDataClassList = dcl;
+  }
+  {
+    MrEdFinalizedContext *fc;
+    fc = new MrEdFinalizedContext;
+    mmc->finalized = fc;
+  }
 
   mred_only_context = mred_main_context;
 

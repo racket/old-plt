@@ -601,8 +601,11 @@ void wxMediaBuffer::InsertBox(int type)
 
   BeginEditSequence();
   snip->style = styleList->FindNamedStyle(STD_STYLE);
-  if (!snip->style)
-    snip->style = styleList->BasicStyle();
+  if (!snip->style) {
+    wxStyle *bs;
+    bs = styleList->BasicStyle();
+    snip->style = bs;
+  }
   Insert(snip);
   SetCaretOwner(snip);
   EndEditSequence();
@@ -802,7 +805,9 @@ Bool wxMediaBuffer::BeginWriteHeaderFooterToFile(wxMediaStreamOut *f,
 						 char *headerName,
 						 long *dataBuffer)
 {
-  *dataBuffer = f->Tell();
+  long db;
+  db = f->Tell();
+  *dataBuffer = db;
   f->PutFixed(0);
   f->Put(headerName);
 
@@ -1033,7 +1038,8 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
       return FALSE;
     if (len) {
       if (sclass) {
-	long start = f->Tell();
+	long start;
+	start = f->Tell();
 
 	if (len >= 0)
 	  f->SetBoundary(len);
@@ -1046,8 +1052,11 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
 	  if (snip->flags & wxSNIP_OWNED)
 	    snip->flags -= wxSNIP_OWNED;
 	  snip->style = styleList->MapIndexToStyle(styleIndex);
-	  if (!snip->style)
-	    snip->style = styleList->BasicStyle();
+	  if (!snip->style) {
+	    wxStyle *bs;
+	    bs = styleList->BasicStyle();
+	    snip->style = bs;
+	  }
 	  if (!ReadInsert(snip))
 	    return FALSE;
 	} else
@@ -1061,7 +1070,8 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
 	  SetSnipData(snip, data);
 
 	if (len >= 0) {
-	  long rcount = f->Tell() - start;
+	  long rcount;
+	  rcount = f->Tell() - start;
 	  if (rcount < len) {
 	    wxmeError("Warning: underread caused by file "
 		      "corruption or unknown internal error.");
@@ -1768,7 +1778,9 @@ void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
   copyingSelf = copyDepth + 1;
   if (bufferType == wxEDIT_BUFFER) {
     wxMediaEdit *e = (wxMediaEdit *)this;
-    e->Copy(TRUE, 0, 0, e->LastPosition());
+    int pos;
+    pos = e->LastPosition();
+    e->Copy(TRUE, 0, 0, pos);
   } else {
     wxMediaPasteboard *pb = (wxMediaPasteboard *)this;
     wxSnip *s;
@@ -1785,7 +1797,9 @@ void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
     }
     pb->Copy(TRUE, 0);
     for (n = unselect->First(); n; n = n->Next()) {
-      pb->RemoveSelected((wxSnip *)n->Data());
+      wSnip *snp;
+      snp = (wxSnip *)n->Data();
+      pb->RemoveSelected(snp);
     }
     EndEditSequence();
   }
@@ -1798,14 +1812,17 @@ void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
   node = copySnips->First();
   node2 = copySnips2->First();
   for (; node; node = node->Next(), node2 = node2->Next()) {
-    wxSnip *s = (wxSnip *)node->Data();
+    wxSnip *s;
+    wxBufferData *bfd;
+    s = (wxSnip *)node->Data();
     if (m->bufferType == wxEDIT_BUFFER)
       m->Insert(s);
     else {
       wxMediaPasteboard *pb = (wxMediaPasteboard *)m;
       pb->Insert(s, s); /* before itself -> at end */
     }
-    m->SetSnipData(s, (wxBufferData *)node2->Data());
+    bfd = (wxBufferData *)node2->Data();
+    m->SetSnipData(s, bfd);
   }
 
   /* Don't delete the snips themselves, though */
@@ -1814,10 +1831,17 @@ void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
 
   m->SizeCacheInvalid();
 
-  m->SetMinWidth(GetMinWidth());
-  m->SetMaxWidth(GetMaxWidth());
-  m->SetMinHeight(GetMinHeight());
-  m->SetMaxHeight(GetMaxHeight());
+  {
+    float mw, mh;
+    mw = GetMinWidth();
+    m->SetMinWidth(mw);
+    mw = GetMaxWidth();
+    m->SetMaxWidth(mw);
+    mh = GetMinHeight();
+    m->SetMinHeight(mh);
+    mh = GetMaxHeight();
+    m->SetMaxHeight(mh);
+  }
  
   f = GetFilename(&t);
   m->SetFilename(f, t);
@@ -2222,7 +2246,8 @@ void wxStandardSnipAdmin::GetViewSize(float *w, float *h)
 
 void wxStandardSnipAdmin::GetView(float *x, float *y, float *w, float *h, wxSnip *snip)
 {
-  wxMediaAdmin *admin = media->GetAdmin();
+  wxMediaAdmin *admin;
+  admin = media->GetAdmin();
     
   if (snip) {
     if (admin) {

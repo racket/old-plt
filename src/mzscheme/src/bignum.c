@@ -114,10 +114,15 @@ Scheme_Object *scheme_make_bignum(long v)
     return scheme_make_small_bignum(v, r);
   } else {
     Small_Bignum *o;
-    int bad_neg;
+    int bad_neg = 0;
 
-    if ((bad_neg = (v != -(-v))))
+    /* There's one negative number in twos complement without a
+       positive counterpart. In fact, if you take the negative of that
+       number, you get back the same number: */
+    if (v && (v == -v)) {
+      bad_neg = 1;
       v++;
+    }
 
     o = (Small_Bignum *)scheme_malloc_tagged(sizeof(Small_Bignum) + sizeof(bigdig));
     o->o.type = scheme_bignum_type;

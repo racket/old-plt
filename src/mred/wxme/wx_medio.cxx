@@ -476,7 +476,11 @@ void wxMediaStreamIn::SetBoundary(long n)
     delete[] old;
   }
 
-  boundaries[boundcount++] = f->Tell() + n;
+  {
+    long m;
+    m = f->Tell() + n;
+    boundaries[boundcount++] = m;
+  }
 }
 
 void wxMediaStreamIn::RemoveBoundary()

@@ -604,7 +604,8 @@ int wxKeymap::GetBestScore(long code, Bool shift, Bool ctrl,
     s = -1;
 
   for (i = 0; i < chainCount; i++) {
-    int r = chainTo[i]->GetBestScore(code, shift, ctrl, alt, meta);
+    int r;
+    r = chainTo[i]->GetBestScore(code, shift, ctrl, alt, meta);
     if (r > s)
       s = r;
   }
@@ -654,7 +655,8 @@ int wxKeymap::OtherHandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent *event,
   int i, result = 0;
   
   for (i = 0; i < chainCount; i++) {
-    int r = chainTo[i]->ChainHandleKeyEvent(media, event, grab, grabData, try_state, score);
+    int r;
+    r = chainTo[i]->ChainHandleKeyEvent(media, event, grab, grabData, try_state, score);
     if (r > 0) {
       Reset();
       return r;
@@ -791,7 +793,8 @@ int wxKeymap::OtherHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent *event,
   int i, result = 0;
   
   for (i = 0; i < chainCount; i++) {
-    int r = chainTo[i]->ChainHandleMouseEvent(media, event, grab, grabData, try_state, score);
+    int r;
+    r = chainTo[i]->ChainHandleMouseEvent(media, event, grab, grabData, try_state, score);
     if (r > 0) {
       Reset();
       return r;

@@ -602,9 +602,11 @@ void wxTextSnip::GetExtent(wxDC *dc,
     if ((flags & wxSNIP_INVISIBLE) || !count 
 	|| (count == 1 && text[0] == '\n')
 	|| (count == 1 && text[0] == '\t')) {
-      if (count == 1 && text[0] == '\t')
-	w = style->GetTextWidth(dc);
-      else
+      if (count == 1 && text[0] == '\t') {
+	float tw;
+	tw = style->GetTextWidth(dc);
+	w = tw;
+      } else
 	w = 0;
     } else {
       GetTextExtent(dc, count, &w);
@@ -613,12 +615,21 @@ void wxTextSnip::GetExtent(wxDC *dc,
 
   if (wo)
     *wo = w;
-  if (ho)
-    *ho = style->GetTextHeight(dc);
-  if (dso)
-    *dso = style->GetTextDescent(dc);
-  if (so)
-    *so = style->GetTextSpace(dc);
+  if (ho) {
+    float th;
+    th = style->GetTextHeight(dc);
+    *ho = th;
+  }
+  if (dso) {
+    int td;
+    td = style->GetTextDescent(dc);
+    *dso = td;
+  }
+  if (so) {
+    float ts;
+    ts = style->GetTextSpace(dc);
+    *so = ts;
+  }
   if (ls)
     *ls = 0.0;
   if (rs)
@@ -696,8 +707,10 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
 
 #ifdef wx_x
   if (style->GetUnderlined()) {
-    float descent = style->GetTextDescent(dc);
-    float h = style->GetTextHeight(dc);
+    float descent, h;
+    
+    descent = style->GetTextDescent(dc);
+    h = style->GetTextHeight(dc);
     
     if (descent >= 2)
       y += h - (descent / 2);
@@ -979,8 +992,10 @@ void wxTabSnip::GetExtent(wxDC *dc,
     if ((*admin_ptr) && (media = (*admin_ptr)->GetMedia()) && (media->bufferType == wxEDIT_BUFFER)) {
       float space;
       Bool units;
+      wxMediaEdit *edt;
 
-      tabs = ((wxMediaEdit *)(*admin_ptr)->GetMedia())->GetTabs(&n, &space, &units);
+      edt = (wxMediaEdit *)(*admin_ptr)->GetMedia();
+      tabs = edt->GetTabs(&n, &space, &units);
       tabspace = space;
       mult = units ? 1 : w;
     } else {
@@ -1186,13 +1201,17 @@ void wxImageSnip::GetExtent(wxDC *,
 {
   if (contentsChanged) {
     if (bm && bm->Ok()) {
-      if (viewh < 0)
-	h = bm->GetHeight();
-      else
+      if (viewh < 0) {
+	int bmh;
+	bmh = bm->GetHeight();
+	h = bmh;
+      } else
 	h = viewh;
-      if (vieww < 0)
-	w = bm->GetWidth();
-      else
+      if (vieww < 0) {
+	int bmw;
+	bmw = bm->GetWidth();
+	w = bmw;
+      } else
 	w = vieww;
     } else {
       h = w = 0;

@@ -1164,8 +1164,9 @@ void wxMediaPasteboard::_ChangeStyle(wxStyle *style, wxStyleDelta *delta,
     rec->AddStyleChange(snip, snip->style);
     if (style)
       snip->style = style;
-    else
+    else {
       snip->style = styleList->FindOrCreateStyle(snip->style, delta);
+    }
     snip->SizeCacheInvalid();
     UpdateSnip(snip);
     didit = TRUE;
@@ -1176,9 +1177,10 @@ void wxMediaPasteboard::_ChangeStyle(wxStyle *style, wxStyleDelta *delta,
 	rec->AddStyleChange(loc->snip, loc->snip->style);
 	if (style)
 	  loc->snip->style = style;
-	else
+	else {
 	  loc->snip->style = styleList->FindOrCreateStyle(loc->snip->style, 
 							  delta);
+	}
 	loc->snip->SizeCacheInvalid();
 	loc->needResize = TRUE;
 	needResize = TRUE;
@@ -1348,7 +1350,8 @@ void wxMediaPasteboard::SetAfter(wxSnip *snip, wxSnip *after)
 
 wxSnip *wxMediaPasteboard::SnipSetAdmin(wxSnip *snip, wxSnipAdmin *a)
 {
-  wxSnipAdmin *orig_admin = snip->GetAdmin();
+  wxSnipAdmin *orig_admin;
+  orig_admin = snip->GetAdmin();
 
   /* Lock during SetAdmin! */
   snip->SetAdmin(a);
@@ -1511,8 +1514,11 @@ void wxMediaPasteboard::Draw(wxDC *dc, float dx, float dy,
   dcb = dcy + ch;
 
   if (skipBox != this) {
-    wxPen *savePen = dc->GetPen();
-    wxBrush *saveBrush = dc->GetBrush();
+    wxPen *savePen;
+    wxBrush *saveBrush;
+
+    savePen = dc->GetPen();
+    saveBrush = dc->GetBrush();
 
     dc->SetBrush(whiteBrush);
     dc->SetPen(invisiPen);
@@ -1649,7 +1655,11 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
 #endif
 
     Draw(offscreen, -localx, -localy, localx, localy, w, h, show_caret);
-    dc->Blit(localx - dx, localy - dy, w, h, offscreen->GetObject(), 0, 0, wxCOPY);
+    {
+      wxBitmap *bm;
+      bm = offscreen->GetObject();
+      dc->Blit(localx - dx, localy - dy, w, h, bm, 0, 0, wxCOPY);
+    }
 
 #ifndef EACH_BUFFER_OWN_OFFSCREEN
     offscreenInUse = FALSE;
@@ -1838,7 +1848,8 @@ void wxMediaPasteboard::UpdateLocation(wxSnipLocation *loc)
 {
   if (admin) {
     if (loc->needResize) {
-      wxDC *dc = admin->GetDC();
+      wxDC *dc;
+      dc = admin->GetDC();
       if (dc)
 	loc->Resize(dc);
       /* otherwise, still need resize... */
@@ -2329,8 +2340,9 @@ void wxMediaPasteboard::InsertPasteString(char *str)
 
   snip = new wxTextSnip();
   snip->style = styleList->FindNamedStyle(STD_STYLE);
-  if (!snip->style)
+  if (!snip->style) {
     snip->style = styleList->BasicStyle();
+  }
   snip->Insert(str, strlen(str));
   
   InsertPasteSnip(snip, NULL);

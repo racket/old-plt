@@ -27,7 +27,7 @@
 	  ((reference-unit/sig "cunit.ss")
 	   mred mzlib unit frame)]
 	[parameters : drscheme:parameters^
-		    ((reference-unit/sig "params.ss") mred unit rep)])
+		    ((reference-unit/sig "params.ss") mred unit frame rep)])
   (export (unit frame)
 	  (unit unit)
 	  (unit compound-unit)

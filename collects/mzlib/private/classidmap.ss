@@ -17,6 +17,13 @@
     (let ([this-id (syntax-local-value the-finder)])
       (datum->syntax-object this-id name src)))
 
+  ;; Help Desk binding info:
+  (define (binding from to stx)
+    (syntax-property
+     stx
+     'bound-in-source
+     (cons from (syntax-local-introduce to))))
+
 
   (define (make-this-map the-finder the-obj)
     (let ([set!-stx (datum->syntax-object the-finder 'set!)])
@@ -33,29 +40,35 @@
 	     stx)]
 	   [id (find the-finder the-obj stx)])))))
 
-  (define (make-field-map the-finder the-obj field-accessor field-mutator)
+  (define (make-field-map the-finder the-obj the-binder field-accessor field-mutator)
     (let ([set!-stx (datum->syntax-object the-finder 'set!)])
       (make-set!-transformer
        (lambda (stx)
 	 (syntax-case stx ()
 	   [(set! id expr)
 	    (module-identifier=? (syntax set!) set!-stx)
-	    (datum->syntax-object 
-	     the-finder
-	     (list field-mutator (find the-finder the-obj stx) (syntax expr))
-	     stx)]
+	    (binding
+	     the-binder (syntax id)
+	     (datum->syntax-object 
+	      the-finder
+	      (list field-mutator (find the-finder the-obj stx) (syntax expr))
+	      stx))]
 	   [(id . args)
-	    (datum->syntax-object 
-	     the-finder
-	     (cons (list field-accessor (find the-finder the-obj stx)) (syntax args))
-	     stx)]
+	    (binding
+	     the-binder (syntax id)
+	     (datum->syntax-object 
+	      the-finder
+	      (cons (list field-accessor (find the-finder the-obj stx)) (syntax args))
+	      stx))]
 	   [_else
-	    (datum->syntax-object 
-	     the-finder
-	     (list field-accessor (find the-finder the-obj stx))
-	     stx)])))))
+	    (binding
+	     the-binder stx
+	     (datum->syntax-object 
+	      the-finder
+	      (list field-accessor (find the-finder the-obj stx))
+	      stx))])))))
 
-  (define (make-method-map the-finder the-obj method-accessor)
+  (define (make-method-map the-finder the-obj the-binder method-accessor)
     (let ([set!-stx (datum->syntax-object the-finder 'set!)])
       (make-set!-transformer
        (lambda (stx)
@@ -64,13 +77,15 @@
 	    (module-identifier=? (syntax set!) set!-stx)
 	    (raise-syntax-error 'class "cannot mutate method" stx)]
 	   [(id . args)
-	    (datum->syntax-object 
-	     the-finder
-	     (make-method-apply
-	      (list method-accessor (find the-finder the-obj stx))
-	      (find the-finder the-obj stx)
-	      (syntax args))
-	     stx)]
+	    (binding
+	     the-binder (syntax id)
+	     (datum->syntax-object 
+	      the-finder
+	      (make-method-apply
+	       (list method-accessor (find the-finder the-obj stx))
+	       (find the-finder the-obj stx)
+	       (syntax args))
+	      stx))]
 	   [_else
 	    (raise-syntax-error 
 	     'class 
@@ -79,7 +94,7 @@
 
   ;; For methods that are dirrectly available via their names
   ;;  (e.g., private methods)
-  (define (make-direct-method-map the-finder the-obj new-name)
+  (define (make-direct-method-map the-finder the-obj the-binder new-name)
     (let ([set!-stx (datum->syntax-object the-finder 'set!)])
       (make-set!-transformer
        (lambda (stx)
@@ -88,17 +103,19 @@
 	    (module-identifier=? (syntax set!) set!-stx)
 	    (raise-syntax-error 'class "cannot mutate method" stx)]
 	   [(id . args)
-	    (datum->syntax-object 
-	     the-finder
-	     (make-method-apply (find the-finder new-name stx) (find the-finder the-obj stx) (syntax args))
-	     stx)]
+	    (binding
+	     the-binder (syntax id)
+	     (datum->syntax-object 
+	      the-finder
+	      (make-method-apply (find the-finder new-name stx) (find the-finder the-obj stx) (syntax args))
+	      stx))]
 	   [_else
 	    (raise-syntax-error 
 	     'class 
 	     "misuse of method (not in application)" 
 	     stx)])))))
 
-  (define (make-rename-map the-finder the-obj rename-temp)
+  (define (make-rename-map the-finder the-obj the-binder rename-temp)
     (let ([set!-stx (datum->syntax-object the-finder 'set!)])
       (make-set!-transformer
        (lambda (stx)
@@ -107,10 +124,12 @@
 	    (module-identifier=? (syntax set!) set!-stx)
 	    (raise-syntax-error 'class "cannot mutate super method" stx)]
 	   [(id . args)
-	    (datum->syntax-object 
-	     the-finder
-	     (make-method-apply (find the-finder rename-temp stx) (find the-finder the-obj stx) (syntax args))
-	     stx)]
+	    (binding
+	     the-binder (syntax id)
+	     (datum->syntax-object 
+	      the-finder
+	      (make-method-apply (find the-finder rename-temp stx) (find the-finder the-obj stx) (syntax args))
+	      stx))]
 	   [_else
 	    (raise-syntax-error 
 	     'class 

@@ -456,6 +456,7 @@
 								     (syntax (old-id (make-direct-method-map 
 										      (quote-syntax the-finder)
 										      (quote the-obj)
+										      (quote-syntax old-id)
 										      (quote new-id))))))
 								 ids new-ids)
 								null)]
@@ -703,27 +704,33 @@
 						       (quote the-obj))
 					(make-field-map (quote-syntax the-finder)
 							(quote the-obj)
+							(quote-syntax all-field)
 							(quote-syntax field-accessor)
 							(quote-syntax field-mutator))
 					...
 					(make-rename-map (quote-syntax the-finder)
 							 (quote the-obj)
+							 (quote-syntax rename-orig)
 							 (quote rename-temp))
 					...
 					(make-method-map (quote-syntax the-finder)
 							 (quote the-obj)
+							 (quote-syntax method-name)
 							 (quote-syntax method-accessor))
 					...
 					(make-direct-method-map (quote-syntax the-finder)
 								(quote the-obj)
+								(quote-syntax private-name)
 								(quote private-temp))
 					...
 					(make-direct-method-map (quote-syntax the-finder)
 								(quote the-obj)
+								(quote-syntax public-final-name)
 								(quote public-final-temp))
 					...
 					(make-direct-method-map (quote-syntax the-finder)
 								(quote the-obj)
+								(quote-syntax override-final-name)
 								(quote override-final-temp))
 					...)])))]
 				 [extra-init-mappings

@@ -298,7 +298,8 @@
 							    (lambda (varloc)
 							      (with-syntax ([(var loc) varloc])
 								(syntax
-								 (make-id-mapper (quote-syntax (unbox loc))))))
+								 (make-id-mapper (quote-syntax (unbox loc))
+										 (quote-syntax var)))))
 							    varlocs)])
 					      (syntax
 					       ([vars (values . rhss)]))))]

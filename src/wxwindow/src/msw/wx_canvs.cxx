@@ -96,6 +96,8 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
 
   if (wxSubType(parent->__type, wxTYPE_PANEL))
     ((wxPanel *)parent)->AdvanceCursor(this);
+  else
+    InitEnable();
 
   if (style & wxGL_CONTEXT) {
     m_wxglc = new wxGLContext(this);

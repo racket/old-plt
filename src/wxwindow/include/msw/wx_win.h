@@ -111,6 +111,8 @@ class wxWindow: public wxbWindow
   virtual Bool PreOnChar(wxWindow *, wxKeyEvent *);
 
   virtual wxWindow *FindFocusWindow();
+
+  void InitEnable();
 };
 
 // Window specific (so far)

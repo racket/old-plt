@@ -139,6 +139,8 @@ Bool wxPanel::Create(wxWindow *parent, int x, int y, int width, int height, long
 
   if (wxSubType(parent->__type, wxTYPE_PANEL))
     ((wxPanel *)parent)->AdvanceCursor(this);
+  else
+    InitEnable();
 
   return TRUE;
 }
@@ -265,7 +267,9 @@ void wxPanel::RealAdvanceCursor(void)
 // Update next cursor position
 void wxPanel::AdvanceCursor(wxWindow *item)
 {
-   last_created = item;
+  item->InitEnable();
+
+  last_created = item;
 }
 
 // If x or y are not specified (i.e. < 0), supply

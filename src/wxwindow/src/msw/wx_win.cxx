@@ -328,6 +328,14 @@ void wxWindow::InternalGrayChildren(Bool gray)
   }
 }
 
+void wxWindow::InitEnable()
+{
+  wxWindow *p;
+  p = GetParent();
+  if (!p->winEnabled || p->internal_gray_disabled)
+    InternalEnable(FALSE, TRUE);
+}
+
 void wxWindow::CaptureMouse(void)
 {
   HWND hWnd = GetHWND();

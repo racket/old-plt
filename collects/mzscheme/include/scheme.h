@@ -1,10 +1,11 @@
 /*
   MzScheme
-  Copyright (c) 1995 Matthew Flatt
+  Copyright (c) 1995-2000 Matthew Flatt
   All rights reserved.
 
   Please see the full copyright in the documentation.
 
+  Originally based on:
   libscheme
   Copyright (c) 1994 Brent Benson
   All rights reserved.
@@ -13,19 +14,28 @@
 #ifndef SCHEME_H
 #define SCHEME_H
 
-#if defined(__MWERKS__)
-# ifdef MZSCHEME_USES_NEAR_GLOBALS
-#  pragma far_data off
-# endif
-#endif
-
 /* The next line is used and set during installation: */
 #define INCLUDE_WITHOUT_PATHS
+
+/*========================================================================*/
+/*                           configuration                                */
+/*========================================================================*/
+
+/* The configuration is not intended to be adjusted here. Instead,
+   modify sconfig.h. The code below simply draws a few more
+   configuration conclusions and a few extra macros based on those
+   settings. */
 
 #ifdef INCLUDE_WITHOUT_PATHS
 # include "sconfig.h"
 #else
 # include "../sconfig.h"
+#endif
+
+#if defined(__MWERKS__)
+# ifdef MZSCHEME_USES_NEAR_GLOBALS
+#  pragma far_data off
+# endif
 #endif
 
 #define AGRESSIVE_ZERO_FOR_GC
@@ -60,15 +70,8 @@
 #endif
 
 #ifdef PALMOS_STUFF
-#include <Pilot.h>
+#include <PalmOS.h>
 #endif
-
-#include <stdio.h>
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stddef.h>
 
 #ifndef SCHEME_DIRECT_EMBEDDED
 # define SCHEME_DIRECT_EMBEDDED 1
@@ -84,59 +87,32 @@
 # define MZ_SIGSET(s, f) sigset(s, f)
 #endif
 
+#include <stdio.h>
+#include <setjmp.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" 
 {
 #endif
 
+/*========================================================================*/
+/*                        basic Scheme values                             */
+/*========================================================================*/
+
 typedef short Scheme_Type;
 
-typedef struct Scheme_Bucket
-{
-  Scheme_Type type;
-  void *val;
-  char *key;
-} Scheme_Bucket;
+/* MzScheme values have the type `Scheme_Object *'.
+   The actual Scheme_Object structure only defines a few variants.
+   The important thing is that all `Scheme_Object *'s start with
+   a Scheme_Type field.
 
-typedef struct Scheme_Hash_Table
-{
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
-  int size, count, step;
-  Scheme_Bucket **buckets;
-  char has_constants, forever, weak;
-  void (*make_hash_indices)(void *v, long *h1, long *h2);
-  int (*compare)(void *v1, void *v2);
-#ifdef MZ_REAL_THREADS
-  void *mutex;
-#endif
-} Scheme_Hash_Table;
-
-/* Hash tablekey types, used with scheme_hash_table */
-enum {
-  SCHEME_hash_string,
-  SCHEME_hash_ptr,
-  SCHEME_hash_weak_ptr
-};
-
-typedef struct Scheme_Env
-{
-  Scheme_Type type; /* scheme_namespace_type */
-  short no_keywords; /* only low-bit used; rest is hash key for precise gc */
-  Scheme_Hash_Table *globals;
-  Scheme_Hash_Table *loaded_libraries;
-  struct Scheme_Comp_Env *init; /* initial compilation environment */
-} Scheme_Env;
-
-typedef struct Scheme_Object *
-(Scheme_Prim)(int argc, struct Scheme_Object *argv[]);
-
-typedef struct Scheme_Object *
-(Scheme_Closed_Prim)(void *d, int argc, struct Scheme_Object *argv[]);
-
-typedef struct Scheme_Object *
-(Scheme_Method_Prim)(struct Scheme_Object *o, 
-		     int argc, struct Scheme_Object *argv[]);
+   The structures are defined here, instead of in a private header, so
+   that macros can provide quick access. Of course, don't access the
+   fields of these structures directly; use the macros instead. */
 
 typedef struct Scheme_Object
 {
@@ -157,16 +133,13 @@ typedef struct Scheme_Object
       struct { int int1; int int2; } two_int_val;
       struct { void *ptr; int pint; } ptr_int_val;
       struct { void *ptr; long pint; } ptr_long_val;
-      struct {
-	Scheme_Closed_Prim *f;
-	void *d; } clsd_prim_val;
       struct { struct Scheme_Object *car, *cdr; } pair_val;
       struct { struct Scheme_Env *env; struct Scheme_Object *code; } closure_val;
       struct { short len; short *vec; } svector_val;
-      struct Scheme_Debugging_Info *debug_val;
     } u;
 } Scheme_Object;
 
+/* Scheme_Small_Object is used for several types of MzScheme values: */
 typedef struct {
   Scheme_Type type;
   MZ_HASH_KEY_EX
@@ -175,10 +148,10 @@ typedef struct {
     Scheme_Object *ptr_value;
     long int_val;
     Scheme_Object *ptr_val;
-    Scheme_Prim *prim_val;
   } u;
 } Scheme_Small_Object;  
 
+/* A floating-point number: */
 typedef struct {
   Scheme_Type type;
   MZ_HASH_KEY_EX
@@ -193,6 +166,172 @@ typedef struct {
 } Scheme_Float;
 #endif
 
+typedef struct Scheme_Symbol {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  int len;
+  char s[1];
+} Scheme_Symbol;
+
+typedef struct Scheme_Vector {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  int size;
+  Scheme_Object *els[1];
+} Scheme_Vector;
+
+
+/* This file defines all the built-in types */
+#ifdef INCLUDE_WITHOUT_PATHS
+# include "stypes.h"
+#else
+# include "../src/stypes.h"
+#endif
+
+
+#define SAME_PTR(a, b) ((a) == (b))
+#define NOT_SAME_PTR(a, b) ((a) != (b))
+
+#define SAME_OBJ(a, b) SAME_PTR(a, b)
+#define NOT_SAME_OBJ(a, b) NOT_SAME_PTR(a, b)
+
+#define SAME_TYPE(a, b) ((Scheme_Type)(a) == (Scheme_Type)(b))
+#define NOT_SAME_TYPE(a, b) ((Scheme_Type)(a) != (Scheme_Type)(b))
+
+# define SCHEME_TYPE(obj)     (SCHEME_INTP(obj)?(Scheme_Type)scheme_integer_type:(obj)->type)
+# define _SCHEME_TYPE(obj) ((obj)->type) /* unsafe version */
+
+/*========================================================================*/
+/*                        basic Scheme predicates                         */
+/*========================================================================*/
+
+#define SCHEME_CHARP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_char_type)
+
+#define SCHEME_INTP(obj)     (((long)obj) & 0x1)
+#define SCHEME_DBLP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_double_type)
+#ifdef MZ_USE_SINGLE_FLOATS
+# define SCHEME_FLTP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_float_type)
+# define SCHEME_FLOATP(obj)     (SCHEME_FLTP(obj) || SCHEME_DBLP(obj))
+#else
+# define SCHEME_FLTP SCHEME_DBLP
+# define SCHEME_FLOATP SCHEME_DBLP
+#endif
+#define SCHEME_BIGNUMP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_bignum_type)
+#define SCHEME_RATIONALP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_rational_type)
+#define SCHEME_COMPLEXP(obj)     (!SCHEME_INTP(obj) && ((_SCHEME_TYPE(obj) >= scheme_complex_izi_type) && (_SCHEME_TYPE(obj) <= scheme_complex_type)))
+#define SCHEME_COMPLEX_IZIP(obj)     (SCHEME_TYPE(obj) == scheme_complex_izi_type)
+#define SCHEME_EXACT_INTEGERP(obj)  (SCHEME_INTP(obj) || (_SCHEME_TYPE(obj) == scheme_bignum_type))
+#define SCHEME_EXACT_REALP(obj)  (SCHEME_INTP(obj) || (_SCHEME_TYPE(obj) == scheme_bignum_type) || (_SCHEME_TYPE(obj) == scheme_rational_type))
+#define SCHEME_REALP(obj)  (SCHEME_INTP(obj) || ((_SCHEME_TYPE(obj) >= scheme_bignum_type) && (_SCHEME_TYPE(obj) <= scheme_complex_izi_type)))
+#define SCHEME_NUMBERP(obj)  (SCHEME_INTP(obj) || ((_SCHEME_TYPE(obj) >= scheme_bignum_type) && (_SCHEME_TYPE(obj) <= scheme_complex_type)))
+
+#define SCHEME_STRINGP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_string_type)
+#define SCHEME_MUTABLE_STRINGP(obj)  (SCHEME_STRINGP(obj) && !((obj)->keyex & 0x1))
+#define SCHEME_SYMBOLP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_symbol_type)
+
+#define SCHEME_BOOLP(obj)    (SAME_OBJ(obj, scheme_true) || SAME_OBJ(obj, scheme_false))
+#define SCHEME_FALSEP(obj)     SAME_OBJ((obj), scheme_false)
+#define SCHEME_TRUEP(obj)     (!SCHEME_FALSEP(obj))
+#define SCHEME_EOFP(obj)     SAME_OBJ((obj), scheme_eof)
+#define SCHEME_VOIDP(obj)     SAME_OBJ((obj), scheme_void)
+
+#define SCHEME_NULLP(obj)    SAME_OBJ(obj, scheme_null)
+#define SCHEME_PAIRP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_pair_type)
+#define SCHEME_MUTABLE_PAIRP(obj)    (SCHEME_PAIRP(obj) && !((obj)->keyex & 0x1))
+#define SCHEME_LISTP(obj)    (SCHEME_NULLP(obj) || SCHEME_PAIRP(obj))
+
+#define SCHEME_BOXP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_box_type)
+
+#define SCHEME_HASHTP(obj) SAME_TYPE(SCHEME_TYPE(obj),scheme_hash_table_type)
+
+#define SCHEME_VECTORP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_vector_type)
+
+#define SCHEME_STRUCTP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type)
+#define SCHEME_STRUCT_TYPEP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_struct_type_type)
+
+#define SCHEME_INPORTP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_input_port_type)
+#define SCHEME_OUTPORTP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_output_port_type)
+
+#define SCHEME_PROMP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_promise_type)
+
+#define SCHEME_PROCESSP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_process_type)
+#define SCHEME_MANAGERP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_manager_type)
+#define SCHEME_SEMAP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_sema_type)
+
+
+#define SCHEME_CONFIGP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_config_type)
+#define SCHEME_NAMESPACEP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_namespace_type)
+#define SCHEME_WEAKP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_weak_box_type)
+
+
+/*========================================================================*/
+/*                        basic Scheme accessors                          */
+/*========================================================================*/
+
+#define SCHEME_CHAR_VAL(obj) (((Scheme_Small_Object *)(obj))->u.char_val)
+#define SCHEME_INT_VAL(obj)  (((long)(obj))>>1)
+#define SCHEME_DBL_VAL(obj)  (((Scheme_Double *)(obj))->double_val)
+#ifdef MZ_USE_SINGLE_FLOATS
+# define SCHEME_FLT_VAL(obj)  (((Scheme_Float *)(obj))->float_val)
+# define SCHEME_FLOAT_VAL(obj) (SCHEME_DBLP(obj) ? SCHEME_DBL_VAL(obj) : SCHEME_FLT_VAL(obj))
+#else
+# define SCHEME_FLT_VAL SCHEME_DBL_VAL
+# define SCHEME_FLOAT_VAL SCHEME_DBL_VAL
+#endif
+
+#define SCHEME_STR_VAL(obj)  ((obj)->u.str_val.string_val)
+#define SCHEME_STRTAG_VAL(obj)  ((obj)->u.str_val.tag_val)
+#define SCHEME_STRLEN_VAL(obj)  ((obj)->u.str_val.tag_val)
+#define SCHEME_SYM_VAL(obj)  (((Scheme_Symbol *)(obj))->s)
+#define SCHEME_SYM_LEN(obj)  (((Scheme_Symbol *)(obj))->len)
+
+#define SCHEME_BOX_VAL(obj)  (((Scheme_Small_Object *)(obj))->u.ptr_val)
+
+#define SCHEME_CAR(obj)      ((obj)->u.pair_val.car)
+#define SCHEME_CDR(obj)      ((obj)->u.pair_val.cdr)
+
+#define SCHEME_CADR(obj)     (SCHEME_CAR (SCHEME_CDR (obj)))
+#define SCHEME_CAAR(obj)     (SCHEME_CAR (SCHEME_CAR (obj)))
+#define SCHEME_CDDR(obj)     (SCHEME_CDR (SCHEME_CDR (obj)))
+
+#define SCHEME_VEC_SIZE(obj) (((Scheme_Vector *)(obj))->size)
+#define SCHEME_VEC_ELS(obj)  (((Scheme_Vector *)(obj))->els)
+#define SCHEME_VEC_BASE(obj) SCHEME_VEC_ELS(obj)
+
+#ifdef MZ_PRECISE_GC
+# define SCHEME_ENVBOX_VAL(obj)  SCHEME_PTR_VAL(obj)
+#else
+# define SCHEME_ENVBOX_VAL(obj)  (*((Scheme_Object **)(obj)))
+#endif
+#define SCHEME_WEAK_BOX_VAL(obj) SCHEME_BOX_VAL(obj) 
+
+#define SCHEME_PTR_VAL(obj)  (((Scheme_Small_Object *)(obj))->u.ptr_val)
+#define SCHEME_PTR1_VAL(obj) ((obj)->u.two_ptr_val.ptr1)
+#define SCHEME_PTR2_VAL(obj) ((obj)->u.two_ptr_val.ptr2)
+#define SCHEME_IPTR_VAL(obj) ((obj)->u.ptr_int_val.ptr)
+#define SCHEME_LPTR_VAL(obj) ((obj)->u.ptr_long_val.ptr)
+#define SCHEME_INT1_VAL(obj) ((obj)->u.two_int_val.int1)
+#define SCHEME_INT2_VAL(obj) ((obj)->u.two_int_val.int2)
+#define SCHEME_PINT_VAL(obj) ((obj)->u.ptr_int_val.pint)
+#define SCHEME_PLONG_VAL(obj) ((obj)->u.ptr_long_val.pint)
+
+
+#define SCHEME_SET_STRING_IMMUTABLE(obj)  (((obj)->keyex |= 0x1))
+#define SCHEME_SET_PAIR_IMMUTABLE(obj)  (((obj)->keyex |= 0x1))
+
+/*========================================================================*/
+/*               fast basic Scheme constructor macros                     */
+/*========================================================================*/
+
+#define scheme_make_integer(i) ((Scheme_Object *)((((long)i) << 1) | 0x1))
+#define scheme_make_character(ch) (scheme_char_constants[(unsigned char)(ch)])
+
+/*========================================================================*/
+/*                          procedure values                              */
+/*========================================================================*/
+
+/* Constants for flags in Scheme_Primitive_[Closed]_Proc.
+   Do not use them directly. */
 #define SCHEME_PRIM_IS_FOLDING 1
 #define SCHEME_PRIM_IS_PRIMITIVE 2
 #define SCHEME_PRIM_IS_STRUCT_PROC 4
@@ -204,6 +343,16 @@ typedef struct {
 #define SCHEME_PRIM_IS_MULTI_RESULT 256
 #define SCHEME_PRIM_IS_GENERIC 512
 #define SCHEME_PRIM_IS_USER_PARAMETER 1024
+
+typedef struct Scheme_Object *
+(Scheme_Prim)(int argc, struct Scheme_Object *argv[]);
+
+typedef struct Scheme_Object *
+(Scheme_Closed_Prim)(void *d, int argc, struct Scheme_Object *argv[]);
+
+typedef struct Scheme_Object *
+(Scheme_Method_Prim)(struct Scheme_Object *o, 
+		     int argc, struct Scheme_Object *argv[]);
 
 typedef struct {
   Scheme_Type type;
@@ -257,116 +406,73 @@ typedef struct {
    (rec)->cases = cses, \
    rec)
 
-typedef struct Scheme_Symbol {
+#define SCHEME_PROCP(obj)    (SCHEME_PRIMP(obj) || SCHEME_CLSD_PRIMP(obj) || SCHEME_CLOSUREP(obj) || SCHEME_CONTP(obj) || SCHEME_ECONTP(obj))
+#define SCHEME_SYNTAXP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_syntax_compiler_type)
+#define SCHEME_PRIMP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_prim_type)
+#define SCHEME_CLSD_PRIMP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_closed_prim_type)
+#define SCHEME_CONTP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_cont_type)
+#define SCHEME_ECONTP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_escaping_cont_type)
+#define SCHEME_STRUCT_PROCP(obj) (SCHEME_CLSD_PRIMP(obj) && (((Scheme_Closed_Primitive_Proc *)obj)->flags & SCHEME_PRIM_IS_STRUCT_PROC))
+#define SCHEME_GENERICP(obj) (SCHEME_CLSD_PRIMP(obj) && (((Scheme_Closed_Primitive_Proc *)obj)->flags & SCHEME_PRIM_IS_GENERIC))
+#define SCHEME_CLOSUREP(obj) (SAME_TYPE(SCHEME_TYPE(obj), scheme_closure_type) || SAME_TYPE(SCHEME_TYPE(obj), scheme_linked_closure_type) || SAME_TYPE(SCHEME_TYPE(obj), scheme_case_closure_type))
+
+#define SCHEME_PRIM(obj)     (((Scheme_Primitive_Proc *)(obj))->prim_val)
+#define SCHEME_CLSD_PRIM(obj) (((Scheme_Closed_Primitive_Proc *)(obj))->prim_val)
+#define SCHEME_CLSD_PRIM_DATA(obj) (((Scheme_Closed_Primitive_Proc *)(obj))->data)
+#define SCHEME_CLOS_ENV(obj) ((obj)->u.closure_val.env)
+#define SCHEME_CLOS_CODE(obj) ((obj)->u.closure_val.code)
+
+/* Type readers & writers for compiled code data */
+typedef Scheme_Object *(*Scheme_Type_Reader)(Scheme_Object *list);
+typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
+
+
+/*========================================================================*/
+/*                      hash tables and environments                      */
+/*========================================================================*/
+
+typedef struct Scheme_Bucket
+{
   Scheme_Type type;
-  MZ_HASH_KEY_EX
-  int len;
-  char s[1];
-} Scheme_Symbol;
+  void *val;
+  char *key;
+} Scheme_Bucket;
 
-typedef struct Scheme_Vector {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
-  int size;
-  Scheme_Object *els[1];
-} Scheme_Vector;
-
-typedef void Scheme_Close_Manager_Client(Scheme_Object *o, void *data);
-#ifdef MZ_PRECISE_GC
-typedef struct Scheme_Object Scheme_Manager_Reference;
-#else
-typedef struct Scheme_Manager *Scheme_Manager_Reference;
-#endif
-
-typedef struct Scheme_Manager {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
-  int count, alloc;
-  Scheme_Object ***boxes;
-  Scheme_Manager_Reference **mrefs;
-  Scheme_Close_Manager_Client **closers;
-  void **data;
-
-  /* weak indirections: */
-  Scheme_Manager_Reference *parent;
-  Scheme_Manager_Reference *sibling;
-  Scheme_Manager_Reference *children;
-} Scheme_Manager;
-
-typedef struct Scheme_Input_Port
+typedef struct Scheme_Hash_Table
 {
   Scheme_Type type;
   MZ_HASH_KEY_EX
-  short closed;
-  Scheme_Object *sub_type;
-  Scheme_Manager_Reference *mref;
-  void *port_data;
-  int (*getc_fun) (struct Scheme_Input_Port *port);
-  int (*peekc_fun) (struct Scheme_Input_Port *port);
-  int (*char_ready_fun) (struct Scheme_Input_Port *port);
-  void (*close_fun) (struct Scheme_Input_Port *port);
-  void (*need_wakeup_fun)(struct Scheme_Input_Port *, void *);
-  Scheme_Object *read_handler;
-  char *name;
-  unsigned char *ungotten;
-  int ungotten_count, ungotten_allocated;
-  long position, lineNumber, charsSinceNewline;
-  int eoffound;
+  int size, count, step;
+  Scheme_Bucket **buckets;
+  char has_constants, forever, weak;
+  void (*make_hash_indices)(void *v, long *h1, long *h2);
+  int (*compare)(void *v1, void *v2);
 #ifdef MZ_REAL_THREADS
-  Scheme_Object *sema;
+  void *mutex;
 #endif
-} Scheme_Input_Port;
+} Scheme_Hash_Table;
 
-typedef struct Scheme_Output_Port
+/* Hash tablekey types, used with scheme_hash_table */
+enum {
+  SCHEME_hash_string,
+  SCHEME_hash_ptr,
+  SCHEME_hash_weak_ptr
+};
+
+typedef struct Scheme_Env
 {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
-  short closed;
-  Scheme_Object *sub_type;
-  Scheme_Manager_Reference *mref;
-  void *port_data;
-  void (*write_string_fun)(char *str, long len, struct Scheme_Output_Port *);
-  void (*close_fun) (struct Scheme_Output_Port *);
-  long pos;
-  Scheme_Object *display_handler;
-  Scheme_Object *write_handler;
-  Scheme_Object *print_handler;
-#ifdef MZ_REAL_THREADS
-  Scheme_Object *sema;
-#endif
-} Scheme_Output_Port;
+  Scheme_Type type; /* scheme_namespace_type */
+  short no_keywords; /* only low-bit used; rest is hash key for precise gc */
+  Scheme_Hash_Table *globals;
+  Scheme_Hash_Table *loaded_libraries;
+  struct Scheme_Comp_Env *init; /* initial compilation environment */
+} Scheme_Env;
 
-typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
-  struct Scheme_Object *sclass;
-  /* The following fields are only here for instances of classes
-     created with scheme_make_class(): */
-  void *primdata;
-  short primflag;
-  short inited;
-} Scheme_Class_Object;
+#define SCHEME_VAR_BUCKET(obj) ((Scheme_Bucket *)(obj))
 
-typedef struct Scheme_Unit {
-  Scheme_Type type;        /* scheme_unit_type */
-  MZ_HASH_KEY_EX
-  short num_imports;       /* num expected import args */
-  short num_exports;       /* num exported vars */
-  Scheme_Object **exports; /* names of exported */
-  Scheme_Object **export_debug_names; /* internal names; NULL => no debugging */
-  Scheme_Object *(*init_func)(Scheme_Object **boxes, Scheme_Object **anchors,
-			      struct Scheme_Unit *m,
-			      void *debug_request);
-  Scheme_Object *data;
-} Scheme_Unit;
-
-typedef void Scheme_Instance_Init_Proc(Scheme_Object **init_boxes,
-				       Scheme_Object **extract_boxes,
-				       Scheme_Object *super_init,
-				       int argc,
-				       Scheme_Object **argv,
-				       Scheme_Object *instance,
-				       void *data);
+/*========================================================================*/
+/*                    setjmpup (continuation) support                     */
+/*========================================================================*/
 
 #ifdef USE_MZ_SETJMP
 typedef long mz_jmp_buf[8];
@@ -387,79 +493,6 @@ typedef struct Scheme_Jumpup_Buf {
 #endif
 } Scheme_Jumpup_Buf;
 
-enum {
-  MZCONFIG_ENV,
-  MZCONFIG_INPUT_PORT,
-  MZCONFIG_OUTPUT_PORT,
-  MZCONFIG_ERROR_PORT,
-
-  MZCONFIG_ENABLE_BREAK,
-
-  MZCONFIG_ERROR_DISPLAY_HANDLER,
-  MZCONFIG_ERROR_PRINT_VALUE_HANDLER,
-
-  MZCONFIG_EXIT_HANDLER,
-
-  MZCONFIG_EXN_HANDLER,
-  MZCONFIG_INIT_EXN_HANDLER,
-
-  MZCONFIG_EVAL_HANDLER,
-  MZCONFIG_LOAD_HANDLER,
-
-  MZCONFIG_PRINT_HANDLER,
-  MZCONFIG_PROMPT_READ_HANDLER,
-
-  MZCONFIG_CAN_READ_GRAPH,
-  MZCONFIG_CAN_READ_COMPILED,
-  MZCONFIG_CAN_READ_BOX,
-  MZCONFIG_CAN_READ_PIPE_QUOTE,
-  MZCONFIG_READ_DECIMAL_INEXACT,
-
-  MZCONFIG_PRINT_GRAPH,
-  MZCONFIG_PRINT_STRUCT,
-  MZCONFIG_PRINT_BOX,
-  MZCONFIG_PRINT_VEC_SHORTHAND,
-
-  MZCONFIG_CASE_SENS,
-  MZCONFIG_SQUARE_BRACKETS_ARE_PARENS,
-  MZCONFIG_CURLY_BRACES_ARE_PARENS,
-
-  MZCONFIG_ERROR_PRINT_WIDTH,
-
-  MZCONFIG_ERROR_ESCAPE_HANDLER,
-
-  MZCONFIG_ALLOW_SET_UNDEFINED,
-  MZCONFIG_COND_AUTO_ELSE,
-
-  MZCONFIG_MANAGER,
-
-  MZCONFIG_USE_COMPILED_KIND,
-
-  MZCONFIG_LOAD_DIRECTORY,
-
-  MZCONFIG_COLLECTION_PATHS,
-
-  MZCONFIG_PORT_PRINT_HANDLER,
-
-  MZCONFIG_REQUIRE_COLLECTION,
-
-  MZCONFIG_LOAD_EXTENSION_HANDLER,
-
-  MZCONFIG_CURRENT_DIRECTORY,
-
-  MZCONFIG_RANDOM_STATE,
-
-  __MZCONFIG_BUILTIN_COUNT__
-};
-
-
-typedef struct Scheme_Config {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
-  Scheme_Hash_Table *extensions;
-  Scheme_Object *configs[1];
-} Scheme_Config;
-
 typedef struct Scheme_Continuation_Jump_State {
   struct Scheme_Escaping_Cont *jumping_to_continuation;
   union {
@@ -470,14 +503,30 @@ typedef struct Scheme_Continuation_Jump_State {
   short is_kill;
 } Scheme_Continuation_Jump_State;
 
-
-#define scheme_set_param(c, pos, o) ((c)->configs[pos] = (o))
-#define scheme_get_param(c, pos) ((c)->configs[pos])
-
 /* Although it's really an integer, it seems beneficial to declare the
    mark position counter as a poiner, perhaps due to locality effects. */
 #define MZ_MARK_POS_TYPE char*
 #define MZ_MARK_STACK_TYPE char*
+
+typedef struct Scheme_Cont_Frame_Data {
+  MZ_MARK_POS_TYPE cont_mark_pos;
+  MZ_MARK_STACK_TYPE cont_mark_stack;
+} Scheme_Cont_Frame_Data;
+
+/*========================================================================*/
+/*                              threads                                   */
+/*========================================================================*/
+
+typedef void Scheme_Close_Manager_Client(Scheme_Object *o, void *data);
+#ifdef MZ_PRECISE_GC
+typedef struct Scheme_Object Scheme_Manager_Reference;
+#else
+typedef struct Scheme_Manager *Scheme_Manager_Reference;
+#endif
+
+typedef struct Scheme_Manager Scheme_Manager;
+
+/* The Scheme_Process structure represents a MzScheme thread. */
 
 typedef struct Scheme_Process {
   Scheme_Type type;
@@ -489,7 +538,7 @@ typedef struct Scheme_Process {
   mz_jmp_buf error_buf;
   Scheme_Continuation_Jump_State cjs;
 
-  Scheme_Config *config;
+  struct Scheme_Config *config;
 
   Scheme_Object **runstack;
   Scheme_Object **runstack_start;
@@ -602,6 +651,8 @@ typedef struct Scheme_Process {
 
   long block_start_sleep;
 
+  int eof_on_error; /* For port operations */
+
 #ifdef AGRESSIVE_ZERO_TB
   int tail_buffer_set;
 #endif
@@ -621,21 +672,203 @@ typedef struct Scheme_Process {
   Scheme_Manager_Reference *mref;
 } Scheme_Process;
 
-typedef struct Scheme_Cont_Frame_Data {
-  MZ_MARK_POS_TYPE cont_mark_pos;
-  MZ_MARK_STACK_TYPE cont_mark_stack;
-} Scheme_Cont_Frame_Data;
-
-/* Type readers & writers for compiled code data */
-typedef Scheme_Object *(*Scheme_Type_Reader)(Scheme_Object *list);
-typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
-
-/* This file defines all the built-in types */
-#ifdef INCLUDE_WITHOUT_PATHS
-# include "stypes.h"
-#else
-# include "../src/stypes.h"
+#if !SCHEME_DIRECT_EMBEDDED
+# ifdef MZ_REAL_THREADS
+#  define scheme_current_process (scheme_get_current_process())
+# else
+#  ifdef LINK_EXTENSIONS_BY_TABLE
+#   define scheme_current_process (*scheme_current_process_ptr)
+#  endif
+# endif
 #endif
+
+/*========================================================================*/
+/*                             parameters                                 */
+/*========================================================================*/
+
+enum {
+  MZCONFIG_ENV,
+  MZCONFIG_INPUT_PORT,
+  MZCONFIG_OUTPUT_PORT,
+  MZCONFIG_ERROR_PORT,
+
+  MZCONFIG_ENABLE_BREAK,
+
+  MZCONFIG_ERROR_DISPLAY_HANDLER,
+  MZCONFIG_ERROR_PRINT_VALUE_HANDLER,
+
+  MZCONFIG_EXIT_HANDLER,
+
+  MZCONFIG_EXN_HANDLER,
+  MZCONFIG_INIT_EXN_HANDLER,
+
+  MZCONFIG_EVAL_HANDLER,
+  MZCONFIG_LOAD_HANDLER,
+
+  MZCONFIG_PRINT_HANDLER,
+  MZCONFIG_PROMPT_READ_HANDLER,
+
+  MZCONFIG_CAN_READ_GRAPH,
+  MZCONFIG_CAN_READ_COMPILED,
+  MZCONFIG_CAN_READ_BOX,
+  MZCONFIG_CAN_READ_PIPE_QUOTE,
+  MZCONFIG_READ_DECIMAL_INEXACT,
+
+  MZCONFIG_PRINT_GRAPH,
+  MZCONFIG_PRINT_STRUCT,
+  MZCONFIG_PRINT_BOX,
+  MZCONFIG_PRINT_VEC_SHORTHAND,
+
+  MZCONFIG_CASE_SENS,
+  MZCONFIG_SQUARE_BRACKETS_ARE_PARENS,
+  MZCONFIG_CURLY_BRACES_ARE_PARENS,
+
+  MZCONFIG_ERROR_PRINT_WIDTH,
+
+  MZCONFIG_ERROR_ESCAPE_HANDLER,
+
+  MZCONFIG_ALLOW_SET_UNDEFINED,
+  MZCONFIG_COND_AUTO_ELSE,
+
+  MZCONFIG_MANAGER,
+
+  MZCONFIG_USE_COMPILED_KIND,
+
+  MZCONFIG_LOAD_DIRECTORY,
+
+  MZCONFIG_COLLECTION_PATHS,
+
+  MZCONFIG_PORT_PRINT_HANDLER,
+
+  MZCONFIG_REQUIRE_COLLECTION,
+
+  MZCONFIG_LOAD_EXTENSION_HANDLER,
+
+  MZCONFIG_CURRENT_DIRECTORY,
+
+  MZCONFIG_RANDOM_STATE,
+
+  __MZCONFIG_BUILTIN_COUNT__
+};
+
+
+typedef struct Scheme_Config {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  Scheme_Hash_Table *extensions;
+  Scheme_Object *configs[1];
+} Scheme_Config;
+
+#define scheme_set_param(c, pos, o) ((c)->configs[pos] = (o))
+#define scheme_get_param(c, pos) ((c)->configs[pos])
+
+/*========================================================================*/
+/*                                  ports                                 */
+/*========================================================================*/
+
+typedef struct Scheme_Input_Port
+{
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  short closed;
+  Scheme_Object *sub_type;
+  Scheme_Manager_Reference *mref;
+  void *port_data;
+  int (*getc_fun) (struct Scheme_Input_Port *port);
+  int (*peekc_fun) (struct Scheme_Input_Port *port);
+  int (*char_ready_fun) (struct Scheme_Input_Port *port);
+  void (*close_fun) (struct Scheme_Input_Port *port);
+  void (*need_wakeup_fun)(struct Scheme_Input_Port *, void *);
+  Scheme_Object *read_handler;
+  char *name;
+  unsigned char *ungotten;
+  int ungotten_count, ungotten_allocated;
+  long position, lineNumber, charsSinceNewline;
+  int eoffound;
+#ifdef MZ_REAL_THREADS
+  Scheme_Object *sema;
+#endif
+} Scheme_Input_Port;
+
+typedef struct Scheme_Output_Port
+{
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  short closed;
+  Scheme_Object *sub_type;
+  Scheme_Manager_Reference *mref;
+  void *port_data;
+  void (*write_string_fun)(char *str, long len, struct Scheme_Output_Port *);
+  void (*close_fun) (struct Scheme_Output_Port *);
+  long pos;
+  Scheme_Object *display_handler;
+  Scheme_Object *write_handler;
+  Scheme_Object *print_handler;
+#ifdef MZ_REAL_THREADS
+  Scheme_Object *sema;
+#endif
+} Scheme_Output_Port;
+
+#define SCHEME_INPORT_VAL(obj) (((Scheme_Input_Port *)(obj))->port_data)
+#define SCHEME_OUTPORT_VAL(obj) (((Scheme_Output_Port *)(obj))->port_data)
+#define SCHEME_IPORT_NAME(obj) (((Scheme_Input_Port *)obj)->name)
+
+/*========================================================================*/
+/*                         classes and units                              */
+/*========================================================================*/
+
+typedef struct {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  struct Scheme_Object *sclass;
+  /* The following fields are only here for instances of classes
+     created with scheme_make_class(): */
+  void *primdata;
+  short primflag;
+  short inited;
+} Scheme_Class_Object;
+
+#define SCHEME_OBJP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
+#define SCHEME_CLASSP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_class_type)
+#define SCHEME_INTERFACEP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_interface_type)
+#define SCHEME_DIVARP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_delayed_ivar_type)
+#define SCHEME_GENDATAP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_generic_data_type)
+#define SCHEME_UNITP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_unit_type)
+
+#define SCHEME_OBJ_CLASS(obj) ((Scheme_Object *)((Scheme_Class_Object *)(obj))->sclass)
+#define SCHEME_OBJ_DATA(obj)  (((Scheme_Class_Object *)(obj))->primdata)
+#define SCHEME_OBJ_FLAG(obj)  (((Scheme_Class_Object *)(obj))->primflag)
+
+/*========================================================================*/
+/*                             units                                      */
+/*========================================================================*/
+
+typedef struct Scheme_Unit {
+  Scheme_Type type;        /* scheme_unit_type */
+  MZ_HASH_KEY_EX
+  short num_imports;       /* num expected import args */
+  short num_exports;       /* num exported vars */
+  Scheme_Object **exports; /* names of exported */
+  Scheme_Object **export_debug_names; /* internal names; NULL => no debugging */
+  Scheme_Object *(*init_func)(Scheme_Object **boxes, Scheme_Object **anchors,
+			      struct Scheme_Unit *m,
+			      void *debug_request);
+  Scheme_Object *data;
+} Scheme_Unit;
+
+typedef void Scheme_Instance_Init_Proc(Scheme_Object **init_boxes,
+				       Scheme_Object **extract_boxes,
+				       Scheme_Object *super_init,
+				       int argc,
+				       Scheme_Object **argv,
+				       Scheme_Object *instance,
+				       void *data);
+
+#define SCHEME_UNITP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_unit_type)
+
+/*========================================================================*/
+/*                              exceptions                                */
+/*========================================================================*/
 
 /* This file includes the MZEXN constants */
 #ifdef INCLUDE_WITHOUT_PATHS
@@ -644,31 +877,9 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 # include "../src/schexn.h"
 #endif
 
-#if defined(DETECT_WIN32_CONSOLE_STDIN) || defined(WINDOWS_PROCESSES)
-# ifndef NO_STDIO_THREADS
-#  define USE_FAR_MZ_FDCALLS
-# endif
-#endif
-#ifdef USE_DYNAMIC_FDSET_SIZE
-# define USE_FAR_MZ_FDCALLS
-#endif
-#ifdef USE_BEOS_PORT_THREADS
-# define USE_FAR_MZ_FDCALLS
-#endif
-
-#ifdef USE_FAR_MZ_FDCALLS
-# define MZ_GET_FDSET(p, n) scheme_get_fdset(p, n)
-# define MZ_FD_ZERO(p) scheme_fdzero(p)
-# define MZ_FD_SET(n, p) scheme_fdset(p, n)
-# define MZ_FD_CLR(n, p) scheme_fdclr(p, n)
-# define MZ_FD_ISSET(n, p) scheme_fdisset(p, n)
-#else
-# define MZ_GET_FDSET(p, n) ((void *)(((fd_set *)p) + n))
-# define MZ_FD_ZERO(p) FD_ZERO(p)
-# define MZ_FD_SET(n, p) FD_SET(n, p)
-# define MZ_FD_CLR(n, p) FD_CLR(n, p)
-# define MZ_FD_ISSET(n, p) FD_ISSET(n, p)
-#endif
+/*========================================================================*/
+/*                               evaluation                               */
+/*========================================================================*/
 
 /* Exploit the fact that these should never be dereferenced: */
 #ifndef FIRST_TWO_BYTES_ARE_LEGAL_ADDRESSES
@@ -687,83 +898,7 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 # define SCHEME_MULTIPLE_VALUES scheme_multiple_values
 #endif
 
-#define FAST_NUMBERS /* Force fast numbers */
-
-/* Value-access macros */
-#ifdef FAST_NUMBERS
-# define SCHEME_TYPE(obj)     (SCHEME_INTP(obj)?(Scheme_Type)scheme_integer_type:(obj)->type)
-# define _SCHEME_TYPE(obj) ((obj)->type) /* unsafe version */
-#else
-# define SCHEME_TYPE(obj)     ((obj)->type)
-# define _SCHEME_TYPE SCHEME_TYPE
-#endif
-
-
-#define SCHEME_CHAR_VAL(obj) (((Scheme_Small_Object *)(obj))->u.char_val)
-#ifdef FAST_NUMBERS
-# define SCHEME_INT_VAL(obj)  (((long)(obj))>>1)
-#else
-# define SCHEME_INT_VAL(obj)  (((Scheme_Small_Object *)(obj))->u.int_val)
-#endif
-#define SCHEME_DBL_VAL(obj)  (((Scheme_Double *)(obj))->double_val)
-#ifdef MZ_USE_SINGLE_FLOATS
-# define SCHEME_FLT_VAL(obj)  (((Scheme_Float *)(obj))->float_val)
-# define SCHEME_FLOAT_VAL(obj) (SCHEME_DBLP(obj) ? SCHEME_DBL_VAL(obj) : SCHEME_FLT_VAL(obj))
-#else
-# define SCHEME_FLT_VAL SCHEME_DBL_VAL
-# define SCHEME_FLOAT_VAL SCHEME_DBL_VAL
-#endif
-#define SCHEME_STR_VAL(obj)  ((obj)->u.str_val.string_val)
-#define SCHEME_STRTAG_VAL(obj)  ((obj)->u.str_val.tag_val)
-#define SCHEME_STRLEN_VAL(obj)  ((obj)->u.str_val.tag_val)
-#define SCHEME_SYM_VAL(obj)  (((Scheme_Symbol *)(obj))->s)
-#define SCHEME_SYM_LEN(obj)  (((Scheme_Symbol *)(obj))->len)
-#define SCHEME_TSYM_VAL(obj)  (SCHEME_SYM_VAL(SCHEME_PTR_VAL(obj)))
-#define SCHEME_BOX_VAL(obj)  (((Scheme_Small_Object *)(obj))->u.ptr_val)
-#define SCHEME_PTR_VAL(obj)  (((Scheme_Small_Object *)(obj))->u.ptr_val)
-#define SCHEME_PTR1_VAL(obj) ((obj)->u.two_ptr_val.ptr1)
-#define SCHEME_PTR2_VAL(obj) ((obj)->u.two_ptr_val.ptr2)
-#define SCHEME_IPTR_VAL(obj) ((obj)->u.ptr_int_val.ptr)
-#define SCHEME_LPTR_VAL(obj) ((obj)->u.ptr_long_val.ptr)
-#define SCHEME_INT1_VAL(obj) ((obj)->u.two_int_val.int1)
-#define SCHEME_INT2_VAL(obj) ((obj)->u.two_int_val.int2)
-#define SCHEME_PINT_VAL(obj) ((obj)->u.ptr_int_val.pint)
-#define SCHEME_PLONG_VAL(obj) ((obj)->u.ptr_long_val.pint)
-#define SCHEME_PRIM(obj)     (((Scheme_Primitive_Proc *)(obj))->prim_val)
-#define SCHEME_CLSD_PRIM(obj) (((Scheme_Closed_Primitive_Proc *)(obj))->prim_val)
-#define SCHEME_CLSD_PRIM_DATA(obj) (((Scheme_Closed_Primitive_Proc *)(obj))->data)
-#define SCHEME_CAR(obj)      ((obj)->u.pair_val.car)
-#define SCHEME_CDR(obj)      ((obj)->u.pair_val.cdr)
-#define SCHEME_VEC_SIZE(obj) (((Scheme_Vector *)(obj))->size)
-#define SCHEME_VEC_ELS(obj)  (((Scheme_Vector *)(obj))->els)
-#define SCHEME_VEC_BASE   SCHEME_VEC_ELS
-#define SCHEME_CLOS_ENV(obj) ((obj)->u.closure_val.env)
-#define SCHEME_CLOS_CODE(obj) ((obj)->u.closure_val.code)
-#define SCHEME_DEBUG(obj)    ((obj)->u.debug_val)
-#define SCHEME_OBJ_CLASS(obj) ((Scheme_Object *)((Scheme_Class_Object *)(obj))->sclass)
-#define SCHEME_OBJ_DATA(obj)  (((Scheme_Class_Object *)(obj))->primdata)
-#define SCHEME_OBJ_FLAG(obj)  (((Scheme_Class_Object *)(obj))->primflag)
-#define SCHEME_INPORT_VAL(obj) (((Scheme_Input_Port *)(obj))->port_data)
-#define SCHEME_OUTPORT_VAL(obj) (((Scheme_Output_Port *)(obj))->port_data)
-#define SCHEME_VAR_BUCKET(obj) ((Scheme_Bucket *)(obj))
-#ifdef MZ_PRECISE_GC
-# define SCHEME_ENVBOX_VAL(obj)  SCHEME_PTR_VAL(obj)
-#else
-# define SCHEME_ENVBOX_VAL(obj)  (*((Scheme_Object **)(obj)))
-#endif
-#define SCHEME_WEAK_BOX_VAL(obj) SCHEME_BOX_VAL(obj) 
-
 #define SCHEME_ASSERT(expr,msg) ((expr) ? 1 : (scheme_signal_error(msg), 0))
-
-#if !SCHEME_DIRECT_EMBEDDED
-# ifdef MZ_REAL_THREADS
-#  define scheme_current_process (scheme_get_current_process())
-# else
-#  ifdef LINK_EXTENSIONS_BY_TABLE
-#   define scheme_current_process (*scheme_current_process_ptr)
-#  endif
-# endif
-#endif
 
 #define scheme_eval_wait_expr (scheme_current_process->ku.eval.wait_expr)
 #define scheme_tail_rator (scheme_current_process->ku.apply.tail_rator)
@@ -864,6 +999,20 @@ extern Scheme_Object *scheme_eval_waiting;
 
 #define scheme_break_waiting(p) (p->external_break)
 
+#ifndef USE_MZ_SETJMP
+# ifdef JMP_BUF_IS_JMPBUF
+#  define scheme_longjmp(b, v) longjmp(&b, v)
+#  define scheme_setjmp(b) setjmp(&b)
+# else
+#  define scheme_longjmp(b, v) longjmp(b, v)
+#  define scheme_setjmp(b) setjmp(b)
+# endif
+#endif
+
+/*========================================================================*/
+/*                      memory management macros                          */
+/*========================================================================*/
+
 /* Allocation */
 #define scheme_alloc_object() \
    ((Scheme_Object *) scheme_malloc_tagged(sizeof(Scheme_Object)))
@@ -934,23 +1083,26 @@ extern void *scheme_malloc_envunbox(size_t);
 # endif
 #endif
 
-#ifdef FAST_NUMBERS
-# define scheme_make_integer(i) ((Scheme_Object *)((((long)i) << 1) | 0x1))
+
+#ifdef MZ_PRECISE_GC
+# define MZ_CWVR(x) (GC_variable_stack = __gc_var_stack__, x)
+# define MZ_DECL_VAR_REG(size) void *__gc_var_stack__[size+2]; \
+                               __gc_var_stack__[0] = GC_variable_stack; \
+                               __gc_var_stack__[1] = (void *)size;
+# define MZ_VAR_REG(x, v) (__gc_var_stack__[x+2] = (void *)&(v))
+# define MZ_ARRAY_VAR_REG(x, v, l) (__gc_var_stack__[x+2] = (void *)0, \
+                                    __gc_var_stack__[x+3] = (void *)&(v), \
+                                    __gc_var_stack__[x+4] = (void *)l)
 #else
-# define scheme_make_integer scheme_make_integer_value
+# define MZ_CWVR(x)                x
+# define MZ_DECL_VAR_REG(size)     /* empty */
+# define MZ_VAR_REG(x, v)          /* empty */
+# define MZ_ARRAY_VAR_REG(x, v, l) /* empty */
 #endif
-#define scheme_make_character(ch) (scheme_char_constants[(unsigned char)(ch)])
 
-#define scheme_new_frame(n) scheme_new_special_frame(n, 0)
-#define scheme_extend_env(f, e) (f->basic.next = e, f)
-#define scheme_next_frame(e) ((e)->basic.next)
-#define scheme_settable_frame(f, s) ((f)->basic.has_set_bang = (s))
-#define scheme_get_frame_settable(f) ((f)->basic.has_set_bang)
-#define scheme_get_binding(f, n) ((f)->values[n])
-
-#define SNF_FOR_TS 0x1
-#define SNF_PIPE_QUOTE 0x2
-#define SNF_NO_PIPE_QUOTE 0x4
+/*========================================================================*/
+/*                   embedding configuration and hooks                    */
+/*========================================================================*/
 
 #if SCHEME_DIRECT_EMBEDDED
 
@@ -969,6 +1121,9 @@ extern int scheme_allow_cond_auto_else; /* Defaults to 1 */
 extern int scheme_square_brackets_are_parens; /* Defaults to 1 */
 extern int scheme_curly_braces_are_parens; /* Defaults to 1 */
 extern int scheme_hash_percent_syntax_only; /* Defaults to 0 */
+#ifdef GC_MIGHT_USE_REGISTERED_STATICS
+extern int GC_use_registered_statics; /* Defaults to 0 */
+#endif
 
 #ifdef MZ_REAL_THREADS
 Scheme_Process *scheme_get_current_process();
@@ -981,6 +1136,7 @@ extern Scheme_Process *scheme_first_process;
 /* Set these global hooks (optionally): */
 extern void (*scheme_exit)(int v);
 extern void (*scheme_console_printf)(char *str, ...);
+extern void (*scheme_console_output)(char *str, long len);
 extern void (*scheme_sleep)(float seconds, void *fds);
 extern void (*scheme_notify_multithread)(int on);
 extern void (*scheme_wakeup_on_input)(void *fds);
@@ -1022,6 +1178,26 @@ void scheme_wake_up(void);
 int scheme_image_main(int argc, char **argv);
 extern int (*scheme_actual_main)(int argc, char **argv);
 
+/* GC registration: */
+void scheme_register_static(void *ptr, long size);
+#if defined(MUST_REGISTER_GLOBALS) || defined(GC_MIGHT_USE_REGISTERED_STATICS)
+# define MZ_REGISTER_STATIC(x)  scheme_register_static((void *)&x, sizeof(x))
+#else
+# define MZ_REGISTER_STATIC(x) /* empty */
+#endif
+
+#endif /* SCHEME_DIRECT_EMBEDDED */
+
+/*========================================================================*/
+/*                              FFI functions                             */
+/*========================================================================*/
+
+/* If MzScheme is being empbedded, then we just include the
+   prototypes. Otherwise, we may include a function-table definition
+   instead, plus macros that map the usual name to table lookups. */
+
+#if SCHEME_DIRECT_EMBEDDED
+
 /* All functions & global constants prototyped here */
 #ifdef INCLUDE_WITHOUT_PATHS
 # include "schemef.h"
@@ -1061,121 +1237,51 @@ extern Scheme_Extension_Table *scheme_extension_table;
 
 #endif
 
-#ifndef USE_MZ_SETJMP
-# ifdef JMP_BUF_IS_JMPBUF
-#  define scheme_longjmp(b, v) longjmp(&b, v)
-#  define scheme_setjmp(b) setjmp(&b)
-# else
-#  define scheme_longjmp(b, v) longjmp(b, v)
-#  define scheme_setjmp(b) setjmp(b)
-# endif
-#endif
+/*========================================================================*/
+/*                              misc flags                                */
+/*========================================================================*/
 
-#ifdef MZ_PRECISE_GC
-# define MZ_CWVR(x) (GC_variable_stack = __gc_var_stack__, x)
-# define MZ_DECL_VAR_REG(size) void *__gc_var_stack__[size+2]; \
-                               __gc_var_stack__[0] = GC_variable_stack; \
-                               __gc_var_stack__[1] = (void *)size;
-# define MZ_VAR_REG(x, v) (__gc_var_stack__[x+2] = (void *)&(v))
-# define MZ_ARRAY_VAR_REG(x, v, l) (__gc_var_stack__[x+2] = (void *)0, \
-                                    __gc_var_stack__[x+3] = (void *)&(v), \
-                                    __gc_var_stack__[x+4] = (void *)l)
-#else
-# define MZ_CWVR(x)                x
-# define MZ_DECL_VAR_REG(size)     /* empty */
-# define MZ_VAR_REG(x, v)          /* empty */
-# define MZ_ARRAY_VAR_REG(x, v, l) /* empty */
-#endif
+/* For use with scheme_symbol_name_and_size: */
+#define SNF_FOR_TS 0x1
+#define SNF_PIPE_QUOTE 0x2
+#define SNF_NO_PIPE_QUOTE 0x4
 
-#define SAME_PTR(a, b) ((a) == (b))
-#define NOT_SAME_PTR(a, b) ((a) != (b))
-
+/* For use with scheme_make_struct_values et al.: */
 #define SCHEME_STRUCT_NO_TYPE 0x01
 #define SCHEME_STRUCT_NO_CONSTR 0x02
 #define SCHEME_STRUCT_NO_PRED 0x04
 #define SCHEME_STRUCT_NO_GET 0x08
 #define SCHEME_STRUCT_NO_SET 0x10
 
-#define SAME_OBJ SAME_PTR
-#define NOT_SAME_OBJ NOT_SAME_PTR
+/*========================================================================*/
+/*                           file descriptors                             */
+/*========================================================================*/
 
-#define SAME_TYPE(a, b) ((Scheme_Type)(a) == (Scheme_Type)(b))
-#define NOT_SAME_TYPE(a, b) ((Scheme_Type)(a) != (Scheme_Type)(b))
-
-/* convenience macros */
-#define SCHEME_CHARP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_char_type)
-#ifdef FAST_NUMBERS
-#define SCHEME_INTP(obj)     (((long)obj) & 0x1)
-#else
-#define SCHEME_INTP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_integer_type)
+#if defined(DETECT_WIN32_CONSOLE_STDIN) || defined(WINDOWS_PROCESSES)
+# ifndef NO_STDIO_THREADS
+#  define USE_FAR_MZ_FDCALLS
+# endif
 #endif
-#define SCHEME_DBLP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_double_type)
-#ifdef MZ_USE_SINGLE_FLOATS
-# define SCHEME_FLTP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_float_type)
-# define SCHEME_FLOATP(obj)     (SCHEME_FLTP(obj) || SCHEME_DBLP(obj))
-#else
-# define SCHEME_FLTP SCHEME_DBLP
-# define SCHEME_FLOATP SCHEME_DBLP
+#ifdef USE_DYNAMIC_FDSET_SIZE
+# define USE_FAR_MZ_FDCALLS
 #endif
-#define SCHEME_BIGNUMP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_bignum_type)
-#define SCHEME_RATIONALP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_rational_type)
-#define SCHEME_COMPLEXP(obj)     (!SCHEME_INTP(obj) && ((_SCHEME_TYPE(obj) >= scheme_complex_izi_type) && (_SCHEME_TYPE(obj) <= scheme_complex_type)))
-#define SCHEME_COMPLEX_IZIP(obj)     (SCHEME_TYPE(obj) == scheme_complex_izi_type)
-#define SCHEME_EXACT_INTEGERP(obj)  (SCHEME_INTP(obj) || (_SCHEME_TYPE(obj) == scheme_bignum_type))
-#define SCHEME_EXACT_REALP(obj)  (SCHEME_INTP(obj) || (_SCHEME_TYPE(obj) == scheme_bignum_type) || (_SCHEME_TYPE(obj) == scheme_rational_type))
-#define SCHEME_REALP(obj)  (SCHEME_INTP(obj) || ((_SCHEME_TYPE(obj) >= scheme_bignum_type) && (_SCHEME_TYPE(obj) <= scheme_complex_izi_type)))
-#define SCHEME_NUMBERP(obj)  (SCHEME_INTP(obj) || ((_SCHEME_TYPE(obj) >= scheme_bignum_type) && (_SCHEME_TYPE(obj) <= scheme_complex_type)))
-#define SCHEME_STRINGP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_string_type)
-#define SCHEME_MUTABLE_STRINGP(obj)  (SCHEME_STRINGP(obj) && !((obj)->keyex & 0x1))
-#define SCHEME_SYMBOLP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_symbol_type)
-#define SCHEME_BOOLP(obj)    (SAME_OBJ(obj, scheme_true) || SAME_OBJ(obj, scheme_false))
-#define SCHEME_FALSEP(obj)     SAME_OBJ((obj), scheme_false)
-#define SCHEME_TRUEP(obj)     (!SCHEME_FALSEP(obj))
-#define SCHEME_SYNTAXP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_syntax_compiler_type)
-#define SCHEME_PRIMP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_prim_type)
-#define SCHEME_CLSD_PRIMP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_closed_prim_type)
-#define SCHEME_CONTP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_cont_type)
-#define SCHEME_ECONTP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_escaping_cont_type)
-#define SCHEME_NULLP(obj)    SAME_OBJ(obj, scheme_null)
-#define SCHEME_PAIRP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_pair_type)
-#define SCHEME_MUTABLE_PAIRP(obj)    (SCHEME_PAIRP(obj) && !((obj)->keyex & 0x1))
-#define SCHEME_LISTP(obj)    (SCHEME_NULLP(obj) || SCHEME_PAIRP(obj))
-#define SCHEME_BOXP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_box_type)
-#define SCHEME_HASHTP(obj) SAME_TYPE(SCHEME_TYPE(obj),scheme_hash_table_type)
-#define SCHEME_VECTORP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_vector_type)
-#define SCHEME_STRUCT_PROCP(obj) (SCHEME_CLSD_PRIMP(obj) && (((Scheme_Closed_Primitive_Proc *)obj)->flags & SCHEME_PRIM_IS_STRUCT_PROC))
-#define SCHEME_GENERICP(obj) (SCHEME_CLSD_PRIMP(obj) && (((Scheme_Closed_Primitive_Proc *)obj)->flags & SCHEME_PRIM_IS_GENERIC))
-#define SCHEME_STRUCTP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type)
-#define SCHEME_STRUCT_TYPEP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_struct_type_type)
-#define SCHEME_CLOSUREP(obj) (SAME_TYPE(SCHEME_TYPE(obj), scheme_closure_type) || SAME_TYPE(SCHEME_TYPE(obj), scheme_linked_closure_type) || SAME_TYPE(SCHEME_TYPE(obj), scheme_case_closure_type))
-#define SCHEME_PROCP(obj)    (SCHEME_PRIMP(obj) || SCHEME_CLSD_PRIMP(obj) || SCHEME_CLOSUREP(obj) || SCHEME_CONTP(obj) || SCHEME_ECONTP(obj))
-#define SCHEME_INPORTP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_input_port_type)
-#define SCHEME_OUTPORTP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_output_port_type)
-#define SCHEME_EOFP(obj)     SAME_OBJ((obj), scheme_eof)
-#define SCHEME_PROMP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_promise_type)
-#define SCHEME_DEBUGP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_debug_handle_type)
-#define SCHEME_PROCESSP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_process_type)
-#define SCHEME_MANAGERP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_manager_type)
-#define SCHEME_SEMAP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_sema_type)
-#define SCHEME_OBJP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
-#define SCHEME_CLASSP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_class_type)
-#define SCHEME_INTERFACEP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_interface_type)
-#define SCHEME_VOIDP(obj)     SAME_OBJ((obj), scheme_void)
-#define SCHEME_DIVARP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_delayed_ivar_type)
-#define SCHEME_GENDATAP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_generic_data_type)
-#define SCHEME_UNITP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_unit_type)
-#define SCHEME_CONFIGP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_config_type)
-#define SCHEME_NAMESPACEP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_namespace_type)
-#define SCHEME_WEAKP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_weak_box_type)
+#ifdef USE_BEOS_PORT_THREADS
+# define USE_FAR_MZ_FDCALLS
+#endif
 
-/* other */
-#define SCHEME_CADR(obj)     (SCHEME_CAR (SCHEME_CDR (obj)))
-#define SCHEME_CAAR(obj)     (SCHEME_CAR (SCHEME_CAR (obj)))
-#define SCHEME_CDDR(obj)     (SCHEME_CDR (SCHEME_CDR (obj)))
-#define SCHEME_IPORT_NAME(obj) (((Scheme_Input_Port *)obj)->name)
-
-#define SCHEME_SET_STRING_IMMUTABLE(obj)  (((obj)->keyex |= 0x1))
-#define SCHEME_SET_PAIR_IMMUTABLE(obj)  (((obj)->keyex |= 0x1))
+#ifdef USE_FAR_MZ_FDCALLS
+# define MZ_GET_FDSET(p, n) scheme_get_fdset(p, n)
+# define MZ_FD_ZERO(p) scheme_fdzero(p)
+# define MZ_FD_SET(n, p) scheme_fdset(p, n)
+# define MZ_FD_CLR(n, p) scheme_fdclr(p, n)
+# define MZ_FD_ISSET(n, p) scheme_fdisset(p, n)
+#else
+# define MZ_GET_FDSET(p, n) ((void *)(((fd_set *)p) + n))
+# define MZ_FD_ZERO(p) FD_ZERO(p)
+# define MZ_FD_SET(n, p) FD_SET(n, p)
+# define MZ_FD_CLR(n, p) FD_CLR(n, p)
+# define MZ_FD_ISSET(n, p) FD_ISSET(n, p)
+#endif
 
 #ifdef __cplusplus
 };

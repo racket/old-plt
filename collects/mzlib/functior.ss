@@ -59,7 +59,34 @@
                              (loop min pivot)
                              (loop pivot max))))))))
          (vector->list v)))))
-  
+
+  (define mergesort
+    (polymorphic
+     (lambda (alox less-than)
+       (letrec ([split (lambda (alox r)
+			 (cond
+			  [(null? alox) r]
+			  [(null? (cdr alox)) (cons alox r)]
+			  [else (split (cdr alox) (cons (list (car alox)) r))]))]
+		[merge (lambda (l1 l2 r)
+			 (cond
+			  [(null? l1) (append! (reverse! r) l2)]
+			  [(null? l2) (append! (reverse! r) l1)]
+			  [(less-than (car l1) (car l2)) 
+			   (merge (cdr l1) l2 (cons (car l1) r))]
+			  [else (merge (cdr l2) l1 (cons (car l2) r))]))]
+		[map2 (lambda (l)
+			(cond
+			 [(null? l) '()]
+			 [(null? (cdr l)) l]
+			 [else (cons (merge (car l) (cadr l) null) 
+				     (map2 (cddr l)))]))]
+		[until (lambda (l)
+			 (if (null? (cdr l)) 
+			     (car l) 
+			     (until (map2 l))))])
+	 (until (split alox null))))))
+
   (define ignore-errors
     (polymorphic
      (lambda (thunk)

@@ -12,7 +12,6 @@ scheme_register_parameter
 scheme_get_env
 scheme_current_process
 scheme_fuel_counter
-scheme_make_namespace
 scheme_thread
 scheme_thread_w_manager
 scheme_kill_thread
@@ -26,7 +25,6 @@ scheme_in_main_thread
 scheme_tls_allocate
 scheme_tls_set
 scheme_tls_get
-scheme_add_namespace_option
 scheme_make_manager
 scheme_add_managed
 scheme_remove_managed
@@ -87,9 +85,6 @@ scheme_current_continuation_marks
 scheme_do_eval
 GC_malloc
 GC_malloc_atomic
-GC_malloc_one_tagged
-GC_malloc_atomic_uncollectable
-GC_malloc_array_tagged
 GC_malloc_stubborn
 GC_malloc_uncollectable
 scheme_malloc_eternal
@@ -225,6 +220,8 @@ scheme_fdclr
 scheme_fdisset
 scheme_add_fd_handle
 scheme_add_fd_eventmask
+scheme_make_namespace
+scheme_add_namespace_option
 scheme_add_global
 scheme_add_global_constant
 scheme_add_global_keyword

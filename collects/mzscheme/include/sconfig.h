@@ -616,19 +616,22 @@ int   scheme_sproc_semaphore_try_down(void *);
 # endif
 
 # define TIME_SYNTAX
-# ifndef __CYGWIN__
-#   define USE_FTIME
+# ifdef __CYGWIN__
+#  define USE_PLAIN_TIME
+#  define USE_TOD_FOR_TIMEZONE
+# else
+#  define USE_FTIME
+#  define USE_TIMEZONE_VAR_W_DLS
 # endif
 # define GETENV_FUNCTION
 # define DIR_FUNCTION
-
-# define USE_TIMEZONE_VAR_W_DLS
 
 # define STACK_GROWS_DOWN
 # define DO_STACK_CHECK
 # define WINDOWS_FIND_STACK_BOUNDS
 
 # define USE_MZ_SETJMP
+# define GC_MIGHT_USE_REGISTERED_STATICS
 
 # define WINDOWS_DYNAMIC_LOAD
 # define LINK_EXTENSIONS_BY_TABLE
@@ -636,6 +639,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 #if defined(_MSC_VER)
 # define NAN_EQUALS_ANYTHING
 # define POW_HANDLES_INF_CORRECTLY
+# define DOUBLE_CHECK_NEG_ZERO_UNDERFLOW
 #endif
 #ifdef __CYGWIN__
 # define USE_DIVIDE_MAKE_INFINITY
@@ -962,7 +966,7 @@ int scheme_pthread_semaphore_try_down(void *);
 
  /* USE_FTIME uses ftime instead of gettimeofday; only for TIME_SYNTAX */
  
- /* USE_DIFFTIME uses time and difftime; only for TIME_SYNTAX */
+ /* USE_PLAIN_TIME uses time; only for TIME_SYNTAX */
  
  /* USE_MACTIME uses the Mac toolbox to implement time functions. */
 
@@ -979,6 +983,7 @@ int scheme_pthread_semaphore_try_down(void *);
  /* GETENV_FUNCTION adds (getenv ...) function */
 
  /* USE_TIMEZONE_VAR gets timezone offset from a timezone global.
+    USE_TOD_FOR_TIMEZONE gets timezone offset via gettimeofday.
     USE_TIMEZONE_VAR_W_DLS is similar, but adds 1 hour when daylight 
      savings is in effect.
     USE_TIMEZONE_AND_ALTZONE_VAR is similar, but uses altzone when
@@ -1046,6 +1051,7 @@ int scheme_pthread_semaphore_try_down(void *);
 #define HAS_STANDARD_IOB
 #define FILES_HAVE_FDS
 #define USE_UNIX_SOCKETS_TCP
+#define CLOSE_ALL_FDS_AFTER_FORK
 
  /* HAS_STANDARD_IOB, HAS_GNU_IOB, HAS_CYGWIN_IOB, HAS_LINUX_IOB,
     HAS_BSD_IOB, and HAS_SCO_IOB are mutually exclusive; they describe
@@ -1056,6 +1062,10 @@ int scheme_pthread_semaphore_try_down(void *);
     file desciptor, which can be select-ed to see if there are
     pending bytes. Don't use this unless one of the HAS_<X>_IOB
     flags is used. */
+
+ /* CLOSE_ALL_FDS_AFTER_FORK means that all fds except 0, 1, and 2
+    should be closed after performing a fork() for `process'
+    and `system' calls. */
 
  /* USE_UNIX_SOCKETS_TCP means that the tcp- procedures can be implemented
     with the standard Unix socket functions. */
@@ -1210,6 +1220,9 @@ int scheme_pthread_semaphore_try_down(void *);
  /* COMPUTE_NEG_INEXACT_TO_EXACT_AS_POS computes inexact->exact of some
     negative inexact number x by computing the result for -x and negating
     it. Use this if (inexact->exact -0.1) is wrong. */
+
+ /* DOUBLE_CHECK_NEG_ZERO_UNDERFLOW watches for stdtod parsing underflow on
+    negative numbers as 0.0 */
 
   /***********************/
  /* Stack Maniuplations */

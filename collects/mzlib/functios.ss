@@ -50,6 +50,7 @@
    build-list
 
    quicksort
+   mergesort
 
    loop-until
 

@@ -19,7 +19,7 @@
 
    (define sort ; Chez argument order
      (lambda (less-than? l)
-       (quicksort l less-than?)))
+       (mergesort l less-than?)))
 
    (define bound? defined?)
 

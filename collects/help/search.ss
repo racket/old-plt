@@ -6,9 +6,15 @@
 
 
   ; These are set by reset-doc-lists:
+  ;; docs, doc-names and doc-kinds are parallel lists. doc-kinds
+  ;; distinguishes between the two variants of docs.
+  ;; docs : (list-of (union string (list string string)))
   (define docs null)
+  ;; doc-names : (list-of string)
   (define doc-names null)
+  ;; doc-kinds : (list-of symbol)
   (define doc-kinds null)
+  ;; doc-collection-date : ??
   (define doc-collection-date #f)
 
   (define colldocs (require-library "colldocs.ss" "help"))
@@ -108,9 +114,7 @@
      ht
      doc
      (lambda ()
-       (with-handlers ([not-break? (lambda (x) 
-				     (printf "~a~n" (exn-message x))
-				     null)])
+       (with-handlers ([not-break? (lambda (x) null)])
 	 (with-input-from-file doc
 	   (lambda ()
 	     (let loop ([start 0])
@@ -127,7 +131,7 @@
   (define text-keywords (make-hash-table))
   (define (load-txt-keywords doc)
     (parse-txt-file
-     doc
+     (apply build-path doc)
      text-keywords
      (lambda (r start)
        (cond
@@ -160,7 +164,7 @@
 			    (fprintf p "'~s" (cadr entry))
 			    (display entry p)))
 		    (get-output-string p)) ; the text to display
-		  #f ; file
+		  (cadr doc) ; file
 		  start ; label (a position in this case)
 		  "doc.txt")))] ; title
 	[else #f]))))
@@ -169,7 +173,7 @@
   (define text-indices (make-hash-table))
   (define (load-txt-index doc)
     (parse-txt-file
-     doc
+     (apply build-path doc)
      text-indices
      (lambda (r start)
        (cond
@@ -263,9 +267,9 @@
 				  (car v) ; key
 				  (cadr v) ; display
 				  (list-ref v 4) ; title
-				  (if (list-ref v 2)
-				      (build-path doc (list-ref v 2))
-				      doc)
+				  (if (eq? 'text doc-kind)
+				      (apply build-path doc)
+				      (build-path doc (list-ref v 2))) ; file
 				  (list-ref v 3) ; label
 				  ckey))])
 
@@ -301,7 +305,7 @@
 					(found "index entries")
  					(add-choice "" name
 						    "indexed content"
-						    doc
+						    (apply build-path doc)
 						    desc
 						    ckey)]))])
 	     (when index
@@ -323,14 +327,14 @@
 	   (let ([files (case doc-kind
 			  [(html) (with-handlers ([not-break? (lambda (x) null)]) 
                                     (map (lambda (x) (build-path doc x)) 
-                                         (directory-list doc)))]
-			  [(text) (list doc)]
+                                         (filter
+					  (lambda (x) (file-exists? (build-path doc x)))
+					  (directory-list doc))))]
+			  [(text) (list (apply build-path doc))]
 			  [else null])])
 	     (for-each
 	      (lambda (f)
-		(with-handlers ([not-break? (lambda (x)
-					      ; (printf "~a~n" (exn-message x))
-					      #f)])
+		(with-handlers ([not-break? (lambda (x) #f)])
 		  (with-input-from-file f
 		    (lambda ()
 		      (let loop ()
@@ -349,7 +353,7 @@
 						 r)
 					     "")
 					    "content"
-					    (build-path doc f)
+					    f
 					    (if (eq? doc-kind 'text) pos "NO TAG")
 					    ckey)))
 			    (loop))))))))

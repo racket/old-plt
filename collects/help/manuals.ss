@@ -58,7 +58,7 @@
 	(map
 	 (lambda (collection-doc-file name)
 	   (format "<LI> <A HREF=\"file:~a\">~a collection</A>"
-		   collection-doc-file
+		   (apply build-path collection-doc-file)
 		   name))
 	 collections-doc-files
 	 collection-names)

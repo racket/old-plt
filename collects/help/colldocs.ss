@@ -1,5 +1,7 @@
-
-; Gets a list of collections that contain a doc.txt file
+;; Gets a list of collections that contain a doc.txt file
+;; return two parallel lists:
+;; (values (listof (list directory filename)) (listof docname))
+;; the first has the locations of the docs and the second is their names.
 
 (lambda (quicksort)
   (invoke-unit
@@ -14,7 +16,9 @@
 	[(null? collection-paths)
 	 (let ([l (quicksort (map cons docs names)
 			     (lambda (a b)
-			       (string-ci<? (car a) (car b))))])
+			       (if (string-ci<? (car (car a)) (car (car b)))
+				   #f
+				   (string-ci<? (cadr (car a)) (cadr (car b))))))])
 	   (values (map car l) (map cdr l)))]
 	[else (let ([path (car collection-paths)])
 		(let cloop ([l (with-handlers ([void (lambda (x) null)]) (directory-list path))]
@@ -31,8 +35,8 @@
 		   (let* ([coll (car l)]
 			  [colldir (build-path path coll)]
 			  [lcollpath (append collpath (list coll))]
-                          [doc-txt-file (build-path colldir "doc.txt")]
-			  [this? (file-exists? doc-txt-file)])
+                          [doc-txt-file (list colldir "doc.txt")]
+			  [this? (file-exists? (apply build-path doc-txt-file))])
 		     (let-values ([(sub-docs sub-names)
 				   (with-handlers ([void (lambda (x)
 							   (values null null))])

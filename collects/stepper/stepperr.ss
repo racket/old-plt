@@ -268,7 +268,8 @@
     (let ([settings (f:preferences:get 'drscheme:settings)])
       (if (not (string=? (d:basis:setting-name settings) "Beginner"))
           (message-box "Stepper" 
-                       (format "Language level is set to \"~a\".~nPlease set the language level to \"Beginner\"" 
+                       (format (string-append "Language level is set to \"~a\".~n"
+                                              "The Foot only works for the \"Beginner\" language level.~n")
                                (d:basis:setting-name settings))
                        #f 
                        '(ok))

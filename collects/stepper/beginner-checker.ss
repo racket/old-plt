@@ -6,17 +6,6 @@
           [e : stepper:error]
           stepper:shared^)
   
-  (define-struct struct-creator-record (name arity))
-  
-  (define (check-structure-constructor-app expr name arity-match-checker)
-    (let ([num-args (length (z:app-args expr))])
-      (cond [(= constructor-arity num-args) 'ok]
-            [else
-             (e:static-error "mis-application of value constructor ~s: requires ~s arguments, given ~s"
-                             name
-                             constructor-arity
-                             num-args)])))
-           
     
   (define (check-expression-list exp-list struct-creator-records)
     (cond
@@ -28,38 +17,29 @@
       [(z:top-level-varref? expr) 'ok]
 
       [(z:app? expr)
-       (let ([fun (z:app-fun expr)])
+       (let* ([fun (z:app-fun expr)]
+              [num-args (length (z:app-args expr))])
          (if (z:top-level-varref? fun)
              (let ([fun-name (z:varref-var fun)])
-               (cond [(memq fun-name (s:get-global-defined-vars))
-                      (let* ([fun-val (parameterize ([current-namespace (get-namespace)])
-                                       (global-defined-value fun-name))]
-                             [fun-arity (
-		(let+
-		 ([val sub-exprs (cons (z:app-fun expr) (z:app-args expr))]
-		  [val arg-temps (build-list (length sub-exprs) get-arg-symbol)]
-                  [val arg-temp-syms (map z:varref-var arg-temps)] 
-		  [val let-clauses (map (lambda (sym) `(,sym (#%quote ,*unevaluated*))) arg-temp-syms)]
-		  [val pile-of-values
-		       (map (lambda (expr) 
-			      (let-values ([(annotated free) (non-tail-recur expr)])
-				(list annotated free)))
-			    sub-exprs)]
-		  [val annotated-sub-exprs (map car pile-of-values)]
-		  [val free-vars (apply var-set-union (map cadr pile-of-values))]
-		  [val set!-list (map (lambda (arg-symbol annotated-sub-expr)
-					`(#%set! ,arg-symbol ,annotated-sub-expr))
-				      arg-temp-syms annotated-sub-exprs)]
-                  [val new-tail-bound (var-set-union tail-bound arg-temps)]
-		  [val app-debug-info (make-debug-info-app new-tail-bound arg-temps 'called)]
-		  [val final-app (break-wrap (wcm-wrap app-debug-info arg-temp-syms))]
-		  [val debug-info (make-debug-info-app new-tail-bound
-                                                       (var-set-union free-vars arg-temps)
-                                                       'not-yet-called)]
-		  [val let-body (wcm-wrap debug-info `(#%begin ,@set!-list ,final-app))])
-		 (values `(#%let ,let-clauses ,let-body) free-vars))]
-	       
-	       [(z:struct-form? expr)
+               (if (memq fun-name (s:get-global-defined-vars))
+                   (let ([fun-val (parameterize ([current-namespace (get-namespace)])
+                                    (global-defined-value fun-name))])
+                     (if (and (structure-constructor-procedure? fun-val)
+                              (not (procedure-arity-includes? num-args)))
+                         (e:static-error "wrong number of arguments (~s) passed to value constructor ~s."
+                                         num-args
+                                         fun-name)
+                         'ok))
+                   (let ([creator-record (assq fun-name struct-creator-records)])
+                     (if (and creator-record
+                              (not (= num-args (cadr creator-record))))
+                         (e:static-error "wrong number of arguments (~s) passed to value constructor ~s."
+                                         num-args
+                                         fun-name)
+                         'ok))))
+             'ok))]
+
+      [(z:struct-form? expr)
 		(let ([super-expr (z:struct-form-super expr)]
 		      [raw-type (read->raw (z:struct-form-type expr))]
 		      [raw-fields (map read->raw (z:struct-form-fields expr))])

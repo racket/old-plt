@@ -800,7 +800,6 @@
                    equal?
                    get-family
                    get-face
-                   set-transparent-text-backing-on
                    get-transparent-text-backing-on
                    copy
                    set-delta-background
@@ -835,7 +834,8 @@
                    get-size-mult
                    set-delta-face
                    set-transparent-text-backing-off
-                   get-transparent-text-backing-off))
+                   get-transparent-text-backing-off
+                   set-transparent-text-backing-on))
                (define string-snip<%>
                  (interface
                    ()

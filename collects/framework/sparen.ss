@@ -14,6 +14,10 @@
 			("|" . "|")))
   
   (define comments '(";" "#!"))
+
+  (define (get-paren-pairs) paren-pairs)
+  (define (get-quote-pairs) quote-pairs)
+  (define (get-comments) comments)
   
   (define forward-match
     (opt-lambda (edit start end [cache #f])

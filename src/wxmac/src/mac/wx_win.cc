@@ -404,7 +404,7 @@ wxMargin wxWindow::Margin(wxArea* outerArea) // mac platform only
   wxMargin result;
   wxArea* parentArea;
   parentArea = ParentArea();
-  if (parentArea)     {
+  if (parentArea) {
     int w, h;
     result.SetMargin(cWindowX, wxLeft);
     result.SetMargin(cWindowY, wxTop);
@@ -1281,14 +1281,14 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
       *areaMouseEvent = *mouseEvent;
       if (hitArea) {
 	wxMargin hitAreaMargin;
-	hitAreaMargin = hitArea->Margin(this /* hitArea->ParentWindow() */);
+	hitAreaMargin = hitArea->Margin(this);
 	hitAreaX = hitAreaMargin.Offset(wxLeft);
 	hitAreaY = hitAreaMargin.Offset(wxTop);
       } else
 	hitAreaX = hitAreaY = 0;
       areaMouseEvent->x = hitX - hitAreaX; // hit area c.s.
       areaMouseEvent->y = hitY - hitAreaY; // hit area c.s.
-      
+
       if (!capThis) {
 	wxChildNode* childWindowNode;
 	wxWindow* childWindow;
@@ -1305,12 +1305,7 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
       
       if (!result) {
 	if (capThis || (hitArea == ClientArea() && CanAcceptEvent())) {
-	  int clientHitX = (int)(areaMouseEvent->x);
-	  int clientHitY = (int)(areaMouseEvent->y);
 	  result = TRUE;
-	  //ClientToLogical(&clientHitX, &clientHitY); // mouseWindow logical c.s.
-	  areaMouseEvent->x = clientHitX; // mouseWindow logical c.s.
-	  areaMouseEvent->y = clientHitY; // mouseWindow logical c.s.
 
 	  if (wxSubType(__type, wxTYPE_CANVAS)
 	      || wxSubType(__type, wxTYPE_PANEL)) {
@@ -1344,14 +1339,8 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
   /* Frame/dialog: hande all events, even outside the window */	
   if (!result && (__type == wxTYPE_FRAME || __type == wxTYPE_DIALOG_BOX)) {
     wxMouseEvent *areaMouseEvent;
-    int clientHitX, clientHitY;
     areaMouseEvent = new wxMouseEvent(0);
     *areaMouseEvent = *mouseEvent;
-    clientHitX = (int)(areaMouseEvent->x);
-    clientHitY = (int)(areaMouseEvent->y);
-    //ClientToLogical(&clientHitX, &clientHitY); // mouseWindow logical c.s.
-    areaMouseEvent->x = clientHitX; // mouseWindow logical c.s.
-    areaMouseEvent->y = clientHitY; // mouseWindow logical c.s.
     if (!doCallPreMouseEvent(this, this, areaMouseEvent))
       if (!IsGray())
 	OnEvent(areaMouseEvent);

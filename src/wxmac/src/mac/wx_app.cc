@@ -42,6 +42,8 @@ extern int wxNumHelpItems;
 
 extern Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *win, wxMouseEvent *evt);
 
+int wxMenuBarHeight;
+
 extern wxApp *wxTheApp;
 //-----------------------------------------------------------------------------
 wxApp::wxApp():wxbApp()
@@ -51,7 +53,6 @@ wxApp::wxApp():wxbApp()
   long windowMgrAttributes;
   long dontcare;
   wxArea* menuArea;
-  int menuBarHeight;
   
   wxREGGLOB(wxTheApp);
   wxTheApp = this;
@@ -96,8 +97,8 @@ wxApp::wxApp():wxbApp()
     wxScreen::gScreenWindow = sc;
   }
   menuArea = (wxScreen::gScreenWindow)->MenuArea();
-  menuBarHeight = GetMBarHeight();
-  menuArea->SetMargin(menuBarHeight, wxTop);
+  wxMenuBarHeight = GetMBarHeight();
+  menuArea->SetMargin(wxMenuBarHeight, wxTop);
 
   wx_frame = NULL;
   death_processed = FALSE;

@@ -26,6 +26,7 @@ static wxMenuBar *close_menu_bar;
 
 extern int mred_current_thread_is_handler(void *ctx);
 extern int mred_in_restricted_context();
+extern int wxMenuBarHeight;
 
 //=============================================================================
 // Public constructors
@@ -567,7 +568,8 @@ void wxFrame::wxMacRecalcNewSize(Bool resize)
   GetWindowBounds(GetWindowFromPort(cMacDC->macGrafPort()),kWindowStructureRgn,&theStrucRect);
   GetWindowBounds(GetWindowFromPort(cMacDC->macGrafPort()),kWindowContentRgn,&theContRect);
   cWindowX = theStrucRect.left;
-  mbh = GetMBarHeight();
+  
+  mbh = wxMenuBarHeight;
   cWindowY = theStrucRect.top - mbh;
   if (resize) {
     cWindowWidth = theStrucRect.right - theStrucRect.left;
@@ -922,7 +924,8 @@ void wxFrame::Show(Bool show)
   theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
   if (show) {
 #ifdef OS_X
-    if (cSheetParent && !cSheetParent->sheet) {
+    if (cSheetParent && !cSheetParent->sheet
+	&& !(cSheetParent->GetWindowStyleFlag() & wxHIDE_MENUBAR)) {
       WindowPtr pwin;
       CGrafPtr graf;
 

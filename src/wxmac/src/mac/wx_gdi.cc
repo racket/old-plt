@@ -30,6 +30,8 @@ extern int write_JPEG_file(char * filename, wxBitmap *bm, int quality_val);
 extern int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg);
 extern int wx_write_png(char *file_name, wxBitmap *bm);
 
+extern int wxMenuBarHeight;
+
 CGrafPtr gMacFontGrafPort = NULL; // mac platform only
 
 #define PLAIN_MALLOC_FOR_XPM
@@ -826,7 +828,7 @@ void wxDisplaySize(int *width, int *height, int flags)
   if (flags)
     mbh = 0;
   else
-    mbh = GetMBarHeight();
+    mbh = wxMenuBarHeight;
   *height = screenBits.bounds.bottom - screenBits.bounds.top - mbh;
 }
 
@@ -834,7 +836,7 @@ void wxDisplayOrigin(int *x, int *y)
 {
   int mbh;
   *x = 0;
-  mbh = GetMBarHeight();
+  mbh = wxMenuBarHeight;
   *y = mbh;
 }
 

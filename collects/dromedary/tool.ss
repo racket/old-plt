@@ -47,14 +47,23 @@
 	  (format "~a option" (ml-tstyle (option-type type)))]
 	 [(ref? type)
 	  (format "~a ref" (ml-tstyle (ref-type type)))]
+	 [(tabstract? type)
+	  (format "type ~a~a = ~a"
+		  (if (null? (tabstract-params type))
+		      ""
+		      (let ([nparams (map ml-tstyle (tabstract-params type))])
+			(format " ~a" nparams)))
+		  (tabstract-name type)
+		  (ml-tstyle (tabstract-type type)))]
 	 [(tvariant? type)
-	  (format "type ~a~a = ~a" (tvariant-name type)
+	  (format "type ~a~a = ~a" 
 		  (if (null? (tvariant-params type))
 		      ""
 		      (let ([nparams (map ml-tstyle (tvariant-params type))])
 			(printf "~a" (tvariant-params type))
 			(printf "~a" nparams)
 		      (format " ~a" nparams)))
+		  (tvariant-name type)
 		  (letrec ([vtypes (lambda (varlist)
 				     (if (null? varlist)
 					 ""

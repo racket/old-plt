@@ -205,15 +205,7 @@
 	       #t
 	       (isa-variant? name type (cdr variants)))))
 
-     (define (add-types cscll)
-       (if (null? cscll)
-	   null
-	   (let* ([current (car cscll)]
-		  [name (car current)]
-		  [types (cdr current)])
-	     (begin
-	       (hash-table-put! user-types name (lambda (x) (and (= (length x) (length types)) (correct-types? types x))))
-	       (add-types (cdr cscll))))))
+ 
 
      (define (correct-types? types x)
        (if (null? x)

@@ -3,13 +3,14 @@
 		 (lib "match.ss")
 		 (lib "pretty.ss")
 		 (lib "structure.ss"))
-	(provide <library-names> user-types built-in-and-user-funcs <constructors> <flatten> <cons>
+	(provide <library-names> built-in-and-user-funcs <constructors> <flatten> <cons>
 		 (struct <tuple> (list))
 		 (struct arrow (arglist result))
 		 (struct tvar (tbox))
 		 (struct tlist (type))
 		 (struct tarray (type))
 		 (struct tvariant (name params varnames variantlist))
+		 (struct tabstract (name params type))
 		 (struct tconstructor (argtype result))
 		 (struct usertype (name params))
 		 (struct option (type))
@@ -36,6 +37,7 @@
 	(define-struct tlist (type) (make-inspector))
 	(define-struct tarray (type) (make-inspector))
 	(define-struct tvariant (name params varnames variantlist) (make-inspector))
+	(define-struct tabstract (name params type))
 	(define-struct tconstructor (argtype result) (make-inspector))
 	(define-struct usertype (name params))
 	(define-struct <voidstruct> (dummy))
@@ -170,7 +172,7 @@
 			      (if (num > lim)
 				  null
 				  (cons num (mknum (+ 1 num) lim))))])
-	      (eval `(vector ,@(map fun (mknum 0 (- leng 1))))))))
+	      (list->vector (map fun (mknum 0 (- leng 1)))))))
 
 	(define (array-make_matrix dimx)
 	  (lambda (dimy)
@@ -180,13 +182,13 @@
 				  (if (num > dimx)
 				      null
 				      (cons (make-vector dimy e) (fillarr (+ 1 num)))))])
-		(eval `(vector ,@(fillarr 1)))))))
+		(list->vector (fillarr 1))))))
 
 	(define array-create_matrix array-make_matrix)
 
 	(define (array-append v1)
 	  (lambda (v2)
-	    (eval `(vector ,@(append (vector->list v1) (vector->list v2))))))
+	    (list->vector (append (vector->list v1) (vector->list v2)))))
 
 	(define (array-concat v1)
 	  (if (null? v1)

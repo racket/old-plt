@@ -2,8 +2,6 @@
 #
 # Contains the source for the Frame widget
 # Version 2.2.1 for FWF V4.0
-#
-# $Id: xwFrame.w,v 1.5 2001/11/22 23:48:47 mflatt Exp $
 
 @class XfwfFrame (XfwfCommon) @file=xwFrame
 

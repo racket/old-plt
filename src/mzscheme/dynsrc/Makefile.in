@@ -43,7 +43,7 @@ dynexmpl.o: $(srcdir)/dynexmpl.c  $(HEADERS)
 oe.o: $(srcdir)/oe.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $(srcdir)/oe.c -o oe.o
 
-ILIBDIR = $(srcdir)/../../../collects/mzscheme/lib
+ILIBDIR = $(srcdir)/../../../lib
 
 cygwin-install:
 	gcc -c -O2 -I$(srcdir)/../include $(srcdir)/mzdyn.c
@@ -51,14 +51,12 @@ cygwin-install:
 	gcc -c $(srcdir)/fixup.c
 	dlltool --def $(srcdir)/mzdyn.def --output-exp $(srcdir)/mzdyn.exp
 	if [ ! -d $(ILIBDIR) ] ; then mkdir $(ILIBDIR) ; fi
-	if [ ! -d $(ILIBDIR)/win32 ] ; then mkdir $(ILIBDIR)/win32 ; fi
-	if [ ! -d $(ILIBDIR)/win32/i386 ] ; then mkdir $(ILIBDIR)/win32/i386 ; fi
-	if [ ! -d $(ILIBDIR)/win32/i386/gcc ] ; then mkdir $(ILIBDIR)/win32/i386/gcc ; fi
-	cp $(srcdir)/mzdyn.def $(ILIBDIR)/win32/i386/gcc
-	cp $(srcdir)/mzdyn.exp $(ILIBDIR)/win32/i386/gcc
-	cp mzdyn.o $(ILIBDIR)/win32/i386/gcc
-	cp init.o $(ILIBDIR)/win32/i386/gcc
-	cp fixup.o $(ILIBDIR)/win32/i386/gcc
+	if [ ! -d $(ILIBDIR)/gcc ] ; then mkdir $(ILIBDIR)/gcc ; fi
+	cp $(srcdir)/mzdyn.def $(ILIBDIR)/gcc
+	cp $(srcdir)/mzdyn.exp $(ILIBDIR)/gcc
+	cp mzdyn.o $(ILIBDIR)/gcc
+	cp init.o $(ILIBDIR)/gcc
+	cp fixup.o $(ILIBDIR)/gcc
 
 clean:
 	/bin/rm -f *.o Makefile.bak

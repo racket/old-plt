@@ -34,6 +34,8 @@
 #include <stdlib.h>
 #endif
 
+#include <string.h>
+
 #define Uses_XtIntrinsic
 
 #include "wx_image.h"
@@ -385,7 +387,7 @@ int wxImage::openPic(char *fullname)
 
   /* set up fullname and basename */
 
-  tmp = rindex(fullname,'/');
+  tmp = strchr(fullname,'/');
   if (!tmp) tmp = fullname; else tmp++;
   strcpy(basename,tmp);
 

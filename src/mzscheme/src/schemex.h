@@ -27,7 +27,7 @@ typedef struct {
 /*========================================================================*/
 void (*scheme_init_jmpup_buf)(Scheme_Jumpup_Buf *b);
 int (*scheme_setjmpup_relative)(Scheme_Jumpup_Buf *b, void *base, 
-			     void *start, Scheme_Jumpup_Buf *cont);
+				       void *start, Scheme_Jumpup_Buf *cont);
 void (*scheme_longjmpup)(Scheme_Jumpup_Buf *b);
 void (*scheme_reset_jmpup_buf)(Scheme_Jumpup_Buf *b);
 #ifdef USE_MZ_SETJMP
@@ -42,10 +42,10 @@ Scheme_Object *(*scheme_make_config)(Scheme_Config *base);
 Scheme_Object *(*scheme_branch_config)(void);
 int (*scheme_new_param)(void);
 Scheme_Object *(*scheme_param_config)(char *name, Scheme_Object *pos,
-				   int argc, Scheme_Object **argv,
-				   int arity, 
-				   Scheme_Prim *check, char *expected,
-				   int isbool);
+					     int argc, Scheme_Object **argv,
+					     int arity, 
+					     Scheme_Prim *check, char *expected,
+					     int isbool);
 Scheme_Object *(*scheme_register_parameter)(Scheme_Prim *function, char *name, int which);
 Scheme_Env *(*scheme_get_env)(Scheme_Config *config);
 /*========================================================================*/
@@ -61,7 +61,7 @@ volatile int *scheme_fuel_counter_ptr;
 #ifndef NO_SCHEME_THREADS
 Scheme_Object *(*scheme_thread)(Scheme_Object *thunk, Scheme_Config *config);
 Scheme_Object *(*scheme_thread_w_custodian)(Scheme_Object *thunk, Scheme_Config *config,
-				       Scheme_Custodian *mgr);
+						   Scheme_Custodian *mgr);
 void (*scheme_kill_thread)(Scheme_Thread *p);
 #endif
 void (*scheme_break_thread)(Scheme_Thread *p);
@@ -77,18 +77,18 @@ void (*scheme_tls_set)(int pos, void *v);
 void *(*scheme_tls_get)(int pos);
 Scheme_Custodian *(*scheme_make_custodian)(Scheme_Custodian *);
 Scheme_Custodian_Reference *(*scheme_add_managed)(Scheme_Custodian *m, Scheme_Object *o, 
-					     Scheme_Close_Custodian_Client *f, void *data, 
-					     int strong);
+							 Scheme_Close_Custodian_Client *f, void *data, 
+							 int strong);
 void (*scheme_remove_managed)(Scheme_Custodian_Reference *m, Scheme_Object *o);
 void (*scheme_close_managed)(Scheme_Custodian *m);
 void (*scheme_add_atexit_closer)(Scheme_Exit_Closer_Func f);
 void (*scheme_add_waitable)(Scheme_Type type,
-			 Scheme_Ready_Fun ready, 
-			 Scheme_Needs_Wakeup_Fun wakeup, 
-			 Scheme_Wait_Filter_Fun filter);
+				   Scheme_Ready_Fun ready, 
+				   Scheme_Needs_Wakeup_Fun wakeup, 
+				   Scheme_Wait_Filter_Fun filter);
 void (*scheme_add_waitable_through_sema)(Scheme_Type type,
-				      Scheme_Wait_Sema_Fun sema, 
-				      Scheme_Wait_Filter_Fun filter);
+						Scheme_Wait_Sema_Fun sema, 
+						Scheme_Wait_Filter_Fun filter);
 /*========================================================================*/
 /*                              error handling                            */
 /*========================================================================*/
@@ -97,26 +97,26 @@ void (*scheme_raise_exn)(int exnid, ...);
 void (*scheme_warning)(char *msg, ...);
 void (*scheme_raise)(Scheme_Object *exn);
 void (*scheme_wrong_count)(const char *name, int minc, int maxc,
-			int argc, Scheme_Object **argv);
+				  int argc, Scheme_Object **argv);
 void (*scheme_wrong_count_m)(const char *name, int minc, int maxc, 
-			  int argc, Scheme_Object **argv,
-			  int is_method);
+				    int argc, Scheme_Object **argv,
+				    int is_method);
 void (*scheme_case_lambda_wrong_count)(const char *name, int argc, 
-				    Scheme_Object **argv, int is_method, int count, ...);
+					      Scheme_Object **argv, int is_method, int count, ...);
 void (*scheme_wrong_type)(const char *name, const char *expected, 
-		       int which, int argc,
-		       Scheme_Object **argv);
+				 int which, int argc,
+				 Scheme_Object **argv);
 void (*scheme_arg_mismatch)(const char *name, const char *msg, Scheme_Object *o);
 void (*scheme_wrong_return_arity)(const char *where, 
-			       int expected, int got,
-			       Scheme_Object **argv,
-			       const char *context_detail, ...);
+					 int expected, int got,
+					 Scheme_Object **argv,
+					 const char *context_detail, ...);
 void (*scheme_unbound_global)(Scheme_Bucket *b);
 Scheme_Object *(*scheme_dynamic_wind)(void (*pre)(void *),
-				   Scheme_Object *(*act)(void *),
-				   void (*post)(void *), 
-				   Scheme_Object *(*jmp_handler)(void *),
-				   void *data);
+					     Scheme_Object *(*act)(void *),
+					     void (*post)(void *), 
+					     Scheme_Object *(*jmp_handler)(void *),
+					     void *data);
 /*========================================================================*/
 /*                                 types                                  */
 /*========================================================================*/
@@ -367,17 +367,17 @@ void (*scheme_close_output_port)(Scheme_Object *port);
 int (*scheme_are_all_chars_ready)(Scheme_Object *port);
 Scheme_Object *(*scheme_make_port_type)(const char *name);
 Scheme_Input_Port *(*scheme_make_input_port)(Scheme_Object *subtype, void *data,
-					  int (*getc_fun)(Scheme_Input_Port*),
-					  int (*peekc_fun)(Scheme_Input_Port*),
-					  int (*char_ready_fun)(Scheme_Input_Port*),
-					  void (*close_fun)(Scheme_Input_Port*),
-					  void (*need_wakeup_fun)(Scheme_Input_Port*, void *),
-					  int must_close);
+						    int (*getc_fun)(Scheme_Input_Port*),
+						    int (*peekc_fun)(Scheme_Input_Port*),
+						    int (*char_ready_fun)(Scheme_Input_Port*),
+						    void (*close_fun)(Scheme_Input_Port*),
+						    void (*need_wakeup_fun)(Scheme_Input_Port*, void *),
+						    int must_close);
 Scheme_Output_Port *(*scheme_make_output_port)(Scheme_Object *subtype,
-					    void *data,
-					    void (*write_string_fun)(char*, long, long, Scheme_Output_Port*),
-					    void (*close_fun)(Scheme_Output_Port*),
-					    int must_close);
+						      void *data,
+						      void (*write_string_fun)(char*, long, long, Scheme_Output_Port*),
+						      void (*close_fun)(Scheme_Output_Port*),
+						      int must_close);
 Scheme_Object *(*scheme_make_file_input_port)(FILE *fp);
 Scheme_Object *(*scheme_make_named_file_input_port)(FILE *fp, const char *filename);
 Scheme_Object *(*scheme_make_file_output_port)(FILE *fp);

@@ -26,7 +26,7 @@ while (<>) {
 			$_ = substr($_, 7);
 		    }
 		    if ($_ =~ /^MZ_EXTERN /) {
-			$_ = substr($_, 7);
+			$_ = substr($_, 10);
 		    }
 		    if ($_ =~ /^volatile /) {
 			$_ = substr($_, 9);

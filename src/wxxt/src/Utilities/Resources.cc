@@ -30,6 +30,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#if defined(SVR4) && !defined(__sgi)
+# include <sys/systeminfo.h>
+#endif
+
 //-----------------------------------------------------------------------------
 // We have a cache for writing different resource files,
 // which will only get flushed when we call wxFlushResources().

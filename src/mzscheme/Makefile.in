@@ -222,7 +222,7 @@ cygwin-install:
 	($ICP) libmzscheme.@LIBSFX@ $(WLIBIDIR)/libmzscheme.@LIBSFX@
 	echo 'CC=gcc' > $(WBUILDINFO)
 	echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(WBUILDINFO)
-	echo 'LIBS=-lm  -lm  gmzwin.exp' >> $(WBUILDINFO)
+	echo 'LIBS=-lm gmzwin.exp' >> $(WBUILDINFO)
 
 config:
 	autoconf $(srcdir)/configure.in | mzscheme -qr $(srcdir)/clean_ac.ss > $(srcdir)/../configure

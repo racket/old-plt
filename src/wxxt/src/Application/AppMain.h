@@ -64,13 +64,6 @@ extern void wxDoNextEvent();
 extern int wxEventReady();
 extern void wxDoEvents();
 
-// Here's a macro you can use if your compiler
-// really, really wants main() to be in your main program
-#if defined(AIX) || defined(AIX4)
-#define IMPLEMENT_WXWIN_MAIN \
-     int main(int argc, char *argv[]) { return wxEntry(argc, argv); }
-#else
-#define IMPLEMENT_WXWIN_MAIN
-#endif
+extern int wxEntry(int argc, char *argv[]);
 
 #endif // AppMain_h

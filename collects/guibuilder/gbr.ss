@@ -3,7 +3,8 @@
   (import mzlib:function^
 	  mzlib:pretty-print^
 	  mzlib:file^
-	  (mred : mred^))
+	  (mred : mred^)
+	  (wx : wx^))
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Snips

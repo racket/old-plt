@@ -309,10 +309,10 @@ struct objhead {
 
 struct mpage {
   unsigned int size, previous_size;
-  unsigned int generation;
-  unsigned int back_pointers;
-  unsigned int big_page;
-  unsigned int page_type;
+  unsigned char generation;
+  unsigned char back_pointers;
+  unsigned char big_page;
+  unsigned char page_type;
   struct mpage *next, *prev;
 };
 
@@ -327,9 +327,9 @@ struct mpage {
 #define PAGE_BIG 5
 #define PAGE_TYPES 6
 
-#define SET_PAGE_NEW_BIT(n) n = n | 0x10000000;
-#define CLEAR_PAGE_NEW_BIT(n) n = n & 0x01111111;
-#define PAGE_NEW_BIT(n) (n & 0x10000000)
+#define SET_PAGE_NEW_BIT(n) n = n | 0x10;
+#define CLEAR_PAGE_NEW_BIT(n) n = n & 0x01;
+#define PAGE_NEW_BIT(n) (n & 0x10)
 
 static struct mpage *page_map[1 << USEFUL_ADDR_BITS];
 static void **gen0_alloc_region = NULL;
@@ -2189,7 +2189,6 @@ static void garbage_collect(int force_full)
   number++; if(gc_full) since_last_full = 0; else since_last_full++;
   INIT_DEBUG_FILE(); DUMP_HEAP();
   
-/*   printf("Collection Number %li (full = %i)\n", number, gc_full); */
   if(GC_collect_start_callback)
     GC_collect_start_callback();
 

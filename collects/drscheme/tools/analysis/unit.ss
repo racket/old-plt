@@ -5,40 +5,43 @@
             mzlib:print-convert^
             (drscheme : drscheme:export^)
 	    drscheme:zodiac^)
-
+    
     (define invoke-spidey
       (lambda (frame)
 	(fw:gui-utils:show-busy-cursor
 	 (lambda ()
 	   (let* ([e (mred:make-eventspace (make-parameterization))]
 		  [f (parameterize ([mred:current-eventspace e])
+		       (mred:begin-busy-cursor)
 		       (make-object mred:dialog% "Spidey"))]
 		  [p (make-object mred:vertical-panel% f)]
 		  [m (make-object mred:message% "Please wait, loading the Analysis." p)])
-	     (send p stretchable-in-y #f)
-	     (send p stretchable-in-x #f)
+	     (send p stretchable-height #f)
+	     (send p stretchable-width #f)
 	     (send f show #t)
 	     (parameterize ([mred:current-eventspace e])
-		(mred:flush-display) (mred:yield)
-		(mred:flush-display) (mred:yield)
-		(mred:flush-display) (mred:yield)
-		(mred:flush-display) (mred:yield)
-		(mred:flush-display) (mred:yield)
-		(mred:flush-display) (mred:yield)
-		(mred:flush-display) (mred:yield))
+	       (mred:flush-display) (mred:yield)
+	       (mred:flush-display) (mred:yield)
+	       (mred:flush-display) (mred:yield)
+	       (mred:flush-display) (mred:yield)
+	       (mred:flush-display) (mred:yield)
+	       (mred:flush-display) (mred:yield)
+	       (mred:flush-display) (mred:yield))
 	     (require-library "drspidey.ss" "mrspidey")
-	     (send f show #f))
-	   (set! invoke-spidey
-		 (invoke-open-unit/sig
-		  (global-defined-value 'tool@) 
-		  mrspidey
-		  (fw : framework^)
-		  (mred : mred^)
-		  mzlib:core^
-		  mzlib:print-convert^
-		  (drscheme : drscheme:export^)
-		  zodiac:system^))
-	   (invoke-spidey frame)))))
+	     (send f show #f)
+	     (set! invoke-spidey
+		   (invoke-open-unit/sig
+		    (global-defined-value 'tool@) 
+		    mrspidey
+		    (fw : framework^)
+		    (mred : mred^)
+		    mzlib:core^
+		    mzlib:print-convert^
+		    (drscheme : drscheme:export^)
+		    zodiac:system^))
+	     (parameterize ([mred:current-eventspace e])
+	       (mred:end-busy-cursor))
+	     (invoke-spidey frame))))))
 
     (define spidey-bitmap
       (drscheme:unit:make-bitmap

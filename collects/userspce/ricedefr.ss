@@ -55,31 +55,31 @@
     (define =
       (if (params:<=-at-least-two-args)
 	  (lambda (x y . args)
-	    (apply orig-= (cons x (cons y args))))
+	    (apply orig-= x y args))
 	  orig-=))
 
     (define >=
       (if (params:<=-at-least-two-args)
 	  (lambda (x y . args)
-	    (apply orig->= (cons x (cons y args))))
+	    (apply orig->= x y args))
 	  orig->=))
 
     (define <
       (if (params:<=-at-least-two-args)
 	  (lambda (x y . args)
-	    (apply orig-< (cons x (cons y args))))
+	    (apply orig-< x  y args))
 	  orig-<))
 
     (define >
       (if (params:<=-at-least-two-args)
 	  (lambda (x y . args)
-	    (apply orig-> (cons x (cons y args))))
+	    (apply orig-> x y args))
 	  orig->))
 
     (define <=
       (if (params:<=-at-least-two-args)
 	  (lambda (x y . args)
-	    (apply orig-<= (cons x (cons y args))))
+	    (apply orig-<= x y args))
 	  orig-<=))
 
     (define cons (if (params:allow-improper-lists)

@@ -104,10 +104,11 @@
 		     language-levels
 		     hp
 		     (lambda (vocab evt)
-		       (let ([pos (send evt get-selection)]
-			     [s (fw:preferences:get 'drscheme:settings)])
-			 (basis:set-setting-vocabulary-symbol! s (list-ref basis:level-symbols pos))
-			 (basis:set-setting-use-zodiac?! s (not (= pos (- (length basis:level-symbols) 1))))
+		       (let* ([pos (send vocab get-selection)]
+			      [s (fw:preferences:get 'drscheme:settings)]
+			      [level-sym (list-ref basis:level-symbols pos)])
+			 (basis:set-setting-vocabulary-symbol! s level-sym)
+			 (basis:set-setting-use-zodiac?! s (basis:zodiac-vocabulary? level-sym))
 			 (fw:preferences:set 'drscheme:settings s)))))
 		 input-syntax-panel)]
 	 [case-sensitive? (make-check-box basis:set-setting-case-sensitive?!

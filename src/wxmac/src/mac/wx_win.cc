@@ -1695,6 +1695,9 @@ Bool wxWindow::AdjustCursor(int mouseX, int mouseY)
     return TRUE;
   }
 
+  if (IsHidden())
+    return FALSE;
+
   wxArea* hitArea = NULL;
   wxNode* areaNode = cAreas->Last();
   while (areaNode && !hitArea) {

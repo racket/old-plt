@@ -101,11 +101,11 @@ static void parse_commandline(char *s, char *src, int addon)
       
       if (ender) {
 	while (*token && (*token != ender))
-	  *(pos++) = *(token)++;
+	  *(pos++) = *(token++);
 	if (*token)
 	  token++;
       } else
-	*(pos++) = *(token)++;
+	*(pos++) = *(token++);
     }
     if (*token)
       token++;

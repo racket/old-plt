@@ -221,8 +221,8 @@ void wxChoice::DrawChoice(Bool active)
   SetCurrentDC();
   
   if (sTitle) {
-    Rect r = { SetOriginY + TitleRect.top, SetOriginX + TitleRect.left, 
-	       SetOriginY + TitleRect.bottom, SetOriginX + TitleRect.right };
+    Rect r = { SetOriginY + TitleRect.top - 2, SetOriginX + TitleRect.left, 
+	       SetOriginY + TitleRect.bottom - 2, SetOriginX + TitleRect.right };
     CFStringRef str = CFStringCreateWithCString(NULL, wxP2C(sTitle), kCFStringEncodingISOLatin1);
     
     DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,

@@ -67,6 +67,7 @@ MZLIBS="$LIBS"
 
 ############## platform tests ################
 
+OS=`uname -s`
 case $OS in
   SunOS)
     case `uname -r` in
@@ -126,18 +127,9 @@ case $OS in
     LIBS="$LIBS gmzwin.exp"
     ;;
   BeOS)
-    enable_sgc=yes
-    # Use gcc if it's here
-    gcc -v >& /dev/null
-    if [ $? = 0 ] ; then
-      COMP='CC=gcc'
-    else
-      COMP='CC=cc WARN=""'
-    fi
-    make $COMP LIBS="" $GCOPTS PERL="" "$@"
     ;;
   *)
-    make $GCOPTS "$@"
+    echo "Warning: Unknown OS"
     ;;
 esac
 
@@ -160,7 +152,6 @@ MROPTIONS=
 
 if test "${enable_mred}" = "yes" ; then
   CXXFLAGS="$CXXFLAGS $X_CFLAGS"
-  echo $CXXFLAGS
   AC_LANG_CPLUSPLUS 
 
 [ msg="new and new[] are different"   ]

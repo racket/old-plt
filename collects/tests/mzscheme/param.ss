@@ -119,6 +119,19 @@
 			 (read p))
 		      exn:read?
 		      #f)
+		(list read-dot-as-symbol
+		      (list #t #f)
+		      '(let ([p (open-input-string "(1 .)")])
+			 (read p))
+		      exn:read?
+		      #f)
+		(list read-accept-quasiquote
+		      (list #t #f)
+		      '(let ([p (open-input-string "`1")])
+			 (read p)
+			 (read p))
+		      exn:read?
+		      #f)
 		(list print-graph
 		      (list #t #f)
 		      '(check-write-string display (quote (#0=(1 2) . #0#)) "(#0=(1 2) . #0#)")

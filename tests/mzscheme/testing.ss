@@ -161,13 +161,13 @@
     [(expr exn?)
      (thunk-error-test (lambda () (eval expr)) expr exn?)])))
 
-(require (rename mzscheme mz:lambda lambda)) ; so err/rt-test works with beginner.ss
+(require (rename mzscheme err:mz:lambda lambda)) ; so err/rt-test works with beginner.ss
 (define-syntax err/rt-test
   (lambda (stx)
     (syntax-case stx ()
       [(_ e exn?)
        (syntax
-	(thunk-error-test (mz:lambda () e) (quote-syntax e) exn?))]
+	(thunk-error-test (err:mz:lambda () e) (quote-syntax e) exn?))]
       [(_ e)
        (syntax
 	(err/rt-test e exn:application:type?))])))

@@ -73,8 +73,9 @@
 		      (if bool
 			  (list language-panel customization-panel when-message ok-panel)
 			  (list language-panel when-message ok-panel)))))]
-	   [full-scheme-panel (let ([p (make-object mred:pane% language-panel)])
-				(send p stretchable-width #f)
+	   [full-scheme-panel (let ([p (make-object mred:panel% language-panel)])
+				(send p set-label-position 'vertical)
+                                (send p stretchable-width #f)
 				(send p stretchable-height #t)
 				p)]
 	   [full-scheme-radio-box-label-map

@@ -3,6 +3,7 @@
 
 #include "wx_win.h"
 #include "wx_gdi.h"
+#include "wx_types.h"
 
 @INCLUDE wxs.xci
 
@@ -53,6 +54,28 @@ static void wxSetPhantomSize(wxWindow *w, int wd, int ht)
 #ifdef wx_mac
    w->SetPhantomSize(wd, ht);
 #endif
+}
+
+static Bool wxIsEnabledToRoot(wxWindow *w)
+{
+   return !w->IsGray();
+}
+
+static Bool wxIsShownToRoot(wxWindow *w)
+{
+  while (1) {
+    if (!w->IsShown())
+      return 0;
+    if (wxSubType(w->__type, wxTYPE_FRAME))
+      return 1;
+#ifdef wx_msw
+    if (wxSubType(w->__type, wxTYPE_DIALOG_BOX))
+      return 1;
+#endif
+    w = w->GetParent();
+    if (!w)
+      return 1;
+  }
 }
 
 @BEGINSYMBOLS sizeMode > ONE > PRED BUNDLE
@@ -106,6 +129,9 @@ static void wxSetPhantomSize(wxWindow *w, int wd, int ht)
 @ m "get-y" : int wxSchemeWindowGetY();
 
 @ m "set-phantom-size" : void wxSetPhantomSize(int, int);
+
+@ m "is-shown-to-root?" : bool wxIsShownToRoot();
+@ m "is-enabled-to-root?" : bool wxIsEnabledToRoot();
 
 @SETMARK w = V
 @INCLUDE wxs_win.xci

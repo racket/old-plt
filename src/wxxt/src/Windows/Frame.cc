@@ -523,6 +523,7 @@ void wxFrame::CreateStatusLine(int number, char *)
 	wxLayoutConstraints *constr;
 	int ww, hh;
 	wxMessage *sm;
+	wxWindow **sr;
 
 	sm = DEBUG_NEW wxMessage(this, "", 0, 0, wxBORDER, "status");
 	status[i] = sm;
@@ -530,13 +531,14 @@ void wxFrame::CreateStatusLine(int number, char *)
 	sm->SetAlignment(wxALIGN_LEFT);
 	sm->GetSize(&ww, &hh);
 	constr = DEBUG_NEW wxLayoutConstraints;
-	wxLC_MEM(constr->left, PercentOf(this, wxWidth, i*(100/num_status)));
-	wxLC_MEM(constr->top, Below(this, 0)); // wxBottom of client area
+	sr = GetWinSafeRef();
+	wxLC_MEM(constr->left, PercentOf(sr, wxWidth, i*(100/num_status)));
+	wxLC_MEM(constr->top, Below(sr, 0)); // wxBottom of client area
 	wxLC_MEM(constr->height, Absolute(hh));
 	if (i != num_status-1) {
-	  wxLC_MEM(constr->width, PercentOf(this, wxWidth, 100 / num_status));
+	  wxLC_MEM(constr->width, PercentOf(sr, wxWidth, 100 / num_status));
 	} else {
-	  wxLC_MEM(constr->right, SameAs(this, wxRight, 0));
+	  wxLC_MEM(constr->right, SameAs(sr, wxRight, 0));
 	  wxLC_MEM(constr->width, Unconstrained());
 	}
 	status[i]->SetConstraints(constr);

@@ -588,7 +588,9 @@ void wxWindow::Layout(void)
 
 void wxPanel::Layout(void)
 {
-    wxWindow::Layout();
+  /* We can stop layout at this level, because constraints are only
+     used for a frame's menu-bar and status-line children. */
+  // wxWindow::Layout();
 }
 
 void wxFrame::Layout(void)

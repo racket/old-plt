@@ -168,6 +168,8 @@ public:
 
     Bool GetsFocus(void) { return TRUE; }
 
+    wxWindow **GetWinSafeRef() { return saferef; }
+
 protected:
     // create and destroy associated device context
     void CreateDC(void);

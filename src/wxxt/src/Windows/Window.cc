@@ -326,7 +326,7 @@ void wxWindow::Configure(int x, int y, int width, int height, int flags)
 	_yoff = parent->yoff;
     }
 
-    /* MATTHEW: [5] Make sure width, height != 0 */
+    /* Make sure width, height != 0 */
     if (!width) {
       width = 1;
       misc_flags |= REPORT_ZERO_WIDTH_FLAG;
@@ -339,7 +339,12 @@ void wxWindow::Configure(int x, int y, int width, int height, int flags)
     } else
       misc_flags -= (misc_flags & REPORT_ZERO_HEIGHT_FLAG);
 
-    XtVaGetValues(X->frame, XtNx, &cx, XtNy, &cy, XtNwidth, &cw, XtNheight, &ch, NULL);
+    XtSetArg(args[0], XtNx, &cx);
+    XtSetArg(args[1], XtNy, &cy);
+    XtSetArg(args[2], XtNwidth, &cw);
+    XtSetArg(args[3], XtNheight, &ch);
+    
+    XtGetValues(X->frame, args, 4);
 
     if (((x > -1) || ((flags & wxPOS_USE_MINUS_ONE) && (x > wxDEFAULT_POSITION)))
 	&& ((Position)(x + _xoff) != cx))

@@ -120,7 +120,7 @@ Bool wxMenuBar::Create(wxPanel *panel)
     XtVaSetValues(X->frame,  XtNheight,  hh, XtNwidth,  ww, NULL);
     wxLC_MEM(constraints->top, Absolute(-hh));
     wxLC_MEM(constraints->left, Absolute(0));
-    wxLC_MEM(constraints->width, SameAs(panel, wxWidth, 0));
+    wxLC_MEM(constraints->width, SameAs(panel->GetWinSafeRef(), wxWidth, 0));
     wxLC_MEM(constraints->height, Absolute(hh));
 
     // menubar may now be managed

@@ -1,5 +1,10 @@
 
 (current-prompt-read 
- (let ([read (require-library "pread.ss" "readline")])
+ (let ([read (require-library "pread.ss" "readline")]
+       [orig-read (current-prompt-read)]
+       [orig-input (current-input-port)])
    (lambda ()
-     (read (lambda (n) (if (zero? n) "> " "  "))))))
+     (if (eq? (current-input-port) orig-input)
+	 (read (lambda (n) (if (zero? n) "> " "  ")))
+	 (orig-read)))))
+

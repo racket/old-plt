@@ -615,13 +615,14 @@ static long hash_symbol(Scheme_Object *o)
     Scheme_Symbol *s = (Scheme_Symbol *)o;
     if (!(s->keyex & 0x1)) {
       /* Interned. Make key depend only on the content. */
-      if (!s->keyex & 0xFFFC) {
-	int i, h = 0;
-	for (i = s->len; i--; ) {
-	  h += (h << 5) + h + s->s[i];
-	}
-	s->keyex |= (((short)h) & 0xFFFC);
+      int i, h = 0;
+      for (i = s->len; i--; ) {
+	h += (h << 5) + h + s->s[i];
       }
+      h += (h << 2);
+      if (!(((short)h) & 0xFFFC))
+	h = 0x10;
+      s->keyex |= (((short)h) & 0xFFFC);
     } else
       return hash_general(o);
   }
@@ -960,6 +961,9 @@ long scheme_equal_hash_key(Scheme_Object *o)
 	  for (i = s->len; i--; ) {
 	    h += (h << 5) + h + s->s[i];
 	  }
+	  h += (h << 2);
+	  if (!(((short)h) & 0xFFFC))
+	    h = 0x10;
 	  s->keyex |= (((short)h) & 0xFFFC);
 	}
 	

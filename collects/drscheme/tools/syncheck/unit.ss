@@ -175,7 +175,7 @@
 		   [make-check
 		    (lambda (name on off)
 		      (let* ([c (lambda (check command)
-				  (if (send command checked?)
+				  (if (send check get-value)
 				      (on)
 				      (off))
 				  (fw:preferences:set sym delta))]
@@ -230,9 +230,11 @@
 							 (if (string=? "syntax" short-style-name)
 							     ""
 							     "s"))
+						 (send color-button get-top-level-window)
 						 color)])
 					  (when users-choice
-					    (send delta set-delta-foreground users-choice))))))]
+					    (send delta set-delta-foreground users-choice)
+					    (fw:preferences:set sym delta))))))]
 		   [style (send (send e get-style-list) find-named-style style-name)])
 	      (send slant-check set-value (eq? (send style get-style) 'slant))
 	      (send bold-check set-value (eq? (send style get-weight) 'bold))

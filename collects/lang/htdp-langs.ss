@@ -322,16 +322,14 @@ not to forget: teachpakcs
                   (let ([new-exp
                          (with-syntax ([body body]
                                        [print-results
-                                        (lambda (results)
+                                        (lambda results
                                           (let ([rep (drscheme:rep:current-rep)])
                                             (when rep
                                               (send rep display-results results))))])
                            (syntax 
                             (call-with-values
                              (lambda () body)
-                             (lambda results
-                               (unless already-exited?
-                                 (print-results results))))))])
+                             print-results)))])
                     (cons new-exp (loop (cdr bodies) ids)))]))])))
       
       ;; filter-ids : syntax[list] -> listof syntax

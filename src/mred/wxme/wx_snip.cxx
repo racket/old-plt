@@ -350,9 +350,12 @@ void wxSnip::GetTextBang(wxchar *s, long offset, long num, long dt)
   if (num <= 0)
     return;
   str = GetText(offset + dt, num, FALSE);
-  if (!str)
-    memset(s, '.', num);
-  else
+  if (!str) {
+    int i;
+    for (i = 0; i < num; i++) {
+      s[i] = '.';
+    }
+  } else
     memcpy(s, str, num * sizeof(wxchar));
 }
 
@@ -360,6 +363,7 @@ wxchar *wxSnip::GetText(long offset, long num,
 			Bool WXUNUSED(flattened), long *got)
 {
   wxchar *s;
+  int i;
 
   if (num <= 0)
     return wx_empty_wxstr;
@@ -371,7 +375,9 @@ wxchar *wxSnip::GetText(long offset, long num,
     num = count - offset;
 
   s = new WXGC_ATOMIC wxchar[num + 1];
-  memset(s, '.', num * sizeof(wxchar));
+  for (i = 0; i < num; i++) {
+    s[i] = '.';
+  }
   s[num] = 0;
 
   if (got)
@@ -491,7 +497,7 @@ static TextSnipClass *TheTextSnipClass;
 TextSnipClass::TextSnipClass(void)
 {
   classname = "wxtext";
-  version = 1;
+  version = 2;
   required = TRUE;
 }
 
@@ -1008,7 +1014,7 @@ void wxTextSnip::Read(long len, wxMediaStreamIn *f)
   }
 
   dtext = 0;
-  if (WXME_VERSION_BEFORE_SEVEN(f)) {
+  if (f->ReadingVersion(TheTextSnipClass) < 2) {
     int i;
     /* Read Latin-1: */
     f->Get((long *)&len, (char *)buffer);

@@ -1,43 +1,133 @@
-#| Data Defs
-
- Class          = (list Name SuperClass Fields [Comment])
- ;; the name of the class, the name of the supertype ("" if none), and 
- ;; the class's fields
-
- DataType       = (make-union TypeName Fields VariantClasses Comment)
- ;; the name of the type and its variants
- 
- VariantClasses = (Listof VariantClass)
- VariantClass   = (list Name Fields [Comment])
-
- Name           = String 
- TypeName       = String 
- SuperClass     = String 
- Fields         = (Listof Field)
- Field          = (list String String)
-|#
 #cs
 (module draw-txt mzscheme
   (require (lib "etc.ss")
            (lib "list.ss")
+           (lib "contract.ss")
            (file "data-defs.scm"))
+  
+  (provide/contract
+   [dt-draw    (Union . -> . string?)]
+   [class-draw (Class . -> . string?)])
   
   ;; ---------------------------------------------------------------------------
   ;; Deal with a Union of classes 
   
-  ;; VariantClasses Super -> (Listof String)
-  (define (variants*-draw variants spr)
-    (flatten-string-matrix (variants*-to-strings variants spr)))
+  ;; DataType -> String
+  (define (dt-draw dt)
+    (let ([spr (dt-type dt)]
+	  [vts (dt-variants dt)])
+      (if (null? vts)
+	  (class-draw (list spr "" (dt-fields dt)))
+    (let*-values 
+        ([(vts-as-strings recursive?) (variants*-to-strings vts spr)]
+         [(width)
+          (apply + (map (lambda (x) (string-length (car x))) vts-as-strings))]
+         ;; calculate the connection point for the first and last variant
+         ;; then create a line that connects those two points 
+         [(last)            (caar (last-pair vts-as-strings))]
+         [(fst-bar)         (find-bar (caar vts-as-strings))]
+         [(last-bar)        (find-bar last)]
+         [(width-of-last)   (string-length last)] 
+         [(center-of-last)  (+ (- width width-of-last) (find-bar last))])
+      (strings->string-as-lines
+       (add-recursion-connector
+        recursive?
+        (append
+         (abstract-to-string spr (dt-fields dt) width recursive?)
+         (map (lambda (x) (centered x width)) REFINEMENT-ARROW)
+         (list (string-append 
+                (make-string fst-bar #\space)
+                (make-string (- width fst-bar (- width-of-last +1 last-bar)) #\-)
+                (make-string (- width-of-last +1 last-bar) #\space)))
+         (flatten-string-matrix vts-as-strings))))))))
+  
+  ;; String -> Number
+  (define (find-bar s)
+    (let loop ([i (- (string-length s) 1)])
+      (cond [(< i 0) (error 'find-bar "can't happen: ~e" s)]
+            [(char=? (string-ref s i) #\|) i]
+            [else (loop (- i 1))])))
+ 
+  ;; (Listof String) -> (Listof String)
+  ;; add 
+  ;; 
+  ;;  --+ // on second line 
+  ;;    |
+  ;;  --+ // on last line 
+  ;; to los 
+  (define/contract add-recursion-connector 
+    (boolean?
+     (and/c (listof string?) (lambda (los) (>= (length los) 3)))
+     . -> .
+     any)
+    (lambda (r los)
+      (if (not r) los
+      (let* ([fst (car los)]
+             [snd (cadr los)]
+             [lst (car (last-pair los))]
+             [BLK "   "]
+             [CON "--+"]
+             [LIN "  |"])
+        (cons (string-append fst BLK)
+              (cons (string-append snd CON)
+                    (let loop ([l (cddr los)])
+                      (cond
+                        [(null? (cdr l)) (list (string-append lst CON))]
+                        [else (cons (string-append (car l) LIN) 
+                                    (loop (cdr l)))]))))))))
+  
+  (define REFINEMENT-ARROW
+    (list "/ \\"
+          "---"
+          " | "))
+  
+  ;; Class Fields Number Boolean-> (Listof String)
+  ;; create a list of strings that represent the abstract class of a union 
+  ;; center the strings with respect to width, add a "recursion" arrow (needed?)
+  (define/contract abstract-to-string
+    (string? Fields natural-number? boolean?
+             . ->d . 
+             (lambda (_1 _2 n _3)
+               (lambda (out) (= (string-length (car out)) n))))
+    (lambda (spr fields width recursive)
+      (let* ([class-as-strings (class-to-strings (list spr "" fields))]
+             [width-of-classes  (string-length (car class-as-strings))]
+             [super-line (centered (cadr class-as-strings) width)])
+        (cons
+         (centered (car class-as-strings) width)
+         (cons (if recursive (add-<-- super-line) super-line)
+               (map (lambda (x) (centered x width)) 
+                    (cddr class-as-strings)))))))
+  
+  ;; String -> String 
+  ;; add the containment arrow to an abstract class from the right fringe
+  (define (add-<-- x0) 
+    (list->string
+     (reverse!
+      (let loop ([x (reverse! (string->list x0))])
+        (cond
+          [(char=? (cadr x) #\|) (cons #\< (cdr x))]
+          [else (cons #\- (loop (cdr x)))])))))
   
   ;; VariantClasses Super -> (Listof String)
+  ;; for testing and printing only 
+  (define (variants*-draw variants spr)
+    (let-values ([(s b) (variants*-to-strings variants spr)])
+      (flatten-string-matrix s)))
+  
+  ;; VariantClasses Super -> (Listof (Listof String)) Boolean
   ;; turns a list of Variants into a list of strings, one per line 
   (define (variants*-to-strings variants spr)
-    (let* ([d (apply max (map (lambda (vc) (length (second vc))) variants))])
-      (let loop ([v variants][cnnctd #f])
-        (cond
-          [(null? v) '()]
-          [else (let-values ([(s b) (variant-to-strings (car v) spr cnnctd d)])
-                  (cons s (loop (cdr v) (or cnnctd b))))]))))
+    (let* ([d (apply max (map (lambda (vc) (length (second vc))) variants))]
+           [recursion #f])
+      (values 
+       (let loop ([v variants][cnnctd #f])
+         (cond
+           [(null? v) (set! recursion cnnctd) '()]
+           [else (let-values ([(s b) (variant-to-strings (car v) spr cnnctd d)])
+                   (cons s (loop (cdr v) (or cnnctd b))))]))
+       ;; ordering: begin
+       recursion)))
   
   ;; VariantClass Super Boolean Number -> String 
   (define (variant-draw class super left-connected depth)
@@ -66,7 +156,8 @@
            [LIN " |"] ;; (= (string-length CON) (string-length LIN))
            [junk (lambda _ (symbol->string (gensym)))]
            [width (string-length (car cs))]
-           [mkln (lambda (lft ch str) (string-append lft (make-string width ch) str))])
+           [mkln (lambda (lft ch str) 
+                   (string-append lft (make-string width ch) str))])
       (values 
        (append
         (list (string-append BLK (centered "|" width) BLK))
@@ -80,23 +171,13 @@
              cs
              ;; pad types with junk lines for class header and class bottom
              (append (map junk head) types (list (junk))))
-        (build-list (- depth -1 (length fields)) (lambda _  (mkln BLK #\space (if recursion LIN BLK))))
+        (build-list (- depth -1 (length fields))
+                    (lambda _  (mkln BLK #\space (if recursion LIN BLK))))
         (list
          (if left-connected
              (mkln STG #\- (if recursion CON STG))
              (mkln BLK #\space (if recursion CN2 BLK)))))
        recursion)))
-  
-  ;; String Number -> String
-  ;; place str in the center of an otherwise blank string
-  (define (centered str width)
-    (let* ([len-str (string-length str)]
-           [lft (quotient (- width len-str) 2)]
-           [rgt (- width len-str lft)])
-      (string-append (make-string lft #\space) str (make-string rgt #\space))))
-  
-  (test== (centered "|" 2) "| ")
-  (test== (centered "|" 3) " | ")
   
   ;; ---------------------------------------------------------------------------
   ;; Deal with a single class 
@@ -172,6 +253,18 @@
   (define (flatten-string-matrix smatrix) 
     (apply map (lambda l (apply string-append l)) smatrix))
   
+    
+  ;; String Number -> String
+  ;; place str in the center of an otherwise blank string
+  (define (centered str width)
+    (let* ([len-str (string-length str)]
+           [lft (quotient (- width len-str) 2)]
+           [rgt (- width len-str lft)])
+      (string-append (make-string lft #\space) str (make-string rgt #\space))))
+    
+  ;; ---------------------------------------------------------------------------
+  ;; Constants
+  
   (define LEFT  "| ")
   (define LFT+  "+-")
   (define RIGHT " |")
@@ -179,9 +272,12 @@
   ; (define HOOK  " |-o") ; (= (string-length RIGHT) (string-length HOOK))
   
   
-  #|Tests: |#
+  #|Tests: 
   (require (lib "testing.scm" "testing"))
-  
+
+  (test== (centered "|" 2) "| ")
+  (test== (centered "|" 3) " | ")
+
   "testing classes"
   (define class1 (list "Class" "Super" '(("int" "capacity") ("hello" "world"))))
   (define class2 (list "Class" "Super" '()))
@@ -261,284 +357,84 @@
           (strings->string-as-lines expected-variant3))
   
   
-  (test== (variants*-to-strings (list vclass1 vclass2 vclass3) "Super") 
+  (test== (let-values
+              ([(s b) 
+                (variants*-to-strings (list vclass1 vclass2 vclass3) "Super")])
+            s)
           (list expected-variant1 expected-variant2 expected-variant3))
   
   (test== (variants*-draw (list vclass1 vclass2 vclass3) "Super") 
           (flatten-string-matrix
            (list expected-variant1 expected-variant2 expected-variant3)))
-  
-  (printf "~a~n" (strings->string-as-lines (variants*-draw (list vclass1 vclass2 vclass3) "Super")))
-  
-  #|  ---------------------------------------------------------------------------
-  
-  ;; Class String *-> String
-  (define (classes-draw classes . super) 
-    (strings->string-as-lines (apply classes-to-strings classes super)))
-  
-  ;; Class (Listof Classes) -> (Listof String)
-  (define (class-union-to-strings utype variants) 
-    (let* ([ac (class-to-strings utype)]
-           [classes (classes-to-strings variants (car utype))]
-           [v  (flatten-string-matrix classes)]
-           [Lv (string-length (first v))]
-           [the-core
-            (append 
-             (center-picture Lv ac)
-             (center-picture Lv REFINEMENT-ARROW)
-             (center-picture Lv (refinement-connectors classes))
-             v)]
-           [foo 0])
-      (map (lambda (x) 
-             (set! foo (+ foo 1))
-             (cond
-               [(> foo 2) (string-append x "|")]
-               [(= foo 1) x]
-               [(= foo 2) (replace-end-with-back-arrow x)]))
-           the-core)))
-  
-  ;; String -> String 
-  ;; add the containment arrow to an abstract class from the right fringe
-  (define (replace-end-with-back-arrow x0)
-    (list->string
-     (reverse!
-      (cons #\+ 
-            (let loop ([x (reverse (string->list x0))])
-              (cond
-                [(char=? (cadr x) #\|) (cons #\< (cdr x))]
-                [else (cons #\- (loop (cdr x)))]))))))
-  
-  ;; (Listof String) -> (Listof String)
-  (define (refinement-connectors class-pictures)
-    (let ([center-char 
-           (lambda (line c l r)
-             (car (center-picture (string-length line) (list c)  l r)))])
-      (list 
-       (string-append
-        (center-char (caar class-pictures) "+" #\space #\-)
-        (let loop ([cp (rest class-pictures)])
-          (cond
-            [(null? (rest cp))
-             (center-char (caar cp) "+" #\- #\space)]
-            [else (string-append (center-char (caar cp) "+" #\- #\-)
-                                 (loop (rest cp)))])))
-       (foldr (lambda (f r) 
-                (string-append (car (center-picture (string-length (car f)) (list "|"))) r))
-              ""
-              class-pictures)
-       )))
-  
-  ;; Number (Listof String) -> (Listof String)
-  (define center-picture 
-    (opt-lambda (Lv ac (l #\space)[r #\space])
-      (let* ([delta (- Lv (string-length (first ac)))]
-             [lft (quotient delta 2)])
-        (map (pad-lines (make-string lft l) (make-string (- delta lft) r)) ac))))
-  
-  (define REFINEMENT-ARROW
-    (list "/ \\"
-          "---"
-          " | "))
-  
 
+  (define aclass-exp ;; 19
+    (list "     +-------+     "
+          "     | Super |<----"
+          "     +-------+     "
+          "     +-------+     "))
   
-  ;; (Listof Class) String *-> (Listof (Listof String))
-  ;; take a list of classes and produce a single "line" (listof string-lines)
-  (define (classes-to-strings classes0 . super)
-    (let* (;; (Listof (Listof String))
-           [classes (map (lambda (c) (apply class-to-strings c super)) classes0)] 
-           [L (apply max (map length classes))]
-           [FOO "   "]
-           [classes (foldr (lambda (class-los is-self-recursive rest)
-                             (if (null? super)
-                                 (map (pad-lines FOO FOO)
-                                    (if (>= (length class-los) L)
-                                        class-los
-                                        (pad-class-with-blank-lines L class-los)))
-                             (cons
-                              (append 
-                               (map (pad-lines FOO FOO)
-                                    (if (>= (length class-los) L)
-                                        class-los
-                                        (pad-class-with-blank-lines L class-los)))
-                               (list
-                                (case is-self-recursive
-                                  [(long)
-                                   (string-append 
-                                    "--"
-                                    (make-string (string-length (first class-los)) #\-)
-                                    CROSS
-                                    (if (null? rest) "--" ""))]
-                                  [(short)
-                                   (string-append 
-                                    "  "
-                                    (make-string (string-length (first class-los)) #\space)
-                                    CROSS
-                                    (if (null? rest) "--" ""))]
-                                  [(conn)
-                                   (string-append 
-                                    "--"
-                                    (make-string (string-length (first class-los)) #\-)
-                                    NOCROSS
-                                    (if (null? rest) "--" ""))
-                                   ]
-                                  [(none)
-                                   (string-append 
-                                    "  "
-                                    (make-string (string-length (first class-los)) #\space)
-                                    FOO)])))
-                              rest)))
-                           '() 
-                           classes
-                           (let loop ([c classes0][prior #f])
-                             (cond
-                               [(null? c) '()]
-                               [else (let ([self-recursive (apply is-recursive? (car c) super)])
-                                       (cond
-                                         [(and self-recursive prior) (cons 'long (loop (cdr c) #t))]
-                                         [self-recursive (cons 'short (loop (cdr c) #t))]
-                                         [prior (cons 'conn (loop (cdr c) #t))]
-                                         [else (cons 'none (loop (cdr c) #f))]))])))])
-      classes))
+  (test== (abstract-to-string "Super" '() 19 #t)
+          aclass-exp)
   
+  (test== (dt-draw
+           (make-dt "Class"
+                    '()
+                    '()
+                    ""))
+          (strings->string-as-lines expected-class2))
   
-  
-  (define is-recursive? 
-    (case-lambda 
-      [(class) #f]
-      [(class super)
-       (let* ([name    (first class)]
-              [fields  (second class)]
-              [types   (map first fields)])
-         (member super types))]))
-  
-  
-  (define CROSS "-+-")
-  (define NOCROSS "---")
-  
-  ;; Number (Cons String (Listof String)) -> (Listof String)
-  (define (pad-class-with-blank-lines n l)
-    (let ([blanks (make-string (string-length (first l)) #\space)])
-      (append l (build-list (- n (length l)) (lambda (i) blanks)))))
-  
-  ;; (Listof Field) -> (Listof String)
-  (define (create-field-declarations fields)
-    (map (lambda (f) (string-append (string-append (first f) " " (second f)))) 
-         fields))
-  
-  ;; String Boolean *-> String
-  (define (make-separator-line width . hasa)
-    (string-append LFT+ (make-string (- width (string-length LFT+) (string-length RGT+)) #\-) 
-                   (if (null? hasa) RGT+ HASA+)))
-  
-  ;; Number String -> String
-  ;; make one line in class of width from txt
-  (define (make-line width . rgt)
-    (lambda (txt)
-      (string-append 
-       LEFT 
-       txt
-       (make-string 
-        (- width (string-length txt) (string-length LEFT) (string-length RIGHT))
-        #\space)
-       (if (null? rgt) RIGHT (car rgt)))))
-  
-  (define LEFT  "  | ")
-  (define LFT+  "  +-")
-  (define RIGHT " |  ")
-  (define HOOK  " |-o") ; (= (string-length RIGHT) (string-length HOOK))
-  (define RGT+  "-+  ") ; (= (string-length RIGHT) (string-length RGT+))
-  (define HASA  " | |") ; (= (string-length RIGHT) (string-length HASA))
-  (define HASA+ "-+ |") ; (= (string-length RIGHT) (string-length RGT+))
-  
-  ;; String (Cons String (Listof String)) -> Number
-  ;; compute width of class as the widest field/name 
-  (define (width-class name fields)
-    (+ (string-length LEFT)
-       ;; longest field spec of name/class and fields
-       (apply max (map string-length (cons name fields)))
-       (string-length RIGHT)))
-  
-  ;; String String -> (String -> String)
-  ;; add lft and rgt to txt 
-  (define (pad-lines lft rgt) (lambda (txt) (string-append lft txt rgt)))
-  
-  
-  
-  ;; (Listof String) -> String
-  ;; turn the list of strings into a single string, separating lines with newline 
-  (define (strings->string-as-lines s)
-    (apply string-append (map (lambda (x) (string-append x "\n")) s)))
-  
-  ;; Basic Tests: 
-  
-  
-  (equal? 
-   (flatten-string-matrix
-    (list (list "a1" "a2" "a3") (list "b1" "b2" "b3") (list "c1" "c2" "c3")))
-   (list "a1b1c1" "a2b2c2" "a3b3c3"))
-  
-  ;; Tests
-  (require (lib "testing.scm" "testing"))
-  
-
-  (test== (width-class (car aTrain) (create-field-declarations (cadr aTrain)))
-          (+ 12 (string-length LEFT) (string-length RIGHT)))
-  
-  (test== ([make-line (+ 12 (string-length LEFT) (string-length RIGHT))] "int capacity")
-          "  | int capacity |  ")
-  
-  (test== (make-separator-line (+ 12 (string-length LEFT) (string-length RIGHT)))
-          "  +--------------+  ")
-  
-
-  (test== (classes-to-strings (list sTrain aTrain))
-          '(("     +--------------+      "
-             "     | Train        |      "
-             "     +--------------+      "
-             "     | int capacity |      "
-             "     +--------------+      "
-             "                           ")
-            ("     +--------------+      "
-             "     | Train        |      "
-             "     +--------------+      "
-             "     | int capacity |      "
-             "     | hello world  |      "
-             "     +--------------+      ")))
-  
-  ;; Union: ARiver = Source(Location) | Confluence(Location, ARiver, ARiver)
-  (define ARiver
-    (list "ARiver" '()))
-  (define Source
-    (list "Source" '(("Location" "loc"))))
-  (define Confluence
-    (list "Confluence" '(("Location" "loc") ("ARiver" "left") ("ARiver" "right"))))
-  
-  (test== (strings->string-as-lines
-           (class-union-to-strings ARiver (list Source Confluence)))
+  (test== (dt-draw 
+           (make-dt "Super" '() (list vclass1 vclass2 vclass3) ""))
           (strings->string-as-lines
-          '("                    +--------+                      "
-            "                    | ARiver |<---------------------+"
-            "                    +--------+                      |"
-            "                    +--------+                      |"
-            "                       / \\                          |" ;; note escape 
-            "                       ---                          |"
-            "                        |                           |"
-            "           +--------------------------+             |"
-            "           |                          |             |"
-            "   +--------------+           +--------------+      |"
-            "   | Source       |           | Confluence   |      |"
-            "   +--------------+           +--------------+      |"
-            "   | Location loc |           | Location loc |      |"
-            "   +--------------+           | ARiver left  |-o    |"
-            "                              | ARiver right |-o    |"
-            "                              +--------------+ |    |"
-            "                                              -+----|")))
+           '(
+"                    +-------+                       "
+"                    | Super |<---------------------+"
+"                    +-------+                      |"
+"                    +-------+                      |"
+"                       / \\                         |" ;; note escape 
+"                       ---                         |"
+"                        |                          |"
+"       ----------------------------------          |"
+"       |                |               |          |"
+"  +----------+    +-----------+    +----------+    |"
+"  | Variant1 |    | Variant2  |    | Variant3 |    |"
+"  +----------+    +-----------+    +----------+    |"
+"  +----------+    | int x     |    | String x |    |"
+"                  | boolean y |    | Super y  |-+  |"
+"                  | Super z   |-+  | Super z  |-+  |"
+"                  +-----------+ |  +----------+ |  |"
+"                                |               |  |"
+"                                +---------------+--+"
+             )))
   
-  (test== (replace-end-with-back-arrow "| ARiver |     ")
-          "| ARiver |<----+"
-          "replace end with back arrow")
+  (test== (dt-draw
+           (make-dt "Super" 
+                    '(("int" "x"))
+                    '(("VC1" (("int" "x")))
+                      ("VC2" (("boolean" "b") ("int" "y")))
+                      ("VC3" (("String" "s"))))
+                    ""))
+          (strings->string-as-lines
+          '(
+"                  +-------+                   "
+"                  | Super |                   "
+"                  +-------+                   "
+"                  | int x |                   "
+"                  +-------+                   "
+"                     / \\                      "
+"                     ---                      "
+"                      |                       "
+"      --------------------------------        "
+"      |              |               |        "
+"  +-------+    +-----------+    +----------+  "
+"  | VC1   |    | VC2       |    | VC3      |  "
+"  +-------+    +-----------+    +----------+  "
+"  | int x |    | boolean b |    | String s |  "
+"  +-------+    | int y     |    +----------+  "
+"               +-----------+                  "            
+"                                              "
+"                                              "
+            )))
   
-  (printf "~a" (strings->string-as-lines (class-union-to-strings ARiver (list Source Confluence))))
   |#
-  )
+)

@@ -13,8 +13,10 @@
            (file "aux-class.scm"))
   
   (provide/contract
-   [get-class-info (-> (union false? (list/p Class boolean? boolean?)))]
-   [get-union-info (-> (union false? (list/p Union boolean? boolean?)))])
+   [get-class-info (->* []
+                        [boolean? (union false? (list/p Class boolean? boolean?))])]
+   [get-union-info (->* []
+		        [boolean? (union false? (list/p Union boolean? boolean?))])])
   
   (define CLASS-WIZARD "The Class Wizard")
   (define UNION-WIZARD "The Union Wizard")
@@ -27,6 +29,7 @@
   (define ADD-VARIANT  "Add Variant")
   (define ADD-TOSTRING "add toString()")
   (define ADD-TEMPLATE "add method template")
+  (define ADD-DIAGRAM  "add class diagram")
   (define PURPOSE-CLASS "// purpose of class: ")
   (define PURPOSE-UNION  "// purpose of union: ")
   (define CLASS        "class")
@@ -140,15 +143,17 @@
       (add-button button-panel add-str (lambda (x e) (add-field-cb x e)))
       
       ;; switches for toString methods and template in comments 
-      (define-values (string template)
+      (define-values (string template diagram)
         (if switches? 
             (let ([switch-pane (add-horizontal-panel p)])
               (values (make-checkbox switch-pane ADD-TOSTRING) 
-                      (make-checkbox switch-pane ADD-TEMPLATE)))
-            (values #f #f)))
+                      (make-checkbox switch-pane ADD-TEMPLATE)
+                      (make-checkbox switch-pane ADD-DIAGRAM)))
+            (values #f #f #f)))
       (define (get-switch x) (and switches? (send x get-value)))
       (define/public (tostring?) (get-switch string))
       (define/public (template?) (get-switch template))
+      (define/public (diagram?) (get-switch diagram))
       
       ;; --------------------------------------------------------------------
       ;; info panel
@@ -180,7 +185,9 @@
       
       ;; --------------------------------------------------------------------
       ;; call in 
-      (define/public (call) (send this show #t) (if abort? #f (produce)))
+      (define/public (call) 
+        (send this show #t)
+        (values (diagram?) (if abort? #f (produce))))
       
       (define/abstract produce)))
   
@@ -193,7 +200,8 @@
       (super-new)
       (inherit-field info-pane)
       (inherit 
-        tostring? template? error-message an-error? produce-name-from-text)
+        tostring? template? diagram? 
+        error-message an-error? produce-name-from-text)
       
       ;; --------------------------------------------------------------------
       ;; filling the info-pane 
@@ -224,13 +232,13 @@
       ;; -> (union false (list Class boolean? boolean?))
       (define/override (produce)           
         (with-handlers ([(lambda (x) (an-error? x)) (lambda _ #f)]) 
-          (list (list (produce-name-from-text class-name CLASS)
-                      (produce-name-from-text
-                       super-name (if (null? a-super) #f SUPER))
-                      (send field-panel produce)
-                      (send purpose get-value))
-                (tostring?) 
-                (template?))))
+           (list (list (produce-name-from-text class-name CLASS)
+                       (produce-name-from-text
+                        super-name (if (null? a-super) #f SUPER))
+                       (send field-panel produce)
+                       (send purpose get-value))
+                 (tostring?) 
+                 (template?))))
       
       ;; if the class specification is proper, hide dialog
       (define/override (make-class-cb x e) 
@@ -432,16 +440,17 @@
       (define (create-variant ms)
         (lambda (bt evt)
           (with-handlers ([an-error? void])
-            (let* ([type (get-type)] ;; may raise an error message
-                   [class-in (send variants lookup bt)]
-                   [a-class (send (new class-info% 
-                                       (title VARIANT-WIZD)
-                                       (insert-str INSERT-VARNT)
-                                       (switches? #f)
-                                       (add-str ADD-FIELD)
-                                       (a-super type)
-                                       (a-v-class (if class-in class-in '())))
-                                  call)])
+            (let*-values
+                ([(type) (get-type)] ;; may raise an error message
+                 [(class-in) (send variants lookup bt)]
+                 [(b a-class) (send (new class-info% 
+                                         (title VARIANT-WIZD)
+                                         (insert-str INSERT-VARNT)
+                                         (switches? #f)
+                                         (add-str ADD-FIELD)
+                                         (a-super type)
+                                         (a-v-class (if class-in class-in '())))
+                                    call)])
               (when a-class
                 (let* ([a-class (car a-class)]
                        [name    (car a-class)])
@@ -492,14 +501,16 @@
   
   ;; ------------------------------------------------------------------------
   #| Run, program, run:  
+ 
+  (require (file "class.scm") (file "draw-txt.ss"))
   
-  (require (file "class.scm"))
-  
-  (define x (get-class-info))
+  (define-values (b x) (get-class-info))
+  (if (and x b) (printf "/*~n~a~n*/~n" (class-draw (car x))))
   (if x (printf "~a~n" (apply make-class x)))
   
-  (define y (get-union-info))
+  (define-values (c y) (get-union-info))
+  (if (and y c) (printf "/*~n~a~n*/~n" (dt-draw (car y))))
   (if y (printf "~a~n" (apply make-union y)))
 
-  |#  
+ |#  
   )

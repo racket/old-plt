@@ -5,3 +5,12 @@ view0:
 
 view: 
  replace the multiple values abstraction with classes
+
+data-def0
+ everything is a list 
+
+data-def 
+ unions (dt) becomes a struct so that I could add common fields 
+
+draw-txt0
+ explorative prototype

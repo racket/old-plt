@@ -38,6 +38,7 @@
    Class   ;; flat-contract
    Union   ;; flat-contract 
    Variant ;; flat-contract 
+   Fields  ;; flat-contract
    java-id? ;; Any -> Boolean
    class-purpose ;; Class -> String
    variant-purpose ;; Variant -> String
@@ -59,7 +60,7 @@
   (define (java-id? s)
     (and (string? s) (not (string=? "" s)) (not (regexp-match "[ |\t|\n]" s))))
   
-  (define-as-contract "<Class representation>" (class c)
+  (define-as-contract "<Class>" (class c)
     (and (pair? c) (pair? (cdr c)) (pair? (cddr c)) 
          (or (null? (cdddr c))
              (and (pair? (cdddr c))
@@ -71,18 +72,18 @@
            (or (java-id? super) (string=? super "")))
          (is-fields? (caddr c))))
   
-  (define (is-fields? l)
+  (define-as-contract "<Fields>" (fields l)
     (and (list? l) (andmap is-field? l)))
   
   (define-as-contract "<Field in Class>" (field l)
     (and (pair? l) (pair? (cdr l)) (null? (cddr l))
          (java-id? (car l)) (java-id? (cadr l))))
   
-  (define-as-contract "<Union (datatype) representation>" (union l) (dt? l))
+  (define-as-contract "<Union>" (union l) (dt? l))
   
   (define (is-variants? l) (andmap is-variant? l))
   
-  (define-as-contract "<Variant (in a union)>" (variant c) 
+  (define-as-contract "<Variant>" (variant c) 
     (and (pair? c) (pair? (cdr c)) 
          (or
           (null? (cddr c))

@@ -5,6 +5,6 @@
                                        (list "profj" "libs" "java" "lang")
 				       (list "profj" "libs" "java" "io"))))
   (define compile-omit-files
-    '("draw-txt.ss" "macro-class.scm" "view0.scm" "data-defs0.scm"))
+    '("draw-txt0.ss" "macro-class.scm" "view0.scm" "data-defs0.scm"))
 
   )

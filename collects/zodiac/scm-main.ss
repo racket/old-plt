@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.198 1999/12/16 17:52:35 shriram Exp $
+; $Id: scm-main.ss,v 1.199 2000/01/02 23:28:25 robby Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -14,7 +14,7 @@
   (define-struct (set!-form struct:form) (var val))
   (define-struct (define-values-form struct:form) (vars val))
   (define-struct (let-values-form struct:form) (vars vals body))
-  (define-struct (letrec*-values-form struct:form) (vars vals body))
+  (define-struct (letrec-values-form struct:form) (vars vals body))
   (define-struct (quote-form struct:form) (expr))
   (define-struct (begin-form struct:form) (bodies))
   (define-struct (begin0-form struct:form) (bodies))
@@ -92,9 +92,9 @@
 	(zodiac-start source) (zodiac-finish source)
 	(make-empty-back-box) vars vals body)))
 
-  (define create-letrec*-values-form
+  (define create-letrec-values-form
     (lambda (vars vals body source)
-      (make-letrec*-values-form (zodiac-origin source)
+      (make-letrec-values-form (zodiac-origin source)
 	(zodiac-start source) (zodiac-finish source)
 	(make-empty-back-box) vars vals body)))
 
@@ -136,13 +136,13 @@
 	    (let-values-form-vars expr) (let-values-form-vals expr))
 	 ,(p->r (let-values-form-body expr)))))
 
-  (extend-parsed->raw letrec*-values-form?
+  (extend-parsed->raw letrec-values-form?
     (lambda (expr p->r)
       `(letrec-values 
 	 ,(map (lambda (vars val)
 		 (list (map p->r vars) (p->r val)))
-	    (letrec*-values-form-vars expr) (letrec*-values-form-vals expr))
-	 ,(p->r (letrec*-values-form-body expr)))))
+	    (letrec-values-form-vars expr) (letrec-values-form-vals expr))
+	 ,(p->r (letrec-values-form-body expr)))))
 
   (extend-parsed->raw quote-form?
     (lambda (expr p->r)
@@ -258,7 +258,7 @@
 
 	    ;; Found internal defines
 	    (begin0
-	     (create-letrec*-values-form
+	     (create-letrec-values-form
 	      (reverse (map (lambda (vars+marks)
 			      (map car vars+marks))
 			    bindings))
@@ -1296,7 +1296,7 @@
 				 (expand-expr e env attributes vocab))
 			       vals))))
 		      (result
-			(create-letrec*-values-form
+			(create-letrec-values-form
 			  (let loop ((var-lists vars)
 				      (new-vars new-vars))
 			    (if (null? var-lists)

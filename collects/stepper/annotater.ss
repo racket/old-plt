@@ -90,18 +90,10 @@
   ; debug-info)
   
   (define (make-debug-info source tail-bound free-vars label)
-    (let* ([top-level-varrefs (filter z:top-level-varref? free-vars)]
-           [bound-varrefs (filter z:bound-varref? free-vars)]
-           [top-level-kept (if (eq? tail-bound 'all)
-                               top-level-varrefs 
-                               null)]
-           [lexical-kept (if (eq? tail-bound 'all)
-                             bound-varrefs
-                             (var-set-intersect bound-varrefs 
-                                                tail-bound))]
-           [kept-vars (append top-level-kept lexical-kept)]
-           ; the reason I don't need var-set-union here is that these sets are guaranteed
-           ; not to overlap.
+    (let* ([kept-vars (if (eq? tail-bound 'all)
+                          free-vars
+                          (var-set-intersect free-vars
+                                             tail-bound))]
             [var-clauses (map (lambda (x) 
                                (let ([var (z:varref-var x)])
                                  `(cons (#%lambda () ,var)
@@ -236,7 +228,9 @@
          ; a) a zodiac expression to annotate
          ; b) a list of all varrefs s.t. this expression is tail w.r.t. their bindings
          ;    or 'all to indicate that this expression is tail w.r.t. _all_ bindings.
-         ; c) a list of all top-level variables which occur in the program
+         ; c) a list of bound-varrefs of 'floating' variables; i.e. lexical bindings 
+         ;    whose value must be captured in order to reconstruct outer expressions.
+         ;    Necessitated by 'unit', useful for 'letrec*-values'.
          ; d) a boolean indicating whether this expression will be the r.h.s. of a reduction
          ;    (and therefore should be broken before)
          ; e) a boolean indicating whether this expression is top-level (and therefore should
@@ -249,29 +243,21 @@
 	 ;(z:parsed (union (list-of z:varref) 'all) (list-of z:varref) bool bool -> 
          ;          sexp (list-of z:varref))
 	 
-	 (define (annotate/inner expr tail-bound pre-break? top-level?)
-	   
-           ; translate-varref: (bool bool -> sexp (listof varref))
+	 (define (annotate/inner expr tail-bound floating-vars pre-break? top-level?)
 	   
 	   (let* ([tail-recur (lambda (expr) (annotate/inner expr tail-bound #t #f))]
                   [define-values-recur (lambda (expr) (annotate/inner expr tail-bound #f #f))]
                   [non-tail-recur (lambda (expr) (annotate/inner expr null #f #f))]
                   [lambda-body-recur (lambda (expr) (annotate/inner expr 'all #t #f))]
                   [make-debug-info-normal (lambda (free-vars)
-                                            (make-debug-info expr tail-bound free-vars 'none))]
+                                            (make-debug-info expr tail-bound free-vars floating-vars 'none))]
                   [make-debug-info-app (lambda (tail-bound free-vars label)
-                                         (make-debug-info expr tail-bound free-vars label))]
+                                         (make-debug-info expr tail-bound free-vars floating-vars label))]
                   [wcm-wrap (if pre-break?
                                 wcm-pre-break-wrap
                                 simple-wcm-wrap)]
                   [wcm-break-wrap (lambda (debug-info expr)
-                                    (wcm-wrap debug-info (break-wrap expr)))]
-
-
-                  
-                  [translate-varref
-                   (lambda ()
-                     )])
+                                    (wcm-wrap debug-info (break-wrap expr)))])
 	     
              ; find the source expression and associate it with the parsed expression
              
@@ -304,21 +290,9 @@
                                                   (#%quote ,v)))
                                         ,real-v)
                                       v)])
-                  (values (wcm-break-wrap debug-info (return-value-wrap annotated)) free-vars))
+                  (values (wcm-break-wrap debug-info (return-value-wrap annotated)) free-vars))]
 
-                [(z:bound-varref? expr)
-		(translate-varref 
-		 (not (never-undefined? (z:bound-varref-binding expr)))
-		 #f)]
-	       
-               [(z:top-level-varref? expr)
-		(if (utils:is-unit-bound? expr)
-		    (translate-varref #t #f)
-		    (begin
-		      
-		      (translate-varref #f #t)))]
-	       
-	       [(z:app? expr)
+               [(z:app? expr)
 		(let+
 		 ([val sub-exprs (cons (z:app-fun expr) (z:app-args expr))]
 		  [val arg-temps (build-list (length sub-exprs) get-arg-symbol)]

@@ -17,9 +17,6 @@
   
   (define w-c-m-key (gensym))
   
-  (define error-box
-    (box #f))
-  
   (define unparse-read utils:read->raw)
   
   ; The new wrap simply puts a w-c-m around an expression. This
@@ -58,10 +55,10 @@
 	     (lambda (element)
 	       (if (pair? element)
 		   (and (utils:check-for-keyword (car element))
-			(list (get-binding-name (car element))
+			(list (utils:get-binding-name (car element))
 			      (annotate/inner (cdr element))))
 		   (and (utils:check-for-keyword element)
-			(get-binding-name element))))))
+			(utils:get-binding-name element))))))
 	(cond
 	  ((z:sym-paroptarglist? paroptarglist)
 	   (process-args (car (z:paroptarglist-vars paroptarglist))))
@@ -76,26 +73,7 @@
 	  (else
 	   (z:interface:internal-error paroptarglist
 				       "Given to paroptarglist->ilist"))))))
-  
-  ; get-binding-name extracts the S-expression name for a binding. Zodiac
-  ; creates a unique, gensym'd symbol for each binding, but the name is
-  ; unreadable. Here, we create a new gensym, but the name of the generated
-  ; symbol prints in the same way as the original symbol.
-  
-  (define (get-binding-name binding)
-    (let ([name (lookup-new-binding-name binding)])
-      (or name
-	  (let* ([orig-name (z:binding-orig-name binding)]
-		 [name (string->uninterned-symbol (symbol->string orig-name))])
-	    (set-new-binding-name! binding name)
-	    name))))
-
-  (define-values (lookup-new-binding-name set-new-binding-name!)
-    (let-values ([(getter setter) (z:register-client 'aries:new-name (lambda () #f))])
-      (values
-       (lambda (parsed) (getter (z:parsed-back parsed)))
-       (lambda (parsed n) (setter (z:parsed-back parsed) n)))))
-  
+    
   ; translate-bound-varref is a short piece of code which would otherwise appear
   ; twice: it translates a bound variable, inserting the undefined-value-check if
   ; this parameter is enabled.  This duplication stems from the problems involving
@@ -104,7 +82,7 @@
   (define (translate-bound-varref expr maybe-undef?)
     (let ([v (if (z:top-level-varref? expr)
 		 (z:varref-var expr)
-		 (get-binding-name (z:bound-varref-binding expr)))]
+		 (utils:get-binding-name (z:bound-varref-binding expr)))]
 	  [real-v (if (z:top-level-varref? expr)
 		      (z:varref-var expr)
 		      (z:binding-orig-name
@@ -217,7 +195,7 @@
 		  (map (lambda (vars val)
 			 (for-each utils:check-for-keyword vars)
 			 (for-each mark-never-undefined vars)
-			 `(,(map get-binding-name vars)
+			 `(,(map utils:get-binding-name vars)
 			   ,(annotate/inner val)))
 		       (z:let-values-form-vars expr)
 		       (z:let-values-form-vals expr))])
@@ -225,29 +203,24 @@
 		   `(#%let-values ,bindings
 		     ,(annotate/inner (z:let-values-form-body expr)))))]
 	  
-	  ; in MzScheme 100, there is no more letrec*-values.  letrec-values
-	  ; has taken its place.  binding initializers are always evaluated
-	  ; sequentially.  However, zodiac still uses a structure called 
-	  ; letrec*-values, at least for a while.
-	  
-	  [(z:letrec*-values-form? expr)
+	  [(z:letrec-values-form? expr)
 	   ; Are all RHSes values? ...
-	   (when (andmap z:case-lambda-form? (z:letrec*-values-form-vals expr))
+	   (when (andmap z:case-lambda-form? (z:letrec-values-form-vals expr))
 	     ; ...yes , mark vars as never undefined.
 	     ; (We do this before annotating any RHS!)
 	     (for-each (lambda (vars)
 			 (for-each mark-never-undefined vars))
-		       (z:letrec*-values-form-vars expr)))
+		       (z:letrec-values-form-vars expr)))
 	   (let* ([bindings
 		   (map (lambda (vars val)
 			  (for-each utils:check-for-keyword vars)
-			  `(,(map get-binding-name vars)
+			  `(,(map utils:get-binding-name vars)
 			    ,(annotate/inner val)))
-			(z:letrec*-values-form-vars expr)
-			(z:letrec*-values-form-vals expr))])
+			(z:letrec-values-form-vars expr)
+			(z:letrec-values-form-vals expr))])
 	     (wrap expr
 		   `(#%letrec-values ,bindings
-		     ,(annotate/inner (z:letrec*-values-form-body expr)))))]
+		     ,(annotate/inner (z:letrec-values-form-body expr)))))]
 	  
 	  ; we may not wrap a define-values form in a w-c-m expression; define-values
 	  ; is legal _only_ at the top level (which includes being inside a `begin' at
@@ -276,7 +249,7 @@
 		      (let ((args (utils:arglist->ilist args)))
 			(utils:improper-foreach utils:check-for-keyword args)
 			(utils:improper-foreach mark-never-undefined args)
-			`(,(utils:improper-map get-binding-name args)
+			`(,(utils:improper-map utils:get-binding-name args)
 			  ,(annotate/inner body))))
 		    (z:case-lambda-form-args expr)
 		    (z:case-lambda-form-bodies expr)))]
@@ -300,12 +273,12 @@
 		 (clauses (map annotate/top-level (z:unit-form-clauses expr))))
 	     (for-each utils:check-for-keyword imports)
 	     `(#%unit
-	       (import ,@(map get-binding-name imports))
+	       (import ,@(map utils:get-binding-name imports))
 	       (export ,@exports)
 	       ,@clauses))]
 	  
 	  [(z:compound-unit-form? expr)
-	   (let ((imports (map get-binding-name
+	   (let ((imports (map utils:get-binding-name
 			       (z:compound-unit-form-imports expr)))
 		 (links (z:compound-unit-form-links expr))
 		 (exports (z:compound-unit-form-exports expr)))
@@ -354,8 +327,8 @@
 	  [(z:class*/names-form? expr)
 	   (wrap expr
 		 `(#%class*/names
-		   (,(get-binding-name (z:class*/names-form-this expr))
-		    ,(get-binding-name (z:class*/names-form-super-init expr)))
+		   (,(utils:get-binding-name (z:class*/names-form-this expr))
+		    ,(utils:get-binding-name (z:class*/names-form-super-init expr)))
 		   ,(annotate/inner (z:class*/names-form-super-expr expr))
 		   ,(map annotate/inner (z:class*/names-form-interfaces expr))
 		   ,(paroptarglist->ilist (z:class*/names-form-init-vars expr))
@@ -365,7 +338,7 @@
 			 ((z:public-clause? clause)
 			  `(public
 			     ,@(map (lambda (internal export expr)
-				      `((,(get-binding-name internal)
+				      `((,(utils:get-binding-name internal)
 					 ,(utils:read->raw export))
 					,(annotate/inner expr)))
 				    (z:public-clause-internals clause)
@@ -374,7 +347,7 @@
 			 ((z:override-clause? clause)
 			  `(override
 			     ,@(map (lambda (internal export expr)
-				      `((,(get-binding-name internal)
+				      `((,(utils:get-binding-name internal)
 					 ,(utils:read->raw export))
 					,(annotate/inner expr)))
 				    (z:override-clause-internals clause)
@@ -383,21 +356,21 @@
 			 ((z:private-clause? clause)
 			  `(private
 			     ,@(map (lambda (internal expr)
-				      `(,(get-binding-name internal)
+				      `(,(utils:get-binding-name internal)
 					,(annotate/inner expr)))
 				    (z:private-clause-internals clause)
 				    (z:private-clause-exprs clause))))
 			 ((z:inherit-clause? clause)
 			  `(inherit
 			    ,@(map (lambda (internal inherited)
-				     `(,(get-binding-name internal)
+				     `(,(utils:get-binding-name internal)
 				       ,(utils:read->raw inherited)))
 				   (z:inherit-clause-internals clause)
 				   (z:inherit-clause-imports clause))))
 			 ((z:rename-clause? clause)
 			  `(rename
 			    ,@(map (lambda (internal import)
-				     `(,(get-binding-name internal)
+				     `(,(utils:get-binding-name internal)
 				       ,(utils:read->raw import)))
 				   (z:rename-clause-internals clause)
 				   (z:rename-clause-imports clause))))

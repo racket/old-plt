@@ -2485,7 +2485,6 @@
 
  [ODBC 3.0 or greater]
  'sql-c-numeric
- 'sql-c-timestamp
  'sql-c-type-timestamp
  'sql-c-type-date
  'sql-c-type-time

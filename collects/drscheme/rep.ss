@@ -368,10 +368,15 @@
 						  (apply values answers))))]
 					 [evaluator
 					  (lambda (exp _ macro)
-					    (wait-on-scheme (aries:annotate exp)))]
+					    (printf "evaluator.1: ~a ~a~n" (current-directory) (current-thread))
+					    (begin0 (wait-on-scheme (aries:annotate exp))
+						    (printf "evaluator.2: ~a ~a~n" (current-directory) (current-thread))))]
 					 [user-macro-body-evaluator
 					  (lambda (x . args)
-					    (wait-on-scheme `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))]
+					    (printf "user-macro-body-evaluator.1: ~a ~a~n" (current-directory) (current-thread))
+					    (begin0
+					      (wait-on-scheme `(,x ,@(map (lambda (x) `(#%quote ,x)) args)))					    
+					      (printf "user-macro-body-evaluator.2: ~a ~a~n" (current-directory) (current-thread))))]
 					 [exp (call/nal zodiac:scheme-expand/nal
 							zodiac:scheme-expand
 							[expression: zodiac-read]
@@ -381,7 +386,10 @@
 					 [heading-out (if annotate? 
 							  (aries:annotate exp)
 							  exp)])
-				    (mred:debug:when 'drscheme:sexp
+				    (mred:debug:when 'aries
+						     (printf "before aries:~n")
+						     (mzlib:pretty-print@:pretty-print exp)
+						     (printf "after aries:~n")
 						     (mzlib:pretty-print@:pretty-print heading-out))
 				    (lambda () (f heading-out loop)))))))])
 		   (next-iteration)))))])
@@ -659,7 +667,6 @@
 		      (semaphore-post break-semaphore)])
 		   (mred:debug:printf 'console-threading "break: passed break.1"))])
 	(public
-	  [current-thread-directory (current-directory)]
 	  [escape
 	   (lambda ()
 	     (with-parameterization user-param
@@ -676,36 +683,22 @@
 		  (error-escape-k (list (void)) #t)))]
 	  [send-scheme 
 	   (lambda (expr)
-	     (let/ec k
-	       (fluid-let ([error-escape-k k])
-			  (dynamic-wind
-			   (lambda () 
-			     (current-directory current-thread-directory)
-			     '(set! exception-handler
-				    (lambda (exn)
-				      (with-parameterization drscheme:init:system-parameterization
-					(lambda ()
-					  (report-exception-error exn)))
-				      ((error-escape-handler))
-				      (with-parameterization drscheme:init:system-parameterization
-					(lambda ()
-					  (mred:message-box "error-escape-handler didn't escape"
-							    "Error Escape")))
-				      (k (list (void)) #t))))
-			   (lambda ()
-			     (call-with-values
-			      (lambda ()
-				(if (drscheme:language:use-zodiac)
-				    (with-parameterization user-param
-				      (lambda ()
-					(syntax-checking-primitive-eval expr)))
-				    (with-parameterization user-param
-				      (lambda ()
-					(drscheme:init:primitive-eval expr)))))
-			      (lambda anss
-				(values anss #f))))
-			   (lambda () 
-			     (set! current-thread-directory (current-directory)))))))])
+	     (printf "send-scheme.1: ~a~n" (current-directory))
+	     (begin0
+	       (let/ec k
+		 (fluid-let ([error-escape-k k])
+			    (call-with-values
+			     (lambda ()
+			       (if (drscheme:language:use-zodiac)
+				   (with-parameterization user-param
+				     (lambda ()
+				       (syntax-checking-primitive-eval expr)))
+				   (with-parameterization user-param
+				     (lambda ()
+				       (drscheme:init:primitive-eval expr)))))
+			     (lambda anss
+			       (values anss #f)))))
+	       (printf "send-scheme.2: ~a~n" (current-directory))))])
 	(public
 	  [evaluation-thread #f]
 	  [run-in-evaluation-thread void]
@@ -720,7 +713,11 @@
 			     (parameterize ([current-custodian user-custodian])
 			       (mzlib:thread@:consumer-thread
 				run-function init-eval-thread))])
-		 (set! run-in-evaluation-thread run-in-evaluation-thread2)
+		 (set! run-in-evaluation-thread 
+		       (lambda x
+			 (printf "current-directory.1: ~a~n" (current-directory))
+			 (begin0 (apply run-in-evaluation-thread2 x)
+				 (printf "current-directory.2: ~a~n" (current-directory)))))
 		 (set! evaluation-thread evaluation-thread2))))])
 	(public
 	  [userspace-load
@@ -807,22 +804,29 @@
 		     (current-input-port this-in)
 		     (current-load userspace-load)
 		     (current-eval userspace-eval)
+
 		     (exit-handler (lambda (arg)
 				     (with-parameterization drscheme:init:system-parameterization
 				       (lambda ()
-					 (shutdown-user-custodian)))))
-		     (set! current-thread-directory
-			   (let/ec k
-			     (unless (get-frame)
-			       (k first-dir))
-			     (let*-values ([(filename) (send (ivar (get-frame) definitions-edit)
-							     get-filename)]
-					   [(normalized) (if (string? filename)
-							     (mzlib:file@:normalize-path filename)
-							     (k first-dir))]
-					   [(base _1 _2) (split-path normalized)])
-			       base)))))
+					 (shutdown-user-custodian)))))))
 		 (set! user-param p))
+	
+	       (let ([directory
+		      (let/ec k
+			(unless (get-frame)
+			  (k first-dir))
+			(let*-values ([(filename) (send (ivar (get-frame) definitions-edit)
+							get-filename)]
+				      [(normalized) (if (string? filename)
+							(mzlib:file@:normalize-path filename)
+							(k first-dir))]
+				      [(base _1 _2) (split-path normalized)])
+			  (or base 
+			      first-dir)))])
+		 (run-in-evaluation-thread
+		  (lambda ()
+		    (current-directory directory))))
+
 	       (set! vocab (zodiac:create-vocabulary
 			    'scheme-w/user-defined-macros/drscheme
 			    zodiac:scheme-vocabulary))

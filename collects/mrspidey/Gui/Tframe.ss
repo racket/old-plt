@@ -47,8 +47,9 @@
       [on-close
         (lambda ignored
           (send main on-frame-close filename)
-          (send this show #f)
           (remq-callback-sdl-alg-changed! flush-type-cache)
+	  (send this show #f)
+	  (send program-edit on-close) ; fixes PR 948
           (super-on-close))]
       [file-menu:between-close-and-quit
         (lambda (file-menu)
@@ -61,7 +62,6 @@
     (public
 
       [auto-set-wrap #f]
-      [edit% flow-arrow:edit%]    
       [panel #f] 
       [set-show-mode
         (lambda (which)

@@ -1,5 +1,5 @@
 ; statedit.ss
-; Defines spidey:static-edit%, a subclass of mred:media-edit%
+; Defines spidey:static-edit%
 ; ----------------------------------------------------------------------
 ; Copyright (C) 1995-97 Cormac Flanagan
 ;
@@ -23,6 +23,8 @@
   (class frame:searchable% init-args
 
     (inherit get-text-to-search)
+
+    (rename [super-on-close on-close])
 
     (public
 
@@ -123,6 +125,9 @@
       [editor-set-caret-owner
        (lambda args (apply (ivar editor set-caret-owner)
 			   args))]
+      [editor-on-close
+       (lambda args (apply (ivar editor on-close)
+			   args))]
       [editor-get-filename
        (lambda args (apply (ivar editor get-filename)
 			   args))]
@@ -133,8 +138,12 @@
     
     (override
 
-      [get-editor% (lambda () (scheme:text-mixin text:searching%))])
-	      
+      [get-editor% (lambda () (scheme:text-mixin text:searching%))]
+      [on-close (lambda () 
+		  (when editor
+			(send editor on-close))
+		  (super-on-close))])
+
     (sequence
 		
       (apply super-init "foobar" init-args)

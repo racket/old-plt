@@ -1,5 +1,5 @@
 ; arrow.ss
-; defines arrow:media-edit%, an extention of graphics:media-edit% with arrows
+; defines arrow:edit%, an extension of graphics:edit% with arrows
 ; ----------------------------------------------------------------------
 ; Copyright (C) 1995-97 Cormac Flanagan
 ;
@@ -134,3 +134,4 @@
                 (cons draw-fn event-fn))])))]))))
 
 ;; ----------------------------------------
+

@@ -38,7 +38,8 @@
     (scheme-init-wordbreak-map scheme-media-wordbreak-map)
 
     (mred:preferences:set-preference-default 'mred:highlight-parens #t)
-    (mred:preferences:set-preference-default 'mred:paren-match/fixup-parens #t)
+    (mred:preferences:set-preference-default 'mred:fixup-parens #t)
+    (mred:preferences:set-preference-default 'mred:paren-match #t)
     (let ([hash-table (make-hash-table)])
 	      (for-each (lambda (x) (hash-table-put! hash-table x 'define))
 			'(define defmacro define-macro
@@ -168,6 +169,7 @@
 	  (public
 	    [on-focus
 	     (lambda (edit on?)
+	       (mred:debug:printf 'highlight-range "highlighting from on-focus ~a" (not on?))
 	       (highlight-parens edit (not on?)))]
 	    [on-change-style
 	     (lambda (edit start len)
@@ -177,6 +179,7 @@
 	     (lambda (edit start len)
 	       (send edit end-edit-sequence)
 	       (unless (ivar edit styles-fixed?)
+		 (mred:debug:printf 'highlight-range "highlighting from after-change-style")
 		 (highlight-parens edit)))]
 	    [on-edit-sequence
 	     (lambda (edit)
@@ -185,6 +188,7 @@
 	     (lambda (edit)
 	       (set! suspend-highlight? #f)
 	       (when just-once
+		 (mred:debug:printf 'highlight-range "highlighting from after-edit-sequence")
 		 (highlight-parens edit)))]
 	    [on-insert
 	     (lambda (edit start size)
@@ -195,6 +199,7 @@
 	       (send backward-cache invalidate start)
 	       (send forward-cache forward-invalidate start size)
 	       (send edit end-edit-sequence)
+	       (mred:debug:printf 'highlight-range "highlighting from after-insert")
 	       (highlight-parens edit)
 	       #t)]
 	    [on-delete
@@ -206,6 +211,7 @@
 	    [after-delete
 	     (lambda (edit start size)
 	       (send edit end-edit-sequence)
+	       (mred:debug:printf 'highlight-range "highlighting from after-delete")
 	       (highlight-parens edit)
 	       #t)]
 	    [on-set-size-constraint
@@ -215,9 +221,11 @@
 	    [after-set-size-constraint
 	     (lambda (edit)
 	       (send edit end-edit-sequence)
+	       (mred:debug:printf 'highlight-range "highlighting from after-set-size-constraint")
 	       (highlight-parens edit))]
 	    [after-set-position 
 	     (lambda (edit)
+	       (mred:debug:printf 'highlight-range "highlighting from after-set-position")
 	       (highlight-parens edit))]
 	    
 	    [highlight-parens? (mred:preferences:get-preference 'mred:highlight-parens)])
@@ -229,9 +237,11 @@
 				      (set! highlight-parens? value)))])
 	  (public
 	    [highlight-parens
-	     (let* ([clear-old-location (lambda () (void))]
+	     (let* ([clear-old-location void]
 		    [color (make-object wx:colour% 192 192 192)])
 	       (opt-lambda (edit [just-clear? #f])
+		 (mred:debug:printf 'highlight-range "highlight-parens; suspend-highlight?: ~a highlight-parens?: ~a just-once: ~a"
+				    suspend-highlight? highlight-parens? just-once)
 		 (if (or (not highlight-parens?)
 			 suspend-highlight?)
 		     (set! just-once #t)
@@ -241,7 +251,7 @@
 			(lambda () (send edit begin-edit-sequence))
 			(lambda ()
 			  (clear-old-location)
-			  (set! clear-old-location (lambda () (void)))
+			  (set! clear-old-location void)
 			  (unless just-clear?
 			    (let* ([here (send edit get-start-position)]
 				   [there (send edit get-end-position)]
@@ -283,12 +293,24 @@
 	     (lambda (edit pos)
 	       0)]
 	    
+	    [balance-quotes
+	     (lambda (edit key)
+	       (let* ([code (send key get-key-code)]
+		      [char (integer->char code)])
+		 (send edit insert char)
+		 (let* ([start-pos (send edit get-start-position)]
+			[limit (get-limit edit start-pos)]
+			[match (mred:scheme-paren:scheme-backward-match
+				edit start-pos limit backward-cache)])
+		   (when match
+		     (send edit flash-on match (add1 match))))))]
 	    [balance-parens
 	     (let-struct string/pos (string pos)
 	       (lambda (edit key)
 		 (let* ([get-text (ivar edit get-text)]
 			[code (send key get-key-code)]
-			[here (send edit get-start-position)] 
+			[char (integer->char code)]
+			[here (send edit get-start-position)]
 			[limit (get-limit edit here)]
 			[check-one
 			 (lambda (p)
@@ -298,10 +320,12 @@
 			       (if (string=? left (get-text (- p (string-length left)) p))
 				   right
 				   #f))))]
+			[paren-match? (mred:preferences:get-preference 'mred:paren-match)]
+			[fixup-parens? (mred:preferences:get-preference 'mred:fixup-parens)]
 			[get-right-paren (lambda (p) 
-					   (ormap (check-one p) 
+					   (ormap (check-one p)
 						  mred:scheme-paren:scheme-paren-pairs))])
-		   (if (mred:preferences:get-preference 'mred:paren-match/fixup-parens)
+		   (if (or paren-match? fixup-parens?)
 		       (let* ([end-pos (mred:paren:backward-match
 					edit here limit
 					mred:scheme-paren:scheme-paren-pairs
@@ -313,12 +337,17 @@
 			   [end-pos
 			    (let ([right-paren-string (get-right-paren end-pos)])
 			      (if right-paren-string
-				  (send* edit 
-					 (insert right-paren-string)
-					 (flash-on (- end-pos (string-length right-paren-string)) end-pos))
-				  (send edit insert (integer->char code))))]
-			   [else (send edit insert (integer->char code))]))
-		       (send edit insert (integer->char code)))
+				  (begin
+				    (send edit insert (if fixup-parens?
+							  right-paren-string
+							  (integer->char code)))
+				    (when paren-match?
+				      (send edit flash-on
+					    (- end-pos (string-length right-paren-string))
+					    end-pos)))
+				  (send edit insert char)))]
+			   [else (send edit insert char)]))
+		       (send edit insert char))
 		   #t)))]
 	    [tabify-on-return?
 	     (lambda ()
@@ -786,6 +815,11 @@
 		  (send (get-mode edit) balance-parens
 			edit 
 			event)))
+	  (send keymap add-key-function "balance-quotes"
+		(lambda (edit event)
+		  (send (get-mode edit) balance-quotes
+			edit 
+			event)))
 
 	  (send keymap add-key-function "evaluate-buffer"
 		(lambda (edit event)
@@ -815,6 +849,8 @@
 	  (send keymap map-function ")" "balance-parens")
 	  (send keymap map-function "]" "balance-parens")
 	  (send keymap map-function "}" "balance-parens")
+	  (send keymap map-function "\"" "balance-quotes")
+	  (send keymap map-function "|" "balance-quotes")
 
 	  ;(send keymap map-function "c:up" "up-sexp") ;; paragraph
 	  ;(send keymap map-function "s:c:up" "select-up-sexp")

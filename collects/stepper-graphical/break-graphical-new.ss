@@ -27,6 +27,7 @@
         [on-local-event
          (lambda (event)
            (when (send event button-down? 'left)
+             ;(printf "rec'd button-press~n")
              (when click-callback
                (let*-values ([(event-x) (send event get-x)]
                              [(event-y) (send event get-y)]
@@ -49,7 +50,6 @@
          (lambda (width height)
            (fw:preferences:set 'debugger-width width)
            (fw:preferences:set 'debugger-height height)
-           (send debugger on-size-frame)
            (super-on-size width height))]
         
         [can-close?
@@ -75,19 +75,19 @@
   
   (define (add-to-popup pm val)
     (cond [(procedure? val)
-           (make-object m:menu-item% "(closure)" pm (void))]
+           (make-object m:menu-item% "(closure)" pm void)]
           [(struct? val)
-           (make-object m:menu-item% "(structure)" pm (void))]
+           (make-object m:menu-item% "(structure)" pm void)]
           [(class? val)
-           (make-object m:menu-item% "(class)" pm (void))]
+           (make-object m:menu-item% "(class)" pm void)]
           [(object? val)
-           (make-object m:menu-item% "(object)" pm (void))]
+           (make-object m:menu-item% "(object)" pm void)]
           [(unit? val)
-           (make-object m:menu-item% "(unit)" pm (void))]
+           (make-object m:menu-item% "(unit)" pm void)]
           [else
            (let ([sp (open-output-string)])
              (write (pc:print-convert val) sp)
-             (make-object m:menu-item% (get-output-string sp) pm (void)))]))
+             (make-object m:menu-item% (get-output-string sp) pm void))]))
 
   (define debugger%
     (class object% (drscheme-frame)
@@ -108,16 +108,21 @@
                [continue-callback
                 (lambda (a b)
                   (send frame show #f)
-                  (semaphore-post break-semaphore))]
+                  (semaphore-post break-semaphore)
+                  (set! break-semaphore #f))]
                 
                [show-var-values
                 (lambda (binding x y)
-                  (let* ([values (marks:lookup-binding-list stored-mark-list binding)]
+                  (let* ([vals (if (z:top-level-varref? binding)
+                                   (list (global-defined-value (z:varref-var binding)))
+                                   (map marks:mark-binding-value (marks:lookup-binding-list stored-mark-list binding)))]
                          [pm (make-object m:popup-menu%)])
                     (for-each (lambda (val)
                                 (add-to-popup pm val))
-                              values)
-                    (send frame popup-menu x y)))]
+                              vals)
+                    (send frame popup-menu pm
+                          (inexact->exact x) (inexact->exact y)
+                          )))]
                
                [clear-highlights
                 (lambda ()
@@ -134,8 +139,8 @@
                          [highlight-var ; (parsed [binding | slot | top-level-varref] -> (void))
                           (lambda (ref binding)
                             (let* ([start (z:location-offset (z:zodiac-start ref))]
-                                   [finish (z:location-offset (z:zodiac-finish ref))])
-                              (send defns-text change-style var-style start finish)
+                                   [finish (+ (z:location-offset (z:zodiac-finish ref)) 1)])
+                              (send defns-text change-style ub-delta start finish)
                               (set! text-region-table (cons (list start finish binding) text-region-table))))]
                          [maybe-highlight-bound-var
                           (lambda (ref binding)
@@ -242,18 +247,17 @@
               
               [handle-breakpoint
                (lambda (mark-list semaphore)
-                 (printf "entering handle-breakpoint~n")
                  (set! break-semaphore semaphore)
                  (set! stored-mark-list mark-list)
                  (if needs-update
                      (begin
                        (send defns-text clear)
-                       (send (ivar drscheme-frame definitions-text) copy-self-to defns-text))
+                       (send (ivar drscheme-frame definitions-text) copy-self-to defns-text)
+                       (set! needs-update #f))
                      (clear-highlights))
-                 (for-each highlight-vars mark-list)
+                 ;(for-each highlight-vars mark-list)
                  (send frame show #t))])
                  
-      (sequence (printf "initializing~n"))
       (sequence (super-init))
       
       (private [frame (make-object debugger-frame% this)]
@@ -262,10 +266,13 @@
                [defns-canvas (make-object m:editor-canvas% area-container)]
                [defns-text (make-object debugger-text%)]
                [standard-style (send (send defns-text get-style-list) find-named-style "Standard")]
-               [var-style (let* ([style-list (send defns-text get-style-list)]
-                                 [underline-delta (make-object m:style-delta% 'change-underline #t)]
-                                 [underline-blue-delta (send underline-delta set-delta-foreground "blue")])
-                            (send style-list find-or-create-style standard-style underline-blue-delta))]
+               [ub-delta (let* ([style-list (send defns-text get-style-list)]
+                                [underline-delta (make-object m:style-delta% 'change-underline #t)])
+                           (send underline-delta set-delta-foreground "blue"))]
+               ;[var-style (let* ([style-list (send defns-text get-style-list)]
+               ;                  [underline-delta (make-object m:style-delta% 'change-underline #t)]
+               ;                  [underline-blue-delta (send underline-delta set-delta-foreground "blue")])
+               ;             (send style-list find-or-create-style standard-style underline-blue-delta))]
                [break-semaphore #f])
       
       (sequence (send defns-text set-click-callback! click-callback)
@@ -281,7 +288,12 @@
                                                              "while a breakpoint is waiting.")
                                       #f '(ok))
                        #f)
-                     #t))])))
+                     #t))]
+              
+              [on-close-frame
+               (lambda ()
+                 (send frame on-close)
+                 (send frame show #f))])))
   
   
   
@@ -290,13 +302,27 @@
    (lambda (super%)
      (class super% args
        (sequence (apply super-init args))
+       (rename [super-can-close? can-close]
+               [super-on-close? on-close])
        (private [debugger #f])
        (public
          [get-debugger
           (lambda ()
             (when (not debugger)
               (set! debugger (make-object debugger% this)))
-            debugger)]))))
+            debugger)])
+       (override
+         [can-close?
+          (lambda ()
+            (and (if debugger
+                     (send debugger can-close-frame?)
+                     #t)
+                 (super-can-close?)))]
+         [on-close
+          (lambda ()
+            (when debugger
+              (send debugger on-close-frame))
+            (super-on-close))]))))
   
   ; ----------------------------------------------------------------
   

@@ -1,11 +1,20 @@
 
+/* 
+   The cXXX.inc files (where XXX is `macro' or `unitsig') are not, as
+   distributed, compatible with omissions from or additions to the set
+   of built-in identifiers.  The reason is that the cXXX.inc files are
+   .zo versions of the XXX.inc files, and the .zo format changes when
+   the set of built-in names changes (because indices assigned to the
+   built-in names shift).
+
+   If you make a version with omissions or additions and then run
+   `mzmake cmacro' to recreate the cXXX.inc files, then
+   USE_COMPILED_MACROS can be set to 1 again.
+*/
+
 #define USE_COMPILED_MACROS 1
 
 #ifdef MZSCHEME_SOMETHING_OMITTED
-/* .inc files are not, by default, compatible with
-   omissions. If you make a version with omissions
-   and then run `mzmake cmacro', then USE_COMPILED_MACROS
-   can be set to 1. */
 # undef USE_COMPILED_MACROS
 # define USE_COMPILED_MACROS 0
 #endif

@@ -41,7 +41,9 @@
 # endif
 #endif
 #ifdef USE_WINSOCK_TCP
-# include <winsock.h>
+# ifdef USE_TCP
+#  include <winsock.h>
+# endif
 #endif
 #ifdef USE_STACKAVAIL
 # include <malloc.h>
@@ -69,11 +71,11 @@ extern HANDLE scheme_break_semaphore;
 # endif
 #endif
 
-#if defined(FILES_HAVE_FDS) || defined(USE_WINSOCK_TCP) \
+#if defined(FILES_HAVE_FDS) || (defined(USE_WINSOCK_TCP) && defined(USE_TCP)) \
 	 || ((defined(WINDOWS_PROCESSES) || defined(DETECT_WIN32_CONSOLE_STDIN)) \
 	     && !defined(NO_STDIO_THREADS))
 # define USING_FDS
-# if !defined(USE_WINSOCK_TCP) && !defined(FILES_HAVE_FDS)
+# if (!defined(USE_WINSOCK_TCP) || !defined(USE_TCP)) && !defined(FILES_HAVE_FDS)
 #  include <sys/types.h>
 # endif
 #endif

@@ -11,7 +11,8 @@ you have an ANSI C compiler on any platform supported by the
 conservative garbage collector. Some flags may need adjustment in the
 Makefile and "sconfig.h".  Special per-platform instructions are
 below, followed by some general notes on compilation and changing
-MzScheme.
+MzScheme. (Please read the general notes if you plan on changing
+MzScheme or the default compilation flags.)
 
 -Matthew Flatt
  Rice University PLT
@@ -136,14 +137,15 @@ may find it conveneient to edit `mzmake'.)
 
 ------------------------------------------------------------------------
 
-The conservative garbage collector distributed with MzScheme has been
-modified slightly from Boehm's standard distribution.
+If you modify MzScheme and change any primitive syntax or the
+collection of built-in identifers, be sure to turn off
+USE_COMPILED_MACROS in schminc.h. Otherwise, MzScheme won't start up.
+See schminc.h for details.
 
 ------------------------------------------------------------------------
 
-If you modify MzScheme and change any primitive syntax or the
-collection of built-in identifers, be sure to turn of
-USE_COMPILED_MACROS in schminc.h. Otherwise, MzScheme won't start up.
+The conservative garbage collector distributed with MzScheme has been
+modified slightly from Boehm's standard distribution.
 
 ========================================================================
  Bug Reports

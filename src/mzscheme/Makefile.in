@@ -12,9 +12,6 @@ AR = @AR@
 ARFLAGS = @ARFLAGS@
 RANLIB = @RANLIB@
 
-# system name for installation
-INSTALLSYS = `$(srcdir)/../../bin/archsys`
-
 ################################################################################
 
 bin: 

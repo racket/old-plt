@@ -1086,6 +1086,11 @@
 			'(0 1 2 3 4))
 		v))
 
+(err/rt-test (let ([l (list 1 2 3)])
+	       (for-each (lambda (x) (set-cdr! (cdr l) 1)) l))
+	     exn:application:mismatch?)
+
+
 (define (map-tests map)
   (let ([size? exn:application:mismatch?]
 	[non-list? type?])

@@ -1091,7 +1091,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     else
       n = CHECK_SINGLE(n, single);
 
-    if (SCHEME_FLOATP(n) && str[0] == '-') {
+    if (SCHEME_FLOATP(n) && str[delta] == '-') {
       if (SCHEME_FLOAT_VAL(n) == 0.0) {
 	/* 0.0 => -0.0 */
 #ifdef MZ_USE_SINGLE_FLOATS

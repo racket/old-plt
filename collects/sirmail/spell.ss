@@ -53,22 +53,23 @@
   
   (thread
    (lambda ()
-     (let loop ([computed? #f]
-                [dict #f])
-       (let-values ([(answer-chan give-up-chan word) (apply values (channel-get ask-chan))])
-         (let ([computed-dict (if computed?
-                                  dict
-                                  (fetch-dictionary))])
-           (object-wait-multiple
-            #f
-            (make-wrapped-waitable
-             (make-channel-put-waitable answer-chan (check-word computed-dict word))
-             (lambda (done)
-               (loop #t computed-dict)))
-            (make-wrapped-waitable
-             give-up-chan
-             (lambda (done)
-               (loop #t computed-dict)))))))))
+     (let ([bad-dict (make-hash-table 'equal)])
+       (let loop ([computed? #f]
+                  [dict #f])
+         (let-values ([(answer-chan give-up-chan word) (apply values (channel-get ask-chan))])
+           (let ([computed-dict (if computed?
+                                    dict
+                                    (fetch-dictionary))])
+             (object-wait-multiple
+              #f
+              (make-wrapped-waitable
+               (make-channel-put-waitable answer-chan (check-word computed-dict bad-dict word))
+               (lambda (done)
+                 (loop #t computed-dict)))
+              (make-wrapped-waitable
+               give-up-chan
+               (lambda (done)
+                 (loop #t computed-dict))))))))))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;
@@ -152,18 +153,23 @@
            good-file-names)
           d))))
   
-  ;; check-word : hash-table string -> boolean
-  (define (check-word dict word)
+  ;; check-word : hash-table hash-table string -> boolean
+  (define (check-word dict bad-dict word)
     (let* ([word-ok (lambda (w) (hash-table-get dict w (lambda () #f)))]
+           [word-bad (lambda (w) (hash-table-get bad-dict w (lambda () #f)))]
            [subword-ok (lambda (reg)
                          (let ([m (regexp-match reg word)])
                            (and m
                                 (word-ok (cadr m)))))])
       (if dict
-          (or (word-ok word)
-              (word-ok (string-lowercase! (string-copy word))) ;; check beginning of sentence-ness?
-              (let ([ispell-ok (ispell-word word)])
-                (when ispell-ok 
-                  (hash-table-put! dict word #t))
-                ispell-ok))
+          (cond
+            [(word-ok word) #t]
+            [(word-ok (string-lowercase! (string-copy word))) #t]
+            [(word-bad word) #f]
+            [else
+             (let ([ispell-ok (ispell-word word)])
+               (if ispell-ok 
+                   (hash-table-put! dict word #t)
+                   (hash-table-put! bad-dict word #t))
+                ispell-ok)])
           #t))))

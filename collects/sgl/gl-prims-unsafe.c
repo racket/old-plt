@@ -19,6 +19,11 @@
 
 #include "gl-prims.h"
 
+/* Almost none of this file allocates, so the 3m Xform can skip it. */
+#ifdef MZ_XFORM
+START_XFORM_SKIP;
+#endif
+
 #define arg_GLunsafev(idx)		\
 	  ((GLvoid *)    arg_unsafev_data((char *) p, v[idx], idx, c, v))
 
@@ -552,6 +557,10 @@ static const struct scm_prim scm_prim[] = {
 	{ "glGetCompressedTexImage",	scm_GetCompressedTexImage,	3, 3 }
 #endif
 };
+
+#ifdef MZ_XFORM
+END_XFORM_SKIP;
+#endif
 
 /*---------------------------------------------------------------------------*/
 /* MzScheme extension interface						     */

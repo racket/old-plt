@@ -136,6 +136,10 @@ static void scheme_set_types()
 #include "gl-vectors/gl-ubyte-vector.h"
 #include "gl-vectors/gl-boolean-vector.h"
 
+#ifdef MZ_XFORM
+START_XFORM_SKIP;
+#endif
+
 static int arg_bool(const char *name, Scheme_Object *arg)
 {
   return (SCHEME_FALSEP(arg)) ? 0 : 1;
@@ -238,6 +242,10 @@ static void *arg_void_data(const char* name, GLsizei length,
   }
   return (void*)(((gl_byte_vector*)data)->els);
 }
+
+#ifdef MZ_XFORM
+END_XFORM_SKIP;
+#endif
 
 #define arg_GLboolean(idx)	\
 	  ((GLboolean)   arg_bool ((char *) p, v[idx]))

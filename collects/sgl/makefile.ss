@@ -4,7 +4,9 @@
            (all-except (lib "file.ss" "dynext") append-c-suffix)
            (prefix dynext: (lib "link.ss" "dynext"))
            (lib "file.ss")
-	   (lib "pretty.ss"))
+	   (lib "pretty.ss")
+	   (lib "restart.ss")
+	   (lib "launcher.ss" "launcher"))
 
   (provide pre-installer)
   
@@ -13,7 +15,13 @@
         '("/usr/X11R6/include" "/usr/X/include")
         '()))
   
-  (define dir (build-path "compiled" "native" (system-library-subpath)))
+  (define dir (build-path "compiled" "native" (system-library-subpath #f)))
+  (define 3mdir (build-path dir "3m"))
+
+  (define use-3m?
+    (and (memq (system-type) '(unix macosx windows))
+	 (memq '3m (available-mzscheme-variants))
+	 (directory-exists? (build-path 'up 'up "src" "mzscheme" "gc2"))))
   
   (define (append-h-suffix s)
     (string-append s ".h"))
@@ -44,7 +52,7 @@
                (delete-file file.so))
              (copy-file pre-compiled file.so)))))
 
-  (define (compile-c-to-so file file.c file.so home)
+  (define (compile-c-to-so file file.c file.so home variant)
     (unless (do-copy file.so)
       (parameterize ((dynext:current-extension-compiler-flags
                       (append
@@ -59,20 +67,63 @@
                          ((windows) (list "opengl32.lib" "glu32.lib"))
                          (else '())))))
         (let ((file.o (append-object-suffix file)))
-          (dynext:compile-extension #f 
-                                    file.c
-                                    file.o
-                                    `(,@X11-include ,(build-path home "collects" "compiler")))
-          (dynext:link-extension #f 
-                                 (list file.o)
-                                 file.so)
-          (delete/continue file.o)))))
-    
+	  (parameterize ([dynext:compile-variant '3m]
+			 [dynext:link-variant '3m])
+	    (dynext:compile-extension #f 
+				      file.c
+				      file.o
+				      `(,@X11-include ,(build-path home "collects" "compiler")))
+	    (dynext:link-extension #f 
+				   (list file.o)
+				   file.so)
+	    (delete/continue file.o))))))
+
+  (define (xform src dest)
+    (make-directory* 3mdir)
+    (restart-mzscheme #() 
+		      (lambda (x) x)
+		      (list->vector 
+		       (list
+			"-qr"
+			(path->string
+			 (build-path 'up 'up "src" "mzscheme" "gc2" "xform.ss"))
+			(let* ([fix-path (lambda (s)
+					   (regexp-replace* " " (path->string s) "\" \""))]
+			       [inc (build-path 'up 'up "include")]
+			       [extras (apply string-append
+					      (format " ~a~a" 
+						      (if (eq? 'windows (system-type))
+							  " /I"
+							  " -I")
+						      (fix-path inc))
+					      (map (lambda (p)
+						     (format 
+						      " ~a~s"
+						      (if (eq? 'windows (system-type))
+							  " /I"
+							  " -I")
+						      (fix-path
+						       (build-path p "include"))))
+						   X11-include))])
+			  (if (eq? 'windows (system-type))
+			      (format "cl.exe /MT /E ~a" 
+				      extras)
+			      (format "gcc -E ~a~a" 
+				      (if (eq? 'macosx (system-type))
+					  "-DOS_X "
+					  "")
+				      extras)))
+			(if (path? src) (path->string src) src)
+			(if (path? dest) (path->string dest) dest)))
+		      void))
+
   (define (build-names str)
     (list str
           (build-path dir (append-extension-suffix str))
           (append-c-suffix str)
-          (append-h-suffix str)))
+          (append-h-suffix str)
+          (build-path 3mdir (append-c-suffix str))
+          (build-path 3mdir (append-extension-suffix str))))
   (define (generate input-file output-file trans)
     (let ((in-str (call-with-input-file input-file
                     (lambda (in)
@@ -96,39 +147,57 @@
            (file (car names))
            (file.so (cadr names))
            (file.c (caddr names))
-           (file.h (cadddr names)))
-      `((,file.so (,file.c ,file.h
-                   ,@(let ((p (get-precompiled-path file.so)))
-                       (cond
-                         ((file-exists? p) (list p))
-                         (else null))))
-         ,(lambda () (compile-c-to-so file file.c file.so home)))
-        (,file.c ("gl-vectors/gl-vector.c" ,@mz-headers)
-         ,(lambda ()
-            (delete/continue file.c)
-            (generate "gl-vectors/gl-vector.c" file.c replacements)))
-        (,file.h ("gl-vectors/gl-vector.h")
-         ,(lambda ()
-            (delete/continue file.h)
-            (generate "gl-vectors/gl-vector.h" file.h replacements))))))
+           (file.h (cadddr names))
+           (file3m.c (list-ref names 4))
+           (file3m.so (list-ref names 5)))
+      (let ([so-rule (lambda (file.so file.c variant)
+		       `(,file.so ,(let ((p (get-precompiled-path file.so)))
+				     (cond
+				      ((file-exists? p) (list p))
+				      (else (list file.c file.h))))
+			 ,(lambda () (compile-c-to-so file file.c file.so home variant))))])
+	`(,(so-rule file.so file.c 'normal)
+	  ,(so-rule file3m.so file3m.c '3m)
+	  (,file.c ("gl-vectors/gl-vector.c" ,@mz-headers)
+           ,(lambda ()
+	      (delete/continue file.c)
+	      (generate "gl-vectors/gl-vector.c" file.c replacements)))
+	  (,file.h ("gl-vectors/gl-vector.h")
+           ,(lambda ()
+	      (delete/continue file.h)
+	      (generate "gl-vectors/gl-vector.h" file.h replacements)))
+	  (,file3m.c (,file.c)
+	   ,(lambda ()
+	      (delete/continue file3m.c)
+	      (xform file.c file3m.c)))))))
     
   (define (make-gl-prims file-name vecs home)
     (let* ((names (build-names file-name))
            (file (car names))
            (file.so (cadr names))
            (file.c (caddr names))
+           (file3m.c (list-ref names 4))
+           (file3m.so (list-ref names 5))
            (vec-sos (map (lambda (v)
                            (build-path "gl-vectors"
                                        (cadr (build-names v))))
                          vecs)))
-      `((,file.so (,file.c "gl-prims.h" ,@vec-sos ,@mz-headers
-                   ,@(let ((p (get-precompiled-path file.so)))
+      `((,file.so (,@(let ((p (get-precompiled-path file.so)))
                        (cond
                          ((file-exists? p) (list p))
-                         (else null))))
-                  ,(lambda ()
-                     (compile-c-to-so file file.c file.so home))))))
-      
+                         (else `(,file.c "gl-prims.h" ,@vec-sos ,@mz-headers)))))
+         ,(lambda ()
+	    (compile-c-to-so file file.c file.so home 'normal)))
+	(,file3m.so (,@(let ((p (get-precompiled-path file3m.so)))
+			 (cond
+			  ((file-exists? p) (list p))
+			  (else `(,file3m.c ,@mz-headers)))))
+	 ,(lambda ()
+	    (compile-c-to-so file file3m.c file3m.so home '3m)))
+	(,file3m.c (,file.c  "gl-prims.h" ,@mz-headers)
+	 ,(lambda ()
+	    (delete/continue file3m.c)
+	    (xform file.c file3m.c))))))
   
   (define vec-names
     '(("gl-double-vector"
@@ -150,6 +219,12 @@
       ("gl-boolean-vector"
        ("GLboolean" "boolean" "scheme_get_boolean" "scheme_make_boolean"))))
              
+  (define (use-names names)
+    ;; Extract all .so names to build
+    (if use-3m?
+	(list (cadr names) (list-ref names 5))
+	(list (cadr names))))
+
   (define (pre-installer home)
     (parameterize ((current-directory (collection-path "sgl"))
 		   (make-print-reasons #f)
@@ -165,10 +240,14 @@
        (list->vector
         `(,dir
           ,(build-path "gl-vectors" dir)
-          ,@(map (lambda (x)
-                   (build-path "gl-vectors" (cadr (build-names (car x)))))
-                 vec-names)
-          ,(cadr (build-names "gl-prims"))
-          ,(cadr (build-names "gl-prims-unsafe")))))))
+          ,@(apply
+	     append
+	     (map (lambda (x)
+		    (map (lambda (name)
+			   (build-path "gl-vectors" name))
+			 (use-names (build-names (car x)))))
+		  vec-names))
+          ,@(use-names (build-names "gl-prims"))
+          ,@(use-names (build-names "gl-prims-unsafe")))))))
 
   )

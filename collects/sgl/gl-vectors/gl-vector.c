@@ -102,6 +102,7 @@ static Scheme_Object* vector_to_gl_<type-name>_vector(int argc, Scheme_Object **
   int length, i;
   Scheme_Object **old_vec;
   gl_<type-name>_vector *new_vec;
+  <type> val;
 
   if (!SCHEME_VECTORP(argv[0]))
     scheme_wrong_type("vector->gl-<type-name>-vector", "vector", 0, argc, argv);
@@ -110,8 +111,10 @@ static Scheme_Object* vector_to_gl_<type-name>_vector(int argc, Scheme_Object **
   new_vec = make_gl_<type-name>_vector(length);
   old_vec = SCHEME_VEC_ELS(argv[0]);
 
-  for (i = 0; i < length; ++i)
-    new_vec->els[i] = <sreal-to-type>(old_vec[i]);
+  for (i = 0; i < length; ++i) {
+    val = <sreal-to-type>(old_vec[i]);
+    new_vec->els[i] = val;
+  }
   
   return (Scheme_Object*)new_vec;
 }
@@ -120,17 +123,19 @@ static Scheme_Object* vector_to_gl_<type-name>_vector(int argc, Scheme_Object **
 static Scheme_Object* gl_<type-name>_vector_to_vector(int argc, Scheme_Object **argv)
 {
   int length, i;
-  Scheme_Object *new_vec;
+  Scheme_Object *new_vec, *val;
   gl_<type-name>_vector *old_vec; 
-
+  
   check_type("gl-<type-name>-vector", argv[0], 0, argc, argv);
 
   old_vec = (gl_<type-name>_vector*)argv[0];
   length = old_vec->length;
 
   new_vec = scheme_make_vector(old_vec->length, scheme_void);
-  for (i = 0; i < length; ++i)
-    SCHEME_VEC_ELS(new_vec)[i] = <type-to-scheme>(old_vec->els[i]);
+  for (i = 0; i < length; ++i) {
+    val = <type-to-scheme>(old_vec->els[i]);
+    SCHEME_VEC_ELS(new_vec)[i] = val;
+  }
   return new_vec;
 }
 
@@ -172,6 +177,7 @@ static Scheme_Object* gl_<type-name>_vector_set(int argc, Scheme_Object **argv)
 {
   int length;
   long l;
+  <type> val;
 
   check_type("gl-<type-name>-vector-ref", argv[0], 0, argc, argv);
   
@@ -187,7 +193,8 @@ static Scheme_Object* gl_<type-name>_vector_set(int argc, Scheme_Object **argv)
   if (SCHEME_BIGNUMP(argv[1]) || l < 0 || l >= length)
     bad_index("gl-<type-name>-vector-set!", argv[0], argv[1], length);
 
-  ((gl_<type-name>_vector*)argv[0])->els[SCHEME_INT_VAL(argv[1])] = <sreal-to-type>(argv[2]);
+  val = <sreal-to-type>(argv[2]);
+  ((gl_<type-name>_vector*)argv[0])->els[SCHEME_INT_VAL(argv[1])] = val;
   return scheme_void;
 }
 
@@ -220,8 +227,9 @@ static Scheme_Object* gl_<type-name>_vector_plus(int argc, Scheme_Object **argv)
 
   vec = make_gl_<type-name>_vector(length);
   
-  for (i = 0; i < length; ++i)
+  for (i = 0; i < length; ++i) {
     vec->els[i] = v1->els[i] + v2->els[i];
+  }
 
   return (Scheme_Object*) vec;  
 }
@@ -246,8 +254,9 @@ static Scheme_Object* gl_<type-name>_vector_minus(int argc, Scheme_Object **argv
 
   vec = make_gl_<type-name>_vector(length);
   
-  for (i = 0; i < length; ++i)
+  for (i = 0; i < length; ++i) {
     vec->els[i] = v1->els[i] - v2->els[i];
+  }
 
   return (Scheme_Object*) vec;  
 }
@@ -271,8 +280,9 @@ static Scheme_Object* gl_<type-name>_vector_times(int argc, Scheme_Object **argv
   length = v0->length;
   vec = make_gl_<type-name>_vector(length);
 
-  for (i = 0; i < length; ++i)
+  for (i = 0; i < length; ++i) {
     vec->els[i] = d * v0->els[i];
+  }
 
   return (Scheme_Object*)vec;
 }
@@ -289,8 +299,9 @@ static Scheme_Object* gl_<type-name>_vector_norm(int argc, Scheme_Object **argv)
   v = (gl_<type-name>_vector*) argv[0];
   length = v->length;
   d = 0.0;
-  for (i = 0; i < length; ++i)
+  for (i = 0; i < length; ++i) {
     d = d + v->els[i] * v->els[i];
+  }
   return <type-to-scheme>(sqrt(d));
 }
 
@@ -303,7 +314,9 @@ static void add_func(char *name, Scheme_Env *mod, Scheme_Prim *c_fun, int mina, 
 
 Scheme_Object *scheme_reload(Scheme_Env *env)
 {
-  Scheme_Env *mod_env = scheme_primitive_module(scheme_intern_symbol("gl-<type-name>-vector"), env);
+  Scheme_Env *mod_env;
+
+  mod_env = scheme_primitive_module(scheme_intern_symbol("gl-<type-name>-vector"), env);
   
   add_func("vector->gl-<type-name>-vector", mod_env, vector_to_gl_<type-name>_vector, 1, 1);
   add_func("gl-<type-name>-vector->vector", mod_env, gl_<type-name>_vector_to_vector, 1, 1);

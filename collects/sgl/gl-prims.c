@@ -20,6 +20,11 @@
 
 #include "gl-prims.h"
 
+/* Almost none of this file allocates, so the 3m Xform can skip it. */
+#ifdef MZ_XFORM
+START_XFORM_SKIP;
+#endif
+
 /*****************************************************************************/
 /* 2. OpenGL Operation							     */
 
@@ -3632,12 +3637,18 @@ Scheme_Object *scm_gluPickMatrix(void *p, int c, Scheme_Object **v) {
   return scheme_void;
 }
 
+#ifdef MZ_XFORM
+END_XFORM_SKIP;
+#endif
+
 /*** Chapter 6 ****/
 /*** 6.1 ***/
 Scheme_Object *scm_gluNewQuadric(void *p, int c, Scheme_Object **v) {
-  GLUquadricObj *ptr = gluNewQuadric();
+  GLUquadricObj *ptr;
+  ptr = gluNewQuadric();
   if (ptr) {
-    scm_Quadric *q = (scm_Quadric *)scheme_malloc(sizeof(scm_Quadric));
+    scm_Quadric *q;
+    q = (scm_Quadric *)scheme_malloc(sizeof(scm_Quadric));
     q->quad = ptr;
     q->so.type = quadric_type;
     scheme_register_finalizer(q, free_quad, NULL, NULL, NULL);
@@ -3648,6 +3659,10 @@ Scheme_Object *scm_gluNewQuadric(void *p, int c, Scheme_Object **v) {
     return scheme_void;
   }
 }
+
+#ifdef MZ_XFORM
+START_XFORM_SKIP;
+#endif
 
 /*** 6.3 ****/
 Scheme_Object *scm_gluQuadricNormals(void *p, int c, Scheme_Object **v) {
@@ -4935,6 +4950,10 @@ static const struct scm_prim scm_prim[] = {
 #endif
  
 };
+
+#ifdef MZ_XFORM
+END_XFORM_SKIP;
+#endif
 
 /*---------------------------------------------------------------------------*/
 /* MzScheme extension interface						     */

@@ -197,6 +197,16 @@ EXAMPLE --------------------------------------------------------------
  (test url:cs)
 
 ==========================================================================
+_URL viewing_
+==========================================================================
+
+The _open-url.ss_ module defines one function:
+
+> (open-url str) - opens the url in a platform-specific manner,
+  sending a message to the local browser to display the url named
+  by `str'.
+
+==========================================================================
 _CGI_ backends, _WWW_
 ==========================================================================
 

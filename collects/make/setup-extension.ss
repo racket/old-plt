@@ -28,6 +28,7 @@
 		       find-windows-libs
 		       unix-libs
 		       windows-libs
+		       extra-depends
 		       last-chance-k)
     (parameterize ([current-directory collection-dir])
       (define mach-id (string->symbol (system-library-subpath)))
@@ -46,10 +47,8 @@
 	       "/usr/local/gnu"
 	       ;; OS X fink location:
 	       "/sw"
-	       ;; Hack for NU PLT:
-	       "/arch/gnu/packages/readline-4.2"
-	       ;; Hack for the author's convenience:
-	       (format "/home/mflatt/proj/readline-2.1/~a" mach-id))))
+	       ;; Hack for NU PLT's convenience:
+	       "/arch/gnu/packages/readline-4.2")))
       
       (define sys-path
 	(ormap (lambda (x)
@@ -60,9 +59,8 @@
 		      (andmap (lambda (lib)
 				(ormap (lambda (suffix)
 					 (file-exists? 
-					  (build-path (if is-win?
-							  x 
-							  (build-path x "lib"))
+					  (build-path x 
+						      "lib"
 						      (format "~a~a.~a" 
 							      (if is-win? 
 								  ""
@@ -83,8 +81,10 @@
       (parameterize ([make-print-checking #f])
 
 	;; Used as make dependencies:
-	(define header (build-path (collection-path "mzscheme") 'up 'up "include" "scheme.h"))
-	(define version-header (build-path (collection-path "mzscheme") 'up 'up "include" "schvers.h"))
+	(define mz-inc-dir (build-path (collection-path "mzscheme") 'up 'up "include"))
+	(define headers (map (lambda (name)
+			       (build-path mz-inc-dir name))
+			     '("scheme.h" "schvers.h" "schemef.h" "sconfig.h" "stypes.h")))
 	
 	(define dir (build-path "compiled" "native" (system-library-subpath)))
 	(define file.so (build-path dir (append-extension-suffix (extract-base-filename/c file.c 'pre-install))))
@@ -103,12 +103,11 @@
 				(file-exists? (build-path sys-path "lib" (format "lib~a.dylib" lib)))))
 			  find-unix-libs))
 	      (case mach-id
-		[(sparc-solaris i386-solaris)
-		 (list "-u" "rl_readline_name")]
-		[(i386-linux i386-freebsd sparc-linux)
-		 (list "--whole-archive")]
+		[(sparc-solaris i386-solaris) (list "-u" "rl_readline_name")]
+		[(i386-linux i386-freebsd sparc-linux) (list "--whole-archive")]
+		[(win32\\i386) null]
 		[else (fprintf (current-error-port)
-			       "~a~a~~a~n"
+			       "~a~a~a~n"
 			       "Warning: trying to use .a library, "
 			       "but don't know how to force inclusion; "
 			       "result may have undefined references")
@@ -149,12 +148,21 @@
 
 	     (last-chance-k
 	      (lambda ()
-		(make ((file.so (file.o dir)
-				(link-extension #f (list file.o) file.so))
+		(make/proc
+		 (list (list file.so 
+			     (list file.o dir)
+			     (lambda ()
+			       (link-extension #f (list file.o) file.so)))
 		       
-		       (file.o (file.c header version-header dir)
-			       (compile-extension #f file.c file.o ()))
+		       (list file.o 
+			     (append (list file.c dir)
+				     headers
+				     extra-depends)
+			     (lambda ()
+			       (compile-extension #f file.c file.o ())))
 		       
-		       (dir ()
-			    (make-directory* dir)))
-		  #()))))))))))))
+		       (list dir 
+			     null
+			     (lambda ()
+			       (make-directory* dir))))
+		 #()))))))))))))

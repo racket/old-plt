@@ -177,7 +177,7 @@ _setup-extension.ss_
 
 The "setup-extension.ss" library helps compile C code via Setup PLT's
 "pre-install" phase (triggered by a `pre-installer' item in "info.ss";
-see above).
+see the "setup" collection for further information).
 
 The `pre-install' function takes a number of arguments that describe
 how the C code is compiled, mainly the libraries that it depends

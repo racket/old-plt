@@ -10,7 +10,9 @@
 		 (struct tvariant (name varnames variantlist))
 		 (struct tconstructor (argtype result))
 		 (struct usertype (name))
+		 (struct option (type))
 		 (struct <voidstruct> (dummy))
+		 (struct mlexn (name types))
 		 != <lt> <gt> <le> <ge> <or> <and>
 		 float? any?
 		 (all-from (lib "match.ss")))
@@ -25,6 +27,7 @@
 	(define-struct usertype (name))
 	(define-struct <voidstruct> (dummy))
 	(define-struct mlexn (name types))
+	(define-struct option (type))
 
 	(define library-names (make-hash-table 'equal))
 
@@ -121,6 +124,8 @@
 	(hash-table-put! constructors "bool" (cons "bool" "some error"))
 	(hash-table-put! constructors "string" (cons "string" "some error"))
 	(hash-table-put! constructors "char" (cons "char" "some error"))
+	(hash-table-put! constructors "None" (cons (make-option (make-tvar "'a")) (make-option (make-<voidstruct> #f))))
+	(hash-table-put! constructors "Some" (cons (make-tconstructor (make-tvar "'a") (make-option (make-tvar "'a"))) make-option))
 	
 	
 	(define built-in-and-user-funcs (make-hash-table 'equal))

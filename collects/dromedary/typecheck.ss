@@ -34,7 +34,7 @@
 		 (begin (pretty-print (format "initial progtype: ~a" progtype))
 		 (if (list? progtype)
 		     (map car (map unconvert-tvars progtype (repeat null (length progtype))))
-		     (list (unconvert-tvars progtype null)))))))
+		     (list (car (unconvert-tvars progtype null))))))))
 
 	   (define (typecheck-ml stmt context)
 ;	     (pretty-print (format "typecheck-ml ~a" stmt))
@@ -491,7 +491,8 @@
 	      [(tvar? type) (let ([r (tvar-tbox type)])
 				  (if (null? (unbox r))
 				      (list r)
-				      (unsolved (unbox r))))]))
+				      (unsolved (unbox r))))]
+	      [(option? type) (unsolved option-type)]))
 
 	   (define (env-unsolved r)
 	     (foldl (lambda (mapping tlist)
@@ -519,7 +520,8 @@
 				 [(tlist? t) (make-tlist (inst (tlist-type t)))]
 				 [(tvar? t) (if (null? (unbox (tvar-tbox t)))
 						(instVar (tvar-tbox t) tm)
-						(inst (unbox (tvar-tbox t))))]))])
+						(inst (unbox (tvar-tbox t))))]
+				 [(option? t) (make-option (inst (option-type t)))]))])
 		 (inst type))))
 		 
 	   (define (schema type env)
@@ -552,7 +554,12 @@
 	       (cond
 		[(tlist? t2) (unify (tlist-type t1) (tlist-type t2) syn)]
 		[(tvar? t2) (unify-var t1 (tvar-tbox t2))]
-		[else (begin (raise-syntax-error #f "Expected a list type" syn) #f)])]))
+		[else (begin (raise-syntax-error #f "Expected a list type" syn) #f)])]
+	      [(option? t1)
+	       (cond
+		[(option? t2) (unify (option-type t1) (option-type t2))]
+		[(tvar? t2) (unify-var t1 (tvar-tbox t2))]
+		[else (begin (raise-syntax-error #f "Expected an option type" syn) #f)])]))
 
 	   (define (unify-var type tbox)
 	     (if (null? (unbox tbox))
@@ -611,6 +618,8 @@
 				  (cons (make-tvar (box mapped-type)) mappings)
 				  (let ([newvar (make-tvar (box null))])
 				    (cons newvar (cons (cons (tvar-tbox type) newvar) mappings)))))]
+	      [(option? type) (let ([mtype (convert-tvars (option-type type)  mappings)])
+				(cons (make-option (car mtype)) (cdr mtype)))]
 	      [else (raise-syntax-error #f "Bad type to convert!" type)]))
 
 	   (define (unconvert-tvars type mappings)
@@ -625,6 +634,8 @@
 			      (cons (make-arrow (reverse (car tlist)) (car restype)) (cdr restype)))]
 	      [(tlist? type) (let ([ltype (unconvert-tvars (tlist-type type) mappings)])
 			       (cons (make-tlist (car ltype)) (cdr ltype)))]
+	      [(option? type) (let ([otype (unconvert-tvars (option-type type) mappings)])
+				(cons (make-option (car otype)) (cdr otype)))]
 	      [(tvar? type) (let ([dbox (tvar-tbox type)])
 			      (if (null? (unbox dbox))
 				  (letrec ([tfunc (lambda (maplist)

@@ -73,8 +73,15 @@
 	       #`(begin (define-struct (#,(string->symbol (format "exn:~a" (eval name))) exn) ())
 			(make-<voidstruct> #f))]
 	      [($ ast:pstr_exn_rebind name ident)
-	       #'"voigt"]
-	       #`(begin (define-values 
+;	       #'"voigt"]
+	       (let* ([rname (syntax-object->datum name)]
+		      [rident (syntax-object->datum ident)]
+		      [maker (string->symbol (format "make-~a" rname))]
+		      [omaker (string->symbol (format "make-~a" rident))]
+		      [test (string->symbol (format "~a?" rname))]
+		      [otest (string->symbol (format "~a?" rident))])
+	       #`(begin (define-values (#,maker #,test) (values #,omaker #,otest))
+			(make-<voidstruct> #f)))]
 	      [else
 	       (pretty-print (list "Unknown structure: " desc))]))
 
@@ -169,8 +176,11 @@
 		 (if constr
 		     (if (null? expr)
 			 (cdr constr)
-			 (let ([args (compile-exps (ast:pexp_tuple-expression-list (ast:expression-pexp_desc expr)) context)])
-			   #`(#,(cdr constr) #,@args)))
+			 (let ([args (compile-expr (ast:expression-pexp_desc expr) (ast:expression-pexp_src expr) context)])
+			   #`(#,(cdr constr) #,@(cond
+						[(tuple? args) (tuple-list args)]
+						[(list? args) args]
+						[else (list args)]))))
 		     (let ([rconstr (string->symbol (format "make-~a" (unlongident name)))]
 			   [args (if (null? expr) #f (compile-exps (ast:pexp_tuple-expression-list (ast:expression-pexp_desc expr)) context))])
 		       (if args

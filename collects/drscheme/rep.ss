@@ -127,26 +127,30 @@
 	     (lambda (start-location end-location type string)
 	       (let* ([start (zodiac:location-offset start-location)]
 		      [finish (add1 (zodiac:location-offset end-location))]
-		      [file (zodiac:location-file start-location)])
+		      [file (zodiac:location-file start-location)]
+		      [fallback
+		       (lambda ()
+			 (mred:message-box
+			  (format "~a: ~a.~a-~a.~a: ~a" file
+				  (zodiac:location-line start-location)
+				  (zodiac:location-column start-location)
+				  (zodiac:location-line end-location)
+				  (zodiac:location-column end-location)
+				  string)
+			  "Error"))])
 		 (cond
 		   [(is-a? file wx:media-edit%)
-		    (let* ([frame (send file get-frame)]
-			   [console-edit (ivar frame interactions-edit)]
-			   [console-end-position (send console-edit get-end-position)])
-		      (send frame ensure-interactions-shown)
-		      (send console-edit this-err-write string)
-		      (send (send file get-canvas) set-focus)
-		      (send file set-position start finish)
-		      (send file scroll-to-position start #f (sub1 (send file last-position))))]
-		   [else
-		    (mred:message-box
-		     (format "~a: ~a.~a-~a.~a: ~a" file
-			     (zodiac:location-line start-location)
-			     (zodiac:location-column start-location)
-			     (zodiac:location-line end-location)
-			     (zodiac:location-column end-location)
-			     string)
-		     "Error")])))])
+		    (let ([frame (send file get-frame)])
+		      (if frame
+			  (let* ([console-edit (ivar frame interactions-edit)]
+				 [console-end-position (send console-edit get-end-position)])
+			    (send frame ensure-interactions-shown)
+			    (send console-edit this-err-write string)
+			    (send (send file get-canvas) set-focus)
+			    (send file set-position start finish)
+			    (send file scroll-to-position start #f (sub1 (send file last-position))))
+			  (fallback)))]
+		   [else (fallback)])))])
 	  (public
 	    [on-set-media void]
 	    [get-prompt (lambda () "> ")]

@@ -60,7 +60,7 @@ Scheme_Object *mx_event_tag(int argc,Scheme_Object **argv) {
   BSTR tag;
   IEvent *pEvent;
 
-  pEvent = getEventInterface(argv[0],"com-event-tag");
+  pEvent = getEventInterface(argv[0],"mx-event-tag");
 
   pEvent->get_srcTag(&tag);
 
@@ -71,7 +71,7 @@ Scheme_Object *mx_event_id(int argc,Scheme_Object **argv) {
   BSTR id;
   IEvent *pEvent;
 
-  pEvent = getEventInterface(argv[0],"com-event-id");
+  pEvent = getEventInterface(argv[0],"mx-event-id");
   
   pEvent->get_srcId(&id);
 
@@ -82,7 +82,7 @@ Scheme_Object *mx_event_from_tag(int argc,Scheme_Object **argv) {
   BSTR tag;
   IEvent *pEvent;
 
-  pEvent = getEventInterface(argv[0],"com-event-from-tag");
+  pEvent = getEventInterface(argv[0],"mx-event-from-tag");
 
   pEvent->get_fromTag(&tag);
 
@@ -93,7 +93,7 @@ Scheme_Object *mx_event_from_id(int argc,Scheme_Object **argv) {
   BSTR id;
   IEvent *pEvent;
 
-  pEvent = getEventInterface(argv[0],"com-event-from-id");
+  pEvent = getEventInterface(argv[0],"mx-event-from-id");
   
   pEvent->get_fromId(&id);
 
@@ -104,7 +104,7 @@ Scheme_Object *mx_event_to_tag(int argc,Scheme_Object **argv) {
   BSTR tag;
   IEvent *pEvent;
 
-  pEvent = getEventInterface(argv[0],"com-event-to-tag");
+  pEvent = getEventInterface(argv[0],"mx-event-to-tag");
   
   pEvent->get_toTag(&tag);
 
@@ -115,18 +115,62 @@ Scheme_Object *mx_event_to_id(int argc,Scheme_Object **argv) {
   BSTR id;
   IEvent *pEvent;
 
-  pEvent = getEventInterface(argv[0],"com-event-to-id");
+  pEvent = getEventInterface(argv[0],"mx-event-to-id");
   
   pEvent->get_toId(&id);
 
   return BSTRToSchemeString(id);
 }
 
+Scheme_Object *mx_event_keycode(int argc,Scheme_Object **argv) {
+  long code;
+  IEvent *pEvent;
+
+  pEvent = getEventInterface(argv[0],"mx-event-keycode");
+  
+  pEvent->get_keyCode(&code);
+
+  return scheme_make_integer(code);
+}
+
+Scheme_Object *mx_event_shiftkey(int argc,Scheme_Object **argv) {
+  VARIANT_BOOL vb;
+  IEvent *pEvent;
+
+  pEvent = getEventInterface(argv[0],"mx-event-shiftkey");
+  
+  pEvent->get_shiftPressed(&vb);
+
+  return (vb == 0) ? scheme_false : scheme_true;
+}
+
+Scheme_Object *mx_event_altkey(int argc,Scheme_Object **argv) {
+  VARIANT_BOOL vb;
+  IEvent *pEvent;
+
+  pEvent = getEventInterface(argv[0],"mx-event-altkey");
+  
+  pEvent->get_altPressed(&vb);
+
+  return (vb == 0) ? scheme_false : scheme_true;
+}
+
+Scheme_Object *mx_event_ctrlkey(int argc,Scheme_Object **argv) {
+  VARIANT_BOOL vb;
+  IEvent *pEvent;
+
+  pEvent = getEventInterface(argv[0],"mx-event-ctrlkey");
+  
+  pEvent->get_ctrlPressed(&vb);
+
+  return (vb == 0) ? scheme_false : scheme_true;
+}
+
 Scheme_Object *mx_event_x(int argc,Scheme_Object **argv) {
   long x;
   IEvent *pEvent;
 
-  pEvent = getEventInterface(argv[0],"com-event-x");
+  pEvent = getEventInterface(argv[0],"mx-event-x");
   
   pEvent->get_x(&x);
 
@@ -137,7 +181,7 @@ Scheme_Object *mx_event_y(int argc,Scheme_Object **argv) {
   long y;
   IEvent *pEvent;
 
-  pEvent = getEventInterface(argv[0],"com-event-y");
+  pEvent = getEventInterface(argv[0],"mx-event-y");
   
   pEvent->get_y(&y);
 

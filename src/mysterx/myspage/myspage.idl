@@ -73,18 +73,20 @@ typedef enum _mouse_button_ {
 		[propput, id(6), helpstring("property toTag")] HRESULT toTag([in] BSTR newVal);
 		[propget, id(7), helpstring("property toId")] HRESULT toId([out, retval] BSTR *pVal);
 		[propput, id(7), helpstring("property toId")] HRESULT toId([in] BSTR newVal);
-		[propget, id(8), helpstring("property altPressed")] HRESULT altPressed([out, retval] VARIANT_BOOL *pVal);
-		[propput, id(8), helpstring("property altPressed")] HRESULT altPressed([in] VARIANT_BOOL newVal);
-		[propget, id(9), helpstring("property ctrlPressed")] HRESULT ctrlPressed([out, retval] VARIANT_BOOL *pVal);
-		[propput, id(9), helpstring("property ctrlPressed")] HRESULT ctrlPressed([in] VARIANT_BOOL newVal);
-		[propget, id(10), helpstring("property shiftPressed")] HRESULT shiftPressed([out, retval] VARIANT_BOOL *pVal);
-		[propput, id(10), helpstring("property shiftPressed")] HRESULT shiftPressed([in] VARIANT_BOOL newVal);
-		[propget, id(11), helpstring("property mouseButton")] HRESULT mouseButton([out, retval] MOUSE_BUTTON *pVal);
-		[propput, id(11), helpstring("property mouseButton")] HRESULT mouseButton([in] MOUSE_BUTTON newVal);
-		[propget, id(12), helpstring("property x")] HRESULT x([out, retval] long *pVal);
-		[propput, id(12), helpstring("property x")] HRESULT x([in] long newVal);
-		[propget, id(13), helpstring("property y")] HRESULT y([out, retval] long *pVal);
-		[propput, id(13), helpstring("property y")] HRESULT y([in] long newVal);
+		[propget, id(8), helpstring("property keyCode")] HRESULT keyCode([out, retval] long *pVal);
+		[propput, id(8), helpstring("property keyCode")] HRESULT keyCode([in] long newVal);
+		[propget, id(9), helpstring("property altPressed")] HRESULT altPressed([out, retval] VARIANT_BOOL *pVal);
+		[propput, id(9), helpstring("property altPressed")] HRESULT altPressed([in] VARIANT_BOOL newVal);
+		[propget, id(10), helpstring("property ctrlPressed")] HRESULT ctrlPressed([out, retval] VARIANT_BOOL *pVal);
+		[propput, id(10), helpstring("property ctrlPressed")] HRESULT ctrlPressed([in] VARIANT_BOOL newVal);
+		[propget, id(11), helpstring("property shiftPressed")] HRESULT shiftPressed([out, retval] VARIANT_BOOL *pVal);
+		[propput, id(11), helpstring("property shiftPressed")] HRESULT shiftPressed([in] VARIANT_BOOL newVal);
+		[propget, id(12), helpstring("property mouseButton")] HRESULT mouseButton([out, retval] MOUSE_BUTTON *pVal);
+		[propput, id(12), helpstring("property mouseButton")] HRESULT mouseButton([in] MOUSE_BUTTON newVal);
+		[propget, id(13), helpstring("property x")] HRESULT x([out, retval] long *pVal);
+		[propput, id(13), helpstring("property x")] HRESULT x([in] long newVal);
+		[propget, id(14), helpstring("property y")] HRESULT y([out, retval] long *pVal);
+		[propput, id(14), helpstring("property y")] HRESULT y([in] long newVal);
 	};
 	[
 		object,

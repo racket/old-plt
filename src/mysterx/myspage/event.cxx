@@ -132,6 +132,20 @@ STDMETHODIMP CEvent::put_toId(BSTR newVal) {
 	return S_OK;
 }
 
+STDMETHODIMP CEvent::get_keyCode(long *pVal) {
+
+  *pVal = keyCode;
+
+  return S_OK;
+}
+
+STDMETHODIMP CEvent::put_keyCode(long newVal) {
+
+  keyCode = newVal;
+
+  return S_OK;
+}
+
 STDMETHODIMP CEvent::get_altPressed(VARIANT_BOOL *pVal) {
 
   *pVal = altPressed;

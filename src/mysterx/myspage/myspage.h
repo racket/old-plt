@@ -2,7 +2,7 @@
 
 
 /* File created by MIDL compiler version 5.01.0164 */
-/* at Fri Jan 08 12:15:04 1999
+/* at Thu Feb 04 16:38:01 1999
  */
 /* Compiler settings for myspage.idl:
     Oicf (OptLev=i2), W1, Zp8, env=Win32, ms_ext, c_ext
@@ -475,6 +475,12 @@ EXTERN_C const IID IID_IEvent;
         virtual /* [helpstring][id][propput] */ HRESULT STDMETHODCALLTYPE put_toId( 
             /* [in] */ BSTR newVal) = 0;
         
+        virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_keyCode( 
+            /* [retval][out] */ long __RPC_FAR *pVal) = 0;
+        
+        virtual /* [helpstring][id][propput] */ HRESULT STDMETHODCALLTYPE put_keyCode( 
+            /* [in] */ long newVal) = 0;
+        
         virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_altPressed( 
             /* [retval][out] */ VARIANT_BOOL __RPC_FAR *pVal) = 0;
         
@@ -615,6 +621,14 @@ EXTERN_C const IID IID_IEvent;
             IEvent __RPC_FAR * This,
             /* [in] */ BSTR newVal);
         
+        /* [helpstring][id][propget] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *get_keyCode )( 
+            IEvent __RPC_FAR * This,
+            /* [retval][out] */ long __RPC_FAR *pVal);
+        
+        /* [helpstring][id][propput] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *put_keyCode )( 
+            IEvent __RPC_FAR * This,
+            /* [in] */ long newVal);
+        
         /* [helpstring][id][propget] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *get_altPressed )( 
             IEvent __RPC_FAR * This,
             /* [retval][out] */ VARIANT_BOOL __RPC_FAR *pVal);
@@ -740,6 +754,12 @@ EXTERN_C const IID IID_IEvent;
 
 #define IEvent_put_toId(This,newVal)	\
     (This)->lpVtbl -> put_toId(This,newVal)
+
+#define IEvent_get_keyCode(This,pVal)	\
+    (This)->lpVtbl -> get_keyCode(This,pVal)
+
+#define IEvent_put_keyCode(This,newVal)	\
+    (This)->lpVtbl -> put_keyCode(This,newVal)
 
 #define IEvent_get_altPressed(This,pVal)	\
     (This)->lpVtbl -> get_altPressed(This,pVal)
@@ -946,6 +966,30 @@ void __RPC_STUB IEvent_get_toId_Stub(
 
 
 void __RPC_STUB IEvent_put_toId_Stub(
+    IRpcStubBuffer *This,
+    IRpcChannelBuffer *_pRpcChannelBuffer,
+    PRPC_MESSAGE _pRpcMessage,
+    DWORD *_pdwStubPhase);
+
+
+/* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE IEvent_get_keyCode_Proxy( 
+    IEvent __RPC_FAR * This,
+    /* [retval][out] */ long __RPC_FAR *pVal);
+
+
+void __RPC_STUB IEvent_get_keyCode_Stub(
+    IRpcStubBuffer *This,
+    IRpcChannelBuffer *_pRpcChannelBuffer,
+    PRPC_MESSAGE _pRpcMessage,
+    DWORD *_pdwStubPhase);
+
+
+/* [helpstring][id][propput] */ HRESULT STDMETHODCALLTYPE IEvent_put_keyCode_Proxy( 
+    IEvent __RPC_FAR * This,
+    /* [in] */ long newVal);
+
+
+void __RPC_STUB IEvent_put_keyCode_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,

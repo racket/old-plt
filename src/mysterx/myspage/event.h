@@ -21,6 +21,7 @@ private:
   BSTR toIdName,toTagName;
   VARIANT_BOOL altPressed,ctrlPressed,shiftPressed;
   MOUSE_BUTTON mouseButton;
+  long keyCode;
   long x,y;
 
 public:
@@ -43,6 +44,8 @@ public:
 	STDMETHOD(put_x)(/*[in]*/ long newVal);
 	STDMETHOD(get_mouseButton)(/*[out, retval]*/ MOUSE_BUTTON *pVal);
 	STDMETHOD(put_mouseButton)(/*[in]*/ MOUSE_BUTTON newVal);
+	STDMETHOD(get_keyCode)(/*[out, retval]*/ long *pVal);
+	STDMETHOD(put_keyCode)(/*[in]*/ long newVal);
 	STDMETHOD(get_shiftPressed)(/*[out, retval]*/ VARIANT_BOOL *pVal);
 	STDMETHOD(put_shiftPressed)(/*[in]*/ VARIANT_BOOL newVal);
 	STDMETHOD(get_ctrlPressed)(/*[out, retval]*/ VARIANT_BOOL *pVal);

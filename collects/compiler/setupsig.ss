@@ -1,7 +1,7 @@
 
 (begin-elaboration-time
  (require-library "launchers.ss" "launcher")
- (require-library "dynext.ss" "dynext"))
+ (require-library "dynexts.ss" "dynext"))
 
 (define-signature compiler:setup-option^
   (verbose

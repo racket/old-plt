@@ -59,21 +59,10 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   labelPosition = panel->label_position;
   panel->GetValidPosition(&x, &y);
 
-  char *the_label = NULL ;
+  char *the_label = NULL;
 
   if (Title)
-  {
-    the_label = new char[strlen(Title)+1] ;
-    if (style&wxFIXED_LENGTH)
-    {
-      int i;
-      for (i=0;i<(int)strlen(Title);i++)
-        the_label[i]=MEANING_CHARACTER ;
-    }
-    else
-      strcpy(the_label,Title) ;
-    the_label[strlen(Title)] = '\0' ;
-  }
+    the_label = copystring(Title);
 
   // If label exists, create a static control for it.
   if (Title) {
@@ -140,11 +129,6 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   SetSize(x, y, width, height);
   panel->AdvanceCursor(this);
   Callback(func);
-
-  if (Title) {
-    if (style&wxFIXED_LENGTH)
-      SetLabel(Title);
-  }
 
   return TRUE;
 }

@@ -21,11 +21,11 @@ class wxCanvas: public wxbCanvas
 
   wxCanvas(void);
   wxCanvas(wxWindow *parent, int x=-1, int y=-1, int width=-1, int height=-1,
-           long style = wxRETAINED, char *name = "canvas");
+           long style = 0, char *name = "canvas");
   ~wxCanvas(void);
 
   Bool Create(wxWindow *parent, int x=-1, int y=-1, int width=-1, int height=-1,
-           long style = wxRETAINED, char *name = "canvas");
+           long style = 0, char *name = "canvas");
   void SetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO);
 
   // Number of pixels per user unit (0 or -1 for no scrollbar)

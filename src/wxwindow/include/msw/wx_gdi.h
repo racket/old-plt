@@ -95,8 +95,6 @@ class wxItem;
 
 class wxBitmap: public wxObject
 {
-  DECLARE_DYNAMIC_CLASS(wxBitmap)
-
  protected:
   int width;
   int height;

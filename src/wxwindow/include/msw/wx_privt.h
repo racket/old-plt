@@ -45,7 +45,6 @@ public:
     Bool mouse_in_window;
     Bool is_canvas;
     Bool is_dialog;
-    Bool userColours; // Usually FALSE, wxUSER_COLOURS overrides CTL3D etc. settings
     HDC cdc;
 
     wxWindow *wx_window;

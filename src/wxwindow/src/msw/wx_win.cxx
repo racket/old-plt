@@ -997,7 +997,6 @@ wxWnd::wxWnd(void)
   yscroll_lines_per_page = 0;
   xscroll_position = 0;
   yscroll_position = 0;
-  userColours = FALSE;
 
   last_x_pos = -1.0;
   last_y_pos = -1.0;
@@ -1069,10 +1068,6 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
   int y1 = 0;
   int w2 = 5;
   int h2 = 5;
-  if (wx_window && wx_window->GetWindowStyleFlag() & wxUSER_COLOURS)
-    userColours = TRUE;
-  else
-    userColours = FALSE;
 
   if (!parent) {
     x1 = y1 = CW_USEDEFAULT;

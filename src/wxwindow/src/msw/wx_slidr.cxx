@@ -45,16 +45,8 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 
   char *the_label = NULL ;
 
-  if (label) {
-    the_label = new char[strlen(label)+1] ;
-    if (style&wxFIXED_LENGTH) {
-      int i;
-      for (i=0;i<(int)strlen(label);i++)
-        the_label[i]=MEANING_CHARACTER ;
-    } else
-      strcpy(the_label,label) ;
-    the_label[strlen(label)] = '\0' ;
-  }
+  if (label)
+    the_label = copystring(label);
   
   // If label exists, create a static control for it.
   if (label) {
@@ -152,13 +144,6 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 
   panel->AdvanceCursor(this);
   Callback(func);
-
-  if (label) {
-    if (style&wxFIXED_LENGTH)
-      SetLabel(label);
-    if (the_label)
-      delete[] the_label;
-  }
 
   return TRUE;
 }

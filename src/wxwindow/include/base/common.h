@@ -9,8 +9,6 @@
  * Renovated by Matthew for MrEd, 1995-2000
  */
 
-/* sccsid[] = "@(#)common.h	1.2 5/9/94" */
-
 #ifndef wxb_commonh
 #define wxb_commonh
 
@@ -20,11 +18,6 @@
 #include <string.h>
 #include "wx_setup.h"
 #include "wx_ver.h"
-
-// Helps SGI compilation, apparently
-#if defined(__sgi) && defined(__GNUG_)
-#define __need_wchar_t
-#endif
 
 #include <windows.h>
 #ifndef Bool
@@ -39,16 +32,16 @@
 
 // wxWindows checks for WIN32, not __WIN32__
 #if (defined(__WIN32__) && !defined(WIN32))
-#define WIN32
+# define WIN32
 #endif
 
 typedef short int WXTYPE;
 
 // Macro to cut down on compiler warnings.
 #if REMOVE_UNUSED_ARG
-#define WXUNUSED(identifier) /* identifier */
+# define WXUNUSED(identifier) /* identifier */
 #else  // stupid, broken compiler
-#define WXUNUSED(identifier) identifier
+# define WXUNUSED(identifier) identifier
 #endif
 
 /*
@@ -77,9 +70,6 @@ typedef short int WXTYPE;
 #define wxVSCROLL           0x00000001
 #define wxHSCROLL           0x00000002
 #define wxCAPTION           0x00000004
-#define wxEDITABLE          0x00000200
-#define wxREADONLY          0x00000400
-#define wxEDIT_CONTROL      0x00000800
 
 #define wxABSOLUTE_POSITIONING 8
                            // Hint to Windowing system not to try anything clever: ***OBSOLETE***
@@ -101,7 +91,6 @@ typedef short int WXTYPE;
 #define wxTINY_CAPTION_VERT 0x00004000
 #define wxRESIZE_BOX        wxMAXIMIZE_BOX
 #define wxNO_RESIZE_BORDER	    0x00800000
-#define wxPUSH_PIN          0x00008000
 #define wxNO_CAPTION           0x00000004
 
 /*
@@ -109,69 +98,7 @@ typedef short int WXTYPE;
  */
  
 #define wxBORDER           0x00000040
-#define wxRETAINED         0x00000080
 
-#define wxNATIVE_IMPL      0x01000000
-                                 // Use native implementation, 
-                                 // e.g. Text EDIT control for wxTextWindow under MSW
-#define wxEXTENDED_IMPL    0x02000000
-                                 // Extended (or simply alternative) implementation, e.g. large
-                                 // but not editable wxTextWindow under Windows
-#define wxUSER_COLOURS     0x04000000
-                                 // Override CTL3D etc. control colour processing to
-                                 // allow own background colour
-#define wxVERTICAL_LABEL   0x08000000
-
-#ifndef wx_motif
-# define wxFLAT            wxBORDER
-# define wxBACKINGSTORE    0x00000000
-# define wxMOTIF_RESIZE    0x00000000
-#else
-# define wxFLAT            0x00000100
-# define wxBACKINGSTORE    0x00004000
-# define wxMOTIF_RESIZE    0x01000000
-#endif
-
-#define wxOVERRIDE_KEY_TRANSLATIONS 0x00000200
-
-// Effect of this flags: when creating wxItem with labels and/or value,
-// say new wxText(...,"label",...,"init_value"), the item is created with
-// strings containing only '0' ("00000" and "0000000000" in the exemple),
-// then SetLabel/SetValue are called. This make alignement more easy:
-//
-// LabelPosition(wxHORIZONTAL)
-// new wxText("label    ","initval1")
-// NewLine()
-// new wxText("longlabel","initval2")
-//
-// the 2 texts are EXACTLY aligned...
-//
-// Please note that:
-//   - I choose '0' as constant character, because it has a mean width.
-//   - This style is useful only if LabelPosition is wxHorizontal...
-#define wxFIXED_LENGTH          0x00020000
-
-// Enhanced Dialog styles
-// Command area placment
-#define wxBOTTOM_COMMANDS       0x00000000
-#define wxRIGHT_COMMANDS        0x00040000
-#define wxMASK_COMMANDS         0x00040000
-// Status Area
-#define wxSTATUS_FOOTER         0x00000000
-#define wxNO_STATUS_FOOTER      0x00080000
-#define wxMASK_STATUS           0x00080000
-// Cancel Button/Pushpin Emulation
-#define wxNO_CANCEL_BUTTON      0x00000000
-#define wxCANCEL_BUTTON_FIRST   0x00100000
-#define wxCANCEL_BUTTON_LAST    0x00200000
-#define wxCANCEL_BUTTON_SECOND  0x00300000
-#define wxMASK_CANCEL           0x00300000
-
-
-#define wxCOLOURED             0x00400000
-
-
-// GDI descriptions
 
 enum {
 // Text font families
@@ -184,10 +111,6 @@ enum {
   wxTELETYPE,  /* @@@@ */
   wxSYSTEM,
   wxSYMBOL,
-
-// Proportional or Fixed width fonts (not yet used)
-  wxVARIABLE   = 80,
-  wxFIXED,
 
   wxNORMAL     = 90,
   wxLIGHT,
@@ -270,43 +193,12 @@ typedef enum {
 #define wxBOTH           (wxVERTICAL|wxHORIZONTAL)
 #define wxCENTER_FRAME   0x04  /* centering into frame rather than screen */
 
-// ToolPanel in wxFrame
-#define	wxTOOL_TOP	   1
-#define	wxTOOL_BOTTOM	   2
-#define	wxTOOL_LEFT	   3
-#define	wxTOOL_RIGHT	   4
-
 // Dialog specifiers/return values
-// Unfortunately const's cause too many 'defined but not used'
-// in GCC.
-// messages. So we're returning to defines for now.
-/*
-const wxOK =                0x0001;
-const wxYES_NO =            0x0002;
-const wxCANCEL =            0x0004;
-const wxYES =               0x0008;
-const wxNO =                0x0010;
-
-const wxICON_EXCLAMATION =  0x0020;
-const wxICON_HAND =         0x0040;
-const wxICON_QUESTION =     0x0080;
-const wxICON_INFORMATION =  0x0100;
-*/
-
 #define wxOK                0x0001
 #define wxYES_NO            0x0002
 #define wxCANCEL            0x0004
 #define wxYES               0x0008
 #define wxNO                0x0010
-
-#define wxICON_EXCLAMATION  0x0020
-#define wxICON_HAND         0x0040
-#define wxICON_QUESTION     0x0080
-#define wxICON_INFORMATION  0x0100
-
-#define wxICON_STOP         wxICON_HAND
-#define wxICON_ASTERISK     wxICON_INFORMATION
-#define wxICON_MASK         (0x0020|0x0040|0x0080|0x0100)
 
 #define wxCENTRE            0x0200
 #define wxCENTER wxCENTRE
@@ -326,19 +218,11 @@ const wxICON_INFORMATION =  0x0100;
 #define wxPOS_USE_MINUS_ONE 4
 
 // Clipboard formats
-#ifdef wx_msw
-# define wxCF_TEXT               CF_TEXT
-# define wxCF_BITMAP             CF_BITMAP
-# define wxCF_METAFILE           CF_METAFILEPICT
-# define wxCF_DIB                CF_DIB
-# define wxCF_OEMTEXT            CF_OEMTEXT
-#else
-# define wxCF_TEXT               1
-# define wxCF_BITMAP             2
-# define wxCF_METAFILE           3
-# define wxCF_DIB                4
-# define wxCF_OEMTEXT            5
-#endif
+#define wxCF_TEXT               CF_TEXT
+#define wxCF_BITMAP             CF_BITMAP
+#define wxCF_METAFILE           CF_METAFILEPICT
+#define wxCF_DIB                CF_DIB
+#define wxCF_OEMTEXT            CF_OEMTEXT
 
 // Virtual keycodes
 enum _Virtual_keycodes {
@@ -417,61 +301,5 @@ enum _Virtual_keycodes {
  WXK_NUMLOCK,
  WXK_SCROLL 
 };
-
-// Colours - see wx_gdi.cc for database
-
-// OS mnemonics -- Identify the running OS (useful for Windows)
-// [Not all platforms are currently available or supported]
-enum {
-  wxCURSES,
-  wxXVIEW_X,	// Sun's XView OpenLOOK toolkit
-  wxMOTIF_X,	// OSF Motif 1.x.x
-  wxCOSE_X,	// OSF Common Desktop Environment
-  wxNEXTSTEP,	// NeXTStep
-  wxMACINTOSH,	// Apple System 7
-  wxGEOS,	// GEOS
-  wxOS2_PM,	// OS/2 Workplace
-  wxWINDOWS,	// Windows or WfW
-  wxPENWINDOWS,	// Windows for Pen Computing
-  wxWINDOWS_NT,	// Windows NT
-  wxWIN32S,	// Windows 32S API
-  wxWIN386	// Watcom 32-bit supervisor modus
-};
-
-// Standard menu identifiers
-#define wxID_OPEN               5000
-#define wxID_CLOSE              5001
-#define wxID_NEW                5002
-#define wxID_SAVE               5003
-#define wxID_SAVEAS             5004
-#define wxID_REVERT             5005
-#define wxID_EXIT               5006
-#define wxID_UNDO               5007
-#define wxID_REDO               5008
-#define wxID_HELP               5009
-#define wxID_PRINT              5010
-#define wxID_PRINT_SETUP        5011
-#define wxID_PREVIEW            5012
-#define wxID_ABOUT              5013
-#define wxID_HELP_CONTENTS      5014
-#define wxID_HELP_COMMANDS      5015
-#define wxID_HELP_PROCEDURES    5016
-#define wxID_HELP_CONTEXT       5017
-
-#define wxID_CUT                5030
-#define wxID_COPY               5031
-#define wxID_PASTE              5032
-#define wxID_CLEAR              5033
-#define wxID_FIND               5034
-
-#define wxID_FILE1              5050
-#define wxID_FILE2              5051
-#define wxID_FILE3              5052
-#define wxID_FILE4              5053
-#define wxID_FILE5              5054
-#define wxID_FILE6              5055
-#define wxID_FILE7              5056
-#define wxID_FILE8              5057
-#define wxID_FILE9              5058
 
 #endif // wxb_commonh

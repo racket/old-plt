@@ -79,9 +79,9 @@ Bool wxGetUserName(char *buf, int maxSize);
 char *wxStripMenuCodes(char *in, char *out = NULL);
 
 #if (!defined(__MINMAX_DEFINED) && !defined(max))
-#define max(a,b)            (((a) > (b)) ? (a) : (b))
-#define min(a,b)            (((a) < (b)) ? (a) : (b))
-#define __MINMAX_DEFINED 1
+# define max(a,b)            (((a) > (b)) ? (a) : (b))
+# define min(a,b)            (((a) < (b)) ? (a) : (b))
+# define __MINMAX_DEFINED 1
 #endif
 
 // Yield to other apps/messages
@@ -89,13 +89,13 @@ Bool wxYield(void);
 
 // Format a message on the standard error (UNIX) or the debugging
 // stream (Windows)
-void wxDebugMsg(const char *fmt ...) ;
+void wxDebugMsg(const char *fmt ...);
  
 // Sound the bell
-void wxBell(void) ;
+void wxBell(void);
   
 // Get OS version
-int wxGetOsVersion(int *majorVsn=NULL,int *minorVsn=NULL) ;
+int wxGetOsVersion(int *majorVsn=NULL,int *minorVsn=NULL);
  
 // Set the cursor to the busy cursor for all windows
 class wxCursor;
@@ -117,7 +117,6 @@ void wxError(const char *msg, const char *title = "wxWindows Internal Error");
 void wxFatalError(const char *msg, const char *title = "wxWindows Fatal Error");
 
 // Reading and writing resources (eg WIN.INI, .Xdefaults)
-#if USE_RESOURCES
 Bool wxWriteResource(const char *section, const char *entry, char *value, const char *file = NULL);
 Bool wxWriteResource(const char *section, const char *entry, float value, const char *file = NULL);
 Bool wxWriteResource(const char *section, const char *entry, long value, const char *file = NULL);
@@ -127,7 +126,6 @@ Bool wxGetResource(const char *section, const char *entry, char **value, const c
 Bool wxGetResource(const char *section, const char *entry, float *value, const char *file = NULL);
 Bool wxGetResource(const char *section, const char *entry, long *value, const char *file = NULL);
 Bool wxGetResource(const char *section, const char *entry, int *value, const char *file = NULL);
-#endif // USE_RESOURCES
 
 // Get the user's home dir (caller must copy--- volatile)
 // returns NULL is no HOME dir is known

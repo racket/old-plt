@@ -23,17 +23,6 @@
 # define WXGC_CLEANUP_CLASS gc_cleanup
 #endif
 
-// No dynamic class system: so stub out the macros
-#define DECLARE_DYNAMIC_CLASS(name)
-#define DECLARE_ABSTRACT_CLASS(name)
-#define DECLARE_CLASS(name)
-#define IMPLEMENT_DYNAMIC_CLASS(name, basename)
-#define IMPLEMENT_DYNAMIC_CLASS2(name, basename1, basename2)
-#define IMPLEMENT_ABSTRACT_CLASS(name, basename)
-#define IMPLEMENT_ABSTRACT_CLASS2(name, basename1, basename2)
-#define IMPLEMENT_CLASS IMPLEMENT_ABSTRACT_CLASS
-#define IMPLEMENT_CLASS2 IMPLEMENT_ABSTRACT_CLASS2
-
 #define WXGC_IGNORE(base, ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
 #define WXGC_ATOMIC (AtomicGC)
 #define WXGC_NO_CLEANUP FALSE

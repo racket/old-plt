@@ -33,7 +33,7 @@ class wxbCanvas: public wxWindow
 
   wxbCanvas(void);
   wxbCanvas(wxWindow *frame, int x=-1, int y=-1, int width=-1, int height=-1,
-           long style = wxRETAINED, char *name = "canvas");
+           long style = 0, char *name = "canvas");
   virtual ~wxbCanvas(void);
 
   void OnChar(wxKeyEvent *event);

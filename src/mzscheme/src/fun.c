@@ -1637,11 +1637,16 @@ static Scheme_Object *object_name(int argc, Scheme_Object **argv)
     return ((Scheme_Struct_Type *)a)->name;
   } else if (SAME_TYPE(SCHEME_TYPE(a), scheme_struct_property_type)) {
     return ((Scheme_Struct_Property *)a)->name;
-  } if (SAME_TYPE(SCHEME_TYPE(a), scheme_regexp_type)) {
+  } else if (SAME_TYPE(SCHEME_TYPE(a), scheme_regexp_type)) {
     Scheme_Object *s;
     s = scheme_regexp_source(a);
     if (s)
       return s;
+  } else if (SCHEME_INPORTP(a)) {
+      Scheme_Input_Port *ip = (Scheme_Input_Port *)a;
+      if (ip->name) {
+	  return scheme_make_immutable_sized_string(ip->name, -1, 0);
+      }
   }
 
   return scheme_false;

@@ -152,7 +152,7 @@ Scheme_Object *mx_event_shiftkey(int argc,Scheme_Object **argv) {
   
   pEvent->get_shiftPressed(&vb);
 
-  return (vb == 0) ? scheme_false : scheme_true;
+  return (vb == VARIANT_FALSE) ? scheme_false : scheme_true;
 }
 
 Scheme_Object *mx_event_altkey(int argc,Scheme_Object **argv) {
@@ -163,7 +163,7 @@ Scheme_Object *mx_event_altkey(int argc,Scheme_Object **argv) {
   
   pEvent->get_altPressed(&vb);
 
-  return (vb == 0) ? scheme_false : scheme_true;
+  return (vb == VARIANT_FALSE) ? scheme_false : scheme_true;
 }
 
 Scheme_Object *mx_event_ctrlkey(int argc,Scheme_Object **argv) {
@@ -174,7 +174,7 @@ Scheme_Object *mx_event_ctrlkey(int argc,Scheme_Object **argv) {
   
   pEvent->get_ctrlPressed(&vb);
 
-  return (vb == 0) ? scheme_false : scheme_true;
+  return (vb == VARIANT_FALSE) ? scheme_false : scheme_true;
 }
 
 Scheme_Object *mx_event_x(int argc,Scheme_Object **argv) {

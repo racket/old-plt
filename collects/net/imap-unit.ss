@@ -1,8 +1,9 @@
 
 (module imap-unit mzscheme
-  (require (lib "unitsig.ss"))
-
-  (require "imap-sig.ss")
+  (require (lib "unitsig.ss")
+	   (lib "list.ss")
+	   "imap-sig.ss"
+	   "private/rbtree.ss")
   
   (provide net:imap@)
   (define net:imap@
@@ -153,14 +154,16 @@
 	      (let ([info (imap-read (skip l 2) r)])
 		(log "info: ~s~n" info)
 		(info-handler info))
-	      (loop)]
+	      (when id
+		(loop))]
 	     [(starts-with? l #"+ ")
 	      (if (null? continuation-handler)
 		  (error 'imap-send "unexpected continuation request: ~a" l)
 		  ((car continuation-handler) loop (imap-read (skip l 2) r)))]
 	     [else
 	      (log-warning "warning: unexpected response for ~a: ~a~n" id l)
-	      (loop)]))))
+	      (when id
+		(loop))]))))
 
       ;; A cmd is
       ;;  * (box v) - send v literally via ~a
@@ -168,8 +171,10 @@
       ;;  * (cons cmd null) - same as cmd
       ;;  * (cons cmd cmd) - send cmd, space, cmd
 
-      (define (imap-send r w cmd info-handler . continuation-handler)
-	(let ([id (make-msg-id)])
+      (define (imap-send imap cmd info-handler . continuation-handler)
+	(let ([r (imap-r imap)]
+              [w (imap-w imap)]
+	      [id (make-msg-id)])
 	  (log "sending ~a~a~n" id cmd)
 	  (fprintf w "~a" id)
 	  (let loop ([cmd cmd])
@@ -193,15 +198,69 @@
 				 (fprintf w " ")
 				 (loop (cdr cmd)))]))
 	  (fprintf w "\r\n")
-	  (get-response r id info-handler continuation-handler)))
+	  (get-response r id (wrap-info-handler imap info-handler) continuation-handler)))
 
       (define (check-ok reply)
 	(unless (and (pair? reply)
 		     (tag-eq? (car reply) 'OK))
 	  (error 'check-ok "server error: ~s" reply)))
 
-      (define-struct imap-connection (r w))
-
+      (define (ok-tag-eq? i t)
+	(and (tag-eq? (car i) 'OK)
+	     (list? (cadr i))
+	     (= 2 (length (cadr i)))
+	     (tag-eq? (cadadr i) t)))
+	
+      (define (wrap-info-handler imap info-handler)
+	(lambda (i)
+	  (when (and (list? i) ((length i) . >= . 2))
+	    (cond
+	     [(tag-eq? (cadr i) 'EXISTS)
+	      (when (> (car i) (or (imap-exists imap) 0))
+		(set-imap-new?! imap #t))
+	      (set-imap-exists! imap (car i))]
+	     [(tag-eq? (cadr i) 'RECENT)
+	      (set-imap-recent! imap (car i))]
+	     [(tag-eq? (cadr i) 'EXPUNGE)
+	      (let ([n (car i)])
+		;; add it to the tree of expunges
+		(expunge-insert! (imap-expunges imap) n)
+		;; decrement exists count:
+		(set-imap-exists! imap (sub1 (imap-exists imap)))
+		;; adjust ids for any remembered fetches:
+		(fetch-shift! (imap-fetches imap) n))]
+	     [(tag-eq? (cadr i) 'FETCH)
+	      (fetch-insert! (imap-fetches imap)
+			     ;; Convert result to assoc list:
+			     (cons (car i)
+				   (let ([new
+					  (let loop ([l (caddr i)])
+					    (if (null? l)
+						null
+						(cons (cons (car l) (cadr l))
+						      (loop (cddr l)))))])
+				     ;; Keep anything not overridden:
+				     (let ([old (cdr (or (fetch-find (imap-fetches imap) (car i))
+							 '(0)))])
+				       (let loop ([old old][new new])
+					 (cond
+					  [(null? old) new]
+					  [(assq (caar old) new)
+					   (loop (cdr old) new)]
+					  [else (loop (cdr old) (cons (car old) new))]))))))]
+	     [(ok-tag-eq? i 'UIDNEXT)
+	      (set-imap-uidnext! imap (cadadr i))]
+	     [(ok-tag-eq? i 'UIDVALIDITY)
+	      (set-imap-uidvalidity! imap (cadadr i))]
+	     [(ok-tag-eq? i 'UNSEEN)
+	      (set-imap-uidvalidity! imap (cadadr i))]))
+	  (info-handler i)))
+      
+      (define-struct imap (r w 
+			     exists recent unseen uidnext uidvalidity
+			     expunges fetches new?))
+      (define (imap-connection? v) (imap? v))
+      
       (define imap-port-number (make-parameter 143))
 
       (define (imap-connect* r w username password inbox)
@@ -211,18 +270,18 @@
 			    (close-output-port w)
 			    (raise x))])
 	  
-	  (check-ok (imap-send r w "NOOP" void))
-	  (let ([reply (imap-send r w (list "LOGIN" username password) void)])
-	    (if (and (pair? reply) (tag-eq? 'NO (car reply)))
-		(error 'imap-connect "username or password rejected by server: ~s" reply)
-		(check-ok reply)))
-	  
-	  (let ([imap (make-imap-connection r w)])
-	    (let-values ([(init-count init-recent) 
-			  (imap-reselect imap inbox)])
+	  (let ([imap (make-imap r w 
+					    #f #f #f #f #f 
+					    (new-tree) (new-tree) #f)])
+	    (check-ok (imap-send imap "NOOP" void))
+	    (let ([reply (imap-send imap (list "LOGIN" username password) void)])
+	      (if (and (pair? reply) (tag-eq? 'NO (car reply)))
+		  (error 'imap-connect "username or password rejected by server: ~s" reply)
+		  (check-ok reply)))
+	    (let-values ([(init-count init-recent) (imap-reselect imap inbox)])
 	      (values imap
-		init-count
-		init-recent)))))
+		      init-count
+		      init-recent)))))
 
       (define (imap-connect server username password inbox)
 	;; => imap count-k recent-k
@@ -234,30 +293,24 @@
 	  (imap-connect* r w username password inbox)))
       
       (define (imap-reselect imap inbox)
-        (imap-selectish-command imap (list "SELECT" inbox)))
-	
+	(imap-selectish-command imap (list "SELECT" inbox) #t))
+
       (define (imap-examine imap inbox)
-	(imap-selectish-command imap (list "EXAMINE" inbox)))
+	(imap-selectish-command imap (list "EXAMINE" inbox) #t))
 
-      ;; returns (values #f #f) if no change since last check
+      ;; Used to return (values #f #f) if no change since last check?
       (define (imap-noop imap)
-        (imap-selectish-command imap "NOOP"))
+        (imap-selectish-command imap "NOOP" #f))
 
-      ;; icky name, someone think of something better!
-      (define (imap-selectish-command imap cmd)
-        (let ([r (imap-connection-r imap)]
-              [w (imap-connection-w imap)])
-          (let ([init-count #f]
-                [init-recent #f])
-            (check-ok (imap-send r w cmd
-                                (lambda (i)
-                                  (when (and (list? i) (= 2 (length i)))
-                                    (cond
-                                      [(tag-eq? (cadr i) 'EXISTS)
-                                       (set! init-count (car i))]
-                                      [(tag-eq? (cadr i) 'RECENT)
-                                       (set! init-recent (car i))])))))
-	    (values init-count init-recent))))
+      (define (imap-selectish-command imap cmd reset?)
+	(let ([init-count #f]
+	      [init-recent #f])
+	  (check-ok (imap-send imap cmd void))
+	  (when reset?
+	    (set-imap-expunges! imap (new-tree))
+	    (set-imap-fetches! imap (new-tree))
+	    (set-imap-new?! imap #f))
+	  (values (imap-exists imap) (imap-recent imap))))
 
       (define (imap-status imap inbox flags)
 	(unless (and (list? flags)
@@ -265,134 +318,166 @@
 			       (memq s '(messages recent uidnext uidvalidity unseen)))
 			     flags))
 	  (raise-type-error 'imap-status "list of status flag symbols" flags))
-	(let ([r (imap-connection-r imap)]
-	      [w (imap-connection-w imap)])
-	  (let ([results null])
-	    (check-ok (imap-send r w (list "STATUS" inbox 
-					   (box (format "~a" flags)))
-				 (lambda (i)
-				   (when (and (list? i) (= 3 (length i))
-					      (tag-eq? (car i) 'STATUS))
-				     (set! results (caddr i))))))
-	    (map
-	     (lambda (f)
-	       (let loop ([l results])
-		 (cond
-		  [(or (null? l) (null? (cdr l))) #f]
-		  [(tag-eq? f (car l)) (cadr l)]
-		  [else (loop (cdr l))])))
-	     flags))))
+	(let ([results null])
+	  (check-ok (imap-send imap (list "STATUS" inbox 
+					  (box (format "~a" flags)))
+			       (lambda (i)
+				 (when (and (list? i) (= 3 (length i))
+					    (tag-eq? (car i) 'STATUS))
+				   (set! results (caddr i))))))
+	  (map
+	   (lambda (f)
+	     (let loop ([l results])
+	       (cond
+		[(or (null? l) (null? (cdr l))) #f]
+		[(tag-eq? f (car l)) (cadr l)]
+		[else (loop (cdr l))])))
+	   flags)))
 
+      (define (imap-poll imap)
+	;; Check for async messages from the server
+	(when (char-ready? (imap-r imap))
+	  ;; It has better start with "*"...
+	  (when (= (peek-byte (imap-r imap))
+		   (char->integer #\*))
+	    ;; May set fields in `imap':
+	    (get-response (imap-r imap) #f (wrap-info-handler imap void) null)
+	    (void))))
+
+      (define (imap-get-updates imap)
+	(no-expunges 'imap-updates imap)
+	(let ([l (fetch-tree->list (imap-fetches imap))])
+	  (set-imap-fetches! imap (new-tree))
+	  l))
+
+      (define (imap-pending-updates? imap)
+	(not (tree-empty? (imap-fetches imap))))
+
+      (define (imap-get-expunges imap)
+	(let ([l (expunge-tree->list (imap-expunges imap))])
+	  (set-imap-expunges! imap (new-tree))
+	  l))
+
+      (define (imap-pending-expunges? imap)
+	(not (tree-empty? (imap-expunges imap))))
+
+      (define (imap-reset-new! imap)
+	(set-imap-new?! imap #f))
+
+      (define (imap-messages imap)
+	(imap-exists imap))
+      
       (define (imap-disconnect imap)
-	(let ([r (imap-connection-r imap)]
-	      [w (imap-connection-w imap)])
-	  (check-ok (imap-send r w "LOGOUT" void))
+	(let ([r (imap-r imap)]
+	      [w (imap-w imap)])
+	  (check-ok (imap-send imap "LOGOUT" void))
 	  (close-input-port r) 
 	  (close-output-port w)))
 
       (define (imap-force-disconnect imap)
-	(let ([r (imap-connection-r imap)]
-	      [w (imap-connection-w imap)])
+	(let ([r (imap-r imap)]
+	      [w (imap-w imap)])
 	  (close-input-port r) 
 	  (close-output-port w)))
+      
+      (define (no-expunges who imap)
+	(unless (tree-empty? (imap-expunges imap))
+	  (raise-mismatch-error who 
+				"session has pending expunge reports")))
 
       (define (imap-get-messages imap msgs field-list)
-	(let ([r (imap-connection-r imap)]
-	      [w (imap-connection-w imap)])
-	  (when (or (not (list? msgs))
-		    (not (andmap integer? msgs)))
-	    (raise-type-error 'imap-get-messages "non-empty message list" msgs))
-	  (when (or (null? field-list)
-		    (not (list? field-list))
-		    (not (andmap (lambda (f) (assoc f field-names)) field-list)))
-	    (raise-type-error 'imap-get-messages "non-empty field list" field-list))
-	  
-	  (if (null? msgs)
-	      null
-	      (let ([results null])
-		(imap-send r w (list "FETCH"
-				     (box (splice msgs ","))
-				     (box
-				      (format "(~a)"
-					      (splice (map (lambda (f) (cadr (assoc f field-names))) field-list) " "))))
-			   (lambda (i)
-			     (when (and (list? i) (<= 2 (length i))
-					(tag-eq? (cadr i) 'FETCH))
-			       (set! results (cons i results)))))
-		(map
-		 (lambda (msg)
-		   (let ([m (assoc msg results)])
-		     (unless m
-		       (error 'imap-get-messages "no result for message ~a" msg))
-		     (let ([d (caddr m)])
-		       (map
-			(lambda (f)
-			  (let ([fld (cadr (assoc f field-names))])
-			    (let loop ([d d])
-			      (cond
-			       [(null? d) #f]
-			       [(null? (cdr d)) #f]
-			       [(tag-eq? (car d) fld) (cadr d)]
-			       [else (loop (cddr d))]))))
-			field-list))))
-		 msgs)))))
-
+	(no-expunges 'imap-get-messages imap)
+	(when (or (not (list? msgs))
+		  (not (andmap integer? msgs)))
+	  (raise-type-error 'imap-get-messages "non-empty message list" msgs))
+	(when (or (null? field-list)
+		  (not (list? field-list))
+		  (not (andmap (lambda (f) (assoc f field-names)) field-list)))
+	  (raise-type-error 'imap-get-messages "non-empty field list" field-list))
+	
+	(if (null? msgs)
+	    null
+	    (begin
+	      ;; FETCH request adds info to `(imap-fectches imap)':
+	      (imap-send imap (list "FETCH"
+				    (box (splice msgs ","))
+				    (box
+				     (format "(~a)"
+					     (splice (map (lambda (f) (cadr (assoc f field-names))) field-list) " "))))
+			 void)
+	      ;; Sort out the collected info:
+	      (let ([flds (map (lambda (f)
+				 (cadr (assoc f field-names)))
+			       field-list)])
+		(begin0
+		 ;; For each msg, try to get each field value:
+		 (map
+		  (lambda (msg)
+		    (let ([m (or (fetch-find (imap-fetches imap) msg)
+				 (error 'imap-get-messages "no result for message ~a" msg))])
+		      (let loop ([flds flds][m (cdr m)])
+			(cond
+			 [(null? flds)
+			  (if (null? m)
+			      (fetch-delete! (imap-fetches imap) msg)
+			      (fetch-insert! (imap-fetches imap) (cons msg m)))
+			  null]
+			 [else
+			  (let ([a (assoc (car flds) m)])
+			    (cons
+			     (and a (cdr a))
+			     (loop (cdr flds) (if a
+						  (remq a m)
+						  m))))]))))
+		  msgs))))))
+      
       (define (imap-store imap mode msgs flags)
-	(let ([r (imap-connection-r imap)]
-	      [w (imap-connection-w imap)])
-	  (check-ok 
-	   (imap-send r w 
-		      (list "STORE"
-			    (box (splice msgs ","))
-			    (case mode
-			      [(+) "+FLAGS.SILENT"]
-			      [(-) "-FLAGS.SILENT"]
-			      [(!) "FLAGS.SILENT"]			    
-			      [else (raise-type-error
-				     'imap-store
-				     "mode: '!, '+, or '-"
-				     mode)])
-			    (box (format "~a" flags)))
-		      void))))
+	(no-expunges 'imap-store imap)
+	(check-ok 
+	 (imap-send imap 
+		    (list "STORE"
+			  (box (splice msgs ","))
+			  (case mode
+			    [(+) "+FLAGS.SILENT"]
+			    [(-) "-FLAGS.SILENT"]
+			    [(!) "FLAGS.SILENT"]			    
+			    [else (raise-type-error
+				   'imap-store
+				   "mode: '!, '+, or '-"
+				   mode)])
+			  (box (format "~a" flags)))
+		    void)))
 
       (define (imap-copy imap msgs dest-mailbox)
-	(let ([r (imap-connection-r imap)]
-	      [w (imap-connection-w imap)])
-	  (check-ok 
-	   (imap-send r w
-		      (list "COPY"
-			    (box (splice msgs ","))
-			    dest-mailbox)
-		      void))))
+	(no-expunges 'imap-copy imap)
+	(check-ok 
+	 (imap-send imap
+		    (list "COPY"
+			  (box (splice msgs ","))
+			  dest-mailbox)
+		    void)))
       
       (define (imap-append imap dest-mailbox msg)
-        (let ([r (imap-connection-r imap)]
-              [w (imap-connection-w imap)]
-	      [msg (if (bytes? msg)
+	(no-expunges 'imap-append imap)
+        (let ([msg (if (bytes? msg)
 		       msg
 		       (string->bytes/utf-8 msg))])
           (check-ok
-           (imap-send r w (list "APPEND"
-				dest-mailbox
-				(box "(\\Seen)")
-				(box (format "{~a}" (bytes-length msg))))
+           (imap-send imap (list "APPEND"
+				 dest-mailbox
+				 (box "(\\Seen)")
+				 (box (format "{~a}" (bytes-length msg))))
                       void
                       (lambda (loop contin)
-                        (fprintf w "~a\r\n" msg)
+                        (fprintf (imap-w imap) "~a\r\n" msg)
 			(loop))))))
-                      
       
       (define (imap-expunge imap)
-	(let ([r (imap-connection-r imap)]
-	      [w (imap-connection-w imap)])
-	  (check-ok (imap-send r w "EXPUNGE" void))))
-
-
+	(check-ok (imap-send imap "EXPUNGE" void)))
+      
       (define (imap-mailbox-exists? imap mailbox)
-	(let ([r (imap-connection-r imap)]
-	      [w (imap-connection-w imap)]
-	      [exists? #f])
-	  (check-ok (imap-send r w 
+	(let ([exists? #f])
+	  (check-ok (imap-send imap
 			       (list "LIST"
 				     ""
 				     mailbox)
@@ -403,21 +488,19 @@
 	  exists?))
 
       (define (imap-create-mailbox imap mailbox)
-	(let ([r (imap-connection-r imap)]
-	      [w (imap-connection-w imap)])
-	  (check-ok 
-	   (imap-send r w 
-		      (list "CREATE" mailbox)
-		      void))))
+	(check-ok 
+	 (imap-send imap
+		    (list "CREATE" mailbox)
+		    void)))
       
       (define (imap-get-hierarchy-delimiter imap)
-	(let* ([r (imap-connection-r imap)]
-	       [w (imap-connection-w imap)]
-	       [result #f])
+	(let* ([result #f])
 	  (check-ok
-	   (imap-send r w (list "LIST" "" "")
-		      (lambda (x)
-			(set! result (caddr x)))))
+	   (imap-send imap (list "LIST" "" "")
+		      (lambda (i)
+			(when (and (pair? i)
+				   (tag-eq? (car i) 'LIST))
+			  (set! result (caddr i))))))
 	  result))
 
       (define imap-list-child-mailboxes 
@@ -447,19 +530,18 @@
                      (if (null? r) "no matches" "multiple matches")))))
       
       (define (imap-list-mailboxes imap pattern except)
-        (let* ([r (imap-connection-r imap)]
-               [w (imap-connection-w imap)]
-               [sub-folders null])
+        (let* ([sub-folders null])
           (check-ok
-           (imap-send r w (list "LIST" "" pattern)
+           (imap-send imap (list "LIST" "" pattern)
                       (lambda (x)
-                        (let ([flags (cadr x)]
-                              [name (cadddr x)])
-                          (unless (and except
-                                       (bytes=? name except))
-                            (set! sub-folders 
-                                  (cons 
-                                   (list flags name)
-                                   sub-folders)))))))
+			(when (and (pair? x)
+				   (tag-eq? (car x) 'LIST))
+			  (let ([flags (cadr x)]
+				[name (cadddr x)])
+			    (unless (and except
+					 (bytes=? name except))
+			      (set! sub-folders 
+				    (cons 
+				     (list flags name)
+				     sub-folders))))))))
           (reverse sub-folders))))))
-

@@ -895,16 +895,18 @@ TYPES ----------------------------------------------------------------
 
 EXCEPTIONS -----------------------------------------------------------
 
-  Communication errors are signalled via exn:user structure instances.
+  Communication errors are signalled via exn:fail structure instances.
 
 PROCEDURES -----------------------------------------------------------
+
+- - - - - - Connecting and selecting mailboxes - - - - -
 
 > (imap-connect server-string username-str/bytes password-str/bytes mailbox-str/bytes)
    -> three values: imap, message count, recent message count
 
   Establishes an IMAP connection to the given server using the given
   username and password, and selects the specified mailbox. The second
-  and third return values indicate the total number of message in the
+  and third return values indicate the total number of messages in the
   mailbox and the number of recent messages (i.e., messages received
   since the mailbox was last selected), respectively.
 
@@ -912,6 +914,15 @@ PROCEDURES -----------------------------------------------------------
 
   A user's primary mailbox is always called "INBOX". (Capitalization
   doesn't matther for that keyword.)
+
+  Updated message-count and recent-count values are available through
+  `imap-messages' and `imap-recent'. See also `imap-new?' and
+  `imap-reset-new!'.
+
+> (imap-port-number [k])
+
+  A parameter that determines the server port number. The initial
+  value is 143.
 
 > (imap-connect* in-port out-port username-str/bytes password-str/bytes mailbox-str/bytes)
    -> three values: imap, message count, recent message count
@@ -934,37 +945,148 @@ PROCEDURES -----------------------------------------------------------
 
   De-selects the mailbox currently selected by the connection and
   selects the specified mailbox, returning the total and recent
-  message counts for the new mailbox.
+  message counts for the new mailbox. Expunge and message-state
+  information is removed.
 
-  This procedure is useful for polling a mailbox to see whether there
-  are any new messages (by providing the currently selected mailbox as
-  the new mailbox), but use imap-status with the 'uidnext flag to
-  determine whether a mailbox has changed at all (e.g., via a copy
-  instead of a move).
+  Do not use this procedure to poll a mailbox to see whether there are
+  any new messages. Use `imap-noop', `imap-new?', and
+  `imap-reset-new?' instead.
 
 > (imap-examine imap mailbox-str/bytes)
   -> two values: message count and recent message count
 
   Like `imap-reselect', but the mailbox is selected as read-only.
 
+- - - - - - Selected mailbox state - - - - -
+
 > (imap-noop imap mailbox-str/bytes)
-  -> two values: message count or #f and recent message count or #f
+  -> two values: message count and recent message count
 
-  Potentially returns information like `imap-reselect', but without
-  changing the mailbox selection.
+  Sends a "no-op" message to the server, typically to keep the session
+  alive. As for many commands, the server may report message-state
+  updates or expunges.
 
-> (imap-status imap mailbox-str/bytes status-symbol-list)
-  -> list of status values
+  The return information is the same as for `imap-reselect'.
 
-  Requests information about a mailbox from the server. The
-  status-symbol-list specifies the request, and the return value
-  includes one value for each symbol in status-symbol-list. The
-  allowed status symbols are:
-    'messages - number of messages
-    'recent - number of recent messages
-    'unseen - number of unseen messages
-    'uidnext - uid for next received message
-    'uidvalidity - id that changes when all uids are changed
+> (imap-poll imap) -> void
+
+  Does not send a request to the server, but checks for asynchronous
+  messages from the server that update the message count, to report
+  expunges, etc.
+
+
+> (imap-messages imap) -> number
+
+  Returns the number of messages in the selected mailbox. The server
+  can update this count during most any interaction.
+
+  This operation does not communicate with the server. It merely
+  reports the result of previous communication.
+
+> (imap-recent imap) -> number
+
+  Returns the number of "recent" messages in the currently selected
+  mailbox, as most recently reported by the server. The server can
+  update this count during most any interaction.
+
+  This operation does not communicate with the server. It merely
+  reports the result of previous communication.
+
+> (imap-unseen imap) -> number-or-false
+
+  Returns the number of "unseen" messages in the currently selected
+  mailbox, as most recently reported by the server. The server can
+  update this count during most any interaction. Old IMAP servers
+  might not report this value, in which case the result is #f.
+
+  This operation does not communicate with the server. It merely
+  reports the result of previous communication.
+
+> (imap-uidnext imap) -> number-or-false
+
+  Returns the predicted next uid for a message in the currently
+  selected mailbox, as most recently reported by the server. The
+  server can update this count during most any interaction. Old IMAP
+  servers might not report this value, in which case the result is #f.
+
+  This operation does not communicate with the server. It merely
+  reports the result of previous communication.
+
+> (imap-uidvalidity imap) -> number-or-false
+
+  Returns an id number that changes when all uids become invalid. The
+  server *cannot* update this number during a session. Old IMAP
+  servers might not report this value, in which case the result is #f.
+
+  This operation does not communicate with the server. It merely
+  reports the result of previous communication.
+
+> (imap-new? imap) -> boolean
+
+  Returns #t if the server has reported an increase in the message
+  count for the currently mailbox since the last call to
+  `imap-reset-new!'. Selecting a mailbox implicitly calls
+  `imap-reset-new!'.
+
+  This operation does not communicate with the server. It merely
+  reports the result of previous communication.
+
+> (imap-reset-new! imap) -> void
+
+  Resets the new flag for the session; see `imap-new?', above.
+  This operation does not communicate with the server.
+
+> (imap-get-expunges imap) -> msg-num-list
+
+  Returns pending expunge notifications from the server for the
+  selected mailbox in terms of message positions (not uids), and
+  clears the pending notifications.  This operation does not
+  communicate with the server; it merely reports the result of
+  previous communication.
+
+  The server can notify the client of newly deleted messages during
+  most other commands, but not asynchronously between
+  commands. Furthermore, the server cannot report new deletions during
+  `imap-get-messages' or `imap-store' operations.
+
+  Before calling any IMAP operation that works in terms of message
+  numbers, pending expunge notifications must be handled by calling
+  `imap-get-expunges'.
+
+> (imap-pending-expunges? imap) -> boolean
+
+  Returns #f if `imap-get-expunges' would return an empty list, #t
+  otherwise.
+
+> (imap-get-updates imap) -> list of (cons msg-num assoc-list)
+
+  Returns information must like `imap-get-messages', but includes
+  information reported asynchronously by the server (e.g., to notify a
+  client with some other client changes a message attribute).  Instead
+  of reporting specific requested information for specific messages,
+  the result is associates message positions to field-value
+  association lists.
+
+  This operation does not communicate with the server; it merely
+  reports the result of previous communication. It also clears the
+  update information from the connection after reporting it.
+
+  When a server reports information that supercedes old reported
+  information for a message, or if the server reports that a message
+  has been deleted, then old information for the message is
+  dropped. Similarly, if `imap-get-messages' is used to explicitly
+  obtain information, any redudant (or out-of-date) information is
+  dropped.
+
+  A client need not use `imap-get-updates' ever, but accumulated
+  information for the connection consumes space.
+
+> (imap-pending-updates? imap) -> boolean
+
+  Returns #f if `imap-get-updates' would return an empty list, #t
+  otherwise.
+
+- - - - - - Manipulating messages - - - - -
 
 > (imap-get-messages imap msg-num-list field-list)
   -> list of field-value lists
@@ -982,6 +1104,9 @@ PROCEDURES -----------------------------------------------------------
   The return value is a list of entry items in parallel to
   `msg-num-list'. Each entry is itself a list containing value items
   in parallel to `field-list'.
+
+  Pending expunges must be handled before calling this function; see
+  `imap-get-expunges'.
 
   Example:
     (imap-get-message imap '(1 3 5) '(uid header))
@@ -1009,7 +1134,7 @@ PROCEDURES -----------------------------------------------------------
 
      'noinferiors   '|\Noinferiors|    \
      'noselect      '|\Noselect|       |
-     'marked        '|\Marked|         > mailbox flags
+     'marked        '|\Marked|          > mailbox flags
      'unmarked      '|\Unmarked|       |
      'hasnochildren '|\HasNoChildren|  |
      'haschildren   '|\HasChildren|    /
@@ -1030,6 +1155,10 @@ PROCEDURES -----------------------------------------------------------
   message positions (not their uids). The `flags' argument specifies
   the imap flags to add/remove/install.
 
+  Pending expunges must be handled before calling this function; see
+  `imap-get-expunges'. The server will not report back message-state
+  changes (so they will not show up through `imap-get-updates').
+
   Example:
     (imap-store imap '+ '(1 2 3) (list (symbol->imap-flag 'deleted)))
     ; marks the first three messages to be deleted
@@ -1042,14 +1171,40 @@ PROCEDURES -----------------------------------------------------------
   Purges every message currently marked with the '|\Deleted| flag from
   the mailbox.
 
+- - - - - - Querying and changing (other) mailboxes - - - - -
+
 > (imap-copy imap msg-num-list dest-mailbox-str/bytes) -> void
 
   Copies the specified messages from the currently selected mailbox to
   the specified mailbox.
 
+  Pending expunges must be handled before calling this function; see
+  `imap-get-expunges'.
+
 > (imap-append imap mailbox-string message-str/bytes) -> void
 
   Adds a new message (containing message-string) to the given mailbox
+
+> (imap-status imap mailbox-str/bytes status-symbol-list)
+  -> list of status values
+
+  Requests information about a mailbox from the server, typically
+  *not* the currently selected mailbox.
+
+  The status-symbol-list specifies the request, and the return value
+  includes one value for each symbol in status-symbol-list. The
+  allowed status symbols are:
+
+    'messages - number of messages
+    'recent - number of recent messages
+    'unseen - number of unseen messages
+    'uidnext - uid for next received message
+    'uidvalidity - id that changes when all uids are changed
+
+  Use `imap-messages' to get the message count for the currently
+  selected mailbox, etc. Use `imap-new?' and `imap-reset-new!' to
+  detect when new messages are available in the currently selected
+  mailbox.
 
 > (imap-mailbox-exists? imap mailbox-str/bytes) -> bool
 
@@ -1082,11 +1237,6 @@ PROCEDURES -----------------------------------------------------------
   -> list of imap flags
 
   Returns a list of imap flags for the given mailbox.
-
-> (imap-port-number [k])
-
-  A parameter that determines the server port number. The initial
-  value is 143.
 
 ==========================================================================
 _mime headers_, _mail headers_, _http headers_

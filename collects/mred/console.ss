@@ -86,14 +86,17 @@
 			position-location
 			line-location
 			set-position
+			clear-undos
 			insert
 			delete
 			change-style
+			scroll-to-position
 			last-position
 			get-start-position
 			get-end-position
 			get-text
-			get-character
+			get-snip-position
+			get-character find-snip
 			find-string
 			erase
 			set-mode
@@ -287,11 +290,14 @@
 		[previous-expr-pos -1]
 		[copy-previous-expr
 		 (lambda (which)
-		   (let ([str (list-ref previous-exprs which)])
+		   (let ([snips (list-ref previous-exprs which)])
 		     (begin-edit-sequence)
-		     (if (and autoprompting? (not prompt-mode?))
-			 (insert-prompt))
-		     (insert str prompt-position (last-position))
+		     (when (and autoprompting? (not prompt-mode?))
+		       (insert-prompt))
+		     (delete prompt-position (last-position) #f)
+		     (for-each (lambda (snip)
+				 (insert (send snip copy) prompt-position))
+			       snips)
 		     (set-position (last-position))
 		     (end-edit-sequence)))]
 		[copy-next-previous-expr
@@ -313,19 +319,27 @@
 		
 		[do-save-and-eval-or-read-avail
 		 (lambda (start end)
-		   (let ([str (get-text start end)])
+		   (change-style (make-object wx:style-delta%) start end)
+		   (let ([snips (let loop ([snip (find-snip start wx:const-snip-after-or-null)]
+					   [snips null])
+				  (cond
+				   [(null? snip) snips]
+				   [(<= (get-snip-position snip) end)
+				    (loop (send snip next)
+					  (cons (send snip copy) snips))]
+				   [else snips]))])
 		     (set! previous-expr-pos -1)
 		     (if (null? previous-exprs)
-			 (set! previous-exprs (cons str ()))
-			 (when (not (string=? str (last-str previous-exprs)))
+			 (set! previous-exprs (list snips))
+			 (begin
 			   (if (>= (length previous-exprs) max-save-previous-exprs)
 			       (set! previous-exprs (cdr previous-exprs)))
 			   (let loop ([l previous-exprs])
 			     (if (null? (cdr l))
-				 (set-cdr! l (cons str ()))
+				 (set-cdr! l (list snips))
 				 (loop (cdr l))))))
 		     (if read-waiting?
-			 (read-avail str)
+			 (read-avail (get-text start end))
 			 (do-eval start end))))]
 		[do-eval
 		 (lambda (start end)
@@ -378,8 +392,10 @@
 		[eval-busy? (lambda () #f)]
 		[on-local-char
 		 (lambda (key)
-		   (let ((code (send key get-key-code)))
-		     (if (or (= code 13) (= code 10))
+		   (let ([cr-code 13]
+			 [lf-code 10]
+			 [code (send key get-key-code)])
+		     (if (or (= code cr-code) (= code lf-code))
 			 (let ((start (get-start-position))
 			       (end (get-end-position))
 			       (last (last-position)))
@@ -447,8 +463,10 @@
 		[insert-prompt
 		 (lambda ()
 		   (set! prompt-mode? #t)
-		   (let* ((last (last-position))
-			  (last-str (get-text (- last 1) last)))
+		   (let* ([last (last-position)]
+			  [start-selection (get-start-position)]
+			  [end-selection (get-end-position)]
+			  [last-str (get-text (- last 1) last)])
 		     (begin-edit-sequence)
 		     (if (not (string=? last-str newline-string))
 			 (insert #\newline last))
@@ -456,6 +474,10 @@
 		       (insert (get-prompt) last)
 		       (change-style normal-delta last (last-position)))
 		     (set! prompt-position (last-position))
+		     (clear-undos)
+		     (unless (= start-selection end-selection)
+		       (set-position start-selection end-selection) 
+		       (scroll-to-position start-selection (last-position) 1))
 		     (end-edit-sequence)
 		     (semaphore-wait timer-sema)
 		     (when timer-on
@@ -595,6 +617,7 @@
 	       (lambda ()
 		 (let* ([mb (super-make-menu-bar)]
 			[help-menu (make-menu)]
+			[added-help-menu #f]
 			[dir (build-path (global-defined-value 
 					  'mred:plt-home-directory)
 					 "doc/")])
@@ -611,12 +634,15 @@
 			       (lambda (local-dir)
 				 (let* ([f (build-path dir local-dir "index.htm")])
 				   (if (file-exists? f)
-				       (send help-menu append-item
-					     (call-with-input-file f find-title)
-					     (lambda ()
-					       (mred:handler:edit-file f)))
+				       (begin
+					 (unless added-help-menu
+					   (set! added-help-menu #t)
+					   (send mb append help-menu "Help"))
+					 (send help-menu append-item
+					       (call-with-input-file f find-title)
+					       (lambda ()
+						 (mred:handler:edit-file f))))
 				       (mred:debug:printf 'help-menu "couldn't find ~a" f))))])
-			 (send mb append help-menu "Help")
 			 (for-each add-item dirs))
 		       (mred:debug:printf 'help-menu "couldn't find PLTHOME/doc directory"))
 		   mb)))]

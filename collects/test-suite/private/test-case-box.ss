@@ -87,7 +87,9 @@
                                  [set-actuals-stx set-actuals])
                      (syntax/loc (datum->syntax-object false 'ignored (list source line column position 1))
                        (test-case equal? to-test-stx exp-stx update-stx set-actuals-stx)))
-                   #'(define-values () (values)))
+                   (syntax-property #'(define-values () (values)) 
+                                    'stepper-skip-completely
+                                    #t))
                1
                true)))
           

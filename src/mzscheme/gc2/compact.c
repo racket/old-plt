@@ -171,6 +171,8 @@ MPage **mpage_maps;
 
 #define BIGBLOCK_MIN_SIZE (1 << (LOG_MPAGE_SIZE - 2))
 
+static long dump_info_array[BIGBLOCK_MIN_SIZE];
+
 #define FREE_LIST_ARRAY_SIZE (BIGBLOCK_MIN_SIZE >> 2)
 
 # define COLOR_MASK 0x3
@@ -209,6 +211,8 @@ MPage **mpage_maps;
 
 typedef unsigned short mtype_t;
 
+#define SKIP ((Type_Tag)0x7000)
+#define TAGGED_EOM ((Type_Tag)0x6000)
 #define UNTAGGED_EOM   (MPAGE_SIZE + 1)
 
 typedef struct {
@@ -240,6 +244,8 @@ static long mark_maxdepth, mark_stackcount;
 static int during_gc;
 
 static MPage *find_page(void *p);
+static void set_ending_tags(void);
+static void init(void);
 
 #if SAFETY
 static void CRASH()
@@ -860,6 +866,73 @@ unsigned long GC_get_stack_base(void)
   return stack_base;
 }
 
+
+static void scan_tagged_mpage(void **p, MPage *page)
+{
+  OffsetTy offset = 0;
+  OffsetArrTy *offsets;
+  void **top;
+
+  offsets = page->u.offsets;
+  top = p + MPAGE_WORDS;
+  
+  while (p < top) {
+    Type_Tag tag;
+    long size;
+
+    tag = *(Type_Tag *)p;
+
+    if (tag == TAGGED_EOM) {
+      break;
+    }
+
+#if ALIGN_DOUBLES
+    if (tag == SKIP) {
+      offset++;
+      p++;
+    } else {
+#endif
+      size = size_table[tag](p);
+
+      dump_info_array[tag]++;
+      dump_info_array[tag + _num_tags_] += size;
+
+      offset += size;      
+      p += size;
+#if ALIGN_DOUBLES
+    }
+#endif
+  }
+}
+
+static void scan_untagged_mpage(void **p, MPage *page)
+{
+  OffsetTy offset = 0;
+  OffsetArrTy *offsets;
+  void **top;
+
+  offsets = page->u.offsets;
+  top = p + MPAGE_WORDS;
+
+  while (p < top) {
+    long size;
+
+    size = *(long *)p + 1;
+
+    if (size == UNTAGGED_EOM) {
+      break;
+    }
+
+    dump_info_array[size - 1] += 1;
+
+    offset += size;
+    p += size;
+  } 
+}
+
+/* HACK! */
+extern char *scheme_get_type_name(Type_Tag t);
+
 void GC_dump(void)
 {
   int i;
@@ -959,7 +1032,74 @@ void GC_dump(void)
     }
     fprintf(stderr, "\n");
   }
-  
+
+  {
+    int j;
+
+    init();
+    set_ending_tags();
+
+    for (j = 0; j < NUM_SETS; j++) {
+      int kind, i;
+      char *name;
+      MPage *page;
+
+      switch (j) {
+      case 1: kind = MTYPE_ARRAY; name = "array"; break;
+      case 2: kind = MTYPE_ATOMIC; name = "atomic"; break;
+      case 3: kind = MTYPE_XTAGGED; name = "xtagged"; break;
+      case 4: kind = MTYPE_TAGGED_ARRAY; name = "tagarray"; break;
+      default: kind = MTYPE_TAGGED; name = "tagged"; break;
+      }
+
+      for (i = 0; i < (BIGBLOCK_MIN_SIZE >> 2); i++)
+	dump_info_array[i] = 0;
+
+      for (page = first; page; page = page->next) {
+	if ((page->type & kind) && !(page->type & MTYPE_BIGBLOCK)) {
+	  if (j)
+	    scan_untagged_mpage(page->block_start, page); /* gets size counts */
+	  else
+	    scan_tagged_mpage(page->block_start, page); /* gets tag counts */
+	}
+      }
+
+      if (j) {
+	int k = 0;
+	fprintf(stderr, "%s counts: ", name);
+	for (i = 0; i < (BIGBLOCK_MIN_SIZE >> 2); i++) {
+	  if (dump_info_array[i]) {
+	    k++;
+	    if (k == 10) {
+	      fprintf(stderr, "\n    ");
+	      k = 0;
+	    }
+	    fprintf(stderr, " [%d:%ld]", i << 2, dump_info_array[i]);
+	  }
+	}
+	fprintf(stderr, "\n");
+      } else {
+	fprintf(stderr, "Tag counts and sizes:\n");
+	for (i = 0; i < _num_tags_; i++) {
+	  if (dump_info_array[i]) {
+	    char *tn;
+	    switch(i) {
+	    case gc_finalization_tag: tn = "finalization"; break;
+	    case gc_finalization_weak_link_tag: tn = "finalization-weak-link"; break;
+	    case gc_weak_array_tag: tn = "weak-array"; break;
+	    case gc_on_free_list_tag: tn = "freelist-elem"; break;
+	    default:
+	      tn = scheme_get_type_name(i);
+	      if (!tn) tn = "unknown";
+	      break;
+	    }
+	    fprintf(stderr, "  %20.20s: %10ld %10ld\n", tn, dump_info_array[i], (dump_info_array[i + _num_tags_]) << 2);
+	  }
+	}
+      }
+    }
+  }
+
   if (memory_in_use > max_memory_use)
     max_memory_use = memory_in_use;
   
@@ -983,9 +1123,6 @@ void GC_init_type_tags(int count, int weakbox)
 {
   weak_box_tag = weakbox;
 }
-
-#define SKIP ((Type_Tag)0x7000)
-#define TAGGED_EOM ((Type_Tag)0x6000)
 
 #if SEARCH
 void *search_for, *search_mark;
@@ -2785,6 +2922,64 @@ void check_variable_stack()
 }
 #endif
 
+static void set_ending_tags(void)
+{
+  int i;
+
+  if (tagged.low < tagged.high)
+    *(Type_Tag *)tagged.low = TAGGED_EOM;
+  for (i = 1; i < NUM_SETS; i++) {
+    if (sets[i]->low < sets[i]->high)
+      *(long *)sets[i]->low = UNTAGGED_EOM - 1;
+  }
+}
+
+static int initialized;
+
+static void init(void)
+{
+  if (!initialized) {
+    GC_register_traversers(weak_box_tag, size_weak_box, mark_weak_box, fixup_weak_box);
+    GC_register_traversers(gc_weak_array_tag, size_weak_array, mark_weak_array, fixup_weak_array);
+    GC_register_traversers(gc_finalization_tag, size_finalizer, mark_finalizer, fixup_finalizer);
+    GC_register_traversers(gc_finalization_weak_link_tag, size_finalizer_weak_link, mark_finalizer_weak_link, fixup_finalizer_weak_link);
+#if USE_FREELIST
+    GC_register_traversers(gc_on_free_list_tag, size_on_free_list, size_on_free_list, size_on_free_list);
+#endif
+    GC_add_roots(&fnls, (char *)&fnls + sizeof(fnls) + 1);
+    GC_add_roots(&fnl_weaks, (char *)&fnl_weaks + sizeof(fnl_weaks) + 1);
+    GC_add_roots(&run_queue, (char *)&run_queue + sizeof(run_queue) + 1);
+    GC_add_roots(&last_in_queue, (char *)&last_in_queue + sizeof(last_in_queue) + 1);
+    GC_add_roots(&park, (char *)&park + sizeof(park) + 1);
+
+    sets[0] = &tagged;
+    sets[1] = &array;
+    sets[2] = &tagged_array;
+    sets[3] = &xtagged;
+    sets[4] = &atomic;
+
+    initialized = 1;
+
+#if GENERATIONS
+# ifdef NEED_SIGSEGV
+    signal(SIGSEGV, (void (*)(int))fault_handler);
+# endif
+# ifdef NEED_SIGBUS
+    signal(SIGBUS, (void (*)(int))fault_handler);
+# endif
+# ifdef NEED_SIGACTION
+    {
+      struct sigaction act, oact;
+      act.sa_sigaction = fault_handler;
+      sigemptyset(&act.sa_mask);
+      act.sa_flags = SA_SIGINFO;
+      sigaction(SIGSEGV, &act, &oact);
+    }
+# endif
+#endif
+  }
+}
+
 #if 0
 # define GETTIME() ((long)scheme_get_milliseconds())
 #else
@@ -2802,8 +2997,6 @@ static long started, rightnow, old;
 # define INITTIME() /* empty */
 # define PRINTTIME(x) /* empty */
 #endif
-
-static int initialized;
 
 static void do_roots(int fixup)
 {
@@ -2868,53 +3061,9 @@ static void gcollect(int full)
   if (memory_in_use > max_memory_use)
     max_memory_use = memory_in_use;
 
-  if (!initialized) {
-    GC_register_traversers(weak_box_tag, size_weak_box, mark_weak_box, fixup_weak_box);
-    GC_register_traversers(gc_weak_array_tag, size_weak_array, mark_weak_array, fixup_weak_array);
-    GC_register_traversers(gc_finalization_tag, size_finalizer, mark_finalizer, fixup_finalizer);
-    GC_register_traversers(gc_finalization_weak_link_tag, size_finalizer_weak_link, mark_finalizer_weak_link, fixup_finalizer_weak_link);
-#if USE_FREELIST
-    GC_register_traversers(gc_on_free_list_tag, size_on_free_list, size_on_free_list, size_on_free_list);
-#endif
-    GC_add_roots(&fnls, (char *)&fnls + sizeof(fnls) + 1);
-    GC_add_roots(&fnl_weaks, (char *)&fnl_weaks + sizeof(fnl_weaks) + 1);
-    GC_add_roots(&run_queue, (char *)&run_queue + sizeof(run_queue) + 1);
-    GC_add_roots(&last_in_queue, (char *)&last_in_queue + sizeof(last_in_queue) + 1);
-    GC_add_roots(&park, (char *)&park + sizeof(park) + 1);
+  init();
 
-    sets[0] = &tagged;
-    sets[1] = &array;
-    sets[2] = &tagged_array;
-    sets[3] = &xtagged;
-    sets[4] = &atomic;
-
-    initialized = 1;
-
-#if GENERATIONS
-# ifdef NEED_SIGSEGV
-    signal(SIGSEGV, (void (*)(int))fault_handler);
-# endif
-# ifdef NEED_SIGBUS
-    signal(SIGBUS, (void (*)(int))fault_handler);
-# endif
-# ifdef NEED_SIGACTION
-    {
-      struct sigaction act, oact;
-      act.sa_sigaction = fault_handler;
-      sigemptyset(&act.sa_mask);
-      act.sa_flags = SA_SIGINFO;
-      sigaction(SIGSEGV, &act, &oact);
-    }
-# endif
-#endif
-  }
-
-  if (tagged.low < tagged.high)
-    *(Type_Tag *)tagged.low = TAGGED_EOM;
-  for (i = 1; i < NUM_SETS; i++) {
-    if (sets[i]->low < sets[i]->high)
-      *(long *)sets[i]->low = UNTAGGED_EOM - 1;
-  }
+  set_ending_tags();
 
   weak_boxes = NULL;
   weak_arrays = NULL;

@@ -1944,7 +1944,7 @@ static Scheme_Object *MrEdMakeStdOut(void)
 static void stderr_write(char *s, long d, long l, Scheme_Output_Port*)
 {
 #if WINDOW_STDIO || WCONSOLE_STDIO
-  MrEdSchemeMessages(NULL, s, l);
+  MrEdSchemeMessages(NULL, s, d, l);
 #else
   if (!mrerr)
     mrerr = fopen("mrstderr.txt", "w");

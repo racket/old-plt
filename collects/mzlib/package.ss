@@ -121,8 +121,9 @@
       (kernel-syntax-case e #f
         ((define-values x y) e)
         ((define-syntaxes x y) e)
-        ((d x y) (or (module-identifier=? (quote-syntax define*-values) #'d)
-                     (module-identifier=? (quote-syntax define*-syntaxes) #'d))
+        ((d x y) (and (identifier? #'d)
+		      (or (module-identifier=? (quote-syntax define*-values) #'d)
+			  (module-identifier=? (quote-syntax define*-syntaxes) #'d)))
          e)
         (x #`(define-values () (begin x (values))))))
     

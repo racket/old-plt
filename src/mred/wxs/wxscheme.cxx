@@ -53,11 +53,6 @@
 
 #include <stdlib.h>
 
-char *WXSCHEME_wrong = "wrong number of parameters to method %s";
-char *WXSCHEME_too_many = "too many parameters to method %s";
-char *WXSCHEME_too_few = "too few parameters to method %s";
-char *WXSCHEME_expected = "expected a %s in %s";
-
 typedef struct GCBitmap {
   wxCanvas **canvasptr; /* weak reference */
   float x, y, w, h;

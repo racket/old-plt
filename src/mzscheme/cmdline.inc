@@ -176,12 +176,12 @@ static char *make_embedded_load(const char *start, const char *end)
 	  "(let* ([sp (find-system-path 'exec-file)] [exe (find-executable-path sp #f)]"
                    "[s (with-input-from-file exe (lambda () "
 	                "(file-position (current-input-port)", start, ") "
-                                         "(read-string (- ", end, start, "))))]"
-                   "[p (open-input-string s)])"
-	    "(when (and (> (string-length s) 2)"
-                           "(char=? (string-ref s 0) #\\#)"
-                           "(char=? (string-ref s 1) #\\!))"
-               "(read-line p))"
+                                         "(read-bytes (- ", end, start, "))))]"
+                   "[p (open-input-bytes s)])"
+	    "(when (and (> (bytes-length s) 2)"
+                           "(= (bytes-ref s 0) (char->integer #\\#))"
+                           "(= (bytes-ref s 1) (char->integer #\\!)))"
+               "(read-bytes-line p))"
 	    "(let loop () (let ([e (parameterize ([read-accept-compiled #t]) (read p))])"
  			     "(unless (eof-object? e) (eval e) (loop)))))");
 

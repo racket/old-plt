@@ -66,7 +66,6 @@ CLEAN :
 	-@erase "$(INTDIR)\WXS_SLID.obj"
 	-@erase "$(INTDIR)\WXS_SNIP.obj"
 	-@erase "$(INTDIR)\WXS_STYL.obj"
-	-@erase "$(INTDIR)\WXS_TEXT.obj"
 	-@erase "$(INTDIR)\WXS_WIN.obj"
 	-@erase "$(INTDIR)\WXSCHEME.obj"
 	-@erase "$(OUTDIR)\wxs.lib"
@@ -141,7 +140,6 @@ LIB32_OBJS= \
 	"$(INTDIR)\WXS_SLID.obj" \
 	"$(INTDIR)\WXS_SNIP.obj" \
 	"$(INTDIR)\WXS_STYL.obj" \
-	"$(INTDIR)\WXS_TEXT.obj" \
 	"$(INTDIR)\WXS_WIN.obj" \
 	"$(INTDIR)\WXSCHEME.obj"
 
@@ -190,7 +188,6 @@ CLEAN :
 	-@erase "$(INTDIR)\WXS_SLID.obj"
 	-@erase "$(INTDIR)\WXS_SNIP.obj"
 	-@erase "$(INTDIR)\WXS_STYL.obj"
-	-@erase "$(INTDIR)\WXS_TEXT.obj"
 	-@erase "$(INTDIR)\WXS_WIN.obj"
 	-@erase "$(INTDIR)\WXSCHEME.obj"
 	-@erase "$(OUTDIR)\wxs.lib"
@@ -265,7 +262,6 @@ LIB32_OBJS= \
 	"$(INTDIR)\WXS_SLID.obj" \
 	"$(INTDIR)\WXS_SNIP.obj" \
 	"$(INTDIR)\WXS_STYL.obj" \
-	"$(INTDIR)\WXS_TEXT.obj" \
 	"$(INTDIR)\WXS_WIN.obj" \
 	"$(INTDIR)\WXSCHEME.obj"
 
@@ -314,7 +310,6 @@ CLEAN :
 	-@erase "$(INTDIR)\WXS_SLID.obj"
 	-@erase "$(INTDIR)\WXS_SNIP.obj"
 	-@erase "$(INTDIR)\WXS_STYL.obj"
-	-@erase "$(INTDIR)\WXS_TEXT.obj"
 	-@erase "$(INTDIR)\WXS_WIN.obj"
 	-@erase "$(INTDIR)\WXSCHEME.obj"
 	-@erase "$(OUTDIR)\wxs.lib"
@@ -389,7 +384,6 @@ LIB32_OBJS= \
 	"$(INTDIR)\WXS_SLID.obj" \
 	"$(INTDIR)\WXS_SNIP.obj" \
 	"$(INTDIR)\WXS_STYL.obj" \
-	"$(INTDIR)\WXS_TEXT.obj" \
 	"$(INTDIR)\WXS_WIN.obj" \
 	"$(INTDIR)\WXSCHEME.obj"
 
@@ -564,12 +558,6 @@ SOURCE=..\..\mred\Wxs\WXS_SNIP.cxx
 SOURCE=..\..\mred\Wxs\WXS_STYL.cxx
 
 "$(INTDIR)\WXS_STYL.obj" : $(SOURCE) "$(INTDIR)"
-	$(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-SOURCE=..\..\mred\Wxs\WXS_TEXT.cxx
-
-"$(INTDIR)\WXS_TEXT.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 

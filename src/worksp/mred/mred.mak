@@ -51,7 +51,6 @@ CLEAN :
 !ENDIF 
 	-@erase "$(INTDIR)\MRED.obj"
 	-@erase "$(INTDIR)\Mred.res"
-	-@erase "$(INTDIR)\mredgcpp.obj"
 	-@erase "$(INTDIR)\MREDMSW.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
@@ -67,6 +66,7 @@ CLEAN :
 	-@erase "$(INTDIR)\WX_MSNIP.obj"
 	-@erase "$(INTDIR)\WX_SNIP.obj"
 	-@erase "$(INTDIR)\WX_STYLE.obj"
+	-@erase "$(INTDIR)\wxGC.obj"
 	-@erase "$(INTDIR)\xcglue.obj"
 	-@erase "$(OUTDIR)\mred.exe"
 	-@erase "$(OUTDIR)\mred.pdb"
@@ -122,7 +122,6 @@ LINK32=link.exe
 LINK32_FLAGS=..\wxs\Release\wxs.lib ..\wxutils\Release\wxutils.lib ..\wxwin\Release\wxwin.lib ..\mzsrc\Release\mzsrc.lib ..\gc\Release\gc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)\mred.pdb" /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"$(OUTDIR)\mred.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\MRED.obj" \
-	"$(INTDIR)\mredgcpp.obj" \
 	"$(INTDIR)\MREDMSW.obj" \
 	"$(INTDIR)\WX_CGREC.obj" \
 	"$(INTDIR)\WX_KEYM.obj" \
@@ -136,6 +135,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\WX_MSNIP.obj" \
 	"$(INTDIR)\WX_SNIP.obj" \
 	"$(INTDIR)\WX_STYLE.obj" \
+	"$(INTDIR)\wxGC.obj" \
 	"$(INTDIR)\xcglue.obj" \
 	"$(INTDIR)\Mred.res" \
 	"$(OUTDIR)\src\worksp\wxwin\Release\wxwin.lib" \
@@ -175,8 +175,6 @@ CLEAN :
 	-@erase "$(INTDIR)\MRED.obj"
 	-@erase "$(INTDIR)\Mred.res"
 	-@erase "$(INTDIR)\MRED.sbr"
-	-@erase "$(INTDIR)\mredgcpp.obj"
-	-@erase "$(INTDIR)\mredgcpp.sbr"
 	-@erase "$(INTDIR)\MREDMSW.obj"
 	-@erase "$(INTDIR)\MREDMSW.sbr"
 	-@erase "$(INTDIR)\vc60.idb"
@@ -205,6 +203,8 @@ CLEAN :
 	-@erase "$(INTDIR)\WX_SNIP.sbr"
 	-@erase "$(INTDIR)\WX_STYLE.obj"
 	-@erase "$(INTDIR)\WX_STYLE.sbr"
+	-@erase "$(INTDIR)\wxGC.obj"
+	-@erase "$(INTDIR)\wxGC.sbr"
 	-@erase "$(INTDIR)\xcglue.obj"
 	-@erase "$(INTDIR)\xcglue.sbr"
 	-@erase "$(OUTDIR)\mred.bsc"
@@ -258,7 +258,6 @@ BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\mred.bsc" 
 BSC32_SBRS= \
 	"$(INTDIR)\MRED.sbr" \
-	"$(INTDIR)\mredgcpp.sbr" \
 	"$(INTDIR)\MREDMSW.sbr" \
 	"$(INTDIR)\WX_CGREC.sbr" \
 	"$(INTDIR)\WX_KEYM.sbr" \
@@ -272,6 +271,7 @@ BSC32_SBRS= \
 	"$(INTDIR)\WX_MSNIP.sbr" \
 	"$(INTDIR)\WX_SNIP.sbr" \
 	"$(INTDIR)\WX_STYLE.sbr" \
+	"$(INTDIR)\wxGC.sbr" \
 	"$(INTDIR)\xcglue.sbr"
 
 "$(OUTDIR)\mred.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
@@ -283,7 +283,6 @@ LINK32=link.exe
 LINK32_FLAGS=libcmt.lib ..\wxs\Debug\wxs.lib ..\wxutils\Debug\wxutils.lib ..\wxwin\Debug\wxwin.lib ..\mzsrc\Debug\mzsrc.lib ..\gc\Debug\gc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)\mred.pdb" /debug /machine:I386 /nodefaultlib:"libcmtd.lib" /out:"$(OUTDIR)\mred.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\MRED.obj" \
-	"$(INTDIR)\mredgcpp.obj" \
 	"$(INTDIR)\MREDMSW.obj" \
 	"$(INTDIR)\WX_CGREC.obj" \
 	"$(INTDIR)\WX_KEYM.obj" \
@@ -297,6 +296,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\WX_MSNIP.obj" \
 	"$(INTDIR)\WX_SNIP.obj" \
 	"$(INTDIR)\WX_STYLE.obj" \
+	"$(INTDIR)\wxGC.obj" \
 	"$(INTDIR)\xcglue.obj" \
 	"$(INTDIR)\Mred.res" \
 	"$(OUTDIR)\src\worksp\wxwin\Debug\wxwin.lib" \
@@ -336,8 +336,6 @@ CLEAN :
 	-@erase "$(INTDIR)\MRED.obj"
 	-@erase "$(INTDIR)\Mred.res"
 	-@erase "$(INTDIR)\MRED.sbr"
-	-@erase "$(INTDIR)\mredgcpp.obj"
-	-@erase "$(INTDIR)\mredgcpp.sbr"
 	-@erase "$(INTDIR)\MREDMSW.obj"
 	-@erase "$(INTDIR)\MREDMSW.sbr"
 	-@erase "$(INTDIR)\vc60.idb"
@@ -366,6 +364,8 @@ CLEAN :
 	-@erase "$(INTDIR)\WX_SNIP.sbr"
 	-@erase "$(INTDIR)\WX_STYLE.obj"
 	-@erase "$(INTDIR)\WX_STYLE.sbr"
+	-@erase "$(INTDIR)\wxGC.obj"
+	-@erase "$(INTDIR)\wxGC.sbr"
 	-@erase "$(INTDIR)\xcglue.obj"
 	-@erase "$(INTDIR)\xcglue.sbr"
 	-@erase "$(OUTDIR)\mred.bsc"
@@ -419,7 +419,6 @@ BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\mred.bsc" 
 BSC32_SBRS= \
 	"$(INTDIR)\MRED.sbr" \
-	"$(INTDIR)\mredgcpp.sbr" \
 	"$(INTDIR)\MREDMSW.sbr" \
 	"$(INTDIR)\WX_CGREC.sbr" \
 	"$(INTDIR)\WX_KEYM.sbr" \
@@ -433,6 +432,7 @@ BSC32_SBRS= \
 	"$(INTDIR)\WX_MSNIP.sbr" \
 	"$(INTDIR)\WX_SNIP.sbr" \
 	"$(INTDIR)\WX_STYLE.sbr" \
+	"$(INTDIR)\wxGC.sbr" \
 	"$(INTDIR)\xcglue.sbr"
 
 "$(OUTDIR)\mred.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
@@ -444,7 +444,6 @@ LINK32=link.exe
 LINK32_FLAGS=..\wxs\SGC\wxs.lib ..\wxutils\SGC\wxutils.lib ..\wxwin\SGC\wxwin.lib ..\mzsrc\SGC\mzsrc.lib ..\sgc\Debug\sgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib libc.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)\mred.pdb" /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"$(OUTDIR)\mred.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\MRED.obj" \
-	"$(INTDIR)\mredgcpp.obj" \
 	"$(INTDIR)\MREDMSW.obj" \
 	"$(INTDIR)\WX_CGREC.obj" \
 	"$(INTDIR)\WX_KEYM.obj" \
@@ -458,6 +457,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\WX_MSNIP.obj" \
 	"$(INTDIR)\WX_SNIP.obj" \
 	"$(INTDIR)\WX_STYLE.obj" \
+	"$(INTDIR)\wxGC.obj" \
 	"$(INTDIR)\xcglue.obj" \
 	"$(INTDIR)\Mred.res" \
 	"$(OUTDIR)\src\worksp\wxwin\SGC\wxwin.lib" \
@@ -513,31 +513,6 @@ SOURCE=.\Mred.rc
 "$(INTDIR)\Mred.res" : $(SOURCE) "$(INTDIR)"
 	$(RSC) $(RSC_PROJ) $(SOURCE)
 
-
-SOURCE=..\..\mred\mredgcpp.cxx
-
-!IF  "$(CFG)" == "mred - Win32 Release"
-
-
-"$(INTDIR)\mredgcpp.obj" : $(SOURCE) "$(INTDIR)"
-	$(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ELSEIF  "$(CFG)" == "mred - Win32 Debug"
-
-
-"$(INTDIR)\mredgcpp.obj"	"$(INTDIR)\mredgcpp.sbr" : $(SOURCE) "$(INTDIR)"
-	$(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ELSEIF  "$(CFG)" == "mred - Win32 SGC"
-
-
-"$(INTDIR)\mredgcpp.obj"	"$(INTDIR)\mredgcpp.sbr" : $(SOURCE) "$(INTDIR)"
-	$(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 SOURCE=..\..\mred\MREDMSW.cxx
 
@@ -859,6 +834,31 @@ SOURCE=..\..\mred\Wxme\WX_STYLE.cxx
 
 
 "$(INTDIR)\WX_STYLE.obj"	"$(INTDIR)\WX_STYLE.sbr" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+!ENDIF 
+
+SOURCE=..\..\wxcommon\wxGC.cxx
+
+!IF  "$(CFG)" == "mred - Win32 Release"
+
+
+"$(INTDIR)\wxGC.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "mred - Win32 Debug"
+
+
+"$(INTDIR)\wxGC.obj"	"$(INTDIR)\wxGC.sbr" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+!ELSEIF  "$(CFG)" == "mred - Win32 SGC"
+
+
+"$(INTDIR)\wxGC.obj"	"$(INTDIR)\wxGC.sbr" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 

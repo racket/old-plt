@@ -128,10 +128,15 @@ SOURCE=..\..\mred\MRED.cxx
 # Begin Source File
 
 SOURCE=.\Mred.rc
-# End Source File
-# Begin Source File
 
-SOURCE=..\..\mred\mredgcpp.cxx
+!IF  "$(CFG)" == "mred - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "mred - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "mred - Win32 SGC"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -184,6 +189,10 @@ SOURCE=..\..\mred\Wxme\WX_SNIP.cxx
 # Begin Source File
 
 SOURCE=..\..\mred\Wxme\WX_STYLE.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\wxcommon\wxGC.cxx
 # End Source File
 # Begin Source File
 

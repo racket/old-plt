@@ -30,13 +30,13 @@
 	 #f
 	 (begin
 	   (set-box! b #t)
-	   (current-milliseconds))))
+	   (current-process-milliseconds))))
    
    (define (register-profile-done key b start)
      (when start
        (set-box! b #f)
        (let ([v (cdr (hash-table-get profile-info key))])
-	 (set-car! v (+ (- (current-milliseconds) start) (car v))))))
+	 (set-car! v (+ (- (current-process-milliseconds) start) (car v))))))
 
    (define (get-profile-results)
      (hash-table-map profile-info (lambda (key val)

@@ -4442,7 +4442,7 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
   }
 
 #ifndef MAC_FILE_SYSTEM
-  if (existsok >= 0) {
+  if (!existsok || (existsok == 1)) {
 #endif
     if (scheme_file_exists(filename)) {
       if (!existsok)
@@ -4457,8 +4457,8 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
 	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   argv[0],
 			   fail_err_symbol,
-			   "%s: error deleting \"%q\"", 
-			   name, filename);
+			   "%s: error deleting \"%q\" (%e)", 
+			   name, filename, errno);
 #ifdef MAC_FILE_SYSTEM
       } else
 	creating = 0;

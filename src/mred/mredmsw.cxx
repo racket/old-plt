@@ -427,10 +427,3 @@ void DeleteRegisteredGDIObject(HANDLE x)
   
   DeleteObject(x);
 }
-
-/**********************************************************************/
-
-wxWindow *wxLocationToWindow(int x, int y)
-{
-  return NULL;
-}

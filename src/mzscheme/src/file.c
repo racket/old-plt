@@ -2081,6 +2081,8 @@ static char *filename_for_error(Scheme_Object *p)
 
 static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
 {
+  int errid;
+
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("delete-file", "string", 0, argc, argv);
 
@@ -2093,9 +2095,11 @@ static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
     if (has_null(file, SCHEME_STRTAG_VAL(argv[0])))
       raise_null_error("delete-file", argv[0], "");
     
-    if (find_mac_file(file, 0, &spec, 0, -2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
-      if (!FSpDelete(&spec))
+    if (find_mac_file(file, 0, &spec, 0, -2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
+      errid = FSpDelete(&spec);
+      if (!errid)
         return scheme_void;
+    }
   }
 #else
   if (!MSC_IZE(unlink)(scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
@@ -2103,13 +2107,15 @@ static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
 					      "delete-file",
 					      NULL)))
     return scheme_void;
+  errid = errno;
 #endif
   
   scheme_raise_exn(MZEXN_I_O_FILESYSTEM, 
 		   argv[0], 
 		   fail_err_symbol,
-		   "delete-file: cannot delete file: \"%q\"",
-		   filename_for_error(argv[0]));
+		   "delete-file: cannot delete file: \"%q\" (%e)",
+		   filename_for_error(argv[0]),
+		   errid);
 
   return NULL;
 }
@@ -2992,8 +2998,9 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
     scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		     argv[0],
 		     fail_err_symbol,
-		     "delete-directory: cannot delete directory: %q",
-		     filename_for_error(argv[0]));
+		     "delete-directory: cannot delete directory: %q (%e)",
+		     filename_for_error(argv[0]),
+		     errno);
     return NULL;
   } else
     return scheme_void;

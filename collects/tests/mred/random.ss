@@ -265,6 +265,7 @@
   integer-list
   symbol
   real
+  real-list
   string
   string-list
   boolean
@@ -420,6 +421,7 @@
 (send real-example-list set-filter real?)
 (send integer-example-list set-filter (lambda (x) (and (number? x) (exact? x) (integer? x))))
 (send integer-list-example-list set-filter (lambda (x) (and (list? x) (andmap (lambda (x) (and (number? x) (exact? x) (integer? x))) x))))
+(send real-list-example-list set-filter (lambda (x) (and (list? x) (andmap (lambda (x) (and (number? x) (real? x))) x))))
 
 (define false-example-list (make-object example-list% 'false '()))
 (send false-example-list add #f)
@@ -431,6 +433,7 @@
 (send real-example-list add-bad 4+5i) 
 (send integer-example-list add-bad 5.0)
 (send integer-list-example-list add-bad 7)
+(send real-list-example-list add-bad 7.0)
 
 (define empty-list-example-list (make-object example-list% 'empty-list '()))
 (send empty-list-example-list add null)
@@ -489,6 +492,9 @@
 
 (define (range-integer-example-list s e)
   (make-object number-example-list% integer-example-list s e))
+
+(define (range-real-example-list s e)
+  (make-object number-example-list% real-example-list s e))
 
 (send* symbol-example-list
        (add 'ok) (add 'change-family))

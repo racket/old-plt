@@ -79,8 +79,6 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
   tab_count = N;
   tab_labels = Choices;
 
-  font = buttonFont;
-  
   SetCurrentMacDC();
   theMacGrafPort = cMacDC->macGrafPort();
   OffsetRect(&boundsRect, SetOriginX, SetOriginY + TAB_TOP_SPACE);

@@ -41,10 +41,8 @@ class wxListBox: public wxbListBox
 	int				cHaveVScroll;
 	int				cKeycnt;		// next key (number)
 	wxList*			cDataList;		// List of ClientData(s) per ListBox Entry
-//	unsigned long   cLastClickTime;  // mflatt: for double-clicking
-//	Cell			cLastClickCell;  // mflatt: for double-clicking
 	wxArea*			cBorderArea; 	// mflatt: for showing keyboard focus
-//	wxArea*         cThinBorderArea; // mflatt: box around list
+	wxFont*  label_font;
 	
   wxListBox(
   		wxPanel *panel, 
@@ -59,6 +57,7 @@ class wxListBox: public wxbListBox
 		char **Choices = NULL,
 		long style = 0, 
 	        wxFont *_font = NULL,
+	        wxFont *_label_font = NULL,
 		char *name = "listBox",
 		WXTYPE		objectType = wxTYPE_LIST_BOX
 		);
@@ -96,24 +95,12 @@ class wxListBox: public wxbListBox
   // For single or multiple choice list item
   int GetSelections(int **list_selections);
   Bool Selected(int N);
-#if 0 // CJC
-  void SetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO);
-  void SetSize(int width, int height) { wxItem::SetSize(width, height); }
-  void GetPosition(int *x, int *y);
-#endif
   void InsertItems(int nItems, char **Items, int pos);
   // Set the specified item at the first visible item
   // or scroll to max range.
   void SetFirstItem(int N) ;
 
-  void SetBackgroundColour(wxColour*col) ;
-  void SetLabelColour(wxColour*col) ;
-  void SetButtonColour(wxColour*col) ;
-  // Windows-specific code to set the horizontal extent of
-  // the listbox, if necessary. If s is non-NULL, it's
-  // used to calculate the horizontal extent.
-  // Otherwise, all strings are used.
-  void SetHorizontalExtent(char *s = NULL);
+  wxFont *GetLabelFont() { return label_font; }
 
   void OnSetFocus(void);
   void OnKillFocus(void);
@@ -122,7 +109,7 @@ class wxListBox: public wxbListBox
   
   virtual void Paint(void);
   virtual void OnEvent(wxMouseEvent *event);
-  virtual void OnChar(wxKeyEvent *event); // mflatt
+  virtual void OnChar(wxKeyEvent *event);
   virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY);
   virtual void MaybeMoveControls();
 
@@ -134,7 +121,7 @@ class wxListBox: public wxbListBox
   int NumberOfVisibleItems();
   int GetFirstItem();
 
-  virtual Bool WantsFocus(void); // mflatt
+  virtual Bool WantsFocus(void);
   virtual void InternalGray(int gray);
   virtual void ReleaseCurrentDC(int really = 0);
   virtual void Activate(Bool gray);

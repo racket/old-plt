@@ -30,9 +30,11 @@ wxMenuItem::~wxMenuItem(void)
 
 // Construct a menu with optional title (then use append)
 
-wxMenu::wxMenu(char *Title, wxFunction func):wxbMenu(Title, func)
+wxMenu::wxMenu(char *Title, wxFunction func, wxFont *_font):wxbMenu(Title, func)
 {
   HANDLE msh;
+
+  SetFont(_font);
   
   mustBeBreaked = FALSE;
   no_items = 0;
@@ -40,6 +42,8 @@ wxMenu::wxMenu(char *Title, wxFunction func):wxbMenu(Title, func)
   wxWinType = wxTYPE_HMENU;
   msh = (HANDLE)wxwmCreatePopupMenu();
   ms_handle = msh;
+  if (_font)
+    wxSetWinFont(font, ms_handle);
   save_ms_handle = NULL;
   top_level_menu = this;
   if (title)

@@ -50,7 +50,7 @@ wxChoice::wxChoice(wxPanel *panel, wxFunction function, char *label,
 
   __type = wxTYPE_CHOICE;
   
-  naya = DEBUG_NEW wxMenu(NULL, (wxFunction)&(wxChoice::MenuEventCallback));
+  naya = DEBUG_NEW wxMenu(NULL, (wxFunction)&(wxChoice::MenuEventCallback), font);
   choice_menu = naya;
   num_choices = 0;
   selection   = -1;
@@ -346,7 +346,6 @@ void wxChoice::EventCallback(Widget WXUNUSED(w),
     choice->SetFocus();
 
     choice->choice_menu->SetClientData(choice);
-    choice->choice_menu->SetFont(choice->font);
 
     // popup menu below "button"
     XtVaGetValues(choice->X->handle, XtNheight, &hh, XtNwidth, &ww, NULL);

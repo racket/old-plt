@@ -21,12 +21,13 @@ class wxListBox: public wxbListBox
  private:
   HWND static_label;
   char **user_data;
+  wxFont *label_font;
  public:
   wxListBox(wxPanel *panel, wxFunction func, char *Title,
              Bool Multiple = wxSINGLE|wxNEEDED_SB,
              int x = -1, int y = -1, int width = -1, int height = -1,
              int N = 0, char **Choices = NULL,
-             long style = 0, wxFont *_font = NULL, char *name = "listBox");
+             long style = 0, wxFont *_font = NULL, wxFont *_label_font = NULL, char *name = "listBox");
   ~wxListBox(void);
 
   Bool Create(wxPanel *panel, wxFunction func, char *Title, Bool Multiple = FALSE,
@@ -63,6 +64,8 @@ class wxListBox: public wxbListBox
   void GetPosition(int *x, int *y);
   char *GetLabel(void);
   void SetLabel(char *label);
+
+  wxFont *GetLabelFont(void) { return label_font; }
 
   // Set the specified item at the first visible item
   // or scroll to max range.

@@ -42,7 +42,7 @@ static wxMenu *popped_up_menu;
 // constructor and destructor
 //-----------------------------------------------------------------------------
 
-wxMenu::wxMenu(char *_title, wxFunction _func)
+wxMenu::wxMenu(char *_title, wxFunction _func, wxFont *_font)
 {
     __type = wxTYPE_MENU;
 
@@ -51,7 +51,7 @@ wxMenu::wxMenu(char *_title, wxFunction _func)
 
     requested_width = 0;
 
-    font = wxSYSTEM_FONT;
+    font = (_font ? _font : wxSYSTEM_FONT);
     callback = _func;
     top = topdummy = title = last = 0;
     // if a title is associated with a menu, it may not be removed

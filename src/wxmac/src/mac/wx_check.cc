@@ -310,7 +310,7 @@ void wxCheckBox::Paint(void)
 	double fDescent = 0.0;
 	double fLeading = 0.0;
 	int stop;
-	GetTextExtent(labelString, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
+	GetTextExtent(labelString, &fWidth, &fHeight, &fDescent, &fLeading, font);
 	stop = (int)((cWindowHeight + fHeight) / 2);
 	::MoveTo(IC_BOX_SIZE + IC_X_SPACE + SetOriginX, (short)(stop - fDescent - fLeading) + SetOriginY);
 	wxDrawUnicodeText(labelString, 0);

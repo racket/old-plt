@@ -38,7 +38,7 @@ public:
 	      Bool Multiple = FALSE,
 	      int x = -1, int y = -1, int width = -1, int height = -1,
 	      int n = 0, char **Choices = NULL,
-	      long style = 0, wxFont *_font = NULL, char *name = "listBox");
+	      long style = 0, wxFont *_font = NULL, wxFont *_label_font = NULL, char *name = "listBox");
     ~wxListBox(void);
 
     // override parent methods
@@ -80,6 +80,8 @@ public:
     void OnScroll(wxScrollEvent* event);
     void OnSize(int width, int height);
 
+    wxFont *GetLabelFont() { return label_font; }
+
 private:
     void OnListSize(int width, int height);
 
@@ -95,6 +97,8 @@ private:
     char    typing[16];
     int     typepos;
     long    typetime;
+
+    wxFont *label_font;
 };
 
 #endif // ListBox_h

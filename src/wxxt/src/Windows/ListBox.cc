@@ -53,7 +53,9 @@ char *wxchoice_unprotect_amp(char *s);
 
 wxListBox::wxListBox(wxPanel *panel, wxFunction func, char *title,
 		     Bool multiple, int x, int y, int width, int height,
-		     int n, char **_choices, long style, wxFont *_font, char *name) : wxItem(_font)
+		     int n, char **_choices, long style, 
+		     wxFont *_font, wxFont *_label_font, 
+		     char *name) : wxItem(_font)
 {
     __type = wxTYPE_LIST_BOX;
 
@@ -64,6 +66,8 @@ wxListBox::wxListBox(wxPanel *panel, wxFunction func, char *title,
     num_free = 0;
     typepos = 0;
     typetime = 0;
+
+    label_font = (_label_font ? _label_font : wxSYSTEM_FONT);
 
     Create(panel, func, title, multiple, x, y, width, height,
 	   n, _choices, style, name);
@@ -100,9 +104,9 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNhighlightColor, wxCTL_HIGHLIGHT_PIXEL,
 	 XtNhighlightThickness, 2,
-	 XtNfont,        font->GetInternalFont(),
+	 XtNfont,        label_font->GetInternalFont(),
 #ifdef WX_USE_XFT
-	 XtNxfont,       font->GetInternalAAFont(),
+	 XtNxfont,       label_font->GetInternalAAFont(),
 #endif
 	 NULL);
     if (!(style & wxINVISIBLE))
@@ -155,7 +159,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
       double w, h;
       char *label_stripped;
       label_stripped = wxchoice_unprotect_amp(title);
-      GetTextExtent(label_stripped, &w, &h, NULL, NULL, font);
+      GetTextExtent(label_stripped, &w, &h, NULL, NULL, label_font);
       if (vert)
 	labelh = (long)h;
       else

@@ -77,6 +77,7 @@ wxItem::~wxItem(void)
 //-----------------------------------------------------------------------------
 void wxItem::SetFont(wxFont *fnt, int defsize)
 {
+  /* See also wx_lbox.cc, which has a separate label_font */
   if (!fnt) {
     fnt = wxTheFontList->FindOrCreateFont(defsize, wxSYSTEM, wxNORMAL, wxNORMAL, FALSE);
   }

@@ -154,9 +154,7 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
   Callback(function);
 
   cRadioPanel = new wxPanel(this->ClientArea(), 0, 0, 0, 0, 0);
-  cRadioPanel->SetButtonFont(buttonFont);
-  cRadioPanel->SetLabelFont(labelFont);
-	
+  
   buttonHolder = cRadioPanel;
 	
   if (Title) {

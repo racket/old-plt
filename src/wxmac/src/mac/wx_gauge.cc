@@ -49,7 +49,7 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
     label = wxItemStripLabel(label);
   
   if (label) {
-    GetTextExtent(label, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
+    GetTextExtent(label, &fWidth, &fHeight, &fDescent, &fLeading, font);
     lblh = (int)fHeight;
     lblw = (int)fWidth;
   }
@@ -103,7 +103,7 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
 
   if (label)
     {
-      cTitle = new wxLabelArea(this, label, labelFont,
+      cTitle = new wxLabelArea(this, label, font,
 			       labelPosition == wxVERTICAL ? wxTop : wxLeft);
     } else
       cTitle = NULL;

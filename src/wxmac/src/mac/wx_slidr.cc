@@ -89,9 +89,8 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   if (page_size < 2)
     page_size = 2;
 
-  valueFont = buttonFont;
   if (label) {
-    GetTextExtent(label, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
+    GetTextExtent(label, &fWidth, &fHeight, &fDescent, &fLeading, font);
     lblh = (int)fHeight;
     lblw = (int)fWidth;
   }
@@ -103,7 +102,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   } else {
     // evidently, the number in the value box should never be wider than the string "258".
     // this looks utterly ridiculous to me... perhaps there's a method to the madness?
-    GetTextExtent("258", &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
+    GetTextExtent("258", &fWidth, &fHeight, &fDescent, &fLeading, font);
     vwid = (int)fWidth;
     vhgt = (int)fHeight;
     hsp = HSP;
@@ -189,7 +188,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 
   if (label)
     {
-      cTitle = new wxLabelArea(this, label, labelFont,
+      cTitle = new wxLabelArea(this, label, font,
 			       labelPosition == wxVERTICAL ? wxTop : wxLeft);
     }
   else

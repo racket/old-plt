@@ -28,8 +28,6 @@ extern int wxCan_Do_Pref();
 
 static int mb_hidden;
 
-#define USE_HELP_MENU_HACK 0
-
 ///////////////////////////////////////////////////////////////////////////////
 // Menu Bar
 ///////////////////////////////////////////////////////////////////////////////
@@ -158,12 +156,15 @@ wxMenu::wxMenu // Constructor (given objectType)
 (
  char*		Title,
  wxFunction	function,
+ wxFont         *_font,
  char*		windowName,
  WXTYPE		objectType
  ) :
   wxbMenu(Title, windowName)
 {
   menuItems = new wxList();
+
+  SetFont(13, _font);
 
   Callback(function);
 
@@ -194,22 +195,6 @@ wxMenu::~wxMenu(void)
   if (menu_bar) // may have to remove menu from the current mac menu bar
     {
       menu_bar->Delete(this);
-      // mflatt: The AboutMenu Hack stuff below is mysterious to me
-#if 0
-      // Deactive AboutMenu Hack - This is untested
-      if (this == menu_bar->wxHelpHackMenu) {
-	menu_bar->wxHelpHackMenu = NULL;
-	menu_bar->iHelpMenuHackNum = 0;
-      }
-      wxFrame* frame = menu_bar->menu_bar_frame;
-      if (frame)
-	{
-	  if (frame->IsFrontWindow())
-	    {
-	      ::DeleteMenu(cMacMenuId);
-	    }
-	}
-#endif
     } else if (window_parent)
       ((wxMenu *)window_parent)->Delete(this, 0, -1);
 
@@ -290,11 +275,7 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
 	
   if (!toHandle)  {
     title = wxItemStripLabel(title);
-#if USE_HELP_MENU_HACK
-    helpflg = strncmp("Help", title, 4) ? 0 : 1;
-#else
     helpflg = 0;
-#endif
     nmh = ::NewMenu(cMacMenuId , "\pTemp");
     CheckMemOK(nmh);
     {
@@ -716,26 +697,7 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
   }
   ::InsertMenu(appleMenuHandle, 0);
 
-#if USE_HELP_MENU_HACK
-  HMGetHelpMenuHandle(&wxHelpMenu);
-  if (!wxNumHelpItems) {
-    /* Each ClearMenuBar() seems to create a new HelpMenu.
-       But just in case Apple changes its mind... */
-    wxNumHelpItems = CountMenuItems(wxHelpMenu);
-  }
-  if (wxHelpMenu) {
-    int i;
-    i = CountMenuItems(wxHelpMenu);
-    while (i > wxNumHelpItems) {
-      DeleteMenuItem(wxHelpMenu, i--);
-    }
-	    
-    if (mbar && mbar->wxHelpHackMenu)
-      mbar->wxHelpHackMenu->CreateCopy(NULL, FALSE, wxHelpMenu);
-  }
-#else
   wxNumHelpItems = 0;
-#endif        
 
  {
    MenuRef mnu;

@@ -29,7 +29,7 @@ class wxMenu: public wxbMenu
   HANDLE save_ms_handle; // Used for Enable() on popup
   int requestedWidth;
 
-  wxMenu(char *Title = NULL, wxFunction func = NULL);
+  wxMenu(char *Title = NULL, wxFunction func = NULL, wxFont *_font = NULL);
   ~wxMenu(void);
   void AppendSeparator(void);
   void Append(long Id, char *Label, char *helpString=NULL, Bool checkable=FALSE);

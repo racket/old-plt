@@ -74,8 +74,6 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
   buttonBitmap = NULL;
   Callback(function);
   
-  font = buttonFont; // WCH: mac platform only
-
   // First, create the control with a bogus rectangle;
   SetCurrentMacDC();
   theMacGrafPort = cMacDC->macGrafPort();

@@ -87,12 +87,19 @@ wxListBox::wxListBox(
 		     char **Choices, 
 		     long style, 
 		     wxFont *_font,
+		     wxFont *_label_font,
 		     char *windowName,
 		     WXTYPE		objectType
 		     ) 
 : wxbListBox (parentPanel, func, Title, Multiple, x, y, width, height, N, Choices, style, windowName)
 {
-  SetFont(_font, 13);
+  SetFont(_font, 12);
+
+  if (!_label_font) {
+    _label_font = wxTheFontList->FindOrCreateFont(13, wxSYSTEM, wxNORMAL, wxNORMAL, FALSE);
+  }
+  label_font = _label_font;
+
   cDataList = new wxList(wxKEY_INTEGER);
   Create(parentPanel, func, Title, Multiple, x, y, width, height, N, Choices,
          style, windowName);
@@ -169,11 +176,6 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 
   SetEraser(wxWHITE_BRUSH);
 
-  if (!buttonFont)
-    buttonFont = wxNORMAL_FONT;
-
-  font = buttonFont;
-  
   if (Title)
     Title = wxItemStripLabel(Title);
   
@@ -181,7 +183,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   SetCurrentDC();
   theMacGrafPort = cMacDC->macGrafPort();
 
-  GetTextExtent(Title, &lblWidth, &lblHeight, NULL, NULL, labelFont);
+  GetTextExtent(Title, &lblWidth, &lblHeight, NULL, NULL, label_font);
   GetTextExtent("X", &tWidth, &tHeight, &tDescent, NULL, font);
   
   if (width < 0) {
@@ -237,7 +239,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   ReleaseCurrentDC();
 
   if (Title) {
-    cListTitle = new wxLabelArea(this, Title, labelFont,
+    cListTitle = new wxLabelArea(this, Title, label_font,
 				 labelPosition == wxVERTICAL ? wxTop : wxLeft);
   } else
     cListTitle = NULL;
@@ -742,18 +744,6 @@ int wxListBox::GetSelection(void)
     return -1;
   else
     return cell.v;
-}
-
-void wxListBox::SetBackgroundColour(wxColour*col)
-{
-} 
-
-void wxListBox::SetLabelColour(wxColour*col)
-{
-}
-
-void wxListBox::SetButtonColour(wxColour*col) 
-{
 }
 
 char* wxListBox::GetLabel(void)

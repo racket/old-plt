@@ -50,7 +50,7 @@ typedef void *wxMenuItem;
 
 class wxMenu : public wxObject {
 public:
-    wxMenu(char *title=NULL, wxFunction func=NULL);
+    wxMenu(char *title=NULL, wxFunction func=NULL, wxFont *_font = NULL);
     ~wxMenu(void);
 
     // popup menu (used by wxWindow);
@@ -78,8 +78,7 @@ public:
     void  SetHelpString(long id, char *help);
     void  SetLabel(long id, char *label);
     void  SetTitle(char *title);
-    // set font & colour
-    void  SetFont(wxFont *newfont)            { if (newfont) font = newfont; }
+    wxFont *GetFont() { return font; }
     // miscellaneous
     void  *GetClientData(void) { return client_data; }
     void  SetClientData(void *data) { client_data = data; }

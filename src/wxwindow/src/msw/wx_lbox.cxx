@@ -38,11 +38,12 @@ wxListBox::wxListBox(wxPanel *panel, wxFunction func,
 		     char *Title, Bool Multiple,
 		     int x, int y, int width, int height,
 		     int N, char **Choices, long style, 
-		     wxFont *_font, char *name):
+		     wxFont *_font, wxFont *_label_font, char *name):
   wxbListBox(panel, func, Title, Multiple, x, y, width, height, N, Choices,
              style, name)
 {
   SetFont(_font);
+  label_font = (_label_font ? label_font : font);
   Create(panel, func, Title, Multiple, x, y, width, height, N, Choices,
          style, name);
 }
@@ -89,7 +90,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 				   0, 0, 0, 0, cparent->handle, (HMENU)nid,
 				   wxhInstance, NULL);
 
-    wxSetWinFont(font, (HANDLE)static_label);
+    wxSetWinFont(label_font, (HANDLE)static_label);
   }
   else
     static_label = NULL;
@@ -401,9 +402,9 @@ void wxListBox::SetSize(int x, int y, int width, int height, int sizeFlags)
 
   if (static_label) {
     // Find size of label
-    wxGetCharSize((HWND)ms_handle, &clx, &cly,font);
+    wxGetCharSize((HWND)ms_handle, &clx, &cly, label_font);
     GetWindowText(static_label, buf, 300);
-    GetTextExtent(wxStripMenuCodes(buf), &label_width, &label_height, NULL, NULL,font);
+    GetTextExtent(wxStripMenuCodes(buf), &label_width, &label_height, NULL, NULL, label_font);
 
     // Given size is total label + edit size, find individual
     // control sizes on that basis.
@@ -523,7 +524,7 @@ void wxListBox::SetLabel(char *label)
       ::ScreenToClient(cparent->handle, &point);
     }
 
-    GetTextExtent((LPSTR)label, &w, &h, NULL, NULL,font);
+    GetTextExtent((LPSTR)label, &w, &h, NULL, NULL, label_font);
     MoveWindow(static_label, point.x, point.y, (int)(w + 10), (int)h,
                TRUE);
     SetWindowTextW(static_label, wxWIDE_STRING(label));

@@ -155,78 +155,7 @@
   (define-struct sexp (left right prompt))
   
   (define newline-string (string #\newline))
-  
-  (define separator-snipclass
-    (make-object
-     (class-asi mred:snip-class%
-       (override
-	 [read (lambda (s) 
-		 (let ([size-box (box 0)])
-		   (send s get size-box)
-		   (make-object separator-snip%)))]))))
-  (send* separator-snipclass
-    (set-version 1)
-    (set-classname "mred:sepatator-snip%"))
-  (send (mred:get-the-snip-class-list) add separator-snipclass)
-  
-  ;; the two numbers 1 and 2 which appear here are to line up this snip
-  ;; with the embedded snips around it in the drscheme rep.
-  ;; I have no idea where the extra pixels are going.
-  (define separator-snip%
-    (class mred:snip% ()
-      (inherit get-style set-snipclass set-flags get-flags get-admin)
-      (private [width 500]
-	       [height 1]
-	       [white-around 2])
-      (override
-	[write (lambda (s) 
-		 (send s put (char->integer #\r)))]
-	[copy (lambda () 
-		(let ([s (make-object (object-class this))])
-		  (send s set-style (get-style))
-		  s))]
-	[get-extent
-	 (lambda (dc x y w-box h-box descent-box space-box lspace-box rspace-box)
-	   (for-each (lambda (box) (when box (set-box! box 0)))
-		     (list descent-box space-box lspace-box rspace-box))
-	   (let* ([admin (get-admin)]
-		  [reporting-media (send admin get-text)]
-		  [reporting-admin (send reporting-media get-admin)]
-		  [widthb (box 0)]
-		  [space 2])
-	     (send reporting-admin get-view #f #f widthb #f)
-	     (set! width (- (unbox widthb)
-			    space
-			    2)))
-	   (set! height 1)
-	   (when w-box
-	     (set-box! w-box width))
-	   (when h-box
-	     (set-box! h-box (+ (* 2 white-around) height))))]
-	[draw
-	 (let* ([body-pen (send mred:the-pen-list find-or-create-pen
-				"BLUE" 0 'solid)]
-		[body-brush (send mred:the-brush-list find-or-create-brush
-				  "BLUE" 'solid)])
-	   (lambda (dc x y left top right bottom dx dy draw-caret)
-	     (let ([orig-pen (send dc get-pen)]
-		   [orig-brush (send dc get-brush)])
-	       (send dc set-pen body-pen)
-	       (send dc set-brush body-brush)
-	       
-	       (send dc draw-rectangle (+ x 1)
-		     (+ white-around y) width height)
-	       
-	       (send dc set-pen orig-pen)
-	       (send dc set-brush orig-brush))))]
-	[get-text
-	 (opt-lambda (offset num [flattened? #f])
-	   "separator-snip")])
-      (sequence
-	(super-init)
-	(set-flags (cons 'hard-newline (get-flags)))
-	(set-snipclass separator-snipclass))))
-  
+    
   (define console-max-save-previous-exprs 30)
   (let* ([list-of? (lambda (p?)
 		     (lambda (l)

@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.23 1999/06/28 05:30:37 robby Exp $
+;; $Id: testr.ss,v 1.24 1999/07/16 05:11:09 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -434,7 +434,7 @@
     (let loop ([l (ancestor-list window #t)])
       (cond [(null? l)
 	     (cond
-	      [(ivar-in-class? 'on-char (object-class window))
+	      [(ivar-in-interface? 'on-char (object-interface window))
 	       (send window on-char event)]
 	      [(is-a? window mred:text-field%)
 	       (send (send window get-editor) on-char event)]
@@ -523,7 +523,7 @@
       (cond
 	[(not frame)
 	 (run-error menu-tag "no active frame")]
-	[(not (ivar-in-class? 'get-menu-bar (object-class frame)))
+	[(not (ivar-in-interface? 'get-menu-bar (object-interface frame)))
 	 (run-error menu-tag "active frame does not have menu bar")]
 	[else
 	 (let ([menu-bar  (send frame get-menu-bar)])
@@ -624,7 +624,7 @@
       (let loop ([l  (ancestor-list window #t)])
 	(cond
 	  [(null? l)
-	   (if (ivar-in-class? 'on-event (object-class window))
+	   (if (ivar-in-interface? 'on-event (object-interface window))
 	       (send window on-event event)
 	       (run-error mouse-tag "focused window does not have on-event"))]
 	  [(send (car l) on-subwindow-event window event)  #f]
@@ -729,10 +729,10 @@
 		
 		;; SOME KLUDGES HERE TO WORK AROUND TEXT% PROBLEMS.
 		
-		(when (and old-window (ivar-in-class? 'on-event (object-class old-window)))
+		(when (and old-window (ivar-in-interface? 'on-event (object-interface old-window)))
 		  (send-mouse-event old-window leave))
 		(send root show #t)
-		(when (ivar-in-class? 'on-event (object-class new-window))
+		(when (ivar-in-interface? 'on-event (object-interface new-window))
 		  (send-mouse-event new-window enter))
 		(send new-window focus)
 		(void))))]))))

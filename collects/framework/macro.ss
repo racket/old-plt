@@ -23,12 +23,8 @@
 
 	 (let ([ensure-interface-has?
 		(lambda (x)
-		  (unless (ormap (lambda (i)
-				   ((cond
-				      [(interface? i) ivar-in-interface?]
-				      [(class? i) ivar-in-class?])
-				    x i))
-				   ,from-g)
+		  (unless (ormap (lambda (i) (ivar-in-interface? x i))
+				 ,from-g)
 		    (error 'mixin
 			   "ivar `~a' not in any of ~a, but was referenced in definition"
 			   x ,from-g)))])
@@ -48,10 +44,7 @@
 	 (lambda (,super-g)
 	   (unless (class? ,super-g)
 	     (error 'mixin "argument ~a not a class matching interfaces: ~a" ,super-g ,from-g))
-	   (unless (andmap (lambda (x) ((cond
-					  [(interface? x) implementation?]
-					  [(class? x) subclass?])
-					,super-g x))
+	   (unless (andmap (lambda (x) (implementation? ,super-g x))
 			   ,from-g)
 	     (error 'mixin "argument ~s does not match ~s" ,super-g ,from-g))
 

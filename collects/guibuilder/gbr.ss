@@ -526,7 +526,9 @@
 	     (draw-box dc (+ 2 x) (+ 2 y) (- w 4) (- h 4)))))
 	(copy
 	 (lambda ()
-	   (let ([o (make-object (object-class this) lm tm rm bm)])
+	   (let ([o (make-object (hash-table-get interface->class-table
+						 (object-interface this))
+				 lm tm rm bm)])
 	     (send o base-setup 
 		   name
 		   x-stretch? y-stretch? w h 
@@ -584,8 +586,14 @@
 	(set-snipclass (send (mred:get-the-snip-class-list) find classname))
 	(set-count 1))))
   
+  (define interface->class-table (make-hash-table))
+
   (define register-class
     (lambda (class% classname)
+      (hash-table-put!
+       interface->class-table
+       (class->interface class%)
+       class%)
       (let ([snipclass
 	     (make-object 
 	      (class mred:snip-class% ()

@@ -36,7 +36,7 @@
     (load-help-desk)
     (open-url-from-user 
      frame 
-     (if (ivar-in-class? 'goto-url (object-class frame))
+     (if (ivar-in-interface? 'goto-url (object-interface frame))
          (lambda (url)
            (send frame goto-url url))
          new-help-frame)))

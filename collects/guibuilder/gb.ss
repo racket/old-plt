@@ -6,11 +6,11 @@
 
 (require-library "framework.ss" "framework")
 
-(invoke-open-unit/sig 
- (require-relative-library "gbr.ss")
- #f
- mzlib:function^
- mzlib:pretty-print^
- mzlib:file^
- mred^
- framework^)
+(define-values/invoke-unit/sig gui-builder^
+  (require-relative-library "gbr.ss")
+  #f
+  mzlib:function^
+  mzlib:pretty-print^
+  mzlib:file^
+  mred^
+  framework^)

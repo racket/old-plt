@@ -204,7 +204,7 @@
 
 (define c2 
   (let ((v 20))
-    (class c1 object%
+    (class c1 ()
 	   (inherit b2 (sup-set-b2 f-1-set-b2))
 	   (rename (also-e e)
 		   (also-b2 b2))
@@ -307,10 +307,10 @@
 (test #f subclass? c1 c2)
 (test #f subclass? c1 c3)
 (test #f subclass? i1 c3)
-(test #t ivar-in-class? 'f-1-a c1)
-(test #t ivar-in-class? 'f-1-a c2)
-(test #f ivar-in-class? 'f-2-a c1)
-(test #t ivar-in-class? 'f-2-a c2)
+(test #t ivar-in-interface? 'f-1-a (class->interface c1))
+(test #t ivar-in-interface? 'f-1-a (class->interface c2))
+(test #f ivar-in-interface? 'f-2-a (class->interface c1))
+(test #t ivar-in-interface? 'f-2-a (class->interface c2))
 (test #t ivar-in-interface? 'x i0.1)
 (test #t ivar-in-interface? 'x i1)
 (test #f ivar-in-interface? 'x i0.2)
@@ -327,11 +327,17 @@
 (error-test '(subclass? o1 i1))
 (error-test '(implementation? o1 o1))
 (error-test '(implementation? o1 c1))
-(error-test '(ivar-in-class? 0 c1))
-(error-test '(ivar-in-class? 'a i1))
-(error-test '(ivar-in-class? 'a o1))
+(error-test '(ivar-in-interface? 0 i1))
+(error-test '(ivar-in-interface? 'a o1))
 (error-test '(ivar-in-interface? 'a c1))
 (error-test '(ivar-in-interface? 'a o1))
+
+(test 0 class-initialization-arity object%)
+(test #t arity-at-least? (class-initialization-arity c1))
+(test 1 arity-at-least-value (class-initialization-arity c1))
+(test 0 class-initialization-arity c2)
+
+(test '(1 2) class-initialization-arity (class object% (a [b 2])))
 
 (arity-test object? 1 1)
 (arity-test class? 1 1)
@@ -339,8 +345,8 @@
 (arity-test is-a? 2 2)
 (arity-test subclass? 2 2)
 (arity-test interface-extension? 2 2)
-(arity-test ivar-in-class? 2 2)
 (arity-test ivar-in-interface? 2 2)
+(arity-test class-initialization-arity 1 1)
 
 (arity-test ivar/proc 2 2)
 (arity-test make-generic/proc 2 2)

@@ -97,10 +97,10 @@
      (car pr)
      (cadr (assoc (cadr pr) synth-info))))
   (define (get-synth-item s)
-    (cadr (assoc s synth-info)))
+    (cadr (assq s synth-info)))
+  (define dynamic-items (get-synth-item 'dynamic-items))
   (define plt-version (get-synth-item 'version))
   (define environment (get-synth-item 'environment))
-  (define computer-language (get-synth-item 'computer-language))
   (define human-language (get-synth-item 'human-language))
   (define docs-installed (get-synth-item 'documentation))
   (define collects-installed (get-synth-item 'collections))
@@ -211,9 +211,13 @@
 	     (WIDTH "85%"))
 	    ,@(map make-synth-entry 
 		   '(("PLT version" version)
-		     ("Environment" environment)
-		     ("Computer language" computer-language)
-		     ("Human language" human-language)
+		     ("Environment" environment)))
+	    ,@(map (lambda (item)
+		     (make-field-entry (car item)
+				       (cadr item)))
+		   dynamic-items)
+	    ,@(map make-synth-entry
+		   '(("Human language" human-language)
 		     ("Installed documentation" documentation)
 		     ("Installed collections" collections))))))])))
 
@@ -242,31 +246,37 @@
 		"From"
 		(format "~a <~a>" originator reply-to)
 		empty-header))))
-	    (list
-	     ">Category:       all"
-	     (format ">Synopsis:       ~a" subject)
-	     ">Confidential:   no"
-	     (format ">Severity:       ~a" severity)
-	     (format ">Priority:       ~a" priority)
-	     (format ">Class:          ~a" bug-class)
-	     ">Submitter-Id:   unknown"
-	     (format ">Originator:     ~a" originator)
-	     ">Organization:   plt"
-	     (format ">Release:        ~a" plt-version)
-	     ">Environment:"
-	     (format "~a" environment)
-	     (format "~n~a" "Docs Installed:")
-	     (format "~a" docs-installed)
-	     (format "~n~a" "Collections:")
-	     (format "~a" collects-installed)
-	     (format "~nComputer Language: ~a" computer-language)
-	     (format "~nHuman Language: ~a" human-language)
-	     ">Fix: "
-	     ">Description:"
-	     (format "~a" description)
-	     ">How-To-Repeat:"
-	     (format "~a" how-to-repeat))
-	    bug-email-server-port))]
+	    (append
+	     (list
+	      ">Category:       all"
+	      (format ">Synopsis:       ~a" subject)
+	      ">Confidential:   no"
+	      (format ">Severity:       ~a" severity)
+	      (format ">Priority:       ~a" priority)
+	      (format ">Class:          ~a" bug-class)
+	      ">Submitter-Id:   unknown"
+	      (format ">Originator:     ~a" originator)
+	      ">Organization:   plt"
+	      (format ">Release:        ~a" plt-version)
+	      ">Environment:"
+	      (format "~a" environment)
+	      (format "~n~a" "Docs Installed:")
+	      (format "~a" docs-installed)
+	      (format "~n~a" "Collections:")
+	      (format "~a" collects-installed)
+	      (format "~nHuman Language: ~a" human-language))
+	     (map
+	      (lambda (item)
+		(format "~a: ~a" (car item) (cadr item)))
+	      dynamic-items)
+	     (list 
+	      ""
+	      ">Description:"
+	      (format "~a" description)
+	      ">How-To-Repeat:"
+	      (format "~a" how-to-repeat)
+	      ">Fix: "))
+	     bug-email-server-port))]
 	[sending-page
 	 (lambda (k-url)
 	   `(HTML 

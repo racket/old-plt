@@ -196,8 +196,7 @@ _Supplemental Help Desk functions_
 Sets dynamic information used when submitting a bug report.
 The `thunk' argument returns an association list, where each 
 element is a list consisting of a symbol (the key) and a string 
-(the value).  Currently, the only key that may be used is 
-'computer-language.
+(the value).
 
 > (help-desk:installed-components)
   It returns a string of XHTML with documentation extracted from the 

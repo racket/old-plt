@@ -12,9 +12,7 @@
 		    (system-type)
 		    (system-type #t)
 		    (system-library-subpath))]
-	   [synth:computer-language 
-	    (or (get-bug-report-item 'computer-language)
-		"unknown")]
+	   [synth:dynamic-items (get-bug-report-items)]
 	   [synth:human-language (format "~s" (this-language))]
 	   [synth:docs 
 	    (format "~s"
@@ -31,9 +29,9 @@
 				"bad path")))
 		     (current-library-collection-paths)))])
       `((version ,synth:version)
-	(environment ,synth:environment)
-	(computer-language ,synth:computer-language)
+	(dynamic-items ,synth:dynamic-items)
 	(human-language ,synth:human-language)
+	(environment ,synth:environment)
 	(documentation ,synth:docs)
 	(collections ,synth:collects)))))
 

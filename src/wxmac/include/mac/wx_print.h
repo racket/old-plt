@@ -100,6 +100,9 @@ class wxPrintData: public wxObject
   void EnablePageNumbers(Bool);
   void EnableHelp(Bool);
 
+  void SetLandscape(Bool);
+  Bool GetLandscape();
+
   wxPrintData *copy();
 };
 

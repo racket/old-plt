@@ -28,25 +28,23 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
 
   if (!printData) {
     wxPrintSetupData *ps;
-    ps = wxGetThePrintSetupData()
+    ps = wxGetThePrintSetupData();
     if (ps->native)
       printData = ps->native->copy();
-    else
+    else {
       printData = new wxPrintData();
+      if (ps->GetPrinterOrientation() == PS_LANDSCAPE)
+	printData->SetLandscape(TRUE);
+    }
   }
 
   cPrintData = printData;
-  if (!printData->cPrintSession) {
+  {
     wxPrintDialog *dialog;
-
-    PMCreateSession(&printData->cPrintSession);
 
     dialog = new wxPrintDialog(NULL, printData);
     dialog->ShowSetupDialog(TRUE);
-    if (!dialog->UseIt()) {
-      PMRelease(printData->cPrintSession);
-      printData->cPrintSession = NULL;
-    }
+    ok = dialog->UseIt();
     DELETE_OBJ dialog;
   }
 
@@ -84,7 +82,6 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
 
   title = NULL;
 
-  ok = (printData->cPrintSession ? TRUE : FALSE);
   current_pen_join = -1 ;
   current_pen_cap = -1 ;
   current_pen_nb_dash = -1 ;
@@ -109,11 +106,6 @@ wxPrinterDC::~wxPrinterDC(void)
     EndPage();
   if (current_phase == 1)
     EndDoc();
-
-  if (cPrintData->cPrintSession) {
-    PMRelease(cPrintData->cPrintSession);
-    cPrintData->cPrintSession = NULL;
-  }
 }
 
 //-----------------------------------------------------------------------------

@@ -68,8 +68,7 @@ Bool wxPrintDialog::UseIt(void)
 {
   Boolean prtJob = FALSE;
 
-  PMSessionDefaultPrintSettings(printData->cPrintSession, printData->cPrintSettings);
-  PMSessionDefaultPageFormat(printData->cPrintSession, printData->cPageFormat);
+  wxPrimDialogSetUp();
 
   if (cShowSetupDialog)
     PMSessionPrintDialog(printData->cPrintSession,
@@ -88,6 +87,8 @@ Bool wxPrintDialog::UseIt(void)
 				&x);
   }
 
+  wxPrimDialogCleanUp();
+
   return prtJob;
 }
 
@@ -105,6 +106,11 @@ wxPrintData::wxPrintData(void)
     cPrintSettings = NULL;
     return;
   }
+
+  PMCreateSession(&cPrintSession);
+
+  PMSessionDefaultPrintSettings(cPrintSession, cPrintSettings);
+  PMSessionDefaultPageFormat(cPrintSession, cPageFormat);
 }
 
 wxPrintData::~wxPrintData(void)
@@ -114,6 +120,11 @@ wxPrintData::~wxPrintData(void)
 
   if (cPageFormat)
     PMRelease(cPageFormat);
+
+  if (cPrintSession) {
+    PMRelease(cPrintSession);
+    cPrintSession = NULL;
+  }
 }
 
 void wxPrintData::SetAbortFlag()
@@ -230,6 +241,18 @@ void wxPrintData::EnableHelp(Bool flag)
 {
 }
 
+void wxPrintData::SetLandscape(Bool flag)
+{
+  PMSetOrientation(cPageFormat, flag ? kPMLandscape : kPMPortrait, 0);
+}
+
+Bool wxPrintData::GetLandscape()
+{
+  PMOrientation o;
+  PMGetOrientation(cPageFormat, &o);
+  return ((o == kPMLandscape) || (o == kPMReverseLandscape));
+}
+
 wxPrintData *wxPrintData::copy(void)
 {
   wxPrintData *pd;
@@ -277,8 +300,6 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
     return FALSE;
 
   printData = new wxPrintData();
-
-  PMCreateSession(&printData->cPrintSession);
 
   printout->SetIsPreview(FALSE);
   printout->OnPreparePrinting();
@@ -377,9 +398,6 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   printout->OnEndPrinting();
 
   //wxEndBusyCursor();
-
-  PMRelease(printData->cPrintSession);
-  printData->cPrintSession = NULL;
 
   DELETE_OBJ dc;
   

@@ -1137,6 +1137,7 @@ static Scheme_Object *os_wxPrintSetupDataShowNative(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
+  Bool r;
   objscheme_check_valid(os_wxPrintSetupData_class, "show-native in ps-setup%", n, p);
   class wxWindow* x0 INIT_NULLED_OUT;
 
@@ -1151,12 +1152,12 @@ static Scheme_Object *os_wxPrintSetupDataShowNative(int n,  Scheme_Object *p[])
     x0 = NULL;
 
   if (x0 && !wxSubType(((wxObject *)x0)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x0)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("ps-setup","show-native"), "frame or dialog box", POFFSET+0, n, p);
-  WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->ShowNative(x0));
+  r = WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->ShowNative(x0));
 
   
   
   READY_TO_RETURN;
-  return scheme_void;
+  return (r ? scheme_true : scheme_false);
 }
 
 static Scheme_Object *os_wxPrintSetupDataCanShowNative(int n,  Scheme_Object *p[])

@@ -2205,6 +2205,16 @@ void wxPrintSetupData::SetPrinterMode(int mode)
 	printer_mode = mode;
 }
 
+void wxPrintSetupData::SetPrinterOrientation(int orient)
+{ 
+  printer_orient = orient; 
+#ifdef wx_mac
+  if (native) {
+    native->SetLandscape(printer_orient == PS_LANDSCAPE);
+  }
+#endif
+}
+
 void wxPrintSetupData::SetAFMPath(char *f)
 {
     if (f && !default_afm_path) {
@@ -2266,13 +2276,29 @@ Bool wxPrintSetupData::CanShowNative()
 #endif
 }
 
-void wxPrintSetupData::ShowNative(wxWindow *parent)
+Bool wxPrintSetupData::ShowNative(wxWindow *parent)
 {
 #ifdef wx_mac
   wxPrintDialog *d;
+  int ls;
+  Bool ok;
+
+  if (!native) {
+    native = new wxPrintData();
+    native->SetLandscape(printer_orient == PS_LANDSCAPE);
+  }
+
   d = new wxPrintDialog(parent, native);
-  d->UseIt();
+  ok = d->UseIt();
   DELETE_OBJ d;
+
+  if (ok) {
+    ls = native->GetLandscape();
+    printer_orient = (ls ? PS_LANDSCAPE : PS_PORTRAIT);
+  }
+  return ok;
+#else
+  return TRUE;
 #endif
 }
 

@@ -188,7 +188,7 @@ void check_ps_mode(int v, Scheme_Object *p)
 @ "copy-from" : void copy(wxPrintSetupData!);
 
 @ "can-show-native?" : bool CanShowNative();
-@ "show-native" : void ShowNative(wxWindow^=NULL); : : /DLGORFRAME[0.METHODNAME("ps-setup","show-native")]
+@ "show-native" : bool ShowNative(wxWindow^=NULL); : : /DLGORFRAME[0.METHODNAME("ps-setup","show-native")]
 
 @END
 

@@ -209,8 +209,7 @@ public:
     void  SetPrinterFile(char *f);
     void  SetAFMPath(char *f);
     void  SetPrinterMode(int mode);
-    void  SetPrinterOrientation(int orient)
-	{ printer_orient = orient; }
+    void  SetPrinterOrientation(int orient);
     void  SetPrinterScaling(double x, double y)
 	{ printer_scale_x = x; printer_scale_y = y; }
     void  SetPrinterTranslation(double x, double y)
@@ -254,7 +253,7 @@ public:
         { *x = ps_margin_h; *y = ps_margin_v; }
 
     Bool CanShowNative();
-    void ShowNative(wxWindow *parent);
+    Bool ShowNative(wxWindow *parent);
 
 private:
     friend class wxPostScriptDC;

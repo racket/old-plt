@@ -1,12 +1,10 @@
 
-/* We have two experimental GC implementations.
-   The copying version is mainly for debugging, since
-   it can move data on every collection. */
+/* We have several experimental GC implementations, listed roughly in
+   best-to-worst order.
 
-#define USE_DEBUGGING_COLLECTOR 0
+   The copying version is mainly for debugging, since it can move data
+   on every collection. */
 
-#if USE_DEBUGGING_COLLECTOR
-# include "copy.c"
-#else
-# include "compact.c"
-#endif
+/* #include "compact.c" */
+#include "copy.c"
+/* #include "noncopy.c" */

@@ -117,7 +117,7 @@
 /* Instead of calling malloc() to get low-level memory, use
    VirtualAlloc() directly. (Win32) */
 
-#define RELEASE_UNUSED_SECTORS GET_MEM_VIA_MMAP
+#define RELEASE_UNUSED_SECTORS 1
 /* Instead of managing a list of unused sectors, they are
    given back to the OS. This only works with mmap(). */
 
@@ -265,7 +265,7 @@
 # include <windows.h>
 #endif
 
-#if !GET_MEM_VIA_MMAP && !GET_MEM_VIA_VIRTUAL_ALLOC
+#if !GET_MEM_VIA_MMAP
 # undef RELEASE_UNUSED_SECTORS
 # define RELEASE_UNUSED_SECTORS 0
 #endif

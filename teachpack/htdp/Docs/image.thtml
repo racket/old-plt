@@ -48,9 +48,10 @@ pinholes in the top-left corner.
  in the first image.
 </menu>
 
-After an image has been built up using overlays, it is
-possible to recover the position of the pieces of the image,
-using the next two functions.
+After an image has been overlaid on another, it is possible
+to recover the position of overlaid image, using the next
+two functions.
+
 <menu>
 <li><code>{(idx image-inside?)}</code> : image image -> boolean <br>
  to determine whether the pixels of the second image appear in the first

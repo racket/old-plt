@@ -307,7 +307,7 @@
 			 (lambda () (f heading-out loop))))))])
 	  (next-iteration)))))
 
-  ;; process/no-zodiac : ( -> sexp) ((TST + process-finish) ( -> void) -> void) -> void
+  ;; process/no-zodiac : ( -> sexp) ((+ sexp process-finish) ( -> void) -> void) -> void
   (define (process/no-zodiac reader f)
     (let loop ()
       (let ([expr (reader)])

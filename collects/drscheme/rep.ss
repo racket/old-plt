@@ -638,9 +638,9 @@
 					   [mzlib:pretty-print@:pretty-print-print-hook
 					    (lambda (x _ port)
 					      (evcase port
-						      [this-result (this-result-write x)]
-						      [this-out (this-out-write x)]
-						      [this-err (this-err-write x)]))])
+						[this-result (this-result-write x)]
+						[this-out (this-out-write x)]
+						[this-err (this-err-write x)]))])
 			      (old value port))
 			    (old value port)))))
 

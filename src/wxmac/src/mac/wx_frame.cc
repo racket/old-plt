@@ -534,6 +534,12 @@ void wxFrame::Command(int id)
 	}
 }
 
+void wxFrame::OnMenuClick()
+/* Called when the user clicks on the menu bar */
+{
+  /* Do nothing; MrEd overrides it. */
+}
+
 //-----------------------------------------------------------------------------
 void wxFrame::ProcessCommand(int id)
 {

@@ -252,9 +252,21 @@ void wxApp::doMacMouseDown(void)
 	switch (windowPart)
 	{
 		case inMenuBar:
-			long menuResult = MenuSelect(cCurrentEvent.where);
-			doMacInMenuBar(menuResult, FALSE);
-			break;
+		  {
+		    long menuResult;
+		    WindowPtr theMacWindow = ::FrontWindow();
+
+		    /* Give the menu bar a chance to build on-demand items: */
+		    if (theMacWindow) {
+		      wxFrame* theMacWxFrame = findMacWxFrame(theMacWindow);
+		      if (theMacWxFrame)
+			theMacWxFrame->OnMenuClick();
+		    }
+
+		    menuResult = MenuSelect(cCurrentEvent.where);
+		    doMacInMenuBar(menuResult, FALSE);
+		    break;
+		  }
 		case inContent:
 			doMacInContent(window); break;
 		case inDrag:

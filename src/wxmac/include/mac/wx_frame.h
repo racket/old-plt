@@ -97,6 +97,7 @@ public:
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	void SetMenuBar(wxMenuBar* menu_bar);
 	void Command(int id); // Call this to simulate a menu command
+	virtual void OnMenuClick(void);
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Icon methods

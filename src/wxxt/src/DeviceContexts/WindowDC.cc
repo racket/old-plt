@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.20 1999/02/04 01:29:48 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.21 1999/02/05 04:30:17 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -242,6 +242,7 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
     if (DRAWABLE && src->Ok()) {
       XGCValues values;
       int mask = 0;
+      Region free_rgn = (Region)NULL;
 
       if ((DEPTH == 1) && (src->GetDepth() > 1)) {
 	/* May need to flip 1 & 0... */
@@ -252,8 +253,18 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
       }
 
       GC gc = XCreateGC(DPY, DRAWABLE, mask, &values);
-      if (clipping)
-	XSetRegion(DPY, gc, clipping->rgn);
+      if (USER_REG || EXPOSE_REG) {
+	Region rgn;
+	if (USER_REG && EXPOSE_REG) {
+	  free_rgn = rgn = XCreateRegion();
+	  XIntersectRegion(EXPOSE_REG, USER_REG, rgn);
+	} else if (USER_REG)
+	  rgn = USER_REG;
+	else
+	  rgn = EXPOSE_REG;
+
+	XSetRegion(DPY, gc, rgn);
+      }
 
       retval = TRUE;
       if ((src->GetDepth() == 1) || (DEPTH == 1)) {
@@ -272,6 +283,9 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
 	retval = FALSE;
 
       XFreeGC(DPY, gc);
+
+      if (free_rgn)
+	XDestroyRegion(free_rgn);
     }
 
     return retval; // someting wrong with the drawables

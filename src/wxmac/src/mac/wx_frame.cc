@@ -38,6 +38,8 @@ extern void MrEdQueueClose(wxWindow *wx_window);
 extern void MrEdQueueZoom(wxWindow *wx_window);
 extern void MrEdQueueUnfocus(wxWindow *wx_window);
 
+extern int wxsIsContextShutdown(void *cx);
+
 static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef, 
 				   EventRef inEvent, 
 				   void *inUserData);
@@ -1025,7 +1027,8 @@ void wxFrame::Show(Bool show)
   } else {
     if (cFocusWindow) {
       ReleaseFocus();
-      cFocusWindow->OnKillFocus();
+      if (!wxsIsContextShutdown(context))
+	cFocusWindow->OnKillFocus();
       cFocusWindow = NULL;
     }
 #ifdef OS_X

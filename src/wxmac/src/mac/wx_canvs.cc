@@ -174,7 +174,7 @@ void wxCanvas::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
   // update deviceContext
   if (wx_dc) {
-    int clientWidth, clientHeight;
+    int clientWidth, clientHeight, ox, oy;
     Rect paintRect;
     wxArea *carea;
 
@@ -186,6 +186,9 @@ void wxCanvas::OnClientAreaDSize(int dW, int dH, int dX, int dY)
     paintRect.bottom = clientHeight;
     paintRect.right = clientWidth;
     wx_dc->SetPaintRegion(&paintRect);
+
+    carea->FrameContentAreaOffset(&ox, &oy);
+    wx_dc->SetGrafPtrOffsets(ox, oy);
   }
   
   if (cScroll && scrollAutomanaged
@@ -232,6 +235,15 @@ void wxCanvas::MaybeMoveControls()
       y += 1;
     }
     MoveControl(cPaintControl, x, y);
+
+    {
+      int ox, oy;
+      wxArea *carea;
+
+      carea = ClientArea();
+      carea->FrameContentAreaOffset(&ox, &oy);
+      wx_dc->SetGrafPtrOffsets(ox, oy);
+    }
   }
 
   if (canvas_border)

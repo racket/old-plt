@@ -265,13 +265,6 @@ void DequeueMrEdEvents(int type, long message)
   }
 }
 
-static void GetSleepTime(int *sleep_time, int *delay_time)
-{
-  /* No need to cooperate: */
-  *sleep_time = 0;
-  *delay_time = 0;
-}
-
 static int WeAreFront(); /* forward decl */
 static int waiting_for_next_event;
 
@@ -280,9 +273,12 @@ static int waiting_for_next_event;
 int WNE(EventRecord *e, double sleep_secs)
 {
 #if 0
+  wxResetCanvasBackgrounds();
   return WaitNextEvent(everyEvent, e, sleep_secs * 60, NULL);
 #else
   EventRef ref;
+  
+  wxResetCanvasBackgrounds();
 
   waiting_for_next_event = 1;
 
@@ -382,10 +378,8 @@ void WakeUpMrEd()
 static int TransferQueue(int all)
 {
   EventRecord e;
-  int sleep_time;
-  int delay_time;
-  
-  GetSleepTime(&sleep_time, &delay_time);
+  int sleep_time = 0;
+  int delay_time = 1;
   
   /* Don't call WaitNextEvent too often. */
   static unsigned long lastTime;
@@ -1898,7 +1892,7 @@ static void wait_for_reply(AppleEvent *ae, AppleEvent *reply)
   AEGetAttributePtr(ae, keyReturnIDAttr, typeLongInteger, &rtype, &id, sizeof(long), &sz);
   
   while (1) {
-    WaitNextEvent(everyEvent, &e, 60, 0L);
+    WNE(&e, 1.0);
     if (e.what == kHighLevelEvent)
       AEProcessAppleEvent(&e);
     else {
@@ -2168,6 +2162,8 @@ int wxHETYield(wxWindow *win, HiEventTrampProc do_f, void *do_data)
   mdc->setCurrentUser(NULL);
 
   more = mred_het_run_some(do_f, do_data);
+
+  wxResetCanvasBackgrounds();
 
   SetGWorld(savep, savegd);
   SetThemeDrawingState(s, TRUE);

@@ -45,6 +45,9 @@ class wxCanvasDC: public wxbCanvasDC
 
   wxBitmap* selected_pixmap;
 
+  int gdx, gdy;
+  wxCanvasDC *chain_next, *chain_prev;
+
   wxCanvasDC(void);
   wxCanvasDC(wxCanvas* canvas); // Create a DC corresponding to a canvas
 
@@ -106,6 +109,7 @@ class wxCanvasDC: public wxbCanvasDC
   void SetClippingRect(double x, double y, double width, double height);
   wxRegion* GetClippingRegion();
   void SetClippingRegion(wxRegion*);
+  void SetGrafPtrOffsets(int dx, int dy);
 
   double GetCharHeight(void);
   double GetCharWidth(void);
@@ -152,6 +156,8 @@ class wxCanvasDC: public wxbCanvasDC
   void PaintStipple(wxRegion *);
 
   wxGL *GetGL();
+
+  void ResetBackground();
 };
 
 long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str, int d = 0, int len = -1);
@@ -178,6 +184,7 @@ extern Pattern wx_white_pat, wx_black_pat, wx_light_gray_pat, wx_dark_gray_pat;
 #define GetLightGrayPattern() &wx_light_gray_pat
 #define GetDarkGrayPattern() &wx_dark_gray_pat
 extern void wx_init_patterns();
+extern void wxResetCanvasBackgrounds();
 
 class wxGL : public wxObject {
 public:

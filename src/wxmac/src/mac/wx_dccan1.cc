@@ -25,8 +25,11 @@ extern CGrafPtr wxMainColormap;
 static int patterns_inited;
 Pattern wx_white_pat, wx_black_pat, wx_light_gray_pat, wx_dark_gray_pat;
 
+static wxCanvasDC *reset_chain;
+
 void wx_init_patterns(void)
 {
+  wxREGGLOB(reset_chain);
   GetQDGlobalsWhite(&wx_white_pat);
   GetQDGlobalsBlack(&wx_black_pat);
   GetQDGlobalsLightGray(&wx_light_gray_pat);
@@ -133,6 +136,19 @@ wxCanvasDC::~wxCanvasDC(void)
     onpaint_reg = NULL;
   }
   canvas = NULL;
+
+  if (reset_chain == this) {
+    reset_chain = chain_next;
+    if (chain_next)
+      chain_next->chain_prev = NULL;
+    chain_next = NULL;
+  } else {
+    if (chain_prev)
+      chain_prev->chain_next = chain_next;
+    if (chain_next)
+      chain_next->chain_prev = chain_prev;
+    chain_prev = chain_next = NULL;
+  }
 }
 
 void wxCanvasDC::BeginDrawing(void)
@@ -171,13 +187,16 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
   } else {
     ::SetPort(theMacGrafPort);
   }
-  
-  SetOriginX = SetOriginY = 0;
+
+  SetOriginX = gdx;
+  SetOriginY = gdy;
+#if 0
   if (canvas) {
     wxArea *area;
     area = canvas->ClientArea();
     area->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
   }
+#endif
 
   if (cMacDC->currentUser() != this) { 
     // must setup platform
@@ -191,17 +210,48 @@ void wxCanvasDC::ReleaseCurrentDC(void)
 {
   if (!--dc_set_depth) {
     if (canvas) {
-      if (cMacCurrentTool != kNoTool) {
-	/* We have to go back to the canvas's drawings settings --- at
-	   least the bg color --- otherwise controls might get drawn
-	   wrong. That's because the DC GrafPtr is the same as the Window GrafPtr. */
-	cMacCurrentTool = kNoTool;
-	canvas->MacSetBackground();
+      /* We have to go back to the canvas's drawings settings --- at
+	 least the bg color --- otherwise controls might get drawn
+	 wrong. That's because the DC GrafPtr is the same as the Window GrafPtr. */
+      if (!chain_next && !chain_prev) {
+	chain_next = reset_chain;
+	if (reset_chain)
+	  reset_chain->chain_prev = this;
+	reset_chain = this;
       }
     } else {
       ::SetGWorld(def_grafptr, def_dev_handle);
       def_grafptr = NULL;
     }
+  }
+}
+
+void wxCanvasDC::ResetBackground()
+{
+  CGrafPtr theMacGrafPort;
+
+  theMacGrafPort = cMacDC->macGrafPort();
+  ::SetPort(theMacGrafPort);
+  cMacCurrentTool = kNoTool;
+  canvas->MacSetBackground();
+
+  reset_chain = chain_next;
+  chain_next = NULL;
+  chain_prev = NULL;
+}
+
+void wxResetCanvasBackgrounds()
+{
+  if (reset_chain) {
+    CGrafPtr savep;
+    GDHandle savegd;
+    
+    GetGWorld(&savep, &savegd);  
+
+    while (reset_chain)
+      reset_chain->ResetBackground();
+    
+    SetGWorld(savep, savegd);
   }
 }
 
@@ -311,6 +361,12 @@ void wxCanvasDC::SetPaintRegion(Rect* paintRect)
   CheckMemOK(onpaint_reg);
   ::RectRgn(onpaint_reg, paintRect);
   SetCanvasClipping();
+}
+
+void wxCanvasDC::SetGrafPtrOffsets(int ox, int oy)
+{
+  gdx = ox;
+  gdy = oy;
 }
 
 //-----------------------------------------------------------------------------

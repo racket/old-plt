@@ -414,7 +414,7 @@ wxInitializeStockObjects (void)
   wxREGGLOB(wxSTANDARD_CURSOR);
   wxSTANDARD_CURSOR = new wxCursor (wxCURSOR_ARROW);
   wxREGGLOB(wxHOURGLASS_CURSOR);
-  wxHOURGLASS_CURSOR = new wxCursor (wxCURSOR_WAIT);
+  wxHOURGLASS_CURSOR = new wxCursor (wxCURSOR_WATCH);
   wxREGGLOB(wxCROSS_CURSOR);
   wxCROSS_CURSOR = new wxCursor (wxCURSOR_CROSS);
   wxREGGLOB(wxIBEAM_CURSOR);

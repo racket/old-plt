@@ -88,7 +88,9 @@ class wxUpdateCursorTimer : public wxTimer
   void Cancel();
 };
 
-wxUpdateCursorTimer::wxUpdateCursorTimer(wxCanvasMediaAdmin *a) {
+wxUpdateCursorTimer::wxUpdateCursorTimer(wxCanvasMediaAdmin *a)
+  : wxTimer(MrEdGetWindowContext(a->canvas))
+{
   admin = a;
   Start(0, TRUE);
 }

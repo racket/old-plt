@@ -5,7 +5,7 @@
     (lambda (mx-path) 
       (if (not (eq? (system-type) 'windows))
 	  (fprintf (current-error-port) 
-		   "Error: can't install MysterX on non-Windows machine~n")
+		   "Warning: can't install MysterX on non-Windows machine~n")
 	  (let* ([dlls '("myspage.dll" "myssink.dll")]
 		 [dll-path-list (list (collection-path "mysterx")
 				      "private" "compiled" "native" 

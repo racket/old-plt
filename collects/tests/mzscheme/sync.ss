@@ -313,9 +313,12 @@
 (define (check-busy-wait go busy?)
   (collect-garbage) ; reduces false-positives in detecting busy wait
   (let ([msecs (current-process-milliseconds)]
+	[gc-msecs (current-gc-milliseconds)]
 	[real-msecs (current-milliseconds)])
     (go)
-    (let ([took (/ (abs (- (current-process-milliseconds) msecs)) 1000.0)]
+    (let ([took (/ (abs (- (current-process-milliseconds) msecs
+			   (abs (- (current-gc-milliseconds) gc-msecs))))
+		   1000.0)]
 	  [real-took (/ (abs (- (current-milliseconds) real-msecs)) 1000.0)]
 	  [boundary (/ SYNC-SLEEP-DELAY 6)])
       (test busy? (lambda (a b c d) (> b c)) 'busy-wait? took boundary real-took))))
@@ -470,6 +473,49 @@
 
 
 ;; ----------------------------------------
+;;  Thread suspend, resume, and dead waitables
+
+(let ([d (thread-dead-waitable (thread void))])
+  (test d object-wait-multiple #f d))
+
+(let* ([sema (make-semaphore)]
+       [t (thread (lambda () (semaphore-wait sema)))]
+       [r (thread-resume-waitable t)]
+       [s (thread-suspend-waitable t)])
+  (test #f object-wait-multiple 0 t s)
+  (test t object-wait-multiple 0 t s r)
+  (test t object-wait-multiple 0 r)
+  (thread-suspend t)
+  (test t object-wait-multiple 0 r)
+  (test t object-wait-multiple 0 s)
+  (let* ([r (thread-resume-waitable t)]
+	 [s (thread-suspend-waitable t)])
+    (test #f object-wait-multiple 0 t r)
+    (test t object-wait-multiple 0 t s r)
+    (test t object-wait-multiple 0 s)
+    (thread-resume t)
+    (test t object-wait-multiple 0 s)
+    (test t object-wait-multiple 0 r)
+    (let* ([s (thread-suspend-waitable t)])
+      (thread (lambda () (sleep SYNC-SLEEP-DELAY) (thread-suspend t)))
+      (test #f object-wait-multiple 0 s)
+      (test t object-wait-multiple #f s)
+      (let* ([r (thread-resume-waitable t)]
+	     [d (thread-dead-waitable t)])
+	(thread (lambda () (sleep SYNC-SLEEP-DELAY) (thread-resume t)))
+	(test #f object-wait-multiple 0 r)
+	(test t object-wait-multiple #f r)
+
+	(test #f object-wait-multiple 0 d)
+	(semaphore-post sema)
+	(test d object-wait-multiple #f d)
+	(test t object-wait-multiple #f r)
+	(test t object-wait-multiple #f s)
+	(test #f object-wait-multiple 0 (thread-resume-waitable t))
+	(test #f object-wait-multiple 0 (thread-suspend-waitable t))
+	(test d thread-dead-waitable t)))))
+
+;; ----------------------------------------
 ;;  Garbage collection
 
 (define (check-threads-gcable label blocking-thunk)
@@ -486,7 +532,7 @@
 	  ok-done?
 	  (let loop ([tries 0][n 100])
 	    (if (or (= tries 3) (< n 10))
-		(list tries n)
+		(list tries n label)
 		(begin
 		  (sl) (collect-garbage)
 		  (loop (add1 tries)
@@ -503,6 +549,18 @@
 (check/combine values)
 (check/combine (lambda (x) (waitables->waitable-set x (make-semaphore))))
 (check/combine (lambda (x) (waitables->waitable-set (make-semaphore) x)))
+(check/combine (lambda (x) (waitables->waitable-set (make-semaphore) x)))
+
+(check-threads-gcable 'nested (lambda () (call-in-nested-thread (lambda () (semaphore-wait (make-semaphore))))))
+(check-threads-gcable 'suspended (lambda () (thread-suspend (current-thread))))
+(check-threads-gcable 'nested-suspend (lambda () (call-in-nested-thread (lambda () (thread-suspend (current-thread))))))
+
+(check-threads-gcable 'resume (lambda () (let ([t (thread (lambda () (sleep 10)))])
+					   (thread-suspend t)
+					   (object-wait-multiple #f (thread-resume-waitable t)))))
+(check-threads-gcable 'suspend (lambda () (let ([t (thread (lambda () (semaphore-wait (make-semaphore))))])
+					    (object-wait-multiple #f (thread-suspend-waitable t)))))
+(check-threads-gcable 'suspend-self (lambda () (object-wait-multiple #f (thread-suspend-waitable (current-thread)))))
 
 ;; ----------------------------------------
 

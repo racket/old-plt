@@ -421,7 +421,8 @@ general functions to help make .plt archives:
   unpacking time.
 
 > (std-filter p) - returns #t unless `p' matches one of the following
-  regular expressions: "CVS$", "compiled$", "~$", or "^#.*#$".
+  regular expressions: "CVS$", "compiled$", "~$", "^#.*#$", or
+  "[.]plt$".
 
 > (mztar path output filter file-mode) - called by `pack' to write one
    directory/file `path' to the output port `output' using the filter

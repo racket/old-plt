@@ -2,6 +2,10 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.27
+Changed exp-time structure type info to allow #f in place
+ of a mutator id
+
 Version 299.25
 Changed character datatype to include #\uFFFE and #\uFFFF
 Removed optional argument of continuation-mark-set->list

@@ -1441,7 +1441,7 @@
 				     "Close"
 				     #t)
 				[(continue) #t]
-				[(save) (begin (send edit save-file) #t)]
+				[(save) (send edit save-file)]
 				[else #f]))])
 		    (and user-allowed-or-not-modified
 			 (super-can-close?))))])))))

@@ -7,6 +7,8 @@
   (define paren-tree%
     (class object%
 
+      ;; matches: (listof (list/p symbol symbol))
+      ;; Symbols for the open-close pairs
       (init matches)
 
       (define open-matches-table (make-hash-table))
@@ -49,11 +51,17 @@
                                           (data (cons #f 0))))
                  (values first next)))))))
       
+      ;; split-tree: natural-number -> 
+      ;; Everything at and after pos is marked as invalid.
+      ;; pos must not be a position inside of a token.
       (define/public (split-tree pos)
         (let-values (((l r) (split tree pos)))
           (set! tree l)
           (set! invalid-tree r)))
       
+      ;; merget-tree: natural-number ->
+      ;; Makes the num-to-keep last positions that have been marked
+      ;; invalid valid again.
       (define/public (merge-tree num-to-keep)
         (send invalid-tree search-max!)
         (let*-values (((bad good) (split invalid-tree (- (send invalid-tree get-root-end-position)
@@ -66,6 +74,9 @@
             (send good remove-root!))
           (insert-last! tree good)))
       
+      
+      ;; add-token: symbol * natural-number ->
+      ;; Adds the token to the end of the valid part of the tree.
       (define/public (add-token type length)
         (cond
           ((or (send tree is-empty?) (is-open? type) (is-close? type))
@@ -73,7 +84,9 @@
           (else
            (send tree search-max!)
            (send tree add-to-root-length length))))
-      
+
+      ;; truncate: natural-number ->
+      ;; removes the tokens after pos
       (define/public (truncate pos)
         (let-values (((l r) (split tree pos)))
           (set! tree l)))
@@ -146,6 +159,9 @@
           (else
            (values #f #f #f))))
       
+      ;; is-open-pos?: natural-number -> (union #f symbol)
+      ;; if the position starts an open, return the corresponding close,
+      ;; otherwise return #f
       (define/public (is-open-pos? pos)
         (send tree search! pos)
         (let ((d (send tree get-root-data)))
@@ -153,6 +169,9 @@
                d
                (is-open? (car d)))))
 
+      ;; is-close-pos?: natural-number -> (union #f symbol)
+      ;; if the position starts an close, return the corresponding open,
+      ;; otherwise return #f
       (define/public (is-close-pos? pos)
         (send tree search! pos)
         (let ((d (send tree get-root-data)))
@@ -203,10 +222,14 @@
                (else
                 (do-match-backward (node-left node) top-offset new-stack escape)))))))
       
-      (define/public (print)
-        (for-each (lambda (x) (display (cons (vector-ref x 0) (car (vector-ref x 2)))))
-                  (send tree to-list))
-        (newline))
-      
+      (define/public (test)
+        (let ((v null)
+              (i null))
+          (send tree for-each (lambda (a b c)
+                                (set! v (cons (list a b c) v))))
+          (send invalid-tree for-each (lambda (a b c)
+                                        (set! i (cons (list a b c) i))))
+          (list (reverse v) (reverse i))))
+        
       (super-instantiate ())
       )))

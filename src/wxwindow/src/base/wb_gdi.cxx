@@ -56,6 +56,7 @@ char *wxbFont::GetFaceString(void)
 // Colour
 
 wxColour::wxColour (void)
+: wxObject(WXGC_NO_CLEANUP)
 {
   __type = wxTYPE_COLOUR;
   isInit = FALSE;
@@ -64,6 +65,7 @@ wxColour::wxColour (void)
 }
 
 wxColour::wxColour (const unsigned char r, const unsigned char g, const unsigned char b)
+: wxObject(WXGC_NO_CLEANUP)
 {
   __type = wxTYPE_COLOUR;
   red = r;
@@ -74,6 +76,7 @@ wxColour::wxColour (const unsigned char r, const unsigned char g, const unsigned
 }
 
 wxColour::wxColour (const wxColour *col)
+: wxObject(WXGC_NO_CLEANUP)
 {
   __type = wxTYPE_COLOUR;
   locked = 0;
@@ -96,6 +99,7 @@ wxColour& wxColour::operator=(const wxColour& col)
 }
 
 wxColour::wxColour (const char *col)
+: wxObject(WXGC_NO_CLEANUP)
 {
   __type = wxTYPE_COLOUR;
   locked = 0;

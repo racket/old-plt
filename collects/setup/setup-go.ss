@@ -35,6 +35,8 @@
 				  (compiler-verbose #t)]
       [("-p" "--pause") "Pause at the end if there are any errors"
 			(pause-on-errors #t)]
+      [("--force") "Treat version mismatches in unpacking as mere warnings"
+                   (force-unpacks #t)]
       [("-l") =>
 	      (lambda (flag . collections)
 		(map list collections))

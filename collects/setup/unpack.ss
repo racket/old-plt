@@ -114,7 +114,7 @@
 
   (define unpack 
     (opt-lambda (archive [plthome (current-directory)] [print-status (lambda (x) (printf "~a~n" x))]
-			 [get-target-directory (lambda () (current-directory))])
+			 [get-target-directory (lambda () (current-directory))] [force? #f])
       (let*-values ([(p64gz) (open-input-file archive)]
 		    [(p kill) (port64gz->port p64gz)])
 	(dynamic-wind
@@ -157,59 +157,71 @@
 				     (define (bad)
 				       (error "`requires' info is corrupt:" l))
 				     (when (void? l)
-				       (error "cannot install; archive is for an older version of PLT Scheme"))
-				     (unless (list? l) (bad))
+				       (if force?
+					   (print-status "warning: archive is for an older version of PLT Scheme")
+					   (error "cannot install; archive is for an older version of PLT Scheme")))
+				     (unless (or (list? l) 
+						 (and force? (void? l)))
+				       (bad))
 				     ;; Check each dependency:
-				     (for-each
-				      (lambda (d)
-					(unless (and (list? d) (= 2 (length d)))
-					  (bad))
-					(let ([coll-path (car d)]
-					      [version (cadr d)])
-					  (unless (and (pair? coll-path)
-						       (list? coll-path)
-						       (andmap string? coll-path)
-						       (list? version)
-						       (andmap number? version))
+				     (when (list? l)
+				       (for-each
+					(lambda (d)
+					  (unless (and (list? d) (= 2 (length d)))
 					    (bad))
-					  (with-handlers ([not-break-exn?
-							   (lambda (x)
-							     (error "cannot install; missing required collection"
-								    coll-path))])
-					    (apply collection-path coll-path))
-					  (let ([inst-version 
-						 (with-handlers ([not-break-exn? (lambda (x) null)])
-						   (let ([info (get-info coll-path)])
-						     (info 'version (lambda () null))))])
-					    (let loop ([v version][iv inst-version])
-					      (unless (null? v)
-						(when (or (null? iv)
-							  (not (= (car v) (car iv))))
-						  (error (format "cannot install; version ~a of collection ~s is required, but version ~a is installed"
-								 version coll-path 
-								 (if (null? inst-version)
-								     '<unknown>
-								     inst-version))))
-						(loop (cdr v) (cdr iv)))))))
-				      l)))
+					  (let ([coll-path (car d)]
+						[version (cadr d)])
+					    (unless (and (pair? coll-path)
+							 (list? coll-path)
+							 (andmap string? coll-path)
+							 (list? version)
+							 (andmap number? version))
+					      (bad))
+					    (with-handlers ([not-break-exn?
+							     (lambda (x)
+							       (if force?
+								   (print-status "warning: missing required collection ~s" coll-path)
+								   (error "cannot install; missing required collection" coll-path)))])
+					      (apply collection-path coll-path))
+					    (let ([inst-version 
+						   (with-handlers ([not-break-exn? (lambda (x) null)])
+						     (let ([info (get-info coll-path)])
+						       (info 'version (lambda () null))))])
+					      (let loop ([v version][iv inst-version])
+						(unless (null? v)
+						  (when (or (null? iv)
+							    (not (= (car v) (car iv))))
+						    (let ([msg (format "version ~a of collection ~s is required, but version ~a is installed"
+								       version coll-path 
+								       (if (null? inst-version)
+									   '<unknown>
+									   inst-version))])
+						      (if force?
+							  (print-status "warning: ~a" msg)
+							  (error (format "cannot install; ~a" msg)))))
+						  (loop (cdr v) (cdr iv)))))))
+					l))))
 
 			;; Check for conflicts:
 			(call-info info 'conflicts (lambda () null)
 				   (lambda (l) 
 				     (define (bad)
 				       (error "`conflicts' info is corrupt:" l))
-				     (unless (list? l) (bad))
-				     (for-each
-				      (lambda (coll-path)
-					(unless (and (pair? coll-path)
-						     (list? coll-path)
-						     (andmap string? coll-path))
-					  (bad))
-					(when (with-handlers ([not-break-exn? (lambda (x) #f)])
-						(apply collection-path coll-path))
-					  (error "cannot install; conflict with installed collection"
-						 coll-path)))
-				      l)))
+				     (unless (or (list? l)
+						 (and force? (void? l)))
+				       (bad))
+				     (when (list? l)
+				       (for-each
+					(lambda (coll-path)
+					  (unless (and (pair? coll-path)
+						       (list? coll-path)
+						       (andmap string? coll-path))
+					    (bad))
+					  (when (with-handlers ([not-break-exn? (lambda (x) #f)])
+						  (apply collection-path coll-path))
+					    (error "cannot install; conflict with installed collection"
+						   coll-path)))
+					l))))
 
 			(unless (and name unpacker)
 			  (error "bad name or unpacker"))

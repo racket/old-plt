@@ -86,7 +86,8 @@
 			   x 
 			   plthome 
 			   (lambda (s) (setup-printf "~a" s)) 
-			   (current-target-directory-getter))) 
+			   (current-target-directory-getter)
+			   (force-unpacks)))
 	      (archives))))
       
       (define (done)

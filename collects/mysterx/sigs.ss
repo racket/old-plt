@@ -257,7 +257,8 @@
    event-click?
    event-dblclick?
    event-error?
-   event-available?))
+   block-until-event))
+	
 
 
 

@@ -682,12 +682,8 @@
 	    [handler-post (lambda () (semaphore-post handler-sem))]
 	    [handler-table (make-hash-table)]
 	    [handler-thread #f]
-	    [block-until-event ; busy-wait loop -- until Mz threads allow blocking
-	     (lambda ()
-	       (let loop () 
-		 (unless (mxprims:event-available? doc)
-			 (sleep 0.02)
-			 (loop))))]
+	    [block-until-event 
+	     (lambda () (mxprims:block-until-event doc))]
 	    [make-event-key 
 	     (lambda (tag id) ; string x string -> symbol
 	       (let ([new-tag (string-copy tag)]
@@ -801,17 +797,14 @@
 
 	     (super-init)
 
+             ; make sure Windows messages handled
+		
 	     (thread
 	      (lambda ()
-
-		; this is unwanted, but appears necessary
-		
 		(let loop ()
 		  (mxprims:document-pump-msgs doc)
-                  (sleep 0.02)		     
+		  (sleep 0)   
 		  (loop))))))))
-
-
 
 
    

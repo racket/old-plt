@@ -739,8 +739,9 @@
                          [(old-break-thread old-kill-eventspace) (get-breakables)])
               (let* ([definitions-text (get-definitions-text)]
                      [drs-eventspace (current-eventspace)]
-                     [users-namespace #f]
-                     [users-custodian #f]
+                     [user-namespace #f]
+                     [user-directory #f]
+                     [user-custodian #f]
                      [normal-termination? #f]
                      [cleanup
                       (lambda ()
@@ -754,20 +755,21 @@
                              (lambda ()
                                (syncheck:clear-highlighting)
                                (cleanup)
-                               (custodian-shutdown-all users-custodian))))))]
+                               (custodian-shutdown-all user-custodian))))))]
                      [error-termination
                       (lambda (msg exn)
                         (set! normal-termination? #t)
                         (cleanup)
                         (syncheck:clear-highlighting)
                         (report-error msg exn)
-                        (custodian-shutdown-all users-custodian))]
+                        (custodian-shutdown-all user-custodian))]
                      [init-proc
                       (lambda () ; =user=
                         (set-breakables (current-thread) (current-custodian))
                         (set-directory definitions-text)
-                        (set! users-custodian (current-custodian))
-                        (set! users-namespace (current-namespace)))])
+                        (set! user-custodian (current-custodian))
+			(set! user-directory (current-directory)) ;; set by set-directory above
+                        (set! user-namespace (current-namespace)))])
                 (disable-evaluation) ;; this locks the editor, so must be outside.
                 (with-lock/edit-sequence
                  (lambda ()
@@ -795,16 +797,16 @@
                             (lambda () ; =drs=
                               (with-lock/edit-sequence
                                (lambda ()
-                                 (expansion-completed users-namespace)))
+                                 (expansion-completed user-namespace)))
                               (cleanup)
-                              (custodian-shutdown-all users-custodian))))]
+                              (custodian-shutdown-all user-custodian))))]
                         [else
                          (parameterize ([current-eventspace drs-eventspace])
                            (queue-callback
                             (lambda () ; =drs=
                               (with-lock/edit-sequence
                                (lambda ()
-                                 (expanded-expression users-namespace sexp))))))
+                                 (expanded-expression user-directory user-namespace sexp))))))
                          (loop)]))))))))
 
           ;; set-directory : text -> void
@@ -894,7 +896,7 @@
                [tl-referenced-macros null]
                [tl-bound-in-sources null]
                [expanded-expression
-                (lambda (users-namespace sexp)
+                (lambda (user-namespace user-directory sexp)
                   (let-values ([(new-binders
                                  new-varrefs
                                  new-tops
@@ -903,9 +905,9 @@
                                  new-referenced-macros
                                  new-bound-in-sources
                                  has-module?)
-                                (annotate-basic sexp)])
+                                (annotate-basic sexp user-namespace user-directory)])
                     (if has-module?
-                        (annotate-complete users-namespace
+                        (annotate-complete user-namespace
                                            new-binders
                                            new-varrefs
                                            new-tops
@@ -922,8 +924,8 @@
                           (set! tl-bound-in-sources (append new-bound-in-sources tl-bound-in-sources))
                           (set! tl-tops (append new-tops tl-tops))))))]
                [expansion-completed
-                (lambda (users-namespace)
-                  (annotate-complete users-namespace
+                (lambda (user-namespace)
+                  (annotate-complete user-namespace
                                      tl-binders
                                      tl-varrefs
                                      tl-tops
@@ -953,7 +955,7 @@
       ;; the inputs match the outputs of annotate-basic, except this
       ;; accepts the user's namespace in addition and doesn't accept
       ;; the boolean from annotate-basic.
-      (define (annotate-complete users-namespace
+      (define (annotate-complete user-namespace
                                  binders
                                  varrefs
                                  tops
@@ -967,7 +969,7 @@
                        requires
                        require-for-syntaxes
                        referenced-macros)])
-          (annotate-variables users-namespace
+          (annotate-variables user-namespace
                               binders
                               non-require-varrefs
                               non-require-referenced-macros
@@ -1078,7 +1080,7 @@
       ;;         have that name. Filter the result for
       ;;         access to variables that are all module-identifier=?
       ;; similarly for binders-ht, except it maps only binding location ids.
-      (define (annotate-variables users-namespace binders varrefs referenced-macros tops)
+      (define (annotate-variables user-namespace binders varrefs referenced-macros tops)
         (let ([vars-ht (make-hash-table)]
               [binders-ht (make-hash-table)])
           (for-each (add-var vars-ht) varrefs)
@@ -1093,7 +1095,7 @@
                     varrefs)
           (for-each (annotate-varref (handle-no-binders/lexical #t) vars-ht binders-ht #t)
                     referenced-macros)
-          (for-each (annotate-varref (handle-no-binders/top users-namespace) vars-ht binders-ht #f)
+          (for-each (annotate-varref (handle-no-binders/top user-namespace) vars-ht binders-ht #f)
                     tops)))
       
       ;; add-var : hash-table -> syntax -> void
@@ -1140,14 +1142,14 @@
                             bound-variable-style-str))])))))
       
       ;; handle-no-binders/top : top-level-info -> syntax[original] -> void
-      (define (handle-no-binders/top users-namespace)
+      (define (handle-no-binders/top user-namespace)
         (lambda (varref)
-          (let ([defined-in-users-namespace?
+          (let ([defined-in-user-namespace?
                  (with-handlers ([exn:variable? (lambda (x) #f)])
-                   (parameterize ([current-namespace users-namespace])
+                   (parameterize ([current-namespace user-namespace])
                      (eval (syntax-e varref))
                      #t))])
-            (if defined-in-users-namespace?
+            (if defined-in-user-namespace?
                 (color varref bound-variable-style-str)
                 (color varref unbound-variable-style-str)))))
       
@@ -1182,13 +1184,16 @@
 		      from-pos-left from-pos-right
 		      to-pos-left to-pos-right))))))
       
-      ;; annotate-basic : syntax -> (values (listof syntax)
-      ;;                                    (listof (cons boolean syntax))
-      ;;                                    (listof syntax)
-      ;;                                    (listof syntax)
-      ;;                                    (listof (cons boolean syntax[original]))
-      ;;                                    (listof (cons syntax[original] syntax[original]))
-      ;;                                    boolean)
+      ;; annotate-basic : syntax 
+      ;;                  string
+      ;;                  namespace
+      ;;                  -> (values (listof syntax)
+      ;;                             (listof (cons boolean syntax))
+      ;;                             (listof syntax)
+      ;;                             (listof syntax)
+      ;;                             (listof (cons boolean syntax[original]))
+      ;;                             (listof (cons syntax[original] syntax[original]))
+      ;;                             boolean)
       ;; annotates the lexical structure of the program `sexp', except
       ;; for the variables in the program. returns the variables in several
       ;; lists -- the first is the ones that occur in binding positions
@@ -1201,7 +1206,7 @@
 
       ;; the booleans in the lists indicate if the variables or macro references
       ;; were on the rhs of a define-syntax (boolean is #t) or not (boolean is #f)
-      (define (annotate-basic sexp)
+      (define (annotate-basic sexp user-directory user-namespace)
         (let ([binders null]
               [varrefs null]
               [tops null]
@@ -1315,7 +1320,7 @@
                 [(module m-name lang (#%plain-module-begin bodies ...))
                  (begin
                    (set! has-module? #t)
-                   (annotate-require-open (syntax lang))
+                   ((annotate-require-open user-namespace user-directory) (syntax lang))
                    (set! requires (cons (syntax lang) requires))
                    (annotate-raw-keyword sexp)
                    (for-each loop (syntax->list (syntax (bodies ...)))))]
@@ -1324,12 +1329,12 @@
                 [(require require-specs ...)
                  (let ([new-specs (map trim-require-prefix
                                        (syntax->list (syntax (require-specs ...))))])
-                   (for-each annotate-require-open new-specs)
+                   (for-each (annotate-require-open user-namespace user-directory) new-specs)
                    (set! requires (append new-specs requires))
                    (annotate-raw-keyword sexp))]
                 [(require-for-syntax require-specs ...)
                  (let ([new-specs (map trim-require-prefix (syntax->list (syntax (require-specs ...))))])
-                   (for-each annotate-require-open new-specs)
+                   (for-each (annotate-require-open user-namespace user-directory) new-specs)
                    (set! require-for-syntaxes (append new-specs require-for-syntaxes))
                    (annotate-raw-keyword sexp))]
                 
@@ -1395,29 +1400,34 @@
                          acc))]
             [else acc])))
 
-      ;; annotate-require-open : (stx -> void)
-      ;; relies on current-module-name-resolver
-      (define (annotate-require-open require-spec)
-        (when (syntax-original? require-spec)
-          (let ([source (syntax-source require-spec)])
-            (when (and (is-a? source syncheck-text<%>)
-                       (syntax-position require-spec)
-                       (syntax-span require-spec))
-              (let* ([start (- (syntax-position require-spec) 1)]
-                     [end (+ start (syntax-span require-spec))]
-                     [datum (syntax-object->datum require-spec)]
-                     [sym 
-                      (and (not (symbol? datum))
-                           ((current-module-name-resolver)
-                            (syntax-object->datum require-spec)
-                            #f 
-                            #f))]
-                     [file (and (symbol? sym)
-                                (module-name-sym->filename sym))])
-                (when file
-                  (send source syncheck:add-menu start end 
-                        #f
-                        (make-require-open-menu file))))))))
+      ;; annotate-require-open : namespace string -> (stx -> void)
+      ;; relies on current-module-name-resolver, which in turn depends on
+      ;; current-directory and current-namespace
+      (define (annotate-require-open user-namespace user-directory)
+	(lambda (require-spec)
+	  (when (syntax-original? require-spec)
+	    (let ([source (syntax-source require-spec)])
+	      (when (and (is-a? source syncheck-text<%>)
+			 (syntax-position require-spec)
+			 (syntax-span require-spec))
+		(let* ([start (- (syntax-position require-spec) 1)]
+		       [end (+ start (syntax-span require-spec))]
+		       [datum (syntax-object->datum require-spec)]
+		       [sym 
+			(and (not (symbol? datum))
+			     (parameterize ([current-namespace user-namespace]
+					    [current-directory user-directory]
+					    [current-load-relative-directory user-directory])
+			       ((current-module-name-resolver)
+				(syntax-object->datum require-spec)
+				#f 
+				#f)))]
+		       [file (and (symbol? sym)
+				  (module-name-sym->filename sym))])
+		  (when file
+		    (send source syncheck:add-menu start end 
+			  #f
+			  (make-require-open-menu file)))))))))
       
       ;; make-require-open-menu : string[filename] -> menu -> void
       (define (make-require-open-menu file)

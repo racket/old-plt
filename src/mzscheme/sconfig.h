@@ -575,7 +575,7 @@
 
 # define REGISTER_POOR_MACHINE
 
-# define WINLATIN_CHAR_SET
+# define WINDOWS_UNICODE_SUPPORT
 
 # define FLAGS_ALREADY_SET
 
@@ -615,6 +615,8 @@
 # define SIGSET_IS_SIGNAL
 
 # define USE_TM_GMTOFF_FIELD
+
+# define MACOS_UNICODE_SUPPORT
 
 # ifndef OS_X
 #  define OS_X 1
@@ -704,6 +706,8 @@
 
 # define POW_HANDLES_INF_CORRECTLY
 # define TRIG_ZERO_NEEDS_SIGN_CHECK
+
+# define MACOS_UNICODE_SUPPORT
 
 # define USE_MAC_TCP
 
@@ -1260,12 +1264,9 @@
  /* USE_LONG_LONG_FOR_BIGDIG indicates that `long long' is available
     and 64 bits wide (don't mix with SIXTY_FOUR_BIT_INTEGERS). */
 
- /* MACROMAN_CHAR_SET indicates that latin1-integer->char should convert
-    Latin-1 values to MacRoman characters. */
-
- /* WINLATIN_CHAR_SET indicates that latin1-integer->char should return
-    #f for values in #x80 to #x9F, and char->latin-1-integer should
-    return #f for characters in that range. */
+ /* MACOS_UNICODE_SUPPORT and WINDOWS_UNICODE_SUPPORT indicate that
+    platform-native functions should be used for string comparisons
+    in the default locale. */
 
  /* NO_INLINE_KEYWORD indicates that the C compiler doesn't recognize
     C's `inline' keyword. */

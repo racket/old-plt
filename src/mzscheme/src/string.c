@@ -1069,20 +1069,6 @@ static Scheme_Object *string_to_immutable (int argc, Scheme_Object *argv[])
 
 #ifndef DONT_USE_LOCALE
 
-#ifdef MACOS_UNICODE_SUPPORT
-# define MZ_UTF16_NATIVE 1
-# define MZ_USE_STRCOLL 0
-#else
-# ifdef WINDOWS_UNICODE_SUPPORT
-#  define MZ_UTF16_NATIVE 1
-#  define MZ_USE_STRCOLL 0
-# else
-#  define MZ_UTF16_NATIVE 0
-#  define MZ_USE_STRCOLL 1
-# endif
-#endif
-
-
 char *scheme_locale_convert(char *from_e, char *to_e, 
 			    char *in, int id, int iilen, 
 			    char *out, int od, int iolen, 
@@ -1272,9 +1258,9 @@ char *scheme_recase_locale_string(int to_up,
   return out;
 }
 
-int mz_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case)
+int mz_locale_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case)
+     /* The s1 and s2 arguments are really UCS-4. */
 {
-#ifdef MZ_USE_STRCOLL
 # define MZ_SC_BUF_SIZE 32
 # ifdef SCHEME_BIG_ENDIAN
 #  define MZ_UCS4_NAME "UCS-4BE"
@@ -1296,6 +1282,12 @@ int mz_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case)
   
   /* Loop to check both convertable and unconvertable parts */
   while (1) {
+    if (!origl1 && !origl2)
+      return 0;
+    if (!origl1)
+      return -1;
+    if (!origl2)
+      return 1;
 
     /* Loop to get consistent parts of the wto strings, in case
        a conversion fails. */
@@ -1335,6 +1327,14 @@ int mz_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case)
 	    got_more = 2;
 	  l2 = (used1 >> 2);
 	  l1 = (used1 >> 2);
+
+	  if (!l1) {
+	    /* Nothing to get this time. */
+	    clen1 = clen2 = 0;
+	    c1 = c2 = "";
+	    used1 = used2 = 0;
+	    break;
+	  }
 	}
       } else
 	/* Got all that we wanted */
@@ -1342,12 +1342,18 @@ int mz_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case)
     }
     
     if (cvt_case) {
-      c1 = scheme_recase_locale_string(0, c1, 0, clen1,
-				       case_buf1, 0, MZ_SC_BUF_SIZE - 1,
-				       &clen1);
-      c2 = scheme_recase_locale_string(0, c2, 0, clen2,
-				       case_buf2, 0, MZ_SC_BUF_SIZE - 1,
-				       &clen2);
+      if (clen1)
+	c1 = scheme_recase_locale_string(0, c1, 0, clen1,
+					 case_buf1, 0, MZ_SC_BUF_SIZE - 1,
+					 &clen1);
+      else
+	c1 = NULL;
+      if (clen2)
+	c2 = scheme_recase_locale_string(0, c2, 0, clen2,
+					 case_buf2, 0, MZ_SC_BUF_SIZE - 1,
+					 &clen2);
+      else
+	c2 = NULL;
       /* There shouldn't have been conversion errors, but just in
 	 case, care of NULL. */
       if (!c1) c1 = "";
@@ -1372,7 +1378,7 @@ int mz_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case)
     /* There's more. It must be that the next character wasn't
        convertable in one of the encodings. */
     if (got_more)
-      return ((got_more == 1) ? 1 : -1);
+      return ((got_more == 2) ? 1 : -1);
 
     if (!origl1)
       return -1;
@@ -1392,42 +1398,57 @@ int mz_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case)
       d2 += 1;
     }
   }
-
-#endif
-#ifdef MACOS_UNICODE_SUPPORT
-  ...
-#endif
-#ifdef WINDOWS_UNICODE_SUPPORT
-    ...
-#endif  
 }
 
-#if MZ_UTF16_NATIVE
-# define mz_wchar_t unsigned short
-#else
-# define mz_wchar_t wchar_t
+#ifdef MACOS_UNICODE_SUPPORT
+int mz_native_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case)
+     /* The s1 and s2 arguments are really UTF-16. */
+{
+  
+}
 #endif
+
+#ifdef WINDOWS_UNICODE_SUPPORT
+#endif
+
+
+typedef int (*strcoll_proc)(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case);
 
 int do_locale_comp(const char *who, unsigned char *str1, int l1, unsigned char *str2, int l2, int cvt_case)
 {
-  int ul1, ul2, xl1, xl2;
-  mz_wchar_t *us1, *us2;
-  int v, endres;
+  int ul1, ul2, xl1;
+  unsigned int *us1, *us2;
+  int v, endres, csize = 4, utf16 = 0;
+  GC_CAN_IGNORE strcoll_proc mz_strcoll = mz_locale_strcoll;
   
-  ul1 = scheme_utf8_decode(str1, NULL, 0, l1, 0, 0, MZ_UTF16_NATIVE);
+#if defined(MACOS_UNICODE_SUPPORT) || defined(WINDOWS_UNICODE_SUPPORT)
+  if (current_locale_name && !*current_locale_name) {
+    utf16 = 1;
+    csize = 2;
+    mz_strcoll = mz_native_strcoll;
+  }
+#endif
+
+  ul1 = scheme_utf8_decode(str1, NULL, 0, l1, 0, utf16, 0);
   if (ul1 < 0)
     scheme_arg_mismatch(who, STRING_IS_NOT_UTF_8, scheme_make_sized_string(str1, l1, 1));
-  ul2 = scheme_utf8_decode(str2, NULL, 0, l2, 0, 0, MZ_UTF16_NATIVE);
+  ul2 = scheme_utf8_decode(str2, NULL, 0, l2, 0, 0, utf16);
   if (ul2 < 0)
     scheme_arg_mismatch(who, STRING_IS_NOT_UTF_8, scheme_make_sized_string(str2, l2, 1));
   
-  us1 = (mz_wchar_t *)scheme_malloc_atomic(sizeof(mz_wchar_t) * (ul1 + 1));
-  us2 = (mz_wchar_t *)scheme_malloc_atomic(sizeof(mz_wchar_t) * (ul2 + 1));
-  us1[ul1] = 0;
-  us2[ul2] = 0;
+  us1 = (unsigned int *)scheme_malloc_atomic(csize * (ul1 + 1));
+  us2 = (unsigned int *)scheme_malloc_atomic(csize * (ul2 + 1));
   
-  ul1 = scheme_utf8_decode(str1, (unsigned int *)us1, 0, l1, 0, MZ_UTF16_NATIVE, 0);
-  ul2 = scheme_utf8_decode(str2, (unsigned int *)us2, 0, l2, 0, MZ_UTF16_NATIVE, 0);
+  ul1 = scheme_utf8_decode(str1, (unsigned int *)us1, 0, l1, 0, utf16, 0);
+  ul2 = scheme_utf8_decode(str2, (unsigned int *)us2, 0, l2, 0, utf16, 0);
+
+  if (utf16) {
+    ((short *)us1)[ul1] = 0;
+    ((short *)us2)[ul2] = 0;
+  } else {
+    us1[ul1] = 0;
+    us2[ul2] = 0;
+  }
 
   if (ul1 > ul2) {
     ul1 = ul2;
@@ -1445,26 +1466,36 @@ int do_locale_comp(const char *who, unsigned char *str1, int l1, unsigned char *
      earlier part of the string (tested later) determines the result,
      but hopefully nul characters are rare. */
 
-  xl1 = xl2 = 0;
+  xl1 = 0;
   while (ul1--) {
-    if (!(us1[ul1]) || !(us2[ul1])) {
-      if (us1[ul1])
-	endres = 1;
-      else if (us2[ul1])
-	endres = -1;
-      
-      v = mz_strcoll((char *)us1, ul1 + 1, xl1, (char *)us2, ul1 + 1, xl2, cvt_case);
+    if ((utf16 && (!(((char *)us1)[ul1]) || !(((short *)us2)[ul1])))
+	|| (!utf16 && (!(us1[ul1]) || !(us2[ul1])))) {
+      if (utf16) {
+	if (((short *)us1)[ul1])
+	  endres = 1;
+	else if (((short *)us2)[ul1])
+	  endres = -1;
+      } else {
+	if (us1[ul1])
+	  endres = 1;
+	else if (us2[ul1])
+	  endres = -1;
+      }
+     
+      if (xl1)
+	v = mz_strcoll((char *)us1, ul1 + 1, xl1, (char *)us2, ul1 + 1, xl1, cvt_case);
+      else
+	v = 0;
 
       if (v)
 	endres = v;
       xl1 = 0;
-      xl2 = 0;
+    } else {
+      xl1++;
     }
-    xl1++;
-    xl2++;
   }
   
-  v = mz_strcoll((char *)us1, 0, xl1, (char *)us2, 0, xl2, cvt_case);
+  v = mz_strcoll((char *)us1, 0, xl1, (char *)us2, 0, xl1, cvt_case);
   if (v)
     endres = v;
   

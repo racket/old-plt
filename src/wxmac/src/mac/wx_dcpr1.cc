@@ -66,7 +66,7 @@ wxPrinterDC::wxPrinterDC(THPrint pData)
     cMacDC = new wxMacDC((CGrafPtr)&(prPort->gPort));
 	GrafPtr theMacGrafPort = (GrafPtr)cMacDC->macGrafPort();
 	::SetPort((GrafPtr)theMacGrafPort);
-
+	
 	cMacDoingDrawing = FALSE;
 
   clipping = FALSE;
@@ -107,7 +107,7 @@ wxPrinterDC::wxPrinterDC(THPrint pData)
   current_pen_cap = -1 ;
   current_pen_nb_dash = -1 ;
   current_pen_dash = NULL ;
-  current_logical_function = -1;
+  current_logical_function = wxCOPY;
   current_stipple = NULL ;
 
   Colour = wxColourDisplay();

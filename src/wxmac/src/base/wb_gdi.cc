@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.2 1998/01/14 03:04:09 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -791,37 +791,34 @@ wxGDIList::~wxGDIList (void)
 }
 
 // Pen and Brush lists
-wxPenList::~wxPenList (void)
+wxPenList::wxPenList(void)
+ : wxObject(WXGC_NO_CLEANUP)
 {
-  wxNode *node = First ();
-  while (node)
-    {
-      wxPen *pen = (wxPen *) node->Data ();
-      wxNode *next = node->Next ();
-      delete pen;
-      node = next;
-    }
+  list = new wxChildList;
 }
+
+wxPenList::~wxPenList(void)
+{
+}
+
 
 void wxPenList::AddPen (wxPen * pen)
 {
-  Append (pen);
+  list->Append(pen);
+  list->Show(pen, -1);
   pen->Lock(1);
-}
-
-void wxPenList::RemovePen (wxPen * pen)
-{
-  DeleteObject (pen);
 }
 
 wxPen *wxPenList::FindOrCreatePen (wxColour * colour, int width, int style)
 {
   wxPen *pen;
+  wxChildNode *node;
+  int i = 0;
 
   if (!colour)
     return NULL;
 
-  for (wxNode * node = First (); node; node = node->Next ())
+  while (node = list->NextNode(i))
     {
       wxPen *each_pen = (wxPen *) node->Data ();
       if (each_pen &&
@@ -848,32 +845,33 @@ wxPen *wxPenList::FindOrCreatePen (char *colour, int width, int style)
     return NULL;
 }
 
-wxBrushList::~wxBrushList (void)
+wxBrushList::wxBrushList(void)
+ : wxObject(WXGC_NO_CLEANUP)
 {
-  wxNode *node = First ();
-  while (node)
-    {
-      wxBrush *brush = (wxBrush *) node->Data ();
-      wxNode *next = node->Next ();
-      delete brush;
-      node = next;
-    }
+  list = new wxChildList;
+}
+
+wxBrushList::~wxBrushList(void)
+{
 }
 
 void wxBrushList::AddBrush (wxBrush * brush)
 {
   brush->Lock(1);
-  Append (brush);
+  list->Append(brush);
+  list->Show(brush, -1);
 }
 
 wxBrush *wxBrushList::FindOrCreateBrush (wxColour * colour, int style)
 {
   wxBrush *brush;
+  wxChildNode *node;
+  int i = 0;
 
   if (!colour)
     return NULL;
 
-  for (wxNode * node = First (); node; node = node->Next ())
+  while (node = list->NextNode(i))
     {
       wxBrush *each_brush = (wxBrush *) node->Data ();
       if (each_brush &&
@@ -900,39 +898,30 @@ wxBrush *wxBrushList::FindOrCreateBrush (char *colour, int style)
 }
 
 
-void wxBrushList::RemoveBrush (wxBrush * brush)
+wxFontList::wxFontList(void)
+ : wxObject(WXGC_NO_CLEANUP)
 {
-  DeleteObject (brush);
+  list = new wxChildList;
 }
 
-wxFontList::~wxFontList (void)
+wxFontList::~wxFontList(void)
 {
-  wxNode *node = First ();
-  while (node)
-    {
-      wxFont *font = (wxFont *) node->Data ();
-      wxNode *next = node->Next ();
-      delete font;
-      node = next;
-    }
 }
 
 void wxFontList::AddFont (wxFont * font)
 {
-  Append (font);
-}
-
-void wxFontList::RemoveFont (wxFont * font)
-{
-  DeleteObject (font);
+  list->Append(font);
+  list->Show(font, -1);
 }
 
 wxFont *wxFontList::
 FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool underline)
 {
   wxFont *font;
+  wxChildNode *node;
+  int i = 0;
 
-  for (wxNode * node = First (); node; node = node->Next ())
+  while (node = list->NextNode(i))
     {
       wxFont *each_font = (wxFont *) node->Data ();
       if (each_font &&

@@ -2158,6 +2158,11 @@ int main(int argc, char *argv[])
   
   Drop_GetArgs(&argc, &argv);
   
+#if 0 /* for testing DrScheme */
+  char *vv[] = { argv[0], "-A", "drscheme" };
+  argv = vv; argc = 3;
+#endif
+
 #if 0
   while (argc > 2 && (!strcmp(argv[1], "-r"))) {
     char *file = argv[2];

@@ -345,6 +345,8 @@ void wxPrinterDC::DrawIcon(wxIcon *icon, float x, float y)
 Bool wxPrinterDC::Blit(float xdest, float ydest, float width, float height,
                 wxCanvasDC *source, float xsrc, float ysrc, int rop)
 {
+	return 0; /* doesn't work */
+
 	if (device != source->device) {
 		// Switch Gworld to this
 		SetGWorld(cMacDC->macGrafPort(), 0);
@@ -405,18 +407,30 @@ Bool wxPrinterDC::Blit(float xdest, float ydest, float width, float height,
 		int h = height;
 		int x = XLOG2DEV(xdest);
 		int y = YLOG2DEV(ydest);
-		Rect srcr = {0, 0, h, w};
+		int ixsrc = source->LogicalToDeviceX(xsrc);
+		int iysrc = source->LogicalToDeviceY(ysrc);
+		Rect srcr = {iysrc, ixsrc, iysrc + h, ixsrc + w};
 		Rect destr = {y, x, y+h, x+w };
-        BitMap *dstbm = (BitMap *) &((GrafPtr)(cMacDC->macGrafPort()))->portBits;
+
+        GrafPtr theMacGrafPort = (GrafPtr)cMacDC->macGrafPort();
+        BitMap *dstbm;
+        PixMapHandle destpixh;
+        if ((((CGrafPtr)theMacGrafPort)->portVersion & 0xC000) != 0xC000) {
+          destpixh = NULL;
+          dstbm = (BitMap *) &((GrafPtr)(cMacDC->macGrafPort()))->portBits;
+        } else {
+          destpixh = ((CGrafPtr)theMacGrafPort)->portPixMap;
+		  ::LockPixels(destpixh);
+		  dstbm = (BitMap *)(* destpixh);
+        }
+
 		// Lock PixMaps
-		//PixMapHandle srpixh = source->pixmap;
-		// mflatt: this should be pixmap, right?
 		PixMapHandle srpixh = source->pixmap;
 		int rs = ::LockPixels(srpixh);
 
-
 		CopyBits((BitMap *) (* srpixh),   (dstbm),	&srcr, &destr, mode, NULL);
 
+		::UnlockPixels(destpixh);
 		::UnlockPixels(srpixh);
 		CalcBoundingBox(xdest, ydest);
 		CalcBoundingBox(xdest + width, ydest + height);

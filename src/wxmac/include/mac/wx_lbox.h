@@ -125,6 +125,9 @@ class wxListBox: public wxbListBox
 
   char *GetLabel(void);
   void SetLabel(char *label);
+  
+  int NumberOfVisibleItems();
+  int GetFirstItem();
 
   virtual Bool WantsFocus(void); // mflatt
 };

@@ -13,6 +13,7 @@
 #include "wx_gcrct.h"
 #include "wx_ptreq.h"
 #include "wx_timer.h"
+#include "wx_main.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -92,18 +93,19 @@ class wxUpdateCursorTimer : public wxTimer
 class wxAutoDragTimer : public wxTimer 
 {
   wxMediaCanvas *canvas;
-  wxMouseEvent event;
+  wxMouseEvent *event;
  public:
   wxAutoDragTimer(wxMediaCanvas *c, wxMouseEvent *e) {
     canvas = c;
-    memcpy(&event, e, sizeof(wxMouseEvent));
+    event = new wxMouseEvent(0);
+    memcpy(event, e, sizeof(wxMouseEvent));
     Start(AUTO_DRAG_DELAY, TRUE);
   }
   void Notify(void) {
     wxYield(); /* In case we get too much time */
     if (canvas) {
-      event.timeStamp += AUTO_DRAG_DELAY;
-      canvas->OnEvent(event);
+      event->timeStamp += AUTO_DRAG_DELAY;
+      canvas->OnEvent(*event);
     }
   }
   void Kill(void) {

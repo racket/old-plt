@@ -607,20 +607,25 @@ void wxListBox::InsertItems(int nItems, char **Items, int pos)
 
 // ------ Manage Selections ----------------------
 
-void wxListBox::SetFirstItem(int N)	// Make item N the first visible item in list
-{	// Kind of Kludgy
-	SetCurrentDC();
-	// Get Current Selection - save it
-	int oldsel = GetSelection();
-	// Set the selection to N
-	SetSelection(N, TRUE);
-	// AutoScroll
-	::LAutoScroll(cListHandle);
-	// Turn off the selection
-	SetSelection(N, FALSE);
-	// Restore the saved selection (if there was one);
-	if (oldsel != -1)
-		SetSelection(oldsel, TRUE);
+void wxListBox::SetFirstItem(int N)
+{
+   SetCurrentDC();
+	
+   Rect rect;
+   Point Nc;
+   Nc.v = N;
+   Nc.h = 0;
+   LRect(&rect, Nc, cListHandle);
+   if (rect.top != 0) {
+      int amt = rect.top / (**cListHandle).cellSize.v;
+      if (rect.top % (**cListHandle).cellSize.v) {
+         if (rect.top < 0)
+	   --amt;
+	 else
+	   amt++;
+      }
+      LScroll(0, amt, cListHandle);
+   }
 }
 
 void wxListBox::SetFirstItem(char *s) 
@@ -629,6 +634,35 @@ void wxListBox::SetFirstItem(char *s)
 
   if (N>=0)
     SetFirstItem(N) ;
+}
+
+int wxListBox::GetFirstItem()
+{
+   Cell c = { 0, 0 };
+   Rect rect;
+   Point size = (**cListHandle).cellSize;
+   int item, d;
+   
+   LRect(&rect, c, cListHandle);
+   d = - rect.top;
+   item = d / size.v;
+   if (d % size.v)
+     item++;
+
+   return item;
+}
+
+int wxListBox::NumberOfVisibleItems()
+{
+   Rect view = (**cListHandle).rView;
+   Point size = (**cListHandle).cellSize;
+   int r;
+   
+   r = (view.bottom - view.top) / size.v;
+   if (r < 1)
+     r  = 1;
+     
+   return r;
 }
 
 void wxListBox::SetSelection(int N, Bool select)

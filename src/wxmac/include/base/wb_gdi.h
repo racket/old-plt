@@ -336,38 +336,35 @@ class wxCursor;
 class wxIcon;
 
 // Management of pens, brushes and fonts
-class wxPenList: public wxList
+class wxPenList: public wxObject
 {
+  wxChildList *list;
  public:
-  inline wxPenList(void)
-    { }
+  wxPenList(void);
   ~wxPenList(void);
   void AddPen(wxPen *pen);
-  void RemovePen(wxPen *pen);
   wxPen *FindOrCreatePen(wxColour *colour, int width, int style);
   wxPen *FindOrCreatePen(char *colour, int width, int style);
 };
 
-class wxBrushList: public wxList
+class wxBrushList: public wxObject
 {
+  wxChildList *list;
  public:
-  inline wxBrushList(void)
-    { }
+  wxBrushList(void);
   ~wxBrushList(void);
   void AddBrush(wxBrush *brush);
-  void RemoveBrush(wxBrush *brush);
   wxBrush *FindOrCreateBrush(wxColour *colour, int style);
   wxBrush *FindOrCreateBrush(char *colour, int style);
 };
 
-class wxFontList: public wxList
+class wxFontList: public wxObject
 {
+  wxChildList *list;
  public:
-  inline wxFontList(void)
-    { }
+  wxFontList(void);
   ~wxFontList(void);
   void AddFont(wxFont *font);
-  void RemoveFont(wxFont *font);
   wxFont *FindOrCreateFont(int PointSize, int Family, int Style, int Weight, Bool underline = FALSE);
   wxFont *FindOrCreateFont (int PointSize, const char *Face, int Family, int Style, int Weight, Bool underline = FALSE);
 };

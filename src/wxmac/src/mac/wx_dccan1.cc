@@ -96,7 +96,7 @@ wxCanvasDC::wxCanvasDC(void)
   current_pen_dash = NULL ;
   current_stipple = NULL ;
 
-  current_logical_function = -1;
+  current_logical_function = wxCOPY;
 
   Colour = wxColourDisplay();
 
@@ -167,7 +167,7 @@ __type = wxTYPE_DC_CANVAS;
   current_pen_cap = -1 ;
   current_pen_nb_dash = -1 ;
   current_pen_dash = NULL ;
-  current_logical_function = -1;
+  current_logical_function = wxCOPY;
   current_stipple = NULL ;
 
   Colour = wxColourDisplay();

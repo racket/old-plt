@@ -189,11 +189,12 @@
 		 (info 'name (lambda () (error 'compile-collection "info.ss did not provide a name")))
 		 (info 'compile-prefix (lambda () '(void)))
 		 (remove*
-		  (info (map normal-case-path
-			     (if zos? 
-				 'compile-zo-omit-files 
-				 'compile-extension-omit-files))
-			(lambda () null))
+		  (map normal-case-path
+		  	(info 
+			 (if zos? 
+			     'compile-zo-omit-files 
+			     'compile-extension-omit-files)
+			 (lambda () null)))
 		  (remove*
 		   (map normal-case-path 
 			(info 'compile-omit-files (lambda () null)))

@@ -51,7 +51,7 @@ wxMemoryDC::wxMemoryDC(void)
   ok = FALSE;
   title = NULL;
 
-  current_logical_function = -1;
+  current_logical_function = wxCOPY;
   font = wxNORMAL_FONT;
   min_x = 0; min_y = 0; max_x = 0; max_y = 0;
   logical_origin_x = 0;
@@ -108,7 +108,7 @@ wxMemoryDC::wxMemoryDC(wxCanvasDC *old_dc):wxbMemoryDC(old_dc)
   ok = FALSE;
   title = NULL;
 
-  current_logical_function = -1;
+  current_logical_function = wxCOPY;
   font = wxNORMAL_FONT;
   logical_origin_x = 0;
   logical_origin_y = 0;

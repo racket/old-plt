@@ -745,6 +745,10 @@ static char *make_arity_expect_string(const char *name, int namelen,
     if (SCHEME_INTP(arity)) {
       xminc = xmaxc = minc = maxc = SCHEME_INT_VAL(arity);
       name = scheme_get_proc_name((Scheme_Object *)name, &namelen, 1);
+      if (!name) {
+        name = "#<procedure>";
+	namelen = strlen(name);
+      }
     }
   }
 

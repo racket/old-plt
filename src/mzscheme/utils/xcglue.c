@@ -26,6 +26,12 @@ static long bhashsize = 201, bhashcount = 0, bhashstep = 17;
 
 static long num_objects_allocated = 0;
 
+#if defined(MZ_PRECISE_GC) || defined(USE_SENORA_GC)
+# define wxREGGLOB(x) scheme_register_extension_global((void *)&x, sizeof(x))
+#else
+# define wxREGGLOB(x) /* empty */
+#endif
+
 static Scheme_Object *set_car_prim;
 
 void objscheme_init(Scheme_Env *env)
@@ -33,14 +39,17 @@ void objscheme_init(Scheme_Env *env)
   long i;
   Scheme_Object *set_car_symbol;
 
+  wxREGGLOB(set_car_prim);
   set_car_symbol = scheme_intern_symbol("set-car!");
   set_car_prim = scheme_lookup_global(set_car_symbol, env);
   
+  wxREGGLOB(hash);
   hash = (ObjectHash *)scheme_malloc_atomic(sizeof(ObjectHash) * hashsize);
   for (i = 0; i < hashsize; i++) {
     hash[i].realobj = NULL;
   }
   
+  wxREGGLOB(bhash);
   bhash = (BundlerHash *)scheme_malloc_atomic(sizeof(BundlerHash) 
 					      * bhashsize);
   for (i = 0; i < bhashsize; i++) {

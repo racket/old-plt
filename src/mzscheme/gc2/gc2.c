@@ -636,6 +636,9 @@ static long started, rightnow, old;
 #endif
 
 static int initialized;
+#if SAFETY
+static long *prev_ptr;
+#endif
 
 void gcollect(int needsize)
 {
@@ -738,6 +741,7 @@ void gcollect(int needsize)
       if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
 	*(int *)0x0 = 1;
       }
+      prev_ptr = p;
 #endif
       size = tag_table[tag](p, NULL);
       p += size;

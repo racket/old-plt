@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.19 1999/11/22 20:29:35 mflatt Exp $
+ * $Id: Choice.cc,v 1.20 1999/11/25 16:32:23 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -46,13 +46,16 @@ wxChoice::wxChoice(wxPanel *panel, wxFunction function, char *label,
 		   int x, int y, int width, int height,
 		   int n, char *choices[], long style, char *name) : wxItem()
 {
-    __type = wxTYPE_CHOICE;
+  wxMenu *naya;
 
-    choice_menu = DEBUG_NEW wxMenu(NULL, (wxFunction)&(wxChoice::MenuEventCallback));
-    num_choices = 0;
-    selection   = -1;
-
-    Create(panel, function, label, x, y, width, height, n, choices, style, name);
+  __type = wxTYPE_CHOICE;
+  
+  naya = DEBUG_NEW wxMenu(NULL, (wxFunction)&(wxChoice::MenuEventCallback));
+  choice_menu = naya;
+  num_choices = 0;
+  selection   = -1;
+  
+  Create(panel, function, label, x, y, width, height, n, choices, style, name);
 }
 
 Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
@@ -242,11 +245,14 @@ void wxChoice::Append(char *s)
 
 void wxChoice::Clear(void)
 {
-    delete choice_menu;
-    choice_menu = DEBUG_NEW wxMenu(NULL, (wxFunction)&(wxChoice::MenuEventCallback));
-    num_choices = 0;
-    selection = 0;
-    XtVaSetValues(X->handle, XtNshrinkToFit, False, XtNlabel, "", NULL);
+  wxMenu *naya;
+  
+  delete choice_menu;
+  naya = DEBUG_NEW wxMenu(NULL, (wxFunction)&(wxChoice::MenuEventCallback));
+  choice_menu = naya;
+  num_choices = 0;
+  selection = 0;
+  XtVaSetValues(X->handle, XtNshrinkToFit, False, XtNlabel, "", NULL);
 }
 
 int wxChoice::FindString(char *s)

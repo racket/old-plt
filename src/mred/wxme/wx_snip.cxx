@@ -1402,7 +1402,11 @@ void wxImageSnip::LoadFile(char *name, long type, Bool relative, Bool inlineImg)
       wxBeginBusyCursor();
 
       fn = (char *)wxmeExpandFilename(loadname);
-      bm = new wxBitmap(fn, type);
+      {
+	wxBitmap *nbm;
+	nbm = new wxBitmap(fn, type);
+	bm = nbm;
+      }
 
       wxEndBusyCursor();
       
@@ -1672,7 +1676,10 @@ wxSnipClass *wxSnipClassList::Nth(int n)
 
 wxStandardSnipClassList::wxStandardSnipClassList(void)
 {
-  unknowns = new wxList((KeyType)wxKEY_INTEGER);
+  wxList *ul;
+
+  ul = new wxList((KeyType)wxKEY_INTEGER);
+  unknowns = ul;
 
   Add(TheTextSnipClass);
   Add(TheTabSnipClass);
@@ -1861,11 +1868,14 @@ Bool wxLocationBufferData::Write(wxMediaStreamOut *f)
 wxBufferDataClassList::wxBufferDataClassList(void)
 : wxList((KeyType)wxKEY_STRING)
 {
+  wxList *ul;
+
 #if USE_OLD_TYPE_SYSTEM
   __type = wxTYPE_BUFFER_DATA_CLASS_LIST;
 #endif
   
-  unknowns = new wxList((KeyType)wxKEY_INTEGER);
+  ul = new wxList((KeyType)wxKEY_INTEGER);
+  unknowns = ul;
 
   Add(TheLocationBufferDataClass);
 }

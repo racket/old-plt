@@ -4,7 +4,7 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_list.cxx,v 1.6 1999/11/25 22:57:08 mflatt Exp $
+ * RCS_ID:	$Id: wb_list.cxx,v 1.7 1999/11/26 19:36:21 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -652,12 +652,8 @@ void wxChildList::Show(wxObject *object, int show)
 	  return;
 
 #ifdef MZ_PRECISE_GC
-	if (show < 0)
-	  weak = GC_malloc_weak_box(object, NULL);
-	else {
-	  weak = GC_malloc_atomic(sizeof(short) + sizeof(short) + sizeof(void *));
-	  *(void **)(weak + 2 * sizeof(short)) = object;
-	}
+	/* FIXME: Is the order on finalizers/weak boxes right? */
+	weak = GC_malloc_weak_box(object, NULL);
 #else
 	weak = new WXGC_ATOMIC wxObject*;
 	*weak = object;

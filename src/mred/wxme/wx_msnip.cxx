@@ -68,7 +68,11 @@ wxMediaSnip::wxMediaSnip(wxMediaBuffer *useme,
   } else {
     me = wxsMakeMediaEdit();
   }
-  myAdmin = new wxMediaSnipMediaAdmin(this);
+  {
+    wxMediaSnipMediaAdmin *msma;
+    msma = new wxMediaSnipMediaAdmin(this);
+    myAdmin = msma;
+  }
 
   if (!me->GetFilename(&istemp) || istemp)
     /* Turn on flag to mirror filename: */

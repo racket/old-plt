@@ -269,8 +269,9 @@ void wxDeleteRecord::InsertSnip(wxSnip *snip)
 
 void wxDeleteRecord::AddClickback(wxClickback *click)
 {
-  if (!clickbacks)
+  if (!clickbacks) {
     clickbacks = new wxcgList();
+  }
   clickbacks->Append((wxObject *)click);
 }
 

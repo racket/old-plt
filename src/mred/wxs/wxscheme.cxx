@@ -108,11 +108,17 @@ static void wxScheme_Invoke(Scheme_Env *env)
   scheme_set_param(scheme_config, MZCONFIG_ENV, save);
 
   if (!mred_sig) {
+    wxREGGLOB(mred_sig);
     mred_sig = scheme_lookup_global(scheme_intern_symbol("mred^"), env);
   } else
     scheme_add_global("mred^", mred_sig, env);
 
   if (!get_file) {
+    wxREGGLOB(get_file);
+    wxREGGLOB(put_file);
+    wxREGGLOB(get_ps_setup_from_user);
+    wxREGGLOB(message_box);
+    wxREGGLOB(execute);
     get_file = scheme_lookup_global(scheme_intern_symbol("get-file"), env);
     put_file = scheme_lookup_global(scheme_intern_symbol("put-file"), env);
     get_ps_setup_from_user = scheme_lookup_global(scheme_intern_symbol("get-ps-setup-from-user"), env);
@@ -143,10 +149,14 @@ void wxsScheme_setup(Scheme_Env *env)
   int i;
   Scheme_Object *link, *a[1], **exs;
 
+  wxREGGLOB(gc_bitmaps);
+
   rec = (InstallRec *)scheme_malloc(sizeof(InstallRec));
 
   objscheme_init(env);
 
+  wxREGGLOB(setup_file_symbol);
+  wxREGGLOB(init_file_symbol);
   setup_file_symbol = scheme_intern_symbol("setup-file");
   init_file_symbol = scheme_intern_symbol("init-file");
 
@@ -182,6 +192,7 @@ void wxsScheme_setup(Scheme_Env *env)
 #endif
 
   a[0] = (Scheme_Object *)u;
+  wxREGGLOB(mred_unit_opener);
   mred_unit_opener = _scheme_apply(link, 1, a);
 
   wxScheme_Invoke(env);
@@ -1005,6 +1016,7 @@ wxMediaPasteboard *wxsMakeMediaPasteboard()
 
 static Scheme_Object *SetMediaSnipMaker(int, Scheme_Object *a[])
 {
+  wxREGGLOB(make_media_snip);
   make_media_snip = a[0];
   none_symbol = scheme_intern_symbol("none");
   return scheme_void;
@@ -1012,12 +1024,14 @@ static Scheme_Object *SetMediaSnipMaker(int, Scheme_Object *a[])
 
 static Scheme_Object *SetMediaEditMaker(int, Scheme_Object *a[])
 {
+  wxREGGLOB(make_media_edit);
   make_media_edit = a[0];
   return scheme_void;
 }
 
 static Scheme_Object *SetMediaPasteboardMaker(int, Scheme_Object *a[])
 {
+  wxREGGLOB(make_media_pasteboard);
   make_media_pasteboard = a[0];
   return scheme_void;
 }
@@ -1524,6 +1538,9 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
     installed = 1;
     scheme_add_namespace_option(scheme_intern_symbol("mred"), wxScheme_Invoke);
     
+    wxREGGLOB(wxs_app_quit_proc);
+    wxREGGLOB(wxs_app_file_proc);
+
     wxs_app_file_proc = scheme_make_prim_w_arity(DefaultAppFileProc,
 						 "default-application-file-handler",
 						 1, 1);

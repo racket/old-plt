@@ -36,6 +36,8 @@ extern "C" {
     {
       if (!grab_stack_pos) {
 	Widget *naya;
+	if (!grab_stack)
+	  wxREGGLOB(grab_stack);
 	grab_stack_size += WSTACK_INC;
 	naya = (Widget *)scheme_malloc(grab_stack_size * sizeof(Widget));
 	memcpy(naya + WSTACK_INC, grab_stack, (grab_stack_size - WSTACK_INC) * sizeof(Widget));

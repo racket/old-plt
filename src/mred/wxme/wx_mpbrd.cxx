@@ -90,12 +90,15 @@ extern void wxMediaSetFileCreatorType(char *file, Bool is_binary);
 
 wxMediaPasteboard::wxMediaPasteboard()
 {
+  wxList *sll;
+
   sizeCacheInvalid = TRUE;
   updateNonemtpy = FALSE;
   writeLocked = 0;
 
   snips = lastSnip = NULL;
-  snipLocationList = new wxList(wxKEY_INTEGER);
+  sll = new wxList(wxKEY_INTEGER);
+  snipLocationList = sll;
   snipLocationList->DeleteContents(TRUE);
 
   sequence = 0;
@@ -122,7 +125,11 @@ wxMediaPasteboard::wxMediaPasteboard()
     rbPen = wxThePenList->FindOrCreatePen("BLACK", 1, wxXOR_DOT);
   }
 
-  snipAdmin = new wxStandardSnipAdmin(this);
+  {
+    wxStandardSnipAdmin *ssa;
+    ssa = new wxStandardSnipAdmin(this);
+    snipAdmin = ssa;
+  }
 
   needResize = FALSE;
 

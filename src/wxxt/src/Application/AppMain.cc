@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: AppMain.cc,v 1.12 1999/11/21 00:08:47 mflatt Exp $
+ * $Id: AppMain.cc,v 1.13 1999/11/24 21:20:19 mflatt Exp $
  *
  * Purpose: wxWindows application and main loop
  *
@@ -192,70 +192,116 @@ void wxCommonInit(void)
     wxAPP_SCREEN    = XtScreen(wxAPP_TOPLEVEL);
     wxAPP_ROOT	    = RootWindow(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY));
 
+    wxREGGLOB(wxAPP_COLOURMAP);
     wxAPP_COLOURMAP = DEBUG_NEW wxColourMap(FALSE); // default colourmap
 
+    wxREGGLOB(wxBuffer);
     wxBuffer = new char[BUFSIZ+512];
 
+    wxREGGLOB(wxResourceCache);
     wxResourceCache = new wxList(wxKEY_STRING);
 
+    wxREGGLOB(wxAllTypes);
     wxAllTypes = new wxTypeTree;
 
     wxInitializeFontNameDirectory();
 
     wxInitializePrintSetupData();
+    wxREGGLOB(wxThePrintPaperDatabase);
     wxThePrintPaperDatabase = DEBUG_NEW wxPrintPaperDatabase;
     wxThePrintPaperDatabase->CreateDatabase();
 
+    wxREGGLOB(wxTheColourDatabase);
     wxTheColourDatabase = DEBUG_NEW wxColourDatabase();
+    wxREGGLOB(wxThePenList);
     wxThePenList = DEBUG_NEW wxPenList();
+    wxREGGLOB(wxTheBrushList);
     wxTheBrushList = DEBUG_NEW wxBrushList();
+    wxREGGLOB(wxTheFontList);
     wxTheFontList = DEBUG_NEW wxFontList();
 
+    wxREGGLOB(wxNORMAL_FONT);
     wxNORMAL_FONT = DEBUG_NEW wxFont (12, wxMODERN, wxNORMAL, wxNORMAL);
+    wxREGGLOB(wxSMALL_FONT);
     wxSMALL_FONT = DEBUG_NEW wxFont (10, wxSWISS, wxNORMAL, wxNORMAL);
+    wxREGGLOB(wxITALIC_FONT);
     wxITALIC_FONT = DEBUG_NEW wxFont (12, wxROMAN, wxITALIC, wxNORMAL);
+    wxREGGLOB(wxSWISS_FONT);
     wxSWISS_FONT = DEBUG_NEW wxFont (12, wxSWISS, wxNORMAL, wxNORMAL);
+    wxREGGLOB(wxSYSTEM_FONT);
     wxSYSTEM_FONT = DEBUG_NEW wxFont (12, wxSYSTEM, wxNORMAL, wxNORMAL);
 
+    wxREGGLOB(wxRED_PEN);
     wxRED_PEN = DEBUG_NEW wxPen ("RED", 0, wxSOLID);
+    wxREGGLOB(wxCYAN_PEN);
     wxCYAN_PEN = DEBUG_NEW wxPen ("CYAN", 0, wxSOLID);
+    wxREGGLOB(wxGREEN_PEN);
     wxGREEN_PEN = DEBUG_NEW wxPen ("GREEN", 0, wxSOLID);
+    wxREGGLOB(wxBLACK_PEN);
     wxBLACK_PEN = DEBUG_NEW wxPen ("BLACK", 0, wxSOLID);
+    wxREGGLOB(wxWHITE_PEN);
     wxWHITE_PEN = DEBUG_NEW wxPen ("WHITE", 0, wxSOLID);
+    wxREGGLOB(wxTRANSPARENT_PEN);
     wxTRANSPARENT_PEN = DEBUG_NEW wxPen ("BLACK", 0, wxTRANSPARENT);
+    wxREGGLOB(wxBLACK_DASHED_PEN);
     wxBLACK_DASHED_PEN = DEBUG_NEW wxPen ("BLACK", 0, wxSHORT_DASH);
+    wxREGGLOB(wxGREY_PEN);
     wxGREY_PEN = DEBUG_NEW wxPen ("GRAY", 0, wxSOLID);
+    wxREGGLOB(wxMEDIUM_GREY_PEN);
     wxMEDIUM_GREY_PEN = DEBUG_NEW wxPen ("MEDIUM GRAY", 0, wxSOLID);
+    wxREGGLOB(wxLIGHT_GREY_PEN);
     wxLIGHT_GREY_PEN = DEBUG_NEW wxPen ("LIGHT GRAY", 0, wxSOLID);
 
     wxBLACK_PEN->Lock(1);
     wxWHITE_PEN->Lock(1);
 
+    wxREGGLOB(wxBLUE_BRUSH);
     wxBLUE_BRUSH = DEBUG_NEW wxBrush ("BLUE", wxSOLID);
+    wxREGGLOB(wxGREEN_BRUSH);
     wxGREEN_BRUSH = DEBUG_NEW wxBrush ("GREEN", wxSOLID);
+    wxREGGLOB(wxWHITE_BRUSH);
     wxWHITE_BRUSH = DEBUG_NEW wxBrush ("WHITE", wxSOLID);
+    wxREGGLOB(wxBLACK_BRUSH);
     wxBLACK_BRUSH = DEBUG_NEW wxBrush ("BLACK", wxSOLID);
+    wxREGGLOB(wxTRANSPARENT_BRUSH);
     wxTRANSPARENT_BRUSH = DEBUG_NEW wxBrush ("BLACK", wxTRANSPARENT);
+    wxREGGLOB(wxCYAN_BRUSH);
     wxCYAN_BRUSH = DEBUG_NEW wxBrush ("CYAN", wxSOLID);
+    wxREGGLOB(wxRED_BRUSH);
     wxRED_BRUSH = DEBUG_NEW wxBrush ("RED", wxSOLID);
+    wxREGGLOB(wxGREY_BRUSH);
     wxGREY_BRUSH = DEBUG_NEW wxBrush ("GRAY", wxSOLID);
+    wxREGGLOB(wxMEDIUM_GREY_BRUSH);
     wxMEDIUM_GREY_BRUSH = DEBUG_NEW wxBrush ("MEDIUM GRAY", wxSOLID);
+    wxREGGLOB(wxLIGHT_GREY_BRUSH);
     wxLIGHT_GREY_BRUSH = DEBUG_NEW wxBrush ("LIGHT GRAY", wxSOLID);
 
     wxBLACK_BRUSH->Lock(1);
     wxWHITE_BRUSH->Lock(1);
 
+    wxREGGLOB(wxBLACK);
     wxBLACK = DEBUG_NEW wxColour ("BLACK");
+    wxREGGLOB(wxWHITE);
     wxWHITE = DEBUG_NEW wxColour ("WHITE");
+    wxREGGLOB(wxGREY);
     wxGREY = DEBUG_NEW wxColour ("GRAY");
+    wxREGGLOB(wxRED);
     wxRED = DEBUG_NEW wxColour ("RED");
+    wxREGGLOB(wxBLUE);
     wxBLUE = DEBUG_NEW wxColour ("BLUE");
+    wxREGGLOB(wxGREEN);
     wxGREEN = DEBUG_NEW wxColour ("GREEN");
+    wxREGGLOB(wxCYAN);
     wxCYAN = DEBUG_NEW wxColour ("CYAN");
+    wxREGGLOB(wxLIGHT_GREY);
     wxLIGHT_GREY = DEBUG_NEW wxColour ("LIGHT GRAY");
 
+    wxREGGLOB(wxSTANDARD_CURSOR);
     wxSTANDARD_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_ARROW);
+    wxREGGLOB(wxHOURGLASS_CURSOR);
     wxHOURGLASS_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_WAIT);
+    wxREGGLOB(wxCROSS_CURSOR);
     wxCROSS_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_CROSS);
+    wxREGGLOB(wxIBEAM_CURSOR);
     wxIBEAM_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_IBEAM);
 }

@@ -69,6 +69,7 @@ void wxInitMedia(void)
   wxInitClipboard();
   wxInitStyles();
 
+  wxREGGLOB(wxTheMediaWordbreakMap);
   wxTheMediaWordbreakMap = new wxMediaWordbreakMap;
 
 #if USE_OLD_TYPE_SYSTEM
@@ -146,7 +147,11 @@ wxMediaEdit::wxMediaEdit(float spacing, float *tabstops, int numtabs)
   delayedscroll = -1;
   delayedscrollbox = FALSE;
 
-  snipAdmin = new wxStandardSnipAdmin(this);
+  {
+    wxStandardSnipAdmin *ssa;
+    ssa = new wxStandardSnipAdmin(this);
+    snipAdmin = ssa;
+  }
 
   caretStyle = NULL;
 

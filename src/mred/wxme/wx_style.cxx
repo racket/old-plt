@@ -49,8 +49,6 @@ extern void wxmeError(const char *e);
 
 wxStyleList *wxTheStyleList;
 
-static wxColour *whiteColour, *blackColour;
-
 #ifndef wx_x
 # define wxAPP_CLASS wxTheApp->wx_class
 #endif
@@ -60,11 +58,9 @@ void wxInitStyles(void)
   if (wxTheStyleList)
     return;
 
-  whiteColour = wxTheColourDatabase->FindColour("WHITE");
-  blackColour = wxTheColourDatabase->FindColour("BLACK");
-
   wxGetResource(wxAPP_CLASS, "defaultFontSize", &defaultSize);
 
+  wxREGGLOB(wxTheStyleList);
   wxTheStyleList = new wxStyleList;
 }
 
@@ -908,8 +904,8 @@ void wxStyleList::Clear(void)
 
   basic->font = wxTheFontList->FindOrCreateFont(defaultSize, wxDEFAULT,
 						wxNORMAL, wxNORMAL);
-  basic->foreground.CopyFrom(blackColour);
-  basic->background.CopyFrom(whiteColour);
+  basic->foreground.CopyFrom(wxBLACK);
+  basic->background.CopyFrom(wxWHITE);
   basic->pen = wxThePenList->FindOrCreatePen(&basic->foreground, 0, wxSOLID);
   basic->brush = wxTheBrushList->FindOrCreateBrush(&basic->background, wxSOLID);
   basic->alignment = wxALIGN_BOTTOM;

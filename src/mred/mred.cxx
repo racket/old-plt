@@ -1169,6 +1169,7 @@ void wxDoEvents()
     oldm = (Scheme_Manager *)scheme_get_param(scheme_config, MZCONFIG_MANAGER);
     m = scheme_make_manager(oldm);    
     scheme_set_param(scheme_config, MZCONFIG_MANAGER, (Scheme_Object *)m);
+    wxREGGLOB(main_manager);
     main_manager = m;
 #endif
 
@@ -1653,6 +1654,7 @@ static void MrEdSchemeMessages(char *msg, ...)
 	return;
   opening = 1;
   if (!ioFrame) {
+    wxREGGLOB(ioFrame);
     if (mred_only_context)
       ioFrame = new IOFrame;
     else {
@@ -2083,6 +2085,7 @@ void DangerThreadTimer::Notify(void)
 {
   if (danger_signal_received) {
     if (!dangerFrame) {
+      wxREGGLOB(dangerFrame);
       dangerFrame = new wxDialogBox((wxWindow *)NULL, "Danger", FALSE, 0, 0, 300, 200);
 
       (void) new wxMessage(dangerFrame, "Warning: Paging space is low.");
@@ -2235,6 +2238,7 @@ static FinishArgs *xfa;
 
 static int do_main_loop(FinishArgs *fa)
 {
+  wxREGGLOB(xfa);
   xfa = fa;
 
   TheMrEdApp->MainLoop();
@@ -2244,6 +2248,7 @@ static int do_main_loop(FinishArgs *fa)
 
 static Scheme_Env *setup_basic_env()
 {
+  wxREGGLOB(global_env);
   global_env = scheme_basic_env();
 
   scheme_no_dumps("the graphics library is running");
@@ -2263,6 +2268,7 @@ static Scheme_Env *setup_basic_env()
 
   scheme_set_param(scheme_config, mred_eventspace_param, (Scheme_Object *)mred_main_context);
 
+  wxREGGLOB(def_dispatch);
   def_dispatch = scheme_make_prim_w_arity(def_event_dispatch_handler,
 					  "default-event-dispatch-handler",
 					  1, 1);
@@ -2294,6 +2300,9 @@ wxFrame *MrEdApp::OnInit(void)
   MrEdContext *mmc;
 
   initialized = 0;
+
+  wxREGGLOB(mred_frames);
+  wxREGGLOB(mred_timers);
 
 #ifdef LIBGPP_REGEX_HACK
   new Regex("a", 0);
@@ -2341,6 +2350,7 @@ wxFrame *MrEdApp::OnInit(void)
   mmc = new MrEdContext;
 #endif
   mmc->type = mred_eventspace_type;
+  wxREGGLOB(mred_main_context);
   mred_main_context = mmc;
   {
     wxChildList *cl;
@@ -2363,12 +2373,14 @@ wxFrame *MrEdApp::OnInit(void)
     mmc->finalized = fc;
   }
 
+  wxREGGLOB(mred_only_context);
   mred_only_context = mred_main_context;
 
   MrEdInitFirstContext(mred_main_context);
 
   /* Just in case wxWindows needs an initial frame: */
   /* (Windows needs it for the clipboard.) */
+  wxREGGLOB(mred_real_main_frame);
   mred_real_main_frame = new wxFrame(NULL, "MrEd");
 #ifdef wx_msw
   TheMrEdApp->wx_frame = mred_real_main_frame;
@@ -2543,7 +2555,11 @@ int actual_main(int argc, char **argv)
 {
   int r;
 
+  wxREGGLOB(orig_ps_setup);
+  wxREGGLOB(q_callbacks);
+
 #ifndef wx_msw
+  wxREGGLOB(TheMrEdApp);
   TheMrEdApp = new MrEdApp;
 #endif
 

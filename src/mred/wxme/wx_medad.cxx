@@ -195,11 +195,15 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 #endif
 			  1, 1, 0, 0, FALSE);
   if (fakeXScroll) {
-    hscroll = new SimpleScroll(this, wxHORIZONTAL, 0, 1, 0) ;
+    SimpleScroll *ss;
+    ss = new SimpleScroll(this, wxHORIZONTAL, 0, 1, 0) ;
+    hscroll = ss;
   } else
     hscroll = (SimpleScroll *)NULL;
   if (fakeYScroll) {
-    vscroll = new SimpleScroll(this, wxVERTICAL, 0, 1, 0);
+    SimpleScroll *ss;
+    ss = new SimpleScroll(this, wxVERTICAL, 0, 1, 0);
+    vscroll = ss;
   } else
     vscroll = (SimpleScroll *)NULL;
   scrollWidth = fakeXScroll ? 0 : 1;
@@ -221,7 +225,11 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
   }
 #endif
 
-  admin = new wxCanvasMediaAdmin(this);
+  {
+    wxCanvasMediaAdmin *cma;
+    cma = new wxCanvasMediaAdmin(this);
+    admin = cma;
+  }
   admin->standard = 1;
 
   customCursor = NULL;
@@ -337,7 +345,9 @@ void wxMediaCanvas::OnFocus(Bool focus)
 
   if (focuson) {
     if (!blinkTimer) {
-      blinkTimer = new wxBlinkTimer(this);
+      wxBlinkTimer *bt;
+      bt = new wxBlinkTimer(this);
+      blinkTimer = bt;
     }
     blinkTimer->Start(BLINK_DELAY, 1);
   }

@@ -419,7 +419,7 @@
                  ;       a)
                  ; b])))
                  ; so we have to deconstruct everything, and be *very* conservative.
-                 ; This *will* raise errors about '() not being a pair, but that's the
+                 ; This *will* raise errors about possible infinite lists, but that's the
                  ; best we can if we want to cover all the possible cases.
                  [(rest (case-lambda
                          [(rest (listof (union a b))) c])
@@ -440,11 +440,12 @@
                [((o p q r s -> t) (listof o) (listof p) (listof q) (listof r) (listof s)) 
                 (listof t)]
                ; use at your own risks: you'll loose arity checking and get spurious errors
-               ; about '() not being a pair (but the result of map will be properly conservative,
-               ; so if you ignore the errors for map itself anf make sure the arity of the
-               ; function given to map is correct, then you might be able to use the output
-               ; of map to detect errors down the flow - except that the output of map will be
-               ; a list => using car on it or stuff like that will trigger another error...)
+               ; about '() not being a pair or about infinite lists (but the result of map
+               ; will be properly conservative, so if you ignore the errors for map itself
+               ; and make sure the arity of the function given to map is correct, then you
+               ; might be able to use the output of map to detect errors down the flow - except
+               ; that the output of map will be a list => using car on it or stuff like that
+               ; will trigger another error...)
                ; The whole problem is that map needs a dependent type...
                ;[(rest
                ;  (case-lambda
@@ -467,19 +468,16 @@
                     [((o p q r s -> top) (listof o) (listof p) (listof q) (listof r) (listof s)) 
                      void]
                     ; use at your own risks: you'll loose arity checking and get spurious errors
-                    ; about '() not being a pair (but the result of map will be properly conservative,
-                    ; so if you ignore the errors for map itself anf make sure the arity of the
-                    ; function given to map is correct, then you might be able to use the output
-                    ; of map to detect errors down the flow - except that the output of map will be
-                    ; a list => using car on it or stuff like that will trigger another error...)
-                    ; The whole problem is that map needs a dependent type...
+                    ; about '() not being a pair or about infinite lists (but the result of for-each
+                    ; will be properly conservative)
+                    ; The whole problem is that for-each needs a dependent type...
                     ;[(rest
                     ;  (case-lambda
                     ;   [(rest o p q r (listof s)) top])
                     ;  (listof o) (listof p) (listof q) (listof r) (listof (listof s)))
                     ; void]
                     )))
-
+ 
  ; (delay expr) => (#%app make-a-promise (lambda () expr))
  ; if we have the arrow type in the argument of make-a-promise, then the application
  ; will happen immediately, which we don't want. So instead
@@ -491,11 +489,11 @@
                          (a -> (promise a))))
  (force (forall ([a top])
                 ((promise (-> a)) -> a)))
-
+ 
  (call-with-current-continuation (forall ([a top]
                                           [b top])
                                          (((a -> bottom) -> b) -> (union a b))))
-
+ 
  ; correct, but currently triggers a bug.
  ;(call-with-current-continuation (forall ([a top]
  ;                                         [b top])
@@ -506,7 +504,7 @@
  ;                                          -> b)
  ;                                         ; result of call/cc
  ;                                         -> (union (values a) b))))
-
+ 
  ; multiple values are simulated internally as a list...
  (values (forall ([a top])
                  (case-lambda
@@ -522,28 +520,127 @@
                                [(rest a) b]))
                              b])))
  
-; this limited values works fine, but then call-with-values doesnt', because all the clauses
-; in call-with-values would have only two arguments, making discrimination between the different
-; cases impossible.
-; (values (forall ([a top]
-;                  [b top][c top]
-;                  [d top][e top][f top]
-;                  [g top][h top][i top][j top]
-;                  [k top][l top][m top][n top][o top])
-;                 (case-lambda
-;                  [() (values)]
-;                  [(a) (values a)]
-;                  [(b c) (values b c)]
-;                  [(d e f) (values d e f)]
-;                  [(g h i j) (values g h i j)]
-;                  [(k l m n o) (values k l m n o)])))
-;
-; (call-with-values (forall ([a top][b top]
-;                            [c top][d top][e top])
-;                           (case-lambda
-;                            [((case-lambda [() (values a)]) (case-lambda [(a) b])) b]
-;                            [((case-lambda [() (values c d)]) (case-lambda [(c d) e])) e]
-;                            )))
+ ; this limited values works fine, but then call-with-values doesnt', because all the clauses
+ ; in call-with-values would have only two arguments, making discrimination between the different
+ ; cases impossible.
+ ;(values (forall ([a top]
+ ;                 [b top][c top]
+ ;                 [d top][e top][f top]
+ ;                 [g top][h top][i top][j top]
+ ;                 [k top][l top][m top][n top][o top])
+ ;                (case-lambda
+ ;                 [() (values)]
+ ;                 [(a) (values a)]
+ ;                 [(b c) (values b c)]
+ ;                 [(d e f) (values d e f)]
+ ;                 [(g h i j) (values g h i j)]
+ ;                 [(k l m n o) (values k l m n o)])))
+ ;
+ ;(call-with-values (forall ([a top][b top]
+ ;                           [c top][d top][e top])
+ ;                          (case-lambda
+ ;                           [((case-lambda [() (values a)]) (case-lambda [(a) b])) b]
+ ;                           [((case-lambda [() (values c d)]) (case-lambda [(c d) e])) e]
+ ;                           )))
+ 
+ (dynamic-wind (forall ([a top])
+                       ((-> top) (-> a) (-> top) -> a)))
+
+ 
+ ; 6.5 Eval
+
+ ; letter is a subtype of char, all the number types are subtypes of number
+ ; see section 7.1.2 of R5RS for the complete definition of datum
+ (eval ((rec-type ([datum (union simple-datum compound-datum)]
+                   [simple-datum (union boolean number char string symbol)]
+                   [compound-datum (union list-datum vector-datum)]
+                   [list-datum (union ()
+                                      (cons datum list-datum)
+                                      (cons datum datum))]
+                   [vector-datum (vector datum)])
+                  datum) env -> top)) 
+ 
+ (scheme-report-environment (5 -> env))
+ (null-environment (5 -> env))
+ 
+ (interaction-environment (-> env))
+ 
+ 
+ ; 6.6.1 Ports
+ 
+ ; R5RS doesn't always explicitely differentiate between input and output ports...
+ 
+ (call-with-input-file (forall ([a top])
+                               (string (input-port -> a) -> a)))
+ (call-with-output-file (forall ([a top])
+                                (string (output-port -> a) -> a)))
+ 
+ (input-port? (top -> boolean))
+ (output-port? (top -> boolean))
+ 
+ (current-input-port (-> input-port))
+ (current-output-port (-> output-port))
+ 
+ (with-input-from-file (forall ([a top])
+                               (string (-> a) -> a)))
+ (with-output-to-file (forall ([a top])
+                              (string (-> a) -> a)))
+ 
+ (open-input-file (string -> input-port))
+ 
+ (open-output-file (string -> output-port))
+ 
+ (close-input-port (input-port -> void))
+ (close-output-port (output-port -> void))
+ 
+ 
+ ; 6.6.2 Input
+ 
+ ; eof is included in top
+ (read (case-lambda
+        [() top]
+        [(input-port) top]))
+        
+ (read-char (case-lambda
+             [() char]
+             [(input-port) char]))
+
+ (peek-char (case-lambda
+             [() char]
+             [(input-port) char]))
+ 
+ (eof-object? (top -> boolean))
+ 
+ (char-ready? (case-lambda
+               [() boolean]
+               [(input-port) boolean]))
+ 
+ 
+ ; 6.6.3 Output
+ 
+ (write (case-lambda
+         [(top) void]
+         [(top output-port) void]))
+ 
+ (display (case-lambda
+           [(top) void]
+           [(top output-port) void]))
+ 
+ (newline (case-lambda
+           [() void]
+           [(output-port) void]))
+ 
+ (write-char (case-lambda
+           [(char) void]
+           [(char output-port) void]))
+ 
+ 
+ ; 6.6.4 System interface
+ 
+ (load (string -> top))
+ 
+ (transcript-on (string -> void))
+ (transcript-off (-> void))
  
  
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; not R5RS, just for testing

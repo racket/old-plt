@@ -45,7 +45,7 @@
 ;  
 ;  (define (debug2 n . args)
 ;    (printf "debug: ~a args: ~a~n" n args)
-;    (apply pp-type args))
+;    (apply sub1 args))
  
  ; XXX perf analysis
  (define ast-nodes 0)
@@ -521,7 +521,7 @@
                                        (cons (list
                                               (list term)
                                               'red
-                                              (format "procedure application: arity mismatch, given: ~a; ~a required arguments was given"
+                                              (format "procedure application: arity mismatch, given: ~a; ~a required arguments were given"
                                                       (if (label-prim? inflowing-case-lambda-label)
                                                         ; this won't work if we use a primitive
                                                         ; in a higer-order way, but they can
@@ -1431,6 +1431,108 @@
         last-body-exp-label
         (create-simple-edge let-values-label))
        let-values-label)]
+    [(letrec-values ((vars exp) ...) body-exps ...)
+     (let* ([varss-stx (map syntax-e (syntax-e (syntax (vars ...))))]
+            [varss-labelss (map (lambda (single-clause-vars)
+                                  (map create-simple-label single-clause-vars))
+                                varss-stx)]
+            [gamma-extended (list:foldl
+                             (lambda (vars-stx vars-labels current-gamma)
+                               (extend-env current-gamma vars-stx vars-labels))
+                             gamma
+                             varss-stx
+                             varss-labelss)]
+            [exps-labels (map (lambda (exp)
+                                (create-label-from-term exp gamma-extended enclosing-lambda-label))
+                              (syntax-e (syntax (exp ...))))]
+            [last-body-exp-label
+             (list:foldl
+              (lambda (exp _)
+                (create-label-from-term exp gamma-extended enclosing-lambda-label))
+              *dummy*
+              (syntax-e (syntax (body-exps ...))))]
+            [letrec-values-label (create-simple-label term)])
+       (for-each
+        (lambda (vars-labels exp-label)
+          (let ([vars-length (length vars-labels)])
+            (if (= vars-length 1)
+              ; we have a clause like [(x) (values (values (values a)))] so we
+              ; can directly start the recursion.
+              (let ([var-label (car vars-labels)])
+                (add-edge-and-propagate-set-through-edge
+                 exp-label
+                 (extend-edge-for-values (create-simple-edge var-label))))
+              ; we have a clause like [(x y) (values (values (values a)) (values (values b)))]
+              ; so we first have to manually unpack the top-most "values", then start a
+              ; recursion for each of the defined variables. So in effect we end up doing
+              ; something equivalent to analysing the clauses
+              ; [(x) (values (values a))]
+              ; [(y) (values (values b))]
+              ; in parallel.
+              (let ([distributive-unpacking-edge
+                     (let ([edge-fake-destination (gensym)])
+                       (case-lambda
+                        [(out-label inflowing-label)
+                         ; inflowing-label (the label corresponding to the top "values") doesn't
+                         ; flow anywhere, it's just taken apart and its elements are connected to
+                         ; the different variables. I.e. it's a sink for multiple values. So we
+                         ; have no need for out-label here.
+                         (if (label-values? inflowing-label)
+                           (let ([label-list (hash-table-map (label-set (label-values-label
+                                                                         inflowing-label))
+                                                             (lambda (label in/out-edges)
+                                                               label))])
+                             (if (= (length label-list) 1)
+                               (let ([values-label (car label-list)])
+                                 ; we do not expect an infinite list here
+                                 (if (= (label-list-length values-label) vars-length)
+                                   ; we have something like
+                                   ; [(x y) (... (values a b) ...)], so we add a
+                                   ; new direct edge from a to x and b to y. Of course these new
+                                   ; edges have to be themselves recursive unpacking edges, since
+                                   ; some (values c) could later flow into either a or b.
+                                   (label-ormap-strict
+                                    (lambda (new-origin-label var-label)
+                                      (add-edge-and-propagate-set-through-edge
+                                       new-origin-label
+                                       (extend-edge-for-values (create-simple-edge var-label))))
+                                    values-label vars-labels)
+                                   ; [(x y) (... (values a b c) ...)]
+                                   (begin
+                                     (set! *errors*
+                                           (cons
+                                            (list (list (label-term inflowing-label))
+                                                  'red
+                                                  (format "letrec-values: context expected ~a value, received ~a values"
+                                                          vars-length (label-list-length values-label)))
+                                            *errors*))
+                                     #f)))
+                               (error 'letrec-values "values didn't contain list: ~a"
+                                      (map (lambda (label)
+                                             (pp-type (get-type label)))
+                                           label-list))))
+                           ; [(x y) (... 1 ...))]
+                           (begin
+                             (set! *errors*
+                                   (cons
+                                    (list
+                                     (list term)
+                                     'red
+                                     (format "letrec-values: context expected ~a values, received 1 non-multiple-values value"
+                                             vars-length))
+                                    *errors*))
+                             #f))]
+                        ; multiple values sink => unique, fake destination
+                        [() edge-fake-destination]))])
+                (add-edge-and-propagate-set-through-edge
+                 exp-label
+                 distributive-unpacking-edge)))))
+        varss-labelss
+        exps-labels)
+       (add-edge-and-propagate-set-through-edge
+        last-body-exp-label
+        (create-simple-edge letrec-values-label))
+       letrec-values-label)]
     [(if test then else)
      (let* ([test-label (create-label-from-term (syntax test) gamma enclosing-lambda-label)]
             [then-label (create-label-from-term (syntax then) gamma enclosing-lambda-label)]
@@ -1497,17 +1599,28 @@
                               (list 'if (syntax test) (syntax then) '(#%app (#%top . void)))
                               term term)
                              gamma enclosing-lambda-label)]
-    [(begin exps ...)
+    [(begin exp exps ...)
      (let ([begin-label (create-simple-label term)]
            [last-body-exp-label (list:foldl
                                  (lambda (exp _)
                                    (create-label-from-term exp gamma enclosing-lambda-label))
                                  *dummy*
-                                 (syntax-e (syntax (exps ...))))])
+                                 (cons (syntax exp) (syntax-e (syntax (exps ...)))))])
        (add-edge-and-propagate-set-through-edge
         last-body-exp-label
         (create-simple-edge begin-label))
        begin-label)]
+    [(begin0 exp exps ...)
+     (let ([begin0-label (create-simple-label term)]
+           [first-body-exp-label
+            (create-label-from-term (syntax exp) gamma enclosing-lambda-label)])
+       (for-each (lambda (exp)
+                   (create-label-from-term exp gamma enclosing-lambda-label))
+                 (syntax-e (syntax (exps ...))))
+       (add-edge-and-propagate-set-through-edge
+        first-body-exp-label
+        (create-simple-edge begin0-label))
+       begin0-label)]
     [(#%top . identifier)
      (let* ([identifier (syntax identifier)]
             [identifier-name (syntax-e identifier)]
@@ -1546,6 +1659,69 @@
                                            identifier-name))
                              *errors*)))))))
        bound-label)]
+    [(set! foo ...)
+     (set! *errors*
+           (cons (list (list term)
+                       'red
+                       (format "set! not yet implemented"))
+                 *errors*))
+     (create-simple-label term)]
+    [(quote-syntax foo ...)
+     (set! *errors*
+           (cons (list (list term)
+                       'red
+                       (format "quote-syntax not yet implemented"))
+                 *errors*))
+     (create-simple-label term)]
+    [(with-continuation-mark foo ...)
+     (set! *errors*
+           (cons (list (list term)
+                       'red
+                       (format "with-continuation-mark not yet implemented"))
+                 *errors*))
+     (create-simple-label term)]
+    [(define-syntaxes foo ...)
+     (set! *errors*
+           (cons (list (list term)
+                       'red
+                       (format "define-syntaxes not yet implemented"))
+                 *errors*))
+     (create-simple-label term)]
+    [(module foo ...)
+     (set! *errors*
+           (cons (list (list term)
+                       'red
+                       (format "module not yet implemented"))
+                 *errors*))
+     (create-simple-label term)]
+    [(require foo ...)
+     (set! *errors*
+           (cons (list (list term)
+                       'red
+                       (format "require not yet implemented"))
+                 *errors*))
+     (create-simple-label term)]
+    [(require-for-syntax foo ...)
+     (set! *errors*
+           (cons (list (list term)
+                       'red
+                       (format "require-for-syntax not yet implemented"))
+                 *errors*))
+     (create-simple-label term)]
+    [(provide foo ...)
+     (set! *errors*
+           (cons (list (list term)
+                       'red
+                       (format "provide not yet implemented"))
+                 *errors*))
+     (create-simple-label term)]
+    [(#%plain-module-begin foo ...)
+     (set! *errors*
+           (cons (list (list term)
+                       'red
+                       (format "#%plain-module-begin not yet implemented"))
+                 *errors*))
+     (create-simple-label term)]
     [var
      ; we cannot directly return the binding label, because, even though it makes for a
      ; simpler graph and simpler types, it screws up the arrows
@@ -1596,12 +1772,13 @@
  
  ; XXX
  (define *basic-types* '(top
-                         void boolean symbol char letter string
+                         void boolean symbol char letter string env
                          number exact-number inexact-number
                          complex exact-complex inexact-complex
                          real exact-real inexact-real
                          rational exact-rational inexact-rational
                          integer exact-integer inexact-integer
+                         port input-port output-port eof-object
                          bottom
                          ))
  (define *type-constructors* '(forall
@@ -2653,6 +2830,7 @@
                         [terms-pos (map (lambda (term)
                                           ; XXX primitives used in quasiquotes don't 
                                           ; have a position ?
+                                          ;(printf "term: ~a~n" term)
                                           (sub1 (syntax-position term)))
                                         terms)])
                    ; XXX create GUI for this

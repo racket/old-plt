@@ -124,11 +124,11 @@
 		[hp (getenv "HOMEPATH")])
 	    (when (and hd hp)
 	      (current-directory (build-path hd hp)))))
-	(when (eq? mred:debug:on? 'compile-and-exit)
-	  (wx:exit))
 	(user-break-poll-handler wx:check-for-break)
 	(mred:change-splash-message "Command Line...")
 	(for-each (lambda (x) (apply (car x) (cdr x))) (reverse todo))
+	(when (eq? mred:debug:on? 'compile-and-exit)
+	  (wx:exit))
 	(mred:invoke)
 	(mred:no-more-splash-messages)
 	(when mred:non-unit-startup?

@@ -34,7 +34,7 @@
     (let* ([user-setup? #t]
 	   [output-spidey-file #f]
 	   [app-determined? #f]
-	   [app-name "MrEd"]
+	   [app-name "MrEd-nu"]
 	   [app-collection "system"]
 	   [app-unit-library "nuapp.ss"]
 	   [app-sig-library "nusig.ss"]

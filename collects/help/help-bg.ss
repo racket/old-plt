@@ -24,7 +24,7 @@
 		(raise 'not-exact-integer))
 	(set! port port-val)))]))
 
-  (define hd-cookie (external-start-help-server port remote-connections?))
+  (define hd-cookie (external-start-help-server port remote-connections? #f))
   (define help-desk-port (hd-cookie->port hd-cookie))
 
   ; allow server startup time

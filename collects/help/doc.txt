@@ -63,12 +63,12 @@ _Server functions_
 ------------------
 
 > start-help-server : [port #f]
-                      [external? #f]
+                      [remote? #f]
                       [browser-frame-mixin (lambda (x) x)] 
                    -> hd-cookie
 
 Starts the Web server for Help Desk.  The optional argument
-`external' indicates whether external connections should be
+`remote?' indicates whether remote connections should be
 allowed; the default is #f.  The optional argument `port' is
 an exact integer or #f, the default.  If a port number is
 given, the server attempts to use that port; otherwise, the

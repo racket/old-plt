@@ -6,7 +6,7 @@
 
 
 (define-signature countdown^
-  (main-edit%))
+  (main-canvas% main-edit%))
 
 (define-signature before^
   (edit frame quit-semaphore))

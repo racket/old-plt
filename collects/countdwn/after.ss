@@ -1,5 +1,4 @@
 (unit/sig ()
   (import before^ mred^)
   (send frame show #t)
-  (printf "msec: ~a~n" (current-process-milliseconds))
   (yield quit-semaphore))

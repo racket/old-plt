@@ -50,6 +50,9 @@ Functions
 > xexpr->xml : Xexpr -> Content
        converts an Xexpression into the interesting part of an XML document
 
+> xexpr->string : Xexpression -> String
+       converts an Xexpression into a string representation
+
 Parameters
 ==========
 

@@ -19,7 +19,7 @@
              (lambda (launcher name)
                (make-mzscheme-launcher 
                 (list "-qge" 
-                      (string-append "(require (lib \"" launcher "\"slatex\"))"))
+                      (string-append "(require (lib \"" launcher "\" \"slatex\"))"))
                 (mzscheme-program-launcher-path name)))])
         (meta-make-mzscheme-launcher "slatex-launcher.scm" "SLaTeX")
         (meta-make-mzscheme-launcher "pdf-slatex-launcher.scm" "pdf-SLaTeX"))))

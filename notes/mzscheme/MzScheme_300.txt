@@ -99,6 +99,12 @@ in several significant ways:
                                        read-bytes-avail!-evt
                                        write-bytes-avail-evt
 
+ * The new `require-for-template' core form serves as a kind of dual
+   to `require-for-syntax', and the new `define-for-syntax' and
+   `begin-for-syntax' forms allow macro helper functions to be placed
+   closer to macro definitions. See the MzScheme manual for more
+   information.
+
 ======================================================================
  Unicode
 ======================================================================

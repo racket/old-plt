@@ -2,6 +2,17 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.11
+New forms:
+  require-for-template [core form]
+  define-values-for-syntax [core form]
+  define-for-syntax
+  begin-for-syntax
+New procedures:
+  local-transformer-expand
+  syntax-transforming?
+module-compiled-imports now returns 3 values
+
 Version 299.10
 Changed the class system; see MzScheme_300.txt
 

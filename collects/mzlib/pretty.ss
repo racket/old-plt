@@ -831,7 +831,9 @@
 	      pp-cond)
 	     ((case) 
 	      pp-case)
-	     ((and or import export require require-for-syntax provide link
+	     ((and or import export 
+		   require require-for-syntax require-for-template 
+		   provide link
 		   public private override rename inherit field init)
 	      pp-and)
 	     ((let letrec let*

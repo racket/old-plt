@@ -1,5 +1,4 @@
 (module make-time-stamp-tool mzscheme
-
   (define (month->sym n)
     (case n
       [(1) 'jan]
@@ -22,21 +21,11 @@
                              (date-year current-date)))
   
 
-  (call-with-output-file (build-path (collection-path "cvs-time-stamp") "time-stamp.ss")
+  (call-with-output-file (build-path (collection-path "cvs-time-stamp") "stamp.ss")
     (lambda (port)
       (write
-       `(module time-stamp mzscheme
-          (require (lib "tool.ss" "drscheme")
-                   (lib "unitsig.ss")
-                   (lib "framework.ss" "framework"))
-          
-          (provide tool@)
-          
-          (define tool@
-            (unit/sig drscheme:tool-exports^
-              (import drscheme:tool^)
-              (define (phase1) (void))
-              (define (phase2) (void))
-              (version:add-spec '-cvs ,date-stamp))))
+       `(module stamp mzscheme
+          (provide stamp)
+          (define stamp ,date-stamp))
        port))
     'text 'truncate))

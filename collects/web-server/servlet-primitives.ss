@@ -1,7 +1,6 @@
 (module servlet-primitives mzscheme
   (require "channel.ss"
            "configuration.ss"
-           "parse-table.ss"
            "configuration-structures.ss"
            "web-server.ss"
            "servlet-sig.ss"
@@ -11,13 +10,25 @@
            ; more here - use contracts when they support suitable error messages
            ;(lib "contracts.ss" "framework")
            (lib "error.ss" "htdp")
+           (lib "unitsig.ss")
            )
-  (provide send/suspend
-           send/finish
-           initial-request)
+  (provide servlet@)
+  
+  ; the unit doesn't contain much since it's better to start as few servers as possible
+  (define servlet@
+    (unit/sig servlet^
+      (import)
+  
+      (define send/suspend the-send/suspend)
+      (define send/finish the-send/finish)
+      (define initial-request the-initial-request)
+      (define adjust-timeout! the-adjust-timeout!)))
+  
+  ; : num -> void
+  (define (the-adjust-timeout! n) (void))
   
   ; send/finish : response -> doesn't
-  (define (send/finish page)
+  (define (the-send/finish page)
     (check-arg 'send/finish (valid-response? page) "response" "1st" page)
     (output-page page)
     (kill-thread (current-thread))
@@ -68,8 +79,8 @@
   (define uri (string->url (format "http://127.0.0.1:~a/servlets/" port)))
   (define invoke-id (string->symbol (symbol->string (gensym "id"))))
   
-  ; send/suspend : (str -> page) -> (values Method Url Bindings Bindings)
-  (define send/suspend
+  ; : (str -> page) -> (values Method Url Bindings Bindings)
+  (define the-send/suspend
     (let ((s/s (gen-send/suspend uri invoke-id instances output-page void update-channel!)))
       (lambda (k->page)
         (s/s (lambda (k-url)
@@ -80,7 +91,7 @@
                           page))
                  page))))))
   
-  (define initial-request
+  (define the-initial-request
     (make-request 'post uri null null "127.0.0.1" "127.0.0.1"))
   
   (add-new-instance invoke-id instances)

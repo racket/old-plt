@@ -518,7 +518,7 @@ current_loaded_library_table(int argc, Scheme_Object *argv[])
   return (Scheme_Object *)env->loaded_libraries;
 }
 
-static Scheme_Env *make_env (void)
+static Scheme_Env *make_env(void)
 {
   Scheme_Hash_Table *globals, *ll;
   Scheme_Env *env;
@@ -773,13 +773,15 @@ static void hash_percent(const char *name, Scheme_Object *obj,
 
 void scheme_copy_from_original_env(Scheme_Env *env)
 {
-  Scheme_Hash_Table *ht;
+  Scheme_Hash_Table *ht, *ht2;
   Scheme_Bucket **bs;
   Scheme_Object *call_ec;
   int i;
   
   ht = get_globals(initial_env);
   bs = ht->buckets;
+
+  ht2 = get_globals(env);
 
   if (scheme_escape_continuations_only)
     call_ec = scheme_lookup_global(scheme_intern_symbol("call/ec"), initial_env);
@@ -793,6 +795,7 @@ void scheme_copy_from_original_env(Scheme_Env *env)
       Scheme_Object *val = (Scheme_Object *)b->val;
       int key = (((Scheme_Bucket_With_Const_Flag *)b)->flags) & GLOB_IS_KEYWORD;
       int builtin = (((Scheme_Bucket_With_Const_Flag *)b)->flags) & GLOB_IS_PRIMITIVE;
+      int refid = (((Scheme_Bucket_With_Const_Flag *)b)->flags) & GLOB_HAS_REF_ID;
       
       if (!scheme_hash_percent_syntax_only || key 
 	  || !(SCHEME_SYNTAXP(val)
@@ -807,7 +810,13 @@ void scheme_copy_from_original_env(Scheme_Env *env)
 	    val = call_ec;
 	}
 
+	if (refid)
+	  ht2->has_constants = 2;
+
 	scheme_add_global_symbol(name, val, env);
+
+	if (refid)
+	  ht2->has_constants = 1;
 	
 	if (key || builtin) {
 	  Scheme_Bucket *b2;
@@ -817,6 +826,10 @@ void scheme_copy_from_original_env(Scheme_Env *env)
 	    ((Scheme_Bucket_With_Const_Flag *)b2)->flags |= GLOB_IS_PRIMITIVE;
 	  if (key && !scheme_no_keywords)
 	    ((Scheme_Bucket_With_Const_Flag *)b2)->flags |= GLOB_IS_KEYWORD;
+	  if (refid) {
+	    ((Scheme_Bucket_With_Const_Flag *)b2)->flags |= GLOB_HAS_REF_ID;
+	    ((Scheme_Bucket_With_Ref_Id *)b2)->id = ((Scheme_Bucket_With_Ref_Id *)b)->id;
+	  }
 	}
       }
     }

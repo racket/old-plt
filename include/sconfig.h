@@ -671,7 +671,6 @@
 
 # define TIME_SYNTAX
 # define USE_MACTIME
-# define CLOCK_IS_USER_TIME
 # define DIR_FUNCTION
 # define TIME_TYPE_IS_UNSIGNED
 

@@ -384,6 +384,7 @@
 #define scheme_register_extension_global (scheme_extension_table->scheme_register_extension_global)
 #define scheme_get_seconds (scheme_extension_table->scheme_get_seconds)
 #define scheme_get_milliseconds (scheme_extension_table->scheme_get_milliseconds)
+#define scheme_get_inexact_milliseconds (scheme_extension_table->scheme_get_inexact_milliseconds)
 #define scheme_get_process_milliseconds (scheme_extension_table->scheme_get_process_milliseconds)
 #define scheme_banner (scheme_extension_table->scheme_banner)
 #define scheme_version (scheme_extension_table->scheme_version)

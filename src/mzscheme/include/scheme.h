@@ -256,6 +256,7 @@ typedef struct Scheme_Simple_Object
       struct { void *ptr; long pint; } ptr_long_val;
       struct { struct Scheme_Object *car, *cdr; } pair_val;
       struct { mzshort len; mzshort *vec; } svector_val;
+      struct { void *val; Scheme_Object *type; } cptr_val;
     } u;
 } Scheme_Simple_Object;
 
@@ -501,8 +502,8 @@ typedef void (*Scheme_Type_Printer)(Scheme_Object *v, int for_display, Scheme_Pr
 #define SCHEME_PINT_VAL(obj) (((Scheme_Simple_Object *)(obj))->u.ptr_int_val.pint)
 #define SCHEME_PLONG_VAL(obj) (((Scheme_Simple_Object *)(obj))->u.ptr_long_val.pint)
 
-#define SCHEME_CPTR_VAL(obj) SCHEME_PTR1_VAL(obj)
-#define SCHEME_CPTR_TYPE(obj) ((Scheme_Object *)SCHEME_PTR2_VAL(obj))
+#define SCHEME_CPTR_VAL(obj) (((Scheme_Simple_Object *)(obj))->u.cptr_val.val)
+#define SCHEME_CPTR_TYPE(obj) (((Scheme_Simple_Object *)(obj))->u.cptr_val.type)
 
 #define SCHEME_SET_IMMUTABLE(obj)  ((MZ_OPT_HASH_KEY((Scheme_Inclhash_Object *)(obj)) |= 0x1))
 #define SCHEME_SET_CHAR_STRING_IMMUTABLE(obj) SCHEME_SET_IMMUTABLE(obj)

@@ -132,8 +132,6 @@
 	 (current-directory mred:mred-startup-directory)
 
 	 (mred:invoke)
-	 (when (getenv "MREDCOMPILE")
-	   (wx:exit))
 	 (mred:build-spidey-unit)
 	 (when mred:non-unit-startup?
 	   (set! mred:console (mred:startup)))
@@ -154,8 +152,9 @@
 		    (current-directory mred:mred-startup-directory)
 		    (begin0(f x)
 			   (current-directory mred:system-source-directory))))]
-	       [do-f (wrap load/cd)]
+	       [do-f (wrap load)]
 	       [do-e (wrap eval-string)]
+	       [do-d (wrap load/cd)]
 	       [ep
 		(lambda (x)
 		  (if (relative-path? x)
@@ -183,38 +182,67 @@
 		      (begin (f (car rest) (cadr rest) (caddr rest))
 			     (apply mred:initialize (cdddr rest)))))])
 	  (cond
-	   [(string-ci=? "-w" arg)
-	    (use-next-arg
-	     (lambda (arg)
-	       (set! mred:output-spidey-file (ep arg))))]
-	   [(string-ci=? "-a" arg)
-	    (use-next-2args
-	     (lambda (apploc sigloc)
-	       (set! mred:app-location (ep apploc))
-	       (set! mred:app-sig-location (ep sigloc))))]
-	   [(string-ci=? "-f" arg)
-	    (use-next-arg
-	     (lambda (fn)
-	       (set! todo (cons (list do-f fn) todo))))]
-	   [(string-ci=? "-p" arg) (use-next-3args mred:open-splash)]
-	   [(string-ci=? "-b" arg) 
-	    (set! no-show-splash? #t)
-	    (apply mred:initialize (cdr args))]
-	   [(string-ci=? "-e" arg)
-	    (use-next-arg
-	     (lambda (s)
-	       (set! todo (cons (list do-e s) todo))))]
-	   [(string-ci=? "--" arg)
-	    (use-next-arg
-	     (lambda (fn)
-	       (set! files-to-open (cons (ep fn) files-to-open))))]
-	   [(or (string-ci=? "-q" arg) 
-		(string-ci=? "--no-init-file" arg))
-	    (set! mred:load-user-setup? #f)
-	    (apply mred:initialize rest)]
-	   [(string-ci=? "-nu" arg)
-	    (set! todo
-		  (cons (list (lambda () (mred:non-unit-startup))) todo))
-	    (apply mred:initialize rest)]
-	   [else (set! files-to-open (cons (ep arg) files-to-open))
-		 (apply mred:initialize rest)]))]))))
+	    [(or (string-ci=? "-h" arg) (string-ci=? "--help" arg))
+	     (printf "Supported switches: ~
+~n  -a <file> <file> : start up a unitized application, ~
+~n                     specifing the unit and signature files. ~
+~n  -b : cancel the splash screen. ~
+~n  -d <file> : load/cd's <file> after MzScheme starts. ~
+~n  -e <expr> : Evaluates <expr> after MzScheme starts. ~
+~n  -f <file> : Loads <file> after MzScheme starts. ~
+~n  -h, --help : Shows this information. ~
+~n  -nu : use a non-unititzed startup. ~
+~n  -p <image-file> <name> <int> : set the splash screen parameters. ~
+~n  -q, --no-init-file : Does n ot load \"~~/.mredrc\". ~
+~n  -w <file> : write out a analyzable entry point for an application. ~
+~n  -v, --version : print version information and exit
+~n  -- : No argument following this switch is used as a switch. ~
+~nAll remaining arguments are opened to be edited. ~
+~nExpressions/files are evaluated/loaded in the specified order. ~
+~nThe file \"~~/.mredrc\" is loaded before any expressions/files are ~
+~n evaluated/loaded, unless the -q or --no-init-file flag is used.~n")
+	     (exit)]
+	    [(or (string-ci=? "-v" arg) (string-ci=? "--version" arg))
+	     (printf "MrEd version ~a, Copyright (c) 1995-1997 PLT, Rice University~
+~n~a               (Matthew Flatt and Robert Bruce Findler)~n" 
+		     (version) (make-string (string-length (version)) #\space))
+	     (exit)]
+	    [(string-ci=? "-w" arg)
+	     (use-next-arg
+	      (lambda (arg)
+		(set! mred:output-spidey-file (ep arg))))]
+	    [(string-ci=? "-a" arg)
+	     (use-next-2args
+	      (lambda (apploc sigloc)
+		(set! mred:app-location (ep apploc))
+		(set! mred:app-sig-location (ep sigloc))))]
+	    [(string-ci=? "-d" arg)
+	     (use-next-arg
+	      (lambda (fn)
+		(set! todo (cons (list do-d fn) todo))))]
+	    [(string-ci=? "-f" arg)
+	     (use-next-arg
+	      (lambda (fn)
+		(set! todo (cons (list do-f fn) todo))))]
+	    [(string-ci=? "-p" arg) (use-next-3args mred:open-splash)]
+	    [(string-ci=? "-b" arg) 
+	     (set! no-show-splash? #t)
+	     (apply mred:initialize (cdr args))]
+	    [(string-ci=? "-e" arg)
+	     (use-next-arg
+	      (lambda (s)
+		(set! todo (cons (list do-e s) todo))))]
+	    [(string-ci=? "--" arg)
+	     (use-next-arg
+	      (lambda (fn)
+		(set! files-to-open (cons (ep fn) files-to-open))))]
+	    [(or (string-ci=? "-q" arg) 
+		 (string-ci=? "--no-init-file" arg))
+	     (set! mred:load-user-setup? #f)
+	     (apply mred:initialize rest)]
+	    [(string-ci=? "-nu" arg)
+	     (set! todo
+		   (cons (list (lambda () (mred:non-unit-startup))) todo))
+	     (apply mred:initialize rest)]
+	    [else (set! files-to-open (cons (ep arg) files-to-open))
+		  (apply mred:initialize rest)]))]))))

@@ -3794,7 +3794,7 @@ mzchar *scheme_utf16_to_ucs4(const unsigned short *text, int start, int end,
   }
 
   if (j + term_size >= bufsize)
-    buf = (mzchar *)scheme_malloc_atomic((j + term_size) * sizeof(wchar_t));
+    buf = (mzchar *)scheme_malloc_atomic((j + term_size) * sizeof(mzchar));
 
   for (i = start, j = 0; i < end; i++) {
     wc = text[i];

@@ -7,15 +7,20 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "myssink", "myssink\myssink.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmysterx", "libmysterx.vcproj", "{68D1B4E0-D9D3-45C3-9BCC-A5491F1F755A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dotnet", "dotnet\dotnet.vcproj", "{44BA9F7B-63F7-41F4-B8E9-8C69A08A677C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dotnetPS", "dotnet\dotnetPS.vcproj", "{5BF37E89-6891-42AD-9133-77B412C01724}"
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		ConfigName.0 = Debug
-		ConfigName.1 = Release
-		ConfigName.2 = Jrm
+		ConfigName.1 = Jrm
+		ConfigName.2 = Release
 	EndGlobalSection
 	GlobalSection(ProjectDependencies) = postSolution
 		{1B8F4E47-9F2D-45EA-9941-7672B28E8285}.0 = {71042DA0-8212-49BB-A3B2-9387D4D39FA6}
 		{68D1B4E0-D9D3-45C3-9BCC-A5491F1F755A}.0 = {71042DA0-8212-49BB-A3B2-9387D4D39FA6}
+		{5BF37E89-6891-42AD-9133-77B412C01724}.0 = {44BA9F7B-63F7-41F4-B8E9-8C69A08A677C}
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
 		{71042DA0-8212-49BB-A3B2-9387D4D39FA6}.Debug.ActiveCfg = Debug|Win32
@@ -42,6 +47,14 @@ Global
 		{68D1B4E0-D9D3-45C3-9BCC-A5491F1F755A}.Jrm.Build.0 = Jrm|Win32
 		{68D1B4E0-D9D3-45C3-9BCC-A5491F1F755A}.Release.ActiveCfg = Release|Win32
 		{68D1B4E0-D9D3-45C3-9BCC-A5491F1F755A}.Release.Build.0 = Release|Win32
+		{44BA9F7B-63F7-41F4-B8E9-8C69A08A677C}.Debug.ActiveCfg = Debug|Win32
+		{44BA9F7B-63F7-41F4-B8E9-8C69A08A677C}.Jrm.ActiveCfg = Jrm|Win32
+		{44BA9F7B-63F7-41F4-B8E9-8C69A08A677C}.Jrm.Build.0 = Jrm|Win32
+		{44BA9F7B-63F7-41F4-B8E9-8C69A08A677C}.Release.ActiveCfg = Release|Win32
+		{44BA9F7B-63F7-41F4-B8E9-8C69A08A677C}.Release.Build.0 = Release|Win32
+		{5BF37E89-6891-42AD-9133-77B412C01724}.Debug.ActiveCfg = Debug|Win32
+		{5BF37E89-6891-42AD-9133-77B412C01724}.Jrm.ActiveCfg = Jrm|Win32
+		{5BF37E89-6891-42AD-9133-77B412C01724}.Release.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

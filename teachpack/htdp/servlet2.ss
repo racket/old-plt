@@ -34,8 +34,8 @@
   (define-struct (button fe)  ())
 
   (provide 
-   (all-from (lib "servlet-helpers.ss" "web-server"))
-   
+   ; (all-from (lib "servlet-helpers.ss" "web-server"))
+
    ; Structures  --------------------------------------------------------------
    make-password
    (rename make-numeric make-number)
@@ -74,10 +74,16 @@
    echo-response       ; Response -> true
    extract/single      ; Symbol Response -> Answer
    extract             ; Symbol Response -> (listof Answer)
-   
+
    inform              ; Srtring String *-> true 
    final-page          ; String String *-> true
+   
+   string->number
+   number->string
+   string->symbol
+   symbol->string
    )
+  
 
                  ;                 
 ;;   ;;                            

@@ -1,14 +1,16 @@
+; Author: Paul Graunke
 (module servlet mzscheme
   (require (lib "servlet-primitives.ss" "web-server")
            (lib "servlet-helpers.ss" "web-server")
            (lib "servlet-sig.ss" "web-server")
            (lib "error.ss" "htdp")
-           (lib "xml.ss" "xml"))
+           (lib "xml.ss" "xml")
+           (lib "list.ss"))
   (provide (all-from (lib "servlet-primitives.ss" "web-server"))
            (all-from-except (lib "servlet-sig.ss" "web-server") servlet^)
            (all-from-except (lib "servlet-helpers.ss" "web-server") build-suspender)
            (rename wrapped-build-suspender build-suspender))
-  
+
   (define wrapped-build-suspender
     (case-lambda
       [(title content)

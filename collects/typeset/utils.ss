@@ -531,32 +531,37 @@
 		  (send dc set-pen old-pen))))]
 
 	   [draw-text
-	    (lambda (dc x y text descender?)
+	    (lambda (dc x y text descender? set-font?)
 	      (let-values ([(w h d s _1 _2) ((get-w/h/d/s/l/r descender?) dc)]
-			   [(bw bh bd bs) (send dc get-text-extent text)])
-		(send dc draw-text text (floor (+ x (- (/ w 2) (/ bw 2)))) y)))]
+			   [(bw bh bd bs) (send dc get-text-extent text)]
+                           [(old-font) (send dc get-font)])
+                (when set-font?
+                  (send dc set-font (send the-font-list find-or-create-font (typeset-size)
+                                          'roman 'normal 'normal #f)))
+		(send dc draw-text text (floor (+ x (- (/ w 2) (/ bw 2)))) y)
+                (send dc set-font old-font)))]
 	   
 	   [arrow
 	    (drawing "robby:arrow"
 		     (get-w/h/d/s/l/r #t)
-		     (lambda (dc x y) (draw-arrow dc x y #t)))]
+		     (lambda (dc x y) (draw-arrow dc x y #t #t)))]
 	   [b-arrow
 	    (drawing "robby:b-arrow"
 		     (get-w/h/d/s/l/r #f)
 		     (lambda (dc x y)
-		       (draw-text dc x y "b" #f)
+		       (draw-text dc x y "b" #f #t)
 		       (draw-arrow dc x  y #f)))]
 	   [g-arrow
 	    (drawing "robby:g-arrow"
 		     (get-w/h/d/s/l/r #t)
 		     (lambda (dc x y)
-		       (draw-text dc x y "g" #t)
+		       (draw-text dc x y "g" #t #t)
 		       (draw-arrow dc x y #t)))]
 	   [bg-arrow
 	    (drawing "robby:bg-arrow"
 		     (get-w/h/d/s/l/r #t)
 		     (lambda (dc x y)
-		       (draw-text dc x y "bg" #t)
+		       (draw-text dc x y "bg" #t #t)
 		       (draw-arrow dc x y #t)))]
 	   [checked-arrow
 	    (drawing "robby:checked-arrow"
@@ -565,12 +570,12 @@
 		       (let ([old-font (send dc get-font)])
 			 (send dc set-font (send the-font-list
 						 find-or-create-font
-						 (send old-font get-point-size)
+						 (typeset-size)
 						 'symbol
 						 (send old-font get-style)
 						 (send old-font get-weight)
 						 (send old-font get-underlined)))
-			 (draw-text dc x y (string (integer->char 214)) #f)
+			 (draw-text dc x y (string (integer->char 214)) #f #f)
 			 (send dc set-font old-font)
 			 (draw-arrow dc x y #f))))]
 	   [blank-arrow

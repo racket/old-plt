@@ -983,6 +983,7 @@ makefiles="Makefile
 
 if test -d "${srcdir}/foreign" && test "${enable_foreign}" = "yes" ; then
   AC_CONFIG_SUBDIRS( foreign/gcc/libffi )
+  makefiles="$makefiles foreign/Makefile"
 fi
 
 if test "${enable_mred}" = "yes" ; then

@@ -541,8 +541,8 @@
 
 ;; (_ptr <mode> <type>)
 ;; This is for pointers, where mode indicates input or output pointers (or
-;; both).  If the mode is 'o (output), then the wrapper will not get an
-;; argument for it, instead it will generate the matching argument.
+;; both).  If the mode is `o' (output), then the wrapper will not get an
+;; argument for it, instead it generates the matching argument.
 (provide _ptr)
 (define-syntax _ptr
   (syntax-rules (i o io)
@@ -560,7 +560,7 @@
 ;; to be a box, which is unboxed on entry and modified on exit.
 (provide _box)
 (define-syntax _box
-  (syntax-rules (i o io)
+  (syntax-rules ()
     [(_ t) (type: _pointer
             bind: tmp ; need to save the box so we can get back to it
             pre:  (x => (let ([p (malloc t)]) (ptr-set! p t (unbox x)) p))
@@ -598,11 +598,12 @@
                  pre:  (x => (vector->cblock x t))
                  post: (x => (cblock->vector x t n)))]))
 
-;; _bytes or (_bytes o n) is for a memory block represented as a Scheme string.
-;; _bytes is just like a byte-string, and (_bytes o n) is for pre-malloc of the
-;; string.  There is no need for other modes: i or io would be just like _bytes
-;; since the string carries its size information (so there is no real need for
-;; the `o', but it's there for consistency with the above macros).
+;; _bytes or (_bytes o n) is for a memory block represented as a Scheme byte
+;; string.  _bytes is just like a byte-string, and (_bytes o n) is for
+;; pre-malloc of the string.  There is no need for other modes: i or io would
+;; be just like _bytes since the string carries its size information (so there
+;; is no real need for the `o', but it's there for consistency with the above
+;; macros).
 (provide (rename _bytes* _bytes))
 (define-syntax _bytes*
   (syntax-id-rules (_bytes* o)

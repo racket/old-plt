@@ -8,6 +8,13 @@
 #endif
 #include <readline/readline.h>
 
+/* For pre-102 compatibility: */
+#ifndef MZ_DECL_VAR_REG
+# define MZ_DECL_VAR_REG(x) /* empty */
+# define MZ_VAR_REG(p, x)   /* empty */
+# define MZ_CWVR(x)         x
+#endif
+
 extern Function *rl_event_hook;
 
 Scheme_Object *do_readline(int argc, Scheme_Object **argv)
@@ -62,13 +69,6 @@ static int block(void)
   scheme_block_until(check, set_fd_wait, scheme_void, 0.0);
   return 0;
 }
-
-/* For pre-102 compilation: */
-#ifndef MZ_DECL_VAR_REG
-# define MZ_DECL_VAR_REG(x) /* empty */
-# define MZ_VAR_REG(p, x)   /* empty */
-# define MZ_CWVR(x)         x
-#endif
 
 Scheme_Object *scheme_reload(Scheme_Env *env)
 {

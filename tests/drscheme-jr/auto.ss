@@ -13,7 +13,7 @@
 (define language-level/advanced
   "Advanced Student")
 (define language-level/mzscheme/debug
-  "Textual Full Scheme (MzScheme)")
+  "Textual Full Scheme")
 
 (define (go)
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -147,8 +147,7 @@
   ;;                       Configurations                         ;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (define mz? (string=? language
-		"Textual Full Scheme without Debugging (MzScheme)"))
+  (define mz? (regexp-match language-level/mzscheme/debug language))
   (define beg? (string=? language language-level/beginner))
   (define int? (string=? language language-level/intermediate))
   (define adv? (string=? language language-level/advanced))
@@ -323,7 +322,7 @@
   (try "(define (testing-implicit-begin-define x) 5 6)"
     (mz-diff 'void '(error "must have exactly one")))
   (try "(define (testing-no-body-define x))"
-    (mz-diff 'void '(error "must have exactly one")))
+    (mz-diff '(error "malformed definition") '(error "must have exactly one")))
   (try "((lambda () 5))" (ldo-diff '(error "only in a definition")
 				   (el-diff (sa-diff '(error "must paren")
 						     "5")
@@ -332,8 +331,8 @@
   (try "(case-lambda [(x) 10])" (ldo-diff '(error "only in a definition")
 					  (pc-diff "(lambda (a1) ...)" "#<procedure>")))
 
-  (try "lambda" '(error "invalid use of keyword"))
-  (try "case-lambda" '(error "invalid use of keyword"))
+  (try "lambda" '(error "Invalid use of keyword"))
+  (try "case-lambda" '(error "Invalid use of keyword"))
 
   (try-void "(define test-define-f (lambda (x) (+ x 5)))")
   (try "(test-define-f 3)" "8")
@@ -705,9 +704,24 @@
 	       #%class #%class* #%class*/names)])
     (for-each
      (lambda (kw)
-       (try kw `(error ,(format "invalid use of keyword ~a" 
+       (try kw `(error ,(format "Invalid use of keyword ~a" 
 				(non-regexp (symbol->string kw))))))
      kws))
+
+
+  (try '(define (x define) define)
+       (if mz?
+	   'void
+	   '(error "Invalid use of keyword")))
+
+  (try '(define define 10)
+       (if mz?
+	   'void
+	   '(error "Invalid use of keyword")))
+  (try 'define
+       (if mz?
+	   "10"
+	   '(error "Invalid use of keyword")))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -726,7 +740,7 @@
   (set! errs? (or (go) errs?))
   (set! argv `#("-l" ,language-level/advanced))
   (set! errs? (or (go) errs?))
-;  (set! argv `#("-l" ,language-level/mzscheme/debug))
-;  (set! errs? (or (go) errs?))
+  (set! argv `#("-l" ,language-level/mzscheme/debug))
+  (set! errs? (or (go) errs?))
   (when errs?
     (printf "THERE WERE ERRORS~n")))

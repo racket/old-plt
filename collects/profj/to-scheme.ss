@@ -601,6 +601,10 @@
                                                             (accesses-protected fields)
                                                             (accesses-private fields))))))
                              
+                             (define field-accessors ,(build-field-table create-get-name 'get fields))
+                             (define field-setters ,(build-field-table create-set-name 'set fields))
+                             (define private-methods ,(build-method-table (accesses-private methods) private-generics))
+                                                          
                              ,@(map (lambda (i) (translate-initialize (initialize-static i)
                                                                       (initialize-block i)
                                                                       (initialize-src i)
@@ -655,7 +659,43 @@
                 (class-name old-class-name)
                 (parent-name old-parent-name)
                 (class-override-table old-override-table))))))))
-            
+
+  ;build-method-table: (list method) (list symbol) -> sexp
+  (define (build-method-table methods generics)
+    `(let ((table (make-hash-table)))
+       (for-each (lambda (method generic)
+                   (hash-table-put! table (string->symbol method) generic))
+                 ,(map (lambda (m)
+                         (mangle-method-name (id-string (method-name m))
+                                             (method-record-atypes (method-rec m))))
+                       methods)
+                 ,generics)
+       table))                  
+  
+  ;build-field-table: (string->string) symbol accesses -> sexp
+  (define (build-field-table maker type fields)
+    `(let ((table (make-hash-table)))
+       (for-each (lambda (field field-method)
+                   (hash-table-put! table (string->symbol field) field-method))
+                 ,@(let ((non-private-fields (map (lambda (n) (id-string (field-name n)))
+                                                  (append (accesses-public fields)
+                                                          (accesses-package fields)
+                                                          (accesses-protected fields))))
+                         (private-fields (map (lambda (n) (id-string (field-name n)))
+                                              (accesses-private fields))))
+                     (list (append non-private-fields private-fields)
+                           (append
+                            (map (lambda (n) (build-identifier (maker n))) non-private-fields)
+                            (map (if (eq? 'get type)
+                                     (lambda (n) 
+                                       `(lambda (class-obj)
+                                          (send class-obj ,(build-identifier (maker n)))))
+                                     (lambda (n)
+                                       `(lambda (class-obj new-val)
+                                          (send class-obj ,(build-identifier (maker n)) new-val))))
+                                 private-fields)))))
+       table))
+
                       
   ;generate-inner-makers: (list def) int type-records -> (list syntax)
   (define (generate-inner-makers defs depth type-recs)
@@ -971,11 +1011,13 @@
                       `(lambda ,parms (void)))
                      ((and (not block) native? void? (not static?))
                       `(lambda ,parms
-                         (,(build-identifier (string-append method-name "-native")) this ,@parms)
+                         (,(build-identifier (string-append method-name "-native"))
+                           this field-accessors field-setters private-methods ,@parms)
                          (void)))
                      ((and (not block) native? (not static?))
                       `(lambda ,parms
-                         (,(build-identifier (string-append method-name "-native")) this ,@parms)))
+                         (,(build-identifier (string-append method-name "-native")) 
+                           this field-accessors field-setters private-methods ,@parms)))
                      ((and (not block) native? void? static?)
                       `(lambda ,parms
                          (,(build-identifier (string-append method-name "-native")) ,@parms)

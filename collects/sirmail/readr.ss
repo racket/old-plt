@@ -279,11 +279,13 @@
       (define initialized? #f)
       (define new-messages? #f)
       (define current-next-uid 0)
+      (define current-count 0)
 
-      (define (initialized next-uid)
+      (define (initialized next-uid count)
 	(set! initialized? #t)
 	(set! new-messages? #f)
 	(set! current-next-uid next-uid)
+	(set! current-count count)
 	(hide-new-mail-msg))
 
       ;; Syncs `mailbox' with the server
@@ -314,7 +316,7 @@
 		   [new-uid/size-map (map cons (map car new) new-sizes)])
 	      (if (and (null? deleted) (null? new))
 		  (begin
-		    (initialized next-uid)
+		    (initialized next-uid count)
 		    (status "No new messages")
 		    #f)
 		  (begin
@@ -365,7 +367,7 @@
 							 0))))))
 				   uids positions))
 		    (write-mailbox)
-		    (initialized next-uid)
+		    (initialized next-uid count)
 		    (display-message-count (length mailbox))
 		    (let ([len (length new-headers)])
 		      (status "Got ~a new message~a" 
@@ -376,7 +378,8 @@
       (define (check-for-new)
 	(status "Checking ~a at ~a..." mailbox-name (IMAP-SERVER))
 	(let-values ([(imap count new next-uid) (connect 'next-uid)])
-	  (set! new-messages? (not (= next-uid current-next-uid))))
+	  (set! new-messages? (not (and (= next-uid current-next-uid)
+					(= count current-count)))))
 	(if new-messages?
 	    (begin
 	      (show-new-mail-msg)

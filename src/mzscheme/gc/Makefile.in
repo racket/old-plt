@@ -256,8 +256,7 @@ $(OBJS) test.o dyn_load.o dyn_load_sunos53.o: \
     $(srcdir)/include/private/gc_priv.h \
     $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
     $(srcdir)/include/gc.h \
-    $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc_typed.h \
-    Makefile
+    $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc_typed.h
 # The dependency on Makefile is needed.  Changing
 # options such as -DSILENT affects the size of GC_arrays,
 # invalidating all .o files that rely on gc_priv.h

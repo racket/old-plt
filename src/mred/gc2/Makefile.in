@@ -774,6 +774,7 @@ MZOBJS = ../../mzscheme/gc2/salloc.o \
 	../../mzscheme/gc2/setjmpup.o \
 	../../mzscheme/gc2/string.o \
 	../../mzscheme/gc2/struct.o \
+	../../mzscheme/gc2/stxobj.o \
 	../../mzscheme/gc2/symbol.o \
 	../../mzscheme/gc2/syntax.o \
 	../../mzscheme/gc2/type.o \

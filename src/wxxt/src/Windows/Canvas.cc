@@ -76,7 +76,7 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 	 XtNtraversalTranslationDone, TRUE,
-	 XtNhighlightThickness, 0,
+	 XtNhighlightThickness, ((style & wxNO_CAPTION) ? 1 : 0),
 	 XtNframeWidth, 0,
 	 NULL);
     if (!(style & wxINVISIBLE))
@@ -92,7 +92,7 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 	 XtNframeType, XfwfPlain,
 	 XtNshadowWidth, 0,
 	 XtNshadowScheme, XfwfBlack,
-	 XtNhighlightThickness, 0, /* ((style & wxNO_CAPTION) ? 2 : 0), */
+	 XtNhighlightThickness, 0,
 	 XtNspacing, 0,
 	 XtNbackground,  wxGREY_PIXEL,
 	 NULL);

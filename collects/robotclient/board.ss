@@ -155,12 +155,13 @@
      (tokens rt ert)
      (start response-list)
      (end EOF)
-     (error void)
+     (error (lambda (a b c) (error 'parser)))
      (grammar
       (response ((^ NUM com-list) 
                  (map (lambda (com)
                         (make-response $2 (car com) (cdr com)))
-                      $3)))
+                      $3))
+                ((^ NUM) (list (make-response $2 'nothing 'nothing))))
       (response-list ((response) (list $1))
                      ((response response-list) (cons $1 $2)))
       (com ((X NUM Y NUM) (cons 'X (cons $2 $4)))
@@ -183,13 +184,14 @@
   (define (read-response in)
     (let* ((t (regexp-replace "#" (read-line in) " ^ "))
            (s (open-input-string t)))
-      (response-parser (lambda ()
-                         (let ((i (read s)))
-                           (cond
-                             ((memq i `(^ X Y N S E W P D)) i)
-                             ((number? i)
-                              (token-NUM i))
-                             (else 'EOF)))))))
+      (with-handlers ((exn:user? (lambda (ex) (printf "~a~n" t))))
+        (response-parser (lambda ()
+                           (let ((i (read s)))
+                             (cond
+                               ((memq i `(^ X Y N S E W P D)) i)
+                               ((number? i)
+                                (token-NUM i))
+                               (else 'EOF))))))))
           
   (define (read-initial-response! in init-gui)
     (let* ((responses
@@ -263,7 +265,10 @@
                                                    (filter (lambda (x)
                                                              (eq? 'P (response-name x)))
                                                            good-responses))))))))
-                       responses))
+                       (filter (lambda (rl)
+                                 (not (eq? 'nothing (response-name (car rl)))))
+                               responses)))
+                                    
       (for-each
        (lambda (p)
          (hash-table-put! package-table
@@ -288,6 +293,7 @@
                     (robot-x old-robot)
                     (robot-y old-robot))))
              (case (response-name r)
+               ((nothing) (void))
                ((P)
                 (cond
                   ((= (response-id r) (player-id))

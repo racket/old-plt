@@ -35,8 +35,8 @@
   (define (compute-goal px py)
     (cond
       ((null? (packages-held))
-       (let loop ((x 1)
-                  (y 1)
+       (let loop ((x +inf.0)
+                  (y +inf.0)
                   (i 1)
                   (j 1))
          (cond

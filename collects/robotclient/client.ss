@@ -5,14 +5,14 @@
   (provide start-client)
   
   (define (start-client baseline? gui? host-name port)
-    ;;(with-handlers ((exn? (lambda (ex) (printf "exception: ~a~n" ex))))
+    (with-handlers ((exn? (lambda (ex) (printf "exception: ~a~n" ex))))
       (let-values (((input output) (tcp-connect host-name port)))
         (display "Player" output)
         (newline output)
         (read-board! input (cond
                              (gui? (dynamic-require "gui-client.ss" 'initialize))
                              (else void)))
-        (do-turn baseline? gui? input output)))
+        (do-turn baseline? gui? input output))))
 
   (define (read-packages in)
     (let* ((x (read-line in))

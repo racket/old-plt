@@ -606,7 +606,8 @@
                   get-admin
                   set-prompt-position
                   get-canvases find-snip
-                  inserting-prompt)
+                  inserting-prompt
+                  release-snip)
          (rename [super-on-insert on-insert]
                  [super-on-delete on-delete]
                  [super-initialize-console initialize-console]
@@ -762,14 +763,14 @@
               text)))
         
 	(define eof-received? #f)
-        (define eof-icon-shown? #f)
+        (define eof-snip #f)
         (define (show-eof-icon) 
-          (unless eof-icon-shown?
-            (set! eof-icon-shown? #t)
+          (unless eof-snip
+            (set! eof-snip (make-object eof-icon-snip% this))
             (let ([c-locked? (locked?)])
               (begin-edit-sequence)
               (lock #f)
-              (insert (make-object eof-icon-snip% this)
+              (insert eof-snip
                       (- (last-position) 1)
                       (- (last-position) 1))
               (lock c-locked?)
@@ -777,16 +778,16 @@
 			(get-canvases))	
               (end-edit-sequence))))
         (define (hide-eof-icon) 
-          (when eof-icon-shown?
-            (set! eof-icon-shown? #f)
+          (when eof-snip
             (let ([c-locked? (locked?)])
               (begin-edit-sequence)
               (lock #f)
-              (delete (- (last-position) 1) (- (last-position) 2))
+              (release-snip eof-snip)
 	      (for-each (lambda (c) (send c recalc-snips))
 			(get-canvases))
               (lock c-locked?)
-              (end-edit-sequence))))
+              (end-edit-sequence)
+              (set! eof-snip #f))))
 	(define (submit-eof)
           (when transparent-text
             (send transparent-text eof-received))
@@ -986,7 +987,9 @@
             (when prompt-mode?
               (insert (string #\newline) (last-position) (last-position) #f))
             
-            (let* ([start (send text last-position)]
+            (let* ([start (if (is-a? text transparent-io-text<%>)
+                              (send text get-insertion-point)
+                              (send text last-position))]
                    [c-locked? (send text locked?)])
               (send text begin-edit-sequence)
               (send text lock #f)
@@ -2306,7 +2309,10 @@
   
   (define input-delta (make-object mred:style-delta%))
   (send input-delta set-delta-foreground (make-object mred:color% 0 150 0))
-  (define transparent-io-text<%> (interface ()))
+  (define transparent-io-text<%> 
+    (interface ()
+      set-program-output
+      get-insertion-point))
 
   (define transparent-io-super% 
     (make-console-text%
@@ -2333,6 +2339,10 @@
 	[stream-start/end-protect (make-semaphore 1)]
 	[wait-for-sexp (make-semaphore 0)]
 	
+        [get-insertion-point
+         (lambda ()
+           stream-start)]
+
 	[auto-set-wrap #t]
 	[shutdown
 	 (lambda ()
@@ -2394,14 +2404,17 @@
 	 (lambda (_program-output?)
 	   (set! program-output? _program-output?))])
       (override
-       [after-insert
-	(lambda (start len)
-	  (super-after-insert start len)
-	  (unless program-output?
-	    (let ([old-r resetting?])
-	      (set-resetting #t)
-	      (change-style input-delta start (+ start len))
-	      (set-resetting old-r))))])
+        [after-insert
+         (lambda (start len)
+           (super-after-insert start len)
+           (when program-output?
+             (when (<= start stream-start)
+               (set! stream-start (+ stream-start len))))
+           (unless program-output?
+             (let ([old-r resetting?])
+               (set-resetting #t)
+               (change-style input-delta start (+ start len))
+               (set-resetting old-r))))])
       (override
        [do-eval
 	(lambda (start end)

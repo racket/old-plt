@@ -1,5 +1,5 @@
 (define-signature mred:url^
-  (get-ports-for-url))
+  (parse-url get-port-for-url))
 
 (define mred:url@
   (unit/sig mred:url^
@@ -121,7 +121,7 @@
 		(else
 		  (loop (add1 index) first-colon first-slash)))))))
 
-      (define get-ports-for-url
+      (define get-url-i/o-ports
 	(lambda (url)
 	  (let-values
 	    (((scheme path search fragment)
@@ -136,11 +136,11 @@
 		(fprintf output-port "GET ~a HTTP/1.0~n" access-path)
 		(values input-port output-port))))))
 
-      (define print-text-at-url
+      (define get-port-for-url
 	(lambda (url)
 	  (let-values
 	    (((server->client client->server)
-	       (get-ports-for-url url)))
+	       (get-url-i/o-ports url)))
 	    (newline client->server)
 	    (close-output-port client->server)
 	    (let* ((protocol (read server->client))
@@ -149,11 +149,17 @@
 		(let ((r (read-line server->client)))
 		  (unless (string=? r "")
 		    (loop))))
-	      (let loop ()
-		(let ((c (read-char server->client)))
-		  (unless (eof-object? c)
-		    (display c)
-		    (loop))))
-	      (close-input-port server->client)))))
+	      (close-input-port server->client)
+	      client->server))))
+
+      (define print-text-at-url
+	(lambda (url)
+	  (let ((client->server (get-port-for-url url)))
+	    (let loop ()
+	      (let ((c (read-char server->client)))
+		(unless (eof-object? c)
+		  (display c)
+		  (loop))))
+	    (close-input-port server->client))))
 
       )))

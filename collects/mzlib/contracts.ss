@@ -22,6 +22,25 @@
   (require (lib "contract-helpers.scm" "mzlib" "private"))
   (require-for-syntax (prefix a: (lib "contract-helpers.scm" "mzlib" "private")))
   
+  
+;                                                                                                    
+;                                                                                                    
+;                                                                                                    
+;       ;           ;;; ;                     ;                                                      
+;       ;          ;                          ;                                                      
+;       ;          ;                         ;                           ;                       ;   
+;    ;; ;    ;;;  ;;;;  ;   ; ;;     ;;;     ;     ;;;    ;;;    ; ;;   ;;;;  ; ;  ;;;     ;;;  ;;;; 
+;   ;  ;;   ;   ;  ;    ;   ;;  ;   ;   ;    ;    ;   ;  ;   ;   ;;  ;   ;    ;;  ;   ;   ;   ;  ;   
+;  ;    ;  ;    ;  ;    ;   ;   ;  ;    ;    ;   ;      ;     ;  ;   ;   ;    ;       ;  ;       ;   
+;  ;    ;  ;;;;;;  ;    ;   ;   ;  ;;;;;;   ;    ;      ;     ;  ;   ;   ;    ;    ;;;;  ;       ;   
+;  ;    ;  ;       ;    ;   ;   ;  ;        ;    ;      ;     ;  ;   ;   ;    ;   ;   ;  ;       ;   
+;   ;  ;;   ;      ;    ;   ;   ;   ;       ;     ;   ;  ;   ;   ;   ;   ;    ;   ;   ;   ;   ;  ;   
+;    ;; ;    ;;;;  ;    ;   ;   ;    ;;;;  ;       ;;;    ;;;    ;   ;    ;;  ;    ;;;;;   ;;;    ;; 
+;                                          ;                                                         
+;                                          ;                                                         
+;                                                                                                    
+
+  
   ;; (define/contract id contract expr)
   ;; defines `id' with `contract'; initially binding
   ;; it to the result of `expr'.  These variables may not be set!'d.
@@ -96,6 +115,25 @@
        (raise-syntax-error 'define/contract "expected identifier in first position"
                            define-stx
                            (syntax name))])) 
+  
+  
+;                                                                                                            
+;                                                                                                            
+;                                                                                                            
+;                               ;       ;             ;                                                      
+;                                       ;             ;                                                      
+;                                       ;            ;                           ;                       ;   
+;   ; ;;    ; ;   ;;;   ;     ; ;    ;; ;    ;;;     ;     ;;;    ;;;    ; ;;   ;;;;  ; ;  ;;;     ;;;  ;;;; 
+;   ;;  ;   ;;   ;   ;   ;   ;  ;   ;  ;;   ;   ;    ;    ;   ;  ;   ;   ;;  ;   ;    ;;  ;   ;   ;   ;  ;   
+;   ;    ;  ;   ;     ;  ;   ;  ;  ;    ;  ;    ;    ;   ;      ;     ;  ;   ;   ;    ;       ;  ;       ;   
+;   ;    ;  ;   ;     ;   ; ;   ;  ;    ;  ;;;;;;   ;    ;      ;     ;  ;   ;   ;    ;    ;;;;  ;       ;   
+;   ;    ;  ;   ;     ;   ; ;   ;  ;    ;  ;        ;    ;      ;     ;  ;   ;   ;    ;   ;   ;  ;       ;   
+;   ;;  ;   ;    ;   ;     ;    ;   ;  ;;   ;       ;     ;   ;  ;   ;   ;   ;   ;    ;   ;   ;   ;   ;  ;   
+;   ; ;;    ;     ;;;      ;    ;    ;; ;    ;;;;  ;       ;;;    ;;;    ;   ;    ;;  ;    ;;;;;   ;;;    ;; 
+;   ;                                              ;                                                         
+;   ;                                              ;                                                         
+;   ;                                                                                                        
+
   
   ;; (provide/contract p/c-ele ...)
   ;; p/c-ele = (id expr) | (struct (id expr) ...)
@@ -344,7 +382,7 @@
              (string-append
               prefix
               (format 
-               "-~a~a-ACK-DONT_USE_ME"
+               "-~a~a-ACK-PLEASE_DONT_GUESS_THIS_ID"
                (syntax-object->datum id)
                (apply 
                 string-append 
@@ -358,52 +396,26 @@
             (begin
               (require (lib "contract-helpers.scm" "mzlib" "private"))
               bodies ...))))]))
-  
-  ;; raise-contract-error : (union syntax #f) symbol symbol string args ... -> alpha
-  ;; doesn't return
-  (define (raise-contract-error src-info to-blame other-party fmt . args)
-    (let ([blame-src (if (syntax? src-info)
-			 (string-append (build-src-loc-string src-info) ": ")
-			 "")]
-	  [specific-blame
-	   (let ([datum (syntax-object->datum src-info)])
-	     (if (symbol? datum)
-		 (format "broke ~a's contract" datum)
-		 "failed contract"))])
-    (raise
-     (make-exn
-      (string->immutable-string
-       (string-append (format "~a~a: ~a ~a: "
-			      blame-src
-			      other-party
-			      to-blame
-			      specific-blame)
-		      (apply format fmt args)))
-      (current-continuation-marks)))))
-  
-  ;; contract = (make-contract (alpha sym sym sym -> alpha))
-  ;; generic contract container
-  (define-struct contract (f))
 
-  ;; flat-named-contract = (make-flat-named-contract string (any -> boolean))
-  ;; this holds flat contracts that have names for error reporting
-  (define-struct flat-named-contract (type-name predicate))
-
-  (provide (rename build-flat-named-contract flat-named-contract)
-           flat-named-contract-type-name
-           flat-named-contract-predicate)
   
-  (define build-flat-named-contract
-    (let ([flat-named-contract
-	   (lambda (name contract)
-	     (unless (and (string? name)
-			  (procedure? contract)
-			  (procedure-arity-includes? contract 1))
-	       (error 'flat-named-contract "expected string and procedure of one argument as arguments, given: ~e and ~e"
-		      name contract))
-	     (make-flat-named-contract name contract))])
-      flat-named-contract))
+;                                                      
+;                                                      
+;                                                      
+;                                                      
+;                                                      
+;                          ;                       ;   
+;    ;;;    ;;;    ; ;;   ;;;;  ; ;  ;;;     ;;;  ;;;; 
+;   ;   ;  ;   ;   ;;  ;   ;    ;;  ;   ;   ;   ;  ;   
+;  ;      ;     ;  ;   ;   ;    ;       ;  ;       ;   
+;  ;      ;     ;  ;   ;   ;    ;    ;;;;  ;       ;   
+;  ;      ;     ;  ;   ;   ;    ;   ;   ;  ;       ;   
+;   ;   ;  ;   ;   ;   ;   ;    ;   ;   ;   ;   ;  ;   
+;    ;;;    ;;;    ;   ;    ;;  ;    ;;;;;   ;;;    ;; 
+;                                                      
+;                                                      
+;                                                      
 
+  
   (define-syntax -contract
     (lambda (stx)
       (syntax-case stx ()
@@ -446,6 +458,137 @@
                          a-contract 
                          name))
                 (check-contract a-contract name pos-blame neg-blame src-info #f)))))])))
+
+  ;; check-contract : contract any symbol symbol syntax (union false? string?)
+  (define (check-contract contract val pos neg src-info extra-message)
+    (cond
+      [(contract? contract)
+       ((contract-f contract) val pos neg src-info)]
+      [(flat-named-contract? contract)
+       (if ((flat-named-contract-predicate contract) val)
+           val
+           (raise-contract-error
+            src-info
+            pos
+	    neg
+            "expected type <~a>, given: ~e"
+	    (flat-named-contract-type-name contract)
+	    val))]
+      [else
+       (if (contract val)
+           val
+           (raise-contract-error
+            src-info
+            pos
+	    neg
+            "~agiven: ~e~a"
+	    (predicate->expected-msg contract)
+	    val
+            (if extra-message
+                extra-message
+                "")))]))
+  
+  ;; raise-contract-error : (union syntax #f) symbol symbol string args ... -> alpha
+  ;; doesn't return
+  (define (raise-contract-error src-info to-blame other-party fmt . args)
+    (let ([blame-src (if (syntax? src-info)
+			 (string-append (build-src-loc-string src-info) ": ")
+			 "")]
+	  [specific-blame
+	   (let ([datum (syntax-object->datum src-info)])
+	     (if (symbol? datum)
+		 (format "broke ~a's contract" datum)
+		 "failed contract"))])
+    (raise
+     (make-exn
+      (string->immutable-string
+       (string-append (format "~a~a: ~a ~a: "
+			      blame-src
+			      other-party
+			      to-blame
+			      specific-blame)
+		      (apply format fmt args)))
+      (current-continuation-marks)))))
+  
+  ;; contract = (make-contract (alpha sym sym (union syntax #f) -> alpha))
+  ;; generic contract container; 
+  ;; the first argument to f is the value to test the contract.
+  ;; the second to f is a symbol representing the name of the positive blame
+  ;; the third to f is the symbol representing the name of the negative blame
+  ;; the final argument is the src-info.
+  (define-struct contract (f))
+
+  ;; flat-named-contract = (make-flat-named-contract string (any -> boolean))
+  ;; this holds flat contracts that have names for error reporting
+  (define-struct flat-named-contract (type-name predicate))
+
+  (provide (rename build-flat-named-contract flat-named-contract)
+           flat-named-contract-type-name
+           flat-named-contract-predicate)
+  
+  (define build-flat-named-contract
+    (let ([flat-named-contract
+	   (lambda (name contract)
+	     (unless (and (string? name)
+			  (procedure? contract)
+			  (procedure-arity-includes? contract 1))
+	       (error 'flat-named-contract "expected string and procedure of one argument as arguments, given: ~e and ~e"
+		      name contract))
+	     (make-flat-named-contract name contract))])
+      flat-named-contract))
+
+  (define -contract?
+    (let ([contract?
+           (lambda (val)
+             (or (contract? val)  ;; refers to struct predicate
+		 (flat-named-contract? val)
+                 (and (procedure? val)
+                      (procedure-arity-includes? val 1))))])
+      contract?))
+
+  ;; predicate->expected-msg : function -> string
+  ;; if the function has a name and the name ends
+  ;; with a question mark, turn it into a mzscheme
+  ;; style type name
+  (define (predicate->expected-msg pred)
+    (let ([name (predicate->type-name pred)])
+      (if name
+          (format "expected type <~a>, " name)
+          "")))
+  
+  ;; predicate->type-name : pred -> (union #f string)
+  (define (predicate->type-name pred)
+    (let* ([name (object-name pred)])
+      (and name
+           (let ([m (regexp-match "(.*)\\?" (symbol->string name))])
+             (and m
+                  (cadr m))))))
+
+  ;; flat-contract->type-name : flat-contract -> string
+  (define (flat-contract->type-name fc)
+    (cond
+      [(flat-named-contract? fc) (flat-named-contract-type-name fc)]
+      [else (or (predicate->type-name fc)
+                "unknown type")]))
+
+  
+;                                                                                   
+;                                                                                   
+;                                                                                   
+;                                                                                   
+;                                                                                   
+;           ;                                    ;                       ;          
+;            ;;            ;;;    ;;;    ; ;;   ;;;;  ; ;  ;;;     ;;;  ;;;;   ;;;  
+;              ;;         ;   ;  ;   ;   ;;  ;   ;    ;;  ;   ;   ;   ;  ;    ;     
+;                ;;      ;      ;     ;  ;   ;   ;    ;       ;  ;       ;    ;;    
+;   ;;;;;;       ;;      ;      ;     ;  ;   ;   ;    ;    ;;;;  ;       ;     ;;   
+;              ;;        ;      ;     ;  ;   ;   ;    ;   ;   ;  ;       ;       ;  
+;            ;;           ;   ;  ;   ;   ;   ;   ;    ;   ;   ;   ;   ;  ;       ;  
+;           ;              ;;;    ;;;    ;   ;    ;;  ;    ;;;;;   ;;;    ;;  ;;;   
+;                                                                                   
+;                                                                                   
+;                                                                                   
+
   
   (define-syntaxes (-> ->* ->d ->d* case->)
     (let ()
@@ -908,69 +1051,77 @@
 		  [opt-vs opts] ...)
 	      (case-> (->* (case-doms ...) (double-res-vs ...)) ...)))))]))
 
-  (define -contract?
-    (let ([contract?
-           (lambda (val)
-             (or (contract? val)  ;; refers to struct predicate
-		 (flat-named-contract? val)
-                 (and (procedure? val)
-                      (procedure-arity-includes? val 1))))])
-      contract?))
-
-  ;; check-contract : contract any symbol symbol syntax (union false? string?)
-  (define (check-contract contract val pos neg src-info extra-message)
-    (cond
-      [(contract? contract)
-       ((contract-f contract) val pos neg src-info)]
-      [(flat-named-contract? contract)
-       (if ((flat-named-contract-predicate contract) val)
-           val
-           (raise-contract-error
-            src-info
-            pos
-	    neg
-            "expected type <~a>, given: ~e"
-	    (flat-named-contract-type-name contract)
-	    val))]
-      [else
-       (if (contract val)
-           val
-           (raise-contract-error
-            src-info
-            pos
-	    neg
-            "~agiven: ~e~a"
-	    (predicate->expected-msg contract)
-	    val
-            (if extra-message
-                extra-message
-                "")))]))
-
-  ;; predicate->expected-msg : function -> string
-  ;; if the function has a name and the name ends
-  ;; with a question mark, turn it into a mzscheme
-  ;; style type name
-  (define (predicate->expected-msg pred)
-    (let ([name (predicate->type-name pred)])
-      (if name
-          (format "expected type <~a>, " name)
-          "")))
   
-  ;; predicate->type-name : pred -> (union #f string)
-  (define (predicate->type-name pred)
-    (let* ([name (object-name pred)])
-      (and name
-           (let ([m (regexp-match "(.*)\\?" (symbol->string name))])
-             (and m
-                  (cadr m))))))
+;                                                                                                 
+;                                                                                                 
+;                                                                                                 
+;          ;                                                                                      
+;          ;                                                                                      
+;          ;                                                   ;                       ;          
+;    ;;;   ;   ;;;     ;;;    ;;;        ;;;    ;;;    ; ;;   ;;;;  ; ;  ;;;     ;;;  ;;;;   ;;;  
+;   ;   ;  ;  ;   ;   ;      ;          ;   ;  ;   ;   ;;  ;   ;    ;;  ;   ;   ;   ;  ;    ;     
+;  ;       ;      ;   ;;     ;;        ;      ;     ;  ;   ;   ;    ;       ;  ;       ;    ;;    
+;  ;       ;   ;;;;    ;;     ;;       ;      ;     ;  ;   ;   ;    ;    ;;;;  ;       ;     ;;   
+;  ;       ;  ;   ;      ;      ;      ;      ;     ;  ;   ;   ;    ;   ;   ;  ;       ;       ;  
+;   ;   ;  ;  ;   ;      ;      ;       ;   ;  ;   ;   ;   ;   ;    ;   ;   ;   ;   ;  ;       ;  
+;    ;;;   ;   ;;;;;  ;;;    ;;;         ;;;    ;;;    ;   ;    ;;  ;    ;;;;;   ;;;    ;;  ;;;   
+;                                                                                                 
+;                                                                                                 
+;;                                                                                                 
+;
+;  (define-syntax (class-contract stx)
+;    (syntax-case stx ()
+;      [(_ (meth-name meth-contract) ...)
+;       (andmap identifier? (syntax->list (syntax (meth-name ...))))
+;       (let ()
+;         (define (expand-contract x y) 
+;           (syntax 1))
+;         (with-syntax ([(((doms ...) (rngs ...)) ...)
+;                        (map expand-contract 
+;                             (syntax->list (syntax (meth-name ...)))
+;                             (syntax->list (syntax (meth-contract ...))))])
+;           (syntax 
+;            (make-contract
+;             (lambda (val pos neg src-info)
+;               (unless (class? val)
+;                 (raise-contract-error src-info pos neg "expected a class, got: ~e" val))
+;               (let ([class-i (class->interface val)])
+;                 (void)
+;                 (unless (method-in-interface? 'meth-name class-i)
+;                   (raise-contract-error src-info
+;                                         pos neg 
+;                                         "expected class to have method ~a, got: ~e"
+;                                         'meth-name
+;                                         val))
+;                 ...)
+;               (class val
+;                 (define/override (meth-name 
+;               val)))))]
+;      [(_ (meth-name meth-contract) ...)
+;       (for-each (lambda (name)
+;                   (unless (identifier? name)
+;                     (raise-syntax-error 'class-contract "expected name" stx name)))
+;                 (syntax->list (syntax (meth-name ...))))]))
 
-  ;; flat-contract->type-name : flat-contract -> string
-  (define (flat-contract->type-name fc)
-    (cond
-      [(flat-named-contract? fc) (flat-named-contract-type-name fc)]
-      [else (or (predicate->type-name fc)
-                "unknown type")]))
+;                                                                                                   
+;                                                                                                   
+;                                                                                                   
+;               ;                                                                                   
+;                                                                                                   
+;                                                                ;                       ;          
+;   ; ;;  ;;    ;    ;;;    ;;;            ;;;    ;;;    ; ;;   ;;;;  ; ;  ;;;     ;;;  ;;;;   ;;;  
+;   ;;  ;;  ;   ;   ;      ;   ;          ;   ;  ;   ;   ;;  ;   ;    ;;  ;   ;   ;   ;  ;    ;     
+;   ;   ;   ;   ;   ;;    ;              ;      ;     ;  ;   ;   ;    ;       ;  ;       ;    ;;    
+;   ;   ;   ;   ;    ;;   ;              ;      ;     ;  ;   ;   ;    ;    ;;;;  ;       ;     ;;   
+;   ;   ;   ;   ;      ;  ;              ;      ;     ;  ;   ;   ;    ;   ;   ;  ;       ;       ;  
+;   ;   ;   ;   ;      ;   ;   ;  ;       ;   ;  ;   ;   ;   ;   ;    ;   ;   ;   ;   ;  ;       ;  
+;   ;   ;   ;   ;   ;;;     ;;;   ;        ;;;    ;;;    ;   ;    ;;  ;    ;;;;;   ;;;    ;;  ;;;   
+;                                                                                                   
+;                                                                                                   
+;                                                                                                   
 
+  
+  
   (provide union)
   (define (union . args)
     (for-each

@@ -3,9 +3,10 @@
   (require (lib "deflate.ss")
            (lib "base64.ss" "net")
            (lib "process.ss")
-	   (lib "etc.ss"))
+	   (lib "etc.ss")
+	   (lib "getinfo.ss" "setup"))
 
-  (provide pack mztar std-filter)
+  (provide pack mztar std-filter pack-collections)
   
   (define pack
     (opt-lambda (dest name paths collections
@@ -162,5 +163,93 @@
     (not (or (regexp-match "CVS$" path)
              (regexp-match "compiled$" path)
              (regexp-match "~$" path)
-             (regexp-match "^#.*#$" path)))))
+             (regexp-match "^#.*#$" path))))
 
+  (define (pack-collections collections output name replace? extra-setup-collections)
+    (let-values ([(dir source-files requires conflicts name)
+		  (let ([dirs (map (lambda (cp) (apply collection-path cp)) collections)])
+		    ;; Figure out the base path:
+		    (let* ([base-path #f]
+			   [base-path-setter #f]
+			   [rel-paths 
+			    (map (lambda (dir)
+				   (let-values ([(base c-name dir?) (split-path dir)])
+				     (let-values ([(base collects-dir-name dir?) (split-path base)])
+				       (if base-path
+					   (unless (equal? base base-path)
+					     (error
+					      'mzc
+					      "cannot combine collections that live in different directories: \"~a\" and: \"~a\""
+					      base-path-setter
+					      dir))
+					   (begin
+					     (set! base-path-setter dir)
+					     (set! base-path base)))
+				       (build-path 'same collects-dir-name c-name))))
+				 dirs)]
+			   [infos (map (lambda (cp) (get-info cp))
+				       collections)]
+			   [coll-list? (lambda (cl)
+					 (and (list? cl)
+					      (andmap (lambda (c) 
+							(and (list? c)
+							     (andmap string? c)
+							     (andmap relative-path? c)))
+						      cl)))]
+			   [get-dep-coll (lambda (which)
+					   (apply append (map (lambda (i src-cp)
+								(let ([rl (if i
+									      (i which (lambda () null))
+									      null)])
+								  (unless (coll-list? rl)
+								    (error
+								     'mzc
+								     "bad ~a specification in info.ss for collection ~s"
+								     which
+								     src-cp))
+								  rl))
+							      infos collections)))])
+		      (values base-path
+			      rel-paths
+			      (get-dep-coll 'requires)
+			      (append
+			       (if replace? null collections)
+			       (get-dep-coll 'conflicts))
+			      (or name
+				  ((or (car infos)
+				       (lambda (n f) (caar collections)))
+				   'name
+				   (lambda () (caar collections)))))))])
+      (let ([output (path->complete-path output)])
+	(parameterize ([current-directory dir])
+	  (pack output name
+		(map (lambda (cp) (apply build-path 'same cp)) collections)
+		(append
+		 extra-setup-collections
+		 collections)
+		std-filter #t 
+		(if replace?
+		    'file-replace
+		    'file)
+		#f
+		#t ; plt-relative
+		;; For each require, get current version
+		(map (lambda (r)
+		       (let ([i (get-info r)])
+			 (let ([v (and i (i 'version (lambda () #f)))])
+			   (if v
+			       (begin
+				 (unless (and (list? v)
+					      (andmap number? v)
+					      (andmap exact? v)
+					      (andmap integer? v))
+				   (error
+				    'mzc
+				    "bad version specification in info.ss for collection ~s"
+				    r))
+				 (list r v))
+			       (list r null)))))
+		     (cons
+		      '("mzscheme")
+		      requires))
+		conflicts))))))

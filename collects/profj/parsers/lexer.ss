@@ -94,8 +94,7 @@
                         "/")
                        (@ (* (@ (* NotStar) (+ "*") NotStarNotSlash))
                         (* NotStar)
-                        (* "*")
-                        (eof))))
+                        (* "*"))))
 
     ;; 3.8 (No need to worry about excluding keywords and such.  They will
     ;;      appear first in the lexer spec)
@@ -195,8 +194,9 @@
      (EscapeSequence (token-STRING_CHAR (EscapeSequence->char lexeme)))
      ((^ CR LF) (token-STRING_CHAR (string-ref lexeme 0)))
      ((: CR LF) (token-STRING_NEWLINE))
-     ((: (eof) #\032) (token-STRING_EOF))))
-  
+     (#\032 (token-STRING_EOF))
+     ((eof) (token-STRING_EOF))))
+     
   ;; 3.10.6
   (define (EscapeSequence->char es)
     (cond
@@ -291,7 +291,8 @@
      ((+ WhiteSpace) (return-without-pos (get-token input-port)))
 
      ;; 3.5
-     ((: (eof) #\032) 'EOF)
+     (#\032 'EOF)
+     ((eof) 'EOF)
      
      ((+ (: (- #\0 #\9)(- #\a #\z)(- #\A #\Z))) (token-NUMBER_ERROR lexeme))
      
@@ -302,14 +303,16 @@
   
   (define get-syn-string
     (lexer
-     ((: (eof) CR LF #\") (position-offset end-pos))
+     ((: CR LF #\") (position-offset end-pos))
+     ((eof) (position-offset end-pos))
      (EscapeSequence (get-syn-string input-port))
      ((^ CR LF) (get-syn-string input-port))))
     
   (define (colorize-string my-start-pos)
     (lexer
      (#\" (syn-val "" 'string #f my-start-pos end-pos))
-     ((: (eof) CR LF) (syn-val "" 'error #f my-start-pos end-pos))
+     ((: CR LF) (syn-val "" 'error #f my-start-pos end-pos))
+     ((eof) (syn-val "" 'error #f my-start-pos end-pos))
      (EscapeSequence ((colorize-string my-start-pos) input-port))
      ((^ CR LF) ((colorize-string my-start-pos) input-port))))
   
@@ -366,7 +369,8 @@
      ((+ WhiteSpace) (syn-val lexeme 'white-space #f start-pos end-pos))
 
      ;; 3.5
-     ((: (eof) #\032) (values lexeme 'eof #f start-pos end-pos))
+     (#\032 (values lexeme 'eof #f start-pos end-pos))
+     ((eof) (values lexeme 'eof #f start-pos end-pos))
      
      ((special) (syn-val "" 'error #f start-pos end-pos))
      ((special-error) (syn-val "" 'error #f start-pos end-pos))     

@@ -2,12 +2,6 @@
 ;; Defines a language to be used by info.ss files
 
 (module infotab mzscheme
-  ;; string-constants are commented out here and in the provides form below.
-  ;; Adding that means that the core system depends on string-constants.  But
-  ;; currently, it is used only for GUI -- if core level stuff goes in there,
-  ;; this should be added back in.
-  ;; (require (lib "string-constant.ss" "string-constants"))
-
   (define-syntax info-module-begin
     (lambda (stx)
       (syntax-case stx ()
@@ -62,6 +56,4 @@
 	   list cons car cdr quasiquote unquote unquote-splicing
 	   list* append reverse
 	   build-path collection-path
-	   system-library-subpath
-           ;; string-constant
-           ))
+	   system-library-subpath))

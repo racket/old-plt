@@ -94,13 +94,17 @@ STDMETHODIMP CEventQueue::get_EventAvailable(VARIANT_BOOL *pVal) {
   return S_OK;
 }
 
-STDMETHODIMP CEventQueue::GetReaderSemaphore(int pReadSem) {
-  *((HANDLE *)pReadSem) = readSem;
+STDMETHODIMP CEventQueue::GetReaderSemaphore (HANDLE* pReadSem)
+{
+  *pReadSem = readSem;
 
   return S_OK;
 }
 
-STDMETHODIMP CEventQueue::set_extension_table(int p) {
+// This method is deprecated.  It is still here so that older
+// code won't break.
+STDMETHODIMP CEventQueue::set_extension_table (int p)
+{
   /* scheme_extension_table = (Scheme_Extension_Table *)p; */
   return S_OK;
 }

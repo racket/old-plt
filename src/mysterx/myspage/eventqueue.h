@@ -42,7 +42,8 @@ public:
 	  STDMETHOD(get_EventAvailable)(VARIANT_BOOL *pVal);
 	  STDMETHOD(QueueEvent)(IEvent *pEvent);
 	  STDMETHOD(GetEvent)(IEvent **ppEvent);
-	  STDMETHOD(GetReaderSemaphore)(int);
+	  STDMETHOD(GetReaderSemaphore)(HANDLE *);
+          // THIS METHOD IS DEPRECATED
 	  STDMETHOD(set_extension_table)(int);
 };
 

@@ -2407,15 +2407,16 @@
 							  (make-object style-delta% 'change-normal)
 							  s
 							  e)))
-				      (let ([fn (normalize-path (build-path "~/Desktop" fn))])
-					(insert (format "[save as ~a & open]" (path->string fn))
-						(lambda (t s e)
-						  (send t set-clickback s e
-							(lambda (a b c)
-							  (to-file fn)
-							  (system* "/usr/bin/open" (path->string fn)))
-							#f #f)
-						  (send t change-style url-delta s e))))))
+                                      (when fn
+                                        (let ([fn (normalize-path (build-path "~/Desktop" fn))])
+                                          (insert (format "[save as ~a & open]" (path->string fn))
+                                                  (lambda (t s e)
+                                                    (send t set-clickback s e
+                                                          (lambda (a b c)
+                                                            (to-file fn)
+                                                            (system* "/usr/bin/open" (path->string fn)))
+                                                          #f #f)
+                                                    (send t change-style url-delta s e)))))))
                                   (insert "\n" (lambda (t s e) 
                                                  (send t change-style
                                                        (make-object style-delta% 'change-normal)

@@ -740,7 +740,7 @@
 #   define ALIGNMENT 4
 #   define DATASTART ((ptr_t)0x20000000)
     extern int errno;
-#   define STACKBOTTOM ((ptr_t)((ulong)&errno + 2*sizeof(int)))
+#   define STACKBOTTOM ((ptr_t)((ulong)&errno + sizeof(int)))
 #   define DYNAMIC_LOADING
 	/* For really old versions of AIX, this may have to be removed. */
 # endif

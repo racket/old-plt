@@ -125,8 +125,9 @@
 			   [else ss-file])])
 	      (mred:debug:printf 'startup "Loading ~a..." file)
 	      (load/cd file)))
-	  (list "sig" "macros"  
-		"autoload" "autosave" "canvas" "console" "containr" "edframe"
+	  (list "sig" "macros" 
+		"autoload" "autosave" "canvas" "console" "contfram"
+		"contkids" "contpanl" "containr" "edframe"
 		"edit" "exit" "exn" "fileutil" "finder" "findstr" "frame"
 		"group" "guiutils" 
 		"handler" "icon" "keys" "mcache" "menu" "mode"

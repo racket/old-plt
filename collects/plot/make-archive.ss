@@ -4,7 +4,7 @@
 ;; will create a precompiled binary for whatever system
 ;; is run on unless "src" is specified 
 
-(module make-archive mzscheme
+;(module make-archive mzscheme
   (require 
    (lib "pack.ss" "setup")
    (lib "file.ss")
@@ -19,7 +19,7 @@
    (current-command-line-arguments)
    (once-each
     [("-s" "--src") "Make source bundle"
-     (set! target-sys-type 'bin)]))
+     (set! target-sys-type 'src)]))
 
   (define tmp-dir (find-system-path 'temp-dir))
   (define work-dir (build-path tmp-dir "mk-plot-plt"))
@@ -27,6 +27,8 @@
   (when (directory-exists? work-dir)
     (error 'make-archive "please delete leftover work directory: ~a"
 	   work-dir))
+
+  (display target-sys-type)	
 
   (make-directory work-dir)
 
@@ -54,13 +56,16 @@
  
   (define src-structure
     '(("src")
-      ("src" "plplot")
-      ("src" "fit")
-      ("src" "gd")))
+   ;   ("src" "plplot")
+   ;   ("src" "fit")
+;	      ("src" "gd")))
+      ("src" "tmp")))
   
   (define copied-structure
-    '(("libpng")
-      ("zlib")))
+    '(
+      ;("libpng")
+      ;("zlib"))
+      ))
   
   (define plot-target-dir
     (build-path work-dir "collects" "plot"))
@@ -128,4 +133,5 @@
 
   (delete-directory/files work-dir)
 
-  (printf "Output to ~a~n" dest))
+  (printf "Output to ~a~n" dest)
+;)

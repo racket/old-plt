@@ -1,3 +1,5 @@
+;; Known bug, the test case box will not grow if the value put into the actual box is bigger than the
+;; other values. Clicking in the actual box grows it however.
 (module test-case-box mzscheme
   
   (provide test-case-box^ test-case-box@)
@@ -308,7 +310,7 @@
     (let ([pb (new horizontal-pasteboard%)])
       (send* pb
         (insert turn-snip false)
-        (insert (new editor-snip%
+        (insert (new stretchable-editor-snip%
                      (min-width 100)
                      (editor comment))
                 false)
@@ -371,7 +373,7 @@
   ;; STATUS: this should really return an stretchable-snip<%> not an editor-snip% of fixed size.
   (define text-field
     (opt-lambda (text (snipclass editor-snip%))
-      (new snipclass
+      (new (stretchable-editor-snip-mixin snipclass)
            (editor text))))
   
   ;; a snip to label a text case field

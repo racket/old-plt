@@ -56,7 +56,9 @@
 				(lambda (s p)
 				  (string-ref s (- (string-length s) p 1))))]
 	       [init-pos (max 0 pos)]
-	       [buffer-end (min end-pos (send edit last-position))]
+	       [buffer-end (if forward?
+			       (min end-pos (send edit last-position))
+			       (max end-pos 0))]
 	       [get-character (ivar edit get-character)]
 	       [get-char (if forward?
 			     get-character
@@ -170,8 +172,8 @@
 	  ;; In reverse mode, start by looking for a comment
 	  (find-comment 
 	   init-pos
-	   (lambda (pos)
-	     (let nloop ([pos pos]
+	   (lambda (i-pos)
+	     (let nloop ([pos i-pos]
 			 [unquoted? #t]
 			 [starters normal-starters]
 			 [closes close-parens]
@@ -189,88 +191,89 @@
 			  (lambda (pos) (loop pos)))]
 			[else
 			 (loop (next1 pos))])
-		       (or (and unquoted? (let ([v (get-cached pos)])
-					    (and v (done-k v))))
-			   ;; Check for matching open-something (forward) or close-something (backward)
-			   (let ([match (match-string-at-pos pos c starters)])
-			     (cond
-			      [(not match)
+		       (let ([cached (and unquoted? (get-cached pos))])
+			 (if cached
+			     (done-k cached)
+			     ;; Check for matching open-something (forward) or close-something (backward)
+			     (let ([match (match-string-at-pos pos c starters)])
 			       (cond
-				[(past-end? pos)  ; end of file
-				 (done-k eof-answer)]
-				[unquoted?
-				 ;; Find next space or parenthesis
-				 (let ([start-pos pos])
-				   (let loop ([pos ((if (char=? c #\\) skip1 next1) pos)])
-				     (let ([c (get-char pos)])
-				       (cond
-					[(or (char-whitespace? c) (past-end? pos))
-					 (done-k 
-					  (if (= pos start-pos)
-					      eof-answer
-					      (answer start-pos pos)))]
-					[(char=? #\\ c) (loop (skip1 pos))]
-					[(match-string-at-pos pos c normal-starters) (done-k (answer start-pos pos))]
-					[else 		      
-					 (loop (next1 pos))]))))]
+				[(not match)
+				 (cond
+				  [(past-end? pos)  ; end of file
+				   (done-k eof-answer)]
+				  [unquoted?
+				   ;; Find next space or parenthesis
+				   (let ([start-pos pos])
+				     (let loop ([pos ((if (char=? c #\\) skip1 next1) pos)])
+				       (let ([c (get-char pos)])
+					 (cond
+					  [(or (char-whitespace? c) (past-end? pos))
+					   (done-k 
+					    (if (= pos start-pos)
+						eof-answer
+						(answer start-pos pos)))]
+					  [(char=? #\\ c) (loop (skip1 pos))]
+					  [(match-string-at-pos pos c normal-starters) (done-k (answer start-pos pos))]
+					  [else 		      
+					   (loop (next1 pos))]))))]
+				  [else
+				   ;; Try again
+				   (if (char=? #\\ c)
+				       (loop (skip1 pos))
+				       (loop (next1 pos)))])]
+				[(member match closes)
+				 ;; pos after close is answer - maybe the final answer
+				 (close-k pos (offset pos (string-length match)) match)]
 				[else
-				 ;; Try again
-				 (if (char=? #\\ c)
-				     (loop (skip1 pos))
-				     (loop (next1 pos)))])]
-			      [(member match closes)
-			       ;; pos after close is answer - maybe the final answer
-			       (close-k pos (offset pos (string-length match)) match)]
-			      [else
-			       ;; Found open; now find close
-			       (cond
-				[(assoc match quote-pairs)
-				 ;; Open quote
-				 => (lambda (p)
-				      (nloop (offset pos (string-length match))
-					     #f
-					     (list (cdr p)) ; no special characters now except the close quote
-					     (list (cdr p))
-					     (lambda (cl-start-pos cl-pos closer) 
-					       (done-k (answer pos cl-pos)))
-					     (lambda (pos)
-					       (if (or (eq? pos bad-match-answer)
-						       (eq? pos eof-answer))
-						   (done-k pos)
-						   (error 'paren-match "non-failure done-k called while looking for a close quote")))))]
-				[(and forward? (member match eol-comment-list))
-				 ;; Start comment to EOL
-				 (let ([start-pos pos])
-				   (let mloop ([pos (offset pos (string-length match))])
-				     (let ([c (get-char pos)])
-				       (if (or (char=? c #\newline)
-					       (and (past-end? pos)))
-					   ;; Skipped comment, now try again
-					   (loop pos)
-					   ;; Still looking for the end-of-comment
-					   (mloop (next1 pos))))))]
-				[else
-				 ;; Open parenthesis
-				 (let ([paren-pair (assoc match paren-pairs)]
-				       [found-pos pos]
-				       [start-pos (offset pos (string-length match))])
-				   (unless paren-pair
-					   (error 'paren-match "internal-error: open parenthesis ~a is not in the list ~a~n"
-						  match paren-pairs))
-				      (let loop ([pos start-pos])
-					(nloop pos
-					       #t
-					       normal-starters
-					       close-parens
-					       (lambda (cl-start-pos cl-pos closer)
-						 (if (string=? closer (cdr paren-pair))
-						     (done-k (answer found-pos cl-pos))
-						     (done-k bad-match-answer))) ; wrong closer
+				 ;; Found open; now find close
+				 (cond
+				  [(assoc match quote-pairs)
+				   ;; Open quote
+				   => (lambda (p)
+					(nloop (offset pos (string-length match))
+					       #f
+					       (list (cdr p)) ; no special characters now except the close quote
+					       (list (cdr p))
+					       (lambda (cl-start-pos cl-pos closer) 
+						 (done-k (answer pos cl-pos)))
 					       (lambda (pos)
 						 (if (or (eq? pos bad-match-answer)
 							 (eq? pos eof-answer))
-							 (done-k pos)
-							 (loop pos))))))])]))))))))))))
+						     (done-k pos)
+						     (error 'paren-match "non-failure done-k called while looking for a close quote")))))]
+				  [(and forward? (member match eol-comment-list))
+				   ;; Start comment to EOL
+				   (let ([start-pos pos])
+				     (let mloop ([pos (offset pos (string-length match))])
+				       (let ([c (get-char pos)])
+					 (if (or (char=? c #\newline)
+						 (and (past-end? pos)))
+					     ;; Skipped comment, now try again
+					     (loop pos)
+					     ;; Still looking for the end-of-comment
+					     (mloop (next1 pos))))))]
+				  [else
+				   ;; Open parenthesis
+				   (let ([paren-pair (assoc match paren-pairs)]
+					 [found-pos pos]
+					 [start-pos (offset pos (string-length match))])
+				     (unless paren-pair
+					     (error 'paren-match "internal-error: open parenthesis ~a is not in the list ~a~n"
+						    match paren-pairs))
+					(let loop ([pos start-pos])
+					  (nloop pos
+						 #t
+						 normal-starters
+						 close-parens
+						 (lambda (cl-start-pos cl-pos closer)
+						   (if (string=? closer (cdr paren-pair))
+						       (done-k (answer found-pos cl-pos))
+						       (done-k bad-match-answer))) ; wrong closer
+						 (lambda (pos)
+						   (if (or (eq? pos bad-match-answer)
+							   (eq? pos eof-answer))
+						       (done-k pos)
+						       (loop pos))))))])])))))))))))))
 
     (define forward-match
       (opt-lambda (edit pos end-pos 

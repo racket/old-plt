@@ -1,0 +1,27 @@
+100alpha4, July 9, 1999
+
+added support for multidimensional arrays,
+  with COM SAFEARRAYs stored column-major
+added com-unregister-event-handler
+COM event handlers can have named arguments
+unit exit-handler forces Release() on global
+  COM objects on exit
+COM objects passed as VARIANTs in methods,
+  properties 
+garbage collection of COM objects passed to 
+  COM event handlers works correctly
+
+100alpha3, June 18, 1999
+
+unitized C++ and Scheme code
+added support for COM events
+added com-object?
+added finalizers for COM objects inserted
+	into HTML or returned from methods
+	and properties
+added support for optional and default
+	parameters to COM methods
+minimal support for SAFEARRAY arguments
+	added
+test object added, code in plt/tests/mysterx/mystests.ss
+

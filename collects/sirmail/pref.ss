@@ -146,8 +146,15 @@
 	  (send (make-object style-delta%) set-delta-background (if on? "yellow" "white"))
 	  0 (send e last-position)))
 
-
-  (define (make-text-field label panel width-num pref optional? check-value)
+  ;; make-text-field : string panel number symbol boolean
+  ;;                   ((union #f ???) (union #f ???) string -> boolean)
+  ;;                   (any -> string)
+  ;;                   (string -> any)
+  ;;                -> void
+  ;; sets up a text field for a preference
+  ;; the last two arguments convert between the string representation (as shown in the text field)
+  ;; and the preferences's actual Scheme value.
+  (define (make-text-field label panel width-num pref optional? check-value val->str str->val)
     (define p0 (and optional?
 		    (instantiate horizontal-panel% (panel) [stretchable-height #f])))
     (define e (and optional?
@@ -165,12 +172,15 @@
 			   (lambda (t e)
 			     (let* ([s (send t get-value)])
 			       (if (check-value #f #f s)
-				   (preferences:set pref s)
+				   (preferences:set pref (str->val s))
 				   (begin
 				     (set! needs-check (cons (list t label check-value) needs-check))
 				     (set-hilite (send t get-editor) #t)))))
 			   (make-string width-num #\space)))
-    (send t set-value (or (preferences:get pref) ""))
+    (send t set-value (let ([v (preferences:get pref)])
+                        (if v
+                            (val->str v)
+                            "")))
     (when optional?
       (send e set-value (preferences:get pref)))
     (when e
@@ -182,7 +192,7 @@
 				       (send t enable val))
 				     (when val
 				       (unless (equal? val (send t get-value))
-					 (send t set-value val))))))
+					 (send t set-value (val->str val)))))))
 
   (define (check-unsaved-pref?)
     (and (andmap (lambda (a)
@@ -288,6 +298,16 @@
   (define (check-host-address/port/multi who tl s)
     (check-address is-host-address+port-list? who tl s #t #t))
 
+  ;; check-biff-delay : (union #f ???) (union #f ???) string -> boolean
+  ;; checks to see if the string in the biff delay field makes
+  ;; sense as an exact integer between 1 and 3600
+  (define (check-biff-delay who tl s)
+    (let ([n (string->number s)])
+      (and (number? n)
+           (integer? n)
+           (exact? n)
+           (<= 1 n 3600))))
+  
   (define (check-user-address who tl s)
     (with-handlers ([not-break-exn? 
 		     (lambda (x)
@@ -359,15 +379,15 @@
   (define (make-addresses-preferences-panel parent)
     (let ([p (instantiate vertical-panel% (parent))])
       
-      (make-text-field "Mail From" p 20 'sirmail:mail-from #f check-user-address)
-      (make-text-field "SMTP Server" p 20 'sirmail:smtp-server #f check-host-address/port/multi)
+      (make-text-field "Mail From" p 20 'sirmail:mail-from #f check-user-address (lambda (x) x) (lambda (x) x))
+      (make-text-field "SMTP Server" p 20 'sirmail:smtp-server #f check-host-address/port/multi (lambda (x) x) (lambda (x) x))
 
       (make-file/directory-button #t #f p
 				  'sirmail:sent-directory
 				  "Save Sent Files")
 
 
-      (make-text-field "Default To Domain" p 20 'sirmail:default-to-domain #f check-host-address)
+      (make-text-field "Default To Domain" p 20 'sirmail:default-to-domain #f check-host-address (lambda (x) x) (lambda (x) x))
       (make-file/directory-button #f #f p
 				  'sirmail:aliases-file
 				  "Aliases File")
@@ -381,16 +401,17 @@
   (define (make-mbox-preferences-panel parent)
     (let ([p (instantiate vertical-panel% (parent))])
       
-      (make-text-field "Username" p 10 'sirmail:username #f check-id)
-      (make-text-field "IMAP Server" p 20 'sirmail:imap-server #f check-host-address/port)
+      (make-text-field "Username" p 10 'sirmail:username #f check-id (lambda (x) x) (lambda (x) x))
+      (make-text-field "IMAP Server" p 20 'sirmail:imap-server #f check-host-address/port (lambda (x) x) (lambda (x) x))
 
 	
       (make-file/directory-button #t "Local Directory" p
 				  'sirmail:local-directory
 				  #f)
 
-      (make-text-field "Folder List Root" p 20 'sirmail:root-mailbox-folder #t void)
-		       
+      (make-text-field "Folder List Root" p 20 'sirmail:root-mailbox-folder #t void (lambda (x) x) (lambda (x) x))
+
+      (make-text-field "Biff Delay" p 5 'sirmail:biff-delay #t check-biff-delay number->string string->number)
 
       (make-file/directory-button #f #f p
 				  'sirmail:auto-file-table-file

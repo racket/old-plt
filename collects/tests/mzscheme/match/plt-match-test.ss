@@ -2,8 +2,8 @@
 (SECTION 'PLT-MATCH)
 
 
-(require (lib "plt-match.ss"))
-;(require "../plt-match.ss")
+;(require (lib "plt-match.ss"))
+(require "../plt-match.ss")
 (require (lib "list.ss"))
 (require (lib "pregexp.ss"))
 
@@ -69,69 +69,77 @@
 ;;
 
 
-(mytest (match "hello"
-               (#rx"he..o" #t)
-               (else #f))
-        #t)
+;(mytest (match "hello"
+;               (#rx"he..o" #t)
+;               (else #f))
+;        #t)
+
+;(mytest (match "hello"
+;               (#rx"heffo" #t)
+;               (else #f))
+;        #f)
 
 (mytest (match "hello"
-               (#rx"heffo" #t)
-               (else #f))
-        #f)
-
-(mytest (match "hello"
-               ((pregex (pregexp "hello")) #t)
+               ((pregexp (pregexp "hello")) #t)
                (else #f))
         #t)
   
 (mytest (match 123
-                ((pregex "123") #t)
+                ((pregexp "123") #t)
                 (else #f))
         #f)
 (mytest (match 123
-                ((regex "123") #t)
+                ((regexp "123") #t)
                 (else #f))
         #f)
 (mytest (match 123
-                ((pregex "123" (list a ...)) #t)
+                ((pregexp "123" (list a ...)) #t)
                 (else #f))
         #f)
 (mytest (match 123
-               ((regex "123" (list a ...)) #t)
+               ((regexp "123" (list a ...)) #t)
                (else #f))
         #f)
 
 (mytest (match "hello"
-           ((regex "hello") #t)
+           ((regexp "hello") #t)
            (else #f))
         #t)
 
 (mytest (match "frank"
-           ((regex "hello") #t)
-           ((regex "frank") 2)
+           ((regexp "hello") #t)
+           ((regexp "frank") 2)
            (else #f))
         2)
 
 (mytest (match "frank"
-           ((pregex "hello") #t)
-           ((pregex "frank") 2)
+           ((pregexp "hello") #t)
+           ((pregexp "frank") 2)
            (else #f))
         2)
 
 (mytest (match "frank"
-           ((regex "hello") #t)
+           ((regexp "hello") #t)
            (else #f))
         #f)
 
 (mytest (match "hello"
-           ((regex "(hel)lo" (list whol a rest ...)) a)
+           ((regexp "(hel)lo" (list whol a rest ...)) a)
            (else #f))
         "hel")
 
 (mytest (match "hello"
-           ((pregex "(hel)lo" (list whole a rest ...)) a)
+           ((pregexp "(hel)lo" (list whole a rest ...)) a)
            (else #f))
         "hel")
+
+(mytest (match-let*
+         ((a 1)
+          (c 2)
+          (d 3))
+         (list a c d))
+        '(1 2 3))
+
 
 (mytest (match (list (cons "a" "b"))
          [(list) ""]

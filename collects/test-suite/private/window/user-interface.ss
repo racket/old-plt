@@ -1,4 +1,4 @@
-(module button-panel mzscheme
+(module user-interface mzscheme
   
   (require
    (lib "class.ss")
@@ -9,7 +9,7 @@
    "make-bitmap.ss")
   
   (provide/contract
-   (interface-mixin mixin-contract))
+   (user-interface-mixin mixin-contract))
   
   ;; callbacks-mixin mixin-contract
   ;; a mixin that contains fields of the callbacks used in the buttons and menus
@@ -88,8 +88,8 @@
       
       (super-instantiate ())
       (inherit get-error-handler)
-      (inherit-field model main-panel
-                     new-callback delete-callback execute-callback break-callback save-callback)
+      (inherit-field model main-panel new-callback delete-callback
+                     execute-callback break-callback save-callback)
       
       ;; update-executing (boolean? . -> . void?)
       ;; called when the model changes execution modes
@@ -169,6 +169,7 @@
           (callback break-callback))])
       
       (send save-button show false)
+      (send save-button enable false)
       ))
   
   ;; save-menu-items-mixin mixin-contract
@@ -201,10 +202,10 @@
   
   ;; interface-mixin mixin-contract
   ;; add an interface for test suite functions to the frame
-  (define (interface-mixin super%)
-    (save-menu-items-mixin
+  (define (user-interface-mixin super%)
+    ;(save-menu-items-mixin
      (button-panel-mixin
       (test-menu-mixin
        (callbacks-mixin
-        super%)))))
+        super%))));)
   )

@@ -8,11 +8,16 @@ add struct contracts for immutable structs?
 |#
 
 (module contract mzscheme
+  
+  ;; no bytes in v206
+;  (define (bytes? x) #f)
+  
   (provide (rename -contract contract)
            ->
            ->d
            ->*
            ->d*
+           ->r
            case->
 	   opt->
            opt->*
@@ -646,6 +651,50 @@ add struct contracts for immutable structs?
 ;                                                                                   
 ;                                                                                   
 
+  (define-syntax (->r stx)
+    (syntax-case stx ()
+      [(-> ([x dom] ...) rng)
+       (and (andmap identifier? (syntax->list (syntax (x ...))))
+            (not (check-duplicate-identifier (syntax->list (syntax (x ...))))))
+       (with-syntax ([(dom-id ...) (generate-temporaries (syntax (x ...)))]
+                     [arity-count (length (syntax->list (syntax (x ...))))])
+         (syntax 
+          (make-contract 
+           "name"
+           (lambda (pos-blame neg-blame src-info orig-str)
+             (lambda (v)
+               (unless (procedure? v)
+                 (raise-contract-error src-info
+                                       pos-blame
+                                       neg-blame
+                                       orig-str
+                                       "expected a procedure, got ~e"
+                                       v))
+               (unless (procedure-arity-includes? v arity-count)
+                 (raise-contract-error src-info
+                                       pos-blame
+                                       neg-blame
+                                       orig-str
+                                       "expected a procedure of arity ~a, got ~e"
+                                       arity-count
+                                       v))
+               (lambda (x ...)
+                 (let ([dom-id ((coerce/select-contract ->r dom) pos-blame neg-blame src-info orig-str)]
+                       ...
+                       [rng-id ((coerce/select-contract ->r rng) pos-blame neg-blame src-info orig-str)])
+                   (rng-id (v (dom-id x) ...)))))))))]
+      [(-> ([x dom] ...) rng)
+       (andmap identifier? (syntax->list (syntax (x ...))))
+       (raise-syntax-error 
+        '->r
+        "duplicate identifier"
+        stx
+        (check-duplicate-identifier (syntax->list (syntax (x ...)))))]
+      [(-> ([x dom] ...) rng)
+       (for-each (lambda (x) (unless (identifier? x) (raise-syntax-error '->r "expected identifier" stx x)))
+                 (syntax->list (syntax (x ...))))]
+      [(-> x dom rng)
+       (raise-syntax-error '->r "expected list of identifiers and expression pairs" stx (syntax x))]))
   
   (define-syntax-set (-> ->* ->d ->d* case-> object-contract opt-> opt->*)
     

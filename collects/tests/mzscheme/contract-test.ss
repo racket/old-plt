@@ -596,7 +596,47 @@
                  'pos
                  'neg)
        (lambda () (set! x 2)))))
- 
+  
+  (test/spec-passed
+   '->r1
+   '((contract (->r () number?) (lambda () 1) 'pos 'neg)))
+  
+  (test/spec-passed
+   '->r2
+   '((contract (->r ([x number?]) number?) (lambda (x) (+ x 1)) 'pos 'neg) 1))
+
+  (test/pos-blame
+   '->r3
+   '((contract (->r () number?) 1 'pos 'neg)))
+  
+  (test/pos-blame
+   '->r4
+   '((contract (->r () number?) (lambda (x) x) 'pos 'neg)))
+  
+  (test/neg-blame
+   '->r5
+   '((contract (->r ([x number?]) (<=/c x)) (lambda (x) (+ x 1)) 'pos 'neg) #f))
+  
+  (test/pos-blame
+   '->r6
+   '((contract (->r ([x number?]) (<=/c x)) (lambda (x) (+ x 1)) 'pos 'neg) 1))
+  
+  (test/spec-passed
+   '->r7
+   '((contract (->r ([x number?][y (<=/c x)]) (<=/c x)) (lambda (x y) (- x 1)) 'pos 'neg) 1 0))
+  
+  (test/neg-blame
+   '->r8
+   '((contract (->r ([x number?][y (<=/c x)]) (<=/c x)) (lambda (x y) (+ x 1)) 'pos 'neg) 1 2))
+  
+  (test/spec-passed
+   '->r9
+   '((contract (->r ([y (<=/c x)][x number?]) (<=/c x)) (lambda (y x) (- x 1)) 'pos 'neg) 1 2))
+  
+  (test/neg-blame
+   '->r10
+   '((contract (->r ([y (<=/c x)][x number?]) (<=/c x)) (lambda (y x) (+ x 1)) 'pos 'neg) 1 0))
+  
   #;
   (test/neg-blame
    'combo1

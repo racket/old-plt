@@ -20,10 +20,14 @@
    (struct url ([scheme (union false? string?)]
                 [host (union false? string?)]
                 [port (union false? number?)]
-                [path string?]
+                [path (listof string?)]
                 [params (union false? string?)]
                 [query (union false? string?)]
                 [fragment (union false? string?)]))
+   (string->url ((union bytes? string?) . -> . url?))
+   (url->string (url? . -> . string?))
+   (url->bytes (url? . -> . bytes?))
+
    (get-pure-port (opt-> (url?) ((listof string?)) input-port?))
    (get-impure-port (opt-> (url?) ((listof string?)) input-port?))
    (post-pure-port (opt-> (url?) ((listof string?)) input-port?))
@@ -31,8 +35,6 @@
    (display-pure-port (input-port? . -> . void?))
    (purify-port (input-port? . -> . (listof mime-header)))
    (netscape/string->url (string? . -> . url?))
-   (string->url (string? . -> . url?))
-   (url->string (url? . -> . string?))
    (decode-some-url-parts (url? . -> . url?))
    (call/input-url (opt-> (url? 
                            (url? . -> . input-port?)
@@ -41,7 +43,6 @@
                           any))
    (combine-url/relative (url? string? . -> . url?))
    (url-exception? (any? . -> . boolean?))
-   
    (current-proxy-servers
     (case-> ((union false? (listof (list string? string? number?))) . -> . void?)
             (-> (union false? (listof (list string? string? number?))))))))

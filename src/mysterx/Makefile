@@ -12,6 +12,13 @@
 # build mysterx.dll.  The files are on the Visual Studio
 # CD.
 
+# The code for mx_element_focus in htmlutil.cxx uses the
+# COM interface IHTMLElement2.  That interface is defined
+# in MsHTML.h in recent versions of the Platform SDK (more 
+# recent than the VC++6 release.  If you don't have such a 
+# Platform SDK, comment out the code in the body of that 
+# function.
+
 all : 
 	cd myspage
 	nmake /f myspage.mak

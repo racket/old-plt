@@ -135,6 +135,7 @@ static MX_PRIM mxPrims[] = {
   { mx_element_insert_text,"element-insert-text",2,2 },
   { mx_element_append_text,"element-append-text",2,2 },
   { mx_element_replace_html,"element-replace-html",2,2 },
+  { mx_element_focus,"element-focus",1,1 },
   { mx_element_attribute,"element-attribute",2,2 },
   { mx_element_set_attribute,"element-set-attribute!",3,3 },
   { mx_element_click,"element-click",1,1 },
@@ -3546,18 +3547,6 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
   
   return (Scheme_Object *)retval;
 }
-/*
-Scheme_Object *mx_current_document(int argc,Scheme_Object **argv) {
-  HRESULT hr;
-   
-  if (MX_DOCUMENTP(argv[0]) == FALSE) { 
-    scheme_wrong_type("current-document","mx-document",0,argc,argv);
-  }
-  
-  ******
-
-}
-*/
 
 Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
   char *controlName;

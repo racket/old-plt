@@ -176,6 +176,35 @@ IDispatch *getObjectInCollection(IHTMLElementCollection *pObjectCollection,int n
   return pIDispatch;
 }
 
+Scheme_Object *mx_element_focus(int argc,Scheme_Object **argv) {
+
+  // if recent Platform SDK not available, comment out code
+  // from HERE
+
+  HRESULT hr;
+  IHTMLElement *pIHTMLElement;
+  IHTMLElement2 *pIHTMLElement2;
+
+  if (MX_ELEMENTP(argv[0]) == FALSE) {
+    scheme_wrong_type("element-focus","mx-element",0,argc,argv);
+  }
+
+  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);   
+  
+  hr = pIHTMLElement->QueryInterface(IID_IHTMLElement2,
+				     (void **)&pIHTMLElement2);
+
+  if (hr != S_OK || pIHTMLElement2 == NULL) {
+    codedComError("element-focus: Couldn't find IHTMLElement2 interface",hr);
+  }
+
+  pIHTMLElement2->focus();
+
+  // to HERE 
+
+  return scheme_void;
+}
+
 // IHTMLElement wrappers
 
 Scheme_Object *mx_element_stuff_html(int argc,Scheme_Object **argv,WCHAR *where,char *name) {
@@ -196,7 +225,6 @@ Scheme_Object *mx_element_stuff_html(int argc,Scheme_Object **argv,WCHAR *where,
   htmlBSTR = schemeStringToBSTR(argv[1]);
 
   pIHTMLElement->insertAdjacentHTML(whereBSTR,htmlBSTR);
-  scheme_printf("stuff 5~n",9,0,NULL);
 
   SysFreeString(whereBSTR);
   SysFreeString(htmlBSTR);

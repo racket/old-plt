@@ -1173,7 +1173,6 @@ void GC_register_thread(void *t, void *c)
 /*****************************************************************************/
 #if defined(NEWGC_BTC_ACCOUNT) || defined(NEWGC_HEAP_DEBUGGING)
 #define STACKLET_SIZE GEN0_PAGE_SIZE
-#define NULL 0
 
 struct stacklet {
   struct stacklet *prev;

@@ -1,0 +1,5 @@
+#define OS_X 1
+
+#pragma precompile_target ":wxGHeadersOSX"
+
+#include "wxGWin.pch"

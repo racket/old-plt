@@ -8,11 +8,6 @@
 
 #include <MacHeaders.h>
 
-#ifdef powerc
-  #pragma precompile_target ":wxGHeadersPPC"
-#else
-  #pragma precompile_target ":wxGHeaders68K"
-#endif
 #define macintosh
 #define FOR_MAC	// needed for wxxpm
 #define DEBUG_NEW 0

@@ -19,10 +19,10 @@
 @ Q "draw-arc" : void DrawArc(float,float,nnfloat,nnfloat,float,float); : : /CheckOk
 @ Q "draw-ellipse" : void DrawEllipse(float,float,nnfloat,nnfloat); : : /ZeroReturn[2]|ZeroReturn[3]|CheckOk
 
-@ Q "draw-lines" : void DrawLines(-int,wxPoint!/bList/ubList/cList,float=0,float=0); : /methListSet[wxPoint.0.1.0]// : / CheckOk|glueListSet[wxPoint.0.1.0.METHODNAME("dc<%>","draw-lines")]//
-@ Q "draw-polygon" : void DrawPolygon(-int,wxPoint!/bList/ubList/cList,float=0,float=0,SYM[fillKind]=wxODDEVEN_RULE); : / methListSet[wxPoint.0.1.0]// : /CheckOk|glueListSet[wxPoint.0.1.0.METHODNAME("dc<%>","draw-polygon")]//
+@ Q "draw-lines" : void DrawLines(-int,wxPoint!/bList/ubList/cList,float=0,float=0); : /methListSet[wxPoint.0.1.0]// : / glueListSet[wxPoint.0.1.0.METHODNAME("dc<%>","draw-lines")]|CheckOk//
+@ Q "draw-polygon" : void DrawPolygon(-int,wxPoint!/bList/ubList/cList,float=0,float=0,SYM[fillKind]=wxODDEVEN_RULE); : / methListSet[wxPoint.0.1.0]// : /glueListSet[wxPoint.0.1.0.METHODNAME("dc<%>","draw-polygon")]|CheckOk//
 
-@ Q "set-clipping-rect" : void SetClippingRect(float,float,nnfloat,nnfloat); : : /CheckOk|ZeroBoundary[2]|ZeroBoundary[3]
+@ Q "set-clipping-rect" : void SetClippingRect(float,float,nnfloat,nnfloat); : : /ZeroBoundary[2]|ZeroBoundary[3]|CheckOk
 @ Q "set-clipping-region" : void SetClippingRegion(wxRegion^) : : /CheckRgn[0]
 @ Q "get-clipping-region" : wxRegion^ GetClippingRegion()
 

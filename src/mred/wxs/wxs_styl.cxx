@@ -257,6 +257,7 @@ class wxMultColour *objscheme_unbundle_wxMultColour(Scheme_Object *obj, const ch
 
 
 
+// short* should really be rshort[-1000|1000]*:
 
 class os_wxAddColour : public wxAddColour {
  public:

@@ -412,14 +412,14 @@ static Scheme_Object *os_wxDCGetSize(Scheme_Object *obj, int n,  Scheme_Object *
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  float _x0;
-  float* x0 = &_x0;
-  float _x1;
-  float* x1 = &_x1;
+  nnfloat _x0;
+  nnfloat* x0 = &_x0;
+  nnfloat _x1;
+  nnfloat* x1 = &_x1;
 
   
-      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-size in dc<%>"), "get-size in dc<%>"", extracting boxed argument");
-      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-size in dc<%>"), "get-size in dc<%>"", extracting boxed argument");
+      *x0 = objscheme_unbundle_nonnegative_float(objscheme_unbox(p[0], "get-size in dc<%>"), "get-size in dc<%>"", extracting boxed argument");
+      *x1 = objscheme_unbundle_nonnegative_float(objscheme_unbox(p[1], "get-size in dc<%>"), "get-size in dc<%>"", extracting boxed argument");
 
   
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->GetSize(x0, x1);
@@ -744,33 +744,33 @@ static Scheme_Object *os_wxDCGetTextExtent(Scheme_Object *obj, int n,  Scheme_Ob
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
   string x0;
-  float _x1;
-  float* x1 = &_x1;
-  float _x2;
-  float* x2 = &_x2;
-  float _x3;
-  float* x3 = &_x3;
-  float _x4;
-  float* x4 = &_x4;
+  nnfloat _x1;
+  nnfloat* x1 = &_x1;
+  nnfloat _x2;
+  nnfloat* x2 = &_x2;
+  nnfloat _x3;
+  nnfloat* x3 = &_x3;
+  nnfloat _x4;
+  nnfloat* x4 = &_x4;
   class wxFont* x5;
   Bool x6;
 
   
   x0 = (string)objscheme_unbundle_string(p[0], "get-text-extent in dc<%>");
-      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-text-extent in dc<%>"), "get-text-extent in dc<%>"", extracting boxed argument");
-      *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "get-text-extent in dc<%>"), "get-text-extent in dc<%>"", extracting boxed argument");
+      *x1 = objscheme_unbundle_nonnegative_float(objscheme_unbox(p[1], "get-text-extent in dc<%>"), "get-text-extent in dc<%>"", extracting boxed argument");
+      *x2 = objscheme_unbundle_nonnegative_float(objscheme_unbox(p[2], "get-text-extent in dc<%>"), "get-text-extent in dc<%>"", extracting boxed argument");
   if (n > 3) {
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = objscheme_unbundle_float(objscheme_nullable_unbox(p[3], "get-text-extent in dc<%>"), "get-text-extent in dc<%>"", extracting boxed argument");
+    *x3 = objscheme_unbundle_nonnegative_float(objscheme_nullable_unbox(p[3], "get-text-extent in dc<%>"), "get-text-extent in dc<%>"", extracting boxed argument");
   } else
     x3 = NULL;
   if (n > 4) {
     if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
-    *x4 = objscheme_unbundle_float(objscheme_nullable_unbox(p[4], "get-text-extent in dc<%>"), "get-text-extent in dc<%>"", extracting boxed argument");
+    *x4 = objscheme_unbundle_nonnegative_float(objscheme_nullable_unbox(p[4], "get-text-extent in dc<%>"), "get-text-extent in dc<%>"", extracting boxed argument");
   } else
     x4 = NULL;
   if (n > 5) {
@@ -957,7 +957,7 @@ static Scheme_Object *os_wxDCSetClippingRect(Scheme_Object *obj, int n,  Scheme_
   x2 = objscheme_unbundle_nonnegative_float(p[2], "set-clipping-rect in dc<%>");
   x3 = objscheme_unbundle_nonnegative_float(p[3], "set-clipping-rect in dc<%>");
 
-  DO_OK_CHECK(scheme_void)if (x2 < 0) x2 = 0;if (x3 < 0) x3 = 0;
+  if (x2 < 0) x2 = 0;if (x3 < 0) x3 = 0;DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetClippingRect(x0, x1, x2, x3);
 
   
@@ -991,7 +991,7 @@ static Scheme_Object *os_wxDCDrawPolygon(Scheme_Object *obj, int n,  Scheme_Obje
   } else
     x4 = wxODDEVEN_RULE;
 
-  DO_OK_CHECK(scheme_void)x1 = __MakewxPointArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("dc<%>","draw-polygon"));
+  x1 = __MakewxPointArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("dc<%>","draw-polygon"));DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawPolygon(x0, x1, x2, x3, x4);
 
   
@@ -1020,7 +1020,7 @@ static Scheme_Object *os_wxDCDrawLines(Scheme_Object *obj, int n,  Scheme_Object
   } else
     x3 = 0;
 
-  DO_OK_CHECK(scheme_void)x1 = __MakewxPointArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("dc<%>","draw-lines"));
+  x1 = __MakewxPointArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("dc<%>","draw-lines"));DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawLines(x0, x1, x2, x3);
 
   

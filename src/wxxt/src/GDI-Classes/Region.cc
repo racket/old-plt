@@ -206,6 +206,9 @@ void wxRegion::SetPolygon(int n, wxPoint points[], float xoffset, float yoffset,
 {
   Cleanup();
 
+  if (n < 2)
+    return;
+
 #ifdef wx_x
 # define POINT XPoint
 #endif

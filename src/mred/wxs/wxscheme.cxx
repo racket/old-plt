@@ -281,8 +281,8 @@ static Scheme_Object *wxSchemeRegisterCollectingBitmap(int n, Scheme_Object **a)
   *gcbm->canvasptr = objscheme_unbundle_wxCanvas(a[0], "register-collecting-blit", 0);
   gcbm->x = objscheme_unbundle_float(a[1], "register-collecting-blit");
   gcbm->y = objscheme_unbundle_float(a[2], "register-collecting-blit");
-  gcbm->w = objscheme_unbundle_float(a[3], "register-collecting-blit");
-  gcbm->h = objscheme_unbundle_float(a[4], "register-collecting-blit");
+  gcbm->w = objscheme_unbundle_nonnegative_float(a[3], "register-collecting-blit");
+  gcbm->h = objscheme_unbundle_nonnegative_float(a[4], "register-collecting-blit");
   gcbm->on = objscheme_unbundle_wxBitmap(a[5], "register-collecting-blit", 0);
   gcbm->off = objscheme_unbundle_wxBitmap(a[6], "register-collecting-blit", 0);
   gcbm->onx = gcbm->ony = gcbm->offx = gcbm-> offy = 0;

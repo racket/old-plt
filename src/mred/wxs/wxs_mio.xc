@@ -126,7 +126,7 @@ static double GetInexact(wxMediaStreamIn *s)
 
 @MACRO alwaysPassPtr = x0 = &_x0;
 
-@ "get-string" : nstring/makeSizedString GetString(long?=NULL); : : /alwaysPassPtr/
+@ "get-string" : nstring/makeSizedString GetString(nnlong?=NULL); : : /alwaysPassPtr/
 @ "get-fixed" : wxMediaStreamIn% GetFixed(long+);
 
 @ m "get-exact" : long GetExact();
@@ -138,7 +138,7 @@ static double GetInexact(wxMediaStreamIn *s)
 @ "set-boundary" : void SetBoundary(nnlong);
 @ "remove-boundary" : void RemoveBoundary();
 
-@ "skip" : void Skip(long);
+@ "skip" : void Skip(nnlong);
 @ "tell" : long Tell();
 @ "jump-to" : void JumpTo(nnlong);
 

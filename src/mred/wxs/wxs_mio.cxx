@@ -1211,10 +1211,10 @@ static Scheme_Object *os_wxMediaStreamInSkip(Scheme_Object *obj, int n,  Scheme_
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  long x0;
+  nnlong x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "skip in editor-stream-in%");
+  x0 = objscheme_unbundle_nonnegative_integer(p[0], "skip in editor-stream-in%");
 
   
   ((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->Skip(x0);
@@ -1363,15 +1363,15 @@ static Scheme_Object *os_wxMediaStreamInGetString(Scheme_Object *obj, int n,  Sc
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   nstring r;
   objscheme_check_valid(obj);
-  long _x0;
-  long* x0 = &_x0;
+  nnlong _x0;
+  nnlong* x0 = &_x0;
 
   
   if (n > 0) {
     if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = objscheme_unbundle_integer(objscheme_nullable_unbox(p[0], "get-string in editor-stream-in%"), "get-string in editor-stream-in%"", extracting boxed argument");
+    *x0 = objscheme_unbundle_nonnegative_integer(objscheme_nullable_unbox(p[0], "get-string in editor-stream-in%"), "get-string in editor-stream-in%"", extracting boxed argument");
   } else
     x0 = NULL;
 

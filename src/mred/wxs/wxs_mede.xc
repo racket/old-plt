@@ -74,7 +74,7 @@
 
 @CLASSBASE wxMediaEdit "text" : "editor"
 
-@CREATOR (float=1.0,float[]=NULL/bList/ubList/cList,-int=0); : : /glueListSet[float.1.1.2.METHODNAME("text%","initialization")]//
+@CREATOR (nnfloat=1.0,float[]=NULL/bList/ubList/cList,-int=0); : : /glueListSet[float.1.1.2.METHODNAME("text%","initialization")]//
 
 @CLASSID wxTYPE_MEDIA_EDIT
 
@@ -85,15 +85,15 @@
 @SETMARK Z = d
 @INCLUDE wxs_mbuf.xci
 
-@ "get-position" : void GetPosition(long?,long?=NULL);
+@ "get-position" : void GetPosition(nnlong?,nnlong?=NULL);
 @ "get-start-position" : long GetStartPosition();
 @ "get-end-position" : long GetEndPosition();
 @ "set-position" : void SetPosition(nnlong,nnls[same]=-1,bool=FALSE,bool=TRUE,SYM[selType]=wxDEFAULT_SELECT);
 @ "set-position-bias-scroll" : void SetPositionBiasScroll(SYM[Bias],nnlong,nnls[same]=-1,bool=FALSE,bool=TRUE,SYM[selType]=wxDEFAULT_SELECT);
 @ "move-position" :  void MovePosition(SYM[moveCode],bool=FALSE,SYM[move]=wxMOVE_SIMPLE);
 @ "scroll-to-position" : bool ScrollToPosition(nnlong,bool=FALSE,nnls[same]=-1,SYM[bias]=0);
-@ "get-visible-position-range" : void GetVisiblePositionRange(long?,long?);
-@ "get-visible-line-range" : void GetVisibleLineRange(long?,long?);
+@ "get-visible-position-range" : void GetVisiblePositionRange(nnlong?,nnlong?);
+@ "get-visible-line-range" : void GetVisibleLineRange(nnlong?,nnlong?);
 
 @ v "set-anchor" : void SetAnchor(bool);
 @ "get-anchor" : bool GetAnchor();
@@ -135,7 +135,7 @@
 @ "find-position-in-line" : long FindPositionInLine(nnlong,float,bool?=NULL,bool?=NULL,float?=NULL);
 
 @ "get-between-threshold" : float GetBetweenThreshold();
-@ "set-between-threshold" : void SetBetweenThreshold(float);
+@ "set-between-threshold" : void SetBetweenThreshold(nnfloat);
 
 @ "position-line" : long PositionLine(nnlong,bool=FALSE);
 @ "position-location" :  void PositionLocation(nnlong,float?=NULL,float?=NULL,bool=TRUE,bool=FALSE,bool=FALSE);
@@ -165,8 +165,8 @@
 
 @ "find-string-all" : long[]/bReturnList[long.1] FindStringAll(string,-long*,SYM[direction]=1,nnls[start]=-1,nnls[eof]=-1,bool=TRUE,bool=TRUE);
 
-@ "find-snip" : wxSnip^ FindSnip(nnlong,SYM[findKind],long?=NULL)
-@ "get-snip-position-and-location" : bool GetSnipPositionAndLocation(wxSnip!,long?,float?=NULL,float?=NULL);
+@ "find-snip" : wxSnip^ FindSnip(nnlong,SYM[findKind],nnlong?=NULL)
+@ "get-snip-position-and-location" : bool GetSnipPositionAndLocation(wxSnip!,nnlong?,float?=NULL,float?=NULL);
 @ "get-snip-position" : long/bNegAsFalse GetSnipPosition(wxSnip!);
 
 @MACRO makeNoCopyString[len] = scheme_make_sized_string(r, <len>, 0)
@@ -185,7 +185,7 @@
 
 @MACRO checkNull = if (!x0) x0 = &_x0;
 
-@ "get-tabs" : float[]/bReturnList[float.0] GetTabs(int?=NULL,float?=NULL,bool?=NULL); : : /checkNull/
+@ "get-tabs" : float[]/bReturnList[float.0] GetTabs(nnint?=NULL,float?=NULL,bool?=NULL); : : /checkNull/
 @ "set-tabs" : void SetTabs(float[]/bList/ubList/cList,-int,float=wxTAB_WIDTH,bool=TRUE); : : /glueListSet[float.0.0.1.METHODNAME("text%","set-tabs")]//
 
 @ v "can-insert?" : bool CanInsert(nnlong,nnlong);
@@ -205,7 +205,7 @@
 @ v "get-region-data" : wxBufferData^ GetRegionData(nnlong,nnlong);
 @ v "set-region-data" : void SetRegionData(nnlong,nnlong,wxBufferData^);
 
-@ "find-wordbreak" : void FindWordbreak(long?,long?,SYM[breakType]);
+@ "find-wordbreak" : void FindWordbreak(nnlong?,nnlong?,SYM[breakType]);
 
 @ "set-wordbreak-map" : void SetWordbreakMap(wxMediaWordbreakMap^);
 @ "get-wordbreak-map" : wxMediaWordbreakMap^ GetWordbreakMap();

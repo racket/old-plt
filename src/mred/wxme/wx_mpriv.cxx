@@ -2275,6 +2275,8 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
     return;
   }
 
+  if (!admin)
+    return;
   dc = admin->GetDC(&x, &y);
   if (!dc)
     return;

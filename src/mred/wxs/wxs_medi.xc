@@ -90,7 +90,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ X "save-file" : bool SaveFile(nstring=NULL,SYM[fileType]=wxMEDIA_FF_SAME,bool=TRUE);
 @ X "insert-file" : bool InsertFile(string,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE);
 
-@ X "get-extent" : void GetExtent(float?,float?);
+@ X "get-extent" : void GetExtent(nnfloat?,nnfloat?);
 @ X "get-descent" : float GetDescent(); : : : : XrZERO
 @ X "get-space" : float GetSpace(); : : : : XrZERO
 
@@ -128,7 +128,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ "local-to-global" : void LocalToGlobal(float?,float?);
 
 @ v "get-dc" : wxDC^ GetDC();
-@ v "get-view-size" : void GetViewSize(float?,float?);
+@ v "get-view-size" : void GetViewSize(nnfloat?,nnfloat?);
 
 @ "clear" : void Clear();
 @ "select-all" : void SelectAll();

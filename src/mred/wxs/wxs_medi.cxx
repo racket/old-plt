@@ -526,7 +526,7 @@ class os_wxMediaBuffer : public wxMediaBuffer {
  public:
 
   ~os_wxMediaBuffer();
-  void GetViewSize(float* x0, float* x1);
+  void GetViewSize(nnfloat* x0, nnfloat* x1);
   class wxDC* GetDC();
   nstring PutFile(nstring x0, nstring x1);
   nstring GetFile(nstring x0);
@@ -551,10 +551,10 @@ class os_wxMediaBuffer : public wxMediaBuffer {
   void SetModified(Bool x0);
   void SetSnipData(class wxSnip* x0, class wxBufferData* x1);
   class wxBufferData* GetSnipData(class wxSnip* x0);
-  void NeedsUpdate(class wxSnip* x0, float x1, float x2, float x3, float x4);
+  void NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4);
   void Resized(class wxSnip* x0, Bool x1);
   void SetCaretOwner(class wxSnip* x0, int x1 = wxFOCUS_IMMEDIATE);
-  Bool ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5, int x6 = 0);
+  Bool ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4, Bool x5, int x6 = 0);
   void OnDisplaySize();
   void OnChange();
   void OnFocus(Bool x0);
@@ -565,7 +565,7 @@ class os_wxMediaBuffer : public wxMediaBuffer {
   void SizeCacheInvalid();
   void BlinkCaret();
   void OwnCaret(Bool x0);
-  void Refresh(float x0, float x1, float x2, float x3, int x4);
+  void Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4);
   class wxCursor* AdjustCursor(class wxMouseEvent& x0);
   void OnChar(class wxKeyEvent& x0);
   void OnEvent(class wxMouseEvent& x0);
@@ -582,7 +582,7 @@ os_wxMediaBuffer::~os_wxMediaBuffer()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-void os_wxMediaBuffer::GetViewSize(float* x0, float* x1)
+void os_wxMediaBuffer::GetViewSize(nnfloat* x0, nnfloat* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
@@ -610,8 +610,8 @@ wxMediaBuffer::GetViewSize(x0, x1);
 
   v = scheme_apply(method, 2, p);
   
-  if (x0) *x0 = objscheme_unbundle_float(objscheme_nullable_unbox(p[0], "get-view-size in editor<%>"", extracting return value via box"), "get-view-size in editor<%>"", extracting return value via box"", extracting boxed argument");
-  if (x1) *x1 = objscheme_unbundle_float(objscheme_nullable_unbox(p[1], "get-view-size in editor<%>"", extracting return value via box"), "get-view-size in editor<%>"", extracting return value via box"", extracting boxed argument");
+  if (x0) *x0 = objscheme_unbundle_nonnegative_float(objscheme_nullable_unbox(p[0], "get-view-size in editor<%>"", extracting return value via box"), "get-view-size in editor<%>"", extracting return value via box"", extracting boxed argument");
+  if (x1) *x1 = objscheme_unbundle_nonnegative_float(objscheme_nullable_unbox(p[1], "get-view-size in editor<%>"", extracting return value via box"), "get-view-size in editor<%>"", extracting return value via box"", extracting boxed argument");
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -1443,7 +1443,7 @@ return 0;
   }
 }
 
-void os_wxMediaBuffer::NeedsUpdate(class wxSnip* x0, float x1, float x2, float x3, float x4)
+void os_wxMediaBuffer::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4)
 {
   Scheme_Object *p[5];
   Scheme_Object *v;
@@ -1548,7 +1548,7 @@ return;
   }
 }
 
-Bool os_wxMediaBuffer::ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5, int x6)
+Bool os_wxMediaBuffer::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4, Bool x5, int x6)
 {
   Scheme_Object *p[7];
   Scheme_Object *v;
@@ -1914,7 +1914,7 @@ return;
   }
 }
 
-void os_wxMediaBuffer::Refresh(float x0, float x1, float x2, float x3, int x4)
+void os_wxMediaBuffer::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4)
 {
   Scheme_Object *p[5];
   Scheme_Object *v;
@@ -2705,20 +2705,20 @@ static Scheme_Object *os_wxMediaBufferGetViewSize(Scheme_Object *obj, int n,  Sc
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  float _x0;
-  float* x0 = &_x0;
-  float _x1;
-  float* x1 = &_x1;
+  nnfloat _x0;
+  nnfloat* x0 = &_x0;
+  nnfloat _x1;
+  nnfloat* x1 = &_x1;
 
   
   if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = objscheme_unbundle_float(objscheme_nullable_unbox(p[0], "get-view-size in editor<%>"), "get-view-size in editor<%>"", extracting boxed argument");
+    *x0 = objscheme_unbundle_nonnegative_float(objscheme_nullable_unbox(p[0], "get-view-size in editor<%>"), "get-view-size in editor<%>"", extracting boxed argument");
   if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = objscheme_unbundle_float(objscheme_nullable_unbox(p[1], "get-view-size in editor<%>"), "get-view-size in editor<%>"", extracting boxed argument");
+    *x1 = objscheme_unbundle_nonnegative_float(objscheme_nullable_unbox(p[1], "get-view-size in editor<%>"), "get-view-size in editor<%>"", extracting boxed argument");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3267,20 +3267,20 @@ static Scheme_Object *os_wxMediaBufferGetExtent(Scheme_Object *obj, int n,  Sche
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  float _x0;
-  float* x0 = &_x0;
-  float _x1;
-  float* x1 = &_x1;
+  nnfloat _x0;
+  nnfloat* x0 = &_x0;
+  nnfloat _x1;
+  nnfloat* x1 = &_x1;
 
   
   if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = objscheme_unbundle_float(objscheme_nullable_unbox(p[0], "get-extent in editor<%>"), "get-extent in editor<%>"", extracting boxed argument");
+    *x0 = objscheme_unbundle_nonnegative_float(objscheme_nullable_unbox(p[0], "get-extent in editor<%>"), "get-extent in editor<%>"", extracting boxed argument");
   if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = objscheme_unbundle_float(objscheme_nullable_unbox(p[1], "get-extent in editor<%>"), "get-extent in editor<%>"", extracting boxed argument");
+    *x1 = objscheme_unbundle_nonnegative_float(objscheme_nullable_unbox(p[1], "get-extent in editor<%>"), "get-extent in editor<%>"", extracting boxed argument");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->GetExtent(x0, x1);
@@ -3966,15 +3966,15 @@ static Scheme_Object *os_wxMediaBufferNeedsUpdate(Scheme_Object *obj, int n,  Sc
   class wxSnip* x0;
   float x1;
   float x2;
-  float x3;
-  float x4;
+  nnfloat x3;
+  nnfloat x4;
 
   
   x0 = objscheme_unbundle_wxSnip(p[0], "needs-update in editor<%>", 0);
   x1 = objscheme_unbundle_float(p[1], "needs-update in editor<%>");
   x2 = objscheme_unbundle_float(p[2], "needs-update in editor<%>");
-  x3 = objscheme_unbundle_float(p[3], "needs-update in editor<%>");
-  x4 = objscheme_unbundle_float(p[4], "needs-update in editor<%>");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "needs-update in editor<%>");
+  x4 = objscheme_unbundle_nonnegative_float(p[4], "needs-update in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4045,8 +4045,8 @@ static Scheme_Object *os_wxMediaBufferScrollTo(Scheme_Object *obj, int n,  Schem
   class wxSnip* x0;
   float x1;
   float x2;
-  float x3;
-  float x4;
+  nnfloat x3;
+  nnfloat x4;
   Bool x5;
   int x6;
 
@@ -4054,8 +4054,8 @@ static Scheme_Object *os_wxMediaBufferScrollTo(Scheme_Object *obj, int n,  Schem
   x0 = objscheme_unbundle_wxSnip(p[0], "scroll-to in editor<%>", 0);
   x1 = objscheme_unbundle_float(p[1], "scroll-to in editor<%>");
   x2 = objscheme_unbundle_float(p[2], "scroll-to in editor<%>");
-  x3 = objscheme_unbundle_float(p[3], "scroll-to in editor<%>");
-  x4 = objscheme_unbundle_float(p[4], "scroll-to in editor<%>");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "scroll-to in editor<%>");
+  x4 = objscheme_unbundle_nonnegative_float(p[4], "scroll-to in editor<%>");
   x5 = objscheme_unbundle_bool(p[5], "scroll-to in editor<%>");
   if (n > 6) {
     x6 = unbundle_symset_bias(p[6], "scroll-to in editor<%>");
@@ -4299,15 +4299,15 @@ static Scheme_Object *os_wxMediaBufferRefresh(Scheme_Object *obj, int n,  Scheme
   objscheme_check_valid(obj);
   float x0;
   float x1;
-  float x2;
-  float x3;
+  nnfloat x2;
+  nnfloat x3;
   int x4;
 
   
   x0 = objscheme_unbundle_float(p[0], "refresh in editor<%>");
   x1 = objscheme_unbundle_float(p[1], "refresh in editor<%>");
-  x2 = objscheme_unbundle_float(p[2], "refresh in editor<%>");
-  x3 = objscheme_unbundle_float(p[3], "refresh in editor<%>");
+  x2 = objscheme_unbundle_nonnegative_float(p[2], "refresh in editor<%>");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "refresh in editor<%>");
   x4 = unbundle_symset_caret(p[4], "refresh in editor<%>");
 
   

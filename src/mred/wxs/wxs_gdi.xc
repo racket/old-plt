@@ -70,8 +70,8 @@
 
 @CREATOR ();
 
-@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[0|255],SYM[family],SYM[style],SYM[weight],bool=0) <> family id
-@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[0|255],cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name ## USE_FONT_NAME_DIRECTORY
+@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[1|255],SYM[family],SYM[style],SYM[weight],bool=0) <> family id
+@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[1|255],cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name ## USE_FONT_NAME_DIRECTORY
 
 @CONSTANT "the-font-list" : wxFontList! wxTheFontList
 
@@ -264,7 +264,7 @@
 
 @CLASSBASE wxCursor "cursor" : "object"
 
-@CREATOR (string,SYM[bitmapType]=0,nnint=0,nnint=0); <> cursor name
+@CREATOR (string,SYM[bitmapType]=0,rint[1|10000]=0,rint[1|10000]=0); <> cursor name
 @CREATOR (SYM[cursor]); <> cursor id
 
 @ "ok?" : bool Ok();

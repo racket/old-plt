@@ -441,7 +441,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     x1 = objscheme_unbundle_integer_in(p[1], 1, 10000, "initialization in bitmap% (character list case)");
     x2 = objscheme_unbundle_integer_in(p[2], 1, 10000, "initialization in bitmap% (character list case)");
 
-    if (scheme_proper_list_length(p[0]) < ((x1 * x2) >> 3)) scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "byte list string too short: ", p[0]);x0 = __MakecharArray((0 < n) ? p[0] : scheme_null, NULL, METHODNAME("bitmap%","initialization"));
+    x0 = __MakecharArray((0 < n) ? p[0] : scheme_null, NULL, METHODNAME("bitmap%","initialization"));if (scheme_proper_list_length(p[0]) < ((x1 * x2) >> 3)) scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "byte list string too short: ", p[0]);
     realobj = new os_wxBitmap(obj, x0, x1, x2);
     
     

@@ -27,6 +27,7 @@
 @IVAR "g" : rint[-1000|1000] g
 @IVAR "b" : rint[-1000|1000] b
 
+// short* should really be rshort[-1000|1000]*:
 @ "get" : void Get(short*,short*,short*);
 @ "set" : void Set(rint[-1000|1000],rint[-1000|1000],rint[-1000|1000]);
 

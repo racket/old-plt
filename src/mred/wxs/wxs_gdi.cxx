@@ -590,7 +590,7 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
     
     if ((n < 4) ||(n > 5)) 
       scheme_wrong_count("find-or-create-font in font-list% (family id case)", 4, 5, n, p);
-    x0 = objscheme_unbundle_integer_in(p[0], 0, 255, "find-or-create-font in font-list% (family id case)");
+    x0 = objscheme_unbundle_integer_in(p[0], 1, 255, "find-or-create-font in font-list% (family id case)");
     x1 = unbundle_symset_family(p[1], "find-or-create-font in font-list% (family id case)");
     x2 = unbundle_symset_style(p[2], "find-or-create-font in font-list% (family id case)");
     x3 = unbundle_symset_weight(p[3], "find-or-create-font in font-list% (family id case)");
@@ -616,7 +616,7 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
     
     if ((n < 5) ||(n > 6)) 
       scheme_wrong_count("find-or-create-font in font-list% (font name case)", 5, 6, n, p);
-    x0 = objscheme_unbundle_integer_in(p[0], 0, 255, "find-or-create-font in font-list% (font name case)");
+    x0 = objscheme_unbundle_integer_in(p[0], 1, 255, "find-or-create-font in font-list% (font name case)");
     x1 = (cstring)objscheme_unbundle_string(p[1], "find-or-create-font in font-list% (font name case)");
     x2 = unbundle_symset_family(p[2], "find-or-create-font in font-list% (font name case)");
     x3 = unbundle_symset_style(p[3], "find-or-create-font in font-list% (font name case)");
@@ -2670,14 +2670,14 @@ static Scheme_Object *bundle_symset_cursor(int v) {
 class os_wxCursor : public wxCursor {
  public:
 
-  os_wxCursor(Scheme_Object * obj, string x0, int x1 = 0, nnint x2 = 0, nnint x3 = 0);
+  os_wxCursor(Scheme_Object * obj, string x0, int x1 = 0, int x2 = 0, int x3 = 0);
   os_wxCursor(Scheme_Object * obj, int x0);
   ~os_wxCursor();
 };
 
 Scheme_Object *os_wxCursor_class;
 
-os_wxCursor::os_wxCursor(Scheme_Object * o, string x0, int x1, nnint x2, nnint x3)
+os_wxCursor::os_wxCursor(Scheme_Object * o, string x0, int x1, int x2, int x3)
 : wxCursor(x0, x1, x2, x3)
 {
   __gc_external = (void *)o;
@@ -2734,8 +2734,8 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
   } else  {
     string x0;
     int x1;
-    nnint x2;
-    nnint x3;
+    int x2;
+    int x3;
 
     
     if ((n < 1) ||(n > 4)) 
@@ -2746,11 +2746,11 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
     } else
       x1 = 0;
     if (n > 2) {
-      x2 = objscheme_unbundle_nonnegative_integer(p[2], "initialization in cursor% (cursor name case)");
+      x2 = objscheme_unbundle_integer_in(p[2], 1, 10000, "initialization in cursor% (cursor name case)");
     } else
       x2 = 0;
     if (n > 3) {
-      x3 = objscheme_unbundle_nonnegative_integer(p[3], "initialization in cursor% (cursor name case)");
+      x3 = objscheme_unbundle_integer_in(p[3], 1, 10000, "initialization in cursor% (cursor name case)");
     } else
       x3 = 0;
 

@@ -72,7 +72,7 @@ static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
 @INCLUDE wxs_draw.xci
 
 // Also in wxWindow:
-@ Q "get-text-extent" : void GetTextExtent(string,float*,float*,float?=NULL,float?=NULL,wxFont^=NULL,bool=FALSE); : : /CheckOk
+@ Q "get-text-extent" : void GetTextExtent(string,nnfloat*,nnfloat*,nnfloat?=NULL,nnfloat?=NULL,wxFont^=NULL,bool=FALSE); : : /CheckOk
 @ Q "get-char-height" : float GetCharHeight();
 @ Q "get-char-width" : float GetCharWidth();
 
@@ -113,7 +113,7 @@ static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
 @ m "get-text-background" : wxColour! dcGetTextBackground();
 @ m "get-text-foreground" : wxColour! dcGetTextForeground();
 
-@ q "get-size" : void GetSize(float*,float*);
+@ q "get-size" : void GetSize(nnfloat*,nnfloat*);
 
 @ q "ok?" : bool Ok();
 

@@ -589,11 +589,7 @@
   (define (predicate->type-name pred)
     (let* ([name (object-name pred)])
       (and name
-           (let* ([name-str (symbol->string name)]
-                  [m (regexp-match "(.*)\\?" name-str)])
-             (if m
-                 (cadr m)
-                 name-str)))))
+           (symbol->string name))))
 
   ;; contract->type-name : any -> string
   (define (contract->type-name c)
@@ -648,7 +644,7 @@
     ;;           -> (syntax -> syntax)
     (define (make-/proc /h stx)
       (let-values ([(arguments-check build-proj check-val wrapper) (/h stx)])
-        (let ([outer-args (syntax (val pos-blame neg-blame src-info))])
+        (let ([outer-args (syntax (val pos-blame neg-blame src-info name-id))])
           (with-syntax ([inner-check (check-val outer-args)]
                         [(val pos-blame neg-blame src-info name-id) outer-args]
                         [(val-args body) (wrapper outer-args)])
@@ -679,9 +675,9 @@
         [(_ cases ...)
          (let-values ([(arguments-check build-projs check-val wrapper)
                        (case->/h stx (syntax->list (syntax (cases ...))))])
-           (let ([outer-args (syntax (val pos-blame neg-blame src-info))])
+           (let ([outer-args (syntax (val pos-blame neg-blame src-info name-id))])
              (with-syntax ([(inner-check ...) (check-val outer-args)]
-                           [(val pos-blame neg-blame src-info) outer-args]
+                           [(val pos-blame neg-blame src-info name-id) outer-args]
                            [(body ...) (wrapper outer-args)])
                (with-syntax ([inner-lambda 
                               (set-inferred-name-from
@@ -765,7 +761,7 @@
     (define (case->/h orig-stx cases)
       (let loop ([cases cases])
         (cond
-          [(null? cases) (values (lambda (x) x)
+          [(null? cases) (values (lambda (outer-args x) x)
                                  (lambda (x y) y)
                                  (lambda (args) (syntax ()))
                                  (lambda (args) (syntax ())))]
@@ -776,7 +772,7 @@
                           [(arguments-check build-proj check-val wrapper)
                            (/h (car cases))])
                (values
-                (lambda (x) (arguments-check (arguments-checks x)))
+                (lambda (outer-args x) (arguments-check outer-args (arguments-checks outer-args x)))
                 (lambda (args inner)
                   (build-projs
                    args
@@ -801,7 +797,7 @@
          (and 
           (andmap method-specifier? (syntax->list (syntax (method-specifier ...))))
           (andmap identifier? (syntax->list (syntax (meth-name ...)))))
-         (let* ([outer-args (syntax (val pos-blame neg-blame src-info))]
+         (let* ([outer-args (syntax (val pos-blame neg-blame src-info name-id))]
                 [val-meth-names (syntax->list (syntax (meth-name ...)))]
                 [super-meth-names (map prefix-super val-meth-names)]
                 [val-meth-contracts (syntax->list (syntax (meth-contract ...)))]
@@ -885,7 +881,7 @@
       (syntax-case stx ()
         [(form (meth-name meth-contract) ...)
          (andmap identifier? (syntax->list (syntax (meth-name ...))))
-         (let* ([outer-args (syntax (val pos-blame neg-blame src-info))]
+         (let* ([outer-args (syntax (val pos-blame neg-blame src-info name-id))]
                 [val-meth-names (syntax->list (syntax (meth-name ...)))]
                 [val-meth-contracts (syntax->list (syntax (meth-contract ...)))]
                 [val-meth-contract-vars (generate-temporaries val-meth-contracts)])
@@ -961,7 +957,7 @@
     ;; constructs a wrapper method that checks the pre and post-condition, and
     ;; calls the original object's method
     (define (make-object-wrapper-method outer-args method-name contract-var contract-stx)
-      (with-syntax ([(val pos-blame neg-blame src-info) outer-args]
+      (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args]
                     [method-name method-name]
                     [method-name-string (symbol->string (syntax-e method-name))]
                     [contract-var contract-var])
@@ -989,7 +985,7 @@
     ;; constructs a wrapper method that checks the pre and post-condition, and
     ;; calls the super method inbetween.
     (define (make-class-wrapper-method outer-args method-name contract-var contract-stx)
-      (with-syntax ([(val pos-blame neg-blame src-info) outer-args]
+      (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args]
                     [super-method-name (prefix-super method-name)]
                     [method-name method-name]
                     [method-name-string (symbol->string (syntax-e method-name))]
@@ -1108,7 +1104,7 @@
                                 ->*make-body)
                                (->*/h ->body)])
                    (values 
-                    (lambda (body) (->add-outer-check (->*add-outer-check body)))
+                    (lambda (outer-args body) (->add-outer-check (->*add-outer-check outer-args body)))
                     ->*make-projections
                     (lambda (stx) (->*make-inner-check stx))
                     ->*make-body))))))]))
@@ -1138,7 +1134,7 @@
                    (let ([name-id (string-append "(->* "
                                                  (build-compound-type-name #f dom-x ...)
                                                  " "
-                                                 (build-type-name #f dom-x ...)
+                                                 (build-compound-type-name #f dom-x ...)
                                                  ")")])
                      body)))))
 
@@ -1252,8 +1248,8 @@
                        [dom-rest-projection-x (dom-rest-x neg-blame pos-blame src-info)]
                        [rng-projection-x (rng-x pos-blame neg-blame src-info)] ...)
                    inner-lambda))))
-            (lambda (stx)
-              (with-syntax ([(val check-rev-contract check-same-contract failure) stx])
+            (lambda (outer-args)
+              (with-syntax ([(val check-rev-contract check-same-contract failure name-id) outer-args])
                 (syntax
                  (unless (procedure? val)
                    (raise-contract-error
@@ -1305,8 +1301,8 @@
                  (let ([dom-projection-x (dom-x neg-blame pos-blame src-info)] ...
                        [dom-projection-rest-x (dom-rest-x neg-blame pos-blame src-info)])
                    inner-lambda))))
-            (lambda (stx)
-              (with-syntax ([(val check-rev-contract check-same-contract failure) stx])
+            (lambda (outer-args)
+              (with-syntax ([(val check-rev-contract check-same-contract failure name-id) outer-args])
                 (syntax
                  (unless (procedure? val)
                    (raise-contract-error
@@ -1316,8 +1312,8 @@
                     "expected a procedure that accepts ~a arguments, given: ~e"
                     dom-length
                     val)))))
-            (lambda (stx)
-              (with-syntax ([(val pos-blame neg-blame src-info) stx])
+            (lambda (outer-args)
+              (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args])
                 (syntax
                  ((arg-x ... . arg-rest-x)
                   (apply
@@ -1360,8 +1356,8 @@
                   (syntax
                    (let ([dom-projection-x (dom-x neg-blame pos-blame src-info)] ...)
                      inner-lambda))))
-              (lambda (stx)
-                (with-syntax ([(val pos-blame neg-blame src-info) stx])
+              (lambda (outer-args)
+                (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args])
                   (syntax
                    (unless (and (procedure? val)
                                 (procedure-arity-includes? val arity))
@@ -1372,8 +1368,8 @@
                       "expected a procedure that accepts ~a arguments, given: ~e"
                       arity
                       val)))))
-              (lambda (stx)
-                (with-syntax ([(val pos-blame neg-blame src-info) stx])
+              (lambda (outer-args)
+                (with-syntax ([(val pos-blame neg-blame src-info name-id) outer-args])
                   (syntax
                    ((arg-x ...)
                     (let ([rng-contract (rng-x arg-x ...)])

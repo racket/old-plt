@@ -1,5 +1,5 @@
 (module make-gl-info mzscheme
-
+  (provide make-gl-info)
   (define gl-enum
     '(GL_2D
       GL_2_BYTES
@@ -992,7 +992,10 @@
       GLU_V_STEP
       ))
     
-  (display #<<end-string
+  (define (make-gl-info path)
+    (with-output-to-file path
+      (lambda ()
+        (display #<<end-string
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -1020,31 +1023,30 @@
 #define GL_ALL_CLIENT_ATTRIB_BITS GL_CLIENT_ALL_ATTRIB_BITS
 #endif
 
-#define gl_enum(e) { #e, e }, 
-
-struct enum_pair
+static void scheme_load_enum(Scheme_Env *env)
 {
-  const char *name;
-  GLenum      val;
-};
 
-static const struct enum_pair gl_consts[] = {
 end-string
-           )
-    
-  (for-each
-   (lambda (e)
-     (printf "  #ifdef ~a gl_enum(~a) #endif~n" e e))
-   gl-enum)
-    
-  (display #<<end-string
-};
+                 )
+        (for-each
+         (lambda (e)
+           (printf "  #ifdef ~a~n" e)
+           (printf "  scheme_add_global(\"~a\", scheme_make_integer_value_from_unsigned(~a), env);~n" e e)
+           (printf "  #else~n")
+           (printf "  scheme_add_global(\"~a\", scheme_make_integer(-1), env);~n" e)
+           (printf "  #endif~n")
+           (newline))
+         gl-enum)
+
+        (display #<<end-string
+}
 
 Scheme_Object *scheme_reload(Scheme_Env *env)
 {
   Scheme_Env *mod_env;
   
   mod_env = scheme_primitive_module(scheme_intern_symbol("gl-info"), env);
+  scheme_load_enum(mod_env);
   scheme_add_global("gl-byte-size",
 		    scheme_make_integer_value(sizeof(GLbyte)),
 		    mod_env);
@@ -1101,5 +1103,6 @@ Scheme_Object *scheme_module_name(void)
 {
   return scheme_intern_symbol("gl-info");
 }
+
 end-string
-           ))
+                 )))))

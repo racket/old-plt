@@ -202,12 +202,12 @@
 		      (#%let* ([test (#%car line)]
 			       [value (#%cdr line)]
 			       [else? (#%and (#%eq? test 'else) 
-					     (#%not (#%local-expansion-time-bound? 'else)))])
+					     (#%not (#%expansion-time-bound? 'else)))])
 			(#%if (#%and else? (#%pair? rest))
 			      (serror "bad syntax (`else' clause must be last)" line))
 			(#%if (#%and (#%pair? value)
 				     (#%eq? '=> (#%car value))
-				     (#%not (#%local-expansion-time-bound? '=>)))
+				     (#%not (#%expansion-time-bound? '=>)))
 			    (#%if (#%and (#%pair? (#%cdr value))
 					 (#%null? (#%cddr value)))
 				(#%let ([test (#%if else?
@@ -268,7 +268,7 @@
 			   (#%cons
 			    (#%cond
 			     [(#%and (#%eq? test 'else)
-				     (#%not (#%local-expansion-time-bound? 'else)))
+				     (#%not (#%expansion-time-bound? 'else)))
 			      (#%if (#%null? rest)
 				    'else
 				    (serror
@@ -746,7 +746,7 @@
 									  r)))])
 			     (#%cond
 			      [(#%and (#%eq? p 'else)
-				      (#%not (#%local-expansion-time-bound? 'else)))
+				      (#%not (#%expansion-time-bound? 'else)))
 			       (#%unless (#%null? p-rest)
 					 (#%raise-syntax-error 'struct-case-lambda "else clause must be last"
 							       (#%list* 'struct-case-lambda x pairs)))

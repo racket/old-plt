@@ -1576,7 +1576,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
 		     "expansion-time-value: illegal at run-time");
 
   if (!SCHEME_SYMBOLP(argv[0])
-      || !SCHEME_STX_SYMBOLP(argv[0]))
+      && !SCHEME_STX_SYMBOLP(argv[0]))
     scheme_wrong_type("expansion-time-value", "syntax identifier", 0, argc, argv);
 
   v = scheme_static_distance(argv[0], env,
@@ -1608,7 +1608,7 @@ local_exp_time_bound_p(int argc, Scheme_Object *argv[])
 		     "local-expansion-time-bound?: illegal at run-time");
 
   if (!SCHEME_SYMBOLP(argv[0])
-      || !SCHEME_STX_SYMBOLP(argv[0]))
+      && !SCHEME_STX_SYMBOLP(argv[0]))
     scheme_wrong_type("expansion-time-bound?", "syntax identifier", 0, argc, argv);
 
   v = scheme_static_distance(argv[0], env,

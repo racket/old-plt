@@ -1087,6 +1087,10 @@ read_string(Scheme_Object *port,
     /* Escape-sequence handling by Eli Barzilay. */
     if (ch == '\\') {
       ch = scheme_getc(port);
+      if (ch == EOF) {
+	scheme_read_err(port, startline, start, 1,
+			"read: expected a '\"'; started");
+      }
       switch ( ch ) {
       case '\\': case '\"': break;
       case 'a': ch = '\a'; break;
@@ -1109,8 +1113,8 @@ read_string(Scheme_Object *port,
 	  }
 	  ch = n;
 	} else {
-	  scheme_read_err(port, startline, start, 1,
-			  "read: no hex digits following \\x in string");
+	  scheme_read_err(port, startline, start, ch == EOF,
+			  "read: no hex digit following \\x in string");
 	}
 	break;
       default:
@@ -1118,7 +1122,7 @@ read_string(Scheme_Object *port,
 	  for (n = j = 0; j < 3; j++) {
 	    n1 = 8*n + ch - '0';
 	    if (n1 > 255) {
-	      scheme_read_err(port, startline, start, 1,
+	      scheme_read_err(port, startline, start, 0,
 			      "read: escape sequence \\%o out of range in string", n1);
 	    }
 	    n = n1;
@@ -1132,7 +1136,7 @@ read_string(Scheme_Object *port,
 	  }
 	  ch = n;
 	} else {
-	  scheme_read_err(port, startline, start, 1,
+	  scheme_read_err(port, startline, start, 0,
 			  "read: unknown escape sequence \\%c in string", ch);
 	}
 	break;

@@ -455,8 +455,12 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
   /* Track indentation: */
   if (col >= 0) {
     if (SCHEME_PAIRP(indentation)) {
-      /* Ignore if it's a comment start: */
-      if (!(ch == ';') && !((ch == '#') && (scheme_peekc_special_ok(port) == '|'))) {
+      /* Ignore if it's a comment start or spurious closer: */
+      if ((ch != ';') 
+	  && !((ch == '#') && (scheme_peekc_special_ok(port) == '|'))
+	  && (ch != ')') 
+	  && ((ch != '}') || !local_curly_braces_are_parens)
+	  && ((ch != ']') || !local_square_brackets_are_parens)) {
 	Scheme_Indent *indt = (Scheme_Indent *)SCHEME_CAR(indentation);
 	if (line > indt->last_line) {
 	  indt->last_line = line;
@@ -1079,7 +1083,7 @@ read_list(Scheme_Object *port,
 	if (indt->suspicious_line) {
 	  suggestion = scheme_malloc_atomic(100);
 	  sprintf(suggestion, 
-		  " -- indentation suggests a missing '%c' before line %d",
+		  "; indentation suggests a missing '%c' before line %d",
 		  indt->suspicious_closer,
 		  indt->suspicious_line);
 	} 
@@ -1830,63 +1834,64 @@ static Scheme_Object *unexpected_closer(int ch,
 					long line, long col, long pos,
 					Scheme_Object *indentation)
 {
-  char *suggestion = "";
+  char *suggestion = "", *found = "unexpected";
 
   if (SCHEME_PAIRP(indentation)) {
     Scheme_Indent *indt;
+    int opener;
+    char *missing;
     
     indt = (Scheme_Indent *)SCHEME_CAR(indentation);
-    suggestion = scheme_malloc_atomic(100);
 
-    if (indt->suspicious_line) {
-      sprintf(suggestion, 
-	      " -- indentation suggests a missing '%c' before line %d",
-	      indt->suspicious_closer,
-	      indt->suspicious_line);
-    } else {
-      int opener;
-      char *missing;
-
-      if (indt->closer == '}')
-	opener = '{';
-      else if (indt->closer == ']')
-	opener = '[';
-      else
-	opener = '(';
-      
-      /* Missing intermediate closers, or just need something else entirely? */
-      {
-	Scheme_Object *l;
-	Scheme_Indent *indt2;
+    found = scheme_malloc_atomic(100);
+    
+    if (indt->closer == '}')
+      opener = '{';
+    else if (indt->closer == ']')
+      opener = '[';
+    else
+      opener = '(';
+    
+    /* Missing intermediate closers, or just need something else entirely? */
+    {
+      Scheme_Object *l;
+      Scheme_Indent *indt2;
 	
-	missing = "need instead";
-	for (l = SCHEME_CDR(indentation); SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
-	  indt2 = (Scheme_Indent *)SCHEME_CAR(l);
-	  if (indt2->closer == ch) {
-	    missing = "missing";	    
-	  }
+      missing = "expected";
+      for (l = SCHEME_CDR(indentation); SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	indt2 = (Scheme_Indent *)SCHEME_CAR(l);
+	if (indt2->closer == ch) {
+	  missing = "missing";	    
 	}
       }
+    }
 
-      if (indt->multiline) {
-	sprintf(suggestion,
-		" -- %s '%c' to close '%c' on line %d",
-		missing,
-		indt->closer,
-		opener,
-		indt->start_line);
-      } else {
-	sprintf(suggestion,
-		" -- %s '%c' to close preceding '%c'",
-		missing,
-		indt->closer,
-		opener);
-      }
+    if (indt->multiline) {
+      sprintf(found,
+	      "%s '%c' to close '%c' on line %d, found instead",
+	      missing,
+	      indt->closer,
+	      opener,
+	      indt->start_line);
+    } else {
+      sprintf(found,
+	      "%s '%c' to close preceding '%c', found instead",
+	      missing,
+	      indt->closer,
+	      opener);
+    }
+
+    if (indt->suspicious_line) {
+      suggestion = scheme_malloc_atomic(100);
+      sprintf(suggestion, 
+	      "; indentation suggests a missing '%c' before line %d",
+	      indt->suspicious_closer,
+	      indt->suspicious_line);
     }
   }
 
-  scheme_read_err(port, stxsrc, line, col, pos, 1, 0, "read: unexpected '%c'%s", 
-		  ch, suggestion);
+  scheme_read_err(port, stxsrc, line, col, pos, 1, 0, "read: %s '%c'%s", 
+		  found, ch, suggestion);
 }
 
 static void pop_indentation(Scheme_Object *indentation)

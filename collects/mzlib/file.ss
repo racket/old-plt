@@ -375,7 +375,11 @@
 				       (current-directory)
 				       base)])
 			  (values filename
-				  (build-path dir (format ".LOCK~a" name))
+				  (build-path dir (format "~aLOCK~a" 
+							  (if (eq? 'windows (system-type))
+							      "_"
+							      ".")
+							  name))
 				  dir))))])
 	(with-handlers ([(lambda (x)
 			   (and (exn:i/o:filesystem? x)

@@ -856,12 +856,15 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   old_ec_ok = p->ec_ok;
   old_cc_start = p->cc_start;
 
-  cc_ok = (long *)scheme_malloc_atomic(sizeof(long));
-  p->cc_ok = cc_ok;
-
-  if (old_cc_ok)
-    *old_cc_ok = 0;
-  *cc_ok = 1;
+  if (eb) {
+    cc_ok = (long *)scheme_malloc_atomic(sizeof(long));
+    p->cc_ok = cc_ok;
+    
+    if (old_cc_ok)
+      *old_cc_ok = 0;
+    *cc_ok = 1;
+  } else
+    cc_ok = NULL;
 
   if (eb > 1) {
     long *ec_ok;
@@ -970,7 +973,8 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
     if (scheme_set_external_stack_val)
       scheme_set_external_stack_val(external_stack);
 #endif
-    *cc_ok = 0;
+    if (cc_ok)
+      *cc_ok = 0;
     if (old_cc_ok)
       *old_cc_ok = 1;
     if (old_ec_ok)
@@ -1003,7 +1007,8 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
     p->overflow_set = 0;
   }
 
-  *cc_ok = 0;
+  if (cc_ok)
+    *cc_ok = 0;
   if (old_cc_ok)
     *old_cc_ok = 1;
   p->cc_ok = old_cc_ok;

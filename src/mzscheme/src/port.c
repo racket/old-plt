@@ -1863,9 +1863,11 @@ file_char_ready (Scheme_Input_Port *port)
   {
     int fd, r;
     DECL_FDSET(readfds, 1);
+    DECL_FDSET(exnfds, 1);
     struct timeval time = {0, 0};
 
     INIT_DECL_FDSET(readfds, 1);
+    INIT_DECL_FDSET(exnfds, 1);
 
     fd = fileno(fp);
     if (fd < 0)
@@ -1873,8 +1875,10 @@ file_char_ready (Scheme_Input_Port *port)
     
     MZ_FD_ZERO(readfds);
     MZ_FD_SET(fd, readfds);
+    MZ_FD_ZERO(exnfds);
+    MZ_FD_SET(fd, exnfds);
 
-    r = select(fd + 1, readfds, NULL, NULL, &time);
+    r = select(fd + 1, readfds, NULL, exnfds, &time);
 
     return r;
   }

@@ -117,6 +117,8 @@ static CGSize sizes_buf[QUICK_UBUF_SIZE];
 static CGFontRef prev_cgf;
 static short cgf_txFont, cgf_txFace;
 
+extern "C" void CGContextSetFontRenderingMode(CGContextRef cg, int v);
+
 //-----------------------------------------------------------------------------
 void wxCanvasDC::DrawText(const char* text, double x, double y, Bool combine, Bool ucs4, int d, double angle)
 {
@@ -131,166 +133,166 @@ void wxCanvasDC::DrawText(const char* text, double x, double y, Bool combine, Bo
       && (angle == 0.0) 
       && table_key
       && (current_bk_mode == wxTRANSPARENT)) {
+    
+    int i;
+    unsigned int *s = (unsigned int *)text;
+    wxKey *k = (wxKey *)SCHEME_BYTE_STR_VAL(table_key);
+    int ulen;
+    atomic_timeout_t old;
+    CGSize *sizes;
+    CGGlyph *cgglyphs;
+    int glyph;
+    Scheme_Object *val;
     int smoothing, use_cgctx;
-
+      
     smoothing = font->GetEffectiveSmoothing(user_scale_y);
     use_cgctx = (always_use_atsu 
 		 && ((smoothing != wxSMOOTHING_PARTIAL) || (user_scale_x != user_scale_y)));
 
-    if (use_cgctx) {
-      int i;
-      unsigned int *s = (unsigned int *)text;
-      wxKey *k = (wxKey *)SCHEME_BYTE_STR_VAL(table_key);
-      int ulen;
-      atomic_timeout_t old;
-      CGSize *sizes;
-      CGGlyph *cgglyphs;
-      int glyph;
-      Scheme_Object *val;
+    k->scale_x = user_scale_x;
+    k->scale_y = user_scale_y;
+    k->angle = angle;
+    i = font->GetMacFontNum();
+    k->txFont = i;
+    i = font->GetPointSize();
+    k->txSize = i;
+    i = font->GetMacFontStyle();
+    k->txFace = i;
+    k->use_cgctx = (char)use_cgctx;
+    k->smoothing = (char)smoothing;
 
-      k->scale_x = user_scale_x;
-      k->scale_y = user_scale_y;
-      k->angle = angle;
-      i = font->GetMacFontNum();
-      k->txFont = i;
-      i = font->GetPointSize();
-      k->txSize = i;
-      i = font->GetMacFontStyle();
-      k->txFace = i;
-      k->use_cgctx = (char)use_cgctx;
-      k->smoothing = (char)smoothing;
+    for (i = d; s[i]; i++) { }
+    ulen = i - d;
+    if (ulen > QUICK_UBUF_SIZE) {
+      sizes = (CGSize *)(new WXGC_ATOMIC char[ulen * sizeof(CGSize)]);
+      cgglyphs = (CGGlyph *)(new WXGC_ATOMIC char[ulen * sizeof(CGGlyph)]);
+    } else {
+      sizes = sizes_buf;
+      cgglyphs = cgglyphs_buf;
+    }
 
-      for (i = d; s[i]; i++) { }
-      ulen = i - d;
-      if (ulen > QUICK_UBUF_SIZE) {
-	sizes = (CGSize *)(new WXGC_ATOMIC char[ulen * sizeof(CGSize)]);
-	cgglyphs = (CGGlyph *)(new WXGC_ATOMIC char[ulen * sizeof(CGGlyph)]);
+    old = pre_scheme();
+
+    for (i = d; s[i]; i++) {
+      k->code = s[i];
+      val = scheme_hash_get(width_table, table_key);
+      if (!val) {
+	val = scheme_hash_get(old_width_table, table_key);
+	if (val) {
+	  /* Move it to the new table, so we find it faster, and
+	     so it's kept on the next rotation: */
+	  Scheme_Object *new_key;
+	  new_key = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(table_key), sizeof(wxKey), 1);
+	  scheme_hash_set(width_table, new_key, val);
+	  scheme_hash_set(old_width_table, table_key, NULL);
+	}
+      }
+      if (!val)
+	break;
+      glyph = SCHEME_INT_VAL(SCHEME_VEC_ELS(val)[2]);
+      if (glyph < 0)
+	break;
+      sizes[i-d].width = SCHEME_DBL_VAL(SCHEME_VEC_ELS(val)[0]);
+      sizes[i-d].height = 0;
+      cgglyphs[i-d] = (CGGlyph)glyph;
+    }
+
+    post_scheme(old);
+
+    if (!s[i]) {
+      FMFont fnt;
+      FMFontStyle intrinsic;
+      int done = 0;
+      FontInfo fontInfo;
+      CGFontRef cgf;
+
+      wxTextFontInfo(k->txFont, k->txSize, k->txFace, &fontInfo, NULL, 0, 0);
+
+      if (prev_cgf
+	  && (cgf_txFont == k->txFont)
+	  && (cgf_txFace == k->txFace)) {
+	cgf = prev_cgf;
       } else {
-	sizes = sizes_buf;
-	cgglyphs = cgglyphs_buf;
-      }
+	if (FMGetFontFromFontFamilyInstance(k->txFont,
+					    k->txFace,
+					    &fnt,
+					    &intrinsic)
+	    == noErr) {
+	  short face = k->txFace;
 
-      old = pre_scheme();
-
-      for (i = d; s[i]; i++) {
-	k->code = s[i];
-	val = scheme_hash_get(width_table, table_key);
-	if (!val) {
-	  val = scheme_hash_get(old_width_table, table_key);
-	  if (val) {
-	    /* Move it to the new table, so we find it faster, and
-	       so it's kept on the next rotation: */
-	    Scheme_Object *new_key;
-	    new_key = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(table_key), sizeof(wxKey), 1);
-	    scheme_hash_set(width_table, new_key, val);
-	    scheme_hash_set(old_width_table, table_key, NULL);
-	  }
-	}
-	if (!val)
-	  break;
-	glyph = SCHEME_INT_VAL(SCHEME_VEC_ELS(val)[2]);
-	if (glyph < 0)
-	  break;
-	sizes[i-d].width = SCHEME_DBL_VAL(SCHEME_VEC_ELS(val)[0]);
-	sizes[i-d].height = 0;
-	cgglyphs[i-d] = (CGGlyph)glyph;
-      }
-
-      post_scheme(old);
-
-      if (!s[i]) {
-	FMFont fnt;
-	FMFontStyle intrinsic;
-	int done = 0;
-	FontInfo fontInfo;
-	CGFontRef cgf;
-
-	wxTextFontInfo(k->txFont, k->txSize, k->txFace, &fontInfo, NULL, 0, 0);
-
-	if (prev_cgf
-	    && (cgf_txFont == k->txFont)
-	    && (cgf_txFace == k->txFace)) {
-	  cgf = prev_cgf;
-	} else {
-	  if (FMGetFontFromFontFamilyInstance(k->txFont,
-					      k->txFace,
-					      &fnt,
-					      &intrinsic)
-	      == noErr) {
-	    short face = k->txFace;
-
-	    face &= ~intrinsic;
-	    if (!face) {
-	      ATSFontRef ats;
-	      ats = FMGetATSFontRefFromFont(fnt);
-	      cgf = CGFontCreateWithPlatformFont(&ats);
-	    } else {
-	      /* After all this, we give up and let the OS take care of bolding
-		 or italicing the font. */
-	      cgf = NULL;
-	    }
-	  } else
+	  face &= ~intrinsic;
+	  if (!face) {
+	    ATSFontRef ats;
+	    ats = FMGetATSFontRefFromFont(fnt);
+	    cgf = CGFontCreateWithPlatformFont(&ats);
+	  } else {
+	    /* After all this, we give up and let the OS take care of bolding
+	       or italicing the font. */
 	    cgf = NULL;
-	}
-	  
-	if (cgf) {
-	  CGContextRef cg;
-	  CGrafPtr qdp;
-	  Rect portRect;
-
-	  SetCurrentDC(TRUE);
-	  cg = GetCG();
-	
-	  CGContextSaveGState(cg);
-      
-	  CGContextSetFont(cg, cgf);
-	  CGContextSetFontSize(cg, k->txSize);
-
-	  {
-	    int red, green, blue;
-
-	    red = current_text_foreground->Red();
-	    green = current_text_foreground->Green();
-	    blue = current_text_foreground->Blue();
-
-	    CGContextSetRGBFillColor(cg, 
-				     (double)red / 255.0,
-				     (double)green / 255.0,
-				     (double)blue / 255.0,
-				     1.0);
 	  }
-
-	  if (smoothing == wxSMOOTHING_OFF)
-	    CGContextSetShouldAntialias(cg, FALSE);
-
-	  qdp = cMacDC->macGrafPort();
-	  SyncCGContextOriginWithPort(cg, qdp);
-	  GetPortBounds(qdp, &portRect);
-	  CGContextTranslateCTM(cg, 
-				gdx + (x * user_scale_x) + device_origin_x, 
-				(portRect.bottom - portRect.top) 
-				- (gdy + ((y  + fontInfo.ascent) * user_scale_y) + device_origin_y));
-	  CGContextScaleCTM(cg, user_scale_x, user_scale_y);
+	} else
+	  cgf = NULL;
+      }
 	  
-	  CGContextSetTextPosition(cg, 0, 0);
-	  CGContextShowGlyphsWithAdvances(cg, cgglyphs, sizes, ulen);
+      if (cgf) {
+	CGContextRef cg;
+	CGrafPtr qdp;
+	Rect portRect;
 
-	  if (prev_cgf && (prev_cgf != cgf))
-	    CGFontRelease(prev_cgf);
-	  prev_cgf = cgf;
-	  cgf_txFont = k->txFont;
-	  cgf_txFace = k->txFace;
-
-	  CGContextRestoreGState(cg);
+	SetCurrentDC(TRUE);
+	cg = GetCG();
 	
-	  ReleaseCurrentDC();
+	CGContextSaveGState(cg);
+      
+	CGContextSetFont(cg, cgf);
+	CGContextSetFontSize(cg, k->txSize);
 
-	  done = 1;
+	{
+	  int red, green, blue;
+
+	  red = current_text_foreground->Red();
+	  green = current_text_foreground->Green();
+	  blue = current_text_foreground->Blue();
+
+	  CGContextSetRGBFillColor(cg, 
+				   (double)red / 255.0,
+				   (double)green / 255.0,
+				   (double)blue / 255.0,
+				   1.0);
 	}
 
-	if (done)
-	  return;
+	if (smoothing == wxSMOOTHING_OFF)
+	  CGContextSetShouldAntialias(cg, FALSE);
+	else if (!use_cgctx)
+	  CGContextSetFontRenderingMode(cg, 2);
+
+	qdp = cMacDC->macGrafPort();
+	SyncCGContextOriginWithPort(cg, qdp);
+	GetPortBounds(qdp, &portRect);
+	CGContextTranslateCTM(cg, 
+			      gdx + (x * user_scale_x) + device_origin_x, 
+			      (portRect.bottom - portRect.top) 
+			      - (gdy + ((y  + fontInfo.ascent) * user_scale_y) + device_origin_y));
+	CGContextScaleCTM(cg, user_scale_x, user_scale_y);
+	  
+	CGContextSetTextPosition(cg, 0, 0);
+	CGContextShowGlyphsWithAdvances(cg, cgglyphs, sizes, ulen);
+
+	if (prev_cgf && (prev_cgf != cgf))
+	  CGFontRelease(prev_cgf);
+	prev_cgf = cgf;
+	cgf_txFont = k->txFont;
+	cgf_txFace = k->txFace;
+
+	CGContextRestoreGState(cg);
+	
+	ReleaseCurrentDC();
+
+	done = 1;
       }
+
+      if (done)
+	return;
     }
   }
 #endif

@@ -121,14 +121,16 @@
       ;; string -> number x string
 
       (define parse-status-line
-	(let ((pattern (regexp "([0-9]+) (.*)")))
-	  (lambda (line)
-	    (let ((match (cdr (or (regexp-match pattern line)
-				  ((signal-error make-bad-status-line
-						 "malformed status line: ~s" line)
-				   line)))))
-	      (values (string->number (car match))
-		      (cadr match))))))
+	(lambda (line)
+          (if (eof-object? line)
+            ((signal-error make-bad-status-line "eof instead of a status line")
+             line)
+            (let ((match (cdr (or (regexp-match #rx"([0-9]+) (.*)" line)
+                                  ((signal-error make-bad-status-line
+                                                 "malformed status line: ~s" line)
+                                   line)))))
+              (values (string->number (car match))
+                      (cadr match))))))
 
       ;; get-one-line-from-server :
       ;; iport -> string
@@ -187,35 +189,34 @@
       ;; article number, and the last article number for that group.
 
       (define open-news-group
-	(let ((pattern (regexp "([0-9]+) ([0-9]+) ([0-9]+)")))
-	  (lambda (communicator group-name)
-	    (send-to-server communicator "GROUP ~a" group-name)
-	    (let-values (((code rest-of-line)
-			  (get-single-line-response communicator)))
-	      (case code
-		((211)
-		 (let ((match (map string->number
-				   (cdr
-				    (or (regexp-match pattern rest-of-line)
-					((signal-error make-bad-newsgroup-line
-						       "malformed newsgroup open response: ~s"
-						       rest-of-line)
-					 rest-of-line))))))
-		   (let ((number-of-articles (car match))
-			 (first-article-number (cadr match))
-			 (last-article-number (caddr match)))
-		     (values number-of-articles
-			     first-article-number
-			     last-article-number))))
-		((411)
-		 ((signal-error make-non-existent-group
-				"group ~s does not exist on server ~s"
-				group-name (communicator-server communicator))
-		  group-name))
-		(else
-		 ((signal-error make-unexpected-response
-				"unexpected group opening response: ~s" code)
-		  code rest-of-line)))))))
+	(lambda (communicator group-name)
+          (send-to-server communicator "GROUP ~a" group-name)
+          (let-values (((code rest-of-line)
+                        (get-single-line-response communicator)))
+            (case code
+              ((211)
+               (let ((match (map string->number
+                                 (cdr
+                                  (or (regexp-match #rx"([0-9]+) ([0-9]+) ([0-9]+)" rest-of-line)
+                                      ((signal-error make-bad-newsgroup-line
+                                                     "malformed newsgroup open response: ~s"
+                                                     rest-of-line)
+                                       rest-of-line))))))
+                 (let ((number-of-articles (car match))
+                       (first-article-number (cadr match))
+                       (last-article-number (caddr match)))
+                   (values number-of-articles
+                           first-article-number
+                           last-article-number))))
+              ((411)
+               ((signal-error make-non-existent-group
+                              "group ~s does not exist on server ~s"
+                              group-name (communicator-server communicator))
+                group-name))
+              (else
+               ((signal-error make-unexpected-response
+                              "unexpected group opening response: ~s" code)
+                code rest-of-line))))))
 
       ;; generic-message-command :
       ;; string x number -> communicator x (number U string) -> list (string)

@@ -4231,7 +4231,7 @@ Scheme_Object *parse_requires(Scheme_Object *form,
 	  /* The `require' expression has a set of marks in its
 	     context, which means that we need to generate a name. */
 	  iname = scheme_datum_to_syntax(iname, scheme_false, mark_src, 0, 0);
-	  iname = scheme_tl_id_sym(env, iname, 1);
+	  iname = scheme_tl_id_sym(env, iname, 2);
 	}
 
 	if (ck)

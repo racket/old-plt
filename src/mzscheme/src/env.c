@@ -1449,7 +1449,7 @@ Scheme_Object *scheme_tl_id_sym(Scheme_Env *env, Scheme_Object *id, int is_def)
        "redundant" module renamings wouldn't be redundant. (See
        simpify in stxobj.c.) So check for a context-determined
        existing rename. */
-    if (!SCHEME_HASHTP((Scheme_Object *)env)&& env->module) {
+    if (!SCHEME_HASHTP((Scheme_Object *)env) && env->module && (is_def != 2)) {
       Scheme_Object *mod, *nm = id;
       mod = scheme_stx_module_name(&nm, env->phase, NULL, NULL);
       if (mod /* must refer to env->module, otherwise there would

@@ -849,7 +849,13 @@
 	   (let ([v (list-ref e ll)])
 	     (and (braces? v)
 		  (let ([v (list-ref e (sub1 ll))])
-		    (and (parens? v)))))))))
+		    (or (parens? v)
+			;; `const' can appear between the arg parens
+			;;  and the function body; this happens in the
+			;;  OS X headers
+			(and (eq? 'const (tok-n v))
+			     (positive? (sub1 ll))
+			     (parens? (list-ref e (- ll 2))))))))))))
 
 (define (var-decl? e)
   (let ([l (length e)])
@@ -1204,87 +1210,92 @@
 	(set-c++-class-top-vars! cl (top-vars))
 	(prototyped pt)
 	(top-vars vs)
-	(let loop ([e e][p body-pos])
-	  (if (zero? p)
-	      (append
-	       (if (or super (eq? name 'gc))
-		   null
-		   (list
-		    (make-tok ': #f #f)
-		    (make-tok 'public #f #f)
-		    (make-tok 'gc #f #f)))
-	       (cons (make-braces
-		      (tok-n body-v)
-		      (tok-line body-v)
-		      (tok-file body-v)
-		      (seq-close body-v)
-		      (list->seq
-		       (append
+	(if (not (or (eq? 'gc (tok-n (caddr e)))
+		     (assoc 'gc c++-classes)))
+	    ;; primitive class, before `gc' defn
+	    e
+	    ;; normal class:
+	    (let loop ([e e][p body-pos])
+	      (if (zero? p)
+		  (append
+		   (if (or super (eq? name 'gc))
+		       null
+		       (list
+			(make-tok ': #f #f)
+			(make-tok 'public #f #f)
+			(make-tok 'gc #f #f)))
+		   (cons (make-braces
+			  (tok-n body-v)
+			  (tok-line body-v)
+			  (tok-file body-v)
+			  (seq-close body-v)
+			  (list->seq
+			   (append
 
-			;; Replace constructors names with gcInit_ names
-			(let loop ([e body-e][did-one? #f])
-			  (cond
-			   [(null? e) (if did-one?
-					  null
-					  ;; Need an explicit gcInit_ method:
-					  (list
-					   (make-tok 'inline #f #f)
-					   (make-tok 'void #f #f)
-					   (make-gc-init-tok name)
-					   (make-parens "(" #f #f ")" (seq))
-					   (make-braces "{" #f #f "}" 
-							(if super
-							    (seq
-							     (make-tok 'this #f #f)
-							     (make-tok '-> #f #f)
-							     (make-gc-init-tok super)
-							     (make-parens "(" #f #f ")" (seq))
-							     (make-tok semi #f #f))
-							    (seq)))))]
-			   [(eq? (tok-n (car e)) '~)
-			    ;; destructor
-			    (cons (car e) (cons (cadr e) (loop (cddr e) did-one?)))]
-			   [(and (eq? (tok-n (car e)) name)
-				 (parens? (cadr e)))
-			    ;; constructor
-			    (cons (make-tok 'void #f #f)
-				  (cons (make-gc-init-tok (tok-n (car e)))
-					(loop (cdr e) #t)))]
-			   [else (cons (car e) (loop (cdr e) did-one?))]))
+			    ;; Replace constructors names with gcInit_ names
+			    (let loop ([e body-e][did-one? #f])
+			      (cond
+			       [(null? e) (if did-one?
+					      null
+					      ;; Need an explicit gcInit_ method:
+					      (list
+					       (make-tok 'inline #f #f)
+					       (make-tok 'void #f #f)
+					       (make-gc-init-tok name)
+					       (make-parens "(" #f #f ")" (seq))
+					       (make-braces "{" #f #f "}" 
+							    (if super
+								(seq
+								 (make-tok 'this #f #f)
+								 (make-tok '-> #f #f)
+								 (make-gc-init-tok super)
+								 (make-parens "(" #f #f ")" (seq))
+								 (make-tok semi #f #f))
+								(seq)))))]
+			       [(eq? (tok-n (car e)) '~)
+				;; destructor
+				(cons (car e) (cons (cadr e) (loop (cddr e) did-one?)))]
+			       [(and (eq? (tok-n (car e)) name)
+				     (parens? (cadr e)))
+				;; constructor
+				(cons (make-tok 'void #f #f)
+				      (cons (make-gc-init-tok (tok-n (car e)))
+					    (loop (cdr e) #t)))]
+			       [else (cons (car e) (loop (cdr e) did-one?))]))
 
-			(if (or (eq? name 'gc)
-				(assq gcMark (c++-class-prototyped cl)))
-			    ;; Don't add to gc or to a class that has it
-			    null
+			    (if (or (eq? name 'gc)
+				    (assq gcMark (c++-class-prototyped cl)))
+				;; Don't add to gc or to a class that has it
+				null
 
-			    ;; Add gcMark and gcFixup methods:
-			    (let ([mk-proc
-				   (lambda (name marker)
-				     (list
-				      (make-tok 'inline #f #f)
-				      (make-tok 'void #f #f)
-				      (make-tok name #f #f)
-				      (make-parens
-				       "(" #f #f ")"
-				       (seq))
-				      (make-braces
-				       "{" #f #f "}"
-				       (list->seq
-					(make-mark-body name marker
-							(or super 'gc)
-							(c++-class-top-vars cl)
-							(car e))))))])
-			      (append
-			       (list
-				(make-tok 'public #f #f)
-				(make-tok ': #f #f))
-			       ;; gcMark method:
-			       (mk-proc gcMark gcMARK_TYPED)
-			       ;; gcFixup method:
-			       (mk-proc gcFixup gcFIXUP_TYPED)))))))
-		     (cdr e)))
-	      
-	      (cons (car e) (loop (cdr e) (sub1 p)))))))))
+				;; Add gcMark and gcFixup methods:
+				(let ([mk-proc
+				       (lambda (name marker)
+					 (list
+					  (make-tok 'inline #f #f)
+					  (make-tok 'void #f #f)
+					  (make-tok name #f #f)
+					  (make-parens
+					   "(" #f #f ")"
+					   (seq))
+					  (make-braces
+					   "{" #f #f "}"
+					   (list->seq
+					    (make-mark-body name marker
+							    (or super 'gc)
+							    (c++-class-top-vars cl)
+							    (car e))))))])
+				  (append
+				   (list
+				    (make-tok 'public #f #f)
+				    (make-tok ': #f #f))
+				   ;; gcMark method:
+				   (mk-proc gcMark gcMARK_TYPED)
+				   ;; gcFixup method:
+				   (mk-proc gcFixup gcFIXUP_TYPED)))))))
+			 (cdr e)))
+		  
+		  (cons (car e) (loop (cdr e) (sub1 p))))))))))
 
 (define (make-mark-body name marker super vars where-v)
   (let ([pointers (append
@@ -1683,7 +1694,7 @@
 	       [else
 		;; An atom
 		(loop (list*
-		       (make-tok NEW_ATOM NEW_OBJ (tok-line v) (tok-file v))
+		       (make-tok NEW_ATOM (tok-line v) (tok-file v))
 		       (make-parens
 			"(" (tok-line v) (tok-file v) ")"
 			(seq (cadr e)))
@@ -1843,7 +1854,7 @@
 					     ;; We're not really interested in the conversion.
 					     ;; We just want to get live vars and
 					     ;; complain about function calls:
-					     (convert-function-calls (car el) extra-vars &-vars c++-class live-vars #t #f)])
+					     (convert-function-calls (car el) extra-vars &-vars c++-class live-vars "in decls" #f)])
 				 (dloop (cdr el) live-vars))))))])
 	      ;; Calculate vars to push in this block
 	      (let ([newly-pushed (filter (lambda (x)
@@ -2011,7 +2022,8 @@
 		 [(eq? sElF (tok-n lhs))
 		  (get-c++-class-member (tok-n (caddr seql)) c++-class)]
 		 [(or (resolve-indirection lhs get-c++-class-var c++-class locals)
-		      (assq (tok-n lhs) locals))
+		      (assq (tok-n lhs) locals)
+		      (assq (tok-n lhs) (top-vars)))
 		  => (lambda (m)
 		       (let ([type (cdr m)])
 			 (and (pointer-type? type)
@@ -2031,7 +2043,7 @@
 	     (extract-resolvable-record-var (car seql))
 	     (car seql)))))
 
-(define (lift-out-calls args live-vars c++-class)
+(define (lift-out-calls args live-vars c++-class locals)
   (let ([e (seq->list (seq-in args))])
     (if (null? e)
 	(values null args null null live-vars)
@@ -2068,7 +2080,7 @@
 			       [p-m (and must-convert?
 					 call-func
 					 (if (parens? call-func)
-					     (resolve-indirection call-func get-c++-class-method c++-class null)
+					     (resolve-indirection call-func get-c++-class-method c++-class locals)
 					     (assq (tok-n call-func) (prototyped))))])
 			  (if p-m
 			      (let ([new-var (gensym '__funcarg)])
@@ -2225,6 +2237,9 @@
   ;; Reverse to calculate live vars as we go.
   ;; Also, it's easier to look for parens and then inspect preceeding
   ;;  to find function calls.
+  ;; complain-not-in is ither #f [function calls are ok], a string [not ok, string describes way],
+  ;;  or (list ok-exprs ...)) [in a rator position, only ok-expr calls are allowed,
+  ;;  because they're blessed by the lifter]
   (let ([e- (reverse e)]
 	[orig-num-calls (live-var-info-num-calls live-vars)])
     (let loop ([e- e-][result null][live-vars live-vars])
@@ -2259,6 +2274,11 @@
 			     ;; Array access
 			     (let-values ([(func rest-) (loop (cdr e-))])
 			       (values (cons (car e-) func) rest-))]
+			    ;; Assignment to result of top-level call
+			    [(and (pair? (cddr e-))
+				  (eq? (tok-n (cadr e-)) '::)
+				  (eq? (tok-n (caddr e-)) '=))
+			     (values (list (car e-) (cadr e-)) (cddr e-))]
 			    ;; Struct reference, class-specified:
 			    [(memq (tok-n (cadr e-)) '(-> |.| ::))
 			     (let-values ([(func rest-) (loop (cddr e-))])
@@ -2267,8 +2287,11 @@
 	     (when (and complain-not-in
 			(or (not (pair? complain-not-in))
 			    (not (memq args complain-not-in))))
-	       (log-error "[CALL] ~a in ~a: Bad place for function call, starting tok is ~s."
+	       (log-error "[CALL] ~a in ~a: Bad place for function call~a, starting tok is ~s."
 			  (tok-line (car func)) (tok-file (car func))
+			  (if (list? complain-not-in)
+			      ""
+			      (format " (in ~a)" complain-not-in))
 			  (tok-n (car func))))
 	     ;; Lift out function calls as arguments. (Can re-order code.
 	     ;; MzScheme source code must live with this change to C's semantics.)
@@ -2283,7 +2306,7 @@
 			    ;; Split args into setup (calls) and args.
 			    ;; List newly-created vars (in order) in new-vars.
 			    ;; Make sure each setup ends with a comma.
-			    (lift-out-calls args live-vars c++-class)]
+			    (lift-out-calls args live-vars c++-class vars)]
 			   [(sub-memcpy?)
 			    ;; memcpy, etc. call?
 			    (and (pair? (cdr e-))
@@ -2302,7 +2325,7 @@
 						    ok-calls
 						    sub-memcpy?)]
 			   [(func live-vars)
-			    (convert-function-calls (reverse func) vars &-vars c++-class live-vars #t #f)]
+			    (convert-function-calls (reverse func) vars &-vars c++-class live-vars "rator" #f)]
 			   ;; Process lifted-out function calls:
 			   [(setups live-vars)
 			    (let loop ([setups setups][new-vars new-vars][result null][live-vars live-vars])
@@ -2578,7 +2601,8 @@
 			(convert-seq-interior (car e-) (parens? (car e-)) 
 					      vars &-vars c++-class live-vars 
 					      (or complain-not-in 
-						  (brackets? (car e-)))
+						  (and (brackets? (car e-))
+						       "array access"))
 					      #f)])
 	    (loop (cdr e-) (cons v result) live-vars)))]
        [(and (assq (tok-n (car e-)) vars)
@@ -2730,8 +2754,8 @@
 		(< 2 (length e))
 		;; Decl ends in seimicolon
 		(eq? semi (tok-n (list-ref e (sub1 (length e)))))
-		;; Doesn't start with a star, decrement, or increment
-		(not (memq (tok-n (car e)) '(* -- ++)))
+		;; Doesn't start with a star, decrement, increment, or global call
+		(not (memq (tok-n (car e)) '(* -- ++ ::)))
 		;; Not an assignemnt
 		(not (memq (tok-n (cadr e)) '(= += -=)))
 		;; Not a return, case, new, or delete

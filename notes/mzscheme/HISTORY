@@ -7,9 +7,14 @@ Version 200, June 2002
 Changed all comparison precedures to require at least two
  operands, including =, <, ..., char=?, char<?, ...,
  string=?, string<?, ...
+Added locale support with string-locale<?, etc.
+Added integer-byte-string->integer, floating-point-byte-string->real,
+ integer->integer-byte-string, real->floating-point-byte-string,
 Renamed exn:misc:user-break to exn:break
+Removed the port field of exn:read
 Renamed arity to procedure-arity
 Replaced primitive-name and inferred-name with object-name
+Added security guards for controlling file and network access
 Added an "infix" conversion in the reader, triggered by a pair of dots
  between a pair of parens
 Added #cs and #ci prefixes for controlling case sentivity during read
@@ -27,23 +32,35 @@ Changed the error display handler to take a raised value (usually
 Removed make-hash-table-weak and changed make-hash-table to
  accept up to two flag arguments: 'weak and/or 'equal
 Added eq-hash-code and equal-hash-code
-Added port-count-lines!, which enables line-couting for a port
+Extended regexp-match, etc. to work on port inputs
+Added read-strng-avail!* and write-string-avail*, which never block
+Added peek-string, peek-string-avail!, peek-string-avail!*,
+ and peek-string-avail!/enable-break
+Added port-count-lines!, which enables line-couting for a port,
+ and port-next-location
 Extended custom ports to support non-char input, added
  read-char-or-special and peek-char-or-special
+Added immutable?
 Quoted portions of a symbol (using | or \) preserve their case,
 Added read-dot-as-symbol and read-accept-quasiquote parameters
-Changed quoted parts of a symbol (with | or \) to always preserve case
 Added an optional third argument to tcp-listen to reuse addresses
 Added tcp-connect/enable-break and tcp-accept/enable-break
 Added object-wait-multiple and object-wait-multiple/enable-break
 Added cons-immutable, list-immutable, and list*-immutable, 
  and removed pair->immutable-pair
+Replaced read-dot-as-symbol with read-accept-dot
 Fixed quotient, remainder, and modulo when the first argument
  is exact 0 and the second argument is inexact
 Default for pconvert.ss's whole/fractional-exact-numbers parameter
  changed to #f
 Load handler or load extension handler now takes two arguments
  instead of one: the filename and the expected module name
+Added shell-execute for Windows
+Moved send-event to MrEd; added a "sendevent.ss" MzLib library
+Changed assf in MzLib
+Added special handling when MzScheme is invoked with the name
+ "scheme-<dialect>", useful to support SRFI-22
+New implementation of Windows I/O
 Renamed "2k" to "3m" (for "moving memory manager")
 Upgraded to gc 6.1alpha2
 Inside MzScheme: changed type of third argument for

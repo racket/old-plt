@@ -185,6 +185,11 @@ sub-directories:
          including execution of the submit-validation function;
          the default is 300
 
+      'session-memory-limit : maximum size in bytes of memory allowed
+         for per-session comuptation, if per-session limits are
+         supported (i.e., when using MrEd3m and MzScheme3m with memory
+         accounting); the default is 40000000
+
       'max-upload : maximum size in bytes of an acceptable submission;
          the default is 500000
 
@@ -217,6 +222,9 @@ sub-directories:
     If the 'allow-new-users configuration allows new users, the
     "users.ss" file can be updated by the server with new users. It
     can always be updated by the server to change passwords.
+
+    The username "solution" is special. It is used by the HTTPS status
+    server.
 
   * active/ --- sub-directory for active assignments. A list of active
     assignments is sent to a client tool when a student clicks
@@ -278,6 +286,10 @@ sub-directories:
 
   * [in]active/<assignment>/<user>/grade (optional) --- <user>'s grade
     for <assignment>, to be reported by the HTTPS status web server.
+
+  * [in]active/<assignment>/solution/<assignment>sol.scm --- the
+    solution to the assignment, made available by the status server
+    to any user who logs in.
 
 The server can be run within either MzScheme or MrEd, but "utils.ss"
 requires MrEd (which means that `checker' modules will likely require
@@ -353,3 +365,11 @@ The _utils.ss_ module provides utilities helpful in implementing
 
 > (evaluate-submission string eval) - like `load' on a non-test-suite
   submission string.
+
+> (current-run-status string-or-#f) - registers information about the
+  current actions of the checker, in case the session is terminated
+  due to excessive memory consumption. For example, a cccchecker might
+  set the status to indicate which instructor-supplied test was being
+  executed when the session ran out of memory. This status is only
+  used when per-session memory limits are supported (i.e., under
+  MrEd3m or MzScheme3m with memory accounting).

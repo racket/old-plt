@@ -1,7 +1,8 @@
 (module utils mzscheme
   (require (lib "class.ss")
 	   (lib "mred.ss" "mred")
-	   (lib "posn.ss" "lang"))
+	   (lib "posn.ss" "lang")
+	   "run-status.ss")
 
   (provide unpack-submission
 	   
@@ -11,7 +12,9 @@
 	   make-evaluator
 	   evaluate-all
 	   evaluate-submission
-	   reraise-exn-as-submission-problem)
+	   reraise-exn-as-submission-problem
+
+	   current-run-status)
 
   (define (unpack-submission str)
     (let* ([base (make-object editor-stream-in-string-base% str)]

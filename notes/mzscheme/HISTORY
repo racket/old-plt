@@ -1,3 +1,14 @@
+103.1:
+
+ * Fixed leaks that could happen with thread kills. For example,
+   killing a thread blocked on a TCP connect could leak file
+   descriptors.
+
+------------------------------------------------------------------------
+
+Version 104, ???
+Fixed leaks (file descriptors, etc.) that could happend with
+ thread kills
 
 Version 103, August 28, 2000
 Changed define-values and set!-values to require distinct variables

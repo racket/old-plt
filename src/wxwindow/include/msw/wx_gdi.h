@@ -53,7 +53,7 @@ class wxColourMap: public wxObject
 class wxPen: public wxbPen
 {
  public:
-  double old_width;
+  double old_width, current_scale;
   int old_style;
   int old_join;
   int old_cap;
@@ -72,7 +72,7 @@ class wxPen: public wxbPen
   ~wxPen(void);
 
   void ChangePen();
-  HPEN SelectPen(HDC dc);
+  HPEN SelectPen(HDC dc, double scale = 1.0);
 
   Pen *GraphicsPen(Bool align, double sx);
   void ReleaseGraphics();

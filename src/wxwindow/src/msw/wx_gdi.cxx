@@ -434,6 +434,7 @@ wxPen::wxPen(void)
   old_dash  = NULL;
   old_color  = 0;
   old_stipple = NULL;
+  current_scale = 1.0;
 
   c = new wxColour(wxBLACK);
   c->Lock(1);
@@ -479,6 +480,7 @@ wxPen::wxPen(wxColour *col, double Width, int Style)
   old_dash  = NULL;
   old_color  = 0;
   old_stipple = NULL;
+  current_scale = 1.0;
   g_p = NULL;
   a_g_p = NULL;
 
@@ -511,6 +513,7 @@ wxPen::wxPen(const char *col, double Width, int Style)
   old_dash  = NULL;
   old_color  = 0;
   old_stipple = NULL;
+  current_scale = 1.0;
   g_p = NULL;
   a_g_p = NULL;
     
@@ -661,9 +664,13 @@ void wxPen::ChangePen(void)
 
     if (!width) {
       xwidth = 1;
-      ms_style |= PS_COSMETIC;
-    } else
-      ms_style |= PS_GEOMETRIC;
+    } else {
+      xwidth = (int)(current_scale * xwidth);
+      if (!xwidth)
+	xwidth = 1;
+    }
+
+    ms_style |= PS_GEOMETRIC;
     
     switch(join) {
     case wxJOIN_BEVEL: ms_style |= PS_JOIN_BEVEL; break;
@@ -734,9 +741,14 @@ void wxPen::ChangePen(void)
   return;
 }
 
-HPEN wxPen::SelectPen(HDC dc)
+HPEN wxPen::SelectPen(HDC dc, double scale)
 {
   HPEN prev_pen;
+
+  if (scale != current_scale) {
+    current_scale = scale;
+    ChangePen();
+  }
 
   if (cpen && style!=wxTRANSPARENT)
     prev_pen = (HPEN)::SelectObject(dc,cpen);

@@ -1731,6 +1731,8 @@ int wxDC::StartPen(HDC dc)
     if (Colour && (ps == wxCOLOR)) {
       int size;
       size = current_pen->GetWidth();
+      if (scaling_mode == wxWX_SCALE)
+	size = MS_LOG2DEV(size);
       if (!hilite_pens[size]) {
 	HPEN p;
 	p = CreatePen(PS_SOLID, size, GetSysColor(COLOR_HIGHLIGHT));
@@ -1740,7 +1742,7 @@ int wxDC::StartPen(HDC dc)
       SelectObject(dc, hilite_pens[size]);
       SetRop(dc, wxCOLOR);
     } else {
-      current_pen->SelectPen(dc);
+      current_pen->SelectPen(dc, (scaling_mode == wxWX_SCALE) ? (user_scale_x*logical_scale_x) : 1.0);
       SetRop(dc, ps);
     }
     return TRUE;

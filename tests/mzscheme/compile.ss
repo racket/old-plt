@@ -54,25 +54,30 @@
 	 [my-eval
 	  (case-lambda 
 	   [(x next-eval)
-	    ; (fprintf file ": ~a~n" +)
-	    ; (write x file) (newline file)
-	    (let ([p (open-output-string)]
-		  [ep (open-output-string)]
-		  [c (compile x)]
-		  [ec (compile (expand x))])
-	      (write c p)
-	      (write ec ep)
-	      (let ([s (get-output-string p)]
-		    [es (get-output-string ep)])
-		(unless (equal? s es)
-		  (fprintf (current-error-port) "bad expand (~a,~a) ~e~n" 
-			   (string-length s) (string-length es) x))
-		; (display s file) (newline file)
-		(let ([e (parameterize ([read-accept-compiled #t])
-			   (read (open-input-string s)))])
-		  ; (write e file) (newline file)
-		  (parameterize ([current-eval next-eval])
-		    (orig e)))))]
+	    (if (or (compiled-expression? x)
+		    (and (syntax? x) (compiled-expression? (syntax-e x)))
+		    (current-module-name-prefix))
+		(next-eval x)
+		(begin
+		  ;; (fprintf file ": ~a~n" +)
+		  ;; (write x file) (newline file)
+		  (let ([p (open-output-string)]
+			[ep (open-output-string)]
+			[c (compile x)]
+			[ec (compile (expand x))])
+		    (write c p)
+		    (write ec ep)
+		    (let ([s (get-output-string p)]
+			  [es (get-output-string ep)])
+		      (unless (equal? s es)
+			'(fprintf (current-error-port) "bad expand (~a,~a) ~e~n" 
+				  (string-length s) (string-length es) x))
+					; (display s file) (newline file)
+		      (let ([e (parameterize ([read-accept-compiled #t])
+				 (read (open-input-string s)))])
+					; (write e file) (newline file)
+			(parameterize ([current-eval next-eval])
+			  (orig e)))))))]
 	   [(x) (my-eval x orig)])])
   (dynamic-wind
    (lambda ()

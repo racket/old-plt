@@ -167,6 +167,59 @@
 	  (set! x (add1 x))
 	  f)))
 
+(test 5 'rename-with-non-hygiene
+      (let-syntax ([f (lambda (stx) (datum->syntax-object stx 'foo))])
+	(let-syntax ([g (make-rename-transformer #'f)])
+	  (let ([foo 5])
+	    g))))
+
+(test 12 'rename-with-non-hygiene/app
+      (let-syntax ([f (lambda (stx) 
+			   (syntax-case stx ()
+			     [(_ arg)
+			      #`(#,(datum->syntax-object stx 'foo) arg)]))])
+	(let-syntax ([g (make-rename-transformer #'f)])
+	  (let ([foo (lambda (x) (sub1 x))])
+	    (g 13)))))
+
+(test 43 'rename-with-non-hygiene/set
+      (let-syntax ([f (make-set!-transformer
+			  (lambda (stx) 
+			    (syntax-case stx ()
+			      [(set! _ arg)
+			       #`(set! #,(datum->syntax-object stx 'foo) arg)])))])
+	(let-syntax ([g (make-rename-transformer #'f)])
+	  (let ([foo 45])
+	    (set! g 43)
+	    foo))))
+
+(define foo 88)
+(test 88 'rename-with-hygiene
+      (let-syntax ([g (make-rename-transformer #'foo)])
+	(let ([foo 5])
+	  g)))
+
+(define (foox w) (+ w 88))
+(test 99 'rename-with-hygiene/app
+      (let-syntax ([g (make-rename-transformer #'foox)])
+	(let ([foox 5])
+	  (g 11))))
+
+(define fooy 12)
+(test '(5 11) 'rename-with-hygiene/set!
+      (list (let-syntax ([g (make-rename-transformer #'fooy)])
+	      (let ([fooy 5])
+		(set! g 11)
+		fooy))
+	    fooy))
+
+(test 12 'rename-internal-define
+      (let-syntax ([fooz (syntax-rules ()
+			   [(_ id) (define id 12)])])
+	(let-syntax ([foozzz (make-rename-transformer #'fooz)])
+	  (foozzz foozz)
+	  foozz)))
+
 (test #t set!-transformer? (make-set!-transformer void))
 (test #t rename-transformer? (make-rename-transformer #'void))
 

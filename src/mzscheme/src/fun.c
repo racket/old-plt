@@ -1249,7 +1249,7 @@ scheme_apply_macro(Scheme_Object *name,
      setkw = SCHEME_STX_CAR(code);
      tail = SCHEME_STX_CDR(tail);
      code = scheme_make_immutable_pair(setkw, scheme_make_immutable_pair(rator, tail));
-     code = scheme_datum_to_syntax(code, orig_code, scheme_sys_wraps(env), 0, 0);
+     code = scheme_datum_to_syntax(code, orig_code, orig_code, 0, 0);
    } else if (SCHEME_SYMBOLP(SCHEME_STX_VAL(code)))
      code = rator;
    else {

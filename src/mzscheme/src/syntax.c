@@ -1075,7 +1075,7 @@ set_resolve(Scheme_Object *data, Resolve_Info *rslv)
 static Scheme_Object *
 set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
-  Scheme_Object *var, *val, *name, *body, *rest;
+  Scheme_Object *var, *val, *name, *body, *rest, *find_name;
   int l, set_undef;
 
   l = check_form(form, form);
@@ -1089,24 +1089,31 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
   
   scheme_check_identifier("set!", name, NULL, env, form);
 
-  var = scheme_lookup_binding(name, env, 
-			      SCHEME_SETTING 
-			      + SCHEME_GLOB_ALWAYS_REFERENCE
-			      + (rec[drec].dont_mark_local_use 
-				 ? SCHEME_DONT_MARK_USE 
-				 : 0)
-			      + (rec[drec].resolve_module_ids
-				 ? SCHEME_RESOLVE_MODIDS
-				 : 0));
+  find_name = name;
 
-  if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
-    /* Redirect to a macro? */
-    if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_set_macro_type)
-	|| SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
-      form = scheme_apply_macro(name, SCHEME_PTR_VAL(var), form, env, scheme_false, 1);
-			      
-      return scheme_compile_expr(form, env, rec, drec);
-    }
+  while (1) {
+    var = scheme_lookup_binding(find_name, env, 
+				SCHEME_SETTING 
+				+ SCHEME_GLOB_ALWAYS_REFERENCE
+				+ (rec[drec].dont_mark_local_use 
+				   ? SCHEME_DONT_MARK_USE 
+				   : 0)
+				+ (rec[drec].resolve_module_ids
+				   ? SCHEME_RESOLVE_MODIDS
+				   : 0));
+    
+    if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
+      /* Redirect to a macro? */
+      if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_set_macro_type)) {
+	form = scheme_apply_macro(name, SCHEME_PTR_VAL(var), form, env, scheme_false, 1);
+	
+	return scheme_compile_expr(form, env, rec, drec);
+      } else if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
+	find_name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(var));
+      } else
+	break;
+    } else
+      break;
   }
 
   if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
@@ -1150,7 +1157,7 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
 static Scheme_Object *
 set_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
-  Scheme_Object *name, *var, *fn, *rhs;
+  Scheme_Object *name, *var, *fn, *rhs, *find_name;
   int l;
   l = check_form(form, form);
   if (l != 3)
@@ -1163,20 +1170,27 @@ set_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *
 
   scheme_check_identifier("set!", name, NULL, env, form);
 
-  /* Make sure it's mutable, and check for redirects: */
-  var = scheme_lookup_binding(name, env, SCHEME_SETTING);
+  find_name = name;
 
-  if ((depth != 0) && SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
-    /* Redirect to a macro? */
-    if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_set_macro_type)
-	|| SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
-      form = scheme_apply_macro(name, SCHEME_PTR_VAL(var), form, env, scheme_false, 1);
+  while (1) {
+    /* Make sure it's mutable, and check for redirects: */
+    var = scheme_lookup_binding(find_name, env, SCHEME_SETTING);
+    
+    if ((depth != 0) && SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
+      /* Redirect to a macro? */
+      if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_set_macro_type)) {
+	form = scheme_apply_macro(name, SCHEME_PTR_VAL(var), form, env, scheme_false, 1);
       
-      if (depth > 0)
-	depth--;
+	if (depth > 0)
+	  depth--;
 
-      return scheme_expand_expr(form, env, depth, name);
-    }
+	return scheme_expand_expr(form, env, depth, name);
+      } else if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
+	find_name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(var));
+      } else
+	break;
+    } else
+      break;
   }
 
   if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)

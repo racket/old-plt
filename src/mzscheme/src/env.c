@@ -409,7 +409,7 @@ static void make_init_env(void)
   scheme_add_global_constant("syntax-local-value", 
 			     scheme_make_prim_w_arity(local_exp_time_value,
 						      "syntax-local-value",
-						      1, 3),
+						      1, 2),
 			     env);
   scheme_add_global_constant("syntax-local-name", 
 			     scheme_make_prim_w_arity(local_exp_time_name,
@@ -2418,7 +2418,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *v, *sym;
   Scheme_Comp_Env *env;
-  int renamed = 0, recur = 1;
+  int renamed = 0;
 
   env = scheme_current_thread->current_local_env;
   if (!env)
@@ -2430,16 +2430,8 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
   if (!(SCHEME_STXP(sym) && SCHEME_SYMBOLP(SCHEME_STX_VAL(sym))))
     scheme_wrong_type("syntax-local-value", "syntax identifier", 0, argc, argv);
 
-  if (argc > 1) {
-    if (SCHEME_TRUEP(argv[1])) {
-      if (!scheme_check_proc_arity(NULL, 0, 1, argc, argv)) {
-	scheme_wrong_type("syntax-local-value", "procedure (arity 0) or #f", 0, argc, argv);
-	return NULL;
-      }
-    }
-    if (argc > 2)
-      recur = SCHEME_TRUEP(argv[2]);
-  }
+  if (argc > 1)
+    scheme_check_proc_arity("syntax-local-value", 0, 1, argc, argv);
 
   if (scheme_current_thread->current_local_mark)
     sym = scheme_add_remove_mark(sym, scheme_current_thread->current_local_mark);
@@ -2467,7 +2459,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
     }
     
     v = SCHEME_PTR_VAL(v);
-    if (recur && SAME_TYPE(SCHEME_TYPE(v), scheme_id_macro_type)) {
+    if (SAME_TYPE(SCHEME_TYPE(v), scheme_id_macro_type)) {
       sym = SCHEME_PTR_VAL(v);
       renamed = 1;
     } else

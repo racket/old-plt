@@ -1609,36 +1609,44 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
   if (!SCHEME_STX_SYMBOLP(name))
     return first;
 
-  val = scheme_lookup_binding(name, env, 
-			      SCHEME_NULL_FOR_UNBOUND
-			      + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
-			      + ((rec && rec[drec].dont_mark_local_use) 
-				 ? SCHEME_DONT_MARK_USE 
-				 : 0)
-			      + ((rec && rec[drec].resolve_module_ids)
-				 ? SCHEME_RESOLVE_MODIDS
-				 : 0));
+  while (1) {
+    val = scheme_lookup_binding(name, env, 
+				SCHEME_NULL_FOR_UNBOUND
+				+ SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
+				+ ((rec && rec[drec].dont_mark_local_use) 
+				   ? SCHEME_DONT_MARK_USE 
+				   : 0)
+				+ ((rec && rec[drec].resolve_module_ids)
+				   ? SCHEME_RESOLVE_MODIDS
+				   : 0));
+    
+    if (SCHEME_STX_PAIRP(first))
+      *current_val = val;
 
-  if (SCHEME_STX_PAIRP(first))
-    *current_val = val;
-
-  if (!val) {
-    return first;
-  } else if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)) {
-    /* Yep, it's a macro; expand once. Also, extend env to indicate
-       an internal-define position, if necessary. */
-    if (!xenv) {
-      if (internel_def_pos)
-	xenv = scheme_new_compilation_frame(0, SCHEME_INTDEF_FRAME, env);
-      else
-	xenv = env;
+    if (!val) {
+      return first;
+    } else if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)) {
+      if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(val)), scheme_id_macro_type)) {
+	/* It's a rename. Look up the target name and try again. */
+	name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(val));
+      } else {
+	/* It's a normal macro; expand once. Also, extend env to indicate
+	   an internal-define position, if necessary. */
+	if (!xenv) {
+	  if (internel_def_pos)
+	    xenv = scheme_new_compilation_frame(0, SCHEME_INTDEF_FRAME, env);
+	  else
+	    xenv = env;
+	}
+	if (rec && (!boundname || SCHEME_FALSEP(boundname))
+	    && rec[drec].value_name)
+	  boundname = rec[drec].value_name;
+	first = scheme_expand_expr(first, xenv, 1, boundname);
+	break; /* break to outer loop */
+      }
+    } else {
+      return first;
     }
-    if (rec && (!boundname || SCHEME_FALSEP(boundname))
-	&& rec[drec].value_name)
-      boundname = rec[drec].value_name;
-    first = scheme_expand_expr(first, xenv, 1, boundname);
-  } else {
-    return first;
   }
 
   if (SCHEME_STX_PAIRP(first))
@@ -1659,8 +1667,6 @@ compile_expand_macro_app(Scheme_Object *name, Scheme_Object *macro,
 
   if (SAME_TYPE(SCHEME_TYPE(xformer), scheme_set_macro_type)) {
     /* scheme_apply_macro unwraps it */
-  } else if (SAME_TYPE(SCHEME_TYPE(xformer), scheme_id_macro_type)) {
-    /* scheme_apply_macro handles it */
   } else if (!scheme_check_proc_arity(NULL, 1, 0, -1, &xformer)) {
     scheme_wrong_syntax(NULL, NULL, form, "illegal use of syntax");
     return NULL;
@@ -1742,27 +1748,39 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     normal = app_expander;
   } else if (!SCHEME_STX_PAIRP(form)) {
     if (SCHEME_STX_SYMBOLP(form)) {
-      var = scheme_lookup_binding(form, env, 
-				  SCHEME_NULL_FOR_UNBOUND
-				  + SCHEME_ENV_CONSTANTS_OK
-				  + (rec
-				     ? SCHEME_ELIM_CONST 
-				     : 0)
-				  + (app_position 
-				     ? SCHEME_APP_POS 
-				     : 0)
-				  + ((rec && drec[rec].dont_mark_local_use) ? 
-				     SCHEME_DONT_MARK_USE 
-				     : 0)
-				  + ((rec && rec[drec].resolve_module_ids)
-				     ? SCHEME_RESOLVE_MODIDS
-				     : 0));
+      Scheme_Object *find_name = form;
+
+      while (1) {
+	var = scheme_lookup_binding(find_name, env, 
+				    SCHEME_NULL_FOR_UNBOUND
+				    + SCHEME_ENV_CONSTANTS_OK
+				    + (rec
+				       ? SCHEME_ELIM_CONST 
+				       : 0)
+				    + (app_position 
+				       ? SCHEME_APP_POS 
+				       : 0)
+				    + ((rec && drec[rec].dont_mark_local_use) ? 
+				       SCHEME_DONT_MARK_USE 
+				       : 0)
+				    + ((rec && rec[drec].resolve_module_ids)
+				       ? SCHEME_RESOLVE_MODIDS
+				       : 0));
+	
+	if (var && SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
+	    && SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
+	  /* It's a rename. Look up the target name and try again. */
+	  find_name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(var));
+	} else
+	  break;
+      }
       
       if (!var) {
 	/* Top variable */
 	stx = top_symbol;
 	not_allowed = "reference to top-level identifiers";
 	normal = top_expander;
+	form = find_name; /* in case it was re-mapped */
       } else {
 	if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
 	  if (var == stop_expander)
@@ -1795,23 +1813,35 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     name = SCHEME_STX_CAR(form);
     if (SCHEME_STX_SYMBOLP(name)) {
       /* Check for macros: */
-      var = scheme_lookup_binding(name, env, 
-				  SCHEME_APP_POS
-				  + SCHEME_NULL_FOR_UNBOUND
-				  + SCHEME_ENV_CONSTANTS_OK
-				  + (rec
-				     ? SCHEME_ELIM_CONST
-				     : 0)
-				  + ((rec && rec[drec].dont_mark_local_use)
-				     ? SCHEME_DONT_MARK_USE 
-				     : 0)
-				  + ((rec && rec[drec].resolve_module_ids)
-				     ? SCHEME_RESOLVE_MODIDS
-				     : 0));
+      Scheme_Object *find_name = name;
+
+      while (1) {
+	var = scheme_lookup_binding(find_name, env, 
+				    SCHEME_APP_POS
+				    + SCHEME_NULL_FOR_UNBOUND
+				    + SCHEME_ENV_CONSTANTS_OK
+				    + (rec
+				       ? SCHEME_ELIM_CONST
+				       : 0)
+				    + ((rec && rec[drec].dont_mark_local_use)
+				       ? SCHEME_DONT_MARK_USE 
+				       : 0)
+				    + ((rec && rec[drec].resolve_module_ids)
+				       ? SCHEME_RESOLVE_MODIDS
+				       : 0));
+
+	if (var && SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
+	    && SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
+	  /* It's a rename. Look up the target name and try again. */
+	  find_name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(var));
+	} else
+	  break;
+      }
+      
       if (!var) {
 	/* apply to global variable: compile it normally */
       } else if (SAME_TYPE(SCHEME_TYPE(var), scheme_local_type)
-	  || SAME_TYPE(SCHEME_TYPE(var), scheme_local_unbox_type)) {
+		 || SAME_TYPE(SCHEME_TYPE(var), scheme_local_unbox_type)) {
 	/* apply to local variable: compile it normally */
       } else {
 	if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
@@ -1830,6 +1860,14 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	
 	/* Else: unknown global - must be a function: compile as application */
       }
+
+      if (!SAME_OBJ(name, find_name)) {
+	/* the rator position was mapped */
+	Scheme_Object *code;
+	code = SCHEME_STX_CDR(form);
+	code = scheme_make_immutable_pair(find_name, code);
+	form = scheme_datum_to_syntax(code, form, form, 0, 0);
+      }
     }
 
     stx = app_symbol;
@@ -1846,10 +1884,23 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
   } else
     stx = scheme_datum_to_syntax(stx, scheme_false, form, 0, 0);
 
-  var = scheme_lookup_binding(stx, env,
-			      SCHEME_NULL_FOR_UNBOUND
-			      + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
-			      + SCHEME_DONT_MARK_USE);
+  {
+    Scheme_Object *find_name = stx;
+
+    while (1) {
+      var = scheme_lookup_binding(find_name, env,
+				  SCHEME_NULL_FOR_UNBOUND
+				  + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
+				  + SCHEME_DONT_MARK_USE);
+
+      if (var && SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
+	  && SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
+	/* It's a rename. Look up the target name and try again. */
+	find_name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(var));
+      } else
+	break;
+    }
+  }
 
   if (SAME_OBJ(stx, quick_stx)) {
     quick_stx_in_use = 0;

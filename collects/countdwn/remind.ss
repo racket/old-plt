@@ -42,7 +42,7 @@
 	[day (or i-day (date-day TMP-date))]
 	[month (or i-month (date-month TMP-date))]
 	[year (or i-year (date-year TMP-date))]
-	[seconds 0])
+	[seconds (find-seconds second minute hour day month year)])
       (private
 	[edit (make-object wx:media-edit%)]
 	[redisplay
@@ -93,7 +93,7 @@
 		  [c-day day]
 		  [c-month month]
 		  [c-year year]
-		  [c-seconds (find-seconds c-second c-minute c-hour c-day c-month c-year)]
+		  [c-seconds seconds]
 		  [increment-year
 		   (lambda ()
 		     (set! c-year (+ 1 c-year)))]
@@ -111,14 +111,14 @@
 			 (set! c-day (+ 1 c-day))))]
 		  [increment-hour
 		   (lambda ()
-		     (if (= c-hour 24)
-			 (begin (set! c-hour 1)
+		     (if (= c-hour 23)
+			 (begin (set! c-hour 0)
 				(increment-day))
 			 (set! c-hour (+ 1 c-hour))))]
 		  [increment-minute
 		   (lambda ()
-		     (if (= c-minute 60)
-			 (begin (set! c-minute 1)
+		     (if (= c-minute 59)
+			 (begin (set! c-minute 0)
 				(increment-hour))
 			 (set! c-minute (+ 1 c-minute))))])
 	     (when (<= c-seconds current-secs)
@@ -139,6 +139,7 @@
 	     (set! day c-day)
 	     (set! month c-month)
 	     (set! year c-year)
+	     '(printf "finding seconds for (original) ~a~n" (list i-second i-minute i-hour i-day i-month i-year))
 	     (set! seconds (find-seconds c-second c-minute c-hour c-day c-month c-year))))])
       (public
 	[get-seconds

@@ -31,15 +31,17 @@
 
 (require-library "load.ss" "zodiac")
 
-(require-library "loadu.ss" "mrspidey" "Sba")
+(require-library "sigs.ss" "mrspidey" "Sba")
+(define mrspidey:sba@
+  (require-library "link.ss" "mrspidey" "Sba"))
 (require-library "loadu.ss" "mrspidey" "Gui")
 
 (define mrspidey:interaction@
   (unit/sig mrspidey:interaction^
     (import 
       [mred : mred^]
-      [zodiac : mrspidey:zodiac^]
-      mzlib:unprefixed-core^)
+      [zodiac : zodiac:system^]
+      mzlib:file^)
     (include "handlers.ss")
 
     (mrspidey:error-handler
@@ -71,8 +73,7 @@
   (unit/sig ()
     (import
       [mred : mred^]
-      mrspidey-gui^
-      mzlib:unprefixed-core^)
+      mrspidey-gui^)
     (mred:add-version-spec 'sd 1)
     (lambda (frame)
       (let* ( [edit (ivar frame definitions-edit)]
@@ -95,65 +96,80 @@
 
 ;; ----------------------------------------------------------------------
 
-(define tool@
-  (let ([mrspidey:sba@ mrspidey:sba@]
-        [mrspidey:interaction@ mrspidey:interaction@]
-        [mrspidey-gui@ mrspidey-gui@]
-        [mrspidey-tool@ mrspidey-tool@])
-    (unit/sig ()
-      (import 
-        [WX : wx^]
-        [MRED : mred^]
-        [MZLIB : mzlib:core^]
-        [PCONVERT : mzlib:print-convert^]
-        [DRSCHEME : drscheme:export^]
-        [ZODIAC : zodiac:system^])
+(define mrspidey:zodiac:interface@
+  (unit/sig zodiac:interface^
+    (import mrspidey:interaction^)
+    (define default-error-handler
+      (lambda (keyword)
+        (lambda (where fmt-spec . args)
+          (apply mrspidey:internal-error
+            keyword fmt-spec args))))
+    (define internal-error
+      (lambda (where fmt-spec . args)
+        (let ([msg 
+                (parameterize ([print-struct #t])
+                  (string-append "Syntax error: " 
+                    (apply format fmt-spec args)))])
+          (if #t                        ;(zodiac:zodiac? where)
+            (mrspidey:error msg where)                    
+            (mrspidey:error msg)))))
+    (define static-error
+      (lambda (where fmt-spec . args)
+        (let ([msg
+                (parameterize ([print-struct #t])
+                  (string-append "Syntax error: " 
+                    (apply format fmt-spec args)))])
+          (if #t                        ;(zodiac:zodiac? where)
+            (mrspidey:error msg where)                    
+            (mrspidey:error msg)))))
+    (define dynamic-error
+      (default-error-handler 'zodiac-run-time))))
 
-      (invoke-unit/sig
-        (unit->unit/sig
-          (unit/sig->unit
-            (unit/sig ()
-              (import
-                mzlib:pretty-print^
-                mzlib:file^
-                mzlib:function^
-                mzlib:compat^
-                mzlib:string^)
-              (invoke-unit/sig
-                (unit->unit/sig
-                  (unit/sig->unit
-                    (compound-unit/sig 
-                      (import 
-		        [WX : wx^]
-                        [MZLIB : mzlib:unprefixed-core^]
-                        [MRED : mred^])
-                      (link 
-                        [INTERACTION : mrspidey:interaction^
-                          (mrspidey:interaction@ MRED (SBA zodiac) MZLIB)]
-                        [SBA : mrspidey:sba^
-                          (mrspidey:sba@ INTERACTION MZLIB WX)]
-                        [GUI : mrspidey-gui^
-                          (mrspidey-gui@ WX MRED MZLIB SBA INTERACTION)]
-                        [TOOL : () 
-                          (mrspidey-tool@ MRED GUI MZLIB)])
-                        (export)))
-                  (wx^ mzlib:unprefixed-core^ mred^)
-                  ()
-                  )
-		[WX : wx^]
-                mzlib:unprefixed-core^
-                [MRED : mred^])))
-          (((unit pretty-print@ : mzlib:pretty-print^))
-            ((unit file@ : mzlib:file^))
-            ((unit function@ : mzlib:function^))
-            ((unit compat@ : mzlib:compat^))
-            ((unit string@ : mzlib:string^)))
-          ())
-        (MZLIB : ((unit pretty-print@ : mzlib:pretty-print^)))
-        (MZLIB : ((unit file@ : mzlib:file^)))
-        (MZLIB : ((unit function@ : mzlib:function^)))
-        (MZLIB : ((unit compat@ : mzlib:compat^)))
-        (MZLIB : ((unit string@ : mzlib:string^)))))))
+;; ----------------------------------------------------------------------
+
+(define tool@
+  (compound-unit/sig 
+   (import [WX : wx^]
+	   [MRED : mred^]
+	   [MZLIB : mzlib:core^]
+	   [PCONVERT : mzlib:print-convert^]
+	   [DRSCHEME : drscheme:export^]
+	   [ZODIAC-UNUSED : zodiac:system^])
+   (link [PARAMETERS : plt:parameters^
+		     ((unit/sig plt:parameters^
+			(import)
+			(define check-syntax-level 'advanced)))]
+	 [INTERFACE : zodiac:interface^
+		    (mrspidey:zodiac:interface@ INTERACTION)]
+	 [ZODIAC : zodiac:system^
+		 (zodiac:system@ 
+		  INTERFACE PARAMETERS 
+		  (MZLIB pretty-print@)
+		  (MZLIB file@))]
+	 [INTERACTION : mrspidey:interaction^
+		      (mrspidey:interaction@ 
+		       MRED ZODIAC
+		       (MZLIB file@))]
+	 [SBA : mrspidey:sba^
+	      (mrspidey:sba@ 
+	       INTERACTION 
+	       ((MZLIB function@) : mrspidey:mzlib:function^)
+	       (MZLIB pretty-print@)
+	       (MZLIB file@)
+	       (MZLIB string@)
+	       ZODIAC)]
+	 [GUI : mrspidey-gui^
+	      (mrspidey-gui@ 
+	       WX MRED 
+	       ((MZLIB function@) : mrspidey:mzlib:function^)
+	       (MZLIB pretty-print@)
+	       (MZLIB file@)
+	       (MZLIB string@)
+	       SBA INTERACTION ZODIAC)]
+	 [TOOL : () 
+	       (mrspidey-tool@ 
+		MRED GUI)])
+   (export)))
 
 ;;(printf "tool@ defined~n")
 

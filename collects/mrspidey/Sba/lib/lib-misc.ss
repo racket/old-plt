@@ -153,5 +153,11 @@
      f
      (lambda () (current-directory cd)))))
 
+(define (get-temp-directory)
+  ; FIXME!!!
+  (if (directory-exists? "/tmp") 
+      "/tmp"
+      (current-directory)))
+
 ;; ----------------------------------------------------------------------
 

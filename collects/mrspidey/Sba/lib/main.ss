@@ -20,7 +20,12 @@
 ;; mrspidey signatures
 
 (unit/sig mrspidey:library^
-  (import mrspidey:interaction^ mzlib:unprefixed-core^)
+  (import mrspidey:interaction^ 
+	  mrspidey:mzlib:function^
+	  mzlib:pretty-print^
+	  mzlib:file^
+	  mzlib:string^)
+
   (include "lib-para.ss")
   (include "lib-list.ss")
   (include "lib-vec.ss")

@@ -1,34 +1,42 @@
 ;; debugging.ss
 
-(define debugging #f)
-(define debugging-front #f)
-(define debugging-traverse #f)
-(define debugging-object #f)
-(define debugging-unit #f)
-(define debugging-check #f)
-(define debugging-atenv #f)
-(define debugging-atype #f)
-(define debugging-sdl #f)
-(define debugging-sdl2 #f)
-(define debugging-gui #f)
+(unit/sig mrspidey:debugging^
+  (import
+   mrspidey:library^
+   mrspidey:mzlib:function^
+   mzlib:pretty-print^
+   mzlib:file^
+   mzlib:string^)
 
-(define debugging-min #f)
-(define debugging-min2 #f)
-(define debugging-few #f)
-(define debugging-gram #f)
-(define debugging-dfa-min #f)
-(define debugging-min-table #f)
+  (define debugging #f)
+  (define debugging-front #f)
+  (define debugging-traverse #f)
+  (define debugging-object #f)
+  (define debugging-unit #f)
+  (define debugging-check #f)
+  (define debugging-atenv #f)
+  (define debugging-atype #f)
+  (define debugging-sdl #f)
+  (define debugging-sdl2 #f)
+  (define debugging-gui #f)
 
-(define timing-min #f)
+  (define debugging-min #f)
+  (define debugging-min2 #f)
+  (define debugging-few #f)
+  (define debugging-gram #f)
+  (define debugging-dfa-min #f)
+  (define debugging-min-table #f)
 
-(define pretty-print-debug pretty-print)
+  (define timing-min #f)
 
-(define (set-debug-flag which val)
-  (case which
-    [(general)  (set! debugging val)]
-    [(min)      (set! debugging-min val)]
-    [(front)    (set! debugging-front val)]
-    [(traverse) (set! debugging-traverse val)]))
+  (define pretty-print-debug pretty-print)
+
+  (define (set-debug-flag which val)
+    (case which
+      [(general)  (set! debugging val)]
+      [(min)      (set! debugging-min val)]
+      [(front)    (set! debugging-front val)]
+      [(traverse) (set! debugging-traverse val)])))
 
 ;(set! debugging #t)
 ;(set! debugging-min #t)

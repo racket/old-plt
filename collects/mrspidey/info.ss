@@ -10,7 +10,8 @@
 			 (require-library "sigs.ss" "mrspidey" "Gui"))]
     [(compile-omit-files)
      (list "pltrc-co.ss" "macros.ss"
-	   "handlers.ss" "mred.ss" "text.ss")]
+	   "handlers.ss" "mred.ss" "text.ss"
+	   "sbasig.ss")]
     [(compile-subcollections) (list (list "mrspidey" "Sba")
 				    (list "mrspidey" "Gui")
 				    (list "drscheme" "tools" "analysis"))]

@@ -199,7 +199,7 @@
                   (wx:get-single-choice
                     "Select referenced unit file to open"
                     "Open Unit"
-                    (sort string<? (map fileinfo-filename fileinfo*))
+                    (quicksort (map fileinfo-filename fileinfo*) string<?)
                     '() -1 -1 #t 500 300)])
             (when (string? choice)
               (open-fileinfo (filename->fileinfo choice) #t))))]

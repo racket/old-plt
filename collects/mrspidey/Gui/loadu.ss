@@ -20,13 +20,16 @@
 
 (define mrspidey-gui@
   (unit/sig mrspidey-gui^
-    (import
-      [wx : wx^]
-      [mred : mred^]
-      mzlib:unprefixed-core^
-      mrspidey:sba^
-      mrspidey:interaction^)
-
+    (import [wx : wx^]
+	    [mred : mred^]
+	    mrspidey:mzlib:function^
+	    mzlib:pretty-print^
+	    mzlib:file^
+	    mzlib:string^
+	    mrspidey:sba^
+	    mrspidey:interaction^
+	    (zodiac : zodiac:system^))
+    
     (include "deltas.ss")
     (include "statedit.ss")
     (include "dyn-edit.ss")
@@ -37,6 +40,4 @@
     ;(include "option.ss")
     (include "prefs.ss")
     (include "Tframe.ss")
-    (include "main.ss")
-
-    ))
+    (include "main.ss")))

@@ -24,18 +24,13 @@
 (begin-elaboration-time
  (require-library "sigs.ss" "zodiac"))
 
-(define-signature mzlib:unprefixed-core^
+(define-signature mrspidey:mzlib:function^
   ; Not really much of mzlib:function^, just the part we need to avoid conflicts:
   (foldl
    foldr
    remq
    remv
-   quicksort
-
-   (open mzlib:pretty-print^)
-   (open mzlib:file^) 
-   (open mzlib:compat^) 
-   (open mzlib:string^)))
+   quicksort))
 
 (define-signature mrspidey:library-paras^ 
   (make-parameter-boolean
@@ -122,14 +117,14 @@
     char-find
     file-newer
     eqc?
+    get-temp-directory
     ))
 
 (define-signature
   mrspidey:env^
-  ( empty-env lookup-or-fail lookup-or-#f lookup bound-in-env?
-    extend-env extend-env* join-env bang-env!
-    env:change-binding env:remove
-    ))
+  (empty-env lookup-or-fail lookup-or-#f lookup bound-in-env?
+   extend-env extend-env* join-env bang-env!
+   env:change-binding env:remove))
 
 (define-signature mrspidey:library^
   ((open mrspidey:library-paras^)
@@ -626,7 +621,7 @@
 ; ----------------------------------------------------------------------
 
 (define-signature mrspidey:program^
-  (analyze-program global-def-env initialize-analysis!))
+  (analyze-program analyze-program-sexps global-def-env initialize-analysis!))
 
 (define-signature mrspidey:driver^
   (st:analyze st: st:type-fn st:help st:set-debug))
@@ -634,7 +629,7 @@
 ;; ----------------------------------------------------------------------
 
 (define-signature
-  mrspidey:zodiac-aux^
+  mrspidey:zodiac^
   ( compat compat*
     ast-size const-size
     unparse-dynamic-letd
@@ -664,9 +659,6 @@
     inline-begins
     ))
 
-(define-signature mrspidey:zodiac^
-  ((open zodiac:system^) (open mrspidey:zodiac-aux^)))
-
 ; ----------------------------------------------------------------------
 
 (define-signature mrspidey:hyper^
@@ -694,7 +686,8 @@
     (open mrspidey:kernel^)
     (open mrspidey:calc-checks^)
     (open mrspidey:languages^)
-    (unit zodiac : mrspidey:zodiac^)
+    (open mrspidey:zodiac^)
+    (open mrspidey:program^)
 ))
 
 ; ----------------------------------------------------------------------

@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.21 1999/03/22 03:54:04 robby Exp $
+;; $Id: testr.ss,v 1.22 1999/03/22 16:35:03 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -608,11 +608,9 @@
 		[(not (in-active-frame? window))
 		 (run-error mouse-tag "focused window is not in active frame")]
 		[else
-		 (let ([motion  (make-mouse-event 'motion window x y modifier-list)]
-		       [down    (make-mouse-event (list button 'down) 
-						  window x y modifier-list)]
-		       [up      (make-mouse-event (list button 'up)
-						  window x y modifier-list)])
+		 (let ([motion  (make-mouse-event 'motion x y modifier-list)]
+		       [down    (make-mouse-event (list button 'down) x y modifier-list)]
+		       [up      (make-mouse-event (list button 'up) x y modifier-list)])
 		   (send-mouse-event window motion)
 		   (send-mouse-event window down)
 		   (send-mouse-event window up)
@@ -637,9 +635,8 @@
   ;;
   
   (define make-mouse-event
-    (lambda (type window x y modifier-list)
+    (lambda (type x y modifier-list)
       (let ([event (make-object mred:mouse-event% (mouse-type-const type))])
-	(send event set-event-object window)
 	(when (and (pair? type) (not (eq? (cadr type) 'up)))
 	  (set-mouse-modifiers event (list (car type))))
 	(set-mouse-modifiers event modifier-list)

@@ -86,7 +86,7 @@
       (inherit get-menu% get-menu-bar)
       (sequence 
 	(super-init name)
-	(set! show-menu (make-object (get-menu%) "Show" (get-menu-bar))))
+	(set! show-menu (make-object (get-menu%) "&Show" (get-menu-bar))))
       
       (private
 	[running-message

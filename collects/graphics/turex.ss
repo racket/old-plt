@@ -1,6 +1,7 @@
 ;; MrEd or MrED Debug language levels required
 (require-library "errortrace.ss" "errortrace")
 (require-library "turtle.ss" "graphics")
+(require-library "math.ss")
 
 (define regular-poly
   (lambda (sides radius)

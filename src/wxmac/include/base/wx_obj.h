@@ -27,6 +27,8 @@ typedef       void    *wxObject ;
 #define WXGC_IGNORE(ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
 #define WXGC_ATOMIC (AtomicGC)
 #define WXGC_NO_CLEANUP FALSE
+#define DELETE_OBJ delete
+#define DELETE_VAL delete
 
 class wxObject : public gc_cleanup
 {

@@ -110,9 +110,9 @@ void wxCanvasDC::Init(wxCanvas* the_canvas)
 
   current_pen = NULL;
   current_brush = NULL;
-  current_background_color = *wxWHITE;
-  current_text_foreground = *wxBLACK;
-  current_text_background = *wxWHITE;
+  current_background_color = new wxColour(wxWHITE);
+  current_text_foreground = new wxColour(wxBLACK);
+  current_text_background = new wxColour(wxWHITE);
   SetBrush(wxWHITE_BRUSH);
   SetPen(wxBLACK_PEN);
 

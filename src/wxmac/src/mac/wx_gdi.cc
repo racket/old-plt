@@ -158,17 +158,31 @@ void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight,
 	point_size = PointSize;
 	underlined = Underlined;
 
-	char *name = wxTheFontNameDirectory.GetScreenName(fontid, Weight, Style);
-	Str255 buffer;
+	int tried_once = 0;
 
-	if (!strcmp(name, "systemfont"))
-		macFontId = GetSysFont();
-	else if (!strcmp(name, "applicationfont"))
-		macFontId = GetAppFont();
-	else {
-		strcpy((char *)buffer, name);
-		C2PStr((char *)buffer);
-		::GetFNum((ConstStr255Param)buffer, &macFontId);
+	while (1) {
+	  char *name = wxTheFontNameDirectory.GetScreenName(Font, Weight, Style);
+	  Str255 buffer;
+	  
+	  if (!strcmp(name, "systemfont")) {
+	    macFontId = GetSysFont();
+	    break;
+	  } else if (!strcmp(name, "applicationfont")) {
+	    macFontId = GetAppFont();
+	    break;
+	  } else {
+	    strcpy((char *)buffer, name);
+	    C2PStr((char *)buffer);
+	    ::GetFNum((ConstStr255Param)buffer, &macFontId);
+
+	    if (macFontId || tried_once)
+	      break;
+	    else {
+	      /* Try again with family... */
+	      Font = Family;
+	      tried_once = 1;
+	    }
+	  }
 	}
 
 #if !WXGARBAGE_COLLECTION_ON

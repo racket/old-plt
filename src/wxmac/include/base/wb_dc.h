@@ -88,9 +88,9 @@ class wxbDC: public wxObject
 
   wxPen *current_pen;
   wxBrush *current_brush;
-  wxColour current_background_color;
-  wxColour current_text_foreground;
-  wxColour current_text_background;
+  wxColour *current_background_color;
+  wxColour *current_text_foreground;
+  wxColour *current_text_background;
   wxFont *font;
   Bool autoSetting ;
 
@@ -179,8 +179,8 @@ class wxbDC: public wxObject
   inline virtual wxBrush *GetBrush(void)           { return current_brush ;}
   inline virtual wxFont  *GetFont(void)            { return font ;}
   inline virtual wxPen   *GetPen(void)             { return current_pen ;}
-  inline virtual wxColour *GetTextBackground(void)  { return &current_text_background ;}
-  inline virtual wxColou *GetTextForeground(void)  { return &current_text_foreground ;}
+  inline virtual wxColour *GetTextBackground(void)  { return current_text_background ;}
+  inline virtual wxColou *GetTextForeground(void)  { return current_text_foreground ;}
  
   virtual void SetLogicalOrigin(float x, float y);
   virtual void SetDeviceOrigin(float x, float y);

@@ -262,6 +262,8 @@ int scheme_num_types(void)
 
 #ifdef MZ_PRECISE_GC
 
+START_XFORM_SKIP;
+
 static int bad_trav(void *p, Mark_Proc mark)
 {
   printf("Shouldn't get here.\n");
@@ -981,5 +983,7 @@ void scheme_register_traversers(void)
   GC_register_traverser(scheme_reserved_3_type, bad_trav);
   GC_register_traverser(scheme_reserved_5_type, bad_trav);
 }
+
+END_XFORM_SKIP;
 
 #endif

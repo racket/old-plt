@@ -3886,6 +3886,7 @@ typedef struct ReplyItem {
 static ReplyItem *reply_queue;
 
 #ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
 static int mark_reply_item(void *p, Mark_Proc mark)
 {
   if (mark) {
@@ -3896,6 +3897,7 @@ static int mark_reply_item(void *p, Mark_Proc mark)
 
   return gcBYTES_TO_WORDS(sizeof(ReplyItem));
 }
+END_XFORM_SKIP;
 #endif
 
 static pascal Boolean while_waiting(EventRecord *e, long *sleeptime, RgnHandle *rgn)
@@ -3951,7 +3953,7 @@ static void wait_for_reply(AppleEvent *ae, AppleEvent *reply)
     AEInstallEventHandler(kCoreEventClass, kAEAnswer, NewAEEventHandlerProc(HandleAnswer), 0, 0);
     REGISTER_SO(reply_queue);
 #ifdef MZ_PRECISE_GC
-    GC_register_traverser(scheme_rt_compile_info, mark_comp_info);
+    GC_register_traverser(scheme_rt_reply_item, mark_reply_item);
 #endif
   }
   

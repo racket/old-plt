@@ -3133,6 +3133,8 @@ void scheme_count_unit(Scheme_Type type, Scheme_Object *o, long *s, long *e,
 
 #ifdef MZ_PRECISE_GC
 
+START_XFORM_SKIP;
+
 static int mark_unit_val(void *p, Mark_Proc mark)
 {
   if (mark) {
@@ -3315,6 +3317,8 @@ static void register_traversers(void)
   GC_register_traverser(scheme_rt_compound_linked_data, mark_compound_linked_data);
   GC_register_traverser(scheme_rt_do_invoke_data, mark_do_invoke_data);
 }
+
+END_XFORM_SKIP;
 
 #endif
 

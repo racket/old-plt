@@ -358,6 +358,8 @@ scheme_change_in_table (Scheme_Hash_Table *table, const char *key, void *naya)
 
 #ifdef MZ_PRECISE_GC
 
+START_XFORM_SKIP;
+
 typedef long (*Hash_Key_Proc)(Scheme_Object *o);
 Hash_Key_Proc hash_key_procs[_scheme_last_normal_type_];
 static short keygen;
@@ -479,5 +481,7 @@ long scheme_hash_key(Scheme_Object *o)
 
   return hash_key_procs[t](o);
 }
+
+END_XFORM_SKIP;
 
 #endif

@@ -3949,6 +3949,8 @@ int scheme_sproc_mutex_try_down(void *s)
 
 #ifdef MZ_PRECISE_GC
 
+START_XFORM_SKIP;
+
 static int mark_config_val(void *p, Mark_Proc mark)
 {
   if (mark) {
@@ -4093,5 +4095,7 @@ static void register_traversers(void)
   GC_register_traverser(scheme_rt_will, mark_will);
   GC_register_traverser(scheme_rt_will_registration, mark_will_registration);
 }
+
+END_XFORM_SKIP;
 
 #endif

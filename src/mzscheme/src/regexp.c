@@ -1496,6 +1496,7 @@ static Scheme_Object *regexp_p(int argc, Scheme_Object *argv[])
 }
 
 #ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
 static int mark_regexp(void *p, Mark_Proc mark)
 {
   regexp *r = (regexp *)p;
@@ -1506,6 +1507,7 @@ static int mark_regexp(void *p, Mark_Proc mark)
 
   return gcBYTES_TO_WORDS((sizeof(regexp) + r->regsize));
 }
+END_XFORM_SKIP;
 #endif
 
 void scheme_regexp_initialize(Scheme_Env *env)

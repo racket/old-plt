@@ -7665,6 +7665,8 @@ void scheme_count_output_port(Scheme_Object *port, long *s, long *e,
 
 #ifdef MZ_PRECISE_GC
 
+START_XFORM_SKIP;
+
 static int mark_listener(void *p, Mark_Proc mark)
 {
   if (mark) {
@@ -7905,5 +7907,7 @@ static void register_traversers(void)
   GC_register_traverser(scheme_rt_oskit_console_input, mark_oskit_console_input);
 #endif
 }
+
+END_XFORM_SKIP;
 
 #endif

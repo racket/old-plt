@@ -1021,6 +1021,8 @@ void scheme_count_struct_info(Scheme_Object *o, long *s, long *e,
 
 #if MZ_PRECISE_GC
 
+START_XFORM_SKIP;
+
 static int mark_struct_val(void *p, Mark_Proc mark)
 {
   Scheme_Structure *s = (Scheme_Structure *)p;
@@ -1086,5 +1088,7 @@ static void register_traversers(void)
 
   GC_register_traverser(scheme_rt_struct_proc_info, mark_struct_proc_info);
 }
+
+END_XFORM_SKIP;
 
 #endif

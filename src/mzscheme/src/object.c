@@ -4057,6 +4057,8 @@ void scheme_count_class_data(Scheme_Object *o, long *s, long *e, Scheme_Hash_Tab
 
 #ifdef MZ_PRECISE_GC
 
+START_XFORM_SKIP;
+
 static int mark_object_val(void *p, Mark_Proc mark)
 {
   Internal_Object *obj = (Internal_Object *)p;
@@ -4278,6 +4280,8 @@ static void register_traversers(void)
   GC_register_traverser(scheme_rt_init_obj_rec, mark_init_object_rec);
   GC_register_traverser(scheme_rt_super_init_data, mark_super_init_data);
 }
+
+END_XFORM_SKIP;
 
 #endif
 

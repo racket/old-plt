@@ -25,7 +25,7 @@
    (lambda ()
      (close-output-port (current-output-port))
      (current-output-port (current-error-port))
-     '(delete-file file-out)
+     (delete-file file-out)
      (eh))))
 
 ;; Header:
@@ -78,6 +78,8 @@
 (define label? #t)
 
 (define semi '|;|)
+(define START_XFORM_SKIP (string->symbol "START_XFORM_SKIP"))
+(define END_XFORM_SKIP (string->symbol "END_XFORM_SKIP"))
 
 (define (get-constructor v)
   (cond
@@ -203,8 +205,18 @@
 	    (newline/indent indent))])
 	(loop (cdr e) v)))))
 
+(define skipping? #f)
+
 (define (top-level e)
   (cond
+   [(end-skip? e)
+    (set! skipping? #f)
+    null]
+   [(start-skip? e)
+    (set! skipping? #t)
+    null]
+   [skipping?
+    e]
    [(prototype? e) 
     (let ([name (register-proto-information e)])
       (when label? (printf "/* PROTO ~a */~n" name)))
@@ -228,6 +240,14 @@
     (when label? (printf "/* VAR */~n"))
     e]
    [else (error 'xform "unknown form: ~s" e)]))
+
+(define (start-skip? e)
+  (and (pair? e)
+       (eq? START_XFORM_SKIP (tok-n (car e)))))
+
+(define (end-skip? e)
+  (and (pair? e)
+       (eq? END_XFORM_SKIP (tok-n (car e)))))
 
 (define (prototype? e)
   (let ([l (length e)])
@@ -376,8 +396,9 @@
 							       (has-union? (struct-type-struct v)))))
 						    v))))))
 			     (fprintf (current-error-port)
-				      "Warning: can't handle union or record with union. ~a in line ~a.~n"
-				      name (tok-line v)))
+				      "Warning: can't handle union or record with union. ~a in line ~a.~n~a~n"
+				      name (tok-line v)
+				      " If it matters, I'll report an error later..."))
 			   (if (or pointer?
 				   base-is-ptr?
 				   base-struct
@@ -714,6 +735,25 @@
 		       (apply fprintf (current-error-port) err-stuff)
 		       (newline (current-error-port)))
 		     (apply error 'xform err-stuff))))
+	     (let ([assignee (and (not (null? rest-))
+				  (not (null? (cdr rest-)))
+				  (or (and (eq? '= (tok-n (car rest-)))
+					   (cdr rest-))
+				      (and (parens? (car rest-))
+					   (eq? '= (tok-n (cadr rest-)))
+					   (cddr rest-))))])
+	       (when (and assignee
+			  (not (null? assignee))
+			  (or (not (symbol? (tok-n (car assignee))))
+			      (and (not (null? (cdr assignee)))
+				   (not (memq (tok-n (cadr assignee)) '(else)))
+				   (not (and (parens? (cadr assignee))
+					     (pair? (cddr assignee))
+					     (memq (tok-n (caddr assignee)) '(if while for until)))))))
+		 (fprintf (current-error-port)
+			  "Suspicious assignment with a function call, line ~a, starting tok is ~s.~n"
+			  (tok-line (car func))
+			  (tok-n (car func)))))
 	     ;; Lift out function calls as arguments. (Can re-order code.
 	     ;; MzScheme source code must live with this change to C's semantics.)
 	     ;; Calls are replaced by varaibles, and setup code generated that

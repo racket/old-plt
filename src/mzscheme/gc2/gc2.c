@@ -34,6 +34,8 @@ void **new_tagged_high, **new_untagged_low;
 
 char *alloc_bitmap;
 
+char zero_sized[4];
+
 /******************************************************************************/
 
 #define PTR_ALIGNMENT 4
@@ -135,29 +137,24 @@ void GC_gcollect()
 {
 }
 
-static void *identity(void *p)
-{
-  return p;
-}
-
-#define SKIP 0x7000
-#define MOVED 0x3000
+#define SKIP ((Scheme_Type)0x7000)
+#define MOVED ((Scheme_Type)0x3000)
 
 static Scheme_Type prev_tag, prev_prev_tag;
 
 static void *mark(void *p)
 {
-  if ((p >= alloc_space)
+  if ((p > alloc_space)
       && (p < (alloc_space + alloc_size))) {
+
 #if 1
-    long diff = ((char *)p - (char *)alloc_space);
-    if (!(alloc_bitmap[diff >> 5] & (1 << ((diff >> 2) & 0x7)))) {
-      printf("Failed sanity check\n");
-      *(int *)0x0 = 1;
-    }
+      long diff = ((char *)p - (char *)alloc_space);
+      if (!(alloc_bitmap[diff >> 5] & (1 << ((diff >> 2) & 0x7)))) {
+	printf("Failed sanity check\n");
+	*(int *)0x0 = 1;
+      }
 #endif
 
-    p -= 4;
     if (p < (void *)tagged_high) {
       Scheme_Type tag = *(Scheme_Type *)p;
       size_t size;
@@ -189,6 +186,7 @@ static void *mark(void *p)
     } else {
       long size;
       
+      p -= 4;
       size = ((*(long *)p) & 0x3FFFFFFF);
       
       if (!size)
@@ -236,12 +234,13 @@ static void *cautious_mark(void *p)
 void gcollect(int needsize)
 {
   /* Check old: */
-  long *p, *top, *new_space;
+  long *p, *top;
+  void *new_space;
   long new_size = alloc_size;
   void **tagged_mark, **untagged_mark;
   void **var_stack;
   char *bitmap;
-  int i;
+  int i, var_count;
 
   sort_and_merge_roots();
 
@@ -252,7 +251,7 @@ void gcollect(int needsize)
       new_size = heap_size * 2;
   }
 
-  new_space = (long *)malloc(new_size);
+  new_space = malloc(new_size);
 
   /******************** Make bitmap image: ****************************/
 
@@ -260,7 +259,7 @@ void gcollect(int needsize)
   p = (long *)untagged_low;
   top = (long *)(alloc_space + alloc_size);
   while (p < top) {
-    long diff = ((char *)p - (char *)alloc_space);
+    long diff = ((char *)p - (char *)alloc_space) + 4;
     bitmap[diff >> 5] |= (1 << ((diff >> 2) & 0x7));
 
     p += (*p & 0x3FFFFFFF) + 1;
@@ -270,7 +269,7 @@ void gcollect(int needsize)
     /* printf("Untagged ok\n"); */
   }
 
-  p = ((long *)alloc_space) + 1;
+  p = ((long *)alloc_space);
   while (p < (long *)tagged_high) {
     Scheme_Type tag = *(Scheme_Type *)p;
     if (tag == SKIP) {
@@ -296,17 +295,21 @@ void gcollect(int needsize)
 
   /******************** Mark/Copy ****************************/
 
-  tagged_mark = new_tagged_high = (void **)(new_space + 4);
+  tagged_mark = new_tagged_high = (void **)new_space;
   untagged_mark = new_untagged_low = (void **)(new_space + new_size);
 
   var_stack = GC_variable_stack;
+  var_count = GC_variable_count;
   while (var_stack) {
-    int size = ((long *)var_stack)[1];
+    int size = var_count;
     void ***p = (void ***)(var_stack + 2);
     
-    while (size--)
+    while (size--) {
       **p = cautious_mark(**p);
+      p++;
+    }
 
+    var_count = ((long *)var_stack)[1]; 
     var_stack = *var_stack;
   }
 
@@ -315,7 +318,7 @@ void gcollect(int needsize)
     void **e = (void **)roots[i + 1];
     
     while (s < e) {
-      *s = mark(*s);
+      *s = cautious_mark(*s);
       s++;
     }
   }
@@ -331,18 +334,20 @@ void gcollect(int needsize)
       else {
 	size_t size;
 
+	printf("%d\n", tag);
+
 	if ((tag < 0) || (tag >= _scheme_last_type_) || !tag_table[tag]) {
 	  *(int *)0x0 = 1;
 	}
-	size = tag_table[tag](p, mark);
-	p += size;
+	size = tag_table[tag](tagged_mark, mark);
+	tagged_mark += size;
       }
     }
 
     while (untagged_mark > new_untagged_low) {
-      void **mp;
+      void **mp, **started;
 
-      mp = new_untagged_low;
+      mp = started = new_untagged_low;
       while (mp < untagged_mark) {
 	long v = *(long *)mp;
 	size_t size = (v & 0x3FFFFFFF);
@@ -367,7 +372,7 @@ void gcollect(int needsize)
 	} else
 	  mp += v + 1;
       }
-      untagged_mark = mp;
+      untagged_mark = started;
     }
   }
 
@@ -421,7 +426,7 @@ static void *malloc_untagged(size_t size_in_bytes, unsigned long nonatomic)
   void **naya;
 
   if (!size_in_bytes)
-    return alloc_space;
+    return zero_sized;
 
   size_in_bytes = ((size_in_bytes + 3) & 0xFFFFFFFC);
   if (!(size_in_bytes & 0x4)) {

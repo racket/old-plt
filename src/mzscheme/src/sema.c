@@ -414,6 +414,8 @@ static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p)
 
 #ifdef MZ_PRECISE_GC
 
+START_XFORM_SKIP;
+
 static int mark_breakable_wait(void *p, Mark_Proc mark)
 {
   if (mark) {
@@ -445,6 +447,8 @@ static void register_traversers(void)
   GC_register_traverser(scheme_rt_breakable_wait, mark_breakable_wait);
   GC_register_traverser(scheme_rt_sema_waiter, mark_sema_waiter);
 }
+
+END_XFORM_SKIP;
 
 #endif
 

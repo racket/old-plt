@@ -2585,6 +2585,8 @@ static Scheme_Object *read_compiled_closure(Scheme_Object *obj)
 
 #ifdef MZ_PRECISE_GC
 
+START_XFORM_SKIP;
+
 static int mark_closure_info(void *p, Mark_Proc mark)
 {
   if (mark) {
@@ -2642,5 +2644,7 @@ static void register_traversers(void)
   GC_register_traverser(scheme_rt_dyn_wind_info, mark_dyn_wind_info);
   GC_register_traverser(scheme_rt_cont_mark_chain, mark_cont_mark_chain);
 }
+
+END_XFORM_SKIP;
 
 #endif

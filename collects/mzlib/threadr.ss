@@ -113,68 +113,59 @@
     [(semaphores timeout) (semaphore-wait-multiple semaphores timeout #f)]
     [(semaphores timeout allow-break?)
      (let ([break-enabled? (or allow-break? (break-enabled))])
-       (parameterize 
-	([break-enabled #f])
-	(for-each
-	 (lambda (s)
-	   (or (semaphore? s) 
-	       (raise-type-error 'semaphore-wait-multiple "list of semaphores" semaphores)))
-	 semaphores)
-	(or (not timeout) (real? timeout) (>= timeout 0)
-	    (raise-type-error 'semaphore-wait-multiple "positive real number" timeout))
-	(let* ([result-l null]
-	       [ok? #f]
-	       [set-l (make-semaphore 1)]
-	       [one-done (make-semaphore)]
-	       [branch-handler (lambda ()
-				 (let ([p (make-parameterization)])
-				   ((in-parameterization p break-enabled) #f)
-				   p))]
-	       [threads (parameterize ([parameterization-branch-handler
-					branch-handler])
-				      (let loop ([l semaphores])
-					(if (null? l)
-					    null
-					    (cons (let ([s (car l)])
-						    (thread (lambda ()
-							      (let/ec 
-							       k
-							       (current-exception-handler k)
-							       (semaphore-wait/enable-break s)
-							       (with-semaphore 
-								set-l
-								(lambda () (set! result-l 
-										 (cons s result-l))))
-							       (semaphore-post one-done)))))
-						  (loop (cdr l))))))]
-	       [timer-thread (if timeout
-				 (parameterize ([parameterization-branch-handler
-						 branch-handler])
-					       (thread (lambda () (sleep timeout) (semaphore-post one-done))))
-				 #f)])
-	  (dynamic-wind
-	   void
-	   (lambda ()
-	     ; wait until someone is done
-	     ((if break-enabled? semaphore-wait/enable-break semaphore-wait) one-done)
-	     (set! ok? #t))
-	   (lambda ()
-	     ; tell everyone to stop
-	     (for-each (lambda (th) (break-thread th)) threads)
-	     (when timer-thread (break-thread timer-thread))
-	     ; wait until everyone's done
-	     (for-each thread-wait threads)
-	     ; If more that too manay suceeded, repost to the extras
-	     (let ([extras (if ok? 
-			       (if (null? result-l) 
-				   null 
-				   (cdr result-l))
-			       result-l)])
-	       (for-each (lambda (s) (semaphore-post s)) extras))))
-	  (if (null? result-l)
-	      #f 
-	      (car result-l)))))]))
-
+       (parameterize ([break-enabled #f])
+	 (for-each
+	  (lambda (s)
+	    (or (semaphore? s) 
+		(raise-type-error 'semaphore-wait-multiple "list of semaphores" semaphores)))
+	  semaphores)
+	 (or (not timeout) (real? timeout) (>= timeout 0)
+	     (raise-type-error 'semaphore-wait-multiple "positive real number" timeout))
+	 (let* ([result-l null]
+		[ok? #f]
+		[set-l (make-semaphore 1)]
+		[one-done (make-semaphore)]
+		[threads (let loop ([l semaphores])
+			   (if (null? l)
+			       null
+			       (cons (let ([s (car l)])
+				       (thread (lambda ()
+						 (let/ec 
+						     k
+						   (current-exception-handler k)
+						   (semaphore-wait/enable-break s)
+						   (with-semaphore 
+						    set-l
+						    (lambda () (set! result-l 
+								     (cons s result-l))))
+						   (semaphore-post one-done)))))
+				     (loop (cdr l)))))]
+		[timer-thread (if timeout
+				  (thread (lambda () (sleep timeout) (semaphore-post one-done)))
+				  #f)])
+	   (dynamic-wind
+	    void
+	    (lambda ()
+	      ; wait until someone is done
+	      ((if break-enabled? semaphore-wait/enable-break semaphore-wait) one-done)
+	      (set! ok? #t))
+	    (lambda ()
+	      ; tell everyone to stop
+	      (for-each (lambda (th) (break-thread th)) threads)
+	      (when timer-thread (break-thread timer-thread))
+	      ; wait until everyone's done
+	      (for-each thread-wait threads)
+	      ; If more that too manay suceeded, repost to the extras
+	      (let ([extras (if ok? 
+				(if (null? result-l) 
+				    null 
+				    (cdr result-l))
+				result-l)])
+		(for-each (lambda (s) (semaphore-post s)) extras))))
+	   (if (null? result-l)
+	       #f 
+	       (car result-l)))))]))
+ 
   (define dynamic-enable-break
     (polymorphic
      (lambda (thunk)

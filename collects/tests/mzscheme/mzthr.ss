@@ -50,7 +50,7 @@
 (sleep SLEEP-TIME)
 (test 5 'consumer-thread c-out)
 
-(arity-test consumer-thread 1 1) 
+(arity-test consumer-thread 1 2)
 (error-test '(consumer-thread 9))
 (arity-test g 2 3)
 

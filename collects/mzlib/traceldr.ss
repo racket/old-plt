@@ -4,12 +4,12 @@
  (import)
  (let ([load (current-load)]
        [load-extension (current-load-extension)]
-       [cep (in-parameterization (current-parameterization) current-error-port)]
+       [ep (current-error-port)]
        [tab ""])
    (let ([mk-chain
 	  (lambda (load)
 	    (lambda (filename)
-	      (fprintf (cep)
+	      (fprintf ep
 		       "~aloading ~a at ~a~n" 
 		       tab filename (current-process-milliseconds))
 	      (begin0
@@ -20,12 +20,12 @@
 		    (if (regexp-match "_loader" filename)
 			(let ([f (load filename)])
 			  (lambda (sym)
-			    (fprintf (cep)
+			    (fprintf ep
 				     "~atrying ~a's ~a~n" tab filename sym)
 			    (let ([loader (f sym)])
 			      (and loader
 				   (lambda ()
-				     (fprintf (cep)
+				     (fprintf ep
 					      "~astarting ~a's ~a at ~a~n" 
 					      tab filename sym
 					      (current-process-milliseconds))
@@ -35,13 +35,13 @@
 					 (lambda () (set! tab (string-append " " tab)))
 					 (lambda () (loader))
 					 (lambda () (set! tab s)))
-					(fprintf (cep)
+					(fprintf ep
 						 "~adone ~a's ~a at ~a~n"
 						 tab filename sym
 						 (current-process-milliseconds)))))))))
 			(load filename)))
 		  (lambda () (set! tab s))))
-	       (fprintf (cep)
+	       (fprintf ep
 			"~adone ~a at ~a~n"
 			tab filename (current-process-milliseconds)))))])
      (current-load (mk-chain load))

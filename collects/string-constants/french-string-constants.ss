@@ -9,6 +9,8 @@
  
  ;;; when translating this constant, substitue name of actual langauge for `English'
  (is-this-your-native-language "Le Français est-il votre langue maternelle ?")
+
+ (interact-with-drscheme-in-language "Interagir avec DrScheme en Français")
  
  (are-you-sure-you-want-to-switch-languages
   "Ceci va changer le language utilisé par l'interface graphique, ce qui va nécessiter un redémarrage de DrScheme. Etes-vous certain de vouloir continuer ?")

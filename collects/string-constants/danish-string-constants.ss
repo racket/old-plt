@@ -1,13 +1,14 @@
-
 (
  ;;; when translating this constant, substitue name of actual langauge for `English'
- (is-this-your-native-language "Er dit sprog dansk?")
+ (is-this-your-native-language "Foretrækker du dansk?")
 
  (are-you-sure-you-want-to-switch-languages
   "Dette ændrer sproget i den grafiske brugerflade. Er du sikker?")
 
+ (interact-with-drscheme-in-language "Arbejd med DrScheme på Dansk")
+
  ;; these two should probably be the same in all languages except English.
- ;; they are the button labels (under macos and windows, respectively)es
+ ;; they are the button labels (under macos and windows, respectively)
  ;; that go the with the string above.
  (accept-and-quit "Accepter og afslut")
  (accept-and-exit "Accepter og afslut")
@@ -114,6 +115,7 @@
  (save "Gem")
  (please-choose-either "Vælg venligst enten \"~a\" eller \"~a\"")
  (close-anyway "Luk alligevel")
+ (clear-anyway "Rens Anyway")
 
  (url "URL")
  (url: "URL:")
@@ -131,7 +133,8 @@
  (help-desk-about-string
   "Hjælpebordet indeholder al dokumention om PLT software, inklusive DrScheme, MzScheme og MrEd.\n\nVersion ~a\nCopyright (c) 1995-2001 PLT")
  (help-on-help "Hjælp til hjælp")
- (help-on-help-details "Brug hjælpebordet til at få hjælp. Følg linket `How to use Help Desk' på hjælpebordets startside. (For at komme til hjemmesiden, hvis du ikke allerede er der, skal du klikke på `Hjem'-knappen i toppen af hjælpebordets vindue.)")
+ (help-on-help-details "Brug hjælpebordet til at få hjælp. Følg linket `How to use Help Desk' på hjælpebordets startside.
+(For at komme til hjemmesiden, hvis du ikke allerede er der, skal du klikke på `Hjem'-knappen i toppen af hjælpebordets vindue.)")
  (find-docs-for "Find dokumentation om:")
  (search "Søg")
  ; next 3 are popup menu choices at bottom of help desk window
@@ -175,6 +178,8 @@
  (forward-in-browser-history "Fremad")
  (home "Hjem")
  (browser "Browser")
+ (choose-browser "Vælg en browser")
+ (no-browser "Ingen")
  (cannot-display-url "Kan ikke vise URL ~s: ~a")
  (install? "Installér?")  ;; if a .plt file is found (title of dialog)
  (you-have-selected-an-installable-package "Du har valgt en pakke, som kan installeres.")
@@ -189,6 +194,13 @@
  (package-was-installed "Pakken blev installeret.")
  (download-was-saved "Den downloadede fil blev gemt.")
  (getting-page "Henter side") ;; dialog title
+
+ (install-plt-file-menu-item... "Installer .plt-fil...")
+ (install-plt-file-dialog-title "Installer .plt-fil")
+ (install-plt-web-tab "Web")
+ (install-plt-file-tab "Fil")
+ (install-plt-filename "Filnavn:")
+ (install-plt-url "URL:")
 
  ;; install plt file when opened in drscheme strings
  (install-plt-file "Installér ~a eller åbn for at redigere?")
@@ -319,8 +331,7 @@
  (could-not-read "kunne ikke læse \"~a\"")
  (are-you-sure-revert
   "Er du sikker på, at du vil vende tilbage til denne fil? En tilbagevenden kan ikke fortrydes.")
- (are-you-sure-revert-title
-  "Vend tilbage?")
+ (are-you-sure-revert-title   "Vend tilbage?")
 
  ;;; saving a file
  ; ~a is filled with the filename
@@ -352,8 +363,8 @@
  ;;; versions below, once the &s have been stripped.
  ;;; if they don't, DrScheme's menus will appear
  ;;; in the wrong order.
- (file-menu "Fil")
- (edit-menu "Ret")
+ (file-menu "Filer")
+ (edit-menu "Rediger")
  (help-menu "Hjælp")
  (windows-menu "Vinduer")
 
@@ -367,44 +378,45 @@
  ;;; more information is required from the user before completing
  ;;; the command.
 
- (file-menu-label-windows "&Fil")
+ (file-menu-label-windows "&Filer")
  (file-menu-label-other "F&il")
 
- (new-info  "Åbn en ny fil")
+ (new-info  "Opret en ny fil")
  (new-menu-item "&Ny")
+ (new-...-menu-item "&Ny...")
 
  (open-info "Åbn en fil fra disk")
  (open-menu-item "&Åbn...")
  (open-here-menu-item "&Åbn her...")
 
  (open-recent-info "En liste af filer brugt for nylig")
- (open-recent-menu-item "Åbn nylig")
+ (open-recent-menu-item "Åbn gammel")
 
  (revert-info "Vend tilbage til diskkopien af denne fil")
  (revert-menu-item "&Vend tilbage")
 
- (save-info "Gem til disk")
+ (save-info "Gem filen på disk")
  (save-menu-item "&Gem")
 
- (save-as-info "Beder om filnavn og gemmer denne fil på disken")
+ (save-as-info "Gemmer filen med et nyt filnavn")
  (save-as-menu-item "Gem &Som...")
 
- (print-info "Send denne fil til en printer")
+ (print-info "Udskriv filen på printer")
  (print-menu-item "&Print...")
 
  (close-info "Luk denne fil")
  (close-menu-item "&Luk")
 
  (quit-info "Luk alle vinduer")
- (quit-menu-item-windows "E&xit")
+ (quit-menu-item-windows "E&xit")  ; TODO
  (quit-menu-item-others "&Quit")
 
- (edit-menu-label "&Ret")
+ (edit-menu-label "&Rediger")
 
  (undo-info "Fortryd sidste handling")
  (undo-menu-item "&Fortryd")
 
- (redo-info "Fortryd det sidste fortryd")
+ (redo-info "Fortryd det seneste fortryd")
  (redo-menu-item "&Omgør")
 
  (cut-info "Flyt det sidst valgte til klippebordet til senere indsættelse")
@@ -413,15 +425,15 @@
  (copy-info "Kopier det sidst valgte til klippebordet til senere indsættelse")
  (copy-menu-item "&Kopier")
 
- (paste-info "Indsæt det senest kopierede eller klippede, i stedet for det valgte")
+ (paste-info "Erstat det valgte med det senest kopierede eller klippede")
  (paste-menu-item "&Indsæt")
 
  (clear-info "Slet de valgte elementer uden at påvirke klippebordet eller indsætning")
  (clear-menu-item-others "Rens")
  (clear-menu-item-windows "&Rens")
 
- (select-all-info "Marker hele dokumentet")
- (select-all-menu-item "Vælg &alt")
+ (select-all-info "Marker alt")
+ (select-all-menu-item "Marker &alt")
 
  (find-info "Søg efter streng")
  (find-menu-item "Søg...")
@@ -429,7 +441,7 @@
  (find-again-info "Søg efter samme streng som før")
  (find-again-menu-item "Søg igen")
 
- (replace-and-find-again-info "Erstat den nuværende tekst og søg efter samme streng som før")
+ (replace-and-find-again-info "Erstat den nuværende tekst og gentag søgningen")
  (replace-and-find-again-menu-item "Erstat og søg igen")
 
  (preferences-info "Rediger dine indstillinger")
@@ -441,14 +453,18 @@
  (keybindings-sort-by-name "Sortér efter Navn")
  (keybindings-sort-by-key "Sortér efter Tast")
 
- (insert-text-box-item "Indsæt tekstboks")
- (insert-pb-box-item "Indsæt pasteboard-kasse")
- (insert-image-item "Indsæt billede...")
- (wrap-text-item "Ombryd tekst")
+ (insert-text-box-item "Indsæt tekstkasse")
+ (insert-pb-box-item   "Indsæt pasteboard-kasse")
+ (insert-image-item    "Indsæt billede...")
+ (insert-comment-box-menu-item-label "Indsæt kommentarkasse")
+ (wrap-text-item       "Ombryd tekst")
 
  (windows-menu-label "&Vinduer")
  (bring-frame-to-front "Skift til andet vindue")       ;;; title of dialog
  (bring-frame-to-front... "Skift til andet vindue...") ;;; corresponding title of menu item
+ (next-window "Næste vindue")
+ (previous-window "Forrige vindue")
+
 
  (show-menu-label "&Vis")
  (show-overview "Vis programkontur")
@@ -457,10 +473,16 @@
  (help-menu-label "&Hjælp")
  (about-info "Akkrediteringer og detaljer om dette program")
  (about-menu-item "Om...")
- (help-menu-check-for-updates "Undersøg om der er opdateringer...")
+ (help-menu-check-for-updates "Undersøg, om der er opdateringer...")
 
  ;;; help-desk-specific menus
  (new-help-desk "Nyt hjælpebord")
+
+ ;; open here's new menu item
+ (create-new-window-or-clear-current
+  "Vil du have et nyt vindue, eller rense det gamle?")
+ (clear-current "Rens nuværende")
+ (new-window "Nyt vindue")
 
  ;;; exiting and quitting are you sure dialog
  ;;; (exit is used on windows, quit on macos. go figure)
@@ -488,12 +510,9 @@
  (invalid-tool-spec "Værkstøjsspecifikationen i collection ~a's info.ss filen er ugyldig. Forventede enten en streng eller en ikke-tom liste af strenge, fik: ~e")
  (error-loading-tool-title "DrScheme - Fejl under hentning af værktøj ~s; ~s")
  (error-invoking-tool-title "Fejl ved kørsel af værktøj ~s;~s")
- (tool-tool-names-same-length
-  "forventede `tool-names' og `tools' var to lister af samme længde i info.ss for ~s, fik ~e og ~e")
- (tool-tool-icons-same-length
-  "forventede `tool-icons' og `tools' var to lister af samme længde i info.ss  for ~s, fik ~e and ~e")
- (error-getting-info-tool
-  "fejl ved hentning af info.ss file for ~s")
+ (tool-tool-names-same-length "forventede `tool-names' og `tools' var to lister af samme længde i info.ss for ~s, fik ~e og ~e")
+ (tool-tool-icons-same-length  "forventede `tool-icons' og `tools' var to lister af samme længde i info.ss  for ~s, fik ~e and ~e")
+ (error-getting-info-tool  "fejl ved hentning af info.ss file for ~s")
  (tool-error-phase1 "Fejl i fase 1 for værktøjet ~s; ~s")
  (tool-error-phase2 "Fejl i fase 2 for værktøjet ~s; ~s")
 
@@ -503,6 +522,7 @@
  (sort-by-name "Sorter efter navn")
  (sort-by-position "Sorter efter rækkefølge i programteksten")
  (no-definitions-found "<< ingen definitioner fundet >>")
+ (jump-to-defn "Hop til definitionen af ~a")
 
  (recent-items-sort-by-age "Sorter efter Alder")
  (recent-items-sort-by-name "Sorter efter Navn")
@@ -543,6 +563,8 @@
  (break-menu-item-help-string "Afbryd den nuværende evaluering")
  (kill-menu-item-label "Slå ihjel")
  (kill-menu-item-help-string "Slå den nuværende evaluering ihjel")
+ (clear-error-highlight-menu-item-label "Fjern fejlfarvelægningen")
+ (clear-error-highlight-item-help-string "Fjerne den pinke farvelægning af fejlene")
  (reindent-menu-item-label "&Indryk igen")
  (reindent-all-menu-item-label "Indryk &alt igen")
  (comment-out-menu-item-label "&Udkommentér")
@@ -554,12 +576,22 @@
  (must-save-before-executable "Du skal gemme dit program, før du laver en binær fil")
  (save-an-executable "Gem en binær kørselsfil")
  (definitions-not-saved "Definitionsvinduet har ikke været gemt. Den binære kørselsfil vil bruge den senest gemte version af definitionsvinduet. Fortsæt?")
- (inline-saved-program-in-executable?
-  "Indlejr det gemte program i en binær kørselsfil? Hvis ja, så kan du kopiere kørselsfilen til en anden ~a computer, men kørselsfilen vil være ret stor. Hvis ikke, kan du ikke kopiere det gemte program til en anden computer, men den vil være meget mindre. I tilgift, hvis ikke, vil kørselsfilen bruge den seneste version af programmet.")
- (inline-saved-program-in-executable/windows
-  "Advarsel: Under Windows har du også brug for libmred.dll, libmzsch.dll og libmzgc.dll for at køre programmet.")
- (use-mred-binary?
-  "Brug den binære mred til denne kørselsfil?\n\nHvis ja, dit program kan buge (lib \"mred.ss\" \"mred\") biblioteket. Hvis nej, vil DrScheme bruge mzscheme til den binære kørselsfil og du kan ikke bruge det bibliotek.\n\nHvis du er i tvivl, så vælg ja.")
+ (inline-saved-program-in-executable?  "Indlejr det gemte program i en binær kørselsfil? Hvis ja, så kan du kopiere kørselsfilen til en anden ~a computer, men kørselsfilen vil være ret stor. Hvis ikke, kan du ikke kopiere det gemte program til en anden computer, men den vil være meget mindre. I tilgift, hvis ikke, vil kørselsfilen bruge den seneste version af programmet.")
+ (inline-saved-program-in-executable/windows  "Advarsel: Under Windows har du også brug for libmred.dll, libmzsch.dll og libmzgc.dll for at køre programmet.")
+ (inline-saved-program-in-executable/windows/path
+   "ADVARSEK! Den frembragte kørselsfil afhænger af tre DLL'er: libmred.dll, libmzsch.gll og libgc.dll, som findes i \n\n~a\n\nKørselsfilen finder DLL'erne enten i kørselsfilens mappe eller gennem miljøvariablen PATH.\n\nDa du installerede DrScheme, tilføjede installationsprogrammet mappen med DLL'erne til brugerens PATH. Vær opmærksom på konfigurationsændringer efter installationen.\n\nHvis du flytter kørselsfilen til en anden maskine, skal du også kopiere DLL'erne til den anden maskine --- enten til samme mappe som kørselsfilen, eller til en mappe i den anden maskines PATH.")
+ (use-mred-binary?  "Brug den binære MrEd til denne kørselsfil?\n\nHvis ja, kan dit program bruge (lib \"mred.ss\" \"mred\") biblioteket. Hvis nej, vil DrScheme bruge mzscheme til den binære kørselsfil og du kan ikke bruge det andet bibliotek.\n\nHvis du er i tvivl, så vælg ja.")
+
+ (launcher "Afvikler")
+ (stand-alone "Selvstænding")
+ (executable-type "Type")
+ (executable-base "Efternavn")
+ (filename "Filnaven: ")
+ (create "Lav")
+ (please-choose-an-executable-filename "Væg et filnavn til kørselsfilen.")
+ 
+ (create-servlet "Lav en Servelet...")
+
 
  ;;; buttons
  (execute-button-label "Kør")
@@ -627,6 +659,7 @@
  (use-mixed-fractions "Uægte brøker")
  (use-repeating-decimals "Periodeiske decimalbrøker")
  (decimal-notation-for-rationals "Brug decimaltalsnotation for brøker")
+ (please-select-a-language "Vælg venligst et sprog")
 
 
  ;;; languages
@@ -652,7 +685,7 @@
  (r5rs-one-line-summary "R5RS, uden dikkedarer")
  (unknown-debug-frame "[ukendt]")
 
- (module-language-one-line-summary "Sprog med modul som eneste kosntruktion")
+ (module-language-one-line-summary "Sprog med modul som eneste konstruktion")
  (bad-module-language-specs  "drscheme-sprog-position og drscheme-language-modules er ikke korrekte. Forventede henholdsvis (listof (cons string (listof string))) og (listof (listof string)), hvor længderne af drscheme-language-position og drscheme-language-module listerne er de samme. Fik ~e og ~e")
 
  ;;; debug language
@@ -731,7 +764,7 @@
  (vc-latest-binary-information-format "Sidste offentliggjorte version: ~a (iteration ~a)")
  (vc-update-dialog-title "PLT opdateringsstatus")
  (vc-need-update-string "En eller flere installerede PLT software-pakker behøver opdatering")
- (vc-no-update-string "Alle installerede softwarepakker fra PLT er up-to-date")
+ (vc-no-update-string "Alle installerede softwarepakker fra PLT er allerede opdaterede")
  (add-teachpack-menu-item-label "Tilføj undervisningspakke...")
  (vc-current-format "~a v.~a (iteration ~a) er up-to-date")
  (vc-details-format "~a~nDetaljer:~n~a")
@@ -759,6 +792,8 @@
 
  (happy-birthday-matthias "Tillykke med fødselsdagen, Matthias!")
 
+ (mrflow-using-default-language-title "Sprog, som bruges når andet ikke er valgt")
+ (mrflow-using-default-language "Det sprog, som anvendes nu, har ikke en typetabel defineret for dets primitiver. R5RS Scheme bruges i stedet.")
  (mrflow-button-title "Analysér")
  (mrflow-coloring-error-title "Ukendt farve")
  (mrflow-coloring-error "Der er ikke defineret en stil for farven: ~a")
@@ -768,14 +803,14 @@
  (mrflow-popup-menu-hide-errors "Skjul fejl")
  (mrflow-popup-menu-tack-all-arrows "Tack alle pile")
  (mrflow-popup-menu-untack-all-arrows "Untack alle pile")
- ;(mrflow-read-exception-title "Læseundtagelse (Read Exception)")
- ;(mrflow-read-exception "Læseundtagelse (Read exception): ~a")
- ;(mrflow-syntax-exception-title "Syntaksundtagelse")
- ;(mrflow-syntax-exception "Syntaksundtagelse: ~a")
- ;(mrflow-unknown-exception-title "Ukendt undtagelse")
- ;(mrflow-unknown-exception "Ukendt undtagelse: ~a")
- ;(mrflow-language-primitives-error-title "Fejl i sprogprimitiver")
- ;(mrflow-language-primitives-error "Forkert filnavn for tabellen med typer for sprogets primitiver: ~a")
+ (mrflow-read-exception-title "Læseundtagelse (Read Exception)")
+ (mrflow-read-exception "Læseundtagelse (Read exception): ~a")
+ (mrflow-syntax-exception-title "Syntaksundtagelse")
+ (mrflow-syntax-exception "Syntaksundtagelse: ~a")
+ (mrflow-unknown-exception-title "Ukendt undtagelse")
+ (mrflow-unknwon-exception "Ukendt undtagelse: ~a")
+ (mrflow-language-primitives-error-title "Fejl i sprogprimitiver")
+ (mrflow-language-primitives-error "Forkert filnavn for tabellen med typer for sprogets primitiver: ~a")
 
  (xml-tool-menu "XML")
  (xml-tool-insert-xml-box "Indsæt XML-kasse")
@@ -789,7 +824,18 @@
  (xml-tool-eliminate-whitespace-in-empty-tags "Fjern blanktegn i tomme tags")
  (xml-tool-leave-whitespace-alone "Bevar blanktegn")
 
- (show-recent-items-window-menu-item "Vis de senest åbnede filer i et separet vindue")
+ (show-recent-items-window-menu-item "Vis de senest åbnede filer i et separat vindue")
  (show-recent-items-window-label "Senest åbnede filer")
+ (number-of-open-recent-items "Number of recent items")
  (switch-anyway "Skift fil alligevel")
+
+ (stepper-program-has-changed "ADVARSEL: Programmer er ændret.")
+ (stepper-program-window-closed "ADVARSEL: Programvinduet er væk.")
+
+ (wizard-next "Næste")
+ (wizard-back "Tilbage")
+ (wizard-finish "Færdig")
+
  )
+
+

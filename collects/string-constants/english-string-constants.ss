@@ -5,6 +5,8 @@
  (are-you-sure-you-want-to-switch-languages
   "This will change the language of the GUI, which requires you to restart DrScheme. Are you sure?")
 
+ (interact-with-drscheme-in-language "Interact with DrScheme in English")
+
  ;; these two should probably be the same in all languages excepet English.
  ;; they are the button labels (under macos and windows, respectively)
  ;; that go the with the string above.

@@ -4,6 +4,8 @@
  (is-this-your-native-language
   "¿Es español tu idioma materno?")
 
+ (interact-with-drscheme-in-language "Interactúa con DrScheme en Español")
+
  (are-you-sure-you-want-to-switch-languages
   "Esto cambiará el idioma de la interfaz, lo que requiere que reinicies DrScheme. ¿Estas seguro(a)?")
  

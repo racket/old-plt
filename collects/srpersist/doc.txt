@@ -1236,8 +1236,24 @@
 
  For a connection handle `hdbc', returns the value of the 
  connection option specified by the symbol `option'.  
- The permisible values of `option' are the same as for `attr' in 
- `get-connect-attr'.  See `get-connect-attr' for more information.
+ The permisible values of `option' are 
+
+  'sql-access-mode 
+  'sql-autocommit 
+  'sql-login-timeout
+  'sql-opt-trace    
+  'sql-opt-tracefile
+  'sql-translate-dll
+  'sql-translate-option
+  'sql-txn-isolation
+  'sql-current-qualifier
+  'sql-odbc-cursors
+  'sql-quiet-mode 
+  'sql-packet-size
+
+ The return values are as for `get-connect-attr' for the corresponding
+ attributes.  In that procedure, the corresponding attributes have `-attr-' 
+ in their symbols.
 
 > (set-connect-attr hdbc attr val)
 
@@ -1284,9 +1300,25 @@
 
  For a connection handle `hdbc', sets the option indicated by the 
  symbol `option' to be `val'.  The type of `val' depends on `attr'.
- The permisible values of `option' are the same as for `attr' in 
- `set-connect-attr'.  See `set-connect-attr' for more information.
- Returns the value of `hdbc'.
+ The permisible values of `option' are: 
+
+  'sql-access-mode 
+  'sql-autocommit 
+  'sql-login-timeout
+  'sql-opt-trace    
+  'sql-opt-tracefile
+  'sql-translate-dll
+  'sql-translate-option
+  'sql-txn-isolation
+  'sql-current-qualifier
+  'sql-odbc-cursors
+  'sql-quiet-mode 
+  'sql-packet-size
+
+ The type of `val' depends on `option', in the same way as corresponding
+ attributes in `set-connect-attr'.  The corresponding attributes in that
+ procedure have `-attr-' in their symbols.
+
 
  Statements and Parameters
  -------------------------

@@ -195,7 +195,10 @@
 	 (let ([sym (zodiac:binding-var name)])
 	   (match (hash-table-get initial-env sym (lambda () #f))
 	     [#f 
-              (mrspidey:warning (format "Free variable ~s" sym))
+              ; total hack ... would be better to add type
+              ; for object%, but I don't know how -- PAS
+	      (unless (eq? sym 'object%)	
+	              (mrspidey:warning (format "Free variable ~s" sym)))
               (loop env rest)]
 	     [ftype (loop (atenv:extend env name ftype) rest)]))])))
 

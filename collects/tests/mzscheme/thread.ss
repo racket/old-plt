@@ -149,6 +149,35 @@
 (semaphore-wait s)
 (test 26 'thread-loop result)
 
+; Make sure you can break a semaphore-wait:
+(test 'ok
+      'break-semaphore-wait
+      (let* ([s1 (make-semaphore 0)]
+	     [s2 (make-semaphore 0)]
+	     [t (thread (lambda ()
+			  (semaphore-post s1)
+			  (with-handlers ([exn:misc:user-break? (lambda (x) (semaphore-post s2))])
+			    (semaphore-wait (make-semaphore 0)))))])
+	(semaphore-wait s1)
+	(sleep 0.1)
+	(break-thread t)
+	(semaphore-wait s2)
+	'ok))
+
+; Make sure two waiters can be released
+(test 'ok
+      'double-semaphore-wait
+      (let* ([s1 (make-semaphore 0)]
+	     [s2 (make-semaphore 0)]
+	     [go (lambda ()
+		   (semaphore-post s2)
+		   (semaphore-wait s1)
+		   (semaphore-post s2))])
+	(thread go) (thread go)
+	(semaphore-wait s2) (semaphore-wait s2)
+	(semaphore-post s1) (semaphore-post s1)
+	(semaphore-wait s2) (semaphore-wait s2)
+	'ok))
 
 ; Tests inspired by a question from Savid Tillman
 (define (read-line/expire1 port expiration)

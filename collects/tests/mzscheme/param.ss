@@ -114,11 +114,6 @@
 			  (lambda () (close-input-port p))))
 		      exn:read:unsupported?
 		      #f)
-		(list read-accept-type-symbol
-		      (list #t #f)
-		      '(read (open-input-string "#<hello>"))
-		      exn:read:unsupported?
-		      #f)
 		(list read-accept-bar-quote
 		      (list #t #f)
 		      '(let ([p (open-input-string "|hello #$ there| x")])

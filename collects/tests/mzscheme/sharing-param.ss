@@ -28,7 +28,6 @@
 			 (vector read-square-bracket-as-paren (box #f))
 			 (vector read-curly-brace-as-paren (box #f))
 			 (vector read-accept-box (box #f))
-			 (vector read-accept-type-symbol (box #f))
 			 (vector read-accept-compiled (box #f))
 			 (vector read-accept-bar-quote (box #f))
 			 (vector read-accept-graph (box #f))

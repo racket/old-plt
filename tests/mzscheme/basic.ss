@@ -8,16 +8,6 @@
 (let ([f (lambda () #&7)])
   (test #t eq? (f) (f)))
 
-(test #t type-symbol? #<hello>)
-(test #t type-symbol? #<<\>>)
-(test #t type-symbol? #<<>)
-(test #t type-symbol? '#<hello>)
-(test #f type-symbol? '<hello>)
-(test #t eq? #<hello> '#<hello>)
-(test #f eq? #<hello> #<hello-again>)
-
-(arity-test type-symbol? 1 1)
-
 (SECTION 2 1);; test that all symbol characters are supported.
 '(+ - ... !.. $.+ %.- &.! *.: /:. :+. <-. =. >. ?. ~. _. ^.)
 

@@ -107,6 +107,7 @@
 (error-test '(readstr "##") (readerrtype exn:read:unsupported?))
 (error-test '(readstr "#?") (readerrtype exn:read:unsupported?))
 (error-test '(readstr "#-1()") (readerrtype exn:read:unsupported?))
+(error-test '(readstr "#<a>") (readerrtype exn:read:unsupported?))
 
 (test 2 vector-length (readstr "#2()"))
 (test 0 vector-ref (readstr "#2()") 1)

@@ -60,7 +60,7 @@ needs to fetch a package. The default value for this parameter is
 > (planet-server-port Nat) -> void
 
 The port on the server the client should connect to. The default value
-for this parameter is 10000.
+for this parameter is 270.
 
 > (planet-dir) -> directory-string
 > (planet-dir directory-string) -> void
@@ -88,7 +88,6 @@ in the root PLaneT directory.
 If #f, indicates that no logging should take place. Otherwise
 specifies the file into which logging should be written. The default
 is the file "INSTALL-LOG" in the root PLaneT directory.
-
 
 Note that while these parameters can be useful to modify
 programmatically, PLaneT code runs at module-expansion time and so
@@ -195,18 +194,60 @@ encoded as x-expressions (see the xml collection for details) that
 PLaneT will use as a short description of your project. This field
 is also used by the Help Desk.
 
+The _'categories field_
+
+If present, the categories field should be a list of symbols 
+corresponding to the categories under which this package should be listed.
+The valid categories are:
+
+Symbol         Description
+------         -----------
+devtools       Development Tools
+net            Networking and Protocols
+media          Graphics and Audio
+xml            XML-Related
+datastructures Data Structures and Algorithms
+io             Input/Output and Filesystem
+scientific     Mathematical and Scientific
+system         Hardware/Operating System-Specific Tools
+ui             Textual and Graphical User Interface
+planet         PLaneT-Related
+misc           Miscellaneous
+
+If you put symbols other than these the categories field, they will be
+ignored. If you put no legal symbols in the categories field or do not
+include this field in your info.ss file, your package will be
+categorized as "Miscellaneous."
+
+The _'doc.txt field_
+
+If present, the doc.txt field should be a list of strings corresponding
+to the name (without path) of the text documentatation file for your
+package. If this field contains the value '("doc.txt") and a file called
+"doc.txt" exists in your package's root directory, it will be used as 
+the online documentation visitors to the planet.plt-scheme.org website
+will be able to read.
+
+The _'html-docs field_
+
+If present, this field should be a list of strings representing
+subdirectories of your package. These directories will be used by
+Help Desk as HTML documentation for your package. See
+_Creating Help Desk Documentation in HTML format_ for more information
+on how to useful HTML Help Desk documentation.
+
+The _'homepage field_
+
+If present, the URL field should be a string corresponding to a URL
+for the package. PLaneT provides this link with the description of your
+package on the main PLaneT web page.
+
 The _'primary-file field_
 
 If present, the primary-file field should be a string corresponding to
 the name (without path) of the main Scheme source file of your
 package. PLaneT will direct casual users of your library to require
 this file.
-
-The _'url field_
-
-If present, the URL field should be a string corresponding to a URL
-for the package. PLaneT provides this link with the description of your
-package on the main PLaneT web page.
 
 The _'version field_
 
@@ -217,11 +258,13 @@ package version number, which is assigned by PLaneT, but may be useful
 to users.
 
 
+
+
 In addition, PLaneT uses the setup-plt installer to install packages
-on client machines, so all the fields it looks for can be included. In
-particular, adding a name field indicates that the Scheme files in the
-package should be compiled during installation; it is probably a good
-idea to add it.
+on client machines, so most fields it looks for can be included with
+their usual effects. In particular, adding a name field indicates that
+the Scheme files in the package should be compiled during
+installation; it is probably a good idea to add it.
 
 An example info.ss file looks like this:
 
@@ -230,7 +273,9 @@ An example info.ss file looks like this:
   (define blurb
     (list "My application runs 60% faster on 20% less peanut "
 	  "butter. It even shows a fancy graphic!"))
-  (define primary-file "my-app.ss"))
+  (define primary-file "my-app.ss")
+  (define doc.txt '("doc.txt"))
+  (define categories '(system xml)))
 
 See the PLT mzc: MzScheme Compiler Manual, chapter 7 for more
 information on info.ss files.
@@ -253,18 +298,13 @@ return the path to that package. The path will always be a file named
 X.plt, where X is the name of the directory you gave to
 make-planet-archive, located in that same directory.
 
-Alternately, you can build your own .plt file using any method that
-produces them (see the documentation for the Setup PLT collection for
-details). The PLT file you create must be set to install in
-user-specified directory rather than in the collects directory or the
-user add-ons directory.
-
 4. SUBMIT THE PACKAGE
 
 E-mail the .plt file you built to jacobm+planet@plt-scheme.org If the
 package is an upgrade to a prior package, then tell me so and tell me
 whether or not this package is backwards-compatible with the package
-it's upgrading. There's no particular format for this message; the
+it's upgrading. Also tell me what PLT Scheme version this package is
+intended for. There's no particular format for this message; the
 system isn't automated yet so I'll just be reading these and
 processing them by hand.
 

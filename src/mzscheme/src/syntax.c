@@ -1139,8 +1139,8 @@ case_lambda_execute(Scheme_Object *expr)
   seqin = (Scheme_Case_Lambda *)expr;
 
   seqout = (Scheme_Case_Lambda *)
-    scheme_malloc_stubborn_tagged(sizeof(Scheme_Case_Lambda)
-				  + (seqin->count - 1) * sizeof(Scheme_Object *));
+    scheme_malloc_tagged(sizeof(Scheme_Case_Lambda)
+			 + (seqin->count - 1) * sizeof(Scheme_Object *));
   seqout->type = scheme_case_closure_type;
   seqout->count = seqin->count;
   seqout->name = seqin->name;
@@ -1154,8 +1154,6 @@ case_lambda_execute(Scheme_Object *expr)
       seqout->array[i] = lc;
     }
   }
-
-  scheme_end_stubborn_change((void *)seqout);
 
   return (Scheme_Object *)seqout;
 }
@@ -1290,8 +1288,8 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
     scheme_wrong_syntax("case-lambda", form, orig_form, NULL);
 
   cl = (Scheme_Case_Lambda *)
-    scheme_malloc_stubborn_tagged(sizeof(Scheme_Case_Lambda)
-				  + (count - 1) * sizeof(Scheme_Object *));
+    scheme_malloc_tagged(sizeof(Scheme_Case_Lambda)
+			 + (count - 1) * sizeof(Scheme_Object *));
   cl->type = scheme_case_lambda_sequence_type;
   cl->count = count;
   if (!name)
@@ -1309,8 +1307,6 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
     cl->array[i] = ce;
     list = SCHEME_CDR(list);
   }
-
-  scheme_end_stubborn_change((void *)cl);
 
   scheme_merge_compile_recs(rec, drec, recs, count);
 
@@ -1879,7 +1875,7 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *origenv, char *formname,
     num_bindings = num_clauses;
 
 
-  names = MALLOC_N_STUBBORN(Scheme_Object *, num_bindings);
+  names = MALLOC_N(Scheme_Object *, num_bindings);
 
   frame = scheme_new_compilation_frame(num_bindings, 0, origenv);
   env = frame;
@@ -2024,8 +2020,6 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *origenv, char *formname,
   }
   
   scheme_merge_compile_recs(rec, drec, recs, num_clauses + 1);
-
-  scheme_end_stubborn_change((void *)names);
 
   rec[drec].max_let_depth += num_bindings;
 
@@ -3062,7 +3056,7 @@ static Scheme_Object *read_let_value(Scheme_Object *obj)
 {
   Scheme_Let_Value *lv;
  
-  lv = (Scheme_Let_Value *)scheme_malloc_stubborn_tagged(sizeof(Scheme_Let_Value));
+  lv = (Scheme_Let_Value *)scheme_malloc_tagged(sizeof(Scheme_Let_Value));
   lv->type = scheme_let_value_type;
 
   lv->count = SCHEME_INT_VAL(SCHEME_CAR(obj));
@@ -3073,8 +3067,6 @@ static Scheme_Object *read_let_value(Scheme_Object *obj)
   obj = SCHEME_CDR(obj);
   lv->value = SCHEME_CAR(obj);
   lv->body = SCHEME_CDR(obj);
-
-  scheme_end_stubborn_change((void *)lv);
 
   return (Scheme_Object *)lv;
 }
@@ -3094,15 +3086,13 @@ static Scheme_Object *read_let_void(Scheme_Object *obj)
 {
   Scheme_Let_Void *lv;
  
-  lv = (Scheme_Let_Void *)scheme_malloc_stubborn_tagged(sizeof(Scheme_Let_Void));
+  lv = (Scheme_Let_Void *)scheme_malloc_tagged(sizeof(Scheme_Let_Void));
   lv->type = scheme_let_void_type;
 
   lv->count = SCHEME_INT_VAL(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
   lv->autobox = SCHEME_TRUEP(SCHEME_CAR(obj));
   lv->body = SCHEME_CDR(obj);
-
-  scheme_end_stubborn_change((void *)lv);
 
   return (Scheme_Object *)lv;
 }
@@ -3121,15 +3111,13 @@ static Scheme_Object *read_let_one(Scheme_Object *obj)
   Scheme_Let_One *lo;
   int et;
  
-  lo = (Scheme_Let_One *)scheme_malloc_stubborn_tagged(sizeof(Scheme_Let_One));
+  lo = (Scheme_Let_One *)scheme_malloc_tagged(sizeof(Scheme_Let_One));
   lo->type = scheme_let_one_type;
 
   lo->value = SCHEME_CAR(obj);
   lo->body = SCHEME_CDR(obj);
   et = scheme_get_eval_type(lo->value);
   lo->eval_type = et;
-
-  scheme_end_stubborn_change((void *)lo);
 
   return (Scheme_Object *)lo;
 }
@@ -3224,8 +3212,8 @@ static Scheme_Object *read_case_lambda(Scheme_Object *obj)
   }
 
   cl = (Scheme_Case_Lambda *)
-    scheme_malloc_stubborn_tagged(sizeof(Scheme_Case_Lambda)
-				  + (count - 1) * sizeof(Scheme_Object *));
+    scheme_malloc_tagged(sizeof(Scheme_Case_Lambda)
+			 + (count - 1) * sizeof(Scheme_Object *));
 
   cl->type = scheme_case_lambda_sequence_type;
   cl->count = count;

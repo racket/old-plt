@@ -1160,9 +1160,8 @@ make_input_port(int argc, Scheme_Object *argv[])
   if (argc > 4)
     scheme_check_proc_arity("make-input-port", 0, 4, argc, argv);
   
-  copy = MALLOC_N_STUBBORN(Scheme_Object *, argc);
+  copy = MALLOC_N(Scheme_Object *, argc);
   memcpy(copy, argv, argc * sizeof(Scheme_Object *));
-  scheme_end_stubborn_change((void *)copy);
 
   ip = _scheme_make_input_port(scheme_user_input_port_type,
 			       copy,
@@ -1190,9 +1189,8 @@ make_output_port (int argc, Scheme_Object *argv[])
   scheme_check_proc_arity("make-output-port", 1, 0, argc, argv);
   scheme_check_proc_arity("make-output-port", 0, 1, argc, argv);
 
-  copy = MALLOC_N_STUBBORN(Scheme_Object *, 2);
+  copy = MALLOC_N(Scheme_Object *, 2);
   memcpy(copy, argv, 2 * sizeof(Scheme_Object *));
-  scheme_end_stubborn_change((void *)copy);
 
   op = scheme_make_output_port(scheme_user_output_port_type,
 			       copy,

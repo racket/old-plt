@@ -59,8 +59,18 @@ extern void GC_register_late_disappearing_link(void **link, void *obj);
 static int use_registered_statics;
 
 #if !defined(MZ_PRECISE_GC) && !defined(USE_SENORA_GC)
+extern void GC_init();
 extern void GC_push_finalizer_structures(void);
 extern unsigned long GC_get_stack_base();
+extern void (*GC_push_other_roots)();
+static void (*orig_GC_push_other_roots)();
+
+static void push_roots()
+{
+  if (orig_GC_push_other_roots)
+    orig_GC_push_other_roots();
+  GC_push_finalizer_structures();
+}
 #endif
 
 void scheme_set_stack_base(void *base, int no_auto_statics)
@@ -71,8 +81,12 @@ void scheme_set_stack_base(void *base, int no_auto_statics)
 #else
   GC_stackbottom = base;
   if (no_auto_statics) {
+    GC_init();
     GC_clear_roots();
     GC_no_dls = 1;
+    
+    orig_GC_push_other_roots = GC_push_other_roots;
+    GC_push_other_roots = push_roots;
   }
 #endif
   use_registered_statics = no_auto_statics;

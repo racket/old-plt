@@ -70,6 +70,7 @@
 
 (require #%kernel) ; 
 
+(test-comp (void) '(void))
 (test-comp 3 '(+ 1 2))
 (test-comp (expt 5 30)
 	   '(expt 5 (* 5 6)))

@@ -1027,7 +1027,7 @@ Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
 
   struct_type = (Scheme_Struct_Type *)type;
 
-  values = MALLOC_N_STUBBORN(Scheme_Object *, count);
+  values = MALLOC_N(Scheme_Object *, count);
  
 #ifdef MEMORY_COUNTING_ON
   if (scheme_starting_up) {
@@ -1109,8 +1109,6 @@ Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
     pos++;
   }
   
-  scheme_end_stubborn_change((void *)values);
- 
   return values;
 }
 
@@ -1147,7 +1145,7 @@ static Scheme_Object **_make_struct_names(const char *base, int blen,
     count_out = NULL; /* Might be an interior pointer. */
   }
 
-  names = MALLOC_N_STUBBORN(Scheme_Object *, count);
+  names = MALLOC_N(Scheme_Object *, count);
 
 #ifdef MEMORY_COUNTING_ON
   if (scheme_starting_up) {
@@ -1210,8 +1208,6 @@ static Scheme_Object **_make_struct_names(const char *base, int blen,
     nm = GENSET_NAME(base, blen, 1);
     names[pos++] = nm;
   }
-
-  scheme_end_stubborn_change((void *)names);
 
   return names;
 }

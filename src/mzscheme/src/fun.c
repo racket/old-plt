@@ -382,7 +382,7 @@ scheme_make_prim_w_everything(Scheme_Prim *fun, int eternal,
   if (eternal && scheme_starting_up)
     prim = (Scheme_Primitive_Proc *)scheme_malloc_eternal_tagged(size);
   else
-    prim = (Scheme_Primitive_Proc *)scheme_malloc_stubborn_tagged(size);
+    prim = (Scheme_Primitive_Proc *)scheme_malloc_tagged(size);
   prim->type = scheme_prim_type;
   SCHEME_PRIM(prim) = fun;
   prim->name = name;
@@ -391,9 +391,6 @@ scheme_make_prim_w_everything(Scheme_Prim *fun, int eternal,
   prim->flags = ((folding ? SCHEME_PRIM_IS_FOLDING : 0)
 		 | (scheme_defining_primitives ? SCHEME_PRIM_IS_PRIMITIVE : 0)
 		 | (hasr ? SCHEME_PRIM_IS_MULTI_RESULT : 0));
-
-  if (!eternal || !scheme_starting_up)
-    scheme_end_stubborn_change(prim);
 
   if (hasr) {
     ((Scheme_Prim_W_Result_Arity *)prim)->minr = minr;
@@ -2785,7 +2782,7 @@ static Scheme_Object *read_compiled_closure(Scheme_Object *obj)
 #define BAD_CC "bad compiled closure"
 #define X_SCHEME_ASSERT(x, y)
 
-  data  = (Scheme_Closure_Compilation_Data *)scheme_malloc_stubborn_tagged(sizeof(Scheme_Closure_Compilation_Data));
+  data  = (Scheme_Closure_Compilation_Data *)scheme_malloc_tagged(sizeof(Scheme_Closure_Compilation_Data));
 
   data->type = scheme_unclosed_procedure_type;
 
@@ -2814,8 +2811,6 @@ static Scheme_Object *read_compiled_closure(Scheme_Object *obj)
   data->closure_size = SCHEME_SVEC_LEN(v);
   data->closure_map = SCHEME_SVEC_VEC(v);
  
-  scheme_end_stubborn_change((void *)data);
-
   if (data->flags & CLOS_FOLDABLE)
     data->flags -= CLOS_FOLDABLE;
 

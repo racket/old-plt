@@ -326,7 +326,7 @@ scheme_make_sized_offset_string(char *chars, long d, long len, int copy)
 
   if (!chars) chars = "";
 
-  str = scheme_alloc_stubborn_object();
+  str = scheme_alloc_object();
   str->type = scheme_string_type;
 
   if (len < 0)
@@ -341,8 +341,8 @@ scheme_make_sized_offset_string(char *chars, long d, long len, int copy)
   } else
     SCHEME_STR_VAL(str) = chars + d;
   SCHEME_STRTAG_VAL(str) = len;
-  scheme_end_stubborn_change((void *)str);
-  return (str);
+
+  return str;
 }
 
 Scheme_Object *
@@ -387,7 +387,7 @@ scheme_alloc_string(int size, char fill)
 		      -1, 0, &str);
   }
 
-  str = scheme_alloc_stubborn_object();
+  str = scheme_alloc_object();
   str->type = scheme_string_type;
   s = (char *)scheme_malloc_fail_ok(scheme_malloc_atomic, sizeof(char)*(size + 1));
   for (i = size; i--; ) {
@@ -396,8 +396,6 @@ scheme_alloc_string(int size, char fill)
   s[size] = '\0';
   SCHEME_STR_VAL(str) = s;
   SCHEME_STRTAG_VAL(str) = size;
-
-  scheme_end_stubborn_change((void *)str);
 
   return str;
 }

@@ -62,6 +62,8 @@
     
     (define setting (basis:get-default-setting))
 
+    (define omit-languages '("MzScheme"))
+
     ;; Flag definitions
 
     (define (make-get/set s s!)
@@ -76,11 +78,13 @@
 			   basis:set-setting-case-sensitive?!)
 	     "case-sensitive symbols and variables"
 	     basis:setting-case-sensitive?)
+#|
        (list "--set-undef"
 	     (make-get/set basis:setting-allow-set!-on-undefined?
 			   basis:set-setting-allow-set!-on-undefined?!)
 	     "set! on undefined variables"
 	     basis:setting-allow-set!-on-undefined?)
+|#
        (list "--auto-else"
 	     (make-get/set basis:setting-unmatched-cond/case-is-error?
 			   basis:set-setting-unmatched-cond/case-is-error?!)
@@ -156,7 +160,9 @@
 
     ;; Mapping from language to flag settings
 
-    (define language-levels (map list basis:level-strings basis:level-symbols))
+    (define language-levels 
+      (mzlib:function:filter (lambda (x) (not (member (car x) omit-languages)))
+			     (map list basis:level-strings basis:level-symbols)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                 Setting the Flags                      ;;;
@@ -170,7 +176,7 @@
 		     base)
 		   'same))])
 	(case (system-type)
-	  [(unix) "~/.drscheme-jr.settings"]
+	  [(unix beos) "~/.drscheme-jr.settings"]
 	  [(macos) (build-path (settings-path 
 				(find-executable-path mz:program "DrScheme Jr"))
 			       "DrScheme Jr Settings")]
@@ -241,7 +247,8 @@
 
     (define (set-level level)
       (let ([p (assoc level (map vector->list basis:settings))])
-	(if p
+	(if (and p
+		 (not (member (symbol->string level) omit-languages)))
 	    (set! setting (basis:copy-setting (cadr p)))
 	    (bad-arguments "bad language name: ~s" level))))
 
@@ -287,7 +294,7 @@
 	   (,(format "Set the language, one of:~n          ~a"
 		     (apply string-append
 			    (map (lambda (l)
-				   (format " ~a" (car l)))
+				   (format "   ~a" (car l)))
 				 language-levels)))
 	    "language")]]
 	 [multi
@@ -500,9 +507,6 @@
 						  (mzlib string)
 						  (mzlib function))]
 	   [cmd-line : mzlib:command-line^ ((require-library "cmdliner.ss"))]
-	   [aries : plt:aries^ ((require-library-unit/sig "ariesr.ss" "cogen")
-				(drzodiac : zodiac:system^)
-				(interface : zodiac:interface^))]
 	   [interface : drscheme:interface^
 		      ((require-library-unit/sig "interface.ss" "userspce") drzodiac)]
 	   [drzodiac : drscheme:zodiac^
@@ -510,6 +514,9 @@
 		      (interface : zodiac:interface^)
 		      (mzlib pretty-print)
 		      (mzlib file))]
+	   [aries : plt:aries^ ((require-library-unit/sig "ariesr.ss" "cogen")
+				(drzodiac : zodiac:system^)
+				(interface : zodiac:interface^))]
 	   [basis-import : userspace:basis-import^ ((unit/sig userspace:basis-import^
 						      (import)
 						      (define in-mzscheme? #t)))]

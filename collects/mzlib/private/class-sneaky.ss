@@ -1,43 +1,4 @@
-#|
 
-This file provides all the same names as the class.ss module,
-plus these:
-
-  (class*/names-sneaky ...)
-
-This form is just the same as class*/names, except that for
-these primitives:
-
-  is-a?
-  subclass?
-  class->interface
-
-it behaves like its superclass, rather than being a new
-class. This is intended for the contract library only, since
-it needs to be able to create wrapper classes that act just
-like the original classes.
-
-These functions:
-
-  set-sneaky-class-contract-table!
-  sneaky-class-contract-table
-  sneaky-class?
-
-are used by the contract implementation to store
-the classes contracts in a hash table on the class
-to ensure that substitutability works out.
-
-This function:
-  
-  class-super-class
-
-is used by the contract system to iterate over
-a class's superclasses when contracts are added
-to the class. The iteration is used to find
-any superclass that has contracts to ensure that
-substitutability is checked properly.
-
-|#
 (module class-sneaky mzscheme
   (require (lib "list.ss")
            (lib "etc.ss"))
@@ -2215,32 +2176,31 @@ substitutability is checked properly.
 	  "not a binding sequence"
 	  stx
 	  (syntax x))])))
-
+  
   ;;--------------------------------------------------------------------
   ;;  class, interface, and object properties
   ;;--------------------------------------------------------------------
   
   (define (is-a? v c)
     (cond
-     [(class? c) ((class-object? (unsneak-class c)) v)]
+     [(class? c) ((class-object? c) (unwrap-object v))]
      [(interface? c)
       (and (object? v)
-	   (implementation? (object-ref v) c))]
+	   (implementation? (object-ref (unwrap-object v)) c))]
      [else (raise-type-error 'is-a? "class or interface" 1 v c)]))
   
-  (define (subclass? v in-c)
-    (unless (class? in-c)
-      (raise-type-error 'subclass? "class" 1 v in-c))
-    (let ([c (unsneak-class in-c)])
-      (and (class? v)
+  (define (subclass? v c)
+    (unless (class? c)
+      (raise-type-error 'subclass? "class" 1 v c))
+    (and (class? v)
 	 (let ([p (class-pos c)])
 	   (and (<= p (class-pos v))
-		(eq? c (vector-ref (class-supers v) p)))))))
+		(eq? c (vector-ref (class-supers v) p))))))
 
   (define (object-interface o)
     (unless (object? o)
       (raise-type-error 'object-interface "object" o))
-    (class-self-interface (object-ref o)))
+    (class-self-interface (object-ref (unwrap-object o))))
   
   (define (implementation? v i)
     (unless (interface? i)
@@ -2266,7 +2226,7 @@ substitutability is checked properly.
   (define (class->interface c)
     (unless (class? c)
       (raise-type-error 'class->interface "class" c))
-    (class-self-interface (unsneak-class c)))
+    (class-self-interface c))
   
   (define (interned? sym)
     (eq? sym (string->symbol (symbol->string sym))))
@@ -2277,28 +2237,19 @@ substitutability is checked properly.
     ;; copy list, and also filter private (interned) methods:
     (apply list-immutable (filter interned? (interface-public-ids i))))
 
-  ;; unsneak-class : class -> class
-  ;; returns the class that the sneaky
-  ;; class is masquerading as.
-  (define (unsneak-class c)
-    (cond
-      [(sneaky-class? c)
-       ;; since object% is not a sneaky class, we
-       ;; know that class-super-class doesn't return #f
-       (unsneak-class (class-super-class c))]
-      [else c]))
+  (define (object=? o1 o2)
+    (unless (object? o1)
+      (raise-type-error 'object=? "object" o1))
+    (unless (object? o2)
+      (raise-type-error 'object=? "object" o2))
+    (eq? (unwrap-object o1)
+         (unwrap-object o2)))
   
-  ;; class-super-class : class -> (union class #f)
-  ;; returns the superclass of c.
-  (define (class-super-class c)
-    (let ([v (class-supers c)]) 
-      (and ((vector-length v) . > . 1)
-           (vector-ref v (- (vector-length v) 2)))))
-
   (define (object-info o)
     (unless (object? o)
       (raise-type-error 'object-info "object" o))
-    (let loop ([c (object-ref o)][skipped? #f])
+    (let loop ([c (object-ref (unwrap-object o))]
+               [skipped? #f])
       (if (struct? ((class-insp-mk c)))
 	  ;; current inspector can inspect this object
 	  (values c skipped?)
@@ -2442,21 +2393,23 @@ substitutability is checked properly.
   (define-struct wrapper-field (name ctc-stx))
   (define-struct wrapper-method (name mth-stx))
 
-  (define-values (wrapper-object-wrapped set-wrapper-object-wrapped! struct:wrapper-object)
-    (let-values ([(struct:wrapper-object wrapper-object? make-wrapper-object ref set!)
+  (define-values (wrapper-object? wrapper-object-wrapped set-wrapper-object-wrapped! struct:wrapper-object)
+    (let-values ([(struct:wrapper-object make-wrapper-object wrapper-object? ref set!)
                   (make-struct-type 'raw-wrapper-object
                                     #f
                                     0
                                     1)])
-      (values (lambda (v) (ref v 0))
+      (values wrapper-object?
+              (lambda (v) (ref v 0))
               (lambda (o v) (set! o 0 v))
               struct:wrapper-object)))
   
-  ;; the wrapper class should have all method bodies just look up the 
-  ;; values of fields and invoke procedures saved there. This means
-  ;; I can construct the class when I just have the contract and
-  ;; "fill in" its actual methods later, based on the object
-  ;; that gets the contract.
+  ;; unwrap-object : (union wrapper-object object) -> object
+  (define (unwrap-object o)
+    (let loop ([o o])
+      (if (wrapper-object? o)
+          (loop (wrapper-object-wrapped o))
+          o)))
   
   ;; make-wrapper-class :   symbol
   ;;                        (listof symbol)
@@ -2605,12 +2558,13 @@ substitutability is checked properly.
   
   (provide class*/names-sneaky
            set-sneaky-class-contract-table! sneaky-class-contract-table sneaky-class?
-           class-super-class
            
            make-wrapper-class
            wrapper-object-wrapped
            extract-vtable
            extract-method-ht
+           
+           object=?
            
            (rename :class class)
 	   class* class*/names

@@ -1038,7 +1038,11 @@ improve method arity mismatch contract violation error messages?
           (cond
             [(null? (cdr p)) p]
             [(pair? (cdr p)) (cons (car p) (sp->il (cdr p)))]
-            [(syntax? (cdr p)) p]))
+            [(syntax? (cdr p)) 
+             (let ([un (syntax-e (cdr p))])
+               (if (pair? un)
+                   (cons (car p) (sp->il un))
+                   p))]))
         (stx->il stx))
       
       (syntax-case stx ()

@@ -6,6 +6,7 @@
            class?
 	   interface interface?
 	   object% object?
+           object=?
 	   new make-object instantiate
 	   send send/apply send* class-field-accessor class-field-mutator with-method
            get-field field-bound?

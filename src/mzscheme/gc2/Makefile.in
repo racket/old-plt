@@ -291,7 +291,8 @@ $(MZFWMMM): $(OBJS) ../src/gmp.o
 	cp PLT_MzScheme.framework/Versions/$(FWVERSION)_3m/PLT_MzScheme ../PLT_MzScheme.framework/Versions/$(FWVERSION)_3m/PLT_MzScheme
 
 clean:
-	/bin/rm -f lex.yy.c ../mzscheme3m *.o $(XSRCDIR)/*
+	/bin/rm -f ../mzscheme3m *.o $(XSRCDIR)/*
+	/bin/rm -rf PLT_MzScheme.framework
 
 #--------------------------------------------------
 

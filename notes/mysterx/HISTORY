@@ -4,6 +4,8 @@ Methods and properties in inherited COM classes
  now reported by com-methods, com-get-properties,
  com-set-properties, and used properly by com-invoke,
  com-get-property, and com-set-property!
+Better support for some COM VARIANT types, VT_UINT
+ in particular
 
 Version 203
 

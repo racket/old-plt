@@ -362,6 +362,15 @@
        (put ,(- w r) ,(- h r) (oval "[tr]" ,rr ,rr))
        (put ,0 ,r (line 0 1 ,lh))))))
 
+(define (big-circle d)
+  (let ([r (quotient d 2)])
+    (picture
+     d d
+     `((curve 0 ,r ,r 0 0 0)
+       (curve ,r 0 ,d ,r ,d 0)
+       (curve ,d ,r ,r ,d ,d ,d)
+       (curve ,r ,d 0 ,r 0 ,d)))))
+
 (define (ghost box)
   (let ([w (pict-width box)]
 	[h (pict-height box)])
@@ -786,8 +795,10 @@
 			     (let ([p (if (and d (>= d 0))
 					  (inexact->exact (floor (* d (sqrt (+ (expt (- x2 x1) 2) (expt (- y2 y1) 2))))))
 					  #f)])
-			       (cons `(qbezier ,p ,x1 ,y1 ,xm ,ym ,x2 ,y2)
-				     translated)))
+			       (if (and (= x1 x2) (= y1 y2))
+				   translated
+				   (cons `(qbezier ,p ,x1 ,y1 ,xm ,ym ,x2 ,y2)
+					 translated))))
 			   children)]
 	    [(place) (let ([x (cadr c)]
 			   [y (caddr c)]

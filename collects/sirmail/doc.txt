@@ -1,0 +1,135 @@
+
+_SirMail_ is a _IMAP_ mail client. The current version has a number of
+rough edges, but it is quite useful to the authors.
+
+Configuration is manual, via S-expressions, as described below.
+
+Caveat: All marks (used for deletion and copying) are local to the
+client. SirMail doesn't use the \Deleted IMAP flag until it is ready
+to delete marked messages. Also, it pays no attention to \Deleted
+flags when synchronizing. However, SirMail removes a \Delete flags
+from a mailbox before purging marked messages. This prevents SirMail
+from accidentally removing messages that you didn't mark within
+SirMail (on the local machine).
+
+------------------------------------------------------------
+
+To configure sirmail, create a .sirmail file in (find-system-path 'pref-dir).
+It should be, when read (not evaluated):
+
+  (list-of (list symbol TST))
+
+where each symbol specifies a configuration parameter and the
+corresponding TST specifies the value that parameter maps to.
+
+Here's an example content for .sirmail:
+
+ ((username "mflatt")
+  (password "notreal")
+  (imap-server "mailhub.cs.utah.edu")
+  (local "~/SirMail")
+  (mail-from "Matthew Flatt <mflatt@cs.utah.edu>")
+  (smtp-server "mail")
+  (default-to-domain "cs.utah.edu")
+  (save-sent "~/SentMail")
+  (biff-delay-seconds 60)
+  (self-addresses ("mflatt@cs.utah.edu" "mflatt@cs.rice.edu" "mflatt@rice.edu"))
+  (aliases (("robby" "robby@rice.edu")
+            ("plt-design" "plt-design@cs.rice.edu")))
+  (aliases-file "~/.sirmail.aliases"))
+
+The required configuration parameters are:
+
+  - imap-server: a string naming the imap server host
+
+  - username: a string naming the user
+
+  - local: pathname of an existing directory where sirmail stores the
+    downloaded messages.
+
+  - mail-from: the user's e-mail address
+
+  - smtp-servers or smtp-server: former is a list of strings naming
+    smtp server hosts, latter is a string naming a single smtp server
+    host.
+
+The optional preferences are:
+
+  - default-to-domain: appended to non-aliased destination addresses
+    that don't include a domain.
+
+  - save-sent: (union #f string) specifing which directory outgoing
+    messages should be saved in (if not present or #f, messages will not
+    be saved).
+
+  - aliases: should be of the form:
+
+      (list-of (list string (union string (list-of string))))
+
+    specifing a mapping from names to one or more email
+    addresses. These names can be used in the "To", "cc", or "bcc"
+    headers of your email address.
+
+    Aliases are expanded recursively.
+
+  - aliases file: string, specifies a filename that contains more
+    alises in the same form as the aliases tag.
+
+  - imap-server-port: (union number #f), when number specifies the
+    port to connect to for the imap server.
+
+  - self-addresses: a list of strings naming your email addresses 
+    so followups do not go to yourself.
+
+  - password: which should map to a string containing the imap password
+
+  - auto-file: 
+
+      (list-of (list mailbox-name (list-of (list field regexp))))
+    
+    specifies where messages should be autofiled based on regular
+    expression matching of various headers in the email. For any
+    email, if it has a header named `field' that mathces `regexp', it
+    is filed into `mailbox-name'.
+
+  - biff-delay: (union #f number); when number specifies how long
+    between sirmail waits before polling the mailbox. Only polls when
+    connected.
+
+  - sort-by: (union #f 'date 'subject 'from 'id); specifies the
+    initial storting of opened mailboxes. 
+    'id indicates sorting by order received and #f means no sorting.
+    These should produce the same ordering, but 'id is probably a bit slower.
+
+  - root-mailbox-folder: a string naming a mailbox to use as the root
+    in the mailbox folder list window. If this option is #f or not
+    provided, the reader window will not contain the "Show Folders
+    Window" menu.
+
+  - message-fields: a list of strings naming header fields to show (in
+    order) when reading a message. The default is
+          ("From" "To" "CC" "Subject" "Date" "X-Mailer")
+
+  - show-urls: (union 'on 'off), defaults to 'on
+    If this is 'on, it hilights urls in the text. Clicking on the
+    urls will open a web browser, pointing it at that url.
+
+-------------------------------------------------------------------
+
+The format of the mailboxes file is a list of entries, where each
+entry is a list of at least two elements:
+
+ The first element is the local directory for the mailbox's messages.
+
+ The second element is the mailbox name for the IMAP server. 
+
+ The rest are overriding options. For example, there's no easy way to
+ move my Rice mailboxes to Utah, so I just access them from Rice on the
+ rare occasions when I need them. For each of my Rice mailboxes, the
+ "mailboxes" entry contains all the configuration options that apply to
+ Rice. Nothing in SirMail ever writes new options into "mailboxes"; I
+ add them by hand, and SirMail preserves them. 
+
+The overidding-options feature was a quick hack for what I needed, and
+it should be replaced eventually. There's a lot of duplication of
+information in the current format.

@@ -2440,14 +2440,18 @@ wxGL::wxGL()
       for (want_db = 0; want_db < 2; want_db++) {
 	for (i = 0; i < n; i++) {
 	  if (want_db) {
-	    if (visi[i].visualid == suggested_vi->visualid) {
-	      vi = suggested_vi;
-	      break;
+	    if (suggested_vi) {
+	      if (visi[i].visualid == suggested_vi->visualid) {
+		vi = suggested_vi;
+		break;
+	      }
 	    }
 	  } else {
-	    if (visi[i].visualid == suggested_sb_vi->visualid) {
-	      sb_vi = suggested_sb_vi;
-	      break;
+	    if (suggested_sb_vi) {
+	      if (visi[i].visualid == suggested_sb_vi->visualid) {
+		sb_vi = suggested_sb_vi;
+		break;
+	      }
 	    }
 	  }
 	}

@@ -166,6 +166,43 @@
    "neg")
   
   (test/spec-passed
+   'contract-arrow-star11
+   '(let-values ([(a b) ((contract (->* (integer?) 
+                                        (listof integer?)
+					any)
+                                   (lambda (x) (values x x))
+                                   'pos
+                                   'neg)
+                         2)])
+      1))
+  
+  (test/spec-failed
+   'contract-arrow-star12
+   '((contract (->* (integer?) (listof integer?) any)
+               (lambda (x) (values x x))
+               'pos
+               'neg)
+     #f)
+   "neg")
+  
+  (test/spec-passed
+   'contract-arrow-star13
+   '((contract (->* (integer?) (listof integer?) any)
+               (lambda (x . y) 1)
+               'pos
+               'neg)
+     1 2))
+  
+  (test/spec-failed
+   'contract-arrow-star14
+   '((contract (->* (integer?) (listof integer?) any)
+               (lambda (x . y) 1)
+               'pos
+               'neg)
+     1 2 'bad)
+   "neg")
+
+  (test/spec-passed
    'contract-arrow-values1
    '(let-values ([(a b) ((contract (-> integer? (values integer? integer?))
                                    (lambda (x) (values x x))

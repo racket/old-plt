@@ -2865,9 +2865,9 @@ static void filename_exn(char *name, char *msg, char *filename, int err)
 		    ? " - too many files open" 
 		    : "")
 #else
-		    ""
+		   ""
 #endif
-		    );
+		   );
 }
 
 static Scheme_Object *

@@ -360,8 +360,8 @@
  (bring-frame-to-front... "Traer ventana al frente...")
 
  (show-menu-label "&Muestra")
- (show-overview "Mostrar descripción") 
- (hide-overview "Esconder descripción")
+ (show-overview "Mostrar Panorama")
+ (hide-overview "Esconder Panorama")
 
  (help-menu-label "&Ayuda")
  (about-info "Créditos y detalles de esta apliación")

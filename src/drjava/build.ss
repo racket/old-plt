@@ -2,52 +2,27 @@
 
 string=? ; exec mzscheme -f "$0" "$@"
 
-;; Library functions
+(load-relative "file-utils.ss")
 
-(require-library "file.ss")
-
-;; path-list->path-list-string : (listof String) -> String
-(define (path-list->path-list-string paths)
-  (cond
-    [(null? paths) ""]
-    [else
-     ;; loop : (cons String (listof String)) -> String
-     (let loop ([paths paths])
-       (cond
-         [(null? (cdr paths)) (car paths)]
-         [else (string-append (car paths) ":" (loop (cdr paths)))]))]))
-
-;; delete-file-maybe : String -> Void
-(define (delete-file-maybe path)
-  (when (file-exists? path)
-    (delete-file path)))
-
-;; delete-directory*-maybe : String -> Void
-(define (delete-directory*-maybe dir)
-  (when (directory-exists? dir)
-    (delete-directory/files dir)))
-
-;; clobber-file : String String -> Void
-(define (clobber-file from to)
-  (delete-file-maybe to)
-  (copy-file from to))
-
-; Tools
+;; Tools
 
 ;; gen-external : String -> (String* -> Boolean)
 (define (gen-external name)
+  (let ([name
+         (if (absolute-path? name)
+             name
+             (find-executable name))])
   (lambda args
     (printf "~a " name)
     (for-each (lambda (arg) (printf "~a " arg)) args)
     (printf "~n~n")
-    (apply system* name args)))
+    (apply system* name args))))
 
-(define compile-c (gen-external "/usr/local/bin/gcc"))
-(define ld (gen-external "/usr/ccs/bin/ld"))
-(define chmod (gen-external "/usr/bin/chmod"))
-(define java-bin (build-path "/usr" "site" "jdk-1.2.01" "bin"))
-(define compile-java (gen-external (build-path java-bin "javac")))
-(define jar (gen-external (build-path java-bin "jar")))
+(define compile-c (gen-external "gcc"))
+(define ld (gen-external "ld"))
+(define chmod (gen-external "chmod"))
+(define compile-java (gen-external "javac"))
+(define jar (gen-external "jar"))
 
 ;; This needs to change to something not in my home directory tree.
 (define jdk-base "/home/ptg/.bin/kaffe-1.0b4")
@@ -117,7 +92,7 @@ string=? ; exec mzscheme -f "$0" "$@"
 
 ;; build-sos : -> Void
 (define (build-sos)
-  (load "gen-wrappers.ss")
+  (load-relative "gen-wrappers.ss")
   (build-so embed-src embed-obj "-o" mzjvm)
   (build-so scheme-val-src scheme-val-obj "-lmzjvm" "-o" scheme-val))
 
@@ -156,7 +131,7 @@ string=? ; exec mzscheme -f "$0" "$@"
     (fprintf out
 "#! /bin/sh
 
-string=? ; LD_LIBRARY_PATH=~a export LD_LIBRARY_PATH ; exec $PLTHOME/bin/mred -g -q -l core.ss -v -m -f \"$0\" -e '(yield (make-semaphore))' < /dev/null
+string=? ; LD_LIBRARY_PATH=~a export LD_LIBRARY_PATH ; exec $PLTHOME/bin/mred -g -q -l core.ss -v -m -f \"$0\" -e '(yield (make-semaphore))' < /dev/null > /dev/null 2>&1
 
 (define libpath (getenv \"LD_LIBRARY_PATH\"))
 

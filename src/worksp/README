@@ -1,13 +1,13 @@
 This directory contains 
 
  - solution files and project files for building MzScheme and
-    MrEd with Microsoft Visual Studio .NET (VS.NET) or
-    Visual Studio Express;
+    MrEd with Microsoft Visual Studio .NET or Visual Studio Express
+    2005;
  - mzconfig.h which is a manual version of information that is
     gathered automatically when using the "configure" script.
 
-If you have downloaded MzCOM, the directory also contains VS.NET
-files for MzCOM.
+If you have downloaded MzCOM, the directory also contains Visual
+Studio files for MzCOM.
 
 MzScheme (but not MzCOM or MrEd) also compiles with Cygwin gcc (a
 free compiler from GNU and Cygnus Solutions); to compile with gcc,
@@ -29,16 +29,19 @@ Building MzScheme, MzCOM, and MrEd
 ----------------------------------------------------------------------
 
 The source code for MzScheme, MzCOM, and MrEd is split into several
-projects. To make the `X' project with VS.NET, open the file 
-plt\src\worksp\X\X.sln.
+projects that are grouped into a few solutions. To make the `X'
+solution with Visual Studio, open the file plt\src\worksp\X\X.sln.
+[When you open a solution, the selected configuration will most likely
+be "Debug". Consider changing to "Release" before you build to enable
+optimization.]
 
-To build MzScheme, make the MzScheme project in
+To build MzScheme, make the MzScheme solution in
    plt\src\worksp\mzscheme - makes plt\mzscheme.exe
 
-To build MzCOM, make the MzCOM project in
+To build MzCOM, make the MzCOM solution in
    plt\src\worksp\mzcom - makes plt\collects\mzcom\mzcom.exe
 
-To build MrEd, make the MrEd project:
+To build MrEd, make the MrEd solution:
    plt\src\worksp\mred - makes plt\mred.exe
 
 The make processes for MzScheme and MzCOM automatically build

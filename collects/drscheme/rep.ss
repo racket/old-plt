@@ -162,8 +162,7 @@
 		     (set! threads-queue null)
 		     (semaphore-post protect-threads-queue)
 		     (set! current-thread-desc #f)
-		     (unless prompt-mode?
-		       (insert-prompt)))]
+		     (insert-prompt))]
 	    [userspace-eval
 	     (let ([system-parameterization (current-parameterization)])
 	       (lambda (sexp)

@@ -376,7 +376,7 @@ void gcollect(int needsize)
 	  if (v & 0x80000000) {
 	    /* Array of pointers */
 	    int i;
-	    printf("parray: %d\n", size);
+	    printf("parray: %d %lx\n", size, (long)mp);
 	    for (i = size; i--; mp++)
 	      *mp = cautious_mark(*mp);
 	  } else {

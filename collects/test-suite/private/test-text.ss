@@ -17,7 +17,10 @@
    base-snip%
    actual-snip%)
   
-  (define *disable-color* "LightCyan")
+  (define *disable-color*
+    (case (system-type)
+      [(macosx) (make-object color% 215 215 255)]
+      [else "LightCyan"]))
   
   (define (grey-editor-snip-mixin super%)
     (class super%

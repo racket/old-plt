@@ -39,17 +39,18 @@
   
  ;type->ext-name: type -> (U symbol string)
   (define (type->ext-name t)
-    (cond 
-      ((ref-type? t) (ref-type-class/iface t))
-      ((array-type? t) 
-       (format "~a~a" (type->ext-name (array-type-type t))
-                      (let ((dims ""))
-                        (let loop ((d (array-type-dim t)))
-                          (if (= d 0)
-                              dims
-                              (begin (set! dims (string-append dims "[]"))
-                                     (loop (sub1 d))))))))
-      (else t))) 
+    (string->sybmol
+     (cond 
+       ((ref-type? t) (ref-type-class/iface t))
+       ((array-type? t) 
+        (format "~a~a" (type->ext-name (array-type-type t))
+                (let ((dims ""))
+                  (let loop ((d (array-type-dim t)))
+                    (if (= d 0)
+                        dims
+                        (begin (set! dims (string-append dims "[]"))
+                               (loop (sub1 d))))))))
+       (else t))))
   
   ;id->ext-name: id -> symbol
   (define (id->ext-name id)

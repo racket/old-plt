@@ -36,11 +36,17 @@
   (define serializable-type (make-ref-type "Serializable" `("java" "io")))
   (define comparable-type (make-ref-type "Comparable" `("java" "lang")))
   (define cloneable-type (make-ref-type "Cloneable" `("java" "lang")))
- 
+  
   ;; reference-type: 'a -> boolean
   (define (reference-type? x)
     (or (ref-type? x) (memq x `(null string))))
 
+  ;;is-string?: 'a -> boolean
+  (define (is-string-type? s)
+    (and (reference-type? s)
+         (or (eq? 'string s)
+             (type=? s string-type))))
+  
   ;; 4.2
   ;; prim-integral-type?: 'a -> boolean
   (define (prim-integral-type? t)
@@ -347,6 +353,8 @@
   (define (is-subclass? c1 c2 type-recs)
     (let ((cr (get-record (send type-recs get-class-record c1 ((get-importer type-recs) c1 type-recs 'full))
                           type-recs)))
+      (display (cons (ref-type-class/iface c2) (ref-type-path c2)))(newline)
+      (display (class-record-parents cr))(newline)
       (member (cons (ref-type-class/iface c2) (ref-type-path c2))
               (class-record-parents cr))))
 

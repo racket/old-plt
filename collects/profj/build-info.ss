@@ -13,28 +13,27 @@
     (cons (id-string (name-id n)) (map id-string (name-path n))))
   
   ;build-require-syntax: string (list string) (list string) bool -> (list syntax)
-  (define build-require-syntax
-    (lambda (name path dir local?)
-      (let* ((syn (lambda (acc) (datum->syntax-object #f acc #f)))
-             (lib? (member (car dir) 
-                           (map (lambda (p) (build-path p "profj" "libs"))
-                                (current-library-collection-paths))))
-             (access (lambda (name)
-                       (cond
-                         (lib? `(lib ,name "profj" "libs" ,@path))
-                         ((and local? (not (to-file))) name)
-                         (else `(file ,(build-path (apply build-path dir) name))))))
-             (make-name (lambda ()
-                          (if (or (not local?) lib? (to-file))
-                              (string-append name ".ss")
-                              (string->symbol name)))))
-        (list (datum->syntax-object #f
-                                    `(prefix ,(string->symbol (apply string-append
-                                                                    (map (lambda (s) (string-append s "."))
-                                                                         path)))
-                                             ,(syn (access (make-name))))
-                                    #f)
-              (syn (access (make-name)))))))
+  (define (build-require-syntax name path dir local?)
+    (let* ((syn (lambda (acc) (datum->syntax-object #f acc #f)))
+           (lib? (member (car dir) 
+                         (map (lambda (p) (build-path p "profj" "libs"))
+                              (current-library-collection-paths))))
+           (access (lambda (name)
+                     (cond
+                       (lib? `(lib ,name "profj" "libs" ,@path))
+                       ((and local? (not (to-file))) name)
+                       (else `(file ,(build-path (apply build-path dir) name))))))
+           (make-name (lambda ()
+                        (if (or (not local?) lib? (to-file))
+                            (string-append name ".ss")
+                            (string->symbol name)))))
+      (list (datum->syntax-object #f
+                                  `(prefix ,(string->symbol (apply string-append
+                                                                   (map (lambda (s) (string-append s "."))
+                                                                        path)))
+                                           ,(syn (access (make-name))))
+                                  #f)
+            (syn (access (make-name))))))
 
   ;-------------------------------------------------------------------------------
   ;Main functions
@@ -49,7 +48,7 @@
            (lang (send type-recs get-package-contents lang-pack 
                        (lambda () (error 'type-recs "Internal error: Type record not set with lang"))))
            (current-loc (unless (null? (package-defs prog)) (def-file (car (package-defs prog))))))
-      
+
       ;Add lang to local environment
       (for-each (lambda (class) (send type-recs add-to-env class lang-pack current-loc)) lang)
       (for-each (lambda (class) (send type-recs add-class-req (cons class lang-pack) #f current-loc)) lang)
@@ -66,13 +65,14 @@
                       (send type-recs add-to-env (car defname) pname 'interactions))
                     (send type-recs add-class-req defname #f current-loc)
                     (send type-recs add-require-syntax defname
-                          (build-require-syntax (car defname) pname 
-                                                (find-directory pname (lambda () #f))
+                          (build-require-syntax (car defname) 
+                                                pname 
+                                                (find-directory pname (lambda () (list (build-path 'same))))
                                                 #t))
                     (send type-recs add-to-records def-name
                           (lambda () (process-class/iface def pname type-recs (null? args) level)))))
                   (package-defs prog))
-      (execution? #f)
+      (execution? #f)     
       
       ;Add package information to environment
       (add-my-package type-recs pname (package-defs prog) current-loc level)
@@ -111,7 +111,7 @@
            (name (id-string (name-id (import-name imp))))
            (name-path (map id-string (name-path (import-name imp))))
            (path (if star? (append name-path (list name)) name-path))
-           (err (lambda () (import-error (import-name imp) (import-src path)))))
+           (err (lambda () (import-error (import-name imp) (import-src imp)))))
       (if star?
           (let ((classes (send type-recs get-package-contents path (lambda () #f))))
             (if classes
@@ -274,7 +274,12 @@
              (lambda ()
                (send type-recs add-to-records cname 'in-progress)
                (let* ((super (if (null? (header-extends info)) null (car (header-extends info))))
-                      (super-name (if (null? super) '("Object" "java" "lang") (name->list super)))
+                      (super-name (if (null? super) 
+                                      '("Object" "java" "lang") 
+                                      (if (null? (name-path super))
+                                          (cons (id-string (name-id super))
+                                                (send type-recs lookup-path (id-string (name-id super)) (lambda () null)))
+                                          (name->list super))))
                       (super-record (get-parent-record super-name super cname level type-recs))
                       (iface-records (map (lambda (i)
                                             (get-parent-record (name->list i) i #f level type-recs))

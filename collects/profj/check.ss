@@ -515,7 +515,7 @@
               (not (prim-integral-type? expr-type)))
       (switch-error 'switch-type 'switch expr-type #f expr-src))
     (for-each (lambda (case)
-                (let* ((constant (caseS-constant))
+                (let* ((constant (caseS-constant case))
                        (cons-type (unless (eq? 'default constant) (check-e constant))))
                   (if (or (eq? 'default constant)
                           (type=? cons-type expr-type))
@@ -766,9 +766,12 @@
       ((* / % *= /= %=)       ;; 15.17
        (prim-check prim-numeric-type? binary-promotion 'num l r op src))
       ((+ - += -=)      ;; 15.18
-       (if (and (not (or (eq? level 'beginner) (eq? level 'intermediate)))
-                (eq? '+ op) (or (eq? 'string l) (eq? 'string r)))
-           'string
+       (display level)(newline)
+       (display l)(newline)
+       (display r)(newline)
+       (if (and (memq level '(advanced full))
+                (eq? '+ op) (or (is-string-type? l) (is-string-type? r)))
+           string-type
            (prim-check prim-numeric-type? binary-promotion 'num l r op src)))
       ((<< >> >>> <<= >>= >>>=)      ;; 15.19
        (prim-check prim-integral-type? 
@@ -996,7 +999,7 @@
            (exp-type #f)
            (handle-call-error 
             (lambda (exn)
-              (unless (or (access? expr) (eq? level 'full)) (raise exn))
+              (unless (or (access? expr) (not (eq? level 'full))) (raise exn))
               (let ((record (car (find-static-class 
                                    (append (access-name expr) (list name))
                                    type-recs))))

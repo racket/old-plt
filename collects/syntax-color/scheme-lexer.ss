@@ -198,8 +198,6 @@
      [(special)
       (get-next-comment input-port)]
      [(special-comment)
-      (get-next-comment input-port)]
-     [(special-error)
       (get-next-comment input-port)]))
   
   (define (read-nested-comment num-opens start-pos input)
@@ -289,8 +287,6 @@
       (ret "" 'no-color #f start-pos end-pos)]
      [(special-comment)
       (ret "" 'comment #f start-pos end-pos)]
-     [(special-error)
-      (ret "" 'no-color #f start-pos end-pos)]
      [(eof) (values lexeme 'eof #f #f #f)]
      [(:or bad-char bad-str 
            (:& bad-id

@@ -166,35 +166,32 @@ The following require imports the _lexer generator_.
    executed to handle the error situation as desired, only consuming
    the first character from the input buffer.
 
-   The lexer treats the rules ((eof) action), ((special) action),
-   ((special-comment) action) and ((special-error) action) specially.
-   In addition to returning characters, input ports can return
-   eof-objects.  Custom input ports can also return arbitrary values
-   (specials), raise an exception to indicate a non-textual comment
-   (special-comments), or raise an exception to indicate a malformed
-   special (special-error).  Eofs, specials, special-comments and
-   special-errors can never be part of a lexeme with surrounding
-   characters.
+   The lexer treats the rules ((eof) action), ((special) action), and
+   ((special-comment) action) specially.  In addition to returning
+   characters, input ports can return eof-objects.  Custom input ports
+   can also return a special-comment value to indicate a non-textual
+   comment, or return another arbitrary value (a special).
 
    The eof rule is matched when the input port returns an eof value.
    If no eof rule is present, the lexer returns the symbol 'eof when
    the port returns an eof value.
 
-   The special rule is matched when the input port returns a value other
-   than a character or eof-object.  If no special rule is present, the 
-   lexer returns void.
+   The special-comment rule is matched when the input port returns a
+   special-comment structure.  If no special-comment rule is present,
+   the lexer automatically tries to return the next token from the
+   input port.
 
-   The special-comment rule is matched when the input port raises a
-   special-comment exception instead of returning a value.  If no
-   special-comment rule is present, the lexer automatically tries to
-   return the next token from the input port.
+   The special rule is matched when the input port returns a value
+   other than a character, eof-object, or special-comment structure.
+   If no special rule is present, the lexer returns void.
 
-   The special-error rule is matched when the input port raises an
-   exception (other than a special-comment or break exception) while
-   trying to read a special value.  This indicates that the special
-   value is internally malformed (such as an embedded XML editor with
-   malformed syntax).  If no special-error rule is present, the
-   lexer itself will raise the exception.
+   Eofs, specials, special-comments and special-errors can never be
+   part of a lexeme with surrounding characters.
+
+   When peeking from the input port raises an exception (such as by an
+   embedded XML editor with malformed syntax), the exception can be
+   raised before all tokens preceeding the exception have been
+   returned.
 
 
 > (lexer-src-pos (re action) ...) is a lexer that returns

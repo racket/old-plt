@@ -20,8 +20,6 @@
       (values "" 'no-color #f (position-offset start-pos) (position-offset end-pos)))
      ((special-comment)
       (values "" 'comment #f (position-offset start-pos) (position-offset end-pos)))
-     ((special-error)
-      (values "" 'no-color #f (position-offset start-pos) (position-offset end-pos)))
      ((eof)
       (values lexeme 'eof #f #f #f)))))
      

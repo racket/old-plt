@@ -1,4 +1,26 @@
 
+Version 203.5
+Changed make-custom-input-port to drop the initial
+ waitbale argument; instead the read and peek
+ functions should return a waitable instead of 0
+Changed make-custom-output-port so tha the first
+ argument is #f or a procedure to return a waitable
+ (instead of #f or a waitable)
+Added make-semaphore-peek
+Added make-wrapped-waitable, make-guard-waitable, and
+ make-nack-waitable a la CML
+Added waitables->waitable-set, which is like CML's choose
+Changed make-struct-type-property to accept a guard
+ procedure for the property
+Changed make-struct-type to accept a list of immutable
+ field positions
+Changed struct-type-info to return 8 values instead of 6
+ to include information on immutable fields
+Changed proc-spec handling in make-struct-type; an integer
+ value must be <= init-field-k, and overriding is disallowed
+ (for consistency with user-defined properties)
+Added prop:waitable
+
 Version 203.4
 Changed handling of top-level and module top-level definitions
  of identifiers that originate from a macro expansion; such

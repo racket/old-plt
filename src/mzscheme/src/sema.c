@@ -83,9 +83,9 @@ void scheme_init_sema(Scheme_Env *env)
 						      1, 1), 
 			     env);
 
-  scheme_add_global_constant("make-semaphore-repost-waitable", 
+  scheme_add_global_constant("make-semaphore-peek", 
 			     scheme_make_prim_w_arity(make_sema_repost,
-						      "make-semaphore-repost-waitable", 
+						      "make-semaphore-peek", 
 						      1, 1), 
 			     env);
 
@@ -132,7 +132,7 @@ static Scheme_Object *make_sema_repost(int n, Scheme_Object **p)
   Scheme_Object *o;
 
   if (!SCHEME_SEMAP(p[0]))
-    scheme_wrong_type("make-semaphore-repost-waitable", "semaphore", 0, n, p);
+    scheme_wrong_type("make-semaphore-peek", "semaphore", 0, n, p);
   
   o = scheme_alloc_small_object();
   o->type = scheme_semaphore_repost_type;

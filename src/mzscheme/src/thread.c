@@ -3290,18 +3290,27 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
   post_waiting_nacks(waiting);
 
   if (waiting->result) {
-    /* Apply wraps functions to the selected waitable: */
-    Scheme_Object *o, *l, *a;
+    /* Apply wrap functions to the selected waitable: */
+    Scheme_Object *o, *l, *a, *to_call = NULL, *args[1];
     o = waitable_set->argv[waiting->result - 1];
     if (waiting->wrapss) {
       l = waiting->wrapss[waiting->result - 1];
       if (l) {
 	for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
 	  a = SCHEME_CAR(l);
-	  if (SCHEME_PROCP(a))
-	    o = scheme_apply(a, 1, &o);
-	  else
+	  if (SCHEME_PROCP(a)) {
+	    if (to_call) {
+	      args[0] = o;
+	      o = scheme_apply(to_call, 1, args);
+	    }
+	    to_call = a;
+	  } else
 	    o = a;
+	}
+
+	if (to_call) {
+	  args[0] = o;
+	  return _scheme_tail_apply(to_call, 1, args);
 	}
       }
     }

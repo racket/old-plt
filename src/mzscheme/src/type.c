@@ -186,7 +186,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_waitable_set_type, "<waitable-set>");
   set_name(scheme_wrapped_waitable_type, "<waitable>");
   set_name(scheme_nack_waitable_type, "<waitable>");
-  set_name(scheme_semaphore_repost_type, "<semaphore-repost-waitable>");
+  set_name(scheme_semaphore_repost_type, "<semaphore-peek>");
 
   set_name(scheme_reserved_4_type, "<reserved4>");
 

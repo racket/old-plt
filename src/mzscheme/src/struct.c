@@ -89,6 +89,8 @@ static Scheme_Object *make_struct_proc(Scheme_Struct_Type *struct_type, char *fu
 static Scheme_Object *make_name(const char *pre, const char *tn, int tnl, const char *post1, 
 				const char *fn, int fnl, const char *post2, int sym);
 
+static void get_struct_type_info(int argc, Scheme_Object *argv[], Scheme_Object **a, int always);
+
 static Scheme_Object *waitable_property;
 static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
 static int is_waitable_struct(Scheme_Object *);
@@ -118,6 +120,8 @@ Scheme_Object *ellipses_symbol;
 #define EXPTIME_NAME(base, blen, sym) make_name("", base, blen, "", NULL, 0, "", sym)
 
 #define TYPE_NAME_STR(sym) (char *)make_name("struct:", (char *)sym, -1, "", NULL, 0, "", 0)
+
+#define mzNUM_ST_INFO 8
 
 void
 scheme_init_struct (Scheme_Env *env)
@@ -271,7 +275,7 @@ scheme_init_struct (Scheme_Env *env)
 			     scheme_make_prim_w_arity2(struct_type_info,
 						       "struct-type-info",
 						       1, 1,
-						       7, 7),
+						       mzNUM_ST_INFO, mzNUM_ST_INFO),
 			     env);
   scheme_add_global_constant("struct->vector",
 			     scheme_make_prim_w_arity(struct_to_vector,
@@ -539,11 +543,17 @@ static Scheme_Object *struct_type_property_p(int argc, Scheme_Object *argv[])
 static Scheme_Object *guard_property(Scheme_Object *prop, Scheme_Object *v, Scheme_Struct_Type *t)
 {
   Scheme_Struct_Property *p = (Scheme_Struct_Property *)prop;
-  Scheme_Object *a[2];
 
   if (p->guard) {
+    Scheme_Object *a[2], *info[mzNUM_ST_INFO], *l;
+
+    a[0] = (Scheme_Object *)t;
+    get_struct_type_info(1, a, info, 1);
+
+    l = scheme_build_list(mzNUM_ST_INFO, info);
+
     a[0] = v;
-    a[1] = (Scheme_Object *)t;
+    a[1] = l;
     
     return _scheme_apply(p->guard, 2, a);
   } else
@@ -557,9 +567,8 @@ static Scheme_Object *guard_property(Scheme_Object *prop, Scheme_Object *v, Sche
 static Scheme_Object *check_waitable_property_value_ok(int argc, Scheme_Object *argv[])
 /* This is the guard for prop:waitable */
 {
-  Scheme_Struct_Type *s = (Scheme_Struct_Type *)argv[1];
-  Scheme_Object *v;
-  int pos;
+  Scheme_Object *v, *l;
+  int pos, num_islots;
 
   v = argv[0];
 
@@ -575,18 +584,32 @@ static Scheme_Object *check_waitable_property_value_ok(int argc, Scheme_Object *
 			"property value is not a waitable, procedure (arity 0), or exact non-negative integer: ",
 			v);
 
+  l = argv[1];
+  l = SCHEME_CDR(l);
+  num_islots = SCHEME_INT_VAL(SCHEME_CAR(l));
+  l = SCHEME_CDR(l);
+  l = SCHEME_CDR(l);
+  l = SCHEME_CDR(l);
+  l = SCHEME_CDR(l);
+  l = SCHEME_CAR(l);
+
   if (SCHEME_BIGNUMP(v))
-    pos = s->num_islots; /* too big */
+    pos = num_islots; /* too big */
   else
     pos = SCHEME_INT_VAL(v);
 
-  if (pos >= s->num_islots) {
+  if (pos >= num_islots) {
     scheme_arg_mismatch("waitable-property-guard",
 			"field index >= initialized-field count for structure type: ",
 			v);
   }
 
-  if (!s->immutables || !s->immutables[pos]) {
+  for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+    if (SCHEME_INT_VAL(SCHEME_CAR(l)) == pos)
+      break;
+  }
+
+  if (!SCHEME_PAIRP(l)) {
     scheme_arg_mismatch("waitable-property-guard",
 			"field index not declared immutable: ",
 			v);
@@ -933,10 +956,10 @@ static Scheme_Object *struct_info(int argc, Scheme_Object *argv[])
   return scheme_values(2, a);
 }
 
-static Scheme_Object *struct_type_info(int argc, Scheme_Object *argv[])
+static void get_struct_type_info(int argc, Scheme_Object *argv[], Scheme_Object **a, int always)
 {
   Scheme_Struct_Type *stype, *parent;
-  Scheme_Object *a[7], *insp, *ims;
+  Scheme_Object *insp, *ims;
   int p;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_struct_type_type))
@@ -946,11 +969,11 @@ static Scheme_Object *struct_type_info(int argc, Scheme_Object *argv[])
 
   insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
 
-  if (!scheme_is_subinspector(stype->inspector, insp)) {
+  if (!always && !scheme_is_subinspector(stype->inspector, insp)) {
     scheme_arg_mismatch("struct-type-info", 
 			"current inspector cannot extract info for struct-type: ",
 			argv[0]);
-    return NULL;
+    return;
   }
 
   /* Make sure generic accessor and mutator are created: */
@@ -972,9 +995,10 @@ static Scheme_Object *struct_type_info(int argc, Scheme_Object *argv[])
     parent = NULL;
 
   a[0] = stype->name;
-  a[1] = scheme_make_integer(stype->num_slots - (parent ? parent->num_slots : 0));
-  a[2] = stype->accessor;
-  a[3] = stype->mutator;
+  a[1] = scheme_make_integer(stype->num_islots);
+  a[2] = scheme_make_integer(stype->num_slots - (parent ? parent->num_slots : 0) - stype->num_islots);
+  a[3] = stype->accessor;
+  a[4] = stype->mutator;
 
   p = stype->name_pos;
   while (--p >= 0) {
@@ -991,12 +1015,19 @@ static Scheme_Object *struct_type_info(int argc, Scheme_Object *argv[])
 	ims = scheme_make_pair(scheme_make_integer(i), ims);
     }
   }
-  a[4] = ims;
+  a[5] = ims;
 
-  a[5] = ((p >= 0) ? (Scheme_Object *)stype->parent_types[p] : scheme_false);
-  a[6] = ((p == stype->name_pos - 1) ? scheme_false : scheme_true);
-  
-  return scheme_values(7, a);
+  a[6] = ((p >= 0) ? (Scheme_Object *)stype->parent_types[p] : scheme_false);
+  a[7] = ((p == stype->name_pos - 1) ? scheme_false : scheme_true);
+}
+
+static Scheme_Object *struct_type_info(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *a[mzNUM_ST_INFO];
+
+  get_struct_type_info(argc, argv, a, 0);
+
+  return scheme_values(mzNUM_ST_INFO, a);
 }
 
 Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown_val, Scheme_Object *insp)
@@ -1277,11 +1308,18 @@ static int nack_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
   Scheme_Object *sema, *a[1], *result;
 
   sema = scheme_make_sema(0);
+
+  /* Install the semaphore immediately, so that it's posted on
+     exceptions (e.g., breaks) even if they happen while trying
+     to run the maker. */
+  scheme_set_wait_target(sinfo, o, NULL, sema);
+  sinfo->w_i++; /* undo unwind */
+
   a[0] = sema;
   result = scheme_apply(nw->maker, 1, a);
 
   if (scheme_is_waitable(result)) {
-    scheme_set_wait_target(sinfo, result, NULL, sema);
+    scheme_set_wait_target(sinfo, result, NULL, NULL);
     return 0;
   } else
     return 1; /* Non-waitable => ready */

@@ -171,7 +171,7 @@
 (err/rt-test (file-position s -1))
 (err/rt-test (file-position s (expt 2 100)) exn:application:mismatch?)
 (err/rt-test (file-position (make-custom-input-port void #f void) 100) exn:application:mismatch?)
-(err/rt-test (file-position (make-custom-output-port void void void) 100) exn:application:mismatch?)
+(err/rt-test (file-position (make-custom-output-port #f void void void) 100) exn:application:mismatch?)
 (arity-test file-position 1 2)
 
 (define (test-read-line r1 r2 s1 s2 flags sep)
@@ -521,7 +521,7 @@
 (err/rt-test (read (make-custom-input-port void void void)))
 (err/rt-test (read-char (make-custom-input-port void void void)))
 (err/rt-test (peek-char (make-custom-input-port void void void)))
-(arity-test make-custom-input-port 4 4)
+(arity-test make-custom-input-port 3 3)
 (err/rt-test (make-custom-input-port 8 void void))
 (err/rt-test (make-custom-input-port void 8 void))
 (err/rt-test (make-custom-input-port void void 8))
@@ -836,10 +836,10 @@
 			    (set! counter (add1 counter))
 			    (loop (add1 got)))
 			  (if (zero? got)
-			      ready-sema
+			      (make-semaphore-peek ready-sema)
 			      got)))
 		    (semaphore-post lock))
-		   #f))
+		   (make-semaphore-peek lock)))
 	     (and supply-peek?
 		  (lambda (s d)
 		    (if (semaphore-try-wait? lock)
@@ -860,7 +860,7 @@
 				 (set! extras (cons s extras))
 				 s)))
 			 (semaphore-post lock))
-			#f)))
+			(make-semaphore-peek lock))))
 	     void)])
     (test-a-port p (gdelay go) gsync)))
 

@@ -1566,13 +1566,19 @@
 			       (cons (car t) (loop (cdr t))))
 			   t))]
 	      [static? (ormap (lambda (t) (eq? (tok-n t) 'static)) type)])
+	  ;; Clean type if we find a method/constructor/destructor
 	  (let-values ([(type class-name)
 			(if (and (list? type)
 				 ((length type) . >= . 2))
 			    (let ([rev-type (reverse type)])
-			      (if (eq? ':: (tok-n (car rev-type)))
-				  (values (reverse (cddr rev-type)) (cadr rev-type))
-				  (values type #f)))
+			      (cond
+			       [(eq? ':: (tok-n (car rev-type)))
+				(values (reverse (cddr rev-type)) (cadr rev-type))]
+			       [(and ((length type) . >= . 3)
+				     (eq? '~ (tok-n (car rev-type)))
+				     (eq? ':: (tok-n (cadr rev-type))))
+				(values (reverse (cdddr rev-type)) (caddr rev-type))]
+			       [else (values type #f)]))
 			    (values type #f))])
 	    (k name
 	       class-name

@@ -1,11 +1,13 @@
 ;;
-;; $Id$
+;; $Id: link.ss,v 1.34 1997/07/02 21:31:03 krentel Exp krentel $
 ;;
 
   (compound-unit/sig
+
     (import [core : mzlib:core^]
 	    [trigger : mzlib:trigger^]
 	    [application : mred:application^])
+
     (link [wx : mred:wx^ ((begin-elaboration-time
 			   (if mred:explicit-wx? 
 			       `(reference-unit/sig "wxr.ss")
@@ -18,14 +20,14 @@
 				    constants
 				    (core function@)
 				    (core string@))]
-          [self-test : mred:self-test^
-                     ((reference-unit/sig  "stlink.ss")  wx)]
+	  [active-frame : mred:test:active-frame^
+	     ((reference-unit/sig "stframe.ss") wx)]
 	  [connections : mred:connections^
 		       ((reference-unit/sig "connect.ss")
 			wx
 			constants 
                         (core function@)
-                        self-test)]
+                        active-frame)]
 	  [exn : mred:exn^ ((reference-unit/sig "exn.ss") constants)]
 	  [container : mred:container^
 		     ((reference-unit/sig "containr.ss") wx 
@@ -149,10 +151,13 @@
 			hyper-edit hyper-dialog container
 			frame canvas group find-string
 			preferences handler)]
+          [self-test : mred:self-test^
+             ((reference-unit/sig  "stlink.ss")  wx  active-frame)]
 	  [html : mred:html^ ((reference-unit/sig "html.ss") wx 
 			      constants
 			      url (core file@)
 			      (core string@))])
+
     (export (unit constants)
 	    (open version)
 	    (open (exn : mred:exn-external^))
@@ -167,5 +172,6 @@
 	    (open panel) (open paren) (open project)
 	    (open scheme-paren) (open scheme-mode) 
 	    (open hyper-edit) (open hyper-dialog) (open hyper-frame)
+ 	    (open active-frame)
             (unit (self-test : mred:self-test-export^) test)
 	    (open url)))

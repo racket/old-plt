@@ -197,8 +197,7 @@
          arrow-pen
          ))
       
-      (drscheme:get/extend:extend-definitions-text
-       definition-text-mixin)
+      (drscheme:get/extend:extend-definitions-text definition-text-mixin)
       
       ; UNIT FRAME MIXIN
       (drscheme:get/extend:extend-unit-frame

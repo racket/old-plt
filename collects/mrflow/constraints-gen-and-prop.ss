@@ -2781,53 +2781,61 @@
                   (effect))))
         set!-label)]
      [(quote-syntax foo ...)
-      (err:error-table-set *errors*
-                           (list (create-dummy-label term))
-                           'red
-                           (format "quote-syntax not yet implemented"))
-      (create-dummy-label term)]
+      (let ([label (create-simple-label term)])
+        (err:error-table-set *errors*
+                             (list label)
+                             'red
+                             (format "quote-syntax not yet implemented"))
+        label)]
      [(with-continuation-mark foo ...)
-      (err:error-table-set *errors*
-                           (list (create-dummy-label term))
-                           'red
-                           (format "with-continuation-mark not yet implemented"))
-      (create-dummy-label term)]
+      (let ([label (create-simple-label term)])
+        (err:error-table-set *errors*
+                             (list label)
+                             'red
+                             (format "with-continuation-mark not yet implemented"))
+        label)]
      [(define-syntaxes foo ...)
-      (err:error-table-set *errors*
-                           (list (create-dummy-label term))
-                           'red
-                           (format "define-syntaxes not yet implemented"))
-      (create-dummy-label term)]
+      (let ([label (create-dummy-label term)])
+        (err:error-table-set *errors*
+                             (list label)
+                             'red
+                             (format "define-syntaxes not yet implemented"))
+        label)]
      [(module foo ...)
-      (err:error-table-set *errors*
-                           (list (create-dummy-label term))
-                           'red
-                           (format "module not yet implemented"))
-      (create-dummy-label term)]
+      (let ([label (create-simple-label term)])
+        (err:error-table-set *errors*
+                             (list label)
+                             'red
+                             (format "module not yet implemented"))
+        label)]
      [(require foo ...)
-      (err:error-table-set *errors*
-                           (list (create-dummy-label term))
-                           'red
-                           (format "require not yet implemented"))
-      (create-dummy-label term)]
+      (let ([label (create-simple-label term)])
+        (err:error-table-set *errors*
+                             (list label)
+                             'red
+                             (format "require not yet implemented"))
+        label)]
      [(require-for-syntax foo ...)
-      (err:error-table-set *errors*
-                           (list (create-dummy-label term))
-                           'red
-                           (format "require-for-syntax not yet implemented"))
-      (create-dummy-label term)]
+      (let ([label (create-simple-label term)])
+        (err:error-table-set *errors*
+                             (list label)
+                             'red
+                             (format "require-for-syntax not yet implemented"))
+        label)]
      [(provide foo ...)
-      (err:error-table-set *errors*
-                           (list (create-dummy-label term))
-                           'red
-                           (format "provide not yet implemented"))
-      (create-dummy-label term)]
+      (let ([label (create-simple-label term)])
+        (err:error-table-set *errors*
+                             (list label)
+                             'red
+                             (format "provide not yet implemented"))
+        label)]
      [(#%plain-module-begin foo ...)
-      (err:error-table-set *errors*
-                           (list (create-dummy-label term))
-                           'red
-                           (format "#%plain-module-begin not yet implemented"))
-      (create-dummy-label term)]
+      (let ([label (create-simple-label term)])
+        (err:error-table-set *errors*
+                             (list label)
+                             'red
+                             (format "#%plain-module-begin not yet implemented"))
+        label)]
      [var
       ; we cannot directly return the binding label, because, even though it makes for a
       ; simpler graph and simpler types, it screws up the arrows

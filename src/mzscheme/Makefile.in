@@ -4,6 +4,7 @@
 
 srcdir = @srcdir@
 prefix = @prefix@
+builddir = @builddir@
 
 # for version.mak:
 mainsrcdir = @srcdir@/..
@@ -157,10 +158,10 @@ mzscheme.multiboot : libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.@LTO@
 # ----------------------------------------
 
 main.@LTO@: $(srcdir)/main.c $(srcdir)/include/scheme.h $(srcdir)/sconfig.h $(srcdir)/src/stypes.h $(srcdir)/cmdline.inc $(srcdir)/oskglue.inc
-	$(CC) @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(srcdir)/include -c $(srcdir)/main.c -o main.@LTO@
+	$(CC) @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(builddir) -I$(srcdir)/include -c $(srcdir)/main.c -o main.@LTO@
 
 main_ee.@LTO@: main.@LTO@
-	$(CC) @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(srcdir)/include -DSTANDALONE_WITH_EMBEDDED_EXTENSION -c $(srcdir)/main.c -o main_ee.@LTO@
+	$(CC) @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(builddir) -I$(srcdir)/include -DSTANDALONE_WITH_EMBEDDED_EXTENSION -c $(srcdir)/main.c -o main_ee.@LTO@
 
 ee-main:
 	$(MAKE) main_ee.@LTO@

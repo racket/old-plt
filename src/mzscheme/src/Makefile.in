@@ -3,6 +3,7 @@
 #
 
 srcdir = @srcdir@
+builddir = @builddir@
 
 CC = @CC@
 PERL = @PERL@
@@ -11,7 +12,7 @@ XMAKE = $(MAKE) $(EXPORT)
 
 MZSRC = $(srcdir)
 
-CFLAGS = @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(srcdir)/../include
+CFLAGS = @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(builddir)/.. -I$(srcdir)/../include
 
 OBJS =  salloc.@LTO@ \
 	bignum.@LTO@ \

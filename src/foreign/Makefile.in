@@ -1,17 +1,19 @@
 # Makefile for all foreign-related libraires
 
 srcdir = @srcdir@
+builddir = @builddir@
 CC = @CC@
 CFLAGS = @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ \
+         -I$(builddir)/../mzscheme \
          -I$(srcdir)/../mzscheme/include -I$(srcdir)/../mzscheme/src \
-         -Igcc/libffi/include -Ilightning
+         -Igcc/libffi/include
 ARFLAGS = @ARFLAGS@
 
 # compile sub-libraries & foreign.c
 all:
 	$(MAKE) foreign.@LTO@
 	$(MAKE) gcc/libffi/libffi@FOREIGN_CONVENIENCE@.la
-	$(MAKE) lightning.@LTO@
+#	$(MAKE) lightning.@LTO@
 
 # Causes objects to be generated in gcc/libffi/src/
 #  in inconvenience mode:

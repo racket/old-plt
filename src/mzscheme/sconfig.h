@@ -30,7 +30,11 @@
 
 
 /******** (BEGIN KNOWN ARCHITECTURE/SYSTEM CONFIGURATIONS) ********/
-  
+
+/* First, use configure-generated information */
+/*   (on Windows, this is done by a manual file which is in src/worksp) */
+#include "mzconfig.h"
+
   /*************** OSKit with Linux/gcc *****************/
 
 #if defined(OSKIT)

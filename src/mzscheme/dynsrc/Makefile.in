@@ -7,12 +7,13 @@ DYNLINK = mzc --ld
 
 srcdir = @srcdir@
 prefix = @prefix@
+builddir = @builddir@
 
 MZSRC = $(srcdir)/../src
 
 CC = @CC@
 PLAIN_CC = @PLAIN_CC@
-CFLAGS = @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ -I$(srcdir)/../include -I$(srcdir)/../src @MZOPTIONS@
+CFLAGS = @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ -I$(builddir)/.. -I$(srcdir)/../include -I$(srcdir)/../src @MZOPTIONS@
 
 dynlib:
 	$(MAKE) ../mzdyn.o

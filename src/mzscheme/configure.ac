@@ -20,7 +20,9 @@
 # it needs to include C++ flags that we don't want for MzScheme.
 # hence PREFLAGS, which is initialized to the original CPPFLAGS.
 
-AC_INIT(mzscheme/src/bignum.c)
+AC_INIT([PLT Scheme])
+AC_CONFIG_SRCDIR(mzscheme/src/bignum.c)
+AC_CONFIG_HEADERS([mzscheme/mzconfig.h])
 
 AC_ARG_ENABLE(mred, [  --enable-mred           compile MrEd as well as MzScheme (enabled by default)], , enable_mred=yes )
 
@@ -71,6 +73,14 @@ else
 fi
 
 OS=`$UNAME -s`
+
+###### Get data sizes #######
+
+AC_CHECK_SIZEOF(char)
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long long)
 
 ###### Some flags imply other flags #######
 

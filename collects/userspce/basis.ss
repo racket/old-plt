@@ -185,6 +185,10 @@
   ;; zodiac-vocabulary? : symbol -> boolean
   (define (zodiac-vocabulary? sym)
     (not (eq? sym 'mzscheme)))
+  ;; has-set!? : symbol -> boolean
+  (define (has-set!? sym)
+    (not (or (eq? sym 'intermediate)
+	     (eq? sym 'beginner))))
 
   ;; r4rs-style-printing? : setting -> boolean
   (define (r4rs-style-printing? setting)

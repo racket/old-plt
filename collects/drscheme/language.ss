@@ -267,8 +267,13 @@
 		    (length basis:level-symbols))))]
 	 [update-to
 	  (lambda (v)
+	    (send allow-set!-on-undefined? show (basis:has-set!? (basis:setting-vocabulary-symbol v)))
 	    (let ([zodiac? (basis:setting-use-zodiac? v)])
 	      (send vocab set-selection (basis:level->number (basis:setting-vocabulary-symbol v)))
+	      (unless zodiac?
+		(basis:set-setting-allow-improper-lists?! v #t)
+		(basis:set-setting-signal-undefined! v #f)
+		(basis:set-setting-signal-not-boolean! v #f))
 	      (for-each (lambda (control) (send control enable zodiac?))
 			(list allow-improper-lists?
 			      signal-undefined

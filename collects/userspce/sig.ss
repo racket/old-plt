@@ -44,6 +44,7 @@
    get-default-setting
 
    zodiac-vocabulary?
+   has-set!?
    
    error-display/debug-handler
    current-vocabulary

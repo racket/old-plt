@@ -3,34 +3,26 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 591 "XWidgets/xwArrow.w"
 #include <X11/bitmaps/gray>
-#line 592 "XWidgets/xwArrow.w"
 #include <stdio.h>
-#line 593 "XWidgets/xwArrow.w"
 #include <assert.h>
-#line 594 "XWidgets/xwArrow.w"
 #include <wxtimeout.h>
 #include <./xwArrowP.h>
-#line 322 "XWidgets/xwArrow.w"
 static void activate_and_start_timer(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 341 "XWidgets/xwArrow.w"
 static void stop_timer(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 349 "XWidgets/xwArrow.w"
 static void push_up(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 411 "XWidgets/xwArrow.w"
 static void push_down(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
@@ -53,82 +45,69 @@ static void _resolve_inheritance(
 WidgetClass
 #endif
 );
-#line 88 "XWidgets/xwArrow.w"
 static void initialize(
 #if NeedFunctionPrototypes
 Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 101 "XWidgets/xwArrow.w"
 static void destroy(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 120 "XWidgets/xwArrow.w"
 static Boolean  set_values(
 #if NeedFunctionPrototypes
 Widget ,Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 163 "XWidgets/xwArrow.w"
 static void _expose(
 #if NeedFunctionPrototypes
 Widget,XEvent *,Region 
 #endif
 );
-#line 480 "XWidgets/xwArrow.w"
 static void timer_callback(
 #if NeedFunctionPrototypes
 XtPointer ,XtIntervalId *
 #endif
 );
-#line 493 "XWidgets/xwArrow.w"
 static void create_arrowgc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 507 "XWidgets/xwArrow.w"
 static void create_arrowlightgc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 548 "XWidgets/xwArrow.w"
 static void create_arrowdarkgc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 480 "XWidgets/xwArrow.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 480 "XWidgets/xwArrow.w"
 static void timer_callback(XtPointer  client_data,XtIntervalId * timer)
 #else
-#line 480 "XWidgets/xwArrow.w"
 static void timer_callback(client_data,timer)XtPointer  client_data;XtIntervalId * timer;
 #endif
-#line 481 "XWidgets/xwArrow.w"
 {
     Widget self = (Widget) client_data;
 
     XtCallCallbackList(self, ((XfwfArrowWidget)self)->xfwfArrow.callback, NULL);
-    if (((XfwfArrowWidget)self)->xfwfArrow.timer) /* i.e., no stop issued by callback */
+    if (((XfwfArrowWidget)self)->xfwfArrow.timer) { /* i.e., no stop issued by callback */
+      if (((XfwfArrowWidget)self)->xfwfArrow.timer != 0x1)
+        wxRemoveTimeOut(((XfwfArrowWidget)self)->xfwfArrow.timer);
       ((XfwfArrowWidget)self)->xfwfArrow.timer = wxAppAddTimeOut(XtWidgetToApplicationContext(self),
 				     ((XfwfArrowWidget)self)->xfwfArrow.repeatDelay, timer_callback, self);
+    }
 }
-#line 493 "XWidgets/xwArrow.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 493 "XWidgets/xwArrow.w"
 static void create_arrowgc(Widget self)
 #else
-#line 493 "XWidgets/xwArrow.w"
 static void create_arrowgc(self)Widget self;
 #endif
-#line 494 "XWidgets/xwArrow.w"
 {
     XtGCMask mask;
     XGCValues values;
@@ -138,16 +117,12 @@ static void create_arrowgc(self)Widget self;
     values.foreground = ((XfwfArrowWidget)self)->xfwfArrow.foreground;
     ((XfwfArrowWidget)self)->xfwfArrow.arrowgc = XtGetGC(self, mask, &values);
 }
-#line 507 "XWidgets/xwArrow.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 507 "XWidgets/xwArrow.w"
 static void create_arrowlightgc(Widget self)
 #else
-#line 507 "XWidgets/xwArrow.w"
 static void create_arrowlightgc(self)Widget self;
 #endif
-#line 508 "XWidgets/xwArrow.w"
 {
     XtGCMask mask=0;
     XGCValues values;
@@ -185,16 +160,12 @@ static void create_arrowlightgc(self)Widget self;
     }
     ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc = XtGetGC(self, mask, &values);
 }
-#line 548 "XWidgets/xwArrow.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 548 "XWidgets/xwArrow.w"
 static void create_arrowdarkgc(Widget self)
 #else
-#line 548 "XWidgets/xwArrow.w"
 static void create_arrowdarkgc(self)Widget self;
 #endif
-#line 549 "XWidgets/xwArrow.w"
 {
     XtGCMask mask=0;
     XGCValues values;
@@ -234,19 +205,12 @@ static void create_arrowdarkgc(self)Widget self;
 }
 
 static XtResource resources[] = {
-#line 27 "XWidgets/xwArrow.w"
 {XtNdirection,XtCDirection,XtRAlignment,sizeof(((XfwfArrowRec*)NULL)->xfwfArrow.direction),XtOffsetOf(XfwfArrowRec,xfwfArrow.direction),XtRImmediate,(XtPointer)XfwfTop },
-#line 32 "XWidgets/xwArrow.w"
 {XtNforeground,XtCForeground,XtRPixel,sizeof(((XfwfArrowRec*)NULL)->xfwfArrow.foreground),XtOffsetOf(XfwfArrowRec,xfwfArrow.foreground),XtRString,(XtPointer)XtDefaultBackground },
-#line 36 "XWidgets/xwArrow.w"
 {XtNarrowShadow,XtCArrowShadow,XtRDimension,sizeof(((XfwfArrowRec*)NULL)->xfwfArrow.arrowShadow),XtOffsetOf(XfwfArrowRec,xfwfArrow.arrowShadow),XtRImmediate,(XtPointer)2 },
-#line 40 "XWidgets/xwArrow.w"
 {XtNrepeat,XtCRepeat,XtRBoolean,sizeof(((XfwfArrowRec*)NULL)->xfwfArrow.repeat),XtOffsetOf(XfwfArrowRec,xfwfArrow.repeat),XtRImmediate,(XtPointer)TRUE },
-#line 46 "XWidgets/xwArrow.w"
 {XtNinitialDelay,XtCInitialDelay,XtRCardinal,sizeof(((XfwfArrowRec*)NULL)->xfwfArrow.initialDelay),XtOffsetOf(XfwfArrowRec,xfwfArrow.initialDelay),XtRImmediate,(XtPointer)500 },
-#line 51 "XWidgets/xwArrow.w"
 {XtNrepeatDelay,XtCRepeatDelay,XtRCardinal,sizeof(((XfwfArrowRec*)NULL)->xfwfArrow.repeatDelay),XtOffsetOf(XfwfArrowRec,xfwfArrow.repeatDelay),XtRImmediate,(XtPointer)200 },
-#line 57 "XWidgets/xwArrow.w"
 {XtNcallback,XtCCallback,XtRCallback,sizeof(((XfwfArrowRec*)NULL)->xfwfArrow.callback),XtOffsetOf(XfwfArrowRec,xfwfArrow.callback),XtRImmediate,(XtPointer)NULL },
 };
 
@@ -320,7 +284,6 @@ XtInherit_set_abs_location,
 };
 WidgetClass xfwfArrowWidgetClass = (WidgetClass) &xfwfArrowClassRec;
 /*ARGSUSED*/
-#line 322 "XWidgets/xwArrow.w"
 static void activate_and_start_timer(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     if (event->type != ButtonPress) {
@@ -341,7 +304,6 @@ static void activate_and_start_timer(self,event,params,num_params)Widget self;XE
 }
 
 /*ARGSUSED*/
-#line 341 "XWidgets/xwArrow.w"
 static void stop_timer(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     if (((XfwfArrowWidget)self)->xfwfArrow.timer && ((XfwfArrowWidget)self)->xfwfArrow.timer != 0x1)
@@ -350,7 +312,6 @@ static void stop_timer(self,event,params,num_params)Widget self;XEvent*event;Str
 }
 
 /*ARGSUSED*/
-#line 349 "XWidgets/xwArrow.w"
 static void push_up(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
 
@@ -414,7 +375,6 @@ static void push_up(self,event,params,num_params)Widget self;XEvent*event;String
 }
 
 /*ARGSUSED*/
-#line 411 "XWidgets/xwArrow.w"
 static void push_down(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
 
@@ -493,16 +453,12 @@ WidgetClass class;
   if (class == xfwfArrowWidgetClass) return;
   super = (XfwfArrowWidgetClass)class->core_class.superclass;
 }
-#line 88 "XWidgets/xwArrow.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 88 "XWidgets/xwArrow.w"
 static void initialize(Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 88 "XWidgets/xwArrow.w"
 static void initialize(request,self,args,num_args)Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 89 "XWidgets/xwArrow.w"
 {
     if (((XfwfArrowWidget)self)->xfwfArrow.direction != XfwfTop && ((XfwfArrowWidget)self)->xfwfArrow.direction != XfwfLeft
 	&& ((XfwfArrowWidget)self)->xfwfArrow.direction != XfwfRight && ((XfwfArrowWidget)self)->xfwfArrow.direction != XfwfBottom) {
@@ -514,16 +470,12 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
     ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc = NULL; create_arrowdarkgc(self);
     ((XfwfArrowWidget)self)->xfwfArrow.timer = 0;
 }
-#line 101 "XWidgets/xwArrow.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 101 "XWidgets/xwArrow.w"
 static void destroy(Widget self)
 #else
-#line 101 "XWidgets/xwArrow.w"
 static void destroy(self)Widget self;
 #endif
-#line 102 "XWidgets/xwArrow.w"
 {
    if (((XfwfArrowWidget)self)->xfwfArrow.timer) {
       if (((XfwfArrowWidget)self)->xfwfArrow.timer != 0x1)
@@ -534,16 +486,12 @@ static void destroy(self)Widget self;
    if (((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc) XtReleaseGC(self, ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc); ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc = NULL;
    if (((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc) XtReleaseGC(self, ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc); ((XfwfArrowWidget)self)->xfwfArrow.arrowdarkgc = NULL;   
 }
-#line 120 "XWidgets/xwArrow.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 120 "XWidgets/xwArrow.w"
 static Boolean  set_values(Widget  old,Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 120 "XWidgets/xwArrow.w"
 static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 121 "XWidgets/xwArrow.w"
 {
     Boolean need_redisplay = False;
 
@@ -585,16 +533,12 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
     }
     return need_redisplay;
 }
-#line 163 "XWidgets/xwArrow.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 163 "XWidgets/xwArrow.w"
 static void _expose(Widget self,XEvent * event,Region  region)
 #else
-#line 163 "XWidgets/xwArrow.w"
 static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 #endif
-#line 164 "XWidgets/xwArrow.w"
 {
     Position x, y;
     int  width, height;

@@ -3,7 +3,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.2
 #
-# $Id: xwArrow.w,v 1.4 1998/05/06 21:15:19 mflatt Exp $
+# $Id: xwArrow.w,v 1.5 1999/07/21 17:34:57 mflatt Exp $
 
 @CLASS XfwfArrow (XfwfBoard)  @file = xwArrow
 
@@ -482,9 +482,12 @@ other). The delay is now |repeatDelay| instead of |initialDelay|.
     Widget $ = (Widget) client_data;
 
     XtCallCallbackList($, $callback, NULL);
-    if ($timer) /* i.e., no stop issued by callback */
+    if ($timer) { /* i.e., no stop issued by callback */
+      if ($timer != 0x1)
+        wxRemoveTimeOut($timer);
       $timer = wxAppAddTimeOut(XtWidgetToApplicationContext($),
 				     $repeatDelay, timer_callback, $);
+    }
 }
 
 @ The GC for the triangle is created by a utility function. It destroys the

@@ -470,7 +470,7 @@ extern "C" {
       wxXtTimer *t;
 #ifdef MZ_PRECISE_GC
       t = *(wxXtTimer **)timer;
-      GC_free_immobile_box((void *)t);
+      GC_free_immobile_box((void *)timer);
 #else
       t = (wxXtTimer *)timer;
 #endif

@@ -89,5 +89,5 @@
     (gui/pred lang reductions (list term) (pred term)))
   
   ;(show '((lambda (x num) x) 1))
-  (show '(((lambda (x num) (lambda (y num) x)) ((lambda (x num) x) 1)) 2))
+  (show '((lambda (x (num -> num)) 1) ((lambda (x (num -> num)) x) (lambda (x num) x))))
   )

@@ -307,8 +307,8 @@
                 [pen (send dc get-pen)]
                 [brush (send dc get-brush)])
             (get-extent dc x y bw bh #f #f #f #f)
-            (send dc set-pen (send the-pen-list find-or-create-pen "red" 1 'solid))
-            (send dc set-brush (send the-brush-list find-or-create-brush '"red" 'solid))
+            (send dc set-pen (send the-pen-list find-or-create-pen bad-color 1 'solid))
+            (send dc set-brush (send the-brush-list find-or-create-brush bad-color 'solid))
             (send dc draw-rectangle x y (unbox bw) (unbox bh))
             (send dc set-pen pen)
             (send dc set-brush brush)))
@@ -325,9 +325,9 @@
                         (- end start))
                       void
                       void)])
+          (send text begin-edit-sequence)
           (send text thaw-colorer)
           (send text set-styles-sticky #f)
-          (send text begin-edit-sequence)
           (send text erase)
           (pp expr port char-width text)
           (when (char=? #\newline (send text get-character (- (send text last-position) 1)))
@@ -339,9 +339,26 @@
 
       (super-instantiate ())))
   
+  (define program-text%
+    (class scheme:text%
+      (init-field bad?)
+      (rename [super-on-paint on-paint])
+      (define/override (on-paint before? dc left top right bottom dx dy draw-caret)
+        (when (and bad? before?)
+          (let ([pen (send dc get-pen)]
+                [brush (send dc get-brush)])
+            (send dc set-pen (send the-pen-list find-or-create-pen bad-color 1 'solid))
+            (send dc set-brush (send the-brush-list find-or-create-brush bad-color 'solid))
+            (send dc draw-rectangle (+ dx left) (+ dy top) (- right left) (- bottom top))
+            (send dc set-pen pen)
+            (send dc set-brush brush)))
+        (super-on-paint before? dc left top right bottom dx dy draw-caret))
+      (super-new)))
+  
   (define lines-pen (send the-pen-list find-or-create-pen "black" 1 'solid))
   (define bad-style-delta (make-object style-delta% 'change-italic))
-  
+  (define bad-color "pink")
+      
   ;; where the first snips are inserted
   (define init-rightmost-x 25)
   
@@ -391,13 +408,14 @@
   ;;          -> (is-a?/c graph-editor-snip%)
   ;; unconditionally creates a new graph-editor-snip
   (define (make-snip parent-snip expr pred pp)
-    (let* ([text (make-object scheme:text%)]
+    (let* ([bad? (not (pred expr))]
+           [text (new program-text% (bad? bad?))]
            [es (instantiate graph-editor-snip% ()
                  (char-width (initial-char-width))
                  (editor text)
                  (pp pp)
                  (expr expr)
-                 (bad? (not (pred expr))))])
+                 (bad? bad?))])
       (send text set-autowrap-bitmap #f)
       (send text freeze-colorer)
       (send es format-expr)

@@ -207,7 +207,7 @@
 	(lambda (w h)
 	  (preferences:set width-sym w)
 	  (preferences:set height-sym h)
-	  (super-on-size))])
+	  (super-on-size w h))])
       (sequence (apply super-init args))))
 
   (define project-frame%
@@ -415,7 +415,7 @@
       ;; get-collection-paths : (-> (union (listof string) #f))
       (define (get-collection-paths)
 	(define-struct error (msg))
-
+        
 	(if collection-paths
 	    (let ([cust (make-custodian)]
 		  [done-sema (make-semaphore 0)]
@@ -463,7 +463,8 @@
 
 		     (semaphore-post done-sema)))))
 
-	      ;; wake up main thread after five seconds
+	      
+              ;; wake up main thread after five seconds
 	      ;; even if no value is yet obtained.
 	      (thread
 	       (lambda ()
@@ -476,7 +477,7 @@
 	      
 	      ;; wait for wakeup here.
 	      (semaphore-wait done-sema)
-
+              
 	      ;; if no value is yet ready, sleep again,
 	      ;; but this time with a dialog that offers killing the evaluation.
 	      (semaphore-wait protect-sema)
@@ -555,54 +556,68 @@
 
       (define (execute-project)
 	(when (offer-to-save-files)
-	  (reset-hierlist)
-	  (show/hide-rep #t)
-	  (send rep reset-console)
+          (let ([collection-paths (get-collection-paths)]
+                [collection-path-err? #f]
+                [collection-path-err #f])
+            (reset-hierlist)
+            (show/hide-rep #t)
+            (send rep reset-console)
+            
+            (let ([sema (make-semaphore 0)])
+              (send rep run-in-evaluation-thread
+                    (lambda ()
+                      (let/ec k
+                        (let ([ol (current-load)])
+                          (current-load
+                           (lambda (l)
+                             (dynamic-wind
+                              (lambda () (push-file l))
+                              (lambda () (ol l))
+                              (lambda () (pop-file))))))
+                        (with-handlers ([(lambda (x) #t)
+                                         (lambda (exn)
+                                           (set! collection-path-err? #t)
+                                           (set! collection-path-err exn)
+                                           (k #f))])
+                          (when collection-paths
+                            (current-library-collection-paths collection-paths))))
+                      (semaphore-post sema)))
+              (semaphore-wait sema))
+            
+            (cond
+              [collection-path-err?
+               (message-box "Error setting collection paths"
+                            (if (exn? collection-path-err)
+                                (exn-message collection-path-err)
+                                (format "~s" collection-path-err)))]
+              [else
+               (send rep do-many-evals
+                     (lambda (single-iteration)
+                       (for-each
+                        (lambda (file)
+                          (single-iteration
+                           (lambda ()
+                             (call-with-values
+                              (lambda ()
+                                (cond
+                                  [(eq? (car file) 'build-path)
+                                   (let* ([str-file (apply build-path (cdr file))]
+                                          [full-name
+                                           (cond
+                                             [(absolute-path? str-file) file]
+                                             [(relative-path? str-file)
+                                              (if project-dir
+                                                  (build-path project-dir str-file)
+                                                  (build-path init-directory str-file))]
+                                             [else str-file])])
+                                     (eval `(load ,full-name)))]
+                                  [(eq? (car file) 'require-library)
+                                   (eval `(require-library ,@(cdr file)))]))
+                              (lambda x
+                                (send rep display-results x))))))
+                        (append elaboration-files to-load-files))))
+               (send rep clear-undos)]))))
 
-	  (let ([sema (make-semaphore 0)])
-	    (send rep run-in-evaluation-thread
-		  (lambda ()
-		    (let ([collection-paths (get-collection-paths)])
-		      (when collection-paths
-			(current-library-collection-paths collection-paths)))
-		    
-		    (let ([ol (current-load)])
-		      (current-load
-		       (lambda (l)
-			 (dynamic-wind
-			  (lambda () (push-file l))
-			  (lambda () (ol l))
-			  (lambda () (pop-file))))))
-		    (semaphore-post sema)))
-	    (semaphore-wait sema))
-
-	  (send rep do-many-evals
-		(lambda (single-iteration)
-		  (for-each
-		   (lambda (file)
-		     (single-iteration
-		      (lambda ()
-			(call-with-values
-			 (lambda ()
-			   (cond
-			    [(eq? (car file) 'build-path)
-			     (let* ([str-file (apply build-path (cdr file))]
-				    [full-name
-				     (cond
-				      [(absolute-path? str-file) file]
-				      [(relative-path? str-file)
-				       (if project-dir
-					   (build-path project-dir str-file)
-					   (build-path init-directory str-file))]
-				      [else str-file])])
-			       (eval `(load ,full-name)))]
-			    [(eq? (car file) 'require-library)
-			     (eval `(require-library ,@(cdr file)))]))
-			 (lambda x
-			   (send rep display-results x))))))
-		   (append elaboration-files to-load-files))))
-	  (send rep clear-undos)))
-      
       (define (configure-collection-paths)
 	(let* ([dialog (make-object prefs-resize-dialog%
 			 'drscheme:project-manager-collection-paths-window-width
@@ -621,6 +636,7 @@
                          (lambda xxx
                            (set! cancel? #t) 
                            (send dialog show #f)))])
+          (make-object grow-box-spacer-pane% button-panel)
 	  (send canvas focus)
 	  (send ok min-width (send cancel get-width))
 	  (send button-panel stretchable-height #f)

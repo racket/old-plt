@@ -311,8 +311,8 @@
 	    [(null? string-finds) (list "the empty search.")]
 	    [else
 	     (append
-	      (cons (format "~s" (car string-finds))
-		    (map (lambda (i) (format " and ~s" i))
+	      (cons (format "\"~a\"" (car string-finds))
+		    (map (lambda (i) (format " and \"~a\"" i))
 			 (cdr string-finds)))
 	      (list "."))]))
 	  #f))))

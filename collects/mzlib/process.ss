@@ -54,12 +54,12 @@
   (define (streamify-in cin in get-thread?)
     (if (and cin (not (file-stream-port? cin)))
 	(let ([t (thread (lambda () 
-			   (dynamic-wind
-			    void
-			    (lambda () 
-			      (with-handlers ([exn:break? void])
-				(copy-port cin in)))
-			    (lambda () (close-output-port in)))))])
+			   (with-handlers ([exn:break? void])
+			     (dynamic-wind
+				 void
+				 (lambda () 
+				   (copy-port cin in))
+				 (lambda () (close-output-port in))))))])
 	  (and get-thread? t))
 	in))
 

@@ -1,4 +1,4 @@
-Time-stamp: <00/06/12 16:32:15 shriram>
+Time-stamp: <00/06/13 14:22:38 shriram>
 
 The `net' collection contains libraries that provide access to the
 following _Internet_ (quasi-)protocols:
@@ -68,29 +68,45 @@ TYPES ----------------------------------------------------------------
 
 PROCEDURES -----------------------------------------------------------
 
-> (unixpath->path string) -> path-string
+> (absolute?-/-path->filesystem-path string) -> path-string
 
   Procedure that handles the translation of URL paths to paths on the
   local filesystem (eg, for URLs with scheme "file", ie, URLs of the
-  form _file:_).  This procedure works as follows:
+  form _file:_).  The procedure consumes "/"-delimited paths that may
+  or may not be absolute filesystem references (hence the name).  It
+  functions as follows:
 
-  A leading slash is turned into a reference to the first string
-  returned by filesystem-root-list.  The rest of the path is split
-  into segments delimited by "/".  Each segment is translated and
-  combined with the remaining segments using build-path.  The segments
-  "", "." and ".." are treated specially: the first two translate into 
-  the 'same directive and the third into the 'up directive to
-  build-path.
+  The path is split into a sequence of segments delimited by "/".
+  Each segment is translated and combined with the remaining segments
+  using build-path.  The segments "", "." and ".." are treated
+  specially: the first two translate into the 'same directive and the
+  third into the 'up directive to build-path.
+
+  A leading slash is handled specially.  If the first segment is a
+  member of the strings returned by the filesystem-root-list
+  primitive, then it is treated as the root for build-path, and the
+  remaining segments are processed as above.  (This permits users on
+  systems with multiple roots (such as multi-disk systems) to
+  explicitly specify the root they wish to use.)  If the first segment
+  is not a member of this list, then the first string returned by
+  filesystem-root-list is used as the root, and all the segments are
+  processed as above.
+
+> unixpath->path
+
+  Deprecated name for absolute?-/-path->filesystem-path.
 
 > (get-pure-port url [list-of-strings]) -> input-port
 
   Takes a URL and returns a pure port corresponding to it.  Writes the
-  optional strings to the server.
+  optional strings to the server.  Uses
+  absolute?-/-path->filesystem-path for "file" schemes.
 
 > (get-impure-port url [list-of-strings]) -> input-port
 
   Takes a URL and returns an impure port corresponding to it.  Writes
-  the optional strings to the server.
+  the optional strings to the server.  Uses
+  absolute?-/-path->filesystem-path for "file" schemes.
 
 > (display-pure-port input-port) -> void
 

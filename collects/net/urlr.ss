@@ -37,40 +37,45 @@
 				   args))))
 	(raise (make-url-exception s (current-continuation-marks))))))
 
-  (define unixpath->path
-    (letrec ([r (regexp "([^/]*)/(.*)")]
-	     [translate-dir
-	      (lambda (s)
-		(cond
-		  [(string=? s "") 'same] ;; handle double slashes
-		  [(string=? s "..") 'up]
-		  [(string=? s ".") 'same]
-		  [else s]))]
-	     [build-relative-path
-	      (lambda (s)
-		(let ([m (regexp-match r s)])
-		  (cond
-		    [(string=? s "") 'same]
-		    [(not m) s]
-		    [else
-		     (build-path (translate-dir (cadr m))
-				 (build-relative-path (caddr m)))])))])
-      (lambda (s)
+  (define path-segment-regexp (regexp "([^/]*)/(.*)"))
+
+  (define relative-/-path->filesystem-path
+    (lambda (s)
+      (define translate-dir
+	(lambda (s)
+	  (cond
+	    [(string=? s "") 'same];; handle double slashes
+	    [(string=? s "..") 'up]
+	    [(string=? s ".") 'same]
+	    [else s])))
+      (let ([m (regexp-match path-segment-regexp s)])
 	(cond
-	  [(string=? s "") ""]
-	  [(string=? s "/") (car (filesystem-root-list))]
-	  [(char=? #\/ (string-ref s 0))
-	    (let* ([m (regexp-match r (substring s 1 (string-length s)))]
-		   [first-segment (cadr m)]
-		   [rest-segment (caddr m)]
-		   [root-list (filesystem-root-list)])
-	      (build-path
-		(if (member first-segment root-list)
-		  first-segment
-		  (car root-list))
-		(build-relative-path
-		  (substring s 1 (string-length s)))))]
-	  [else (build-relative-path s)]))))
+	  [(string=? s "") 'same]
+	  [(not m) s]
+	  [else
+	    (build-path (translate-dir (cadr m))
+	      (relative-/-path->filesystem-path (caddr m)))]))))
+
+  (define absolute?-/-path->filesystem-path
+    (lambda (s)
+      (cond
+	[(string=? s "") ""]
+	[(string=? s "/") (car (filesystem-root-list))]
+	[(char=? #\/ (string-ref s 0))
+	  (let* ([m (regexp-match path-segment-regexp
+		      (substring s 1 (string-length s)))]
+		  [first-segment (cadr m)]
+		  [rest-segment (caddr m)]
+		  [root-list (filesystem-root-list)])
+	    (build-path
+	      (if (member first-segment root-list)
+		first-segment
+		(car root-list))
+	      (relative-/-path->filesystem-path
+		(substring s 1 (string-length s)))))]
+	[else (relative-/-path->filesystem-path s)])))
+
+  (define unixpath->path absolute?-/-path->filesystem-path)
 
   ;; scheme : str + #f
   ;; host : str + #f
@@ -154,7 +159,7 @@
 	      (string=? host "")
 	      (string=? host "localhost"))
 	  (open-input-file
-	    (unixpath->path (url-path url)))
+	    (absolute?-/-path->filesystem-path (url-path url)))
 	  (url-error "Cannot get files from remote hosts")))))
 
   ;; get-impure-port : url [x list (str)] -> in-port
@@ -254,7 +259,8 @@
 				[val (values base name must-be-dir?)
 				  (split-path base-path)]
 				[val base-dir (if must-be-dir? base-path base)]
-				[val ind-rel-path (unixpath->path rel-path)]
+				[val ind-rel-path
+				  (relative-/-path->filesystem-path rel-path)]
 				[val merged (build-path base-dir
 					      ind-rel-path)])
 			  (set-url-path! relative merged)

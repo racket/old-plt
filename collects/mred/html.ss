@@ -44,20 +44,23 @@
 	      (cond
 	       [(= n NUM-CACHED)
 		;; Look for item to uncache
+		(vector-set! cached-use 0 (max 0 (sub1 (vector-ref cached-use 0))))
 		(let ([m (let loop ([n 1][m (vector-ref cached-use 0)])
 			   (if (= n NUM-CACHED)
 			       m
-			       (loop (add1 n) (min m (vector-ref cached-use n)))))])
+			       (begin
+				 (vector-set! cached-use n (max 0 (sub1 (vector-ref cached-use n))))
+				 (loop (add1 n) (min m (vector-ref cached-use n))))))])
 		  (let loop ([n 0])
 		    (if (= (vector-ref cached-use n) m)
 			(let ([image (get-image-from-url url)])
 			  (vector-set! cached n image)
 			  (vector-set! cached-name n url)
-			  (vector-set! cached-use n 1)
+			  (vector-set! cached-use n 5)
 			  (send image copy))
 			(loop (add1 n)))))]
 	       [(equal? url (vector-ref cached-name n))
-		(vector-set! cached-use n (add1 (vector-ref cached-use n)))
+		(vector-set! cached-use n (min 10 (add1 (vector-ref cached-use n))))
 		(send (vector-ref cached n) copy)]
 	       [else
 		(loop (add1 n))])))))

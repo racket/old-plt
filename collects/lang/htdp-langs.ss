@@ -329,6 +329,9 @@ to the original stdout of DrScheme.
                           (number? pos)
                           (number? span))
                  (send rep highlight-error src (- pos 1) (+ pos -1 span))))]
+            [(drscheme:rep:exn:locs? exn)
+             (let ([locs (drscheme:rep:exn:locs-locs exn)])
+               (send rep highlight-errors locs))]
             [(exn? exn) 
              (let ([cms (continuation-mark-set->list (exn-continuation-marks exn) cm-key)])
                (when (and cms (not (null? cms)))

@@ -2583,7 +2583,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 		base = SCHEME_STX_VAL(base);
 		fields = scheme_syntax_to_datum(fields, 0, NULL);
 
-		names = scheme_make_struct_names(base, fields, 0, &len);
+		names = scheme_make_struct_names(base, fields, SCHEME_STRUCT_EXPTIME, &len);
 
 		for (i = 0; i < len; i++) {
 		  if (scheme_hash_get(provided, names[i]))

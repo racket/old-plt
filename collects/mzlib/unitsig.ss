@@ -12,7 +12,7 @@
   (require-for-syntax "private/sigmatch.ss")
   (require-for-syntax (lib "kerncase.ss" "syntax"))
 
-  (define-struct unit/sig (unit imports exports))
+  (define-struct signed-unit (unit imports exports))
 
   (define-syntax define-signature
     (lambda (expr)
@@ -36,7 +36,7 @@
 	     (syntax (letrec-syntax ([name (make-sig (quote content))])
 		       . body))))])))
   
-  (define-syntax :unit/sig
+  (define-syntax unit/sig
     (lambda (expr)
       (syntax-case expr ()
 	[(_ sig . rest)
@@ -65,7 +65,7 @@
 			  [import-sigs (explode-named-sigs (parsed-unit-imports a-unit) #f)]
 			  [export-sig (explode-sig sig #f)])
 	      (syntax/loc expr
-		(make-unit/sig
+		(make-signed-unit
 		 (unit
 		   (import . imports)
 		   (export . exports)
@@ -111,10 +111,10 @@
 		 `exploded-link-imports
 		 `exploded-link-exports)
 		;; All checks done. Make the unit:
-		(make-unit/sig
+		(make-signed-unit
 		 (compound-unit
 		  (import . flat-imports)
-		  (link [tag ((unit/sig-unit tagx)
+		  (link [tag ((signed-unit-unit tagx)
 			      . link-import)]
 			...)
 		  (export . flat-exports))
@@ -143,7 +143,7 @@
 		 (list unt)
 		 (quote ((#() . #())))
 		 (quote (exploded-sigs)))
-		(invoke-unit (unit/sig-unit u)
+		(invoke-unit (signed-unit-unit u)
 			     . flat-sigs)))))])))
   
   (define-syntax unit->unit/sig
@@ -163,7 +163,7 @@
 					    (explode-sig ex-sig #f)
 					    expr)])
 	     (syntax
-	      (make-unit/sig
+	      (make-signed-unit
 	       e
 	       (quote exploded-imports)
 	      (quote exploded-exports)))))])))
@@ -176,7 +176,7 @@
       (lambda (who tags units esigs isigs)
 	(for-each
 	 (lambda (u tag)
-	   (unless (unit/sig? u)
+	   (unless (signed-unit? u)
 	     (raise
 	      (make-exn
 	       (string->immutable-string
@@ -192,11 +192,11 @@
 	    (format "specified export signature for ~a" tag)
 	    esig
 	    (format "export signature for actual ~a sub-unit" tag)
-	    (unit/sig-exports u)))
+	    (signed-unit-exports u)))
 	 units tags esigs)
 	(for-each
 	 (lambda (u tag isig)
-	   (let ([n (length (unit/sig-imports u))]
+	   (let ([n (length (signed-unit-imports u))]
 		 [c (length isig)])
 	     (unless (= c n)
 	       (raise
@@ -209,7 +209,7 @@
 	 units tags isigs)
 	(for-each
 	 (lambda (u tag isig)
-	   (let loop ([isig isig][expecteds (unit/sig-imports u)][pos 1])
+	   (let loop ([isig isig][expecteds (signed-unit-imports u)][pos 1])
 	     (unless (null? isig)
 	       (let ([expected (car expecteds)]
 		     [provided (car isig)])
@@ -283,7 +283,7 @@
 			    (list unit-var)
 			    '(ex-exploded)
 			    '(im-explodeds))
-			   (unit/sig-unit unit-var))
+			   (signed-unit-unit unit-var))
 			 prefix
 			 . im-flattened)
 			. stx-decls))))))))])))
@@ -320,14 +320,14 @@
   
   (provide define-signature
 	   let-signature
-	   (rename :unit/sig unit/sig)
+	   unit/sig
 	   compound-unit/sig
 	   invoke-unit/sig
 	   unit->unit/sig
 	   signature->symbols
 	   verify-linkage-signature-match
 
-	   (struct unit/sig (unit imports exports))
+	   (struct signed-unit (unit imports exports))
 	   
 	   define-values/invoke-unit/sig
 	   namespace-variable-bind/invoke-unit/sig

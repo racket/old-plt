@@ -3,7 +3,8 @@
   ;; Used by unitsig.ss
   ;; (needs an overhaul, too)
 
-  (require (lib "stx.ss" "syntax"))
+  (require (lib "stx.ss" "syntax")
+	   (lib "struct.ss" "syntax"))
 
   (require "sigmatch.ss")
   (require "../unit.ss")
@@ -108,31 +109,6 @@
 		       names))])
 	(when dup
 	  (error-k dup)))))
-
-  (define build-struct-names
-    (lambda (name-stx fields omit-sel? omit-set?)
-      (let ([name (symbol->string (syntax-e name-stx))]
-	    [fields (map symbol->string (map syntax-e fields))]
-	    [+ string-append])
-	(map (lambda (s)
-	       (datum->syntax-object name-stx (string->symbol s) #f))
-	     (append
-	      (list 
-	       (+ "struct:" name)
-	       (+ "make-" name)
-	       (+ name "?"))
-	      (if omit-sel?
-		  null
-		  (map
-		   (lambda (f)
-		     (+ name "-" f))
-		   fields))
-	      (if omit-set?
-		  null
-		  (map
-		   (lambda (f)
-		     (+ "set-" name "-" f "!"))
-		   fields)))))))
 
   (define parse-signature
     (lambda (who expr name body)

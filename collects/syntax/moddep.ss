@@ -1,6 +1,36 @@
 
 (module moddep mzscheme
 
+  (define (check-module-form exp expected-module filename)
+    (cond
+     [(compiled-module-expression? (syntax-e exp))
+      (if (eq? (module-compiled-name (syntax-e exp))
+	       (string->symbol
+		(format "~a~a"
+			(or (current-module-name-prefix) "")
+			expected-module)))
+	  ;; It's fine:
+	  exp
+	  ;; Wrong name:
+	  (and filename
+	       (error 'load-handler
+		      "file ~s declares wrong module name: ~a"
+		      filename (module-compiled-name (syntax-e exp)))))]
+     [(and (syntax? exp)
+	   (syntax-case exp ()
+	     [(mod nm . _)
+	      (and (eq? (syntax-e (syntax mod)) 'module)
+		   (eq? (syntax-e (syntax nm)) expected-module))]
+	     [_else #f]))
+      ;; It's ok; need to install a specific `module' binding:
+      (with-syntax ([(mod nm . _) exp])
+	(syntax (module nm . _)))]
+     [else
+      (and filename
+	   (error 'load-handler 
+		  "file ~s does not contain a module declaration as expected"
+		  filename))]))
+  
   (define re:suffix (regexp "\\..?.?.?$"))
 	  
   (define (resolve s)
@@ -224,7 +254,9 @@
 	  (for-each (mk-loop #f) imports)
 	  (for-each (mk-loop #t) fs-imports)))))
 
-  (provide get-module-code
+  (provide check-module-form
+
+	   get-module-code
 
 	   resolve-module-path
 	   resolve-module-path-index

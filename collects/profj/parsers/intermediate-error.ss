@@ -603,7 +603,7 @@
                  (parse-error "Method parameter list already closed, unneeded )" next-start next-end))
                 ;Intermediate - changed body call
                 ((o-brace? next-tok)
-                 (parse-members next (parse-method-body null (getter) 'start getter 'method) 'method-end getter))
+                 (parse-members next (parse-method-body null (getter) getter) 'method-end getter))
                 ((open-separator? next-tok)
                  (parse-error (format "Method body begins with a {, found ~a" next-out) next-start next-end))
                 ((semi-colon? next-tok) (parse-members next (getter) 'start getter))
@@ -854,7 +854,7 @@
            ((c-paren? tok)
             (let ((next (getter)))
               (if (semi-colon? (get-tok next))
-                  (parse-method-body next (getter) 'start getter)
+                  (parse-method-body next (getter) getter)
                   (parse-error (format "Expected a ';' after constructor call, found ~a" (output-format (get-tok next)))
                                start (get-end next)))))
            (else (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter) 'more-args getter))))
@@ -877,7 +877,7 @@
   (define (parse-method-body pre cur-tok getter)
     (case (get-token-name (get-tok cur-tok))
       ((C_BRACE EOF) cur-tok)
-      (else (parse-method-body pre (parse-statement pre cur-tok 'start getter)))))
+      (else (parse-method-body pre (parse-statement pre cur-tok 'start getter) getter))))
   
   ;parse-statement: token token symbol (->token) -> token
   (define (parse-statement pre cur-tok state getter)
@@ -997,7 +997,7 @@
             (let ((next (getter)))
               (if (eof? (get-tok next))
                   (parse-error "Expected an expression after = for assignment" start end)
-                  (parse-method-body cur-tok (parse-expression null next 'start getter) 'assign-end getter))))
+                  (parse-statement cur-tok (parse-expression null next 'start getter) 'assign-end getter))))
            ((O_PAREN) (parse-statement cur-tok (parse-expression pre cur-tok 'method-call-args getter) 'exn-end getter))
            (else (parse-error (format "Expected assignment or method call, found ~a, which is not valid for a statement" out)
                               start end))))
@@ -1020,7 +1020,7 @@
                               ps (get-end next))))))
            ((SEMI_COLON) (getter))
            (else 
-            (parse-error "Expected ';' or rest of statement, found ~a" out start end))))
+            (parse-error (format "Expected ';' or rest of statement, found ~a" out) start end))))
         ;Intermediate
         ((c-brace)
          (case kind
@@ -1145,7 +1145,7 @@
            ((eof? tok) (parse-error "Expected a name or expression and a )" ps pe))
            ((prim-type? tok) (parse-expression pre (getter) 'cast getter))
            ((id-token? tok) (parse-expression pre (getter) 'cast-or-parened-close getter))
-           (else (parse-expression pre (parse-expression pre cur-tok 'start) 'c-paren getter))))
+           (else (parse-expression pre (parse-expression pre cur-tok 'start getter) 'c-paren getter))))
         ;Intermediate
         ((cast)
          (cond

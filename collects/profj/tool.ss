@@ -388,14 +388,14 @@
                    (namespace-require '(prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))))))))
           
           (define/public (render-value value settings port port-write)
-            (display (format-java value (profj-settings-print-full? settings) (profj-settings-print-style settings)) port))
+            (display (format-java value (profj-settings-print-full? settings) (profj-settings-print-style settings) null) port))
             ;(write value port))
           (define/public (render-value/format value settings port port-write width) 
             (render-value value settings port port-write)(newline port))
             ;(write value port))
 
-	  ;format-java: java-value bool symbol -> string
-          (define (format-java value full-print? style)
+	  ;format-java: java-value bool symbol (list value) -> string
+          (define (format-java value full-print? style already-printed)
             (cond
               ((null? value) "null")
               ((number? value) (format "~a" value))
@@ -403,37 +403,42 @@
               ((boolean? value) (if value "true" "false"))
               ((is-java-array? value) 
                (if full-print?
-                   (array->string value (send value length) -1 #t style)
-                   (array->string value 3 (- (send value length) 3) #f style)))
+                   (array->string value (send value length) -1 #t style already-printed)
+                   (array->string value 3 (- (send value length) 3) #f style already-printed)))
               ((is-a? value String) (send value get-mzscheme-string))
               ((is-a? value ObjectI)
                (case style
                  ((type) (send value my-name))
                  ((field)
                   (let ((retrieve-fields (send value fields-for-display))
-                        (st (format "~a(" (send value my-name))))
+                        (st (format "~a(" (send value my-name)))
+                        (fields ""))
                     (let loop ((current (retrieve-fields)))
                       (when current
-                        (set! st (string-append st (format " ~a = ~a," 
-                                                           (car current) 
-                                                           (format-java (cadr current) full-print? style))))
+                        (set! fields (string-append fields (format " ~a = ~a," 
+                                                                   (car current)
+                                                                   (if (memq (cadr current) already-printed)
+                                                                       (format-java (cadr current) full-print? 'type already-printed)
+                                                                       (format-java (cadr current) full-print? style 
+                                                                                    (cons value already-printed))))))
                         (loop (retrieve-fields))))
-                    (string-append (substring st 0 (sub1 (string-length st))) ")")))                    
+                    (string-append st (if (> (string-length fields) 1) 
+                                          (substring fields 0 (sub1 (string-length fields))) "") ")")))
                  (else (send value my-name))))
               (else (format "~a" value))))
 
-          ;array->string: java-value int int bool symbol -> string
-          (define (array->string value stop restart full-print? style)
+          ;array->string: java-value int int bool symbol (list value) -> string
+          (define (array->string value stop restart full-print? style already-printed)
             (letrec ((len (send value length))
                      (make-partial-string
                       (lambda (idx first-test second-test)
                         (cond
                           ((first-test idx) "")
                           ((second-test idx)
-                           (string-append (format-java (send value access idx) full-print? style)
+                           (string-append (format-java (send value access idx) full-print? style already-printed)
                                           (make-partial-string (add1 idx) first-test second-test)))
                           (else
-                           (string-append (format-java (send value access idx) full-print? style)
+                           (string-append (format-java (send value access idx) full-print? style already-printed)
                                           " "
                                           (make-partial-string (add1 idx) first-test second-test)))))))
               (if (or full-print? (< restart stop))
@@ -454,14 +459,14 @@
 
       
       (define full-lang% 
-        (java-lang-mixin 'full "Java" (list "ProfessorJ" "Full Java") (list 1000 10 4) "Java 1.0 (some 1.1)"))
+        (java-lang-mixin 'full "ProfessorJ: Java" (list "ProfessorJ" "Full Java") (list 1000 10 4) "Java 1.0 (some 1.1)"))
       (define advanced-lang% 
-        (java-lang-mixin 'advanced "Advanced Java" 
+        (java-lang-mixin 'advanced "ProfessorJ: Advanced Java" 
                          (list "ProfessorJ" "Advanced") (list 1000 10 3) "Java Advanced teaching language"))
       (define intermediate-lang% 
-        (java-lang-mixin 'intermediate "Intermediate Java" 
+        (java-lang-mixin 'intermediate "ProfessorJ: Intermediate Java" 
                          (list "ProfessorJ" "Intermediate") (list 1000 10 2) "Java Intermediate teaching language"))
-      (define beginner-lang% (java-lang-mixin 'beginner "Beginner Java" (list "ProfessorJ" "Beginner")
+      (define beginner-lang% (java-lang-mixin 'beginner "ProfessorJ: Beginner Java" (list "ProfessorJ" "Beginner")
                                               (list 1000 10 1) "Java Beginner teaching language"))
       ))
       

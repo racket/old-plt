@@ -2039,12 +2039,14 @@ void wxWindow::DoScroll(wxScrollEvent *event)
     newPos = ::GetScrollPos(hWnd, SB_HORZ);
     nScrollInc = newPos - wnd->xscroll_position;
     wnd->xscroll_position = newPos;
+    event->pos = newPos;
   } else {
     int newPos = wnd->yscroll_position + nScrollInc;
     ::SetScrollPos(hWnd, SB_VERT, newPos, TRUE );
     newPos = ::GetScrollPos(hWnd, SB_VERT);
     nScrollInc = newPos - wnd->yscroll_position;
     wnd->yscroll_position = newPos;
+    event->pos = newPos;
   }
 
   if (!wnd->calcScrolledOffset) {

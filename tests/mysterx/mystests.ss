@@ -41,7 +41,7 @@
    (unless (test-currency n)
 	   (printf "Error in test-currency for value ~a~n" n)
 	   (set! errors? #t)))
- '(25.00 -22.34 11.7832 91000000000 25034343434.9933))
+ '(0 1 3.14 25.00 -22.34 11.7832 91000000000 25034343434.9933))
 
 
 
@@ -73,8 +73,9 @@
 (unless (string=? caption (com-get-property ctrl "Caption"))
 	(set! errors? #t))
 
-(when errors?
-      (printf "There were errors!~n"))
+(if errors?
+      (printf "There were errors!~n")
+      (printf "No errors in conversions and COM tests~n")) 	
 
 (define (make-mousefun s)
   (let ([t (string-append s ": button = ~a shift = ~a x = ~a y = ~a~n")])

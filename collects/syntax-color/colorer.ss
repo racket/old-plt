@@ -24,7 +24,12 @@
       ;; The position of the next token to be read
       (define current-pos start-pos)
       
+      ;; The lexer
       (define get-token #f)
+
+      ;; If the tree is completed
+      (define up-to-date? #t)
+      
       
       ;; ---------------------- Interactions state ----------------------------
       ;; The position to start the coloring at.
@@ -46,18 +51,13 @@
       (define background-thread #f)
       ;; The input port tokens are read from.  Any change to the text% invalidates this port.
       (define in #f)
+      ;; The position in the buffer where the input port starts
       (define input-port-start-pos start-pos)
 
-      (define finished? #t)
-      
       (inherit get-prompt-position
                change-style begin-edit-sequence end-edit-sequence
                get-surrogate set-surrogate get-style-list)
             
-      
-      (define/public (modify)
-        (set! in #f))
-      
       (define (reset)
         (set! tokens #f)
         (set! invalid-tokens #f)
@@ -66,7 +66,11 @@
         (set! colors null)
         (set! in #f)
         (set! input-port-start-pos start-pos)
-        (set! finished? #t))
+        (set! up-to-date? #t))
+      
+      (define/public (modify)
+        (set! in #f))
+      
       
       (define (color)
         (unless (null? colors)
@@ -139,20 +143,36 @@
                    (re-tokenize)))))
               (else
                (break-enabled old-breaks))))))
-    
+      
       (define/public (do-insert/delete edit-start-pos change-length)
-        (modify)
         (when should-color?
-          (set! finished? #f)
           (when (> edit-start-pos start-pos)
             (set! edit-start-pos (sub1 edit-start-pos)))
-          (let-values (((orig-token-start orig-token-end valid-tree invalid-tree)
-                        (split tokens (- edit-start-pos start-pos))))
-            (set! invalid-tokens invalid-tree)
-            (set! tokens valid-tree)
-            (set! invalid-tokens-start (+ orig-token-end change-length))
-            (set! current-pos (+ start-pos orig-token-start)))
-          (colorer-callback)))
+          (modify)
+          (cond
+            (up-to-date?
+             (let-values (((orig-token-start orig-token-end valid-tree invalid-tree)
+                           (split tokens (- edit-start-pos start-pos))))
+               (set! invalid-tokens invalid-tree)
+               (set! tokens valid-tree)
+               (set! invalid-tokens-start (+ start-pos orig-token-end change-length))
+               (set! current-pos (+ start-pos orig-token-start)))
+             (set! up-to-date? #f)
+             (colorer-callback))
+            ((>= edit-start-pos invalid-tokens-start)
+             (let-values (((tok-start tok-end valid-tree invalid-tree)
+                           (split invalid-tokens (- edit-start-pos invalid-tokens-start))))
+               (set! invalid-tokens invalid-tree)
+               (set! invalid-tokens-start (+ start-pos tok-end change-length))))
+            ((>= edit-start-pos current-pos)
+             (set! invalid-tokens-start (+ change-length invalid-tokens-start)))
+            (else
+             (let-values (((tok-start tok-end valid-tree invalid-tree)
+                           (split tokens (- edit-start-pos start-pos))))
+               (set! tokens valid-tree)
+               (set! invalid-tokens-start (+ change-length invalid-tokens-start))
+               (set! current-pos (+ start-pos tok-start)))))))
+                   
       
       (define/public (start prefix- get-token-)
         (reset)
@@ -183,13 +203,13 @@
       (define (colorer-callback)
         (channel-put sync #f)
         (sleep .01)
-        (unless finished?
+        (unless up-to-date?
           (break-thread background-thread)
           (channel-get sync))
         (begin-edit-sequence #f)
         (color)
         (end-edit-sequence)
-        (unless finished?
+        (unless up-to-date?
           (queue-callback colorer-callback #f)))
       
       (define (background-colorer starting?)
@@ -216,7 +236,7 @@
                                                 end-pos))
                (break-enabled #t)
                (re-tokenize)
-               (set! finished? #t)
+               (set! up-to-date? #t)
                (set! in #f)
                #t))));)
       

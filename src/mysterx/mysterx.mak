@@ -10,7 +10,7 @@ clean :
 	-@erase mysterx.dll
 
 CPP=cl.exe
-CPP_FLAGS=/I"../mzscheme/include" /I"./myspage" /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /c 
+CPP_FLAGS=/I"../mzscheme/include" /I"./myspage" /I"F:/SBN/Include" /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /c 
 
 .cxx.obj::
    $(CPP) $(CPP_FLAGS) $< 
@@ -21,7 +21,7 @@ LINK32=$(MZC)
 LINK32_FLAGS=
 LINK32_LIBS= \
 	kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib \
-	advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib \
+	advapi32.lib f:\SBN\LIB\shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib \
         odbccp32.lib mapi32.lib
 LINK32_OBJS= \
         mysterx.obj comtypes.obj event.obj htmlutil.obj

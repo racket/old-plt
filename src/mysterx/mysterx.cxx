@@ -1,4 +1,4 @@
-// mysterx.cpp : COM/ActiveX/DHTML extension for MzScheme
+// mysterx.cxx : COM/ActiveX/DHTML extension for MzScheme
 // Author: Paul Steckler
 
 #include "stdafx.h"
@@ -40,6 +40,8 @@ static HWND documentHwnd;
 static HANDLE documentHwndMutex;
 static HANDLE createHwndSem;
 
+static Scheme_Unit *mx_unit;  /* the unit returned by the extension */
+
 static MX_TYPE_TBL_ENTRY *typeTable[TYPE_TBL_SIZE];
 
 static char *objectAttributes[] = { "InprocServer", "InprocServer32",
@@ -69,6 +71,7 @@ static MX_PRIM mxPrims[] = {
 
   // COM objects
 
+  { mx_cocreate_instance,"cocreate-instance",1,1 },
   { mx_com_object_eq,"com-object-eq?",2,2 },
 
   // documents 
@@ -180,7 +183,7 @@ static MX_PRIM mxPrims[] = {
   { mx_element_set_filter,"element-set-filter!",2,2 }, 
   { mx_element_style_string,"element-style-string",1,1 },
   { mx_element_text_decoration_none,"element-text-decoration-none",1,1 },
-  { mx_element_set_text_decoration_none,"element-set_text_decoration_none!",2,2 }, 
+  { mx_element_set_text_decoration_none,"element-set-text-decoration-none!",2,2 }, 
   { mx_element_text_decoration_underline,"element-text-decoration-underline",1,1 },
   { mx_element_set_text_decoration_underline,"element-set-text-decoration-underline!",2,2 }, 
   { mx_element_text_decoration_overline,"element-text-decoration-overline",1,1 },
@@ -413,15 +416,51 @@ MX_TYPEDESC *lookupTypeDesc(IDispatch *pIDispatch,char *name,
   return NULL;
 }
 
-void scheme_add_prim_to_env(Scheme_Env *env,
-			    Scheme_Object *(*f)(int,Scheme_Object **),
-			    char *name,
-			    short minArgs,short maxArgs) {
-  Scheme_Object *pobj;
+Scheme_Object *mx_unit_init(Scheme_Object **boxes,Scheme_Object **anchors,
+			    Scheme_Unit *m,void *debug_request) {
+  int i;
 
-  pobj = scheme_make_prim_w_arity(f,name,minArgs,maxArgs);
-    
-  scheme_add_global(name,pobj,env);
+  for (i = 0; i < sizeray(mxPrims); i++) {
+    SCHEME_ENVBOX_VAL(boxes[i]) = scheme_make_prim_w_arity(mxPrims[i].c_fun,
+							   mxPrims[i].name,
+							   mxPrims[i].minargs,
+							   mxPrims[i].maxargs);
+    anchors[i] = boxes[i];
+  }
+
+  return scheme_void;
+}
+
+Scheme_Object *mx_cocreate_instance(int argc,Scheme_Object **argv) {
+  HRESULT hr;
+  char *coclass;
+  CLSID clsId;
+  IDispatch *pIDispatch;
+  MX_COM_Object *com_object;
+
+  if (SCHEME_STRINGP(argv[0]) == FALSE) {
+    scheme_wrong_type("cocreate-instance","string",0,argc,argv);
+  }
+
+  coclass = SCHEME_STR_VAL(argv[0]);
+  clsId = getCLSIDFromString(coclass);
+
+  hr = CoCreateInstance(clsId,NULL,CLSCTX_LOCAL_SERVER | CLSCTX_INPROC_SERVER,
+			IID_IDispatch,(void **)&pIDispatch);
+
+  if (hr != ERROR_SUCCESS) {
+    scheme_signal_error("Unable to create instance of %s, code: %X",
+			coclass,hr);
+  }
+		   
+  com_object = (MX_COM_Object *)scheme_malloc(sizeof(MX_COM_Object));
+
+  com_object->type = mx_com_object_type; 
+  com_object->pIDispatch = pIDispatch;
+
+  mx_register_com_object((Scheme_Object *)com_object,pIDispatch);
+
+  return (Scheme_Object *)com_object;
 }
 
 Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
@@ -2188,7 +2227,7 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
   return retval;
 }
 
-CLSID getCLSIDFromString(char const *name) {  // linear search through Registry
+CLSID getCLSIDFromString(const char *name) { // linear search through Registry
   HKEY hkey,hsubkey;
   LONG result;
   FILETIME fileTime;
@@ -2768,12 +2807,17 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   scheme_register_extension_global(typeTable,TYPE_TBL_SIZE * sizeof(MX_TYPE_TBL_ENTRY *));
 
+  mx_unit = (Scheme_Unit *)scheme_malloc(sizeof(Scheme_Unit));
+  mx_unit->type = scheme_unit_type;
+  mx_unit->num_imports = 0;
+  mx_unit->num_exports = sizeray(mxPrims);
+  mx_unit->exports = (Scheme_Object **)
+    scheme_malloc(sizeray(mxPrims) * sizeof(Scheme_Object *));
+  mx_unit->export_debug_names = NULL;
+  mx_unit->init_func = mx_unit_init;
+
   for (i = 0; i < sizeray(mxPrims); i++) {
-    scheme_add_prim_to_env(env,
-			   mxPrims[i].c_fun,
-			   mxPrims[i].name,
-			   mxPrims[i].minargs,
-			   mxPrims[i].maxargs);
+    mx_unit->exports[i] = scheme_intern_symbol(mxPrims[i].name);
   }
 
   initEventNames();
@@ -2781,7 +2825,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   puts("MysterX extension for MzScheme, "
        "Copyright (c) 1999 Rice PLT (Paul Steckler)");
   
-  return scheme_void;
+  return (Scheme_Object *)mx_unit;
 }
 
 Scheme_Object *scheme_reload(Scheme_Env *env) {

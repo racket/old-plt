@@ -179,6 +179,7 @@ MX_PRIM_DECL(mx_com_set_properties);
 MX_PRIM_DECL(mx_com_method_type);
 MX_PRIM_DECL(mx_com_get_property_type);
 MX_PRIM_DECL(mx_com_set_property_type);
+MX_PRIM_DECL(mx_cocreate_instance);
 MX_PRIM_DECL(mx_com_object_eq);
 MX_PRIM_DECL(mx_com_help);
 MX_PRIM_DECL(mx_all_controls);
@@ -430,4 +431,4 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *);
 void marshallSchemeValueToVariant(Scheme_Object *,VARIANTARG *);
 void initEventNames(void);
 IHTMLElement *findBodyElement(IHTMLDocument2 *,char *,char *);
-
+CLSID getCLSIDFromString(const char *);

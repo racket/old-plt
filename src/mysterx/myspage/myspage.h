@@ -2,7 +2,7 @@
 
 
 /* File created by MIDL compiler version 5.01.0164 */
-/* at Thu Feb 04 16:38:01 1999
+/* at Wed Feb 24 11:57:30 1999
  */
 /* Compiler settings for myspage.idl:
     Oicf (OptLev=i2), W1, Zp8, env=Win32, ms_ext, c_ext

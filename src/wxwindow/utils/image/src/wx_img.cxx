@@ -760,11 +760,11 @@ void wxImage::FSDither(byte *inpic, int w, int h, byte *outpic)
   free(dithpic);
 }
 
-
 /***********************************/
 void wxImage::CreateXImage()
 {
   int    i;
+  int    effectiveDeep;
 
   /*
    * this has to do the tricky bit of converting the data in 'epic'
@@ -804,7 +804,16 @@ void wxImage::CreateXImage()
     return;
   }
 
-  switch (dispDEEP) 
+  effectiveDeep = dispDEEP;
+  if (effectiveDeep == 24) {
+    /* Check whether this display likes real 24, or 24 in 32: */
+    XImage *i = XCreateImage(theDisp,theVisual,dispDEEP,ZPixmap,0,
+			     NULL, 1, 1, 8, 0);
+    effectiveDeep = i->bits_per_pixel;
+    XDestroyImage(i);
+  }
+
+  switch (effectiveDeep) 
     {
 
     case 8:

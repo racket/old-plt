@@ -81,11 +81,11 @@
        [(double) (make-type-spec 'double 0 (build-src 1))])
       
       (ReferenceType
-       [(Name) (make-type-spec $1 0 (build-src 1))]
+       [(IDENTIFIER) (make-type-spec $1 0 (build-src 1))]
        )
       
       (ClassOrInterfaceType
-       [(Name) $1])
+       [(IDENTIFIER) $1])
             
       (ClassType
        [(ClassOrInterfaceType) $1])

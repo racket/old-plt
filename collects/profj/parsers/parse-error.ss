@@ -598,7 +598,10 @@
         ((member)
          (cond
            ((eof? tok) (parse-error "Class member may not end here, class body still requires a }" ps pe))
-           ((dot? tok) (parse-members cur (parse-name (getter) getter #f) 'method-or-field getter abstract-method?))
+           ((dot? tok) 
+            (if (beginner?)
+                (parse-error "The name of a type or class may not contain a '.'" ps end)
+                (parse-members cur (parse-name (getter) getter #f) 'method-or-field getter abstract-method?)))
            ((id-token? tok) (parse-members pre cur 'method-or-field getter abstract-method?))
            ((o-paren? tok) (parse-members cur (getter) 'ctor-parms getter abstract-method?))
            ((c-paren? tok) (parse-error "( must precede ) in parameter list" srt end))
@@ -737,7 +740,10 @@
                    (next-start (get-start next)))
               (cond
                 ((eof? next-tok) (parse-error "Expected method name, and class body still requires a }" srt end))
-                ((dot? next-tok) (parse-members next (parse-name (getter) getter #f) 'method-id getter abstract-method?))
+                ((dot? next-tok) 
+                 (if (beginner?)
+                     (parse-error "The name of a type or class may not contain '.'" srt next-end)
+                     (parse-members next (parse-name (getter) getter #f) 'method-id getter abstract-method?)))
                 ((o-paren? next-tok) 
                  (parse-error "Declaration is similar to constructor, which cannot be abstract" ps next-end))
                 ((semi-colon? next-tok) 
@@ -2169,9 +2175,14 @@
                      (parse-error "Expected constructor arguments for class allocation" start end)))
                 ;Advanced
                 ((dot? next-tok)
-                 (if (advanced?)
-                     (parse-expression cur-tok (parse-name (getter) getter #f) 'alloc-open getter statement-ok?)
-                     (parse-expression cur-tok (parse-name (getter) getter #f) 'class-args-start getter statement-ok?)))
+                 (cond
+                   ((beginner?)
+                    (parse-error "Expected arguments or '()' to complete class allocation, '.' may not appear here"
+                                 (get-start next) (get-end next)))
+                   ((advanced?)
+                    (parse-expression cur-tok (parse-name (getter) getter #f) 'alloc-open getter statement-ok?))
+                   (else
+                    (parse-expression cur-tok (parse-name (getter) getter #f) 'class-args-start getter statement-ok?))))
                 ((o-paren? next-tok) (parse-expression cur-tok next 'class-args-start getter statement-ok?))
                 ;Advanced
                 ((and (advanced?) (o-bracket? next-tok))

@@ -76,7 +76,6 @@
     (lambda ()
       (unless invoked?
 	(set! invoked? #t)
-	(mred:change-splash-message "Invoking...")
 	(unless (and (procedure? mred:make-invokable-unit)
 		     (equal? 0 (arity mred:make-invokable-unit)))
 	  (error 'mred:invoke "mred:make-invokable-unit is not a procedure of arity 0, it's: ~a~n"
@@ -85,6 +84,7 @@
 	  (unless (unit/sig? unit/sig)
 	    (error 'mred:invoke "mred:make-invokable-unit didn't return a unit/sig, returned: ~a~n"
 		   unit/sig))
+	  (mred:change-splash-message "Invoking...")
 	  (invoke-open-unit/sig unit/sig))
 	(mred:user-setup)))))
 

@@ -2,10 +2,6 @@
 
 (error-print-width 250)
 
-(load (if (file-exists? "splash.zo")
-	  "splash.zo"
-	  "splash.ss"))
-
 (when (getenv "MREDCOMPILE")
   (load "compsys.ss"))
 
@@ -66,6 +62,7 @@
 (require-library "referc.ss")
 
 (load "debug.ss")
+(load "splash.ss")
 
 (mred:debug:printf 'startup "mred:plt-home-directory: ~a" mred:plt-home-directory)
 (mred:debug:printf 'startup "mred:system-source-directory: ~a" mred:system-source-directory)
@@ -125,8 +122,8 @@
 	     (when (and hd hp)
 	       (current-directory (build-path hd hp)))))
 	 (user-break-poll-handler wx:check-for-break)
-	 (mred:change-splash-message "Command Line...")
-	 
+
+	 (mred:change-splash-message "Command Line...")	 
 	 (for-each (lambda (x) (apply (car x) (cdr x))) (reverse todo))
 	 
 	 (current-directory mred:mred-startup-directory)

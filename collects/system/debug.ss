@@ -39,11 +39,8 @@
      (values
       (lambda (symbol string . rest)
 	`(when (member ,symbol (unbox ,when))
-	  (with-parameterization (global-defined-value 'mred:debug:param)
-				 (lambda ()
-				   (printf
-				    (string-append ,string "~n")
-				    ,@rest)))))
+	   ;(printf "DEBUG: ~a~n" ,symbol)
+	   (printf (string-append ,string "~n") ,@rest)))
       (lambda (symbol then else)
 	(let ([g (gensym "mred:debug:if")])
 	  `(if (let ([,g ,symbol])

@@ -4,10 +4,12 @@
 (define pack
   (case-lambda
    [(dest name paths collections)
-    (pack dest name paths collections std-filter #t)]
+    (pack dest name paths collections std-filter #t 'file)]
    [(dest name paths collections filter)
-    (pack dest name paths collections filter #t)]
+    (pack dest name paths collections filter #t 'file)]
    [(dest name paths collections filter encode?)
+    (pack dest name paths collections filter encode? 'file)]
+   [(dest name paths collections filter encode? file-mode)
     (let* ([p (if encode?
 		  (process (format "gzip -c | mmencode > ~s" dest))
 		  #f)]
@@ -42,14 +44,14 @@
       (newline stdin)
       (for-each
        (lambda (path)
-	 (mztar path stdin filter))
+	 (mztar path stdin filter file-mode))
        paths)
       (close-output-port stdin)
       (when p
 	(thread-wait t1)
 	(thread-wait t2)))]))
 
-(define (mztar path output filter)
+(define (mztar path output filter file-mode)
   (define (path->list p)
     (let-values ([(base name dir?) (split-path p)])
 	(if (string? base)
@@ -60,26 +62,32 @@
     (fprintf output "~s~n~s~n" 'dir dpath)
     (for-each
      (lambda (f)
-       (let ([p (build-path dir f)])
-	 (when (filter p)
-	       (if (directory-exists? p)
-		   (loop p (append dpath (list f)))
-		   (let ([len (file-size p)])
-		     ; (printf "MzTarring ~a~n" p)
-		     (fprintf output "~s~n~s~n~s~n*"
-			      'file
-			      (append dpath (list f))
-			      len)
-		     (with-input-from-file p
-		       (lambda ()
-			 (let loop ()
-			   (let ([c (read-char)])
-			     (unless (eof-object? c)
-				(write-char c output)
-				(loop)))))))))))
+       (let* ([p (build-path dir f)]
+	      [filter-val (filter p)])
+	 (when filter-val
+	   (if (directory-exists? p)
+	       (loop p (append dpath (list f)))
+	       (let ([len (file-size p)])
+		 ; (printf "MzTarring ~a~n" p)
+		 (fprintf output "~s~n~s~n~s~n*"
+			  (case filter-val
+			    [(file) 'file]
+			    [(file-replace) 'file-replace]
+			    [else file-mode])
+			  (append dpath (list f))
+			  len)
+		 (with-input-from-file p
+		   (lambda ()
+		     (let loop ()
+		       (let ([c (read-char)])
+			 (unless (eof-object? c)
+			   (write-char c output)
+			   (loop)))))))))))
      (directory-list dir))))
 
 (define (std-filter path)
   (not (or (regexp-match "CVS$" path)
-	   (regexp-match "compiled$" path))))
+	   (regexp-match "compiled$" path)
+	   (regexp-match "~$" path)
+	   (regexp-match "^#.*#$" path))))
 

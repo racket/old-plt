@@ -38,6 +38,11 @@
 		      (exn-message x)
 		      x)))
 
+  (define (pretty-name f)
+    (with-handlers ([void (lambda (x) f)])
+      (let-values ([(base name dir?) (split-path f)])
+	(format "~a in ~a" name base))))
+
   (define (call-info info flag default test)
     (with-handlers ([void (lambda (x) 
 			    (warning
@@ -138,50 +143,54 @@
 		       (let ([d (build-path plthome s)])
 			 (unless (directory-exists? d)
 			   (when (verbose)
-			     (setup-printf "  making directory ~a" d))
+			     (setup-printf "  making directory ~a" (pretty-name d)))
 			   (make-directory* d)))))]
-	    [(file) (let ([s (apply build-path (read p))])
-		      (unless (relative-path? s)
-			(error "expected a file name relative path string, got" s))
-		      (let ([len (read p)])
-			(unless (and (number? len) (integer? len))
-			  (error "expected a file name size, got" len))
-			(let* ([write? (filter 'file s plthome)]
-			       [path (build-path plthome s)])
-			  (let ([out (and write?
-					  (not (file-exists? path))
-					  (open-output-file path))])
-			    (when (and write? (not out))
-			      (setup-printf "Warning: ~a already exists; skipping" path))
-			    (when (and out (or #t (verbose)))
-			      (setup-printf "  unpacking ~a" path))
-			    ; Find starting *
-			    (let loop ()
-			      (let ([c (read-char p)])
-				(cond
-				 [(char=? c #\*) (void)] ; found it
-				 [(char-whitespace? c) (loop)]
-				 [(eof-object? c) (void)] ; signal the error below
-				 [else (error 
-					(format
-					 "unexpected character setting up ~a, looking for #\*"
-					 path)
-					c)])))
-			    ; Copy file data
-			    (let loop ([n len])
-			      (unless (zero? n)
-				(let ([c (read-char p)])
-				  (when (eof-object? c)
-				    (error (format 
-					    "unexpected end-of-file while ~a ~a (at ~a of ~a)"
-					    (if out "unpacking" "skipping")
-					    path
-					    (- len n -1) len)))
-				  (when out
-				    (write-char c out)))
-				(loop (sub1 n))))
-			    (when out
-			      (close-output-port out))))))]
+	    [(file file-replace) 
+	     (let ([s (apply build-path (read p))])
+	       (unless (relative-path? s)
+		 (error "expected a file name relative path string, got" s))
+	       (let ([len (read p)])
+		 (unless (and (number? len) (integer? len))
+		   (error "expected a file name size, got" len))
+		 (let* ([write? (filter kind s plthome)]
+			[path (build-path plthome s)])
+		   (let ([out (and write?
+				   (if (file-exists? path)
+				       (if (eq? kind 'file)
+					   #f
+					   (open-output-file path 'truncate))
+				       (open-output-file path)))])
+		     (when (and write? (not out))
+		       (setup-printf "Warning: ~a already exists; skipping" (pretty-name path)))
+		     (when (and out (or #t (verbose)))
+		       (setup-printf "  unpacking ~a" (pretty-name path)))
+		     ; Find starting *
+		     (let loop ()
+		       (let ([c (read-char p)])
+			 (cond
+			  [(char=? c #\*) (void)] ; found it
+			  [(char-whitespace? c) (loop)]
+			  [(eof-object? c) (void)] ; signal the error below
+			  [else (error 
+				 (format
+				  "unexpected character setting up ~a, looking for #\*"
+				  path)
+				 c)])))
+		     ; Copy file data
+		     (let loop ([n len])
+		       (unless (zero? n)
+			 (let ([c (read-char p)])
+			   (when (eof-object? c)
+			     (error (format 
+				     "unexpected end-of-file while ~a ~a (at ~a of ~a)"
+				     (if out "unpacking" "skipping")
+				     path
+				     (- len n -1) len)))
+			   (when out
+			     (write-char c out)))
+			 (loop (sub1 n))))
+		     (when out
+		       (close-output-port out))))))]
 	    [else (error "unknown file tag" kind)])
 	  (loop)))))
 
@@ -230,8 +239,12 @@
      (specific-collections)
      (map unpack-archive (archives))))
 
+  (define (done)
+    (setup-printf "Done setting up"))
+
   (unless (null? (archives))
     (when (null? x-specific-collections)
+      (done)
       (exit 0))) ; done
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -502,7 +515,7 @@
 		       (t plthome))))))
 	      collections-to-compile))
 
-  (setup-printf "Done setting up")
+  (done)
 
   (unless (null? errors)
     (for-each

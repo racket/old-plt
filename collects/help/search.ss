@@ -2,31 +2,47 @@
   (import mzlib:function^)
   
   ; Define an order for the documentation:
-  (define html-doc-position (require-library "docpos.ss" "help"))
+  (define html-doc-position (car (require-library "docpos.ss" "help")))
 
-  ; Locate standard HTML documentation
-  (define-values (std-docs std-doc-names)
-    (let* ([path (with-handlers ([void (lambda (x) #f)])
-		   (collection-path "doc"))]
-	   [doc-names (if path
-			  (directory-list path)
-			  null)]
-	   [docs (map (lambda (x) (build-path path x)) doc-names)])
-      ; Order the standard docs:
-      (let ([ordered (quicksort
-		      (map cons docs doc-names)
-		      (lambda (a b)
-			(< (html-doc-position (cdr a))
-			   (html-doc-position (cdr b)))))])
-	(values (map car ordered) (map cdr ordered)))))
 
-  ; Check collections for doc.txt files:
-  (define-values (txt-docs txt-doc-names)
-    ((require-library "colldocs.ss" "help") quicksort))
+  ; These are set by reset-doc-lists:
+  (define docs null)
+  (define doc-names null)
+  (define doc-kinds null)
+  (define doc-collection-date #f)
 
-  (define docs (append std-docs txt-docs))
-  (define doc-names (append std-doc-names (map (lambda (s) (format "~a collection" s)) txt-doc-names)))
-  (define doc-kinds (append (map (lambda (x) 'html) std-docs) (map (lambda (x) 'text) txt-docs)))
+  (define colldocs (require-library "colldocs.ss" "help"))
+
+  (define (reset-doc-lists)
+    ; Locate standard HTML documentation
+    (define-values (std-docs std-doc-names)
+      (let* ([path (with-handlers ([void (lambda (x) #f)])
+		     (collection-path "doc"))]
+	     [doc-names (if path
+			    (directory-list path)
+			    null)]
+	     [docs (map (lambda (x) (build-path path x)) doc-names)])
+	; Order the standard docs:
+	(let ([ordered (quicksort
+			(map cons docs doc-names)
+			(lambda (a b)
+			  (< (html-doc-position (cdr a))
+			     (html-doc-position (cdr b)))))])
+	  (values (map car ordered) (map cdr ordered)))))
+    
+    ; Check collections for doc.txt files:
+    (define-values (txt-docs txt-doc-names)
+      (colldocs quicksort))
+    
+    (set! docs (append std-docs txt-docs))
+    (set! doc-names (append std-doc-names (map (lambda (s) (format "~a collection" s)) txt-doc-names)))
+    (set! doc-kinds (append (map (lambda (x) 'html) std-docs) (map (lambda (x) 'text) txt-docs)))
+
+    (with-handlers ([void (lambda (x)
+			    (set! doc-collection-date 'none))])
+      (set! doc-collection-date 
+	    (file-or-directory-modify-seconds
+	     (collection-path "doc")))))
 
   (define MAX-HIT-COUNT 300)
   
@@ -192,6 +208,12 @@
   
   (define (do-search given-find search-level regexp? exact? ckey maxxed-out
 		     add-doc-section add-kind-section add-choice)
+    ; When new docs are installed, the directory's modification date changes:
+    (unless (eq? doc-collection-date 'none)
+      (when (or (not doc-collection-date)
+		(> (file-or-directory-modify-seconds (collection-path "doc"))
+		   doc-collection-date))
+	(reset-doc-lists)))
     (let* ([hit-count 0]
 	   [string-finds (list given-find)]
 	   [finds (cond

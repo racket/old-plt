@@ -2384,10 +2384,10 @@
 	     (set! main-panel (find-snip-by-original-id "0"))
 	     (send main-panel set-id "0")
 	     (handle-new-arrivals)
-	     (set-modified #f)))])
+	     (set-modified #f)))]
+	[get-keymaps (lambda () null)])
       (sequence
 	(super-init))))
-  
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Frame

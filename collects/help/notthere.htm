@@ -10,9 +10,16 @@ You tried to access documenation for <b><!-- MZSCHEME="(if (defined? 'missing-do
 <P>
 
 The documentation is not installed on this machine, probably because
-it is not part of the standard DrScheme distribution.
+ it is not part of the standard DrScheme distribution.
 
 <P>
 
-You can download documenation from
-<A href="http://www.cs.rice.edu/CS/PLT/packages/100alpha2/">http://www.cs.rice.edu/CS/PLT/packages/100alpha2/</A>
+<!-- MZSCHEME="(if (defined? 'missing-doc-name)
+                   (let* ([url (format |http://www.cs.rice.edu/CS/PLT/packages/100alpha3/~a-doc.plt| missing-doc-name)])
+                     (format |You can download the documentation as<UL><LI><A href=\|~a\|>~a</A></UL>
+                              (Follow the above link within Help Desk to download the
+                               documentation. Help Desk will install it automatically.
+                               After installing, click the <B><TT>Rewind</TT></B> button
+                               above and continue.)|
+                             url url))
+                   ||)" -->

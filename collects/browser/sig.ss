@@ -14,6 +14,8 @@
 
 (define-signature browser^
   (open-url
+   (struct exn:file-saved-instead (pathname))
+   (struct exn:cancelled ())
    
    hyper-text-mixin
    hyper-text%

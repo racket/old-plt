@@ -450,8 +450,8 @@ The raw format is
    procedure. The filter procedure is called for each directory and
    file to be unpacked. It is called with three arguments:
 
-      + 'dir or 'file - indicates whether the item to be unpacked
-        is a directory or a file;
+      + 'dir, 'file, 'file-replace - indicates whether the item to be
+        unpacked is a directory, a file, or a file to be replaced;
 
       + a relative path string - the pathname of the directory or file
         to be unpacked, relative to the plt directory; and
@@ -460,7 +460,9 @@ The raw format is
 
    If the filter procedure returns #f for a directory or file, the
    directory or file is not unpacked. If the filter procedure returns
-   #t and the file or directory already exists, it is not created.
+   #t and the directory or file for 'dir or 'file already exists, it
+   is not created. (The file for 'file-replace need not exist
+   already.)
 
    When a directory is unpacked, intermediate directies are created
    as necessary to create the specified directory. When a file is
@@ -497,34 +499,48 @@ An unpackable is one of the following:
    an asterisk is found. The file data must follow this asterisk
    immediately.
 
+ * The symbol 'file-replace is treated like 'file, but if the file
+   exists on disk already, the file in the archive replaces the file
+   on disk.
+
  Making .plt archives
  --------------------
 
 The compiler collection's pack.ss library provides functions to help
 make .plt archives, especially under Unix:
 
-> (pack dest name dirs collections filter encode?) - Creates the .plt
-  file specified by the pathname `dest', using the string `name' as
-  the name reported to Setup PLT as the archive's description, and 
-  `collections' as the list of colection paths returned by the
-  unpacking unit. The `dirs' argument must be a list of relative
-  paths for directories; the contents of these directories will be
-  packed into the archive. The `filter' procedure is called with
-  the relative path of each candidate for packing; if it returns #f
-  for some path, then that file or directory is omitted from the
-  archive. If `encode?' is #f, then the output archive is in raw
-  form, and still must be gzipped and mime-encoded. If `encode?'
-  is #t, then gzip and mmencode must be in the shell's path for
-  executables.
+> (pack dest name dirs collections [filter encode? file-mode]) -
+  Creates the .plt file specified by the pathname `dest', using the
+  string `name' as the name reported to Setup PLT as the archive's
+  description, and `collections' as the list of colection paths
+  returned by the unpacking unit. The `dirs' argument must be a list
+  of relative paths for directories; the contents of these directories
+  will be packed into the archive.
 
-  The `filter' and `encode?' arguments are optional, defaulting
-  to std-filter and #t, respectively.
+  The `filter' procedure is called with the relative path of each
+  candidate for packing. If it returns #f for some path, then that
+  file or directory is omitted from the archive. If it returns 'file
+  or 'file-replace for a file, the file is packed with that mode,
+  rather than the default mode. The default `filter' is `std-filter'
+  (defined below).
+  
+  If `encode?' is #f, then the output archive is in raw form, and
+  still must be gzipped and mime-encoded. If `encode?'  is #t, then
+  gzip and mmencode must be in the shell's path for executables.
+  the default value is #t.
 
-> (std-filter p) - returns #t unless `p' matches "CVS$" or "compiled$".
+  The `file-mode' argument must be 'file or 'file-replace, indicating
+  the default mode for a file in the archive. The default value is
+  'file.
 
-> (mztar dir output filter) - called by `pack' to write one directory
-  `dir' to the output port `output; using the filter procedure
-  `filter'.
+> (std-filter p) - returns #t unless `p' matches one of the following
+  regular expressions: "CVS$", "compiled$", "~$", or "^#.*#$".
+
+> (mztar dir output filter file-mode) - called by `pack' to write one
+   directory `dir' to the output port `output; using the filter
+   procedure `filter' (see `pack' for a description of `filter').  The
+   `file-mode' argument specifies the default mode for packing a file,
+   either 'file or 'file-replace.
 
  Setup PLT as a Unit
  -------------------

@@ -96,9 +96,12 @@
 						    ;; Many things can go wrong; give up if anything does...
 						    (with-handlers ([void void])
 						      (let ([start (send (send (get-canvas) get-editor) get-url)])
-							(when (string=? "file" (url-scheme start))
-							  (let ([url (if (string? url) 
-									 (combine-url/relative start url)
+							(when (or (not start)
+								  (string=? "file" (url-scheme start)))
+							  (let ([url (if (string? url)
+									 (if start
+									     (combine-url/relative start url)
+									     (string->url url))
 									 url)])
 							    (when (string=? "file" (url-scheme url))
 							      (when (not (file-exists? (url-path url)))
@@ -258,13 +261,19 @@
 				    [spacer (make-object vertical-pane% p)]
 				    [ok (make-object button% "Open" p
 						     (lambda (b e)
-						       (let ([s (send t get-value)])
+						       (let* ([s (send t get-value)]
+							      [done (lambda ()
+								      (set! last-url-string s)
+								      (send d show #f))])
 							 (with-handlers ([void
 									  (lambda (x)
-									    (message-box "Bad URL" 
-											 (format "Bad URL: ~a" (exn-message x))
-											 d))])
-							   (let ([url (string->url 
+									    (if (exn:file-saved-instead? x)
+										(done)
+										(unless (exn:cancelled? x)
+										  (message-box "Bad URL" 
+											       (format "Bad URL: ~a" (exn-message x))
+											       d))))])
+							   (let ([url (string->url
 								       (cond
 									[(regexp-match ":" s) s]
 									[(regexp-match "^[a-zA-Z][a-zA-Z.]*($|/)" s)
@@ -272,8 +281,7 @@
 									[else
 									 (string-append "file:" s)]))])
 							     (send results goto-url url #f)
-							     (set! last-url-string s)
-							     (send d show #f)))))
+							     (done)))))
 						     '(border))]
 				    [update-ok (lambda () (send ok enable 
 								(positive? (send (send t get-editor) 
@@ -283,7 +291,7 @@
 			     (when last-url-string 
 			       (send t set-value last-url-string))
 			     (send p set-alignment 'right 'center)
-			     (send ok enable #f)
+			     (update-ok)
 			     (send d center)
 			     (send t focus)
 			     (send d show #t)))

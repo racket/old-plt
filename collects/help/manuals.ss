@@ -7,7 +7,8 @@
 	    (link [F : (quicksort) ((require-library "functior.ss"))]
 		  [I : () ((unit/sig () (import (quicksort)) quicksort) F)])
 	    (export)))]
-	 [docpos (require-library "docpos.ss" "help")]
+	 [docpos (car (require-library "docpos.ss" "help"))]
+	 [known-docs (cdr (require-library "docpos.ss" "help"))]
 	 [d (with-handlers ([void (lambda (x) #f)])
 	      (collection-path "doc"))]
 	 [docs (let loop ([l (if d
@@ -61,4 +62,22 @@
 		   name))
 	 collections
 	 collection-names)
-	(list "</UL>"))))))
+	(list "</UL>")
+	(let ([uninstalled (let loop ([l known-docs])
+			     (cond
+			      [(null? l) null]
+			      [(member (caar l) docs) (loop (cdr l))]
+			      [else (cons (car l) (loop (cdr l)))]))])
+	  (if (null? uninstalled)
+	      (list "")
+	      (list*
+	       "<H3>Uninstalled Manuals</H3>"
+	       "<UL>"
+	       (append
+		(map
+		 (lambda (doc-pair)
+		   (format "<LI> <A HREF=\"file:~a\">~a</A>"
+			   (build-path d (car doc-pair) "index.htm")
+			   (cdr doc-pair)))
+		 uninstalled)
+		(list "</UL>"))))))))))

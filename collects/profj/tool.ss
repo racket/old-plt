@@ -129,7 +129,12 @@
       (define (java-lang-mixin level name number one-line)
         (class* object% (drscheme:language:language<%>)
 
-          (define/public (order-manuals x) (values x #t))
+          (define/public (order-manuals x)
+            (values (case level
+                      ((beginner) `("profj-beginner" "tour" "drscheme" "help"))
+                      ((intermediate) '("profj-intermediate" "profj-beginner" "tour" "drscheme" "help"))
+                      ((advanced full) '("profj-advanced" "profj-intermediate" "profj-beginner" "tour" "drscheme" "help")))
+                    #f))
           
           ;default-settings: -> profj-settings
           (define/public (default-settings) 

@@ -1,12 +1,7 @@
-;;
 ;; TODO
 ;; - track files in project.
 ;;   - when project is opened check already open files.
-;;   - when executing the project, offer to save files.
-;; - remember shown-state of loaded window
-;; - add a show menu for showing loaded files and ??? files
-;; - make the two files windows in the project manager same min-size
-;; - leak in project execute?
+;;   - after execute, grab files that were loaded (?)
 
 (unit/sig ()
   (import mred^
@@ -390,6 +385,39 @@
 		   (loop (cdr frames))]
 		  [(cancel) #f]))]))))
 
+      '(define (execute-project)
+	(when (offer-to-save-files)
+          (send rep reset-console)
+          (parameterize ([current-eventspace (ivar rep user-eventspace)])
+            (queue-callback
+             (lambda ()
+               (when collection-paths
+                 (current-library-collection-paths collection-paths))
+               
+               (drscheme:basis:error-display/debug-handler
+                (let ([project-manager-error-display/debug-handler
+                       (lambda (msg zodiac exn)
+                         (if (and zodiac
+                                  (zodiac:zodiac? zodiac))
+                             (show-error/open-file msg zodiac)
+                             (message-box (format "Error running project ~a" project-name) msg)))])
+                  project-manager-error-display/debug-handler))
+               
+               (let ([ol (current-load)])
+                 (current-load
+                  (lambda (l)
+                    (dynamic-wind
+                     (lambda () (push-file l))
+                     (lambda () (ol l))
+                     (lambda () (pop-file))))))
+               
+               (for-each
+                (lambda (file)
+                  (cond
+                    [(string? file) (load file)]
+                    [else (apply require-library/proc file)]))
+                files))))))
+      
       (define (execute-project)
 	(when (offer-to-save-files)
 	  (shutdown-project)
@@ -1006,9 +1034,10 @@
       (make-object menu-item% "Configure Collection Paths..." project-menu (lambda x (configure-collection-paths)))
 
       (make-object button% "Execute" (get-area-container) (lambda x (execute-project)))
-      (define top-panel (make-object horizontal-panel% (get-area-container)))
-      (define left-panel (make-object vertical-panel% top-panel))
-      (define to-load-files-outer-panel (make-object vertical-panel% left-panel))
+      (define top-panel (make-object vertical-panel% (get-area-container)))
+      ;(define bottom-panel (make-object vertical-panel% (get-area-container)))
+        
+      (define to-load-files-outer-panel (make-object vertical-panel% top-panel))
       (define to-load-files-panel (make-object horizontal-panel% to-load-files-outer-panel '(border)))
       (define files-list-box (make-object list-box% #f null to-load-files-panel
 					  (lambda (lb evt)
@@ -1023,7 +1052,7 @@
       (send to-load-button-panel stretchable-width #f)
       (send to-load-button-panel set-alignment 'center 'center)
 
-      (define loaded-files-outer-panel (make-object vertical-panel% left-panel))
+      (define loaded-files-outer-panel (make-object vertical-panel% top-panel))
       (define loaded-files-panel (make-object horizontal-panel% loaded-files-outer-panel '(border)))
       (define loaded-files-hierarchical-list (make-object hierlist% loaded-files-panel))
       (define loaded-files-button-panel (make-object vertical-panel% loaded-files-panel))
@@ -1044,6 +1073,25 @@
       (send open-loaded-file-button enable #f)
 
       (update-buttons)
+
+      (define context%
+        (class/d* object% (drscheme:rep:context<%>) ()
+          ((public ensure-rep-shown
+                   needs-execution?
+                   enable-evaluation disable-evaluation
+                   running not-running
+                   get-directory))
+
+          (define (ensure-rep-shown) (void))
+          (define (needs-execution?) #f)
+          (define (enable-evaluation) (void))
+          (define (disable-evaluation) (void))
+          (define (running) (void))
+          (define (not-running) (void))
+          (define (get-directory) (current-directory))
+          (super-init)))
+      ;(define rep (make-object drscheme:rep:text% (make-object context%)))
+      ;(define rep-canvas (make-object canvas:wide-snip% bottom-panel rep))
 
       (frame:reorder-menus this)
 

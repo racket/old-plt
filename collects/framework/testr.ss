@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.26 1999/09/11 22:05:57 robby Exp $
+;; $Id: testr.ss,v 1.27 1999/12/28 05:07:45 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -38,7 +38,7 @@
         [()   msec]
 	[(x)  (if (and (integer? x) (exact? x) (<= 0 x))
 		  (set! msec x)
-		  (error tag "expects exact, non-negative integer, given: ~s" x))])))
+		  (error tag "expects exact, non-negative integer, given: ~e" x))])))
   
   ;;
   ;; How we get into the handler thread, and put fake actions 
@@ -272,7 +272,7 @@
 	   (if found
 	       found
 	       (error object-tag 
-			  "no object of class ~a named ~s in active frame"
+			  "no object of class ~a named ~e in active frame"
 			  obj-class
 			  b-desc)))]
 	[(is-a? b-desc obj-class) b-desc]
@@ -424,9 +424,11 @@
      [(key modifier-list)
       (cond
 	[(not (or (char? key) (memq key valid-key-symbols)))
-	 (error key-tag "expects char or valid key symbol, given: ~s" key)]
+	 (error key-tag "expects char or valid key symbol, given: ~e" key)]
+	[(not (list? modifier-list))
+	 (error key-tag "expected a list as second argument, got: ~e" modifier-list)]
 	[(verify-list  modifier-list  legal-keystroke-modifiers)
-	 => (lambda (mod) (error key-tag "unknown key modifier: ~s" mod))]
+	 => (lambda (mod) (error key-tag "unknown key modifier: ~e" mod))]
 	[else
 	 (run-one
 	  (lambda ()
@@ -490,7 +492,7 @@
 	      [(eq? mod 'nocontrol)  (send event set-control-down #f)]
 	      [(eq? mod 'nometa)     (send event set-meta-down    #f)]
 	      [(eq? mod 'noshift)    (send event set-shift-down   #f)]
-	      [else  (error key-tag "unknown key modifier: ~s" mod)])
+	      [else  (error key-tag "unknown key modifier: ~e" mod)])
 	    (loop (cdr l)))))))
   
   ;; A-Z and keymap:get-shifted-key-list are implicitly shifted.
@@ -522,9 +524,9 @@
     (lambda (menu-name . item-names)
       (cond
 	[(not (string? menu-name))
-	 (error menu-tag "expects string, given: ~s" menu-name)]
+	 (error menu-tag "expects string, given: ~e" menu-name)]
 	[(not (andmap string? item-names))
-	 (error menu-tag "expects strings, given: ~s" item-names)]
+	 (error menu-tag "expects strings, given: ~e" item-names)]
 	[else
 	 (run-one
 	  (lambda ()
@@ -551,7 +553,7 @@
 			[wanted-names (cdr item-names)])
 	       (cond
 		[(null? items)
-		 (error 'menu-select "didn't find a menu: ~s~n" item-names)]
+		 (error 'menu-select "didn't find a menu: ~e" item-names)]
 		[else (let ([i (car items)])
 			(cond
 			 [(not (is-a? i mred:labelled-menu-item<%>))
@@ -569,7 +571,7 @@
 				  (car wanted-names)
 				  (cdr wanted-names))]
 			   [else
-			    (error menu-tag "no menu matching ~s~n" item-names)])]
+			    (error menu-tag "no menu matching ~e" item-names)])]
 			 [else
 			  (loop (cdr items)
 				this-name
@@ -602,14 +604,14 @@
       (cond 
 	[(verify-item button legal-mouse-buttons)
 	 => (lambda (button)
-	      (error mouse-tag "unknown mouse button: ~s" button))]
+	      (error mouse-tag "unknown mouse button: ~e" button))]
 	[(not (real? x))
-	 (error mouse-tag "expected real, given: ~s" x)]
+	 (error mouse-tag "expected real, given: ~e" x)]
 	[(not (real? y))
-	 (error mouse-tag "expected real, given: ~s" y)]
+	 (error mouse-tag "expected real, given: ~e" y)]
 	[(verify-list modifier-list legal-mouse-modifiers)
 	 => (lambda (mod) 
-	      (error mouse-tag "unknown mouse modifier: ~s" mod))]
+	      (error mouse-tag "unknown mouse modifier: ~e" mod))]
 	[else
 	 (run-one
 	  (lambda ()
@@ -677,7 +679,7 @@
 	    [(eq? mod 'nocontrol)  (send event set-control-down #f)]
 	    [(eq? mod 'nometa)     (send event set-meta-down    #f)]
 	    [(eq? mod 'noshift)    (send event set-shift-down   #f)]
-	    [else  (error mouse-tag "unknown mouse modifier: ~s" mod)]))
+	    [else  (error mouse-tag "unknown mouse modifier: ~e" mod)]))
 	(set-mouse-modifiers event (cdr modifier-list)))))
       
   (define mouse-type-const
@@ -715,8 +717,7 @@
   
   (define bad-mouse-type
     (lambda (type)
-      (error mouse-tag "unknown mouse event type: ~s" type)))
-
+      (error mouse-tag "unknown mouse event type: ~e" type)))
   
   ;;
   ;; Move mouse to new window.

@@ -6,8 +6,8 @@ Fixed typechecking of values supplied to
  com-set-property!
 Removed right-click context menu from browser 
  windows, because Language option caused errors
-Added navigate/status, refresh, print methods 
- to mx-browser%
+Added navigate/status, refresh, iconize, restore, and 
+ print methods to mx-browser%
 
 Version 103-p1:
 

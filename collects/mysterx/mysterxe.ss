@@ -1605,6 +1605,10 @@
 	     (make-navigator mxprims:go-forward 'go-forward)]
 	    [refresh
 	     (lambda () (mxprims:refresh browser))]
+	    [iconize
+	     (lambda () (mxprims:iconize browser))]
+	    [restore
+	     (lambda () (mxprims:restore browser))]
 	    [current-url
 	     (lambda ()
 	       (mxprims:current-url browser))]

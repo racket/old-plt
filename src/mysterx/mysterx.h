@@ -256,6 +256,8 @@ MX_PRIM_DECL(mx_navigate);
 MX_PRIM_DECL(mx_go_back);
 MX_PRIM_DECL(mx_go_forward);
 MX_PRIM_DECL(mx_refresh);
+MX_PRIM_DECL(mx_iconize);
+MX_PRIM_DECL(mx_restore);
 MX_PRIM_DECL(mx_current_url);
 MX_PRIM_DECL(mx_register_navigate_handler);
 MX_PRIM_DECL(mx_make_browser);

@@ -104,6 +104,8 @@
    go-back
    go-forward
    refresh
+   iconize
+   restore
    register-navigate-handler
    current-url
    current-document	

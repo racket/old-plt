@@ -83,15 +83,20 @@ _MysterX_
 
   Creates an instance of a MysterX browser.
   `label' is a string for the document caption,
-  with default "MysterX".  `width', `height', `x',
-  and `y' give the size and placement of the
-  browser window on the desktop, with defaults
+  with default "MysterX".  The parameters `width', 
+  `height', `x', and `y' give the size and placement 
+  of the browser window on the desktop, with defaults
   provided by Windows if omitted.  `style-list'
   may contain any of the symbols 'iconize,
   'maximize, 'no-system-menu, 'no-thick-border, and  
   'scrollbars.  The vertical scrollbar is disabled 
   if scrolling is unnecessary; the horizontal scrollbar 
-  disappears if scrolling is unnecessary.
+  disappears if scrolling is unnecessary.  
+
+  Although the browser window cannot be hidden initially,
+  it can be iconized.  The `restore' method of mx-browser% 
+  can be used to restore an iconized browser to an ordinary 
+  window.
 
 > current-document :: (send an-mx-browser current-document)
 
@@ -145,6 +150,14 @@ _MysterX_
 
   Refreshes the document in the browser.  Returns #t
   if the refresh is successful, #f otherwise.
+
+> iconize :: (send an-mx-browser iconize)
+
+  Iconizes the browser window.
+
+> restore :: (send an-mx-browser restore)
+
+  Restores the browser window, if it has been iconized.
 
 > current-url :: (send an-mx-browser current-url)
 

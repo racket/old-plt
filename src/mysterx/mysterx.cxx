@@ -144,6 +144,8 @@ static MX_PRIM mxPrims[] = {
   { mx_go_back,"go-back",1,1 },
   { mx_go_forward,"go-forward",1,1 },
   { mx_refresh,"refresh",1,1 },
+  { mx_iconize,"iconize",1,1 },
+  { mx_restore,"restore",1,1 },
   { mx_current_url,"current-url",1,1 },
   { mx_register_navigate_handler,"register-navigate-handler",2,2 },
   { mx_current_document,"current-document",1,1 },
@@ -4492,7 +4494,6 @@ void browserHwndMsgLoop(LPVOID p) {
   BROWSER_WINDOW_INIT *pBrowserWindowInit;
   LONG hasScrollBars;
   BOOL *destroy;
-  BOOL isHidden;
   
   pBrowserWindowInit = (BROWSER_WINDOW_INIT *)p;
 
@@ -4505,10 +4506,8 @@ void browserHwndMsgLoop(LPVOID p) {
     hasScrollBars = 0L;
   }
 
-  isHidden = !(pBrowserWindowInit->browserWindow.style & WS_VISIBLE);
-
   hwnd = CreateWindow("AtlAxWin","myspage.DHTMLPage.1",
-		      hasScrollBars | 
+		      WS_VISIBLE | hasScrollBars | 
 		      (pBrowserWindowInit->browserWindow.style & ~(WS_HSCROLL|WS_VSCROLL)),
 		      pBrowserWindowInit->browserWindow.x,pBrowserWindowInit->browserWindow.y,
 		      pBrowserWindowInit->browserWindow.width,pBrowserWindowInit->browserWindow.height,
@@ -4518,13 +4517,8 @@ void browserHwndMsgLoop(LPVOID p) {
     scheme_signal_error("make-browser: Can't create browser window");
   }
 
-  if (isHidden) {
-    ShowWindow(hwnd,SW_HIDE);
-  }
-  else {
-    ShowWindow(hwnd,SW_SHOW);
-    SetForegroundWindow(hwnd);
-  }
+  ShowWindow(hwnd,SW_SHOW);
+  SetForegroundWindow(hwnd);
 
   browserHwnd = hwnd;
   

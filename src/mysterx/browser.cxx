@@ -27,11 +27,9 @@ BROWSER_WINDOW_STYLE_OPTION styleOptions[6] = {
   
   { "iconize",WS_ICONIC,TRUE },
   { "maximize",WS_MAXIMIZE,TRUE },
-  //  { "no-caption",WS_CAPTION,FALSE }, 
   { "no-system-menu",WS_CAPTION | WS_SYSMENU,FALSE },
   { "no-thick-border",WS_THICKFRAME,FALSE },
   { "scrollbars",WS_HSCROLL | WS_VSCROLL,TRUE },
-  { "visible",WS_VISIBLE,TRUE },
 };
 
 int cmpBwso(char *key,BROWSER_WINDOW_STYLE_OPTION *bwso) {
@@ -258,20 +256,6 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
   return (Scheme_Object *)browser;
 }
 
-Scheme_Object *mx_browser_show(int argc,Scheme_Object **argv) {
-  MX_Browser_Object *pBrowser;
-  
-  if (MX_BROWSERP(argv[0]) == FALSE) {
-    scheme_wrong_type("browser-show","mx-browser",0,argc,argv);
-  }
-  
-  pBrowser = (MX_Browser_Object *)argv[0];
-
-  ShowWindow(pBrowser->hwnd,argv[1] == scheme_false ? SW_HIDE : SW_SHOW);
-  
-  return scheme_void;
-}
-
 Scheme_Object *mx_navigate(int argc,Scheme_Object **argv) {
   HRESULT hr;
   IWebBrowser2 *pIWebBrowser2;
@@ -336,6 +320,39 @@ Scheme_Object *mx_refresh(int argc,Scheme_Object **argv) {
   hr = pIWebBrowser2->Refresh();
 
   return (hr == S_OK) ? scheme_true : scheme_false;
+}
+
+Scheme_Object *mx_show_browser_window(int argc,Scheme_Object **argv,
+				      int cmd,char *s) {
+  HWND hwnd;
+
+  if (MX_BROWSERP(argv[0]) == FALSE) {
+    scheme_wrong_type(s,"mx-browser",0,argc,argv);
+  }
+
+  hwnd = MX_BROWSER_HWND(argv[0]);
+
+  if (hwnd == NULL) {
+    scheme_signal_error("Browser has NULL window handle");
+  }
+
+  ShowWindow(hwnd,cmd);
+
+  return scheme_void;
+}
+
+Scheme_Object *mx_browser_show(int argc,Scheme_Object **argv) {
+  return mx_show_browser_window(argc,argv,
+				argv[1] == scheme_false ? SW_HIDE : SW_SHOW,
+				"show");
+}
+
+Scheme_Object *mx_iconize(int argc,Scheme_Object **argv) {
+  return mx_show_browser_window(argc,argv,SW_MINIMIZE,"iconize");
+}
+
+Scheme_Object *mx_restore(int argc,Scheme_Object **argv) {
+  return mx_show_browser_window(argc,argv,SW_SHOWNORMAL,"restore");
 }
 
 Scheme_Object *mx_register_navigate_handler(int argc,Scheme_Object **argv) {

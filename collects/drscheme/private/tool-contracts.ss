@@ -1474,6 +1474,7 @@
      (get-language-position (-> (cons/p string? (listof string?))))
      (get-language-url (-> (union false? string?)))
      (get-one-line-summary (-> string?))
+     (get-comment-character (-> char?))
      (get-style-delta (-> (union false?
                                  (is-a?/c style-delta%)
                                  (listof (list/p (is-a?/c style-delta%) number? number?)))))

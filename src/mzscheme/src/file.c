@@ -123,6 +123,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[]);
 static Scheme_Object *filesystem_root_list(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_directory(int argc, Scheme_Object *argv[]);
 static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[]);
+static Scheme_Object *make_link(int argc, Scheme_Object *argv[]);
 static Scheme_Object *split_pathname(int argc, Scheme_Object **argv);
 static Scheme_Object *relative_pathname_p(int argc, Scheme_Object **argv);
 static Scheme_Object *absolute_pathname_p(int argc, Scheme_Object **argv);
@@ -325,6 +326,11 @@ void scheme_init_file(Scheme_Env *env)
 			     scheme_make_prim_w_arity(delete_directory,
 						      "delete-directory",
 						      1, 1), 
+			     env);
+  scheme_add_global_constant("make-file-or-directory-link",
+			     scheme_make_prim_w_arity(make_link,
+						      "make-file-or-directory-link",
+						      2, 2), 
 			     env);
   scheme_add_global_constant("file-or-directory-modify-seconds",
 			     scheme_make_prim_w_arity(file_modify_seconds,
@@ -3454,6 +3460,51 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
 		   errno);
   return NULL;
 #endif
+}
+
+static Scheme_Object *make_link(int argc, Scheme_Object *argv[])
+{
+  char *src, *dest;
+  int len, copied;
+
+  if (!SCHEME_STRINGP(argv[0]))
+    scheme_wrong_type("make-file-or-directory-link", "string", 0, argc, argv);
+  if (!SCHEME_STRINGP(argv[1]))
+    scheme_wrong_type("make-file-or-directory-link", "string", 0, argc, argv);
+
+  dest = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
+				SCHEME_STRTAG_VAL(argv[0]),
+				"make-file-or-directory-link",
+				&copied,
+				SCHEME_GUARD_FILE_EXISTS);
+  src = scheme_expand_filename(SCHEME_STR_VAL(argv[1]),
+			       SCHEME_STRTAG_VAL(argv[1]),
+			       "make-file-or-directory-link",
+			       &copied,
+			       SCHEME_GUARD_FILE_WRITE);
+
+#if defined(USE_MAC_FILE_TOOLBOX) || defined(DOS_FILE_SYSTEM)
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "make-file-or-directory-link: link creation not supported on this platform; "
+		   "cannot create link: %e",
+		   argv[1]);
+#else
+  while (1) {
+    if (!MSC_IZE(symlink)(dest, src))
+      return scheme_void;
+    else if (errno != EINTR)
+      break;
+  }
+
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+		   argv[1],
+		   (errno == EEXIST) ? exists_err_symbol : fail_err_symbol,
+		   "make-file-or-directory-link: cannot make link: %q (%e)",
+		   filename_for_error(argv[1]),
+		   errno);
+#endif
+
+  return NULL;
 }
 
 static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)

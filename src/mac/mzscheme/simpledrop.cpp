@@ -31,6 +31,10 @@ static void strcpy(char *s, char *d)
 int scheme_mac_ready, scheme_mac_argc = 0;
 char **scheme_mac_argv;
 
+#ifdef OS_X
+void GetStarterInfo();
+#endif
+
 static char *ThisAppName(void)
 {	
 #ifndef FOR_STARTER
@@ -317,16 +321,123 @@ void Drop_GetArgs(int *argc, char ***argv, int *in_terminal)
   }
 
 #ifdef OS_X
-  if (((*argc) > 1) && (strncmp((*argv)[1],"-psn_",5) == 0)) {
-    /* Finder started app --- no new arguments, but fix scheme_mac_argv[0] */
-    *in_terminal = 0;
-    scheme_mac_argv[0] = (*argv)[0];
-  } else {
-    /* Command-line start; don't change argv & argc: */
-    return;
+  {
+    int from_finder;
+
+    from_finder = (((*argc) > 1) && (strncmp((*argv)[1],"-psn_",5) == 0));
+    if (from_finder) {
+      /* Finder started app; fix scheme_mac_argv[0] */
+      *in_terminal = 0;
+      scheme_mac_argv[0] = (*argv)[0];
+    } else {
+      scheme_mac_argc = *argc;
+      scheme_mac_argv = *argv;
+    }
+
+    GetStarterInfo();
   }
 #endif  
 
   *argc = scheme_mac_argc;
   *argv = scheme_mac_argv;
 }
+
+/**********************************************************************/
+
+#ifdef OS_X
+
+#define BUFSIZE 1000
+#define RSRCNAME "starter-info"
+#define EXECNAME "MrEd"
+
+static CFPropertyListRef getPropertyList()
+{
+  // locate the starter's bundle:
+  CFBundleRef appBundle = CFBundleGetMainBundle();
+  
+  // get a URL for the named resource
+  CFURLRef myRef = CFBundleCopyResourceURL(appBundle, CFSTR(RSRCNAME), 
+					   NULL, NULL);
+  if (myRef == NULL) {
+    return NULL;
+  }
+  
+  // Load the XML data using its URL.
+  CFDataRef       xmlData;
+  CFURLCreateDataAndPropertiesFromResource(kCFAllocatorDefault, myRef, 
+					   &xmlData, NULL, NULL, NULL);
+
+  // convert to a Property List
+  CFStringRef error;
+  CFPropertyListRef propertyList;
+  propertyList = CFPropertyListCreateFromXMLData(kCFAllocatorDefault, xmlData, 
+						 kCFPropertyListImmutable, 
+						 &error);
+  if (error != NULL) {
+    return NULL;
+  }
+
+  return propertyList;
+}
+
+char *ConvertCFStringRef(CFStringRef str)
+{
+  static char buf[BUFSIZE];
+
+  Boolean success;
+  success = CFStringGetCString(str,buf,BUFSIZE,kCFStringEncodingISOLatin1);
+  if (!success) {
+    return "???";
+  }
+  char *result = new char[strlen(buf) + 1];
+  strcpy(result,buf);
+  return result;
+}  
+
+void GetStarterInfo()
+{
+  int i;
+
+  CFPropertyListRef propertyList = getPropertyList();
+
+  if (propertyList) {
+    
+    CFStringRef execName;
+    CFArrayRef storedArgsArray;
+    CFIndex count;
+    char **storedArgs;
+    
+    if (CFDictionaryContainsKey((CFDictionaryRef)propertyList,
+				(const void *)(CFSTR("executable name")))) {
+      execName = (CFStringRef)CFDictionaryGetValue((CFDictionaryRef)propertyList,
+						   (CFSTR("executable name")));
+      scheme_mac_argv[0] = ConvertCFStringRef(execName);
+    }
+
+    if (CFDictionaryContainsKey((CFDictionaryRef)propertyList,
+				(const void *)CFSTR("stored arguments"))) {
+      storedArgsArray = (CFArrayRef)CFDictionaryGetValue((CFDictionaryRef)propertyList,
+							 (CFSTR("stored arguments")));
+    } else {
+      return;
+    }
+    
+    count = CFArrayGetCount(storedArgsArray);
+    
+    storedArgs = new char *[scheme_mac_argc + count];
+    
+    storedArgs[0] = scheme_mac_argv[0];
+    for (i = 0; i < count; i++) {
+      CFStringRef arg = (CFStringRef)CFArrayGetValueAtIndex(storedArgsArray,i);
+      storedArgs[i + 1] = ConvertCFStringRef(arg);
+    }
+    for (i = 1; i < scheme_mac_argc; i++) {
+      storedArgs[count + i] = scheme_mac_argv[i];
+    }
+
+    scheme_mac_argv = storedArgs;
+    scheme_mac_argc += count;
+  }
+}
+
+#endif

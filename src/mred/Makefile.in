@@ -87,7 +87,7 @@ bin:
 	$(MAKE) $(LINKRESULT)
 
 EXTRASETUP_wx_xt =
-EXTRASETUP_wx_mac = MrEd.app Starter.app/Contents/MacOS/Starter
+EXTRASETUP_wx_mac = MrEd.app
 
 $(LINKRESULT) : $(MZSCHEME) mrmain.o $(MREDOBJECTS) $(@WXLIBS@) $(MRSTATIC_STUB) $(EXTRASETUP_@WXVARIANT@)
 	$(LINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(LINKRESULT) $(MREDOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB)
@@ -97,9 +97,6 @@ libmred.@LIBSFX@: $(WXLIBSNORM)
 
 MrEd.app:
 	$(srcdir)/../mac/osx_appl.ss $(srcdir)/..
-
-Starter.app/Contents/MacOS/Starter: $(srcdir)/../mac/starter/X-starter.cpp
-	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -framework Carbon $(srcdir)/../mac/starter/X-starter.cpp -o Starter.app/Contents/MacOS/Starter
 
 
 ee-app: mred mred_ee.o

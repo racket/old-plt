@@ -711,22 +711,25 @@
 				       super-root)]
 	      [space (make-object mred:container:horizontal-panel% info-panel)]
 	      [anchor-message 
-	       (make-object mred:container:message%
+	       (make-object mred:container:canvas-message%
 			    info-panel
 			    (let ([b (mred:icon:get-anchor-bitmap)])
 			      (if (send b ok?)
 				  b
-				  "Anchor")))]
+				  "Anchor"))
+			    -1 -1 wx:const-border)]
 	      [overwrite-message 
-	       (make-object mred:container:message%
+	       (make-object mred:container:canvas-message%
 			    info-panel
-			    "Overwrite")]
-	      [lock-message (make-object mred:container:message%
+			    "Overwrite"
+			    -1 -1 wx:const-border)]
+	      [lock-message (make-object mred:container:canvas-message%
 			      info-panel 
 			      (let ([b (mred:icon:get-unlock-bitmap)])
 				(if (send b ok?)
 				    b
-				    "Unlocked")))]
+				    "Unlocked"))
+			      -1 -1 wx:const-border)]
 	      [position-canvas (make-object mred:canvas:one-line-canvas%
 					    info-panel)]
 	      [time-canvas (make-object mred:canvas:one-line-canvas% 

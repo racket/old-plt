@@ -1,5 +1,5 @@
 ;;
-;; $Id$
+;; $Id: contkids.ss,v 1.36 1997/07/11 20:09:43 krentel Exp robby $
 ;;
 
 ; need to export:
@@ -650,4 +650,78 @@
       (define media-canvas% (make-item%
 			     mred:connections:connections-media-canvas%
 			     0 0 #t #t canvas-args))
-      (define text-window% (make-item% mred:testable-text-window% 0 0 #t #t canvas-args)))
+      (define text-window% (make-item% mred:testable-text-window% 0 0 #t #t canvas-args))
+
+      (define canvas-message%
+	(class canvas% (panel
+			message 
+			[x -1] [y -1]
+			[style wx:const-retained]
+			[name "canvasmessage"])
+	  (private
+	    [mdc (make-object wx:memory-dc%)]
+	    [bitmap 'canvas-message:not-yet-the-bitmap]
+	    [update-label
+	     (lambda (new-label)
+	       (cond
+		 [(is-a? new-label wx:bitmap%)
+		  (set! bitmap new-label)
+		  (send mdc select-object new-label)]
+		 [(string? new-label)
+		  (let* ([width 0]
+			 [height 0]
+			 [width-space 2]
+			 [font (make-object wx:font%)])
+		    (let ([bw (box 0)]
+			  [bh (box 0)]
+			  [bl (box 0)]
+			  [bd (box 0)])
+		      (send* mdc 
+			(select-object (make-object wx:bitmap% 2 2))
+			(set-font font)
+			(get-text-extent new-label bw bh bl bd))
+		      (set! width (+ (* 2 width-space) (unbox bw)))
+		      (set! height (+ (unbox bh) (unbox bl) (unbox bd))))
+		    (let ([tbitmap (make-object wx:bitmap% width height)])
+		      (send* mdc 
+			(select-object tbitmap)
+			(clear)
+			(set-font font)
+			(set-text-foreground (make-object wx:colour% "BLACK"))
+			(set-text-background (make-object wx:colour% "WHITE"))
+			(draw-text new-label width-space 0))
+		      (set! bitmap tbitmap)))]
+		 [else 
+		  (error 'canvas-message% 
+			 "expected the label to be a string or a wx:bitmap%")]))])
+	  (inherit get-dc)
+	  (public
+	    [default-x-stretch #f]
+	    [default-y-stretch #f]
+	    [set-label
+	     (lambda (new-label)
+	       (update-label new-label)
+	       (on-paint))]
+	    [on-paint
+	     (lambda ()
+	       (send* (get-dc)
+		 (clear)
+		 (blit 0 0
+		       (send bitmap get-width)
+		       (send bitmap get-height)
+		       mdc 0 0)))])
+	  (inherit set-min-height set-min-width set-size get-client-size)
+	  (sequence
+	    (update-label message)
+	    (super-init panel x y 
+			(send bitmap get-width)
+			(send bitmap get-height)
+			style name)
+	    (let ([bw (send bitmap get-width)]
+		  [bh (send bitmap get-height)]
+		  [b1 (box 0)]
+		  [b2 (box 0)])
+	      (set-size 0 0 bw bh)
+	      (get-client-size b1 b2)
+	      (set-min-width (- (* 2 bw) (unbox b1)))
+	      (set-min-height (- (* 2 bh) (unbox b2))))))))

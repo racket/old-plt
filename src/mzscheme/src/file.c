@@ -3311,6 +3311,9 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
 #ifdef NO_RMDIR
   return scheme_false;
 #else
+# ifdef DOS_FILE_SYSTEM
+  int tried_cwd = 0;
+# endif
   char *filename;
 
   if (!SCHEME_STRINGP(argv[0]))
@@ -3324,6 +3327,15 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
   while (1) {
     if (!MSC_IZE(rmdir)(filename))
       return scheme_void;
+#ifdef DOS_FILE_SYSTEM
+    else if ((errno == EACCES) && !tried_cwd) {
+      /* Maybe we're using the target directory. Try a real setcwd. */
+      scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config, 
+						       MZCONFIG_CURRENT_DIRECTORY)),
+		       0);
+      tried_cwd = 1;
+    }
+#endif
 #ifndef MAC_FILE_SYSTEM
     else if (errno != EINTR)
 #endif

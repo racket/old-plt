@@ -275,6 +275,8 @@ static Scheme_Object *replace_symbol, *truncate_symbol, *truncate_replace_symbol
 
 static Scheme_Object *none_symbol, *line_symbol, *block_symbol;
 
+static Scheme_Object *exact_symbol;
+
 #define fail_err_symbol scheme_false
 
 #include "schwinfd.h"
@@ -332,6 +334,10 @@ scheme_init_port (Scheme_Env *env)
   none_symbol = scheme_intern_symbol("none");
   line_symbol = scheme_intern_symbol("line");
   block_symbol = scheme_intern_symbol("block");
+
+  REGISTER_SO(exact_symbol);
+
+  exact_symbol = scheme_intern_symbol("exact");
 
   REGISTER_SO(scheme_orig_stdout_port);
   REGISTER_SO(scheme_orig_stderr_port);
@@ -4755,7 +4761,7 @@ static char *cmdline_protect(char *s)
 }
 
 static long mz_spawnv(char *command, const char * const *argv,
-		      int sin, int sout, int serr, int *pid)
+		      int exact_cmdline, int sin, int sout, int serr, int *pid)
 {
   int i, l, len = 0;
   long cr_flag;
@@ -4763,21 +4769,25 @@ static long mz_spawnv(char *command, const char * const *argv,
   STARTUPINFO startup;
   PROCESS_INFORMATION info;
 
-  for (i = 0; argv[i]; i++) {
-    len += strlen(argv[i]) + 1;
+  if (exact_cmdline) {
+    cmdline = (char *)argv[1];
+  } else {
+    for (i = 0; argv[i]; i++) {
+      len += strlen(argv[i]) + 1;
+    }
+    
+    cmdline = (char *)scheme_malloc_atomic(len);
+    
+    len = 0;
+    for (i = 0; argv[i]; i++) {
+      l = strlen(argv[i]);
+      memcpy(cmdline + len, argv[i], l);
+      cmdline[len + l] = ' ';
+      len += l + 1;
+    }
+    --len;
+    cmdline[len] = 0;
   }
-
-  cmdline = (char *)scheme_malloc_atomic(len);
-
-  len = 0;
-  for (i = 0; argv[i]; i++) {
-    l = strlen(argv[i]);
-    memcpy(cmdline + len, argv[i], l);
-    cmdline[len + l] = ' ';
-    len += l + 1;
-  }
-  --len;
-  cmdline[len] = 0;
 
   memset(&startup, 0, sizeof(startup));
   startup.cb = sizeof(startup);
@@ -4905,6 +4915,9 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   Scheme_Object *errport;
   Scheme_Object *a[4];
   Scheme_Subprocess *subproc;
+#if defined(WINDOWS_PROCESSES)
+  int exact_cmdline;
+#endif
 #if defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
   int spawn_status;
 #endif
@@ -5002,13 +5015,28 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
     np = scheme_normal_path_case(argv[0], &nplen);
     argv[0] = np;
   }
-    
-  for (i = 4; i < c; i++) { 
-    if (!SCHEME_STRINGP(args[i]) || scheme_string_has_null(args[i]))
-      scheme_wrong_type(name, STRING_W_NO_NULLS, i, c, args);
-    argv[i - 3] = SCHEME_STR_VAL(args[i]);
+
+  if ((c == 6) && SAME_OBJ(args[4], exact_symbol)) {
+    argv[2] = NULL; 
+    if (!SCHEME_STRINGP(args[5]) || scheme_string_has_null(args[5]))
+      scheme_wrong_type(name, STRING_W_NO_NULLS, 5, c, args);
+    argv[1] = SCHEME_STR_VAL(args[5]);
+#ifdef WINDOWS_PROCESSES
+    exact_cmdline = 1;
+#else
+    /* 'exact-full only works in windows */
+    scheme_arg_mismatch(name,
+			"exact command line not supported on this platform", 
+			args[5]);
+#endif    
+  } else {
+    for (i = 4; i < c; i++) { 
+      if (!SCHEME_STRINGP(args[i]) || scheme_string_has_null(args[i]))
+	scheme_wrong_type(name, STRING_W_NO_NULLS, i, c, args);
+      argv[i - 3] = SCHEME_STR_VAL(args[i]);
+    }
+    argv[c - 3] = NULL;
   }
-  argv[c - 3] = NULL;
 
   command = argv[0];
 
@@ -5057,12 +5085,16 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
     int save0, save1, save2;
 # endif
 
-    /* protect spaces, etc. in the arguments: */
-    for (i = 0; i < (c - 3); i++) {
-      char *cla;
-      cla = cmdline_protect(argv[i]);
-      argv[i] = cla;
+# ifdef WINDOWS_PROCESSES
+    if (!exact_cmdline) {
+      /* protect spaces, etc. in the arguments: */
+      for (i = 0; i < (c - 3); i++) {
+	char *cla;
+	cla = cmdline_protect(argv[i]);
+	argv[i] = cla;
+      }
     }
+# endif
 
 # ifdef BEOS_PROCESSES
     /* Save stdin and stdout */
@@ -5083,6 +5115,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 
     spawn_status = mz_spawnv(command, (const char * const *)argv,
 # ifdef WINDOWS_PROCESSES
+			     exact_cmdline,
 			     to_subprocess[0],
 			     from_subprocess[1],
 			     err_subprocess[1],

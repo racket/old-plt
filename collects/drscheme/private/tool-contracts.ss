@@ -423,8 +423,13 @@
   
   (drscheme:unit:make-bitmap
    (case->
-    (string? . -> . ((is-a?/c area-container<%>) . -> . (union string? (is-a?/c bitmap%))))
-    (string? (union string? (is-a?/c bitmap%)) . -> . ((is-a?/c area-container<%>) . -> . (union string? (is-a?/c bitmap%)))))
+    (string?
+     . -> .
+     ((is-a?/c area-container<%>) . -> . (union string? (is-a?/c bitmap%))))
+    (string? 
+     (union path? (is-a?/c bitmap%))
+     . -> . 
+     ((is-a?/c area-container<%>) . -> . (union string? (is-a?/c bitmap%)))))
    
    ((button-name) (text filename-or-bitmap))
    

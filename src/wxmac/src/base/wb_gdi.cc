@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.22 1999/12/10 00:05:26 clements Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.23 2000/02/08 03:35:54 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -14,6 +14,7 @@
 
 #ifdef __GNUG__
 #pragma implementation
+#pragma implementation "FontDirectory.h"
 #endif
 
 #include "common.h"

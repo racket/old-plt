@@ -67,11 +67,13 @@ static int wxFindFileFlags = 0;
 #ifdef OS_X
 char *wxFSSpecToPath(const FSSpec *spec)
 {
+    wxFatalError("Not Implemented Yet","");
   // hopefully, OS X will give us a nice way to do this.
 }
 
 OSErr wxPathToFSSpec(const char *path, FSSpec *spec)
 {
+    wxFatalError("Not Implemented Yet","");
   // hopefully, OS X will give us a nice way to do this.
 }
 #else

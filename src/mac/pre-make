@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# pathetic test to see if we're in the right directory:
+if [ `basename $PWD` != 'MrEd' ] ; then
+	echo 'This script may only be run from the proj-builder/MrEd directory'
+	exit -1
+fi
+ 
+cd ../../..
+make mz
+cd wxcommon/jpeg
+make

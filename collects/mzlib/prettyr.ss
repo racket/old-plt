@@ -642,6 +642,8 @@
 	 (define (style head)
 	   (case head
 	     ((lambda let* letrec define shared
+		      unless #%unless
+		      when #%when
 		      #%lambda #%let* #%letrec #%define
 		      define-macro #%define-macro)
 	      pp-lambda)

@@ -2451,8 +2451,8 @@ static int file_getc(Scheme_Input_Port *port)
       } else {
 	scheme_raise_exn(MZEXN_I_O_PORT_READ,
 			 port,
-			 "error reading from file port (%e)",
-			 errno);
+			 "error reading from file port \"%q\" (%e)",
+			 port->name, errno);
 	return 0;
       }
     }
@@ -2640,8 +2640,8 @@ static int fd_getc(Scheme_Input_Port *port)
       } else {
 	scheme_raise_exn(MZEXN_I_O_PORT_READ,
 			 port,
-			 "error reading from stream port (%e)",
-			 errno);
+			 "error reading from stream port \"%q\" (%e)",
+			 port->name, errno);
 	return 0;
       }
     }
@@ -3037,8 +3037,8 @@ static int tested_file_getc(Scheme_Input_Port *p)
     if (!scheme_return_eof_for_error()) {
       scheme_raise_exn(MZEXN_I_O_PORT_READ,
 		       p,
-		       "error reading from file port (%e)",
-		       tip->err_no);
+		       "error reading from file port \"%q\" (%e)",
+		       p->name, tip->err_no);
     }
     return EOF;
   }

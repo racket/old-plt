@@ -231,8 +231,10 @@ static int run_from_cmd_line(int argc, char *argv[],
   FinishArgs *fa;
 
 #ifndef USE_SENORA_GC
-# ifdef GC_MIGHT_USE_REGISTERED_STATICS
+# ifndef MZ_PRECISE_GC
+#  ifdef GC_MIGHT_USE_REGISTERED_STATICS
   GC_use_registered_statics = 1;
+#  endif
 # endif
 #endif
 
@@ -253,7 +255,8 @@ static int run_from_cmd_line(int argc, char *argv[],
 	|| (tolower(((unsigned char *)prog)[l - 3]) != 'e')
 	|| (tolower(((unsigned char *)prog)[l - 2]) != 'x')
 	|| (tolower(((unsigned char *)prog)[l - 1]) != 'e')) {
-      char *s = (char *)scheme_malloc_atomic(l + 4 + 1);
+      char *s;
+      s  = (char *)scheme_malloc_atomic(l + 4 + 1);
       memcpy(s, prog, l);
       memcpy(s + l, ".exe", 5);
       prog = s;

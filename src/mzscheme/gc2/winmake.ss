@@ -1,6 +1,10 @@
 
 (require-library "restart.ss")
 
+(define (system- s)
+  (fprintf (current-error-port) "~a~n" s)
+  (system s))
+
 (define srcs
   '("salloc"
     "bignum"
@@ -61,13 +65,17 @@
       (when (file-exists? dest)
 	(delete-file dest))
       (error "error xforming")))
-  (compile dest objdest))
+  (compile dest objdest null ""))
 
-(define (compile c o)
+(define (compile c o deps flags)
   (unless (and (file-exists? o)
-	       (>= (file-or-directory-modify-seconds o)
-		   (file-or-directory-modify-seconds c)))
-    (unless (system (format "cl.exe /c ~a /Fo~a" c o))
+	       (let ([t (file-or-directory-modify-seconds o)])
+		 (and (>= t (file-or-directory-modify-seconds c))
+		      (andmap
+		       (lambda (f)
+			 (>= t (file-or-directory-modify-seconds f)))
+		       deps))))
+    (unless (system- (format "cl.exe ~a /c ~a /Fo~a" flags c o))
       (error "failed compile"))))
 
 (define common-deps (list "xform.ss" "ctok.ss"))
@@ -92,4 +100,39 @@
      "xsrc/main.obj"
      "/I ../include")
 
-(compile "gc2.c" "xsrc/cgc2.obj")
+(compile "gc2.c" "xsrc/gc2.obj" '("compact.c") "")
+(compile "../src/mzsj86.c" "xsrc/mzsj86.obj" '() "/I ../include")
+
+(define exe "mz2k.exe")
+
+(define libs "kernel32.lib user32.lib wsock32.lib libcmt.lib /nodefaultlib:LIBC")
+
+(let ([objs (list*
+	     "xsrc/main.obj"
+	     "xsrc/gc2.obj"
+	     "xsrc/mzsj86.obj"
+	     (map
+	      (lambda (n)
+		(format "xsrc/~a.obj" n))
+	      srcs))])
+  (let ([ms (if (file-exists? exe)
+		(file-or-directory-modify-seconds exe)
+		0)])
+    (when (ormap
+	   (lambda (f)
+	     (> (file-or-directory-modify-seconds f)
+		ms))
+	   objs)
+      (unless (system- (format "cl.exe /Fo~a ~a ~a"
+			       exe
+			       (let loop ([objs objs])
+				 (if (null? objs)
+				     ""
+				     (string-append
+				      (car objs)
+				      " "
+				      (loop (cdr objs)))))
+			       libs))
+	(error "link failed")))))
+
+				 

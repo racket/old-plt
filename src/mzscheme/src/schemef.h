@@ -256,9 +256,11 @@ char *scheme_strdup_eternal(const char *str);
 
 void *scheme_malloc_fail_ok(void *(*f)(size_t), size_t);
 
+#ifndef MZ_PRECISE_GC
 void scheme_weak_reference(void **p);
 void scheme_weak_reference_indirect(void **p, void *v);
 void scheme_unweak_reference(void **p);
+#endif
 void scheme_add_finalizer(void *p, void (*f)(void *p, void *data), void *data);
 void scheme_add_finalizer_once(void *p, void (*f)(void *p, void *data), void *data);
 void scheme_add_scheme_finalizer(void *p, void (*f)(void *p, void *data), void *data);

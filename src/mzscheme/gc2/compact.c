@@ -414,7 +414,7 @@ void flush_freed_pages(void)
 void protect_pages(void *p, size_t len, int writeable)
 {
   DWORD old;
-  VrtualProtect(p, len, (writeable ? PAGE_READWRITE : PAGE_READONLY), &old);
+  VirtualProtect(p, len, (writeable ? PAGE_READWRITE : PAGE_READONLY), &old);
 }
 
 #endif
@@ -1131,7 +1131,7 @@ void GC_dump(void)
 	    case gc_weak_array_tag: tn = "weak-array"; break;
 	    case gc_on_free_list_tag: tn = "freelist-elem"; break;
 	    default:
-	      tn = scheme_get_type_name((Scheme_Type)i);
+	      tn = scheme_get_type_name((Type_Tag)i);
 	      if (!tn) tn = "unknown";
 	      break;
 	    }
@@ -2847,7 +2847,7 @@ void fault_handler(int sn, struct siginfo *si, void *ctx)
 
 /* Windows signal handler: */
 #if defined(_WIN32)
-LONG fault_handler(LPEXCEPTION_POINTERS e) 
+LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e) 
 {
   if ((e->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION)
       && (e->ExceptionRecord->ExceptionInformation[0] == 1)) {
@@ -3041,7 +3041,7 @@ static void init(void)
     }
 # endif
 # ifdef NEED_SIGWIN
-    SetUnhandledExceptionHandler(fault_handler);
+    SetUnhandledExceptionFilter(fault_handler);
 # endif
 #endif
   }

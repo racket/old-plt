@@ -132,9 +132,11 @@
 #define scheme_strdup (scheme_extension_table->scheme_strdup)
 #define scheme_strdup_eternal (scheme_extension_table->scheme_strdup_eternal)
 #define scheme_malloc_fail_ok (scheme_extension_table->scheme_malloc_fail_ok)
+#ifndef MZ_PRECISE_GC
 #define scheme_weak_reference (scheme_extension_table->scheme_weak_reference)
 #define scheme_weak_reference_indirect (scheme_extension_table->scheme_weak_reference_indirect)
 #define scheme_unweak_reference (scheme_extension_table->scheme_unweak_reference)
+#endif
 #define scheme_add_finalizer (scheme_extension_table->scheme_add_finalizer)
 #define scheme_add_finalizer_once (scheme_extension_table->scheme_add_finalizer_once)
 #define scheme_add_scheme_finalizer (scheme_extension_table->scheme_add_scheme_finalizer)

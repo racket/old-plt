@@ -267,6 +267,7 @@ typedef struct {
   Scheme_Type type;
   short kind;
   Scheme_Object *clori;
+  Scheme_Object *ivar_name;
   int vp;
 } Generic_Data;
 
@@ -3242,6 +3243,7 @@ Scheme_Object *scheme_get_generic_data(Scheme_Object *clori,
   data->type = scheme_generic_data_type;
   data->kind = kind;
   data->clori = clori;
+  data->ivar_name = name;
   data->vp = vp;
 
   return (Scheme_Object *)data;
@@ -3268,7 +3270,8 @@ Scheme_Object *scheme_apply_generic_data(Scheme_Object *gdata,
 	const char *cl = get_class_name(data->clori, ": ");
 	scheme_raise_exn(MZEXN_OBJECT_GENERIC,
 			 obj,
-			 "generic" ": object not an instance of the generic's class%s",
+			 "generic for %s: object not an instance of the generic's class%s",
+			 scheme_symbol_name(data->ivar_name),
 			 cl);
 	return NULL;
       }
@@ -3283,7 +3286,8 @@ Scheme_Object *scheme_apply_generic_data(Scheme_Object *gdata,
       const char *inn = get_interface_name(data->clori, ": ");
       scheme_raise_exn(MZEXN_OBJECT_GENERIC,
 		       obj,
-		       "generic" ": object not an instance of the generic's interface%s",
+		       "generic for %s: object not an instance of the generic's interface%s",
+		       scheme_symbol_name(data->ivar_name),
 		       inn);
       return NULL;
     }
@@ -3297,8 +3301,13 @@ Scheme_Object *scheme_apply_generic_data(Scheme_Object *gdata,
 static Scheme_Object *DoGeneric(Generic_Data *data, 
 				int argc, Scheme_Object *argv[])
 {
-  if (!SCHEME_OBJP(argv[0]))
-    scheme_wrong_type("generic", "object", 0, argc, argv);
+  if (!SCHEME_OBJP(argv[0])) {
+    char *s = (char *)scheme_symbol_name(data->ivar_name), *n;
+    n = scheme_malloc(strlen(s) + 20);
+    strcpy(n, "generic for ");
+    strcat(n, s);
+    scheme_wrong_type(n, "object", 0, argc, argv);
+  }
 
   return scheme_apply_generic_data((Scheme_Object *)data, argv[0], 1);
 }
@@ -3789,6 +3798,7 @@ void scheme_count_generic(Scheme_Object *o, long *s, long *e, Scheme_Hash_Table 
 {
   *s = sizeof(Generic_Data);
   *e = scheme_count_memory(((Generic_Data *)o)->clori, ht);
+  *e = scheme_count_memory(((Generic_Data *)o)->ivar_name, ht);
 }
 
 void scheme_count_class_data(Scheme_Object *o, long *s, long *e, Scheme_Hash_Table *ht)

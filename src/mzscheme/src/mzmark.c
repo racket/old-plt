@@ -1987,6 +1987,7 @@ int module_val_MARK(void *p) {
   gcMARK(m->modname);
 
   gcMARK(m->et_requires);
+  gcMARK(m->tt_requires);
   gcMARK(m->requires);
 
   gcMARK(m->body);
@@ -2024,6 +2025,7 @@ int module_val_FIXUP(void *p) {
   gcFIXUP(m->modname);
 
   gcFIXUP(m->et_requires);
+  gcFIXUP(m->tt_requires);
   gcFIXUP(m->requires);
 
   gcFIXUP(m->body);

@@ -767,6 +767,7 @@ module_val {
   gcMARK(m->modname);
 
   gcMARK(m->et_requires);
+  gcMARK(m->tt_requires);
   gcMARK(m->requires);
 
   gcMARK(m->body);

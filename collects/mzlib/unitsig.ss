@@ -207,7 +207,7 @@
 		 (loop (cdr isig) (cdr expecteds) (add1 pos))))))
 	 units tags isigs))))
 
-  (define signature->symbols
+  (define-syntax signature->symbols
     (lambda (stx)
       (syntax-case stx ()
 	[(_ name)
@@ -216,6 +216,85 @@
 	   (with-syntax ([e (explode-sig sig)])
 	     (syntax 'e)))])))
 
+  ;; Internal:
+  (define-syntax do-define-values/invoke-unit/sig
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ global? signame unite prefix imports orig)
+	 (let* ([formname (if (syntax-e (syntax global?))
+			      'global-define-values/invoke-unit/sig
+			      'define-values/invoke-unit/sig)]
+		[badsyntax (lambda (s why)
+			     (raise-syntax-error
+			      formname
+			      (format "bad syntax (~a)" why)
+			      (syntax orig)
+			      s))])
+	   (unless (or (not (syntax-e (syntax prefix)))
+		       (identifier? (syntax prefix)))
+	     (badsyntax (syntax prefix) "prefix is not an identifier"))
+	   (let ([ex-sig (get-sig formname (syntax orig) #f (syntax signame))])
+	     (let ([ex-exploded (explode-sig ex-sig)]
+		   [ex-flattened (flatten-signature #f ex-sig)])
+	       (let ([im-sigs
+		      (map
+		       (lambda (s)
+			 (get-sig formname (syntax orig) #f s))
+		       (syntax->list (syntax imports)))])
+		 (let ([im-explodeds (explode-named-sigs im-sigs)]
+		       [im-flattened (flatten-signatures im-sigs)])
+		   (with-syntax ([dv/iu (if (syntax-e (syntax global?))
+					    (quote-syntax global-define-values/invoke-unit)
+					    (quote-syntax define-values/invoke-unit))]
+				 [ex-flattened ex-flattened]
+				 [ex-exploded ex-exploded]
+				 [im-explodeds im-explodeds]
+				 [im-flattened im-flattened]
+				 [formname formname])
+		     (syntax
+		      (dv/iu
+		       ex-flattened
+		       (let ([unit-var unite])
+			 (verify-linkage-signature-match
+			  'formname
+			  '(invoke)
+			  (list unit-var)
+			  '(ex-exploded)
+			  '(im-explodeds))
+			 (unit/sig-unit unit-var))
+		       prefix
+		       . im-flattened))))))))])))
+  
+  (define-syntax define-values/invoke-unit/sig
+    (lambda (stx)
+      (with-syntax ([orig stx])
+	(syntax-case stx ()
+	  [(_ signame unit prefix . imports)
+	   (syntax (do-define-values/invoke-unit/sig #f signame unit prefix imports orig))]
+	  [(_ signame unit)
+	   (syntax (do-define-values/invoke-unit/sig #f signame unit #f () orig))]))))
+
+  (define-syntax global-define-values/invoke-unit/sig
+    (lambda (stx)
+      (with-syntax ([orig stx])
+	(syntax-case stx ()
+	  [(_ signame unit prefix . imports)
+	   (syntax (do-define-values/invoke-unit/sig #t signame unit prefix imports orig))]
+	  [(_ signame unit)
+	   (syntax (do-define-values/invoke-unit/sig #t signame unit #f () orig))]))))
+
+  (define-syntax export-signature-elements
+    (lambda (stx)
+      (with-syntax ([orig stx])
+	(syntax-case stx ()
+	  [(_ signame)
+	   (let ([sig (get-sig 'export-signature-elements stx #f (syntax signame))])
+	     (let ([flattened (flatten-signature #f sig)])
+	       (with-syntax ([flattened (map (lambda (x) (datum->syntax x #f (syntax signame)))
+					     flattened)])
+		 (syntax
+		  (export . flattened)))))]))))
+  
   (export-indirect verify-linkage-signature-match)
 
   (export define-signature
@@ -224,5 +303,9 @@
           compound-unit/sig
 	  invoke-unit/sig
 	  unit->unit/sig
-	  signature->symbols))
+	  signature->symbols
+	  
+	  define-values/invoke-unit/sig
+	  global-define-values/invoke-unit/sig
+	  export-signature-elements))
 

@@ -622,7 +622,85 @@
 		  ((list-ref ((unit-go u)) 1)
 		   bx ...))))))])))
 
+  (define-syntax do-define-values/invoke-unit
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ global? exports unite prefix imports orig)
+	 (let* ([badsyntax (lambda (s why)
+			     (raise-syntax-error
+			      (if (syntax-e (syntax global?))
+				  'global-define-values/invoke-unit
+				  'define-values/invoke-unit)
+			      (format "bad syntax (~a)" why)
+			      (syntax orig)
+			      s))]
+		[symcheck (lambda (s)
+			    (or (identifier? s)
+				(badsyntax s "not an identifier")))])
+	   (unless (stx-list? (syntax exports))
+	     (badsyntax (syntax exports) "not a sequence of identifiers"))
+	   (for-each symcheck (syntax->list (syntax exports)))
+	   (unless (or (not (syntax-e (syntax prefix)))
+		       (identifier? (syntax prefix)))
+	     (badsyntax (syntax prefix) "prefix is not an identifier"))
+	   (for-each symcheck (syntax->list (syntax imports)))
+	   
+	   (with-syntax ([(tagged-export ...) 
+			  (if (syntax-e (syntax prefix))
+			      (let ([prefix (string-append
+					     (symbol->string 
+					      (syntax-e (syntax prefix)))
+					     ":")])
+				(map (lambda (s)
+				       (datum->syntax
+					(string->symbol
+					 (string-append
+					  prefix
+					  (symbol->string s)))
+					s s))
+				     (syntax->list (syntax exports))))
+			      (syntax exports))]
+			 [extract-unit (syntax (unit
+						 (import . exports)
+						 (export)
+						 (values . exports)))])
+	     (with-syntax ([invoke-unit (syntax (invoke-unit
+						 (compound-unit
+						  (import . imports)
+						  (link [unit-to-invoke (unite . imports)]
+							[export-extractor 
+							 (extract-unit (unit-to-invoke . exports))])
+						  (export))
+						 . imports))])
+	       (if (syntax-e (syntax global?))
+		   (syntax (let-values ([(tagged-export ...) invoke-unit])
+			     (global-defined-value 'tagged-export tagged-export)
+			     ...
+			     (void)))
+		   (syntax (define-values (tagged-export ...) invoke-unit))))))])))
+    
+  (define-syntax define-values/invoke-unit
+    (lambda (stx)
+      (with-syntax ([orig stx])
+	(syntax-case stx ()
+	  [(_ exports unit name . imports) 
+	   (syntax (do-define-values/invoke-unit #f exports unit name imports orig))]
+	  [(_ exports unit) 
+	   (syntax (do-define-values/invoke-unit #f exports unit #f () orig))]))))
+  
+  (define-syntax global-define-values/invoke-unit
+    (lambda (stx)
+      (with-syntax ([orig stx])
+	(syntax-case stx ()
+	  [(_ exports unit name . imports) 
+	   (syntax (do-define-values/invoke-unit #t exports unit name imports orig))]
+	  [(_ exports unit) 
+	   (syntax (do-define-values/invoke-unit #t exports unit #f () orig))]))))
+  
   (export-indirect make-unit check-unit undefined unit-go
 		   check-expected-interface)
   (export unit compound-unit invoke-unit unit?
-	  exn:unit? struct:exn:unit make-exn:unit))
+	  exn:unit? struct:exn:unit make-exn:unit
+
+	  define-values/invoke-unit
+	  global-define-values/invoke-unit))

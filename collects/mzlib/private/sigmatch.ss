@@ -130,4 +130,4 @@
 			       exact? who src-context dest-context)
 	(raise-type-error 'verify-signature-match "signature" dest-sig))))
 
-  (export verify-signature-match exn:unit?))
+  (export verify-signature-match))

@@ -4,6 +4,7 @@
 
   (import "sigmatch.ss")
   (import "../exstruct.ss")
+  (import "../unit.ss")
 
   (define-struct signature (name    ; sym
 			    src     ; sym
@@ -966,4 +967,5 @@
 	  explode-sig
 	  explode-named-sigs
 	  check-signature-unit-body
+	  flatten-signature
 	  flatten-signatures))

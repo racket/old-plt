@@ -4,7 +4,29 @@
            (lib "framework.ss" "framework")
            "color-selection.ss")
   
-  (provide add-to-colorer-prefs)
+  (provide add-to-colorer-prefs make-style-delta)
+  
+  (define (make-style-delta color bold? underline? italic?)
+    (let ((sd (make-object style-delta%)))
+      (send sd set-delta-foreground color)
+      (cond
+        (bold?
+         (send sd set-weight-on 'bold)
+         (send sd set-weight-off 'base))
+        (else
+         (send sd set-weight-on 'base)
+         (send sd set-weight-off 'bold)))
+      (send sd set-underline-on underline?)
+      (send sd set-underline-off (not underline?))
+      (cond
+        (italic?
+         (send sd set-style-on 'italic)
+         (send sd set-style-off 'base))
+        (else
+         (send sd set-style-on 'base)
+         (send sd set-style-off 'italic)))
+      sd))
+  
   
   (define color-selection-panel%
     (class vertical-panel%

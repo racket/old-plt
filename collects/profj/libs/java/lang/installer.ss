@@ -18,4 +18,6 @@
 	(javac "Math.java")
         (javac "System.java")
 	(javac "Number.java")
-        (javac "Double.java")))))
+        (javac "Double.java")
+        (javac "Float.java")
+        (javac "Boolean.java")))))

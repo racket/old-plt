@@ -199,8 +199,8 @@
      ((first) . e--> . "first: expects one argument")
      ((first v v v ...) . e--> . "first: expects one argument")
      ((side-condition (first (name v v))
-                      (or (not (pair? v))
-                          (not (eq? 'cons (car v)))))
+                      (not (and (pair? v) 
+                                (eq? (car v) 'cons))))
       . e--> .
       "first: expects argument of type <pair>")
      
@@ -209,12 +209,12 @@
      ((rest) . e--> . "rest: expects one argument")
      
      ((side-condition (rest (name v v))
-                      (or (not (pair? v))
-                          (not (eq? 'cons (car v)))))
+                      (not (and (pair? v) 
+                                (eq? (car v) 'cons))))
       . e--> .
       "rest: expects argument of type <pair>")
      
-     ((symbol=? '(name y x) '(name x x)) . --> . (if (eq? x y) 'true 'false))
+     ((symbol=? '(name x x) '(name y x)) . --> . (if (eq? x y) 'true 'false))
      ((side-condition (symbol=? (name v1 v) (name v2 v))
                       (or (not (and (pair? v1)
                                     (eq? (car v1) 'quote)))
@@ -231,20 +231,20 @@
      
      ((+ (name n number) ...) . --> . (apply + n))
      ((side-condition (+ (name arg v) ...)
-                      (ormap (lambda (x) (not (number? x))) arg))
+                      (ormap (lambda (arg) (not (number? arg))) arg))
       . e--> .
       "+: expects type <number>")
      
      ((side-condition (/ (name n number) (name ns number) ...)
-                      (not (ormap zero? ns)))
+                      (andmap (lambda (ns) (not (zero? ns))) ns))
       . --> .
       (apply / (cons n ns)))
      ((side-condition (/ (name n number) (name ns number) ...)
-                      (ormap zero? ns))
+                      (ormap (lambda (ns) (zero? ns)) ns))
       . e--> . 
       "/: division by zero")
      ((side-condition (/ (name arg v) ...)
-                      (ormap (lambda (x) (not (number? x))) arg))
+                      (ormap (lambda (arg) (not (number? arg))) arg))
       . e--> .
       "/: expects type <number>")
      

@@ -1,5 +1,5 @@
 ;;
-;; $Id: stprims.ss,v 1.8 1997/08/08 20:38:06 krentel Exp krentel $
+;; $Id: stprims.ss,v 1.9 1997/08/13 15:34:57 krentel Exp krentel $
 ;;
 ;; Primitives for faking user input.
 ;; Buttons, Keystrokes, Menus, Mice.
@@ -11,23 +11,14 @@
     [wx        : mred:wx^]
     [mred      : mred:testable-window^]
     [mred      : mred:keymap^]
-    [mred:test : mred:test:struct^]
     [mred:test : mred:test:globals^]
     [mred:test : mred:test:run^])
 
-  (define arg-error error)
+  (define arg-error error)  ;; naive error handling (for now).
   (define run-error error)
   
   (define time-stamp current-milliseconds)
     
-  ;;
-  ;; Do one action now in default thread style.
-  ;;
-  
-  (define do-now
-    (lambda (thunk-maker)
-      (lambda args
-	(mred:test:run (list (apply thunk-maker args))))))
   
   ;;
   ;; Return list of window's ancestors from root down to window
@@ -83,15 +74,13 @@
 	  [(not (is-a? button wx:button%))
 	   (arg-error tag "button is not a wx:button")]
 	  [else
-	   (mred:test:make-event
+	   (mred:test:run-one
 	    (lambda ()
 	      (let ([event  (make-object wx:command-event% 
 					 wx:const-event-type-button-command)])
 		(send button command event)
 		(void))))]))))
-  
-  (define button-push-now (do-now button-push))
-  
+    
   
   ;;
   ;; KEYSTROKES 
@@ -121,7 +110,7 @@
 	[(verify-list  modifier-list  legal-keystroke-modifiers)
 	 => (lambda (mod) (arg-error key-tag "unknown key modifier: ~s" mod))]
 	[else
-	 (mred:test:make-event
+	 (mred:test:run-one
 	  (lambda ()
 	    (let*
 		([window  (mred:test:get-focused-window)]
@@ -199,9 +188,7 @@
       (for-each set-shifted letters)
       (for-each set-shifted mred:shifted-key-list)
       (lambda (int) (and (< 0 int ascii-size) (vector-ref keys int)))))
-  
-  (define keystroke-now (do-now keystroke))
-  
+    
   
   ;;
   ;; MENU ITEMS are selected with
@@ -219,7 +206,7 @@
 	  [(not (string? item))
 	   (arg-error tag "invalid menu item")]
 	  [else
-	   (mred:test:make-event
+	   (mred:test:run-one
 	    (lambda ()
 	      (let*
 		  ([frame     (mred:test:top-frame)]
@@ -227,8 +214,6 @@
 		   [item-id   (mred:test:menu-bar->item-id menu-bar menu item)])
 		(send frame command item-id)
 		(void))))]))))
-  
-  (define menu-select-now (do-now menu-select))
   
   
   ;;
@@ -252,7 +237,7 @@
 	  [(not (and (real? x) (real? y)))
 	   (arg-error tag "x, y must be reals.")]
 	  [else
-	   (mred:test:make-event
+	   (mred:test:run-one
 	    (lambda ()
 	      (let
 		  ([canvas  (mred:test:get-focused-window)]
@@ -283,8 +268,6 @@
 	  [(send (car l) pre-on-event window event)  #f]
 	  [else  (loop (cdr l))]))))
   
-  (define mouse-click-now (do-now mouse-click))
-  
   
   ;;
   ;; Move mouse to new window.
@@ -301,7 +284,7 @@
 	  [(not (is-a? new-window wx:window%))
 	   (arg-error tag "new-window is not a wx:window")]
 	  [else
-	   (mred:test:make-event
+	   (mred:test:run-one
 	    (lambda ()
 	      (let
 		  ([old-window  (mred:test:get-focused-window)]
@@ -311,6 +294,8 @@
 		(send leave  set-x 0)   (send leave  set-y 0)
 		(send enter  set-x 0)   (send enter  set-y 0)
 		
+		;; SOME KLUDGES HERE TO WORK AROUND WX:TEXT% PROBLEMS.
+		
 		(when (and old-window (ivar-in-class? 'on-event (object-class old-window)))
 		  (send-mouse-event old-window leave))
 		(send root show #t)
@@ -318,26 +303,5 @@
 		  (send-mouse-event new-window enter))
 		(send new-window set-focus)
 		(void))))]))))
-		
-  (define new-window-now (do-now new-window))
-  
-  
-  ;;
-  ;; The units for mred:test:sleep are seconds (same as real sleep),
-  ;; but the units for wx:timer% are milliseconds, so we convert.
-  ;;
-  
-  (define sleep 
-    (let ([tag  'mred:test:sleep])
-      (lambda (seconds)
-	(cond
-	  [(not (and (real? seconds) (<= 0 seconds)))
-	   (arg-error tag "expects non-negative real, given ~s" seconds)]
-	  [else
-	   (mred:test:make-sleep
-	    void
-	    (inexact->exact (ceiling (* seconds 1000))))]))))
-  
-  (define sleep-now (do-now sleep))
   
   )

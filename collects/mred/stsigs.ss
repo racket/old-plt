@@ -1,5 +1,5 @@
 ;;
-;; $Id: stsigs.ss,v 1.8 1997/07/30 20:51:50 krentel Exp krentel $
+;; $Id: stsigs.ss,v 1.9 1997/08/08 20:39:32 krentel Exp krentel $
 ;;
 ;; Signatures for gui tester.
 ;;
@@ -24,10 +24,6 @@
    testable-frame%
    testable-dialog-box% ))
 
-(define-signature mred:test:struct^
-  ((struct event (thunk))
-   (struct sleep (msec))))
-
 (define-signature mred:test:globals^
   (top-frame
    top-panel
@@ -36,15 +32,15 @@
    frame->active-canvas))
 
 (define-signature mred:test:run^
-  (run  run-interval))
+  (run-one
+   run-interval))
 
 (define-signature mred:test:primitives^
-  (button-push   button-push-now 
-   keystroke     keystroke-now   
-   menu-select   menu-select-now 
-   mouse-click   mouse-click-now 
-   new-window    new-window-now
-   sleep         sleep-now))
+  (button-push
+   keystroke  
+   menu-select
+   mouse-click
+   new-window))
 
 (define-signature mred:test:drscheme^
   (get-defns-canvas 
@@ -54,8 +50,7 @@
    get-execute-button))
 
 (define-signature mred:self-test^
-  ((open mred:test:struct^)
-   (open mred:test:run^)
+  ((open mred:test:run^)
    (open mred:test:primitives^)
    (unit drs : mred:test:drscheme^)))
 

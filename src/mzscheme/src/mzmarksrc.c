@@ -820,6 +820,18 @@ mark_inspector {
   gcBYTES_TO_WORDS(sizeof(Scheme_Inspector));
 }
 
+mark_pipe {
+ mark:
+  Scheme_Pipe *pp = (Scheme_Pipe *)p;
+    
+  gcMARK(pp->buf);
+  gcMARK(pp->wakeup_on_read);
+  gcMARK(pp->wakeup_on_write);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
+}
+
 END type;
 
 /**********************************************************************/
@@ -1033,18 +1045,6 @@ mark_indexed_string {
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Indexed_String));
-}
-
-mark_pipe {
- mark:
-  Scheme_Pipe *pp = (Scheme_Pipe *)p;
-    
-  gcMARK(pp->buf);
-  gcMARK(pp->wakeup_on_read);
-  gcMARK(pp->wakeup_on_write);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
 }
 
 mark_user_input {

@@ -2132,6 +2132,37 @@ int mark_inspector_FIXUP(void *p) {
 #define mark_inspector_IS_CONST_SIZE 1
 
 
+int mark_pipe_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
+}
+
+int mark_pipe_MARK(void *p) {
+  Scheme_Pipe *pp = (Scheme_Pipe *)p;
+    
+  gcMARK(pp->buf);
+  gcMARK(pp->wakeup_on_read);
+  gcMARK(pp->wakeup_on_write);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
+}
+
+int mark_pipe_FIXUP(void *p) {
+  Scheme_Pipe *pp = (Scheme_Pipe *)p;
+    
+  gcFIXUP(pp->buf);
+  gcFIXUP(pp->wakeup_on_read);
+  gcFIXUP(pp->wakeup_on_write);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
+}
+
+#define mark_pipe_IS_ATOMIC 0
+#define mark_pipe_IS_CONST_SIZE 1
+
+
 #endif  /* TYPE */
 
 /**********************************************************************/
@@ -2627,37 +2658,6 @@ int mark_indexed_string_FIXUP(void *p) {
 
 #define mark_indexed_string_IS_ATOMIC 0
 #define mark_indexed_string_IS_CONST_SIZE 1
-
-
-int mark_pipe_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
-}
-
-int mark_pipe_MARK(void *p) {
-  Scheme_Pipe *pp = (Scheme_Pipe *)p;
-    
-  gcMARK(pp->buf);
-  gcMARK(pp->wakeup_on_read);
-  gcMARK(pp->wakeup_on_write);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
-}
-
-int mark_pipe_FIXUP(void *p) {
-  Scheme_Pipe *pp = (Scheme_Pipe *)p;
-    
-  gcFIXUP(pp->buf);
-  gcFIXUP(pp->wakeup_on_read);
-  gcFIXUP(pp->wakeup_on_write);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
-}
-
-#define mark_pipe_IS_ATOMIC 0
-#define mark_pipe_IS_CONST_SIZE 1
 
 
 int mark_user_input_SIZE(void *p) {

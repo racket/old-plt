@@ -479,6 +479,7 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_inspector_type, mark_inspector);
 
   GC_REG_TRAV(scheme_rt_buf_holder, buf_holder);
+  GC_REG_TRAV(scheme_rt_pipe, mark_pipe);
 }
 
 END_XFORM_SKIP;

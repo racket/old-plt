@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_frame.cc,v 1.6 2001/06/29 21:24:55 clements Exp $
+ * RCS_ID:      $Id: wb_frame.cc,v 1.7 2001/10/26 21:12:25 clements Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -121,7 +121,7 @@ void wxbFrame::OnSize(int x, int y)
   int noChildren = 0;
   for(wxChildNode *node = GetChildren()->First(); node; node = node->Next())
   {
-    wxWindow *win = dynamic_cast<wxWindow *>(node->Data());
+    wxWindow *win = (wxWindow *)(node->Data());
     WXTYPE winType = win->__type;
 
     if (wxSubType(winType, wxTYPE_PANEL) ||
@@ -157,7 +157,7 @@ void wxbFrame::OnActivate(Bool flag)
   for(wxChildNode *node = GetChildren()->First(); node; node = node->Next())
   {
     // Find a child that's a subwindow, but not a dialog box.
-    wxWindow *child = dynamic_cast<wxWindow *>(node->Data());
+    wxWindow *child = (wxWindow *)(node->Data());
     if ((wxSubType(child->__type, wxTYPE_PANEL) &&
          !wxSubType(child->__type, wxTYPE_DIALOG_BOX)) ||
         wxSubType(child->__type, wxTYPE_TEXT_WINDOW) ||

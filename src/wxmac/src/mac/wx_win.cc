@@ -1087,7 +1087,7 @@ static void SendEnterLeaveEvent(wxWindow *target, int eventtype, wxWindow *evtsr
 
 static void QueueLeaveEvent(wxWindow *target, wxWindow *evtsrc, wxMouseEvent *evt)
 {
-#ifdef OS_X
+#if 0 //#ifdef OS_X
 	EventRef e;
 
 	// result ignored:
@@ -1489,7 +1489,7 @@ void wxWindow::ChildrenInternalGray(Bool gray)
 	wxChildNode *node;
 	
 	for (node = GetChildren()->First(); node; node = node->Next()) {
-		wxWindow *w = dynamic_cast<wxWindow *>(node->Data());
+		wxWindow *w = (wxWindow *)(node->Data());
 		w->InternalGray(gray);
 	}
 }
@@ -1523,7 +1523,7 @@ void wxWindow::AddWhiteRgn(RgnHandle r)
 {
 	wxChildNode *node;
 	for (node = GetChildren()->First(); node; node = node->Next()) {
-		wxWindow *c = dynamic_cast<wxWindow *>(node->Data());
+		wxWindow *c = (wxWindow *)(node->Data());
 		if (!c->cHidden)
 		  c->AddWhiteRgn(r);
 	}
@@ -1816,7 +1816,7 @@ void wxWindow::ForEach(void (*foreach)(wxWindow *w, void *data), void *data)
 {
 	wxChildNode *node, *next;
 	for (node = GetChildren()->First(); node; node = next) {
-		wxWindow *c = dynamic_cast<wxWindow *>(node->Data());
+		wxWindow *c = (wxWindow *)(node->Data());
 		next = node->Next();
 		if (c) {
 		  c->ForEach(foreach, data);

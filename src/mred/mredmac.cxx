@@ -40,13 +40,13 @@ static long resume_ticks;
 
 static int dispatched = 1;
 
-#ifndef OS_X
+#if 1 // #ifndef OS_X
 static int QueueTransferredEvent(EventRecord *e);
 #endif
 
 void MrEdInitFirstContext(MrEdContext *)
 {
-#ifdef OS_X
+#if 0 // #ifdef OS_X
   // result ignored:
   InstallAEventHandler();
   
@@ -113,7 +113,7 @@ static wxFrame *wxWindowPtrToFrame(WindowPtr w, MrEdContext *c)
  * handle the event yourself? I believe it does.
  */
  
-#ifdef OS_X
+#if 0 //#ifdef OS_X
 
 UInt32 kEventClassMrEd = 'MrEd';
 UInt32 kEventMrEdLeave = 'LEEV';
@@ -184,8 +184,8 @@ Bool EventFinder(EventRef inEvent, EventFinderClosure *closure)
         closure.action_to_take = kActionRemove;
       	return TRUE;
       } else {
-		fr = dynamic_cast<wxFrame *>(win->GetRootFrame());
-		fc = fr ? dynamic_cast<MrEdContext *>(fr->context) : (MrEdContext *)NULL;
+		fr = (wxFrame *)(win->GetRootFrame());
+		fc = fr ? (MrEdContext *)(fr->context) : (MrEdContext *)NULL;
 	    if ((!c && !fr) || (!c && fc->ready) || (fc == c)) {
 	      closure.which = fc;
 
@@ -316,7 +316,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
 {
   /* Search for an event. Handle clicks in non-frontmost windows
      immediately. */
-#ifndef OS_X
+#if 1// #ifndef OS_X
   MrQueueElem *osq, *next;
   MrQueueElem *q;
 #else
@@ -335,7 +335,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
   
   c = current_only ? MrEdGetContext() : NULL;
   
-#ifdef OS_X
+#if 0 // #ifdef OS_X
   eventFinderClosure.c = c;
 #endif
     
@@ -351,7 +351,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
     if (!StillDown())
       kill_context = 1;
 
-#ifdef OS_X
+#if 0 // #ifdef OS_X
   // just to give the event manager a little time:
   EventRecord ignored;
   WaitNextEvent(0, // no events
@@ -418,7 +418,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
 #endif
   
   /* First, service leave events: */
-#ifdef OS_X
+#if 0 // #ifdef OS_X
 
   eventFinderClosure.eventClass = kEventClassMrEd;
   eventFinderClosure.eventKind = kEventMrEdLeave;

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_win.cc,v 1.4 2001/07/11 16:53:06 clements Exp $
+ * RCS_ID:      $Id: wb_win.cc,v 1.5 2001/10/26 21:12:25 clements Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -131,7 +131,7 @@ void wxbWindow::DestroyChildren(void)
     wxChildNode *node;
     while ((node = children->First()) != (wxNode *)NULL) {
       wxWindow *child;
-      if ((child = dynamic_cast<wxWindow *>(node->Data())) != (wxWindow *)NULL)) {
+      if ((child = (wxWindow *)(node->Data())) != (wxWindow *)NULL)) {
 //      child->DestroyChildren();
         delete child;
       }
@@ -148,7 +148,7 @@ void wxbWindow::MakeModal(Bool modal)
     wxChildNode *node = wxTopLevelWindows(ContextWindow())->First();
     while (node)
     {
-      wxWindow *win = dynamic_cast<wxWindow *>(node->Data());
+      wxWindow *win = (wxWindow *)(node->Data());
       if (win != this)
         win->Enable(!modal);
 
@@ -170,7 +170,7 @@ void wxbWindow::SetName(char *name)
 wxWindow *wxbWindow::ContextWindow()
 {
 	if (wxSubType(__type, wxTYPE_FRAME))
-		return dynamic_cast<wxWindow *>(this);
+		return (wxWindow *)(this);
 	if (wxSubType(__type, wxTYPE_DIALOG_BOX))
 		return ((wxDialogBox *)this)->cFrame;
 	return NULL;

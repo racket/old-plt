@@ -3,19 +3,13 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 32;
+	objectVersion = 34;
 	objects = {
 		00E9FFD100B278517F000001 = {
 			isa = PBXFileReference;
 			name = libmzscheme.a;
 			path = ../../../mzscheme/libmzscheme.a;
 			refType = 2;
-		};
-		00E9FFD300B278517F000001 = {
-			fileRef = 00E9FFD100B278517F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
 		};
 		00F450DF00EC642C7F000001 = {
 			isa = PBXLibraryReference;
@@ -33,10 +27,10 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				HEADER_SEARCH_PATHS = "/Users/clements/plt/src/wxmac/include/base /Users/clements/plt/src/wxmac/include/mac /Users/clements/plt/src/wxmac/utils/image/src /Users/clements/plt/src/mzscheme/include /Users/clements/plt/src/mzscheme/gc/include /Users/clements/plt/src/a-list/c-headers /Users/clements/plt/src/wxcommon /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib /Developer/Headers/FlatCarbon";
+				IMPLICITLY_INCLUDED_HEADERS = /Users/clements/plt/src/mac/mred/wxGWin.pch;
 				INSTALL_PATH = "/Users/clements/plt/src/mac/proj-builder";
 				LIBRARY_STYLE = STATIC;
-				OPTIMIZATION_CFLAGS = "";
-				OTHER_CFLAGS = "-DOS_X -include /Users/clements/plt/src/mac/mred/wxGWin.pch";
+				OTHER_CFLAGS = "-DOS_X";
 				OTHER_LDFLAGS = "";
 				OTHER_LIBTOOL_FLAGS = "";
 				OTHER_REZFLAGS = "";
@@ -44,8 +38,6 @@
 				REZ_EXECUTABLE = YES;
 				SECTORDER_FLAGS = "";
 				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
-			};
-			conditionalBuildSettings = {
 			};
 			dependencies = (
 			);
@@ -187,7 +179,6 @@
 				DYLIB_CURRENT_VERSION = 1;
 				HEADER_SEARCH_PATHS = "/Users/clements/plt/src/a-list/c-headers /Developer/Headers/FlatCarbon";
 				LIBRARY_STYLE = STATIC;
-				OPTIMIZATION_CFLAGS = "";
 				OTHER_CFLAGS = "-DTARGET_API_MAC_CARBON -DOPAQUE_TOOLBOX_STRUCTS -DOS_X";
 				OTHER_LDFLAGS = "";
 				OTHER_LIBTOOL_FLAGS = "";
@@ -196,8 +187,6 @@
 				REZ_EXECUTABLE = YES;
 				SECTORDER_FLAGS = "";
 				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
-			};
-			conditionalBuildSettings = {
 			};
 			dependencies = (
 			);
@@ -255,12 +244,6 @@
 			name = libjpeg.a;
 			path = ../../../wxcommon/jpeg/libjpeg.a;
 			refType = 2;
-		};
-		00F450F300EC676F7F000001 = {
-			fileRef = 00F450F200EC676F7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
 		};
 		00F450F400EC67E27F000001 = {
 			children = (
@@ -714,12 +697,16 @@
 			settings = {
 			};
 		};
-		0127095200D43CF27F000001 = {
-			fileRef = 03172A9000BAB0A57F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
+//000
+//001
+//002
+//003
+//004
+//020
+//021
+//022
+//023
+//024
 		0249A665FF388DC511CA2CEA = {
 			isa = PBXApplicationReference;
 			path = MrEd.app;
@@ -737,6 +724,16 @@
 			settings = {
 			};
 		};
+//020
+//021
+//022
+//023
+//024
+//030
+//031
+//032
+//033
+//034
 		03172A8F00BAB02E7F000001 = {
 			children = (
 				0366420A00EBD2D97F000001,
@@ -756,12 +753,6 @@
 			name = mredmac.cxx;
 			path = ../../../mred/mredmac.cxx;
 			refType = 2;
-		};
-		03172A9300BAB0A57F000001 = {
-			fileRef = 03172A9100BAB0A57F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
 		};
 		03172A9800BAB1697F000001 = {
 			children = (
@@ -854,89 +845,11 @@
 			path = ../../../mred/wxme/wx_style.cxx;
 			refType = 2;
 		};
-		03172AA500BAB1E77F000001 = {
-			fileRef = 03172A9900BAB1E77F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		03172AA600BAB1E77F000001 = {
-			fileRef = 03172A9A00BAB1E77F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		03172AA700BAB1E77F000001 = {
-			fileRef = 03172A9B00BAB1E77F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		03172AA800BAB1E77F000001 = {
-			fileRef = 03172A9C00BAB1E77F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		03172AA900BAB1E77F000001 = {
-			fileRef = 03172A9D00BAB1E77F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		03172AAA00BAB1E77F000001 = {
-			fileRef = 03172A9E00BAB1E77F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		03172AAB00BAB1E77F000001 = {
-			fileRef = 03172A9F00BAB1E77F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		03172AAC00BAB1E77F000001 = {
-			fileRef = 03172AA000BAB1E77F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		03172AAD00BAB1E77F000001 = {
-			fileRef = 03172AA100BAB1E77F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		03172AAE00BAB1E77F000001 = {
-			fileRef = 03172AA200BAB1E77F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		03172AAF00BAB1E77F000001 = {
-			fileRef = 03172AA300BAB1E77F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		03172AB000BAB1E77F000001 = {
-			fileRef = 03172AA400BAB1E77F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
 		0366420A00EBD2D97F000001 = {
 			isa = PBXFileReference;
 			name = xcglue.c;
 			path = ../../../mzscheme/utils/xcglue.c;
 			refType = 2;
-		};
-		0366420B00EBD2D97F000001 = {
-			fileRef = 0366420A00EBD2D97F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
 		};
 		0366420C00EBD39D7F000001 = {
 			isa = PBXLibraryReference;
@@ -954,10 +867,10 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				HEADER_SEARCH_PATHS = "/Users/clements/plt/src/wxmac/include/base /Users/clements/plt/src/wxmac/include/mac /Users/clements/plt/src/mred/wxme /Users/clements/plt/src/mzscheme /Users/clements/plt/src/mzscheme/src /Users/clements/plt/src/mzscheme/include /Users/clements/plt/src/mzscheme/utils /Users/clements/plt/src/mzscheme/gc/include /Users/clements/plt/src/a-list/c-headers /Users/clements/plt/src/wxcommon /Developer/Headers/FlatCarbon";
+				IMPLICITLY_INCLUDED_HEADERS = /Users/clements/plt/src/mac/mred/wxspre.pch;
 				INSTALL_PATH = "/Users/clements/plt/src/mac/proj-builder";
 				LIBRARY_STYLE = STATIC;
-				OPTIMIZATION_CFLAGS = "";
-				OTHER_CFLAGS = "-DOS_X -include /Users/clements/plt/src/mac/mred/wxspre.pch";
+				OTHER_CFLAGS = "-DOS_X";
 				OTHER_LDFLAGS = "";
 				OTHER_LIBTOOL_FLAGS = "";
 				OTHER_REZFLAGS = "";
@@ -965,8 +878,6 @@
 				REZ_EXECUTABLE = YES;
 				SECTORDER_FLAGS = "";
 				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
-			};
-			conditionalBuildSettings = {
 			};
 			dependencies = (
 			);
@@ -1620,6 +1531,16 @@
 			settings = {
 			};
 		};
+//030
+//031
+//032
+//033
+//034
+//040
+//041
+//042
+//043
+//044
 		04313892FE3035C9C02AAC07 = {
 			buildActionMask = 2147483647;
 			files = (
@@ -1628,23 +1549,28 @@
 			isa = PBXRezBuildPhase;
 			name = "ResourceManager Resources";
 		};
+//040
+//041
+//042
+//043
+//044
+//050
+//051
+//052
+//053
+//054
 		0518BA90013ED35D810A736F = {
 			isa = PBXFileReference;
 			name = mrmain.cxx;
 			path = ../../../mred/mrmain.cxx;
 			refType = 2;
 		};
-		0518BA91013ED35D810A736F = {
-			fileRef = 0518BA90013ED35D810A736F;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
 		05952DFCFFF02D1B11CA0E50 = {
 			buildRules = (
 			);
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
+				OPTIMIZATION_CFLAGS = "-O0";
 			};
 			isa = PBXBuildStyle;
 			name = Development;
@@ -1658,6 +1584,16 @@
 			isa = PBXBuildStyle;
 			name = Deployment;
 		};
+//050
+//051
+//052
+//053
+//054
+//060
+//061
+//062
+//063
+//064
 		0640BAA4FFF0323A11CA0E50 = {
 			isa = PBXFrameworkReference;
 			name = ApplicationServices.framework;
@@ -1670,6 +1606,16 @@
 			path = /System/Library/Frameworks/CoreServices.framework;
 			refType = 0;
 		};
+//060
+//061
+//062
+//063
+//064
+//080
+//081
+//082
+//083
+//084
 		0867D6AAFE840B52C02AAC07 = {
 			children = (
 				0867D6ABFE840B52C02AAC07,
@@ -1691,6 +1637,16 @@
 			settings = {
 			};
 		};
+//080
+//081
+//082
+//083
+//084
+//0C0
+//0C1
+//0C2
+//0C3
+//0C4
 		0CBB185200FBA5A97F000001 = {
 			isa = PBXFileReference;
 			name = libalist.a;
@@ -1709,36 +1665,32 @@
 			path = build/libwxs.a;
 			refType = 4;
 		};
-		0CBB185500FBA5A97F000001 = {
-			fileRef = 0CBB185200FBA5A97F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		0CBB185600FBA5A97F000001 = {
-			fileRef = 0CBB185300FBA5A97F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		0CBB185700FBA5A97F000001 = {
-			fileRef = 0CBB185400FBA5A97F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
+//0C0
+//0C1
+//0C2
+//0C3
+//0C4
+//0D0
+//0D1
+//0D2
+//0D3
+//0D4
 		0DBDC8E70145316D810A736F = {
 			isa = PBXFileReference;
 			name = libmzgc.a;
 			path = ../../../mzscheme/libmzgc.a;
 			refType = 2;
 		};
-		0DBDC8E80145316D810A736F = {
-			fileRef = 0DBDC8E70145316D810A736F;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
+//0D0
+//0D1
+//0D2
+//0D3
+//0D4
+//0E0
+//0E1
+//0E2
+//0E3
+//0E4
 		0E7DA83F00ECA4DD7F000001 = {
 			children = (
 				00F4511600EC76317F000001,
@@ -2459,36 +2411,22 @@
 			path = ../../../wxcommon/wxGC.cxx;
 			refType = 2;
 		};
-		0E7DA8C200ED23FA7F000001 = {
-			fileRef = 0E7DA8C100ED23FA7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
 		0E7DA8C300ED24437F000001 = {
 			isa = PBXFileReference;
 			name = wxJPEG.cxx;
 			path = ../../../wxcommon/wxJPEG.cxx;
 			refType = 2;
 		};
-		0E7DA8C400ED24437F000001 = {
-			fileRef = 0E7DA8C300ED24437F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		0E7DA8C500ED24A57F000001 = {
-			isa = PBXTargetDependency;
-			target = 00F450E600EC649B7F000001;
-		};
-		0E7DA8C600ED24A57F000001 = {
-			isa = PBXTargetDependency;
-			target = 00F450E000EC642C7F000001;
-		};
-		0E7DA8C700ED24A57F000001 = {
-			isa = PBXTargetDependency;
-			target = 0366420D00EBD39D7F000001;
-		};
+//0E0
+//0E1
+//0E2
+//0E3
+//0E4
+//190
+//191
+//192
+//193
+//194
 		195DF8C9FE9D4F0611CA2CBB = {
 			children = (
 				0249A665FF388DC511CA2CEA,
@@ -2501,6 +2439,16 @@
 			name = Products;
 			refType = 4;
 		};
+//190
+//191
+//192
+//193
+//194
+//1D0
+//1D1
+//1D2
+//1D3
+//1D4
 		1D95026D00F6259E7F000001 = {
 			isa = PBXFrameworkReference;
 			name = QuickTime.framework;
@@ -2513,6 +2461,16 @@
 			settings = {
 			};
 		};
+//1D0
+//1D1
+//1D2
+//1D3
+//1D4
+//200
+//201
+//202
+//203
+//204
 		20286C28FDCF999611CA2CEA = {
 			buildStyles = (
 				05952DFCFFF02D1B11CA0E50,
@@ -2520,6 +2478,7 @@
 			);
 			isa = PBXProject;
 			mainGroup = 20286C29FDCF999611CA2CEA;
+			projectDirPath = "";
 			targets = (
 				20286C34FDCF999611CA2CEA,
 				0366420D00EBD39D7F000001,
@@ -2614,10 +2573,10 @@
 			buildSettings = {
 				FRAMEWORK_SEARCH_PATHS = "";
 				HEADER_SEARCH_PATHS = "/Users/clements/plt/src/wxmac/include/base /Users/clements/plt/src/wxmac/include/mac /Users/clements/plt/src/wxcommon /Users/clements/plt/src/wxcommon/jpeg /Users/clements/plt/src/mzscheme/include /Users/clements/plt/src/mzscheme/gc /Users/clements/plt/src/mzscheme/src /Users/clements/plt/src/mzscheme/utils /Users/clements/plt/src/mzscheme /Users/clements/plt/src/mred/wxme /Users/clements/plt/src/mred/wxs /Users/clements/plt/src/mac/mzscheme /Users/clements/plt/src/mac/mred /Users/clements/plt/src/a-list/c-headers /Developer/Headers/FlatCarbon";
+				IMPLICITLY_INCLUDED_HEADERS = /Users/clements/plt/src/mac/mred/MrEdSetup.h;
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "/Users/clements/plt/src/mzscheme /Users/clements/plt/src/wxcommon/jpeg /Users/clements /Users/clements/plt/src/mac/proj-builder/MrEd/build";
-				OPTIMIZATION_CFLAGS = "";
-				OTHER_CFLAGS = "-DOS_X -include /Users/clements/plt/src/mac/mred/MrEdSetup.h";
+				OTHER_CFLAGS = "-DOS_X";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = MrEd;
@@ -2625,12 +2584,7 @@
 				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
 				WRAPPER_EXTENSION = app;
 			};
-			conditionalBuildSettings = {
-			};
 			dependencies = (
-				0E7DA8C500ED24A57F000001,
-				0E7DA8C600ED24A57F000001,
-				0E7DA8C700ED24A57F000001,
 			);
 			isa = PBXApplicationTarget;
 			name = MrEd;
@@ -2657,8 +2611,6 @@
 	<string>199.21</string>
 	<key>CSResourcesFileMapped</key>
 	<true/>
-	<key>NSHelpFile</key>
-	<string></string>
 	<key>NSMainNibFile</key>
 	<string></string>
 	<key>NSPrincipalClass</key>
@@ -2687,25 +2639,6 @@
 		20286C38FDCF999611CA2CEA = {
 			buildActionMask = 2147483647;
 			files = (
-				03172A9300BAB0A57F000001,
-				03172AA500BAB1E77F000001,
-				03172AA600BAB1E77F000001,
-				03172AA700BAB1E77F000001,
-				03172AA800BAB1E77F000001,
-				03172AA900BAB1E77F000001,
-				03172AAA00BAB1E77F000001,
-				03172AAB00BAB1E77F000001,
-				03172AAC00BAB1E77F000001,
-				03172AAD00BAB1E77F000001,
-				03172AAE00BAB1E77F000001,
-				03172AAF00BAB1E77F000001,
-				03172AB000BAB1E77F000001,
-				0127095200D43CF27F000001,
-				0366420B00EBD2D97F000001,
-				0E7DA8C200ED23FA7F000001,
-				0E7DA8C400ED24437F000001,
-				5E4220EE00FC401E7F000001,
-				0518BA91013ED35D810A736F,
 			);
 			isa = PBXSourcesBuildPhase;
 			name = Sources;
@@ -2723,13 +2656,7 @@
 			files = (
 				20286C3CFDCF999611CA2CEA,
 				0249A66AFF388E3911CA2CEA,
-				00E9FFD300B278517F000001,
-				00F450F300EC676F7F000001,
 				1D95026E00F6259E7F000001,
-				0CBB185500FBA5A97F000001,
-				0CBB185600FBA5A97F000001,
-				0CBB185700FBA5A97F000001,
-				0DBDC8E80145316D810A736F,
 			);
 			isa = PBXFrameworksBuildPhase;
 			name = "Frameworks & Libraries";
@@ -2740,6 +2667,16 @@
 			settings = {
 			};
 		};
+//200
+//201
+//202
+//203
+//204
+//2A0
+//2A1
+//2A2
+//2A3
+//2A4
 		2A904A23014FE0D8810A736F = {
 			isa = PBXFileReference;
 			name = mred.icns;
@@ -2752,6 +2689,16 @@
 			settings = {
 			};
 		};
+//2A0
+//2A1
+//2A2
+//2A3
+//2A4
+//370
+//371
+//372
+//373
+//374
 		3750263701526C8F810A736F = {
 			isa = PBXApplicationReference;
 			path = Starter.app;
@@ -2767,7 +2714,6 @@
 			);
 			buildSettings = {
 				INSTALL_PATH = /Users/clements/plt;
-				OPTIMIZATION_CFLAGS = "";
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
@@ -2775,8 +2721,6 @@
 				SECTORDER_FLAGS = "";
 				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
 				WRAPPER_EXTENSION = app;
-			};
-			conditionalBuildSettings = {
 			};
 			dependencies = (
 			);
@@ -2897,17 +2841,21 @@
 			settings = {
 			};
 		};
+//370
+//371
+//372
+//373
+//374
+//5E0
+//5E1
+//5E2
+//5E3
+//5E4
 		5E4220ED00FC401E7F000001 = {
 			isa = PBXFileReference;
 			name = simpledrop.cpp;
 			path = ../../mzscheme/simpledrop.cpp;
 			refType = 2;
-		};
-		5E4220EE00FC401E7F000001 = {
-			fileRef = 5E4220ED00FC401E7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
 		};
 	};
 	rootObject = 20286C28FDCF999611CA2CEA;

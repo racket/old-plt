@@ -37,6 +37,9 @@ static const char sccsid[] = "%W% %G%";
 #define KDEFAULTW  60	// number pixels wide for a default scroll control
 #ifdef OS_X
 # define KSCROLLH   15
+# define PAD_X 10 // these are all assuming a horizontal configuration.
+# define PAD_TOP 10
+# define PAD_BOTTOM 10
 #else
 # define KSCROLLH   16	// height of a mac scrollbar control
 #endif
@@ -45,6 +48,20 @@ static const char sccsid[] = "%W% %G%";
 // Because I never get this right and t,l,b,r makes sense to me - CJC
 //
 #define SetBounds(rect, top, left, bottom, right) ::SetRect(rect, left, top, right, bottom)
+static void InsetSliderRect(long style, Rect *r);
+
+static void InsetSliderRect(long style, Rect *r) 
+{
+  if (style & wxHORIZONTAL) {
+  	InsetRect(r,PAD_X,0);
+  	r->top += PAD_TOP;
+  	r->bottom -= PAD_BOTTOM;
+  } else {
+    InsetRect(r,0,PAD_X);
+    r->left += PAD_TOP;
+    r->right -= PAD_BOTTOM;
+  }
+}
 
 wxSlider::wxSlider(wxPanel *panel, wxFunction func, char *label, int value,
            int min_value, int max_value, int width, int x, int y,
@@ -100,6 +117,8 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 	  hsp = 0;
 	  vsp = 0;
 	} else {
+	  // evidently, the number in the value box should never be wider than the string "258".
+	  // this looks utterly ridiculous to me... perhaps there's a method to the madness?
 	  GetTextExtent("258", &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
 	  vwid = (int)fWidth;
 	  vhgt = (int)fHeight;
@@ -107,30 +126,31 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 	  vsp = VSP;
     }
     
-	Rect boundsRect = {0, 0, KSCROLLH, KDEFAULTW};
+    controlRect.top = controlRect.left = 0;
 	
 	int adjust = 0;
 	if (style & wxVERTICAL) {
 		if (width < 0)
-			cWindowHeight = KDEFAULTW + ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
+			cWindowHeight = KDEFAULTW + (2 * PAD_X) + ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
 		else
 			cWindowHeight = width;
-		cWindowWidth = vwid + KSCROLLH + hsp + ((labelPosition == wxVERTICAL) ? 0 : lblw + HSP);
+		cWindowWidth = vwid + PAD_TOP + PAD_BOTTOM + KSCROLLH + hsp + ((labelPosition == wxVERTICAL) ? 0 : lblw + HSP);
 		
-		boundsRect.right = KSCROLLH;
-		boundsRect.bottom = cWindowHeight - ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
+		controlRect.right = KSCROLLH + PAD_TOP + PAD_BOTTOM;
+		controlRect.bottom = cWindowHeight - ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
 		
 		valueRect.left = cWindowWidth - vwid + 1;
 		valueRect.top = (cWindowHeight - vhgt) / 2;
 		adjust = -1;
 	} else {
 		if (width < 0)
-			cWindowWidth = KDEFAULTW + ((labelPosition == wxHORIZONTAL) ? lblw + HSP : 0);
+			cWindowWidth = KDEFAULTW + (2 * PAD_X) + ((labelPosition == wxHORIZONTAL) ? lblw + HSP : 0);
 		else
 			cWindowWidth = width;
-		cWindowHeight = vhgt + KSCROLLH + vsp + ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
+		cWindowHeight = vhgt + PAD_TOP + KSCROLLH + PAD_BOTTOM + vsp + ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
 		
-		boundsRect.right = cWindowWidth - ((labelPosition == wxVERTICAL) ? 0 : lblw + HSP);
+		controlRect.right = cWindowWidth - ((labelPosition == wxVERTICAL) ? 0 : lblw + HSP);
+		controlRect.bottom = KSCROLLH;
 		
 		valueRect.top = cWindowHeight - vhgt;
 		valueRect.left = (cWindowWidth - vwid) / 2;
@@ -144,9 +164,11 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 	  valueRect.right = valueRect.left + vwid + adjust;
 	}
 	valuebase = (int)fDescent;
-        
-        OffsetRect(&boundsRect,SetOriginX,SetOriginY);
-	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, NULL,
+    
+    Rect r = controlRect;    
+    OffsetRect(&r,SetOriginX,SetOriginY);
+    InsetSliderRect(style,&r);
+	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &r, NULL,
 			TRUE, value, min_value, max_value, kControlSliderProc, (long)this);
 	CheckMemOK(cMacControl);
 	
@@ -201,8 +223,8 @@ void wxSlider::Paint(void)
 		SetFont(valueFont);
 		SetTextInfo();
 		
-                Rect r = valueRect;
-                OffsetRect(&r,SetOriginX,SetOriginY);
+        Rect r = valueRect;
+        OffsetRect(&r,SetOriginX,SetOriginY);
 		::MoveTo(r.left, r.bottom - valuebase);
 		::EraseRect(&r);
 		char t[8];
@@ -237,13 +259,12 @@ void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 	{	
 		int clientWidth = ClientArea()->Width();
 		int clientHeight= ClientArea()->Height();
-		Rect viewRect = *GetControlBounds(cMacControl,NULL);
 
 		int vwid = valueRect.right - valueRect.left;
 		int vhgt = valueRect.bottom - valueRect.top;
 			
 		if (windowStyle & wxVERTICAL) {
-			int w = viewRect.right - viewRect.left;
+			int w = controlRect.right - controlRect.left;
 			// the wid can't change
 			::SizeControl(cMacControl, w, clientHeight);
 			valueRect.top = (clientHeight - vhgt) / 2;
@@ -251,7 +272,7 @@ void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 			valueRect.left = KSCROLLH + HSP;
 			valueRect.right = valueRect.left + vwid;
 		} else {
-			int h = viewRect.bottom - viewRect.top;
+			int h = controlRect.bottom - controlRect.top;
 			// the hgt can't change
 			::SizeControl(cMacControl, clientWidth, h);
 			valueRect.left = (clientWidth - vwid) / 2;
@@ -264,8 +285,10 @@ void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 	if (dX || dY)
 	{	// Changing the position
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
-		SetCurrentDC(); // put newViewRect at (0, 0)
-                ::MoveControl(cMacControl,SetOriginX + valueRect.left,SetOriginY + valueRect.top);
+		SetCurrentDC(); // put newcontrolRect at (0, 0)
+		Rect r = controlRect;
+		InsetSliderRect(windowStyle,&r);
+        ::MoveControl(cMacControl,SetOriginX + r.left,SetOriginY + r.top);
 	}
 }
 

@@ -26,6 +26,7 @@ public:
   int s_max;
   int page_size;
   wxLabelArea*	cTitle;
+  Rect		controlRect;
   Rect		valueRect;
   wxFont*	valueFont;
   int		valuebase;

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.26 2001/10/17 21:17:33 clements Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.27 2001/10/26 21:12:25 clements Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -32,6 +32,7 @@
 #endif
 
 #include "wx.h"
+
 
 #ifdef wx_x
 extern Colormap wxMainColormap;
@@ -302,7 +303,7 @@ wxColourDatabase::~wxColourDatabase (void)
   while (node) {
     wxColour *col;
     wxNode *next;
-    col = dynamic_cast<wxColour *>(node->Data ());
+    col = (wxColour *)(node->Data ());
     next = node->Next ();
     delete col;
     node = next;
@@ -345,8 +346,9 @@ wxColour *wxColourDatabase::FindColour(const char *colour)
   }
 
   wxNode *node = Find(colour);
-  if (node)
-    return dynamic_cast<wxColour *>(node->Data());
+  if (node) {
+    return (wxColour *)(node->Data());
+  }  
   else 
     return NULL;
 }
@@ -359,7 +361,7 @@ char *wxColourDatabase::FindName (wxColour *colour)
 
   for (wxNode * node = First (); node; node = node->Next ())
     {
-      wxColour *col = dynamic_cast<wxColour *> (node->Data ());
+      wxColour *col = (wxColour *) (node->Data ());
       if (col->Red () == red && col->Green () == green && col->Blue () == blue)
 	{
 	  char *found = node->string_key;
@@ -736,7 +738,7 @@ wxPen *wxPenList::FindOrCreatePen (wxColour * colour, float width, int style)
 
   while (node = list->NextNode(i))
     {
-      wxPen *each_pen = dynamic_cast<wxPen *> ( node->Data ());
+      wxPen *each_pen = (wxPen *) ( node->Data ());
       if (each_pen &&
 	  each_pen->GetWidthF() == width &&
 	  each_pen->GetStyle() == style &&
@@ -789,7 +791,7 @@ wxBrush *wxBrushList::FindOrCreateBrush (wxColour * colour, int style)
 
   while (node = list->NextNode(i))
     {
-      wxBrush *each_brush = dynamic_cast<wxBrush *> (node->Data ());
+      wxBrush *each_brush = (wxBrush *) (node->Data ());
       if (each_brush &&
 	  each_brush->GetStyle() == style &&
 	  each_brush->GetColour()->Red() == colour->Red() &&
@@ -839,7 +841,7 @@ FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool
 
   while (node = list->NextNode(i))
     {
-      wxFont *each_font = dynamic_cast<wxFont *> ( node->Data ());
+      wxFont *each_font = (wxFont *) ( node->Data ());
       if (each_font &&
 	  each_font->GetPointSize () == PointSize &&
 	  each_font->GetStyle () == Style &&

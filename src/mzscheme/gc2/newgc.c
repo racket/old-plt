@@ -12,8 +12,6 @@
 #include "gc2.h"
 #include "../src/schpriv.h"
 
-#define inline /* */
-
 /*****************************************************************************/
 /* Collector selection. Change the definitions of these to set or unset the  */
 /* particular collector you want.                                            */

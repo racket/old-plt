@@ -1161,7 +1161,8 @@ static Scheme_Object *MrEdDoNextEvent(MrEdContext *c, wxDispatch_Check_Fun alt, 
       /* Alternate condition fired. Clear waiting flag. */
       c->ready = 0;
       c->waiting_for_nested = 0;
-      result = scheme_void;
+      if (!result)
+	result = scheme_void;
     }
 
     return result;

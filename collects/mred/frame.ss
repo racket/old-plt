@@ -64,10 +64,15 @@
 	     (or (and #f (send keymap handle-key-event this event))
 		 (super-pre-on-event receiver event)))])))
 
+    (mred:preferences:set-preference-default 'mred:status-line #f)
     (define time-edit (make-object mred:edit:edit%))
     (send* time-edit (lock #t) (hide-caret #t))
+    (define time-sema (make-semaphore 0))
+					  
     (letrec ([loop
 	      (lambda ()
+		(unless (mred:preferences:get-preference 'mred:status-line)
+		  (semaphore-wait time-sema))
 		(let* ([date (seconds->date (current-seconds))]
 		       [minute (date-minute date)])
 		  (send* time-edit (lock #f) (begin-edit-sequence) (erase)
@@ -76,11 +81,15 @@
 				     (format "~a:0~a" (date-hour date) minute)))
 			 (end-edit-sequence)
 			 (lock #t))
-		  (sleep 45)
+		  (sleep 10)
 		  (loop)))])
       (thread loop))
 
-    (mred:preferences:set-preference-default 'mred:status-line #f)
+    (mred:preferences:add-preference-callback 'mred:status-line
+					      (lambda (p v)
+						(when v
+						  (semaphore-post time-sema))))
+
     (define make-status-line-frame%
       (lambda (%)
 	(class % args

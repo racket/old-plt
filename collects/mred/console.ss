@@ -460,6 +460,7 @@
 		[reset-console
 		 (lambda ()
 		   (set! resetting? #t)
+		   (set! prompt-mode? #f)
 		   (erase)
 		   (set! resetting? #f))]
 		

@@ -1,4 +1,7 @@
 
+Version 204.2
+Added a `super-new' local form to (lib "class.ss")
+
 Version 204.1
 Added a `new' form to (lib "class.ss")
 Changed the expansion-time information associated with a

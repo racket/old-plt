@@ -5590,7 +5590,7 @@ static Scheme_Object *do_param(void *data, int argc, Scheme_Object *argv[])
       argv2 = MALLOC_N(Scheme_Object *, argc);
       memcpy(argv2, argv, argc * sizeof(Scheme_Object *));
       argv2[0] = v;
-    } if (argc == 2) {
+    } else if (argc == 2) {
       /* Special hook for parameterize: */
       argv[1] = argv[0];
       return ((ParamData *)data)->key;

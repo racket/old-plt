@@ -275,8 +275,8 @@
 			(delete-file dest))
 		      (error 
 		       (format	
-			"~a exceeds limit of ~a characters: ~a"
-			es len s))))]
+			"~a exceeds limit of ~a characters with ~a characters: ~a"
+			es len (string-length s) s))))]
 		 [content (begin
 			    (file-position p 0)
 			    (read-string (file-size dest) p))])

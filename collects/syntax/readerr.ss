@@ -40,5 +40,4 @@
                     (format "~a: " source-name)])
                  msg))
         (current-continuation-marks)
-        (current-input-port) ;; BAD PORT: this field should go away...
         source-name line col pos span)))))

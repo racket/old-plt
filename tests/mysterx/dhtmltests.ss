@@ -147,3 +147,15 @@
       (printf "Checking filter~n")
       (error (format "filter test: Expected ~a, got ~a~n"
 		     filter-spec result))))
+
+(printf "Navigating to CNN~n")
+(send wb navigate "http://www.cnn.com")
+(sleep 2)
+(printf "Navigating to IBM~n")
+(send wb navigate/status "http://www.ibm.com")
+(sleep 2)
+(printf "Back to CNN~n")
+(send wb go-back) 
+(sleep 2)
+(printf "Forward to IBM~n")
+(send wb go-forward)

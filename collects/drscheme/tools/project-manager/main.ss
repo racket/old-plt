@@ -704,6 +704,7 @@
 	  (send text change-style (make-object style-delta% 'change-family 'modern)
 		0
 		(send text last-position))
+          (send text auto-wrap #t)
 	  (send text lock #t)
 	  (send text hide-caret #t)
 

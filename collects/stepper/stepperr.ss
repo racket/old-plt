@@ -44,37 +44,36 @@
   (define stepper-canvas%
     (class editor-canvas% (parent (editor #f) (style null) (scrolls-per-page 100))
       (rename (super-on-size on-size))
-      (inherit get-editor get-client-size show)
+      (inherit get-editor)
       (override 
-        (on-size 
+        [on-size 
          (lambda (width height)
            (super-on-size width height)
-           (reset-pretty-print-width))))
-      (public (reset-pretty-print-width
-               (lambda ()
-                 (let ([editor (get-editor)])
-                   (when editor
-                     (let-values ([(client-width client-height) (get-client-size)])
-                       (send editor reset-pretty-print-width client-width)))))))
+           (let ([editor (get-editor)])
+             (when editor
+               (send editor reset-pretty-print-width this))))])
       (sequence (super-init parent editor style scrolls-per-page))))
   
   (define stepper-text%
     (class f:text:basic% (sexp redex error-msg (line-spacing 1.0) (tabstops null))
-      (inherit get-dc find-snip insert change-style highlight-range last-position lock erase
+      (inherit find-snip insert change-style highlight-range last-position lock erase
                begin-edit-sequence end-edit-sequence)
       (public (pretty-printed-width -1)
               (clear-highlight-thunk (lambda () #f))
               (reset-pretty-print-width 
-               (lambda (width)
+               (lambda (canvas)
                  (begin-edit-sequence)
                  (when (= (last-position) 0)
                    (insert "a")
                    (change-style result-delta 0 1))
                  (let* ([style (send (find-snip 0 'before) get-style)]
-                        [char-width (send style get-text-width (get-dc))]
-                        [min-columns 50]
+                        [char-width (send style get-text-width (send canvas get-dc))]
+                        [canvas-width (let-values ([(client-width client-height)
+                                                    (send canvas get-client-size)])
+                                        (- client-width 18))] ; 12 border pixels + 6 for wrap char
+                        [min-columns 30]
                         [new-columns (max min-columns 
-                                          (- (floor (/ width char-width)) 3))])
+                                          (floor (/ canvas-width char-width)))])
                    (pretty-print-columns new-columns)
                    (reformat-sexp)
                    (end-edit-sequence))))
@@ -181,10 +180,9 @@
              [update-view
               (lambda (new-view)
                 (set! view new-view)
-                (send canvas lazy-refresh #t)
-                (send canvas set-editor (list-ref history view))
-                (send canvas reset-pretty-print-width)
-                (send canvas lazy-refresh #f)
+                (let ([e (list-ref history view)])
+                  (send e reset-pretty-print-width canvas)
+                  (send canvas set-editor e))
                 (send previous-button enable (not (zero? view)))
                 (send home-button enable (not (zero? view)))
                 (send next-button enable (not (eq? final-view view))))]

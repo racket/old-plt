@@ -134,6 +134,7 @@ typedef struct FSSpec mzFSSpec;
     && !defined(LINK_EXTENSIONS_BY_TABLE) \
     && !defined(SCHEME_EMBEDDED_NO_DLL)
 # define MZ_DLLIMPORT __declspec(dllimport)
+# define MZ_DLLEXPORT __declspec(dllexport)
 # ifdef __mzscheme_private__
 #  define MZ_DLLSPEC __declspec(dllexport)
 # else
@@ -142,6 +143,7 @@ typedef struct FSSpec mzFSSpec;
 #else
 # define MZ_DLLSPEC
 # define MZ_DLLIMPORT
+# define MZ_DLLEXPORT
 #endif
 
 #define MZ_EXTERN extern MZ_DLLSPEC

@@ -3,23 +3,25 @@ compile.ss
 
 `compile-extension' takes
    quiet? - Boolean indicating whether command should be echoed to stdout
-   input-file - A .c file
-   output-file - A .o/.obj file
+   input-file - A C source filename
+   output-file - A compiled object filename
    includes - A list of include directories; MzScheme's include is
               added automatically.
 
 Compilation is controlled by a number of parameters:
 
-   current-extension-compiler - compiler executable or #f. Under 
-     Windows, #f looks for cl.exe using the PATH env. variable.
-     Under Unix, #f looks for gcc and then cc.
+   current-extension-compiler - compiler executable pathname or
+     #f.  Under Windows, #f looks for cl.exe using the PATH
+     env. variable.  Under Unix, #f looks for gcc and then cc.
 
-   current-extension-compiler-flags - list of strings. Under Windows,
-    the default is (list "/c" "/O2"); (list "-c" "-O2") for Unix
+   current-extension-compiler-flags - list of strings passed to the
+    compiler as flags. Under Windows, the default is (list "/c"
+    "/O2"); (list "-c" "-O2") for Unix
 
    current-make-compile-include-strings - procedure that takes an
-    include dir and returns a list of strings for the command line.
-    Windows: "dir" -> (list "\Idir"); Unix: "dir" -> (list "-Idir")
+    include directory path and returns a list of strings for the
+    command line.  Windows: "dir" -> (list "\Idir"); Unix: "dir" ->
+    (list "-Idir")
 
    current-make-compile-input-strings - procedure that takes an
     input file and returns a list of strings for the command line.
@@ -29,17 +31,19 @@ Compilation is controlled by a number of parameters:
     output file and returns a list of strings for the command line.
     Windows: "file"->(list "\Fofile"); Unix: "file"->(list "-o" "file")
 
+The unit/sig form defined by "compiler.ss" requires no imports.
+
 link.ss
 -------
 
 `link-extension' takes:
    quiet? - Boolean indicating whether command should be echoed to stdout
-   input-files - A list of .o files
-   output-file - A .so/.dll file
+   input-files - A list of compiled object filenames
+   output-file - An extension filename
 
 Linking parameters:
 
-   current-extension-linker - linker executable or #f. Under 
+   current-extension-linker - linker executable pathname or #f. Under 
      Windows, #f looks for cl.exe using the PATH env. variable.
      Under Unix except AIX, #f looks for ld. Under AIX, #f looks
      for cc.
@@ -51,9 +55,9 @@ Linking parameters:
      input file and returns a list of strings for the command line.
      The default is `list'.
 
-   current-make-link-output-strings - procedure that takes an
-    output file and returns a list of strings for the command line.
-    Windows: "file"->(list "\Fefile"); Unix: "file"->(list "-o" "file")
+   current-make-link-output-strings - procedure that takes an output
+    file and returns a list of strings for the command line.  Windows:
+    "file" -> (list "\Fefile"); Unix: "file" -> (list "-o" "file")
 
    current-standard-link-libraries - list of file paths; For
     most platforms, the default is 
@@ -61,14 +65,42 @@ Linking parameters:
                        (system-library-subpath)
                        "mzdyn.o"))
 
+The unit/sig form defined by "linkr.ss" requires no imports.
+
 file.ss
 -------
 
  (make-directory* dir) - makes dir, creating intermediate directoies
    if necessary. If there is an error, and exception is raised.
 
- (append-object-suffix s) - appends the platform-standard object
-   file suffix to s
+ (append-zo-suffix s) - appends the .zo file suffix to s.
+
+ (append-object-suffix s) - appends the platform-standard compiled
+   object file suffix to s.
+
+ (append-c-suffix s) - appends the platform-standard C source
+   file suffix to s.
+
+ (append-constant-pool-suffix s) - appends the constant pool file
+   suffix (.kp) to s.
 
  (append-extension-suffix s) - appends the platform-standard dynamic
    extension file suffix to s
+
+ (extract-base-filename/ss s program) - strips the Scheme file suffix
+   from the path s and returns the stripped pathname. If s is not a
+   Scheme file name and `program' is a symbol, and error is signalled.
+   If s is not a Scheme file and `program' is #f, #f is returned. The
+   `program' argument is optional and defaults to #f.
+
+ (extract-base-filename/c s program) - same as
+   extract-base-filename/ss but for C source files.
+
+ (extract-base-filename/kp s program) - same as
+   extract-base-filename/ss but for constant pool files.
+
+ (extract-base-filename/o s program) - same as
+   extract-base-filename/ss but for compiled object files.
+
+The unit/sig form defined by "filer.ss" requires no imports.
+

@@ -41,6 +41,9 @@ static void GC_prim_stringout(char *s, int len)
       s += wrote;
       if (len)
 	Sleep(10);
+    } else {
+      /* Give up */
+      break;
     }
   }
 }

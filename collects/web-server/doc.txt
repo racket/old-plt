@@ -54,13 +54,14 @@ options.
   A later section describes the remaining semi-internal functions in the
   web-sever.ss library.
 
-The library internal-server.ss also provides a single function named serve
-that behaves almost the same as the above function with the same name.
-Instead of accepting HTTP requests from network connections, this version
-of the serve function returns another function of type (str -> void)
-This extra function directs the built-in web browser to the url specified
-by the argument string.  It does not use any network support from the underlying
-OS.
+The library _internal-server.ss_ also provides a single
+function named serve that behaves almost the same as the
+above function with the same name.  Instead of accepting
+HTTP requests from network connections, this version of the
+serve function returns another function of type (str ->
+void) This extra function directs the built-in web browser
+to the url specified by the argument string.  It does not
+use any network support from the underlying OS.
 
 > serve : configuration [nat] [str] -> (-> void) (str -> void)
 

@@ -876,9 +876,11 @@ char* wxMenu::GetLabel(int Id)
 void wxMenu::SetLabel(int Id , char* label)
 {
 	wxMenuItem* theMenuItem = FindItemForId(Id);
-	label = wxItemStripLabel(label);
-	if (theMenuItem)
+	if (theMenuItem) {
 		theMenuItem->SetLabel(label);
+		if (menu_bar)
+		  MacChangeMenuText(this, title);
+	}
 
 	CheckHelpHack();
 }

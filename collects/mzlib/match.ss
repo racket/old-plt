@@ -31,7 +31,7 @@
 ;;       | (match-let ((pat exp) ...) body)
 ;;       | (match-let* ((pat exp) ...) body)
 ;;       | (match-letrec ((pat exp) ...) body)
-;;       | (match-define> pat exp)
+;;       | (match-define pat exp)
 ;;
 ;; clause ::= (pat body) | (pat => exp)
 ;;
@@ -107,7 +107,8 @@
    match-lambda*
    match-letrec
    match-let
-   match-let*)
+   match-let*
+   match-define)
 
  (define match:version "Version 1.10mz, Feb 5, 1996")
 
@@ -309,7 +310,7 @@
        [(_ pat exp)
 	(datum->syntax-object
 	 (quote-syntax here)
-	 (gendefine (map (lambda (p) (:ucall parse-pattern p)) (syntax pat))
+	 (gendefine (:ucall parse-pattern (syntax pat))
 		    (syntax exp)
 		    stx)
 	 stx)]))))

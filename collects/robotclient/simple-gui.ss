@@ -2,6 +2,7 @@
 
   (require (lib "mred.ss" "mred")
            (lib "class.ss")
+           (lib "framework.ss" "framework")
            "client-parameters.ss")
 
   (provide gui% parse-input)
@@ -74,7 +75,7 @@
       (init-field board width height)
 
       (define f (instantiate frame% ("Simple Gui" #f 400 400)))
-      (define p (make-object vertical-pane% f))
+      (define p (make-object panel:vertical-dragable% f))
       (define map-text (instantiate text% ()))
       (send (instantiate editor-canvas% (p)) set-editor map-text)
       (define log-text (instantiate text% ()))

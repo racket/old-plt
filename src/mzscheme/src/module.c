@@ -61,9 +61,6 @@ static Scheme_Object *provide_expand(Scheme_Object *form, Scheme_Comp_Env *env, 
 static Scheme_Object *module_execute(Scheme_Object *data);
 static Scheme_Object *top_level_require_execute(Scheme_Object *data);
 
-static Scheme_Object *module_link(Scheme_Object *data, Link_Info *info);
-static Scheme_Object *top_level_require_link(Scheme_Object *data, Link_Info *info);
-
 static Scheme_Object *module_resolve(Scheme_Object *data, Resolve_Info *info);
 static Scheme_Object *top_level_require_resolve(Scheme_Object *data, Resolve_Info *info);
 
@@ -74,7 +71,8 @@ static Scheme_Module *module_load(Scheme_Object *modname, Scheme_Env *env, const
 
 static void eval_defmacro(Scheme_Object *names, int count,
 			  Scheme_Object *expr, Scheme_Comp_Env *env,
-			  int let_depth, Scheme_Bucket_Table *syntax);
+			  Resolve_Prefix *rp, int let_depth, int shift,
+			  Scheme_Bucket_Table *syntax);
 
 #define cons scheme_make_pair
 
@@ -135,6 +133,7 @@ static Scheme_Object *parse_requires(Scheme_Object *form,
 static void start_module(Scheme_Module *m, Scheme_Env *env, int restart, Scheme_Object *syntax_idx, int delay_exptime);
 static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart, Scheme_Object *syntax_idx, int delay_exptime);
 static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env);
+static void eval_module_body(Scheme_Env *menv);
 
 static Scheme_Object *default_module_resolver(int argc, Scheme_Object **argv);
 
@@ -155,9 +154,9 @@ void scheme_init_module(Scheme_Env *env)
   Scheme_Object *o;
 
   scheme_register_syntax(MODULE_EXPD, module_resolve, 
-			 module_link, module_execute, 1);
+			 module_execute, 1);
   scheme_register_syntax(REQUIRE_EXPD, top_level_require_resolve, 
-			 top_level_require_link, top_level_require_execute, 1);
+			 top_level_require_execute, 1);
 
   scheme_add_global_keyword("module", 
 			    scheme_make_compiled_syntax(module_syntax, 
@@ -1506,14 +1505,18 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env)
 
     ivk(cenv, menv->phase, menv->module->self_modidx, menv->module->body);
   } else {
+    Resolve_Prefix *rp;
+
     for (body = menv->module->et_body; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
       e = SCHEME_CAR(body);
       
       names = SCHEME_VEC_ELS(e)[0];
       let_depth = SCHEME_INT_VAL(SCHEME_VEC_ELS(e)[2]);
+      rp = (Resolve_Prefix *)SCHEME_VEC_ELS(e)[3];
       e = SCHEME_VEC_ELS(e)[1];
       
-      eval_defmacro(names, scheme_proper_list_length(names), e, exp_env->init, let_depth, syntax);
+      eval_defmacro(names, scheme_proper_list_length(names), e, exp_env->init, 
+		    rp, let_depth, 1, syntax);
     }
   }
 }
@@ -1522,7 +1525,7 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart,
 			 Scheme_Object *syntax_idx, int delay_expstart)
 {
   Scheme_Env *menv;
-  Scheme_Object *body, *e, *l;
+  Scheme_Object *l;
 
   if (SAME_OBJ(m, kernel))
     return;
@@ -1549,16 +1552,48 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart,
 
   menv->running = 1;
 
-  body = m->body;
-
   if (menv->module->prim_body) {
     Scheme_Invoke_Proc ivk = menv->module->prim_body;
-    ivk(menv, menv->phase, menv->module->self_modidx, body);
+    ivk(menv, menv->phase, menv->module->self_modidx, m->body);
   } else {
-    for (; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
-      e = scheme_link_expr(SCHEME_CAR(body), menv);
-      _scheme_eval_linked_expr_multi(e);
-    }
+    eval_module_body(menv);
+  }
+}
+
+static void *eval_module_body_k(void)
+{
+  Scheme_Thread *p = scheme_current_thread;
+  Scheme_Env *menv;
+
+  menv = (Scheme_Env *)p->ku.k.p1;
+  p->ku.k.p1 = NULL;
+
+  eval_module_body(menv);
+  
+  return NULL;
+}
+
+static void eval_module_body(Scheme_Env *menv)
+{
+  Scheme_Module *m = menv->module;
+  Scheme_Object *body, **save_runstack;
+  int depth;
+
+  depth = m->max_let_depth + scheme_prefix_depth(m->prefix);
+  if (!scheme_check_runstack(depth)) {
+    Scheme_Thread *p = scheme_current_thread;
+    p->ku.k.p1 = menv;
+    (void)scheme_enlarge_runstack(depth, eval_module_body_k);
+    return;
+  }
+
+  save_runstack = scheme_push_prefix(menv, m->prefix,
+				     m->self_modidx, menv->link_midx,
+				     0, menv->phase);
+
+  body = m->body;
+  for (; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
+    _scheme_eval_linked_expr_multi(SCHEME_CAR(body));
   }
 }
 
@@ -1704,17 +1739,69 @@ Scheme_Module *scheme_extract_compiled_module(Scheme_Object *o)
 /*                          define-syntaxes                           */
 /**********************************************************************/
 
+static void *eval_defmacro_k(void)
+{
+  Scheme_Thread *p = scheme_current_thread;
+  Scheme_Object *names;
+  int count;
+  Scheme_Object *expr;
+  Scheme_Comp_Env *env;
+  Resolve_Prefix *rp;
+  int let_depth, shift;
+  Scheme_Bucket_Table *syntax;
+
+  names = (Scheme_Object *)p->ku.k.p1;
+  expr = (Scheme_Object *)p->ku.k.p2;
+  env = (Scheme_Comp_Env *)p->ku.k.p3;
+  rp = (Resolve_Prefix *)SCHEME_CAR((Scheme_Object *)p->ku.k.p4);
+  syntax = (Scheme_Bucket_Table *)SCHEME_CDR((Scheme_Object *)p->ku.k.p4);
+  count = p->ku.k.i1;
+  let_depth = p->ku.k.i2;
+  shift = p->ku.k.i3;
+
+  p->ku.k.p1 = NULL;
+  p->ku.k.p2 = NULL;
+  p->ku.k.p3 = NULL;
+  p->ku.k.p4 = NULL;
+
+  eval_defmacro(names, count, expr, env, rp, let_depth, shift, syntax);
+
+  return NULL;
+}
+
 static void eval_defmacro(Scheme_Object *names, int count,
 			  Scheme_Object *expr, Scheme_Comp_Env *env,
-			  int let_depth, Scheme_Bucket_Table *syntax)
+			  Resolve_Prefix *rp,
+			  int let_depth, int shift, Scheme_Bucket_Table *syntax)
 {
-  Scheme_Object *macro, *vals, *name;
-  int i, g;
+  Scheme_Object *macro, *vals, *name, **save_runstack;
+  int i, g, depth;
 
-  expr = scheme_link_expr(expr, env->genv);
+  depth = let_depth + scheme_prefix_depth(rp);
+  if (!scheme_check_runstack(depth)) {
+    Scheme_Thread *p = scheme_current_thread;
+    p->ku.k.p1 = names;
+    p->ku.k.p2 = expr;
+    p->ku.k.p3 = env;
+    vals = scheme_make_pair((Scheme_Object *)rp, (Scheme_Object *)syntax);
+    p->ku.k.p4 = vals;
+    p->ku.k.i1 = count;
+    p->ku.k.i2 = let_depth;
+    p->ku.k.i3 = shift;
+    (void)scheme_enlarge_runstack(depth, eval_defmacro_k);
+    return;
+  }
+
+  save_runstack = scheme_push_prefix(env->genv, rp,
+				     (shift ? env->genv->module->self_modidx : NULL), 
+				     (shift ? env->genv->link_midx : NULL), 
+				     1, env->genv->phase);
 	
   scheme_on_next_top(env, NULL, scheme_false);
-  vals = scheme_eval_linked_expr_multi(expr, let_depth);
+  vals = scheme_eval_linked_expr_multi(expr);
+
+  scheme_pop_prefix(save_runstack);
+
   
   if (SAME_OBJ(vals, SCHEME_MULTIPLE_VALUES)) {
     g = scheme_current_thread->ku.multiple.count;
@@ -1775,11 +1862,13 @@ static void eval_defmacro(Scheme_Object *names, int count,
 static Scheme_Object *
 module_execute(Scheme_Object *data)
 {
-  Scheme_Module *m = (Scheme_Module *)SCHEME_CAR(data);
-  Scheme_Env *env = (Scheme_Env *)SCHEME_CDR(data);
+  Scheme_Module *m = (Scheme_Module *)data;
+  Scheme_Env *env;
   Scheme_Env *menv;
   Scheme_Object *mzscheme_symbol;
   
+  env = scheme_environment_from_dummy(m->dummy);
+
   mzscheme_symbol = scheme_intern_symbol("mzscheme");
   
   if ((((SCHEME_SYM_VAL(m->modname)[0] == '#')
@@ -1821,18 +1910,20 @@ module_execute(Scheme_Object *data)
 }
 
 static Scheme_Object *
-module_link(Scheme_Object *data, Link_Info *link)
-{
-  /* We don't actually link, leaving that until module run time(s) */
-  return scheme_make_syntax_linked(MODULE_EXPD,
-				   cons(data, (Scheme_Object *)link));
-}
-
-static Scheme_Object *
 module_resolve(Scheme_Object *data, Resolve_Info *rslv)
 {
   Scheme_Module *m = (Scheme_Module *)data;
   Scheme_Object *b;
+  Resolve_Prefix *rp;
+
+  rp = scheme_resolve_prefix(0, m->comp_prefix, 1);
+  m->comp_prefix = NULL;
+  m->prefix = rp;
+
+  b = scheme_resolve_expr(m->dummy, rslv);
+  m->dummy = b;
+
+  rslv = scheme_resolve_info_create(rp);
 
   for (b = m->body; !SCHEME_NULLP(b); b = SCHEME_CDR(b)) {
     Scheme_Object *e;
@@ -1990,6 +2081,11 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   }
   
   if (rec) {
+    Scheme_Object *dummy;
+
+    dummy = scheme_make_environment_dummy(env);
+    m->dummy = dummy;
+
     scheme_compile_rec_done_local(rec, drec);
     fm = scheme_compile_expr(fm, menv->init, rec, drec);
 
@@ -2001,7 +2097,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     return scheme_make_syntax_compiled(MODULE_EXPD, (Scheme_Object *)m);
   } else {
     Scheme_Object *hints, *formname;
-    
+
     fm = scheme_expand_expr(fm, menv->init, depth, scheme_false);
 
     hints = m->hints;
@@ -2324,7 +2420,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 				      int depth, Scheme_Object *boundname)
 {
   Scheme_Object *fm, *first, *last, *p, *rn, *exp_body, *et_rn, *self_modidx;
-  Scheme_Comp_Env *xenv, *cenv, *eenv = NULL;
+  Scheme_Comp_Env *xenv, *cenv;
   Scheme_Hash_Table *et_required; /* just to avoid duplicates */
   Scheme_Hash_Table *required;    /* name -> (vector nominal-modidx modidx srcname var?) */
   Scheme_Hash_Table *provided;    /* exname -> locname */
@@ -2334,6 +2430,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   int excount, exvcount, exicount;
   int num_to_compile;
   int reprovide_kernel;
+  int max_let_depth;
   Scheme_Compile_Info *recs;
   Scheme_Object *redef_modname;
   Scheme_Object *simplify_cache;
@@ -2532,6 +2629,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  /* Define the macro: */
 	  Scheme_Compile_Info mrec;
 	  Scheme_Object *names, *l, *code, *m, *vec, *boundname;
+	  Resolve_Prefix *rp;
+	  Scheme_Comp_Env *eenv;
 	  int count = 0;
 
 	  scheme_define_parse(e, &names, &code, 1, env);
@@ -2572,23 +2671,24 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  mrec.value_name = NULL;
 
 	  scheme_prepare_exp_env(env->genv);
-	  if (!eenv) {
-	    eenv = scheme_no_defines(env->genv->exp_env->init);
-	  }
+	  eenv = scheme_new_comp_env(env->genv->exp_env->init, 0);
 
 	  if (!rec)
 	    code = scheme_expand_expr(code, eenv, -1, boundname);
 	  m = scheme_compile_expr(code, eenv, &mrec, 0);
-	  m = scheme_resolve_expr(m, scheme_resolve_info_create(simplify_cache));
+
+	  rp = scheme_resolve_prefix(1, eenv->prefix, 0);
+	  m = scheme_resolve_expr(m, scheme_resolve_info_create(rp));
 
 	  /* Add code with names and lexical depth to exp-time body: */
-	  vec = scheme_make_vector(3, NULL);
+	  vec = scheme_make_vector(4, NULL);
 	  SCHEME_VEC_ELS(vec)[0] = names;
 	  SCHEME_VEC_ELS(vec)[1] = m;
 	  SCHEME_VEC_ELS(vec)[2] = scheme_make_integer(mrec.max_let_depth);
+	  SCHEME_VEC_ELS(vec)[3] = (Scheme_Object *)rp;
 	  exp_body = scheme_make_pair(vec, exp_body);
 	
-	  eval_defmacro(names, count, m, eenv, mrec.max_let_depth, env->genv->syntax);
+	  eval_defmacro(names, count, m, eenv, rp, mrec.max_let_depth, 0, env->genv->syntax);
 
 	  /* Add a renaming for each name: */
 	  for (l= names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
@@ -2840,9 +2940,12 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   }
   /* first =  a list of (cons semi-expanded-expression normal?) */
 
-  eenv = NULL;
-
-  cenv = scheme_extend_as_toplevel(env);
+  if (rec) {
+    /* Module manages its own prefix. That's how we get
+       multiple instantiation of module with "dynamic linking". */
+    cenv = scheme_new_comp_env(env, 1);
+  } else
+    cenv = scheme_extend_as_toplevel(env);
 
   if (rec) {
     recs = MALLOC_N_RT(Scheme_Compile_Info, num_to_compile);
@@ -2871,7 +2974,10 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
   if (rec) {
     scheme_merge_compile_recs(rec, drec, recs, num_to_compile);
-  }
+    max_let_depth = rec[drec].max_let_depth;
+    rec[drec].max_let_depth = 0; /* since module executer takes care of it */
+  } else
+    max_let_depth = 0; /* not used */
 
   scheme_clean_dead_env(env->genv);
 
@@ -3253,6 +3359,9 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
     env->genv->module->indirect_provides = exis;
     env->genv->module->num_indirect_provides = exicount;
+
+    env->genv->module->comp_prefix = cenv->prefix;
+    env->genv->module->max_let_depth = max_let_depth;
 
     return (Scheme_Object *)env->genv->module;
   } else {
@@ -3650,9 +3759,11 @@ top_level_require_execute(Scheme_Object *data)
 {
   Scheme_Hash_Table *ht;
   Scheme_Object *rn;
-  Scheme_Object *form = SCHEME_CDR(SCHEME_CAR(data)), *rest, *brn;
-  int for_exp = (SCHEME_TRUEP(SCHEME_CAR(SCHEME_CAR(data))) ? 1 : 0);
-  Scheme_Env *env = (Scheme_Env *)SCHEME_CDR(data);
+  Scheme_Object *form = SCHEME_CDR(SCHEME_CDR(data)), *rest, *brn;
+  int for_exp = (SCHEME_TRUEP(SCHEME_CAR(data)) ? 1 : 0);
+  Scheme_Env *env;
+
+  env = scheme_environment_from_dummy(SCHEME_CADR(data));
 
   if (for_exp) {
     scheme_prepare_exp_env(env);
@@ -3693,12 +3804,6 @@ top_level_require_execute(Scheme_Object *data)
 }
 
 static Scheme_Object *
-top_level_require_link(Scheme_Object *data, Link_Info *link)
-{
-  return scheme_make_syntax_linked(REQUIRE_EXPD, cons(data, (Scheme_Object *)link));
-}
-
-static Scheme_Object *
 top_level_require_resolve(Scheme_Object *data, Resolve_Info *rslv)
 {
   return scheme_make_syntax_resolved(REQUIRE_EXPD, data);
@@ -3710,7 +3815,7 @@ static Scheme_Object *do_require(Scheme_Object *form, Scheme_Comp_Env *env,
 				int for_exp)
 {
   Scheme_Hash_Table *ht;
-  Scheme_Object *rn;
+  Scheme_Object *rn, *dummy;
   Scheme_Env *genv;
 
   if (!scheme_is_toplevel(env))
@@ -3733,6 +3838,9 @@ static Scheme_Object *do_require(Scheme_Object *form, Scheme_Comp_Env *env,
 		       check_dup_require, ht, 0, 
 		       NULL, 0, 0);
 
+  /* Dummy lets us access a top-level environment: */
+  dummy = scheme_make_environment_dummy(env);
+
   if (rec) {
     scheme_compile_rec_done_local(rec, drec);
     scheme_default_compile_rec(rec, drec);
@@ -3740,7 +3848,7 @@ static Scheme_Object *do_require(Scheme_Object *form, Scheme_Comp_Env *env,
 				       cons((for_exp 
 					     ? scheme_true 
 					     : scheme_false),
-					    form));
+					    cons(dummy, form)));
   } else
     return form;
 }

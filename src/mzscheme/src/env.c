@@ -91,6 +91,9 @@ static int env_uid_counter;
 typedef struct Compile_Data {
   char **stat_dists; /* (pos, depth) => used? */
   int *sd_depths;
+  int used_toplevel;
+  int max_stx_used;
+  char *stxes_used;
   int num_const;
   Scheme_Object **const_names;
   Scheme_Object **const_vals;
@@ -445,6 +448,7 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi, int toplevel_size)
     module_registry = NULL;
   } else {
     syntax = scheme_make_bucket_table(7, SCHEME_hash_ptr);
+    syntax->with_home = 1;
     if (base) {
       modchain = base->modchain;
       module_registry = base->module_registry;
@@ -682,7 +686,13 @@ scheme_global_bucket(Scheme_Object *symbol, Scheme_Env *env)
 Scheme_Bucket *
 scheme_global_keyword_bucket(Scheme_Object *symbol, Scheme_Env *env)
 {
-  return scheme_bucket_from_table(env->syntax, (char *)symbol);
+  Scheme_Bucket *b;
+    
+  b = scheme_bucket_from_table(env->syntax, (char *)symbol);
+  if (!((Scheme_Bucket_With_Home *)b)->home)
+    ((Scheme_Bucket_With_Home *)b)->home = env; /* not env->syntax ! */
+    
+  return b;
 }
 
 Scheme_Bucket *
@@ -844,7 +854,7 @@ static void init_compile_data(Scheme_Comp_Env *env)
 }
 
 Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags,
-					 Scheme_Comp_Env *base)
+					      Scheme_Comp_Env *base)
 {
   Scheme_Comp_Env *frame;
   int count;
@@ -866,10 +876,24 @@ Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags,
   frame->flags = flags | (base->flags & SCHEME_NO_RENAME);
   frame->next = base;
   frame->genv = base->genv;
+  frame->prefix = base->prefix;
 
   init_compile_data(frame);
 
   return frame;
+}
+
+Scheme_Comp_Env *scheme_new_comp_env(Scheme_Comp_Env *env, int top_level)
+{
+  Scheme_Comp_Env *e;
+  Comp_Prefix *cp;
+
+  cp = MALLOC_ONE_RT(Comp_Prefix);
+
+  e = scheme_new_compilation_frame(0, top_level ? SCHEME_TOPLEVEL_FRAME : 0, env);
+  e->prefix = cp;
+
+  return e;
 }
 
 int scheme_used_app_only(Scheme_Comp_Env *env, int which)
@@ -991,6 +1015,106 @@ Scheme_Comp_Env *scheme_extend_as_toplevel(Scheme_Comp_Env *env)
     return scheme_new_compilation_frame(0, SCHEME_TOPLEVEL_FRAME, env);
 }
 
+Scheme_Object *scheme_register_toplevel_in_prefix(Scheme_Object *var, Scheme_Comp_Env *env, int keyword)
+{
+  Scheme_Comp_Env *frame;
+  Comp_Prefix *cp = env->prefix;
+  Scheme_Hash_Table *ht;
+  Scheme_Object *o;
+  Scheme_Toplevel *tl;
+
+  /* Register use at lambda, if any: */
+  frame = env;
+  while (frame) {
+    if (frame->flags & SCHEME_LAMBDA_FRAME) {
+      COMPILE_DATA(frame)->used_toplevel = 1;
+      break;
+    }
+    frame = frame->next;
+  }
+
+  if (!keyword) {
+    ht = cp->toplevels;
+    if (!ht) {
+      ht = scheme_make_hash_table(SCHEME_hash_ptr);
+      cp->toplevels = ht;
+    }
+  } else {
+    ht = cp->keywords;
+    if (!ht) {
+      ht = scheme_make_hash_table(SCHEME_hash_ptr);
+      cp->keywords = ht;
+    }
+  }
+
+  o = scheme_hash_get(ht, var);
+  if (o)
+    return o;
+
+  tl = MALLOC_ONE_TAGGED(Scheme_Toplevel);
+  tl->type = scheme_compiled_toplevel_type;
+  tl->depth = (keyword ? 1 : 0);
+  tl->position = (keyword ? cp->num_keywords : cp->num_toplevels);
+
+  if (!keyword)
+    cp->num_toplevels++;
+  else
+    cp->num_keywords++;
+  o = (Scheme_Object *)tl;  
+  scheme_hash_set(ht, var, o);
+
+  return o;
+}
+
+Scheme_Object *scheme_register_stx_in_prefix(Scheme_Object *var, Scheme_Comp_Env *env)
+{
+  Comp_Prefix *cp = env->prefix;
+  Scheme_Local *l;
+  Scheme_Object *o;
+  int pos;
+
+  if (!cp->stxes) {
+    Scheme_Hash_Table *ht;
+    ht = scheme_make_hash_table(SCHEME_hash_ptr);
+    cp->stxes = ht;
+  }
+
+  pos = cp->num_stxes;
+
+  l = MALLOC_ONE_TAGGED(Scheme_Local);
+  l->type = scheme_compiled_quote_syntax_type;
+  l->position = pos;
+
+  cp->num_stxes++;
+  o = (Scheme_Object *)l;
+  
+  scheme_hash_set(cp->stxes, var, o);
+
+  /* Register use at lambda, if any: */
+  while (env) {
+    if (env->flags & SCHEME_LAMBDA_FRAME) {
+      Compile_Data *data = COMPILE_DATA(env);
+
+      if (data->max_stx_used <= pos) {
+	char *p;
+	int max_stx_used = (pos * 2) + 10;
+	
+	p = MALLOC_N_ATOMIC(char, max_stx_used);
+	memset(p, 0, max_stx_used);
+	memcpy(p, data->stxes_used, data->max_stx_used);
+	data->stxes_used = p;
+	data->max_stx_used = max_stx_used;
+      }
+
+      data->stxes_used[pos] = 1;
+      break;
+    }
+    env = env->next;
+  }
+
+  return o;
+}
+
 /*========================================================================*/
 /*                     compile-time env, lookup bindings                  */
 /*========================================================================*/
@@ -1027,6 +1151,8 @@ static Scheme_Object *force_lazy_macro(Scheme_Object *val, long phase)
 
 static Scheme_Local *get_frame_loc(Scheme_Comp_Env *frame,
 				   int i, int j, int p, int flags)
+/* Generates a Scheme_Local record for a static distance coodinate, and also
+   marks the variable as used for closures. */
 {
   COMPILE_DATA(frame)->use[i] |= (((flags & (SCHEME_APP_POS | SCHEME_SETTING))
 				   ? CONSTRAINED_USE
@@ -1225,6 +1351,7 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
       if (frame->values[i]) {
 	if (SAME_OBJ(SCHEME_STX_VAL(symbol), SCHEME_STX_VAL(frame->values[i]))
 	    && scheme_stx_env_bound_eq(symbol, frame->values[i], uid, phase)) {
+	  /* Found a lambda- or let-bound variable: */
 	  if (flags & SCHEME_DONT_MARK_USE)
 	    return scheme_make_local(scheme_local_type, 0);
 	  else
@@ -1439,7 +1566,7 @@ void scheme_env_make_closure_map(Scheme_Comp_Env *env, short *_size, short **_ma
 	  if (data->stat_dists[i][j]) {
 	    map[pos++] = lpos;
 	    data->stat_dists[i][j] = 0; /* This closure's done with these vars... */
-	    data->stat_dists[i][j - 1] = 1; /* ... but insure previous keeps */
+	    data->stat_dists[i][j - 1] = 1; /* ... but ensure previous keeps */
 	  }
 	}
 	lpos++;
@@ -1447,6 +1574,85 @@ void scheme_env_make_closure_map(Scheme_Comp_Env *env, short *_size, short **_ma
     } else
       lpos += frame->num_bindings;
   }
+}
+
+void scheme_env_make_stx_closure_map(Scheme_Comp_Env *frame, short *size, short **_map)
+{
+  char *used;
+
+  used = COMPILE_DATA(frame)->stxes_used;
+
+  if (used) {
+    short *map;
+    int i, max_stx_used, count = 0;
+    
+    max_stx_used = COMPILE_DATA(frame)->max_stx_used;
+    
+    for (i = 0; i < max_stx_used; i++) {
+      if (used[i])
+	count++;
+    }
+
+    *size = count;
+    map = MALLOC_N_ATOMIC(short, count);
+    *_map = map;
+
+    count = 0;
+    for (i = 0; i < max_stx_used; i++) {
+      if (used[i])
+	map[count++] = i;
+    }
+
+    /* Propagate uses to an enclosing lambda, if any: */
+    frame = frame->next;
+    while (frame) {
+      if (frame->flags & SCHEME_LAMBDA_FRAME) {
+	Compile_Data *data = COMPILE_DATA(frame);
+
+	if (data->max_stx_used < max_stx_used) {
+	  char *p;
+
+	  p = MALLOC_N_ATOMIC(char, max_stx_used);
+	  memset(p, 0, max_stx_used);
+	  memcpy(p, data->stxes_used, data->max_stx_used);
+	  data->stxes_used = p;
+	  data->max_stx_used = max_stx_used;
+	}
+
+	for (i = 0; i < max_stx_used; i++) {
+	  if (used[i])
+	    data->stxes_used[i] = 1;
+	}
+
+	break;
+      }
+      frame = frame->next;
+    }
+  } else {
+    *size = 0;
+    *_map = NULL;
+  }
+}
+
+int scheme_env_uses_toplevel(Scheme_Comp_Env *frame)
+{
+  int used;
+
+  used = COMPILE_DATA(frame)->used_toplevel;
+  
+  if (used) {
+    /* Propagate use to an enclosing lambda, if any: */
+    frame = frame->next;
+    while (frame) {
+      if (frame->flags & SCHEME_LAMBDA_FRAME) {
+	COMPILE_DATA(frame)->used_toplevel = 1;
+	break;
+      }
+      frame = frame->next;
+    }
+  }
+
+  return used;
 }
 
 int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count)
@@ -1532,7 +1738,73 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
 
 /* See eval.c for information about the compilation phases. */
 
-Resolve_Info *scheme_resolve_info_create(Scheme_Object *simplify_cache)
+Resolve_Prefix *scheme_resolve_prefix(int phase, Comp_Prefix *cp, int simplify)
+{
+  Resolve_Prefix *rp;
+  Scheme_Object **tls, **stxes, **kws, *simplify_cache;
+  Scheme_Hash_Table *ht;
+  int i;
+
+  rp = MALLOC_ONE_RT(Resolve_Prefix);
+  rp->type = scheme_resolve_prefix_type;
+  rp->num_toplevels = cp->num_toplevels;
+  rp->num_keywords = cp->num_keywords;
+  rp->num_stxes = cp->num_stxes;
+  
+  if (rp->num_toplevels)
+    tls = MALLOC_N(Scheme_Object*, rp->num_toplevels);
+  else
+    tls = NULL;
+  if (rp->num_keywords)
+    kws = MALLOC_N(Scheme_Object*, rp->num_toplevels);
+  else
+    kws = NULL;
+  if (rp->num_stxes)
+    stxes = MALLOC_N(Scheme_Object*, rp->num_stxes);
+  else
+    stxes = NULL;
+
+  rp->toplevels = tls;
+  rp->keywords = kws;
+  rp->stxes = stxes;
+
+  ht = cp->toplevels;
+  if (ht) {
+    for (i = 0; i < ht->size; i++) {
+      if (ht->vals[i]) {
+	tls[SCHEME_TOPLEVEL_POS(ht->vals[i])] = ht->keys[i];
+      }
+    }
+  }
+
+  ht = cp->keywords;
+  if (ht) {
+    for (i = 0; i < ht->size; i++) {
+      if (ht->vals[i]) {
+	kws[SCHEME_TOPLEVEL_POS(ht->vals[i])] = ht->keys[i];
+      }
+    }
+  }
+
+  if (simplify)
+    simplify_cache = scheme_new_stx_simplify_cache();
+  else
+    simplify_cache = NULL;  
+
+  ht = cp->stxes;
+  if (ht) {
+    for (i = 0; i < ht->size; i++) {
+      if (ht->vals[i]) {
+	scheme_simplify_stx(ht->keys[i], simplify_cache);
+	stxes[SCHEME_LOCAL_POS(ht->vals[i])] = ht->keys[i];
+      }
+    }
+  }
+
+  return rp;
+}
+
+Resolve_Info *scheme_resolve_info_create(Resolve_Prefix *rp)
 {
   Resolve_Info *naya;
 
@@ -1540,14 +1812,15 @@ Resolve_Info *scheme_resolve_info_create(Scheme_Object *simplify_cache)
 #ifdef MZTAG_REQUIRED
   naya->type = scheme_rt_resolve_info;
 #endif
-  naya->simplify_cache = simplify_cache;
+  naya->prefix = rp;
   naya->count = 0;
   naya->next = NULL;
+  naya->toplevel_pos = -1;
 
   return naya;
 }
 
-Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsize, int mapc)
+Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsize, int mapc, int stxc)
      /* size = number of appended items in run-time frame */
      /* oldisze = number of appended items in original compile-time frame */
      /* mapc = mappings that will be installed */
@@ -1558,12 +1831,15 @@ Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsi
 #ifdef MZTAG_REQUIRED
   naya->type = scheme_rt_resolve_info;
 #endif
-  naya->simplify_cache = info->simplify_cache;
+  naya->prefix = info->prefix;
   naya->next = info;
   naya->size = size;
   naya->oldsize = oldsize;
   naya->count = mapc;
   naya->pos = 0;
+  naya->stx_count = stxc;
+  naya->toplevel_pos = -1;
+
   if (mapc) {
     int i, *ia;
     short *sa;
@@ -1583,6 +1859,13 @@ Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsi
     }
   }
 
+  if (stxc) {
+    short *sa;
+
+    sa = MALLOC_N_ATOMIC(short, stxc);
+    naya->old_stx_pos = sa;
+  }
+
   return naya;
 }
 
@@ -1598,6 +1881,16 @@ void scheme_resolve_info_add_mapping(Resolve_Info *info, int oldp, int newp, int
   info->flags[info->pos] = flags;
   
   info->pos++;
+}
+
+void scheme_resolve_info_add_stx_mapping(Resolve_Info *info, int oldp, int newp)
+{
+  info->old_stx_pos[newp] = oldp;
+}
+
+void scheme_resolve_info_set_toplevel_pos(Resolve_Info *info, int pos)
+{
+  info->toplevel_pos = pos;
 }
 
 static int resolve_info_lookup(Resolve_Info *info, int pos, int *flags)
@@ -1637,6 +1930,64 @@ int scheme_resolve_info_flags(Resolve_Info *info, int pos)
 int scheme_resolve_info_lookup(Resolve_Info *info, int pos, int *flags)
 {
   return resolve_info_lookup(info, pos, flags);
+}
+
+int scheme_resolve_toplevel_pos(Resolve_Info *info)
+{
+  int pos = 0;
+
+  while (info && (info->toplevel_pos < 0)) {
+    pos += info->size;
+    info = info->next;
+  }
+
+  if (!info)
+    return pos;
+  else
+    return info->toplevel_pos + pos;
+}
+
+Scheme_Object *scheme_resolve_toplevel(Resolve_Info *info, Scheme_Object *expr)
+{
+  Scheme_Toplevel *tl;
+  int skip;
+
+  skip = scheme_resolve_toplevel_pos(info);
+
+  tl = MALLOC_ONE_TAGGED(Scheme_Toplevel);
+  tl->type = scheme_toplevel_type;
+  tl->depth = skip + SCHEME_TOPLEVEL_DEPTH(expr); /* depth is 0 (normal) or 1 (exp-time) */
+  tl->position = SCHEME_TOPLEVEL_POS(expr);
+
+  return (Scheme_Object *)tl;
+}
+
+int scheme_resolve_quote_syntax(Resolve_Info *info, int oldpos)
+{
+  Resolve_Info *start = info;
+  int skip = 0;
+
+  while (info) {
+    if (info->old_stx_pos) {
+      int i;
+      for (i = 0; i < info->stx_count; i++) {
+	if (info->old_stx_pos[i] == oldpos)
+	  return (info->count - info->size) + ((info->toplevel_pos >= 0) ? 1 : 0) + i + skip;
+      }
+      scheme_signal_error("internal error: didn't find an stx pos");
+      return 0;
+    } else {
+      skip += info->size;
+      info = info->next;
+    }
+  }
+
+  if (start->prefix->num_toplevels)
+    skip += 1;
+  if (start->prefix->num_keywords)
+    skip += 1;
+  
+  return skip + oldpos;
 }
 
 /*========================================================================*/

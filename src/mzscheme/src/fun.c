@@ -535,55 +535,29 @@ scheme_make_linked_closure(Scheme_Thread *p,
   return (Scheme_Object *)closure;
 }
 
+/* Closure_Info is used to store extra closure information
+   before a closure mapping is resolved */
 typedef struct {
   MZTAG_IF_REQUIRED
   int *local_flags;
-  short *real_closure_map;
+  short base_closure_size;
+  short *base_closure_map;
+  short stx_closure_size;
+  short *stx_closure_map;
+  short has_tl;
 } Closure_Info;
-
-Scheme_Object *
-scheme_link_closure_compilation(Scheme_Object *_data, Link_Info *info)
-{
-  Scheme_Closure_Compilation_Data *odata = (Scheme_Closure_Compilation_Data *)_data;
-  Scheme_Closure_Compilation_Data *ndata;
-  Scheme_Object *e;
-
-  e = scheme_link_expr(odata->code, info);
-
-  if (!SAME_OBJ(e, odata->code)) {
-    ndata = MALLOC_ONE_TAGGED(Scheme_Closure_Compilation_Data);
-    ndata->type = scheme_unclosed_procedure_type;
-    
-    ndata->flags = odata->flags;
-    ndata->num_params = odata->num_params;
-    ndata->max_let_depth = odata->max_let_depth;
-    ndata->closure_size = odata->closure_size;
-    ndata->closure_map = odata->closure_map;
-    ndata->name = odata->name;
-    
-    ndata->code = e;
-  } else
-    ndata = odata;
-  
-  if (!ndata->closure_size)
-    /* If only global frame is needed, go ahead and finialize closure */
-    return scheme_make_linked_closure(NULL, (Scheme_Object *)ndata, 0);
-  else
-    return (Scheme_Object *)ndata;
-}
 
 Scheme_Object *
 scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
 {
   Scheme_Closure_Compilation_Data *data;
-  int i;
-  short *oldpos;
+  int i, closure_size, offset;
+  short *oldpos, *stx_oldpos, *closure_map;
   Closure_Info *cl;
   Resolve_Info *new_info;
 
   data = (Scheme_Closure_Compilation_Data *)_data;
   cl = (Closure_Info *)data->closure_map;
-  data->closure_map = cl->real_closure_map;
   data->type = scheme_unclosed_procedure_type;
 
   /* Set local_flags: */
@@ -594,21 +568,39 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
       cl->local_flags[i] = 0;
   }
 
-  oldpos = (short *)scheme_malloc_atomic(sizeof(short) * data->closure_size);
-  for (i = data->closure_size; i--; ) {
+  closure_size = data->closure_size;
+  closure_map = (short *)scheme_malloc_atomic(sizeof(short) * closure_size);
+
+  oldpos = cl->base_closure_map;
+  for (i = cl->base_closure_size; i--; ) {
     int li;
-    oldpos[i] = data->closure_map[i];
     li = scheme_resolve_info_lookup(info, oldpos[i], NULL);
-    data->closure_map[i] = li;
+    closure_map[i] = li;
+  }
+
+  offset = cl->base_closure_size;
+  if (cl->has_tl) {
+    int li;
+    li = scheme_resolve_toplevel_pos(info);
+    closure_map[offset] = li;
+    offset++;
+  }
+  
+  stx_oldpos = cl->stx_closure_map;
+  for (i = cl->stx_closure_size; i--; ) {
+    int li;
+    li = scheme_resolve_quote_syntax(info, stx_oldpos[i]);
+    closure_map[i + offset] = li;
   }
   
   new_info = scheme_resolve_info_extend(info, data->num_params, data->num_params,
-					data->closure_size + data->num_params);
+					cl->base_closure_size + data->num_params,
+					cl->stx_closure_size);
   for (i = 0; i < data->num_params; i++) {
-    scheme_resolve_info_add_mapping(new_info, i, i + data->closure_size, 
+    scheme_resolve_info_add_mapping(new_info, i, i + closure_size, 
 				    cl->local_flags[i]);
   }
-  for (i = 0; i < data->closure_size; i++) {
+  for (i = 0; i < cl->base_closure_size; i++) {
     int p = oldpos[i];
 
     if (p < 0)
@@ -619,6 +611,13 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
     scheme_resolve_info_add_mapping(new_info, p, i,
 				    scheme_resolve_info_flags(info, oldpos[i]));
   }
+  for (i = 0; i < cl->stx_closure_size; i++) {
+    scheme_resolve_info_add_stx_mapping(new_info, stx_oldpos[i], i);
+  }
+  if (cl->has_tl)
+    scheme_resolve_info_set_toplevel_pos(new_info, cl->base_closure_size);
+					 
+  data->closure_map = closure_map;
 
   {
     Scheme_Object *code;
@@ -629,7 +628,7 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
   /* Add code to box set!ed variables: */
   for (i = 0; i < data->num_params; i++) {
     if (cl->local_flags[i] & SCHEME_INFO_BOXED) {
-      int j = i + data->closure_size;
+      int j = i + closure_size;
       Scheme_Object *code;
       
       code = scheme_make_syntax_resolved(BOXENV_EXPD,
@@ -642,7 +641,11 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
   if (SCHEME_TYPE(data->code) > _scheme_compiled_values_types_)
     data->flags |= CLOS_FOLDABLE;
 
-  return (Scheme_Object *)data;
+  if (!data->closure_size)
+    /* If only global frame is needed, go ahead and finialize closure */
+    return scheme_make_linked_closure(NULL, (Scheme_Object *)data, 0);
+  else
+    return (Scheme_Object *)data;
 }
 
 Scheme_Object *scheme_source_to_name(Scheme_Object *code)
@@ -766,9 +769,17 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
 
   /* Remembers positions of used vars (and unsets usage for this level) */
   scheme_env_make_closure_map(frame, &dcs, &dcm);
-  data->closure_size = dcs;
-  cl->real_closure_map = dcm;
+  cl->base_closure_size = dcs;
+  cl->base_closure_map = dcm;
+  scheme_env_make_stx_closure_map(frame, &dcs, &dcm);
+  cl->stx_closure_size = dcs;
+  cl->stx_closure_map = dcm;
+  if (scheme_env_uses_toplevel(frame))
+    cl->has_tl = 1;
 
+  data->closure_size = (cl->base_closure_size
+			+ cl->stx_closure_size
+			+ (cl->has_tl ? 1 : 0));
   data->closure_map = (short *)cl;
 
   data->max_let_depth = lam.max_let_depth + data->num_params + data->closure_size;
@@ -2812,7 +2823,11 @@ static Scheme_Object *read_compiled_closure(Scheme_Object *obj)
   if (SCHEME_TYPE(data->code) > _scheme_values_types_)
     data->flags |= CLOS_FOLDABLE;
 
-  return (Scheme_Object *)data;
+  if (!data->closure_size)
+    /* If the closure is empty, go ahead and finialize */
+    return scheme_make_linked_closure(NULL, (Scheme_Object *)data, 0);
+  else
+    return (Scheme_Object *)data;
 }
 
 

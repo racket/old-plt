@@ -95,7 +95,7 @@ mzscheme.multiboot : libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.o
                 -loskit_kern -loskit_freebsd_c -loskit_c \
 		@OSKHOME@/lib/oskit/crtn.o
 
-main.o: $(srcdir)/main.c $(srcdir)/include/scheme.h $(srcdir)/sconfig.h $(srcdir)/cmdline.inc $(srcdir)/oskglue.inc
+main.o: $(srcdir)/main.c $(srcdir)/include/scheme.h $(srcdir)/sconfig.h $(srcdir)/src/stypes.h $(srcdir)/cmdline.inc $(srcdir)/oskglue.inc
 	$(CC) @CFLAGS@ @PROFFLAGS@ @OPTIONS@ -I$(srcdir)/include -c $(srcdir)/main.c -o main.o
 
 main_ee.o: main.o

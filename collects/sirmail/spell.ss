@@ -82,19 +82,33 @@
   (define ispell-err #f)
   (define (ispell-word word)
     (when (eq? has-ispell? 'dontknow)
-      (let ([existings (filter file-exists? '("/sw/bin/ispell"
-                                              "/usr/bin/ispell"
-                                              "/bin/ispell"
-                                              "/usr/local/bin/ispell"))])
-        (if (null? existings)
+      (let ([existing (or (find-executable-path "ispell" #f)
+			  (ormap (lambda (x) (and (file-exists? x) x))
+				 '("/sw/bin/ispell"
+				   "/usr/bin/ispell"
+				   "/bin/ispell"
+				   "/usr/local/bin/ispell")))])
+        (if existing
             (set! has-ispell? #f)
             (begin
               (set! has-ispell? #t)
-              (set! ispell-prog (car existings))))))
+              (set! ispell-prog existing)))))
     (cond
       [has-ispell?
        (unless (and ispell-in ispell-out ispell-err)
-         (let-values ([(out in pid err status) (apply values (process* ispell-prog "-a"))])
+         (let-values ([(out in pid err status) (apply values (process* ispell-prog 
+								       "-a"
+								       "-w"
+								       ;; Tell ispell to treat every character
+								       ;;  as part of a word, because our lexer
+								       ;;  has already separated words.
+								       (let loop ([n 0][l null])
+									 (if (= n 256)
+									     (apply string-append l)
+									     (loop (add1 n)
+										   (cons
+										    (format "n~a" n)
+										    l))))))])
            (let ([version-line (read-line out)])
              (debug "< ~s\n" version-line))
            
@@ -102,7 +116,7 @@
            (set! ispell-out out)
            (set! ispell-err err)))
        
-       (let ([to-send (format "~a\n" word)])
+       (let ([to-send (format "^~a\n" word)])
          (debug "> ~s\n" to-send)
          (display to-send ispell-in))
 

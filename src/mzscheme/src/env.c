@@ -929,25 +929,27 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 	  count++;
       }
       
-      if (!env->renames || (env->rename_var_count != count)) {
-	Scheme_Object *rnm;
-	
-	rnm = scheme_make_rename(uid, count);
-	
-	count = 0;
-	for (c = COMPILE_DATA(env)->constants; c; c = c->next) {
-	  scheme_set_rename(rnm, count++, c->name);
+      if (count) {
+	if (!env->renames || (env->rename_var_count != count)) {
+	  Scheme_Object *rnm;
+	  
+	  rnm = scheme_make_rename(uid, count);
+	  
+	  count = 0;
+	  for (c = COMPILE_DATA(env)->constants; c; c = c->next) {
+	    scheme_set_rename(rnm, count++, c->name);
+	  }
+	  for (i = env->num_bindings; i--; ) {
+	    if (env->values[i])
+	      scheme_set_rename(rnm, count++, env->values[i]);
+	  }
+	  
+	  env->renames = rnm;
+	  env->rename_var_count = count;
 	}
-	for (i = env->num_bindings; i--; ) {
-	  if (env->values[i])
-	    scheme_set_rename(rnm, count++, env->values[i]);
-	}
- 
-	env->renames = rnm;
-	env->rename_var_count = count;
+	
+	stx = scheme_add_rename(stx, env->renames);
       }
-
-      stx = scheme_add_rename(stx, env->renames);
     }
 
     env = env->next;

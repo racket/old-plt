@@ -3418,9 +3418,12 @@ static void *expand_k(void)
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *obj;
   Scheme_Comp_Env *env;
+  int depth, rename;
 
   obj = (Scheme_Object *)p->ku.k.p1;
   env = (Scheme_Comp_Env *)p->ku.k.p2;
+  depth = p->ku.k.i1;
+  rename = p->ku.k.i2;
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
@@ -3428,29 +3431,33 @@ static void *expand_k(void)
   if (!SCHEME_STXP(obj))
     obj = scheme_datum_to_syntax(obj, scheme_false, scheme_false, 1, 0);
 
-  /* Renamings for imports: */
-  if (env->genv->rename)
-    obj = scheme_add_rename(obj, env->genv->rename);
-  if (env->genv->exp_env && env->genv->exp_env->rename)
-    obj = scheme_add_rename(obj, env->genv->exp_env->rename);
+  if (rename) {
+    /* Renamings for imports: */
+    if (env->genv->rename)
+      obj = scheme_add_rename(obj, env->genv->rename);
+    if (env->genv->exp_env && env->genv->exp_env->rename)
+      obj = scheme_add_rename(obj, env->genv->exp_env->rename);
+  }
 
-  return scheme_expand_expr(obj, env, p->ku.k.i1, scheme_false);
+  return scheme_expand_expr(obj, env, depth, scheme_false);
 }
 
-static Scheme_Object *_expand(Scheme_Object *obj, Scheme_Comp_Env *env, int depth, int eb)
+static Scheme_Object *_expand(Scheme_Object *obj, Scheme_Comp_Env *env, 
+			      int depth, int rename, int eb)
 {
   Scheme_Process *p = scheme_current_process;
 
   p->ku.k.p1 = obj;
   p->ku.k.p2 = env;
   p->ku.k.i1 = depth;
+  p->ku.k.i2 = rename;
 
   return (Scheme_Object *)scheme_top_level_do(expand_k, eb);
 }
 
 Scheme_Object *scheme_expand(Scheme_Object *obj, Scheme_Env *env)
 {
-  return _expand(obj, env->init, 1, -1);
+  return _expand(obj, env->init, 1, 1, -1);
 }
 
 Scheme_Object *scheme_tail_eval_expr(Scheme_Object *obj)
@@ -3563,7 +3570,7 @@ static Scheme_Object *expand(int argc, Scheme_Object **argv)
 
   env = scheme_get_env(scheme_config);
 
-  return _expand(argv[0], env->init, -1, 0);
+  return _expand(argv[0], env->init, -1, 1, 0);
 }
 
 static Scheme_Object *stop_syntax(Scheme_Object *form, Scheme_Comp_Env *env, 
@@ -3635,7 +3642,7 @@ local_expand(int argc, Scheme_Object **argv)
 
   /* Expand the expression. depth = -2 means expand all the way, but
      preserve letrec-syntax. */
-  l = _expand(l, env, -2, 0);
+  l = _expand(l, env, -2, 0, 0);
 
   /* Put the temporary mark back: */
   return scheme_add_remove_mark(l, local_mark);
@@ -3648,7 +3655,7 @@ expand_once(int argc, Scheme_Object **argv)
 
   env = scheme_get_env(scheme_config);
 
-  return _expand(argv[0], env->init, 1, 0);
+  return _expand(argv[0], env->init, 1, 1, 0);
 }
 
 Scheme_Object *scheme_eval_string_all(const char *str, Scheme_Env *env, int cont)

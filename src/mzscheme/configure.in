@@ -421,7 +421,7 @@ case $OS in
       fi
     else
       # gcc 3.x
-      MROPTIONS="$MROPTIONS -fno-rtti"
+      CXXFLAGS="$CXXFLAGS -fno-rtti"
       if test "${enable_quartz}" = "yes" ; then
         gcc_vers_three_one=`${CC} -v 2>&1 | grep "version 3[.]1"`
         if test "$gcc_vers_three_one" = "" ; then

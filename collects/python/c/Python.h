@@ -251,33 +251,6 @@ void Py_FatalError (const char * message);
         } while(0)
 
 
-//#define PyMem_Malloc(count) (scheme_malloc_eternal(count))
-static __inline__ void* PyMem_Malloc(int count) {
-  PyObject* ptr = (PyObject*) scheme_malloc_eternal(count);
-  assert(ptr != NULL);
-  if (count >= sizeof(PyObject))
-     {
-     return SPY_INIT_SCHEME_HEADER(ptr);
-     }
-  else
-     {
-     return ptr;
-     }
-}
-//#define PyMem_Malloc(count) (scheme_malloc(count))
-#define PyMem_MALLOC(count) PyMem_Malloc(count)
-#define PyMem_NEW(type, count) ((type *) PyMem_MALLOC(count * sizeof(type)))
-// TODO: OPTIMIZE: make this a void macro for speed.
-void PyMem_Free(void* obj);
-//#define PyMem_Free(obj)
-#define PyMem_FREE(obj) 0
-//#define PyMem_FREE(obj) PyMem_Free(obj)
-// fixme
-#define PyMem_REALLOC(p, n)   PyMem_Realloc(p,n)
-//  realloc((p), (n) ? (n) : 1)
-
-#define PyObject_MALLOC PyMem_MALLOC
-//#define PyObject_Free PyMem_Free
 
 
 //PyObject * PyList_New (int size);
@@ -540,6 +513,30 @@ typedef int             Py_intptr_t;
 #define LONG_BIT (8 * SIZEOF_LONG)
 
 
+//#define PyMem_Malloc(count) (scheme_malloc_eternal(count))
+static __inline__ void* PyMem_Malloc(int count) {
+  PyObject* ptr = (PyObject*) scheme_malloc_eternal(count);
+  assert(ptr != NULL);
+  if (count >= sizeof(PyObject))
+     {
+     return SPY_INIT_SCHEME_HEADER(ptr);
+     }
+  else
+     {
+     return ptr;
+     }
+}
+//#define PyMem_Malloc(count) (scheme_malloc(count))
+#define PyMem_MALLOC(count) PyMem_Malloc(count)
+#define PyMem_NEW(type, count) ((type *) PyMem_MALLOC(count * sizeof(type)))
+// TODO: OPTIMIZE: make this a void macro for speed.
+//void PyMem_Free(void* obj);
+#define PyMem_REALLOC(p, n)   PyMem_Realloc(p,n)
+//  realloc((p), (n) ? (n) : 1)
+#define PyObject_MALLOC PyMem_MALLOC
+
+
+
 //#include <pyport.h>
 
 // std C stuff
@@ -602,6 +599,12 @@ PyObject* spy_init_obj(PyObject* obj, PyTypeObject* py_type);
 #define PyOS_strtol strtol
 #define PyOS_strtoul strtoul
 
+#define PyMem_FREE(obj) 0
+#define PyObject_Free PyMem_Free
+#define PyObject_Del PyMem_Free
+
+#undef PyMem_Free
+__inline__ static void PyMem_Free(PyObject* obj) {}
 
 #undef assert
 #define assert(b) if (!(b)) {KABOOM_SEGFAULT();}

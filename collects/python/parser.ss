@@ -21,9 +21,11 @@
     (port-count-lines! ip)
     (let ((get-token (make-lexer)))
       (p (lambda () 
-           (let ((tok (get-token ip)))
+           ;(let ((tok (get-token ip)))
              ;(printf "~a~n" tok)
-             tok)))))
+             ;tok)
+           (get-token ip)
+             ))))
   
   (define (build-ast-from-file name)
     (with-input-from-file name

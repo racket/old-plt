@@ -48,47 +48,49 @@
   ; python-load-module: (listof symbol) [(listof symbol)] -> (values namespace symbol string)
   (define python-load-module
     (opt-lambda (id-list [parent-id-list null])
-;    (unless (module-path? path)
-;      (error (format "python-load-module: ~a is not a module path object.  Please use build-module-path." path)))
-      (let ([path (build-module-path (list (car id-list)))])
-        (let ([module (or (*lookup-loaded-module* path)
-                          (let* ([absolute-id-list (reverse (cons (car id-list)
-                                                                  (reverse parent-id-list)))]
-                                 [name #cs(string->symbol
-                                                               (foldr (lambda (a b)
-                                                                        (if (string=? b "")
-                                                                            a
-                                                                            (string-append a "." b)))
-                                                                      ""
-                                                                      (map symbol->string
-                                                                           absolute-id-list)))]
-                                 [ns (make-python-namespace name)])
-                            (let ([module (make-loaded-module ns name path)])
-                              (set-python-namespace-name! ns (loaded-module-name module))
-                              (*add-loaded-module* module)
-                            (eval-python (parse-module (module-path->string path)) ns)
-                              ;;;; now that we loaded the "a" part of "a.b.c.d", load "b" inside "a", and so on
-                              (unless (null? (cdr id-list))
-                                (parameterize ([current-namespace ns]
-                                               [current-directory (module-path-dir-string path)])
-                                  (let ([primitives-module-name ((current-module-name-resolver) '(lib "primitives.ss"
-                                                                                                      "python")
-                                                                                                #f
-                                                                                                #f)])
-                                    (dynamic-require primitives-module-name #f)
-                                    (namespace-require primitives-module-name)
-                                    (print "loading more modules in python-load-module")
-                                    (namespace-set-variable-value! (cadr id-list)
-                                                          (call-with-values
-                                                           (lambda ()
-                                                             (python-load-module (cdr id-list) absolute-id-list))
-                                                           (namespace-variable-value 'namespace->py-module%))))))
-                              module)))])
+      (let* ([path (build-module-path (list (car id-list)))]
+             [module (or (*lookup-loaded-module* path)
+                         (let* ([absolute-id-list (reverse (cons (car id-list)
+                                                                 (reverse parent-id-list)))]
+                                [name #cs(string->symbol
+                                          (symbol-list->dotted-string absolute-id-list))]
+                                [ns (make-python-namespace name)]
+                                [module (make-loaded-module ns name path)])
+                           (set-python-namespace-name! ns (loaded-module-name module))
+                           (*add-loaded-module* module)
+                           (eval-python (parse-module (module-path->string path)) ns)
+                           ;;;; now that we loaded the "a" part of "a.b.c.d", load "b" inside "a", and so on
+                           (unless (null? (cdr id-list))
+                             (parameterize ([current-namespace ns]
+                                            [current-directory (module-path-dir-string path)])
+                               (let ([primitives-module-name ((current-module-name-resolver) '(lib "primitives.ss"
+                                                                                                   "python")
+                                                                                             #f
+                                                                                             #f)])
+                                 (dynamic-require primitives-module-name #f)
+                                 (namespace-require primitives-module-name)
+                                 (print "loading more modules in python-load-module")
+                                 (namespace-set-variable-value! (cadr id-list)
+                                                                (call-with-values
+                                                                 (lambda ()
+                                                                   (python-load-module (cdr id-list) absolute-id-list))
+                                                                 (namespace-variable-value 'namespace->py-module%))))))
+                           module))])
       (values (loaded-module-namespace module)
               (loaded-module-name module)
-              (module-path->string (loaded-module-path module)))))))
+              (module-path->string (loaded-module-path module))))))
 
-
+  
+  (define (symbol-list->dotted-string sl)
+    (foldr (lambda (a b)
+             (if (string=? b "")
+                 a
+                 (string-append a "." b)))
+           ""
+           (map symbol->string
+                sl)))
+  
+  
   (define (set-python-namespace-name! ns name)
   #|  (parameterize ([current-namespace ns])
        (eval (datum->syntax-object (eval '(current-toplevel-context))

@@ -761,7 +761,7 @@
       
       (define/override (set-bindings! enclosing-scope)
         (send test set-bindings! enclosing-scope)
-        (send body set-bindings! enclosing-scope)
+       ; (send body set-bindings! enclosing-scope)
         (when else (send else set-bindings! enclosing-scope)))
 
       (define/override (collect-globals)

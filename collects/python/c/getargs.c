@@ -5,6 +5,23 @@
 
 #include <ctype.h>
 
+static char *
+convertitem(PyObject *arg, char **p_format, va_list *p_va, int *levels,
+            char *msgbuf, size_t bufsize, PyObject **freelist);
+static char *
+converttuple(PyObject *arg, char **p_format, va_list *p_va, int *levels,
+             char *msgbuf, size_t bufsize, int toplevel, PyObject **freelist);
+static void
+seterror(int iarg, char *msg, int *levels, char *fname, char *message);
+static char *
+convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
+              size_t bufsize, PyObject **freelist);
+static char *
+skipitem(char **p_format, va_list *p_va);
+static int
+float_argument_error(PyObject *arg);
+static char *
+converterr(char *expected, PyObject *arg, char *msgbuf, size_t bufsize);
 
 int PyArg_ParseTuple(PyObject* arg_tuple, char* format, ...)
 {

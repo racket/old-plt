@@ -1,26 +1,56 @@
 (module compile-python mzscheme
   
   (require (lib "class.ss")
+           (lib "etc.ss")
+           (lib "contract.ss")
+           "compiler.ss"
+           "runtime-support.ss"
            "read-python.ss")
+
+  (provide/contract
+   [compile-python ((listof (is-a?/c ast-node%)) . -> . (listof syntax?))]
+   [compile-python-ast ((is-a?/c ast-node%) . -> . syntax?)]
+   [py-gen/file (string? . -> . (listof syntax?))]
+   [py-gen/str (string? namespace? . -> . (listof syntax?))]
+   [py-gen/port (input-port? string? namespace? . -> . (listof syntax?))])
   
-  (provide compile-python
-           compile-python-ast
-           (rename read-python parse-python-file)
-           (rename read-python-port parse-python-port)
-           python-to-scheme)
-  
-    (define (python-to-scheme path)
-      (compile-python (read-python path)))
   
   (define (compile-python ast-list)
-    (map compile-python-ast
-         ast-list))
+    (with-compilation-contexts
+     (map compile-python-ast/fast
+          ast-list)))
   
   (define (compile-python-ast ast)
-    (send ast to-scheme))
+    (with-compilation-contexts
+     (compile-python-ast/fast ast)))
   
-;  (define parse-python-port read-python-port)
+  (define (compile-python-ast/fast ast)
+    (syntax-as-top (send ast to-scheme)))
   
-;  (define parse-python-file read-python)
+  (define-syntax (with-compilation-contexts stx)
+    (syntax-case stx ()
+      [(_ bodies ...) #`(parameterize ([current-runtime-support-context #'here]
+                                       [current-toplevel-context #f]) ;base-importing-stx])
+                          ;                  (eval '(require "c-bindings.ss"))
+                          bodies ...)]))
+
+  (define (py-gen/file path)
+    (compile-python (read-python path)))
+  
+  (define (py-gen/str str ns)
+    (let ([is (open-input-string str)])
+      (begin0 (py-gen/port is "input string" ns)
+              (close-input-port is))))
+
+  (define (py-gen/port port port-name ns)
+    (parameterize ([current-namespace ns])
+      (compile-python (read-python-port port port-name))))
+
+  
+  (define (syntax-as-top s)
+    (if (syntax? s)
+        (namespace-syntax-introduce s)
+        s))
+
   
   )

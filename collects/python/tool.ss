@@ -9,6 +9,7 @@
 	   (lib "string-constant.ss" "string-constants")
            (lib "etc.ss")
            "python.ss"
+           "read-python.ss"
            "compile-python.ss"
            ;"base.ss"
            ;"spy.ss"
@@ -130,17 +131,13 @@
                                         (drscheme:language:text/pos-end input)))
                                  text)))])
 
-              (let ([ast-list (parse-python-port port name)])
+              (let ([ast-list (read-python-port port name)])
+                (close-input-port port)
                 (lambda ()
-                  (set! front-end-thunk-ns (current-namespace))
                   ;(on-execute settings (lambda (thunk) (thunk)))
                   (if (null? ast-list)
                       eof
-                      (begin0 (parameterize ([current-runtime-support-context #'here]
-                                             [current-toplevel-context ;base-importing-stx])
-                                                                       #f])
-                                                                       ;my-toplevel-context])
-                                (syntax-as-top (compile-python-ast (car ast-list))))
+                      (begin0 (compile-python-ast (car ast-list))
                               (set! ast-list (cdr ast-list))))))))
 
           (define/public (front-end/complete-program input settings teachpack-cache)
@@ -148,11 +145,6 @@
 
           (define/public (front-end/interaction input settings teachpack-cache)
             (front-end input settings))
-
-          (define/private (syntax-as-top s)
-            (if (syntax? s)
-                (namespace-syntax-introduce s)
-                s))
 
           (define/public (get-style-delta) #f)
           (define/public (get-language-position) (list (string-constant experimental-languages) "Python"))
@@ -162,13 +154,9 @@
             (list 1000 10))
           (define/public (get-teachpack-names) null)
 
-          (define my-toplevel-context 'foo)
-
           (define/public (on-execute settings run-in-user-thread)
-            (set! on-execute-ns (current-namespace))
             (run-in-user-thread
              (lambda ()
-               (set! user-thread-ns (current-namespace))
                (error-display-handler
                 (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
                (current-eval
@@ -218,29 +206,23 @@
                  ))))
           |#
           
-          (define (render value port)
-            (let ([to-render (if (python-node? value)
-                                 (get-py-string (py-object->py-string value))
-                                 value)])
-              (display to-render port)))
-            
           (define/public (render-value value settings port port-write)
-            (render value port))
-            ;(render-python-value value port port-write))
+            (render-python-value value port port-write))
+          
           (define/public (render-value/format value settings port port-write width)
-            (render value port))
-            ;(render-python-value/format value port port-write))
+            (render-python-value/format value port port-write))
 
           ;; default implementation provided by Robby
           (define/public (order-manuals x) (values x #t))
-          
+
+          ;; TODO: fixme
 	  (define/public (create-executable settings parent src-file)
 	    (let ([dst-file (drscheme:language:put-executable
 			     parent src-file #f #f
 			     (string-constant save-a-mzscheme-stand-alone-executable))])
 	      (when dst-file
 		(let ([code (compile-python
-                             (parse-python-file src-file))]);(compile-simplified (simplify (parse-a60-file src-file)
+                             (read-python src-file))]);(compile-simplified (simplify (parse-a60-file src-file)
 			;				  base-importing-stx)
 				;		base-importing-stx)])
 		  (make-embedding-executable dst-file

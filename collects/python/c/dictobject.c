@@ -9,8 +9,12 @@
 
 #include "Python.h"
 
+PyObject* spy_stringobject_interned();
+
+
 typedef PyDictEntry dictentry;
 typedef PyDictObject dictobject;
+
 
 /* Define this out if you don't want conversion statistics on exit. */
 #undef SHOW_CONVERSION_COUNTS
@@ -1972,7 +1976,6 @@ PyDict_GetItemString(PyObject *v, const char *key)
 	return rv;
 }
 
-PyObject* spy_stringobject_interned();
 
 int
 PyDict_SetItemString(PyObject *v, const char *key, PyObject *item)

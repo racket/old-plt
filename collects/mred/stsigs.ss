@@ -1,5 +1,5 @@
 ;;
-;; $Id: stsigs.ss,v 1.10 1997/08/15 19:31:44 krentel Exp krentel $
+;; $Id: stsigs.ss,v 1.11 1997/08/15 22:36:39 krentel Exp krentel $
 ;;
 ;; Signatures for gui tester.
 ;;
@@ -24,19 +24,24 @@
    testable-frame%
    testable-dialog-box% ))
 
-;; run-one is not for export.
+(define-signature mred:test:run-export^
+  (run-interval
+   number-pending-actions
+   reraise-error))
+
+(define-signature mred:test:run-internal^
+  (run-one))
 
 (define-signature mred:test:run^
-  (run-one
-   run-interval))
+  ((open mred:test:run-export^)
+   (open mred:test:run-internal^)))
 
 (define-signature mred:test:primitives^
   (button-push
    keystroke  
    menu-select
    mouse-click
-   new-window
-   noop))
+   new-window))
 
 (define-signature mred:test:drscheme^
   (get-defns-canvas 
@@ -50,4 +55,7 @@
    (open mred:test:primitives^)
    (unit drs : mred:test:drscheme^)))
 
-(define-signature mred:self-test-export^ mred:self-test^)
+(define-signature mred:self-test-export^
+  ((open mred:test:run-export^)
+   (open mred:test:primitives^)
+   (unit drs : mred:test:drscheme^)))

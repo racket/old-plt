@@ -318,8 +318,6 @@ typedef struct Scheme_Dynamic_Wind {
   struct Scheme_Dynamic_Wind *prev;
 } Scheme_Dynamic_Wind;
 
-
-
 typedef struct Scheme_Cont {
   Scheme_Type type;
   Scheme_Object *value;
@@ -327,6 +325,7 @@ typedef struct Scheme_Cont {
   long *ok;
   Scheme_Dynamic_Wind *dw, *common;
   Scheme_Process *home;
+  Scheme_Continuation_Jump_State cjs;
 #ifdef ERROR_ON_OVERFLOW
   int orig_overflow;
 #else
@@ -341,23 +340,18 @@ typedef struct Scheme_Cont {
 
 typedef struct Scheme_Escaping_Cont {
   Scheme_Type type;
-  short num_vals;
+  Scheme_Continuation_Jump_State cjs;
   Scheme_Process *home;
-  long *ok;
-  union {
-    Scheme_Object **vals;
-    Scheme_Object *val;
-  } u;
+  long *ok;  
 #ifdef ERROR_ON_OVERFLOW
   int orig_overflow;
 #endif
+  Scheme_Object *f;
 } Scheme_Escaping_Cont;
 
 #define SCHEME_CONT_HOME(obj)  (((Scheme_Escaping_Cont *)(obj))->home)
 #define SCHEME_CONT_OK(obj)  (((Scheme_Escaping_Cont *)(obj))->ok)
-#define SCHEME_CONT_VAL(obj)  (((Scheme_Escaping_Cont *)(obj))->u.val)
-#define SCHEME_CONT_VALS(obj)  (((Scheme_Escaping_Cont *)(obj))->u.vals)
-#define SCHEME_CONT_NUM_VALS(obj)  (((Scheme_Escaping_Cont *)(obj))->num_vals)
+#define SCHEME_CONT_F(obj) (((Scheme_Escaping_Cont *)(obj))->f)
 
 #define _scheme_do_eval(obj, env, v) \
   ((SCHEME_INTP(obj) || !SCHEME_STRTAG_VAL(_SCHEME_TYPE(obj))) \

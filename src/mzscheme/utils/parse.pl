@@ -12,6 +12,7 @@ $key_header = '@HEADER ';
 $key_end = '@END ';
 $key_stop = '@STOP ';
 $key_creator = '@CREATOR ';
+$key_creatorx = '@CREATORX ';
 $key_macro = '@MACRO ';
 $key_var = '@VAR ';
 $key_set = '@SET ';
@@ -23,6 +24,9 @@ $key_suffix = '@CLASSSUFFIX ';
 $key_test = '@TEST ';
 $key_setmark = '@SETMARK ';
 $key_idfield = '@IDFIELD ';
+$key_startsymbols = '@BEGINSYMBOLS ';
+$key_endsymbols = '@ENDSYMBOLS ';
+$key_sym = '@SYM ';
 
 sub ResetObjParams 
 {
@@ -31,6 +35,7 @@ sub ResetObjParams
     @vars = ();
     @ivars = ();
     @creators = ();
+    @distinct_creators = ();
     @constants = ();
     %justoneok = ();
     %justonemin = ();
@@ -52,9 +57,12 @@ sub ReadFile {
     $classsuffix = '';
     $idfield = '';
     $bool = 'boolean';
+    $cursymset = '';
     %macros = ();
     %sets = ();
     %marks = ();
+    @syms = ();
+    $symsetkind = "";
     $marks{'V'} = 'V';
     $marks{'H'} = 'H';
     $marks{'v'} = 'v';
@@ -146,6 +154,10 @@ sub ReadFile {
 	    } elsif (&StartsWithKey($_, $key_creator)) {
 		$creator = &SkipKey($_, $key_creator);
 		@creators = (@creators, $creator);
+		@distinct_creators = (@distinct_creators, $creator);
+	    } elsif (&StartsWithKey($_, $key_creatorx)) {
+		$creator = &SkipKey($_, $key_creatorx);
+		@creators = (@creators, $creator);
 	    } elsif (&StartsWithKey($_, $key_macro)) {
 		$s = &Wash(&SkipKey($_, $key_macro));
 		$eqpos = index($s, '=');
@@ -190,6 +202,19 @@ sub ReadFile {
 		($mark, $val) = split(/=/, &SkipKey($_, $key_setmark), 2);
 		$mark = &Wash($mark);
 		$marks{$mark} = &Wash($val);
+	    } elsif (&StartsWithKey($_, $key_startsymbols)) {
+		($name, $kind) = split(/>/, &SkipKey($_, $key_startsymbols), 2);
+		$name = &Wash($name);
+		@syms = ();
+		$cursymset = $name;
+		$symsetkind = $kind;
+	    } elsif (&StartsWithKey($_, $key_sym)) {
+		($name, $val) = split(/:/, &SkipKey($_, $key_sym), 2);
+		$name = &Wash($name);
+		$val = &Wash($val);
+		@syms = (@syms, "$name=$val");
+	    } elsif (&StartsWithKey($_, $key_endsymbols)) {
+		&PrintSymSet($cursymset, $symsetkind, @syms);
 	    } elsif (substr($_, 1, 1) ne ' ') {
 		print STDERR 
 		    "syntax error at line $linenum of \"$thisfile\".\n"

@@ -5,6 +5,7 @@ EXPORTS
  scheme_reset_jmpup_buf
  scheme_setjmp
  scheme_longjmp
+ scheme_clear_escape
  scheme_make_config
  scheme_branch_config
  scheme_new_param

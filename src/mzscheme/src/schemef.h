@@ -55,6 +55,8 @@ int scheme_setjmp(mz_jmp_buf b);
 void scheme_longjmp(mz_jmp_buf b, int v);
 #endif
 
+void scheme_clear_escape(void);
+
 /* Parameters */
 Scheme_Object *scheme_make_config(Scheme_Config *base);
 Scheme_Object *scheme_branch_config(void);

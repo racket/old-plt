@@ -6,6 +6,7 @@
   scheme_extension_table->scheme_setjmp = scheme_setjmp;
   scheme_extension_table->scheme_longjmp = scheme_longjmp;
 #endif
+  scheme_extension_table->scheme_clear_escape = scheme_clear_escape;
   scheme_extension_table->scheme_make_config = scheme_make_config;
   scheme_extension_table->scheme_branch_config = scheme_branch_config;
   scheme_extension_table->scheme_new_param = scheme_new_param;

@@ -1764,7 +1764,7 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
 
   if (!rec) {
     /* Just expanding: */
-    Scheme_Object *first, *last, *il;
+    Scheme_Object *first, *last, *il, *expanded_args;
 
     superclass = scheme_expand_expr(superclass, env, depth);
 
@@ -1777,6 +1777,38 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
       for (i = num_interfaces; i--; )
 	il = cons(interfaces[i], il);
     }
+
+    l = make_args;
+    first = scheme_null;
+    last = NULL;
+    while (!SCHEME_NULLP(l)) {
+      Scheme_Object *pr;
+
+      if (SCHEME_PAIRP(l)) {
+	Scheme_Object *arg;
+
+	arg = SCHEME_CAR(l);
+	l = SCHEME_CDR(l);
+
+	if (SCHEME_PAIRP(arg)) {
+	  arg = scheme_make_pair(SCHEME_CAR(arg),
+				 scheme_expand_expr(SCHEME_CDR(arg),
+						    objenv, depth));
+	}
+	
+	pr = scheme_make_pair(arg, scheme_null);
+      } else {
+	pr = l;
+	l = scheme_null;
+      }
+
+      if (last)
+	SCHEME_CDR(last) = pr;
+      else
+	first = pr;
+      last = pr;
+    }
+    expanded_args = first;
 
     l = SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(form)))));
     first = scheme_null;
@@ -1813,7 +1845,7 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
 			  cons(superinitname, scheme_null)),
 		     cons(superclass,
 			  cons(il,
-			       cons(make_args, first)))));
+			       cons(expanded_args, first)))));
   } else {
     /* Compiling: */
     Scheme_Compile_Info lam;

@@ -597,9 +597,9 @@
 		      [orig (#%gensym)]
 		      [pz (#%gensym)])
 		 `(#%let* ([,pz (#%in-parameterization (#%current-parameterization) ,param)]
-			   [,orig (,pz)])
+			   [,orig #f])
 		     (#%dynamic-wind
-		        (#%lambda () (,pz ,(#%cadar params)))
+		        (#%lambda () (set! ,orig (,pz)) (,pz ,(#%cadar params)))
 		        (#%lambda () (parameterize ,(cdr params) ,@body))
 			(#%lambda () (,pz ,orig))))))))))
 

@@ -2229,10 +2229,10 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  vals[i] = rands[i];
 	
 	value = (Scheme_Object *)vals;
-	SCHEME_CONT_NUM_VALS(obj) = num_rands;
+	p->cjs.num_vals = num_rands;
       } else {
 	value = rands[0];
-	SCHEME_CONT_NUM_VALS(obj) = 1;
+	p->cjs.num_vals = 1;
       }
 
 #ifdef AGRESSIVE_ZERO_TB
@@ -2250,8 +2250,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       if (SCHEME_CONT_OK(obj) && !*SCHEME_CONT_OK(obj))
 	scheme_raise_exn(MZEXN_MISC_CONTINUATION,
 			 "continuation application: attempted to cross an escape continuation boundary");
-      SCHEME_CONT_VAL(obj) = value;
-      MZTHREADELEM(p, jumping_to_continuation) = 1;
+      p->cjs.u.val = value;
+      p->cjs.jumping_to_continuation = (Scheme_Escaping_Cont *)obj;
       scheme_longjmp(MZTHREADELEM(p, error_buf), 1);
     } else {
       UPDATE_THREAD_RSPTR_FOR_ERROR();

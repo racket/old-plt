@@ -434,6 +434,16 @@ typedef struct Scheme_Config {
   Scheme_Object **configs[1];
 } Scheme_Config;
 
+typedef struct Scheme_Continuation_Jump_State {
+  struct Scheme_Escaping_Cont *jumping_to_continuation;
+  union {
+    Scheme_Object **vals;
+    Scheme_Object *val;
+  } u;
+  short num_vals;
+} Scheme_Continuation_Jump_State;
+
+
 #define scheme_set_param(c, pos, o) (*((c)->configs[pos]) = o)
 #define scheme_get_param(c, pos) (*((c)->configs[pos]))
 
@@ -448,7 +458,7 @@ typedef struct Scheme_Process {
   Scheme_Type type;
 
   mz_jmp_buf error_buf;
-  int jumping_to_continuation;
+  Scheme_Continuation_Jump_State cjs;
 
   Scheme_Config *config;
 

@@ -132,6 +132,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object *argv[]);
 static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[]);
 static Scheme_Object *file_size(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_library_collection_paths(int argc, Scheme_Object *argv[]);
+static Scheme_Object *find_system_path(int argc, Scheme_Object **argv);
 #endif
 
 #ifdef DIR_FUNCTION
@@ -145,6 +146,9 @@ static Scheme_Object *up_symbol, *relative_symbol;
 static Scheme_Object *same_symbol;
 #ifndef NO_FILE_SYSTEM_UTILS
 static Scheme_Object *read_symbol, *write_symbol, *execute_symbol;
+
+static Scheme_Object *temp_dir_symbol, *home_dir_symbol, *pref_dir_symbol;
+static Scheme_Object *init_dir_symbol, *init_file_symbol;
 
 # ifdef MACINTOSH_EVENTS
 static Scheme_Object *record_symbol, *file_symbol;
@@ -165,6 +169,12 @@ void scheme_init_file(Scheme_Env *env)
     REGISTER_SO(read_symbol);
     REGISTER_SO(write_symbol);
     REGISTER_SO(execute_symbol);
+
+    REGISTER_SO(temp_dir_symbol);
+    REGISTER_SO(home_dir_symbol);
+    REGISTER_SO(pref_dir_symbol);
+    REGISTER_SO(init_dir_symbol);
+    REGISTER_SO(init_file_symbol);
 #endif
     
     up_symbol = scheme_intern_symbol("up");
@@ -176,6 +186,12 @@ void scheme_init_file(Scheme_Env *env)
     read_symbol = scheme_intern_symbol("read");
     write_symbol = scheme_intern_symbol("write");
     execute_symbol = scheme_intern_symbol("execute");
+
+    temp_dir_symbol = scheme_intern_symbol("temp-dir");
+    home_dir_symbol = scheme_intern_symbol("home-dir");
+    pref_dir_symbol = scheme_intern_symbol("pref-dir");
+    init_dir_symbol = scheme_intern_symbol("init-dir");
+    init_file_symbol = scheme_intern_symbol("init-file");
 
 # ifdef MACINTOSH_EVENTS
 	record_symbol = scheme_intern_symbol("record");
@@ -309,6 +325,13 @@ void scheme_init_file(Scheme_Env *env)
 						      "current-drive", 
 						      0, 0), 
 			     env);
+
+  scheme_add_global_constant("find-system-path", 
+			     scheme_make_prim_w_arity(find_system_path, 
+						      "find-system-path", 
+						      1, 1), 
+			     env);
+
 #endif
 
 #ifdef DIR_FUNCTION
@@ -3121,6 +3144,190 @@ static Scheme_Object *current_library_collection_paths(int argc, Scheme_Object *
 }
 
 #endif
+
+
+/********************************************************************************/
+
+enum {
+  id_temp_dir,
+  id_home_dir,
+  id_pref_dir,
+  id_init_dir,
+  id_init_file
+};
+
+static Scheme_Object *
+find_system_path(int argc, Scheme_Object **argv)
+{
+  int which;
+
+  if (argv[0] == temp_dir_symbol)
+    which = id_temp_dir;
+  else if (argv[0] == home_dir_symbol)
+    which = id_home_dir;
+  else if (argv[0] == pref_dir_symbol)
+    which = id_pref_dir;
+  else if (argv[0] == init_dir_symbol)
+    which = id_init_dir;
+  else if (argv[0] == init_file_symbol)
+    which = id_init_file;
+  else {
+    scheme_wrong_type("find-system-path", "system-path-symbol",
+		      0, argc, argv);
+    return NULL;
+  }
+
+#ifdef UNIX_FILE_SYSTEM
+  if (which == id_temp_dir) {
+    char *p;
+    
+    if ((p = getenv("TMPDIR"))) {
+      p = scheme_expand_filename(p, -1, NULL, NULL);
+      if (p && scheme_directory_exists(p))
+	return scheme_make_string(p);
+    }
+
+    if (scheme_directory_exists("/usr/tmp"))
+      return scheme_make_string("/usr/tmp");
+
+    if (scheme_directory_exists("/tmp"))
+      return scheme_make_string("/tmp");
+
+    return CURRENT_WD();
+  }
+
+  {
+    /* Everything else is in ~: */
+    Scheme_Object *home;
+    int ends_in_slash;
+
+    home = scheme_make_string(scheme_expand_filename("~/", 2, NULL, NULL));
+
+    if ((which == id_pref_dir) || (which == id_init_dir) || (which == id_home_dir))
+      return home;
+
+    ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1] == '/';
+    
+    if (which == id_init_file)
+      return scheme_append_string(home,
+				  scheme_make_string("/.mzschemerc" + ends_in_slash));
+  }
+#endif
+
+#ifdef DOS_FILE_SYSTEM
+  {
+    char *d, *p;
+    Scheme_Object *home;
+    int ends_in_slash;
+    
+    if (which == id_temp_dir) {
+      char *p;
+      
+      if ((p = getenv("TMPDIR"))) {
+	p = scheme_expand_filename(p, -1, NULL, NULL);
+	if (p && scheme_directory_exists(p))
+	  return scheme_make_string(p);
+      }
+      
+      return CURRENT_WD();
+    }
+    
+    d = getenv("HOMEDRIVE");
+    p = getenv("HOMEPATH");
+
+    if (d && p) {
+      char *s;
+      s = new char[strlen(d) + strlen(p) + 1];
+      strcpy(s, d);
+      strcat(s, p);
+      
+      if (scheme_directory_exists(s))
+	home = scheme_make_string_without_copying(s);
+      else
+	home = NULL;
+    } else 
+      home = NULL;
+    
+    if (!home) {
+      int i;
+      char *s;
+      
+      p = wxTheApp->argv[0];
+      s = copystring(p);
+      
+      i = strlen(s) - 1;
+      
+      while (i && (s[i] != '\\'))
+	--i;
+      s[i] = 0;
+      home = scheme_make_string_without_copying(s);
+    }
+    
+    if ((which == id_pref_dir)
+	|| (which == id_init_dir))
+      return home;
+
+    ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1];
+    ends_in_slash = ((ends_in_slash == '/') || (ends_in_slash == '\\'));
+
+    if (which == id_init_file)
+      return scheme_append_string(home,
+				  scheme_make_string("\\mzschemerc.ss" + ends_in_slash));
+  }
+#endif
+
+#ifdef MAC_FILE_SYSTEM
+  {
+    OSType t;
+    FSSpec spec;
+    Scheme_Object *home;
+    int ends_in_colon;
+
+    switch (which) {
+    case id_home_dir:
+    case id_pref_dir:
+    case id_init_dir:
+    case id_init_file:
+      t = 'pref';
+      break;
+    case id_temp_dir:
+    default:
+      t = 'temp';
+      break;
+    }
+
+    if (!FindFolder(kOnSystemDisk, t, kCreateFolder, &spec.vRefNum, &spec.parID))
+      home = scheme_make_string(scheme_build_mac_filename(&spec, 1));
+    else {
+      if (which == id_temp_dir)
+	home = CURRENT_WD();
+      else {
+	/* Everything else uses system current directory if there's no prefs folder */
+	home = scheme_make_string(scheme_os_getcwd(NULL, 0, NULL, 1));
+	if (!home)
+	  /* disaster strikes; use Scheme CWD */
+	  home = CURRENT_WD();
+      }
+    }
+  
+    if ((which == id_pref_dir) 
+	|| (which == id_home_dir) 
+	|| (which == id_temp_dir) 
+	|| (which == id_init_dir))
+      return home;
+    
+    ends_in_colon = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1] == ':';
+    
+    if (which == id_init_file)
+      return scheme_append_string(home,
+				  scheme_make_string(":mzschemerc.ss" + ends_in_colon));
+  }
+#endif
+
+  return scheme_void;
+}
+
+/********************************************************************************/
 
 #ifdef MACINTOSH_EVENTS
 

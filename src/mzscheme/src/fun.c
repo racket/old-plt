@@ -1620,6 +1620,22 @@ Scheme_Object *scheme_values(int argc, Scheme_Object *argv[])
   return SCHEME_MULTIPLE_VALUES;
 }
 
+void scheme_clear_escape(void)
+{
+  Scheme_Process *p = scheme_current_process;
+
+  p->cjs.jumping_to_continuation = NULL;
+  p->cjs.u.val = NULL;
+  p->cjs.num_vals = 0;
+}
+
+static void copy_cjs(Scheme_Continuation_Jump_State *a, Scheme_Continuation_Jump_State *b)
+{
+  a->jumping_to_continuation = b->jumping_to_continuation;
+  a->u.val = b->u.val;
+  a->num_vals = b->num_vals;
+}
+
 static void pre_call_ec(void *ec)
 {
   SCHEME_CONT_HOME(ec) = scheme_current_process;
@@ -1635,25 +1651,23 @@ static Scheme_Object *do_call_ec(void *ec)
   Scheme_Object *p[1], *f;
 
   p[0] = (Scheme_Object *)ec;
-  f = SCHEME_CONT_VAL(ec);
-  SCHEME_CONT_VAL(ec) = NULL;
+  f = SCHEME_CONT_F(ec);
 
   return _scheme_apply_multi(f, 1, p);
 }
 
 static Scheme_Object *handle_call_ec(void *ec)
 {
-  if (SCHEME_CONT_VAL(ec)) {
-    int n;
-    Scheme_Object *v = SCHEME_CONT_VAL(ec);
-    Scheme_Object **vs = SCHEME_CONT_VALS(ec);
-    SCHEME_CONT_VAL(ec) = NULL;
-    scheme_jumping_to_continuation = 0;
+  Scheme_Process *p = scheme_current_process;
+
+  if ((void *)p->cjs.jumping_to_continuation == ec) {
+    int n = p->cjs.num_vals;
+    Scheme_Object *v = p->cjs.u.val;
+    Scheme_Object **vs = p->cjs.u.vals;
+    copy_cjs(&p->cjs, &((Scheme_Escaping_Cont *)ec)->cjs);
 #ifdef ERROR_ON_OVERFLOW
-    scheme_current_process->stack_overflow = 
-      ((Scheme_Escaping_Cont *)ec)->orig_overflow;
+    p->stack_overflow = ((Scheme_Escaping_Cont *)ec)->orig_overflow;
 #endif
-    n = SCHEME_CONT_NUM_VALS(ec);
     if (n == 1)
       return v;
     else
@@ -1673,12 +1687,13 @@ call_ec (int argc, Scheme_Object *argv[])
 
   cont = MALLOC_ONE_TAGGED(Scheme_Escaping_Cont);
   cont->type = scheme_escaping_cont_type;
-  SCHEME_CONT_HOME(cont) = p;
+  cont->home = p;
   cont->ok = p->ec_ok;
-  cont->u.val = argv[0];
+  cont->f = argv[0];
 #ifdef ERROR_ON_OVERFLOW
   cont->orig_overflow = p->stack_overflow;
 #endif
+  copy_cjs(&cont->cjs, &p->cjs);
 
   return scheme_dynamic_wind(pre_call_ec, do_call_ec, post_call_ec,
 			     handle_call_ec, (void *)cont);
@@ -1705,6 +1720,7 @@ call_cc (int argc, Scheme_Object *argv[])
   cont->ok = p->cc_ok;
   cont->dw = p->dw;
   cont->home = p;
+  copy_cjs(&cont->cjs, &p->cjs);
 #ifdef ERROR_ON_OVERFLOW
   cont->orig_overflow = p->stack_overflow;
 #else
@@ -1745,25 +1761,22 @@ call_cc (int argc, Scheme_Object *argv[])
 
     p->current_local_env = cont->current_local_env;
 
+    memcpy(&p->error_buf, &cont->savebuf, sizeof(mz_jmp_buf));
+
     /* For dynamic-winds after the "common" intersection
        (see eval.c), execute the pre thunks. Make a list
        of these first because they have to be done in the
        inverse order of `prev' linkage. */
     if (cont->dw) {
-      Scheme_Dynamic_Wind_List *dwl = NULL, *last = NULL;
+      Scheme_Dynamic_Wind_List *dwl = NULL;
       
       for (dw = cont->dw; dw != cont->common; dw = dw->prev) {
 	Scheme_Dynamic_Wind_List *cell;
 
 	cell = MALLOC_ONE(Scheme_Dynamic_Wind_List);
 	cell->dw = dw;
-	cell->next = NULL;
-
-	if (last)
-	  last->next = cell;
-	else
-	  dwl = cell;
-	last = cell;
+	cell->next = dwl;
+	dwl = cell;
       }
       for (; dwl; dwl = dwl->next)
 	if (dwl->dw->pre) {
@@ -1773,8 +1786,7 @@ call_cc (int argc, Scheme_Object *argv[])
     }
     p->dw = cont->dw;
 
-    memcpy(&p->error_buf, &cont->savebuf, sizeof(mz_jmp_buf));
-
+    copy_cjs(&p->cjs, &cont->cjs);
 #ifdef ERROR_ON_OVERFLOW
     p->stack_overflow = cont->orig_overflow;
 #else
@@ -1933,11 +1945,25 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
   if (scheme_setjmp(p->error_buf)) {
     scheme_restore_env_stack_w_process(dw->envss, p);
     p->current_local_env = dw->current_local_env;
-    if (jmp_handler)
-      v = jmp_handler(data);
-    else
-      v = NULL;
-    err = !v;
+    if (p->dw != dw) {
+      /* Apparently, a full continuation jump was interrupted by an
+	 escape continuation jump (in a dw pre or post thunk). Either
+
+	 1) this dw's post is already done for an interupted upward
+	 jump; or 
+
+	 2) we never actually got this far for an interrupted
+	 downward jump.
+
+	 In either case, skip up until we get to the right level. */
+      scheme_longjmp(dw->saveerr, 1);
+    } else {
+      if (jmp_handler)
+	v = jmp_handler(data);
+      else
+	v = NULL;
+      err = !v;
+    }
   } else {
     v = act(data);
 
@@ -1967,7 +1993,7 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 
   if (err)
     scheme_longjmp(dw->saveerr, 1);
-
+  
   memcpy(&p->error_buf, &dw->saveerr, sizeof(mz_jmp_buf));
 
   if (save_values) {

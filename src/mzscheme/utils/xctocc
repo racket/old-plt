@@ -132,8 +132,8 @@ sub DoPrintClass
 	print "\n";
 
 	# Print creation prototypes:
-	if ($#creators >= 0) {
-	    foreach $creator (@creators) {
+	if ($#distinct_creators >= 0) {
+	    foreach $creator (@distinct_creators) {
 		&ReadFields($dummyfields . $creator);
 		print "  ${newclass}(Scheme_Object * obj";
 		print ", " if ($#paramtypes >= 0);
@@ -180,8 +180,8 @@ sub DoPrintClass
 	print "Scheme_Object *${newclass}_class;\n\n";
 	
 	#Do creation methods
-	if ($#creators >= 0) {
-	    foreach $creator (@creators) {
+	if ($#distinct_creators >= 0) {
+	    foreach $creator (@distinct_creators) {
 		&ReadFields($dummyfields . $creator);
 		&OIStart;
 		print "${newclass}::${newclass}(Scheme_Object * o";
@@ -798,12 +798,13 @@ sub PrintMethod
     print "  if (method && !OBJSCHEME_PRIM_METHOD(method)) {\n";
     print "    COPY_JMPBUF(savebuf, scheme_error_buf);\n";
     print "    sj = scheme_setjmp(scheme_error_buf);\n";
+    print "    if (sj) {\n";
+    print "      COPY_JMPBUF(scheme_error_buf, savebuf);\n";
+    print "      scheme_clear_escape();\n";
+    print "    }\n";
     print "  } else sj = 1;\n";
     print "  if (sj) {\n";
 
-    print "    if (method && !OBJSCHEME_PRIM_METHOD(method))\n";
-    print "      COPY_JMPBUF(scheme_error_buf, savebuf);\n    ";
-    
     &PrintFailureHandling();
 
     print "\n  } else {\n";
@@ -835,7 +836,7 @@ sub PrintMethod
 
     print "  " . &ApplyMacros($methprecall) . "\n";
 
-    print "\n  v = scheme_apply_eb(";
+    print "\n  v = scheme_apply(";
     print "method, ";
     print "${numschemes}, p);\n";
 
@@ -1373,6 +1374,10 @@ sub PrintBundleVar
 	substr($paramtype, -1) = '';
 	$var = "&$var" unless $outgoing;
 	&PrintBundleObject($var, $paramtype);
+    } elsif (substr($paramtype, 0, 3) eq 'SYM') {
+	$paramtype =~ /SYM\[(.*)\]/;
+	$symtype = $1;
+	print "bundle_symset_${symtype}($var);";
     } else {
 	print STDERR "Unknown type ${paramtype} in $func.\n";
     }
@@ -1467,6 +1472,10 @@ sub PrintUnbundleVar
 	substr($paramtype, -1) = '';
 	print "*" if ($outgoing);
 	&PrintUnbundleObject("$var", $paramtype, 0, $mname);
+    } elsif (substr($paramtype, 0, 3) eq 'SYM') {
+	$paramtype =~ /SYM\[(.*)\]/;
+	$symtype = $1;
+	print "unbundle_symset_${symtype}($var, $stop);";
     } else {
 	print STDERR "Unknown type ${paramtype} in $func.\n";
     }
@@ -1514,6 +1523,8 @@ sub NormalType {
 	$paramtype = 'long';
     } elsif ($paramtype eq 'Double') {
 	$paramtype = 'double';
+    } elsif (substr($paramtype, 0, 3) eq 'SYM') {
+	$paramtype = 'int';
     }
 
     return $paramtype;
@@ -1756,6 +1767,10 @@ sub PrintTypecheck
     } elsif (substr($paramtype, -1) eq '%') {
 	substr($paramtype, -1) = '';
 	&PrintTypecheckObj("$var", $paramtype, $stop);
+    } elsif (substr($paramtype, 0, 3) eq 'SYM') {
+	$paramtype =~ /SYM\[(.*)\]/;
+	$symtype = $1;
+	print "istype_symset_${symtype}($var, $stop)";
     } else {
 	print STDERR "Unknown type ${paramtype} in $func.\n";
     }
@@ -1865,4 +1880,100 @@ sub OIEnd
     if ($onlyif ne '') {
 	print "#endif\n";
     }
+}
+
+sub PrintSymSet
+{
+    local ($name, $kind, @syms) = @_;
+    local ($multi, $vv, $lname);
+
+    if ($kind =~ /ONE/) {
+	$multi = 0;
+	$lname = "";
+    } else {
+	$multi = 1;
+	$lname = " list";
+    }
+
+    foreach $sym (@syms) {
+	($n, $v) = split(/=/, $sym, 2);
+	print "static Scheme_Object *${name}_${v}_sym = NULL;\n";
+    }
+    print "\n";
+
+    print "static void init_symset_${name}(void) {\n";
+    foreach $sym (@syms) {
+	($n, $v) = split(/=/, $sym, 2);
+	print "  ${name}_${v}_sym = scheme_intern_symbol($n);\n";
+    }
+    print "}\n\n";
+
+    foreach $mode ("unbundle", "istype") {
+	print "static int ${mode}_symset_${name}(Scheme_Object *v, const char *where) {\n";
+	print "  if (!${name}_${v}_sym) init_symset_${name}();\n";
+	if ($multi) {
+	    $vv = "i";
+	    print "  Scheme_Object *i, *l = v;\n";
+	    if ($mode eq 'unbundle') {
+		print "  long result = 0;\n";
+	    } else {
+		print "  long result = 1;\n";
+	    }
+	    print "  while (SCHEME_PAIRP(l)) {\n";
+	    print "  i = SCHEME_CAR(l);\n";
+	    if ($mode eq 'unbundle') {
+		$donepre = "result = result | ";
+	    } else {
+		$donepre = "";
+	    }
+	    $donepost = "";
+	} else {
+	    $vv = "v";
+	    $donepre = "return ";
+	    $donepost = "";
+	}
+	print "  if (0) { }\n";
+	foreach $sym (@syms) {
+	    ($n, $v) = split(/=/, $sym, 2);
+	    if ($mode eq 'unbundle') {
+		$result = $v;
+	    } else {
+		if ($multi) {
+		    $result = "";
+		} else {
+		    $result = "1";
+		}
+	    }
+	    print "  else if (${vv} == ${name}_${v}_sym) { $donepre$result$donepost; }\n";
+	}
+	if ($multi) {
+	    print "  else { break; } \n";
+	    print "  l = SCHEME_CDR(l);\n";
+	    print "  }\n";
+	    print "  if (SCHEME_NULLP(l)) return result;\n";
+	}
+	print "  if (where) scheme_wrong_type(where, \"$name symbol${lname}\", -1, 0, &v);\n";
+	print "  return 0;\n";
+	print "}\n\n";
+    }
+
+    print "static Scheme_Object *bundle_symset_${name}(int v) {\n";
+    print "  if (!${name}_${v}_sym) init_symset_${name}();\n";
+    if ($multi) {
+	print "  Scheme_Object *l = scheme_null;\n";
+	foreach $sym (@syms) {
+	    ($n, $v) = split(/=/, $sym, 2);
+	    print "  if (v & $v) l = scheme_make_pair(${name}_${v}_sym, l);\n";
+	}
+	print "  return l;\n";
+    } else {
+	print "  switch (v) {\n";
+	foreach $sym (@syms) {
+	    ($n, $v) = split(/=/, $sym, 2);
+	    print "  case $v: return ${name}_${v}_sym;\n";
+	}
+	print "  default: return NULL;\n";
+	print "  }\n";
+    }
+    print "}\n\n";
 }

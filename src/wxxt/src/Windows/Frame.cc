@@ -572,7 +572,7 @@ void wxFrame::CreateStatusLine(int number, char *)
 	wxMessage *sm;
 	wxWindow **sr;
 
-	sm = DEBUG_NEW wxMessage(this, "", 0, 0, 0, "status");
+	sm = DEBUG_NEW wxMessage(this, "", 0, 0, wxBORDER, "status");
 	status[i] = sm;
 	sm->AllowResize(FALSE);
 	sm->SetAlignment(wxALIGN_LEFT);

@@ -329,8 +329,9 @@ Bool wxMessage::Create(wxPanel *panel,
 	 XtNhighlightThickness, 0,
 	 ( !(style & wxBORDER) ) ?
 	     NULL :
-	     XtNouterOffset, 1, XtNinnerOffset, 1,
-	     XtNframeWidth,  2, XtNframeType, XfwfChiseled,
+	     XtNouterOffset, 0, 
+	     XtNinnerOffset, 1,
+	     XtNframeWidth,  0,
 	     NULL);
 
     X->handle = wgt;

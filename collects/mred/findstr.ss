@@ -10,7 +10,7 @@
     (define make-find-frame%
       (lambda (super%) 
 	(class super% (canvas [in-edit ()] [x -1] [y -1] [flags ()])
-	  (inherit set-client-size show center make-modal
+	  (inherit set-size show center make-modal
 		   capture-mouse release-mouse)
 	  (public
 	    [WIDTH 450]
@@ -80,10 +80,10 @@
 	       (if on?
 		   (begin
 		     (send find-button show #f)
-		     (set-client-size WIDTH long-height))
+		     (set-size WIDTH long-height))
 		   (begin
 		     (send find-button show #t)
-		     (set-client-size WIDTH short-height))))]
+		     (set-size WIDTH short-height))))]
 	    
 	    [on-replace-check
 	     (lambda (button event)
@@ -290,7 +290,7 @@
 	    [long-height (+ (send bottom-panel get-height)
 			    (send bottom-panel get-y))])
 	  (sequence
-	    (set-client-size WIDTH short-height)
+	    (set-size WIDTH short-height)
 	    
 	    (if (member 'replace flags)
 		(begin

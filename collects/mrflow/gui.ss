@@ -295,12 +295,15 @@
                                           (send definitions-text color-registered-labels)
                                           (enable-evaluation)
                                           )))
-                                     (parameterize ([current-eventspace drs-eventspace])
-                                       (queue-callback
-                                        (lambda () ; =drs=
-                                          ;(printf "syntax: ~a~n" (syntax-object->datum syntax-object-or-eof))
-                                          (sba:create-label-from-term sba-state syntax-object-or-eof '() #f)
-                                          (iter))))))))
+                                     (begin
+                                       (parameterize ([current-eventspace drs-eventspace])
+                                         (queue-callback
+                                          (lambda () ; =drs=
+                                            ;(printf "syntax: ~a~n" (syntax-object->datum syntax-object-or-eof))
+                                            (sba:create-label-from-term sba-state syntax-object-or-eof '() #f))))
+                                       ; must be outside the parameterize so the next expansion occurs
+                                       ; in the right eventspace...
+                                       (iter))))))
                             ; get-mrflow-primitives-filename defaults to R5RS
                             ; (see mrflow-default-implementation-mixin above), so if we arrive here,
                             ; we know we are in trouble because it means no primitive table is

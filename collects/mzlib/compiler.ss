@@ -3,7 +3,7 @@
  (link
   [referf 
    : (make-reference-unit make-reference)
-   ((unit->unit/sig (reference "referf.ss") 
+   ((unit->unit/sig (reference-relative-library "referf.ss") 
 		    () 
 		    (make-reference-unit make-reference)))]
   [compile 

@@ -1,11 +1,11 @@
 
-(reference "prettys.ss")
-(reference "files.ss")
-(reference "functios.ss")
-(reference "compats.ss")
-(reference "strings.ss")
-(reference "compiles.ss")
-(reference "threads.ss")
+(reference-relative-library "prettys.ss")
+(reference-relative-library "files.ss")
+(reference-relative-library "functios.ss")
+(reference-relative-library "compats.ss")
+(reference-relative-library "strings.ss")
+(reference-relative-library "compiles.ss")
+(reference-relative-library "threads.ss")
 
 (define-signature mzlib:core^
   ((unit pretty-print@ : mzlib:pretty-print^)

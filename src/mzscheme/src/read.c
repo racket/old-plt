@@ -587,7 +587,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	case '$':
 	  if (((Scheme_Input_Port *)port)->get_special_fun) {
 	    Scheme_Object *v;
-	    v = scheme_get_special(port);
+	    v = scheme_get_special(port, stxsrc, line, col, pos);
 	    if (SCHEME_STXP(v)) {
 	      if (!stxsrc)
 		v = scheme_syntax_to_datum(v, 0, NULL);

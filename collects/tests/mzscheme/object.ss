@@ -342,6 +342,24 @@
 (syntax-test #'(class object% (define/public (1 x) 2)))
 (syntax-test #'(class object% (define/public (x . 1) 2)))
 
+(syntax-test #'(class object% define/override))
+(syntax-test #'(class object% (define/override)))
+(syntax-test #'(class object% (define/override x)))
+(syntax-test #'(class object% (define/override x 1 2)))
+(syntax-test #'(class object% (define/override 1 2)))
+(syntax-test #'(class object% (define/override (x 1) 2)))
+(syntax-test #'(class object% (define/override (1 x) 2)))
+(syntax-test #'(class object% (define/override (x . 1) 2)))
+
+(syntax-test #'(class object% define/private))
+(syntax-test #'(class object% (define/private)))
+(syntax-test #'(class object% (define/private x)))
+(syntax-test #'(class object% (define/private x 1 2)))
+(syntax-test #'(class object% (define/private 1 2)))
+(syntax-test #'(class object% (define/private (x 1) 2)))
+(syntax-test #'(class object% (define/private (1 x) 2)))
+(syntax-test #'(class object% (define/private (x . 1) 2)))
+
 (define c*1% (class object%
 	       (define/public (x) (f))
 	       (public*
@@ -354,7 +372,8 @@
 (define c*2% (class c*1%
 	       (override*
 		[y (lambda () 20)])
-	       (define/override z (lambda () 30))
+	       (define/override z (lambda () (g)))
+	       (define/private (g) 30)
 	       (super-make-object)))
 
 (define o*1 (make-object c*1%))
@@ -368,3 +387,4 @@
 (test 30 'o2 (send o*2 z))
 
 (report-errs)
+

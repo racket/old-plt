@@ -63,6 +63,7 @@ static Scheme_Object *local_exp_time_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_context(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_introduce(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_set_transformer(int argc, Scheme_Object *argv[]);
+static Scheme_Object *set_transformer_p(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *write_variable(Scheme_Object *obj);
 static Scheme_Object *read_variable(Scheme_Object *obj);
@@ -377,6 +378,14 @@ static void make_init_env(void)
 						      "make-set!-transformer",
 						      1, 1),
 			     env);
+
+#if 0
+  scheme_add_global_constant("set!-transformer?", 
+			     scheme_make_prim_w_arity(set_transformer_p,
+						      "set!-transformer?",
+						      1, 1),
+			     env);
+#endif
 
   DONE_TIME(env);
 
@@ -1755,6 +1764,14 @@ make_set_transformer(int argc, Scheme_Object *argv[])
   SCHEME_PTR_VAL(v) = argv[0];
 
   return v;
+}
+
+static Scheme_Object *
+set_transformer_p(int argc, Scheme_Object *argv[])
+{
+  return ((SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_id_macro_type))
+	  ? scheme_true
+	  : scheme_false);
 }
 
 

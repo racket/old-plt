@@ -835,7 +835,7 @@ typedef struct Scheme_Input_Port
   int (*char_ready_fun) (struct Scheme_Input_Port *port);
   void (*close_fun) (struct Scheme_Input_Port *port);
   void (*need_wakeup_fun)(struct Scheme_Input_Port *, void *);
-  Scheme_Object *(*get_special_fun)(struct Scheme_Input_Port *);
+  Scheme_Object *(*get_special_fun)(struct Scheme_Input_Port *, Scheme_Object *, long, long, long);
   Scheme_Object *read_handler;
   char *name;
   unsigned char *ungotten;

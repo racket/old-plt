@@ -1795,14 +1795,14 @@ void scheme_pipe_did_read(Scheme_Pipe *pipe);
 int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block, Scheme_Output_Port *port);
 #endif
 
-Scheme_Object *scheme_get_special(Scheme_Object *inport);
+Scheme_Object *scheme_get_special(Scheme_Object *inport, Scheme_Object *stxsrc, long line, long col, long pos);
 
 typedef int (*Getc_Fun)(struct Scheme_Input_Port *port);
 typedef int (*Peekc_Fun)(struct Scheme_Input_Port *port);
 typedef int (*Char_Ready_Fun)(struct Scheme_Input_Port *port);
 typedef void (*Close_Fun_i)(struct Scheme_Input_Port *port);
 typedef void (*Need_Wakeup_Fun)(struct Scheme_Input_Port *, void *);
-typedef Scheme_Object *(*Get_Special_Fun)(struct Scheme_Input_Port *port);
+typedef Scheme_Object *(*Get_Special_Fun)(struct Scheme_Input_Port *port, Scheme_Object *, long, long, long);
 
 Scheme_Input_Port *_scheme_make_input_port(Scheme_Object *subtype,
 					   void *data,

@@ -383,7 +383,7 @@ Scheme_Input_Port *(*scheme_make_input_port)(Scheme_Object *subtype, void *data,
 					  int (*char_ready_fun)(Scheme_Input_Port*),
 					  void (*close_fun)(Scheme_Input_Port*),
 					  void (*need_wakeup_fun)(Scheme_Input_Port*, void *),
-					  Scheme_Object *(*get_special_fun)(Scheme_Input_Port*),
+					  Scheme_Object *(*get_special_fun)(Scheme_Input_Port*,Scheme_Object*,long,long,long),
 					  int must_close);
 Scheme_Output_Port *(*scheme_make_output_port)(Scheme_Object *subtype,
 					    void *data,

@@ -3005,7 +3005,7 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
   Scheme_Module *m;
   int j, var_count, is_kern;
   Scheme_Object **exs, **exsns, **exss;
-  Scheme_Object *idxstx, *idx, *name, *i, *exns, *prefix, *iname, *ename, *aa;
+  Scheme_Object *idxstx, *idx, *name, *i, *exns, *one_exn, *prefix, *iname, *ename, *aa;
   Scheme_Object *imods;
 
   imods = scheme_null;
@@ -3161,8 +3161,11 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
 	  imods = p;
       }
     }
+
+    one_exn = NULL;
       
     while (1) { /* loop to handle kernel re-provides... */
+      int break_if_iname_null = !!iname;
 
       exs = m->provides;
       exsns = m->provide_src_names;
@@ -3175,8 +3178,8 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
 	if (ename) {
 	  if (!SAME_OBJ(ename, exs[j]))
 	    continue;  /* we don't want this one. */
-	} else if (exns) {
-	  if (SCHEME_STX_PAIRP(exns)) {
+	} else {
+	  if (exns) {
 	    Scheme_Object *l;
 	    for (l = exns; SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l)) {
 	      if (SAME_OBJ(SCHEME_STX_VAL(SCHEME_STX_CAR(l)), exs[j]))
@@ -3184,8 +3187,10 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
 	    }
 	    if (!SCHEME_STX_NULLP(l))
 	      continue; /* we don't want this one. */
-	  } else {
-	    if (SAME_OBJ(exns, exs[j]))
+	  }
+
+	  if (one_exn) {
+	    if (SAME_OBJ(one_exn, exs[j]))
 	      continue; /* we don't want this one. */
 	  }
 	}
@@ -3198,7 +3203,7 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
 	  iname = exs[j];
 
 	if (prefix)
-	  iname = scheme_symbol_append(prefix, iname);
+ 	  iname = scheme_symbol_append(prefix, iname);
 	
 	if (ck)
 	  ck(iname, idx, modidx, exsns[j], (j < var_count), data, i);
@@ -3230,13 +3235,16 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
 	  return NULL;
 	}
       }
-      
+
       if (is_kern)
 	scheme_extend_module_rename_with_kernel(rn);
 
+      if (break_if_iname_null && !iname)
+	break;
+
       if (m->reprovide_kernel) {
 	idx = kernel_symbol;
-	exns = m->kernel_exclusion;
+	one_exn = m->kernel_exclusion;
 	m = kernel;
 	is_kern = !prefix && !unpack_kern && !ename;
       } else

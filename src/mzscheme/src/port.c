@@ -1463,7 +1463,7 @@ scheme_char_ready (Scheme_Object *port)
   return retval;
 }
 
-Scheme_Object *scheme_get_special(Scheme_Object *port)
+Scheme_Object *scheme_get_special(Scheme_Object *port, Scheme_Object *src, long line, long col, long pos)
 {
   Get_Special_Fun f;
   Scheme_Object *r, *val, *pd;
@@ -1485,9 +1485,25 @@ Scheme_Object *scheme_get_special(Scheme_Object *port)
     return NULL;
   }
    
+  if (src && (SAME_TYPE(SCHEME_TYPE(src), scheme_stx_offset_type))) {
+    Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)src;
+
+    if (pos >= 0)
+      pos += o->pos;
+    if (col >= 0) {
+      if (line == 1)
+	col += o->col;
+    }
+    if (line >= 0)
+      line += o->line;
+
+    src = o->src;
+  }
+
+
   CHECK_PORT_CLOSED("#<primitive:get-special>", "input", port, ip->closed);
   f = ip->get_special_fun;
-  r = f(ip);
+  r = f(ip, src, line, col, pos);
 
   /* Should be multiple values: */
   if (SAME_OBJ(r, SCHEME_MULTIPLE_VALUES)) {

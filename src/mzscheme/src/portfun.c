@@ -713,13 +713,17 @@ user_close_input(Scheme_Input_Port *port)
 }
 
 static Scheme_Object * 
-user_get_special (Scheme_Input_Port *port)
+user_get_special (Scheme_Input_Port *port, Scheme_Object *src, long line, long col, long pos)
 {
-  Scheme_Object *fun, *val;
+  Scheme_Object *fun, *val, *a[4];
 
   fun = ((Scheme_Object **) port->port_data)[4];
 
-  val = _scheme_apply_multi(fun, 0, NULL);
+  a[0] = (src ? src : scheme_false);
+  a[1] = (line > 0) ? scheme_make_integer(line) : scheme_false;
+  a[2] = (col > 0) ? scheme_make_integer(col) : scheme_false;
+  a[3] = (pos > 0) ? scheme_make_integer(pos) : scheme_false;
+  val = _scheme_apply_multi(fun, 4, a);
 
   return val;
 }
@@ -1182,7 +1186,7 @@ make_input_port(int argc, Scheme_Object *argv[])
       scheme_wrong_type("make-input-port", "procedure (arity 0) or #f", 3, argc, argv);
   }
   if (argc > 4)
-    scheme_check_proc_arity("make-input-port", 0, 4, argc, argv);
+    scheme_check_proc_arity("make-input-port", 4, 4, argc, argv);
   
   copy = MALLOC_N(Scheme_Object *, argc);
   memcpy(copy, argv, argc * sizeof(Scheme_Object *));

@@ -1,4 +1,4 @@
 
-(require-library "compiles.ss" "mzscheme" "dynext")
+(require-relative-library "compiles.ss")
 
-(invoke-open-unit/sig (require-library "compiler.ss" "mzscheme" "dynext"))
+(invoke-open-unit/sig (require-relative-library "compiler.ss"))

@@ -7,9 +7,9 @@
 (reference-library "file.ss")
 (reference-library "pretty.ss")
 
-(reference-library "compile.ss" "mzscheme" "dynext")
-(reference-library "link.ss" "mzscheme" "dynext")
-(reference-library "file.ss" "mzscheme" "dynext")
+(reference-library "compile.ss" "dynext")
+(reference-library "link.ss" "dynext")
+(reference-library "file.ss" "dynext")
 
 (reference-library "option.ss" "compiler")
 

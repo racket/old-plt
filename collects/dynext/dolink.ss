@@ -1,5 +1,5 @@
 
-(require-library "link.ss" "mzscheme" "dynext")
+(require-relative-library "link.ss")
 
 ; Parse arguments:
 (define a (vector->list argv))

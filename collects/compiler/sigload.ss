@@ -3,9 +3,9 @@
 (reference-library "files.ss")
 (reference-library "prettys.ss")
 
-(reference-library "compiles.ss" "mzscheme" "dynext")
-(reference-library "links.ss" "mzscheme" "dynext")
-(reference-library "files.ss" "mzscheme" "dynext")
+(reference-library "compiles.ss" "dynext")
+(reference-library "links.ss" "dynext")
+(reference-library "files.ss" "dynext")
 
 (reference-library "zsigs.ss" "zodiac")
 (reference-library "sigs.ss" "zodiac")

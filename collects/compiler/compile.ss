@@ -9,9 +9,9 @@
 (require-library "file.ss")
 (require-library "compile.ss")
 
-(reference-library "compile.ss" "mzscheme" "dynext")
-(reference-library "link.ss" "mzscheme" "dynext")
-(reference-library "file.ss" "mzscheme" "dynext")
+(reference-library "compile.ss" "dynext")
+(reference-library "link.ss" "dynext")
+(reference-library "file.ss" "dynext")
 
 (require-library "makes.ss" "make")
 (require-library "collections.ss" "make")

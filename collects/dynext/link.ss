@@ -1,4 +1,4 @@
 
-(require-library "links.ss" "mzscheme" "dynext")
+(require-relative-library "links.ss")
 
-(invoke-open-unit/sig (require-library "linkr.ss" "mzscheme" "dynext"))
+(invoke-open-unit/sig (require-relative-library "linkr.ss"))

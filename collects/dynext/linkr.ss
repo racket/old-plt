@@ -63,7 +63,7 @@
   (define std-library-dir (build-path (collection-path "mzscheme" "lib") (system-library-subpath)))
   
   (define-values (my-process* stdio-link)
-    (let-values ([(p* do-stdio) (require-library "stdio.ss" "mzscheme" "dynext")])
+    (let-values ([(p* do-stdio) (require-library "stdio.ss" "dynext")])
       (values
        p*
        (lambda (start-process quiet?)

@@ -1,6 +1,6 @@
 
 (require-library "compile.ss")
-(require-library "file.ss" "mzscheme" "dynext")
+(require-library "file.ss" "dynext")
 
 (define (compile-to-zo src dest namespace)
   (let ([cwd (current-directory)])

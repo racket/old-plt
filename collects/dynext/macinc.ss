@@ -11,7 +11,7 @@
  (define (macos-make name base-project tmp-suffix quiet? input-files output-file includes)
     (define src-files (map path->complete-path input-files))
     (define dest-file (path->complete-path output-file))
-    (define proj-dir (build-path (collection-path "mzscheme" "dynext")))
+    (define proj-dir (build-path (collection-path "dynext")))
     (define tmp-proj (build-path proj-dir "building-extension"))
     (define ext-out (build-path proj-dir (format "extension.~a" tmp-suffix)))
     (define debug-out (string-append ext-out ".xSYM"))

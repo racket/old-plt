@@ -81,7 +81,7 @@
        p)))
   
   (define-values (my-process* stdio-compile)
-    (let-values ([(p* do-stdio) (require-library "stdio.ss" "mzscheme" "dynext")])
+    (let-values ([(p* do-stdio) (require-library "stdio.ss" "dynext")])
       (values
        p*
        (lambda (start-process quiet?)

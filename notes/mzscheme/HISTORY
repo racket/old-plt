@@ -148,6 +148,16 @@ Regexp grammar changed to match docs with respect to "-"
 Changed pref dir (all platforms) and pref file name
  (except Windows)
 
+Version 208, August 2004
+Added string-copy! and hash-table-count
+Upgraded to gc 6.3
+
+Version 207, May 2004
+Fixed comparison of infinities and 0.0 in eqv?
+Fixed incorrect handling of -0.0 versus 0.0 for various
+ platforms, including x86 with gcc 3.2
+Fixed inefficient (/ x 1) for an exact rational x
+
 Version 206, January 2004
 A shut-down custodian is no longer allowed to manage new
  objects

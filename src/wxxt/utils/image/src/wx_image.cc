@@ -675,7 +675,12 @@ Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **cmap)
 			tempImage->dispDEEP))
       return FALSE;
 
-    wxColourMap *tempColourMap = tempImage->GetColourMap();
+    wxColourMap *tempColourMap;
+
+    if (tempImage->ncols > 256)
+      tempColourMap = NULL;
+    else
+      tempColourMap = tempImage->GetColourMap();
 
     tempImage->Resize(tempImage->eWIDE, tempImage->eHIGH);
 

@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include "wx_image.h"
 #include "wx_utils.h"
+#include "../../../src/XWidgets/wxAllocColor.h"
 
 /***********************************/
 void wxImage::Resize(int w, int h)
@@ -954,9 +955,28 @@ void wxImage::CreateXImage()
   
   byte *pp = epic;
   int i, j;
+  unsigned long white = WhitePixelOfScreen(DefaultScreenOfDisplay(theDisp));
+  
   for (j = 0; j < eHIGH; j++) {
     for (i = 0; i < eWIDE; i++, pp++) {
-      XPutPixel(theImage, i, j, cols[*pp]);
+      unsigned long pixel;
+      if (ncols <= 256)
+	pixel = cols[*pp];
+      else {
+	XColor c;
+
+	c.red   = (*pp++)<<8;
+	c.green = (*pp++)<<8;
+	c.blue  = (*pp)<<8;
+	c.flags = DoRed | DoGreen | DoBlue;
+	
+	if (wxAllocColor(theDisp, theCmap, &c))
+	  pixel = c.pixel;
+	else
+	  pixel = white;
+      }
+
+      XPutPixel(theImage, i, j, pixel);
     }
   }
 }

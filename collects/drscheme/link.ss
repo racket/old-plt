@@ -56,7 +56,7 @@
           [(side-effects) 2]
           [(advanced) 3])))
     (define level-symbols (list 'core 'structured 'side-effects 'advanced))
-    (define level-strings (list "Beginner" "Intermediate" "Advanced" "R4RS"))
+    (define level-strings (list "Beginner" "Intermediate" "Advanced" "Quasi-R4RS"))
 
     (mred:set-preference-default 'drscheme:library-file #f)
     (mred:add-preference-callback 

@@ -38,8 +38,6 @@
 (define-signature mred:html-mode^
   ())
 
-; mred^ is the concatenation of the following signatures in order.
-
 (define-signature mred:debug^ (printf exit? on?))
 
 (define-signature mred:constants^
@@ -296,8 +294,6 @@
    open-hyper-view
    open-hyper-make
    hyper-text-require))
-
-;; mred^ is the concatenation of the signatures above this
 
 (define-signature mred:container^
   ((open mred:container-frames^)

@@ -75,6 +75,9 @@
       ;;  Mailbox List                                           ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+      (unless (directory-exists? LOCAL*)
+	(make-directory LOCAL*))
+
       (define mailboxes
 	(with-handlers ([void (lambda (x) '(("Inbox" "inbox")))])
 	  (with-input-from-file (build-path LOCAL* "mailboxes")
@@ -86,7 +89,7 @@
       (define mailbox-dir (build-path LOCAL* (cadr (assoc mailbox-name mailboxes))))
       
       (unless (directory-exists? mailbox-dir)
-	(error 'sirmail "Mailbox directory missing: ~a" mailbox-dir))
+	(make-directory mailbox-dir))
       
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Message data structure                                 ;;

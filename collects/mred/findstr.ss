@@ -461,10 +461,8 @@
                                 (send replacee-edit get-end-position))]
                          [get-pos 
                            (if (= searching-direction 1)
-                             (lambda ()
-                               (ivar replacee-edit get-end-position))
-                             (lambda ()
-                               (ivar replacee-edit get-start-position)))]
+                               (ivar replacee-edit get-end-position)
+			       (ivar replacee-edit get-start-position))]
                          [done? (if (= 1 searching-direction)
                                   <=
                                   >=)])

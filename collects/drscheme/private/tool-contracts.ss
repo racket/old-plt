@@ -715,6 +715,15 @@
 ""
 "It only returns \\scheme|#f| if the program not running"
 "in the context of a repl (eg, the test suite window).")
+  
+(drscheme:rep:current-value-port
+ (-> (union false? port?))
+ ()
+ "This is a parameter whose value is a port that"
+ "prints in the REPL in blue. It is used to print"
+ "the values of toplevel expressions in the REPL."
+ ""
+ "It is only initialized on the user's thread")
 
 (drscheme:rep:which-number-snip
  (case->

@@ -1,7 +1,6 @@
 #|
 
-WARNING: printf is rebound in the mosdule to always print
-to the original stdout of DrScheme.
+not to forget: teachpakcs
 
 ;; we don't use the built in debugging, use our own
 ;; version here that has no bug icon and only
@@ -17,6 +16,7 @@ to the original stdout of DrScheme.
            (prefix pc: (lib "pconvert.ss"))
            (lib "unitsig.ss")
            (lib "class.ss")
+           (lib "list.ss")
            (lib "tool.ss" "drscheme")
            (lib "mred.ss" "mred"))
   
@@ -242,25 +242,154 @@ to the original stdout of DrScheme.
           
           (define/override (get-style-delta)
             (get-htdp-style-delta))
+          
+          (inherit get-reader)
+          (define/override (front-end/complete-program input settings)
+            (let-values ([(port source offset line col) (drscheme:language:open-program-for-reading input)])
+              (let ([state 'init]
+                    [reader (get-reader)])
+                (lambda ()
+                  (case state
+                    [(init)
+                     (with-syntax ([(body-exp ...) 
+                                    (let loop ()
+                                      (let ([result (reader source port (list line col offset))])
+                                        (if (eof-object? result)
+                                            null
+                                            (cons result (loop)))))]
+                                   [language-module (get-module)])
+                       (set! state 'require)
+                       (let* ([mod (expand (syntax (module #%htdp language-module body-exp ...)))]
+                              [r-mod (rewrite-module mod)])
+                         ;(oprintf "~s\n" (syntax-object->datum mod))
+                         ;(oprintf "~s\n" (syntax-object->datum r-mod))
+                         r-mod))]
+                    [(require) 
+                     (set! state 'done)
+                     (syntax (require #%htdp))]
+                    [(done) eof])))))
+
           (super-instantiate ())))
-                                                                                          
 
-                                                                                    
-;;                                                      ;;                   ;;     
- ;                                                       ;                    ;     
- ;                                                       ;                    ;     
- ; ;;   ;;;;  ; ;;;    ;;; ;;;; ;   ;;;;  ; ;;;          ; ;;   ;;;;    ;;;   ;  ;; 
- ;;  ;      ;  ;;  ;  ;   ;  ; ; ;      ;  ;;  ;         ;;  ;      ;  ;   ;  ; ;   
- ;   ;   ;;;;  ;   ;  ;   ;  ; ; ;   ;;;;  ;   ;         ;   ;   ;;;;  ;      ;;    
- ;   ;  ;   ;  ;   ;  ;   ;  ; ; ;  ;   ;  ;   ;         ;   ;  ;   ;  ;      ; ;   
- ;   ;  ;   ;  ;   ;  ;   ;  ; ; ;  ;   ;  ;   ;         ;   ;  ;   ;  ;   ;  ;  ;  
-;;; ;;;  ;;; ;;;;  ;;  ;;;; ;; ; ;;  ;;; ;;;;  ;;       ;;; ;;;  ;;; ;  ;;;  ;;   ;;
-                          ;                                                         
-                          ;                                                         
-                       ;;;                                                          
+      ;; rewrite-module : syntax -> syntax
+      ;; rewrites te module to provide all definitions and 
+      ;; print out all results.
+      (define (rewrite-module stx)
+        (syntax-case stx (module #%plain-module-begin)
+          [(module name lang (#%plain-module-begin bodies ...))
+           (with-syntax ([(rewritten-bodies ...) 
+                          (rewrite-bodies (syntax->list (syntax (bodies ...))))])
+             (syntax (module name lang
+                       (#%plain-module-begin 
+                        rewritten-bodies ...))))]
+          [else
+           (raise-syntax-error 'htdp-languages "internal error .1")]))
       
+      ;; rewrite-bodies : (listof syntax) -> syntax
+      (define (rewrite-bodies bodies)
+        (let ([required-specs (make-hash-table 'equal)])
+          (let loop ([bodies bodies]
+                     [ids null])
+            ;(oprintf "loop: ~s\n" (length bodies))
+            (cond
+              [(null? bodies) 
+               (list
+                (with-syntax ([(ids ...) ids])
+                  (syntax (provide ids ...))))]
+              [else
+               (let ([body (car bodies)])
+                 (syntax-case body (define-values define-syntaxes require require-for-syntax provide)
+                   [(define-values (new-vars ...) e)
+                    (cons body (loop (cdr bodies)
+                                     (append
+                                      ids 
+                                      (filter-ids (syntax (new-vars ...))))))]
+                   [(define-syntaxes (new-vars ...) e)
+                    (cons body (loop (cdr bodies)
+                                     (append
+                                      ids 
+                                      (filter-ids (syntax (new-vars ...))))))]
+                   [(require specs ...)
+                    '(for-each (lambda (spec)
+                                 (syntax-case spec (prefix all-except rename)
+                                   [(prefix identifier module-name) 
+                                    (hash-table-put! required-specs
+                                                     (syntax-object->datum (syntax module-name)) 
+                                                     (syntax module-name))]
+                                   [(all-except module-name identifer ...) 
+                                    (hash-table-put! required-specs
+                                                     (syntax-object->datum (syntax module-name))
+                                                     (syntax module-name))]
+                                   [(rename module-name local-identifer exported-identifer)
+                                    (hash-table-put! required-specs 
+                                                     (syntax-object->datum (syntax module-name))
+                                                     (syntax module-name))]
+                                   [module-name
+                                    (hash-table-put! required-specs 
+                                                     (syntax-object->datum (syntax module-name))
+                                                     (syntax module-name))]))
+                               (syntax->list (syntax (specs ...))))
+                    (loop (cdr bodies) ids)]
+                   [(require-for-syntax specs ...)
+                    (cons body (loop (cdr bodies) ids))]
+                   [(provide specs ...)
+                    (loop (cdr bodies) ids)]
+                   [else 
+                    (let ([new-exp
+                           (with-syntax ([body body]
+                                         [drscheme:rep:current-value-port drscheme:rep:current-value-port])
+                             (syntax 
+                              (let ([already-exited? #f])
+                                (dynamic-wind
+                                 void
+                                 (lambda ()
+                                   (let ([value body])
+                                     (unless already-exited?
+                                       (print value (drscheme:rep:current-value-port))
+                                       (newline (drscheme:rep:current-value-port)))
+                                     value))
+                                 (lambda ()
+                                   (set! already-exited? #t))))))])
+                      (cons new-exp (loop (cdr bodies) ids)))]))]))))
+      
+      ;; filter-ids : syntax[list] -> listof syntax
+      (define (filter-ids ids)
+        ;; When a `define-values' or `define-syntax' declaration
+        ;; is macro-generated, if the defined name also originates
+        ;; from a macro, then the name is hidden to anything
+        ;; that wasn't generated by the same macro invocation. This
+        ;; hiding relies on renaming at the symbol level, and it's
+        ;; exposed by the fact that `syntax-e' of the identifier 
+        ;; returns a different name than `identifier-binding'.
+        (filter
+         (lambda (id)
+           (let ([ib (identifier-binding id)])
+             ;; ib should always be a 4-elem list, but
+             ;; check, just in case:
+             (or (not (pair? ib)) 
+                 (eq? (syntax-e id)
+                      (cadr ib)))))
+         (syntax->list ids)))
+                 
 
-
+;                                                                                              
+;                                                                                              
+;                                                                                              
+;   ;                                                             ;                     ;      
+;   ;                                                             ;                     ;      
+;   ;                                                             ;                     ;      
+;   ; ;;    ;;;    ; ;;     ;; ;   ; ;;  ;;    ;;;    ; ;;        ; ;;    ;;;     ;;;   ;   ;  
+;   ;;  ;  ;   ;   ;;  ;   ;  ;;   ;;  ;;  ;  ;   ;   ;;  ;       ;;  ;  ;   ;   ;   ;  ;  ;   
+;   ;   ;      ;   ;   ;  ;    ;   ;   ;   ;      ;   ;   ;       ;   ;      ;  ;       ; ;    
+;   ;   ;   ;;;;   ;   ;  ;    ;   ;   ;   ;   ;;;;   ;   ;       ;   ;   ;;;;  ;       ;;;    
+;   ;   ;  ;   ;   ;   ;  ;    ;   ;   ;   ;  ;   ;   ;   ;       ;   ;  ;   ;  ;       ;  ;   
+;   ;   ;  ;   ;   ;   ;   ;  ;;   ;   ;   ;  ;   ;   ;   ;       ;   ;  ;   ;   ;   ;  ;   ;  
+;   ;   ;   ;;;;;  ;   ;    ;; ;   ;   ;   ;   ;;;;;  ;   ;       ;   ;   ;;;;;   ;;;   ;    ; 
+;                              ;                                                               
+;                         ;    ;                                                               
+;                          ;;;;                                                                
+                 
+                 
       ;; this inspector should be powerful enough to see
       ;; any structure defined in the user's namespace
       (define drscheme-inspector (current-inspector))
@@ -270,26 +399,26 @@ to the original stdout of DrScheme.
                (define drscheme-inspector ,drscheme-inspector)))
       (namespace-require 'drscheme-secrets)
       
-
-
-;                                                               
-;                                                               
-;                                                               
-;                                                               
-;                                                               
-;                                 ;                             
-;    ;;;   ; ;  ; ;   ;;;    ; ; ;;;;  ; ;  ;;;     ;;;    ;;;  
-;   ;   ;  ;;   ;;   ;   ;   ;;   ;    ;;  ;   ;   ;   ;  ;   ; 
-;  ;    ;  ;    ;   ;     ;  ;    ;    ;       ;  ;      ;    ; 
-;  ;;;;;;  ;    ;   ;     ;  ;    ;    ;    ;;;;  ;      ;;;;;; 
-;  ;       ;    ;   ;     ;  ;    ;    ;   ;   ;  ;      ;      
-;   ;      ;    ;    ;   ;   ;    ;    ;   ;   ;   ;   ;  ;     
-;    ;;;;  ;    ;     ;;;    ;     ;;  ;    ;;;;;   ;;;    ;;;; 
-;                                                               
-;                                                               
-;                                                               
-                                                                             
-                                                                             
+      
+      
+      ;                                                               
+      ;                                                               
+      ;                                                               
+      ;                                                               
+      ;                                                               
+      ;                                 ;                             
+      ;    ;;;   ; ;  ; ;   ;;;    ; ; ;;;;  ; ;  ;;;     ;;;    ;;;  
+      ;   ;   ;  ;;   ;;   ;   ;   ;;   ;    ;;  ;   ;   ;   ;  ;   ; 
+      ;  ;    ;  ;    ;   ;     ;  ;    ;    ;       ;  ;      ;    ; 
+      ;  ;;;;;;  ;    ;   ;     ;  ;    ;    ;    ;;;;  ;      ;;;;;; 
+      ;  ;       ;    ;   ;     ;  ;    ;    ;   ;   ;  ;      ;      
+      ;   ;      ;    ;    ;   ;   ;    ;    ;   ;   ;   ;   ;  ;     
+      ;    ;;;;  ;    ;     ;;;    ;     ;;  ;    ;;;;;   ;;;    ;;;; 
+      ;                                                               
+      ;                                                               
+      ;                                                               
+      
+      
       
       
       ;; cm-key : symbol
@@ -316,7 +445,7 @@ to the original stdout of DrScheme.
             (when (string? src)
               (display src (current-error-port))
               (display ": " (current-error-port))))
-            
+          
           (if (exn? exn)
               (display (exn-message exn) (current-error-port))
               (fprintf (current-error-port) "uncaught exception: ~e" exn))
@@ -369,9 +498,9 @@ to the original stdout of DrScheme.
                             [mark (make-st-mark `(,source ,(- start-position 1) . ,span))]
                             [cm-key cm-key])
                 #`(with-continuation-mark
-                   'cm-key
-                   mark
-                  expr))
+                      'cm-key
+                    mark
+                    expr))
               expr)))
       
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -385,7 +514,7 @@ to the original stdout of DrScheme.
       (define (register-profile-start . x) #f)
       (define (register-profile-done . x) (void))
       
-
+      
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;
       ;;  test coverage
@@ -395,23 +524,23 @@ to the original stdout of DrScheme.
       (define current-test-coverage-info (make-parameter #f))
       
       (define (initialize-test-coverage-point key expr)
-	(unless (current-test-coverage-info)
-	  (let ([ht (make-hash-table)])
-	    (current-test-coverage-info ht)
-	    (let ([rep (drscheme:rep:current-rep)])
-	      (when rep
-		(send rep set-test-coverage-info
-		      ht
-		      (let ([s (make-object style-delta%)])
-			(send s set-delta-foreground "black")
-			s)
-		      (let ([s (make-object style-delta%)])
-			(send s set-delta-foreground "firebrick")
-			s)
-		      #f)))))
-	(hash-table-put! (current-test-coverage-info)
-			 key
-			 (list #f expr)))
+        (unless (current-test-coverage-info)
+          (let ([ht (make-hash-table)])
+            (current-test-coverage-info ht)
+            (let ([rep (drscheme:rep:current-rep)])
+              (when rep
+                (send rep set-test-coverage-info
+                      ht
+                      (let ([s (make-object style-delta%)])
+                        (send s set-delta-foreground "black")
+                        s)
+                      (let ([s (make-object style-delta%)])
+                        (send s set-delta-foreground "firebrick")
+                        s)
+                      #f)))))
+        (hash-table-put! (current-test-coverage-info)
+                         key
+                         (list #f expr)))
       
       (define (test-covered key)
         (let ([v (hash-table-get (current-test-coverage-info) key)])
@@ -432,37 +561,23 @@ to the original stdout of DrScheme.
                    (oe annotated)))])
           teaching-language-eval-handler))
       
-
-
-                                                                      
-                               ;                         ;;;    ;;;   
-                ;                    ;                     ;      ;   
-                ;                    ;                     ;      ;   
-; ;;;  ;;  ;;  ;;;;;         ;;;    ;;;;;         ;;;;     ;      ;   
- ;   ;  ;   ;   ;              ;     ;                ;    ;      ;   
- ;   ;  ;   ;   ;              ;     ;             ;;;;    ;      ;   
- ;   ;  ;   ;   ;              ;     ;            ;   ;    ;      ;   
- ;   ;  ;   ;   ;   ;          ;     ;   ;        ;   ;    ;      ;   
- ;;;;    ;;; ;   ;;;         ;;;;;    ;;;          ;;; ; ;;;;;; ;;;;;;
- ;                                                                    
- ;                                                                    
-;;;                                                                   
-
       
-                                                        
-                                   ;;                   
-  ;                           ;     ;                   
-  ;                           ;     ;                   
- ;;;;;   ;;;    ;;; ;  ;;;   ;;;;;  ; ;;    ;;;   ; ;;; 
-  ;     ;   ;  ;   ;  ;   ;   ;     ;;  ;  ;   ;   ;    
-  ;     ;   ;  ;   ;  ;;;;;   ;     ;   ;  ;;;;;   ;    
-  ;     ;   ;  ;   ;  ;       ;     ;   ;  ;       ;    
-  ;   ; ;   ;  ;   ;  ;   ;   ;   ; ;   ;  ;   ;   ;    
-   ;;;   ;;;    ;;;;   ;;;     ;;; ;;; ;;;  ;;;   ;;;;  
-                   ;                                    
-                   ;                                    
-                ;;;                                     
-
+;                                                                                                                
+;                                                                                                                
+;                                                                                                                
+;                            ;                   ;   ;                                        ;                  
+;                                                ;   ;                                        ;                  
+;                   ;            ;               ;   ;       ;                           ;    ;                  
+;   ; ;;    ;   ;  ;;;;      ;  ;;;;      ;;;    ;   ;      ;;;;   ;;;     ;; ;    ;;;  ;;;;  ; ;;     ;;;   ; ; 
+;   ;;  ;   ;   ;   ;        ;   ;       ;   ;   ;   ;       ;    ;   ;   ;  ;;   ;   ;  ;    ;;  ;   ;   ;  ;;  
+;   ;    ;  ;   ;   ;        ;   ;           ;   ;   ;       ;   ;     ; ;    ;  ;    ;  ;    ;   ;  ;    ;  ;   
+;   ;    ;  ;   ;   ;        ;   ;        ;;;;   ;   ;       ;   ;     ; ;    ;  ;;;;;;  ;    ;   ;  ;;;;;;  ;   
+;   ;    ;  ;   ;   ;        ;   ;       ;   ;   ;   ;       ;   ;     ; ;    ;  ;       ;    ;   ;  ;       ;   
+;   ;;  ;   ;  ;;   ;        ;   ;       ;   ;   ;   ;       ;    ;   ;   ;  ;;   ;      ;    ;   ;   ;      ;   
+;   ; ;;     ;; ;    ;;      ;    ;;      ;;;;;  ;   ;        ;;   ;;;     ;; ;    ;;;;   ;;  ;   ;    ;;;;  ;   
+;   ;                                                                         ;                                  
+;   ;                                                                    ;    ;                                  
+;   ;                                                                     ;;;;                                   
       
       
       ;; add-htdp-language : (instanceof htdp-language<%>) -> void
@@ -478,7 +593,7 @@ to the original stdout of DrScheme.
              (module-based-language-extension
               (drscheme:language:simple-module-based-language->module-based-language-mixin
                simple-htdp-language%))))))
-      
+        
         (add-htdp-language
          (instantiate htdp-language% ()
            (one-line-summary (string-constant advanced-one-line-summary))

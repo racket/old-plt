@@ -157,7 +157,7 @@ WXSCC = $(CXX) $(WXSCFLAGS) $(LOCALFLAGS) -c
 $(OBJDIR)/wxscheme.o : wxscheme.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) wxsmred.h wrap.inc cwrap.inc
 	$(WXSCC) wxscheme.cxx -o $(OBJDIR)/wxscheme.o 
 
-$(OBJDIR)/xcglue.o : ../../mzscheme/utils/xcglue.c ../../mzscheme/utils/xcglue.h ../../mzscheme/src/stypes.h
+$(OBJDIR)/xcglue.o : ../../mzscheme/utils/xcglue.c ../../mzscheme/utils/xcglue.h $(WXSCHEMEHEADERS)
 	$(WXSCC) ../../mzscheme/utils/xcglue.c -o $(OBJDIR)/xcglue.o
 
 $(OBJDIR)/wxscomon.o : wxscomon.cxx $(WXSCHEMEHEADERS)

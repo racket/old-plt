@@ -2171,7 +2171,7 @@ char *wxMediaEdit::GetText(long start, long end, Bool flatt, Bool forceCR, long 
 	s[p + offset - 1] = '\n';
       p += offset;
 
-      delete[] t;
+      /* delete[] t; - not needed */
     }
     total += num;
     snip = snip->next;
@@ -2380,10 +2380,10 @@ void StandardWordbreak(wxMediaEdit *win, long *startp, long *endp,
     while ((end < lend) && nonbreak(text[end]))
       end++;
 
-    if ((end == lend) && (lend != tend)) {
+    if ((end == lend) && ((lend + lstart) != tend)) {
       delete[] text;
-      text = (unsigned char *)win->GetText(lstart, lend);
-      tend = lend;
+      text = (unsigned char *)win->GetText(lstart, lstart + lend);
+      lend = tend - lstart;
       goto try_end_again;
     }
 

@@ -1060,8 +1060,8 @@
 		  (set-size 0 0 gc-width gc-height)
 		  (get-client-size bw bh))
 		(send* gc-canvas
-		  (user-min-width (+ gc-width (- gc-width (unbox bw))))
-		  (user-min-height (+ gc-height (- gc-height (unbox bh))))
+		  (user-min-client-width gc-width)
+		  (user-min-client-height gc-height)
 		  (stretchable-in-x #f)
 		  (stretchable-in-y #f)))
 	      (send* info-panel 

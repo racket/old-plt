@@ -1,5 +1,5 @@
 ;;
-;; $Id: contkids.ss,v 1.36 1997/07/11 20:09:43 krentel Exp robby $
+;; $Id: contkids.ss,v 1.37 1997/07/11 21:33:09 robby Exp robby $
 ;;
 
 ; need to export:
@@ -137,7 +137,9 @@
                 get-height
                 get-x
                 get-y
-                get-parent)
+                get-parent
+		get-client-size
+		get-size)
 	    
               (rename
                 [super-set-size set-size])
@@ -184,6 +186,31 @@
                                         ; gets/sets user's requirement for minimum width.  Errors out
                                         ; if new value is not a non-negative real number.  Forces a
                                         ; redraw upon a set.
+		[user-min-client-width
+		 (case-lambda 
+		  [() (let ([b (box 0)])
+			(get-client-size b (box 0))
+			(unbox b))]
+		  [(new-width)
+		   (let ([c-box (box 0)]
+			 [a-box (box 0)])
+		     (get-client-size c-box (box 0))
+		     (get-size a-box (box 0))
+		     (user-min-width (+ new-width 
+					(- (unbox a-box) (unbox c-box)))))])]
+		[user-min-client-height
+		 (case-lambda 
+		  [() (let ([b (box 0)])
+			(get-client-size (box 0) b)
+			(unbox b))]
+		  [(new-height)
+		   (let ([c-box (box 0)]
+			 [a-box (box 0)])
+		     (get-client-size (box 0) c-box)
+		     (get-size (box 0) a-box)
+		     (user-min-height (+ new-height 
+					 (- (unbox a-box) (unbox c-box)))))])]
+
                 [user-min-width
                   (make-item-param
                     this 0 non-negative-number?

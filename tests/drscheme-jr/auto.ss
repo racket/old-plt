@@ -161,6 +161,8 @@
   (define explicit-inexact? (not mz?))
   (define abbrev-list? (not beg?))
   (define mzscheme? mz?)
+  (define single-and/or-ok? mz?)
+  (define nonbool-and/or-ok? (not beg?))
 
   (define (mk-diff flag?)
     (lambda (x other)
@@ -181,6 +183,7 @@
   (define nl-diff (mk-diff named-let?))
   (define ei-diff (mk-diff explicit-inexact?))
   (define al-diff (mk-diff abbrev-list?))
+  (define sao-diff (mk-diff single-and/or-ok?))
 
   (start-copy jr-out copy-out #f)
   (start-copy jr-err copy-err #f)
@@ -444,7 +447,7 @@
 
       (try "let" '(error "undefined")))
 	
-  ;; ;;;;;;;;;;;;;;;;;; when. unless ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; ;;;;;;;;;;;;;;;;;; when, unless ;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   (if imperative?
 
@@ -473,6 +476,37 @@
 	(try "when" '(error "undefined"))
 	(try "unless" '(error "undefined"))))
   
+  ;; ;;;;;;;;;;;;;;;;;; and, or ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  
+  (try '(and #t #t) "#t")
+  (try '(and #t #f) "#f")
+  (try '(and #f #t) "#f")
+  (try '(and #f #f) "#f")
+  (try '(or #t #t) "#t")
+  (try '(or #t #f) "#t")
+  (try '(or #f #t) "#t")
+  (try '(or #f #f) "#f")
+
+  (try '(and) (sao-diff "#t" '(error "Malformed and")))
+  (try '(or) (sao-diff "#f" '(error "Malformed or")))
+    
+  (try '(and #t) (sao-diff "#t" '(error "Malformed and")))
+  (try '(or #t) (sao-diff "#t" '(error "Malformed or")))
+  (try '(and #f) (sao-diff "#f" '(error "Malformed and")))
+  (try '(or #f) (sao-diff "#f" '(error "Malformed or")))
+
+  (try '(and 7) (sao-diff "7" '(error "Malformed and")))
+  (try '(or 14) (sao-diff "14" '(error "Malformed or")))
+
+  (try '(and 9 7) (cb-diff '(error "neither #t nor #f") "7"))
+  (try '(or 9 7) (cb-diff '(error "neither #t nor #f") "9"))
+  (try '(and #t 7) (cb-diff '(error "neither #t nor #f") "7"))
+  (try '(or #f 7) (cb-diff '(error "neither #t nor #f") "7"))
+  (try '(and #f 7) "#f")
+  (try '(or #t 7) "#t")
+  (try '(and 1 #f #f) (cb-diff '(error "neither #t nor #f") "#f"))
+  (try '(or 3 #t #t) (cb-diff '(error "neither #t nor #f") "3"))
+
   ;; ;;;;;;;;;;;;;;;;;; set!, begin, begin0, do, delay ;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   (if imperative?

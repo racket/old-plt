@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.184 1999/05/13 02:20:10 mflatt Exp $
+; $Id: scm-main.ss,v 1.185 1999/05/21 12:53:28 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1201,73 +1201,93 @@
   (add-primitivized-macro-form 'letrec advanced-vocabulary (make-letrec-macro #t))
   (add-primitivized-macro-form 'letrec scheme-vocabulary (make-letrec-macro #t))
 
-  (define (make-or boolean-result?)
+  (define (make-or-macro boolean-result? one-or-zero-ok?)
     (let* ((kwd '())
-	    (in-pattern-1 '(_))
-	    (out-pattern-1 '#f)
-	    (in-pattern-2 '(_ e))
-	    (out-pattern-2 (if (not boolean-result?)
-			     'e
-			     '(if e #t #f)))
-	    (in-pattern-3 '(_ e0 e1 ...))
-	    (out-pattern-3 (if (not boolean-result?)
-			     '(let ((t e0)) (if t t (or e1 ...)))
-			     '(if e0 #t (or e1 ...))))
-	    (m&e-1 (pat:make-match&env in-pattern-1 kwd))
-	    (m&e-2 (pat:make-match&env in-pattern-2 kwd))
-	    (m&e-3 (pat:make-match&env in-pattern-3 kwd)))
+	   (in-pattern-1 '(_))
+	   (out-pattern-1 '#f)
+	   (in-pattern-2 '(_ e))
+	   (out-pattern-2 (if (not boolean-result?)
+			      'e
+			      '(if e #t #f)))
+	   (in-pattern-3 '(_ e0 e1))
+	   (out-pattern-3 (if (not boolean-result?)
+			      '(let ((t e0)) (if t t e1))
+			      '(if e0 #t (if e1 #t #f))))
+	   (in-pattern-4 '(_ e0 e1 ...))
+	   (out-pattern-4 (if (not boolean-result?)
+			      '(let ((t e0)) (if t t (or e1 ...)))
+			      '(if e0 #t (or e1 ...))))
+	   (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	   (m&e-2 (pat:make-match&env in-pattern-2 kwd))
+	   (m&e-3 (pat:make-match&env in-pattern-3 kwd))
+	   (m&e-4 (pat:make-match&env in-pattern-4 kwd)))
       (lambda (expr env)
-	(let ((p-env (pat:match-against m&e-1 expr env)))
+	(let ((p-env (and one-or-zero-ok?
+			  (pat:match-against m&e-1 expr env))))
 	  (if p-env
-	    (pat:pexpand out-pattern-1 p-env kwd)
-	    (or (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
-	      (pat:match-and-rewrite expr m&e-3 out-pattern-3 kwd env)
-	      (static-error expr "Malformed or")))))))
+	      (pat:pexpand out-pattern-1 p-env kwd)
+	      (or (and one-or-zero-ok? 
+		       (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env))
+		  (and (not one-or-zero-ok?)
+		       (pat:match-and-rewrite expr m&e-3 out-pattern-3 kwd env))
+		  (pat:match-and-rewrite expr m&e-4 out-pattern-4 kwd env)
+		  (static-error expr "Malformed or")))))))
 
-  (add-primitivized-macro-form 'or beginner-vocabulary (make-or #t))
-  (add-primitivized-macro-form 'or intermediate-vocabulary (make-or #f))
-  (add-primitivized-macro-form 'or scheme-vocabulary (make-or #f))
+  (add-primitivized-macro-form 'or beginner-vocabulary (make-or-macro #t #f))
+  (add-primitivized-macro-form 'or advanced-vocabulary (make-or-macro #f #f))
+  (add-primitivized-macro-form 'or scheme-vocabulary (make-or-macro #f #t))
 
   (add-primitivized-macro-form
     'nor
     beginner-vocabulary
     (let* ((kwd '())
-	    (in-pattern '(_ e0 ...))
-	    (out-pattern '(#%not (or e0 ...)))
-	    (m&e (pat:make-match&env in-pattern kwd)))
+	   (in-pattern '(_ e0 e1 ...))
+	   (out-pattern '(#%not (or e0 e1 ...)))
+	   (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env)
 	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
-	  (static-error expr "Malformed nor")))))
+	    (static-error expr "Malformed nor")))))
+
+  (define (make-and-macro boolean-result? one-or-zero-ok?)
+    (let* ((kwd '())
+	   (in-pattern-1 '(_))
+	   (out-pattern-1 '#t)
+	   (in-pattern-2 '(_ e))
+	   (out-pattern-2 'e)
+	   (in-pattern-3 '(_ e0 e1))
+	   (out-pattern-3 (if (not boolean-result?)
+			      '(if e0 e1 #f)
+			      '(if e0 (if e1 #t #f) #f)))
+	   (in-pattern-4 '(_ e0 e1 ...))
+	   (out-pattern-4 '(if e0 (and e1 ...) #f))
+	   (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	   (m&e-2 (pat:make-match&env in-pattern-2 kwd))
+	   (m&e-3 (pat:make-match&env in-pattern-3 kwd))
+	   (m&e-4 (pat:make-match&env in-pattern-4 kwd)))
+      (lambda (expr env)
+	(or (and one-or-zero-ok?
+		 (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd env))
+	    (and one-or-zero-ok?
+		 (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env))
+	    (and (not one-or-zero-ok?)
+		 (pat:match-and-rewrite expr m&e-3 out-pattern-3 kwd env))
+	    (pat:match-and-rewrite expr m&e-4 out-pattern-4 kwd env)
+	    (static-error expr "Malformed and")))))
+
+  (add-primitivized-macro-form 'and beginner-vocabulary (make-and-macro #t #f))
+  (add-primitivized-macro-form 'and advanced-vocabulary (make-and-macro #f #f))
+  (add-primitivized-macro-form 'and scheme-vocabulary (make-and-macro #f #t))
 
   (add-primitivized-macro-form
-    'and
-    common-vocabulary
-    (let* ((kwd '())
-	    (in-pattern-1 '(_))
-	    (out-pattern-1 '#t)
-	    (in-pattern-2 '(_ e))
-	    (out-pattern-2 'e)
-	    (in-pattern-3 '(_ e0 e1 ...))
-	    (out-pattern-3 '(if e0 (and e1 ...) #f))
-	    (m&e-1 (pat:make-match&env in-pattern-1 kwd))
-	    (m&e-2 (pat:make-match&env in-pattern-2 kwd))
-	    (m&e-3 (pat:make-match&env in-pattern-3 kwd)))
-      (lambda (expr env)
-	(or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd env)
-	  (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
-	  (pat:match-and-rewrite expr m&e-3 out-pattern-3 kwd env)
-	  (static-error expr "Malformed and")))))
-
-  (add-primitivized-macro-form
-    'nand
-    beginner-vocabulary
-    (let* ((kwd '())
-	    (in-pattern '(_ e0 ...))
-	    (out-pattern '(#%not (and e0 ...)))
-	    (m&e (pat:make-match&env in-pattern kwd)))
-      (lambda (expr env)
-	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
-	  (static-error expr "Malformed nand")))))
+   'nand
+   beginner-vocabulary
+   (let* ((kwd '())
+	  (in-pattern '(_ e0 e1 ...))
+	  (out-pattern '(#%not (and e0 e1 ...)))
+	  (m&e (pat:make-match&env in-pattern kwd)))
+     (lambda (expr env)
+       (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	   (static-error expr "Malformed nand")))))
 
   (define recur-macro
       (let* ((kwd '())

@@ -221,8 +221,14 @@ byte string that is not a UTF-8 encoding will never correspond to a
 pathname under Windows.
 
 ======================================================================
- Classes in (lib "class.ss")
+ Classes
 ======================================================================
+
+Changes to the `(lib "class.ss")' object system are in two parts: a
+syntactic clean-up for super calls, and new constructs for
+augment-only methods. Meanwhile, keywords such as `public' are now
+bound to syntactic forms that report out-of-context uses (much like
+`unquote' and `unquote-splicing').
 
 Super Calls
 -----------
@@ -366,12 +372,15 @@ ignored).
 In general:
 
                Can use `inner'?    Can use `super'?
-    public         N                    N
-    pubment        Y                    N
-    override       N                    Y
-    augment        Y                    N
-    overment       Y                    Y
-    augride        N                    N
+    public          N                    N
+    pubment         Y                    N
+    override        N                    Y
+    augment         Y                    N
+    overment        Y                    Y
+    augride         N                    N
+    public-final    N                    N
+    override-final  N                    Y
+    augment-final   N                    N
 
 
 The `rename-inner' form is similar to `rename-super'. Like

@@ -128,6 +128,8 @@ static MX_PRIM mxPrims[] = {
   { mx_com_object_eq,"com-object-eq?",2,2 },
   { mx_com_register_object,"com-register-object",1,1 },  
   { mx_com_release_object,"com-release-object",1,1 },  
+  { mx_com_add_ref,"com-add-ref",1,1 },  
+  { mx_com_ref_count,"com-ref-count",1,1 },  
 
   // COM termination
 
@@ -463,7 +465,7 @@ void mx_register_object(Scheme_Object *obj,IUnknown *pIUnknown,
   }
 
   /* we should not have to do this */
-  pIUnknown->AddRef(); 
+  // pIUnknown->AddRef(); 
 
   scheme_register_finalizer(obj,release_fun,pIUnknown,NULL,NULL);
   scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,
@@ -471,6 +473,38 @@ void mx_register_object(Scheme_Object *obj,IUnknown *pIUnknown,
 		     (Scheme_Object *)obj,
 		     (Scheme_Close_Manager_Client *)release_fun,
 		     pIUnknown,0);
+}
+
+Scheme_Object *mx_com_add_ref(int argc,Scheme_Object **argv) {
+  IDispatch *pIDispatch;
+
+  if (MX_COM_OBJP(argv[0]) == FALSE) {
+    scheme_wrong_type("com-add-ref","com-object",0,argc,argv);
+  }
+
+  pIDispatch = MX_COM_OBJ_VAL(argv[0]);
+
+  pIDispatch->AddRef();
+  
+  return scheme_void;
+}
+
+Scheme_Object *mx_com_ref_count(int argc,Scheme_Object **argv) {
+  IDispatch *pIDispatch;
+  unsigned long n;
+
+  if (MX_COM_OBJP(argv[0]) == FALSE) {
+    scheme_wrong_type("com-add-ref","com-object",0,argc,argv);
+  }
+
+  pIDispatch = MX_COM_OBJ_VAL(argv[0]);
+
+  n = pIDispatch->AddRef();
+  n--;
+
+  pIDispatch->Release();
+
+  return scheme_make_integer_value_from_unsigned(n);
 }
 
 void mx_register_com_object(Scheme_Object *obj,IDispatch *pIDispatch) {

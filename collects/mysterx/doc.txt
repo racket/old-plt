@@ -521,6 +521,19 @@ _MysterX_
   Returns #t if the argument is a COM object, #f
   otherwise.
 
+> (com-add-ref a-com-object)
+ 
+  Increments the reference count for a COM object.
+  This procedure should only be called when system-level 
+  errors occur due to a mismanaged COM object.  Ordinarily,
+  MysterX handles all COM reference-counting automatically.
+  See also `com-ref-count'.
+
+> (com-ref-count a-com-object)
+
+  Returns a number indicating the current reference count
+  for a COM object.  See also `com-add-ref'.
+
 _DCOM_
 ======
 _Remote COM servers_

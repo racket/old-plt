@@ -20,6 +20,8 @@
   (define com-set-property-type mxprims:com-set-property-type)
   (define com-event-type mxprims:com-event-type)
   (define com-object-type mxprims:com-object-type)
+  (define com-add-ref mxprims:com-add-ref)
+  (define com-ref-count mxprims:com-ref-count)
   (define com-is-a? mxprims:com-is-a?)
   (define com-currency? mxprims:com-currency?)
   (define number->com-currency mxprims:number->com-currency)

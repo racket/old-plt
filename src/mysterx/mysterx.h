@@ -299,6 +299,8 @@ MX_PRIM_DECL(mx_com_object_eq);
 MX_PRIM_DECL(mx_com_object_pred);
 MX_PRIM_DECL(mx_com_register_object);
 MX_PRIM_DECL(mx_com_release_object);
+MX_PRIM_DECL(mx_com_add_ref);
+MX_PRIM_DECL(mx_com_ref_count);
 MX_PRIM_DECL(mx_com_get_object_type);
 MX_PRIM_DECL(mx_com_is_a);
 MX_PRIM_DECL(mx_com_help);

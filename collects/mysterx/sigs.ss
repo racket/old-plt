@@ -15,6 +15,8 @@
    com-set-property-type
    com-event-type
    com-object-type
+   com-add-ref	
+   com-ref-count	
    com-is-a?
    com-help
    com-register-event-handler
@@ -94,6 +96,8 @@
    com-object-eq?
    com-register-object
    com-release-object
+   com-add-ref
+   com-ref-count
    make-browser
    browser-show
    navigate

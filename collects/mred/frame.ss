@@ -493,7 +493,7 @@
 	       (edit-menu:after-standard-items edit-menu)
 	       
 	       (let ([mb (super-make-menu-bar)])
-		 (send mb append file-menu "&File")
+		 (send mb append file-menu (if (eq? wx:platform 'windows) "&File" "F&ile"))
 		 (send mb append edit-menu "&Edit")
 		 mb))])
 	  (sequence

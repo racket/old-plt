@@ -3,6 +3,10 @@ _parser-tools_
 This documentation assumes familiarity with lex and yacc style lexer
 and parser generators.
 
+CHANGE: Regular expression of the form (symbol) are no longer valid and symbol
+regular expressions alway refer to abbreviations and do not match the string of
+characters in the symbol anymore.
+
 CHANGE: Parsers can now specify multiple start symbols.  A parser with
 only one start symbol behaves as before.  When multiple start symbols
 are present, a list of functions is created by the parser form, one
@@ -14,14 +18,13 @@ bound in the action.
 
 _lex.ss_
 A regular expression is one of the following
+symbol                             expand the lex abbreviation whose name 
+				   is symbol
 character                          match the given character
-symbol                             match the sequence of chars in the symbol
 				   beware of mzscheme converting the 
 				   symbol to all lower case
 string                             match its sequence of characters
 (eof)				   match end of file
-(symbol)                           expand the lex abbreviation whose name 
-				   is symbol
 (* re)                             match 0 or more occurrences of re
 (+ re)                             match 1 or more occurrences of re
 (? re)                             match 0 or 1 occurrence of re
@@ -31,12 +34,7 @@ string                             match its sequence of characters
 				   (a single character symbol or string can
 				    be used as a character here)
 (^ char_or_range ...1)             match any character not listed
-(the null concatenation `(@) means epsilon)
-
-WARNING: symbol and (symbol) are quite different.  If letter has been
-defined as an abbreviation for (: (- a z) (- "A" "Z")), then (letter)
-will match a letter, while letter will match the sequence l-e-t-t-e-r.
-Leaving off the () is a common mistake.
+(the null concatenation `(@) and the empty string "" both mean epsilon)
 
 To use the _lexer generator_ you must (require (lib "lex.ss" "parser-tools")).
 This gives you the following syntactic forms:

@@ -2,7 +2,8 @@
   
   ;; the parse function that builds an ast.
   
-  (require "structs.ss")
+  (require "structs.ss"
+           (lib "stx.ss" "syntax"))
 
   (provide parse)
   
@@ -10,9 +11,8 @@
   ;; re = char                       match the given character
   ;;    | (make-marker nat)          cannot match, a placeholder used in the 
   ;;                                   dfa algorithm
-  ;;    | symbol                     match the sequence of chars in the symbol
   ;;    | string                     match its sequence of characters
-  ;;    | (symbol)                   expand the lex abbreviation named symbol
+  ;;    | symbol                     expand the lex abbreviation named symbol
   ;;    | (* re)                     match 0 or more re
   ;;    | (+ re)                     match 1 or more re
   ;;    | (? re)                     match 0 or 1 re
@@ -20,7 +20,7 @@
   ;;    | (@ re ...)                 match each re in succession
   ;;    | (- char char)              match any character between two (inclusive)
   ;;    | (^ char_or_range ...1)     match any character not listed
-  ;; (the null concatenation `(@) means epsilon)
+  ;; (the null concatenation `(@) means epsilon as does "")
   
   
   ;; make-range : int * int -> char list
@@ -82,143 +82,129 @@
   ;; parse : syntax-object -> re-ast
   ;; checks for errors and generates the ast for s
   (define (parse s)
-    (syntax-case s ()
-      (obj
-       (char? (syntax-object->datum (syntax obj)))
-       (make-syms (list (syntax-object->datum (syntax obj))) -1))
-      (obj
-       (marker? (syntax-object->datum (syntax obj)))
-       (make-syms (syntax-object->datum (syntax obj)) -1))
-      (obj
-       (or (string? (syntax-object->datum (syntax obj))) 
-           (symbol? (syntax-object->datum (syntax obj))))
-       (let* ((obj (syntax-object->datum (syntax obj)))
-              (l (string->list 
-                  (if (symbol? obj)
-                      (symbol->string obj)
-                      obj))))
-         (cond
-           ((= 0 (length l)) (make-epsilon))
-           ((= 1 (length l)) (make-syms l -1))
-           (else (parse-assoc make-concat 
-                              (map (lambda (x) (make-syms (list x) -1)) l))))))
-      (()
-       (raise-syntax-error
-        'regular-expression
-        "invalid regular expression"
-        s))
-      ((oper args ...)
-       (let* ((op (syntax-object->datum (syntax oper)))
-              (ar (syntax->list (syntax (args ...))))
-              (num-args (length ar)))
-         (cond
-           ((and (eq? op 'eof) (= num-args 0))
-            (make-syms eof -1))
-           ((eq? op 'eof)
-            (num-arg-err s 0 num-args))
-           ((and (eq? op '*) (= 1 num-args))
-            (make-kstar (parse (car ar))))
-           ((eq? op '*)
-            (num-arg-err s 1 num-args))
-           ((and (eq? op '+) (= num-args 1))
-            (let ((arg (parse (car ar))))
-              (make-concat arg (make-kstar arg))))
-           ((eq? op '+)
-            (num-arg-err s 1 num-args))
-           ((and (eq? op '?) (= num-args 1))
-            (make-altern (make-epsilon) (parse (car ar))))
-           ((eq? op '?)
-            (num-arg-err s 1 num-args))
-           ((and (eq? op ':) (> num-args 1))
-            (let* ((parts (group-chars (map parse ar)))
-                   (l (length parts)))
-              (if (= 1 l)
-                  (car parts)
-                  (parse-assoc make-altern parts))))
-           ((and (eq? op ':) (= num-args 1))
-            (parse (car ar)))
-           ((eq? op ':)
-            (num-arg-err s "at least 1" num-args))
-           ((and (eq? op '@) (= num-args 0))
-            (make-epsilon))
-           ((and (eq? op '@) (= num-args 1))
-            (parse (car ar)))
-           ((and (eq? op '@))
-            (parse-assoc make-concat (map parse ar)))
-           ((and (eq? op '-) (= num-args 2))
-            (let ((c1 (parse (car ar)))
-                  (c2 (parse (cadr ar))))
-              (if (and (syms? c1) (syms? c2)
-                       (list? (syms-chars c1)) (list? (syms-chars c2))
-                       (null? (cdr (syms-chars c1))) 
-                       (null? (cdr (syms-chars c2))))
-                  (let ((i1 (char->integer (car (syms-chars c1))))
-                        (i2 (char->integer (car (syms-chars c2)))))
-                    (if (<= i1 i2)
-                        (make-syms (make-range i1 i2) -1)
-                        (raise-syntax-error
-                         'regular-expression
-                         (format "first argument ~a does not preceed second argument ~a" 
-                                 (integer->char i1) 
-                                 (integer->char i2))
-                         s)))
-                  (raise-syntax-error
-                   'regular-expression
-                   (format "expects single character arguments, given ~a and ~a"
-                           (syntax-object->datum (car ar))
-                           (syntax-object->datum (cadr ar)))
-                   s))))
-           ((eq? op '-)
-            (num-arg-err s 2 num-args))
-           ((and (eq? op '^) (> num-args 0))
-            (letrec ((res (map parse ar))
-                     (v (make-vector 256 #t)))
-              (if (not (andmap (lambda (x)
-                                 (and (syms? x)
-                                      (list? (syms-chars x))))
-                               res))
-                  (raise-syntax-error
-                   'regular-expression
-                   (format 
-                    "expects single character or character range arguments, given ~a"
-                    (map syntax-object->datum ar))
-                    s))
-              (for-each (lambda (sym)
-                          (for-each (lambda (char)
-                                      (vector-set! v (char->integer char) #f))
-                                    (syms-chars sym)))
-                        res)
-              (make-syms
-               (let loop ((i 0))
-                 (cond
-                   ((= i 256) null)
-                   ((vector-ref v i)
-                    (cons (integer->char i) (loop (add1 i))))
-                   (else
-                    (loop (add1 i)))))
-               -1)))
-           ((eq? op '^)
-            (num-arg-err s "at least 1" num-args))
-           ((identifier? (syntax oper))
-            (let ((expand (syntax-local-value (syntax oper) (lambda () #f))))
-              (if (lex-abbrev? expand)
-                  (if (= 0 num-args)
-                      (parse (lex-abbrev-abbrev expand))
-                      (num-arg-err s 0 num-args))
-                  (raise-syntax-error
-                   'regular-expresssion
-                   "invalid operator or abbreviation"
-                   s))))
-           (else
-            (raise-syntax-error
-             'regular-expression
-             "invalid operator or abbreviation"
-             s)))))
-      (_
-       (raise-syntax-error
-        'regular-expression
-        "invalid regular expression"
-        s))))
+    (let ((s-e (syntax-e s)))
+      (cond
+        ((char? s-e) (make-syms (list s-e) -1))
+        ((marker? s-e) (make-syms s-e -1))
+        ((string? s-e)
+         (let ((l (string->list s-e)))
+           (cond
+             ((= 0 (length l)) (make-epsilon))
+             ((= 1 (length l)) (make-syms l -1))
+             (else (parse-assoc make-concat 
+                                (map (lambda (x) (make-syms (list x) -1)) l))))))
+        ((symbol? s-e)
+         (let ((expand (syntax-local-value s (lambda () #f))))
+           (unless (lex-abbrev? expand)
+             (raise-syntax-error 'regular-expresssion "undefined abbreviation" s))
+           (parse (lex-abbrev-abbrev expand))))
+        ((stx-null? s)
+         (raise-syntax-error 'regular-expression "invalid regular expression" s))
+        ((stx-list? s)
+         (let* ((ar (stx->list (stx-cdr s)))
+                (num-args (length ar)))
+           (case (syntax-e (stx-car s))
+             ((eof)
+              (unless (= num-args 0)
+                (num-arg-err s 0 num-args))
+              (make-syms eof -1))
+             ((*)
+              (unless (= num-args 1)
+                (num-arg-err s 1 num-args))
+              (make-kstar (parse (car ar))))
+             ((+)
+              (unless (= num-args 1)
+                (num-arg-err s 1 num-args))
+              (let ((arg (parse (car ar))))
+                (make-concat arg (make-kstar arg))))
+             ((?)
+              (unless (= num-args 1)
+                (num-arg-err s 1 num-args))
+              (make-altern (make-epsilon) (parse (car ar))))
+             ((:)
+              (cond
+                ((> num-args 1)
+                 (let* ((parts (group-chars (map parse ar)))
+                        (l (length parts)))
+                   (if (= 1 l)
+                       (car parts)
+                       (parse-assoc make-altern parts))))
+                ((= num-args 1)
+                 (parse (car ar)))
+                (else
+                 (num-arg-err s "at least 1" num-args))))
+             ((@)
+              (cond
+                ((= num-args 0)
+                 (make-epsilon))
+                ((= num-args 1)
+                 (parse (car ar)))
+                (else
+                 (parse-assoc make-concat (map parse ar)))))
+             ((-)
+              (unless (= num-args 2)
+                (num-arg-err s 2 num-args))
+              (let ((c1 (parse (car ar)))
+                    (c2 (parse (cadr ar))))
+                (if (and (syms? c1) (syms? c2)
+                         (list? (syms-chars c1)) (list? (syms-chars c2))
+                         (null? (cdr (syms-chars c1))) 
+                         (null? (cdr (syms-chars c2))))
+                    (let ((i1 (char->integer (car (syms-chars c1))))
+                          (i2 (char->integer (car (syms-chars c2)))))
+                      (if (<= i1 i2)
+                          (make-syms (make-range i1 i2) -1)
+                          (raise-syntax-error
+                           'regular-expression
+                           (format "first argument ~a does not preceed second argument ~a" 
+                                   (integer->char i1) 
+                                   (integer->char i2))
+                           s)))
+                    (raise-syntax-error
+                     'regular-expression
+                     (format "expects single character arguments, given ~a and ~a"
+                             (syntax-object->datum (car ar))
+                             (syntax-object->datum (cadr ar)))
+                     s))))
+             ((^)
+              (unless (> num-args 0)
+                (num-arg-err s "at least 1" num-args))
+              (letrec ((res (map parse ar))
+                       (v (make-vector 256 #t)))
+                (if (not (andmap (lambda (x)
+                                   (and (syms? x)
+                                        (list? (syms-chars x))))
+                                 res))
+                    (raise-syntax-error
+                     'regular-expression
+                     (format 
+                      "expects single character or character range arguments, given ~a"
+                      (map syntax-object->datum ar))
+                     s))
+                (for-each (lambda (sym)
+                            (for-each (lambda (char)
+                                        (vector-set! v (char->integer char) #f))
+                                      (syms-chars sym)))
+                          res)
+                (make-syms
+                 (let loop ((i 0))
+                   (cond
+                     ((= i 256) null)
+                     ((vector-ref v i)
+                      (cons (integer->char i) (loop (add1 i))))
+                     (else
+                      (loop (add1 i)))))
+                 -1)))
+             (else
+              (raise-syntax-error
+               'regular-expression
+               "invalid operator"
+               s)))))
+        (else
+         (raise-syntax-error
+          'regular-expression
+          "invalid regular expression"
+          s)))))
   )
         
 

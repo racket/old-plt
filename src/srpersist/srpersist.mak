@@ -41,10 +41,10 @@ srpmain.dll : $(DEF_FILE) $(LINK32_OBJS)
 	$(LINK32) $(LINK32_FLAGS) --ld srpmain.dll $(LINK32_OBJS) $(LINK32_LIBS)
 
 install : srpmain.dll
-	@ -255 mkdir ..\..\collects\srpersist\compiled\native
-	@ -255 mkdir ..\..\collects\srpersist\compiled\native\win32
-	@ -255 mkdir ..\..\collects\srpersist\compiled\native\win32\i386
-	copy srpmain.dll ..\..\collects\srpersist\compiled\native\win32\i386
+	@ -255 mkdir ..\..\collects\srpersist\lib
+	@ -255 mkdir ..\..\collects\srpersist\lib\win32
+	@ -255 mkdir ..\..\collects\srpersist\lib\win32\i386
+	copy srpmain.dll ..\..\collects\srpersist\lib\win32\i386
 
 srpersist.obj : srpersist.cxx srpersist.h srptypes.h srpprims.tbl srpconsts.tbl srpinfo.tbl srpstructs.tbl srpexns.tbl
 

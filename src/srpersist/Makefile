@@ -18,7 +18,7 @@ OBJS=srpersist.o srpbuffer.o srptypes.o
 
 ARCH=`archsys`
  
-NATIVE_DIR=../../collects/srpersist/compiled/native/$(ARCH)
+NATIVE_DIR=../../collects/srpersist/lib/$(ARCH)
 
 .cxx.o ::
 	$(CPP) $(CPP_FLAGS) $<  

@@ -25,10 +25,6 @@ NULL=
 NULL=nul
 !ENDIF 
 
-CPP=cl.exe
-MTL=midl.exe
-RSC=rc.exe
-
 !IF  "$(CFG)" == "libmzsch - Win32 Release"
 
 OUTDIR=.\Release
@@ -104,7 +100,42 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MT /W3 /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /I "..\..\mzscheme\src" /I "..\..\foreign\libffi_msvc" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "__STDC__" /D "_USRDLL" /D "GC_DLL" /Fp"$(INTDIR)\libmzsch.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP=cl.exe
+CPP_PROJ=/nologo /MT /W3 /Zi /O2 /I ".." /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /I "..\..\mzscheme\src" /I "..\..\foreign\libffi_msvc" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "__STDC__" /D "_USRDLL" /D "GC_DLL" /Fp"$(INTDIR)\libmzsch.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+MTL=midl.exe
+MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
+RSC=rc.exe
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmzsch.bsc" 
 BSC32_SBRS= \
@@ -240,7 +271,42 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MTd /W3 /Zi /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /I "..\..\mzscheme\src" /I "..\..\foreign\libffi_msvc" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "__STDC__" /D "_USRDLL" /D "GC_DLL" /Fp"$(INTDIR)\libmzsch.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP=cl.exe
+CPP_PROJ=/nologo /MTd /W3 /Zi /Od /I ".." /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /I "..\..\mzscheme\src" /I "..\..\foreign\libffi_msvc" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "__STDC__" /D "_USRDLL" /D "GC_DLL" /Fp"$(INTDIR)\libmzsch.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+MTL=midl.exe
+MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
+RSC=rc.exe
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmzsch.bsc" 
 BSC32_SBRS= \
@@ -302,37 +368,6 @@ LINK32_OBJS= \
 
 !ENDIF 
 
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
 !IF EXISTS("libmzsch.dep")
@@ -617,24 +652,24 @@ SOURCE=..\..\foreign\libffi_msvc\win32.c
 !IF  "$(CFG)" == "libmzsch - Win32 Release"
 
 "libmzgc - Win32 Release" : 
-   cd "..\libmzgc"
+   cd "\Matthew\plt\src\worksp\libmzgc"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Release" 
    cd "..\libmzsch"
 
 "libmzgc - Win32 ReleaseCLEAN" : 
-   cd "..\libmzgc"
+   cd "\Matthew\plt\src\worksp\libmzgc"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Release" RECURSE=1 CLEAN 
    cd "..\libmzsch"
 
 !ELSEIF  "$(CFG)" == "libmzsch - Win32 Debug"
 
 "libmzgc - Win32 Debug" : 
-   cd "..\libmzgc"
+   cd "\Matthew\plt\src\worksp\libmzgc"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Debug" 
    cd "..\libmzsch"
 
 "libmzgc - Win32 DebugCLEAN" : 
-   cd "..\libmzgc"
+   cd "\Matthew\plt\src\worksp\libmzgc"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\libmzsch"
 

@@ -25,10 +25,6 @@ NULL=
 NULL=nul
 !ENDIF 
 
-CPP=cl.exe
-MTL=midl.exe
-RSC=rc.exe
-
 !IF  "$(CFG)" == "libmred - Win32 Release"
 
 OUTDIR=.\Release
@@ -62,7 +58,42 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBMRED_EXPORTS" /D "GC_DLL" /Fp"$(INTDIR)\libmred.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP=cl.exe
+CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /I ".." /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBMRED_EXPORTS" /D "GC_DLL" /Fp"$(INTDIR)\libmred.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+MTL=midl.exe
+MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
+RSC=rc.exe
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmred.bsc" 
 BSC32_SBRS= \
@@ -122,33 +153,8 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBMRED_EXPORTS" /D "GC_DLL" /Fp"$(INTDIR)\libmred.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmred.bsc" 
-BSC32_SBRS= \
-	
-LINK32=link.exe
-LINK32_FLAGS=../libmzsch/debug/libmzschxxxxxxx.lib ../libmzgc/debug/libmzgcxxxxxxx.lib ../wxs/debug/wxs.lib ../wxme/debug/wxme.lib ../wxutils/debug/wxutils.lib ../jpeg/debug/jpeg.lib ../png/debug/png.lib ../zlib/debug/zlib.lib unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib comctl32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmredxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmredxxxxxxx.dll" /implib:"$(OUTDIR)\libmredxxxxxxx.lib" 
-LINK32_OBJS= \
-	"$(INTDIR)\MRED.obj" \
-	"$(INTDIR)\MREDMSW.obj" \
-	"$(INTDIR)\uniplt.obj" \
-	"..\jpeg\Debug\jpeg.lib" \
-	"..\wxs\Debug\wxs.lib" \
-	"..\wxutils\Debug\wxutils.lib" \
-	"..\wxwin\Debug\wxwin.lib" \
-	"..\libmzgc\Debug\libmzgcxxxxxxx.lib" \
-	"..\libmzsch\Debug\libmzschxxxxxxx.lib" \
-	"..\wxme\Debug\wxme.lib" \
-	"..\png\Debug\png.lib" \
-	"..\zlib\Debug\zlib.lib"
-
-"..\..\..\libmredxxxxxxx.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
-
-!ENDIF 
+CPP=cl.exe
+CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /I ".." /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBMRED_EXPORTS" /D "GC_DLL" /Fp"$(INTDIR)\libmred.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -180,7 +186,36 @@ LINK32_OBJS= \
    $(CPP_PROJ) $< 
 <<
 
+MTL=midl.exe
 MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
+RSC=rc.exe
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmred.bsc" 
+BSC32_SBRS= \
+	
+LINK32=link.exe
+LINK32_FLAGS=../libmzsch/debug/libmzschxxxxxxx.lib ../libmzgc/debug/libmzgcxxxxxxx.lib ../wxs/debug/wxs.lib ../wxme/debug/wxme.lib ../wxutils/debug/wxutils.lib ../jpeg/debug/jpeg.lib ../png/debug/png.lib ../zlib/debug/zlib.lib unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib comctl32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmredxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmredxxxxxxx.dll" /implib:"$(OUTDIR)\libmredxxxxxxx.lib" 
+LINK32_OBJS= \
+	"$(INTDIR)\MRED.obj" \
+	"$(INTDIR)\MREDMSW.obj" \
+	"$(INTDIR)\uniplt.obj" \
+	"..\jpeg\Debug\jpeg.lib" \
+	"..\wxs\Debug\wxs.lib" \
+	"..\wxutils\Debug\wxutils.lib" \
+	"..\wxwin\Debug\wxwin.lib" \
+	"..\libmzgc\Debug\libmzgcxxxxxxx.lib" \
+	"..\libmzsch\Debug\libmzschxxxxxxx.lib" \
+	"..\wxme\Debug\wxme.lib" \
+	"..\png\Debug\png.lib" \
+	"..\zlib\Debug\zlib.lib"
+
+"..\..\..\libmredxxxxxxx.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+!ENDIF 
+
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
 !IF EXISTS("libmred.dep")
@@ -213,24 +248,24 @@ SOURCE=..\mzscheme\uniplt.c
 !IF  "$(CFG)" == "libmred - Win32 Release"
 
 "jpeg - Win32 Release" : 
-   cd "..\jpeg"
+   cd "\Matthew\plt\src\worksp\jpeg"
    $(MAKE) /$(MAKEFLAGS) /F .\jpeg.mak CFG="jpeg - Win32 Release" 
    cd "..\libmred"
 
 "jpeg - Win32 ReleaseCLEAN" : 
-   cd "..\jpeg"
+   cd "\Matthew\plt\src\worksp\jpeg"
    $(MAKE) /$(MAKEFLAGS) /F .\jpeg.mak CFG="jpeg - Win32 Release" RECURSE=1 CLEAN 
    cd "..\libmred"
 
 !ELSEIF  "$(CFG)" == "libmred - Win32 Debug"
 
 "jpeg - Win32 Debug" : 
-   cd "..\jpeg"
+   cd "\Matthew\plt\src\worksp\jpeg"
    $(MAKE) /$(MAKEFLAGS) /F .\jpeg.mak CFG="jpeg - Win32 Debug" 
    cd "..\libmred"
 
 "jpeg - Win32 DebugCLEAN" : 
-   cd "..\jpeg"
+   cd "\Matthew\plt\src\worksp\jpeg"
    $(MAKE) /$(MAKEFLAGS) /F .\jpeg.mak CFG="jpeg - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\libmred"
 
@@ -239,24 +274,24 @@ SOURCE=..\mzscheme\uniplt.c
 !IF  "$(CFG)" == "libmred - Win32 Release"
 
 "wxs - Win32 Release" : 
-   cd "..\wxs"
+   cd "\Matthew\plt\src\worksp\wxs"
    $(MAKE) /$(MAKEFLAGS) /F .\wxs.mak CFG="wxs - Win32 Release" 
    cd "..\libmred"
 
 "wxs - Win32 ReleaseCLEAN" : 
-   cd "..\wxs"
+   cd "\Matthew\plt\src\worksp\wxs"
    $(MAKE) /$(MAKEFLAGS) /F .\wxs.mak CFG="wxs - Win32 Release" RECURSE=1 CLEAN 
    cd "..\libmred"
 
 !ELSEIF  "$(CFG)" == "libmred - Win32 Debug"
 
 "wxs - Win32 Debug" : 
-   cd "..\wxs"
+   cd "\Matthew\plt\src\worksp\wxs"
    $(MAKE) /$(MAKEFLAGS) /F .\wxs.mak CFG="wxs - Win32 Debug" 
    cd "..\libmred"
 
 "wxs - Win32 DebugCLEAN" : 
-   cd "..\wxs"
+   cd "\Matthew\plt\src\worksp\wxs"
    $(MAKE) /$(MAKEFLAGS) /F .\wxs.mak CFG="wxs - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\libmred"
 
@@ -265,24 +300,24 @@ SOURCE=..\mzscheme\uniplt.c
 !IF  "$(CFG)" == "libmred - Win32 Release"
 
 "wxutils - Win32 Release" : 
-   cd "..\wxutils"
+   cd "\Matthew\plt\src\worksp\wxutils"
    $(MAKE) /$(MAKEFLAGS) /F .\wxutils.mak CFG="wxutils - Win32 Release" 
    cd "..\libmred"
 
 "wxutils - Win32 ReleaseCLEAN" : 
-   cd "..\wxutils"
+   cd "\Matthew\plt\src\worksp\wxutils"
    $(MAKE) /$(MAKEFLAGS) /F .\wxutils.mak CFG="wxutils - Win32 Release" RECURSE=1 CLEAN 
    cd "..\libmred"
 
 !ELSEIF  "$(CFG)" == "libmred - Win32 Debug"
 
 "wxutils - Win32 Debug" : 
-   cd "..\wxutils"
+   cd "\Matthew\plt\src\worksp\wxutils"
    $(MAKE) /$(MAKEFLAGS) /F .\wxutils.mak CFG="wxutils - Win32 Debug" 
    cd "..\libmred"
 
 "wxutils - Win32 DebugCLEAN" : 
-   cd "..\wxutils"
+   cd "\Matthew\plt\src\worksp\wxutils"
    $(MAKE) /$(MAKEFLAGS) /F .\wxutils.mak CFG="wxutils - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\libmred"
 
@@ -291,24 +326,24 @@ SOURCE=..\mzscheme\uniplt.c
 !IF  "$(CFG)" == "libmred - Win32 Release"
 
 "wxwin - Win32 Release" : 
-   cd "..\wxwin"
+   cd "\Matthew\plt\src\worksp\wxwin"
    $(MAKE) /$(MAKEFLAGS) /F .\wxwin.mak CFG="wxwin - Win32 Release" 
    cd "..\libmred"
 
 "wxwin - Win32 ReleaseCLEAN" : 
-   cd "..\wxwin"
+   cd "\Matthew\plt\src\worksp\wxwin"
    $(MAKE) /$(MAKEFLAGS) /F .\wxwin.mak CFG="wxwin - Win32 Release" RECURSE=1 CLEAN 
    cd "..\libmred"
 
 !ELSEIF  "$(CFG)" == "libmred - Win32 Debug"
 
 "wxwin - Win32 Debug" : 
-   cd "..\wxwin"
+   cd "\Matthew\plt\src\worksp\wxwin"
    $(MAKE) /$(MAKEFLAGS) /F .\wxwin.mak CFG="wxwin - Win32 Debug" 
    cd "..\libmred"
 
 "wxwin - Win32 DebugCLEAN" : 
-   cd "..\wxwin"
+   cd "\Matthew\plt\src\worksp\wxwin"
    $(MAKE) /$(MAKEFLAGS) /F .\wxwin.mak CFG="wxwin - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\libmred"
 
@@ -317,24 +352,24 @@ SOURCE=..\mzscheme\uniplt.c
 !IF  "$(CFG)" == "libmred - Win32 Release"
 
 "libmzgc - Win32 Release" : 
-   cd "..\libmzgc"
+   cd "\Matthew\plt\src\worksp\libmzgc"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Release" 
    cd "..\libmred"
 
 "libmzgc - Win32 ReleaseCLEAN" : 
-   cd "..\libmzgc"
+   cd "\Matthew\plt\src\worksp\libmzgc"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Release" RECURSE=1 CLEAN 
    cd "..\libmred"
 
 !ELSEIF  "$(CFG)" == "libmred - Win32 Debug"
 
 "libmzgc - Win32 Debug" : 
-   cd "..\libmzgc"
+   cd "\Matthew\plt\src\worksp\libmzgc"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Debug" 
    cd "..\libmred"
 
 "libmzgc - Win32 DebugCLEAN" : 
-   cd "..\libmzgc"
+   cd "\Matthew\plt\src\worksp\libmzgc"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\libmred"
 
@@ -343,24 +378,24 @@ SOURCE=..\mzscheme\uniplt.c
 !IF  "$(CFG)" == "libmred - Win32 Release"
 
 "libmzsch - Win32 Release" : 
-   cd "..\libmzsch"
+   cd "\Matthew\plt\src\worksp\libmzsch"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzsch.mak CFG="libmzsch - Win32 Release" 
    cd "..\libmred"
 
 "libmzsch - Win32 ReleaseCLEAN" : 
-   cd "..\libmzsch"
+   cd "\Matthew\plt\src\worksp\libmzsch"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzsch.mak CFG="libmzsch - Win32 Release" RECURSE=1 CLEAN 
    cd "..\libmred"
 
 !ELSEIF  "$(CFG)" == "libmred - Win32 Debug"
 
 "libmzsch - Win32 Debug" : 
-   cd "..\libmzsch"
+   cd "\Matthew\plt\src\worksp\libmzsch"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzsch.mak CFG="libmzsch - Win32 Debug" 
    cd "..\libmred"
 
 "libmzsch - Win32 DebugCLEAN" : 
-   cd "..\libmzsch"
+   cd "\Matthew\plt\src\worksp\libmzsch"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzsch.mak CFG="libmzsch - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\libmred"
 
@@ -369,24 +404,24 @@ SOURCE=..\mzscheme\uniplt.c
 !IF  "$(CFG)" == "libmred - Win32 Release"
 
 "wxme - Win32 Release" : 
-   cd "..\wxme"
+   cd "\Matthew\plt\src\worksp\wxme"
    $(MAKE) /$(MAKEFLAGS) /F .\wxme.mak CFG="wxme - Win32 Release" 
    cd "..\libmred"
 
 "wxme - Win32 ReleaseCLEAN" : 
-   cd "..\wxme"
+   cd "\Matthew\plt\src\worksp\wxme"
    $(MAKE) /$(MAKEFLAGS) /F .\wxme.mak CFG="wxme - Win32 Release" RECURSE=1 CLEAN 
    cd "..\libmred"
 
 !ELSEIF  "$(CFG)" == "libmred - Win32 Debug"
 
 "wxme - Win32 Debug" : 
-   cd "..\wxme"
+   cd "\Matthew\plt\src\worksp\wxme"
    $(MAKE) /$(MAKEFLAGS) /F .\wxme.mak CFG="wxme - Win32 Debug" 
    cd "..\libmred"
 
 "wxme - Win32 DebugCLEAN" : 
-   cd "..\wxme"
+   cd "\Matthew\plt\src\worksp\wxme"
    $(MAKE) /$(MAKEFLAGS) /F .\wxme.mak CFG="wxme - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\libmred"
 
@@ -395,24 +430,24 @@ SOURCE=..\mzscheme\uniplt.c
 !IF  "$(CFG)" == "libmred - Win32 Release"
 
 "png - Win32 Release" : 
-   cd "..\png"
+   cd "\Matthew\plt\src\worksp\png"
    $(MAKE) /$(MAKEFLAGS) /F .\png.mak CFG="png - Win32 Release" 
    cd "..\libmred"
 
 "png - Win32 ReleaseCLEAN" : 
-   cd "..\png"
+   cd "\Matthew\plt\src\worksp\png"
    $(MAKE) /$(MAKEFLAGS) /F .\png.mak CFG="png - Win32 Release" RECURSE=1 CLEAN 
    cd "..\libmred"
 
 !ELSEIF  "$(CFG)" == "libmred - Win32 Debug"
 
 "png - Win32 Debug" : 
-   cd "..\png"
+   cd "\Matthew\plt\src\worksp\png"
    $(MAKE) /$(MAKEFLAGS) /F .\png.mak CFG="png - Win32 Debug" 
    cd "..\libmred"
 
 "png - Win32 DebugCLEAN" : 
-   cd "..\png"
+   cd "\Matthew\plt\src\worksp\png"
    $(MAKE) /$(MAKEFLAGS) /F .\png.mak CFG="png - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\libmred"
 
@@ -421,24 +456,24 @@ SOURCE=..\mzscheme\uniplt.c
 !IF  "$(CFG)" == "libmred - Win32 Release"
 
 "zlib - Win32 Release" : 
-   cd "..\zlib"
+   cd "\Matthew\plt\src\worksp\zlib"
    $(MAKE) /$(MAKEFLAGS) /F .\zlib.mak CFG="zlib - Win32 Release" 
    cd "..\libmred"
 
 "zlib - Win32 ReleaseCLEAN" : 
-   cd "..\zlib"
+   cd "\Matthew\plt\src\worksp\zlib"
    $(MAKE) /$(MAKEFLAGS) /F .\zlib.mak CFG="zlib - Win32 Release" RECURSE=1 CLEAN 
    cd "..\libmred"
 
 !ELSEIF  "$(CFG)" == "libmred - Win32 Debug"
 
 "zlib - Win32 Debug" : 
-   cd "..\zlib"
+   cd "\Matthew\plt\src\worksp\zlib"
    $(MAKE) /$(MAKEFLAGS) /F .\zlib.mak CFG="zlib - Win32 Debug" 
    cd "..\libmred"
 
 "zlib - Win32 DebugCLEAN" : 
-   cd "..\zlib"
+   cd "\Matthew\plt\src\worksp\zlib"
    $(MAKE) /$(MAKEFLAGS) /F .\zlib.mak CFG="zlib - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\libmred"
 

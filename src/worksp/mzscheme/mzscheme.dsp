@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "GC_DLL" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I ".." /I "..\..\mzscheme\include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "GC_DLL" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -54,7 +54,7 @@ LINK32=link.exe
 # SUBTRACT LINK32 /pdb:none /nodefaultlib
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
-PostBuild_Cmds=cd ..\..\mzscheme\dynsrc	mkmzdyn.bat	cd ..\..\worksp\mzscheme
+PostBuild_Cmds=cd ..\..\mzscheme\dynsrc	mkmzdyn.bat	cd ..\..\worksp\mzscheme	..\..\..\mzscheme.exe -qr ..\..\mzscheme\mkincludes.ss ..\..\.. ..
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 Debug"
@@ -72,7 +72,7 @@ PostBuild_Cmds=cd ..\..\mzscheme\dynsrc	mkmzdyn.bat	cd ..\..\worksp\mzscheme
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "USE_MSVC_MD_LIBRARY" /YX /FD /c
-# ADD CPP /nologo /MTd /W3 /GX /Zi /Od /I "..\..\mzscheme\include" /D "WIN32" /D "DEBUG" /D "_CONSOLE" /D "GC_DLL" /YX /FD /c
+# ADD CPP /nologo /MTd /W3 /GX /Zi /Od /I ".." /I "..\..\mzscheme\include" /D "WIN32" /D "DEBUG" /D "_CONSOLE" /D "GC_DLL" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -85,7 +85,7 @@ LINK32=link.exe
 # SUBTRACT LINK32 /pdb:none
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
-PostBuild_Cmds=cd ..\..\mzscheme\dynsrc	mkmzdyn.bat	cd ..\..\worksp\mzscheme
+PostBuild_Cmds=cd ..\..\mzscheme\dynsrc	mkmzdyn.bat	cd ..\..\worksp\mzscheme	..\..\..\mzscheme.exe -qr ..\..\mzscheme\mkincludes.ss ..\..\.. ..
 # End Special Build Tool
 
 !ENDIF 

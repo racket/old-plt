@@ -25,9 +25,6 @@ NULL=
 NULL=nul
 !ENDIF 
 
-CPP=cl.exe
-RSC=rc.exe
-
 !IF  "$(CFG)" == "mzscheme - Win32 Release"
 
 OUTDIR=.\..\..\..\..\plt
@@ -65,7 +62,41 @@ CLEAN :
 "$(INTDIR)" :
     if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
 
-CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "GC_DLL" /Fp"$(INTDIR)\mzscheme.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP=cl.exe
+CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /I ".." /I "..\..\mzscheme\include" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "GC_DLL" /Fp"$(INTDIR)\mzscheme.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+RSC=rc.exe
+RSC_PROJ=/l 0x409 /fo"$(INTDIR)\mzscheme.res" /d "NDEBUG" 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\mzscheme.bsc" 
 BSC32_SBRS= \
@@ -97,6 +128,7 @@ $(DS_POSTBUILD_DEP) : "libmzgc - Win32 Release" "libmzsch - Win32 Release" "$(OU
    cd ..\..\mzscheme\dynsrc
 	mkmzdyn.bat
 	cd ..\..\worksp\mzscheme
+	..\..\..\mzscheme.exe -qr ..\..\mzscheme\mkincludes.ss ..\..\.. ..
 	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 Debug"
@@ -130,37 +162,8 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /I "..\..\mzscheme\include" /D "WIN32" /D "DEBUG" /D "_CONSOLE" /D "GC_DLL" /Fp"$(INTDIR)\mzscheme.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\mzscheme.bsc" 
-BSC32_SBRS= \
-	
-LINK32=link.exe
-LINK32_FLAGS=..\libmzgc\Debug\libmzgcxxxxxxx.lib ..\libmzsch\Debug\libmzschxxxxxxx.lib unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\MzScheme.pdb" /debug /machine:I386 /nodefaultlib:"kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib" /out:"..\..\..\MzScheme.exe" 
-LINK32_OBJS= \
-	"$(INTDIR)\Main.obj" \
-	"$(INTDIR)\uniplt.obj" \
-	"$(INTDIR)\mzscheme.res" \
-	"..\libmzsch\Debug\libmzschxxxxxxx.lib" \
-	"..\libmzgc\Debug\libmzgcxxxxxxx.lib"
-
-"..\..\..\MzScheme.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
-
-SOURCE="$(InputPath)"
-DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
-
-ALL : $(DS_POSTBUILD_DEP)
-
-$(DS_POSTBUILD_DEP) : "libmzgc - Win32 Debug" "libmzsch - Win32 Debug" "..\..\..\MzScheme.exe"
-   cd ..\..\mzscheme\dynsrc
-	mkmzdyn.bat
-	cd ..\..\worksp\mzscheme
-	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
-
-!ENDIF 
+CPP=cl.exe
+CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /I ".." /I "..\..\mzscheme\include" /D "WIN32" /D "DEBUG" /D "_CONSOLE" /D "GC_DLL" /Fp"$(INTDIR)\mzscheme.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -192,7 +195,40 @@ $(DS_POSTBUILD_DEP) : "libmzgc - Win32 Debug" "libmzsch - Win32 Debug" "..\..\..
    $(CPP_PROJ) $< 
 <<
 
+RSC=rc.exe
 RSC_PROJ=/l 0x409 /fo"$(INTDIR)\mzscheme.res" /d "NDEBUG" 
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\mzscheme.bsc" 
+BSC32_SBRS= \
+	
+LINK32=link.exe
+LINK32_FLAGS=..\libmzgc\Debug\libmzgcxxxxxxx.lib ..\libmzsch\Debug\libmzschxxxxxxx.lib unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\MzScheme.pdb" /debug /machine:I386 /nodefaultlib:"kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib" /out:"..\..\..\MzScheme.exe" 
+LINK32_OBJS= \
+	"$(INTDIR)\Main.obj" \
+	"$(INTDIR)\uniplt.obj" \
+	"$(INTDIR)\mzscheme.res" \
+	"..\libmzsch\Debug\libmzschxxxxxxx.lib" \
+	"..\libmzgc\Debug\libmzgcxxxxxxx.lib"
+
+"..\..\..\MzScheme.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+SOURCE="$(InputPath)"
+DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
+
+ALL : $(DS_POSTBUILD_DEP)
+
+$(DS_POSTBUILD_DEP) : "libmzgc - Win32 Debug" "libmzsch - Win32 Debug" "..\..\..\MzScheme.exe"
+   cd ..\..\mzscheme\dynsrc
+	mkmzdyn.bat
+	cd ..\..\worksp\mzscheme
+	..\..\..\mzscheme.exe -qr ..\..\mzscheme\mkincludes.ss ..\..\.. ..
+	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
+
+!ENDIF 
+
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
 !IF EXISTS("mzscheme.dep")
@@ -224,24 +260,24 @@ SOURCE=.\uniplt.c
 !IF  "$(CFG)" == "mzscheme - Win32 Release"
 
 "libmzsch - Win32 Release" : 
-   cd "\Matthew\plt\src\worksp\libmzsch"
+   cd "..\libmzsch"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzsch.mak CFG="libmzsch - Win32 Release" 
    cd "..\mzscheme"
 
 "libmzsch - Win32 ReleaseCLEAN" : 
-   cd "\Matthew\plt\src\worksp\libmzsch"
+   cd "..\libmzsch"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzsch.mak CFG="libmzsch - Win32 Release" RECURSE=1 CLEAN 
    cd "..\mzscheme"
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 Debug"
 
 "libmzsch - Win32 Debug" : 
-   cd "\Matthew\plt\src\worksp\libmzsch"
+   cd "..\libmzsch"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzsch.mak CFG="libmzsch - Win32 Debug" 
    cd "..\mzscheme"
 
 "libmzsch - Win32 DebugCLEAN" : 
-   cd "\Matthew\plt\src\worksp\libmzsch"
+   cd "..\libmzsch"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzsch.mak CFG="libmzsch - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\mzscheme"
 
@@ -250,24 +286,24 @@ SOURCE=.\uniplt.c
 !IF  "$(CFG)" == "mzscheme - Win32 Release"
 
 "libmzgc - Win32 Release" : 
-   cd "\Matthew\plt\src\worksp\libmzgc"
+   cd "..\libmzgc"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Release" 
    cd "..\mzscheme"
 
 "libmzgc - Win32 ReleaseCLEAN" : 
-   cd "\Matthew\plt\src\worksp\libmzgc"
+   cd "..\libmzgc"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Release" RECURSE=1 CLEAN 
    cd "..\mzscheme"
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 Debug"
 
 "libmzgc - Win32 Debug" : 
-   cd "\Matthew\plt\src\worksp\libmzgc"
+   cd "..\libmzgc"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Debug" 
    cd "..\mzscheme"
 
 "libmzgc - Win32 DebugCLEAN" : 
-   cd "\Matthew\plt\src\worksp\libmzgc"
+   cd "..\libmzgc"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\mzscheme"
 

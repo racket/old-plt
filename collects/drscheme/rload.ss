@@ -6,15 +6,9 @@
 	 (define value-ht (make-hash-table))
 	 (define mods-ht (make-hash-table))
 	 
-	 (define loading-frame (make-object frame% "Loading message"))
-	 (define loading-messages 
-	   (list (make-object message% 
-			      (apply string-append
-				     (let loop ([n (if (eq? (system-type) 'macos) 6 4)])
-				       (cond
-					 [(zero? n) null]
-					 [else (cons "abcdefghijklmnopqrstuvwxyz" (loop (- n 1)))])))
-			      loading-frame)))
+	 (define-values (display-width display-height) (get-display-size))
+	 (define loading-frame (make-object frame% "Loading message" #f (- display-width 80) #f))
+	 (define loading-messages null)
 	 
 	 (define (check-cache/force filename)
 	   (let* ([sym (string->symbol filename)]
@@ -71,7 +65,6 @@
 
    (send loading-frame set-alignment 'left 'center)
    (send loading-frame show #t)
-   (send (car loading-messages) set-label "")
 
    (lambda (fn)
      (unless (file-exists? fn)

@@ -25,8 +25,8 @@
     (case printing-setting
       [(constructor-style) 0]
       [(quasi-style) 1]
-      [(quasi-read-style) 2]
-      [(r4rs-style) 3]
+      [(quasi-read-style) 1]
+      [(r4rs-style) 2]
       [else (error 'drscheme:language:update-to "got: ~a as printing style"
 		   printing-setting)]))
 
@@ -102,16 +102,6 @@
 		     (set-setting! s i)
 		     (fw:preferences:set 'drscheme:settings s)))))
 	     panel))]
-
-;; keepers
-;  - Signal undefined variables when first referenced
-; - Unmatched cond/case is an error
-; - Case sensitive
-; - Output Style
-; - Show sharing in values
-; - Print rationals in whole/part notation
-
-
 	 
 	 [case-sensitive? (make-check-box basis:set-setting-case-sensitive?!
 					  basis:setting-case-sensitive?
@@ -132,17 +122,15 @@
 	    (case which
 	      [(0) 'constructor-style]
 	      [(1) 'quasi-style]
-	      [(2) 'quasi-read-style]
-	      [(3) 'r4rs-style]
-	      [else (error 'printing-callback "got: ~a~n" which)]))]
+	      [(2) 'r4rs-style]
+	      [else 'constructor-style]))]
 	 [printing
 	  (right-align
 	   (lambda (main)
 	     (make-object mred:choice%
 	       "Output Style"
 	       (list "Constructor"
-		     "Quasiquote (lists only)"
-		     "Quasiquote (read syntax)"
+		     "Quasiquote"
 		     "R4RS")
 	       main
 	       (lambda (box evt)

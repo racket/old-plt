@@ -9,25 +9,26 @@
 (require-library "refer.ss")
 
 (define graphical-debug? #t)
+(define textual-debug? #f)
 
 (define drscheme-custodian #f)
 (define drscheme-eventspace #f)
 
 (load-relative "start-drs.ss")
 
-(require-library "core.ss")
-(require-library "url.ss" "net")
-(require-library "sig.ss" "help")
-(invoke-open-unit/sig 
- (require-library "start-help-desk.ss" "help")
- #f
- mzlib:function^
- mzlib:string^
- mzlib:file^
- mzlib:url^
- mred^)
-
-(define (help-desk) 
+(define (help-desk)
+  (require-library "core.ss")
+  (require-library "url.ss" "net")
+  (require-library "sig.ss" "help")
+  (eval
+   '(invoke-open-unit/sig
+     (require-library "start-help-desk.ss" "help")
+     #f
+     mzlib:function^
+     mzlib:string^
+     mzlib:file^
+     mzlib:url^
+     mred^))
   (thread
    (lambda ()
      (parameterize ([current-eventspace (make-eventspace)])
@@ -44,6 +45,9 @@
 (cond
   [graphical-debug?
    (graphical-read-eval-print-loop)]
-  [else
+  [textual-debug?
    (require-library "rep.ss" "readline")
-   (read-eval-print-loop)])
+   (read-eval-print-loop)]
+  [else
+   (T)
+   (yield (make-semaphore 0))])

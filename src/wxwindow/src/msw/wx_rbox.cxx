@@ -12,7 +12,6 @@
 #include "wx.h"
 
 #define HAS_LABEL 1
-#define HAS_GROUP 2
 
 #define GROUP_CLASS      "wxBUTTON"
 #define GROUP_FLAGS      (BS_GROUPBOX|WS_CHILD|WS_VISIBLE)
@@ -162,21 +161,11 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
 
   HWND the_handle = cparent->handle;
 
-#if 0
-  ms_handle = wxwmCreateWindowEx(0, GROUP_CLASS, the_label,
-				 GROUP_FLAGS 
-				 | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-				 0, 0, 0, 0,
-				 cparent->handle, (HMENU)NewId(this),
-				 wxhInstance, NULL);
-
-#else
   ms_handle = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
 				 STATIC_FLAGS | WS_CLIPSIBLINGS
 				 | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				 0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				 wxhInstance, NULL);
-#endif
 
   HDC the_dc = GetWindowDC((HWND)ms_handle) ;
   if (labelFont && labelFont->GetInternalFont(the_dc))
@@ -439,19 +428,14 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
   float label_width = 0;
   float label_height = 0;
 
-  if (style & HAS_LABEL) {
+  if ((style & HAS_LABEL)) {
     GetWindowText((HWND)ms_handle, buf, 300);
     GetTextExtent(wxStripMenuCodes(buf), &label_width, &label_height, NULL, NULL, labelFont);
     int char_width, ignored;
     wxGetCharSize(wnd, &char_width, &ignored, labelFont);
-
-    if (style & HAS_GROUP)
-      label_width += 3 * char_width; /* space before & after label */
   } else {
-    int cw, ch;
-    wxGetCharSize(wnd, &cw, &ch, buttonFont);
-    label_height = ch;
-    label_width = cw;
+    label_height = 0;
+    label_width = 0;
   }
 
   int i;
@@ -486,34 +470,24 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
       nbHor = (no_items + majorDim - 1) / majorDim;
     }
 
-    if (!(style & HAS_GROUP)) {
-      if (labelPosition == wxHORIZONTAL)
-	hlabel = 1;
-    }
-
-    if (hlabel) {
+    if (!(style & HAS_LABEL) || (labelPosition == wxHORIZONTAL)) {
       // hieght =       items           + between & ends space
-      totHeight = (int)(nbVer*maxHeight + nbVer*maxHeight/2.0);
+      totHeight = (int)(nbVer*maxHeight + (nbVer-1)*maxHeight/2.0);
       totWidth  = label_width + (nbHor * (maxWidth + cx1)+ 2 * cx1) + label_height;
       if (totHeight < label_height)
 	totHeight = label_height;
     } else {
       // hieght =       label         + items           + between & ends space
-      totHeight = (int)(label_height + nbVer*maxHeight + nbVer*maxHeight/2.0
-			// + a little more at the end
-			+ maxHeight/4.0);
+      totHeight = (int)(label_height + nbVer*maxHeight + nbVer*maxHeight/2.0);
       totWidth  = nbHor * (maxWidth + cx1)+ 2 * cx1;
       if (totWidth < label_width)
 	totWidth = label_width;
-
     }
 
-    if (style & HAS_GROUP)
-      MoveWindow((HWND)ms_handle, x_offset, y_offset, totWidth, totHeight, TRUE);
-    else {
+    {
       int dy;
       
-      if (hlabel)
+      if ((style & HAS_LABEL) && (labelPosition == wxHORIZONTAL))
 	dy = (totHeight - label_height) / 2;
       else
 	dy = 0;
@@ -522,11 +496,11 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
     }
     ::InvalidateRect((HWND)ms_handle, NULL, TRUE);
 
-    if (hlabel) {
+    if (!(style & HAS_LABEL) || (labelPosition == wxHORIZONTAL)) {
       x_offset += label_width + (0.5 * label_height);
     } else {
       x_offset += cx1;
-      y_offset += label_height + maxHeight/4;
+      y_offset += label_height + maxHeight/2.0;
     }
 
   }

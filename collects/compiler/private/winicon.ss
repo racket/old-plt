@@ -1,6 +1,9 @@
 
 (module winicon mzscheme
-  (provide install-icon)
+  (provide install-icon
+	   extract-icons
+	   parse-icon
+	   build-icon)
 
   (define (byte->integer p)
     (char->integer (read-char p)))
@@ -8,6 +11,9 @@
     (integer-byte-string->integer (read-string 2 p) #f #f))
   (define (dword->integer p)
     (integer-byte-string->integer (read-string 4 p) #f #f))
+
+  (define (integer->dword i p)
+    (display (integer->integer-byte-string i 4 #f #f) p))
 
   (define (flag v)
     (positive? (bitwise-and #x80000000 v)))
@@ -141,8 +147,110 @@
 	    (let ([name (regexp-match "^[^\0]*" p)])
 	      (printf "~a~n" name))))))))
 
-  (define-struct icon (desc data) (make-inspector))
-  (print-struct #t)
+  (define-struct icon (desc data))
+  
+  (define (num-colors l)
+    (let ([n (caddr l)])
+      (if (zero? n)
+          (arithmetic-shift 1 (list-ref l 5))
+          n)))
+  
+  (define (install-icon exe-file ico-file)
+    (let ([ico-icons (get-icons-in-ico ico-file)]
+	  [exe-icons (get-icons-in-exe exe-file)])
+      (let ([p (open-output-file exe-file 'update)])
+	(dynamic-wind
+	 void
+	 (lambda ()
+	   (for-each (lambda (exe-icon)
+                       (let ([best-ico-icon
+                              ;; Find exact match?
+                              (ormap (lambda (ico-icon)
+                                       (let ([le (icon-desc exe-icon)]
+                                             [li (icon-desc ico-icon)])
+                                         (and (= (car li) (car le))
+                                              (= (cadr li) (cadr le))
+                                              (= (num-colors li) (num-colors le))
+                                              (= (string-length (cdr (icon-data exe-icon)))
+                                                 (string-length (cdr (icon-data ico-icon))))
+                                              ico-icon)))
+                                     ico-icons)])
+                         (let ([ico-icon (or best-ico-icon
+                                             ;; Look for a conversion, if we
+                                             ;; need a 16x16, 32x32, or 48x48
+                                             ;; icon
+                                             (and
+                                              (= (car (icon-desc exe-icon))
+                                                 (cadr (icon-desc exe-icon)))
+                                              (memq (car (icon-desc exe-icon))
+                                                    '(16 32 48))
+                                              (let ([biggest-colorest #f])
+                                                (for-each 
+						 (lambda (ico-icon)
+						   (let ([w (car (icon-desc ico-icon))]
+							 [exew (car (icon-desc exe-icon))])
+						     (when (and
+							    (= w
+							       (cadr (icon-desc ico-icon)))
+							    (memq w '(16 32 48))
+							    (or
+							     (not biggest-colorest)
+							     (and (= w exew)
+								  (not (= exew (car (icon-desc biggest-colorest)))))
+							     (and (= w exew)
+								  (> (num-colors (icon-desc ico-icon))
+								     (num-colors (icon-desc biggest-colorest))))
+							     (and (not (= exew (car (icon-desc biggest-colorest))))
+								  (or (> w (car (icon-desc biggest-colorest)))
+								      (> (num-colors (icon-desc ico-icon))
+									 (num-colors (icon-desc biggest-colorest)))))))
+							   (set! biggest-colorest ico-icon))))
+						 ico-icons)
+                                                (and
+                                                 biggest-colorest
+                                                 ;; Convert...
+                                                 (let* ([src-size (car (icon-desc biggest-colorest))]
+							[dest-size (car (icon-desc exe-icon))]
+							[src (parse-icon biggest-colorest)]
+							[image (list-ref src 3)]
+							[mask (list-ref src 4)]
+							[has-alpha? (<= 256 (num-colors (icon-desc biggest-colorest)))])
+						   (if (= src-size dest-size)
+						       (build-icon exe-icon
+								   (if has-alpha?
+								       image
+								       (mask->alpha image mask))
+								   mask)
+						       (let ([cvt
+							      (cond
+							       [(and (= src-size 32) (= dest-size 16))
+								(lambda (i) (48->16 (32->48 i)))]
+							       [(and (= src-size 32) (= dest-size 48)) 
+								32->48]
+							       [(and (= src-size 48) (= dest-size 16)) 
+								48->16]
+							       [(and (= src-size 48) (= dest-size 32))
+								48->32]
+							       [(and (= src-size 16) (= dest-size 32)) 
+								16->32]
+							      [(and (= src-size 16) (= dest-size 48)) 
+							       (lambda (i) (32->48 (16->32 i)))])])
+							 (let ([mask (cvt mask)])
+							   (build-icon exe-icon 
+								       (if has-alpha?
+									   image
+									   (mask->alpha (cvt image) mask))
+								       mask)))))))))])
+			   (unless ico-icon (printf "no! ~a~n" (icon-desc exe-icon)))
+                           (when ico-icon
+                             (file-position p (car (icon-data exe-icon)))
+                             (display (cdr (icon-data ico-icon)) p)))))
+		     exe-icons))
+	 (lambda () (close-output-port p))))))
+
+  ;; ------------------------------
+  ;;  Image parsing
+  ;; ------------------------------
 
   (define (get-icons file res?)
     (let ([p (if (input-port? file)
@@ -193,32 +301,420 @@
 	 (when (string? file)
 	       (close-input-port p))))))
 
-  (define (install-icon exe-file ico-file)
-    (let ([ico-icons (get-icons ico-file #f)]
-	  [exe-icons (let ([p (open-input-file exe-file)])
-		       (dynamic-wind
-			void
-			(lambda ()
-			  (let ([pos+size (find-rsrc-start p "^14[.]")])
-			    (file-position p (car pos+size))
-			    (get-icons p #t)))
-			(lambda () (close-input-port p))))])
-      (let ([p (open-output-file exe-file 'update)])
-	(dynamic-wind
-	 void
-	 (lambda ()
-	   (for-each (lambda (exe-icon)
-		       (for-each (lambda (ico-icon)
-				   (let ([le (icon-desc exe-icon)]
-					 [li (icon-desc ico-icon)])
-				     (when (and (= (car li) (car le))
-						(= (cadr li) (cadr le))
-						(= (caddr li) (caddr le))
-						(= (string-length (cdr (icon-data exe-icon)))
-						   (string-length (cdr (icon-data ico-icon)))))
-					   (file-position p (car (icon-data exe-icon)))
-					   (display (cdr (icon-data ico-icon)) p))))
-				 ico-icons))
-		     exe-icons))
-	 (lambda () (close-output-port p)))))))
+  (define (bitmapinfo icon)
+    (let ([p (open-input-string (cdr (icon-data icon)))])
+      (list (dword->integer p)    ; size == 40 in practice
+	    (dword->integer p)    ; width
+	    (dword->integer p)    ; height
+	    (word->integer p)     ; planes
+	    (word->integer p)     ; bitcount
+	    (dword->integer p)    ; compression == 0
+	    (dword->integer p)    ; size image
+	    (dword->integer p)    ; x pixels per meter == 0
+	    (dword->integer p)    ; y pixels per meter == 0
+	    (dword->integer p)    ; used == 0
+	    (dword->integer p)))) ; important == 0
 
+  ;; Assumes that bits-per-pixel is 1, 2, 4, 8, or 32.
+  ;; Also assumes that (bits-per-pixel * width) is a multiple of 8.
+  (define (parse-dib icon)
+    (let* ([bi (bitmapinfo icon)]
+	   [header-size (list-ref bi 0)]
+	   [num-colors (caddr (icon-desc icon))]
+	   [w (list-ref bi 1)]
+	   [h (/ (list-ref bi 2) 2)]
+	   [bits-per-pixel (list-ref bi 4)])
+      (let ([p (open-input-string (cdr (icon-data icon)))])
+	;; Skip header
+	(read-string header-size p)
+	(let* ([read-n
+		(lambda (n read-one combine)
+		  (let loop ([i n][r null])
+		    (if (= i 0)
+			(reverse! r)
+			(loop (sub1 i)
+			      (combine (read-one p) r)))))]
+	       [read-lines 
+		(lambda (w h read-one combine)
+		  (if (zero? (modulo w 4))
+		      (read-n (* w h) read-one combine)
+		      (let loop ([h h])
+			(if (zero? h)
+			    null
+			    (append (read-n w read-one combine)
+				    (begin
+				      ;; pad line to dword:
+				      (read-n (- 4 (modulo w 4)) byte->integer cons)
+				      ;; read next line:
+				      (loop (sub1 h))))))))]
+	       [split-bits (lambda (b)
+			     (list
+			      (bitwise-and b 1)
+			      (arithmetic-shift (bitwise-and b 2) -1)
+			      (arithmetic-shift (bitwise-and b 4) -2)
+			      (arithmetic-shift (bitwise-and b 8) -3)
+			      (arithmetic-shift (bitwise-and b 16) -4)
+			      (arithmetic-shift (bitwise-and b 32) -5)
+			      (arithmetic-shift (bitwise-and b 64) -6)
+			      (arithmetic-shift (bitwise-and b 128) -7)))])
+	  (let ([main-image
+		 (if (= bits-per-pixel 32)
+		     ;; RGB mode:
+		     (read-n (* w h) dword->integer cons)
+		     ;; Index mode:
+		     (let ([color-table (list->vector
+					 (read-n (if (zero? num-colors)
+						     (arithmetic-shift 1 bits-per-pixel)
+						     num-colors)
+						 dword->integer cons))]
+			   [image (read-lines (/ w (/ 8 bits-per-pixel))
+					      h
+					      (lambda (p)
+						(let ([b (byte->integer p)])
+						  (case bits-per-pixel
+						    [(1) (split-bits b)]
+						    [(2)
+						     (list
+						      (bitwise-and b 3)
+						      (arithmetic-shift (bitwise-and b 12) -2)
+						      (arithmetic-shift (bitwise-and b 48) -4)
+						      (arithmetic-shift (bitwise-and b 192) -6))]
+						    [(4)
+						     (list
+						      (bitwise-and b 15)
+						      (arithmetic-shift (bitwise-and b 240) -4))]
+						    [(8) (list b)])))
+					      append)])
+		       (map (lambda (i) (vector-ref color-table i)) image)))])
+	    (let ([mask (read-lines (/ w 8)
+				    h
+				    (lambda (p) (split-bits (byte->integer p)))
+				    append)])
+	      (unless (eof-object? (read-char p))
+		 (error 'parse-dib "not extactly at end"))
+	      (list main-image mask)))))))
+
+  ;; rgb->indexed
+  ;;  The color-reduction strategy isn't great, and because it
+  ;;  depends on hash-table order, it's non-deterministic in
+  ;;  principle. But the actual hash-table implementatin is
+  ;;  deterministic, of course. Also, the re-ordering of the
+  ;;  image via the hash tables tends to produce better
+  ;;  (pseudo-random) representatives of the image for colors.
+  (define (rgb->indexed image num-colors)
+    (let ([image (map (lambda (i) (bitwise-and #xFFFFFF i)) image)] ; drop alphas, if any
+	  [table (make-vector num-colors 0)]
+	  [ht (make-hash-table 'equal)]
+	  [map-ht (make-hash-table 'equal)]
+	  [color-dist (lambda (a b)
+			(sqrt (+ (expt (- (bitwise-and #xFF a)
+					  (bitwise-and #xFF b))
+				       2)
+				 (expt (- (arithmetic-shift (bitwise-and #xFF00 a) -8)
+					  (arithmetic-shift (bitwise-and #xFF00 b) -8))
+				       2)
+				 (expt (- (arithmetic-shift (bitwise-and #xFF0000 a) -16)
+					  (arithmetic-shift (bitwise-and #xFF0000 b) -16))
+				       2))))])
+      (for-each (lambda (c)
+		  (hash-table-put! 
+		   ht 
+		   c
+		   (add1
+		    (hash-table-get ht c (lambda () 0)))))
+		image)
+      (let ([n 0])
+	(hash-table-for-each ht (lambda (key val)
+				  (let ([n (if (< n (sub1 num-colors))
+					       n
+					       ;; Find closest match:
+					       (let ([n 0])
+						 (let loop ([i 1])
+						   (unless (= i num-colors)
+						    (when (< (color-dist key (vector-ref table i))
+							     (color-dist key (vector-ref table n)))
+						       (set! n i))
+						    (loop (add1 i))))
+						 n))])
+				    (vector-set! table n key)
+				    (hash-table-put! map-ht key n))
+				  (when (< n (sub1 num-colors))
+			            (set! n (add1 n))))))
+      (values (vector->list table)
+	      (map (lambda (c) (hash-table-get map-ht c)) image))))
+
+  ;; Assumes that bits-per-pixel is 1, 2, 4, 8, or 32.
+  ;; Also assumes that (bits-per-pixel * width) is a multiple of 8.
+  (define (build-dib icon image mask)
+    (let* ([bi (bitmapinfo icon)]
+	   [header-size (list-ref bi 0)]
+	   [num-colors (caddr (icon-desc icon))]
+	   [w (list-ref bi 1)]
+	   [h (/ (list-ref bi 2) 2)]
+	   [bits-per-pixel (list-ref bi 4)])
+      (let ([orig-p (open-input-string (cdr (icon-data icon)))]
+	    [result-p (open-output-string)])
+	;; Copy header:
+	(display (read-string header-size orig-p) result-p)
+	(let ([get-lines (lambda (image bits-per-pixel)
+			   (map (lambda (line)
+				  ;; pad line to dword boundary
+				  (let ([line-bytes (/ (* w bits-per-pixel) 8)])
+				    (if (zero? (modulo line-bytes 4))
+					line
+					(append line 
+						(vector->list
+						 (make-vector (* (- 4 (modulo line-bytes 4)) 
+								 (/ 8 bits-per-pixel))
+							      0))))))
+				;; break out lines
+				(let loop ([l image])
+				  (if (null? l)
+				      null
+				      (cons (let loop ([l l][i 0])
+					      (if (= i w)
+						  null
+						  (cons (car l) (loop (cdr l) (add1 i)))))
+					    (loop (list-tail l w)))))))]
+	      [bits->dwords (lambda (l bpp)
+			      (let ([chunk-size (/ 32 bpp)]
+				    [1byte (lambda (l)
+					     (bitwise-ior
+					      (arithmetic-shift (list-ref l 0) 7)
+					      (arithmetic-shift (list-ref l 1) 6)
+					      (arithmetic-shift (list-ref l 2) 5)
+					      (arithmetic-shift (list-ref l 3) 4)
+					      (arithmetic-shift (list-ref l 4) 3)
+					      (arithmetic-shift (list-ref l 5) 2)
+					      (arithmetic-shift (list-ref l 6) 1)
+					      (arithmetic-shift (list-ref l 7) 0)))]
+				    [2byte (lambda (l)
+					     (bitwise-ior
+					      (arithmetic-shift (list-ref l 0) 6)
+					      (arithmetic-shift (list-ref l 1) 4)
+					      (arithmetic-shift (list-ref l 2) 2)
+					      (arithmetic-shift (list-ref l 3) 0)))]
+				    [4byte (lambda (l)
+					     (bitwise-ior
+					      (arithmetic-shift (list-ref l 0) 4)
+					      (arithmetic-shift (list-ref l 1) 0)))])
+				(let loop ([l l])
+				  (if (null? l)
+				      null
+				      (cons (case bpp
+					      [(1) (bitwise-ior
+						    (arithmetic-shift (1byte (list-tail l 0)) 0)
+						    (arithmetic-shift (1byte (list-tail l 8)) 8)
+						    (arithmetic-shift (1byte (list-tail l 16)) 16)
+						    (arithmetic-shift (1byte (list-tail l 24)) 24))]
+					      [(2) (bitwise-ior
+						    (2byte l)
+						    (arithmetic-shift (2byte (list-tail l 4)) 8)
+						    (arithmetic-shift (2byte (list-tail l 8)) 16)
+						    (arithmetic-shift (2byte (list-tail l 12)) 24))]
+					      [(4) (bitwise-ior
+						    (4byte l)
+						    (arithmetic-shift (4byte (list-tail l 2)) 8)
+						    (arithmetic-shift (4byte (list-tail l 4)) 16)
+						    (arithmetic-shift (4byte (list-tail l 6)) 24))]
+					      [(8) (bitwise-ior
+						    (car l)
+						    (arithmetic-shift (list-ref l 1) 8)
+						    (arithmetic-shift (list-ref l 2) 16)
+						    (arithmetic-shift (list-ref l 3) 24))])
+					    (loop (list-tail l chunk-size)))))))])
+	  (if (= bits-per-pixel 32)
+	      (for-each (lambda (col) (integer->dword col result-p))
+			image)
+	      (let-values ([(colors indexed-image) (rgb->indexed image (arithmetic-shift 1 bits-per-pixel))])
+  	        ;; color table
+	        (for-each (lambda (col) (integer->dword col result-p))
+			  colors)
+		(let* ([lines (get-lines indexed-image bits-per-pixel)]
+		       [dwords (apply append (map (lambda (l) (bits->dwords l bits-per-pixel)) 
+                                                 lines))])
+                  (for-each (lambda (col) (integer->dword col result-p))
+			    dwords))))
+	  (let* ([lines (get-lines mask 1)]
+		 [dwords (apply append (map (lambda (l) (bits->dwords l 1)) lines))])
+	    (for-each (lambda (col) (integer->dword col result-p))
+		      dwords))
+	  (let ([s (get-output-string result-p)])
+	    (unless (= (string-length s) (string-length (cdr (icon-data icon))))
+	      (error 'build-dib "bad result size ~a != ~a"
+                     (string-length s) (string-length (cdr (icon-data icon)))))
+	    s)))))
+
+  (define (parse-icon icon)
+    (let ([image (parse-dib icon)])
+      (list (car (icon-desc icon))
+	    (cadr (icon-desc icon))
+	    (let ([cols (caddr (icon-desc icon))])
+	      (if (zero? cols)
+		  (expt 2 (list-ref (icon-desc icon) 5))
+		  cols))
+	    (car image)
+	    (cadr image))))
+
+  (define (build-icon base-icon image mask)
+    (make-icon (icon-desc base-icon)
+	       (cons (car (icon-desc base-icon))
+		     (build-dib base-icon image mask))))
+
+  (define (extract-icons file)
+    (if (regexp-match #rx"[.]ico$" file)
+	(get-icons-in-ico file)
+	(get-icons-in-exe file)))
+
+  (define (get-icons-in-ico ico-file)
+    (get-icons ico-file #f))
+
+  (define (get-icons-in-exe exe-file)
+    (let ([p (open-input-file exe-file)])
+      (dynamic-wind
+       void
+       (lambda ()
+	 (let ([pos+size (find-rsrc-start p "^14[.]")])
+	   (file-position p (car pos+size))
+	   (get-icons p #t)))
+       (lambda () (close-input-port p)))))
+
+  ;; ------------------------------
+  ;;  Image conversion
+  ;; ------------------------------
+  
+  (define (mask->alpha image mask)
+    (map (lambda (i m)
+           (if (zero? m)
+               (bitwise-ior #xFF000000 i)
+               m))
+         image mask))
+  
+  (define (first-n n l)
+    (let loop ([l l][i n])
+      (if (zero? i)
+          null
+          (cons (car l) (loop (cdr l) (sub1 i))))))
+  
+  (define (16->32 l)
+    (let loop ([l l])
+      (if (null? l) 
+          null
+          (let ([l2 (let loop ([l (first-n 16 l)])
+                      (if (null? l)
+                          null
+                          (list* (car l) (car l) (loop (cdr l)))))])
+            (append l2 l2
+                    (loop (list-tail l 16)))))))
+  
+  (define (32->48 l)
+    (let loop ([l l][dup? #t])
+      (if (null? l) 
+          null
+          (let ([l2 (let loop ([l (first-n 32 l)])
+                      (if (null? l)
+                          null
+                          (list* (car l) (car l) (cadr l)
+                                 (loop (cddr l)))))])
+            (append l2
+                    (if dup? l2 null)
+                    (loop (list-tail l 32) (not dup?)))))))
+  
+  (define (48->16 l)
+    (let loop ([l l])
+      (if (null? l) 
+          null
+          (let ([l2 (let loop ([l (first-n 48 l)])
+                      (if (null? l)
+                          null
+                          (cons (car l) (loop (cdddr l)))))])
+            (append l2
+                    (loop (list-tail l 144)))))))
+  
+  (define (48->32 l)
+    (let loop ([l l][step 0])
+      (if (null? l) 
+          null
+          (let ([l2 (let loop ([l (first-n 48 l)][step 0])
+                      (if (null? l)
+                          null
+                          (if (= 1 (modulo step 3))
+                              (loop (cdr l) 2)
+                              (cons (car l) (loop (cdr l) (add1 step))))))])
+            (append (if (= 1 (modulo step 3)) null l2)
+                    (loop (list-tail l 48) (add1 step))))))))
+
+#|
+
+;; ----------------------------------------
+;; Test code
+
+(define icons (extract-icons "e:/matthew/plt/mred.exe"))
+
+(define (show-icon w h col-count image mask)
+  (let* ([f (make-object frame% (format "~a x ~a (~a) Image" w h col-count))]
+         [bm (make-object bitmap% w h)]
+         [mbm (make-object bitmap% w h)]
+         [c (instantiate canvas% (f)
+              [paint-callback (lambda (c dc)
+                                (send dc draw-bitmap bm 0 0)
+                                (send dc draw-bitmap mbm w 0))])])
+    (let ([mdc (make-object bitmap-dc% bm)]
+          [col (make-object color%)])
+      (let loop ([l image][i 0][j 0])
+        (unless (= j h)
+          (let ([v (car l)])
+            (send col set
+                  (bitwise-and v #xFF)
+                  (arithmetic-shift (bitwise-and v #xFF00) -8)
+                  (arithmetic-shift (bitwise-and v #xFF0000) -16))
+            (send mdc set-pixel i j col)
+            (if (= (add1 i) w)
+                (loop (cdr l) 0 (add1 j))
+                (loop (cdr l) (add1 i) j)))))
+      (send mdc set-bitmap mbm)
+      (let loop ([l (if (col-count . > . 256) image mask)][i 0][j 0])
+        (unless (= j h)
+          (let ([v (if (col-count . > . 256)
+                       (- 255 (arithmetic-shift (bitwise-and (car l) #xFF000000) -24))
+                       (if (zero? (car l))
+                           0
+                           255))])
+            (send col set v v v)
+            (send mdc set-pixel i j col)
+            (if (= (add1 i) w)
+                (loop (cdr l) 0 (add1 j))
+                (loop (cdr l) (add1 i) j)))))
+      
+      (send mdc set-bitmap #f))
+    (send c min-client-width (* 2 w))
+    (send c min-client-height h)
+    (send c stretchable-width #f)
+    (send c stretchable-height #f)
+    
+    (send f show #t)))
+
+(define (find-icon icons w h colors)
+  (ormap (lambda (i)
+           (let ([p (parse-icon i)])
+             (and (= w (car p))
+                  (= h (cadr p))
+                  (= colors (caddr p))
+                  i)))
+         icons))
+
+(let ([orig (find-icon icons 48 48 (expt 2 32))]
+      [target (find-icon icons 32 32 256)])
+  (apply show-icon (parse-icon orig))
+  (apply show-icon (parse-icon target))
+  (apply show-icon 
+         (parse-icon
+          (let* ([p (parse-icon orig)]
+                 [mask (48->32(list-ref p 4))]
+                 [image (mask->alpha (48->32 (list-ref p 3)) mask)])
+            (build-icon target image mask)))))
+
+;; ----------------------------------------
+;; End test code
+
+|#

@@ -19,18 +19,20 @@
 		    button-panel
 		    (letrec ([t 
 			      (lambda ()
-				(load/use-compiled (build-path filename))
-				(set! t
-				      (let ([f (invoke-unit/sig
-						(global-defined-value 'tool@) 
-						(mred : mred^)
-						mzlib:core^
-						mzlib:print-convert^
-						(drscheme : drscheme:export^)
-						zodiac:system^
-						plt:parameters^)])
-					(lambda ()
-					  (f this))))
+				(mred:show-busy-cursor
+				 (lambda ()
+				   (load/use-compiled (build-path filename))
+				   (set! t
+					 (let ([f (invoke-unit/sig
+						   (global-defined-value 'tool@) 
+						   (mred : mred^)
+						   mzlib:core^
+						   mzlib:print-convert^
+						   (drscheme : drscheme:export^)
+						   zodiac:system^
+						   plt:parameters^)])
+					   (lambda ()
+					     (f this))))))
 				(t))])
 		      (lambda (button evt) 
 			(t)))

@@ -17,8 +17,9 @@
    (hd-cookie? (any? . -> . boolean?))
    (hd-cookie-shutdown-server (hd-cookie? . -> . (-> any)))
    (hd-cookie-find-browser (hd-cookie? . -> . (-> (union false? (is-a?/c frame%)))))
-   (hd-cookie-new-browser (hd-cookie? . -> . (-> (is-a?/c frame%))))
-   (visit-url-in-browser (hd-cookie? string? . -> . void?)))
+   (hd-cookie-port (hd-cookie? . -> . number?))
+   (visit-url-in-browser (hd-cookie? string? . -> . void?))
+   (visit-url-in-new-browser (hd-cookie? string? . -> . void?)))
   
   (provide 
    ;; manual ordering
@@ -43,4 +44,7 @@
 
    search-for-docs
    goto-manual-link
-   goto-hd-location))
+   goto-hd-location
+   
+   make-home-page-url
+   ))

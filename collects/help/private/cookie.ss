@@ -20,7 +20,16 @@
         (send hc goto-url url #f)
         (void))))
   
-  (provide/contract (visit-url-in-browser (hd-cookie? string? . -> . void?)))
+  (define (visit-url-in-new-browser hd-cookie url)
+    (let ([browser ((hd-cookie-new-browser hd-cookie))])
+      (send browser show #t)
+      (let* ([hp (send browser get-hyper-panel)]
+             [hc (send hp get-canvas)])
+        (send hc goto-url url #f)
+        (void))))
+  
+  (provide/contract (visit-url-in-browser (hd-cookie? string? . -> . void?))
+                    (visit-url-in-new-browser (hd-cookie? string? . -> . void?)))
   
   (provide
    (struct hd-cookie (port 

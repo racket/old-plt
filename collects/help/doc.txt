@@ -93,10 +93,6 @@ shuts down the server when called.
  Returns a procedure that finds a help desk browser
  window. If none is available, returns #f.
 
-> hd-cookie-new-browser : (hd-cookie? . -> . (-> (is-a?/c frame%)))
-
- Returns a procedure that creates a new help desk browser.
-
 > hd-cookie? : obj -> boolean
 
 Returns #t if `obj' is a Help Desk cookie, #f otherwise. 
@@ -105,6 +101,11 @@ Returns #t if `obj' is a Help Desk cookie, #f otherwise.
 
  Visits the second argument in a browser, creating a
  browser window if necessary.
+
+> visit-url-in-new-browser : (hd-cookie? string? . -> . void?)
+
+ Visits the second argument in a browser, always creating a
+ new browser window.
 
 _Manual ordering_
 -----------------
@@ -154,6 +155,14 @@ search.ss in the private subdirectory of the help collection.
 
 Calling this procedure indicates to the Help Desk search engine that 
 the documentation collections have changed.
+
+_Important Help Desk URLs_
+---------------------------
+
+> make-home-page-url : number -> string
+
+given the port of the help desk server (from the cookie),
+returns a url for the homepage of help desk.
 
 _Manual listing_
 ----------------

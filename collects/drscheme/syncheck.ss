@@ -294,11 +294,12 @@
              v))))
       
       (define-struct graphic (pos* locs->thunks draw-fn click-fn))
-      (define-struct arrow (start-text
-                            start-pos-left start-pos-right
-                            end-text
-                            end-pos-left end-pos-right
-                            start-x start-y end-x end-y))
+      
+      (define-struct arrow (start-x start-y end-x end-y))
+      (define-struct (var-arrow arrow)
+                     (start-text start-pos-left start-pos-right
+                      end-text end-pos-left end-pos-right))
+      (define-struct (tail-arrow arrow) (from-text from-pos to-text to-pos))
       
       (define tacked-brush (send the-brush-list find-or-create-brush "BLUE" 'solid))
       (define untacked-brush (send the-brush-list find-or-create-brush "WHITE" 'solid))
@@ -310,7 +311,8 @@
           syncheck:clear-arrows
           syncheck:add-menu
           syncheck:add-arrow
-          syncheck:add-mouse-over))
+          syncheck:add-tail-arrow
+          syncheck:add-mouse-over-status))
 
       ;; clearing-text-mixin : (mixin text%)
       ;; overrides methods that make sure the arrow go away appropriately.
@@ -351,6 +353,7 @@
               ;;    (text%
               ;;     . -o> .
               ;;    (vector (listof (union (cons (union #f sym) (menu -> void))
+              ;;                           tail-link
               ;;                           arrow
               ;;                           string))))))
               (define arrow-vectors #f)
@@ -372,15 +375,49 @@
                     (values (/ (+ xl xr) 2)
                             (/ (+ yl yr) 2)))))
               
-              (define (update-poss arrow)
+              ;; find-char-box : text number number -> (values number number number number)
+              ;; returns the bounding box (left, top, right, bottom) for the text range.
+              ;; only works right if the text is on a single line.
+              (define (find-char-box text left-pos right-pos)
+                (let ([xlb (box 0)]
+                      [ylb (box 0)]
+                      [xrb (box 0)]
+                      [yrb (box 0)])
+                  (send text position-location left-pos xlb ylb #t)
+                  (send text position-location right-pos xrb yrb #f)
+                  (let*-values ([(xl-off yl-off) (send text editor-location-to-dc-location (unbox xlb) (unbox ylb))]
+                                [(xl yl) (dc-location-to-editor-location xl-off yl-off)]
+                                [(xr-off yr-off) (send text editor-location-to-dc-location (unbox xrb) (unbox yrb))]
+                                [(xr yr) (dc-location-to-editor-location xr-off yr-off)])
+                    (values 
+                     xl
+                     yl
+                     xr 
+                     yr))))
+              
+              (define (update-var-arrow-poss arrow)
                 (let-values ([(start-x start-y) (find-poss 
-                                                 (arrow-start-text arrow)
-                                                 (arrow-start-pos-left arrow)
-                                                 (arrow-start-pos-right arrow))]
+                                                 (var-arrow-start-text arrow)
+                                                 (var-arrow-start-pos-left arrow)
+                                                 (var-arrow-start-pos-right arrow))]
                              [(end-x end-y) (find-poss 
-                                             (arrow-end-text arrow)
-                                             (arrow-end-pos-left arrow)
-                                             (arrow-end-pos-right arrow))])
+                                             (var-arrow-end-text arrow)
+                                             (var-arrow-end-pos-left arrow)
+                                             (var-arrow-end-pos-right arrow))])
+                  (set-arrow-start-x! arrow start-x)
+                  (set-arrow-start-y! arrow start-y)
+                  (set-arrow-end-x! arrow end-x)
+                  (set-arrow-end-y! arrow end-y)))
+              
+              (define (update-tail-arrow-poss arrow)
+                (let-values ([(start-x start-y) (find-poss 
+                                                 (tail-arrow-from-text arrow)
+                                                 (tail-arrow-from-pos arrow)
+                                                 (+ (tail-arrow-from-pos arrow) 1))]
+                             [(end-x end-y) (find-poss 
+                                             (tail-arrow-to-text arrow)
+                                             (tail-arrow-to-pos arrow)
+                                             (+ (tail-arrow-to-pos arrow) 1))])
                   (set-arrow-start-x! arrow start-x)
                   (set-arrow-start-y! arrow start-y)
                   (set-arrow-end-x! arrow end-x)
@@ -405,23 +442,28 @@
                 (when (and (<= 0 start-pos end-pos (last-position)))
                   (add-to-range/key text start-pos end-pos make-menu key #t)))
               
-              ;; syncheck:add-arrow : text number number text number number -> void
+              ;; syncheck:add-arrow : symbol text number number text number number -> void
               ;; pre: start-editor, end-editor are embedded in `this' (or are `this')
               (define/public (syncheck:add-arrow start-text start-pos-left start-pos-right
                                                  end-text end-pos-left end-pos-right)
-                (let* ([arrow (make-arrow start-text start-pos-left start-pos-right
-                                          end-text end-pos-left end-pos-right
-                                          0 0 0 0)])
+                (let* ([arrow (make-var-arrow 0 0 0 0
+                                              start-text start-pos-left start-pos-right
+                                              end-text end-pos-left end-pos-right)])
                   (add-to-range/key start-text start-pos-left start-pos-right arrow #f #f)
                   (add-to-range/key end-text end-pos-left end-pos-right arrow #f #f)))
               
-              ;; syncheck:add-mouse-over : text pos-left pos-right string -> void
-              (define/public (syncheck:add-mouse-over text pos-left pos-right str)
+              ;; syncheck:add-tail-arrow : text number text number -> void
+              (define/public (syncheck:add-tail-arrow from-text from-pos to-text to-pos)
+                (let ([tail-arrow (make-tail-arrow 0 0 0 0 from-text from-pos to-text to-pos)])
+                  (add-to-range/key from-text from-pos (+ from-pos 1) tail-arrow #f #f)))
+              
+              ;; syncheck:add-mouse-over-status : text pos-left pos-right string -> void
+              (define/public (syncheck:add-mouse-over-status text pos-left pos-right str)
                 (add-to-range/key text pos-left pos-right str #f #f))
 
               ;; add-to-range/key : text number number any any boolean -> void
               ;; adds `key' to the range `start' - `end' in the editor
-              ;; If use-key? is #t, it adds `to-add' with the key, and doesnot
+              ;; If use-key? is #t, it adds `to-add' with the key, and does not
               ;; replace a value with that key already there.
               ;; If use-key? is #f, it adds `to-add' without a key.
               ;; pre: arrow-vectors is not #f
@@ -466,8 +508,11 @@
                      (unless (zero? n)
                        (let ([eles (vector-ref arrow-vector (- n 1))])
                          (for-each (lambda (ele)
-                                     (when (arrow? ele)
-                                       (update-poss ele)))
+                                     (cond
+                                       [(var-arrow? ele)
+                                        (update-var-arrow-poss ele)]
+                                       [(tail-arrow? ele)
+                                        (update-tail-arrow-poss ele)]))
                                    eles))
                        (loop (- n 1)))))))
               
@@ -504,11 +549,31 @@
                         (when arrow-vector
                           (let ([eles (vector-ref arrow-vector cursor-location)])
                             (for-each (lambda (ele) 
-                                        (when (arrow? ele)
-                                          (draw-arrow2 ele)))
+                                        (cond
+                                          [(var-arrow? ele)
+                                           (draw-arrow2 ele)]
+                                          [(tail-arrow? ele)
+                                           (draw-tail-arrows draw-arrow2 ele)]))
                                       eles)))))
                     (send dc set-brush old-brush)
                     (send dc set-pen old-pen))))
+              
+              ;; draw-tail-arrows : dc number -> void
+              (define (draw-tail-arrows draw-arrow2 tail-arrow)
+                (let ([ht (make-hash-table)])
+                  (let loop ([tail-arrow tail-arrow])
+                    (unless (hash-table-get ht tail-arrow (lambda () #f))
+                      (hash-table-put! ht tail-arrow #t)
+                      (draw-arrow2 tail-arrow)
+                      (let* ([to-pos (tail-arrow-to-pos tail-arrow)]
+                             [to-text (tail-arrow-to-text tail-arrow)]
+                             [arrow-vector (hash-table-get arrow-vectors to-text (lambda () #f))])
+                        (when arrow-vector
+                          (let ([eles (vector-ref arrow-vector to-pos)])
+                            (for-each (lambda (ele) 
+                                        (cond
+                                          [(tail-arrow? ele) (loop ele)]))
+                                      eles))))))))
               
               ;; get-pos/text : event -> (values (union #f text%) (union number #f))
               ;; returns two #fs to indicate the event doesn't correspond to
@@ -572,8 +637,11 @@
                                 (set! cursor-text text)
                                 (when eles
                                   (for-each (lambda (ele)
-                                              (when (arrow? ele) 
-                                                (update-poss ele)))
+                                              (cond
+                                                [(var-arrow? ele)
+                                                 (update-var-arrow-poss ele)]
+                                                [(tail-arrow? ele)
+                                                 (update-tail-arrow-poss ele)]))
                                             eles)
                                   (invalidate-bitmap-cache))))]
                            [else
@@ -596,7 +664,7 @@
                                       (super-on-event event)]
                                      [else
                                       (let ([menu (make-object popup-menu% #f)]
-                                            [arrows (filter arrow? vec-ents)]
+                                            [arrows (filter var-arrow? vec-ents)]
                                             [add-menus (map cdr (filter cons? vec-ents))])
                                         (unless (null? arrows)
                                           (make-object menu-item%
@@ -634,10 +702,10 @@
               (define (jump-callback pos arrows)
                 (unless (null? arrows)
                   (let* ([arrow (car arrows)]
-                         [start-pos-left (arrow-start-pos-left arrow)]
-                         [start-pos-right (arrow-start-pos-right arrow)]
-                         [end-pos-left (arrow-end-pos-left arrow)]
-                         [end-pos-right (arrow-end-pos-right arrow)])
+                         [start-pos-left (var-arrow-start-pos-left arrow)]
+                         [start-pos-right (var-arrow-start-pos-right arrow)]
+                         [end-pos-left (var-arrow-end-pos-left arrow)]
+                         [end-pos-right (var-arrow-end-pos-right arrow)])
                     (if (<= start-pos-left pos start-pos-right)
                         (set-position end-pos-left end-pos-right)
                         (set-position start-pos-left start-pos-right)))))              
@@ -1373,7 +1441,7 @@
                          (syntax-span stx))
                 (let* ([pos-left (- (syntax-position stx) 1)]
                        [pos-right (+ pos-left (syntax-span stx))])
-                  (send syncheck-text syncheck:add-mouse-over
+                  (send syncheck-text syncheck:add-mouse-over-status
                         source pos-left pos-right str)))))))
       
       ;; find-syncheck-text : text% -> (union #f (is-a?/c syncheck-text<%>))
@@ -1406,9 +1474,10 @@
       ;; is those that occur in #%top's. 
       ;; The next value is all of the require expressions and then all of the
       ;; require-for-syntax expressions.
-      ;; the next to last is the list of all original macro references.
-      ;; the last is a boolean indicating if there was a `module' in the expanded expression.
-
+      ;; the next is the list of all original macro references.
+      ;; the last to last is a boolean indicating if there was a `module' in the expanded expression.
+      ;; the last is a hash-table that describes the relative tail positions in the expression
+      
       ;; the booleans in the lists indicate if the variables or macro references
       ;; were on the rhs of a define-syntax (boolean is #t) or not (boolean is #f)
       (define (annotate-basic sexp user-directory user-namespace)
@@ -1419,7 +1488,8 @@
               [require-for-syntaxes null]
               [referenced-macros null]
               [bound-in-sources null]
-              [has-module? #f])
+              [has-module? #f]
+              [tail-ht (make-hash-table)])
           (let level-loop ([sexp sexp]
                            [high-level? #f])
             (annotate-original-keywords sexp)
@@ -1437,13 +1507,15 @@
                 [(lambda args bodies ...)
                  (begin
                    (annotate-raw-keyword sexp)
-                   (annotate-tail-position/last (syntax->list (syntax (bodies ...))))
+                   (annotate-tail-position/last sexp (syntax->list (syntax (bodies ...))) tail-ht)
                    (set! binders (combine/color-binders (syntax args) binders bound-variable-style-str))
                    (for-each loop (syntax->list (syntax (bodies ...)))))]
                 [(case-lambda [argss bodiess ...]...)
                  (begin
                    (annotate-raw-keyword sexp)
-                   (for-each (lambda (bodies/stx) (annotate-tail-position/last (syntax->list bodies/stx)))
+                   (for-each (lambda (bodies/stx) (annotate-tail-position/last sexp 
+                                                                               (syntax->list bodies/stx)
+                                                                               tail-ht))
                              (syntax->list (syntax ((bodiess ...) ...))))
                    (for-each
                     (lambda (args bodies)
@@ -1454,21 +1526,21 @@
                 [(if test then else)
                  (begin
                    (annotate-raw-keyword sexp)
-                   (annotate-tail-position (syntax then))
-                   (annotate-tail-position (syntax else))
+                   (annotate-tail-position sexp (syntax then) tail-ht)
+                   (annotate-tail-position sexp (syntax else) tail-ht)
                    (loop (syntax test))
                    (loop (syntax else))
                    (loop (syntax then)))]
                 [(if test then)
                  (begin
                    (annotate-raw-keyword sexp)
-                   (annotate-tail-position (syntax then))
+                   (annotate-tail-position sexp (syntax then) tail-ht)
                    (loop (syntax test))
                    (loop (syntax then)))]
                 [(begin bodies ...)
                  (begin
                    (annotate-raw-keyword sexp)
-                   (annotate-tail-position/last (syntax->list (syntax (bodies ...))))
+                   (annotate-tail-position/last sexp (syntax->list (syntax (bodies ...))) tail-ht)
                    (for-each loop (syntax->list (syntax (bodies ...)))))]
                 
                 [(begin0 bodies ...)
@@ -1479,7 +1551,7 @@
                 [(let-values (((xss ...) es) ...) bs ...)
                  (begin
                    (annotate-raw-keyword sexp)
-                   (annotate-tail-position/last (syntax->list (syntax (bs ...))))
+                   (annotate-tail-position/last sexp (syntax->list (syntax (bs ...))) tail-ht)
                    (for-each (lambda (x) (set! binders (combine/color-binders x binders bound-variable-style-str)))
                              (syntax->list (syntax ((xss ...) ...))))
                    (for-each loop (syntax->list (syntax (es ...))))
@@ -1487,16 +1559,16 @@
                 [(letrec-values (((xss ...) es) ...) bs ...)
                  (begin
                    (annotate-raw-keyword sexp)
-                   (annotate-tail-position/last (syntax->list (syntax (bs ...))))
+                   (annotate-tail-position/last sexp (syntax->list (syntax (bs ...))) tail-ht)
                    (for-each (lambda (x) (set! binders (combine/color-binders x binders bound-variable-style-str)))
                              (syntax->list (syntax ((xss ...) ...))))
                    (for-each loop (syntax->list (syntax (es ...))))
                    (for-each loop (syntax->list (syntax (bs ...)))))]
-                [(set! var E)
+                [(set! var e)
                  (begin
                    (annotate-raw-keyword sexp)
                    (set! varrefs (cons (cons high-level? (syntax var)) varrefs))
-                   (loop (syntax E)))]
+                   (loop (syntax e)))]
                 [(quote datum)
                  (begin 
                    (annotate-raw-keyword sexp)
@@ -1508,7 +1580,7 @@
                 [(with-continuation-mark a b c)
                  (begin
                    (annotate-raw-keyword sexp)
-                   (annotate-tail-position (syntax c))
+                   (annotate-tail-position sexp (syntax c) tail-ht)
                    (loop (syntax a))
                    (loop (syntax b))
                    (loop (syntax c)))]
@@ -1577,6 +1649,7 @@
                             (and (syntax? sexp)
                                  (syntax-source sexp)))
                    (void))])))
+          (add-tail-ht-links tail-ht)
           (values binders 
                   varrefs
                   tops
@@ -1587,30 +1660,23 @@
                   has-module?)))
 
       ;; annotate-tail-position/last : (listof syntax) -> void
-      (define (annotate-tail-position/last stxs)
+      (define (annotate-tail-position/last orig-stx stxs tail-ht)
         (unless (null? stxs)
-          (annotate-tail-position (car (last-pair stxs)))))
+          (annotate-tail-position orig-stx (car (last-pair stxs)) tail-ht)))
       
       ;; annotate-tail-position : syntax -> boid
       ;; colors the parens (if any) around the argument
       ;; to indicate this is a tail call.
-      (define (annotate-tail-position stx)
-        '(printf "annotate-tail-position.1 ~s\n" (syntax-object->datum stx))
-        '(let ([source (syntax-source stx)]
-               [pos (syntax-position stx)]
-               [span (syntax-span stx)])
-           (printf "annotate-tail-position.2 ~s ~s ~s\n" source pos span)
-           (when (and (is-a? source text%)
-                      pos 
-                      span)
-             (let* ([start-index (- pos 1)]
-                    [end-index (+ pos span -2)]
-                    [start-char (send source get-character start-index)]
-                    [end-char (send source get-character end-index)])
-               (printf "annotate-tail-position.3 ~s ~s ~s ~s\n" start-index end-index start-char end-char)
-               (when (and (paren? start-char) (paren? end-char))
-                 (color-range source start-index (+ start-index 1) tail-call-style-str)
-                 (color-range source end-index (+ end-index 1) tail-call-style-str))))))
+      (define (annotate-tail-position orig-stx tail-stx tail-ht)
+        (hash-table-put!
+         tail-ht 
+         orig-stx 
+         (cons
+          tail-stx
+          (hash-table-get 
+           tail-ht
+           orig-stx
+           (lambda () null)))))
       
       ;; paren? : character -> boolean
       (define (paren? char)
@@ -1879,7 +1945,7 @@
 	       [(syntax? stx)
                 (when (syntax-original? stx)
                   (color stx style-name))
-                (let ([stx-e (syntax-e stx)])
+                (let ([stx-e (syntax-e stx)]) 
                   (cond
 		   [(cons? stx-e)
 		    (loop (car stx-e) (car datum))
@@ -1912,21 +1978,48 @@
                            style-name)])
           (add-to-cleanup-texts source)
           (send source change-style style start finish #f)))
+
+      ;; hash-table[syntax -o> (listof syntax)] -> void
+      (define (add-tail-ht-links tail-ht)
+        (hash-table-for-each
+         tail-ht
+         (lambda (stx-from stx-tos)
+           (for-each (lambda (stx-to) (add-tail-ht-link stx-from stx-to))
+                     stx-tos))))
       
+      ;; add-tail-ht-link : syntax syntax -> void
+      (define (add-tail-ht-link from-stx to-stx)
+        (let* ([to-src (syntax-source to-stx)]
+               [from-src (syntax-source from-stx)]
+               [to-outermost-src (and (is-a? to-src editor<%>)
+                                      (find-outermost-editor to-src))]
+               [from-outermost-src (and (is-a? from-src editor<%>)
+                                        (find-outermost-editor from-src))])
+          (when (and (is-a? to-outermost-src syncheck-text<%>)
+                     (eq? from-outermost-src to-outermost-src))
+            (let ([from-pos (syntax-position from-stx)]
+                  [to-pos (syntax-position to-stx)])
+              (when (and from-pos to-pos)
+                (send to-outermost-src syncheck:add-tail-arrow
+                      from-src (- from-pos 1)
+                      to-src (- to-pos 1)))))))
+                    
       ;; add-to-cleanup-texts : (is-a?/c editor<%>) -> void
       (define (add-to-cleanup-texts ed)
-        (let ([canvas 
-               (let loop ([ed ed])
-                 (let ([admin (send ed get-admin)])
-                   (if (is-a? admin editor-snip-editor-admin<%>)
-                       (let* ([enclosing-snip (send admin get-snip)]
-                              [enclosing-snip-admin (send enclosing-snip get-admin)])
-                         (loop (send enclosing-snip-admin get-editor)))
-                       (send ed get-canvas))))])
+        (let ([canvas (send (find-outermost-editor ed) get-canvas)])
           (when canvas
             (let ([frame (send canvas get-top-level-window)])
               (when (is-a? frame syncheck-frame<%>)
                 (send frame syncheck:add-to-cleanup-texts ed))))))
+      
+      (define (find-outermost-editor ed)
+        (let loop ([ed ed])
+          (let ([admin (send ed get-admin)])
+            (if (is-a? admin editor-snip-editor-admin<%>)
+                (let* ([enclosing-snip (send admin get-snip)]
+                       [enclosing-snip-admin (send enclosing-snip get-admin)])
+                  (loop (send enclosing-snip-admin get-editor)))
+                ed))))
       
       ;; make-rename-menu : stx[original] (hash-table symbol (listof syntax)) -> void
       (define (make-rename-menu stx vars-ht)

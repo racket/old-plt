@@ -218,7 +218,10 @@
       
       (define/override (file-menu:create-new?) #t)
       (define/override (file-menu:new-callback x y)
-        ((hd-cookie-new-browser hd-cookie)))
+        (visit-url-in-new-browser 
+         hd-cookie
+         (make-home-page-url
+          (hd-cookie-port hd-cookie))))
 
       (define/override (file-menu:create-open-recent?) #f)
       

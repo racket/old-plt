@@ -2696,6 +2696,9 @@ static void fixup_tagged_array_mpage(void **p, MPage *page)
 #if ALIGN_DOUBLES
     if (size) {
 #endif
+#if KEEP_BACKPOINTERS
+      GC_fixup((void *)(mp - 1 + bp_delta));
+#endif
       tag = *(Type_Tag *)mp;
 
       traverse = fixup_table[tag];
@@ -2704,9 +2707,6 @@ static void fixup_tagged_array_mpage(void **p, MPage *page)
       for (i = elem_size; i < size; i += elem_size, mp += elem_size)
 	traverse(mp);
 
-#if KEEP_BACKPOINTERS
-      GC_fixup((void *)(p + bp_delta));
-#endif
 #if ALIGN_DOUBLES
     }
 #endif
@@ -4448,6 +4448,7 @@ extern void scheme_print_tagged_value(const char *prefix,
 void *print_out_pointer(const char *prefix, void *p)
 {
   MPage *page;
+  const char *what;
 
   page = find_page(p);
   if (!page) {
@@ -4463,23 +4464,37 @@ void *print_out_pointer(const char *prefix, void *p)
     } else {
       GCPRINT(GCOUTF, "%s<#%d> %p\n", prefix, tag, p);
     }
+    what = NULL;
   } else if (page->type == MTYPE_ARRAY) {
-    GCPRINT(GCOUTF, "%sARRAY %p\n", prefix, p);
+    what = "ARRAY";
   } else if (page->type == MTYPE_TAGGED_ARRAY) {
-    GCPRINT(GCOUTF, "%sTARRAY %p\n", prefix, p);
+    what = "TARRAY";
   } else if (page->type == MTYPE_ATOMIC) {
-    GCPRINT(GCOUTF, "%sATOMIC!? %p\n", prefix, p);
+    what = "ATOMIC";
   } else if (page->type == MTYPE_XTAGGED) {
-    GCPRINT(GCOUTF, "%sXTAGGED %p\n", prefix, p);
+    what = "XTAGGED";
   } else {
-    GCPRINT(GCOUTF, "%s?!? %p\n", prefix, p);
-    return NULL;
+    what = "?!?";
+  }
+
+  if (what) {
+    GCPRINT(GCOUTF, "%s%s%s %p\n", 
+	    prefix, what, 
+	    ((page->flags & MFLAG_BIGBLOCK) ? "b" : ""),
+	    p);
   }
 
   if (page->flags & MFLAG_BIGBLOCK)
-    return (void *)page->backpointer_page;
-  else
-    return page->backpointer_page[((char *)p - page->block_start) >> LOG_WORD_SIZE];
+    p = (void *)page->backpointer_page;
+  else {
+    int offset;
+    offset = ((char *)p - (char *)page->block_start) >> LOG_WORD_SIZE;
+    if (what)
+      offset -= 1;
+    p = page->backpointer_page[offset];
+  }
+
+  return p;
 }
 #endif
 

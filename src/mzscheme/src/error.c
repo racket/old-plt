@@ -297,7 +297,7 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 #else
 # ifdef DOS_FILE_SYSTEM
 	      char mbuf[256];
-	      if ((type != 'E') && !es) {
+	      if ((type != 'e') && !es) {
 		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, 
 				  en, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 				  mbuf, 255, NULL)) {

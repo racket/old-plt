@@ -181,10 +181,10 @@
 			      (lambda (s)
 				(regexp-match "\\.(ss|scm)$" s))
 			      (directory-list))])
-		   (f (info 'name)
-		      (info 'compile-prefix)
+		   (f (info 'name (lambda () (error 'compile-collection "info.ss did not provide a name")))
+		      (info 'compile-prefix (lambda () '(void)))
 		      (remove*
-		       (info 'compile-omit-files)
+		       (info 'compile-omit-files (lambda () null))
 		       sses)
 		      (if zos? #("zo") #()))))))
 	  (lambda () (current-directory orig)))))))

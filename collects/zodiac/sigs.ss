@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.44 1997/09/20 18:51:55 shriram Exp mflatt $
+; $Id: sigs.ss,v 1.45 1997/11/14 21:59:49 mflatt Exp $
 
 (reference-relative-library "namedarg.ss")
 
@@ -70,7 +70,8 @@
     make-attributes get-attribute put-attribute
     extend-env retract-env
     resolve resolve-in-env
-    macro-resolution? micro-resolution? top-level-resolution?
+    macro-resolution? micro-resolution?
+    (struct top-level-resolution ())
     introduce-identifier introduce-fresh-identifier introduce-bound-id
     create-vocabulary append-vocabulary
     (struct vocabulary-record
@@ -176,6 +177,7 @@
     (struct invoke-unit-form (unit variables))
     (struct invoke-open-unit-form (unit name-specifier variables))
     unit-clauses-vocab-delta update-unresolved-attribute
+    inside-unit? check-export
     ))
 
 (define-signature zodiac:scheme-objects+units^

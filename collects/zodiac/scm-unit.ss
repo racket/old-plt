@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.51 1998/03/03 20:02:48 shriram Exp $
+; $Id: scm-unit.ss,v 1.52 1998/03/03 23:36:45 shriram Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -125,7 +125,7 @@
   ; --------------------------------------------------------------------
 
   (define-struct import-id (id))
-  (define-struct export-id (id))
+  (define-struct export-id (id defined?))
   (define-struct internal-id (id))
   (define-struct link-id (id))
 
@@ -162,6 +162,18 @@
 	(let ((entry (hash-table-get id-table id-name
 		       (lambda () #f))))
 	  (import-id? entry)))))
+
+  (define inside-unit?
+    (lambda (attributes)
+      (not (null? (get-attribute attributes 'unit-vars)))))
+
+  (define check-export
+    (lambda (id attributes)
+      (let ((id-table (get-vars-attribute attributes))
+	     (id-name (z:read-object id)))
+	(let ((entry (hash-table-get id-table id-name
+		       (lambda () #f))))
+	  (export-id? entry)))))
 
   (define register-import
     (lambda (id attributes)
@@ -200,16 +212,41 @@
 		((import-id? entry)
 		  (static-error id "Redefined imported identifier ~a" id-name))
 		((export-id? entry)
-		  'do-nothing)
+		  (if (export-id-defined? entry)
+		    (static-error id "Redefining exported identifier ~a"
+		      id-name)
+		    (set-export-id-defined?! entry #t)))
 		((internal-id? entry)
 		  (static-error id "Duplicate internal definition for ~a"
 		    id-name))
 		(else
 		  (internal-error entry
-		    "Invalid entry in register-definition"))))))
+		    "Invalid entry in register-definitions"))))))
 	ids)))
 
   (define register-export
+    (lambda (id attributes)
+      (let ((id-table (get-vars-attribute attributes))
+	     (id-name (z:read-object id)))
+	(let ((entry (hash-table-get id-table id-name
+		       (lambda () #f))))
+	  (cond
+	    ((not entry)
+	      (hash-table-put! id-table id-name
+		(make-export-id id #f)))
+	    ((import-id? entry)
+	      (static-error id "Imported identifier ~a being exported"
+		id-name))
+	    ((export-id? entry)
+	      (static-error id "Duplicate export identifier ~a" id-name))
+	    ((internal-id? entry)
+	      (internal-error entry
+		"Should not have had an internal-id in register-export"))
+	    (else
+	      (internal-error entry
+		"Invalid in register-import/export")))))))
+
+  (define verify-export
     (lambda (id attributes)
       (let ((id-table (get-vars-attribute attributes))
 	     (id-name (z:read-object id)))
@@ -223,10 +260,12 @@
 	      (static-error id "Imported identifier ~a being exported"
 		id-name))
 	    ((export-id? entry)
-	      (static-error id "Duplicate export identifier ~a" id-name))
+	      (unless (export-id-defined? entry)
+		(static-error id "Exported identifier ~a not defined"
+		  id-name)))
 	    ((internal-id? entry)
-	      (hash-table-put! id-table id-name
-		(make-export-id id)))
+	      (internal-error entry
+		"Should not have had an internal-id in verify-export"))
 	    (else
 	      (internal-error entry
 		"Invalid in register-import/export")))))))
@@ -266,21 +305,18 @@
 
   ; ----------------------------------------------------------------------
 
-  (define unit-exports-vocab
-    (create-vocabulary 'unit-exports-vocab #f
+  (define unit-register-exports-vocab
+    (create-vocabulary 'unit-register-exports-vocab #f
       "Invalid export declaration"
       "Invalid export declaration"
       "Invalid export declaration"
       "Invalid export declaration"))
 
-  (add-sym-micro unit-exports-vocab
+  (add-sym-micro unit-register-exports-vocab
     (lambda (expr env attributes vocab)
-      (register-export expr attributes)
-      (let ((expand-vocab (get-attribute attributes 'exports-expand-vocab)))
-	(cons (expand-expr expr env attributes expand-vocab)
-	  expr))))
+      (register-export expr attributes)))
 
-  (add-list-micro unit-exports-vocab
+  (add-list-micro unit-register-exports-vocab
     (let* ((kwd '())
 	    (in-pattern '(internal-id external-id))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -293,13 +329,46 @@
 		     (external (pat:pexpand 'external-id p-env kwd)))
 		(valid-syntactic-id? internal)
 		(valid-syntactic-id? external)
-		(register-export internal attributes)
+		(register-export internal attributes))))
+	  (else
+	    (static-error expr "Malformed export declaration"))))))
+
+; ----------------------------------------------------------------------
+
+  (define unit-verify-exports-vocab
+    (create-vocabulary 'unit-verify-exports-vocab #f
+      "Invalid export declaration"
+      "Invalid export declaration"
+      "Invalid export declaration"
+      "Invalid export declaration"))
+
+  (add-sym-micro unit-verify-exports-vocab
+    (lambda (expr env attributes vocab)
+      (verify-export expr attributes)
+      (let ((expand-vocab (get-attribute attributes 'exports-expand-vocab)))
+	(cons (expand-expr expr env attributes expand-vocab)
+	  expr))))
+
+  (add-list-micro unit-verify-exports-vocab
+    (let* ((kwd '())
+	    (in-pattern '(internal-id external-id))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((internal (pat:pexpand 'internal-id p-env kwd))
+		     (external (pat:pexpand 'external-id p-env kwd)))
+		(verify-export internal attributes)
 		(let ((expand-vocab (get-attribute attributes
 				      'exports-expand-vocab)))
 		  (cons (expand-expr internal env attributes expand-vocab)
 		    external)))))
 	  (else
 	    (static-error expr "Malformed export declaration"))))))
+
+  ; ----------------------------------------------------------------------
 
   (when (language>=? 'advanced)
     (add-primitivized-micro-form 'unit scheme-vocabulary
@@ -334,19 +403,23 @@
 					      attributes c/imports-vocab))
 				       in:imports))
 			(_ (extend-env proc:imports env))
+			(_ (put-attribute attributes 'exports-expand-vocab
+			     unit-clauses-vocab))
+			(_ (for-each (lambda (e)
+				       (expand-expr e env attributes
+					 unit-register-exports-vocab))
+			     in:exports))
 			(proc:clauses (map (lambda (e)
 					     (expand-expr e env
 					       attributes
 					       unit-clauses-vocab))
 					in:clauses))
-			(_ (put-attribute attributes 'exports-expand-vocab
-			     unit-clauses-vocab))
+			(_ (retract-env (map car proc:imports) env))
 			(proc:exports (map (lambda (e)
 					     (expand-expr e env
 					       attributes
-					       unit-exports-vocab))
+					       unit-verify-exports-vocab))
 					in:exports))
-			(_ (retract-env (map car proc:imports) env))
 			(unresolveds (get-unresolved-vars attributes)))
 		      (remove-vars-attribute attributes)
 		      (remove/update-unresolved-attribute attributes
@@ -720,9 +793,10 @@
 				     (let ((r (resolve var env vocab)))
 				       (when (or (micro-resolution? r)
 					       (macro-resolution? r))
-					 (static-error var
-					   "Cannot bind keyword ~s"
-					   (z:symbol-orig-name var)))))
+					 (unless (check-export var attributes)
+					   (static-error var
+					     "Cannot bind keyword ~s"
+					     (z:symbol-orig-name var))))))
 				   vars))
 			      (out (handler expr env attributes
 				     vocab p-env vars)))
@@ -751,35 +825,38 @@
       "Invalid in identifier position"))
 
   (add-sym-micro define-values-id-parse-vocab
-    (lambda (expr env attributes vocab)
-      (let ((r (resolve expr env vocab)))
-	(cond
-	  ((or (macro-resolution? r) (micro-resolution? r))
-	    (static-error expr
-	      "Invalid use of keyword ~s" (z:symbol-orig-name expr)))
-	  ((lexical-binding? r)
-	    (create-lexical-varref r expr))
-	  ((top-level-resolution? r)
-	    (let ((id (z:read-object expr)))
-	      (let ((top-level-space (get-attribute attributes 'top-levels)))
-		(if top-level-space
-		  (begin
-		    (let ((ref
-			    (create-top-level-varref/bind
-			      id
-			      (hash-table-get top-level-space id
-				(lambda ()
-				  (let ((b (box '())))
-				    (hash-table-put! top-level-space id b)
-				    b)))
-			      expr)))
-		      (let ((b (top-level-varref/bind-slot ref)))
-			(set-box! b (cons ref (unbox b))))
-		      ref))
-		  (create-top-level-varref id expr)))))
-	  (else
-	    (internal-error expr
-	      "Invalid resolution in unit define-values: ~s" r))))))
+    (let ((top-level-resolution (make-top-level-resolution 'dummy #f)))
+      (lambda (expr env attributes vocab)
+	(let loop ((r (resolve expr env vocab)))
+	  (cond
+	    ((or (macro-resolution? r) (micro-resolution? r))
+	      (if (check-export expr attributes)
+		(loop top-level-resolution)
+		(static-error expr
+		  "Invalid use of keyword ~a" (z:symbol-orig-name expr))))
+	    ((lexical-binding? r)
+	      (create-lexical-varref r expr))
+	    ((top-level-resolution? r)
+	      (let ((id (z:read-object expr)))
+		(let ((top-level-space (get-attribute attributes 'top-levels)))
+		  (if top-level-space
+		    (begin
+		      (let ((ref
+			      (create-top-level-varref/bind
+				id
+				(hash-table-get top-level-space id
+				  (lambda ()
+				    (let ((b (box '())))
+				      (hash-table-put! top-level-space id b)
+				      b)))
+				expr)))
+			(let ((b (top-level-varref/bind-slot ref)))
+			  (set-box! b (cons ref (unbox b))))
+			ref))
+		    (create-top-level-varref id expr)))))
+	    (else
+	      (internal-error expr
+		"Invalid resolution in unit define-values: ~s" r)))))))
 
   (add-primitivized-micro-form 'set! unit-clauses-vocab-delta
     (let* ((kwd '())
@@ -841,36 +918,40 @@
 	    (static-error expr "Malformed if"))))))
 
   (add-sym-micro unit-clauses-vocab-delta
-    (lambda (expr env attributes vocab)
-      (let ((r (resolve expr env vocab)))
-	(cond
-	  ((or (macro-resolution? r) (micro-resolution? r))
-	    (static-error expr
-	      "Invalid use of keyword ~s" (z:symbol-orig-name expr)))
-	  ((lexical-binding? r)
-	    (create-lexical-varref r expr))
-	  ((top-level-resolution? r)
-	    (let ((id (z:read-object expr)))
-	      (unless (built-in-name id)
-		(update-unresolved-attribute attributes expr))
-	      (let ((top-level-space (get-attribute attributes 'top-levels)))
-		(if top-level-space
-		  (begin
-		    (let ((ref
-			    (create-top-level-varref/bind
-			      id
-			      (hash-table-get top-level-space id
-				(lambda ()
-				  (let ((b (box '())))
-				    (hash-table-put! top-level-space id b)
-				    b)))
-			      expr)))
-		      (let ((b (top-level-varref/bind-slot ref)))
-			(set-box! b (cons ref (unbox b))))
-		      ref))
-		  (create-top-level-varref id expr)))))
-	  (else
-	    (internal-error expr "Invalid resolution in unit delta: ~s" r))))))
+    (let ((top-level-resolution (make-top-level-resolution 'dummy #f)))
+      (lambda (expr env attributes vocab)
+	(let loop ((r (resolve expr env vocab)))
+	  (cond
+	    ((or (macro-resolution? r) (micro-resolution? r))
+	      (if (check-export expr attributes)
+		(loop top-level-resolution)
+		(static-error expr
+		  "Invalid use of keyword ~a" (z:symbol-orig-name expr))))
+	    ((lexical-binding? r)
+	      (create-lexical-varref r expr))
+	    ((top-level-resolution? r)
+	      (let ((id (z:read-object expr)))
+		(unless (built-in-name id)
+		  (update-unresolved-attribute attributes expr))
+		(let ((top-level-space (get-attribute attributes 'top-levels)))
+		  (if top-level-space
+		    (begin
+		      (let ((ref
+			      (create-top-level-varref/bind
+				id
+				(hash-table-get top-level-space id
+				  (lambda ()
+				    (let ((b (box '())))
+				      (hash-table-put! top-level-space id b)
+				      b)))
+				expr)))
+			(let ((b (top-level-varref/bind-slot ref)))
+			  (set-box! b (cons ref (unbox b))))
+			ref))
+		    (create-top-level-varref id expr)))))
+	    (else
+	      (internal-error expr "Invalid resolution in unit delta: ~s"
+		r)))))))
 
   ; --------------------------------------------------------------------
 

@@ -5,7 +5,8 @@
 
 (module info (lib "infotab.ss" "setup")
   (define name "SrPersist")
-  (define help-desk-message "Mz/Mr: (require (lib \"invoke-n.m\" \"srpersist\")")
+  (define help-desk-message 
+     "Mz/Mr: (require (lib \"invoke-n.m\" \"srpersist\")")
   (define compile-omit-files
     '("info.ss"
       "invoke-1.0.ss"
@@ -15,7 +16,7 @@
   (define blurb
     (list
       "SrPersist is an extension for using ODBC databases from Scheme."))
-
   (define release-version "200alpha1")
   (define release-iteration "0"))
+
 

@@ -223,11 +223,17 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
 
   if (biBitCount==24) {
     pic24 = (byte *) calloc(biWidth * biHeight * 3, 1);
-    if (!pic24) return (bmpError(fname, "couldn't malloc 'pic24'"));
+    if (!pic24) {
+      fclose(fp);
+      return (bmpError(fname, "couldn't malloc 'pic24'"));
+    }
   }
   else {
     pic8 = (byte *) calloc(biWidth * biHeight, 1);
-    if (!pic8) return(bmpError(fname, "couldn't malloc 'pic8'"));
+    if (!pic8) {
+      fclose(fp);
+      return(bmpError(fname, "couldn't malloc 'pic8'"));
+    }
   }
 
   /* load up the image */

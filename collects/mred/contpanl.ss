@@ -347,8 +347,6 @@
     ;        get-h-info/get-v-info: functions which take info lists
     ;          describing the major and minor directions and select the
     ;          appropriate one.
-    ;        spacing: the size of the gaps between adjacent objects and
-    ;          objects and the edge of the panel.
     ; returns: a function which takes the children info, the width and the
     ;   height of the panel's client and returns a list which contains
     ;   posn&size info for each child. 

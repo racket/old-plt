@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Colour.h,v 1.6 1999/11/28 05:21:34 mflatt Exp $
  *
  * Purpose: classes to cover colours and colourmaps
  *
@@ -78,7 +77,7 @@ public:
     inline void  Lock(int d) { locked += d; }
 
 private:
-    friend wxColourMap;
+    friend class wxColourMap;
 
     wxColour_Xintern* X; // the encapsulated X representation
     int locked;
@@ -93,8 +92,8 @@ public:
 
     Bool Ok(void) { return (X!=NULL); }
 private:
-    friend wxColour;
-    friend wxColourDatabase;
+    friend class wxColour;
+    friend class wxColourDatabase;
 
     wxColourMap_Xintern* X; // the encapsulated X representation
 };

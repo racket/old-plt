@@ -2485,7 +2485,9 @@ static Scheme_Object *MrEdMakeStdIn(void)
   ip = scheme_make_input_port(scheme_make_port_type("mred-console-input-port"),
 			      readp,
 			      scheme_intern_symbol("mred-console"),
+			      scheme_get_evt_via_get,
 			      CAST_GS mrconsole_get_string,
+			      scheme_peek_evt_via_peek,
 			      NULL,
 			      CAST_IREADY mrconsole_char_ready,
 			      CAST_ICLOSE mrconsole_close,
@@ -2495,7 +2497,8 @@ static Scheme_Object *MrEdMakeStdIn(void)
   return (Scheme_Object *)ip;
 }
 
-static long stdout_write(Scheme_Output_Port*, const char *s, long d, long l, int rarely_block, int enable_break)
+static long stdout_write(Scheme_Output_Port*, const char *s, long d, long l, int rarely_block, 
+			 int enable_break, int breakable)
 {
 #if WINDOW_STDIO || WCONSOLE_STDIO
   if (l)
@@ -2520,11 +2523,13 @@ static Scheme_Object *MrEdMakeStdOut(void)
 
   return (Scheme_Object *)scheme_make_output_port(outtype, NULL,
 						  scheme_intern_symbol("mred-console"),
+						  scheme_write_evt_via_write,
 						  CAST_WS stdout_write,
-						  NULL, NULL, NULL, NULL, 0);
+						  NULL, NULL, NULL, NULL, NULL, 0);
 }
 
-static long stderr_write(Scheme_Output_Port*, const char *s, long d, long l, int rarely_block)
+static long stderr_write(Scheme_Output_Port*, const char *s, long d, long l, 
+			 int rarely_block, int breakable)
 {
 #if WINDOW_STDIO || WCONSOLE_STDIO
   if (l)
@@ -2547,6 +2552,7 @@ static Scheme_Object *MrEdMakeStdErr(void)
 
   return (Scheme_Object *)scheme_make_output_port(errtype, NULL,
 						  scheme_intern_symbol("mred-console"),
+						  scheme_write_evt_via_write,
 						  CAST_WS stderr_write,
 						  NULL, NULL, NULL, NULL, 0);
 }

@@ -2242,7 +2242,8 @@
 		 (insert-field
 		  "Content-Disposition" "inline"
 		  empty-header)))
-	       (string-append h body)))))))
+	       (lambda ()
+		 (string-append h body))))))))
       
       (define (start-new-mailer file to cc subject other-headers body enclosures)
 	(start-new-window

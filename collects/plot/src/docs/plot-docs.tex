@@ -204,6 +204,7 @@ For example, if we wanted to create a constructor that creates Plot-items that
 \begin{schemedisplay}
 ; Load the required modules
 (require (lib "class.ss")
+         (lib "etc.ss")
          (lib "plot-extend.ss" "plot"))
 
 
@@ -225,10 +226,10 @@ For example, if we wanted to create a constructor that creates Plot-items that
      (lambda (dash)
        (send 2dview plot-line 
               (map (lambda (x) (vector x (fun x))) dash))) 
-     x-lists))))
+     x-lists)))
 
 ; Plot a test case
-(plot (dashed-line (lambda (x) x) '((color red))))
+(plot (dashed-line (lambda (x) x) (color 'red)))
 \end{schemedisplay}
 
 \pagebreak
@@ -283,9 +284,9 @@ Data Definitions:
 2d-plot-item is one of:
 
  (points (list-of (vector number number)) point-options*)
- (line [(number -> number) | (number -> number number)] line-options*)
+ (line [(number -> number) | (number -> (vector number number))] line-options*)
  (error-bars (list-of (vector number number number)) error-bar-options*)
- (field r2->r2 field-options*)
+ (field ((vector number number) -> (vector number number)) field-options*)
  (contour (number number -> number) contour-options*)
  (shade (number number -> number) shade-options*)
  (mix 2d-plot-item 2d-plot-item+)
@@ -296,44 +297,51 @@ Data Definitions:
  (mix 3d-plot-item 3d-plot-item+)
  (custom (3d-view% -> void))
 
-note: all of the options appear as (name value) parenthesized expressions
-the -> means `default'
+note: all of the options appear as
+ option-name : enumeration of values with default enclosed in []
+or
+ option-name : type [default]
+
+color is one of:
+ 'white 'black 'yellow 'green 'aqua 'pink
+ 'wheat 'grey 'brown 'blue 'violet 'cyan
+ 'turquoise 'magenta 'salmon 'red
 
 point-options are:
- sym : symbol -> 'square
- color : symbol -> 'black
+ sym       : ['square], 'circle
+ color     : symbol -> 'black
 
 line-options are:
- samples : number -> 150
- width : number -> 1
- color : symbol -> 'red
- mode : symbol -> 'standard
- mapping : symbol -> 'cartesian
- t-min : number -> -5
- t-max : number -> 5
+ samples   : number [150]
+ width     : number [1]
+ color     : color ['red]
+ mode      : ['standard], 'parametric
+ mapping   : ['cartesian], 'polar
+ t-min     : number [-5]
+ t-max     : number [5]
  
 error-bar-options are:
- color : symbol -> 'red
-
+ color     : color ['red]
+ 
 field-options are:
- color : symbol -> 'red
- width : number -> 1
- style : symbol -> 'scaled
+ color     : color ['red]
+ width     : number [1]
+ style     : ['scaled],'normalized,'read
 
 contour-options are:
- samples : number -> 50
- color : symbol -> black
- width : number -> 1
- levels : number U (list-of number) -> 10
+ samples   : number [50]
+ color     : color ['black]
+ width     : number [1]
+ levels    : number U (list-of number) [10]
 
 shade-options are:
- samples : number -> 50
- levels : number -> 10
+ samples   : number [50]
+ levels    : number [10]
 
 surface-options are:
- samples : number -> 50
- color : symbol -> black
- width : number -> 1
+ samples   : number [50]
+ color     : color ['black]
+ width     : number [1]
 \end{schemedisplay}
 
 
@@ -368,23 +376,22 @@ PLTPlot uses the standard Non-Linear Least Squares fit algorithm for curve fitti
 \begin{schemedisplay}
 
 Data:
-       
-a fit-result is 
-  (fit (number*-> number) parameter-guess-list  data)       
-  
-  
+
+a fit-result is
+  (fit (number*-> number) parameter-guess-list  data)
+
+
 parameter-guess-list is a set of name-value pairs enclosed in (..)
-  
+
 data is
   (list-of (vector number number number))
 | (list-of (vector number number number number))
-  
+
 Functions:
-  
+
   fit-result-function : fit-result -> procedure
   fit-result-final-params : fit-result -> guess-list
-      
-       
+
 \end{schemedisplay}
 
 

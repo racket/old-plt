@@ -934,16 +934,6 @@ user_peek_string(Scheme_Input_Port *port,
   return user_get_or_peek_string(port, buffer, offset, size, nonblock, 1, skip);
 }
 
-static long 
-user_peek_string_bignum_skip(Scheme_Input_Port *port, 
-			     char *buffer, long offset, long size,
-			     Scheme_Object *skip,
-			     int nonblock)
-{
-  return user_get_or_peek_string(port, buffer, offset, size, nonblock, 
-				 1, skip);
-}
-
 static int
 user_char_ready(Scheme_Input_Port *port)
 {
@@ -1313,8 +1303,13 @@ static long pipe_peek_string(Scheme_Input_Port *p,
 
   if (SCHEME_INTP(skip))
     peek_skip = SCHEME_INT_VAL(skip);
-  else
-    peek_skip = 0;
+  else {
+#ifdef SIXTY_FOUR_BIT_INTEGERS
+    peek_skip = 0x7FFFFFFFFFFFFFFF;
+#else
+    peek_skip = 0x7FFFFFFF;
+#endif
+  }
 
   return pipe_get_or_peek_string(p, buffer, offset, size, nonblock, 1, peek_skip);
 }
@@ -2204,8 +2199,8 @@ do_general_read_string(const char *who, int argc, Scheme_Object *argv[],
 		       int alloc_mode, int only_avail, int peek)
 {
   Scheme_Object *port, *str, *peek_skip;
-  long size, start, finish, got, peek_skip;
-  int delta, skip_was_bignum = 0, size_too_big = 0;
+  long size, start, finish, got;
+  int delta, size_too_big = 0;
 
   if (alloc_mode) {
     if (!SCHEME_INTP(argv[0])) {

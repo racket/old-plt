@@ -43,7 +43,12 @@
 #include <string.h>
 
 typedef int rxpos;
-#define BIGGEST_RXPOS 0x7FFFFFFF
+#ifdef SIXTY_FOUR_BIT_INTEGERS
+# define BIGGEST_RXPOS 0x7FFFFFFFFFFFFFFF
+#else
+# define BIGGEST_RXPOS 0x7FFFFFFF
+#endif
+
 
 typedef struct regexp {
   Scheme_Type type;
@@ -939,8 +944,8 @@ regexec(const char *who,
       /* In non-peek port mode, skip over portstart chars: */
       long amt, got;
 
-      if (SCHEME_INTP(startpos)) {
-	amt = SCHEME_INT_VAL(stringpos);
+      if (SCHEME_INTP(portstart)) {
+	amt = SCHEME_INT_VAL(portstart);
 	if (amt > 4096)
 	  amt = 4096;
       } else
@@ -962,7 +967,7 @@ regexec(const char *who,
 	      scheme_put_string(who, discard_oport, drain, 0, got, 0);
 	    
 	    dropped = scheme_bin_plus(dropped, scheme_make_integer(amt));
-	    delta = scheme_bin_minus(startpos, dropped);
+	    delta = scheme_bin_minus(portstart, dropped);
 	    if (scheme_bin_gt(scheme_make_integer(amt), delta))
 	      amt = SCHEME_INT_VAL(delta);
 	  }
@@ -970,10 +975,10 @@ regexec(const char *who,
 	if (amt)
 	  return 0; /* can't skip far enough, so it fails */
       }
-
-      if (portend)
-	portend = scheme_bin_minus(portend, dropped);
     }
+
+    if (portend)
+      portend = scheme_bin_minus(portend, dropped);
   }
 
   /* Simplest case:  anchored match need be tried only once. */
@@ -1034,7 +1039,7 @@ regexec(const char *who,
     /* We don't know the starting char, or we have a port -- general
        case. */
     if (port) {
-      rxpos len = 0, skip = stringpos, space = 0;
+      rxpos len = 0, skip = 0, space = 0;
       *stringp = NULL;
 
       do {
@@ -1740,7 +1745,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
   char *full_s;
   rxpos *startp, *endp;
   int offset = 0, endset, m;
-  Scheme_Object *iport, *oport = NULL, *startv = NULL, *endv = NULL;
+  Scheme_Object *iport, *oport = NULL, *startv = NULL, *endv = NULL, *dropped;
   
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
       && !SCHEME_STRINGP(argv[0]))
@@ -1769,6 +1774,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
       /* argument was a bignum */
       offset = 0x7FFFFFFF;
     }
+    startv = argv[2];
       
 
     if (argc > 3) {
@@ -1791,6 +1797,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
 	scheme_out_of_string_range(name, "ending ", argv[3], argv[1], offset, len);
 	return NULL;
       }
+      endv = argv[3];
 
       if (argc > 4) {
 	if (!SCHEME_OUTPORTP(argv[4]))
@@ -1800,8 +1807,8 @@ static Scheme_Object *gen_compare(char *name, int pos,
     }
   }
 
-  if (iport && (endset < 0))
-    endset = 0x7FFFFFFF;
+  if (iport && !startv)
+    startv = scheme_make_integer(0);
 
   if (SCHEME_STRINGP(argv[0]))
     r = regcomp(SCHEME_STR_VAL(argv[0]), 0, SCHEME_STRTAG_VAL(argv[0]));
@@ -1816,12 +1823,17 @@ static Scheme_Object *gen_compare(char *name, int pos,
   startp = MALLOC_N_ATOMIC(rxpos, r->nsubexp);
   endp = MALLOC_N_ATOMIC(rxpos, r->nsubexp);
 
+  dropped = scheme_make_integer(0);
+
   m = regexec(name, r, full_s, offset, endset - offset, startp, endp,
-	      iport, &full_s, peek, pos, oport, &dropped);
+	      iport, &full_s, peek, pos, oport, startv, endv, &dropped);
 
   if (m) {
     int i;
     Scheme_Object *l = scheme_null;
+
+    if (oport && !iport)
+      scheme_put_string(name, oport, full_s, 0, *startp, 0);
 
     for (i = r->nsubexp; i--; ) {
       if (startp[i] != -1) {
@@ -1851,6 +1863,9 @@ static Scheme_Object *gen_compare(char *name, int pos,
 
     return l;
   } else {
+    if (oport && !iport)
+      scheme_put_string(name, oport, full_s, 0, endset, 0);
+
     return scheme_false;
   }
 }
@@ -1905,7 +1920,7 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
     int m;
 
     m = regexec("regexp-replace", r, source, srcoffset, sourcelen - srcoffset, startp, endp,
-		NULL, NULL, 0, 0, NULL);
+		NULL, NULL, 0, 0, NULL, NULL, NULL, NULL);
 
     if (m) {
       char *insert;

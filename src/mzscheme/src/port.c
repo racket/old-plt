@@ -1087,6 +1087,8 @@ long scheme_get_string(const char *who,
 
   if (!size)
     return 0;
+  if (!peek_skip) 
+    peek_skip = scheme_make_integer(0);
 
   ip = (Scheme_Input_Port *)port;
 
@@ -1132,7 +1134,7 @@ long scheme_get_string(const char *who,
 
       l = pipe_char_count(ip->peeked_read);
       if (size && l) {
-	if (SCHEME_INTP(peek_skip) && (l > peek_skip)) {
+	if (SCHEME_INTP(peek_skip) && (l > SCHEME_INT_VAL(peek_skip))) {
 	  l -= SCHEME_INT_VAL(peek_skip);
 
 	  if (l > size)
@@ -1178,31 +1180,33 @@ long scheme_get_string(const char *who,
        we haven't gotten anything so far, it means that we need to read before we
        can actually peek. Handle this case with a recursive peek that starts
        from the current position, then set peek_skip to 0 and go on. */
-    if (peek && !ps && (peek_skip != scheme_make_integer(0)) && !total_got && !got) {
+    while (peek && !ps && (peek_skip != scheme_make_integer(0)) && !total_got && !got) {
       char *tmp;
       int v, pcc;
       long skip;
 
-      if (!SCHEME_INTP(peek_skip)) {
-	scheme_raise_out_of_memory(who, "peeking with offset %V", peek_skip);
-	return 0;
-      }
-	
-      skip = SCHEME_INT_VAL(peek_skip);
+#     define MAX_SKIP_TRY_AMOUNT 65536
+
+      if (SCHEME_INTP(peek_skip)) {
+	skip = SCHEME_INT_VAL(peek_skip);
+	if (skip > MAX_SKIP_TRY_AMOUNT)
+	  skip = MAX_SKIP_TRY_AMOUNT;
+      } else
+	skip = MAX_SKIP_TRY_AMOUNT;
 
       tmp = (char *)scheme_malloc_atomic(skip);
       pcc = pipe_char_count(ip->peeked_read);
       v = scheme_get_string(who, port, tmp, 0, skip,
 			    (only_avail == 2) ? 2 : 0, 
-			    1, ip->ungotten_count + pcc);
+			    1, scheme_make_integer(ip->ungotten_count + pcc));
       if (v == EOF)
 	return EOF;
       else if (v == SCHEME_SPECIAL) {
 	ip->special = NULL;
 	scheme_bad_time_for_special(who, port);
       } else if (v == skip) {
-	peek_skip = scheme_make_integer(0);
-	/* Ok, we're ready to continue! */
+	peek_skip = scheme_bin_minus(peek_skip, scheme_make_integer(skip));
+	/* Ok... ready to continue (if skip == peek_skip) */
       } else
 	return 0;
     }

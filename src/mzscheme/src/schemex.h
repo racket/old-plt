@@ -371,7 +371,7 @@ long (*scheme_get_string)(const char *who,
 				 Scheme_Object *port, 
 				 char *buffer, long offset, long size,
 				 int only_avail, 
-				 int peek, long peek_skip);
+				 int peek, Scheme_Object *peek_skip);
 long (*scheme_get_chars)(Scheme_Object *port, long size, char *buffer, int offset);
 long (*scheme_tell)(Scheme_Object *port);
 long (*scheme_output_tell)(Scheme_Object *port);

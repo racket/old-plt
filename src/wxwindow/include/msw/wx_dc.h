@@ -49,8 +49,10 @@ class wxDC: public wxbDC
   COLORREF cur_bk;
   int cur_rop;
 
+  Graphics *g;
+
   // Store all old GDI objects when do a SelectObject,
-  // so we can select them back in (this unselecting user's
+  // so we can select them back in (thus unselecting user
   // objects) so we can safely delete the DC.
   HBITMAP old_bitmap;
   HPEN    old_pen;
@@ -167,6 +169,9 @@ class wxDC: public wxbDC
   wxBitmap *StippleBrush();				   
 
   virtual wxGL *GetGL();
+
+  void InitGraphics();
+  void ReleaseGraphics();
 };
 
 // This class specific to Windows 3.1

@@ -12,6 +12,8 @@
 
 #include "wx.h"
 
+#include "wx_graphics.h"
+
 #include "..\..\utils\dib\dib.h"
 
 #include "xpm34.h"
@@ -442,6 +444,8 @@ wxPen::~wxPen()
 {
   COUNT_M(pen_count);
 
+  ReleaseGraphics();
+
   if (cpen)
     DeleteRegisteredGDIObject(cpen);
 
@@ -509,11 +513,36 @@ wxPen::wxPen(const char *col, double Width, int Style)
   ChangePen();
 }
 
+static LineCap graphics_caps[] = { LineCapRound, LineCapSquare, LineCapFlat };
+static LineJoin graphics_joins[] = { LineJoinBevel, LineJoinMiter, LineJoinRound };
+
+Pen *wxPen::GraphicsPen()
+{
+  if (!g_p) {
+    Pen *p;
+    p = wxGPenNew(c->pixel, width, 
+		  graphics_caps[cap - wxCAP_ROUND]
+		  graphics_joins[cap - wxJOIN_BEVEL]);
+    g_p = p;
+  }
+  return g_p;
+}
+
+void wxPen::ReleaseGraphics()
+{
+  if (p) {
+    wxGPenRelease(p);
+    p = NULL;
+  }
+}
+
 void wxPen::ChangePen(void)
 {
   Bool must_change = FALSE;
   COLORREF ms_colour = 0;
   wxBitmap *bm;
+
+  ReleaseGraphics();
 
   if (style==wxTRANSPARENT)
     return;
@@ -720,6 +749,8 @@ wxBrush::~wxBrush()
 {
   COUNT_M(brush_count);
 
+  ReleaseGraphics();
+  
   if (cbrush)
     DeleteRegisteredGDIObject(cbrush);
 
@@ -746,11 +777,33 @@ wxBrush::wxBrush(wxColour *col, int Style)
   ChangeBrush();
 }
 
+Pen *wxPen::GraphicsPen()
+{
+  if (!g_b) {
+    Brush *b;
+    b = wxGBrushNew(c->pixel);
+    g_g = b;
+  }
+  return g_b;
+}
+
+void wxBrush::ReleaseGraphics()
+{
+  if (g_b) {
+    wxGBrushRelease(g_b);
+    b_b = NULL;
+  }
+}
+
+
+
 void wxBrush::ChangeBrush(void) 
 {
   Bool must_change = FALSE;
   COLORREF ms_colour = 0;
   wxBitmap *bm;
+
+  ReleaseGraphics();
 
   if (style==wxTRANSPARENT)
     return;

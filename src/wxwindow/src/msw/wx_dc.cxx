@@ -14,6 +14,7 @@
 
 #include "../../../wxcommon/Region.h"
 #include "wx_pdf.h"
+#include "wx_graphics.h"
 #include "../../../mzscheme/include/scheme.h"
 
 #include <math.h>
@@ -30,6 +31,22 @@ static HANDLE null_brush;
 static HANDLE null_pen;
 
 void RegisterGDIObject(HANDLE x);
+
+extern Bool wx_gdi_plus;
+extern void wxInitGraphicsPlus(void);
+
+void wxGDIStartup(void)
+{
+  wxInitGraphicsPlus();
+  if (wx_gdi_plus)
+    wxGStartup();
+}
+
+void wxGDIShutdown(void)
+{
+  if (wx_gdi_plus)
+    wxGShutdown();
+}
 
 static is_nt()
 {
@@ -119,6 +136,8 @@ wxDC::wxDC(void)
 
 wxDC::~wxDC(void)
 {
+  ReleaseGraphics();
+  
   if (current_pen) current_pen->Lock(-1);
   if (current_brush) current_brush->Lock(-1);
   if (clipping) --clipping->locked;
@@ -205,8 +224,10 @@ void wxDC::DoneDC(HDC dc)
   if (dc && !cdc) {
     wxWnd *wnd = NULL;
     if (canvas) wnd = (wxWnd *)canvas->handle;
-    if (!cdc && wnd)
+    if (!cdc && wnd) {
+      ReleaseGraphics();
       wnd->ReleaseHDC();
+    }
   }
 }
 
@@ -354,6 +375,33 @@ void wxDC::SetColourMap(wxColourMap *cmap)
   DoneDC(dc);
 }
 
+void wxDC::InitGraphics()
+{
+  if (!g) {
+    int x, y;
+
+    g = wxGMake(dc);
+
+    if (canvas) {
+      wxWnd *wnd = (wxWnd *)canvas->handle;
+      wnd->CalcScrolledPosition(0, 0, &x, &y);
+    } else {
+      x = y = 0;
+    }
+
+    wxGTranslate(g, device_origin_x - x, device_origin_y - y);
+    wxGScale(g, user_scale_x, user_scale_y);
+  }
+}
+
+void wxDC::ReleaseGraphics()
+{
+  if (g) {
+    wxGRelease(g);
+    g = NULL;
+  }
+}
+
 void wxDC::Clear(void)
 {
   HDC dc;
@@ -379,6 +427,19 @@ void wxDC::Clear(void)
     rect.bottom = ::GetDeviceCaps(dc, VERTRES);
   }
 
+  if (anti_alias) {
+    GraphicsState s;
+
+    InitGraphics();
+
+    s = wxGSave(g);
+    wxGResetTransform(g);
+    wxGFillRectangleColor(g, current_background_colour->pixel, 0, 0, rect.right, rect.bottom);
+    wxGRestore(g, s);
+
+    return;
+  }
+  
   /* Make sure the mapping mode is 1:1 */
   if (::GetGraphicsMode(dc) == GM_ADVANCED) {
     XFORM xform;
@@ -481,6 +542,15 @@ void wxDC::DrawLine(double x1, double y1, double x2, double y2)
   dc = ThisDC();
 
   if (!dc) return;
+
+  if (anti_alias) {
+    if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
+      InitGraphics();
+      
+      wxGDrawLine(g, current_pen->GraphicsPen(), x1, y1, x2, y2);
+    }
+    return;
+  }
 
   if (StartPen(dc)) {
     int pw;
@@ -603,6 +673,33 @@ void wxDC::DrawArc(double x, double y, double w, double h, double start, double 
 
   if (!dc) return;
 
+  if (anti_alias) {
+    double span, init;
+
+    InitGraphics();
+
+    init = start * 180 / wxPI;
+    init = fmod(init, 360.0);
+    if (init < 360.0)
+      init += 360.0;
+
+    span = (end - start) * 180 / wxPI;
+    span = fmod(span, 360.0);
+    if (span < 360.0)
+      span += 360.0;
+
+    if (current_brush && (current_brush->GetStyle() != wxTRANSPARENT)) {
+      wxGFillPie(g, current_pen->GraphicsBrush(), x, y, w, h, init, span);
+    }
+
+    if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
+      wxGDrawArc(g, current_pen->GraphicsPen(), x, y, w, h, init, span);
+    }
+
+    return;
+  }
+
+  
   if (StippleBrush()) {
     wxRegion *r;
     r = new wxRegion(this);
@@ -728,6 +825,29 @@ void wxDC::DrawPolygon(int n, wxPoint points[], double xoffset, double yoffset,i
 
   if (!dc) return;
 
+  if (anti_alias) {
+    PointF *pts;
+    
+    InitGraphics();
+
+    pts = new PointF[n];
+    for (i = 0; i < n; i++) {
+      pts[i].x = points[i].x + xoffset;
+      pts[i].y = points[i].y + yoffset;
+    }
+
+    if (current_brush && (current_brush->GetStyle() != wxTRANSPARENT)) {
+      wxGFillPolygon(g, current_brush->GraphicsBrush(), pts, n, 
+		     (fillStyle == wxODDEVEN_RULE) ? FillModeAlternate : FillModeWinding);
+    }
+
+    if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
+      wxGDrawPolygon(g, current_pen->GraphicsPen(), pts, n);
+    }
+
+    return;
+  }
+
   if (StippleBrush()) {
     wxRegion *r;
     r = new wxRegion(this);
@@ -766,6 +886,25 @@ void wxDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffset)
 
   if (!dc) return;
 
+  if (anti_alias) {
+    if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
+      PointF *pts;
+      
+      InitGraphics();
+      
+      pts = new PointF[n];
+      for (i = 0; i < n; i++) {
+	pts[i].x = points[i].x + xoffset;
+	pts[i].y = points[i].y + yoffset;
+      }
+
+      
+      wxGDrawLines(g, current_pen->GraphicsPen(), pts, n);
+    }
+
+    return;
+  }
+
   if (StartPen(dc)) {
     int xoffset1;
     int yoffset1;
@@ -797,6 +936,20 @@ void wxDC::DrawRectangle(double x, double y, double width, double height)
 
   if (!dc) return;
 
+  if (anti_alias) {
+    InitGraphics();
+
+    if (current_brush && (current_brush->GetStyle() != wxTRANSPARENT)) {
+      wxGFillRectangle(g, current_brush->GraphicsBrush(), x, y, width, height);
+    }
+
+    if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
+      wxGDrawRectangle(g, current_pen->GraphicsPen(), x, y, width, height);
+    }
+    
+    return;
+  }
+  
   if (StippleBrush()) {
     wxRegion *r;
     r = new wxRegion(this);
@@ -835,17 +988,7 @@ void wxDC::DrawRoundedRectangle(double x, double y, double width, double height,
   dc = ThisDC();
 
   if (!dc) return;
-
-  if (StippleBrush()) {
-    wxRegion *r;
-    r = new wxRegion(this);
-    r->SetRoundedRectangle(x, y, width, height);
-    FillWithStipple(this, r, current_brush);
-  }
-
-  ShiftXY(x, y, &x1, &y1);
-  ShiftXY(x + width, y + height, &x2, &y2);
-
+  
   // A negative radius value is interpreted to mean
   // 'the proportion of the smallest X or Y dimension'
   if (radius < 0.0) {
@@ -856,6 +999,44 @@ void wxDC::DrawRoundedRectangle(double x, double y, double width, double height,
       smallest = height;
     radius = (double)(- radius * smallest);
   }
+
+  if (anti_alias) {
+    GraphicsPath *gp;
+
+    InitGraphics();
+
+    gp = wxGPathNew(FillModeWinding);
+    wxGPathAddArc(gp, x + radius, y + radius, radius, radius, 180, -90);
+    wxGPathAddLine(gp, x + radius, y, x + width - radius, y);
+    wxGPathAddArc(gp, x + width - radius, y + radius, radius, radius, 90, -90);
+    wxGPathAddLine(gp, x + width, y + radius, x + width, y + height - radius);
+    wxGPathAddArc(gp, x + width - radius, y + height - radius, radius, radius, 0, -90);
+    wxGPathAddLine(gp, x + width - radius, y + height, x + radius, y + height);
+    wxGPathAddArc(gp, x + radius, y + height - radius, radius, radius, 270, -90);
+    wxGPathCloseFigure(gp);
+    
+    if (current_brush && (current_brush->GetStyle() != wxTRANSPARENT)) {
+      wxGFillPath(g, current_brush->GraphicsBrush(), path);
+    }
+
+    if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
+      wxGDrawPath(g, current_pen->GraphicsPen(), path);
+    }
+
+    wxGPathRelease(gp);
+    
+    return;
+  }
+  
+  if (StippleBrush()) {
+    wxRegion *r;
+    r = new wxRegion(this);
+    r->SetRoundedRectangle(x, y, width, height);
+    FillWithStipple(this, r, current_brush);
+  }
+
+  ShiftXY(x, y, &x1, &y1);
+  ShiftXY(x + width, y + height, &x2, &y2);
 
   if (StartBrush(dc, 1)) {
     (void)RoundRect(dc, (int)XLOG2DEV(x1), (int)YLOG2DEV(y1), (int)XLOG2DEV(x2) + 1,
@@ -879,6 +1060,11 @@ void wxDC::DrawEllipse(double x, double y, double width, double height)
   dc = ThisDC();
 
   if (!dc) return;
+
+  if (anti_alias) {
+    DrawArc(x, y, width, height, 0, 2 * wxPI);
+    return;
+  }
 
   if (StippleBrush()) {
     wxRegion *r;
@@ -1474,6 +1660,8 @@ void wxDC::SetMapMode(int mode)
 
 void wxDC::SetUserScale(double x, double y)
 {
+  ReleaseGraphics();
+
   user_scale_x = x;
   user_scale_y = y;
 
@@ -1506,6 +1694,8 @@ void wxDC::SetLogicalOrigin(double x, double y)
 
 void wxDC::SetDeviceOrigin(double x, double y)
 {
+  ReleaseGraphics();
+
   device_origin_x = x;
   device_origin_y = y;
   

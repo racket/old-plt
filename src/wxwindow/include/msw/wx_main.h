@@ -57,5 +57,7 @@ MRED_EXTERN int wxWinMain(int wm_is_mred,
 			  int argc, char **argv, int nCmdShow,
 			  int (*main)(int, char**));
 
+extern void wxGDIStartup(void);
+extern void wxGDIShutdown(void);
 
 #endif

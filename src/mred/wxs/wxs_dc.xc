@@ -316,6 +316,81 @@ static wxBitmap *dc_target(Scheme_Object *obj)
   return (wxBitmap *)0x1; /* dont't return NULL because that matches unspecified mask */
 }
 
+static void ScaleSection(wxMemoryDC *dest, wxMemoryDC *src, 
+			 double tx, double ty, int w2, int h2,
+			 double fx, double fy, int w, int h)
+{
+  double xs, ys, r, g, b, t, dx, dy, wt, si, sj;
+  long i, j, starti, endi, startj, endj, p, xi, xj;
+  unsigned char *s, *s2;
+  SETUP_VAR_STACK(4);
+  VAR_STACK_PUSH(0, s);
+  VAR_STACK_PUSH(1, s2);
+  VAR_STACK_PUSH(2, dest);
+  VAR_STACK_PUSH(3, src);
+
+  if (!dest->Ok())
+    WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","draw-scaled-section"), 
+				       "dc is not ok: ",
+				       WITH_VAR_STACK(objscheme_bundle_wxMemoryDC(dest))));
+  if (!src->Ok())
+    WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","draw-scaled-section"), 
+				       "source dc is not ok: ", 
+				       WITH_VAR_STACK(objscheme_bundle_wxMemoryDC(src))));
+
+  xs = (double)w2 / (double)w;
+  ys = (double)h2 / (double)h;
+
+  s = (unsigned char *)WITH_VAR_STACK(scheme_malloc_atomic(w * h * 4));
+  s2 = (unsigned char *)WITH_VAR_STACK(scheme_malloc_atomic(w2 * h2 * 4));
+
+  WITH_VAR_STACK(dcGetARGBPixels(src, fx, fy, w, h, (char *)s));
+
+  for (i = 0; i < w2; i++) {
+    si = (double)i / xs;
+    starti = (int)floor(si);
+    endi = (int)ceil(si);
+    if (endi >= w)
+      endi = w - 1;
+
+    for (j = 0; j < h2; j++) {
+      sj = (double)j / ys;
+      startj = (int)floor(sj);
+      endj = (int)ceil(sj);
+      if (endj >= h)
+	endj = h - 1;
+
+      r = g = b = t = 0.0;
+
+      for (xi = starti; xi <= endi; xi++) {
+	for (xj = startj; xj <= endj; xj++) {
+	  dx = ((xi * xs) - i);
+	  dy = ((xj * ys) - j);
+	  wt = ((double)1 / (0.001 + sqrt((dx * dx) + (dy * dy))));
+	  p = ((xj * w) + xi) * 4;
+	  r += (wt * s[p+1]);
+	  g += (wt * s[p+2]);
+	  b += (wt * s[p+3]);
+	  t += wt;
+	}
+      }
+
+      r /= t;
+      g /= t;
+      b /= t;
+
+      p = ((j * w2) + i) * 4;
+      s2[p+1] = (int)r;
+      s2[p+2] = (int)g;
+      s2[p+3] = (int)b;
+    }
+  }
+
+  WITH_VAR_STACK(dcSetARGBPixels(dest, tx, ty, w2, h2, (char *)s2));
+
+  READY_TO_RETURN;
+}
+
 @MACRO CheckStringIndex[n.s.i] = if (x<i> > SCHEME_CHAR_STRLEN_VAL(p[POFFSET+<s>])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>",<n>), "string index too large: ", p[POFFSET+<i>]));
 
 @CLASSBASE wxDC "dc":"object"
@@ -404,6 +479,8 @@ static wxBitmap *dc_target(Scheme_Object *obj)
 
 @ m "get-argb-pixels" : void dcGetARGBPixels(double,double,rint[0|10000],rint[0|10000],wbstring) : : /CheckOk[METHODNAME("bitmap-dc%","get-argb-pixels")]|STRINGENOUGH["get-argb-pixels"]
 @ m "set-argb-pixels" : void dcSetARGBPixels(double,double,rint[0|10000],rint[0|10000],bstring) : : /CheckOk[METHODNAME("bitmap-dc%","set-argb-pixels")]|STRINGENOUGH["set-argb-pixels"]
+
+@ m "draw-scaled-section" : void ScaleSection(wxMemoryDC!,double,double,rint[0|10000],rint[0|10000],double,double,rint[0|10000],rint[0|10000])
 
 @ "set-bitmap" : void SelectObject(wxBitmap^);  : : /CHECKOKFORDC[0.METHODNAME("bitmap-dc%","set-bitmap")]
 @ "get-bitmap" : wxBitmap^ GetObject();

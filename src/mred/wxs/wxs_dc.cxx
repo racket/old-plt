@@ -413,6 +413,81 @@ static wxBitmap *dc_target(Scheme_Object *obj)
   return (wxBitmap *)0x1; /* dont't return NULL because that matches unspecified mask */
 }
 
+static void ScaleSection(wxMemoryDC *dest, wxMemoryDC *src, 
+			 double tx, double ty, int w2, int h2,
+			 double fx, double fy, int w, int h)
+{
+  double xs, ys, r, g, b, t, dx, dy, wt, si, sj;
+  long i, j, starti, endi, startj, endj, p, xi, xj;
+  unsigned char *s, *s2;
+  SETUP_VAR_STACK(4);
+  VAR_STACK_PUSH(0, s);
+  VAR_STACK_PUSH(1, s2);
+  VAR_STACK_PUSH(2, dest);
+  VAR_STACK_PUSH(3, src);
+
+  if (!dest->Ok())
+    WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","draw-scaled-section"), 
+				       "dc is not ok: ",
+				       WITH_VAR_STACK(objscheme_bundle_wxMemoryDC(dest))));
+  if (!src->Ok())
+    WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","draw-scaled-section"), 
+				       "source dc is not ok: ", 
+				       WITH_VAR_STACK(objscheme_bundle_wxMemoryDC(src))));
+
+  xs = (double)w2 / (double)w;
+  ys = (double)h2 / (double)h;
+
+  s = (unsigned char *)WITH_VAR_STACK(scheme_malloc_atomic(w * h * 4));
+  s2 = (unsigned char *)WITH_VAR_STACK(scheme_malloc_atomic(w2 * h2 * 4));
+
+  WITH_VAR_STACK(dcGetARGBPixels(src, fx, fy, w, h, (char *)s));
+
+  for (i = 0; i < w2; i++) {
+    si = (double)i / xs;
+    starti = (int)floor(si);
+    endi = (int)ceil(si);
+    if (endi >= w)
+      endi = w - 1;
+
+    for (j = 0; j < h2; j++) {
+      sj = (double)j / ys;
+      startj = (int)floor(sj);
+      endj = (int)ceil(sj);
+      if (endj >= h)
+	endj = h - 1;
+
+      r = g = b = t = 0.0;
+
+      for (xi = starti; xi <= endi; xi++) {
+	for (xj = startj; xj <= endj; xj++) {
+	  dx = ((xi * xs) - i);
+	  dy = ((xj * ys) - j);
+	  wt = ((double)1 / (0.001 + sqrt((dx * dx) + (dy * dy))));
+	  p = ((xj * w) + xi) * 4;
+	  r += (wt * s[p+1]);
+	  g += (wt * s[p+2]);
+	  b += (wt * s[p+3]);
+	  t += wt;
+	}
+      }
+
+      r /= t;
+      g /= t;
+      b /= t;
+
+      p = ((j * w2) + i) * 4;
+      s2[p+1] = (int)r;
+      s2[p+2] = (int)g;
+      s2[p+3] = (int)b;
+    }
+  }
+
+  WITH_VAR_STACK(dcSetARGBPixels(dest, tx, ty, w2, h2, (char *)s2));
+
+  READY_TO_RETURN;
+}
+
 
 
 
@@ -1919,6 +1994,7 @@ class wxDC *objscheme_unbundle_wxDC(Scheme_Object *obj, const char *where, int n
 
 
 
+
 class os_wxMemoryDC : public wxMemoryDC {
  public:
 
@@ -1988,6 +2064,45 @@ static Scheme_Object *os_wxMemoryDCSelectObject(int n,  Scheme_Object *p[])
 
   if (x0) { if (!x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","set-bitmap"), "bad bitmap: ", p[POFFSET+0])); if (BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","set-bitmap"), "bitmap is already installed into a bitmap-dc%: ", p[POFFSET+0])); if (BM_IN_USE(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","set-bitmap"), "bitmap is currently installed as a control label or pen/brush stipple: ", p[POFFSET+0])); }
   WITH_VAR_STACK(((wxMemoryDC *)((Scheme_Class_Object *)p[0])->primdata)->SelectObject(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxMemoryDCScaleSection(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMemoryDC_class, "draw-scaled-section in bitmap-dc%", n, p);
+  class wxMemoryDC* x0 INIT_NULLED_OUT;
+  double x1;
+  double x2;
+  int x3;
+  int x4;
+  double x5;
+  double x6;
+  int x7;
+  int x8;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMemoryDC(p[POFFSET+0], "draw-scaled-section in bitmap-dc%", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-scaled-section in bitmap-dc%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "draw-scaled-section in bitmap-dc%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+3], 0, 10000, "draw-scaled-section in bitmap-dc%"));
+  x4 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+4], 0, 10000, "draw-scaled-section in bitmap-dc%"));
+  x5 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+5], "draw-scaled-section in bitmap-dc%"));
+  x6 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+6], "draw-scaled-section in bitmap-dc%"));
+  x7 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+7], 0, 10000, "draw-scaled-section in bitmap-dc%"));
+  x8 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+8], 0, 10000, "draw-scaled-section in bitmap-dc%"));
+
+  
+  WITH_VAR_STACK(ScaleSection(((wxMemoryDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4, x5, x6, x7, x8));
 
   
   
@@ -2149,10 +2264,11 @@ void objscheme_setup_wxMemoryDC(Scheme_Env *env)
 
   wxREGGLOB(os_wxMemoryDC_class);
 
-  os_wxMemoryDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "bitmap-dc%", "dc%", (Scheme_Method_Prim *)os_wxMemoryDC_ConstructScheme, 6));
+  os_wxMemoryDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "bitmap-dc%", "dc%", (Scheme_Method_Prim *)os_wxMemoryDC_ConstructScheme, 7));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMemoryDC_class, "get-bitmap" " method", (Scheme_Method_Prim *)os_wxMemoryDCGetObject, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMemoryDC_class, "set-bitmap" " method", (Scheme_Method_Prim *)os_wxMemoryDCSelectObject, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMemoryDC_class, "draw-scaled-section" " method", (Scheme_Method_Prim *)os_wxMemoryDCScaleSection, 9, 9));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMemoryDC_class, "set-argb-pixels" " method", (Scheme_Method_Prim *)os_wxMemoryDCdcSetARGBPixels, 5, 5));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMemoryDC_class, "get-argb-pixels" " method", (Scheme_Method_Prim *)os_wxMemoryDCdcGetARGBPixels, 5, 5));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMemoryDC_class, "set-pixel" " method", (Scheme_Method_Prim *)os_wxMemoryDCSetPixel, 3, 3));

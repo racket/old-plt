@@ -30,12 +30,7 @@ class wxbRadioBox: public wxItem
 
   wxbRadioBox(wxPanel *panel, wxFunction func, char *Title,
              int x = -1, int y = -1, int width = -1, int height = -1,
-             int N = 0, char **Choices = NULL,
-             int majorDim = 0,
-             long style = 0, char *name = "radioBox");
-  wxbRadioBox(wxPanel *panel, wxFunction func, char *Title,
-             int x = -1, int y = -1, int width = -1, int height = -1,
-             int N = 0, wxBitmap **Choices = NULL,
+             int N = 0,
              int majorDim = 0,
              long style = 0, char *name = "radioBox");
 

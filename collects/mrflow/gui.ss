@@ -171,9 +171,11 @@
           [(type) (list (sba:pp-type (sba:get-type-from-label sba-state label) 'gui))]
           [(error) (map err:sba-error-message (sba:get-errors-from-label sba-state label))]))
       
+      
       ; DEFINITION WINDOW MIXIN
       (drscheme:get/extend:extend-definitions-text
        saa:drscheme:get/extend:extend-definitions-text-mixin)
+      
       
       ; UNIT FRAME MIXIN
       (drscheme:get/extend:extend-unit-frame
@@ -200,6 +202,7 @@
            
            (super-instantiate ())
            
+           
            (inherit get-button-panel get-interactions-text)
            (define analyze-button
              (instantiate
@@ -216,6 +219,7 @@
                           (drscheme:language-configuration:get-settings-preferences-symbol))])
                     (letrec ([register-label-with-gui
                               (saa:make-register-label-with-gui
+                               definitions-text
                                sba:get-source-from-label
                                sba:get-mzscheme-position-from-label
                                (lambda (label) (get-span-from-label sba-state label))
@@ -225,6 +229,7 @@
                                (lambda (label) (error 'get-name-from-label "MrFlow internal error; renaming forbidden"))
                                (lambda (labels) (error 'get-labels-to-rename-from-label "MrFlow internal error; renaming forbidden"))
                                (lambda (label) (get-style-delta-from-label sba-state label))
+                               (lambda (menu labels) cst:void)
                                get-box-style-delta-from-snip-type
                                get-menu-text-from-snip-type
                                (lambda (type label) (get-snip-text-from-snip-type sba-state type label))
@@ -232,12 +237,14 @@
                                #t
                                tacked-arrow-brush
                                untacked-arrow-brush
-                               arrow-pen
-                               )]
+                               arrow-pen)]
                              [sba-state (sba:make-sba-state register-label-with-gui)])
-                      ; disable-evaluation will lock the editor, so we need to clear all
-                      ; the snips before that.
-                      (clear-annotations)
+                      ; disable-evaluation will lock the editor, so before that we need
+                      ; to make sure other tools have cleared their crap (note that this
+                      ; is a call to the superclass, so remove-all-snips-and-arrows-and-colors
+                      ; is not called here, but is called internally inside
+                      ; make-register-label-with-gui
+                      (super-clear-annotations)
                       (disable-evaluation)
                       
                       ; note: we have to do this each time, because the user might have changed
@@ -279,17 +286,18 @@
                                        (send definitions-text color-all-labels)
                                        )
                                      (begin
+                                       ;(printf "syntax: ~a~n" (syntax-object->datum syntax-object-or-eof))
                                        (sba:create-label-from-term sba-state syntax-object-or-eof '() #f)
                                        (iter))))))
                             ; get-mrflow-primitives-filename defaults to R5RS
                             ; (see mrflow-default-implementation-mixin above), so if we arrive here,
-                            ; we know we are in trouble, because it means no primitive table is
+                            ; we know we are in trouble because it means no primitive table is
                             ; defined for the current language and we couldn't even find the table
                             ; for the R5RS primitives.
                             (error 'analyze-button-callback
                                    "MrFlow internal error; R5RS primitive types file ~a doesn't exist."
                                    primitive-table-file)))))))))
-             
+           
            (send (get-button-panel) change-children
                  (lambda (button-list)
                    (cons analyze-button (remq analyze-button button-list))))

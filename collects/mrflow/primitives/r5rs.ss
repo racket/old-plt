@@ -588,15 +588,15 @@
                      ; void]
                      )))
  
- ; (delay expr) => (#%app make-a-promise (lambda () expr))
- ; if we have the arrow type in the argument of make-a-promise, then the application
+ ; (delay expr) => (#%app make-promise (lambda () expr))
+ ; if we have the arrow type in the argument of make-promise, then the application
  ; will happen immediately, which we don't want. So instead
  ; a will be the thunk, and having the arrow type for this thunk in the type for force
  ; will force the application of the thunk inside force.
  ; pp-type for promises just "forgets" to show the enclosing thunk part of the type.
  ; It's ugly, but it works, and it works well enough to approximate memoization.
- (make-a-promise (forall ([a_make-a-promise top])
-                         (a_make-a-promise -> (promise a_make-a-promise))))
+ (make-promise (forall ([a_make-promise top])
+                       (a_make-promise -> (promise a_make-promise))))
  (force (forall ([a_force top])
                 ((promise (-> a_force)) -> a_force)))
  

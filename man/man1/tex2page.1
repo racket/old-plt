@@ -1,8 +1,8 @@
-.TH tex2page 1 "2003-06-19"
+.TH tex2page 1 "2003-06-20"  \" last change
 
 .SH NAME
 
-TeX2page \- TeX document to Web page converter 
+TeX2page \- converts TeX documents to Web pages 
 
 .SH SYNOPSIS
 
@@ -47,15 +47,18 @@ tex2page can be called with the following options
 instead of an argument filename.
 .TP
 --help
+.br
 Print help message and exit.
 .TP
 --version
+.br
 Print version information and exit.
 
 .SH ENVIRONMENT
 
 .TP
 TEXINPUTS
+.br
 tex2page uses the same search path as TeX
 to search for 
 \einput and \eopenin files.  The default search path is
@@ -68,6 +71,7 @@ to any directory in TEXINPUTS that you want to
 recursively search all subdirectories of.
 .TP
 TIIPINPUTS
+.br
 tex2page will use a search path specified in the
 environment variable TIIPINPUTS
 instead of TEXINPUTS, if TIIPINPUTS exists.
@@ -76,6 +80,7 @@ does not support the double-slash mechanism of
 TEXINPUTS.
 .TP
 TEXEDIT
+.br
 If tex2page encounters a fatal error in the document,
 you can type e to edit the offending file at the 
 line containing the error.  The editor call can
@@ -84,6 +89,7 @@ environment variable TEXEDIT, with %d standing
 for the line number and %s for the filename.  
 .TP
 EDITOR
+.br
 If TEXEDIT is not set, $EDITOR is chosen as the editor.
 If EDITOR is also not set, "vi" is chosen as the editor.  
 The
@@ -95,7 +101,7 @@ filename.
 .SH FILES
 .TP 
 jobname.hdir, .tex2page.hdir, ~/.tex2page.hdir
-
+.br
 By default, tex2page generates its output HTML files 
 in the current directory.  You can specify a different
 directory by naming it in the file jobname.hdir in the
@@ -103,14 +109,14 @@ current directory, the file .tex2page.hdir in the current
 directory, or the file .tex2page.hdir in your home
 directory.  The first of these files that exists is
 considered.
-.sp 1
-The name
-can be or contain the TeX control-sequence \ejobname,
-which expands to the basename of the input file.
+.IP
+The name can be or contain the TeX
+control-sequence \ejobname, which expands to the
+basename of the input file.
 .PP
 .TP 
 jobname.t2p
-
+.br
 Before processing a TeX source file whose basename is
 jobname, tex2page will automatically load the file 
 jobname.t2p, if it exists.  jobname.t2p is a good place

@@ -437,7 +437,7 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
 			 double tx, double ty, double ww2, double hh2,
 			 double fx, double fy, double ww, double hh)
 {
-  double xs, ys, r, g, b, t, dx, dy, wt, si, sj, dist_base;
+  double xs, ys, r, g, b, t, dx, dy, wt, si, sj, span;
   int i, j, starti, endi, startj, endj, p, xi, xj, sbmw, sbmh, w, h, w2, h2, ispan, jspan;
   unsigned char *s = NULL, *s2 = NULL;
   wxMemoryDC *srcdc = NULL;
@@ -495,11 +495,10 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
   }
   if (h > h2) {
     jspan = (h / h2) - 1;
-    dist_base += 0.5;
   } else {
     jspan = 0;
   }
-  dist_base = 0.01;
+  span = ((ispan + jspan) / 2) + 1;
 
 #ifdef wx_msw
   srcdc = (wxMemoryDC *)src->selectedInto;
@@ -547,7 +546,7 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
 	for (xi = starti; xi <= endi; xi++) {
 	  dx = ((xi * xs) - i);
 	  dy = ((xj * ys) - j);
-	  wt = ((double)1 / (dist_base + approx_dist(dx, dy)));
+	  wt = ((double)1 / (0.001 + (approx_dist(dx, dy) / span)));
 	  p = ((xj * w) + xi) * 4;
 	  r += (wt * s[p+1]);
 	  g += (wt * s[p+2]);
@@ -568,6 +567,11 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
   }
 
   WITH_VAR_STACK(dcSetARGBPixels(dest, tx, ty, w2, h2, (char *)s2));
+
+#ifndef SENORA_GC_NO_FREE
+  GC_free(s);
+  GC_free(s2);
+#endif
 
   READY_TO_RETURN;
 }

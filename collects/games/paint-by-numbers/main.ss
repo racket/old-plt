@@ -31,6 +31,11 @@
 	 [else 
 	  (send g set-value counter)]))))
 
+  (define show-help
+    ((require-library "show-help.ss" "games")
+     (list "games" "paint-by-numbers")
+     "Paint by Numbers Help"))
+
   (define generic-frame%
     (class fw:frame:standard-menus% (name)
 
@@ -126,7 +131,13 @@
 	  (send (get-canvas) redo))])
 
       (sequence
-	(super-init name))))
+	(super-init name))
+      (public
+	[top-panel (make-object horizontal-panel% this)]
+	[help-button
+	 (make-object button% "Help" top-panel (lambda (_1 _2) (show-help)))])
+      (sequence
+	(send top-panel set-alignment 'right 'center))))
 
   (define pbn-frame%
     (class generic-frame% ([_problem (car problems)])
@@ -229,8 +240,9 @@
 					 (lambda (_1 _2)
 					   (editor problem))))))
 
+      (inherit top-panel help-button)
       (private
-	[top-panel (make-object horizontal-panel% this)]
+	[gap (make-object horizontal-panel% top-panel)]
 	[choice (make-object choice%
 		  "Choose a Board"
 		  (map problem-name problems)
@@ -238,6 +250,8 @@
 		  (lambda (choice evt)
 		    (set-problem (list-ref problems (send choice get-selection)))))]
 	[canvas #f])
+      (sequence
+	(send top-panel change-children (lambda (l) (list choice gap help-button))))
 
       (override
 	[get-canvas

@@ -9,6 +9,9 @@ Primitives like 'make-number/make-numeric' that are renamed
 as module provides are not displayed using their renamed
 names.
 
+'And' expressions containing subexpressions which don't
+evaluate to booleans are not reduced correctly.
+
 Inexact numbers are not printed with a leading #i.
 
 For a more complete listing of known bugs, see our

@@ -1,32 +1,37 @@
 (module simple-gui mzscheme
 
-  (define board "")
+  (require (lib "mred.ss" "mred")
+           (lib "class.ss"))
 
-  (define (get-board s width height)
-    (set! board s)
-    (display-board board))
 
-  (define (get-robots l)
-    (let ((b (copy-string (board))))
-      (for-each
-       (lambda (robot)
-	 (string-set! b (+ (* width (sub1 (caddr robot)))
-			   (sub1 (cadr robot)))
-		      (car robot)))
-       l)
-      (display-board b)))
+  (define gui%
+    (class object%
       
-  
+      (init-field board width height)
 
-  (define f (instantiate frame% ("Simple Gui" #f 200 200)))
-  (define c (instantiate editor-canvas% (f)))
-  (define t (instantiate text% ()))
-  (send c set-editor t)
-  (send f show #t)
+      (define f (instantiate frame% ("Simple Gui" #f 200 200)))
+      (define c (instantiate editor-canvas% (f)))
+      (define t (instantiate text% ()))
+      (send c set-editor t)
+      (send f show #t)
 
-  (define (display-board b)
-    (send t delete 'start 'back)
-    (sent t insert b 1))
-
+      (define (display-board b)
+        (send t select-all)
+        (send t delete)
+        (send t insert b 1))
+      
+      (display-board board)
+      
+      
+      (define/public (set-robots l)
+        (let ((b (string-copy board)))
+          (for-each
+           (lambda (robot)
+             (string-set! b (+ (* width (sub1 (caddr robot)))
+                               (sub1 (cadr robot)))
+                          (string-ref (number->string (car robot) 16) 0)))
+           l)
+          (display-board b)))
+      (super-instantiate ())))
 
   )

@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2003-08-16")
+(define *tex2page-version* "2003-09-19")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -7126,6 +7126,9 @@
     (let ((tmp-port (open-output-string)))
       (fluid-let ((*html* tmp-port)) (tex2page-string ts))
       (get-output-string tmp-port))))
+
+(define call-with-html-output-going-to
+  (lambda (p th) (fluid-let ((*html* p)) (th))))
 
 (define call-external-programs-if-necessary
   (lambda ()

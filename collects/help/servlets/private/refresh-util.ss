@@ -122,8 +122,10 @@
       (call-with-output-file doc-name
 	(lambda (out-port)
 	  (parameterize ([current-proxy-servers 
-			  (or (get-preference 'plt:http-proxy (lambda () #f))
-			      null)])
+			  (let ([p (get-preference 'plt:http-proxy (lambda () #f))])
+			    (if p
+				(list p)
+				null))])
 	    (call/input-url (string->url url) get-pure-port 
 			    (lambda (in-port)
 			      (let loop ()

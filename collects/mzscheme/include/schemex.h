@@ -75,6 +75,7 @@ void (*scheme_swap_thread)(Scheme_Thread *process);
 #else
 void (*scheme_thread_block_w_thread)(float sleep_time, Scheme_Thread *p);
 #endif
+void (*scheme_making_progress)();
 void (*scheme_weak_suspend_thread)(Scheme_Thread *p);
 void (*scheme_weak_resume_thread)(Scheme_Thread *p);
 int (*scheme_block_until)(int (*f)(Scheme_Object *), void (*fdfd)(Scheme_Object *, void *), void *, float);
@@ -358,7 +359,7 @@ char *(*scheme_write_to_string_w_max)(Scheme_Object *obj, long *len, long maxl);
 char *(*scheme_display_to_string_w_max)(Scheme_Object *obj, long *len, long maxl);
 void (*scheme_debug_print)(Scheme_Object *obj);
 void (*scheme_flush_output)(Scheme_Object *port);
-char *(*scheme_format)(char *format, int flen, int argc, Scheme_Object **argv, int *rlen);
+char *(*scheme_format)(char *format, int flen, int argc, Scheme_Object **argv, long *rlen);
 void (*scheme_printf)(char *format, int flen, int argc, Scheme_Object **argv);
 int (*scheme_getc)(Scheme_Object *port);
 int (*scheme_peekc)(Scheme_Object *port);
@@ -396,7 +397,7 @@ Scheme_Object *(*scheme_make_string_input_port)(const char *str);
 Scheme_Object *(*scheme_make_sized_string_input_port)(const char *str, long len);
 Scheme_Object *(*scheme_make_string_output_port)();
 char *(*scheme_get_string_output)(Scheme_Object *);
-char *(*scheme_get_sized_string_output)(Scheme_Object *, int *len);
+char *(*scheme_get_sized_string_output)(Scheme_Object *, long *len);
 void (*scheme_pipe)(Scheme_Object **write, Scheme_Object **read);
 void (*scheme_pipe_with_limit)(Scheme_Object **write, Scheme_Object **read, int maxsize);
 int (*scheme_file_exists)(char *filename);

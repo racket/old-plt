@@ -233,7 +233,7 @@
       (syntax-case stx ()
 	[(_ global? signame unite prefix imports orig)
 	 (let* ([formname (if (syntax-e (syntax global?))
-			      'global-define-values/invoke-unit/sig
+			      'namespace-variable-bind/invoke-unit/sig
 			      'define-values/invoke-unit/sig)]
 		[badsyntax (lambda (s why)
 			     (raise-syntax-error
@@ -253,7 +253,7 @@
 		       [im-flattened (flatten-signatures im-sigs)]
 		       [d->s (lambda (x) (datum->syntax-object (syntax orig) x (syntax orig)))])
 		   (with-syntax ([dv/iu (if (syntax-e (syntax global?))
-					    (quote-syntax global-define-values/invoke-unit)
+					    (quote-syntax namespace-variable-bind/invoke-unit)
 					    (quote-syntax define-values/invoke-unit))]
 				 [ex-flattened (d->s ex-flattened)]
 				 [ex-exploded (d->s ex-exploded)]
@@ -283,7 +283,7 @@
 	  [(_ signame unit)
 	   (syntax (do-define-values/invoke-unit/sig #f signame unit #f () orig))]))))
 
-  (define-syntax global-define-values/invoke-unit/sig
+  (define-syntax namespace-variable-bind/invoke-unit/sig
     (lambda (stx)
       (with-syntax ([orig stx])
 	(syntax-case stx ()
@@ -316,6 +316,6 @@
 	   (struct unit/sig (unit imports exports))
 	   
 	   define-values/invoke-unit/sig
-	   global-define-values/invoke-unit/sig
+	   namespace-variable-bind/invoke-unit/sig
 	   provide-signature-elements))
 

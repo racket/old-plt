@@ -694,7 +694,7 @@
 	 (let* ([badsyntax (lambda (s why)
 			     (raise-syntax-error
 			      (if (syntax-e (syntax global?))
-				  'global-define-values/invoke-unit
+				  'namespace-variable-bind/invoke-unit
 				  'define-values/invoke-unit)
 			      (format "bad syntax (~a)" why)
 			      (syntax orig)
@@ -740,7 +740,7 @@
 						 . imports))])
 	       (if (syntax-e (syntax global?))
 		   (syntax (let-values ([(tagged-export ...) invoke-unit])
-			     (global-defined-value 'tagged-export tagged-export)
+			     (namespace-variable-binding 'tagged-export tagged-export)
 			     ...
 			     (void)))
 		   (syntax (define-values (tagged-export ...) invoke-unit))))))])))
@@ -754,7 +754,7 @@
 	  [(_ exports unit) 
 	   (syntax (do-define-values/invoke-unit #f exports unit #f () orig))]))))
   
-  (define-syntax global-define-values/invoke-unit
+  (define-syntax namespace-variable-bind/invoke-unit
     (lambda (stx)
       (with-syntax ([orig stx])
 	(syntax-case stx ()
@@ -767,4 +767,4 @@
 	  exn:unit? struct:exn:unit make-exn:unit
 
 	  define-values/invoke-unit
-	  global-define-values/invoke-unit))
+	  namespace-variable-bind/invoke-unit))

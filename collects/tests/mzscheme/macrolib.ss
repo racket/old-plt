@@ -107,6 +107,35 @@
        (let ([=> 12]) (evcase 3 [3 => 17]))
        (let ([=> 17]) (evcase 3 [3 =>]))))
 
+(define (opt-lam-test exp expected)
+   (let ([got (eval exp)])
+     (unless (equal? got expected)
+       (printf  "FAILED test: ~a~n   expected: ~s~n        got: ~s~n"
+                exp expected got))))
+
+(define (opt-lam-test/bad exp expected)
+   (let ([got (with-handlers ([exn:syntax?
+                               (lambda (exn) (exn-message exn))])
+                (cons 'got-result (eval exp)))])
+     (unless (regexp-match expected got)
+       (printf  "FAILED test: ~a~n   expected: ~s~n        got: ~s~n"
+                exp expected got))))
+
+(test 1 (opt-lambda (start) start) 1)
+(test 1 (opt-lambda ([start 1]) start))
+(test 1 (opt-lambda ([start 2]) start) 1)
+(test '(1) (opt-lambda args args) 1)
+(test '(1) (opt-lambda (x . args) args) 2 1)
+(test '(2 1) (opt-lambda ([x 1] . args) (cons x args)) 2 1)
+(test '(1) (opt-lambda ([x 1] . args) (cons x args)))
+(test '(1 2 3) (opt-lambda ([x 1] . args) (cons x args)) 1 2 3)
+
+(syntax-test #'(opt-lambda))
+(syntax-test #'(opt-lambda 1 x))
+(syntax-test #'(opt-lambda (x [x 1]) x))
+(syntax-test #'(opt-lambda ([x 1] y) x))
+(syntax-test #'(opt-lambda (1) x))
+(syntax-test #'(opt-lambda ([2 1]) x))
 
 (report-errs)
 

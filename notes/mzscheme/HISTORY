@@ -35,15 +35,20 @@ Version 199.18:
 
  * Re-renamed "2k" to "3m" (for "moving memory manager").
 
-   Garbage collection is inherently imprecise, making "precise garbage
-   collection" an awkward term. "Moving memory manager" more clearly
-   explains the difference as it affects extension/embedding
-   programmers. Also, the number--letter combination looks
-   better. Finally, unlike "2k", we have another 2,997,999 years to
-   get the conversion right before the name goes out of date.
+   Why change again? Garbage collection is inherently imprecise,
+   making "precise garbage collection" an awkward term. "Moving memory
+   manager" more clearly explains the difference as it affects
+   extension/embedding programmers. Also, the number--letter
+   combination looks better. Finally, unlike "2k", we have another
+   2,997,999 years to get the conversion right before the name goes
+   out of date.
 
- * Added a -M <coll> flag to MzScheme and MrEd as a shothand for
+ * Added a -M <coll> flag to MzScheme and MrEd as a shorthand for
    -L <coll>.ss <coll>.
+
+ * Fixed a bug in code that cooperates with the scheduler; the bug
+   could trigger a crash in `tcp-accept' because the needs_wakeup
+   function was called without a preceding call to the check function.
 
 Version 199.17:
 

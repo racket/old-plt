@@ -34,20 +34,7 @@ sends an error response, the monitor will notify <alert-email> of the problem.
 Another Start
 =============
 
-Using the version 200 release of DrScheme, programmers can insert graphical
-XML boxes into programs.  These boxes are not supported by the version 200
-release of the Web server when running outside of DrScheme.  Future releases
-of the Web server will remedy this situation.  For the current release,
-start the Web server from inside DrScheme.
-
-To start the server
-  1) Start DrScheme
-  2) Type
-       (require (lib "launch.ss" "web-server"))
-     into the definitions window.
-  3) Click the Execute button.
-
-Alternatively, requiring the library _web-server.ss_, via 
+Requiring the library _web-server.ss_, via 
   (require (lib "web-server.ss" "web-server"))
 provides the serve function, which starts the server with more configuration
 options.
@@ -112,7 +99,7 @@ A Response is one of the following:
      (often "text/html", but see RFC 2822 for other options).
    - The rest of the strings provide the document's content.
 
- > (make-response/full code message seconds mime extras body) where
+>  (make-response/full code message seconds mime extras body) where
    - code is a natural number indicating the HTTP response code
    - message is a string describing the code to a human
    - seconds is a natural number indicating the time the resource was created.
@@ -123,6 +110,20 @@ A Response is one of the following:
      an environment is a (listof (cons symbol string))
    - body is a (listof string)
 
+>  (make-response/incremental code message seconds mime extras gen) where
+   - code, message, seconds, mime, and extras are all the same as for
+     make-response/full
+   - gen : (string -> void) -> void
+   The function gen consumes an output function.  The output function
+   consumes a string and sends it to the client.  For HTTP/1.1 clients,
+   the server uses the chunked encoding, which is reliable.  HTTP/1.0
+   clients, however, can not distinguish between the end of the document and
+   a lost connection.  These facts have two implications.  First,
+   it is more efficient to send fewer, larger strings.  Second, this
+   response should not be used for data that must arrive reliably.
+
+   Also see make-html-response/incremental in the servlet-helpers section below.
+   
 
 Evaluating (require (lib "servlet-sig.ss" "web-server")) loads
 the servlet^ signature consisting of the following imports:
@@ -210,7 +211,12 @@ An environment is a (listof (cons symbol string)), as before.
     - see-other (The redirection is not replacing the current url.)
   See the HTTP/1.1 specification for details on each kind of redirection.
   Permanently is the default redirection type.
-  
+
+> make-html-response/incremental
+  : ((string-> void) -> void) -> response/incremental
+
+  This fills in default values for make-response/incremental appropriate
+  for html.
 
 For small example servlets, look in the "examples" directory in
 the "servlets" directory in the "default-web-root" of the web-server
@@ -237,6 +243,12 @@ teachpack.  This provides functions for writing servlets including
 send/suspend and send/finish.  All the extra servlet helper functions for
 extracting information from Web requests and building Web responses also
 become available through the teachpack.
+
+Choosing "Create Servlet..." from DrScheme's "Scheme" menu saves the
+program in the definitions window as a servlet.  This adds all the necessary
+code to produce a unit suitable for the Web server's "servlets" directory.
+The servlet can use any selected teachpacks and language specific
+constructs just as the program in the defintions window can.
 
 
 File locations

@@ -261,15 +261,28 @@
 	   (send canvas set-rect i j nv)
 	   (send canvas paint-rect i j))]
 
+	[really-solve?
+	 (lambda ()
+	   (fw:gui-utils:get-choice
+	    (format "~
+  Solving can be a very computationally intense task;~
+~nyou may run out of memory and crash. ~
+~nReally continue? (Be sure to save your work!)")
+	    "Yes"
+	    "No"
+	    "Really Solve?"
+	    #f))]
+
 	[solve
 	 (lambda ()
-	   (send canvas all-unknown)
-	   (send canvas on-paint)
-	   (SOLVE:solve
-	    (problem-rows problem)
-	    (problem-cols problem)
-	    set-entry
-	    setup-progress))])
+	   (when (really-solve?)
+	     (send canvas all-unknown)
+	     (send canvas on-paint)
+	     (SOLVE:solve
+	      (problem-rows problem)
+	      (problem-cols problem)
+	      set-entry
+	      setup-progress)))])
 
       (sequence
 	(super-init game-name))

@@ -64,8 +64,8 @@ string=? ; exec mzscheme -qr $0
        (let ([len (length v)])
 	 (set! total (+ len total))
 	 (printf "~s ~s~n" k
-		 ;len
-		 v
+		 len
+		 ;v
 		 ))))
    (quicksort (hash-table-map email-ht list)
 	      (lambda (x y) (> (length (cadr x)) (length (cadr y))))))

@@ -161,7 +161,7 @@
 					   (open-output-file path 'truncate))
 				       (open-output-file path)))])
 		     (when (and write? (not out))
-		       (setup-printf "Warning: ~a already exists; skipping" (pretty-name path)))
+		       (setup-printf "  skipping ~a; already exists" (pretty-name path)))
 		     (when (and out (or #t (verbose)))
 		       (setup-printf "  unpacking ~a" (pretty-name path)))
 		     ; Find starting *

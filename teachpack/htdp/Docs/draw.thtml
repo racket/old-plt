@@ -2,8 +2,25 @@
   (define FILENAME "draw.ss")
   (include "head.tinc") }
 
-The teachpack <code>draw.ss</code> provides a miniscule collection of
-graphics functions:
+The teachpack provides two kinds of functions. The first four allow
+students to simulate a small world of animated drawings and games: 
+<menu>
+<li><code>{(idx big-bang)}</code> : Number World -> true; <br>
+<code>(define (big-bang n w) ...)</code>
+start the clock, one tick every <code>n</code> seconds; <code>w</code>
+becomes the first world
+<li><code>{(idx on-key-event)}</code> : ((union char symbol) World -> World) -> true; <br>
+add a function to the world that processes keyboard events
+<li><code>{(idx on-tick-event)}</code> : (World -> World) -> true; <br>
+add a function to the world that processes tick events
+<li><code>{(idx end-of-time)}</code> : -> World; <br>
+stop the world, return the last world 
+</menu>
+The world consists of a canvas and whatever the tick and keyevent handlers
+draw on it. For the use of these functions, see the HtDP+ material. 
+
+With the reminder, the students can write functions that draw into this
+world: 
 <menu>
 <li><code>{(idx start)}</code> : Number Number -> true; <br>
 opens a canvas of specified size
@@ -47,15 +64,6 @@ suspends evaluation for the given number of seconds
 </blockquote>
 Applying the functions to any other symbol triggers an error.
 
-<li><br>
-<li><code>{(idx big-bang)}</code> : Number World -> true; <br>
-start the clock, one tick every n seconds, initialize the world with an initial value
-<li><code>{(idx on-key-event)}</code> : ((union char symbol) World -> World) -> true; <br>
-add a function to the world that processes keyboard events
-<li><code>{(idx on-tick-event)}</code> : (World -> World) -> true; <br>
-add a function to the world that processes tick events
-<li><code>{(idx stop-time)}</code> : -> World; <br>
-stop the world, return the last world 
 </menu>
 <br>
 <br>

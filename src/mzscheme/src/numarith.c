@@ -32,7 +32,7 @@ static Scheme_Object *div_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *quotient (int argc, Scheme_Object *argv[]);
 static Scheme_Object *rem_prim (int argc, Scheme_Object *argv[]);
 
-#define zeroi scheme_make_integer(0)
+#define zeroi scheme_exact_zero
 
 void scheme_init_numarith(Scheme_Env *env)
 {

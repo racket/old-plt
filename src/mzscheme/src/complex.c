@@ -25,7 +25,7 @@
 #include <ctype.h>
 #include <math.h>
 
-static Scheme_Object *zero = scheme_make_integer(0);
+#define zero scheme_exact_zero
 
 static Scheme_Object *make_complex(const Scheme_Object *r, const Scheme_Object *i,
 				   int normalize)

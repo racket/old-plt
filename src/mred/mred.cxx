@@ -1832,6 +1832,7 @@ public:
       fileMenu->Append(77, CLOSE_MENU_ITEM);
       wxMenu *m = new wxMenu();
       m->Append(79, "&Copy\tCmd+C");
+      m->Append(81, "&Paste\tCmd+V");
       mb->Append(fileMenu, "File");
       mb->Append(m, "Edit");
       
@@ -1871,6 +1872,8 @@ public:
     {
       if (id == 79)
 	media->Copy();
+      else if (id == 81)
+	media->Paste();
       else if (id == 77)
         if (OnClose())
            Show(FALSE);

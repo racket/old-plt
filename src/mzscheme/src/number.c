@@ -87,7 +87,7 @@ static double not_a_number_val;
 
 Scheme_Object *scheme_inf_object, *scheme_minus_inf_object, *scheme_nan_object;
 
-#define zeroi scheme_make_integer(0)
+#define zeroi scheme_exact_zero
 
 Scheme_Object *scheme_zerod, *scheme_nzerod, *scheme_pi, *scheme_half_pi, *scheme_plus_i, *scheme_minus_i;
 #ifdef MZ_USE_SINGLE_FLOATS

@@ -85,7 +85,7 @@ Scheme_Object *scheme_rational_normalize(const Scheme_Object *o)
   Scheme_Object *gcd, *tmpn;
   int negate = 0;
 
-  if (r->num == scheme_make_integer(0))
+  if (r->num == scheme_exact_zero)
     return scheme_make_integer(0);
 
   if (SCHEME_INTP(r->denom)) {

@@ -3318,6 +3318,7 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
   return scheme_false;
 #else
   char *filename;
+  int exists_already = 0;
 
 # ifdef USE_MAC_FILE_TOOLBOX	  
   FSSpec spec;
@@ -3331,9 +3332,13 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
   if (find_mac_file(filename, 0, &spec, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
     SInt32 created;
     errno = FSpDirCreate(&spec, smSystemScript, &created);
+    if (!created)
+      errno = dupFNErr;
     if (!errno)
       return scheme_void;
-  }  
+    exists_already = (errno == dupFNErr);
+  }
+# define MKDIR_EXN_TYPE "%E"
 # else
   int len, copied;
 
@@ -3366,12 +3371,15 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
       return scheme_void;
       break;
   }
+
+  exists_already = (errno == EEXIST);
+# define MKDIR_EXN_TYPE "%e"
 # endif
 
   scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		   argv[0],
-		   (errno == EEXIST) ? exists_err_symbol : fail_err_symbol,
-		   "make-directory: cannot make directory: %q (%e)",
+		   exists_already ? exists_err_symbol : fail_err_symbol,
+		   "make-directory: cannot make directory: %q (" MKDIR_EXN_TYPE ")",
 		   filename_for_error(argv[0]),
 		   errno);
   return NULL;

@@ -63,7 +63,7 @@ static Scheme_Object *num_limits[3];
 
 #define TO_DOUBLE scheme_TO_DOUBLE
 
-#define zeroi scheme_make_integer(0)
+#define zeroi scheme_exact_zero
 
 void scheme_init_numstr(Scheme_Env *env)
 {

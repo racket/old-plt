@@ -857,6 +857,13 @@ typedef struct Scheme_Sema {
 /*                                 numbers                                */
 /*========================================================================*/
 
+#ifdef MPW_C
+/* Optimizer bug! */
+# define scheme_exact_zero ((Scheme_Object *)0x1)
+#else
+# define scheme_exact_zero scheme_make_integer(0)
+#endif
+
 /****** Bignums *******/
 
 #ifdef USE_LONG_LONG_FOR_BIGDIG

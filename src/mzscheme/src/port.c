@@ -73,10 +73,14 @@ static int mzerrno = 0;
 # endif
 extern int osk_not_console; /* set by cmd-line flag */
 #endif
+#ifdef MAC_FILE_SYSTEM
+# include <Carbon.h>
+#endif
 #include <math.h> /* for fmod , used by default_sleep */
 #include "schfd.h"
 
 #define mzAssert(x) /* if (!(x)) abort() */
+
 
 /******************** Generic FILEs ********************/
 
@@ -178,9 +182,17 @@ typedef struct Scheme_Subprocess {
 # define MZ_FDS
 #endif
 
-/******************** Unix/Windows I/O ********************/
 
-/* Windows I/O is piggy-backed on Unix file-descriptor I/O.  Making
+/******************** Mac Classic input ********************/
+
+#ifdef MAC_FILE_SYSTEM
+# define MZ_FDS
+# define MAC_FILE_HANDLES
+#endif
+
+/******************** file-descriptor I/O ********************/
+
+/* Windows/Mac I/O is piggy-backed on Unix file-descriptor I/O.  Making
    Windows file HANDLEs behave as nicely as file descriptors for
    non-blocking I/O requires a lot of work, and often a separate
    thread. The "th" and "oth" fields of Scheme_FD point to malloced
@@ -215,7 +227,7 @@ typedef struct Scheme_FD {
 # include <fcntl.h>
 #endif
 
-#ifdef WINDOWS_FILE_HANDLES
+#if defined(WINDOWS_FILE_HANDLES) || defined(MAC_FILE_HANDLES)
 # define FILENAME_EXN_E "%E"
 #else
 # define FILENAME_EXN_E "%e"
@@ -291,7 +303,6 @@ static void register_subprocess_wait();
 Scheme_Object *
 _scheme_make_named_file_input_port(FILE *fp, const char *filename, 
 				   int regfile);
-
 static void default_sleep(float v, void *fds);
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
@@ -2133,16 +2144,36 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
     return NULL;
   }
 
-  regfile = scheme_is_regular_file(filename);
+#  ifdef MAC_FILE_SYSTEM
+  {
+    FSSpec spec;
+    SInt16 refnum;
 
+    if (scheme_mac_path_to_spec(filename, &spec)) {
+      errno = FSpOpenDF(&spec, fsRdWrShPerm, &refnum);
+      if (errno == noErr)
+	result = make_fd_input_port(refnum, filename, 1, mode[1] == 't');
+      else {
+	filename_exn(name, "could not open file", filename, errno);
+	return NULL;
+      }
+    } else {
+      filename_exn(name, "could not open file", filename, 0);
+      return NULL;
+    }
+  }
+#  else
+  regfile = scheme_is_regular_file(filename);
+  
   fp = fopen(filename, mode);
   if (!fp) {
     filename_exn(name, "cannot open input file", filename, errno);
     return NULL;
   }
   scheme_file_open_count++;
-
+  
   result = scheme_make_named_file_input_port(fp, filename);
+#  endif
 # endif
 #endif
 
@@ -2172,9 +2203,6 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
   char *filename;
   char mode[4];
   int typepos;
-#ifdef MAC_FILE_SYSTEM
-  int creating = 1;
-#endif
 
   mode[0] = 'w';
   mode[1] = 'b';
@@ -2416,9 +2444,9 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
       SetEndOfFile(fd);
   }
 
+  scheme_file_open_count++;
   return make_fd_output_port((int)fd, regfile, mode[1] == 't');
 # else
-
   if (scheme_directory_exists(filename)) {
     if (!existsok)
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
@@ -2431,38 +2459,67 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
     return scheme_void;
   }
 
-#  ifndef MAC_FILE_SYSTEM
-  if (!existsok || (existsok == 1)) {
-#  endif
-    if (scheme_file_exists(filename)) {
-      int uok;
 
-      if (!existsok)
-	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-			 argv[0],
-			 scheme_intern_symbol("already-exists"),
-			 "%s: file \"%q\" exists", name, filename);
 #  ifdef MAC_FILE_SYSTEM
-      if (existsok == 1) {
-#  endif
-	do {
-	  uok = MSC_IZE(unlink)(filename);
-	} while ((uok == -1) && (errno == EINTR));
+  {
+    FSSpec spec;
+    SInt16 refnum;
+    int creating = 0;
 
-	if (uok)
+    if (scheme_mac_path_to_spec(filename, &spec)) {
+      errno = FSpCreate(&spec, 'MrEd', 'TEXT', smSystemScript);
+      if (errno == dupFNErr) {
+	if (!existsok) {
 	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   argv[0],
-			   fail_err_symbol,
-			   "%s: error deleting \"%q\" (%e)", 
-			   name, filename, errno);
-#  ifdef MAC_FILE_SYSTEM
+			   scheme_intern_symbol("already-exists"),
+			   "%s: file \"%q\" exists", name, filename);
+	  return NULL;
+	}
       } else
-	creating = 0;
-#  endif
+	creating = 1;
+      errno = FSpOpenDF(&spec, fsRdWrShPerm, &refnum);
+      if ((errno == noErr) && (existsok < 0)) {
+	/* truncate or truncate/replace */
+	SetEOF(refnum, 0);
+      }
+
+      if (errno == noErr) {
+	if (creating)
+	  scheme_file_create_hook(filename);
+	
+	scheme_file_open_count++;
+	return make_fd_output_port(refnum, 1, mode[1] == 't');
+      } else {
+	filename_exn(name, "could not open file", filename, errno);
+	return NULL;
+      }
+    } else {
+      filename_exn(name, "could not open file", filename, 0);
+      return NULL;
     }
-#  ifndef MAC_FILE_SYSTEM
   }
-#  endif
+#  else
+
+  if (scheme_file_exists(filename)) {
+    int uok;
+    
+    if (!existsok)
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+		       argv[0],
+		       scheme_intern_symbol("already-exists"),
+		       "%s: file \"%q\" exists", name, filename);
+    do {
+      uok = MSC_IZE(unlink)(filename);
+    } while ((uok == -1) && (errno == EINTR));
+    
+    if (uok)
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+		       argv[0],
+		       fail_err_symbol,
+		       "%s: error deleting \"%q\" (%e)", 
+		       name, filename, errno);
+  }
 
   fp = fopen(filename, mode);
   if (!fp) {
@@ -2483,9 +2540,6 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 			   name, filename);
 	else {
 	  fp = fopen(filename, mode);
-#  ifdef MAC_FILE_SYSTEM
-	  creating = 1;
-#  endif
 	}
       }
     }
@@ -2494,13 +2548,8 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
   }
   scheme_file_open_count++;
 
-#  ifdef MAC_FILE_SYSTEM
-  if (creating)
-    scheme_file_create_hook(filename);
-#  endif
-
   return scheme_make_file_output_port(fp);
-
+#  endif
 # endif
 #endif
 }
@@ -2640,7 +2689,17 @@ scheme_file_position(int argc, Scheme_Object *argv[])
 # ifdef WINDOWS_FILE_HANDLES
       lv = SetFilePointer((HANDLE)fd, n, NULL, FILE_BEGIN);
 # else
+#  ifdef MAC_FILE_HANDLES
+      {
+	errno = SetFPos(fd, fsFromStart, n);
+	if (errno == noErr)
+	  lv = 0;
+	else
+	  lv = -1;
+      }
+#  else
       lv = lseek(fd, n, 0);
+#  endif
 # endif
 
       if (lv < 0) {
@@ -2713,7 +2772,18 @@ scheme_file_position(int argc, Scheme_Object *argv[])
 # ifdef WINDOWS_FILE_HANDLES
       p = SetFilePointer((HANDLE)fd, 0, NULL, FILE_CURRENT);
 # else
+#  ifdef MAC_FILE_HANDLES
+      {
+	SInt32 pos;
+	errno = GetFPos(fd, &pos);
+	if (errno == noErr)
+	  p = pos;
+	else
+	  p = -1;
+      }      
+#  else
       p = lseek(fd, 0, 1);
+#  endif
 # endif
       if (p < 0) {
 	if (SCHEME_INPORTP(argv[0])) {
@@ -2950,7 +3020,6 @@ scheme_make_file_input_port(FILE *fp)
   return scheme_make_named_file_input_port(fp, "FILE");
 }
 
-
 /*========================================================================*/
 /*                           fd input ports                               */
 /*========================================================================*/
@@ -3030,6 +3099,9 @@ fd_char_ready (Scheme_Input_Port *port)
 
     return 0;
 #else
+# ifdef MAC_FILE_HANDLES
+    return 1;
+# else
     int r;
     DECL_FDSET(readfds, 1);
     DECL_FDSET(exnfds, 1);
@@ -3065,6 +3137,7 @@ fd_char_ready (Scheme_Input_Port *port)
 # endif
 
     return r;
+# endif
 #endif
   }
 }
@@ -3139,7 +3212,7 @@ static long fd_get_string(Scheme_Input_Port *port,
 	target_size = size;
       } else {
 	ext_target = 0;
-	target = fip->buffer;
+	target = (char *)fip->buffer;
 	target_offset = 0;
 	target_size = MZPORT_FD_BUFFSIZE;
       }
@@ -3228,6 +3301,17 @@ static long fd_get_string(Scheme_Input_Port *port,
 	}
       }
 #else
+# ifdef MAC_FILE_HANDLES
+      {
+	SInt32 cnt = target_size;
+
+	errno = FSRead(fip->fd, &cnt, target + target_offset);
+	if (!cnt && (errno != eofErr))
+	  bc = -1;
+	else
+	  bc = cnt;
+      }
+# else
       if (fip->regfile) {
 	do {
 	  bc = read(fip->fd, target + target_offset, target_size);
@@ -3250,6 +3334,7 @@ static long fd_get_string(Scheme_Input_Port *port,
 	  bc = 0;
 	}
       }
+# endif
 #endif
 
       if (!none_avail) {
@@ -3313,9 +3398,13 @@ fd_close_input(Scheme_Input_Port *port)
   }
   mzCloseHandle((HANDLE)fip->fd);
 #else
+# ifdef MAC_FILE_HANDLES
+  FSClose(fip->fd);
+# else
   do {
     cr = close(fip->fd);
   } while ((cr == -1) && (errno == EINTR));
+# endif
 #endif
 
   --scheme_file_open_count;
@@ -3353,10 +3442,13 @@ fd_need_wakeup(Scheme_Input_Port *port, void *fds)
     scheme_add_fd_handle((void *)fip->fd, fds, 0);
   }
 #else
+# ifdef MAC_FILE_HANDLES
+# else
   n = fip->fd;
   MZ_FD_SET(n, (fd_set *)fds);
   fds2 = MZ_GET_FDSET(fds, 2);
   MZ_FD_SET(n, (fd_set *)fds2);
+# endif
 #endif
 }
 
@@ -3899,6 +3991,9 @@ fd_write_ready (Scheme_Object *port)
   } else
     return 1; /* non-blocking output, such as a console, or haven't written yet */
 #else
+# ifdef MAC_FILE_HANDLES
+  return 1;
+# else
   {
     DECL_FDSET(writefds, 1);
     DECL_FDSET(exnfds, 1);
@@ -3919,6 +4014,7 @@ fd_write_ready (Scheme_Object *port)
 
     return sr;
   }
+# endif
 #endif
 }
 
@@ -3938,11 +4034,14 @@ fd_write_need_wakeup(Scheme_Object *port, void *fds)
   else
     scheme_add_fd_nosleep(fds);
 #else
+# ifdef MAC_FILE_HANDLES
+# else
   n = fop->fd;
   fds2 = MZ_GET_FDSET(fds, 1);
   MZ_FD_SET(n, (fd_set *)fds2);
   fds2 = MZ_GET_FDSET(fds, 2);
   MZ_FD_SET(n, (fd_set *)fds2);
+# endif
 #endif
 }
 
@@ -3980,7 +4079,7 @@ static long flush_fd(Scheme_Output_Port *op,
   }
 
   if (!bufstr) {
-    bufstr = fop->buffer;
+    bufstr = (char *)fop->buffer;
     buflen = fop->bufcount;
   }
 
@@ -4267,6 +4366,17 @@ static long flush_fd(Scheme_Output_Port *op,
 	}
       }
 #else
+# ifdef MAC_FILE_HANDLES
+      {
+	SInt32 put = buflen - offset;
+	errsaved = FSWrite(fop->fd, &put, bufstr + offset);
+	if (errsaved != noErr)
+	  len = -1;
+	else
+	  len = put;
+	full_write_buffer = 0;
+      }
+# else
       int flags;
 
       flags = fcntl(fop->fd, F_GETFL, 0);
@@ -4280,6 +4390,7 @@ static long flush_fd(Scheme_Output_Port *op,
       fcntl(fop->fd, F_SETFL, flags);
 
       full_write_buffer = (errsaved == EAGAIN);
+# endif
 #endif
 
       if (len < 0) {
@@ -4434,9 +4545,13 @@ fd_close_output(Scheme_Output_Port *port)
   }
   mzCloseHandle((HANDLE)fop->fd);
 #else
+# ifdef MAC_FILE_HANDLES
+  FSClose(fop->fd);
+# else
   do {
     cr = close(fop->fd);
   } while ((cr == -1) && (errno == EINTR));
+# endif
 #endif
 
   --scheme_file_open_count;

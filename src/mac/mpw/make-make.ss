@@ -500,7 +500,7 @@
     (printf "\rall \304 ::::MrEd ::::netglue ::::collects:launcher:GoMr\r\r")
 
     (printf "\r::::MrEd \304 {OBJS}\r")
-    (printf "\tPPCLink {OBJS} \"{SharedLibraries}CarbonLib\" \"{SharedLibraries}StdCLib\"  \"{PPCLibraries}MrCPlusLib.o\" \"{PPCLibraries}PPCCRuntime.o\" \"{PPCLibraries}StdCRuntime.o\" -o ::::MrEd -c 'MrEd' -m __appstart~a\r"
+    (printf "\tPPCLink {OBJS} \"{SharedLibraries}CarbonLib\" \"{SharedLibraries}StdCLib\"  \"{PPCLibraries}StdCRuntime.o\" \"{PPCLibraries}PPCCRuntime.o\" \"{PPCLibraries}MrCPlusLib.o\" -o ::::MrEd -c 'MrEd' -m __appstart~a\r"
 	    (if debug? " -sym big" ""))
     (printf "\tRez ::cw:MrEd.r ::cw:MrEd_classic.r -o ::::MrEd -append\r")
     (when debug?

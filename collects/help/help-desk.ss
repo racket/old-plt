@@ -27,7 +27,7 @@
   (provide/contract 
    (set-bug-report-info! any/c)
    (find-doc-names (-> (listof (cons/c path? string?))))
-   (goto-manual-link (string? string? . -> . any))
+   (goto-manual-link (any/c string? string? . -> . any))
    
    (goto-hd-location (symbol? . -> . any))
    (new-help-desk (-> (is-a?/c help-desk-frame<%>)))

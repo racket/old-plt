@@ -29,7 +29,7 @@
                       (union false/c string?)
                       . -> .
                       string?))
-   (make-missing-manual-url (string? string? string? . -> . string?))
+   (make-missing-manual-url (string? string? string? string? . -> . string?))
    (get-hd-location ((lambda (sym) (memq sym hd-location-syms))
                      . -> . 
                      string))

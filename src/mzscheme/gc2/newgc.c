@@ -2364,12 +2364,11 @@ static void repair_heap(void)
 		
 		if(info->mark) {
 		  info->mark = 0;
-		  start++; 
-		  start += fixup_table[*(unsigned short*)start](start);
+		  fixup_table[*(unsigned short*)(start+1)](start+1);
 		} else {
 		  info->dead = 1;
-		  start += info->size;
 		}
+		start += info->size;
 	      }
 	      break;
 	    case PAGE_ATOMIC:
@@ -2405,6 +2404,7 @@ static void repair_heap(void)
 		  while(start < tempend)
 		    start += fixup_table[tag](start);
 		  info->mark = 0;
+		  start = PPTR(info) + info->size;
 		} else {
 		  info->dead = 1;
 		  start += info->size;

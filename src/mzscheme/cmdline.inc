@@ -524,8 +524,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
     no_more_switches = 1;
     no_init_file = 1;
     no_argv = 1;
-    argv++;
-    --argc;
+    /* Don't argv++ --argc because we want to keep the script name */
   }
 #endif
 
@@ -1009,9 +1008,9 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 "If the executable name has the form scheme-<dialect>, then the command\n"
 	 " line is effectively prefixed with:\n"
 	 "    -qAerC '(require (lib \"init.ss\" \"script-lang\" \"<dialect>\"))'\n"
-	 " so that the first actual command-line argument is the name of a file\n"
-	 " to load; the file should define `main', which is called with the\n"
-	 " remaining arguments in a list.\n"
+	 " In addition, the first command-line argument is duplicated, so that is\n"
+	 " the name of a file and also the first argument to that file; the file\n"
+	 " should define `main', which is called with the arguments in a list.\n"
 	 "For general information about " PROGRAM ", see:\n"
 	 "  http://www.plt-scheme.org/software/" PROGRAM_LC "/\n"
 	 );

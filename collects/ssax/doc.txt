@@ -13,7 +13,13 @@ _ssax.ss_
 ================================================================
 
 To load the module, do
-(require (lib "ssax.ss"))
+(require (lib "ssax.ss" "ssax"))
+
+Besides the standard SSAX procedures described below, this defines:
+
+> ssax:warn-parameter - Parameter for the procedure to display
+  warnings.  It must accept a port, a warning message, and any number
+  of additional arguments.
 
 > make-xml-token KIND HEAD
 This creates an XML token.
@@ -470,7 +476,21 @@ _input-parse.ss_
 ================================================================
 
 To load the module, do
-(require (lib "input-parse.ss"))
+(require (lib "input-parse.ss" "ssax"))
+
+This defines
+
+> (define-struct (exn:ssax exn) (port stuff))
+
+for parser errors raised by SSAX via RAISE.  PORT contains the port on
+which the error happens, STUFF is a list of additional, but random
+information.
+
+Note that this also exports a procedure called read-string, which
+conflicts with the procedure of the same name in the mzscheme
+language.  The ssax collection comes with a module called
+restricted-mzscheme that is identical to mzscheme, except that it
+omits read-string.
 
 > parser-error PORT MESSAGE SPECIALISING-MSG*
 Many procedures of this package call parser-error to report a parsing
@@ -480,15 +500,12 @@ let the user query a PORT for the current position. MESSAGE is the
 description of the error. Other arguments supply more details about
 the problem.
 
-
-
-
 ================================================================
 _sxml-tree-trans.ss_
 ================================================================
 
 To load the module, do
-(require (lib "sxml-tree-trans.ss"))
+(require (lib "sxml-tree-trans.ss" "ssax"))
 
 > SRV:send-reply FRAGMENT ...
 
@@ -604,7 +621,7 @@ _sxml-to-html.ss_
 ================================================================
 
 To load the module, do
-(require (lib "sxml-to-html.ss"))
+(require (lib "sxml-to-html.ss" "ssax"))
 
 > SXML->HTML TREE
 
@@ -638,7 +655,7 @@ _sxml-to-html-ext.ss_
 ================================================================
 
 To load the module, do
-(require (lib "sxml-to-html-ext.ss"))
+(require (lib "sxml-to-html-ext.ss" "ssax"))
 
 > make-header HEAD-PARMS
 Create the 'head' SXML/HTML tag. HEAD-PARMS is an assoc list of

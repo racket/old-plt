@@ -36,7 +36,7 @@
 START_XFORM_SKIP;
 #endif
 
-wxPrinter::abortIt = 0;
+int wxPrinter::abortIt = 0;
 
 #ifdef MZ_PRECISE_GC
 END_XFORM_SKIP;

@@ -146,6 +146,8 @@
 # define USE_ON_EXIT_FOR_ATEXIT
 # endif
 
+# define FLUSH_SPARC_REGISTER_WINDOWS
+
 # define FLAGS_ALREADY_SET
 
 #endif
@@ -194,6 +196,13 @@
 # if defined(__alpha__)
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "alpha-linux"
 # endif
+# if defined(__hppa__)
+#  define SCHEME_PLATFORM_LIBRARY_SUBPATH "hppa-linux"
+# endif
+# if defined(__sparc__)
+#  define SCHEME_PLATFORM_LIBRARY_SUBPATH "sparc-linux"
+#  define FLUSH_SPARC_REGISTER_WINDOWS
+# endif
 # ifndef SCHEME_PLATFORM_LIBRARY_SUBPATH
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "unknown-linux"
 # endif
@@ -208,10 +217,15 @@
 
 # define HAS_LINUX_IOB
 
-# define STACK_GROWS_DOWN
-
 # if defined(__alpha)
 #  define SIXTY_FOUR_BIT_INTEGERS
+# endif
+
+# if defined(__hppa__)
+#  define STACK_GROWS_UP
+#  define SIXTY_FOUR_BIT_INTEGERS
+# else
+#  define STACK_GROWS_DOWN
 # endif
 
 # define USE_IEEE_FP_PREDS
@@ -402,7 +416,7 @@
 
   /************** HP/UX with cc ****************/
 
-#if defined(_PA_RISC1_0) || defined(_PA_RISC1_1)
+#if (defined(_PA_RISC1_0) || defined(_PA_RISC1_1)) && !defined(linux)
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "parisc-hpux"
 
@@ -605,8 +619,7 @@
 # define SCHEME_BIG_ENDIAN
 # define USE_MAP_ANON
 
-# define USE_IEEE_FP_PREDS
-# define POW_HANDLES_INF_CORRECTLY
+# define USE_CARBON_FP_PREDS
 # define TRIG_ZERO_NEEDS_SIGN_CHECK
 
 # define UNDERSCORE_DYNLOAD_SYMBOL_PREFIX
@@ -1001,6 +1014,9 @@
  /* USE_UNDERSCORE_SETJMP uses _setjmp() instead of setjmp() to avoid
     sigmal-mask work. */
 
+ /* FLUSH_SPARC_REGISTER_WINDOWS uses an assembly instruction for
+    flushing the Sparc register windows before copying the stack. */
+
   /**********************/
  /* Inexact Arithmetic */
 /**********************/
@@ -1028,6 +1044,9 @@
 
  /* USE_SCO_IEEE_FP_PREDS uses fpclass() and isnan() to implement tests for
     infinity and not-a-number. */
+
+ /* USE_CARBOM_FP_PREDS uses __isnand() and __isfinited() to implement tests
+    for infinity and not-a-number. */
 
  /* DEFEAT_FP_COMP_OPTIMIZATION avoids a compiler optimization that
     converts (a == a) to TRUE, even if `a' is floating-point. Used

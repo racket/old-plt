@@ -282,7 +282,7 @@ non-negaytive exact integer for the source column (if known), and
 starting from the indicated position.
 
 ======================================================================
-_boundmap.ss_: mapping bound identifiers
+_boundmap.ss_: mapping identifiers based on bound-identifier=? and module-identifier=?
 ======================================================================
 
 > (make-bound-identifier-mapping) - produces a hash-table-like value
@@ -322,6 +322,49 @@ _boundmap.ss_: mapping bound identifiers
 				  . -> .
 				  (listof any?))
   - Like `hash-table-map'
+
+
+> (make-module-identifier-mapping) - produces a hash-table-like value
+   for storing a mapping from syntax identifiers to arbitrary
+   values.
+
+   The mapping uses `module-identifier=?' to compare mapping
+   keys, but also uses a hash table based on symbol equality
+   to make the mapping efficient in the common case, i.e.,
+   where the identifiers print differently. Note that some
+   identifiers print differently but are module-identifier=?
+   to each other. This case is handled properly by this
+   library.
+
+> (module-identifier-mapping? v) - #t if v was produced by
+   `make-module-identifier-mapping', #f otherwise.
+
+> module-identifier-mapping-get : (opt->
+                                   (module-identifier-mapping?
+                                    identifier?)
+                                   [(-> any)]
+                                   any)
+  - Like `hash-table-get' for module-identifier mappings.
+
+> module-identifier-mapping-put! : (module-identifier-mapping?
+                                    identifier?
+                                    any?
+                                    . -> .
+                                    void?)
+  - Like `hash-table-put! for module-identifier mappings.
+
+> module-identifier-mapping-for-each : (module-identifier-mapping?
+                                        (identifier? any? . -> . any)
+                                        . -> .
+                                        void?)
+  - Like `hash-table-for-each'
+
+> module-identifier-mapping-map : (module-identifier-mapping?
+                                   (identifier? any? . -> . any)
+                                   . -> .
+                                   (listof any?))
+  - Like `hash-table-map'
+
 
 ======================================================================
 _zodiac.ss_, _zodiac-unit.ss_, and _zodiac-sig.ss_: compatibility

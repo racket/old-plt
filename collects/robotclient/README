@@ -1,9 +1,13 @@
+Programmers:
 David Goldberg
-Kathy Gray
+Kathryn Gray
 Scott Owens
 Adam Wick
 
-Our entry is written in the mzscheme dialect of Scheme.
+AI consultant:
+Brijesh Garabadu
+
+Our entry is written in the mzscheme v202 dialect of Scheme.
 
 Our player uses a breadth-first-search to plan paths to homes and
 package destinations.  If other robots are nearby, a weighted

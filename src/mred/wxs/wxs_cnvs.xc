@@ -20,10 +20,36 @@ static void FillZero(int *a, int *b) {
   *a = *b = 0;
 }
 
+#ifndef wxGL_CONTEXT
+# define wxGL_CONTEXT 0
+#endif
+
+static void wxSwapBuffers(wxCanvas* c)
+{
+#ifdef wx_msw
+  c->SwapBuffers();
+#endif
+}
+
+static void wxThisContextCurrent(wxCanvas* c)
+{
+#ifdef wx_msw
+  c->ThisContextCurrent();
+#endif
+}
+
+static void wxPreviousContextCurrent(wxCanvas* c)
+{
+#ifdef wx_msw
+  c->PreviousContextCurrent();
+#endif
+}
+
 @BEGINSYMBOLS canvasStyle > > PRED BUNDLE
 @SYM "border" : wxBORDER
 @SYM "vscroll" : wxVSCROLL
 @SYM "hscroll" : wxHSCROLL
+@SYM "gl" : wxGL_CONTEXT
 @ENDSYMBOLS
 
 @INCLUDE wxs_ornt.xci
@@ -57,6 +83,10 @@ static void FillZero(int *a, int *b) {
 @ "set-scroll-page" : void SetScrollPage(SYM[orientation], rint[1|10000]);
 
 @ v "on-scroll" : void OnScroll(wxScrollEvent!); : JMPDECL/SETJMP/RESETJMP : / PANELREDIRECT[return scheme_void]
+
+@ m "swap-buffers" : void wxSwapBuffers()
+@ m "this-context-current" : void wxThisContextCurrent()
+@ m "previous-context-current" : void wxPreviousContextCurrent()
 
 @SETMARK w = d
 @INCLUDE wxs_win.xci

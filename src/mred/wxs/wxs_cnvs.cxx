@@ -43,9 +43,35 @@ static void FillZero(int *a, int *b) {
   *a = *b = 0;
 }
 
+#ifndef wxGL_CONTEXT
+# define wxGL_CONTEXT 0
+#endif
+
+static void wxSwapBuffers(wxCanvas* c)
+{
+#ifdef wx_msw
+  c->SwapBuffers();
+#endif
+}
+
+static void wxThisContextCurrent(wxCanvas* c)
+{
+#ifdef wx_msw
+  c->ThisContextCurrent();
+#endif
+}
+
+static void wxPreviousContextCurrent(wxCanvas* c)
+{
+#ifdef wx_msw
+  c->PreviousContextCurrent();
+#endif
+}
+
 static Scheme_Object *canvasStyle_wxBORDER_sym = NULL;
 static Scheme_Object *canvasStyle_wxVSCROLL_sym = NULL;
 static Scheme_Object *canvasStyle_wxHSCROLL_sym = NULL;
+static Scheme_Object *canvasStyle_wxGL_CONTEXT_sym = NULL;
 
 static void init_symset_canvasStyle(void) {
   REMEMBER_VAR_STACK();
@@ -55,12 +81,14 @@ static void init_symset_canvasStyle(void) {
   canvasStyle_wxVSCROLL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("vscroll"));
   wxREGGLOB(canvasStyle_wxHSCROLL_sym);
   canvasStyle_wxHSCROLL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hscroll"));
+  wxREGGLOB(canvasStyle_wxGL_CONTEXT_sym);
+  canvasStyle_wxGL_CONTEXT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("gl"));
 }
 
 static int unbundle_symset_canvasStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!canvasStyle_wxHSCROLL_sym) WITH_VAR_STACK(init_symset_canvasStyle());
+  if (!canvasStyle_wxGL_CONTEXT_sym) WITH_VAR_STACK(init_symset_canvasStyle());
   Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
@@ -69,6 +97,7 @@ static int unbundle_symset_canvasStyle(Scheme_Object *v, const char *where) {
   else if (i == canvasStyle_wxBORDER_sym) { result = result | wxBORDER; }
   else if (i == canvasStyle_wxVSCROLL_sym) { result = result | wxVSCROLL; }
   else if (i == canvasStyle_wxHSCROLL_sym) { result = result | wxHSCROLL; }
+  else if (i == canvasStyle_wxGL_CONTEXT_sym) { result = result | wxGL_CONTEXT; }
   else { break; } 
   l = SCHEME_CDR(l);
   }
@@ -122,6 +151,7 @@ static Scheme_Object *bundle_symset_orientation(int v) {
 
 
 // @ "get-scroll-units" : void GetScrollUnitsPerPage(int*,int*); : : / PANELREDIRECT[ FillZero(x0,x1); return scheme_void]
+
 
 
 
@@ -656,6 +686,63 @@ static Scheme_Object *os_wxCanvasOnKillFocus(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
+static Scheme_Object *os_wxCanvaswxPreviousContextCurrent(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxCanvas_class, "previous-context-current in canvas%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  WITH_VAR_STACK(wxPreviousContextCurrent(((wxCanvas *)((Scheme_Class_Object *)p[0])->primdata)));
+
+  
+  
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxCanvaswxThisContextCurrent(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxCanvas_class, "this-context-current in canvas%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  WITH_VAR_STACK(wxThisContextCurrent(((wxCanvas *)((Scheme_Class_Object *)p[0])->primdata)));
+
+  
+  
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxCanvaswxSwapBuffers(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxCanvas_class, "swap-buffers in canvas%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  WITH_VAR_STACK(wxSwapBuffers(((wxCanvas *)((Scheme_Class_Object *)p[0])->primdata)));
+
+  
+  
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxCanvasOnScroll(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1130,7 +1217,7 @@ void objscheme_setup_wxCanvas(Scheme_Env *env)
 
   wxREGGLOB(os_wxCanvas_class);
 
-  os_wxCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "canvas%", "window%", os_wxCanvas_ConstructScheme, 22));
+  os_wxCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "canvas%", "window%", os_wxCanvas_ConstructScheme, 25));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-drop-file", os_wxCanvasOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "pre-on-event", os_wxCanvasPreOnEvent, 2, 2));
@@ -1138,6 +1225,9 @@ void objscheme_setup_wxCanvas(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-size", os_wxCanvasOnSize, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-set-focus", os_wxCanvasOnSetFocus, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-kill-focus", os_wxCanvasOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "previous-context-current", os_wxCanvaswxPreviousContextCurrent, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "this-context-current", os_wxCanvaswxThisContextCurrent, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "swap-buffers", os_wxCanvaswxSwapBuffers, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-scroll", os_wxCanvasOnScroll, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "set-scroll-page", os_wxCanvasSetScrollPage, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "set-scroll-range", os_wxCanvasSetScrollRange, 2, 2));

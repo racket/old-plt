@@ -860,17 +860,18 @@
 
 ;; Network - - - - - - - - - - - - - - - - - - - - - -
 
-(define (net-reject? who)
+(define (net-reject? who what)
   (lambda (x) (and (pair? x)
 		   (eq? (car x) 'net-reject)
-		   (eq? (cdr x) who))))
+		   (eq? (cadr x) who)
+		   (eq? (cddr x) what))))
 
 (parameterize ([current-security-guard 
 		(make-security-guard (current-security-guard)
 				     void
-				     (lambda (who host port)
-				       (raise (cons 'net-reject who))))])
-  (err/rt-test (tcp-connect "other" 123)  (net-reject? 'tcp-connect))
-  (err/rt-test (tcp-listen 123)  (net-reject? 'tcp-listen)))
+				     (lambda (who host port mode)
+				       (raise (list* 'net-reject who mode))))])
+  (err/rt-test (tcp-connect "other" 123)  (net-reject? 'tcp-connect 'client))
+  (err/rt-test (tcp-listen 123)  (net-reject? 'tcp-listen 'server)))
 
 (report-errs)

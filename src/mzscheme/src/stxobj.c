@@ -455,8 +455,9 @@ int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *u
   if ((a == asym) || (b == bsym))
     return 1;
 
-  if (!same_marks(((Scheme_Stx *)a)->wraps, ((Scheme_Stx *)b)->wraps))
-    return 0;
+  if (!uid)
+    if (!same_marks(((Scheme_Stx *)a)->wraps, ((Scheme_Stx *)b)->wraps))
+      return 0;
   
   a = resolve_env(a);
   if (uid)

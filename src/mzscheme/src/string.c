@@ -598,10 +598,10 @@ void scheme_get_substring_indices(const char *name, Scheme_Object *str,
     finish = len;
 
   if (!(start <= len)) {
-    scheme_out_of_string_range(name, "first ", argv[spos], str, 0, len);
+    scheme_out_of_string_range(name, "starting ", argv[spos], str, 0, len);
   }
   if (!(finish >= start && finish <= len)) {
-    scheme_out_of_string_range(name, "second ", argv[fpos], str, start, len);
+    scheme_out_of_string_range(name, "ending ", argv[fpos], str, start, len);
   }
 
   *_start = start;

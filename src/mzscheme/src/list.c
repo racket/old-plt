@@ -1084,38 +1084,38 @@ static Scheme_Object * \
 name ## _prim (int argc, Scheme_Object *argv[]) \
 { \
   if (!(SCHEME_PAIRP(argv[0]) \
-	&& SCHEME_PAIRP(SCHEME_ ## D (argv[0])))) \
+	&& SCHEME_PAIRP(D(argv[0])))) \
       scheme_wrong_type(#name, #name "able value", 0, argc, argv); \
-  return SCHEME_ ## C (SCHEME_ ## D (argv[0])); \
+  return C(D(argv[0])); \
 }
 
-LISTFUNC2(cddr, CDR, CDR)
-LISTFUNC2(cadr, CAR, CDR)
-LISTFUNC2(cdar, CDR, CAR)
-LISTFUNC2(caar, CAR, CAR)
+LISTFUNC2(cddr, SCHEME_CDR, SCHEME_CDR)
+LISTFUNC2(cadr, SCHEME_CAR, SCHEME_CDR)
+LISTFUNC2(cdar, SCHEME_CDR, SCHEME_CAR)
+LISTFUNC2(caar, SCHEME_CAR, SCHEME_CAR)
 
 #define LISTFUNC3(name, B, C, D) \
 static Scheme_Object * \
 name ## _prim (int argc, Scheme_Object *argv[]) \
 { \
   if (!((SCHEME_PAIRP(argv[0])) \
-	&& SCHEME_PAIRP(SCHEME_ ## D (argv[0])) \
-	&& SCHEME_PAIRP(SCHEME_ ## C (SCHEME_ ## D (argv[0]))))) \
+	&& SCHEME_PAIRP(D(argv[0])) \
+	&& SCHEME_PAIRP(C(D(argv[0]))))) \
     scheme_wrong_type(#name, #name "able value", 0, argc, argv); \
-  return SCHEME_ ## B (SCHEME_ ## C (SCHEME_ ## D (argv[0]))); \
+  return B (C (D (argv[0]))); \
 }
 
-LISTFUNC3(cdddr, CDR, CDR, CDR)
+LISTFUNC3(cdddr, SCHEME_CDR, SCHEME_CDR, SCHEME_CDR)
 
-LISTFUNC3(caddr, CAR, CDR, CDR)
-LISTFUNC3(cdadr, CDR, CAR, CDR)
-LISTFUNC3(cddar, CDR, CDR, CAR)
+LISTFUNC3(caddr, SCHEME_CAR, SCHEME_CDR, SCHEME_CDR)
+LISTFUNC3(cdadr, SCHEME_CDR, SCHEME_CAR, SCHEME_CDR)
+LISTFUNC3(cddar, SCHEME_CDR, SCHEME_CDR, SCHEME_CAR)
 
-LISTFUNC3(cdaar, CDR, CAR, CAR)
-LISTFUNC3(cadar, CAR, CDR, CAR)
-LISTFUNC3(caadr, CAR, CAR, CDR)
+LISTFUNC3(cdaar, SCHEME_CDR, SCHEME_CAR, SCHEME_CAR)
+LISTFUNC3(cadar, SCHEME_CAR, SCHEME_CDR, SCHEME_CAR)
+LISTFUNC3(caadr, SCHEME_CAR, SCHEME_CAR, SCHEME_CDR)
 
-LISTFUNC3(caaar, CAR, CAR, CAR)
+LISTFUNC3(caaar, SCHEME_CAR, SCHEME_CAR, SCHEME_CAR)
 
 
 #define LISTFUNC4(name, A, B, C, D) \
@@ -1123,33 +1123,33 @@ static Scheme_Object * \
 name ## _prim (int argc, Scheme_Object *argv[]) \
 { \
   if (!(SCHEME_PAIRP(argv[0]) \
-	&& SCHEME_PAIRP(SCHEME_ ## D (argv[0])) \
-	&& SCHEME_PAIRP(SCHEME_ ## C (SCHEME_ ## D (argv[0]))) \
-	&&SCHEME_PAIRP(SCHEME_ ## B (SCHEME_ ## C (SCHEME_ ## D (argv[0]))))))\
+	&& SCHEME_PAIRP(D (argv[0])) \
+	&& SCHEME_PAIRP(C(D(argv[0]))) \
+	&&SCHEME_PAIRP(B(C(D(argv[0]))))))\
     scheme_wrong_type(#name, #name "able value", 0, argc, argv); \
-  return SCHEME_ ## A (SCHEME_ ## B (SCHEME_ ## C (SCHEME_ ## D (argv[0]))));\
+  return A(B(C(D(argv[0]))));\
 }
 
-LISTFUNC4(cddddr, CDR, CDR, CDR, CDR)
+LISTFUNC4(cddddr, SCHEME_CDR, SCHEME_CDR, SCHEME_CDR, SCHEME_CDR)
 
-LISTFUNC4(cadddr, CAR, CDR, CDR, CDR)
-LISTFUNC4(cdaddr, CDR, CAR, CDR, CDR)
-LISTFUNC4(cddadr, CDR, CDR, CAR, CDR)
-LISTFUNC4(cdddar, CDR, CDR, CDR, CAR)
+LISTFUNC4(cadddr, SCHEME_CAR, SCHEME_CDR, SCHEME_CDR, SCHEME_CDR)
+LISTFUNC4(cdaddr, SCHEME_CDR, SCHEME_CAR, SCHEME_CDR, SCHEME_CDR)
+LISTFUNC4(cddadr, SCHEME_CDR, SCHEME_CDR, SCHEME_CAR, SCHEME_CDR)
+LISTFUNC4(cdddar, SCHEME_CDR, SCHEME_CDR, SCHEME_CDR, SCHEME_CAR)
 
-LISTFUNC4(caaddr, CAR, CAR, CDR, CDR)
-LISTFUNC4(cadadr, CAR, CDR, CAR, CDR)
-LISTFUNC4(caddar, CAR, CDR, CDR, CAR)
-LISTFUNC4(cdaadr, CDR, CAR, CAR, CDR)
-LISTFUNC4(cdadar, CDR, CAR, CDR, CAR)
-LISTFUNC4(cddaar, CDR, CDR, CAR, CAR)
+LISTFUNC4(caaddr, SCHEME_CAR, SCHEME_CAR, SCHEME_CDR, SCHEME_CDR)
+LISTFUNC4(cadadr, SCHEME_CAR, SCHEME_CDR, SCHEME_CAR, SCHEME_CDR)
+LISTFUNC4(caddar, SCHEME_CAR, SCHEME_CDR, SCHEME_CDR, SCHEME_CAR)
+LISTFUNC4(cdaadr, SCHEME_CDR, SCHEME_CAR, SCHEME_CAR, SCHEME_CDR)
+LISTFUNC4(cdadar, SCHEME_CDR, SCHEME_CAR, SCHEME_CDR, SCHEME_CAR)
+LISTFUNC4(cddaar, SCHEME_CDR, SCHEME_CDR, SCHEME_CAR, SCHEME_CAR)
 
-LISTFUNC4(cdaaar, CDR, CAR, CAR, CAR)
-LISTFUNC4(cadaar, CAR, CDR, CAR, CAR)
-LISTFUNC4(caadar, CAR, CAR, CDR, CAR)
-LISTFUNC4(caaadr, CAR, CAR, CAR, CDR)
+LISTFUNC4(cdaaar, SCHEME_CDR, SCHEME_CAR, SCHEME_CAR, SCHEME_CAR)
+LISTFUNC4(cadaar, SCHEME_CAR, SCHEME_CDR, SCHEME_CAR, SCHEME_CAR)
+LISTFUNC4(caadar, SCHEME_CAR, SCHEME_CAR, SCHEME_CDR, SCHEME_CAR)
+LISTFUNC4(caaadr, SCHEME_CAR, SCHEME_CAR, SCHEME_CAR, SCHEME_CDR)
 
-LISTFUNC4(caaaar, CAR, CAR, CAR, CAR)
+LISTFUNC4(caaaar, SCHEME_CAR, SCHEME_CAR, SCHEME_CAR, SCHEME_CAR)
 
 Scheme_Object *scheme_box(Scheme_Object *v)
 {

@@ -214,28 +214,34 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 
     f = (char*(*)(SSI_ARG_TYPES))dlsym(dl, SO_SYMBOL_PREFIX "scheme_initialize_internal");
     
-    if (!f)
+    if (!f) {
+      dlclose(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
 		       "load-extension: \"%s\" is not an extension (%s)", 
 		       filename, dlerror());
-    
+    }
+
     vers = f(SSI_ARGS);
-    if (!vers || strcmp(vers, VERSION))
+    if (!vers || strcmp(vers, VERSION)) {
+      dlclose(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
 		       "load-extension: bad version %s from \"%s\"",
 		       vers, filename);
+    }
     
     init_f = (Scheme_Object*(*)(Scheme_Env*))dlsym(dl, SO_SYMBOL_PREFIX "scheme_initialize");
     reload_f = (Scheme_Object*(*)(Scheme_Env*))dlsym(dl, SO_SYMBOL_PREFIX "scheme_reload");
     
-    if (!init_f || !reload_f)
+    if (!init_f || !reload_f) {
+      dlclose(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
 		       "load-extension: no %s in \"%s\" (%s)",
 		       init_f ? "scheme_reload" : "scheme_initialize",
 		       filename, dlerror());
+    }
 #endif
 #if defined(WINDOWS_DYNAMIC_LOAD)
     HINSTANCE dl;
@@ -252,28 +258,34 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     
     f = (char*(*)(SSI_ARG_TYPES))GetProcAddress(dl, "scheme_initialize_internal");
     
-    if (!f)
+    if (!f) {
+      FreeLibrary(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
 		       "load-extension: \"%s\" is not an extension (%ld)",
 		       filename, GetLastError());
+    }
     
     vers = (f)(SSI_ARGS);
-    if (!vers || strcmp(vers, VERSION))
+    if (!vers || strcmp(vers, VERSION)) {
+      FreeLibrary(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
 		       "load-extension: bad version %s from \"%s\"",
 		       vers, filename);
+    }
     
     init_f = (Scheme_Object*(*)(Scheme_Env*))GetProcAddress(dl,"scheme_initialize");
     reload_f = (Scheme_Object*(*)(Scheme_Env*))GetProcAddress(dl,"scheme_reload");
     
-    if (!init_f || !reload_f)
+    if (!init_f || !reload_f) {
+      FreeLibrary(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
 		       "load-extension: no %s in \"%s\"", 
 		       init_f ? "scheme_reload" : "scheme_initialize",
 		       filename);
+    }
 #endif
 #if defined(CODEFRAGMENT_DYNAMIC_LOAD)
     FSSpec spec;

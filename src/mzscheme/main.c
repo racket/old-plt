@@ -413,6 +413,7 @@ int start_linux_fs(char *diskname, char *partname)
   oskit_dir_t *root;
 # define MAX_PARTS 30
   diskpart_t part_array[MAX_PARTS];
+  int num_parts;
 
 # define CHECK(what, f) \
   if ((err = f)) { printf("filesystem init error at " what ": %d\n", err); return 0; }
@@ -437,7 +438,8 @@ int start_linux_fs(char *diskname, char *partname)
   CHECK("diskopen", oskit_linux_block_open(diskname, OSKIT_DEV_OPEN_ALL, &disk));
 
   printf(">> Reading partitions\n");
-  (void)diskpart_blkio_get_partition(disk, part_array, MAX_PARTS);
+  num_parts = diskpart_blkio_get_partition(disk, part_array, MAX_PARTS);
+  printf(">> Found %d partitions, looking for %s\n", num_parts, partname);
   if (diskpart_blkio_lookup_bsd_string(part_array, partname, disk, &part) == 0) {
     printf("can't find partition %s\n", partname);
     return 0;
@@ -499,7 +501,9 @@ int main(int argc, char **argv)
   oskit_init_libc();
 
 # ifdef OSK_LINUX_FILESYSTEMS
-  if (argc > 2) {
+  if (main) { start_linux_fs("hda", "a"); } else
+
+  if (argc > 1) {
     start_linux_fs(argv[1], argv[2]);
     argv[2] = argv[0];
     argv += 2;

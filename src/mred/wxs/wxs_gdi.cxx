@@ -499,13 +499,13 @@ void objscheme_setup_wxFont(Scheme_Env *env)
 
   os_wxFont_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "font%", "object%", os_wxFont_ConstructScheme, 7));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-font-id" " method", os_wxFontGetFontId, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-underlined" " method", os_wxFontGetUnderlined, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-weight" " method", os_wxFontGetWeight, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-point-size" " method", os_wxFontGetPointSize, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-style" " method", os_wxFontGetStyle, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-face" " method", os_wxFontGetFaceString, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-family" " method", os_wxFontGetFamily, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-font-id" " method", (Scheme_Method_Prim *)os_wxFontGetFontId, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-underlined" " method", (Scheme_Method_Prim *)os_wxFontGetUnderlined, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-weight" " method", (Scheme_Method_Prim *)os_wxFontGetWeight, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-point-size" " method", (Scheme_Method_Prim *)os_wxFontGetPointSize, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-style" " method", (Scheme_Method_Prim *)os_wxFontGetStyle, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-face" " method", (Scheme_Method_Prim *)os_wxFontGetFaceString, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-family" " method", (Scheme_Method_Prim *)os_wxFontGetFamily, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxFont_class));
@@ -714,7 +714,7 @@ void objscheme_setup_wxFontList(Scheme_Env *env)
 
   os_wxFontList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "font-list%", "object%", os_wxFontList_ConstructScheme, 1));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontList_class, "find-or-create-font" " method", os_wxFontListFindOrCreateFont, 4, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontList_class, "find-or-create-font" " method", (Scheme_Method_Prim *)os_wxFontListFindOrCreateFont, 4, 6));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxFontList_class));
@@ -1050,12 +1050,12 @@ void objscheme_setup_wxColour(Scheme_Env *env)
 
   os_wxColour_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "color%", "object%", os_wxColour_ConstructScheme, 6));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "blue" " method", os_wxColourBlue, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "green" " method", os_wxColourGreen, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "red" " method", os_wxColourRed, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "set" " method", os_wxColourSet, 3, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "ok?" " method", os_wxColourOk, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "copy-from" " method", os_wxColourCopyFrom, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "blue" " method", (Scheme_Method_Prim *)os_wxColourBlue, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "green" " method", (Scheme_Method_Prim *)os_wxColourGreen, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "red" " method", (Scheme_Method_Prim *)os_wxColourRed, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "set" " method", (Scheme_Method_Prim *)os_wxColourSet, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "ok?" " method", (Scheme_Method_Prim *)os_wxColourOk, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "copy-from" " method", (Scheme_Method_Prim *)os_wxColourCopyFrom, 1, 1));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxColour_class));
@@ -1197,7 +1197,7 @@ void objscheme_setup_wxColourDatabase(Scheme_Env *env)
 
   os_wxColourDatabase_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "color-database%", "object%", NULL, 1));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColourDatabase_class, "find-color" " method", os_wxColourDatabaseFindColour, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColourDatabase_class, "find-color" " method", (Scheme_Method_Prim *)os_wxColourDatabaseFindColour, 1, 1));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxColourDatabase_class));
@@ -1889,12 +1889,12 @@ void objscheme_setup_wxBrush(Scheme_Env *env)
 
   os_wxBrush_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "brush%", "object%", os_wxBrush_ConstructScheme, 6));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "set-style" " method", os_wxBrushSetStyle, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "get-style" " method", os_wxBrushGetStyle, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "set-stipple" " method", os_wxBrushSetStipple, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "get-stipple" " method", os_wxBrushGetStipple, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "set-color" " method", os_wxBrushSetColour, 1, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "get-color" " method", os_wxBrushGetColour, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "set-style" " method", (Scheme_Method_Prim *)os_wxBrushSetStyle, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "get-style" " method", (Scheme_Method_Prim *)os_wxBrushGetStyle, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "set-stipple" " method", (Scheme_Method_Prim *)os_wxBrushSetStipple, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "get-stipple" " method", (Scheme_Method_Prim *)os_wxBrushGetStipple, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "set-color" " method", (Scheme_Method_Prim *)os_wxBrushSetColour, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "get-color" " method", (Scheme_Method_Prim *)os_wxBrushGetColour, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxBrush_class));
@@ -2084,7 +2084,7 @@ void objscheme_setup_wxBrushList(Scheme_Env *env)
 
   os_wxBrushList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "brush-list%", "object%", os_wxBrushList_ConstructScheme, 1));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrushList_class, "find-or-create-brush" " method", os_wxBrushListFindOrCreateBrush, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrushList_class, "find-or-create-brush" " method", (Scheme_Method_Prim *)os_wxBrushListFindOrCreateBrush, 2, 2));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxBrushList_class));
@@ -2741,18 +2741,18 @@ void objscheme_setup_wxPen(Scheme_Env *env)
 
   os_wxPen_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "pen%", "object%", os_wxPen_ConstructScheme, 12));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-style" " method", os_wxPenSetStyle, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-style" " method", os_wxPenGetStyle, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-stipple" " method", os_wxPenSetStipple, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-stipple" " method", os_wxPenGetStipple, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-color" " method", os_wxPenSetColour, 1, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-color" " method", os_wxPenGetColour, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-join" " method", os_wxPenSetJoin, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-join" " method", os_wxPenGetJoin, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-cap" " method", os_wxPenSetCap, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-cap" " method", os_wxPenGetCap, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-width" " method", os_wxPenSetWidth, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-width" " method", os_wxPenGetWidthF, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-style" " method", (Scheme_Method_Prim *)os_wxPenSetStyle, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-style" " method", (Scheme_Method_Prim *)os_wxPenGetStyle, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-stipple" " method", (Scheme_Method_Prim *)os_wxPenSetStipple, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-stipple" " method", (Scheme_Method_Prim *)os_wxPenGetStipple, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-color" " method", (Scheme_Method_Prim *)os_wxPenSetColour, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-color" " method", (Scheme_Method_Prim *)os_wxPenGetColour, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-join" " method", (Scheme_Method_Prim *)os_wxPenSetJoin, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-join" " method", (Scheme_Method_Prim *)os_wxPenGetJoin, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-cap" " method", (Scheme_Method_Prim *)os_wxPenSetCap, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-cap" " method", (Scheme_Method_Prim *)os_wxPenGetCap, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-width" " method", (Scheme_Method_Prim *)os_wxPenSetWidth, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-width" " method", (Scheme_Method_Prim *)os_wxPenGetWidthF, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxPen_class));
@@ -2947,7 +2947,7 @@ void objscheme_setup_wxPenList(Scheme_Env *env)
 
   os_wxPenList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "pen-list%", "object%", os_wxPenList_ConstructScheme, 1));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPenList_class, "find-or-create-pen" " method", os_wxPenListFindOrCreatePen, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPenList_class, "find-or-create-pen" " method", (Scheme_Method_Prim *)os_wxPenListFindOrCreatePen, 3, 3));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxPenList_class));
@@ -3242,7 +3242,7 @@ void objscheme_setup_wxCursor(Scheme_Env *env)
 
   os_wxCursor_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "cursor%", "object%", os_wxCursor_ConstructScheme, 1));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCursor_class, "ok?" " method", os_wxCursorOk, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCursor_class, "ok?" " method", (Scheme_Method_Prim *)os_wxCursorOk, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxCursor_class));
@@ -3811,17 +3811,17 @@ void objscheme_setup_wxRegion(Scheme_Env *env)
 
   os_wxRegion_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "region%", "object%", os_wxRegion_ConstructScheme, 11));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "is-empty?" " method", os_wxRegionEmpty, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "get-bounding-box" " method", os_wxRegionRgnBoundingBox, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "subtract" " method", os_wxRegionSubtract, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "intersect" " method", os_wxRegionIntersect, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "union" " method", os_wxRegionUnion, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-arc" " method", os_wxRegionSetArc, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-polygon" " method", os_wxRegionSetPolygon, 1, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-ellipse" " method", os_wxRegionSetEllipse, 4, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-rounded-rectangle" " method", os_wxRegionSetRoundedRectangle, 4, 5));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-rectangle" " method", os_wxRegionSetRectangle, 4, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "get-dc" " method", os_wxRegionGetDC, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "is-empty?" " method", (Scheme_Method_Prim *)os_wxRegionEmpty, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "get-bounding-box" " method", (Scheme_Method_Prim *)os_wxRegionRgnBoundingBox, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "subtract" " method", (Scheme_Method_Prim *)os_wxRegionSubtract, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "intersect" " method", (Scheme_Method_Prim *)os_wxRegionIntersect, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "union" " method", (Scheme_Method_Prim *)os_wxRegionUnion, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-arc" " method", (Scheme_Method_Prim *)os_wxRegionSetArc, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-polygon" " method", (Scheme_Method_Prim *)os_wxRegionSetPolygon, 1, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-ellipse" " method", (Scheme_Method_Prim *)os_wxRegionSetEllipse, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-rounded-rectangle" " method", (Scheme_Method_Prim *)os_wxRegionSetRoundedRectangle, 4, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "set-rectangle" " method", (Scheme_Method_Prim *)os_wxRegionSetRectangle, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "get-dc" " method", (Scheme_Method_Prim *)os_wxRegionGetDC, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxRegion_class));
@@ -4157,15 +4157,15 @@ void objscheme_setup_wxFontNameDirectory(Scheme_Env *env)
 
   os_wxFontNameDirectory_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "font-name-directory%", "object%", NULL, 9));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "find-family-default-font-id" " method", os_wxFontNameDirectoryIdentity, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "find-or-create-font-id" " method", os_wxFontNameDirectoryFindOrCreateFontId, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-family" " method", os_wxFontNameDirectoryGetFamily, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-face-name" " method", os_wxFontNameDirectoryGetFontName, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-font-id" " method", os_wxFontNameDirectoryGetFontId, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "set-post-script-name" " method", os_wxFontNameDirectorySetPostScriptName, 4, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "set-screen-name" " method", os_wxFontNameDirectorySetScreenName, 4, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-post-script-name" " method", os_wxFontNameDirectoryGetPostScriptName, 3, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-screen-name" " method", os_wxFontNameDirectoryGetScreenName, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "find-family-default-font-id" " method", (Scheme_Method_Prim *)os_wxFontNameDirectoryIdentity, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "find-or-create-font-id" " method", (Scheme_Method_Prim *)os_wxFontNameDirectoryFindOrCreateFontId, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-family" " method", (Scheme_Method_Prim *)os_wxFontNameDirectoryGetFamily, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-face-name" " method", (Scheme_Method_Prim *)os_wxFontNameDirectoryGetFontName, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-font-id" " method", (Scheme_Method_Prim *)os_wxFontNameDirectoryGetFontId, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "set-post-script-name" " method", (Scheme_Method_Prim *)os_wxFontNameDirectorySetPostScriptName, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "set-screen-name" " method", (Scheme_Method_Prim *)os_wxFontNameDirectorySetScreenName, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-post-script-name" " method", (Scheme_Method_Prim *)os_wxFontNameDirectoryGetPostScriptName, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-screen-name" " method", (Scheme_Method_Prim *)os_wxFontNameDirectoryGetScreenName, 3, 3));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxFontNameDirectory_class));
@@ -4359,15 +4359,15 @@ void objscheme_setup_wxGDIGlobal(Scheme_Env *env)
   Scheme_Object *functmp INIT_NULLED_OUT;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxGDIGlobalwxGetTheFontNameDirectory, "get-the-font-name-directory", 0, 0));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxGDIGlobalwxGetTheFontNameDirectory, "get-the-font-name-directory", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-the-font-name-directory", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxGDIGlobalwxGetTheFontList, "get-the-font-list", 0, 0));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxGDIGlobalwxGetTheFontList, "get-the-font-list", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-the-font-list", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxGDIGlobalwxGetThePenList, "get-the-pen-list", 0, 0));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxGDIGlobalwxGetThePenList, "get-the-pen-list", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-the-pen-list", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxGDIGlobalwxGetTheBrushList, "get-the-brush-list", 0, 0));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxGDIGlobalwxGetTheBrushList, "get-the-brush-list", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-the-brush-list", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxGDIGlobalwxGetTheColourDatabase, "get-the-color-database", 0, 0));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxGDIGlobalwxGetTheColourDatabase, "get-the-color-database", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-the-color-database", functmp, env));
 }
 

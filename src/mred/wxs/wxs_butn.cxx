@@ -686,13 +686,13 @@ void objscheme_setup_wxButton(Scheme_Env *env)
 
   os_wxButton_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "button%", "item%", os_wxButton_ConstructScheme, 7));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "set-label" " method", os_wxButtonSetLabel, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-drop-file" " method", os_wxButtonOnDropFile, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "pre-on-event" " method", os_wxButtonPreOnEvent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "pre-on-char" " method", os_wxButtonPreOnChar, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-size" " method", os_wxButtonOnSize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-set-focus" " method", os_wxButtonOnSetFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-kill-focus" " method", os_wxButtonOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "set-label" " method", (Scheme_Method_Prim *)os_wxButtonSetLabel, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxButtonOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "pre-on-event" " method", (Scheme_Method_Prim *)os_wxButtonPreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "pre-on-char" " method", (Scheme_Method_Prim *)os_wxButtonPreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-size" " method", (Scheme_Method_Prim *)os_wxButtonOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-set-focus" " method", (Scheme_Method_Prim *)os_wxButtonOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-kill-focus" " method", (Scheme_Method_Prim *)os_wxButtonOnKillFocus, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxButton_class));

@@ -1097,7 +1097,7 @@ sub DoPrintClass
 		    print "(${newclass}_class, ";
 		    $cleanfunc = $func;
 		    $cleanfunc = &OperatorClean($cleanfunc);
-		    print "${fname} \" method\", (Scheme_Method_Prim)${newclass}${cleanfunc}";
+		    print "${fname} \" method\", (Scheme_Method_Prim *)${newclass}${cleanfunc}";
 		    if ($justoneok{$func}) {
 			print ", ";
 			print $justonemin{$func};
@@ -1177,7 +1177,7 @@ sub DoPrintClass
 		} else {
 		    print "scheme_make_prim";
 		}
-		print "((Scheme_Prim)${globalname}${func}";
+		print "((Scheme_Prim *)${globalname}${func}";
 		if ($justoneok{$func}) {
 		    print ", ${fname}, ";
 		    print $justonemin{$func};

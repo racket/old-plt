@@ -230,8 +230,8 @@ void objscheme_setup_wxMultColour(Scheme_Env *env)
 
   os_wxMultColour_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "mult-color%", "object%", NULL, 8));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMultColour_class, "set" " method", os_wxMultColourSet, 3, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMultColour_class, "get" " method", os_wxMultColourGet, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMultColour_class, "set" " method", (Scheme_Method_Prim *)os_wxMultColourSet, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMultColour_class, "get" " method", (Scheme_Method_Prim *)os_wxMultColourGet, 3, 3));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMultColour_class,"get-r" " method", objscheme_wxMultColour_Getr, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMultColour_class,"set-r" " method", objscheme_wxMultColour_Setr, 1, 1));
@@ -503,8 +503,8 @@ void objscheme_setup_wxAddColour(Scheme_Env *env)
 
   os_wxAddColour_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "add-color%", "object%", NULL, 8));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxAddColour_class, "set" " method", os_wxAddColourSet, 3, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxAddColour_class, "get" " method", os_wxAddColourGet, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxAddColour_class, "set" " method", (Scheme_Method_Prim *)os_wxAddColourSet, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxAddColour_class, "get" " method", (Scheme_Method_Prim *)os_wxAddColourGet, 3, 3));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxAddColour_class,"get-r" " method", objscheme_wxAddColour_Getr, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxAddColour_class,"set-r" " method", objscheme_wxAddColour_Setr, 1, 1));
@@ -2086,13 +2086,13 @@ void objscheme_setup_wxStyleDelta(Scheme_Env *env)
 
   os_wxStyleDelta_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style-delta%", "object%", os_wxStyleDelta_ConstructScheme, 39));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "copy" " method", os_wxStyleDeltaCopy, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "collapse" " method", os_wxStyleDeltaCollapse, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "equal?" " method", os_wxStyleDeltaEqual, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta-foreground" " method", os_wxStyleDeltaSetDeltaForeground, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta-background" " method", os_wxStyleDeltaSetDeltaBackground, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta-face" " method", os_wxStyleDeltaSetDeltaFace, 1, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta" " method", os_wxStyleDeltaSetDelta, 0, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "copy" " method", (Scheme_Method_Prim *)os_wxStyleDeltaCopy, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "collapse" " method", (Scheme_Method_Prim *)os_wxStyleDeltaCollapse, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "equal?" " method", (Scheme_Method_Prim *)os_wxStyleDeltaEqual, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta-foreground" " method", (Scheme_Method_Prim *)os_wxStyleDeltaSetDeltaForeground, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta-background" " method", (Scheme_Method_Prim *)os_wxStyleDeltaSetDeltaBackground, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta-face" " method", (Scheme_Method_Prim *)os_wxStyleDeltaSetDeltaFace, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta" " method", (Scheme_Method_Prim *)os_wxStyleDeltaSetDelta, 0, 2));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"get-family" " method", objscheme_wxStyleDelta_Getfamily, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"set-family" " method", objscheme_wxStyleDelta_Setfamily, 1, 1));
@@ -2740,30 +2740,30 @@ void objscheme_setup_wxStyle(Scheme_Env *env)
 
   os_wxStyle_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style%", "object%", NULL, 24));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "switch-to" " method", os_wxStyleSwitchTo, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "set-shift-style" " method", os_wxStyleSetShiftStyle, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-shift-style" " method", os_wxStyleGetShiftStyle, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "is-join?" " method", os_wxStyleIsJoin, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "set-delta" " method", os_wxStyleSetDelta, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-delta" " method", os_wxStyleGetDelta, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "set-base-style" " method", os_wxStyleSetBaseStyle, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-base-style" " method", os_wxStyleGetBaseStyle, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-text-width" " method", os_wxStyleGetTextWidth, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-text-space" " method", os_wxStyleGetTextSpace, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-text-descent" " method", os_wxStyleGetTextDescent, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-text-height" " method", os_wxStyleGetTextHeight, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-transparent-text-backing" " method", os_wxStyleGetTransparentTextBacking, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-alignment" " method", os_wxStyleGetAlignment, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-background" " method", os_wxStyleGetBackground, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-foreground" " method", os_wxStyleGetForeground, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-font" " method", os_wxStyleGetFont, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-underlined" " method", os_wxStyleGetUnderlined, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-style" " method", os_wxStyleGetStyle, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-weight" " method", os_wxStyleGetWeight, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-size" " method", os_wxStyleGetSize, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-face" " method", os_wxStyleGetFace, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-family" " method", os_wxStyleGetFamily, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-name" " method", os_wxStyleGetName, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "switch-to" " method", (Scheme_Method_Prim *)os_wxStyleSwitchTo, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "set-shift-style" " method", (Scheme_Method_Prim *)os_wxStyleSetShiftStyle, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-shift-style" " method", (Scheme_Method_Prim *)os_wxStyleGetShiftStyle, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "is-join?" " method", (Scheme_Method_Prim *)os_wxStyleIsJoin, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "set-delta" " method", (Scheme_Method_Prim *)os_wxStyleSetDelta, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-delta" " method", (Scheme_Method_Prim *)os_wxStyleGetDelta, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "set-base-style" " method", (Scheme_Method_Prim *)os_wxStyleSetBaseStyle, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-base-style" " method", (Scheme_Method_Prim *)os_wxStyleGetBaseStyle, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-text-width" " method", (Scheme_Method_Prim *)os_wxStyleGetTextWidth, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-text-space" " method", (Scheme_Method_Prim *)os_wxStyleGetTextSpace, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-text-descent" " method", (Scheme_Method_Prim *)os_wxStyleGetTextDescent, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-text-height" " method", (Scheme_Method_Prim *)os_wxStyleGetTextHeight, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-transparent-text-backing" " method", (Scheme_Method_Prim *)os_wxStyleGetTransparentTextBacking, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-alignment" " method", (Scheme_Method_Prim *)os_wxStyleGetAlignment, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-background" " method", (Scheme_Method_Prim *)os_wxStyleGetBackground, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-foreground" " method", (Scheme_Method_Prim *)os_wxStyleGetForeground, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-font" " method", (Scheme_Method_Prim *)os_wxStyleGetFont, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-underlined" " method", (Scheme_Method_Prim *)os_wxStyleGetUnderlined, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-style" " method", (Scheme_Method_Prim *)os_wxStyleGetStyle, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-weight" " method", (Scheme_Method_Prim *)os_wxStyleGetWeight, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-size" " method", (Scheme_Method_Prim *)os_wxStyleGetSize, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-face" " method", (Scheme_Method_Prim *)os_wxStyleGetFace, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-family" " method", (Scheme_Method_Prim *)os_wxStyleGetFamily, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "get-name" " method", (Scheme_Method_Prim *)os_wxStyleGetName, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxStyle_class));
@@ -3199,18 +3199,18 @@ void objscheme_setup_wxStyleList(Scheme_Env *env)
 
   os_wxStyleList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style-list%", "object%", os_wxStyleList_ConstructScheme, 12));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "forget-notification" " method", os_wxStyleListForgetNotification, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "notify-on-change" " method", os_wxStyleListNotifyOnChange, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "style-to-index" " method", os_wxStyleListStyleToIndex, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "index-to-style" " method", os_wxStyleListIndexToStyle, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "convert" " method", os_wxStyleListConvert, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "replace-named-style" " method", os_wxStyleListReplaceNamedStyle, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "new-named-style" " method", os_wxStyleListNewNamedStyle, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "find-named-style" " method", os_wxStyleListFindNamedStyle, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "find-or-create-join-style" " method", os_wxStyleListFindOrCreateJoinStyle, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "find-or-create-style" " method", os_wxStyleListFindOrCreateStyle, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "number" " method", os_wxStyleListNumber, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "basic-style" " method", os_wxStyleListBasicStyle, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "forget-notification" " method", (Scheme_Method_Prim *)os_wxStyleListForgetNotification, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "notify-on-change" " method", (Scheme_Method_Prim *)os_wxStyleListNotifyOnChange, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "style-to-index" " method", (Scheme_Method_Prim *)os_wxStyleListStyleToIndex, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "index-to-style" " method", (Scheme_Method_Prim *)os_wxStyleListIndexToStyle, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "convert" " method", (Scheme_Method_Prim *)os_wxStyleListConvert, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "replace-named-style" " method", (Scheme_Method_Prim *)os_wxStyleListReplaceNamedStyle, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "new-named-style" " method", (Scheme_Method_Prim *)os_wxStyleListNewNamedStyle, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "find-named-style" " method", (Scheme_Method_Prim *)os_wxStyleListFindNamedStyle, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "find-or-create-join-style" " method", (Scheme_Method_Prim *)os_wxStyleListFindOrCreateJoinStyle, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "find-or-create-style" " method", (Scheme_Method_Prim *)os_wxStyleListFindOrCreateStyle, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "number" " method", (Scheme_Method_Prim *)os_wxStyleListNumber, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "basic-style" " method", (Scheme_Method_Prim *)os_wxStyleListBasicStyle, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxStyleList_class));
@@ -3316,7 +3316,7 @@ void objscheme_setup_wxGlobalStyleList(Scheme_Env *env)
   Scheme_Object *functmp INIT_NULLED_OUT;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxGlobalStyleListwxGetTheStyleList, "get-the-style-list", 0, 0));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxGlobalStyleListwxGetTheStyleList, "get-the-style-list", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-the-style-list", functmp, env));
 }
 

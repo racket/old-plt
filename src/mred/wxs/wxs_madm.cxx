@@ -1163,26 +1163,26 @@ void objscheme_setup_wxMediaCanvas(Scheme_Env *env)
 
   os_wxMediaCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-canvas%", "canvas%", os_wxMediaCanvas_ConstructScheme, 22));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-char" " method", os_wxMediaCanvasOnChar, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-event" " method", os_wxMediaCanvasOnEvent, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-paint" " method", os_wxMediaCanvasOnPaint, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-drop-file" " method", os_wxMediaCanvasOnDropFile, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "pre-on-event" " method", os_wxMediaCanvasPreOnEvent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "pre-on-char" " method", os_wxMediaCanvasPreOnChar, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-size" " method", os_wxMediaCanvasOnSize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-set-focus" " method", os_wxMediaCanvasOnSetFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-kill-focus" " method", os_wxMediaCanvasOnKillFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "popup-for-editor" " method", os_wxMediaCanvasPopupForMedia, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "call-as-primary-owner" " method", os_wxMediaCanvasCallAsPrimaryOwner, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "scroll-to" " method", os_wxMediaCanvasScrollTo, 5, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "set-lazy-refresh" " method", os_wxMediaCanvasSetLazyRefresh, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "get-lazy-refresh" " method", os_wxMediaCanvasGetLazyRefresh, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "scroll-with-bottom-base" " method", os_wxMediaCanvasScrollWithBottomBase, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "allow-scroll-to-last" " method", os_wxMediaCanvasAllowScrollToLast, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "force-display-focus" " method", os_wxMediaCanvasForceDisplayFocus, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "is-focus-on?" " method", os_wxMediaCanvasIsFocusOn, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "get-editor" " method", os_wxMediaCanvasGetMedia, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "set-editor" " method", os_wxMediaCanvasSetMedia, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-char" " method", (Scheme_Method_Prim *)os_wxMediaCanvasOnChar, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-event" " method", (Scheme_Method_Prim *)os_wxMediaCanvasOnEvent, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-paint" " method", (Scheme_Method_Prim *)os_wxMediaCanvasOnPaint, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxMediaCanvasOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "pre-on-event" " method", (Scheme_Method_Prim *)os_wxMediaCanvasPreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "pre-on-char" " method", (Scheme_Method_Prim *)os_wxMediaCanvasPreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-size" " method", (Scheme_Method_Prim *)os_wxMediaCanvasOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-set-focus" " method", (Scheme_Method_Prim *)os_wxMediaCanvasOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-kill-focus" " method", (Scheme_Method_Prim *)os_wxMediaCanvasOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "popup-for-editor" " method", (Scheme_Method_Prim *)os_wxMediaCanvasPopupForMedia, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "call-as-primary-owner" " method", (Scheme_Method_Prim *)os_wxMediaCanvasCallAsPrimaryOwner, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "scroll-to" " method", (Scheme_Method_Prim *)os_wxMediaCanvasScrollTo, 5, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "set-lazy-refresh" " method", (Scheme_Method_Prim *)os_wxMediaCanvasSetLazyRefresh, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "get-lazy-refresh" " method", (Scheme_Method_Prim *)os_wxMediaCanvasGetLazyRefresh, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "scroll-with-bottom-base" " method", (Scheme_Method_Prim *)os_wxMediaCanvasScrollWithBottomBase, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "allow-scroll-to-last" " method", (Scheme_Method_Prim *)os_wxMediaCanvasAllowScrollToLast, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "force-display-focus" " method", (Scheme_Method_Prim *)os_wxMediaCanvasForceDisplayFocus, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "is-focus-on?" " method", (Scheme_Method_Prim *)os_wxMediaCanvasIsFocusOn, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "get-editor" " method", (Scheme_Method_Prim *)os_wxMediaCanvasGetMedia, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "set-editor" " method", (Scheme_Method_Prim *)os_wxMediaCanvasSetMedia, 1, 2));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class,"get-wheel-step" " method", objscheme_wxMediaCanvas_Getwheel_amt, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class,"set-wheel-step" " method", objscheme_wxMediaCanvas_Setwheel_amt, 1, 1));
@@ -2064,16 +2064,16 @@ void objscheme_setup_wxMediaAdmin(Scheme_Env *env)
 
   os_wxMediaAdmin_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-admin%", "object%", os_wxMediaAdmin_ConstructScheme, 10));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "refresh-delayed?" " method", os_wxMediaAdminDelayRefresh, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "popup-menu" " method", os_wxMediaAdminPopupMenu, 3, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "update-cursor" " method", os_wxMediaAdminUpdateCursor, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "needs-update" " method", os_wxMediaAdminNeedsUpdate, 4, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "resized" " method", os_wxMediaAdminResized, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "grab-caret" " method", os_wxMediaAdminGrabCaret, 0, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "scroll-to" " method", os_wxMediaAdminScrollTo, 4, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "get-max-view" " method", os_wxMediaAdminGetMaxView, 4, 5));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "get-view" " method", os_wxMediaAdminGetView, 4, 5));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "get-dc" " method", os_wxMediaAdminGetDC, 0, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "refresh-delayed?" " method", (Scheme_Method_Prim *)os_wxMediaAdminDelayRefresh, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "popup-menu" " method", (Scheme_Method_Prim *)os_wxMediaAdminPopupMenu, 3, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "update-cursor" " method", (Scheme_Method_Prim *)os_wxMediaAdminUpdateCursor, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "needs-update" " method", (Scheme_Method_Prim *)os_wxMediaAdminNeedsUpdate, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "resized" " method", (Scheme_Method_Prim *)os_wxMediaAdminResized, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "grab-caret" " method", (Scheme_Method_Prim *)os_wxMediaAdminGrabCaret, 0, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "scroll-to" " method", (Scheme_Method_Prim *)os_wxMediaAdminScrollTo, 4, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "get-max-view" " method", (Scheme_Method_Prim *)os_wxMediaAdminGetMaxView, 4, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "get-view" " method", (Scheme_Method_Prim *)os_wxMediaAdminGetView, 4, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "get-dc" " method", (Scheme_Method_Prim *)os_wxMediaAdminGetDC, 0, 2));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxMediaAdmin_class));
@@ -2197,7 +2197,7 @@ void objscheme_setup_wxMediaSnipMediaAdmin(Scheme_Env *env)
 
   os_wxMediaSnipMediaAdmin_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-snip-editor-admin%", "editor-admin%", NULL, 1));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnipMediaAdmin_class, "get-snip" " method", os_wxMediaSnipMediaAdminGetSnip, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnipMediaAdmin_class, "get-snip" " method", (Scheme_Method_Prim *)os_wxMediaSnipMediaAdminGetSnip, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxMediaSnipMediaAdmin_class));
@@ -3163,18 +3163,18 @@ void objscheme_setup_wxSnipAdmin(Scheme_Env *env)
 
   os_wxSnipAdmin_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip-admin%", "object%", os_wxSnipAdmin_ConstructScheme, 12));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "popup-menu" " method", os_wxSnipAdminPopupMenu, 4, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "update-cursor" " method", os_wxSnipAdminUpdateCursor, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "release-snip" " method", os_wxSnipAdminReleaseSnip, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "needs-update" " method", os_wxSnipAdminNeedsUpdate, 5, 5));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "recounted" " method", os_wxSnipAdminRecounted, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "resized" " method", os_wxSnipAdminResized, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "set-caret-owner" " method", os_wxSnipAdminSetCaretOwner, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "scroll-to" " method", os_wxSnipAdminScrollTo, 6, 7));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "get-view" " method", os_wxSnipAdminGetView, 4, 5));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "get-view-size" " method", os_wxSnipAdminGetViewSize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "get-dc" " method", os_wxSnipAdminGetDC, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "get-editor" " method", os_wxSnipAdminGetMedia, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "popup-menu" " method", (Scheme_Method_Prim *)os_wxSnipAdminPopupMenu, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "update-cursor" " method", (Scheme_Method_Prim *)os_wxSnipAdminUpdateCursor, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "release-snip" " method", (Scheme_Method_Prim *)os_wxSnipAdminReleaseSnip, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "needs-update" " method", (Scheme_Method_Prim *)os_wxSnipAdminNeedsUpdate, 5, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "recounted" " method", (Scheme_Method_Prim *)os_wxSnipAdminRecounted, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "resized" " method", (Scheme_Method_Prim *)os_wxSnipAdminResized, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "set-caret-owner" " method", (Scheme_Method_Prim *)os_wxSnipAdminSetCaretOwner, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "scroll-to" " method", (Scheme_Method_Prim *)os_wxSnipAdminScrollTo, 6, 7));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "get-view" " method", (Scheme_Method_Prim *)os_wxSnipAdminGetView, 4, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "get-view-size" " method", (Scheme_Method_Prim *)os_wxSnipAdminGetViewSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "get-dc" " method", (Scheme_Method_Prim *)os_wxSnipAdminGetDC, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "get-editor" " method", (Scheme_Method_Prim *)os_wxSnipAdminGetMedia, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxSnipAdmin_class));
@@ -3586,10 +3586,10 @@ void objscheme_setup_wxSnipClass(Scheme_Env *env)
 
   os_wxSnipClass_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip-class%", "object%", os_wxSnipClass_ConstructScheme, 8));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "reading-version" " method", os_wxSnipClassReadingVersion, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "write-header" " method", os_wxSnipClassWriteHeader, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "read-header" " method", os_wxSnipClassReadHeader, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "read" " method", os_wxSnipClassRead, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "reading-version" " method", (Scheme_Method_Prim *)os_wxSnipClassReadingVersion, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "write-header" " method", (Scheme_Method_Prim *)os_wxSnipClassWriteHeader, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "read-header" " method", (Scheme_Method_Prim *)os_wxSnipClassReadHeader, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "read" " method", (Scheme_Method_Prim *)os_wxSnipClassRead, 1, 1));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class,"get-classname" " method", objscheme_wxSnipClass_Getclassname, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class,"set-classname" " method", objscheme_wxSnipClass_Setclassname, 1, 1));
@@ -3809,11 +3809,11 @@ void objscheme_setup_wxSnipClassList(Scheme_Env *env)
 
   os_wxSnipClassList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip-class-list%", "object%", NULL, 5));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClassList_class, "nth" " method", os_wxSnipClassListNth, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClassList_class, "number" " method", os_wxSnipClassListNumber, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClassList_class, "add" " method", os_wxSnipClassListAdd, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClassList_class, "find-position" " method", os_wxSnipClassListFindPosition, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClassList_class, "find" " method", os_wxSnipClassListFind, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClassList_class, "nth" " method", (Scheme_Method_Prim *)os_wxSnipClassListNth, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClassList_class, "number" " method", (Scheme_Method_Prim *)os_wxSnipClassListNumber, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClassList_class, "add" " method", (Scheme_Method_Prim *)os_wxSnipClassListAdd, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClassList_class, "find-position" " method", (Scheme_Method_Prim *)os_wxSnipClassListFindPosition, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClassList_class, "find" " method", (Scheme_Method_Prim *)os_wxSnipClassListFind, 1, 1));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxSnipClassList_class));
@@ -4399,21 +4399,21 @@ void objscheme_setup_wxKeymap(Scheme_Env *env)
 
   os_wxKeymap_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "keymap%", "object%", os_wxKeymap_ConstructScheme, 15));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "remove-chained-keymap" " method", os_wxKeymapRemoveChainedKeymap, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "chain-to-keymap" " method", os_wxKeymapChainToKeymap, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "set-break-sequence-callback" " method", os_wxKeymapSetBreakSequenceCallback, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "call-function" " method", os_wxKeymapCallFunction, 3, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "remove-grab-mouse-function" " method", os_wxKeymapRemoveGrabMouseFunction, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "set-grab-mouse-function" " method", os_wxKeymapSetGrabMouseFunction, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "remove-grab-key-function" " method", os_wxKeymapRemoveGrabKeyFunction, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "set-grab-key-function" " method", os_wxKeymapSetGrabKeyFunction, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "add-function" " method", os_wxKeymapAddFunction, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "map-function" " method", os_wxKeymapMapFunction, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "break-sequence" " method", os_wxKeymapBreakSequence, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "handle-mouse-event" " method", os_wxKeymapHandleMouseEvent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "handle-key-event" " method", os_wxKeymapHandleKeyEvent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "set-double-click-interval" " method", os_wxKeymapSetDoubleClickInterval, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "get-double-click-interval" " method", os_wxKeymapGetDoubleClickInterval, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "remove-chained-keymap" " method", (Scheme_Method_Prim *)os_wxKeymapRemoveChainedKeymap, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "chain-to-keymap" " method", (Scheme_Method_Prim *)os_wxKeymapChainToKeymap, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "set-break-sequence-callback" " method", (Scheme_Method_Prim *)os_wxKeymapSetBreakSequenceCallback, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "call-function" " method", (Scheme_Method_Prim *)os_wxKeymapCallFunction, 3, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "remove-grab-mouse-function" " method", (Scheme_Method_Prim *)os_wxKeymapRemoveGrabMouseFunction, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "set-grab-mouse-function" " method", (Scheme_Method_Prim *)os_wxKeymapSetGrabMouseFunction, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "remove-grab-key-function" " method", (Scheme_Method_Prim *)os_wxKeymapRemoveGrabKeyFunction, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "set-grab-key-function" " method", (Scheme_Method_Prim *)os_wxKeymapSetGrabKeyFunction, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "add-function" " method", (Scheme_Method_Prim *)os_wxKeymapAddFunction, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "map-function" " method", (Scheme_Method_Prim *)os_wxKeymapMapFunction, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "break-sequence" " method", (Scheme_Method_Prim *)os_wxKeymapBreakSequence, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "handle-mouse-event" " method", (Scheme_Method_Prim *)os_wxKeymapHandleMouseEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "handle-key-event" " method", (Scheme_Method_Prim *)os_wxKeymapHandleKeyEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "set-double-click-interval" " method", (Scheme_Method_Prim *)os_wxKeymapSetDoubleClickInterval, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "get-double-click-interval" " method", (Scheme_Method_Prim *)os_wxKeymapGetDoubleClickInterval, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxKeymap_class));
@@ -4728,8 +4728,8 @@ void objscheme_setup_wxMediaWordbreakMap(Scheme_Env *env)
 
   os_wxMediaWordbreakMap_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-wordbreak-map%", "object%", os_wxMediaWordbreakMap_ConstructScheme, 2));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaWordbreakMap_class, "get-map" " method", os_wxMediaWordbreakMapGetMap, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaWordbreakMap_class, "set-map" " method", os_wxMediaWordbreakMapSetMap, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaWordbreakMap_class, "get-map" " method", (Scheme_Method_Prim *)os_wxMediaWordbreakMapGetMap, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaWordbreakMap_class, "set-map" " method", (Scheme_Method_Prim *)os_wxMediaWordbreakMapSetMap, 2, 2));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxMediaWordbreakMap_class));
@@ -4823,7 +4823,7 @@ void objscheme_setup_wxGlobalMediaWordbreakMap(Scheme_Env *env)
   Scheme_Object *functmp INIT_NULLED_OUT;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxGlobalMediaWordbreakMapwxGetTheMediaWordbreakMap, "get-the-editor-wordbreak-map", 0, 0));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxGlobalMediaWordbreakMapwxGetTheMediaWordbreakMap, "get-the-editor-wordbreak-map", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-the-editor-wordbreak-map", functmp, env));
 }
 

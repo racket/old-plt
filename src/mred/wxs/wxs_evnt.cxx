@@ -2592,13 +2592,13 @@ void objscheme_setup_wxMouseEvent(Scheme_Env *env)
 
   os_wxMouseEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "mouse-event%", "event%", os_wxMouseEvent_ConstructScheme, 27));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "moving?" " method", os_wxMouseEventMoving, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "leaving?" " method", os_wxMouseEventLeaving, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "entering?" " method", os_wxMouseEventEntering, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "dragging?" " method", os_wxMouseEventDragging, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "button-up?" " method", os_wxMouseEventButtonUp, 0, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "button-down?" " method", os_wxMouseEventButtonDown, 0, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "button-changed?" " method", os_wxMouseEventButton, 0, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "moving?" " method", (Scheme_Method_Prim *)os_wxMouseEventMoving, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "leaving?" " method", (Scheme_Method_Prim *)os_wxMouseEventLeaving, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "entering?" " method", (Scheme_Method_Prim *)os_wxMouseEventEntering, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "dragging?" " method", (Scheme_Method_Prim *)os_wxMouseEventDragging, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "button-up?" " method", (Scheme_Method_Prim *)os_wxMouseEventButtonUp, 0, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "button-down?" " method", (Scheme_Method_Prim *)os_wxMouseEventButtonDown, 0, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "button-changed?" " method", (Scheme_Method_Prim *)os_wxMouseEventButton, 0, 1));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"get-event-type" " method", objscheme_wxMouseEvent_GeteventType, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class,"set-event-type" " method", objscheme_wxMouseEvent_SeteventType, 1, 1));

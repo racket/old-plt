@@ -855,21 +855,21 @@ void objscheme_setup_wxChoice(Scheme_Env *env)
 
   os_wxChoice_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "choice%", "item%", os_wxChoice_ConstructScheme, 15));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "get-string" " method", os_wxChoiceGetString, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "set-string-selection" " method", os_wxChoiceSetStringSelection, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "set-selection" " method", os_wxChoiceSetSelection, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "get-string-selection" " method", os_wxChoiceGetStringSelection, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "get-selection" " method", os_wxChoiceGetSelection, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "find-string" " method", os_wxChoiceFindString, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "number" " method", os_wxChoiceNumber, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "clear" " method", os_wxChoiceClear, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "append" " method", os_wxChoiceAppend, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "on-drop-file" " method", os_wxChoiceOnDropFile, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "pre-on-event" " method", os_wxChoicePreOnEvent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "pre-on-char" " method", os_wxChoicePreOnChar, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "on-size" " method", os_wxChoiceOnSize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "on-set-focus" " method", os_wxChoiceOnSetFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "on-kill-focus" " method", os_wxChoiceOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "get-string" " method", (Scheme_Method_Prim *)os_wxChoiceGetString, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "set-string-selection" " method", (Scheme_Method_Prim *)os_wxChoiceSetStringSelection, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "set-selection" " method", (Scheme_Method_Prim *)os_wxChoiceSetSelection, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "get-string-selection" " method", (Scheme_Method_Prim *)os_wxChoiceGetStringSelection, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "get-selection" " method", (Scheme_Method_Prim *)os_wxChoiceGetSelection, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "find-string" " method", (Scheme_Method_Prim *)os_wxChoiceFindString, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "number" " method", (Scheme_Method_Prim *)os_wxChoiceNumber, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "clear" " method", (Scheme_Method_Prim *)os_wxChoiceClear, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "append" " method", (Scheme_Method_Prim *)os_wxChoiceAppend, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxChoiceOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "pre-on-event" " method", (Scheme_Method_Prim *)os_wxChoicePreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "pre-on-char" " method", (Scheme_Method_Prim *)os_wxChoicePreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "on-size" " method", (Scheme_Method_Prim *)os_wxChoiceOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "on-set-focus" " method", (Scheme_Method_Prim *)os_wxChoiceOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "on-kill-focus" " method", (Scheme_Method_Prim *)os_wxChoiceOnKillFocus, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxChoice_class));

@@ -961,23 +961,23 @@ void objscheme_setup_wxPanel(Scheme_Env *env)
 
   os_wxPanel_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "panel%", "window%", os_wxPanel_ConstructScheme, 17));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "get-label-font" " method", os_wxPanelGetLabelFont, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "set-label-font" " method", os_wxPanelSetLabelFont, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "get-control-font" " method", os_wxPanelGetButtonFont, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "set-control-font" " method", os_wxPanelSetButtonFont, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "get-label-position" " method", os_wxPanelGetLabelPosition, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "set-label-position" " method", os_wxPanelSetLabelPosition, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "on-char" " method", os_wxPanelOnChar, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "on-event" " method", os_wxPanelOnEvent, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "on-paint" " method", os_wxPanelOnPaint, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "on-drop-file" " method", os_wxPanelOnDropFile, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "pre-on-event" " method", os_wxPanelPreOnEvent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "pre-on-char" " method", os_wxPanelPreOnChar, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "on-size" " method", os_wxPanelOnSize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "on-set-focus" " method", os_wxPanelOnSetFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "on-kill-focus" " method", os_wxPanelOnKillFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "set-item-cursor" " method", os_wxPanelSetItemCursor, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "get-item-cursor" " method", os_wxPanelGetCursor, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "get-label-font" " method", (Scheme_Method_Prim *)os_wxPanelGetLabelFont, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "set-label-font" " method", (Scheme_Method_Prim *)os_wxPanelSetLabelFont, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "get-control-font" " method", (Scheme_Method_Prim *)os_wxPanelGetButtonFont, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "set-control-font" " method", (Scheme_Method_Prim *)os_wxPanelSetButtonFont, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "get-label-position" " method", (Scheme_Method_Prim *)os_wxPanelGetLabelPosition, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "set-label-position" " method", (Scheme_Method_Prim *)os_wxPanelSetLabelPosition, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "on-char" " method", (Scheme_Method_Prim *)os_wxPanelOnChar, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "on-event" " method", (Scheme_Method_Prim *)os_wxPanelOnEvent, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "on-paint" " method", (Scheme_Method_Prim *)os_wxPanelOnPaint, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxPanelOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "pre-on-event" " method", (Scheme_Method_Prim *)os_wxPanelPreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "pre-on-char" " method", (Scheme_Method_Prim *)os_wxPanelPreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "on-size" " method", (Scheme_Method_Prim *)os_wxPanelOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "on-set-focus" " method", (Scheme_Method_Prim *)os_wxPanelOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "on-kill-focus" " method", (Scheme_Method_Prim *)os_wxPanelOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "set-item-cursor" " method", (Scheme_Method_Prim *)os_wxPanelSetItemCursor, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "get-item-cursor" " method", (Scheme_Method_Prim *)os_wxPanelGetCursor, 2, 2));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxPanel_class));
@@ -1742,16 +1742,16 @@ void objscheme_setup_wxDialogBox(Scheme_Env *env)
 
   os_wxDialogBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dialog%", "window%", os_wxDialogBox_ConstructScheme, 10));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "system-menu" " method", os_wxDialogBoxdialogMenu, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "set-title" " method", os_wxDialogBoxSetTitle, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "on-drop-file" " method", os_wxDialogBoxOnDropFile, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "pre-on-event" " method", os_wxDialogBoxPreOnEvent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "pre-on-char" " method", os_wxDialogBoxPreOnChar, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "on-size" " method", os_wxDialogBoxOnSize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "on-set-focus" " method", os_wxDialogBoxOnSetFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "on-kill-focus" " method", os_wxDialogBoxOnKillFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "on-close" " method", os_wxDialogBoxOnClose, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "on-activate" " method", os_wxDialogBoxOnActivate, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "system-menu" " method", (Scheme_Method_Prim *)os_wxDialogBoxdialogMenu, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "set-title" " method", (Scheme_Method_Prim *)os_wxDialogBoxSetTitle, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxDialogBoxOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "pre-on-event" " method", (Scheme_Method_Prim *)os_wxDialogBoxPreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "pre-on-char" " method", (Scheme_Method_Prim *)os_wxDialogBoxPreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "on-size" " method", (Scheme_Method_Prim *)os_wxDialogBoxOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "on-set-focus" " method", (Scheme_Method_Prim *)os_wxDialogBoxOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "on-kill-focus" " method", (Scheme_Method_Prim *)os_wxDialogBoxOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "on-close" " method", (Scheme_Method_Prim *)os_wxDialogBoxOnClose, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "on-activate" " method", (Scheme_Method_Prim *)os_wxDialogBoxOnActivate, 1, 1));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxDialogBox_class));

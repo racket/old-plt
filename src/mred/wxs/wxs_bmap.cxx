@@ -444,13 +444,13 @@ void objscheme_setup_wxBitmap(Scheme_Env *env)
 
   os_wxBitmap_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "bitmap%", "object%", os_wxBitmap_ConstructScheme, 7));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "save-file" " method", os_wxBitmapSaveFile, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "load-file" " method", os_wxBitmapLoadFile, 1, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "is-color?" " method", os_wxBitmapIsColor, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "ok?" " method", os_wxBitmapOk, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "get-width" " method", os_wxBitmapGetWidth, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "get-height" " method", os_wxBitmapGetHeight, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "get-depth" " method", os_wxBitmapGetDepth, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "save-file" " method", (Scheme_Method_Prim *)os_wxBitmapSaveFile, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "load-file" " method", (Scheme_Method_Prim *)os_wxBitmapLoadFile, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "is-color?" " method", (Scheme_Method_Prim *)os_wxBitmapIsColor, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "ok?" " method", (Scheme_Method_Prim *)os_wxBitmapOk, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "get-width" " method", (Scheme_Method_Prim *)os_wxBitmapGetWidth, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "get-height" " method", (Scheme_Method_Prim *)os_wxBitmapGetHeight, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "get-depth" " method", (Scheme_Method_Prim *)os_wxBitmapGetDepth, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxBitmap_class));

@@ -1197,30 +1197,30 @@ void objscheme_setup_wxCanvas(Scheme_Env *env)
 
   os_wxCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "canvas%", "window%", os_wxCanvas_ConstructScheme, 24));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-drop-file" " method", os_wxCanvasOnDropFile, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "pre-on-event" " method", os_wxCanvasPreOnEvent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "pre-on-char" " method", os_wxCanvasPreOnChar, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-size" " method", os_wxCanvasOnSize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-set-focus" " method", os_wxCanvasOnSetFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-kill-focus" " method", os_wxCanvasOnKillFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "this-context-current" " method", os_wxCanvaswxThisContextCurrent, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "swap-buffers" " method", os_wxCanvaswxSwapBuffers, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-scroll" " method", os_wxCanvasOnScroll, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "set-scroll-page" " method", os_wxCanvasSetScrollPage, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "set-scroll-range" " method", os_wxCanvasSetScrollRange, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "set-scroll-pos" " method", os_wxCanvasSetScrollPos, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "get-scroll-page" " method", os_wxCanvasGetScrollPage, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "get-scroll-range" " method", os_wxCanvasGetScrollRange, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "get-scroll-pos" " method", os_wxCanvasGetScrollPos, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "scroll" " method", os_wxCanvasScrollPercent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "warp-pointer" " method", os_wxCanvasWarpPointer, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "view-start" " method", os_wxCanvasViewStart, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "set-scrollbars" " method", os_wxCanvasSetScrollbars, 6, 9));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "get-virtual-size" " method", os_wxCanvasGetVirtualSize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "get-dc" " method", os_wxCanvasGetDC, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-char" " method", os_wxCanvasOnChar, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-event" " method", os_wxCanvasOnEvent, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-paint" " method", os_wxCanvasOnPaint, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxCanvasOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "pre-on-event" " method", (Scheme_Method_Prim *)os_wxCanvasPreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "pre-on-char" " method", (Scheme_Method_Prim *)os_wxCanvasPreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-size" " method", (Scheme_Method_Prim *)os_wxCanvasOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-set-focus" " method", (Scheme_Method_Prim *)os_wxCanvasOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-kill-focus" " method", (Scheme_Method_Prim *)os_wxCanvasOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "this-context-current" " method", (Scheme_Method_Prim *)os_wxCanvaswxThisContextCurrent, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "swap-buffers" " method", (Scheme_Method_Prim *)os_wxCanvaswxSwapBuffers, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-scroll" " method", (Scheme_Method_Prim *)os_wxCanvasOnScroll, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "set-scroll-page" " method", (Scheme_Method_Prim *)os_wxCanvasSetScrollPage, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "set-scroll-range" " method", (Scheme_Method_Prim *)os_wxCanvasSetScrollRange, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "set-scroll-pos" " method", (Scheme_Method_Prim *)os_wxCanvasSetScrollPos, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "get-scroll-page" " method", (Scheme_Method_Prim *)os_wxCanvasGetScrollPage, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "get-scroll-range" " method", (Scheme_Method_Prim *)os_wxCanvasGetScrollRange, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "get-scroll-pos" " method", (Scheme_Method_Prim *)os_wxCanvasGetScrollPos, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "scroll" " method", (Scheme_Method_Prim *)os_wxCanvasScrollPercent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "warp-pointer" " method", (Scheme_Method_Prim *)os_wxCanvasWarpPointer, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "view-start" " method", (Scheme_Method_Prim *)os_wxCanvasViewStart, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "set-scrollbars" " method", (Scheme_Method_Prim *)os_wxCanvasSetScrollbars, 6, 9));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "get-virtual-size" " method", (Scheme_Method_Prim *)os_wxCanvasGetVirtualSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "get-dc" " method", (Scheme_Method_Prim *)os_wxCanvasGetDC, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-char" " method", (Scheme_Method_Prim *)os_wxCanvasOnChar, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-event" " method", (Scheme_Method_Prim *)os_wxCanvasOnEvent, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-paint" " method", (Scheme_Method_Prim *)os_wxCanvasOnPaint, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxCanvas_class));

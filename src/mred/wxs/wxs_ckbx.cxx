@@ -709,15 +709,15 @@ void objscheme_setup_wxCheckBox(Scheme_Env *env)
 
   os_wxCheckBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "check-box%", "item%", os_wxCheckBox_ConstructScheme, 9));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "set-label" " method", os_wxCheckBoxSetLabel, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "set-value" " method", os_wxCheckBoxSetValue, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "get-value" " method", os_wxCheckBoxGetValue, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "on-drop-file" " method", os_wxCheckBoxOnDropFile, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "pre-on-event" " method", os_wxCheckBoxPreOnEvent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "pre-on-char" " method", os_wxCheckBoxPreOnChar, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "on-size" " method", os_wxCheckBoxOnSize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "on-set-focus" " method", os_wxCheckBoxOnSetFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "on-kill-focus" " method", os_wxCheckBoxOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "set-label" " method", (Scheme_Method_Prim *)os_wxCheckBoxSetLabel, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "set-value" " method", (Scheme_Method_Prim *)os_wxCheckBoxSetValue, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "get-value" " method", (Scheme_Method_Prim *)os_wxCheckBoxGetValue, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxCheckBoxOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "pre-on-event" " method", (Scheme_Method_Prim *)os_wxCheckBoxPreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "pre-on-char" " method", (Scheme_Method_Prim *)os_wxCheckBoxPreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "on-size" " method", (Scheme_Method_Prim *)os_wxCheckBoxOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "on-set-focus" " method", (Scheme_Method_Prim *)os_wxCheckBoxOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "on-kill-focus" " method", (Scheme_Method_Prim *)os_wxCheckBoxOnKillFocus, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxCheckBox_class));

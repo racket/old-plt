@@ -1089,27 +1089,27 @@ void objscheme_setup_wxFrame(Scheme_Env *env)
 
   os_wxFrame_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "frame%", "window%", os_wxFrame_ConstructScheme, 21));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-drop-file" " method", os_wxFrameOnDropFile, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "pre-on-event" " method", os_wxFramePreOnEvent, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "pre-on-char" " method", os_wxFramePreOnChar, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-size" " method", os_wxFrameOnSize, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-set-focus" " method", os_wxFrameOnSetFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-kill-focus" " method", os_wxFrameOnKillFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-menu-click" " method", os_wxFrameOnMenuClick, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-menu-command" " method", os_wxFrameOnMenuCommand, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-close" " method", os_wxFrameOnClose, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-activate" " method", os_wxFrameOnActivate, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "system-menu" " method", os_wxFrameframeMenu, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "create-status-line" " method", os_wxFrameCreateStatusLine, 0, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "maximize" " method", os_wxFrameMaximize, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "status-line-exists?" " method", os_wxFrameStatusLineExists, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "iconized?" " method", os_wxFrameIconized, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-status-text" " method", os_wxFrameSetStatusText, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "get-menu-bar" " method", os_wxFrameGetTheMenuBar, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-menu-bar" " method", os_wxFrameSetMenuBar, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-icon" " method", os_wxFrameSetIcon, 1, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "iconize" " method", os_wxFrameIconize, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-title" " method", os_wxFrameSetTitle, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxFrameOnDropFile, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "pre-on-event" " method", (Scheme_Method_Prim *)os_wxFramePreOnEvent, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "pre-on-char" " method", (Scheme_Method_Prim *)os_wxFramePreOnChar, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-size" " method", (Scheme_Method_Prim *)os_wxFrameOnSize, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-set-focus" " method", (Scheme_Method_Prim *)os_wxFrameOnSetFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-kill-focus" " method", (Scheme_Method_Prim *)os_wxFrameOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-menu-click" " method", (Scheme_Method_Prim *)os_wxFrameOnMenuClick, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-menu-command" " method", (Scheme_Method_Prim *)os_wxFrameOnMenuCommand, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-close" " method", (Scheme_Method_Prim *)os_wxFrameOnClose, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-activate" " method", (Scheme_Method_Prim *)os_wxFrameOnActivate, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "system-menu" " method", (Scheme_Method_Prim *)os_wxFrameframeMenu, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "create-status-line" " method", (Scheme_Method_Prim *)os_wxFrameCreateStatusLine, 0, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "maximize" " method", (Scheme_Method_Prim *)os_wxFrameMaximize, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "status-line-exists?" " method", (Scheme_Method_Prim *)os_wxFrameStatusLineExists, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "iconized?" " method", (Scheme_Method_Prim *)os_wxFrameIconized, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-status-text" " method", (Scheme_Method_Prim *)os_wxFrameSetStatusText, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "get-menu-bar" " method", (Scheme_Method_Prim *)os_wxFrameGetTheMenuBar, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-menu-bar" " method", (Scheme_Method_Prim *)os_wxFrameSetMenuBar, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-icon" " method", (Scheme_Method_Prim *)os_wxFrameSetIcon, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "iconize" " method", (Scheme_Method_Prim *)os_wxFrameIconize, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "set-title" " method", (Scheme_Method_Prim *)os_wxFrameSetTitle, 1, 1));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxFrame_class));

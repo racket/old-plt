@@ -479,18 +479,18 @@ void objscheme_setup_wxMenu(Scheme_Env *env)
 
   os_wxMenu_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "menu%", "object%", os_wxMenu_ConstructScheme, 12));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "select" " method", os_wxMenumenuSelect, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "set-title" " method", os_wxMenuSetTitle, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "set-label" " method", os_wxMenuSetLabel, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "set-help-string" " method", os_wxMenuSetHelpString, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "number" " method", os_wxMenuNumber, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "enable" " method", os_wxMenuEnable, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "check" " method", os_wxMenuCheck, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "checked?" " method", os_wxMenuChecked, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "append-separator" " method", os_wxMenuAppendSeparator, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "delete-by-position" " method", os_wxMenuDeleteByPosition, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "delete" " method", os_wxMenuDelete, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "append" " method", os_wxMenuAppend, 2, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "select" " method", (Scheme_Method_Prim *)os_wxMenumenuSelect, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "set-title" " method", (Scheme_Method_Prim *)os_wxMenuSetTitle, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "set-label" " method", (Scheme_Method_Prim *)os_wxMenuSetLabel, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "set-help-string" " method", (Scheme_Method_Prim *)os_wxMenuSetHelpString, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "number" " method", (Scheme_Method_Prim *)os_wxMenuNumber, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "enable" " method", (Scheme_Method_Prim *)os_wxMenuEnable, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "check" " method", (Scheme_Method_Prim *)os_wxMenuCheck, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "checked?" " method", (Scheme_Method_Prim *)os_wxMenuChecked, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "append-separator" " method", (Scheme_Method_Prim *)os_wxMenuAppendSeparator, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "delete-by-position" " method", (Scheme_Method_Prim *)os_wxMenuDeleteByPosition, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "delete" " method", (Scheme_Method_Prim *)os_wxMenuDelete, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "append" " method", (Scheme_Method_Prim *)os_wxMenuAppend, 2, 4));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxMenu_class));
@@ -784,11 +784,11 @@ void objscheme_setup_wxMenuBar(Scheme_Env *env)
 
   os_wxMenuBar_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "menu-bar%", "object%", os_wxMenuBar_ConstructScheme, 5));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenuBar_class, "set-label-top" " method", os_wxMenuBarSetLabelTop, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenuBar_class, "number" " method", os_wxMenuBarNumber, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenuBar_class, "enable-top" " method", os_wxMenuBarEnableTop, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenuBar_class, "delete" " method", os_wxMenuBarDelete, 1, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenuBar_class, "append" " method", os_wxMenuBarAppend, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenuBar_class, "set-label-top" " method", (Scheme_Method_Prim *)os_wxMenuBarSetLabelTop, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenuBar_class, "number" " method", (Scheme_Method_Prim *)os_wxMenuBarNumber, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenuBar_class, "enable-top" " method", (Scheme_Method_Prim *)os_wxMenuBarEnableTop, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenuBar_class, "delete" " method", (Scheme_Method_Prim *)os_wxMenuBarDelete, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenuBar_class, "append" " method", (Scheme_Method_Prim *)os_wxMenuBarAppend, 2, 2));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxMenuBar_class));
@@ -999,7 +999,7 @@ void objscheme_setup_wxsMenuItem(Scheme_Env *env)
 
   os_wxsMenuItem_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "menu-item%", "object%", os_wxsMenuItem_ConstructScheme, 1));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsMenuItem_class, "id" " method", os_wxsMenuItemId, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsMenuItem_class, "id" " method", (Scheme_Method_Prim *)os_wxsMenuItemId, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxsMenuItem_class));
@@ -1092,7 +1092,7 @@ void objscheme_setup_wxsMenuItemGlobal(Scheme_Env *env)
   Scheme_Object *functmp INIT_NULLED_OUT;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsMenuItemGlobalwxsIdToMenuItem, "id-to-menu-item", 1, 1));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsMenuItemGlobalwxsIdToMenuItem, "id-to-menu-item", 1, 1));
   WITH_VAR_STACK(scheme_install_xc_global("id-to-menu-item", functmp, env));
 }
 

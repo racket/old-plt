@@ -500,13 +500,40 @@
 (drscheme:modes:add-mode
  (string?
   (union false? (is-a?/c mode:surrogate-text<%>))
-  any?
+  ((is-a?/c drscheme:rep:text%) number? . -> . boolean?)
   (string? . -> . boolean?)
   . -> .
   drscheme:modes:mode?)
  (name surrogate repl-submit matches-filename)
  "Adds a mode to DrScheme. Returns a mode value"
  "that identifies the mode."
+ ""
+ "The first argument, \\var{name}, is the name"
+ "of the mode, used in DrScheme's GUI to allow"
+ "the user to select this mode."
+ ""
+ "The \\var{surrogate} argument is set to the"
+ "definitions text and the interactions text"
+ "(via the"
+ "@ilink mode:host-text set-surrogate"
+ "method) whenever this mode is enabled."
+ ""
+ "The \\var{repl-submit} procedure is called"
+ "whenever the user types a return in the interactions"
+ "window. It is passed the interactions editor"
+ "and the position where the last prompt occurs."
+ "If it "
+ "returns \\scheme|#t|, the text after the last"
+ "prompt is treated as a program fragment and"
+ "evaluated, according to the language settings."
+ "If it returns \\scheme|#f|, the text is"
+ "assumed to be an incomplete program fragment, and"
+ "the keystroke is not treated specially."
+ ""
+ "The \\var{matches-filename} predicate is called whenever"
+ "a new file is opened, or an open file changes its name"
+ "(via Save As, for example). If it returns \\scheme|#t|"
+ "the file is opened in this mode and otherwise not."
  ""
  "See also"
  "@flink drscheme:modes:get-modes %"

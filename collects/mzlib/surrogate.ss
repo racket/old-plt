@@ -1,13 +1,7 @@
 (module surrogate mzscheme
   (require (lib "class.ss"))
 
-  (provide host<%>
-           surrogate)
-  
-  (define host<%> 
-    (interface ()
-      set-surrogate
-      get-surrogate))
+  (provide surrogate)
   
   (define-syntax (surrogate stx)
     
@@ -117,7 +111,12 @@
                  (interface ()
                    on-disable-surrogate
                    on-enable-surrogate
-                   ids ...)])
+                   ids ...)]
+		[host<%> 
+		 (interface ()
+		   set-surrogate
+		   get-surrogate
+		   ids ...)])
             (values
              (lambda (super%)
                (class* super% (host<%>)
@@ -145,7 +144,8 @@
                  overriding-methods ...
                  
                  (super-new)))
-             
+             host<%>
+
              (class* object% (surrogate<%>)
                (define/public (on-enable-surrogate x) (void))
                (define/public (on-disable-surrogate x) (void))

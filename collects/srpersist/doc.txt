@@ -2379,11 +2379,11 @@
  the indicator `sql-indicator'.  If the indicator is subsequently 
  accessed by the ODBC driver, unpredictable effects may occur.
 
-> (read-indicator sql-indicator [n])
+> (read-indicator sql-indicator [index])
 
  Given an sql-indicator, returns its stored value or values.  
- The optional parameter `n' is an index into the array of ODBC indicators 
- represented by `sql-indicator'. If `n' is omitted, all the values 
+ The optional parameter `index' is an index into the array of ODBC indicators 
+ represented by `sql-indicator'. If `index' is omitted, all the values 
  associated with the sql-indicator are returned in a list.  The 
  possible values are 'sql-no-total, 'sql-null-data, 'sql-nts, 
  'sql-column-ignore, 'sql-data-at-exec, a pair consisting of 
@@ -2441,14 +2441,14 @@
  the buffer `sql-buffer'.  If the buffer is subsequently accessed by 
  the ODBC driver, unpredictable effects may occur.
 
-> (read-buffer sql-buffer [n]) 
+> (read-buffer sql-buffer [index]) 
 
- Returns the contents of an sql-buffer.  `n' is a zero-based index
- into the buffer.  If `n' is omitted, the entire buffer contents 
+ Returns the contents of an sql-buffer.  `index' is a zero-based index
+ into the buffer.  If `index' is omitted, the entire buffer contents 
  are returned, in a form appropriate to the type of data contained
  in the buffer.  For most C data types, the buffer is read as a 
  list; for buffers containing 'sql-c-binary, 'sql-c-varbookmark, 
- and 'sql-c-bit elements, the buffer is read as a string.  If `n' 
+ and 'sql-c-bit elements, the buffer is read as a string.  If `index' 
  is given, an individual element of the buffer is returned.   In the 
  case of 'sql-c-wchar, an error occurs if the segment of the buffer 
  to be read contains a character not representable as an ordinary 
@@ -2463,13 +2463,22 @@
  is a nonnegative exact integer used to indicate an offset in the
  buffer; the default is 0.
 
-> (read-row-status sql-row-status)
+> (make-row-status [num-rows])
 
- Given a row status value, returns a list, each element of which 
- is one of 'sql-row-deleted, 'sql-row-error, 'sql-row-success, or 
- 'sql-row-updated.
+ Creates a new row status value.  The optional `num-rows' parameter
+ indicates how many rows the row-status-value represents.  The default
+ is 1.
 
-> (free-row-status sql-row-status)
+> (read-row-status sql-row-status [index])
+
+ Given a row status value, returns a symbol or list of symbols from 
+ '(sql-row-deleted sql-row-error sql-row-success sql-row-updated).
+ If the optional argument `index', a nonnegative exact integer, is
+ omitted, a list is returned.  If provided, `index' is interpreted 
+ as a zero-based index into an array of row status values, and a 
+ single symbol is returned.
+
+> (free-row-status! sql-row-status)
 
  Allows the Scheme garbage collector to reclaim the memory used by 
  the row status `sql-row-status'.  If the row status is subsequently 

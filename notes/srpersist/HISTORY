@@ -24,8 +24,10 @@ make-buffer defaults to buffer of size 1; character
 make-indicator takes optional size argument
 write-buffer! now takes a single value argument and
  optional offset
-read-buffer, read-indicator takes optional offset 
- argument
+read-buffer, read-indicator, read-row-status take an
+ optional index argument
+added make-boxed-uint, free-boxed-uint!
+added make-row-status
 
 Version 103
 

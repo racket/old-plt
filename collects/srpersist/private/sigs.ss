@@ -25,6 +25,7 @@
      free-indicator!
      read-indicator
      set-indicator!
+     make-row-status
      read-row-status
      free-row-status!
      make-buffer

@@ -227,13 +227,13 @@
 			 (map
 			  (lambda (c)
 			    (syntax-case c (=>)
-			      [(p (=> i) e)
+			      [(p (=> i) e e1 ...)
 			       `(,(:ucall parse-pattern (syntax p))
 				 (=> ,(syntax i))
-				 ,(syntax e))]
-			      [(p e)
+				 ,@(syntax->list (syntax (e e1 ...))))]
+			      [(p e e1 ...)
 			       `(,(:ucall parse-pattern (syntax p))
-				 ,(syntax e))]
+				 ,@(syntax->list (syntax (e e1 ...))))]
 			      [_else
 			       (match:syntax-err
 				c

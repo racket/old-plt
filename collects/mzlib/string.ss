@@ -7,7 +7,10 @@
 	   read-from-string-all
 	   expr->string
 	   newline-string
+	   string->literal-regexp-string
 	   regexp-match-exact?)
+
+  (require (lib "etc.ss"))
 
   (define make-string-do!
     (lambda (translate)
@@ -103,6 +106,22 @@
   
   (define newline-string (string #\newline))
   
+  (define string->literal-regexp-string
+    (opt-lambda (s [case-sens? #t])
+      (list->string
+       (apply
+	append
+	(map
+	 (lambda (c)
+	   (cond 
+	    [(memq c '(#\$ #\| #\\ #\[ #\] #\. #\* #\? #\+ #\( #\) #\^))
+	     (list #\\ c)]
+	    [(and (char-alphabetic? c)
+		  (not case-sens?))
+	     (list #\[ (char-upcase c) (char-downcase c) #\])]
+	    [else (list c)]))
+	 (string->list s))))))
+
   (define regexp-match-exact?
     (lambda (p s)
       (let ([m (regexp-match p s)])

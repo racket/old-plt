@@ -236,8 +236,10 @@ int sizeofCDataType(SQLSMALLINT type) {
   switch (type) {
   case SQL_C_CHAR :
     return sizeof(unsigned char);
+#if ODBCVER >= 0x0350
   case SQL_C_WCHAR :
     return sizeof(wchar_t);
+#endif
   case SQL_C_SHORT :
   case SQL_C_SSHORT :
     return sizeof(short int);
@@ -307,7 +309,7 @@ int sizeofCDataType(SQLSMALLINT type) {
 #endif
   }
   
-  scheme_signal_error("Unknown C data type constant: %X",(int)type);
+  scheme_signal_error("Unknown C data type constant: %d",(int)type);
 
   return 0;  /* unreachable */
 }

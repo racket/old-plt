@@ -96,6 +96,7 @@
  (teachpack-error-invoke "The TeachPack file ~a raised an error when invoked.")
  (add-teachpack-menu-item-label "Add Teachpack...")
  (clear-all-teachpacks-menu-item-label "Clear All Teachpacks")
+ (teachpack-not-only-one-import "The TeachPack unit/sig in ~a must have exactly one import.")
  
  ;; Language dialog
  (language-dialog-title "Configure Language")

@@ -131,14 +131,24 @@
     (let ([sexp (syntax-object->datum stx)])
       (match sexp
 	[`(module ,name mzscheme (#%module-begin ,@bodies))
-	 (let loop ([bodies bodies])
-	   (cond
-	     [(null? bodies) null]
-	     [else (match (car bodies)
-		     [`(require ,@require-specs)
-		      (append require-specs (loop (cdr bodies)))]
-		     [`(require-for-syntax ,@require-specs)
-		      (append require-specs (loop (cdr bodies)))]
-		     [else (loop (cdr bodies))])]))]
+         (let ([pre-specs
+                (let loop ([bodies bodies])
+                  (cond
+                    [(null? bodies) null]
+                    [else (match (car bodies)
+                            [`(require ,@require-specs)
+                             (cons require-specs (loop (cdr bodies)))]
+                            [`(require-for-syntax ,@require-specs)
+                             (cons require-specs (loop (cdr bodies)))]
+                            [else (loop (cdr bodies))])]))])
+           (map extract-module-name-from-require-spec (apply append pre-specs)))]
 	[else
-	 (error 'get-imports "~s" sexp)]))))
+	 (error 'get-imports "~s" sexp)])))
+  
+  ;; extract-module-name-from-require-spec : require-spec -> module-name
+  (define (extract-module-name-from-require-spec spec)
+    (match spec
+      [`(prefix ,identifier ,module-name) module-name]
+      [`(all-except ,module-name ,@identifier) module-name]
+      [`(rename ,module-name ,local-identifer ,exported-identifer) module-name]
+      [module-name module-name])))

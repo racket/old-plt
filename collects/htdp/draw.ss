@@ -1,9 +1,14 @@
-(require-library "error.ss" "htdp")
-(require-library "big-draw.ss" "htdp")
+(module draw mzscheme
+  (provide teachpack@)
 
-(compound-unit/sig
-  (import (PLT : plt:userspace^))
-  (link
-    (DRAW : drawS (bigDrawU ERR PLT))
-    (ERR  : errorS (errorU)))
-  (export (open DRAW)))
+  (require "error.ss"
+           "big-draw.ss"
+           (lib "unitsig.ss"))
+
+  (define teachpack@
+    (compound-unit/sig
+      (import (user : draw-from-user^))
+      (link
+       (DRAW : drawS (bigDrawU user ERR))
+       (ERR  : errorS (errorU)))
+      (export (open DRAW)))))

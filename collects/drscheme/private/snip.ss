@@ -222,8 +222,11 @@
            [number _number])
           (public
             [read-special
-             (lambda ()
-               (values number 1))])
+             (lambda (file line col pos)
+               (values
+                ;(datum->syntax-object #f number (list file line col pos 1))
+                number
+                1))])
           (override
             [get-text
              (case-lambda

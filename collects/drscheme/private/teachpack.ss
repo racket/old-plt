@@ -19,8 +19,9 @@
       (define-struct teachpack-cache (tps timestamp))
       
       ;; type cache-entry = (make-cache-entry string (union #f bindings))
-      ;; type bindings = (listof (list symbol TST))
-      ;; bindings represents the invoked teachpack unit.
+      ;; type bindings = (union (listof (list symbol TST)) #f)
+      ;; bindings represents the invoked teachpack unit. It is #f when the
+      ;; teachpack doesn't apply to this language level
       (define-struct cache-entry (filename bindings))
       
       ;; new-teachpack-cache : -> teachpack-cache
@@ -47,23 +48,25 @@
                    (map (lambda (filename) (make-cache-entry filename #f))
                         missing-files)))))
       
-      ;; load-teachpacks : teachpack-cache -> void
+      ;; load-teachpacks : namespace teachpack-cache -> void
       ;; loads the teachpacks from the disk
       ;; initializes teachpack-units, reloading the teachpacks from the disk if they have changed.
-      ;; ensures that none of the cache-entry structs have #f's
-      (define (load-teachpacks cache)
+      ;; ensures that none of the cache-entry structs have #f's.
+      ;; re-invokes all of the teachpacks.
+      (define (load-teachpacks user-namespace cache)
 	(let ([new-timestamp (current-seconds)]
               [new-tps (map (lambda (x) (load-teachpack 
+                                         user-namespace
                                          (cache-entry-filename x)
                                          (teachpack-cache-timestamp cache)))
                             (teachpack-cache-tps cache))])
           (set-teachpack-cache-timestamp! cache new-timestamp)
 	  (set-teachpack-cache-tps! cache (filter (lambda (x) x) new-tps))))
       
-      ;; load-teachpack : string[filename] number[timestamp] -> (union #f cache-entry)
+      ;; load-teachpack : namespace string[filename] number[timestamp] -> (union #f cache-entry)
       ;; loads the techpack file and invokes the teachpack unit
       ;; returns #f  and display error to user if the teachpack doesn't load properly
-      (define (load-teachpack tp-filename timestamp)
+      (define (load-teachpack user-namespace tp-filename timestamp)
 	(let ([teachpack-assoc
                (with-handlers ([not-break-exn?
                                 (lambda (x)
@@ -75,20 +78,58 @@
                          (exploded->flattened-signature
                           (unit/sig-exports
                            teachpack-unit@))]
+                        [imports (get-teachpack-imports tp-filename user-namespace teachpack-unit@)]
                         [unitsig-name ((current-module-name-resolver)
                                        '(lib "unitsig.ss") #f #f)]
                         [orig-namespace (current-namespace)])
-                   (parameterize ([current-namespace (make-namespace)])
-                     (namespace-attach-module orig-namespace unitsig-name)
-                     (namespace-require '(lib "unitsig.ss"))
-                     (eval `(let ()
-                              (define-values/invoke-unit/sig ,export-signature ,teachpack-unit@)
-                              (list
-                               ,@(map (lambda (ent) `(list ',ent ,ent))
-                                      export-signature)))))))])
+                   (and imports
+                        (parameterize ([current-namespace (make-namespace)])
+                          (namespace-attach-module orig-namespace unitsig-name)
+                          (namespace-require '(lib "unitsig.ss"))
+                          (copy-to-current-namespace user-namespace imports)
+                          (eval `(let ()
+                                   (define-values/invoke-unit/sig ,export-signature 
+                                                                  ,teachpack-unit@
+                                                                  #f
+                                                                  ,imports)
+                                   (list
+                                    ,@(map (lambda (ent) `(list ',ent ,ent))
+                                           export-signature))))))))])
           (and teachpack-assoc
                (make-cache-entry tp-filename teachpack-assoc))))
 
+      ;; get-teachpack-imports : string namespace unit/sig -> (union #f (listof symbol))
+      ;; extracts the imports from the teachpack.
+      ;; if there is more than one unit imports, an error is signaled
+      ;; returns #f if any of the names in the import are not defined
+      ;; in the namespace.
+      (define (get-teachpack-imports tp-filename user-namespace teachpack-unit@)
+        (let ([imports (unit/sig-imports teachpack-unit@)])
+          (unless (= 1 (length imports))
+            (error
+             'teachpack
+             (string-constant teachpack-not-only-one-import)
+             tp-filename))
+          (let ([names (exploded->flattened-signature (cdr (car imports)))])
+            (and (parameterize ([current-namespace user-namespace])
+                   (andmap (lambda (x)
+                             (with-handlers ([not-break-exn? (lambda (x) #f)])
+                               (namespace-variable-binding x)
+                               #t))
+                           names))
+                 names))))
+
+      ;; copy-to-current-namespace : namespace (listof symbol) -> void
+      ;; copies the values bound by `names' from `namespace' to the 
+      ;; current namespace.
+      (define (copy-to-current-namespace namespace names)
+        (for-each
+         (lambda (name)
+           (let ([other-binding (parameterize ([current-namespace namespace])
+                               (namespace-variable-binding name))])
+             (namespace-variable-binding name other-binding)))
+         names))
+      
       ;; install-teachpacks : teqachpack-cache -> void
       ;; =User=
       ;; installs the loaded teachpacks
@@ -100,9 +141,10 @@
       ;; install-teachpack : cache-entry -> void
       ;; =User=
       (define (install-teachpack cache-entry)
-        (for-each (lambda (ent) (namespace-variable-binding (car ent) (cadr ent)))
-                  (cache-entry-bindings cache-entry)))
-      
+        (let ([bindings (cache-entry-bindings cache-entry)])
+          (when bindings
+            (for-each (lambda (ent) (namespace-variable-binding (car ent) (cadr ent)))
+                      bindings))))
       
       ;; marshall-teachpack-cache : teachpack-cache -> writable
       (define (marshall-teachpack-cache cache)
@@ -121,6 +163,9 @@
       (define (teachpack-cache-filenames cache)
         (map cache-entry-filename (teachpack-cache-tps cache)))
       
+      ;; teachpack-cache-applies : teachpack-cache -> (listof boolean)
+      (define (teachpack-cache-applies cache)
+        (map (lambda (x) (not (not (cache-entry-bindings x)))) (teachpack-cache-tps cache)))
       
       ;; filename=? : string string -> boolean
       ;; compares two strings as filenames (depends on current-directory parameter)

@@ -113,7 +113,7 @@
 		       (ball2 (remove-objs-hit-paddle ball1))
 		       (ball3 (remove-outside-objs ball2))
 		       (p1    (objs-posn ball3)))
-		  (move-paddle east west (ready-mouse-click @VP))
+		  (move-paddle east west (ready-mouse-click (get-@VP)))
 		  (PLAY ball3 p1 (+ hits (- (length ball1) (length ball2))))))))
 	;; --- clean up
 	(stop)))
@@ -160,7 +160,7 @@
 	    (draw-ball p0) (sleep SLEEP) (clear-ball p0)
 	    (let* ((ball1 (move ball0 1)) (p1 (ball-posn ball1)))
 	      (draw-solid-line p0 p1 TRACE-COLOR)
-	      (move-paddle east west (ready-mouse-click @VP))
+	      (move-paddle east west (ready-mouse-click (get-@VP)))
 	      (if (zero? (modulo i SWITCH))
 		  (play (make-ball p1 (make-speed (rn-10-10) (rn-10-10))) p1 1)
 		  (play ball1 p1 (add1 i))))))
@@ -189,9 +189,9 @@
     (define (ready-to-go?)
       (start2 EAST SOUTH)
       (draw-solid-rect   (make-posn (- (quotient EAST 2) 100) 10) 200 20 BG-COLOR)
-      ((draw-string @VP) (make-posn (- (quotient EAST 2)  65) 20)
+      ((draw-string (get-@VP)) (make-posn (- (quotient EAST 2)  65) 20)
        "Click anywhere when ready!")
-      (let loop () (unless (ready-mouse-click @VP) (loop)))
+      (let loop () (unless (ready-mouse-click (get-@VP)) (loop)))
       (draw-solid-rect   (make-posn (- (quotient EAST 2) 100) 10) 200 20 BG-COLOR))
  
     (define (start2 x y)
@@ -205,10 +205,10 @@
     (define (clear-ball p) (draw-solid-disk p BALL-RADIUS 'white))
 
     ;(define (draw-ball p)
-    ;  (set! draw-ball ((draw-pixmap-posn "Gifs/redball.gif") @VP))
+    ;  (set! draw-ball ((draw-pixmap-posn "Gifs/redball.gif") (get-@VP)))
     ;  (draw-ball p))
     ;(define (clear-ball p)
-    ;  (set! clear-ball ((clear-pixmap-posn "Gifs/redball.gif") @VP))
+    ;  (set! clear-ball ((clear-pixmap-posn "Gifs/redball.gif") (get-@VP)))
     ;  (clear-ball p))
 
 

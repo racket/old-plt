@@ -451,8 +451,12 @@
                    (namespace-require '(prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))))))))
           
           (define/public (render-value value settings port port-write)
-            (display (format-java value (profj-settings-print-full? settings) (profj-settings-print-style settings) null)
-                     port))
+            (let ((out (format-java value (profj-settings-print-full? settings) (profj-settings-print-style settings)
+                                    null #f 0)))
+              (if (< 25 (string-length out))
+                  (display (format-java value (profj-settings-print-full? settings) (profj-settings-print-style settings)
+                                        null #t 0) port)
+                  (display out port))))
           ;(write value port))
           (define/public (render-value/format value settings port port-write width) 
             (render-value value settings port port-write)(newline port))
@@ -460,7 +464,7 @@
 
           
 	  ;format-java: java-value bool symbol (list value) -> string
-          (define (format-java value full-print? style already-printed)
+          (define (format-java value full-print? style already-printed newline? num-tabs)
             (cond
               ((null? value) "null")
               ((number? value) (format "~a" value))
@@ -468,42 +472,58 @@
               ((boolean? value) (if value "true" "false"))
               ((is-java-array? value) 
                (if full-print?
-                   (array->string value (send value length) -1 #t style already-printed)
-                   (array->string value 3 (- (send value length) 3) #f style already-printed)))
+                   (array->string value (send value length) -1 #t style already-printed newline? num-tabs)
+                   (array->string value 3 (- (send value length) 3) #f style already-printed newline? num-tabs)))
               ((is-a? value String) (send value get-mzscheme-string))
               ((is-a? value ObjectI)
                (case style
                  ((type) (send value my-name))
                  ((field)
-                  (let ((retrieve-fields (send value fields-for-display))
-                        (st (format "~a(" (send value my-name)))
-                        (fields ""))
+                  (let* ((retrieve-fields (send value fields-for-display))
+                         (st (format "~a(" (send value my-name)))
+                         (new-tabs (+ num-tabs (string-length st)))
+                         (fields ""))
                     (let loop ((current (retrieve-fields)))
                       (when current
-                        (set! fields (string-append fields (format " ~a = ~a," 
-                                                                   (car current)
-                                                                   (if (memq (cadr current) already-printed)
-                                                                       (format-java (cadr current) full-print? 'type already-printed)
-                                                                       (format-java (cadr current) full-print? style 
-                                                                                    (cons value already-printed))))))
+                        (set! fields 
+                              (string-append fields 
+                                             (format "~a~a = ~a,~a" 
+                                                     (if newline? 
+                                                         (if (equal? fields "")
+                                                             ""
+                                                             (get-n-spaces new-tabs)) "")
+                                                     (car current)
+                                                     (if (memq (cadr current) already-printed)
+                                                         (format-java (cadr current) full-print? 'type already-printed #f 0)
+                                                         (format-java (cadr current) full-print? style 
+                                                                      (cons value already-printed)
+                                                                      newline?
+                                                                      (if newline? 
+                                                                          (+ new-tabs (string-length (car current)) 3)
+                                                                          num-tabs)))
+                                                     (if newline? (format "~n") ""))))
                         (loop (retrieve-fields))))
-                    (string-append st (if (> (string-length fields) 1) 
-                                          (substring fields 0 (sub1 (string-length fields))) "") ")")))
+                    (string-append st 
+                                   ;(if newline? (format "~n") "")
+                                   (if (> (string-length fields) 1) 
+                                       (substring fields 0 (if newline? 
+                                                               (- (string-length fields) 2)
+                                                               (sub1 (string-length fields)))) "") ")")))
                  (else (send value my-name))))
               (else (format "~a" value))))
 
           ;array->string: java-value int int bool symbol (list value) -> string
-          (define (array->string value stop restart full-print? style already-printed)
+          (define (array->string value stop restart full-print? style already-printed nl? nt)
             (letrec ((len (send value length))
                      (make-partial-string
                       (lambda (idx first-test second-test)
                         (cond
                           ((first-test idx) "")
                           ((second-test idx)
-                           (string-append (format-java (send value access idx) full-print? style already-printed)
+                           (string-append (format-java (send value access idx) full-print? style already-printed nl? nt)
                                           (make-partial-string (add1 idx) first-test second-test)))
                           (else
-                           (string-append (format-java (send value access idx) full-print? style already-printed)
+                           (string-append (format-java (send value access idx) full-print? style already-printed nl? nt)
                                           " "
                                           (make-partial-string (add1 idx) first-test second-test)))))))
               (if (or full-print? (< restart stop))
@@ -512,6 +532,11 @@
                           (make-partial-string 0 (lambda (i) (or (>= i stop) (>= i len))) (lambda (i) (= i (sub1 stop))))
                           " ... "
                           (make-partial-string restart (lambda (i) (>= i len)) (lambda (i) (= i (sub1 len))))))))
+          
+          (define (get-n-spaces n)
+            (cond
+              ((= n 0) "")
+              (else (string-append " " (get-n-spaces (sub1 n))))))
           
           (define/public (create-executable fn parent . args)
 	    (message-box "Unsupported"

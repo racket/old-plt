@@ -580,7 +580,7 @@ Bool wxFrame::Show(Bool show)
       wxUnpopMenu();
       /* Make sure window isn't iconized: */
       Iconize(FALSE);
-      XRaiseWindow(XtDisplay(X->frame), XtWindow(X->frame));
+      XRaiseWindow(XtDisplay(X->frame), XtWindow(X->frame));		   
       ForceFocus(X->frame);      
     }
     return TRUE;

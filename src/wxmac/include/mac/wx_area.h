@@ -17,6 +17,10 @@
 
 class wxWindow;
 
+// Here's my understanding of areas: a window contains a list of child areas, and
+// an area contains a list of child windows.  So essentially, areas are a grouping
+// mechanism for child windows.  What it's good for, I don't know.
+
 class wxArea: public wxObject
 {
 //=============================================================================

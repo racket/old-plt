@@ -250,8 +250,9 @@ The arguments are as follows:
     "#include <openssl/err.h>".
 
   * find-unix-libs --- like `include-subdirs', but a list of library
-    bases. For "openssl", the list is '("ssl" "crypto"). This name
-    will get a "-l" prefix on the link line.
+    bases. Leave off the "lib" prefix and any suffix (such as ".a" or
+    ".zo"). For "openssl", the list is '("ssl" "crypto"). This name
+    will get a "-llib" prefix on the link line.
 
   * find-windows-libs --- like `find-unix-libs', but for Windows.  The
     library name will be suffixed with ".lib" and supplied directly to

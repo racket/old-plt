@@ -17,6 +17,7 @@
 		 (invoke-open-unit/sig
 		  (global-defined-value 'tool@) 
 		  mrspidey
+		  (wx : wx^)
 		  (mred : mred^)
 		  mzlib:core^
 		  mzlib:print-convert^

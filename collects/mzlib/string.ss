@@ -10,7 +10,7 @@
 	   regexp-replace-quote
 	   regexp-match*
 	   regexp-match-positions*
-	   regexp-match-peek-positions*
+	   regexp-match-peek-positions**
 	   regexp-split
 	   regexp-match-exact?
            regexp-match/fail-without-reading)
@@ -316,12 +316,12 @@
   (wrap regexp-match-positions* -regexp-match-positions*)
 
   ;; Returns all the positions at which the pattern matched.
-  (define -regexp-match-peek-positions*
-    (regexp-fn 'regexp-match-peek-positions*
+  (define -regexp-match-peek-positions**
+    (regexp-fn 'regexp-match-peek-positions**
 	       ;; success-k:
 	       (lambda (expr string start end match-start match-end)
 		 (cons (cons match-start match-end)
-		       (regexp-match-peek-positions* expr string match-end end)))
+		       (regexp-match-peek-positions** expr string match-end end)))
 	       ;; port-success-k --- use string case
 	       #f
 	       ;; fail-k:
@@ -331,7 +331,7 @@
 	       #f
 	       #f
 	       #t))
-  (wrap regexp-match-peek-positions* -regexp-match-peek-positions*)
+  (wrap regexp-match-peek-positions** -regexp-match-peek-positions**)
 
   ;; Splits a string into a list by removing any piece which matches
   ;; the pattern.

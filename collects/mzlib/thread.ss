@@ -3,14 +3,8 @@
   (require "spidey.ss"
 	   "etc.ss")
 
-  (provide consumer-thread
-	   with-semaphore
-	   
-	   dynamic-disable-break
-	   dynamic-enable-break
-	   make-single-threader
-
-	   run-server)
+  (provide run-server
+	   consumer-thread)
   
   #|
   t accepts a function, f, and creates a thread. It returns the thread and a
@@ -56,41 +50,14 @@
 	     (unless (procedure-arity-includes? f num) 
 		     (raise 
 		      (make-exn:fail:contract:arity
-		       (format "<procedure-from-consumer-thread>: consumer procedure arity is ~e; provided ~s argument~a"
-			       (procedure-arity f) num (if (= 1 num) "" "s"))
+		       (string->immutable-string
+			(format "<procedure-from-consumer-thread>: consumer procedure arity is ~e; provided ~s argument~a"
+				(procedure-arity f) num (if (= 1 num) "" "s")))
 		       (current-continuation-marks)))))
 	   (semaphore-wait protect)
 	   (set! front-state (cons new-state front-state))
 	   (semaphore-post protect)
 	   (semaphore-post sema))))]))
-
-  (define with-semaphore
-    (lambda (s f)
-      (semaphore-wait s)
-      (begin0 (f)
-	      (semaphore-post s))))
- 
-  (define dynamic-enable-break
-    (polymorphic
-     (lambda (thunk)
-       (parameterize-break #t
-	 (thunk)))))
-  
-  (define dynamic-disable-break
-    (polymorphic
-     (lambda (thunk)
-       (parameterize-break #f
-	 (thunk)))))
-  
-  (define make-single-threader
-    (polymorphic
-     (lambda ()
-       (let ([sema (make-semaphore 1)])
-	 (lambda (thunk)
-	   (dynamic-wind
-	    (lambda () (semaphore-wait sema))
-	    thunk
-	    (lambda () (semaphore-post sema))))))))
 
   (define run-server
     (opt-lambda (port-number 

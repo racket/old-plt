@@ -3018,7 +3018,7 @@ void scheme_regexp_initialize(Scheme_Env *env)
 						      "regexp-match-peek*",
 						      2, 5),
 			     env);
-  scheme_add_global_constant("regexp-match-peek-positions(", 
+  scheme_add_global_constant("regexp-match-peek-positions*", 
 			     scheme_make_prim_w_arity(positions_peek_nonblock, 
 						      "regexp-match-peek-positions*",
 						      2, 5),

@@ -362,7 +362,8 @@ static int sslin_char_ready(Scheme_Input_Port *port);
    the possibly blocking nature that mzscheme might want from us. */
 long ssl_do_get_string(Scheme_Input_Port *port, char *buffer, long offset,
 		       long size, int nonblocking, 
-		       int *stuck_why, int err_ok) 
+		       int *stuck_why, int err_ok,
+		       Scheme_Object *unless) 
 {
   const char *errstr = "Unknown error";
   int err = 0;
@@ -371,6 +372,10 @@ long ssl_do_get_string(Scheme_Input_Port *port, char *buffer, long offset,
   struct sslplt *ssl = (struct sslplt *)SCHEME_INPORT_VAL(port);
 
   while (!bytes_read) {
+    /* check unless before anything else */
+    if (scheme_unless_ready(unless))
+      return SCHEME_UNLESS_READY;
+
     /* check the buffer */
     if(ssl->ib_used) {
       buffer[offset + bytes_read] = ssl->ibuffer;
@@ -431,11 +436,20 @@ long ssl_do_get_string(Scheme_Input_Port *port, char *buffer, long offset,
        and might shift it into SSL_ERROR_WANT_WRITE mode.
        Use the general sll input blocking functions. */
 
-    if (!bytes_read)
-      scheme_block_until_enable_break((Scheme_Ready_Fun)sslin_char_ready, 
-				      (Scheme_Needs_Wakeup_Fun)sslin_need_wakeup,
-				      (void *)port, (float)0.0,
-				      nonblocking < 0);
+    if (!bytes_read) {
+      while (!sslin_char_ready(port)) {
+	scheme_block_until_unless((Scheme_Ready_Fun)sslin_char_ready, 
+				  (Scheme_Needs_Wakeup_Fun)sslin_need_wakeup,
+				  (void *)port, (float)0.0,
+				  unless,
+				  nonblocking < 0);
+	
+	scheme_wait_input_allowed(port, nonblocking);
+	
+	if (scheme_unless_ready(unless))
+	  return SCHEME_UNLESS_READY;
+      }
+    }
   }
   
   return bytes_read;
@@ -448,11 +462,14 @@ long ssl_do_get_string(Scheme_Input_Port *port, char *buffer, long offset,
 }
 
 long ssl_get_string(Scheme_Input_Port *port, char *buffer, long offset,
-		    long size, int nonblocking) 
+		    long size, int nonblocking,
+		    Scheme_Object *unless) 
 {
   int stuck_why;
 
-  return ssl_do_get_string(port, buffer, offset, size, nonblocking, &stuck_why, 1);
+  return ssl_do_get_string(port, buffer, offset, size, nonblocking, 
+			   &stuck_why, 1,
+			   unless);
 }
 
 /* sslin_char_ready: return 1 (true) iff a nonblocking call to get_string 
@@ -472,7 +489,7 @@ static int sslin_do_char_ready(Scheme_Input_Port *port, int *stuck_why)
   if(ssl->ib_used) return 1;
 
   /* otherwise, try to read a character in */
-  r = ssl_do_get_string(port, buf, 0, 1, 1, stuck_why, 0);
+  r = ssl_do_get_string(port, buf, 0, 1, 1, stuck_why, 0, NULL);
   if (r) {
     if (r != EOF) {
       ssl->ib_used = 1;
@@ -541,10 +558,11 @@ Scheme_Input_Port *make_sslin_port(SSL *ssl, struct sslplt *wrapper, const char 
 {
   return scheme_make_input_port(ssl_input_port_type, wrapper, 
 				scheme_make_immutable_sized_utf8_string((char *)name, -1),
-				scheme_get_evt_via_get,
 				ssl_get_string, 
-				scheme_peek_evt_via_peek,
-				NULL, sslin_char_ready, sslin_close, 
+				NULL, 
+				scheme_progress_evt_via_get,
+				scheme_peeked_read_via_get,
+				sslin_char_ready, sslin_close, 
 				sslin_need_wakeup, 1);
 }
 

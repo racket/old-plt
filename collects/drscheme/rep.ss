@@ -60,9 +60,8 @@
 				 (loop (sub1 i)))))
 			   short-string)))))
 		(debug-info-handler (lambda () (unbox aries:error-box)))
-		(let ([p (global-defined-value 'plt:home-directory)])
-		  (current-namespace n)
-		  (eval `(#%define plt:home-directory ,p)))
+		(current-namespace n)
+		(eval `(#%define plt:home-directory ,mred:constants:plt-home-directory))
 		(break-enabled #t)
 		(user-break-poll-handler 
 		 (lambda ()

@@ -127,33 +127,27 @@
       (else
        (widening-ref-conversion to from type-recs))))
   
-  ;java-name->type: name type-records -> type
-  (define (java-name->type n type-recs)
-       ;If type does not exist, then an error will be raised
-    (type-exists? (id-string (name-id n)) 
-                  (map id-string (name-path n)) type-recs)
-    (make-ref-type (id-string (name-id n)) 
-                   (if (null? (name-path n))
-                       (send type-recs lookup-path (id-string (name-id n)) (lambda () (raise-error #f #f)))
-                       (map id-string (name-path n)))))
+  ;; type-spec-to-type: type-spec symbol type-records -> type
+  (define (type-spec-to-type ts level type-recs)
+    (let* ((ts-name (type-spec-name ts))
+           (t (cond
+                ((memq ts-name `(null string boolean char byte short int long float double void ctor)) ts-name)
+                ((name? ts-name) (name->type ts-name (type-spec-src ts) level type-recs)))))
+      (if (> (type-spec-dim ts) 0)
+          (make-array-type t (type-spec-dim ts))
+          t)))
+
+  ;name->type: name src symbol type-records -> type
+  (define (name->type n src level type-recs)
+    (let ((name (id-string (name-id n)))
+          (path (map id-string (name-path n))))
+      (type-exists? name path src level type-recs)
+      (make-ref-type name (if (null? path) (send type-recs lookup-path name (lambda () null)) path)))) 
   
-  ;; type-spec-to-type: type-spec type-records -> type
-  (define type-spec-to-type
-    (lambda (ts type-recs)
-      (let* ((ts-name (type-spec-name ts))
-             (t (cond
-                  ((memq ts-name `(null string boolean char byte short int long float double void ctor)) ts-name)
-                  ((name? ts-name) (java-name->type ts-name type-recs)))))
-        (if (> (type-spec-dim ts) 0)
-            (make-array-type t (type-spec-dim ts))
-            t))))
-    
-  ;; type-exists: string (list string) type-records -> record
-  (define (type-exists? name path type-recs)
+  ;; type-exists: string (list string) src symbol type-records -> record
+  (define (type-exists? name path src level type-recs)
     (get-record (send type-recs get-class-record (cons name path)
-                      (lambda () 
-                        (send type-recs lookup-path name
-                              ((get-importer type-recs) (cons name path) type-recs 'full #f))))
+                      ((get-importer type-recs) (cons name path) type-recs level src))
                 type-recs))
   
   
@@ -345,21 +339,17 @@
   
   ;; is-interface?: (U type (list string) 'string) type-records-> boolean
   (define (is-interface? t type-recs)
-    (not (class-record-class? 
-          (get-record (send type-recs get-class-record t ((get-importer type-recs) t type-recs 'full #f))
-                      type-recs))))
+    (not (class-record-class? (get-record (send type-recs get-class-record t) type-recs))))
   
   ;; is-subclass?: (U type (list string) 'string) ref-type type-records -> boolean
   (define (is-subclass? c1 c2 type-recs)
-    (let ((cr (get-record (send type-recs get-class-record c1 ((get-importer type-recs) c1 type-recs 'full #f))
-                          type-recs)))
+    (let ((cr (get-record (send type-recs get-class-record c1) type-recs)))
       (member (cons (ref-type-class/iface c2) (ref-type-path c2))
               (class-record-parents cr))))
 
   ;; subclass?: (U type (list string) 'string) ref-type type-records -> boolean
   (define (implements? c1 c2 type-recs)
-    (let ((cr (get-record (send type-recs get-class-record c1 ((get-importer type-recs) c1 type-recs 'full #f))
-                          type-recs)))
+    (let ((cr (get-record (send type-recs get-class-record c1) type-recs)))
       (member (cons (ref-type-class/iface c2) (ref-type-path c2))
               (class-record-ifaces cr))))
 
@@ -401,14 +391,15 @@
       (quicksort l
                  (lambda (item1 item2)
                    (< (car item1) (car item2))))))
-  (define number-assign-conversions 
-    (lambda (site-args method-args type-recs)
-      (cond
-        ((null? site-args) 0)
-        ((and (assignment-conversion (car site-args) (car method-args) type-recs)
-              (not (type=? (car site-args) (car method-args))))
-         (add1 (number-assign-conversions (cdr site-args) (cdr method-args) type-recs)))
-        (else (number-assign-conversions (cdr site-args) (cdr method-args) type-recs)))))
+  
+  ;number-assign-conversion: (list type) (list type) type-records -> int
+  (define (number-assign-conversions site-args method-args type-recs)
+    (cond
+      ((null? site-args) 0)
+      ((and (assignment-conversion (car site-args) (car method-args) type-recs)
+            (not (type=? (car site-args) (car method-args))))
+       (add1 (number-assign-conversions (cdr site-args) (cdr method-args) type-recs)))
+      (else (number-assign-conversions (cdr site-args) (cdr method-args) type-recs))))
   
   ;; resolve-overloading: (list method-record) (list type) (-> 'a) (-> 'a) (-> 'a) type-records-> method-record
   (define (resolve-overloading methods arg-types arg-count-fail method-conflict-fail  no-method-fail type-recs)

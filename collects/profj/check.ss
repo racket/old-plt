@@ -83,8 +83,8 @@
         (add-exns-to-env (cdr exns)
                          (add-exn-to-env (car exns) env))))
   
-  ;;lookup-exn: type env type-records-> bool
-  (define (lookup-exn type env type-recs)
+  ;;lookup-exn: type env type-records symbol-> bool
+  (define (lookup-exn type env type-recs level)
     (ormap (lambda (lookup)
              (assignment-conversion lookup type type-recs))
            (environment-exns env)))
@@ -156,7 +156,7 @@
            (check-var-init (var-init-init prog)
                            (lambda (e) 
                              (check-expr e (remove-var-from-env name env) level type-recs c-class #f #t))
-                           (type-spec-to-type (field-type prog) type-recs)
+                           (type-spec-to-type (field-type prog) level type-recs)
                            (string->symbol name)
                            type-recs)))
         ((var-decl? prog) (void))
@@ -219,7 +219,7 @@
               ((field? member)
                (let ((static? (memq 'static (map modifier-kind (field-modifiers member))))
                      (name (id-string (field-name member)))
-                     (type (type-spec-to-type (field-type member) type-recs)))
+                     (type (type-spec-to-type (field-type member) level type-recs)))
                  (if (var-init? member)
                      (check-var-init (var-init-init member)
                                      (lambda (e) 
@@ -449,7 +449,7 @@
            (mods (map modifier-kind (method-modifiers method)))
            (return (if ctor? 
                        'void
-                       (type-spec-to-type (method-type method) type-recs))))
+                       (type-spec-to-type (method-type method) level type-recs))))
       (if (or (memq 'abstract mods) (memq 'native mods))
           (when body
             (method-error (if (memq 'abstract mods) 'abstract 'native)
@@ -461,9 +461,9 @@
             (check-statement body
                              return
                              (add-exns-to-env (map (lambda (n)
-                                                     (java-name->type n type-recs)) 
+                                                     (name->type n (name-src n) level type-recs))
                                                    (method-throws method))
-                                              (build-method-env (method-parms method) env type-recs))
+                                              (build-method-env (method-parms method) env level type-recs))
                              level
                              type-recs
                              c-class
@@ -473,18 +473,19 @@
                              #f)
             ))))
   
-  ;build-method-env: (list field) env type-records-> env
-  (define (build-method-env parms env type-recs)
+  ;build-method-env: (list field) env symbol type-records-> env
+  (define (build-method-env parms env level type-recs)
     (cond
       ((null? parms) env)
       (else
        (build-method-env (cdr parms)
                          (add-var-to-env (id-string (field-name (car parms)))
-                                         (type-spec-to-type (field-type (car parms)) type-recs)
+                                         (type-spec-to-type (field-type (car parms)) level type-recs)
                                          (if (memq 'final (map modifier-kind (field-modifiers (car parms))))
                                              final-parameter
                                              parameter)
                                          env)
+                         level
                          type-recs))))
 
   ;reachable-return?: statement -> bool
@@ -641,6 +642,7 @@
                     check-e
                     check-s
                     env
+                    level
                     type-recs
                     in-switch?))
         ((try? statement) 
@@ -663,6 +665,7 @@
                       env
                       check-s-env-change
                       check-e
+                      level
                       type-recs))
         ((break? statement)
          (check-break (break-label statement)
@@ -703,7 +706,7 @@
            (not (is-eq-subclass? exp-type throw-type type-recs)))
        (throw-error 'not-throwable exp-type src))
       ((not (is-eq-subclass? exp-type runtime-exn-type type-recs))
-       (unless (lookup-exn exp-type env type-recs)
+       (unless (lookup-exn exp-type env type-recs 'full)
          (throw-error 'not-declared exp-type src)))
       (else
        (send type-recs add-req (make-req "Throwable" (list "java" "lang"))))))
@@ -727,31 +730,31 @@
   (define check-do (check-cond 'do))
   
   ;check-for: forInit Expression (list Expression) Statement (Expression env -> type) 
-  ;           (Statement env bool bool-> void) env type-records bool -> void
-  (define (check-for init cond incr loop check-e check-s env type-recs in-switch?)
+  ;           (Statement env bool bool-> void) env symbol type-records bool -> void
+  (define (check-for init cond incr loop check-e check-s env level type-recs in-switch?)
     (let ((newEnv (if (and (not (null? init))
                            (field? (car init)))
-                      (check-for-vars init env (lambda (e) (check-e e env)) type-recs)
+                      (check-for-vars init env (lambda (e) (check-e e env)) level type-recs)
                       (begin (for-each (lambda (e) (check-e e env)) init)
                              env))))
       ((check-cond 'for) (check-e cond newEnv) (expr-src cond))
       (map (lambda (e) (check-e e newEnv)) incr)
       (check-s loop newEnv #t in-switch?)))
 
-  ;check-for-vars: (list field) env (expression -> type) type-records -> env
-  (define (check-for-vars vars env check-e types)
+  ;check-for-vars: (list field) env (expression -> type) symbol type-records -> env
+  (define (check-for-vars vars env check-e level types)
     (if (null? vars)
         env
         (check-for-vars (cdr vars) 
-                        (check-local-var (car vars) env check-e types) check-e types)))
+                        (check-local-var (car vars) env check-e level types) check-e level types)))
   
-  ;check-local-var: field env (expression -> type) type-records -> env
-  (define (check-local-var local env check-e type-recs)
+  ;check-local-var: field env (expression -> type) symbol type-records -> env
+  (define (check-local-var local env check-e level type-recs)
     (let* ((is-var-init? (var-init? local))
            (name (id-string (field-name local)))
            (in-env? (lookup-var-in-env name env))
            (sym-name (string->symbol name))
-           (type (type-spec-to-type (field-type local) type-recs)))
+           (type (type-spec-to-type (field-type local) level type-recs)))
       (when (and in-env? (not (properties-local-field? (var-type-properties in-env?))))
         (illegal-redefinition (field-name local) (field-src local)))
       (when is-var-init?
@@ -799,13 +802,13 @@
                       (switch-error 'incompat 'case cons-type expr-type (expr-src constant)))))
               cases))
   
-  ;check-block: (list (U statement field)) env (statement env -> void) (expr -> type) type-records -> void
-  (define (check-block stmts env check-s check-e type-recs)
+  ;check-block: (list (U statement field)) env (statement env -> void) (expr -> type) symbol type-records -> void
+  (define (check-block stmts env check-s check-e level type-recs)
     (let loop ((stmts stmts) (block-env env) (check-e (lambda (e) (check-e env))))
       (cond 
         ((null? stmts) (void))
         ((field? (car stmts))
-         (loop (cdr stmts) (check-local-var (car stmts) block-env check-e type-recs)
+         (loop (cdr stmts) (check-local-var (car stmts) block-env check-e level type-recs)
                (lambda (e) (check-e e block-env))))
         (else
          (check-s (car stmts) block-env)
@@ -981,6 +984,7 @@
                                            (array-alloc-dim exp)
                                            (expr-src exp)
                                            check-sub-expr
+                                           level
                                            type-recs)))
         ((cond-expression? exp)
          (set-expr-type exp
@@ -989,6 +993,7 @@
                                          (check-sub-expr (cond-expression-else exp))
                                          (expr-src exp)
                                          (expr-src (cond-expression-cond exp))
+                                         level
                                          type-recs)))
         ((array-access? exp)
          (set-expr-type exp
@@ -1016,6 +1021,7 @@
                         (check-cast (check-sub-expr (cast-expr exp))
                                     (cast-type exp)
                                     (expr-src exp)
+                                    level
                                     current-class 
                                     type-recs)))
         ((instanceof? exp)
@@ -1023,6 +1029,7 @@
                         (check-instanceof (check-sub-expr (instanceof-expr exp))
                                           (instanceof-type exp)
                                           (expr-src exp)
+                                          level
                                           current-class
                                           type-recs)))
         ((assignment? exp)
@@ -1107,7 +1114,7 @@
                (src (id-src (field-access-field acc)))
                (record null))
            (if obj
-               (set! record (field-lookup fname (check-sub-expr obj) obj type-recs))
+               (set! record (field-lookup fname (check-sub-expr obj) obj level type-recs))
                (set! record 
                      (let ((name (var-access-class (field-access-access acc))))
                        (get-field-record fname
@@ -1135,7 +1142,7 @@
          (let ((var (lookup-var-in-env (id-string (local-access-name acc)) env)))
            (if (properties-usable? (var-type-properties var))
                (var-type-type var)
-               (unusable-var-error (string->symbol (var-type-var var) (id-src (local-access-name acc)))))))
+               (unusable-var-error (string->symbol (var-type-var var)) (id-src (local-access-name acc))))))
         
         (else
          (let* ((first-acc (id-string (car acc)))
@@ -1143,7 +1150,7 @@
                 (new-acc
                  (cond
                    ((and (eq? level 'full) (not first-binding) (> (length acc) 1))
-                    (let* ((static-class (find-static-class acc type-recs))
+                    (let* ((static-class (find-static-class acc level type-recs))
                            (accs (cadr static-class)))
                       (build-field-accesses 
                        (make-access #f 
@@ -1176,8 +1183,8 @@
            (set-access-name! exp new-acc)
            (check-sub-expr exp))))))
   
-  ;; field-lookup: string type expression type-records -> field-record
-  (define (field-lookup fname obj-type obj type-recs)
+  ;; field-lookup: string type expression symbol type-records -> field-record
+  (define (field-lookup fname obj-type obj level type-recs)
     (let ((src (expr-src obj))
           (name (string->symbol fname)))
       (cond
@@ -1204,8 +1211,8 @@
                      (make-field-access start (car accesses) #f))
         (cdr accesses)))))
   
-  ;;find-static-class: (list access) type-recs -> (list class-record (list access))
-  (define (find-static-class accs type-recs)
+  ;;find-static-class: (list access) symbol type-recs -> (list class-record (list access))
+  (define (find-static-class accs level type-recs)
     (let ((path (send type-recs lookup-path (id-string (car accs)) (lambda () #f))))
       (if path
           (list (let* ((name (cons (id-string (car accs)) path))
@@ -1271,8 +1278,9 @@
             (lambda (exn)
               (unless (or (access? expr) (not (eq? level 'full))) (raise exn))
               (let ((record (car (find-static-class 
-                                   (append (access-name expr) (list name))
-                                   type-recs))))
+                                  (append (access-name expr) (list name))
+                                  level
+                                  type-recs))))
                 (set-call-expr! call #f)
                 (unless (equal? (class-record-name record) c-class)
                   (send type-recs add-req (make-req (car (class-record-name record))
@@ -1353,7 +1361,7 @@
           (call-access-error 'pri name exp-type src))
         (when (eq? level 'full)
           (for-each (lambda (thrown)
-                      (unless (lookup-exn thrown env type-recs)
+                      (unless (lookup-exn thrown env type-recs level)
                         (thrown-error (ref-type-class/iface thrown) name exp-type src)))
                     (method-record-throws method-record)))
         (when (and (eq? level 'beginner)
@@ -1378,7 +1386,7 @@
   ;; 15.9
   ;;check-class-alloc: name (list type) src type-records (list string) env symbol -> type
   (define (check-class-alloc name args src type-recs c-class env level)
-    (let* ((type (java-name->type name type-recs))
+    (let* ((type (name->type name (name-src name) level type-recs))
            (class-record (send type-recs get-class-record type))
            (methods (get-method-records (ref-type-class/iface type) class-record)))
       (unless (equal? (ref-type-class/iface type) (car c-class))
@@ -1389,18 +1397,18 @@
         (class-alloc-error 'interface type (name-src name)))
       (let* ((const (if (memq level `(full advanced))
                         (resolve-overloading methods 
-                                             args 
+                                             args
                                              (lambda () (ctor-overload-error 'number name args src))
                                              (lambda () (ctor-overload-error 'conflict name args src))
                                              (lambda () (ctor-overload-error 'no-match name args src))
                                              type-recs)
-                        (when (check-ctor-args args (method-record-atypes (car methods)) type src type-recs)
+                        (when (check-ctor-args args (method-record-atypes (car methods)) type src level type-recs)
                           (car methods))))
              (mods (method-record-modifiers const))
              (this (lookup-this type-recs env)))
         (when (eq? level 'full)
           (for-each (lambda (thrown)
-                      (unless (lookup-exn thrown env type-recs)
+                      (unless (lookup-exn thrown env type-recs level)
                         (ctor-throws-error (ref-type-class/iface thrown) type src)))
                     (method-record-throws const)))
         (when (and (memq 'private mods) (not (eq? class-record this)))
@@ -1409,8 +1417,8 @@
           (class-access-error 'pro type src))
         type)))
 
-  ;check-method-args: (list type) (list type) type src type-records -> void
-  (define (check-ctor-args args atypes name src type-recs)
+  ;check-ctor-args: (list type) (list type) type src symbol type-records -> void
+  (define (check-ctor-args args atypes name src level type-recs)
     (unless (= (length args) (length atypes))
       (ctor-arg-error 'number args atypes name src))
     (for-each (lambda (arg atype)
@@ -1419,10 +1427,10 @@
               args atypes))
   
   ;; 15.10
-  ;;check-array-alloc type-spec (list expression) int src (expr->type) type-records -> type
-  (define (check-array-alloc elt-type exps dim src check-sub-exp type-recs)
+  ;;check-array-alloc type-spec (list expression) int src (expr->type) symbol type-records -> type
+  (define (check-array-alloc elt-type exps dim src check-sub-exp level type-recs)
     (send type-recs add-req (make-req 'array null))
-    (let ((type (type-spec-to-type elt-type type-recs)))
+    (let ((type (type-spec-to-type elt-type level type-recs)))
       (for-each (lambda (e)
                   (let ((t (check-sub-exp e)))
                     (unless (prim-integral-type? t)
@@ -1431,8 +1439,8 @@
       (make-array-type type (+ (length exps) dim))))
   
   ;; 15.25
-  ;check-cond-expr: type type type src src type-records -> type
-  (define (check-cond-expr test then else-t src test-src type-recs)
+  ;check-cond-expr: type type type src src symbol type-records -> type
+  (define (check-cond-expr test then else-t src test-src level type-recs)
     (unless (eq? 'boolean test)
       (condition-error test test-src))
     (cond
@@ -1489,9 +1497,9 @@
            (unary-error op 'bool expr-type src)))))
     
   ;; 15.16
-  ;check-cast: type type-spec src (list string) type-records -> type
-  (define (check-cast exp-type cast-type src current-class type-recs)
-    (let ((type (type-spec-to-type cast-type type-recs)))
+  ;check-cast: type type-spec src symbol (list string) type-records -> type
+  (define (check-cast exp-type cast-type src level current-class type-recs)
+    (let ((type (type-spec-to-type cast-type level type-recs)))
       (unless (equal? (car current-class) (ref-type-class/iface type))
         (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type))))
       (cond
@@ -1503,9 +1511,9 @@
          (cast-error 'from-ref exp-type type src)))))
 
   ;; 15.20.2
-  ;check-instanceof type type-spec src (list string) type-records -> type
-  (define (check-instanceof exp-type inst-type src current-class type-recs)
-    (let ((type (type-spec-to-type inst-type type-recs)))
+  ;check-instanceof type type-spec src symbol (list string) type-records -> type
+  (define (check-instanceof exp-type inst-type src level current-class type-recs)
+    (let ((type (type-spec-to-type inst-type level type-recs)))
       (unless (equal? (car current-class) (ref-type-class/iface type))
         (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type))))
       (cond 

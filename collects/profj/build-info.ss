@@ -323,9 +323,6 @@
                  
                  (send type-recs set-location! (class-def-file class))
                  (set-class-def-uses! class reqs)
-                 (unless (andmap (lambda (req) (type-exists? (req-class req) (req-path req) type-recs))
-                                 reqs)
-                   (error 'process-class "Internal error: not all of imports and classes exist"))
                  
                  (when (eq? level 'full)
                    (when (memq 'final (class-record-modifiers super-record))
@@ -357,14 +354,14 @@
                        (beginner-ctor-error (header-id info) (id-src (header-id info))))
                      (add-ctor class (lambda (rec) (set! m (cons rec m))) old-methods (header-id info) level))
                    
-                   (valid-field-names? f members type-recs)
+                   (valid-field-names? f members level type-recs)
                    (valid-method-sigs? m members level type-recs)
 
                    (when (not (memq 'abstract test-mods))
                      (and (class-fully-implemented? super-record super 
                                                     iface-records (header-implements info)
                                                     m level)
-                          (no-abstract-methods m members type-recs)))
+                          (no-abstract-methods m members level type-recs)))
                    
                    (valid-inherited-methods? (cons super-record iface-records)
                                              (cons (if (null? super)
@@ -464,9 +461,6 @@
                                  super-names)))
                  (send type-recs set-location! (interface-def-file iface))
                  (set-interface-def-uses! iface reqs)                 
-                 (unless (andmap (lambda (req) (type-exists? (req-class req) (req-path req) type-recs))
-                                 reqs)
-                   (error 'process-interface "Internal error: Not all of extends exist"))
                  
                  (when (ormap class-record-class? super-records)
                    (letrec ((find-class
@@ -481,7 +475,7 @@
                  
                  (let-values (((f m) (process-members members null iname type-recs level)))
                    
-                   (valid-field-names? f members type-recs)
+                   (valid-field-names? f members level type-recs)
                    (valid-method-sigs? m members level type-recs)
                    (valid-inherited-methods? super-records (header-extends info) level type-recs)
                    (check-current-methods super-records m members level type-recs)
@@ -517,13 +511,13 @@
              (extension-error 'implement #f (car implements) (id-src (car implements))))
         (valid-iface-implement? (cdr records) (cdr implements))))
   
-  ;valid-field-names? (list field-record) (list member) type-records -> bool
-  (define (valid-field-names? fields members type-recs)
+  ;valid-field-names? (list field-record) (list member) symbol type-records -> bool
+  (define (valid-field-names? fields members level type-recs)
     (or (null? fields)
         (and (field-member? (car fields) (cdr fields))
-             (let ((f (find-member (car fields) members type-recs)))
+             (let ((f (find-member (car fields) members level type-recs)))
                (field-error (field-name f) (field-src f))))
-        (valid-field-names? (cdr fields) members type-recs)))
+        (valid-field-names? (cdr fields) members level type-recs)))
   
   ;field-member: field-record (list field-record) -> bool
   (define (field-member? field fields)
@@ -532,7 +526,7 @@
                      (field-record-name (car fields)))
              (field-member? field (cdr fields)))))
   
-  (define (find-member member-record members type-recs)
+  (define (find-member member-record members level type-recs)
     (when (null? members)
       (error 'internal-error "Find-member given a member that is not contained in the member list"))
     (cond
@@ -541,7 +535,7 @@
        (if (equal? (id-string (field-name (car members)))
                    (field-record-name member-record))
            (car members)
-           (find-member member-record (cdr members) type-recs)))
+           (find-member member-record (cdr members) level type-recs)))
       ((and (method-record? member-record)
             (method? (car members)))
        (if (and (equal? (id-string (method-name (car members)))
@@ -551,22 +545,22 @@
                 (andmap type=?
                         (method-record-atypes member-record)
                         (map (lambda (t)
-                               (type-spec-to-type t type-recs))
+                               (type-spec-to-type t level type-recs))
                              (map field-type (method-parms (car members))))))
            (car members)
-           (find-member member-record (cdr members) type-recs)))
+           (find-member member-record (cdr members) level type-recs)))
       (else
-       (find-member member-record (cdr members) type-recs))))
+       (find-member member-record (cdr members) level type-recs))))
   
   ;valid-method-sigs? (list method-record) (list member) symbol type-records -> bool
   (define (valid-method-sigs? methods members level type-recs)
     (or (null? methods)
         (and (method-member? (car methods) (cdr methods) level)
-             (let ((m (find-member (car methods) members type-recs)))
+             (let ((m (find-member (car methods) members level type-recs)))
                (method-error 'repeated 
                              (method-name m)
                              (map (lambda (t)
-                                    (type-spec-to-type (field-type t) type-recs))
+                                    (type-spec-to-type (field-type t) level type-recs))
                                   (method-parms m))
                              (car (method-record-class (car methods)))
                              (method-src m)
@@ -628,11 +622,11 @@
         (and (method-conflicts? (car methods)
                                 (class-record-methods record)
                                 level)
-             (let ((method (find-member (car methods) members type-recs)))
+             (let ((method (find-member (car methods) members level type-recs)))
                (method-error 'conflicts 
                              (method-name method)
                              (map (lambda (t)
-                                    (type-spec-to-type (field-type t) type-recs))
+                                    (type-spec-to-type (field-type t) level type-recs))
                                   (method-parms method))
                              (car (class-record-name record))
                              (method-src method)
@@ -664,19 +658,19 @@
                            #f))
         (implements-all? (cdr inherit-methods) methods name level)))
   
-  (define (no-abstract-methods methods members type-recs)
+  (define (no-abstract-methods methods members level type-recs)
     (or (null? methods)
         (and (memq 'abstract (method-record-modifiers (car methods)))
-             (let ((method (find-member (car methods) members type-recs)))
+             (let ((method (find-member (car methods) members level type-recs)))
                (method-error 'illegal-abstract 
                              (method-name method) 
                              (map (lambda (t)
-                                    (type-spec-to-type (field-type t) type-recs))
+                                    (type-spec-to-type (field-type t) level type-recs))
                                   (method-parms method)) 
                              (car (method-record-class (car methods)))
                              (method-src method)
                              #f)))
-        (no-abstract-methods (cdr methods) members type-recs)))
+        (no-abstract-methods (cdr methods) members level type-recs)))
     
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Methods to process fields and methods
@@ -714,17 +708,17 @@
     (make-field-record (id-string (field-name field)) 
                        (check-field-modifiers level (field-modifiers field)) 
                        cname 
-                       (type-spec-to-type (field-type field) type-recs)))
+                       (type-spec-to-type (field-type field) level type-recs)))
 
                   
   ;; process-method: method (list method-record) (list string) type-records symbol -> method-record  
   (define (process-method method inherited-methods cname type-recs level . args)
     (let* ((name (id-string (method-name method)))
            (parms (map (lambda (p)
-                         (type-spec-to-type (field-type p) type-recs))
+                         (type-spec-to-type (field-type p) level type-recs))
                        (method-parms method)))
            (mods (if (null? args) (method-modifiers method) (cons (car args) (method-modifiers method))))
-           (ret (type-spec-to-type (method-type method) type-recs))
+           (ret (type-spec-to-type (method-type method) level type-recs))
            (throws (filter (lambda (n)
                              (not (or (is-eq-subclass? n runtime-exn-type type-recs))))
                            ;(is-eq-subclass? n error-type type-recs))))

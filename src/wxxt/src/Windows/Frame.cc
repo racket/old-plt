@@ -250,9 +250,23 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
 	plt_icon = (Pixmap)NULL;
     }
 
-    if (plt_mask && plt_icon) {
-      XtVaSetValues(X->frame, XtNiconMask, plt_mask, NULL);
-      XtVaSetValues(X->frame, XtNiconPixmap, plt_icon, NULL);
+    if ((style & wxTRANSIENT) && frame_parent) {
+      /* Dialog: use parent frame's icon. */
+      Pixmap icon, mask;
+
+      XtVaGetValues(frame_parent->X->frame, 
+		    XtNiconMask, &mask, 
+		    XtNiconPixmap, &icon, NULL);
+
+      if (mask && icon) {
+	XtVaSetValues(X->frame, XtNiconMask, mask, NULL);
+	XtVaSetValues(X->frame, XtNiconPixmap, icon, NULL);
+      }
+    } else {
+      if (plt_mask && plt_icon) {
+	XtVaSetValues(X->frame, XtNiconMask, plt_mask, NULL);
+	XtVaSetValues(X->frame, XtNiconPixmap, plt_icon, NULL);
+      }
     }
 
     return TRUE;

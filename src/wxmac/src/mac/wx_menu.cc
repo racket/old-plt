@@ -23,6 +23,8 @@ MenuHandle wxHelpMenu;
 
 void wxSetUpAppleMenu(wxMenuBar *mbar);
 
+#define USE_HELP_MENU_HACK 0
+
 ///////////////////////////////////////////////////////////////////////////////
 // Menu Bar
 ///////////////////////////////////////////////////////////////////////////////
@@ -273,10 +275,10 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
     }
     *s = 0;
     s = t;
-#ifdef OS_X
-    helpflg = 0;
-#else
+#if USE_HELP_MENU_HACK
     helpflg = strncmp("Help", s, 4) ? 0 : 1;
+#else
+    helpflg = 0;
 #endif
     CopyCStringToPascal(s,tempString);
     nmh = ::NewMenu(cMacMenuId ,tempString);
@@ -641,8 +643,7 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
   }
   ::InsertMenu(appleMenuHandle, 0);
 
-#ifndef WX_CARBON
-  // this is just a futile attempt to get rid of the help menu anyway.	
+#if USE_HELP_MENU_HACK
   HMGetHelpMenuHandle(&wxHelpMenu);
   if (!wxNumHelpItems) {
     /* Each ClearMenuBar() seems to create a new HelpMenu.

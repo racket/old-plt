@@ -18,15 +18,6 @@
       (import [c : dynext:compile^]
 	      [l : dynext:link^])
 
-      ;; NOTE: evil name dependencies here:
-      
-      (define mz-app-ppc "MzScheme PPC")
-      (define mz-app-68k "MzScheme 68k")
-      (define mr-app-ppc "MrEd PPC")
-      (define mr-app-68k "MrEd 68k")
-      
-      ;; END of evil name dependencies
-      
       (define plthome
 	(with-handlers ([(lambda (x) #t) (lambda (x) #f)])
 	  (or (let ([p (getenv "PLTHOME")])
@@ -338,9 +329,24 @@
       
       (define (make-macos-launcher kind variant flags dest aux)
 	(install-template dest kind "GoMr" "GoMr")
-	(let ([p (open-output-file dest 'truncate)])
-	  (display (str-list->sh-str flags) p)
-	  (close-output-port p)))
+	(let ([p (open-input-file dest)])
+	  (let ([m (regexp-match-positions "<Insert offset here>" p)])
+	    ;; fast-forward to the end:
+	    (let ([s (make-string 4096)])
+	      (let loop ()
+		(if (eof-object? (read-string-avail! s p))
+		    (file-position p)
+		    (loop))))
+	    (let ([data-fork-size (file-position p)])
+	      (close-input-port p)
+	      (let ([p (open-output-file dest 'update)]
+		    [str (str-list->sh-str flags)])
+		(file-position p (caar m))
+		(display (integer->integer-byte-string (string-length str) 4 #t #t) p)
+		(display (integer->integer-byte-string data-fork-size 4 #t #t) p)
+		(file-position p data-fork-size)
+		(display str p)
+		(close-output-port p))))))
       
       (define (get-maker)
 	(case (system-type)

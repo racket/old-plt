@@ -5,6 +5,14 @@
 
 (SECTION 'MACRO)
 
+(error-test #'(define-syntaxes () (values 1)) exn:application:arity?)
+(error-test #'(define-syntaxes () (values 1 2)) exn:application:arity?)
+(error-test #'(define-syntaxes (x) (values)) exn:application:arity?)
+(error-test #'(define-syntaxes (x) (values 1 2)) exn:application:arity?)
+(error-test #'(define-syntaxes (x y) (values)) exn:application:arity?)
+(error-test #'(define-syntaxes (x y) (values 1)) exn:application:arity?)
+(error-test #'(define-syntaxes (x y) (values 1 2 3)) exn:application:arity?)
+
 (define-syntax mx
   (lambda (stx)
     (syntax-case stx ()

@@ -578,10 +578,15 @@ define_execute(Scheme_Object *vars, Scheme_Object *vals, int defmacro,
   show_any = i;
 
   if (show_any) {
-    Scheme_Object **toplevels;
-    toplevels = (Scheme_Object **)MZ_RUNSTACK[SCHEME_TOPLEVEL_DEPTH(SCHEME_CAR(vars))];
-    b = (Scheme_Bucket *)toplevels[SCHEME_TOPLEVEL_POS(SCHEME_CAR(vars))];
-    name = (Scheme_Object *)b->key;
+    if (defmacro) {
+      b = scheme_global_keyword_bucket(SCHEME_CAR(vars), dm_env);
+      name = (Scheme_Object *)b->key;
+    } else {
+      Scheme_Object **toplevels;
+      toplevels = (Scheme_Object **)MZ_RUNSTACK[SCHEME_TOPLEVEL_DEPTH(SCHEME_CAR(vars))];
+      b = (Scheme_Bucket *)toplevels[SCHEME_TOPLEVEL_POS(SCHEME_CAR(vars))];
+      name = (Scheme_Object *)b->key;
+    }
   } else
     name = NULL;
   

@@ -1,6 +1,7 @@
 #cs(module rectangle mzscheme
   (require (lib "error.ss" "htdp")
 	   (lib "draw-sig.ss" "htdp")
+	   (lib "prim.ss" "lang")           
 	   (lib "big-draw.ss" "htdp")
            (lib "unitsig.ss")
            (lib "list.ss")

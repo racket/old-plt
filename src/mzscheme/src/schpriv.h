@@ -1558,6 +1558,10 @@ typedef struct Scheme_Modix {
   Scheme_Object *shift_cache; /* vector */
 } Scheme_Modidx;
 
+void scheme_add_global_keyword(const char *name, Scheme_Object *v, Scheme_Env *env);
+void scheme_add_global_constant(const char *name, Scheme_Object *v, Scheme_Env *env);
+void scheme_add_global_constant_symbol(Scheme_Object *name, Scheme_Object *v, Scheme_Env *env);
+
 Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env);
 
 Scheme_Env *scheme_new_module_env(Scheme_Env *env, Scheme_Module *m, int new_exp_module_tree);

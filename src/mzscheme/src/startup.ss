@@ -136,16 +136,18 @@
   (require-for-syntax #%stx #%kernel)
 
   (define-syntaxes (quasiquote)
-    (let ([here (quote-syntax here)]) ; id with module bindings, but not lexical
+    (let ([here (quote-syntax here)] ; id with module bindings, but not lexical
+	  [unquote-stx (quote-syntax unquote)]
+	  [unquote-splicing-stx (quote-syntax unquote-splicing)])
       (lambda (in-form)
 	(if (identifier? in-form)
-	    (raise-syntax-error 'quasiquote "bad syntax" in-form))
+	    (raise-syntax-error #f "bad syntax" in-form))
 	(let-values
 	    (((form) (if (stx-pair? (stx-cdr in-form))
 			 (if (stx-null? (stx-cdr (stx-cdr in-form)))
 			     (stx-car (stx-cdr in-form))
-			     (raise-syntax-error 'quasiquote "bad syntax" in-form))
-			 (raise-syntax-error 'quasiquote "bad syntax" in-form)))
+			     (raise-syntax-error #f "bad syntax" in-form))
+			 (raise-syntax-error #f "bad syntax" in-form)))
 	     ((normal)
 	      (lambda (x old)
 		(if (eq? x old)
@@ -184,7 +186,7 @@
 			  (let-values
 			      (((first) (stx-car x)))
 			    (if (if (if (identifier? first)
-					(module-identifier=? first (quote-syntax unquote))
+					(module-identifier=? first unquote-stx)
 					#f)
 				    (stx-list? x)
 				    #f)
@@ -194,7 +196,7 @@
 					  (((g35) (not (stx-pair? rest))))
 					(if g35 g35 (not (stx-null? (stx-cdr rest)))))
 				      (raise-syntax-error
-				       'unquote
+				       unquote-stx
 				       "takes exactly one expression"
 				       in-form))
 				  (if (zero? level)
@@ -207,18 +209,18 @@
 					#f)
 				    (qq-list x (add1 level))
 				    (if (if (if (identifier? first)
-						(module-identifier=? first (quote-syntax unquote-splicing))
+						(module-identifier=? first unquote-splicing-stx)
 						#f)
 					    (stx-list? x)
 					    #f)
 					(raise-syntax-error
-					 'unquote-splicing
+					 unquote-splicing-stx
 					 "invalid context within quasiquote"
 					 in-form)
 					(if (if (stx-pair? first)
 						(if (identifier? (stx-car first))
 						    (if (module-identifier=? (stx-car first)
-									     (quote-syntax unquote-splicing))
+									     unquote-splicing-stx)
 							(stx-list? first)
 							#F)
 						    #f)
@@ -231,7 +233,7 @@
 							g34
 							(not (stx-null? (stx-cdr rest)))))
 						  (raise-syntax-error
-						   'unquote-splicing
+						   unquote-splicing-stx
 						   "takes exactly one expression"
 						   in-form))
 					      (let-values
@@ -291,7 +293,7 @@
     (let ([here (quote-syntax here)])
       (lambda (x)
 	(if (not (stx-list? x))
-	    (raise-syntax-error 'and "bad syntax" x))
+	    (raise-syntax-error #f "bad syntax" x))
 	(let ([e (stx-cdr x)])
 	  (if (stx-null? e)
 	      (quote-syntax #t)
@@ -312,7 +314,7 @@
     (let ([here (quote-syntax here)])
       (lambda (x)
 	(if (identifier? x)
-	    (raise-syntax-error 'or "bad syntax" x))
+	    (raise-syntax-error #f "bad syntax" x))
 	(let ([e (stx-cdr x)])
 	  (if (stx-null? e) 
 	      (quote-syntax #f)
@@ -335,7 +337,7 @@
 					   (stx-cdr e))))
 			 x))
 		      (raise-syntax-error 
-		       'or
+		       #f
 		       "bad syntax"
 		       x))))))))
 
@@ -351,13 +353,13 @@
     (let ([here (quote-syntax here)])
       (lambda (in-form)
 	(if (identifier? in-form)
-	    (raise-syntax-error 'cond "bad syntax" in-form))
+	    (raise-syntax-error #f "bad syntax" in-form))
 	(datum->syntax-object
 	 here
 	 (let ([form (stx-cdr in-form)]
 	       [serror
 		(lambda (msg at)
-		  (raise-syntax-error 'cond msg in-form at))])
+		  (raise-syntax-error #f msg in-form at))])
 	   (let loop ([tests form])
 	     (if (stx-null? tests)
 		 (quote-syntax (void))
@@ -416,15 +418,15 @@
   (define-syntaxes (define define-syntax)
     (let ([here (quote-syntax here)])
       (let ([mk-define
-	     (lambda (who base)
+	     (lambda (base)
 	       (lambda (code)
 		 (if (or (identifier? code)
 			 (not (stx-pair? (stx-cdr code))))
-		     (raise-syntax-error who "bad syntax" code))
+		     (raise-syntax-error #f "bad syntax" code))
 		 (let ([body (stx-cdr code)])
 		   (if (stx-null? body)
 		       (raise-syntax-error
-			who
+			#f
 			"bad syntax (no definition body)"
 			code))
 		   (let ([first (stx-car body)]) 
@@ -437,11 +439,11 @@
 			    `(,base (,first) ,@(stx->list (stx-cdr body)))
 			    code)
 			   (raise-syntax-error
-			    who
+			    #f
 			    "bad syntax (zero or multiple expressions after identifier)"
 			    code))]
 		      [(stx-pair? first)
-		       (let ([bad-symbol  (lambda (s) (raise-syntax-error who
+		       (let ([bad-symbol  (lambda (s) (raise-syntax-error #f
 									  "bad identifier"
 									  code
 									  s))])
@@ -461,12 +463,12 @@
 			code)]
 		      [else
 		       (raise-syntax-error
-			who
+			#f
 			"not an identifier"
 			code
 			first)])))))])
-	(values (mk-define 'define (quote-syntax define-values))
-		(mk-define 'define-syntax (quote-syntax define-syntaxes))))))
+	(values (mk-define (quote-syntax define-values))
+		(mk-define (quote-syntax define-syntaxes))))))
 
   (define-syntax when
     (lambda (x)
@@ -482,7 +484,7 @@
 		    (stx-cdr (stx-cdr x))))
 	     x)
 	    (raise-syntax-error
-	     'when
+	     #f
 	     "bad syntax"
 	     x)))))
 
@@ -501,7 +503,7 @@
 		    (cddr l)))
 	     x)
 	    (raise-syntax-error
-	     'unless
+	     #f
 	     "bad syntax"
 	     x)))))
 
@@ -518,20 +520,20 @@
 	       `(call/ec (lambda (,var) ,@(stx->list exprs)))
 	       code))
 	    (raise-syntax-error
-	     'let/ec
+	     #f
 	     "bad syntax"
 	     code)))))
 
   (define-syntax define-struct
     (lambda (stx)
       (if (identifier? stx)
-	  (raise-syntax-error 'define-struct "bad syntax" stx))
+	  (raise-syntax-error #f "bad syntax" stx))
       (let ([body (stx->list (stx-cdr stx))])
 	(let ([syntax-error
 	       (lambda (s . detail)
 		 (apply
 		  raise-syntax-error
-		  'define-struct
+		  #f
 		  s
 		  stx
 		  detail))]
@@ -667,6 +669,10 @@
 	(list e)
 	(list e de)))
 
+
+  (define syntax-case-stx (quote-syntax syntax-case))
+  (define syntax-stx (quote-syntax syntax))
+
   ;;----------------------------------------------------------------------
   ;; Input matcher
   
@@ -696,7 +702,7 @@
 	(unless (stx-null? (stx-cdr (stx-cdr p)))
 	  (apply
 	   raise-syntax-error 
-	   'syntax-case
+	   syntax-case-stx
 	   "misplaced ellipses in pattern"
 	   (pick-specificity
 	    top
@@ -733,7 +739,7 @@
 		    (m&e dp dp #f #f))
 		  (apply
 		   raise-syntax-error 
-		   'syntax-case
+		   syntax-case-stx
 		   "misplaced ellipses in pattern"
 		   (pick-specificity
 		    top
@@ -766,7 +772,7 @@
 		     (eq? (syntax-e p) '...))
 		(apply
 		 raise-syntax-error 
-		 'syntax-case
+		 syntax-case-stx
 		 "misplaced ellipses in pattern"
 		 (pick-specificity
 		  top
@@ -795,7 +801,7 @@
 		(let ([l (hash-table-get ht (syntax-e r) (lambda () null))])
 		  (when (ormap (lambda (i) (module-identifier=? i r)) l)
 		    (raise-syntax-error 
-		     'syntax-case
+		     syntax-case-stx
 		     "variable used twice in pattern"
 		     top
 		     r))
@@ -876,7 +882,7 @@
 	  (when (null? nestings)
 	    (apply
 	     raise-syntax-error 
-	     'syntax
+	     syntax-stx
 	     "no pattern variables before ellipses in template"
 	     (pick-specificity
 	      top
@@ -903,7 +909,7 @@
 		      (when (null? proto-rr-deep)
 			(apply
 			 raise-syntax-error 
-			 'syntax
+			 syntax-stx
 			 "too many ellipses in template"
 			 (pick-specificity
 			  top
@@ -945,7 +951,7 @@
 		    (expander dp proto-r dp #f hash!))
 		  (apply
 		   raise-syntax-error 
-		   'syntax
+		   syntax-stx
 		   "misplaced ellipses in template"
 		   (pick-specificity
 		    top
@@ -971,7 +977,7 @@
 				   (eq? (syntax-e p) '...))
 			  (apply
 			   raise-syntax-error 
-			   'syntax
+			   syntax-stx
 			   "misplaced ellipses in template"
 			   (pick-specificity
 			    top
@@ -1133,7 +1139,7 @@
 	(unless v
 	  (apply
 	   raise-syntax-error 
-	   'syntax
+	   (quote-syntax syntax)
 	   "too few ellipses for pattern variable in template"
 	   (pick-specificity
 	    src
@@ -1162,7 +1168,7 @@
 		     [(syntax? l)
 		      (when (module-identifier=? l ssym)
 			(raise-syntax-error 
-			 'syntax
+			 (quote-syntax syntax)
 			 "missing ellipses with pattern variable in template"
 			 ssym))]
 		     [else (loop (car l))]))))
@@ -1225,7 +1231,7 @@
       (unless (and (stx-list? x)
 		   (> (length l) 3))
 	(raise-syntax-error
-	 'syntax-case*
+	 #f
 	 "bad form"
 	 x))
       (let ([expr (cadr l)]
@@ -1236,7 +1242,7 @@
 	 (lambda (lit)
 	   (unless (identifier? lit)
 	     (raise-syntax-error
-	      'syntax-case
+	      #f
 	      "literal is not a indentifier"
 	      x
 	      lit)))
@@ -1246,7 +1252,7 @@
 	   (unless (and (stx-list? clause)
 			(<= 2 (length (stx->list clause)) 3))
 	     (raise-syntax-error
-	      'syntax-case
+	      #f
 	      "bad clause"
 	      x
 	      clause)))
@@ -1289,8 +1295,7 @@
 		      [(null? patterns)
 		       (list
 			(quote-syntax raise-syntax-error)
-			(list (quote-syntax quote)
-			      (quote-syntax compile))
+			#f
 			"bad syntax"
 			arg)]
 		      [else
@@ -1403,7 +1408,7 @@
 		     (and (stx-pair? rest)
 			  (stx-null? (stx-cdr rest)))))
 	(raise-syntax-error
-	 'syntax
+	 #f
 	 "bad form"
 	 x))
       (datum->syntax-object
@@ -1652,20 +1657,20 @@
 			     (case x c1 c2 ...)))))
 	((_ v (bad e1 e2 ...) . rest)
 	 (raise-syntax-error 
-	  'case
+	  #f
 	  "bad syntax (not a datum sequence)"
 	  x
 	  (syntax bad)))
 	((_ v clause . rest)
 	 (raise-syntax-error 
-	  'case
+	  #f
 	  "bad syntax (missing expression after datum sequence)"
 	  x
 	  (syntax clause)))
 	((_ . v)
 	 (not (null? (syntax-e (syntax v))))
 	 (raise-syntax-error 
-	  'case
+	  #f
 	  "bad syntax (illegal use of `.')"
 	  x)))))
 
@@ -1680,7 +1685,7 @@
 				 (() v)
 				 ((e) (syntax e))
 				 (_ (raise-syntax-error 
-				     'do
+				     #f
 				     "bad variable syntax"
 				     orig-x))))
 			     (syntax->list (syntax (var ...)))
@@ -1785,14 +1790,14 @@
 	   (for-each
 	    (lambda (id)
 	      (unless (identifier? id)
-		(raise-syntax-error 'set!-values
+		(raise-syntax-error #f
 				    "not an identifier"
 				    stx
 				    id)))
 	    ids)
 	   (let ([dup (check-duplicate-identifier ids)])
 	     (when dup
-	       (raise-syntax-error 'set!-values
+	       (raise-syntax-error #f
 				   "duplicate identifier"
 				   stx
 				   dup))))
@@ -2204,7 +2209,7 @@
 	      (unless filename
 		(if stx
 		    (raise-syntax-error
-		     'standard-module-name-resolver
+		     (quote-syntax standard-module-name-resolver)
 		     "bad module path"
 		     stx)
 		    (raise-type-error 

@@ -516,14 +516,8 @@ void scheme_add_namespace_option(Scheme_Object *key, void (*f)(Scheme_Env *));
 void scheme_require_from_original_env(Scheme_Env *env, int syntax_only);
 
 void scheme_add_global(const char *name, Scheme_Object *val, Scheme_Env *env);
-void scheme_add_global_keyword(const char *name, Scheme_Object *v, Scheme_Env *env);
-void scheme_add_global_constant(const char *name, Scheme_Object *v, Scheme_Env *env);
-void scheme_remove_global(const char *name, Scheme_Env *env);
-
 void scheme_add_global_symbol(Scheme_Object *name, Scheme_Object *val, 
 			      Scheme_Env *env);
-void scheme_remove_global_symbol(Scheme_Object *name, Scheme_Env *env);
-void scheme_add_global_constant_symbol(Scheme_Object *name, Scheme_Object *v, Scheme_Env *env);
 
 Scheme_Object *scheme_make_envunbox(Scheme_Object *value);
 

@@ -63,6 +63,8 @@ static char *init_buf(long *len, long *blen);
 static char *prepared_buf;
 static long prepared_buf_len;
 
+static Scheme_Object *syntax_error_module;
+
 static Scheme_Object *kernel_symbol;
 
 typedef struct {
@@ -456,6 +458,8 @@ void scheme_init_error(Scheme_Env *env)
   kernel_symbol = scheme_intern_symbol("#%kernel");
 
   scheme_init_error_config();
+
+  REGISTER_SO(syntax_error_module);
 }
 
 void scheme_init_error_config(void)
@@ -1038,6 +1042,19 @@ void scheme_wrong_syntax(const char *where,
   long len, slen, vlen, dvlen, blen, plen;
   char *s, *buffer;
   char *v, *dv, *p;
+  Scheme_Object *mod, *who;
+
+  /* back-door argument: */
+  if (syntax_error_module) {
+    mod = syntax_error_module;
+    syntax_error_module = NULL;
+  } else
+    mod = kernel_symbol;
+
+  if (where)
+    who = scheme_intern_symbol(where);
+  else
+    who = scheme_false;
 
   if (!detail) {
     s = "bad syntax";
@@ -1065,6 +1082,32 @@ void scheme_wrong_syntax(const char *where,
     if (SCHEME_STXP(form)) {
       p = make_srcloc_string(form, &plen);
       pform = scheme_syntax_to_datum(form, 0, NULL);
+
+      /* Try to extract syntax name from syntax, if needed */
+      if (SCHEME_FALSEP(who) 
+	  && (SCHEME_SYMBOLP(SCHEME_STX_VAL(form))
+	      || SCHEME_STX_PAIRP(form))) {
+	Scheme_Object *first;
+	if (SCHEME_STX_PAIRP(form))
+	  first = SCHEME_STX_CAR(form);
+	else
+	  first = form;
+	if (SCHEME_SYMBOLP(SCHEME_STX_VAL(first))) {
+	  /* Get module and name at source: */
+	  int phase = 0;
+ 	  if (scheme_current_thread->current_local_env)
+	    phase = scheme_current_thread->current_local_env->genv->phase;
+	  mod = scheme_stx_module_name(&first, phase);
+	  if (mod && (SAME_TYPE(SCHEME_TYPE(mod), scheme_module_index_type)
+		      || SCHEME_SYMBOLP(mod))) {
+	    mod = scheme_module_resolve(mod);
+	    who = first;
+	  } else {
+	    mod = scheme_false;
+	    who = SCHEME_STX_VAL(first);
+	  }
+	}
+      }
     } else {
       pform = form;
       if (!detail_form)
@@ -1091,10 +1134,17 @@ void scheme_wrong_syntax(const char *where,
     }
 
     /* don't use error_write_to_string_w_max since this is code */
-    dv = scheme_write_to_string_w_max(detail_form, &dvlen, len);
+    dv = scheme_write_to_string_w_max(pform, &dvlen, len);
   } else {
     dv = NULL;
     dvlen = 0;
+  }
+
+  if (!where) {
+    if (SCHEME_FALSEP(who))
+      where = "?";
+    else
+      where = scheme_symbol_val(who);
   }
 
   if (v) {
@@ -1111,7 +1161,7 @@ void scheme_wrong_syntax(const char *where,
   } else
     blen = scheme_sprintf(buffer, blen, "%s: %t", where, s, slen);
   
-  scheme_raise_exn(MZEXN_SYNTAX, form, scheme_intern_symbol(where), kernel_symbol, 
+  scheme_raise_exn(MZEXN_SYNTAX, form, who, mod, 
 		   "%t", buffer, blen);
 }
 
@@ -1384,12 +1434,23 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *raise_syntax_error(int argc, Scheme_Object *argv[])
 {
-  if (!SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("raise-syntax-error", "symbol", 0, argc, argv);
+  const char *who;
+
+  if (!SCHEME_FALSEP(argv[0]) && !SCHEME_STX_SYMBOLP(argv[0]))
+    scheme_wrong_type("raise-syntax-error", "symbol, identifier syntax, or #f", 0, argc, argv);
   if (!SCHEME_STRINGP(argv[1]))
     scheme_wrong_type("raise-syntax-error", "string", 1, argc, argv);
 
-  scheme_wrong_syntax(scheme_symbol_val(argv[0]), 
+  if (SCHEME_SYMBOLP(argv[0])) {
+    who = scheme_symbol_val(argv[0]);
+    syntax_error_module = scheme_false;
+  } else if (SCHEME_STXP(argv[0])) {
+    who = scheme_symbol_val(SCHEME_STX_VAL(argv[0]));
+    syntax_error_module = scheme_stx_source_module(argv[0], 1);
+  } else
+    who = NULL;
+
+  scheme_wrong_syntax(who, 
 		      (argc > 3) ? argv[3] : NULL,
 		      (argc > 2) ? argv[2] : NULL,
 		      "%T", argv[1]);

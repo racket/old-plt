@@ -235,12 +235,7 @@ EXPORTS
  scheme_add_namespace_option
  scheme_require_from_original_env
  scheme_add_global
- scheme_add_global_keyword
- scheme_add_global_constant
- scheme_remove_global
  scheme_add_global_symbol
- scheme_remove_global_symbol
- scheme_add_global_constant_symbol
  scheme_make_envunbox
  scheme_lookup_global
  scheme_global_bucket

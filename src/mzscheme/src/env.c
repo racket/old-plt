@@ -686,32 +686,6 @@ scheme_add_global_keyword(const char *name, Scheme_Object *obj,
   scheme_do_add_global_symbol(env, scheme_intern_symbol(name), obj, 0, 0);
 }
 
-void
-scheme_remove_global_symbol(Scheme_Object *sym, Scheme_Env *env)
-{
-  Scheme_Bucket *b;
-  Scheme_Bucket_Table *toplevel;
-
-  toplevel = env->toplevel;
-
-  b = scheme_bucket_from_table(toplevel, (char *)sym);
-
-  if (!b)
-    return;
-
-  b->val = NULL;
-}
-
-void
-scheme_remove_global(const char *name, Scheme_Env *env)
-{
-  Scheme_Object *sym;
-
-  sym = scheme_intern_symbol(name);
-
-  scheme_remove_global_symbol(sym, env);
-}
-
 Scheme_Object **scheme_make_builtin_references_table(void)
 {
   Scheme_Bucket_Table *ht;

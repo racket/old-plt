@@ -32,17 +32,17 @@
 	      (loop (stx-cdr stx) (cdr v))]
 	     [(stx-null? stx) null]
 	     [(vector? (syntax-e stx))
-	      (map
+	      (for-each
 	       loop
 	       (vector->list
 		(syntax-e stx))
 	       (vector->list v))]
 	     [(box? (syntax-e stx))
-	      (box (loop (unbox (syntax-e stx))
-			 (unbox v)))]
+	      (loop (unbox (syntax-e stx))
+		    (unbox v))]
 	     [else (void)]))))
       v))
-
+  
   (define (dm-subst ht v)
     (define cycle-ht (make-hash-table))
     (let loop ([v v])

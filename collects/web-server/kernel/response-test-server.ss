@@ -30,12 +30,38 @@
        [(and (not (null? dir-part))
              (string=? (car dir-part) "chunked"))
         (serve-chunked-file conn (apply build-path `(,(current-directory)
-                                                     ,@(cdr dir-part) ,f-part)))]
+                                                     ,@(cdr dir-part)
+                                                     ,f-part)))]
+       [(and (not (null? dir-part))
+             (string=? (car dir-part) "xexpr"))
+        (serve-xexpr conn)]
+       [(and (not (null? dir-part))
+             (string=? (car dir-part) "bytes"))
+        (serve-file-as-bytes conn (apply build-path `(,(current-directory)
+                                                        ,@(cdr dir-part)
+                                                        ,f-part)))]
+       [(and (not (null? dir-part))
+             (string=? (car dir-part) "full"))
+        (serve-file-as-full conn (apply build-path `(,(current-directory)
+                                                     ,@(cdr dir-part)
+                                                     ,f-part)))]
        [(string=? f-part "")
         (serve-file conn (apply build-path `(,(current-directory) ,@dir-part
                                              "index.html")))]
        [else
-        (serve-file conn (apply build-path `(,(current-directory) ,@dir-part ,f-part)))])))
+        (serve-file conn (apply build-path `(,(current-directory) ,@dir-part
+        ,f-part)))])))
+
+  ;; serve-xexpr: connection -> void
+  ;; serve up an x-expression
+  (define (serve-xexpr conn)
+    (output-response
+     conn
+     `(html
+       (head (title "xexpr Page"))
+       (body
+        (h1 "xexpr Page")
+        (p "This is my xexpr page.")))))
 
   ;; serve-file: connection path -> void
   ;; serve the given file if it exists
@@ -45,13 +71,41 @@
       (output-file conn path 'get (get-mime-type path))]
      [else (do-404-error conn 'get)]))
 
+  ;; serve-file-as-bytes: connection path -> void
+  ;; bundle the file contents as a (listof string)-response and serve away
+  (define (serve-file-as-bytes conn file-path)
+    (output-response
+     conn
+     `(,(get-mime-type file-path) ,@(get-file-strings file-path))))
+
+  ;; serve-file-as-full: connection path -> void
+  ;; bundle the file contents as a response/full and serve away
+  (define (serve-file-as-full conn file-path)
+    (output-response
+     conn
+     (make-response/full
+      200 "Okay" '()
+      (file-or-directory-modify-seconds file-path)
+      (get-mime-type file-path)
+      (get-file-strings file-path))))
+
+  ;; get-file-strings: string -> (listof bytes)
+  (define (get-file-strings file-path)
+    (call-with-input-file file-path
+      (lambda (i-port)
+        (let loop ([next (read-bytes 50 i-port)])
+          (if (eof-object? next)
+              '()
+              (cons next (loop (read-bytes 50 i-port))))))))
+
+
   ;; serve-chunked-file: connection path -> void
   ;; serve the given file using chunked transfer coding
   (define (serve-chunked-file conn file-path)
     (myprint "serve-chunked-file~n")
     (cond
      [(file-exists? file-path)
-      (output-response/incremental
+      (output-response
        conn
        (make-response/incremental
         200 "Okay" '()
@@ -65,7 +119,6 @@
   ;; and feed it to a procedure
   (define (chunked-file-generator file-path)
     (lambda (blow-chunks)
-      (myprint "inside chunked-file-generator~n")
       (call-with-input-file file-path
         (lambda (i-port)
           (let ([read-next
@@ -77,7 +130,6 @@
                           (read-bytes 50 i-port))))])
             (let loop ([next (read-next)])
               (unless (null? next)
-                (myprint "about to call blow-chunks~n")
                 (apply blow-chunks next)
                 (loop (read-next)))))))))
 

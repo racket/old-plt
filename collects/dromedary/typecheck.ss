@@ -1191,12 +1191,16 @@
 			    [result (hash-table-get built-in-and-user-funcs rname (lambda () #f))])
 		       (if result
 			   (car result)
-			   (raise-error #f
-					(loc)
-					(format "Unbound value: ~a" rname)
-					(string->symbol rname)
-					src)
-			   ))]
+			   (with-handlers
+			    ([exn:syntax? (lambda (exn)
+					    (raise-error #f
+							 (loc)
+							 (format "Unbound value: ~a" rname)
+							 (string->symbol rname)
+							 src)
+					    )])
+			    (lookup-ident (ast:make-ldot "Pervasives" name)))
+					    ))]
 		    
 		    [($ ast:ldot longident name)
 

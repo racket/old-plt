@@ -1,7 +1,6 @@
 (module basic mzscheme
 	(provide (all-defined))
 
-	(define-struct <tuple> (list) (make-inspector))
 	(define-struct <unit> () (make-inspector))
 
 

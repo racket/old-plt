@@ -276,7 +276,7 @@
 	       (let ([testc (compile-ml test context)]
 		     [ifexpc (compile-ml ifexp context)]
 		     [elseexpc (if (null? elseexp) null (compile-ml elseexp context))])
-		 #`(#,(create-syntax #f `if (build-src ifsrc)) #,testc ((#,(create-syntax #f `lambda (build-src thensrc)) () #,ifexpc)) #,(if (not (null? elseexpc)) #`((#,(create-syntax #f `lambda (build-src elsesrc)) () #,elseexpc)) (make-<unit> #f))))]
+		 #`(#,(create-syntax #f `if (build-src ifsrc)) #,testc ((#,(create-syntax #f `lambda (build-src thensrc)) () #,ifexpc)) #,(if (not (null? elseexpc)) #`((#,(create-syntax #f `lambda (build-src elsesrc)) () #,elseexpc)) (make-<unit>))))]
 	      [($ ast:pexp_construct name expr bool)
 	       (let ([constr (hash-table-get <constructors> (unlongident name) (lambda () #f))])
 		 (if constr
@@ -337,7 +337,7 @@
 			   (begin
 			     #,bodyc
 			     (loop))
-			   (make-<unit> #f))))]
+			   (make-<unit>))))]
 
 	      [($ ast:pexp_for var init test up body)
 	       (pretty-print (format "for testc: ~a" test))
@@ -352,7 +352,7 @@
 			   (loop #,(if up 
 				       #`(+ #,rvar 1)
 				       #`(- #,rvar 1))))
-			 (make-<unit> #f))))]
+			 (make-<unit>))))]
 	      [($ ast:pexp_sequence firstexpr restexpr)
 	       #`(begin #,(compile-ml firstexpr context)
 			#,(compile-ml restexpr context))]
@@ -376,7 +376,7 @@
        (cond 
 	[(null? args) fun]
 ;	[(null? (cdr-args))
-;	 #`(#,(compile-apply fun (make-<unit> #f)) #,(car args))]
+;	 #`(#,(compile-apply fun (make-<unit>)) #,(car args))]
 	[else
 	 #`(#,(compile-apply fun (cdr args)) #,(car args))]))
 
@@ -562,7 +562,10 @@
 	       (let ([result (hash-table-get built-in-and-user-funcs (syntax-object->datum name) (lambda () #f))])
 		 (if result
 		     (cdr result)
-		     #f))]
+		     (let ([sresult (lookup-ident (ast:make-ldot "Pervasives" name))])
+		       (if sresult
+			   (cdr sresult)
+			   #f))))]
 	      [($ ast:ldot longident name)
 	       (match longident
 		      [($ ast:lident library)
@@ -605,7 +608,7 @@
 	   #f
 	   (or (equal? fun (car primlist)) (ml-primitive? fun (cdr primlist)))))
 
-     (define ml-prims (list + - * / equal? = <> <gt> <ge> <le> <or> <and> expt != not append string-append set-box! unbox)) 
+
 
      (define (empty-context) 
        '(("+" operator +)

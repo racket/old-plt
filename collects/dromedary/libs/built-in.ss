@@ -21,7 +21,11 @@
 	  (lambda (b)
 	    (not (equal? a b))))
 
-	
+	(define (boolean-to-number a)
+	  (if a
+	      1
+	      0))
+
 	(define (<lt> a)
 	  (lambda (b)
 	    (cond
@@ -32,7 +36,7 @@
 	     [(string? a)
 	      (string<? a b)]
 	     [else
-	      (pretty-print "Uncaught exception: Invalid_argument")])))
+	      "Uncaught exception: Invalid_argument"])))
 
 	(define (<le> a)
 	  (lambda (b)
@@ -44,7 +48,7 @@
 	     [(string? a)
 	      (string<=? a b)]
 	     [else
-	      (pretty-print "Uncaught exception: Invalid_argument")])))
+	      "Uncaught exception: Invalid_argument"])))
 
 	(define (<gt> a)
 	  (lambda (b)
@@ -56,7 +60,7 @@
 	     [(string? a)
 	      (string>? a b)]
 	     [else
-	      (pretty-print "Uncaught exception: Invalid_argument")])))
+	      "Uncaught exception: Invalid_argument"])))
 
 	(define (<ge> a)
 	  (lambda (b)
@@ -68,7 +72,7 @@
 	     [(string? a)
 	      (string>=? a b)]
 	     [else
-	      (pretty-print "Uncaught exception: Invalid_argument")])))
+	      "Uncaught exception: Invalid_argument"])))
 
 	(define (<compare> a)
 	  (lambda (b)
@@ -97,7 +101,7 @@
 	  (lambda (b)
 	    (eq? a b)))
 
-	(define (!= a)
+	(define (<!=> a)
 	  (lambda (b)
 	    (not (eq? a b))))
 
@@ -150,7 +154,7 @@
 
 	(define (<lor> a)
 	  (lambda (b)
-	    (bitwise-or a b)))
+	    (bitwise-ior a b)))
 
 	(define (<lxor> a)
 	  (lambda (b)
@@ -205,7 +209,7 @@
 
 	;; tanh (tanh)
 
-	;; ceil (ceiling)
+	;; ceiling (ceiling)
 	
 	;; floor (floor)
 
@@ -226,7 +230,7 @@
 	(define (<modf> a)
 	  (if (> a 0)
 	      (make-<tuple> (- a (floor a)) (floor a))
-	      (make-<tuple> (- a (ceil a)) (ceil a))))
+	      (make-<tuple> (- a (ceiling a)) (ceiling a))))
 
 	;; float (truncate)
 
@@ -283,7 +287,7 @@
 	(define (<fst> a)
 	  (car (<tuple>-list a)))
 
-	(define (<snd a)
+	(define (<snd> a)
 	  (cadr (<tuple>-list a)))
 
 	;;18.1.12 List operations
@@ -381,7 +385,7 @@
 	      (file-position port k)
 	      (make-<unit>))))
 
-	(define (<pos_out port)
+	(define (<pos_out> port)
 	  (file-position port))
 
 	
@@ -401,7 +405,7 @@
 	(define (<input_line> p)
 	  (read-line p))
 
-	(define (<input_value p)
+	(define (<input_value> p)
 	  (read p))
 	
 	(define (<seek_in> p)
@@ -458,7 +462,7 @@
 
 	(hash-table-put! <pervasive-funcs> "==" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "bool")) <==> ))
 
-	(hash-table-put! <pervasive-funcs> "!=" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "bool") <!=>))
+	(hash-table-put! <pervasive-funcs> "!=" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "bool")) <!=>))
 
 	(hash-table-put! <pervasive-funcs> "not" (cons (make-arrow (list "bool") "bool")  not))
 
@@ -540,16 +544,16 @@
 	(hash-table-put! <pervasive-funcs> "sinh" (cons (make-arrow (list "float") "float") sinh))
 
 
-	(hash-table-put! <pervasive-funcs> "tanh" (cons (make-arrow (list "float") "float") tanh))
+;	(hash-table-put! <pervasive-funcs> "tanh" (cons (make-arrow (list "float") "float") tanh))
 
 
-	(hash-table-put! <pervasive-funcs> "ceil" (cons (make-arrow (list "float") "float") ceil))
+	(hash-table-put! <pervasive-funcs> "ceil" (cons (make-arrow (list "float") "float") ceiling))
 
 
 	(hash-table-put! <pervasive-funcs> "floor" (cons (make-arrow (list "float") "float") floor))
 
 
-	(hash-table-put! <pervasive-funcs> "abs_float" (cons (make-arrow (list "float") "float") abs_float))
+	(hash-table-put! <pervasive-funcs> "abs_float" (cons (make-arrow (list "float") "float") abs))
 
 	(hash-table-put! <pervasive-funcs> "mod_float" (cons (make-arrow (list "float") (make-arrow (list "float") "float" )) <mod_float>))
 
@@ -588,7 +592,7 @@
 
 	(hash-table-put! <pervasive-funcs> "fst" (cons (make-arrow (list (make-<tuple> (list (make-tvar "'a") (make-tvar "'b")))) (make-tvar "'a")) <fst>))
 
-	(hash-table-put! <pervasive-funcs> "snd" (cons (make-arrow (list (make-<tuple> (list (makt-tvar "'a") (make-tvar "'b")))) (make-tvar "'b")) <snd>))
+	(hash-table-put! <pervasive-funcs> "snd" (cons (make-arrow (list (make-<tuple> (list (make-tvar "'a") (make-tvar "'b")))) (make-tvar "'b")) <snd>))
 
 	(hash-table-put! <pervasive-funcs> "@" (cons (make-arrow (list (make-tlist (make-tvar "'a"))) (make-arrow (list (make-tlist (make-tvar "'a'"))) (make-tlist (make-tvar "'a")))) <append>))
 
@@ -620,7 +624,7 @@
 
 	(hash-table-put! <pervasive-funcs> "read_int" (cons (make-arrow (list "unit") "int") <read_int>))
 
-	(hash-table-put! <pervasive-funcs> "read_float" (cons (make-arrow (list "unit") "float") ))
+	(hash-table-put! <pervasive-funcs> "read_float" (cons (make-arrow (list "unit") "float") <read_float>))
 
 	(hash-table-put! <pervasive-funcs> "open_out" (cons (make-arrow (list "string") "out_channel") <open_out>))
 
@@ -645,10 +649,31 @@
 	(hash-table-put! <pervasive-funcs> "open_in" (cons (make-arrow (list "string") "in_channel") <open_in>))
 
 	(hash-table-put! <pervasive-funcs> "open_in_bin" (cons (make-arrow (list "string") "unit") open-input-file))
+	
+	(hash-table-put! <pervasive-funcs> "input_char" (cons (make-arrow (list "in_channel") "char") <input_char>))
+	
+	(hash-table-put! <pervasive-funcs> "input_line" (cons (make-arrow (list "in_channel") "string") <input_line>))
 
-	(hash-table-put! <pervasive-funcs> "" (cons (make-arrow (list ) ) ))
-	(define (<cons> tuple)
-	  (cons (car (<tuple>-list tuple)) (cadr (<tuple>-list tuple))))
+	(hash-table-put! <pervasive-funcs> "input_value" (cons (make-arrow (list "in_channel") (make-tvar "'a")) <input_value>))
+
+	(hash-table-put! <pervasive-funcs> "seek_in" (cons (make-arrow (list "in_channel") (make-arrow (list "int") "unit")) <seek_in>))
+
+	(hash-table-put! <pervasive-funcs> "pos_in" (cons (make-arrow (list "in_channel") "int") <pos_in>))
+
+	(hash-table-put! <pervasive-funcs> "close_in" (cons (make-arrow (list "in_channel") "unit") <close_in>))
+
+	(hash-table-put! <pervasive-funcs> "ref" (cons (make-arrow (list (make-tvar "'a")) (make-ref (make-tvar "'a"))) box))
+
+	(hash-table-put! <pervasive-funcs> "!" (cons (make-arrow (list (make-ref (make-tvar "'a"))) (make-tvar "'a")) unbox))
+
+	(hash-table-put! <pervasive-funcs> ":=" (cons (make-arrow (list (make-ref (make-tvar "'a"))) (make-arrow (list (make-tvar "'a")) "unit")) <:=>))
+
+	(hash-table-put! <pervasive-funcs> "incr" (cons (make-arrow (list (make-ref "int")) "unit") <incr>))
+
+	(hash-table-put! <pervasive-funcs> "decr" (cons (make-arrow (list (make-ref "int")) "unit") <decr>))
+
+
+)
 
 
 

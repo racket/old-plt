@@ -137,7 +137,7 @@ wxMouseEvent_ext::wxMouseEvent_ext(int et, int ld, int mdd, int rd, int xv, int 
 
 @CLASSBASE wxScrollEvent=wxScrollEvent_ext "scroll-event":"event" / nofnl
 
-@CREATOR (SYM[scrollMoveType]=wxEVENT_TYPE_SCROLL_THUMBTRACK, SYM[orientation]=wxVERTICAL, int=0, ExactLong=0)
+@CREATOR (SYM[scrollMoveType]=wxEVENT_TYPE_SCROLL_THUMBTRACK, SYM[orientation]=wxVERTICAL, rint[0|10000]=0, ExactLong=0)
 @ARGNAMES [event-type thumb] [direction vertical] [position 0] [time-stamp 0]
 
 @IVAR "event-type" : SYM[scrollMoveType] moveType

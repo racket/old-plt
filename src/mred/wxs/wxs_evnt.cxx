@@ -961,7 +961,7 @@ static Scheme_Object *os_wxScrollEvent_ConstructScheme(int n,  Scheme_Object *p[
   } else
     x1 = wxVERTICAL;
   if (n > (POFFSET+2)) {
-    x2 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+2], "initialization in scroll-event%"));
+    x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 0, 10000, "initialization in scroll-event%"));
   } else
     x2 = 0;
   if (n > (POFFSET+3)) {

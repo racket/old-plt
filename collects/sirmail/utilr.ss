@@ -5,6 +5,7 @@
 	   (lib "mred-sig.ss" "mred")
 	   (lib "qp-sig.ss" "net")
 	   (lib "base64-sig.ss" "net")
+	   (prefix unihead: (lib "unihead.ss" "net"))
 	   (lib "etc.ss")
 	   (lib "string.ss"))
 
@@ -227,74 +228,6 @@
       ;;  Decoding `from' names                                  ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      (define re:iso #rx#"[iI][sS][oO]-8859-1")
-      (define re:utf-8 #rx#"[uU][tT][fF]-8")
-
-      (define re:encoded #rx#"^(.*?)=[?]([^?]+)[?]([qQbB])[?](.*?)[?]=(.*)$")
-
-      (define (latin-1->windows-1252 encoding)
-	(if (regexp-match re:iso encoding)
-	    ;; Treat Latin-1 as Windows-1252, because
-	    ;; some mailers are broken. The only difference
-	    ;; is control chaarcters (which are technically
-	    ;; not mapped in Latin-1, anyway).
-	    (if (bytes? encoding)
-		#"WINDOWS-1252"
-		"WINDOWS-1252")
-	    encoding))
-
-      (define (parse-encoded s)
-	(and s
-	     (let ([m (regexp-match re:encoded (string->bytes/latin-1 s (char->integer #\?)))])
-	       (if m
-		   (let ([s ((if (member (cadddr m) '(#"q" #"Q"))
-				 ;; quoted-printable, with special _ handling
-				 (lambda (x)
-				   (qp-decode (regexp-replace* #rx#"_" x #" ")))
-				 ;; base64:
-				 base64-decode)
-			     (cadddr (cdr m)))]
-			 [encoding (caddr m)])
-		     (string-append
-		      (parse-encoded (bytes->string/latin-1 (cadr m)))
-		      (let ([encoding (latin-1->windows-1252 encoding)])
-			(cond
-			 [(regexp-match re:utf-8 encoding) (bytes->string/utf-8 s #\?)]
-			 [else (let ([c (bytes-open-converter (bytes->string/latin-1 encoding) "UTF-8")])
-				 (if c
-				     (let-values ([(r got status) (bytes-convert c s)])
-				       (bytes-close-converter c)
-				       (if (eq? status 'complete)
-					   (bytes->string/utf-8 r #\?)
-					   (bytes->string/latin-1 s)))
-				     (bytes->string/latin-1 s)))]))
-		      (let ([rest (cadddr (cddr m))])
-			(let ([rest
-			       ;; A CR-LF-space-encoding sequence means that we should
-			       ;; drop the space.
-			       (if (and (> (bytes-length rest) 4)
-					(= 13 (bytes-ref rest 0))
-					(= 10 (bytes-ref rest 1))
-					(= 32 (bytes-ref rest 2))
-					(let ([m (regexp-match-positions re:encoded rest)])
-					  (and m (= (caaddr m) 5))))
-				   (subbytes rest 3)
-				   rest)])
-			  (parse-encoded (bytes->string/latin-1 rest))))))
-		   s))))
-
-      ;; Bug: encode-for-header should make sure that each line is short enough
-      (define (encode-for-header s)
-	(let ([m (regexp-match #rx"^(.*?)([^\u0-\u7F]+)(.*)$" s)])
-	  (if m
-	      (string-append
-	       (protect-equal-question (cadr m))
-	       (format "=?UTF-8?b?~a=?="
-		       (regexp-replace* #rx#"[\r\n]+$"
-					(base64-encode (string->bytes/utf-8 (caddr m)))
-					#""))
-	       (encode-for-header (cadddr m)))
-	      (protect-equal-question s))))
-      
-      (define (protect-equal-question s)
-	(regexp-replace* #rx"[=][?]" s "=?UTF-8?PT8=?=")))))
+      (define latin-1->windows-1252 unihead:latin-1->windows-1252)
+      (define parse-encoded unihead:decode-for-header)
+      (define encode-for-header unihead:encode-for-header))))

@@ -1135,6 +1135,9 @@ PROCEDURES -----------------------------------------------------------
   CRLF, but a multi-line value (perhaps created with
   `data-lines->data') may contain seperator CRLFs.
 
+  The inserted text should be ASCII, or at least Latin-1. To encode
+  address and subject fields, use `encode-for-header' from "unihead.ss".
+
 > (replace-field field-string value-string header) -> header
 
   Replaces or inserts the given field. If value-string is #f, then
@@ -1195,6 +1198,46 @@ PROCEDURES -----------------------------------------------------------
 
   Creates a header field value from a list of addresses. The addresses
   are comma-separated, and possibly broken into multiple lines.
+
+==========================================================================
+_Unicode in mail headers_
+==========================================================================
+
+To load directly: (require (lib "unihead.ss" "net"))
+Module files: _unihead.ss_ - provides the procedures documented below,
+                             uses "base64-encode.ss" and "qp.ss"
+
+ABSTRACT -------------------------------------------------------------
+
+Implements utlities for RFC 1522 header-field encoding and decoding.
+
+PROCEDURES -----------------------------------------------------------
+
+> (decode-for-header string) -> string
+
+  Decodes the given header-field content. The field may span multiple
+  lines, and line breaks are preserved, except for those that decoding
+  is supposed to remove.
+
+  When a header claims to be encoded with ISO-8859-1, and when
+  `bytes-open-converter' can convert from WINDOWS-1252 to UTF-8, then
+  the header is actually decoded as WINDOWS-1252.
+
+> (encode-for-header string) -> string
+
+  Encodes the given header-field content. The field may span multiple
+  lines, and in principle, the result can contain a different number
+  of lines to avoid exceeding the line-length limit imposed by RFC
+  1522. However, this procedure is currently buggy, in that it does
+  not implement line limits.
+
+> (latin-1->windows-1252 string-or-byte-string) -> string-or-byte-string
+
+  Recognizes if the input is "ISO-8859-1" (case-insensitively), the
+  result is "WINDOWS-152", otherwise the result is the argument.
+
+  Many documents that claim to be encoded using ISO-8859-1 are actually
+  encoded using WINDOWS-1252.
 
 ==========================================================================
 _DNS_, _domain name service_

@@ -466,6 +466,7 @@
                    get-cursor
                    add-child
                    horiz-margin
+                   reflow-container
                    get-children
                    change-children
                    container-size
@@ -490,6 +491,7 @@
                    spacing
                    add-child
                    horiz-margin
+                   reflow-container
                    get-children
                    change-children
                    container-size
@@ -618,11 +620,16 @@
                    on-char
                    clear
                    delete
+                   do-edit-operation
+                   get-style-list
+                   set-style-list
                    is-modified?
                    get-filename
                    insert-image
                    get-focus-snip
                    set-position
+                   scroll-to-position
+                   find-position
                    position-line
                    position-location
                    line-location
@@ -705,9 +712,6 @@
                    global-to-local
                    local-to-global
                    get-view-size
-                   do-edit-operation
-                   get-style-list
-                   set-style-list
                    set-position-bias-scroll
                    get-visible-position-range
                    get-visible-line-range
@@ -728,8 +732,6 @@
                    get-start-position
                    get-end-position
                    move-position
-                   scroll-to-position
-                   find-position
                    get-canvas
                    add-canvas
                    auto-wrap
@@ -759,9 +761,9 @@
                    set-admin
                    on-event
                    on-char
+                   do-edit-operation
                    adjust-cursor
                    size-cache-invalid
-                   do-edit-operation
                    set-snipclass
                    get-snipclass
                    release-from-owner
@@ -785,22 +787,21 @@
                    clear
                    basic-style
                    convert
+                   find-named-style
+                   new-named-style
+                   replace-named-style
                    index-to-style
                    style-to-index
                    notify-on-change
                    forget-notification
                    find-or-create-style
-                   find-or-create-join-style
-                   find-named-style
-                   new-named-style
-                   replace-named-style))
+                   find-or-create-join-style))
                (define style-delta<%>
                  (interface
                    ()
                    equal?
                    get-family
                    get-face
-                   get-transparent-text-backing-on
                    copy
                    set-delta-background
                    set-delta-foreground
@@ -835,7 +836,8 @@
                    set-delta-face
                    set-transparent-text-backing-off
                    get-transparent-text-backing-off
-                   set-transparent-text-backing-on))
+                   set-transparent-text-backing-on
+                   get-transparent-text-backing-on))
                (define string-snip<%>
                  (interface
                    ()
@@ -857,9 +859,9 @@
                    set-admin
                    on-event
                    on-char
+                   do-edit-operation
                    adjust-cursor
                    size-cache-invalid
-                   do-edit-operation
                    set-snipclass
                    get-snipclass
                    release-from-owner
@@ -920,9 +922,9 @@
                    set-admin
                    on-event
                    on-char
+                   do-edit-operation
                    adjust-cursor
                    size-cache-invalid
-                   do-edit-operation
                    set-snipclass
                    get-snipclass
                    release-from-owner
@@ -980,7 +982,7 @@
                    client->screen
                    screen->client))
                (define separator-menu-item<%>
-                 (interface () get-parent delete restore is-deleted?))
+                 (interface () get-parent is-deleted? delete restore))
                (define scroll-event<%>
                  (interface
                    ()
@@ -1030,6 +1032,7 @@
                    get-client-size
                    on-focus
                    focus
+                   get-number
                    is-enabled?
                    get-top-level-window
                    get-item-plain-label
@@ -1045,7 +1048,6 @@
                    on-move
                    has-focus?
                    get-cursor
-                   get-number
                    horiz-margin
                    on-subwindow-event
                    client->screen
@@ -1083,7 +1085,6 @@
                    get-text-extent
                    get-size
                    draw-rounded-rectangle
-                   end-drawing
                    draw-line
                    draw-point
                    draw-spline
@@ -1105,7 +1106,6 @@
                    end-doc
                    end-page
                    clear
-                   begin-drawing
                    draw-rectangle
                    draw-ellipse
                    draw-polygon
@@ -1130,7 +1130,6 @@
                    get-text-extent
                    get-size
                    draw-rounded-rectangle
-                   end-drawing
                    draw-line
                    draw-point
                    draw-spline
@@ -1152,7 +1151,6 @@
                    end-doc
                    end-page
                    clear
-                   begin-drawing
                    draw-rectangle
                    draw-ellipse
                    draw-polygon
@@ -1267,6 +1265,9 @@
                    on-char
                    clear
                    delete
+                   do-edit-operation
+                   get-style-list
+                   set-style-list
                    is-modified?
                    get-filename
                    insert-image
@@ -1320,9 +1321,6 @@
                    global-to-local
                    local-to-global
                    get-view-size
-                   do-edit-operation
-                   get-style-list
-                   set-style-list
                    find-next-selected-snip
                    interactive-adjust-mouse
                    interactive-adjust-move
@@ -1407,6 +1405,7 @@
                    get-cursor
                    add-child
                    horiz-margin
+                   reflow-container
                    get-children
                    change-children
                    container-size
@@ -1431,6 +1430,7 @@
                    spacing
                    add-child
                    horiz-margin
+                   reflow-container
                    get-children
                    change-children
                    container-size
@@ -1550,6 +1550,7 @@
                    is-selected?
                    focus
                    select
+                   get-number
                    is-enabled?
                    get-top-level-window
                    get-first-visible-item
@@ -1564,7 +1565,6 @@
                    on-move
                    has-focus?
                    get-cursor
-                   get-number
                    horiz-margin
                    on-subwindow-event
                    client->screen
@@ -1630,10 +1630,10 @@
                    on-event
                    on-char
                    set-bitmap
+                   do-edit-operation
                    get-filename
                    adjust-cursor
                    size-cache-invalid
-                   do-edit-operation
                    get-filetype
                    set-snipclass
                    get-snipclass
@@ -1697,6 +1697,7 @@
                    get-cursor
                    add-child
                    horiz-margin
+                   reflow-container
                    get-children
                    change-children
                    container-size
@@ -1721,6 +1722,7 @@
                    spacing
                    add-child
                    horiz-margin
+                   reflow-container
                    get-children
                    change-children
                    container-size
@@ -1813,6 +1815,9 @@
                    get-top-level-window
                    get-edit-target-window
                    get-edit-target-object
+                   has-status-line?
+                   is-iconized?
+                   on-traverse-char
                    on-subwindow-char
                    get-plain-label
                    accept-drop-files
@@ -1829,6 +1834,7 @@
                    can-exit?
                    on-exit
                    add-child
+                   reflow-container
                    get-children
                    change-children
                    container-size
@@ -1840,8 +1846,7 @@
                    get-eventspace
                    get-focus-window
                    get-focus-object
-                   has-status-line?
-                   is-iconized?))
+                   on-menu-char))
                (define font-list<%> (interface () find-or-create-font))
                (define font<%>
                  (interface
@@ -1901,6 +1906,7 @@
                    get-editor
                    on-event
                    on-char
+                   do-edit-operation
                    adjust-cursor
                    size-cache-invalid
                    get-max-width
@@ -1911,7 +1917,6 @@
                    get-min-height
                    set-max-height
                    set-min-height
-                   do-edit-operation
                    set-snipclass
                    get-snipclass
                    release-from-owner
@@ -2050,6 +2055,7 @@
                    get-top-level-window
                    get-edit-target-window
                    get-edit-target-object
+                   on-traverse-char
                    on-subwindow-char
                    get-plain-label
                    accept-drop-files
@@ -2066,6 +2072,7 @@
                    can-exit?
                    on-exit
                    add-child
+                   reflow-container
                    get-children
                    change-children
                    container-size
@@ -2119,6 +2126,7 @@
                    on-focus
                    clear
                    focus
+                   get-number
                    is-enabled?
                    get-top-level-window
                    on-subwindow-char
@@ -2132,7 +2140,6 @@
                    on-move
                    has-focus?
                    get-cursor
-                   get-number
                    horiz-margin
                    on-subwindow-event
                    client->screen
@@ -2140,23 +2147,23 @@
                (define checkable-menu-item<%>
                  (interface
                    ()
-                   go
-                   get-help-string
+                   command
                    get-label
                    set-label
                    enable
                    get-parent
+                   is-deleted?
                    check
                    delete
                    set-help-string
                    is-enabled?
+                   restore
                    get-x-shortcut-prefix
                    set-x-shortcut-prefix
                    get-plain-label
+                   get-help-string
                    set-shortcut
                    get-shortcut
-                   restore
-                   is-deleted?
                    is-checked?))
                (define check-box<%>
                  (interface
@@ -2259,7 +2266,6 @@
                    set-pixel
                    set-bitmap
                    get-bitmap
-                   end-drawing
                    draw-line
                    draw-point
                    draw-spline
@@ -2281,7 +2287,6 @@
                    end-doc
                    end-page
                    clear
-                   begin-drawing
                    draw-rectangle
                    draw-ellipse
                    draw-polygon

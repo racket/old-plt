@@ -221,10 +221,10 @@ categorized as "Miscellaneous."
 
 The _'doc.txt field_
 
-If present, the doc.txt field should be a list of strings corresponding
-to the name (without path) of the text documentatation file for your
-package. If this field contains the value '("doc.txt") and a file called
-"doc.txt" exists in your package's root directory, it will be used as 
+If present, the doc.txt field should be a string corresponding to the
+name (without path) of the text documentatation file for your
+package. If this field is the value "doc.txt" and a file called
+"doc.txt" exists in your package's root directory, it will be used as
 the online documentation visitors to the planet.plt-scheme.org website
 will be able to read.
 

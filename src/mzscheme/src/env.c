@@ -670,8 +670,6 @@ scheme_global_keyword_bucket(Scheme_Object *symbol, Scheme_Env *env)
   Scheme_Bucket *b;
     
   b = scheme_bucket_from_table(env->syntax, (char *)symbol);
-  if (!((Scheme_Bucket_With_Home *)b)->home)
-    ((Scheme_Bucket_With_Home *)b)->home = env; /* not env->syntax ! */
     
   return b;
 }

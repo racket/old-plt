@@ -1,4 +1,13 @@
 
+Version 205.9
+Changed define to support MIT-style curried-procedure forms
+Fixed a bug in the bytecode verifier that caused it to skip
+ significant parts of typical bytecode
+Added syntax-track-origin
+Added 'disappeared-binding and 'disappeared-use properties
+ and refined 'origin tracking for internal definitions
+ and spliced sequences
+
 Version 205.8
 Added vector-immutable
 

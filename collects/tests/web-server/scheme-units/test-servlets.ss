@@ -8,6 +8,7 @@
 (module test-servlets mzscheme
   (require (lib "contract.ss")
            (lib "test.ss" "schemeunit")
+           (lib "url.ss" "net")
            "assertions.ss"
            )
 
@@ -49,6 +50,8 @@
   (define test8-output (string-append (path->string
                                         (build-path web-root "servlets"))
                                       "abseed"))
+
+  (define add-output "<title>The Answer</title><p>6</p>")
 
   (define test-servlets
     (make-test-suite
@@ -138,6 +141,34 @@
 
       ;;; TODO
       ;;; - <form action="...?a=b;c=d" method="POST"> ... </form>
+
+      ;; A servlet with an implicit send/back.
+      (make-test-case
+        "Implicit send/back"
+        (let ((stop-server (start-server)))
+          (let* ((p1 (get-pure-port 
+                       (string->url
+                         (format "http://~a:~a/servlets/add.ss"
+                                 THE-IP THE-PORT))))
+                 (m1 (regexp-match #rx"action=\"([^\"]*)\"" p1))
+                 (p2 (post-pure-port
+                       (string->url
+                         (format "http://~a:~a~a" THE-IP THE-PORT (cadr m1)))
+                       #"number=1"
+                       null))
+                 (m2 (regexp-match #rx"action=\"([^\"]*)\"" p2))
+                 (p3 (sync/timeout
+                       5
+                       (post-pure-port
+                         (string->url
+                           (format "http://~a:~a~a" THE-IP THE-PORT (cadr m2)))
+                         #"number=2"
+                         null))))
+            (if p3
+              (begin0
+                (equal? (read-string 100 p3) add-output)
+                (stop-server))
+              (begin (stop-server) (fail))))))
 
       ))
 

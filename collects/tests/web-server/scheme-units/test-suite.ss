@@ -1,7 +1,9 @@
+#!/bin/sh
+#|
+exec mzscheme -r "$0" "$@"
+|#
 ;; Mike Burns, July 28th, 2004, netgeek@speakeasy.net
-;; Run with:
-;; mzscheme -mvf test-suite.ss
-;; From collects/tests/web-server/scheme-units
+;; Run from collects/tests/web-server/scheme-units
 (require (lib "text-ui.ss" "schemeunit")
          "test-authentication.ss"
          "test-serve-static-html.ss"

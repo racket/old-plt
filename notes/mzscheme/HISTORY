@@ -40,6 +40,8 @@ Added continuation field to exn:misc:user-break
 Windows: all network sockets are closed on exit
 Fixed (acos 0)
 Fixed (expt x y) where x is negative and y is non-integral
+Inside MzScheme: scheme_param_config's 2nd argument is
+ now a Scheme_Object*
 
 Version 100, August 9, 1999
  + indicates a change since 100alpha4

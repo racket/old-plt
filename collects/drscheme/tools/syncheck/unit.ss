@@ -511,8 +511,6 @@
        (mred:debug:if 'mrslatex
 		      "CS"
 		      "Check Syntax")))
-    
-    (printf "syncheck-bitmap: ~a~n" (send syncheck-bitmap ok?))
 
     (define new%
       (class (drscheme:parameters:current-frame%) args

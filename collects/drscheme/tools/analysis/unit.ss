@@ -35,7 +35,6 @@
 		   "icons"
 		   "mrspidey.bmp")
        "Analyze"))
-    (printf "spidey-bitmap: ~a~n" (send spidey-bitmap ok?))
 
     (define spidey-frame%
       (letrec ()

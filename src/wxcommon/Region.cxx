@@ -729,7 +729,10 @@ void wxRegion::Xor(wxRegion *r)
   if (!no_prgn) {
     wxPathRgn *pr;
     if (!r->prgn) abort();
-    pr = new wxDiffPathRgn(prgn, r->prgn);
+    if (!prgn)
+      pr = r->prgn;
+    else
+      pr = new wxDiffPathRgn(prgn, r->prgn);
     prgn = pr;
   }
 
@@ -976,6 +979,25 @@ void wxRegion::Install(long target)
     }
 # endif
 #endif
+  } else {
+    /* Empty region: */
+#ifdef WX_USE_CAIRO
+    cairo_new_path(CAIRO_DEV);
+    cairo_clip(CAIRO_DEV);
+#endif
+#ifdef wx_mac
+    CGContextBeginPath(cg);
+    CGContextClip(cg);
+#endif
+#ifdef wx_msw
+    {
+      GraphicsPath *gp;
+      Graphics *g = (Graphics *)target;
+      gp = wxGPathNew(FillModeAlternate);
+      wxGSetClip(g, gp, CombineModeReplace);
+      wxGPathRelease(gp);
+    }
+#endif
   }
 }
 
@@ -1022,7 +1044,10 @@ wxPathRgn::wxPathRgn(wxDC *dc)
 }
 
 wxPathRgn::~wxPathRgn()
-{
+{ 
+  /* If anything important is added here, change constructor chaining
+     to wxObject from FALSE to TRUE. Beware that wxPaths can share
+     wxPathRgns. */
 }
 
 long wxPathRgn::PrepareScale(long target, Bool oe)

@@ -770,6 +770,7 @@
           (send e begin-edit-sequence)
           (send i user-data (message-uid m))
           (send e set-line-spacing 0)
+          (send snip set-width (+ FROM-WIDTH SUBJECT-WIDTH UID-WIDTH))
 	  (send e insert snip)
           (unless (message-downloaded? m)
             (send e change-style unread-delta before (+ before 1)))

@@ -1365,7 +1365,7 @@ MK_SCH_TRIG(SCH_ASIN, asin)
 # ifdef SIN_COS_NEED_DEOPTIMIZE
 #  pragma optimize("g", off)
 #  define MK_SCH_TRIG(SCH_TRIG, c_trig) static double SCH_TRIG(double d) { return c_trig(d); }
-MK_SCH_TRIG(SCH_SIN, tan)
+MK_SCH_TRIG(SCH_SIN, sin)
 MK_SCH_TRIG(SCH_COS, cos)
 MK_SCH_TRIG(SCH_TAN, tan)
 #  pragma optimize("g", on)

@@ -135,6 +135,17 @@ void scheme_init_numstr(Scheme_Env *env)
   REGISTER_SO(num_limits);
 }
 
+# ifdef SIN_COS_NEED_DEOPTIMIZE
+#  pragma optimize("g", off)
+#  define MK_SCH_TRIG(SCH_TRIG, c_trig) static double SCH_TRIG(double d) { return c_trig(d); }
+MK_SCH_TRIG(SCH_SIN, sin)
+MK_SCH_TRIG(SCH_COS, cos)
+#  pragma optimize("g", on)
+# else
+#  define SCH_SIN sin
+#  define SCH_COS cos
+# endif
+
 /*========================================================================*/
 /*                           number parsing                               */
 /*========================================================================*/
@@ -778,8 +789,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     if (MZ_IS_NAN(d1))
       return scheme_false;
 
-    r1 = d1 * cos(d2);
-    r2 = d1 * sin(d2);
+    r1 = d1 * SCH_COS(d2);
+    r2 = d1 * SCH_SIN(d2);
 
 #ifdef MZ_USE_SINGLE_FLOATS
     if (SCHEME_FLTP(n1) && SCHEME_FLTP(n2))

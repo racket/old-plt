@@ -498,6 +498,11 @@ scheme_init_port_fun(Scheme_Env *env)
 						      "file-stream-buffer-mode", 
 						      1, 2), 
 			     env);
+  scheme_add_global_constant("port-file-identity", 
+			     scheme_make_prim_w_arity(scheme_file_identity, 
+						      "port-file-identity", 
+						      1, 1), 
+			     env);
   
   scheme_add_global_constant("make-pipe", 
 			     scheme_make_prim_w_arity2(sch_pipe, 
@@ -3319,7 +3324,6 @@ flush_output(int argc, Scheme_Object *argv[])
 
   return (scheme_void);
 }
-
 
 /*========================================================================*/
 /*                       precise GC traversers                            */

@@ -3160,6 +3160,7 @@ static Scheme_Config *make_initial_config(void)
   scheme_set_param(config, MZCONFIG_PRINT_STRUCT, scheme_false);
   scheme_set_param(config, MZCONFIG_PRINT_BOX, scheme_true);
   scheme_set_param(config, MZCONFIG_PRINT_VEC_SHORTHAND, scheme_true);
+  scheme_set_param(config, MZCONFIG_PRINT_HASH_TABLE, scheme_false);
 
   {
     Scheme_Object *s;

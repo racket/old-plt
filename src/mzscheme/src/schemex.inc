@@ -152,9 +152,11 @@
   scheme_extension_table->scheme_bucket_from_table = scheme_bucket_from_table;
   scheme_extension_table->scheme_bucket_table_equal = scheme_bucket_table_equal;
   scheme_extension_table->scheme_make_hash_table = scheme_make_hash_table;
+  scheme_extension_table->scheme_make_hash_table_equal = scheme_make_hash_table_equal;
   scheme_extension_table->scheme_hash_set = scheme_hash_set;
   scheme_extension_table->scheme_hash_get = scheme_hash_get;
   scheme_extension_table->scheme_hash_table_equal = scheme_hash_table_equal;
+  scheme_extension_table->scheme_is_hash_table_equal = scheme_is_hash_table_equal;
   scheme_extension_table->scheme_make_prim = scheme_make_prim;
   scheme_extension_table->scheme_make_noneternal_prim = scheme_make_noneternal_prim;
   scheme_extension_table->scheme_make_closed_prim = scheme_make_closed_prim;

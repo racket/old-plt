@@ -64,6 +64,7 @@ static Scheme_Object *print_graph(int, Scheme_Object *[]);
 static Scheme_Object *print_struct(int, Scheme_Object *[]);
 static Scheme_Object *print_box(int, Scheme_Object *[]);
 static Scheme_Object *print_vec_shorthand(int, Scheme_Object *[]);
+static Scheme_Object *print_hash_table(int, Scheme_Object *[]);
 
 #define NOT_EOF_OR_SPECIAL(x) ((x) >= 0)
 
@@ -311,6 +312,11 @@ void scheme_init_read(Scheme_Env *env)
 						       "print-vector-length",
 						       MZCONFIG_PRINT_VEC_SHORTHAND), 
 			     env);
+  scheme_add_global_constant("print-hash-table", 
+			     scheme_register_parameter(print_hash_table, 
+						       "print-hash-table",
+						       MZCONFIG_PRINT_HASH_TABLE), 
+			     env);
 }
 
 void scheme_alloc_list_stack(Scheme_Thread *p)
@@ -422,6 +428,12 @@ static Scheme_Object *
 print_vec_shorthand(int argc, Scheme_Object *argv[])
 {
   DO_CHAR_PARAM("print-vector-length", MZCONFIG_PRINT_VEC_SHORTHAND);
+}
+
+static Scheme_Object *
+print_hash_table(int argc, Scheme_Object *argv[])
+{
+  DO_CHAR_PARAM("print-vector-length", MZCONFIG_PRINT_HASH_TABLE);
 }
 
 /*========================================================================*/
@@ -761,7 +773,62 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	  else {
 	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation, 
 			    "read: #& expressions not currently enabled");
-	    return scheme_void;
+	    return NULL;
+	  }
+	case 'r':
+	  {
+	    int cnt = 0;
+
+	    ch = scheme_getc_special_ok(port);
+	    if (ch == 'x') {
+	      ch = scheme_getc_special_ok(port);
+	      cnt++;
+	      if (ch == '"') {
+		Scheme_Object *str;
+		int is_err;
+
+		/* Skip #rx: */
+		col = scheme_tell_column(port);
+		pos = scheme_tell(port);
+
+		str = read_string(port, stxsrc, line, col, pos, indentation);
+
+		if (stxsrc)
+		  str = SCHEME_STX_VAL(str);
+
+		str = scheme_make_regexp(str, &is_err);
+
+		if (is_err) {
+		  scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation, 
+				  "read: bad regexp string: %s", (char *)str);
+		  return NULL;
+		}
+
+		if (stxsrc)
+		  str = scheme_make_stx_w_offset(str, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
+
+		return str;
+	      }
+	    }
+
+	    {
+	      char a[1], b[1];
+
+	      if (cnt > 1) {
+		a[0] = 'x';
+		b[0] = ch;
+	      } else {
+		a[0] = ch;
+		b[0] = 0;
+	      }
+		
+	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 
+			      ch, indentation, 
+			      "read: bad syntax `#r%t%t'",
+			      a, cnt ? 1 : (NOT_EOF_OR_SPECIAL(ch) ? 1 : 0),
+			      b, cnt ? (NOT_EOF_OR_SPECIAL(ch) ? 1 : 0) : 0);	      
+	      return NULL;
+	    }
 	  }
 	case 'h':
 	  {
@@ -814,6 +881,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 			      "read: bad syntax `#h%s%t'",
 			      str_part,
 			      one_more, NOT_EOF_OR_SPECIAL(ch) ? 1 : 0);
+	      return NULL;
 	    }
 	  }
 	default:
@@ -1073,11 +1141,14 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
       for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
 	a = SCHEME_CAR(l);
 	key = SCHEME_CAR(a);
-	val = SCHEME_CADR(a);
+	val = SCHEME_CDR(a);
 	
 	scheme_hash_set(t, key, val);
       }
     }
+
+    /* Make it immutable: */
+    SCHEME_SET_IMMUTABLE(obj);
   }
 
   return result;
@@ -1178,7 +1249,7 @@ read_list(Scheme_Object *port,
   int ch, next;
   int brackets = local_square_brackets_are_parens;
   int braces = local_curly_braces_are_parens;
-  long start, startcol, startline, dotpos, dotcol, dotline, elements = 0;
+  long start, startcol, startline, dotpos, dotcol, dotline;
 
   start = scheme_tell(port);
   startcol = scheme_tell_column(port);
@@ -1203,7 +1274,7 @@ read_list(Scheme_Object *port,
 
   while (1) {
     ch = skip_whitespace_comments(port, stxsrc, indentation);
-    if ((ch == EOF) || ((elements == 2) && (shape == mz_shape_hash_elem))) {
+    if (ch == EOF) {
       char *suggestion = "";
       if (SCHEME_PAIRP(indentation)) {
 	Scheme_Indent *indt;
@@ -1219,18 +1290,14 @@ read_list(Scheme_Object *port,
       }
 
       scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), EOF, indentation, 
-		      "read: expected a '%c'%s%s", closer, 
-		      (ch != EOF) ? " after hash value" : "",
-		      suggestion);
+		      "read: expected a '%c'%s", closer, suggestion);
       return NULL;
     }
 
     if (ch == closer) {
-      if ((elements < 2) && (shape == mz_shape_hash_elem)) {
+      if (shape == mz_shape_hash_elem) {
 	scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), ch, indentation, 
-			"read: expected %d %s before '%c'",
-			2 - elements,
-			(elements == 1) ? "more element" : "elements",
+			"read: expected dotted hash pair before '%c'",
 			closer);
 	return NULL;
       }
@@ -1268,8 +1335,6 @@ read_list(Scheme_Object *port,
       /* can't be eof, due to check above */
     }
 
-    elements++;
-
     if (USE_LISTSTACK(use_stack)) {
       if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
 	/* Overflow */
@@ -1291,11 +1356,9 @@ read_list(Scheme_Object *port,
 
     ch = skip_whitespace_comments(port, stxsrc, indentation);
     if (ch == closer) {
-      if ((elements < 2) && (shape == mz_shape_hash_elem)) {
+      if (shape == mz_shape_hash_elem) {
 	scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), ch, indentation, 
-			"read: expected %d %s before '%c'",
-			2 - elements,
-			(elements == 1) ? "more element" : "elements",
+			"read: expected `.' and value for hash before '%c'",
 			closer);
 	return NULL;
       }
@@ -1338,7 +1401,7 @@ read_list(Scheme_Object *port,
       dotcol = scheme_tell_column(port);
       dotline = scheme_tell_line(port);
       
-      if ((shape != mz_shape_cons) || infixed) {
+      if (((shape != mz_shape_cons) && (shape != mz_shape_hash_elem)) || infixed) {
 	scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 1, 0, indentation, 
 			"read: illegal use of \".\"");
 	return NULL;
@@ -1349,6 +1412,14 @@ read_list(Scheme_Object *port,
       if (ch != closer) {
 	if (ch == '.') {
 	  /* Parse as infix: */
+
+	  if (shape == mz_shape_hash_elem) {
+	    scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), ch, indentation, 
+			    "read: expected '%c' after hash value",
+			    closer);
+	    return NULL;
+	  }
+
 	  infixed = cdr;
 
 	  if (!list)
@@ -1357,7 +1428,7 @@ read_list(Scheme_Object *port,
 	    SCHEME_CDR(last) = pair;
 	  last = pair;
 	} else {
-	  scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 1, 0, indentation, 
+	  scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 1, (ch == EOF) ? EOF : 0, indentation, 
 			  "read: illegal use of \".\"");
 	  return NULL;
 	}
@@ -1378,6 +1449,12 @@ read_list(Scheme_Object *port,
 		: list);
       }
     } else {
+      if (shape == mz_shape_hash_elem) {
+	scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), ch, indentation, 
+			"read: expected `.' and value for hash");
+	return NULL;
+      } 
+
       scheme_ungetc(ch, port);
       cdr = pair;
       if (!list)
@@ -1999,10 +2076,10 @@ static Scheme_Object *read_hash(Scheme_Object *port, Scheme_Object *stxsrc,
 				Scheme_Hash_Table **ht,
 				Scheme_Object *indentation)
 {
-  Scheme_Object *l, *a, *key, *val, *result;
+  Scheme_Object *l, *result;
   Scheme_Hash_Table *t;
 
-  /* using mz_shape_hash_list ensures that l is a list of 2-element lists */
+  /* using mz_shape_hash_list ensures that l is a list of pairs */
   l = read_list(port, stxsrc, line, col, pos, closer, mz_shape_hash_list, 1, ht, indentation);
 
   if (eq)

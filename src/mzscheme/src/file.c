@@ -1656,6 +1656,66 @@ static Scheme_Object *link_exists(int argc, Scheme_Object **argv)
 #endif
 }
 
+Scheme_Object *scheme_get_fd_identity(Scheme_Object *port, long fd)
+{
+  int errid = 0;
+
+#ifdef UNIX_FILE_SYSTEM
+  struct MSC_IZE(stat) buf;
+  Scheme_Object *devn, *inon, *a[2];
+
+  while (1) {
+    if (!MSC_IZE(fstat)(fd, &buf))
+      break;
+    else if (errno != EINTR) {
+      errid = errno;
+      break;
+    }
+  }
+  
+  if (!errid) {
+    /* Warning: we assume that dev_t and ino_t fit in a long. */
+    devn = scheme_make_integer_value_from_unsigned((unsigned long)buf.st_dev);
+    inon = scheme_make_integer_value_from_unsigned((unsigned long)buf.st_ino);
+    
+    a[0] = inon;
+    a[1] = scheme_make_integer(sizeof(dev_t));
+    inon = scheme_bitwise_shift(2, a);
+    
+    return scheme_bin_plus(devn, inon);
+  }
+#endif
+#ifdef MAC_FILE_SYSTEM
+  FCBPBRec rec;
+
+  rec.ioNamePtr = NULL;
+  rec.ioFCBIndx = 0;
+  rec.ioRefNum = fd;
+
+  err = PBGetFCBInfo(&rec, FALSE);
+
+  if (err == noErr) {
+    Scheme_Object *vid, *fid, *a[2];
+
+    vid = scheme_make_integer((unsigned short)rec.ioFCBVRefNum);
+    fid = scheme_make_integer((unsigned short)rec.ioFCBVRefNum);
+
+    a[0] = vid;
+    a[1] = scheme_make_integer(sizeof(short));
+    vid = scheme_bitwise_shift(2, a);
+    
+    return scheme_bin_plus(vid, fid);
+  }
+#endif
+
+  scheme_raise_exn(MZEXN_I_O_PORT,
+		   port,
+		   fail_err_symbol,
+		   "port-file-identity: error obtaining identity (%E)",
+		   errid);
+  return NULL;
+}
+
 char *scheme_normal_path_case(char *si, int *_len)
 {
 #ifdef PALMOS_STUFF

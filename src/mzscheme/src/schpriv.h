@@ -1853,6 +1853,8 @@ int scheme_is_special_filename(const char *_f, int not_nul);
 
 char *scheme_get_exec_path(void);
 
+Scheme_Object *scheme_get_fd_identity(Scheme_Object *port, long fd);
+
 /*========================================================================*/
 /*                               ports                                    */
 /*========================================================================*/
@@ -1924,6 +1926,7 @@ Scheme_Object *scheme_do_open_input_file(char *name, int offset, int argc, Schem
 Scheme_Object *scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv[], int and_read);
 Scheme_Object *scheme_file_position(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_file_buffer(int argc, Scheme_Object *argv[]);
+Scheme_Object *scheme_file_identity(int argc, Scheme_Object *argv[]);
 
 #ifdef USE_TCP
 int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block, Scheme_Output_Port *port);
@@ -1991,6 +1994,7 @@ Scheme_Object *scheme_symbol_append(Scheme_Object *s1, Scheme_Object *s2);
 Scheme_Object *scheme_copy_list(Scheme_Object *l);
 
 Scheme_Object *scheme_regexp_source(Scheme_Object *re);
+Scheme_Object *scheme_make_regexp(Scheme_Object *str, int * volatile result_is_err_string);
 
 extern int scheme_locale_on;
 void scheme_reset_locale(void);

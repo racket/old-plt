@@ -90,6 +90,7 @@ static Scheme_Object *unbox (int argc, Scheme_Object *argv[]);
 static Scheme_Object *set_box (int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *make_hash_table(int argc, Scheme_Object *argv[]);
+static Scheme_Object *make_immutable_hash_table(int argc, Scheme_Object *argv[]);
 static Scheme_Object *hash_table_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *hash_table_put(int argc, Scheme_Object *argv[]);
 static Scheme_Object *hash_table_get(int argc, Scheme_Object *argv[]);
@@ -419,6 +420,11 @@ scheme_init_list (Scheme_Env *env)
 			     scheme_make_prim_w_arity(make_hash_table, 
 						      "make-hash-table", 
 						      0, 2), 
+			     env);
+  scheme_add_global_constant("make-immutable-hash-table", 
+			     scheme_make_prim_w_arity(make_immutable_hash_table, 
+						      "make-immutable-hash-table", 
+						      1, 2), 
 			     env);
   scheme_add_global_constant("hash-table?", 
 			     scheme_make_folding_prim(hash_table_p, 
@@ -1303,6 +1309,39 @@ static Scheme_Object *make_hash_table(int argc, Scheme_Object *argv[])
   }
 }
 
+static Scheme_Object *make_immutable_hash_table(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *l = argv[0], *a;
+  Scheme_Hash_Table *ht;
+
+  if (scheme_proper_list_length(l) >= 0) {
+    for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+      a = SCHEME_CAR(l);
+      if (!SCHEME_PAIRP(a))
+	break;
+    }
+  }
+
+  if (!SCHEME_NULLP(l))
+    scheme_wrong_type("make-immutable-hash-table", "list of pairs", 0, argc, argv);
+
+  if (argc > 1) {
+    if (!SAME_OBJ(equal_symbol, argv[1]))
+      scheme_wrong_type("make-immutable-hash-table", "'equal", 1, argc, argv);
+    ht = scheme_make_hash_table_equal();
+  } else
+    ht = scheme_make_hash_table(SCHEME_hash_ptr);
+
+  for (l = argv[0]; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+    a = SCHEME_CAR(l);
+    scheme_hash_set(ht, SCHEME_CAR(a), SCHEME_CDR(a));
+  }
+  
+  SCHEME_SET_IMMUTABLE((Scheme_Object *)ht);
+
+  return (Scheme_Object *)ht;
+}
+
 Scheme_Hash_Table *scheme_make_hash_table_equal()
 {
   Scheme_Hash_Table *t;
@@ -1346,8 +1385,8 @@ int scheme_is_hash_table_equal(Scheme_Object *o)
 
 static Scheme_Object *hash_table_put(int argc, Scheme_Object *argv[])
 {
-  if (!(SCHEME_HASHTP(argv[0]) || SCHEME_BUCKTP(argv[0])))
-    scheme_wrong_type("hash-table-put!", "hash table", 0, argc, argv);
+  if (!(SCHEME_HASHTP(argv[0]) || SCHEME_BUCKTP(argv[0])) || SCHEME_IMMUTABLEP(argv[0]))
+    scheme_wrong_type("hash-table-put!", "mutable hash-table", 0, argc, argv);
 
   if (SCHEME_BUCKTP(argv[0])) {
     Scheme_Bucket_Table *t = (Scheme_Bucket_Table *)argv[0];
@@ -1369,7 +1408,7 @@ static Scheme_Object *hash_table_get(int argc, Scheme_Object *argv[])
   void *v;
 
   if (!(SCHEME_HASHTP(argv[0]) || SCHEME_BUCKTP(argv[0])))
-    scheme_wrong_type("hash-table-get", "hash table", 0, argc, argv);
+    scheme_wrong_type("hash-table-get", "hash-table", 0, argc, argv);
 
   if (SCHEME_BUCKTP(argv[0])){
     Scheme_Bucket_Table *t = (Scheme_Bucket_Table *)argv[0];
@@ -1398,8 +1437,8 @@ static Scheme_Object *hash_table_get(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *hash_table_remove(int argc, Scheme_Object *argv[])
 {
-  if (!(SCHEME_HASHTP(argv[0]) || SCHEME_BUCKTP(argv[0])))
-    scheme_wrong_type("hash-table-remove!", "hash table", 0, argc, argv);
+  if (!(SCHEME_HASHTP(argv[0]) || SCHEME_BUCKTP(argv[0])) || SCHEME_IMMUTABLEP(argv[0]))
+    scheme_wrong_type("hash-table-remove!", "mutable hash-table", 0, argc, argv);
 
   if (SCHEME_BUCKTP(argv[0])) {
     Scheme_Bucket *b;

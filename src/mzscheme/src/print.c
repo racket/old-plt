@@ -608,7 +608,7 @@ print_to_string(Scheme_Object *obj,
   p->quick_print_box = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_BOX));
   p->quick_print_struct = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_STRUCT));
   p->quick_print_vec_shorthand = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_VEC_SHORTHAND));
-  p->quick_print_hash_table = 1;
+  p->quick_print_hash_table = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_HASH_TABLE));
   p->quick_can_read_pipe_quote = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE));
   p->quick_case_sens = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CASE_SENS));
   p->quick_inspector = scheme_get_param(config, MZCONFIG_INSPECTOR);
@@ -1108,7 +1108,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	    print_this_string(p, "(", 0, 1);
 	    val = vals[i];
 	    print(keys[i], notdisplay, compact, ht, symtab, rnht, p);
-	    print_this_string(p, " ", 0, 1);
+	    print_this_string(p, " . ", 0, 3);
 	    print(val, notdisplay, compact, ht, symtab, rnht, p);
 	    print_this_string(p, ")", 0, 1);
 	    did_one = 1;
@@ -1273,16 +1273,17 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
   else if (SAME_TYPE(SCHEME_TYPE(obj), scheme_regexp_type))
     {
        if (compact) {
-	cannot_print(p, notdisplay, obj, ht);
+	 print_escaped(p, notdisplay, obj, ht);
        } else {
 	 Scheme_Object *src;
 	 src = scheme_regexp_source(obj);
-	 print_this_string(p, "#<regexp", 0, 8);
 	 if (src) {
-	   print_this_string(p, ":", 0, 1);
+	   print_this_string(p, "#rx", 0, 3);
 	   print_string(src, 1, p);
-	 }
-	 print_this_string(p, ">", 0, 1);
+	 } else if (compact)
+	   cannot_print(p, notdisplay, obj, ht);
+	 else
+	   print_this_string(p, "#<regexp>", 0, 9);
 	 closed = 1;
        }
     }

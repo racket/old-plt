@@ -185,7 +185,7 @@ static regexp *regcomp(char *, rxpos, int);
 #define	UCHARAT(p)	((int)*(p)&CHARBITS)
 #endif
 
-#define	FAIL(m)	{ regerror(m); return 0; }
+#define	FAIL(m)	{ regcomperror(m); return 0; }
 #define	ISMULT(c)	((c) == '*' || (c) == '+' || (c) == '?')
 #define	META	"^$.[()|?+*\\"
 
@@ -233,6 +233,18 @@ regerror(char *s)
 {
   scheme_raise_exn(MZEXN_MISC,
 		   "regexp: %s", s);
+}
+
+const char *failure_msg_for_read;
+
+static void
+regcomperror(char *s)
+{
+  if (failure_msg_for_read) {
+    failure_msg_for_read = s;
+    scheme_longjmp(scheme_error_buf, 1);
+  } else
+    regerror(s);
 }
 
 /*
@@ -1752,6 +1764,28 @@ static Scheme_Object *make_regexp(int argc, Scheme_Object *argv[])
   }
   
   return re;
+}
+
+Scheme_Object *scheme_make_regexp(Scheme_Object *str, int * volatile result_is_err_string)
+{
+  volatile mz_jmp_buf save;
+  Scheme_Object * volatile result;
+
+  *result_is_err_string = 0;
+
+  /* we rely on single-threaded, non-blocking regexp compilation: */
+  memcpy(&save, &scheme_error_buf, sizeof(mz_jmp_buf));
+  failure_msg_for_read = "yes";
+  if (!scheme_setjmp(scheme_error_buf)) {
+    result = make_regexp(1, &str);
+  } else {
+    result = (Scheme_Object *)failure_msg_for_read;
+    *result_is_err_string = 1;
+  }
+
+  failure_msg_for_read = NULL;
+  memcpy(&scheme_error_buf, &save, sizeof(mz_jmp_buf));
+  return result;
 }
 
 static Scheme_Object *gen_compare(char *name, int pos, 

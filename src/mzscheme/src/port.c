@@ -2034,6 +2034,53 @@ scheme_file_stream_port_p (int argc, Scheme_Object *argv[])
   return scheme_false;
 }
 
+Scheme_Object *scheme_file_identity(int argc, Scheme_Object *argv[])
+{
+  long fd = 0;
+  int fd_ok = 0;
+  Scheme_Object *p;
+
+  p = argv[0];
+
+  if (SCHEME_INPORTP(p)) {
+    Scheme_Input_Port *ip = (Scheme_Input_Port *)p;
+
+    CHECK_PORT_CLOSED("port-file-identity", "input", p, ip->closed);
+
+    if (SAME_OBJ(ip->sub_type, file_input_port_type)) {
+      fd = fileno((FILE *)((Scheme_Input_File *)ip->port_data)->f);
+      fd_ok = 1;
+    }
+#ifdef MZ_FDS
+    else if (SAME_OBJ(ip->sub_type, fd_input_port_type)) {
+      fd = ((Scheme_FD *)ip->port_data)->fd;
+      fd_ok = 1;
+    }
+#endif
+  } else if (SCHEME_OUTPORTP(p)) {
+    Scheme_Output_Port *op = (Scheme_Output_Port *)p;
+
+    CHECK_PORT_CLOSED("port-file-identity", "output", p, op->closed);
+
+    if (SAME_OBJ(op->sub_type, file_output_port_type))  {
+      fd = fileno((FILE *)((Scheme_Output_File *)op->port_data)->f);
+      fd_ok = 1;
+    }
+#ifdef MZ_FDS
+    else if (SAME_OBJ(op->sub_type, fd_output_port_type))  {
+      fd = ((Scheme_FD *)op->port_data)->fd;
+      fd_ok = 1;
+    }
+#endif
+  }
+
+  if (!fd_ok) {
+    scheme_wrong_type("port-file-identity", "file-stream-port", 0, argc, argv);
+  }
+
+  return scheme_get_fd_identity(p, fd);
+}
+
 static void filename_exn(char *name, char *msg, char *filename, int err)
 {
   char *dir, *drive;

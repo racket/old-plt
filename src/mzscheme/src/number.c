@@ -1347,8 +1347,8 @@ static Scheme_Object *complex_atan(Scheme_Object *c)
 
 #define GEN_ZERO_IS_ZERO() if (o == zeroi) return zeroi;
 #define GEN_ZERO_IS_ONE() if (o == zeroi) return scheme_make_integer(1);
-#define GEN_ONE_IS_ZERO() if (o == scheme_make_integer(1)) return zeroi;
-#define GEN_ONE_IS_ZERO_AND_ZERO_IS_ERR() if (o == scheme_make_integer(1)) return zeroi; else if (o == zeroi) scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, zeroi, "log: undefined for 0");
+#define GEN_ONE_IS_ZERO() if (o == scheme_exact_one) return zeroi;
+#define GEN_ONE_IS_ZERO_AND_ZERO_IS_ERR() if (o == scheme_exact_one) return zeroi; else if (o == zeroi) scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, zeroi, "log: undefined for 0");
 #define GEN_ZERO_IS_HALF_PI() if (o == zeroi) return scheme_half_pi;
 
 #define NEVER_RESORT_TO_COMPLEX(d) 0
@@ -1647,9 +1647,9 @@ scheme_expt(int argc, Scheme_Object *argv[])
 
   if (e == zeroi)
     return scheme_make_integer(1);
-  if (e == scheme_make_integer(1))
+  if (e == scheme_exact_one)
     return n;
-  if (n == scheme_make_integer(1)) {
+  if (n == scheme_exact_one) {
     /* Power of one: */
     if (SCHEME_NUMBERP(e))
       return n;

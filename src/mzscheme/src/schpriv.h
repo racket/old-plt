@@ -860,8 +860,10 @@ typedef struct Scheme_Sema {
 #ifdef MPW_C
 /* Optimizer bug! */
 # define scheme_exact_zero ((Scheme_Object *)0x1)
+# define scheme_exact_one ((Scheme_Object *)0x3)
 #else
 # define scheme_exact_zero scheme_make_integer(0)
+# define scheme_exact_one scheme_make_integer(1)
 #endif
 
 /****** Bignums *******/

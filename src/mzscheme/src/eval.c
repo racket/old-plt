@@ -3200,7 +3200,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 			 "continuation application: attempted to cross a continuation barrier");
       }
       
-      p->suspend_break = 1; /* restored at call/cc destination */
+      p->suspend_break++; /* restored at call/cc destination */
 
       /* Find `common', then intersection of dynamic-wind chain for 
 	 the current continuation and the given continuation */

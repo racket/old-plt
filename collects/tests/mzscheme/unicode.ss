@@ -565,6 +565,15 @@
 
 (let ([utf-8-iconv (bytes-open-converter "UTF-8" "UTF-8")]
       [utf-8-iconv-p (bytes-open-converter "UTF-8-permissive" "UTF-8")])
+  ;; First, check some simple conversions
+  (let-values ([(z1 z2 more) (bytes-convert utf-8-iconv #"xyz" 0 3 (bytes))])
+    (test '(0 0 continues) list z1 z2 more))
+  (let-values ([(z1 z2 more) (bytes-convert utf-8-iconv #"xyz" 0 3 (bytes 0))])
+    (test '(1 1 continues) list z1 z2 more))
+  (let-values ([(z1 z2 more) (bytes-convert utf-8-iconv #"xyz" 0 3 (bytes 0 0 0))])
+    (test '(3 3 complete) list z1 z2 more))
+
+  ;; The real tests:
   (for-each (lambda (p)
 	      (let ([code-points (car p)]
 		    [parse-status (cadr p)]

@@ -8,6 +8,192 @@
 (define SYNC-BUSY-DELAY 0.1) ; go a little slower to check busy waits
 
 ;; ----------------------------------------
+;;  Breaks disabled in dynamic-wind thunks
+
+(let ([s #f]
+      [p #f]
+      [/dev/null-for-err
+       (make-custom-output-port #f (lambda (s start end ?) (- end start)) void void)]
+      [did-pre1 #f]
+      [did-pre2 #f]
+      [did-act1 #f]
+      [did-act2 #f]
+      [did-post1 #f]
+      [did-post2 #f]
+      [did-done #f]
+      [break-on (lambda () (break-enabled #t))]
+      [sw semaphore-wait])
+  (let ([mk-t
+	 (lambda (init
+		  catch
+		  pre-thunk act-thunk post-thunk
+		  pre-semaphore-wait act-semaphore-wait post-semaphore-wait)
+	   (set! did-pre1 #f) (set! did-pre2 #f)
+	   (set! did-act1 #f) (set! did-act2 #f)
+	   (set! did-post1 #f) (set! did-post2 #f)
+	   (set! did-done #f)
+	   (thread 
+	    (lambda ()
+	      (init
+	       (lambda ()
+		 ;; (current-error-port /dev/null-for-err)
+		 (dynamic-wind
+		     (lambda ()
+		       (set! did-pre1 #t)
+		       (semaphore-post p)
+		       (pre-thunk)
+		       (pre-semaphore-wait s)
+		       (set! did-pre2 #t))
+		     (lambda () 
+		       (catch
+			(lambda (-catch
+				 -pre-thunk -act-thunk -post-thunk
+				 -pre-semaphore-wait -act-semaphore-wait -post-semaphore-wait)
+			  (set! catch -catch)
+			  (set! pre-thunk -pre-thunk)
+			  (set! act-thunk -act-thunk)
+			  (set! post-thunk -post-thunk)
+			  (set! pre-semaphore-wait -pre-semaphore-wait)
+			  (set! act-semaphore-wait -act-semaphore-wait)
+			  (set! post-semaphore-wait -post-semaphore-wait))
+			(lambda ()
+			  (set! did-act1 #t)
+			  (semaphore-post p)
+			  (act-thunk)
+			  (act-semaphore-wait s)
+			  (set! did-act2 #t))))
+		     (lambda ()
+		       (set! did-post1 #t)
+		       (semaphore-post p)
+		       (post-thunk)
+		       (post-semaphore-wait s)
+		       (set! did-post2 #t)))
+		 (set! did-done #t))))))])
+    (define (go
+	     mk-t*
+	     pre-thunk act-thunk post-thunk
+	     pre-semaphore-wait act-semaphore-wait post-semaphore-wait
+	     try-pre-break 
+	     should-pre-break?
+	     should-preact-break?
+	     try-act-break 
+	     should-act-break?
+	     try-post-break 
+	     should-post-break?
+	     should-done-break?)
+      (test #t list? (list 'go 
+			   pre-thunk act-thunk post-thunk
+			   pre-semaphore-wait act-semaphore-wait post-semaphore-wait
+			   try-pre-break 
+			   should-pre-break?
+			   should-preact-break?
+			   try-act-break 
+			   should-act-break?
+			   try-post-break 
+			   should-post-break?
+			   should-done-break?))
+      (set! s (make-semaphore))
+      (set! p (make-semaphore))
+      (let ([t (mk-t* pre-thunk act-thunk post-thunk
+		      pre-semaphore-wait act-semaphore-wait post-semaphore-wait)])
+	(semaphore-wait p)
+	(test #t 'pre1 did-pre1)
+	(try-pre-break t)
+	(semaphore-post s)
+	(if should-pre-break?
+	    (begin
+	      (thread-wait t)
+	      (test #f 'pre2 did-pre2))
+	    (if should-preact-break?
+		(begin
+		  (semaphore-post s) ; for post
+		  (thread-wait t)
+		  (test #t 'pre2 did-pre2)
+		  (test #f 'act1 did-act1))
+		(begin
+		  (semaphore-wait p)
+		  (test #t 'pre2 did-pre2)
+		  (test #t 'act1 did-act1)
+		  (try-act-break t)
+		  (semaphore-post s)
+		  (if should-act-break?
+		      (begin
+			(semaphore-post s) ; for post
+			(thread-wait t)
+			(test #f 'act2 did-act2))
+		      (begin
+			(semaphore-wait p)
+			(test #t 'act2 did-act2)
+			(test #t 'post1 did-post1)
+			(try-post-break t)
+			(semaphore-post s)
+			(if should-post-break?
+			    (begin
+			      (thread-wait t)
+			      (test #f 'post2 did-post2))
+			    (begin
+			      (thread-wait t)
+			      (test #t 'post2 did-post2)
+			      (test (not should-done-break?) 'done did-done))))))))))
+    (for-each 
+     (lambda (mk-t)
+       (for-each 
+	(lambda (nada)
+	  ;; Basic checks --- dynamic-wind thunks don't explicitly enable breaks
+	  (go mk-t  nada nada nada  sw sw sw  void #f #f void #f void #f #f)
+	  (go mk-t  nada nada nada  sw sw sw  break-thread #f 'pre-act void #f void #f #f)
+	  (go mk-t  nada nada nada  sw sw sw  void #f #f break-thread 'act void #f #f)
+	  (go mk-t  nada nada nada  sw sw sw  void #f #f void #f break-thread #f 'done)
+
+	  ;; All dynamic-wind thunks enable breaks
+	  (map (lambda (break-on sw)
+		 (go mk-t  break-on break-on break-on  sw sw sw  void #f #f void #f void #f #f)
+		 (go mk-t  break-on break-on break-on  sw sw sw  break-thread 'pre #f void #f void #f #f)
+		 (go mk-t  break-on break-on break-on  sw sw sw  void #f #f break-thread 'act void #f #f)
+		 (go mk-t  break-on break-on break-on  sw sw sw  void #f #f void #f break-thread 'post #f))
+	       (list break-on void)
+	       (list sw semaphore-wait/enable-break))
+
+	  ;; Enable break in pre or act shouldn't affect post
+	  (go mk-t  break-on nada nada  sw sw sw  void #f #f void #f break-thread #f 'done)
+	  (go mk-t  nada break-on nada  sw sw sw  void #f #f void #f break-thread #f 'done)
+	  
+	  ;; Enable break in pre shouldn't affect act/done
+	  (parameterize ([break-enabled #f])
+	    (go mk-t  break-on nada nada  sw sw sw  void #f #f break-thread #f void #f #f)
+	    (go mk-t  break-on nada nada  sw sw sw  void #f #f void #f break-thread #f #f)))
+	(list void sleep)))
+     (let ([plain-mk-t (lambda args
+			 (apply mk-t 
+				(lambda (f) (f))
+				(lambda (x y) (y)) 
+				args))])
+       (list plain-mk-t
+	     (let ([k+reset #f])
+	       ;; Grab a continuation for the dyn-wind's body
+	       (go (lambda args
+		     (apply mk-t 
+			    (lambda (f) (f))
+			    (lambda (reset body)
+			      (break-enabled
+			       (let/cc k 
+				 (set! k+reset (cons k reset))
+				 (break-enabled)))
+			      (body))
+			    args))
+		   void void void  sw sw sw  void #f #f void #f void #f #f)
+	       (lambda args
+		 (apply mk-t 
+			(lambda (f)
+			  (apply (cdr k+reset) (lambda (f s) (s)) args)
+			  ((car k+reset) (break-enabled)))
+			(lambda (x y) (error "shouldn't get here"))
+			args))))))))
+
+(report-errs)
+done
+
+;; ----------------------------------------
 ;;  Semaphore peeks
 
 (let* ([s (make-semaphore)]

@@ -875,6 +875,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   Scheme_Comp_Env * volatile save_current_local_env;
   Scheme_Object * volatile save_mark, *  volatile save_name, * volatile save_list_stack;
   Scheme_Thread * volatile p = scheme_current_thread;
+  volatile int save_suspend_break;
   int set_overflow;
 #ifdef MZ_PRECISE_GC
   void *external_stack;
@@ -917,6 +918,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   save_name = p->current_local_name;
   save_list_stack = p->list_stack;
   save_list_stack_pos = p->list_stack_pos;
+  save_suspend_break = p->suspend_break;
 
   if (top_next_env) {
     p->current_local_env = top_next_env;
@@ -1019,6 +1021,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
     p->current_local_name = save_name;
     p->list_stack = save_list_stack;
     p->list_stack_pos = save_list_stack_pos;
+    p->suspend_break = save_suspend_break;
     scheme_longjmp(save, 1);
   }
 
@@ -2383,13 +2386,14 @@ call_cc (int argc, Scheme_Object *argv[])
 	  DW_PrePost_Proc pre = dwl->dw->pre;
 	  p->dw = dwl->dw->prev;
 	  pre(dwl->dw->data);
+	  p = scheme_current_thread;
 	}
       }
     }
     p->dw = cont->dw;
 
     p->suspend_break = cont->suspend_break;
-
+    
     copy_cjs(&p->cjs, &cont->cjs);
     memcpy(&p->overflow_buf, &cont->save_overflow_buf, sizeof(mz_jmp_buf));
     p->overflow = cont->save_overflow;
@@ -2722,15 +2726,30 @@ typedef struct {
   Scheme_Object *pre, *act, *post;
 } Dyn_Wind;
 
-static void pre_dyn_wind(void *d)
+static void pre_post_dyn_wind(Scheme_Object *prepost)
 {
-  Scheme_Thread *p = scheme_current_thread;
-  Dyn_Wind *dw = (Dyn_Wind *)d;
-  int s = p->suspend_break;
+  Scheme_Config *config;
+  Scheme_Cont_Frame_Data cframe;
 
-  p->suspend_break = 1;
-  (void)_scheme_apply_multi(dw->pre, 0, NULL);
-  p->suspend_break = s;
+  /* Cancel internal suspend in eval or dyn-wind, because we convert
+     it to a parameterize. */
+  --scheme_current_thread->suspend_break;
+  if (scheme_current_thread->suspend_break < 0)
+    *(long *)(0x0) = 1;
+
+  config = scheme_extend_config(scheme_current_config(),
+				MZCONFIG_ENABLE_BREAK, 
+				scheme_false);
+  scheme_push_continuation_frame(&cframe);
+  scheme_install_config(config);
+
+  /* Here's the main call: */
+  (void)_scheme_apply_multi(prepost, 0, NULL);
+
+  scheme_pop_continuation_frame(&cframe);
+
+  /* Restore internal suspend: */
+  scheme_current_thread->suspend_break++;
 }
 
 static Scheme_Object *do_dyn_wind(void *d)
@@ -2741,15 +2760,14 @@ static Scheme_Object *do_dyn_wind(void *d)
   return _scheme_apply_multi(dw->act, 0, NULL);
 }
 
+static void pre_dyn_wind(void *d)
+{
+  pre_post_dyn_wind(((Dyn_Wind *)d)->pre);
+}
+
 static void post_dyn_wind(void *d)
 {
-  Scheme_Thread *p = scheme_current_thread;
-  Dyn_Wind *dw = (Dyn_Wind *)d;
-  int s = p->suspend_break;
-
-  p->suspend_break = 1;
-  (void)_scheme_apply_multi(dw->post, 0, NULL);
-  p->suspend_break = s;
+  pre_post_dyn_wind(((Dyn_Wind *)d)->post);
 }
 
 static Scheme_Object *dynamic_wind(int c, Scheme_Object *argv[])
@@ -2824,11 +2842,15 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
   dw->post = post;
   dw->prev = p->dw;
 
-  if (pre)
+  if (pre) {
+    p->suspend_break++;
     pre(data);
+    p = scheme_current_thread;
+    --p->suspend_break;
+  }
 
   p->dw = dw;
-
+  
   memcpy(&dw->saveerr, &scheme_error_buf, sizeof(mz_jmp_buf));
 
   scheme_save_env_stack_w_thread(dw->envss, p);
@@ -2836,6 +2858,7 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
   dw->current_local_env = p->current_local_env;
 
   if (scheme_setjmp(p->error_buf)) {
+    p = scheme_current_thread;
     scheme_restore_env_stack_w_thread(dw->envss, p);
     p->current_local_env = dw->current_local_env;
     if (p->dw != dw) {
@@ -2858,11 +2881,18 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
       err = !v;
     }
   } else {
+    if (pre) {
+      /* Need to check for a break, in case one was queued during
+	 pre: */
+      scheme_check_break_now();
+    }
+
     v = act(data);
 
     err = 0;
   }
 
+  p = scheme_current_thread;
   if (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES)) {
     save_count = p->ku.multiple.count;
     save_values = p->ku.multiple.array;
@@ -2882,11 +2912,15 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 
   if (post) {
     if (scheme_setjmp(p->error_buf)) {
+      p = scheme_current_thread;
       scheme_restore_env_stack_w_thread(dw->envss, p);
       p->current_local_env = dw->current_local_env;
       err = 1;
     } else {
+      p->suspend_break++;
       post(data);
+      p = scheme_current_thread;
+      --p->suspend_break;
     }
   }
 
@@ -2894,6 +2928,11 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
     scheme_longjmp(dw->saveerr, 1);
 
   memcpy(&p->error_buf, &dw->saveerr, sizeof(mz_jmp_buf));
+
+  if (post) {
+    /* Need to check for a break, in case one was queued during post: */
+    scheme_check_break_now();
+  }
 
   if (save_values) {
     p->ku.multiple.count = save_count;

@@ -35,16 +35,16 @@
 			       "Internal Error"))))))
 
     (define build-parameterization
-      (let ([orig-eventspace (wx:current-eventspace)]
-	    [bottom-eventspace (wx:make-eventspace)])
+      (let ([orig-eventspace (wx:current-eventspace)])
 	(lambda (base-parameterization)
-	  (let ([system-parameterization (current-parameterization)]
-		[p (make-parameterization base-parameterization)]
-		[n (make-namespace 'no-constants
-				   'wx
-				   'hash-percent-syntax
-				   'auto-else
-				   'set!-undefined)])
+	  (let* ([system-parameterization (current-parameterization)]
+		 [p (make-parameterization base-parameterization)]
+		 [bottom-eventspace (wx:make-eventspace p)]
+		 [n (make-namespace 'no-constants
+				    'wx
+				    'hash-percent-syntax
+				    'auto-else
+				    'set!-undefined)])
 	    (with-parameterization p
 	      (lambda ()
 		(current-exception-handler
@@ -209,6 +209,7 @@
 	    [send-scheme
 	     (let ([s (make-semaphore 1)])
 	       (opt-lambda (get-expr [before void] [after void])
+	       (car)
 		 (let* ([print-style (drscheme:language:setting-printing
 				      (mred:get-preference 'drscheme:settings))]
 			[user-code

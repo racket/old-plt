@@ -302,28 +302,28 @@ scheme_internal_display(Scheme_Object *obj, Scheme_Object *port,
 }
 
 #ifdef DO_STACK_CHECK
-static int check_cycles(Scheme_Object *, Scheme_Process *);
+static int check_cycles(Scheme_Object *, Scheme_Process *, Scheme_Hash_Table *);
 
 static Scheme_Object *check_cycle_k(void)
 {
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
+  Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p->ku.k.p2;
 
   p->ku.k.p1 = NULL;
+  p->ku.k.p2 = NULL;
 
-  return check_cycles(o, p)
+  return check_cycles(o, p, ht)
     ? scheme_true : scheme_false;
 }
 #endif
 
-static int check_cycles(Scheme_Object *obj, Scheme_Process *p)
+static int check_cycles(Scheme_Object *obj, Scheme_Process *p, Scheme_Hash_Table *ht)
 {
   Scheme_Type t;
-  int cycle = 0;
+  Scheme_Bucket *b;
 
   t = SCHEME_TYPE(obj);
-  if (t < 0)
-    return 1;
 
 #ifdef DO_STACK_CHECK
 #define CHECK_COUNT_START 50
@@ -337,6 +337,7 @@ static int check_cycles(Scheme_Object *obj, Scheme_Process *p)
 #include "mzstkchk.h"
 	{
 	  scheme_current_process->ku.k.p1 = (void *)obj;
+	  scheme_current_process->ku.k.p2 = (void *)ht;
 	  return SCHEME_TRUEP(scheme_handle_stack_overflow(check_cycle_k));
 	}
       }
@@ -346,13 +347,83 @@ static int check_cycles(Scheme_Object *obj, Scheme_Process *p)
   SCHEME_USE_FUEL(1);
 #endif
 
+  if (SCHEME_PAIRP(obj)
+      || (p->quick_print_box && SCHEME_BOXP(obj))
+      || SCHEME_VECTORP(obj)
+      || (p->quick_print_struct && SAME_TYPE(t, scheme_structure_type))) {
+    b = scheme_bucket_from_table(ht, (const char *)obj);
+    if (b->val)
+      return 1;
+    b->val = (void *)1;    
+  } else 
+    return 0;
+
+  if (SCHEME_PAIRP(obj)) {
+    if (check_cycles(SCHEME_CAR(obj), p, ht) || check_cycles(SCHEME_CDR(obj), p, ht))
+      return 1;
+  } else if (p->quick_print_box && SCHEME_BOXP(obj)) {
+    if (check_cycles(SCHEME_BOX_VAL(obj), p, ht))
+      return 1;
+  } else if (SCHEME_VECTORP(obj)) {
+    int i, len;
+    Scheme_Object **array;
+
+    len = SCHEME_VEC_SIZE(obj);
+    array = SCHEME_VEC_ELS(obj);
+    for (i = 0; i < len; i++) {
+      if (check_cycles(array[i], p, ht)) {
+	return 1;
+      }
+    }
+  } else if (p->quick_print_struct && SAME_TYPE(t, scheme_structure_type)) {
+    Scheme_Object **slots = ((Scheme_Structure *)obj)->slots;
+    int i = SCHEME_STRUCT_NUM_SLOTS(obj);
+
+    while (i--) {
+      if (check_cycles(slots[i], p, ht)) {
+	return 1;
+      }
+    }
+  }
+
+  b->val = NULL;
+
+  return 0;
+}
+
+#ifndef MZ_REAL_THREADS
+# ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+# endif
+
+/* The fast cycle-checker plays a dangerous game: it changes type
+   tags. No GCs can occur here, and no thread switches. If the fast
+   version takes to long, we back out to the general case. (We don't
+   even check for stack overflow, so keep the max limit low.) */
+
+static int fast_checker_counter;
+
+static int check_cycles_fast(Scheme_Object *obj, Scheme_Process *p)
+{
+  Scheme_Type t;
+  int cycle = 0;
+
+  t = SCHEME_TYPE(obj);
+  if (t < 0)
+    return 1;
+
+  if (fast_checker_counter-- < 0)
+    return -1;
+
   if (SCHEME_PAIRP(obj)) {
     obj->type = -t;
-    cycle = check_cycles(SCHEME_CAR(obj), p) || check_cycles(SCHEME_CDR(obj), p);
+    cycle = check_cycles_fast(SCHEME_CAR(obj), p);
+    if (!cycle)
+      cycle = check_cycles_fast(SCHEME_CDR(obj), p);
     obj->type = t;
   } else if (p->quick_print_box && SCHEME_BOXP(obj)) {
     obj->type = -t;
-    cycle = check_cycles(SCHEME_BOX_VAL(obj), p);
+    cycle = check_cycles_fast(SCHEME_BOX_VAL(obj), p);
     obj->type = t;
   } else if (SCHEME_VECTORP(obj)) {
     int i, len;
@@ -362,10 +433,9 @@ static int check_cycles(Scheme_Object *obj, Scheme_Process *p)
     len = SCHEME_VEC_SIZE(obj);
     array = SCHEME_VEC_ELS(obj);
     for (i = 0; i < len; i++) {
-      if (check_cycles(array[i], p)) {
-	cycle = 1;
+      cycle = check_cycles_fast(array[i], p);
+      if (cycle)
 	break;
-      }
     }
     obj->type = t;
   } else if (p->quick_print_struct && SAME_TYPE(t, scheme_structure_type)) {
@@ -374,17 +444,21 @@ static int check_cycles(Scheme_Object *obj, Scheme_Process *p)
 
     obj->type = -t;
     while (i--) {
-      if (check_cycles(slots[i], p)) {
-	cycle = 1;
+      cycle = check_cycles_fast(slots[i], p);
+      if (cycle)
 	break;
-      }
     }
     obj->type = t;
-  }  else
+  } else
     cycle = 0;
 
   return cycle;
 }
+
+# ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+# endif
+#endif
 
 static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
 			      int *counter, Scheme_Process *p)
@@ -436,6 +510,7 @@ print_to_string(Scheme_Object *obj, long *len, int write,
 {
   Scheme_Hash_Table * volatile ht;
   char *ca;
+  int cycles;
 
   p->print_allocated = 50;
   ca = (char *)scheme_malloc_atomic(p->print_allocated);
@@ -450,7 +525,22 @@ print_to_string(Scheme_Object *obj, long *len, int write,
   p->quick_print_vec_shorthand = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_VEC_SHORTHAND));
   p->quick_can_read_pipe_quote = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE));
 
-  if (p->quick_print_graph || check_cycles(obj, p)) {
+  if (p->quick_print_graph)
+    cycles = 1;
+  else {
+#ifndef MZ_REAL_THREADS
+    fast_checker_counter = 50;
+    cycles = check_cycles_fast(obj, p);
+#else
+    cycles = -1;
+#endif
+    if (cycles == -1) {
+      ht = scheme_hash_table(101, SCHEME_hash_ptr, 0, 0);
+      cycles = check_cycles(obj, p, ht);
+    }
+  }
+
+  if (cycles) {
     int counter = 1;
     ht = scheme_hash_table(101, SCHEME_hash_ptr, 0, 0);
     setup_graph_table(obj, ht, &counter, p);

@@ -2226,7 +2226,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	      SCHEME_CDR(pairs) = rest_vals;
 	      SCHEME_CAR(pairs) = rands[i];
 	      rest_vals = pairs;
-	      pairs++;
 	    }
 
 	    p->runstack_tmp_keep = NULL;
@@ -3503,7 +3502,7 @@ static void register_traversers(void)
   GC_register_traverser(scheme_rt_compile_info, mark_comp_info);
   GC_register_traverser(scheme_rt_cont_mark, mark_cont_mark);
   GC_register_traverser(scheme_rt_saved_stack, mark_saved_stack);
-  GC_register_traverser(scheme_rt_saved_stack, mark_eval_in_env);
+  GC_register_traverser(scheme_rt_eval_in_env, mark_eval_in_env);
 }
 
 END_XFORM_SKIP;

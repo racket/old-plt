@@ -1022,7 +1022,9 @@ Bool wxmbWriteBufferData(wxMediaStreamOut *f, wxBufferData *data)
   long dataPos = 0, dataStart = 0, dataEnd;
   
   while (data) {
-    f->Put((short)f->MapPosition(data->dataclass));
+    short mp;
+    mp = (short)f->MapPosition(data->dataclass);
+    f->Put(mp);
     
     if (!data->dataclass->required) {
       dataStart = f->Tell();
@@ -1086,7 +1088,9 @@ Bool wxmbWriteSnipsToFile(wxMediaStreamOut *f,
       wxmeError("There's a snip without a class."
 		" Data will be lost.");
     } else if (!f->GetHeaderFlag(sclass)) {
-      f->Put((short)f->MapPosition(sclass));
+      short mp;
+      mp = (short)f->MapPosition(sclass);
+      f->Put(mp);
       headerStart = f->Tell();
       f->PutFixed(0);
       headerPos = f->Tell();
@@ -1131,9 +1135,11 @@ Bool wxmbWriteSnipsToFile(wxMediaStreamOut *f,
   for (snip = startSnip; PTRNE(snip, endSnip); ) {
     sclass = snip->snipclass;
 
-    if (sclass)
-      f->Put((short)f->MapPosition(sclass));
-    else
+    if (sclass) {
+      short mp;
+      mp = (short)f->MapPosition(sclass);
+      f->Put(mp);
+    } else
       f->Put((short)(-1));
 
     if (!snip->snipclass || !snip->snipclass->required) {

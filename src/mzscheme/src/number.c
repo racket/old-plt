@@ -3272,9 +3272,10 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       int dbz = 0;
 
       /* s2 can't contain @: */
-      for (i = 0; s2[i]; i++)
+      for (i = 0; s2[i]; i++) {
 	if (s2[i] == '@')
 	  break;
+      }
 
       if (s2[i])
 	other = scheme_false;

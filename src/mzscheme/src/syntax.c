@@ -1107,7 +1107,7 @@ with_cont_mark_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_I
 
   scheme_init_expand_recs(erec, drec, recs, 3);
   recs[0].value_name = scheme_false;
-  recs[0].value_name = scheme_false;
+  recs[1].value_name = scheme_false;
   recs[2].value_name = boundname;
 
   form = SCHEME_STX_CDR(form);
@@ -2468,6 +2468,7 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, Scheme_Expand_Info 
   if (!partial) {
     body = scheme_add_env_renames(body, env, origenv);
     scheme_init_expand_recs(erec, drec, &erec1, 1);
+    erec1.value_name = erec[drec].value_name;
     body = scheme_expand_block(body, env, &erec1, 0);
   }
 

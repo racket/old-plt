@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.cc,v 1.12 1999/11/28 17:12:50 mflatt Exp $
+ * $Id: DC.cc,v 1.13 1999/11/29 14:45:25 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -363,8 +363,10 @@ static Bool wx_spline_add_point(float x, float y)
 {
     wxPoint *point;
 
-    if (!wx_spline_point_list)
+    if (!wx_spline_point_list) {
+      wxREGGLOB(wx_spline_point_list);
       wx_spline_point_list = new wxList;
+    }
 
     point = new wxPoint;
     point->x = x;

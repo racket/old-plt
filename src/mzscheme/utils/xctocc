@@ -2386,12 +2386,15 @@ sub PrintSymSet
 
     if (!($omit =~ /BUNDLE/)) {
 	print "static Scheme_Object *bundle_symset_${name}(int v) {\n";
+	if ($multi) {
+	    print "  REMEMBER_VAR_STACK();\n";
+	}
 	print "  if (!${name}_${v}_sym) init_symset_${name}();\n";
 	if ($multi) {
 	    print "  Scheme_Object *l = scheme_null;\n";
 	    foreach $sym (@syms) {
 		($n, $v) = split(/,/, $sym);
-		print "  if (v & $v) l = scheme_make_pair(${name}_${v}_sym, l);\n";
+		print "  if (v & $v) l = WITH_REMEMBERED_STACK(scheme_make_pair(${name}_${v}_sym, l));\n";
 	    }
 	    print "  return l;\n";
 	} else {

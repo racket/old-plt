@@ -49,7 +49,7 @@ typedef struct {
   void *val;
 } wxWeak_Box;
 # define SET_SAFEREF(x, v) (*(wxWeak_Box **)x)->val = gcOBJ_TO_PTR(v)
-# define GET_SAFEREF(x) gcPTR_TO_OBJ((*(wxWeak_Box **)x)->val)
+# define GET_SAFEREF(x) ((*(void **)x) ? gcPTR_TO_OBJ((*(wxWeak_Box **)x)->val) : NULL)
 #else
 # define WXGC_IGNORE(ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
 # define WXGC_ATOMIC (AtomicGC)

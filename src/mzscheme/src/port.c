@@ -2180,6 +2180,7 @@ fd_char_ready (Scheme_Input_Port *port)
 static int fd_getc(Scheme_Input_Port *port)
 {
   Scheme_FD *fip;
+  int bc;
 
   fip = (Scheme_FD *)port->port_data;
 
@@ -2198,7 +2199,8 @@ static int fd_getc(Scheme_Input_Port *port)
       scheme_current_process->ran_some = 1;
     }
 
-    fip->bufcount = read(fip->fd, fip->buffer, MZPORT_FD_BUFFSIZE);
+    bc = read(fip->fd, fip->buffer, MZPORT_FD_BUFFSIZE);
+    fip->bufcount = bc;
 
     if (fip->bufcount < 0) {
       fip->bufcount = 0;

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.36 1999/11/28 05:21:34 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.37 1999/11/28 17:12:50 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -78,7 +78,7 @@ static int fill_rule[]  = { EvenOddRule, WindingRule };
 
 #define FreeGetPixelCache() if (X->get_pixel_image_cache) DoFreeGetPixelCache()
 
-Pixmap* hatch_bitmaps = NULL;
+static Pixmap* hatch_bitmaps = NULL;
 
 //-----------------------------------------------------------------------------
 // create and destroy wxWindowDC
@@ -106,6 +106,7 @@ wxWindowDC::wxWindowDC(void) : wxDC()
     if (!hatch_bitmaps) {
 	Display *dpy = wxAPP_DISPLAY;
 	Window  win  = RootWindow(dpy, DefaultScreen(dpy));
+	wxREGGLOB(hatch_bitmaps);
 	hatch_bitmaps = new Pixmap[num_hatches];
 	hatch_bitmaps[0] = XCreateBitmapFromData(dpy, win, bdiag_bits,
 						 bdiag_width, bdiag_height);
@@ -815,6 +816,14 @@ void wxWindowDC::SetColourMap(wxColourMap *new_cmap)
   }
 }
 
+static wxDash dashdefs[4][4] = {
+  { 2, 5, 0, 0 }, // wxDOT
+  { 4, 8, 0, 0 }, // wxLONG_DASH
+  { 4, 4, 0, 0 }, // wxSHORT_DASH
+  { 6, 6, 2, 6 }  // wxDOT_DASH
+};
+static int    num_dashes[] = { 2, 2, 2, 4 };	
+
 void wxWindowDC::SetPen(wxPen *pen)
 {
   XGCValues     values;
@@ -908,13 +917,6 @@ void wxWindowDC::SetPen(wxPen *pen)
       }
     } else {
       if (wxIS_DASH(style) || style==wxUSER_DASH) {
-	static wxDash dashdefs[4][4] = {
-	  { 2, 5, 0, 0 }, // wxDOT
-	  { 4, 8, 0, 0 }, // wxLONG_DASH
-	  { 4, 4, 0, 0 }, // wxSHORT_DASH
-	  { 6, 6, 2, 6 }  // wxDOT_DASH
-	};
-	static int    num_dashes[] = { 2, 2, 2, 4 };
 	int           num_dash;
 	wxDash        *dashdef, *scaleddef;
 	if (style==wxUSER_DASH) {

@@ -515,11 +515,18 @@
     (and (> l 2)
 	 ; Ends in semicolon
 	 (eq? semi (tok-n (list-ref e (sub1 l))))
-	 ; next-to-last is parens
-	 (let ([v (list-ref e (- l 2))])
-	   (and (parens? v)))
-	 ; Symbol before parens
-	 (symbol? (tok-n (list-ref e (- l 3)))))))
+	 (or (and
+	      ;; next-to-last is parens
+	      (parens? (list-ref e (- l 2)))
+	      ;; Symbol before parens
+	      (symbol? (tok-n (list-ref e (- l 3)))))
+	     (and
+	      ;; next-to-last is 0, then =, then parens
+	      (eq? 0 (tok-n (list-ref e (- l 2))))
+	      (eq? '= (tok-n (list-ref e (- l 3))))
+	      (parens? (list-ref e (- l 4)))
+	      ;; Symbol before parens
+	      (symbol? (tok-n (list-ref e (- l 5)))))))))
 
 (define (typedef? e)
   (eq? 'typedef (tok-n (car e))))

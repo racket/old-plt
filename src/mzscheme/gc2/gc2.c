@@ -34,7 +34,7 @@ typedef short Type_Tag;
 #include "gc2.h"
 
 #define TIME 0
-#define SEARCH 0
+#define SEARCH 1
 #define SAFETY 1
 #define RECYCLE_HEAP 0
 #define KEEP_FROM_PTR 0
@@ -268,7 +268,7 @@ typedef struct GC_Weak_Array {
   long count;
   void *replace_val;
   struct GC_Weak_Array *next;
-  void *data[0];
+  void *data[1];
 } GC_Weak_Array;
 
 static GC_Weak_Array *weak_arrays;
@@ -537,7 +537,7 @@ void GC_dump(void)
 
 long GC_get_memory_use()
 {
-  return (alloc_size - ((untagged_low - tagged_high) << 2)) >> 2;
+  return (alloc_size - ((untagged_low - tagged_high) << 2));
 }
 
 void GC_init_type_tags(int count, int weakbox)
@@ -555,10 +555,12 @@ int detail_cycle;
 int atomic_detail_cycle;
 #endif
 
+#if SEARCH
 void stop()
 {
   printf("stopped\n");
 }
+#endif
 
 /* Only works during GC: */
 void *find_start(void *p)

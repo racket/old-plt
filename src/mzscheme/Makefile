@@ -271,7 +271,7 @@ zo:
 	rm -f ../collects/mzlib/compiled/*/*.so
 	$(MZSCHEME) -qf mkmzlib.ss -e '(make-zo)' -e '(exit)'
 
-mzscheme2k:
+2k:
 	$(XMAKE) bin
 	cd gc2; $(XMAKE) all
 	cd gc2; $(XMAKE) $(MZBUILDDIR)mzscheme2k

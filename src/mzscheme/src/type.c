@@ -1009,7 +1009,7 @@ void scheme_register_traversers(void)
   GC_register_traverser(scheme_tail_call_waiting_type, bad_trav);
   GC_register_traverser(scheme_undefined_type, char_obj); /* small */
   GC_register_traverser(scheme_multiple_values_type, bad_trav);
-  GC_register_traverser(scheme_placeholder_type, char_obj); /* small */
+  GC_register_traverser(scheme_placeholder_type, small_object);
   GC_register_traverser(scheme_case_lambda_sequence_type, case_closure);
   GC_register_traverser(scheme_begin0_sequence_type, seq_rec);
 

@@ -195,6 +195,20 @@
                (preferences:set 'drscheme:project-manager:window-size-percentage (car percentages)))))])
       (sequence (apply super-init args))))
 
+  (preferences:set-default 'drscheme:project-manager-collection-paths-window-width 200 number?)
+  (preferences:set-default 'drscheme:project-manager-collection-paths-window-height 400 number?)
+
+  (define prefs-resize-dialog%
+    (class dialog% (width-sym height-sym . args)
+      (rename
+       [super-on-size on-size])
+      (override
+       [on-size
+	(lambda (w h)
+	  (preferences:set width-sym w)
+	  (preferences:set height-sym h)
+	  (super-on-size))])
+      (sequence (apply super-init args))))
 
   (define project-frame%
     (class/d (drscheme:frame:basics-mixin (frame:searchable-mixin frame:standard-menus%)) (filename)
@@ -590,7 +604,13 @@
 	  (send rep clear-undos)))
       
       (define (configure-collection-paths)
-	(let* ([dialog (make-object dialog% "Configure Collection Paths" this 200 400)]
+	(let* ([dialog (make-object prefs-resize-dialog%
+			 'drscheme:project-manager-collection-paths-window-width
+			 'drscheme:project-manager-collection-paths-window-height
+			 "Configure Collection Paths" this
+			 (preferences:get 'drscheme:project-manager-collection-paths-window-width)
+			 (preferences:get 'drscheme:project-manager-collection-paths-window-height)
+			 #f #f '(resize-border))]
 	       [text (make-object (scheme:text-mixin text:basic%))]
 	       [message (make-object message% "Specify an expression for the collection paths" dialog)]
 	       [canvas (make-object editor-canvas% dialog text)]

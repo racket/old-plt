@@ -7,10 +7,9 @@
 ;;
 ;; Special thanks go out to:
 ;; Robert Bruce Findler for support and bug detection.
-;; Scott Owens for the new constructor grammer.
 ;; Doug Orleans for pointing out that pairs should be reused while
 ;; matching lists.
-;; 
+;;
 ;;
 ;; Originally written by Andrew K. Wright, 1993 (wright@research.nj.nec.com)
 ;; which in turn was adapted from code written by Bruce F. Duba, 1991.
@@ -44,7 +43,7 @@
 ;;
 ;; pat ::= 
 ;;         identifier                      this binds an identifier if it 
-;;                                         doesn't conflict with ..k or _
+;;                                         doesn't conflict with ..k, __k or _
 ;;       | _                               anything
 ;;       | #t                              #t
 ;;       | #f                              #f
@@ -53,7 +52,8 @@
 ;;       | character                       a character
 ;;       | 'sexp                           an s-expression
 ;;       | 'symbol                         a symbol (special case of s-expr)
-;;       | (var id)                        allows one to use ..k or _ as identifiers
+;;       | (var id)                        allows one to use ..k or _ as 
+;;                                         identifiers
 ;;       | (list lvp_1 ... lvp_n)               list of n elements
 ;;       | (list-rest lvp_1 ... lvp_n pat) an improper list of n elements
 ;;                                         plus a last element which represents
@@ -66,9 +66,12 @@
 ;;                                         items in the list
 ;;       | (list-no-order pat ... pat_n ooo) pat_n matches the remaining 
 ;;                                           unmatched items
-;;       | (hash-table pat ...)            matches the elements of a hash table
-;;       | (hash-table pat ... pat_n ooo)  pat_n must match the remaining 
-;;                                         unmatched elements
+;;       | (hash-table (pat_k pat_v) ...)  matches the elements of a hash table
+;;       | (hash-table (pat_k pat_v) ... (pat_kn pat_vn) ooo)  
+;;                                         pat_kn must match the remaining 
+;;                                         unmatched key elements
+;;                                         pat_vn must match the remaining 
+;;                                         unmatched value elements
 ;;       | (app field pat)                 a field of a structure (field is 
 ;;                                         an accessor)
 ;;                                         Actually field can be any function 
@@ -120,7 +123,7 @@
 ;;
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;; extra
 
 (module plt-match mzscheme
   (provide 
@@ -131,14 +134,15 @@
    match-let*
    match-letrec
    match-define
+   match-test
    match:test-no-order
    ) 
   
   (require-for-syntax (lib "stx.ss" "syntax")
                       (lib "etc.ss")
                       (lib "list.ss")
-                      (lib "include.ss"))
-  
+                      (lib "include.ss")
+                      (lib "struct.ss" "syntax"))
   (require (lib "etc.ss")
            (lib "list.ss"))
   
@@ -166,11 +170,34 @@
                       match-let*
                       match-letrec
                       match-define
+                      match-test
                       )
 
     (include "private/plt-match/match-inc.scm")    
 
     (define node-count 0)
+
+    ;;!(syntax match-test)
+    ;; This macro only returns a list of two numbers.  
+    ;; The first number represents the
+    ;; number of nodes generated in the process of compiling the match 
+    ;; expression.  This gives one and idea as to the size of the 
+    ;; compiled expression.  
+    ;; The second number is the amount of "real" time in milliseconds 
+    ;; it took to compile the patterns.
+    (define match-test/proc 
+      (lambda (stx)
+        (syntax-case stx (=>)
+          ((_ clause ...)
+           (begin
+             (set! node-count 0)
+              (let-values (((stx t rt gc) (time-apply gen-match 
+                                   (list (syntax x)
+                                         '()
+                                         (syntax (clause ...))
+                                         stx))))
+                #`(list #,node-count
+                        #,rt)))))))
 
     (define match/proc 
       (lambda (stx)

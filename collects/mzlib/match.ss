@@ -131,7 +131,8 @@
   (require-for-syntax (lib "stx.ss" "syntax")
                       (lib "etc.ss")
                       (lib "list.ss")
-                      (lib "include.ss"))
+                      (lib "include.ss")
+                      (lib "struct.ss" "syntax"))
 
   (require (lib "etc.ss")
            (lib "list.ss"))

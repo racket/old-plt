@@ -29,26 +29,28 @@
                      (dot-dot-k? pat)))
                (syntax p))
               (p
+               (stx-null? (syntax p))
+               (syntax/loc stx (list)))
+              (p
                ;; although it is not in the grammer for quasi patterns
                ;; it seems important to not allow unquote splicing to be
                ;; a symbol in this case `,@(a b c). In this unquote-splicing
                ;; is treated as a symbol and quoted to be matched.
                ;; this is probably not what the programmer intends so
-             ;; it may be better to throw a syntax error
-             (identifier? (syntax p))
-             (syntax/loc stx 'p))
-            ;; ((var p)  ;; we shouldn't worry about this in quasi-quote
-            ;;  (identifier? (syntax p))
-            ;;  (syntax/loc phrase 'p))
+               ;; it may be better to throw a syntax error
+               (identifier? (syntax p)) 
+               (syntax/loc stx 'p))
+              ;; ((var p)  ;; we shouldn't worry about this in quasi-quote
+              ;;  (identifier? (syntax p))
+              ;;  (syntax/loc phrase 'p))
             (,p (syntax p))
             (,@pat
              (q-error (syntax ,@pat) "unquote-splicing not nested in list"))
-            (p
-             (or (pair? (syntax-e (syntax p))) (null? (syntax-e (syntax p)))) 
+            ((x . y) 
              (let* ((list-type 'list)
                     (result
                      (let loop 
-                         ((l (syntax-e (syntax p))))
+                         ((l (syntax-e (syntax (x . y)))))
                                         ;(write l)(newline)
                        (cond ((null? l) '())
                              ((and (stx-pair? (car l))

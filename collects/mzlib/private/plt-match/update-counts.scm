@@ -51,7 +51,9 @@
                   (map
                    (lambda (tl)
                      (let ((f (map test-tst (test-filter tl))))
-                       (append f (map implied f))))
+                       ;(write 'tl)(write (map test-tst tl))(newline)
+                       ;(write 'f)(write f) (newline)
+                       (append f (foldl append '() (map implied f)))))
                    test-master-list)))
             (let loop ((tml test-master-list)
                        (tsf test-so-far-lists)

@@ -1,4 +1,5 @@
 ;; This library is used by match.ss
+;
 
 ;;! (function stx-length
 ;;          (form (syntax-length syntax-obj) -> int)
@@ -64,7 +65,7 @@
   (let ((accessors-index 3)
         (mutators-index 4)
         (pred-index 2)
-        (struct-type-index 0)
+        (super-type-index 5)
         (handle-acc-list
          (lambda (l)
            (letrec ((RC
@@ -75,14 +76,28 @@
                                          (RC (cdr ac-list))))))))
              (reverse (RC l))))))
     (lambda (struct-name failure-thunk)
-      (let* ((info-on-struct (syntax-local-value struct-name failure-thunk))
-             (accessors (handle-acc-list
-                         (list-ref info-on-struct accessors-index)))
-             (mutators (handle-acc-list
-                        (list-ref info-on-struct mutators-index)))
-             (pred (list-ref info-on-struct pred-index))
-             )
-        (values pred accessors mutators)))))
+      (letrec ((get-lineage
+                (lambda (struct-name)
+                  (let ((super 
+                         (list-ref 
+                          (syntax-local-value struct-name 
+                                              failure-thunk)
+                          super-type-index)))
+                    (cond ((equal? super #t) '())
+                          ((equal? super #f) '()) ;; not sure what to do in case where super-type is unknown
+                          (else
+                           (cons super (get-lineage super))))))))
+            (let ((info-on-struct (syntax-local-value struct-name failure-thunk)))
+              (if (struct-declaration-info? info-on-struct)
+                  (let ((accessors (handle-acc-list
+                                    (list-ref info-on-struct accessors-index)))
+                        (mutators (handle-acc-list
+                                   (list-ref info-on-struct mutators-index)))
+                        (pred (list-ref info-on-struct pred-index))
+                        (parental-chain (get-lineage struct-name)))
+                    (values pred accessors mutators (cons struct-name parental-chain)))
+                  (failure-thunk)))))))
+
 
 
 
@@ -101,8 +116,15 @@
 ;; redundant.  If e can be determined to be true from the list of
 ;; tests l then e is "in" l.
 (define in (lambda (e l)
-             ;(write e)(newline)
-             (or (member e l)
+             (or 
+                 (ormap
+                  (lambda (el)
+                    (or (equal? e el)
+                        (and 
+                         (eq? (car e) 'struct-pred)
+                         (eq? (car el) 'struct-pred)
+                         (member (caaddr e) (caddr el))
+                         (equal? (cadddr e) (cadddr el))))) l)
                  (and (eq? (car e) 'list?)
                       (or (member `(null? ,(cadr e)) l)
                           (member `(pair? ,(cadr e)) l)))
@@ -111,18 +133,20 @@
                              (const-class (equal-test? srch)))
                         ;(write srch)
                         (cond
-                         ;;Experimental
-                   ;       ((equal? (car srch) 'struct-pred)
-;                           (let mem ((l l))
-;                             (if (null? l)
-;                                 #f
-;                                 (let ((x (car l)))
-;                                   (if (and (equal? (car x)
-;                                                    'struct-pred)
-;                                            (not (equal? (cadr x) (cadr srch)))
-;                                            (equal? (cddr x) (cddr srch)))
-;                                       #t
-;                                       (mem (cdr l)))))))
+                         ((equal? (car srch) 'struct-pred)
+                          (let mem ((l l))
+                            (if (null? l)
+                                #f
+                                (let ((x (car l)))
+                                  (if (and (equal? (car x)
+                                                   'struct-pred)
+                                           (not (equal? (cadr x) (cadr srch)))
+                                           ; the current struct type should not
+                                           ; be a member of the parental-chain of 
+                                           (not (member (caaddr x) (caddr srch))) 
+                                           (equal? (cadddr x) (cadddr srch)))
+                                      #t
+                                      (mem (cdr l)))))))        
                          (const-class  
                           (let mem ((l l))
                             (if (null? l)
@@ -155,8 +179,7 @@
                             (if (null? l)
                                 #f
                                 (let ((x (car l)))
-                                  (or (and (disjoint?
-                                            x)
+                                  (or (and (disjoint? x)
                                            (not (equal?
                                                  (car x)
                                                  (car srch)))
@@ -165,13 +188,18 @@
                                                    'struct-pred)
                                                   (equal? 
                                                    (cadr x)
-                                                   (caddr srch)))
+                                                   ;; we use cadddr here to access the expression
+                                                   ;; because struct predicates carry some extra baggage
+                                                   ;; They have the form (struct-pred <predicate> <list of super types> <exp>)
+                                                   (cadddr srch)))
                                                  ((equal?
                                                    (car x)
                                                    'struct-pred)
                                                   (equal? 
                                                    (cadr srch)
-                                                   (caddr x)))
+                                                   ;; we use cadddr here to access the expression
+                                                   ;; because struct predicates carry some extra baggage
+                                                   (cadddr x)))
                                                  (else (equal?
                                                         (cadr x)
                                                         (cadr srch)))))
@@ -246,7 +274,7 @@
 (define match:disjoint-predicates
   '(struct-pred null? pair? symbol? boolean? number? string? char?
           procedure? vector?
-          box?)) ; These are based on chez scheme
+          box?)) 
 
 (define match:vector-structures '())
 

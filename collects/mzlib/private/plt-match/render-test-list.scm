@@ -326,29 +326,44 @@
                    bv
                    kf
                    ks))))
-        (make-act
-         'hash-table-pat
-         ae
-         (lambda (ks kf let-bound)
-           (lambda (sf bv)
-             (let ((hash-name (gensym 'hash)))
-               #`(let ((#,hash-name
-                        (hash-table-map #,(subst-bindings ae
-                                                          let-bound)
-                                        (lambda (k v) (list k v)))))
-                   #,(next-outer #`(list-no-order pats ...)
-                                 #`#,hash-name
-                                 sf
-                                 ;; these tests have to be true
-                                 ;;(append (list
-                                 ;;         '(pair? exp)
-                                 ;;         '(pair? (cdr exp))
-                                 ;;         '(null? (cdr (cdr exp))))
-                                 ;;        sf)
-                                 bv
-                                 let-bound
-                                 kf
-                                 ks))))))))
+        (let ((mod-pat
+               (lambda (pat)
+                 (syntax-case pat ()
+                   ((key value) (syntax (list key value)))
+                   (ddk 
+                    (stx-dot-dot-k? (syntax ddk))
+                    (syntax ddk))
+                   (id 
+                    (and (identifier? (syntax id))
+                         (pattern-var? (syntax-object->datum (syntax id)))
+                         (not (stx-dot-dot-k? (syntax id))))
+                    (syntax id))
+                   (p (match:syntax-err
+                       (syntax/loc stx p)
+                       "poorly formed hash-table pattern"))))))
+          (make-act
+           'hash-table-pat
+           ae
+           (lambda (ks kf let-bound)
+             (lambda (sf bv)
+               (let ((hash-name (gensym 'hash)))
+                 #`(let ((#,hash-name
+                          (hash-table-map #,(subst-bindings ae
+                                                            let-bound)
+                                          (lambda (k v) (list k v)))))
+                     #,(next-outer #`(list-no-order #,@(map mod-pat (syntax->list (syntax (pats ...)))))
+                                   #`#,hash-name
+                                   sf
+                                   ;; these tests have to be true
+                                   ;;(append (list
+                                   ;;         '(pair? exp)
+                                   ;;         '(pair? (cdr exp))
+                                   ;;         '(null? (cdr (cdr exp))))
+                                   ;;        sf)
+                                   bv
+                                   let-bound
+                                   kf
+                                   ks)))))))))
 
       ((hash-table pats ...)
        (match:syntax-err
@@ -358,7 +373,7 @@
       ((struct struct-name (fields ...))
        (identifier? (syntax struct-name))
        (let ((num-of-fields (stx-length (syntax (fields ...)))))
-         (let-values (((pred accessors mutators)
+         (let-values (((pred accessors mutators parental-chain)
                        (struct-pred-accessors-mutators
                         (syntax struct-name)
                         (lambda ()
@@ -374,12 +389,14 @@
                    "fields for structure in pattern"))
                  (cons
                   (make-shape-test
-                   `(struct-pred ,pred ,(syntax-object->datum ae))
+                   `(struct-pred ,(syntax-object->datum pred) 
+                                 ,(map syntax-object->datum parental-chain) 
+                                 ,(syntax-object->datum ae))
                    ae
                    (lambda (ks kf let-bound)
                      (lambda (sf bv)
                        (emit (lambda (exp) 
-                               (quasisyntax/loc stx (struct-pred #,pred #,exp)))
+                               (quasisyntax/loc stx (struct-pred #,pred #,parental-chain #,exp)))
                              ae
                              let-bound
                              sf

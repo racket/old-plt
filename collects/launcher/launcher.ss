@@ -7,7 +7,7 @@
 	   (lib "link-sig.ss" "dynext")
 	   (lib "link.ss" "dynext")
 	   (lib "xml-sig.ss" "xml")
-	   (lib "xml-unit.ss" "xml"))
+	   (lib "xml.ss" "xml"))
   
   (require "launcher-sig.ss"
 	   "launcher-unit.ss")

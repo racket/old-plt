@@ -296,7 +296,7 @@
 					   (dict (key "executable name")
 						 (string ,executable-name)
 						 (key "stored arguments")
-						 (array ,(map (lambda (arg)
+						 (array ,@(map (lambda (arg)
 								`(string ,arg))
 							      arg-list)))))))
 

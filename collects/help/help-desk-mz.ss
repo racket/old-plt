@@ -7,6 +7,8 @@
 	   "private/manuals.ss"
 	   "private/installed-components.ss")
 
+  (require (lib "buginfo.ss" "help" "servlets" "private"))
+
   (define (start-help-server use-port remote-connections?)
     (external-start-help-server use-port
                                 remote-connections?
@@ -35,6 +37,7 @@
     finddoc-page
     finddoc-page-anchor
     ;; supplemental
+    set-bug-report-info!
     help-desk:installed-components))
 
 

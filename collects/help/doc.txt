@@ -49,14 +49,6 @@ below.  If the user's default browser does not contact the
 Help Desk server within a certain time period, an internal PLT 
 browser is started instead.
 
-> set-dr-bug-report-info! : (-> alist) -> void
-
-Sets dynamic information used when submitting a bug report.
-The argument is a thunk that returns an association
-list, where each element is a list consisting of a symbol 
-(the key) and a string (the value).  Currently, the only
-key used is 'computer-language.
-
 The following functions are provided by both `help-desk-mz.ss' and
 `help-desk.ss'.  These functions rely only on MzScheme:
 
@@ -198,6 +190,14 @@ documentation.
 
 _Supplemental Help Desk functions_
 ----------------------------------
+
+> (set-bug-report-info! thunk)
+
+Sets dynamic information used when submitting a bug report.
+The `thunk' argument returns an association list, where each 
+element is a list consisting of a symbol (the key) and a string 
+(the value).  Currently, the only key that may be used is 
+'computer-language.
 
 > (help-desk:installed-components)
   It returns a string of XHTML with documentation extracted from the 

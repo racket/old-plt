@@ -1,3 +1,4 @@
+;; Mike Burns, July 28th, 2004, netgeek@speakeasy.net
 ;; Test if the Web server can start and stop via the command line.
 ;; Not sure if this is needed, but it was in Paul's.
 (module test-web-server-process mzscheme
@@ -10,7 +11,7 @@
 
   (define the-port 8135)
 
-  ;; TODO resurrect
+  ;;; TODO resurrect
   (define test-web-server-process
     (make-test-suite
       "Start and stop the Web server via the command line"

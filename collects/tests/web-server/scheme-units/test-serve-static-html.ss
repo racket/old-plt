@@ -1,3 +1,4 @@
+;; Mike Burns, July 28th, 2004, netgeek@speakeasy.net
 ;; Test whether a static, HTML file can be sent correctly.
 (module test-serve-static-html mzscheme
   (require (lib "test.ss" "schemeunit")
@@ -21,5 +22,5 @@
         (assert-serve "/"
                       (build-path web-root "htdocs" "index.html")
                       "text/html"))))
-  ;; TODO test that additional indices work, too.
+  ;;; TODO test that additional indices work, too.
   )

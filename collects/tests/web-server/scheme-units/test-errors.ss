@@ -1,3 +1,4 @@
+;; Mike Burns, July 28th, 2004, netgeek@speakeasy.net
 ;; Test the error messages for both headers and content.
 (module test-errors mzscheme
   (require (lib "test.ss" "schemeunit")
@@ -29,7 +30,7 @@
       ;(make-test-case
       ; "Unit servlet not returning a response"
       ; ...)
-      ;; TODO check headers
+      ;;; TODO check headers
       (make-test-case
         "Require failure"
         (assert-with-server

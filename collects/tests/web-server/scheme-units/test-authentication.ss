@@ -1,3 +1,4 @@
+;; Mike Burns, July 28th, 2004, netgeek@speakeasy.net
 ;; Test serving files that require authentication.
 (module test-authentication mzscheme
   (require (lib "contract.ss")
@@ -50,11 +51,11 @@
         "Authorization-only file with provided authorization, explicit file"
         (assert-auth "/secret/index.html" "bubba:bbq"))))
 
-  ;; TODO
-  ;; browser requests file,
-  ;; browser gives 403,
-  ;; browser provides creditentials,
-  ;; server provides file
+  ;;; TODO
+  ;;; browser requests file,
+  ;;; browser gives 403,
+  ;;; browser provides creditentials,
+  ;;; server provides file
 
   ;; browser requests file,
   ;; browser gives 403,

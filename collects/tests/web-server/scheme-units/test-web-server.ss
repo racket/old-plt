@@ -1,3 +1,4 @@
+;; Mike Burns, July 26th, 2004, netgeek@speakeasy.net
 ;; Test the ability to start and stop the server via the library.
 (module test-web-server mzscheme
   (require (lib "web-server.ss" "web-server")
@@ -8,7 +9,7 @@
   (provide test-web-server)
 
   (define the-configuration
-    ;;;; Must be tested!
+    ;;; TODO: test load-configuration
     (load-configuration "configuration-table"))
 
   (define the-port 8135)

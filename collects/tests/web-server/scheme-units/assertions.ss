@@ -1,3 +1,4 @@
+;; Mike Burns, July 8th, 2004, netgeek@speakeasy.net
 ;; Useful assertions
 (module assertions mzscheme
   (require (lib "test.ss" "schemeunit")

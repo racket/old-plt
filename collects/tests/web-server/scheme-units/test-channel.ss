@@ -1,6 +1,5 @@
+;; Mike Burns, July 8th, 2004, netgeek@speakeasy.net
 ;; Test async-channel:
-;;  async-channel-get-available
-;;  async-channel-try-get
 (module test-channel mzscheme
   (require (lib "test.ss" "schemeunit")
            (lib "channel.ss" "web-server"))

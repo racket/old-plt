@@ -1,3 +1,4 @@
+;; Mike Burns, July 28th, 2004, netgeek@speakeasy.net
 ;; Test serving JPEGs. This also tests PR #6302.
 (module test-serve-static-jpeg mzscheme
   (require (lib "contract.ss")

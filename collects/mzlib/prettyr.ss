@@ -72,7 +72,9 @@
    mzlib:pretty-print^
    (import)
    
-   (define pretty-print-show-inexactness (make-parameter #f))
+   (define pretty-print-show-inexactness 
+     (make-parameter #f
+		     (lambda (x) (and x #t))))
 
    (define pretty-print-columns 
      (make-parameter 79

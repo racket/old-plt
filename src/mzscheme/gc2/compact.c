@@ -3044,11 +3044,21 @@ static void designate_modified(void *p)
 /* Linux signal handler: */
 #if defined(linux)
 # include <signal.h>
+# if (defined(powerpc) || defined(__powerpc__))
+/* PowerPC */
+void fault_handler(int sn, siginfo_t *si)
+{
+  designate_modified((void *)si->_sigfault.addr);
+  signal(SIGSEGV, (void (*)(int))fault_handler);
+}
+# else
+/* x86 */
 void fault_handler(int sn, struct sigcontext sc)
 {
   designate_modified((void *)sc.cr2);
   signal(SIGSEGV, (void (*)(int))fault_handler);
 }
+# endif
 # define NEED_SIGSEGV
 #endif
 

@@ -170,11 +170,13 @@
       (unless (zero? i)
 	(let loop ([j (length (problem-cols problem))])
 	  (unless (zero? j)
-	    (let ([m (- i 1)]
-		  [n (- j 1)])
-	      (when (and (not (eq? (get-entry m n)
-				   (vector-ref (vector-ref (problem-solution problem) m) n)))
-			 (not (eq? (get-entry m n) 'unknown)))
+	    (let* ([m (- i 1)]
+		   [n (- j 1)]
+		   [board-entry (get-entry m n)]
+		   [real-answer (vector-ref (vector-ref (problem-solution problem) m) n)])
+	      (unless (or (eq? board-entry real-answer)
+			  (eq? board-entry 'unknown)
+			  (eq? real-answer 'unknown))
 		(set-entry m n 'wrong)))
 	    (loop (- j 1))))
 	(loop (- i 1)))))

@@ -109,7 +109,21 @@
             (10)
             (8)
             (4))
-          '#f)
+          '#15(#14(off off off off off on on on on off)
+               #14(off off off on on on on on on on on off)
+               #14(off off on on on on on on on on on on off)
+               #14(off on on on on on on on on on on on on off)
+               #14(off on off on on on on on on on on off on off)
+               #14(on on off off off on on on on on off off on)
+               #14(on on on on off off on on on off off on)
+               #14(on on on on on off off off off off on)
+               #14(on on on on on on on off off on)
+               #14(on on on on on on on on off off off on)
+               #14(off on on on on on on on on on off off on off)
+               #14(off on on on on on on on on on on off on off)
+               #14(off off on on on on on on on on on on off)
+               #14(off off off on on on on on on on on off)
+               #14(off off off off off on on on on off)))
         (make-problem
           "John "
           '((15 16)
@@ -213,7 +227,30 @@
             (1 1)
             (2 1)
             (1))
-          '#f)
+          '#24(#9(on)
+               #9(on)
+               #9(off off off on off off off off on)
+               #9(off off off on off off off off on)
+               #9(off off off on)
+               #9(off off off off on on on on off)
+               #9(off off off on on on on on off)
+               #9(off off off on)
+               #9(off off off off off off off off on)
+               #9(off off off off off off off on)
+               #9(off off off on)
+               #9(off off off on)
+               #9(off off off off on off)
+               #9(off on)
+               #9(on)
+               #9(on off off off on off)
+               #9(on on off off on off)
+               #9(off on off)
+               #9(off off off off on off)
+               #9(off on)
+               #9(on)
+               #9(on off off off on off)
+               #9(on on off off on off)
+               #9(off on off)))
         (make-problem
           "Solver Breaker"
           '((1) (2 2) (1) (2) (2 2) (1))
@@ -280,7 +317,332 @@
             (5 3 2)
             (2 4 2)
             (3))
-          '#f)
+          '#20(#20(off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   on
+                   on
+                   on
+                   on
+                   on
+                   off)
+               #20(off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   off)
+               #20(off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   off
+                   off
+                   on
+                   on
+                   off)
+               #20(off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   on
+                   on
+                   on
+                   off
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   off
+                   on)
+               #20(off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   on
+                   on
+                   on
+                   off
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   off
+                   on)
+               #20(off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   on
+                   on
+                   on
+                   on
+                   off
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   off
+                   on)
+               #20(off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   on
+                   on
+                   on
+                   on
+                   off
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   off
+                   on)
+               #20(off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   on
+                   on
+                   on
+                   on
+                   on
+                   off
+                   on
+                   on
+                   on
+                   on
+                   off
+                   off
+                   on)
+               #20(off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   off
+                   off
+                   off
+                   off
+                   on
+                   off
+                   on)
+               #20(off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   off
+                   on)
+               #20(off
+                   off
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   off
+                   on
+                   on
+                   off)
+               #20(on on on on on on off on on on on on on on on on on off)
+               #20(off on on on on on on off on on on on on on on on on on off)
+               #20(off
+                   off
+                   on
+                   on
+                   on
+                   off
+                   on
+                   on
+                   off
+                   on
+                   on
+                   on
+                   on
+                   off
+                   off
+                   on
+                   on
+                   on
+                   on
+                   off)
+               #20(off
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   off
+                   on
+                   on
+                   off
+                   off
+                   off
+                   off
+                   off
+                   on
+                   on
+                   off)
+               #20(off
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   on
+                   off
+                   on
+                   on
+                   on
+                   off
+                   off
+                   off
+                   off
+                   on
+                   on
+                   off)
+               #20(off on on on on off on on off off on on on off)
+               #20(off
+                   off
+                   on
+                   on
+                   on
+                   on
+                   on
+                   off
+                   off
+                   off
+                   off
+                   on
+                   on
+                   on
+                   off
+                   off
+                   on
+                   on
+                   off)
+               #20(off
+                   on
+                   on
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   on
+                   on
+                   on
+                   on
+                   off
+                   on
+                   on
+                   off)
+               #20(off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   off
+                   on
+                   on
+                   on
+                   off)))
         (make-problem
           "Izuoh (3)"
           '((2)

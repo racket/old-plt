@@ -574,6 +574,7 @@
 	       (set! hyperlinks-list ())
 	       (set! hypertags-list ())
 	       (lock #f)
+	       (mred:dv load-file)
 	       (let* ([url
 		       (cond
 			 [(and (or (null? filename) (not filename))
@@ -588,6 +589,8 @@
 			 [else (error 'hyper-load-file "not a valid filename: ~a" filename)])]
 		      [url-string (mred:url:url->string url)]
 		      [p (mred:url:get-pure-port url)])
+		 (mred:dv url url-string)
+		 (printf "(get-filename) = ~a~n" (get-filename))
 		 (set-filename url-string)
 		 (dynamic-wind (lambda ()
 				 (wx:begin-busy-cursor)

@@ -440,6 +440,7 @@ Scheme_Object *(*scheme_make_envunbox)(Scheme_Object *value);
 Scheme_Object *(*scheme_lookup_global)(Scheme_Object *symbol, Scheme_Env *env);
 Scheme_Bucket *(*scheme_global_bucket)(Scheme_Object *symbol, Scheme_Env *env);
 Scheme_Bucket *(*scheme_global_keyword_bucket)(Scheme_Object *symbol, Scheme_Env *env);
+Scheme_Bucket *(*scheme_module_bucket)(Scheme_Object *mod, Scheme_Object *var, Scheme_Env *env);
 void (*scheme_set_global_bucket)(char *proc, Scheme_Bucket *var, Scheme_Object *val,
 			      int set_undef);
 void (*scheme_save_initial_module_set)(Scheme_Env *env);

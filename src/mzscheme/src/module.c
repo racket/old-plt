@@ -697,7 +697,7 @@ void scheme_module_force_lazy(Scheme_Env *env)
 	  Scheme_Bucket *b = bs[i];
 	  if (b && b->val) {
 	    Scheme_Object *mcr = (Scheme_Object *)b->val;
-	    if (!SAME_TYPE(SCHEME_TYPE(mcr), scheme_macro_type)) {
+	    if (SCHEME_TRUEP(mcr) && !SAME_TYPE(SCHEME_TYPE(mcr), scheme_macro_type)) {
 	      /* It's lazy. Finish it. */
 	      finish_expstart_module(mcr, ht, env);
 	    }
@@ -822,9 +822,14 @@ static void finish_expstart_module(Scheme_Object *lazy, Scheme_Hash_Table *synta
 		 scheme_modidx_shift(SCHEME_CAR(l), menv->module->self_modidx, exp_env->link_midx));
   }
 
-  body = menv->module->et_body;
+  /* Just in case: set syntax to #f to avoid cyclic forcing of lazy syntax. */
+  for (body = menv->module->et_body; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
+    e = SCHEME_CAR(body);
+    name = SCHEME_VEC_ELS(e)[0];
+    scheme_add_to_table(syntax, (const char *)name, scheme_false, 0);
+  }
 
-  for (; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
+  for (body = menv->module->et_body; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
     e = SCHEME_CAR(body);
 
     name = SCHEME_VEC_ELS(e)[0];

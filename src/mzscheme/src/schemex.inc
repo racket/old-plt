@@ -304,6 +304,7 @@
   scheme_extension_table->scheme_lookup_global = scheme_lookup_global;
   scheme_extension_table->scheme_global_bucket = scheme_global_bucket;
   scheme_extension_table->scheme_global_keyword_bucket = scheme_global_keyword_bucket;
+  scheme_extension_table->scheme_module_bucket = scheme_module_bucket;
   scheme_extension_table->scheme_set_global_bucket = scheme_set_global_bucket;
   scheme_extension_table->scheme_save_initial_module_set = scheme_save_initial_module_set;
   scheme_extension_table->scheme_primitive_module = scheme_primitive_module;

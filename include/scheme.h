@@ -985,9 +985,8 @@ MZ_EXTERN volatile int scheme_fuel_counter;
 # define DECREMENT_FUEL(f, p) (f -= (p))
 #endif
 
-#define _scheme_check_for_break_wp(penalty, p) \
-   { if (DECREMENT_FUEL(scheme_fuel_counter, penalty) <= 0) scheme_thread_block_w_thread(0, p); }
-#define _scheme_check_for_break(penalty) _scheme_check_for_break_wp(penalty, scheme_current_thread)
+#define SCHEME_USE_FUEL(n) \
+  { if (DECREMENT_FUEL(scheme_fuel_counter, n) <= 0) { scheme_out_of_fuel(); }}
 
 #if SCHEME_DIRECT_EMBEDDED
 MZ_EXTERN Scheme_Object *scheme_eval_waiting;

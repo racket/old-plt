@@ -14,6 +14,7 @@ EXPORTS
  scheme_get_env
  scheme_current_thread
  scheme_fuel_counter
+ scheme_out_of_fuel
  scheme_thread
  scheme_thread_w_custodian
  scheme_kill_thread

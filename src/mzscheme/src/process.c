@@ -1815,6 +1815,8 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
 
 #ifdef MZ_REAL_THREADS
   SCHEME_SET_CURRENT_PROCESS(np);
+  if (p->break_received)
+    np->break_received = 1;
 #else
   scheme_current_process = np;
 #endif
@@ -1864,6 +1866,8 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
 
 #ifdef MZ_REAL_THREADS
   SCHEME_SET_CURRENT_PROCESS(p);
+  if (np->break_received)
+    p->break_received = 1;
 #else
   scheme_current_process = p;
 #endif
@@ -3387,8 +3391,11 @@ END_XFORM_SKIP;
    void SCHEME_EXIT_THREAD() - exits the current thread
 
    void SCHEME_BREAK_THREAD(void* th) - signals a break in the thread `th'.
-     If `th' is waiting on a semaphore or selecting a file descriptor, this
-     breaking signal must cause that wait or select to break.
+     If `th' is waiting on a semaphore or selecting a file descriptor, This
+     breaking signal must cause that wait or select to break. Unix: When
+     receiving the signal, a thread should set the `break_received' flag
+     in the current process record, and if `select_tv' in the current
+     process record is non-NULL, zero it.
 
    void SCHEME_SET_CURRENT_PROCESS(Scheme_Process* p) - stores `p' as the
      Scheme thread pointer for the current thread.
@@ -3405,35 +3412,38 @@ END_XFORM_SKIP;
 
    void SCHEME_UNLOCK_MUTEX(void* m) - unlocks the mutex `m'.
 
-   int SCHEME_SEMA_DOWN_BREAKABLE(void* s) - waits on `s' but allows the
-     wait to be terminated by a break, returing 1 if the wait was sucessful
-     (i.e., no break occurred) or 0 if unsuccessful.
-
    void* SCHEME_MAKE_SEMA(int init) - creates a new semaphore with initial
      count `init'.
 
    void SCHEME_FREE_SEMA(void* s) - destroys the semaphore `s'.
 
    int SCHEME_SEMA_UP(void* s) - posts to the semaphore `s', returning 0 if
-     an error occurred.
+     an error occurred. For Unix, this function must work in a signal handler.
 
-   int SCHEME_SEMA_DOWN_BREAKABLE(void* s) - waits on `s' but allows the
-     wait to be terminated by a break, returing 1 if the wait was sucessful
-     (i.e., no break occurred) or 0 if unsuccessful.
+   int SCHEME_SEMA_DOWN_BREAKABLE(void* s) - waits on `s' but allows
+     the wait to be terminated by a break, returing 1 if the wait was
+     sucessful (i.e., no break occurred) or 0 if unsuccessful. For
+     Unix, this function must work in a signal handler.
 
-   int SCHEME_SEMA_TRY_DOWN(void* s) - attempts a non-blocking wait on the
-     semaphore `s', immediately returning 1 if the wait was successful or
-     0 if unsuccessful.
+   int SCHEME_SEMA_TRY_DOWN(void* s) - attempts a non-blocking wait on
+     the semaphore `s', immediately returning 1 if the wait was
+     successful or 0 if unsuccessful.  For Unix, this function must
+     work in a signal handler.
+
 */
 
 void scheme_real_sema_down(void *sema)
 {
-  if (!SCHEME_SEMA_DOWN_BREAKABLE(sema)) {
-    Scheme_Process *p = scheme_current_process;
-    do {
-      scheme_process_block_w_process(0, p);
-    } while (!SCHEME_SEMA_DOWN_BREAKABLE(sema));
-  }
+  /* >>>> BUG! SIGNAL RACE CONDITION HERE! <<<<
+     We try to make problems rare by checking breaks
+     just before blocking, but this is inherently wrong.
+     A signal might happen after we check flags but
+     before the semaphore-wait starts. */
+
+  Scheme_Process *p = scheme_current_process;
+  do {
+    scheme_process_block_w_process(0, p);
+  } while (!SCHEME_SEMA_DOWN_BREAKABLE(sema));
 }
 
 #endif
@@ -3457,6 +3467,16 @@ static void do_nothing(int ignored)
 # ifdef SIGSET_NEEDS_REINSTALL
   MZ_SIGSET(SIGMZTHREAD, do_nothing);
 # endif
+
+  {
+    Scheme_Process *p;
+    p = scheme_current_process;
+    p->break_received = 1;
+    if (p->select_tv) {
+      p->select_tv->tv_sec = 0;
+      p->select_tv->tv_usec = 0;
+    }
+  }
 
 # ifdef ____MZ_USE_LINUX_PTHREADS
   {
@@ -3717,6 +3737,13 @@ typedef struct {
 
 static void do_nothing(int ignored)
 {
+  Scheme_Process *p;
+  p = scheme_current_process;
+  p->break_received = 1;
+  if (p->select_tv) {
+    p->select_tv->tv_sec = 0;
+    p->select_tv->tv_usec = 0;
+  }
 }
 
 void *scheme_solaris_init_threads(void)
@@ -4094,6 +4121,13 @@ void *scheme_sproc_init_threads(void)
 
 static void do_nothing(int ignored)
 {
+  Scheme_Process *p;
+  p = scheme_current_process;
+  p->break_received = 1;
+  if (p->select_tv) {
+    p->select_tv->tv_sec = 0;
+    p->select_tv->tv_usec = 0;
+  }
 }
 
 static void start_sproc_thread(void *cl, size_t ignored)

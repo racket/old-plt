@@ -566,6 +566,8 @@ typedef struct Scheme_Process {
   Scheme_Jumpup_Buf jmpup_buf;
 #ifdef MZ_REAL_THREADS
   void *thread;
+  int break_received;
+  struct timeval *select_tv;
 # ifdef MZ_USE_LINUX_PTHREADS
   int jump_on_signal;
   mz_jmp_buf signal_buf;

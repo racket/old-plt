@@ -128,6 +128,9 @@ typedef struct System_Child {
   pid_t id;
   short done;
   int status;
+#ifdef MZ_REAL_THREADS
+  Scheme_Object *sema;
+#endif
   struct System_Child *next;
 } System_Child;
 #endif
@@ -440,7 +443,8 @@ scheme_init_port (Scheme_Env *env)
 #endif
 
 #if defined(FILES_HAVE_FDS)
-# ifndef USE_OSKIT_CONSOLE
+# ifndef MZ_REAL_THREADS
+#  ifndef USE_OSKIT_CONSOLE
   /* Set up a pipe for signalling external events: */
   {
     int fds[2];
@@ -451,6 +455,7 @@ scheme_init_port (Scheme_Env *env)
       fcntl(put_external_event_fd, F_SETFL, MZ_NONBLOCKING);
     }
   }
+#  endif
 # endif
 #endif
 
@@ -4079,6 +4084,16 @@ static int MyPipe(int *ph) {
 
 # define WAITANY(s) waitpid((pid_t)-1, s, WNOHANG)
 
+#ifdef MZ_REAL_THREADS
+static void *sigchld_sema;
+# define WAIT_CHILD_LOCK()   SCHEME_SEMA_UP(sigchld_sema)
+# define WAIT_CHILD_UNLOCK() while (!SCHEME_SEMA_DOWN_BREAKABLE(sigchld_sema)) {}
+#else
+/* Single-threaded case: signal blocking implements lock: */
+# define WAIT_CHILD_LOCK()   /* empty */
+# define WAIT_CHILD_UNLOCK() /* empty */
+#endif
+
 #ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
 #endif
@@ -4098,6 +4113,8 @@ static void child_done(int ingored)
   int status;
   System_Child *sc, *prev;
 
+  WAIT_CHILD_LOCK();
+
   do {
     do {
       result = WAITANY(&status);
@@ -4112,15 +4129,15 @@ static void child_done(int ingored)
       } else
 	status = 0;
 
-      /* OS threads: there's no lock here because signals are disabled
-	 when scheme_system_childen is being modified by a thread. */
-
       prev = NULL;
       for (sc = scheme_system_children; sc; prev = sc, sc = sc->next) {
 	if (sc->id == result) {
 	  sc->done = 1;
 	  sc->status = status;
-	  
+#ifdef MZ_REAL_THREADS
+	  scheme_post_sema(sc->sema);
+#endif
+
 	  if (prev)
 	    prev->next = sc->next;
 	  else
@@ -4133,6 +4150,8 @@ static void child_done(int ingored)
     }
   } while (result > 0);
 
+  WAIT_CHILD_UNLOCK();
+
 # ifdef SIGSET_NEEDS_REINSTALL
   MZ_SIGSET(SIGCHLD, child_done);
 # endif
@@ -4143,6 +4162,25 @@ END_XFORM_SKIP;
 #endif
 
 #endif
+
+static int sigchld_installed = 0;
+
+static void init_sigchld(void)
+{
+  if (!sigchld_installed) {
+    /* Catch child-done signals */
+    START_XFORM_SKIP;
+    MZ_SIGSET(SIGCHLD, child_done);
+    END_XFORM_SKIP;
+
+#ifdef MZ_REAL_THREADS
+    REGISTER_SO(sigchld_sema);
+    sigchld_sema = SCHEME_MAKE_SEMA(1);
+#endif
+
+    sigchld_installed = 1;
+  }
+}
 
 /*********** Unix/Windows/BeOS: process status stuff *************/
 
@@ -4241,9 +4279,13 @@ static Scheme_Object *get_process_status(void *sci, int argc, Scheme_Object **ar
 # endif
     return scheme_intern_symbol("unknown");
 #endif
-  } else if (SAME_OBJ(argv[0], scheme_intern_symbol("wait")))
+  } else if (SAME_OBJ(argv[0], scheme_intern_symbol("wait"))) {
+#ifdef MZ_REAL_THREADS
+    scheme_wait_sema(((System_Child *)sci)->sema, 0);
+#else
     scheme_block_until(subp_done, subp_needs_wakeup, sci, (float)0.0);
-  else
+#endif
+  } else
     scheme_wrong_type("control-process", "'status or 'wait", 0, argc, argv);
   return scheme_void;
 }
@@ -4633,16 +4675,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     scheme_flush_orig_outputs();
 
   if (as_child || !def_exit_on) {
-    {
-      static int sigchld_installed = 0;
-      if (!sigchld_installed) {
-	/* Catch child-done signals */
-	START_XFORM_SKIP;
-	MZ_SIGSET(SIGCHLD, child_done);
-	END_XFORM_SKIP;
-	sigchld_installed = 1;
-      }
-    }
+    init_sigchld();
 
     sc = MALLOC_ONE_RT(System_Child);
 #ifdef MZTAG_REQUIRED
@@ -4650,7 +4683,11 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 #endif
     sc->id = 0;
     sc->done = 0;
+#ifdef MZ_REAL_THREADS
+    sc->sema = scheme_make_sema(0);
+#endif
 
+    WAIT_CHILD_LOCK();
     scheme_block_child_signals(1);
 
     pid = fork();
@@ -4662,6 +4699,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     }
 
     scheme_block_child_signals(0);
+    WAIT_CHILD_UNLOCK();
   } else {
     sc = NULL;
     pid = 0;
@@ -4845,7 +4883,11 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       scheme_do_exit(0, NULL);
       status = 0; /* Doesn't get here */
     } else {
+#ifdef MZ_REAL_THREADS
+      scheme_wait_sema(sc->sema, 0);
+#else
       scheme_block_until(subp_done, NULL, (void *)sc, 0);
+#endif
       status = !sc->status;
     }
 #else
@@ -5147,6 +5189,18 @@ static void clean_up_wait(long result, OS_SEMAPHORE_TYPE *array,
 }
 #endif
 
+/********************* RealThreads hack  *******************/
+
+#ifdef MZ_REAL_THREADS
+# define CHECK_MZBREAK_SIGNAL(t) { if (scheme_current_process->break_received) \
+                                     (t)->tv_sec = 0, (t)->tv_usec = 0; \
+                                   scheme_current_process->select_tv = t; }
+# define DONE_MZBREAK_CHECK() (scheme_current_process->select_tv = NULL, \
+                               scheme_current_process->break_received = 0)
+#else
+# define CHECK_MZBREAK_SIGNAL(t) /* empty */
+# define DONE_MZBREAK_CHECK()    /* empty */
+#endif
 
 /******************** Main sleep function  *****************/
 /* The simple select() stuff is buried in Windows/BeOS
@@ -5169,6 +5223,8 @@ static void default_sleep(float v, void *fds)
     time.tv_sec = (long)v;
     time.tv_usec = (long)(fmod(v, 1.0) * 1000000);
 
+    CHECK_MZBREAK_SIGNAL(&time);
+
     if (external_event_fd) {
       DECL_FDSET(readfds, 1);
 
@@ -5176,10 +5232,13 @@ static void default_sleep(float v, void *fds)
 
       MZ_FD_ZERO(readfds);
       MZ_FD_SET(external_event_fd, readfds);
+
       select(external_event_fd + 1, readfds, NULL, NULL, &time);
     } else {
       select(0, NULL, NULL, NULL, &time);
     }
+
+    DONE_MZBREAK_CHECK();
 #else
 # ifndef NO_SLEEP
 #  ifdef USE_BEOS_SNOOZE
@@ -5358,7 +5417,11 @@ static void default_sleep(float v, void *fds)
       MZ_FD_SET(external_event_fd, rd);
 #endif
 
+    CHECK_MZBREAK_SIGNAL(&time);
+
     select(limit, rd, wr, ex, v ? &time : NULL);
+
+    DONE_MZBREAK_CHECK();
 #endif
   }
 

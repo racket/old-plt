@@ -168,7 +168,7 @@ static void user_break_hit(int ignore)
   MZ_SIGSET(SIGINT, user_break_hit);
 #  endif
 #  ifdef MZ_PRECISE_GC
-  /* Restore variable stack. Stupid call ensures xformes adds
+  /* Restore variable stack. Stupid call ensures xform adds
      __gc_var_stack__. */
   if (0) scheme_break_thread(NULL);
   GC_variable_stack = (void **)__gc_var_stack__[0];

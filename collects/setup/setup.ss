@@ -1,4 +1,3 @@
-
 (parameterize ([use-compiled-file-kinds 'none])
   (require-library "compile.ss" "compiler"))
 
@@ -80,6 +79,7 @@
 				 file
 				 string
 				 compile
+				 info
 				 dcompile
 				 dlink
 				 dfile)]

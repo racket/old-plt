@@ -4,13 +4,15 @@
 (compound-unit/sig
   (import)
   (link
+   [info : setup:info^ ((require-library "get-infor.ss" "setup"))]
    [function : mzlib:function^ ((require-library "functior.ss"))]
    [xml : xml^ ((require-library "xmlr.ss" "xml") function)]
    [main
     : ()
     ((unit/sig ()
        (import mzlib:function^
-	       xml^)
+	       xml^
+	       setup:info^)
 
        (define (all-collections)
 	 (let ([colls (make-hash-table)])
@@ -31,14 +33,10 @@
 
        (define (get-blurb collection)
 	 (let/ec k
-	   (let ([info-file (build-path (collection-path collection) "info.ss")])
-	     (unless (file-exists? info-file)
+	   (let ([proc (get-info (list collection))])
+	     (unless proc
 	       (k #f))
-	     (let* ([proc (with-handlers ([(lambda (x) #t)
-					   (lambda (x)
-					     (k #f))])
-			    (load info-file))]
-		    [name (with-handlers ([(lambda (x) #t)
+	     (let* ([name (with-handlers ([(lambda (x) #t)
 					   (lambda (x)
 					     (k
 					      (make-comp
@@ -110,5 +108,6 @@
 	       (map build-string-from-comp comps)
 	       (list (format "</ul>~n")))))
      function
-     xml)])
+     xml
+     info)])
   (export))

@@ -4,10 +4,10 @@
 ;; the first has the locations of the docs and the second is their names.
 
 (lambda (quicksort)
-  (invoke-unit
-   (unit 
-     (import quicksort)
-     (export)
+  (invoke-unit/sig
+   (unit/sig ()
+     (import (quicksort)
+	     setup:info^)
 
      (let loop ([collection-paths (current-library-collection-paths)]
 		[docs null]
@@ -60,7 +60,7 @@
 		     (let-values ([(sub-docs sub-names)
 				   (with-handlers ([void (lambda (x)
 							   (values null null))])
-				     (let ([l ((apply require-library/proc "info.ss" lcollpath)
+				     (let ([l ((get-info lcollpath)
 					       'doc-sub-collections
 					       (lambda () null))])
 				       (cloop l colldir lcollpath null null)))])
@@ -72,4 +72,5 @@
 					   (values sub-docs sub-names))])
 			   (cloop (cdr l) path collpath (append ldocs docs) (append lnames names))))))]
 		  [else (cloop (cdr l) path collpath docs names)])))])))
-   quicksort))
+   (quicksort)
+   setup:info^))

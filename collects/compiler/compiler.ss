@@ -16,6 +16,7 @@
 	 mzlib:file^
 	 mzlib:string^
 	 mzlib:compile^
+	 setup:info^
 	 dynext:compile^
 	 dynext:link^
 	 dynext:file^)
@@ -204,7 +205,7 @@
 	     compiler^)])
        (let ([dir (apply collection-path cp)]
 	     [orig (current-directory)]
-	     [info (apply require-library/proc "info.ss" cp)])
+	     [info (get-info cp)])
 	 (dynamic-wind
 	  (lambda () (current-directory dir))
 	  (lambda ()
@@ -217,7 +218,7 @@
 			    normal-case-path
 			    (directory-list)))])
 		(make-collection
-		 (info 'name (lambda () (error 'compile-collection "info.ss did not provide a name")))
+		 (info 'name (lambda () (error 'compile-collection "info did not provide a name")))
 		 (info 'compile-prefix (lambda () '(void)))
 		 (remove*
 		  (map normal-case-path

@@ -8,19 +8,19 @@ services:
  * Compiling and setting up all collections: When Setup PLT is run
    without any arguments, it finds all of the current collections
    (using the PLTHOME and PLTCOLLECTS environment variable)
-   and compiles all collections with an info.ss library that
+   and compiles all collections with an info-table.ss library that
    indicates how the collection is compiled (see the
    --collection-zos flag for mzc).
 
    The --clean (or -c) flag to Setup PLT causes it to delete
    all existing .zo and extension files, thus ensuring a clean
    build from the source files. (Exactly which files are deleted
-   is controlled by the info.ss file. See below for more info.)
+   is controlled by the info-table.ss file. See below for more info.)
 
    The -l flag takes one or more collection names and restricts 
    Setup PLT's action to those collections.
 
-   In addition to compilation, a collection's info.ss library
+   In addition to compilation, a collection's info-table.ss library
    can specify executables to be installed in the plt directory
    (plt/bin under Unix) or other installation actions.
 
@@ -37,23 +37,23 @@ services:
 
 Setup PLT attempts to compile and set up any collection that:
 
- * has an info.ss library;
+ * has an info-table.ss library;
  
  * is a top-level collection (not a sub-collection; top-level
    collections can specify subcollections to be compiled and
-   set up with the `compile-subcollections' info.ss field);
+   set up with the `compile-subcollections' info-table.ss field);
    and
 
- * has the 'name info.ss field.
+ * has the 'name info-table.ss field.
 
 Collections meeting this criteria are compiled using the
 `compile-collection-zos' procedure described above. If the -e or
 --extension flag is specified, then the collections are also compiled
 using the `compile-collection-extension' procedure described above.
 
-Additional info.ss fields trigger additional setup actions:
+Additional info-table.ss fields trigger additional setup actions:
 
->  'mzscheme-launcher-names - a list of executable names to be
+>  mzscheme-launcher-names - a list of executable names to be
    installed in plt (or plt/bin) to run MzScheme programs implemented
    by the collection. A parallel list of library names must be
    provided by `mzscheme-launcher-libraries'. For each name, a
@@ -61,10 +61,10 @@ Additional info.ss fields trigger additional setup actions:
    `install-mzscheme-program-launcher'. If the executable already
    exists, no action is taken.
 
-> 'mzscheme-launcher-libraries - a list of library names in
+> mzscheme-launcher-libraries - a list of library names in
    parallel to `mzscheme-launcher-names'.
 
->  'mred-launcher-names - a list of executable names to be installed
+>  mred-launcher-names - a list of executable names to be installed
    in plt (or plt/bin) to run MrEd programs implemented by the
    collection.  A parallel list of library names must be provided by
    `mred-launcher-libraries'. For each name, a launching executable is
@@ -72,16 +72,16 @@ Additional info.ss fields trigger additional setup actions:
    `install-mred-program-launcher'. If the executable already exists,
    no action is taken.
 
->  'mred-launcher-libraries - a list of library names in
+>  mred-launcher-libraries - a list of library names in
    parallel to `mred-launcher-names'.
 
->  'install-collection - a procedure that accepts a directory path
+>  install-collection - a procedure that accepts a directory path
    argument (the path to the collection) and performs
    collection-specific installation work.  This procedure should avoid
    unnecessary work in the case that it is called multiple times for
    the same installation.
 
-> 'clean - a list of pathnames to be deleted when the --clean or
+> clean - a list of pathnames to be deleted when the --clean or
   -c flag is passed to setup-plt. The pathnames must be relative to
   the collection.  If the any path names a directory, each of the
   files in the directory are deleted but none of the subdirectories of that
@@ -280,9 +280,9 @@ defines the following parameters that control the setup process:
          [default: #f]
 > make-zo - #t => compile .zo files [default #t]
 > make-so - #t => compile .so/.dll files [default: #f]
-> make-launchers - #t => make collection info.ss-specified launchers
+> make-launchers - #t => make collection info-table.ss-specified launchers
                    [default: #t]
-> call-install - #t => call collection info.ss-specified setup code
+> call-install - #t => call collection info-table.ss-specified setup code
                  [default: #t]
 > specific-collections - a list of collections to set up; the empty
            list means set-up all collections if  the archives
@@ -310,19 +310,36 @@ initialized between them, e.g.:
       ...)
 
 
- _Getting fields from info.ss files_
- -----------------------------------
+ _The syntax of an info-table.ss file_
+ -------------------------------------
+
+Each info-table.ss file consists of a number of associates from keys to
+values. The syntax is like this:
+
+  ((key1 value1)
+   (key2 value2)
+   ...
+   (keyn valuen))
+
+A key has the same syntax as an identifier (or symbol without a quote) in
+Scheme and each value may be a string, number, #t, #f, or other value that
+`read' returns. The precise keys and values depend on the tool that is
+processing the results of the keys. See above for keys that affect
+compilation.
+
+ _Getting fields from info-table.ss files_
+ -----------------------------------------
 
  The file get-info.ss defines 
 
 > (get-info collection-names) -> (union #f (symbol (-> TST) -> TST))
 
    get-info accepts a list of strings naming a collection or
-   sub-collection. It returns #f if there is no info.ss file or if the
-   info.ss file has an error during loading. Otherwise, it returns a
-   procedure of two arguments. This procedure extracts the value bound to
-   the symbol from the info.ss procedure, or returns the result of the
-   thunk if the symbol isn't bound in the info.ss file.
+   sub-collection. It returns #f if there is no info-table.ss file or if
+   the info-table.ss file has an error during loading. Otherwise, it
+   returns a procedure of two arguments. This procedure extracts the value
+   bound to the symbol from the info-table, or returns the result of the
+   thunk if the symbol isn't bound in the info-table.ss file.
 
-   get-info will print an error message if the info.ss has an error during
-   loading or when the info.ss procedure is called.
+   get-info will print an error message if the info-table.ss has an error
+   during loading.

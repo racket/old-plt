@@ -237,7 +237,7 @@
 
   (define collection->cc
     (lambda (collection-p)
-      (let* ([info (get-info collection-p)] 
+      (let* ([info (get-info collection-p)]
 	     [name (call-info info 'name #f
 			      (lambda (x)
 				(unless (string? x)
@@ -249,34 +249,6 @@
 	  (apply collection-path collection-p)
 	  name
 	  info)))))
-
-  '(define collection->cc
-    (lambda (collection-p)
-      (with-handlers ([void (lambda (x) #f)])
-	(let ([dir (apply collection-path collection-p)])
-	  (with-handlers ([(lambda (x)
-			     (and (exn:i/o:filesystem? x)
-				  (string=? (exn:i/o:filesystem-pathname x)
-					    (build-path dir "info.ss"))))
-			   (lambda (x) #f)]
-			  [void
-			   (lambda (x)
-			     (warning "Warning: error loading info.ss: ~a" x)
-			     #f)])
-	    (let* ([info (parameterize ([use-compiled-file-kinds 'none])
-			   (apply require-library/proc "info.ss" collection-p))]
-		   [name (call-info info 'name #f
-				    (lambda (x)
-				      (unless (string? x)
-					(error "result is not a string:" x))))])
-	      (and
-	       name
-	       ;(call-info info 'compile-prefix #f #t)
-	       (make-cc
-		collection-p
-		(apply collection-path collection-p)
-		name
-		info))))))))
 
   (define (cannot-compile c)
     (error 'setup-plt "don't know how to compile collection: ~a" 

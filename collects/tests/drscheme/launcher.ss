@@ -70,6 +70,7 @@
 (define (teachpackless-test)
   (define-values (port-num listener) (get-port))
   (define drs (wait-for-drscheme-frame))
+  (fw:test:menu-select "Language" "Clear All Teachpacks")
   (clear-definitions drs)
   (type-in-definitions
    drs
@@ -79,12 +80,22 @@
   (when (file-exists? tmp-filename)
     (delete-file tmp-filename))
   (save-drscheme-window-as tmp-filename)
-  (set-language-level! "Graphical without Debugging (MrEd)")
-  (run-launcher/no-teachpack listener 'no-teachpack 'the-correct-answer))
+  (let ([run-one-language
+	 (lambda (language)
+	   (printf "    teachpackless ~a~n" language)
+	   (set-language-level! language)
+	   (run-launcher/no-teachpack listener 'no-teachpack 'the-correct-answer))])
+    (run-one-language "Graphical without Debugging (MrEd)")
+    (run-one-language "Textual without Debugging (MzScheme)")
+    (run-one-language "Graphical (MrEd)")
+    (run-one-language "Textual (MzScheme)")))
 
 (define (teachpack-test language insert-junk)
   (define-values (port-num listener) (get-port))
   (define drs (wait-for-drscheme-frame))
+
+  (printf "    teachpack ~a (~a)~n" language insert-junk)
+
   (set-language-level! language)
   (call-with-output-file tmp-teachpack
     (lambda (port)
@@ -121,9 +132,11 @@
 (teachpack-test "Advanced Student" void)
 
 (teachpack-test "Beginning Student"
-		(lambda ()
-		  (let ([drs (wait-for-drscheme-frame)])
-		    (fw:test:menu-select "Edit" "Insert Text Box")
-		    (fw:test:keystroke #\a)
-		    (fw:test:keystroke #\b)
-		    (fw:test:keystroke #\c))))
+		(rec
+		 insert-text-box
+		 (lambda ()
+		   (let ([drs (wait-for-drscheme-frame)])
+		     (fw:test:menu-select "Edit" "Insert Text Box")
+		     (fw:test:keystroke #\a)
+		     (fw:test:keystroke #\b)
+		     (fw:test:keystroke #\c)))))

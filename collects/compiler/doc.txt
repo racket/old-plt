@@ -257,6 +257,7 @@ The compiler.ss signed unit requires the following imports:
    mzlib:pretty-print^
    mzlib:file^
    mzlib:compile^
+   setup:get-info^ - from the `setup' collection
    dynext:compile^ - From the `dynext' collection
    dynext:link^
    dynext:file^

@@ -15,6 +15,8 @@
 (require-library "makes.ss" "make")
 (require-library "collections.ss" "make")
 
+(require-library "get-info.ss" "setup")
+
 (begin-elaboration-time
  (require-library "invoke.ss"))
 
@@ -27,6 +29,7 @@
   mzlib:file^
   mzlib:string^
   mzlib:compile^
+  setup:info^
   dynext:compile^
   dynext:link^
   dynext:file^)

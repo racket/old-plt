@@ -542,7 +542,7 @@
 	    (is-changed))))
 
       (define (configure-language)
-	(let ([new-settings (drscheme:language:language-dialog language-settings)])
+	(let ([new-settings (drscheme:language:language-dialog language-settings this)])
 	  (when new-settings
 	    (set! language-settings new-settings)
 	    (is-changed))))

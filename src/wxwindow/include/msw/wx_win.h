@@ -130,6 +130,8 @@ class wxWindow: public wxbWindow
 
   virtual Bool PreOnEvent(wxWindow *, wxMouseEvent *);
   virtual Bool PreOnChar(wxWindow *, wxKeyEvent *);
+
+  virtual wxWindow *FindFocusWindow();
 };
 
 // Window specific (so far)

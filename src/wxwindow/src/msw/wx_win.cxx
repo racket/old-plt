@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.22 1999/01/12 03:09:28 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.23 1999/01/29 02:48:28 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -716,6 +716,21 @@ void wxWindow::Refresh(void)
   {
     ::InvalidateRect(hWnd, NULL, TRUE);
   }
+}
+
+wxWindow *wxWindow::FindFocusWindow()
+{
+  if (IsShown()) {
+    wxChildNode *cn;
+    for (cn = GetChildren()->First(); cn; cn = cn->Next()) {
+      wxWindow *w = (wxWindow *)cn->Data();
+      w = w->FindFocusWindow();
+      if (w)
+	return w;
+    }
+  }
+
+  return NULL;
 }
 
 // Hook for new window just as it's being created,
@@ -1830,6 +1845,11 @@ BOOL wxWnd::OnActivate(BOOL state, BOOL WXUNUSED(minimized), HWND WXUNUSED(activ
   if (wx_window)
   {
     if ((state == WA_ACTIVE) || (state == WA_CLICKACTIVE)) {
+      if (!wx_window->focusWindow) {
+	/* Try to find one... */
+	wx_window->focusWindow = wx_window->FindFocusWindow();
+      }
+
       if (wx_window->focusWindow) {
 	wxWindow *win = wx_window->focusWindow;
 	wx_window->focusWindow = NULL;

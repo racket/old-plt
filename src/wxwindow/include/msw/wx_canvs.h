@@ -68,6 +68,7 @@ class wxCanvas: public wxbCanvas
   void EnableScrolling(Bool x_scrolling, Bool y_scrolling);
 
   virtual void WarpPointer(int x_pos, int y_pos) ;
+  virtual wxWindow *FindFocusWindow();
 };
 
 #endif // IN_CPROTO

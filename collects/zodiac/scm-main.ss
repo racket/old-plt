@@ -233,11 +233,13 @@
 		  (let ((bodies (pat:pexpand '(b ...) p-env kwd)))
 		    (if (null? bodies)
 		      (static-error expr "Malformed begin")
-		      (let ((peabodies
-			      (map (lambda (e)
-				     (expand-expr e env attributes vocab))
-				bodies)))
-			(create-begin-form peabodies expr))))))
+		      (if (null? (cdr bodies))
+			(expand-expr (car bodies) env attributes vocab)
+			(let ((peabodies
+				(map (lambda (e)
+				       (expand-expr e env attributes vocab))
+				  bodies)))
+			  (create-begin-form peabodies expr)))))))
 	      (else
 		(static-error expr "Malformed begin")))))))
 
@@ -1562,6 +1564,8 @@
 
 	      (gen
 		(lambda (p level)
+		  (printf "gen at ~a:~n" level)
+		  (pretty-print (sexp->raw p)) (newline)
 		  (let ((kwd '(unquote unquote-splicing quasiquote)))
 		    (cond
 		      ((pat:match-against

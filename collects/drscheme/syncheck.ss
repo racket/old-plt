@@ -22,9 +22,12 @@
   
   (define status-init "Check Syntax: Creating user environment")
   (define status-coloring-program "Check Syntax: coloring expression")
-  (define status-eval-compile-time "Check syntax: eval compile time")
+  (define status-eval-compile-time "Check Syntax: eval compile time")
   (define status-expanding-expression "Check Syntax: expanding expression")
   (define status-teachpacks "Check Syntax: installing teachpacks")
+  
+  (define mouse-over-variable-import "variable ~s imported from ~s")
+  (define mouse-over-syntax-import "syntax ~s imported from ~s")
   
   (define tool@
     (unit/sig drscheme:tool-exports^
@@ -306,7 +309,8 @@
           syncheck:init-arrows
           syncheck:clear-arrows
           syncheck:add-menu
-          syncheck:add-arrow))
+          syncheck:add-arrow
+          syncheck:add-mouse-over))
 
       ;; clearing-text-mixin : (mixin text%)
       ;; overrides methods that make sure the arrow go away appropriately.
@@ -346,7 +350,9 @@
               ;;  (hash-table
               ;;    (text%
               ;;     . -o> .
-              ;;    (vector (listof (union (cons (union #f sym) (menu -> void)) arrow))))))
+              ;;    (vector (listof (union (cons (union #f sym) (menu -> void))
+              ;;                           arrow
+              ;;                           string))))))
               (define arrow-vectors #f)
               
               (field (tacked-hash-table (make-hash-table)))
@@ -382,13 +388,19 @@
               
               (define/public (syncheck:init-arrows)
                 (set! tacked-hash-table (make-hash-table))
-                (set! arrow-vectors (make-hash-table)))
+                (set! arrow-vectors (make-hash-table))
+                (let ([f (get-top-level-window)])
+                  (when f
+                    (send f open-status-line 'mouse-over))))
               (define/public (syncheck:clear-arrows)
                 (when (or arrow-vectors cursor-location cursor-text)
                   (set! arrow-vectors #f)
                   (set! cursor-location #f)
                   (set! cursor-text #f)
-                  (invalidate-bitmap-cache)))
+                  (invalidate-bitmap-cache)
+                  (let ([f (get-top-level-window)])
+                    (when f
+                      (send f close-status-line 'mouse-over)))))
               (define/public (syncheck:add-menu text start-pos end-pos key make-menu)
                 (when (and (<= 0 start-pos end-pos (last-position)))
                   (add-to-range/key text start-pos end-pos make-menu key #t)))
@@ -402,6 +414,10 @@
                                           0 0 0 0)])
                   (add-to-range/key start-text start-pos-left start-pos-right arrow #f #f)
                   (add-to-range/key end-text end-pos-left end-pos-right arrow #f #f)))
+              
+              ;; syncheck:add-mouse-over : text pos-left pos-right string -> void
+              (define/public (syncheck:add-mouse-over text pos-left pos-right str)
+                (add-to-range/key text pos-left pos-right str #f #f))
 
               ;; add-to-range/key : text number number any any boolean -> void
               ;; adds `key' to the range `start' - `end' in the editor
@@ -521,6 +537,9 @@
                        (when (and cursor-location cursor-text)
                          (set! cursor-location #f)
                          (set! cursor-text #f)
+                         (let ([f (get-top-level-window)])
+                           (when f
+                             (send f update-status-line 'mouse-over "")))
                          (invalidate-bitmap-cache))
                        (super-on-event event)]
                       [(or (send event moving?)
@@ -528,22 +547,39 @@
                        (let-values ([(pos text) (get-pos/text event)])
                          (cond
                            [pos
-                            (unless (and cursor-location
-                                         cursor-text
-                                         (= pos cursor-location)
-                                         (eq? cursor-text text)
-                                         (hash-table-get arrow-vectors cursor-text (lambda () #f)))
-                              (set! cursor-location pos)
-                              (set! cursor-text text)
-                              (let ([arrow-vector (hash-table-get arrow-vectors cursor-text (lambda () #f))])
-                                (when arrow-vector
-                                  (let ([eles (vector-ref arrow-vector cursor-location)])
-                                    (for-each (lambda (ele)
-                                                (when (arrow? ele)
-                                                  (update-poss ele)))
-                                              eles))
+                            (let* ([arrow-vector (hash-table-get arrow-vectors cursor-text (lambda () #f))]
+                                   [eles (and arrow-vector (vector-ref arrow-vector cursor-location))])
+
+                              (when eles
+                                (let ([has-txt? #f])
+                                  (for-each (lambda (ele)
+                                              (when (string? ele)
+                                                (set! has-txt? #t)
+                                                (let ([f (get-top-level-window)])
+                                                  (when f
+                                                    (send f update-status-line 'mouse-over ele)))))
+                                            eles)
+                                  (unless has-txt?
+                                    (let ([f (get-top-level-window)])
+                                      (when f
+                                        (send f update-status-line 'mouse-over ""))))))
+ 
+                              (unless (and cursor-location
+                                           cursor-text
+                                           (= pos cursor-location)
+                                           (eq? cursor-text text))
+                                (set! cursor-location pos)
+                                (set! cursor-text text)
+                                (when eles
+                                  (for-each (lambda (ele)
+                                              (when (arrow? ele) 
+                                                (update-poss ele)))
+                                            eles)
                                   (invalidate-bitmap-cache))))]
                            [else
+                            (let ([f (get-top-level-window)])
+                              (when f
+                                (send f update-status-line 'mouse-over "")))
                             (when (or cursor-location cursor-text)
                               (set! cursor-location #f)
                               (set! cursor-text #f)
@@ -1158,6 +1194,11 @@
                         (when (equal? (req/tag-req-sexp req/tag) mod-req-path)
                           (set! unused? #t)
                           (connect-syntaxes (req/tag-req-stx req/tag) stx)
+                          (add-mouse-over 
+                           stx
+                           (format mouse-over-syntax-import
+                                   (syntax-object->datum stx)
+                                   (syntax-object->datum (req/tag-req-stx req/tag))))
                           (set-req/tag-used?! req/tag #t)))
                       req/tags)
             unused?)))
@@ -1185,7 +1226,12 @@
                         (when (syntax-original? varref)
                           (color varref bound-variable-style-str)
                           (when (syntax-original? (req/tag-req-stx req/tag))
-                            (connect-syntaxes (req/tag-req-stx req/tag) varref)))
+                            (connect-syntaxes (req/tag-req-stx req/tag) varref)
+                            (add-mouse-over 
+                             varref
+                             (format mouse-over-variable-import
+                                     (syntax-object->datum varref)
+                                     (syntax-object->datum (req/tag-req-stx req/tag))))))
                         #t))))))
       
       ;; get-module-req-path : binding -> (union #f require-sexp)
@@ -1314,6 +1360,21 @@
                     (send from-syncheck-text syncheck:add-arrow
                           from-source from-pos-left from-pos-right
                           to-source to-pos-left to-pos-right))))))))
+      
+      ;; add-mouse-over : syntax[original] string -> void
+      ;; registers the range in the editor so that a mouse over
+      ;; this area shows up in the status line.
+      (define (add-mouse-over stx str)
+        (let* ([source (syntax-source stx)])
+	  (when (is-a? source text%)
+            (let ([syncheck-text (find-syncheck-text source)])
+              (when (and syncheck-text
+                         (syntax-position stx)
+                         (syntax-span stx))
+                (let* ([pos-left (- (syntax-position stx) 1)]
+                       [pos-right (+ pos-left (syntax-span stx))])
+                  (send syncheck-text syncheck:add-mouse-over
+                        source pos-left pos-right str)))))))
       
       ;; find-syncheck-text : text% -> (union #f (is-a?/c syncheck-text<%>))
       (define (find-syncheck-text text)

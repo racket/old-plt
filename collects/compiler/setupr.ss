@@ -412,7 +412,12 @@
     (with-handlers ([(lambda (x) (not (exn:misc:user-break? x)))
 		     (lambda (x)
 		       (if (exn? x)
-			   (fprintf (current-error-port) "~a~n" (exn-message x))
+			   (begin
+			     (fprintf (current-error-port) "~a~n" (exn-message x))
+			     (when (defined? 'print-error-trace)
+				   ((global-defined-value 'print-error-trace)
+				    (current-error-port)
+				    x)))
 			   (fprintf (current-error-port) "~s~n" x))
 		       (set! errors (cons (cons cc desc) errors)))])
       (go)))

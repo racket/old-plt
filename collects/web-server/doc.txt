@@ -16,20 +16,21 @@ from the "configuration-table" file of the web-server collection or from
 the specified configuration file.  If <ip-address> is provided, the server
 accepts connections only from <ip-address>.
 
-The launcher web-server-text is the same as the web-server launcher,
+The launcher _web-server-text_ is the same as the _web-server_ launcher,
 except that it can not load servlets written using DrScheme's graphical XML
 boxes, but it uses less memory.  It also works with the mzscheme-only
 distribution of PLT-scheme.
 
-The command line
+When launched via
   web-server-monitor [-p <port>]
                      [-f <frequency>]
                      [-t <timeout>]
 		     <alert-email> <host-name>
-polls any Web server running on host <host-name> at port <port> (or port 80)
-every <frequency> seconds (or 1 hour).  If the server does not respond to
-a HEAD HTTP request for the homepage within <timeout> (or 75) seconds or
-sends an error response, the monitor will notify <alert-email> of the problem.
+the _web-server-monitor_ polls any Web server running on host
+<host-name> at port <port> (or port 80) every <frequency> seconds (or
+1 hour).  If the server does not respond to a HEAD HTTP request for
+the homepage within <timeout> (or 75) seconds or sends an error
+response, the monitor will notify <alert-email> of the problem.
 
 Another Start
 =============
@@ -389,3 +390,32 @@ They may change at anytime or disappear entirely.
   update-time! resets timeouts upon each Web request.
   update-channel! receives the channel used to send responses to the
   connection thread.
+
+
+_Channels_
+
+The library
+  (require (lib "channel.ss" "web-server"))
+implements channels---a synchronized queue for communicating between
+threads.  Channels are not specific to the Web server, although that
+was the library's first use.
+
+> (create-channel) : -> Channel
+  creates a new channel
+
+> (channel-put c x) : Channel TST -> Void
+  puts a value into the channel at the end of the queue
+
+> (channel-get c) : Channel -> TST
+  gets a value from the front of the channel queue.  If no value is
+  currently present, the call blocks until a value is ready to dequeue.
+
+> (channel-get-available c k) : Channel (TST -> a) -> (U a void)
+  gets a value from the front of the channel queue, if available, and calls
+  k with the value.  Otherwise, it returns void without calling k.
+  The original use of this funciton was to process all the remaining values in
+  the queue, but that still does not quite justify the CPSing.
+
+> (channel-try-get c fail) : Channel ( -> TST) -> TST
+  either dequeues and returns a value from the front of the channel or
+  if the queue is empty, returns the result of the fail thunk

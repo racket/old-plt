@@ -542,6 +542,8 @@ thread_val {
   gcMARK(pr->current_local_mark);
   gcMARK(pr->current_local_name);
   
+  gcMARK(pr->quick_inspector);
+
   gcMARK(pr->print_buffer);
   gcMARK(pr->print_port);
   

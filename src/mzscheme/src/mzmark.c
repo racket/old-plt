@@ -1404,6 +1404,8 @@ int thread_val_MARK(void *p) {
   gcMARK(pr->current_local_mark);
   gcMARK(pr->current_local_name);
   
+  gcMARK(pr->quick_inspector);
+
   gcMARK(pr->print_buffer);
   gcMARK(pr->print_port);
   
@@ -1479,6 +1481,8 @@ int thread_val_FIXUP(void *p) {
   gcFIXUP(pr->current_local_mark);
   gcFIXUP(pr->current_local_name);
   
+  gcFIXUP(pr->quick_inspector);
+
   gcFIXUP(pr->print_buffer);
   gcFIXUP(pr->print_port);
   

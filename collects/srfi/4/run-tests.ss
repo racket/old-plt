@@ -1,7 +1,7 @@
 (module run-tests mzscheme
   (require "homo-vectors.ss")
   
-  (load (build-path "/Users/clements/plt" "tests" "mzscheme" "testing.ss"))
+  (load (build-path (collection-path "mzlib") 'up 'up "tests" "mzscheme" "testing.ss"))
   
   (define SECTION (namespace-variable-value 'SECTION))
   (define test (namespace-variable-value 'test))

@@ -815,7 +815,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
     if (scheme_setjmp(p->overflow_buf)) {
       while (1) {
 	/* We get `p' again because it might be a nestee: */
-	Scheme_Process *pp = scheme_current_process;
+	Scheme_Process * volatile pp = scheme_current_process;
 	Scheme_Overflow *overflow;
 
 	overflow = MALLOC_ONE_RT(Scheme_Overflow);
@@ -830,7 +830,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
       
 	memcpy(&overflow->savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
 	if (scheme_setjmp(scheme_error_buf)) {
-	  scheme_overflow_reply = NULL; /* means "continue the error" */
+	  pp->overflow_reply = NULL; /* means "continue the error" */
 	} else {
 	  void *p1, *p2, *p3, *p4;
 	  int i1, i2;

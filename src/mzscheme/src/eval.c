@@ -1631,6 +1631,8 @@ static Scheme_Object *add_renames_unless_module(Scheme_Object *form, Scheme_Env 
     form = scheme_add_rename(form, genv->rename);
   if (genv->exp_env && genv->exp_env->rename)
     form = scheme_add_rename(form, genv->exp_env->rename);
+  if (genv->template_env && genv->template_env->rename)
+    form = scheme_add_rename(form, genv->template_env->rename);
 
   return form;
 }

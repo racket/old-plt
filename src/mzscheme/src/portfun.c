@@ -4000,6 +4000,8 @@ static Scheme_Object *do_load_handler(void *data)
       obj = scheme_add_rename(obj, genv->rename);
     if (genv->exp_env && genv->exp_env->rename)
       obj = scheme_add_rename(obj, genv->exp_env->rename);
+    if (genv->template_env && genv->template_env->rename)
+      obj = scheme_add_rename(obj, genv->template_env->rename);
 
     last_val = _scheme_apply_multi(scheme_get_param(config, MZCONFIG_EVAL_HANDLER),
 				   1, &obj);

@@ -50,8 +50,10 @@ static Scheme_Object *bound_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *free_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *module_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *module_trans_eq(int argc, Scheme_Object **argv);
+static Scheme_Object *module_templ_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *module_binding(int argc, Scheme_Object **argv);
 static Scheme_Object *module_trans_binding(int argc, Scheme_Object **argv);
+static Scheme_Object *module_templ_binding(int argc, Scheme_Object **argv);
 static Scheme_Object *module_binding_pos(int argc, Scheme_Object **argv);
 static Scheme_Object *module_trans_binding_pos(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_src_module(int argc, Scheme_Object **argv);
@@ -369,6 +371,11 @@ void scheme_init_stx(Scheme_Env *env)
 						      "module-transformer-identifier=?",
 						      2, 2),
 			     env);
+  scheme_add_global_constant("module-template-identifier=?", 
+			     scheme_make_prim_w_arity(module_templ_eq,
+						      "module-template-identifier=?",
+						      2, 2),
+			     env);
 
   scheme_add_global_constant("identifier-binding", 
 			     scheme_make_prim_w_arity(module_binding,
@@ -378,6 +385,11 @@ void scheme_init_stx(Scheme_Env *env)
   scheme_add_global_constant("identifier-transformer-binding", 
 			     scheme_make_prim_w_arity(module_trans_binding,
 						      "identifier-transformer-binding",
+						      1, 1),
+			     env);
+  scheme_add_global_constant("identifier-template-binding", 
+			     scheme_make_prim_w_arity(module_templ_binding,
+						      "identifier-template-binding",
 						      1, 1),
 			     env);
 
@@ -4254,38 +4266,36 @@ static Scheme_Object *free_eq(int argc, Scheme_Object **argv)
 	  : scheme_false);
 }
 
-static Scheme_Object *module_eq(int argc, Scheme_Object **argv)
+static Scheme_Object *do_module_eq(const char *who, int delta, int argc, Scheme_Object **argv)
 {
   Scheme_Thread *p = scheme_current_thread;
 
   if (!SCHEME_STX_IDP(argv[0]))
-    scheme_wrong_type("module-identifier=?", "identifier syntax", 0, argc, argv);
+    scheme_wrong_type(who, "identifier syntax", 0, argc, argv);
   if (!SCHEME_STX_IDP(argv[1]))
-    scheme_wrong_type("module-identifier=?", "identifier syntax", 1, argc, argv);
+    scheme_wrong_type(who, "identifier syntax", 1, argc, argv);
 
   return (scheme_stx_module_eq(argv[0], argv[1],
-			       (p->current_local_env
-				? p->current_local_env->genv->phase
-				: 0))
+			       delta + (p->current_local_env
+					? p->current_local_env->genv->phase
+					: 0))
 	  ? scheme_true
 	  : scheme_false);
 }
 
+static Scheme_Object *module_eq(int argc, Scheme_Object **argv)
+{
+  return do_module_eq("module-identifier=?", 0, argc, argv);
+}
+
 static Scheme_Object *module_trans_eq(int argc, Scheme_Object **argv)
 {
-  Scheme_Thread *p = scheme_current_thread;
+  return do_module_eq("module-transformer-identifier=?", 1, argc, argv);
+}
 
-  if (!SCHEME_STX_IDP(argv[0]))
-    scheme_wrong_type("module-transformer-identifier=?", "identifier syntax", 0, argc, argv);
-  if (!SCHEME_STX_IDP(argv[1]))
-    scheme_wrong_type("module-transformer-identifier=?", "identifier syntax", 1, argc, argv);
-
-  return (scheme_stx_module_eq(argv[0], argv[1],
-			       1 + (p->current_local_env
-				    ? p->current_local_env->genv->phase
-				    : 0))
-	  ? scheme_true
-	  : scheme_false);
+static Scheme_Object *module_templ_eq(int argc, Scheme_Object **argv)
+{
+  return do_module_eq("module-template-identifier=?", -1, argc, argv);
 }
 
 static Scheme_Object *do_module_binding(char *name, int argc, Scheme_Object **argv, 
@@ -4348,6 +4358,11 @@ static Scheme_Object *module_binding(int argc, Scheme_Object **argv)
 static Scheme_Object *module_trans_binding(int argc, Scheme_Object **argv)
 {
   return do_module_binding("identifier-transformer-binding", argc, argv, 1, 0);
+}
+
+static Scheme_Object *module_templ_binding(int argc, Scheme_Object **argv)
+{
+  return do_module_binding("identifier-template-binding", argc, argv, -1, 0);
 }
 
 static Scheme_Object *module_binding_pos(int argc, Scheme_Object **argv)

@@ -193,7 +193,7 @@
 
 > (alloc-env)
 
- ODBC 1.0.
+ ODBC 1.0, deprecated in favor of `alloc-handle'.
 
  Returns a fresh environment handle. 
 

@@ -119,7 +119,7 @@ The raw format is
 
  * "PLT" are the first three characters.
 
- * An info.ss-like procedure that takes a symbol and a failure thunk
+ * An "info.ss"-like procedure that takes a symbol and a failure thunk
    and returns information about archive for recognized symbols. The
    two required info fields are:
 
@@ -288,9 +288,9 @@ defines the following parameters that control the setup process:
          [default: #f]
 > make-zo - #t => compile .zo files [default #t]
 > make-so - #t => compile .so/.dll files [default: #f]
-> make-launchers - #t => make collection info-table.ss-specified launchers
+> make-launchers - #t => make collection "info.ss"-specified launchers
                    [default: #t]
-> call-install - #t => call collection info-table.ss-specified setup code
+> call-install - #t => call collection "info.ss"-specified setup code
                  [default: #t]
 > specific-collections - a list of collections to set up; the empty
            list means set-up all collections if  the archives
@@ -318,41 +318,37 @@ initialized between them, e.g.:
       ...)
 
 
- _The syntax of an info-table.ss file_
- -------------------------------------
+_Getting info.ss fields_
+========================
 
-Each info-table.ss file consists of a number of associates from keys to
-values. The syntax is like this:
-
-  ((key1 value1)
-   (key2 value2)
-   ...
-   (keyn valuen))
-
-A key has the same syntax as an identifier (or symbol without a quote) in
-Scheme and each value may be a string, number, #t, #f, or other value that
-`read' returns. The precise keys and values depend on the tool that is
-processing the results of the keys. See above for keys that affect
-compilation.
-
- _Getting fields from info-table.ss files_
- -----------------------------------------
-
- The file _getinfo.ss_ defines 
+The _getinfo.ss_ module defines the following function:
 
 > (get-info collection-names) -> (union #f (symbol (-> TST) -> TST))
 
    get-info accepts a list of strings naming a collection or
-   sub-collection. It returns #f if there is no info-table.ss file or if
-   the info-table.ss file has an error during loading. Otherwise, it
-   returns a procedure of two arguments. This procedure extracts the value
-   bound to the symbol from the info-table, or returns the result of the
-   thunk if the symbol isn't bound in the info-table.ss file.
+   sub-collection. It returns #f if there is no "info.ss" file in the
+   collection. If the "info.ss" file has the wrong shape (i.e., not a
+   module using (lib "infotab.ss" "setup")), or if the "info.ss" file
+   fails to load, then an exception is raised. 
 
-   get-info will raise an error if the info-table.ss has an error
-   during loading.
+   Otherwise, `get-info' returns an info procedure of one or two
+   arguments. The first argument to the info procedure is always a
+   symbolic name, and the result is the value of the name in the
+   "info.ss" file, if the name is defined. The optional second
+   argument to the info procedure is a thunk that is called when the
+   name is not defined, and the result of the info procedure is the
+   result of the thunk in that case. If the name is not defined and no
+   thunk is provided, then an exception is raised.
 
- The file _get-infos.ss_ defines the setup:plt-info^
- signature, which contains only `get-info', and the
- _get-infor.ss_ defines a unit that imports nothing
- and exports setup:plt-info^.
+The _info.ss syntax_
+====================
+
+The format of the "info.ss" file is documented in the mzc manual. In
+general, the format is
+
+  (module info (lib "infotab.ss" "setup")
+     (define <identifier> <info-expr>)
+     ...)
+
+where <info-expr> is a highly restructed subset of Scheme expressions.
+See the mzc manual for more information.

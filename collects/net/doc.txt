@@ -1081,7 +1081,8 @@ PROCEDURES -----------------------------------------------------------
 
   Consumes a string and returns its Base 64 encoding as a new string.
   The returned string is broken into 72-character lines separated by
-  CRLF combinations, and always ends with a CRLF combination.
+  CRLF combinations, and always ends with a CRLF combination unless
+  the input is empty.
 
 > (base64-decode string) -> string
 
@@ -1091,9 +1092,10 @@ PROCEDURES -----------------------------------------------------------
 
   Reads characters from `input-port' and writes the encoded result to
   `output-port', breaking the output into 72-character lines separated
-  by `newline-string', and ending with `newline-string'. The default
-  `newline-string' contains just a newline (not CRLF). The procedure
-  returns when it encounters an end-of-file from `input-port'.
+  by `newline-string', and ending with `newline-string' unless the
+  input stream is empty. The default `newline-string' contains just a
+  newline (not CRLF). The procedure returns when it encounters an
+  end-of-file from `input-port'.
 
 > (base64-dencode-stream input-port output-port) -> void
 

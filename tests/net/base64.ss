@@ -8,13 +8,10 @@
 (define (check-file/fastest p in)
   (let ([s1 (make-string 5000)]
 	[s2 (make-string 5000)])
-    (let loop ([leftover 0][pos 0])
-      (let* ([n1 (let ([n (read-string-avail! s1 p leftover)])
-		   (if (eof-object? n)
-		       (if (zero? leftover)
-			   n
-			   leftover)
-		       (+ n leftover)))]
+    (let loop ([leftover 0][startpos 0][pos 0])
+      (let* ([n1 (if (zero? leftover)
+		     (read-string-avail! s1 p)
+		     leftover)]
 	     [n2 (read-string-avail! s2 in 0 (if (eof-object? n1)
 						 1
 						 n1))])
@@ -24,17 +21,15 @@
 			 (eof-object? n2))
 		    (if (= n2 n1 5000)
 			(string=? s1 s2)
-			(string=? (substring s1 0 n2)
+			(string=? (substring s1 startpos (+ startpos n2))
 				  (substring s2 0 n2))))
-	  (error 'check "failed at ~a (~a ~a)" pos n1 n2))
+	  (error 'check "failed at ~a (~a@~a ~a)" pos n1 startpos n2))
 	(unless (eof-object? n1)
-	  (let ([leftover (- n1 n2)])
-	    (unless (zero? leftover)
-	      (let loop ([x 0][y (- n1 leftover)])
-		(unless (= x leftover)
-		  (string-set! s1 x (string-ref s1 y))
-		  (loop (add1 x) (add1 y)))))
-	    (loop leftover (+ pos n2))))))))
+	  (loop (- n1 n2) 
+		(if (= n1 n2)
+		    0
+		    (+ startpos n2))
+		(+ pos n2)))))))
 
 (define mimencode (find-executable-path "mimencode" #f))
 (unless mimencode

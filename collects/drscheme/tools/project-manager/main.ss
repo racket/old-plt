@@ -750,7 +750,7 @@
 	 [(null? l) (error 'nth-cdr "got to end of list with ~s cdrs left" n)]
 	 [else (nth-cdr (- n 1) (cdr l))]))
 
-      (define (add-files)
+      (define (add-files add-single-file)
 
 	(define new-files
 	  (let ([user-result (get-file-list)])
@@ -883,23 +883,24 @@
 				    [else (cons (car pieces)
 						(loop (cdr pieces)))]))])
 			   (cond
-			    [(and (string=?
-				   (normal-case-path
-				    (file:normalize-path
-				     (build-path (apply collection-path collections)
-						 filename)))
-				   (normal-case-path new-file))
-				  (prompt-user-collection?
-				   filename
-				   collections
-				   (apply build-path
-					  (car exploded-collection-paths))))
-			     (set! files (append
-					  files
-					  (list
-					   (list* 'require-library
-						  filename
-						  collections))))]
+                             [(and (string=?
+                                    (normal-case-path
+                                     (file:normalize-path
+                                      (build-path (apply collection-path collections)
+                                                  filename)))
+                                    (normal-case-path new-file))
+                                   (prompt-user-collection?
+                                    filename
+                                    collections
+                                    (apply build-path
+                                           (car exploded-collection-paths))))
+                              (add-single-file
+                               (append
+                                files
+                                (list
+                                 (list* 'require-library
+                                        filename
+                                        collections))))]
 			    [else (add-as-raw-file new-file)]))
 			 (loop (cdr exploded-collection-paths)))]))))
 	     new-files))
@@ -1338,7 +1339,10 @@
        check
        (preferences:get 'drscheme:project-manager:add-files-as-relative?))
       (make-object separator-menu-item% project-menu)
-      (make-object menu-item% "Add Files..." project-menu (lambda x (add-files)))
+      (make-object menu-item% "Add Files..." project-menu (lambda x (add-files (lambda (f)       
+                                                                                 (void)
+                                                                                 )))
+      (make-object menu-item% "Add Files..." project-menu (lambda x (add-elaborated-files)))
       (make-object menu-item% "Choose Language..." project-menu (lambda x (configure-language)) #\l)
       (make-object menu-item% "Configure Collection Paths..." project-menu (lambda x (configure-collection-paths)))
 

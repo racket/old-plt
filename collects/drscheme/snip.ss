@@ -216,10 +216,15 @@
 	 (lambda ()
 	   (format " ~a " number))])
       (private
-        [whole (floor number)]
-        [wholes (if (zero? whole) "" (number->string whole))]
-        [nums (number->string (numerator (- number whole)))]
-        [dens (number->string (denominator (- number whole)))])
+        [wholes (cond
+                  [(= (floor number) 0) ""]
+                  [(= (ceiling number) 0) "-"]
+                  [(< number 0)
+                   (number->string (ceiling number))]
+                  [else
+                   (number->string (floor number))])]
+        [nums (number->string (numerator (- number (floor number))))]
+        [dens (number->string (denominator (- number (floor number))))])
       (inherit get-style)
       (override
         [write

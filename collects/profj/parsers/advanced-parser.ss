@@ -325,7 +325,7 @@
        [(O_BRACE C_BRACE)
 	(make-block
 	 (list (make-call #f (build-src 1) 
-			      #f (make-special-name #f (build-src 1) "super") null #f))
+			      #f (make-special-name #f #f "super") null (build-src 2)))
 	 (build-src 2))])
       
       (ExplicitConstructorInvocation

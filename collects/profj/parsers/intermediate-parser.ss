@@ -110,7 +110,7 @@
       (CompilationUnit
        [(ImportDeclarations TypeDeclarations) (make-package #f (reverse $1) (reverse $2))]
        [(TypeDeclarations) (make-package #f null (reverse $1))]
-       [(ImportDeclarations) (make-package #f null (reverse $1))]
+       [(ImportDeclarations) (make-package #f (reverse $1) null)]
        [() (make-package #f null null)])
       
       (ImportDeclarations
@@ -286,13 +286,13 @@
 	(make-block (list $2) (build-src 3))]
        [(O_BRACE BlockStatements C_BRACE)
 	(make-block 
-	 (cons (make-call #f #f #f (make-special-name #f #f "super") null #f)
+	 (cons (make-call #f (build-src 3) #f (make-special-name #f #f "super") null #f)
 	       (reverse $2))
 	 (build-src 3))]
        [(O_BRACE C_BRACE)
 	(make-block
-	 (list (make-call #f (build-src 1) 
-			      #f (make-special-name #f (build-src 1) "super") null #f))
+	 (list (make-call #f (build-src 2) 
+			      #f (make-special-name #f #f "super") null #f))
 	 (build-src 2))])
       
       (ExplicitConstructorInvocation

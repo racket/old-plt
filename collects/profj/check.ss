@@ -1715,7 +1715,8 @@
                                              (lambda () (teaching-error 'type))
                                              (lambda () (teaching-error 'type))
                                              type-recs))
-                      (when (check-method-args args (method-record-atypes (car methods)) name exp-type src type-recs)
+                      (when 
+                          (check-method-args args (method-record-atypes (car methods)) name exp-type src type-recs)
                         (car methods)))))
              (mods (method-record-modifiers method-record)))
         
@@ -1765,12 +1766,17 @@
   
   ;check-method-args: (list type) (list type) id type src type-records -> void
   (define (check-method-args args atypes name exp-type src type-recs)
-    (unless (= (length args) (length atypes))
-      (method-arg-error 'number args atypes name exp-type src))
-    (for-each (lambda (arg atype)
-                (unless (assignment-conversion atype arg type-recs)
-                  (method-arg-error 'type (list arg) (cons atype atypes) name exp-type src)))
-              args atypes))
+    (let ((bad-length? (not (= (length args) (length atypes)))))
+      (cond
+        ((and (special-name? name) (not (expr-src name)) bad-length?)
+         (method-arg-error 'implicit-ctor args atypes name exp-type src))
+        (bad-length?
+         (method-arg-error 'number args atypes name exp-type src))
+        (else
+         (for-each (lambda (arg atype)
+                     (unless (assignment-conversion atype arg type-recs)
+                       (method-arg-error 'type (list arg) (cons atype atypes) name exp-type src)))
+                   args atypes)))))
   
   ;; 15.9
   ;;check-class-alloc: expr (U name identifier) (list type) src type-records (list string) env symbol bool-> type
@@ -2316,9 +2322,13 @@
           (awitht "arguments with types"))
       (raise-error n
                    (case kind
-                     ((number)
-                      (format "method ~a from ~a expects ~a ~a ~a. Given ~a ~a ~a"
-                              n e (length expecteds) awitht expecteds (length givens) awitht givens))
+                     ((implicit-ctor)
+                      (format 
+                       "This constructor must contain a call to the super class's constructor which expects ~a ~a ~a"
+                       (length expecteds) awitht expecteds))
+                      ((number)
+                       (format "method ~a from ~a expects ~a ~a ~a. Given ~a ~a ~a"
+                               n e (length expecteds) awitht expecteds (length givens) awitht givens))
                      ((type)
                       (format "method ~a from ~a expects ~a ~a, but given a ~a instead of ~a for one argument"
                               n e awitht (map type->ext-name (cdr atypes)) (car givens) (type->ext-name (car atypes)))))

@@ -63,7 +63,10 @@
                       (when (execution?) 
                         (send type-recs add-interactions-box (car cur-defs)))
                       (loop (cdr cur-defs))))))
-           (current-loc (unless (null? defs) (def-file (car defs)))))
+           (current-loc (cond
+                          ((not (null? defs)) (def-file (car defs)))
+                          ((not (null? (package-imports prog))) 
+                           (import-file (car (package-imports prog)))))))
       (set-package-defs! prog defs)
       
       ;Add lang to local environment
@@ -159,7 +162,7 @@
   ;Import processing/General loading
 
   ;;process-import: type-records import symbol -> void
-  (define (process-import type-recs imp level) 
+  (define (process-import type-recs imp level)
     (let* ((star? (import-star imp))
            (file (import-file imp))
            (name (id-string (name-id (import-name imp))))

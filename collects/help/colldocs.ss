@@ -31,7 +31,8 @@
 		   (let* ([coll (car l)]
 			  [colldir (build-path path coll)]
 			  [lcollpath (append collpath (list coll))]
-			  [this? (file-exists? (build-path colldir "doc.txt"))])
+                          [doc-txt-file (build-path colldir "doc.txt")]
+			  [this? (file-exists? doc-txt-file)])
 		     (let-values ([(sub-docs sub-names)
 				   (with-handlers ([void (lambda (x)
 							   (values null null))])
@@ -42,7 +43,7 @@
 		       (let ([sub-names (map (lambda (s) (string-append coll " " s)) sub-names)])
 			 (let-values ([(ldocs lnames)
 				       (if this?
-					   (values (cons colldir sub-docs)
+					   (values (cons doc-txt-file sub-docs)
 						   (cons coll sub-names))
 					   (values sub-docs sub-names))])
 			   (cloop (cdr l) path collpath (append ldocs docs) (append lnames names))))))]

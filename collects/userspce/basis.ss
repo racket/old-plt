@@ -55,7 +55,7 @@
   ;; settings : (list-of setting)
   (define settings
     (list (make-setting/parse
-	   `((name "Beginner")
+	   `((name "Beginning Student")
 	     (extra-definitions-unit-name "beginner.ss")
 	     (macro-libraries ())
 	     (vocabulary-symbol beginner)
@@ -77,7 +77,7 @@
 	     (printing constructor-style)
 	     (define-argv? #f)))
 	  (make-setting/parse
-	   `((name "Intermediate")
+	   `((name "Intermediate Student")
 	     (extra-definitions-unit-name "intermediate.ss")
 	     (macro-libraries ())
 	     (vocabulary-symbol intermediate)
@@ -99,7 +99,7 @@
              (printing constructor-style)
 	     (define-argv? #f)))
 	  (make-setting/parse
-	   `((name "Advanced")
+	   `((name "Advanced Student")
 	     (extra-definitions-unit-name ((mred@ "advanced.ss")
 					   .
 					   "advancedjr.ss"))
@@ -123,10 +123,10 @@
              (printing constructor-style)
 	     (define-argv? #f)))
 	  (make-setting/parse
-	   `((name "MzScheme")
+	   `((name "Textual Full Scheme")
+	     (vocabulary-symbol mzscheme-debug)
 	     (extra-definitions-unit-name #f)
 	     (macro-libraries ())
-	     (vocabulary-symbol mzscheme)
 	     (case-sensitive? #f)
 	     (allow-set!-on-undefined? #f)
 	     (unmatched-cond/case-is-error? #f)
@@ -145,10 +145,10 @@
              (printing r4rs-style)
 	     (define-argv? #t)))
 	  (make-setting/parse
-	   `((name "MzScheme Debug")
-	     (vocabulary-symbol mzscheme-debug)
+	   `((name "MzScheme")
 	     (extra-definitions-unit-name #f)
 	     (macro-libraries ())
+	     (vocabulary-symbol mzscheme)
 	     (case-sensitive? #f)
 	     (allow-set!-on-undefined? #f)
 	     (unmatched-cond/case-is-error? #f)

@@ -59,16 +59,51 @@
 		    (if bool
 			(list language-panel customization-panel when-message ok-panel)
 			(list language-panel when-message ok-panel)))))]
+
+         [full-scheme-panel (let ([p (make-object mred:pane% language-panel)])
+                              (send p stretchable-width #f)
+                              (send p stretchable-height #t)
+                              p)]
+         [full-scheme-radio-box #f]
+         [full-scheme-radio-box-callback void]
+         [close-full-scheme-radio-box
+          (lambda ()
+            (when full-scheme-radio-box
+              (send full-scheme-panel change-children (lambda (x) null))))]
+         [open-full-scheme-radio-box
+          (lambda ()
+            (cond
+              [full-scheme-radio-box
+               (send full-scheme-panel change-children (lambda (x) (list full-scheme-radio-box)))]
+              [else
+               (set! full-scheme-radio-box
+                     (make-object mred:radio-box% 
+                                  #f
+                                  (list "Textual Scheme"
+                                        "Graphical Scheme"
+                                        "MzScheme (no debugging)"
+                                        "MrEd (no debugging)")
+                                  full-scheme-panel
+                                  (lambda x (full-scheme-radio-box-callback))))]))]
 	 [language-choice (make-object mred:choice%
-			    "Language"
-			    language-levels
-			    language-panel
-			    (lambda (choice evt)
-			      (fw:preferences:set
-			       'drscheme:settings
-			       (basis:copy-setting
-				(basis:number->setting
-				 (send choice get-selection))))))]
+                                       "Language"
+                                       (list (first language-levels)
+                                             (second language-levels)
+                                             (third language-levels)
+                                             "Full Scheme")
+                                       language-panel
+                                       (lambda (choice evt)
+                                         (cond
+                                           [(string=? "Full Scheme" (send choice get-string-selection))
+                                            (open-full-scheme-radio-box)
+                                            (full-scheme-radio-box-callback)]
+                                           [else
+                                            (close-full-scheme-radio-box)
+                                            (fw:preferences:set
+                                             'drscheme:settings
+                                             (basis:copy-setting
+                                              (basis:number->setting
+                                               (send choice get-selection))))])))]
 	 [custom-message (make-object mred:message% "Custom" language-panel)]
 	 [right-align
 	  (opt-lambda (mo panel)
@@ -156,8 +191,8 @@
 			  "Cancel"
 			  ok-panel
 			  (lambda (button evt) 
-			    (fw:preferences:read)
 			    (send f show #f)
+			    (fw:preferences:read)
 			    (when (procedure? unregister-callback)
 			      (unregister-callback))))]
 	 [ok-button (make-object mred:button%
@@ -168,7 +203,7 @@
 			(when (procedure? unregister-callback)
 			  (unregister-callback)))
 		      '(border))]
-	 [spacer (make-object mred:grow-box-spacer-pane% ok-panel)]
+	 ;[spacer (make-object mred:grow-box-spacer-pane% ok-panel)]
 	 [compare-setting-to-gui
 	  (lambda (setting)
 	    (let* ([compare-check-box
@@ -195,8 +230,8 @@
 			    (basis:number->setting
 			     (send language-choice get-selection)))])
 		      (if not-custom?
-			  (list language-choice)
-			  (list language-choice custom-message))))))]
+			  (list language-choice full-scheme-panel)
+			  (list language-choice full-scheme-panel custom-message))))))]
 	 [update-to
 	  (lambda (v)
 	    (let ([zodiac? (basis:zodiac-vocabulary? v)])
@@ -271,7 +306,7 @@
 
   (define (fill-language-menu language-menu)
     (make-object mred:menu-item%
-      "Configure Language..."
+      "Choose Language..."
       language-menu
       (lambda (_1 _2) (language-dialog))
       (and

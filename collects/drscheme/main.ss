@@ -16,8 +16,8 @@
      (basis:set-setting-name! s "MrEd")
      s))
   (basis:add-setting 
-   (let ([s (basis:copy-setting (basis:find-setting-named "MzScheme Debug"))])
-     (basis:set-setting-name! s "MrEd Debug")
+   (let ([s (basis:copy-setting (basis:find-setting-named "Textual Full Scheme"))])
+     (basis:set-setting-name! s "Graphical Full Scheme")
      (basis:set-setting-vocabulary-symbol! s 'mred-debug)
      s))
 

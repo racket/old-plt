@@ -110,7 +110,7 @@
        (with-handlers ([not-break? (lambda (x) 
 				     (printf "~a~n" (exn-message x))
 				     null)])
-	 (with-input-from-file (build-path doc "doc.txt")
+	 (with-input-from-file doc
 	   (lambda ()
 	     (let loop ([start 0])
 	       (let* ([r (read-line (current-input-port) 'any)]
@@ -238,6 +238,7 @@
 	   (set! hit-count (add1 hit-count))
 	   (unless (< hit-count MAX-HIT-COUNT)
 	     (maxxed-out)))
+
 	 ;; Keyword search
 	 (let ([keys (case doc-kind
 		       [(html) (load-html-keywords doc)]
@@ -285,7 +286,7 @@
 					(found "index entries")
 					(add-choice "" name
 						    "indexed content"
-						    (build-path doc "doc.txt")
+						    doc
 						    desc
 						    ckey)]))])
 	     (when index
@@ -305,15 +306,18 @@
 	 ;; Content Search
 	 (unless (or (< search-level 2) exact? (null? finds))
 	   (let ([files (case doc-kind
-			  [(html) (with-handlers ([not-break? (lambda (x) null)]) (directory-list doc))]
-			  [(text) (list "doc.txt")]
+			  [(html) (with-handlers ([not-break? (lambda (x) null)]) 
+                                    (map (lambda (x) (build-path doc x)) 
+                                         (directory-list doc)))]
+			  [(text) (list doc)]
 			  [else null])])
 	     (for-each
 	      (lambda (f)
+                (printf "checking ~s~n" f)
 		(with-handlers ([not-break? (lambda (x)
 					      ; (printf "~a~n" (exn-message x))
 					      #f)])
-		  (with-input-from-file (build-path doc f)
+		  (with-input-from-file f
 		    (lambda ()
 		      (let loop ()
 			(let ([pos (file-position (current-input-port))]

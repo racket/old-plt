@@ -231,6 +231,7 @@
 					    (public
 					      [stop-search
 					       (lambda ()
+                                                 (set! cycle-key #f)
 						 (when collecting-thread
 						   (semaphore-wait break-sema)
 						   (break-thread collecting-thread)

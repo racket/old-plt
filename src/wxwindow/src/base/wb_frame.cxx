@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_frame.cxx,v 1.3 1998/08/09 20:55:18 mflatt Exp $
+ * RCS_ID:      $Id: wb_frame.cxx,v 1.4 1998/08/16 19:23:12 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -57,7 +57,7 @@ Bool wxbFrame::Create(wxFrame *Parent, char *WXUNUSED(title), int WXUNUSED(x), i
   windowStyle = style;
 
   context = (void *)wxGetContextForFrame();
-  WXGC_IGNORE(context);
+  /* WXGC_IGNORE(context); - NO context itself is not finalized */
 
   if (!Parent) {
     wxTopLevelWindows(this)->Append(this);

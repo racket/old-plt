@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.6 1998/11/17 21:40:44 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.7 1998/12/11 01:07:21 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1852,9 +1852,15 @@ int wxCanvasDC:: LogicalToDeviceYRel (float y)
 Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 		      wxBitmap *source, float xsrc, float ysrc, int rop, wxColour *c)
 {
+  if (!source->Ok() || !pixmap) return FALSE;
+
+  if (source->GetDepth() > 1) {
+    /* rop & c don't matter; use GCBlit */
+    return GCBlit(xdest, ydest, width, height, sources, xsrc, ysrc);
+  }
+
   FreeGetPixelCache();
 
-  Bool retval = FALSE;
   wxColor bg;
   wxPen *save_pen = current_pen;
   
@@ -1864,9 +1870,6 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
   if (source->selectedTo) 
     source->selectedTo->EndSetPixel();
 
-  if (source->GetDepth() > 1)
-    c = wxBLACK;
-
   if (rop != wxSTIPPLE)
     SetBackground(wxWHITE);
 
@@ -1875,52 +1878,44 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
   int scaled_height
     = source->GetHeight() < YLOG2DEVREL(height) ? source->GetHeight() : YLOG2DEVREL(height);
 
-  if (pixmap && source->Ok()) {
-    SetPen(wxThePenList->FindOrCreatePen(c, 0, rop));
-    save_pen->Lock(1); /* We're going to mash save_pen back into current_pen */
+  SetPen(wxThePenList->FindOrCreatePen(c, 0, rop));
+  save_pen->Lock(1); /* We're going to mash save_pen back into current_pen */
     
-    if (!color || (source->GetDepth() == 1)) {
-      if ((source->GetDepth() == 1) && ((rop == wxSOLID) || (rop == wxXOR))) {
-	/* Seems like the easiest way to implement transparent backgrounds is to
-	   use a stipple. */
-	XGCValues values;
-	unsigned long mask = GCFillStyle | GCStipple | GCTileStipXOrigin | GCTileStipYOrigin;
-	values.stipple = source->x_pixmap;
-	values.fill_style = FillStippled;
-	values.ts_x_origin = ((XLOG2DEV(xdest) - (long)xsrc) % source->GetWidth());
-	values.ts_y_origin = ((YLOG2DEV(ydest) - (long)ysrc) % source->GetHeight());
-	current_stipple = source;
-	XChangeGC(display, gc, mask, &values);
-	XFillRectangle(display, pixmap, gc, XLOG2DEV(xdest), YLOG2DEV(ydest), scaled_width, scaled_height);
-      } else {
-	XCopyPlane (display, source->x_pixmap, pixmap, gc,
-		    (long)xsrc, (long)ysrc, scaled_width, scaled_height,
-		    XLOG2DEV(xdest), YLOG2DEV(ydest), 1);
-      }
-    } else {
-      XCopyArea (display, source->x_pixmap, pixmap, gc,
-		 (long)xsrc, (long)ysrc, scaled_width, scaled_height,
-		 XLOG2DEV(xdest), YLOG2DEV(ydest));
-      
-    }
-      
-    CalcBoundingBox(xdest, ydest);
-    CalcBoundingBox(xdest + width, ydest + height);
-
-    retval = TRUE;
+  if ((rop == wxSOLID) || (rop == wxXOR)) {
+    /* Seems like the easiest way to implement transparent backgrounds is to
+       use a stipple. */
+    XGCValues values;
+    unsigned long mask = GCFillStyle | GCStipple | GCTileStipXOrigin | GCTileStipYOrigin;
+    values.stipple = source->x_pixmap;
+    values.fill_style = FillStippled;
+    values.ts_x_origin = ((XLOG2DEV(xdest) - (long)xsrc) % source->GetWidth());
+    values.ts_y_origin = ((YLOG2DEV(ydest) - (long)ysrc) % source->GetHeight());
+    current_stipple = source;
+    XChangeGC(display, gc, mask, &values);
+    XFillRectangle(display, pixmap, gc, XLOG2DEV(xdest), YLOG2DEV(ydest), 
+		   scaled_width, scaled_height);
+  } else {
+    XCopyPlane (display, source->x_pixmap, pixmap, gc,
+		(long)xsrc, (long)ysrc, scaled_width, scaled_height,
+		XLOG2DEV(xdest), YLOG2DEV(ydest), 1);
   }
+
+  CalcBoundingBox(xdest, ydest);
+  CalcBoundingBox(xdest + width, ydest + height);
 
   SetBackground(&bg);
   autoSetting = 0x1;
   current_pen = save_pen;
 
-  return retval;
+  return TRUE;
 }
 
 Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
 			wxBitmap *source, float xsrc, float ysrc)
 {
   /* Non-allocating (of collectable memory) Blit */
+
+  if (!source->Ok() || !pixmap) return FALSE;
 
   FreeGetPixelCache();
 
@@ -1936,7 +1931,17 @@ Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
 
   if (pixmap && source->Ok()) {
     XGCValues values;
-    GC gc = XCreateGC(display, pixmap, 0, &values);
+    int mask = 0;
+
+    if (!color && (source->GetDepth() > 1)) {
+      /* color->mono; may need to flip bitmaps */
+      if (BlackPixel(display, DefaultScreen(display)) == 1) {
+	mask = GCFunction;
+	values.function = GXcopyInverted;
+      }
+    }
+
+    GC gc = XCreateGC(display, pixmap, mask, &values);
 
     if (!color || (source->GetDepth() == 1)) {
       XCopyPlane (display, source->x_pixmap, pixmap, gc,

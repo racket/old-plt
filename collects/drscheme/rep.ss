@@ -743,11 +743,11 @@
 	[thread-killed 'not-yet-thread-killed]
 	[initialize-killed-thread
 	 (lambda ()
-	   (when (thread? thread-killed)
-	     (kill-thread thread-killed))
-	   (set! thread-killed
-		 (system
-		  (lambda ()
+	   (system
+	    (lambda ()
+	      (when (thread? thread-killed)
+		(kill-thread thread-killed))
+	      (set! thread-killed
 		    (thread
 		     (lambda ()
 		       (thread-wait user-thread)

@@ -30,22 +30,22 @@
 		    (sequence (super-init name)))]
 	 [language-levels (map (lambda (x) (symbol->string (vector-ref x 0))) basis:settings)]
 	 [f (make-object dialog% "Language")]
-	 [main (make-object mred:vertical-panel% f)]
+	 [main (make-object mred:vertical-pane% f)]
 	 [language-panel (make-object mred:horizontal-panel% main '(border))]
-	 [customization-panel (make-object mred:horizontal-panel% main)]
-	 [customization-left-panel (make-object mred:vertical-panel% customization-panel)]
-	 [customization-right-panel (make-object mred:vertical-panel% customization-panel)]
+	 [customization-panel (make-object mred:horizontal-pane% main)]
+	 [customization-left-panel (make-object mred:vertical-pane% customization-panel)]
+	 [customization-right-panel (make-object mred:vertical-pane% customization-panel)]
 	 [when-message (make-object mred:message% "Language changes effective after next execution" main)]
 	 [make-sub-panel
 	  (lambda (name panel)
-	    (let* ([p (make-object mred:vertical-panel% panel)]
+	    (let* ([p (make-object mred:vertical-pane% panel)]
 		   [message (make-object mred:message% name p)])
 	      (make-object mred:vertical-panel% p '(border))))]
 	 [input-syntax-panel (make-sub-panel "Input Syntax" customization-left-panel)]
 	 [dynamic-panel (make-sub-panel "Safety Properties" customization-left-panel)]
 	 [output-syntax-panel (make-sub-panel "Output Syntax" customization-right-panel)]
 	 
-	 [_1 (make-object mred:horizontal-panel% language-panel)]
+	 [_1 (make-object mred:horizontal-pane% language-panel)]
 	 [specifics-shown? #f]
 	 [show-specifics
 	  (lambda (bool)
@@ -75,13 +75,13 @@
 				 (basis:number->level
 				  (send choice get-selection)))))))]
 	 [custom-message (make-object mred:message% "Custom" language-panel)]
-	 [_2 (make-object mred:horizontal-panel% language-panel)]
+	 [_2 (make-object mred:horizontal-pane% language-panel)]
 	 [right-align
 	  (opt-lambda (mo panel)
-	    (let* ([hp (make-object mred:horizontal-panel% panel)])
+	    (let* ([hp (make-object mred:horizontal-pane% panel)])
 	      (begin0
 	       (mo hp)
-	       (make-object mred:horizontal-panel% hp))))]
+	       (make-object mred:horizontal-pane% hp))))]
 	 [make-check-box
 	  (lambda (set-setting! setting name panel)
 	    (right-align
@@ -143,7 +143,7 @@
 			  basis:setting-whole/fractional-exact-numbers
 			  "Print rationals in whole/part notation"
 			  output-syntax-panel)]
-	 [ok-panel (make-object mred:horizontal-panel% main)]
+	 [ok-panel (make-object mred:horizontal-pane% main)]
 	 [hide-button (make-object mred:button%
 			"Hide Details"
 			ok-panel
@@ -152,7 +152,7 @@
 			"Show Details"
 			ok-panel
 			(lambda (button evt) (show-specifics #t)))]
-	 [_3 (make-object mred:horizontal-panel% ok-panel)]
+	 [_3 (make-object mred:horizontal-pane% ok-panel)]
 	 [cancel-button (make-object mred:button%
 			  "Cancel"
 			  ok-panel
@@ -169,6 +169,7 @@
 			(when (procedure? unregister-callback)
 			  (unregister-callback)))
 		      '(border))]
+	 [spacer (make-object mred:grow-box-spacer-pane% ok-panel)]
 	 [compare-setting-to-gui
 	  (lambda (setting)
 	    (let* ([compare-check-box

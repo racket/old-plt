@@ -81,12 +81,14 @@
 		 (link-extension-parts
 		  (append objs kps)
 		  dest-dir))))])
-    (unless (directory-exists? dest-dir)
+    (make-directory* "compiled")
+    (unless (or (equal? argv #("zo"))
+		(directory-exists? dest-dir))
        (make-directory* dest-dir))
     (make*
      (append
       (list o->so)
-      `(("zo" ,zos ,void))
+      `(("zo" ,zos))
       ss->zo-list
       ss->c-list
       c->o-list)

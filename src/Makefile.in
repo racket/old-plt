@@ -20,9 +20,10 @@ install:
 	$(MAKE) finish-stub
 
 install-normal:
-	$(MAKE) copytree-stub
+	if [ ! -d $(prefix) ] ; then mkdir $(prefix) ; fi
 	$(MAKE) mzinstall
 	$(MAKE) mredinstall-stub
+	$(MAKE) copytree-stub
 	$(MAKE) lib-finish
 
 copytree-stub: @MAKE_COPYTREE@
@@ -86,7 +87,6 @@ inplace-finish:
 	if [ -d $(srcdir)/CVS ] ; then cat $(srcdir)/mzscheme/imsg.txt ; fi
 
 copytree:
-	if [ ! -d $(prefix) ] ; then mkdir $(prefix) ; fi
 	cp -p -r $(srcdir)/../collects $(prefix)/.
 	cp -p -r $(srcdir)/../include $(prefix)/.
 	cp -p -r $(srcdir)/../notes $(prefix)/.

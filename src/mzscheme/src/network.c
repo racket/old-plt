@@ -278,9 +278,174 @@ typedef struct SOCKADDR_IN tcp_address;
 # define UNREGISTER_SOCKET(s) winsock_forget(s)
 #endif
 
+/******************************* hostnames ************************************/
+
+static int parse_numerical(const char *address, unsigned long *addr)
+{
+  unsigned char *s = (unsigned char *)address, n[4];
+  int p = 0, v = 0;
+  while (*s) {
+    if (isdigit(*s)) {
+      if (v < 256)
+	v = (v * 10) + (*s - '0');
+    } else if (*s == '.') {
+      if (p < 4) {
+	n[p] = v;
+	p++;
+      }
+      v = 0;
+    } else
+      break;
+    s++;
+  }
+     
+  if (p == 3) {
+    n[p] = v;
+    p++;
+  }
+     
+  if (!*s && (p == 4)
+      && (s[0] < 256) && (s[1] < 256)
+      && (s[2] < 256) && (s[3] < 256)) {
+    /* Numerical address */
+    *addr = *(unsigned long *)n;
+    return 1;
+  }
+
+  return 0;
+}
+
 #ifdef USE_WINSOCK_TCP
+# ifdef __BORLANDC__
+#  define MZ_LPTHREAD_START_ROUTINE unsigned int (__stdcall*)(void*)
+# else
+#  define MZ_LPTHREAD_START_ROUTINE LPTHREAD_START_ROUTINE
+# endif
+
+static int ghbn_lock;
+
+typedef struct {
+  HANDLE th;
+  long result;
+  int done;
+} GHBN_Rec;
+
+static char ghbn_hostname[256];
+
+static long gethostbyname_in_thread(void *data)
+{
+  struct hostent *host;
+  host = gethostbyname(ghbn_hostname);
+  if (host)
+    return *(long *)host->h_addr_list[0];
+  else
+    return 0;
+}
+
+static void release_ghbn_lock(GHBN_Rec *rec)
+{
+  ghbn_lock = 0;
+  CloseHandle(rec->th);
+}
+static int ghbn_lock_avail(Scheme_Object *_ignored)
+{
+  return !ghbn_lock;
+}
+
+static int ghbn_thread_done(Scheme_Object *_rec)
+{
+  GHBN_Rec *rec = (GHBN_Rec *)_rec;
+
+  if (rec->done)
+    return 1;
+
+  if (WaitForSingleObject(rec->th, 0) == WAIT_OBJECT_0) {
+    DWORD code;
+
+    GetExitCodeThread(rec->th, &code);
+    rec->result = code;
+    rec->done = 1;
+
+    return 1;
+  }
+
+  return 0;
+}
+
+static void ghbn_thread_need_wakeup(Scheme_Object *_rec, void *fds)
+{
+  GHBN_Rec *rec = (GHBN_Rec *)_rec;
+
+  scheme_add_fd_handle((void *)rec->th, fds, 0);
+}
+
+#define HOST_RESULT_IS_ADDR
+static struct hostent *MZ_GETHOSTBYNAME(const char *name)
+{
+  GHBN_Rec *rec;
+  long th;
+  DWORD id;
+
+  if (strlen(name) < 256)
+    strcpy(ghbn_hostname, name);
+  else
+    return NULL;
+
+  rec = MALLOC_ONE_ATOMIC(GHBN_Rec);
+  rec->done = 0;
+
+  scheme_block_until(ghbn_lock_avail, NULL, NULL, 0);
+
+  ghbn_lock = 1;
+
+  th = _beginthreadex(NULL, 5000, 
+		      (MZ_LPTHREAD_START_ROUTINE)gethostbyname_in_thread,
+		      NULL, 0, &id);
+
+  rec->th = (HANDLE)th;
+  
+  BEGIN_ESCAPEABLE(release_ghbn_lock, rec);
+  scheme_block_until(ghbn_thread_done, ghbn_thread_need_wakeup, (Scheme_Object *)rec, 0);
+  END_ESCAPEABLE();
+
+  CloseHandle(rec->th);
+
+  ghbn_lock = 0;
+
+  return (struct hostent *)rec->result;
+}
+#else
+# define MZ_GETHOSTBYNAME gethostbyname 
+#endif
+
+#ifdef USE_SOCKETS_TCP
+
+static unsigned long by_number_id;
+#ifndef HOST_RESULT_IS_ADDR
+static unsigned long *by_number_array[2];
+static struct hostent by_number_host;
+#endif
+
+static struct hostent *get_host_by_number(const char *address)
+{
+  if (parse_numerical(address, &by_number_id)) {
+#ifdef HOST_RESULT_IS_ADDR
+    return (struct hostent *)by_number_host;
+#else
+    by_number_array[0] = &by_number_id;
+    by_number_host.h_addr_list = (char **)by_number_array;
+    by_number_host.h_length = sizeof(long);
+    return &by_number_host;
+#endif
+  }
+
+  return NULL;
+}
+#endif
 
 /******************************* WinSock ***********************************/
+
+#ifdef USE_WINSOCK_TCP
 
 static int wsr_size = 0;
 static tcp_t *wsr_array;
@@ -364,9 +529,10 @@ static void TCP_INIT(char *name)
 		   name);
 }
 #else
-#ifdef USE_MAC_TCP
 
-/***************************** Mac *******************************************/
+/********************************** Mac ***************************************/
+
+#ifdef USE_MAC_TCP
 
 /* Much of this is derived from (or at least influenced by) GUSI's TCP
    socket implementation, by Matthias Neeracher, which was derived from
@@ -618,38 +784,9 @@ static int tcp_addr(const char *address, struct hostInfo *info)
   long *done = MALLOC_ONE_ATOMIC(long);
   
   /* Check for numerical address: */
-  {
-     unsigned char *s = (unsigned char *)address, n[4];
-     int p = 0, v = 0;
-     while (*s) {
-       if (isdigit(*s)) {
-         if (v < 256)
-           v = (v * 10) + (*s - '0');
-       } else if (*s == '.') {
-         if (p < 4) {
-           n[p] = v;
-           p++;
-         }
-         v = 0;
-       } else
-         break;
-       s++;
-     }
-     
-     if (p == 3) {
-       n[p] = v;
-       p++;
-     }
-     
-     if (!*s && (p == 4)
-         && (s[0] < 256) && (s[1] < 256)
-         && (s[2] < 256) && (s[3] < 256)) {
-       /* Numerical address */
-       info->addr[0] = *(unsigned long *)n;
-       return 0;
-     }
-  }
-  
+  if (parse_numerical(&(info->addr[0])))
+    return 0;
+
  try_again:
   *done = 0;
   info->rtnCode = 0;
@@ -1600,109 +1737,6 @@ static void closesocket_w_decrement(tcp_t s)
 }
 #endif
 
-#ifdef USE_WINSOCK_TCP
-# ifdef __BORLANDC__
-#  define MZ_LPTHREAD_START_ROUTINE unsigned int (__stdcall*)(void*)
-# else
-#  define MZ_LPTHREAD_START_ROUTINE LPTHREAD_START_ROUTINE
-# endif
-
-static int ghbn_lock;
-
-typedef struct {
-  HANDLE th;
-  long result;
-  int done;
-} GHBN_Rec;
-
-static char ghbn_hostname[256];
-
-static long gethostbyname_in_thread(void *data)
-{
-  struct hostent *host;
-  host = gethostbyname(ghbn_hostname);
-  if (host)
-    return *(long *)host->h_addr_list[0];
-  else
-    return 0;
-}
-
-static void release_ghbn_lock(GHBN_Rec *rec)
-{
-  ghbn_lock = 0;
-  CloseHandle(rec->th);
-}
-static int ghbn_lock_avail(Scheme_Object *_ignored)
-{
-  return !ghbn_lock;
-}
-
-static int ghbn_thread_done(Scheme_Object *_rec)
-{
-  GHBN_Rec *rec = (GHBN_Rec *)_rec;
-
-  if (rec->done)
-    return 1;
-
-  if (WaitForSingleObject(rec->th, 0) == WAIT_OBJECT_0) {
-    DWORD code;
-
-    GetExitCodeThread(rec->th, &code);
-    rec->result = code;
-    rec->done = 1;
-
-    return 1;
-  }
-
-  return 0;
-}
-
-static void ghbn_thread_need_wakeup(Scheme_Object *_rec, void *fds)
-{
-  GHBN_Rec *rec = (GHBN_Rec *)_rec;
-
-  scheme_add_fd_handle((void *)rec->th, fds, 0);
-}
-
-#define HOST_RESULT_IS_ADDR
-static struct hostent *MZ_GETHOSTBYNAME(const char *name)
-{
-  GHBN_Rec *rec;
-  long th;
-  DWORD id;
-
-  if (strlen(name) < 256)
-    strcpy(ghbn_hostname, name);
-  else
-    return NULL;
-
-  rec = MALLOC_ONE_ATOMIC(GHBN_Rec);
-  rec->done = 0;
-
-  scheme_block_until(ghbn_lock_avail, NULL, NULL, 0);
-
-  ghbn_lock = 1;
-
-  th = _beginthreadex(NULL, 5000, 
-		      (MZ_LPTHREAD_START_ROUTINE)gethostbyname_in_thread,
-		      NULL, 0, &id);
-
-  rec->th = (HANDLE)th;
-  
-  BEGIN_ESCAPEABLE(release_ghbn_lock, rec);
-  scheme_block_until(ghbn_thread_done, ghbn_thread_need_wakeup, (Scheme_Object *)rec, 0);
-  END_ESCAPEABLE();
-
-  CloseHandle(rec->th);
-
-  ghbn_lock = 0;
-
-  return (struct hostent *)rec->result;
-}
-#else
-# define MZ_GETHOSTBYNAME gethostbyname 
-#endif
-
 static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 {
   char * volatile address = "", * volatile errmsg = "";
@@ -1804,7 +1838,9 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 #endif
 
 #ifdef USE_SOCKETS_TCP
-  host = MZ_GETHOSTBYNAME(address);
+  host = get_host_by_number(address);
+  if (!host)
+    host = MZ_GETHOSTBYNAME(address);
   if (host) {
     tcp_connect_dest_addr.sin_family = AF_INET;
     tcp_connect_dest_addr.sin_port = id;
@@ -2046,9 +2082,11 @@ tcp_listen(int argc, Scheme_Object *argv[])
   {
     struct hostent *host;
 
-    if (address)
-      host = MZ_GETHOSTBYNAME(address);
-    else
+    if (address) {
+      host = get_host_by_number(address);
+      if (!host)
+	host = MZ_GETHOSTBYNAME(address);
+    } else
       host = NULL;
 
     if (!address || host) {

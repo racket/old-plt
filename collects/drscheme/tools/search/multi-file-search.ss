@@ -280,9 +280,9 @@
         (send zoom-text set-style-list (get-style-list))
         (if style
             (send style set-delta delta)
-            (send style-list new-named-style "Standard"
-                  (send style-list find-or-create-style
-                        (send style-list find-named-style "Basic")
+            (send (get-style-list) new-named-style "Standard"
+                  (send (get-style-list) find-or-create-style
+                        (send (get-style-list) find-named-style "Basic")
                         delta))))
       (insert "Searching..."))))
 

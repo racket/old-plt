@@ -136,6 +136,7 @@
 			  ;;(printf "3. creating coroutine thread~n")
 			  (with-handlers (((lambda (exn) #t)
 					   (lambda (exn) 
+					     (enable-stop #t)
 					     (channel-put ex-ch exn))))
 			    (let ([v (f enable-stop)])
 			      (enable-stop #t)

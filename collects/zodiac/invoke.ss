@@ -31,28 +31,33 @@
   (opt-lambda ((show-raw? #t))
     (zodiac:invoke-system)
     (let ([peval (current-eval)])
-      (parameterize ([current-prompt-read
-		       (lambda ()
-			 (newline)
-			 (display "e> ")
-			 (flush-output)
-			 (let ([read ((zodiac:read))])
-			   (newline)
-			   (flush-output)
-			   (if (zodiac:eof? read)
-			     eof
-			     read)))]
-		      [current-eval
+      (let ((system-params (current-parameterization)))
+	(let ((new-params (make-parameterization)))
+	  (with-parameterization new-params
+	    (lambda ()
+	      (parameterize
+		((current-prompt-read
+		   (lambda ()
+		     (newline)
+		     (display "e> ")
+		     (flush-output)
+		     (let ([read ((zodiac:read))])
+		       (newline)
+		       (flush-output)
+		       (if (zodiac:eof? read)
+			 eof
+			 read))))
+		  (current-eval
+		    (lambda (in)
+		      (let ((e (car
+				 (with-parameterization system-params
+				   (lambda ()
+				     (zodiac:scheme-expand-program
+				       (list in)))))))
 			(if show-raw?
-			  (lambda (in)
-			    (zodiac:parsed->raw
-			      (car
-				(zodiac:scheme-expand-program
-				  (list in)))))
-			  (lambda (in)
-			    (zodiac:scheme-expand-program
-			      (list in))))])
-	(read-eval-print-loop)))))
+			  (zodiac:parsed->raw e)
+			  e)))))
+		(read-eval-print-loop)))))))))
 
 (define zodiac:old-see
   (opt-lambda ((show-raw? #t))

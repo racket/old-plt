@@ -7,7 +7,7 @@
     zodiac:back-protocol^ zodiac:expander^ zodiac:interface^
     (param : plt:parameters^))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define-struct (if-form struct:form) (test then else))
   (define-struct (set!-form struct:form) (var val))
@@ -20,7 +20,7 @@
   (define-struct (case-lambda-form struct:form) (args bodies))
   (define-struct (struct-form struct:form) (type super fields))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define create-const
     (lambda (c s)
@@ -32,7 +32,7 @@
     (lambda (expr env attributes vocab)
       (create-const expr expr)))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define create-case-lambda-form
     (lambda (args bodies source)
@@ -94,7 +94,7 @@
 	(zodiac-start source) (zodiac-finish source)
 	(make-empty-back-box) type super fields)))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (extend-parsed->raw if-form?
     (lambda (expr p->r)
@@ -157,7 +157,7 @@
 	    (sexp->raw (struct-form-type expr)))
 	 ,(map sexp->raw (struct-form-fields expr)))))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define expr-pattern
     (if (language>=? 'side-effecting)
@@ -174,7 +174,7 @@
 			 `(begin ,@expr) source '(-1))
 	    env attributes vocab)))))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (let ((case-lambda-handler
 	  (lambda (cl-kwd)
@@ -773,10 +773,10 @@
 		      expr)
 		    env attributes vocab)))))))))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
-					; (let ((var val) ...) body ...)                           [macro]
-					; (let fun ((var val) ...) body ...)                       [macro]
+  ; (let ((var val) ...) body ...)                           [macro]
+  ; (let fun ((var val) ...) body ...)                       [macro]
 
   (add-macro-form 'let scheme-vocabulary
     (let* ((kwd '(let))
@@ -1563,6 +1563,17 @@
 			  (close-input-port p)))))))))
 	  (else
 	    (static-error expr "Malformed include"))))))
+
+;  (add-micro-form 'begin-elaboration-time scheme-vocabulary
+;    (let* ((kwd '(begin-elaboration-time))
+;	    (in-pattern '(begin-elaboration-time expr ...))
+;	    (m&e (pat:make-match&env in-pattern kwd)))
+;      (lambda (expr env attributes vocab)
+;	(cond
+;	  ((pat:match-against m&e expr env)
+;	    =>
+;	    (lambda (p-env)
+;	      (let ((exprs 
 
   (add-macro-form 'unquote scheme-vocabulary
     (lambda (expr env)

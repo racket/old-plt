@@ -132,7 +132,8 @@
   ())
 
 (define-signature zodiac:scheme-mrspidey^
-  ((struct poly-form (exp))
+  (mrspidey-vocabulary
+    (struct poly-form (exp))
     (struct :-form (exp type))
     (struct type:-form (type attrs))
     (struct st:control-form (para val))

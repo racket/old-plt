@@ -1,7 +1,10 @@
+(require-library "compile.ss")
+
 (define file-names
   '("corelate" "invoke" "link" "misc" "pattern" "back"
      "scm-core" "scm-main" "scm-obj" "scm-unit" "scm-ou" "scm-spdy"
-     "sexp" "sigs" "x" "zcode" "zsigs"))
+     "sexp" "sigs" "x" "zsigs" "basestr" "readstr" "reader"
+     "scanner" "scanparm" "scanstr"))
 
 (printf "Deleting ...~n")
 (for-each (lambda (f)

@@ -61,9 +61,14 @@
 	(make-empty-back-box)
 	sym modes)))
 
-					; --------------------------------------------------------------------
+  ; --------------------------------------------------------------------
 
-  (add-micro-form 'poly scheme-vocabulary
+  (define mrspidey-vocabulary
+    (create-vocabulary 'mrspidey-vocabulary scheme-vocabulary))
+
+  ; --------------------------------------------------------------------
+
+  (add-micro-form 'poly mrspidey-vocabulary
     (let* ((kwd '(poly))
 	    (in-pattern '(poly p-expr))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -79,7 +84,7 @@
 	  (else
 	    (static-error expr "Malformed poly"))))))
 
-  (add-micro-form ': scheme-vocabulary
+  (add-micro-form ': mrspidey-vocabulary
     (let* ((kwd '(:))
 	    (in-pattern '(: :-expr type))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -97,7 +102,7 @@
 	  (else
 	    (static-error expr "Malformed :"))))))
 
-  (add-micro-form 'type: scheme-vocabulary
+  (add-micro-form 'type: mrspidey-vocabulary
     (let* ((kwd '(type:))
 	    (in-pattern '(type: type attr ...))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -115,7 +120,7 @@
 	  (else
 	    (static-error expr "Malformed type:"))))))
 
-  (add-micro-form 'st:control scheme-vocabulary
+  (add-micro-form 'st:control mrspidey-vocabulary
     (let* ((kwd '(st:control))
 	    (in-pattern '(st:control para val))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -133,7 +138,7 @@
 	  (else
 	    (static-error expr "Malformed st:control"))))))
 
-  (add-micro-form 'define-type scheme-vocabulary
+  (add-micro-form 'define-type mrspidey-vocabulary
     (let* ((kwd '(define-type))
 	    (in-pattern '(define-type sym type))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -152,7 +157,7 @@
 	  (else
 	    (static-error expr "Malformed define-type"))))))
 
-  (add-micro-form 'define-constructor scheme-vocabulary
+  (add-micro-form 'define-constructor mrspidey-vocabulary
     (let* ((kwd '(define-constructor))
 	    (in-pattern '(define-constructor sym modes ...))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -164,9 +169,9 @@
 	      (let ((sym (pat:pexpand 'sym p-env kwd))
 		     (modes (pat:pexpand '(modes ...) p-env kwd)))
 		(valid-syntactic-id? sym)
-					; Cormac has an (assert-syn def (andmap boolean? modes))
-					; here.  I only do the andmap z:boolean? part since
-					; I have no idea what (assert-syn def ...) does.
+		; Cormac has an (assert-syn def (andmap boolean? modes))
+		; here.  I only do the andmap z:boolean? part since
+		; I have no idea what (assert-syn def ...) does.
 		(map (lambda (mode)
 		       (unless (z:boolean? mode)
 			 (static-error mode "Malformed mode")))
@@ -178,7 +183,7 @@
 	  (else
 	    (static-error expr "Malformed define-constructor"))))))
 
-  (add-micro-form 'include-unit scheme-vocabulary
+  (add-micro-form 'include-unit mrspidey-vocabulary
     (let* ((kwd '(include-unit))
 	    (in-pattern '(include-unit file))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -196,7 +201,7 @@
 	  (else
 	    (static-error expr "Malformed include-unit"))))))
 
-  (add-micro-form 'include-unit-imports scheme-vocabulary
+  (add-micro-form 'include-unit-imports mrspidey-vocabulary
     (let* ((kwd '(include-unit-imports))
 	    (in-pattern '(include-unit-imports file))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -214,7 +219,7 @@
 	  (else
 	    (static-error expr "Malformed include-unit-imports"))))))
 
-					; --------------------------------------------------------------------
+  ; --------------------------------------------------------------------
 
   (extend-parsed->raw poly-form?
     (lambda (expr p->r)

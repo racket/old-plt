@@ -1176,6 +1176,10 @@
 (test '((1 . 10) (7 . 9)) regexp-match-positions #rx"1(ak*)*2" "01akakkak23")
 (test '((1 . 10)) regexp-match-positions #rx"1(?:ak*)*2" "01akakkak23")
 
+;; Regexps that shouldn't work:
+(err/rt-test (regexp "[a--b]") exn:misc?)
+(err/rt-test (regexp "[a-b-c]") exn:misc?)
+
 (arity-test regexp 1 1)
 (arity-test regexp? 1 1)
 (arity-test regexp-match 2 5)

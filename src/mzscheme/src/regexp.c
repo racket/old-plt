@@ -61,6 +61,7 @@ typedef struct regexp {
   Scheme_Object *source;
   long nsubexp;
   long regsize;
+  char is_utf8;
   char regstart;		/* Internal use only. */
   char reganch;			/* Internal use only. */
   long regmust;                 /* Internal use only: => pointer relative to self */
@@ -137,16 +138,17 @@ static regexp *regcomp(char *, rxpos, int);
 #define	ANY	3	/* no	Match any one character. */
 #define	ANYOF	4	/* str	Match any character in this string. */
 #define	ANYBUT	5	/* str	Match any character not in this string. */
-#define	BRANCH	6	/* node	Match this alternative, or the next... */
-#define	BACK	7	/* no	Match "", "next" ptr points backward. */
-#define	EXACTLY	8	/* str	Match this string. */
-#define	NOTHING	9	/* no	Match empty string. */
-#define	STAR	10	/* node	Match this (simple) thing 0 or more times. */
-#define	PLUS	11	/* node	Match this (simple) thing 1 or more times. */
-#define	STAR2	12	/* non-greedy star. */
-#define	PLUS2	13	/* non-greedy plus. */
-#define OPENN   14      /* like OPEN, but with an n >= 50, or n == 0 means (?:...) */
-#define CLOSEN  15      /* like CLOSE, but with an n >= 50 */
+#define INRANGE 6       /* str  Match character in range */
+#define	BRANCH	7	/* node	Match this alternative, or the next... */
+#define	BACK	8	/* no	Match "", "next" ptr points backward. */
+#define	EXACTLY	9	/* str	Match this string. */
+#define	NOTHING	10	/* no	Match empty string. */
+#define	STAR	11	/* node	Match this (simple) thing 0 or more times. */
+#define	PLUS	12	/* node	Match this (simple) thing 1 or more times. */
+#define	STAR2	13	/* non-greedy star. */
+#define	PLUS2	14	/* non-greedy plus. */
+#define OPENN   15      /* like OPEN, but with an n >= 50, or n == 0 means (?:...) */
+#define CLOSEN  16      /* like CLOSE, but with an n >= 50 */
 #define	OPEN	20	/* no	Mark this point in input as start of #n. */
 /*	OPEN+1 is number 1, etc. */
 #define	CLOSE	70	/* no	Analogous to OPEN. */
@@ -677,54 +679,77 @@ regatom(int *flagp)
     ret = regnode(ANY);
     *flagp |= HASWIDTH|SIMPLE;
     break;
-  case '[': {
-    int xclass;
-    int classend, len;
-    rxpos l0, l1;
+  case '[': 
+    /* Check for simple-range special case: */
+    if (((regparse + 4) <= regparse_end)
+	&& (regparsestr[regparse] != '^')
+	&& (regparsestr[regparse] != '-')
+	&& (regparsestr[regparse] != ']')
+	&& (regparsestr[regparse + 1] == '-')
+	&& (regparsestr[regparse + 2] != '-')
+	&& (regparsestr[regparse + 2] != ']')
+	&& (regparsestr[regparse + 3] == ']')) {
+      ret = regnode(INRANGE);
+      regc(regparsestr[regparse]);
+      regc(regparsestr[regparse + 2]);
+      regparse += 4;
+      *flagp |= HASWIDTH|SIMPLE;
+    } else {
+      int xclass;
+      int classend, len, can_range = 0;
+      rxpos l0, l1;
 
-    if (regparsestr[regparse] == '^') { /* Complement of range. */
-      ret = regnode(ANYBUT);
-      regparse++;
-    } else
-      ret = regnode(ANYOF);
-    len = 0;
-    l0 = regcode;
-    regc(0);
-    l1 = regcode;
-    regc(0);
-    if (regparsestr[regparse] == ']' || regparsestr[regparse] == '-') {
-      regc(regparsestr[regparse++]);
-      len++;
-    }
-    while (regparse != regparse_end && regparsestr[regparse] != ']') {
-      if (regparsestr[regparse] == '-') {
+      if (regparsestr[regparse] == '^') { /* Complement of range. */
+	ret = regnode(ANYBUT);
 	regparse++;
-	if (regparsestr[regparse] == ']' || regparse == regparse_end) {
-	  regc('-');
-	  len++;
-	} else {
-	  xclass = UCHARAT(regparsestr + (regparse-2))+1;
-	  classend = UCHARAT(regparsestr + regparse);
-	  if (xclass > classend+1)
-	    FAIL("invalid range within square brackets in pattern");
-	  for (; xclass <= classend; xclass++) {
-	    regc(xclass);
-	    len++;
-	  }
-	  regparse++;
-	}
-      } else {
+      } else
+	ret = regnode(ANYOF);
+      len = 0;
+      l0 = regcode;
+      regc(0);
+      l1 = regcode;
+      regc(0);
+      if (regparsestr[regparse] == ']' || regparsestr[regparse] == '-') {
 	regc(regparsestr[regparse++]);
 	len++;
       }
+      while (regparse != regparse_end && regparsestr[regparse] != ']') {
+	if (regparsestr[regparse] == '-') {
+	  regparse++;
+	  if (regparsestr[regparse] == ']' || regparse == regparse_end) {
+	    regc('-');
+	    len++;
+	  } else {
+	    if (!can_range) {
+	      FAIL("misplaced hypen within square brackets in pattern");
+	    }
+	    xclass = UCHARAT(regparsestr + (regparse-2))+1;
+	    classend = UCHARAT(regparsestr + regparse);
+	    if (classend == '-') {
+	      FAIL("misplaced hypen within square brackets in pattern");
+	    }
+	    if (xclass > classend+1)
+	      FAIL("invalid range within square brackets in pattern");
+	    for (; xclass <= classend; xclass++) {
+	      regc(xclass);
+	      len++;
+	    }
+	    regparse++;
+	  }
+	  can_range = 0;
+	} else {
+	  regc(regparsestr[regparse++]);
+	  len++;
+	  can_range = 1;
+	}
+      }
+      if (regparsestr[regparse] != ']')
+	FAIL("missing closing square bracket in pattern");
+      regparse++;
+      regstr[l0] = (len >> 8);
+      regstr[l1] = (len & 255);
+      *flagp |= HASWIDTH|SIMPLE;
     }
-    if (regparsestr[regparse] != ']')
-      FAIL("missing closing square bracket in pattern");
-    regparse++;
-    regstr[l0] = (len >> 8);
-    regstr[l1] = (len & 255);
-    *flagp |= HASWIDTH|SIMPLE;
-  }
   break;
   case '(':
     if ((regparsestr[regparse] == '?')
@@ -1441,6 +1466,19 @@ regmatch(Regwork *rw, rxpos prog)
 	return(0);
       rw->input++;
       break;
+    case INRANGE:
+      {
+	int lo, hi;
+	lo = ((unsigned char *)(regstr + OPERAND(scan)))[0];
+	hi = ((unsigned char *)(regstr + OPERAND(scan)))[1];
+	NEED_INPUT(rw, rw->input, 1);
+	if (rw->input == rw->input_end 
+	    || (((unsigned char *)rw->instr)[rw->input] < lo)
+	    || (((unsigned char *)rw->instr)[rw->input] > hi))
+	  return(0);
+	rw->input++;
+      }
+      break;
     case NOTHING:
       break;
     case BACK:
@@ -1668,6 +1706,22 @@ regrepeat(Regwork *rw, rxpos p)
       NEED_INPUT(rw, scan, 1);
     }
     break;
+  case INRANGE:
+    NEED_INPUT(rw, scan, 1);
+    {
+      int lo, hi;
+      lo = ((unsigned char *)(regstr + opnd))[0];
+      hi = ((unsigned char *)(regstr + opnd))[1];
+      NEED_INPUT(rw, scan, 1);
+      while (scan != rw->input_end 
+	     && (((unsigned char *)rw->instr)[scan] >= lo)
+	     && (((unsigned char *)rw->instr)[scan] <= hi)) {
+	scan++;
+	count++;
+	NEED_INPUT(rw, scan, 1);
+      }
+    }
+    break;
   default:			/* Oh dear.  Called inappropriately. */
     regerror("internal foulup");
     count = 0;			/* Best compromise. */
@@ -1795,14 +1849,550 @@ char *regsub(regexp *prog, char *src, int sourcelen, long *lenout, char *insrc, 
   return dest;
 }
 
-static Scheme_Object *make_regexp(int argc, Scheme_Object *argv[])
+/************************************************************/
+/*              UTF-8 -> per-byte translation               */
+/************************************************************/
+
+static unsigned char *make_room(unsigned char *r, int j, int need_extra, int *extra, int *rsize)
+{
+  int nrs;
+  unsigned char *nr;
+
+  if (*extra < need_extra) {
+    nrs = ((*rsize) * 2) + need_extra;
+    *extra += *rsize + need_extra;
+    nr = (char *)scheme_malloc_atomic(nrs+1);
+    memcpy(nr, r, j);
+    r = nr;
+    *rsize = nrs;
+  } else {
+    *extra -= need_extra;
+  }
+
+  return r;
+}
+
+#include "../gc2/my_qsort.c"
+
+static int compare_ranges(const void *a, const void *b)
+{
+  if (*(unsigned int *)a < *(unsigned int *)b)
+    return -1;
+  else
+    return 1;
+}
+
+static unsigned char *add_byte_range(const unsigned char *lo, const unsigned char *hi, int count,
+				     unsigned char *r, int *_j, int *rextra, int *rsize,
+				     int did_alt, int wrap_alts)
+{
+  int same_chars, j, i;
+  const unsigned char *lowest = "\200\200\200\200\200";
+  const unsigned char *highest = "\277\277\277\277\277";
+  unsigned char p, q;
+
+  for (same_chars = 0; same_chars < count; same_chars++) {
+    if (lo[same_chars] != hi[same_chars])
+      break;
+  }
+
+  j = *_j;
+
+  /* We assume that in the curent context, it's ok to produce
+     alternatives without parens around the set of alternatives */
+
+  /* Match exactly the part that's the same for hi and lo */
+  if (same_chars) {
+    r = make_room(r, j, 4 + same_chars, rextra, rsize);
+    if (!did_alt) {
+      r[j++] = '|';
+      did_alt = 1;
+    }
+    for (i = 0; i < same_chars; i++) {
+      r[j++] = lo[i];
+    }
+  }
+
+  if (same_chars < count) {
+    /* We have something like nxxxx to mxxxx where n < m.
+       Find p such that p >= n and p0000 >= nxxxx, and
+       find q such that q0000 <= mxxxx */
+    int choices = 0;
+    
+    for (i = same_chars + 1; i < count; i++) {
+      if (lo[i] != 128)
+	break;
+    }
+    if (i == count)
+      p = lo[same_chars];
+    else {
+      p = lo[same_chars] + 1;
+      choices++;
+    }
+
+    for (i = same_chars + 1; i < count; i++) {
+      if (hi[i] != 191)
+	break;
+    }
+    if (i == count)
+      q = hi[same_chars];
+    else {
+      q = hi[same_chars] - 1;
+      choices++;
+    }
+
+    if (p <= q)
+      choices++;
+
+    if ((wrap_alts || same_chars) && (choices > 1)) {
+      r = make_room(r, j, 4, rextra, rsize);
+      if (!did_alt) {
+	r[j++] = '|';
+	did_alt = 1;
+      }
+      r[j++] = '(';
+      r[j++] = '?';
+      r[j++] = ':';
+    }
+
+    
+    if (p > lo[same_chars]) {
+      r = make_room(r, j, 2, rextra, rsize);
+      if (!did_alt) {
+	r[j++] = '|';
+	did_alt = 1;
+      }
+      r[j++] = lo[same_chars];
+      *_j = j;
+      r = add_byte_range(lo + same_chars + 1, highest, count - same_chars - 1,
+			 r, _j, rextra, rsize, 1, 1);
+      j = *_j;
+      p = lo[same_chars] + 1;
+      did_alt = 0;
+    }
+    
+    if (q < hi[same_chars]) {
+      r = make_room(r, j, 2, rextra, rsize);
+      if (!did_alt) {
+	r[j++] = '|';
+	did_alt = 1;
+      }
+      r[j++] = hi[same_chars];
+      *_j = j;
+      r = add_byte_range(lowest, hi + same_chars + 1, count - same_chars - 1,
+			 r, _j, rextra, rsize, 1, 1);
+      j = *_j;
+      did_alt = 0;
+
+      q = hi[same_chars] - 1;
+    }
+    
+    if (p <= q) {
+      /* Make the alternative that lets the initial digit vary,
+	 since there's room between the lo and hi leading digit */
+      const char *any_str = "[\200-\277]";
+      const int any_len = 5;
+
+      r = make_room(r, j, 10 + ((count - same_chars - 1) * any_len) , rextra, rsize);
+      if (!did_alt) {
+	r[j++] = '|';
+	did_alt = 1;
+      }
+      if (p == q) {
+	r[j++] = p;
+      } else {
+	r[j++] = '[';
+	r[j++] = p;
+	r[j++] = '-';
+	r[j++] = q;
+	r[j++] = ']';
+      }
+      for (i = same_chars + 1; i < count; i++) {
+	memcpy(r + j, any_str, any_len);
+	j += any_len;
+      }
+    }
+
+    if ((wrap_alts || same_chars) && (choices > 1)) {
+      /* Close out the grouping */
+      r = make_room(r, j, 1, rextra, rsize);    
+      r[j++] = ')';
+    } 
+  }
+
+  *_j = j;
+  return r;
+}
+
+static unsigned char *add_range(unsigned char *r, int *_j, int *rextra, int *rsize,
+				unsigned int start, unsigned int end, int did_alt)
+{
+  int  top, count;
+  unsigned char lo[6], hi[6];
+
+  /* If this range spans different-sized encodings, split it up
+     with a recursive call. */
+  if (start <= 0x7FF) {
+    top = 0x7FF;
+    count = 2;
+  } else if (start <= 0xFFFF) {
+    top = 0xFFFF;
+    count = 3;
+  } else if (start <= 0x1FFFFF) {
+    top = 0x1FFFFF;
+    count = 4;
+  } else if (start <= 0x3FFFFFF) {
+    top = 0x3FFFFFF;
+    count = 5;
+  } else {
+    top = 0x7FFFFFFF;
+    count = 6;
+  }
+
+  if (end > top) {
+    r = add_range(r, _j, rextra, rsize, top + 1, end, did_alt);
+    end = top;
+    did_alt = 0;
+  }
+
+  /* At this point, the situation is much like creating a
+     regexp to match decimal digits. If we wanted to match the
+     range 28 to 75 (inclusive), we'd need three parts:
+
+          2[8-9]|[3-6][0-9]|7[0-5]
+
+     It gets more complex with three digits, say 
+     128 to 715:
+
+       12[8-9]|1[3-6][0-9]|[2-6][0-9][0-9]|7[0-0][0-9]|71[0-5]
+
+     but you get the idea. Note that any_str takes the place of
+     [0-9].
+
+     This same idea works with UTF-8 "digits", so first encode
+     our code-point numbers in UTF-8: */
+
+  scheme_utf8_encode(&start, lo, 0, 1, 0, 0);
+  scheme_utf8_encode(&end, hi, 0, 1, 0, 0);
+
+  return add_byte_range(lo, hi, count, r, _j, rextra, rsize, did_alt, 0);
+}
+
+int translate(unsigned char *s, int len, char **result)
+{
+  int i, j;
+  int rsize = len, rextra = 0;
+  unsigned char *r;
+  
+  r = (char *)scheme_malloc_atomic(rsize + 1);
+
+  /* We need to translate if the pattern contains any use of ".", if
+     there's a big character in a range, or if there's a big character
+     before '+', '*', or '?'. */
+
+  for (i = j = 0; i < len;) {
+    if (s[i] == '[') {
+      int k = i + 1, saw_big = 0;
+      /* First, check whether we need to translate. */
+      /* Close bracket start is special: */
+      if ((k < len) && (s[k] == '^'))
+	k++;
+      if ((k < len) && (s[k] == ']'))
+	k++;
+      while ((k < len) && (s[k] != ']')) {
+	if (s[k] > 127)
+	  saw_big = 1;
+	k++;
+      }
+      if ((k >= len) || !saw_big) {
+	/* No translation necessary. */
+	while (i <= k) {
+	  r[j++] = s[i++];
+	}
+      } else {
+	/* Need to translate. */
+	char *simple_on;
+	Scheme_Object *ranges;
+	unsigned int *us, *range_array;
+	int ulen, on_count, range_len, rp, p;
+	int not_mode = (s[i + 1] == '^');
+
+	ulen = scheme_utf8_decode(s, NULL, i + 1, k, 0, 0, 0);
+	us = (unsigned int *)scheme_malloc_atomic(ulen * sizeof(unsigned int));
+	scheme_utf8_decode(s, us, i + 1, k, 0, 0, 0);
+
+	/* The simple_on array lists ASCII chars to (not) find
+	   for the match */
+	simple_on = (char *)scheme_malloc_atomic(128);
+	memset(simple_on, 0, 128);
+	/* The ranges list is pairs of larger ranges */
+	ranges = scheme_null;
+	
+	p = 0;
+	if (not_mode)
+	  p++;
+	if (us[p] == '-') {
+	  simple_on['-'] = 1;
+	  p++;
+	}
+
+	while (p < ulen) {
+	  if (((p + 2) < ulen)
+	      && us[p+1] == '-') {
+	    int beg = us[p], end = us[p+2];
+	    if (end == '-') {
+	      FAIL("misplaced hypen within square brackets in pattern");
+	      return 0;
+	    }
+	    if (end < beg) {
+	      /* Bad regexp */
+	      FAIL("invalid range within square brackets in pattern");	      
+	      return 0;
+	    }
+	      
+	    if ((beg > 127) || (end > 127)) {
+	      /* A big-char range */
+	      ranges = scheme_make_pair(scheme_make_pair(scheme_make_integer_value_from_unsigned(us[p]),
+							 scheme_make_integer_value_from_unsigned(us[p+2])),
+					ranges);
+	    } else {
+	      /* Small range */
+	      int w;
+	      for (w = beg; w <= end; w++) {
+		simple_on[w] = 1;
+	      }
+	    }
+	    p += 3;
+	  } else if (us[p] > 127) {
+	    ranges = scheme_make_pair(scheme_make_pair(scheme_make_integer_value_from_unsigned(us[p]),
+						       scheme_make_integer_value_from_unsigned(us[p])),
+				      ranges);
+	    p++;
+	  } else {
+	    if (((p + 1) < ulen) && (us[p] == '-')) {
+	      FAIL("misplaced hypen within square brackets in pattern");
+	      return 0;
+	    }
+	    simple_on[us[p]] = 1;
+	    p++;
+	  }
+	}
+
+	/* Turn the ranges list into an array */
+	range_len = scheme_list_length(ranges);
+	range_array = (unsigned int *)scheme_malloc_atomic(2 * range_len * sizeof(unsigned int));
+	for (rp = 0; SCHEME_PAIRP(ranges); ranges = SCHEME_CDR(ranges), rp++) {
+	  long hi, lo;
+	  scheme_get_unsigned_int_val(SCHEME_CAAR(ranges), &lo);
+	  scheme_get_unsigned_int_val(SCHEME_CDR(SCHEME_CAR(ranges)), &hi);
+	  range_array[rp] = lo;
+	  range_array[rp+1] = hi;
+	}
+	/* Sort the ranges by the starting index. */
+	my_qsort(range_array, range_len >> 1, 2 * sizeof(unsigned long), compare_ranges);
+	
+	/* If a range starts below 128, fill in the simple array */
+	for (rp = 0; rp < range_len; rp += 2) {
+	  if (range_array[rp] < 128) {
+	    for (p = range_array[rp]; p < 128; p++) {
+	      simple_on[p] = 1;
+	    }
+	    range_array[rp] = 128;
+	  }
+	}
+	
+	/* Count simples that are on */
+	on_count = 0;
+	for (p = 0; p < 128; p++) {
+	  if (simple_on[p])
+	    on_count++;
+	}
+
+	if (not_mode) {
+	  /* "Not" mode. We produce something in regular mode */
+	  /* Start with "(?:[...]|" for simples. */
+	  long last_end;
+	  int did_alt;
+	  r = make_room(r, j, 6 + (128 - on_count), &rextra, &rsize);
+	  r[j++] = '(';
+	  r[j++] = '?';
+	  r[j++] = ':';
+	  if (on_count < 128) {
+	    if (!on_count) {
+	      r[j++] = '[';
+	      r[j++] = 0;
+	      r[j++] = '-';
+	      r[j++] = 127;
+	      r[j++] = ']';
+	    } else {
+	      r[j++] = '[';
+	      if (!simple_on[']'])
+		r[j++] = ']';
+	      for (p = 0; p < 128; p++) {
+		if ((p != '-') && (p != ']'))
+		  if (!simple_on[p])
+		    r[j++] = p;
+	      }
+	      if (!simple_on['-'])
+		r[j++] = '-';
+	      r[j++] = ']';
+	    }
+	    did_alt = 0;
+	  } else
+	    did_alt = 1;
+	  last_end = 128;
+	  for (rp = 0; rp < range_len; rp += 2) {
+	    if (range_array[rp] > last_end) {
+	      r = add_range(r, &j, &rextra, &rsize, last_end, range_array[rp] - 1, did_alt);
+	      did_alt = 0;
+	    }
+	    if ((range_array[rp + 1] + 1) > last_end)
+	      last_end = range_array[rp + 1] + 1;
+	  }
+	  if (last_end <= 0x7FFFFFFF) {
+	    r = add_range(r, &j, &rextra, &rsize, last_end, 0x7FFFFFFF, did_alt);
+	    did_alt = 0;
+	  }
+	  r = make_room(r, j, 1, &rextra, &rsize);
+	  r[j++] = ')';
+	} else {
+	  /* Normal mode */
+	  /* Start with "(?:[...]|" for simples. */
+	  int p, did_alt;
+	  r = make_room(r, j, 5 + on_count, &rextra, &rsize);
+	  r[j++] = '(';
+	  r[j++] = '?';
+	  r[j++] = ':';
+	  if (on_count) {
+	    if (on_count == 128) {
+	      r[j++] = '[';
+	      r[j++] = 0;
+	      r[j++] = '-';
+	      r[j++] = 127;
+	      r[j++] = ']';
+	    } else {
+	      r[j++] = '[';
+	      if (simple_on[']'])
+		r[j++] = ']';
+	      for (p = 0; p < 128; p++) {
+		if ((p != '-') && (p != ']'))
+		  if (simple_on[p])
+		    r[j++] = p;
+	      }
+	      if (simple_on['-'])
+		r[j++] = '-';
+	      r[j++] = ']';
+	    }
+	    did_alt = 0;
+	  } else
+	    did_alt = 1;
+	  for (rp = 0; rp < range_len; rp += 2) {
+	    r = add_range(r, &j, &rextra, &rsize, range_array[rp], range_array[rp+1], did_alt);
+	    did_alt = 0;
+	  }
+	  r = make_room(r, j, 1, &rextra, &rsize);
+	  r[j++] = ')';
+	}
+      }
+      i = k + 1;
+    } else if (s[i] == '\\') {
+      /* Skip over next char, possibly big: */
+      r[j++] = s[i++];
+      if ((i < len)
+	  && (s[i] > 127)) {
+	r[j++] = s[i++];
+	while ((i < len) && ((s[i] & 0xC0) == 0x80)) {
+	  r[j++] = s[i++];
+	}
+      } else
+	r[j++] = s[i++];
+    } else if ((s[i] == '.') && (((i + 1) >= len)
+				 || (s[i+1] != '*'))) {
+      /* "." has to be expanded, but only if it's not followed by "*".
+	 (The ".*" exception is important to the regexp matcher, snce there's
+	 always an implement ".*" at the start of a pattern.) */
+      const char *any_str = "(?:[0-\177]|[\300-\375][\200-\277]*)";
+      int len;
+      len = strlen(any_str);
+      r = make_room(r, j, len - 1, &rextra, &rsize);
+      memcpy(r + j, any_str, len);
+      j += len;
+      i++;
+    } else if (s[i] > 127) {
+      int k = i + 1;
+      /* Look for *, +, or ? after this big char */
+      while ((k < len) && ((s[k] & 0xC0) == 0x80)) {
+	k++;
+      }
+      if ((k < len) && ((s[k] == '+')
+			|| (s[k] == '*')
+			|| (s[k] == '?'))) {
+	/* Need to translate; wrap char in (?: ...) */
+	r = make_room(r, j, 4, &rextra, &rsize);
+	r[j++] = '(';
+	r[j++] = '?';
+	r[j++] = ':';
+	while (i < k) {
+	  r[j++] = s[i++];
+	}
+	r[j++] = ')';
+      } else {
+	/* No translation. */
+	while (i < k) {
+	  r[j++] = s[i++];
+	}
+      }
+    } else {
+      r[j++] = s[i++];
+    }
+  }
+
+  r[j] = 0;
+  *result = r;
+  return j;
+}
+
+/************************************************************/
+/*                   Scheme front end                       */
+/************************************************************/
+
+
+static Scheme_Object *do_make_regexp(const char *who, int is_byte, int argc, Scheme_Object *argv[])
 {
   Scheme_Object *re;
+  char *s;
+  int slen;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("string->regexp", "string", 0, argc, argv);
+    scheme_wrong_type(who, "string", 0, argc, argv);
+  if (!is_byte)
+    if (scheme_utf8_decode(SCHEME_STR_VAL(argv[0]), NULL, 0, SCHEME_STRTAG_VAL(argv[0]), 0, 0, 0) < 0)
+      scheme_arg_mismatch(who, "string is not a well-formed UTF-8 encoding: ", argv[0]);
 
-  re = (Scheme_Object *)regcomp(SCHEME_STR_VAL(argv[0]), 0, SCHEME_STRTAG_VAL(argv[0]));
+  s = SCHEME_STR_VAL(argv[0]);
+  slen = SCHEME_STRTAG_VAL(argv[0]);
+
+  if (!is_byte) {
+    slen = translate(s,slen, &s);
+#if 0
+    /* Debugging, to see the translated regexp: */
+    {
+      char *cp;
+      int i;
+      cp = (char *)scheme_malloc_atomic(slen + 1);
+      memcpy(cp, s, slen + 1);
+      for (i = 0; i < slen; i++) {
+	if (!cp[i]) cp[i] = '0';
+      } 
+      printf("%d %s\n", slen, cp);
+    }
+#endif
+  }
+
+  re = (Scheme_Object *)regcomp(s, 0, slen);
+
+  if (!is_byte)
+    ((regexp *)re)->is_utf8 = 1;
 
   if (SCHEME_IMMUTABLE_STRINGP(argv[0]))
     ((regexp *)re)->source = argv[0];
@@ -1817,7 +2407,17 @@ static Scheme_Object *make_regexp(int argc, Scheme_Object *argv[])
   return re;
 }
 
-Scheme_Object *scheme_make_regexp(Scheme_Object *str, int * volatile result_is_err_string)
+static Scheme_Object *make_regexp(int argc, Scheme_Object *argv[])
+{
+  return do_make_regexp("regexp", 0, argc, argv);
+}
+
+static Scheme_Object *make_byte_regexp(int argc, Scheme_Object *argv[])
+{
+  return do_make_regexp("byte-regexp", 1, argc, argv);
+}
+
+Scheme_Object *scheme_make_regexp(Scheme_Object *str, int is_byte, int * volatile result_is_err_string)
 {
   volatile mz_jmp_buf save;
   Scheme_Object * volatile result;
@@ -1828,7 +2428,10 @@ Scheme_Object *scheme_make_regexp(Scheme_Object *str, int * volatile result_is_e
   memcpy((void *)&save, (void *)&scheme_error_buf, sizeof(mz_jmp_buf));
   failure_msg_for_read = "yes";
   if (!scheme_setjmp(scheme_error_buf)) {
-    result = make_regexp(1, &str);
+    if (is_byte)
+      result = make_byte_regexp(1, &str);
+    else
+      result = make_regexp(1, &str);
   } else {
     result = (Scheme_Object *)failure_msg_for_read;
     *result_is_err_string = 1;
@@ -2113,6 +2716,11 @@ Scheme_Object *scheme_regexp_source(Scheme_Object *re)
   return ((regexp *)re)->source;
 }
 
+int scheme_regexp_is_byte(Scheme_Object *re)
+{
+  return !((regexp *)re)->is_utf8;
+}
+
 #ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
 #define MARKS_FOR_REGEXP_C
@@ -2133,6 +2741,11 @@ void scheme_regexp_initialize(Scheme_Env *env)
   scheme_add_global_constant("regexp", 
 			     scheme_make_prim_w_arity(make_regexp, 
 						      "regexp", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("byte-regexp", 
+			     scheme_make_prim_w_arity(make_byte_regexp, 
+						      "byte-regexp", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("regexp-match",

@@ -406,6 +406,13 @@ MZ_EXTERN Scheme_Object *scheme_make_cptr(void *cptr, const char *typestr);
 MZ_EXTERN const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error);
 
 /*========================================================================*/
+/*                               strings                                  */
+/*========================================================================*/
+
+MZ_EXTERN int scheme_utf8_decode(const unsigned char *s, unsigned int *us, int start, int end, int dstart, char utf16, char permissive);
+MZ_EXTERN int scheme_utf8_encode(const unsigned int *us, unsigned char *s, int start, int end, int dstart, char utf16);
+
+/*========================================================================*/
 /*                               bignums                                  */
 /*========================================================================*/
 

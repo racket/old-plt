@@ -798,17 +798,22 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	  }
 	case 'r':
 	  {
-	    int cnt = 0;
+	    int cnt = 0, is_byte = 0;
 
 	    ch = scheme_getc_special_ok(port);
 	    if (ch == 'x') {
 	      ch = scheme_getc_special_ok(port);
 	      cnt++;
+	      if (ch == 'b') {
+		is_byte = 1;
+		ch = scheme_getc_special_ok(port);
+		cnt++;
+	      }
 	      if (ch == '"') {
 		Scheme_Object *str;
 		int is_err;
 
-		/* Skip #rx: */
+		/* Skip #rx[b]: */
 		col = scheme_tell_column(port);
 		pos = scheme_tell(port);
 
@@ -817,7 +822,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 		if (stxsrc)
 		  str = SCHEME_STX_VAL(str);
 
-		str = scheme_make_regexp(str, &is_err);
+		str = scheme_make_regexp(str, is_byte, &is_err);
 
 		if (is_err) {
 		  scheme_read_err(port, stxsrc, line, col, pos, 2, 0, indentation, 
@@ -833,21 +838,18 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	    }
 
 	    {
-	      char a[1], b[1];
+	      char a[1], b[1], c[1];
 
-	      if (cnt) {
-		a[0] = 'x';
-		b[0] = ch;
-	      } else {
-		a[0] = ch;
-		b[0] = 0;
-	      }
+	      a[0] = 'x';
+	      b[0] = 'b';
+	      c[0] = ch;
 		
 	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 
 			      ch, indentation, 
-			      "read: bad syntax `#r%t%t'",
-			      a, cnt ? 1 : (NOT_EOF_OR_SPECIAL(ch) ? 1 : 0),
-			      b, cnt ? (NOT_EOF_OR_SPECIAL(ch) ? 1 : 0) : 0);	      
+			      "read: bad syntax `#r%t%t%t'",
+			      a, cnt ? 1 : 0,
+			      b, (cnt > 1) ? 1 : 0,
+			      c, (NOT_EOF_OR_SPECIAL(ch) ? 1 : 0));
 	      return NULL;
 	    }
 	  }

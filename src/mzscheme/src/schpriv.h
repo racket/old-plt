@@ -2068,7 +2068,8 @@ Scheme_Object *scheme_symbol_append(Scheme_Object *s1, Scheme_Object *s2);
 Scheme_Object *scheme_copy_list(Scheme_Object *l);
 
 Scheme_Object *scheme_regexp_source(Scheme_Object *re);
-Scheme_Object *scheme_make_regexp(Scheme_Object *str, int * volatile result_is_err_string);
+int scheme_regexp_is_byte(Scheme_Object *re);
+Scheme_Object *scheme_make_regexp(Scheme_Object *str, int byte, int * volatile result_is_err_string);
 
 extern int scheme_locale_on;
 void scheme_reset_locale(void);

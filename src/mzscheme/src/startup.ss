@@ -2875,10 +2875,10 @@
   (define (load-relative-extension path) (-load load-extension 'load-relative-extension path))
   
   (define path-list-string->path-list
-    (let ((r (regexp (let ((sep (case (system-type) 
-				  ((unix beos oskit macosx) ":")
-				  ((windows macos) ";"))))
-		       (format "([^~a]*)~a(.*)" sep sep))))
+    (let ((r (byte-regexp (let ((sep (case (system-type) 
+				       ((unix beos oskit macosx) ":")
+				       ((windows macos) ";"))))
+			    (format "([^~a]*)~a(.*)" sep sep))))
 	  (cons-path (lambda (default s l) 
 		       (if (string=? s "")
 			   (append default l)
@@ -2995,8 +2995,8 @@
 			(cloop (cdr paths))))
 		  (cloop (cdr paths))))))))
 
-  (define -re:suffix (regexp "\\..?.?.?$"))
-	  
+  (define -re:suffix (byte-regexp "[.][^.]*$"))
+  
   (define current-load/use-compiled
     (make-parameter
      (let ([default-load/use-compiled
@@ -3084,9 +3084,9 @@
 
   (define (load/use-compiled f) ((current-load/use-compiled) f #f))
 
-  (define -re:dir (regexp "(.+?)/+(.*)"))
-  (define -re:auto (regexp "^,"))
-  (define -re:ok-relpath (regexp "^[-a-zA-Z0-9_. ]+(/+[-a-zA-Z0-9_. ]+)*$"))
+  (define -re:dir (byte-regexp "(.+?)/+(.*)"))
+  (define -re:auto (byte-regexp "^,"))
+  (define -re:ok-relpath (byte-regexp "^[-a-zA-Z0-9_. ]+(/+[-a-zA-Z0-9_. ]+)*$"))
   (define -module-hash-table-table (make-hash-table 'weak)) ; weak map from namespace to module ht
   
   (define -loading-filename (gensym))

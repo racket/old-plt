@@ -215,6 +215,8 @@
   scheme_extension_table->scheme_real_to_double = scheme_real_to_double;
   scheme_extension_table->scheme_make_cptr = scheme_make_cptr;
   scheme_extension_table->scheme_get_proc_name = scheme_get_proc_name;
+  scheme_extension_table->scheme_utf8_decode = scheme_utf8_decode;
+  scheme_extension_table->scheme_utf8_encode = scheme_utf8_encode;
   scheme_extension_table->scheme_make_bignum = scheme_make_bignum;
   scheme_extension_table->scheme_make_bignum_from_unsigned = scheme_make_bignum_from_unsigned;
   scheme_extension_table->scheme_bignum_to_double = scheme_bignum_to_double;

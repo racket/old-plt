@@ -45,12 +45,12 @@
                            marks
                            annotate)]
         [break : (break)
-               ((require-library-unit/sig "break.ss" "stepper")
+               ((require-library-unit/sig "break-graphical.ss" "stepper-graphical")
                 mred
                 marks
                 annotate)]
         [stepper-view-controller : (stepper-go)
-                 ((require-library-unit/sig "view-controller.ss" "stepper")
+                 ((require-library-unit/sig "view-controller.ss" "stepper-graphical")
                   core
                   error
                   zodiac
@@ -64,7 +64,7 @@
                   utils
                   marks)]
         [stepper-startup : ()
-                         ((require-library-unit/sig "startup.ss" "stepper")
+                         ((require-library-unit/sig "startup.ss" "stepper-graphical")
                           core
                           mred
                           framework

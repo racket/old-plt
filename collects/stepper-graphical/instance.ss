@@ -28,12 +28,11 @@
                       (core function)
                       error
                       utils
-                      (drscheme basis)
                       marks
                       stepper
                       shared)]
         [stepper : stepper:model^
-                 ((require-library-unit/sig "model.ss" "stepper")
+                 ((require-library-unit/sig "model.ss" "stepper-graphical")
                   model-input
                   mred
                   zodiac

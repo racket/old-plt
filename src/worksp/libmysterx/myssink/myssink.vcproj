@@ -21,9 +21,9 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\mysterx\mysc;..\..\..\..\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL"
-				MinimalRebuild="TRUE"
+				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\mysterx\mysc"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MYSSINK_EXPORTS"
+				MinimalRebuild="FALSE"
 				ExceptionHandling="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -31,19 +31,22 @@
 				BrowseInformation="1"
 				WarningLevel="4"
 				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"/>
+				DebugInformationFormat="3"
+				CompileAs="2"/>
 			<Tool
 				Name="VCCustomBuildTool"
 				Description="Copy $(InputName).dll to collects"
-				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386
+				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..
 "
-				Outputs="..\..\..\..\lib\msvc\mzdyn.obj ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
+				Outputs="..\..\..\..\$(InputName).dll"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\..\..\lib\msvc\libmzgcxxxxxxx.lib ..\..\..\..\lib\msvc\libmzschxxxxxxx.lib"
+				AdditionalDependencies="libmzgcxxxxxxx.lib libmzschxxxxxxx.lib mzdyn.obj ..\mysc\Debug\mysc.lib"
 				OutputFile="$(OutDir)\$(InputName).dll"
-				LinkIncremental="2"
+				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="..\..\..\..\lib\msvc"
+				IgnoreDefaultLibraryNames="LIBCMT.lib"
 				ModuleDefinitionFile="..\..\..\mysterx\myssink\$(InputName).def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)\$(InputName).pdb"
@@ -61,7 +64,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Register $(InputName).dll"
-				CommandLine="REGSVR32 /s ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
+				CommandLine="REGSVR32 /s ..\..\..\..\$(InputName).dll"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -84,9 +87,9 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\mysterx\mysc;..\..\..\..\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL"
-				MinimalRebuild="TRUE"
+				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\mysterx\mysc"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MYSSINK_EXPORTS"
+				MinimalRebuild="FALSE"
 				ExceptionHandling="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -94,19 +97,22 @@
 				BrowseInformation="1"
 				WarningLevel="4"
 				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"/>
+				DebugInformationFormat="3"
+				CompileAs="2"/>
 			<Tool
 				Name="VCCustomBuildTool"
 				Description="Copy $(InputName).dll to collects"
-				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386
+				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..
 "
-				Outputs="..\..\..\..\lib\msvc\mzdyn.obj ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
+				Outputs="..\..\..\..\$(InputName).dll"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\..\..\lib\msvc\libmzgcxxxxxxx.lib ..\..\..\..\lib\msvc\libmzschxxxxxxx.lib"
+				AdditionalDependencies="libmzgcxxxxxxx.lib libmzschxxxxxxx.lib mzdyn.obj ..\mysc\Debug\mysc.lib"
 				OutputFile="$(OutDir)\$(InputName).dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="..\..\..\..\lib\msvc"
+				IgnoreDefaultLibraryNames="LIBCMT.lib"
 				ModuleDefinitionFile="..\..\..\mysterx\myssink\$(InputName).def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)\$(InputName).pdb"
@@ -124,7 +130,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Register $(InputName).dll"
-				CommandLine="REGSVR32 /s ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
+				CommandLine="REGSVR32 /s ..\..\..\..\$(InputName).dll"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -143,39 +149,46 @@
 			ConfigurationType="2"
 			UseOfATL="1"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			CharacterSet="2"
+			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				InlineFunctionExpansion="0"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="2"
+				FavorSizeOrSpeed="1"
 				OmitFramePointers="FALSE"
-				AdditionalIncludeDirectories="..\..\..\mysterx\mysc;..\..\..\..\include"
+				AdditionalIncludeDirectories="..\..\..\..\include;..\..\..\mysterx\mysc"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MYSSINK_EXPORTS"
-				StringPooling="FALSE"
+				StringPooling="TRUE"
+				MinimalRebuild="FALSE"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="FALSE"
 				EnableFunctionLevelLinking="FALSE"
-				UsePrecompiledHeader="0"
+				UsePrecompiledHeader="2"
 				ObjectFile=""
 				ProgramDataBaseFileName=""
-				WarningLevel="3"
-				SuppressStartupBanner="FALSE"
-				Detect64BitPortabilityProblems="FALSE"
+				WarningLevel="4"
+				SuppressStartupBanner="TRUE"
+				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="0"
-				CompileAs="0"/>
+				CompileAs="2"/>
 			<Tool
 				Name="VCCustomBuildTool"
 				Description="Copy $(InputName).dll to collects"
-				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386
+				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..
 "
-				Outputs="..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
+				Outputs="..\..\..\..\$(InputName).dll"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\..\..\lib\msvc\mzdyn.obj ..\..\..\..\lib\msvc\libmzgcxxxxxxx.lib ..\..\..\..\lib\msvc\libmzschxxxxxxx.lib"
+				AdditionalDependencies="libmzgcxxxxxxx.lib libmzschxxxxxxx.lib mzdyn.obj ..\mysc\Release\mysc.lib"
 				OutputFile="$(OutDir)\$(InputName).dll"
 				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="..\..\..\..\lib\msvc"
+				IgnoreDefaultLibraryNames="LIBCMT.lib"
 				ModuleDefinitionFile="..\..\..\mysterx\myssink\$(InputName).def"
-				GenerateDebugInformation="TRUE"
+				GenerateDebugInformation="FALSE"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -183,6 +196,7 @@
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
+				WarningLevel="3"
 				GenerateStublessProxies="TRUE"
 				TypeLibraryName="$(InputName).tlb"
 				OutputDirectory="..\..\..\mysterx\myssink"
@@ -190,7 +204,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Register $(InputName).dll"
-				CommandLine="REGSVR32 /s ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(InputName).dll"/>
+				CommandLine="REGSVR32 /s ..\..\..\..\$(InputName).dll"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -230,7 +244,7 @@
 					Name="Debug|Win32">
 					<Tool
 						Name="VCMIDLTool"
-						AdditionalIncludeDirectories="..\..\..\mzscheme\include"
+						AdditionalIncludeDirectories="..\..\..\mzscheme\include;..\..\..\mysterx\mysc"
 						OutputDirectory="$(InputDir)"/>
 				</FileConfiguration>
 				<FileConfiguration

@@ -49,6 +49,11 @@ void MrEdDestroyContext(MrEdFinalizedContext *)
 {
 }
 
+int MrEdGetDoubleTime(void)
+{
+  return (int)(GetDblTime() * 16.67);
+}
+
 static wxFrame *_wxWindowPtrToFrame(WindowPtr w, wxChildList *l)
 {
   wxChildNode *n;

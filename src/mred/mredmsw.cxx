@@ -67,6 +67,11 @@ void MrEdSyncCurrentDir(void)
 		   0);
 }
 
+int MrEdGetDoubleTime(void)
+{
+  return GetDoubleClickTime();
+}
+
 extern wxWindow *wxHWNDtoWindow(HWND);
 
 static MrEdContext *GetContext(HWND hwnd)

@@ -29,8 +29,6 @@
 #include <ctype.h>
 #include "wx_ptreq.h"
 
-#define DOUBLE_CLICK_THRESHOLD 500 /* Half-second */
-
 extern void wxsKeymapError(char *s);
 
 class wxKMFunc
@@ -77,20 +75,16 @@ static int doubleClickThreshold = -1;
 
 #ifndef wx_x
 # define wxAPP_CLASS wxTheApp->wx_class
-#else
-extern int MrEdGetDoubleTime(void);
 #endif
+
+extern int MrEdGetDoubleTime(void);
 
 int wxmeGetDoubleClickThreshold()
 {
   if (doubleClickThreshold < 0) {
     if (!wxGetResource(wxAPP_CLASS, "doubleClickTime", 
 		       &doubleClickThreshold)) {
-#ifdef wx_xt
       doubleClickThreshold = MrEdGetDoubleTime();
-#else      
-      doubleClickThreshold = DOUBLE_CLICK_THRESHOLD;
-#endif
     }
   }
 

@@ -1,13 +1,10 @@
-; Time-stamp: <97/08/19 13:54:02 shriram>
+; Time-stamp: <97/08/19 15:07:32 shriram>
 ; Time-stamp: <97/07/12 12:44:01 shriram>
 
 ; Differences from the Chez implementation:
 
 ; - The code does not respect tail-calls.
-; - If one of the identifiers supplied to trace yields an error (such
-;   as not being bound), the identifiers in the prefix to the
-;   erroneous one will still be traced.
-; - If trace.ss is loaded more than once, especially in the middle
+; - If the library is loaded more than once, especially in the middle
 ;   of a trace, the behavior is not well-defined.
 
 (define-signature mzlib:trace^
@@ -164,48 +161,59 @@
     (let loop ((ids ids))
       (unless (null? ids)
 	(unless (symbol? (car ids))
-	  (error 'trace "~s not an identifier" (car ids)))
+	  (error 'trace "~s not a name" (car ids)))
 	(loop (cdr ids))))
     `(#%begin
        ,@(map
 	   (lambda (id)
-	     (let ((traced-name (string->symbol
-				  (string-append "traced-"
-				    (symbol->string id))))
-		    (real-value (gensym 'real-value))
-		    (global-value (gensym 'global-value)))
-	       `(with-handlers ((#%exn:variable?
+	     `(#%with-handlers ((#%exn:variable?
 				  (#%lambda (exn)
 				    (#%if (#%eq? (#%exn:variable-id exn) ',id)
 				      (#%error 'trace
 					"~s is not bound" ',id)
 				      (#%raise exn)))))
-		  (#%let ((,global-value (#%global-defined-value ',id)))
-		    (unless (#%procedure? ,global-value)
-		      (#%error 'trace
-			"the top-level value of ~s is not a procedure" ',id))
-		    (#%let* ((,real-value ,global-value)
-			      (,traced-name
-				(#%lambda args
-				  (#%dynamic-wind
-				    (lambda ()
-				      (#%set! -:trace-level
-					(#%add1 -:trace-level)))
-				    (lambda ()
-				      (-:trace-print-args ',id args)
-				      (#%call-with-values
-					(#%lambda ()
-					  (#%apply ,real-value args))
-					(#%lambda results
-					  (flush-output)
-					  (-:trace-print-results ',id results)
-					  (#%apply #%values results))))
-				    (lambda ()
-				      (#%set! -:trace-level
-					(#%sub1 -:trace-level)))))))
-		      (#%hash-table-put! -:trace-table ',id
-			(-:make-traced-entry ,real-value ,traced-name))
-		      (#%global-defined-value ',id ,traced-name))))))
+		(#%let ((global (#%global-defined-value ',id)))
+		  (#%unless (#%procedure? global)
+		    (#%error 'trace
+		      "the top-level value of ~s is not a procedure" ',id)))))
+	   ids)
+       ,@(map
+	   (lambda (id)
+	     (let ((traced-name (string->symbol
+				  (string-append "traced-"
+				    (symbol->string id))))
+		    (table-entry (gensym 'table-entry))
+		    (real-value (gensym 'real-value))
+		    (global-value (gensym 'global-value)))
+	       `(#%let ((,global-value (#%global-defined-value ',id)))
+		  (#%let ((,table-entry (#%hash-table-get -:trace-table ',id
+					  (#%lambda () #f))))
+		    (#%unless (#%and ,table-entry
+				(#%eq? ,global-value
+				  (-:traced-entry-trace-proc ,table-entry)))
+		      (#%let* ((,real-value ,global-value)
+				(,traced-name
+				  (#%lambda args
+				    (#%dynamic-wind
+				      (lambda ()
+					(#%set! -:trace-level
+					  (#%add1 -:trace-level)))
+				      (lambda ()
+					(-:trace-print-args ',id args)
+					(#%call-with-values
+					  (#%lambda ()
+					    (#%apply ,real-value args))
+					  (#%lambda results
+					    (flush-output)
+					    (-:trace-print-results ',id
+					      results)
+					    (#%apply #%values results))))
+				      (lambda ()
+					(#%set! -:trace-level
+					  (#%sub1 -:trace-level)))))))
+			(#%hash-table-put! -:trace-table ',id
+			  (-:make-traced-entry ,real-value ,traced-name))
+			(#%global-defined-value ',id ,traced-name)))))))
 	   ids)
        (#%quote ,ids))))
 
@@ -222,12 +230,12 @@
 		    `(let ((entry (#%hash-table-get -:trace-table
 				    ',id (#%lambda () #f))))
 		       (#%if (#%and entry
-			       (#%eq? ,id
+			       (#%eq? (#%global-defined-value ',id)
 				 (-:traced-entry-trace-proc entry)))
 			 (#%begin
 			   (#%hash-table-put! -:trace-table
 			     ',id #f)
-			   (#%set! ,id 
+			   (#%global-defined-value ',id 
 			     (-:traced-entry-original-proc entry))
 			   (#%list ',id))
 			 '())))

@@ -14,11 +14,13 @@
   (define (shell-path/args)
     (case (system-type)
       ((unix) '("/bin/sh" "-c"))
-      ((windows) (let ([d (find-system-path 'sys-dir)])
-		   (let ([cmd (build-path d "cmd.exe")])
-		     (if (file-exists? cmd)
-			 cmd
-			 (build-path d "command.com")))))
+      ((windows) (list
+		  (let ([d (find-system-path 'sys-dir)])
+		    (let ([cmd (build-path d "cmd.exe")])
+		      (if (file-exists? cmd)
+			  cmd
+			  (build-path d "command.com"))))
+		  "/c"))
       (else (error "don't know what shell to use for ~e." (system-type)))))
 
   (define (if-stream-out p)

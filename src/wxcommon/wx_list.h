@@ -162,7 +162,7 @@ public:
   wxObject *strong;
 #ifdef MZ_PRECISE_GC
   void *weak;
-# define cnGET_WEAK(weak) ((wxObject *)GC_weak_box_val(weak))
+# define cnGET_WEAK(weak) ((wxObject *)gcPTR_TO_OBJ(GC_weak_box_val(weak)))
 #else
   wxObject **weak; /* atomic-allocated disappearing ptr */
 # define cnGET_WEAK(weak) (*weak)

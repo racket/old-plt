@@ -41,6 +41,9 @@ extern "C" {
 	grab_stack_size += WSTACK_INC;
 	naya = (Widget *)scheme_malloc(grab_stack_size * sizeof(Widget));
 	memcpy(naya + WSTACK_INC, grab_stack, (grab_stack_size - WSTACK_INC) * sizeof(Widget));
+	if (!grab_stack) {
+	  wxREGGLOB(grab_stack);
+	}
 	grab_stack = naya;
 	grab_stack_pos = WSTACK_INC;
       }
@@ -277,7 +280,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
   return 0;
 }
 
-Scheme_Hash_Table *disabled_widgets;
+static Scheme_Hash_Table *disabled_widgets;
 
 #ifdef MZ_PRECISE_GC
 static void widget_hash_indices(void *_key, int *_h, int *_h2)
@@ -302,6 +305,7 @@ void wxSetSensitive(Widget w, Bool enabled)
       return;
 
     /* Use SCHEME_hash_weak_ptr so elements can be deleted from the table */
+    wxREGGLOB(disabled_widgets);
     disabled_widgets = scheme_hash_table(7, SCHEME_hash_weak_ptr, 0, 0);
 #ifdef MZ_PRECISE_GC
     disabled_widgets->make_hash_indices = widget_hash_indices;

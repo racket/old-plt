@@ -178,11 +178,12 @@ void *GC_malloc_weak_box(void *p, void **secondary);
    GC_init_type_tags() function above), but the GC is responsible for
    traversing weak boxes.
 
-   MzScheme can change `value' at any time; when a collection happens,
+   MzScheme can change `val' at any time; when a collection happens,
    if the object in `val' is collectable and is collected, then `val'
    is zeroed.  The `val' pointer must be updated by the GC if the
    object it refers to is moved by the GC, but it does not otherwise
-   keep an object from being collected.
+   keep an object from being collected. However, if `val' can be
+   moved, it must point to the beginning of the allocated object.
 
    The `secondary' argument points to an auxilliary address (probably
    in the middle of a collectable object) that should be zeroed
@@ -219,7 +220,8 @@ void GC_register_eager_finalizer(void *p, int level,
    Installs a finalizer to be queued for invocation when `p' would
    otherwise be collected. `p' isn't actually collected when a
    finalizer is queued, since the finalizer will receive `p' as an
-   argument. (Hence, weak references aren't zeroed, either.)
+   argument. (Hence, weak references aren't zeroed, either.) `p' must
+   point to the beginning of an allocated object.
 
    `level' refers to an ordering of finalizers. It can be 1 or
    2. During a collection, level 2 finalizers are queued first, then

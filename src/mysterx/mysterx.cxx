@@ -314,7 +314,7 @@ static MX_PRIM mxPrims[] = {
   { mx_event_click_pred,"event-click?",1,1},
   { mx_event_dblclick_pred,"event-dblclick?",1,1},
   { mx_event_error_pred,"event-error?",1,1},
-  { mx_event_available,"event-available?",1,1},
+  { mx_block_until_event,"block-until-event",1,1},
 };
 
 DOCUMENT_WINDOW_STYLE_OPTION styleOptions[] = {
@@ -3185,7 +3185,6 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
 
 Scheme_Object *mx_document_pump_msgs(int argc,Scheme_Object **argv) {
   MX_Document_Object *pDoc;
-  IEventQueue *pIEventQueue;
 
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
     scheme_wrong_type("show-document","mx-document",0,argc,argv);

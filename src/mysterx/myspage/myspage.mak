@@ -43,15 +43,15 @@ clean :
 .cxx{$(INTDIR)}.obj::
    $(CPP) $(CPP_FLAGS) $< 
 
-dhtmlpage.obj : dhtmlpage.cxx dhtmlpage.h dhtmlpageui.htm
+dhtmlpage.obj : dhtmlpage.cxx dhtmlpage.h dhtmlpageui.htm stdafx.h
 
-event.obj : event.cxx event.h
+event.obj : event.cxx event.h stdafx.h
 
-eventqueue.obj : eventqueue.cxx eventqueue.h
+eventqueue.obj : eventqueue.cxx eventqueue.h stdafx.h
 
-myspage.obj : myspage.cxx myspage.h
+myspage.obj : myspage.cxx myspage.h stdafx.h
 
-stdafx.obj : stdafx.cxx
+stdafx.obj : stdafx.cxx stdafx.h
 
 myspage.res : myspage.rc myspage.tlb
 	$(RSC) $(RSC_PROJ) myspage.rc

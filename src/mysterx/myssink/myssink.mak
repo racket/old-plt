@@ -36,11 +36,13 @@ clean :
 .cxx.obj::
    $(CPP) $(CPP_FLAGS) $<
 
-myssink.obj : stdafx.h myssink.h sink.h comtypes.h
+myssink.obj : myssink.cxx myssink.h sink.h comtypes.h stdafx.h 
 
-sink.obj : stdafx.h myssink.h sink.h comtypes.h
+sink.obj : sink.cxx myssink.h sink.h comtypes.h stdafx.h 
 
-stdafx.obj : stdafx.cxx
+comtypes.obj : comtypes.cxx comtypes.h stdafx.h
+
+stdafx.obj : stdafx.cxx stdafx.h
 
 myssink.tlb myssink.h myssink_i.c : myssink.idl
 	$(MTL) $(MTL_SWITCHES) myssink.idl

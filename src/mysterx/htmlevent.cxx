@@ -23,16 +23,23 @@ Scheme_Object *hash_table_put;
 Scheme_Object *hash_table_remove;
 Scheme_Object *make_hash_table;
 
-Scheme_Object *mx_event_available(int argc,Scheme_Object **argv) {
+BOOL mx_event_available(MX_Document_Object *doc) {
   VARIANT_BOOL val;
 
+  doc->pIEventQueue->get_EventAvailable(&val);
+
+  return val;
+}
+
+Scheme_Object *mx_block_until_event(int argc,Scheme_Object **argv) {
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("mx_event_available","mx-document",0,argc,argv) ;
+    scheme_wrong_type("block-until-event","mx-document",0,argc,argv) ;
   }
 
-  ((MX_Document_Object *)argv[0])->pIEventQueue->get_EventAvailable(&val);
+  scheme_block_until((int (*)(Scheme_Object *))mx_event_available,
+		     NULL,argv[0],0.02F);
 
-  return val ? scheme_true : scheme_false;    
+  return scheme_void;
 }
 
 void initEventNames(void) {

@@ -158,7 +158,7 @@
 						    stx
 						    (car l))]))]
 				       [else
-					(with-syntax ([body (wrap-state (syntax body))])
+					(with-syntax ([body (wrap-state body)])
 					  (syntax
 					   ((cond [test-expr . body]
 						  [else (void)])

@@ -1,6 +1,6 @@
 
 (module class mzscheme
-
+  (require (lib "list.ss"))
   (require-for-syntax (lib "kerncase.ss" "syntax")
 		      (lib "stx.ss" "syntax")
 		      "private/classidmap.ss")
@@ -131,6 +131,8 @@
 			       (syntax->list (syntax (idp ...)))))]
 			   [(init . rest)
 			    (bad "ill-formed init clause" stx)]
+			   [(init-rest)
+			    'ok]
 			   [(init-rest rest)
 			    (identifier? (syntax rest))
 			    'ok]
@@ -509,7 +511,12 @@
 						(if (identifier? i)
 						    i
 						    (stx-car i)))
-					      plain-inits)])
+					      plain-inits)]
+			   [init-mode (cond
+				       [(null? init-rest-decls) 'normal]
+				       [(stx-null? (stx-cdr (car init-rest-decls))) 'stop]
+				       [else 'list])])
+
 		       ;; -- Look for duplicates --
 		       (let ([dup (check-duplicate-identifier
 				   (append defined-method-names
@@ -564,22 +571,7 @@
 								(stx-car idp)))
 							  (syntax->list (syntax (idp ...))))])
 						(with-syntax ([(id ...) ids]
-							      [(idpos ...)
-							       (map 
-								(lambda (id)
-								  (if (null? init-rest-decls)
-								      ;; Normal mode: find by id
-								      id
-								      ;; By-pos mode: compute position of id
-								      (let loop ([l inits][p 0])
-									(if (bound-identifier=?
-									     id 
-									     (if (identifier? (car l))
-										 (car l)
-										 (stx-car (car l))))
-									    p
-									    (loop (cdr l) (add1 p))))))
-								ids)]
+							      [(idpos ...) ids]
 							      [(defval ...) 
 							       (map (lambda (idp)
 								      (if (identifier? idp)
@@ -601,6 +593,8 @@
 								  (length plain-init-fields)
 								  -1)])
 						(syntax/loc e (set! id (extract-rest-args n init-args))))]
+					     [(init-rest)
+					      (syntax (void))]
 					     [_else e]))
 					 exprs)]
 			     [mk-method-temp
@@ -741,13 +735,12 @@
 								plain-fields
 								plain-init-fields))]
 					     [inherit-field-names inherit-field-names]
-					     [init-names (if (null? init-rest-decls)
-							     (map (lambda (i)
-								    (if (identifier? i)
-									i
-									(car i)))
-								  inits)
-							     #f)]
+					     [init-names (map (lambda (i)
+								(if (identifier? i)
+								    i
+								    (car i)))
+							      inits)]
+					     [init-mode init-mode]
 					     [(private-method ...) (map (find-method private-methods) (map car privates))]
 					     [public-methods (map (find-method methods) (map car publics))]
 					     [override-methods (map (find-method methods) (map car overrides))]
@@ -783,6 +776,7 @@
 				     (quote (public-final-name ... override-final-name ...))
 				     ;; Init arg names (in order)
 				     (quote init-names)
+				     (quote init-mode)
 				     ;; Methods (when given needed super-methods, etc.):
 				     (lambda (field-accessor ...  ; inherit, public, private
 							     field-mutator ...
@@ -869,6 +863,7 @@
 			field-set!     ; mutator
 
 			init-args      ; list of symbols in order; #f => only by position
+			init-mode      ; 'normal, 'stop (don't accept by-pos for super), or 'list
 
 			init           ; initializer
 
@@ -892,6 +887,7 @@
 			 final-names         ; subset of public + override
 
 			 init-args           ; list of symbols in order
+			 init-mode           ; 'normal, 'stop, or 'list
 			 
 			 make-methods        ; takes field and method accessors
 			 make-struct:prim)   ; see "primitive classes", below
@@ -1054,6 +1050,7 @@
 				  field-width field-ht field-names
 				  'struct:object 'object? 'make-object 'field-ref 'field-set!
 				  init-args
+				  init-mode
 				  'init
 				  (and make-struct:prim #t))]
 		   [obj-name (if name
@@ -1329,10 +1326,11 @@
 		   'field-ref-not-needed 'field-set!-not-needed
 
 		   null
+		   'normal
 
 		   (lambda (this super-init args) 
 		     (unless (null? args)
-		       (obj-error 'make-object "unused initialization arguments: ~e" args))
+		       (unused-args-error this args))
 		     (void))
 
 		   #t)) ; no super-init
@@ -1382,12 +1380,12 @@
 		       [(kw arg)
 			(raise-syntax-error
 			 (syntax-e (syntax form))
-			 "keyword-based argument does not start with an identifier"
+			 "by-name argument does not start with an identifier"
 			 kwarg)]
 		       [_else
 			(raise-syntax-error
 			 (syntax-e (syntax form))
-			 "ill-formed keyword-based argument"
+			 "ill-formed by-name argument"
 			 kwarg)]))
 		   (syntax->list (syntax (kwarg ...))))])))
 
@@ -1396,42 +1394,59 @@
       (raise-type-error (quote-syntax make-object) "class" class))
     (let ([o ((class-make-object class))])
       ;; Initialize it:
-      (let loop ([c class][by-pos-args by-pos-args][named-args named-args])
+      (let loop ([c class][by-pos-args by-pos-args][named-args named-args][explict-named-args? #t])
 	(let ([by-pos-only? (not (class-init-args c))])
 	  ;; Primitive class with by-pos arguments?
 	  (when by-pos-only?
 	    (unless (null? named-args)
-	      (obj-error 
-	       'make-object
-	       "class has only by-position initializers, but given keyword-based arguments: ~e~a" 
-	       named-args
-	       (for-class (class-name c)))))
+	      (if explict-named-args?
+		  (obj-error 
+		   'make-object
+		   "class has only by-position initializers, but given by-name arguments:~a~a" 
+		   (make-named-arg-string named-args)
+		   (for-class (class-name c)))
+		  ;; If args were implicit from subclass, should report as unused:
+		  (unused-args-error o named-args))))
 	  ;; Merge by-pos into named args:
-	  (let ([named-args (if (not by-pos-only?)
-				;; Normal merge
-				(let loop ([al by-pos-args][nl (class-init-args c)])
+	  (let* ([named-args (if (not by-pos-only?)
+				 ;; Normal merge
+				 (let loop ([al by-pos-args][nl (class-init-args c)][ic c])
+				   (cond
+				    [(null? al) named-args]
+				    [(null? nl)
+				     ;; continue mapping with superclass init args, if allowed
+				     (let ([super (and (eq? 'normal (class-init-mode c))
+						       (positive? (class-pos c))
+						       (vector-ref (class-supers c) (sub1 (class-pos c))))])
+				       (cond
+					[(and super (class-init-args super))
+					 (loop al (class-init-args super) super)]
+					[(eq? 'list (class-init-mode c))
+					 (map (lambda (x) (cons #f x)) al)]
+					[else
+					 (obj-error 'make-object 
+						    "too many initialization arguments:~a~a" 
+						    (make-pos-arg-string by-pos-args)
+						    (for-class (class-name c)))]))]
+				    [else (cons (cons (car nl) (car al))
+						(loop (cdr al) (cdr nl) ic))]))
+				 ;; Non-merge for by-position initializers:
+				 by-pos-args)]
+		 [leftovers (if (not by-pos-only?)
+				(let loop ([l named-args][names (class-init-args c)])
 				  (cond
-				   [(null? al) named-args]
-				   [(null? nl) (obj-error 'make-object "too many initialization arguments: ~e~a" 
-							  by-pos-args
-							  (for-class (class-name c)))]
-				   [else (cons (cons (car nl) (car al))
-					       (loop (cdr al) (cdr nl)))]))
-				;; Fake merge for by-position initializers:
-				by-pos-args)])
-	    ;; Check for duplicate arguments
-	    (unless by-pos-only?
-	      (unless (null? named-args)
-		(let loop ([l named-args])
-		  (unless (null? (cdr l))
-		    (if (assq (caar l) (cdr l))
-			(obj-error 'make-object "duplicate initialization argument: ~a in: ~e~a"
-				   (caar l)
-				   named-args
-				   (for-class (class-name c)))
-			(loop (cdr l)))))))
+				   [(null? l) null]
+				   [(memq (caar l) names)
+				    (loop (cdr l) (remq (caar l) names))]
+				   [else (cons (car l) (loop (cdr l) names))]))
+				null)])
+	    ;; In 'stop or 'list mode, make sure no by-name arguments are left over
+	    (when (memq (class-init-mode c) '(stop list))
+	      (unless (or (null? leftovers)
+			  (not (ormap car leftovers)))
+		(unused-args-error o (filter car leftovers))))
 	    (let ([inited? (class-no-super-init? c)])
-	      ((class-init c) 
+	      ((class-init c)
 	       o 
 	       ;; ----- This is the super-init function -----
 	       (lambda (ignore-false by-pos-args new-named-args)
@@ -1439,17 +1454,19 @@
 		   (obj-error 'make-object "superclass already initialized by class initialization~a"
 			      (for-class (class-name c))))
 		 (set! inited? #t)
-		 (let ([named-args (if by-pos-only?
+		 (let ([named-args (if (not (eq? 'normal (class-init-mode c)))
 				       ;; all old args must have been used up
 				       new-named-args
-				       ;; Normal mode: merge leftover keyowrd-based args with new ones
-				       (let loop ([l named-args])
-					 (cond
-					  [(null? l) new-named-args]
-					  [(memq (caar l) (class-init-args c))
-					   (loop (cdr l))]
-					  [else (cons (car l) (loop (cdr l)))])))])
-		   (loop (vector-ref (class-supers c) (sub1 (class-pos c))) by-pos-args named-args)))
+				       ;; Normal mode: merge leftover keyword-based args with new ones
+				       (append
+					new-named-args
+					(if (eq? 'list (class-init-mode c))
+					    null
+					    leftovers)))])
+		   (loop (vector-ref (class-supers c) (sub1 (class-pos c))) 
+			 by-pos-args 
+			 named-args
+			 (pair? new-named-args))))
 	       named-args)
 	      (unless inited?
 		(obj-error 'make-object "superclass initialization not invoked by initialization~a"
@@ -1463,19 +1480,47 @@
 	  (cond
 	   [a (cdr a)]
 	   [default (default)]
-	   [else (obj-error 'make-object "no argument for required init variable: ~a~a" name
-			    (if class-name (format " in class: ~a" class-name) ""))]))
+	   [else (missing-argument-error class-name name)]))
 	;; By-position mode
 	(cond
 	 [(< name (length arguments))
-	  (list-ref arguments name)]
+	  (cdr (list-ref arguments name))]
 	 [default (default)]
 	 [else (obj-error 'make-object "too few initialization arguments")])))
 
   (define (extract-rest-args skip arguments)
     (if (< skip (length arguments))
-	(list-tail arguments skip)
+	(map cdr (list-tail arguments skip))
 	null))
+
+  (define (make-pos-arg-string args)
+    (let ([len (length args)])
+      (apply string-append
+	     (map (lambda (a)
+		    (format " ~e" a))
+		  args))))
+
+  (define (make-named-arg-string args)
+    (let loop ([args args][count 0])
+      (cond
+       [(null? args) ""]
+       [(= count 3) " ..."]
+       [else (let ([rest (loop (cdr args) (add1 count))])
+	       (format " (~a ~e)~a"
+		       (caar args)
+		       (cdar args)
+		       rest))])))
+
+  (define (unused-args-error this args)
+    (let ([arg-string (make-named-arg-string args)])
+      (obj-error 'make-object "unused initialization arguments:~a~a" 
+		 arg-string
+		 (for-class/which "instantiated" (class-name (object-ref this))))))
+
+  (define (missing-argument-error class-name name)
+    (obj-error 'make-object "no argument for required init variable: ~a~a"
+	       name
+	       (if class-name (format " in class: ~a" class-name) "")))
 
   ;;--------------------------------------------------------------------
   ;;  methods and fields
@@ -1647,6 +1692,7 @@
 	   prim-init            ; primitive initializer: takes obj and list of name-arg pairs
 	   name                 ; symbol
 	   super                ; superclass
+	   init-arg-names       ; #f or list of syms and sym--value lists
 	   override-names       ; overridden method names
 	   new-names            ; new (public) method names
 	   override-methods     ; list of methods
@@ -1679,16 +1725,46 @@
 		   null ; no inherits
 		   null ; no finals
 		   
-		   #f ; => init args by position only
-			 
+		   ; #f => init args by position only
+		   ; sym => required arg
+		   ; sym--value list => optional arg
+		   (and init-arg-names  
+			(map (lambda (s)
+			       (if (symbol? s) s (car s)))
+			     init-arg-names))
+		   'stop
+		   
 		   (lambda ignored
 		     (values
 		      new-methods
 		      override-methods
 		      (lambda (this super/ignored init-args)
-			(apply prim-init this init-args))))
-
+			(apply prim-init this 
+			       (if init-arg-names
+				   (extract-primitive-args this name init-arg-names init-args)
+				   init-args)))))
+		   
 		   make-struct:prim))
+
+  (define (extract-primitive-args this class-name init-arg-names init-args)
+    (let loop ([names init-arg-names][args init-args])
+      (cond
+       [(null? names)
+	(unless (null? args)
+	  (unused-args-error this args))
+	null]
+       [else (let* ([name (car names)]
+		    [id (if (symbol? name)
+			    name
+			    (car name))])
+	       (let ([arg (assq id args)])
+		 (cond
+		  [arg 
+		   (cons (cdr arg) (loop (cdr names) (remq arg args)))]
+		  [(symbol? name)
+		   (missing-argument-error class-name name)]
+		  [else
+		   (cons (cadr name) (loop (cdr names) args))])))])))
 
   ;;--------------------------------------------------------------------
   ;;  misc utils
@@ -1708,6 +1784,8 @@
 
   (define (for-class name)
     (if name (format " for class: ~a" name) ""))
+  (define (for-class/which which name)
+    (if name (format " for ~a class: ~a" which name) ""))
   (define (for-intf name)
     (if name (format " for interface: ~a" name) ""))
 

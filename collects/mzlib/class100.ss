@@ -24,9 +24,11 @@
 			 (let loop ([inits (syntax init-vars)][need-def? #f])
 			   (syntax-case inits ()
 			     [() (values null null #f)]
-			     [id (identifier? (syntax id))
-				 (values null null (syntax id))]
-			     [(id . rest) (identifier? (syntax id))
+			     [id 
+			      (identifier? (syntax id))
+			      (values null null (syntax id))]
+			     [(id . rest) 
+			      (identifier? (syntax id))
 			      (begin
 				(when need-def?
 				  (se "expected identifier with default value" (syntax id)))
@@ -34,7 +36,8 @@
 				  (values (cons (syntax id) ids)
 					  (cons #f defs)
 					  rest)))]
-			     [((id def) . rest) (identifier? (syntax id))
+			     [((id def) . rest)
+			      (identifier? (syntax id))
 			      (let-values ([(ids defs rest) (loop (syntax rest) #f)])
 				(values (cons (syntax id) ids)
 					(cons (syntax def) defs)
@@ -137,7 +140,7 @@
 						  (if init-rest-id
 						      (with-syntax ([init-rest-id init-rest-id])
 							(list (syntax (init-rest init-rest-id))))
-						      null)]
+						      (list (syntax (init-rest))))]
 						 [(car init-defs)
 						  (with-syntax ([id (car init-ids)]
 								[def (car init-defs)])

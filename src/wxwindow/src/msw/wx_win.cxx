@@ -1407,8 +1407,16 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
     h2 = parent_rect.bottom - parent_rect.top;
   }
 
-  if (x != wxDEFAULT_POSITION) x1 = x;
-  if (y != wxDEFAULT_POSITION) y1 = y;
+  if ((x != wxDEFAULT_POSITION) || (y != wxDEFAULT_POSITION)) {
+    if (x != wxDEFAULT_POSITION)
+      x1 = x;
+    else
+      x1 = 0;
+    if (y != wxDEFAULT_POSITION)
+      y1 = y;
+    else
+      y1 = 0;
+  }
   if (width > -1) w2 = width;
   if (height > -1) h2 = height;
 

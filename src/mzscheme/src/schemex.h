@@ -538,13 +538,17 @@ Scheme_Output_Port *(*scheme_make_output_port)(Scheme_Object *subtype, void *dat
 						      Scheme_Write_Special_Evt_Fun write_special_evt_fun,
 						      Scheme_Write_Special_Fun write_special_fun,
 						      int must_close);
-Scheme_Object *(*scheme_get_event_via_get)(Scheme_Input_Port *port,
+Scheme_Object *(*scheme_get_evt_via_get)(Scheme_Input_Port *port,
+						char *buffer, long offset, long size,
+						int byte_or_special);
+Scheme_Object *(*scheme_peek_evt_via_peek)(Scheme_Input_Port *port, 
 						  char *buffer, long offset, long size,
+						  Scheme_Object *skip,
 						  int byte_or_special);
-Scheme_Object *(*scheme_write_event_via_write)(Scheme_Output_Port *port,
-						      const char *str, long offset, long size);
-Scheme_Object *(*scheme_write_special_event_via_write_special)(Scheme_Output_Port *port, 
-								      Scheme_Object *special);
+Scheme_Object *(*scheme_write_evt_via_write)(Scheme_Output_Port *port,
+						    const char *str, long offset, long size);
+Scheme_Object *(*scheme_write_special_evt_via_write_special)(Scheme_Output_Port *port, 
+								    Scheme_Object *special);
 Scheme_Object *(*scheme_open_input_file)(const char *name, const char *who);
 Scheme_Object *(*scheme_open_output_file)(const char *name, const char *who);
 Scheme_Object *(*scheme_make_file_input_port)(FILE *fp);

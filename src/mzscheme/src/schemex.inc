@@ -350,9 +350,10 @@
   scheme_extension_table->scheme_make_port_type = scheme_make_port_type;
   scheme_extension_table->scheme_make_input_port = scheme_make_input_port;
   scheme_extension_table->scheme_make_output_port = scheme_make_output_port;
-  scheme_extension_table->scheme_get_event_via_get = scheme_get_event_via_get;
-  scheme_extension_table->scheme_write_event_via_write = scheme_write_event_via_write;
-  scheme_extension_table->scheme_write_special_event_via_write_special = scheme_write_special_event_via_write_special;
+  scheme_extension_table->scheme_get_evt_via_get = scheme_get_evt_via_get;
+  scheme_extension_table->scheme_peek_evt_via_peek = scheme_peek_evt_via_peek;
+  scheme_extension_table->scheme_write_evt_via_write = scheme_write_evt_via_write;
+  scheme_extension_table->scheme_write_special_evt_via_write_special = scheme_write_special_evt_via_write_special;
   scheme_extension_table->scheme_open_input_file = scheme_open_input_file;
   scheme_extension_table->scheme_open_output_file = scheme_open_output_file;
   scheme_extension_table->scheme_make_file_input_port = scheme_make_file_input_port;

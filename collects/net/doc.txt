@@ -1,19 +1,127 @@
-Time-stamp: <99/01/21 15:31:18 shriram>
+Time-stamp: <99/01/07 12:26:01 mflatt>
 
 The `net' collection contains libraries that provide access to the
 following _Internet_ (quasi-)protocols:
 
+  URL parsing
   CGI backends
   sendmail
+  SMTP
   NNTP
   POP-3
-  URL parsing
+  IMAP
+  Mail header reading and writing
 
 Shriram Krishnamurthi
 shriram@cs.rice.edu
 
 ==========================================================================
-_CGI_ backends
+_URL_ posting, _web clients_, _WWW_
+==========================================================================
+
+Collection: net
+Files: _url.ss_, _urlr.ss_, _urls.ss_, _urlu.ss_
+
+ABSTRACT -------------------------------------------------------------
+
+The url package manages features of URLs.
+
+TYPES ----------------------------------------------------------------
+
+> url
+  struct url (scheme host port path params query fragment)
+  scheme : string or #f
+  host : string or #f
+  port : number or #f
+  path : string
+  params : string or #f
+  query : string or #f
+  fragment : string or #f
+
+  The basic structure for all URLs.
+
+  http://www.cs.rice.edu:80/cgi-bin/finger;xyz?name=shriram&host=nw#top
+    1          2          3       4         5           6            7
+
+  1 = scheme, 2 = host, 3 = port, 4 = path,
+  5 = params, 6 = query, 7 = fragment
+
+> pure-port
+
+  A pure port is one from which the MIME headers have been removed, so
+  that what remains is purely the first content fragment.
+
+> mime-header
+  struct mime-header (name value)
+  name : string
+  value : string
+
+  MIME header.
+
+PROCEDURES -----------------------------------------------------------
+
+> (unixpath->path string) -> path-string
+
+  Given a path from a URL structure, turns it into a path that
+  conforms to the local OS path specifications.  Useful for file
+  accesses on the local disk system.
+
+> (get-pure-port url [list-of-strings]) -> input-port
+
+  Takes a URL and returns a pure port corresponding to it.  Writes the
+  optional strings to the server.
+
+> (get-impure-port url [list-of-strings]) -> input-port
+
+  Takes a URL and returns an impure port corresponding to it.  Writes
+  the optional strings to the server.
+
+> (display-pure-port input-port) -> void
+
+  Writes the output of a pure port.  For debugging purposes.
+
+> (purify-port input-port) -> list-of-mime-headers
+
+  Purifies a port, returning the MIME headers.
+
+> (string->url string) -> url
+
+  Turns a string into a URL.
+  
+> (netscape/string->url string) -> url
+
+  Turns a string into a URL, applying (what appear to be) Netscape's
+  conventions on automatically specifying the scheme: a string
+  starting with a slash gets the scheme "file", while all others get
+  the scheme "http".
+
+> (url->string url) -> string
+
+  Generates a string corresponding to the contents of the url struct.
+
+> (call/input-url url url->port-proc port->void-proc [list-of-strings]) -> void
+
+  First argument is the URL to open.  Second is a procedure that takes
+  a URL and turns it into a (pure or impure) port.  The third takes
+  the (pure or impure) port and handles its contents.  The optional
+  fourth argument is a set of strings to send to the server.
+
+> (combine-url/relative url string) -> url
+
+  Given a base URL and a relative path, combines the two and returns a
+  new URL.
+
+EXAMPLE --------------------------------------------------------------
+
+ (invoke-open-unit/sig mzlib:url@ #f)
+ (define url:cs (string->url "http://www.cs.rice.edu/"))
+ (define url:me (string->url "http://www.cs.rice.edu/~shriram/"))
+ (define comb combine-url/relative)
+ (define (test url)
+   (call/input-url url get-pure-port display-pure-port))
+
+==========================================================================
+_CGI_ backends, _WWW_
 ==========================================================================
 
 Collection: net
@@ -120,7 +228,7 @@ PROCEDURES -----------------------------------------------------------
   debugging.
 
 ==========================================================================
-_SMTP_, _mail sending_, _sendmail_
+_sending mail_, _sendmail_
 ==========================================================================
 
 Collection: net
@@ -129,9 +237,9 @@ Files: _mail.ss_, _mailr.ss_, _mails.ss_, _mailu.ss_
 ABSTRACT -------------------------------------------------------------
 
 The mail package helps programmers write programs that need to send
-electronic mail messages using SMTP.  Currently the package assumes
-the existence of a conformant sendmail program on the host system, but
-in the future it will be extended to mimic basic sendmail behavior.
+electronic mail messages.  The package assumes the existence of a
+conformant sendmail program on the local system; see also the SMTP
+package, below.
 
 TYPES ----------------------------------------------------------------
 
@@ -171,6 +279,52 @@ PROCEDURES -----------------------------------------------------------
   present).  There is no interesting return value.
 
   Lines that contain a single period do not need to be quoted.
+
+==========================================================================
+_sending mail_, _SMTP_
+==========================================================================
+
+Collection: net
+Files: _smtp.ss_, _smtpr.ss_, _smtps.ss_
+
+ABSTRACT -------------------------------------------------------------
+
+The SMTP package helps programmers write programs that need to send
+electronic mail messages using SMTP. The client must provide the
+address of an SMTP server; in contrast, the mail package (see above)
+uses a pre-configured sendmail on the local system.
+
+TYPES ----------------------------------------------------------------
+
+  The head package defines the format of a `header' string, which is
+  used by `send-smtp-message'. The head package also provides
+  utilities to verify the formatting of a mail address. The procedures
+  of the SMTP package assume that the given string arguments are
+  well-formed.
+
+EXCEPTIONS -----------------------------------------------------------
+
+  Communication errors are signalled via exn:user structure instances.
+
+PROCEDURES -----------------------------------------------------------
+
+> (send-smtp-message server-string from-string to-list-of-strings header message-list-of-strings [port]) -> void
+
+  The first argument is the IP address of the SMTP server. The
+  `from-string' argument specifies the mail address of the sender, and
+  `to-listof-strings' is a list of recipient addresses (including
+  "To", "CC", and "BCC" recipients). The `header' argument is the
+  complete message header, which should already include "From", "To",
+  and "CC" fields consistent with the given sender and recipients.
+  the `message-list-of-strings' argument is the body of the message,
+  where each string in the list corresponds to a single line of
+  message text; no string in `message-list-of-strings' should contain
+  a carriage return or newline characters. The optional `port'
+  argument specifies the IP port to use in contacting the SMTP server;
+  the default is 25.
+
+  See the head package for utilities that construct a message headers
+  and validate mail address strings.
 
 ==========================================================================
 _NNTP_, _newsgroups_
@@ -292,7 +446,7 @@ PROCEDURES -----------------------------------------------------------
   that match any of the desired's.
 
 ==========================================================================
-_POP-3_, _mail reading_
+_POP-3_, _reading mail_
 ==========================================================================
 
 Collection: net
@@ -471,106 +625,241 @@ EXAMPLE --------------------------------------------------------------
  > (pop3:disconnect-from-server c)
 
 ==========================================================================
-_URL_ posting, _web clients_, _WWW_
+_IMAP_, _reading mail_
 ==========================================================================
 
 Collection: net
-Files: _url.ss_, _urlr.ss_, _urls.ss_, _urlu.ss_
+Files: _imap.ss_, _imapr.ss_, _imaps.ss_
 
 ABSTRACT -------------------------------------------------------------
 
-The url package manages features of URLs.
+Implements portions of client-side RFC 2060, Internet Message Access
+Protocol - Version 4rev1, Crispin, http://www.isi.edu/in-notes/rfc2060.txt
 
 TYPES ----------------------------------------------------------------
 
-> url
-  struct url (scheme host port path params query fragment)
-  scheme : string or #f
-  host : string or #f
-  port : number or #f
-  path : string
-  params : string or #f
-  query : string or #f
-  fragment : string or #f
+> imap
 
-  The basic structure for all URLs.
+  An opaque record reprsenting an IMAP connection.
 
-  http://www.cs.rice.edu:80/cgi-bin/finger;xyz?name=shriram&host=nw#top
-    1          2          3       4         5           6            7
+> imap-flag
 
-  1 = scheme, 2 = host, 3 = port, 4 = path,
-  5 = params, 6 = query, 7 = fragment
+  A symbol, but generally not a convenient one to use within a Scheme
+  program. The `imap-flag->symbol' and `symbol->imap-flag' procedures
+  convert IMAP flags to convenient symbols and vice-versa.
 
-> pure-port
+EXCEPTIONS -----------------------------------------------------------
 
-  A pure port is one from which the MIME headers have been removed, so
-  that what remains is purely the first content fragment.
-
-> mime-header
-  struct mime-header (name value)
-  name : string
-  value : string
-
-  MIME header.
+  Communication errors are signalled via exn:user structure instances.
 
 PROCEDURES -----------------------------------------------------------
 
-> (unixpath->path string) -> path-string
+> (imap-connect server-string username-string password-string mailbox-string) 
+   -> three values: imap, message count, recent message count
 
-  Given a path from a URL structure, turns it into a path that
-  conforms to the local OS path specifications.  Useful for file
-  accesses on the local disk system.
+  Establishes an IMAP connection to the given server using the given
+  username and password, and selects the specified mailbox. The second
+  and third return values indicate the total number of message in the
+  mailbox and the number of recent messages (i.e., messages received
+  since the mailbox was last selected), respectively.
 
-> (get-pure-port url [list-of-strings]) -> input-port
+  A user's primary mailbox is always called "INBOX".
 
-  Takes a URL and returns a pure port corresponding to it.  Writes the
-  optional strings to the server.
+> (imap-disconnect imap) -> void
 
-> (get-impure-port url [list-of-strings]) -> input-port
+  Closes an IMAP connection.
 
-  Takes a URL and returns an impure port corresponding to it.  Writes
-  the optional strings to the server.
+> (imap-reselect imap mailbox-string)
+  -> two values: message count and recent message count
 
-> (display-pure-port input-port) -> void
+  De-selects the mailbox currently selected by the connection and
+  selects the specified mailbox, returning the total and recent
+  message counts for the new mailbox.
 
-  Writes the output of a pure port.  For debugging purposes.
+  This procedure is useful for polling a mailbox to see whether there
+  are any new messages (by providing the currently selected mailbox as
+  the new mailbox).
 
-> (purify-port input-port) -> list-of-mime-headers
+> (imap-get-messages imap msg-num-list field-list)
+  -> list of field-value lists
 
-  Purifies a port, returning the MIME headers.
+  Downloads information for a set of messages. The `msg-num-list'
+  argument specifies a set of messages by their message positions (not
+  their uids). The `field-list' argument specifies the type of
+  information to download for each message. The avilable fields are:
 
-> (string->url string) -> url
+    * 'uid - value is an integer
+    * 'header - value is a header (string; see the head package)
+    * 'body - value is a string (with CRLF-separated lines)
+    * 'flags - value is a list of imap flags
+    
+  The return value is a list of entry items in parallel to
+  `msg-num-list'. Each entry is itself a list containing value items
+  in parallel to `field-list'.
 
-  Turns a string into a URL.
-  
-> (netscape/string->url string) -> url
+  Example:
+    (imap-get-message imap '(1 3 5) '(uid header))
+    ; => ((107 "From: larry@stooges.com ...")
+          (110 "From: moe@stooges.com ...")
+          (112 "From: curly@stooges.com ..."))
 
-  Turns a string into a URL, applying (what appear to be) Netscape's
-  conventions on automatically specifying the scheme: a string
-  starting with a slash gets the scheme "file", while all others get
-  the scheme "http".
+> (imap-flag->symbol imap-flag) -> symbol
+> (symbol->imap-flag symbol) -> imap-flag
 
-> (url->string url) -> string
+  An imap flag is a symbol, but it is generally not a convenient one
+  to use within a Scheme program, because it usually starts with a
+  backslash and flag comparisions are case-insensitive. The
+  `imap-flag->symbol' and `symbol->imap-flag' procedures convert IMAP
+  flags to convenient symbols and vice-versa:
 
-  Generates a string corresponding to the contents of the url struct.
+      symbol    imap flag
+      ------    ----------
+     'seen      '|\Seen|
+     'answered  '|\Answered|
+     'flagged   '|\Flagged|
+     'deleted   '|\Deleted|
+     'draft     '|\Draft|
+     'recent    '|\Recent|
 
-> (call/input-url url url->port-proc port->void-proc [list-of-strings]) -> void
+  `imap-flag->symbol' and `symbol->imap-flag' act like the identity
+  function when any other symbol/flag is provided.
 
-  First argument is the URL to open.  Second is a procedure that takes
-  a URL and turns it into a (pure or impure) port.  The third takes
-  the (pure or impure) port and handles its contents.  The optional
-  fourth argument is a set of strings to send to the server.
+> (imap-store imap mode msg-num-list flags) -> void
 
-> (combine-url/relative url string) -> url
+  Sets flags for a set of messages. The mode argument specifies how
+  flags are set:
 
-  Given a base URL and a relative path, combines the two and returns a
-  new URL.
+       * '+ - add the given flags to each message
+       * '- - remove the given flags from each emssage
+       * '! - set each message's flags to the given set
 
-EXAMPLE --------------------------------------------------------------
+  The `msg-num-list' argument specifies a set of messages by their
+  message positions (not their uids). The `flags' argument specifies
+  the imap flags to add/remove/install.
 
- (invoke-open-unit/sig mzlib:url@ #f)
- (define url:cs (string->url "http://www.cs.rice.edu/"))
- (define url:me (string->url "http://www.cs.rice.edu/~shriram/"))
- (define comb combine-url/relative)
- (define (test url)
-   (call/input-url url get-pure-port display-pure-port))
+  Example:
+    (imap-store imap '+ '(1 2 3) (list (symbol->imap-flag 'deleted)))
+    ; marks the first three messages to be deleted
+    (imap-expunge imap)
+    ; permanently removes the first three messages (and possibly others)
+    ;  from the currently-selected mailbox
+
+> (imap-expunge imap) -> void
+
+  Purges every message currently marked with the '|\Deleted| flag from
+  the mailbox.
+
+==========================================================================
+_mail headers_
+==========================================================================
+
+Collection: net
+Files: _head.ss_, _headr.ss_, _heads.ss_
+
+ABSTRACT -------------------------------------------------------------
+
+Implements utlities for RFC 822 headers and mail addresses.
+
+TYPES ----------------------------------------------------------------
+
+> header
+
+  A string that is an RFC-882-compliant header. A header string
+  contains a series of CRLF-delimitted fields, and ends with two CRLFs
+  (the first one terminates the last field, and the second terminates
+  the header).
+
+PROCEDURES -----------------------------------------------------------
+
+> empty-header
+
+  A string correcponding to the empty header, useful for building up
+  headers with `insert-field' and `append-headers'.
+
+> (validate-header candidate-header-string) -> void
+
+  If the format of `candidate-header-string' matches RFC 822, void is
+  returned, otherwise an exception is raised.
+
+> (extract-field field-string header) -> string or #f
+
+  Returns the header content for the specified field, or #f if the
+  field is not in the header. `field-string' should not end with ":",
+  and it is used case-insensitively. The returned string will not
+  contain the field name, color separator, of CRLF terminator for the
+  field; however, if the field spans multiple lines, the CRLFs
+  separating the lines will be intact.
+
+  Example:
+    (extract-field "TO" (insert-field "to" "me@localhost" empty-header))
+    ; => "me@localhost"
+
+> (remove-field field-string header) -> header
+
+  Creates a new header by removing the specified field from `header'
+  (or the first instance of the field, if it occurs multiple
+  times). If the field is not in `header', then the return value is
+  `header'.
+
+> (insert-field field-string value-string header) -> header
+
+  Creates a new header by prefixing the given header with the given
+  field-value pair. `value-string' should not contain a terminating
+  CRLF, but a multi-line value (perhaps created with
+  `data-lines->data') may contain seperator CRLFs.
+
+> (append-headers a-header another-header) -> header
+
+> (standard-message-header from-string to-list-of-strings cc-list-of-strings bcc-list-of-strings subject-string) -> header
+
+  Creates a standard mail header given the sender, various lists of
+  recipients, and a subject. (The BCC recipients do not acually appear
+  in the header, but they're accepted anyway to complete the
+  abstarction.)
+
+> (data-lines->data list-of-strings) -> string
+
+  Merges multiple lines for a single field value into one string,
+  adding CRLF-TAB separators.
+
+> (extract-addresses string kind) -> list of strings or
+                                     list of list of strings
+
+  Parses `string' as a list of comma-delimited mail addresses, raising
+  an exception if the list is ill-formed. This procedure can be used
+  for single-address strings, in which case the returned list should
+  contain only one address.
+
+  The `kind' argument specifies which portion of an address should be
+  returned:
+
+     * 'name - the free-form name in the address, or the address
+               itself if no name is available:
+        "John Doe <doe@localhost>" => "Jon Doe"
+        "doe@localhost (Johnny Doe)" => "Johnny Doe"
+        "doe@localhost" => "doe@localhost"
+
+     * 'address - just the mailing address, without any free-form
+               names:
+        "Jon Doe <doe@localhost>" => "doe@localhost"
+        "doe@localhost (Johnny Doe)" => "doe@localhost"
+        "doe@localhost" => "doe@localhost"
+
+     * 'full - the full address, essentially as it appears in the
+               input, but normalized:
+        "Jon Doe   < doe@localhost >" => "Jon Doe <doe@localhost>"
+        "  doe@localhost  (Johnny Doe)" => "doe@localhost (Johnny Doe)"
+        "doe@localhost" => "doe@localhost"
+
+     * 'all - a list containing each of the three posibilities:
+              free-form name, address, and full address (in that
+              order)
+
+  Example:
+    (extract-addresses " \"Doe, John\" <doe@localhost>, john" 'address)
+    ; => ("doe@localhost" "john")
+           
+> (assemble-address-field list-of-address-strings) -> string
+
+  Creates a header field value from a list of addresses. The addresses
+  are comma-separated, and possibly broken into multiple lines.

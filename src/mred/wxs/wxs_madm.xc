@@ -184,7 +184,6 @@ typedef Scheme_Object KeymapCallbackToSchemeRec;
 static Bool KMCallbackToScheme(UNKNOWN_OBJ, wxEvent &, KeymapCallbackToSchemeRec *data);
 static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km, UNKNOWN_OBJ, wxKeyEvent &, KeymapCallbackToSchemeRec *data);
 static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km, UNKNOWN_OBJ, wxMouseEvent &, KeymapCallbackToSchemeRec *data);
-static void ErrorCallbackToScheme(KeymapCallbackToSchemeRec *data, char *str);
 static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
 
 @MACRO bCallback =
@@ -193,13 +192,11 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
 @MACRO ubCallbackKM = (wxKMFunction)KMCallbackToScheme
 @MACRO ubCallbackGrabKey = (wxGrabKeyFunction)GrabKeyCallbackToScheme
 @MACRO ubCallbackGrabMouse = (wxGrabMouseFunction)GrabMouseCallbackToScheme
-@MACRO ubCallbackError = (wxKeyErrorFunction)ErrorCallbackToScheme
 @MACRO ubCallbackBreak = (wxBreakSequenceFunction)BreakSequenceCallbackToScheme
 
 @MACRO spCallbackKM = (wxObject-object wxEvent-object -> bool)
 @MACRO spCallbackGrabKey = (str wxKeymap-object wxObject-object wxKeyEvent-object -> bool)
 @MACRO spCallbackGrabMouse = (str wxKeymap-object wxObject-object wxMouseEvent-object -> bool)
-@MACRO spCallbackError = (str -> void)
 @MACRO spCallbackBreak = (-> void)
 
 @MACRO ubData = NULL
@@ -286,31 +283,6 @@ static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km,
   return retval;
 }
 
-static Bool MouseCallbackToScheme(UNKNOWN_OBJ media, wxMouseEvent &event, 
-				 KeymapCallbackToSchemeRec *data)
-{
-  extern Scheme_Object *objscheme_bundle_wxMouseEvent(wxMouseEvent *);
-  Scheme_Object *p[2], *obj;
-  Bool retval;
-  jmp_buf savebuf;
-
-  p[0] = (Scheme_Object *)media;
-  p[1] = objscheme_bundle_wxMouseEvent(&event);
-
-  COPY_JMPBUF(savebuf, scheme_error_buf);
-
-  if (!scheme_setjmp(scheme_error_buf)) {
-    obj = scheme_apply(kctsr(data), 2, p);
-    retval = objscheme_unbundle_bool(obj, "Scheme mouse callback");
-  } else
-    retval = 0;
-
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-  scheme_clear_escape();
-
-  return retval;
-}
-
 static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km,
 				      UNKNOWN_OBJ media, wxMouseEvent &event, 
 				      KeymapCallbackToSchemeRec *data)
@@ -337,23 +309,6 @@ static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km,
   scheme_clear_escape();
 
   return retval;
-}
-
-static void ErrorCallbackToScheme(KeymapCallbackToSchemeRec *data, char *err)
-{
-  Scheme_Object *p[1];
-  jmp_buf savebuf;
-
-  p[0] = objscheme_bundle_string(err);
-
-  COPY_JMPBUF(savebuf, scheme_error_buf);
-
-  if (!scheme_setjmp(scheme_error_buf)) {
-    scheme_apply_multi(kctsr(data), 1, p);
-  }
-
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-  scheme_clear_escape();
 }
 
 static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data)

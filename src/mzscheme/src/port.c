@@ -2856,10 +2856,13 @@ static void filename_exn(char *name, char *msg, char *filename, int err)
 
   scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		   scheme_make_string(filename),
-		   "%s: %s: \"%.255s\"%s%.255s%s (%d)", 
+		   "%s: %s: \"%.255s\"%s%.255s%s (%d%s)", 
 		   name, msg, filename,
 		   pre, rel, post,
-		   err);
+		   err,
+		   (((err == EMFILE) || (err == ENFILE)) 
+		    ? " - too many files open" 
+		    : ""));
 }
 
 static Scheme_Object *

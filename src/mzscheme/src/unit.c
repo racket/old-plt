@@ -1960,7 +1960,7 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
 
   if (unit->num_imports != data->num_exports) {
     scheme_raise_exn(MZEXN_UNIT,
-		     "%s : " KIND " "
+		     "%s: " KIND " "
 		     "expects %d imports, given %d",
 		     data->path ? INVOKE_OPEN_UNIT : INVOKE_UNIT,
 		     unit->num_imports,

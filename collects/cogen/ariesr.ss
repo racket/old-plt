@@ -60,7 +60,6 @@
 	    (zodiac:id-var expr)]
 
 	  [(zodiac:top-level-varref? expr)
-	    (check-for-keyword expr)
 	    (wrap expr (zodiac:id-var expr))]
 	 
 	  [(zodiac:app? expr)

@@ -647,6 +647,7 @@ wxCursor::wxCursor(wxBitmap *mask, wxBitmap *bm, int hotSpotX, int hotSpotY)
 # define hackIBEAM_CURSOR 0x5
 # define hackCROSS_CURSOR 0x7
 # define hackHAND_CURSOR 0x9
+# define hackSIZEWE_CURSOR 0x11
 
 wxCursor::wxCursor(int cursor_type)
 {
@@ -728,16 +729,23 @@ wxCursor::wxCursor(int cursor_type)
 	break;
       }
     case wxCURSOR_SIZENWSE:
+      {
+	cMacCursor = GetCursor(5129);
+	break;
+      }
     case wxCURSOR_SIZENESW:
       {
+	cMacCursor = GetCursor(5139);
 	break;
       }
     case wxCURSOR_SIZEWE:
       {
+	cMacCursor = (Cursor **)hackSIZEWE_CURSOR;
 	break;
       }
     case wxCURSOR_SIZENS:
       {
+	cMacCursor = GetCursor(5140);
 	break;
       }
     case wxCURSOR_POINT_LEFT:
@@ -756,7 +764,8 @@ wxCursor::wxCursor(int cursor_type)
       }
     case wxCURSOR_BLANK:
       {
-	break ;
+	cMacCursor = GetCursor(5128);
+	break;
       }
     }
 }
@@ -806,6 +815,8 @@ void wxSetCursor(wxCursor *cursor)
 	  SetThemeCursor(kThemeCrossCursor);
 	else if (cursor->cMacCursor == (Cursor **)hackHAND_CURSOR)
 	  SetThemeCursor(kThemeOpenHandCursor);
+	else if (cursor->cMacCursor == (Cursor **)hackSIZEWE_CURSOR)
+	  SetThemeCursor(kThemeResizeLeftRightCursor);
 	else if (cursor->cMacCursor) {
 	  ::SetCursor(*(cursor->cMacCursor));
 	} else

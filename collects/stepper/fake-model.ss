@@ -15,6 +15,7 @@
   (define constructor-style-printing? 'fake)
   (define abbreviate-cons-as-list? 'fake)
   (define user-cons? 'fake)
+  (define user-list? 'fake)
   (define user-vector? 'fake)
   (define image? 'fake)
   (define print-convert 'fake))

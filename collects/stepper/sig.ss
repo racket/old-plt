@@ -60,8 +60,7 @@
    true-false-printed?
    constructor-style-printing?
    abbreviate-cons-as-list?
-   user-cons?
-   user-vector?
+   user-cons? user-vector? user-list?
    image?
    print-convert))
 

@@ -25,7 +25,7 @@
     (letrec ([pair-off
               (lambda (lst)
                 (cond [(null? lst) null]
-                      [(null? (cdr lst)) (e:internal-error 'mark-bindings 
+                      [(null? (cdr lst)) (error 'mark-bindings 
                                                            "uneven number of vars and bindings")]
                       [else (cons (list (car lst) (cadr lst)) (pair-off (cddr lst)))]))])
       (pair-off (cddr (mark)))))

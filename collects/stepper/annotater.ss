@@ -135,7 +135,7 @@
     (let* ([closure-record (closure-table-lookup value)]
            [old-name (closure-record-name closure-record)])
       (if old-name
-          (e:internal-error "closure-record already has a name: ~a" old-name)
+          (error 'update-closure-record-name "closure-record already has a name: ~a" old-name)
           (set-closure-record-name! closure-record name))))
   
   

@@ -20,6 +20,9 @@
   
   (define error-delta (make-object style-delta% 'change-style 'italic))
   (send error-delta set-delta-foreground "RED")
+  
+  (define snip-delta (make-object style-delta% 'change-alignment 'top))
+  
 
 ;;;;;; copied from /plt/collects/drscheme/snip.ss :
   
@@ -93,6 +96,12 @@
 
   ;;;; duplicated for vertical-snip
   
+  (define red-arrow-bitmap
+    (make-object bitmap% (build-path (collection-path "icons") "red-arrow.bmp") 'bmp))
+
+  (unless (send red-arrow-bitmap ok?)
+    (error 'red-arrow-bitmap "unable to load red-arrow bitmap"))
+  
   (define vertical-separator-snipclass
     (make-object
      (class-asi snip-class%
@@ -114,11 +123,13 @@
   (define vertical-separator-snip%
     (class snip% (height)
       (inherit get-style set-snipclass set-flags get-flags get-admin)
-      (private [width 1]
-	       [white-around 2])
+      (private [bitmap-width 15.0]
+	       [left-white 0.0]
+               [right-white 3.0]
+               [bitmap-height 10.0])
       (public [set-height! 
-               (lambda (x) 
-                 (set! height x))])
+               (lambda (x)
+                 (set! height (max x bitmap-height)))])
       (override
 	[copy (lambda () 
 		(let ([s (make-object vertical-separator-snip% height)])
@@ -129,25 +140,14 @@
 	   (for-each (lambda (box) (unless (not box) (set-box! box 0)))
 		     (list descent-box space-box lspace-box rspace-box))
 	   (unless (not w-box)
-	     (set-box! w-box (+ (* 2 white-around) width)))
+	     (set-box! w-box (+ left-white right-white bitmap-width)))
 	   (unless (not h-box)
 	     (set-box! h-box height)))]
 	[draw
-	 (let* ([body-pen (send the-pen-list find-or-create-pen
-				"BLUE" 0 'solid)]
-		[body-brush (send the-brush-list find-or-create-brush
-				  "BLUE" 'solid)])
-	   (lambda (dc x y left top right bottom dx dy draw-caret)
-	     (let ([orig-pen (send dc get-pen)]
-		   [orig-brush (send dc get-brush)])
-	       (send dc set-pen body-pen)
-	       (send dc set-brush body-brush)
-	       
-	       (send dc draw-rectangle (+ white-around x)
-		     y width height)
-	       
-	       (send dc set-pen orig-pen)
-	       (send dc set-brush orig-brush))))])
+         (lambda (dc x y left top right bottom dx dy draw-caret)
+           (let ([y-offset (round (/ (- height bitmap-height) 2))]
+                 [x-offset left-white])
+             (send dc draw-bitmap red-arrow-bitmap (+ x x-offset) (+ y y-offset))))])
       (sequence
 	(super-init)
 	(set-snipclass vertical-separator-snipclass))))
@@ -232,7 +232,7 @@
                                       (insert string))]
                                    [pretty-print-print-line
                                     (lambda (number port old-length dest-columns)
-                                      (when (not (eq? number 0))
+                                      (when (and number (not (eq? number 0)))
                                         (insert #\newline))
                                       0)]
                                    [pretty-print-pre-print-hook
@@ -289,9 +289,11 @@
                   (reset-style)
                   (set! remaining-highlights highlights)
                   (stack-top-decide)
-                  (for-each
-                   (lambda (exp) (format-sexp (advance-substitute exp)))
-                   exps)
+                  (let loop ([remaining exps] [first #t])
+                    (unless (null? remaining)
+                      (unless first (insert #\newline))
+                      (format-sexp (advance-substitute (car remaining)))
+                      (loop (cdr remaining) #f)))
                   (unless (null? remaining-highlights)
                     (error 'format-whole-step "leftover highlights"))
                   (end-edit-sequence)
@@ -333,7 +335,7 @@
                                          error-msg after-exprs (line-spacing 1.0) (tabstops null))
       (inherit find-snip insert change-style highlight-range last-position lock erase auto-wrap
                begin-edit-sequence end-edit-sequence get-start-position get-style-list set-style-list
-               get-admin get-snip-location get-dc)
+               get-admin get-snip-location get-dc needs-update)
       (public [reset-width 
                (lambda (canvas)
                  (let* ([width-box (box 0)]
@@ -366,6 +368,7 @@
                 (lambda ()
                   (for-each (lambda (snip)
                               (send snip set-min-height 0.0)
+                              (send snip set-max-height 0.0)
                               (send snip set-max-height 'none))
                             (list before-snip after-snip)))]
                [coordinate-snip-sizes
@@ -379,19 +382,18 @@
                               (- (unbox bottom-box) (unbox top-box))))]
                          [max-height (apply max (map get-snip-height (list before-snip after-snip)))])
                     (send vert-separator set-height! (- max-height 4))
-                    (send before-snip set-min-height max-height)
-                    (send before-snip set-max-height max-height)
-                    (send after-snip set-min-height max-height)
-                    (send after-snip set-max-height max-height)))])
+                    (needs-update vert-separator 0 0 0 0)))])
       
       
 
       (sequence (super-init line-spacing tabstops)
                 (set-style-list (f:scheme:get-style-list))
-                (for-each insert (list top-defs-snip (string #\newline) horiz-separator-1
-                                       before-snip vert-separator 
-                                       after-snip (string #\newline) 
-                                       horiz-separator-2 bottom-defs-snip))
+                (let ([before-position (last-position)])
+                  (for-each insert (list top-defs-snip (string #\newline) horiz-separator-1
+                                         before-snip vert-separator 
+                                         after-snip (string #\newline) 
+                                         horiz-separator-2 bottom-defs-snip))
+                  (change-style snip-delta before-position (last-position)))
                 (send top-defs-snip set-editor 
                       (make-object stepper-sub-text% finished-exprs null #f))
                 (send before-snip set-editor
@@ -402,7 +404,8 @@
                     (send after-snip set-editor
                           (make-object stepper-sub-error-text% error-msg)))
                 (send bottom-defs-snip set-editor
-                      (make-object stepper-sub-text% after-exprs null #f)))))
+                      (make-object stepper-sub-text% after-exprs null #f))
+                (lock #t))))
 
 ;  (define (stepper-text-test . args)
 ;    (let* ([new-frame (make-object frame% "test-frame")]
@@ -507,11 +510,9 @@
             (define (update-view new-view)
               (set! view new-view)
               (let ([e (list-ref view-history view)])
-                (send canvas lazy-refresh #f)
                 (send canvas set-editor e)
                 (send e reset-width canvas)
-                (send e set-position (send e last-position))
-                (send canvas lazy-refresh #f))
+                (send e set-position (send e last-position)))
               (send previous-button enable (not (zero? view)))
               (send home-button enable (not (zero? view)))
               (send next-button enable (not (eq? final-view view))))

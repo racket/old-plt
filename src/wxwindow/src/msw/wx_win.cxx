@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.34 2000/01/18 03:50:32 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.35 2000/03/04 17:22:00 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -82,7 +82,7 @@ typedef signed short int SHORT ;
 Bool wxShiftDown = FALSE;
 Bool wxControlDown = FALSE;
 
-wxMenu *wxCurrentPopupMenu = NULL;
+wxMenu **wxCurrentPopupMenu = NULL;
 static wxWindow *current_mouse_wnd = NULL;
 static void *current_mouse_context = NULL;
 
@@ -2206,7 +2206,8 @@ BOOL wxSubWnd::OnCommand(WORD id, WORD cmd, HWND WXUNUSED(control))
 #endif
   if (wxCurrentPopupMenu)
   {
-    wxMenu *popupMenu = wxCurrentPopupMenu;
+    wxMenu *popupMenu = *wxCurrentPopupMenu;
+    *wxCurrentPopupMenu = NULL;
     wxCurrentPopupMenu = NULL;
     BOOL succ = popupMenu->MSWCommand(cmd, id);
     return succ;

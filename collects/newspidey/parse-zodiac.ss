@@ -1117,9 +1117,13 @@
       (apply string-append (map pp-type (Type-Union-types type)))
       ")")]
     [(Const? type)
-     (if (number? (Const-val type))
-         (number->string (Const-val type))
-         "null")]
+     (let ([val (Const-val type)])
+       (cond
+         [(number? val) (number->string (Const-val type))]
+         [(string? val) "str"]
+         [(symbol? val) "symbol"]
+         [(null? val) "null"]
+         [else (error 'pp-type "unknown constant type ~a" type)]))]
     [(Type-Empty? type)
      "empty"]))
      

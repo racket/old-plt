@@ -566,6 +566,8 @@ typedef struct Scheme_Process {
   Scheme_Jumpup_Buf jmpup_buf;
 #ifdef MZ_REAL_THREADS
   void *thread;
+  int break_received;
+  struct timeval *select_tv;
 # ifdef MZ_USE_LINUX_PTHREADS
   int jump_on_signal;
   mz_jmp_buf signal_buf;
@@ -669,8 +671,9 @@ typedef struct Scheme_Process {
   void *kill_data;
 
   /* MzScheme use only: */
-  void (*private_on_kill)(struct Scheme_Process *p);
+  void (*private_on_kill)(void *);
   void *private_kill_data;
+  void **private_kill_next; /* array of three pointers */
 
   void **user_tls;
   int user_tls_size;

@@ -159,7 +159,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 
     /* Handle scaling by creating a new, tmeporary bitmap: */
     if ((scale_x != 1) || (scale_y != 1)) {
-      int sw, sh, tw, th, i, j, ti, tj, xs, ys;
+      int sw, sh, tw, th, i, j, ti, tj, xs, ys, mono;
       unsigned long pixel;
 
       xs = (int)xsrc;
@@ -182,18 +182,22 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 
       tw = (int)(sw * scale_x);
       th = (int)(sh * scale_y);
-      tmp = new wxBitmap(tw, th, (src->GetDepth() == 1));
+      mono = (src->GetDepth() == 1);
+      tmp = new wxBitmap(tw, th, mono);
       
       if (tmp->Ok()) {
 	XImage *simg, *timg;
 	XGCValues values;
 	GC agc;
+	Pixmap spm, tpm;
 	
 	if (src->selectedTo)
 	  src->selectedTo->EndSetPixel();
 	
-	simg = XGetImage(DPY, GETPIXMAP(src), xs, ys, sw, sh, AllPlanes, ZPixmap);
-	timg = XGetImage(DPY, GETPIXMAP(tmp), 0, 0, tw, th, AllPlanes, ZPixmap);
+	spm = GETPIXMAP(src);
+	simg = XGetImage(DPY, spm, xs, ys, sw, sh, AllPlanes, ZPixmap);
+	tpm = GETPIXMAP(tmp);
+	timg = XGetImage(DPY, tpm, 0, 0, tw, th, AllPlanes, ZPixmap);
 	
 	if (tw > sw) {
 	  for (ti = 0; ti < tw; ti++) {
@@ -231,9 +235,9 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	  }
 	}
 
-	agc = XCreateGC(DPY, GETPIXMAP(tmp), 0, &values);
+	agc = XCreateGC(DPY, tpm, 0, &values);
 	if (agc) {
-	  XPutImage(DPY, GETPIXMAP(tmp), agc, timg, 0, 0, 0, 0, tw, th);
+	  XPutImage(DPY, tpm, agc, timg, 0, 0, 0, 0, tw, th);
 	  XFreeGC(DPY, agc);
 	  retval = 1;
 	} else

@@ -645,6 +645,10 @@
   (let ([cblock (malloc len type)])
     (make-cvector cblock type len)))
 
+(provide (rename cvector-args cvector))
+(define (cvector-args type . args)
+  (list->cvector args type))
+
 (define* (cvector-ref v i)
   (if (and (integer? i) (<= 0 i (sub1 (cvector-length v))))
     (ptr-ref (cvector-ptr v) (cvector-type v) i)
@@ -688,8 +692,8 @@
                      [TAGname      name])
          #'(begin
              (define-struct TAG (ptr length))
-             (provide TAG?)
-             (provide TAG-length (rename allocate-TAG make-TAG))
+             (provide TAG? TAG-length)
+             (provide (rename allocate-TAG make-TAG))
              (define (allocate-TAG n . init)
                (let* ([p (malloc n type)]
                       [v (make-TAG p n)])

@@ -3,11 +3,11 @@
 
   (require (lib "stx.ss" "syntax"))
 
-  (define (make-method-apply id this args)
-    (let loop ([args args][accum null])
+  (define (make-method-apply id this orig-args)
+    (let loop ([args orig-args][accum null])
       (cond
        [(stx-null? args)
-	(list* id this args)]
+	(list* id this orig-args)]
        [(stx-pair? args)
 	(loop (stx-cdr args) (cons (stx-car args) accum))]
        [else

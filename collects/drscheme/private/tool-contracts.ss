@@ -1478,9 +1478,10 @@
     
     
     ;; what about get-mrflow-primitives-filename?!
-    #;
     (object-contract
-     (config-panel (case-> (any? . -> . void?) (-> any?)))
+     (config-panel ((is-a?/c area-container<%>)
+                    . -> .
+                    (case-> (any? . -> . void?) (-> any?))))
      (create-executable (any?
                          (union (is-a?/c dialog%) (is-a?/c frame%))
                          string?
@@ -1522,5 +1523,5 @@
                            . -> .
                            any))
      (unmarshall-settings (printable? . -> . any)))
-
+    #;
     (is-a?/c drscheme:language:language<%>)))

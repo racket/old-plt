@@ -923,7 +923,9 @@ static void InsureNamesReady(ClassVariable *ivars, int count, Scheme_Object ***n
   ClassVariable *cvar;
 
   if (count && !*names) {
-    *names = MALLOC_N(Scheme_Object*, count);
+    Scheme_Object **ns;
+    ns = MALLOC_N(Scheme_Object*, count);
+    *names = ns;
 
     for (i = 0, cvar = ivars; cvar; cvar = cvar->next) {
       if (ispublic(cvar))

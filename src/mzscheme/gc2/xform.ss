@@ -31,7 +31,7 @@
 (close-output-port (cadr cpp-process))
 
 (define ctok-process
-  (process "ctok"))
+  (process (build-path (current-load-relative-directory) "ctok")))
 
 (define (mk-error-thread proc)
   (thread (lambda ()
@@ -89,7 +89,7 @@
      (close-output-port (current-output-port))
      (current-output-port (current-error-port))
      (when file-out
-       (delete-file file-out))
+       '(delete-file file-out))
      (eh))))
 
 (define exit-with-error? #f)
@@ -118,6 +118,7 @@
 (define-struct (braces struct:seq) ())
 (define-struct (call struct:tok) (func args live tag))
 (define-struct (block-push struct:tok) (vars tag super-tag))
+(define-struct (class-var struct:tok) (var))
 (define-struct (note struct:tok) (s))
 
 (define-struct vtype ())
@@ -324,6 +325,10 @@
 		(push-vars (call-live v) "" ", ")
 		(display/indent v ")), ")))
 	  (print-it (append (call-func v) (list (call-args v))) indent #f)
+	  (display/indent v ")")]
+	 [(class-var? v)
+	  (display/indent v "(SELF->")
+	  (display/indent v (tok-n (class-var-var v)))
 	  (display/indent v ")")]
 	 [(block-push? v)
 	  (let ([size (total-push-size (block-push-vars v))]
@@ -675,7 +680,7 @@
     null)))
 
 (define (register-class e)
-  (let ([name (tok-n (car e))]
+  (let ([name (tok-n (cadr e))]
 	[body-pos (if (eq? ': (tok-n (caddr e)))
 		      (if (memq (tok-n (cadddr e)) '(public private))
 			  5
@@ -690,7 +695,7 @@
 				  #f)
 			      null)]
 	  [pt (prototyped)])
-      (set! c++-classes (cons cl c++-classes))
+      (set! c++-classes (cons (cons name cl) c++-classes))
       (prototyped null)
       (let* ([body-v (list-ref e body-pos)]
 	     [body-e (process-top-level (seq-in body-v))])
@@ -707,6 +712,29 @@
 		     body-e)
 		    (cdr e))
 	      (cons (car e) (loop (cdr e) (sub1 p)))))))))
+
+(define (find-c++-class class-name v)
+  (let ([m (assoc class-name c++-classes)])
+    (if m
+	(cdr m)
+	(begin
+	  (log-error "[CLASS] ~a in ~a: Unknown class ~a."
+		     (tok-line v) (tok-file v)
+		     class-name)
+	  #f))))
+
+(define (is-c++-class-var? v c++-class)
+  (and c++-class
+       (let ([m (assoc (tok-n v) (c++-class-prototyped c++-class))])
+	 (if m
+	     m
+	     (let ([parent (c++-class-parent c++-class)])
+	       (and parent
+		    (if (c++-class? parent)
+			(is-c++-class-var? v parent)
+			(let ([parent (find-c++-class parent v)])
+			  (set-c++-class-parent! c++-class parent)
+			  (is-c++-class-var? v parent)))))))))
 
 (define (convert-function e)
   (let*-values ([(body-v len) (let* ([len (sub1 (length e))]
@@ -728,7 +756,14 @@
 					      #f)])
 			      (apply
 			       append
-			       (map (lambda (x) (get-pointer-vars x "PTRARG" #f)) arg-decls)))])
+			       (map (lambda (x) (get-pointer-vars x "PTRARG" #f)) arg-decls)))]
+		[(class-name) (let loop ([e e])
+				(cond
+				 [(null? e) #f]
+				 [(null? (cdr e)) #f]
+				 [(eq? ':: (tok-n (cadr e)))
+				  (tok-n (car e))]
+				 [else (loop (cdr e))]))])
      (append
       (let loop ([e e][len len])
 	(if (zero? len)
@@ -742,14 +777,17 @@
 	(tok-file body-v)
 	(seq-close body-v)
 	(let-values ([(body-e live-vars)
-		      (convert-body body-e arg-vars arg-vars (make-live-var-info #f -1 0 null null null 0) #t)])
+		      (convert-body body-e 
+				    arg-vars arg-vars 
+				    (find-c++-class class-name (car e))
+				    (make-live-var-info #f -1 0 null null null 0) #t)])
 	  body-e))))))
 
 (define re:funcarg (regexp "^__funcarg"))
 (define (is-generated? x)
   (regexp-match re:funcarg (symbol->string (car x))))
 
-(define (convert-body body-e extra-vars pushable-vars live-vars setup-stack?)
+(define (convert-body body-e extra-vars pushable-vars c++-class live-vars setup-stack?)
   (let ([el (body->lines body-e #f)])
     (let-values ([(decls body) (split-decls el)])
 	(let* ([local-vars 
@@ -816,6 +854,7 @@
 					  [(e live-vars)
 					   (convert-function-calls (car body)
 								   vars
+								   c++-class
 								   live-vars
 								   #f)])
 			      (values (cons e rest) live-vars))]))])
@@ -832,7 +871,7 @@
 					     ;; We're not really interested in the conversion.
 					     ;; We just want to get live vars and
 					     ;; complain about function calls:
-					     (convert-function-calls (car el) extra-vars live-vars #t)])
+					     (convert-function-calls (car el) extra-vars c++-class live-vars #t)])
 				 (dloop (cdr el) live-vars))))))])
 	      ;; Calculate vars to push in this block
 	      (let ([newly-pushed (filter (lambda (x)
@@ -996,7 +1035,7 @@
 	     [else
 	      (loop (cdr el) (cons (car el) new-args) setups new-vars ok-calls #t live-vars)]))))))
 
-(define (convert-function-calls e vars live-vars complain-not-in)
+(define (convert-function-calls e vars c++-class live-vars complain-not-in)
   ;; e is a single statement
   ;; Reverse to calculate live vars as we go.
   ;; Also, it's easier to look for parens and then inspect preceeding
@@ -1013,7 +1052,7 @@
 	 (lambda ()
 	   ;; It's a cast:
 	   (let-values ([(v live-vars)
-			 (convert-paren-interior (car e-) vars live-vars complain-not-in)])
+			 (convert-paren-interior (car e-) vars c++-class live-vars complain-not-in)])
 	     (loop (cddr e-)
 		   (list* (cadr e-) v result)
 		   live-vars)))
@@ -1054,6 +1093,7 @@
 			    (lift-out-calls args live-vars)]
 			   [(args live-vars)
 			    (convert-paren-interior args vars 
+						    c++-class
 						    (replace-live-vars 
 						     live-vars
 						     (append (map (lambda (x)
@@ -1064,7 +1104,7 @@
 							     (live-var-info-vars live-vars)))
 						    ok-calls)]
 			   [(func live-vars)
-			    (convert-function-calls (reverse func) vars live-vars #t)]
+			    (convert-function-calls (reverse func) vars c++-class live-vars #t)]
 			   ;; Process lifted-out function calls:
 			   [(setups live-vars)
 			    (let loop ([setups setups][new-vars new-vars][result null][live-vars live-vars])
@@ -1072,6 +1112,7 @@
 				  (values result live-vars)
 				  (let-values ([(setup live-vars)
 						(convert-function-calls (car setups) vars 
+									c++-class
 									;; Remove var for this one:
 									(replace-live-vars
 									 live-vars
@@ -1180,7 +1221,7 @@
 		      ;; Proc to convert body once
 		      [(convert-brace-body) 
 		       (lambda (live-vars)
-			 (convert-body (seq-in v) vars null live-vars #f))]
+			 (convert-body (seq-in v) vars null c++-class live-vars #f))]
 		      ;; First conversion
 		      [(e live-vars) (convert-brace-body live-vars)]
 		      ;; Proc to filter live and pushed vars, dropping vars no longer in scope:
@@ -1220,6 +1261,7 @@
 			 ;; Run test part. We don't filter live-vars, but maybe we should:
 			 (let-values ([(v live-vars)
 				       (convert-seq-interior (cadr e-) #t vars 
+							     c++-class
 							     (restore-new-vars live-vars)
 							     #f)])
 			   ;; Now run body again:
@@ -1228,6 +1270,7 @@
 			     ;; Finally, run test again:
 			     (let-values ([(v live-vars)
 					   (convert-seq-interior (cadr e-) #t vars 
+								 c++-class
 								 live-vars
 								 #f)])
 			       (values e live-vars (cddr e-) v))))]
@@ -1251,10 +1294,20 @@
 	;; Do nested body:
 	(let-values ([(v live-vars)
 		      (convert-seq-interior (car e-) (parens? (car e-)) 
-					    vars live-vars 
+					    vars c++-class live-vars 
 					    (or complain-not-in 
 						(brackets? (car e-))))])
 	  (loop (cdr e-) (cons v result) live-vars))]
+       [(and c++-class (is-c++-class-var? (car e-) c++-class))
+	;; Class variable
+	(loop (cdr e-)
+	      (cons (make-class-var "class variable"
+				    (tok-file (car e-))
+				    (tok-line (car e-))
+				    (tok-col (car e-))
+				    (car e-))
+		    result)
+	      live-vars)]
        [(and (assq (tok-n (car e-)) vars)
 	     (not (assq (tok-n (car e-)) (live-var-info-vars live-vars))))
 	;; Add a live variable:
@@ -1277,7 +1330,7 @@
 	(loop (cdr e-) (cons (car e-) result) live-vars)]
        [else (loop (cdr e-) (cons (car e-) result) live-vars)]))))
 
-(define (convert-seq-interior v comma-sep? vars live-vars complain-not-in)
+(define (convert-seq-interior v comma-sep? vars c++-class live-vars complain-not-in)
   (let ([e (seq-in v)])
     (let ([el (body->lines e comma-sep?)])
       (let-values ([(el live-vars)
@@ -1286,7 +1339,7 @@
 			  (values null live-vars)
 			  (let-values ([(rest live-vars) (loop (cdr el))])
 			    (let-values ([(e live-vars)
-					  (convert-function-calls (car el) vars live-vars complain-not-in)])
+					  (convert-function-calls (car el) vars c++-class live-vars complain-not-in)])
 			      (values (cons e rest) live-vars)))))])
 	(values ((get-constructor v)
 		 (tok-n v)
@@ -1297,8 +1350,8 @@
 		 (apply append el))
 		live-vars)))))
 
-(define (convert-paren-interior v vars live-vars complain-not-in)
-  (convert-seq-interior v #t vars live-vars complain-not-in))
+(define (convert-paren-interior v vars c++-class live-vars complain-not-in)
+  (convert-seq-interior v #t vars c++-class live-vars complain-not-in))
 
 (define (split-decls el)
   (let loop ([el el][decls null])

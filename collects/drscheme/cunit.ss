@@ -4,7 +4,7 @@
   (unit/sig drscheme:project^
     (import [mred : mred^]
 	    [mzlib : mzlib:core^]
-	    [drscheme:aries : drscheme:aries^]
+	    [drscheme:frame : drscheme:frame^]
 	    [drscheme:edit : drscheme:edit^]
 	    [drscheme:spawn : drscheme:spawn^])
 
@@ -15,7 +15,7 @@
 	(inherit project get-frames)
 	(public
 	 [frame%
-	  (class drscheme:aries:frame% args
+	  (class drscheme:frame:scheme-project-member-frame% args
 	    (inherit set-project)
 	    (sequence
 	      (mred:debug:printf 'super-init "before.1")
@@ -59,7 +59,7 @@
 	    [project-extension "spj"]
 	    [group% scheme-project-frame-group%]
 	    
-	    [console-edit (make-object drscheme:aries:console-edit%)])
+	    [console-edit (make-object drscheme:edit:console-edit%)])
 	  
 	  (public
 	    
@@ -238,7 +238,7 @@
 	    (mred:debug:printf 'super-init "before visibility check")
 	    (if (mred:get-preference 'drscheme:project-visible?)
 		(show #t)
-		(make-object drscheme:aries:frame% #f #t group))
+		(make-object drscheme:frame:scheme-project-member-frame% #f #t group))
 	    (mred:debug:printf 'super-init "after visibility check")
 	    
 	    (mred:show-busy-cursor

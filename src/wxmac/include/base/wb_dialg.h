@@ -94,6 +94,7 @@ int wxbMessageBox(char *message, char *caption = "Message", long style = wxOK|wx
 #define wxHIDE_READONLY 8
 #define wxDIR_ONLY	16
 #define wxFILES_ONLY 32
+#define wxMULTIOPEN 64
 
 // Generic file load dialog
 char * wxLoadFileSelector(char *what = "Text", char *extension = "txt", char *default_name = NULL);

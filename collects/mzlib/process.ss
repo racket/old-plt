@@ -88,6 +88,11 @@
 	    [se (streamify-out cerr err #t)]
 	    [aport (lambda (x)
 		     (and (port? x) x))])
+	(when (thread? si)
+	  ;; Wait for process to end, then stop copying input:
+	  (thread (lambda ()
+		    (sync subp)
+		    (break-thread si))))
 	(list (aport so)
 	      (aport si)
 	      (subprocess-pid subp)
@@ -107,7 +112,7 @@
 					    (when (thread? t)
 					      (thread-wait t)))])
 			       (twait so)
-			       ;; (twait si) - if the process didn't wait, we don't need to!
+			       (twait si)
 			       (twait se)))
 			    ((interrupt) (subprocess-kill subp #f))
 			    ((kill) (subprocess-kill subp #t))

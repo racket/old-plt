@@ -2,7 +2,7 @@
   (unit/sig zodiac:scheme-mrspidey^
     (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
       zodiac:sexp^ (pat : zodiac:pattern^) zodiac:scheme-core^
-      zodiac:scheme-main^
+      zodiac:scheme-main^ zodiac:back-protocol^
       zodiac:expander^ zodiac:interface^)
 
     (define-struct (poly-form struct:parsed) (exp))

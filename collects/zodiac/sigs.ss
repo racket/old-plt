@@ -36,7 +36,6 @@
     parsed->raw extend-parsed->raw
     lexically-resolved? in-lexically-extended-env
     generate-name
-    make-empty-back-box
     scheme-expand scheme-expand-program
     scheme-vocabulary
     (struct parsed (back))
@@ -149,6 +148,9 @@
     create-define-type-form
     create-define-constructor-form))
 
+(define-signature zodiac:back-protocol^
+  (make-empty-back-box register-client))
+
 (define-signature zodiac:system^
   ((open zodiac:structures^)
     (open zodiac:scanner-parameters^)
@@ -157,6 +159,7 @@
     (open zodiac:sexp^)
     (open zodiac:pattern^)
     (open zodiac:correlate^)
+    (open zodiac:back-protocol^)
     (open zodiac:expander^)
     (open zodiac:scheme-core^)
     (open zodiac:scheme-main^)

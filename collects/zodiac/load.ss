@@ -25,6 +25,7 @@
 (load-recent "pattern")
 (load-recent "x")
 (load-recent "corelate")
+(load-recent "back")
 (load-recent "scm-core")
 (load-recent "scm-main")
 (load-recent "scm-spdy")

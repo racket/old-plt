@@ -3,7 +3,8 @@
 (define zodiac:scheme-core@
   (unit/sig zodiac:scheme-core^
     (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
-      (z : zodiac:reader-structs^) zodiac:expander^ zodiac:interface^
+      (z : zodiac:reader-structs^) zodiac:back-protocol^
+      zodiac:expander^ zodiac:interface^
       (pat : zodiac:pattern^) (param : plt:parameters^))
 
     (define-struct (parsed struct:zodiac) (back))
@@ -25,7 +26,7 @@
 
     ; ----------------------------------------------------------------------
 
-    (define make-empty-back-box (lambda () (box '())))
+;    (define make-empty-back-box (lambda () (box '())))
 
     (define generate-name
       (lambda (var)

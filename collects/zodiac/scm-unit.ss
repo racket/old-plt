@@ -2,7 +2,7 @@
   (unit/sig zodiac:scheme-units^
     (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
       zodiac:sexp^ (pat : zodiac:pattern^) zodiac:scheme-core^
-      zodiac:scheme-main^
+      zodiac:scheme-main^ zodiac:back-protocol^
       zodiac:expander^ zodiac:interface^)
 
     (define-struct (unit-form struct:parsed)

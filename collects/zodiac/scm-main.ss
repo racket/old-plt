@@ -3,8 +3,8 @@
 (define zodiac:scheme-main@
   (unit/sig zodiac:scheme-main^
     (import zodiac:misc^ zodiac:structures^ (z : zodiac:reader-structs^)
-      zodiac:sexp^ (pat : zodiac:pattern^) zodiac:scheme-core^ zodiac:expander^
-      zodiac:interface^)
+      zodiac:sexp^ (pat : zodiac:pattern^) zodiac:scheme-core^
+      zodiac:back-protocol^ zodiac:expander^ zodiac:interface^)
 
     ; ----------------------------------------------------------------------
 

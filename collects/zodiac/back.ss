@@ -1,5 +1,5 @@
-(define zodiac:scheme-core@
-  (unit/sig (make-empty-back-box register-client)
+(define zodiac:back-protocol@
+  (unit/sig zodiac:back-protocol^
     (import zodiac:misc^ zodiac:interface^)
 
     (define-struct secure-box (value))
@@ -7,17 +7,17 @@
     (define init-value-list '())
 
     (define register-initial-value
-      (lambda (index value)
+      (lambda (index value-thunk)
 	(set! init-value-list
 	  (append init-value-list
-	    (list value)))))
+	    (list value-thunk)))))
 
     (define make-initial-value-vector
       (lambda ()
-	(let ((v (make-vector current-vector-size)))
+	(let ((v (make-vector current-vector-size uninitialized-flag)))
 	  (let loop ((index 0) (inits init-value-list))
 	    (unless (null? inits)
-	      (vector-set! v index (car inits))
+	      (vector-set! v index ((car inits)))
 	      (loop (add1 index) (cdr inits))))
 	  v)))
 
@@ -35,16 +35,19 @@
 	    (set! current-vector-size (* 2 current-vector-size)))
 	  count)))
 
+    (define-struct uninitialized-back ())
+    (define uninitialized-flag (make-uninitialized-back))
+
     (define client-registry (make-hash-table))
 
     (define register-client
-      (lambda (client-name default-initial-value)
+      (lambda (client-name default-initial-value-thunk)
 	(when (hash-table-get client-registry client-name
 		(lambda () #f))
 	  (internal-error client-name "Attempting duplicate registration"))
 	(hash-table-put! client-registry client-name #t)
 	(let ((index (next-client-count)))
-	  (register-initial-value index default-initial-value)
+	  (register-initial-value index default-initial-value-thunk)
 	  (values
 	    (lambda (back)		; getter
 	      (let ((v (secure-box-value back)))
@@ -52,7 +55,13 @@
 		  ((exn:application:range:bounds:vector?
 		     (lambda (exception)
 		       (vector-ref (extend-back-vector back) index))))
-		  (vector-ref v index))))
+		  (let ((value (vector-ref v index)))
+		    (if (uninitialized-back? value)
+		      (let ((correct-value
+			      ((list-ref init-value-list index))))
+			(vector-set! v index correct-value)
+			correct-value)
+		      value)))))
 	    (lambda (back value)	; setter
 	      (let ((v (secure-box-value back)))
 		(with-handlers

@@ -37,6 +37,7 @@
    [create-new-instance! (hash-table? custodian? execution-context? semaphore?
                                       . -> . servlet-instance?)]
    [remove-instance! (hash-table? servlet-instance? . -> . any)]
+   [clear-continuations! (servlet-instance? . -> . any)]
    )
 
   ;; not found in the instance table
@@ -70,6 +71,13 @@
       (let ([next-k-id (get-k-id! k-table)])
         (hash-table-put! k-table next-k-id k)
         (embed-ids (servlet-instance-id inst) next-k-id uri))))
+
+  ;; clear-continuations!: servlet-instance -> void
+  ;; replace the k-table for the given servlet-instance
+  (define (clear-continuations! inst)
+    (set-servlet-instance-k-table!
+     inst
+     (make-k-table)))
 
   ;; create-new-instance! hash-table custodian execution-context semaphore-> servlet-instance
   (define (create-new-instance! instance-table cust ctxt sema)

@@ -60,6 +60,12 @@ Parameters
        preferred XML notation.  However, it's not part of HTML, so this
        parameter provides backward compatability.
 
+Exceptions
+==========
+
+> xml-read:error is thrown by read-xml if the document is not well formed.
+  (define-struct (xml-read:error struct:exn) ())
+
 Examples
 ========
 

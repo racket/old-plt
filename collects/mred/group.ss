@@ -4,7 +4,7 @@
 	    [mred:exit mred:exit^] [mred:autosave mred:autosave^]
 	    [mred:handler mred:handler^] [mzlib:function mzlib:function^])
 
-    (mred:debug:dprintf "mred:group@~n")
+    (mred:debug:printf "mred:group@~n")
 
     (define buffer-group%
       (let ([untitled-number 0])

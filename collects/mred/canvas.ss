@@ -3,7 +3,7 @@
     (import [mred:debug mred:debug^] [mred:edit mred:edit^]
 	    [mzlib:file mzlib:file^])
 
-    (mred:debug:dprintf "mred:canvas@~n")
+    (mred:debug:printf "mred:canvas@~n")
 
     (define make-canvas%
       (lambda (super%)

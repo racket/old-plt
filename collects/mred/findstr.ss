@@ -3,7 +3,7 @@
     (import [mred:debug mred:debug^] [mred:canvas mred:canvas^]
 	    [mred:edit mred:edit^] [mred:frame mred:frame^])
 
-    (mred:debug:dprintf "mred:find-string@~n")
+    (mred:debug:printf "mred:find-string@~n")
 
     (define make-find-frame%
       (lambda (super%) 

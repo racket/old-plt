@@ -122,4 +122,4 @@
        ("Don't remove intermediate files")]])
    (lambda (prefixes file . files)
      (values (cons file files) prefixes))
-   (list "file")))
+   (list "file" "file")))

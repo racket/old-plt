@@ -5,4 +5,4 @@
   (define blurb '("The SSL collection provides a driver for using the OpenSSL "
 		  "secure connection library."))
   (define release-version "204")	
-  (define release-iteration "0")))
+  (define release-iteration "0"))

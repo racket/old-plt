@@ -1040,9 +1040,11 @@ PROCEDURES -----------------------------------------------------------
 
   Returns pending expunge notifications from the server for the
   selected mailbox in terms of message positions (not uids), and
-  clears the pending notifications.  This operation does not
-  communicate with the server; it merely reports the result of
-  previous communication.
+  clears the pending notifications. The result list is sorted,
+  ascending.
+
+  This operation does not communicate with the server. It merely
+  reports the result of previous communication.
 
   The server can notify the client of newly deleted messages during
   most other commands, but not asynchronously between
@@ -1065,7 +1067,8 @@ PROCEDURES -----------------------------------------------------------
   client with some other client changes a message attribute).  Instead
   of reporting specific requested information for specific messages,
   the result is associates message positions to field-value
-  association lists.
+  association lists. The result list is sorted by message position,
+  ascending.
 
   This operation does not communicate with the server; it merely
   reports the result of previous communication. It also clears the

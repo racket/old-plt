@@ -193,7 +193,7 @@
 (error-test '(open-output-file "x" 'something-else))
 (let ([conflict? exn:application:mismatch?]
       [modes '(binary text)]
-      [replacement '(error replace truncate append)])
+      [replacement '(error replace truncate append truncate/replace update)])
   (for-each
    (lambda (ones)
      (for-each
@@ -261,6 +261,25 @@
 (error-test '(read p) exn:i/o:port:closed?)
 (error-test '(read-char p) exn:i/o:port:closed?)
 (error-test '(char-ready? p) exn:i/o:port:closed?)
+
+(define p (open-output-file "tmp4" 'update))
+(display 6 p)
+(close-output-port p)
+(test 2 file-size "tmp4")
+(define p (open-input-file "tmp4"))
+(test 67 read p)
+(test eof read p)
+(close-input-port p)
+
+(define p (open-output-file "tmp4" 'update))
+(file-position p 1)
+(display 68 p)
+(close-output-port p)
+(test 3 file-size "tmp4")
+(define p (open-input-file "tmp4"))
+(test 668 read p)
+(test eof read p)
+(close-input-port p)
 
 (arity-test call-with-input-file 2 3)
 (arity-test call-with-output-file 2 4)

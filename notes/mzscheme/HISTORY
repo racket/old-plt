@@ -1,4 +1,15 @@
 
+Version 102/11:
+
+ * Inside MzScheme:
+
+    - Not all import ports keep line counts anymore (it's wasteful for
+      programs using block I/O on binary data, and it's mostly useful
+      only with `load'). -1 return from scheme_tell_line() indicates
+      that line counts are not ketp. scheme_count_lines() enables
+      line-counting for an input port. Note that there's no MzScheme
+      primitive that provides line information.
+
 Version 102/10:
 
  * Switched to `configure'-based Makefiles (autoconf). See
@@ -287,6 +298,8 @@ Inside MzScheme: added embedding-settable function
  scheme_console_output, used to report low-level errors
 Inside MzScheme: restricted the format strings accepted by
  scheme_signal_error, scheme_raise_exn, and scheme_warning
+Inside MzScheme: added scheme_count_lines; scheme_tell_line
+ can return -1 if lines are not counted for a port
 
 Version 101, October 25, 1999
 Added 'sys-dir to find-system-path

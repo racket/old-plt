@@ -7,11 +7,16 @@ Version 199.27:
  * Changed `struct?' to return #t for v only if `struct->vector'
    exposes one or more fields of v with the current inspector.
 
- * Changed `struct-info' and `struct->vector' to work on all values.
-
    [The theory is that all values are implemented by structs at some
    level, and the only difference is whether the struct is opqaue or
    not.]
+
+ * Changed `equal?' and `equal-hash-code' so that two structs are
+   considered equal only when they are instances of the same type,
+   have no opaque fields, and have equal `struct->vector'
+   representations.
+
+ * Changed `struct-info' and `struct->vector' to work on all values.
 
  * Added `send/apply' to "class.ss". (For now, I left the old dotted
    apply forms in place and improved the documentation.)
@@ -25,7 +30,21 @@ Version 199.27:
    The new `with-module-reading-parameterization' procedure in
    "syntax"'s "moddep.ss" sets the parameters correctly.
 
+ * Added a mode to `subprocess' so that an exact Windows command-line
+   string can be provided.
 
+   (In Unix, the vector of string arguments is already exact, but
+   Windows programs actually receive a single string, which the
+   program can parse any way that it wants. There's a quasi-standard
+   for parsing command lines, but command.com/cmd.exe doesn't obey it,
+   of course!)
+
+ * Windows: if `delete-directory' fails, then MzScheme resets the
+   OS-level working directory to the thread's `current-directory'
+   value and tries again.
+
+ * Changed `syntax-source-module' to produce module path indices
+   instead of the resolved module name.
 
 Version 199.26:
 

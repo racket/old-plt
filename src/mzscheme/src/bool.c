@@ -219,15 +219,19 @@ int scheme_equal (Scheme_Object *obj1, Scheme_Object *obj2)
     return ((l1 == l2) 
 	    && !memcmp(SCHEME_STR_VAL(obj1), SCHEME_STR_VAL(obj2), l1));
   } else if (SCHEME_STRUCTP(obj1)) {
-    Scheme_Object *insp;
-    insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
-    if (scheme_inspector_sees_part(obj1, insp, -2)
-	&& scheme_inspector_sees_part(obj2, insp, -2)) {
-      obj1 = scheme_struct_to_vector(obj1, NULL, insp);
-      obj2 = scheme_struct_to_vector(obj2, NULL, insp);
-      goto top;
-    } else
+    if (SCHEME_STRUCT_TYPE(obj1) != SCHEME_STRUCT_TYPE(obj2))
       return 0;
+    else {
+      Scheme_Object *insp;
+      insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+      if (scheme_inspector_sees_part(obj1, insp, -2)
+	  && scheme_inspector_sees_part(obj2, insp, -2)) {
+	obj1 = scheme_struct_to_vector(obj1, NULL, insp);
+	obj2 = scheme_struct_to_vector(obj2, NULL, insp);
+	goto top;
+      } else
+	return 0;
+    }
   } else if (SCHEME_BOXP(obj1)) {
     SCHEME_USE_FUEL(1);
     obj1 = SCHEME_BOX_VAL(obj1);

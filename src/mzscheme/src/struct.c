@@ -684,29 +684,6 @@ static Scheme_Object *struct_setter(Struct_Proc_Info *i, int argc, Scheme_Object
   return scheme_void;
 }
 
-int scheme_equal_structs(Scheme_Object *obj1, Scheme_Object *obj2)
-{
-  Scheme_Structure *s1, *s2;
-  int i;
-
-  if (!SAME_TYPE(SCHEME_TYPE(obj1), scheme_structure_type)
-      || !SAME_TYPE(SCHEME_TYPE(obj2), scheme_structure_type))
-    return 0;
-
-  s1 = (Scheme_Structure *)obj1;
-  s2 = (Scheme_Structure *)obj2;
-
-  if (SCHEME_STRUCT_TYPE(s1) != SCHEME_STRUCT_TYPE(s2))
-    return 0;
-
-  for (i = SCHEME_STRUCT_NUM_SLOTS(s1); i--; ) {
-    if (!scheme_equal(s1->slots[i], s2->slots[i]))
-      return 0;
-  }
-
-  return 1;
-}
-
 static Scheme_Object *
 struct_p(int argc, Scheme_Object *argv[])
 {

@@ -387,8 +387,6 @@ Scheme_Object *scheme_make_struct_type_from_string(const char *base,
 						   Scheme_Object *parent, 
 						   int num_fields);
 
-int scheme_equal_structs(Scheme_Object *obj1, Scheme_Object *obj2);
-
 Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown_val, Scheme_Object *insp);
 
 #define SCHEME_STRUCT_INSPECTOR(obj) (((Scheme_Structure *)obj)->stype->inspector)

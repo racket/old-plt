@@ -1509,7 +1509,7 @@
 
 (let ([check-hash-tables
        (lambda (maybe-weak)
-	 (define-struct a (b c))
+	 (define-struct a (b c) (make-inspector))
 	 
 	 (let ([h1 (apply make-hash-table maybe-weak)]
 	       [l (list 1 2 3)])

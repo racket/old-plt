@@ -235,12 +235,16 @@ void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight,
 
 int wxFont::GetEffectiveSmoothing(float scale)
 {
+  /* Fixed width between 9 and 13 inclusive => partial smoothing */
   if ((smoothing == wxSMOOTHING_DEFAULT)
-      && (family == wxMODERN)
-      && ((scale * point_size) < 14))
-    return wxSMOOTHING_PARTIAL;
-  else
-    return smoothing;
+      && (family == wxMODERN)) {
+    float sz;
+    sz = floor(scale * point_size);
+    if ((sz > 8) && (sz < 14))
+      return wxSMOOTHING_PARTIAL;
+  }
+
+  return smoothing;
 }
 
 //-----------------------------------------------------------------------------

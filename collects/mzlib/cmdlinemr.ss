@@ -54,43 +54,53 @@
 		    (let ([line (car args)])
 		      (if (pair? line)
 			  (case (car line)
-			    [(once-each once-any multi)
+			    [(once-each once-any multi help-labels)
 			     (loop (cdr args)
 				   (append
 				    clauses
 				    (list
 				     (list* 'list
 					    (list 'quote (car line))
-					    (let loop ([sublines (cdr line)])
-					      (if (null? sublines)
-						  null
-						  (cons
-						   (let ([line (car sublines)])
-						     (let-values ([(flags rest) (extract "flag string(s)" line line)])
-						       (unless (or (string? flags)
-								   (and (list? flags)
-									(andmap string? flags)))
-							 (serror "flag specification is not a string or sequence of strings" flags))
-						       (if (and (pair? rest) (eq? (car rest) '=>))
-							   (let ([rest (cdr rest)])
-							     (unless (and (list? rest) (= 2 (length rest)))
-							       (serror "two expressions must follow a => line" line))
-							     `(list ',(listify flags) ,@rest))
-							   (let*-values ([(formals rest) (let loop ([a null][rest rest])
-											   (cond
-											    [(null? rest) (values a null)]
-											    [(symbol? (car rest)) (values (append a (list (car rest))) (cdr rest))]
-											    [else (values a rest)]))]
-									 [(_) (check-formals formals)]
-									 [(help rest) (extract "help string" rest line)]
-									 [(_) (unless (string? help)
-										(serror "help info is not a string" help))]
-									 [(expr1 rest) (extract "handler body expressions" rest line)])
-							     `(list ',(listify flags)
-								    (lambda ,(cons (gensym 'flag) formals)
-								      ,expr1 ,@rest)
-								    '(,help ,@(formal-names formals)))))))
-						   (loop (cdr sublines)))))))))]
+					    (if (eq? (car line) 'help-labels)
+						(begin
+						  (unless (and (list? (cdr line))
+							       (andmap string? (cdr line)))
+						    (serror "help-labels clause must contain only strings" line))
+						  (cdr line))
+						(let loop ([sublines (cdr line)])
+						  (if (not (pair? sublines))
+						      (if (null? sublines)
+							  null
+							  (serror "clause is not a sequence" line))
+						      (cons
+						       (let ([line (car sublines)])
+							 (let-values ([(flags rest) (extract "flag string(s)" line line)])
+							   (unless (or (string? flags)
+								       (and (list? flags)
+									    (andmap string? flags)))
+							     (serror "flag specification is not a string or sequence of strings" flags))
+							   (if (and (pair? rest) (eq? (car rest) '=>))
+							       (let ([rest (cdr rest)])
+								 (unless (and (list? rest) (= 2 (length rest)))
+								   (serror "two expressions must follow a => line" line))
+								 `(list ',(listify flags) ,@rest))
+							       (let*-values ([(formals rest) (let loop ([a null][rest rest])
+											       (cond
+												[(null? rest) (values a null)]
+												[(symbol? (car rest)) 
+												 (values (append a (list (car rest))) 
+													 (cdr rest))]
+												[else (values a rest)]))]
+									     [(_) (check-formals formals)]
+									     [(help rest) (extract "help string" rest line)]
+									     [(_) (unless (string? help)
+										    (serror "help info is not a string" help))]
+									     [(expr1 rest) (extract "handler body expressions" rest line)])
+								 `(list ',(listify flags)
+									(lambda ,(cons (gensym 'flag) formals)
+									  ,expr1 ,@rest)
+									'(,help ,@(formal-names formals)))))))
+						       (loop (cdr sublines))))))))))]
 			    [(=>)
 			     (when (pair? (cdr args)) (serror "=> must be the last clause"))
 			     `((list ,@clauses)

@@ -49,10 +49,10 @@
 			   (error (string->symbol program) "unknown flag: ~s" flag)))]
     [(program arguments table finish finish-help help unknown-flag)
      (unless (string? program)
-	     (raise-type-error 'parse-command-line "program name string" program))
+       (raise-type-error 'parse-command-line "program name string" program))
      (unless (and (vector? arguments)
 		  (andmap string? (vector->list arguments)))
-	     (raise-type-error 'parse-command-line "argument vector of strings" arguments))
+       (raise-type-error 'parse-command-line "argument vector of strings" arguments))
      (unless (and (list? table)
 		  (let ([bad-table
 			 (lambda (reason)
@@ -60,65 +60,77 @@
 					     (format "table as a list of flag-list/procedure pairs (~a)" 
 						     reason)
 					     table))])
-		    (andmap (lambda (spec)
-			      (and (or (and (list? spec) (pair? spec))
-				       (bad-table (format "spec-set must be a non-empty list: ~a" spec)))
-				   (or (memq (car spec) '(once-any once-each multi))
-				       (bad-table (format "spec-set type must be 'once-any, 'once-each, or 'multi: ~a" 
-							  (car spec))))
-				   (andmap (lambda (line)
-					     (and (or (and (list? line) (= (length line) 3))
-						      (bad-table (format "spec-line must be a list of at three items: ~e" line)))
-						  (or (list? (car line))
-						      (bad-table (format "flags part of a spec-line must be a list: ~e" (car line))))
-						  (andmap
-						   (lambda (flag)
-						     (or (string? flag)
-							 (bad-table (format "flag must be a string: ~e" flag)))
-						     (or (and (or (regexp-match "^-[^-]$" flag)
-								  (regexp-match "^[+][^+]$" flag)
-								  (regexp-match "^--." flag)
-								  (regexp-match "^[+][+]." flag))
-							      (not (or (regexp-match "^--help$" flag)
-								       (regexp-match "^-h$" flag)
-								       (regexp-match number-regexp flag))))
-							 (bad-table (format "no ill-formed or pre-defined flags: ~e" flag))))
-						   (car line))
-						  (or (procedure? (cadr line))
-						      (bad-table (format "second item in a spec-line must be a procedure: ~e" (cadr line))))
-						  (let ([a (arity (cadr line))])
-						    (or (and (number? a)
-							     (or (>= a 1)
-								 (bad-table (format "flag handler procedure must take at least 1 argument: ~e" 
-										    (cadr line)))))
-							(arity-at-least? a)
-							(bad-table (format "flag handler procedure cannot have multiple cases: ~e" (cadr line)))))
-						  (or (and (list? (caddr line))
-							   (andmap string? (caddr line)))
-						      (bad-table (format "spec-line help section must be a list of strings")))
-						  
-						  (or (let ([l (length (caddr line))]
-							    [a (arity (cadr line))])
-							(if (number? a)
-							    (= a l)
-							    (and (>= l 1)
-								 (>= l (arity-at-least-value a)))))
-						      (bad-table (format "spec-line help list strings must match procedure arguments")))))
-					   (cdr spec))))
-			    table)))
-	     (raise-type-error 'parse-command-line "table of spec sets" table))
+		    (andmap 
+		     (lambda (spec)
+		       (and (or (and (list? spec) (pair? spec))
+				(bad-table (format "spec-set must be a non-empty list: ~a" spec)))
+			    (or (memq (car spec) '(once-any once-each multi help-labels))
+				(bad-table (format "spec-set type must be 'once-any, 'once-each, 'multi, or 'help-labels: ~a" 
+						   (car spec))))
+			    (andmap 
+			     (lambda (line)
+			       (if (eq? (car spec) 'help-labels)
+
+				   (or (string? line)
+				       (bad-table (format "help-labels line must be a string: ~e" line)))
+
+				   (and (or (and (list? line) (= (length line) 3))
+					    (bad-table (format "spec-line must be a list of at three items: ~e" line)))
+
+					(or (list? (car line))
+					    (bad-table (format "flags part of a spec-line must be a list: ~e" (car line))))
+
+					(andmap
+					 (lambda (flag)
+					   (or (string? flag)
+					       (bad-table (format "flag must be a string: ~e" flag)))
+					   (or (and (or (regexp-match "^-[^-]$" flag)
+							(regexp-match "^[+][^+]$" flag)
+							(regexp-match "^--." flag)
+							(regexp-match "^[+][+]." flag))
+						    (not (or (regexp-match "^--help$" flag)
+							     (regexp-match "^-h$" flag)
+							     (regexp-match number-regexp flag))))
+					       (bad-table (format "no ill-formed or pre-defined flags: ~e" flag))))
+					 (car line))
+
+					(or (procedure? (cadr line))
+					    (bad-table (format "second item in a spec-line must be a procedure: ~e" (cadr line))))
+
+					(let ([a (arity (cadr line))])
+					  (or (and (number? a)
+						   (or (>= a 1)
+						       (bad-table (format "flag handler procedure must take at least 1 argument: ~e" 
+									  (cadr line)))))
+					      (arity-at-least? a)
+					      (bad-table (format "flag handler procedure cannot have multiple cases: ~e" (cadr line)))))
+
+					(or (and (list? (caddr line))
+						 (andmap string? (caddr line)))
+					    (bad-table (format "spec-line help section must be a list of strings")))
+					
+					(or (let ([l (length (caddr line))]
+						  [a (arity (cadr line))])
+					      (if (number? a)
+						  (= a l)
+						  (and (>= l 1)
+						       (>= l (arity-at-least-value a)))))
+					    (bad-table (format "spec-line help list strings must match procedure arguments"))))))
+			     (cdr spec))))
+		     table)))
+       (raise-type-error 'parse-command-line "table of spec sets" table))
      (unless (and (procedure? finish)
 		  (procedure-arity-includes-at-least? finish 1))
-	     (raise-type-error 'parse-command-line "finish procedure accepting at least 1 argument" finish))
+       (raise-type-error 'parse-command-line "finish procedure accepting at least 1 argument" finish))
      (unless (and (list? finish-help) (andmap string? finish-help))
-	     (raise-type-error 'parse-command-line "argument help list of strings" finish-help))
+       (raise-type-error 'parse-command-line "argument help list of strings" finish-help))
      (unless (and (procedure? help) (procedure-arity-includes? help 1))
-	     (raise-type-error 'parse-command-line "help procedure of arity 1" help))
+       (raise-type-error 'parse-command-line "help procedure of arity 1" help))
      (unless (and (procedure? unknown-flag) (procedure-arity-includes? unknown-flag 1)
 		  (let ([a (arity unknown-flag)])
 		    (or (number? a) (arity-at-least? a))))
-	     (raise-type-error 'parse-command-line "unknown-flag procedure of simple arity, accepting 1 argument (an perhaps more)" unknown-flag))
-
+       (raise-type-error 'parse-command-line "unknown-flag procedure of simple arity, accepting 1 argument (an perhaps more)" unknown-flag))
+     
      (letrec ([a (arity finish)]
 	      [l (length finish-help)]
 	      [a-c (lambda (a)
@@ -127,7 +139,7 @@
 			      (max 1 (arity-at-least-value a)))
 			 (and (list? a) (apply max (map a-c a)))))])
        (unless (= (a-c a) l)
-	  (error 'parse-command-line "the length of the argument help string list does not match the arity of the finish procedure")))
+	 (error 'parse-command-line "the length of the argument help string list does not match the arity of the finish procedure")))
 
      (let* ([once-spec-set
 	     (lambda (lines)
@@ -150,30 +162,35 @@
 			 (fprintf sp "~n where <flag> is one of~n")
 			 (for-each
 			  (lambda (set)
-			    (for-each
-			     (lambda (line)
-			       (fprintf sp (cond
-					    [(and (eq? (car set) 'once-any) 
-						  (pair? (cddr set)))
-					     (cond
-					      [(eq? line (cadr set)) "/"]
-					      [(eq? line (let loop ([l set])
-							   (if (pair? (cdr l))
-							       (loop (cdr l))
-							       (car l)))) "\\"]
-					      [else "|"])]
-					    [(eq? (car set) 'multi)
-					     "*"]
-					    [else " "]))
-			       (let loop ([flags (car line)])
-				 (let ([flag (car flags)])
-				   (fprintf sp " ~a" flag)
-				   (print-args sp (cdaddr line) (cadr line)))
-				 (unless (null? (cdr flags))
-					 (fprintf sp ",")
-					 (loop (cdr flags))))
-			       (fprintf sp " : ~a~n" (caaddr line)))
-			     (cdr set)))
+			    (if (eq? (car set) 'help-labels)
+				(for-each
+				 (lambda (line)
+				   (fprintf sp " ~a~n" line))
+				 (cdr set))
+				(for-each
+				 (lambda (line)
+				   (fprintf sp (cond
+						[(and (eq? (car set) 'once-any) 
+						      (pair? (cddr set)))
+						 (cond
+						  [(eq? line (cadr set)) "/"]
+						  [(eq? line (let loop ([l set])
+							       (if (pair? (cdr l))
+								   (loop (cdr l))
+								   (car l)))) "\\"]
+						  [else "|"])]
+						[(eq? (car set) 'multi)
+						 "*"]
+						[else " "]))
+				   (let loop ([flags (car line)])
+				     (let ([flag (car flags)])
+				       (fprintf sp " ~a" flag)
+				       (print-args sp (cdaddr line) (cadr line)))
+				     (unless (null? (cdr flags))
+				       (fprintf sp ",")
+				       (loop (cdr flags))))
+				   (fprintf sp " : ~a~n" (caaddr line)))
+				 (cdr set))))
 			  table) ; the original table
 			 (fprintf sp "  --help, -h : Show this help~n")
 			 (fprintf sp "  -- : Do not treat any remaining argument as a flag (at this level)~n")
@@ -196,6 +213,8 @@
 		     (cdr spec)))]
 		  [(eq? (car spec) 'once-any)
 		   (once-spec-set (cdr spec))]
+		  [(eq? (car spec) 'help-labels)
+		   null]
 		  [(eq? (car spec) 'multi)
 		   (map
 		    (lambda (line) (cons #f line))

@@ -14,12 +14,21 @@
     (member x '("exact-match" "containing-match" "regexp-match")))
   
   (provide/contract 
-   (make-relative-results-url (string? search-type? search-how? any? (listof symbol?) any?
-                                       (union false? string?) . -> . string?))
+   (make-relative-results-url (string? 
+                               search-type? 
+                               search-how?
+                               any? 
+                               (listof path?)
+                               any?
+                               (union false? string?) . -> . string?))
    (make-results-url (number? 
                       string?
                       search-type? search-how? any? 
-                      (listof symbol?) any? (union false? string?) . -> . string?))
+                      (listof path?) 
+                      any?
+                      (union false? string?)
+                      . -> .
+                      string?))
    (make-missing-manual-url (hd-cookie? string? string? string? . -> . string?))
    (search-for-docs (hd-cookie? string? search-type? search-how? any? (listof symbol?) any? 
                                 (union false? string?) . -> . any?))
@@ -87,7 +96,7 @@
             search-type
             match-type
             (if lucky? "true" "false")
-            (hexify-string (format "~s" manuals))
+            (hexify-string (format "~s" (map path->bytes manuals)))
             (if doc.txt? "true" "false"))])
       (if language-name
           (string-append start (format "&langname=~a" (hexify-string language-name)))

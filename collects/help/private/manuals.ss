@@ -21,9 +21,9 @@
 	   finddoc-page-anchor)
   
   (provide/contract [get-doc-name (string? . -> . string?)]
-                    [find-doc-directories (-> (listof string?))]
-                    [find-doc-directory (string? . -> . (union false? string?))]
-                    [find-doc-names (-> (listof (cons/p string? string?)))]
+                    [find-doc-directories (-> (listof path?))]
+                    [find-doc-directory (string? . -> . (union false? path?))]
+                    [find-doc-names (-> (listof (cons/p path? string?)))]
                     
                     [goto-manual-link (hd-cookie? string? string? . -> . any?)]
                     [get-index-file (string? . -> . (union false? string?))])
@@ -167,7 +167,7 @@
             dirs)
        uninstalled)))
   
-  ;; find-doc-directories : -> (listof string[dir-path])
+  ;; find-doc-directories : -> (listof path)
   ;; constructs a list of directories where documentation may reside.
   ;; it is the contents of all of the "doc" collections
   (define (find-doc-directories)
@@ -380,7 +380,7 @@
                    "</FONT>")
                   ""))))
   
-  ;; get-doc-name : string -> string
+  ;; get-doc-name : path -> path
   (define cached-doc-names (make-hash-table 'equal))
   (define (get-doc-name doc-dir)
     (hash-table-get
@@ -399,7 +399,7 @@
   ;; the same.
   (define (compute-doc-name doc-dir)
     (let-values ([(_1 doc-short-dir-name _2) (split-path doc-dir)])
-      (if (equal? "help" doc-short-dir-name)
+      (if (equal? (string->path "help") doc-short-dir-name)
           "PLT Help Desk"
           (or (get-known-doc-name doc-dir)
               (let ([main-file (get-index-file doc-dir)])
@@ -422,7 +422,7 @@
                                                [(regexp-match re:title r) => cadr]
                                                [else (aloop r)]))])))]
                               [else (loop)])))))
-                    doc-short-dir-name))))))
+                    (path->string doc-short-dir-name)))))))
   
   ;; is-known-doc? : string[path] -> boolean
   (define (is-known-doc? doc-path)
@@ -472,10 +472,10 @@
       (cond
         [(null? contents) #f]
         [else (let* ([file (car contents)]
-                     [m (regexp-match #rx"(.*)-Z-H-1.html" file)])
+                     [m (regexp-match #rx#"(.*)-Z-H-1.html" (path->bytes file))])
                 (or (and m
                          (file-exists? (build-path dir file))
-                         (let ([index-file (string-append (cadr m) ".html")])
+                         (let ([index-file (bytes->path (bytes-append (cadr m) #".html"))])
                            (if (file-exists? (build-path dir index-file))
                                index-file
                                #f)))

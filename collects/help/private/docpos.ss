@@ -3,16 +3,16 @@
            (lib "contract.ss"))
 
   (provide/contract
-   [standard-html-doc-position (string? . -> . number?)])
+   [standard-html-doc-position (path? . -> . number?)]
+   [known-docs (listof (cons/p path? string?))])
   
   (provide user-defined-doc-position
            set-doc-position!
-	   reset-doc-positions!
-	   known-docs)
+	   reset-doc-positions!)
   
   ;; Define an order on the standard docs.
   (define (standard-html-doc-position d)
-    (if (string=? d "help")
+    (if (equal? d (string->path "help"))
         -1
         (let ([line (assoc d docs-and-positions)])
           (if line
@@ -22,7 +22,6 @@
   (define user-doc-positions '())
 
   (define (set-doc-position! manual weight)
-    (printf "set-doc-position! ~s ~s\n" manual weight)
     (let ([man-sym (string->symbol manual)])
       (unless (assoc manual known-docs)
 	      (error 
@@ -78,5 +77,4 @@
       ("t-y-scheme" "Teach Yourself Scheme in Fixnum Days" 100)
       ("tex2page" "TeX2page" 101)))
   
-  ; known-docs: (listof (cons string[subdir-of-doc-dir] string[title]))
-  (define known-docs (map (lambda (x) (cons (car x) (cadr x))) docs-and-positions)))
+  (define known-docs (map (lambda (x) (cons (string->path (car x)) (cadr x))) docs-and-positions)))

@@ -1,12 +1,14 @@
 (module colldocs mzscheme
   (require (lib "list.ss")
-           (lib "getinfo.ss" "setup"))
+           (lib "getinfo.ss" "setup")
+           (lib "contract.ss"))
   
-  (provide colldocs)
+  (provide/contract 
+   [colldocs (-> (values (listof (list/p path? path?))
+                         (listof string?)))])
   
   ; Gets a list of collections that contain a doc.txt file
-  ; return two parallel lists:
-  ; (values (listof (list directory filename)) (listof docname))
+  ; returns two parallel lists.
   ; the first has the locations of the docs and the second is their names.
   (define (colldocs)
     (let loop ([collection-paths (current-library-collection-paths)]
@@ -16,7 +18,7 @@
 	[(null? collection-paths)
 	 (let* ([collections-docs (map cons docs names)]
 		[l (quicksort collections-docs
-			      (lambda (a b) (string<=? (cdr a) (cdr b))))])
+			      (lambda (a b) (string<? (cdr a) (cdr b))))])
 	   (values (map car l) (map cdr l)))]
 	[else (let ([path (car collection-paths)])
 		(let cloop ([l (with-handlers ([not-break-exn? (lambda (x) null)])
@@ -30,11 +32,11 @@
                                    (loop (cdr collection-paths) docs names)
                                    (values docs names))]
                     [(and (directory-exists? (build-path path (car l)))
-                          (not (member (car l) names)))
+                          (not (member (path->string (car l)) names)))
                      (let* ([coll (car l)]
                             [colldir (build-path path coll)]
                             [lcollpath (append collpath (list coll))]
-                            [doc-txt-file (list colldir "doc.txt")]
+                            [doc-txt-file (list colldir (string->path "doc.txt"))]
                             [this? (file-exists? (apply build-path doc-txt-file))])
                        (let-values ([(sub-docs sub-names)
                                      (with-handlers ([not-break-exn?
@@ -44,11 +46,11 @@
                                                  'doc-sub-collections 
                                                  (lambda () null))])
                                          (cloop l colldir lcollpath null null)))])
-                         (let ([sub-names (map (lambda (s) (string-append coll " " s)) sub-names)])
+                         (let ([sub-names (map (lambda (s) (string-append (path->string coll) " " s)) sub-names)])
                            (let-values ([(ldocs lnames)
                                          (if this?
                                              (values (cons doc-txt-file sub-docs)
-                                                     (cons coll sub-names))
+                                                     (cons (path->string coll) sub-names))
                                              (values sub-docs sub-names))])
                              (cloop (cdr l) path collpath (append ldocs docs) (append lnames names))))))]
                     [else (cloop (cdr l) path collpath docs names)])))]))))

@@ -1,34 +1,14 @@
 
-@BEGINSYMBOLS bufferType > ONE
-@SYM "text" : wxEDIT_BUFFER
-@SYM "pasteboard" : wxPASTEBOARD_BUFFER
-@ENDSYMBOLS
-
-@BEGINSYMBOLS fileType > ONE
-@SYM "guess" : wxMEDIA_FF_GUESS
-@SYM "standard" : wxMEDIA_FF_STD
-@SYM "text" : wxMEDIA_FF_TEXT
-@SYM "text-force-cr" : wxMEDIA_FF_TEXT_FORCE_CR
-@SYM "same" : wxMEDIA_FF_SAME
-@SYM "copy" : wxMEDIA_FF_COPY
-@ENDSYMBOLS
-
-@BEGINSYMBOLS focus > ONE
+@BEGINSYMBOLS focus > ONE > PRED
 @SYM "immediate" : wxFOCUS_IMMEDIATE
 @SYM "display" : wxFOCUS_DISPLAY
 @SYM "global" : wxFOCUS_GLOBAL
 @ENDSYMBOLS
 
-@BEGINSYMBOLS caret > ONE
-@SYM "no-caret" : wxSNIP_DRAW_NO_CARET
-@SYM "show-caret" : wxSNIP_DRAW_SHOW_CARET
-@SYM "show-inactive-caret" : wxSNIP_DRAW_SHOW_INACTIVE_CARET
-@ENDSYMBOLS
-
 # define Sym_END 1
 # define Sym_START -1
 # define Sym_NONE 0
-@BEGINSYMBOLS bias > ONE
+@BEGINSYMBOLS bias > ONE > PRED
 @SYM "start" : Sym_START
 @SYM "none" : Sym_NONE
 @SYM "end" : Sym_END

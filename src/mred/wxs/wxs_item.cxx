@@ -184,10 +184,6 @@ static int unbundle_symset_messageStyle(Scheme_Object *v, const char *where) {
   istype_symset_messageStyle(v, where);
   return 0;
 }
-static Scheme_Object *bundle_symset_messageStyle(int v) {
-  return scheme_null;
-}
-
 
 
 

@@ -7,7 +7,7 @@
 
 @HEADER
 
-@BEGINSYMBOLS buttonStyle
+@BEGINSYMBOLS buttonStyle > > PRED BUNDLE
 @SYM "border" : 1
 @ENDSYMBOLS
 

@@ -9,7 +9,7 @@
 
 #define wxPLAIN_SLIDER (wxHORIZONTAL << 2)
 
-@BEGINSYMBOLS sliderStyle
+@BEGINSYMBOLS sliderStyle > > PRED BUNDLE
 @SYM "vertical" : wxVERTICAL
 @SYM "horizontal" : wxHORIZONTAL
 @SYM "plain" : wxPLAIN_SLIDER

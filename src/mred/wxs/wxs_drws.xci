@@ -1,5 +1,5 @@
 
-@BEGINSYMBOLS fillKind > ONE
+@BEGINSYMBOLS fillKind > ONE > PRED BUNDLE
 @SYM "odd-even" : wxODDEVEN_RULE
 @SYM "winding" : wxWINDING_RULE
 @ENDSYMBOLS

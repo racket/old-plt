@@ -35,8 +35,11 @@ static Scheme_Object *sliderStyle_wxHORIZONTAL_sym = NULL;
 static Scheme_Object *sliderStyle_wxPLAIN_SLIDER_sym = NULL;
 
 static void init_symset_sliderStyle(void) {
+  wxREGGLOB(sliderStyle_wxVERTICAL_sym);
   sliderStyle_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+  wxREGGLOB(sliderStyle_wxHORIZONTAL_sym);
   sliderStyle_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
+  wxREGGLOB(sliderStyle_wxPLAIN_SLIDER_sym);
   sliderStyle_wxPLAIN_SLIDER_sym = scheme_intern_symbol("plain");
 }
 
@@ -56,33 +59,6 @@ static int unbundle_symset_sliderStyle(Scheme_Object *v, const char *where) {
   if (SCHEME_NULLP(l)) return result;
   if (where) scheme_wrong_type(where, "sliderStyle symbol list", -1, 0, &v);
   return 0;
-}
-
-static int istype_symset_sliderStyle(Scheme_Object *v, const char *where) {
-  if (!sliderStyle_wxPLAIN_SLIDER_sym) init_symset_sliderStyle();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == sliderStyle_wxVERTICAL_sym) { ; }
-  else if (i == sliderStyle_wxHORIZONTAL_sym) { ; }
-  else if (i == sliderStyle_wxPLAIN_SLIDER_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
-  }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "sliderStyle symbol list", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_sliderStyle(int v) {
-  if (!sliderStyle_wxPLAIN_SLIDER_sym) init_symset_sliderStyle();
-  Scheme_Object *l = scheme_null;
-  if (v & wxVERTICAL) l = scheme_make_pair(sliderStyle_wxVERTICAL_sym, l);
-  if (v & wxHORIZONTAL) l = scheme_make_pair(sliderStyle_wxHORIZONTAL_sym, l);
-  if (v & wxPLAIN_SLIDER) l = scheme_make_pair(sliderStyle_wxPLAIN_SLIDER_sym, l);
-  return l;
 }
 
 

@@ -33,7 +33,7 @@
 
 @END
 
-@BEGINSYMBOLS family > ONE
+@BEGINSYMBOLS family > ONE > PRED
 @SYM "base" : wxBASE
 @SYM "default" : wxDEFAULT
 @SYM "decorative" : wxDECORATIVE
@@ -45,28 +45,28 @@
 @SYM "symbol" : wxSYMBOL
 @ENDSYMBOLS
 
-@BEGINSYMBOLS weight > ONE
+@BEGINSYMBOLS weight > ONE > PRED
 @SYM "base" : wxBASE
 @SYM "normal" : wxNORMAL
 @SYM "light" : wxLIGHT
 @SYM "bold" : wxBOLD
 @ENDSYMBOLS
 
-@BEGINSYMBOLS style > ONE
+@BEGINSYMBOLS style > ONE > PRED
 @SYM "base" : wxBASE
 @SYM "normal" : wxNORMAL
 @SYM "italic" : wxITALIC
 @SYM "slant" : wxSLANT
 @ENDSYMBOLS
 
-@BEGINSYMBOLS align > ONE
+@BEGINSYMBOLS align > ONE > PRED
 @SYM "base" : wxBASE
 @SYM "top" :  wxALIGN_TOP
 @SYM "bottom" : wxALIGN_BOTTOM
 @SYM "center" : wxALIGN_CENTER
 @ENDSYMBOLS
 
-@BEGINSYMBOLS changeNoArg > ONE
+@BEGINSYMBOLS changeNoArg > ONE > PRED BUNDLE
 @SYM "change-nothing" : wxCHANGE_NOTHING
 @SYM "change-normal" : wxCHANGE_NORMAL
 @SYM "change-bold" : wxCHANGE_BOLD
@@ -74,26 +74,26 @@
 @SYM "change-toggle-underline" : wxCHANGE_TOGGLE_UNDERLINE
 @SYM "change-normal-color" : wxCHANGE_NORMAL_COLOUR
 @ENDSYMBOLS
-@BEGINSYMBOLS changeFam > ONE
+@BEGINSYMBOLS changeFam > ONE > BUNDLE
 @SYM "change-family" : wxCHANGE_FAMILY
 @ENDSYMBOLS
-@BEGINSYMBOLS changeStyle > ONE
+@BEGINSYMBOLS changeStyle > ONE > BUNDLE
 @SYM "change-style" : wxCHANGE_STYLE
 @SYM "change-toggle-style" : wxCHANGE_TOGGLE_STYLE
 @ENDSYMBOLS
-@BEGINSYMBOLS changeWeight > ONE
+@BEGINSYMBOLS changeWeight > ONE > BUNDLE
 @SYM "change-weight" : wxCHANGE_WEIGHT
 @SYM "change-toggle-weight" : wxCHANGE_TOGGLE_WEIGHT
 @ENDSYMBOLS
-@BEGINSYMBOLS changeUnderline > ONE
+@BEGINSYMBOLS changeUnderline > ONE > BUNDLE
 @SYM "change-underline" : wxCHANGE_UNDERLINE
 @ENDSYMBOLS
-@BEGINSYMBOLS changeSize > ONE
+@BEGINSYMBOLS changeSize > ONE > BUNDLE
 @SYM "change-size" : wxCHANGE_SIZE
 @SYM "change-bigger" : wxCHANGE_BIGGER
 @SYM "change-smaller" : wxCHANGE_SMALLER
 @ENDSYMBOLS
-@BEGINSYMBOLS changeAlign > ONE
+@BEGINSYMBOLS changeAlign > ONE > BUNDLE
 @SYM "change-alignment" : wxCHANGE_ALIGNMENT
 @ENDSYMBOLS
 
@@ -128,7 +128,9 @@
 
 @CLASSID wxTYPE_STYLE_DELTA
 
-@ "set-delta" : wxStyleDelta! SetDelta(SYM[changeNoArg]=wxCHANGE_NOTHING,-int=0); <> no change argument
+@MACRO setX1Zero = x1 = 0;
+
+@ "set-delta" : wxStyleDelta! SetDelta(SYM[changeNoArg]=wxCHANGE_NOTHING,-int=0); : : /setX1Zero <> no change argument
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeFam],SYM[family]); <> family
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeStyle],SYM[style]); <> style
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeWeight],SYM[weight]); <> weight

@@ -94,13 +94,13 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 @END
 
 
-@BEGINSYMBOLS psMode > ONE
+@BEGINSYMBOLS psMode > ONE > PRED
 @SYM "preview" : PS_PREVIEW
 @SYM "file" : PS_FILE
 @SYM "printer" : PS_PRINTER
 @ENDSYMBOLS
 
-@BEGINSYMBOLS psOrientation > ONE
+@BEGINSYMBOLS psOrientation > ONE > PRED
 @SYM "portrait" : PS_PORTRAIT
 @SYM "landscape" : PS_LANDSCAPE
 @ENDSYMBOLS

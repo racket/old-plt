@@ -7,7 +7,7 @@
 
 @HEADER
 
-@BEGINSYMBOLS choiceStyle
+@BEGINSYMBOLS choiceStyle > > BUNDLE
 @ENDSYMBOLS
 
 

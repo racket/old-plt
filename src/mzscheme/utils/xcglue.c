@@ -90,6 +90,9 @@ Scheme_Object *objscheme_find_method(Scheme_Object *obj, Scheme_Object *sclass,
     Scheme_Object *s;
     s = scheme_intern_symbol(name);
     gdata = scheme_get_generic_data(sclass, s);
+#if defined(MZ_PRECISE_GC) || defined(USE_SENORA_GC)
+    scheme_regsiter_extension_global(cache, sizeof(void *));
+#endif
     *cache = (void *)gdata;
   }
 

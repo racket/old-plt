@@ -7,7 +7,7 @@
 
 @HEADER
 
-@BEGINSYMBOLS radioboxStyle
+@BEGINSYMBOLS radioboxStyle >  > PRED BUNDLE
 @SYM "vertical" : wxVERTICAL
 @SYM "horizontal" : wxHORIZONTAL
 @ENDSYMBOLS

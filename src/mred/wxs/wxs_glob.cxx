@@ -50,9 +50,13 @@ static Scheme_Object *fileSelMode_wxOVERWRITE_PROMPT_sym = NULL;
 static Scheme_Object *fileSelMode_wxHIDE_READONLY_sym = NULL;
 
 static void init_symset_fileSelMode(void) {
+  wxREGGLOB(fileSelMode_wxOPEN_sym);
   fileSelMode_wxOPEN_sym = scheme_intern_symbol("get");
+  wxREGGLOB(fileSelMode_wxSAVE_sym);
   fileSelMode_wxSAVE_sym = scheme_intern_symbol("put");
+  wxREGGLOB(fileSelMode_wxOVERWRITE_PROMPT_sym);
   fileSelMode_wxOVERWRITE_PROMPT_sym = scheme_intern_symbol("overwrite-prompt");
+  wxREGGLOB(fileSelMode_wxHIDE_READONLY_sym);
   fileSelMode_wxHIDE_READONLY_sym = scheme_intern_symbol("hide-readonly");
 }
 
@@ -65,28 +69,6 @@ static int unbundle_symset_fileSelMode(Scheme_Object *v, const char *where) {
   else if (v == fileSelMode_wxHIDE_READONLY_sym) { return wxHIDE_READONLY; }
   if (where) scheme_wrong_type(where, "fileSelMode symbol", -1, 0, &v);
   return 0;
-}
-
-static int istype_symset_fileSelMode(Scheme_Object *v, const char *where) {
-  if (!fileSelMode_wxHIDE_READONLY_sym) init_symset_fileSelMode();
-  if (0) { }
-  else if (v == fileSelMode_wxOPEN_sym) { return 1; }
-  else if (v == fileSelMode_wxSAVE_sym) { return 1; }
-  else if (v == fileSelMode_wxOVERWRITE_PROMPT_sym) { return 1; }
-  else if (v == fileSelMode_wxHIDE_READONLY_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "fileSelMode symbol", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_fileSelMode(int v) {
-  if (!fileSelMode_wxHIDE_READONLY_sym) init_symset_fileSelMode();
-  switch (v) {
-  case wxOPEN: return fileSelMode_wxOPEN_sym;
-  case wxSAVE: return fileSelMode_wxSAVE_sym;
-  case wxOVERWRITE_PROMPT: return fileSelMode_wxOVERWRITE_PROMPT_sym;
-  case wxHIDE_READONLY: return fileSelMode_wxHIDE_READONLY_sym;
-  default: return NULL;
-  }
 }
 
 

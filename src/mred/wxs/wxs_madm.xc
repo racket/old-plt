@@ -15,7 +15,7 @@
 @MACRO rFALSE = return FALSE;
 @MACRO rZERO = return 0;
 
-@BEGINSYMBOLS style
+@BEGINSYMBOLS style > > PRED BUNDLE
 @SYM "no-hscroll" : wxMCANVAS_NO_H_SCROLL
 @SYM "no-vscroll" : wxMCANVAS_NO_V_SCROLL
 @SYM "hide-hscroll" : wxMCANVAS_HIDE_H_SCROLL
@@ -23,8 +23,6 @@
 @ENDSYMBOLS
 
 @INCLUDE wxs_fcs.xci
-
-static int capo_propagate_exn = 0;
 
 static void *DoCAPOCallback(void *data)
 {

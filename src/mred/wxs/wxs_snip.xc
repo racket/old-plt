@@ -7,9 +7,9 @@
 
 @HEADER
 
-@INCLUDE wxs_fcs.xci
+@INCLUDE wxs_cret.xci
 
-@BEGINSYMBOLS flags
+@BEGINSYMBOLS flags > > PRED
 @SYM "can-append" : wxSNIP_CAN_APPEND
 @SYM "newline" : wxSNIP_NEWLINE
 @SYM "hard-newline" : wxSNIP_HARD_NEWLINE

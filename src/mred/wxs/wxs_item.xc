@@ -25,7 +25,7 @@
 
 @END
 
-@BEGINSYMBOLS messageStyle
+@BEGINSYMBOLS messageStyle > > BUNDLE
 @ENDSYMBOLS
 
 @CLASSBASE wxMessage "message" : "item"

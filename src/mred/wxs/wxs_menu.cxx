@@ -28,7 +28,13 @@
 
 
 
-static void menuSelect(wxMenu *m)
+#ifdef wx_msw
+# define XTMAC_UNUSED(x) /x
+#else
+# define XTMAC_UNUSED(x) /**/
+#endif
+
+static void menuSelect(wxMenu *XTMAC_UNUSED(m))
 {
 #ifdef wx_msw
   m->SelectMenu();

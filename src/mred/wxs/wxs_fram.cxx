@@ -56,10 +56,15 @@ static Scheme_Object *frameStyle_wxNO_SYSTEM_MENU_sym = NULL;
 static Scheme_Object *frameStyle_wxNO_RESIZE_BORDER_sym = NULL;
 
 static void init_symset_frameStyle(void) {
+  wxREGGLOB(frameStyle_wxNO_CAPTION_sym);
   frameStyle_wxNO_CAPTION_sym = scheme_intern_symbol("no-caption");
+  wxREGGLOB(frameStyle_wxMDI_PARENT_sym);
   frameStyle_wxMDI_PARENT_sym = scheme_intern_symbol("mdi-parent");
+  wxREGGLOB(frameStyle_wxMDI_CHILD_sym);
   frameStyle_wxMDI_CHILD_sym = scheme_intern_symbol("mdi-child");
+  wxREGGLOB(frameStyle_wxNO_SYSTEM_MENU_sym);
   frameStyle_wxNO_SYSTEM_MENU_sym = scheme_intern_symbol("no-system-menu");
+  wxREGGLOB(frameStyle_wxNO_RESIZE_BORDER_sym);
   frameStyle_wxNO_RESIZE_BORDER_sym = scheme_intern_symbol("no-resize-border");
 }
 
@@ -83,45 +88,17 @@ static int unbundle_symset_frameStyle(Scheme_Object *v, const char *where) {
   return 0;
 }
 
-static int istype_symset_frameStyle(Scheme_Object *v, const char *where) {
-  if (!frameStyle_wxNO_RESIZE_BORDER_sym) init_symset_frameStyle();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == frameStyle_wxNO_CAPTION_sym) { ; }
-  else if (i == frameStyle_wxMDI_PARENT_sym) { ; }
-  else if (i == frameStyle_wxMDI_CHILD_sym) { ; }
-  else if (i == frameStyle_wxNO_SYSTEM_MENU_sym) { ; }
-  else if (i == frameStyle_wxNO_RESIZE_BORDER_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
-  }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "frameStyle symbol list", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_frameStyle(int v) {
-  if (!frameStyle_wxNO_RESIZE_BORDER_sym) init_symset_frameStyle();
-  Scheme_Object *l = scheme_null;
-  if (v & wxNO_CAPTION) l = scheme_make_pair(frameStyle_wxNO_CAPTION_sym, l);
-  if (v & wxMDI_PARENT) l = scheme_make_pair(frameStyle_wxMDI_PARENT_sym, l);
-  if (v & wxMDI_CHILD) l = scheme_make_pair(frameStyle_wxMDI_CHILD_sym, l);
-  if (v & wxNO_SYSTEM_MENU) l = scheme_make_pair(frameStyle_wxNO_SYSTEM_MENU_sym, l);
-  if (v & wxNO_RESIZE_BORDER) l = scheme_make_pair(frameStyle_wxNO_RESIZE_BORDER_sym, l);
-  return l;
-}
-
 
 static Scheme_Object *iconKind_0_sym = NULL;
 static Scheme_Object *iconKind_1_sym = NULL;
 static Scheme_Object *iconKind_2_sym = NULL;
 
 static void init_symset_iconKind(void) {
+  wxREGGLOB(iconKind_0_sym);
   iconKind_0_sym = scheme_intern_symbol("both");
+  wxREGGLOB(iconKind_1_sym);
   iconKind_1_sym = scheme_intern_symbol("small");
+  wxREGGLOB(iconKind_2_sym);
   iconKind_2_sym = scheme_intern_symbol("large");
 }
 
@@ -135,28 +112,14 @@ static int unbundle_symset_iconKind(Scheme_Object *v, const char *where) {
   return 0;
 }
 
-static int istype_symset_iconKind(Scheme_Object *v, const char *where) {
-  if (!iconKind_2_sym) init_symset_iconKind();
-  if (0) { }
-  else if (v == iconKind_0_sym) { return 1; }
-  else if (v == iconKind_1_sym) { return 1; }
-  else if (v == iconKind_2_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "iconKind symbol", -1, 0, &v);
-  return 0;
-}
 
-static Scheme_Object *bundle_symset_iconKind(int v) {
-  if (!iconKind_2_sym) init_symset_iconKind();
-  switch (v) {
-  case 0: return iconKind_0_sym;
-  case 1: return iconKind_1_sym;
-  case 2: return iconKind_2_sym;
-  default: return NULL;
-  }
-}
+#ifdef wx_msw
+# define XTMAC_UNUSED(x) /x
+#else
+# define XTMAC_UNUSED(x) /**/
+#endif
 
-
-static void frameMenu(wxFrame *f)
+static void frameMenu(wxFrame *XTMAC_UNUSED(f))
 {
 #ifdef wx_msw
   f->SystemMenu();

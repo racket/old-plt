@@ -52,13 +52,13 @@ static int wxSchemeWindowGetY(wxWindow *w)
   return y;
 }
 
-@BEGINSYMBOLS sizeMode > ONE
+@BEGINSYMBOLS sizeMode > ONE > PRED BUNDLE
 @SYM "auto" : wxSIZE_AUTO
 @SYM "use-exsiting" : wxSIZE_USE_EXISTING
 @SYM "use-minus-one" : wxPOS_USE_MINUS_ONE
 @ENDSYMBOLS
 
-@BEGINSYMBOLS direction > ONE
+@BEGINSYMBOLS direction > ONE > PRED BUNDLE
 @SYM "both" : wxBOTH
 @SYM "vertical" : wxVERTICAL
 @SYM "horizontal" : wxHORIZONTAL

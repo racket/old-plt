@@ -181,15 +181,25 @@ static Scheme_Object *actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym = NULL;
 static Scheme_Object *actionType_wxEVENT_TYPE_MENU_SELECT_sym = NULL;
 
 static void init_symset_actionType(void) {
+  wxREGGLOB(actionType_wxEVENT_TYPE_BUTTON_COMMAND_sym);
   actionType_wxEVENT_TYPE_BUTTON_COMMAND_sym = scheme_intern_symbol("button");
+  wxREGGLOB(actionType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym);
   actionType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym = scheme_intern_symbol("check-box");
+  wxREGGLOB(actionType_wxEVENT_TYPE_CHOICE_COMMAND_sym);
   actionType_wxEVENT_TYPE_CHOICE_COMMAND_sym = scheme_intern_symbol("choice");
+  wxREGGLOB(actionType_wxEVENT_TYPE_LISTBOX_COMMAND_sym);
   actionType_wxEVENT_TYPE_LISTBOX_COMMAND_sym = scheme_intern_symbol("list-box");
+  wxREGGLOB(actionType_wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND_sym);
   actionType_wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND_sym = scheme_intern_symbol("list-box-dclick");
+  wxREGGLOB(actionType_wxEVENT_TYPE_TEXT_COMMAND_sym);
   actionType_wxEVENT_TYPE_TEXT_COMMAND_sym = scheme_intern_symbol("text-field");
+  wxREGGLOB(actionType_wxEVENT_TYPE_SLIDER_COMMAND_sym);
   actionType_wxEVENT_TYPE_SLIDER_COMMAND_sym = scheme_intern_symbol("slider");
+  wxREGGLOB(actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym);
   actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym = scheme_intern_symbol("radio-box");
+  wxREGGLOB(actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym);
   actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym = scheme_intern_symbol("text-field-enter");
+  wxREGGLOB(actionType_wxEVENT_TYPE_MENU_SELECT_sym);
   actionType_wxEVENT_TYPE_MENU_SELECT_sym = scheme_intern_symbol("menu");
 }
 
@@ -206,23 +216,6 @@ static int unbundle_symset_actionType(Scheme_Object *v, const char *where) {
   else if (v == actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym) { return wxEVENT_TYPE_RADIOBOX_COMMAND; }
   else if (v == actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym) { return wxEVENT_TYPE_TEXT_ENTER_COMMAND; }
   else if (v == actionType_wxEVENT_TYPE_MENU_SELECT_sym) { return wxEVENT_TYPE_MENU_SELECT; }
-  if (where) scheme_wrong_type(where, "actionType symbol", -1, 0, &v);
-  return 0;
-}
-
-static int istype_symset_actionType(Scheme_Object *v, const char *where) {
-  if (!actionType_wxEVENT_TYPE_MENU_SELECT_sym) init_symset_actionType();
-  if (0) { }
-  else if (v == actionType_wxEVENT_TYPE_BUTTON_COMMAND_sym) { return 1; }
-  else if (v == actionType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym) { return 1; }
-  else if (v == actionType_wxEVENT_TYPE_CHOICE_COMMAND_sym) { return 1; }
-  else if (v == actionType_wxEVENT_TYPE_LISTBOX_COMMAND_sym) { return 1; }
-  else if (v == actionType_wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND_sym) { return 1; }
-  else if (v == actionType_wxEVENT_TYPE_TEXT_COMMAND_sym) { return 1; }
-  else if (v == actionType_wxEVENT_TYPE_SLIDER_COMMAND_sym) { return 1; }
-  else if (v == actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym) { return 1; }
-  else if (v == actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym) { return 1; }
-  else if (v == actionType_wxEVENT_TYPE_MENU_SELECT_sym) { return 1; }
   if (where) scheme_wrong_type(where, "actionType symbol", -1, 0, &v);
   return 0;
 }
@@ -541,12 +534,19 @@ static Scheme_Object *scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym = NULL;
 static Scheme_Object *scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym = NULL;
 
 static void init_symset_scrollMoveType(void) {
+  wxREGGLOB(scrollMoveType_wxEVENT_TYPE_SCROLL_TOP_sym);
   scrollMoveType_wxEVENT_TYPE_SCROLL_TOP_sym = scheme_intern_symbol("top");
+  wxREGGLOB(scrollMoveType_wxEVENT_TYPE_SCROLL_BOTTOM_sym);
   scrollMoveType_wxEVENT_TYPE_SCROLL_BOTTOM_sym = scheme_intern_symbol("bottom");
+  wxREGGLOB(scrollMoveType_wxEVENT_TYPE_SCROLL_LINEUP_sym);
   scrollMoveType_wxEVENT_TYPE_SCROLL_LINEUP_sym = scheme_intern_symbol("line-up");
+  wxREGGLOB(scrollMoveType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym);
   scrollMoveType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym = scheme_intern_symbol("line-down");
+  wxREGGLOB(scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEUP_sym);
   scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEUP_sym = scheme_intern_symbol("page-up");
+  wxREGGLOB(scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym);
   scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym = scheme_intern_symbol("page-down");
+  wxREGGLOB(scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym);
   scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym = scheme_intern_symbol("thumb");
 }
 
@@ -560,20 +560,6 @@ static int unbundle_symset_scrollMoveType(Scheme_Object *v, const char *where) {
   else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEUP_sym) { return wxEVENT_TYPE_SCROLL_PAGEUP; }
   else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym) { return wxEVENT_TYPE_SCROLL_PAGEDOWN; }
   else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) { return wxEVENT_TYPE_SCROLL_THUMBTRACK; }
-  if (where) scheme_wrong_type(where, "scrollMoveType symbol", -1, 0, &v);
-  return 0;
-}
-
-static int istype_symset_scrollMoveType(Scheme_Object *v, const char *where) {
-  if (!scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) init_symset_scrollMoveType();
-  if (0) { }
-  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_TOP_sym) { return 1; }
-  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_BOTTOM_sym) { return 1; }
-  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_LINEUP_sym) { return 1; }
-  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym) { return 1; }
-  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEUP_sym) { return 1; }
-  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym) { return 1; }
-  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) { return 1; }
   if (where) scheme_wrong_type(where, "scrollMoveType symbol", -1, 0, &v);
   return 0;
 }
@@ -598,7 +584,9 @@ static Scheme_Object *orientation_wxVERTICAL_sym = NULL;
 static Scheme_Object *orientation_wxHORIZONTAL_sym = NULL;
 
 static void init_symset_orientation(void) {
+  wxREGGLOB(orientation_wxVERTICAL_sym);
   orientation_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+  wxREGGLOB(orientation_wxHORIZONTAL_sym);
   orientation_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
 }
 
@@ -607,15 +595,6 @@ static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == orientation_wxVERTICAL_sym) { return wxVERTICAL; }
   else if (v == orientation_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
-  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
-  return 0;
-}
-
-static int istype_symset_orientation(Scheme_Object *v, const char *where) {
-  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
-  if (0) { }
-  else if (v == orientation_wxVERTICAL_sym) { return 1; }
-  else if (v == orientation_wxHORIZONTAL_sym) { return 1; }
   if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
   return 0;
 }
@@ -904,71 +883,137 @@ static Scheme_Object *keyCode_WXK_NUMLOCK_sym = NULL;
 static Scheme_Object *keyCode_WXK_SCROLL_sym = NULL;
 
 static void init_symset_keyCode(void) {
+  wxREGGLOB(keyCode_WXK_ESCAPE_sym);
   keyCode_WXK_ESCAPE_sym = scheme_intern_symbol("escape");
+  wxREGGLOB(keyCode_WXK_START_sym);
   keyCode_WXK_START_sym = scheme_intern_symbol("start");
+  wxREGGLOB(keyCode_WXK_CANCEL_sym);
   keyCode_WXK_CANCEL_sym = scheme_intern_symbol("cancel");
+  wxREGGLOB(keyCode_WXK_CLEAR_sym);
   keyCode_WXK_CLEAR_sym = scheme_intern_symbol("clear");
+  wxREGGLOB(keyCode_WXK_SHIFT_sym);
   keyCode_WXK_SHIFT_sym = scheme_intern_symbol("shift");
+  wxREGGLOB(keyCode_WXK_CONTROL_sym);
   keyCode_WXK_CONTROL_sym = scheme_intern_symbol("control");
+  wxREGGLOB(keyCode_WXK_MENU_sym);
   keyCode_WXK_MENU_sym = scheme_intern_symbol("menu");
+  wxREGGLOB(keyCode_WXK_PAUSE_sym);
   keyCode_WXK_PAUSE_sym = scheme_intern_symbol("pause");
+  wxREGGLOB(keyCode_WXK_CAPITAL_sym);
   keyCode_WXK_CAPITAL_sym = scheme_intern_symbol("capital");
+  wxREGGLOB(keyCode_WXK_PRIOR_sym);
   keyCode_WXK_PRIOR_sym = scheme_intern_symbol("prior");
+  wxREGGLOB(keyCode_WXK_NEXT_sym);
   keyCode_WXK_NEXT_sym = scheme_intern_symbol("next");
+  wxREGGLOB(keyCode_WXK_END_sym);
   keyCode_WXK_END_sym = scheme_intern_symbol("end");
+  wxREGGLOB(keyCode_WXK_HOME_sym);
   keyCode_WXK_HOME_sym = scheme_intern_symbol("home");
+  wxREGGLOB(keyCode_WXK_LEFT_sym);
   keyCode_WXK_LEFT_sym = scheme_intern_symbol("left");
+  wxREGGLOB(keyCode_WXK_UP_sym);
   keyCode_WXK_UP_sym = scheme_intern_symbol("up");
+  wxREGGLOB(keyCode_WXK_RIGHT_sym);
   keyCode_WXK_RIGHT_sym = scheme_intern_symbol("right");
+  wxREGGLOB(keyCode_WXK_DOWN_sym);
   keyCode_WXK_DOWN_sym = scheme_intern_symbol("down");
+  wxREGGLOB(keyCode_WXK_SELECT_sym);
   keyCode_WXK_SELECT_sym = scheme_intern_symbol("select");
+  wxREGGLOB(keyCode_WXK_PRINT_sym);
   keyCode_WXK_PRINT_sym = scheme_intern_symbol("print");
+  wxREGGLOB(keyCode_WXK_EXECUTE_sym);
   keyCode_WXK_EXECUTE_sym = scheme_intern_symbol("execute");
+  wxREGGLOB(keyCode_WXK_SNAPSHOT_sym);
   keyCode_WXK_SNAPSHOT_sym = scheme_intern_symbol("snapshot");
+  wxREGGLOB(keyCode_WXK_INSERT_sym);
   keyCode_WXK_INSERT_sym = scheme_intern_symbol("insert");
+  wxREGGLOB(keyCode_WXK_HELP_sym);
   keyCode_WXK_HELP_sym = scheme_intern_symbol("help");
+  wxREGGLOB(keyCode_WXK_NUMPAD0_sym);
   keyCode_WXK_NUMPAD0_sym = scheme_intern_symbol("numpad0");
+  wxREGGLOB(keyCode_WXK_NUMPAD1_sym);
   keyCode_WXK_NUMPAD1_sym = scheme_intern_symbol("numpad1");
+  wxREGGLOB(keyCode_WXK_NUMPAD2_sym);
   keyCode_WXK_NUMPAD2_sym = scheme_intern_symbol("numpad2");
+  wxREGGLOB(keyCode_WXK_NUMPAD3_sym);
   keyCode_WXK_NUMPAD3_sym = scheme_intern_symbol("numpad3");
+  wxREGGLOB(keyCode_WXK_NUMPAD4_sym);
   keyCode_WXK_NUMPAD4_sym = scheme_intern_symbol("numpad4");
+  wxREGGLOB(keyCode_WXK_NUMPAD5_sym);
   keyCode_WXK_NUMPAD5_sym = scheme_intern_symbol("numpad5");
+  wxREGGLOB(keyCode_WXK_NUMPAD6_sym);
   keyCode_WXK_NUMPAD6_sym = scheme_intern_symbol("numpad6");
+  wxREGGLOB(keyCode_WXK_NUMPAD7_sym);
   keyCode_WXK_NUMPAD7_sym = scheme_intern_symbol("numpad7");
+  wxREGGLOB(keyCode_WXK_NUMPAD8_sym);
   keyCode_WXK_NUMPAD8_sym = scheme_intern_symbol("numpad8");
+  wxREGGLOB(keyCode_WXK_NUMPAD9_sym);
   keyCode_WXK_NUMPAD9_sym = scheme_intern_symbol("numpad9");
+  wxREGGLOB(keyCode_3_sym);
   keyCode_3_sym = scheme_intern_symbol("numpad-enter");
+  wxREGGLOB(keyCode_WXK_MULTIPLY_sym);
   keyCode_WXK_MULTIPLY_sym = scheme_intern_symbol("multiply");
+  wxREGGLOB(keyCode_WXK_ADD_sym);
   keyCode_WXK_ADD_sym = scheme_intern_symbol("add");
+  wxREGGLOB(keyCode_WXK_SEPARATOR_sym);
   keyCode_WXK_SEPARATOR_sym = scheme_intern_symbol("separator");
+  wxREGGLOB(keyCode_WXK_SUBTRACT_sym);
   keyCode_WXK_SUBTRACT_sym = scheme_intern_symbol("subtract");
+  wxREGGLOB(keyCode_WXK_DECIMAL_sym);
   keyCode_WXK_DECIMAL_sym = scheme_intern_symbol("decimal");
+  wxREGGLOB(keyCode_WXK_DIVIDE_sym);
   keyCode_WXK_DIVIDE_sym = scheme_intern_symbol("divide");
+  wxREGGLOB(keyCode_WXK_F1_sym);
   keyCode_WXK_F1_sym = scheme_intern_symbol("f1");
+  wxREGGLOB(keyCode_WXK_F2_sym);
   keyCode_WXK_F2_sym = scheme_intern_symbol("f2");
+  wxREGGLOB(keyCode_WXK_F3_sym);
   keyCode_WXK_F3_sym = scheme_intern_symbol("f3");
+  wxREGGLOB(keyCode_WXK_F4_sym);
   keyCode_WXK_F4_sym = scheme_intern_symbol("f4");
+  wxREGGLOB(keyCode_WXK_F5_sym);
   keyCode_WXK_F5_sym = scheme_intern_symbol("f5");
+  wxREGGLOB(keyCode_WXK_F6_sym);
   keyCode_WXK_F6_sym = scheme_intern_symbol("f6");
+  wxREGGLOB(keyCode_WXK_F7_sym);
   keyCode_WXK_F7_sym = scheme_intern_symbol("f7");
+  wxREGGLOB(keyCode_WXK_F8_sym);
   keyCode_WXK_F8_sym = scheme_intern_symbol("f8");
+  wxREGGLOB(keyCode_WXK_F9_sym);
   keyCode_WXK_F9_sym = scheme_intern_symbol("f9");
+  wxREGGLOB(keyCode_WXK_F10_sym);
   keyCode_WXK_F10_sym = scheme_intern_symbol("f10");
+  wxREGGLOB(keyCode_WXK_F11_sym);
   keyCode_WXK_F11_sym = scheme_intern_symbol("f11");
+  wxREGGLOB(keyCode_WXK_F12_sym);
   keyCode_WXK_F12_sym = scheme_intern_symbol("f12");
+  wxREGGLOB(keyCode_WXK_F13_sym);
   keyCode_WXK_F13_sym = scheme_intern_symbol("f13");
+  wxREGGLOB(keyCode_WXK_F14_sym);
   keyCode_WXK_F14_sym = scheme_intern_symbol("f14");
+  wxREGGLOB(keyCode_WXK_F15_sym);
   keyCode_WXK_F15_sym = scheme_intern_symbol("f15");
+  wxREGGLOB(keyCode_WXK_F16_sym);
   keyCode_WXK_F16_sym = scheme_intern_symbol("f16");
+  wxREGGLOB(keyCode_WXK_F17_sym);
   keyCode_WXK_F17_sym = scheme_intern_symbol("f17");
+  wxREGGLOB(keyCode_WXK_F18_sym);
   keyCode_WXK_F18_sym = scheme_intern_symbol("f18");
+  wxREGGLOB(keyCode_WXK_F19_sym);
   keyCode_WXK_F19_sym = scheme_intern_symbol("f19");
+  wxREGGLOB(keyCode_WXK_F20_sym);
   keyCode_WXK_F20_sym = scheme_intern_symbol("f20");
+  wxREGGLOB(keyCode_WXK_F21_sym);
   keyCode_WXK_F21_sym = scheme_intern_symbol("f21");
+  wxREGGLOB(keyCode_WXK_F22_sym);
   keyCode_WXK_F22_sym = scheme_intern_symbol("f22");
+  wxREGGLOB(keyCode_WXK_F23_sym);
   keyCode_WXK_F23_sym = scheme_intern_symbol("f23");
+  wxREGGLOB(keyCode_WXK_F24_sym);
   keyCode_WXK_F24_sym = scheme_intern_symbol("f24");
+  wxREGGLOB(keyCode_WXK_NUMLOCK_sym);
   keyCode_WXK_NUMLOCK_sym = scheme_intern_symbol("numlock");
+  wxREGGLOB(keyCode_WXK_SCROLL_sym);
   keyCode_WXK_SCROLL_sym = scheme_intern_symbol("scroll");
 }
 
@@ -1042,80 +1087,6 @@ static int unbundle_symset_keyCode(Scheme_Object *v, const char *where) {
   else if (v == keyCode_WXK_F24_sym) { return WXK_F24; }
   else if (v == keyCode_WXK_NUMLOCK_sym) { return WXK_NUMLOCK; }
   else if (v == keyCode_WXK_SCROLL_sym) { return WXK_SCROLL; }
-  if (where) scheme_wrong_type(where, "keyCode symbol", -1, 0, &v);
-  return 0;
-}
-
-static int istype_symset_keyCode(Scheme_Object *v, const char *where) {
-  if (!keyCode_WXK_SCROLL_sym) init_symset_keyCode();
-  if (0) { }
-  else if (SCHEME_CHARP(v)) { return 1; }
-  else if (v == keyCode_WXK_ESCAPE_sym) { return 1; }
-  else if (v == keyCode_WXK_START_sym) { return 1; }
-  else if (v == keyCode_WXK_CANCEL_sym) { return 1; }
-  else if (v == keyCode_WXK_CLEAR_sym) { return 1; }
-  else if (v == keyCode_WXK_SHIFT_sym) { return 1; }
-  else if (v == keyCode_WXK_CONTROL_sym) { return 1; }
-  else if (v == keyCode_WXK_MENU_sym) { return 1; }
-  else if (v == keyCode_WXK_PAUSE_sym) { return 1; }
-  else if (v == keyCode_WXK_CAPITAL_sym) { return 1; }
-  else if (v == keyCode_WXK_PRIOR_sym) { return 1; }
-  else if (v == keyCode_WXK_NEXT_sym) { return 1; }
-  else if (v == keyCode_WXK_END_sym) { return 1; }
-  else if (v == keyCode_WXK_HOME_sym) { return 1; }
-  else if (v == keyCode_WXK_LEFT_sym) { return 1; }
-  else if (v == keyCode_WXK_UP_sym) { return 1; }
-  else if (v == keyCode_WXK_RIGHT_sym) { return 1; }
-  else if (v == keyCode_WXK_DOWN_sym) { return 1; }
-  else if (v == keyCode_WXK_SELECT_sym) { return 1; }
-  else if (v == keyCode_WXK_PRINT_sym) { return 1; }
-  else if (v == keyCode_WXK_EXECUTE_sym) { return 1; }
-  else if (v == keyCode_WXK_SNAPSHOT_sym) { return 1; }
-  else if (v == keyCode_WXK_INSERT_sym) { return 1; }
-  else if (v == keyCode_WXK_HELP_sym) { return 1; }
-  else if (v == keyCode_WXK_NUMPAD0_sym) { return 1; }
-  else if (v == keyCode_WXK_NUMPAD1_sym) { return 1; }
-  else if (v == keyCode_WXK_NUMPAD2_sym) { return 1; }
-  else if (v == keyCode_WXK_NUMPAD3_sym) { return 1; }
-  else if (v == keyCode_WXK_NUMPAD4_sym) { return 1; }
-  else if (v == keyCode_WXK_NUMPAD5_sym) { return 1; }
-  else if (v == keyCode_WXK_NUMPAD6_sym) { return 1; }
-  else if (v == keyCode_WXK_NUMPAD7_sym) { return 1; }
-  else if (v == keyCode_WXK_NUMPAD8_sym) { return 1; }
-  else if (v == keyCode_WXK_NUMPAD9_sym) { return 1; }
-  else if (v == keyCode_3_sym) { return 1; }
-  else if (v == keyCode_WXK_MULTIPLY_sym) { return 1; }
-  else if (v == keyCode_WXK_ADD_sym) { return 1; }
-  else if (v == keyCode_WXK_SEPARATOR_sym) { return 1; }
-  else if (v == keyCode_WXK_SUBTRACT_sym) { return 1; }
-  else if (v == keyCode_WXK_DECIMAL_sym) { return 1; }
-  else if (v == keyCode_WXK_DIVIDE_sym) { return 1; }
-  else if (v == keyCode_WXK_F1_sym) { return 1; }
-  else if (v == keyCode_WXK_F2_sym) { return 1; }
-  else if (v == keyCode_WXK_F3_sym) { return 1; }
-  else if (v == keyCode_WXK_F4_sym) { return 1; }
-  else if (v == keyCode_WXK_F5_sym) { return 1; }
-  else if (v == keyCode_WXK_F6_sym) { return 1; }
-  else if (v == keyCode_WXK_F7_sym) { return 1; }
-  else if (v == keyCode_WXK_F8_sym) { return 1; }
-  else if (v == keyCode_WXK_F9_sym) { return 1; }
-  else if (v == keyCode_WXK_F10_sym) { return 1; }
-  else if (v == keyCode_WXK_F11_sym) { return 1; }
-  else if (v == keyCode_WXK_F12_sym) { return 1; }
-  else if (v == keyCode_WXK_F13_sym) { return 1; }
-  else if (v == keyCode_WXK_F14_sym) { return 1; }
-  else if (v == keyCode_WXK_F15_sym) { return 1; }
-  else if (v == keyCode_WXK_F16_sym) { return 1; }
-  else if (v == keyCode_WXK_F17_sym) { return 1; }
-  else if (v == keyCode_WXK_F18_sym) { return 1; }
-  else if (v == keyCode_WXK_F19_sym) { return 1; }
-  else if (v == keyCode_WXK_F20_sym) { return 1; }
-  else if (v == keyCode_WXK_F21_sym) { return 1; }
-  else if (v == keyCode_WXK_F22_sym) { return 1; }
-  else if (v == keyCode_WXK_F23_sym) { return 1; }
-  else if (v == keyCode_WXK_F24_sym) { return 1; }
-  else if (v == keyCode_WXK_NUMLOCK_sym) { return 1; }
-  else if (v == keyCode_WXK_SCROLL_sym) { return 1; }
   if (where) scheme_wrong_type(where, "keyCode symbol", -1, 0, &v);
   return 0;
 }
@@ -1540,14 +1511,23 @@ static Scheme_Object *mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym = NULL;
 static Scheme_Object *mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym = NULL;
 
 static void init_symset_mouseEventType(void) {
+  wxREGGLOB(mouseEventType_wxEVENT_TYPE_LEFT_DOWN_sym);
   mouseEventType_wxEVENT_TYPE_LEFT_DOWN_sym = scheme_intern_symbol("left-down");
+  wxREGGLOB(mouseEventType_wxEVENT_TYPE_LEFT_UP_sym);
   mouseEventType_wxEVENT_TYPE_LEFT_UP_sym = scheme_intern_symbol("left-up");
+  wxREGGLOB(mouseEventType_wxEVENT_TYPE_MIDDLE_DOWN_sym);
   mouseEventType_wxEVENT_TYPE_MIDDLE_DOWN_sym = scheme_intern_symbol("middle-down");
+  wxREGGLOB(mouseEventType_wxEVENT_TYPE_MIDDLE_UP_sym);
   mouseEventType_wxEVENT_TYPE_MIDDLE_UP_sym = scheme_intern_symbol("middle-up");
+  wxREGGLOB(mouseEventType_wxEVENT_TYPE_RIGHT_DOWN_sym);
   mouseEventType_wxEVENT_TYPE_RIGHT_DOWN_sym = scheme_intern_symbol("right-down");
+  wxREGGLOB(mouseEventType_wxEVENT_TYPE_RIGHT_UP_sym);
   mouseEventType_wxEVENT_TYPE_RIGHT_UP_sym = scheme_intern_symbol("right-up");
+  wxREGGLOB(mouseEventType_wxEVENT_TYPE_MOTION_sym);
   mouseEventType_wxEVENT_TYPE_MOTION_sym = scheme_intern_symbol("motion");
+  wxREGGLOB(mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym);
   mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym = scheme_intern_symbol("enter");
+  wxREGGLOB(mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym);
   mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym = scheme_intern_symbol("leave");
 }
 
@@ -1563,22 +1543,6 @@ static int unbundle_symset_mouseEventType(Scheme_Object *v, const char *where) {
   else if (v == mouseEventType_wxEVENT_TYPE_MOTION_sym) { return wxEVENT_TYPE_MOTION; }
   else if (v == mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym) { return wxEVENT_TYPE_ENTER_WINDOW; }
   else if (v == mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym) { return wxEVENT_TYPE_LEAVE_WINDOW; }
-  if (where) scheme_wrong_type(where, "mouseEventType symbol", -1, 0, &v);
-  return 0;
-}
-
-static int istype_symset_mouseEventType(Scheme_Object *v, const char *where) {
-  if (!mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym) init_symset_mouseEventType();
-  if (0) { }
-  else if (v == mouseEventType_wxEVENT_TYPE_LEFT_DOWN_sym) { return 1; }
-  else if (v == mouseEventType_wxEVENT_TYPE_LEFT_UP_sym) { return 1; }
-  else if (v == mouseEventType_wxEVENT_TYPE_MIDDLE_DOWN_sym) { return 1; }
-  else if (v == mouseEventType_wxEVENT_TYPE_MIDDLE_UP_sym) { return 1; }
-  else if (v == mouseEventType_wxEVENT_TYPE_RIGHT_DOWN_sym) { return 1; }
-  else if (v == mouseEventType_wxEVENT_TYPE_RIGHT_UP_sym) { return 1; }
-  else if (v == mouseEventType_wxEVENT_TYPE_MOTION_sym) { return 1; }
-  else if (v == mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym) { return 1; }
-  else if (v == mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym) { return 1; }
   if (where) scheme_wrong_type(where, "mouseEventType symbol", -1, 0, &v);
   return 0;
 }
@@ -1607,9 +1571,13 @@ static Scheme_Object *buttonId_2_sym = NULL;
 static Scheme_Object *buttonId_3_sym = NULL;
 
 static void init_symset_buttonId(void) {
+  wxREGGLOB(buttonId_NEGATIVE_ONE_sym);
   buttonId_NEGATIVE_ONE_sym = scheme_intern_symbol("any");
+  wxREGGLOB(buttonId_1_sym);
   buttonId_1_sym = scheme_intern_symbol("left");
+  wxREGGLOB(buttonId_2_sym);
   buttonId_2_sym = scheme_intern_symbol("middle");
+  wxREGGLOB(buttonId_3_sym);
   buttonId_3_sym = scheme_intern_symbol("right");
 }
 
@@ -1622,28 +1590,6 @@ static int unbundle_symset_buttonId(Scheme_Object *v, const char *where) {
   else if (v == buttonId_3_sym) { return 3; }
   if (where) scheme_wrong_type(where, "buttonId symbol", -1, 0, &v);
   return 0;
-}
-
-static int istype_symset_buttonId(Scheme_Object *v, const char *where) {
-  if (!buttonId_3_sym) init_symset_buttonId();
-  if (0) { }
-  else if (v == buttonId_NEGATIVE_ONE_sym) { return 1; }
-  else if (v == buttonId_1_sym) { return 1; }
-  else if (v == buttonId_2_sym) { return 1; }
-  else if (v == buttonId_3_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "buttonId symbol", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_buttonId(int v) {
-  if (!buttonId_3_sym) init_symset_buttonId();
-  switch (v) {
-  case NEGATIVE_ONE: return buttonId_NEGATIVE_ONE_sym;
-  case 1: return buttonId_1_sym;
-  case 2: return buttonId_2_sym;
-  case 3: return buttonId_3_sym;
-  default: return NULL;
-  }
 }
 
 

@@ -1,5 +1,5 @@
 
-@BEGINSYMBOLS editOp > ONE
+@BEGINSYMBOLS editOp > ONE > PRED
 @SYM "undo" : wxEDIT_UNDO
 @SYM "redo" : wxEDIT_REDO
 @SYM "clear" : wxEDIT_CLEAR

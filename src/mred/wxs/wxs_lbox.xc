@@ -23,13 +23,13 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
   return cdr;
 }
 
-@BEGINSYMBOLS kind > ONE
+@BEGINSYMBOLS kind > ONE > PRED BUNDLE
 @SYM "single" : wxSINGLE       
 @SYM "multiple" : wxMULTIPLE     
 @SYM "extended" : wxEXTENDED     
 @ENDSYMBOLS
 
-@BEGINSYMBOLS style
+@BEGINSYMBOLS style > > PRED BUNDLE
 @SYM "always-vscroll" : wxALWAYS_SB    
 @SYM "hscroll" : wxHSCROLL
 @ENDSYMBOLS

@@ -15,7 +15,7 @@
 
 @END
 
-@BEGINSYMBOLS actionType > ONE
+@BEGINSYMBOLS actionType > ONE > PRED
 @SYM "button" : wxEVENT_TYPE_BUTTON_COMMAND
 @SYM "check-box" : wxEVENT_TYPE_CHECKBOX_COMMAND
 @SYM "choice" : wxEVENT_TYPE_CHOICE_COMMAND
@@ -47,7 +47,7 @@
 
 @END
 
-@BEGINSYMBOLS scrollMoveType > ONE
+@BEGINSYMBOLS scrollMoveType > ONE > PRED
 @SYM "top" : wxEVENT_TYPE_SCROLL_TOP
 @SYM "bottom" : wxEVENT_TYPE_SCROLL_BOTTOM
 @SYM "line-up" : wxEVENT_TYPE_SCROLL_LINEUP
@@ -70,7 +70,7 @@
 @END
 
 
-@BEGINSYMBOLS keyCode > ONE/CHAR
+@BEGINSYMBOLS keyCode > ONE/CHAR > PRED
 @SYM "escape" : WXK_ESCAPE
 @SYM "start" : WXK_START
 @SYM "cancel" : WXK_CANCEL
@@ -155,7 +155,7 @@
 
 @END
 
-@BEGINSYMBOLS mouseEventType > ONE
+@BEGINSYMBOLS mouseEventType > ONE > PRED
 @SYM "left-down" : wxEVENT_TYPE_LEFT_DOWN
 @SYM "left-up" : wxEVENT_TYPE_LEFT_UP
 @SYM "middle-down" : wxEVENT_TYPE_MIDDLE_DOWN
@@ -168,7 +168,7 @@
 @ENDSYMBOLS
 
 #define NEGATIVE_ONE (-1)
-@BEGINSYMBOLS buttonId > ONE
+@BEGINSYMBOLS buttonId > ONE > PRED BUNDLE
 @SYM "any" : NEGATIVE_ONE
 @SYM "left" : 1
 @SYM "middle" : 2

@@ -7,7 +7,7 @@
 
 @HEADER
 
-@BEGINSYMBOLS checkboxStyle
+@BEGINSYMBOLS checkboxStyle > > BUNDLE
 @ENDSYMBOLS
 
 @CLASSBASE wxCheckBox "check-box":"item"

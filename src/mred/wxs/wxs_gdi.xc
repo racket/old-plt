@@ -26,13 +26,13 @@
 @SYM "symbol" : wxSYMBOL
 @ENDSYMBOLS
 
-@BEGINSYMBOLS weight > ONE
+@BEGINSYMBOLS weight > ONE > PRED
 @SYM "normal" : wxNORMAL
 @SYM "light" : wxLIGHT
 @SYM "bold" : wxBOLD
 @ENDSYMBOLS
 
-@BEGINSYMBOLS style > ONE
+@BEGINSYMBOLS style > ONE > PRED
 @SYM "normal" : wxNORMAL
 @SYM "italic" : wxITALIC
 @SYM "slant" : wxSLANT
@@ -131,7 +131,7 @@
 
 @END
 
-@BEGINSYMBOLS brushStyle > ONE
+@BEGINSYMBOLS brushStyle > ONE > PRED
 @SYM "transparent" : wxTRANSPARENT
 @SYM "solid" : wxSOLID
 @SYM "opaque" : wxSTIPPLE
@@ -174,7 +174,7 @@
 
 @END
 
-@BEGINSYMBOLS penStyle > ONE
+@BEGINSYMBOLS penStyle > ONE > PRED
 @SYM "transparent" : wxTRANSPARENT
 @SYM "solid" : wxSOLID
 @SYM "xor" : wxXOR
@@ -188,13 +188,13 @@
 @SYM "xor-dot-dash" : wxXOR_DOT_DASH
 @ENDSYMBOLS
 
-@BEGINSYMBOLS join > ONE
+@BEGINSYMBOLS join > ONE > PRED
 @SYM "bevel" : wxJOIN_BEVEL
 @SYM "miter" : wxJOIN_MITER
 @SYM "round" : wxJOIN_ROUND
 @ENDSYMBOLS
 
-@BEGINSYMBOLS cap > ONE
+@BEGINSYMBOLS cap > ONE > PRED
 @SYM "round" : wxCAP_ROUND
 @SYM "projecting" : wxCAP_PROJECTING
 @SYM "butt" : wxCAP_BUTT
@@ -241,7 +241,7 @@
 
 @END
 
-@BEGINSYMBOLS cursor > ONE
+@BEGINSYMBOLS cursor > ONE > BUNDLE
 @SYM "arrow" : wxCURSOR_ARROW
 @SYM "bullseye" : wxCURSOR_BULLSEYE
 // @SYM "char" : wxCURSOR_CHAR

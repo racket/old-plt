@@ -982,7 +982,7 @@ Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
     
     top = rl - 1;
     for (i = 0; i < offset; i++) {
-      ra[0] = 0;
+      ra[i] = 0;
     }
     for (i = offset + 1; i < top; i++) {
       ra[i] = ((na[i - offset] << hishift) & BIG_MAX) | (na[i - offset - 1] >> loshift);

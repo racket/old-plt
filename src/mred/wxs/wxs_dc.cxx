@@ -45,7 +45,9 @@ static Scheme_Object *textMode_wxTRANSPARENT_sym = NULL;
 static Scheme_Object *textMode_wxSOLID_sym = NULL;
 
 static void init_symset_textMode(void) {
+  wxREGGLOB(textMode_wxTRANSPARENT_sym);
   textMode_wxTRANSPARENT_sym = scheme_intern_symbol("transparent");
+  wxREGGLOB(textMode_wxSOLID_sym);
   textMode_wxSOLID_sym = scheme_intern_symbol("solid");
 }
 
@@ -54,15 +56,6 @@ static int unbundle_symset_textMode(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == textMode_wxTRANSPARENT_sym) { return wxTRANSPARENT; }
   else if (v == textMode_wxSOLID_sym) { return wxSOLID; }
-  if (where) scheme_wrong_type(where, "textMode symbol", -1, 0, &v);
-  return 0;
-}
-
-static int istype_symset_textMode(Scheme_Object *v, const char *where) {
-  if (!textMode_wxSOLID_sym) init_symset_textMode();
-  if (0) { }
-  else if (v == textMode_wxTRANSPARENT_sym) { return 1; }
-  else if (v == textMode_wxSOLID_sym) { return 1; }
   if (where) scheme_wrong_type(where, "textMode symbol", -1, 0, &v);
   return 0;
 }
@@ -82,8 +75,11 @@ static Scheme_Object *bitmapDrawStyle_wxSTIPPLE_sym = NULL;
 static Scheme_Object *bitmapDrawStyle_wxXOR_sym = NULL;
 
 static void init_symset_bitmapDrawStyle(void) {
+  wxREGGLOB(bitmapDrawStyle_wxSOLID_sym);
   bitmapDrawStyle_wxSOLID_sym = scheme_intern_symbol("solid");
+  wxREGGLOB(bitmapDrawStyle_wxSTIPPLE_sym);
   bitmapDrawStyle_wxSTIPPLE_sym = scheme_intern_symbol("opaque");
+  wxREGGLOB(bitmapDrawStyle_wxXOR_sym);
   bitmapDrawStyle_wxXOR_sym = scheme_intern_symbol("xor");
 }
 
@@ -97,33 +93,15 @@ static int unbundle_symset_bitmapDrawStyle(Scheme_Object *v, const char *where) 
   return 0;
 }
 
-static int istype_symset_bitmapDrawStyle(Scheme_Object *v, const char *where) {
-  if (!bitmapDrawStyle_wxXOR_sym) init_symset_bitmapDrawStyle();
-  if (0) { }
-  else if (v == bitmapDrawStyle_wxSOLID_sym) { return 1; }
-  else if (v == bitmapDrawStyle_wxSTIPPLE_sym) { return 1; }
-  else if (v == bitmapDrawStyle_wxXOR_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "bitmapDrawStyle symbol", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_bitmapDrawStyle(int v) {
-  if (!bitmapDrawStyle_wxXOR_sym) init_symset_bitmapDrawStyle();
-  switch (v) {
-  case wxSOLID: return bitmapDrawStyle_wxSOLID_sym;
-  case wxSTIPPLE: return bitmapDrawStyle_wxSTIPPLE_sym;
-  case wxXOR: return bitmapDrawStyle_wxXOR_sym;
-  default: return NULL;
-  }
-}
-
 
 
 static Scheme_Object *fillKind_wxODDEVEN_RULE_sym = NULL;
 static Scheme_Object *fillKind_wxWINDING_RULE_sym = NULL;
 
 static void init_symset_fillKind(void) {
+  wxREGGLOB(fillKind_wxODDEVEN_RULE_sym);
   fillKind_wxODDEVEN_RULE_sym = scheme_intern_symbol("odd-even");
+  wxREGGLOB(fillKind_wxWINDING_RULE_sym);
   fillKind_wxWINDING_RULE_sym = scheme_intern_symbol("winding");
 }
 
@@ -134,24 +112,6 @@ static int unbundle_symset_fillKind(Scheme_Object *v, const char *where) {
   else if (v == fillKind_wxWINDING_RULE_sym) { return wxWINDING_RULE; }
   if (where) scheme_wrong_type(where, "fillKind symbol", -1, 0, &v);
   return 0;
-}
-
-static int istype_symset_fillKind(Scheme_Object *v, const char *where) {
-  if (!fillKind_wxWINDING_RULE_sym) init_symset_fillKind();
-  if (0) { }
-  else if (v == fillKind_wxODDEVEN_RULE_sym) { return 1; }
-  else if (v == fillKind_wxWINDING_RULE_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "fillKind symbol", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_fillKind(int v) {
-  if (!fillKind_wxWINDING_RULE_sym) init_symset_fillKind();
-  switch (v) {
-  case wxODDEVEN_RULE: return fillKind_wxODDEVEN_RULE_sym;
-  case wxWINDING_RULE: return fillKind_wxWINDING_RULE_sym;
-  default: return NULL;
-  }
 }
 
 

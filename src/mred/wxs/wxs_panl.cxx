@@ -39,6 +39,7 @@
 static Scheme_Object *panelStyle_wxBORDER_sym = NULL;
 
 static void init_symset_panelStyle(void) {
+  wxREGGLOB(panelStyle_wxBORDER_sym);
   panelStyle_wxBORDER_sym = scheme_intern_symbol("border");
 }
 
@@ -58,36 +59,15 @@ static int unbundle_symset_panelStyle(Scheme_Object *v, const char *where) {
   return 0;
 }
 
-static int istype_symset_panelStyle(Scheme_Object *v, const char *where) {
-  if (!panelStyle_wxBORDER_sym) init_symset_panelStyle();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == panelStyle_wxBORDER_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
-  }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "panelStyle symbol list", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_panelStyle(int v) {
-  if (!panelStyle_wxBORDER_sym) init_symset_panelStyle();
-  Scheme_Object *l = scheme_null;
-  if (v & wxBORDER) l = scheme_make_pair(panelStyle_wxBORDER_sym, l);
-  return l;
-}
-
 
 
 static Scheme_Object *orientation_wxVERTICAL_sym = NULL;
 static Scheme_Object *orientation_wxHORIZONTAL_sym = NULL;
 
 static void init_symset_orientation(void) {
+  wxREGGLOB(orientation_wxVERTICAL_sym);
   orientation_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+  wxREGGLOB(orientation_wxHORIZONTAL_sym);
   orientation_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
 }
 
@@ -96,15 +76,6 @@ static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == orientation_wxVERTICAL_sym) { return wxVERTICAL; }
   else if (v == orientation_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
-  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
-  return 0;
-}
-
-static int istype_symset_orientation(Scheme_Object *v, const char *where) {
-  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
-  if (0) { }
-  else if (v == orientation_wxVERTICAL_sym) { return 1; }
-  else if (v == orientation_wxHORIZONTAL_sym) { return 1; }
   if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
   return 0;
 }
@@ -880,8 +851,13 @@ class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *obj, const char *where,
 }
 
 
+#ifdef wx_msw
+# define XTMAC_UNUSED(x) /x
+#else
+# define XTMAC_UNUSED(x) /**/
+#endif
 
-static void dialogMenu(wxDialogBox *d)
+static void dialogMenu(wxDialogBox *XTMAC_UNUSED(d))
 {
 #ifdef wx_msw
   d->SystemMenu();
@@ -892,7 +868,9 @@ static Scheme_Object *dialogStyle_wxNO_CAPTION_sym = NULL;
 static Scheme_Object *dialogStyle_wxMAXIMIZE_sym = NULL;
 
 static void init_symset_dialogStyle(void) {
+  wxREGGLOB(dialogStyle_wxNO_CAPTION_sym);
   dialogStyle_wxNO_CAPTION_sym = scheme_intern_symbol("no-caption");
+  wxREGGLOB(dialogStyle_wxMAXIMIZE_sym);
   dialogStyle_wxMAXIMIZE_sym = scheme_intern_symbol("resize-border");
 }
 
@@ -911,31 +889,6 @@ static int unbundle_symset_dialogStyle(Scheme_Object *v, const char *where) {
   if (SCHEME_NULLP(l)) return result;
   if (where) scheme_wrong_type(where, "dialogStyle symbol list", -1, 0, &v);
   return 0;
-}
-
-static int istype_symset_dialogStyle(Scheme_Object *v, const char *where) {
-  if (!dialogStyle_wxMAXIMIZE_sym) init_symset_dialogStyle();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == dialogStyle_wxNO_CAPTION_sym) { ; }
-  else if (i == dialogStyle_wxMAXIMIZE_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
-  }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "dialogStyle symbol list", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_dialogStyle(int v) {
-  if (!dialogStyle_wxMAXIMIZE_sym) init_symset_dialogStyle();
-  Scheme_Object *l = scheme_null;
-  if (v & wxNO_CAPTION) l = scheme_make_pair(dialogStyle_wxNO_CAPTION_sym, l);
-  if (v & wxMAXIMIZE) l = scheme_make_pair(dialogStyle_wxMAXIMIZE_sym, l);
-  return l;
 }
 
 

@@ -15,13 +15,13 @@
 @MACRO rFALSE = return FALSE;
 @MACRO rZERO = return 0;
 
-@BEGINSYMBOLS selType > ONE
+@BEGINSYMBOLS selType > ONE > PRED BUNDLE
 @SYM "default" : wxDEFAULT_SELECT
 @SYM "x" : wxX_SELECT
 @SYM "local" : wxLOCAL_SELECT
 @ENDSYMBOLS
 
-@BEGINSYMBOLS moveCode > ONE
+@BEGINSYMBOLS moveCode > ONE > PRED BUNDLE
 @SYM "home" : WXK_HOME
 @SYM "end" : WXK_END
 @SYM "right" : WXK_RIGHT
@@ -30,21 +30,21 @@
 @SYM "down" : WXK_DOWN
 @ENDSYMBOLS
 
-@BEGINSYMBOLS move > ONE
+@BEGINSYMBOLS move > ONE > PRED BUNDLE
 @SYM "simple" : wxMOVE_SIMPLE
 @SYM "line" : wxMOVE_LINE
 @SYM "page" : wxMOVE_PAGE
 @SYM "word" : wxMOVE_WORD
 @ENDSYMBOLS
 
-@BEGINSYMBOLS findKind > ONE
+@BEGINSYMBOLS findKind > ONE > PRED BUNDLE
 @SYM "before-or-none" : wxSNIP_BEFORE_OR_NULL
 @SYM "before" : wxSNIP_BEFORE
 @SYM "after" : wxSNIP_AFTER
 @SYM "after-or-none" : wxSNIP_AFTER_OR_NULL
 @ENDSYMBOLS
 
-@BEGINSYMBOLS breakType > ONE
+@BEGINSYMBOLS breakType > ONE > PRED
 @SYM "caret" : wxBREAK_FOR_CARET
 @SYM "line" : wxBREAK_FOR_LINE
 @SYM "selection" : wxBREAK_FOR_SELECTION
@@ -54,7 +54,7 @@
 
 # define Sym_FORWARD 1
 # define Sym_BACKWARD -1
-@BEGINSYMBOLS direction > ONE
+@BEGINSYMBOLS direction > ONE > PRED
 @SYM "forward" : Sym_FORWARD
 @SYM "backward" : Sym_BACKWARD
 @ENDSYMBOLS
@@ -62,18 +62,18 @@
 # define Sym_RIGHT 1
 # define Sym_CENTER 0
 # define Sym_LEFT -1
-@BEGINSYMBOLS horizontalAlignment > ONE
+@BEGINSYMBOLS horizontalAlignment > ONE > PRED BUNDLE
 @SYM "left" : Sym_LEFT
 @SYM "right" : Sym_RIGHT
 @SYM "center" : Sym_CENTER
 @ENDSYMBOLS
 
-@INCLUDE wxs_fcs.xci
+@INCLUDE wxs_eds.xci
 @INCLUDE wxs_bmt.xci
 
 # define Sym_END_ONLY 2
 # define Sym_START_ONLY -2
-@BEGINSYMBOLS Bias > ONE
+@BEGINSYMBOLS Bias > ONE > PRED BUNDLE
 @SYM "start-only" : Sym_START_ONLY
 @SYM "start" : Sym_START
 @SYM "none" : Sym_NONE

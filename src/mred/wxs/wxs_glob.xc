@@ -23,7 +23,7 @@ static void wxsFillPrivateColor(wxDC *dc, wxColour *c)
 #endif
 }
 
-@BEGINSYMBOLS fileSelMode > ONE
+@BEGINSYMBOLS fileSelMode > ONE > PRED BUNDLE
 @SYM "get" : wxOPEN
 @SYM "put" : wxSAVE
 @SYM "overwrite-prompt" : wxOVERWRITE_PROMPT

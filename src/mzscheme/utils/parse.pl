@@ -65,6 +65,7 @@ sub ReadFile {
     %marks = ();
     @syms = ();
     $symsetkind = "";
+    $symsetomit = "";
     $marks{'V'} = 'V';
     $marks{'H'} = 'H';
     $marks{'v'} = 'v';
@@ -208,18 +209,19 @@ sub ReadFile {
 		$mark = &Wash($mark);
 		$marks{$mark} = &Wash($val);
 	    } elsif (&StartsWithKey($_, $key_startsymbols)) {
-		($name, $kind) = split(/>/, &SkipKey($_, $key_startsymbols), 2);
+		($name, $kind, $omit) = split(/>/, &SkipKey($_, $key_startsymbols), 3);
 		$name = &Wash($name);
 		@syms = ();
 		$cursymset = $name;
 		$symsetkind = $kind;
+		$symsetomit = $omit;
 	    } elsif (&StartsWithKey($_, $key_sym)) {
 		($name, $val) = split(/:/, &SkipKey($_, $key_sym), 2);
 		$name = &Wash($name);
 		$val = &Wash($val);
 		@syms = (@syms, "$name,$val");
 	    } elsif (&StartsWithKey($_, $key_endsymbols)) {
-		&PrintSymSet($cursymset, $symsetkind, @syms);
+		&PrintSymSet($cursymset, $symsetkind, $symsetomit, @syms);
 	    } elsif (substr($_, 1, 1) ne ' ') {
 		print STDERR 
 		    "syntax error at line $linenum of \"$thisfile\".\n"

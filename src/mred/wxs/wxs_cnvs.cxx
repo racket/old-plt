@@ -46,8 +46,11 @@ static Scheme_Object *canvasStyle_wxVSCROLL_sym = NULL;
 static Scheme_Object *canvasStyle_wxHSCROLL_sym = NULL;
 
 static void init_symset_canvasStyle(void) {
+  wxREGGLOB(canvasStyle_wxBORDER_sym);
   canvasStyle_wxBORDER_sym = scheme_intern_symbol("border");
+  wxREGGLOB(canvasStyle_wxVSCROLL_sym);
   canvasStyle_wxVSCROLL_sym = scheme_intern_symbol("vscroll");
+  wxREGGLOB(canvasStyle_wxHSCROLL_sym);
   canvasStyle_wxHSCROLL_sym = scheme_intern_symbol("hscroll");
 }
 
@@ -69,40 +72,15 @@ static int unbundle_symset_canvasStyle(Scheme_Object *v, const char *where) {
   return 0;
 }
 
-static int istype_symset_canvasStyle(Scheme_Object *v, const char *where) {
-  if (!canvasStyle_wxHSCROLL_sym) init_symset_canvasStyle();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == canvasStyle_wxBORDER_sym) { ; }
-  else if (i == canvasStyle_wxVSCROLL_sym) { ; }
-  else if (i == canvasStyle_wxHSCROLL_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
-  }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "canvasStyle symbol list", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_canvasStyle(int v) {
-  if (!canvasStyle_wxHSCROLL_sym) init_symset_canvasStyle();
-  Scheme_Object *l = scheme_null;
-  if (v & wxBORDER) l = scheme_make_pair(canvasStyle_wxBORDER_sym, l);
-  if (v & wxVSCROLL) l = scheme_make_pair(canvasStyle_wxVSCROLL_sym, l);
-  if (v & wxHSCROLL) l = scheme_make_pair(canvasStyle_wxHSCROLL_sym, l);
-  return l;
-}
-
 
 
 static Scheme_Object *orientation_wxVERTICAL_sym = NULL;
 static Scheme_Object *orientation_wxHORIZONTAL_sym = NULL;
 
 static void init_symset_orientation(void) {
+  wxREGGLOB(orientation_wxVERTICAL_sym);
   orientation_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+  wxREGGLOB(orientation_wxHORIZONTAL_sym);
   orientation_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
 }
 
@@ -111,15 +89,6 @@ static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == orientation_wxVERTICAL_sym) { return wxVERTICAL; }
   else if (v == orientation_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
-  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
-  return 0;
-}
-
-static int istype_symset_orientation(Scheme_Object *v, const char *where) {
-  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
-  if (0) { }
-  else if (v == orientation_wxVERTICAL_sym) { return 1; }
-  else if (v == orientation_wxHORIZONTAL_sym) { return 1; }
   if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
   return 0;
 }

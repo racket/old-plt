@@ -65,7 +65,9 @@ static Scheme_Object *gaugeStyle_wxVERTICAL_sym = NULL;
 static Scheme_Object *gaugeStyle_wxHORIZONTAL_sym = NULL;
 
 static void init_symset_gaugeStyle(void) {
+  wxREGGLOB(gaugeStyle_wxVERTICAL_sym);
   gaugeStyle_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+  wxREGGLOB(gaugeStyle_wxHORIZONTAL_sym);
   gaugeStyle_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
 }
 

@@ -1981,7 +1981,7 @@ sub OIEnd
 
 sub PrintSymSet
 {
-    local ($name, $kind, @syms) = @_;
+    local ($name, $kind, $omit, @syms) = @_;
     local ($multi, $vv, $lname, $char);
 
     if ($kind =~ /ONE/) {
@@ -1998,18 +1998,24 @@ sub PrintSymSet
     }
 
     if ($#syms < 0) {
-	print "static int istype_symset_${name}(Scheme_Object *v, const char *where) {\n";
-	print "  if SCHEME_NULLP(v) return 1;\n";
-	print "  if (where) scheme_wrong_type(where, \"$name symbol${lname}\", -1, 0, &v);\n";
-	print "  return 0;\n";
-	print "}\n\n";
-	print "static int unbundle_symset_${name}(Scheme_Object *v, const char *where) {\n";
-	print "  istype_symset_${name}(v, where);\n";
-	print "  return 0;\n";
-	print "}\n";
-	print "static Scheme_Object *bundle_symset_${name}(int v) {\n";
-        print "  return scheme_null;\n";
-        print "}\n\n";
+	if (!($omit =~ /PRED/)) {
+	    print "static int istype_symset_${name}(Scheme_Object *v, const char *where) {\n";
+	    print "  if SCHEME_NULLP(v) return 1;\n";
+	    print "  if (where) scheme_wrong_type(where, \"$name symbol${lname}\", -1, 0, &v);\n";
+	    print "  return 0;\n";
+	    print "}\n\n";
+	}
+	if (!($omit =~ /UNBUNDLE/)) {
+	    print "static int unbundle_symset_${name}(Scheme_Object *v, const char *where) {\n";
+	    print "  istype_symset_${name}(v, where);\n";
+	    print "  return 0;\n";
+	    print "}\n";
+	}
+	if (!($omit =~ /BUNDLE/)) {
+	    print "static Scheme_Object *bundle_symset_${name}(int) {\n";
+	    print "  return scheme_null;\n";
+	    print "}\n\n";
+	}
 	return;
     }
 
@@ -2022,91 +2028,102 @@ sub PrintSymSet
     print "static void init_symset_${name}(void) {\n";
     foreach $sym (@syms) {
 	($n, $v) = split(/,/, $sym);
+	print "  wxREGGLOB(${name}_${v}_sym);\n";
 	print "  ${name}_${v}_sym = scheme_intern_symbol($n);\n";
     }
     print "}\n\n";
 
     foreach $mode ("unbundle", "istype") {
-	print "static int ${mode}_symset_${name}(Scheme_Object *v, const char *where) {\n";
-	print "  if (!${name}_${v}_sym) init_symset_${name}();\n";
-	if ($multi) {
-	    $vv = "i";
-	    print "  Scheme_Object *i, *l = v;\n";
-	    if ($mode eq 'unbundle') {
-		print "  long result = 0;\n";
-	    } else {
-		print "  long result = 1;\n";
-	    }
-	    print "  while (SCHEME_PAIRP(l)) {\n";
-	    print "  i = SCHEME_CAR(l);\n";
-	    if ($mode eq 'unbundle') {
-		$donepre = "result = result | ";
-	    } else {
-		$donepre = "";
-	    }
-	    $donepost = "";
+	if ($mode eq 'unbundle') {
+	    $dothisone = !($omit =~ /UNBUNDLE/);
 	} else {
-	    $vv = "v";
-	    $donepre = "return ";
-	    $donepost = "";
+	    $dothisone = !($omit =~ /PRED/);
 	}
-	print "  if (0) { }\n";
-	if ($char) {
-	    print "  else if (SCHEME_CHARP(v)) { return ";
-	    if ($mode eq 'unbundle') {
-		print "SCHEME_CHAR_VAL(v)";
-	    } else {
-		print "1";
-	    }
-	    print "; }\n";
-	}
-	foreach $sym (@syms) {
-	    ($n, $v) = split(/,/, $sym);
-	    if ($mode eq 'unbundle') {
-		$result = $v;
-	    } else {
-		if ($multi) {
-		    $result = "";
+
+	if ($dothisone) {
+	    print "static int ${mode}_symset_${name}(Scheme_Object *v, const char *where) {\n";
+	    print "  if (!${name}_${v}_sym) init_symset_${name}();\n";
+	    if ($multi) {
+		$vv = "i";
+		print "  Scheme_Object *i, *l = v;\n";
+		if ($mode eq 'unbundle') {
+		    print "  long result = 0;\n";
 		} else {
-		    $result = "1";
+		    print "  long result = 1;\n";
 		}
+		print "  while (SCHEME_PAIRP(l)) {\n";
+		print "  i = SCHEME_CAR(l);\n";
+		if ($mode eq 'unbundle') {
+		    $donepre = "result = result | ";
+		} else {
+		    $donepre = "";
+		}
+		$donepost = "";
+	    } else {
+		$vv = "v";
+		$donepre = "return ";
+		$donepost = "";
 	    }
-	    print "  else if (${vv} == ${name}_${v}_sym) { $donepre$result$donepost; }\n";
+	    print "  if (0) { }\n";
+	    if ($char) {
+		print "  else if (SCHEME_CHARP(v)) { return ";
+		if ($mode eq 'unbundle') {
+		    print "SCHEME_CHAR_VAL(v)";
+		} else {
+		    print "1";
+		}
+		print "; }\n";
+	    }
+	    foreach $sym (@syms) {
+		($n, $v) = split(/,/, $sym);
+		if ($mode eq 'unbundle') {
+		    $result = $v;
+		} else {
+		    if ($multi) {
+			$result = "";
+		    } else {
+			$result = "1";
+		    }
+		}
+		print "  else if (${vv} == ${name}_${v}_sym) { $donepre$result$donepost; }\n";
+	    }
+	    if ($multi) {
+		print "  else { break; } \n";
+		print "  l = SCHEME_CDR(l);\n";
+		print "  }\n";
+		print "  if (SCHEME_NULLP(l)) return result;\n";
+	    }
+	    print "  if (where) scheme_wrong_type(where, \"$name symbol${lname}\", -1, 0, &v);\n";
+	    print "  return 0;\n";
+	    print "}\n\n";
 	}
-	if ($multi) {
-	    print "  else { break; } \n";
-	    print "  l = SCHEME_CDR(l);\n";
-	    print "  }\n";
-	    print "  if (SCHEME_NULLP(l)) return result;\n";
-	}
-	print "  if (where) scheme_wrong_type(where, \"$name symbol${lname}\", -1, 0, &v);\n";
-	print "  return 0;\n";
-	print "}\n\n";
     }
 
-    print "static Scheme_Object *bundle_symset_${name}(int v) {\n";
-    print "  if (!${name}_${v}_sym) init_symset_${name}();\n";
-    if ($multi) {
-	print "  Scheme_Object *l = scheme_null;\n";
-	foreach $sym (@syms) {
-	    ($n, $v) = split(/,/, $sym);
-	    print "  if (v & $v) l = scheme_make_pair(${name}_${v}_sym, l);\n";
-	}
-	print "  return l;\n";
-    } else {
-	print "  switch (v) {\n";
-	foreach $sym (@syms) {
-	    ($n, $v) = split(/,/, $sym);
-	    print "  case $v: return ${name}_${v}_sym;\n";
-	}
-	if ($char) {
-	    print "  default: return ((v >= 0) && (v <= 255)) ? scheme_make_character(v) : scheme_make_character(0);\n";
+    if (!($omit =~ /BUNDLE/)) {
+	print "static Scheme_Object *bundle_symset_${name}(int v) {\n";
+	print "  if (!${name}_${v}_sym) init_symset_${name}();\n";
+	if ($multi) {
+	    print "  Scheme_Object *l = scheme_null;\n";
+	    foreach $sym (@syms) {
+		($n, $v) = split(/,/, $sym);
+		print "  if (v & $v) l = scheme_make_pair(${name}_${v}_sym, l);\n";
+	    }
+	    print "  return l;\n";
 	} else {
-	    print "  default: return NULL;\n";
+	    print "  switch (v) {\n";
+	    foreach $sym (@syms) {
+		($n, $v) = split(/,/, $sym);
+		print "  case $v: return ${name}_${v}_sym;\n";
+	    }
+	    if ($char) {
+		print "  default: return ((v >= 0) && (v <= 255)) ? scheme_make_character(v) : scheme_make_character(0);\n";
+	    } else {
+		print "  default: return NULL;\n";
+	    }
+	    print "  }\n";
 	}
-	print "  }\n";
+	print "}\n\n";
     }
-    print "}\n\n";
 }
 
 sub oldPrintSymSet

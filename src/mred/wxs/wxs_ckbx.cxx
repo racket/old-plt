@@ -38,10 +38,6 @@ static int unbundle_symset_checkboxStyle(Scheme_Object *v, const char *where) {
   istype_symset_checkboxStyle(v, where);
   return 0;
 }
-static Scheme_Object *bundle_symset_checkboxStyle(int v) {
-  return scheme_null;
-}
-
 
 
 

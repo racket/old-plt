@@ -35,11 +35,11 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 @MACRO rFALSE = return FALSE;
 @MACRO rZERO = return 0;
 
-@INCLUDE wxs_fcs.xci
+@INCLUDE wxs_eds.xci
 
 @INCLUDE wxs_eop.xci
 
-@BEGINSYMBOLS printMethod > ONE
+@BEGINSYMBOLS printMethod > ONE > PRED BUNDLE
 @SYM "standard" : 0
 @SYM "postscript" : 1
 @ENDSYMBOLS

@@ -28,7 +28,7 @@
 
 @INCLUDE wxs_espc.xci
 
-@BEGINSYMBOLS frameStyle
+@BEGINSYMBOLS frameStyle > > PRED BUNDLE
 @SYM "no-caption" : wxNO_CAPTION
 @SYM "mdi-parent" : wxMDI_PARENT
 @SYM "mdi-child" : wxMDI_CHILD
@@ -36,13 +36,19 @@
 @SYM "no-resize-border" : wxNO_RESIZE_BORDER
 @ENDSYMBOLS
 
-@BEGINSYMBOLS iconKind > ONE
+@BEGINSYMBOLS iconKind > ONE > PRED BUNDLE
 @SYM "both" : 0
 @SYM "small" : 1
 @SYM "large" : 2
 @ENDSYMBOLS
 
-static void frameMenu(wxFrame *f)
+#ifdef wx_msw
+# define XTMAC_UNUSED(x) /x
+#else
+# define XTMAC_UNUSED(x) /**/
+#endif
+
+static void frameMenu(wxFrame *XTMAC_UNUSED(f))
 {
 #ifdef wx_msw
   f->SystemMenu();

@@ -122,9 +122,9 @@ wxs_list.cxx : wxs_list.xc  $(XCDEPEND)
 	$(XCTOCXX) wxs_list.xc
 wxs_madm.cxx : wxs_madm.xc wxs_madm.xci wxs_fcs.xci wxs_bkt.xci wxs_win.xci $(XCDEPEND)
 	$(XCTOCXX) wxs_madm.xc
-wxs_medi.cxx : wxs_medi.xc wxs_mbuf.xci wxs_fcs.xci $(XCDEPEND) $(LIST_DEPEND)
+wxs_medi.cxx : wxs_medi.xc wxs_mbuf.xci wxs_fcs.xci wxs_eds.xci wxs_cret.xci wxs_eop.xci $(XCDEPEND) $(LIST_DEPEND)
 	$(XCTOCXX) wxs_medi.xc
-wxs_mede.cxx : wxs_mede.xc wxs_mbuf.xci wxs_fcs.xci wxs_bkt.xci $(XCDEPEND) $(LIST_DEPEND)
+wxs_mede.cxx : wxs_mede.xc wxs_mbuf.xci wxs_fcs.xci wxs_eds.xci wxs_cret.xci wxs_bkt.xci $(XCDEPEND) $(LIST_DEPEND)
 	$(XCTOCXX) wxs_mede.xc
 wxs_menu.cxx : wxs_menu.xc  $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND)
 	$(XCTOCXX) wxs_menu.xc
@@ -132,7 +132,7 @@ wxs_mio.cxx : wxs_mio.xc  $(XCDEPEND)
 	$(XCTOCXX) wxs_mio.xc
 wxs_misc.cxx : wxs_misc.xc  wxs_espc.xci $(XCDEPEND) $(CB_DEPEND)
 	$(XCTOCXX) wxs_misc.xc
-wxs_mpb.cxx : wxs_mpb.xc  wxs_mbuf.xci wxs_fcs.xci $(XCDEPEND)
+wxs_mpb.cxx : wxs_mpb.xc  wxs_mbuf.xci wxs_eds.xci wxs_cret.xci wxs_fcs.xci $(XCDEPEND)
 	$(XCTOCXX) wxs_mpb.xc
 wxs_obj.cxx : wxs_obj.xc  $(XCDEPEND)
 	$(XCTOCXX) wxs_obj.xc
@@ -142,7 +142,7 @@ wxs_rado.cxx : wxs_rado.xc  range.xci $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND) $(
 	$(XCTOCXX) wxs_rado.xc
 wxs_slid.cxx : wxs_slid.xc  $(XCDEPEND) $(CB_DEPEND) $(ITEM_DEPEND)
 	$(XCTOCXX) wxs_slid.xc
-wxs_snip.cxx : wxs_snip.xc  wxs_snip.xci wxs_bmt.xci $(XCDEPEND)
+wxs_snip.cxx : wxs_snip.xc  wxs_snip.xci wxs_bmt.xci wxs_cret.xci wxs_eop.xci $(XCDEPEND)
 	$(XCTOCXX) wxs_snip.xc
 wxs_styl.cxx : wxs_styl.xc  $(XCDEPEND)
 	$(XCTOCXX) wxs_styl.xc

@@ -38,10 +38,6 @@ static int unbundle_symset_choiceStyle(Scheme_Object *v, const char *where) {
   istype_symset_choiceStyle(v, where);
   return 0;
 }
-static Scheme_Object *bundle_symset_choiceStyle(int v) {
-  return scheme_null;
-}
-
 
 
 

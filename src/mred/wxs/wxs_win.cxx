@@ -78,8 +78,11 @@ static Scheme_Object *sizeMode_wxSIZE_USE_EXISTING_sym = NULL;
 static Scheme_Object *sizeMode_wxPOS_USE_MINUS_ONE_sym = NULL;
 
 static void init_symset_sizeMode(void) {
+  wxREGGLOB(sizeMode_wxSIZE_AUTO_sym);
   sizeMode_wxSIZE_AUTO_sym = scheme_intern_symbol("auto");
+  wxREGGLOB(sizeMode_wxSIZE_USE_EXISTING_sym);
   sizeMode_wxSIZE_USE_EXISTING_sym = scheme_intern_symbol("use-exsiting");
+  wxREGGLOB(sizeMode_wxPOS_USE_MINUS_ONE_sym);
   sizeMode_wxPOS_USE_MINUS_ONE_sym = scheme_intern_symbol("use-minus-one");
 }
 
@@ -93,34 +96,17 @@ static int unbundle_symset_sizeMode(Scheme_Object *v, const char *where) {
   return 0;
 }
 
-static int istype_symset_sizeMode(Scheme_Object *v, const char *where) {
-  if (!sizeMode_wxPOS_USE_MINUS_ONE_sym) init_symset_sizeMode();
-  if (0) { }
-  else if (v == sizeMode_wxSIZE_AUTO_sym) { return 1; }
-  else if (v == sizeMode_wxSIZE_USE_EXISTING_sym) { return 1; }
-  else if (v == sizeMode_wxPOS_USE_MINUS_ONE_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "sizeMode symbol", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_sizeMode(int v) {
-  if (!sizeMode_wxPOS_USE_MINUS_ONE_sym) init_symset_sizeMode();
-  switch (v) {
-  case wxSIZE_AUTO: return sizeMode_wxSIZE_AUTO_sym;
-  case wxSIZE_USE_EXISTING: return sizeMode_wxSIZE_USE_EXISTING_sym;
-  case wxPOS_USE_MINUS_ONE: return sizeMode_wxPOS_USE_MINUS_ONE_sym;
-  default: return NULL;
-  }
-}
-
 
 static Scheme_Object *direction_wxBOTH_sym = NULL;
 static Scheme_Object *direction_wxVERTICAL_sym = NULL;
 static Scheme_Object *direction_wxHORIZONTAL_sym = NULL;
 
 static void init_symset_direction(void) {
+  wxREGGLOB(direction_wxBOTH_sym);
   direction_wxBOTH_sym = scheme_intern_symbol("both");
+  wxREGGLOB(direction_wxVERTICAL_sym);
   direction_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+  wxREGGLOB(direction_wxHORIZONTAL_sym);
   direction_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
 }
 
@@ -132,26 +118,6 @@ static int unbundle_symset_direction(Scheme_Object *v, const char *where) {
   else if (v == direction_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
   if (where) scheme_wrong_type(where, "direction symbol", -1, 0, &v);
   return 0;
-}
-
-static int istype_symset_direction(Scheme_Object *v, const char *where) {
-  if (!direction_wxHORIZONTAL_sym) init_symset_direction();
-  if (0) { }
-  else if (v == direction_wxBOTH_sym) { return 1; }
-  else if (v == direction_wxVERTICAL_sym) { return 1; }
-  else if (v == direction_wxHORIZONTAL_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "direction symbol", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_direction(int v) {
-  if (!direction_wxHORIZONTAL_sym) init_symset_direction();
-  switch (v) {
-  case wxBOTH: return direction_wxBOTH_sym;
-  case wxVERTICAL: return direction_wxVERTICAL_sym;
-  case wxHORIZONTAL: return direction_wxHORIZONTAL_sym;
-  default: return NULL;
-  }
 }
 
 

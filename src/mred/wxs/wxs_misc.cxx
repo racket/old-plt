@@ -716,8 +716,11 @@ static Scheme_Object *psMode_PS_FILE_sym = NULL;
 static Scheme_Object *psMode_PS_PRINTER_sym = NULL;
 
 static void init_symset_psMode(void) {
+  wxREGGLOB(psMode_PS_PREVIEW_sym);
   psMode_PS_PREVIEW_sym = scheme_intern_symbol("preview");
+  wxREGGLOB(psMode_PS_FILE_sym);
   psMode_PS_FILE_sym = scheme_intern_symbol("file");
+  wxREGGLOB(psMode_PS_PRINTER_sym);
   psMode_PS_PRINTER_sym = scheme_intern_symbol("printer");
 }
 
@@ -727,16 +730,6 @@ static int unbundle_symset_psMode(Scheme_Object *v, const char *where) {
   else if (v == psMode_PS_PREVIEW_sym) { return PS_PREVIEW; }
   else if (v == psMode_PS_FILE_sym) { return PS_FILE; }
   else if (v == psMode_PS_PRINTER_sym) { return PS_PRINTER; }
-  if (where) scheme_wrong_type(where, "psMode symbol", -1, 0, &v);
-  return 0;
-}
-
-static int istype_symset_psMode(Scheme_Object *v, const char *where) {
-  if (!psMode_PS_PRINTER_sym) init_symset_psMode();
-  if (0) { }
-  else if (v == psMode_PS_PREVIEW_sym) { return 1; }
-  else if (v == psMode_PS_FILE_sym) { return 1; }
-  else if (v == psMode_PS_PRINTER_sym) { return 1; }
   if (where) scheme_wrong_type(where, "psMode symbol", -1, 0, &v);
   return 0;
 }
@@ -756,7 +749,9 @@ static Scheme_Object *psOrientation_PS_PORTRAIT_sym = NULL;
 static Scheme_Object *psOrientation_PS_LANDSCAPE_sym = NULL;
 
 static void init_symset_psOrientation(void) {
+  wxREGGLOB(psOrientation_PS_PORTRAIT_sym);
   psOrientation_PS_PORTRAIT_sym = scheme_intern_symbol("portrait");
+  wxREGGLOB(psOrientation_PS_LANDSCAPE_sym);
   psOrientation_PS_LANDSCAPE_sym = scheme_intern_symbol("landscape");
 }
 
@@ -765,15 +760,6 @@ static int unbundle_symset_psOrientation(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == psOrientation_PS_PORTRAIT_sym) { return PS_PORTRAIT; }
   else if (v == psOrientation_PS_LANDSCAPE_sym) { return PS_LANDSCAPE; }
-  if (where) scheme_wrong_type(where, "psOrientation symbol", -1, 0, &v);
-  return 0;
-}
-
-static int istype_symset_psOrientation(Scheme_Object *v, const char *where) {
-  if (!psOrientation_PS_LANDSCAPE_sym) init_symset_psOrientation();
-  if (0) { }
-  else if (v == psOrientation_PS_PORTRAIT_sym) { return 1; }
-  else if (v == psOrientation_PS_LANDSCAPE_sym) { return 1; }
   if (where) scheme_wrong_type(where, "psOrientation symbol", -1, 0, &v);
   return 0;
 }

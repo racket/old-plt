@@ -9,7 +9,7 @@
 
 @INCLUDE wxs_bmt.xci
 
-@BEGINSYMBOLS saveBitmapType > ONE
+@BEGINSYMBOLS saveBitmapType > ONE > PRED BUNDLE
 @SYM "bmp" : wxBITMAP_TYPE_BMP
 @SYM "xbm" : wxBITMAP_TYPE_XBM
 @SYM "xpm" : wxBITMAP_TYPE_XPM

@@ -20,7 +20,7 @@ static void FillZero(int *a, int *b) {
   *a = *b = 0;
 }
 
-@BEGINSYMBOLS canvasStyle
+@BEGINSYMBOLS canvasStyle > > PRED BUNDLE
 @SYM "border" : wxBORDER
 @SYM "vscroll" : wxVSCROLL
 @SYM "hscroll" : wxHSCROLL

@@ -62,6 +62,9 @@ static const char *wxCallExpandPath(const char *f)
 
 void wxInitMedia(void)
 {
+  wxREGGLOB(iBeam);
+  wxREGGLOB(arrow);
+
   wxInitClipboard();
   wxInitStyles();
 

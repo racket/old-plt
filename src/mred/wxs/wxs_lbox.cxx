@@ -49,8 +49,11 @@ static Scheme_Object *kind_wxMULTIPLE_sym = NULL;
 static Scheme_Object *kind_wxEXTENDED_sym = NULL;
 
 static void init_symset_kind(void) {
+  wxREGGLOB(kind_wxSINGLE_sym);
   kind_wxSINGLE_sym = scheme_intern_symbol("single");
+  wxREGGLOB(kind_wxMULTIPLE_sym);
   kind_wxMULTIPLE_sym = scheme_intern_symbol("multiple");
+  wxREGGLOB(kind_wxEXTENDED_sym);
   kind_wxEXTENDED_sym = scheme_intern_symbol("extended");
 }
 
@@ -64,32 +67,14 @@ static int unbundle_symset_kind(Scheme_Object *v, const char *where) {
   return 0;
 }
 
-static int istype_symset_kind(Scheme_Object *v, const char *where) {
-  if (!kind_wxEXTENDED_sym) init_symset_kind();
-  if (0) { }
-  else if (v == kind_wxSINGLE_sym) { return 1; }
-  else if (v == kind_wxMULTIPLE_sym) { return 1; }
-  else if (v == kind_wxEXTENDED_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "kind symbol", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_kind(int v) {
-  if (!kind_wxEXTENDED_sym) init_symset_kind();
-  switch (v) {
-  case wxSINGLE: return kind_wxSINGLE_sym;
-  case wxMULTIPLE: return kind_wxMULTIPLE_sym;
-  case wxEXTENDED: return kind_wxEXTENDED_sym;
-  default: return NULL;
-  }
-}
-
 
 static Scheme_Object *style_wxALWAYS_SB_sym = NULL;
 static Scheme_Object *style_wxHSCROLL_sym = NULL;
 
 static void init_symset_style(void) {
+  wxREGGLOB(style_wxALWAYS_SB_sym);
   style_wxALWAYS_SB_sym = scheme_intern_symbol("always-vscroll");
+  wxREGGLOB(style_wxHSCROLL_sym);
   style_wxHSCROLL_sym = scheme_intern_symbol("hscroll");
 }
 
@@ -108,31 +93,6 @@ static int unbundle_symset_style(Scheme_Object *v, const char *where) {
   if (SCHEME_NULLP(l)) return result;
   if (where) scheme_wrong_type(where, "style symbol list", -1, 0, &v);
   return 0;
-}
-
-static int istype_symset_style(Scheme_Object *v, const char *where) {
-  if (!style_wxHSCROLL_sym) init_symset_style();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == style_wxALWAYS_SB_sym) { ; }
-  else if (i == style_wxHSCROLL_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
-  }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "style symbol list", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_style(int v) {
-  if (!style_wxHSCROLL_sym) init_symset_style();
-  Scheme_Object *l = scheme_null;
-  if (v & wxALWAYS_SB) l = scheme_make_pair(style_wxALWAYS_SB_sym, l);
-  if (v & wxHSCROLL) l = scheme_make_pair(style_wxHSCROLL_sym, l);
-  return l;
 }
 
 

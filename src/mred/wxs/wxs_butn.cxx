@@ -31,6 +31,7 @@
 static Scheme_Object *buttonStyle_1_sym = NULL;
 
 static void init_symset_buttonStyle(void) {
+  wxREGGLOB(buttonStyle_1_sym);
   buttonStyle_1_sym = scheme_intern_symbol("border");
 }
 
@@ -48,29 +49,6 @@ static int unbundle_symset_buttonStyle(Scheme_Object *v, const char *where) {
   if (SCHEME_NULLP(l)) return result;
   if (where) scheme_wrong_type(where, "buttonStyle symbol list", -1, 0, &v);
   return 0;
-}
-
-static int istype_symset_buttonStyle(Scheme_Object *v, const char *where) {
-  if (!buttonStyle_1_sym) init_symset_buttonStyle();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
-  if (0) { }
-  else if (i == buttonStyle_1_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
-  }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "buttonStyle symbol list", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_buttonStyle(int v) {
-  if (!buttonStyle_1_sym) init_symset_buttonStyle();
-  Scheme_Object *l = scheme_null;
-  if (v & 1) l = scheme_make_pair(buttonStyle_1_sym, l);
-  return l;
 }
 
 

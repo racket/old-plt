@@ -20,12 +20,12 @@
 
 @HEADER
 
-@BEGINSYMBOLS textMode > ONE
+@BEGINSYMBOLS textMode > ONE > PRED
 @SYM "transparent" : wxTRANSPARENT
 @SYM "solid" : wxSOLID
 @ENDSYMBOLS
 
-@BEGINSYMBOLS bitmapDrawStyle > ONE
+@BEGINSYMBOLS bitmapDrawStyle > ONE > PRED BUNDLE
 @SYM "solid" : wxSOLID
 @SYM "opaque" : wxSTIPPLE
 @SYM "xor" : wxXOR

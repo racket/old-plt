@@ -5,7 +5,7 @@
 
 #define wxBITMAP_TYPE_UNKNOWN 0
 
-@BEGINSYMBOLS bitmapType > ONE
+@BEGINSYMBOLS bitmapType > ONE > PRED
 @SYM "bmp" : wxBITMAP_TYPE_BMP
 @SYM "gif" : wxBITMAP_TYPE_GIF
 @SYM "xbm" : wxBITMAP_TYPE_XBM

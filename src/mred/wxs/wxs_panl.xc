@@ -15,7 +15,7 @@
 #define INTERACT_METHODS 0
 #endif
 
-@BEGINSYMBOLS panelStyle
+@BEGINSYMBOLS panelStyle > > PRED BUNDLE
 @SYM "border" : wxBORDER
 @ENDSYMBOLS
 
@@ -46,15 +46,20 @@
 
 @END
 
+#ifdef wx_msw
+# define XTMAC_UNUSED(x) /x
+#else
+# define XTMAC_UNUSED(x) /**/
+#endif
 
-static void dialogMenu(wxDialogBox *d)
+static void dialogMenu(wxDialogBox *XTMAC_UNUSED(d))
 {
 #ifdef wx_msw
   d->SystemMenu();
 #endif
 }
 
-@BEGINSYMBOLS dialogStyle
+@BEGINSYMBOLS dialogStyle >  > PRED BUNDLE
 @SYM "no-caption" : wxNO_CAPTION
 @SYM "resize-border" : wxMAXIMIZE
 @ENDSYMBOLS
